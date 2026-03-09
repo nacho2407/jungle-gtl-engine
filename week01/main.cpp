@@ -461,6 +461,7 @@ public:
 
 	virtual void Render(URenderer& renderer) = 0;
 
+    // 삭제 예정 플래그 조작
 	void MarkPendingDestroy()
     {
         bPendingDestroy = true;
@@ -623,6 +624,9 @@ enum EFruitType
     FT_Count  // Last Type Check 용도
 };
 
+const float SmallestFruitRadius = 0.05f; // 가장 작은 과일의 반지름
+const float CoefRadiusGrowth = 1.25f; // 과일 레벨이 하나씩 올라갈 때마다 반지름이 커지는 정도
+
 class UFruit : public UBall
 {
 public:
@@ -630,6 +634,9 @@ public:
     {
 
     }
+
+    // 특정 EFruitType에 해당하는 과일 객체를 특정 X 위치에 스폰하는 생성자 필요
+	// 과일 반지름: SmallestFruitRadius * pow(CoefRadiusGrowth, FruitType)
 
     void UpdatePhysics(
         float dt
@@ -902,6 +909,29 @@ struct FPendingMerge
 	FVector NewLocation;
 };
 
+class UScoreManager
+{
+public:
+    UScoreManager() : Score(0) {}
+
+    /**
+     * @brief 원본 게임의 점수 규칙에 따라 점수를 누적합니다
+     * 
+     * @param FruitType 병합된 후의 과일 타입
+     */
+    void GetScore(EFruitType FruitType)
+    {
+        Score += (UINT)((FruitType * (FruitType + 1)) / 2);
+    }
+
+    UINT GetScore() const
+    {
+        return Score;
+    }
+private:
+    UINT Score;
+};
+
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -967,6 +997,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     ImGui_ImplWin32_Init((void*)hWnd); // OS 이벤트 및 입력 담당
     ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext); // GPU 렌더링 담당
+
+	UScoreManager ScoreManager;
 
     TArray<UPrimitive*> PrimitiveList;
     
@@ -1047,8 +1079,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 						A->MarkPendingDestroy();
 						B->MarkPendingDestroy();
 
-                        // 점수 획득 로직 추가
-
                         // 수박끼리 병합 시 두 수박만 사라지고 병합 X
                         if (A->GetFruitType() != EFruitType::FT_Watermelon) {
                             PendingMergeQueue.Push({ 
@@ -1088,8 +1118,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             FPendingMerge MergeInfo = PendingMergeQueue.Front();
             PendingMergeQueue.Pop();
 
+            // 점수 획득
+			ScoreManager.GetScore(MergeInfo.ResultFruitType);
+
+            // 새 과일 생성
             PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation));
 		}
+
+        // 점수는 ImGui로 표현할 수도 있음
 
         ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
         ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
