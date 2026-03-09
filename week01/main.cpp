@@ -648,7 +648,8 @@ public:
         
     }
 
-private:
+    // 게임 로직 쪽 테스트 하는 동안만 그냥 public으로 두겠습니당..
+public:
     // Fruit Type
     EFruitType FruitType;
 };
@@ -1117,26 +1118,32 @@ static void ResolveCollision(UBall* A, UBall* B)
     B->Velocity = B->Velocity + (Normal * (j / MB));
 }
 
-class UFruit : public UPrimitive
+static void Merge(UFruit* fruitA, UFruit* fruitB)
 {
-    public:
-    void UpdatePhysics(
-        float dt,
-        bool bGravity,
-        bool bAntigravity,
-        bool bAirDrag,
-        float SlowMotionCoef
-    ) override
-    {
-        // 과일의 물리 업데이트 로직
+    if (fruitA->FruitType != fruitB->FruitType) {
+        return;
     }
-    void Render(URenderer& renderer) override
-    {
-        // 과일의 렌더링 로직
-	}
-}
 
-static void Merge(UFruit& fruitA, UFruit& fruitB)
-{
-	FVector 
+    // 수박이 두 개 합쳐지는 경우에는 두 수박이 모두 사라지며 점수 획득
+	if (fruitA->FruitType == EFruitType::FT_Watermelon) {
+		// fruitA, fruitB를 모두 현재 씬에서 제거하는 로직 추가
+
+        // 점수 획득 로직 추가
+
+        return;
+    }
+
+	// 두 과일의 중심 위치를 통해 합쳐지는 과일의 Location 결정
+	FVector NewLocation = (fruitA->Location + fruitB->Location) * 0.5f;
+
+	// 두 과일의 EFruitType을 통해 합쳐지는 과일의 FruitType 결정
+	EFruitType NewFruitType = (EFruitType) (fruitA->FruitType + 1);
+
+    // fruitA, fruitB를 현재 씬에서 제거하는 로직 추가
+	
+    // 새로운 과일의 크기는 NewFruitType에 따라 결정되므로, NewLocation과 NewFruitType을 통해 새로운 과일을 현재 씬에 추가
+
+    // 점수 획득 로직 추가
+
+    return;
 }
