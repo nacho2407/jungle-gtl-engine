@@ -576,6 +576,9 @@ public:
         renderer.RenderSphere();
 	}
 
+    void SetLocation(const FVector& InLocation) { Location = InLocation; }
+    FVector GetLocation() const { return Location; }
+
 private:
     float Random()
     {
@@ -648,10 +651,35 @@ public:
         
     }
 
+    void SetFruitType(EFruitType InFruitType)
+    {
+        FruitType = InFruitType;
+    }
+
+    EFruitType GetFruitType() const { return FruitType; }
+
 private:
     // Fruit Type
     EFruitType FruitType;
 };
+
+// RAII 고려 필요 (자원 해제가 지금은 제대로 안됨)
+// 스마트포인터 사용 필요
+UFruit* CreateFruit(EFruitType FruitType)
+{
+    UFruit* Fruit = new UFruit();
+    Fruit->SetFruitType(FruitType);
+    return Fruit;
+}
+
+UFruit* CreateFruitAt(EFruitType FruitType, FVector Location)
+{
+    UFruit* Fruit = new UFruit();
+    Fruit->SetFruitType(FruitType);
+    Fruit->SetLocation(Location);
+    return Fruit;
+}
+
 
 template<typename DataType>
 class TQueue
@@ -834,7 +862,6 @@ private:
     UINT Capacity;
 };
 
-
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 static void ResolveCollision(UBall* a, UBall* b);
@@ -900,11 +927,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     ImGui_ImplWin32_Init((void*)hWnd); // OS 이벤트 및 입력 담당
     ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext); // GPU 렌더링 담당
 
-    UINT PrimitiveListCapacity = 64;
-	UINT PrimitiveListSize = UBall::TotalNumBalls; // 컨테이너 크기 자체는 컨테이너가 직접 파악
-    UPrimitive** PrimitiveList = new UPrimitive*[PrimitiveListCapacity];
-
-	PrimitiveList[PrimitiveListSize++] = new UFruit();
+    TArray<UPrimitive*> PrimitiveList;
+    PrimitiveList.PushBack(CreateFruit(EFruitType::FT_Apple));
 
 	bool bIsExit = false;
 
@@ -937,7 +961,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         static float SlowMotionCoef = 1.0f;
 
         // 이동 및 벽 충돌 계산
-		for (UINT i = 0; i < PrimitiveListSize; i++)
+		for (UINT i = 0; i < PrimitiveList.Num(); i++)
         {
             PrimitiveList[i]->UpdatePhysics(
                 fixedDeltaTime
@@ -946,11 +970,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
 
         // 공들 간 충돌 계산
-        for (UINT i = 0; i < PrimitiveListSize; i++)
+        for (UINT i = 0; i < PrimitiveList.Num(); i++)
         {
             UBall* A = (UBall*) PrimitiveList[i];
 
-            for (UINT j = i + 1; j < PrimitiveListSize; j++)
+            for (UINT j = i + 1; j < PrimitiveList.Num(); j++)
             {
                 UBall* B = (UBall*) PrimitiveList[j];
 
@@ -973,35 +997,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             TargetCount = 1;
         }
 
-        while (PrimitiveListSize < (UINT) TargetCount)
+        while (PrimitiveList.Num() < (UINT) TargetCount)
         {
-            if (PrimitiveListSize == PrimitiveListCapacity)
-            {
-                UINT NewCapacity = PrimitiveListCapacity * 2;
-
-                UPrimitive** NewList = new UPrimitive * [NewCapacity];
-
-                for (UINT i = 0; i < PrimitiveListSize; i++)
-                {
-                    NewList[i] = PrimitiveList[i];
-                }
-
-                delete[] PrimitiveList;
-
-                PrimitiveList = NewList;
-                PrimitiveListCapacity = NewCapacity;
-            }
-
-            PrimitiveList[PrimitiveListSize++] = new UFruit();
+            PrimitiveList.PushBack(CreateFruitAt(EFruitType::FT_Apple, FVector(0.5, 0.5, 0)));
         }
 
-        while (PrimitiveListSize > (UINT) TargetCount)
+        while (PrimitiveList.Num() > (UINT)TargetCount)
         {
-            UINT RandomIndex = (UINT) (rand() % PrimitiveListSize);
-            delete PrimitiveList[RandomIndex];
-
-            PrimitiveList[RandomIndex] = PrimitiveList[PrimitiveListSize - 1]; // 순서가 중요하지 않으므로...
-            PrimitiveListSize--;
+            PrimitiveList.PopBack();
         }
 
         ImGui::Checkbox("Gravity", &bGravity);
@@ -1037,12 +1040,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         } while (elapsedTime < targetFrameTime);
 	}
 
-    for (UINT i = 0; i < PrimitiveListSize; i++) {
+    for (UINT i = 0; i < PrimitiveList.Num(); i++) {
         delete PrimitiveList[i];
 		PrimitiveList[i] = nullptr;
     }
-
-	delete[] PrimitiveList;
 
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
