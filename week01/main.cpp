@@ -720,8 +720,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_VISIBLE,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
-        1024,
-        1024,
+        900,
+        1100,
         nullptr,
         nullptr,
         hInstance,
@@ -796,26 +796,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         static float SlowMotionCoef = 1.0f;
 
         // 이동 및 벽 충돌 계산
-		for (UINT i = 0; i < PrimitiveListSize; i++)
+        for (UINT i = 0; i < PrimitiveListSize; i++)
         {
             PrimitiveList[i]->UpdatePhysics(
-                fixedDeltaTime, 
-                bGravity, 
-                bAntigravity, 
+                fixedDeltaTime,
+                bGravity,
+                bAntigravity,
                 bAirDrag,
                 SlowMotionCoef
             );
-			PrimitiveList[i]->Render(renderer);
+            PrimitiveList[i]->Render(renderer);
         }
 
         // 공들 간 충돌 계산
         for (UINT i = 0; i < PrimitiveListSize; i++)
         {
-            UBall* A = (UBall*) PrimitiveList[i];
+            UBall* A = (UBall*)PrimitiveList[i];
 
             for (UINT j = i + 1; j < PrimitiveListSize; j++)
             {
-                UBall* B = (UBall*) PrimitiveList[j];
+                UBall* B = (UBall*)PrimitiveList[j];
 
                 ResolveCollision(A, B);
             }
@@ -823,7 +823,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         bool bLineCollision = false;
 
-		// 공과 선의 충돌 계산
+        // 공과 선의 충돌 계산
         for (UINT i = 0; i < PrimitiveListSize; i++)
         {
             UBall* ball = (UBall*)PrimitiveList[i];
@@ -874,20 +874,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             nullptr,
             ImGuiWindowFlags_NoResize |
             ImGuiWindowFlags_NoMove |
-            ImGuiWindowFlags_NoCollapse
+            ImGuiWindowFlags_NoCollapse |
+            ImGuiWindowFlags_NoTitleBar
         );
 
         ImGui::Text("GameOver: %d", gameOver);
         ImGui::Text("Score:");
 
         ImGui::Spacing();
+        ImGui::Spacing();
 
         if (!gameOver)
         {
+            float sceneWidth = 850;
+            float sceneHeight = 850;
+
             // 가운데 정렬
             ImVec2 avail = ImGui::GetContentRegionAvail();
-            float posX = (avail.x - 600) * 0.5f;
-            float posY = (avail.y - 600) * 0.5f;
+            float posX = (avail.x - sceneWidth) * 0.5f;
+            float posY = (avail.y - sceneHeight) * 0.9f;
 
             if (posX > 0) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + posX);
             if (posY > 0) ImGui::SetCursorPosY(ImGui::GetCursorPosY() + posY);
@@ -895,20 +900,46 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             // 내부 프레임
             ImGui::BeginChild(
                 "SceneFrame",
-                ImVec2(600, 600),   // 프레임 크기
+                ImVec2(sceneWidth, sceneHeight),   // 프레임 크기
                 false,               // border 표시
                 ImGuiWindowFlags_NoScrollbar
             );
 
+            ImVec2 scenePos = ImGui::GetCursorScreenPos();
+            ImVec2 sceneSize(sceneWidth, sceneHeight);
+
             ImGui::Image(
                 (ImTextureID)renderer.SceneSRV,
-                ImVec2(600, 600)
+                ImVec2(sceneWidth, sceneHeight)
             );
+
+            if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+            {
+                ImVec2 mouse = ImGui::GetMousePos();
+
+                float localX = mouse.x - scenePos.x;
+
+                float worldX = (localX / sceneSize.x) * 2.0f - 1.0f;
+                float worldY = 0.9f;
+
+                UBall* newBall = new UBall();
+                newBall->Location = FVector(worldX, worldY, 0);
+
+                PrimitiveList[PrimitiveListSize++] = newBall;
+            }
 
             ImGui::EndChild();
         }
         else
         {
+            // 기존 데이터 초기화
+            for (UINT i = 0; i < PrimitiveListSize; i++)
+            {
+                delete PrimitiveList[i];
+            }
+
+            PrimitiveListSize = 0;
+
             const char* text = "Game Over";
             ImVec2 textSize = ImGui::CalcTextSize(text);
 
@@ -928,15 +959,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             if (ImGui::Button(buttonText))
             {
                 gameOver = false;
-
-                // 기존 데이터 초기화
-                for (UINT i = 0; i < PrimitiveListSize; i++)
-                {
-                    delete PrimitiveList[i];
-                }
-
-                PrimitiveListSize = 0;
-
                 PrimitiveList[PrimitiveListSize++] = new UBall();
             }
         }
