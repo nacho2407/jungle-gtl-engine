@@ -461,6 +461,16 @@ public:
 
 	virtual void Render(URenderer& renderer) = 0;
 
+	void MarkPendingDestroy()
+    {
+        bPendingDestroy = true;
+    }
+
+    bool IsPendingDestroy() const
+    {
+        return bPendingDestroy;
+	}
+
 protected:
     // Border 는 map 데이터이므로 따로 빼서 전역 상수 등으로 관리하는 것이 좋을 듯함
     // 이외 데이터도 관련해서 수정해야할수도
@@ -477,6 +487,8 @@ protected:
     const float GravityAccel = 4.0f; // 중력 가속도
     const float RestitutionWall = 0.8f; // 중력 활성화 시 적용할 벽 반발 감쇠 계수(1.0 == 완전 반사)
     const float AirDragCoef = 0.2f; // 공기 저항 활성화 시 적용할 공기 저항 계수
+
+    bool bPendingDestroy = false; // 충돌 검사 중 삭제될 예정인 Primitive들을 표시하기 위한 플래그
 };
 
 class UBall: public UPrimitive
@@ -677,6 +689,10 @@ UFruit* CreateFruitAt(EFruitType FruitType, FVector Location)
     UFruit* Fruit = new UFruit();
     Fruit->SetFruitType(FruitType);
     Fruit->SetLocation(Location);
+
+    // 이미 존재하는 과일들 사이에 새로운 과일이 합쳐지는 경우 처리 로직은 준혁님 코드에 구현된 로직으로 처리 예정(차후 코드 병합 과정에서 처리)
+    // 아마 PrimitiveList 내의 모든 과일들 위치를 처리해주어야 할 듯
+
     return Fruit;
 }
 
@@ -856,11 +872,35 @@ public:
         return true;
     }
 
+    void RemoveAt(UINT Idx)
+    {
+        if (Idx >= DataNum)
+        {
+            return;
+        }
+
+        if (Idx != DataNum - 1)
+        {
+            Data[Idx] = Data[DataNum - 1];
+        }
+
+        DataNum--;
+
+        // 원소의 소멸자를 별도로 호출하지 않음에 유의
+    }
+
 private:
     DataType* Data;
     UINT DataNum;
     UINT Capacity;
 };
+
+struct FPendingMerge
+{
+    EFruitType ResultFruitType;
+	FVector NewLocation;
+};
+
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -868,6 +908,8 @@ static void ResolveCollision(UBall* a, UBall* b);
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+
+TArray<UPrimitive*> PrimitiveList;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
@@ -927,7 +969,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     ImGui_ImplWin32_Init((void*)hWnd); // OS 이벤트 및 입력 담당
     ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext); // GPU 렌더링 담당
 
-    TArray<UPrimitive*> PrimitiveList;
+    // Merge 쪽에서 접근 가능하도록 PrimitiveList는 일단 전역으로 빼두었습니다.
+
     PrimitiveList.PushBack(CreateFruit(EFruitType::FT_Apple));
 
 	bool bIsExit = false;
@@ -969,18 +1012,84 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			PrimitiveList[i]->Render(renderer);
         }
 
-        // 공들 간 충돌 계산
+        // 병합 예정 정보를 담은 큐
+		TQueue<FPendingMerge> PendingMergeQueue;
+
+        /**************************
+         * 과일들 간 충돌 / 병합 연산 *
+         **************************/
         for (UINT i = 0; i < PrimitiveList.Num(); i++)
         {
-            UBall* A = (UBall*) PrimitiveList[i];
+            UFruit* A = (UFruit*) PrimitiveList[i];
+
+			if (A->IsPendingDestroy())
+            {
+                continue;
+            }
 
             for (UINT j = i + 1; j < PrimitiveList.Num(); j++)
             {
-                UBall* B = (UBall*) PrimitiveList[j];
+                UFruit* B = (UFruit*) PrimitiveList[j];
 
-                ResolveCollision(A, B);
+                if (B->IsPendingDestroy())
+                {
+                    continue;
+                }
+
+                FVector Delta = B->Location - A->Location;
+                float Dist2 = Delta.Dot2(Delta);
+                float r = A->Radius + B->Radius;
+
+                if (Dist2 <= r * r)
+                {
+                    if (A->GetFruitType() == B->GetFruitType())
+                    {
+						A->MarkPendingDestroy();
+						B->MarkPendingDestroy();
+
+                        // 점수 획득 로직 추가
+
+                        // 수박끼리 병합 시 두 수박만 사라지고 병합 X
+                        if (A->GetFruitType() != EFruitType::FT_Watermelon) {
+                            PendingMergeQueue.Push({ 
+                                (EFruitType) (A->GetFruitType() + 1), 
+                                (A->Location + B->Location) * 0.5f
+							});
+                        }
+
+						break; // A는 이미 병합 대상, 추가 충돌 검사 X
+                    }
+                    else
+                    {
+                        ResolveCollision(A, B);
+                    }
+                }
             }
         }
+
+        // 과일 삭제 로직
+        for (UINT i = 0; i < PrimitiveList.Num();)
+        {
+            if (PrimitiveList[i]->IsPendingDestroy())
+            {
+                delete PrimitiveList[i];
+                PrimitiveList[i] = nullptr;
+                PrimitiveList.RemoveAt(i);
+            }
+            else
+            {
+                i++;
+            }
+		}
+
+		// 병합 처리 로직
+        while (!PendingMergeQueue.IsEmpty())
+        {
+            FPendingMerge MergeInfo = PendingMergeQueue.Front();
+            PendingMergeQueue.Pop();
+
+            PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation));
+		}
 
         ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
         ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
@@ -1080,12 +1189,6 @@ static void ResolveCollision(UBall* A, UBall* B)
 {
     FVector Delta = B->Location - A->Location;
     float Dist2 = Delta.Dot2(Delta);
-    float r = A->Radius + B->Radius;
-
-    if (Dist2 >= r * r)
-    {
-        return;
-    }
 
     float Dist = sqrtf(Dist2);
 
@@ -1118,14 +1221,15 @@ static void ResolveCollision(UBall* A, UBall* B)
     B->Velocity = B->Velocity + (Normal * (j / MB));
 }
 
+// 수정 예정(아마 사용안할 듯)
 static void Merge(UFruit* fruitA, UFruit* fruitB)
 {
-    if (fruitA->FruitType != fruitB->FruitType) {
+    if (fruitA->GetFruitType() != fruitB->GetFruitType()) {
         return;
     }
 
     // 수박이 두 개 합쳐지는 경우에는 두 수박이 모두 사라지며 점수 획득
-	if (fruitA->FruitType == EFruitType::FT_Watermelon) {
+	if (fruitA->GetFruitType() == EFruitType::FT_Watermelon) {
 		// fruitA, fruitB를 모두 현재 씬에서 제거하는 로직 추가
 
         // 점수 획득 로직 추가
@@ -1137,7 +1241,7 @@ static void Merge(UFruit* fruitA, UFruit* fruitB)
 	FVector NewLocation = (fruitA->Location + fruitB->Location) * 0.5f;
 
 	// 두 과일의 EFruitType을 통해 합쳐지는 과일의 FruitType 결정
-	EFruitType NewFruitType = (EFruitType) (fruitA->FruitType + 1);
+	EFruitType NewFruitType = (EFruitType) (fruitA->GetFruitType() + 1);
 
     // fruitA, fruitB를 현재 씬에서 제거하는 로직 추가
 	
