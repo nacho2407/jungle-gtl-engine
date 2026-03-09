@@ -863,3 +863,27 @@ static void ResolveCollision(UBall* A, UBall* B)
     A->Velocity = A->Velocity - (Normal * (j / MA));
     B->Velocity = B->Velocity + (Normal * (j / MB));
 }
+
+class UFruit : public UPrimitive
+{
+    public:
+    void UpdatePhysics(
+        float dt,
+        bool bGravity,
+        bool bAntigravity,
+        bool bAirDrag,
+        float SlowMotionCoef
+    ) override
+    {
+        // 과일의 물리 업데이트 로직
+    }
+    void Render(URenderer& renderer) override
+    {
+        // 과일의 렌더링 로직
+	}
+}
+
+static void Merge(UFruit& fruitA, UFruit& fruitB)
+{
+	FVector 
+}
