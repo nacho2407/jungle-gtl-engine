@@ -53,7 +53,9 @@ public:
 	struct FConstants
 	{
 		FVector Offset;
-		float Radius;
+		float  Radius;
+		FVector SinCos;
+		float Padding;
 	};
 
 	struct FSphere
@@ -378,7 +380,7 @@ public:
 		}
 	}
 
-	void UpdateConstant(FVector Offset, float Radius)
+	void UpdateConstant(FVector Offset, FVector SinCos, float Radius)
 	{
 		if (ConstantBuffer)
 		{
@@ -388,6 +390,7 @@ public:
 			FConstants* constants = (FConstants*)constantbufferMSR.pData;
 
 			constants->Offset = Offset;
+			constants->SinCos = SinCos;
 			constants->Radius = Radius;
 
 			DeviceContext->Unmap(ConstantBuffer, 0); // CPU 작업이 끝난 뒤 언매핑
@@ -453,13 +456,19 @@ class UBall : public UPrimitive
 public:
 	FVector Location; // 여기서는 Offset과 동일한 개념
 	FVector Velocity;
+	
+	float Angle;
+	float AngularVelocity;
+
 	float Radius;
 	float Mass;
-
+	
 public:
 	UBall() :
 		Location(0.0f, 0.0f, 0.0f),
 		Velocity(0.0f, 0.0f, 0.0f),
+		Angle(0.f),
+		AngularVelocity(0.f),
 		Radius(0.1f),
 		Mass(1.0f)
 	{
@@ -479,8 +488,6 @@ public:
 		Velocity.x = 0.f;
 		Velocity.y = -1.f;
 		Velocity.z = 0.0f;
-
-
 	}
 
 	~UBall()
@@ -522,15 +529,24 @@ public:
 				Velocity.x = 0.0f;                                          
 			else
 				Velocity.x -= (Velocity.x > 0.0f ? 1.0f : -1.0f) * frictionImpulse;
+
+			//마찰로 인한 토크 적용
+
 		}
 
 
 		Velocity.y -= GravityAccel * dt;
+
+		//각가속도는 0.98로 고정
+		AngularVelocity *= 0.98f;
+		Angle += AngularVelocity * dt;
+
 	}
 
 	void Render(URenderer& renderer) override
 	{
-		renderer.UpdateConstant(Location, Radius);
+		FVector CosSin = {cosf(Angle), sinf(Angle), 0.f };
+		renderer.UpdateConstant(Location, CosSin, Radius);
 		renderer.RenderSphere();
 	}
 
@@ -855,7 +871,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-
 static void ResolveCollision(UBall* A, UBall* B)
 {
 	FVector Delta = B->Location - A->Location;
@@ -873,6 +888,7 @@ static void ResolveCollision(UBall* A, UBall* B)
 	float InverseDist = 1.0f / Dist;
 	Normal = FVector(Delta.x * InverseDist, Delta.y * InverseDist, 0.0f);
 
+
 	// 안정성을 위해 공들이 겹치는 경우 처리
 	float Penetration = r - Dist;
 	float MA = A->Mass;
@@ -883,17 +899,48 @@ static void ResolveCollision(UBall* A, UBall* B)
 	A->Location = A->Location - (Normal * MoveA);
 	B->Location = B->Location + (Normal * MoveB);
 
-	FVector RelVel = B->Velocity - A->Velocity;
+	// 관성 모멘트 
+	float IA = 0.5f * MA * A->Radius * A->Radius;
+	float IB = 0.5f * MB * B->Radius * B->Radius;
+	float InvIA = 1.0f / IA, InvIB = 1.0f / IB;
+
+	//접선의 방향
+	FVector Tangent = FVector(-Normal.y, Normal.x, 0.f);
+	float rACrossT = A->Radius;
+	float rBCrossT = -B->Radius;
+
+	// 충격량 적용 전 접촉점 속도: v_contact = v + w corss r
+	FVector vA_contact = FVector(
+		A->Velocity.x - A->AngularVelocity * Normal.y * A->Radius,
+		A->Velocity.y + A->AngularVelocity * Normal.x * A->Radius,
+		0.f);
+	
+	FVector vB_contact = FVector(
+		B->Velocity.x + B->AngularVelocity * Normal.y * B->Radius,
+		B->Velocity.y - B->AngularVelocity * Normal.x * B->Radius,
+		0.f);
+
+	FVector RelVel = vB_contact - vA_contact;
 	float RelVelNorm = RelVel.Dot2(Normal);
 
+	// 이미 멀어지는 중이면 무시
 	if (RelVelNorm > 0.0f)
-	{
 		return;
-	}
 
-	const float e = 0.2f; // 탄성계수(완전 탄성)
-	float j = -(1.0f + e) * RelVelNorm / (1.0f / MA + 1.0f / MB); // 충격량
+	float RelVelTang = RelVel.Dot2(Tangent);
 
-	A->Velocity = A->Velocity - (Normal * (j / MA));
-	B->Velocity = B->Velocity + (Normal * (j / MB));
+	const float e = 0.5f;
+	float jN = -(1.0f + e) * RelVelNorm / (1 / MA + 1 / MB);
+
+	float jT = -RelVelTang / (1 / MA + 1 / MB + rACrossT * rACrossT * InvIA + rBCrossT * rBCrossT * InvIB);
+
+	const float mu = 0.4f;
+	float maxFriction = mu * fabsf(jN);
+	if (fabsf(jT) > maxFriction)
+		jT = (jT > 0.f ? 1.f : -1.f) * maxFriction;
+	A->Velocity = A->Velocity - (Normal * (jN * 1 / MA)) - (Tangent * (jT * 1 / MA));
+	B->Velocity = B->Velocity + (Normal * (jN * 1 / MB)) + (Tangent * (jT * 1 / MB));
+
+	A->AngularVelocity -= rACrossT * jT * InvIA;
+	B->AngularVelocity += rBCrossT * jT * InvIB;
 }
