@@ -912,8 +912,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 (ImTextureID)renderer.SceneSRV,
                 ImVec2(sceneWidth, sceneHeight)
             );
-
-            if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+            if (ImGui::IsItemHovered())
             {
                 ImVec2 mouse = ImGui::GetMousePos();
 
@@ -921,13 +920,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
                 float worldX = (localX / sceneSize.x) * 2.0f - 1.0f;
                 float worldY = 0.9f;
+                
+        
+                renderer.UpdateConstant(FVector(worldX, worldY, 0), 0.1f);
+                renderer.RenderSphere();
 
-                UBall* newBall = new UBall();
-                newBall->Location = FVector(worldX, worldY, 0);
+                if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+                {
 
-                PrimitiveList[PrimitiveListSize++] = newBall;
+                    UBall* newBall = new UBall();
+                    newBall->Location = FVector(worldX, worldY, 0);
+
+                    PrimitiveList[PrimitiveListSize++] = newBall;
+                }
             }
-
             ImGui::EndChild();
         }
         else
