@@ -652,6 +652,7 @@ public:
             Location.y = TopBorder;
             Velocity.y *= -1.0f;
         }
+		// 실제 게임에서는 바닥에 닿은 과일이 튕기지 않고 바닥에 착 붙어버리는 식으로 되어있어서, 이 부분은 나중에 확인해보고 수정이 필요하면 수정!!
         if (Location.y < BottomBorder)
         {
             Location.y = BottomBorder;
@@ -909,8 +910,6 @@ static void ResolveCollision(UBall* a, UBall* b);
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
-TArray<UPrimitive*> PrimitiveList;
-
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
     WCHAR WindowClass[] = L"GTLWindowClass";
@@ -969,9 +968,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     ImGui_ImplWin32_Init((void*)hWnd); // OS 이벤트 및 입력 담당
     ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext); // GPU 렌더링 담당
 
-    // Merge 쪽에서 접근 가능하도록 PrimitiveList는 일단 전역으로 빼두었습니다.
-
-    PrimitiveList.PushBack(CreateFruit(EFruitType::FT_Apple));
+    TArray<UPrimitive*> PrimitiveList;
+    
+	// Input 포함 Drop Position 관련 기능은 지윤님 코드에 구현된 로직으로 처리 예정(차후 코드 병합 과정에서 처리)
+    // PrimitiveList.PushBack(CreateFruit(EFruitType::FT_Apple));
 
 	bool bIsExit = false;
 
@@ -1189,8 +1189,8 @@ static void ResolveCollision(UBall* A, UBall* B)
 {
     FVector Delta = B->Location - A->Location;
     float Dist2 = Delta.Dot2(Delta);
-
     float Dist = sqrtf(Dist2);
+    float r = A->Radius + B->Radius;
 
     FVector Normal;
     float InverseDist = 1.0f / Dist;
@@ -1219,35 +1219,4 @@ static void ResolveCollision(UBall* A, UBall* B)
 
     A->Velocity = A->Velocity - (Normal * (j / MA));
     B->Velocity = B->Velocity + (Normal * (j / MB));
-}
-
-// 수정 예정(아마 사용안할 듯)
-static void Merge(UFruit* fruitA, UFruit* fruitB)
-{
-    if (fruitA->GetFruitType() != fruitB->GetFruitType()) {
-        return;
-    }
-
-    // 수박이 두 개 합쳐지는 경우에는 두 수박이 모두 사라지며 점수 획득
-	if (fruitA->GetFruitType() == EFruitType::FT_Watermelon) {
-		// fruitA, fruitB를 모두 현재 씬에서 제거하는 로직 추가
-
-        // 점수 획득 로직 추가
-
-        return;
-    }
-
-	// 두 과일의 중심 위치를 통해 합쳐지는 과일의 Location 결정
-	FVector NewLocation = (fruitA->Location + fruitB->Location) * 0.5f;
-
-	// 두 과일의 EFruitType을 통해 합쳐지는 과일의 FruitType 결정
-	EFruitType NewFruitType = (EFruitType) (fruitA->GetFruitType() + 1);
-
-    // fruitA, fruitB를 현재 씬에서 제거하는 로직 추가
-	
-    // 새로운 과일의 크기는 NewFruitType에 따라 결정되므로, NewLocation과 NewFruitType을 통해 새로운 과일을 현재 씬에 추가
-
-    // 점수 획득 로직 추가
-
-    return;
 }
