@@ -451,7 +451,32 @@ public:
         bool bAirDrag,
         float SlowMotionCoef
     ) = 0;
+
+    virtual void UpdatePhysics(
+        float dt
+    ) 
+    {
+
+    }
+
 	virtual void Render(URenderer& renderer) = 0;
+
+protected:
+    // Border 는 map 데이터이므로 따로 빼서 전역 상수 등으로 관리하는 것이 좋을 듯함
+    // 이외 데이터도 관련해서 수정해야할수도
+    float LeftBorder = -1.0f;
+    float RightBorder = 1.0f;
+    float TopBorder = 1.0f;
+    float BottomBorder = -1.0f;
+
+    float MassFactor = 1.0f; // 질량 보정용
+
+    const float MinSpeed = -2.0f;
+    const float MaxSpeed = 2.0f;
+
+    const float GravityAccel = 4.0f; // 중력 가속도
+    const float RestitutionWall = 0.8f; // 중력 활성화 시 적용할 벽 반발 감쇠 계수(1.0 == 완전 반사)
+    const float AirDragCoef = 0.2f; // 공기 저항 활성화 시 적용할 공기 저항 계수
 };
 
 class UBall: public UPrimitive
@@ -471,7 +496,7 @@ public:
         Radius(0.1f), 
         Mass(0.0f)
     {
-        Radius = RandRange(0.1f, 0.2f);
+        // Radius = RandRange(0.1f, 0.2f);
 
         Mass = Radius * MassFactor;
 
@@ -480,6 +505,7 @@ public:
         TopBorder = 1.0f - Radius;
         BottomBorder = -1.0f + Radius;
 
+        /*
         Location.x = RandRange(LeftBorder, RightBorder);
         Location.y = RandRange(BottomBorder, TopBorder);
         Location.z = 0.0f;
@@ -487,6 +513,7 @@ public:
         Velocity.x = RandRange(MinSpeed, MaxSpeed);
         Velocity.y = RandRange(MinSpeed, MaxSpeed);
         Velocity.z = 0.0f;
+        */
 
         TotalNumBalls++;
 	}
@@ -542,26 +569,12 @@ public:
         }
 	}
 
+
     void Render(URenderer& renderer) override
     {
         renderer.UpdateConstant(Location, Radius);
         renderer.RenderSphere();
 	}
-
-private:
-	float MassFactor = 1.0f; // 질량 보정용
-
-	float LeftBorder = -1.0f;
-	float RightBorder = 1.0f;
-	float TopBorder = 1.0f;
-	float BottomBorder = -1.0f;
-
-    const float MinSpeed = -2.0f;
-	const float MaxSpeed = 2.0f;
-
-    const float GravityAccel = 4.0f; // 중력 가속도
-    const float RestitutionWall = 0.8f; // 중력 활성화 시 적용할 벽 반발 감쇠 계수(1.0 == 완전 반사)
-    const float AirDragCoef = 0.2f; // 공기 저항 활성화 시 적용할 공기 저항 계수
 
 private:
     float Random()
@@ -577,6 +590,250 @@ private:
 
 
 int UBall::TotalNumBalls = 0;
+
+enum EFruitType
+{
+    FT_Cherry = 0,
+    FT_Strawberry,
+    FT_Grape,
+    FT_Dekopon,      // 귤/데코폰
+    FT_Orange,
+    FT_Apple,
+    FT_Pear,
+    FT_Peach,
+    FT_Pineapple,
+    FT_Melon,
+    FT_Watermelon,
+
+    FT_Count  // Last Type Check 용도
+};
+
+class UFruit : public UBall
+{
+public:
+    UFruit()
+    {
+
+    }
+
+    void UpdatePhysics(
+        float dt
+    ) override
+    {
+        Location = Location + Velocity * dt;
+
+        if (Location.x < LeftBorder)
+        {
+            Location.x = LeftBorder;
+            Velocity.x *= -1.0f;
+        }
+        if (Location.x > RightBorder)
+        {
+            Location.x = RightBorder;
+            Velocity.x *= -1.0f;
+        }
+        if (Location.y > TopBorder)
+        {
+            Location.y = TopBorder;
+            Velocity.y *= -1.0f;
+        }
+        if (Location.y < BottomBorder)
+        {
+            Location.y = BottomBorder;
+            Velocity.y *= -1.0f;
+        }
+
+        // Fruit 에 대해 기본적으로 Gravity 적용
+        Velocity.y -= GravityAccel * dt;
+        
+    }
+
+private:
+    // Fruit Type
+    EFruitType FruitType;
+};
+
+template<typename DataType>
+class TQueue
+{
+public:
+    TQueue()
+    {
+        Data = new DataType[1];
+        DataNum = 0;
+        Capacity = 1;
+        Head = 0;
+        Tail = 0;
+    }
+
+    ~TQueue()
+    {
+        delete[] Data;
+    }
+
+    // Push, Pop, Reserve
+    bool Push(const DataType& InData)
+    {
+        // Array is full
+        if (DataNum == Capacity)
+        {
+            bool bIsReserveOK = Reserve(Capacity * 2);
+            if (!bIsReserveOK) return false;
+        }
+
+        Data[Tail] = InData;
+        Tail = (Tail + 1) % Capacity;
+        DataNum++;
+        return true;
+    }
+
+    void Pop()
+    {
+        if (IsEmpty()) return;
+        Head = (Head + 1) % Capacity;
+        DataNum--;
+    }
+
+    DataType& Front()
+    {
+        // Empty 체크 나중에 넣어야할듯
+        return Data[Head];
+    }
+
+    const DataType& Front() const
+    {
+        // Empty 체크 나중에 넣어야할듯
+        return Data[Head];
+    }
+
+    bool Reserve(UINT NewCapacity)
+    {
+        // 더 작아지는 경우는 고려하지 않음
+        if (Capacity >= NewCapacity) return false;
+
+        DataType* NewData = new DataType[NewCapacity];
+        
+        // 객체가 특수한 복사, 이동 연산을 가지는 것은 아직 고려하지 않음
+        for (UINT i = 0; i < DataNum; i++)
+        {
+            NewData[i] = Data[(Head + i) % Capacity];
+        }
+
+        delete[] Data;
+        Data = NewData;
+        // DataNum 유지
+        Capacity = NewCapacity;
+        Head = 0;
+        Tail = DataNum;
+        return true;
+    }
+    
+    bool IsEmpty() const
+    {
+        return DataNum == 0;
+    }
+
+    UINT Num() const
+    {
+        return DataNum;
+    }
+
+private:
+    DataType* Data;
+    UINT Head;
+    UINT Tail;
+    UINT DataNum;
+    UINT Capacity;
+};
+
+template<typename DataType>
+class TArray
+{
+public:
+    TArray()
+    {
+        Data = new DataType[1];
+        DataNum = 0;
+        Capacity = 1;
+    }
+
+    ~TArray()
+    {
+        delete[] Data;
+    }
+
+    // PushBack, PopBack
+    bool PushBack(const DataType& InData)
+    {
+        if (DataNum == Capacity)
+        {
+            bool bIsReserveOK = Reserve(Capacity * 2);
+            if (!bIsReserveOK) return false;
+        }
+
+        Data[DataNum] = InData;
+        DataNum++;
+        return true;
+    }
+
+    void PopBack()
+    {
+        if (IsEmpty()) return;
+
+        DataNum--;
+    }
+
+    DataType& Back()
+    {
+        // Empty 처리 나중에 해야됨
+        return Data[DataNum - 1];
+    }
+
+    DataType& operator[](UINT Idx)
+    {
+        // 일단 Out of index 는 체크 안함
+        return Data[Idx];
+    }
+
+    const DataType& operator[](UINT Idx) const
+    {
+        return Data[Idx];
+    }
+
+    bool IsEmpty() const
+    {
+        return DataNum == 0;
+    }
+
+    UINT Num() const
+    {
+        return DataNum;
+    }
+
+    bool Reserve(UINT NewCapacity)
+    {
+        // 더 작아지는 경우는 허용 안함
+        if (Capacity >= NewCapacity) return false;
+
+        DataType* NewData = new DataType[NewCapacity];
+        for (UINT i = 0; i < DataNum; i++)
+        {
+            NewData[i] = Data[i];
+        }
+
+        delete[] Data;
+        Data = NewData;
+        // DataNum 유지
+        Capacity = NewCapacity;
+        return true;
+    }
+
+private:
+    DataType* Data;
+    UINT DataNum;
+    UINT Capacity;
+};
+
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -647,7 +904,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	UINT PrimitiveListSize = UBall::TotalNumBalls; // 컨테이너 크기 자체는 컨테이너가 직접 파악
     UPrimitive** PrimitiveList = new UPrimitive*[PrimitiveListCapacity];
 
-	PrimitiveList[PrimitiveListSize++] = new UBall();
+	PrimitiveList[PrimitiveListSize++] = new UFruit();
 
 	bool bIsExit = false;
 
@@ -683,11 +940,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		for (UINT i = 0; i < PrimitiveListSize; i++)
         {
             PrimitiveList[i]->UpdatePhysics(
-                fixedDeltaTime, 
-                bGravity, 
-                bAntigravity, 
-                bAirDrag,
-                SlowMotionCoef
+                fixedDeltaTime
             );
 			PrimitiveList[i]->Render(renderer);
         }
@@ -739,7 +992,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 PrimitiveListCapacity = NewCapacity;
             }
 
-            PrimitiveList[PrimitiveListSize++] = new UBall();
+            PrimitiveList[PrimitiveListSize++] = new UFruit();
         }
 
         while (PrimitiveListSize > (UINT) TargetCount)
