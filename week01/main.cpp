@@ -47,6 +47,12 @@ struct FVector
 
 #include "Sphere.h"
 
+FVertexSimple line_vertices[] =
+{
+    {-1.0f, 0.8f, 0.0f, 1,1,1,1},
+    { 1.0f, 0.8f, 0.0f, 1,1,1,1}
+};
+
 class URenderer
 {
 public:
@@ -61,6 +67,8 @@ public:
 		ID3D11Buffer* VertexBuffer = nullptr;
 		UINT NumVertices;
     } sphere;
+
+    ID3D11Buffer* LineVertexBuffer = nullptr;
 
     ID3D11Device* Device = nullptr;
     ID3D11DeviceContext* DeviceContext = nullptr;
@@ -82,6 +90,10 @@ public:
 
     ID3D11Buffer* ConstantBuffer = nullptr;
 
+    ID3D11Texture2D* SceneTexture = nullptr;
+    ID3D11RenderTargetView* SceneRTV = nullptr;
+    ID3D11ShaderResourceView* SceneSRV = nullptr;
+
     // 화면 초기화 색상
     FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 
@@ -90,11 +102,18 @@ public:
     {
         CreateDeviceAndSwapChain(hWindow);
 
+        CreateSceneRenderTarget(
+            (UINT)ViewportInfo.Width,
+            (UINT)ViewportInfo.Height
+        );
+
         CreateFrameBuffer();
 
         CreateRasterizerState();
 
         CreateSphereMesh();
+
+        CreateLine();
     }
 
     void CreateDeviceAndSwapChain(HWND hWindow)
@@ -140,6 +159,25 @@ public:
         };
     }
 
+    void CreateSceneRenderTarget(UINT width, UINT height)
+    {
+        D3D11_TEXTURE2D_DESC desc = {};
+        desc.Width = width;
+        desc.Height = height;
+        desc.MipLevels = 1;
+        desc.ArraySize = 1;
+        desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        desc.SampleDesc.Count = 1;
+        desc.Usage = D3D11_USAGE_DEFAULT;
+        desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+        Device->CreateTexture2D(&desc, nullptr, &SceneTexture);
+
+        Device->CreateRenderTargetView(SceneTexture, nullptr, &SceneRTV);
+
+        Device->CreateShaderResourceView(SceneTexture, nullptr, &SceneSRV);
+    }
+
     void CreateFrameBuffer()
     {
         // 스왑 체인으로부터 백 버퍼 텍스처 가져오기
@@ -166,6 +204,19 @@ public:
     {
 		sphere.NumVertices = sizeof(sphere_vertices) / sizeof(FVertexSimple);
 		sphere.VertexBuffer = CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
+    }
+
+    void CreateLine()
+    {
+        D3D11_BUFFER_DESC desc = {};
+        desc.ByteWidth = sizeof(line_vertices);
+        desc.Usage = D3D11_USAGE_DEFAULT;
+        desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+
+        D3D11_SUBRESOURCE_DATA data = {};
+        data.pSysMem = line_vertices;
+
+        Device->CreateBuffer(&desc, &data, &LineVertexBuffer);
     }
 
     void Release()
@@ -419,6 +470,18 @@ public:
         }
     }
 
+    void PrepareScene()
+    {
+        DeviceContext->ClearRenderTargetView(SceneRTV, ClearColor);
+
+        DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        DeviceContext->RSSetViewports(1, &ViewportInfo);
+        DeviceContext->RSSetState(RasterizerState);
+
+        DeviceContext->OMSetRenderTargets(1, &SceneRTV, nullptr);
+    }
+
     void RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices)
     {
         UINT offset = 0;
@@ -431,6 +494,45 @@ public:
     {
         RenderPrimitive(sphere.VertexBuffer, sphere.NumVertices);
 	}
+
+    void RenderLine()
+    {
+        UINT offset = 0;
+
+        DeviceContext->IASetVertexBuffers(
+            0,
+            1,
+            &LineVertexBuffer,
+            &Stride,
+            &offset
+        );
+
+        DeviceContext->IASetPrimitiveTopology(
+            D3D11_PRIMITIVE_TOPOLOGY_LINELIST
+        );
+
+        DeviceContext->Draw(2, 0);
+    }
+
+    void UpdateLineColor(bool collision)
+    {
+        FVertexSimple vertices[2];
+
+        float y = 0.8f;
+
+        if (collision)
+        {
+            vertices[0] = { -1.0f, y, 0.0f, 1,0,0,1 };
+            vertices[1] = { 1.0f, y, 0.0f, 1,0,0,1 };
+        }
+        else
+        {
+            vertices[0] = { -1.0f, y, 0.0f, 1,1,1,1 };
+            vertices[1] = { 1.0f, y, 0.0f, 1,1,1,1 };
+        }
+
+        DeviceContext->UpdateSubresource(LineVertexBuffer, 0, nullptr, vertices, 0, 0);
+    }
 
     void SwapBuffer()
     {
@@ -542,6 +644,12 @@ public:
         }
 	}
 
+    bool CheckLineCollision(float lineY)
+    {
+        float distance = fabs(Location.y - lineY);
+        return distance <= Radius;
+    }
+
     void Render(URenderer& renderer) override
     {
         renderer.UpdateConstant(Location, Radius);
@@ -575,7 +683,6 @@ private:
     }
 };
 
-
 int UBall::TotalNumBalls = 0;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -606,17 +713,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	RegisterClassW(&wndclass);
 
-	HWND hWnd = CreateWindowExW(0,
-        WindowClass, 
-        Title, 
-        WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW, 
-        CW_USEDEFAULT, 
-        CW_USEDEFAULT, 
-        1024, 
-        1024, 
-        nullptr, 
-        nullptr, 
-        hInstance, 
+    HWND hWnd = CreateWindowExW(
+        0,
+        WindowClass,
+        Title,
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_VISIBLE,
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        1024,
+        1024,
+        nullptr,
+        nullptr,
+        hInstance,
         nullptr
     );
 
@@ -649,7 +757,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	PrimitiveList[PrimitiveListSize++] = new UBall();
 
+    const float LineY = 0.8f;
+
 	bool bIsExit = false;
+
+	// 게임 오버 상태와 이전 프레임의 선 충돌 여부를 추적하는 변수
+    bool gameOver = false;
+    bool prevCollision = false;
+
+    LARGE_INTEGER collisionStartCounter;
 
 	while (bIsExit == false)
 	{
@@ -670,7 +786,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 		}
 
-        renderer.Prepare();
+        renderer.PrepareScene();
         renderer.PrepareShader();
 
         static int TargetCount = 1;
@@ -705,68 +821,128 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
         }
 
+        bool bLineCollision = false;
+
+		// 공과 선의 충돌 계산
+        for (UINT i = 0; i < PrimitiveListSize; i++)
+        {
+            UBall* ball = (UBall*)PrimitiveList[i];
+
+            if (ball->CheckLineCollision(LineY))
+            {
+                bLineCollision = true;
+                if (!prevCollision)
+                {
+                    QueryPerformanceCounter(&collisionStartCounter);
+                }
+                break;
+            }
+        }
+
+        // Game Over 여부 계산
+        if (bLineCollision)
+        {
+            LARGE_INTEGER now;
+            QueryPerformanceCounter(&now);
+
+            double elapsed = (double)(now.QuadPart - collisionStartCounter.QuadPart) / frequency.QuadPart;
+
+            if (elapsed >= 1.0)
+            {
+                gameOver = true;
+            }
+        }
+
+        prevCollision = bLineCollision;
+
+        renderer.UpdateLineColor(bLineCollision);
+
+        renderer.UpdateConstant(FVector(0, 0, 0), 1.0f);
+        renderer.RenderLine();
+
         ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
         ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
         ImGui::NewFrame(); // ImGui Core 초기화
 
-        ImGui::Begin("Jungle Property Window");
+        ImGuiIO& io = ImGui::GetIO();
 
-        ImGui::Text("Hello, jungle world!");
+        ImGui::SetNextWindowPos(ImVec2(0, 0));
+        ImGui::SetNextWindowSize(io.DisplaySize);
 
-        ImGui::InputInt("Number of balls", &TargetCount);
+        ImGui::Begin(
+            "Jungle Scene Window",
+            nullptr,
+            ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoMove |
+            ImGuiWindowFlags_NoCollapse
+        );
 
-        if (TargetCount < 1)
+        ImGui::Text("GameOver: %d", gameOver);
+        ImGui::Text("Score:");
+
+        ImGui::Spacing();
+
+        if (!gameOver)
         {
-            TargetCount = 1;
+            // 가운데 정렬
+            ImVec2 avail = ImGui::GetContentRegionAvail();
+            float posX = (avail.x - 600) * 0.5f;
+            float posY = (avail.y - 600) * 0.5f;
+
+            if (posX > 0) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + posX);
+            if (posY > 0) ImGui::SetCursorPosY(ImGui::GetCursorPosY() + posY);
+
+            // 내부 프레임
+            ImGui::BeginChild(
+                "SceneFrame",
+                ImVec2(600, 600),   // 프레임 크기
+                false,               // border 표시
+                ImGuiWindowFlags_NoScrollbar
+            );
+
+            ImGui::Image(
+                (ImTextureID)renderer.SceneSRV,
+                ImVec2(600, 600)
+            );
+
+            ImGui::EndChild();
         }
-
-        while (PrimitiveListSize < (UINT) TargetCount)
+        else
         {
-            if (PrimitiveListSize == PrimitiveListCapacity)
+            const char* text = "Game Over";
+            ImVec2 textSize = ImGui::CalcTextSize(text);
+
+            float centerX = (io.DisplaySize.x - textSize.x) * 0.5f;
+            float centerY = (io.DisplaySize.y - textSize.y) * 0.5f;
+
+            ImGui::SetCursorPos(ImVec2(centerX, centerY));
+            ImGui::Text("%s", text);
+
+            ImGui::Spacing();
+
+            const char* buttonText = "Restart";
+            ImVec2 buttonSize = ImGui::CalcTextSize(buttonText);
+
+            ImGui::SetCursorPosX((io.DisplaySize.x - buttonSize.x - 20) * 0.5f);
+
+            if (ImGui::Button(buttonText))
             {
-                UINT NewCapacity = PrimitiveListCapacity * 2;
+                gameOver = false;
 
-                UPrimitive** NewList = new UPrimitive * [NewCapacity];
-
+                // 기존 데이터 초기화
                 for (UINT i = 0; i < PrimitiveListSize; i++)
                 {
-                    NewList[i] = PrimitiveList[i];
+                    delete PrimitiveList[i];
                 }
 
-                delete[] PrimitiveList;
+                PrimitiveListSize = 0;
 
-                PrimitiveList = NewList;
-                PrimitiveListCapacity = NewCapacity;
+                PrimitiveList[PrimitiveListSize++] = new UBall();
             }
-
-            PrimitiveList[PrimitiveListSize++] = new UBall();
         }
-
-        while (PrimitiveListSize > (UINT) TargetCount)
-        {
-            UINT RandomIndex = (UINT) (rand() % PrimitiveListSize);
-            delete PrimitiveList[RandomIndex];
-
-            PrimitiveList[RandomIndex] = PrimitiveList[PrimitiveListSize - 1]; // 순서가 중요하지 않으므로...
-            PrimitiveListSize--;
-        }
-
-        ImGui::Checkbox("Gravity", &bGravity);
-
-        if (!bGravity)
-        {
-            bAntigravity = false;
-        }
-
-        ImGui::BeginDisabled(!bGravity);
-        ImGui::Checkbox("Antigravity", &bAntigravity);
-        ImGui::EndDisabled();
-
-        ImGui::Checkbox("Air Drag", &bAirDrag);
-
-        ImGui::SliderFloat("Slow Motion", &SlowMotionCoef, 0.1f, 1.0f);
-
         ImGui::End();
+
+        renderer.Prepare();
 
         ImGui::Render(); // 이번 프레임에 그릴 UI 설정
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
