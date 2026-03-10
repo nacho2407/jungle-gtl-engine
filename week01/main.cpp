@@ -1369,7 +1369,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		ImGui::Combo("Fruit Type", &SelectedFruitType, FruitNames, sizeof(FruitNames) / sizeof(*FruitNames));
 		ImGui::Text("GameOver: %d", gameOver);
-		ImGui::Text("Score:");
+		ImGui::Text("Score: %d", ScoreManager.GetScore());
 
 		if (ImGui::Button("Credits"))
 		{
