@@ -943,7 +943,7 @@ private:
 	float MaxLifeTime = { 0.f };
 };
 
-const float SmallestFruitRadius = 0.1f; // 가장 작은 과일의 반지름
+const float SmallestFruitRadius = 0.05f; // 가장 작은 과일의 반지름
 const float CoefRadiusGrowth = 1.25f; // 과일 레벨이 하나씩 올라갈 때마다 반지름이 커지는 정도
 
 class UFruit : public UBall
