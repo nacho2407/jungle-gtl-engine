@@ -1,5 +1,6 @@
 ﻿#include <cstdlib>
 #include <ctime>
+#include <string>
 
 #include <windows.h>
 #include <windowsx.h>
@@ -22,6 +23,16 @@
 class UTexture
 {
 public:
+	UTexture()
+	{
+
+	}
+
+	UTexture(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext, const char* FileName)
+	{
+		Initialize(Device, DeviceContext, FileName);
+	}
+
 	bool Initialize(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext, const char* FileName)
 	{
 		D3D11_TEXTURE2D_DESC TextureDesc;
@@ -36,7 +47,7 @@ public:
 		TextureDesc.Width = Width;
 		TextureDesc.MipLevels = 1;
 		TextureDesc.ArraySize = 1;
-		TextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		TextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 		TextureDesc.SampleDesc.Count = 1;
 		TextureDesc.SampleDesc.Quality = 0;
 		TextureDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -992,7 +1003,6 @@ public:
 
 		}
 
-
 		Velocity.y -= GravityAccel * dt;
 
 		//각가속도는 0.98로 고정
@@ -1378,9 +1388,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	bool prevCollision = false;
 
 	LARGE_INTEGER collisionStartCounter;
+	
+	static const char* FruitNames[] = {
+		"Cherry", "Strawberry", "Grape", "Dekopon", "Orange",
+		"Apple", "Pear", "Peach", "Pineapple", "Melon", "Watermelon"
+	};
 
-	UTexture* PeachTexture = new UTexture;
-	PeachTexture->Initialize(renderer.Device, renderer.DeviceContext, "./Peach.png");
+	TArray<UTexture*> FruitTextures;
+	for (int i = 0; i < ARRAYSIZE(FruitNames); i++)
+	{
+		std::string FruitPath = "./Resource/";
+		FruitPath += FruitNames[i];
+		FruitPath += ".png";
+		FruitTextures.PushBack(new UTexture(renderer.Device, renderer.DeviceContext, FruitPath.c_str()));
+	}
+
 
 	while (bIsExit == false)
 	{
@@ -1425,10 +1447,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		bool bLineCollision = false;
 
-		static const char* FruitNames[] = {
-			"Cherry", "Strawberry", "Grape", "Dekopon", "Orange",
-			"Apple", "Pear", "Peach", "Pineapple", "Melon", "Watermelon"
-		};
+
 		static int SelectedFruitType = 0;
 		static float SpawnX = 0.0f;
 
@@ -1545,7 +1564,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				EFruitType ft = (EFruitType)SelectedFruitType;
 				FVector spawnPos = FVector(spawnX, 0.9f, 0);
 
-				PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos, PeachTexture));
+				PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos, FruitTextures[ft]));
 
 				SelectedFruitType = rand() % (EFruitType::FT_Orange + 1);
 			}
@@ -1635,7 +1654,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				ScoreManager.AddScore(MergeInfo.ResultFruitType);
 
 				// 새 과일 생성
-				PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, PeachTexture));
+				PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, FruitTextures[MergeInfo.ResultFruitType]));
 			}
 
 			//새 과일이 생성된 후 마찰 적용
