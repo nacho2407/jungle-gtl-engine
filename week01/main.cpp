@@ -632,7 +632,7 @@ public:
 		Radius(0.1f),
 		Mass(0.0f),
 		Angle(0.f),
-		AngularVelocity(0.f)
+		AngularVelocity(0.5f)
 	{
 		// Radius = RandRange(0.1f, 0.2f);
 		Mass = Radius * MassFactor;
@@ -716,21 +716,21 @@ enum EFruitType
 };
 
 
-class UPariticle : public UBall
+class UParticle : public UBall
 {
 public:
-	FVector Location; // 여기서는 Offset과 동일한 개념
+	FVector Location;
 	FVector Velocity;
 	float Radius;
 public:
-	UPariticle() :
+	UParticle() :
 		Location(0.0f, 0.0f, 0.0f),
 		Velocity(0.0f, 0.0f, 0.0f),
-		Radius(0.1f)
+		Radius(0.03f)
 	{
 	}
 
-	~UPariticle()
+	~UParticle()
 	{
 
 	}
@@ -739,6 +739,9 @@ public:
 	void UpdatePhysics(float dt) override
 	{
 		Location = Location + Velocity * dt;
+		LifeTime += dt;
+
+		if (LifeTime >= MaxLifeTime) bActive = false;
 	}
 
 	void Render(URenderer& renderer) override
@@ -751,6 +754,28 @@ public:
 	void SetLocation(const FVector& InLocation) { Location = InLocation; }
 	FVector GetLocation() const { return Location; }
 
+	void SetActive(bool bIsActive, float angleRand) {
+		Angle = angleRand;
+		Angle += RandRange(-10.f, 10.f);
+		float radian = Angle * 3.141592f / 180.f;
+		MaxLifeTime = RandRange(0.1f, 0.3f);
+		LifeTime = 0.f;
+		Velocity.x = cos(radian);
+		Velocity.y = sin(radian);
+
+		bActive = bIsActive;
+	};
+	bool IsActive() { return bActive; };
+
+	void SetAngle(float _Angle)
+	{
+		Angle = _Angle;
+	}
+	void SetMaxLifeTime(float time)
+	{
+		MaxLifeTime = time;
+	}
+	
 private:
 	float Random()
 	{
@@ -761,6 +786,10 @@ private:
 	{
 		return a + (b - a) * Random();
 	}
+private:
+	bool bActive = { false };
+	float LifeTime = { 0.f };
+	float MaxLifeTime = { 0.f };
 };
 
 const float SmallestFruitRadius = 0.05f; // 가장 작은 과일의 반지름
@@ -820,8 +849,11 @@ public:
 
 		Velocity.y -= GravityAccel * dt;
 
-		//각가속도는 0.98로 고정
-		AngularVelocity *= 0.98f;
+		// 각속도 감쇠: 0.98 → 0.88로 강화하여 누적 스핀 방지
+		AngularVelocity *= 0.88f;
+
+		// 미세 각속도 제거 (dead zone): 작은 값이 무한히 진동하는 것 방지
+		if (fabsf(AngularVelocity) < 0.05f) AngularVelocity = 0.0f;
 
 		//각속도 제한
 		const float MaxAngularSpeed = 20.0f;
@@ -863,9 +895,6 @@ UFruit* CreateFruitAt(EFruitType FruitType, FVector Location)
 	UFruit* Fruit = new UFruit();
 	Fruit->SetFruitType(FruitType);
 	Fruit->SetLocation(Location);
-
-	// 이미 존재하는 과일들 사이에 새로운 과일이 합쳐지는 경우 처리 로직은 준혁님 코드에 구현된 로직으로 처리 예정(차후 코드 병합 과정에서 처리)
-	// 아마 PrimitiveList 내의 모든 과일들 위치를 처리해주어야 할 듯
 
 	return Fruit;
 }
@@ -1075,16 +1104,109 @@ struct FPendingMerge
 	FVector NewLocation;
 };
 
+
+/*
+* 파티클 특성상 합쳐질때마다 생성을 할 경우 생명주기 관리가 어렵고 
+  생성되는데 비용도 고려하여 풀을 만듦
+*/
+class UParticlePool
+{
+public:
+	UParticlePool() = default;
+	~UParticlePool() = default;
+
+public:
+	void Initialize(int DefaultCapacity)
+	{
+		ParticlePool.Reserve(DefaultCapacity);
+		for (int i = 0; i < DefaultCapacity; ++i)
+		{
+			UParticle* particle = new UParticle();
+			particle->SetActive(false, 0);
+			ParticlePool.Push(particle);
+		}
+	}
+	void ReleasePool()
+	{
+		while (!ParticlePool.IsEmpty())
+		{
+			UParticle* particle = ParticlePool.Front();
+			ParticlePool.Pop();
+			delete particle;
+		}
+		for (int i = 0; i < ParticleList.Num(); ++i)
+		{
+			delete ParticleList[i];
+			ParticleList[i] = nullptr;
+		}
+	}
+	void Update(float dt)
+	{
+		for (UINT i = 0; i < ParticleList.Num(); ++i)
+		{
+			ParticleList[i]->UpdatePhysics(dt);
+		}
+
+		for (UINT i = 0; i < ParticleList.Num(); ++i)
+		{
+			if (!ParticleList[i]->IsActive())
+			{
+				Return(i);
+			}
+		}
+	}
+
+	void Render(URenderer& renderer)
+	{
+		for (int i = 0; i < ParticleList.Num(); ++i)
+		{
+			ParticleList[i]->Render(renderer);
+
+		}
+	}
+	void Aquire(FVector Location)
+	{
+		//소유권 이동
+		if (ParticlePool.IsEmpty()) return;
+
+		UINT pairticleNum = 5;
+		if (pairticleNum % 2 == 0) ++pairticleNum;
+
+		for (UINT i = 1; i <= pairticleNum; ++i)
+		{
+			UParticle* particle = ParticlePool.Front();
+			particle->SetLocation(Location);
+			particle->SetActive(true, 360 * i / pairticleNum);
+
+			//각도 설정
+			ParticlePool.Pop();
+			ParticleList.PushBack(particle);
+		}
+	}
+
+private:
+	void Return(int idx)
+	{
+		ParticleList[idx]->SetActive(false, 0);
+
+		ParticlePool.Push(ParticleList[idx]);
+
+		ParticleList.RemoveAt(idx);
+	}
+
+
+private:
+	TQueue<UParticle*> ParticlePool;
+	TArray<UParticle*> ParticleList;
+}; 
+
+
 class UScoreManager
 {
 public:
 	UScoreManager() : Score(0) {}
 
-	/**
-	 * @brief 원본 게임의 점수 규칙에 따라 점수를 누적합니다
-	 *
-	 * @param FruitType 병합된 후의 과일 타입
-	 */
+	
 	void AddScore(EFruitType FruitType)
 	{
 		Score += (UINT)((FruitType * (FruitType + 1)) / 2);
@@ -1188,6 +1310,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	UINT PrimitiveListCapacity = 64;
 	UINT PrimitiveListSize = UBall::TotalNumBalls; // 컨테이너 크기 자체는 컨테이너가 직접 파악
 	UScoreManager ScoreManager;
+	UParticlePool ParticlePool;
+
+	//연쇄적인 12개의 충돌을 고려해 100개
+	ParticlePool.Initialize(100);
+
 
 	TArray<UPrimitive*> PrimitiveList;
 
@@ -1262,6 +1389,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		if (!gameOver)
 		{
 			EFruitType ft = (EFruitType)SelectedFruitType;
+
+			//빠른 게임 오버를 원한다면
 			//PrimitiveList.PushBack(CreateFruit(ft));
 
 			// 생성
@@ -1280,6 +1409,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			{
 				PrimitiveList[i]->UpdatePhysics(fixedDeltaTime);
 			}
+
+			ParticlePool.Update(fixedDeltaTime);
 
 			/**************************
 			 * 과일들 간 충돌 / 병합 연산 *
@@ -1319,6 +1450,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 									(EFruitType)(A->GetFruitType() + 1),
 									(A->Location + B->Location) * 0.5f
 									});
+								
+								ParticlePool.Aquire((A->Location + B->Location) * 0.5f);
 							}
 						}
 					}
@@ -1374,6 +1507,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			{
 				PrimitiveList[i]->Render(renderer);
 			}
+			ParticlePool.Render(renderer);
 
 			for (UINT i = 0; i < PrimitiveList.Num(); i++)
 			{
@@ -1529,6 +1663,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		} while (elapsedTime < targetFrameTime);
 	}
 
+	ParticlePool.ReleasePool();
 
 	for (UINT i = 0; i < PrimitiveList.Num(); i++) {
 		delete PrimitiveList[i];
@@ -1638,25 +1773,20 @@ static void ResolveCollision(UBall* A, UBall* B)
 	const float e = 0.5f;
 	float jN = -(1.0f + e) * RelVelNorm / (1 / MA + 1 / MB);
 
-	// 정지 접촉시에 각속도가 증폭됨.
-	// 3개 이상 맞닿았을 때 각속도로 증폭되는 문제 방지
 
-	const float tangThreshold = 2.f;
-	float jT = 0.0f;
-	if (fabsf(RelVelTang) >= tangThreshold)
-	{
-		jT = -RelVelTang / (1 / MA + 1 / MB + A->Radius * A->Radius * InvIA + B->Radius * B->Radius * InvIB);
+	float jT = -RelVelTang / (1 / MA + 1 / MB + A->Radius * A->Radius * InvIA + B->Radius * B->Radius * InvIB);
 
-		//마찰력 적용
-		const float mu = 0.4f;
-		float maxFriction = mu * fabsf(jN);
-		if (fabsf(jT) > maxFriction)
-			jT = (jT > 0.f ? 1.f : -1.f) * maxFriction;
-	}
+	//마찰력 적용
+	const float mu = 0.4f;
+	float maxFriction = mu * fabsf(jN);
+	if (fabsf(jT) > maxFriction)
+		jT = (jT > 0.f ? 1.f : -1.f) * maxFriction;
 
 	A->Velocity = A->Velocity - (Normal * (jN * 1 / MA)) - (Tangent * (jT * 1 / MA));
 	B->Velocity = B->Velocity + (Normal * (jN * 1 / MB)) + (Tangent * (jT * 1 / MB));
 
-	A->AngularVelocity -= A->Radius * jT * InvIA;
-	B->AngularVelocity += B->Radius * jT * InvIB;
+	//선형 마찰은 유지하되 토크 생성량을 줄여 다중 접촉 시 에너지 누적 방지
+	const float angularFrictionScale = 0.2f;
+	A->AngularVelocity -= A->Radius * jT * InvIA * angularFrictionScale;
+	B->AngularVelocity += B->Radius * jT * InvIB * angularFrictionScale;
 }
