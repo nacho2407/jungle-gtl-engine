@@ -929,7 +929,9 @@ public:
 	//TODO 아랫벽에 부딪혔을 때 속도 선형 감소
 	void UpdatePhysics(float dt) override
 	{
-		Location = Location + Velocity * dt;
+		Velocity = Velocity + dt;
+
+		Location = Location + Velocity * EaseOut(LifeTime / MaxLifeTime) *dt;
 		LifeTime += dt;
 
 		if (LifeTime >= MaxLifeTime) bActive = false;
@@ -949,7 +951,7 @@ public:
 		Angle = angleRand;
 		Angle += RandRange(-10.f, 10.f);
 		float radian = Angle * 3.141592f / 180.f;
-		MaxLifeTime = RandRange(0.1f, 0.3f);
+		MaxLifeTime = RandRange(0.3f, 0.5f);
 		LifeTime = 0.f;
 		Velocity.x = cos(radian);
 		Velocity.y = sin(radian);
@@ -976,6 +978,10 @@ private:
 	float RandRange(float a, float b)
 	{
 		return a + (b - a) * Random();
+	}
+	float EaseOut(float t)
+	{
+		return 1.0f - (1.0f - t) * (1.0f - t);
 	}
 private:
 	bool bActive = { false };
@@ -1127,6 +1133,17 @@ public:
 		return true;
 	}
 
+	void Clear()
+	{
+		delete[] Data;
+
+		Data = new DataType[1];
+		DataNum = 0;
+		Capacity = 1;
+		Head = 0;
+		Tail = 0;
+	}
+
 	void Pop()
 	{
 		if (IsEmpty()) return;
@@ -1214,6 +1231,15 @@ public:
 		Data[DataNum] = InData;
 		DataNum++;
 		return true;
+	}
+
+	void Clear()
+	{
+		delete[] Data;
+
+		Data = new DataType[1];
+		DataNum = 0;
+		Capacity = 1;
 	}
 
 	void PopBack()
@@ -1322,6 +1348,15 @@ public:
 			particle->SetActive(false, 0);
 			particle->SetTexture(ParticleTexture);
 			ParticlePool.Push(particle);
+		}
+	}
+	void ReturnAll()
+	{
+		for (UINT i = 0; i < ParticleList.Num(); ++i)
+		{
+			//강제로 풀에 반납
+			ParticleList[i]->SetActive(true, 0);
+			Return(i);
 		}
 	}
 	void ReleasePool()
@@ -1676,7 +1711,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			if (ImGui::Button(buttonText))
 			{
 				gameOver = false;
-				PrimitiveList[PrimitiveListSize++] = new UBall();
+				//PrimitiveList[PrimitiveListSize++] = new UBall();
 			}
 		}
 		ImGui::End();
@@ -1854,10 +1889,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		else // Game Over
 		{
 			// 기존 데이터 초기화
-			for (UINT i = 0; i < PrimitiveList.Num(); i++) {
-				delete PrimitiveList[i];
-				PrimitiveList[i] = nullptr;
-			}
+			PrimitiveList.Clear();
+			ParticlePool.ReturnAll();
 		}
 
 		renderer.SwapBuffer();
@@ -1873,9 +1906,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			elapsedTime = (endTime.QuadPart - startTime.QuadPart) * 1000.0 / frequency.QuadPart;
 		} while (elapsedTime < targetFrameTime);
 	}
-
+	//파티클 텍스쳐도 삭제
 	ParticlePool.ReleasePool();
-
 	PeachTexture->Release();
 
 	for (UINT i = 0; i < PrimitiveList.Num(); i++) {
