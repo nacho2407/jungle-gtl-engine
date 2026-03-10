@@ -70,8 +70,16 @@ public:
 
 	void Release()
 	{
-		if(TextureSRV) TextureSRV->Release();
-		if(Texture) Texture->Release();
+		if (TextureSRV)
+		{
+			TextureSRV->Release();
+			TextureSRV = nullptr;
+		}
+		if (Texture)
+		{
+			Texture->Release();
+			Texture = nullptr;
+		}
 	}
 
 	ID3D11ShaderResourceView* GetTextureSRV() { return TextureSRV; }
@@ -780,7 +788,7 @@ public:
 		Radius(0.1f),
 		Mass(0.0f),
 		Angle(0.f),
-		AngularVelocity(0.5f)
+		AngularVelocity(1.f)
 	{
 		Mass = Radius * MassFactor;
 
@@ -845,7 +853,7 @@ public:
 		Velocity.y -= GravityAccel * dt;
 
 		//각가속도는 0.98로 고정
-		AngularVelocity *= 0.98f;
+		AngularVelocity *= 0.88f;
 		Angle += AngularVelocity * dt;
 	}
 
@@ -864,8 +872,8 @@ protected:
 	float MassFactor = 1.0f; // 질량 보정용
 
 	const float GravityAccel = 4.f;    // 중력 가속도
-	const float RestitutionWall = 0.2f;
-	const float FloorFriction = 0.1f;
+	const float RestitutionWall = 0.1f;
+	const float FloorFriction = 0.07f;
 
 private:
 	float Random()
@@ -907,7 +915,7 @@ public:
 	UParticle() :
 		Location(0.0f, 0.0f, 0.0f),
 		Velocity(0.0f, 0.0f, 0.0f),
-		Radius(0.03f)
+		Radius(0.1f)
 	{
 	}
 
@@ -929,7 +937,8 @@ public:
 	{
 		FVector CosSin = { cosf(Angle), sinf(Angle), 0.f };
 		renderer.UpdateConstant(Location, CosSin, Radius);
-		renderer.RenderSphere();
+		renderer.UpdateTexture(GetTexture());
+		renderer.RenderRectangle();
 	}
 
 	void SetLocation(const FVector& InLocation) { Location = InLocation; }
@@ -1023,21 +1032,17 @@ public:
 			else
 				Velocity.x -= (Velocity.x > 0.0f ? 1.0f : -1.0f) * frictionImpulse;
 
-			//마찰로 인한 토크 적용
-
 		}
 
 
 		Velocity.y -= GravityAccel * dt;
 
-		// 각속도 감쇠: 0.98 → 0.88로 강화하여 누적 스핀 방지
-		AngularVelocity *= 0.88f;
+		float speed = sqrtf(Velocity.x * Velocity.x + Velocity.y * Velocity.y);
 
-		// 미세 각속도 제거 (dead zone): 작은 값이 무한히 진동하는 것 방지
-		if (fabsf(AngularVelocity) < 0.05f) AngularVelocity = 0.0f;
+		//각속도를 현재 속도의 크기를 이용하여 조절
+		AngularVelocity *= 0.98f;
 
-		//각속도 제한
-		const float MaxAngularSpeed = 20.0f;
+		const float MaxAngularSpeed = 5.0f;
 		if (AngularVelocity > MaxAngularSpeed) AngularVelocity = MaxAngularSpeed;
 		else if (AngularVelocity < -MaxAngularSpeed) AngularVelocity = -MaxAngularSpeed;
 
@@ -1303,13 +1308,18 @@ public:
 	~UParticlePool() = default;
 
 public:
-	void Initialize(int DefaultCapacity)
+	/*머지를 위해 임시적으로 Texture를 Pool에 둠*/
+	void Initialize(int DefaultCapacity, URenderer& renderer)
 	{
+		ParticleTexture = new UTexture;
+		ParticleTexture->Initialize(renderer.Device, renderer.DeviceContext, "./Star.png");
+
 		ParticlePool.Reserve(DefaultCapacity);
 		for (int i = 0; i < DefaultCapacity; ++i)
 		{
 			UParticle* particle = new UParticle();
 			particle->SetActive(false, 0);
+			particle->SetTexture(ParticleTexture);
 			ParticlePool.Push(particle);
 		}
 	}
@@ -1326,6 +1336,7 @@ public:
 			delete ParticleList[i];
 			ParticleList[i] = nullptr;
 		}
+		ParticleTexture->Release();
 	}
 	void Update(float dt)
 	{
@@ -1385,6 +1396,7 @@ private:
 private:
 	TQueue<UParticle*> ParticlePool;
 	TArray<UParticle*> ParticleList;
+	UTexture* ParticleTexture;
 }; 
 
 
@@ -1503,7 +1515,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	UParticlePool ParticlePool;
 
 	//연쇄적인 12개의 충돌을 고려해 100개
-	ParticlePool.Initialize(100);
+	ParticlePool.Initialize(100, renderer);
 
 
     TArray<UPrimitive*> PrimitiveList;
@@ -1683,6 +1695,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			if (spawnFruit)
 			{
 				EFruitType ft = (EFruitType)SelectedFruitType;
+
+				// 새 과일 생성
+				float offsetAngle = ((float)rand() / RAND_MAX) * 2.0f * 3.14159f;
+				float offsetDist = 0.01f;
+				spawnX += cosf(offsetAngle) * offsetDist;
+
 				FVector spawnPos = FVector(spawnX, 0.9f, 0);
 
 				PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos, PeachTexture));
@@ -1692,7 +1710,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 			// 병합 예정 정보를 담은 큐
 			TQueue<FPendingMerge> PendingMergeQueue;
-
+			
 			for (UINT i = 0; i < PrimitiveList.Num(); i++)
 			{
 				PrimitiveList[i]->UpdatePhysics(fixedDeltaTime);
@@ -1738,6 +1756,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                                 (A->Location + B->Location) * 0.5f
 							});
 
+							//병합된 곳에서 파티클  생성
 							ParticlePool.Aquire((A->Location + B->Location) * 0.5f);
 						}
 						else
@@ -1772,13 +1791,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 				// 점수 획득
 				ScoreManager.AddScore(MergeInfo.ResultFruitType);
-
-				// 새 과일 생성
-				PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, PeachTexture));
+			PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, PeachTexture));
 			}
 
 			//새 과일이 생성된 후 마찰 적용
-			const static int overlapIteration = 10;
+			const static int overlapIteration = 1;
 			for (UINT i = 0; i < overlapIteration; ++i)
 			{
 				for (UINT i = 0; i < PrimitiveList.Num(); i++)
@@ -1798,6 +1815,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			{
 				PrimitiveList[i]->Render(renderer);
 			}
+
 			ParticlePool.Render(renderer);
 
 			for (UINT i = 0; i < PrimitiveList.Num(); i++)
@@ -1922,8 +1940,16 @@ static void ResolveCollision(UBall* A, UBall* B)
 	float Dist = sqrtf(Dist2);
 
 	FVector Normal;
-	float InverseDist = 1.0f / Dist;
-	Normal = FVector(Delta.x * InverseDist, Delta.y * InverseDist, 0.0f);
+	if (Dist < 0.0001f)
+	{
+		float angle = ((float)rand() / RAND_MAX) * 2.0f * 3.14159f;
+		Normal = FVector(cosf(angle), sinf(angle), 0.f);
+	}
+	else
+	{
+		float InverseDist = 1.0f / Dist;
+		Normal = FVector(Delta.x * InverseDist, Delta.y * InverseDist, 0.0f);
+	}
 
 
 	// 안정성을 위해 공들이 겹치는 경우 처리
@@ -1967,8 +1993,9 @@ static void ResolveCollision(UBall* A, UBall* B)
 	const float e = 0.5f;
 	float jN = -(1.0f + e) * RelVelNorm / (1 / MA + 1 / MB);
 
-
-	float jT = -RelVelTang / (1 / MA + 1 / MB + A->Radius * A->Radius * InvIA + B->Radius * B->Radius * InvIB);
+	float jT = 0.f;
+	if (fabsf(RelVelTang) > 0.1f)
+		jT = -RelVelTang / (1 / MA + 1 / MB + A->Radius * A->Radius * InvIA + B->Radius * B->Radius * InvIB);
 
 	//마찰력 적용
 	const float mu = 0.4f;
@@ -1979,8 +2006,11 @@ static void ResolveCollision(UBall* A, UBall* B)
 	A->Velocity = A->Velocity - (Normal * (jN * 1 / MA)) - (Tangent * (jT * 1 / MA));
 	B->Velocity = B->Velocity + (Normal * (jN * 1 / MB)) + (Tangent * (jT * 1 / MB));
 
-	//선형 마찰은 유지하되 토크 생성량을 줄여 다중 접촉 시 에너지 누적 방지
-	const float angularFrictionScale = 0.2f;
-	A->AngularVelocity -= A->Radius * jT * InvIA * angularFrictionScale;
-	B->AngularVelocity += B->Radius * jT * InvIB * angularFrictionScale;
+	//충격량이 존재할 때만 각속도를 변화
+	if (jN > 0.05f)
+	{
+		A->AngularVelocity -= A->Radius * jT * InvIA;
+		B->AngularVelocity += B->Radius * jT * InvIB;
+	}
+
 }
