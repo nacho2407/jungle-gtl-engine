@@ -498,7 +498,9 @@ public:
         Location(0.0f, 0.0f, 0.0f), 
         Velocity(0.0f, 0.0f, 0.0f), 
         Radius(0.1f), 
-        Mass(0.0f)
+        Mass(0.0f),
+		Angle(0.f),
+		AngularVelocity(0.f)
     {
         // Radius = RandRange(0.1f, 0.2f);
 		Mass = Radius * MassFactor;
@@ -525,48 +527,6 @@ public:
 	//TODO 아랫벽에 부딪혔을 때 속도 선형 감소
 	void UpdatePhysics(float dt) override
 	{
-		Location = Location + Velocity * dt;
-
-		if (Location.x < LeftBorder)
-		{
-			Location.x = LeftBorder;
-			Velocity.x *= -1.0f;
-		}
-		if (Location.x > RightBorder)
-		{
-			Location.x = RightBorder;
-			Velocity.x *= -1.0f;
-		}
-		if (Location.y > TopBorder)
-		{
-			Location.y = TopBorder;
-			Velocity.y *= -RestitutionWall;
-		}
-		if (Location.y < BottomBorder)
-		{
-			Location.y = BottomBorder;
-
-			//바닥 마찰력 적용
-			float normalImpulse = fabsf(Velocity.y) * (1.0f + RestitutionWall);
-
-			Velocity.y *= -RestitutionWall;
-
-			float frictionImpulse = FloorFriction * normalImpulse;
-			if (fabsf(Velocity.x) <= frictionImpulse)
-				Velocity.x = 0.0f;                                          
-			else
-				Velocity.x -= (Velocity.x > 0.0f ? 1.0f : -1.0f) * frictionImpulse;
-
-			//마찰로 인한 토크 적용
-
-		}
-
-
-		Velocity.y -= GravityAccel * dt;
-
-		//각가속도는 0.98로 고정
-		AngularVelocity *= 0.98f;
-		Angle += AngularVelocity * dt;
 
 	}
 
@@ -580,7 +540,7 @@ public:
 	void SetLocation(const FVector& InLocation) { Location = InLocation; }
 	FVector GetLocation() const { return Location; }
 
-private:
+protected:
 	float MassFactor = 1.0f; // 질량 보정용
 
 	float LeftBorder = -1.0f;
@@ -641,33 +601,48 @@ public:
         float dt
     ) override
     {
-        Location = Location + Velocity * dt;
+		Location = Location + Velocity * dt;
 
-        if (Location.x < LeftBorder)
-        {
-            Location.x = LeftBorder;
-            Velocity.x *= -1.0f;
-        }
-        if (Location.x > RightBorder)
-        {
-            Location.x = RightBorder;
-            Velocity.x *= -1.0f;
-        }
-        if (Location.y > TopBorder)
-        {
-            Location.y = TopBorder;
-            Velocity.y *= -1.0f;
-        }
-		// 실제 게임에서는 바닥에 닿은 과일이 튕기지 않고 바닥에 착 붙어버리는 식으로 되어있어서, 이 부분은 나중에 확인해보고 수정이 필요하면 수정!!
-        if (Location.y < BottomBorder)
-        {
-            Location.y = BottomBorder;
-            Velocity.y *= -1.0f;
-        }
+		if (Location.x < LeftBorder)
+		{
+			Location.x = LeftBorder;
+			Velocity.x *= -1.0f;
+		}
+		if (Location.x > RightBorder)
+		{
+			Location.x = RightBorder;
+			Velocity.x *= -1.0f;
+		}
+		if (Location.y > TopBorder)
+		{
+			Location.y = TopBorder;
+			Velocity.y *= -RestitutionWall;
+		}
+		if (Location.y < BottomBorder)
+		{
+			Location.y = BottomBorder;
 
-        // Fruit 에 대해 기본적으로 Gravity 적용
-        Velocity.y -= GravityAccel * dt;
-        
+			//바닥 마찰력 적용
+			float normalImpulse = fabsf(Velocity.y) * (1.0f + RestitutionWall);
+
+			Velocity.y *= -RestitutionWall;
+
+			float frictionImpulse = FloorFriction * normalImpulse;
+			if (fabsf(Velocity.x) <= frictionImpulse)
+				Velocity.x = 0.0f;
+			else
+				Velocity.x -= (Velocity.x > 0.0f ? 1.0f : -1.0f) * frictionImpulse;
+
+			//마찰로 인한 토크 적용
+
+		}
+
+
+		Velocity.y -= GravityAccel * dt;
+
+		//각가속도는 0.98로 고정
+		AngularVelocity *= 0.98f;
+		Angle += AngularVelocity * dt;
     }
 
     void SetFruitType(EFruitType InFruitType)
@@ -918,7 +893,7 @@ public:
      * 
      * @param FruitType 병합된 후의 과일 타입
      */
-    void GetScore(EFruitType FruitType)
+    void AddScore(EFruitType FruitType)
     {
         Score += (UINT)((FruitType * (FruitType + 1)) / 2);
     }
@@ -997,16 +972,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ImGui_ImplWin32_Init((void*)hWnd); // OS 이벤트 및 입력 담당
 	ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext); // GPU 렌더링 담당
 
-	UINT PrimitiveListCapacity = 64;
-	UINT PrimitiveListSize = 0;
-	UPrimitive** PrimitiveList = new UPrimitive * [PrimitiveListCapacity];
-
 	UScoreManager ScoreManager;
 
     TArray<UPrimitive*> PrimitiveList;
     
 	// Input 포함 Drop Position 관련 기능은 지윤님 코드에 구현된 로직으로 처리 예정(차후 코드 병합 과정에서 처리)
-    // PrimitiveList.PushBack(CreateFruit(EFruitType::FT_Apple));
+    PrimitiveList.PushBack(CreateFruit(EFruitType::FT_Apple));
 
 
 	bool bIsExit = false;
@@ -1033,37 +1004,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		renderer.Prepare();
 		renderer.PrepareShader();
 
-		static int TargetCount = 2;
 		static float SlowMotionCoef = 1.0f;
 
-	/*	for (UINT i = 0; i < PrimitiveListSize; i++)
-		{
-			PrimitiveList[i]->UpdatePhysics(fixedDeltaTime);
-		}
 
-		const static int overlapIteration = 10;
-		for (int i = 0; i < overlapIteration; ++i)
-		{
-			for (UINT i = 0; i < PrimitiveListSize; i++)
-			{
-				UBall* A = (UBall*)PrimitiveList[i];
-
-				for (UINT j = i + 1; j < PrimitiveListSize; j++)
-				{
-					UBall* B = (UBall*)PrimitiveList[j];
-
-					ResolveCollision(A, B);
-				}
-			}
-		}*/
-
-		for (UINT i = 0; i < PrimitiveList.Num(); i++)
-        {
-            PrimitiveList[i]->UpdatePhysics(
-                fixedDeltaTime
-            );
-			PrimitiveList[i]->Render(renderer);
-		}
 
 		ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
 		ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
@@ -1072,8 +1015,34 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		ImGui::Begin("Jungle Property Window");
 		ImGui::Text("Hello, jungle world!");
 
+		static const char* FruitNames[] = {
+			"Cherry", "Strawberry", "Grape", "Dekopon", "Orange",
+			"Apple", "Pear", "Peach", "Pineapple", "Melon", "Watermelon"
+		};
+		static int SelectedFruitType = 0;
+		static float SpawnX = 0.0f;
+
+		ImGui::Separator();
+		ImGui::Text("Add Ball");
+		ImGui::Combo("Fruit Type", &SelectedFruitType, FruitNames, sizeof(FruitNames) / sizeof(*FruitNames));
+		ImGui::SliderFloat("Spawn X", &SpawnX, -0.9f, 0.9f);
+		if (ImGui::Button("Add Ball"))
+		{
+			EFruitType ft = (EFruitType)SelectedFruitType;
+			float radius = SmallestFruitRadius + CoefRadiusGrowth * ft;
+			PrimitiveList.PushBack(CreateFruit(ft));
+		}
+		ImGui::Separator();
+
         // 병합 예정 정보를 담은 큐
 		TQueue<FPendingMerge> PendingMergeQueue;
+
+
+
+		for (UINT i = 0; i < PrimitiveList.Num(); i++)
+		{
+			PrimitiveList[i]->UpdatePhysics(fixedDeltaTime);
+		}
 
         /**************************
          * 과일들 간 충돌 / 병합 연산 *
@@ -1114,12 +1083,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                                 (A->Location + B->Location) * 0.5f
 							});
                         }
-
-						break; // A는 이미 병합 대상, 추가 충돌 검사 X
-                    }
-                    else
-                    {
-                        ResolveCollision(A, B);
                     }
                 }
             }
@@ -1147,28 +1110,32 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             PendingMergeQueue.Pop();
 
             // 점수 획득
-			ScoreManager.GetScore(MergeInfo.ResultFruitType);
+			ScoreManager.AddScore(MergeInfo.ResultFruitType);
 
             // 새 과일 생성
             PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation));
 		}
 
-        // 점수는 ImGui로 표현할 수도 있음
+		const static int overlapIteration = 10;
+		for (UINT i = 0; i < overlapIteration; ++i)
+		{
+			for (UINT i = 0; i < PrimitiveList.Num(); i++)
+			{
+				UFruit* A = (UFruit*)PrimitiveList[i];
 
-        ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
-        ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
-        ImGui::NewFrame(); // ImGui Core 초기화
+				for (UINT j = i + 1; j < PrimitiveList.Num(); j++)
+				{
+					UFruit* B = (UFruit*)PrimitiveList[j];
 
+					ResolveCollision(A, B);
+				}
+			}
+		}
 
-        while (PrimitiveList.Num() < (UINT) TargetCount)
-        {
-            PrimitiveList.PushBack(CreateFruitAt(EFruitType::FT_Apple, FVector(0.5, 0.5, 0)));
-        }
-
-        while (PrimitiveList.Num() > (UINT)TargetCount)
-        {
-            PrimitiveList.PopBack();
-        }
+		for (UINT i = 0; i < PrimitiveList.Num(); i++)
+		{
+			PrimitiveList[i]->Render(renderer);
+		}
 
         ImGui::End();
 
@@ -1193,9 +1160,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         delete PrimitiveList[i];
 		PrimitiveList[i] = nullptr;
 	}
-
-	delete[] PrimitiveList;
-
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
