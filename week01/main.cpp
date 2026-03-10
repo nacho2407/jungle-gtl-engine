@@ -1504,7 +1504,7 @@ static void UpdateCredits()
 	ImGui::End();
 }
 
-static void UpdateGameOver()
+static void UpdateGameOver(FScoreManager& ScoreManager)
 {
 	ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
 	ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
@@ -1531,6 +1531,9 @@ static void UpdateGameOver()
 	ImGui::SetCursorPos(ImVec2(centerX, centerY));
 	ImGui::Text("%s", text);
 
+	ImGui::SetCursorPosX(centerX);
+	ImGui::Text("Score: %d", ScoreManager.GetScore());
+
 	ImGui::Spacing();
 
 	const char* buttonText = "Restart";
@@ -1541,6 +1544,7 @@ static void UpdateGameOver()
 	if (ImGui::Button(buttonText))
 	{
 		//Reset();
+		ScoreManager.Reset();
 
 		GameState = GS_Playing;
 	}
@@ -1864,8 +1868,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 						// 없다면 나중에 추가 권장
 						ParticlePool.Reset();
 
-						ScoreManager.Reset();
-
 						prevCollision = false;
 
 						prevMouseDown = false;
@@ -1904,7 +1906,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 			case GS_GameOver:
 				renderer.Prepare();
-				UpdateGameOver();
+				UpdateGameOver(ScoreManager);
 				break;
 		}
 
