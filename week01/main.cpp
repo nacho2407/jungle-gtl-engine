@@ -18,6 +18,12 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include <fmod.hpp>
+#pragma comment (lib, "fmod_vc.lib")
+
+
+#include <unordered_map>
+#include <string>
 
 class UTexture
 {
@@ -569,7 +575,7 @@ public:
 
 	void UpdateConstant(FVector Offset, float Angle, float Radius)
 	{
-		
+
 		FVector CosSin = { cosf(Angle), sinf(Angle), 0.f };
 
 		if (ConstantBuffer)
@@ -761,7 +767,7 @@ protected:
 	float TopBorder = 1.0f;
 	float BottomBorder = -1.0f;
 
-    bool bPendingDestroy = false; // 충돌 검사 중 삭제될 예정인 Primitive들을 표시하기 위한 플래그
+	bool bPendingDestroy = false; // 충돌 검사 중 삭제될 예정인 Primitive들을 표시하기 위한 플래그
 
 private:
 	UTexture* Texture;
@@ -875,7 +881,7 @@ protected:
 
 	const float GravityAccel = 2.f;    // 중력 가속도
 	const float RestitutionWall = 0.1f;
-	const float FloorFriction = 0.07f;
+	const float FloorFriction = 0.4f;
 
 private:
 	float Random()
@@ -931,7 +937,7 @@ public:
 	{
 		Velocity = Velocity + dt;
 
-		Location = Location + Velocity * EaseOut(LifeTime / MaxLifeTime) *dt;
+		Location = Location + Velocity * EaseOut(LifeTime / MaxLifeTime) * dt;
 		LifeTime += dt;
 
 		if (LifeTime >= MaxLifeTime) bActive = false;
@@ -968,7 +974,7 @@ public:
 	{
 		MaxLifeTime = time;
 	}
-	
+
 private:
 	float Random()
 	{
@@ -1062,15 +1068,15 @@ public:
 		return distance <= Radius;
 	}
 
-    void SetFruitType(EFruitType InFruitType)
-    {
-        FruitType = InFruitType;
+	void SetFruitType(EFruitType InFruitType)
+	{
+		FruitType = InFruitType;
 		Radius = SmallestFruitRadius * pow(CoefRadiusGrowth, InFruitType);
 		LeftBorder = -1.0f + Radius;
 		RightBorder = 1.0f - Radius;
 		TopBorder = 1.0f - Radius;
 		BottomBorder = -1.0f + Radius;
-    }
+	}
 
 	EFruitType GetFruitType() const { return FruitType; }
 
@@ -1095,7 +1101,7 @@ UFruit* CreateFruitAt(EFruitType FruitType, FVector Location, UTexture* InTextur
 	Fruit->SetLocation(Location);
 	Fruit->SetTexture(InTexture);
 
-    return Fruit;
+	return Fruit;
 }
 
 
@@ -1325,7 +1331,7 @@ struct FPendingMerge
 
 
 /*
-* 파티클 특성상 합쳐질때마다 생성을 할 경우 생명주기 관리가 어렵고 
+* 파티클 특성상 합쳐질때마다 생성을 할 경우 생명주기 관리가 어렵고
   생성되는데 비용도 고려하여 풀을 만듦
 */
 class UParticlePool
@@ -1433,21 +1439,98 @@ private:
 	TQueue<UParticle*> ParticlePool;
 	TArray<UParticle*> ParticleList;
 	UTexture* ParticleTexture;
-}; 
+};
 
+enum class ESOUNDCHANNEL
+{
+	SC_BGM,
+	SC_SFX,
+	SC_COUNT
+};
+
+class USoundManager
+{
+public:
+	USoundManager() = default;
+	~USoundManager() = default;
+public:
+	void Initialize()
+	{
+		FMOD::System_Create(&System);
+		System->init(static_cast<int>(ESOUNDCHANNEL::SC_COUNT), FMOD_INIT_NORMAL, nullptr);
+	}
+
+	void Release()
+	{
+		for (auto MyPair : Sounds)
+		{
+			MyPair.second->release();
+		}
+
+		System->close();
+		System->release();
+	}
+
+	void LoadSound(std::wstring Path, bool bIsLoop)
+	{
+		//BGM의 경우는 Loop
+		FMOD_MODE Mode = (bIsLoop) ? (FMOD_LOOP_NORMAL) : (FMOD_DEFAULT);
+
+		if (Sounds.find(Path) != Sounds.end())
+		{
+			System->createSound(std::string(Path.begin(), Path.end()).c_str(), Mode, nullptr, &Sounds[Path]);
+		}
+	}
+
+	void PlayGameSound(std::wstring Path, ESOUNDCHANNEL eChannel)
+	{
+		if (Sounds.find(Path) != Sounds.end())
+		{
+			Channels[static_cast<int>(eChannel)]->stop();
+			System->playSound(Sounds[Path], nullptr, false, &Channels[static_cast<int>(eChannel)]);
+		}
+	}
+
+	void StopAll()
+	{
+		//모든 채널의 사운드를 종료
+		for (FMOD::Channel* Elem : Channels)
+		{
+			if (!Elem)
+			{
+				continue;
+			}
+			Elem->stop();
+		}
+
+	}
+
+	void Update()
+	{
+		System->update();
+	}
+
+
+private:
+	FMOD::System* System = nullptr;
+	FMOD::Channel* Channels[static_cast<int>(ESOUNDCHANNEL::SC_COUNT)] = { nullptr, };
+
+	std::unordered_map<std::wstring, FMOD::Sound*> Sounds;
+
+};
 
 class UScoreManager
 {
 public:
 	UScoreManager() : Score(0) {}
 
-    /**
-     * @param FruitType 병합된 후의 과일 타입
-     */
-    void AddScore(EFruitType FruitType)
-    {
-        Score += (UINT)((FruitType * (FruitType + 1)) / 2);
-    }
+	/**
+	 * @param FruitType 병합된 후의 과일 타입
+	 */
+	void AddScore(EFruitType FruitType)
+	{
+		Score += (UINT)((FruitType * (FruitType + 1)) / 2);
+	}
 	UINT GetScore() const
 	{
 		return Score;
@@ -1548,15 +1631,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	UINT PrimitiveListCapacity = 64;
 	UINT PrimitiveListSize = UBall::TotalNumBalls; // 컨테이너 크기 자체는 컨테이너가 직접 파악
 	UScoreManager ScoreManager;
+	USoundManager SoundManager;
+
 	UParticlePool ParticlePool;
+
+	SoundManager.Initialize();
+
+	SoundManager.LoadSound(TEXT("./Sound/Memu.mp3"), true);
+	SoundManager.PlayGameSound(TEXT("./Sound/Memu.mp3"), ESOUNDCHANNEL::SC_BGM);
 
 	//연쇄적인 12개의 충돌을 고려해 100개
 	ParticlePool.Initialize(100, renderer);
 
 
-    TArray<UPrimitive*> PrimitiveList;
+	TArray<UPrimitive*> PrimitiveList;
 
-    const float LineY = 0.8f;
+	const float LineY = 0.8f;
 
 	bool bIsExit = false;
 
@@ -1723,6 +1813,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		ImGui::Render(); // 이번 프레임에 그릴 UI 설정
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
 
+
+		//게임오버든 아니든.. 사운드는 흘러야해서 일단 이줄에서 처리
+		SoundManager.Update();
+
 		if (!gameOver)
 		{
 			EFruitType ft = (EFruitType)SelectedFruitType;
@@ -1746,7 +1840,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 			// 병합 예정 정보를 담은 큐
 			TQueue<FPendingMerge> PendingMergeQueue;
-			
+
 			for (UINT i = 0; i < PrimitiveList.Num(); i++)
 			{
 				PrimitiveList[i]->UpdatePhysics(fixedDeltaTime);
@@ -1785,24 +1879,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 							A->MarkPendingDestroy();
 							B->MarkPendingDestroy();
 
-                        // 수박끼리 병합 시 두 수박만 사라지고 병합 X
-                        if (A->GetFruitType() != EFruitType::FT_Watermelon) {
-                            PendingMergeQueue.Push({ 
-                                (EFruitType) (A->GetFruitType() + 1), 
-                                (A->Location + B->Location) * 0.5f
-							});
+							// 수박끼리 병합 시 두 수박만 사라지고 병합 X
+							if (A->GetFruitType() != EFruitType::FT_Watermelon) {
+								PendingMergeQueue.Push({
+									(EFruitType)(A->GetFruitType() + 1),
+									(A->Location + B->Location) * 0.5f
+									});
 
-							//병합된 곳에서 파티클  생성
-							ParticlePool.Aquire((A->Location + B->Location) * 0.5f);
+								//병합된 곳에서 파티클  생성
+								ParticlePool.Aquire((A->Location + B->Location) * 0.5f);
+							}
+							else
+							{
+								ScoreManager.AddScore(EFruitType::FT_Watermelon);
+							}
 						}
-						else
-						{
-							ScoreManager.AddScore(EFruitType::FT_Watermelon);
-						}
-                    }
-                }
-            }
-        }
+					}
+				}
+			}
 
 			// 과일 삭제 로직
 			for (UINT i = 0; i < PrimitiveList.Num();)
@@ -1827,7 +1921,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 				// 점수 획득
 				ScoreManager.AddScore(MergeInfo.ResultFruitType);
-			PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, PeachTexture));
+				PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, PeachTexture));
 			}
 
 			//새 과일이 생성된 후 마찰 적용
@@ -1906,6 +2000,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			elapsedTime = (endTime.QuadPart - startTime.QuadPart) * 1000.0 / frequency.QuadPart;
 		} while (elapsedTime < targetFrameTime);
 	}
+
+	SoundManager.StopAll();
+	SoundManager.Release();
+
 	//파티클 텍스쳐도 삭제
 	ParticlePool.ReleasePool();
 	PeachTexture->Release();
