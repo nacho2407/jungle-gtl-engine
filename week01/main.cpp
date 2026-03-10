@@ -16,11 +16,75 @@
 #include "imgui/imgui_impl_dx11.h"
 #include "imgui/imgui_impl_win32.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+class UTexture
+{
+public:
+	bool Initialize(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext, const char* FileName)
+	{
+		D3D11_TEXTURE2D_DESC TextureDesc;
+		D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
+		UINT RowPitch;
+		HRESULT Result;
+		unsigned char* Data;
+
+		Data = stbi_load(FileName, &Width, &Height, &Channels, 0);
+
+		TextureDesc.Height = Height;
+		TextureDesc.Width = Width;
+		TextureDesc.MipLevels = 1;
+		TextureDesc.ArraySize = 1;
+		TextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		TextureDesc.SampleDesc.Count = 1;
+		TextureDesc.SampleDesc.Quality = 0;
+		TextureDesc.Usage = D3D11_USAGE_DEFAULT;
+		TextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		TextureDesc.CPUAccessFlags = 0;
+		TextureDesc.MiscFlags = 0;
+
+		RowPitch = (Width * 4) * sizeof(unsigned char);
+		D3D11_SUBRESOURCE_DATA InitData = { Data, RowPitch, 0 };
+
+		Result = Device->CreateTexture2D(&TextureDesc, &InitData, &Texture);
+		if (FAILED(Result))
+		{
+			return false;
+		}
+
+		SRVDesc.Format = TextureDesc.Format;
+		SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+		SRVDesc.Texture2D.MostDetailedMip = 0;
+		SRVDesc.Texture2D.MipLevels = 1;
+
+		Result = Device->CreateShaderResourceView(Texture, &SRVDesc, &TextureSRV);
+		if (FAILED(Result))
+		{
+			return false;
+		}
+
+		delete[] Data;
+
+		return true;
+	}
+
+	ID3D11ShaderResourceView* GetTextureSRV() { return TextureSRV; }
+
+private:
+	ID3D11Texture2D* Texture;
+	ID3D11ShaderResourceView* TextureSRV;
+
+	int Width;
+	int Height;
+	int Channels;
+};
 
 struct FVertexSimple
 {
 	float x, y, z;
 	float r, g, b, a;
+	float u, v;
 };
 
 struct FVector
@@ -66,6 +130,7 @@ struct SceneFrame
 };
 
 #include "Sphere.h"
+#include "Rectangle.h"
 
 FVertexSimple line_vertices[] =
 {
@@ -84,11 +149,14 @@ public:
 		float Padding;
 	};
 
-	struct FSphere
+	struct FMesh
 	{
 		ID3D11Buffer* VertexBuffer = nullptr;
 		UINT NumVertices;
-	} sphere;
+	};
+
+	FMesh sphere;
+	FMesh rectangle;
 
 	ID3D11Buffer* LineVertexBuffer = nullptr;
 
@@ -134,6 +202,8 @@ public:
 		CreateRasterizerState();
 
 		CreateSphereMesh();
+
+		CreateRectangleMesh();
 
 		CreateLine();
 	}
@@ -228,6 +298,12 @@ public:
 		sphere.VertexBuffer = CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
 	}
 
+	void CreateRectangleMesh()
+	{
+		rectangle.NumVertices = sizeof(rectangle_vertices) / sizeof(FVertexSimple);
+		rectangle.VertexBuffer = CreateVertexBuffer(rectangle_vertices, sizeof(rectangle_vertices));
+	}
+
 	void CreateLine()
 	{
 		D3D11_BUFFER_DESC desc = {};
@@ -255,6 +331,7 @@ public:
 		ReleaseDeviceAndSwapChain();
 
 		ReleaseSphereMesh();
+		ReleaseRectangleMesh();
 	}
 	void ReleaseLine()
 	{
@@ -321,6 +398,11 @@ public:
 		ReleaseVertexBuffer(sphere.VertexBuffer);
 	}
 
+	void ReleaseRectangleMesh()
+	{
+		ReleaseVertexBuffer(rectangle.VertexBuffer);
+	}
+
 	void CreateShader()
 	{
 		ID3DBlob* vertexshaderCSO;
@@ -382,6 +464,15 @@ public:
 				DXGI_FORMAT_R32G32B32A32_FLOAT,
 				0,
 				12,
+				D3D11_INPUT_PER_VERTEX_DATA,
+				0
+			},
+			{
+				"TEXCOORD",
+				0,
+				DXGI_FORMAT_R32G32_FLOAT,
+				0,
+				28,
 				D3D11_INPUT_PER_VERTEX_DATA,
 				0
 			}
@@ -480,6 +571,20 @@ public:
 		}
 	}
 
+	void UpdateTexture(UTexture* InTexture)
+	{
+		if (InTexture)
+		{
+			ID3D11ShaderResourceView* SRV = InTexture->GetTextureSRV();
+			DeviceContext->PSSetShaderResources(0, 1, &SRV);
+		}
+		else
+		{
+			ID3D11ShaderResourceView* nullSRV = nullptr;
+			DeviceContext->PSSetShaderResources(0, 1, &nullSRV);
+		}
+	}
+
 	void Prepare()
 	{
 		DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
@@ -490,7 +595,32 @@ public:
 		DeviceContext->RSSetState(RasterizerState);
 
 		DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr);
-		DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+		// alpha blending 설정
+		D3D11_BLEND_DESC blendDesc = {};
+		blendDesc.AlphaToCoverageEnable = FALSE;
+		blendDesc.IndependentBlendEnable = FALSE;
+
+		blendDesc.RenderTarget[0].BlendEnable = TRUE;
+
+		blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+
+		blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+		blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+		blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+
+		blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+		ID3D11BlendState* AlphaBlendState;
+		Device->CreateBlendState(&blendDesc, &AlphaBlendState);
+
+		float blendFactor[4] = { 0.f,0.f,0.f,0.f };
+
+		DeviceContext->OMSetBlendState(
+			AlphaBlendState,
+			blendFactor,
+			0xffffffff);
 	}
 
 	void PrepareShader()
@@ -528,6 +658,11 @@ public:
 	void RenderSphere()
 	{
 		RenderPrimitive(sphere.VertexBuffer, sphere.NumVertices);
+	}
+
+	void RenderRectangle()
+	{
+		RenderPrimitive(rectangle.VertexBuffer, rectangle.NumVertices);
 	}
 
 	void RenderLine()
@@ -578,7 +713,9 @@ public:
 class UPrimitive
 {
 public:
-	UPrimitive() = default;
+	UPrimitive(UTexture* InTexture = nullptr) : Texture(InTexture)
+	{
+	}
 	virtual ~UPrimitive() = default; // 생성과 해제를 UPrimitive*로 할 예정이므로
 
 	virtual void UpdatePhysics(float dt) = 0;
@@ -595,6 +732,9 @@ public:
 		return bPendingDestroy;
 	}
 
+	void SetTexture(UTexture* InTexture) { Texture = InTexture; }
+	UTexture* GetTexture() const { return Texture; }
+
 protected:
 	// Border 는 map 데이터이므로 따로 빼서 전역 상수 등으로 관리하는 것이 좋을 듯함
 	// 이외 데이터도 관련해서 수정해야할수도
@@ -604,6 +744,9 @@ protected:
 	float BottomBorder = -1.0f;
 
     bool bPendingDestroy = false; // 충돌 검사 중 삭제될 예정인 Primitive들을 표시하기 위한 플래그
+
+private:
+	UTexture* Texture;
 };
 
 class UBall : public UPrimitive
@@ -623,7 +766,8 @@ public:
 	float Mass;
 
 public:
-	UBall() :
+	UBall(UTexture* InTexture = nullptr) :
+		UPrimitive(InTexture),
 		Location(0.0f, 0.0f, 0.0f),
 		Velocity(0.0f, 0.0f, 0.0f),
 		Radius(0.1f),
@@ -703,7 +847,8 @@ public:
 	{
 		FVector CosSin = { cosf(Angle), sinf(Angle), 0.f };
 		renderer.UpdateConstant(Location, CosSin, Radius);
-		renderer.RenderSphere();
+		renderer.UpdateTexture(GetTexture());
+		renderer.RenderRectangle();
 	}
 
 	void SetLocation(const FVector& InLocation) { Location = InLocation; }
@@ -893,11 +1038,12 @@ UFruit* CreateFruit(EFruitType FruitType)
 	return Fruit;
 }
 
-UFruit* CreateFruitAt(EFruitType FruitType, FVector Location)
+UFruit* CreateFruitAt(EFruitType FruitType, FVector Location, UTexture* InTexture = nullptr)
 {
 	UFruit* Fruit = new UFruit();
 	Fruit->SetFruitType(FruitType);
 	Fruit->SetLocation(Location);
+	Fruit->SetTexture(InTexture);
 
     return Fruit;
 }
@@ -1233,6 +1379,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	LARGE_INTEGER collisionStartCounter;
 
+	UTexture* PeachTexture = new UTexture;
+	PeachTexture->Initialize(renderer.Device, renderer.DeviceContext, "./Peach.png");
+
 	while (bIsExit == false)
 	{
 		QueryPerformanceCounter(&startTime);
@@ -1274,10 +1423,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 		}
 
-		renderer.PrepareScene();
-		renderer.PrepareShader();
-
-
 		bool bLineCollision = false;
 
 		static const char* FruitNames[] = {
@@ -1287,10 +1432,112 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		static int SelectedFruitType = 0;
 		static float SpawnX = 0.0f;
 
+		renderer.PrepareScene();
+		renderer.PrepareShader();
+
+		ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
+		ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
+		ImGui::NewFrame(); // ImGui Core 초기화
+
+		ImGuiIO& io = ImGui::GetIO();
+
+		ImGui::SetNextWindowPos(ImVec2(0, 0));
+		ImGui::SetNextWindowSize(io.DisplaySize);
+
+		ImGui::Begin(
+			"Jungle Scene Window",
+			nullptr,
+			ImGuiWindowFlags_NoResize |
+			ImGuiWindowFlags_NoMove |
+			ImGuiWindowFlags_NoCollapse |
+			ImGuiWindowFlags_NoTitleBar
+		);
+
+		ImGui::Combo("Fruit Type", &SelectedFruitType, FruitNames, sizeof(FruitNames) / sizeof(*FruitNames));
+		ImGui::Text("GameOver: %d", gameOver);
+		ImGui::Text("Score: %d", ScoreManager.GetScore());
+
+		if (ImGui::Button("Credits"))
+		{
+			showCredits = true;
+		}
+
+		ImGui::Spacing();
+		ImGui::Spacing();
+
+		if (!gameOver)
+		{
+			renderer.UpdateConstant(FVector(0, 0, 0), FVector(1, 0, 0), 1.0f);
+			renderer.UpdateLineColor(bLineCollision);
+			renderer.RenderLine();
+
+			if (mouseInScene)
+			{
+				renderer.UpdateConstant(FVector(spawnX, 0.9f, 0), FVector(1, 0, 0), 0.1f);
+				renderer.RenderSphere();
+			}
+			// 가운데 정렬
+			ImVec2 avail = ImGui::GetContentRegionAvail();
+			float posX = (avail.x - sceneWidth) * 0.5f;
+			float posY = (avail.y - sceneHeight) * 0.9f;
+
+			if (posX > 0) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + posX);
+			if (posY > 0) ImGui::SetCursorPosY(ImGui::GetCursorPosY() + posY);
+
+			// 내부 프레임
+			ImGui::BeginChild(
+				"SceneFrame",
+				ImVec2(sceneWidth, sceneHeight),   // 프레임 크기
+				false,               // border 표시
+				ImGuiWindowFlags_NoScrollbar
+			);
+
+			gameScene.Pos = ImGui::GetCursorScreenPos();
+			gameScene.Size = ImVec2(sceneWidth, sceneHeight);
+
+			ImGui::Image(
+				(ImTextureID)renderer.SceneSRV,
+				ImVec2(sceneWidth, sceneHeight)
+			);
+
+			ImGui::EndChild();
+		}
+		else
+		{
+			const char* text = "Game Over";
+			ImVec2 textSize = ImGui::CalcTextSize(text);
+
+			float centerX = (io.DisplaySize.x - textSize.x) * 0.5f;
+			float centerY = (io.DisplaySize.y - textSize.y) * 0.5f;
+
+			ImGui::SetCursorPos(ImVec2(centerX, centerY));
+			ImGui::Text("%s", text);
+
+			ImGui::Spacing();
+
+			const char* buttonText = "Restart";
+			ImVec2 buttonSize = ImGui::CalcTextSize(buttonText);
+
+			ImGui::SetCursorPosX((io.DisplaySize.x - buttonSize.x - 20) * 0.5f);
+
+			if (ImGui::Button(buttonText))
+			{
+				gameOver = false;
+				PrimitiveList[PrimitiveListSize++] = new UBall();
+			}
+		}
+		ImGui::End();
+
+		Credits(&showCredits);
+
+		renderer.Prepare();
+
+		ImGui::Render(); // 이번 프레임에 그릴 UI 설정
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
+
 		if (!gameOver)
 		{
 			EFruitType ft = (EFruitType)SelectedFruitType;
-			//PrimitiveList.PushBack(CreateFruit(ft));
 
 			// 생성
 			if (spawnFruit)
@@ -1298,7 +1545,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				EFruitType ft = (EFruitType)SelectedFruitType;
 				FVector spawnPos = FVector(spawnX, 0.9f, 0);
 
-				PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos));
+				PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos, PeachTexture));
 
 				SelectedFruitType = rand() % (EFruitType::FT_Orange + 1);
 			}
@@ -1388,7 +1635,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				ScoreManager.AddScore(MergeInfo.ResultFruitType);
 
 				// 새 과일 생성
-				PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation));
+				PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, PeachTexture));
 			}
 
 			//새 과일이 생성된 후 마찰 적용
@@ -1453,105 +1700,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				PrimitiveList[i] = nullptr;
 			}
 		}
-
-		ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
-		ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
-		ImGui::NewFrame(); // ImGui Core 초기화
-
-		ImGuiIO& io = ImGui::GetIO();
-
-		ImGui::SetNextWindowPos(ImVec2(0, 0));
-		ImGui::SetNextWindowSize(io.DisplaySize);
-
-		ImGui::Begin(
-			"Jungle Scene Window",
-			nullptr,
-			ImGuiWindowFlags_NoResize |
-			ImGuiWindowFlags_NoMove |
-			ImGuiWindowFlags_NoCollapse |
-			ImGuiWindowFlags_NoTitleBar
-		);
-
-		ImGui::Combo("Fruit Type", &SelectedFruitType, FruitNames, sizeof(FruitNames) / sizeof(*FruitNames));
-		ImGui::Text("GameOver: %d", gameOver);
-		ImGui::Text("Score: %d", ScoreManager.GetScore());
-
-		if (ImGui::Button("Credits"))
-		{
-			showCredits = true;
-		}
-
-		ImGui::Spacing();
-		ImGui::Spacing();
-
-		if (!gameOver)
-		{
-			renderer.UpdateConstant(FVector(0, 0, 0), FVector(1, 0, 0), 1.0f);
-			renderer.UpdateLineColor(bLineCollision);
-			renderer.RenderLine();
-
-			if (mouseInScene)
-			{
-				renderer.UpdateConstant(FVector(spawnX, 0.9f, 0), FVector(1, 0, 0), 0.1f);
-				renderer.RenderSphere();
-			}
-			// 가운데 정렬
-			ImVec2 avail = ImGui::GetContentRegionAvail();
-			float posX = (avail.x - sceneWidth) * 0.5f;
-			float posY = (avail.y - sceneHeight) * 0.9f;
-
-			if (posX > 0) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + posX);
-			if (posY > 0) ImGui::SetCursorPosY(ImGui::GetCursorPosY() + posY);
-
-			// 내부 프레임
-			ImGui::BeginChild(
-				"SceneFrame",
-				ImVec2(sceneWidth, sceneHeight),   // 프레임 크기
-				false,               // border 표시
-				ImGuiWindowFlags_NoScrollbar
-			);
-
-			gameScene.Pos = ImGui::GetCursorScreenPos();
-			gameScene.Size = ImVec2(sceneWidth, sceneHeight);
-
-			ImGui::Image(
-				(ImTextureID)renderer.SceneSRV,
-				ImVec2(sceneWidth, sceneHeight)
-			);
-			ImGui::EndChild();
-		}
-		else
-		{
-			const char* text = "Game Over";
-			ImVec2 textSize = ImGui::CalcTextSize(text);
-
-			float centerX = (io.DisplaySize.x - textSize.x) * 0.5f;
-			float centerY = (io.DisplaySize.y - textSize.y) * 0.5f;
-
-			ImGui::SetCursorPos(ImVec2(centerX, centerY));
-			ImGui::Text("%s", text);
-
-			ImGui::Spacing();
-
-			const char* buttonText = "Restart";
-			ImVec2 buttonSize = ImGui::CalcTextSize(buttonText);
-
-			ImGui::SetCursorPosX((io.DisplaySize.x - buttonSize.x - 20) * 0.5f);
-
-			if (ImGui::Button(buttonText))
-			{
-				gameOver = false;
-				PrimitiveList[PrimitiveListSize++] = new UBall();
-			}
-		}
-		ImGui::End();
-
-		Credits(&showCredits);
-
-		renderer.Prepare();
-
-		ImGui::Render(); // 이번 프레임에 그릴 UI 설정
-		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
 
 		renderer.SwapBuffer();
 
