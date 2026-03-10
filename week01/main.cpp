@@ -567,8 +567,11 @@ public:
 		}
 	}
 
-	void UpdateConstant(FVector Offset, FVector SinCos, float Radius)
+	void UpdateConstant(FVector Offset, float Angle, float Radius)
 	{
+		
+		FVector CosSin = { cosf(Angle), sinf(Angle), 0.f };
+
 		if (ConstantBuffer)
 		{
 			D3D11_MAPPED_SUBRESOURCE constantbufferMSR; // GPU에 있는 상수 버퍼를 CPU가 접근할 수 있도록 매핑
@@ -577,7 +580,7 @@ public:
 			FConstants* constants = (FConstants*)constantbufferMSR.pData;
 
 			constants->Offset = Offset;
-			constants->SinCos = SinCos;
+			constants->SinCos = CosSin;
 			constants->Radius = Radius;
 
 			DeviceContext->Unmap(ConstantBuffer, 0); // CPU 작업이 끝난 뒤 언매핑
@@ -859,8 +862,7 @@ public:
 
 	void Render(URenderer& renderer) override
 	{
-		FVector CosSin = { cosf(Angle), sinf(Angle), 0.f };
-		renderer.UpdateConstant(Location, CosSin, Radius);
+		renderer.UpdateConstant(Location, Angle, Radius);
 		renderer.UpdateTexture(GetTexture());
 		renderer.RenderRectangle();
 	}
@@ -871,7 +873,7 @@ public:
 protected:
 	float MassFactor = 1.0f; // 질량 보정용
 
-	const float GravityAccel = 4.f;    // 중력 가속도
+	const float GravityAccel = 2.f;    // 중력 가속도
 	const float RestitutionWall = 0.1f;
 	const float FloorFriction = 0.07f;
 
@@ -935,8 +937,7 @@ public:
 
 	void Render(URenderer& renderer) override
 	{
-		FVector CosSin = { cosf(Angle), sinf(Angle), 0.f };
-		renderer.UpdateConstant(Location, CosSin, Radius);
+		renderer.UpdateConstant(Location, Angle, Radius);
 		renderer.UpdateTexture(GetTexture());
 		renderer.RenderRectangle();
 	}
@@ -1619,13 +1620,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		if (!gameOver)
 		{
-			renderer.UpdateConstant(FVector(0, 0, 0), FVector(1, 0, 0), 1.0f);
+			renderer.UpdateConstant(FVector(0, 0, 0), 0.f, 1.0f);
 			renderer.UpdateLineColor(bLineCollision);
 			renderer.RenderLine();
 
 			if (mouseInScene)
 			{
-				renderer.UpdateConstant(FVector(spawnX, 0.9f, 0), FVector(1, 0, 0), 0.1f);
+				renderer.UpdateConstant(FVector(spawnX, 0.9f, 0), 0.f, 0.1f);
 				renderer.RenderSphere();
 			}
 			// 가운데 정렬
@@ -1795,7 +1796,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 
 			//새 과일이 생성된 후 마찰 적용
-			const static int overlapIteration = 1;
+			const static int overlapIteration = 10;
 			for (UINT i = 0; i < overlapIteration; ++i)
 			{
 				for (UINT i = 0; i < PrimitiveList.Num(); i++)
