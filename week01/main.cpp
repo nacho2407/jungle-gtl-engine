@@ -45,7 +45,24 @@ struct FVector
     }
 };
 
+struct InputState
+{
+    float MouseX;
+    float MouseY;
+
+    bool MouseLeftDown;
+    bool MouseLeftClicked;
+};
+InputState gInput;
+
+struct SceneFrame
+{
+    ImVec2 Pos;
+    ImVec2 Size;
+};
+
 #include "Sphere.h"
+#include <windowsx.h>
 
 FVertexSimple line_vertices[] =
 {
@@ -721,7 +738,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         CW_USEDEFAULT,
         CW_USEDEFAULT,
         900,
-        1100,
+        1100, // 윈도우 사이즈 고정
         nullptr,
         nullptr,
         hInstance,
@@ -751,6 +768,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     ImGui_ImplWin32_Init((void*)hWnd); // OS 이벤트 및 입력 담당
     ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext); // GPU 렌더링 담당
 
+    float sceneWidth = 850;
+    float sceneHeight = 850;
+    SceneFrame gameScene;
+
     UINT PrimitiveListCapacity = 64;
 	UINT PrimitiveListSize = UBall::TotalNumBalls; // 컨테이너 크기 자체는 컨테이너가 직접 파악
     UPrimitive** PrimitiveList = new UPrimitive*[PrimitiveListCapacity];
@@ -761,7 +782,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	bool bIsExit = false;
 
-	// 게임 오버 상태와 이전 프레임의 선 충돌 여부를 추적하는 변수
+	// 게임 오버 상태와 이전 프레임의 선 충돌 여부
     bool gameOver = false;
     bool prevCollision = false;
 
@@ -773,18 +794,39 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		MSG msg;
 
+		// ----- input ------
+
 		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
 
 			DispatchMessage(&msg);
 
-			if (msg.message == WM_QUIT)
-			{
-				bIsExit = true;
-				break;
-			}
+            if (msg.message == WM_QUIT)
+            {
+                bIsExit = true;
+                break;
+            }
 		}
+        bool mouseInScene =
+            gInput.MouseX >= gameScene.Pos.x &&
+            gInput.MouseX <= gameScene.Pos.x + gameScene.Size.x &&
+            gInput.MouseY >= gameScene.Pos.y &&
+            gInput.MouseY <= gameScene.Pos.y + gameScene.Size.y;
+
+        bool spawnBall = false;
+        float spawnX = 0;
+
+        if (mouseInScene)
+        {
+            float localX = gInput.MouseX - gameScene.Pos.x;
+            spawnX = (localX / gameScene.Size.x) * 2.0f - 1.0f;
+
+            if (gInput.MouseLeftClicked)
+            {
+                spawnBall = true;
+            }
+        }
 
         renderer.PrepareScene();
         renderer.PrepareShader();
@@ -794,71 +836,92 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         static bool bAntigravity = false;
         static bool bAirDrag = false;
         static float SlowMotionCoef = 1.0f;
-
-        // 이동 및 벽 충돌 계산
-        for (UINT i = 0; i < PrimitiveListSize; i++)
-        {
-            PrimitiveList[i]->UpdatePhysics(
-                fixedDeltaTime,
-                bGravity,
-                bAntigravity,
-                bAirDrag,
-                SlowMotionCoef
-            );
-            PrimitiveList[i]->Render(renderer);
-        }
-
-        // 공들 간 충돌 계산
-        for (UINT i = 0; i < PrimitiveListSize; i++)
-        {
-            UBall* A = (UBall*)PrimitiveList[i];
-
-            for (UINT j = i + 1; j < PrimitiveListSize; j++)
-            {
-                UBall* B = (UBall*)PrimitiveList[j];
-
-                ResolveCollision(A, B);
-            }
-        }
-
         bool bLineCollision = false;
 
-        // 공과 선의 충돌 계산
-        for (UINT i = 0; i < PrimitiveListSize; i++)
+        if (!gameOver)
         {
-            UBall* ball = (UBall*)PrimitiveList[i];
+            // ----- logic -----
 
-            if (ball->CheckLineCollision(LineY))
+            // 공 생성
+            if (spawnBall)
             {
-                bLineCollision = true;
-                if (!prevCollision)
+                UBall* newBall = new UBall();
+                newBall->Location = FVector(spawnX, 0.9f, 0);
+
+                PrimitiveList[PrimitiveListSize++] = newBall;
+            }
+
+            // 이동 및 벽 충돌 계산
+            for (UINT i = 0; i < PrimitiveListSize; i++)
+            {
+                PrimitiveList[i]->UpdatePhysics(
+                    fixedDeltaTime,
+                    bGravity,
+                    bAntigravity,
+                    bAirDrag,
+                    SlowMotionCoef
+                );
+                PrimitiveList[i]->Render(renderer);
+            }
+
+            // 공들 간 충돌 계산
+            for (UINT i = 0; i < PrimitiveListSize; i++)
+            {
+                UBall* A = (UBall*)PrimitiveList[i];
+
+                for (UINT j = i + 1; j < PrimitiveListSize; j++)
                 {
-                    QueryPerformanceCounter(&collisionStartCounter);
+                    UBall* B = (UBall*)PrimitiveList[j];
+
+                    ResolveCollision(A, B);
                 }
-                break;
             }
-        }
 
-        // Game Over 여부 계산
-        if (bLineCollision)
-        {
-            LARGE_INTEGER now;
-            QueryPerformanceCounter(&now);
-
-            double elapsed = (double)(now.QuadPart - collisionStartCounter.QuadPart) / frequency.QuadPart;
-
-            if (elapsed >= 1.0)
+            // 공과 선의 충돌 계산
+            for (UINT i = 0; i < PrimitiveListSize; i++)
             {
-                gameOver = true;
+                UBall* ball = (UBall*)PrimitiveList[i];
+
+                if (ball->CheckLineCollision(LineY))
+                {
+                    bLineCollision = true;
+                    if (!prevCollision)
+                    {
+                        QueryPerformanceCounter(&collisionStartCounter);
+                    }
+                    break;
+                }
             }
+
+            // Game Over 여부 계산
+            if (bLineCollision)
+            {
+                LARGE_INTEGER now;
+                QueryPerformanceCounter(&now);
+
+                double elapsed = (double)(now.QuadPart - collisionStartCounter.QuadPart) / frequency.QuadPart;
+
+                if (elapsed >= 1.0)
+                {
+                    gameOver = true;
+                }
+            }
+
+            prevCollision = bLineCollision;
         }
+        else
+        {
+            // 기존 데이터 초기화
+            for (UINT i = 0; i < PrimitiveListSize; i++)
+            {
+                delete PrimitiveList[i];
+            }
 
-        prevCollision = bLineCollision;
+            PrimitiveListSize = 0;
+        }
+        // ----- render -----
 
-        renderer.UpdateLineColor(bLineCollision);
 
-        renderer.UpdateConstant(FVector(0, 0, 0), 1.0f);
-        renderer.RenderLine();
 
         ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
         ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
@@ -886,9 +949,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         if (!gameOver)
         {
-            float sceneWidth = 850;
-            float sceneHeight = 850;
+            renderer.UpdateConstant(FVector(0, 0, 0), 1.0f);
+            renderer.UpdateLineColor(bLineCollision);
+            renderer.RenderLine();
 
+            if (mouseInScene)
+            {
+                renderer.UpdateConstant(FVector(spawnX, 0.9f, 0), 0.1f);
+                renderer.RenderSphere();
+            }
             // 가운데 정렬
             ImVec2 avail = ImGui::GetContentRegionAvail();
             float posX = (avail.x - sceneWidth) * 0.5f;
@@ -905,47 +974,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 ImGuiWindowFlags_NoScrollbar
             );
 
-            ImVec2 scenePos = ImGui::GetCursorScreenPos();
-            ImVec2 sceneSize(sceneWidth, sceneHeight);
+            gameScene.Pos = ImGui::GetCursorScreenPos();
+            gameScene.Size = ImVec2(sceneWidth, sceneHeight);
 
             ImGui::Image(
                 (ImTextureID)renderer.SceneSRV,
                 ImVec2(sceneWidth, sceneHeight)
             );
-            if (ImGui::IsItemHovered())
-            {
-                ImVec2 mouse = ImGui::GetMousePos();
-
-                float localX = mouse.x - scenePos.x;
-
-                float worldX = (localX / sceneSize.x) * 2.0f - 1.0f;
-                float worldY = 0.9f;
-                
-        
-                renderer.UpdateConstant(FVector(worldX, worldY, 0), 0.1f);
-                renderer.RenderSphere();
-
-                if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-                {
-
-                    UBall* newBall = new UBall();
-                    newBall->Location = FVector(worldX, worldY, 0);
-
-                    PrimitiveList[PrimitiveListSize++] = newBall;
-                }
-            }
             ImGui::EndChild();
         }
         else
         {
-            // 기존 데이터 초기화
-            for (UINT i = 0; i < PrimitiveListSize; i++)
-            {
-                delete PrimitiveList[i];
-            }
-
-            PrimitiveListSize = 0;
-
             const char* text = "Game Over";
             ImVec2 textSize = ImGui::CalcTextSize(text);
 
@@ -977,6 +1016,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         renderer.SwapBuffer();
 
+        gInput.MouseLeftClicked = false;
 		// 모니터 주사율이 144Hz일 수도 있으니 VSync를 사용하더라도 60fps 고정 코드는 유지
         do
         {
@@ -1016,6 +1056,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	switch (message)
 	{
+    case WM_MOUSEMOVE:
+        gInput.MouseX = (float)GET_X_LPARAM(lParam);
+        gInput.MouseY = (float)GET_Y_LPARAM(lParam);
+        break;
+
+    case WM_LBUTTONDOWN:
+        gInput.MouseLeftDown = true;
+        gInput.MouseLeftClicked = true;
+        break;
+
+    case WM_LBUTTONUP:
+        gInput.MouseLeftDown = false;
+        break;
+
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
