@@ -1,4 +1,5 @@
 ﻿#include <windows.h>
+#include <windowsx.h>
 
 #pragma comment(lib, "user32")
 #pragma comment(lib, "d3d11")
@@ -62,7 +63,6 @@ struct SceneFrame
 };
 
 #include "Sphere.h"
-#include <windowsx.h>
 
 FVertexSimple line_vertices[] =
 {
@@ -700,6 +700,20 @@ private:
     }
 };
 
+void Credits(bool* open)
+{
+    if (!*open) return;
+    ImGui::Begin("Credits", open, ImGuiWindowFlags_AlwaysAutoResize);
+
+    ImGui::Text("Developer:");
+    ImGui::Text("KJS");
+    ImGui::Text("PJH");
+    ImGui::Text("JMJ");
+    ImGui::Text("JJY");
+
+    ImGui::End();
+}
+
 int UBall::TotalNumBalls = 0;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -771,6 +785,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     float sceneWidth = 850;
     float sceneHeight = 850;
     SceneFrame gameScene;
+    bool showCredits = false;
 
     UINT PrimitiveListCapacity = 64;
 	UINT PrimitiveListSize = UBall::TotalNumBalls; // 컨테이너 크기 자체는 컨테이너가 직접 파악
@@ -909,7 +924,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
             prevCollision = bLineCollision;
         }
-        else
+        else // Game Over
         {
             // 기존 데이터 초기화
             for (UINT i = 0; i < PrimitiveListSize; i++)
@@ -919,9 +934,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
             PrimitiveListSize = 0;
         }
+
         // ----- render -----
-
-
 
         ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
         ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
@@ -943,7 +957,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         ImGui::Text("GameOver: %d", gameOver);
         ImGui::Text("Score:");
-
+        
+        if (ImGui::Button("Credits"))
+        {
+            showCredits = true;
+        }
+        
         ImGui::Spacing();
         ImGui::Spacing();
 
@@ -1008,6 +1027,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
         }
         ImGui::End();
+
+        Credits(&showCredits);
 
         renderer.Prepare();
 
