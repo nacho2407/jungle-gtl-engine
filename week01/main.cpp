@@ -449,6 +449,36 @@ public:
 
 	virtual void UpdatePhysics(float dt) = 0;
 	virtual void Render(URenderer& renderer) = 0;
+
+    // 삭제 예정 플래그 조작
+	void MarkPendingDestroy()
+    {
+        bPendingDestroy = true;
+    }
+
+    bool IsPendingDestroy() const
+    {
+        return bPendingDestroy;
+	}
+
+protected:
+    // Border 는 map 데이터이므로 따로 빼서 전역 상수 등으로 관리하는 것이 좋을 듯함
+    // 이외 데이터도 관련해서 수정해야할수도
+    float LeftBorder = -1.0f;
+    float RightBorder = 1.0f;
+    float TopBorder = 1.0f;
+    float BottomBorder = -1.0f;
+
+    float MassFactor = 1.0f; // 질량 보정용
+
+    const float MinSpeed = -2.0f;
+    const float MaxSpeed = 2.0f;
+
+    const float GravityAccel = 4.0f; // 중력 가속도
+    const float RestitutionWall = 0.8f; // 중력 활성화 시 적용할 벽 반발 감쇠 계수(1.0 == 완전 반사)
+    const float AirDragCoef = 0.2f; // 공기 저항 활성화 시 적용할 공기 저항 계수
+
+    bool bPendingDestroy = false; // 충돌 검사 중 삭제될 예정인 Primitive들을 표시하기 위한 플래그
 };
 
 class UBall : public UPrimitive
@@ -464,16 +494,13 @@ public:
 	float Mass;
 	
 public:
-	UBall() :
-		Location(0.0f, 0.0f, 0.0f),
-		Velocity(0.0f, 0.0f, 0.0f),
-		Angle(0.f),
-		AngularVelocity(0.f),
-		Radius(0.1f),
-		Mass(1.0f)
-	{
-		Radius = RandRange(0.1f, 0.2f);
-
+    UBall(): 
+        Location(0.0f, 0.0f, 0.0f), 
+        Velocity(0.0f, 0.0f, 0.0f), 
+        Radius(0.1f), 
+        Mass(0.0f)
+    {
+        // Radius = RandRange(0.1f, 0.2f);
 		Mass = Radius * MassFactor;
 
 		LeftBorder = -1.0f + Radius;
@@ -550,6 +577,9 @@ public:
 		renderer.RenderSphere();
 	}
 
+	void SetLocation(const FVector& InLocation) { Location = InLocation; }
+	FVector GetLocation() const { return Location; }
+
 private:
 	float MassFactor = 1.0f; // 질량 보정용
 
@@ -574,6 +604,331 @@ private:
 	{
 		return a + (b - a) * Random();
 	}
+};
+
+enum EFruitType
+{
+    FT_Cherry = 0,
+    FT_Strawberry,
+    FT_Grape,
+    FT_Dekopon,      // 귤/데코폰
+    FT_Orange,
+    FT_Apple,
+    FT_Pear,
+    FT_Peach,
+    FT_Pineapple,
+    FT_Melon,
+    FT_Watermelon,
+
+    FT_Count  // Last Type Check 용도
+};
+
+const float SmallestFruitRadius = 0.05f; // 가장 작은 과일의 반지름
+const float CoefRadiusGrowth = 1.25f; // 과일 레벨이 하나씩 올라갈 때마다 반지름이 커지는 정도
+
+class UFruit : public UBall
+{
+public:
+    UFruit()
+    {
+
+    }
+
+    // 특정 EFruitType에 해당하는 과일 객체를 특정 X 위치에 스폰하는 생성자 필요
+	// 과일 반지름: SmallestFruitRadius * pow(CoefRadiusGrowth, FruitType)
+
+    void UpdatePhysics(
+        float dt
+    ) override
+    {
+        Location = Location + Velocity * dt;
+
+        if (Location.x < LeftBorder)
+        {
+            Location.x = LeftBorder;
+            Velocity.x *= -1.0f;
+        }
+        if (Location.x > RightBorder)
+        {
+            Location.x = RightBorder;
+            Velocity.x *= -1.0f;
+        }
+        if (Location.y > TopBorder)
+        {
+            Location.y = TopBorder;
+            Velocity.y *= -1.0f;
+        }
+		// 실제 게임에서는 바닥에 닿은 과일이 튕기지 않고 바닥에 착 붙어버리는 식으로 되어있어서, 이 부분은 나중에 확인해보고 수정이 필요하면 수정!!
+        if (Location.y < BottomBorder)
+        {
+            Location.y = BottomBorder;
+            Velocity.y *= -1.0f;
+        }
+
+        // Fruit 에 대해 기본적으로 Gravity 적용
+        Velocity.y -= GravityAccel * dt;
+        
+    }
+
+    void SetFruitType(EFruitType InFruitType)
+    {
+        FruitType = InFruitType;
+    }
+
+    EFruitType GetFruitType() const { return FruitType; }
+
+private:
+    // Fruit Type
+    EFruitType FruitType;
+};
+
+// RAII 고려 필요 (자원 해제가 지금은 제대로 안됨)
+// 스마트포인터 사용 필요
+UFruit* CreateFruit(EFruitType FruitType)
+{
+    UFruit* Fruit = new UFruit();
+    Fruit->SetFruitType(FruitType);
+    return Fruit;
+}
+
+UFruit* CreateFruitAt(EFruitType FruitType, FVector Location)
+{
+    UFruit* Fruit = new UFruit();
+    Fruit->SetFruitType(FruitType);
+    Fruit->SetLocation(Location);
+
+    // 이미 존재하는 과일들 사이에 새로운 과일이 합쳐지는 경우 처리 로직은 준혁님 코드에 구현된 로직으로 처리 예정(차후 코드 병합 과정에서 처리)
+    // 아마 PrimitiveList 내의 모든 과일들 위치를 처리해주어야 할 듯
+
+    return Fruit;
+}
+
+
+template<typename DataType>
+class TQueue
+{
+public:
+    TQueue()
+    {
+        Data = new DataType[1];
+        DataNum = 0;
+        Capacity = 1;
+        Head = 0;
+        Tail = 0;
+    }
+
+    ~TQueue()
+    {
+        delete[] Data;
+    }
+
+    // Push, Pop, Reserve
+    bool Push(const DataType& InData)
+    {
+        // Array is full
+        if (DataNum == Capacity)
+        {
+            bool bIsReserveOK = Reserve(Capacity * 2);
+            if (!bIsReserveOK) return false;
+        }
+
+        Data[Tail] = InData;
+        Tail = (Tail + 1) % Capacity;
+        DataNum++;
+        return true;
+    }
+
+    void Pop()
+    {
+        if (IsEmpty()) return;
+        Head = (Head + 1) % Capacity;
+        DataNum--;
+    }
+
+    DataType& Front()
+    {
+        // Empty 체크 나중에 넣어야할듯
+        return Data[Head];
+    }
+
+    const DataType& Front() const
+    {
+        // Empty 체크 나중에 넣어야할듯
+        return Data[Head];
+    }
+
+    bool Reserve(UINT NewCapacity)
+    {
+        // 더 작아지는 경우는 고려하지 않음
+        if (Capacity >= NewCapacity) return false;
+
+        DataType* NewData = new DataType[NewCapacity];
+        
+        // 객체가 특수한 복사, 이동 연산을 가지는 것은 아직 고려하지 않음
+        for (UINT i = 0; i < DataNum; i++)
+        {
+            NewData[i] = Data[(Head + i) % Capacity];
+        }
+
+        delete[] Data;
+        Data = NewData;
+        // DataNum 유지
+        Capacity = NewCapacity;
+        Head = 0;
+        Tail = DataNum;
+        return true;
+    }
+    
+    bool IsEmpty() const
+    {
+        return DataNum == 0;
+    }
+
+    UINT Num() const
+    {
+        return DataNum;
+    }
+
+private:
+    DataType* Data;
+    UINT Head;
+    UINT Tail;
+    UINT DataNum;
+    UINT Capacity;
+};
+
+template<typename DataType>
+class TArray
+{
+public:
+    TArray()
+    {
+        Data = new DataType[1];
+        DataNum = 0;
+        Capacity = 1;
+    }
+
+    ~TArray()
+    {
+        delete[] Data;
+    }
+
+    // PushBack, PopBack
+    bool PushBack(const DataType& InData)
+    {
+        if (DataNum == Capacity)
+        {
+            bool bIsReserveOK = Reserve(Capacity * 2);
+            if (!bIsReserveOK) return false;
+        }
+
+        Data[DataNum] = InData;
+        DataNum++;
+        return true;
+    }
+
+    void PopBack()
+    {
+        if (IsEmpty()) return;
+
+        DataNum--;
+    }
+
+    DataType& Back()
+    {
+        // Empty 처리 나중에 해야됨
+        return Data[DataNum - 1];
+    }
+
+    DataType& operator[](UINT Idx)
+    {
+        // 일단 Out of index 는 체크 안함
+        return Data[Idx];
+    }
+
+    const DataType& operator[](UINT Idx) const
+    {
+        return Data[Idx];
+    }
+
+    bool IsEmpty() const
+    {
+        return DataNum == 0;
+    }
+
+    UINT Num() const
+    {
+        return DataNum;
+    }
+
+    bool Reserve(UINT NewCapacity)
+    {
+        // 더 작아지는 경우는 허용 안함
+        if (Capacity >= NewCapacity) return false;
+
+        DataType* NewData = new DataType[NewCapacity];
+        for (UINT i = 0; i < DataNum; i++)
+        {
+            NewData[i] = Data[i];
+        }
+
+        delete[] Data;
+        Data = NewData;
+        // DataNum 유지
+        Capacity = NewCapacity;
+        return true;
+    }
+
+    void RemoveAt(UINT Idx)
+    {
+        if (Idx >= DataNum)
+        {
+            return;
+        }
+
+        if (Idx != DataNum - 1)
+        {
+            Data[Idx] = Data[DataNum - 1];
+        }
+
+        DataNum--;
+
+        // 원소의 소멸자를 별도로 호출하지 않음에 유의
+    }
+
+private:
+    DataType* Data;
+    UINT DataNum;
+    UINT Capacity;
+};
+
+struct FPendingMerge
+{
+    EFruitType ResultFruitType;
+	FVector NewLocation;
+};
+
+class UScoreManager
+{
+public:
+    UScoreManager() : Score(0) {}
+
+    /**
+     * @brief 원본 게임의 점수 규칙에 따라 점수를 누적합니다
+     * 
+     * @param FruitType 병합된 후의 과일 타입
+     */
+    void GetScore(EFruitType FruitType)
+    {
+        Score += (UINT)((FruitType * (FruitType + 1)) / 2);
+    }
+
+    UINT GetScore() const
+    {
+        return Score;
+    }
+private:
+    UINT Score;
 };
 
 
@@ -646,8 +1001,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	UINT PrimitiveListSize = 0;
 	UPrimitive** PrimitiveList = new UPrimitive * [PrimitiveListCapacity];
 
+	UScoreManager ScoreManager;
 
-	PrimitiveList[PrimitiveListSize++] = new UBall();
+    TArray<UPrimitive*> PrimitiveList;
+    
+	// Input 포함 Drop Position 관련 기능은 지윤님 코드에 구현된 로직으로 처리 예정(차후 코드 병합 과정에서 처리)
+    // PrimitiveList.PushBack(CreateFruit(EFruitType::FT_Apple));
 
 
 	bool bIsExit = false;
@@ -677,7 +1036,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		static int TargetCount = 2;
 		static float SlowMotionCoef = 1.0f;
 
-		for (UINT i = 0; i < PrimitiveListSize; i++)
+	/*	for (UINT i = 0; i < PrimitiveListSize; i++)
 		{
 			PrimitiveList[i]->UpdatePhysics(fixedDeltaTime);
 		}
@@ -696,64 +1055,124 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					ResolveCollision(A, B);
 				}
 			}
-		}
+		}*/
 
-		// 렌더링
-		for (UINT i = 0; i < PrimitiveListSize; i++)
-		{
+		for (UINT i = 0; i < PrimitiveList.Num(); i++)
+        {
+            PrimitiveList[i]->UpdatePhysics(
+                fixedDeltaTime
+            );
 			PrimitiveList[i]->Render(renderer);
 		}
-
 
 		ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
 		ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
 		ImGui::NewFrame(); // ImGui Core 초기화
 
 		ImGui::Begin("Jungle Property Window");
-
 		ImGui::Text("Hello, jungle world!");
 
-		ImGui::InputInt("Number of balls", &TargetCount);
+        // 병합 예정 정보를 담은 큐
+		TQueue<FPendingMerge> PendingMergeQueue;
 
-		if (TargetCount < 1)
-		{
-			TargetCount = 1;
+        /**************************
+         * 과일들 간 충돌 / 병합 연산 *
+         **************************/
+        for (UINT i = 0; i < PrimitiveList.Num(); i++)
+        {
+            UFruit* A = (UFruit*) PrimitiveList[i];
+
+			if (A->IsPendingDestroy())
+            {
+                continue;
+            }
+
+            for (UINT j = i + 1; j < PrimitiveList.Num(); j++)
+            {
+                UFruit* B = (UFruit*) PrimitiveList[j];
+
+                if (B->IsPendingDestroy())
+                {
+                    continue;
+                }
+
+                FVector Delta = B->Location - A->Location;
+                float Dist2 = Delta.Dot2(Delta);
+                float r = A->Radius + B->Radius;
+
+                if (Dist2 <= r * r)
+                {
+                    if (A->GetFruitType() == B->GetFruitType())
+                    {
+						A->MarkPendingDestroy();
+						B->MarkPendingDestroy();
+
+                        // 수박끼리 병합 시 두 수박만 사라지고 병합 X
+                        if (A->GetFruitType() != EFruitType::FT_Watermelon) {
+                            PendingMergeQueue.Push({ 
+                                (EFruitType) (A->GetFruitType() + 1), 
+                                (A->Location + B->Location) * 0.5f
+							});
+                        }
+
+						break; // A는 이미 병합 대상, 추가 충돌 검사 X
+                    }
+                    else
+                    {
+                        ResolveCollision(A, B);
+                    }
+                }
+            }
+        }
+
+        // 과일 삭제 로직
+        for (UINT i = 0; i < PrimitiveList.Num();)
+        {
+            if (PrimitiveList[i]->IsPendingDestroy())
+            {
+                delete PrimitiveList[i];
+                PrimitiveList[i] = nullptr;
+                PrimitiveList.RemoveAt(i);
+            }
+            else
+            {
+                i++;
+            }
 		}
 
-		while (PrimitiveListSize < (UINT)TargetCount)
-		{
-			if (PrimitiveListSize == PrimitiveListCapacity)
-			{
-				UINT NewCapacity = PrimitiveListCapacity * 2;
+		// 병합 처리 로직
+        while (!PendingMergeQueue.IsEmpty())
+        {
+            FPendingMerge MergeInfo = PendingMergeQueue.Front();
+            PendingMergeQueue.Pop();
 
-				UPrimitive** NewList = new UPrimitive * [NewCapacity];
+            // 점수 획득
+			ScoreManager.GetScore(MergeInfo.ResultFruitType);
 
-				for (UINT i = 0; i < PrimitiveListSize; i++)
-				{
-					NewList[i] = PrimitiveList[i];
-				}
-
-				delete[] PrimitiveList;
-
-				PrimitiveList = NewList;
-				PrimitiveListCapacity = NewCapacity;
-			}
-
-			PrimitiveList[PrimitiveListSize++] = new UBall();
+            // 새 과일 생성
+            PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation));
 		}
 
-		while (PrimitiveListSize > (UINT)TargetCount)
-		{
-			UINT RandomIndex = (UINT)(rand() % PrimitiveListSize);
-			delete PrimitiveList[RandomIndex];
+        // 점수는 ImGui로 표현할 수도 있음
 
-			PrimitiveList[RandomIndex] = PrimitiveList[PrimitiveListSize - 1]; // 순서가 중요하지 않으므로...
-			PrimitiveListSize--;
-		}
+        ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
+        ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
+        ImGui::NewFrame(); // ImGui Core 초기화
 
-		ImGui::End();
 
-		ImGui::Render(); // 이번 프레임에 그릴 UI 설정
+        while (PrimitiveList.Num() < (UINT) TargetCount)
+        {
+            PrimitiveList.PushBack(CreateFruitAt(EFruitType::FT_Apple, FVector(0.5, 0.5, 0)));
+        }
+
+        while (PrimitiveList.Num() > (UINT)TargetCount)
+        {
+            PrimitiveList.PopBack();
+        }
+
+        ImGui::End();
+
+        ImGui::Render(); // 이번 프레임에 그릴 UI 설정
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
 
 		renderer.SwapBuffer();
@@ -769,8 +1188,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		} while (elapsedTime < targetFrameTime);
 	}
 
-	for (UINT i = 0; i < PrimitiveListSize; i++) {
-		delete PrimitiveList[i];
+
+    for (UINT i = 0; i < PrimitiveList.Num(); i++) {
+        delete PrimitiveList[i];
 		PrimitiveList[i] = nullptr;
 	}
 
@@ -778,7 +1198,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
-
 	ImGui::DestroyContext();
 
 	renderer.ReleaseConstantBuffer();
