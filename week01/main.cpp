@@ -1098,43 +1098,7 @@ private:
 	UINT Score;
 };
 
-<<<<<< < HEAD
-	/*class UParitlcePool
-	{
-	public:
-		UParitlcePool()  = default;
-		~UParitlcePool() = default;
-
-	public:
-		void Initailize(int DefaultCapacity)
-		{
-			ParticlePool.Reserve(DefaultCapacity);
-			for (int i = 0; i < ParticlePool.Num(); ++i)
-			{
-
-				ParticlePool.Push(new UBall());
-			}
-		}
-
-		void SpawnParticles(int NumParticles)
-		{
-
-		}
-		void UpdateParticles()
-		{
-			for (size_t i = 0; i < ParticlePool.Num(); ++i)
-			{
-
-			}
-		}
-
-	private:
-		TQueue<UPariticle*> ParticlePool;
-
-	};*/
-
-	====== =
-	void Credits(bool* open)
+void Credits(bool* open)
 {
 	if (!*open) return;
 	ImGui::Begin("Credits", open, ImGuiWindowFlags_AlwaysAutoResize);
@@ -1149,7 +1113,6 @@ private:
 }
 
 int UBall::TotalNumBalls = 0;
->>>>>> > main
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -1286,8 +1249,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		renderer.PrepareScene();
 		renderer.PrepareShader();
 
-		ImGui::Begin("Jungle Property Window");
-		ImGui::Text("Hello, jungle world!");
 
 		bool bLineCollision = false;
 
@@ -1301,7 +1262,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		if (!gameOver)
 		{
 			EFruitType ft = (EFruitType)SelectedFruitType;
-			PrimitiveList.PushBack(CreateFruit(ft));
+			//PrimitiveList.PushBack(CreateFruit(ft));
 
 			// 생성
 			if (spawnFruit)
