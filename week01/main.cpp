@@ -1,4 +1,7 @@
-﻿#include <windows.h>
+﻿#include <cstdlib>
+#include <ctime>
+
+#include <windows.h>
 #include <windowsx.h>
 
 #pragma comment(lib, "user32")
@@ -40,7 +43,7 @@ struct FVector
 		return FVector(x * scala, y * scala, z * scala);
 	}
 
-	float Dot2(const FVector& rhs)
+	float Dot2(const FVector& rhs) const
 	{
 		return x * rhs.x + y * rhs.y;
 	}
@@ -600,15 +603,7 @@ protected:
 	float TopBorder = 1.0f;
 	float BottomBorder = -1.0f;
 
-	float MassFactor = 1.0f; // 질량 보정용
-
-	const float MinSpeed = -2.0f;
-	const float MaxSpeed = 2.0f;
-
-	const float GravityAccel = 4.0f; // 중력 가속도
-	const float RestitutionWall = 0.8f; // 중력 활성화 시 적용할 벽 반발 감쇠 계수(1.0 == 완전 반사
-
-	bool bPendingDestroy = false; // 충돌 검사 중 삭제될 예정인 Primitive들을 표시하기 위한 플래그
+    bool bPendingDestroy = false; // 충돌 검사 중 삭제될 예정인 Primitive들을 표시하기 위한 플래그
 };
 
 class UBall : public UPrimitive
@@ -623,6 +618,8 @@ public:
 	float AngularVelocity;
 
 	float Radius;
+
+	// 무게 비례 공 밀어내기에 사용(ResolveCollision 참조)
 	float Mass;
 
 public:
@@ -632,9 +629,9 @@ public:
 		Radius(0.1f),
 		Mass(0.0f),
 		Angle(0.f),
-		AngularVelocity(0.f)
-	{
-		// Radius = RandRange(0.1f, 0.2f);
+		AngularVelocity(0.1f)
+    {
+        // Radius = RandRange(0.1f, 0.2f);
 		Mass = Radius * MassFactor;
 
 		LeftBorder = -1.0f + Radius;
@@ -656,10 +653,50 @@ public:
 
 	}
 
-	//TODO 아랫벽에 부딪혔을 때 속도 선형 감소
-	void UpdatePhysics(float dt) override
+	void UpdatePhysics(
+		float dt
+	) override
 	{
+		Location = Location + Velocity * dt;
 
+		if (Location.x < LeftBorder)
+		{
+			Location.x = LeftBorder;
+			Velocity.x *= -1.0f;
+		}
+		if (Location.x > RightBorder)
+		{
+			Location.x = RightBorder;
+			Velocity.x *= -1.0f;
+		}
+		if (Location.y > TopBorder)
+		{
+			Location.y = TopBorder;
+			Velocity.y *= -RestitutionWall;
+		}
+		if (Location.y < BottomBorder)
+		{
+			Location.y = BottomBorder;
+
+			//바닥 마찰력 적용
+			float normalImpulse = fabsf(Velocity.y) * (1.0f + RestitutionWall);
+
+			Velocity.y *= -RestitutionWall;
+
+			float frictionImpulse = FloorFriction * normalImpulse;
+			if (fabsf(Velocity.x) <= frictionImpulse)
+				Velocity.x = 0.0f;
+			else
+				Velocity.x -= (Velocity.x > 0.0f ? 1.0f : -1.0f) * frictionImpulse;
+
+			//마찰로 인한 토크 적용
+		}
+
+		Velocity.y -= GravityAccel * dt;
+
+		//각가속도는 0.98로 고정
+		AngularVelocity *= 0.98f;
+		Angle += AngularVelocity * dt;
 	}
 
 	void Render(URenderer& renderer) override
@@ -674,13 +711,6 @@ public:
 
 protected:
 	float MassFactor = 1.0f; // 질량 보정용
-
-	float LeftBorder = -1.0f;
-	float RightBorder = 1.0f;
-	float TopBorder = 1.0f;
-	float BottomBorder = -1.0f;
-
-	const float DefaultSpeed = 1.0f;
 
 	const float GravityAccel = 4.f;    // 중력 가속도
 	const float RestitutionWall = 0.2f;
@@ -837,10 +867,15 @@ public:
 		return distance <= Radius;
 	}
 
-	void SetFruitType(EFruitType InFruitType)
-	{
-		FruitType = InFruitType;
-	}
+    void SetFruitType(EFruitType InFruitType)
+    {
+        FruitType = InFruitType;
+		Radius = SmallestFruitRadius * pow(CoefRadiusGrowth, InFruitType);
+		LeftBorder = -1.0f + Radius;
+		RightBorder = 1.0f - Radius;
+		TopBorder = 1.0f - Radius;
+		BottomBorder = -1.0f + Radius;
+    }
 
 	EFruitType GetFruitType() const { return FruitType; }
 
@@ -864,10 +899,7 @@ UFruit* CreateFruitAt(EFruitType FruitType, FVector Location)
 	Fruit->SetFruitType(FruitType);
 	Fruit->SetLocation(Location);
 
-	// 이미 존재하는 과일들 사이에 새로운 과일이 합쳐지는 경우 처리 로직은 준혁님 코드에 구현된 로직으로 처리 예정(차후 코드 병합 과정에서 처리)
-	// 아마 PrimitiveList 내의 모든 과일들 위치를 처리해주어야 할 듯
-
-	return Fruit;
+    return Fruit;
 }
 
 
@@ -1080,15 +1112,13 @@ class UScoreManager
 public:
 	UScoreManager() : Score(0) {}
 
-	/**
-	 * @brief 원본 게임의 점수 규칙에 따라 점수를 누적합니다
-	 *
-	 * @param FruitType 병합된 후의 과일 타입
-	 */
-	void AddScore(EFruitType FruitType)
-	{
-		Score += (UINT)((FruitType * (FruitType + 1)) / 2);
-	}
+    /**
+     * @param FruitType 병합된 후의 과일 타입
+     */
+    void AddScore(EFruitType FruitType)
+    {
+        Score += (UINT)((FruitType * (FruitType + 1)) / 2);
+    }
 
 	UINT GetScore() const
 	{
@@ -1123,6 +1153,8 @@ extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
+	std::srand(std::time(0));
+
 	WCHAR WindowClass[] = L"GTLWindowClass";
 
 	WCHAR Title[] = L"Game Tech Lab";
@@ -1189,13 +1221,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	UINT PrimitiveListSize = UBall::TotalNumBalls; // 컨테이너 크기 자체는 컨테이너가 직접 파악
 	UScoreManager ScoreManager;
 
-	TArray<UPrimitive*> PrimitiveList;
+    TArray<UPrimitive*> PrimitiveList;
 
-	// Input 포함 Drop Position 관련 기능은 지윤님 코드에 구현된 로직으로 처리 예정(차후 코드 병합 과정에서 처리)
-	// PrimitiveList.PushBack(CreateFruit(EFruitType::FT_Apple));
-
-
-	const float LineY = 0.8f;
+    const float LineY = 0.8f;
 
 	bool bIsExit = false;
 
@@ -1271,11 +1299,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				FVector spawnPos = FVector(spawnX, 0.9f, 0);
 
 				PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos));
+
+				SelectedFruitType = rand() % (EFruitType::FT_Orange + 1);
 			}
 
 			// 병합 예정 정보를 담은 큐
 			TQueue<FPendingMerge> PendingMergeQueue;
 
+		for (UINT i = 0; i < PrimitiveList.Num(); i++)
+		{
+			PrimitiveList[i]->UpdatePhysics(fixedDeltaTime);
+		}
 			for (UINT i = 0; i < PrimitiveList.Num(); i++)
 			{
 				PrimitiveList[i]->UpdatePhysics(fixedDeltaTime);
@@ -1313,17 +1347,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 							A->MarkPendingDestroy();
 							B->MarkPendingDestroy();
 
-							// 수박끼리 병합 시 두 수박만 사라지고 병합 X
-							if (A->GetFruitType() != EFruitType::FT_Watermelon) {
-								PendingMergeQueue.Push({
-									(EFruitType)(A->GetFruitType() + 1),
-									(A->Location + B->Location) * 0.5f
-									});
-							}
+                        // 수박끼리 병합 시 두 수박만 사라지고 병합 X
+                        if (A->GetFruitType() != EFruitType::FT_Watermelon) {
+                            PendingMergeQueue.Push({ 
+                                (EFruitType) (A->GetFruitType() + 1), 
+                                (A->Location + B->Location) * 0.5f
+							});
 						}
-					}
-				}
-			}
+						else
+						{
+							ScoreManager.AddScore(EFruitType::FT_Watermelon);
+						}
+                    }
+                }
+            }
+        }
 
 			// 과일 삭제 로직
 			for (UINT i = 0; i < PrimitiveList.Num();)
