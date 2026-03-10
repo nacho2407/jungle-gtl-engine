@@ -39,7 +39,7 @@ struct FVector
 		return FVector(x * scala, y * scala, z * scala);
 	}
 
-	float Dot2(const FVector& rhs)
+	float Dot2(const FVector& rhs) const
 	{
 		return x * rhs.x + y * rhs.y;
 	}
@@ -469,15 +469,6 @@ protected:
     float TopBorder = 1.0f;
     float BottomBorder = -1.0f;
 
-    float MassFactor = 1.0f; // 질량 보정용
-
-    const float MinSpeed = -2.0f;
-    const float MaxSpeed = 2.0f;
-
-    const float GravityAccel = 4.0f; // 중력 가속도
-    const float RestitutionWall = 0.8f; // 중력 활성화 시 적용할 벽 반발 감쇠 계수(1.0 == 완전 반사)
-    const float AirDragCoef = 0.2f; // 공기 저항 활성화 시 적용할 공기 저항 계수
-
     bool bPendingDestroy = false; // 충돌 검사 중 삭제될 예정인 Primitive들을 표시하기 위한 플래그
 };
 
@@ -491,6 +482,8 @@ public:
 	float AngularVelocity;
 
 	float Radius;
+
+	// 무게 비례 공 밀어내기에 사용(ResolveCollision 참조)
 	float Mass;
 	
 public:
@@ -524,10 +517,50 @@ public:
 
 	}
 
-	//TODO 아랫벽에 부딪혔을 때 속도 선형 감소
-	void UpdatePhysics(float dt) override
+	void UpdatePhysics(
+		float dt
+	) override
 	{
+		Location = Location + Velocity * dt;
 
+		if (Location.x < LeftBorder)
+		{
+			Location.x = LeftBorder;
+			Velocity.x *= -1.0f;
+		}
+		if (Location.x > RightBorder)
+		{
+			Location.x = RightBorder;
+			Velocity.x *= -1.0f;
+		}
+		if (Location.y > TopBorder)
+		{
+			Location.y = TopBorder;
+			Velocity.y *= -RestitutionWall;
+		}
+		if (Location.y < BottomBorder)
+		{
+			Location.y = BottomBorder;
+
+			//바닥 마찰력 적용
+			float normalImpulse = fabsf(Velocity.y) * (1.0f + RestitutionWall);
+
+			Velocity.y *= -RestitutionWall;
+
+			float frictionImpulse = FloorFriction * normalImpulse;
+			if (fabsf(Velocity.x) <= frictionImpulse)
+				Velocity.x = 0.0f;
+			else
+				Velocity.x -= (Velocity.x > 0.0f ? 1.0f : -1.0f) * frictionImpulse;
+
+			//마찰로 인한 토크 적용
+		}
+
+		Velocity.y -= GravityAccel * dt;
+
+		//각가속도는 0.98로 고정
+		AngularVelocity *= 0.98f;
+		Angle += AngularVelocity * dt;
 	}
 
 	void Render(URenderer& renderer) override
@@ -542,13 +575,6 @@ public:
 
 protected:
 	float MassFactor = 1.0f; // 질량 보정용
-
-	float LeftBorder = -1.0f;
-	float RightBorder = 1.0f;
-	float TopBorder = 1.0f;
-	float BottomBorder = -1.0f;
-
-	const float DefaultSpeed = 1.0f;
 
 	const float GravityAccel = 4.f;    // 중력 가속도
 	const float RestitutionWall = 0.2f;
@@ -589,65 +615,19 @@ const float CoefRadiusGrowth = 1.25f; // 과일 레벨이 하나씩 올라갈 �
 class UFruit : public UBall
 {
 public:
-    UFruit()
-    {
+	UFruit()
+	{
 
-    }
-
-    // 특정 EFruitType에 해당하는 과일 객체를 특정 X 위치에 스폰하는 생성자 필요
-	// 과일 반지름: SmallestFruitRadius * pow(CoefRadiusGrowth, FruitType)
-
-    void UpdatePhysics(
-        float dt
-    ) override
-    {
-		Location = Location + Velocity * dt;
-
-		if (Location.x < LeftBorder)
-		{
-			Location.x = LeftBorder;
-			Velocity.x *= -1.0f;
-		}
-		if (Location.x > RightBorder)
-		{
-			Location.x = RightBorder;
-			Velocity.x *= -1.0f;
-		}
-		if (Location.y > TopBorder)
-		{
-			Location.y = TopBorder;
-			Velocity.y *= -RestitutionWall;
-		}
-		if (Location.y < BottomBorder)
-		{
-			Location.y = BottomBorder;
-
-			//바닥 마찰력 적용
-			float normalImpulse = fabsf(Velocity.y) * (1.0f + RestitutionWall);
-
-			Velocity.y *= -RestitutionWall;
-
-			float frictionImpulse = FloorFriction * normalImpulse;
-			if (fabsf(Velocity.x) <= frictionImpulse)
-				Velocity.x = 0.0f;
-			else
-				Velocity.x -= (Velocity.x > 0.0f ? 1.0f : -1.0f) * frictionImpulse;
-
-			//마찰로 인한 토크 적용
-
-		}
-
-
-		Velocity.y -= GravityAccel * dt;
-
-		//각가속도는 0.98로 고정
-		AngularVelocity *= 0.98f;
-		Angle += AngularVelocity * dt;
-    }
+	}
 
     void SetFruitType(EFruitType InFruitType)
     {
         FruitType = InFruitType;
+		Radius = SmallestFruitRadius * pow(CoefRadiusGrowth, InFruitType);
+		LeftBorder = -1.0f + Radius;
+		RightBorder = 1.0f - Radius;
+		TopBorder = 1.0f - Radius;
+		BottomBorder = -1.0f + Radius;
     }
 
     EFruitType GetFruitType() const { return FruitType; }
@@ -671,9 +651,6 @@ UFruit* CreateFruitAt(EFruitType FruitType, FVector Location)
     UFruit* Fruit = new UFruit();
     Fruit->SetFruitType(FruitType);
     Fruit->SetLocation(Location);
-
-    // 이미 존재하는 과일들 사이에 새로운 과일이 합쳐지는 경우 처리 로직은 준혁님 코드에 구현된 로직으로 처리 예정(차후 코드 병합 과정에서 처리)
-    // 아마 PrimitiveList 내의 모든 과일들 위치를 처리해주어야 할 듯
 
     return Fruit;
 }
@@ -889,8 +866,6 @@ public:
     UScoreManager() : Score(0) {}
 
     /**
-     * @brief 원본 게임의 점수 규칙에 따라 점수를 누적합니다
-     * 
      * @param FruitType 병합된 후의 과일 타입
      */
     void AddScore(EFruitType FruitType)
@@ -1013,7 +988,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		ImGui::NewFrame(); // ImGui Core 초기화
 
 		ImGui::Begin("Jungle Property Window");
-		ImGui::Text("Hello, jungle world!");
+		ImGui::Text("Suika Game!!!");
 
 		static const char* FruitNames[] = {
 			"Cherry", "Strawberry", "Grape", "Dekopon", "Orange",
@@ -1033,11 +1008,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			PrimitiveList.PushBack(CreateFruit(ft));
 		}
 		ImGui::Separator();
+		ImGui::Text("Score: %u", ScoreManager.GetScore());
 
         // 병합 예정 정보를 담은 큐
 		TQueue<FPendingMerge> PendingMergeQueue;
-
-
 
 		for (UINT i = 0; i < PrimitiveList.Num(); i++)
 		{
@@ -1082,7 +1056,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                                 (EFruitType) (A->GetFruitType() + 1), 
                                 (A->Location + B->Location) * 0.5f
 							});
-                        }
+						}
+						else
+						{
+							ScoreManager.AddScore(EFruitType::FT_Watermelon);
+						}
                     }
                 }
             }
