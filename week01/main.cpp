@@ -51,26 +51,26 @@ struct FVector
 
 struct InputState
 {
-    float MouseX;
-    float MouseY;
+	float MouseX;
+	float MouseY;
 
-    bool MouseLeftDown;
-    bool MouseLeftClicked;
+	bool MouseLeftDown;
+	bool MouseLeftClicked;
 };
 InputState gInput;
 
 struct SceneFrame
 {
-    ImVec2 Pos;
-    ImVec2 Size;
+	ImVec2 Pos;
+	ImVec2 Size;
 };
 
 #include "Sphere.h"
 
 FVertexSimple line_vertices[] =
 {
-    {-1.0f, 0.8f, 0.0f, 1,1,1,1},
-    { 1.0f, 0.8f, 0.0f, 1,1,1,1}
+	{-1.0f, 0.8f, 0.0f, 1,1,1,1},
+	{ 1.0f, 0.8f, 0.0f, 1,1,1,1}
 };
 
 class URenderer
@@ -90,11 +90,11 @@ public:
 		UINT NumVertices;
 	} sphere;
 
-    ID3D11Buffer* LineVertexBuffer = nullptr;
+	ID3D11Buffer* LineVertexBuffer = nullptr;
 
-    ID3D11Device* Device = nullptr;
-    ID3D11DeviceContext* DeviceContext = nullptr;
-    IDXGISwapChain* SwapChain = nullptr;
+	ID3D11Device* Device = nullptr;
+	ID3D11DeviceContext* DeviceContext = nullptr;
+	IDXGISwapChain* SwapChain = nullptr;
 
 	ID3D11Texture2D* FrameBuffer = nullptr;
 	ID3D11RenderTargetView* FrameBufferRTV = nullptr;
@@ -112,31 +112,31 @@ public:
 
 	ID3D11Buffer* ConstantBuffer = nullptr;
 
-    ID3D11Texture2D* SceneTexture = nullptr;
-    ID3D11RenderTargetView* SceneRTV = nullptr;
-    ID3D11ShaderResourceView* SceneSRV = nullptr;
+	ID3D11Texture2D* SceneTexture = nullptr;
+	ID3D11RenderTargetView* SceneRTV = nullptr;
+	ID3D11ShaderResourceView* SceneSRV = nullptr;
 
-    // 화면 초기화 색상
-    FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
+	// 화면 초기화 색상
+	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 
 public:
 	void Create(HWND hWindow)
 	{
 		CreateDeviceAndSwapChain(hWindow);
 
-        CreateSceneRenderTarget(
-            (UINT)ViewportInfo.Width,
-            (UINT)ViewportInfo.Height
-        );
+		CreateSceneRenderTarget(
+			(UINT)ViewportInfo.Width,
+			(UINT)ViewportInfo.Height
+		);
 
-        CreateFrameBuffer();
+		CreateFrameBuffer();
 
 		CreateRasterizerState();
 
-        CreateSphereMesh();
+		CreateSphereMesh();
 
-        CreateLine();
-    }
+		CreateLine();
+	}
 
 	void CreateDeviceAndSwapChain(HWND hWindow)
 	{
@@ -181,30 +181,30 @@ public:
 		};
 	}
 
-    void CreateSceneRenderTarget(UINT width, UINT height)
-    {
-        D3D11_TEXTURE2D_DESC desc = {};
-        desc.Width = width;
-        desc.Height = height;
-        desc.MipLevels = 1;
-        desc.ArraySize = 1;
-        desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        desc.SampleDesc.Count = 1;
-        desc.Usage = D3D11_USAGE_DEFAULT;
-        desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	void CreateSceneRenderTarget(UINT width, UINT height)
+	{
+		D3D11_TEXTURE2D_DESC desc = {};
+		desc.Width = width;
+		desc.Height = height;
+		desc.MipLevels = 1;
+		desc.ArraySize = 1;
+		desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		desc.SampleDesc.Count = 1;
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
-        Device->CreateTexture2D(&desc, nullptr, &SceneTexture);
+		Device->CreateTexture2D(&desc, nullptr, &SceneTexture);
 
-        Device->CreateRenderTargetView(SceneTexture, nullptr, &SceneRTV);
+		Device->CreateRenderTargetView(SceneTexture, nullptr, &SceneRTV);
 
-        Device->CreateShaderResourceView(SceneTexture, nullptr, &SceneSRV);
-    }
+		Device->CreateShaderResourceView(SceneTexture, nullptr, &SceneSRV);
+	}
 
-    void CreateFrameBuffer()
-    {
-        // 스왑 체인으로부터 백 버퍼 텍스처 가져오기
-        // 특정 물리 메모리를 계속 가리키는 것이 아니며, 스왑 체인 내 버퍼는 DXGI가 내부적으로 버퍼 회전을 하면서도 앱이 계속 같은 RTV로 현재의 백 버퍼를 그릴 수 있게 추상화되어 있음
-        SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**) &FrameBuffer);
+	void CreateFrameBuffer()
+	{
+		// 스왑 체인으로부터 백 버퍼 텍스처 가져오기
+		// 특정 물리 메모리를 계속 가리키는 것이 아니며, 스왑 체인 내 버퍼는 DXGI가 내부적으로 버퍼 회전을 하면서도 앱이 계속 같은 RTV로 현재의 백 버퍼를 그릴 수 있게 추상화되어 있음
+		SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&FrameBuffer);
 
 		D3D11_RENDER_TARGET_VIEW_DESC framebufferRTVdesc = {};
 		framebufferRTVdesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
@@ -228,32 +228,44 @@ public:
 		sphere.VertexBuffer = CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
 	}
 
-    void CreateLine()
-    {
-        D3D11_BUFFER_DESC desc = {};
-        desc.ByteWidth = sizeof(line_vertices);
-        desc.Usage = D3D11_USAGE_DEFAULT;
-        desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	void CreateLine()
+	{
+		D3D11_BUFFER_DESC desc = {};
+		desc.ByteWidth = sizeof(line_vertices);
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 
-        D3D11_SUBRESOURCE_DATA data = {};
-        data.pSysMem = line_vertices;
+		D3D11_SUBRESOURCE_DATA data = {};
+		data.pSysMem = line_vertices;
 
-        Device->CreateBuffer(&desc, &data, &LineVertexBuffer);
-    }
+		Device->CreateBuffer(&desc, &data, &LineVertexBuffer);
+	}
 
-    void Release()
-    {
-        ReleaseRasterizerState();
+	void Release()
+	{
+		ReleaseLine();
+		ReleaseRasterizerState();
 
 		// 렌더 타겟 초기화
 		DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+
+		ReleaseSceneRenderTarget();
 
 		ReleaseFrameBuffer();
 		ReleaseDeviceAndSwapChain();
 
 		ReleaseSphereMesh();
 	}
-
+	void ReleaseLine()
+	{
+		if (LineVertexBuffer) { LineVertexBuffer->Release(); LineVertexBuffer = nullptr; }
+	}
+	void ReleaseSceneRenderTarget()
+	{
+		if (SceneSRV) { SceneSRV->Release(); SceneSRV = nullptr; }
+		if (SceneRTV) { SceneRTV->Release(); SceneRTV = nullptr; }
+		if (SceneTexture) { SceneTexture->Release(); SceneTexture = nullptr; }
+	}
 	void ReleaseFrameBuffer()
 	{
 		if (FrameBuffer)
@@ -493,22 +505,22 @@ public:
 		}
 	}
 
-    void PrepareScene()
-    {
-        DeviceContext->ClearRenderTargetView(SceneRTV, ClearColor);
+	void PrepareScene()
+	{
+		DeviceContext->ClearRenderTargetView(SceneRTV, ClearColor);
 
-        DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-        DeviceContext->RSSetViewports(1, &ViewportInfo);
-        DeviceContext->RSSetState(RasterizerState);
+		DeviceContext->RSSetViewports(1, &ViewportInfo);
+		DeviceContext->RSSetState(RasterizerState);
 
-        DeviceContext->OMSetRenderTargets(1, &SceneRTV, nullptr);
-    }
+		DeviceContext->OMSetRenderTargets(1, &SceneRTV, nullptr);
+	}
 
-    void RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices)
-    {
-        UINT offset = 0;
-        DeviceContext->IASetVertexBuffers(0, 1, &pBuffer, &Stride, &offset);
+	void RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices)
+	{
+		UINT offset = 0;
+		DeviceContext->IASetVertexBuffers(0, 1, &pBuffer, &Stride, &offset);
 
 		DeviceContext->Draw(numVertices, 0);
 	}
@@ -518,49 +530,49 @@ public:
 		RenderPrimitive(sphere.VertexBuffer, sphere.NumVertices);
 	}
 
-    void RenderLine()
-    {
-        UINT offset = 0;
+	void RenderLine()
+	{
+		UINT offset = 0;
 
-        DeviceContext->IASetVertexBuffers(
-            0,
-            1,
-            &LineVertexBuffer,
-            &Stride,
-            &offset
-        );
+		DeviceContext->IASetVertexBuffers(
+			0,
+			1,
+			&LineVertexBuffer,
+			&Stride,
+			&offset
+		);
 
-        DeviceContext->IASetPrimitiveTopology(
-            D3D11_PRIMITIVE_TOPOLOGY_LINELIST
-        );
+		DeviceContext->IASetPrimitiveTopology(
+			D3D11_PRIMITIVE_TOPOLOGY_LINELIST
+		);
 
-        DeviceContext->Draw(2, 0);
-    }
+		DeviceContext->Draw(2, 0);
+	}
 
-    void UpdateLineColor(bool collision)
-    {
-        FVertexSimple vertices[2];
+	void UpdateLineColor(bool collision)
+	{
+		FVertexSimple vertices[2];
 
-        float y = 0.8f;
+		float y = 0.8f;
 
-        if (collision)
-        {
-            vertices[0] = { -1.0f, y, 0.0f, 1,0,0,1 };
-            vertices[1] = { 1.0f, y, 0.0f, 1,0,0,1 };
-        }
-        else
-        {
-            vertices[0] = { -1.0f, y, 0.0f, 1,1,1,1 };
-            vertices[1] = { 1.0f, y, 0.0f, 1,1,1,1 };
-        }
+		if (collision)
+		{
+			vertices[0] = { -1.0f, y, 0.0f, 1,0,0,1 };
+			vertices[1] = { 1.0f, y, 0.0f, 1,0,0,1 };
+		}
+		else
+		{
+			vertices[0] = { -1.0f, y, 0.0f, 1,1,1,1 };
+			vertices[1] = { 1.0f, y, 0.0f, 1,1,1,1 };
+		}
 
-        DeviceContext->UpdateSubresource(LineVertexBuffer, 0, nullptr, vertices, 0, 0);
-    }
+		DeviceContext->UpdateSubresource(LineVertexBuffer, 0, nullptr, vertices, 0, 0);
+	}
 
-    void SwapBuffer()
-    {
-        SwapChain->Present(1, 0); // VSync 활성화
-    }
+	void SwapBuffer()
+	{
+		SwapChain->Present(1, 0); // VSync 활성화
+	}
 }; // class URenderer
 
 class UPrimitive
@@ -572,24 +584,24 @@ public:
 	virtual void UpdatePhysics(float dt) = 0;
 	virtual void Render(URenderer& renderer) = 0;
 
-    // 삭제 예정 플래그 조작
+	// 삭제 예정 플래그 조작
 	void MarkPendingDestroy()
-    {
-        bPendingDestroy = true;
-    }
+	{
+		bPendingDestroy = true;
+	}
 
-    bool IsPendingDestroy() const
-    {
-        return bPendingDestroy;
+	bool IsPendingDestroy() const
+	{
+		return bPendingDestroy;
 	}
 
 protected:
-    // Border 는 map 데이터이므로 따로 빼서 전역 상수 등으로 관리하는 것이 좋을 듯함
-    // 이외 데이터도 관련해서 수정해야할수도
-    float LeftBorder = -1.0f;
-    float RightBorder = 1.0f;
-    float TopBorder = 1.0f;
-    float BottomBorder = -1.0f;
+	// Border 는 map 데이터이므로 따로 빼서 전역 상수 등으로 관리하는 것이 좋을 듯함
+	// 이외 데이터도 관련해서 수정해야할수도
+	float LeftBorder = -1.0f;
+	float RightBorder = 1.0f;
+	float TopBorder = 1.0f;
+	float BottomBorder = -1.0f;
 
     bool bPendingDestroy = false; // 충돌 검사 중 삭제될 예정인 Primitive들을 표시하기 위한 플래그
 };
@@ -599,8 +611,8 @@ class UBall : public UPrimitive
 public:
 	FVector Location; // 여기서는 Offset과 동일한 개념
 	FVector Velocity;
-	
-    static int TotalNumBalls;
+
+	static int TotalNumBalls;
 
 	float Angle;
 	float AngularVelocity;
@@ -609,13 +621,13 @@ public:
 
 	// 무게 비례 공 밀어내기에 사용(ResolveCollision 참조)
 	float Mass;
-	
+
 public:
-    UBall(): 
-        Location(0.0f, 0.0f, 0.0f), 
-        Velocity(0.0f, 0.0f, 0.0f), 
-        Radius(0.1f), 
-        Mass(0.0f),
+	UBall() :
+		Location(0.0f, 0.0f, 0.0f),
+		Velocity(0.0f, 0.0f, 0.0f),
+		Radius(0.1f),
+		Mass(0.0f),
 		Angle(0.f),
 		AngularVelocity(0.1f)
     {
@@ -689,7 +701,7 @@ public:
 
 	void Render(URenderer& renderer) override
 	{
-		FVector CosSin = {cosf(Angle), sinf(Angle), 0.f };
+		FVector CosSin = { cosf(Angle), sinf(Angle), 0.f };
 		renderer.UpdateConstant(Location, CosSin, Radius);
 		renderer.RenderSphere();
 	}
@@ -718,22 +730,70 @@ private:
 
 enum EFruitType
 {
-    FT_Cherry = 0,
-    FT_Strawberry,
-    FT_Grape,
-    FT_Dekopon,      // 귤/데코폰
-    FT_Orange,
-    FT_Apple,
-    FT_Pear,
-    FT_Peach,
-    FT_Pineapple,
-    FT_Melon,
-    FT_Watermelon,
+	FT_Cherry = 0,
+	FT_Strawberry,
+	FT_Grape,
+	FT_Dekopon,      // 귤/데코폰
+	FT_Orange,
+	FT_Apple,
+	FT_Pear,
+	FT_Peach,
+	FT_Pineapple,
+	FT_Melon,
+	FT_Watermelon,
 
-    FT_Count  // Last Type Check 용도
+	FT_Count  // Last Type Check 용도
 };
 
-const float SmallestFruitRadius = 0.06f; // 가장 작은 과일의 반지름
+
+class UPariticle : public UBall
+{
+public:
+	FVector Location; // 여기서는 Offset과 동일한 개념
+	FVector Velocity;
+	float Radius;
+public:
+	UPariticle() :
+		Location(0.0f, 0.0f, 0.0f),
+		Velocity(0.0f, 0.0f, 0.0f),
+		Radius(0.1f)
+	{
+	}
+
+	~UPariticle()
+	{
+
+	}
+
+	//TODO 아랫벽에 부딪혔을 때 속도 선형 감소
+	void UpdatePhysics(float dt) override
+	{
+		Location = Location + Velocity * dt;
+	}
+
+	void Render(URenderer& renderer) override
+	{
+		FVector CosSin = { cosf(Angle), sinf(Angle), 0.f };
+		renderer.UpdateConstant(Location, CosSin, Radius);
+		renderer.RenderSphere();
+	}
+
+	void SetLocation(const FVector& InLocation) { Location = InLocation; }
+	FVector GetLocation() const { return Location; }
+
+private:
+	float Random()
+	{
+		return (float)rand() / (float)RAND_MAX; // [0, 1]
+	}
+
+	float RandRange(float a, float b)
+	{
+		return a + (b - a) * Random();
+	}
+};
+
+const float SmallestFruitRadius = 0.05f; // 가장 작은 과일의 반지름
 const float CoefRadiusGrowth = 1.25f; // 과일 레벨이 하나씩 올라갈 때마다 반지름이 커지는 정도
 
 class UFruit : public UBall
@@ -744,13 +804,13 @@ public:
 
 	}
 
-    // 특정 EFruitType에 해당하는 과일 객체를 특정 X 위치에 스폰하는 생성자 필요
+	// 특정 EFruitType에 해당하는 과일 객체를 특정 X 위치에 스폰하는 생성자 필요
 	// 과일 반지름: SmallestFruitRadius * pow(CoefRadiusGrowth, FruitType)
 
-    void UpdatePhysics(
-        float dt
-    ) override
-    {
+	void UpdatePhysics(
+		float dt
+	) override
+	{
 		Location = Location + Velocity * dt;
 
 		if (Location.x < LeftBorder)
@@ -792,8 +852,14 @@ public:
 
 		//각가속도는 0.98로 고정
 		AngularVelocity *= 0.98f;
+
+		//각속도 제한
+		const float MaxAngularSpeed = 20.0f;
+		if (AngularVelocity > MaxAngularSpeed) AngularVelocity = MaxAngularSpeed;
+		else if (AngularVelocity < -MaxAngularSpeed) AngularVelocity = -MaxAngularSpeed;
+
 		Angle += AngularVelocity * dt;
-    }
+	}
 
 	bool CheckLineCollision(float lineY)
 	{
@@ -811,27 +877,27 @@ public:
 		BottomBorder = -1.0f + Radius;
     }
 
-    EFruitType GetFruitType() const { return FruitType; }
+	EFruitType GetFruitType() const { return FruitType; }
 
 private:
-    // Fruit Type
-    EFruitType FruitType;
+	// Fruit Type
+	EFruitType FruitType;
 };
 
 // RAII 고려 필요 (자원 해제가 지금은 제대로 안됨)
 // 스마트포인터 사용 필요
 UFruit* CreateFruit(EFruitType FruitType)
 {
-    UFruit* Fruit = new UFruit();
-    Fruit->SetFruitType(FruitType);
-    return Fruit;
+	UFruit* Fruit = new UFruit();
+	Fruit->SetFruitType(FruitType);
+	return Fruit;
 }
 
 UFruit* CreateFruitAt(EFruitType FruitType, FVector Location)
 {
-    UFruit* Fruit = new UFruit();
-    Fruit->SetFruitType(FruitType);
-    Fruit->SetLocation(Location);
+	UFruit* Fruit = new UFruit();
+	Fruit->SetFruitType(FruitType);
+	Fruit->SetLocation(Location);
 
     return Fruit;
 }
@@ -841,210 +907,210 @@ template<typename DataType>
 class TQueue
 {
 public:
-    TQueue()
-    {
-        Data = new DataType[1];
-        DataNum = 0;
-        Capacity = 1;
-        Head = 0;
-        Tail = 0;
-    }
+	TQueue()
+	{
+		Data = new DataType[1];
+		DataNum = 0;
+		Capacity = 1;
+		Head = 0;
+		Tail = 0;
+	}
 
-    ~TQueue()
-    {
-        delete[] Data;
-    }
+	~TQueue()
+	{
+		delete[] Data;
+	}
 
-    // Push, Pop, Reserve
-    bool Push(const DataType& InData)
-    {
-        // Array is full
-        if (DataNum == Capacity)
-        {
-            bool bIsReserveOK = Reserve(Capacity * 2);
-            if (!bIsReserveOK) return false;
-        }
+	// Push, Pop, Reserve
+	bool Push(const DataType& InData)
+	{
+		// Array is full
+		if (DataNum == Capacity)
+		{
+			bool bIsReserveOK = Reserve(Capacity * 2);
+			if (!bIsReserveOK) return false;
+		}
 
-        Data[Tail] = InData;
-        Tail = (Tail + 1) % Capacity;
-        DataNum++;
-        return true;
-    }
+		Data[Tail] = InData;
+		Tail = (Tail + 1) % Capacity;
+		DataNum++;
+		return true;
+	}
 
-    void Pop()
-    {
-        if (IsEmpty()) return;
-        Head = (Head + 1) % Capacity;
-        DataNum--;
-    }
+	void Pop()
+	{
+		if (IsEmpty()) return;
+		Head = (Head + 1) % Capacity;
+		DataNum--;
+	}
 
-    DataType& Front()
-    {
-        // Empty 체크 나중에 넣어야할듯
-        return Data[Head];
-    }
+	DataType& Front()
+	{
+		// Empty 체크 나중에 넣어야할듯
+		return Data[Head];
+	}
 
-    const DataType& Front() const
-    {
-        // Empty 체크 나중에 넣어야할듯
-        return Data[Head];
-    }
+	const DataType& Front() const
+	{
+		// Empty 체크 나중에 넣어야할듯
+		return Data[Head];
+	}
 
-    bool Reserve(UINT NewCapacity)
-    {
-        // 더 작아지는 경우는 고려하지 않음
-        if (Capacity >= NewCapacity) return false;
+	bool Reserve(UINT NewCapacity)
+	{
+		// 더 작아지는 경우는 고려하지 않음
+		if (Capacity >= NewCapacity) return false;
 
-        DataType* NewData = new DataType[NewCapacity];
-        
-        // 객체가 특수한 복사, 이동 연산을 가지는 것은 아직 고려하지 않음
-        for (UINT i = 0; i < DataNum; i++)
-        {
-            NewData[i] = Data[(Head + i) % Capacity];
-        }
+		DataType* NewData = new DataType[NewCapacity];
 
-        delete[] Data;
-        Data = NewData;
-        // DataNum 유지
-        Capacity = NewCapacity;
-        Head = 0;
-        Tail = DataNum;
-        return true;
-    }
-    
-    bool IsEmpty() const
-    {
-        return DataNum == 0;
-    }
+		// 객체가 특수한 복사, 이동 연산을 가지는 것은 아직 고려하지 않음
+		for (UINT i = 0; i < DataNum; i++)
+		{
+			NewData[i] = Data[(Head + i) % Capacity];
+		}
 
-    UINT Num() const
-    {
-        return DataNum;
-    }
+		delete[] Data;
+		Data = NewData;
+		// DataNum 유지
+		Capacity = NewCapacity;
+		Head = 0;
+		Tail = DataNum;
+		return true;
+	}
+
+	bool IsEmpty() const
+	{
+		return DataNum == 0;
+	}
+
+	UINT Num() const
+	{
+		return DataNum;
+	}
 
 private:
-    DataType* Data;
-    UINT Head;
-    UINT Tail;
-    UINT DataNum;
-    UINT Capacity;
+	DataType* Data;
+	UINT Head;
+	UINT Tail;
+	UINT DataNum;
+	UINT Capacity;
 };
 
 template<typename DataType>
 class TArray
 {
 public:
-    TArray()
-    {
-        Data = new DataType[1];
-        DataNum = 0;
-        Capacity = 1;
-    }
+	TArray()
+	{
+		Data = new DataType[1];
+		DataNum = 0;
+		Capacity = 1;
+	}
 
-    ~TArray()
-    {
-        delete[] Data;
-    }
+	~TArray()
+	{
+		delete[] Data;
+	}
 
-    // PushBack, PopBack
-    bool PushBack(const DataType& InData)
-    {
-        if (DataNum == Capacity)
-        {
-            bool bIsReserveOK = Reserve(Capacity * 2);
-            if (!bIsReserveOK) return false;
-        }
+	// PushBack, PopBack
+	bool PushBack(const DataType& InData)
+	{
+		if (DataNum == Capacity)
+		{
+			bool bIsReserveOK = Reserve(Capacity * 2);
+			if (!bIsReserveOK) return false;
+		}
 
-        Data[DataNum] = InData;
-        DataNum++;
-        return true;
-    }
+		Data[DataNum] = InData;
+		DataNum++;
+		return true;
+	}
 
-    void PopBack()
-    {
-        if (IsEmpty()) return;
+	void PopBack()
+	{
+		if (IsEmpty()) return;
 
-        DataNum--;
-    }
+		DataNum--;
+	}
 
-    DataType& Back()
-    {
-        // Empty 처리 나중에 해야됨
-        return Data[DataNum - 1];
-    }
+	DataType& Back()
+	{
+		// Empty 처리 나중에 해야됨
+		return Data[DataNum - 1];
+	}
 
-    DataType& operator[](UINT Idx)
-    {
-        // 일단 Out of index 는 체크 안함
-        return Data[Idx];
-    }
+	DataType& operator[](UINT Idx)
+	{
+		// 일단 Out of index 는 체크 안함
+		return Data[Idx];
+	}
 
-    const DataType& operator[](UINT Idx) const
-    {
-        return Data[Idx];
-    }
+	const DataType& operator[](UINT Idx) const
+	{
+		return Data[Idx];
+	}
 
-    bool IsEmpty() const
-    {
-        return DataNum == 0;
-    }
+	bool IsEmpty() const
+	{
+		return DataNum == 0;
+	}
 
-    UINT Num() const
-    {
-        return DataNum;
-    }
+	UINT Num() const
+	{
+		return DataNum;
+	}
 
-    bool Reserve(UINT NewCapacity)
-    {
-        // 더 작아지는 경우는 허용 안함
-        if (Capacity >= NewCapacity) return false;
+	bool Reserve(UINT NewCapacity)
+	{
+		// 더 작아지는 경우는 허용 안함
+		if (Capacity >= NewCapacity) return false;
 
-        DataType* NewData = new DataType[NewCapacity];
-        for (UINT i = 0; i < DataNum; i++)
-        {
-            NewData[i] = Data[i];
-        }
+		DataType* NewData = new DataType[NewCapacity];
+		for (UINT i = 0; i < DataNum; i++)
+		{
+			NewData[i] = Data[i];
+		}
 
-        delete[] Data;
-        Data = NewData;
-        // DataNum 유지
-        Capacity = NewCapacity;
-        return true;
-    }
+		delete[] Data;
+		Data = NewData;
+		// DataNum 유지
+		Capacity = NewCapacity;
+		return true;
+	}
 
-    void RemoveAt(UINT Idx)
-    {
-        if (Idx >= DataNum)
-        {
-            return;
-        }
+	void RemoveAt(UINT Idx)
+	{
+		if (Idx >= DataNum)
+		{
+			return;
+		}
 
-        if (Idx != DataNum - 1)
-        {
-            Data[Idx] = Data[DataNum - 1];
-        }
+		if (Idx != DataNum - 1)
+		{
+			Data[Idx] = Data[DataNum - 1];
+		}
 
-        DataNum--;
+		DataNum--;
 
-        // 원소의 소멸자를 별도로 호출하지 않음에 유의
-    }
+		// 원소의 소멸자를 별도로 호출하지 않음에 유의
+	}
 
 private:
-    DataType* Data;
-    UINT DataNum;
-    UINT Capacity;
+	DataType* Data;
+	UINT DataNum;
+	UINT Capacity;
 };
 
 struct FPendingMerge
 {
-    EFruitType ResultFruitType;
+	EFruitType ResultFruitType;
 	FVector NewLocation;
 };
 
 class UScoreManager
 {
 public:
-    UScoreManager() : Score(0) {}
+	UScoreManager() : Score(0) {}
 
     /**
      * @param FruitType 병합된 후의 과일 타입
@@ -1054,26 +1120,26 @@ public:
         Score += (UINT)((FruitType * (FruitType + 1)) / 2);
     }
 
-    UINT GetScore() const
-    {
-        return Score;
-    }
+	UINT GetScore() const
+	{
+		return Score;
+	}
 private:
-    UINT Score;
+	UINT Score;
 };
 
 void Credits(bool* open)
 {
-    if (!*open) return;
-    ImGui::Begin("Credits", open, ImGuiWindowFlags_AlwaysAutoResize);
+	if (!*open) return;
+	ImGui::Begin("Credits", open, ImGuiWindowFlags_AlwaysAutoResize);
 
-    ImGui::Text("Developer:");
-    ImGui::Text("KJS");
-    ImGui::Text("PJH");
-    ImGui::Text("JMJ");
-    ImGui::Text("JJY");
+	ImGui::Text("Developer:");
+	ImGui::Text("KJS");
+	ImGui::Text("PJH");
+	ImGui::Text("JMJ");
+	ImGui::Text("JJY");
 
-    ImGui::End();
+	ImGui::End();
 }
 
 int UBall::TotalNumBalls = 0;
@@ -1108,20 +1174,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	RegisterClassW(&wndclass);
 
-    HWND hWnd = CreateWindowExW(
-        0,
-        WindowClass,
-        Title,
-        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_VISIBLE,
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        900,
-        1100, // 윈도우 사이즈 고정
-        nullptr,
-        nullptr,
-        hInstance,
-        nullptr
-    );
+	HWND hWnd = CreateWindowExW(
+		0,
+		WindowClass,
+		Title,
+		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_VISIBLE,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		900,
+		1100, // 윈도우 사이즈 고정
+		nullptr,
+		nullptr,
+		hInstance,
+		nullptr
+	);
 
 	URenderer renderer;
 	renderer.Create(hWnd); // 현재는 공 모델만 사용하기 때문에 정점 버퍼는 Create() 내에서 한 번 생성
@@ -1146,12 +1212,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ImGui_ImplWin32_Init((void*)hWnd); // OS 이벤트 및 입력 담당
 	ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext); // GPU 렌더링 담당
 
-    float sceneWidth = 850;
-    float sceneHeight = 850;
-    SceneFrame gameScene;
-    bool showCredits = false;
+	float sceneWidth = 850;
+	float sceneHeight = 850;
+	SceneFrame gameScene;
+	bool showCredits = false;
 
-    UINT PrimitiveListCapacity = 64;
+	UINT PrimitiveListCapacity = 64;
 	UINT PrimitiveListSize = UBall::TotalNumBalls; // 컨테이너 크기 자체는 컨테이너가 직접 파악
 	UScoreManager ScoreManager;
 
@@ -1162,10 +1228,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	bool bIsExit = false;
 
 	// 게임 오버 상태와 이전 프레임의 선 충돌 여부
-    bool gameOver = false;
-    bool prevCollision = false;
+	bool gameOver = false;
+	bool prevCollision = false;
 
-    LARGE_INTEGER collisionStartCounter;
+	LARGE_INTEGER collisionStartCounter;
 
 	while (bIsExit == false)
 	{
@@ -1181,11 +1247,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 			DispatchMessage(&msg);
 
-            if (msg.message == WM_QUIT)
-            {
-                bIsExit = true;
-                break;
-            }
+			if (msg.message == WM_QUIT)
+			{
+				bIsExit = true;
+				break;
+			}
 		}
 
 		bool mouseInScene =
@@ -1211,7 +1277,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		renderer.PrepareScene();
 		renderer.PrepareShader();
 
-		static float SlowMotionCoef = 1.0f;
+
 		bool bLineCollision = false;
 
 		static const char* FruitNames[] = {
@@ -1223,7 +1289,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		if (!gameOver)
 		{
-			// ----- logic -----
+			EFruitType ft = (EFruitType)SelectedFruitType;
+			//PrimitiveList.PushBack(CreateFruit(ft));
 
 			// 생성
 			if (spawnFruit)
@@ -1233,7 +1300,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 				PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos));
 
-				//SelectedFruitType = rand() % (EFruitType::FT_Orange + 1);
+				SelectedFruitType = rand() % (EFruitType::FT_Orange + 1);
 			}
 
 			// 병합 예정 정보를 담은 큐
@@ -1324,6 +1391,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation));
 			}
 
+			//새 과일이 생성된 후 마찰 적용
 			const static int overlapIteration = 10;
 			for (UINT i = 0; i < overlapIteration; ++i)
 			{
@@ -1487,7 +1555,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		renderer.SwapBuffer();
 
-        gInput.MouseLeftClicked = false;
+		gInput.MouseLeftClicked = false;
 		// 모니터 주사율이 144Hz일 수도 있으니 VSync를 사용하더라도 60fps 고정 코드는 유지
 		do
 		{
@@ -1500,8 +1568,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 
 
-    for (UINT i = 0; i < PrimitiveList.Num(); i++) {
-        delete PrimitiveList[i];
+	for (UINT i = 0; i < PrimitiveList.Num(); i++) {
+		delete PrimitiveList[i];
 		PrimitiveList[i] = nullptr;
 	}
 
@@ -1525,19 +1593,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	switch (message)
 	{
-    case WM_MOUSEMOVE:
-        gInput.MouseX = (float)GET_X_LPARAM(lParam);
-        gInput.MouseY = (float)GET_Y_LPARAM(lParam);
-        break;
+	case WM_MOUSEMOVE:
+		gInput.MouseX = (float)GET_X_LPARAM(lParam);
+		gInput.MouseY = (float)GET_Y_LPARAM(lParam);
+		break;
 
-    case WM_LBUTTONDOWN:
-        gInput.MouseLeftDown = true;
-        gInput.MouseLeftClicked = true;
-        break;
+	case WM_LBUTTONDOWN:
+		gInput.MouseLeftDown = true;
+		gInput.MouseLeftClicked = true;
+		break;
 
-    case WM_LBUTTONUP:
-        gInput.MouseLeftDown = false;
-        break;
+	case WM_LBUTTONUP:
+		gInput.MouseLeftDown = false;
+		break;
 
 	case WM_DESTROY:
 		PostQuitMessage(0);
@@ -1590,7 +1658,7 @@ static void ResolveCollision(UBall* A, UBall* B)
 		A->Velocity.x - A->AngularVelocity * Normal.y * A->Radius,
 		A->Velocity.y + A->AngularVelocity * Normal.x * A->Radius,
 		0.f);
-	
+
 	FVector vB_contact = FVector(
 		B->Velocity.x + B->AngularVelocity * Normal.y * B->Radius,
 		B->Velocity.y - B->AngularVelocity * Normal.x * B->Radius,
@@ -1608,13 +1676,22 @@ static void ResolveCollision(UBall* A, UBall* B)
 	const float e = 0.5f;
 	float jN = -(1.0f + e) * RelVelNorm / (1 / MA + 1 / MB);
 
-	float jT = -RelVelTang / (1 / MA + 1 / MB + A->Radius * A->Radius * InvIA + B->Radius * B->Radius * InvIB);
+	// 정지 접촉시에 각속도가 증폭됨.
+	// 3개 이상 맞닿았을 때 각속도로 증폭되는 문제 방지
 
-	//마찰력 적용
-	const float mu = 0.4f;
-	float maxFriction = mu * fabsf(jN);
-	if (fabsf(jT) > maxFriction)
-		jT = (jT > 0.f ? 1.f : -1.f) * maxFriction;
+	const float tangThreshold = 2.f;
+	float jT = 0.0f;
+	if (fabsf(RelVelTang) >= tangThreshold)
+	{
+		jT = -RelVelTang / (1 / MA + 1 / MB + A->Radius * A->Radius * InvIA + B->Radius * B->Radius * InvIB);
+
+		//마찰력 적용
+		const float mu = 0.4f;
+		float maxFriction = mu * fabsf(jN);
+		if (fabsf(jT) > maxFriction)
+			jT = (jT > 0.f ? 1.f : -1.f) * maxFriction;
+	}
+
 	A->Velocity = A->Velocity - (Normal * (jN * 1 / MA)) - (Tangent * (jT * 1 / MA));
 	B->Velocity = B->Velocity + (Normal * (jN * 1 / MB)) + (Tangent * (jT * 1 / MB));
 
