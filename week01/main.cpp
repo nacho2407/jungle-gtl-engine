@@ -648,8 +648,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 
 	PrimitiveList[PrimitiveListSize++] = new UBall();
-	//프로토타입용 테스트
-	//PrimitiveList[PrimitiveListSize++] = new UBall();
 
 
 	bool bIsExit = false;
@@ -679,58 +677,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		static int TargetCount = 2;
 		static float SlowMotionCoef = 1.0f;
 
-		//프로토타입용 
-		static bool bTouchingPrototype = false;
-		static bool bPrototypeInitialized = !bTouchingPrototype;
-
-		static float ProtoRadiusA = 0.15f;
-		static float ProtoRadiusB = 0.15f;
-
-		// 이동 및 벽 충돌 계산 (프로토타입 모드의 두 공은 물리 스킵)
 		for (UINT i = 0; i < PrimitiveListSize; i++)
 		{
-			if (bTouchingPrototype)
-				continue;
-
 			PrimitiveList[i]->UpdatePhysics(fixedDeltaTime);
 		}
 
-		// 프로토타입 모드: A를 고정하고 B를 맞닿게 유지
-		if (bTouchingPrototype)
-		{
-			UBall* ProtoA = (UBall*)PrimitiveList[0];
-			UBall* ProtoB = (UBall*)PrimitiveList[1];
-
-			//초기 위치 설정
-			if (!bPrototypeInitialized)
-			{
-				ProtoA->Radius = ProtoRadiusA;
-				ProtoA->Mass = ProtoRadiusA;
-
-				ProtoB->Mass = ProtoRadiusB;
-				ProtoB->Mass = ProtoRadiusB;
-
-				ProtoA->Location = FVector(-0.2f, 0.0f, 0.0f);
-				ProtoA->Velocity = FVector(0.0f, 0.0f, 0.0f);
-
-				ProtoB->Location = FVector(-0.2f + ProtoRadiusA + ProtoB->Radius, 0.0f, 0.0f);
-				ProtoB->Velocity = FVector(0.0f, 0.0f, 0.0f);
-
-				bPrototypeInitialized = true;
-			}
-
-
-			ProtoA->Radius = ProtoRadiusA;
-			ProtoA->Mass = ProtoRadiusA;
-
-			ProtoA->Velocity = FVector(0.0f, 0.0f, 0.0f);
-			ProtoB->Velocity = FVector(0.0f, 0.0f, 0.0f);
-		}
-
-
-		//1. 충돌 후
-		//2. 과일인지 확인(사이즈 변화)
-		//3. 밀어내기
 		const static int overlapIteration = 10;
 		for (int i = 0; i < overlapIteration; ++i)
 		{
@@ -799,21 +750,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			PrimitiveList[RandomIndex] = PrimitiveList[PrimitiveListSize - 1]; // 순서가 중요하지 않으므로...
 			PrimitiveListSize--;
 		}
-
-
-		
-		//ImGui::SliderFloat("Slow Motion", &SlowMotionCoef, 0.1f, 1.0f);
-		//ImGui::SliderFloat("ProtoA Location", &(static_cast<UBall*>(PrimitiveList[0])->Location.x), -1.f, 0.f);
-		//ImGui::SliderFloat("ProtoB Location", &(static_cast<UBall*>(PrimitiveList[1])->Location.x), 0.f, 1.f);
-		//
-		//ImGui::Separator();
-		//ImGui::Checkbox("Touching Prototype", &bTouchingPrototype);
-		//
-		//if (bTouchingPrototype)
-		//{
-		//	ImGui::Text("Ball A: fixed at (-0.2, 0)  |  Ball B: pushed away");
-		//	ImGui::SliderFloat("Ball A Radius", &ProtoRadiusA, 0.05f, 0.45f);
-		//}
 
 		ImGui::End();
 
@@ -906,10 +842,8 @@ static void ResolveCollision(UBall* A, UBall* B)
 
 	//접선의 방향
 	FVector Tangent = FVector(-Normal.y, Normal.x, 0.f);
-	float rACrossT = A->Radius;
-	float rBCrossT = -B->Radius;
 
-	// 충격량 적용 전 접촉점 속도: v_contact = v + w corss r
+	// 충격량 적용 전 접촉점 속도 v + w corss r
 	FVector vA_contact = FVector(
 		A->Velocity.x - A->AngularVelocity * Normal.y * A->Radius,
 		A->Velocity.y + A->AngularVelocity * Normal.x * A->Radius,
@@ -932,8 +866,9 @@ static void ResolveCollision(UBall* A, UBall* B)
 	const float e = 0.5f;
 	float jN = -(1.0f + e) * RelVelNorm / (1 / MA + 1 / MB);
 
-	float jT = -RelVelTang / (1 / MA + 1 / MB + rACrossT * rACrossT * InvIA + rBCrossT * rBCrossT * InvIB);
+	float jT = -RelVelTang / (1 / MA + 1 / MB + A->Radius * A->Radius * InvIA + B->Radius * B->Radius * InvIB);
 
+	//마찰력 적용
 	const float mu = 0.4f;
 	float maxFriction = mu * fabsf(jN);
 	if (fabsf(jT) > maxFriction)
@@ -941,6 +876,6 @@ static void ResolveCollision(UBall* A, UBall* B)
 	A->Velocity = A->Velocity - (Normal * (jN * 1 / MA)) - (Tangent * (jT * 1 / MA));
 	B->Velocity = B->Velocity + (Normal * (jN * 1 / MB)) + (Tangent * (jT * 1 / MB));
 
-	A->AngularVelocity -= rACrossT * jT * InvIA;
-	B->AngularVelocity += rBCrossT * jT * InvIB;
+	A->AngularVelocity -= A->Radius * jT * InvIA;
+	B->AngularVelocity += B->Radius * jT * InvIB;
 }
