@@ -65,8 +65,13 @@ public:
 		}
 
 		delete[] Data;
-
 		return true;
+	}
+
+	void Release()
+	{
+		if(TextureSRV) TextureSRV->Release();
+		if(Texture) Texture->Release();
 	}
 
 	ID3D11ShaderResourceView* GetTextureSRV() { return TextureSRV; }
@@ -621,6 +626,8 @@ public:
 			AlphaBlendState,
 			blendFactor,
 			0xffffffff);
+
+		AlphaBlendState->Release();
 	}
 
 	void PrepareShader()
@@ -1849,6 +1856,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 
 	ParticlePool.ReleasePool();
+
+	PeachTexture->Release();
 
 	for (UINT i = 0; i < PrimitiveList.Num(); i++) {
 		delete PrimitiveList[i];
