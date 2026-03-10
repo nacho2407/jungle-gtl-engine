@@ -240,17 +240,29 @@ public:
 
     void Release()
     {
+		ReleaseLine();
         ReleaseRasterizerState();
 
 		// 렌더 타겟 초기화
 		DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+
+		ReleaseSceneRenderTarget();
 
 		ReleaseFrameBuffer();
 		ReleaseDeviceAndSwapChain();
 
 		ReleaseSphereMesh();
 	}
-
+	void ReleaseLine()
+	{
+		if (LineVertexBuffer) { LineVertexBuffer->Release(); LineVertexBuffer = nullptr; }
+	}
+	void ReleaseSceneRenderTarget()
+	{
+		if (SceneSRV) { SceneSRV->Release(); SceneSRV = nullptr; }
+		if (SceneRTV) { SceneRTV->Release(); SceneRTV = nullptr; }
+		if (SceneTexture) { SceneTexture->Release(); SceneTexture = nullptr; }
+	}
 	void ReleaseFrameBuffer()
 	{
 		if (FrameBuffer)
