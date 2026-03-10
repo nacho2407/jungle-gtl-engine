@@ -919,7 +919,7 @@ public:
      * 
      * @param FruitType 병합된 후의 과일 타입
      */
-    void GetScore(EFruitType FruitType)
+    void AddScore(EFruitType FruitType)
     {
         Score += (UINT)((FruitType * (FruitType + 1)) / 2);
     }
@@ -1119,7 +1119,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             PendingMergeQueue.Pop();
 
             // 점수 획득
-			ScoreManager.GetScore(MergeInfo.ResultFruitType);
+			ScoreManager.AddScore(MergeInfo.ResultFruitType);
 
             // 새 과일 생성
             PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation));
