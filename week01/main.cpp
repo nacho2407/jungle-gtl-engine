@@ -493,7 +493,7 @@ public:
         Radius(0.1f), 
         Mass(0.0f),
 		Angle(0.f),
-		AngularVelocity(0.f)
+		AngularVelocity(0.1f)
     {
         // Radius = RandRange(0.1f, 0.2f);
 		Mass = Radius * MassFactor;
@@ -952,8 +952,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     TArray<UPrimitive*> PrimitiveList;
     
 	// Input 포함 Drop Position 관련 기능은 지윤님 코드에 구현된 로직으로 처리 예정(차후 코드 병합 과정에서 처리)
-    PrimitiveList.PushBack(CreateFruit(EFruitType::FT_Apple));
-
 
 	bool bIsExit = false;
 
@@ -1004,8 +1002,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		if (ImGui::Button("Add Ball"))
 		{
 			EFruitType ft = (EFruitType)SelectedFruitType;
-			float radius = SmallestFruitRadius + CoefRadiusGrowth * ft;
-			PrimitiveList.PushBack(CreateFruit(ft));
+
+			UFruit* newFruit = CreateFruit(ft);
+			newFruit->SetFruitType(ft);
+			FVector spawnLocation = { SpawnX, 1.f, 0.f };
+			newFruit->SetLocation(spawnLocation);
+
+			PrimitiveList.PushBack(newFruit);
 		}
 		ImGui::Separator();
 		ImGui::Text("Score: %u", ScoreManager.GetScore());
