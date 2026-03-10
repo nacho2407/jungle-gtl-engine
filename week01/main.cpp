@@ -126,16 +126,6 @@ struct FVector
 	}
 };
 
-struct InputState
-{
-	float MouseX;
-	float MouseY;
-
-	bool MouseLeftDown;
-	bool MouseLeftClicked;
-};
-InputState gInput;
-
 struct SceneFrame
 {
 	ImVec2 Pos;
@@ -160,6 +150,8 @@ public:
 		float  Radius;
 		FVector SinCos;
 		float Padding;
+		float UseTexture;   // 1 = texture, 0 = color
+		float Padding2[3];
 	};
 
 	struct FMesh
@@ -193,10 +185,7 @@ public:
 
 	ID3D11Buffer* ConstantBuffer = nullptr;
 
-	ID3D11Texture2D* SceneTexture = nullptr;
-	ID3D11RenderTargetView* SceneRTV = nullptr;
-	ID3D11ShaderResourceView* SceneSRV = nullptr;
-
+	ID3D11BlendState* AlphaBlendState = nullptr;
 	// 화면 초기화 색상
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 
@@ -204,11 +193,6 @@ public:
 	void Create(HWND hWindow)
 	{
 		CreateDeviceAndSwapChain(hWindow);
-
-		CreateSceneRenderTarget(
-			(UINT)ViewportInfo.Width,
-			(UINT)ViewportInfo.Height
-		);
 
 		CreateFrameBuffer();
 
@@ -275,12 +259,6 @@ public:
 		desc.SampleDesc.Count = 1;
 		desc.Usage = D3D11_USAGE_DEFAULT;
 		desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-
-		Device->CreateTexture2D(&desc, nullptr, &SceneTexture);
-
-		Device->CreateRenderTargetView(SceneTexture, nullptr, &SceneRTV);
-
-		Device->CreateShaderResourceView(SceneTexture, nullptr, &SceneSRV);
 	}
 
 	void CreateFrameBuffer()
@@ -332,29 +310,21 @@ public:
 
 	void Release()
 	{
-		ReleaseLine();
 		ReleaseRasterizerState();
 
 		// 렌더 타겟 초기화
 		DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
-
-		ReleaseSceneRenderTarget();
 
 		ReleaseFrameBuffer();
 		ReleaseDeviceAndSwapChain();
 
 		ReleaseSphereMesh();
 		ReleaseRectangleMesh();
+		ReleaseLine();
 	}
 	void ReleaseLine()
 	{
 		if (LineVertexBuffer) { LineVertexBuffer->Release(); LineVertexBuffer = nullptr; }
-	}
-	void ReleaseSceneRenderTarget()
-	{
-		if (SceneSRV) { SceneSRV->Release(); SceneSRV = nullptr; }
-		if (SceneRTV) { SceneRTV->Release(); SceneRTV = nullptr; }
-		if (SceneTexture) { SceneTexture->Release(); SceneTexture = nullptr; }
 	}
 	void ReleaseFrameBuffer()
 	{
@@ -567,11 +537,8 @@ public:
 		}
 	}
 
-	void UpdateConstant(FVector Offset, float Angle, float Radius)
+	void UpdateConstant(FVector Offset, FVector SinCos, float Radius, float UseTexture)
 	{
-		
-		FVector CosSin = { cosf(Angle), sinf(Angle), 0.f };
-
 		if (ConstantBuffer)
 		{
 			D3D11_MAPPED_SUBRESOURCE constantbufferMSR; // GPU에 있는 상수 버퍼를 CPU가 접근할 수 있도록 매핑
@@ -580,8 +547,9 @@ public:
 			FConstants* constants = (FConstants*)constantbufferMSR.pData;
 
 			constants->Offset = Offset;
-			constants->SinCos = CosSin;
+			constants->SinCos = SinCos;
 			constants->Radius = Radius;
+			constants->UseTexture = UseTexture;
 
 			DeviceContext->Unmap(ConstantBuffer, 0); // CPU 작업이 끝난 뒤 언매핑
 		}
@@ -600,18 +568,8 @@ public:
 			DeviceContext->PSSetShaderResources(0, 1, &nullSRV);
 		}
 	}
-
-	void Prepare()
+	void CreateBlendState() // alpha blending
 	{
-		DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
-
-		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-		DeviceContext->RSSetViewports(1, &ViewportInfo);
-		DeviceContext->RSSetState(RasterizerState);
-
-		DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr);
-		// alpha blending 설정
 		D3D11_BLEND_DESC blendDesc = {};
 		blendDesc.AlphaToCoverageEnable = FALSE;
 		blendDesc.IndependentBlendEnable = FALSE;
@@ -626,12 +584,24 @@ public:
 		blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
 		blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 
-		blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+		blendDesc.RenderTarget[0].RenderTargetWriteMask =
+			D3D11_COLOR_WRITE_ENABLE_ALL;
 
-		ID3D11BlendState* AlphaBlendState;
 		Device->CreateBlendState(&blendDesc, &AlphaBlendState);
+	}
+	void Prepare()
+	{
+		DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
 
-		float blendFactor[4] = { 0.f,0.f,0.f,0.f };
+		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		DeviceContext->RSSetViewports(1, &ViewportInfo);
+		DeviceContext->RSSetState(RasterizerState);
+
+		DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr);
+		// alpha blending 설정
+		CreateBlendState();
+		float blendFactor[4] = { 0,0,0,0 };
 
 		DeviceContext->OMSetBlendState(
 			AlphaBlendState,
@@ -650,19 +620,8 @@ public:
 		if (ConstantBuffer)
 		{
 			DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
+			DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer);
 		}
-	}
-
-	void PrepareScene()
-	{
-		DeviceContext->ClearRenderTargetView(SceneRTV, ClearColor);
-
-		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-		DeviceContext->RSSetViewports(1, &ViewportInfo);
-		DeviceContext->RSSetState(RasterizerState);
-
-		DeviceContext->OMSetRenderTargets(1, &SceneRTV, nullptr);
 	}
 
 	void RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices)
@@ -675,31 +634,26 @@ public:
 
 	void RenderSphere()
 	{
+		DeviceContext->IASetPrimitiveTopology(
+			D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
+		);
 		RenderPrimitive(sphere.VertexBuffer, sphere.NumVertices);
 	}
 
 	void RenderRectangle()
 	{
+		DeviceContext->IASetPrimitiveTopology(
+			D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
+		);
 		RenderPrimitive(rectangle.VertexBuffer, rectangle.NumVertices);
 	}
 
 	void RenderLine()
 	{
-		UINT offset = 0;
-
-		DeviceContext->IASetVertexBuffers(
-			0,
-			1,
-			&LineVertexBuffer,
-			&Stride,
-			&offset
-		);
-
 		DeviceContext->IASetPrimitiveTopology(
 			D3D11_PRIMITIVE_TOPOLOGY_LINELIST
 		);
-
-		DeviceContext->Draw(2, 0);
+		RenderPrimitive(LineVertexBuffer, 2);
 	}
 
 	void UpdateLineColor(bool collision)
@@ -862,7 +816,8 @@ public:
 
 	void Render(URenderer& renderer) override
 	{
-		renderer.UpdateConstant(Location, Angle, Radius);
+		FVector CosSin = { cosf(Angle), sinf(Angle), 0.f };
+		renderer.UpdateConstant(Location, CosSin, Radius, 1.0f);
 		renderer.UpdateTexture(GetTexture());
 		renderer.RenderRectangle();
 	}
@@ -939,9 +894,9 @@ public:
 
 	void Render(URenderer& renderer) override
 	{
-		renderer.UpdateConstant(Location, Angle, Radius);
-		renderer.UpdateTexture(GetTexture());
-		renderer.RenderRectangle();
+		FVector CosSin = { cosf(Angle), sinf(Angle), 0.f };
+		renderer.UpdateConstant(Location, CosSin, Radius, 0.0f);
+		renderer.RenderSphere();
 	}
 
 	void SetLocation(const FVector& InLocation) { Location = InLocation; }
@@ -1502,15 +1457,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	RegisterClassW(&wndclass);
 
-	HWND hWnd = CreateWindowExW(
-		0,
+	HWND hWnd = CreateWindowExW(0,
 		WindowClass,
 		Title,
-		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_VISIBLE,
+		WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
-		900,
-		1100, // 윈도우 사이즈 고정
+		1024,
+		1024,
 		nullptr,
 		nullptr,
 		hInstance,
@@ -1540,9 +1494,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ImGui_ImplWin32_Init((void*)hWnd); // OS 이벤트 및 입력 담당
 	ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext); // GPU 렌더링 담당
 
-	float sceneWidth = 850;
-	float sceneHeight = 850;
-	SceneFrame gameScene;
 	bool showCredits = false;
 
 	UINT PrimitiveListCapacity = 64;
@@ -1555,7 +1506,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 
     TArray<UPrimitive*> PrimitiveList;
-
     const float LineY = 0.8f;
 
 	bool bIsExit = false;
@@ -1563,6 +1513,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// 게임 오버 상태와 이전 프레임의 선 충돌 여부
 	bool gameOver = false;
 	bool prevCollision = false;
+
+	UFruit previewFruit;
 
 	LARGE_INTEGER collisionStartCounter;
 
@@ -1590,25 +1542,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 		}
 
-		bool mouseInScene =
-			gInput.MouseX >= gameScene.Pos.x &&
-			gInput.MouseX <= gameScene.Pos.x + gameScene.Size.x &&
-			gInput.MouseY >= gameScene.Pos.y &&
-			gInput.MouseY <= gameScene.Pos.y + gameScene.Size.y;
 
+		POINT mousePos;
+		GetCursorPos(&mousePos);
+		ScreenToClient(hWnd, &mousePos);
+
+		float SpawnX = mousePos.x / renderer.ViewportInfo.Width;
+		SpawnX = max(0.0f, min(1.0f, SpawnX));
+		SpawnX = SpawnX * 2.0f - 1.0f;
+
+		static bool prevMouseDown = false;
 		bool spawnFruit = false;
-		float spawnX = 0;
 
-		if (mouseInScene)
+		bool curMouseDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+
+		if (curMouseDown && !prevMouseDown)
 		{
-			float localX = gInput.MouseX - gameScene.Pos.x;
-			spawnX = (localX / gameScene.Size.x) * 2.0f - 1.0f;
-
-			if (gInput.MouseLeftClicked)
-			{
-				spawnFruit = true;
-			}
+			spawnFruit = true;
 		}
+
+		prevMouseDown = curMouseDown;
 
 		bool bLineCollision = false;
 
@@ -1617,145 +1570,38 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			"Apple", "Pear", "Peach", "Pineapple", "Melon", "Watermelon"
 		};
 		static int SelectedFruitType = 0;
-		static float SpawnX = 0.0f;
-
-
-		renderer.PrepareScene();
-		renderer.PrepareShader();
-
-		ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
-		ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
-		ImGui::NewFrame(); // ImGui Core 초기화
-
-		ImGuiIO& io = ImGui::GetIO();
-
-		ImGui::SetNextWindowPos(ImVec2(0, 0));
-		ImGui::SetNextWindowSize(io.DisplaySize);
-
-		ImGui::Begin(
-			"Jungle Scene Window",
-			nullptr,
-			ImGuiWindowFlags_NoResize |
-			ImGuiWindowFlags_NoMove |
-			ImGuiWindowFlags_NoCollapse |
-			ImGuiWindowFlags_NoTitleBar
-		);
-
-		ImGui::Combo("Fruit Type", &SelectedFruitType, FruitNames, sizeof(FruitNames) / sizeof(*FruitNames));
-		ImGui::Text("GameOver: %d", gameOver);
-		ImGui::Text("Score: %d", ScoreManager.GetScore());
-
-		if (ImGui::Button("Credits"))
-		{
-			showCredits = true;
-		}
-
-		ImGui::Spacing();
-		ImGui::Spacing();
-
-		if (!gameOver)
-		{
-			renderer.UpdateConstant(FVector(0, 0, 0), 0.f, 1.0f);
-			renderer.UpdateLineColor(bLineCollision);
-			renderer.RenderLine();
-
-			if (mouseInScene)
-			{
-				renderer.UpdateConstant(FVector(spawnX, 0.9f, 0), 0.f, 0.1f);
-				renderer.RenderSphere();
-			}
-			// 가운데 정렬
-			ImVec2 avail = ImGui::GetContentRegionAvail();
-			float posX = (avail.x - sceneWidth) * 0.5f;
-			float posY = (avail.y - sceneHeight) * 0.9f;
-
-			if (posX > 0) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + posX);
-			if (posY > 0) ImGui::SetCursorPosY(ImGui::GetCursorPosY() + posY);
-
-			// 내부 프레임
-			ImGui::BeginChild(
-				"SceneFrame",
-				ImVec2(sceneWidth, sceneHeight),   // 프레임 크기
-				false,               // border 표시
-				ImGuiWindowFlags_NoScrollbar
-			);
-
-			gameScene.Pos = ImGui::GetCursorScreenPos();
-			gameScene.Size = ImVec2(sceneWidth, sceneHeight);
-
-			ImGui::Image(
-				(ImTextureID)renderer.SceneSRV,
-				ImVec2(sceneWidth, sceneHeight)
-			);
-
-			ImGui::EndChild();
-		}
-		else
-		{
-			const char* text = "Game Over";
-			ImVec2 textSize = ImGui::CalcTextSize(text);
-
-			float centerX = (io.DisplaySize.x - textSize.x) * 0.5f;
-			float centerY = (io.DisplaySize.y - textSize.y) * 0.5f;
-
-			ImGui::SetCursorPos(ImVec2(centerX, centerY));
-			ImGui::Text("%s", text);
-
-			ImGui::Spacing();
-
-			const char* buttonText = "Restart";
-			ImVec2 buttonSize = ImGui::CalcTextSize(buttonText);
-
-			ImGui::SetCursorPosX((io.DisplaySize.x - buttonSize.x - 20) * 0.5f);
-
-			if (ImGui::Button(buttonText))
-			{
-				gameOver = false;
-				//PrimitiveList[PrimitiveListSize++] = new UBall();
-			}
-		}
-		ImGui::End();
-
-		Credits(&showCredits);
 
 		renderer.Prepare();
+		renderer.PrepareShader();
 
-		ImGui::Render(); // 이번 프레임에 그릴 UI 설정
-		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
+		EFruitType ft = (EFruitType)SelectedFruitType;
 
-		if (!gameOver)
+		// 생성
+		if (spawnFruit)
 		{
 			EFruitType ft = (EFruitType)SelectedFruitType;
+			FVector spawnPos = FVector(SpawnX, 0.9f, 0);
 
-			// 생성
-			if (spawnFruit)
-			{
-				EFruitType ft = (EFruitType)SelectedFruitType;
+			PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos, PeachTexture));
 
-				// 새 과일 생성
-				float offsetAngle = ((float)rand() / RAND_MAX) * 2.0f * 3.14159f;
-				float offsetDist = 0.01f;
-				spawnX += cosf(offsetAngle) * offsetDist;
+			SelectedFruitType = rand() % (EFruitType::FT_Orange + 1);
+		}
 
-				FVector spawnPos = FVector(spawnX, 0.9f, 0);
+		// 병합 예정 정보를 담은 큐
+		TQueue<FPendingMerge> PendingMergeQueue;
 
-				PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos, PeachTexture));
-
-				SelectedFruitType = rand() % (EFruitType::FT_Orange + 1);
-			}
-
-			// 병합 예정 정보를 담은 큐
-			TQueue<FPendingMerge> PendingMergeQueue;
-			
+		for (UINT i = 0; i < PrimitiveList.Num(); i++)
+		{
+			PrimitiveList[i]->UpdatePhysics(fixedDeltaTime);
+		}
 			for (UINT i = 0; i < PrimitiveList.Num(); i++)
 			{
 				PrimitiveList[i]->UpdatePhysics(fixedDeltaTime);
 			}
-			ParticlePool.Update(fixedDeltaTime);
 
 			/**************************
-			 * 과일들 간 충돌 / 병합 연산 *
-			 **************************/
+				* 과일들 간 충돌 / 병합 연산 *
+				**************************/
 			for (UINT i = 0; i < PrimitiveList.Num(); i++)
 			{
 				UFruit* A = (UFruit*)PrimitiveList[i];
@@ -1785,11 +1631,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 							A->MarkPendingDestroy();
 							B->MarkPendingDestroy();
 
-                        // 수박끼리 병합 시 두 수박만 사라지고 병합 X
-                        if (A->GetFruitType() != EFruitType::FT_Watermelon) {
-                            PendingMergeQueue.Push({ 
-                                (EFruitType) (A->GetFruitType() + 1), 
-                                (A->Location + B->Location) * 0.5f
+						// 수박끼리 병합 시 두 수박만 사라지고 병합 X
+						if (A->GetFruitType() != EFruitType::FT_Watermelon) {
+							PendingMergeQueue.Push({ 
+								(EFruitType) (A->GetFruitType() + 1), 
+								(A->Location + B->Location) * 0.5f
 							});
 
 							//병합된 곳에서 파티클  생성
@@ -1799,103 +1645,131 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 						{
 							ScoreManager.AddScore(EFruitType::FT_Watermelon);
 						}
-                    }
-                }
-            }
-        }
-
-			// 과일 삭제 로직
-			for (UINT i = 0; i < PrimitiveList.Num();)
-			{
-				if (PrimitiveList[i]->IsPendingDestroy())
-				{
-					delete PrimitiveList[i];
-					PrimitiveList[i] = nullptr;
-					PrimitiveList.RemoveAt(i);
-				}
-				else
-				{
-					i++;
-				}
-			}
-
-			// 병합 처리 로직
-			while (!PendingMergeQueue.IsEmpty())
-			{
-				FPendingMerge MergeInfo = PendingMergeQueue.Front();
-				PendingMergeQueue.Pop();
-
-				// 점수 획득
-				ScoreManager.AddScore(MergeInfo.ResultFruitType);
-			PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, PeachTexture));
-			}
-
-			//새 과일이 생성된 후 마찰 적용
-			const static int overlapIteration = 10;
-			for (UINT i = 0; i < overlapIteration; ++i)
-			{
-				for (UINT i = 0; i < PrimitiveList.Num(); i++)
-				{
-					UFruit* A = (UFruit*)PrimitiveList[i];
-
-					for (UINT j = i + 1; j < PrimitiveList.Num(); j++)
-					{
-						UFruit* B = (UFruit*)PrimitiveList[j];
-
-						ResolveCollision(A, B);
 					}
 				}
 			}
-
-			for (UINT i = 0; i < PrimitiveList.Num(); i++)
-			{
-				PrimitiveList[i]->Render(renderer);
-			}
-
-			ParticlePool.Render(renderer);
-
-			for (UINT i = 0; i < PrimitiveList.Num(); i++)
-			{
-				UFruit* fruit = (UFruit*)PrimitiveList[i];
-
-				if (fruit->CheckLineCollision(LineY))
-				{
-					bLineCollision = true;
-
-					if (!prevCollision)
-					{
-						QueryPerformanceCounter(&collisionStartCounter);
-					}
-
-					break;
-				}
-			}
-			// Game Over 여부 계산
-			if (bLineCollision)
-			{
-				LARGE_INTEGER now;
-				QueryPerformanceCounter(&now);
-
-				double elapsed = (double)(now.QuadPart - collisionStartCounter.QuadPart) / frequency.QuadPart;
-
-				if (elapsed >= 1.0)
-				{
-					gameOver = true;
-				}
-			}
-
-			prevCollision = bLineCollision;
 		}
-		else // Game Over
+
+		// 과일 삭제 로직
+		for (UINT i = 0; i < PrimitiveList.Num();)
 		{
-			// 기존 데이터 초기화
-			PrimitiveList.Clear();
-			ParticlePool.ReturnAll();
+			if (PrimitiveList[i]->IsPendingDestroy())
+			{
+				delete PrimitiveList[i];
+				PrimitiveList[i] = nullptr;
+				PrimitiveList.RemoveAt(i);
+			}
+			else
+			{
+				i++;
+			}
 		}
+
+		// 병합 처리 로직
+		while (!PendingMergeQueue.IsEmpty())
+		{
+			FPendingMerge MergeInfo = PendingMergeQueue.Front();
+			PendingMergeQueue.Pop();
+
+			// 점수 획득
+			ScoreManager.AddScore(MergeInfo.ResultFruitType);
+
+			// 새 과일 생성
+			PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, PeachTexture));
+		}
+
+		//새 과일이 생성된 후 마찰 적용
+		const static int overlapIteration = 10;
+		for (UINT i = 0; i < overlapIteration; ++i)
+		{
+			for (UINT i = 0; i < PrimitiveList.Num(); i++)
+			{
+				UFruit* A = (UFruit*)PrimitiveList[i];
+
+				for (UINT j = i + 1; j < PrimitiveList.Num(); j++)
+				{
+					UFruit* B = (UFruit*)PrimitiveList[j];
+
+					ResolveCollision(A, B);
+				}
+			}
+		}
+		int mergeCount = 0;
+		for (UINT i = 0; i < PrimitiveList.Num(); i++)
+		{
+			PrimitiveList[i]->Render(renderer);
+			mergeCount++;
+		}
+
+		for (UINT i = 0; i < PrimitiveList.Num(); i++)
+		{
+			UFruit* fruit = (UFruit*)PrimitiveList[i];
+
+			if (fruit->CheckLineCollision(LineY))
+			{
+				bLineCollision = true;
+
+				if (!prevCollision)
+				{
+					QueryPerformanceCounter(&collisionStartCounter);
+				}
+
+				break;
+			}
+		}
+		// Game Over 여부 계산
+		if (bLineCollision)
+		{
+			LARGE_INTEGER now;
+			QueryPerformanceCounter(&now);
+
+			double elapsed = (double)(now.QuadPart - collisionStartCounter.QuadPart) / frequency.QuadPart;
+
+			if (elapsed >= 1.0)
+			{
+				gameOver = true;
+			}
+		}
+
+		prevCollision = bLineCollision;
+
+		previewFruit.SetFruitType((EFruitType)SelectedFruitType);
+		previewFruit.SetLocation(FVector(SpawnX, 0.9f, 0));
+		previewFruit.SetTexture(PeachTexture);
+		previewFruit.Render(renderer);
+
+		renderer.UpdateConstant(FVector(0, 0, 0), FVector(1, 0, 0), 1.0f, 0.0f);
+		renderer.UpdateTexture(nullptr);
+		renderer.UpdateLineColor(bLineCollision);
+		renderer.RenderLine();
+
+		ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
+		ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
+		ImGui::NewFrame(); // ImGui Core 초기화
+
+		ImGui::Begin("Team4 Game");
+
+		ImGui::Combo("Fruit Type", &SelectedFruitType, FruitNames, sizeof(FruitNames) / sizeof(*FruitNames));
+		ImGui::Text("GameOver: %d", gameOver);
+		ImGui::Text("Score: %d", ScoreManager.GetScore());
+
+		if (ImGui::Button("Credits"))
+		{
+			showCredits = true;
+		}
+		
+		ImGui::Spacing();
+		ImGui::Spacing();
+
+		Credits(&showCredits);
+
+		ImGui::End();
+
+		ImGui::Render(); // 이번 프레임에 그릴 UI 설정
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
 
 		renderer.SwapBuffer();
 
-		gInput.MouseLeftClicked = false;
 		// 모니터 주사율이 144Hz일 수도 있으니 VSync를 사용하더라도 60fps 고정 코드는 유지
 		do
 		{
@@ -1935,20 +1809,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	switch (message)
 	{
-	case WM_MOUSEMOVE:
-		gInput.MouseX = (float)GET_X_LPARAM(lParam);
-		gInput.MouseY = (float)GET_Y_LPARAM(lParam);
-		break;
-
-	case WM_LBUTTONDOWN:
-		gInput.MouseLeftDown = true;
-		gInput.MouseLeftClicked = true;
-		break;
-
-	case WM_LBUTTONUP:
-		gInput.MouseLeftDown = false;
-		break;
-
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
