@@ -475,8 +475,7 @@ protected:
     const float MaxSpeed = 2.0f;
 
     const float GravityAccel = 4.0f; // 중력 가속도
-    const float RestitutionWall = 0.8f; // 중력 활성화 시 적용할 벽 반발 감쇠 계수(1.0 == 완전 반사)
-    const float AirDragCoef = 0.2f; // 공기 저항 활성화 시 적용할 공기 저항 계수
+    const float RestitutionWall = 0.8f; // 중력 활성화 시 적용할 벽 반발 감쇠 계수(1.0 == 완전 반사
 
     bool bPendingDestroy = false; // 충돌 검사 중 삭제될 예정인 Primitive들을 표시하기 위한 플래그
 };
@@ -583,6 +582,54 @@ enum EFruitType
     FT_Count  // Last Type Check 용도
 };
 
+
+class UPariticle : public UBall
+{
+public:
+	FVector Location; // 여기서는 Offset과 동일한 개념
+	FVector Velocity;
+	float Radius;
+public:
+	UPariticle() :
+		Location(0.0f, 0.0f, 0.0f),
+		Velocity(0.0f, 0.0f, 0.0f),
+		Radius(0.1f)
+	{
+	}
+
+	~UPariticle()
+	{
+
+	}
+
+	//TODO 아랫벽에 부딪혔을 때 속도 선형 감소
+	void UpdatePhysics(float dt) override
+	{
+		Location = Location + Velocity * dt;
+	}
+
+	void Render(URenderer& renderer) override
+	{
+		FVector CosSin = { cosf(Angle), sinf(Angle), 0.f };
+		renderer.UpdateConstant(Location, CosSin, Radius);
+		renderer.RenderSphere();
+	}
+
+	void SetLocation(const FVector& InLocation) { Location = InLocation; }
+	FVector GetLocation() const { return Location; }
+
+private:
+	float Random()
+	{
+		return (float)rand() / (float)RAND_MAX; // [0, 1]
+	}
+
+	float RandRange(float a, float b)
+	{
+		return a + (b - a) * Random();
+	}
+};
+
 const float SmallestFruitRadius = 0.05f; // 가장 작은 과일의 반지름
 const float CoefRadiusGrowth = 1.25f; // 과일 레벨이 하나씩 올라갈 때마다 반지름이 커지는 정도
 
@@ -642,6 +689,12 @@ public:
 
 		//각가속도는 0.98로 고정
 		AngularVelocity *= 0.98f;
+
+		//각속도 제한
+		const float MaxAngularSpeed = 20.0f;
+		if (AngularVelocity > MaxAngularSpeed) AngularVelocity = MaxAngularSpeed;
+		else if (AngularVelocity < -MaxAngularSpeed) AngularVelocity = -MaxAngularSpeed;
+
 		Angle += AngularVelocity * dt;
     }
 
@@ -906,6 +959,40 @@ private:
     UINT Score;
 };
 
+/*class UParitlcePool
+{
+public:
+	UParitlcePool()  = default;
+	~UParitlcePool() = default;
+
+public:
+	void Initailize(int DefaultCapacity)
+	{
+		ParticlePool.Reserve(DefaultCapacity);
+		for (int i = 0; i < ParticlePool.Num(); ++i)
+		{
+
+			ParticlePool.Push(new UBall());
+		}
+	}
+
+	void SpawnParticles(int NumParticles)
+	{
+
+	}
+	void UpdateParticles()
+	{
+		for (size_t i = 0; i < ParticlePool.Num(); ++i)
+		{
+
+		}
+	}
+
+private:
+	TQueue<UPariticle*> ParticlePool;
+
+};*/
+
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -1004,10 +1091,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		renderer.Prepare();
 		renderer.PrepareShader();
 
-		static float SlowMotionCoef = 1.0f;
-
-
-
 		ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
 		ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
 		ImGui::NewFrame(); // ImGui Core 초기화
@@ -1029,7 +1112,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		if (ImGui::Button("Add Ball"))
 		{
 			EFruitType ft = (EFruitType)SelectedFruitType;
-			float radius = SmallestFruitRadius + CoefRadiusGrowth * ft;
 			PrimitiveList.PushBack(CreateFruit(ft));
 		}
 		ImGui::Separator();
@@ -1116,16 +1198,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation));
 		}
 
+		//새 과일이 생성된 후 마찰 적용
 		const static int overlapIteration = 10;
 		for (UINT i = 0; i < overlapIteration; ++i)
 		{
 			for (UINT i = 0; i < PrimitiveList.Num(); i++)
 			{
-				UFruit* A = (UFruit*)PrimitiveList[i];
+				UFruit* A = static_cast<UFruit*>(PrimitiveList[i]);
 
 				for (UINT j = i + 1; j < PrimitiveList.Num(); j++)
 				{
-					UFruit* B = (UFruit*)PrimitiveList[j];
+					UFruit* B = static_cast<UFruit*>(PrimitiveList[j]);
 
 					ResolveCollision(A, B);
 				}
@@ -1249,13 +1332,22 @@ static void ResolveCollision(UBall* A, UBall* B)
 	const float e = 0.5f;
 	float jN = -(1.0f + e) * RelVelNorm / (1 / MA + 1 / MB);
 
-	float jT = -RelVelTang / (1 / MA + 1 / MB + A->Radius * A->Radius * InvIA + B->Radius * B->Radius * InvIB);
+	// 정지 접촉시에 각속도가 증폭됨.
+	// 3개 이상 맞닿았을 때 각속도로 증폭되는 문제 방지
 
-	//마찰력 적용
-	const float mu = 0.4f;
-	float maxFriction = mu * fabsf(jN);
-	if (fabsf(jT) > maxFriction)
-		jT = (jT > 0.f ? 1.f : -1.f) * maxFriction;
+	const float tangThreshold = 2.f;
+	float jT = 0.0f;
+	if (fabsf(RelVelTang) >= tangThreshold)
+	{
+		jT = -RelVelTang / (1 / MA + 1 / MB + A->Radius * A->Radius * InvIA + B->Radius * B->Radius * InvIB);
+
+		//마찰력 적용
+		const float mu = 0.4f;
+		float maxFriction = mu * fabsf(jN);
+		if (fabsf(jT) > maxFriction)
+			jT = (jT > 0.f ? 1.f : -1.f) * maxFriction;
+	}
+
 	A->Velocity = A->Velocity - (Normal * (jN * 1 / MA)) - (Tangent * (jT * 1 / MA));
 	B->Velocity = B->Velocity + (Normal * (jN * 1 / MB)) + (Tangent * (jT * 1 / MB));
 
