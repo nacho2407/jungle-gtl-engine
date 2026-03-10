@@ -1,4 +1,7 @@
-﻿#include <windows.h>
+﻿#include <cstdlib>
+#include <ctime>
+
+#include <windows.h>
 #include <windowsx.h>
 
 #pragma comment(lib, "user32")
@@ -13,11 +16,75 @@
 #include "imgui/imgui_impl_dx11.h"
 #include "imgui/imgui_impl_win32.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+class UTexture
+{
+public:
+	bool Initialize(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext, const char* FileName)
+	{
+		D3D11_TEXTURE2D_DESC TextureDesc;
+		D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
+		UINT RowPitch;
+		HRESULT Result;
+		unsigned char* Data;
+
+		Data = stbi_load(FileName, &Width, &Height, &Channels, 0);
+
+		TextureDesc.Height = Height;
+		TextureDesc.Width = Width;
+		TextureDesc.MipLevels = 1;
+		TextureDesc.ArraySize = 1;
+		TextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		TextureDesc.SampleDesc.Count = 1;
+		TextureDesc.SampleDesc.Quality = 0;
+		TextureDesc.Usage = D3D11_USAGE_DEFAULT;
+		TextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		TextureDesc.CPUAccessFlags = 0;
+		TextureDesc.MiscFlags = 0;
+
+		RowPitch = (Width * 4) * sizeof(unsigned char);
+		D3D11_SUBRESOURCE_DATA InitData = { Data, RowPitch, 0 };
+
+		Result = Device->CreateTexture2D(&TextureDesc, &InitData, &Texture);
+		if (FAILED(Result))
+		{
+			return false;
+		}
+
+		SRVDesc.Format = TextureDesc.Format;
+		SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+		SRVDesc.Texture2D.MostDetailedMip = 0;
+		SRVDesc.Texture2D.MipLevels = 1;
+
+		Result = Device->CreateShaderResourceView(Texture, &SRVDesc, &TextureSRV);
+		if (FAILED(Result))
+		{
+			return false;
+		}
+
+		delete[] Data;
+
+		return true;
+	}
+
+	ID3D11ShaderResourceView* GetTextureSRV() { return TextureSRV; }
+
+private:
+	ID3D11Texture2D* Texture;
+	ID3D11ShaderResourceView* TextureSRV;
+
+	int Width;
+	int Height;
+	int Channels;
+};
 
 struct FVertexSimple
 {
 	float x, y, z;
 	float r, g, b, a;
+	float u, v;
 };
 
 struct FVector
@@ -40,7 +107,7 @@ struct FVector
 		return FVector(x * scala, y * scala, z * scala);
 	}
 
-	float Dot2(const FVector& rhs)
+	float Dot2(const FVector& rhs) const
 	{
 		return x * rhs.x + y * rhs.y;
 	}
@@ -63,6 +130,7 @@ struct SceneFrame
 };
 
 #include "Sphere.h"
+#include "Rectangle.h"
 
 FVertexSimple line_vertices[] =
 {
@@ -81,11 +149,14 @@ public:
 		float Padding;
 	};
 
-	struct FSphere
+	struct FMesh
 	{
 		ID3D11Buffer* VertexBuffer = nullptr;
 		UINT NumVertices;
-	} sphere;
+	};
+
+	FMesh sphere;
+	FMesh rectangle;
 
 	ID3D11Buffer* LineVertexBuffer = nullptr;
 
@@ -131,6 +202,8 @@ public:
 		CreateRasterizerState();
 
 		CreateSphereMesh();
+
+		CreateRectangleMesh();
 
 		CreateLine();
 	}
@@ -225,6 +298,12 @@ public:
 		sphere.VertexBuffer = CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
 	}
 
+	void CreateRectangleMesh()
+	{
+		rectangle.NumVertices = sizeof(rectangle_vertices) / sizeof(FVertexSimple);
+		rectangle.VertexBuffer = CreateVertexBuffer(rectangle_vertices, sizeof(rectangle_vertices));
+	}
+
 	void CreateLine()
 	{
 		D3D11_BUFFER_DESC desc = {};
@@ -252,6 +331,7 @@ public:
 		ReleaseDeviceAndSwapChain();
 
 		ReleaseSphereMesh();
+		ReleaseRectangleMesh();
 	}
 	void ReleaseLine()
 	{
@@ -318,6 +398,11 @@ public:
 		ReleaseVertexBuffer(sphere.VertexBuffer);
 	}
 
+	void ReleaseRectangleMesh()
+	{
+		ReleaseVertexBuffer(rectangle.VertexBuffer);
+	}
+
 	void CreateShader()
 	{
 		ID3DBlob* vertexshaderCSO;
@@ -379,6 +464,15 @@ public:
 				DXGI_FORMAT_R32G32B32A32_FLOAT,
 				0,
 				12,
+				D3D11_INPUT_PER_VERTEX_DATA,
+				0
+			},
+			{
+				"TEXCOORD",
+				0,
+				DXGI_FORMAT_R32G32_FLOAT,
+				0,
+				28,
 				D3D11_INPUT_PER_VERTEX_DATA,
 				0
 			}
@@ -477,6 +571,20 @@ public:
 		}
 	}
 
+	void UpdateTexture(UTexture* InTexture)
+	{
+		if (InTexture)
+		{
+			ID3D11ShaderResourceView* SRV = InTexture->GetTextureSRV();
+			DeviceContext->PSSetShaderResources(0, 1, &SRV);
+		}
+		else
+		{
+			ID3D11ShaderResourceView* nullSRV = nullptr;
+			DeviceContext->PSSetShaderResources(0, 1, &nullSRV);
+		}
+	}
+
 	void Prepare()
 	{
 		DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
@@ -487,7 +595,32 @@ public:
 		DeviceContext->RSSetState(RasterizerState);
 
 		DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr);
-		DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+		// alpha blending 설정
+		D3D11_BLEND_DESC blendDesc = {};
+		blendDesc.AlphaToCoverageEnable = FALSE;
+		blendDesc.IndependentBlendEnable = FALSE;
+
+		blendDesc.RenderTarget[0].BlendEnable = TRUE;
+
+		blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+
+		blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+		blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+		blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+
+		blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+		ID3D11BlendState* AlphaBlendState;
+		Device->CreateBlendState(&blendDesc, &AlphaBlendState);
+
+		float blendFactor[4] = { 0.f,0.f,0.f,0.f };
+
+		DeviceContext->OMSetBlendState(
+			AlphaBlendState,
+			blendFactor,
+			0xffffffff);
 	}
 
 	void PrepareShader()
@@ -525,6 +658,11 @@ public:
 	void RenderSphere()
 	{
 		RenderPrimitive(sphere.VertexBuffer, sphere.NumVertices);
+	}
+
+	void RenderRectangle()
+	{
+		RenderPrimitive(rectangle.VertexBuffer, rectangle.NumVertices);
 	}
 
 	void RenderLine()
@@ -575,7 +713,9 @@ public:
 class UPrimitive
 {
 public:
-	UPrimitive() = default;
+	UPrimitive(UTexture* InTexture = nullptr) : Texture(InTexture)
+	{
+	}
 	virtual ~UPrimitive() = default; // 생성과 해제를 UPrimitive*로 할 예정이므로
 
 	virtual void UpdatePhysics(float dt) = 0;
@@ -592,6 +732,9 @@ public:
 		return bPendingDestroy;
 	}
 
+	void SetTexture(UTexture* InTexture) { Texture = InTexture; }
+	UTexture* GetTexture() const { return Texture; }
+
 protected:
 	// Border 는 map 데이터이므로 따로 빼서 전역 상수 등으로 관리하는 것이 좋을 듯함
 	// 이외 데이터도 관련해서 수정해야할수도
@@ -600,15 +743,10 @@ protected:
 	float TopBorder = 1.0f;
 	float BottomBorder = -1.0f;
 
-	float MassFactor = 1.0f; // 질량 보정용
+    bool bPendingDestroy = false; // 충돌 검사 중 삭제될 예정인 Primitive들을 표시하기 위한 플래그
 
-	const float MinSpeed = -2.0f;
-	const float MaxSpeed = 2.0f;
-
-	const float GravityAccel = 4.0f; // 중력 가속도
-	const float RestitutionWall = 0.8f; // 중력 활성화 시 적용할 벽 반발 감쇠 계수(1.0 == 완전 반사
-
-	bool bPendingDestroy = false; // 충돌 검사 중 삭제될 예정인 Primitive들을 표시하기 위한 플래그
+private:
+	UTexture* Texture;
 };
 
 class UBall : public UPrimitive
@@ -623,10 +761,13 @@ public:
 	float AngularVelocity;
 
 	float Radius;
+
+	// 무게 비례 공 밀어내기에 사용(ResolveCollision 참조)
 	float Mass;
 
 public:
-	UBall() :
+	UBall(UTexture* InTexture = nullptr) :
+		UPrimitive(InTexture),
 		Location(0.0f, 0.0f, 0.0f),
 		Velocity(0.0f, 0.0f, 0.0f),
 		Radius(0.1f),
@@ -634,7 +775,6 @@ public:
 		Angle(0.f),
 		AngularVelocity(0.5f)
 	{
-		// Radius = RandRange(0.1f, 0.2f);
 		Mass = Radius * MassFactor;
 
 		LeftBorder = -1.0f + Radius;
@@ -656,17 +796,58 @@ public:
 
 	}
 
-	//TODO 아랫벽에 부딪혔을 때 속도 선형 감소
-	void UpdatePhysics(float dt) override
+	void UpdatePhysics(
+		float dt
+	) override
 	{
+		Location = Location + Velocity * dt;
 
+		if (Location.x < LeftBorder)
+		{
+			Location.x = LeftBorder;
+			Velocity.x *= -1.0f;
+		}
+		if (Location.x > RightBorder)
+		{
+			Location.x = RightBorder;
+			Velocity.x *= -1.0f;
+		}
+		if (Location.y > TopBorder)
+		{
+			Location.y = TopBorder;
+			Velocity.y *= -RestitutionWall;
+		}
+		if (Location.y < BottomBorder)
+		{
+			Location.y = BottomBorder;
+
+			//바닥 마찰력 적용
+			float normalImpulse = fabsf(Velocity.y) * (1.0f + RestitutionWall);
+
+			Velocity.y *= -RestitutionWall;
+
+			float frictionImpulse = FloorFriction * normalImpulse;
+			if (fabsf(Velocity.x) <= frictionImpulse)
+				Velocity.x = 0.0f;
+			else
+				Velocity.x -= (Velocity.x > 0.0f ? 1.0f : -1.0f) * frictionImpulse;
+
+			//마찰로 인한 토크 적용
+		}
+
+		Velocity.y -= GravityAccel * dt;
+
+		//각가속도는 0.98로 고정
+		AngularVelocity *= 0.98f;
+		Angle += AngularVelocity * dt;
 	}
 
 	void Render(URenderer& renderer) override
 	{
 		FVector CosSin = { cosf(Angle), sinf(Angle), 0.f };
 		renderer.UpdateConstant(Location, CosSin, Radius);
-		renderer.RenderSphere();
+		renderer.UpdateTexture(GetTexture());
+		renderer.RenderRectangle();
 	}
 
 	void SetLocation(const FVector& InLocation) { Location = InLocation; }
@@ -674,13 +855,6 @@ public:
 
 protected:
 	float MassFactor = 1.0f; // 질량 보정용
-
-	float LeftBorder = -1.0f;
-	float RightBorder = 1.0f;
-	float TopBorder = 1.0f;
-	float BottomBorder = -1.0f;
-
-	const float DefaultSpeed = 1.0f;
 
 	const float GravityAccel = 4.f;    // 중력 가속도
 	const float RestitutionWall = 0.2f;
@@ -869,10 +1043,15 @@ public:
 		return distance <= Radius;
 	}
 
-	void SetFruitType(EFruitType InFruitType)
-	{
-		FruitType = InFruitType;
-	}
+    void SetFruitType(EFruitType InFruitType)
+    {
+        FruitType = InFruitType;
+		Radius = SmallestFruitRadius * pow(CoefRadiusGrowth, InFruitType);
+		LeftBorder = -1.0f + Radius;
+		RightBorder = 1.0f - Radius;
+		TopBorder = 1.0f - Radius;
+		BottomBorder = -1.0f + Radius;
+    }
 
 	EFruitType GetFruitType() const { return FruitType; }
 
@@ -890,13 +1069,14 @@ UFruit* CreateFruit(EFruitType FruitType)
 	return Fruit;
 }
 
-UFruit* CreateFruitAt(EFruitType FruitType, FVector Location)
+UFruit* CreateFruitAt(EFruitType FruitType, FVector Location, UTexture* InTexture = nullptr)
 {
 	UFruit* Fruit = new UFruit();
 	Fruit->SetFruitType(FruitType);
 	Fruit->SetLocation(Location);
+	Fruit->SetTexture(InTexture);
 
-	return Fruit;
+    return Fruit;
 }
 
 
@@ -1206,12 +1386,13 @@ class UScoreManager
 public:
 	UScoreManager() : Score(0) {}
 
-	
-	void AddScore(EFruitType FruitType)
-	{
-		Score += (UINT)((FruitType * (FruitType + 1)) / 2);
-	}
-
+    /**
+     * @param FruitType 병합된 후의 과일 타입
+     */
+    void AddScore(EFruitType FruitType)
+    {
+        Score += (UINT)((FruitType * (FruitType + 1)) / 2);
+    }
 	UINT GetScore() const
 	{
 		return Score;
@@ -1245,6 +1426,8 @@ extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
+	std::srand(std::time(0));
+
 	WCHAR WindowClass[] = L"GTLWindowClass";
 
 	WCHAR Title[] = L"Game Tech Lab";
@@ -1316,13 +1499,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ParticlePool.Initialize(100);
 
 
-	TArray<UPrimitive*> PrimitiveList;
+    TArray<UPrimitive*> PrimitiveList;
 
-	// Input 포함 Drop Position 관련 기능은 지윤님 코드에 구현된 로직으로 처리 예정(차후 코드 병합 과정에서 처리)
-	// PrimitiveList.PushBack(CreateFruit(EFruitType::FT_Apple));
-
-
-	const float LineY = 0.8f;
+    const float LineY = 0.8f;
 
 	bool bIsExit = false;
 
@@ -1331,6 +1510,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	bool prevCollision = false;
 
 	LARGE_INTEGER collisionStartCounter;
+
+	UTexture* PeachTexture = new UTexture;
+	PeachTexture->Initialize(renderer.Device, renderer.DeviceContext, "./Peach.png");
 
 	while (bIsExit == false)
 	{
@@ -1373,10 +1555,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 		}
 
-		renderer.PrepareScene();
-		renderer.PrepareShader();
-
-
 		bool bLineCollision = false;
 
 		static const char* FruitNames[] = {
@@ -1386,169 +1564,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		static int SelectedFruitType = 0;
 		static float SpawnX = 0.0f;
 
-		if (!gameOver)
-		{
-			EFruitType ft = (EFruitType)SelectedFruitType;
 
-			//빠른 게임 오버를 원한다면
-			//PrimitiveList.PushBack(CreateFruit(ft));
-
-			// 생성
-			if (spawnFruit)
-			{
-				EFruitType ft = (EFruitType)SelectedFruitType;
-				FVector spawnPos = FVector(spawnX, 0.9f, 0);
-
-				PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos));
-			}
-
-			// 병합 예정 정보를 담은 큐
-			TQueue<FPendingMerge> PendingMergeQueue;
-
-			for (UINT i = 0; i < PrimitiveList.Num(); i++)
-			{
-				PrimitiveList[i]->UpdatePhysics(fixedDeltaTime);
-			}
-
-			ParticlePool.Update(fixedDeltaTime);
-
-			/**************************
-			 * 과일들 간 충돌 / 병합 연산 *
-			 **************************/
-			for (UINT i = 0; i < PrimitiveList.Num(); i++)
-			{
-				UFruit* A = (UFruit*)PrimitiveList[i];
-
-				if (A->IsPendingDestroy())
-				{
-					continue;
-				}
-
-				for (UINT j = i + 1; j < PrimitiveList.Num(); j++)
-				{
-					UFruit* B = (UFruit*)PrimitiveList[j];
-
-					if (B->IsPendingDestroy())
-					{
-						continue;
-					}
-
-					FVector Delta = B->Location - A->Location;
-					float Dist2 = Delta.Dot2(Delta);
-					float r = A->Radius + B->Radius;
-
-					if (Dist2 <= r * r)
-					{
-						if (A->GetFruitType() == B->GetFruitType())
-						{
-							A->MarkPendingDestroy();
-							B->MarkPendingDestroy();
-
-							// 수박끼리 병합 시 두 수박만 사라지고 병합 X
-							if (A->GetFruitType() != EFruitType::FT_Watermelon) {
-								PendingMergeQueue.Push({
-									(EFruitType)(A->GetFruitType() + 1),
-									(A->Location + B->Location) * 0.5f
-									});
-								
-								ParticlePool.Aquire((A->Location + B->Location) * 0.5f);
-							}
-						}
-					}
-				}
-			}
-
-			// 과일 삭제 로직
-			for (UINT i = 0; i < PrimitiveList.Num();)
-			{
-				if (PrimitiveList[i]->IsPendingDestroy())
-				{
-					delete PrimitiveList[i];
-					PrimitiveList[i] = nullptr;
-					PrimitiveList.RemoveAt(i);
-				}
-				else
-				{
-					i++;
-				}
-			}
-
-			// 병합 처리 로직
-			while (!PendingMergeQueue.IsEmpty())
-			{
-				FPendingMerge MergeInfo = PendingMergeQueue.Front();
-				PendingMergeQueue.Pop();
-
-				// 점수 획득
-				ScoreManager.AddScore(MergeInfo.ResultFruitType);
-
-				// 새 과일 생성
-				PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation));
-			}
-
-			//새 과일이 생성된 후 마찰 적용
-			const static int overlapIteration = 10;
-			for (UINT i = 0; i < overlapIteration; ++i)
-			{
-				for (UINT i = 0; i < PrimitiveList.Num(); i++)
-				{
-					UFruit* A = (UFruit*)PrimitiveList[i];
-
-					for (UINT j = i + 1; j < PrimitiveList.Num(); j++)
-					{
-						UFruit* B = (UFruit*)PrimitiveList[j];
-
-						ResolveCollision(A, B);
-					}
-				}
-			}
-
-			for (UINT i = 0; i < PrimitiveList.Num(); i++)
-			{
-				PrimitiveList[i]->Render(renderer);
-			}
-			ParticlePool.Render(renderer);
-
-			for (UINT i = 0; i < PrimitiveList.Num(); i++)
-			{
-				UFruit* fruit = (UFruit*)PrimitiveList[i];
-
-				if (fruit->CheckLineCollision(LineY))
-				{
-					bLineCollision = true;
-
-					if (!prevCollision)
-					{
-						QueryPerformanceCounter(&collisionStartCounter);
-					}
-
-					break;
-				}
-			}
-			// Game Over 여부 계산
-			if (bLineCollision)
-			{
-				LARGE_INTEGER now;
-				QueryPerformanceCounter(&now);
-
-				double elapsed = (double)(now.QuadPart - collisionStartCounter.QuadPart) / frequency.QuadPart;
-
-				if (elapsed >= 1.0)
-				{
-					gameOver = true;
-				}
-			}
-
-			prevCollision = bLineCollision;
-		}
-		else // Game Over
-		{
-			// 기존 데이터 초기화
-			for (UINT i = 0; i < PrimitiveList.Num(); i++) {
-				delete PrimitiveList[i];
-				PrimitiveList[i] = nullptr;
-			}
-		}
+		renderer.PrepareScene();
+		renderer.PrepareShader();
 
 		ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
 		ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
@@ -1614,6 +1632,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				(ImTextureID)renderer.SceneSRV,
 				ImVec2(sceneWidth, sceneHeight)
 			);
+
 			ImGui::EndChild();
 		}
 		else
@@ -1648,6 +1667,172 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		ImGui::Render(); // 이번 프레임에 그릴 UI 설정
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
+
+		if (!gameOver)
+		{
+			EFruitType ft = (EFruitType)SelectedFruitType;
+
+			// 생성
+			if (spawnFruit)
+			{
+				EFruitType ft = (EFruitType)SelectedFruitType;
+				FVector spawnPos = FVector(spawnX, 0.9f, 0);
+
+				PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos, PeachTexture));
+
+				SelectedFruitType = rand() % (EFruitType::FT_Orange + 1);
+			}
+
+			// 병합 예정 정보를 담은 큐
+			TQueue<FPendingMerge> PendingMergeQueue;
+
+			for (UINT i = 0; i < PrimitiveList.Num(); i++)
+			{
+				PrimitiveList[i]->UpdatePhysics(fixedDeltaTime);
+			}
+			ParticlePool.Update(fixedDeltaTime);
+
+			/**************************
+			 * 과일들 간 충돌 / 병합 연산 *
+			 **************************/
+			for (UINT i = 0; i < PrimitiveList.Num(); i++)
+			{
+				UFruit* A = (UFruit*)PrimitiveList[i];
+
+				if (A->IsPendingDestroy())
+				{
+					continue;
+				}
+
+				for (UINT j = i + 1; j < PrimitiveList.Num(); j++)
+				{
+					UFruit* B = (UFruit*)PrimitiveList[j];
+
+					if (B->IsPendingDestroy())
+					{
+						continue;
+					}
+
+					FVector Delta = B->Location - A->Location;
+					float Dist2 = Delta.Dot2(Delta);
+					float r = A->Radius + B->Radius;
+
+					if (Dist2 <= r * r)
+					{
+						if (A->GetFruitType() == B->GetFruitType())
+						{
+							A->MarkPendingDestroy();
+							B->MarkPendingDestroy();
+
+                        // 수박끼리 병합 시 두 수박만 사라지고 병합 X
+                        if (A->GetFruitType() != EFruitType::FT_Watermelon) {
+                            PendingMergeQueue.Push({ 
+                                (EFruitType) (A->GetFruitType() + 1), 
+                                (A->Location + B->Location) * 0.5f
+							});
+
+							ParticlePool.Aquire((A->Location + B->Location) * 0.5f);
+						}
+						else
+						{
+							ScoreManager.AddScore(EFruitType::FT_Watermelon);
+						}
+                    }
+                }
+            }
+        }
+
+			// 과일 삭제 로직
+			for (UINT i = 0; i < PrimitiveList.Num();)
+			{
+				if (PrimitiveList[i]->IsPendingDestroy())
+				{
+					delete PrimitiveList[i];
+					PrimitiveList[i] = nullptr;
+					PrimitiveList.RemoveAt(i);
+				}
+				else
+				{
+					i++;
+				}
+			}
+
+			// 병합 처리 로직
+			while (!PendingMergeQueue.IsEmpty())
+			{
+				FPendingMerge MergeInfo = PendingMergeQueue.Front();
+				PendingMergeQueue.Pop();
+
+				// 점수 획득
+				ScoreManager.AddScore(MergeInfo.ResultFruitType);
+
+				// 새 과일 생성
+				PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, PeachTexture));
+			}
+
+			//새 과일이 생성된 후 마찰 적용
+			const static int overlapIteration = 10;
+			for (UINT i = 0; i < overlapIteration; ++i)
+			{
+				for (UINT i = 0; i < PrimitiveList.Num(); i++)
+				{
+					UFruit* A = (UFruit*)PrimitiveList[i];
+
+					for (UINT j = i + 1; j < PrimitiveList.Num(); j++)
+					{
+						UFruit* B = (UFruit*)PrimitiveList[j];
+
+						ResolveCollision(A, B);
+					}
+				}
+			}
+
+			for (UINT i = 0; i < PrimitiveList.Num(); i++)
+			{
+				PrimitiveList[i]->Render(renderer);
+			}
+			ParticlePool.Render(renderer);
+
+			for (UINT i = 0; i < PrimitiveList.Num(); i++)
+			{
+				UFruit* fruit = (UFruit*)PrimitiveList[i];
+
+				if (fruit->CheckLineCollision(LineY))
+				{
+					bLineCollision = true;
+
+					if (!prevCollision)
+					{
+						QueryPerformanceCounter(&collisionStartCounter);
+					}
+
+					break;
+				}
+			}
+			// Game Over 여부 계산
+			if (bLineCollision)
+			{
+				LARGE_INTEGER now;
+				QueryPerformanceCounter(&now);
+
+				double elapsed = (double)(now.QuadPart - collisionStartCounter.QuadPart) / frequency.QuadPart;
+
+				if (elapsed >= 1.0)
+				{
+					gameOver = true;
+				}
+			}
+
+			prevCollision = bLineCollision;
+		}
+		else // Game Over
+		{
+			// 기존 데이터 초기화
+			for (UINT i = 0; i < PrimitiveList.Num(); i++) {
+				delete PrimitiveList[i];
+				PrimitiveList[i] = nullptr;
+			}
+		}
 
 		renderer.SwapBuffer();
 
