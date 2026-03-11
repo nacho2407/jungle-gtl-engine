@@ -2200,6 +2200,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		case GS_Playing:
 		{
 			static bool prevMouseDown = false;
+
 			bool spawnFruit = false;
 
 			bool curMouseDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
@@ -2265,6 +2266,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					}
 				}
 
+				if (curMouseDown && !prevMouseDown)
+				{
+					spawnFruit = true;
+				}
+
 			}
 			else
 			{
@@ -2275,17 +2281,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				spawnX = mousePos.x / renderer.ViewportInfo.Width;
 				spawnX = max(0.0f, min(1.0f, spawnX));
 				spawnX = spawnX * 2.0f - 1.0f;
-			}
 
-			if (curMouseDown && !prevMouseDown)
-			{
-				spawnFruit = true;
+				// 화면 바깥을 클릭해도 과일이 생성되는 문제 해결
+				bool isMouseInScene = (mousePos.y >= renderer.ViewportInfo.TopLeftY) && (mousePos.y <= renderer.ViewportInfo.TopLeftY + renderer.ViewportInfo.Height) &&
+					(mousePos.x >= renderer.ViewportInfo.TopLeftX) && (mousePos.x <= renderer.ViewportInfo.TopLeftX + renderer.ViewportInfo.Width);
+
+				if (curMouseDown && !prevMouseDown && isMouseInScene)
+				{
+					spawnFruit = true;
+				}
 			}
 
 			prevMouseDown = curMouseDown;
 
 			bool bLineCollision = false;
-
 
 			static int CurrentFruitType = GetRandomFruitType();
 			static int NextFruitType = GetRandomFruitType();
