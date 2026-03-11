@@ -8,6 +8,8 @@ cbuffer constants: register(b0)
     
     float3 CosSin;
     float Padding;
+    
+    float UseTexture;
 }
 
 struct VS_INPUT
@@ -46,8 +48,12 @@ PS_INPUT mainVS(VS_INPUT input)
 
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
+    if (UseTexture == 0.0f)
+    {
+        return input.color;
+    }
     float4 textureColor;
     textureColor = ShaderTexture.Sample(SampleType, input.tex);
-    
+
     return textureColor;
 }
