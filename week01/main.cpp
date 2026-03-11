@@ -839,6 +839,11 @@ public:
 	void SetLocation(const FVector& InLocation) { Location = InLocation; }
 	FVector GetLocation() const { return Location; }
 
+	bool IsInWallBoder()
+	{
+		return ((Location.x <= LeftBorder) || (Location.x >= RightBorder || (Location.y <= BottomBorder)));
+	}
+
 	void BorderClamp()
 	{
 		if (Location.x < LeftBorder)
@@ -855,14 +860,16 @@ public:
 		}
 	}
 
+
 protected:
 	float MassFactor = 1.0f; // 질량 보정용
 
 	const float GravityAccel = 2.f;    // 중력 가속도
 	const float RestitutionWall = 0.1f;
-	const float FloorFriction = 0.4f;
+	const float FloorFriction = 0.8f;
 
 private:
+
 	float Random()
 	{
 		return (float)rand() / (float)RAND_MAX; // [0, 1]
@@ -1075,7 +1082,7 @@ public:
 		POINT lpPoint = {};
 		GetCursorPos(&lpPoint);
 		ScreenToClient(hWnd, &lpPoint);
-		
+
 		return IsOnBound(lpPoint.x, lpPoint.y);
 	}
 
@@ -1235,9 +1242,15 @@ public:
 		{
 			Location.y = BottomBorder;
 
-			Velocity.y *= -RestitutionWall;
+			if (fabsf(Velocity.y) < 0.05f)
+				Velocity.y = 0.0f;
+			else
+				Velocity.y *= -RestitutionWall;
+		}
 
-			//바닥 마찰력 적용
+		if (IsInWallBoder())
+		{
+			//벽 마찰 적용
 			float normalImpulse = fabsf(Velocity.y) * (1.0f + RestitutionWall);
 
 			float frictionImpulse = FloorFriction * normalImpulse;
@@ -1248,6 +1261,11 @@ public:
 		}
 
 		Velocity.y -= GravityAccel * dt;
+
+		// 속도가 매우 작으면 0으로 수렴 (sleep)
+		const float SleepThreshold = 0.01f;
+		if (fabsf(Velocity.x) < SleepThreshold) Velocity.x = 0.0f;
+		if (fabsf(Velocity.y) < SleepThreshold) Velocity.y = 0.0f;
 
 		float speed = sqrtf(Velocity.x * Velocity.x + Velocity.y * Velocity.y);
 
@@ -1665,7 +1683,7 @@ private:
 class UInputManager
 {
 public:
-	UInputManager():
+	UInputManager() :
 		bIsMouseDown(false),
 		bIsXPadConnected(false),
 		MousePosition(0, 0),
@@ -1673,7 +1691,8 @@ public:
 		XPadStickY(0),
 		bIsXPadADown(false),
 		bIsXPadTriggerDown(false)
-	{ }
+	{
+	}
 
 	void Update(HWND hWnd)
 	{
@@ -2377,7 +2396,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		{
 		case GS_Title:
 			renderer.Prepare();
-			
+
 			UpdateTitle(renderer);
 			break;
 		case GS_Credits:
@@ -2433,14 +2452,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				// 화면 바깥을 클릭해도 과일이 생성되는 문제 해결
 				bool isMouseInScene = (mousePos.y >= renderer.ViewportInfo.TopLeftY) && (mousePos.y <= renderer.ViewportInfo.TopLeftY + renderer.ViewportInfo.Height) &&
 					(mousePos.x >= renderer.ViewportInfo.TopLeftX) && (mousePos.x <= renderer.ViewportInfo.TopLeftX + renderer.ViewportInfo.Width);
-				
+
 				bool curMouseDown = InputManager.IsMouseDown();
 
 				if (curMouseDown && !prevMouseDown && isMouseInScene)
 				{
 					spawnFruit = true;
 				}
-				
+
 				prevMouseDown = curMouseDown;
 			}
 
@@ -2584,11 +2603,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				ScoreManager.AddScore(MergeInfo.ResultFruitType);
 
 				CurrentScoreWidget.SetText(std::to_wstring(ScoreManager.GetScore()).c_str());
-				PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, FruitTextures[MergeInfo.ResultFruitType]));
 			}
 
 			//새 과일이 생성된 후 마찰 적용
-			const static int overlapIteration = 10;
+			const static int overlapIteration = 100;
 			for (UINT i = 0; i < overlapIteration; ++i)
 			{
 				for (UINT i = 0; i < PrimitiveList.Num(); i++)
@@ -2603,6 +2621,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					}
 				}
 			}
+
+
 
 			for (UINT i = 0; i < PrimitiveList.Num(); i++)
 			{
@@ -2869,11 +2889,18 @@ static void ResolveCollision(UBall* A, UBall* B)
 	float Penetration = r - Dist;
 	float MA = A->Mass;
 	float MB = B->Mass;
-	float MoveA = Penetration * (MB / (MA + MB));
-	float MoveB = Penetration * (MA / (MA + MB));
+
+	const float Slop = 0.001f;
+	const float Percent = 0.8f;
+	float Correction = fmaxf(Penetration - Slop, 0.0f) / (1.0f / MA + 1.0f / MB) * Percent;
+	float MoveA = Correction / MA;
+	float MoveB = Correction / MB;
 
 	A->Location = A->Location - (Normal * MoveA);
 	B->Location = B->Location + (Normal * MoveB);
+
+	A->BorderClamp();
+	B->BorderClamp();
 
 	// 관성 모멘트 
 	float IA = 0.5f * MA * A->Radius * A->Radius;
@@ -2926,7 +2953,4 @@ static void ResolveCollision(UBall* A, UBall* B)
 		B->AngularVelocity += B->Radius * jT * InvIB;
 	}
 
-	// Border Clamp
-	A->BorderClamp();
-	B->BorderClamp();
 }
