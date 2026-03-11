@@ -2335,11 +2335,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		RankNum[i].SetNumber(i + 1);
 		RankNum[i].SetScale(1);
 		RankNum[i].SetParent(&RankBg[i]);
-		RankNum[i].SetOffset(FVector(-0.2, 0.09, 0));
+		RankNum[i].SetOffset(FVector(-0.19, 0.015, 0));
 
 		RankScore[i].SetScale(1);
 		RankScore[i].SetParent(&RankBg[i]);
-		RankScore[i].SetOffset(FVector(0, 0.09, 0));
+		RankScore[i].SetOffset(FVector(0, 0.015, 0));
 	}
 	float spawnX = 0;
 	float VibrationTime = 0.f;
@@ -2444,7 +2444,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 				bool curMouseDown = InputManager.IsXPadADown();
 
-				if (curMouseDown && !prevMouseDown && spawnX > (-1) * MapBoarder && spawnX < MapBoarder)
+				if (curMouseDown && !prevMouseDown && spawnX > ((-1) * MapBoarder) + previewFruit.Radius && spawnX < MapBoarder - previewFruit.Radius)
 				{
 					LARGE_INTEGER currentTime;
 					QueryPerformanceCounter(&currentTime);
@@ -2744,8 +2744,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			prevCollision = bLineCollision;
 
 			previewFruit.SetFruitType((EFruitType)CurrentFruitType);
-			if (spawnX < (-1) * MapBoarder) { spawnX = (-1) * MapBoarder; }
-			else if (spawnX > MapBoarder) { spawnX = MapBoarder; }
+			if (spawnX < ((-1) * MapBoarder) + previewFruit.Radius) { spawnX = ((-1) * MapBoarder) + previewFruit.Radius; }
+			else if (spawnX > MapBoarder - previewFruit.Radius) { spawnX = MapBoarder - previewFruit.Radius; }
 			previewFruit.SetLocation(FVector(spawnX, 0.9f, 0));
 
 			// 과일이 생성 가능한 상태인지에 따라 프리뷰 이미지 변경
@@ -2814,9 +2814,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 			LeaderBoardWidget.Render(renderer);
 
-			NextTextWidget.Render(renderer);
-			CurrentScoreWidget.Render(renderer);
-
 			for (int i = 0; i < RANK_NUM; i++)
 			{
 				RankBg[i].Render(renderer);
@@ -2828,6 +2825,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				RankScore[i].Render(renderer);
 
 			}
+
+			NextTextWidget.Render(renderer);
+			CurrentScoreWidget.Render(renderer);
 		}
 
 		renderer.SwapBuffer();
