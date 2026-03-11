@@ -1,5 +1,6 @@
 ﻿#include <cstdlib>
 #include <ctime>
+#include <string>
 
 #include <windows.h>
 #include <windowsx.h>
@@ -18,10 +19,32 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include <fmod.hpp>
+#pragma comment (lib, "fmod_vc.lib")
+
+// From DirectXTK
+#include "SpriteBatch.h"
+#include "SpriteFont.h"
+#include "SimpleMath.h"
+
+
+#include <unordered_map>
+#include <string>
 
 class UTexture
 {
 public:
+	UTexture()
+	{
+
+	}
+
+	UTexture(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext, const char* FileName)
+	{
+		bool bIsOK = Initialize(Device, DeviceContext, FileName);
+		assert(bIsOK);
+	}
+
 	bool Initialize(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext, const char* FileName)
 	{
 		D3D11_TEXTURE2D_DESC TextureDesc;
@@ -31,12 +54,14 @@ public:
 		unsigned char* Data;
 
 		Data = stbi_load(FileName, &Width, &Height, &Channels, 0);
-		
+
+		assert(Data);
+
 		TextureDesc.Height = Height;
 		TextureDesc.Width = Width;
 		TextureDesc.MipLevels = 1;
 		TextureDesc.ArraySize = 1;
-		TextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		TextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 		TextureDesc.SampleDesc.Count = 1;
 		TextureDesc.SampleDesc.Quality = 0;
 		TextureDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -189,6 +214,9 @@ public:
 	// 화면 초기화 색상
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 
+	std::unique_ptr<DirectX::SpriteBatch> SpriteBatch;
+	std::unique_ptr<DirectX::SpriteFont> Font;
+
 public:
 	void Create(HWND hWindow)
 	{
@@ -203,6 +231,8 @@ public:
 		CreateRectangleMesh();
 
 		CreateLine();
+
+		CreateFont();
 	}
 
 	void CreateDeviceAndSwapChain(HWND hWindow)
@@ -308,6 +338,15 @@ public:
 		Device->CreateBuffer(&desc, &data, &LineVertexBuffer);
 	}
 
+	void CreateFont()
+	{
+		SpriteBatch = std::make_unique<DirectX::SpriteBatch>(DeviceContext);
+		Font = std::make_unique<DirectX::SpriteFont>(
+			Device,
+			L"./Resource/comic_sans_ms.spritefont"
+		);
+	}
+
 	void Release()
 	{
 		ReleaseRasterizerState();
@@ -322,6 +361,7 @@ public:
 		ReleaseRectangleMesh();
 		ReleaseLine();
 	}
+
 	void ReleaseLine()
 	{
 		if (LineVertexBuffer) { LineVertexBuffer->Release(); LineVertexBuffer = nullptr; }
@@ -719,7 +759,7 @@ protected:
 	float TopBorder = 1.0f;
 	float BottomBorder = -1.0f;
 
-    bool bPendingDestroy = false; // 충돌 검사 중 삭제될 예정인 Primitive들을 표시하기 위한 플래그
+	bool bPendingDestroy = false; // 충돌 검사 중 삭제될 예정인 Primitive들을 표시하기 위한 플래그
 
 private:
 	UTexture* Texture;
@@ -749,7 +789,7 @@ public:
 		Angle(0.f),
 		AngularVelocity(1.f)
 	{
-		Mass = Radius * MassFactor;
+		Mass = Radius * Radius * MassFactor;
 
 		LeftBorder = -1.0f + Radius;
 		RightBorder = 1.0f - Radius;
@@ -785,7 +825,7 @@ protected:
 
 	const float GravityAccel = 2.f;    // 중력 가속도
 	const float RestitutionWall = 0.1f;
-	const float FloorFriction = 0.07f;
+	const float FloorFriction = 0.4f;
 
 private:
 	float Random()
@@ -798,6 +838,206 @@ private:
 		return a + (b - a) * Random();
 	}
 };
+
+class UWidget
+{
+public:
+	UWidget() :
+		Parent(nullptr),
+		Scale(1)
+	{
+
+	}
+
+	void SetParent(UWidget* InWidget)
+	{
+		// Offset 은 Scale = 1 기준이므로 Scale 을 배제한 GetLocation 사용
+		if (InWidget)
+		{
+			FVector PrevLocation = GetLocation(false);
+			Parent = InWidget;
+			Offset = PrevLocation - Parent->GetLocation(false);
+		}
+		else
+		{
+			if (Parent)
+			{
+				// parent 초기화하기 전에 현재 위치를 Offset 으로 지정 (parent == nullptr 일 때 Offset 은 location 임을 기억)
+				Offset = GetLocation(false);
+				Parent = nullptr;
+			}
+			else
+			{
+				// do nothing
+			}
+		}
+	}
+
+	void SetScale(float InScale) { Scale = InScale; }
+
+	// Scale = 1 기준, Parent 와의 Offset 설정
+	// Parent == nullptr 인 경우 Location 설정과 같음
+	// Offset = Self.Loc - Parent.Loc
+	// Self.Loc = Parent.Loc + Offset
+	void SetOffset(FVector InOffset) { Offset = InOffset; }
+
+	FVector GetLocation(bool bApplyScale) const
+	{
+		if (Parent)
+		{
+			FVector Location = Parent->GetLocation(bApplyScale);
+			if (bApplyScale) Location = Location + Offset * GetParentScale();
+			return Location;
+		}
+		else
+		{
+			return Offset;
+		}
+	}
+
+	float GetParentScale() const
+	{
+		if (Parent)
+		{
+			return Parent->GetScale() * Parent->GetParentScale();
+		}
+		else
+		{
+			return 1;
+		}
+	}
+
+	float GetScale() const
+	{
+		return Scale;
+	}
+
+	virtual void Render(URenderer& renderer)
+	{
+
+	}
+
+protected:
+	// Cartesian <-> Screen 변환 과정을 어느 객체에서 또는 함수에서 할 것인가는 논의 필요
+	FVector CartesianToScreenCoord(FVector CartesianCoord)
+	{
+		// Screen Size 가 (900, 1100) 고정 상황 가정
+		return FVector(round((CartesianCoord.x + 1.0f) * 0.5f * 900), round((1 - (CartesianCoord.y + 1.0f) * 0.5f) * 1100));
+	}
+
+private:
+	UWidget* Parent;
+	float Scale;  // 실제 Offset 에 영향을 줌
+
+	// Parent == nullptr 인 경우 Offset 이 곧 Location 이 됨
+	// Parent != nullptr 인 경우 Parent 로부터의 상대적 거리를 나타내는 Offset (Scale = 1 기준)
+	FVector Offset;
+};
+
+/*
+UTextWidget Render 후 UImageWidget Render 가 제대로 작동하지 않거나
+Parent-Child 위치 관계가 보존이 안되는 등의 문제가 있어 현재로썬 단일 객체 + Rendering 순
+
+*/
+class UTextWidget : public UWidget
+{
+public:
+	void Render(URenderer& renderer) override
+	{
+		/*
+			UI
+		*/
+		DirectX::SimpleMath::Vector2 textSize = renderer.Font->MeasureString(Text.c_str());
+
+		renderer.SpriteBatch->Begin();
+
+		// Screen 좌표 계산
+		FVector ScreenCoord = CartesianToScreenCoord(GetLocation(true));
+
+		// DrawString 중앙 정렬: Origin = 텍스트 중앙
+		DirectX::XMFLOAT2 origin = { textSize.x / 2.f, textSize.y / 2.f };
+
+		/*
+		renderer.Font->DrawString(
+			renderer.SpriteBatch.get(),
+			Text.c_str(),
+			DirectX::XMFLOAT2(ScreenCoord.x, ScreenCoord.y),
+			DirectX::Colors::White,
+			0.0f,
+			origin,                        // 텍스트 중앙 기준
+			GetScale() * GetParentScale()
+		);
+		*/
+
+		renderer.Font->DrawString(
+			renderer.SpriteBatch.get(),
+			Text.c_str(),
+			DirectX::XMFLOAT2(ScreenCoord.x, ScreenCoord.y),
+			DirectX::Colors::White,
+			0.0f,
+			DirectX::XMFLOAT2(0, 0),                        // 텍스트 중앙 기준
+			GetScale() * GetParentScale()
+		);
+
+		renderer.SpriteBatch->End();
+	}
+
+	void SetNumber(int Num)
+	{
+		Text = std::to_wstring(Num);
+	}
+
+	void SetText(const wchar_t* InText)
+	{
+		Text = InText;
+	}
+
+private:
+	std::wstring Text;
+};
+
+class UImageWidget : public UWidget
+{
+public:
+	UImageWidget() :
+		Texture(nullptr),
+		Radius(1)
+	{
+	}
+
+	void Render(URenderer& renderer) override
+	{
+		FVector Location = GetLocation(true);
+		renderer.UpdateConstant(Location, 0, Radius * GetScale() * GetParentScale(), true);
+		renderer.UpdateTexture(Texture);
+		renderer.RenderRectangle();
+	}
+
+	void SetTexture(UTexture* InTexture) { Texture = InTexture; }
+	void SetRadius(float InRadius) { Radius = InRadius; }
+
+private:
+	UTexture* Texture;
+	float Radius;
+};
+
+enum EFruitType
+{
+	FT_Cherry = 0,
+	FT_Strawberry,
+	FT_Grape,
+	FT_Dekopon,      // 귤/데코폰
+	FT_Orange,
+	FT_Apple,
+	FT_Pear,
+	FT_Peach,
+	FT_Pineapple,
+	FT_Melon,
+	FT_Watermelon,
+
+	FT_Count  // Last Type Check 용도
+};
+
 
 class UParticle : public UBall
 {
@@ -881,23 +1121,6 @@ private:
 	float MaxLifeTime = { 0.f };
 };
 
-enum EFruitType
-{
-	FT_Cherry = 0,
-	FT_Strawberry,
-	FT_Grape,
-	FT_Dekopon,      // 귤/데코폰
-	FT_Orange,
-	FT_Apple,
-	FT_Pear,
-	FT_Peach,
-	FT_Pineapple,
-	FT_Melon,
-	FT_Watermelon,
-
-	FT_Count  // Last Type Check 용도
-};
-
 class UFruit : public UBall
 {
 public:
@@ -944,7 +1167,6 @@ public:
 
 		}
 
-
 		Velocity.y -= GravityAccel * dt;
 
 		float speed = sqrtf(Velocity.x * Velocity.x + Velocity.y * Velocity.y);
@@ -965,20 +1187,23 @@ public:
 		return distance <= Radius;
 	}
 
-    void SetFruitType(EFruitType InFruitType)
-    {
-        FruitType = InFruitType;
+	void SetFruitType(EFruitType InFruitType)
+	{
+		FruitType = InFruitType;
 		Radius = SmallestFruitRadius * pow(CoefRadiusGrowth, InFruitType);
+
+		Mass = Radius * Radius * MassFactor;
+
 		LeftBorder = -1.0f + Radius;
 		RightBorder = 1.0f - Radius;
 		TopBorder = 1.0f - Radius;
 		BottomBorder = -1.0f + Radius;
-    }
+	}
 
 	EFruitType GetFruitType() const { return FruitType; }
 
 private:
-	const float SmallestFruitRadius = 0.05f; // 가장 작은 과일의 반지름
+	const float SmallestFruitRadius = 0.06f; // 가장 작은 과일의 반지름
 	const float CoefRadiusGrowth = 1.25f; // 과일 레벨이 하나씩 올라갈 때마다 반지름이 커지는 정도
 
 	EFruitType FruitType;
@@ -1000,7 +1225,7 @@ UFruit* CreateFruitAt(EFruitType FruitType, FVector Location, UTexture* InTextur
 	Fruit->SetLocation(Location);
 	Fruit->SetTexture(InTexture);
 
-    return Fruit;
+	return Fruit;
 }
 
 template<typename DataType>
@@ -1229,7 +1454,7 @@ struct FPendingMerge
 
 
 /*
-* 파티클 특성상 합쳐질때마다 생성을 할 경우 생명주기 관리가 어렵고 
+* 파티클 특성상 합쳐질때마다 생성을 할 경우 생명주기 관리가 어렵고
   생성되는데 비용도 고려하여 풀을 만듦
 */
 class UParticlePool
@@ -1357,20 +1582,100 @@ private:
 	TQueue<UParticle*> ParticlePool;
 	TArray<UParticle*> ParticleList;
 	UTexture* ParticleTexture;
-}; 
+};
+
+
+class USoundManager
+{
+public:
+	USoundManager() = default;
+	~USoundManager() = default;
+public:
+	void Initialize()
+	{
+		FMOD::System_Create(&System);
+		System->init(512, FMOD_INIT_NORMAL, nullptr);
+		System->createChannelGroup("BGM", &BGMGroup);
+		System->createChannelGroup("SFX", &SFXGroup);
+	}
+
+	void Release()
+	{
+		for (auto MyPair : Sounds)
+		{
+			MyPair.second->release();
+		}
+
+		if (BGMGroup) BGMGroup->release();
+		if (SFXGroup) SFXGroup->release();
+		System->close();
+		System->release();
+	}
+
+	void LoadSound(std::wstring Path, bool bIsLoop)
+	{
+		FMOD_MODE Mode = (bIsLoop) ? (FMOD_LOOP_NORMAL) : (FMOD_DEFAULT);
+
+		if (Sounds.find(Path) == Sounds.end())
+		{
+			System->createSound(std::string(Path.begin(), Path.end()).c_str(), Mode, nullptr, &Sounds[Path]);
+		}
+	}
+
+	// BGM: 하나만 재생 (이전 BGM 정지 후 교체)
+	void PlayBGM(std::wstring Path, float Volume = 1.f)
+	{
+		if (Sounds.find(Path) == Sounds.end()) return;
+
+		if (BGMChannel) BGMChannel->stop();
+
+		System->playSound(Sounds[Path], BGMGroup, false, &BGMChannel);
+		if (BGMChannel) BGMChannel->setVolume(Volume);
+	}
+
+	void PlaySFX(std::wstring Path, float Volume = 1.f)
+	{
+		if (Sounds.find(Path) == Sounds.end()) return;
+
+		FMOD::Channel* Ch = nullptr;
+		System->playSound(Sounds[Path], SFXGroup, false, &Ch);
+		if (Ch) Ch->setVolume(Volume);
+	}
+
+	void StopAll()
+	{
+		if (BGMGroup) BGMGroup->stop();
+		if (SFXGroup) SFXGroup->stop();
+	}
+
+	void Update()
+	{
+		System->update();
+	}
+
+
+private:
+	FMOD::System* System = nullptr;
+	FMOD::ChannelGroup* BGMGroup = nullptr;
+	FMOD::ChannelGroup* SFXGroup = nullptr;
+	FMOD::Channel* BGMChannel = nullptr;
+
+	std::unordered_map<std::wstring, FMOD::Sound*> Sounds;
+
+};
 
 class FScoreManager
 {
 public:
 	FScoreManager() : Score(0) {}
 
-    /**
-     * @param FruitType 병합된 후의 과일 타입
-     */
-    void AddScore(EFruitType FruitType)
-    {
-        Score += (UINT)((FruitType * (FruitType + 1)) / 2);
-    }
+	/**
+	 * @param FruitType 병합된 후의 과일 타입
+	 */
+	void AddScore(EFruitType FruitType)
+	{
+		Score += (UINT)((FruitType * (FruitType + 1)) / 2);
+	}
 	UINT GetScore() const
 	{
 		return Score;
@@ -1400,8 +1705,17 @@ EGameState GameState = GS_Title;
 
 const float GameOverLimit = 1.5f;
 
-static void UpdateTitle()
+static void UpdateTitle(URenderer& renderer)
 {
+	static ID3D11ShaderResourceView* TitleBackgroundSRV = nullptr;
+
+	if (TitleBackgroundSRV == nullptr)
+	{
+		UTexture* TitleBackgroundTexture = new UTexture();
+		TitleBackgroundTexture->Initialize(renderer.Device, renderer.DeviceContext, "./Resource/title_bg.png");
+		TitleBackgroundSRV = TitleBackgroundTexture->GetTextureSRV();
+	}
+
 	ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
 	ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
 	ImGui::NewFrame(); // ImGui Core 초기화
@@ -1418,25 +1732,30 @@ static void UpdateTitle()
 		ImGuiWindowFlags_NoTitleBar
 	);
 
-	const char* text = "Suika Game!!!";
-	ImVec2 textSize = ImGui::CalcTextSize(text);
+	ImDrawList* drawList = ImGui::GetWindowDrawList();
 
-	float centerX = (ImGui::GetIO().DisplaySize.x - textSize.x) * 0.5f;
-	float centerY = (ImGui::GetIO().DisplaySize.y - textSize.y) * 0.5f;
+	ImVec2 pos = ImGui::GetWindowPos();
+	ImVec2 size = ImGui::GetWindowSize();
 
-	ImGui::SetCursorPos(ImVec2(centerX, centerY));
-	ImGui::Text("%s", text);
+	drawList->AddImage(
+		(ImTextureID) TitleBackgroundSRV,
+		pos,
+		ImVec2(pos.x + size.x, pos.y + size.y)
+	);
 
-	ImGui::Spacing();
+	ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 0, 0, 255));
 
 	const char* StartButtonText = "START";
 	ImVec2 buttonSize = ImGui::CalcTextSize(StartButtonText);
 
-	ImGui::SetCursorPosX((ImGui::GetIO().DisplaySize.x - buttonSize.x - 20) * 0.5f);
+	ImGui::SetCursorPos(ImVec2((ImGui::GetIO().DisplaySize.x - buttonSize.x - 20) * 0.5f, (ImGui::GetIO().DisplaySize.y - buttonSize.y) * 0.5f));
 
 	if (ImGui::Button(StartButtonText))
 	{
 		GameState = GS_Playing;
+
+		TitleBackgroundSRV->Release();
+		TitleBackgroundSRV = nullptr;
 	}
 
 	const char* CreditsButtonText = "CREDITS";
@@ -1448,11 +1767,22 @@ static void UpdateTitle()
 		GameState = GS_Credits;
 	}
 
+	ImGui::PopStyleColor();
+
 	ImGui::End();
 }
 
-static void UpdateCredits()
+static void UpdateCredits(URenderer& renderer)
 {
+	static ID3D11ShaderResourceView* CreditsBackgroundSRV = nullptr;
+
+	if (CreditsBackgroundSRV == nullptr)
+	{
+		UTexture* CreditsBackgroundTexture = new UTexture();
+		CreditsBackgroundTexture->Initialize(renderer.Device, renderer.DeviceContext, "./Resource/credits_bg.png");
+		CreditsBackgroundSRV = CreditsBackgroundTexture->GetTextureSRV();
+	}
+
 	ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
 	ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
 	ImGui::NewFrame(); // ImGui Core 초기화
@@ -1468,6 +1798,19 @@ static void UpdateCredits()
 		ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_NoTitleBar
 	);
+
+	ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+	ImVec2 pos = ImGui::GetWindowPos();
+	ImVec2 size = ImGui::GetWindowSize();
+
+	drawList->AddImage(
+		(ImTextureID)CreditsBackgroundSRV,
+		pos,
+		ImVec2(pos.x + size.x, pos.y + size.y)
+	);
+
+	ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 0, 0, 255));
 
 	const char* text = "Amazing Developers!!!";
 	ImVec2 textSize = ImGui::CalcTextSize(text);
@@ -1499,13 +1842,27 @@ static void UpdateCredits()
 	if (ImGui::Button(buttonText))
 	{
 		GameState = GS_Title;
+
+		CreditsBackgroundSRV->Release();
+		CreditsBackgroundSRV = nullptr;
 	}
+
+	ImGui::PopStyleColor();
 
 	ImGui::End();
 }
 
-static void UpdateGameOver(FScoreManager& ScoreManager)
+static void UpdateGameOver(URenderer& renderer,FScoreManager& ScoreManager)
 {
+	static ID3D11ShaderResourceView* GameOverBackgroundSRV = nullptr;
+
+	if (GameOverBackgroundSRV == nullptr)
+	{
+		UTexture* GameOverBackgroundTexture = new UTexture();
+		GameOverBackgroundTexture->Initialize(renderer.Device, renderer.DeviceContext, "./Resource/gameover_bg.png");
+		GameOverBackgroundSRV = GameOverBackgroundTexture->GetTextureSRV();
+	}
+
 	ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
 	ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
 	ImGui::NewFrame(); // ImGui Core 초기화
@@ -1521,6 +1878,19 @@ static void UpdateGameOver(FScoreManager& ScoreManager)
 		ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_NoTitleBar
 	);
+
+	ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+	ImVec2 pos = ImGui::GetWindowPos();
+	ImVec2 size = ImGui::GetWindowSize();
+
+	drawList->AddImage(
+		(ImTextureID)GameOverBackgroundSRV,
+		pos,
+		ImVec2(pos.x + size.x, pos.y + size.y)
+	);
+
+	ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 0, 0, 255));
 
 	const char* text = "Game Over";
 	ImVec2 textSize = ImGui::CalcTextSize(text);
@@ -1547,7 +1917,12 @@ static void UpdateGameOver(FScoreManager& ScoreManager)
 		ScoreManager.Reset();
 
 		GameState = GS_Playing;
+
+		GameOverBackgroundSRV->Release();
+		GameOverBackgroundSRV = nullptr;
 	}
+
+	ImGui::PopStyleColor();
 
 	ImGui::End();
 }
@@ -1618,14 +1993,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext); // GPU 렌더링 담당
 
 	FScoreManager ScoreManager;
+	USoundManager SoundManager;
 	UParticlePool ParticlePool;
+
+	SoundManager.Initialize();
+
+	//BGM은 mp3파일
+	SoundManager.LoadSound(TEXT("./Sound/BGM/Menu.mp3"), true);
+
+	//SFX는 wav파일
+	SoundManager.LoadSound(TEXT("./Sound/SFX/Drop.wav"), false);
+	SoundManager.LoadSound(TEXT("./Sound/SFX/Merge.wav"), false);
+
+	SoundManager.PlayBGM(TEXT("./Sound/BGM/Menu.mp3"));
 
 	//연쇄적인 12개의 충돌을 고려해 100개
 	ParticlePool.Initialize(100, renderer);
 
-    TArray<UPrimitive*> PrimitiveList;
 
-    const float LineY = 0.8f;
+	TArray<UPrimitive*> PrimitiveList;
+
+	const float LineY = 0.8f;
 
 	bool bIsExit = false;
 
@@ -1636,8 +2024,44 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	LARGE_INTEGER collisionStartCounter;
 
-	UTexture* PeachTexture = new UTexture;
-	PeachTexture->Initialize(renderer.Device, renderer.DeviceContext, "./Peach.png");
+	static const char* FruitNames[] = {
+		"Cherry", "Strawberry", "Grape", "Dekopon", "Orange",
+		"Apple", "Pear", "Peach", "Pineapple", "Melon", "Watermelon"
+	};
+
+	TArray<UTexture*> FruitTextures;
+	for (int i = 0; i < ARRAYSIZE(FruitNames); i++)
+	{
+		std::string FruitPath = "./Resource/";
+		FruitPath += FruitNames[i];
+		FruitPath += ".png";
+		FruitTextures.PushBack(new UTexture(renderer.Device, renderer.DeviceContext, FruitPath.c_str()));
+	}
+
+	UTexture* BubbleTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/bubble.png");
+	UTexture* NextTextTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/NextText.png");
+
+	UImageWidget ScoreWidget, TestWidget, NextTextWidget;
+	UTextWidget TestTextWidget;
+
+	ScoreWidget.SetOffset(FVector(0.7, 0.7, 0));
+	ScoreWidget.SetTexture(BubbleTexture);
+	ScoreWidget.SetScale(1);
+	ScoreWidget.SetRadius(0.1);
+
+	TestWidget.SetTexture(FruitTextures[0]);
+	TestWidget.SetScale(1);
+	TestWidget.SetRadius(0.05);
+	TestWidget.SetParent(&ScoreWidget);
+	TestWidget.SetOffset(FVector(0, 0, 0));
+
+	NextTextWidget.SetTexture(NextTextTexture);
+	NextTextWidget.SetScale(1);
+	NextTextWidget.SetRadius(0.1);
+	NextTextWidget.SetParent(&ScoreWidget);
+	NextTextWidget.SetOffset(FVector(0, 0.1, 0));
+
+	
 
 	while (bIsExit == false)
 	{
@@ -1659,16 +2083,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				break;
 			}
 		}
+		
+		// 일단 임시로 게임 상태 저장
+		EGameState FrameState = GameState;
 
-		switch (GameState)
+		switch (FrameState)
 		{
 			case GS_Title:
 				renderer.Prepare();
-				UpdateTitle();
+				UpdateTitle(renderer);
 				break;
 			case GS_Credits:
 				renderer.Prepare();
-				UpdateCredits();
+				UpdateCredits(renderer);
 				break;
 			case GS_Playing:
 			{
@@ -1694,14 +2121,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 				bool bLineCollision = false;
 
-				static const char* FruitNames[] = {
-					"Cherry", "Strawberry", "Grape", "Dekopon", "Orange",
-					"Apple", "Pear", "Peach", "Pineapple", "Melon", "Watermelon"
-				};
+
 				static int SelectedFruitType = 0;
 
 				renderer.Prepare();
 				renderer.PrepareShader();
+
+				SoundManager.Update();
 
 				EFruitType ft = (EFruitType)SelectedFruitType;
 
@@ -1717,7 +2143,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 					FVector spawnPos = FVector(spawnX, 0.9f, 0);
 
-					PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos, PeachTexture));
+					PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos, FruitTextures[ft]));
 
 					SelectedFruitType = rand() % (EFruitType::FT_Orange + 1);
 				}
@@ -1763,13 +2189,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 								// 수박끼리 병합 시 두 수박만 사라지고 병합 X
 								if (A->GetFruitType() != EFruitType::FT_Watermelon) {
+									//FVector TargetLocation = (A->Location.y < B->Location.y) ? A->Location : B->Location;
+									FVector TargetLocation = A->Location;
+
 									PendingMergeQueue.Push({
 										(EFruitType)(A->GetFruitType() + 1),
-										(A->Location + B->Location) * 0.5f
+										TargetLocation
 										});
 
-									//병합된 곳에서 파티클  생성
-									ParticlePool.Aquire((A->Location + B->Location) * 0.5f);
+									//병합된 곳에서 파티클 생성
+									ParticlePool.Aquire(TargetLocation);
+									SoundManager.PlaySFX(TEXT("./Sound/SFX/Merge.wav"));
 								}
 								else
 								{
@@ -1803,7 +2233,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 					// 점수 획득
 					ScoreManager.AddScore(MergeInfo.ResultFruitType);
-					PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, PeachTexture));
+					PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, FruitTextures[EFruitType::FT_Peach]));
 				}
 
 				//새 과일이 생성된 후 마찰 적용
@@ -1864,8 +2294,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 						}
 						PrimitiveList.Clear();
 
-						// ParticlePool 쪽은 Reset 함수가 있으면 그걸 쓰는 게 가장 좋음
-						// 없다면 나중에 추가 권장
 						ParticlePool.Reset();
 
 						prevCollision = false;
@@ -1883,7 +2311,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 				previewFruit.SetFruitType((EFruitType)SelectedFruitType);
 				previewFruit.SetLocation(FVector(spawnX, 0.9f, 0));
-				previewFruit.SetTexture(PeachTexture);
+				previewFruit.SetTexture(FruitTextures[SelectedFruitType]);
 				previewFruit.Render(renderer);
 
 				renderer.UpdateConstant(FVector(0, 0, 0), 0.f, 1.0f, 0.0f);
@@ -1906,12 +2334,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 			case GS_GameOver:
 				renderer.Prepare();
-				UpdateGameOver(ScoreManager);
+				UpdateGameOver(renderer, ScoreManager);
 				break;
 		}
 
 		ImGui::Render(); // 이번 프레임에 그릴 UI 설정
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
+
+		if (FrameState == GS_Playing)
+		{
+			ScoreWidget.Render(renderer);
+			TestWidget.Render(renderer);
+			NextTextWidget.Render(renderer);
+		}
 
 		renderer.SwapBuffer();
 
@@ -1925,14 +2360,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			elapsedTime = (endTime.QuadPart - startTime.QuadPart) * 1000.0 / frequency.QuadPart;
 		} while (elapsedTime < targetFrameTime);
 	}
+
+	SoundManager.StopAll();
+	SoundManager.Release();
+
 	//파티클 텍스쳐도 삭제
 	ParticlePool.ReleasePool();
 
-	if (PeachTexture)
+	for (int i = 0; i < FruitTextures.Num(); i++)
 	{
-		PeachTexture->Release();
-		delete PeachTexture;
-		PeachTexture = nullptr;
+		FruitTextures[i]->Release();
 	}
 
 	for (UINT i = 0; i < PrimitiveList.Num(); i++) {
@@ -2045,7 +2482,7 @@ static void ResolveCollision(UBall* A, UBall* B)
 		jT = -RelVelTang / (1 / MA + 1 / MB + A->Radius * A->Radius * InvIA + B->Radius * B->Radius * InvIB);
 
 	//마찰력 적용
-	const float mu = 0.4f;
+	const float mu = 0.6f;
 	float maxFriction = mu * fabsf(jN);
 	if (fabsf(jT) > maxFriction)
 		jT = (jT > 0.f ? 1.f : -1.f) * maxFriction;
