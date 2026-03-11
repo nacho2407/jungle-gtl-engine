@@ -1395,12 +1395,6 @@ private:
 	UTexture* ParticleTexture;
 };
 
-enum class ESOUNDCHANNEL
-{
-	SC_BGM,
-	SC_SFX,
-	SC_COUNT
-};
 
 class USoundManager
 {
@@ -1411,7 +1405,9 @@ public:
 	void Initialize()
 	{
 		FMOD::System_Create(&System);
-		System->init(static_cast<int>(ESOUNDCHANNEL::SC_COUNT), FMOD_INIT_NORMAL, nullptr);
+		System->init(512, FMOD_INIT_NORMAL, nullptr);
+		System->createChannelGroup("BGM", &BGMGroup);
+		System->createChannelGroup("SFX", &SFXGroup);
 	}
 
 	void Release()
@@ -1421,42 +1417,46 @@ public:
 			MyPair.second->release();
 		}
 
+		if (BGMGroup) BGMGroup->release();
+		if (SFXGroup) SFXGroup->release();
 		System->close();
 		System->release();
 	}
 
 	void LoadSound(std::wstring Path, bool bIsLoop)
 	{
-		//BGM의 경우는 Loop
 		FMOD_MODE Mode = (bIsLoop) ? (FMOD_LOOP_NORMAL) : (FMOD_DEFAULT);
 
-		if (Sounds.find(Path) != Sounds.end())
+		if (Sounds.find(Path) == Sounds.end())
 		{
 			System->createSound(std::string(Path.begin(), Path.end()).c_str(), Mode, nullptr, &Sounds[Path]);
 		}
 	}
 
-	void PlayGameSound(std::wstring Path, ESOUNDCHANNEL eChannel)
+	// BGM: 하나만 재생 (이전 BGM 정지 후 교체)
+	void PlayBGM(std::wstring Path, float Volume = 1.f)
 	{
-		if (Sounds.find(Path) != Sounds.end())
-		{
-			Channels[static_cast<int>(eChannel)]->stop();
-			System->playSound(Sounds[Path], nullptr, false, &Channels[static_cast<int>(eChannel)]);
-		}
+		if (Sounds.find(Path) == Sounds.end()) return;
+
+		if (BGMChannel) BGMChannel->stop();
+
+		System->playSound(Sounds[Path], BGMGroup, false, &BGMChannel);
+		if (BGMChannel) BGMChannel->setVolume(Volume);
+	}
+
+	void PlaySFX(std::wstring Path, float Volume = 1.f)
+	{
+		if (Sounds.find(Path) == Sounds.end()) return;
+
+		FMOD::Channel* Ch = nullptr;
+		System->playSound(Sounds[Path], SFXGroup, false, &Ch);
+		if (Ch) Ch->setVolume(Volume);
 	}
 
 	void StopAll()
 	{
-		//모든 채널의 사운드를 종료
-		for (FMOD::Channel* Elem : Channels)
-		{
-			if (!Elem)
-			{
-				continue;
-			}
-			Elem->stop();
-		}
-
+		if (BGMGroup) BGMGroup->stop();
+		if (SFXGroup) SFXGroup->stop();
 	}
 
 	void Update()
@@ -1467,7 +1467,9 @@ public:
 
 private:
 	FMOD::System* System = nullptr;
-	FMOD::Channel* Channels[static_cast<int>(ESOUNDCHANNEL::SC_COUNT)] = { nullptr, };
+	FMOD::ChannelGroup* BGMGroup = nullptr;
+	FMOD::ChannelGroup* SFXGroup = nullptr;
+	FMOD::Channel* BGMChannel = nullptr;
 
 	std::unordered_map<std::wstring, FMOD::Sound*> Sounds;
 
@@ -1587,8 +1589,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	SoundManager.Initialize();
 
-	SoundManager.LoadSound(TEXT("./Sound/Memu.mp3"), true);
-	SoundManager.PlayGameSound(TEXT("./Sound/Memu.mp3"), ESOUNDCHANNEL::SC_BGM);
+	//BGM은 mp3파일
+	SoundManager.LoadSound(TEXT("./Sound/BGM/Menu.mp3"), true);
+
+	//SFX는 wav파일
+	SoundManager.LoadSound(TEXT("./Sound/SFX/Drop.wav"), false);
+	SoundManager.LoadSound(TEXT("./Sound/SFX/Merge.wav"), false);
+
+	SoundManager.PlayBGM(TEXT("./Sound/BGM/Menu.mp3"));
 
 	//연쇄적인 12개의 충돌을 고려해 100개
 	ParticlePool.Initialize(100, renderer);
@@ -1664,9 +1672,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		renderer.Prepare();
 		renderer.PrepareShader();
 
+		SoundManager.Update();
+
 		if (!gameOver)
 		{
-			SoundManager.Update();
 			EFruitType ft = (EFruitType)SelectedFruitType;
 
 			// 생성
@@ -1736,6 +1745,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 								//병합된 곳에서 파티클  생성
 								ParticlePool.Aquire((A->Location + B->Location) * 0.5f);
+								SoundManager.PlaySFX(TEXT("./Sound/SFX/Merge.wav"));
 							}
 							else
 							{
