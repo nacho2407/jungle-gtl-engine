@@ -10,392 +10,46 @@
 #pragma comment(lib, "user32")
 #pragma comment(lib, "d3d11")
 #pragma comment(lib, "d3dcompiler")
+#pragma comment(lib, "Xinput.lib")
 
 #include <d3d11.h>
 #include <d3dcompiler.h>
-
-#include "imgui/imgui.h"
-#include "imgui/imgui_internal.h"
-#include "imgui/imgui_impl_dx11.h"
-#include "imgui/imgui_impl_win32.h"
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include <Xinput.h>
 
 // From DirectXTK
 #include "SpriteBatch.h"
 #include "SpriteFont.h"
 #include "SimpleMath.h"
 
-#include <fmod.hpp>
+#include "imgui/imgui.h"
+#include "imgui/imgui_internal.h"
+#include "imgui/imgui_impl_dx11.h"
+#include "imgui/imgui_impl_win32.h"
+
 #pragma comment (lib, "fmod_vc.lib")
+#include <fmod.hpp>
 
-#include <Xinput.h>
-#pragma comment(lib, "Xinput.lib")
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
-class USoundManager
-{
-public:
-	USoundManager() = default;
-	~USoundManager() = default;
-public:
-	void Initialize()
-	{
-		FMOD::System_Create(&System);
-		System->init(512, FMOD_INIT_NORMAL, nullptr);
-		System->createChannelGroup("BGM", &BGMGroup);
-		System->createChannelGroup("SFX", &SFXGroup);
-	}
+#include "Rectangle.h"
+#include "Sphere.h"
 
-	void Release()
-	{
-		for (auto MyPair : Sounds)
-		{
-			MyPair.second->release();
-		}
+#include "Containers.hpp"
+#include "Core.h"
 
-		if (BGMGroup) BGMGroup->release();
-		if (SFXGroup) SFXGroup->release();
-		System->close();
-		System->release();
-	}
+#include "EFruitType.h"
 
-	void LoadSound(std::wstring Path, bool bIsLoop)
-	{
-		FMOD_MODE Mode = (bIsLoop) ? (FMOD_LOOP_NORMAL) : (FMOD_DEFAULT);
-
-		if (Sounds.find(Path) == Sounds.end())
-		{
-			System->createSound(std::string(Path.begin(), Path.end()).c_str(), Mode, nullptr, &Sounds[Path]);
-		}
-	}
-
-	// BGM: 하나만 재생 (이전 BGM 정지 후 교체)
-	void PlayBGM(std::wstring Path, float Volume = 1.f)
-	{
-		if (Sounds.find(Path) == Sounds.end()) return;
-
-		if (BGMChannel) BGMChannel->stop();
-
-		System->playSound(Sounds[Path], BGMGroup, false, &BGMChannel);
-		if (BGMChannel) BGMChannel->setVolume(Volume);
-	}
-
-	void PlaySFX(std::wstring Path, float Volume = 1.f)
-	{
-		if (Sounds.find(Path) == Sounds.end()) return;
-
-		FMOD::Channel* Ch = nullptr;
-		System->playSound(Sounds[Path], SFXGroup, false, &Ch);
-		if (Ch) Ch->setVolume(Volume);
-	}
-
-	void StopAll()
-	{
-		if (BGMGroup) BGMGroup->stop();
-		if (SFXGroup) SFXGroup->stop();
-	}
-
-	void Update()
-	{
-		System->update();
-	}
-
-
-private:
-	FMOD::System* System = nullptr;
-	FMOD::ChannelGroup* BGMGroup = nullptr;
-	FMOD::ChannelGroup* SFXGroup = nullptr;
-	FMOD::Channel* BGMChannel = nullptr;
-
-	std::unordered_map<std::wstring, FMOD::Sound*> Sounds;
-
-};
-
-
-class UInputManager
-{
-public:
-	UInputManager() :
-		bIsPrevMouseDown(false),
-		bIsMouseDown(false),
-		bIsMousePressed(false),
-		bIsMouseReleased(false),
-		bIsXPadConnected(false),
-		MousePosition(0, 0),
-		XPadStickX(0),
-		XPadStickY(0),
-		bIsXPadADown(false),
-		bIsXPadTriggerDown(false)
-	{
-	}
-
-	void Update(HWND hWnd, float dt)
-	{
-		bool bCurrent = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-
-		bIsMousePressed = (!bIsPrevMouseDown && bCurrent);
-		bIsMouseReleased = (bIsPrevMouseDown && !bCurrent);
-		bIsMouseDown = bCurrent;
-		bIsPrevMouseDown = bCurrent;
-
-		GetCursorPos(&MousePosition);
-		ScreenToClient(hWnd, &MousePosition);
-
-		XINPUT_STATE state;
-		ZeroMemory(&state, sizeof(XINPUT_STATE));
-
-		DWORD result = XInputGetState(0, &state);
-		bIsXPadConnected = (result == ERROR_SUCCESS);
-
-		if (bIsXPadConnected)
-		{
-			// 패드 연결됨
-
-			// [-32768, 32767]
-			SHORT lx = state.Gamepad.sThumbLX;
-			SHORT ly = state.Gamepad.sThumbLY;
-
-			float Magnitude = sqrt(lx * lx + ly * ly);
-			const float DEADZONE = 8689;
-
-			// HW Noise 배제
-			if (Magnitude < DEADZONE)
-			{
-				// Not Holding
-				lx = 0;
-				ly = 0;
-
-				if (bIsHoldingRepeatStarted)
-				{
-					bIsHoldingRepeatStarted = false;
-					bIsHoldingRepeatTriggered = false;
-					HoldRepeatTime = 0;
-				}
-			}
-			else
-			{
-				// Holding
-				if (bIsHoldingRepeatStarted)
-				{
-					HoldRepeatTime += dt;
-					if (HoldRepeatTime >= 0.3f)
-					{
-						bIsHoldingRepeatTriggered = true;
-						// dt 가 큰 경우 0.3f 를 크게 벗어날 수 있으므로 이를 고려해서 HoldRepeatTime 수정
-						HoldRepeatTime -= 0.3f;
-					}
-					else
-					{
-						bIsHoldingRepeatTriggered = false;
-					}
-				}
-				else
-				{
-					// 첫 시작시엔 바로 Trigger
-					bIsHoldingRepeatStarted = true;
-					bIsHoldingRepeatTriggered = true;
-					HoldRepeatTime = 0;
-				}
-			}
-
-
-			// lx, ly => [-1, 1] 정규화
-			XPadStickX = lx / 32768.f;
-			XPadStickY = ly / 32768.f;
-
-			bIsXPadADown = (state.Gamepad.wButtons & XINPUT_GAMEPAD_A) != 0;
-			bIsXPadAPressed = bIsXPadADown && !bIsPrevXPadADown;
-			bIsXPadAReleased = !bIsXPadADown && bIsPrevXPadADown;
-			bIsPrevXPadADown = bIsXPadADown;
-
-			bIsXPadTriggerDown = (state.Gamepad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD || state.Gamepad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD);
-		}
-	}
-
-	bool IsMousePressed() const { return bIsMousePressed; }
-	bool IsMouseReleased() const { return bIsMouseReleased; }
-	bool IsMouseDown() const { return bIsMouseDown; }
-
-	bool IsXPadConnected() const { return bIsXPadConnected; }
-	POINT GetMousePosition() const { return MousePosition; }
-
-	float GetXPadStickX() const { return XPadStickX; }
-	float GetXPadStickY() const { return XPadStickY; }
-
-	bool IsXPadADown() const { return bIsXPadADown; }
-	bool IsXPadAPressed() const { return bIsXPadAPressed; }
-	bool IsXPadAReleased() const { return bIsXPadAReleased; }
-
-	bool IsXPadTriggerDown() const { return bIsXPadTriggerDown; }
-	bool IsXPadHoldingRepeatTriggered() const { return bIsHoldingRepeatTriggered; }
-
-private:
-	bool bIsPrevMouseDown = false;
-	bool bIsMouseDown = false;
-	bool bIsMousePressed = false;
-	bool bIsMouseReleased = false;
-
-	bool bIsPrevXPadADown = false;
-	bool bIsXPadADown = false;
-	bool bIsXPadAPressed = false;
-	bool bIsXPadAReleased = false;
-
-	bool bIsXPadConnected;
-	POINT MousePosition;
-
-	// [-1, 1] Normalized
-	float XPadStickX;
-	float XPadStickY;
-
-	bool bIsXPadTriggerDown;
-
-	bool bIsHoldingRepeatStarted;
-	bool bIsHoldingRepeatTriggered;
-	float HoldRepeatTime;
-};
-
-class UTexture
-{
-public:
-	UTexture()
-	{
-
-	}
-
-	UTexture(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext, const char* FileName)
-	{
-		bool bIsOK = Initialize(Device, DeviceContext, FileName);
-		assert(bIsOK);
-	}
-
-	~UTexture()
-	{
-		// Release와 동시에 객체 자체의 메모리도 해제되도록
-		Release();
-	}
-
-	bool Initialize(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext, const char* FileName)
-	{
-		D3D11_TEXTURE2D_DESC TextureDesc;
-		D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
-		UINT RowPitch;
-		HRESULT Result;
-		unsigned char* Data;
-
-		Data = stbi_load(FileName, &Width, &Height, &Channels, 4);
-
-		assert(Data);
-
-		TextureDesc.Height = Height;
-		TextureDesc.Width = Width;
-		TextureDesc.MipLevels = 1;
-		TextureDesc.ArraySize = 1;
-		TextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-		TextureDesc.SampleDesc.Count = 1;
-		TextureDesc.SampleDesc.Quality = 0;
-		TextureDesc.Usage = D3D11_USAGE_DEFAULT;
-		TextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-		TextureDesc.CPUAccessFlags = 0;
-		TextureDesc.MiscFlags = 0;
-
-		RowPitch = (Width * 4) * sizeof(unsigned char);
-		D3D11_SUBRESOURCE_DATA InitData = { Data, RowPitch, 0 };
-
-		Result = Device->CreateTexture2D(&TextureDesc, &InitData, &Texture);
-		if (FAILED(Result))
-		{
-			return false;
-		}
-
-		SRVDesc.Format = TextureDesc.Format;
-		SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-		SRVDesc.Texture2D.MostDetailedMip = 0;
-		SRVDesc.Texture2D.MipLevels = 1;
-
-		Result = Device->CreateShaderResourceView(Texture, &SRVDesc, &TextureSRV);
-		if (FAILED(Result))
-		{
-			return false;
-		}
-
-		stbi_image_free(Data);
-		return true;
-	}
-
-	void Release()
-	{
-		if (TextureSRV)
-		{
-			TextureSRV->Release();
-			TextureSRV = nullptr;
-		}
-		if (Texture)
-		{
-			Texture->Release();
-			Texture = nullptr;
-		}
-	}
-
-	ID3D11ShaderResourceView* GetTextureSRV() { return TextureSRV; }
-
-private:
-	ID3D11Texture2D* Texture;
-	ID3D11ShaderResourceView* TextureSRV;
-
-	int Width;
-	int Height;
-	int Channels;
-};
-
-struct FVertexSimple
-{
-	float x, y, z;
-	float r, g, b, a;
-	float u, v;
-};
-
-struct FVector
-{
-	float x, y, z;
-	FVector(float _x = 0, float _y = 0, float _z = 0) : x(_x), y(_y), z(_z) {}
-
-	FVector operator +(const FVector& rhs) const
-	{
-		return FVector(x + rhs.x, y + rhs.y, z + rhs.z);
-	}
-
-	FVector operator -(const FVector& rhs) const
-	{
-		return FVector(x - rhs.x, y - rhs.y, z - rhs.z);
-	}
-
-	FVector operator *(float scala) const
-	{
-		return FVector(x * scala, y * scala, z * scala);
-	}
-
-	float Dot2(const FVector& rhs) const
-	{
-		return x * rhs.x + y * rhs.y;
-	}
-
-	static FVector Splat(float Scalar)
-	{
-		return FVector(Scalar, Scalar, Scalar);
-	}
-};
+#include "UInputManager.hpp"
+#include "UScoreManager.hpp"
+#include "USoundManager.hpp"
+#include "UTexture.hpp"
 
 struct SceneFrame
 {
 	ImVec2 Pos;
 	ImVec2 Size;
 };
-
-#include "Sphere.h"
-#include "Rectangle.h"
-
-const float LineY = 0.7f;
 
 FVertexSimple line_vertices[] =
 {
@@ -972,8 +626,6 @@ public:
 	}
 };
 
-const float MapBoarder = 0.76f;
-
 class UPrimitive
 {
 public:
@@ -1351,22 +1003,6 @@ public:
 	}
 };
 
-enum EFruitType
-{
-	FT_Cherry = 0,
-	FT_Strawberry,
-	FT_Grape,
-	FT_Dekopon,      // 귤/데코폰
-	FT_Orange,
-	FT_Apple,
-	FT_Pear,
-	FT_Peach,
-	FT_Pineapple,
-	FT_Melon,
-	FT_Watermelon,
-
-	FT_Count  // Last Type Check 용도
-};
 
 class UParticle : public UBall
 {
@@ -1582,224 +1218,6 @@ UFruit* CreateFruitAt(EFruitType FruitType, FVector Location, UTexture* InTextur
 	return Fruit;
 }
 
-template<typename DataType>
-class TQueue
-{
-public:
-	TQueue()
-	{
-		Data = new DataType[1];
-		DataNum = 0;
-		Capacity = 1;
-		Head = 0;
-		Tail = 0;
-	}
-
-	~TQueue()
-	{
-		delete[] Data;
-	}
-
-	// Push, Pop, Reserve
-	bool Push(const DataType& InData)
-	{
-		// Array is full
-		if (DataNum == Capacity)
-		{
-			bool bIsReserveOK = Reserve(Capacity * 2);
-			if (!bIsReserveOK) return false;
-		}
-
-		Data[Tail] = InData;
-		Tail = (Tail + 1) % Capacity;
-		DataNum++;
-		return true;
-	}
-
-	void Clear()
-	{
-		delete[] Data;
-
-		Data = new DataType[1];
-		DataNum = 0;
-		Capacity = 1;
-		Head = 0;
-		Tail = 0;
-	}
-
-	void Pop()
-	{
-		if (IsEmpty()) return;
-		Head = (Head + 1) % Capacity;
-		DataNum--;
-	}
-
-	DataType& Front()
-	{
-		// Empty 체크 나중에 넣어야할듯
-		return Data[Head];
-	}
-
-	const DataType& Front() const
-	{
-		// Empty 체크 나중에 넣어야할듯
-		return Data[Head];
-	}
-
-	bool Reserve(UINT NewCapacity)
-	{
-		// 더 작아지는 경우는 고려하지 않음
-		if (Capacity >= NewCapacity) return false;
-
-		DataType* NewData = new DataType[NewCapacity];
-
-		// 객체가 특수한 복사, 이동 연산을 가지는 것은 아직 고려하지 않음
-		for (UINT i = 0; i < DataNum; i++)
-		{
-			NewData[i] = Data[(Head + i) % Capacity];
-		}
-
-		delete[] Data;
-		Data = NewData;
-		// DataNum 유지
-		Capacity = NewCapacity;
-		Head = 0;
-		Tail = DataNum;
-		return true;
-	}
-
-	bool IsEmpty() const
-	{
-		return DataNum == 0;
-	}
-
-	UINT Num() const
-	{
-		return DataNum;
-	}
-
-private:
-	DataType* Data;
-	UINT Head;
-	UINT Tail;
-	UINT DataNum;
-	UINT Capacity;
-};
-
-template<typename DataType>
-class TArray
-{
-public:
-	TArray()
-	{
-		Data = new DataType[1];
-		DataNum = 0;
-		Capacity = 1;
-	}
-
-	~TArray()
-	{
-		delete[] Data;
-	}
-
-	// PushBack, PopBack
-	bool PushBack(const DataType& InData)
-	{
-		if (DataNum == Capacity)
-		{
-			bool bIsReserveOK = Reserve(Capacity * 2);
-			if (!bIsReserveOK) return false;
-		}
-
-		Data[DataNum] = InData;
-		DataNum++;
-		return true;
-	}
-
-	void Clear()
-	{
-		delete[] Data;
-
-		Data = new DataType[1];
-		DataNum = 0;
-		Capacity = 1;
-	}
-
-	void PopBack()
-	{
-		if (IsEmpty()) return;
-
-		DataNum--;
-	}
-
-	DataType& Back()
-	{
-		// Empty 처리 나중에 해야됨
-		return Data[DataNum - 1];
-	}
-
-	DataType& operator[](UINT Idx)
-	{
-		// 일단 Out of index 는 체크 안함
-		return Data[Idx];
-	}
-
-	const DataType& operator[](UINT Idx) const
-	{
-		return Data[Idx];
-	}
-
-	bool IsEmpty() const
-	{
-		return DataNum == 0;
-	}
-
-	UINT Num() const
-	{
-		return DataNum;
-	}
-
-	bool Reserve(UINT NewCapacity)
-	{
-		// 더 작아지는 경우는 허용 안함
-		if (Capacity >= NewCapacity) return false;
-
-		DataType* NewData = new DataType[NewCapacity];
-		for (UINT i = 0; i < DataNum; i++)
-		{
-			NewData[i] = Data[i];
-		}
-
-		delete[] Data;
-		Data = NewData;
-		// DataNum 유지
-		Capacity = NewCapacity;
-		return true;
-	}
-
-	void RemoveAt(UINT Idx)
-	{
-		if (Idx >= DataNum)
-		{
-			return;
-		}
-
-		if (Idx != DataNum - 1)
-		{
-			Data[Idx] = Data[DataNum - 1];
-		}
-
-		DataNum--;
-
-		// 원소의 소멸자를 별도로 호출하지 않음에 유의
-	}
-
-private:
-	DataType* Data;
-	UINT DataNum;
-	UINT Capacity;
-};
-
 struct FPendingMerge
 {
 	EFruitType ResultFruitType;
@@ -1938,81 +1356,6 @@ private:
 };
 
 
-const UINT RANK_NUM = 5;
-
-class FScoreManager
-{
-public:
-	FScoreManager() : Score(0)
-	{
-		ReadHighScoreData();
-	}
-
-	/**
-	 * @param FruitType 병합된 후의 과일 타입
-	 */
-	void AddScore(EFruitType FruitType)
-	{
-		Score += (UINT)((FruitType * (FruitType + 1)) / 2);
-	}
-	UINT GetScore() const
-	{
-		return Score;
-	}
-
-	void Reset()
-	{
-		Score = 0;
-	}
-
-	int UpdateHighScore()
-	{
-		for (int i = 0; i < RANK_NUM; i++)
-		{
-			if (Score > HighScores[i])
-			{
-				for (int j = RANK_NUM - 1; j > i; j--)
-				{
-					HighScores[j] = HighScores[j - 1];
-				}
-
-				HighScores[i] = Score;
-
-				WriteHighScoreData();
-
-				return i;
-			}
-		}
-		return -1; // 랭킹 진입 실패
-	}
-
-	UINT* GetHighScores() {
-		return HighScores;
-	}
-private:
-	void ReadHighScoreData()
-	{
-		std::ifstream HighScoreData("highscore_data", std::ios::binary);
-
-		if (!HighScoreData)
-		{
-			return;
-		}
-
-		HighScoreData.read(reinterpret_cast<char*>(HighScores), sizeof(HighScores));
-	}
-
-	void WriteHighScoreData()
-	{
-		std::ofstream HighScoreData("highscore_data", std::ios::binary); // 덮어쓰기
-
-		HighScoreData.write(reinterpret_cast<const char*>(HighScores), sizeof(HighScores));
-	}
-private:
-	UINT Score;
-	UINT HighScores[5] = { 0 }; // 0:최고기록
-};
-
 // main 브랜치가 바뀌는 부분을 모두 추적하기 어려워서 게임 매니저는 개발이 어느정도 끝난 후 리팩토링 하면서 추가하겠숩니다..
 //class FGameManager;
 
@@ -2026,10 +1369,6 @@ enum EGameState
 	GS_HowToPlay
 };
 EGameState GameState = GS_Title;
-
-const float DangerLimit = 0.6f;
-const float GameOverLimit = 2.5f;
-const double BlinkInterval = 0.2f;
 
 static void UpdateTitle(URenderer& renderer)
 {
@@ -2187,7 +1526,7 @@ static void UpdateCredits(URenderer& renderer)
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
 }
 
-static void UpdateGameOver(URenderer& renderer, FScoreManager& ScoreManager)
+static void UpdateGameOver(URenderer& renderer, UScoreManager& ScoreManager)
 {
 	// 메모리 누수가 남아있는 함수입니다. 대체 예정이라 여기는 생략했습니다.
 
@@ -2348,7 +1687,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ImGui_ImplWin32_Init((void*)hWnd); // OS 이벤트 및 입력 담당
 	ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext); // GPU 렌더링 담당
 
-	FScoreManager ScoreManager;
+	UScoreManager ScoreManager;
 	UInputManager InputManager;
 	USoundManager SoundManager;
 	UParticlePool ParticlePool;

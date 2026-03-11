@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Core.h"
+
 FVertexSimple rectangle_vertices[] = {
 	{-1, -1, 0, 1, 1, 1, 1, 0, 1},
 	{-1, 1, 0, 1, 1, 1, 1, 0, 0},
