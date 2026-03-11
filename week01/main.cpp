@@ -967,7 +967,7 @@ public:
 		// DrawString 중앙 정렬: Origin = 텍스트 중앙
 		DirectX::XMFLOAT2 origin = { textSize.x / 2.f, textSize.y / 2.f };
 
-
+		/*
 		renderer.Font->DrawString(
 			renderer.SpriteBatch.get(),
 			Text.c_str(),
@@ -977,8 +977,8 @@ public:
 			origin,                        // 텍스트 중앙 기준
 			GetScale() * GetParentScale()
 		);
-		
-		/*
+		*/
+
 		renderer.Font->DrawString(
 			renderer.SpriteBatch.get(),
 			Text.c_str(),
@@ -988,7 +988,7 @@ public:
 			DirectX::XMFLOAT2(0, 0),                        // 텍스트 중앙 기준
 			GetScale() * GetParentScale()
 		);
-		*/
+
 		renderer.SpriteBatch->End();
 	}
 
@@ -1203,8 +1203,8 @@ public:
 		Radius = SmallestFruitRadius * pow(CoefRadiusGrowth, InFruitType);
 		Mass = Radius * Radius * MassFactor;
 
-		LeftBorder = -0.8f + Radius;
-		RightBorder = 0.8f - Radius;
+		LeftBorder = -0.76f + Radius;
+		RightBorder = 0.76f - Radius;
 		TopBorder = 1.0f - Radius;
 		BottomBorder = -0.9f + Radius;
 	}
@@ -1695,7 +1695,7 @@ public:
 	{
 		Score = 0;
 	}
-	
+
 	int UpdateHighScore()
 	{
 		for (int i = 0; i < RANK_NUM; i++)
@@ -1946,6 +1946,7 @@ static void UpdateGameOver(URenderer& renderer, FScoreManager& ScoreManager)
 	if (ImGui::Button(buttonText))
 	{
 		//Reset();
+		ScoreManager.UpdateHighScore();
 		ScoreManager.Reset();
 
 		GameState = GS_Playing;
@@ -2112,7 +2113,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	MapRoofWidget.SetAxisScale(FVector(1, 0.1, 0));
 	MapRoofWidget.SetOffset(FVector(0, 0.6, 0));
 
-
 	UTexture* LeaderBoardTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/leaderboard.png");
 	UTexture* RankBgTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/rankbg.png");
 
@@ -2126,7 +2126,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	LeaderBoardWidget.SetScale(1);
 	LeaderBoardWidget.SetAxisScale(FVector::Splat(0.2));
 
-	
+
 	for (int i = 0; i < RANK_NUM; i++)
 	{
 
@@ -2136,16 +2136,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		RankBg[i].SetParent(&LeaderBoardWidget);
 		RankBg[i].SetOffset(FVector(0, 0.08 - (0.06 * i), 0));
 
-		RankNum[i].SetNumber(i+1);
+		RankNum[i].SetNumber(i + 1);
 		RankNum[i].SetScale(1);
 		RankNum[i].SetParent(&RankBg[i]);
-		RankNum[i].SetOffset(FVector(-0.2, 0.06, 0));
+		RankNum[i].SetOffset(FVector(-0.2, 0.09, 0));
 
 		RankScore[i].SetScale(1);
 		RankScore[i].SetParent(&RankBg[i]);
-		RankScore[i].SetOffset(FVector(0, 0.06, 0));
+		RankScore[i].SetOffset(FVector(0, 0.09, 0));
 	}
-
 	while (bIsExit == false)
 	{
 		QueryPerformanceCounter(&startTime);
@@ -2427,6 +2426,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			UpdateGameOver(renderer, ScoreManager);
 			break;
 		}
+
 		ImGui::Render(); // 이번 프레임에 그릴 UI 설정
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
 
@@ -2438,19 +2438,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			ScoreWidget.Render(renderer);
 			TestWidget.Render(renderer);
 			NextTextWidget.Render(renderer);
-		}
 
-		LeaderBoardWidget.Render(renderer);
-		for (int i = 0; i < RANK_NUM; i++)
-		{
-			RankBg[i].Render(renderer);
-		}
-		for (int i = 0; i < RANK_NUM; i++)
-		{
-			RankNum[i].Render(renderer);
-			RankScore[i].SetNumber(ScoreManager.GetHighScores()[i]);
-			RankScore[i].Render(renderer);
+			LeaderBoardWidget.Render(renderer);
+			for (int i = 0; i < RANK_NUM; i++)
+			{
+				RankBg[i].Render(renderer);
+			}
+			for (int i = 0; i < RANK_NUM; i++)
+			{
+				RankNum[i].Render(renderer);
+				RankScore[i].SetNumber(ScoreManager.GetHighScores()[i]);
+				RankScore[i].Render(renderer);
 
+			}
 		}
 
 		renderer.SwapBuffer();
@@ -2483,8 +2483,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 
 	// 임시 메모리 해제
-	delete BubbleTexture;
-	delete NextTextTexture;
 	delete LeaderBoardTexture;
 	delete RankBgTexture;
 	delete[] RankBg;
