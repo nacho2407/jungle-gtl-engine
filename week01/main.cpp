@@ -1001,7 +1001,7 @@ public:
 		// DrawString 중앙 정렬: Origin = 텍스트 중앙
 		DirectX::XMFLOAT2 origin = { textSize.x / 2.f, textSize.y / 2.f };
 
-		/*
+		
 		renderer.Font->DrawString(
 			renderer.SpriteBatch.get(),
 			Text.c_str(),
@@ -1011,8 +1011,8 @@ public:
 			origin,                        // 텍스트 중앙 기준
 			GetScale() * GetParentScale()
 		);
-		*/
-
+		
+		/*
 		renderer.Font->DrawString(
 			renderer.SpriteBatch.get(),
 			Text.c_str(),
@@ -1022,6 +1022,7 @@ public:
 			DirectX::XMFLOAT2(0, 0),                        // 텍스트 중앙 기준
 			GetScale() * GetParentScale()
 		);
+		*/
 
 		renderer.SpriteBatch->End();
 	}
@@ -1846,6 +1847,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	UTexture* BubbleTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/bubble.png");
 	UTexture* NextTextTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/NextText.png");
+	UTexture* ScoreTextTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/ScoreText.png");
 
 	UImageWidget ScoreWidget, TestWidget, NextTextWidget;
 	UTextWidget TestTextWidget;
@@ -1867,6 +1869,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	NextTextWidget.SetParent(&ScoreWidget);
 	NextTextWidget.SetOffset(FVector(0, 0.1, 0));
 	
+	//왼쪽 점수
+	UImageWidget LeftScoreWidget, ScoreTextWidget;
+	UTextWidget  CurrentScoreWidget;
+
+	LeftScoreWidget.SetOffset(FVector(-0.7f, 0.7f, 0.f));
+	LeftScoreWidget.SetTexture(BubbleTexture);
+	LeftScoreWidget.SetScale(1.f);
+	LeftScoreWidget.SetRadius(0.1);
+
+	ScoreTextWidget.SetTexture(ScoreTextTexture);
+	ScoreTextWidget.SetScale(1);
+	ScoreTextWidget.SetRadius(0.1);
+	ScoreTextWidget.SetParent(&LeftScoreWidget);
+	ScoreTextWidget.SetOffset(FVector(0, 0.1, 0));
+
+	CurrentScoreWidget.SetText(TEXT("0"));
+	CurrentScoreWidget.SetParent(&LeftScoreWidget);
+	CurrentScoreWidget.SetScale(1.f);
+	CurrentScoreWidget.SetOffset(FVector(0.03f, 0.03f, 0.f));
+
+
 	while (bIsExit == false)
 	{
 		QueryPerformanceCounter(&startTime);
@@ -1991,6 +2014,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 								//병합된 곳에서 파티클  생성
 								ParticlePool.Aquire((A->Location + B->Location) * 0.5f);
 								SoundManager.PlaySFX(TEXT("./Sound/SFX/Merge.wav"));
+				
 							}
 							else
 							{
@@ -2024,6 +2048,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 				// 점수 획득
 				ScoreManager.AddScore(MergeInfo.ResultFruitType);
+
+				CurrentScoreWidget.SetText(std::to_wstring(ScoreManager.GetScore()).c_str());
 				PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, FruitTextures[EFruitType::FT_Peach]));
 			}
 
@@ -2125,9 +2151,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		ImGui::Render(); // 이번 프레임에 그릴 UI 설정
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
 
+
+		LeftScoreWidget.Render(renderer);
+		ScoreTextWidget.Render(renderer);
+		
 		ScoreWidget.Render(renderer);
 		TestWidget.Render(renderer);
+
 		NextTextWidget.Render(renderer);
+		CurrentScoreWidget.Render(renderer);
+
+
 
 		renderer.SwapBuffer();
 
