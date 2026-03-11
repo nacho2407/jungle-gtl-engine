@@ -1084,9 +1084,11 @@ public:
 		GetCursorPos(&lpPoint);
 		ScreenToClient(hWnd, &lpPoint);
 
-		return IsOnBound(lpPoint.x, lpPoint.y);
+		//if (Input->IsMouseDown() && IsOnBound(lpPoint.x, lpPoint.y))
+		//{
+		//	SoundManger->PlaySFX(TEXT("./Sound/SFX/Click.wav"));
+		//}
 	}
-
 private:
 	/*
 	* 스크린 상에서 버튼 클릭 체크
@@ -1104,13 +1106,7 @@ private:
 		LeftTop = { (LeftTop.x + 1.0f) * 0.5f * 1024, (1.f - LeftTop.y) * 0.5f * 1024 , 0 };
 		RightBottom = { (RightBottom.x + 1.0f) * 0.5f * 1024,  (1.f - RightBottom.y) * 0.5f * 1024 , 0 };
 
-		bool debugFlag = (MouseX > LeftTop.x && MouseX < RightBottom.x && MouseY > LeftTop.y && MouseY < RightBottom.y);
-
-		if (debugFlag)
-		{
-			int iDebug = 0;
-		}
-		return debugFlag;
+		return (MouseX > LeftTop.x && MouseX < RightBottom.x && MouseY > LeftTop.y && MouseY < RightBottom.y);
 
 	}
 };
@@ -1279,7 +1275,12 @@ public:
 		Radius = SmallestFruitRadius * pow(CoefRadiusGrowth, InFruitType);
 		AngularVelocity -= Radius * 2;
 		if (AngularVelocity < 0.f)AngularVelocity = 0.f;
-		Mass = Radius * Radius; 
+
+		//최소 포도의 질량을 가지도록 설정
+		float GrapeRadius = SmallestFruitRadius * pow(CoefRadiusGrowth, 2);
+
+		Mass = max(GrapeRadius * GrapeRadius, Radius * Radius);
+
 		LeftBorder += Radius;
 		RightBorder -= Radius;
 		TopBorder -= Radius;
@@ -2247,6 +2248,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	//SFX는 wav파일
 	SoundManager.LoadSound(TEXT("./Sound/SFX/Drop.wav"), false);
 	SoundManager.LoadSound(TEXT("./Sound/SFX/Merge.wav"), false);
+	SoundManager.LoadSound(TEXT("./Sound/SFX/Click.wav"), false);
 
 
 	SoundManager.PlayBGM(TEXT("./Sound/BGM/Menu.mp3"));
