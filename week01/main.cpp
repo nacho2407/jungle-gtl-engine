@@ -91,7 +91,7 @@ public:
 			return false;
 		}
 
-		delete[] Data;
+		stbi_image_free(Data);
 		return true;
 	}
 
@@ -1842,7 +1842,7 @@ enum EGameState
 EGameState GameState = GS_Title;
 
 const float DangerLimit = 0.6f;
-const float GameOverLimit = 2.0f;
+const float GameOverLimit = 1.5f;
 const double BlinkInterval = 0.2f;
 
 static void UpdateTitle(URenderer& renderer)
@@ -2191,6 +2191,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		FruitTextures.PushBack(new UTexture(renderer.Device, renderer.DeviceContext, FruitPath.c_str()));
 	}
 
+	// 여기 데이터 해제 필요함!!!
+	UTexture* EmptyTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/preview_empty.png");
 	UTexture* BubbleTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/bubble.png");
 	UTexture* NextTextTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/NextText.png");
 	UTexture* Map1Texture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/Map1.png");
@@ -2265,6 +2267,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	const float MaxVibrationTime = 0.3f;
 	bool bIsVibrating = false;
 
+	const float SpawnCooldown = 0.5f; // 과일 생성 간 최소 시간 간격 (초)
+	LARGE_INTEGER LastSpawnTime;
+	QueryPerformanceCounter(&LastSpawnTime);
+
 	while (bIsExit == false)
 	{
 		QueryPerformanceCounter(&startTime);
@@ -2295,7 +2301,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		{
 		case GS_Title:
 			renderer.Prepare();
-			
 			UpdateTitle(renderer);
 			break;
 		case GS_Credits:
@@ -2335,7 +2340,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 				if (curMouseDown && !prevMouseDown && spawnX > (-1) * MapBoarder && spawnX < MapBoarder)
 				{
-					spawnFruit = true;
+					LARGE_INTEGER currentTime;
+					QueryPerformanceCounter(&currentTime);
+
+					float timeSinceLastSpawn = (currentTime.QuadPart - LastSpawnTime.QuadPart) / (float)frequency.QuadPart;
+					if (timeSinceLastSpawn >= SpawnCooldown)
+					{
+						spawnFruit = true;
+						LastSpawnTime = currentTime;
+					}
 				}
 
 				prevMouseDown = curMouseDown;
@@ -2356,7 +2369,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 				if (curMouseDown && !prevMouseDown && isMouseInScene)
 				{
-					spawnFruit = true;
+					LARGE_INTEGER currentTime;
+					QueryPerformanceCounter(&currentTime);
+
+					float timeSinceLastSpawn = (currentTime.QuadPart - LastSpawnTime.QuadPart) / (float)frequency.QuadPart;
+					if (timeSinceLastSpawn >= SpawnCooldown)
+					{
+						spawnFruit = true;
+						LastSpawnTime = currentTime;
+					}
 				}
 				
 				prevMouseDown = curMouseDown;
@@ -2376,11 +2397,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 			EFruitType ft = (EFruitType)CurrentFruitType;
 
+			// 새 과일 생성
 			if (spawnFruit)
 			{
 				EFruitType ft = (EFruitType)CurrentFruitType;
 
-				// 새 과일 생성
 				float offsetAngle = ((float)rand() / RAND_MAX) * 2.0f * 3.14159f;
 				float offsetDist = 0.01f;
 				spawnX += cosf(offsetAngle) * offsetDist;
@@ -2614,7 +2635,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			if (spawnX < (-1) * MapBoarder) { spawnX = (-1) * MapBoarder; }
 			else if (spawnX > MapBoarder) { spawnX = MapBoarder; }
 			previewFruit.SetLocation(FVector(spawnX, 0.9f, 0));
-			previewFruit.SetTexture(FruitTextures[CurrentFruitType]);
+
+			// 과일이 생성 가능한 상태인지에 따라 프리뷰 이미지 변경
+			LARGE_INTEGER currentTime;
+			QueryPerformanceCounter(&currentTime);
+
+			float timeSinceLastSpawn = (currentTime.QuadPart - LastSpawnTime.QuadPart) / (float)frequency.QuadPart;
+			if (timeSinceLastSpawn >= SpawnCooldown)
+			{
+				previewFruit.SetTexture(FruitTextures[CurrentFruitType]);
+			}
+			else
+			{
+				previewFruit.SetTexture(EmptyTexture);
+			}
+
 			previewFruit.Render(renderer);
 
 			ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
