@@ -753,7 +753,7 @@ protected:
 	float LeftBorder = -1.0f;
 	float RightBorder = 1.0f;
 	float TopBorder = 1.0f;
-	float BottomBorder = -1.0f;
+	float BottomBorder = -0.5f;
 
 	bool bPendingDestroy = false; // 충돌 검사 중 삭제될 예정인 Primitive들을 표시하기 위한 플래그
 
@@ -789,10 +789,10 @@ public:
 	{
 		Mass = Radius * MassFactor;
 
-		LeftBorder = -1.0f + Radius;
-		RightBorder = 1.0f - Radius;
-		TopBorder = 1.0f - Radius;
-		BottomBorder = -1.0f + Radius;
+		LeftBorder   += Radius;
+		RightBorder  -= Radius;
+		TopBorder    -= Radius;
+		BottomBorder += Radius;
 
 		Location.x = RandRange(LeftBorder, RightBorder);
 		Location.y = 1.f;
@@ -1241,10 +1241,11 @@ public:
 	{
 		FruitType = InFruitType;
 		Radius = SmallestFruitRadius * pow(CoefRadiusGrowth, InFruitType);
-		LeftBorder = -1.0f + Radius;
-		RightBorder = 1.0f - Radius;
-		TopBorder = 1.0f - Radius;
-		BottomBorder = -1.0f + Radius;
+		Mass = Radius;
+		LeftBorder   += Radius;
+		RightBorder  -= Radius;
+		TopBorder    -= Radius;
+		BottomBorder += Radius;
 	}
 
 	EFruitType GetFruitType() const { return FruitType; }
@@ -1811,6 +1812,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	SoundManager.LoadSound(TEXT("./Sound/SFX/Drop.wav"), false);
 	SoundManager.LoadSound(TEXT("./Sound/SFX/Merge.wav"), false);
 
+
 	SoundManager.PlayBGM(TEXT("./Sound/BGM/Menu.mp3"));
 
 	//연쇄적인 12개의 충돌을 고려해 100개
@@ -1958,6 +1960,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 				FVector spawnPos = FVector(spawnX, 0.9f, 0);
 
+				SoundManager.PlaySFX(TEXT("./Sound/SFX/Drop.wav"), 1.f);
 				PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos, FruitTextures[ft]));
 
 				SelectedFruitType = rand() % (EFruitType::FT_Orange + 1);
