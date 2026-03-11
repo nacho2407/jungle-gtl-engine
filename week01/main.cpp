@@ -1942,6 +1942,11 @@ static void ResolveCollision(UBall* a, UBall* b);
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+static inline EFruitType GetRandomFruitType()
+{
+	return static_cast<EFruitType>(rand() % (EFruitType::FT_Orange + 1));
+}
+
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
@@ -2143,7 +2148,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			bool bLineCollision = false;
 
 
-			static int SelectedFruitType = 0;
+			static int CurrentFruitType = GetRandomFruitType();
+			static int NextFruitType = GetRandomFruitType();
 
 			renderer.Prepare();
 			renderer.PrepareShader();
@@ -2152,12 +2158,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 			MapWidget.Render(renderer);
 
-			EFruitType ft = (EFruitType)SelectedFruitType;
+			EFruitType ft = (EFruitType)CurrentFruitType;
 
-			// 생성
 			if (spawnFruit)
 			{
-				EFruitType ft = (EFruitType)SelectedFruitType;
+				EFruitType ft = (EFruitType)CurrentFruitType;
 
 				// 새 과일 생성
 				float offsetAngle = ((float)rand() / RAND_MAX) * 2.0f * 3.14159f;
@@ -2168,7 +2173,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 				PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos, FruitTextures[ft]));
 
-				SelectedFruitType = rand() % (EFruitType::FT_Orange + 1);
+				// 다음 과일
+				CurrentFruitType = NextFruitType;
+				NextFruitType = GetRandomFruitType();
+				TestWidget.SetTexture(FruitTextures[NextFruitType]);
 			}
 
 			// 병합 예정 정보를 담은 큐
@@ -2322,7 +2330,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					prevCollision = false;
 
 					prevMouseDown = false;
-					SelectedFruitType = 0;
+
+					CurrentFruitType = GetRandomFruitType();
+					NextFruitType = GetRandomFruitType();
 
 					GameState = GS_GameOver;
 
@@ -2332,9 +2342,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 			prevCollision = bLineCollision;
 
-			previewFruit.SetFruitType((EFruitType)SelectedFruitType);
+			previewFruit.SetFruitType((EFruitType)CurrentFruitType);
 			previewFruit.SetLocation(FVector(spawnX, 0.9f, 0));
-			previewFruit.SetTexture(FruitTextures[SelectedFruitType]);
+			previewFruit.SetTexture(FruitTextures[CurrentFruitType]);
 			previewFruit.Render(renderer);
 
 			renderer.UpdateConstant(FVector(0, 0, 0), 0.f, FVector::Splat(1.0f), 0.0f);
@@ -2348,7 +2358,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 			ImGui::Begin("Team4 Game");
 
-			ImGui::Combo("Fruit Type", &SelectedFruitType, FruitNames, sizeof(FruitNames) / sizeof(*FruitNames));
+			ImGui::Combo("Fruit Type", &CurrentFruitType, FruitNames, sizeof(FruitNames) / sizeof(*FruitNames));
 			ImGui::Text("Score: %d", ScoreManager.GetScore());
 
 			ImGui::End();
@@ -2364,7 +2374,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		ImGui::Render(); // 이번 프레임에 그릴 UI 설정
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
 
-		
+
 
 		if (FrameState == GS_Playing)
 		{
