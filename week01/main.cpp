@@ -1609,17 +1609,21 @@ private:
 class UInputManager
 {
 public:
-	UInputManager():
+	UInputManager() :
 		bIsMouseDown(false),
 		bIsXPadConnected(false),
 		MousePosition(0, 0),
 		XPadStickX(0),
 		XPadStickY(0),
 		bIsXPadADown(false),
-		bIsXPadTriggerDown(false)
-	{ }
+		bIsXPadTriggerDown(false),
+		bIsHoldingRepeatStarted(false),
+		bIsHoldingRepeatTriggered(false),
+		HoldRepeatTime(0)
+	{
+	}
 
-	void Update(HWND hWnd)
+	void Update(HWND hWnd, float dt)
 	{
 		bIsMouseDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
 
@@ -1646,8 +1650,41 @@ public:
 			// HW Noise 배제
 			if (Magnitude < DEADZONE)
 			{
+				// Not Holding
 				lx = 0;
 				ly = 0;
+
+				if (bIsHoldingRepeatStarted)
+				{
+					bIsHoldingRepeatStarted = false;
+					bIsHoldingRepeatTriggered = false;
+					HoldRepeatTime = 0;
+				}
+			}
+			else
+			{
+				// Holding
+				if (bIsHoldingRepeatStarted)
+				{
+					HoldRepeatTime += dt;
+					if (HoldRepeatTime >= 0.3f)
+					{
+						bIsHoldingRepeatTriggered = true;
+						// dt 가 큰 경우 0.3f 를 크게 벗어날 수 있으므로 이를 고려해서 HoldRepeatTime 수정
+						HoldRepeatTime -= 0.3f;
+					}
+					else
+					{
+						bIsHoldingRepeatTriggered = false;
+					}
+				}
+				else
+				{
+					// 첫 시작시엔 바로 Trigger
+					bIsHoldingRepeatStarted = true;
+					bIsHoldingRepeatTriggered = true;
+					HoldRepeatTime = 0;
+				}
 			}
 
 			// lx, ly => [-1, 1] 정규화
@@ -1675,6 +1712,7 @@ public:
 	float GetXPadStickY() const { return XPadStickY; }
 	bool IsXPadADown() const { return bIsXPadADown; }
 	bool IsXPadTriggerDown() const { return bIsXPadTriggerDown; }
+	bool IsXPadHoldingRepeatTriggered() const { return bIsHoldingRepeatTriggered; }
 
 private:
 	bool bIsMouseDown;
@@ -1687,6 +1725,10 @@ private:
 
 	bool bIsXPadADown;
 	bool bIsXPadTriggerDown;
+
+	bool bIsHoldingRepeatStarted;
+	bool bIsHoldingRepeatTriggered;
+	float HoldRepeatTime;
 };
 
 
@@ -2276,7 +2318,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 		}
 
-		InputManager.Update(hWnd);
+		InputManager.Update(hWnd, fixedDeltaTime);
 
 		// 임시 게임 상태 저장
 		EGameState FrameState = GameState;
@@ -2301,7 +2343,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				if (InputManager.IsXPadTriggerDown())
 					spawnX += InputManager.GetXPadStickX() * 0.01f;
 				else
-					spawnX += InputManager.GetXPadStickX() * 0.05f;
+					spawnX += InputManager.GetXPadStickX() * 0.03f;
+
 				spawnX = max(min(spawnX, 1), -1);
 
 				if (bIsVibrating)
