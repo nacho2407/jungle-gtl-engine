@@ -2434,7 +2434,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 				bool curMouseDown = InputManager.IsXPadADown();
 
-				if (curMouseDown && !prevMouseDown && spawnX > (-1) * MapBoarder && spawnX < MapBoarder)
+				if (curMouseDown && !prevMouseDown && spawnX > ((-1) * MapBoarder) + previewFruit.Radius && spawnX < MapBoarder - previewFruit.Radius)
 				{
 					spawnFruit = true;
 				}
@@ -2718,8 +2718,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			prevCollision = bLineCollision;
 
 			previewFruit.SetFruitType((EFruitType)CurrentFruitType);
-			if (spawnX < (-1) * MapBoarder) { spawnX = (-1) * MapBoarder; }
-			else if (spawnX > MapBoarder) { spawnX = MapBoarder; }
+			if (spawnX < ((-1) * MapBoarder) + previewFruit.Radius) { spawnX = ((-1) * MapBoarder) + previewFruit.Radius; }
+			else if (spawnX > MapBoarder - previewFruit.Radius) { spawnX = MapBoarder - previewFruit.Radius; }
 			previewFruit.SetLocation(FVector(spawnX, 0.9f, 0));
 			previewFruit.SetTexture(FruitTextures[CurrentFruitType]);
 			previewFruit.Render(renderer);
@@ -2774,9 +2774,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 			LeaderBoardWidget.Render(renderer);
 
-			NextTextWidget.Render(renderer);
-			CurrentScoreWidget.Render(renderer);
-
 			for (int i = 0; i < RANK_NUM; i++)
 			{
 				RankBg[i].Render(renderer);
@@ -2788,6 +2785,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				RankScore[i].Render(renderer);
 
 			}
+
+			NextTextWidget.Render(renderer);
+			CurrentScoreWidget.Render(renderer);
 		}
 
 		renderer.SwapBuffer();
