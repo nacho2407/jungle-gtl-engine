@@ -149,6 +149,11 @@ struct FVector
 	{
 		return x * rhs.x + y * rhs.y;
 	}
+
+	static FVector Splat(float Scalar)
+	{
+		return FVector(Scalar, Scalar, Scalar);
+	}
 };
 
 struct SceneFrame
@@ -171,12 +176,17 @@ class URenderer
 public:
 	struct FConstants
 	{
+		// 16B
 		FVector Offset;
-		float  Radius;
+		float Padding1;
+
+		// 16B
+		FVector Scale;
+		float Padding2;
+
+		// 16B
 		FVector SinCos;
-		float Padding;
 		float UseTexture;   // 1 = texture, 0 = color
-		float Padding2[3];
 	};
 
 	struct FMesh
@@ -581,7 +591,7 @@ public:
 		}
 	}
 
-	void UpdateConstant(FVector Offset, float Angle, float Radius, float UseTexture)
+	void UpdateConstant(FVector Offset, float Angle, FVector Scale, float UseTexture)
 	{
 		FVector CosSin = { cosf(Angle), sinf(Angle), 0.f };
 
@@ -594,7 +604,7 @@ public:
 
 			constants->Offset = Offset;
 			constants->SinCos = CosSin;
-			constants->Radius = Radius;
+			constants->Scale = Scale;
 			constants->UseTexture = UseTexture;
 
 			DeviceContext->Unmap(ConstantBuffer, 0); // CPU 작업이 끝난 뒤 언매핑
@@ -757,7 +767,7 @@ protected:
 	float LeftBorder = -1.0f;
 	float RightBorder = 1.0f;
 	float TopBorder = 1.0f;
-	float BottomBorder = -1.0f;
+	float BottomBorder = -0.5f;
 
 	bool bPendingDestroy = false; // 충돌 검사 중 삭제될 예정인 Primitive들을 표시하기 위한 플래그
 
@@ -812,7 +822,7 @@ public:
 
 	void Render(URenderer& renderer) override
 	{
-		renderer.UpdateConstant(Location, Angle, Radius, 1.0f);
+		renderer.UpdateConstant(Location, Angle, FVector::Splat(Radius), 1.0f);
 		renderer.UpdateTexture(GetTexture());
 		renderer.RenderRectangle();
 	}
@@ -1001,24 +1011,24 @@ class UImageWidget : public UWidget
 public:
 	UImageWidget() :
 		Texture(nullptr),
-		Radius(1)
+		AxisScale(FVector::Splat(1))
 	{
 	}
 
 	void Render(URenderer& renderer) override
 	{
 		FVector Location = GetLocation(true);
-		renderer.UpdateConstant(Location, 0, Radius * GetScale() * GetParentScale(), true);
+		renderer.UpdateConstant(Location, 0.f, AxisScale * GetScale() * GetParentScale(), 1.0f);
 		renderer.UpdateTexture(Texture);
 		renderer.RenderRectangle();
 	}
 
 	void SetTexture(UTexture* InTexture) { Texture = InTexture; }
-	void SetRadius(float InRadius) { Radius = InRadius; }
+	void SetAxisScale(FVector InAxisScale) { AxisScale = InAxisScale; }
 
 private:
 	UTexture* Texture;
-	float Radius;
+	FVector AxisScale;
 };
 
 enum EFruitType
@@ -1071,7 +1081,7 @@ public:
 
 	void Render(URenderer& renderer) override
 	{
-		renderer.UpdateConstant(Location, Angle, Radius, 1.0f);
+		renderer.UpdateConstant(Location, Angle, FVector::Splat(Radius), 1.0f);
 		renderer.UpdateTexture(GetTexture());
 		renderer.RenderRectangle();
 	}
@@ -1191,13 +1201,12 @@ public:
 	{
 		FruitType = InFruitType;
 		Radius = SmallestFruitRadius * pow(CoefRadiusGrowth, InFruitType);
-
 		Mass = Radius * Radius * MassFactor;
 
-		LeftBorder = -1.0f + Radius;
-		RightBorder = 1.0f - Radius;
+		LeftBorder = -0.8f + Radius;
+		RightBorder = 0.8f - Radius;
 		TopBorder = 1.0f - Radius;
-		BottomBorder = -1.0f + Radius;
+		BottomBorder = -0.9f + Radius;
 	}
 
 	EFruitType GetFruitType() const { return FruitType; }
@@ -1738,7 +1747,7 @@ static void UpdateTitle(URenderer& renderer)
 	ImVec2 size = ImGui::GetWindowSize();
 
 	drawList->AddImage(
-		(ImTextureID) TitleBackgroundSRV,
+		(ImTextureID)TitleBackgroundSRV,
 		pos,
 		ImVec2(pos.x + size.x, pos.y + size.y)
 	);
@@ -1852,7 +1861,7 @@ static void UpdateCredits(URenderer& renderer)
 	ImGui::End();
 }
 
-static void UpdateGameOver(URenderer& renderer,FScoreManager& ScoreManager)
+static void UpdateGameOver(URenderer& renderer, FScoreManager& ScoreManager)
 {
 	static ID3D11ShaderResourceView* GameOverBackgroundSRV = nullptr;
 
@@ -2040,6 +2049,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	UTexture* BubbleTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/bubble.png");
 	UTexture* NextTextTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/NextText.png");
+	UTexture* Map1Texture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/Map1.png");
+	UTexture* Map1RoofTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/Map1_Roof.png");
 
 	UImageWidget ScoreWidget, TestWidget, NextTextWidget;
 	UTextWidget TestTextWidget;
@@ -2047,21 +2058,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ScoreWidget.SetOffset(FVector(0.7, 0.7, 0));
 	ScoreWidget.SetTexture(BubbleTexture);
 	ScoreWidget.SetScale(1);
-	ScoreWidget.SetRadius(0.1);
+	ScoreWidget.SetAxisScale(FVector::Splat(0.1));
 
 	TestWidget.SetTexture(FruitTextures[0]);
 	TestWidget.SetScale(1);
-	TestWidget.SetRadius(0.05);
+	TestWidget.SetAxisScale(FVector::Splat(0.05));
 	TestWidget.SetParent(&ScoreWidget);
 	TestWidget.SetOffset(FVector(0, 0, 0));
 
 	NextTextWidget.SetTexture(NextTextTexture);
 	NextTextWidget.SetScale(1);
-	NextTextWidget.SetRadius(0.1);
+	NextTextWidget.SetAxisScale(FVector::Splat(0.1));
 	NextTextWidget.SetParent(&ScoreWidget);
 	NextTextWidget.SetOffset(FVector(0, 0.1, 0));
 
-	
+	UImageWidget MapWidget;
+
+	MapWidget.SetTexture(Map1Texture);
+	MapWidget.SetAxisScale(FVector::Splat(1));
+	MapWidget.SetOffset(FVector(0, -0.15, 0));
+
+	UImageWidget MapRoofWidget;
+
+	MapRoofWidget.SetTexture(Map1RoofTexture);
+	MapRoofWidget.SetAxisScale(FVector(1, 0.1, 0));
+	MapRoofWidget.SetOffset(FVector(0, 0.6, 0));
 
 	while (bIsExit == false)
 	{
@@ -2083,266 +2104,271 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				break;
 			}
 		}
-		
-		// 일단 임시로 게임 상태 저장
+
+		// 임시 게임 상태 저장
 		EGameState FrameState = GameState;
 
 		switch (FrameState)
 		{
-			case GS_Title:
-				renderer.Prepare();
-				UpdateTitle(renderer);
-				break;
-			case GS_Credits:
-				renderer.Prepare();
-				UpdateCredits(renderer);
-				break;
-			case GS_Playing:
+		case GS_Title:
+			renderer.Prepare();
+			UpdateTitle(renderer);
+			break;
+		case GS_Credits:
+			renderer.Prepare();
+			UpdateCredits(renderer);
+			break;
+		case GS_Playing:
+		{
+			POINT mousePos;
+			GetCursorPos(&mousePos);
+			ScreenToClient(hWnd, &mousePos);
+
+			float spawnX = mousePos.x / renderer.ViewportInfo.Width;
+			spawnX = max(0.0f, min(1.0f, spawnX));
+			spawnX = spawnX * 2.0f - 1.0f;
+
+			static bool prevMouseDown = false;
+			bool spawnFruit = false;
+
+			bool curMouseDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+
+			if (curMouseDown && !prevMouseDown)
 			{
-				POINT mousePos;
-				GetCursorPos(&mousePos);
-				ScreenToClient(hWnd, &mousePos);
+				spawnFruit = true;
+			}
 
-				float spawnX = mousePos.x / renderer.ViewportInfo.Width;
-				spawnX = max(0.0f, min(1.0f, spawnX));
-				spawnX = spawnX * 2.0f - 1.0f;
+			prevMouseDown = curMouseDown;
 
-				static bool prevMouseDown = false;
-				bool spawnFruit = false;
-
-				bool curMouseDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-
-				if (curMouseDown && !prevMouseDown)
-				{
-					spawnFruit = true;
-				}
-
-				prevMouseDown = curMouseDown;
-
-				bool bLineCollision = false;
+			bool bLineCollision = false;
 
 
-				static int SelectedFruitType = 0;
+			static int SelectedFruitType = 0;
 
-				renderer.Prepare();
-				renderer.PrepareShader();
+			renderer.Prepare();
+			renderer.PrepareShader();
 
-				SoundManager.Update();
+			SoundManager.Update();
 
+			MapWidget.Render(renderer);
+
+			EFruitType ft = (EFruitType)SelectedFruitType;
+
+			// 생성
+			if (spawnFruit)
+			{
 				EFruitType ft = (EFruitType)SelectedFruitType;
 
-				// 생성
-				if (spawnFruit)
+				// 새 과일 생성
+				float offsetAngle = ((float)rand() / RAND_MAX) * 2.0f * 3.14159f;
+				float offsetDist = 0.01f;
+				spawnX += cosf(offsetAngle) * offsetDist;
+
+				FVector spawnPos = FVector(spawnX, 0.9f, 0);
+
+				PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos, FruitTextures[ft]));
+
+				SelectedFruitType = rand() % (EFruitType::FT_Orange + 1);
+			}
+
+			// 병합 예정 정보를 담은 큐
+			TQueue<FPendingMerge> PendingMergeQueue;
+
+			for (UINT i = 0; i < PrimitiveList.Num(); i++)
+			{
+				PrimitiveList[i]->UpdatePhysics(fixedDeltaTime);
+			}
+			ParticlePool.Update(fixedDeltaTime);
+
+			// 과일들 간 충돌 / 병합 연산
+			for (UINT i = 0; i < PrimitiveList.Num(); i++)
+			{
+				UFruit* A = (UFruit*)PrimitiveList[i];
+
+				if (A->IsPendingDestroy())
 				{
-					EFruitType ft = (EFruitType)SelectedFruitType;
-
-					// 새 과일 생성
-					float offsetAngle = ((float)rand() / RAND_MAX) * 2.0f * 3.14159f;
-					float offsetDist = 0.01f;
-					spawnX += cosf(offsetAngle) * offsetDist;
-
-					FVector spawnPos = FVector(spawnX, 0.9f, 0);
-
-					PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos, FruitTextures[ft]));
-
-					SelectedFruitType = rand() % (EFruitType::FT_Orange + 1);
+					continue;
 				}
 
-				// 병합 예정 정보를 담은 큐
-				TQueue<FPendingMerge> PendingMergeQueue;
-
-				for (UINT i = 0; i < PrimitiveList.Num(); i++)
+				for (UINT j = i + 1; j < PrimitiveList.Num(); j++)
 				{
-					PrimitiveList[i]->UpdatePhysics(fixedDeltaTime);
-				}
-				ParticlePool.Update(fixedDeltaTime);
+					UFruit* B = (UFruit*)PrimitiveList[j];
 
-				// 과일들 간 충돌 / 병합 연산
-				for (UINT i = 0; i < PrimitiveList.Num(); i++)
-				{
-					UFruit* A = (UFruit*)PrimitiveList[i];
-
-					if (A->IsPendingDestroy())
+					if (B->IsPendingDestroy())
 					{
 						continue;
 					}
 
-					for (UINT j = i + 1; j < PrimitiveList.Num(); j++)
+					FVector Delta = B->Location - A->Location;
+					float Dist2 = Delta.Dot2(Delta);
+					float r = A->Radius + B->Radius;
+
+					if (Dist2 <= r * r)
 					{
-						UFruit* B = (UFruit*)PrimitiveList[j];
-
-						if (B->IsPendingDestroy())
+						if (A->GetFruitType() == B->GetFruitType())
 						{
-							continue;
-						}
+							A->MarkPendingDestroy();
+							B->MarkPendingDestroy();
 
-						FVector Delta = B->Location - A->Location;
-						float Dist2 = Delta.Dot2(Delta);
-						float r = A->Radius + B->Radius;
+							// 수박끼리 병합 시 두 수박만 사라지고 병합 X
+							if (A->GetFruitType() != EFruitType::FT_Watermelon) {
+								//FVector TargetLocation = (A->Location.y < B->Location.y) ? A->Location : B->Location;
+								FVector TargetLocation = A->Location;
 
-						if (Dist2 <= r * r)
-						{
-							if (A->GetFruitType() == B->GetFruitType())
+								PendingMergeQueue.Push({
+									(EFruitType)(A->GetFruitType() + 1),
+									TargetLocation
+									});
+
+								//병합된 곳에서 파티클 생성
+								ParticlePool.Aquire(TargetLocation);
+								SoundManager.PlaySFX(TEXT("./Sound/SFX/Merge.wav"));
+							}
+							else
 							{
-								A->MarkPendingDestroy();
-								B->MarkPendingDestroy();
-
-								// 수박끼리 병합 시 두 수박만 사라지고 병합 X
-								if (A->GetFruitType() != EFruitType::FT_Watermelon) {
-									//FVector TargetLocation = (A->Location.y < B->Location.y) ? A->Location : B->Location;
-									FVector TargetLocation = A->Location;
-
-									PendingMergeQueue.Push({
-										(EFruitType)(A->GetFruitType() + 1),
-										TargetLocation
-										});
-
-									//병합된 곳에서 파티클 생성
-									ParticlePool.Aquire(TargetLocation);
-									SoundManager.PlaySFX(TEXT("./Sound/SFX/Merge.wav"));
-								}
-								else
-								{
-									ScoreManager.AddScore(EFruitType::FT_Watermelon);
-								}
+								ScoreManager.AddScore(EFruitType::FT_Watermelon);
 							}
 						}
 					}
 				}
+			}
 
-				// 과일 삭제 로직
-				for (UINT i = 0; i < PrimitiveList.Num();)
+			// 과일 삭제 로직
+			for (UINT i = 0; i < PrimitiveList.Num();)
+			{
+				if (PrimitiveList[i]->IsPendingDestroy())
 				{
-					if (PrimitiveList[i]->IsPendingDestroy())
-					{
-						delete PrimitiveList[i];
-						PrimitiveList[i] = nullptr;
-						PrimitiveList.RemoveAt(i);
-					}
-					else
-					{
-						i++;
-					}
+					delete PrimitiveList[i];
+					PrimitiveList[i] = nullptr;
+					PrimitiveList.RemoveAt(i);
 				}
-
-				// 병합 처리 로직
-				while (!PendingMergeQueue.IsEmpty())
+				else
 				{
-					FPendingMerge MergeInfo = PendingMergeQueue.Front();
-					PendingMergeQueue.Pop();
+					i++;
+				}
+			}
+
+			// 병합 처리 로직
+			while (!PendingMergeQueue.IsEmpty())
+			{
+				FPendingMerge MergeInfo = PendingMergeQueue.Front();
+				PendingMergeQueue.Pop();
 
 				// 점수 획득
 				ScoreManager.AddScore(MergeInfo.ResultFruitType);
 				PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, FruitTextures[MergeInfo.ResultFruitType]));
 			}
 
-				//새 과일이 생성된 후 마찰 적용
-				const static int overlapIteration = 10;
-				for (UINT i = 0; i < overlapIteration; ++i)
+			//새 과일이 생성된 후 마찰 적용
+			const static int overlapIteration = 10;
+			for (UINT i = 0; i < overlapIteration; ++i)
+			{
+				for (UINT i = 0; i < PrimitiveList.Num(); i++)
 				{
+					UFruit* A = (UFruit*)PrimitiveList[i];
+
+					for (UINT j = i + 1; j < PrimitiveList.Num(); j++)
+					{
+						UFruit* B = (UFruit*)PrimitiveList[j];
+
+						ResolveCollision(A, B);
+					}
+				}
+			}
+
+			for (UINT i = 0; i < PrimitiveList.Num(); i++)
+			{
+				PrimitiveList[i]->Render(renderer);
+			}
+
+			ParticlePool.Render(renderer);
+
+			for (UINT i = 0; i < PrimitiveList.Num(); i++)
+			{
+				UFruit* fruit = (UFruit*)PrimitiveList[i];
+
+				if (fruit->CheckLineCollision(LineY))
+				{
+					bLineCollision = true;
+
+					if (!prevCollision)
+					{
+						QueryPerformanceCounter(&collisionStartCounter);
+					}
+
+					break;
+				}
+			}
+			// Game Over 여부 계산
+			if (bLineCollision)
+			{
+				LARGE_INTEGER now;
+				QueryPerformanceCounter(&now);
+
+				double elapsed = (double)(now.QuadPart - collisionStartCounter.QuadPart) / frequency.QuadPart;
+
+				if (elapsed >= GameOverLimit)
+				{
+					// 데이터 초기화. 게임 매니저가 있으면 UpdateGameOver 함수에서 GameState가 GS_Playing으로 바뀔 때 초기화하는 쪽으로 리팩토링
 					for (UINT i = 0; i < PrimitiveList.Num(); i++)
 					{
-						UFruit* A = (UFruit*)PrimitiveList[i];
-
-						for (UINT j = i + 1; j < PrimitiveList.Num(); j++)
-						{
-							UFruit* B = (UFruit*)PrimitiveList[j];
-
-							ResolveCollision(A, B);
-						}
+						delete PrimitiveList[i];
+						PrimitiveList[i] = nullptr;
 					}
+					PrimitiveList.Clear();
+
+					ParticlePool.Reset();
+
+					prevCollision = false;
+
+					prevMouseDown = false;
+					SelectedFruitType = 0;
+
+					GameState = GS_GameOver;
+
+					break;
 				}
-
-				for (UINT i = 0; i < PrimitiveList.Num(); i++)
-				{
-					PrimitiveList[i]->Render(renderer);
-				}
-
-				ParticlePool.Render(renderer);
-
-				for (UINT i = 0; i < PrimitiveList.Num(); i++)
-				{
-					UFruit* fruit = (UFruit*)PrimitiveList[i];
-
-					if (fruit->CheckLineCollision(LineY))
-					{
-						bLineCollision = true;
-
-						if (!prevCollision)
-						{
-							QueryPerformanceCounter(&collisionStartCounter);
-						}
-
-						break;
-					}
-				}
-				// Game Over 여부 계산
-				if (bLineCollision)
-				{
-					LARGE_INTEGER now;
-					QueryPerformanceCounter(&now);
-
-					double elapsed = (double)(now.QuadPart - collisionStartCounter.QuadPart) / frequency.QuadPart;
-
-					if (elapsed >= GameOverLimit)
-					{
-						// 데이터 초기화. 게임 매니저가 있으면 UpdateGameOver 함수에서 GameState가 GS_Playing으로 바뀔 때 초기화하는 쪽으로 리팩토링
-						for (UINT i = 0; i < PrimitiveList.Num(); i++)
-						{
-							delete PrimitiveList[i];
-							PrimitiveList[i] = nullptr;
-						}
-						PrimitiveList.Clear();
-
-						ParticlePool.Reset();
-
-						prevCollision = false;
-
-						prevMouseDown = false;
-						SelectedFruitType = 0;
-
-						GameState = GS_GameOver;
-
-						break;
-					}
-				}
-
-				prevCollision = bLineCollision;
-
-				previewFruit.SetFruitType((EFruitType)SelectedFruitType);
-				previewFruit.SetLocation(FVector(spawnX, 0.9f, 0));
-				previewFruit.SetTexture(FruitTextures[SelectedFruitType]);
-				previewFruit.Render(renderer);
-
-				renderer.UpdateConstant(FVector(0, 0, 0), 0.f, 1.0f, 0.0f);
-				renderer.UpdateTexture(nullptr);
-				renderer.UpdateLineColor(bLineCollision);
-				renderer.RenderLine();
-
-				ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
-				ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
-				ImGui::NewFrame(); // ImGui Core 초기화
-
-				ImGui::Begin("Team4 Game");
-
-				ImGui::Combo("Fruit Type", &SelectedFruitType, FruitNames, sizeof(FruitNames) / sizeof(*FruitNames));
-				ImGui::Text("Score: %d", ScoreManager.GetScore());
-
-				ImGui::End();
-
-				break;
 			}
-			case GS_GameOver:
-				renderer.Prepare();
-				UpdateGameOver(renderer, ScoreManager);
-				break;
+
+			prevCollision = bLineCollision;
+
+			previewFruit.SetFruitType((EFruitType)SelectedFruitType);
+			previewFruit.SetLocation(FVector(spawnX, 0.9f, 0));
+			previewFruit.SetTexture(FruitTextures[SelectedFruitType]);
+			previewFruit.Render(renderer);
+
+			renderer.UpdateConstant(FVector(0, 0, 0), 0.f, FVector::Splat(1.0f), 0.0f);
+			renderer.UpdateTexture(nullptr);
+			renderer.UpdateLineColor(bLineCollision);
+			renderer.RenderLine();
+
+			ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
+			ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
+			ImGui::NewFrame(); // ImGui Core 초기화
+
+			ImGui::Begin("Team4 Game");
+
+			ImGui::Combo("Fruit Type", &SelectedFruitType, FruitNames, sizeof(FruitNames) / sizeof(*FruitNames));
+			ImGui::Text("Score: %d", ScoreManager.GetScore());
+
+			ImGui::End();
+
+			break;
+		}
+		case GS_GameOver:
+			renderer.Prepare();
+			UpdateGameOver(renderer, ScoreManager);
+			break;
 		}
 
 		ImGui::Render(); // 이번 프레임에 그릴 UI 설정
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
 
+		
+
 		if (FrameState == GS_Playing)
 		{
+			MapRoofWidget.Render(renderer);
 			ScoreWidget.Render(renderer);
 			TestWidget.Render(renderer);
 			NextTextWidget.Render(renderer);
