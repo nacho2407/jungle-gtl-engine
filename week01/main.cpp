@@ -932,7 +932,7 @@ protected:
 	FVector CartesianToScreenCoord(FVector CartesianCoord)
 	{
 		// Screen Size 가 (900, 1100) 고정 상황 가정
-		return FVector(round((CartesianCoord.x + 1.0f) * 0.5f * 900), round((1 - (CartesianCoord.y + 1.0f) * 0.5f) * 1100));
+		return FVector(round((CartesianCoord.x + 1.0f) * 0.5f * 1024), round((1 - (CartesianCoord.y + 1.0f) * 0.5f) * 1024));
 	}
 
 private:
@@ -967,7 +967,7 @@ public:
 		// DrawString 중앙 정렬: Origin = 텍스트 중앙
 		DirectX::XMFLOAT2 origin = { textSize.x / 2.f, textSize.y / 2.f };
 
-		/*
+
 		renderer.Font->DrawString(
 			renderer.SpriteBatch.get(),
 			Text.c_str(),
@@ -977,8 +977,8 @@ public:
 			origin,                        // 텍스트 중앙 기준
 			GetScale() * GetParentScale()
 		);
-		*/
-
+		
+		/*
 		renderer.Font->DrawString(
 			renderer.SpriteBatch.get(),
 			Text.c_str(),
@@ -988,7 +988,7 @@ public:
 			DirectX::XMFLOAT2(0, 0),                        // 텍스트 중앙 기준
 			GetScale() * GetParentScale()
 		);
-
+		*/
 		renderer.SpriteBatch->End();
 	}
 
@@ -1673,6 +1673,7 @@ private:
 
 };
 
+const UINT RANK_NUM = 5;
 class FScoreManager
 {
 public:
@@ -1694,8 +1695,30 @@ public:
 	{
 		Score = 0;
 	}
+	
+	int UpdateHighScore()
+	{
+		for (int i = 0; i < RANK_NUM; i++)
+		{
+			if (Score > HighScores[i])
+			{
+				for (int j = RANK_NUM - 1; j > i; j--)
+				{
+					HighScores[j] = HighScores[j - 1];
+				}
+
+				HighScores[i] = Score;
+				return i;
+			}
+		}
+		return -1; // 랭킹 진입 실패
+	}
+	UINT* GetHighScores() {
+		return HighScores;
+	}
 private:
 	UINT Score;
+	UINT HighScores[5] = { 0 }; // 0:최고기록
 };
 
 // main 브랜치가 바뀌는 부분을 모두 추적하기 어려워서 게임 매니저는 개발이 어느정도 끝난 후 리팩토링 하면서 추가하겠숩니다..
@@ -2089,6 +2112,40 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	MapRoofWidget.SetAxisScale(FVector(1, 0.1, 0));
 	MapRoofWidget.SetOffset(FVector(0, 0.6, 0));
 
+
+	UTexture* LeaderBoardTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/leaderboard.png");
+	UTexture* RankBgTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/rankbg.png");
+
+	UImageWidget LeaderBoardWidget;
+	UImageWidget* RankBg = new UImageWidget[RANK_NUM];
+	UTextWidget* RankNum = new UTextWidget[RANK_NUM];
+	UTextWidget* RankScore = new UTextWidget[RANK_NUM];
+
+	LeaderBoardWidget.SetOffset(FVector(-0.8, 0.3, 0));
+	LeaderBoardWidget.SetTexture(LeaderBoardTexture);
+	LeaderBoardWidget.SetScale(1);
+	LeaderBoardWidget.SetAxisScale(FVector::Splat(0.2));
+
+	
+	for (int i = 0; i < RANK_NUM; i++)
+	{
+
+		RankBg[i].SetTexture(RankBgTexture);
+		RankBg[i].SetScale(0.5);
+		RankBg[i].SetAxisScale(FVector::Splat(0.28));
+		RankBg[i].SetParent(&LeaderBoardWidget);
+		RankBg[i].SetOffset(FVector(0, 0.08 - (0.06 * i), 0));
+
+		RankNum[i].SetNumber(i+1);
+		RankNum[i].SetScale(1);
+		RankNum[i].SetParent(&RankBg[i]);
+		RankNum[i].SetOffset(FVector(-0.2, 0.06, 0));
+
+		RankScore[i].SetScale(1);
+		RankScore[i].SetParent(&RankBg[i]);
+		RankScore[i].SetOffset(FVector(0, 0.06, 0));
+	}
+
 	while (bIsExit == false)
 	{
 		QueryPerformanceCounter(&startTime);
@@ -2370,7 +2427,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			UpdateGameOver(renderer, ScoreManager);
 			break;
 		}
-
 		ImGui::Render(); // 이번 프레임에 그릴 UI 설정
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
 
@@ -2382,6 +2438,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			ScoreWidget.Render(renderer);
 			TestWidget.Render(renderer);
 			NextTextWidget.Render(renderer);
+		}
+
+		LeaderBoardWidget.Render(renderer);
+		for (int i = 0; i < RANK_NUM; i++)
+		{
+			RankBg[i].Render(renderer);
+		}
+		for (int i = 0; i < RANK_NUM; i++)
+		{
+			RankNum[i].Render(renderer);
+			RankScore[i].SetNumber(ScoreManager.GetHighScores()[i]);
+			RankScore[i].Render(renderer);
+
 		}
 
 		renderer.SwapBuffer();
@@ -2412,6 +2481,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		delete PrimitiveList[i];
 		PrimitiveList[i] = nullptr;
 	}
+
+	// 임시 메모리 해제
+	delete BubbleTexture;
+	delete NextTextTexture;
+	delete LeaderBoardTexture;
+	delete RankBgTexture;
+	delete[] RankBg;
+	delete[] RankNum;
+	delete[] RankScore;
 
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
