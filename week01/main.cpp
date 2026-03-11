@@ -27,9 +27,11 @@
 #include "SpriteFont.h"
 #include "SimpleMath.h"
 
-
 #include <unordered_map>
 #include <string>
+
+#include <Xinput.h>
+#pragma comment(lib, "Xinput.lib")
 
 class UTexture
 {
@@ -2145,6 +2147,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		RankScore[i].SetParent(&RankBg[i]);
 		RankScore[i].SetOffset(FVector(0, 0.09, 0));
 	}
+	float spawnX = 0;
+	float VibrationTime = 0.f;
+	const float MaxVibrationTime = 0.3f;
+	bool bIsVibrating = false;
+
 	while (bIsExit == false)
 	{
 		QueryPerformanceCounter(&startTime);
@@ -2181,18 +2188,83 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			break;
 		case GS_Playing:
 		{
-			POINT mousePos;
-			GetCursorPos(&mousePos);
-			ScreenToClient(hWnd, &mousePos);
-
-			float spawnX = mousePos.x / renderer.ViewportInfo.Width;
-			spawnX = max(0.0f, min(1.0f, spawnX));
-			spawnX = spawnX * 2.0f - 1.0f;
-
 			static bool prevMouseDown = false;
 			bool spawnFruit = false;
 
 			bool curMouseDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+
+			XINPUT_STATE state;
+			ZeroMemory(&state, sizeof(XINPUT_STATE));
+
+			DWORD result = XInputGetState(0, &state);
+
+			if (result == ERROR_SUCCESS)
+			{
+				// 패드 연결됨
+
+				// [-32768, 32767]
+				SHORT lx = state.Gamepad.sThumbLX;
+				SHORT ly = state.Gamepad.sThumbLY;
+
+				float Magnitude = sqrt(lx * lx + ly * ly);
+				const float DEADZONE = 8689;
+
+				// HW Noise 배제
+				if (Magnitude < DEADZONE)
+				{
+					lx = 0;
+					ly = 0;
+				}
+
+				// lx, ly => [-1, 1] 정규화
+				float nx = lx / 32768.f;
+				float ny = ly / 32768.f;
+
+				if (state.Gamepad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD || state.Gamepad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD)
+				{
+					// 미세 조정
+					spawnX += nx * 0.01f;
+				}
+				else
+				{
+					spawnX += nx * 0.05f;
+				}
+
+				spawnX = max(min(spawnX, 1), -1);
+
+				if (state.Gamepad.wButtons & XINPUT_GAMEPAD_A)
+				{
+					spawnFruit = true;
+					// A 버튼 눌림
+					curMouseDown = true;
+				}
+
+				if (bIsVibrating)
+				{
+					VibrationTime += fixedDeltaTime;
+					if (VibrationTime >= MaxVibrationTime)
+					{
+						// 진동 종료
+						XINPUT_VIBRATION vibration{};
+						vibration.wLeftMotorSpeed = 0;
+						vibration.wRightMotorSpeed = 0;
+						XInputSetState(0, &vibration);
+						bIsVibrating = false;
+						VibrationTime = 0;
+					}
+				}
+
+			}
+			else
+			{
+				POINT mousePos;
+				GetCursorPos(&mousePos);
+				ScreenToClient(hWnd, &mousePos);
+
+				spawnX = mousePos.x / renderer.ViewportInfo.Width;
+				spawnX = max(0.0f, min(1.0f, spawnX));
+				spawnX = spawnX * 2.0f - 1.0f;
+			}
 
 			if (curMouseDown && !prevMouseDown)
 			{
@@ -2271,6 +2343,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					{
 						if (A->GetFruitType() == B->GetFruitType())
 						{
+							if (result == ERROR_SUCCESS)
+							{
+								// 패드 연결 상태
+								XINPUT_VIBRATION vibration{};
+								vibration.wLeftMotorSpeed = 500 * (A->GetFruitType() * A->GetFruitType() + 1);
+								vibration.wRightMotorSpeed = 500 * (A->GetFruitType() * A->GetFruitType() + 1);
+
+								XInputSetState(0, &vibration);
+
+								bIsVibrating = true;
+								VibrationTime = 0.f;
+							}
+
 							A->MarkPendingDestroy();
 							B->MarkPendingDestroy();
 
@@ -2424,6 +2509,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		case GS_GameOver:
 			renderer.Prepare();
 			UpdateGameOver(renderer, ScoreManager);
+
+			// 종료 시 진동 종료
+			if (bIsVibrating)
+			{
+				// 진동 종료
+				XINPUT_VIBRATION vibration{};
+				vibration.wLeftMotorSpeed = 0;
+				vibration.wRightMotorSpeed = 0;
+				XInputSetState(0, &vibration);
+				bIsVibrating = false;
+				VibrationTime = 0;
+			}
 			break;
 		}
 
