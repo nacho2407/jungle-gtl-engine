@@ -562,9 +562,13 @@ public:
 		return vertexBuffer;
 	}
 
-	void ReleaseVertexBuffer(ID3D11Buffer* vertexBuffer)
+	void ReleaseVertexBuffer(ID3D11Buffer*& vertexBuffer)
 	{
-		vertexBuffer->Release();
+		if (vertexBuffer)
+		{
+			vertexBuffer->Release();
+			vertexBuffer = nullptr;
+		}
 	}
 
 	void CreateConstantBuffer()
@@ -730,7 +734,7 @@ public:
 	{
 		SwapChain->Present(1, 0); // VSync 활성화
 	}
-}; // class URenderer
+};
 
 class UPrimitive
 {
@@ -777,8 +781,6 @@ public:
 	FVector Location; // 여기서는 Offset과 동일한 개념
 	FVector Velocity;
 
-	static int TotalNumBalls;
-
 	float Angle;
 	float AngularVelocity;
 
@@ -797,7 +799,7 @@ public:
 		Angle(0.f),
 		AngularVelocity(1.f)
 	{
-		Mass = Radius * MassFactor;
+		Mass = Radius * Radius * MassFactor;
 
 		LeftBorder = -1.0f + Radius;
 		RightBorder = 1.0f - Radius;
@@ -816,52 +818,6 @@ public:
 	~UBall()
 	{
 
-	}
-
-	void UpdatePhysics(
-		float dt
-	) override
-	{
-		Location = Location + Velocity * dt;
-
-		if (Location.x < LeftBorder)
-		{
-			Location.x = LeftBorder;
-			Velocity.x *= -1.0f;
-		}
-		if (Location.x > RightBorder)
-		{
-			Location.x = RightBorder;
-			Velocity.x *= -1.0f;
-		}
-		if (Location.y > TopBorder)
-		{
-			Location.y = TopBorder;
-			Velocity.y *= -RestitutionWall;
-		}
-		if (Location.y < BottomBorder)
-		{
-			Location.y = BottomBorder;
-
-			//바닥 마찰력 적용
-			float normalImpulse = fabsf(Velocity.y) * (1.0f + RestitutionWall);
-
-			Velocity.y *= -RestitutionWall;
-
-			float frictionImpulse = FloorFriction * normalImpulse;
-			if (fabsf(Velocity.x) <= frictionImpulse)
-				Velocity.x = 0.0f;
-			else
-				Velocity.x -= (Velocity.x > 0.0f ? 1.0f : -1.0f) * frictionImpulse;
-
-			//마찰로 인한 토크 적용
-		}
-
-		Velocity.y -= GravityAccel * dt;
-
-		//각가속도는 0.98로 고정
-		AngularVelocity *= 0.88f;
-		Angle += AngularVelocity * dt;
 	}
 
 	void Render(URenderer& renderer) override
@@ -896,7 +852,7 @@ private:
 class UWidget
 {
 public:
-	UWidget():
+	UWidget() :
 		Parent(nullptr),
 		Scale(1)
 	{
@@ -968,7 +924,7 @@ public:
 
 	virtual void Render(URenderer& renderer)
 	{
-		
+
 	}
 
 protected:
@@ -1053,10 +1009,11 @@ private:
 class UImageWidget : public UWidget
 {
 public:
-	UImageWidget():
+	UImageWidget() :
 		Texture(nullptr),
 		AxisScale(FVector::Splat(1))
-	{ }
+	{
+	}
 
 	void Render(URenderer& renderer) override
 	{
@@ -1174,19 +1131,13 @@ private:
 	float MaxLifeTime = { 0.f };
 };
 
-const float SmallestFruitRadius = 0.05f; // 가장 작은 과일의 반지름
-const float CoefRadiusGrowth = 1.25f; // 과일 레벨이 하나씩 올라갈 때마다 반지름이 커지는 정도
-
 class UFruit : public UBall
 {
 public:
 	UFruit()
 	{
-
+		FruitType = EFruitType::FT_Cherry;
 	}
-
-	// 특정 EFruitType에 해당하는 과일 객체를 특정 X 위치에 스폰하는 생성자 필요
-	// 과일 반지름: SmallestFruitRadius * pow(CoefRadiusGrowth, FruitType)
 
 	void UpdatePhysics(
 		float dt
@@ -1250,6 +1201,8 @@ public:
 	{
 		FruitType = InFruitType;
 		Radius = SmallestFruitRadius * pow(CoefRadiusGrowth, InFruitType);
+		Mass = Radius * Radius * MassFactor;
+
 		LeftBorder = -0.8f + Radius;
 		RightBorder = 0.8f - Radius;
 		TopBorder = 1.0f - Radius;
@@ -1259,7 +1212,9 @@ public:
 	EFruitType GetFruitType() const { return FruitType; }
 
 private:
-	// Fruit Type
+	const float SmallestFruitRadius = 0.06f; // 가장 작은 과일의 반지름
+	const float CoefRadiusGrowth = 1.25f; // 과일 레벨이 하나씩 올라갈 때마다 반지름이 커지는 정도
+
 	EFruitType FruitType;
 };
 
@@ -1281,7 +1236,6 @@ UFruit* CreateFruitAt(EFruitType FruitType, FVector Location, UTexture* InTextur
 
 	return Fruit;
 }
-
 
 template<typename DataType>
 class TQueue
@@ -1556,7 +1510,12 @@ public:
 			delete ParticleList[i];
 			ParticleList[i] = nullptr;
 		}
-		ParticleTexture->Release();
+		if (ParticleTexture)
+		{
+			ParticleTexture->Release();
+			delete ParticleTexture;
+			ParticleTexture = nullptr;
+		}
 	}
 	void Update(float dt)
 	{
@@ -1600,6 +1559,21 @@ public:
 			ParticlePool.Pop();
 			ParticleList.PushBack(particle);
 		}
+	}
+
+	void Reset()
+	{
+		for (UINT i = 0; i < ParticleList.Num(); ++i)
+		{
+			if (ParticleList[i])
+			{
+				ParticleList[i]->SetActive(false, 0);
+				ParticlePool.Push(ParticleList[i]);
+				ParticleList[i] = nullptr;
+			}
+		}
+
+		ParticleList.Clear();
 	}
 
 private:
@@ -1699,10 +1673,10 @@ private:
 
 };
 
-class UScoreManager
+class FScoreManager
 {
 public:
-	UScoreManager() : Score(0) {}
+	FScoreManager() : Score(0) {}
 
 	/**
 	 * @param FruitType 병합된 후의 과일 타입
@@ -1715,31 +1689,263 @@ public:
 	{
 		return Score;
 	}
+
+	void Reset()
+	{
+		Score = 0;
+	}
 private:
 	UINT Score;
 };
 
-void Credits(bool* open)
-{
-	if (!*open) return;
-	ImGui::Begin("Credits", open, ImGuiWindowFlags_AlwaysAutoResize);
+// main 브랜치가 바뀌는 부분을 모두 추적하기 어려워서 게임 매니저는 개발이 어느정도 끝난 후 리팩토링 하면서 추가하겠숩니다..
+//class FGameManager;
 
-	ImGui::Text("Developer:");
-	ImGui::Text("KJS");
-	ImGui::Text("PJH");
-	ImGui::Text("JMJ");
-	ImGui::Text("JJY");
+// 우선 게임 상태는 간단하게 enum으로 관리
+enum EGameState
+{
+	GS_Title,
+	GS_Credits,
+	GS_Playing,
+	GS_GameOver
+};
+
+EGameState GameState = GS_Title;
+
+const float GameOverLimit = 1.5f;
+
+static void UpdateTitle(URenderer& renderer)
+{
+	static ID3D11ShaderResourceView* TitleBackgroundSRV = nullptr;
+
+	if (TitleBackgroundSRV == nullptr)
+	{
+		UTexture* TitleBackgroundTexture = new UTexture();
+		TitleBackgroundTexture->Initialize(renderer.Device, renderer.DeviceContext, "./Resource/title_bg.png");
+		TitleBackgroundSRV = TitleBackgroundTexture->GetTextureSRV();
+	}
+
+	ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
+	ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
+	ImGui::NewFrame(); // ImGui Core 초기화
+
+	ImGui::SetNextWindowPos(ImVec2(0, 0));
+	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+
+	ImGui::Begin(
+		"Jungle Scene Window",
+		nullptr,
+		ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoTitleBar
+	);
+
+	ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+	ImVec2 pos = ImGui::GetWindowPos();
+	ImVec2 size = ImGui::GetWindowSize();
+
+	drawList->AddImage(
+		(ImTextureID)TitleBackgroundSRV,
+		pos,
+		ImVec2(pos.x + size.x, pos.y + size.y)
+	);
+
+	ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 0, 0, 255));
+
+	const char* StartButtonText = "START";
+	ImVec2 buttonSize = ImGui::CalcTextSize(StartButtonText);
+
+	ImGui::SetCursorPos(ImVec2((ImGui::GetIO().DisplaySize.x - buttonSize.x - 20) * 0.5f, (ImGui::GetIO().DisplaySize.y - buttonSize.y) * 0.5f));
+
+	if (ImGui::Button(StartButtonText))
+	{
+		GameState = GS_Playing;
+
+		TitleBackgroundSRV->Release();
+		TitleBackgroundSRV = nullptr;
+	}
+
+	const char* CreditsButtonText = "CREDITS";
+	buttonSize = ImGui::CalcTextSize(CreditsButtonText);
+
+	ImGui::SetCursorPosX((ImGui::GetIO().DisplaySize.x - buttonSize.x - 20) * 0.5f);
+	if (ImGui::Button(CreditsButtonText))
+	{
+		GameState = GS_Credits;
+	}
+
+	ImGui::PopStyleColor();
 
 	ImGui::End();
 }
 
-int UBall::TotalNumBalls = 0;
+static void UpdateCredits(URenderer& renderer)
+{
+	static ID3D11ShaderResourceView* CreditsBackgroundSRV = nullptr;
+
+	if (CreditsBackgroundSRV == nullptr)
+	{
+		UTexture* CreditsBackgroundTexture = new UTexture();
+		CreditsBackgroundTexture->Initialize(renderer.Device, renderer.DeviceContext, "./Resource/credits_bg.png");
+		CreditsBackgroundSRV = CreditsBackgroundTexture->GetTextureSRV();
+	}
+
+	ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
+	ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
+	ImGui::NewFrame(); // ImGui Core 초기화
+
+	ImGui::SetNextWindowPos(ImVec2(0, 0));
+	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+
+	ImGui::Begin(
+		"Jungle Scene Window",
+		nullptr,
+		ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoTitleBar
+	);
+
+	ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+	ImVec2 pos = ImGui::GetWindowPos();
+	ImVec2 size = ImGui::GetWindowSize();
+
+	drawList->AddImage(
+		(ImTextureID)CreditsBackgroundSRV,
+		pos,
+		ImVec2(pos.x + size.x, pos.y + size.y)
+	);
+
+	ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 0, 0, 255));
+
+	const char* text = "Amazing Developers!!!";
+	ImVec2 textSize = ImGui::CalcTextSize(text);
+
+	float centerX = (ImGui::GetIO().DisplaySize.x - textSize.x) * 0.5f;
+	float centerY = (ImGui::GetIO().DisplaySize.y - textSize.y) * 0.5f;
+
+	ImGui::SetCursorPos(ImVec2(centerX, centerY));
+	ImGui::Text("%s", text);
+
+	textSize = ImGui::CalcTextSize("KJS");
+	centerX = (ImGui::GetIO().DisplaySize.x - textSize.x) * 0.5f;
+	ImGui::SetCursorPosX(centerX);
+	ImGui::Text("KJS");
+	ImGui::SetCursorPosX(centerX);
+	ImGui::Text("PJH");
+	ImGui::SetCursorPosX(centerX);
+	ImGui::Text("JMJ");
+	ImGui::SetCursorPosX(centerX);
+	ImGui::Text("JJY");
+
+	ImGui::Spacing();
+
+	const char* buttonText = "BACK";
+	ImVec2 buttonSize = ImGui::CalcTextSize(buttonText);
+
+	ImGui::SetCursorPosX((ImGui::GetIO().DisplaySize.x - buttonSize.x - 20) * 0.5f);
+
+	if (ImGui::Button(buttonText))
+	{
+		GameState = GS_Title;
+
+		CreditsBackgroundSRV->Release();
+		CreditsBackgroundSRV = nullptr;
+	}
+
+	ImGui::PopStyleColor();
+
+	ImGui::End();
+}
+
+static void UpdateGameOver(URenderer& renderer, FScoreManager& ScoreManager)
+{
+	static ID3D11ShaderResourceView* GameOverBackgroundSRV = nullptr;
+
+	if (GameOverBackgroundSRV == nullptr)
+	{
+		UTexture* GameOverBackgroundTexture = new UTexture();
+		GameOverBackgroundTexture->Initialize(renderer.Device, renderer.DeviceContext, "./Resource/gameover_bg.png");
+		GameOverBackgroundSRV = GameOverBackgroundTexture->GetTextureSRV();
+	}
+
+	ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
+	ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
+	ImGui::NewFrame(); // ImGui Core 초기화
+
+	ImGui::SetNextWindowPos(ImVec2(0, 0));
+	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+
+	ImGui::Begin(
+		"Jungle Scene Window",
+		nullptr,
+		ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoTitleBar
+	);
+
+	ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+	ImVec2 pos = ImGui::GetWindowPos();
+	ImVec2 size = ImGui::GetWindowSize();
+
+	drawList->AddImage(
+		(ImTextureID)GameOverBackgroundSRV,
+		pos,
+		ImVec2(pos.x + size.x, pos.y + size.y)
+	);
+
+	ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 0, 0, 255));
+
+	const char* text = "Game Over";
+	ImVec2 textSize = ImGui::CalcTextSize(text);
+
+	float centerX = (ImGui::GetIO().DisplaySize.x - textSize.x) * 0.5f;
+	float centerY = (ImGui::GetIO().DisplaySize.y - textSize.y) * 0.5f;
+
+	ImGui::SetCursorPos(ImVec2(centerX, centerY));
+	ImGui::Text("%s", text);
+
+	ImGui::SetCursorPosX(centerX);
+	ImGui::Text("Score: %d", ScoreManager.GetScore());
+
+	ImGui::Spacing();
+
+	const char* buttonText = "Restart";
+	ImVec2 buttonSize = ImGui::CalcTextSize(buttonText);
+
+	ImGui::SetCursorPosX((ImGui::GetIO().DisplaySize.x - buttonSize.x - 20) * 0.5f);
+
+	if (ImGui::Button(buttonText))
+	{
+		//Reset();
+		ScoreManager.Reset();
+
+		GameState = GS_Playing;
+
+		GameOverBackgroundSRV->Release();
+		GameOverBackgroundSRV = nullptr;
+	}
+
+	ImGui::PopStyleColor();
+
+	ImGui::End();
+}
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 static void ResolveCollision(UBall* a, UBall* b);
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+static inline EFruitType GetRandomFruitType()
+{
+	return static_cast<EFruitType>(rand() % (EFruitType::FT_Orange + 1));
+}
 
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
@@ -1797,18 +2003,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 
-	ImGuiIO& io = ImGui::GetIO();
-
 	ImGui_ImplWin32_Init((void*)hWnd); // OS 이벤트 및 입력 담당
 	ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext); // GPU 렌더링 담당
 
-	bool showCredits = false;
-
-	UINT PrimitiveListCapacity = 64;
-	UINT PrimitiveListSize = UBall::TotalNumBalls; // 컨테이너 크기 자체는 컨테이너가 직접 파악
-	UScoreManager ScoreManager;
+	FScoreManager ScoreManager;
 	USoundManager SoundManager;
-
 	UParticlePool ParticlePool;
 
 	SoundManager.Initialize();
@@ -1832,14 +2031,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	bool bIsExit = false;
 
-	// 게임 오버 상태와 이전 프레임의 선 충돌 여부
-	bool gameOver = false;
+	// 이전 프레임의 선 충돌 여부
 	bool prevCollision = false;
 
 	UFruit previewFruit;
 
 	LARGE_INTEGER collisionStartCounter;
-	
+
 	static const char* FruitNames[] = {
 		"Cherry", "Strawberry", "Grape", "Dekopon", "Orange",
 		"Apple", "Pear", "Peach", "Pineapple", "Melon", "Watermelon"
@@ -1890,7 +2088,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	MapRoofWidget.SetTexture(Map1RoofTexture);
 	MapRoofWidget.SetAxisScale(FVector(1, 0.1, 0));
 	MapRoofWidget.SetOffset(FVector(0, 0.6, 0));
-	
+
 	while (bIsExit == false)
 	{
 		QueryPerformanceCounter(&startTime);
@@ -1912,47 +2110,59 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 		}
 
+		// 임시 게임 상태 저장
+		EGameState FrameState = GameState;
 
-		POINT mousePos;
-		GetCursorPos(&mousePos);
-		ScreenToClient(hWnd, &mousePos);
+		switch (FrameState)
+		{
+		case GS_Title:
+			renderer.Prepare();
+			UpdateTitle(renderer);
+			break;
+		case GS_Credits:
+			renderer.Prepare();
+			UpdateCredits(renderer);
+			break;
+		case GS_Playing:
+		{
+			POINT mousePos;
+			GetCursorPos(&mousePos);
+			ScreenToClient(hWnd, &mousePos);
 
-		float spawnX = mousePos.x / renderer.ViewportInfo.Width;
-		spawnX = max(0.0f, min(1.0f, spawnX));
-		spawnX = spawnX * 2.0f - 1.0f;
+			float spawnX = mousePos.x / renderer.ViewportInfo.Width;
+			spawnX = max(0.0f, min(1.0f, spawnX));
+			spawnX = spawnX * 2.0f - 1.0f;
 
-		static bool prevMouseDown = false;
-		bool spawnFruit = false;
+			static bool prevMouseDown = false;
+			bool spawnFruit = false;
 
-		bool curMouseDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+			bool curMouseDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
 
-		if (curMouseDown && !prevMouseDown)
+			if (curMouseDown && !prevMouseDown)
 			{
 				spawnFruit = true;
 			}
 
-		prevMouseDown = curMouseDown;
+			prevMouseDown = curMouseDown;
 
-		bool bLineCollision = false;
+			bool bLineCollision = false;
 
 
-		static int SelectedFruitType = 0;
+			static int CurrentFruitType = GetRandomFruitType();
+			static int NextFruitType = GetRandomFruitType();
 
-		renderer.Prepare();
-		renderer.PrepareShader();
+			renderer.Prepare();
+			renderer.PrepareShader();
 
-		SoundManager.Update();
+			SoundManager.Update();
 
-		MapWidget.Render(renderer);
+			MapWidget.Render(renderer);
 
-		if (!gameOver)
-		{
-			EFruitType ft = (EFruitType)SelectedFruitType;
+			EFruitType ft = (EFruitType)CurrentFruitType;
 
-			// 생성
 			if (spawnFruit)
 			{
-				EFruitType ft = (EFruitType)SelectedFruitType;
+				EFruitType ft = (EFruitType)CurrentFruitType;
 
 				// 새 과일 생성
 				float offsetAngle = ((float)rand() / RAND_MAX) * 2.0f * 3.14159f;
@@ -1963,7 +2173,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 				PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos, FruitTextures[ft]));
 
-				SelectedFruitType = rand() % (EFruitType::FT_Orange + 1);
+				// 다음 과일
+				CurrentFruitType = NextFruitType;
+				NextFruitType = GetRandomFruitType();
+				TestWidget.SetTexture(FruitTextures[NextFruitType]);
 			}
 
 			// 병합 예정 정보를 담은 큐
@@ -1975,9 +2188,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 			ParticlePool.Update(fixedDeltaTime);
 
-			/**************************
-			 * 과일들 간 충돌 / 병합 연산 *
-			 **************************/
+			// 과일들 간 충돌 / 병합 연산
 			for (UINT i = 0; i < PrimitiveList.Num(); i++)
 			{
 				UFruit* A = (UFruit*)PrimitiveList[i];
@@ -2009,13 +2220,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 							// 수박끼리 병합 시 두 수박만 사라지고 병합 X
 							if (A->GetFruitType() != EFruitType::FT_Watermelon) {
+								//FVector TargetLocation = (A->Location.y < B->Location.y) ? A->Location : B->Location;
+								FVector TargetLocation = A->Location;
+
 								PendingMergeQueue.Push({
 									(EFruitType)(A->GetFruitType() + 1),
-									(A->Location + B->Location) * 0.5f
+									TargetLocation
 									});
 
-								//병합된 곳에서 파티클  생성
-								ParticlePool.Aquire((A->Location + B->Location) * 0.5f);
+								//병합된 곳에서 파티클 생성
+								ParticlePool.Aquire(TargetLocation);
 								SoundManager.PlaySFX(TEXT("./Sound/SFX/Merge.wav"));
 							}
 							else
@@ -2101,61 +2315,74 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 				double elapsed = (double)(now.QuadPart - collisionStartCounter.QuadPart) / frequency.QuadPart;
 
-				if (elapsed >= 1.0)
+				if (elapsed >= GameOverLimit)
 				{
-					gameOver = true;
+					// 데이터 초기화. 게임 매니저가 있으면 UpdateGameOver 함수에서 GameState가 GS_Playing으로 바뀔 때 초기화하는 쪽으로 리팩토링
+					for (UINT i = 0; i < PrimitiveList.Num(); i++)
+					{
+						delete PrimitiveList[i];
+						PrimitiveList[i] = nullptr;
+					}
+					PrimitiveList.Clear();
+
+					ParticlePool.Reset();
+
+					prevCollision = false;
+
+					prevMouseDown = false;
+
+					CurrentFruitType = GetRandomFruitType();
+					NextFruitType = GetRandomFruitType();
+
+					GameState = GS_GameOver;
+
+					break;
 				}
 			}
 
 			prevCollision = bLineCollision;
+
+			previewFruit.SetFruitType((EFruitType)CurrentFruitType);
+			previewFruit.SetLocation(FVector(spawnX, 0.9f, 0));
+			previewFruit.SetTexture(FruitTextures[CurrentFruitType]);
+			previewFruit.Render(renderer);
+
+			renderer.UpdateConstant(FVector(0, 0, 0), 0.f, FVector::Splat(1.0f), 0.0f);
+			renderer.UpdateTexture(nullptr);
+			renderer.UpdateLineColor(bLineCollision);
+			renderer.RenderLine();
+
+			ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
+			ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
+			ImGui::NewFrame(); // ImGui Core 초기화
+
+			ImGui::Begin("Team4 Game");
+
+			ImGui::Combo("Fruit Type", &CurrentFruitType, FruitNames, sizeof(FruitNames) / sizeof(*FruitNames));
+			ImGui::Text("Score: %d", ScoreManager.GetScore());
+
+			ImGui::End();
+
+			break;
 		}
-		else // Game Over
-		{
-			// 기존 데이터 초기화
-			PrimitiveList.Clear();
-			ParticlePool.ReturnAll();
+		case GS_GameOver:
+			renderer.Prepare();
+			UpdateGameOver(renderer, ScoreManager);
+			break;
 		}
-
-		previewFruit.SetFruitType((EFruitType)SelectedFruitType);
-		previewFruit.SetLocation(FVector(spawnX, 0.9f, 0));
-		previewFruit.SetTexture(FruitTextures[SelectedFruitType]);
-		previewFruit.Render(renderer);
-
-		renderer.UpdateConstant(FVector(0, 0, 0), 0.f, FVector::Splat(1.0f), 0.0f);
-		renderer.UpdateTexture(nullptr);
-		renderer.UpdateLineColor(bLineCollision);
-		renderer.RenderLine();
-
-		ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
-		ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
-		ImGui::NewFrame(); // ImGui Core 초기화
-
-		ImGui::Begin("Team4 Game");
-
-		ImGui::Combo("Fruit Type", &SelectedFruitType, FruitNames, sizeof(FruitNames) / sizeof(*FruitNames));
-		ImGui::Text("GameOver: %d", gameOver);
-		ImGui::Text("Score: %d", ScoreManager.GetScore());
-
-		if (ImGui::Button("Credits"))
-		{
-			showCredits = true;
-		}
-
-		ImGui::Spacing();
-		ImGui::Spacing();
-
-		Credits(&showCredits);
-
-		ImGui::End();
 
 		ImGui::Render(); // 이번 프레임에 그릴 UI 설정
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
 
-		MapRoofWidget.Render(renderer);
 
-		ScoreWidget.Render(renderer);
-		TestWidget.Render(renderer);
-		NextTextWidget.Render(renderer);
+
+		if (FrameState == GS_Playing)
+		{
+			MapRoofWidget.Render(renderer);
+			ScoreWidget.Render(renderer);
+			TestWidget.Render(renderer);
+			NextTextWidget.Render(renderer);
+		}
 
 		renderer.SwapBuffer();
 
@@ -2199,9 +2426,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam)) // 메시지가 자기 입력으로 처리되지 않았으면 false 반환
+	if (ImGui::GetCurrentContext() != nullptr)
 	{
-		return true;
+		if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
+		{
+			return true;
+		}
 	}
 
 	switch (message)
@@ -2288,7 +2518,7 @@ static void ResolveCollision(UBall* A, UBall* B)
 		jT = -RelVelTang / (1 / MA + 1 / MB + A->Radius * A->Radius * InvIA + B->Radius * B->Radius * InvIB);
 
 	//마찰력 적용
-	const float mu = 0.4f;
+	const float mu = 0.6f;
 	float maxFriction = mu * fabsf(jN);
 	if (fabsf(jT) > maxFriction)
 		jT = (jT > 0.f ? 1.f : -1.f) * maxFriction;
