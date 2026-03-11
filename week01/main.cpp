@@ -839,11 +839,6 @@ public:
 	void SetLocation(const FVector& InLocation) { Location = InLocation; }
 	FVector GetLocation() const { return Location; }
 
-	bool IsInWallBoder()
-	{
-		return ((Location.x <= LeftBorder) || (Location.x >= RightBorder || (Location.y <= BottomBorder)));
-	}
-
 	void BorderClamp()
 	{
 		if (Location.x < LeftBorder)
@@ -866,7 +861,7 @@ protected:
 
 	const float GravityAccel = 2.f;    // 중력 가속도
 	const float RestitutionWall = 0.1f;
-	const float FloorFriction = 0.8f;
+	const float FloorFriction = 0.6f;
 
 private:
 
@@ -1248,21 +1243,9 @@ public:
 				Velocity.y *= -RestitutionWall;
 		}
 
-		if (IsInWallBoder())
-		{
-			//벽 마찰 적용
-			float normalImpulse = fabsf(Velocity.y) * (1.0f + RestitutionWall);
-
-			float frictionImpulse = FloorFriction * normalImpulse;
-			if (fabsf(Velocity.x) <= frictionImpulse)
-				Velocity.x = 0.0f;
-			else
-				Velocity.x -= (Velocity.x > 0.0f ? 1.0f : -1.0f) * frictionImpulse;
-		}
+		ResolveWallCollision(dt);
 
 		Velocity.y -= GravityAccel * dt;
-
-		// 속도가 매우 작으면 0으로 수렴 (sleep)
 		const float SleepThreshold = 0.01f;
 		if (fabsf(Velocity.x) < SleepThreshold) Velocity.x = 0.0f;
 		if (fabsf(Velocity.y) < SleepThreshold) Velocity.y = 0.0f;
@@ -1289,7 +1272,9 @@ public:
 	{
 		FruitType = InFruitType;
 		Radius = SmallestFruitRadius * pow(CoefRadiusGrowth, InFruitType);
-		Mass = Radius * Radius;
+		AngularVelocity -= Radius * 2;
+		if (AngularVelocity < 0.f)AngularVelocity = 0.f;
+		Mass = Radius * Radius; 
 		LeftBorder += Radius;
 		RightBorder -= Radius;
 		TopBorder -= Radius;
@@ -1297,6 +1282,33 @@ public:
 	}
 
 	EFruitType GetFruitType() const { return FruitType; }
+
+private:
+	/** 
+	* 옆과 아래 벽과의 마찰
+	*/
+	void ResolveWallCollision(float dt)
+	{
+		float normalImpulse = Mass * GravityAccel;
+		float frictionImpulse = FloorFriction * normalImpulse;
+
+		if (Location.y <= LeftBorder)
+		{
+			if (fabsf(Velocity.x) <= frictionImpulse)
+				Velocity.x = 0.0f;
+			else
+				Velocity.x -= (Velocity.x > 0.0f ? 1.0f : -1.0f) * frictionImpulse;
+		}
+		// 옆벽 마찰 
+		if (Location.x <= LeftBorder || Location.x >= RightBorder)
+		{
+			float frictionImpulse = FloorFriction * normalImpulse;
+			if (fabsf(Velocity.y) <= frictionImpulse)
+				Velocity.y = 0.0f;
+			else
+				Velocity.y -= (Velocity.y > 0.0f ? 1.0f : -1.0f) * frictionImpulse;
+		}
+	}
 
 private:
 	const float SmallestFruitRadius = 0.06f; // 가장 작은 과일의 반지름
