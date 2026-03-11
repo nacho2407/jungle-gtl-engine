@@ -167,10 +167,11 @@ struct SceneFrame
 #include "Sphere.h"
 #include "Rectangle.h"
 
+const float LineY = 0.6f;
 FVertexSimple line_vertices[] =
 {
-	{-1.0f, 0.6f, 0.0f, 1,1,1,1},
-	{ 1.0f, 0.6f, 0.0f, 1,1,1,1}
+	{-1.0f, LineY, 0.0f, 1,1,1,1},
+	{ 1.0f, LineY, 0.0f, 1,1,1,1}
 };
 
 class URenderer
@@ -720,7 +721,7 @@ public:
 	{
 		FVertexSimple vertices[2];
 
-		float y = 0.6f;
+		float y = LineY;
 
 		if (collision)
 		{
@@ -1605,6 +1606,89 @@ private:
 	UTexture* ParticleTexture;
 };
 
+class UInputManager
+{
+public:
+	UInputManager():
+		bIsMouseDown(false),
+		bIsXPadConnected(false),
+		MousePosition(0, 0),
+		XPadStickX(0),
+		XPadStickY(0),
+		bIsXPadADown(false),
+		bIsXPadTriggerDown(false)
+	{ }
+
+	void Update(HWND hWnd)
+	{
+		bIsMouseDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+
+		GetCursorPos(&MousePosition);
+		ScreenToClient(hWnd, &MousePosition);
+
+		XINPUT_STATE state;
+		ZeroMemory(&state, sizeof(XINPUT_STATE));
+
+		DWORD result = XInputGetState(0, &state);
+		bIsXPadConnected = (result == ERROR_SUCCESS);
+
+		if (bIsXPadConnected)
+		{
+			// 패드 연결됨
+
+			// [-32768, 32767]
+			SHORT lx = state.Gamepad.sThumbLX;
+			SHORT ly = state.Gamepad.sThumbLY;
+
+			float Magnitude = sqrt(lx * lx + ly * ly);
+			const float DEADZONE = 8689;
+
+			// HW Noise 배제
+			if (Magnitude < DEADZONE)
+			{
+				lx = 0;
+				ly = 0;
+			}
+
+			// lx, ly => [-1, 1] 정규화
+			XPadStickX = lx / 32768.f;
+			XPadStickY = ly / 32768.f;
+
+			if (state.Gamepad.wButtons & XINPUT_GAMEPAD_A)
+			{
+				bIsXPadADown = true;
+			}
+			else
+			{
+				bIsXPadADown = false;
+			}
+
+			bIsXPadTriggerDown = (state.Gamepad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD || state.Gamepad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD);
+		}
+	}
+
+	bool IsMouseDown() const { return bIsMouseDown; }
+	bool IsXPadConnected() const { return bIsXPadConnected; }
+	POINT GetMousePosition() const { return MousePosition; }
+
+	float GetXPadStickX() const { return XPadStickX; }
+	float GetXPadStickY() const { return XPadStickY; }
+	bool IsXPadADown() const { return bIsXPadADown; }
+	bool IsXPadTriggerDown() const { return bIsXPadTriggerDown; }
+
+private:
+	bool bIsMouseDown;
+	bool bIsXPadConnected;
+	POINT MousePosition;
+
+	// [-1, 1] Normalized
+	float XPadStickX;
+	float XPadStickY;
+
+	bool bIsXPadADown;
+	bool bIsXPadTriggerDown;
+};
+
 
 class USoundManager
 {
@@ -2038,12 +2122,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	LARGE_INTEGER startTime, endTime, lastBlinkTime;
 	double elapsedTime = 0.0;
 
-	static bool initialized = false;
+	static bool BlinkInitialized = false;
 
-	if (!initialized)
+	if (!BlinkInitialized)
 	{
 		QueryPerformanceCounter(&lastBlinkTime);
-		initialized = true;
+		BlinkInitialized = true;
 	}
 
 	IMGUI_CHECKVERSION();
@@ -2053,6 +2137,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext); // GPU 렌더링 담당
 
 	FScoreManager ScoreManager;
+	UInputManager InputManager;
 	USoundManager SoundManager;
 	UParticlePool ParticlePool;
 
@@ -2072,8 +2157,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 
 	TArray<UPrimitive*> PrimitiveList;
-
-	const float LineY = 0.6f;
 
 	bool bIsExit = false;
 
@@ -2193,6 +2276,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 		}
 
+		InputManager.Update(hWnd);
+
 		// 임시 게임 상태 저장
 		EGameState FrameState = GameState;
 
@@ -2211,53 +2296,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			static bool prevMouseDown = false;
 			bool spawnFruit = false;
 
-			bool curMouseDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-
-			XINPUT_STATE state;
-			ZeroMemory(&state, sizeof(XINPUT_STATE));
-
-			DWORD result = XInputGetState(0, &state);
-
-			if (result == ERROR_SUCCESS)
+			if (InputManager.IsXPadConnected())
 			{
-				// 패드 연결됨
-
-				// [-32768, 32767]
-				SHORT lx = state.Gamepad.sThumbLX;
-				SHORT ly = state.Gamepad.sThumbLY;
-
-				float Magnitude = sqrt(lx * lx + ly * ly);
-				const float DEADZONE = 8689;
-
-				// HW Noise 배제
-				if (Magnitude < DEADZONE)
-				{
-					lx = 0;
-					ly = 0;
-				}
-
-				// lx, ly => [-1, 1] 정규화
-				float nx = lx / 32768.f;
-				float ny = ly / 32768.f;
-
-				if (state.Gamepad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD || state.Gamepad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD)
-				{
-					// 미세 조정
-					spawnX += nx * 0.01f;
-				}
+				if (InputManager.IsXPadTriggerDown())
+					spawnX += InputManager.GetXPadStickX() * 0.01f;
 				else
-				{
-					spawnX += nx * 0.05f;
-				}
-
+					spawnX += InputManager.GetXPadStickX() * 0.05f;
 				spawnX = max(min(spawnX, 1), -1);
-
-				if (state.Gamepad.wButtons & XINPUT_GAMEPAD_A)
-				{
-					spawnFruit = true;
-					// A 버튼 눌림
-					curMouseDown = true;
-				}
 
 				if (bIsVibrating)
 				{
@@ -2273,27 +2318,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 						VibrationTime = 0;
 					}
 				}
-
 			}
 			else
 			{
-				POINT mousePos;
-				GetCursorPos(&mousePos);
-				ScreenToClient(hWnd, &mousePos);
+				POINT mousePos = InputManager.GetMousePosition();
+
 				spawnX = mousePos.x / renderer.ViewportInfo.Width;
 				spawnX = max(0.0f, min(1.0f, spawnX));
 				spawnX = spawnX * 2.0f - 1.0f;
+			}
 
-				if (curMouseDown && !prevMouseDown && spawnX > (-1) * MapBoarder && spawnX < MapBoarder)
-				{
-					spawnFruit = true;
-				}
+			bool curMouseDown = InputManager.IsMouseDown() || InputManager.IsXPadADown();
+
+			if (curMouseDown && !prevMouseDown && spawnX > (-1) * MapBoarder && spawnX < MapBoarder)
+			{
+				spawnFruit = true;
 			}
 
 			prevMouseDown = curMouseDown;
 
 			bool bLineCollision = false;
-
 
 			static int CurrentFruitType = GetRandomFruitType();
 			static int NextFruitType = GetRandomFruitType();
@@ -2362,7 +2406,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					{
 						if (A->GetFruitType() == B->GetFruitType())
 						{
-							if (result == ERROR_SUCCESS)
+							if (InputManager.IsXPadConnected())
 							{
 								// 패드 연결 상태
 								XINPUT_VIBRATION vibration{};
