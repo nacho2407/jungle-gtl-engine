@@ -167,10 +167,11 @@ struct SceneFrame
 #include "Sphere.h"
 #include "Rectangle.h"
 
+const float LineY = 0.6f;
 FVertexSimple line_vertices[] =
 {
-	{-1.0f, 0.8f, 0.0f, 1,1,1,1},
-	{ 1.0f, 0.8f, 0.0f, 1,1,1,1}
+	{-1.0f, LineY, 0.0f, 1,1,1,1},
+	{ 1.0f, LineY, 0.0f, 1,1,1,1}
 };
 
 class URenderer
@@ -189,6 +190,9 @@ public:
 		// 16B
 		FVector SinCos;
 		float UseTexture;   // 1 = texture, 0 = color
+
+		FVector TintColor;
+		float Padding3;
 	};
 
 	struct FMesh
@@ -593,7 +597,7 @@ public:
 		}
 	}
 
-	void UpdateConstant(FVector Offset, float Angle, FVector Scale, float UseTexture)
+	void UpdateConstant(FVector Offset, float Angle, FVector Scale, float UseTexture, FVector Tint)
 	{
 		FVector CosSin = { cosf(Angle), sinf(Angle), 0.f };
 
@@ -608,6 +612,7 @@ public:
 			constants->SinCos = CosSin;
 			constants->Scale = Scale;
 			constants->UseTexture = UseTexture;
+			constants->TintColor = Tint;
 
 			DeviceContext->Unmap(ConstantBuffer, 0); // CPU 작업이 끝난 뒤 언매핑
 		}
@@ -716,7 +721,7 @@ public:
 	{
 		FVertexSimple vertices[2];
 
-		float y = 0.8f;
+		float y = LineY;
 
 		if (collision)
 		{
@@ -737,6 +742,8 @@ public:
 		SwapChain->Present(1, 0); // VSync 활성화
 	}
 };
+
+const float MapBoarder = 0.76f;
 
 class UPrimitive
 {
@@ -824,7 +831,7 @@ public:
 
 	void Render(URenderer& renderer) override
 	{
-		renderer.UpdateConstant(Location, Angle, FVector::Splat(Radius), 1.0f);
+		renderer.UpdateConstant(Location, Angle, FVector::Splat(Radius), 1.0f, FVector(1, 1, 1));
 		renderer.UpdateTexture(GetTexture());
 		renderer.RenderRectangle();
 	}
@@ -1029,24 +1036,28 @@ class UImageWidget : public UWidget
 public:
 	UImageWidget() :
 		Texture(nullptr),
-		AxisScale(FVector::Splat(1))
+		AxisScale(FVector::Splat(1)),
+		TintColor(FVector(1, 1, 1))
 	{
 	}
 
 	void Render(URenderer& renderer) override
 	{
 		FVector Location = GetLocation(true);
-		renderer.UpdateConstant(Location, 0.f, AxisScale * GetScale() * GetParentScale(), 1.0f);
+		renderer.UpdateConstant(Location, 0.f, AxisScale * GetScale() * GetParentScale(), 1.0f, TintColor);
 		renderer.UpdateTexture(Texture);
 		renderer.RenderRectangle();
 	}
 
 	void SetTexture(UTexture* InTexture) { Texture = InTexture; }
 	void SetAxisScale(FVector InAxisScale) { AxisScale = InAxisScale; }
+	void SetTintColor(FVector InTintColor) { TintColor = InTintColor; }
+	FVector GetTintColor() { return TintColor; }
 
 private:
 	UTexture* Texture;
 	FVector AxisScale;
+	FVector TintColor;
 };
 
 enum EFruitType
@@ -1099,7 +1110,7 @@ public:
 
 	void Render(URenderer& renderer) override
 	{
-		renderer.UpdateConstant(Location, Angle, FVector::Splat(Radius), 1.0f);
+		renderer.UpdateConstant(Location, Angle, FVector::Splat(Radius), 1.0f, FVector(1, 1, 1));
 		renderer.UpdateTexture(GetTexture());
 		renderer.RenderRectangle();
 	}
@@ -1215,8 +1226,8 @@ public:
 		Radius = SmallestFruitRadius * pow(CoefRadiusGrowth, InFruitType);
 		Mass = Radius * Radius * MassFactor;
 
-		LeftBorder = -0.76f + Radius;
-		RightBorder = 0.76f - Radius;
+		LeftBorder = (-1) * MapBoarder + Radius;
+		RightBorder = MapBoarder - Radius;
 		TopBorder = 1.0f - Radius;
 		BottomBorder = -0.9f + Radius;
 	}
@@ -1605,6 +1616,89 @@ private:
 	UTexture* ParticleTexture;
 };
 
+class UInputManager
+{
+public:
+	UInputManager():
+		bIsMouseDown(false),
+		bIsXPadConnected(false),
+		MousePosition(0, 0),
+		XPadStickX(0),
+		XPadStickY(0),
+		bIsXPadADown(false),
+		bIsXPadTriggerDown(false)
+	{ }
+
+	void Update(HWND hWnd)
+	{
+		bIsMouseDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+
+		GetCursorPos(&MousePosition);
+		ScreenToClient(hWnd, &MousePosition);
+
+		XINPUT_STATE state;
+		ZeroMemory(&state, sizeof(XINPUT_STATE));
+
+		DWORD result = XInputGetState(0, &state);
+		bIsXPadConnected = (result == ERROR_SUCCESS);
+
+		if (bIsXPadConnected)
+		{
+			// 패드 연결됨
+
+			// [-32768, 32767]
+			SHORT lx = state.Gamepad.sThumbLX;
+			SHORT ly = state.Gamepad.sThumbLY;
+
+			float Magnitude = sqrt(lx * lx + ly * ly);
+			const float DEADZONE = 8689;
+
+			// HW Noise 배제
+			if (Magnitude < DEADZONE)
+			{
+				lx = 0;
+				ly = 0;
+			}
+
+			// lx, ly => [-1, 1] 정규화
+			XPadStickX = lx / 32768.f;
+			XPadStickY = ly / 32768.f;
+
+			if (state.Gamepad.wButtons & XINPUT_GAMEPAD_A)
+			{
+				bIsXPadADown = true;
+			}
+			else
+			{
+				bIsXPadADown = false;
+			}
+
+			bIsXPadTriggerDown = (state.Gamepad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD || state.Gamepad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD);
+		}
+	}
+
+	bool IsMouseDown() const { return bIsMouseDown; }
+	bool IsXPadConnected() const { return bIsXPadConnected; }
+	POINT GetMousePosition() const { return MousePosition; }
+
+	float GetXPadStickX() const { return XPadStickX; }
+	float GetXPadStickY() const { return XPadStickY; }
+	bool IsXPadADown() const { return bIsXPadADown; }
+	bool IsXPadTriggerDown() const { return bIsXPadTriggerDown; }
+
+private:
+	bool bIsMouseDown;
+	bool bIsXPadConnected;
+	POINT MousePosition;
+
+	// [-1, 1] Normalized
+	float XPadStickX;
+	float XPadStickY;
+
+	bool bIsXPadADown;
+	bool bIsXPadTriggerDown;
+};
+
 
 class USoundManager
 {
@@ -1747,7 +1841,9 @@ enum EGameState
 
 EGameState GameState = GS_Title;
 
-const float GameOverLimit = 1.5f;
+const float DangerLimit = 0.6f;
+const float GameOverLimit = 2.0f;
+const double BlinkInterval = 0.2f;
 
 static void UpdateTitle(URenderer& renderer)
 {
@@ -2033,8 +2129,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	LARGE_INTEGER frequency;
 	QueryPerformanceFrequency(&frequency);
 
-	LARGE_INTEGER startTime, endTime;
+	LARGE_INTEGER startTime, endTime, lastBlinkTime;
 	double elapsedTime = 0.0;
+
+	static bool BlinkInitialized = false;
+
+	if (!BlinkInitialized)
+	{
+		QueryPerformanceCounter(&lastBlinkTime);
+		BlinkInitialized = true;
+	}
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -2043,6 +2147,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext); // GPU 렌더링 담당
 
 	FScoreManager ScoreManager;
+	UInputManager InputManager;
 	USoundManager SoundManager;
 	UParticlePool ParticlePool;
 
@@ -2062,8 +2167,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 
 	TArray<UPrimitive*> PrimitiveList;
-
-	const float LineY = 0.8f;
 
 	bool bIsExit = false;
 
@@ -2183,6 +2286,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 		}
 
+		InputManager.Update(hWnd);
+
 		// 임시 게임 상태 저장
 		EGameState FrameState = GameState;
 
@@ -2203,53 +2308,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 			bool spawnFruit = false;
 
-			bool curMouseDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-
-			XINPUT_STATE state;
-			ZeroMemory(&state, sizeof(XINPUT_STATE));
-
-			DWORD result = XInputGetState(0, &state);
-
-			if (result == ERROR_SUCCESS)
+			if (InputManager.IsXPadConnected())
 			{
-				// 패드 연결됨
-
-				// [-32768, 32767]
-				SHORT lx = state.Gamepad.sThumbLX;
-				SHORT ly = state.Gamepad.sThumbLY;
-
-				float Magnitude = sqrt(lx * lx + ly * ly);
-				const float DEADZONE = 8689;
-
-				// HW Noise 배제
-				if (Magnitude < DEADZONE)
-				{
-					lx = 0;
-					ly = 0;
-				}
-
-				// lx, ly => [-1, 1] 정규화
-				float nx = lx / 32768.f;
-				float ny = ly / 32768.f;
-
-				if (state.Gamepad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD || state.Gamepad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD)
-				{
-					// 미세 조정
-					spawnX += nx * 0.01f;
-				}
+				if (InputManager.IsXPadTriggerDown())
+					spawnX += InputManager.GetXPadStickX() * 0.01f;
 				else
-				{
-					spawnX += nx * 0.05f;
-				}
-
+					spawnX += InputManager.GetXPadStickX() * 0.05f;
 				spawnX = max(min(spawnX, 1), -1);
-
-				if (state.Gamepad.wButtons & XINPUT_GAMEPAD_A)
-				{
-					spawnFruit = true;
-					// A 버튼 눌림
-					curMouseDown = true;
-				}
 
 				if (bIsVibrating)
 				{
@@ -2266,17 +2331,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					}
 				}
 
-				if (curMouseDown && !prevMouseDown)
+				bool curMouseDown = InputManager.IsXPadADown();
+
+				if (curMouseDown && !prevMouseDown && spawnX > (-1) * MapBoarder && spawnX < MapBoarder)
 				{
 					spawnFruit = true;
 				}
 
+				prevMouseDown = curMouseDown;
 			}
 			else
 			{
-				POINT mousePos;
-				GetCursorPos(&mousePos);
-				ScreenToClient(hWnd, &mousePos);
+				POINT mousePos = InputManager.GetMousePosition();
 
 				spawnX = mousePos.x / renderer.ViewportInfo.Width;
 				spawnX = max(0.0f, min(1.0f, spawnX));
@@ -2285,14 +2351,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				// 화면 바깥을 클릭해도 과일이 생성되는 문제 해결
 				bool isMouseInScene = (mousePos.y >= renderer.ViewportInfo.TopLeftY) && (mousePos.y <= renderer.ViewportInfo.TopLeftY + renderer.ViewportInfo.Height) &&
 					(mousePos.x >= renderer.ViewportInfo.TopLeftX) && (mousePos.x <= renderer.ViewportInfo.TopLeftX + renderer.ViewportInfo.Width);
+				
+				bool curMouseDown = InputManager.IsMouseDown();
 
 				if (curMouseDown && !prevMouseDown && isMouseInScene)
 				{
 					spawnFruit = true;
 				}
+				
+				prevMouseDown = curMouseDown;
 			}
-
-			prevMouseDown = curMouseDown;
 
 			bool bLineCollision = false;
 
@@ -2366,7 +2434,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					{
 						if (A->GetFruitType() == B->GetFruitType())
 						{
-							if (result == ERROR_SUCCESS)
+							if (InputManager.IsXPadConnected())
 							{
 								// 패드 연결 상태
 								XINPUT_VIBRATION vibration{};
@@ -2472,6 +2540,41 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					break;
 				}
 			}
+			// Danger 여부 계산
+			if (bLineCollision)
+			{
+				LARGE_INTEGER now;
+				QueryPerformanceCounter(&now);
+
+				double elapsed = (double)(now.QuadPart - collisionStartCounter.QuadPart) / frequency.QuadPart;
+
+				if (elapsed >= DangerLimit)
+				{
+					LARGE_INTEGER now;
+					QueryPerformanceCounter(&now);
+
+					double blinkElapsed = (double)(now.QuadPart - lastBlinkTime.QuadPart) / frequency.QuadPart;
+
+					if (blinkElapsed >= BlinkInterval)
+					{
+						if (MapRoofWidget.GetTintColor().y == 0 &&
+							MapRoofWidget.GetTintColor().z == 0)
+						{
+							MapRoofWidget.SetTintColor(FVector(1, 1, 1));
+						}
+						else
+						{
+							MapRoofWidget.SetTintColor(FVector(1, 0, 0));
+						}
+
+						lastBlinkTime = now;
+					}
+				}
+			}
+			else
+			{
+				MapRoofWidget.SetTintColor(FVector(1, 1, 1));
+			}
 			// Game Over 여부 계산
 			if (bLineCollision)
 			{
@@ -2508,14 +2611,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			prevCollision = bLineCollision;
 
 			previewFruit.SetFruitType((EFruitType)CurrentFruitType);
+			if (spawnX < (-1) * MapBoarder) { spawnX = (-1) * MapBoarder; }
+			else if (spawnX > MapBoarder) { spawnX = MapBoarder; }
 			previewFruit.SetLocation(FVector(spawnX, 0.9f, 0));
 			previewFruit.SetTexture(FruitTextures[CurrentFruitType]);
 			previewFruit.Render(renderer);
-
-			renderer.UpdateConstant(FVector(0, 0, 0), 0.f, FVector::Splat(1.0f), 0.0f);
-			renderer.UpdateTexture(nullptr);
-			renderer.UpdateLineColor(bLineCollision);
-			renderer.RenderLine();
 
 			ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
 			ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
