@@ -395,7 +395,7 @@ struct SceneFrame
 #include "Sphere.h"
 #include "Rectangle.h"
 
-const float LineY = 0.6f;
+const float LineY = 0.7f;
 
 FVertexSimple line_vertices[] =
 {
@@ -1039,10 +1039,10 @@ public:
 	{
 		Mass = Radius * Radius * MassFactor;
 
-		LeftBorder += Radius;
-		RightBorder -= Radius;
-		TopBorder -= Radius;
-		BottomBorder += Radius;
+		LeftBorder += Radius * 0.2f;
+		RightBorder -= Radius * 0.2f;
+		TopBorder -= Radius * 0.2f;
+		BottomBorder += Radius * 0.2f;
 
 		Location.x = RandRange(LeftBorder, RightBorder);
 		Location.y = 1.f;
@@ -2028,7 +2028,7 @@ enum EGameState
 EGameState GameState = GS_Title;
 
 const float DangerLimit = 0.6f;
-const float GameOverLimit = 1.5f;
+const float GameOverLimit = 2.5f;
 const double BlinkInterval = 0.2f;
 
 static void UpdateTitle(URenderer& renderer)
@@ -2419,7 +2419,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ScoreWidget.SetScale(1);
 	ScoreWidget.SetAxisScale(FVector::Splat(0.1));
 
-	TestWidget.SetTexture(FruitTextures[0]);
 	TestWidget.SetScale(1);
 	TestWidget.SetAxisScale(FVector::Splat(0.05));
 	TestWidget.SetParent(&ScoreWidget);
@@ -2829,7 +2828,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 				bool curMouseDown = InputManager.IsXPadADown();
 
-				if (curMouseDown && !prevMouseDown && spawnX > ((-1) * MapBoarder) + previewFruit.Radius && spawnX < MapBoarder - previewFruit.Radius)
+				if (curMouseDown && !prevMouseDown)
 				{
 					LARGE_INTEGER currentTime;
 					QueryPerformanceCounter(&currentTime);
@@ -2905,9 +2904,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				// 다음 과일
 				CurrentFruitType = NextFruitType;
 				NextFruitType = GetRandomFruitType();
-				TestWidget.SetTexture(FruitTextures[NextFruitType]);
 			}
-
+			TestWidget.SetTexture(FruitTextures[NextFruitType]);
 			// 병합 예정 정보를 담은 큐
 			TQueue<FPendingMerge> PendingMergeQueue;
 
