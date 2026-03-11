@@ -766,8 +766,8 @@ public:
 protected:
 	// Border 는 map 데이터이므로 따로 빼서 전역 상수 등으로 관리하는 것이 좋을 듯함
 	// 이외 데이터도 관련해서 수정해야할수도
-	float LeftBorder = -0.8f;
-	float RightBorder = 0.8f;
+	float LeftBorder = -0.76f;
+	float RightBorder = 0.76f;
 	float TopBorder = 1.0f;
 	float BottomBorder = -0.9f;
 
@@ -1213,17 +1213,16 @@ public:
 		{
 			Location.y = BottomBorder;
 
+			Velocity.y *= -RestitutionWall;
+
 			//바닥 마찰력 적용
 			float normalImpulse = fabsf(Velocity.y) * (1.0f + RestitutionWall);
-
-			Velocity.y *= -RestitutionWall;
 
 			float frictionImpulse = FloorFriction * normalImpulse;
 			if (fabsf(Velocity.x) <= frictionImpulse)
 				Velocity.x = 0.0f;
 			else
 				Velocity.x -= (Velocity.x > 0.0f ? 1.0f : -1.0f) * frictionImpulse;
-
 		}
 
 		Velocity.y -= GravityAccel * dt;
@@ -1250,7 +1249,7 @@ public:
 	{
 		FruitType = InFruitType;
 		Radius = SmallestFruitRadius * pow(CoefRadiusGrowth, InFruitType);
-		Mass = Radius;
+		Mass = Radius * Radius;
 		LeftBorder += Radius;
 		RightBorder -= Radius;
 		TopBorder -= Radius;
@@ -2357,7 +2356,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				}
 				spawnFruit = true;
 			}
-		}
 
 			prevMouseDown = curMouseDown;
 
@@ -2784,7 +2782,7 @@ static void ResolveCollision(UBall* A, UBall* B)
 
 	float RelVelTang = RelVel.Dot2(Tangent);
 
-	const float e = 0.5f;
+	const float e = 0.2f;
 	float jN = -(1.0f + e) * RelVelNorm / (1 / MA + 1 / MB);
 
 	float jT = 0.f;
@@ -2801,7 +2799,7 @@ static void ResolveCollision(UBall* A, UBall* B)
 	B->Velocity = B->Velocity + (Normal * (jN * 1 / MB)) + (Tangent * (jT * 1 / MB));
 
 	//충격량이 존재할 때만 각속도를 변화
-	if (jN > 0.05f)
+	if (jN > 0.01f)
 	{
 		A->AngularVelocity -= A->Radius * jT * InvIA;
 		B->AngularVelocity += B->Radius * jT * InvIB;
