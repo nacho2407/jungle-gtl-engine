@@ -773,10 +773,10 @@ public:
 protected:
 	// Border 는 map 데이터이므로 따로 빼서 전역 상수 등으로 관리하는 것이 좋을 듯함
 	// 이외 데이터도 관련해서 수정해야할수도
-	float LeftBorder = -1.0f;
-	float RightBorder = 1.0f;
+	float LeftBorder = -0.76f;
+	float RightBorder = 0.76f;
 	float TopBorder = 1.0f;
-	float BottomBorder = -0.5f;
+	float BottomBorder = -0.9f;
 
 	bool bPendingDestroy = false; // 충돌 검사 중 삭제될 예정인 Primitive들을 표시하기 위한 플래그
 
@@ -810,10 +810,10 @@ public:
 	{
 		Mass = Radius * Radius * MassFactor;
 
-		LeftBorder = -1.0f + Radius;
-		RightBorder = 1.0f - Radius;
-		TopBorder = 1.0f - Radius;
-		BottomBorder = -1.0f + Radius;
+		LeftBorder += Radius;
+		RightBorder -= Radius;
+		TopBorder -= Radius;
+		BottomBorder += Radius;
 
 		Location.x = RandRange(LeftBorder, RightBorder);
 		Location.y = 1.f;
@@ -839,6 +839,11 @@ public:
 	void SetLocation(const FVector& InLocation) { Location = InLocation; }
 	FVector GetLocation() const { return Location; }
 
+	bool IsInWallBoder()
+	{
+		return ((Location.x <= LeftBorder) || (Location.x >= RightBorder || (Location.y <= BottomBorder)));
+	}
+
 	void BorderClamp()
 	{
 		if (Location.x < LeftBorder)
@@ -855,14 +860,16 @@ public:
 		}
 	}
 
+
 protected:
 	float MassFactor = 1.0f; // 질량 보정용
 
 	const float GravityAccel = 2.f;    // 중력 가속도
 	const float RestitutionWall = 0.1f;
-	const float FloorFriction = 0.4f;
+	const float FloorFriction = 0.8f;
 
 private:
+
 	float Random()
 	{
 		return (float)rand() / (float)RAND_MAX; // [0, 1]
@@ -956,8 +963,8 @@ protected:
 	// Cartesian <-> Screen 변환 과정을 어느 객체에서 또는 함수에서 할 것인가는 논의 필요
 	FVector CartesianToScreenCoord(FVector CartesianCoord)
 	{
-		// Screen Size 가 (900, 1100) 고정 상황 가정
-		return FVector(round((CartesianCoord.x + 1.0f) * 0.5f * 1024), round((1 - (CartesianCoord.y + 1.0f) * 0.5f) * 1024));
+		// Screen Size 가 (1024, ) 고정 상황 가정
+		return FVector((CartesianCoord.x + 1.0f) * 0.5f * 1024, (1 - CartesianCoord.y) * 0.5f * 1024);
 	}
 
 private:
@@ -971,8 +978,7 @@ private:
 
 /*
 UTextWidget Render 후 UImageWidget Render 가 제대로 작동하지 않거나
-Parent-Child 위치 관계가 보존이 안되는 등의 문제가 있어 현재로썬 단일 객체 + Rendering 순
-
+Parent-Child 위치 관계가 보존이 안되는 등의 문제가 있어 현재로썬 단일 객체 + Rendering 순서
 */
 class UTextWidget : public UWidget
 {
@@ -992,7 +998,7 @@ public:
 		// DrawString 중앙 정렬: Origin = 텍스트 중앙
 		DirectX::XMFLOAT2 origin = { textSize.x / 2.f, textSize.y / 2.f };
 
-		/*
+
 		renderer.Font->DrawString(
 			renderer.SpriteBatch.get(),
 			Text.c_str(),
@@ -1002,8 +1008,8 @@ public:
 			origin,                        // 텍스트 중앙 기준
 			GetScale() * GetParentScale()
 		);
-		*/
 
+		/*
 		renderer.Font->DrawString(
 			renderer.SpriteBatch.get(),
 			Text.c_str(),
@@ -1013,6 +1019,7 @@ public:
 			DirectX::XMFLOAT2(0, 0),                        // 텍스트 중앙 기준
 			GetScale() * GetParentScale()
 		);
+		*/
 
 		renderer.SpriteBatch->End();
 	}
@@ -1054,10 +1061,57 @@ public:
 	void SetTintColor(FVector InTintColor) { TintColor = InTintColor; }
 	FVector GetTintColor() { return TintColor; }
 
-private:
+protected:
 	UTexture* Texture;
 	FVector AxisScale;
 	FVector TintColor;
+};
+
+/*
+* 이미지가 없는 버튼도 있겠지만 이 게임 프로토타입에선 배제하여 이미지를 상속받음
+* 버튼의 가운데에 해당 텍스트를 넣는다면 렌더 순서가 꼬여 소유하지 않고 일단 외부 텍스트를 받도록 함
+*/
+class UButtonWidget : public UImageWidget
+{
+public:
+	UButtonWidget() = default;
+
+public:
+	bool IsPressed(HWND hWnd)
+	{
+		POINT lpPoint = {};
+		GetCursorPos(&lpPoint);
+		ScreenToClient(hWnd, &lpPoint);
+
+		return IsOnBound(lpPoint.x, lpPoint.y);
+	}
+
+private:
+	/*
+	* 스크린 상에서 버튼 클릭 체크
+	*/
+	bool IsOnBound(float MouseX, float MouseY)
+	{
+		//NDC 좌표
+
+		FVector CartesianCoord = GetLocation(true);
+
+		FVector ScaledAxisScale = AxisScale * GetScale() * GetParentScale();
+		FVector LeftTop = { CartesianCoord.x - ScaledAxisScale.x, CartesianCoord.y + ScaledAxisScale.y, 0.f };
+		FVector RightBottom = { CartesianCoord.x + ScaledAxisScale.x, CartesianCoord.y - ScaledAxisScale.y, 0.f };
+
+		LeftTop = { (LeftTop.x + 1.0f) * 0.5f * 1024, (1.f - LeftTop.y) * 0.5f * 1024 , 0 };
+		RightBottom = { (RightBottom.x + 1.0f) * 0.5f * 1024,  (1.f - RightBottom.y) * 0.5f * 1024 , 0 };
+
+		bool debugFlag = (MouseX > LeftTop.x && MouseX < RightBottom.x && MouseY > LeftTop.y && MouseY < RightBottom.y);
+
+		if (debugFlag)
+		{
+			int iDebug = 0;
+		}
+		return debugFlag;
+
+	}
 };
 
 enum EFruitType
@@ -1188,9 +1242,15 @@ public:
 		{
 			Location.y = BottomBorder;
 
-			Velocity.y *= -RestitutionWall;
+			if (fabsf(Velocity.y) < 0.05f)
+				Velocity.y = 0.0f;
+			else
+				Velocity.y *= -RestitutionWall;
+		}
 
-			//바닥 마찰력 적용
+		if (IsInWallBoder())
+		{
+			//벽 마찰 적용
 			float normalImpulse = fabsf(Velocity.y) * (1.0f + RestitutionWall);
 
 			float frictionImpulse = FloorFriction * normalImpulse;
@@ -1201,6 +1261,11 @@ public:
 		}
 
 		Velocity.y -= GravityAccel * dt;
+
+		// 속도가 매우 작으면 0으로 수렴 (sleep)
+		const float SleepThreshold = 0.01f;
+		if (fabsf(Velocity.x) < SleepThreshold) Velocity.x = 0.0f;
+		if (fabsf(Velocity.y) < SleepThreshold) Velocity.y = 0.0f;
 
 		float speed = sqrtf(Velocity.x * Velocity.x + Velocity.y * Velocity.y);
 
@@ -1224,12 +1289,11 @@ public:
 	{
 		FruitType = InFruitType;
 		Radius = SmallestFruitRadius * pow(CoefRadiusGrowth, InFruitType);
-		Mass = Radius * Radius * MassFactor;
-
-		LeftBorder = (-1) * MapBoarder + Radius;
-		RightBorder = MapBoarder - Radius;
-		TopBorder = 1.0f - Radius;
-		BottomBorder = -0.9f + Radius;
+		Mass = Radius * Radius;
+		LeftBorder += Radius;
+		RightBorder -= Radius;
+		TopBorder -= Radius;
+		BottomBorder += Radius;
 	}
 
 	EFruitType GetFruitType() const { return FruitType; }
@@ -1619,7 +1683,7 @@ private:
 class UInputManager
 {
 public:
-	UInputManager():
+	UInputManager() :
 		bIsMouseDown(false),
 		bIsXPadConnected(false),
 		MousePosition(0, 0),
@@ -1627,7 +1691,8 @@ public:
 		XPadStickY(0),
 		bIsXPadADown(false),
 		bIsXPadTriggerDown(false)
-	{ }
+	{
+	}
 
 	void Update(HWND hWnd)
 	{
@@ -2103,14 +2168,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	RegisterClassW(&wndclass);
 
+	RECT rect = { 0, 0, 1024, 1024 };
+	AdjustWindowRect(&rect, WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW, FALSE);
+
 	HWND hWnd = CreateWindowExW(0,
 		WindowClass,
 		Title,
 		WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
-		1024,
-		1024,
+		rect.right - rect.left,   // 타이틀바 포함한 전체 크기
+		rect.bottom - rect.top,
 		nullptr,
 		nullptr,
 		hInstance,
@@ -2160,6 +2228,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	SoundManager.LoadSound(TEXT("./Sound/SFX/Drop.wav"), false);
 	SoundManager.LoadSound(TEXT("./Sound/SFX/Merge.wav"), false);
 
+
 	SoundManager.PlayBGM(TEXT("./Sound/BGM/Menu.mp3"));
 
 	//연쇄적인 12개의 충돌을 고려해 100개
@@ -2194,7 +2263,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// 여기 데이터 해제 필요함!!!
 	UTexture* EmptyTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/preview_empty.png");
 	UTexture* BubbleTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/bubble.png");
+	UTexture* ButtonBGTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/Button_BG.png");
 	UTexture* NextTextTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/NextText.png");
+	UTexture* ScoreTextTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/ScoreText.png");
 	UTexture* Map1Texture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/Map1.png");
 	UTexture* Map1RoofTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/Map1_Roof.png");
 
@@ -2266,6 +2337,36 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	float VibrationTime = 0.f;
 	const float MaxVibrationTime = 0.3f;
 	bool bIsVibrating = false;
+
+
+
+
+	//왼쪽 점수
+	UImageWidget LeftScoreWidget, ScoreTextWidget;
+	UTextWidget  CurrentScoreWidget;
+
+	LeftScoreWidget.SetOffset(FVector(-0.7f, 0.7f, 0.f));
+	LeftScoreWidget.SetTexture(BubbleTexture);
+	LeftScoreWidget.SetScale(1.f);
+	LeftScoreWidget.SetAxisScale({ 0.1, 0.1f, 1.f });
+
+	ScoreTextWidget.SetTexture(ScoreTextTexture);
+	ScoreTextWidget.SetScale(1);
+	ScoreTextWidget.SetParent(&LeftScoreWidget);
+
+	ScoreTextWidget.SetAxisScale(FVector::Splat(0.1));
+	ScoreTextWidget.SetOffset(FVector(0, 0.1, 0));
+
+	CurrentScoreWidget.SetText(TEXT("0"));
+	CurrentScoreWidget.SetParent(&LeftScoreWidget);
+	CurrentScoreWidget.SetScale(1.f);
+	CurrentScoreWidget.SetOffset(FVector(0.f, 0.0f, 0.f));
+
+
+	UButtonWidget ButtonTestWidget;
+	ButtonTestWidget.SetOffset(FVector(0.f, 0.f, 0.f));
+	ButtonTestWidget.SetTexture(ButtonBGTexture);
+	ButtonTestWidget.SetAxisScale({ 0.1, 0.1f, 1.f });
 
 	const float SpawnCooldown = 0.5f; // 과일 생성 간 최소 시간 간격 (초)
 	LARGE_INTEGER LastSpawnTime;
@@ -2364,7 +2465,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				// 화면 바깥을 클릭해도 과일이 생성되는 문제 해결
 				bool isMouseInScene = (mousePos.y >= renderer.ViewportInfo.TopLeftY) && (mousePos.y <= renderer.ViewportInfo.TopLeftY + renderer.ViewportInfo.Height) &&
 					(mousePos.x >= renderer.ViewportInfo.TopLeftX) && (mousePos.x <= renderer.ViewportInfo.TopLeftX + renderer.ViewportInfo.Width);
-				
+
 				bool curMouseDown = InputManager.IsMouseDown();
 
 				if (curMouseDown && !prevMouseDown && isMouseInScene)
@@ -2408,6 +2509,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 				FVector spawnPos = FVector(spawnX, 0.9f, 0);
 
+				SoundManager.PlaySFX(TEXT("./Sound/SFX/Drop.wav"), 1.f);
 				PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos, FruitTextures[ft]));
 
 				// 다음 과일
@@ -2484,6 +2586,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 								//병합된 곳에서 파티클 생성
 								ParticlePool.Aquire(TargetLocation);
 								SoundManager.PlaySFX(TEXT("./Sound/SFX/Merge.wav"));
+
 							}
 							else
 							{
@@ -2519,10 +2622,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 				// 점수 획득
 				ScoreManager.AddScore(MergeInfo.ResultFruitType);
+
+				CurrentScoreWidget.SetText(std::to_wstring(ScoreManager.GetScore()).c_str());
 			}
 
 			//새 과일이 생성된 후 마찰 적용
-			const static int overlapIteration = 10;
+			const static int overlapIteration = 100;
 			for (UINT i = 0; i < overlapIteration; ++i)
 			{
 				for (UINT i = 0; i < PrimitiveList.Num(); i++)
@@ -2537,6 +2642,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					}
 				}
 			}
+
+
 
 			for (UINT i = 0; i < PrimitiveList.Num(); i++)
 			{
@@ -2691,11 +2798,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		if (FrameState == GS_Playing)
 		{
 			MapRoofWidget.Render(renderer);
+
+			LeftScoreWidget.Render(renderer);
+			ScoreTextWidget.Render(renderer);
+
 			ScoreWidget.Render(renderer);
 			TestWidget.Render(renderer);
 			NextTextWidget.Render(renderer);
 
+
 			LeaderBoardWidget.Render(renderer);
+
+			NextTextWidget.Render(renderer);
+			CurrentScoreWidget.Render(renderer);
+
 			for (int i = 0; i < RANK_NUM; i++)
 			{
 				RankBg[i].Render(renderer);
@@ -2808,11 +2924,18 @@ static void ResolveCollision(UBall* A, UBall* B)
 	float Penetration = r - Dist;
 	float MA = A->Mass;
 	float MB = B->Mass;
-	float MoveA = Penetration * (MB / (MA + MB));
-	float MoveB = Penetration * (MA / (MA + MB));
+
+	const float Slop = 0.001f;
+	const float Percent = 0.8f;
+	float Correction = fmaxf(Penetration - Slop, 0.0f) / (1.0f / MA + 1.0f / MB) * Percent;
+	float MoveA = Correction / MA;
+	float MoveB = Correction / MB;
 
 	A->Location = A->Location - (Normal * MoveA);
 	B->Location = B->Location + (Normal * MoveB);
+
+	A->BorderClamp();
+	B->BorderClamp();
 
 	// 관성 모멘트 
 	float IA = 0.5f * MA * A->Radius * A->Radius;
@@ -2842,7 +2965,7 @@ static void ResolveCollision(UBall* A, UBall* B)
 
 	float RelVelTang = RelVel.Dot2(Tangent);
 
-	const float e = 0.5f;
+	const float e = 0.2f;
 	float jN = -(1.0f + e) * RelVelNorm / (1 / MA + 1 / MB);
 
 	float jT = 0.f;
@@ -2859,13 +2982,10 @@ static void ResolveCollision(UBall* A, UBall* B)
 	B->Velocity = B->Velocity + (Normal * (jN * 1 / MB)) + (Tangent * (jT * 1 / MB));
 
 	//충격량이 존재할 때만 각속도를 변화
-	if (jN > 0.05f)
+	if (jN > 0.01f)
 	{
 		A->AngularVelocity -= A->Radius * jT * InvIA;
 		B->AngularVelocity += B->Radius * jT * InvIB;
 	}
 
-	// Border Clamp
-	A->BorderClamp();
-	B->BorderClamp();
 }
