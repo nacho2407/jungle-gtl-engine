@@ -49,7 +49,7 @@ public:
 	{
 	}
 
-	void Update(HWND hWnd)
+	void Update(HWND hWnd, float dt)
 	{
 		bool bCurrent = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
 
@@ -81,22 +81,52 @@ public:
 			// HW Noise 배제
 			if (Magnitude < DEADZONE)
 			{
+				// Not Holding
 				lx = 0;
 				ly = 0;
+
+				if (bIsHoldingRepeatStarted)
+				{
+					bIsHoldingRepeatStarted = false;
+					bIsHoldingRepeatTriggered = false;
+					HoldRepeatTime = 0;
+				}
 			}
+			else
+			{
+				// Holding
+				if (bIsHoldingRepeatStarted)
+				{
+					HoldRepeatTime += dt;
+					if (HoldRepeatTime >= 0.3f)
+					{
+						bIsHoldingRepeatTriggered = true;
+						// dt 가 큰 경우 0.3f 를 크게 벗어날 수 있으므로 이를 고려해서 HoldRepeatTime 수정
+						HoldRepeatTime -= 0.3f;
+					}
+					else
+					{
+						bIsHoldingRepeatTriggered = false;
+					}
+				}
+				else
+				{
+					// 첫 시작시엔 바로 Trigger
+					bIsHoldingRepeatStarted = true;
+					bIsHoldingRepeatTriggered = true;
+					HoldRepeatTime = 0;
+				}
+			}
+
 
 			// lx, ly => [-1, 1] 정규화
 			XPadStickX = lx / 32768.f;
 			XPadStickY = ly / 32768.f;
 
-			if (state.Gamepad.wButtons & XINPUT_GAMEPAD_A)
-			{
-				bIsXPadADown = true;
-			}
-			else
-			{
-				bIsXPadADown = false;
-			}
+			bIsXPadADown = (state.Gamepad.wButtons & XINPUT_GAMEPAD_A) != 0;
+			bIsXPadAPressed = bIsXPadADown && !bIsPrevXPadADown;
+			bIsXPadAReleased = !bIsXPadADown && bIsPrevXPadADown;
+			bIsPrevXPadADown = bIsXPadADown;
 
 			bIsXPadTriggerDown = (state.Gamepad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD || state.Gamepad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD);
 		}
@@ -111,14 +141,24 @@ public:
 
 	float GetXPadStickX() const { return XPadStickX; }
 	float GetXPadStickY() const { return XPadStickY; }
+
 	bool IsXPadADown() const { return bIsXPadADown; }
+	bool IsXPadAPressed() const { return bIsXPadAPressed; }
+	bool IsXPadAReleased() const { return bIsXPadAReleased; }
+
 	bool IsXPadTriggerDown() const { return bIsXPadTriggerDown; }
+	bool IsXPadHoldingRepeatTriggered() const { return bIsHoldingRepeatTriggered; }
 
 private:
 	bool bIsPrevMouseDown = false;
 	bool bIsMouseDown = false;
 	bool bIsMousePressed = false;
 	bool bIsMouseReleased = false;
+
+	bool bIsPrevXPadADown = false;
+	bool bIsXPadADown = false;
+	bool bIsXPadAPressed = false;
+	bool bIsXPadAReleased = false;
 
 	bool bIsXPadConnected;
 	POINT MousePosition;
@@ -127,8 +167,11 @@ private:
 	float XPadStickX;
 	float XPadStickY;
 
-	bool bIsXPadADown;
 	bool bIsXPadTriggerDown;
+
+	bool bIsHoldingRepeatStarted;
+	bool bIsHoldingRepeatTriggered;
+	float HoldRepeatTime;
 };
 
 class UTexture
@@ -1088,6 +1131,10 @@ private:
 class UTextWidget : public UWidget
 {
 public:
+	UTextWidget():
+		TextColor(DirectX::Colors::White)
+	{ }
+
 	void Render(URenderer& renderer) override
 	{
 		/*
@@ -1108,7 +1155,7 @@ public:
 			renderer.SpriteBatch.get(),
 			Text.c_str(),
 			DirectX::XMFLOAT2(ScreenCoord.x, ScreenCoord.y),
-			DirectX::Colors::White,
+			TextColor,
 			0.0f,
 			origin,                        // 텍스트 중앙 기준
 			GetScale() * GetParentScale()
@@ -1139,8 +1186,15 @@ public:
 		Text = InText;
 	}
 
+	void SetTextColor(DirectX::XMVECTORF32 InTextColor)
+	{
+		TextColor = InTextColor;
+	}
+
 private:
 	std::wstring Text;
+
+	DirectX::XMVECTORF32 TextColor;
 };
 
 class UImageWidget : public UWidget
@@ -2397,6 +2451,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	CurrentScoreWidget.SetScale(1.f);
 	CurrentScoreWidget.SetOffset(FVector(0.f, 0.0f, 0.f));
 
+	// 게임 오버 점수 UI
+	UImageWidget GameOverScoreImage, GameOverScoreTextImage;
+	UTextWidget  GameOverScoreText;
+
+	GameOverScoreImage.SetOffset(FVector(0.f, -0.2f, 0.f));
+	GameOverScoreImage.SetTexture(ButtonBGTexture);
+	GameOverScoreImage.SetScale(1.5f);
+	GameOverScoreImage.SetAxisScale({ 0.1, 0.1f, 1.f });
+
+	GameOverScoreTextImage.SetTexture(ScoreTextTexture);
+	GameOverScoreTextImage.SetScale(1);
+	GameOverScoreTextImage.SetParent(&GameOverScoreImage);
+	GameOverScoreTextImage.SetAxisScale(FVector::Splat(0.1));
+	GameOverScoreTextImage.SetOffset(FVector(0, 0.1, 0));
+
+	GameOverScoreText.SetText(TEXT("0"));
+	GameOverScoreText.SetParent(&GameOverScoreImage);
+	GameOverScoreText.SetScale(1.f);
+	GameOverScoreText.SetTextColor(DirectX::Colors::White);
+	GameOverScoreText.SetOffset(FVector(0.f, 0.0f, 0.f));
+
 
 	UButtonWidget StartButton, CreditButton, RuleButton, BackButton, RestartButton, BackToTitleButton;
 	UTextWidget StartText, CreditText, RuleText, BackText, RestartText, BackToTitleText;
@@ -2479,6 +2554,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	LARGE_INTEGER LastSpawnTime;
 	QueryPerformanceCounter(&LastSpawnTime);
 
+	// GameState 변화 간 Index 를 초기화해줘야 하는데 지금 구조 상으로 아직 안돼있어서 나중에 고쳐야할듯함
 	int XPadButtonIndex = 0;
 
 	while (bIsExit == false)
@@ -2502,7 +2578,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 		}
 
-		InputManager.Update(hWnd);
+		InputManager.Update(hWnd, fixedDeltaTime);
 
 		// 임시 게임 상태 저장
 		EGameState FrameState = GameState;
@@ -2515,16 +2591,56 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 			if (InputManager.IsXPadConnected())
 			{
+				if (InputManager.IsXPadHoldingRepeatTriggered())
+				{
+					if (InputManager.GetXPadStickY() < 0)
+					{
+						XPadButtonIndex = (XPadButtonIndex + 1) % 3;
+					}
+					else
+					{
+						if (XPadButtonIndex == 0) XPadButtonIndex = 2;
+						else XPadButtonIndex -= 1;
+					}
+				}
+
+				// 모든 버튼 Hover -> Normal
+				// 비효율적이긴한데 시간이 없어서 우선 이렇게 처리
+				StartButton.SetTexture(ButtonBGTexture);
+				CreditButton.SetTexture(ButtonBGTexture);
+				RuleButton.SetTexture(ButtonBGTexture);
+
 				switch (XPadButtonIndex)
 				{
 				case 0:
+					StartButton.SetTexture(ButtonBGHoverTexture);
 					break;
 
 				case 1:
+					CreditButton.SetTexture(ButtonBGHoverTexture);
 					break;
 
 				case 2:
+					RuleButton.SetTexture(ButtonBGHoverTexture);
 					break;
+				}
+
+				if (InputManager.IsXPadAReleased())
+				{
+					switch (XPadButtonIndex)
+					{
+					case 0:
+						GameState = GS_Playing;
+						break;
+
+					case 1:
+						GameState = GS_Credits;
+						break;
+
+					case 2:
+						GameState = GS_HowToPlay;
+						break;
+					}
 				}
 			}
 			else
@@ -2573,40 +2689,62 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			renderer.Prepare();
 			renderer.PrepareShader();
 
-			if (BackButton.IsOnBound(hWnd))
+			if (InputManager.IsXPadConnected())
+			{
 				BackButton.SetTexture(ButtonBGHoverTexture);
+				if (InputManager.IsXPadAReleased())
+				{
+					GameState = GS_Title;
+				}
+			}
 			else
-				BackButton.SetTexture(ButtonBGTexture);
+			{
+				if (BackButton.IsOnBound(hWnd))
+					BackButton.SetTexture(ButtonBGHoverTexture);
+				else
+					BackButton.SetTexture(ButtonBGTexture);
+
+				if (BackButton.IsPressed(hWnd, InputManager))
+				{
+					GameState = GS_Title;
+				}
+			}
 
 			CreditImage.Render(renderer);
 			
 			BackButton.Render(renderer);
 			BackText.Render(renderer);
 
-			if (BackButton.IsPressed(hWnd, InputManager))
-			{
-				GameState = GS_Title;
-			}
-
 			break;
 
 		case GS_HowToPlay:
 			renderer.Prepare();
 			renderer.PrepareShader();
-			HowToPlayImage.Render(renderer);
 
-			if (BackButton.IsOnBound(hWnd))
+			if (InputManager.IsXPadConnected())
+			{
 				BackButton.SetTexture(ButtonBGHoverTexture);
+				if (InputManager.IsXPadAReleased())
+				{
+					GameState = GS_Title;
+				}
+			}
 			else
-				BackButton.SetTexture(ButtonBGTexture);
+			{
+				if (BackButton.IsOnBound(hWnd))
+					BackButton.SetTexture(ButtonBGHoverTexture);
+				else
+					BackButton.SetTexture(ButtonBGTexture);
 
+				if (BackButton.IsPressed(hWnd, InputManager))
+				{
+					GameState = GS_Title;
+				}
+			}
+
+			HowToPlayImage.Render(renderer);
 			BackButton.Render(renderer);
 			BackText.Render(renderer);
-
-			if (BackButton.IsPressed(hWnd, InputManager))
-			{
-				GameState = GS_Title;
-			}
 
 			break;
 		case GS_Playing:
@@ -2620,7 +2758,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				if (InputManager.IsXPadTriggerDown())
 					spawnX += InputManager.GetXPadStickX() * 0.01f;
 				else
-					spawnX += InputManager.GetXPadStickX() * 0.05f;
+					spawnX += InputManager.GetXPadStickX() * 0.03f;
+
 				spawnX = max(min(spawnX, 1), -1);
 
 				if (bIsVibrating)
@@ -2982,24 +3121,95 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		case GS_GameOver:
 			renderer.Prepare();
 			renderer.PrepareShader();
-			// UpdateGameOver(renderer, ScoreManager);
 
-			if (RestartButton.IsOnBound(hWnd))
-				RestartButton.SetTexture(ButtonBGHoverTexture);
-			else
+			if (InputManager.IsXPadConnected())
+			{
+				if (InputManager.IsXPadHoldingRepeatTriggered())
+				{
+					if (InputManager.GetXPadStickX() > 0)
+					{
+						XPadButtonIndex = (XPadButtonIndex + 1) % 2;
+					}
+					else
+					{
+						if (XPadButtonIndex == 0) XPadButtonIndex = 1;
+						else XPadButtonIndex -= 1;
+					}
+				}
+
+				// 모든 버튼 Hover -> Normal
+				// 비효율적이긴한데 시간 문제로...
 				RestartButton.SetTexture(ButtonBGTexture);
-
-			if (BackToTitleButton.IsOnBound(hWnd))
-				BackToTitleButton.SetTexture(ButtonBGHoverTexture);
-			else
 				BackToTitleButton.SetTexture(ButtonBGTexture);
+
+				switch (XPadButtonIndex)
+				{
+				case 0:
+					RestartButton.SetTexture(ButtonBGHoverTexture);
+					break;
+
+				case 1:
+					BackToTitleButton.SetTexture(ButtonBGHoverTexture);
+					break;
+				}
+
+				if (InputManager.IsXPadAReleased())
+				{
+					switch (XPadButtonIndex)
+					{
+					case 0:
+						GameState = GS_Playing;
+						ScoreManager.UpdateHighScore();
+						ScoreManager.Reset();
+						break;
+
+					case 1:
+						GameState = GS_Title;
+						ScoreManager.UpdateHighScore();
+						ScoreManager.Reset();
+						XPadButtonIndex = 0;
+						break;
+					}
+				}
+			}
+			else
+			{
+				if (RestartButton.IsOnBound(hWnd))
+					RestartButton.SetTexture(ButtonBGHoverTexture);
+				else
+					RestartButton.SetTexture(ButtonBGTexture);
+
+				if (BackToTitleButton.IsOnBound(hWnd))
+					BackToTitleButton.SetTexture(ButtonBGHoverTexture);
+				else
+					BackToTitleButton.SetTexture(ButtonBGTexture);
+
+				if (RestartButton.IsPressed(hWnd, InputManager))
+				{
+					GameState = GS_Playing;
+					ScoreManager.UpdateHighScore();
+					ScoreManager.Reset();
+				}
+				else if (BackToTitleButton.IsPressed(hWnd, InputManager))
+				{
+					GameState = GS_Title;
+					ScoreManager.UpdateHighScore();
+					ScoreManager.Reset();
+				}
+			}
 
 			GameOverImage.Render(renderer);
 			RestartButton.Render(renderer);
 			BackToTitleButton.Render(renderer);
 
+			GameOverScoreImage.Render(renderer);
+			GameOverScoreTextImage.Render(renderer);
+
 			RestartText.Render(renderer);
 			BackToTitleText.Render(renderer);
+
+			GameOverScoreText.SetText(std::to_wstring(ScoreManager.GetScore()).c_str());
+			GameOverScoreText.Render(renderer);
 
 			// 종료 시 진동 종료
 			if (bIsVibrating)
@@ -3012,18 +3222,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				bIsVibrating = false;
 				VibrationTime = 0;
 			}
-
-			if (RestartButton.IsPressed(hWnd, InputManager))
-			{
-				GameState = GS_Playing;
-			}
-			else if (BackToTitleButton.IsPressed(hWnd, InputManager))
-			{
-				GameState = GS_Title;
-			}
-
-			ScoreManager.UpdateHighScore();
-			ScoreManager.Reset();
 
 			break;
 		}
