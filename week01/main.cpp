@@ -32,6 +32,86 @@
 #include <Xinput.h>
 #pragma comment(lib, "Xinput.lib")
 
+class USoundManager
+{
+public:
+	USoundManager() = default;
+	~USoundManager() = default;
+public:
+	void Initialize()
+	{
+		FMOD::System_Create(&System);
+		System->init(512, FMOD_INIT_NORMAL, nullptr);
+		System->createChannelGroup("BGM", &BGMGroup);
+		System->createChannelGroup("SFX", &SFXGroup);
+	}
+
+	void Release()
+	{
+		for (auto MyPair : Sounds)
+		{
+			MyPair.second->release();
+		}
+
+		if (BGMGroup) BGMGroup->release();
+		if (SFXGroup) SFXGroup->release();
+		System->close();
+		System->release();
+	}
+
+	void LoadSound(std::wstring Path, bool bIsLoop)
+	{
+		FMOD_MODE Mode = (bIsLoop) ? (FMOD_LOOP_NORMAL) : (FMOD_DEFAULT);
+
+		if (Sounds.find(Path) == Sounds.end())
+		{
+			System->createSound(std::string(Path.begin(), Path.end()).c_str(), Mode, nullptr, &Sounds[Path]);
+		}
+	}
+
+	// BGM: 하나만 재생 (이전 BGM 정지 후 교체)
+	void PlayBGM(std::wstring Path, float Volume = 1.f)
+	{
+		if (Sounds.find(Path) == Sounds.end()) return;
+
+		if (BGMChannel) BGMChannel->stop();
+
+		System->playSound(Sounds[Path], BGMGroup, false, &BGMChannel);
+		if (BGMChannel) BGMChannel->setVolume(Volume);
+	}
+
+	void PlaySFX(std::wstring Path, float Volume = 1.f)
+	{
+		if (Sounds.find(Path) == Sounds.end()) return;
+
+		FMOD::Channel* Ch = nullptr;
+		System->playSound(Sounds[Path], SFXGroup, false, &Ch);
+		if (Ch) Ch->setVolume(Volume);
+	}
+
+	void StopAll()
+	{
+		if (BGMGroup) BGMGroup->stop();
+		if (SFXGroup) SFXGroup->stop();
+	}
+
+	void Update()
+	{
+		System->update();
+	}
+
+
+private:
+	FMOD::System* System = nullptr;
+	FMOD::ChannelGroup* BGMGroup = nullptr;
+	FMOD::ChannelGroup* SFXGroup = nullptr;
+	FMOD::Channel* BGMChannel = nullptr;
+
+	std::unordered_map<std::wstring, FMOD::Sound*> Sounds;
+
+};
+
+
 class UInputManager
 {
 public:
@@ -1231,12 +1311,17 @@ public:
 	UButtonWidget() = default;
 
 public:
-	bool IsPressed(HWND hWnd, const UInputManager& InputManager)
+	bool IsPressed(HWND hWnd, const UInputManager& InputManager, USoundManager& soundManger)
 	{
-		return IsOnBound(hWnd) && InputManager.IsMouseReleased();
+		if (IsOnBound(hWnd) && InputManager.IsMouseReleased())
+		{
+			soundManger.PlaySFX(TEXT("./Sound/SFX/Click.wav"));
+			return true;
+		}
+		return false;
 	}
 
-private:
+public:
 	/*
 	* 스크린 상에서 버튼 클릭 체크
 	*/
@@ -1850,84 +1935,6 @@ private:
 	UTexture* ParticleTexture;
 };
 
-class USoundManager
-{
-public:
-	USoundManager() = default;
-	~USoundManager() = default;
-public:
-	void Initialize()
-	{
-		FMOD::System_Create(&System);
-		System->init(512, FMOD_INIT_NORMAL, nullptr);
-		System->createChannelGroup("BGM", &BGMGroup);
-		System->createChannelGroup("SFX", &SFXGroup);
-	}
-
-	void Release()
-	{
-		for (auto MyPair : Sounds)
-		{
-			MyPair.second->release();
-		}
-
-		if (BGMGroup) BGMGroup->release();
-		if (SFXGroup) SFXGroup->release();
-		System->close();
-		System->release();
-	}
-
-	void LoadSound(std::wstring Path, bool bIsLoop)
-	{
-		FMOD_MODE Mode = (bIsLoop) ? (FMOD_LOOP_NORMAL) : (FMOD_DEFAULT);
-
-		if (Sounds.find(Path) == Sounds.end())
-		{
-			System->createSound(std::string(Path.begin(), Path.end()).c_str(), Mode, nullptr, &Sounds[Path]);
-		}
-	}
-
-	// BGM: 하나만 재생 (이전 BGM 정지 후 교체)
-	void PlayBGM(std::wstring Path, float Volume = 1.f)
-	{
-		if (Sounds.find(Path) == Sounds.end()) return;
-
-		if (BGMChannel) BGMChannel->stop();
-
-		System->playSound(Sounds[Path], BGMGroup, false, &BGMChannel);
-		if (BGMChannel) BGMChannel->setVolume(Volume);
-	}
-
-	void PlaySFX(std::wstring Path, float Volume = 1.f)
-	{
-		if (Sounds.find(Path) == Sounds.end()) return;
-
-		FMOD::Channel* Ch = nullptr;
-		System->playSound(Sounds[Path], SFXGroup, false, &Ch);
-		if (Ch) Ch->setVolume(Volume);
-	}
-
-	void StopAll()
-	{
-		if (BGMGroup) BGMGroup->stop();
-		if (SFXGroup) SFXGroup->stop();
-	}
-
-	void Update()
-	{
-		System->update();
-	}
-
-
-private:
-	FMOD::System* System = nullptr;
-	FMOD::ChannelGroup* BGMGroup = nullptr;
-	FMOD::ChannelGroup* SFXGroup = nullptr;
-	FMOD::Channel* BGMChannel = nullptr;
-
-	std::unordered_map<std::wstring, FMOD::Sound*> Sounds;
-
-};
 
 const UINT RANK_NUM = 5;
 
@@ -2327,6 +2334,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	SoundManager.LoadSound(TEXT("./Sound/SFX/Drop.wav"), false);
 	SoundManager.LoadSound(TEXT("./Sound/SFX/Merge.wav"), false);
 	SoundManager.LoadSound(TEXT("./Sound/SFX/Click.wav"), false);
+	SoundManager.LoadSound(TEXT("./Sound/SFX/GameWin.wav"), false);
+	SoundManager.LoadSound(TEXT("./Sound/SFX/GameOver.wav"), false);
 
 
 	SoundManager.PlayBGM(TEXT("./Sound/BGM/Menu.mp3"));
@@ -2673,15 +2682,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				else
 					RuleButton.SetTexture(ButtonBGTexture);
 
-				if (StartButton.IsPressed(hWnd, InputManager))
+				if (StartButton.IsPressed(hWnd, InputManager, SoundManager))
 				{
 					GameState = GS_Playing;
 				}
-				else if (CreditButton.IsPressed(hWnd, InputManager))
+				else if (CreditButton.IsPressed(hWnd, InputManager, SoundManager))
 				{
 					GameState = GS_Credits;
 				}
-				else if (RuleButton.IsPressed(hWnd, InputManager))
+				else if (RuleButton.IsPressed(hWnd, InputManager, SoundManager))
 				{
 					GameState = GS_HowToPlay;
 				}
@@ -2717,7 +2726,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				else
 					BackButton.SetTexture(ButtonBGTexture);
 
-				if (BackButton.IsPressed(hWnd, InputManager))
+				if (BackButton.IsPressed(hWnd, InputManager, SoundManager))
 				{
 					GameState = GS_Title;
 				}
@@ -2749,7 +2758,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				else
 					BackButton.SetTexture(ButtonBGTexture);
 
-				if (BackButton.IsPressed(hWnd, InputManager))
+				if (BackButton.IsPressed(hWnd, InputManager, SoundManager))
 				{
 					GameState = GS_Title;
 				}
@@ -2944,6 +2953,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 							else
 							{
 								ScoreManager.AddScore(EFruitType::FT_Watermelon);
+								ParticlePool.Aquire(A->Location);
+								SoundManager.PlaySFX(TEXT("./Sound/SFX/Merge.wav"));
+								SoundManager.PlaySFX(TEXT("./Sound/SFX/GameWin.wav"));
 							}
 						}
 					}
@@ -3083,6 +3095,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					CurrentFruitType = GetRandomFruitType();
 					NextFruitType = GetRandomFruitType();
 
+					SoundManager.StopAll();
+					SoundManager.PlaySFX(TEXT("./Sound/SFX/GameOver.wav"));
+
 					GameState = GS_GameOver;
 
 					break;
@@ -3122,6 +3137,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			ImGui::Text("Score: %d", ScoreManager.GetScore());
 			if (ImGui::Button("Give Up"))
 			{
+				SoundManager.StopAll();
+				SoundManager.PlayBGM(TEXT("./Sound/SFX/GameOver.wav"));
 				GameState = GS_GameOver;
 			}
 
@@ -3197,14 +3214,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				else
 					BackToTitleButton.SetTexture(ButtonBGTexture);
 
-				if (RestartButton.IsPressed(hWnd, InputManager))
+				if (RestartButton.IsPressed(hWnd, InputManager, SoundManager))
 				{
+					SoundManager.PlayBGM(TEXT("./Sound/BGM/Menu.mp3"));
 					GameState = GS_Playing;
 					ScoreManager.UpdateHighScore();
 					ScoreManager.Reset();
 				}
-				else if (BackToTitleButton.IsPressed(hWnd, InputManager))
+				else if (BackToTitleButton.IsPressed(hWnd, InputManager, SoundManager))
 				{
+					SoundManager.PlayBGM(TEXT("./Sound/BGM/Menu.mp3"));
 					GameState = GS_Title;
 					ScoreManager.UpdateHighScore();
 					ScoreManager.Reset();
