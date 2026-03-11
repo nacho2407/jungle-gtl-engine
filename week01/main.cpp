@@ -27,9 +27,11 @@
 #include "SpriteFont.h"
 #include "SimpleMath.h"
 
-
 #include <unordered_map>
 #include <string>
+
+#include <Xinput.h>
+#pragma comment(lib, "Xinput.lib")
 
 class UTexture
 {
@@ -948,7 +950,7 @@ protected:
 	FVector CartesianToScreenCoord(FVector CartesianCoord)
 	{
 		// Screen Size 가 (900, 1100) 고정 상황 가정
-		return FVector(round((CartesianCoord.x + 1.0f) * 0.5f * 900), round((1 - (CartesianCoord.y + 1.0f) * 0.5f) * 1100));
+		return FVector(round((CartesianCoord.x + 1.0f) * 0.5f * 1024), round((1 - (CartesianCoord.y + 1.0f) * 0.5f) * 1024));
 	}
 
 private:
@@ -1213,8 +1215,8 @@ public:
 		Radius = SmallestFruitRadius * pow(CoefRadiusGrowth, InFruitType);
 		Mass = Radius * Radius * MassFactor;
 
-		LeftBorder = -0.8f + Radius;
-		RightBorder = 0.8f - Radius;
+		LeftBorder = -0.76f + Radius;
+		RightBorder = 0.76f - Radius;
 		TopBorder = 1.0f - Radius;
 		BottomBorder = -0.9f + Radius;
 	}
@@ -1683,6 +1685,7 @@ private:
 
 };
 
+const UINT RANK_NUM = 5;
 class FScoreManager
 {
 public:
@@ -1704,8 +1707,30 @@ public:
 	{
 		Score = 0;
 	}
+
+	int UpdateHighScore()
+	{
+		for (int i = 0; i < RANK_NUM; i++)
+		{
+			if (Score > HighScores[i])
+			{
+				for (int j = RANK_NUM - 1; j > i; j--)
+				{
+					HighScores[j] = HighScores[j - 1];
+				}
+
+				HighScores[i] = Score;
+				return i;
+			}
+		}
+		return -1; // 랭킹 진입 실패
+	}
+	UINT* GetHighScores() {
+		return HighScores;
+	}
 private:
 	UINT Score;
+	UINT HighScores[5] = { 0 }; // 0:최고기록
 };
 
 // main 브랜치가 바뀌는 부분을 모두 추적하기 어려워서 게임 매니저는 개발이 어느정도 끝난 후 리팩토링 하면서 추가하겠숩니다..
@@ -1933,6 +1958,7 @@ static void UpdateGameOver(URenderer& renderer, FScoreManager& ScoreManager)
 	if (ImGui::Button(buttonText))
 	{
 		//Reset();
+		ScoreManager.UpdateHighScore();
 		ScoreManager.Reset();
 
 		GameState = GS_Playing;
@@ -2099,6 +2125,43 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	MapRoofWidget.SetAxisScale(FVector(1, 0.1, 0));
 	MapRoofWidget.SetOffset(FVector(0, 0.6, 0));
 
+	UTexture* LeaderBoardTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/leaderboard.png");
+	UTexture* RankBgTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/rankbg.png");
+
+	UImageWidget LeaderBoardWidget;
+	UImageWidget* RankBg = new UImageWidget[RANK_NUM];
+	UTextWidget* RankNum = new UTextWidget[RANK_NUM];
+	UTextWidget* RankScore = new UTextWidget[RANK_NUM];
+
+	LeaderBoardWidget.SetOffset(FVector(-0.8, 0.3, 0));
+	LeaderBoardWidget.SetTexture(LeaderBoardTexture);
+	LeaderBoardWidget.SetScale(1);
+	LeaderBoardWidget.SetAxisScale(FVector::Splat(0.2));
+
+
+	for (int i = 0; i < RANK_NUM; i++)
+	{
+
+		RankBg[i].SetTexture(RankBgTexture);
+		RankBg[i].SetScale(0.5);
+		RankBg[i].SetAxisScale(FVector::Splat(0.28));
+		RankBg[i].SetParent(&LeaderBoardWidget);
+		RankBg[i].SetOffset(FVector(0, 0.08 - (0.06 * i), 0));
+
+		RankNum[i].SetNumber(i + 1);
+		RankNum[i].SetScale(1);
+		RankNum[i].SetParent(&RankBg[i]);
+		RankNum[i].SetOffset(FVector(-0.2, 0.09, 0));
+
+		RankScore[i].SetScale(1);
+		RankScore[i].SetParent(&RankBg[i]);
+		RankScore[i].SetOffset(FVector(0, 0.09, 0));
+	}
+	float spawnX = 0;
+	float VibrationTime = 0.f;
+	const float MaxVibrationTime = 0.3f;
+	bool bIsVibrating = false;
+
 	while (bIsExit == false)
 	{
 		QueryPerformanceCounter(&startTime);
@@ -2136,18 +2199,83 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			break;
 		case GS_Playing:
 		{
-			POINT mousePos;
-			GetCursorPos(&mousePos);
-			ScreenToClient(hWnd, &mousePos);
-
-			float spawnX = mousePos.x / renderer.ViewportInfo.Width;
-			spawnX = max(0.0f, min(1.0f, spawnX));
-			spawnX = spawnX * 2.0f - 1.0f;
-
 			static bool prevMouseDown = false;
 			bool spawnFruit = false;
 
 			bool curMouseDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+
+			XINPUT_STATE state;
+			ZeroMemory(&state, sizeof(XINPUT_STATE));
+
+			DWORD result = XInputGetState(0, &state);
+
+			if (result == ERROR_SUCCESS)
+			{
+				// 패드 연결됨
+
+				// [-32768, 32767]
+				SHORT lx = state.Gamepad.sThumbLX;
+				SHORT ly = state.Gamepad.sThumbLY;
+
+				float Magnitude = sqrt(lx * lx + ly * ly);
+				const float DEADZONE = 8689;
+
+				// HW Noise 배제
+				if (Magnitude < DEADZONE)
+				{
+					lx = 0;
+					ly = 0;
+				}
+
+				// lx, ly => [-1, 1] 정규화
+				float nx = lx / 32768.f;
+				float ny = ly / 32768.f;
+
+				if (state.Gamepad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD || state.Gamepad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD)
+				{
+					// 미세 조정
+					spawnX += nx * 0.01f;
+				}
+				else
+				{
+					spawnX += nx * 0.05f;
+				}
+
+				spawnX = max(min(spawnX, 1), -1);
+
+				if (state.Gamepad.wButtons & XINPUT_GAMEPAD_A)
+				{
+					spawnFruit = true;
+					// A 버튼 눌림
+					curMouseDown = true;
+				}
+
+				if (bIsVibrating)
+				{
+					VibrationTime += fixedDeltaTime;
+					if (VibrationTime >= MaxVibrationTime)
+					{
+						// 진동 종료
+						XINPUT_VIBRATION vibration{};
+						vibration.wLeftMotorSpeed = 0;
+						vibration.wRightMotorSpeed = 0;
+						XInputSetState(0, &vibration);
+						bIsVibrating = false;
+						VibrationTime = 0;
+					}
+				}
+
+			}
+			else
+			{
+				POINT mousePos;
+				GetCursorPos(&mousePos);
+				ScreenToClient(hWnd, &mousePos);
+
+				spawnX = mousePos.x / renderer.ViewportInfo.Width;
+				spawnX = max(0.0f, min(1.0f, spawnX));
+				spawnX = spawnX * 2.0f - 1.0f;
+			}
 
 			if (curMouseDown && !prevMouseDown)
 			{
@@ -2229,6 +2357,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					{
 						if (A->GetFruitType() == B->GetFruitType())
 						{
+							if (result == ERROR_SUCCESS)
+							{
+								// 패드 연결 상태
+								XINPUT_VIBRATION vibration{};
+								vibration.wLeftMotorSpeed = 500 * (A->GetFruitType() * A->GetFruitType() + 1);
+								vibration.wRightMotorSpeed = 500 * (A->GetFruitType() * A->GetFruitType() + 1);
+
+								XInputSetState(0, &vibration);
+
+								bIsVibrating = true;
+								VibrationTime = 0.f;
+							}
+
 							A->MarkPendingDestroy();
 							B->MarkPendingDestroy();
 
@@ -2383,6 +2524,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		case GS_GameOver:
 			renderer.Prepare();
 			UpdateGameOver(renderer, ScoreManager);
+
+			// 종료 시 진동 종료
+			if (bIsVibrating)
+			{
+				// 진동 종료
+				XINPUT_VIBRATION vibration{};
+				vibration.wLeftMotorSpeed = 0;
+				vibration.wRightMotorSpeed = 0;
+				XInputSetState(0, &vibration);
+				bIsVibrating = false;
+				VibrationTime = 0;
+			}
 			break;
 		}
 
@@ -2397,6 +2550,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			ScoreWidget.Render(renderer);
 			TestWidget.Render(renderer);
 			NextTextWidget.Render(renderer);
+
+			LeaderBoardWidget.Render(renderer);
+			for (int i = 0; i < RANK_NUM; i++)
+			{
+				RankBg[i].Render(renderer);
+			}
+			for (int i = 0; i < RANK_NUM; i++)
+			{
+				RankNum[i].Render(renderer);
+				RankScore[i].SetNumber(ScoreManager.GetHighScores()[i]);
+				RankScore[i].Render(renderer);
+
+			}
 		}
 
 		renderer.SwapBuffer();
@@ -2427,6 +2593,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		delete PrimitiveList[i];
 		PrimitiveList[i] = nullptr;
 	}
+
+	// 임시 메모리 해제
+	delete LeaderBoardTexture;
+	delete RankBgTexture;
+	delete[] RankBg;
+	delete[] RankNum;
+	delete[] RankScore;
 
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
