@@ -2231,10 +2231,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					FPendingMerge MergeInfo = PendingMergeQueue.Front();
 					PendingMergeQueue.Pop();
 
-					// 점수 획득
-					ScoreManager.AddScore(MergeInfo.ResultFruitType);
-					PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, FruitTextures[EFruitType::FT_Peach]));
-				}
+				// 점수 획득
+				ScoreManager.AddScore(MergeInfo.ResultFruitType);
+				PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, FruitTextures[MergeInfo.ResultFruitType]));
+			}
 
 				//새 과일이 생성된 후 마찰 적용
 				const static int overlapIteration = 10;
