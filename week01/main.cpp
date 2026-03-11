@@ -149,6 +149,11 @@ struct FVector
 	{
 		return x * rhs.x + y * rhs.y;
 	}
+
+	static FVector Splat(float Scalar)
+	{
+		return FVector(Scalar, Scalar, Scalar);
+	}
 };
 
 struct SceneFrame
@@ -171,12 +176,17 @@ class URenderer
 public:
 	struct FConstants
 	{
+		// 16B
 		FVector Offset;
-		float  Radius;
+		float Padding1;
+
+		// 16B
+		FVector Scale;
+		float Padding2;
+
+		// 16B
 		FVector SinCos;
-		float Padding;
 		float UseTexture;   // 1 = texture, 0 = color
-		float Padding2[3];
 	};
 
 	struct FMesh
@@ -577,7 +587,7 @@ public:
 		}
 	}
 
-	void UpdateConstant(FVector Offset, float Angle, float Radius, float UseTexture)
+	void UpdateConstant(FVector Offset, float Angle, FVector Scale, float UseTexture)
 	{
 		FVector CosSin = { cosf(Angle), sinf(Angle), 0.f };
 
@@ -590,7 +600,7 @@ public:
 
 			constants->Offset = Offset;
 			constants->SinCos = CosSin;
-			constants->Radius = Radius;
+			constants->Scale = Scale;
 			constants->UseTexture = UseTexture;
 
 			DeviceContext->Unmap(ConstantBuffer, 0); // CPU 작업이 끝난 뒤 언매핑
@@ -753,7 +763,7 @@ protected:
 	float LeftBorder = -1.0f;
 	float RightBorder = 1.0f;
 	float TopBorder = 1.0f;
-	float BottomBorder = -1.0f;
+	float BottomBorder = -0.5f;
 
 	bool bPendingDestroy = false; // 충돌 검사 중 삭제될 예정인 Primitive들을 표시하기 위한 플래그
 
@@ -856,7 +866,7 @@ public:
 
 	void Render(URenderer& renderer) override
 	{
-		renderer.UpdateConstant(Location, Angle, Radius, 1.0f);
+		renderer.UpdateConstant(Location, Angle, FVector::Splat(Radius), 1.0f);
 		renderer.UpdateTexture(GetTexture());
 		renderer.RenderRectangle();
 	}
@@ -1045,23 +1055,23 @@ class UImageWidget : public UWidget
 public:
 	UImageWidget():
 		Texture(nullptr),
-		Radius(1)
+		AxisScale(FVector::Splat(1))
 	{ }
 
 	void Render(URenderer& renderer) override
 	{
 		FVector Location = GetLocation(true);
-		renderer.UpdateConstant(Location, 0, Radius * GetScale() * GetParentScale(), true);
+		renderer.UpdateConstant(Location, 0.f, AxisScale * GetScale() * GetParentScale(), 1.0f);
 		renderer.UpdateTexture(Texture);
 		renderer.RenderRectangle();
 	}
 
 	void SetTexture(UTexture* InTexture) { Texture = InTexture; }
-	void SetRadius(float InRadius) { Radius = InRadius; }
+	void SetAxisScale(FVector InAxisScale) { AxisScale = InAxisScale; }
 
 private:
 	UTexture* Texture;
-	float Radius;
+	FVector AxisScale;
 };
 
 enum EFruitType
@@ -1114,7 +1124,7 @@ public:
 
 	void Render(URenderer& renderer) override
 	{
-		renderer.UpdateConstant(Location, Angle, Radius, 1.0f);
+		renderer.UpdateConstant(Location, Angle, FVector::Splat(Radius), 1.0f);
 		renderer.UpdateTexture(GetTexture());
 		renderer.RenderRectangle();
 	}
@@ -1240,10 +1250,10 @@ public:
 	{
 		FruitType = InFruitType;
 		Radius = SmallestFruitRadius * pow(CoefRadiusGrowth, InFruitType);
-		LeftBorder = -1.0f + Radius;
-		RightBorder = 1.0f - Radius;
+		LeftBorder = -0.8f + Radius;
+		RightBorder = 0.8f - Radius;
 		TopBorder = 1.0f - Radius;
-		BottomBorder = -1.0f + Radius;
+		BottomBorder = -0.9f + Radius;
 	}
 
 	EFruitType GetFruitType() const { return FruitType; }
@@ -1846,6 +1856,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	UTexture* BubbleTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/bubble.png");
 	UTexture* NextTextTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/NextText.png");
+	UTexture* Map1Texture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/Map1.png");
+	UTexture* Map1RoofTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/Map1_Roof.png");
 
 	UImageWidget ScoreWidget, TestWidget, NextTextWidget;
 	UTextWidget TestTextWidget;
@@ -1853,19 +1865,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ScoreWidget.SetOffset(FVector(0.7, 0.7, 0));
 	ScoreWidget.SetTexture(BubbleTexture);
 	ScoreWidget.SetScale(1);
-	ScoreWidget.SetRadius(0.1);
+	ScoreWidget.SetAxisScale(FVector::Splat(0.1));
 
 	TestWidget.SetTexture(FruitTextures[0]);
 	TestWidget.SetScale(1);
-	TestWidget.SetRadius(0.05);
+	TestWidget.SetAxisScale(FVector::Splat(0.05));
 	TestWidget.SetParent(&ScoreWidget);
 	TestWidget.SetOffset(FVector(0, 0, 0));
 
 	NextTextWidget.SetTexture(NextTextTexture);
 	NextTextWidget.SetScale(1);
-	NextTextWidget.SetRadius(0.1);
+	NextTextWidget.SetAxisScale(FVector::Splat(0.1));
 	NextTextWidget.SetParent(&ScoreWidget);
 	NextTextWidget.SetOffset(FVector(0, 0.1, 0));
+
+	UImageWidget MapWidget;
+
+	MapWidget.SetTexture(Map1Texture);
+	MapWidget.SetAxisScale(FVector::Splat(1));
+	MapWidget.SetOffset(FVector(0, -0.15, 0));
+
+	UImageWidget MapRoofWidget;
+
+	MapRoofWidget.SetTexture(Map1RoofTexture);
+	MapRoofWidget.SetAxisScale(FVector(1, 0.1, 0));
+	MapRoofWidget.SetOffset(FVector(0, 0.6, 0));
 	
 	while (bIsExit == false)
 	{
@@ -1918,6 +1942,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		renderer.PrepareShader();
 
 		SoundManager.Update();
+
+		MapWidget.Render(renderer);
 
 		if (!gameOver)
 		{
@@ -2095,7 +2121,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		previewFruit.SetTexture(FruitTextures[SelectedFruitType]);
 		previewFruit.Render(renderer);
 
-		renderer.UpdateConstant(FVector(0, 0, 0), 0.f, 1.0f, 0.0f);
+		renderer.UpdateConstant(FVector(0, 0, 0), 0.f, FVector::Splat(1.0f), 0.0f);
 		renderer.UpdateTexture(nullptr);
 		renderer.UpdateLineColor(bLineCollision);
 		renderer.RenderLine();
@@ -2124,6 +2150,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		ImGui::Render(); // 이번 프레임에 그릴 UI 설정
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
+
+		MapRoofWidget.Render(renderer);
 
 		ScoreWidget.Render(renderer);
 		TestWidget.Render(renderer);

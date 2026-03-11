@@ -4,11 +4,8 @@ SamplerState SampleType : register(s0);
 cbuffer constants: register(b0)
 {
     float3 Offset;
-    float  Radius;
-    
+    float3 Scale;
     float3 CosSin;
-    float Padding;
-    
     float UseTexture;
 }
 
@@ -31,7 +28,7 @@ PS_INPUT mainVS(VS_INPUT input)
     PS_INPUT output;
     
      // 1. 스케일
-    float3 scaled = input.position * Radius;
+    float3 scaled = input.position * Scale;
 
     float3 rotated;
      // 2. 회전 (스케일된 값에 적용)
@@ -50,7 +47,7 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
 {
     if (UseTexture == 0.0f)
     {
-        return input.color;
+        // return input.color;
     }
     float4 textureColor;
     textureColor = ShaderTexture.Sample(SampleType, input.tex);
