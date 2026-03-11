@@ -33,7 +33,85 @@
 #include <Xinput.h>
 #pragma comment(lib, "Xinput.lib")
 
-namespace fs = std::filesystem;
+class USoundManager
+{
+public:
+	USoundManager() = default;
+	~USoundManager() = default;
+public:
+	void Initialize()
+	{
+		FMOD::System_Create(&System);
+		System->init(512, FMOD_INIT_NORMAL, nullptr);
+		System->createChannelGroup("BGM", &BGMGroup);
+		System->createChannelGroup("SFX", &SFXGroup);
+	}
+
+	void Release()
+	{
+		for (auto MyPair : Sounds)
+		{
+			MyPair.second->release();
+		}
+
+		if (BGMGroup) BGMGroup->release();
+		if (SFXGroup) SFXGroup->release();
+		System->close();
+		System->release();
+	}
+
+	void LoadSound(std::wstring Path, bool bIsLoop)
+	{
+		FMOD_MODE Mode = (bIsLoop) ? (FMOD_LOOP_NORMAL) : (FMOD_DEFAULT);
+
+		if (Sounds.find(Path) == Sounds.end())
+		{
+			System->createSound(std::string(Path.begin(), Path.end()).c_str(), Mode, nullptr, &Sounds[Path]);
+		}
+	}
+
+	// BGM: 하나만 재생 (이전 BGM 정지 후 교체)
+	void PlayBGM(std::wstring Path, float Volume = 1.f)
+	{
+		if (Sounds.find(Path) == Sounds.end()) return;
+
+		if (BGMChannel) BGMChannel->stop();
+
+		System->playSound(Sounds[Path], BGMGroup, false, &BGMChannel);
+		if (BGMChannel) BGMChannel->setVolume(Volume);
+	}
+
+	void PlaySFX(std::wstring Path, float Volume = 1.f)
+	{
+		if (Sounds.find(Path) == Sounds.end()) return;
+
+		FMOD::Channel* Ch = nullptr;
+		System->playSound(Sounds[Path], SFXGroup, false, &Ch);
+		if (Ch) Ch->setVolume(Volume);
+	}
+
+	void StopAll()
+	{
+		if (BGMGroup) BGMGroup->stop();
+		if (SFXGroup) SFXGroup->stop();
+	}
+
+	void Update()
+	{
+		System->update();
+	}
+
+
+private:
+	FMOD::System* System = nullptr;
+	FMOD::ChannelGroup* BGMGroup = nullptr;
+	FMOD::ChannelGroup* SFXGroup = nullptr;
+	FMOD::Channel* BGMChannel = nullptr;
+
+	std::unordered_map<std::wstring, FMOD::Sound*> Sounds;
+
+};
+
 
 class UInputManager
 {
@@ -990,11 +1068,6 @@ public:
 	void SetLocation(const FVector& InLocation) { Location = InLocation; }
 	FVector GetLocation() const { return Location; }
 
-	bool IsInWallBoder()
-	{
-		return ((Location.x <= LeftBorder) || (Location.x >= RightBorder || (Location.y <= BottomBorder)));
-	}
-
 	void BorderClamp()
 	{
 		if (Location.x < LeftBorder)
@@ -1017,7 +1090,7 @@ protected:
 
 	const float GravityAccel = 2.f;    // 중력 가속도
 	const float RestitutionWall = 0.1f;
-	const float FloorFriction = 0.8f;
+	const float FloorFriction = 0.6f;
 
 private:
 
@@ -1240,11 +1313,17 @@ public:
 	UButtonWidget() = default;
 
 public:
-	bool IsPressed(HWND hWnd, const UInputManager& InputManager)
+	bool IsPressed(HWND hWnd, const UInputManager& InputManager, USoundManager& soundManger)
 	{
-		return IsOnBound(hWnd) && InputManager.IsMouseReleased();
+		if (IsOnBound(hWnd) && InputManager.IsMouseReleased())
+		{
+			soundManger.PlaySFX(TEXT("./Sound/SFX/Click.wav"));
+			return true;
+		}
+		return false;
 	}
 
+public:
 	/*
 	* 스크린 상에서 버튼 클릭 체크
 	*/
@@ -1267,13 +1346,7 @@ public:
 		LeftTop = { (LeftTop.x + 1.0f) * 0.5f * 1024, (1.f - LeftTop.y) * 0.5f * 1024 , 0 };
 		RightBottom = { (RightBottom.x + 1.0f) * 0.5f * 1024,  (1.f - RightBottom.y) * 0.5f * 1024 , 0 };
 
-		bool debugFlag = (MouseX > LeftTop.x && MouseX < RightBottom.x && MouseY > LeftTop.y && MouseY < RightBottom.y);
-
-		if (debugFlag)
-		{
-			int iDebug = 0;
-		}
-		return debugFlag;
+		return (MouseX > LeftTop.x && MouseX < RightBottom.x && MouseY > LeftTop.y && MouseY < RightBottom.y);
 
 	}
 };
@@ -1411,21 +1484,9 @@ public:
 				Velocity.y *= -RestitutionWall;
 		}
 
-		if (IsInWallBoder())
-		{
-			//벽 마찰 적용
-			float normalImpulse = fabsf(Velocity.y) * (1.0f + RestitutionWall);
-
-			float frictionImpulse = FloorFriction * normalImpulse;
-			if (fabsf(Velocity.x) <= frictionImpulse)
-				Velocity.x = 0.0f;
-			else
-				Velocity.x -= (Velocity.x > 0.0f ? 1.0f : -1.0f) * frictionImpulse;
-		}
+		ResolveWallCollision(dt);
 
 		Velocity.y -= GravityAccel * dt;
-
-		// 속도가 매우 작으면 0으로 수렴 (sleep)
 		const float SleepThreshold = 0.01f;
 		if (fabsf(Velocity.x) < SleepThreshold) Velocity.x = 0.0f;
 		if (fabsf(Velocity.y) < SleepThreshold) Velocity.y = 0.0f;
@@ -1452,7 +1513,14 @@ public:
 	{
 		FruitType = InFruitType;
 		Radius = SmallestFruitRadius * pow(CoefRadiusGrowth, InFruitType);
-		Mass = Radius * Radius;
+		AngularVelocity -= Radius * 2;
+		if (AngularVelocity < 0.f)AngularVelocity = 0.f;
+
+		//최소 포도의 질량을 가지도록 설정
+		float GrapeRadius = SmallestFruitRadius * pow(CoefRadiusGrowth, 2);
+
+		Mass = max(GrapeRadius * GrapeRadius, Radius * Radius);
+
 		LeftBorder += Radius;
 		RightBorder -= Radius;
 		TopBorder -= Radius;
@@ -1460,6 +1528,33 @@ public:
 	}
 
 	EFruitType GetFruitType() const { return FruitType; }
+
+private:
+	/** 
+	* 옆과 아래 벽과의 마찰
+	*/
+	void ResolveWallCollision(float dt)
+	{
+		float normalImpulse = Mass * GravityAccel;
+		float frictionImpulse = FloorFriction * normalImpulse;
+
+		if (Location.y <= LeftBorder)
+		{
+			if (fabsf(Velocity.x) <= frictionImpulse)
+				Velocity.x = 0.0f;
+			else
+				Velocity.x -= (Velocity.x > 0.0f ? 1.0f : -1.0f) * frictionImpulse;
+		}
+		// 옆벽 마찰 
+		if (Location.x <= LeftBorder || Location.x >= RightBorder)
+		{
+			float frictionImpulse = FloorFriction * normalImpulse;
+			if (fabsf(Velocity.y) <= frictionImpulse)
+				Velocity.y = 0.0f;
+			else
+				Velocity.y -= (Velocity.y > 0.0f ? 1.0f : -1.0f) * frictionImpulse;
+		}
+	}
 
 private:
 	const float SmallestFruitRadius = 0.06f; // 가장 작은 과일의 반지름
@@ -1842,84 +1937,6 @@ private:
 	UTexture* ParticleTexture;
 };
 
-class USoundManager
-{
-public:
-	USoundManager() = default;
-	~USoundManager() = default;
-public:
-	void Initialize()
-	{
-		FMOD::System_Create(&System);
-		System->init(512, FMOD_INIT_NORMAL, nullptr);
-		System->createChannelGroup("BGM", &BGMGroup);
-		System->createChannelGroup("SFX", &SFXGroup);
-	}
-
-	void Release()
-	{
-		for (auto MyPair : Sounds)
-		{
-			MyPair.second->release();
-		}
-
-		if (BGMGroup) BGMGroup->release();
-		if (SFXGroup) SFXGroup->release();
-		System->close();
-		System->release();
-	}
-
-	void LoadSound(std::wstring Path, bool bIsLoop)
-	{
-		FMOD_MODE Mode = (bIsLoop) ? (FMOD_LOOP_NORMAL) : (FMOD_DEFAULT);
-
-		if (Sounds.find(Path) == Sounds.end())
-		{
-			System->createSound(std::string(Path.begin(), Path.end()).c_str(), Mode, nullptr, &Sounds[Path]);
-		}
-	}
-
-	// BGM: 하나만 재생 (이전 BGM 정지 후 교체)
-	void PlayBGM(std::wstring Path, float Volume = 1.f)
-	{
-		if (Sounds.find(Path) == Sounds.end()) return;
-
-		if (BGMChannel) BGMChannel->stop();
-
-		System->playSound(Sounds[Path], BGMGroup, false, &BGMChannel);
-		if (BGMChannel) BGMChannel->setVolume(Volume);
-	}
-
-	void PlaySFX(std::wstring Path, float Volume = 1.f)
-	{
-		if (Sounds.find(Path) == Sounds.end()) return;
-
-		FMOD::Channel* Ch = nullptr;
-		System->playSound(Sounds[Path], SFXGroup, false, &Ch);
-		if (Ch) Ch->setVolume(Volume);
-	}
-
-	void StopAll()
-	{
-		if (BGMGroup) BGMGroup->stop();
-		if (SFXGroup) SFXGroup->stop();
-	}
-
-	void Update()
-	{
-		System->update();
-	}
-
-
-private:
-	FMOD::System* System = nullptr;
-	FMOD::ChannelGroup* BGMGroup = nullptr;
-	FMOD::ChannelGroup* SFXGroup = nullptr;
-	FMOD::Channel* BGMChannel = nullptr;
-
-	std::unordered_map<std::wstring, FMOD::Sound*> Sounds;
-
-};
 
 const UINT RANK_NUM = 5;
 
@@ -2344,6 +2361,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	//SFX는 wav파일
 	SoundManager.LoadSound(TEXT("./Sound/SFX/Drop.wav"), false);
 	SoundManager.LoadSound(TEXT("./Sound/SFX/Merge.wav"), false);
+	SoundManager.LoadSound(TEXT("./Sound/SFX/Click.wav"), false);
+	SoundManager.LoadSound(TEXT("./Sound/SFX/GameWin.wav"), false);
+	SoundManager.LoadSound(TEXT("./Sound/SFX/GameOver.wav"), false);
 
 
 	SoundManager.PlayBGM(TEXT("./Sound/BGM/Menu.mp3"));
@@ -2690,15 +2710,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				else
 					RuleButton.SetTexture(ButtonBGTexture);
 
-				if (StartButton.IsPressed(hWnd, InputManager))
+				if (StartButton.IsPressed(hWnd, InputManager, SoundManager))
 				{
 					GameState = GS_Playing;
 				}
-				else if (CreditButton.IsPressed(hWnd, InputManager))
+				else if (CreditButton.IsPressed(hWnd, InputManager, SoundManager))
 				{
 					GameState = GS_Credits;
 				}
-				else if (RuleButton.IsPressed(hWnd, InputManager))
+				else if (RuleButton.IsPressed(hWnd, InputManager, SoundManager))
 				{
 					GameState = GS_HowToPlay;
 				}
@@ -2734,7 +2754,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				else
 					BackButton.SetTexture(ButtonBGTexture);
 
-				if (BackButton.IsPressed(hWnd, InputManager))
+				if (BackButton.IsPressed(hWnd, InputManager, SoundManager))
 				{
 					GameState = GS_Title;
 				}
@@ -2766,7 +2786,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				else
 					BackButton.SetTexture(ButtonBGTexture);
 
-				if (BackButton.IsPressed(hWnd, InputManager))
+				if (BackButton.IsPressed(hWnd, InputManager, SoundManager))
 				{
 					GameState = GS_Title;
 				}
@@ -2961,6 +2981,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 							else
 							{
 								ScoreManager.AddScore(EFruitType::FT_Watermelon);
+								ParticlePool.Aquire(A->Location);
+								SoundManager.PlaySFX(TEXT("./Sound/SFX/Merge.wav"));
+								SoundManager.PlaySFX(TEXT("./Sound/SFX/GameWin.wav"));
 							}
 						}
 					}
@@ -3100,6 +3123,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					CurrentFruitType = GetRandomFruitType();
 					NextFruitType = GetRandomFruitType();
 
+					SoundManager.StopAll();
+					SoundManager.PlaySFX(TEXT("./Sound/SFX/GameOver.wav"));
+
 					GameState = GS_GameOver;
 
 					break;
@@ -3139,6 +3165,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			ImGui::Text("Score: %d", ScoreManager.GetScore());
 			if (ImGui::Button("Give Up"))
 			{
+				SoundManager.StopAll();
+				SoundManager.PlayBGM(TEXT("./Sound/SFX/GameOver.wav"));
 				GameState = GS_GameOver;
 			}
 
@@ -3214,14 +3242,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				else
 					BackToTitleButton.SetTexture(ButtonBGTexture);
 
-				if (RestartButton.IsPressed(hWnd, InputManager))
+				if (RestartButton.IsPressed(hWnd, InputManager, SoundManager))
 				{
+					SoundManager.PlayBGM(TEXT("./Sound/BGM/Menu.mp3"));
 					GameState = GS_Playing;
 					ScoreManager.UpdateHighScore();
 					ScoreManager.Reset();
 				}
-				else if (BackToTitleButton.IsPressed(hWnd, InputManager))
+				else if (BackToTitleButton.IsPressed(hWnd, InputManager, SoundManager))
 				{
+					SoundManager.PlayBGM(TEXT("./Sound/BGM/Menu.mp3"));
 					GameState = GS_Title;
 					ScoreManager.UpdateHighScore();
 					ScoreManager.Reset();
