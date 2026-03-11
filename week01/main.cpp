@@ -32,6 +32,105 @@
 #include <Xinput.h>
 #pragma comment(lib, "Xinput.lib")
 
+class UInputManager
+{
+public:
+	UInputManager() :
+		bIsPrevMouseDown(false),
+		bIsMouseDown(false),
+		bIsMousePressed(false),
+		bIsMouseReleased(false),
+		bIsXPadConnected(false),
+		MousePosition(0, 0),
+		XPadStickX(0),
+		XPadStickY(0),
+		bIsXPadADown(false),
+		bIsXPadTriggerDown(false)
+	{
+	}
+
+	void Update(HWND hWnd)
+	{
+		bool bCurrent = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+
+		bIsMousePressed = (!bIsPrevMouseDown && bCurrent);
+		bIsMouseReleased = (bIsPrevMouseDown && !bCurrent);
+		bIsMouseDown = bCurrent;
+		bIsPrevMouseDown = bCurrent;
+
+		GetCursorPos(&MousePosition);
+		ScreenToClient(hWnd, &MousePosition);
+
+		XINPUT_STATE state;
+		ZeroMemory(&state, sizeof(XINPUT_STATE));
+
+		DWORD result = XInputGetState(0, &state);
+		bIsXPadConnected = (result == ERROR_SUCCESS);
+
+		if (bIsXPadConnected)
+		{
+			// 패드 연결됨
+
+			// [-32768, 32767]
+			SHORT lx = state.Gamepad.sThumbLX;
+			SHORT ly = state.Gamepad.sThumbLY;
+
+			float Magnitude = sqrt(lx * lx + ly * ly);
+			const float DEADZONE = 8689;
+
+			// HW Noise 배제
+			if (Magnitude < DEADZONE)
+			{
+				lx = 0;
+				ly = 0;
+			}
+
+			// lx, ly => [-1, 1] 정규화
+			XPadStickX = lx / 32768.f;
+			XPadStickY = ly / 32768.f;
+
+			if (state.Gamepad.wButtons & XINPUT_GAMEPAD_A)
+			{
+				bIsXPadADown = true;
+			}
+			else
+			{
+				bIsXPadADown = false;
+			}
+
+			bIsXPadTriggerDown = (state.Gamepad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD || state.Gamepad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD);
+		}
+	}
+
+	bool IsMousePressed() const { return bIsMousePressed; }
+	bool IsMouseReleased() const { return bIsMouseReleased; }
+	bool IsMouseDown() const { return bIsMouseDown; }
+
+	bool IsXPadConnected() const { return bIsXPadConnected; }
+	POINT GetMousePosition() const { return MousePosition; }
+
+	float GetXPadStickX() const { return XPadStickX; }
+	float GetXPadStickY() const { return XPadStickY; }
+	bool IsXPadADown() const { return bIsXPadADown; }
+	bool IsXPadTriggerDown() const { return bIsXPadTriggerDown; }
+
+private:
+	bool bIsPrevMouseDown = false;
+	bool bIsMouseDown = false;
+	bool bIsMousePressed = false;
+	bool bIsMouseReleased = false;
+
+	bool bIsXPadConnected;
+	POINT MousePosition;
+
+	// [-1, 1] Normalized
+	float XPadStickX;
+	float XPadStickY;
+
+	bool bIsXPadADown;
+	bool bIsXPadTriggerDown;
+};
+
 class UTexture
 {
 public:
@@ -60,7 +159,7 @@ public:
 		HRESULT Result;
 		unsigned char* Data;
 
-		Data = stbi_load(FileName, &Width, &Height, &Channels, 0);
+		Data = stbi_load(FileName, &Width, &Height, &Channels, 4);
 
 		assert(Data);
 
@@ -1083,22 +1182,23 @@ public:
 	UButtonWidget() = default;
 
 public:
-	bool IsPressed(HWND hWnd)
+	bool IsPressed(HWND hWnd, const UInputManager& InputManager)
 	{
+		return IsOnBound(hWnd) && InputManager.IsMouseReleased();
+	}
+
+	/*
+	* 스크린 상에서 버튼 클릭 체크
+	*/
+	bool IsOnBound(HWND hWnd)
+	{
+		//NDC 좌표
 		POINT lpPoint = {};
 		GetCursorPos(&lpPoint);
 		ScreenToClient(hWnd, &lpPoint);
 
-		return IsOnBound(lpPoint.x, lpPoint.y);
-	}
-
-private:
-	/*
-	* 스크린 상에서 버튼 클릭 체크
-	*/
-	bool IsOnBound(float MouseX, float MouseY)
-	{
-		//NDC 좌표
+		float MouseX = lpPoint.x;
+		float MouseY = lpPoint.y;
 
 		FVector CartesianCoord = GetLocation(true);
 
@@ -1684,90 +1784,6 @@ private:
 	UTexture* ParticleTexture;
 };
 
-class UInputManager
-{
-public:
-	UInputManager() :
-		bIsMouseDown(false),
-		bIsXPadConnected(false),
-		MousePosition(0, 0),
-		XPadStickX(0),
-		XPadStickY(0),
-		bIsXPadADown(false),
-		bIsXPadTriggerDown(false)
-	{
-	}
-
-	void Update(HWND hWnd)
-	{
-		bIsMouseDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-
-		GetCursorPos(&MousePosition);
-		ScreenToClient(hWnd, &MousePosition);
-
-		XINPUT_STATE state;
-		ZeroMemory(&state, sizeof(XINPUT_STATE));
-
-		DWORD result = XInputGetState(0, &state);
-		bIsXPadConnected = (result == ERROR_SUCCESS);
-
-		if (bIsXPadConnected)
-		{
-			// 패드 연결됨
-
-			// [-32768, 32767]
-			SHORT lx = state.Gamepad.sThumbLX;
-			SHORT ly = state.Gamepad.sThumbLY;
-
-			float Magnitude = sqrt(lx * lx + ly * ly);
-			const float DEADZONE = 8689;
-
-			// HW Noise 배제
-			if (Magnitude < DEADZONE)
-			{
-				lx = 0;
-				ly = 0;
-			}
-
-			// lx, ly => [-1, 1] 정규화
-			XPadStickX = lx / 32768.f;
-			XPadStickY = ly / 32768.f;
-
-			if (state.Gamepad.wButtons & XINPUT_GAMEPAD_A)
-			{
-				bIsXPadADown = true;
-			}
-			else
-			{
-				bIsXPadADown = false;
-			}
-
-			bIsXPadTriggerDown = (state.Gamepad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD || state.Gamepad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD);
-		}
-	}
-
-	bool IsMouseDown() const { return bIsMouseDown; }
-	bool IsXPadConnected() const { return bIsXPadConnected; }
-	POINT GetMousePosition() const { return MousePosition; }
-
-	float GetXPadStickX() const { return XPadStickX; }
-	float GetXPadStickY() const { return XPadStickY; }
-	bool IsXPadADown() const { return bIsXPadADown; }
-	bool IsXPadTriggerDown() const { return bIsXPadTriggerDown; }
-
-private:
-	bool bIsMouseDown;
-	bool bIsXPadConnected;
-	POINT MousePosition;
-
-	// [-1, 1] Normalized
-	float XPadStickX;
-	float XPadStickY;
-
-	bool bIsXPadADown;
-	bool bIsXPadTriggerDown;
-};
-
 class USoundManager
 {
 public:
@@ -1905,7 +1921,8 @@ enum EGameState
 	GS_Title,
 	GS_Credits,
 	GS_Playing,
-	GS_GameOver
+	GS_GameOver,
+	GS_HowToPlay
 };
 EGameState GameState = GS_Title;
 
@@ -1980,6 +1997,8 @@ static void UpdateTitle(URenderer& renderer)
 	ImGui::PopStyleColor();
 
 	ImGui::End();
+	ImGui::Render(); // 이번 프레임에 그릴 UI 설정
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
 }
 
 static void UpdateCredits(URenderer& renderer)
@@ -2062,6 +2081,9 @@ static void UpdateCredits(URenderer& renderer)
 	ImGui::PopStyleColor();
 
 	ImGui::End();
+
+	ImGui::Render(); // 이번 프레임에 그릴 UI 설정
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
 }
 
 static void UpdateGameOver(URenderer& renderer, FScoreManager& ScoreManager)
@@ -2140,6 +2162,9 @@ static void UpdateGameOver(URenderer& renderer, FScoreManager& ScoreManager)
 	ImGui::PopStyleColor();
 
 	ImGui::End();
+
+	ImGui::Render(); // 이번 프레임에 그릴 UI 설정
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -2271,11 +2296,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// 여기 데이터 해제 필요함!!!
 	UTexture* EmptyTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/preview_empty.png");
 	UTexture* BubbleTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/bubble.png");
-	UTexture* ButtonBGTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/Button_BG.png");
+	UTexture* ButtonBGTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/WoodButton_Normal.png");
+	UTexture* ButtonBGHoverTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/WoodButton_Hover.png");
 	UTexture* NextTextTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/NextText.png");
 	UTexture* ScoreTextTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/ScoreText.png");
 	UTexture* Map1Texture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/Map1.png");
 	UTexture* Map1RoofTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/Map1_Roof.png");
+	UTexture* TitleBackgroundTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/title_bg.png");
+	UTexture* RuleTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/rule_bg.png");
+	UTexture* CreditTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/credits.png");
+	UTexture* GameOverTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/gameover_bg.png");
 
 	UImageWidget ScoreWidget, TestWidget, NextTextWidget;
 	UTextWidget TestTextWidget;
@@ -2368,14 +2398,88 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	CurrentScoreWidget.SetOffset(FVector(0.f, 0.0f, 0.f));
 
 
-	UButtonWidget ButtonTestWidget;
-	ButtonTestWidget.SetOffset(FVector(0.f, 0.f, 0.f));
-	ButtonTestWidget.SetTexture(ButtonBGTexture);
-	ButtonTestWidget.SetAxisScale({ 0.1, 0.1f, 1.f });
+	UButtonWidget StartButton, CreditButton, RuleButton, BackButton, RestartButton, BackToTitleButton;
+	UTextWidget StartText, CreditText, RuleText, BackText, RestartText, BackToTitleText;
+	UImageWidget StartScreenImage, HowToPlayImage, CreditImage, GameOverImage;
+
+	RestartButton.SetOffset(FVector(-0.3f, -0.5f, 0.f));
+	RestartButton.SetTexture(ButtonBGTexture);
+	RestartButton.SetAxisScale({ 0.2, 0.1f, 1.f });
+
+	RestartText.SetParent(&RestartButton);
+	RestartText.SetOffset({ 0, 0, 0 });
+	RestartText.SetScale(1);
+	RestartText.SetText(L"Restart");
+
+	BackToTitleButton.SetOffset(FVector(0.3f, -0.5f, 0.f));
+	BackToTitleButton.SetTexture(ButtonBGTexture);
+	BackToTitleButton.SetAxisScale({ 0.2, 0.1f, 1.f });
+
+	BackToTitleText.SetParent(&BackToTitleButton);
+	BackToTitleText.SetOffset({ 0, 0, 0 });
+	BackToTitleText.SetScale(1);
+	BackToTitleText.SetText(L"Back To Title");
+
+	StartButton.SetOffset(FVector(0.f, 0.f, 0.f));
+	StartButton.SetTexture(ButtonBGTexture);
+	StartButton.SetAxisScale({ 0.2, 0.1f, 1.f });
+
+	StartText.SetParent(&StartButton);
+	StartText.SetScale(1);
+	StartText.SetText(L"Game Start");
+
+	CreditButton.SetParent(&StartButton);
+	CreditButton.SetTexture(ButtonBGTexture);
+	CreditButton.SetAxisScale({ 0.2, 0.1, 1.f });
+	CreditButton.SetOffset({ 0.f, -0.3f, 0.f });
+
+	CreditText.SetParent(&CreditButton);
+	CreditText.SetScale(1);
+	CreditText.SetText(L"Credits");
+
+	RuleButton.SetParent(&StartButton);
+	RuleButton.SetTexture(ButtonBGTexture);
+	RuleButton.SetAxisScale({ 0.2, 0.1, 1.f });
+	RuleButton.SetOffset({ 0.f, -0.6f, 0.f });
+
+	RuleText.SetParent(&RuleButton);
+	RuleText.SetScale(1);
+	RuleText.SetText(L"How To Play");
+
+	StartScreenImage.SetTexture(TitleBackgroundTexture);
+	StartScreenImage.SetOffset({ 0, 0, 0 });
+	StartScreenImage.SetAxisScale({ 1, 1, 1 });
+	StartScreenImage.SetScale(1);
+
+	HowToPlayImage.SetTexture(RuleTexture);
+	HowToPlayImage.SetOffset({ 0, 0, 0 });
+	HowToPlayImage.SetAxisScale({ 1, 1, 1 });
+	HowToPlayImage.SetScale(1);
+
+	CreditImage.SetTexture(CreditTexture);
+	CreditImage.SetOffset({ 0, 0, 0 });
+	CreditImage.SetAxisScale({ 1, 1, 1 });
+	CreditImage.SetScale(1);
+
+	GameOverImage.SetTexture(GameOverTexture);
+	GameOverImage.SetOffset({ 0, 0, 0 });
+	GameOverImage.SetAxisScale({ 1, 1, 1 });
+	GameOverImage.SetScale(1);
+
+	BackButton.SetOffset(FVector(-0.8f, 0.8f, 0.f));
+	BackButton.SetTexture(ButtonBGTexture);
+	BackButton.SetAxisScale({ 0.1, 0.05f, 1.f });
+
+	BackText.SetParent(&BackButton);
+	BackText.SetOffset({ 0, 0, 0 });
+	BackText.SetScale(1);
+	BackText.SetText(L"Back");
 
 	const float SpawnCooldown = 0.5f; // 과일 생성 간 최소 시간 간격 (초)
 	LARGE_INTEGER LastSpawnTime;
 	QueryPerformanceCounter(&LastSpawnTime);
+
+	int XPadButtonIndex = 0;
 
 	while (bIsExit == false)
 	{
@@ -2407,11 +2511,103 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		{
 		case GS_Title:
 			renderer.Prepare();
-			UpdateTitle(renderer);
+			renderer.PrepareShader();
+
+			if (InputManager.IsXPadConnected())
+			{
+				switch (XPadButtonIndex)
+				{
+				case 0:
+					break;
+
+				case 1:
+					break;
+
+				case 2:
+					break;
+				}
+			}
+			else
+			{
+				if (StartButton.IsOnBound(hWnd))
+					StartButton.SetTexture(ButtonBGHoverTexture);
+				else
+					StartButton.SetTexture(ButtonBGTexture);
+
+				if (CreditButton.IsOnBound(hWnd))
+					CreditButton.SetTexture(ButtonBGHoverTexture);
+				else
+					CreditButton.SetTexture(ButtonBGTexture);
+
+				if (RuleButton.IsOnBound(hWnd))
+					RuleButton.SetTexture(ButtonBGHoverTexture);
+				else
+					RuleButton.SetTexture(ButtonBGTexture);
+
+				if (StartButton.IsPressed(hWnd, InputManager))
+				{
+					GameState = GS_Playing;
+				}
+				else if (CreditButton.IsPressed(hWnd, InputManager))
+				{
+					GameState = GS_Credits;
+				}
+				else if (RuleButton.IsPressed(hWnd, InputManager))
+				{
+					GameState = GS_HowToPlay;
+				}
+			}
+
+			StartScreenImage.Render(renderer);
+			StartButton.Render(renderer);
+			CreditButton.Render(renderer);
+			RuleButton.Render(renderer);
+
+			StartText.Render(renderer);
+			CreditText.Render(renderer);
+			RuleText.Render(renderer);
+
 			break;
+
 		case GS_Credits:
 			renderer.Prepare();
-			UpdateCredits(renderer);
+			renderer.PrepareShader();
+
+			if (BackButton.IsOnBound(hWnd))
+				BackButton.SetTexture(ButtonBGHoverTexture);
+			else
+				BackButton.SetTexture(ButtonBGTexture);
+
+			CreditImage.Render(renderer);
+			
+			BackButton.Render(renderer);
+			BackText.Render(renderer);
+
+			if (BackButton.IsPressed(hWnd, InputManager))
+			{
+				GameState = GS_Title;
+			}
+
+			break;
+
+		case GS_HowToPlay:
+			renderer.Prepare();
+			renderer.PrepareShader();
+			HowToPlayImage.Render(renderer);
+
+			if (BackButton.IsOnBound(hWnd))
+				BackButton.SetTexture(ButtonBGHoverTexture);
+			else
+				BackButton.SetTexture(ButtonBGTexture);
+
+			BackButton.Render(renderer);
+			BackText.Render(renderer);
+
+			if (BackButton.IsPressed(hWnd, InputManager))
+			{
+				GameState = GS_Title;
+			}
+
 			break;
 		case GS_Playing:
 		{
@@ -2772,14 +2968,38 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 			ImGui::Combo("Fruit Type", &CurrentFruitType, FruitNames, sizeof(FruitNames) / sizeof(*FruitNames));
 			ImGui::Text("Score: %d", ScoreManager.GetScore());
+			if (ImGui::Button("Give Up"))
+			{
+				GameState = GS_GameOver;
+			}
 
 			ImGui::End();
+			ImGui::Render(); // 이번 프레임에 그릴 UI 설정
+			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
 
 			break;
 		}
 		case GS_GameOver:
 			renderer.Prepare();
-			UpdateGameOver(renderer, ScoreManager);
+			renderer.PrepareShader();
+			// UpdateGameOver(renderer, ScoreManager);
+
+			if (RestartButton.IsOnBound(hWnd))
+				RestartButton.SetTexture(ButtonBGHoverTexture);
+			else
+				RestartButton.SetTexture(ButtonBGTexture);
+
+			if (BackToTitleButton.IsOnBound(hWnd))
+				BackToTitleButton.SetTexture(ButtonBGHoverTexture);
+			else
+				BackToTitleButton.SetTexture(ButtonBGTexture);
+
+			GameOverImage.Render(renderer);
+			RestartButton.Render(renderer);
+			BackToTitleButton.Render(renderer);
+
+			RestartText.Render(renderer);
+			BackToTitleText.Render(renderer);
 
 			// 종료 시 진동 종료
 			if (bIsVibrating)
@@ -2792,13 +3012,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				bIsVibrating = false;
 				VibrationTime = 0;
 			}
+
+			if (RestartButton.IsPressed(hWnd, InputManager))
+			{
+				GameState = GS_Playing;
+			}
+			else if (BackToTitleButton.IsPressed(hWnd, InputManager))
+			{
+				GameState = GS_Title;
+			}
+
+			ScoreManager.UpdateHighScore();
+			ScoreManager.Reset();
+
 			break;
 		}
-
-		ImGui::Render(); // 이번 프레임에 그릴 UI 설정
-		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
-
-
 
 		if (FrameState == GS_Playing)
 		{
