@@ -3330,11 +3330,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	delete EmptyTexture;
 	delete BubbleTexture;
 	delete ButtonBGTexture;
+	delete ButtonBGHoverTexture;
 	delete NextTextTexture;
 	delete ScoreTextTexture;
 	delete Map1Texture;
 	delete Map1RoofTexture;
-	
+	delete TitleBackgroundTexture;
+	delete RuleTexture;
+	delete CreditTexture;
+	delete GameOverTexture;
+
 
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
