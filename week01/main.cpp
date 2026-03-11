@@ -830,6 +830,22 @@ public:
 	void SetLocation(const FVector& InLocation) { Location = InLocation; }
 	FVector GetLocation() const { return Location; }
 
+	void BorderClamp()
+	{
+		if (Location.x < LeftBorder)
+		{
+			Location.x = LeftBorder;
+		}
+		if (Location.x > RightBorder)
+		{
+			Location.x = RightBorder;
+		}
+		if (Location.y < BottomBorder)
+		{
+			Location.y = BottomBorder;
+		}
+	}
+
 protected:
 	float MassFactor = 1.0f; // 질량 보정용
 
@@ -1155,26 +1171,20 @@ public:
 			Location.x = RightBorder;
 			Velocity.x *= -1.0f;
 		}
-		if (Location.y > TopBorder)
-		{
-			Location.y = TopBorder;
-			Velocity.y *= -RestitutionWall;
-		}
-		if (Location.y < BottomBorder)
+		if (Location.y <= BottomBorder)
 		{
 			Location.y = BottomBorder;
 
+			Velocity.y *= -RestitutionWall;
+
 			//바닥 마찰력 적용
 			float normalImpulse = fabsf(Velocity.y) * (1.0f + RestitutionWall);
-
-			Velocity.y *= -RestitutionWall;
 
 			float frictionImpulse = FloorFriction * normalImpulse;
 			if (fabsf(Velocity.x) <= frictionImpulse)
 				Velocity.x = 0.0f;
 			else
 				Velocity.x -= (Velocity.x > 0.0f ? 1.0f : -1.0f) * frictionImpulse;
-
 		}
 
 		Velocity.y -= GravityAccel * dt;
@@ -2117,6 +2127,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		{
 		case GS_Title:
 			renderer.Prepare();
+			
 			UpdateTitle(renderer);
 			break;
 		case GS_Credits:
@@ -2188,6 +2199,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 			ParticlePool.Update(fixedDeltaTime);
 
+			// 과일 간 충돌 계산 시 기준이 너무 빡빡하면 가끔씩 충돌이 감지되지 않는 경우가 있어서 약간의 여유를 둠
+			const float MergeSlop = 0.005f;
+
 			// 과일들 간 충돌 / 병합 연산
 			for (UINT i = 0; i < PrimitiveList.Num(); i++)
 			{
@@ -2211,7 +2225,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					float Dist2 = Delta.Dot2(Delta);
 					float r = A->Radius + B->Radius;
 
-					if (Dist2 <= r * r)
+					if (Dist2 <= r * r + MergeSlop)
 					{
 						if (A->GetFruitType() == B->GetFruitType())
 						{
@@ -2262,9 +2276,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				FPendingMerge MergeInfo = PendingMergeQueue.Front();
 				PendingMergeQueue.Pop();
 
+				PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, FruitTextures[MergeInfo.ResultFruitType]));
+
 				// 점수 획득
 				ScoreManager.AddScore(MergeInfo.ResultFruitType);
-				PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, FruitTextures[MergeInfo.ResultFruitType]));
 			}
 
 			//새 과일이 생성된 후 마찰 적용
@@ -2533,4 +2548,7 @@ static void ResolveCollision(UBall* A, UBall* B)
 		B->AngularVelocity += B->Radius * jT * InvIB;
 	}
 
+	// Border Clamp
+	A->BorderClamp();
+	B->BorderClamp();
 }
