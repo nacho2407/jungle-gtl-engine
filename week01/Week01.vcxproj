@@ -152,12 +152,19 @@
     <ClCompile Include="imgui\imgui_tables.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Physics.cpp" />
+    <ClCompile Include="UBall.cpp" />
+    <ClCompile Include="UFruit.cpp" />
     <ClCompile Include="UInputManager.cpp" />
+    <ClCompile Include="UParticle.cpp" />
+    <ClCompile Include="UParticlePool.cpp" />
+    <ClCompile Include="URenderer.cpp" />
     <ClCompile Include="UScoreManager.cpp" />
     <ClCompile Include="USoundManager.cpp" />
     <ClCompile Include="UTexture.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Constants.h" />
     <ClInclude Include="Containers.hpp" />
     <ClInclude Include="EFruitType.h" />
     <ClInclude Include="imgui\imconfig.h" />
@@ -169,6 +176,7 @@
     <ClInclude Include="imgui\imstb_textedit.h" />
     <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="Core.h" />
+    <ClInclude Include="Physics.hpp" />
     <ClInclude Include="Rectangle.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="stb_image.h" />
@@ -180,7 +188,13 @@
     <ClInclude Include="ThirdParty\FMOD\inc\fmod_dsp_effects.h" />
     <ClInclude Include="ThirdParty\FMOD\inc\fmod_errors.h" />
     <ClInclude Include="ThirdParty\FMOD\inc\fmod_output.h" />
+    <ClInclude Include="UBall.hpp" />
+    <ClInclude Include="UFruit.hpp" />
     <ClInclude Include="UInputManager.hpp" />
+    <ClInclude Include="UParticle.hpp" />
+    <ClInclude Include="UParticlePool.hpp" />
+    <ClInclude Include="UPrimitive.hpp" />
+    <ClInclude Include="URenderer.hpp" />
     <ClInclude Include="UScoreManager.hpp" />
     <ClInclude Include="USoundManager.hpp" />
     <ClInclude Include="UTexture.hpp" />

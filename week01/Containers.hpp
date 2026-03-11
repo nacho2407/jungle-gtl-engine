@@ -1,5 +1,7 @@
 #pragma once
 
+#include <windows.h>
+
 // 구현 부분 분리하지 않고 헤더 전용 파일로 두었습니다.
 
 template<typename DataType>
