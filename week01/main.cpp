@@ -2325,11 +2325,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		RankNum[i].SetNumber(i + 1);
 		RankNum[i].SetScale(1);
 		RankNum[i].SetParent(&RankBg[i]);
-		RankNum[i].SetOffset(FVector(-0.2, 0.09, 0));
+		RankNum[i].SetOffset(FVector(-0.19, 0.015, 0));
 
 		RankScore[i].SetScale(1);
 		RankScore[i].SetParent(&RankBg[i]);
-		RankScore[i].SetOffset(FVector(0, 0.09, 0));
+		RankScore[i].SetOffset(FVector(0, 0.015, 0));
 	}
 	float spawnX = 0;
 	float VibrationTime = 0.f;
