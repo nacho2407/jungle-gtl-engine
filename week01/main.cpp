@@ -1,5 +1,6 @@
 ﻿#include <cstdlib>
 #include <ctime>
+#include <fstream>
 #include <string>
 #include <unordered_map>
 
@@ -31,6 +32,8 @@
 
 #include <Xinput.h>
 #pragma comment(lib, "Xinput.lib")
+
+namespace fs = std::filesystem;
 
 class UInputManager
 {
@@ -1131,9 +1134,10 @@ private:
 class UTextWidget : public UWidget
 {
 public:
-	UTextWidget():
+	UTextWidget() :
 		TextColor(DirectX::Colors::White)
-	{ }
+	{
+	}
 
 	void Render(URenderer& renderer) override
 	{
@@ -1922,7 +1926,10 @@ const UINT RANK_NUM = 5;
 class FScoreManager
 {
 public:
-	FScoreManager() : Score(0) {}
+	FScoreManager() : Score(0)
+	{
+		ReadHighScoreData();
+	}
 
 	/**
 	 * @param FruitType 병합된 후의 과일 타입
@@ -1953,13 +1960,36 @@ public:
 				}
 
 				HighScores[i] = Score;
+
+				WriteHighScoreData();
+
 				return i;
 			}
 		}
 		return -1; // 랭킹 진입 실패
 	}
+
 	UINT* GetHighScores() {
 		return HighScores;
+	}
+private:
+	void ReadHighScoreData()
+	{
+		std::ifstream HighScoreData("highscore_data", std::ios::binary);
+
+		if (!HighScoreData)
+		{
+			return;
+		}
+
+		HighScoreData.read(reinterpret_cast<char*>(HighScores), sizeof(HighScores));
+	}
+
+	void WriteHighScoreData()
+	{
+		std::ofstream HighScoreData("highscore_data", std::ios::binary); // 덮어쓰기
+
+		HighScoreData.write(reinterpret_cast<const char*>(HighScores), sizeof(HighScores));
 	}
 private:
 	UINT Score;
@@ -2710,7 +2740,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 
 			CreditImage.Render(renderer);
-			
+
 			BackButton.Render(renderer);
 			BackText.Render(renderer);
 
@@ -2819,7 +2849,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 						LastSpawnTime = currentTime;
 					}
 				}
-				
+
 				prevMouseDown = curMouseDown;
 			}
 
@@ -3300,7 +3330,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	delete ScoreTextTexture;
 	delete Map1Texture;
 	delete Map1RoofTexture;
-	
+
 
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
