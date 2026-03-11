@@ -1952,7 +1952,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			float nx = lx / 32768.f;
 			float ny = ly / 32768.f;
 
-			spawnX += nx * 0.05f;
+			if (state.Gamepad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD || state.Gamepad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD)
+			{
+				// 미세 조정
+				spawnX += nx * 0.01f;
+			}
+			else
+			{
+				spawnX += nx * 0.05f;
+			}
+
 			spawnX = max(min(spawnX, 1), -1);
 
 			if (state.Gamepad.wButtons & XINPUT_GAMEPAD_A)
