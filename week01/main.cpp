@@ -1,5 +1,6 @@
 ﻿#include <cstdlib>
 #include <ctime>
+#include <string>
 
 #include <windows.h>
 #include <windowsx.h>
@@ -19,9 +20,25 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+// From DirectXTK
+#include "SpriteBatch.h"
+#include "SpriteFont.h"
+#include "SimpleMath.h"
+
 class UTexture
 {
 public:
+	UTexture()
+	{
+
+	}
+
+	UTexture(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext, const char* FileName)
+	{
+		bool bIsOK = Initialize(Device, DeviceContext, FileName);
+		assert(bIsOK);
+	}
+
 	bool Initialize(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext, const char* FileName)
 	{
 		D3D11_TEXTURE2D_DESC TextureDesc;
@@ -32,11 +49,13 @@ public:
 
 		Data = stbi_load(FileName, &Width, &Height, &Channels, 0);
 
+		assert(Data);
+
 		TextureDesc.Height = Height;
 		TextureDesc.Width = Width;
 		TextureDesc.MipLevels = 1;
 		TextureDesc.ArraySize = 1;
-		TextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		TextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 		TextureDesc.SampleDesc.Count = 1;
 		TextureDesc.SampleDesc.Quality = 0;
 		TextureDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -189,6 +208,9 @@ public:
 	// 화면 초기화 색상
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 
+	std::unique_ptr<DirectX::SpriteBatch> SpriteBatch;
+	std::unique_ptr<DirectX::SpriteFont> Font;
+
 public:
 	void Create(HWND hWindow)
 	{
@@ -203,6 +225,8 @@ public:
 		CreateRectangleMesh();
 
 		CreateLine();
+
+		CreateFont();
 	}
 
 	void CreateDeviceAndSwapChain(HWND hWindow)
@@ -308,6 +332,15 @@ public:
 		Device->CreateBuffer(&desc, &data, &LineVertexBuffer);
 	}
 
+	void CreateFont()
+	{
+		SpriteBatch = std::make_unique<DirectX::SpriteBatch>(DeviceContext);
+		Font = std::make_unique<DirectX::SpriteFont>(
+			Device,
+			L"./Resource/comic_sans_ms.spritefont"
+		);
+	}
+
 	void Release()
 	{
 		ReleaseRasterizerState();
@@ -322,6 +355,7 @@ public:
 		ReleaseRectangleMesh();
 		ReleaseLine();
 	}
+
 	void ReleaseLine()
 	{
 		if (LineVertexBuffer) { LineVertexBuffer->Release(); LineVertexBuffer = nullptr; }
@@ -843,6 +877,187 @@ private:
 	}
 };
 
+class UWidget
+{
+public:
+	UWidget():
+		Parent(nullptr),
+		Scale(1)
+	{
+
+	}
+
+	void SetParent(UWidget* InWidget)
+	{
+		// Offset 은 Scale = 1 기준이므로 Scale 을 배제한 GetLocation 사용
+		if (InWidget)
+		{
+			FVector PrevLocation = GetLocation(false);
+			Parent = InWidget;
+			Offset = PrevLocation - Parent->GetLocation(false);
+		}
+		else
+		{
+			if (Parent)
+			{
+				// parent 초기화하기 전에 현재 위치를 Offset 으로 지정 (parent == nullptr 일 때 Offset 은 location 임을 기억)
+				Offset = GetLocation(false);
+				Parent = nullptr;
+			}
+			else
+			{
+				// do nothing
+			}
+		}
+	}
+
+	void SetScale(float InScale) { Scale = InScale; }
+
+	// Scale = 1 기준, Parent 와의 Offset 설정
+	// Parent == nullptr 인 경우 Location 설정과 같음
+	// Offset = Self.Loc - Parent.Loc
+	// Self.Loc = Parent.Loc + Offset
+	void SetOffset(FVector InOffset) { Offset = InOffset; }
+
+	FVector GetLocation(bool bApplyScale) const
+	{
+		if (Parent)
+		{
+			FVector Location = Parent->GetLocation(bApplyScale);
+			if (bApplyScale) Location = Location + Offset * GetParentScale();
+			return Location;
+		}
+		else
+		{
+			return Offset;
+		}
+	}
+
+	float GetParentScale() const
+	{
+		if (Parent)
+		{
+			return Parent->GetScale() * Parent->GetParentScale();
+		}
+		else
+		{
+			return 1;
+		}
+	}
+
+	float GetScale() const
+	{
+		return Scale;
+	}
+
+	virtual void Render(URenderer& renderer)
+	{
+		
+	}
+
+protected:
+	// Cartesian <-> Screen 변환 과정을 어느 객체에서 또는 함수에서 할 것인가는 논의 필요
+	FVector CartesianToScreenCoord(FVector CartesianCoord)
+	{
+		// Screen Size 가 (900, 1100) 고정 상황 가정
+		return FVector(round((CartesianCoord.x + 1.0f) * 0.5f * 900), round((1 - (CartesianCoord.y + 1.0f) * 0.5f) * 1100));
+	}
+
+private:
+	UWidget* Parent;
+	float Scale;  // 실제 Offset 에 영향을 줌
+
+	// Parent == nullptr 인 경우 Offset 이 곧 Location 이 됨
+	// Parent != nullptr 인 경우 Parent 로부터의 상대적 거리를 나타내는 Offset (Scale = 1 기준)
+	FVector Offset;
+};
+
+/*
+UTextWidget Render 후 UImageWidget Render 가 제대로 작동하지 않거나
+Parent-Child 위치 관계가 보존이 안되는 등의 문제가 있어 현재로썬 단일 객체 + Rendering 순
+
+*/
+class UTextWidget : public UWidget
+{
+public:
+	void Render(URenderer& renderer) override
+	{
+		/*
+			UI
+		*/
+		DirectX::SimpleMath::Vector2 textSize = renderer.Font->MeasureString(Text.c_str());
+
+		renderer.SpriteBatch->Begin();
+
+		// Screen 좌표 계산
+		FVector ScreenCoord = CartesianToScreenCoord(GetLocation(true));
+
+		// DrawString 중앙 정렬: Origin = 텍스트 중앙
+		DirectX::XMFLOAT2 origin = { textSize.x / 2.f, textSize.y / 2.f };
+
+		/*
+		renderer.Font->DrawString(
+			renderer.SpriteBatch.get(),
+			Text.c_str(),
+			DirectX::XMFLOAT2(ScreenCoord.x, ScreenCoord.y),
+			DirectX::Colors::White,
+			0.0f,
+			origin,                        // 텍스트 중앙 기준
+			GetScale() * GetParentScale()
+		);
+		*/
+
+		renderer.Font->DrawString(
+			renderer.SpriteBatch.get(),
+			Text.c_str(),
+			DirectX::XMFLOAT2(ScreenCoord.x, ScreenCoord.y),
+			DirectX::Colors::White,
+			0.0f,
+			DirectX::XMFLOAT2(0, 0),                        // 텍스트 중앙 기준
+			GetScale() * GetParentScale()
+		);
+
+		renderer.SpriteBatch->End();
+	}
+
+	void SetNumber(int Num)
+	{
+		Text = std::to_wstring(Num);
+	}
+
+	void SetText(const wchar_t* InText)
+	{
+		Text = InText;
+	}
+
+private:
+	std::wstring Text;
+};
+
+class UImageWidget : public UWidget
+{
+public:
+	UImageWidget():
+		Texture(nullptr),
+		Radius(1)
+	{ }
+
+	void Render(URenderer& renderer) override
+	{
+		FVector Location = GetLocation(true);
+		renderer.UpdateConstant(Location, 0, Radius * GetScale() * GetParentScale(), true);
+		renderer.UpdateTexture(Texture);
+		renderer.RenderRectangle();
+	}
+
+	void SetTexture(UTexture* InTexture) { Texture = InTexture; }
+	void SetRadius(float InRadius) { Radius = InRadius; }
+
+private:
+	UTexture* Texture;
+	float Radius;
+};
+
 enum EFruitType
 {
 	FT_Cherry = 0,
@@ -994,7 +1209,6 @@ public:
 				Velocity.x -= (Velocity.x > 0.0f ? 1.0f : -1.0f) * frictionImpulse;
 
 		}
-
 
 		Velocity.y -= GravityAccel * dt;
 
@@ -1517,10 +1731,44 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	UFruit previewFruit;
 
 	LARGE_INTEGER collisionStartCounter;
+	
+	static const char* FruitNames[] = {
+		"Cherry", "Strawberry", "Grape", "Dekopon", "Orange",
+		"Apple", "Pear", "Peach", "Pineapple", "Melon", "Watermelon"
+	};
 
-	UTexture* PeachTexture = new UTexture;
-	PeachTexture->Initialize(renderer.Device, renderer.DeviceContext, "./Peach.png");
+	TArray<UTexture*> FruitTextures;
+	for (int i = 0; i < ARRAYSIZE(FruitNames); i++)
+	{
+		std::string FruitPath = "./Resource/";
+		FruitPath += FruitNames[i];
+		FruitPath += ".png";
+		FruitTextures.PushBack(new UTexture(renderer.Device, renderer.DeviceContext, FruitPath.c_str()));
+	}
 
+	UTexture* BubbleTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/bubble.png");
+	UTexture* NextTextTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/NextText.png");
+
+	UImageWidget ScoreWidget, TestWidget, NextTextWidget;
+	UTextWidget TestTextWidget;
+
+	ScoreWidget.SetOffset(FVector(0.7, 0.7, 0));
+	ScoreWidget.SetTexture(BubbleTexture);
+	ScoreWidget.SetScale(1);
+	ScoreWidget.SetRadius(0.1);
+
+	TestWidget.SetTexture(FruitTextures[0]);
+	TestWidget.SetScale(1);
+	TestWidget.SetRadius(0.05);
+	TestWidget.SetParent(&ScoreWidget);
+	TestWidget.SetOffset(FVector(0, 0, 0));
+
+	NextTextWidget.SetTexture(NextTextTexture);
+	NextTextWidget.SetScale(1);
+	NextTextWidget.SetRadius(0.1);
+	NextTextWidget.SetParent(&ScoreWidget);
+	NextTextWidget.SetOffset(FVector(0, 0.1, 0));
+	
 	while (bIsExit == false)
 	{
 		QueryPerformanceCounter(&startTime);
@@ -1565,10 +1813,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		bool bLineCollision = false;
 
-		static const char* FruitNames[] = {
-			"Cherry", "Strawberry", "Grape", "Dekopon", "Orange",
-			"Apple", "Pear", "Peach", "Pineapple", "Melon", "Watermelon"
-		};
+
 		static int SelectedFruitType = 0;
 
 		renderer.Prepare();
@@ -1590,7 +1835,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 				FVector spawnPos = FVector(spawnX, 0.9f, 0);
 
-				PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos, PeachTexture));
+				PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos, FruitTextures[ft]));
 
 				SelectedFruitType = rand() % (EFruitType::FT_Orange + 1);
 			}
@@ -1678,7 +1923,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 				// 점수 획득
 				ScoreManager.AddScore(MergeInfo.ResultFruitType);
-				PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, PeachTexture));
+				PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, FruitTextures[EFruitType::FT_Peach]));
 			}
 
 			//새 과일이 생성된 후 마찰 적용
@@ -1746,7 +1991,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		previewFruit.SetFruitType((EFruitType)SelectedFruitType);
 		previewFruit.SetLocation(FVector(spawnX, 0.9f, 0));
-		previewFruit.SetTexture(PeachTexture);
+		previewFruit.SetTexture(FruitTextures[SelectedFruitType]);
 		previewFruit.Render(renderer);
 
 		renderer.UpdateConstant(FVector(0, 0, 0), 0.f, 1.0f, 0.0f);
@@ -1779,6 +2024,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		ImGui::Render(); // 이번 프레임에 그릴 UI 설정
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
 
+		ScoreWidget.Render(renderer);
+		TestWidget.Render(renderer);
+		NextTextWidget.Render(renderer);
+
 		renderer.SwapBuffer();
 
 		// 모니터 주사율이 144Hz일 수도 있으니 VSync를 사용하더라도 60fps 고정 코드는 유지
@@ -1791,9 +2040,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			elapsedTime = (endTime.QuadPart - startTime.QuadPart) * 1000.0 / frequency.QuadPart;
 		} while (elapsedTime < targetFrameTime);
 	}
+
 	//파티클 텍스쳐도 삭제
 	ParticlePool.ReleasePool();
-	PeachTexture->Release();
+
+	for (int i = 0; i < FruitTextures.Num(); i++)
+	{
+		FruitTextures[i]->Release();
+	}
 
 	for (UINT i = 0; i < PrimitiveList.Num(); i++) {
 		delete PrimitiveList[i];
