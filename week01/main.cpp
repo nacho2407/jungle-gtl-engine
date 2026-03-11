@@ -2053,7 +2053,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				ScoreManager.AddScore(MergeInfo.ResultFruitType);
 
 				CurrentScoreWidget.SetText(std::to_wstring(ScoreManager.GetScore()).c_str());
-				PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, FruitTextures[EFruitType::FT_Peach]));
+				PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, FruitTextures[MergeInfo.ResultFruitType]));
 			}
 
 			//새 과일이 생성된 후 마찰 적용
