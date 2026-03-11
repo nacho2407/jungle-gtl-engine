@@ -799,9 +799,9 @@ public:
 	{
 		Mass = Radius * MassFactor;
 
-		LeftBorder   += Radius;
-		RightBorder  -= Radius;
-		TopBorder    -= Radius;
+		LeftBorder += Radius;
+		RightBorder -= Radius;
+		TopBorder -= Radius;
 		BottomBorder += Radius;
 
 		Location.x = RandRange(LeftBorder, RightBorder);
@@ -896,7 +896,7 @@ private:
 class UWidget
 {
 public:
-	UWidget():
+	UWidget() :
 		Parent(nullptr),
 		Scale(1)
 	{
@@ -968,15 +968,15 @@ public:
 
 	virtual void Render(URenderer& renderer)
 	{
-		
+
 	}
 
 protected:
 	// Cartesian <-> Screen 변환 과정을 어느 객체에서 또는 함수에서 할 것인가는 논의 필요
 	FVector CartesianToScreenCoord(FVector CartesianCoord)
 	{
-		// Screen Size 가 (900, 1100) 고정 상황 가정
-		return FVector(round((CartesianCoord.x + 1.0f) * 0.5f * 900), round((1 - (CartesianCoord.y + 1.0f) * 0.5f) * 1100));
+		// Screen Size 가 (1024, ) 고정 상황 가정
+		return FVector((CartesianCoord.x + 1.0f) * 0.5f * 1024, (1 - CartesianCoord.y) * 0.5f * 1024);
 	}
 
 private:
@@ -990,8 +990,7 @@ private:
 
 /*
 UTextWidget Render 후 UImageWidget Render 가 제대로 작동하지 않거나
-Parent-Child 위치 관계가 보존이 안되는 등의 문제가 있어 현재로썬 단일 객체 + Rendering 순
-
+Parent-Child 위치 관계가 보존이 안되는 등의 문제가 있어 현재로썬 단일 객체 + Rendering 순서
 */
 class UTextWidget : public UWidget
 {
@@ -1011,7 +1010,7 @@ public:
 		// DrawString 중앙 정렬: Origin = 텍스트 중앙
 		DirectX::XMFLOAT2 origin = { textSize.x / 2.f, textSize.y / 2.f };
 
-		
+
 		renderer.Font->DrawString(
 			renderer.SpriteBatch.get(),
 			Text.c_str(),
@@ -1021,7 +1020,7 @@ public:
 			origin,                        // 텍스트 중앙 기준
 			GetScale() * GetParentScale()
 		);
-		
+
 		/*
 		renderer.Font->DrawString(
 			renderer.SpriteBatch.get(),
@@ -1054,10 +1053,11 @@ private:
 class UImageWidget : public UWidget
 {
 public:
-	UImageWidget():
+	UImageWidget() :
 		Texture(nullptr),
 		AxisScale(FVector::Splat(1))
-	{ }
+	{
+	}
 
 	void Render(URenderer& renderer) override
 	{
@@ -1070,9 +1070,56 @@ public:
 	void SetTexture(UTexture* InTexture) { Texture = InTexture; }
 	void SetAxisScale(FVector InAxisScale) { AxisScale = InAxisScale; }
 
-private:
+protected:
 	UTexture* Texture;
 	FVector AxisScale;
+};
+
+/*
+* 이미지가 없는 버튼도 있겠지만 이 게임 프로토타입에선 배제하여 이미지를 상속받음
+* 버튼의 가운데에 해당 텍스트를 넣는다면 렌더 순서가 꼬여 소유하지 않고 일단 외부 텍스트를 받도록 함
+*/
+class UButtonWidget : public UImageWidget
+{
+public:
+	UButtonWidget() = default;
+
+public:
+	bool IsPressed(HWND hWnd)
+	{
+		POINT lpPoint = {};
+		GetCursorPos(&lpPoint);
+		ScreenToClient(hWnd, &lpPoint);
+		
+		return IsOnBound(lpPoint.x, lpPoint.y);
+	}
+
+private:
+	/*
+	* 스크린 상에서 버튼 클릭 체크
+	*/
+	bool IsOnBound(float MouseX, float MouseY)
+	{
+		//NDC 좌표
+
+		FVector CartesianCoord = GetLocation(true);
+
+		FVector ScaledAxisScale = AxisScale * GetScale() * GetParentScale();
+		FVector LeftTop = { CartesianCoord.x - ScaledAxisScale.x, CartesianCoord.y + ScaledAxisScale.y, 0.f };
+		FVector RightBottom = { CartesianCoord.x + ScaledAxisScale.x, CartesianCoord.y - ScaledAxisScale.y, 0.f };
+
+		LeftTop = { (LeftTop.x + 1.0f) * 0.5f * 1024, (1.f - LeftTop.y) * 0.5f * 1024 , 0 };
+		RightBottom = { (RightBottom.x + 1.0f) * 0.5f * 1024,  (1.f - RightBottom.y) * 0.5f * 1024 , 0 };
+
+		bool debugFlag = (MouseX > LeftTop.x && MouseX < RightBottom.x && MouseY > LeftTop.y && MouseY < RightBottom.y);
+
+		if (debugFlag)
+		{
+			int iDebug = 0;
+		}
+		return debugFlag;
+
+	}
 };
 
 enum EFruitType
@@ -1252,9 +1299,9 @@ public:
 		FruitType = InFruitType;
 		Radius = SmallestFruitRadius * pow(CoefRadiusGrowth, InFruitType);
 		Mass = Radius;
-		LeftBorder   += Radius;
-		RightBorder  -= Radius;
-		TopBorder    -= Radius;
+		LeftBorder += Radius;
+		RightBorder -= Radius;
+		TopBorder -= Radius;
 		BottomBorder += Radius;
 	}
 
@@ -1767,14 +1814,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	RegisterClassW(&wndclass);
 
+	RECT rect = { 0, 0, 1024, 1024 };
+	AdjustWindowRect(&rect, WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW, FALSE);
+
 	HWND hWnd = CreateWindowExW(0,
 		WindowClass,
 		Title,
 		WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
-		1024,
-		1024,
+		rect.right - rect.left,   // 타이틀바 포함한 전체 크기
+		rect.bottom - rect.top,
 		nullptr,
 		nullptr,
 		hInstance,
@@ -1842,7 +1892,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	UFruit previewFruit;
 
 	LARGE_INTEGER collisionStartCounter;
-	
+
 	static const char* FruitNames[] = {
 		"Cherry", "Strawberry", "Grape", "Dekopon", "Orange",
 		"Apple", "Pear", "Peach", "Pineapple", "Melon", "Watermelon"
@@ -1858,6 +1908,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 
 	UTexture* BubbleTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/bubble.png");
+	UTexture* ButtonBGTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/Button_BG.png");
 	UTexture* NextTextTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/NextText.png");
 	UTexture* ScoreTextTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/ScoreText.png");
 	UTexture* Map1Texture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/Map1.png");
@@ -1894,8 +1945,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	MapRoofWidget.SetTexture(Map1RoofTexture);
 	MapRoofWidget.SetAxisScale(FVector(1, 0.1, 0));
 	MapRoofWidget.SetOffset(FVector(0, 0.6, 0));
-	
-	
+
+
+
 	//왼쪽 점수
 	UImageWidget LeftScoreWidget, ScoreTextWidget;
 	UTextWidget  CurrentScoreWidget;
@@ -1903,19 +1955,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	LeftScoreWidget.SetOffset(FVector(-0.7f, 0.7f, 0.f));
 	LeftScoreWidget.SetTexture(BubbleTexture);
 	LeftScoreWidget.SetScale(1.f);
-	LeftScoreWidget.SetRadius(0.1);
+	LeftScoreWidget.SetAxisScale({ 0.1, 0.1f, 1.f });
 
 	ScoreTextWidget.SetTexture(ScoreTextTexture);
 	ScoreTextWidget.SetScale(1);
-	ScoreTextWidget.SetRadius(0.1);
 	ScoreTextWidget.SetParent(&LeftScoreWidget);
+
+	ScoreTextWidget.SetAxisScale(FVector::Splat(0.1));
 	ScoreTextWidget.SetOffset(FVector(0, 0.1, 0));
 
 	CurrentScoreWidget.SetText(TEXT("0"));
 	CurrentScoreWidget.SetParent(&LeftScoreWidget);
 	CurrentScoreWidget.SetScale(1.f);
-	CurrentScoreWidget.SetOffset(FVector(0.03f, 0.03f, 0.f));
+	CurrentScoreWidget.SetOffset(FVector(0.f, 0.0f, 0.f));
 
+
+	UButtonWidget ButtonTestWidget;
+	ButtonTestWidget.SetOffset(FVector(0.f, 0.f, 0.f));
+	ButtonTestWidget.SetTexture(ButtonBGTexture);
+	ButtonTestWidget.SetAxisScale({ 0.1, 0.1f, 1.f });
 
 	while (bIsExit == false)
 	{
@@ -1953,9 +2011,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		bool curMouseDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
 
 		if (curMouseDown && !prevMouseDown)
+		{
+			spawnFruit = true;
+
+			if (ButtonTestWidget.IsPressed(hWnd))
 			{
-				spawnFruit = true;
+				//TODO 클릭처리
+
 			}
+		}
 
 		prevMouseDown = curMouseDown;
 
@@ -2044,7 +2108,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 								//병합된 곳에서 파티클  생성
 								ParticlePool.Aquire((A->Location + B->Location) * 0.5f);
 								SoundManager.PlaySFX(TEXT("./Sound/SFX/Merge.wav"));
-				
+
 							}
 							else
 							{
@@ -2182,18 +2246,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
 
 
+		MapRoofWidget.Render(renderer);
+
 		LeftScoreWidget.Render(renderer);
 		ScoreTextWidget.Render(renderer);
-		
-		MapRoofWidget.Render(renderer);
 
 		ScoreWidget.Render(renderer);
 		TestWidget.Render(renderer);
+		ButtonTestWidget.Render(renderer);
+
 
 		NextTextWidget.Render(renderer);
 		CurrentScoreWidget.Render(renderer);
-
-
 
 		renderer.SwapBuffer();
 
