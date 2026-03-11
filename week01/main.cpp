@@ -1,6 +1,7 @@
 ﻿#include <cstdlib>
 #include <ctime>
 #include <string>
+#include <unordered_map>
 
 #include <windows.h>
 #include <windowsx.h>
@@ -19,16 +20,14 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#include <fmod.hpp>
-#pragma comment (lib, "fmod_vc.lib")
 
 // From DirectXTK
 #include "SpriteBatch.h"
 #include "SpriteFont.h"
 #include "SimpleMath.h"
 
-#include <unordered_map>
-#include <string>
+#include <fmod.hpp>
+#pragma comment (lib, "fmod_vc.lib")
 
 #include <Xinput.h>
 #pragma comment(lib, "Xinput.lib")
@@ -45,6 +44,12 @@ public:
 	{
 		bool bIsOK = Initialize(Device, DeviceContext, FileName);
 		assert(bIsOK);
+	}
+
+	~UTexture()
+	{
+		// Release와 동시에 객체 자체의 메모리도 해제되도록
+		Release();
 	}
 
 	bool Initialize(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext, const char* FileName)
@@ -168,6 +173,7 @@ struct SceneFrame
 #include "Rectangle.h"
 
 const float LineY = 0.6f;
+
 FVertexSimple line_vertices[] =
 {
 	{-1.0f, LineY, 0.0f, 1,1,1,1},
@@ -977,9 +983,9 @@ private:
 };
 
 /*
-UTextWidget Render 후 UImageWidget Render 가 제대로 작동하지 않거나
-Parent-Child 위치 관계가 보존이 안되는 등의 문제가 있어 현재로썬 단일 객체 + Rendering 순서
-*/
+ * UTextWidget Render 후 UImageWidget Render 가 제대로 작동하지 않거나
+ * Parent-Child 위치 관계가 보존이 안되는 등의 문제가 있어 현재로썬 단일 객체 + Rendering 순서
+ */
 class UTextWidget : public UWidget
 {
 public:
@@ -1068,9 +1074,9 @@ protected:
 };
 
 /*
-* 이미지가 없는 버튼도 있겠지만 이 게임 프로토타입에선 배제하여 이미지를 상속받음
-* 버튼의 가운데에 해당 텍스트를 넣는다면 렌더 순서가 꼬여 소유하지 않고 일단 외부 텍스트를 받도록 함
-*/
+ * 이미지가 없는 버튼도 있겠지만 이 게임 프로토타입에선 배제하여 이미지를 상속받음
+ * 버튼의 가운데에 해당 텍스트를 넣는다면 렌더 순서가 꼬여 소유하지 않고 일단 외부 텍스트를 받도록 함
+ */
 class UButtonWidget : public UImageWidget
 {
 public:
@@ -1130,7 +1136,6 @@ enum EFruitType
 
 	FT_Count  // Last Type Check 용도
 };
-
 
 class UParticle : public UBall
 {
@@ -1548,11 +1553,10 @@ struct FPendingMerge
 	FVector NewLocation;
 };
 
-
 /*
-* 파티클 특성상 합쳐질때마다 생성을 할 경우 생명주기 관리가 어렵고
-  생성되는데 비용도 고려하여 풀을 만듦
-*/
+ * 파티클 특성상 합쳐질때마다 생성을 할 경우 생명주기 관리가 어렵고
+ * 생성되는데 비용도 고려하여 풀을 만듦
+ */
 class UParticlePool
 {
 public:
@@ -1564,7 +1568,7 @@ public:
 	void Initialize(int DefaultCapacity, URenderer& renderer)
 	{
 		ParticleTexture = new UTexture;
-		ParticleTexture->Initialize(renderer.Device, renderer.DeviceContext, "./Star.png");
+		ParticleTexture->Initialize(renderer.Device, renderer.DeviceContext, "./Resource/Star.png");
 
 		ParticlePool.Reserve(DefaultCapacity);
 		for (int i = 0; i < DefaultCapacity; ++i)
@@ -1599,11 +1603,11 @@ public:
 		}
 		if (ParticleTexture)
 		{
-			ParticleTexture->Release();
 			delete ParticleTexture;
 			ParticleTexture = nullptr;
 		}
 	}
+
 	void Update(float dt)
 	{
 		for (UINT i = 0; i < ParticleList.Num(); ++i)
@@ -1764,7 +1768,6 @@ private:
 	bool bIsXPadTriggerDown;
 };
 
-
 class USoundManager
 {
 public:
@@ -1845,6 +1848,7 @@ private:
 };
 
 const UINT RANK_NUM = 5;
+
 class FScoreManager
 {
 public:
@@ -1903,7 +1907,6 @@ enum EGameState
 	GS_Playing,
 	GS_GameOver
 };
-
 EGameState GameState = GS_Title;
 
 const float DangerLimit = 0.6f;
@@ -1912,6 +1915,8 @@ const double BlinkInterval = 0.2f;
 
 static void UpdateTitle(URenderer& renderer)
 {
+	// 메모리 누수가 남아있는 함수입니다. 대체 예정이라 여기는 생략했습니다.
+
 	static ID3D11ShaderResourceView* TitleBackgroundSRV = nullptr;
 
 	if (TitleBackgroundSRV == nullptr)
@@ -1979,6 +1984,8 @@ static void UpdateTitle(URenderer& renderer)
 
 static void UpdateCredits(URenderer& renderer)
 {
+	// 메모리 누수가 남아있는 함수입니다. 대체 예정이라 여기는 생략했습니다.
+
 	static ID3D11ShaderResourceView* CreditsBackgroundSRV = nullptr;
 
 	if (CreditsBackgroundSRV == nullptr)
@@ -2059,6 +2066,8 @@ static void UpdateCredits(URenderer& renderer)
 
 static void UpdateGameOver(URenderer& renderer, FScoreManager& ScoreManager)
 {
+	// 메모리 누수가 남아있는 함수입니다. 대체 예정이라 여기는 생략했습니다.
+
 	static ID3D11ShaderResourceView* GameOverBackgroundSRV = nullptr;
 
 	if (GameOverBackgroundSRV == nullptr)
@@ -2143,7 +2152,6 @@ static inline EFruitType GetRandomFruitType()
 {
 	return static_cast<EFruitType>(rand() % (EFruitType::FT_Orange + 1));
 }
-
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
@@ -2337,9 +2345,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	float VibrationTime = 0.f;
 	const float MaxVibrationTime = 0.3f;
 	bool bIsVibrating = false;
-
-
-
 
 	//왼쪽 점수
 	UImageWidget LeftScoreWidget, ScoreTextWidget;
@@ -2622,9 +2627,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 				// 점수 획득
 				ScoreManager.AddScore(MergeInfo.ResultFruitType);
-
-				CurrentScoreWidget.SetText(std::to_wstring(ScoreManager.GetScore()).c_str());
 			}
+
+			CurrentScoreWidget.SetText(std::to_wstring(ScoreManager.GetScore()).c_str());
 
 			//새 과일이 생성된 후 마찰 적용
 			const static int overlapIteration = 100;
@@ -2846,13 +2851,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	for (int i = 0; i < FruitTextures.Num(); i++)
 	{
-		FruitTextures[i]->Release();
+		// Release와 동시에 FruitTextures[i] 자체도 해제
+		delete FruitTextures[i];
 	}
 
 	for (UINT i = 0; i < PrimitiveList.Num(); i++) {
 		delete PrimitiveList[i];
 		PrimitiveList[i] = nullptr;
 	}
+	PrimitiveList.Clear();
 
 	// 임시 메모리 해제
 	delete LeaderBoardTexture;
@@ -2860,6 +2867,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	delete[] RankBg;
 	delete[] RankNum;
 	delete[] RankScore;
+
+	// 텍스처 해제
+	delete EmptyTexture;
+	delete BubbleTexture;
+	delete ButtonBGTexture;
+	delete NextTextTexture;
+	delete ScoreTextTexture;
+	delete Map1Texture;
+	delete Map1RoofTexture;
+	
 
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
@@ -2987,5 +3004,4 @@ static void ResolveCollision(UBall* A, UBall* B)
 		A->AngularVelocity -= A->Radius * jT * InvIA;
 		B->AngularVelocity += B->Radius * jT * InvIB;
 	}
-
 }
