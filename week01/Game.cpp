@@ -156,7 +156,7 @@ bool Game::Initialize()
 
 	RestartButton.SetOffset(FVector(-0.3f, -0.5f, 0.f));
 	RestartButton.SetTexture(ButtonBGTexture);
-	StartButton.SetAxisScale({ 0.2, 0.07f, 1.f });
+	RestartButton.SetAxisScale({ 0.2, 0.1f, 1.f });
 
 	RestartText.SetParent(&RestartButton);
 	RestartText.SetOffset({ 0, 0, 0 });
@@ -174,7 +174,7 @@ bool Game::Initialize()
 
 	StartButton.SetOffset(FVector(0.f, 0.f, 0.f));
 	StartButton.SetTexture(ButtonBGTexture);
-	StartButton.SetAxisScale({ 0.2, 0.1f, 1.f });
+	StartButton.SetAxisScale({ 0.2, 0.07f, 1.f });
 
 	StartText.SetParent(&StartButton);
 	StartText.SetScale(1);
