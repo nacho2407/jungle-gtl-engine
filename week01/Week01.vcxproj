@@ -162,6 +162,7 @@
     <ClCompile Include="UScoreManager.cpp" />
     <ClCompile Include="USoundManager.cpp" />
     <ClCompile Include="UTexture.cpp" />
+    <ClCompile Include="Widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Constants.h" />
@@ -198,6 +199,7 @@
     <ClInclude Include="UScoreManager.hpp" />
     <ClInclude Include="USoundManager.hpp" />
     <ClInclude Include="UTexture.hpp" />
+    <ClInclude Include="Widgets.hpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ShaderW0.hlsl">
