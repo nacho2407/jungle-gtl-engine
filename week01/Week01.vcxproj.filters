@@ -84,6 +84,15 @@
     <ClCompile Include="Widgets.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="EGameState.h">
+      <Filter>헤더 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="stb_image_impl.cpp">
+      <Filter>stb</Filter>
+    </ClCompile>
+    <ClCompile Include="Game.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Sphere.h">
@@ -189,6 +198,9 @@
       <Filter>stb</Filter>
     </ClInclude>
     <ClInclude Include="Widgets.hpp">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Game.hpp">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

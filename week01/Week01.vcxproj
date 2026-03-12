@@ -144,6 +144,8 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="EGameState.h" />
+    <ClCompile Include="Game.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
@@ -153,6 +155,7 @@
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Physics.cpp" />
+    <ClCompile Include="stb_image_impl.cpp" />
     <ClCompile Include="UBall.cpp" />
     <ClCompile Include="UFruit.cpp" />
     <ClCompile Include="UInputManager.cpp" />
@@ -168,6 +171,7 @@
     <ClInclude Include="Constants.h" />
     <ClInclude Include="Containers.hpp" />
     <ClInclude Include="EFruitType.h" />
+    <ClInclude Include="Game.hpp" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
     <ClInclude Include="imgui\imgui_impl_dx11.h" />
