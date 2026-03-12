@@ -7,7 +7,7 @@ void UFruit::SetFruitType(EFruitType InFruitType)
 	AngularVelocity -= Radius * 2;
 	if (AngularVelocity < 0.f)AngularVelocity = 0.f;
 
-	//최소 포도의 질량을 가지도록 설정
+	//질량의 지수승인 radius의 영향을 받아서 최소 포도의 질량을 가지도록 설정
 	float GrapeRadius = SmallestFruitRadius * pow(CoefRadiusGrowth, 2);
 
 	Mass = max(GrapeRadius * GrapeRadius, Radius * Radius);
@@ -45,7 +45,7 @@ void UFruit::UpdatePhysics(float dt)
 	ResolveWallCollision(dt);
 
 	Velocity.y -= GravityAccel * dt;
-	const float SleepThreshold = 0.01f;
+	const float SleepThreshold = 0.02f;
 	if (fabsf(Velocity.x) < SleepThreshold) Velocity.x = 0.0f;
 	if (fabsf(Velocity.y) < SleepThreshold) Velocity.y = 0.0f;
 

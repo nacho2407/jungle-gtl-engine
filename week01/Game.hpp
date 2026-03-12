@@ -103,6 +103,7 @@ private:
 	UTexture* GameOverTexture = nullptr;
 	UTexture* LeaderBoardTexture = nullptr;
 	UTexture* RankBgTexture = nullptr;
+	UTexture* LeaderBoardBgTexture = nullptr;
 
 	UImageWidget ScoreWidget, TestWidget, NextTextWidget;
 	UTextWidget TestTextWidget;
@@ -111,14 +112,15 @@ private:
 	UImageWidget LeaderBoardWidget;
 	UImageWidget* RankBg = nullptr;
 	UTextWidget* RankNum = nullptr;
+	UTextWidget* RankScoreIngame = nullptr;
 	UTextWidget* RankScore = nullptr;
 	UImageWidget LeftScoreWidget, ScoreTextWidget; //왼쪽 점수
 	UTextWidget  CurrentScoreWidget;
 	UImageWidget GameOverScoreImage, GameOverScoreTextImage; // 게임 오버 점수 UI
 	UTextWidget  GameOverScoreText;
-	UButtonWidget StartButton, CreditButton, RuleButton, BackButton, RestartButton, BackToTitleButton;
-	UTextWidget StartText, CreditText, RuleText, BackText, RestartText, BackToTitleText;
-	UImageWidget StartScreenImage, HowToPlayImage, CreditImage, GameOverImage;
+	UButtonWidget StartButton, CreditButton, RuleButton, LeaderBoardButton, BackButton, RestartButton, BackToTitleButton;
+	UTextWidget StartText, CreditText, RuleText, LeaderBoardText, BackText, RestartText, BackToTitleText;
+	UImageWidget StartScreenImage, HowToPlayImage, CreditImage, GameOverImage, LeaderBoardImage;
 
 	float spawnX = 0;
 	float VibrationTime = 0.f;
@@ -142,6 +144,8 @@ private:
 	void UpdateCredits();
 
 	void UpdateHowToPlay();
+
+	void UpdateLeaderBoard();
 
 	void UpdatePlaying();
 

@@ -57,6 +57,7 @@ bool Game::Initialize()
 	RuleTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/rule_bg.png");
 	CreditTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/credits.png");
 	GameOverTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/gameover_bg.png");
+	LeaderBoardBgTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/leaderboard_bg.png");
 
 	ScoreWidget.SetOffset(FVector(0.7, 0.7, 0));
 	ScoreWidget.SetTexture(BubbleTexture);
@@ -87,6 +88,7 @@ bool Game::Initialize()
 
 	RankBg = new UImageWidget[RANK_NUM];
 	RankNum = new UTextWidget[RANK_NUM];
+	RankScoreIngame = new UTextWidget[RANK_NUM];
 	RankScore = new UTextWidget[RANK_NUM];
 
 	LeaderBoardWidget.SetOffset(FVector(-0.8, 0.3, 0));
@@ -109,9 +111,13 @@ bool Game::Initialize()
 		RankNum[i].SetParent(&RankBg[i]);
 		RankNum[i].SetOffset(FVector(-0.19, 0.015, 0));
 
-		RankScore[i].SetScale(1);
-		RankScore[i].SetParent(&RankBg[i]);
-		RankScore[i].SetOffset(FVector(0, 0.015, 0));
+		RankScoreIngame[i].SetScale(1);
+		RankScoreIngame[i].SetParent(&RankBg[i]);
+		RankScoreIngame[i].SetOffset(FVector(0, 0.015, 0));
+
+		RankScore[i].SetScale(2);
+		RankScore[i].SetTextColor(DirectX::Colors::Black);
+		RankScore[i].SetOffset(FVector(0.1, 0.29 - (0.215 * i), 0));
 	}
 
 	LeftScoreWidget.SetOffset(FVector(-0.7f, 0.7f, 0.f));
@@ -150,7 +156,7 @@ bool Game::Initialize()
 
 	RestartButton.SetOffset(FVector(-0.3f, -0.5f, 0.f));
 	RestartButton.SetTexture(ButtonBGTexture);
-	RestartButton.SetAxisScale({ 0.2, 0.1f, 1.f });
+	StartButton.SetAxisScale({ 0.2, 0.07f, 1.f });
 
 	RestartText.SetParent(&RestartButton);
 	RestartText.SetOffset({ 0, 0, 0 });
@@ -176,8 +182,8 @@ bool Game::Initialize()
 
 	CreditButton.SetParent(&StartButton);
 	CreditButton.SetTexture(ButtonBGTexture);
-	CreditButton.SetAxisScale({ 0.2, 0.1, 1.f });
-	CreditButton.SetOffset({ 0.f, -0.3f, 0.f });
+	CreditButton.SetAxisScale({ 0.2, 0.07, 1.f });
+	CreditButton.SetOffset({ 0.f, -0.2f, 0.f });
 
 	CreditText.SetParent(&CreditButton);
 	CreditText.SetScale(1);
@@ -185,12 +191,21 @@ bool Game::Initialize()
 
 	RuleButton.SetParent(&StartButton);
 	RuleButton.SetTexture(ButtonBGTexture);
-	RuleButton.SetAxisScale({ 0.2, 0.1, 1.f });
-	RuleButton.SetOffset({ 0.f, -0.6f, 0.f });
+	RuleButton.SetAxisScale({ 0.2, 0.07, 1.f });
+	RuleButton.SetOffset({ 0.f, -0.4f, 0.f });
 
 	RuleText.SetParent(&RuleButton);
 	RuleText.SetScale(1);
 	RuleText.SetText(L"How To Play");
+
+	LeaderBoardButton.SetParent(&StartButton);
+	LeaderBoardButton.SetTexture(ButtonBGTexture);
+	LeaderBoardButton.SetAxisScale({ 0.2, 0.07, 1.f });
+	LeaderBoardButton.SetOffset({ 0.f, -0.6f, 0.f });
+
+	LeaderBoardText.SetParent(&LeaderBoardButton);
+	LeaderBoardText.SetScale(1);
+	LeaderBoardText.SetText(L"Leader Board");
 
 	StartScreenImage.SetTexture(TitleBackgroundTexture);
 	StartScreenImage.SetOffset({ 0, 0, 0 });
@@ -211,6 +226,11 @@ bool Game::Initialize()
 	GameOverImage.SetOffset({ 0, 0, 0 });
 	GameOverImage.SetAxisScale({ 1, 1, 1 });
 	GameOverImage.SetScale(1);
+
+	LeaderBoardImage.SetTexture(LeaderBoardBgTexture);
+	LeaderBoardImage.SetOffset({ 0, 0, 0 });
+	LeaderBoardImage.SetAxisScale({ 1, 1, 1 });
+	LeaderBoardImage.SetScale(1);
 
 	BackButton.SetOffset(FVector(-0.8f, 0.8f, 0.f));
 	BackButton.SetTexture(ButtonBGTexture);
@@ -291,6 +311,7 @@ void Game::ShutDown()
 	delete RankBgTexture;
 	delete[] RankBg;
 	delete[] RankNum;
+	delete[] RankScoreIngame;
 	delete[] RankScore;
 
 	// 텍스처 해제
@@ -306,6 +327,7 @@ void Game::ShutDown()
 	delete RuleTexture;
 	delete CreditTexture;
 	delete GameOverTexture;
+	delete LeaderBoardBgTexture;
 
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
@@ -332,6 +354,10 @@ void Game::Update()
 		UpdateHowToPlay();
 		break;
 
+	case GS_LeaderBoard:
+		UpdateLeaderBoard();
+		break;
+
 	case GS_Playing:
 		UpdatePlaying();
 		break;
@@ -355,11 +381,11 @@ void Game::UpdateTitle()
 		{
 			if (InputManager.GetXPadStickY() < 0)
 			{
-				XPadButtonIndex = (XPadButtonIndex + 1) % 3;
+				XPadButtonIndex = (XPadButtonIndex + 1) % 4;
 			}
 			else
 			{
-				if (XPadButtonIndex == 0) XPadButtonIndex = 2;
+				if (XPadButtonIndex == 0) XPadButtonIndex = 3;
 				else XPadButtonIndex -= 1;
 			}
 		}
@@ -369,6 +395,7 @@ void Game::UpdateTitle()
 		StartButton.SetTexture(ButtonBGTexture);
 		CreditButton.SetTexture(ButtonBGTexture);
 		RuleButton.SetTexture(ButtonBGTexture);
+		LeaderBoardButton.SetTexture(ButtonBGTexture);
 
 		switch (XPadButtonIndex)
 		{
@@ -382,6 +409,9 @@ void Game::UpdateTitle()
 
 		case 2:
 			RuleButton.SetTexture(ButtonBGHoverTexture);
+			break;
+		case 3:
+			LeaderBoardButton.SetTexture(ButtonBGHoverTexture);
 			break;
 		}
 
@@ -399,6 +429,9 @@ void Game::UpdateTitle()
 
 			case 2:
 				GameState = GS_HowToPlay;
+				break;
+			case 3:
+				GameState = GS_LeaderBoard;
 				break;
 			}
 		}
@@ -420,6 +453,11 @@ void Game::UpdateTitle()
 		else
 			RuleButton.SetTexture(ButtonBGTexture);
 
+		if (LeaderBoardButton.IsOnBound(hWnd))
+			LeaderBoardButton.SetTexture(ButtonBGHoverTexture);
+		else
+			LeaderBoardButton.SetTexture(ButtonBGTexture);
+
 		if (StartButton.IsPressed(hWnd, InputManager, SoundManager))
 		{
 			GameState = GS_Playing;
@@ -432,16 +470,22 @@ void Game::UpdateTitle()
 		{
 			GameState = GS_HowToPlay;
 		}
+		else if (LeaderBoardButton.IsPressed(hWnd, InputManager, SoundManager))
+		{
+			GameState = GS_LeaderBoard;
+		}
 	}
 
 	StartScreenImage.Render(renderer);
 	StartButton.Render(renderer);
 	CreditButton.Render(renderer);
 	RuleButton.Render(renderer);
+	LeaderBoardButton.Render(renderer);
 
 	StartText.Render(renderer);
 	CreditText.Render(renderer);
 	RuleText.Render(renderer);
+	LeaderBoardText.Render(renderer);
 }
 
 void Game::UpdateCredits()
@@ -505,6 +549,43 @@ void Game::UpdateHowToPlay()
 	HowToPlayImage.Render(renderer);
 	BackButton.Render(renderer);
 	BackText.Render(renderer);
+}
+
+void Game::UpdateLeaderBoard()
+{
+	renderer.Prepare();
+	renderer.PrepareShader();
+
+	if (InputManager.IsXPadConnected())
+	{
+		BackButton.SetTexture(ButtonBGHoverTexture);
+		if (InputManager.IsXPadAReleased())
+		{
+			GameState = GS_Title;
+		}
+	}
+	else
+	{
+		if (BackButton.IsOnBound(hWnd))
+			BackButton.SetTexture(ButtonBGHoverTexture);
+		else
+			BackButton.SetTexture(ButtonBGTexture);
+
+		if (BackButton.IsPressed(hWnd, InputManager, SoundManager))
+		{
+			GameState = GS_Title;
+		}
+	}
+
+	LeaderBoardImage.Render(renderer);
+	BackButton.Render(renderer);
+	BackText.Render(renderer);
+
+	for (int i = 0; i < RANK_NUM; i++)
+	{
+		RankScore[i].SetNumber(ScoreManager.GetHighScores()[i]);
+		RankScore[i].Render(renderer);
+	}
 }
 
 void Game::UpdatePlaying()
@@ -682,7 +763,6 @@ void Game::UpdatePlaying()
 						ScoreManager.AddScore(EFruitType::FT_Watermelon);
 						ParticlePool.Aquire(A->Location);
 						SoundManager.PlaySFX(TEXT("./Sound/SFX/Merge.wav"));
-						SoundManager.PlaySFX(TEXT("./Sound/SFX/GameWin.wav"));
 					}
 				}
 			}
@@ -711,6 +791,11 @@ void Game::UpdatePlaying()
 		PendingMergeQueue.Pop();
 
 		PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, FruitTextures[MergeInfo.ResultFruitType]));
+		
+		if (MergeInfo.ResultFruitType == EFruitType::FT_Watermelon)
+		{
+			SoundManager.PlaySFX(TEXT("./Sound/SFX/GameWin.wav"));
+		}
 
 		// 점수 획득
 		ScoreManager.AddScore(MergeInfo.ResultFruitType);
@@ -890,8 +975,8 @@ void Game::UpdatePlaying()
 	for (int i = 0; i < RANK_NUM; i++)
 	{
 		RankNum[i].Render(renderer);
-		RankScore[i].SetNumber(ScoreManager.GetHighScores()[i]);
-		RankScore[i].Render(renderer);
+		RankScoreIngame[i].SetNumber(ScoreManager.GetHighScores()[i]);
+		RankScoreIngame[i].Render(renderer);
 
 	}
 

@@ -61,7 +61,6 @@ bool UButtonWidget::IsPressed(HWND hWnd, const UInputManager& InputManager, USou
 
 bool UButtonWidget::IsOnBound(HWND hWnd)
 {
-	//NDC 좌표
 	POINT lpPoint = {};
 	GetCursorPos(&lpPoint);
 	ScreenToClient(hWnd, &lpPoint);
