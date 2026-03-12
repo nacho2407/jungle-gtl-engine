@@ -58,6 +58,7 @@ bool Game::Initialize()
 	CreditTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/credits.png");
 	GameOverTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/gameover_bg.png");
 	LeaderBoardBgTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/leaderboard_bg.png");
+	DropCatTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/DropCat.png");
 
 	ScoreWidget.SetOffset(FVector(0.7, 0.7, 0));
 	ScoreWidget.SetTexture(BubbleTexture);
@@ -136,6 +137,7 @@ bool Game::Initialize()
 	CurrentScoreWidget.SetParent(&LeftScoreWidget);
 	CurrentScoreWidget.SetScale(1.f);
 	CurrentScoreWidget.SetOffset(FVector(0.f, 0.0f, 0.f));
+	CurrentScoreWidget.SetTextColor(DirectX::Colors::Black);
 
 	GameOverScoreImage.SetOffset(FVector(0.f, -0.2f, 0.f));
 	GameOverScoreImage.SetTexture(FruitTextures[10]);
@@ -241,10 +243,17 @@ bool Game::Initialize()
 	BackText.SetScale(1);
 	BackText.SetText(L"Back");
 
+	DropCatImage.SetTexture(DropCatTexture);
+	DropCatImage.SetOffset({ 0, 0, 0 });
+	DropCatImage.SetAxisScale({ 0.15, 0.15, 0.2 });
+	DropCatImage.SetScale(1.2);
+
 	QueryPerformanceCounter(&LastSpawnTime);
 
 	CurrentFruitType = GetRandomFruitType();
 	NextFruitType = GetRandomFruitType();
+
+	GameTime = 0;
 
 	return true;
 }
@@ -283,6 +292,9 @@ void Game::Run()
 
 			elapsedTime = (endTime.QuadPart - startTime.QuadPart) * 1000.0 / frequency.QuadPart;
 		} while (elapsedTime < targetFrameTime);
+
+		// 사실 elapsedTime 이 더 정확하긴 한데, 다른 Update 에서 fixedDeltaTime 을 기준으로 하고 있어서 일관성 유지
+		GameTime += fixedDeltaTime;
 	}
 }
 
@@ -328,6 +340,7 @@ void Game::ShutDown()
 	delete CreditTexture;
 	delete GameOverTexture;
 	delete LeaderBoardBgTexture;
+	delete DropCatTexture;
 
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
@@ -690,6 +703,30 @@ void Game::UpdatePlaying()
 		CurrentFruitType = NextFruitType;
 		NextFruitType = GetRandomFruitType();
 	}
+
+	previewFruit.SetFruitType((EFruitType)CurrentFruitType);
+	if (spawnX < ((-1) * MapBoarder) + previewFruit.Radius) { spawnX = ((-1) * MapBoarder) + previewFruit.Radius; }
+	else if (spawnX > MapBoarder - previewFruit.Radius) { spawnX = MapBoarder - previewFruit.Radius; }
+	previewFruit.SetLocation(FVector(spawnX, 0.8f, 0));
+	DropCatImage.SetOffset(FVector(spawnX, 0.85f, 0));
+
+	// 과일이 생성 가능한 상태인지에 따라 프리뷰 이미지 변경
+	LARGE_INTEGER currentTime;
+	QueryPerformanceCounter(&currentTime);
+
+	float timeSinceLastSpawn = (currentTime.QuadPart - LastSpawnTime.QuadPart) / (float)frequency.QuadPart;
+	if (timeSinceLastSpawn >= SpawnCooldown)
+	{
+		previewFruit.SetTexture(FruitTextures[CurrentFruitType]);
+	}
+	else
+	{
+		previewFruit.SetTexture(EmptyTexture);
+	}
+
+	DropCatImage.Render(renderer);
+	previewFruit.Render(renderer);
+
 	TestWidget.SetTexture(FruitTextures[NextFruitType]);
 	// 병합 예정 정보를 담은 큐
 	TQueue<FPendingMerge> PendingMergeQueue;
@@ -916,27 +953,6 @@ void Game::UpdatePlaying()
 
 	prevCollision = bLineCollision;
 
-	previewFruit.SetFruitType((EFruitType)CurrentFruitType);
-	if (spawnX < ((-1) * MapBoarder) + previewFruit.Radius) { spawnX = ((-1) * MapBoarder) + previewFruit.Radius; }
-	else if (spawnX > MapBoarder - previewFruit.Radius) { spawnX = MapBoarder - previewFruit.Radius; }
-	previewFruit.SetLocation(FVector(spawnX, 0.9f, 0));
-
-	// 과일이 생성 가능한 상태인지에 따라 프리뷰 이미지 변경
-	LARGE_INTEGER currentTime;
-	QueryPerformanceCounter(&currentTime);
-
-	float timeSinceLastSpawn = (currentTime.QuadPart - LastSpawnTime.QuadPart) / (float)frequency.QuadPart;
-	if (timeSinceLastSpawn >= SpawnCooldown)
-	{
-		previewFruit.SetTexture(FruitTextures[CurrentFruitType]);
-	}
-	else
-	{
-		previewFruit.SetTexture(EmptyTexture);
-	}
-
-	previewFruit.Render(renderer);
-
 	ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
 	ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
 	ImGui::NewFrame(); // ImGui Core 초기화
@@ -958,9 +974,11 @@ void Game::UpdatePlaying()
 
 	MapRoofWidget.Render(renderer);
 
+	LeftScoreWidget.SetOffset(FVector(-0.85f, 0.7f + 0.01 * sinf(4 * GameTime), 0.f));
 	LeftScoreWidget.Render(renderer);
 	ScoreTextWidget.Render(renderer);
 
+	ScoreWidget.SetOffset(FVector(0.85f, 0.7 + 0.01 * sinf(4 * GameTime), 0));
 	ScoreWidget.Render(renderer);
 	TestWidget.Render(renderer);
 	NextTextWidget.Render(renderer);
@@ -1025,12 +1043,14 @@ void Game::UpdateGameOver()
 			switch (XPadButtonIndex)
 			{
 			case 0:
+				SoundManager.PlayBGM(TEXT("./Sound/BGM/Menu.mp3"));
 				GameState = GS_Playing;
 				ScoreManager.UpdateHighScore();
 				ScoreManager.Reset();
 				break;
 
 			case 1:
+				SoundManager.PlayBGM(TEXT("./Sound/BGM/Menu.mp3"));
 				GameState = GS_Title;
 				ScoreManager.UpdateHighScore();
 				ScoreManager.Reset();

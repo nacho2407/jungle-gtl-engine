@@ -104,6 +104,7 @@ private:
 	UTexture* LeaderBoardTexture = nullptr;
 	UTexture* RankBgTexture = nullptr;
 	UTexture* LeaderBoardBgTexture = nullptr;
+	UTexture* DropCatTexture = nullptr;
 
 	UImageWidget ScoreWidget, TestWidget, NextTextWidget;
 	UTextWidget TestTextWidget;
@@ -120,7 +121,7 @@ private:
 	UTextWidget  GameOverScoreText;
 	UButtonWidget StartButton, CreditButton, RuleButton, LeaderBoardButton, BackButton, RestartButton, BackToTitleButton;
 	UTextWidget StartText, CreditText, RuleText, LeaderBoardText, BackText, RestartText, BackToTitleText;
-	UImageWidget StartScreenImage, HowToPlayImage, CreditImage, GameOverImage, LeaderBoardImage;
+	UImageWidget StartScreenImage, HowToPlayImage, CreditImage, GameOverImage, LeaderBoardImage, DropCatImage;
 
 	float spawnX = 0;
 	float VibrationTime = 0.f;
@@ -130,6 +131,8 @@ private:
 
 	int CurrentFruitType;
 	int NextFruitType;
+
+	float GameTime;
 
 private:
 	EFruitType GetRandomFruitType()
