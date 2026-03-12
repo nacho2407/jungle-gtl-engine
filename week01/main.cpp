@@ -2665,11 +2665,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				{
 					if (InputManager.GetXPadStickY() < 0)
 					{
-						XPadButtonIndex = (XPadButtonIndex + 1) % 3;
+						XPadButtonIndex = (XPadButtonIndex + 1) % 4;
 					}
 					else
 					{
-						if (XPadButtonIndex == 0) XPadButtonIndex = 2;
+						if (XPadButtonIndex == 0) XPadButtonIndex = 3;
 						else XPadButtonIndex -= 1;
 					}
 				}
