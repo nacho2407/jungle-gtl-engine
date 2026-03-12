@@ -1327,7 +1327,6 @@ public:
 	*/
 	bool IsOnBound(HWND hWnd)
 	{
-		//NDC 좌표
 		POINT lpPoint = {};
 		GetCursorPos(&lpPoint);
 		ScreenToClient(hWnd, &lpPoint);
@@ -1485,7 +1484,7 @@ public:
 		ResolveWallCollision(dt);
 
 		Velocity.y -= GravityAccel * dt;
-		const float SleepThreshold = 0.01f;
+		const float SleepThreshold = 0.02f;
 		if (fabsf(Velocity.x) < SleepThreshold) Velocity.x = 0.0f;
 		if (fabsf(Velocity.y) < SleepThreshold) Velocity.y = 0.0f;
 
@@ -1514,9 +1513,8 @@ public:
 		AngularVelocity -= Radius * 2;
 		if (AngularVelocity < 0.f)AngularVelocity = 0.f;
 
-		//최소 포도의 질량을 가지도록 설정
+		//질량의 지수승인 radius의 영향을 받아서 최소 포도의 질량을 가지도록 설정
 		float GrapeRadius = SmallestFruitRadius * pow(CoefRadiusGrowth, 2);
-
 		Mass = max(GrapeRadius * GrapeRadius, Radius * Radius);
 
 		LeftBorder += Radius;
@@ -2076,8 +2074,6 @@ static void UpdateTitle(URenderer& renderer)
 
 static void UpdateCredits(URenderer& renderer)
 {
-	// 메모리 누수가 남아있는 함수입니다. 대체 예정이라 여기는 생략했습니다.
-
 	static ID3D11ShaderResourceView* CreditsBackgroundSRV = nullptr;
 
 	if (CreditsBackgroundSRV == nullptr)
@@ -2955,7 +2951,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 								ScoreManager.AddScore(EFruitType::FT_Watermelon);
 								ParticlePool.Aquire(A->Location);
 								SoundManager.PlaySFX(TEXT("./Sound/SFX/Merge.wav"));
-								SoundManager.PlaySFX(TEXT("./Sound/SFX/GameWin.wav"));
 							}
 						}
 					}
@@ -2984,6 +2979,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				PendingMergeQueue.Pop();
 
 				PrimitiveList.PushBack(CreateFruitAt(MergeInfo.ResultFruitType, MergeInfo.NewLocation, FruitTextures[MergeInfo.ResultFruitType]));
+				if (MergeInfo.ResultFruitType == EFruitType::FT_Watermelon)
+				{
+					SoundManager.PlaySFX(TEXT("./Sound/SFX/GameWin.wav"));
+				}
 
 				// 점수 획득
 				ScoreManager.AddScore(MergeInfo.ResultFruitType);
