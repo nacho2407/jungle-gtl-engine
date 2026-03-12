@@ -111,10 +111,12 @@ bool Game::Initialize()
 		RankNum[i].SetScale(1);
 		RankNum[i].SetParent(&RankBg[i]);
 		RankNum[i].SetOffset(FVector(-0.19, 0.015, 0));
+		RankNum[i].SetTextColor(DirectX::Colors::Black);
 
 		RankScoreIngame[i].SetScale(1);
 		RankScoreIngame[i].SetParent(&RankBg[i]);
 		RankScoreIngame[i].SetOffset(FVector(0, 0.015, 0));
+		RankScoreIngame[i].SetTextColor(DirectX::Colors::Black);
 
 		RankScore[i].SetScale(2);
 		RankScore[i].SetTextColor(DirectX::Colors::Black);
@@ -953,6 +955,8 @@ void Game::UpdatePlaying()
 
 	prevCollision = bLineCollision;
 
+	// 디버깅 UI
+	/*
 	ImGui_ImplDX11_NewFrame(); // 렌더러 쪽 준비
 	ImGui_ImplWin32_NewFrame(); // 플랫폼 쪽 준비
 	ImGui::NewFrame(); // ImGui Core 초기화
@@ -971,6 +975,7 @@ void Game::UpdatePlaying()
 	ImGui::End();
 	ImGui::Render(); // 이번 프레임에 그릴 UI 설정
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // DX11 백 엔드를 통해 실제 GPU 드로우 호출
+	*/
 
 	MapRoofWidget.Render(renderer);
 
