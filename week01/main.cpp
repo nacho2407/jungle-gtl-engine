@@ -2505,7 +2505,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	UTextWidget  GameOverScoreText;
 
 	GameOverScoreImage.SetOffset(FVector(0.f, -0.2f, 0.f));
-	GameOverScoreImage.SetTexture(ButtonBGTexture);
+	GameOverScoreImage.SetTexture(FruitTextures[10]);
 	GameOverScoreImage.SetScale(1.5f);
 	GameOverScoreImage.SetAxisScale({ 0.1, 0.1f, 1.f });
 
