@@ -2023,7 +2023,8 @@ enum EGameState
 	GS_Credits,
 	GS_Playing,
 	GS_GameOver,
-	GS_HowToPlay
+	GS_HowToPlay,
+	GS_LeaderBoard
 };
 EGameState GameState = GS_Title;
 
@@ -2410,6 +2411,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	UTexture* RuleTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/rule_bg.png");
 	UTexture* CreditTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/credits.png");
 	UTexture* GameOverTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/gameover_bg.png");
+	UTexture* LeaderBoardBgTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/leaderboard_bg.png");
 
 	UImageWidget ScoreWidget, TestWidget, NextTextWidget;
 	UTextWidget TestTextWidget;
@@ -2448,6 +2450,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	UImageWidget LeaderBoardWidget;
 	UImageWidget* RankBg = new UImageWidget[RANK_NUM];
 	UTextWidget* RankNum = new UTextWidget[RANK_NUM];
+	UTextWidget* RankScoreIngame = new UTextWidget[RANK_NUM];
 	UTextWidget* RankScore = new UTextWidget[RANK_NUM];
 
 	LeaderBoardWidget.SetOffset(FVector(-0.8, 0.3, 0));
@@ -2470,9 +2473,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		RankNum[i].SetParent(&RankBg[i]);
 		RankNum[i].SetOffset(FVector(-0.19, 0.015, 0));
 
-		RankScore[i].SetScale(1);
-		RankScore[i].SetParent(&RankBg[i]);
-		RankScore[i].SetOffset(FVector(0, 0.015, 0));
+		RankScoreIngame[i].SetScale(1);
+		RankScoreIngame[i].SetParent(&RankBg[i]);
+		RankScoreIngame[i].SetOffset(FVector(0, 0.015, 0));
+
+		RankScore[i].SetScale(2);
+		RankScore[i].SetTextColor(DirectX::Colors::Black);
+		RankScore[i].SetOffset(FVector(0.1, 0.29 - (0.215 * i), 0));
 	}
 	float spawnX = 0;
 	float VibrationTime = 0.f;
@@ -2522,9 +2529,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	GameOverScoreText.SetOffset(FVector(0.f, 0.0f, 0.f));
 
 
-	UButtonWidget StartButton, CreditButton, RuleButton, BackButton, RestartButton, BackToTitleButton;
-	UTextWidget StartText, CreditText, RuleText, BackText, RestartText, BackToTitleText;
-	UImageWidget StartScreenImage, HowToPlayImage, CreditImage, GameOverImage;
+	UButtonWidget StartButton, CreditButton, RuleButton, LeaderBoardButton, BackButton, RestartButton, BackToTitleButton;
+	UTextWidget StartText, CreditText, RuleText, LeaderBoardText, BackText, RestartText, BackToTitleText;
+	UImageWidget StartScreenImage, HowToPlayImage, CreditImage, GameOverImage, LeaderBoardImage;
 
 	RestartButton.SetOffset(FVector(-0.3f, -0.5f, 0.f));
 	RestartButton.SetTexture(ButtonBGTexture);
@@ -2546,7 +2553,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	StartButton.SetOffset(FVector(0.f, 0.f, 0.f));
 	StartButton.SetTexture(ButtonBGTexture);
-	StartButton.SetAxisScale({ 0.2, 0.1f, 1.f });
+	StartButton.SetAxisScale({ 0.2, 0.07f, 1.f });
 
 	StartText.SetParent(&StartButton);
 	StartText.SetScale(1);
@@ -2554,8 +2561,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	CreditButton.SetParent(&StartButton);
 	CreditButton.SetTexture(ButtonBGTexture);
-	CreditButton.SetAxisScale({ 0.2, 0.1, 1.f });
-	CreditButton.SetOffset({ 0.f, -0.3f, 0.f });
+	CreditButton.SetAxisScale({ 0.2, 0.07, 1.f });
+	CreditButton.SetOffset({ 0.f, -0.2f, 0.f });
 
 	CreditText.SetParent(&CreditButton);
 	CreditText.SetScale(1);
@@ -2563,12 +2570,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	RuleButton.SetParent(&StartButton);
 	RuleButton.SetTexture(ButtonBGTexture);
-	RuleButton.SetAxisScale({ 0.2, 0.1, 1.f });
-	RuleButton.SetOffset({ 0.f, -0.6f, 0.f });
+	RuleButton.SetAxisScale({ 0.2, 0.07, 1.f });
+	RuleButton.SetOffset({ 0.f, -0.4f, 0.f });
 
 	RuleText.SetParent(&RuleButton);
 	RuleText.SetScale(1);
 	RuleText.SetText(L"How To Play");
+
+	LeaderBoardButton.SetParent(&StartButton);
+	LeaderBoardButton.SetTexture(ButtonBGTexture);
+	LeaderBoardButton.SetAxisScale({ 0.2, 0.07, 1.f });
+	LeaderBoardButton.SetOffset({ 0.f, -0.6f, 0.f });
+
+	LeaderBoardText.SetParent(&LeaderBoardButton);
+	LeaderBoardText.SetScale(1);
+	LeaderBoardText.SetText(L"Leader Board");
 
 	StartScreenImage.SetTexture(TitleBackgroundTexture);
 	StartScreenImage.SetOffset({ 0, 0, 0 });
@@ -2589,6 +2605,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	GameOverImage.SetOffset({ 0, 0, 0 });
 	GameOverImage.SetAxisScale({ 1, 1, 1 });
 	GameOverImage.SetScale(1);
+
+	LeaderBoardImage.SetTexture(LeaderBoardBgTexture);
+	LeaderBoardImage.SetOffset({ 0, 0, 0 });
+	LeaderBoardImage.SetAxisScale({ 1, 1, 1 });
+	LeaderBoardImage.SetScale(1);
 
 	BackButton.SetOffset(FVector(-0.8f, 0.8f, 0.f));
 	BackButton.SetTexture(ButtonBGTexture);
@@ -2658,6 +2679,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				StartButton.SetTexture(ButtonBGTexture);
 				CreditButton.SetTexture(ButtonBGTexture);
 				RuleButton.SetTexture(ButtonBGTexture);
+				LeaderBoardButton.SetTexture(ButtonBGTexture);
 
 				switch (XPadButtonIndex)
 				{
@@ -2671,6 +2693,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 				case 2:
 					RuleButton.SetTexture(ButtonBGHoverTexture);
+					break;
+
+				case 3:
+					LeaderBoardButton.SetTexture(ButtonBGHoverTexture);
 					break;
 				}
 
@@ -2688,6 +2714,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 					case 2:
 						GameState = GS_HowToPlay;
+						break;
+
+					case 3:
+						GameState = GS_LeaderBoard;
 						break;
 					}
 				}
@@ -2709,6 +2739,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				else
 					RuleButton.SetTexture(ButtonBGTexture);
 
+				if (LeaderBoardButton.IsOnBound(hWnd))
+					LeaderBoardButton.SetTexture(ButtonBGHoverTexture);
+				else
+					LeaderBoardButton.SetTexture(ButtonBGTexture);
+
 				if (StartButton.IsPressed(hWnd, InputManager, SoundManager))
 				{
 					GameState = GS_Playing;
@@ -2721,16 +2756,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				{
 					GameState = GS_HowToPlay;
 				}
+				else if (LeaderBoardButton.IsPressed(hWnd, InputManager, SoundManager))
+				{
+					GameState = GS_LeaderBoard;
+				}
 			}
 
 			StartScreenImage.Render(renderer);
 			StartButton.Render(renderer);
 			CreditButton.Render(renderer);
 			RuleButton.Render(renderer);
+			LeaderBoardButton.Render(renderer);
 
 			StartText.Render(renderer);
 			CreditText.Render(renderer);
 			RuleText.Render(renderer);
+			LeaderBoardText.Render(renderer);
 
 			break;
 
@@ -2794,6 +2835,43 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			HowToPlayImage.Render(renderer);
 			BackButton.Render(renderer);
 			BackText.Render(renderer);
+
+			break;
+
+		case GS_LeaderBoard:
+			renderer.Prepare();
+			renderer.PrepareShader();
+
+			if (InputManager.IsXPadConnected())
+			{
+				BackButton.SetTexture(ButtonBGHoverTexture);
+				if (InputManager.IsXPadAReleased())
+				{
+					GameState = GS_Title;
+				}
+			}
+			else
+			{
+				if (BackButton.IsOnBound(hWnd))
+					BackButton.SetTexture(ButtonBGHoverTexture);
+				else
+					BackButton.SetTexture(ButtonBGTexture);
+
+				if (BackButton.IsPressed(hWnd, InputManager, SoundManager))
+				{
+					GameState = GS_Title;
+				}
+			}
+
+			LeaderBoardImage.Render(renderer);
+			BackButton.Render(renderer);
+			BackText.Render(renderer);
+
+			for (int i = 0; i < RANK_NUM; i++)
+			{
+				RankScore[i].SetNumber(ScoreManager.GetHighScores()[i]);
+				RankScore[i].Render(renderer);
+			}
 
 			break;
 		case GS_Playing:
@@ -3295,7 +3373,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			TestWidget.Render(renderer);
 			NextTextWidget.Render(renderer);
 
-
 			LeaderBoardWidget.Render(renderer);
 
 			for (int i = 0; i < RANK_NUM; i++)
@@ -3305,9 +3382,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			for (int i = 0; i < RANK_NUM; i++)
 			{
 				RankNum[i].Render(renderer);
-				RankScore[i].SetNumber(ScoreManager.GetHighScores()[i]);
-				RankScore[i].Render(renderer);
-
+				RankScoreIngame[i].SetNumber(ScoreManager.GetHighScores()[i]);
+				RankScoreIngame[i].Render(renderer);
 			}
 
 			NextTextWidget.Render(renderer);
@@ -3350,6 +3426,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	delete RankBgTexture;
 	delete[] RankBg;
 	delete[] RankNum;
+	delete[] RankScoreIngame;
 	delete[] RankScore;
 
 	// 텍스처 해제
@@ -3360,6 +3437,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	delete ScoreTextTexture;
 	delete Map1Texture;
 	delete Map1RoofTexture;
+	delete LeaderBoardBgTexture;
 
 
 	ImGui_ImplDX11_Shutdown();
