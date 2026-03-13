@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "UPrimitiveComponent.h"
 
 class USphereComp : public UPrimitiveComponent
@@ -7,4 +7,5 @@ class USphereComp : public UPrimitiveComponent
 public:
 	USphereComp();
 	virtual ~USphereComp() override;
+	virtual void Render(URenderer* Renderer) override;
 };

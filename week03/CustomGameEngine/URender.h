@@ -5,6 +5,10 @@
 #include "FVertexSimple.h"
 #include "FMatrix.h"
 #include "FVector.h"
+#include <vector>
+#include <memory>
+#include <string>
+#include <unordered_map>
 
 class URenderer {
 public:
@@ -59,7 +63,9 @@ public:
 
 public:
 	struct FConstantBufferData {
-		FMatrix World;
+		FMatrix Model;
+		FMatrix Veiw;
+		FMatrix Projection;
 	};
 	ID3D11Buffer* ConstantBuffer{ nullptr };
 
@@ -67,5 +73,35 @@ public:
 
 	void ReleaseConstantBuffer();
 
-	void UpdateConstant(const FMatrix& World);
+	void UpdateConstant(const FConstantBufferData& Data);
+
+
+public:
+	struct FMeshData
+	{
+		ID3D11Buffer* VertexBuffer;
+		ID3D11Buffer* IndexBuffer;
+		ID3D11InputLayout* Layout;
+		ID3D11VertexShader* VS;
+		ID3D11PixelShader* PS;
+		int VertexCount = 0;
+	};
+
+	struct FRenderData
+	{
+		FMatrix Scale;
+		FMatrix Rotation;
+		FMatrix Translation;
+		FMeshData MeshData;
+	};
+
+	void DrawPrimitive(FVector Scale, FVector Rotation, FVector Translation, std::string MeshID);
+	void AddCubeMesh();
+	void AddSphereMesh();
+	void Render();
+
+
+	std::vector<FRenderData> RenderDataContainer;
+	std::unordered_map<std::string, FMeshData> ResourceContainer;
+
 };

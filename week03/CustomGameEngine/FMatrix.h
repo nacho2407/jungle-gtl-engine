@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <cmath>
+#include "FVector.h"
 struct FMatrix {
 public:
 	float m[4][4];
@@ -15,8 +16,10 @@ public:
 	}
 
 	static FMatrix ZeroMatrix();
+	static FMatrix TranslationMatrix(FVector InVec) { return TranslationMatrix(InVec.x, InVec.y, InVec.z); }
 	static FMatrix TranslationMatrix(float InX = 0.f, float InY = 0.f, float InZ = 0.f);
 
+	static FMatrix SclaeMatrix(FVector InVec) { return ScaleMatrix(InVec.x, InVec.y, InVec.z); }
 	static FMatrix ScaleMatrix(float InX = 1.f, float InY = 1.f, float InZ = 1.f);
 
 	static float DegToRad(float Degree) { return Degree * 3.14159265358979323846f / 180.0f; }
@@ -28,10 +31,13 @@ public:
 
 	static FMatrix RotationZMatrix(float InZDegree);
 
+	static FMatrix EulerRotationMatrix(FVector InVec) { return EulerRotationMatrix(InVec.x, InVec.y, InVec.z); }
 	//X->Y->Z
 	static FMatrix EulerRotationMatrix(float InX = 0.f, float InY = 0.f, float InZ = 0.f);
 
 	FMatrix operator*(const FMatrix& Other) const;
+
+	static FMatrix ViewMatrix(FVector Eye, FVector Target, FVector Up);
 
 
 	float* operator[](int Row) { return m[Row]; }

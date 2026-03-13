@@ -12,7 +12,8 @@
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
 #include "ImGui/imgui_internal.h"
-#include "Sphere.h"
+#include "Scene.h"
+#include "UCubeComp.h"
 
 static constexpr float PI{ 3.1415927f };
 static constexpr float G{ -0.98f };
@@ -55,19 +56,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	renderer.Create(hwnd);
 	renderer.CreateShader();
 	renderer.CreateConstantBuffer();
+	renderer.AddCubeMesh();
+	renderer.AddSphereMesh();
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 	ImGui_ImplWin32_Init((void*)hwnd);
 	ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext);
-
-	FVertexSimple* vertices = sphere_vertices;
-	UINT ByteWidth = sizeof(sphere_vertices);
-	UINT numVerticesSphere = sizeof(sphere_vertices) / sizeof(FVertexSimple);
-
-	ID3D11Buffer* vertexBufferSphere =
-		renderer.CreateVertexBuffer(sphere_vertices, ByteWidth);
 
 	const int targetFPS{ 60 };
 	const double targetFrameTime{ 1000.0 / targetFPS };
@@ -77,13 +73,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	double elapsedTime{ 0.0 };
 	QueryPerformanceFrequency(&frequency);
 
-	bool bShowSpawnError{ false };
-	float ErrorDisplayTimer{ 0.0f };
-	int ImGuiBallCount{ 1 };
-	bool SpinEnable{ false };
-	bool GravityEnable{ false };
 
 	bool bIsExit{ false };
+	FScene Scene;
+	Scene.InjectRenderer(&renderer);
+	UCubeComp Cube;
+	Cube.RelativeScale3D = FVector(1, 1, 1);
+	Scene.Primitives.push_back(&Cube);
+	Cube.RelativeScale3D = FVector(0.5, 0.5, 0.5);
+	Cube.RelativeLocation = FVector(0.5, 0, 0);
+
+
+
+	//MainLoop
 	while (bIsExit == false) {
 		MSG msg;
 		QueryPerformanceCounter(&startTime);
@@ -98,28 +100,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 			}
 		}
 
+		Scene.Update(0.15);
+		Scene.Render();
+
 
 		renderer.Prepare();
 		renderer.PrepareShader();
 
+		renderer.Render();
 		ImGui_ImplDX11_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
 		ImGui::Begin("Jungle Property Window");
 		ImGui::Text("Hello Jungle World!");
-		ImGui::Checkbox("Gravity", &GravityEnable);
-		ImGui::Checkbox("Spin", &SpinEnable);
-		if (ImGui::InputInt("Number of Ball", &ImGuiBallCount)) {
-			if (ImGuiBallCount < 1) ImGuiBallCount = 1;
-			if (ImGuiBallCount > 100) ImGuiBallCount = 100;
-		}
-		if (bShowSpawnError) {
-			ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f),
-				"Error: No space to spawn more balls!");
-			ErrorDisplayTimer -= (float)targetFrameTime / 1000.0f;
-			if (ErrorDisplayTimer <= 0) bShowSpawnError = false;
-		}
 		ImGui::End();
 		ImGui::Render();
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -137,8 +131,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
-
-	renderer.ReleaseVertexBuffer(vertexBufferSphere);
 
 	renderer.ReleaseConstantBuffer();
 	renderer.ReleaseShader();
