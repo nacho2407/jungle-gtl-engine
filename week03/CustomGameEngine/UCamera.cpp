@@ -1,69 +1,64 @@
 ﻿#include "UCamera.h"
 
+UCamera::~UCamera() {}
 
-UCamera::~UCamera()
-{
-}
-
-void UCamera::SetPosition(const FVector& _input)
-{
-	if (!Position.IsNearlyEqual(_input, Epsilon))
-	{
+void UCamera::SetPosition(const FVector& _input) {
+	if (!Position.IsNearlyEqual(_input, Epsilon)) {
 		Position = _input;
 		IsChanged = true;
 	}
 }
 
-void UCamera::MoveUp() {
-  Position = Position + UpDirection * MoveSpeed;
-  IsChanged = true;
-}
-
-void UCamera::MoveDown() {
-  Position = Position - UpDirection * MoveSpeed;
-  IsChanged = true;
-}
-
-void UCamera::MoveLeft() {
-  Position = Position - SideDirection * MoveSpeed;
-  IsChanged = true;
-}
-
-void UCamera::MoveRight() {
-  Position = Position + SideDirection * MoveSpeed;
-  IsChanged = true;
+void UCamera::Move() {
+	if (InputManager::GetInstance().IsKeyHold(VK_UP) &&
+		!InputManager::GetInstance().IsKeyHold(VK_DOWN)) {
+		Position = Position + UpDirection * MoveSpeed;
+		IsChanged = true;
+	}
+	else if (!InputManager::GetInstance().IsKeyHold(VK_UP) &&
+		InputManager::GetInstance().IsKeyHold(VK_DOWN)) {
+		Position = Position - UpDirection * MoveSpeed;
+		IsChanged = true;
+	}
+	if (InputManager::GetInstance().IsKeyHold(VK_LEFT) &&
+		!InputManager::GetInstance().IsKeyHold(VK_RIGHT)) {
+		Position = Position - SideDirection * MoveSpeed;
+		IsChanged = true;
+	}
+	else if (!InputManager::GetInstance().IsKeyHold(VK_LEFT) &&
+		InputManager::GetInstance().IsKeyHold(VK_RIGHT)) {
+		Position = Position + SideDirection * MoveSpeed;
+		IsChanged = true;
+	}
 }
 
 void UCamera::SetDirection(const float InputPitch, const float InputYaw,
-                           const float InputRoll) {
-  if (std::abs(Pitch - InputPitch) < Epsilon) {
-    Pitch = std::max(-89.9f, std::min(89.9f, InputPitch));
-    IsChanged = true;
-  }
-  if (std::abs(Yaw - InputYaw) < Epsilon) {
-    Yaw = InputYaw;
-    IsChanged = true;
-  }
-  if (std::abs(Roll - InputRoll) < Epsilon) {
-    Roll = InputRoll;
-    IsChanged = true;
-  }
+	const float InputRoll) {
+	if (std::abs(Pitch - InputPitch) > Epsilon) {
+		Pitch = (std::max)(-89.9f, (std::min)(89.9f, InputPitch));
+		IsChanged = true;
+	}
+	if (std::abs(Yaw - InputYaw) > Epsilon) {
+		Yaw = InputYaw;
+		IsChanged = true;
+	}
+	if (std::abs(Roll - InputRoll) > Epsilon) {
+		Roll = InputRoll;
+		IsChanged = true;
+	}
 }
 
-void UCamera::Rotate(const float InputPitch, const float InputYaw,
-            const float InputRoll) {}
+void UCamera::Rotate() {}
 
 FMatrix UCamera::GetViewProjectionMatrix() const { return ViewProjection; }
 
-void UCamera::OnResize(int NewWidth, int NewHeight)
-{
+void UCamera::OnResize(int NewWidth, int NewHeight) {
 	if (NewHeight == 0) return;
 	AspectRatio = static_cast<float>(NewWidth) / static_cast<float>(NewHeight);
 	IsChanged = true;
 }
 
-void UCamera::update()
-{
+void UCamera::update() {
 	if (!IsChanged) return;
 
 	View = GetViewMatrix();

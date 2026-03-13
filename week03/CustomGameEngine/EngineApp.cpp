@@ -143,22 +143,10 @@ void EngineApp::Run()
 		}
 
 		InputManager::GetInstance().Update();
-        if (InputManager::GetInstance().IsKeyHold(VK_UP) &&
-            !InputManager::GetInstance().IsKeyHold(VK_DOWN)) {
-            Camera->MoveUp();
-        } else if (!InputManager::GetInstance().IsKeyHold(VK_UP) &&
-                    InputManager::GetInstance().IsKeyHold(VK_DOWN)) {
-            Camera->MoveDown();
-        }
-        if (InputManager::GetInstance().IsKeyHold(VK_LEFT) &&
-            !InputManager::GetInstance().IsKeyHold(VK_RIGHT)) {
-            Camera->MoveLeft();
-        } else if (!InputManager::GetInstance().IsKeyHold(VK_LEFT) &&
-                    InputManager::GetInstance().IsKeyHold(VK_RIGHT)) {
-            Camera->MoveRight();
-        }
-		Camera->update();
 
+		Camera->Move();
+        Camera->Rotate();
+		Camera->update();
 
 		// Main Loop
 		TimerManager::GetInstance().Tick();
