@@ -2,4 +2,12 @@
 
 #include "USceneComponent.h"
 
-class UPrimitiveComponent : public USceneComponent {};
+class UPrimitiveComponent : public USceneComponent 
+{
+ public:
+  
+ public:
+  UPrimitiveComponent();
+  virtual ~UPrimitiveComponent();
+
+};
