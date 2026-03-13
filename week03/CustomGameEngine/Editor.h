@@ -26,10 +26,10 @@ private:
 	void DrawStatPanel();
 
 private:
-	EditorControlPanel* ControlPanel;
-	EditorConsole* Console;
-	EditorPropertyPanel* PropertyPanel;
-	EditorStatPanel* StatPanel;
+	EditorControlPanel* ControlPanel = nullptr;
+	EditorConsole* Console = nullptr;
+	EditorPropertyPanel* PropertyPanel = nullptr;
+	EditorStatPanel* StatPanel = nullptr;
 
 	USceneComponent* SelectedComponent = nullptr;
 };

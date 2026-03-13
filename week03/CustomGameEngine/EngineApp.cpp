@@ -5,6 +5,7 @@
 #include "UCubeComp.h"
 #include "Editor.h"
 #include "Logger.h"
+#include "TimerManager.h"
 #include "UCamera.h"
 #include "InputManager.h"
 
@@ -15,11 +16,39 @@ LRESULT CALLBACK EngineApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 	if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
 		return true;
 
+	EngineApp* pApp = reinterpret_cast<EngineApp*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+
 	switch (message)
 	{
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
+	case WM_NCCREATE: // 창이 처음 생성될 때 호출됨
+	{
+		// CreateWindowExW의 마지막 인자(this)를 꺼냅니다.
+		LPCREATESTRUCT pcs = reinterpret_cast<LPCREATESTRUCT>(lParam);
+		pApp = reinterpret_cast<EngineApp*>(pcs->lpCreateParams);
+		// 이를 윈도우 데이터에 저장합니다.
+		SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pApp));
+		return 1;
+	}
+	break;
+	case WM_SIZE:
+		if (pApp)
+		{
+			UINT width = LOWORD(lParam);
+			UINT height = HIWORD(lParam);
+			if (width > 0 && height > 0)
+			{
+				if (pApp->Camera)
+					pApp->Camera->OnResize(width, height);
+
+				if (pApp->Renderer)
+					pApp->Renderer->OnResize(width, height);
+			}
+		}
+		break;
+
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
@@ -42,7 +71,9 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 {
 	CreateEngineWindow();
 	Renderer->Create(HWnd);
-	// Create Shader
+	EditorInst->Initialize(HWnd, Renderer->Device, Renderer->DeviceContext);
+
+	// Init ResoureManager
 	D3D11_INPUT_ELEMENT_DESC layout[] = {
 	{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
 	 D3D11_INPUT_PER_VERTEX_DATA, 0},
@@ -53,6 +84,22 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	ResourceManager::GetInstance()->CompilePixelShader(L"ShaderW0.hlsl", "mainPS", Renderer->Device);
 	ResourceManager::GetInstance()->AddCubeMesh(Renderer->Device);
 
+	// Init Camera
+	Camera = Cast<UCamera>(FObjectFactory::ConstructObject(UCamera::GetClass()));
+	RECT rc;
+	int width = 0;
+	int height = 0;
+	if (GetClientRect(HWnd, &rc))
+	{
+		width = rc.right - rc.left;   // 가로 크기
+		height = rc.bottom - rc.top; // 세로 크기
+		// 이 값을 Aspect Ratio 계산에 넣으시면 됩니다!
+	}
+	Camera->OnResize(width, height);
+
+	// Init Timer
+	TimerManager::GetInstance().CreateGlobalTimer();
+
 	return true;
 }
 
@@ -60,23 +107,24 @@ void EngineApp::Run()
 {
 	//----TEST
 	UObject* sceneobj = FObjectFactory::ConstructObject(UScene::GetClass());
-	UScene* Scene = dynamic_cast<UScene*>(sceneobj);
+	UScene* Scene = Cast<UScene>(sceneobj);
 	Scene->InjectRenderer(Renderer);
 
 
 	UObject* cubeobj = FObjectFactory::ConstructObject(UCubeComp::GetClass());
-	UCubeComp* Cube = dynamic_cast<UCubeComp*>(cubeobj);
+	UCubeComp* Cube = Cast<UCubeComp>(cubeobj);
 	Scene->PrimitiveContainer.push_back(Cube);
 	UObject* cubeobj2 = FObjectFactory::ConstructObject(UCubeComp::GetClass());
-	UCubeComp* Cube2 = dynamic_cast<UCubeComp*>(cubeobj2);
-	Cube2->RelativeLocation = FVector(0.5, 0, 0);
-	Cube2->RelativeScale3D = FVector(0.5, 0.5, 0.5);
+	UCubeComp* Cube2 = Cast<UCubeComp>(cubeobj2);
+	Cube2->RelativeLocation = FVector(0.0, 0, 0);
+	Cube2->RelativeScale3D = FVector(2.f, 2.f, 2.f);
 	Scene->PrimitiveContainer.push_back(Cube2);
+
+	Camera->SetPosition(FVector(0, 0, -10.f));
 	//-----TEST
 
-	UCamera Camera;
-        Camera.SetPosition(FVector(0.f, 0.f, -5.f));
-	Camera.OnResize(1024, 1024);
+	Timer* globalTimer = TimerManager::GetInstance().GetGlobalTimer();
+	globalTimer->Reset();
 
 	bool bIsExit = false;
 	while (bIsExit == false)
@@ -113,13 +161,15 @@ void EngineApp::Run()
 
 
 		// Main Loop
-		Renderer->Prepare();
-		Renderer->PrepareShader();
+		TimerManager::GetInstance().Tick();
 
-		Scene->Update(0.016f);
+		Renderer->Prepare();
+
+		Scene->Update(globalTimer->GetDeltaTime());
 		Scene->Render();
 
-		Renderer->Render(&Camera);
+		Renderer->Render(Camera);
+		EditorInst->Render();
 
 		Renderer->SwapBuffer();
 	}
@@ -127,6 +177,11 @@ void EngineApp::Run()
 
 void EngineApp::Finalize()
 {
+	if (EditorInst)
+	{
+		EditorInst->Finalize();
+	}
+
 	if (Renderer)
 	{
 		Renderer->Release();
@@ -149,7 +204,7 @@ void EngineApp::CreateEngineWindow()
 	HWnd = CreateWindowExW(0, windowClass, title,
 		WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, CW_USEDEFAULT, 1024, 1024, nullptr,
-		nullptr, nullptr, nullptr);
+		nullptr, nullptr, this);//lpParam에 this 넣어서 WndProc에서 접근 가능하도록
 }
 
 void EngineApp::ReleaseEngineWindow()

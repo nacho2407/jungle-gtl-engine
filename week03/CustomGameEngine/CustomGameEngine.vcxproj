@@ -133,9 +133,11 @@
     <ClInclude Include="EditorPropertyPanel.h" />
     <ClInclude Include="EditorStatPanel.h" />
     <ClInclude Include="EngineApp.h" />
+    <ClInclude Include="FColor.h" />
     <ClInclude Include="FMatrix.h" />
     <ClInclude Include="FObjectFactory.h" />
     <ClInclude Include="InputManager.h" />
+    <ClInclude Include="ISerializable.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="ISingleton.h" />
     <ClInclude Include="RenderObject.h" />
@@ -152,18 +154,23 @@
     <ClInclude Include="ImGui\imstb_textedit.h" />
     <ClInclude Include="ImGui\imstb_truetype.h" />
     <ClInclude Include="SceneManager.h" />
+    <ClInclude Include="Timer.h" />
+    <ClInclude Include="TimerManager.h" />
+    <ClInclude Include="UAxisComp.h" />
     <ClInclude Include="UCamera.h" />
     <ClInclude Include="UCubeComp.h" />
+    <ClInclude Include="UPlaneComp.h" />
     <ClInclude Include="UPrimitiveComponent.h" />
     <ClInclude Include="USceneComponent.h" />
     <ClInclude Include="Math\FVector4.h" />
-    <ClInclude Include="json.hpp" />
+    <ClInclude Include="json.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="UEngineStatics.h" />
     <ClInclude Include="UEngineTypes.h" />
     <ClInclude Include="UObject.h" />
     <ClInclude Include="URender.h" />
     <ClInclude Include="USphereComp.h" />
+    <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Editor.cpp" />
@@ -173,9 +180,11 @@
     <ClCompile Include="EditorPropertyPanel.cpp" />
     <ClCompile Include="EditorStatPanel.cpp" />
     <ClCompile Include="EngineApp.cpp" />
+    <ClCompile Include="FColor.cpp" />
     <ClCompile Include="FMatrix.cpp" />
     <ClCompile Include="FObjectFactory.cpp" />
     <ClCompile Include="InputManager.cpp" />
+    <ClCompile Include="json.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="RenderObject.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
@@ -190,14 +199,19 @@
     <ClCompile Include="ImGui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="SceneManager.cpp" />
+    <ClCompile Include="Timer.cpp" />
+    <ClCompile Include="TimerManager.cpp" />
+    <ClCompile Include="UAxisComp.cpp" />
     <ClCompile Include="UCamera.cpp" />
     <ClCompile Include="UCubeComp.cpp" />
+    <ClCompile Include="UPlaneComp.cpp" />
     <ClCompile Include="UPrimitiveComponent.cpp" />
     <ClCompile Include="USceneComponent.cpp" />
     <ClCompile Include="UEngineStatics.cpp" />
     <ClCompile Include="UObject.cpp" />
     <ClCompile Include="URender.cpp" />
     <ClCompile Include="USphereComp.cpp" />
+    <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ShaderW0.hlsl">

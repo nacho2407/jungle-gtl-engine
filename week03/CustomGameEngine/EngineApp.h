@@ -3,8 +3,7 @@
 
 class USceneComponent;
 class Editor;
-
-#include "ResourceManager.h"
+class UCamera;
 class EngineApp
 {
 public:
@@ -26,5 +25,7 @@ private:
 	HWND HWnd = nullptr;
 	URenderer* Renderer = nullptr;
 	Editor* EditorInst = nullptr;
+	UCamera* Camera = nullptr;
+
 };
 
