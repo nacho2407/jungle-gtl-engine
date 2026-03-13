@@ -53,41 +53,41 @@ void FScene::Update(float DeltaTime)
 
 std::string FScene::ToJson()
 {
-	return ToJson(*this);
+    return ToJson(this);
 }
 
-std::string FScene::ToJson(FScene scene)
+std::string FScene::ToJson(FScene* scene)
 {
-	json::JSON json;
-	json["Version"] = scene.Version;
-	json["NextUUID"] = scene.NextUUID;
+    json::JSON json;
+    json["Version"] = scene->Version;
+    json["NextUUID"] = scene->NextUUID;
 
-	json::JSON arr;
-	for (auto s : scene.Primitives)
-	{
-		arr[std::to_string(s.UUID)] = SerializeSceneComponent(s);
-	}
-	json["Primitives"] = arr;
+    json::JSON arr;
+    for (auto s : scene->Primitives) 
+    {    
+        arr[std::to_string(s.UUID)] = SerializeSceneComponent(s);
+    }
+    json["Primitives"] = arr;
 
 	return json.dump();
 }
 
-FScene FScene::FromJson(std::string jsonStr)
+FScene* FScene::FromJson(std::string jsonStr)
 {
-	FScene scene;
+    FScene* scene = new FScene;
 
 	json::JSON obj;
 	obj = json::JSON::Load(jsonStr);
 
-	scene.Version = obj["Version"].ToInt();
-	scene.NextUUID = obj["NextUUID"].ToInt();
+    scene->Version = obj["Version"].ToInt();
+    scene->NextUUID = obj["NextUUID"].ToInt();
 
-	for (auto pair : obj["Primitives"].ObjectRange())
-	{
-		USceneComponent s = DeserializeSceneComponent(pair.second);
-		s.UUID = std::stoi(pair.first);
-		scene.Primitives.push_back(s);
-	}
+    for (auto pair : obj["Primitives"].ObjectRange())
+    {
+        USceneComponent s = DeserializeSceneComponent(pair.second);
+        s.UUID = std::stoi(pair.first);
+        scene->Primitives.push_back(s);
+    }
 
 	return scene;
 }

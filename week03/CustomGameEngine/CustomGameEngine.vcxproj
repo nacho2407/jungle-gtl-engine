@@ -135,6 +135,7 @@
     <ClInclude Include="FMatrix.h" />
     <ClInclude Include="FObjectFactory.h" />
     <ClInclude Include="Logger.h" />
+    <ClInclude Include="ISingleton.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="FVector.h" />
     <ClInclude Include="FVertexSimple.h" />
@@ -146,6 +147,7 @@
     <ClInclude Include="ImGui\imstb_rectpack.h" />
     <ClInclude Include="ImGui\imstb_textedit.h" />
     <ClInclude Include="ImGui\imstb_truetype.h" />
+    <ClInclude Include="SceneManager.h" />
     <ClInclude Include="UCubeComp.h" />
     <ClInclude Include="UPrimitiveComponent.h" />
     <ClInclude Include="USceneComponent.h" />
@@ -178,6 +180,7 @@
     <ClCompile Include="ImGui\imgui_tables.cpp" />
     <ClCompile Include="ImGui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="UCubeComp.cpp" />
     <ClCompile Include="UPrimitiveComponent.cpp" />
     <ClCompile Include="USceneComponent.cpp" />
