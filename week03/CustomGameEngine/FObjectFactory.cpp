@@ -13,7 +13,7 @@ UObject* FObjectFactory::ConstructObject(const void* id)
 	return nullptr;
 }
 
-void FObjectFactory::RegisterClass(const void* id, std::function<UObject*()> func)
+void FObjectFactory::RegisterObjectType(const void* id, std::function<UObject*()> func)
 {
 	GetRegistry()[id] = func;
 }

@@ -4,22 +4,48 @@
 class FVector
 {
 public:
-    FVector(float _x = 0.0f, float _y = 0.0f, float _z = 0.0f) : x(_x), y(_y), z(_z) {}
-    float Dot(const FVector& Other) const;
-    FVector operator+(const FVector& Other) const;
-    FVector operator-(const FVector& Other) const;
-    FVector operator*(const float s) const;
-    FVector operator/(const float s) const;
+	FVector(float _x = 0.0f, float _y = 0.0f, float _z = 0.0f) : x(_x), y(_y), z(_z) {}
+	float Dot(const FVector& Other) const;
+	FVector operator+(const FVector& Other) const;
+	FVector operator-(const FVector& Other) const;
+	FVector operator*(const float s) const;
+	FVector operator/(const float s) const;
 
-    FVector Normalize() const;
-    float Length() const;
+	FVector Normalize() const;
+	float Length() const;
 
 public:
-    float x, y, z;
+	float x, y, z;
 };
 
-float Dot(const FVector& a, const FVector& b);
-FVector Add(const FVector& a, const FVector& b);
-FVector Sub(const FVector& a, const FVector& b);
-FVector Mul(const FVector& v, float s);
-FVector Div(const FVector& v, float s);
+inline float Dot(const FVector& a, const FVector& b)
+{
+	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+inline FVector Add(const FVector& a, const FVector& b)
+{
+	return { a.x + b.x, a.y + b.y, a.z + b.z };
+}
+
+inline FVector Sub(const FVector& a, const FVector& b)
+{
+	return { a.x - b.x, a.y - b.y, a.z - b.z };
+}
+
+inline FVector Mul(const FVector& v, float s)
+{
+	return { v.x * s, v.y * s, v.z * s };
+}
+
+inline FVector Div(const FVector& v, float s)
+{
+	if (s == 0.0f)
+	{
+		// throw std::invalid_argument("Division by zero condition!");
+		return { 0.0f, 0.0f, 0.0f };
+	}
+	return { v.x / s, v.y / s, v.z / s };
+}
+
+FVector Cross(const FVector& a, const FVector& b);

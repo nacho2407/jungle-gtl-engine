@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "UPrimitiveComponent.h"
 
 class UCubeComp : public UPrimitiveComponent
@@ -7,4 +7,6 @@ class UCubeComp : public UPrimitiveComponent
 public:
 	UCubeComp();
 	virtual ~UCubeComp() override;
+	virtual void Render(URenderer* Renderer) override;
+	virtual void Update(float DeltaTime) override;
 };

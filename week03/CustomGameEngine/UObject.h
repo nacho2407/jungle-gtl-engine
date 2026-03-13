@@ -17,7 +17,7 @@
 		{ \
 			cls##Registrar() \
 			{ \
-				FObjectFactory::RegisterClass(cls::GetClass(), []() -> UObject* { return new cls(); }); \
+				FObjectFactory::RegisterObjectType(cls::GetClass(), []() -> UObject* { return new cls(); }); \
 			} \
 		}; \
 		static cls##Registrar global_##cls##Registrar; \

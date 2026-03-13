@@ -1,6 +1,8 @@
 cbuffer MyConstants : register(b0)
 {
-    row_major matrix WorldMatrix;
+    row_major matrix Model;
+    row_major matrix View;
+    row_major matrix Projection;
 };
 
 struct VS_INPUT
@@ -19,7 +21,10 @@ PS_INPUT mainVS(VS_INPUT input)
 {
     PS_INPUT output;
     
-    output.Pos = mul(input.Pos, WorldMatrix);
+    float4 pos = mul(input.Pos, Model);
+    pos = mul(pos, View);
+    pos = mul(pos, Projection);
+    output.Pos = pos;
     
     output.Color = input.Color;
     return output;
