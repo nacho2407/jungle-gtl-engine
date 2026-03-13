@@ -165,6 +165,7 @@
     <ClInclude Include="UObject.h" />
     <ClInclude Include="URender.h" />
     <ClInclude Include="USphereComp.h" />
+    <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Editor.cpp" />
@@ -200,6 +201,7 @@
     <ClCompile Include="UObject.cpp" />
     <ClCompile Include="URender.cpp" />
     <ClCompile Include="USphereComp.cpp" />
+    <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ShaderW0.hlsl">

@@ -73,7 +73,7 @@ std::string UScene::ToJson(UScene* scene)
 	json::JSON arr;
 	for (auto s : scene->Primitives)
 	{
-		arr[std::to_string(s.UUID)] = SerializeSceneComponent(s);
+		arr[std::to_string(s->UUID)] = SerializeSceneComponent(*s);
 	}
 	json["Primitives"] = arr;
 
@@ -96,7 +96,7 @@ UScene* UScene::FromJson(std::string jsonStr)
 	{
 		USceneComponent s = DeserializeSceneComponent(pair.second);
 		s.UUID = std::stoi(pair.first);
-		scene->Primitives.push_back(s);
+		scene->Primitives.push_back(&s);
 	}
 
 	return scene;
