@@ -128,6 +128,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="FMatrix.h" />
     <ClInclude Include="FVector.h" />
     <ClInclude Include="FVertexSimple.h" />
     <ClInclude Include="ImGui\imconfig.h" />
@@ -139,8 +140,10 @@
     <ClInclude Include="ImGui\imstb_textedit.h" />
     <ClInclude Include="ImGui\imstb_truetype.h" />
     <ClInclude Include="Sphere.h" />
+    <ClInclude Include="URender.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="FMatrix.cpp" />
     <ClCompile Include="FVector.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
     <ClCompile Include="ImGui\imgui_demo.cpp" />
@@ -150,6 +153,7 @@
     <ClCompile Include="ImGui\imgui_tables.cpp" />
     <ClCompile Include="ImGui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="URender.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ShaderW0.hlsl">

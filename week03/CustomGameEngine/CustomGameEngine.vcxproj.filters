@@ -54,6 +54,12 @@
     <ClInclude Include="FVertexSimple.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="URender.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="FMatrix.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ImGui\imgui.cpp">
@@ -81,6 +87,12 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="URender.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="FMatrix.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
