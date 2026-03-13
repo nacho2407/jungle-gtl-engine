@@ -25,7 +25,7 @@ void UCamera::SetDirection(const const float InputPitch, const float InputYaw,
     IsChanged = true;
   }
 }
-  FMatrix4x4 UCamera::GetViewProjectionMatrix() const { return ViewProjection; }
+  FMatrix UCamera::GetViewProjectionMatrix() const { return ViewProjection; }
 
 void UCamera::OnResize(int NewWidth, int NewHeight)
 {
@@ -40,8 +40,8 @@ void UCamera::update()
   Projection = GetProjectionMatrix();
   ViewProjection = View * Projection;
 
-  float p = FMatrix4x4::DegToRad(Pitch);
-  float y = FMatrix4x4::DegToRad(Yaw);
+  float p = FMatrix::DegToRad(Pitch);
+  float y = FMatrix::DegToRad(Yaw);
 
   Direction.x = std::cos(p) * std::sin(y);
   Direction.y = std::sin(p);
@@ -53,22 +53,22 @@ void UCamera::update()
 
 }
 
-FMatrix4x4 UCamera::GetViewMatrix() const  {
-  FMatrix4x4 InvT;
+FMatrix UCamera::GetViewMatrix() const  {
+  FMatrix InvT;
   InvT[3][0] = -Position.x;
   InvT[3][1] = -Position.y;
   InvT[3][2] = -Position.z;
 
-  FMatrix4x4 InvR = FMatrix4x4::RotationZMatrix(-Roll) *
-                    FMatrix4x4::RotationYMatrix(-Yaw) *
-                    FMatrix4x4::RotationXMatrix(-Pitch);
+  FMatrix InvR = FMatrix::RotationZMatrix(-Roll) *
+                    FMatrix::RotationYMatrix(-Yaw) *
+                    FMatrix::RotationXMatrix(-Pitch);
   return InvT * InvR;
 }
 
-FMatrix4x4 UCamera::GetProjectionMatrix() const {
-  FMatrix4x4 M = FMatrix4x4::ZeroMatrix();
+FMatrix UCamera::GetProjectionMatrix() const {
+  FMatrix M = FMatrix::ZeroMatrix();
 
-  float rad = FMatrix4x4::DegToRad(FOV);
+  float rad = FMatrix::DegToRad(FOV);
   float h = 1.0f / std::tan(rad * 0.5f);
   float w = h / AspectRatio;
 

@@ -25,9 +25,9 @@ class UCamera {
   FVector SideDirection{FVector(1.0f, 0.0f, 0.0f)};
   FVector UpDirection{FVector(0.0f, 1.0f, 0.0f)};
 
-  FMatrix4x4 View;
-  FMatrix4x4 Projection;
-  FMatrix4x4 ViewProjection;
+  FMatrix View;
+  FMatrix Projection;
+  FMatrix ViewProjection;
 
   public:
     UCamera() {};
@@ -36,13 +36,13 @@ class UCamera {
    void SetPosition(const FVector& _input);
    void SetDirection(const const float InputPitch, const float InputYaw,
                      const float InputRoll);
-   FMatrix4x4 GetViewProjectionMatrix() const;
+   FMatrix GetViewProjectionMatrix() const;
 
    void OnResize(int NewWidth, int NewHeight);
    void update();
 
    private:
-   FMatrix4x4 GetViewMatrix() const;
-   FMatrix4x4 GetProjectionMatrix() const;
+   FMatrix GetViewMatrix() const;
+   FMatrix GetProjectionMatrix() const;
 };
 
