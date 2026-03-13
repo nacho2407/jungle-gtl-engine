@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="cpp-gametechlab-project-w02/cpp-gametechlab-project-w02.vcxproj" Id="359c2b8f-ae1c-48af-84d6-a18f1d6844f6" />
+</Solution>
