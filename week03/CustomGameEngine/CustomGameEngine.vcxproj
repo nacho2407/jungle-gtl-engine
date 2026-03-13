@@ -141,6 +141,9 @@
     <ClInclude Include="ImGui\imstb_truetype.h" />
     <ClInclude Include="Math\FVector4.h" />
     <ClInclude Include="Sphere.h" />
+    <ClInclude Include="UEngineStatics.h" />
+    <ClInclude Include="UEngineTypes.h" />
+    <ClInclude Include="UObject.h" />
     <ClInclude Include="URender.h" />
   </ItemGroup>
   <ItemGroup>
@@ -154,6 +157,8 @@
     <ClCompile Include="ImGui\imgui_tables.cpp" />
     <ClCompile Include="ImGui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="UEngineStatics.cpp" />
+    <ClCompile Include="UObject.cpp" />
     <ClCompile Include="URender.cpp" />
   </ItemGroup>
   <ItemGroup>
