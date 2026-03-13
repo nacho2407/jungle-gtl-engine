@@ -46,7 +46,7 @@ float FVector::Length() const
 	return sqrtf(x * x + y * y + z * z);
 }
 
-float FVector::IsNearlyEqual(const FVector& Other, float Epsilon = 1e-6f) const
+float FVector::IsNearlyEqual(const FVector& Other, float Epsilon) const
 {
   return (std::abs(x - Other.x) < Epsilon) &&
          (std::abs(y - Other.y) < Epsilon) && (std::abs(z - Other.z) < Epsilon);
