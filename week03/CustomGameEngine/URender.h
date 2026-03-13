@@ -81,6 +81,7 @@ public:
 public:
 
 	void PushRenderObject(URenderObject* RenderObj) { RenderObjects.push_back(RenderObj); }
+	void ClearRenderObjects();
 	void Render();
 
 	TArray<URenderObject*> RenderObjects;

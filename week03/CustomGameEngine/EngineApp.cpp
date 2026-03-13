@@ -40,6 +40,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 {
 	CreateEngineWindow();
 	Renderer->Create(HWnd);
+	EditorInst->Initialize(HWnd, Renderer->Device, Renderer->DeviceContext);
 	// Create Shader
 	D3D11_INPUT_ELEMENT_DESC layout[] = {
 	{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
@@ -96,6 +97,7 @@ void EngineApp::Run()
 		Scene->Render();
 
 		Renderer->Render();
+		EditorInst->Render();
 
 		Renderer->SwapBuffer();
 	}

@@ -241,6 +241,14 @@ void URenderer::UpdateConstant(const FConstantBufferData& Data) {
 //}
 
 
+void URenderer::ClearRenderObjects()
+{
+	for (int i = 0; i < RenderObjects.size();i++)
+	{
+		delete RenderObjects[i];
+	}
+}
+
 void URenderer::Render()
 {
 	RenderObjectConstants GlobalConstants;
@@ -256,5 +264,6 @@ void URenderer::Render()
 		RenderObj->SetConstantBuffer(ConstantBuffer);
 		RenderObj->Render(DeviceContext);
 	}
+	ClearRenderObjects();
 	RenderObjects.clear();
 }
