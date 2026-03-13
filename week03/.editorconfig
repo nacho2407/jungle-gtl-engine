@@ -1,0 +1,6 @@
+[*]
+charset = utf-8-bom
+
+# HLSL 파일들은 BOM 없이 일반 UTF-8로 설정 (또는 latin1 등)
+[*.{hlsl,hlsli}]
+charset = utf-8

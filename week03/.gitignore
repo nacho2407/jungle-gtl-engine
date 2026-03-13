@@ -1,0 +1,36 @@
+# Visual Studio 임시 작업 폴더 및 캐시
+.vs/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+# 빌드 결과물 (실행 파일 및 라이브러리)
+*.exe
+*.dll
+*.lib
+*.pdb
+*.exp
+*.ilk
+
+# 컴파일 임시 파일
+*.obj
+*.pch
+*.tlog
+*.lastbuildstate
+*.idb
+*.recipe
+*.log
+
+# Visual Studio 프로젝트 개인 설정 파일
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# 외부 라이브러리 설정 (ImGui 등)
+imgui.ini
+
+# 기타 OS 임시 파일
+Thumbs.db
+.DS_Store
