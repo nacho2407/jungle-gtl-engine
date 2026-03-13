@@ -51,6 +51,7 @@ void UCamera::update()
   SideDirection = Direction.Cross(UpVec);
   UpDirection = SideDirection.Cross(Direction);
 
+  IsChanged = false;
 }
 
 FMatrix UCamera::GetViewMatrix() const  {
