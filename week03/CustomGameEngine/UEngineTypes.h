@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <string>
 #include <vector>
 #include <list>
 #include <unordered_set>
@@ -9,6 +10,8 @@
 
 typedef int int32;
 typedef unsigned int uint32;
+
+using FString = std::string;
 
 template <typename T>
 using TArray = std::vector<T>;
