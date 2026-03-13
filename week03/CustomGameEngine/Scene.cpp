@@ -12,15 +12,34 @@ json::JSON SerializeFVector(FVector v)
     return j;
 }
 
+FVector DeserializeFVector(json::JSON j)
+{
+    FVector v;
+    v.x = j[0].ToFloat();
+    v.y = j[0].ToFloat();
+    v.z = j[0].ToFloat();
+    return v;
+}
+
 json::JSON SerializeSceneComponent(USceneComponent& s)
 {
     json::JSON obj;
     obj["Location"] = SerializeFVector(s.RelativeLocation);
     obj["Rotation"] = SerializeFVector(s.RelativeRotation);
     obj["Scale"] = SerializeFVector(s.RelativeScale3D);
-    // TODO: RTTI 구현되면 여기에 타입네임 넣기
+    // TODO: RTTI 구현되면 반영
     obj["Type"] = "TYPE SERIALIZATION NOT IMPLEMETED";
     return obj;
+}
+
+USceneComponent DeserializeSceneComponent(json::JSON j)
+{
+    USceneComponent s;
+    s.RelativeLocation = DeserializeFVector(j["Location"]);
+    s.RelativeLocation = DeserializeFVector(j["Location"]);
+    s.RelativeLocation = DeserializeFVector(j["Location"]);
+    // TODO: RTTI 구현되면 반영
+    return s;
 }
 
 std::string FScene::ToJson()
@@ -53,9 +72,13 @@ FScene FScene::FromJson(std::string jsonStr)
 
     scene.Version = obj["Version"].ToInt();
     scene.NextUUID = obj["NextUUID"].ToInt();
-    //for (auto& s : obj["Primitives"]) {
-    //    scene->Primitives.push_back(s);
-    //}
+
+    for (auto pair : obj["Primitives"].ObjectRange())
+    {
+        USceneComponent s = DeserializeSceneComponent(pair.second);
+        s.UUID = std::stoi(pair.first);
+        scene.Primitives.push_back(s);
+    }
 
     return scene;
 }
