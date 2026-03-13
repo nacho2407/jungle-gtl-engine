@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 #include "UObject.h"
 #include "FVector.h"
+#include "FMatrix.h"
 
 class USceneComponent : public UObject
 {
@@ -13,4 +14,6 @@ public:
 	FVector RelativeLocation;
 	FVector RelativeRotation;
 	FVector RelativeScale3D;
+
+	FMatrix GetRelativeMatrix() const;
 };

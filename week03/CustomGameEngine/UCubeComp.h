@@ -7,6 +7,6 @@ class UCubeComp : public UPrimitiveComponent
 public:
 	UCubeComp();
 	virtual ~UCubeComp() override;
-	virtual void Render(URenderer* Renderer) override;
+	virtual URenderObject* Render() override;
 	virtual void Update(float DeltaTime) override;
 };

@@ -1,6 +1,6 @@
 ﻿#include "Scene.h"
 #include "json.hpp"
-
+#include "URender.h"
 #include "UPrimitiveComponent.h"
 constexpr int INDENT = 4;
 
@@ -43,7 +43,15 @@ USceneComponent DeserializeSceneComponent(json::JSON j)
 	return s;
 }
 
-void FScene::Update(float DeltaTime)
+UScene::UScene()
+{
+}
+
+UScene::~UScene()
+{
+}
+
+void UScene::Update(float DeltaTime)
 {
 	for (UPrimitiveComponent* Prim : PrimitiveContainer)
 	{
@@ -51,51 +59,56 @@ void FScene::Update(float DeltaTime)
 	}
 }
 
-std::string FScene::ToJson()
+std::string UScene::ToJson()
 {
-    return ToJson(this);
+	return ToJson(this);
 }
 
-std::string FScene::ToJson(FScene* scene)
+std::string UScene::ToJson(UScene* scene)
 {
-    json::JSON json;
-    json["Version"] = scene->Version;
-    json["NextUUID"] = scene->NextUUID;
+	json::JSON json;
+	json["Version"] = scene->Version;
+	json["NextUUID"] = scene->NextUUID;
 
-    json::JSON arr;
-    for (auto s : scene->Primitives) 
-    {    
-        arr[std::to_string(s.UUID)] = SerializeSceneComponent(s);
-    }
-    json["Primitives"] = arr;
+	json::JSON arr;
+	for (auto s : scene->Primitives)
+	{
+		arr[std::to_string(s.UUID)] = SerializeSceneComponent(s);
+	}
+	json["Primitives"] = arr;
 
 	return json.dump();
 }
 
-FScene* FScene::FromJson(std::string jsonStr)
+UScene* UScene::FromJson(std::string jsonStr)
 {
-    FScene* scene = new FScene;
+	//TODO : UScene = new UScene
+	UObject* Object = FObjectFactory::ConstructObject(UScene::GetClass());
+	UScene* scene = Cast<UScene>(Object);
 
 	json::JSON obj;
 	obj = json::JSON::Load(jsonStr);
 
-    scene->Version = obj["Version"].ToInt();
-    scene->NextUUID = obj["NextUUID"].ToInt();
+	scene->Version = obj["Version"].ToInt();
+	scene->NextUUID = obj["NextUUID"].ToInt();
 
-    for (auto pair : obj["Primitives"].ObjectRange())
-    {
-        USceneComponent s = DeserializeSceneComponent(pair.second);
-        s.UUID = std::stoi(pair.first);
-        scene->Primitives.push_back(s);
-    }
+	for (auto pair : obj["Primitives"].ObjectRange())
+	{
+		USceneComponent s = DeserializeSceneComponent(pair.second);
+		s.UUID = std::stoi(pair.first);
+		scene->Primitives.push_back(s);
+	}
 
 	return scene;
 }
 
-void FScene::Render() const
+void UScene::Render() const
 {
 	for (UPrimitiveComponent* PrimComponent : PrimitiveContainer)
 	{
-		PrimComponent->Render(Renderer);
+		URenderObject* Obj = PrimComponent->Render();
+		Renderer->PushRenderObject(Obj);
 	}
 }
+
+REGISTER_CLASS(UScene);
