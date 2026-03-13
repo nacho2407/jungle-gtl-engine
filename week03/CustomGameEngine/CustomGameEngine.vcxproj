@@ -133,6 +133,7 @@
     <ClInclude Include="EditorPropertyPanel.h" />
     <ClInclude Include="EditorStatPanel.h" />
     <ClInclude Include="EngineApp.h" />
+    <ClInclude Include="FColor.h" />
     <ClInclude Include="FMatrix.h" />
     <ClInclude Include="FObjectFactory.h" />
     <ClInclude Include="InputManager.h" />
@@ -154,7 +155,10 @@
     <ClInclude Include="SceneManager.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="TimerManager.h" />
+    <ClInclude Include="UAxisComp.h" />
+    <ClInclude Include="UCamera.h" />
     <ClInclude Include="UCubeComp.h" />
+    <ClInclude Include="UPlaneComp.h" />
     <ClInclude Include="UPrimitiveComponent.h" />
     <ClInclude Include="USceneComponent.h" />
     <ClInclude Include="Math\FVector4.h" />
@@ -174,6 +178,7 @@
     <ClCompile Include="EditorPropertyPanel.cpp" />
     <ClCompile Include="EditorStatPanel.cpp" />
     <ClCompile Include="EngineApp.cpp" />
+    <ClCompile Include="FColor.cpp" />
     <ClCompile Include="FMatrix.cpp" />
     <ClCompile Include="FObjectFactory.cpp" />
     <ClCompile Include="InputManager.cpp" />
@@ -193,7 +198,10 @@
     <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="TimerManager.cpp" />
+    <ClCompile Include="UAxisComp.cpp" />
+    <ClCompile Include="UCamera.cpp" />
     <ClCompile Include="UCubeComp.cpp" />
+    <ClCompile Include="UPlaneComp.cpp" />
     <ClCompile Include="UPrimitiveComponent.cpp" />
     <ClCompile Include="USceneComponent.cpp" />
     <ClCompile Include="UEngineStatics.cpp" />

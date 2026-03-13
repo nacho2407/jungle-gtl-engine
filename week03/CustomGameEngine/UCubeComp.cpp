@@ -34,9 +34,10 @@ URenderObject* UCubeComp::Render()
 
 void UCubeComp::Update(float DeltaTime)
 {
-	RelativeRotation.x += DeltaTime;
-	RelativeRotation.y += DeltaTime;
-	RelativeRotation.z += DeltaTime;
+	float Speed = 10.f;
+	//	RelativeRotation.x += DeltaTime * Speed;
+	RelativeRotation.y += DeltaTime * Speed;
+	//	RelativeRotation.z += DeltaTime * Speed;
 }
 
 REGISTER_CLASS(UCubeComp);

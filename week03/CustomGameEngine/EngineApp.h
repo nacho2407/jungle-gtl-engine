@@ -3,7 +3,7 @@
 
 class USceneComponent;
 class Editor;
-
+class UCamera;
 class EngineApp
 {
 public:
@@ -25,5 +25,7 @@ private:
 	HWND HWnd = nullptr;
 	URenderer* Renderer = nullptr;
 	Editor* EditorInst = nullptr;
+	UCamera* Camera = nullptr;
+
 };
 

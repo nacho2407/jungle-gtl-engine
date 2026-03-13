@@ -1,4 +1,5 @@
 ﻿#include "URender.h"
+#include "UCamera.h"
 void URenderer::Create(HWND hWindow) {
 	CreateDeviceAndSwapChain(hWindow);
 
@@ -58,7 +59,7 @@ void URenderer::ReleaseDeviceAndSwapChain() {
 }
 
 void URenderer::CreateFrameBuffer() {
-	SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&FrameBuffer);
+	SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&FrameBuffer); //백버퍼 가져오기
 
 	D3D11_RENDER_TARGET_VIEW_DESC framebufferRTVdesc = {};
 	framebufferRTVdesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
@@ -104,54 +105,28 @@ void URenderer::Release() {
 
 void URenderer::SwapBuffer() { SwapChain->Present(1, 0); }
 
-void URenderer::CreateShader() {
-	ID3DBlob* vertexshaderCSO;
-	ID3DBlob* pixelshaderCSO;
+void URenderer::OnResize(UINT Width, UINT Height)
+{
+	if (!Device || !SwapChain) return;
 
-	D3DCompileFromFile(L"ShaderW0.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0,
-		0, &vertexshaderCSO, nullptr);
 
-	Device->CreateVertexShader(vertexshaderCSO->GetBufferPointer(),
-		vertexshaderCSO->GetBufferSize(), nullptr,
-		&SimpleVertexShader);
+	DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+	ReleaseFrameBuffer();
 
-	D3DCompileFromFile(L"ShaderW0.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0,
-		0, &pixelshaderCSO, nullptr);
-
-	Device->CreatePixelShader(pixelshaderCSO->GetBufferPointer(),
-		pixelshaderCSO->GetBufferSize(), nullptr,
-		&SimplePixelShader);
-
-	D3D11_INPUT_ELEMENT_DESC layout[] = {
-		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
-		 D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12,
-		 D3D11_INPUT_PER_VERTEX_DATA, 0},
-	};
-
-	Device->CreateInputLayout(
-		layout, ARRAYSIZE(layout), vertexshaderCSO->GetBufferPointer(),
-		vertexshaderCSO->GetBufferSize(), &SimpleInputLayout);
-
-	Stride = sizeof(FVertexSimple);
-
-	vertexshaderCSO->Release();
-	pixelshaderCSO->Release();
-}
-
-void URenderer::ReleaseShader() {
-	if (SimpleInputLayout) {
-		SimpleInputLayout->Release();
-		SimpleInputLayout = nullptr;
+	HRESULT hr = SwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, 0);
+	if (FAILED(hr)) {
+		return;
 	}
-	if (SimplePixelShader) {
-		SimplePixelShader->Release();
-		SimplePixelShader = nullptr;
-	}
-	if (SimpleVertexShader) {
-		SimpleVertexShader->Release();
-		SimpleVertexShader = nullptr;
-	}
+
+	CreateFrameBuffer();
+
+	ViewportInfo.Width = float(Width);
+	ViewportInfo.Height = float(Height);
+	ViewportInfo.MinDepth = 0.0f;
+	ViewportInfo.MaxDepth = 1.0f;
+	ViewportInfo.TopLeftX = 0.0f;
+	ViewportInfo.TopLeftY = 0.0f;
+	DeviceContext->RSSetViewports(1, &ViewportInfo);
 }
 
 void URenderer::Prepare() {
@@ -162,21 +137,7 @@ void URenderer::Prepare() {
 	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr);
 	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 }
-void URenderer::PrepareShader() {
-	DeviceContext->VSSetShader(SimpleVertexShader, nullptr, 0);
-	DeviceContext->PSSetShader(SimplePixelShader, nullptr, 0);
-	DeviceContext->IASetInputLayout(SimpleInputLayout);
 
-	if (ConstantBuffer) {
-		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
-	}
-}
-
-void URenderer::RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices) {
-	UINT offset = 0;
-	DeviceContext->IASetVertexBuffers(0, 1, &pBuffer, &Stride, &offset);
-	DeviceContext->Draw(numVertices, 0);
-}
 
 ID3D11Buffer* URenderer::CreateVertexBuffer(FVertexSimple* vertices,
 	UINT byteWidth) {
@@ -198,7 +159,7 @@ void URenderer::ReleaseVertexBuffer(ID3D11Buffer* vertexBuffer) {
 
 void URenderer::CreateConstantBuffer() {
 	D3D11_BUFFER_DESC constantbufferdesc = {};
-	constantbufferdesc.ByteWidth = sizeof(FConstantBufferData) + 0xf & 0xfffffff0;
+	constantbufferdesc.ByteWidth = sizeof(RenderObjectConstants) + 0xf & 0xfffffff0;
 	constantbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
 	constantbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	constantbufferdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -213,33 +174,6 @@ void URenderer::ReleaseConstantBuffer() {
 	}
 }
 
-void URenderer::UpdateConstant(const FConstantBufferData& Data) {
-	if (ConstantBuffer) {
-		D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
-
-		HRESULT hr = DeviceContext->Map(ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD,
-			0, &constantbufferMSR);
-
-		if (SUCCEEDED(hr)) {
-			memcpy(constantbufferMSR.pData, &Data, sizeof(FConstantBufferData));
-			DeviceContext->Unmap(ConstantBuffer, 0);
-		}
-	}
-}
-
-//void URenderer::DrawPrimitive(FVector InScale, FVector InRotation, FVector InTranslation, std::string MeshID)
-//{
-//	if (ResourceContainer.find(MeshID) == ResourceContainer.end())
-//		return;
-//
-//	FRenderData Data;
-//	Data.Scale = FMatrix::SclaeMatrix(InScale);
-//	Data.Rotation = FMatrix::EulerRotationMatrix(InRotation);
-//	Data.Translation = FMatrix::TranslationMatrix(InTranslation);
-//	Data.MeshData = ResourceContainer[MeshID];
-//	RenderDataContainer.push_back(Data);
-//}
-
 
 void URenderer::ClearRenderObjects()
 {
@@ -249,11 +183,11 @@ void URenderer::ClearRenderObjects()
 	}
 }
 
-void URenderer::Render()
+void URenderer::Render(UCamera* Camera)
 {
 	RenderObjectConstants GlobalConstants;
-	GlobalConstants.View = FMatrix::IdentityMatrix();
-	GlobalConstants.Projection = FMatrix::IdentityMatrix();
+	GlobalConstants.View = Camera->GetViewMatrix();
+	GlobalConstants.Projection = Camera->GetProjectionMatrix();
 
 	for (URenderObject* RenderObj : RenderObjects)
 	{

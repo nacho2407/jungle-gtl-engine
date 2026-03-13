@@ -27,36 +27,19 @@ public:
 
 public:
 	void Create(HWND hWindow);
-
 	void CreateDeviceAndSwapChain(HWND hWindow);
-
 	void ReleaseDeviceAndSwapChain();
-
 	void CreateFrameBuffer();
 	void ReleaseFrameBuffer();
-
 	void CreateRasterizerState();
-
 	void ReleaseRasterizerState();
-
 	void Release();
-
 	void SwapBuffer();
+	void OnResize(UINT Width, UINT Height);
 
 public:
-	ID3D11VertexShader* SimpleVertexShader;
-	ID3D11PixelShader* SimplePixelShader;
-	ID3D11InputLayout* SimpleInputLayout;
-	unsigned int Stride;
-
-	void CreateShader();
-
-	void ReleaseShader();
 
 	void Prepare();
-	void PrepareShader();
-
-	void RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices);
 
 public:
 	ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT byteWidth);
@@ -64,25 +47,17 @@ public:
 	void ReleaseVertexBuffer(ID3D11Buffer* vertexBuffer);
 
 public:
-	struct FConstantBufferData {
-		FMatrix Model;
-		FMatrix Veiw;
-		FMatrix Projection;
-	};
 	ID3D11Buffer* ConstantBuffer{ nullptr };
 
 	void CreateConstantBuffer();
-
 	void ReleaseConstantBuffer();
-
-	void UpdateConstant(const FConstantBufferData& Data);
 
 
 public:
 
 	void PushRenderObject(URenderObject* RenderObj) { RenderObjects.push_back(RenderObj); }
 	void ClearRenderObjects();
-	void Render();
+	void Render(class UCamera* Camera);
 
 	TArray<URenderObject*> RenderObjects;
 };
