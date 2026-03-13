@@ -15,7 +15,7 @@ public:
 public:
 	int Version;
 	int NextUUID;
-	TArray<USceneComponent> Primitives;
+	TArray<USceneComponent*> Primitives;
 
 
 	void Update(float DeltaTime);

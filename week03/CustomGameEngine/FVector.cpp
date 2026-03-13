@@ -1,6 +1,8 @@
 ﻿#include "FVector.h"
 #include <stdexcept>
 
+FVector::~FVector() {}
+
 float FVector::Dot(const FVector& Other) const
 {
 	return x * Other.x + y * Other.y + z * Other.z;
@@ -50,6 +52,22 @@ bool FVector::IsNearlyEqual(const FVector& Other, float Epsilon) const
 {
   return (std::abs(x - Other.x) < Epsilon) &&
          (std::abs(y - Other.y) < Epsilon) && (std::abs(z - Other.z) < Epsilon);
+}
+
+json::JSON FVector::Serialize()
+{
+	json::JSON j;
+	j[0] = x;
+	j[1] = y;
+	j[2] = z;
+	return j;
+}
+
+void FVector::Deserialize(json::JSON jsonObj)
+{
+	x = jsonObj[0].ToFloat();
+	y = jsonObj[0].ToFloat();
+	z = jsonObj[0].ToFloat();
 }
 
 FVector Cross(const FVector& a, const FVector& b)
