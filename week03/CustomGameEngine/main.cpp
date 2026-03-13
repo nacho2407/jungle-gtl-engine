@@ -14,6 +14,10 @@
 #include "ImGui/imgui_internal.h"
 #include "Sphere.h"
 
+#include "UCubeComp.h"
+#include "USphereComp.h"
+#include <string>
+
 static constexpr float PI{3.1415927f};
 static constexpr float G{-0.98f};
 static constexpr float leftBorder{-1.0f};
@@ -235,16 +239,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   ImGui_ImplWin32_Init((void*)hwnd);
   ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext);
 
-  FVertexSimple* vertices = sphere_vertices;
-  UINT ByteWidth = sizeof(sphere_vertices);
-  UINT numVerticesSphere = sizeof(sphere_vertices) / sizeof(FVertexSimple);
+  //FVertexSimple* vertices = sphere_vertices;
+  //UINT ByteWidth = sizeof(sphere_vertices);
+  //UINT numVerticesSphere = sizeof(sphere_vertices) / sizeof(FVertexSimple);
 
-  ID3D11Buffer* vertexBufferSphere =
-      renderer.CreateVertexBuffer(sphere_vertices, ByteWidth);
-  UBall::Init_VertexBuffer(vertexBufferSphere);
+  //ID3D11Buffer* vertexBufferSphere =
+  //    renderer.CreateVertexBuffer(sphere_vertices, ByteWidth);
+  //UBall::Init_VertexBuffer(vertexBufferSphere);
 
-  int UBallArraySize{100};
-  UPrimitive** PrimitiveList{new UPrimitive*[UBallArraySize]};
+  //int UBallArraySize{100};
+  //UPrimitive** PrimitiveList{new UPrimitive*[UBallArraySize]};
 
   const int targetFPS{60};
   const double targetFrameTime{1000.0 / targetFPS};
@@ -254,11 +258,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   double elapsedTime{0.0};
   QueryPerformanceFrequency(&frequency);
 
-  bool bShowSpawnError{false};
-  float ErrorDisplayTimer{0.0f};
-  int ImGuiBallCount{1};
-  bool SpinEnable{false};
-  bool GravityEnable{false};
+  //bool bShowSpawnError{false};
+  //float ErrorDisplayTimer{0.0f};
+  //int ImGuiBallCount{1};
+  //bool SpinEnable{false};
+  //bool GravityEnable{false};
+
+  UObject* CubeComp = new UCubeComp();
+  UObject* SphereComp = new USphereComp();
+
+  OutputDebugStringA((std::string("CubeComp is a UCubeComp: ") +
+                         (CubeComp->IsA(UCubeComp::GetClass()) ? "true" : "false") + "\n")
+	  .c_str());
+  OutputDebugStringA((std::string("CubeComp is a USphereComp: ") +
+      (CubeComp->IsA(USphereComp::GetClass()) ? "true" : "false") + "\n").c_str());
+  OutputDebugStringA((std::string("SphereComp is a UCubeComp: ") +
+      (SphereComp->IsA(UCubeComp::GetClass()) ? "true" : "false") + "\n").c_str());
+  OutputDebugStringA((std::string("SphereComp is a USphereComp: ") +
+	  (SphereComp->IsA(USphereComp::GetClass()) ? "true" : "false") + "\n").c_str());
+  OutputDebugStringA((std::string("CubeComp is a UObject: ") +
+	  (CubeComp->IsA(UObject::GetClass()) ? "true" : "false") + "\n").c_str());
 
   bool bIsExit{false};
   while (bIsExit == false) {
@@ -275,76 +294,76 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
       }
     }
 
-    if (ImGuiBallCount > UBall::TotalNumBalls &&
-        UBall::TotalNumBalls < UBallArraySize) {
-      while (UBall::TotalNumBalls < ImGuiBallCount) {
-        int targetIdx{UBall::TotalNumBalls};
-        UBall* TempBall{new UBall()};
-        bool bIsOverlapped{false};
-        int maxAttempts{50};
-        int attempts{0};
+    //if (ImGuiBallCount > UBall::TotalNumBalls &&
+    //    UBall::TotalNumBalls < UBallArraySize) {
+    //  while (UBall::TotalNumBalls < ImGuiBallCount) {
+    //    int targetIdx{UBall::TotalNumBalls};
+    //    UBall* TempBall{new UBall()};
+    //    bool bIsOverlapped{false};
+    //    int maxAttempts{50};
+    //    int attempts{0};
 
-        do {
-          bIsOverlapped = false;
-          float rx{GetRandomFloat(-1.0f + TempBall->Radius,
-                                  1.0f - TempBall->Radius)};
-          float ry{GetRandomFloat(-1.0f + TempBall->Radius,
-                                  1.0f - TempBall->Radius)};
-          TempBall->Location = FVector(rx, ry, 0.0f);
+    //    do {
+    //      bIsOverlapped = false;
+    //      float rx{GetRandomFloat(-1.0f + TempBall->Radius,
+    //                              1.0f - TempBall->Radius)};
+    //      float ry{GetRandomFloat(-1.0f + TempBall->Radius,
+    //                              1.0f - TempBall->Radius)};
+    //      TempBall->Location = FVector(rx, ry, 0.0f);
 
-          for (int i = 0; i < UBall::TotalNumBalls - 1; ++i) {
-            if (PrimitiveList[i] &&
-                TempBall->CheckCollision(PrimitiveList[i])) {
-              bIsOverlapped = true;
-              break;
-            }
-          }
-          attempts++;
+    //      for (int i = 0; i < UBall::TotalNumBalls - 1; ++i) {
+    //        if (PrimitiveList[i] &&
+    //            TempBall->CheckCollision(PrimitiveList[i])) {
+    //          bIsOverlapped = true;
+    //          break;
+    //        }
+    //      }
+    //      attempts++;
 
-        } while (bIsOverlapped && attempts < maxAttempts);
-        if (attempts >= maxAttempts) {
-          delete TempBall;
-          bShowSpawnError = true;
-          ErrorDisplayTimer = 3.0f;
-          ImGuiBallCount = UBall::TotalNumBalls;
-          break;
+    //    } while (bIsOverlapped && attempts < maxAttempts);
+    //    if (attempts >= maxAttempts) {
+    //      delete TempBall;
+    //      bShowSpawnError = true;
+    //      ErrorDisplayTimer = 3.0f;
+    //      ImGuiBallCount = UBall::TotalNumBalls;
+    //      break;
 
-        } else {
-          PrimitiveList[targetIdx] = TempBall;
-          TempBall->Velocity.x = GetRandomFloat(-0.3f, 0.3f);
-          TempBall->Velocity.y = GetRandomFloat(-0.3f, 0.3f);
-        }
-      }
+    //    } else {
+    //      PrimitiveList[targetIdx] = TempBall;
+    //      TempBall->Velocity.x = GetRandomFloat(-0.3f, 0.3f);
+    //      TempBall->Velocity.y = GetRandomFloat(-0.3f, 0.3f);
+    //    }
+    //  }
 
-    } else if (ImGuiBallCount < UBall::TotalNumBalls &&
-               UBall::TotalNumBalls > 0) {
-      while (UBall::TotalNumBalls > ImGuiBallCount) {
-        int deleteIdx = rand() % UBall::TotalNumBalls;
-        delete PrimitiveList[deleteIdx];
-        for (int i{deleteIdx}; i < UBall::TotalNumBalls; ++i) {
-          PrimitiveList[i] = PrimitiveList[i + 1];
-        }
-        PrimitiveList[UBall::TotalNumBalls] = nullptr;
-      }
-    }
+    //} else if (ImGuiBallCount < UBall::TotalNumBalls &&
+    //           UBall::TotalNumBalls > 0) {
+    //  while (UBall::TotalNumBalls > ImGuiBallCount) {
+    //    int deleteIdx = rand() % UBall::TotalNumBalls;
+    //    delete PrimitiveList[deleteIdx];
+    //    for (int i{deleteIdx}; i < UBall::TotalNumBalls; ++i) {
+    //      PrimitiveList[i] = PrimitiveList[i + 1];
+    //    }
+    //    PrimitiveList[UBall::TotalNumBalls] = nullptr;
+    //  }
+    //}
 
     renderer.Prepare();
     renderer.PrepareShader();
 
-    float deltaTime{static_cast<float>(targetFrameTime) / 1000.0f};
-    for (int i{0}; i < UBall::TotalNumBalls; ++i) {
-      for (int j{i + 1}; j < UBall::TotalNumBalls; ++j) {
-        UBall* ballA{static_cast<UBall*>(PrimitiveList[i])};
-        UBall* ballB{static_cast<UBall*>(PrimitiveList[j])};
+    //float deltaTime{static_cast<float>(targetFrameTime) / 1000.0f};
+    //for (int i{0}; i < UBall::TotalNumBalls; ++i) {
+    //  for (int j{i + 1}; j < UBall::TotalNumBalls; ++j) {
+    //    UBall* ballA{static_cast<UBall*>(PrimitiveList[i])};
+    //    UBall* ballB{static_cast<UBall*>(PrimitiveList[j])};
 
-        if (ballA->CheckCollision(ballB)) {
-          ballA->ResolveCollision(ballB);
-        }
-      }
-      PrimitiveList[i]->Update(deltaTime, GravityEnable, SpinEnable);
-      renderer.UpdateConstant(PrimitiveList[i]->GetWorldMatrix());
-      renderer.RenderPrimitive(vertexBufferSphere, numVerticesSphere);
-    }
+    //    if (ballA->CheckCollision(ballB)) {
+    //      ballA->ResolveCollision(ballB);
+    //    }
+    //  }
+    //  PrimitiveList[i]->Update(deltaTime, GravityEnable, SpinEnable);
+    //  renderer.UpdateConstant(PrimitiveList[i]->GetWorldMatrix());
+    //  renderer.RenderPrimitive(vertexBufferSphere, numVerticesSphere);
+    //}
 
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
@@ -352,18 +371,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     ImGui::Begin("Jungle Property Window");
     ImGui::Text("Hello Jungle World!");
-    ImGui::Checkbox("Gravity", &GravityEnable);
-    ImGui::Checkbox("Spin", &SpinEnable);
-    if (ImGui::InputInt("Number of Ball", &ImGuiBallCount)) {
-      if (ImGuiBallCount < 1) ImGuiBallCount = 1;
-      if (ImGuiBallCount > 100) ImGuiBallCount = 100;
-    }
-    if (bShowSpawnError) {
-      ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f),
-                         "Error: No space to spawn more balls!");
-      ErrorDisplayTimer -= (float)targetFrameTime / 1000.0f;
-      if (ErrorDisplayTimer <= 0) bShowSpawnError = false;
-    }
+    //ImGui::Checkbox("Gravity", &GravityEnable);
+    //ImGui::Checkbox("Spin", &SpinEnable);
+    //if (ImGui::InputInt("Number of Ball", &ImGuiBallCount)) {
+    //  if (ImGuiBallCount < 1) ImGuiBallCount = 1;
+    //  if (ImGuiBallCount > 100) ImGuiBallCount = 100;
+    //}
+    //if (bShowSpawnError) {
+    //  ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f),
+    //                     "Error: No space to spawn more balls!");
+    //  ErrorDisplayTimer -= (float)targetFrameTime / 1000.0f;
+    //  if (ErrorDisplayTimer <= 0) bShowSpawnError = false;
+    //}
     ImGui::End();
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -382,17 +401,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   ImGui_ImplWin32_Shutdown();
   ImGui::DestroyContext();
 
-  renderer.ReleaseVertexBuffer(vertexBufferSphere);
+  //renderer.ReleaseVertexBuffer(vertexBufferSphere);
 
   renderer.ReleaseConstantBuffer();
   renderer.ReleaseShader();
   renderer.Release();
 
-  int finalCount = UBall::TotalNumBalls;
-  for (int i{0}; i < finalCount; ++i) {
-    delete PrimitiveList[i];
-  }
-  delete[] PrimitiveList;
+  //int finalCount = UBall::TotalNumBalls;
+  //for (int i{0}; i < finalCount; ++i) {
+  //  delete PrimitiveList[i];
+  //}
+  //delete[] PrimitiveList;
 
   return 0;
 }
