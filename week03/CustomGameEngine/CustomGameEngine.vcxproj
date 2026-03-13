@@ -128,9 +128,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Editor.h" />
+    <ClInclude Include="EditorControlPanel.h" />
+    <ClInclude Include="EditorPropertyPanel.h" />
     <ClInclude Include="EngineApp.h" />
     <ClInclude Include="FMatrix.h" />
     <ClInclude Include="FObjectFactory.h" />
+    <ClInclude Include="Logger.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="FVector.h" />
     <ClInclude Include="FVertexSimple.h" />
@@ -155,9 +159,15 @@
     <ClInclude Include="USphereComp.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Editor.cpp" />
+    <ClCompile Include="EditorConsole.cpp" />
+    <ClCompile Include="EditorConsole.h" />
+    <ClCompile Include="EditorControlPanel.cpp" />
+    <ClCompile Include="EditorPropertyPanel.cpp" />
     <ClCompile Include="EngineApp.cpp" />
     <ClCompile Include="FMatrix.cpp" />
     <ClCompile Include="FObjectFactory.cpp" />
+    <ClCompile Include="Logger.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="FVector.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />

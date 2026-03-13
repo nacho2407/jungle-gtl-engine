@@ -1,7 +1,14 @@
 ﻿#include "EngineApp.h"
+#include "Editor.h"
+#include "Logger.h"
+
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 LRESULT CALLBACK EngineApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
+		return true;
+
 	switch (message)
 	{
 	case WM_DESTROY:
@@ -14,13 +21,14 @@ LRESULT CALLBACK EngineApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 }
 
 EngineApp::EngineApp()
-	: Renderer(nullptr)
 {
 	Renderer = new URenderer();
+	EditorInst = new Editor();
 }
 
 EngineApp::~EngineApp()
 {
+	delete EditorInst;
 	delete Renderer;
 }
 
@@ -28,6 +36,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 {
 	CreateEngineWindow();
 	Renderer->Create(HWnd);
+	EditorInst->Initialize(HWnd, Renderer->Device, Renderer->DeviceContext);
 
 	return true;
 }
@@ -55,6 +64,7 @@ void EngineApp::Run()
 		Renderer->Prepare();
 		Renderer->PrepareShader();
 
+		EditorInst->Render();
 		Renderer->SwapBuffer();
 	}
 }

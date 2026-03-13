@@ -1,6 +1,9 @@
 ﻿#pragma once
 #include "URender.h"
 
+class USceneComponent;
+class Editor;
+
 class EngineApp
 {
 public:
@@ -21,5 +24,6 @@ private:
 private:
 	HWND HWnd = nullptr;
 	URenderer* Renderer = nullptr;
+	Editor* EditorInst = nullptr;
 };
 

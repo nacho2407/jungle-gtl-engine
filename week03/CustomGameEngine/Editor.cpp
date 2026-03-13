@@ -1,0 +1,67 @@
+﻿#include "Editor.h"
+#include "ImGui/imgui.h"
+#include "ImGui/imgui_impl_dx11.h"
+#include "ImGui/imgui_impl_win32.h"
+#include "USceneComponent.h"
+#include "EditorConsole.h"
+#include "EditorControlPanel.h"
+#include "EditorPropertyPanel.h"
+
+Editor::Editor()
+{
+	ControlPanel = new EditorControlPanel();
+	Console = new EditorConsole();
+	PropertyPanel = new EditorPropertyPanel();
+}
+
+Editor::~Editor()
+{
+}
+
+bool Editor::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
+{
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	ImGui_ImplWin32_Init(hWnd);
+	ImGui_ImplDX11_Init(device, deviceContext);
+
+	return true;
+}
+
+void Editor::Render()
+{
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+		
+	DrawControlPanel();
+	DrawConsole();
+	DrawPropertyPanel();
+
+	ImGui::Render();
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+}
+
+void Editor::Finalize()
+{
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+}
+
+void Editor::DrawControlPanel()
+{
+	ControlPanel->Draw();
+}
+
+void Editor::DrawConsole()
+{
+	bool flag = true;
+	Console->Draw("Example: Console", &flag);
+}
+
+void Editor::DrawPropertyPanel()
+{
+	PropertyPanel->Draw(SelectedComponent);
+}
