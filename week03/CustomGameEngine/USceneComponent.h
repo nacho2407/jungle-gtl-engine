@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "UObject.h"
 #include "FVector.h"
 

@@ -212,7 +212,7 @@ void URenderer::ReleaseConstantBuffer() {
   }
 }
 
-void URenderer::UpdateConstant(const FMatrix4x4& World) {
+void URenderer::UpdateConstant(const FMatrix& World) {
   if (ConstantBuffer) {
     D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
 
@@ -220,7 +220,7 @@ void URenderer::UpdateConstant(const FMatrix4x4& World) {
                                     0, &constantbufferMSR);
 
     if (SUCCEEDED(hr)) {
-      memcpy(constantbufferMSR.pData, &World, sizeof(FMatrix4x4));
+      memcpy(constantbufferMSR.pData, &World, sizeof(FMatrix));
       DeviceContext->Unmap(ConstantBuffer, 0);
     }
   }
