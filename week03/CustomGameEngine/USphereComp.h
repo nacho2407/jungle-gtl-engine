@@ -7,5 +7,5 @@ class USphereComp : public UPrimitiveComponent
 public:
 	USphereComp();
 	virtual ~USphereComp() override;
-	virtual void Render(URenderer* Renderer) override;
+	virtual URenderObject* Render() override;
 };

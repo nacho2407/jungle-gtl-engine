@@ -13,17 +13,17 @@ SceneManager::~SceneManager()
 	UnloadScene();
 }
 
-FScene* SceneManager::GetActiveScene()
+UScene* SceneManager::GetActiveScene()
 {
 	return this->activeScene;
 }
 
-FScene* SceneManager::NewScene()
+UScene* SceneManager::NewScene()
 {
 	// TODO: 리소스 관리자 완성되면 리소스 관리자 통하여 파일 입출력하도록 수정
-	if(activeScene != nullptr)
+	if (activeScene != nullptr)
 		UnloadScene();
-	activeScene = new FScene();
+	activeScene = Cast<UScene>(FObjectFactory::ConstructObject(UScene::GetClass()));
 	return activeScene;
 }
 
@@ -33,13 +33,13 @@ void SceneManager::SaveScene(FString sceneName)
 	const FString filePath = sceneName + ".scene";
 	std::ofstream outFile(filePath);
 
-	if (outFile.is_open()) 
+	if (outFile.is_open())
 	{
 		outFile << jsonStr;
 		outFile.close();
 		UE_LOG("Saved scene file: %s\n", filePath.c_str());
 	}
-	else 
+	else
 	{
 		// TODO: 에러 출력 로그 레벨 변경
 		UE_LOG("Cannot open file : %s\n", filePath.c_str());
@@ -48,7 +48,7 @@ void SceneManager::SaveScene(FString sceneName)
 }
 
 
-FScene* SceneManager::LoadScene(FString sceneName)
+UScene* SceneManager::LoadScene(FString sceneName)
 {
 	// TODO: 리소스 관리자 완성되면 리소스 관리자 통하여 파일 입출력하도록 수정
 	const FString filePath = sceneName + ".scene";
@@ -58,7 +58,7 @@ FScene* SceneManager::LoadScene(FString sceneName)
 	{
 		FString jsonStr;
 		inFile >> jsonStr;
-		activeScene = FScene::FromJson(jsonStr);
+		activeScene = UScene::FromJson(jsonStr);
 		UE_LOG("Loaded scene file: %s\n", filePath.c_str());
 		return activeScene;
 	}
@@ -66,7 +66,7 @@ FScene* SceneManager::LoadScene(FString sceneName)
 	{
 		// TODO: 에러 출력 로그 레벨 변경
 		UE_LOG("Cannot open file : %s\n", filePath.c_str());
-		return new FScene();
+		return new UScene();
 	}
 }
 

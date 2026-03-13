@@ -13,21 +13,21 @@ private:
 public:
 	~SceneManager();
 
-	FScene* GetActiveScene();
+	UScene* GetActiveScene();
 
 	// Unload current scene and create new scene
-	FScene* NewScene();
+	UScene* NewScene();
 
 	// Save Scene Synchronously
 	void SaveScene(FString sceneName);
 
 	// Load Scene Synchronously
-	FScene* LoadScene(FString sceneName);
+	UScene* LoadScene(FString sceneName);
 
 	// Unload Scene Synchronously
 	void UnloadScene();
 
 private:
-	FScene* activeScene;
+	UScene* activeScene;
 };
 

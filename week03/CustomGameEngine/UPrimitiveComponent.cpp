@@ -14,8 +14,9 @@ void UPrimitiveComponent::Update(float DeltaTime)
 
 }
 
-void UPrimitiveComponent::Render(URenderer* Renderer)
+URenderObject* UPrimitiveComponent::Render()
 {
+	return nullptr;
 }
 
 REGISTER_CLASS(UPrimitiveComponent);
