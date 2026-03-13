@@ -2,9 +2,10 @@
 #include <windows.h>
 #include <d3d11.h>
 
-class EditorControlPanel;
-class EditorConsole;
-class EditorPropertyPanel;
+struct EditorControlPanel;
+struct EditorConsole;
+struct EditorPropertyPanel;
+struct EditorStatPanel;
 class USceneComponent;
 
 class Editor
@@ -22,11 +23,13 @@ private:
 	void DrawControlPanel();
 	void DrawConsole();
 	void DrawPropertyPanel();
+	void DrawStatPanel();
 
 private:
 	EditorControlPanel* ControlPanel;
 	EditorConsole* Console;
 	EditorPropertyPanel* PropertyPanel;
+	EditorStatPanel* StatPanel;
 
 	USceneComponent* SelectedComponent = nullptr;
 };

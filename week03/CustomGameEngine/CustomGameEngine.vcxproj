@@ -131,6 +131,7 @@
     <ClInclude Include="Editor.h" />
     <ClInclude Include="EditorControlPanel.h" />
     <ClInclude Include="EditorPropertyPanel.h" />
+    <ClInclude Include="EditorStatPanel.h" />
     <ClInclude Include="EngineApp.h" />
     <ClInclude Include="FMatrix.h" />
     <ClInclude Include="FObjectFactory.h" />
@@ -168,6 +169,7 @@
     <ClCompile Include="EditorConsole.h" />
     <ClCompile Include="EditorControlPanel.cpp" />
     <ClCompile Include="EditorPropertyPanel.cpp" />
+    <ClCompile Include="EditorStatPanel.cpp" />
     <ClCompile Include="EngineApp.cpp" />
     <ClCompile Include="FMatrix.cpp" />
     <ClCompile Include="FObjectFactory.cpp" />
