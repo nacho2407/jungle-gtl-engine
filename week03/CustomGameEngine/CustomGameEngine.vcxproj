@@ -139,12 +139,15 @@
     <ClInclude Include="ImGui\imstb_rectpack.h" />
     <ClInclude Include="ImGui\imstb_textedit.h" />
     <ClInclude Include="ImGui\imstb_truetype.h" />
-    <ClInclude Include="Math\FVector4.h" />
+    <ClInclude Include="UCubeComp.h" />
+    <ClInclude Include="UPrimitiveComponent.h" />
+    <ClInclude Include="USceneComponent.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="UEngineStatics.h" />
     <ClInclude Include="UEngineTypes.h" />
     <ClInclude Include="UObject.h" />
     <ClInclude Include="URender.h" />
+    <ClInclude Include="USphereComp.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FMatrix.cpp" />
@@ -157,9 +160,13 @@
     <ClCompile Include="ImGui\imgui_tables.cpp" />
     <ClCompile Include="ImGui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="UCubeComp.cpp" />
+    <ClCompile Include="UPrimitiveComponent.cpp" />
+    <ClCompile Include="USceneComponent.cpp" />
     <ClCompile Include="UEngineStatics.cpp" />
     <ClCompile Include="UObject.cpp" />
     <ClCompile Include="URender.cpp" />
+    <ClCompile Include="USphereComp.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ShaderW0.hlsl">
