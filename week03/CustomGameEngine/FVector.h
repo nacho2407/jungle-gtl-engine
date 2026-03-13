@@ -6,6 +6,7 @@ class FVector
 public:
     FVector(float _x = 0.0f, float _y = 0.0f, float _z = 0.0f) : x(_x), y(_y), z(_z) {}
     float Dot(const FVector& Other) const;
+    FVector Cross(const FVector& Other) const;
     FVector operator+(const FVector& Other) const;
     FVector operator-(const FVector& Other) const;
     FVector operator*(const float s) const;
@@ -13,6 +14,7 @@ public:
 
     FVector Normalize() const;
     float Length() const;
+    float IsNearlyEqual(const FVector& Other, float Epsilon = 1e-6f) const;
 
 public:
     float x, y, z;
