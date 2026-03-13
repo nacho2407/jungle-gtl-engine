@@ -14,7 +14,7 @@ public:
 
     FVector Normalize() const;
     float Length() const;
-    float IsNearlyEqual(const FVector& Other, float Epsilon = 1e-6f) const;
+    bool IsNearlyEqual(const FVector& Other, float Epsilon = 1e-6f) const;
 
 public:
 	float x, y, z;

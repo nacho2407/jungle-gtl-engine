@@ -135,6 +135,7 @@
     <ClInclude Include="EngineApp.h" />
     <ClInclude Include="FMatrix.h" />
     <ClInclude Include="FObjectFactory.h" />
+    <ClInclude Include="InputManager.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="ISingleton.h" />
     <ClInclude Include="RenderObject.h" />
@@ -173,6 +174,7 @@
     <ClCompile Include="EngineApp.cpp" />
     <ClCompile Include="FMatrix.cpp" />
     <ClCompile Include="FObjectFactory.cpp" />
+    <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="RenderObject.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
