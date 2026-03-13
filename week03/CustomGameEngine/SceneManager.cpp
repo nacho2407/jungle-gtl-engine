@@ -1,6 +1,7 @@
 ﻿#include "SceneManager.h"
 #include <fstream>
 #include <iostream>
+#include "Logger.h"
 
 SceneManager::SceneManager()
 {
@@ -36,12 +37,12 @@ void SceneManager::SaveScene(FString sceneName)
 	{
 		outFile << jsonStr;
 		outFile.close();
-		std::cout << "Saved scene file: " << filePath << std::endl;
+		UE_LOG("Saved scene file: %s\n", filePath.c_str());
 	}
 	else 
 	{
-		// TODO: 디버깅 에러 출력 변경
-		std::cerr << "Cannot open file: " << filePath << std::endl;
+		// TODO: 에러 출력 로그 레벨 변경
+		UE_LOG("Cannot open file : %s\n", filePath.c_str());
 	}
 	return;
 }
@@ -57,14 +58,16 @@ FScene* SceneManager::LoadScene(FString sceneName)
 	{
 		FString jsonStr;
 		inFile >> jsonStr;
-		return FScene::FromJson(jsonStr);
+		activeScene = FScene::FromJson(jsonStr);
+		UE_LOG("Loaded scene file: %s\n", filePath.c_str());
+		return activeScene;
 	}
 	else
 	{
-		// TODO: 디버깅 에러 출력 변경
-		std::cerr << "Cannot open file: " << filePath << std::endl;
+		// TODO: 에러 출력 로그 레벨 변경
+		UE_LOG("Cannot open file : %s\n", filePath.c_str());
+		return new FScene();
 	}
-	return new FScene();
 }
 
 void SceneManager::UnloadScene()

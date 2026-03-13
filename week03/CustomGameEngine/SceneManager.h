@@ -29,6 +29,5 @@ public:
 
 private:
 	FScene* activeScene;
-	FString activeSceneName;
 };
 
