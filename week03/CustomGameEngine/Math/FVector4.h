@@ -14,7 +14,7 @@ struct FVector4
 	float Length();
 	float Length3();
 
-	FVector4 operator*(const FMatrix4x4& Matrix)
+	FVector4 operator*(const FMatrix& Matrix)
 	{
 		int sum[4] = { 0,0,0,0 };
 		for (int col = 0; col < 4;++col)

@@ -1,8 +1,8 @@
 ﻿#include "FMatrix.h"
 
-FMatrix4x4 FMatrix4x4::ZeroMatrix()
+FMatrix FMatrix::ZeroMatrix()
 {
-	FMatrix4x4 M = IdentityMatrix();
+	FMatrix M = IdentityMatrix();
 	M[0][0] = 0;
 	M[1][1] = 0;
 	M[2][2] = 0;
@@ -10,27 +10,27 @@ FMatrix4x4 FMatrix4x4::ZeroMatrix()
 	return M;
 }
 
-FMatrix4x4 FMatrix4x4::TranslationMatrix(float InX, float InY, float InZ)
+FMatrix FMatrix::TranslationMatrix(float InX, float InY, float InZ)
 {
-	FMatrix4x4 M = IdentityMatrix();
+	FMatrix M = IdentityMatrix();
 	M[3][0] = InX;
 	M[3][1] = InY;
 	M[3][2] = InZ;
 	return M;
 }
 
-FMatrix4x4 FMatrix4x4::ScaleMatrix(float InX, float InY, float InZ)
+FMatrix FMatrix::ScaleMatrix(float InX, float InY, float InZ)
 {
-	FMatrix4x4 M = IdentityMatrix();
+	FMatrix M = IdentityMatrix();
 	M[0][0] = InX;
 	M[1][1] = InY;
 	M[2][2] = InZ;
 	return M;
 }
 
-FMatrix4x4 FMatrix4x4::RotationXMatrix(float InXDegree)
+FMatrix FMatrix::RotationXMatrix(float InXDegree)
 {
-	FMatrix4x4 Mat = IdentityMatrix();
+	FMatrix Mat = IdentityMatrix();
 
 	float Rad = DegToRad(InXDegree);
 	float C = std::cos(Rad);
@@ -44,9 +44,9 @@ FMatrix4x4 FMatrix4x4::RotationXMatrix(float InXDegree)
 	return Mat;
 }
 
-FMatrix4x4 FMatrix4x4::RotationYMatrix(float InYDegree)
+FMatrix FMatrix::RotationYMatrix(float InYDegree)
 {
-	FMatrix4x4 Mat = IdentityMatrix();
+	FMatrix Mat = IdentityMatrix();
 
 	float Rad = DegToRad(InYDegree);
 	float C = std::cos(Rad);
@@ -60,9 +60,9 @@ FMatrix4x4 FMatrix4x4::RotationYMatrix(float InYDegree)
 	return Mat;
 }
 
-FMatrix4x4 FMatrix4x4::RotationZMatrix(float InZDegree)
+FMatrix FMatrix::RotationZMatrix(float InZDegree)
 {
-	FMatrix4x4 Mat = IdentityMatrix();
+	FMatrix Mat = IdentityMatrix();
 
 	float Rad = DegToRad(InZDegree);
 	float C = std::cos(Rad);
@@ -76,18 +76,18 @@ FMatrix4x4 FMatrix4x4::RotationZMatrix(float InZDegree)
 	return Mat;
 }
 
-FMatrix4x4 FMatrix4x4::EulerRotationMatrix(float InX, float InY, float InZ)
+FMatrix FMatrix::EulerRotationMatrix(float InX, float InY, float InZ)
 {
-	FMatrix4x4 Rx = RotationXMatrix(InX);
-	FMatrix4x4 Ry = RotationYMatrix(InY);
-	FMatrix4x4 Rz = RotationZMatrix(InZ);
+	FMatrix Rx = RotationXMatrix(InX);
+	FMatrix Ry = RotationYMatrix(InY);
+	FMatrix Rz = RotationZMatrix(InZ);
 
 	return Rx * Ry * Rz;
 }
 
-FMatrix4x4 FMatrix4x4::operator*(const FMatrix4x4& Other) const
+FMatrix FMatrix::operator*(const FMatrix& Other) const
 {
-	FMatrix4x4 Result = {};
+	FMatrix Result = {};
 
 	for (int Row = 0; Row < 4; ++Row)
 	{
