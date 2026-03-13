@@ -41,38 +41,6 @@ float FVector::Length() const
 	return sqrtf(x * x + y * y + z * z);
 }
 
-inline float Dot(const FVector& a, const FVector& b)
-{
-	return a.x * b.x + a.y * b.y + a.z * b.z;
-}
-
-// 두 벡터의 함
-inline FVector Add(const FVector& a, const FVector& b)
-{
-	return { a.x + b.x, a.y + b.y, a.z + b.z };
-}
-
-// 두 벡터의 차
-inline FVector Sub(const FVector& a, const FVector& b)
-{
-
-	return { a.x - b.x, a.y - b.y, a.z - b.z };
-}
-
-// 벡터 곱
-inline FVector Mul(const FVector& v, float s)
-{
-	return { v.x * s, v.y * s, v.z * s };
-}
-
-// 벡터 나눗셈
-inline FVector Div(const FVector& v, float s)
-{
-	if (s == 0)
-		throw std::invalid_argument("Division by zero condition!");
-	return { v.x / s, v.y / s, v.z / s };
-}
-
 FVector Cross(const FVector& a, const FVector& b)
 {
 	return {

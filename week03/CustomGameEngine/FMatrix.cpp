@@ -1,5 +1,5 @@
 ﻿#include "FMatrix.h"
-
+#include "FVector.h"
 FMatrix FMatrix::ZeroMatrix()
 {
 	FMatrix M = IdentityMatrix();
