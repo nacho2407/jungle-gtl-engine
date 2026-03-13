@@ -3,17 +3,29 @@
 
 constexpr int INDENT = 4;
 
+json::JSON SerializeFVector(FVector v)
+{
+    json::JSON j;
+    j[0] = v.x;
+    j[1] = v.y;
+    j[2] = v.z;
+    return j;
+}
+
+json::JSON SerializeSceneComponent(USceneComponent& s)
+{
+    json::JSON obj;
+    obj["Location"] = SerializeFVector(s.RelativeLocation);
+    obj["Rotation"] = SerializeFVector(s.RelativeRotation);
+    obj["Scale"] = SerializeFVector(s.RelativeScale3D);
+    // TODO: RTTI 구현되면 여기에 타입네임 넣기
+    obj["Type"] = "TYPE SERIALIZATION NOT IMPLEMETED";
+    return obj;
+}
+
 std::string FScene::ToJson()
 {
     return ToJson(*this);
-}
-
-json::JSON SerializeUObject(UObject& s)
-{
-    json::JSON obj;
-    // TODO: Primitive 구현되면 serialize 코드에 반영
-    obj["Data"] = "This is test data";
-    return obj;
 }
 
 std::string FScene::ToJson(FScene scene)
@@ -25,7 +37,7 @@ std::string FScene::ToJson(FScene scene)
     json::JSON arr;
     for (auto s : scene.Primitives) 
     {    
-        arr[std::to_string(s.UUID)] = SerializeUObject(s);
+        arr[std::to_string(s.UUID)] = SerializeSceneComponent(s);
     }
     json["Primitives"] = arr;
 
