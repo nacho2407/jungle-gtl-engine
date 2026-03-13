@@ -145,19 +145,19 @@ void EngineApp::Run()
 		InputManager::GetInstance().Update();
         if (InputManager::GetInstance().IsKeyHold(VK_UP) &&
             !InputManager::GetInstance().IsKeyHold(VK_DOWN)) {
-            Camera.MoveUp();
+            Camera->MoveUp();
         } else if (!InputManager::GetInstance().IsKeyHold(VK_UP) &&
                     InputManager::GetInstance().IsKeyHold(VK_DOWN)) {
-            Camera.MoveDown();
+            Camera->MoveDown();
         }
         if (InputManager::GetInstance().IsKeyHold(VK_LEFT) &&
             !InputManager::GetInstance().IsKeyHold(VK_RIGHT)) {
-            Camera.MoveLeft();
+            Camera->MoveLeft();
         } else if (!InputManager::GetInstance().IsKeyHold(VK_LEFT) &&
                     InputManager::GetInstance().IsKeyHold(VK_RIGHT)) {
-            Camera.MoveRight();
+            Camera->MoveRight();
         }
-		Camera.update();
+		Camera->update();
 
 
 		// Main Loop
