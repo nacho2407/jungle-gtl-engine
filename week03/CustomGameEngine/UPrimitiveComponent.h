@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "USceneComponent.h"
-
+#include "RenderObject.h"
 class URenderer;
 
 class UPrimitiveComponent : public USceneComponent
@@ -10,7 +10,7 @@ public:
 	UPrimitiveComponent();
 	virtual ~UPrimitiveComponent() override;
 	virtual void Update(float DeltaTime);
-	virtual void Render(URenderer* Renderer);
+	virtual URenderObject* Render();
 	void SetMaterial(int Handle) { MaterialHandle = Handle; }
 
 private:

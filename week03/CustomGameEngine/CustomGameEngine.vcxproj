@@ -131,6 +131,8 @@
     <ClInclude Include="EngineApp.h" />
     <ClInclude Include="FMatrix.h" />
     <ClInclude Include="FObjectFactory.h" />
+    <ClInclude Include="RenderObject.h" />
+    <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="FVector.h" />
     <ClInclude Include="FVertexSimple.h" />
@@ -158,6 +160,8 @@
     <ClCompile Include="EngineApp.cpp" />
     <ClCompile Include="FMatrix.cpp" />
     <ClCompile Include="FObjectFactory.cpp" />
+    <ClCompile Include="RenderObject.cpp" />
+    <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="FVector.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />

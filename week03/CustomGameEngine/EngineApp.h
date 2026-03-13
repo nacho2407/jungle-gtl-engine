@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "URender.h"
-
+#include "ResourceManager.h"
 class EngineApp
 {
 public:

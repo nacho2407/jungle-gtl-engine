@@ -8,9 +8,9 @@ USphereComp::~USphereComp()
 {
 }
 
-void USphereComp::Render(URenderer* Renderer)
+URenderObject* USphereComp::Render()
 {
-	Renderer->DrawPrimitive(RelativeScale3D, RelativeRotation, RelativeLocation, "Sphere");
+	return nullptr;
 }
 
 REGISTER_CLASS(USphereComp);

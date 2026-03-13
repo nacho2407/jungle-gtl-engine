@@ -1,6 +1,6 @@
 ﻿#include "Scene.h"
 #include "json.hpp"
-
+#include "URender.h"
 #include "UPrimitiveComponent.h"
 constexpr int INDENT = 4;
 
@@ -43,7 +43,15 @@ USceneComponent DeserializeSceneComponent(json::JSON j)
 	return s;
 }
 
-void FScene::Update(float DeltaTime)
+UScene::UScene()
+{
+}
+
+UScene::~UScene()
+{
+}
+
+void UScene::Update(float DeltaTime)
 {
 	for (UPrimitiveComponent* Prim : PrimitiveContainer)
 	{
@@ -51,12 +59,12 @@ void FScene::Update(float DeltaTime)
 	}
 }
 
-std::string FScene::ToJson()
+std::string UScene::ToJson()
 {
 	return ToJson(*this);
 }
 
-std::string FScene::ToJson(FScene scene)
+std::string UScene::ToJson(UScene scene)
 {
 	json::JSON json;
 	json["Version"] = scene.Version;
@@ -72,9 +80,9 @@ std::string FScene::ToJson(FScene scene)
 	return json.dump();
 }
 
-FScene FScene::FromJson(std::string jsonStr)
+UScene UScene::FromJson(std::string jsonStr)
 {
-	FScene scene;
+	UScene scene;
 
 	json::JSON obj;
 	obj = json::JSON::Load(jsonStr);
@@ -92,10 +100,13 @@ FScene FScene::FromJson(std::string jsonStr)
 	return scene;
 }
 
-void FScene::Render() const
+void UScene::Render() const
 {
 	for (UPrimitiveComponent* PrimComponent : PrimitiveContainer)
 	{
-		PrimComponent->Render(Renderer);
+		URenderObject* Obj = PrimComponent->Render();
+		Renderer->PushRenderObject(Obj);
 	}
 }
+
+REGISTER_CLASS(UScene);

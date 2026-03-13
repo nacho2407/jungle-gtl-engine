@@ -1,11 +1,12 @@
 ﻿#include "URender.h"
-#include "Sphere.h"
 void URenderer::Create(HWND hWindow) {
 	CreateDeviceAndSwapChain(hWindow);
 
 	CreateFrameBuffer();
 
 	CreateRasterizerState();
+
+	CreateConstantBuffer();
 }
 
 void URenderer::CreateDeviceAndSwapChain(HWND hWindow) {
@@ -226,133 +227,34 @@ void URenderer::UpdateConstant(const FConstantBufferData& Data) {
 	}
 }
 
-void URenderer::DrawPrimitive(FVector InScale, FVector InRotation, FVector InTranslation, std::string MeshID)
-{
-	if (ResourceContainer.find(MeshID) == ResourceContainer.end())
-		return;
+//void URenderer::DrawPrimitive(FVector InScale, FVector InRotation, FVector InTranslation, std::string MeshID)
+//{
+//	if (ResourceContainer.find(MeshID) == ResourceContainer.end())
+//		return;
+//
+//	FRenderData Data;
+//	Data.Scale = FMatrix::SclaeMatrix(InScale);
+//	Data.Rotation = FMatrix::EulerRotationMatrix(InRotation);
+//	Data.Translation = FMatrix::TranslationMatrix(InTranslation);
+//	Data.MeshData = ResourceContainer[MeshID];
+//	RenderDataContainer.push_back(Data);
+//}
 
-	FRenderData Data;
-	Data.Scale = FMatrix::SclaeMatrix(InScale);
-	Data.Rotation = FMatrix::EulerRotationMatrix(InRotation);
-	Data.Translation = FMatrix::TranslationMatrix(InTranslation);
-	Data.MeshData = ResourceContainer[MeshID];
-	RenderDataContainer.push_back(Data);
-}
-
-void URenderer::AddCubeMesh()
-{
-	std::string id = "Cube";
-	FVertexSimple cubeVertices[] =
-	{
-		// Front (+Z) - Red
-		{ -0.5f,-0.5f, 0.5f, 1,0,0,1 },
-		{  0.5f,-0.5f, 0.5f, 1,0,0,1 },
-		{  0.5f, 0.5f, 0.5f, 1,0,0,1 },
-
-		{ -0.5f,-0.5f, 0.5f, 1,0,0,1 },
-		{  0.5f, 0.5f, 0.5f, 1,0,0,1 },
-		{ -0.5f, 0.5f, 0.5f, 1,0,0,1 },
-
-
-		// Back (-Z) - Green
-		{  0.5f,-0.5f,-0.5f, 0,1,0,1 },
-		{ -0.5f,-0.5f,-0.5f, 0,1,0,1 },
-		{ -0.5f, 0.5f,-0.5f, 0,1,0,1 },
-
-		{  0.5f,-0.5f,-0.5f, 0,1,0,1 },
-		{ -0.5f, 0.5f,-0.5f, 0,1,0,1 },
-		{  0.5f, 0.5f,-0.5f, 0,1,0,1 },
-
-
-		// Left (-X) - Blue
-		{ -0.5f,-0.5f,-0.5f, 0,0,1,1 },
-		{ -0.5f,-0.5f, 0.5f, 0,0,1,1 },
-		{ -0.5f, 0.5f, 0.5f, 0,0,1,1 },
-
-		{ -0.5f,-0.5f,-0.5f, 0,0,1,1 },
-		{ -0.5f, 0.5f, 0.5f, 0,0,1,1 },
-		{ -0.5f, 0.5f,-0.5f, 0,0,1,1 },
-
-
-		// Right (+X) - Yellow
-		{ 0.5f,-0.5f, 0.5f, 1,1,0,1 },
-		{ 0.5f,-0.5f,-0.5f, 1,1,0,1 },
-		{ 0.5f, 0.5f,-0.5f, 1,1,0,1 },
-
-		{ 0.5f,-0.5f, 0.5f, 1,1,0,1 },
-		{ 0.5f, 0.5f,-0.5f, 1,1,0,1 },
-		{ 0.5f, 0.5f, 0.5f, 1,1,0,1 },
-
-
-		// Top (+Y) - Cyan
-		{ -0.5f,0.5f, 0.5f, 0,1,1,1 },
-		{  0.5f,0.5f, 0.5f, 0,1,1,1 },
-		{  0.5f,0.5f,-0.5f, 0,1,1,1 },
-
-		{ -0.5f,0.5f, 0.5f, 0,1,1,1 },
-		{  0.5f,0.5f,-0.5f, 0,1,1,1 },
-		{ -0.5f,0.5f,-0.5f, 0,1,1,1 },
-
-
-		// Bottom (-Y) - Magenta
-		{ -0.5f,-0.5f,-0.5f, 1,0,1,1 },
-		{  0.5f,-0.5f,-0.5f, 1,0,1,1 },
-		{  0.5f,-0.5f, 0.5f, 1,0,1,1 },
-
-		{ -0.5f,-0.5f,-0.5f, 1,0,1,1 },
-		{  0.5f,-0.5f, 0.5f, 1,0,1,1 },
-		{ -0.5f,-0.5f, 0.5f, 1,0,1,1 },
-	};
-
-	FMeshData MeshData;
-	MeshData.VertexCount = sizeof(cubeVertices) / sizeof(FVertexSimple);
-	MeshData.VertexBuffer = CreateVertexBuffer(cubeVertices, sizeof(cubeVertices));
-	MeshData.VS = SimpleVertexShader;
-	MeshData.PS = SimplePixelShader;
-	MeshData.Layout = SimpleInputLayout;
-	MeshData.IndexBuffer = nullptr;
-
-	ResourceContainer[id] = MeshData;
-}
-
-void URenderer::AddSphereMesh()
-{
-
-	std::string id = "Sphere";
-	FMeshData MeshData;
-	MeshData.VertexCount = sizeof(sphere_vertices) / sizeof(FVertexSimple);
-	MeshData.VertexBuffer = CreateVertexBuffer((FVertexSimple*)sphere_vertices, sizeof(sphere_vertices));
-	MeshData.VS = SimpleVertexShader;
-	MeshData.PS = SimplePixelShader;
-	MeshData.Layout = SimpleInputLayout;
-	MeshData.IndexBuffer = nullptr;
-
-	ResourceContainer[id] = MeshData;
-}
 
 void URenderer::Render()
 {
-	FConstantBufferData ConstantData;
-	ConstantData.Model = FMatrix::IdentityMatrix();
-	ConstantData.Veiw = FMatrix::IdentityMatrix();
-	ConstantData.Projection = FMatrix::IdentityMatrix();
+	RenderObjectConstants GlobalConstants;
+	GlobalConstants.View = FMatrix::IdentityMatrix();
+	GlobalConstants.Projection = FMatrix::IdentityMatrix();
 
-	for (FRenderData& RenderData : RenderDataContainer)
+	for (URenderObject* RenderObj : RenderObjects)
 	{
-		ConstantData.Model = RenderData.Scale * RenderData.Rotation * RenderData.Translation;
-		DeviceContext->VSSetShader(RenderData.MeshData.VS, nullptr, 0);
-		DeviceContext->PSSetShader(RenderData.MeshData.PS, nullptr, 0);
-		DeviceContext->IASetInputLayout(RenderData.MeshData.Layout);
-		UpdateConstant(ConstantData);
+		//Camera
+		RenderObj->Constants.View = GlobalConstants.View;
+		RenderObj->Constants.Projection = GlobalConstants.Projection;
 
-		UINT offset = 0;
-		DeviceContext->IASetVertexBuffers(0, 1, &RenderData.MeshData.VertexBuffer, &Stride, &offset);
-
-		if (ConstantBuffer) {
-			DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
-		}
-		DeviceContext->Draw(RenderData.MeshData.VertexCount, 0);
+		RenderObj->SetConstantBuffer(ConstantBuffer);
+		RenderObj->Render(DeviceContext);
 	}
-
-	RenderDataContainer.clear();
+	RenderObjects.clear();
 }
