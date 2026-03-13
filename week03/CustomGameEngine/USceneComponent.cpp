@@ -20,3 +20,19 @@ FMatrix USceneComponent::GetRelativeMatrix() const
 
 	return S * R * T;
 }
+
+json::JSON USceneComponent::Serialize()
+{
+	json::JSON jsonObj;
+	jsonObj["Location"] = RelativeLocation.Serialize();
+	jsonObj["Rotation"] = RelativeRotation.Serialize();
+	jsonObj["Scale"] = RelativeScale3D.Serialize();
+	return jsonObj;
+}
+
+void USceneComponent::Deserialize(json::JSON jsonObj)
+{
+	RelativeLocation.Deserialize(jsonObj["Location"]);
+	RelativeRotation.Deserialize(jsonObj["Rotation"]);
+	RelativeScale3D.Deserialize(jsonObj["Scale"]);
+}

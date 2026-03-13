@@ -75,6 +75,11 @@ void EngineApp::Run()
 	Cube2->RelativeLocation = FVector(0.5, 0, 0);
 	Cube2->RelativeScale3D = FVector(0.5, 0.5, 0.5);
 	Scene->PrimitiveContainer.push_back(Cube2);
+
+	UPrimitiveComponent* p = (UPrimitiveComponent*)cubeobj2;
+	p->SetType(EPrimitiveType::Cube);
+	FString str = p->Serialize().dump();
+	UE_LOG("%s", str.c_str());
 	//-----TEST
 
 	Timer* globalTimer = TimerManager::GetInstance().GetGlobalTimer();

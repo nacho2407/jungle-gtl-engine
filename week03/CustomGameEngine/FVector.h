@@ -1,10 +1,12 @@
 ﻿#pragma once
+#include "ISerializable.h"
 
 // Structure for a 3D vector
-class FVector
+class FVector : public ISerializable
 {
 public:
     FVector(float _x = 0.0f, float _y = 0.0f, float _z = 0.0f) : x(_x), y(_y), z(_z) {}
+	~FVector();
     float Dot(const FVector& Other) const;
     FVector Cross(const FVector& Other) const;
     FVector operator+(const FVector& Other) const;
@@ -16,6 +18,8 @@ public:
     float Length() const;
     bool IsNearlyEqual(const FVector& Other, float Epsilon = 1e-6f) const;
 
+	json::JSON Serialize();
+	void Deserialize(json::JSON);
 public:
 	float x, y, z;
 };
