@@ -59,7 +59,7 @@ class URenderer {
 
  public:
   struct FConstantBufferData {
-    FMatrix4x4 World;
+    FMatrix World;
   };
   ID3D11Buffer* ConstantBuffer{nullptr};
 
@@ -67,5 +67,5 @@ class URenderer {
 
   void ReleaseConstantBuffer();
 
-  void UpdateConstant(const FMatrix4x4& World);
+  void UpdateConstant(const FMatrix& World);
 };

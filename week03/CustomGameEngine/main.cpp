@@ -5,7 +5,6 @@
 #pragma comment(lib, "d3dcompiler")
 
 #include "FVector.h"
-
 #include "FMatrix.h"
 #include "URender.h"
 #include "FVertexSimple.h"
@@ -33,7 +32,7 @@ class UPrimitive {
  public:
   virtual ~UPrimitive() {}
   virtual void Update(float DeltaTime, bool GravityEnable, bool SpinEnable) = 0;
-  virtual FMatrix4x4 GetWorldMatrix() const = 0;
+  virtual FMatrix GetWorldMatrix() const = 0;
   virtual bool CheckCollision(const UPrimitive* Other) = 0;
 };
 
@@ -119,13 +118,13 @@ class UBall : public UPrimitive {
     }
   }
 
-  virtual FMatrix4x4 GetWorldMatrix() const override {
-    FMatrix4x4 mScale;
+  virtual FMatrix GetWorldMatrix() const override {
+    FMatrix mScale;
     mScale.m[0][0] = Radius;
     mScale.m[1][1] = Radius;
     mScale.m[2][2] = Radius;
 
-    FMatrix4x4 mRotation;
+    FMatrix mRotation;
     float CosCalc{cosf(Rotation)};
     float SinCalc{sinf(Rotation)};
     mRotation.m[0][0] = CosCalc;
@@ -133,7 +132,7 @@ class UBall : public UPrimitive {
     mRotation.m[1][0] = -SinCalc;
     mRotation.m[1][1] = CosCalc;
 
-    FMatrix4x4 mTranslation;
+    FMatrix mTranslation;
     mTranslation.m[3][0] = Location.x;
     mTranslation.m[3][1] = Location.y;
     mTranslation.m[3][2] = Location.z;
