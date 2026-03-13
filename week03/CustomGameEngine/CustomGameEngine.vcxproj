@@ -129,6 +129,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="FMatrix.h" />
+    <ClInclude Include="Scene.h" />
     <ClInclude Include="FVector.h" />
     <ClInclude Include="FVertexSimple.h" />
     <ClInclude Include="ImGui\imconfig.h" />
@@ -140,6 +141,7 @@
     <ClInclude Include="ImGui\imstb_textedit.h" />
     <ClInclude Include="ImGui\imstb_truetype.h" />
     <ClInclude Include="Math\FVector4.h" />
+    <ClInclude Include="json.hpp" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="UEngineStatics.h" />
     <ClInclude Include="UEngineTypes.h" />
@@ -148,6 +150,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FMatrix.cpp" />
+    <ClCompile Include="Scene.cpp" />
     <ClCompile Include="FVector.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
     <ClCompile Include="ImGui\imgui_demo.cpp" />
