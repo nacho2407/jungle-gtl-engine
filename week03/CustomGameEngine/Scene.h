@@ -1,17 +1,16 @@
 ﻿#pragma once
 #include <string>
-#include "json.hpp"
+#include "UEngineTypes.h"
+#include "USceneComponent.h"
 
 class FScene
 {
 public:
 	int Version;
 	int NextUUID;
-	// TArray<UObject> Primitives;
+	TArray<USceneComponent> Primitives;
 	
 	std::string ToJson();
 	static std::string ToJson(FScene);
 	static FScene FromJson(std::string);
 };
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FScene, Version, NextUUID)

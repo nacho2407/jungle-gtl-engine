@@ -34,3 +34,5 @@ void UObject::operator delete(void* p, size_t size)
 
 	::operator delete(p, size);
 }
+
+REGISTER_CLASS(UObject);
