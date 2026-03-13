@@ -1,6 +1,7 @@
 ﻿#include "EditorControlPanel.h"
 #include "ImGui/imgui.h"
 #include "FVector.h"
+#include "TimerManager.h"
 #include <string>
 
 // Remove later.
@@ -35,7 +36,9 @@ void EditorControlPanel::Draw()
 
 	ImGui::Begin("Jungle Control Panel");
 	ImGui::Text("Hello Jungle World!");
-	ImGui::Text("FPS 60 (1 ms)");
+	ImGui::Text("FPS %d (%d ms)",
+		TimerManager::GetInstance().GetGlobalFPS(),
+		static_cast<int>(TimerManager::GetInstance().GetGlobalDeltaTime() * 1000));
 	ImGui::Separator();
 
 	if (ImGui::Combo("Primitive", (int*)&type, "Triangle\0Cube\0Sphere\0"))

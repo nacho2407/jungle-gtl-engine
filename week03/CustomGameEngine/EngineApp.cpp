@@ -5,6 +5,7 @@
 #include "UCubeComp.h"
 #include "Editor.h"
 #include "Logger.h"
+#include "TimerManager.h"
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -41,6 +42,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	CreateEngineWindow();
 	Renderer->Create(HWnd);
 	EditorInst->Initialize(HWnd, Renderer->Device, Renderer->DeviceContext);
+
 	// Create Shader
 	D3D11_INPUT_ELEMENT_DESC layout[] = {
 	{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
@@ -51,6 +53,8 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	ResourceManager::GetInstance()->CompileVertexShaderAndLayout(L"ShaderW0.hlsl", "mainVS", Renderer->Device, layout, 2);
 	ResourceManager::GetInstance()->CompilePixelShader(L"ShaderW0.hlsl", "mainPS", Renderer->Device);
 	ResourceManager::GetInstance()->AddCubeMesh(Renderer->Device);
+
+	TimerManager::GetInstance().CreateGlobalTimer();
 
 	return true;
 }
@@ -73,6 +77,9 @@ void EngineApp::Run()
 	Scene->PrimitiveContainer.push_back(Cube2);
 	//-----TEST
 
+	Timer* globalTimer = TimerManager::GetInstance().GetGlobalTimer();
+	globalTimer->Reset();
+
 	bool bIsExit = false;
 	while (bIsExit == false)
 	{
@@ -90,13 +97,17 @@ void EngineApp::Run()
 		}
 
 		// Main Loop
+		TimerManager::GetInstance().Tick();
+
 		Renderer->Prepare();
 		Renderer->PrepareShader();
 
-		Scene->Update(0.016f);
+		Scene->Update(globalTimer->GetDeltaTime());
 		Scene->Render();
 
 		Renderer->Render();
+		EditorInst->Render();
+
 		EditorInst->Render();
 
 		Renderer->SwapBuffer();
@@ -105,6 +116,11 @@ void EngineApp::Run()
 
 void EngineApp::Finalize()
 {
+	if (EditorInst)
+	{
+		EditorInst->Finalize();
+	}
+
 	if (Renderer)
 	{
 		Renderer->Release();
