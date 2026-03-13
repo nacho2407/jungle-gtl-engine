@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "UEngineTypes.h"
+#include "FObjectFactory.h"
 
 #define DECLARE_RTTI(cls, parent_cls) \
 	public: \
@@ -9,6 +10,18 @@
 			 if (GetClass() == id) return true; \
 			 return parent_cls::IsA(id); \
 		}
+
+#define REGISTER_CLASS(cls) \
+	namespace { \
+		struct cls##Registrar \
+		{ \
+			cls##Registrar() \
+			{ \
+				FObjectFactory::RegisterClass(cls::GetClass(), []() -> UObject* { return new cls(); }); \
+			} \
+		}; \
+		static cls##Registrar global_##cls##Registrar; \
+	}
 
 class UObject
 {

@@ -7,3 +7,5 @@ UPrimitiveComponent::UPrimitiveComponent()
 UPrimitiveComponent::~UPrimitiveComponent()
 {
 }
+
+REGISTER_CLASS(UPrimitiveComponent);
