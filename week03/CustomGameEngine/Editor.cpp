@@ -6,12 +6,14 @@
 #include "EditorConsole.h"
 #include "EditorControlPanel.h"
 #include "EditorPropertyPanel.h"
+#include "EditorStatPanel.h"
 
 Editor::Editor()
 {
 	ControlPanel = new EditorControlPanel();
 	Console = new EditorConsole();
 	PropertyPanel = new EditorPropertyPanel();
+	StatPanel = new EditorStatPanel();
 }
 
 Editor::~Editor()
@@ -38,6 +40,7 @@ void Editor::Render()
 	DrawControlPanel();
 	DrawConsole();
 	DrawPropertyPanel();
+	DrawStatPanel();
 
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -64,4 +67,9 @@ void Editor::DrawConsole()
 void Editor::DrawPropertyPanel()
 {
 	PropertyPanel->Draw(SelectedComponent);
+}
+
+void Editor::DrawStatPanel()
+{
+	StatPanel->Draw();
 }
