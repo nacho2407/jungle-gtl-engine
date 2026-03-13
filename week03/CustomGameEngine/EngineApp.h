@@ -4,7 +4,6 @@
 class USceneComponent;
 class Editor;
 
-#include "ResourceManager.h"
 class EngineApp
 {
 public:
