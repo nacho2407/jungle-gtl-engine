@@ -13,14 +13,14 @@
 
 #define REGISTER_CLASS(cls) \
 	namespace { \
-		struct cls##Registrar \
+		struct cls##Register \
 		{ \
-			cls##Registrar() \
+			cls##Register() \
 			{ \
 				FObjectFactory::RegisterObjectType(cls::GetClass(), []() -> UObject* { return new cls(); }); \
 			} \
 		}; \
-		static cls##Registrar global_##cls##Registrar; \
+		static cls##Register global_##cls##Register; \
 	}
 
 class UObject
@@ -40,3 +40,13 @@ public:
 	uint32 UUID;
 	uint32 InternalIndex;
 };
+
+template <typename To, typename From>
+To* Cast(From* obj)
+{
+	if (obj && obj->IsA(To::GetClass()))
+	{
+		return static_cast<To*>(obj);
+	}
+	return nullptr;
+}
