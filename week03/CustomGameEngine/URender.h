@@ -12,6 +12,8 @@
 #include "RenderObject.h"
 #include "UEngineTypes.h"
 
+
+
 class URenderer {
 public:
 	ID3D11Device* Device = nullptr;
@@ -81,7 +83,7 @@ public:
 public:
 
 	void PushRenderObject(URenderObject* RenderObj) { RenderObjects.push_back(RenderObj); }
-	void Render();
+	void Render(class UCamera* Camera);
 
 	TArray<URenderObject*> RenderObjects;
 };

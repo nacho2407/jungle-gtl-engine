@@ -5,6 +5,8 @@
 #include "UCubeComp.h"
 #include "Editor.h"
 #include "Logger.h"
+#include "UCamera.h"
+#include "InputManager.h"
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -72,6 +74,10 @@ void EngineApp::Run()
 	Scene->PrimitiveContainer.push_back(Cube2);
 	//-----TEST
 
+	UCamera Camera;
+        Camera.SetPosition(FVector(0.f, 0.f, -5.f));
+	Camera.OnResize(1024, 1024);
+
 	bool bIsExit = false;
 	while (bIsExit == false)
 	{
@@ -88,6 +94,24 @@ void EngineApp::Run()
 			}
 		}
 
+		InputManager::GetInstance().Update();
+        if (InputManager::GetInstance().IsKeyHold(VK_UP) &&
+            !InputManager::GetInstance().IsKeyHold(VK_DOWN)) {
+            Camera.MoveUp();
+        } else if (!InputManager::GetInstance().IsKeyHold(VK_UP) &&
+                    InputManager::GetInstance().IsKeyHold(VK_DOWN)) {
+            Camera.MoveDown();
+        }
+        if (InputManager::GetInstance().IsKeyHold(VK_LEFT) &&
+            !InputManager::GetInstance().IsKeyHold(VK_RIGHT)) {
+            Camera.MoveLeft();
+        } else if (!InputManager::GetInstance().IsKeyHold(VK_LEFT) &&
+                    InputManager::GetInstance().IsKeyHold(VK_RIGHT)) {
+            Camera.MoveRight();
+        }
+		Camera.update();
+
+
 		// Main Loop
 		Renderer->Prepare();
 		Renderer->PrepareShader();
@@ -95,7 +119,7 @@ void EngineApp::Run()
 		Scene->Update(0.016f);
 		Scene->Render();
 
-		Renderer->Render();
+		Renderer->Render(&Camera);
 
 		Renderer->SwapBuffer();
 	}

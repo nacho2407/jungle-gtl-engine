@@ -1,4 +1,5 @@
 ﻿#include "URender.h"
+#include "UCamera.h"
 void URenderer::Create(HWND hWindow) {
 	CreateDeviceAndSwapChain(hWindow);
 
@@ -241,17 +242,14 @@ void URenderer::UpdateConstant(const FConstantBufferData& Data) {
 //}
 
 
-void URenderer::Render()
+void URenderer::Render(UCamera* Camera)
 {
-	RenderObjectConstants GlobalConstants;
-	GlobalConstants.View = FMatrix::IdentityMatrix();
-	GlobalConstants.Projection = FMatrix::IdentityMatrix();
 
 	for (URenderObject* RenderObj : RenderObjects)
 	{
 		//Camera
-		RenderObj->Constants.View = GlobalConstants.View;
-		RenderObj->Constants.Projection = GlobalConstants.Projection;
+		RenderObj->Constants.View = Camera->GetViewMatrix();
+                RenderObj->Constants.Projection = Camera->GetProjectionMatrix();
 
 		RenderObj->SetConstantBuffer(ConstantBuffer);
 		RenderObj->Render(DeviceContext);

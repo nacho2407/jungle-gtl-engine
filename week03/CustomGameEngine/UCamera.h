@@ -15,6 +15,7 @@ class UCamera {
   float Yaw{0.0f};
   float Roll{0.0f};
   bool IsChanged{true};
+  float MoveSpeed{0.1f};
 
   float FOV{60.0f};
   float AspectRatio{16.0f / 9.0f};
@@ -34,15 +35,21 @@ class UCamera {
    ~UCamera() {};
 
    void SetPosition(const FVector& _input);
-   void SetDirection(const const float InputPitch, const float InputYaw,
+   void MoveUp();
+   void MoveDown();
+   void MoveLeft();
+   void MoveRight();
+   void SetDirection(const float InputPitch, const float InputYaw,
                      const float InputRoll);
+   void Rotate(const float InputPitch, const float InputYaw,
+               const float InputRoll);
    FMatrix GetViewProjectionMatrix() const;
 
    void OnResize(int NewWidth, int NewHeight);
    void update();
-
-   private:
    FMatrix GetViewMatrix() const;
    FMatrix GetProjectionMatrix() const;
+
+   private:
 };
 

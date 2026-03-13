@@ -1,16 +1,33 @@
 ﻿#include "UCamera.h"
 
-
-void UCamera::SetPosition(const FVector& _input) 
-{ 
-    if (!Position.IsNearlyEqual(_input, Epsilon))
-    {
-      Position = _input;
-      IsChanged = true;
-    }
+void UCamera::SetPosition(const FVector& _input) {
+  if (!Position.IsNearlyEqual(_input, Epsilon)) {
+    Position = _input;
+    IsChanged = true;
+  }
 }
 
-void UCamera::SetDirection(const const float InputPitch, const float InputYaw,
+void UCamera::MoveUp() {
+  Position = Position + UpDirection * MoveSpeed;
+  IsChanged = true;
+}
+
+void UCamera::MoveDown() {
+  Position = Position - UpDirection * MoveSpeed;
+  IsChanged = true;
+}
+
+void UCamera::MoveLeft() {
+  Position = Position - SideDirection * MoveSpeed;
+  IsChanged = true;
+}
+
+void UCamera::MoveRight() {
+  Position = Position + SideDirection * MoveSpeed;
+  IsChanged = true;
+}
+
+void UCamera::SetDirection(const float InputPitch, const float InputYaw,
                            const float InputRoll) {
   if (std::abs(Pitch - InputPitch) < Epsilon) {
     Pitch = std::max(-89.9f, std::min(89.9f, InputPitch));
@@ -25,15 +42,17 @@ void UCamera::SetDirection(const const float InputPitch, const float InputYaw,
     IsChanged = true;
   }
 }
-  FMatrix UCamera::GetViewProjectionMatrix() const { return ViewProjection; }
 
-void UCamera::OnResize(int NewWidth, int NewHeight)
-{
+void UCamera::Rotate(const float InputPitch, const float InputYaw,
+            const float InputRoll) {}
+
+FMatrix UCamera::GetViewProjectionMatrix() const { return ViewProjection; }
+
+void UCamera::OnResize(int NewWidth, int NewHeight) {
   AspectRatio = static_cast<float>(NewWidth) / static_cast<float>(NewHeight);
 }
 
-void UCamera::update()
-{
+void UCamera::update() {
   if (!IsChanged) return;
 
   View = GetViewMatrix();
@@ -54,15 +73,15 @@ void UCamera::update()
   IsChanged = false;
 }
 
-FMatrix UCamera::GetViewMatrix() const  {
+FMatrix UCamera::GetViewMatrix() const {
   FMatrix InvT;
   InvT[3][0] = -Position.x;
   InvT[3][1] = -Position.y;
   InvT[3][2] = -Position.z;
 
   FMatrix InvR = FMatrix::RotationZMatrix(-Roll) *
-                    FMatrix::RotationYMatrix(-Yaw) *
-                    FMatrix::RotationXMatrix(-Pitch);
+                 FMatrix::RotationYMatrix(-Yaw) *
+                 FMatrix::RotationXMatrix(-Pitch);
   return InvT * InvR;
 }
 
