@@ -103,6 +103,9 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	//Init Picker
 	Picker = Cast<UPicker>(FObjectFactory::ConstructObject(UPicker::GetClass()));
 
+	//Init Scene
+	SceneManager::GetInstance().GetActiveScene()->InjectRenderer(Renderer);
+
 	// Init Timer
 	TimerManager::GetInstance().CreateGlobalTimer();
 
@@ -113,18 +116,13 @@ void EngineApp::Run()
 {
 	//----TEST
 	UObject* sceneobj = FObjectFactory::ConstructObject(UScene::GetClass());
-	UScene* Scene = Cast<UScene>(sceneobj);
-	Scene->InjectRenderer(Renderer);
 
 
-	UObject* cubeobj = FObjectFactory::ConstructObject(UCubeComp::GetClass());
-	UCubeComp* Cube = Cast<UCubeComp>(cubeobj);
-	Scene->PrimitiveContainer.push_back(Cube);
 	UObject* cubeobj2 = FObjectFactory::ConstructObject(UCubeComp::GetClass());
 	UCubeComp* Cube2 = Cast<UCubeComp>(cubeobj2);
 	Cube2->RelativeLocation = FVector(0.0, 0, 0);
 	Cube2->RelativeScale3D = FVector(2.f, 2.f, 2.f);
-	Scene->PrimitiveContainer.push_back(Cube2);
+	SceneManager::GetInstance().GetActiveScene()->PrimitiveContainer.push_back(Cube2);
 
 	Camera->SetPosition(FVector(0, 0, -10.f));
 	//-----TEST
@@ -151,7 +149,12 @@ void EngineApp::Run()
 
 		TimerManager::GetInstance().Tick();
 		InputManager::GetInstance().Update();
-		//Picker->Pick(Camera, SceneManager::GetInstance()->GetActiveScene());
+		UScene* Scene = SceneManager::GetInstance().GetActiveScene();
+		if (InputManager::GetInstance().IsKeyDown(VK_LBUTTON))
+		{
+			FVector Mouse = InputManager::GetInstance().MousePos;
+			Picker->Pick(Mouse.x, Mouse.y, Camera, SceneManager::GetInstance().GetActiveScene());
+		}
 
 		Camera->Move();
 		Camera->Rotate();

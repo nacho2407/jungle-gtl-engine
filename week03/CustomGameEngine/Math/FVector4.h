@@ -16,13 +16,13 @@ struct FVector4
 
 	FVector4 operator*(const FMatrix& Matrix)
 	{
-		int sum[4] = { 0,0,0,0 };
+		float sum[4] = { 0,0,0,0 };
 		for (int col = 0; col < 4;++col)
 		{
 			sum[col] += x * Matrix[0][col];
-			sum[col] += y * Matrix[0][col];
-			sum[col] += z * Matrix[0][col];
-			sum[col] += w * Matrix[0][col];
+			sum[col] += y * Matrix[1][col];
+			sum[col] += z * Matrix[2][col];
+			sum[col] += w * Matrix[3][col];
 		}
 		return FVector4(sum[0], sum[1], sum[2], sum[3]);
 	}

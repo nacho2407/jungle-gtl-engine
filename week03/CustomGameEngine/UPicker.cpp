@@ -21,7 +21,7 @@ void UPicker::Pick(int ScreenX, int ScreenY, UCamera* Camera, UScene* Scene)
 		float Distance = 0.f;
 		if (ray.Intersects(Comp, Distance))
 		{
-			UE_LOG("Hit Object at Distance");
+			UE_LOG("Hit Object at Distance : %f", Distance);
 			//TODO : Do Something
 		}
 
@@ -47,6 +47,8 @@ Ray UPicker::CreateRay(int ScreenX, int ScreenY, UCamera* Camera)
 	FVector4 FarWorld = FarView * InvView;
 
 	Ray ray;
+	//UE_LOG("Near World: (%f, %f, %f)", NearWorld.x, NearWorld.y, NearWorld.z);
+	//UE_LOG("Far World: (%f, %f, %f)", FarWorld.x, FarWorld.y, FarWorld.z);
 	ray.Origin = FVector(NearWorld.x, NearWorld.y, NearWorld.z);
 	ray.Direction = FVector(FarWorld.x - NearWorld.x, FarWorld.y - NearWorld.y, FarWorld.z - NearWorld.z).Normalize();
 

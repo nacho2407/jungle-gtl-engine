@@ -116,31 +116,31 @@ FMatrix FMatrix::operator*(const FMatrix& Other) const
 
 FMatrix FMatrix::ViewMatrix(FVector Eye, FVector Target, FVector Up)
 {
-	FVector F = (Target - Eye).Normalize();
-	FVector R = (Cross(Up, F)).Normalize();
-	FVector U = Cross(F, R);
+	FVector F = (Target - Eye).Normalize();   // Forward
+	FVector R = Cross(Up, F).Normalize();     // Right
+	FVector U = Cross(F, R);                  // Up
 
-	FMatrix M;
+	FMatrix M = IdentityMatrix();
 
 	M.m[0][0] = R.x;
-	M.m[0][1] = R.y;
-	M.m[0][2] = R.z;
-	M.m[0][3] = -Dot(R, Eye);
+	M.m[1][0] = R.y;
+	M.m[2][0] = R.z;
+	M.m[3][0] = -Dot(R, Eye);
 
-	M.m[1][0] = U.x;
+	M.m[0][1] = U.x;
 	M.m[1][1] = U.y;
-	M.m[1][2] = U.z;
-	M.m[1][3] = -Dot(U, Eye);
+	M.m[2][1] = U.z;
+	M.m[3][1] = -Dot(U, Eye);
 
-	M.m[2][0] = F.x;
-	M.m[2][1] = F.y;
+	M.m[0][2] = F.x;
+	M.m[1][2] = F.y;
 	M.m[2][2] = F.z;
-	M.m[2][3] = -Dot(F, Eye);
+	M.m[3][2] = -Dot(F, Eye);
 
-	M.m[3][0] = 0;
-	M.m[3][1] = 0;
-	M.m[3][2] = 0;
-	M.m[3][3] = 1;
+	M.m[0][3] = 0.0f;
+	M.m[1][3] = 0.0f;
+	M.m[2][3] = 0.0f;
+	M.m[3][3] = 1.0f;
 
 	return M;
 }
