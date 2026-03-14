@@ -22,7 +22,8 @@ public:
 	static FMatrix ScaleMatrix(FVector InVec) { return ScaleMatrix(InVec.x, InVec.y, InVec.z); }
 	static FMatrix ScaleMatrix(float InX = 1.f, float InY = 1.f, float InZ = 1.f);
 
-	FVector TransformPoint(const FVector Vector) const;
+	FVector TransformPoint(const FVector& Vector) const;
+	FVector TransformVector(const FVector& Vector) const;
 
 	static float DegToRad(float Degree) { return Degree * 3.14159265358979323846f / 180.0f; }
 

@@ -186,7 +186,7 @@ void URenderer::Release() {
 
 }
 
-void URenderer::SwapBuffer() { SwapChain->Present(1, 0); }
+void URenderer::SwapBuffer() { SwapChain->Present(0, 0); }
 
 void URenderer::OnResize(UINT Width, UINT Height)
 {

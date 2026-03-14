@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include "World.h"
+#include "UEngineStatics.h"
 #include "Logger.h"
 
 SceneManager::SceneManager()
@@ -21,13 +22,17 @@ UScene* SceneManager::NewScene()
 		UnloadScene();
 	UScene* newScene = Cast<UScene>(FObjectFactory::ConstructObject(UScene::GetClass()));
 	GetWorld().SetActiveScene(newScene);
+	UEngineStatics::NextUUID = 0;
 	UE_LOG("Created new scene\n");
 	return GetWorld().GetActiveScene();
 }
 
 void SceneManager::SaveScene(FString sceneName)
 {
-	FString jsonStr = GetWorld().GetActiveScene()->ToJson();
+	UScene *activeScene = GetWorld().GetActiveScene();
+	activeScene->NextUUID = UEngineStatics::NextUUID;
+
+	FString jsonStr = activeScene->ToJson();
 	const FString filePath = sceneName + ".scene";
 	std::ofstream outFile(filePath);
 
@@ -57,10 +62,15 @@ UScene* SceneManager::LoadScene(FString sceneName)
 		FString jsonStr((std::istreambuf_iterator<char>(inFile)),
 			std::istreambuf_iterator<char>());
 		inFile >> jsonStr;
-		GetWorld().SetActiveScene(UScene::FromJson(jsonStr));
 		inFile.close();
+
+		UScene *loadedScene = UScene::FromJson(jsonStr);
+
+		GetWorld().SetActiveScene(loadedScene);
+		UEngineStatics::NextUUID = loadedScene->NextUUID;
+
 		UE_LOG("Loaded scene file: %s\n", filePath.c_str());
-		return GetWorld().GetActiveScene();
+		return loadedScene;
 	}
 	else
 	{

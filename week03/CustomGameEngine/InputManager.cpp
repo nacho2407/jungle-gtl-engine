@@ -39,6 +39,8 @@ void InputManager::UpdateMouse()
 	POINT pt;
 	GetCursorPos(&pt);
 
+	ScreenToClient(hWnd, &pt);
+
 	MousePos.x = static_cast<float>(pt.x);
 	MousePos.y = static_cast<float>(pt.y);
 

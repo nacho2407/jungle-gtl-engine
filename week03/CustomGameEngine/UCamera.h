@@ -33,7 +33,7 @@ public:
 	float ScreenWidth = 0.f;
 	float ScreenHeight = 0.f;
 	float RotateSensitivity = 0.1f;
-	bool IsOrthogonal{false};
+	bool IsOrthogonal{ false };
 	float OrthoHeight{ 10.0f };
 
 	//EProjectionType ProjectionType{ EProjectionType::Perspective };
@@ -71,5 +71,5 @@ public:
 	FMatrix GetViewProjectionMatrix() const;
 
 private:
-	
+
 };
