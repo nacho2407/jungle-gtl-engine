@@ -19,7 +19,7 @@ void EditorPropertyPanel::Draw(USceneComponent* selectedComponent)
 
 	if (selectedComponent)
 	{
-
+		selectedComponent->DrawProperties();
 	}
 
 	ImGui::End();
