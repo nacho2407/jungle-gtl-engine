@@ -11,6 +11,7 @@
 #include "Gizmo.h"
 #include "UPicker.h"
 #include "SceneManager.h"
+#include "ImGui/imgui.h"
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -154,16 +155,21 @@ void EngineApp::Run()
 		TimerManager::GetInstance().Tick();
 		InputManager::GetInstance().Update();
 		UScene* Scene = SceneManager::GetInstance().GetActiveScene();
-		if (InputManager::GetInstance().IsKeyDown(VK_LBUTTON))
+
+		ImGuiIO& io = ImGui::GetIO();
+
+		if (!io.WantCaptureMouse && InputManager::GetInstance().IsKeyDown(VK_LBUTTON))
 		{
 			FVector Mouse = InputManager::GetInstance().MousePos;
 			Picker->Pick(Mouse.x, Mouse.y, Camera, SceneManager::GetInstance().GetActiveScene());
 		}
 
-		Camera->Move();
-		Camera->Rotate();
+		if (!io.WantCaptureKeyboard && !io.WantCaptureMouse)
+		{
+			Camera->Move();
+			Camera->Rotate();
+		}
 		Camera->update();
-
 
 		//Render
 		Renderer->Prepare();
