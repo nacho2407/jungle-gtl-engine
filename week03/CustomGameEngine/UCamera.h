@@ -7,6 +7,13 @@
 #include "UObject.h"
 #include "InputManager.h"
 
+enum class EProjectionType
+{
+	Perspective,
+	Orthogonal,
+	Isometric
+};
+
 const FVector UpVec(0.0f, 1.0f, 0.0f);
 const float Epsilon = 1e-6f;
 
@@ -24,6 +31,10 @@ public:
 	bool IsChanged{ true };
 	float MoveSpeed{ 0.1f };
 	float RotateSensitivity = 0.1f;
+	bool IsOrthogonal{false};
+	float OrthoHeight{ 10.0f };
+
+	//EProjectionType ProjectionType{ EProjectionType::Perspective };
 
 	FVector Direction{ FVector(0.0f, 0.0f, 1.0f) };
 	FVector SideDirection{ FVector(1.0f, 0.0f, 0.0f) };
@@ -46,9 +57,15 @@ public:
 	float GetFOV() const;
 	void OnResize(int NewWidth, int NewHeight);
 	float GetAspectRatio() const;
+	void SetOrthogonal(bool input);
+	//void ChangePerpective(EProjectionType NewType);
 	void update();
+	void CalcViewMatrix();
 	FMatrix GetViewMatrix() const;
+	void CalcProjectionMatrix();
 	FMatrix GetProjectionMatrix() const;
+	void CalcPerspectiveProjectionMatrix();
+	void CalcOrthogonalProjectionMatrix();
 	FMatrix GetViewProjectionMatrix() const;
 
 private:

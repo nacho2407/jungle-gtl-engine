@@ -70,7 +70,7 @@ void EditorControlPanel::Draw(UCamera* camera)
 	}
 	ImGui::Separator();
 
-	ImGui::Checkbox("Orthogonal", &orthogonal); // TODO: Connect orthogonal property.
+	ImGui::Checkbox("Orthogonal", &camera->IsOrthogonal); // TODO: Connect orthogonal property.
 	ImGui::InputFloat("FOV", &camera->FOV);
 	ImGui::InputFloat3("Camera Location", &camera->Position.x);
 	ImGui::InputFloat3("Camera Rotation", &camera->Pitch);
