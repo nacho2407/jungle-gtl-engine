@@ -243,7 +243,7 @@ void EngineApp::CreateEngineWindow()
 
 	HWnd = CreateWindowExW(0, windowClass, title,
 		WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT, 1024, 1024, nullptr,
+		CW_USEDEFAULT, CW_USEDEFAULT, 1920, 1080, nullptr,
 		nullptr, nullptr, this);//lpParam에 this 넣어서 WndProc에서 접근 가능하도록
 }
 

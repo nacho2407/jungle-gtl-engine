@@ -26,8 +26,8 @@ public:
 	float Roll{ 0.0f };
 	float FOV{ 60.0f };
 	float AspectRatio{ 1.0f };
-	float NearPlane{ 0.1f };
-	float FarPlane{ 1000.0f };
+	float NearPlane{ 1.0f };
+	float FarPlane{ 2000.0f };
 	bool IsChanged{ true };
 	float MoveSpeed{ 0.1f };
 	float ScreenWidth = 0.f;
