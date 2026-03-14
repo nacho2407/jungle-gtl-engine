@@ -68,8 +68,8 @@ json::JSON FVector::Serialize()
 void FVector::Deserialize(json::JSON jsonObj)
 {
 	x = jsonObj[0].ToFloat();
-	y = jsonObj[0].ToFloat();
-	z = jsonObj[0].ToFloat();
+	y = jsonObj[1].ToFloat();
+	z = jsonObj[2].ToFloat();
 }
 
 FVector Cross(const FVector& a, const FVector& b)

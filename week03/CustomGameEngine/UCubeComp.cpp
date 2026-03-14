@@ -3,6 +3,7 @@
 #include "ResourceManager.h"
 UCubeComp::UCubeComp()
 {
+	type = EPrimitiveType::Cube;
 	ResourceManager* RM = ResourceManager::GetInstance();
 	VResource = &RM->GetVertexResource("Cube");
 }

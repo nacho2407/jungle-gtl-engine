@@ -1,5 +1,6 @@
 ﻿#include "World.h"
 #include "FObjectFactory.h"
+#include "UPrimitiveComponent.h"
 #include "algorithm"
 
 UScene* UWorld::activeScene;
@@ -13,29 +14,49 @@ UScene* UWorld::GetActiveScene()
 	return activeScene;
 }
 
-template <typename T>
-T* UWorld::AddSceneComponent()
+void UWorld::SetActiveScene(UScene* scene)
 {
-	// TODO: 액터 개념 도입되면 USceneComponent 대신 UActor로 교체
-	static_assert(std::is_base_of<USceneComponent, T>::value, "T must derive from USceneComponent");
-
-	int uuid = activeScene->NextUUID;
-	T* instance = FObjectFactory::ConstructObject(uuid);
-
-	activeScene->Primitives.push_back(static_cast<USceneComponent*>(instance));
-
-	activeScene->NextUUID += 1;
-	return instance;
+	activeScene = scene;
 }
 
 void UWorld::RemoveSceneComponent(USceneComponent* toDespawn)
 {
-	for (auto it = activeScene->Primitives.begin(); it != activeScene->Primitives.end(); it++)
+	for (auto it = activeScene->SceneComponents.begin(); it != activeScene->SceneComponents.end(); it++)
 	{
 		if ((*it) == toDespawn)
 		{
-			activeScene->Primitives.erase(it);
-			return;
+			activeScene->SceneComponents.erase(it);
+			break;
 		}
 	}
+	
+	auto primToDespawn = Cast<UPrimitiveComponent>(toDespawn);
+	if (primToDespawn != nullptr)
+	{
+		auto prims = &(activeScene->PrimitiveContainer);
+		for (auto it = prims->begin(); it != prims->end(); it++)
+		{
+			if ((*it) == primToDespawn)
+			{
+				prims->erase(it);
+				break;
+			}
+		}
+	}
+}
+
+void UWorld::Render() const
+{
+	// TODO: 멀티 씬 구조에서 for each scene 루프 중첩 추가
+	auto primitiveList = activeScene->PrimitiveContainer;
+	for (UPrimitiveComponent* PrimComponent : primitiveList)
+	{
+		URenderObject* Obj = PrimComponent->Render();
+		Renderer->PushRenderObject(Obj);
+	}
+}
+
+UWorld& GetWorld()
+{
+	return UWorld::GetInstance();
 }

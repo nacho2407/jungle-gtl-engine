@@ -6,10 +6,14 @@
 #include "Editor.h"
 #include "Logger.h"
 #include "TimerManager.h"
+#include "SceneManager.h"
+#include "World.h"
 #include "UCamera.h"
 #include "InputManager.h"
+#include "Gizmo.h"
 #include "UPicker.h"
 #include "SceneManager.h"
+#include "ImGui/imgui.h"
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -85,10 +89,12 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	ResourceManager::GetInstance()->CompileVertexShaderAndLayout(L"ShaderW0.hlsl", "mainVS", Renderer->Device, layout, 2);
 	ResourceManager::GetInstance()->CompilePixelShader(L"ShaderW0.hlsl", "mainPS", Renderer->Device);
 	ResourceManager::GetInstance()->AddCubeMesh(Renderer->Device);
+	ResourceManager::GetInstance()->AddGizmoTranslationMesh(Renderer->Device);
 
 	// Init Camera
 	Camera = Cast<UCamera>(FObjectFactory::ConstructObject(UCamera::GetClass()));
 	EditorInst->SetCamera(Camera);
+	EditorInst->SetRenderer(Renderer);
 
 	RECT rc;
 	int width = 0;
@@ -102,9 +108,11 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 
 	//Init Picker
 	Picker = Cast<UPicker>(FObjectFactory::ConstructObject(UPicker::GetClass()));
+	Picker->SetEditor(EditorInst);
 
-	//Init Scene
-	SceneManager::GetInstance().GetActiveScene()->InjectRenderer(Renderer);
+	//Init World & Scene
+	GetWorld().InjectRenderer(Renderer);
+	SceneManager::GetInstance().NewScene();
 
 	// Init Timer
 	TimerManager::GetInstance().CreateGlobalTimer();
@@ -122,7 +130,7 @@ void EngineApp::Run()
 	UCubeComp* Cube2 = Cast<UCubeComp>(cubeobj2);
 	Cube2->RelativeLocation = FVector(0.0, 0, 0);
 	Cube2->RelativeScale3D = FVector(2.f, 2.f, 2.f);
-	SceneManager::GetInstance().GetActiveScene()->PrimitiveContainer.push_back(Cube2);
+	GetWorld().GetActiveScene()->PrimitiveContainer.push_back(Cube2);
 
 	Camera->SetPosition(FVector(0, 0, -10.f));
 	//-----TEST
@@ -149,24 +157,31 @@ void EngineApp::Run()
 
 		TimerManager::GetInstance().Tick();
 		InputManager::GetInstance().Update();
-		UScene* Scene = SceneManager::GetInstance().GetActiveScene();
-		if (InputManager::GetInstance().IsKeyDown(VK_LBUTTON))
+		UScene* Scene = GetWorld().GetActiveScene();
+
+		ImGuiIO& io = ImGui::GetIO();
+
+		if (!io.WantCaptureMouse && InputManager::GetInstance().IsKeyDown(VK_LBUTTON))
 		{
 			FVector Mouse = InputManager::GetInstance().MousePos;
-			Picker->Pick(Mouse.x, Mouse.y, Camera, SceneManager::GetInstance().GetActiveScene());
+			Picker->Pick(Mouse.x, Mouse.y, Camera, GetWorld().GetActiveScene());
 		}
 
-		Camera->Move();
-		Camera->Rotate();
+		if (!io.WantCaptureKeyboard && !io.WantCaptureMouse)
+		{
+			Camera->Move();
+			Camera->Rotate();
+		}
 		Camera->update();
-
 
 		//Render
 		Renderer->Prepare();
 		Scene->Update(globalTimer->GetDeltaTime());
-		Scene->Render();
-		Renderer->Render(Camera);
+		GetWorld().Render();
 		EditorInst->Render();
+
+		Renderer->Render(Camera);
+		EditorInst->DrawUI();
 
 		Renderer->SwapBuffer();
 	}

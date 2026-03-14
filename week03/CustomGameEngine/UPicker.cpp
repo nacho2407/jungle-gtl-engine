@@ -5,6 +5,8 @@
 #include "Scene.h"
 #include "ResourceManager.h"
 #include "Logger.h"
+#include "Editor.h"
+
 UPicker::UPicker()
 {
 }
@@ -22,9 +24,12 @@ void UPicker::Pick(int ScreenX, int ScreenY, UCamera* Camera, UScene* Scene)
 		if (ray.Intersects(Comp, Distance))
 		{
 			UE_LOG("Hit Object at Distance : %f", Distance);
-			//TODO : Do Something
+			EditorPtr->SelectComponent(Comp);
 		}
-
+		else
+		{
+			EditorPtr->SelectComponent(nullptr);
+		}
 	}
 }
 
@@ -121,3 +126,5 @@ bool Ray::Intersects(UPrimitiveComponent* Comp, float& OutDistance)
 	}
 	return bHit;
 }
+
+REGISTER_CLASS(UPicker)

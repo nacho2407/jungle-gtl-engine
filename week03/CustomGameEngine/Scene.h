@@ -15,19 +15,15 @@ public:
 public:
 	int Version;
 	int NextUUID;
-	TArray<USceneComponent*> Primitives;
+	TArray<USceneComponent*> SceneComponents;
 
 
 	void Update(float DeltaTime);
 	std::string ToJson();
 	static std::string ToJson(UScene*);
 	static UScene* FromJson(std::string);
-	void InjectRenderer(URenderer* InRenderer) { Renderer = InRenderer; }
 	std::vector<UPrimitiveComponent*> PrimitiveContainer; // TODO : Change to TArray And Private
 
 public:
 	void Render() const;
-
-private:
-	URenderer* Renderer;
 };

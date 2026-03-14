@@ -44,3 +44,5 @@ void USceneComponent::DrawProperties()
 	ImGui::InputFloat3("Rotation", &RelativeRotation.x);
 	ImGui::InputFloat3("Scale", &RelativeScale3D.x);
 }
+
+REGISTER_CLASS(USceneComponent);

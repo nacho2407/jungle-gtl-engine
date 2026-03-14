@@ -13,8 +13,6 @@ private:
 public:
 	~SceneManager();
 
-	UScene* GetActiveScene();
-
 	// Unload current scene and create new scene
 	UScene* NewScene();
 
@@ -26,8 +24,5 @@ public:
 
 	// Unload Scene Synchronously
 	void UnloadScene();
-
-private:
-	UScene* activeScene;
 };
 
