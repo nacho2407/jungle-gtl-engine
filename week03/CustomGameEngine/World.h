@@ -22,7 +22,6 @@ public:
 		// TODO: 액터 개념 도입되면 USceneComponent 대신 UActor로 교체
 		static_assert(std::is_base_of<USceneComponent, T>::value, "T must derive from USceneComponent");
 
-		int uuid = activeScene->NextUUID;
 		UObject* obj = FObjectFactory::ConstructObject(T::GetClass());
 		T* instance = Cast<T>(obj);
 
@@ -33,8 +32,6 @@ public:
 		{
 			activeScene->PrimitiveContainer.push_back(primitive);
 		}
-
-		activeScene->NextUUID += 1;
 		return instance;
 	}
 
