@@ -255,8 +255,6 @@ void URenderer::ReleaseConstantBuffer() {
 	ObjectConstantBuffer.Release();
 }
 
-#include "Logger.h"
-
 void URenderer::Render(UCamera* Camera)
 {
 	FFrameConstant FrameConst;
@@ -271,7 +269,6 @@ void URenderer::Render(UCamera* Camera)
 
 	FObjectConstant ObjectConst;
 	auto renderObjects = &FLevel::GetInstance().RenderObjects;
-	UE_LOG("Drawing object count: %d\n", renderObjects->size());
 	for (RenderObject* RenderObj : *renderObjects)
 	{
 		if (RenderObj->bDepthEnabled)

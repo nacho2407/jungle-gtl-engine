@@ -91,13 +91,16 @@ UScene* SceneManager::LoadScene(FString sceneName)
 		// TODO: 에러 출력 로그 레벨 변경
 		UE_LOG("Cannot open file : %s\n", filePath.c_str());
 		return new UScene();
-	}
+	} 
 }
 
 void SceneManager::UnloadScene()
 {
 	UScene *curScene = GetWorld().GetActiveScene();
-	for (auto obj : curScene->SceneComponents)
+
+	// loop 내에서의 삽입/삭제로 인한 오류 방지
+	auto deleteList = curScene->SceneComponents;
+	for (auto obj : deleteList)
 	{
 		GetWorld().RemoveSceneComponent(obj);
 	}
