@@ -30,7 +30,7 @@ public:
 	VertexResource* GetVertexResource() { return VResource; }
 protected:
 	VertexResource* VResource;
+	EPrimitiveType type;
 private:
 	int MaterialHandle = -1;
-	EPrimitiveType type;
 };

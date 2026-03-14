@@ -1,8 +1,8 @@
 ﻿#include "Scene.h"
 #include "json.h"
-#include "URender.h"
 #include "UPrimitiveComponent.h"
-constexpr int INDENT = 4;
+#include "UCubeComp.h"
+#include "Logger.h"
 
 UScene::UScene()
 {
@@ -55,9 +55,24 @@ UScene* UScene::FromJson(std::string jsonStr)
 
 	for (auto pair : obj["Primitives"].ObjectRange())
 	{
-		USceneComponent* newSc = Cast<USceneComponent>(
-			FObjectFactory::ConstructObject(USceneComponent::GetClass())
-			);
+		USceneComponent* newSc = nullptr;
+		FString typeStr = pair.second["Type"].ToString();
+		if (typeStr == "Cube")
+			newSc = Cast<USceneComponent>(FObjectFactory::ConstructObject(UCubeComp::GetClass()));
+		if (typeStr == "Sphere")
+		{
+			UE_LOG("[Scene.cpp] Deserialize Sphere not implemented");
+			continue;
+		}
+		if (typeStr == "Triangle")
+		{
+			UE_LOG("[Scene.cpp] Deserialize Triangle not implemented");
+			continue;
+		}
+
+		if (newSc == nullptr)
+			continue;
+
 		newSc->Deserialize(pair.second);
 		newSc->UUID = std::stoi(pair.first);
 		scene->SceneComponents.push_back(newSc);
