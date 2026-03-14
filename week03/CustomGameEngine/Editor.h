@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <windows.h>
 #include <d3d11.h>
+#include "Gizmo.h"
 
 struct EditorControlPanel;
 struct EditorConsole;
@@ -24,8 +25,7 @@ public:
 
 	void SetRenderer(URenderer* renderer) { Renderer = renderer; }
 	void SetCamera(UCamera* camera) { Camera = camera; }
-	void SelectComponent(USceneComponent* component) { SelectedComponent = component; }
-	void GetSelectedComponent(USceneComponent*& outComponent) { outComponent = SelectedComponent; }
+	void SelectComponent(USceneComponent* component) { SelectedComponent = component; Gizmo::GetInstance().AttachToComponent(component); }
 
 private:
 	void DrawControlPanel();
