@@ -1,8 +1,13 @@
-cbuffer MyConstants : register(b0)
+cbuffer FrameConstant : register(b0)
 {
-    row_major matrix Model;
     row_major matrix View;
     row_major matrix Projection;
+};
+
+cbuffer ObjectConstant : register(b1)
+{
+    row_major matrix Model;
+    bool bIsSelected;
 };
 
 struct VS_INPUT

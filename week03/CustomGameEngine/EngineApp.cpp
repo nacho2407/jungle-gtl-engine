@@ -82,8 +82,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12,
 	 D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
-	ResourceManager::GetInstance()->CompileVertexShaderAndLayout(L"ShaderW0.hlsl", "mainVS", Renderer->Device, layout, 2);
-	ResourceManager::GetInstance()->CompilePixelShader(L"ShaderW0.hlsl", "mainPS", Renderer->Device);
+	ResourceManager::GetInstance()->CreateMaterial(L"ShaderW0.hlsl", L"ShaderW0.hlsl", Renderer->Device, layout, 2);
 	ResourceManager::GetInstance()->AddCubeMesh(Renderer->Device);
 
 	// Init Camera

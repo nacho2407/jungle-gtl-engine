@@ -11,7 +11,7 @@
 #include <unordered_map>
 #include "RenderObject.h"
 #include "UEngineTypes.h"
-
+#include "FConstantBuffer.h"
 
 
 class URenderer {
@@ -48,11 +48,23 @@ public:
 
 	void ReleaseVertexBuffer(ID3D11Buffer* vertexBuffer);
 
-public:
-	ID3D11Buffer* ConstantBuffer{ nullptr };
 
-	void CreateConstantBuffer();
+public:
+	struct FFrameConstant
+	{
+		FMatrix View;
+		FMatrix Projection;
+	};
+	struct FObjectConstant
+	{
+		FMatrix World;
+		bool bIsSelected;
+	};
+	FConstantBuffer FrameConstantBuffer; //View Proj
+	FConstantBuffer ObjectConstantBuffer; //World
+
 	void ReleaseConstantBuffer();
+	void CreateConstantBuffer();
 
 
 public:

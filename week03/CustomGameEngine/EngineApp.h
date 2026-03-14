@@ -28,6 +28,5 @@ private:
 	Editor* EditorInst = nullptr;
 	UCamera* Camera = nullptr;
 	UPicker* Picker = nullptr;
-
 };
 
