@@ -40,7 +40,7 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
 {
     if (bIsSelected > 0)
     {
-        return float4(input.Color.xyz, input.Color.w * 1.5f); // 선택 시 투명화.
+        return float4(input.Color.xyz, input.Color.w * 0.5f); // 선택 시 투명화.
     }
     return input.Color;
 }
