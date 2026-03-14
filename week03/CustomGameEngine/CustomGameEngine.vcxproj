@@ -134,6 +134,9 @@
     <ClInclude Include="EditorStatPanel.h" />
     <ClInclude Include="EngineApp.h" />
     <ClInclude Include="FColor.h" />
+    <ClInclude Include="FConstantBuffer.h" />
+    <ClInclude Include="FGeometry.h" />
+    <ClInclude Include="FLevel.h" />
     <ClInclude Include="FMatrix.h" />
     <ClInclude Include="FObjectFactory.h" />
     <ClInclude Include="Gizmo.h" />
@@ -187,6 +190,7 @@
     <ClCompile Include="EditorStatPanel.cpp" />
     <ClCompile Include="EngineApp.cpp" />
     <ClCompile Include="FColor.cpp" />
+    <ClCompile Include="FLevel.cpp" />
     <ClCompile Include="FMatrix.cpp" />
     <ClCompile Include="FObjectFactory.cpp" />
     <ClCompile Include="Gizmo.cpp" />

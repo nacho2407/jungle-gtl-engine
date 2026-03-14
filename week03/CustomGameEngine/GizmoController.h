@@ -22,7 +22,7 @@ public:
 
 public:
 	void Update();
-	void Draw(URenderer* renderer);
+	void UpdateRenderObject();
 
 	void SetHoverAxis(GizmoControllerAxis axis) { HoverAxis = axis; }
 	bool IsDragging() const { return bDragging; }
@@ -49,5 +49,15 @@ private:
 
 	FVector InitialObjectLocation;
 	float InitialDragOffset = 0.0f;
+
+	RenderObject* GizmoTranslationX;
+	RenderObject* GizmoTranslationY;
+	RenderObject* GizmoTranslationZ;
+	RenderObject* GizmoRotationX;
+	RenderObject* GizmoRotationY;
+	RenderObject* GizmoRotationZ;
+	RenderObject* GizmoScaleX;
+	RenderObject* GizmoScaleY;
+	RenderObject* GizmoScaleZ;
 };
 

@@ -19,7 +19,7 @@ public:
 
 public:
 	bool Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* deviceContext);
-	void Render();
+	void OnBeforeRender();
 	void DrawUI();
 	void Finalize();
 

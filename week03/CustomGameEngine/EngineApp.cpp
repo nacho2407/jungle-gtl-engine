@@ -112,6 +112,9 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	Picker = Cast<UPicker>(FObjectFactory::ConstructObject(UPicker::GetClass()));
 	Picker->SetEditor(EditorInst);
 
+	// Init gizmos
+	Gizmo::Initialize();
+
 	//Init World & Scene
 	GetWorld().InjectRenderer(Renderer);
 	SceneManager::GetInstance().NewScene();
@@ -125,22 +128,17 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 void EngineApp::Run()
 {
 	//----TEST
-	UObject* sceneobj = FObjectFactory::ConstructObject(UScene::GetClass());
-
-	UCubeComp* Cube2 = Cast<UCubeComp>(FObjectFactory::ConstructObject(UCubeComp::GetClass()));
-	Cube2->RelativeLocation = FVector(0.0, 0, 0);
-	Cube2->RelativeScale3D = FVector(2.f, 2.f, 2.f);
-	GetWorld().GetActiveScene()->PrimitiveContainer.push_back(Cube2);
+	UCubeComp* cube = GetWorld().AddSceneComponent<UCubeComp>();
+	cube->SetRelativeLocation(FVector(0.0, 0, 0));
+	cube->SetRelativeScale3D(FVector(2.f, 2.f, 2.f));
 
 	UCubeComp* Cube = Cast<UCubeComp>(FObjectFactory::ConstructObject(UCubeComp::GetClass()));
-	Cube->RelativeLocation = FVector(10.f, 0.f, 0.f);
-	Cube->RelativeScale3D = FVector(1.f, 1.f, 1.f);
-	GetWorld().GetActiveScene()->PrimitiveContainer.push_back(Cube);
+	Cube->SetRelativeLocation(FVector(10.f, 0.f, 0.f));
+	Cube->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
 
 	UCubeComp* Cube3 = Cast<UCubeComp>(FObjectFactory::ConstructObject(UCubeComp::GetClass()));
-	Cube3->RelativeLocation = FVector(5.f, 0.f, 0.f);
-	Cube3->RelativeScale3D = FVector(1.f, 1.f, 1.f);
-	GetWorld().GetActiveScene()->PrimitiveContainer.push_back(Cube3);
+	Cube3->SetRelativeLocation(FVector(5.f, 0.f, 0.f));
+	Cube3->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
 
 	Camera->SetPosition(FVector(0, 0, -10.f));
 	//-----TEST
@@ -211,8 +209,8 @@ void EngineApp::Run()
 		//Render
 		Renderer->Prepare();
 		Scene->Update(globalTimer->GetDeltaTime());
-		GetWorld().Render();
-		EditorInst->Render();
+		GetWorld().OnBeforeRender();
+		EditorInst->OnBeforeRender();
 
 		Renderer->Render(Camera);
 		EditorInst->DrawUI();

@@ -35,11 +35,12 @@ bool Editor::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* de
 	return true;
 }
 
-void Editor::Render()
+void Editor::OnBeforeRender()
 {
-	if (Renderer == nullptr) return;
+	if (SelectedComponent == nullptr) return;
 
-	Gizmo::GetInstance().Render(Renderer);
+	Gizmo::GetInstance().UpdateRenderObject(SelectedComponent, TransformationType::Location);
+	Gizmo::GetInstance().OnBeforeRender();
 }
 
 void Editor::DrawUI()
@@ -66,9 +67,20 @@ void Editor::Finalize()
 
 void Editor::SelectComponent(USceneComponent* component)
 {
+
 	if (SelectedComponent)
 	{
 		SelectedComponent->bIsSelected = false;
+		SelectedComponent = nullptr;
+		FLevel::GetInstance().RemoveRenderObject(Gizmo::GetInstance().GetRenderObject());
+	}
+	if (component)
+	{
+		component->bIsSelected = true;
+		SelectedComponent = component;
+		Gizmo::GetInstance().AttachToComponent(component);
+
+		FLevel::GetInstance().PushRenderObject(Gizmo::GetInstance().GetRenderObject());
 	}
 
 	SelectedComponent = component;

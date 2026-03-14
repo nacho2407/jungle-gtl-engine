@@ -38,8 +38,12 @@ void UPicker::Pick(int ScreenX, int ScreenY, UCamera* Camera, UScene* Scene)
 		for (int dy = -1; dy <= 1;++dy)
 		{
 			Ray ray = CreateRay(ScreenX + dx, ScreenY + dy, Camera);
-			for (UPrimitiveComponent* Comp : Scene->PrimitiveContainer)
+			for (USceneComponent* sc : Scene->SceneComponents)
 			{
+				UPrimitiveComponent* Comp = Cast<UPrimitiveComponent>(sc);
+				if (Comp == nullptr)
+					continue;
+
 				float Distance = 0.f;
 				if (ray.Intersects(Comp, Distance))
 				{

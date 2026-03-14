@@ -10,6 +10,19 @@
 
 GizmoController::GizmoController()
 {
+	GizmoTranslationX = new RenderObject();
+	GizmoTranslationY = new RenderObject();
+	GizmoTranslationZ = new RenderObject();
+	GizmoRotationX = new RenderObject();
+	GizmoRotationY = new RenderObject();
+	GizmoRotationZ = new RenderObject();
+	GizmoScaleX = new RenderObject();
+	GizmoScaleY = new RenderObject();
+	GizmoScaleZ = new RenderObject();
+
+	FLevel::GetInstance().PushRenderObject(GizmoTranslationX);
+	FLevel::GetInstance().PushRenderObject(GizmoTranslationY);
+	FLevel::GetInstance().PushRenderObject(GizmoTranslationZ);
 }
 
 GizmoController::~GizmoController()
@@ -20,60 +33,46 @@ void GizmoController::Update()
 {
 	if (AttachedComponent == nullptr) return;
 
+	FVector scale = AttachedComponent->GetRelativeScale3D();
 	FMatrix invScaleMatrix = FMatrix::ScaleMatrix(
-		1.0f / AttachedComponent->RelativeScale3D.x,
-		1.0f / AttachedComponent->RelativeScale3D.y,
-		1.0f / AttachedComponent->RelativeScale3D.z);
+		1.0f / scale.x,
+		1.0f / scale.y,
+		1.0f / scale.z);
 	RelativeMatrix = invScaleMatrix * AttachedComponent->GetRelativeMatrix();
 }
 
-void GizmoController::Draw(URenderer* renderer)
+void GizmoController::UpdateRenderObject()
 {
 	if (AttachedComponent == nullptr) return;
 
 	ResourceManager* resourceManager = ResourceManager::GetInstance();
 
 	{
-		UObject* obj = FObjectFactory::ConstructObject(URenderObject::GetClass());
-		URenderObject* renderObj = Cast<URenderObject>(obj);
+		GizmoTranslationX->Geometry = &resourceManager->GetGeometry("GizmoTranslationX");
+		GizmoTranslationX->Material = &resourceManager->GetMaterial(L"ShaderW0.hlsl");
 
-		renderObj->Geometry = &resourceManager->GetGeometry("GizmoTranslationX");
-		renderObj->Material = &resourceManager->GetMaterial(L"ShaderW0.hlsl");
+		GizmoTranslationX->World = RelativeMatrix;
+		GizmoTranslationX->bDepthEnabled = false;
 
-		renderObj->World = RelativeMatrix;
-		renderObj->bDepthEnabled = false;
-
-		renderObj->bIsSelected = HoverAxis == GizmoControllerAxis::X;
-
-		renderer->PushRenderObject(renderObj);
+		GizmoTranslationX->bIsSelected = HoverAxis == GizmoControllerAxis::X;
 	}
 	{
-		UObject* obj = FObjectFactory::ConstructObject(URenderObject::GetClass());
-		URenderObject* renderObj = Cast<URenderObject>(obj);
+		GizmoTranslationY->Geometry = &resourceManager->GetGeometry("GizmoTranslationY");
+		GizmoTranslationY->Material = &resourceManager->GetMaterial(L"ShaderW0.hlsl");
 
-		renderObj->Geometry = &resourceManager->GetGeometry("GizmoTranslationY");
-		renderObj->Material = &resourceManager->GetMaterial(L"ShaderW0.hlsl");
+		GizmoTranslationY->World = RelativeMatrix;
+		GizmoTranslationY->bDepthEnabled = false;
 
-		renderObj->World = RelativeMatrix;
-		renderObj->bDepthEnabled = false;
-
-		renderObj->bIsSelected = HoverAxis == GizmoControllerAxis::Y;
-
-		renderer->PushRenderObject(renderObj);
+		GizmoTranslationY->bIsSelected = HoverAxis == GizmoControllerAxis::Y;
 	}
 	{
-		UObject* obj = FObjectFactory::ConstructObject(URenderObject::GetClass());
-		URenderObject* renderObj = Cast<URenderObject>(obj);
+		GizmoTranslationZ->Geometry = &resourceManager->GetGeometry("GizmoTranslationZ");
+		GizmoTranslationZ->Material = &resourceManager->GetMaterial(L"ShaderW0.hlsl");
 
-		renderObj->Geometry = &resourceManager->GetGeometry("GizmoTranslationZ");
-		renderObj->Material = &resourceManager->GetMaterial(L"ShaderW0.hlsl");
+		GizmoTranslationZ->World = RelativeMatrix;
+		GizmoTranslationZ->bDepthEnabled = false;
 
-		renderObj->World = RelativeMatrix;
-		renderObj->bDepthEnabled = false;
-
-		renderObj->bIsSelected = HoverAxis == GizmoControllerAxis::Z;
-
-		renderer->PushRenderObject(renderObj);
+		GizmoTranslationZ->bIsSelected = HoverAxis == GizmoControllerAxis::Z;
 	}
 
 	return;
@@ -104,7 +103,7 @@ void GizmoController::BeginDrag(const Ray& ray)
 
 	bDragging = true;
 
-	InitialObjectLocation = AttachedComponent->RelativeLocation;
+	InitialObjectLocation = AttachedComponent->GetRelativeLocation();
 
 	FVector axisDir;
 	if (CurrentAxis == GizmoControllerAxis::X) axisDir = FVector(1, 0, 0);
@@ -135,7 +134,8 @@ void GizmoController::UpdateDrag(const Ray& ray)
 	float currentT = GetClosestPointOnAxis(ray, worldOrigin, worldAxisDir);
 	float deltaT = currentT - InitialDragOffset;
 
-	AttachedComponent->RelativeLocation = AttachedComponent->RelativeLocation + worldAxisDir * deltaT;
+	FVector newLocation = AttachedComponent->GetRelativeLocation() + worldAxisDir * deltaT;
+	AttachedComponent->SetRelativeLocation(newLocation);
 }
 
 void GizmoController::EndDrag()

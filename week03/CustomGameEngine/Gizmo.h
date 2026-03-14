@@ -5,7 +5,7 @@
 
 struct Ray;
 class URenderer;
-class URenderObject;
+class RenderObject;
 class USceneComponent;
 class GizmoController;
 
@@ -30,15 +30,34 @@ class Gizmo : public ISingleton<Gizmo>
 private:
 	Gizmo();
 	~Gizmo();
+public:
+	static void Initialize();
+
+	RenderObject* GetRenderObject();
+	RenderObject* UpdateRenderObject(USceneComponent* target, TransformationType type);
+
+	USceneComponent* GetAttachedComponent() const { return AttachedComponent; }
+	void AttachToComponent(USceneComponent* target) { AttachedComponent = target; }
+
+	FMatrix GetRelativeMatrix() const { return RelativeMatrix; }
+
+	void BeginDrag(GizmoAxis axis, const Ray& mouseRay);
+	void UpdateDrag(const Ray& currentMouseRay);
+	void EndDrag();
+	bool IsDragging() const { return bIsDragging; }
+
+private:
+	RenderObject* UpdateLocationGizmo(USceneComponent* target);
+	RenderObject* UpdateRotationGizmo(USceneComponent* target);
+	RenderObject* UpdateScaleGizmo(USceneComponent* target);
+	FGeometry* Geometry;
 
 public:
-	void Render(URenderer* renderer);
+	void OnBeforeRender();
 
 	GizmoController* GetController() const { return Controller; }
 
 	void SetControllerTarget(USceneComponent* target);
-
-	bool IsDragging() const { return bIsDragging; }
 
 private:
 	USceneComponent* AttachedComponent = nullptr;
@@ -51,4 +70,5 @@ private:
 
 	FVector InitialObjectLocation;
 	float InitialDragOffset;
+	RenderObject* renderObj = nullptr;
 };

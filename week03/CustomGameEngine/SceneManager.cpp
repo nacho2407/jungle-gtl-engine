@@ -4,6 +4,7 @@
 #include <sstream>
 #include "World.h"
 #include "UEngineStatics.h"
+#include "UPrimitiveComponent.h"
 #include "Logger.h"
 
 SceneManager::SceneManager()
@@ -53,6 +54,9 @@ void SceneManager::SaveScene(FString sceneName)
 
 UScene* SceneManager::LoadScene(FString sceneName)
 {
+	if (GetWorld().GetActiveScene() != nullptr)
+		UnloadScene();
+
 	// TODO: 리소스 관리자 완성되면 리소스 관리자 통하여 파일 입출력하도록 수정
 	const FString filePath = sceneName + ".scene";
 	std::ifstream inFile;
@@ -65,7 +69,6 @@ UScene* SceneManager::LoadScene(FString sceneName)
 		inFile.close();
 
 		UScene *loadedScene = UScene::FromJson(jsonStr);
-
 		GetWorld().SetActiveScene(loadedScene);
 		UEngineStatics::NextUUID = loadedScene->NextUUID;
 
@@ -77,12 +80,20 @@ UScene* SceneManager::LoadScene(FString sceneName)
 		// TODO: 에러 출력 로그 레벨 변경
 		UE_LOG("Cannot open file : %s\n", filePath.c_str());
 		return new UScene();
-	}
+	} 
 }
 
 void SceneManager::UnloadScene()
 {
-	GetWorld().GetActiveScene();
+	UScene *curScene = GetWorld().GetActiveScene();
+
+	// loop 내에서의 삽입/삭제로 인한 오류 방지
+	auto deleteList = curScene->SceneComponents;
+	for (auto obj : deleteList)
+	{
+		GetWorld().RemoveSceneComponent(obj);
+	}
+	delete GetWorld().GetActiveScene();
 	GetWorld().SetActiveScene(nullptr);
 }
 
