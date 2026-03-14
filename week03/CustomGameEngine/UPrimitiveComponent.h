@@ -7,7 +7,8 @@ enum EPrimitiveType
 {
 	Sphere,
 	Cube,
-	Triangle
+	Triangle,
+	Axis
 };
 
 class UPrimitiveComponent : public USceneComponent
