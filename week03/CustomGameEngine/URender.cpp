@@ -193,7 +193,7 @@ void URenderer::Render(UCamera* Camera)
 	{
 		//Camera
 		RenderObj->Constants.View = Camera->GetViewMatrix();
-                RenderObj->Constants.Projection = Camera->GetProjectionMatrix();
+		RenderObj->Constants.Projection = Camera->GetProjectionMatrix();
 
 		RenderObj->SetConstantBuffer(ConstantBuffer);
 		RenderObj->Render(DeviceContext);

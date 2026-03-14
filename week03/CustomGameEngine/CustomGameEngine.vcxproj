@@ -159,6 +159,8 @@
     <ClInclude Include="UAxisComp.h" />
     <ClInclude Include="UCamera.h" />
     <ClInclude Include="UCubeComp.h" />
+    <ClInclude Include="UMesh.h" />
+    <ClInclude Include="UPicker.h" />
     <ClInclude Include="UPlaneComp.h" />
     <ClInclude Include="UPrimitiveComponent.h" />
     <ClInclude Include="USceneComponent.h" />
@@ -204,6 +206,7 @@
     <ClCompile Include="UAxisComp.cpp" />
     <ClCompile Include="UCamera.cpp" />
     <ClCompile Include="UCubeComp.cpp" />
+    <ClCompile Include="UPicker.cpp" />
     <ClCompile Include="UPlaneComp.cpp" />
     <ClCompile Include="UPrimitiveComponent.cpp" />
     <ClCompile Include="USceneComponent.cpp" />

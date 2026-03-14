@@ -19,8 +19,10 @@ public:
 	static FMatrix TranslationMatrix(FVector InVec) { return TranslationMatrix(InVec.x, InVec.y, InVec.z); }
 	static FMatrix TranslationMatrix(float InX = 0.f, float InY = 0.f, float InZ = 0.f);
 
-	static FMatrix SclaeMatrix(FVector InVec) { return ScaleMatrix(InVec.x, InVec.y, InVec.z); }
+	static FMatrix ScaleMatrix(FVector InVec) { return ScaleMatrix(InVec.x, InVec.y, InVec.z); }
 	static FMatrix ScaleMatrix(float InX = 1.f, float InY = 1.f, float InZ = 1.f);
+
+	FVector TransformPoint(const FVector Vector) const;
 
 	static float DegToRad(float Degree) { return Degree * 3.14159265358979323846f / 180.0f; }
 
@@ -40,6 +42,8 @@ public:
 	static FMatrix ViewMatrix(FVector Eye, FVector Target, FVector Up);
 
 	FMatrix PerspectiveMatrix(float FovDegree, float Aspect, float Near, float Far);
+
+	FMatrix Inverse() const;
 
 
 	float* operator[](int Row) { return m[Row]; }

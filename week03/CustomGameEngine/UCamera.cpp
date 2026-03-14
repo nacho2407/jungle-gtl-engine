@@ -54,6 +54,8 @@ FMatrix UCamera::GetViewProjectionMatrix() const { return ViewProjection; }
 
 void UCamera::OnResize(int NewWidth, int NewHeight) {
 	if (NewHeight == 0) return;
+	ScreenWidth = static_cast<float>(NewWidth);
+	ScreenHeight = static_cast<float>(NewHeight);
 	AspectRatio = static_cast<float>(NewWidth) / static_cast<float>(NewHeight);
 	IsChanged = true;
 }

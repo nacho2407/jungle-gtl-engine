@@ -8,6 +8,8 @@
 #include "TimerManager.h"
 #include "UCamera.h"
 #include "InputManager.h"
+#include "UPicker.h"
+#include "SceneManager.h"
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -91,11 +93,13 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	int height = 0;
 	if (GetClientRect(HWnd, &rc))
 	{
-		width = rc.right - rc.left;   // 가로 크기
-		height = rc.bottom - rc.top; // 세로 크기
-		// 이 값을 Aspect Ratio 계산에 넣으시면 됩니다!
+		width = rc.right - rc.left;
+		height = rc.bottom - rc.top;
 	}
 	Camera->OnResize(width, height);
+
+	//Init Picker
+	Picker = Cast<UPicker>(FObjectFactory::ConstructObject(UPicker::GetClass()));
 
 	// Init Timer
 	TimerManager::GetInstance().CreateGlobalTimer();
@@ -142,20 +146,20 @@ void EngineApp::Run()
 			}
 		}
 
+
+		TimerManager::GetInstance().Tick();
 		InputManager::GetInstance().Update();
+		//Picker->Pick(Camera, SceneManager::GetInstance()->GetActiveScene());
 
 		Camera->Move();
-        Camera->Rotate();
+		Camera->Rotate();
 		Camera->update();
 
-		// Main Loop
-		TimerManager::GetInstance().Tick();
 
+		//Render
 		Renderer->Prepare();
-
 		Scene->Update(globalTimer->GetDeltaTime());
 		Scene->Render();
-
 		Renderer->Render(Camera);
 		EditorInst->Render();
 

@@ -1,0 +1,29 @@
+﻿#pragma once
+
+#include "UObject.h"
+#include "FVector.h"
+class UCamera;
+class UScene;
+class UPrimitiveComponent;
+struct Ray
+{
+	FVector Origin;
+	FVector Direction;
+
+	bool IntersectsTriangle(const FVector& V0, const FVector& V1, const FVector& V2, float& OutT);
+
+	bool Intersects(UPrimitiveComponent* Comp, float& OutDistance);
+};
+
+class UPicker : public UObject
+{
+	DECLARE_RTTI(UPicker, UObject)
+public:
+	UPicker();
+	virtual ~UPicker() override;
+	void Pick(int x, int y, UCamera* Camera, UScene* Scene);
+	Ray CreateRay(int x, int y, UCamera* Camera);
+private:
+	UCamera* Camera;
+	UScene* Scene;
+};

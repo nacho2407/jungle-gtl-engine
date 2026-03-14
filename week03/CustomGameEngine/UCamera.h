@@ -22,6 +22,8 @@ public:
 
 	float FOV{ 60.0f };
 	float AspectRatio{ 16.0f / 9.0f };
+	float ScreenWidth = 0.f;
+	float ScreenHeight = 0.f;
 	float NearPlane{ 0.1f };
 	float FarPlane{ 1000.0f };
 

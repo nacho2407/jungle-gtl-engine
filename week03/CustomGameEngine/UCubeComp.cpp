@@ -3,6 +3,8 @@
 #include "ResourceManager.h"
 UCubeComp::UCubeComp()
 {
+	ResourceManager* RM = ResourceManager::GetInstance();
+	VResource = &RM->GetVertexResource("Cube");
 }
 
 UCubeComp::~UCubeComp()
@@ -15,15 +17,13 @@ URenderObject* UCubeComp::Render()
 	URenderObject* RenderObj = dynamic_cast<URenderObject*>(renderObj);
 	ResourceManager* RM = ResourceManager::GetInstance();
 
-	VertexResource Resource = RM->GetVertexResource("Cube");
-
-	RenderObj->SetObject(Resource.VertexBuffer,
+	RenderObj->SetObject(VResource->VertexBuffer,
 		RM->GetVertexShader(L"ShaderW0.hlsl"),
 		RM->GetPixelShader(L"ShaderW0.hlsl"),
 		RM->GetInputLayout(L"ShaderW0.hlsl"),
-		Resource.vertexCount,
-		Resource.offset,
-		Resource.stride);
+		VResource->vertexCount,
+		VResource->offset,
+		VResource->stride);
 
 	RenderObjectConstants Constants;
 	Constants.Model = GetRelativeMatrix();

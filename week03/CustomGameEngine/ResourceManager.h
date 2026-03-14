@@ -3,9 +3,11 @@
 #include "d3d11.h"
 #include "d3dcompiler.h"
 #include "FVertexSimple.h"
+#include "FVector.h"
 struct VertexResource
 {
 	ID3D11Buffer* VertexBuffer;
+	TArray<FVector> Vertices;
 	int stride = 0;
 	int vertexCount = 0;
 	int offset = 0;
@@ -22,7 +24,7 @@ public:
 	~ResourceManager() {};
 
 	template<typename T>
-	static void CreateVertexResource(FString ResourceName, T* vertices, UINT byteWidth, ID3D11Device* Device, int offset)
+	static void CreateVertexResource(FString ResourceName, T* vertices, UINT byteWidth, ID3D11Device* Device, int offset, const TArray<FVector>& Verticies)
 	{
 		D3D11_BUFFER_DESC vertexbufferdesc = {};
 		vertexbufferdesc.ByteWidth = byteWidth;
@@ -38,6 +40,7 @@ public:
 		Resource.stride = sizeof(T);
 		Resource.vertexCount = byteWidth / sizeof(T);
 		Resource.offset = offset;
+		Resource.Vertices = Verticies;
 	}
 
 	static void CompileVertexShaderAndLayout(WFString VertexShaderName, FString ShaderMainName, ID3D11Device* Device, D3D11_INPUT_ELEMENT_DESC layout[], UINT layoutCount)
@@ -140,10 +143,16 @@ public:
 			{ -0.5f,-0.5f, 0.5f, 1,0,1,1 },
 		};
 
-		CreateVertexResource("Cube", cubeVertices, sizeof(cubeVertices), Device, 0);
+		int Cnt = sizeof(cubeVertices) / sizeof(FVertexSimple);
+		TArray<FVector> Vertices(Cnt);
+		for (int i = 0;i < Cnt;++i)
+		{
+			Vertices[i] = FVector(cubeVertices[i].x, cubeVertices[i].y, cubeVertices[i].z);
+		}
+		CreateVertexResource("Cube", cubeVertices, sizeof(cubeVertices), Device, 0, Vertices);
 	}
 
-	static VertexResource GetVertexResource(FString ResourceName)
+	static VertexResource& GetVertexResource(FString ResourceName)
 	{
 		return VertexResourceMap[ResourceName];
 	}
