@@ -3,9 +3,11 @@
 #include "FGeometry.h"
 #include "FMatrix.h"
 
+struct Ray;
+class URenderer;
 class URenderObject;
 class USceneComponent;
-struct Ray;
+class GizmoController;
 
 enum class GizmoAxis
 {
@@ -25,29 +27,24 @@ enum class TransformationType
 class Gizmo : public ISingleton<Gizmo>
 {
 	friend class ISingleton<Gizmo>;
-public:
-	URenderObject* DrawGizmo(USceneComponent* target, TransformationType type);
-
-	USceneComponent* GetAttachedComponent() const { return AttachedComponent; }
-	void AttachToComponent(USceneComponent* target) { AttachedComponent = target; }
-
-	FMatrix GetRelativeMatrix() const { return RelativeMatrix; }
-
-	void BeginDrag(GizmoAxis axis, const Ray& mouseRay);
-	void UpdateDrag(const Ray& currentMouseRay);
-	void EndDrag();
-	bool IsDragging() const { return bIsDragging; }
-
 private:
-	URenderObject* DrawLocationGizmo(USceneComponent* target);
-	URenderObject* DrawRotationGizmo(USceneComponent* target);
-	URenderObject* DrawScaleGizmo(USceneComponent* target);
-	FGeometry* Geometry;
+	Gizmo();
+	~Gizmo();
 
+public:
+	void Render(URenderer* renderer);
+
+	GizmoController* GetController() const { return Controller; }
+
+	void SetControllerTarget(USceneComponent* target);
+
+	bool IsDragging() const { return bIsDragging; }
 
 private:
 	USceneComponent* AttachedComponent = nullptr;
 	FMatrix RelativeMatrix;
+
+	GizmoController* Controller = nullptr;
 
 	bool bIsDragging = false;
 	GizmoAxis CurrentAxis = GizmoAxis::None;

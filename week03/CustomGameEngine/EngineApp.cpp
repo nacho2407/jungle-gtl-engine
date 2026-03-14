@@ -11,8 +11,8 @@
 #include "UCamera.h"
 #include "InputManager.h"
 #include "Gizmo.h"
+#include "GizmoController.h"
 #include "UPicker.h"
-#include "World.h";
 #include "ImGui/imgui.h"
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -177,31 +177,35 @@ void EngineApp::Run()
 			Picker->Pick(Mouse.x, Mouse.y, Camera, GetWorld().GetActiveScene());
 		}
 
+		Ray ray = Picker->CreateRay(Mouse.x, Mouse.y, Camera);
+
+		if (InputManager::GetInstance().IsKeyHold(VK_LBUTTON))
+		{
+			if (Gizmo::GetInstance().GetController()->IsDragging())
+			{
+				Gizmo::GetInstance().GetController()->UpdateDrag(ray);
+			}
+		}
+
+		if (InputManager::GetInstance().IsKeyUp(VK_LBUTTON))
+		{
+			if (Gizmo::GetInstance().GetController()->IsDragging())
+			{
+				Gizmo::GetInstance().GetController()->EndDrag();
+			}
+		}
+
+		if (!InputManager::GetInstance().IsKeyHold(VK_LBUTTON))
+		{
+			GizmoControllerAxis hoveredAxis = Picker->PickGizmo(Mouse.x, Mouse.y, Camera, GetWorld().GetActiveScene());
+			Gizmo::GetInstance().GetController()->SetHoverAxis(hoveredAxis);
+		}
+
 		if (!io.WantCaptureKeyboard && !io.WantCaptureMouse)
 		{
 			Camera->Move();
 			Camera->Rotate();
 		}
-
-		bool bMouseHold = InputManager::GetInstance().IsKeyHold(VK_LBUTTON);
-		if (bMouseHold && !io.WantCaptureMouse)
-		{
-			Ray currentRay = Picker->CreateRay(Mouse.x, Mouse.y, Camera);
-
-			if (Gizmo::GetInstance().IsDragging())
-			{
-				Gizmo::GetInstance().UpdateDrag(currentRay);
-			}
-		}
-		else
-		{
-			if (Gizmo::GetInstance().IsDragging())
-			{
-				Gizmo::GetInstance().EndDrag();
-				UE_LOG("Ended Gizmo Drag");
-			}
-		}
-
 		Camera->update();
 
 		//Render

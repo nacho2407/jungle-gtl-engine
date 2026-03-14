@@ -3,11 +3,14 @@
 #include "UObject.h"
 #include "FVector.h"
 #include "Gizmo.h"
+#include "UEngineTypes.h"
 
 class UCamera;
 class UScene;
 class UPrimitiveComponent;
 class Editor;
+
+enum class GizmoControllerAxis : int32;
 
 struct Ray
 {
@@ -26,7 +29,7 @@ public:
 	UPicker();
 	virtual ~UPicker() override;
 	void Pick(int x, int y, UCamera* Camera, UScene* Scene);
-	GizmoAxis PickGizmo(int x, int y, UCamera* Camera, UScene* Scene);
+	GizmoControllerAxis PickGizmo(int x, int y, UCamera* Camera, UScene* Scene);
 	Ray CreateRay(int x, int y, UCamera* Camera);
 
 	void SetEditor(Editor* pEditor) { EditorPtr = pEditor; }
