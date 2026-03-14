@@ -11,7 +11,7 @@ private:
 	InputManager();
 public:
 	~InputManager();
-	
+
 	void Update();
 	void UpdateKeyboard();
 
@@ -28,6 +28,8 @@ public:
 	FVector MousePos;
 	FVector LastMousePos;
 	FVector MouseDelta;
+
+	HWND hWnd;
 
 private:
 

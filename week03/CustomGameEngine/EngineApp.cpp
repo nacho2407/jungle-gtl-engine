@@ -92,6 +92,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	ResourceManager::AddTriangleMesh(Renderer->Device);
 	ResourceManager::AddGizmoTranslationMesh(Renderer->Device);
 
+	InputManager::GetInstance().hWnd = HWnd;
 	// Init Camera
 	Camera = Cast<UCamera>(FObjectFactory::ConstructObject(UCamera::GetClass()));
 	EditorInst->SetCamera(Camera);
@@ -126,12 +127,20 @@ void EngineApp::Run()
 	//----TEST
 	UObject* sceneobj = FObjectFactory::ConstructObject(UScene::GetClass());
 
-
-	UObject* cubeobj2 = FObjectFactory::ConstructObject(UCubeComp::GetClass());
-	UCubeComp* Cube2 = Cast<UCubeComp>(cubeobj2);
+	UCubeComp* Cube2 = Cast<UCubeComp>(FObjectFactory::ConstructObject(UCubeComp::GetClass()));
 	Cube2->RelativeLocation = FVector(0.0, 0, 0);
 	Cube2->RelativeScale3D = FVector(2.f, 2.f, 2.f);
 	GetWorld().GetActiveScene()->PrimitiveContainer.push_back(Cube2);
+
+	UCubeComp* Cube = Cast<UCubeComp>(FObjectFactory::ConstructObject(UCubeComp::GetClass()));
+	Cube->RelativeLocation = FVector(10.f, 0.f, 0.f);
+	Cube->RelativeScale3D = FVector(1.f, 1.f, 1.f);
+	GetWorld().GetActiveScene()->PrimitiveContainer.push_back(Cube);
+
+	UCubeComp* Cube3 = Cast<UCubeComp>(FObjectFactory::ConstructObject(UCubeComp::GetClass()));
+	Cube3->RelativeLocation = FVector(5.f, 0.f, 0.f);
+	Cube3->RelativeScale3D = FVector(1.f, 1.f, 1.f);
+	GetWorld().GetActiveScene()->PrimitiveContainer.push_back(Cube3);
 
 	Camera->SetPosition(FVector(0, 0, -10.f));
 	//-----TEST

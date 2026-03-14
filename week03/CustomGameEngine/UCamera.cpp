@@ -140,6 +140,7 @@ void UCamera::CalcViewMatrix()
 	View = InvT * InvR;
 }
 
+
 FMatrix UCamera::GetViewMatrix() const
 {
 	return View;
