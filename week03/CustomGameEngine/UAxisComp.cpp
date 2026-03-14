@@ -1,11 +1,11 @@
 ﻿#include "UAxisComp.h"
-
 #include "URender.h"
 #include "ResourceManager.h"
 UAxisComp::UAxisComp()
 {
+	type = EPrimitiveType::Axis;
 	ResourceManager* RM = ResourceManager::GetInstance();
-	VResource = &RM->GetVertexResource("Axis");
+	VResource = &RM->GetGeometry("Axis");
 }
 
 UAxisComp::~UAxisComp()
@@ -18,17 +18,9 @@ URenderObject* UAxisComp::Render()
 	URenderObject* RenderObj = dynamic_cast<URenderObject*>(renderObj);
 	ResourceManager* RM = ResourceManager::GetInstance();
 
-	RenderObj->SetObject(VResource->VertexBuffer,
-		RM->GetVertexShader(L"ShaderW0.hlsl"),
-		RM->GetPixelShader(L"ShaderW0.hlsl"),
-		RM->GetInputLayout(L"ShaderW0.hlsl"),
-		VResource->vertexCount,
-		VResource->offset,
-		VResource->stride);
-
-	RenderObjectConstants Constants;
-	Constants.Model = GetRelativeMatrix();
-	RenderObj->SetConstants(Constants);
+	RenderObj->Geometry = &RM->GetGeometry("Axis");
+	RenderObj->Material = &RM->GetMaterial(L"ShaderW0.hlsl");
+	RenderObj->World = GetRelativeMatrix();
 
 	return RenderObj;
 }
@@ -36,9 +28,7 @@ URenderObject* UAxisComp::Render()
 void UAxisComp::Update(float DeltaTime)
 {
 	float Speed = 10.f;
-	//	RelativeRotation.x += DeltaTime * Speed;
 	RelativeRotation.y += DeltaTime * Speed;
-	//	RelativeRotation.z += DeltaTime * Speed;
 }
 
 REGISTER_CLASS(UAxisComp);

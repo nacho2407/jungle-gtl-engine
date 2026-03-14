@@ -63,8 +63,8 @@ void UCamera::Rotate()
 {
 	if (InputManager::GetInstance().IsKeyHold(VK_RBUTTON))
 	{
-		Yaw += InputManager::GetInstance().MouseDelta.x * RotateSensitivity;
-		Pitch -= InputManager::GetInstance().MouseDelta.y * RotateSensitivity;
+		Yaw += (InputManager::GetInstance().MouseDelta.x * RotateSensitivity);
+		Pitch -= (InputManager::GetInstance().MouseDelta.y * RotateSensitivity);
 		IsChanged = true;
 	}
 }
@@ -109,10 +109,6 @@ void UCamera::SetOrthogonal(bool input)
 void UCamera::update() {
 	//if (!IsChanged) return;
 
-	CalcViewMatrix();
-	CalcProjectionMatrix();
-	ViewProjection = View * Projection;
-
 	float p = FMatrix::DegToRad(Pitch);
 	float y = FMatrix::DegToRad(Yaw);
 
@@ -123,6 +119,10 @@ void UCamera::update() {
 	Direction = Direction.Normalize();
 	SideDirection = Direction.Cross(UpVec);
 	UpDirection = SideDirection.Cross(Direction);
+
+	CalcViewMatrix();
+	CalcProjectionMatrix();
+	ViewProjection = View * Projection;
 
 	IsChanged = false;
 }
