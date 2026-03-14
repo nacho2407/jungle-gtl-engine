@@ -1,13 +1,14 @@
 #pragma once
+
 #pragma comment(lib, "user32")
 #pragma comment(lib, "d3d11")
 #pragma comment(lib, "d3dcompiler")
 
+#include "Core.h"
+
+#include "FVertex.h"
 #include <d3d11.h>
 #include <d3dcompiler.h>
-
-#include "FVector.h"
-#include "FVertex.h"
 
 class URenderer
 {
@@ -15,6 +16,11 @@ class URenderer
 	{
 		FVector Offset;
 		float padding;
+	};
+
+	struct FMVPMatrix
+	{
+		FMatrix matrix;
 	};
 public:
 	// Direct3D 11 장치(Device)와 장치 컨텍스트(Device Context) 및 스왑 체인(Swap Chain)을 관리하기 위한 포인터들
@@ -58,4 +64,5 @@ public:
 	void Release();	// 렌더러에 사용된 모든 리소스를 해제하는 함수
 	void SwapBuffer(); 	// 스왑 체인의 백 버퍼와 프론트 버퍼를 교체하여 화면에 출력
 	void UpdateConstant(FVector Offset);
+	void UpdateConstantMTX(FMatrix mvp);
 };

@@ -1,6 +1,6 @@
-#include "URenderer.h"
+#include "Renderer.h"
 
-ID3D11Buffer* URenderer::CreateVertexBuffer(FVertex* vertices, UINT byteWidth) 
+ID3D11Buffer* URenderer::CreateVertexBuffer(FVertex* vertices, UINT byteWidth)
 {
 	// 2. Create a vertex buffer
 	D3D11_BUFFER_DESC vertexbufferdesc = {};
@@ -272,6 +272,21 @@ void URenderer::UpdateConstant(FVector Offset)
 		FConstants* constants = (FConstants*)constantbufferMSR.pData;
 		{
 			constants->Offset = Offset;
+		}
+		DeviceContext->Unmap(ConstantBuffer, 0);
+	}
+}
+
+void URenderer::UpdateConstantMTX(FMatrix mvp)
+{
+	if (ConstantBuffer)
+	{
+		D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
+
+		DeviceContext->Map(ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR); // update constant buffer every frame
+		FMVPMatrix* constants = (FMVPMatrix*)constantbufferMSR.pData;
+		{
+			constants->matrix = mvp;
 		}
 		DeviceContext->Unmap(ConstantBuffer, 0);
 	}

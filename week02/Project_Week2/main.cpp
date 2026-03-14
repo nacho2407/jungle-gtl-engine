@@ -1,29 +1,11 @@
 #include <windows.h>
-#include "URenderer.h"
-//#include "FVector.h"
+
+#include "Core/Core.h"
+#include "Engine/Engine.h"
+#include "GUI/GUI.h"
+#include "Renderer/Renderer.h"
+
 #include "Sphere.h"
-
-#include "ImGui/imgui.h"
-#include "ImGui/imgui_internal.h"
-#include "ImGui/imgui_impl_dx11.h"
-#include "imGui/imgui_impl_win32.h"
-
-//// 1. Define the triangle vertices
-//struct FVertexSimple
-//{
-//	float x, y, z;    // Position
-//	float r, g, b, a; // Color
-//};
-
-class UPrimitive
-{
-public:
-	virtual FVector GetLocation() = 0;
-	virtual void Update(bool) = 0;
-	virtual float GetRadius() = 0;
-	virtual bool IsCollide(UPrimitive* other) = 0;
-	virtual ~UPrimitive() = default;
-};
 
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -118,6 +100,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		renderer.Prepare();
 		renderer.PrepareShader();
 
+
+
+		//FMatrix identity
+
 		renderer.UpdateConstant(FVector(0.f, 0.f, 0.f));
 		renderer.RenderPrimitive(vertexBufferSphere, numVerticesSphere);
 
@@ -146,7 +132,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			elapsedTime = (endTime.QuadPart - startTime.QuadPart) * 1000.0 / frequency.QuadPart;
 
 		} while (elapsedTime < targetFrameTime);
-
 
 		////////////////////////////////////////////
 	}

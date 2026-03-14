@@ -1,4 +1,5 @@
 #pragma once
+
 struct FVertex
 {
 	float x, y, z;    // Position

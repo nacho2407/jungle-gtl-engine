@@ -105,6 +105,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\Core\Public;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\Core;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\Renderer;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\Renderer\public;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\Engine;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\Engine\Public;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\GUI;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\GUI\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -127,31 +128,49 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="FVector.h" />
-    <ClInclude Include="FVertex.h" />
-    <ClInclude Include="ImGui\imconfig.h" />
-    <ClInclude Include="ImGui\imgui.h" />
-    <ClInclude Include="ImGui\imgui_impl_dx11.h" />
-    <ClInclude Include="ImGui\imgui_impl_win32.h" />
-    <ClInclude Include="ImGui\imgui_internal.h" />
-    <ClInclude Include="ImGui\imstb_rectpack.h" />
-    <ClInclude Include="ImGui\imstb_textedit.h" />
-    <ClInclude Include="ImGui\imstb_truetype.h" />
+    <ClInclude Include="Core\Public\UObject.h" />
+    <ClInclude Include="Core\Core.h" />
+    <ClInclude Include="Core\Public\CoreTypes.h" />
+    <ClInclude Include="Core\Public\Math\FMatrix.h" />
+    <ClInclude Include="Core\Public\Math\FVector.h" />
+    <ClInclude Include="Core\Public\FVertex.h" />
+    <ClInclude Include="Engine\Engine.h" />
+    <ClInclude Include="Engine\Public\AActor.h" />
+    <ClInclude Include="Engine\Public\UActorComponent.h" />
+    <ClInclude Include="Engine\Public\UPrimitiveComponent.h" />
+    <ClInclude Include="Engine\Public\USceneComponent.h" />
+    <ClInclude Include="GUI\GUI.h" />
+    <ClInclude Include="Renderer\Private\FVertex.h" />
+    <ClInclude Include="Renderer\public\URenderer.h" />
+    <ClInclude Include="Renderer\Renderer.h" />
+    <ClInclude Include="GUI\Public\imconfig.h" />
+    <ClInclude Include="GUI\Public\imgui.h" />
+    <ClInclude Include="GUI\Public\imgui_impl_dx11.h" />
+    <ClInclude Include="GUI\Public\imgui_impl_win32.h" />
+    <ClInclude Include="GUI\Public\imgui_internal.h" />
+    <ClInclude Include="GUI\Public\imstb_rectpack.h" />
+    <ClInclude Include="GUI\Public\imstb_textedit.h" />
+    <ClInclude Include="GUI\Public\imstb_truetype.h" />
     <ClInclude Include="Sphere.h" />
-    <ClInclude Include="URenderer.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="FVector.cpp" />
-    <ClCompile Include="FVertex.cpp" />
-    <ClCompile Include="ImGui\imgui.cpp" />
-    <ClCompile Include="ImGui\imgui_demo.cpp" />
-    <ClCompile Include="ImGui\imgui_draw.cpp" />
-    <ClCompile Include="ImGui\imgui_impl_dx11.cpp" />
-    <ClCompile Include="ImGui\imgui_impl_win32.cpp" />
-    <ClCompile Include="ImGui\imgui_tables.cpp" />
-    <ClCompile Include="ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="Core\Private\UObject.cpp" />
+    <ClCompile Include="Core\Private\Math\FMatrix.cpp" />
+    <ClCompile Include="Core\Private\Math\FVector.cpp" />
+    <ClCompile Include="Core\Private\Math\FVector4.cpp" />
+    <ClCompile Include="Core\Public\Math\FVector4.h" />
+    <ClCompile Include="Engine\Private\USceneComponent.cpp" />
+    <ClCompile Include="Renderer\Private\URenderer.cpp" />
+    <ClCompile Include="Core\Private\UEngineStatics.cpp" />
+    <ClCompile Include="Core\Private\UFactory.cpp" />
+    <ClCompile Include="GUI\Private\imgui.cpp" />
+    <ClCompile Include="GUI\Private\imgui_demo.cpp" />
+    <ClCompile Include="GUI\Private\imgui_draw.cpp" />
+    <ClCompile Include="GUI\Private\imgui_impl_dx11.cpp" />
+    <ClCompile Include="GUI\Private\imgui_impl_win32.cpp" />
+    <ClCompile Include="GUI\Private\imgui_tables.cpp" />
+    <ClCompile Include="GUI\Private\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="URenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ShaderW0.hlsl">
