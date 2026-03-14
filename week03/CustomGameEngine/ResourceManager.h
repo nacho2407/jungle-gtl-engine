@@ -351,7 +351,6 @@ public:
 				v.b = 0.0f;
 			}
 			vertices.insert(vertices.end(), coneVertices.begin(), coneVertices.end());
-
 		}
 		// Z Axis - Blue
 		{
@@ -398,7 +397,7 @@ public:
 			vertices.insert(vertices.end(), coneVertices.begin(), coneVertices.end());
 		}
 
-		int cnt = sizeof(vertices) / sizeof(FVertexSimple);
+		int cnt = vertices.size();
 		TArray<FVector> Vertices(cnt);
 		for (int i = 0; i < cnt; ++i)
 		{
