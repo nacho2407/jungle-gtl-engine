@@ -22,12 +22,12 @@ void UCamera::Move() {
 	}
 	if (InputManager::GetInstance().IsKeyHold('E') &&
 		!InputManager::GetInstance().IsKeyHold('Q')) {
-		Position = Position + UpDirection * MoveSpeed;
+		Position = Position + UpVec * MoveSpeed;
 		IsChanged = true;
 	}
 	else if (!InputManager::GetInstance().IsKeyHold('E') &&
 		InputManager::GetInstance().IsKeyHold('Q')) {
-		Position = Position - UpDirection * MoveSpeed;
+		Position = Position - UpVec * MoveSpeed;
 		IsChanged = true;
 	}
 	if (!InputManager::GetInstance().IsKeyHold('D') &&
@@ -61,7 +61,7 @@ void UCamera::SetDirection(const float InputPitch, const float InputYaw,
 
 void UCamera::Rotate()
 {
-	if (InputManager::GetInstance().IsKeyHold(VK_LBUTTON))
+	if (InputManager::GetInstance().IsKeyHold(VK_RBUTTON))
 	{
 		Yaw += InputManager::GetInstance().MouseDelta.x * RotateSensitivity;
 		Pitch -= InputManager::GetInstance().MouseDelta.y * RotateSensitivity;
