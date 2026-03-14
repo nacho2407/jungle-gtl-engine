@@ -1,6 +1,7 @@
 ﻿#include "Scene.h"
+#include "World.h"
 #include "json.h"
-#include "UPrimitiveComponent.h"
+#include "USceneComponent.h"
 #include "UCubeComp.h"
 #include "USphereComp.h"
 #include "UTriangleComp.h"
@@ -16,7 +17,7 @@ UScene::~UScene()
 
 void UScene::Update(float DeltaTime)
 {
-	for (UPrimitiveComponent* Prim : PrimitiveContainer)
+	for (USceneComponent* Prim : SceneComponents)
 	{
 		Prim->Update(DeltaTime);
 	}
@@ -60,11 +61,11 @@ UScene* UScene::FromJson(std::string jsonStr)
 		USceneComponent* newSc = nullptr;
 		FString typeStr = pair.second["Type"].ToString();
 		if (typeStr == "Cube")
-			newSc = Cast<USceneComponent>(FObjectFactory::ConstructObject(UCubeComp::GetClass()));
+			newSc = GetWorld().AddSceneComponent<UCubeComp>();
 		if (typeStr == "Sphere")
-			newSc = Cast<USceneComponent>(FObjectFactory::ConstructObject(USphereComp::GetClass()));
+			newSc = GetWorld().AddSceneComponent<USphereComp>();
 		if (typeStr == "Triangle")
-			newSc = Cast<USceneComponent>(FObjectFactory::ConstructObject(UTriangleComp::GetClass()));
+			newSc = GetWorld().AddSceneComponent<UTriangleComp>();
 
 		if (newSc == nullptr)
 			continue;
@@ -72,10 +73,6 @@ UScene* UScene::FromJson(std::string jsonStr)
 		newSc->Deserialize(pair.second);
 		newSc->UUID = std::stoi(pair.first);
 		scene->SceneComponents.push_back(newSc);
-
-		UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(newSc);
-		if(primitive != nullptr)
-			scene->PrimitiveContainer.push_back(primitive);
 	}
 
 	return scene;

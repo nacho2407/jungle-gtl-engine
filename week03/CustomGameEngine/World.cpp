@@ -21,6 +21,13 @@ void UWorld::SetActiveScene(UScene* scene)
 
 void UWorld::RemoveSceneComponent(USceneComponent* toDespawn)
 {
+	// Remove render object first
+	auto primToDespawn = Cast<UPrimitiveComponent>(toDespawn);
+	if (primToDespawn != nullptr)
+	{
+		FLevel::GetInstance().RemoveRenderObject(primToDespawn->GetRenderObject());
+	}
+
 	for (auto it = activeScene->SceneComponents.begin(); it != activeScene->SceneComponents.end(); it++)
 	{
 		if ((*it) == toDespawn)
@@ -29,31 +36,20 @@ void UWorld::RemoveSceneComponent(USceneComponent* toDespawn)
 			break;
 		}
 	}
-	
-	auto primToDespawn = Cast<UPrimitiveComponent>(toDespawn);
-	if (primToDespawn != nullptr)
-	{
-		auto prims = &(activeScene->PrimitiveContainer);
-		for (auto it = prims->begin(); it != prims->end(); it++)
-		{
-			if ((*it) == primToDespawn)
-			{
-				prims->erase(it);
-				break;
-			}
-		}
-	}
 }
 
-void UWorld::Render() const
+void UWorld::OnBeforeRender() const
 {
 	// TODO: 멀티 씬 구조에서 for each scene 루프 중첩 추가
-	auto primitiveList = activeScene->PrimitiveContainer;
-	for (UPrimitiveComponent* PrimComponent : primitiveList)
+	auto sceneComponents = activeScene->SceneComponents;
+	for (USceneComponent* s : sceneComponents)
 	{
-		RenderObject* Obj = PrimComponent->GetRenderObject();
-		if(Obj != nullptr)
-			Renderer->PushRenderObject(Obj);
+		UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(s);
+		if (primitive != nullptr)
+		{
+			if (primitive->GetRenderStateDirty())
+				primitive->ResolveRenderStateDirty();
+		}
 	}
 }
 

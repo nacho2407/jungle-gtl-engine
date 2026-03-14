@@ -5,21 +5,30 @@
 #include "UPicker.h"
 #include "Logger.h"
 
-RenderObject* Gizmo::DrawGizmo(USceneComponent* target, TransformationType type)
+void Gizmo::Initialize()
+{
+	GetInstance().renderObj = new RenderObject();
+}
+
+RenderObject* Gizmo::GetRenderObject()
+{
+	return renderObj;
+}
+
+RenderObject* Gizmo::UpdateRenderObject(USceneComponent* target, TransformationType type)
 {
 	switch (type)
 	{
 	case TransformationType::Location:
-		return DrawLocationGizmo(target);
+		return UpdateLocationGizmo(target);
 
 	default:
 		break;
 	}
 }
 
-RenderObject* Gizmo::DrawLocationGizmo(USceneComponent* target)
+RenderObject* Gizmo::UpdateLocationGizmo(USceneComponent* target)
 {
-	RenderObject* renderObj = new RenderObject();
 	ResourceManager* resourceManager = ResourceManager::GetInstance();
 
 	renderObj->Geometry = &resourceManager->GetGeometry("GizmoTranslation");
@@ -35,12 +44,12 @@ RenderObject* Gizmo::DrawLocationGizmo(USceneComponent* target)
 	return renderObj;
 }
 
-RenderObject* Gizmo::DrawRotationGizmo(USceneComponent* target)
+RenderObject* Gizmo::UpdateRotationGizmo(USceneComponent* target)
 {
 	return nullptr;
 }
 
-RenderObject* Gizmo::DrawScaleGizmo(USceneComponent* target)
+RenderObject* Gizmo::UpdateScaleGizmo(USceneComponent* target)
 {
 	return nullptr;
 }

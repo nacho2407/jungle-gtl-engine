@@ -26,7 +26,10 @@ class Gizmo : public ISingleton<Gizmo>
 {
 	friend class ISingleton<Gizmo>;
 public:
-	RenderObject* DrawGizmo(USceneComponent* target, TransformationType type);
+	static void Initialize();
+
+	RenderObject* GetRenderObject();
+	RenderObject* UpdateRenderObject(USceneComponent* target, TransformationType type);
 
 	USceneComponent* GetAttachedComponent() const { return AttachedComponent; }
 	void AttachToComponent(USceneComponent* target) { AttachedComponent = target; }
@@ -39,9 +42,9 @@ public:
 	bool IsDragging() const { return bIsDragging; }
 
 private:
-	RenderObject* DrawLocationGizmo(USceneComponent* target);
-	RenderObject* DrawRotationGizmo(USceneComponent* target);
-	RenderObject* DrawScaleGizmo(USceneComponent* target);
+	RenderObject* UpdateLocationGizmo(USceneComponent* target);
+	RenderObject* UpdateRotationGizmo(USceneComponent* target);
+	RenderObject* UpdateScaleGizmo(USceneComponent* target);
 	FGeometry* Geometry;
 
 
@@ -54,4 +57,5 @@ private:
 
 	FVector InitialObjectLocation;
 	float InitialDragOffset;
+	RenderObject* renderObj = nullptr;
 };

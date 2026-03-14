@@ -31,7 +31,9 @@ public:
 		auto primitive = Cast<UPrimitiveComponent>(instance);
 		if (primitive != nullptr)
 		{
-			activeScene->PrimitiveContainer.push_back(primitive);
+			auto renderObj = primitive->CreateRenderObject();
+			if(renderObj != nullptr)
+				FLevel::GetInstance().PushRenderObject(renderObj);
 		}
 		UE_LOG("Added new scene component with uuid = %d\n", obj->UUID);
 		return instance;
@@ -39,7 +41,7 @@ public:
 
 	void RemoveSceneComponent(USceneComponent* toDespawn);
 	inline void InjectRenderer(URenderer* InRenderer) { Renderer = InRenderer; }
-	void Render() const;
+	void OnBeforeRender() const;
 
 private:
 	static UScene* activeScene;

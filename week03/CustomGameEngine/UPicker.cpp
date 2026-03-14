@@ -26,10 +26,13 @@ void UPicker::Pick(int ScreenX, int ScreenY, UCamera* Camera, UScene* Scene)
 	}
 
 	Ray ray = CreateRay(ScreenX, ScreenY, Camera);
-	for (UPrimitiveComponent* Comp : Scene->PrimitiveContainer)
+	for (USceneComponent* Comp : Scene->SceneComponents)
 	{
+		UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(Comp);
+		if (primitive == nullptr)
+			continue;
 		float Distance = 0.f;
-		if (ray.Intersects(Comp, Distance))
+		if (ray.Intersects(primitive, Distance))
 		{
 			UE_LOG("Hit Object at Distance : %f", Distance);
 			EditorPtr->SelectComponent(Comp);

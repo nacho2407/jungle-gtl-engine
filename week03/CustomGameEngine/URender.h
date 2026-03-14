@@ -12,6 +12,7 @@
 #include "RenderObject.h"
 #include "UEngineTypes.h"
 #include "FConstantBuffer.h"
+#include "FLevel.h"
 
 
 class URenderer {
@@ -78,10 +79,6 @@ public:
 
 
 public:
-
-	void PushRenderObject(RenderObject* RenderObj) { RenderObjects.push_back(RenderObj); }
-	void ClearRenderObjects();
 	void Render(class UCamera* Camera);
-
-	TArray<RenderObject*> RenderObjects;
+	FLevel drawLevel;
 };

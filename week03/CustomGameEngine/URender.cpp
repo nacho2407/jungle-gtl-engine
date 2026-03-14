@@ -255,15 +255,6 @@ void URenderer::ReleaseConstantBuffer() {
 	ObjectConstantBuffer.Release();
 }
 
-
-void URenderer::ClearRenderObjects()
-{
-	for (int i = 0; i < RenderObjects.size();i++)
-	{
-		delete RenderObjects[i];
-	}
-}
-
 void URenderer::Render(UCamera* Camera)
 {
 	FFrameConstant FrameConst;
@@ -277,7 +268,8 @@ void URenderer::Render(UCamera* Camera)
 	TArray<RenderObject*> NoDepthRenderObjects;
 
 	FObjectConstant ObjectConst;
-	for (RenderObject* RenderObj : RenderObjects)
+	auto renderObjects = &FLevel::GetInstance().RenderObjects;
+	for (RenderObject* RenderObj : *renderObjects)
 	{
 		if (RenderObj->bDepthEnabled)
 		{
@@ -311,6 +303,6 @@ void URenderer::Render(UCamera* Camera)
 			RenderObj->Render(DeviceContext);
 		}
 	}
-	ClearRenderObjects();
-	RenderObjects.clear();
+	// ClearRenderObjects();
+	// RenderObjects.clear();
 }

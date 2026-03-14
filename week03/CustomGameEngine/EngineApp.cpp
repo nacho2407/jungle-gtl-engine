@@ -111,6 +111,9 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	Picker = Cast<UPicker>(FObjectFactory::ConstructObject(UPicker::GetClass()));
 	Picker->SetEditor(EditorInst);
 
+	// Init gizmos
+	Gizmo::Initialize();
+
 	//Init World & Scene
 	GetWorld().InjectRenderer(Renderer);
 	SceneManager::GetInstance().NewScene();
@@ -124,14 +127,9 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 void EngineApp::Run()
 {
 	//----TEST
-	UObject* sceneobj = FObjectFactory::ConstructObject(UScene::GetClass());
-
-
-	UObject* cubeobj2 = FObjectFactory::ConstructObject(UCubeComp::GetClass());
-	UCubeComp* Cube2 = Cast<UCubeComp>(cubeobj2);
-	Cube2->SetRelativeLocation(FVector(0.0, 0, 0));
-	Cube2->SetRelativeScale3D(FVector(2.f, 2.f, 2.f));
-	GetWorld().GetActiveScene()->PrimitiveContainer.push_back(Cube2);
+	UCubeComp* cube = GetWorld().AddSceneComponent<UCubeComp>();
+	cube->SetRelativeLocation(FVector(0.0, 0, 0));
+	cube->SetRelativeScale3D(FVector(2.f, 2.f, 2.f));
 
 	Camera->SetPosition(FVector(0, 0, -10.f));
 	//-----TEST
@@ -198,8 +196,8 @@ void EngineApp::Run()
 		//Render
 		Renderer->Prepare();
 		Scene->Update(globalTimer->GetDeltaTime());
-		GetWorld().Render();
-		EditorInst->Render();
+		GetWorld().OnBeforeRender();
+		EditorInst->OnBeforeRender();
 
 		Renderer->Render(Camera);
 		EditorInst->DrawUI();

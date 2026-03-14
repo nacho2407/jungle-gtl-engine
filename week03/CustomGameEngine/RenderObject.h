@@ -8,6 +8,7 @@ class FGeometry;
 struct RenderObject
 {
 public:
+	bool bIsDirty;
 	virtual void Render(ID3D11DeviceContext* Context);
 
 public:

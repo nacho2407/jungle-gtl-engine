@@ -15,14 +15,15 @@ public:
 	inline const FVector GetRelativeLocation() { return RelativeLocation; }
 	inline const FVector GetRelativeRotation() { return RelativeRotation; }
 	inline const FVector GetRelativeScale3D() { return RelativeScale3D; }
-	inline void SetRelativeLocation(FVector newLocation) { RelativeLocation = newLocation; }
-	inline void SetRelativeRotation(FVector newRotation) { RelativeRotation = newRotation; }
-	inline void SetRelativeScale3D(FVector newScale) { RelativeScale3D = newScale; }
+	inline virtual void SetRelativeLocation(FVector newLocation) { RelativeLocation = newLocation; }
+	inline virtual void SetRelativeRotation(FVector newRotation) { RelativeRotation = newRotation; }
+	inline virtual void SetRelativeScale3D(FVector newScale) { RelativeScale3D = newScale; }
 
 	bool bIsSelected = false;
 
 	FMatrix GetRelativeMatrix() const;
 
+	virtual void Update(float deltaTime) {};
 	virtual json::JSON Serialize();
 	virtual void Deserialize(json::JSON);
 

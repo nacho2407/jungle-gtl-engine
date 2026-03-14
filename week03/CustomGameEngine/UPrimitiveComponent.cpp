@@ -20,25 +20,68 @@ void UPrimitiveComponent::SetType(EPrimitiveType type)
 	this->type = type;
 }
 
+void UPrimitiveComponent::SetRelativeLocation(FVector newLocation)
+{
+	USceneComponent::SetRelativeLocation(newLocation);
+	MarkRenderStateDirty();
+}
+
+void UPrimitiveComponent::SetRelativeRotation(FVector newRotation)
+{
+	USceneComponent::SetRelativeRotation(newRotation);
+	MarkRenderStateDirty();
+}
+
+void UPrimitiveComponent::SetRelativeScale3D(FVector newScale)
+{
+	USceneComponent::SetRelativeScale3D(newScale);
+	MarkRenderStateDirty();
+}
+
 void UPrimitiveComponent::Update(float DeltaTime)
 {
 
 }
 
-RenderObject* UPrimitiveComponent::GetRenderObject()
+RenderObject* UPrimitiveComponent::CreateRenderObject()
 {
 	if (VResource == nullptr)
 		return nullptr;
 
-	RenderObject* RenderObj = new RenderObject();
+	RenderObj = new RenderObject();
+	UpdateRenderObject();
+	return RenderObj;
+}
+
+void UPrimitiveComponent::UpdateRenderObject()
+{
 	ResourceManager* RM = ResourceManager::GetInstance();
 
 	RenderObj->Geometry = this->VResource;
 	RenderObj->Material = &RM->GetMaterial(L"ShaderW0.hlsl");
 	RenderObj->World = GetRelativeMatrix();
 	RenderObj->bIsSelected = bIsSelected;
+}
 
+RenderObject* UPrimitiveComponent::GetRenderObject()
+{
 	return RenderObj;
+}
+
+void UPrimitiveComponent::MarkRenderStateDirty()
+{
+	bIsDirty = true;
+}
+
+bool UPrimitiveComponent::GetRenderStateDirty()
+{
+	return bIsDirty;
+}
+
+void UPrimitiveComponent::ResolveRenderStateDirty()
+{
+	UpdateRenderObject();
+	bIsDirty = false;
 }
 
 json::JSON UPrimitiveComponent::Serialize()
@@ -70,5 +113,7 @@ void UPrimitiveComponent::Deserialize(json::JSON jsonObj)
 	else if (jsonObj["Type"].ToString() == "Triangle")
 		type = EPrimitiveType::Triangle;
 }
+
+
 
 REGISTER_CLASS(UPrimitiveComponent);
