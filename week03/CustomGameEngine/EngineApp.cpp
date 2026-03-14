@@ -86,9 +86,11 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12,
 	 D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
-	ResourceManager::GetInstance()->CreateMaterial(L"ShaderW0.hlsl", L"ShaderW0.hlsl", Renderer->Device, layout, 2);
-	ResourceManager::GetInstance()->AddCubeMesh(Renderer->Device);
-	ResourceManager::GetInstance()->AddGizmoTranslationMesh(Renderer->Device);
+	ResourceManager::CreateMaterial(L"ShaderW0.hlsl", L"ShaderW0.hlsl", Renderer->Device, layout, 2);
+	ResourceManager::AddCubeMesh(Renderer->Device);
+	ResourceManager::AddSphereMesh(Renderer->Device);
+	ResourceManager::AddTriangleMesh(Renderer->Device);
+	ResourceManager::AddGizmoTranslationMesh(Renderer->Device);
 
 	// Init Camera
 	Camera = Cast<UCamera>(FObjectFactory::ConstructObject(UCamera::GetClass()));

@@ -1,4 +1,102 @@
 ﻿#include "ResourceManager.h"
+#include "FVertexSimple.h"
+#include "Sphere.h"
+#include "Triangle.h"
 
 TMap<FString, FGeometry> ResourceManager::GeometryMap;
 TMap<WFString, FMaterial> ResourceManager::MaterialMap;
+
+void ResourceManager::AddCubeMesh(ID3D11Device* Device)
+{
+	FVertexSimple cubeVertices[] =
+	{
+		// Front (+Z) - Red
+		{ -0.5f,-0.5f, 0.5f, 1,0,0,1 },
+		{  0.5f,-0.5f, 0.5f, 1,0,0,1 },
+		{  0.5f, 0.5f, 0.5f, 1,0,0,1 },
+
+		{ -0.5f,-0.5f, 0.5f, 1,0,0,1 },
+		{  0.5f, 0.5f, 0.5f, 1,0,0,1 },
+		{ -0.5f, 0.5f, 0.5f, 1,0,0,1 },
+
+
+		// Back (-Z) - Green
+		{  0.5f,-0.5f,-0.5f, 0,1,0,1 },
+		{ -0.5f,-0.5f,-0.5f, 0,1,0,1 },
+		{ -0.5f, 0.5f,-0.5f, 0,1,0,1 },
+
+		{  0.5f,-0.5f,-0.5f, 0,1,0,1 },
+		{ -0.5f, 0.5f,-0.5f, 0,1,0,1 },
+		{  0.5f, 0.5f,-0.5f, 0,1,0,1 },
+
+
+		// Left (-X) - Blue
+		{ -0.5f,-0.5f,-0.5f, 0,0,1,1 },
+		{ -0.5f,-0.5f, 0.5f, 0,0,1,1 },
+		{ -0.5f, 0.5f, 0.5f, 0,0,1,1 },
+
+		{ -0.5f,-0.5f,-0.5f, 0,0,1,1 },
+		{ -0.5f, 0.5f, 0.5f, 0,0,1,1 },
+		{ -0.5f, 0.5f,-0.5f, 0,0,1,1 },
+
+
+		// Right (+X) - Yellow
+		{ 0.5f,-0.5f, 0.5f, 1,1,0,1 },
+		{ 0.5f,-0.5f,-0.5f, 1,1,0,1 },
+		{ 0.5f, 0.5f,-0.5f, 1,1,0,1 },
+
+		{ 0.5f,-0.5f, 0.5f, 1,1,0,1 },
+		{ 0.5f, 0.5f,-0.5f, 1,1,0,1 },
+		{ 0.5f, 0.5f, 0.5f, 1,1,0,1 },
+
+
+		// Top (+Y) - Cyan
+		{ -0.5f,0.5f, 0.5f, 0,1,1,1 },
+		{  0.5f,0.5f, 0.5f, 0,1,1,1 },
+		{  0.5f,0.5f,-0.5f, 0,1,1,1 },
+
+		{ -0.5f,0.5f, 0.5f, 0,1,1,1 },
+		{  0.5f,0.5f,-0.5f, 0,1,1,1 },
+		{ -0.5f,0.5f,-0.5f, 0,1,1,1 },
+
+
+		// Bottom (-Y) - Magenta
+		{ -0.5f,-0.5f,-0.5f, 1,0,1,1 },
+		{  0.5f,-0.5f,-0.5f, 1,0,1,1 },
+		{  0.5f,-0.5f, 0.5f, 1,0,1,1 },
+
+		{ -0.5f,-0.5f,-0.5f, 1,0,1,1 },
+		{  0.5f,-0.5f, 0.5f, 1,0,1,1 },
+		{ -0.5f,-0.5f, 0.5f, 1,0,1,1 },
+	};
+
+	int Cnt = sizeof(cubeVertices) / sizeof(FVertexSimple);
+	TArray<FVector> Vertices(Cnt);
+	for (int i = 0; i < Cnt; ++i)
+	{
+		Vertices[i] = FVector(cubeVertices[i].x, cubeVertices[i].y, cubeVertices[i].z);
+	}
+	CreateGeometry("Cube", cubeVertices, sizeof(cubeVertices), Device, 0, Vertices);
+}
+
+void ResourceManager::AddSphereMesh(ID3D11Device* Device)
+{
+	int Cnt = sizeof(sphere_vertices) / sizeof(FVertexSimple);
+	TArray<FVector> Vertices(Cnt);
+	for (int i = 0; i < Cnt; ++i)
+	{
+		Vertices[i] = FVector(sphere_vertices[i].x, sphere_vertices[i].y, sphere_vertices[i].z);
+	}
+	CreateGeometry("Sphere", sphere_vertices, sizeof(sphere_vertices), Device, 0, Vertices);
+}
+
+void ResourceManager::AddTriangleMesh(ID3D11Device* Device)
+{
+	int Cnt = sizeof(triangle_vertices) / sizeof(FVertexSimple);
+	TArray<FVector> Vertices(Cnt);
+	for (int i = 0; i < Cnt; ++i)
+	{
+		Vertices[i] = FVector(triangle_vertices[i].x, triangle_vertices[i].y, triangle_vertices[i].z);
+	}
+	CreateGeometry("Triangle", triangle_vertices, sizeof(triangle_vertices), Device, 0, Vertices);
+}

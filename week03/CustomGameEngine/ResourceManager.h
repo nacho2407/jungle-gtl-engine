@@ -71,81 +71,10 @@ public:
 		vertexshaderCSO->Release();
 	}
 
-
-
 	//Temporary Function
-	static void AddCubeMesh(ID3D11Device* Device)
-	{
-		FVertexSimple cubeVertices[] =
-		{
-			// Front (+Z) - Red
-			{ -0.5f,-0.5f, 0.5f, 1,0,0,1 },
-			{  0.5f,-0.5f, 0.5f, 1,0,0,1 },
-			{  0.5f, 0.5f, 0.5f, 1,0,0,1 },
-
-			{ -0.5f,-0.5f, 0.5f, 1,0,0,1 },
-			{  0.5f, 0.5f, 0.5f, 1,0,0,1 },
-			{ -0.5f, 0.5f, 0.5f, 1,0,0,1 },
-
-
-			// Back (-Z) - Green
-			{  0.5f,-0.5f,-0.5f, 0,1,0,1 },
-			{ -0.5f,-0.5f,-0.5f, 0,1,0,1 },
-			{ -0.5f, 0.5f,-0.5f, 0,1,0,1 },
-
-			{  0.5f,-0.5f,-0.5f, 0,1,0,1 },
-			{ -0.5f, 0.5f,-0.5f, 0,1,0,1 },
-			{  0.5f, 0.5f,-0.5f, 0,1,0,1 },
-
-
-			// Left (-X) - Blue
-			{ -0.5f,-0.5f,-0.5f, 0,0,1,1 },
-			{ -0.5f,-0.5f, 0.5f, 0,0,1,1 },
-			{ -0.5f, 0.5f, 0.5f, 0,0,1,1 },
-
-			{ -0.5f,-0.5f,-0.5f, 0,0,1,1 },
-			{ -0.5f, 0.5f, 0.5f, 0,0,1,1 },
-			{ -0.5f, 0.5f,-0.5f, 0,0,1,1 },
-
-
-			// Right (+X) - Yellow
-			{ 0.5f,-0.5f, 0.5f, 1,1,0,1 },
-			{ 0.5f,-0.5f,-0.5f, 1,1,0,1 },
-			{ 0.5f, 0.5f,-0.5f, 1,1,0,1 },
-
-			{ 0.5f,-0.5f, 0.5f, 1,1,0,1 },
-			{ 0.5f, 0.5f,-0.5f, 1,1,0,1 },
-			{ 0.5f, 0.5f, 0.5f, 1,1,0,1 },
-
-
-			// Top (+Y) - Cyan
-			{ -0.5f,0.5f, 0.5f, 0,1,1,1 },
-			{  0.5f,0.5f, 0.5f, 0,1,1,1 },
-			{  0.5f,0.5f,-0.5f, 0,1,1,1 },
-
-			{ -0.5f,0.5f, 0.5f, 0,1,1,1 },
-			{  0.5f,0.5f,-0.5f, 0,1,1,1 },
-			{ -0.5f,0.5f,-0.5f, 0,1,1,1 },
-
-
-			// Bottom (-Y) - Magenta
-			{ -0.5f,-0.5f,-0.5f, 1,0,1,1 },
-			{  0.5f,-0.5f,-0.5f, 1,0,1,1 },
-			{  0.5f,-0.5f, 0.5f, 1,0,1,1 },
-
-			{ -0.5f,-0.5f,-0.5f, 1,0,1,1 },
-			{  0.5f,-0.5f, 0.5f, 1,0,1,1 },
-			{ -0.5f,-0.5f, 0.5f, 1,0,1,1 },
-		};
-
-		int Cnt = sizeof(cubeVertices) / sizeof(FVertexSimple);
-		TArray<FVector> Vertices(Cnt);
-		for (int i = 0;i < Cnt;++i)
-		{
-			Vertices[i] = FVector(cubeVertices[i].x, cubeVertices[i].y, cubeVertices[i].z);
-		}
-		CreateGeometry("Cube", cubeVertices, sizeof(cubeVertices), Device, 0, Vertices);
-	}
+	static void AddCubeMesh(ID3D11Device* Device);
+	static void AddSphereMesh(ID3D11Device* Device);
+	static void AddTriangleMesh(ID3D11Device* Device);
 
 	static TArray<FVertexSimple> CreateCylinderVertices(int sliceCount = 20, float radius = 0.5f, float height = 1.0f)
 	{

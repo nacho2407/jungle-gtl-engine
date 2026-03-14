@@ -7,7 +7,8 @@ cbuffer FrameConstant : register(b0)
 cbuffer ObjectConstant : register(b1)
 {
     row_major matrix Model;
-    bool bIsSelected;
+    int bIsSelected;
+    float3 Padding;
 };
 
 struct VS_INPUT
@@ -37,5 +38,9 @@ PS_INPUT mainVS(VS_INPUT input)
 
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
+    if (bIsSelected > 0)
+    {
+        return float4(input.Color.xyz, input.Color.w * 0.5f); // 선택 시 투명화.
+    }
     return input.Color;
 }

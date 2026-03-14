@@ -15,6 +15,7 @@ public:
 	FVector RelativeLocation;
 	FVector RelativeRotation;
 	FVector RelativeScale3D;
+	bool bIsSelected = false;
 
 	FMatrix GetRelativeMatrix() const;
 
@@ -22,4 +23,7 @@ public:
 	virtual void Deserialize(json::JSON);
 
 	virtual void DrawProperties();
+
+	bool IsSelected() const;
+
 };

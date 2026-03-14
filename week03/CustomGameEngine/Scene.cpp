@@ -2,6 +2,8 @@
 #include "json.h"
 #include "UPrimitiveComponent.h"
 #include "UCubeComp.h"
+#include "USphereComp.h"
+#include "UTriangleComp.h"
 #include "Logger.h"
 
 UScene::UScene()
@@ -60,15 +62,9 @@ UScene* UScene::FromJson(std::string jsonStr)
 		if (typeStr == "Cube")
 			newSc = Cast<USceneComponent>(FObjectFactory::ConstructObject(UCubeComp::GetClass()));
 		if (typeStr == "Sphere")
-		{
-			UE_LOG("[Scene.cpp] Deserialize Sphere not implemented");
-			continue;
-		}
+			newSc = Cast<USceneComponent>(FObjectFactory::ConstructObject(USphereComp::GetClass()));
 		if (typeStr == "Triangle")
-		{
-			UE_LOG("[Scene.cpp] Deserialize Triangle not implemented");
-			continue;
-		}
+			newSc = Cast<USceneComponent>(FObjectFactory::ConstructObject(UTriangleComp::GetClass()));
 
 		if (newSc == nullptr)
 			continue;
