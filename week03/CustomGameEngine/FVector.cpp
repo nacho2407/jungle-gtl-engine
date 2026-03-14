@@ -40,6 +40,8 @@ FVector FVector::Normalize() const
 	float SquareSum = x * x + y * y + z * z;
 	float Denominator = sqrtf(SquareSum);
 
+	if (Denominator == 0) return FVector(0.0f, 0.0f, 0.0f);
+
 	return FVector(x / Denominator, y / Denominator, z / Denominator);
 }
 
@@ -72,7 +74,6 @@ void FVector::Deserialize(json::JSON jsonObj)
 
 FVector Cross(const FVector& a, const FVector& b)
 {
-
 	return {
 		a.y * b.z - a.z * b.y,
 		a.z * b.x - a.x * b.z,

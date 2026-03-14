@@ -59,14 +59,37 @@ void UCamera::SetDirection(const float InputPitch, const float InputYaw,
 	}
 }
 
-void UCamera::Rotate() {}
+void UCamera::Rotate()
+{
+	if (InputManager::GetInstance().IsKeyHold(VK_LBUTTON))
+	{
+		Yaw += InputManager::GetInstance().MouseDelta.x * RotateSensitivity;
+		Pitch -= InputManager::GetInstance().MouseDelta.y * RotateSensitivity;
+		IsChanged = true;
+	}
+}
 
-FMatrix UCamera::GetViewProjectionMatrix() const { return ViewProjection; }
+void UCamera::SetFOV(const float NewFOV)
+{
+	if (std::abs(FOV - NewFOV) > Epsilon) {
+		FOV = std::clamp(NewFOV, 10.0f, 170.0f);
+		IsChanged = true;
+	}
+}
+float UCamera::GetFOV() const
+{
+	return FOV;
+}
 
 void UCamera::OnResize(int NewWidth, int NewHeight) {
 	if (NewHeight == 0) return;
 	AspectRatio = static_cast<float>(NewWidth) / static_cast<float>(NewHeight);
 	IsChanged = true;
+}
+
+float UCamera::GetAspectRatio() const
+{
+	return AspectRatio;
 }
 
 void UCamera::update() {
@@ -120,5 +143,7 @@ FMatrix UCamera::GetProjectionMatrix() const {
 
 	return M;
 }
+
+FMatrix UCamera::GetViewProjectionMatrix() const { return ViewProjection; }
 
 REGISTER_CLASS(UCamera);
