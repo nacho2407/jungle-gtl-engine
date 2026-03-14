@@ -8,6 +8,7 @@
 #include "TimerManager.h"
 #include "UCamera.h"
 #include "InputManager.h"
+#include "Gizmo.h"
 #include "UPicker.h"
 #include "SceneManager.h"
 
@@ -85,10 +86,12 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	ResourceManager::GetInstance()->CompileVertexShaderAndLayout(L"ShaderW0.hlsl", "mainVS", Renderer->Device, layout, 2);
 	ResourceManager::GetInstance()->CompilePixelShader(L"ShaderW0.hlsl", "mainPS", Renderer->Device);
 	ResourceManager::GetInstance()->AddCubeMesh(Renderer->Device);
+	ResourceManager::GetInstance()->AddGizmoTranslationMesh(Renderer->Device);
 
 	// Init Camera
 	Camera = Cast<UCamera>(FObjectFactory::ConstructObject(UCamera::GetClass()));
 	EditorInst->SetCamera(Camera);
+	EditorInst->SetRenderer(Renderer);
 
 	RECT rc;
 	int width = 0;
@@ -102,6 +105,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 
 	//Init Picker
 	Picker = Cast<UPicker>(FObjectFactory::ConstructObject(UPicker::GetClass()));
+	Picker->SetEditor(EditorInst);
 
 	//Init Scene
 	SceneManager::GetInstance().GetActiveScene()->InjectRenderer(Renderer);
@@ -165,8 +169,10 @@ void EngineApp::Run()
 		Renderer->Prepare();
 		Scene->Update(globalTimer->GetDeltaTime());
 		Scene->Render();
-		Renderer->Render(Camera);
 		EditorInst->Render();
+
+		Renderer->Render(Camera);
+		EditorInst->DrawUI();
 
 		Renderer->SwapBuffer();
 	}

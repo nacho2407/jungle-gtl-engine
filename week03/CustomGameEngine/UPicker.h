@@ -5,6 +5,8 @@
 class UCamera;
 class UScene;
 class UPrimitiveComponent;
+class Editor;
+
 struct Ray
 {
 	FVector Origin;
@@ -23,7 +25,11 @@ public:
 	virtual ~UPicker() override;
 	void Pick(int x, int y, UCamera* Camera, UScene* Scene);
 	Ray CreateRay(int x, int y, UCamera* Camera);
+
+	void SetEditor(Editor* pEditor) { EditorPtr = pEditor; }
+
 private:
 	UCamera* Camera;
 	UScene* Scene;
+	Editor* EditorPtr;
 };

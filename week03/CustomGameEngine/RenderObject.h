@@ -79,4 +79,6 @@ public:
 	UINT Offset;
 	UINT Stride;
 	//Texture
+
+	bool bDepthEnabled = true;
 };
