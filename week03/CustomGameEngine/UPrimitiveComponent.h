@@ -2,7 +2,7 @@
 #include "USceneComponent.h"
 #include "RenderObject.h"
 class URenderer;
-
+class VertexResource;
 enum EPrimitiveType
 {
 	Sphere,
@@ -27,6 +27,9 @@ public:
 	virtual json::JSON Serialize() override;
 	virtual void Deserialize(json::JSON) override;
 
+	VertexResource* GetVertexResource() { return VResource; }
+protected:
+	VertexResource* VResource;
 private:
 	int MaterialHandle = -1;
 	EPrimitiveType type;

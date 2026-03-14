@@ -30,6 +30,8 @@ public:
 	float FarPlane{ 1000.0f };
 	bool IsChanged{ true };
 	float MoveSpeed{ 0.1f };
+	float ScreenWidth = 0.f;
+	float ScreenHeight = 0.f;
 	float RotateSensitivity = 0.1f;
 	bool IsOrthogonal{false};
 	float OrthoHeight{ 10.0f };

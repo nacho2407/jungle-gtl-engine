@@ -4,6 +4,7 @@
 class USceneComponent;
 class Editor;
 class UCamera;
+class UPicker;
 class EngineApp
 {
 public:
@@ -26,6 +27,7 @@ private:
 	URenderer* Renderer = nullptr;
 	Editor* EditorInst = nullptr;
 	UCamera* Camera = nullptr;
+	UPicker* Picker = nullptr;
 
 };
 

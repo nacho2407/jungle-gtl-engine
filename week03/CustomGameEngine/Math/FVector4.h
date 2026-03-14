@@ -26,4 +26,16 @@ struct FVector4
 		}
 		return FVector4(sum[0], sum[1], sum[2], sum[3]);
 	}
+	FVector4 operator /(const float factor)
+	{
+		if (factor == 0.f)
+		{
+			return FVector4(0.f, 0.f, 0.f, 0.f);
+		}
+		return FVector4(x / factor, y / factor, z / factor, w / factor);
+	}
+	FVector4 operator* (const float factor)
+	{
+		return FVector4(x * factor, y * factor, z * factor, w * factor);
+	}
 };
