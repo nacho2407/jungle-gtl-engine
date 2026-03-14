@@ -12,9 +12,13 @@ public:
 	virtual ~USceneComponent() override;
 
 public:
-	FVector RelativeLocation;
-	FVector RelativeRotation;
-	FVector RelativeScale3D;
+	inline const FVector GetRelativeLocation() { return RelativeLocation; }
+	inline const FVector GetRelativeRotation() { return RelativeRotation; }
+	inline const FVector GetRelativeScale3D() { return RelativeScale3D; }
+	inline void SetRelativeLocation(FVector newLocation) { RelativeLocation = newLocation; }
+	inline void SetRelativeRotation(FVector newRotation) { RelativeRotation = newRotation; }
+	inline void SetRelativeScale3D(FVector newScale) { RelativeScale3D = newScale; }
+
 	bool bIsSelected = false;
 
 	FMatrix GetRelativeMatrix() const;
@@ -26,4 +30,8 @@ public:
 
 	bool IsSelected() const;
 
+private:
+	FVector RelativeLocation;
+	FVector RelativeRotation;
+	FVector RelativeScale3D;
 };

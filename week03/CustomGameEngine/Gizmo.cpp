@@ -24,7 +24,11 @@ RenderObject* Gizmo::DrawLocationGizmo(USceneComponent* target)
 
 	renderObj->Geometry = &resourceManager->GetGeometry("GizmoTranslation");
 	renderObj->Material = &resourceManager->GetMaterial(L"ShaderW0.hlsl");
-	FMatrix invScaleMatrix = FMatrix::ScaleMatrix(1.0f / target->RelativeScale3D.x, 1.0f / target->RelativeScale3D.y, 1.0f / target->RelativeScale3D.z);
+	FMatrix invScaleMatrix = FMatrix::ScaleMatrix(
+		1.0f / target->GetRelativeScale3D().x, 
+		1.0f / target->GetRelativeScale3D().y, 
+		1.0f / target->GetRelativeScale3D().z
+	);
 	renderObj->World = invScaleMatrix * target->GetRelativeMatrix();
 	renderObj->bDepthEnabled = false;
 
@@ -65,7 +69,7 @@ void Gizmo::BeginDrag(GizmoAxis axis, const Ray& mouseRay)
 
 	bIsDragging = true;
 	CurrentAxis = axis;
-	InitialObjectLocation = AttachedComponent->RelativeLocation;
+	InitialObjectLocation = AttachedComponent->GetRelativeLocation();
 
 	FVector axisDir;
 	if (axis == GizmoAxis::X) axisDir = FVector(1, 0, 0);
@@ -97,7 +101,8 @@ void Gizmo::UpdateDrag(const Ray& currentMouseRay)
 	float currentT = GetClosestPointOnAxis(currentMouseRay, worldOrigin, worldAxisDir);
 	float deltaT = currentT - InitialDragOffset;
 
-	AttachedComponent->RelativeLocation = AttachedComponent->RelativeLocation + worldAxisDir * deltaT;
+	FVector newLocation = AttachedComponent->GetRelativeLocation() + worldAxisDir * deltaT;
+	AttachedComponent->SetRelativeLocation(newLocation);
 }
 
 void Gizmo::EndDrag()

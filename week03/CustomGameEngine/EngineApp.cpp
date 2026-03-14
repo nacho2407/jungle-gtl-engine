@@ -129,8 +129,8 @@ void EngineApp::Run()
 
 	UObject* cubeobj2 = FObjectFactory::ConstructObject(UCubeComp::GetClass());
 	UCubeComp* Cube2 = Cast<UCubeComp>(cubeobj2);
-	Cube2->RelativeLocation = FVector(0.0, 0, 0);
-	Cube2->RelativeScale3D = FVector(2.f, 2.f, 2.f);
+	Cube2->SetRelativeLocation(FVector(0.0, 0, 0));
+	Cube2->SetRelativeScale3D(FVector(2.f, 2.f, 2.f));
 	GetWorld().GetActiveScene()->PrimitiveContainer.push_back(Cube2);
 
 	Camera->SetPosition(FVector(0, 0, -10.f));
