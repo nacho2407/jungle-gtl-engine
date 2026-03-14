@@ -22,4 +22,5 @@ public:
 
 	bool bIsSelected = false;
 	bool bDepthEnabled = true;
+	bool bIsLine = false;
 };

@@ -21,14 +21,13 @@ URenderObject* UAxisComp::Render()
 	RenderObj->Geometry = &RM->GetGeometry("Axis");
 	RenderObj->Material = &RM->GetMaterial(L"ShaderW0.hlsl");
 	RenderObj->World = GetRelativeMatrix();
+	RenderObj->bIsLine = true;
 
 	return RenderObj;
 }
 
 void UAxisComp::Update(float DeltaTime)
 {
-	float Speed = 10.f;
-	RelativeRotation.y += DeltaTime * Speed;
 }
 
 REGISTER_CLASS(UAxisComp);

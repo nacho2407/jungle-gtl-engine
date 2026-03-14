@@ -15,6 +15,8 @@
 #include "World.h";
 #include "ImGui/imgui.h"
 
+#include "UAxisComp.h"
+
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 LRESULT CALLBACK EngineApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -91,6 +93,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	ResourceManager::AddSphereMesh(Renderer->Device);
 	ResourceManager::AddTriangleMesh(Renderer->Device);
 	ResourceManager::AddGizmoTranslationMesh(Renderer->Device);
+	ResourceManager::AddAxisMesh(Renderer->Device);
 
 	// Init Camera
 	Camera = Cast<UCamera>(FObjectFactory::ConstructObject(UCamera::GetClass()));
@@ -132,6 +135,10 @@ void EngineApp::Run()
 	Cube2->RelativeLocation = FVector(0.0, 0, 0);
 	Cube2->RelativeScale3D = FVector(2.f, 2.f, 2.f);
 	GetWorld().GetActiveScene()->PrimitiveContainer.push_back(Cube2);
+
+	UObject* mainAxis = FObjectFactory::ConstructObject(UAxisComp::GetClass());
+	UAxisComp* MainAxis = Cast<UAxisComp>(mainAxis);
+	GetWorld().GetActiveScene()->PrimitiveContainer.push_back(MainAxis);
 
 	Camera->SetPosition(FVector(0, 0, -10.f));
 	//-----TEST

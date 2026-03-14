@@ -10,3 +10,4 @@ public:
 	virtual URenderObject* Render() override;
 	virtual void Update(float DeltaTime) override;
 };
+

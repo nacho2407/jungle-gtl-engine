@@ -14,8 +14,8 @@ UCubeComp::~UCubeComp()
 
 void UCubeComp::Update(float DeltaTime)
 {
-	float Speed = 10.f;
-	RelativeRotation.y += DeltaTime * Speed;
+	/*float Speed = 10.f;
+	RelativeRotation.y += DeltaTime * Speed;*/
 }
 
 REGISTER_CLASS(UCubeComp);

@@ -297,6 +297,11 @@ void URenderer::Render(UCamera* Camera)
 		ObjectConstantBuffer.Update(DeviceContext, &ObjectConst, sizeof(FObjectConstant));
 
 		//GPU에 ConstantBuffer가 오브젝트마다 생기는 것을 방지하기 위해 ObjectConstantBuffer를 하나만 만들어서 매 오브젝트마다 업데이트해서 사용.
+		if (!RenderObj->bIsLine)
+			DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		else
+			DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+		
 		RenderObj->Render(DeviceContext);
 	}
 
