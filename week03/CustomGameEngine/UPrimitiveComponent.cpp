@@ -1,5 +1,6 @@
 ﻿#include "UPrimitiveComponent.h"
 #include "URender.h"
+#include "ResourceManager.h"
 
 UPrimitiveComponent::UPrimitiveComponent()
 {
@@ -26,7 +27,18 @@ void UPrimitiveComponent::Update(float DeltaTime)
 
 URenderObject* UPrimitiveComponent::Render()
 {
-	return nullptr;
+	if (VResource == nullptr)
+		return nullptr;
+
+	UObject* renderObj = FObjectFactory::ConstructObject(URenderObject::GetClass());
+	URenderObject* RenderObj = dynamic_cast<URenderObject*>(renderObj);
+	ResourceManager* RM = ResourceManager::GetInstance();
+
+	RenderObj->Geometry = this->VResource;
+	RenderObj->Material = &RM->GetMaterial(L"ShaderW0.hlsl");
+	RenderObj->World = GetRelativeMatrix();
+
+	return RenderObj;
 }
 
 json::JSON UPrimitiveComponent::Serialize()

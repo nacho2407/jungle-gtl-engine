@@ -48,57 +48,6 @@
     <ClInclude Include="Sphere.h">
       <Filter>리소스 파일</Filter>
     </ClInclude>
-    <ClInclude Include="FVector.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="FVertexSimple.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="URender.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="FMatrix.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="UCubeComp.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="UPrimitiveComponent.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="USceneComponent.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="UEngineStatics.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="UEngineTypes.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="UObject.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="USphereComp.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="EngineApp.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="FObjectFactory.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Scene.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Math\FVector4.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="ResourceManager.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="RenderObject.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Editor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -111,7 +60,28 @@
     <ClInclude Include="EditorStatPanel.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="EngineApp.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
     <ClInclude Include="FColor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="FMatrix.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="FObjectFactory.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="FVector.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\FVector4.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="FVertexSimple.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Gizmo.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="InputManager.h">
@@ -120,10 +90,22 @@
     <ClInclude Include="ISerializable.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="ISingleton.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="json.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
     <ClInclude Include="Logger.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="ISingleton.h">
+    <ClInclude Include="RenderObject.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="SceneManager.h">
@@ -141,16 +123,46 @@
     <ClInclude Include="UCamera.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="UCubeComp.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="UEngineStatics.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="UEngineTypes.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="UMesh.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="UObject.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="UPicker.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
     <ClInclude Include="UPlaneComp.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="json.h">
+    <ClInclude Include="UPrimitiveComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="URender.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="USceneComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="USphereComp.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="World.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Gizmo.h">
+    <ClInclude Include="Triangle.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="UTriangleComp.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -227,9 +239,6 @@
     <ClCompile Include="EditorConsole.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="EditorConsole.h">
-      <Filter>헤더 파일</Filter>
-    </ClCompile>
     <ClCompile Include="EditorControlPanel.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -273,6 +282,15 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Gizmo.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="UPicker.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="EditorConsole.h">
+      <Filter>헤더 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="UTriangleComp.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

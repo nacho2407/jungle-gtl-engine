@@ -160,6 +160,7 @@
     <ClInclude Include="SceneManager.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="TimerManager.h" />
+    <ClInclude Include="Triangle.h" />
     <ClInclude Include="UAxisComp.h" />
     <ClInclude Include="UCamera.h" />
     <ClInclude Include="UCubeComp.h" />
@@ -176,6 +177,7 @@
     <ClInclude Include="UObject.h" />
     <ClInclude Include="URender.h" />
     <ClInclude Include="USphereComp.h" />
+    <ClInclude Include="UTriangleComp.h" />
     <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
@@ -219,6 +221,7 @@
     <ClCompile Include="UObject.cpp" />
     <ClCompile Include="URender.cpp" />
     <ClCompile Include="USphereComp.cpp" />
+    <ClCompile Include="UTriangleComp.cpp" />
     <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>

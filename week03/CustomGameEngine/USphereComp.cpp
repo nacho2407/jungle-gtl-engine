@@ -1,16 +1,16 @@
 ﻿#include "USphereComp.h"
 #include "URender.h"
+#include "ResourceManager.h"
+
 USphereComp::USphereComp()
 {
+	type = EPrimitiveType::Sphere;
+	ResourceManager* RM = ResourceManager::GetInstance();
+	VResource = &RM->GetGeometry("Sphere");
 }
 
 USphereComp::~USphereComp()
 {
-}
-
-URenderObject* USphereComp::Render()
-{
-	return nullptr;
 }
 
 REGISTER_CLASS(USphereComp);

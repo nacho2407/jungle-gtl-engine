@@ -12,19 +12,6 @@ UCubeComp::~UCubeComp()
 {
 }
 
-URenderObject* UCubeComp::Render()
-{
-	UObject* renderObj = FObjectFactory::ConstructObject(URenderObject::GetClass());
-	URenderObject* RenderObj = dynamic_cast<URenderObject*>(renderObj);
-	ResourceManager* RM = ResourceManager::GetInstance();
-
-	RenderObj->Geometry = &RM->GetGeometry("Cube");
-	RenderObj->Material = &RM->GetMaterial(L"ShaderW0.hlsl");
-	RenderObj->World = GetRelativeMatrix();
-
-	return RenderObj;
-}
-
 void UCubeComp::Update(float DeltaTime)
 {
 	float Speed = 10.f;

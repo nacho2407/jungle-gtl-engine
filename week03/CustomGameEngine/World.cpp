@@ -52,7 +52,8 @@ void UWorld::Render() const
 	for (UPrimitiveComponent* PrimComponent : primitiveList)
 	{
 		URenderObject* Obj = PrimComponent->Render();
-		Renderer->PushRenderObject(Obj);
+		if(Obj != nullptr)
+			Renderer->PushRenderObject(Obj);
 	}
 }
 
