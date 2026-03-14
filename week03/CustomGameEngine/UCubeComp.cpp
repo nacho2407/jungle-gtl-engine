@@ -37,7 +37,7 @@ void UCubeComp::Update(float DeltaTime)
 {
 	float Speed = 10.f;
 	//	RelativeRotation.x += DeltaTime * Speed;
-	RelativeRotation.y += DeltaTime * Speed;
+	//RelativeRotation.y += DeltaTime * Speed;
 	//	RelativeRotation.z += DeltaTime * Speed;
 }
 

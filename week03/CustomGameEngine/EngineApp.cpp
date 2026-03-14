@@ -12,7 +12,7 @@
 #include "InputManager.h"
 #include "Gizmo.h"
 #include "UPicker.h"
-#include "SceneManager.h"
+#include "World.h";
 #include "ImGui/imgui.h"
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -161,9 +161,9 @@ void EngineApp::Run()
 
 		ImGuiIO& io = ImGui::GetIO();
 
+		FVector Mouse = InputManager::GetInstance().MousePos;
 		if (!io.WantCaptureMouse && InputManager::GetInstance().IsKeyDown(VK_LBUTTON))
 		{
-			FVector Mouse = InputManager::GetInstance().MousePos;
 			Picker->Pick(Mouse.x, Mouse.y, Camera, GetWorld().GetActiveScene());
 		}
 
@@ -172,6 +172,26 @@ void EngineApp::Run()
 			Camera->Move();
 			Camera->Rotate();
 		}
+
+		bool bMouseHold = InputManager::GetInstance().IsKeyHold(VK_LBUTTON);
+		if (bMouseHold && !io.WantCaptureMouse)
+		{
+			Ray currentRay = Picker->CreateRay(Mouse.x, Mouse.y, Camera);
+
+			if (Gizmo::GetInstance().IsDragging())
+			{
+				Gizmo::GetInstance().UpdateDrag(currentRay);
+			}
+		}
+		else
+		{
+			if (Gizmo::GetInstance().IsDragging())
+			{
+				Gizmo::GetInstance().EndDrag();
+				UE_LOG("Ended Gizmo Drag");
+			}
+		}
+
 		Camera->update();
 
 		//Render
