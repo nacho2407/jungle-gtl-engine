@@ -86,6 +86,8 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 
 	// Init Camera
 	Camera = Cast<UCamera>(FObjectFactory::ConstructObject(UCamera::GetClass()));
+	EditorInst->SetCamera(Camera);
+
 	RECT rc;
 	int width = 0;
 	int height = 0;

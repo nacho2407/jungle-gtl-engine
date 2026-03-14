@@ -20,4 +20,6 @@ public:
 
 	virtual json::JSON Serialize();
 	virtual void Deserialize(json::JSON);
+
+	virtual void DrawProperties();
 };

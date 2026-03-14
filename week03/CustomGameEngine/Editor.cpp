@@ -7,6 +7,7 @@
 #include "EditorControlPanel.h"
 #include "EditorPropertyPanel.h"
 #include "EditorStatPanel.h"
+#include "UCamera.h"
 
 Editor::Editor()
 {
@@ -55,7 +56,7 @@ void Editor::Finalize()
 
 void Editor::DrawControlPanel()
 {
-	ControlPanel->Draw();
+	ControlPanel->Draw(Camera);
 }
 
 void Editor::DrawConsole()

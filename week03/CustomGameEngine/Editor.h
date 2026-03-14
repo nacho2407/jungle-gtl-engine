@@ -7,6 +7,7 @@ struct EditorConsole;
 struct EditorPropertyPanel;
 struct EditorStatPanel;
 class USceneComponent;
+class UCamera;
 
 class Editor
 {
@@ -18,6 +19,9 @@ public:
 	bool Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 	void Render();
 	void Finalize();
+
+	void SetCamera(UCamera* camera) { Camera = camera; }
+	void SelectComponent(USceneComponent* component) { SelectedComponent = component; }
 
 private:
 	void DrawControlPanel();
@@ -31,5 +35,6 @@ private:
 	EditorPropertyPanel* PropertyPanel = nullptr;
 	EditorStatPanel* StatPanel = nullptr;
 
+	UCamera* Camera = nullptr;
 	USceneComponent* SelectedComponent = nullptr;
 };

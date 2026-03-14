@@ -1,4 +1,5 @@
 ﻿#include "USceneComponent.h"
+#include "ImGui/imgui.h"
 
 USceneComponent::USceneComponent()
 {
@@ -35,4 +36,11 @@ void USceneComponent::Deserialize(json::JSON jsonObj)
 	RelativeLocation.Deserialize(jsonObj["Location"]);
 	RelativeRotation.Deserialize(jsonObj["Rotation"]);
 	RelativeScale3D.Deserialize(jsonObj["Scale"]);
+}
+
+void USceneComponent::DrawProperties()
+{
+	ImGui::InputFloat3("Location", &RelativeLocation.x);
+	ImGui::InputFloat3("Rotation", &RelativeRotation.x);
+	ImGui::InputFloat3("Scale", &RelativeScale3D.x);
 }

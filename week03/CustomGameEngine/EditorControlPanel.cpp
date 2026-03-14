@@ -2,6 +2,7 @@
 #include "ImGui/imgui.h"
 #include "FVector.h"
 #include "TimerManager.h"
+#include "UCamera.h"
 #include <string>
 
 // Remove later.
@@ -29,7 +30,7 @@ EditorControlPanel::~EditorControlPanel()
 {
 }
 
-void EditorControlPanel::Draw()
+void EditorControlPanel::Draw(UCamera* camera)
 {
 	ImGui::SetNextWindowPos(ImVec2(50, 50), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);
@@ -69,10 +70,10 @@ void EditorControlPanel::Draw()
 	}
 	ImGui::Separator();
 
-	ImGui::Checkbox("Orthogonal", &orthogonal);
-	ImGui::InputFloat("FOV", &fov);
-	ImGui::InputFloat3("Camera Location", &cameraLocation.x);
-	ImGui::InputFloat3("Camera Rotation", &cameraRotation.x);
+	ImGui::Checkbox("Orthogonal", &orthogonal); // TODO: Connect orthogonal property.
+	ImGui::InputFloat("FOV", &camera->FOV);
+	ImGui::InputFloat3("Camera Location", &camera->Position.x);
+	ImGui::InputFloat3("Camera Rotation", &camera->Pitch);
 
 	ImGui::End();
 }
