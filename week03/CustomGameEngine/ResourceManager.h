@@ -7,14 +7,8 @@
 #include "FMatrix.h"
 
 #include "FVector.h"
-struct VertexResource
-{
-	ID3D11Buffer* VertexBuffer;
-	TArray<FVector> Vertices;
-	int stride = 0;
-	int vertexCount = 0;
-	int offset = 0;
-};
+#include "FMaterial.h"
+#include "FGeometry.h"
 class ResourceManager
 {
 public:
@@ -27,7 +21,7 @@ public:
 	~ResourceManager() {};
 
 	template<typename T>
-	static void CreateVertexResource(FString ResourceName, T* vertices, UINT byteWidth, ID3D11Device* Device, int offset, const TArray<FVector>& Verticies)
+	static void CreateGeometry(FString ResourceName, T* vertices, UINT byteWidth, ID3D11Device* Device, int offset, const TArray<FVector>& Verticies)
 	{
 		D3D11_BUFFER_DESC vertexbufferdesc = {};
 		vertexbufferdesc.ByteWidth = byteWidth;
@@ -38,20 +32,20 @@ public:
 		ID3D11Buffer* vertexBuffer;
 		Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, &vertexBuffer);
 
-		VertexResource& Resource = VertexResourceMap[ResourceName];
-		Resource.VertexBuffer = vertexBuffer;
-		Resource.stride = sizeof(T);
-		Resource.vertexCount = byteWidth / sizeof(T);
-		Resource.offset = offset;
-		Resource.Vertices = Verticies;
+		FGeometry& Geometry = GeometryMap[ResourceName];
+		Geometry.VertexBuffer = vertexBuffer;
+		Geometry.VertexStride = sizeof(T);
+		Geometry.VertexCount = byteWidth / sizeof(T);
+		Geometry.Offset = offset;
+		Geometry.Vertices = Verticies;
 	}
 
-	static void CompileVertexShaderAndLayout(WFString VertexShaderName, FString ShaderMainName, ID3D11Device* Device, D3D11_INPUT_ELEMENT_DESC layout[], UINT layoutCount)
+	static void CreateMaterial(WFString VertexShaderName, WFString PixelShaderName, ID3D11Device* Device, D3D11_INPUT_ELEMENT_DESC layout[], UINT layoutCount)
 	{
 		ID3D11VertexShader* VertexShader = nullptr;
 		ID3D11InputLayout* InputLayout = nullptr;
 		ID3DBlob* vertexshaderCSO = nullptr;
-		D3DCompileFromFile(VertexShaderName.c_str(), nullptr, nullptr, ShaderMainName.c_str(), "vs_5_0", 0,
+		D3DCompileFromFile(VertexShaderName.c_str(), nullptr, nullptr, "mainVS", "vs_5_0", 0,
 			0, &vertexshaderCSO, nullptr);
 		Device->CreateVertexShader(vertexshaderCSO->GetBufferPointer(),
 			vertexshaderCSO->GetBufferSize(), nullptr,
@@ -60,23 +54,21 @@ public:
 			layout, layoutCount, vertexshaderCSO->GetBufferPointer(),
 			vertexshaderCSO->GetBufferSize(), &InputLayout);
 
-		VertexShaderMap[VertexShaderName] = VertexShader;
-		InputLayoutMap[VertexShaderName] = InputLayout;
-
-		vertexshaderCSO->Release();
-	}
-
-	static void CompilePixelShader(WFString PixelShaderName, FString ShaderMainName, ID3D11Device* Device)
-	{
 		ID3D11PixelShader* PixelShader = nullptr;
 		ID3DBlob* pixelshaderCSO = nullptr;
-		D3DCompileFromFile(PixelShaderName.c_str(), nullptr, nullptr, ShaderMainName.c_str(), "ps_5_0", 0,
+		D3DCompileFromFile(PixelShaderName.c_str(), nullptr, nullptr, "mainPS", "ps_5_0", 0,
 			0, &pixelshaderCSO, nullptr);
 		Device->CreatePixelShader(pixelshaderCSO->GetBufferPointer(),
 			pixelshaderCSO->GetBufferSize(), nullptr,
 			&PixelShader);
-		PixelShaderMap[PixelShaderName] = PixelShader;
+
+		FMaterial& Mat = MaterialMap[VertexShaderName];
+		Mat.VertexShader = VertexShader;
+		Mat.PixelShader = PixelShader;
+		Mat.InputLayout = InputLayout;
+
 		pixelshaderCSO->Release();
+		vertexshaderCSO->Release();
 	}
 
 
@@ -152,7 +144,7 @@ public:
 		{
 			Vertices[i] = FVector(cubeVertices[i].x, cubeVertices[i].y, cubeVertices[i].z);
 		}
-		CreateVertexResource("Cube", cubeVertices, sizeof(cubeVertices), Device, 0, Vertices);
+		CreateGeometry("Cube", cubeVertices, sizeof(cubeVertices), Device, 0, Vertices);
 	}
 
 	static TArray<FVertexSimple> CreateCylinderVertices(int sliceCount = 20, float radius = 0.5f, float height = 1.0f)
@@ -277,13 +269,13 @@ public:
 				v.x = px * cylinderMatrix[0][0] + py * cylinderMatrix[1][0] + pz * cylinderMatrix[2][0] + 1.0f * cylinderMatrix[3][0];
 				v.y = px * cylinderMatrix[0][1] + py * cylinderMatrix[1][1] + pz * cylinderMatrix[2][1] + 1.0f * cylinderMatrix[3][1];
 				v.z = px * cylinderMatrix[0][2] + py * cylinderMatrix[1][2] + pz * cylinderMatrix[2][2] + 1.0f * cylinderMatrix[3][2];
-			
+
 				v.r = 1.0f;
 				v.g = 0.0f;
 				v.b = 0.0f;
 			}
 			vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
-		
+
 			TArray<FVertexSimple> coneVertices = CreateConeVertices();
 			FMatrix coneTransform = FMatrix::TranslationMatrix(1.0f, 0.0f, 0.0f);
 			FMatrix coneRotation = FMatrix::RotationZMatrix(-90.0f);
@@ -299,7 +291,7 @@ public:
 				v.x = px * coneMatrix[0][0] + py * coneMatrix[1][0] + pz * coneMatrix[2][0] + 1.0f * coneMatrix[3][0];
 				v.y = px * coneMatrix[0][1] + py * coneMatrix[1][1] + pz * coneMatrix[2][1] + 1.0f * coneMatrix[3][1];
 				v.z = px * coneMatrix[0][2] + py * coneMatrix[1][2] + pz * coneMatrix[2][2] + 1.0f * coneMatrix[3][2];
-				
+
 				v.r = 1.0f;
 				v.g = 0.0f;
 				v.b = 0.0f;
@@ -323,13 +315,13 @@ public:
 				v.x = px * cylinderMatrix[0][0] + py * cylinderMatrix[1][0] + pz * cylinderMatrix[2][0] + 1.0f * cylinderMatrix[3][0];
 				v.y = px * cylinderMatrix[0][1] + py * cylinderMatrix[1][1] + pz * cylinderMatrix[2][1] + 1.0f * cylinderMatrix[3][1];
 				v.z = px * cylinderMatrix[0][2] + py * cylinderMatrix[1][2] + pz * cylinderMatrix[2][2] + 1.0f * cylinderMatrix[3][2];
-			
+
 				v.r = 0.0f;
 				v.g = 1.0f;
 				v.b = 0.0f;
 			}
 			vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
-		
+
 			TArray<FVertexSimple> coneVertices = CreateConeVertices();
 			FMatrix coneTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 1.0f);
 			FMatrix coneRotation = FMatrix::RotationXMatrix(90.0f);
@@ -351,7 +343,6 @@ public:
 				v.b = 0.0f;
 			}
 			vertices.insert(vertices.end(), coneVertices.begin(), coneVertices.end());
-
 		}
 		// Z Axis - Blue
 		{
@@ -375,7 +366,7 @@ public:
 				v.b = 1.0f;
 			}
 			vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
-		
+
 			TArray<FVertexSimple> coneVertices = CreateConeVertices();
 			FMatrix coneTransform = FMatrix::TranslationMatrix(0.0f, 1.0f, 0.0f);
 			FMatrix coneScale = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f);
@@ -398,36 +389,27 @@ public:
 			vertices.insert(vertices.end(), coneVertices.begin(), coneVertices.end());
 		}
 
-		int cnt = sizeof(vertices) / sizeof(FVertexSimple);
+		int cnt = vertices.size();
 		TArray<FVector> Vertices(cnt);
 		for (int i = 0; i < cnt; ++i)
 		{
 			Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
 		}
 
-		CreateVertexResource("GizmoTranslation", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
+		CreateGeometry("GizmoTranslation", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
 	}
 
-	static VertexResource& GetVertexResource(FString ResourceName)
+
+	static FMaterial& GetMaterial(WFString ResourceName)
 	{
-		return VertexResourceMap[ResourceName];
+		return MaterialMap[ResourceName];
 	}
-	static ID3D11InputLayout* GetInputLayout(WFString VertexShaderName)
+	static FGeometry& GetGeometry(FString ResourceName)
 	{
-		return InputLayoutMap[VertexShaderName];
-	}
-	static ID3D11VertexShader* GetVertexShader(WFString VertexShaderName)
-	{
-		return VertexShaderMap[VertexShaderName];
-	}
-	static ID3D11PixelShader* GetPixelShader(WFString PixelShaderName)
-	{
-		return PixelShaderMap[PixelShaderName];
+		return GeometryMap[ResourceName];
 	}
 private:
 	ResourceManager() {};
-	static TMap<FString, VertexResource> VertexResourceMap;
-	static TMap<WFString, ID3D11InputLayout*> InputLayoutMap;
-	static TMap<WFString, ID3D11PixelShader*> PixelShaderMap;
-	static TMap<WFString, ID3D11VertexShader*> VertexShaderMap;
+	static TMap<FString, FGeometry> GeometryMap;
+	static TMap<WFString, FMaterial> MaterialMap;
 };

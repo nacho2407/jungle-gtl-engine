@@ -2,6 +2,8 @@
 
 #include "UObject.h"
 #include "FVector.h"
+#include "Gizmo.h"
+
 class UCamera;
 class UScene;
 class UPrimitiveComponent;
@@ -24,6 +26,7 @@ public:
 	UPicker();
 	virtual ~UPicker() override;
 	void Pick(int x, int y, UCamera* Camera, UScene* Scene);
+	GizmoAxis PickGizmo(int x, int y, UCamera* Camera, UScene* Scene);
 	Ray CreateRay(int x, int y, UCamera* Camera);
 
 	void SetEditor(Editor* pEditor) { EditorPtr = pEditor; }

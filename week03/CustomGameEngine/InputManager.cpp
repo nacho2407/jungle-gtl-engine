@@ -31,7 +31,7 @@ bool InputManager::IsKeyUp(int vk) {
 }
 
 bool InputManager::IsKeyHold(int vk) {
-	return CurrentState[vk] && PrevState[vk];
+	return CurrentState[vk];
 }
 
 void InputManager::UpdateMouse()
