@@ -19,6 +19,8 @@ public:
 	void Render();
 	void Finalize();
 
+	void SelectComponent(USceneComponent* component) { SelectedComponent = component; }
+
 private:
 	void DrawControlPanel();
 	void DrawConsole();
