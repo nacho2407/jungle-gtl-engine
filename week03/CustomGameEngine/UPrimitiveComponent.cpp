@@ -37,6 +37,7 @@ URenderObject* UPrimitiveComponent::Render()
 	RenderObj->Geometry = this->VResource;
 	RenderObj->Material = &RM->GetMaterial(L"ShaderW0.hlsl");
 	RenderObj->World = GetRelativeMatrix();
+	RenderObj->bIsSelected = bIsSelected;
 
 	return RenderObj;
 }
