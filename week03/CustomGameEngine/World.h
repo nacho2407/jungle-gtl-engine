@@ -2,6 +2,7 @@
 
 #include "Scene.h"
 #include "ISingleton.h"
+#include "URender.h"
 
 class UWorld : public UObject, public ISingleton<UWorld>
 {
@@ -38,9 +39,12 @@ public:
 	}
 
 	void RemoveSceneComponent(USceneComponent* toDespawn);
+	inline void InjectRenderer(URenderer* InRenderer) { Renderer = InRenderer; }
+	void Render() const;
 
 private:
 	static UScene* activeScene;
+	URenderer* Renderer;
 };
 
 UWorld& GetWorld();

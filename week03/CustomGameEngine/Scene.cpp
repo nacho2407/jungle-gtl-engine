@@ -85,13 +85,4 @@ UScene* UScene::FromJson(std::string jsonStr)
 	return scene;
 }
 
-void UScene::Render() const
-{
-	for (UPrimitiveComponent* PrimComponent : PrimitiveContainer)
-	{
-		URenderObject* Obj = PrimComponent->Render();
-		Renderer->PushRenderObject(Obj);
-	}
-}
-
 REGISTER_CLASS(UScene);

@@ -45,6 +45,17 @@ void UWorld::RemoveSceneComponent(USceneComponent* toDespawn)
 	}
 }
 
+void UWorld::Render() const
+{
+	// TODO: 멀티 씬 구조에서 for each scene 루프 중첩 추가
+	auto primitiveList = activeScene->PrimitiveContainer;
+	for (UPrimitiveComponent* PrimComponent : primitiveList)
+	{
+		URenderObject* Obj = PrimComponent->Render();
+		Renderer->PushRenderObject(Obj);
+	}
+}
+
 UWorld& GetWorld()
 {
 	return UWorld::GetInstance();

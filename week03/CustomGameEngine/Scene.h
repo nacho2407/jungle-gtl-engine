@@ -22,12 +22,8 @@ public:
 	std::string ToJson();
 	static std::string ToJson(UScene*);
 	static UScene* FromJson(std::string);
-	void InjectRenderer(URenderer* InRenderer) { Renderer = InRenderer; }
 	std::vector<UPrimitiveComponent*> PrimitiveContainer; // TODO : Change to TArray And Private
 
 public:
 	void Render() const;
-
-private:
-	URenderer* Renderer;
 };

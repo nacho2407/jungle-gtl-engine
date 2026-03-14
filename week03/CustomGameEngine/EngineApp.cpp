@@ -110,9 +110,9 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	Picker = Cast<UPicker>(FObjectFactory::ConstructObject(UPicker::GetClass()));
 	Picker->SetEditor(EditorInst);
 
-	//Init Scene
+	//Init World & Scene
+	GetWorld().InjectRenderer(Renderer);
 	SceneManager::GetInstance().NewScene();
-	GetWorld().GetActiveScene()->InjectRenderer(Renderer);
 
 	// Init Timer
 	TimerManager::GetInstance().CreateGlobalTimer();
@@ -177,7 +177,7 @@ void EngineApp::Run()
 		//Render
 		Renderer->Prepare();
 		Scene->Update(globalTimer->GetDeltaTime());
-		Scene->Render();
+		GetWorld().Render();
 		EditorInst->Render();
 
 		Renderer->Render(Camera);
