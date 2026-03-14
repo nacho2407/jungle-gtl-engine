@@ -61,11 +61,11 @@ UScene* UScene::FromJson(std::string jsonStr)
 		USceneComponent* newSc = nullptr;
 		FString typeStr = pair.second["Type"].ToString();
 		if (typeStr == "Cube")
-			newSc = GetWorld().AddSceneComponent<UCubeComp>();
+			newSc = Cast<USceneComponent>(FObjectFactory::ConstructObject(UCubeComp::GetClass()));
 		if (typeStr == "Sphere")
-			newSc = GetWorld().AddSceneComponent<USphereComp>();
+			newSc = Cast<USceneComponent>(FObjectFactory::ConstructObject(USphereComp::GetClass()));
 		if (typeStr == "Triangle")
-			newSc = GetWorld().AddSceneComponent<UTriangleComp>();
+			newSc = Cast<USceneComponent>(FObjectFactory::ConstructObject(UTriangleComp::GetClass()));
 
 		if (newSc == nullptr)
 			continue;

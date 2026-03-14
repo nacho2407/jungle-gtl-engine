@@ -4,6 +4,7 @@
 #include <sstream>
 #include "World.h"
 #include "UEngineStatics.h"
+#include "UPrimitiveComponent.h"
 #include "Logger.h"
 
 SceneManager::SceneManager()
@@ -53,6 +54,9 @@ void SceneManager::SaveScene(FString sceneName)
 
 UScene* SceneManager::LoadScene(FString sceneName)
 {
+	if (GetWorld().GetActiveScene() != nullptr)
+		UnloadScene();
+
 	// TODO: 리소스 관리자 완성되면 리소스 관리자 통하여 파일 입출력하도록 수정
 	const FString filePath = sceneName + ".scene";
 	std::ifstream inFile;
@@ -64,7 +68,17 @@ UScene* SceneManager::LoadScene(FString sceneName)
 		inFile >> jsonStr;
 		inFile.close();
 
+		// restore sceneComponents, and add to Render list if it is primitive
 		UScene *loadedScene = UScene::FromJson(jsonStr);
+		for (auto sceneComp : loadedScene->SceneComponents)
+		{
+			UPrimitiveComponent* prim = Cast<UPrimitiveComponent>(sceneComp);
+			if (prim != nullptr)
+			{
+				prim->CreateRenderObject();
+				FLevel::GetInstance().PushRenderObject(prim->GetRenderObject());
+			}
+		}
 
 		GetWorld().SetActiveScene(loadedScene);
 		UEngineStatics::NextUUID = loadedScene->NextUUID;
@@ -82,7 +96,12 @@ UScene* SceneManager::LoadScene(FString sceneName)
 
 void SceneManager::UnloadScene()
 {
-	GetWorld().GetActiveScene();
+	UScene *curScene = GetWorld().GetActiveScene();
+	for (auto obj : curScene->SceneComponents)
+	{
+		GetWorld().RemoveSceneComponent(obj);
+	}
+	delete GetWorld().GetActiveScene();
 	GetWorld().SetActiveScene(nullptr);
 }
 
