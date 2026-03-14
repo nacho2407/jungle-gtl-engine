@@ -9,6 +9,7 @@
 #include "EditorStatPanel.h"
 #include "UCamera.h"
 #include "Gizmo.h"
+#include "GizmoController.h"
 #include "URender.h"
 
 Editor::Editor()
@@ -38,10 +39,7 @@ void Editor::Render()
 {
 	if (Renderer == nullptr) return;
 
-	if (SelectedComponent)
-	{
-		Renderer->PushRenderObject(Gizmo::GetInstance().DrawGizmo(SelectedComponent, TransformationType::Location));
-	}
+	Gizmo::GetInstance().Render(Renderer);
 }
 
 void Editor::DrawUI()
@@ -68,15 +66,19 @@ void Editor::Finalize()
 
 void Editor::SelectComponent(USceneComponent* component)
 {
-
-	if (SelectedComponent) SelectedComponent->bIsSelected = false;
-	if (component)
+	if (SelectedComponent)
 	{
-		component->bIsSelected = true;
-		SelectedComponent = component;
-		Gizmo::GetInstance().AttachToComponent(component);
+		SelectedComponent->bIsSelected = false;
 	}
 
+	SelectedComponent = component;
+
+	if (SelectedComponent)
+	{
+		SelectedComponent->bIsSelected = true;
+	}
+
+	Gizmo::GetInstance().SetControllerTarget(SelectedComponent);
 }
 
 void Editor::DrawControlPanel()

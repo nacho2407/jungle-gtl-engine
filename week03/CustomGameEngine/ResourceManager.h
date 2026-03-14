@@ -179,10 +179,10 @@ public:
 
 	static void AddGizmoTranslationMesh(ID3D11Device* Device)
 	{
-		TArray<FVertexSimple> vertices;
-
 		// X Axis - Red
 		{
+			TArray<FVertexSimple> vertices;
+
 			TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
 			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.5f, 0.0f, 0.0f);
 			FMatrix cylinderRotation = FMatrix::RotationZMatrix(90.0f);
@@ -226,9 +226,21 @@ public:
 				v.b = 0.0f;
 			}
 			vertices.insert(vertices.end(), coneVertices.begin(), coneVertices.end());
+
+			int cnt = vertices.size();
+			TArray<FVector> Vertices(cnt);
+			for (int i = 0; i < cnt; ++i)
+			{
+				Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
+			}
+
+			CreateGeometry("GizmoTranslationX", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
+
 		}
 		// Y Axis - Green
 		{
+			TArray<FVertexSimple> vertices;
+
 			TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
 			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 0.5f);
 			FMatrix cylinderRotation = FMatrix::RotationXMatrix(90.0f);
@@ -272,9 +284,20 @@ public:
 				v.b = 0.0f;
 			}
 			vertices.insert(vertices.end(), coneVertices.begin(), coneVertices.end());
+
+			int cnt = vertices.size();
+			TArray<FVector> Vertices(cnt);
+			for (int i = 0; i < cnt; ++i)
+			{
+				Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
+			}
+
+			CreateGeometry("GizmoTranslationY", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
 		}
 		// Z Axis - Blue
 		{
+			TArray<FVertexSimple> vertices;
+
 			TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
 			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.0f, 0.5f, 0.0f);
 			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 1.0f, 0.05f);
@@ -316,16 +339,16 @@ public:
 				v.b = 1.0f;
 			}
 			vertices.insert(vertices.end(), coneVertices.begin(), coneVertices.end());
-		}
 
-		int cnt = vertices.size();
-		TArray<FVector> Vertices(cnt);
-		for (int i = 0; i < cnt; ++i)
-		{
-			Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
-		}
+			int cnt = vertices.size();
+			TArray<FVector> Vertices(cnt);
+			for (int i = 0; i < cnt; ++i)
+			{
+				Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
+			}
 
-		CreateGeometry("GizmoTranslation", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
+			CreateGeometry("GizmoTranslationZ", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
+		}
 	}
 
 

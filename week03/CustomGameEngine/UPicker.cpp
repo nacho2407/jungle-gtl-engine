@@ -6,6 +6,7 @@
 #include "ResourceManager.h"
 #include "Logger.h"
 #include "Editor.h"
+#include "GizmoController.h"
 
 UPicker::UPicker()
 {
@@ -19,11 +20,14 @@ void UPicker::Pick(int ScreenX, int ScreenY, UCamera* Camera, UScene* Scene)
 {
 	UE_LOG("Screen Clicked at: (%d, %d)", ScreenX, ScreenY);
 	//Screenx
-	GizmoAxis selectedAxis = PickGizmo(ScreenX, ScreenY, Camera, Scene);
-	if (selectedAxis != GizmoAxis::None)
+	GizmoControllerAxis selectedAxis = PickGizmo(ScreenX, ScreenY, Camera, Scene);
+	if (selectedAxis != GizmoControllerAxis::None)
 	{
-		UE_LOG("Selected Gizmo Axis: %d", static_cast<int>(selectedAxis));
-		Gizmo::GetInstance().BeginDrag(selectedAxis, CreateRay(ScreenX, ScreenY, Camera));
+		Gizmo::GetInstance().GetController()->SetAxis(selectedAxis);
+
+		Ray ray = CreateRay(ScreenX, ScreenY, Camera);
+		Gizmo::GetInstance().GetController()->BeginDrag(ray);
+		UE_LOG("Gizmo picked!");
 		return;
 	}
 
@@ -75,27 +79,39 @@ void UPicker::Pick(int ScreenX, int ScreenY, UCamera* Camera, UScene* Scene)
 }
 
 // TODO: Optimize later...
-GizmoAxis UPicker::PickGizmo(int ScreenX, int ScreenY, UCamera* Camera, UScene* Scene)
+GizmoControllerAxis UPicker::PickGizmo(int ScreenX, int ScreenY, UCamera* Camera, UScene* Scene)
 {
 	Ray ray = CreateRay(ScreenX, ScreenY, Camera);
-	GizmoAxis SelectedAxis = GizmoAxis::None;
+	GizmoControllerAxis SelectedAxis = GizmoControllerAxis::None;
+	GizmoController* Controller = Gizmo::GetInstance().GetController();
 
-	USceneComponent* comp = Gizmo::GetInstance().GetAttachedComponent();
-	if (comp == nullptr) return GizmoAxis::None;
+	USceneComponent* comp = Controller->GetAttachedComponent();
+	if (comp == nullptr) return SelectedAxis;
 
-	FMatrix gizmoMatrix = Gizmo::GetInstance().GetRelativeMatrix();
+	FMatrix gizmoMatrix = Controller->GetRelativeMatrix();
+
+	//for (int i = 0; i < 4; ++i)
+	//{
+	//	UE_LOG("%f %f %f %f", gizmoMatrix[i][0], gizmoMatrix[i][1], gizmoMatrix[i][2], gizmoMatrix[i][3]);
+	//}
 
 	FVector origin = gizmoMatrix.TransformPoint(FVector(0, 0, 0));
 
 	FVector xDir = (gizmoMatrix.TransformPoint(FVector(1, 0, 0)) - origin).Normalize();
-	FVector yDir = (gizmoMatrix.TransformPoint(FVector(0, 1, 0)) - origin).Normalize();
-	FVector zDir = (gizmoMatrix.TransformPoint(FVector(0, 0, 1)) - origin).Normalize();
+	FVector yDir = (gizmoMatrix.TransformPoint(FVector(0, 0, 1)) - origin).Normalize();
+	FVector zDir = (gizmoMatrix.TransformPoint(FVector(0, 1, 0)) - origin).Normalize();
 
 	FVector Axes[3] = { xDir, yDir, zDir };
-	GizmoAxis AxisEnums[3] = { GizmoAxis::X, GizmoAxis::Y, GizmoAxis::Z };
+	GizmoControllerAxis AxisEnums[3] = { GizmoControllerAxis::X, GizmoControllerAxis::Y, GizmoControllerAxis::Z };
+
+	float distanceToCamera = (origin - Camera->Position).Length();
+
+	float dynamicRadius = distanceToCamera * 0.02f;
 
 	float MaxGizmoLength = 1.2f;
-	float ThickPickRadius = 0.2f;
+	float ThickPickRadius = dynamicRadius;
+	if (dynamicRadius < 0.1f) ThickPickRadius = 0.1f;
+	else if (dynamicRadius > 0.5f) ThickPickRadius = 0.5f;
 
 	float ClosestT = FLT_MAX;
 
