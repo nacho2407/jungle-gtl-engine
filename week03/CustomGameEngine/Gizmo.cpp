@@ -21,20 +21,11 @@ URenderObject* Gizmo::DrawLocationGizmo(USceneComponent* target)
 	URenderObject* renderObj = Cast<URenderObject>(obj);
 	ResourceManager* resourceManager = ResourceManager::GetInstance();
 
-	VertexResource resource = resourceManager->GetVertexResource("GizmoTranslation");
 
-	renderObj->SetObject(resource.VertexBuffer,
-		resourceManager->GetVertexShader(L"ShaderW0.hlsl"),
-		resourceManager->GetPixelShader(L"ShaderW0.hlsl"),
-		resourceManager->GetInputLayout(L"ShaderW0.hlsl"),
-		resource.vertexCount,
-		resource.offset,
-		resource.stride);
-
-	RenderObjectConstants constants;
+	renderObj->Geometry = &resourceManager->GetGeometry("GizmoTranslation");
+	renderObj->Material = &resourceManager->GetMaterial(L"ShaderW0.hlsl");
 	FMatrix invScaleMatrix = FMatrix::ScaleMatrix(1.0f / target->RelativeScale3D.x, 1.0f / target->RelativeScale3D.y, 1.0f / target->RelativeScale3D.z);
-	constants.Model = invScaleMatrix * target->GetRelativeMatrix();
-	renderObj->SetConstants(constants);
+	renderObj->World = invScaleMatrix * target->GetRelativeMatrix();
 	renderObj->bDepthEnabled = false;
 
 	return renderObj;

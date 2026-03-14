@@ -234,6 +234,7 @@ void URenderer::Render(UCamera* Camera)
 	FrameConst.Projection = Camera->GetProjectionMatrix();
 	FrameConst.View = Camera->GetViewMatrix();
 	FrameConstantBuffer.Update(DeviceContext, &FrameConst, sizeof(FFrameConstant));
+	DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
 	//FrameConstantBuffer.Bind(DeviceContext);
 
 	TArray<URenderObject*> NormalRenderObjects;
@@ -252,14 +253,12 @@ void URenderer::Render(UCamera* Camera)
 		}
 	}
 
-	DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
 	for (URenderObject* RenderObj : NormalRenderObjects)
 	{
 		//Camera
-		RenderObj->Constants.View = Camera->GetViewMatrix();
-		RenderObj->Constants.Projection = Camera->GetProjectionMatrix();
-
-		RenderObj->SetConstantBuffer(ConstantBuffer);
+		ObjectConst.World = RenderObj->World;
+		ObjectConstantBuffer.Update(DeviceContext, &ObjectConst, sizeof(FObjectConstant));
+		//GPU에 ConstantBuffer가 오브젝트마다 생기는 것을 방지하기 위해 ObjectConstantBuffer를 하나만 만들어서 매 오브젝트마다 업데이트해서 사용.
 		RenderObj->Render(DeviceContext);
 	}
 
@@ -268,19 +267,10 @@ void URenderer::Render(UCamera* Camera)
 		DeviceContext->OMSetDepthStencilState(DepthStencilStateNoDepth, 0);
 		for (URenderObject* RenderObj : NoDepthRenderObjects)
 		{
-			//Camera
-			RenderObj->Constants.View = Camera->GetViewMatrix();
-			RenderObj->Constants.Projection = Camera->GetProjectionMatrix();
-
-			RenderObj->SetConstantBuffer(ConstantBuffer);
+			ObjectConst.World = RenderObj->World;
+			ObjectConstantBuffer.Update(DeviceContext, &ObjectConst, sizeof(FObjectConstant));
 			RenderObj->Render(DeviceContext);
 		}
-	}
-
-		ObjectConst.World = RenderObj->World;
-		//GPU에 ConstantBuffer가 오브젝트마다 생기는 것을 방지하기 위해 ObjectConstantBuffer를 하나만 만들어서 매 오브젝트마다 업데이트해서 사용.
-		ObjectConstantBuffer.Update(DeviceContext, &ObjectConst, sizeof(FObjectConstant));
-		RenderObj->Render(DeviceContext);
 	}
 	ClearRenderObjects();
 	RenderObjects.clear();

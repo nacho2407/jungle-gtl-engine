@@ -397,13 +397,17 @@ public:
 			Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
 		}
 
-		CreateVertexResource("GizmoTranslation", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
+		CreateGeometry("GizmoTranslation", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
 	}
 
 
 	static FMaterial& GetMaterial(WFString ResourceName)
 	{
 		return MaterialMap[ResourceName];
+	}
+	static FGeometry& GetGeometry(FString ResourceName)
+	{
+		return GeometryMap[ResourceName];
 	}
 private:
 	ResourceManager() {};

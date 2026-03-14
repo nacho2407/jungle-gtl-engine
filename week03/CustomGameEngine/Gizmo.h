@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "ISingleton.h"
-
+#include "FGeometry.h"
 class URenderObject;
 class USceneComponent;
 
@@ -21,4 +21,6 @@ private:
 	URenderObject* DrawLocationGizmo(USceneComponent* target);
 	URenderObject* DrawRotationGizmo(USceneComponent* target);
 	URenderObject* DrawScaleGizmo(USceneComponent* target);
+	FGeometry* Geometry;
+
 };
