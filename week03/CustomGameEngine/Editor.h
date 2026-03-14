@@ -25,6 +25,7 @@ public:
 	void SetRenderer(URenderer* renderer) { Renderer = renderer; }
 	void SetCamera(UCamera* camera) { Camera = camera; }
 	void SelectComponent(USceneComponent* component) { SelectedComponent = component; }
+	void GetSelectedComponent(USceneComponent*& outComponent) { outComponent = SelectedComponent; }
 
 private:
 	void DrawControlPanel();

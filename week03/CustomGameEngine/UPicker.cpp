@@ -100,8 +100,8 @@ bool Ray::Intersects(UPrimitiveComponent* Comp, float& OutDistance)
 	bool bHit = false;
 	float ClosestT = FLT_MAX;
 
-	const auto& Vertices = Comp->GetVertexResource()->Vertices;
-	int VertexCount = Comp->GetVertexResource()->vertexCount;
+	const auto& Vertices = Comp->GetGeometry()->Vertices;
+	int VertexCount = Comp->GetGeometry()->VertexCount;
 
 	for (int i = 0; i + 2 < VertexCount; ++i)
 	{
