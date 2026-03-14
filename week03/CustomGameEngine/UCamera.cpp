@@ -40,7 +40,7 @@ void UCamera::Move() {
 		Position = Position - SideDirection * MoveSpeed;
 		IsChanged = true;
 	}
-	
+
 }
 
 void UCamera::SetDirection(const float InputPitch, const float InputYaw,
@@ -92,11 +92,23 @@ float UCamera::GetAspectRatio() const
 	return AspectRatio;
 }
 
-void UCamera::update() {
-	if (!IsChanged) return;
+void UCamera::SetOrthogonal(bool input)
+{
+	IsOrthogonal = input;
+	IsChanged = true;
+}
 
-	View = GetViewMatrix();
-	Projection = GetProjectionMatrix();
+//void UCamera::ChangePerpective(EProjectionType NewType)
+//{
+//	ProjectionType = NewType;
+//	IsChanged = true;
+//}
+
+void UCamera::update() {
+	//if (!IsChanged) return;
+
+	CalcViewMatrix();
+	CalcProjectionMatrix();
 	ViewProjection = View * Projection;
 
 	float p = FMatrix::DegToRad(Pitch);
@@ -113,7 +125,8 @@ void UCamera::update() {
 	IsChanged = false;
 }
 
-FMatrix UCamera::GetViewMatrix() const {
+void UCamera::CalcViewMatrix()
+{
 	FMatrix InvT;
 	InvT[3][0] = -Position.x;
 	InvT[3][1] = -Position.y;
@@ -122,10 +135,37 @@ FMatrix UCamera::GetViewMatrix() const {
 	FMatrix InvR = FMatrix::RotationZMatrix(-Roll) *
 		FMatrix::RotationYMatrix(-Yaw) *
 		FMatrix::RotationXMatrix(-Pitch);
-	return InvT * InvR;
+	View = InvT * InvR;
 }
 
-FMatrix UCamera::GetProjectionMatrix() const {
+FMatrix UCamera::GetViewMatrix() const
+{
+	return View;
+}
+
+//void UCamera::CalcProjectionMatrix()
+//{
+//	if (ProjectionType == EProjectionType::Perspective)
+//		CalcPerspectiveProjectionMatrix();
+//	else
+//		CalcOrthogonalProjectionMatrix();
+//}
+
+void UCamera::CalcProjectionMatrix()
+{
+	if (!IsOrthogonal)
+		CalcPerspectiveProjectionMatrix();
+	else
+		CalcOrthogonalProjectionMatrix();
+}
+
+FMatrix UCamera::GetProjectionMatrix() const
+{
+	return Projection;
+}
+
+void UCamera::CalcPerspectiveProjectionMatrix()
+{
 	FMatrix M = FMatrix::ZeroMatrix();
 
 	float rad = FMatrix::DegToRad(FOV);
@@ -141,7 +181,28 @@ FMatrix UCamera::GetProjectionMatrix() const {
 	M[3][2] = b;
 	M[2][3] = 1.0f;
 
-	return M;
+	Projection = M;
+}
+
+void UCamera::CalcOrthogonalProjectionMatrix()
+{
+	FMatrix M;
+
+	float OrthoWidth = OrthoHeight * AspectRatio;
+
+	float w = 2.0f / OrthoWidth;
+	float h = 2.0f / OrthoHeight;
+
+	float q = 1.0f / (FarPlane - NearPlane);
+	float b = -NearPlane / (FarPlane - NearPlane);
+
+	M[0][0] = w;
+	M[1][1] = h;
+	M[2][2] = q;
+	M[3][2] = b;
+	M[3][3] = 1.0f;
+
+	Projection = M;
 }
 
 FMatrix UCamera::GetViewProjectionMatrix() const { return ViewProjection; }
