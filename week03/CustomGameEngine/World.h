@@ -3,6 +3,7 @@
 #include "Scene.h"
 #include "ISingleton.h"
 #include "URender.h"
+#include "Logger.h"		// TEST
 
 class UWorld : public UObject, public ISingleton<UWorld>
 {
@@ -32,6 +33,7 @@ public:
 		{
 			activeScene->PrimitiveContainer.push_back(primitive);
 		}
+		UE_LOG("Added new scene component with uuid = %d\n", obj->UUID);
 		return instance;
 	}
 

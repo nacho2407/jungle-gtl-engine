@@ -5,13 +5,9 @@
 class FMaterial;
 class FGeometry;
 
-class URenderObject : public UObject
+struct RenderObject
 {
-	DECLARE_RTTI(URenderObject, UObject)
 public:
-	URenderObject();
-	virtual ~URenderObject() override;
-
 	virtual void Render(ID3D11DeviceContext* Context);
 
 public:

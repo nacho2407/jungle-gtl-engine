@@ -3,7 +3,7 @@
 #include "FGeometry.h"
 #include "FMatrix.h"
 
-class URenderObject;
+class RenderObject;
 class USceneComponent;
 struct Ray;
 
@@ -26,7 +26,7 @@ class Gizmo : public ISingleton<Gizmo>
 {
 	friend class ISingleton<Gizmo>;
 public:
-	URenderObject* DrawGizmo(USceneComponent* target, TransformationType type);
+	RenderObject* DrawGizmo(USceneComponent* target, TransformationType type);
 
 	USceneComponent* GetAttachedComponent() const { return AttachedComponent; }
 	void AttachToComponent(USceneComponent* target) { AttachedComponent = target; }
@@ -39,9 +39,9 @@ public:
 	bool IsDragging() const { return bIsDragging; }
 
 private:
-	URenderObject* DrawLocationGizmo(USceneComponent* target);
-	URenderObject* DrawRotationGizmo(USceneComponent* target);
-	URenderObject* DrawScaleGizmo(USceneComponent* target);
+	RenderObject* DrawLocationGizmo(USceneComponent* target);
+	RenderObject* DrawRotationGizmo(USceneComponent* target);
+	RenderObject* DrawScaleGizmo(USceneComponent* target);
 	FGeometry* Geometry;
 
 

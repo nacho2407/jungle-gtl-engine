@@ -5,7 +5,7 @@
 #include "UPicker.h"
 #include "Logger.h"
 
-URenderObject* Gizmo::DrawGizmo(USceneComponent* target, TransformationType type)
+RenderObject* Gizmo::DrawGizmo(USceneComponent* target, TransformationType type)
 {
 	switch (type)
 	{
@@ -17,12 +17,10 @@ URenderObject* Gizmo::DrawGizmo(USceneComponent* target, TransformationType type
 	}
 }
 
-URenderObject* Gizmo::DrawLocationGizmo(USceneComponent* target)
+RenderObject* Gizmo::DrawLocationGizmo(USceneComponent* target)
 {
-	UObject* obj = FObjectFactory::ConstructObject(URenderObject::GetClass());
-	URenderObject* renderObj = Cast<URenderObject>(obj);
+	RenderObject* renderObj = new RenderObject();
 	ResourceManager* resourceManager = ResourceManager::GetInstance();
-
 
 	renderObj->Geometry = &resourceManager->GetGeometry("GizmoTranslation");
 	renderObj->Material = &resourceManager->GetMaterial(L"ShaderW0.hlsl");
@@ -33,12 +31,12 @@ URenderObject* Gizmo::DrawLocationGizmo(USceneComponent* target)
 	return renderObj;
 }
 
-URenderObject* Gizmo::DrawRotationGizmo(USceneComponent* target)
+RenderObject* Gizmo::DrawRotationGizmo(USceneComponent* target)
 {
 	return nullptr;
 }
 
-URenderObject* Gizmo::DrawScaleGizmo(USceneComponent* target)
+RenderObject* Gizmo::DrawScaleGizmo(USceneComponent* target)
 {
 	return nullptr;
 }

@@ -25,13 +25,12 @@ void UPrimitiveComponent::Update(float DeltaTime)
 
 }
 
-URenderObject* UPrimitiveComponent::Render()
+RenderObject* UPrimitiveComponent::GetRenderObject()
 {
 	if (VResource == nullptr)
 		return nullptr;
 
-	UObject* renderObj = FObjectFactory::ConstructObject(URenderObject::GetClass());
-	URenderObject* RenderObj = dynamic_cast<URenderObject*>(renderObj);
+	RenderObject* RenderObj = new RenderObject();
 	ResourceManager* RM = ResourceManager::GetInstance();
 
 	RenderObj->Geometry = this->VResource;

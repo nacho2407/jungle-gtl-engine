@@ -273,11 +273,11 @@ void URenderer::Render(UCamera* Camera)
 	DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
 	//FrameConstantBuffer.Bind(DeviceContext);
 
-	TArray<URenderObject*> NormalRenderObjects;
-	TArray<URenderObject*> NoDepthRenderObjects;
+	TArray<RenderObject*> NormalRenderObjects;
+	TArray<RenderObject*> NoDepthRenderObjects;
 
 	FObjectConstant ObjectConst;
-	for (URenderObject* RenderObj : RenderObjects)
+	for (RenderObject* RenderObj : RenderObjects)
 	{
 		if (RenderObj->bDepthEnabled)
 		{
@@ -289,7 +289,7 @@ void URenderer::Render(UCamera* Camera)
 		}
 	}
 
-	for (URenderObject* RenderObj : NormalRenderObjects)
+	for (RenderObject* RenderObj : NormalRenderObjects)
 	{
 		//Camera
 		ObjectConst.World = RenderObj->World;
@@ -303,7 +303,7 @@ void URenderer::Render(UCamera* Camera)
 	if (!NoDepthRenderObjects.empty())
 	{
 		DeviceContext->OMSetDepthStencilState(DepthStencilStateNoDepth, 0);
-		for (URenderObject* RenderObj : NoDepthRenderObjects)
+		for (RenderObject* RenderObj : NoDepthRenderObjects)
 		{
 			ObjectConst.World = RenderObj->World;
 			ObjectConst.bIsSelected = RenderObj->bIsSelected ? 1 : 0;

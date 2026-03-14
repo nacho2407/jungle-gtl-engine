@@ -51,7 +51,7 @@ void UWorld::Render() const
 	auto primitiveList = activeScene->PrimitiveContainer;
 	for (UPrimitiveComponent* PrimComponent : primitiveList)
 	{
-		URenderObject* Obj = PrimComponent->Render();
+		RenderObject* Obj = PrimComponent->GetRenderObject();
 		if(Obj != nullptr)
 			Renderer->PushRenderObject(Obj);
 	}

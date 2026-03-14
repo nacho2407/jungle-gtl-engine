@@ -79,9 +79,9 @@ public:
 
 public:
 
-	void PushRenderObject(URenderObject* RenderObj) { RenderObjects.push_back(RenderObj); }
+	void PushRenderObject(RenderObject* RenderObj) { RenderObjects.push_back(RenderObj); }
 	void ClearRenderObjects();
 	void Render(class UCamera* Camera);
 
-	TArray<URenderObject*> RenderObjects;
+	TArray<RenderObject*> RenderObjects;
 };

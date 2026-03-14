@@ -22,7 +22,7 @@ public:
 	void SetType(EPrimitiveType);
 
 	virtual void Update(float DeltaTime);
-	virtual URenderObject* Render();
+	virtual RenderObject* GetRenderObject();
 	void SetMaterial(int Handle) { MaterialHandle = Handle; }
 
 	virtual json::JSON Serialize() override;
