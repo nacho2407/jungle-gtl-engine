@@ -8,6 +8,8 @@
 #include "EditorPropertyPanel.h"
 #include "EditorStatPanel.h"
 #include "UCamera.h"
+#include "Gizmo.h"
+#include "URender.h"
 
 Editor::Editor()
 {
@@ -33,6 +35,16 @@ bool Editor::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* de
 }
 
 void Editor::Render()
+{
+	if (Renderer == nullptr) return;
+
+	if (SelectedComponent)
+	{
+		Renderer->PushRenderObject(Gizmo::GetInstance().DrawGizmo(SelectedComponent, TransformationType::Location));
+	}
+}
+
+void Editor::DrawUI()
 {
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();

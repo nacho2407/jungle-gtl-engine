@@ -6,6 +6,7 @@ void URenderer::Create(HWND hWindow) {
 	CreateFrameBuffer();
 
 	CreateRasterizerState();
+	CreateDepthStencilState();
 
 	CreateConstantBuffer();
 }
@@ -67,9 +68,33 @@ void URenderer::CreateFrameBuffer() {
 
 	Device->CreateRenderTargetView(FrameBuffer, &framebufferRTVdesc,
 		&FrameBufferRTV);
+
+	D3D11_TEXTURE2D_DESC depthBufferDesc = {};
+	FrameBuffer->GetDesc(&depthBufferDesc);
+	depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	depthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	depthBufferDesc.CPUAccessFlags = 0;
+	depthBufferDesc.MiscFlags = 0;
+
+	Device->CreateTexture2D(&depthBufferDesc, nullptr, &DepthStencilBuffer);
+	if (DepthStencilBuffer)
+	{
+		Device->CreateDepthStencilView(DepthStencilBuffer, nullptr, &DepthStencilView);
+	}
 }
 
 void URenderer::ReleaseFrameBuffer() {
+	if (DepthStencilView)
+	{
+		DepthStencilView->Release();
+		DepthStencilView = nullptr;
+	}
+	if (DepthStencilBuffer)
+	{
+		DepthStencilBuffer->Release();
+		DepthStencilBuffer = nullptr;
+	}
 	if (FrameBuffer) {
 		FrameBuffer->Release();
 		FrameBuffer = nullptr;
@@ -95,7 +120,30 @@ void URenderer::ReleaseRasterizerState() {
 	}
 }
 
+void URenderer::CreateDepthStencilState() {
+	D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
+	depthStencilDesc.DepthEnable = TRUE;
+	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+
+	depthStencilDesc.StencilEnable = FALSE;
+
+	Device->CreateDepthStencilState(&depthStencilDesc, &DepthStencilState);
+
+	depthStencilDesc.DepthEnable = FALSE;
+
+	Device->CreateDepthStencilState(&depthStencilDesc, &DepthStencilStateNoDepth);
+}
+
+void URenderer::ReleaseDepthStencilState() {
+	if (DepthStencilState) {
+		DepthStencilState->Release();
+		DepthStencilState = nullptr;
+	}
+}
+
 void URenderer::Release() {
+	ReleaseDepthStencilState();
 	RasterizerState->Release();
 	DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 
@@ -131,10 +179,12 @@ void URenderer::OnResize(UINT Width, UINT Height)
 
 void URenderer::Prepare() {
 	DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
+	DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	DeviceContext->RSSetViewports(1, &ViewportInfo);
 	DeviceContext->RSSetState(RasterizerState);
-	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr);
+	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView);
+	DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
 	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 }
 
@@ -189,7 +239,23 @@ void URenderer::Render(UCamera* Camera)
 	GlobalConstants.View = Camera->GetViewMatrix();
 	GlobalConstants.Projection = Camera->GetProjectionMatrix();
 
+	TArray<URenderObject*> NormalRenderObjects;
+	TArray<URenderObject*> NoDepthRenderObjects;
+
 	for (URenderObject* RenderObj : RenderObjects)
+	{
+		if (RenderObj->bDepthEnabled)
+		{
+			NormalRenderObjects.push_back(RenderObj);
+		}
+		else
+		{
+			NoDepthRenderObjects.push_back(RenderObj);
+		}
+	}
+
+	DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
+	for (URenderObject* RenderObj : NormalRenderObjects)
 	{
 		//Camera
 		RenderObj->Constants.View = Camera->GetViewMatrix();
@@ -198,6 +264,21 @@ void URenderer::Render(UCamera* Camera)
 		RenderObj->SetConstantBuffer(ConstantBuffer);
 		RenderObj->Render(DeviceContext);
 	}
+
+	if (!NoDepthRenderObjects.empty())
+	{
+		DeviceContext->OMSetDepthStencilState(DepthStencilStateNoDepth, 0);
+		for (URenderObject* RenderObj : NoDepthRenderObjects)
+		{
+			//Camera
+			RenderObj->Constants.View = Camera->GetViewMatrix();
+			RenderObj->Constants.Projection = Camera->GetProjectionMatrix();
+
+			RenderObj->SetConstantBuffer(ConstantBuffer);
+			RenderObj->Render(DeviceContext);
+		}
+	}
+
 	ClearRenderObjects();
 	RenderObjects.clear();
 }

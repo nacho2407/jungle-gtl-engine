@@ -136,6 +136,7 @@
     <ClInclude Include="FColor.h" />
     <ClInclude Include="FMatrix.h" />
     <ClInclude Include="FObjectFactory.h" />
+    <ClInclude Include="Gizmo.h" />
     <ClInclude Include="InputManager.h" />
     <ClInclude Include="ISerializable.h" />
     <ClInclude Include="Logger.h" />
@@ -185,6 +186,7 @@
     <ClCompile Include="FColor.cpp" />
     <ClCompile Include="FMatrix.cpp" />
     <ClCompile Include="FObjectFactory.cpp" />
+    <ClCompile Include="Gizmo.cpp" />
     <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="json.cpp" />
     <ClCompile Include="Logger.cpp" />

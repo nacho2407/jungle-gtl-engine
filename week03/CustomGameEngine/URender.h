@@ -23,6 +23,10 @@ public:
 	ID3D11Texture2D* FrameBuffer = nullptr;
 	ID3D11RenderTargetView* FrameBufferRTV = nullptr;
 	ID3D11RasterizerState* RasterizerState = nullptr;
+	ID3D11DepthStencilState* DepthStencilState = nullptr;
+	ID3D11DepthStencilState* DepthStencilStateNoDepth = nullptr;
+	ID3D11Texture2D* DepthStencilBuffer = nullptr;
+	ID3D11DepthStencilView* DepthStencilView = nullptr;
 
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 	D3D11_VIEWPORT ViewportInfo;
@@ -35,6 +39,8 @@ public:
 	void ReleaseFrameBuffer();
 	void CreateRasterizerState();
 	void ReleaseRasterizerState();
+	void CreateDepthStencilState();
+	void ReleaseDepthStencilState();
 	void Release();
 	void SwapBuffer();
 	void OnResize(UINT Width, UINT Height);
