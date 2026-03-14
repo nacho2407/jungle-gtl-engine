@@ -22,13 +22,19 @@ public:
 		static_assert(std::is_base_of<USceneComponent, T>::value, "T must derive from USceneComponent");
 
 		int uuid = activeScene->NextUUID;
-		UObject* instance = FObjectFactory::ConstructObject(T::GetClass());
-		T* ret = Cast<T>(instance);
+		UObject* obj = FObjectFactory::ConstructObject(T::GetClass());
+		T* instance = Cast<T>(obj);
 
-		activeScene->Primitives.push_back(ret);
+		activeScene->SceneComponents.push_back(instance);
+
+		auto primitive = Cast<UPrimitiveComponent>(instance);
+		if (primitive != nullptr)
+		{
+			activeScene->PrimitiveContainer.push_back(primitive);
+		}
 
 		activeScene->NextUUID += 1;
-		return ret;
+		return instance;
 	}
 
 	void RemoveSceneComponent(USceneComponent* toDespawn);

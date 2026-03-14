@@ -32,7 +32,7 @@ std::string UScene::ToJson(UScene* scene)
 	json["NextUUID"] = scene->NextUUID;
 
 	json::JSON arr;
-	for (auto s : scene->Primitives)
+	for (auto s : scene->SceneComponents)
 	{
 		arr[std::to_string(s->UUID)] = s->Serialize();
 	}
@@ -55,12 +55,16 @@ UScene* UScene::FromJson(std::string jsonStr)
 
 	for (auto pair : obj["Primitives"].ObjectRange())
 	{
-		USceneComponent* s = Cast<USceneComponent>(
+		USceneComponent* newSc = Cast<USceneComponent>(
 			FObjectFactory::ConstructObject(USceneComponent::GetClass())
 			);
-		s->Deserialize(pair.second);
-		s->UUID = std::stoi(pair.first);
-		scene->Primitives.push_back(s);
+		newSc->Deserialize(pair.second);
+		newSc->UUID = std::stoi(pair.first);
+		scene->SceneComponents.push_back(newSc);
+
+		UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(newSc);
+		if(primitive != nullptr)
+			scene->PrimitiveContainer.push_back(primitive);
 	}
 
 	return scene;

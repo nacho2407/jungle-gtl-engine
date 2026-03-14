@@ -1,5 +1,6 @@
 ﻿#include "World.h"
 #include "FObjectFactory.h"
+#include "UPrimitiveComponent.h"
 #include "algorithm"
 
 UScene* UWorld::activeScene;
@@ -20,12 +21,26 @@ void UWorld::SetActiveScene(UScene* scene)
 
 void UWorld::RemoveSceneComponent(USceneComponent* toDespawn)
 {
-	for (auto it = activeScene->Primitives.begin(); it != activeScene->Primitives.end(); it++)
+	for (auto it = activeScene->SceneComponents.begin(); it != activeScene->SceneComponents.end(); it++)
 	{
 		if ((*it) == toDespawn)
 		{
-			activeScene->Primitives.erase(it);
-			return;
+			activeScene->SceneComponents.erase(it);
+			break;
+		}
+	}
+	
+	auto primToDespawn = Cast<UPrimitiveComponent>(toDespawn);
+	if (primToDespawn != nullptr)
+	{
+		auto prims = &(activeScene->PrimitiveContainer);
+		for (auto it = prims->begin(); it != prims->end(); it++)
+		{
+			if ((*it) == primToDespawn)
+			{
+				prims->erase(it);
+				break;
+			}
 		}
 	}
 }

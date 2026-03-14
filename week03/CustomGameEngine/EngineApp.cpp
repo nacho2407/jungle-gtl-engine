@@ -111,7 +111,8 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	Picker->SetEditor(EditorInst);
 
 	//Init Scene
-	SceneManager::GetInstance().GetActiveScene()->InjectRenderer(Renderer);
+	SceneManager::GetInstance().NewScene();
+	GetWorld().GetActiveScene()->InjectRenderer(Renderer);
 
 	// Init Timer
 	TimerManager::GetInstance().CreateGlobalTimer();
@@ -129,15 +130,13 @@ void EngineApp::Run()
 	UCubeComp* Cube2 = Cast<UCubeComp>(cubeobj2);
 	Cube2->RelativeLocation = FVector(0.0, 0, 0);
 	Cube2->RelativeScale3D = FVector(2.f, 2.f, 2.f);
-	SceneManager::GetInstance().GetActiveScene()->PrimitiveContainer.push_back(Cube2);
+	GetWorld().GetActiveScene()->PrimitiveContainer.push_back(Cube2);
 
 	Camera->SetPosition(FVector(0, 0, -10.f));
 	//-----TEST
 
 	Timer* globalTimer = TimerManager::GetInstance().GetGlobalTimer();
 	globalTimer->Reset();
-	
-	SceneManager::GetInstance().GetInstance().NewScene();
 
 	bool bIsExit = false;
 	while (bIsExit == false)
@@ -158,14 +157,14 @@ void EngineApp::Run()
 
 		TimerManager::GetInstance().Tick();
 		InputManager::GetInstance().Update();
-		UScene* Scene = SceneManager::GetInstance().GetActiveScene();
+		UScene* Scene = GetWorld().GetActiveScene();
 
 		ImGuiIO& io = ImGui::GetIO();
 
 		if (!io.WantCaptureMouse && InputManager::GetInstance().IsKeyDown(VK_LBUTTON))
 		{
 			FVector Mouse = InputManager::GetInstance().MousePos;
-			Picker->Pick(Mouse.x, Mouse.y, Camera, SceneManager::GetInstance().GetActiveScene());
+			Picker->Pick(Mouse.x, Mouse.y, Camera, GetWorld().GetActiveScene());
 		}
 
 		if (!io.WantCaptureKeyboard && !io.WantCaptureMouse)
