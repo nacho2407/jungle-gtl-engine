@@ -27,6 +27,7 @@ public:
 	ID3D11DepthStencilState* DepthStencilStateNoDepth = nullptr;
 	ID3D11Texture2D* DepthStencilBuffer = nullptr;
 	ID3D11DepthStencilView* DepthStencilView = nullptr;
+	ID3D11BlendState* BlendState = nullptr;
 
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 	D3D11_VIEWPORT ViewportInfo;
@@ -34,6 +35,7 @@ public:
 public:
 	void Create(HWND hWindow);
 	void CreateDeviceAndSwapChain(HWND hWindow);
+	void CreateBlendState();
 	void ReleaseDeviceAndSwapChain();
 	void CreateFrameBuffer();
 	void ReleaseFrameBuffer();
@@ -41,6 +43,7 @@ public:
 	void ReleaseRasterizerState();
 	void CreateDepthStencilState();
 	void ReleaseDepthStencilState();
+	void ReleaseBlendState();
 	void Release();
 	void SwapBuffer();
 	void OnResize(UINT Width, UINT Height);
@@ -64,7 +67,8 @@ public:
 	struct FObjectConstant
 	{
 		FMatrix World;
-		bool bIsSelected;
+		int bIsSelected;
+		float Padding[3];
 	};
 	FConstantBuffer FrameConstantBuffer; //View Proj
 	FConstantBuffer ObjectConstantBuffer; //World
