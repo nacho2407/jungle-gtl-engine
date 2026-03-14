@@ -10,26 +10,37 @@ void UCamera::SetPosition(const FVector& _input) {
 }
 
 void UCamera::Move() {
-	if (InputManager::GetInstance().IsKeyHold(VK_UP) &&
-		!InputManager::GetInstance().IsKeyHold(VK_DOWN)) {
+	if (InputManager::GetInstance().IsKeyHold('W') &&
+		!InputManager::GetInstance().IsKeyHold('S')) {
+		Position = Position + Direction * MoveSpeed;
+		IsChanged = true;
+	}
+	else if (!InputManager::GetInstance().IsKeyHold('W') &&
+		InputManager::GetInstance().IsKeyHold('S')) {
+		Position = Position - Direction * MoveSpeed;
+		IsChanged = true;
+	}
+	if (InputManager::GetInstance().IsKeyHold('E') &&
+		!InputManager::GetInstance().IsKeyHold('Q')) {
 		Position = Position + UpDirection * MoveSpeed;
 		IsChanged = true;
 	}
-	else if (!InputManager::GetInstance().IsKeyHold(VK_UP) &&
-		InputManager::GetInstance().IsKeyHold(VK_DOWN)) {
+	else if (!InputManager::GetInstance().IsKeyHold('E') &&
+		InputManager::GetInstance().IsKeyHold('Q')) {
 		Position = Position - UpDirection * MoveSpeed;
 		IsChanged = true;
 	}
-	if (InputManager::GetInstance().IsKeyHold(VK_LEFT) &&
-		!InputManager::GetInstance().IsKeyHold(VK_RIGHT)) {
-		Position = Position - SideDirection * MoveSpeed;
-		IsChanged = true;
-	}
-	else if (!InputManager::GetInstance().IsKeyHold(VK_LEFT) &&
-		InputManager::GetInstance().IsKeyHold(VK_RIGHT)) {
+	if (!InputManager::GetInstance().IsKeyHold('D') &&
+		InputManager::GetInstance().IsKeyHold('A')) {
 		Position = Position + SideDirection * MoveSpeed;
 		IsChanged = true;
 	}
+	else if (InputManager::GetInstance().IsKeyHold('D') &&
+		!InputManager::GetInstance().IsKeyHold('A')) {
+		Position = Position - SideDirection * MoveSpeed;
+		IsChanged = true;
+	}
+	
 }
 
 void UCamera::SetDirection(const float InputPitch, const float InputYaw,

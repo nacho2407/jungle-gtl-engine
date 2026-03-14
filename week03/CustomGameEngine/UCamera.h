@@ -21,7 +21,7 @@ public:
 	float MoveSpeed{ 0.1f };
 
 	float FOV{ 60.0f };
-	float AspectRatio{ 16.0f / 9.0f };
+	float AspectRatio{ 1.0f };
 	float NearPlane{ 0.1f };
 	float FarPlane{ 1000.0f };
 
