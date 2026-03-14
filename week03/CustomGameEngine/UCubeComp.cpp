@@ -21,6 +21,7 @@ URenderObject* UCubeComp::Render()
 	RenderObj->Geometry = &RM->GetGeometry("Cube");
 	RenderObj->Material = &RM->GetMaterial(L"ShaderW0.hlsl");
 	RenderObj->World = GetRelativeMatrix();
+	RenderObj->bIsSelected = bIsSelected;
 
 	return RenderObj;
 }

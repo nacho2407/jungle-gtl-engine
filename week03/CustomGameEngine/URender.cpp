@@ -7,6 +7,7 @@ void URenderer::Create(HWND hWindow) {
 
 	CreateRasterizerState();
 	CreateDepthStencilState();
+	CreateBlendState();
 
 	CreateConstantBuffer();
 }
@@ -39,6 +40,29 @@ void URenderer::CreateDeviceAndSwapChain(HWND hWindow) {
 					(float)swapchaindesc.BufferDesc.Height,
 					0.0f,
 					1.0f };
+}
+
+void URenderer::CreateBlendState()
+{
+	D3D11_BLEND_DESC desc = {};
+	desc.AlphaToCoverageEnable = FALSE;
+	desc.IndependentBlendEnable = FALSE;
+
+	D3D11_RENDER_TARGET_BLEND_DESC& rt = desc.RenderTarget[0];
+
+	rt.BlendEnable = TRUE;
+
+	rt.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	rt.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	rt.BlendOp = D3D11_BLEND_OP_ADD;
+
+	rt.SrcBlendAlpha = D3D11_BLEND_ONE;
+	rt.DestBlendAlpha = D3D11_BLEND_ZERO;
+	rt.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+
+	rt.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+	Device->CreateBlendState(&desc, &BlendState);
 }
 
 void URenderer::ReleaseDeviceAndSwapChain() {
@@ -142,6 +166,15 @@ void URenderer::ReleaseDepthStencilState() {
 	}
 }
 
+void URenderer::ReleaseBlendState()
+{
+	if (BlendState)
+	{
+		BlendState->Release();
+		BlendState = nullptr;
+	}
+}
+
 void URenderer::Release() {
 	ReleaseDepthStencilState();
 	RasterizerState->Release();
@@ -149,6 +182,8 @@ void URenderer::Release() {
 
 	ReleaseFrameBuffer();
 	ReleaseDeviceAndSwapChain();
+	ReleaseBlendState();
+
 }
 
 void URenderer::SwapBuffer() { SwapChain->Present(1, 0); }
@@ -185,7 +220,8 @@ void URenderer::Prepare() {
 	DeviceContext->RSSetState(RasterizerState);
 	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView);
 	DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
-	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+	float blendFactor[4] = { 0,0,0,0 };
+	DeviceContext->OMSetBlendState(BlendState, blendFactor, 0xffffffff);
 }
 
 
@@ -257,7 +293,9 @@ void URenderer::Render(UCamera* Camera)
 	{
 		//Camera
 		ObjectConst.World = RenderObj->World;
+		ObjectConst.bIsSelected = RenderObj->bIsSelected ? 1 : 0;
 		ObjectConstantBuffer.Update(DeviceContext, &ObjectConst, sizeof(FObjectConstant));
+
 		//GPU에 ConstantBuffer가 오브젝트마다 생기는 것을 방지하기 위해 ObjectConstantBuffer를 하나만 만들어서 매 오브젝트마다 업데이트해서 사용.
 		RenderObj->Render(DeviceContext);
 	}
@@ -268,6 +306,7 @@ void URenderer::Render(UCamera* Camera)
 		for (URenderObject* RenderObj : NoDepthRenderObjects)
 		{
 			ObjectConst.World = RenderObj->World;
+			ObjectConst.bIsSelected = RenderObj->bIsSelected ? 1 : 0;
 			ObjectConstantBuffer.Update(DeviceContext, &ObjectConst, sizeof(FObjectConstant));
 			RenderObj->Render(DeviceContext);
 		}

@@ -1,6 +1,6 @@
 ﻿#include "USceneComponent.h"
 #include "ImGui/imgui.h"
-
+#include "Editor.h"
 USceneComponent::USceneComponent()
 {
 	RelativeLocation = FVector(0.0f, 0.0f, 0.0f);
@@ -43,6 +43,11 @@ void USceneComponent::DrawProperties()
 	ImGui::InputFloat3("Location", &RelativeLocation.x);
 	ImGui::InputFloat3("Rotation", &RelativeRotation.x);
 	ImGui::InputFloat3("Scale", &RelativeScale3D.x);
+}
+
+bool USceneComponent::IsSelected() const
+{
+	return bIsSelected;
 }
 
 REGISTER_CLASS(USceneComponent);

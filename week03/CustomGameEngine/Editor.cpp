@@ -49,7 +49,7 @@ void Editor::DrawUI()
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
-		
+
 	DrawControlPanel();
 	DrawConsole();
 	DrawPropertyPanel();
@@ -64,6 +64,19 @@ void Editor::Finalize()
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
+}
+
+void Editor::SelectComponent(USceneComponent* component)
+{
+
+	if (SelectedComponent) SelectedComponent->bIsSelected = false;
+	if (component)
+	{
+		component->bIsSelected = true;
+		SelectedComponent = component;
+		Gizmo::GetInstance().AttachToComponent(component);
+	}
+
 }
 
 void Editor::DrawControlPanel()

@@ -20,5 +20,6 @@ public:
 	FMatrix World;
 	//Texture
 
+	bool bIsSelected = false;
 	bool bDepthEnabled = true;
 };

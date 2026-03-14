@@ -25,7 +25,8 @@ public:
 
 	void SetRenderer(URenderer* renderer) { Renderer = renderer; }
 	void SetCamera(UCamera* camera) { Camera = camera; }
-	void SelectComponent(USceneComponent* component) { SelectedComponent = component; Gizmo::GetInstance().AttachToComponent(component); }
+	void SelectComponent(USceneComponent* component);
+	USceneComponent* GetSelectedComponent() const { return SelectedComponent; }
 
 private:
 	void DrawControlPanel();
