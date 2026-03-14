@@ -136,6 +136,7 @@
     <ClInclude Include="FColor.h" />
     <ClInclude Include="FMatrix.h" />
     <ClInclude Include="FObjectFactory.h" />
+    <ClInclude Include="FQuat.h" />
     <ClInclude Include="Gizmo.h" />
     <ClInclude Include="GizmoController.h" />
     <ClInclude Include="InputManager.h" />
@@ -189,6 +190,7 @@
     <ClCompile Include="FColor.cpp" />
     <ClCompile Include="FMatrix.cpp" />
     <ClCompile Include="FObjectFactory.cpp" />
+    <ClCompile Include="FQuat.cpp" />
     <ClCompile Include="Gizmo.cpp" />
     <ClCompile Include="GizmoController.cpp" />
     <ClCompile Include="InputManager.cpp" />
