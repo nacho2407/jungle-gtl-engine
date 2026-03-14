@@ -28,14 +28,22 @@ FMatrix FMatrix::ScaleMatrix(float InX, float InY, float InZ)
 	return M;
 }
 
-FVector FMatrix::TransformPoint(const FVector V) const
+FVector FMatrix::TransformPoint(const FVector& V) const
 {
 	return FVector(
 		V.x * m[0][0] + V.y * m[1][0] + V.z * m[2][0] + m[3][0],
 		V.x * m[0][1] + V.y * m[1][1] + V.z * m[2][1] + m[3][1],
 		V.x * m[0][2] + V.y * m[1][2] + V.z * m[2][2] + m[3][2]
 	);
-	return FVector();
+}
+
+FVector FMatrix::TransformVector(const FVector& V) const
+{
+	return FVector(
+		V.x * m[0][0] + V.y * m[1][0] + V.z * m[2][0],
+		V.x * m[0][1] + V.y * m[1][1] + V.z * m[2][1],
+		V.x * m[0][2] + V.y * m[1][2] + V.z * m[2][2]
+	);
 }
 
 FMatrix FMatrix::RotationXMatrix(float InXDegree)
