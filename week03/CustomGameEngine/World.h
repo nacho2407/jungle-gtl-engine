@@ -17,8 +17,9 @@ public:
 	UScene* GetActiveScene();
 	void SetActiveScene(UScene*);
 
+public:
 	template <typename T>
-	T* AddSceneComponent()
+	T* AddSceneComponent(UScene* targetScene)
 	{
 		// TODO: 액터 개념 도입되면 USceneComponent 대신 UActor로 교체
 		static_assert(std::is_base_of<USceneComponent, T>::value, "T must derive from USceneComponent");
@@ -26,7 +27,7 @@ public:
 		UObject* obj = FObjectFactory::ConstructObject(T::GetClass());
 		T* instance = Cast<T>(obj);
 
-		activeScene->SceneComponents.push_back(instance);
+		targetScene->SceneComponents.push_back(instance);
 
 		auto primitive = Cast<UPrimitiveComponent>(instance);
 		if (primitive != nullptr)
@@ -37,6 +38,12 @@ public:
 		}
 		UE_LOG("Added new scene component with uuid = %d\n", obj->UUID);
 		return instance;
+	}
+
+	template <typename T>
+	T* AddSceneComponent()
+	{
+		return AddSceneComponent<T>(activeScene);
 	}
 
 	void RemoveSceneComponent(USceneComponent* toDespawn);

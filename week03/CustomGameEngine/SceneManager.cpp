@@ -68,18 +68,7 @@ UScene* SceneManager::LoadScene(FString sceneName)
 		inFile >> jsonStr;
 		inFile.close();
 
-		// restore sceneComponents, and add to Render list if it is primitive
 		UScene *loadedScene = UScene::FromJson(jsonStr);
-		for (auto sceneComp : loadedScene->SceneComponents)
-		{
-			UPrimitiveComponent* prim = Cast<UPrimitiveComponent>(sceneComp);
-			if (prim != nullptr)
-			{
-				prim->CreateRenderObject();
-				FLevel::GetInstance().PushRenderObject(prim->GetRenderObject());
-			}
-		}
-
 		GetWorld().SetActiveScene(loadedScene);
 		UEngineStatics::NextUUID = loadedScene->NextUUID;
 

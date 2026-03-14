@@ -44,7 +44,6 @@ protected:
 	FGeometry* VResource;
 	EPrimitiveType type;
 	RenderObject* RenderObj = nullptr;
-	bool bIsDirty;
 private:
 	int MaterialHandle = -1;
 };

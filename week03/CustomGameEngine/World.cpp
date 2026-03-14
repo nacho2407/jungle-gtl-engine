@@ -47,7 +47,7 @@ void UWorld::OnBeforeRender() const
 		UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(s);
 		if (primitive != nullptr)
 		{
-			if (primitive->GetRenderStateDirty())
+			if (primitive->GetRenderObject()->bIsDirty)
 				primitive->ResolveRenderStateDirty();
 		}
 	}

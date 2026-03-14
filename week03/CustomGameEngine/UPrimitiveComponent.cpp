@@ -70,18 +70,14 @@ RenderObject* UPrimitiveComponent::GetRenderObject()
 
 void UPrimitiveComponent::MarkRenderStateDirty()
 {
-	bIsDirty = true;
-}
-
-bool UPrimitiveComponent::GetRenderStateDirty()
-{
-	return bIsDirty;
+	if (RenderObj != nullptr)
+		RenderObj->bIsDirty = true;
 }
 
 void UPrimitiveComponent::ResolveRenderStateDirty()
 {
 	UpdateRenderObject();
-	bIsDirty = false;
+	RenderObj->bIsDirty = false;
 }
 
 json::JSON UPrimitiveComponent::Serialize()
