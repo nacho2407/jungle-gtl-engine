@@ -6,6 +6,8 @@
 #include "Editor.h"
 #include "Logger.h"
 #include "TimerManager.h"
+#include "SceneManager.h"
+#include "World.h"
 #include "UCamera.h"
 #include "InputManager.h"
 #include "Gizmo.h"
@@ -134,6 +136,12 @@ void EngineApp::Run()
 
 	Timer* globalTimer = TimerManager::GetInstance().GetGlobalTimer();
 	globalTimer->Reset();
+	
+	SceneManager::GetInstance().GetInstance().NewScene();
+
+	//----TEST 
+	GetWorld().AddSceneComponent<UCubeComp>();
+	//-----TEST
 
 	bool bIsExit = false;
 	while (bIsExit == false)

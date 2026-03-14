@@ -1,11 +1,12 @@
 ﻿#include "SceneManager.h"
-#include <fstream>
 #include <iostream>
+#include <fstream>
+#include <sstream>
+#include "World.h"
 #include "Logger.h"
 
 SceneManager::SceneManager()
-{
-	NewScene();
+{	
 }
 
 SceneManager::~SceneManager()
@@ -13,23 +14,20 @@ SceneManager::~SceneManager()
 	UnloadScene();
 }
 
-UScene* SceneManager::GetActiveScene()
-{
-	return this->activeScene;
-}
-
 UScene* SceneManager::NewScene()
 {
 	// TODO: 리소스 관리자 완성되면 리소스 관리자 통하여 파일 입출력하도록 수정
-	if (activeScene != nullptr)
+	if (GetWorld().GetActiveScene() != nullptr)
 		UnloadScene();
-	activeScene = Cast<UScene>(FObjectFactory::ConstructObject(UScene::GetClass()));
-	return activeScene;
+	UScene* newScene = Cast<UScene>(FObjectFactory::ConstructObject(UScene::GetClass()));
+	GetWorld().SetActiveScene(newScene);
+	UE_LOG("Created new scene\n");
+	return GetWorld().GetActiveScene();
 }
 
 void SceneManager::SaveScene(FString sceneName)
 {
-	FString jsonStr = activeScene->ToJson();
+	FString jsonStr = GetWorld().GetActiveScene()->ToJson();
 	const FString filePath = sceneName + ".scene";
 	std::ofstream outFile(filePath);
 
@@ -56,11 +54,13 @@ UScene* SceneManager::LoadScene(FString sceneName)
 	inFile.open(filePath);
 	if (inFile.is_open())
 	{
-		FString jsonStr;
+		FString jsonStr((std::istreambuf_iterator<char>(inFile)),
+			std::istreambuf_iterator<char>());
 		inFile >> jsonStr;
-		activeScene = UScene::FromJson(jsonStr);
+		GetWorld().SetActiveScene(UScene::FromJson(jsonStr));
+		inFile.close();
 		UE_LOG("Loaded scene file: %s\n", filePath.c_str());
-		return activeScene;
+		return GetWorld().GetActiveScene();
 	}
 	else
 	{
@@ -72,8 +72,8 @@ UScene* SceneManager::LoadScene(FString sceneName)
 
 void SceneManager::UnloadScene()
 {
-	delete activeScene;
-	activeScene = nullptr;
+	GetWorld().GetActiveScene();
+	GetWorld().SetActiveScene(nullptr);
 }
 
 

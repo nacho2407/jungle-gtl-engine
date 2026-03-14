@@ -26,8 +26,5 @@ public:
 
 	// Unload Scene Synchronously
 	void UnloadScene();
-
-private:
-	UScene* activeScene;
 };
 

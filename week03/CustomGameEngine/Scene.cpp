@@ -55,9 +55,11 @@ UScene* UScene::FromJson(std::string jsonStr)
 
 	for (auto pair : obj["Primitives"].ObjectRange())
 	{
-		USceneComponent* s = static_cast<USceneComponent*>(
-			FObjectFactory::ConstructObject(USceneComponent::GetClass())
-			);
+		// TODO: 오브젝트 생성을 FObjectFactory 기반으로 전환
+		//USceneComponent* s = static_cast<USceneComponent*>(
+		//	FObjectFactory::ConstructObject(USceneComponent::GetClass())
+		//	);
+		USceneComponent* s = new USceneComponent();
 		s->Deserialize(pair.second);
 		s->UUID = std::stoi(pair.first);
 		scene->Primitives.push_back(s);

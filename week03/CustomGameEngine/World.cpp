@@ -13,19 +13,9 @@ UScene* UWorld::GetActiveScene()
 	return activeScene;
 }
 
-template <typename T>
-T* UWorld::AddSceneComponent()
+void UWorld::SetActiveScene(UScene* scene)
 {
-	// TODO: 액터 개념 도입되면 USceneComponent 대신 UActor로 교체
-	static_assert(std::is_base_of<USceneComponent, T>::value, "T must derive from USceneComponent");
-
-	int uuid = activeScene->NextUUID;
-	T* instance = FObjectFactory::ConstructObject(uuid);
-
-	activeScene->Primitives.push_back(static_cast<USceneComponent*>(instance));
-
-	activeScene->NextUUID += 1;
-	return instance;
+	activeScene = scene;
 }
 
 void UWorld::RemoveSceneComponent(USceneComponent* toDespawn)
@@ -38,4 +28,9 @@ void UWorld::RemoveSceneComponent(USceneComponent* toDespawn)
 			return;
 		}
 	}
+}
+
+UWorld& GetWorld()
+{
+	return UWorld::GetInstance();
 }

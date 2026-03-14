@@ -2,6 +2,7 @@
 #include "ImGui/imgui.h"
 #include "FVector.h"
 #include "TimerManager.h"
+#include "SceneManager.h"
 #include "UCamera.h"
 #include <string>
 
@@ -58,15 +59,15 @@ void EditorControlPanel::Draw(UCamera* camera)
 	ImGui::InputText("Scene Name", sceneName, 128);
 	if (ImGui::Button("New Scene"))
 	{
-
+		SceneManager::GetInstance().NewScene();
 	}
 	if (ImGui::Button("Save Scene"))
 	{
-
+		SceneManager::GetInstance().SaveScene(sceneName);
 	}
 	if (ImGui::Button("Load Scene"))
 	{
-
+		SceneManager::GetInstance().LoadScene(sceneName);
 	}
 	ImGui::Separator();
 
