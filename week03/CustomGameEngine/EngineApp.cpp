@@ -139,10 +139,6 @@ void EngineApp::Run()
 	
 	SceneManager::GetInstance().GetInstance().NewScene();
 
-	//----TEST 
-	GetWorld().AddSceneComponent<UCubeComp>();
-	//-----TEST
-
 	bool bIsExit = false;
 	while (bIsExit == false)
 	{

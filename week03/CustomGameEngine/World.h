@@ -22,14 +22,13 @@ public:
 		static_assert(std::is_base_of<USceneComponent, T>::value, "T must derive from USceneComponent");
 
 		int uuid = activeScene->NextUUID;
-		// TODO: 오브젝트 생성을 FObjectFactory 기반으로 전환
-		// T* instance = FObjectFactory::ConstructObject();
-		T* instance = new T();
+		UObject* instance = FObjectFactory::ConstructObject(T::GetClass());
+		T* ret = Cast<T>(instance);
 
-		activeScene->Primitives.push_back(static_cast<USceneComponent*>(instance));
+		activeScene->Primitives.push_back(ret);
 
 		activeScene->NextUUID += 1;
-		return instance;
+		return ret;
 	}
 
 	void RemoveSceneComponent(USceneComponent* toDespawn);
