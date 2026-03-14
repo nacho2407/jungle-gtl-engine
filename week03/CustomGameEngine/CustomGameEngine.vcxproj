@@ -141,6 +141,10 @@
     <ClInclude Include="FObjectFactory.h" />
     <ClInclude Include="Gizmo.h" />
     <ClInclude Include="GizmoController.h" />
+    <ClInclude Include="GizmoRotationControlStrategy.h" />
+    <ClInclude Include="GizmoScaleControlStrategy.h" />
+    <ClInclude Include="GizmoTranslationControlStrategy.h" />
+    <ClInclude Include="IGizmoControlStrategy.h" />
     <ClInclude Include="InputManager.h" />
     <ClInclude Include="ISerializable.h" />
     <ClInclude Include="Logger.h" />
@@ -195,6 +199,9 @@
     <ClCompile Include="FObjectFactory.cpp" />
     <ClCompile Include="Gizmo.cpp" />
     <ClCompile Include="GizmoController.cpp" />
+    <ClCompile Include="GizmoRotationControlStrategy.cpp" />
+    <ClCompile Include="GizmoScaleControlStrategy.cpp" />
+    <ClCompile Include="GizmoTranslationControlStrategy.cpp" />
     <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="json.cpp" />
     <ClCompile Include="Logger.cpp" />

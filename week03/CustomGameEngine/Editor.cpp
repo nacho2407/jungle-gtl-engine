@@ -67,30 +67,18 @@ void Editor::Finalize()
 
 void Editor::SelectComponent(USceneComponent* component)
 {
-
 	if (SelectedComponent)
 	{
 		SelectedComponent->bIsSelected = false;
 		SelectedComponent = nullptr;
-		FLevel::GetInstance().RemoveRenderObject(Gizmo::GetInstance().GetRenderObject());
+		Gizmo::GetInstance().GetController()->AttachTo(nullptr);
 	}
 	if (component)
 	{
 		component->bIsSelected = true;
 		SelectedComponent = component;
-		Gizmo::GetInstance().AttachToComponent(component);
-
-		FLevel::GetInstance().PushRenderObject(Gizmo::GetInstance().GetRenderObject());
+		Gizmo::GetInstance().GetController()->AttachTo(component);
 	}
-
-	SelectedComponent = component;
-
-	if (SelectedComponent)
-	{
-		SelectedComponent->bIsSelected = true;
-	}
-
-	Gizmo::GetInstance().SetControllerTarget(SelectedComponent);
 }
 
 void Editor::DrawControlPanel()

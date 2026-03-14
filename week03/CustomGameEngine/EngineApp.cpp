@@ -91,6 +91,8 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	ResourceManager::AddSphereMesh(Renderer->Device);
 	ResourceManager::AddTriangleMesh(Renderer->Device);
 	ResourceManager::AddGizmoTranslationMesh(Renderer->Device);
+	ResourceManager::AddGizmoRotationMesh(Renderer->Device);
+	ResourceManager::AddGizmoScaleMesh(Renderer->Device);
 
 	InputManager::GetInstance().hWnd = HWnd;
 	// Init Camera
@@ -195,7 +197,7 @@ void EngineApp::Run()
 
 		if (!InputManager::GetInstance().IsKeyHold(VK_LBUTTON))
 		{
-			GizmoControllerAxis hoveredAxis = Picker->PickGizmo(Mouse.x, Mouse.y, Camera, GetWorld().GetActiveScene());
+			GizmoControllerAxis hoveredAxis = Gizmo::GetInstance().GetController()->TryPick(ray);
 			Gizmo::GetInstance().GetController()->SetHoverAxis(hoveredAxis);
 		}
 

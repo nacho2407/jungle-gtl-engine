@@ -19,4 +19,6 @@ public:
 
 	bool bIsSelected = false;
 	bool bDepthEnabled = true;
+
+	D3D11_PRIMITIVE_TOPOLOGY PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 };

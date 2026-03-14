@@ -8,6 +8,8 @@ void RenderObject::Render(ID3D11DeviceContext* Context)
 
 	Material->BindShaders(Context);
 	Geometry->BindBuffers(Context);
+
+	Context->IASetPrimitiveTopology(PrimitiveTopology);
 	
 	Context->Draw(Geometry->VertexCount, 0);
 }
