@@ -187,6 +187,32 @@ bool FWindowsApplication::IsKeyDown(int Key) const
     return KeyStates[Key];
 }
 
+bool FWindowsApplication::ConsumeRightMouseDown(int& OutX, int& OutY) const
+{
+    if (!bPendingRightMouseDown)
+    {
+        return false;
+    }
+
+    OutX = PendingRightMouseDownX;
+    OutY = PendingRightMouseDownY;
+    bPendingRightMouseDown = false;
+    return true;
+}
+
+bool FWindowsApplication::ConsumeRightMouseUp(int& OutX, int& OutY) const
+{
+    if (!bPendingRightMouseUp)
+    {
+        return false;
+    }
+
+    OutX = PendingRightMouseUpX;
+    OutY = PendingRightMouseUpY;
+    bPendingRightMouseUp = false;
+    return true;
+}
+
 bool FWindowsApplication::IsRightMousePressed() const
 {
     return bRightMousePressed;

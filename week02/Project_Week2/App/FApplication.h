@@ -14,6 +14,32 @@ class UStaticMesh;
 
 class UStaticMeshComponent;
 
+enum class EPointerPulsePhase
+{
+    Hidden,
+    Growing,
+    Holding,
+    Shrinking
+};
+
+struct FPointerPulse
+{
+    EPointerPulsePhase Phase = EPointerPulsePhase::Hidden;
+
+    bool bDragDetected = false;
+    bool bMouseStillDown = false;
+
+    int StartMouseX = 0;
+    int StartMouseY = 0;
+
+    float CurrentRadius = 0.0f;
+    float MaxRadius = 0.05f;      // 월드 단위
+    float GrowSpeed = 0.5f;       // radius/sec
+    float ShrinkSpeed = 2.4f;     // radius/sec
+
+    float OverlayDistance = 2.0f; // 카메라 앞 몇 유닛에 붙일지
+};
+
 class FApplication
 {
 public:
@@ -55,6 +81,12 @@ private:
     void UpdateGizmoColors();
     void SetGizmoVisibility(bool bVisible);
 
+    void BeginPointerPulse(int MouseX, int MouseY);
+    void UpdatePointerPulse(float DeltaTime);
+    void EndPointerPulse();
+    bool ComputePointerPulseWorldPosition(int MouseX, int MouseY, float Distance, FVector& OutWorldPos) const;
+    void RefreshPointerPulseTransform();
+
 private:
     FWindowsApplication* WindowApp;
     URenderer* Renderer;
@@ -89,4 +121,10 @@ private:
     FVector DragStartHitPoint = FVector::ZeroVector;
     FVector DragAxisDirection = FVector::ZeroVector;
     FVector DragPlaneNormal = FVector::ZeroVector;
+
+    UStaticMesh* ClickCircleMesh = nullptr;
+    AActor* ClickCircleActor = nullptr;
+    UStaticMeshComponent* ClickCircleComp = nullptr;
+
+    FPointerPulse PointerPulse;
 };

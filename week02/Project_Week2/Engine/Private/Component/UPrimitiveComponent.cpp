@@ -31,8 +31,9 @@ FRenderItem UPrimitiveComponent::CreateRenderItem() const
 	Item.WorldMatrix = GetWorldTransformMatrix();
 	Item.Mesh = nullptr;
 	Item.Color = RenderColor;
-	Item.CullMode = ERenderCullMode::Back; // @@@ 뭐하는 놈일까
-	Item.bDepthEnable = true; // @@@ 뭐하는 놈일까
+	Item.CullMode = CullMode; // @@@ 뭐하는 놈일까
+	Item.bDepthEnable = bDepthEnable; // @@@ 뭐하는 놈일까
+	Item.bUseVertexColor = bUseVertexColor;
 	return Item;
 }
 
@@ -44,4 +45,19 @@ void UPrimitiveComponent::SetRenderColor(const FVector4& InColor)
 const FVector4& UPrimitiveComponent::GetRenderColor() const
 {
 	return RenderColor;
+}
+
+void UPrimitiveComponent::SetDepthEnable(bool bInDepthEnable)
+{
+	bDepthEnable = bInDepthEnable;
+}
+
+void UPrimitiveComponent::SetCullMode(ERenderCullMode InCullMode)
+{
+	CullMode = InCullMode;
+}
+
+void UPrimitiveComponent::SetUseVertexColor(bool bInUseVertexColor)
+{
+	bUseVertexColor = bInUseVertexColor;
 }

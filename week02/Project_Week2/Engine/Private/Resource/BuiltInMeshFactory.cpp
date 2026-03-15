@@ -2,6 +2,7 @@
 #include "Resource/UStaticMesh.h"
 #include "Geometry/Sphere.h"
 #include "Geometry/Cube.h"
+#include <cmath>
 
 namespace
 {
@@ -78,6 +79,67 @@ namespace
             11,8,12
         };
     }
+
+    //std::vector<FVertexSimple> CreateCircleVertices(int Segments)
+    //{
+    //    std::vector<FVertexSimple> V;
+    //    V.reserve(Segments * 2);
+
+    //    const float PI = 3.14159265358979323846f;
+
+    //    for (int i = 0; i < Segments; ++i)
+    //    {
+    //        const float T0 = (2.0f * PI * i) / Segments;
+    //        const float T1 = (2.0f * PI * (i + 1)) / Segments;
+
+    //        const float X0 = std::cos(T0);
+    //        const float Y0 = std::sin(T0);
+    //        const float X1 = std::cos(T1);
+    //        const float Y1 = std::sin(T1);
+
+    //        // XY 평면의 unit circle, 카메라 정면을 향하게 회전시킬 예정
+    //        V.emplace_back(X0, Y0, 0.0f, 1, 1, 1, 1);
+    //        V.emplace_back(X1, Y1, 0.0f, 1, 1, 1, 1);
+    //    }
+
+    //    return V;
+    //}
+
+    std::vector<FVertexSimple> CreateDiscVertices(int Segments)
+    {
+        std::vector<FVertexSimple> V;
+        V.reserve(Segments + 2);
+
+        const float PI = 3.14159265358979323846f;
+
+        // center
+        V.emplace_back(0.0f, 0.0f, 0.0f, 1, 1, 1, 1);
+
+        for (int i = 0; i <= Segments; ++i)
+        {
+            const float T = (2.0f * PI * i) / Segments;
+            const float X = std::cos(T);
+            const float Y = std::sin(T);
+            V.emplace_back(X, Y, 0.0f, 1, 1, 1, 1);
+        }
+
+        return V;
+    }
+
+    std::vector<uint32_t> CreateDiscIndices(int Segments)
+    {
+        std::vector<uint32_t> I;
+        I.reserve(Segments * 3);
+
+        for (int i = 1; i <= Segments; ++i)
+        {
+            I.push_back(0);
+            I.push_back(i);
+            I.push_back(i + 1);
+        }
+
+        return I;
+    }
 }
 
 namespace BuiltInMeshFactory
@@ -133,6 +195,23 @@ namespace BuiltInMeshFactory
         UStaticMesh* Mesh = new UStaticMesh();
         Mesh->SetVertices(CreateGizmoArrowVertices());
         Mesh->SetIndices(CreateGizmoArrowIndices());
+        Mesh->SetTopology(EMeshTopology::TriangleList);
+        return Mesh;
+    }
+
+//    UStaticMesh* CreateCircleMesh(int Segments)
+//    {
+//        UStaticMesh* Mesh = new UStaticMesh();
+//        Mesh->SetVertices(CreateCircleVertices(Segments));
+//        Mesh->SetTopology(EMeshTopology::LineList);
+//        return Mesh;
+//    }
+
+    UStaticMesh* CreateDiscMesh(int Segments)
+    {
+        UStaticMesh* Mesh = new UStaticMesh();
+        Mesh->SetVertices(CreateDiscVertices(Segments));
+        Mesh->SetIndices(CreateDiscIndices(Segments));
         Mesh->SetTopology(EMeshTopology::TriangleList);
         return Mesh;
     }

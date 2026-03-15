@@ -109,6 +109,9 @@ bool FApplication::InitializeResources()
     AxesMesh = BuiltInMeshFactory::CreateAxesMesh();
     GizmoArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh();
 
+    //ClickCircleMesh = BuiltInMeshFactory::CreateCircleMesh(64);
+    ClickCircleMesh = BuiltInMeshFactory::CreateDiscMesh(64);
+
     return true;
 }
 
@@ -222,6 +225,28 @@ bool FApplication::InitializeScene()
         World->AddActor(GizmoActor);
     }
 
+    // Click Pulse Circle
+    {
+        ClickCircleActor = new AActor();
+        ClickCircleComp = new UStaticMeshComponent();
+
+        ClickCircleComp->SetStaticMesh(ClickCircleMesh);
+        ClickCircleComp->SetRelativeLocation(FVector::ZeroVector);
+        ClickCircleComp->SetRelativeRotation(FVector::ZeroVector);
+        ClickCircleComp->SetRelativeScale(FVector(0.0f, 0.0f, 0.0f));
+
+        ClickCircleComp->SetRenderColor(FVector4(0.98f, 0.84f, 0.10f, 1.0f));
+        ClickCircleComp->SetUseVertexColor(false);
+        ClickCircleComp->SetDepthEnable(false);
+        ClickCircleComp->SetCullMode(ERenderCullMode::None);
+        ClickCircleComp->SetVisibility(false);
+
+        ClickCircleActor->AddComponent(ClickCircleComp);
+        ClickCircleActor->SetRootComponent(ClickCircleComp);
+
+        World->AddActor(ClickCircleActor);
+    }
+
     return true;
 }
 
@@ -295,6 +320,8 @@ void FApplication::Tick(float DeltaTime)
     int DownY = 0;
     if (WindowApp->ConsumeLeftMouseDown(DownX, DownY))
     {
+        BeginPointerPulse(DownX, DownY);
+
         EGizmoAxis Axis = PickGizmoAxis(DownX, DownY);
         if (Axis != EGizmoAxis::None)
         {
@@ -313,6 +340,26 @@ void FApplication::Tick(float DeltaTime)
     if (WindowApp->ConsumeLeftMouseUp(UpX, UpY))
     {
         EndGizmoDrag();
+        EndPointerPulse();
+    }
+
+    // 우클릭 down에도 원 시작
+    int RightDownX = 0;
+    int RightDownY = 0;
+    if (WindowApp->ConsumeRightMouseDown(RightDownX, RightDownY))
+    {
+        BeginPointerPulse(RightDownX, RightDownY);
+
+        // Orbit 시작 기준점 맞추기
+        PrevMouseX = RightDownX;
+        PrevMouseY = RightDownY;
+    } 
+    // 우클릭 up에도 원 종료
+    int RightUpX = 0;
+    int RightUpY = 0;
+    if (WindowApp->ConsumeRightMouseUp(RightUpX, RightUpY))
+    {
+        EndPointerPulse();
     }
 
     if (bDraggingGizmo && WindowApp->IsLeftMousePressed())
@@ -320,6 +367,7 @@ void FApplication::Tick(float DeltaTime)
         WindowApp->GetMousePosition(MouseX, MouseY);
         UpdateGizmoDrag(MouseX, MouseY);
     }
+
 
     if (WindowApp->IsRightMousePressed())
     {
@@ -401,6 +449,7 @@ void FApplication::Tick(float DeltaTime)
         MainCamera->SetRelativeLocation(Loc);
     }
 
+    UpdatePointerPulse(DeltaTime);
     World->Tick(DeltaTime);
 
     if (SelectedActor)
@@ -532,7 +581,7 @@ AActor* FApplication::PickActor(const FRay& Ray) const
     for (AActor* Actor : Actors)
     {
         // @@@ Actor==GizmoActor라는데, 이거 XYZ로 나누면서 nullptr 아닌가?
-        if (!Actor || Actor == CameraActor || Actor == GizmoActor || Actor == WorldAxesActor)
+        if (!Actor || Actor == CameraActor || Actor == GizmoActor || Actor == WorldAxesActor || Actor == ClickCircleActor)
         {
             continue;
         }
@@ -1007,4 +1056,166 @@ void FApplication::SetGizmoVisibility(bool bVisible)
     if (GizmoXComp) GizmoXComp->SetVisibility(bVisible);
     if (GizmoYComp) GizmoYComp->SetVisibility(bVisible);
     if (GizmoZComp) GizmoZComp->SetVisibility(bVisible);
+}
+
+bool FApplication::ComputePointerPulseWorldPosition(int MouseX, int MouseY, float Distance, FVector& OutWorldPos) const
+{
+    if (!MainCamera)
+    {
+        return false;
+    }
+
+    FRay Ray = BuildPickRay(MouseX, MouseY);
+
+    const FVector CamLoc = MainCamera->GetRelativeLocation();
+    const FVector CamRot = MainCamera->GetRelativeRotation();
+
+    const FMatrix RotMatrix = FMatrix::MakeRotationXYZ(CamRot);
+    const FVector4 Forward4 = RotMatrix * FVector4(0, 0, 1, 0);
+    const FVector Forward(Forward4.X, Forward4.Y, Forward4.Z);
+
+    const FVector PlanePoint = CamLoc + Forward * Distance;
+
+    return IntersectRayPlane(Ray, PlanePoint, Forward, OutWorldPos);
+}
+
+void FApplication::BeginPointerPulse(int MouseX, int MouseY)
+{
+    PointerPulse.Phase = EPointerPulsePhase::Growing;
+    PointerPulse.bDragDetected = false;
+    PointerPulse.bMouseStillDown = true;
+    PointerPulse.StartMouseX = MouseX;
+    PointerPulse.StartMouseY = MouseY;
+    PointerPulse.CurrentRadius = 0.0f;
+
+    if (ClickCircleComp)
+    {
+        ClickCircleComp->SetVisibility(true);
+        RefreshPointerPulseTransform();
+    }
+}
+
+void FApplication::EndPointerPulse()
+{
+    PointerPulse.bMouseStillDown = false;
+
+    // 드래그였다면 바로 shrink 시작
+    if (PointerPulse.bDragDetected &&
+        PointerPulse.Phase != EPointerPulsePhase::Hidden)
+    {
+        PointerPulse.Phase = EPointerPulsePhase::Shrinking;
+    }
+}
+
+void FApplication::RefreshPointerPulseTransform()
+{
+    if (!ClickCircleComp || !MainCamera)
+    {
+        return;
+    }
+    int MouseX = PointerPulse.StartMouseX;
+    int MouseY = PointerPulse.StartMouseY;
+
+    // 드래그 중이면 현재 마우스 위치를 따라가게 함
+    if (PointerPulse.bDragDetected && PointerPulse.bMouseStillDown)
+    {
+        WindowApp->GetMousePosition(MouseX, MouseY);
+    }
+
+    FVector WorldPos;
+    if (!ComputePointerPulseWorldPosition(
+        MouseX,
+        MouseY,
+        PointerPulse.OverlayDistance,
+        WorldPos))
+    {
+        return;
+    }
+
+    ClickCircleComp->SetRelativeLocation(WorldPos);
+    ClickCircleComp->SetRelativeRotation(MainCamera->GetRelativeRotation());
+
+    const float S = PointerPulse.CurrentRadius;
+    ClickCircleComp->SetRelativeScale(FVector(S, S, S));
+}
+
+void FApplication::UpdatePointerPulse(float DeltaTime)
+{
+    if (!ClickCircleComp)
+    {
+        return;
+    }
+
+    if (PointerPulse.Phase == EPointerPulsePhase::Hidden)
+    {
+        ClickCircleComp->SetVisibility(false);
+        return;
+    }
+
+    int MouseX = 0;
+    int MouseY = 0;
+    WindowApp->GetMousePosition(MouseX, MouseY);
+
+    const int DragDX = MouseX - PointerPulse.StartMouseX;
+    const int DragDY = MouseY - PointerPulse.StartMouseY;
+    const int DragThreshold = 6;
+
+    if (PointerPulse.bMouseStillDown &&
+        !PointerPulse.bDragDetected &&
+        (DragDX * DragDX + DragDY * DragDY) >= (DragThreshold * DragThreshold))
+    {
+        PointerPulse.bDragDetected = true;
+    }
+
+    switch (PointerPulse.Phase)
+    {
+    case EPointerPulsePhase::Growing:
+    {
+        PointerPulse.CurrentRadius += PointerPulse.GrowSpeed * DeltaTime;
+
+        if (PointerPulse.CurrentRadius >= PointerPulse.MaxRadius)
+        {
+            PointerPulse.CurrentRadius = PointerPulse.MaxRadius;
+
+            if (PointerPulse.bDragDetected && PointerPulse.bMouseStillDown)
+            {
+                PointerPulse.Phase = EPointerPulsePhase::Holding;
+            }
+            else if (!PointerPulse.bMouseStillDown)
+            {
+                // 클릭: 이미 뗐더라도 max까지 커진 뒤 shrink
+                PointerPulse.Phase = EPointerPulsePhase::Shrinking;
+            }
+        }
+        break;
+    }
+    case EPointerPulsePhase::Holding:
+    {
+        PointerPulse.CurrentRadius = PointerPulse.MaxRadius;
+
+        if (!PointerPulse.bMouseStillDown)
+        {
+            PointerPulse.Phase = EPointerPulsePhase::Shrinking;
+        }
+        break;
+    }
+    case EPointerPulsePhase::Shrinking:
+    {
+        PointerPulse.CurrentRadius -= PointerPulse.ShrinkSpeed * DeltaTime;
+
+        if (PointerPulse.CurrentRadius <= 0.0f)
+        {
+            PointerPulse.CurrentRadius = 0.0f;
+            PointerPulse.Phase = EPointerPulsePhase::Hidden;
+            ClickCircleComp->SetVisibility(false);
+            return;
+        }
+        break;
+    }
+    case EPointerPulsePhase::Hidden:
+    default:
+        return;
+    }
+
+    RefreshPointerPulseTransform();
 }

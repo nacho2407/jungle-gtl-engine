@@ -24,7 +24,16 @@ public:
     void SetRenderColor(const FVector4& InColor);
     const FVector4& GetRenderColor() const;
 
+    // 클릭 애니메이션
+    void SetDepthEnable(bool bInDepthEnable);
+    void SetCullMode(ERenderCullMode InCullMode);
+    void SetUseVertexColor(bool bInUseVertexColor);
+
 protected:
     bool bVisible;
     FVector4 RenderColor = FVector4(1, 1, 1, 1);
+
+    bool bDepthEnable = true;
+    bool bUseVertexColor = true; // @@@@ 이름 중복 있음
+    ERenderCullMode CullMode = ERenderCullMode::Back;
 };
