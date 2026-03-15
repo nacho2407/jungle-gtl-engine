@@ -25,6 +25,7 @@ private:
 	GizmoController* Controller;
 
 	FVector InitialObjectLocation;
+	FVector InitialWorldPos;
 	float InitialDragOffset = 0.0f;
 
 	RenderObject* GizmoX;
