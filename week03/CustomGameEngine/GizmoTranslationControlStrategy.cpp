@@ -65,51 +65,52 @@ void GizmoTranslationControlStrategy::BeginDrag(const Ray& ray)
 {
 	InitialObjectLocation = Controller->GetAttachedComponent()->GetRelativeLocation();
 
-	FVector axisDir;
+	FVector localAxis;
 	switch (Controller->GetHoverAxis())
 	{
 	case GizmoControllerAxis::X:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Forward());
+		localAxis = FVector::Forward();
 		break;
 	case GizmoControllerAxis::Y:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Right());
+		localAxis = FVector::Right();
 		break;
 	case GizmoControllerAxis::Z:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Up());
+		localAxis = FVector::Up();
 		break;
 	}
 
-	FVector worldOrigin = Controller->GetRelativeMatrix().TransformPoint(FVector(0, 0, 0));
-	FVector worldAxisPoint = Controller->GetRelativeMatrix().TransformPoint(axisDir);
-	FVector worldAxisDir = (worldAxisPoint - worldOrigin).Normalize();
+	FVector worldAxisDir = Controller->GetRelativeMatrix().TransformVector(localAxis).Normalize();
+	FVector worldOrigin = Controller->GetRelativeMatrix().TransformPoint(FVector::Zero());
 
+	InitialWorldPos = worldOrigin;
 	InitialDragOffset = Controller->GetClosestPointOnAxis(ray, worldOrigin, worldAxisDir);
 }
 
 void GizmoTranslationControlStrategy::UpdateDrag(const Ray& ray)
 {
-	FVector axisDir;
+	FVector localAxis;
 	switch (Controller->GetHoverAxis())
 	{
 	case GizmoControllerAxis::X:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Forward());
+		localAxis = FVector::Forward();
 		break;
 	case GizmoControllerAxis::Y:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Right());
+		localAxis = FVector::Right();
 		break;
 	case GizmoControllerAxis::Z:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Up());
+		localAxis = FVector::Up();
 		break;
 	}
 
-	FVector worldOrigin = Controller->GetRelativeMatrix().TransformPoint(FVector(0, 0, 0));
-	FVector worldAxisPoint = Controller->GetRelativeMatrix().TransformPoint(axisDir);
-	FVector worldAxisDir = (worldAxisPoint - worldOrigin).Normalize();
+	FVector axisDir = Controller->GetRelativeMatrix().TransformVector(localAxis).Normalize();
 
-	float currentT = Controller->GetClosestPointOnAxis(ray, worldOrigin, worldAxisDir);
+	FVector worldOrigin = Controller->GetRelativeMatrix().TransformPoint(FVector(0, 0, 0));
+	FVector worldAxisDir = axisDir;
+
+	float currentT = Controller->GetClosestPointOnAxis(ray, InitialWorldPos, worldAxisDir);
 	float deltaT = currentT - InitialDragOffset;
 
-	FVector newPos = Controller->GetAttachedComponent()->GetRelativeLocation() + axisDir * deltaT;
+	FVector newPos = InitialObjectLocation + worldAxisDir * deltaT;
 	Controller->GetAttachedComponent()->SetRelativeLocation(newPos);
 }
 
