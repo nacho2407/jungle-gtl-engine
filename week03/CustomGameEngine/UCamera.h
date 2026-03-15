@@ -29,7 +29,7 @@ public:
 	float NearPlane{ 0.1f };
 	float FarPlane{ 1000.0f };
 	bool IsChanged{ true };
-	float MoveSpeed{ 0.1f };
+	float MoveSpeed{ 10.0f };
 	float ScreenWidth = 0.f;
 	float ScreenHeight = 0.f;
 	float RotateSensitivity = 0.1f;

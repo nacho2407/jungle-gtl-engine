@@ -1,4 +1,5 @@
 ﻿#include "UCamera.h"
+#include "TimerManager.h"
 
 UCamera::~UCamera() {}
 
@@ -10,34 +11,37 @@ void UCamera::SetPosition(const FVector& _input) {
 }
 
 void UCamera::Move() {
+	float deltaTime = TimerManager::GetInstance().GetGlobalDeltaTime();
+	float moveSpeed = MoveSpeed * deltaTime;
+
 	if (InputManager::GetInstance().IsKeyHold('W') &&
 		!InputManager::GetInstance().IsKeyHold('S')) {
-		Position = Position + Direction * MoveSpeed;
+		Position = Position + Direction * moveSpeed;
 		IsChanged = true;
 	}
 	else if (!InputManager::GetInstance().IsKeyHold('W') &&
 		InputManager::GetInstance().IsKeyHold('S')) {
-		Position = Position - Direction * MoveSpeed;
+		Position = Position - Direction * moveSpeed;
 		IsChanged = true;
 	}
 	if (InputManager::GetInstance().IsKeyHold('E') &&
 		!InputManager::GetInstance().IsKeyHold('Q')) {
-		Position = Position + UpVec * MoveSpeed;
+		Position = Position + UpVec * moveSpeed;
 		IsChanged = true;
 	}
 	else if (!InputManager::GetInstance().IsKeyHold('E') &&
 		InputManager::GetInstance().IsKeyHold('Q')) {
-		Position = Position - UpVec * MoveSpeed;
+		Position = Position - UpVec * moveSpeed;
 		IsChanged = true;
 	}
 	if (!InputManager::GetInstance().IsKeyHold('D') &&
 		InputManager::GetInstance().IsKeyHold('A')) {
-		Position = Position + SideDirection * MoveSpeed;
+		Position = Position + SideDirection * moveSpeed;
 		IsChanged = true;
 	}
 	else if (InputManager::GetInstance().IsKeyHold('D') &&
 		!InputManager::GetInstance().IsKeyHold('A')) {
-		Position = Position - SideDirection * MoveSpeed;
+		Position = Position - SideDirection * moveSpeed;
 		IsChanged = true;
 	}
 
