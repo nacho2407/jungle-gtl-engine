@@ -1,25 +1,40 @@
 #pragma once
-#include "Core.h"
+
+#include <string>
+#include <cstdint>
 
 class UObject
 {
 public:
-	void* operator new(size_t size)
-	{
-		return nullptr;
-	}
-	void operator delete(void* ptr) noexcept
-	{
-	}
-	uint32 UUID;
-	uint32 InternalIndex; // Index of GUObjectArray
-	virtual void Init() = 0;
-	virtual void Start() = 0;
-	//const type_info& GetType();
 
-	//template<typename T>
-	//T* UObject::CreateDefaultSubobject(FString FName)
-	//{
-	//	return nullptr;
-	//}
+    UObject();
+    virtual ~UObject();
+
+public:
+
+    // Unique Object ID
+    uint64_t GetID() const;
+
+    // Object Name
+    const std::string& GetName() const;
+    void SetName(const std::string& InName);
+
+    // Owner Object
+    UObject* GetOuter() const;
+    void SetOuter(UObject* InOuter);
+
+    // Runtime type info
+    virtual const char* GetObjClassName() const;
+
+protected:
+
+    uint64_t ObjectID = 0;
+
+    std::string Name;
+
+    UObject* Outer = nullptr;
+
+private:
+
+    static uint64_t GlobalObjectID;
 };
