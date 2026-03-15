@@ -294,7 +294,8 @@ void URenderer::Render(UCamera* Camera)
 
 	if (!NoDepthRenderObjects.empty())
 	{
-		DeviceContext->OMSetDepthStencilState(DepthStencilStateNoDepth, 0);
+		DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+
 		for (RenderObject* RenderObj : NoDepthRenderObjects)
 		{
 			ObjectConst.World = RenderObj->World;
