@@ -51,6 +51,10 @@ private:
 
     void AddSelectionOutlineRenderItem();
 
+    void UpdateGizmoTransform();
+    void UpdateGizmoColors();
+    void SetGizmoVisibility(bool bVisible);
+
 private:
     FWindowsApplication* WindowApp;
     URenderer* Renderer;
@@ -59,13 +63,19 @@ private:
 
     AActor* CameraActor = nullptr;
     UCameraComponent* MainCamera;
+    // @@@ 액터의 mesh 별로 이렇게 하나씩 다 선언하는 게 맞음?? 하나로 편하게 관리 못하나?
+    // 지금 Spawn이 아니라 미리 만들어놓아야 해서 이렇게 한건가?
+    UStaticMesh* CubeMesh; 
     UStaticMesh* SphereMesh;
-    UStaticMesh* CubeMesh;
     //UStaticMesh* TriangleMesh;
     UStaticMesh* AxesMesh;
+    UStaticMesh* GizmoArrowMesh = nullptr;
 
     AActor* GizmoActor = nullptr;
-    UStaticMeshComponent* GizmoMeshComp = nullptr;
+    UStaticMeshComponent* GizmoXComp = nullptr;
+    UStaticMeshComponent* GizmoYComp = nullptr;
+    UStaticMeshComponent* GizmoZComp = nullptr;
+    //UStaticMeshComponent* GizmoMeshComp = nullptr;
     AActor* SelectedActor = nullptr;
 
     AActor* WorldAxesActor = nullptr;

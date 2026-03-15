@@ -30,8 +30,18 @@ FRenderItem UPrimitiveComponent::CreateRenderItem() const
 	FRenderItem Item;
 	Item.WorldMatrix = GetWorldTransformMatrix();
 	Item.Mesh = nullptr;
-	Item.Color = FVector4(1, 1, 1, 1);
+	Item.Color = RenderColor;
 	Item.CullMode = ERenderCullMode::Back; // @@@ 뭐하는 놈일까
 	Item.bDepthEnable = true; // @@@ 뭐하는 놈일까
 	return Item;
+}
+
+void UPrimitiveComponent::SetRenderColor(const FVector4& InColor)
+{
+	RenderColor = InColor;
+}
+
+const FVector4& UPrimitiveComponent::GetRenderColor() const
+{
+	return RenderColor;
 }

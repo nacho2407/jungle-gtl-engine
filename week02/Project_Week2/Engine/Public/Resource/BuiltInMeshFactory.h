@@ -8,4 +8,5 @@ namespace BuiltInMeshFactory
     UStaticMesh* CreateCubeMesh();
     UStaticMesh* CreateTriangleMesh();
     UStaticMesh* CreateAxesMesh();
+    UStaticMesh* CreateGizmoArrowMesh();
 }
