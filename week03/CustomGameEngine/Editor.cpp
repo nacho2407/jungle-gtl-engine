@@ -39,7 +39,7 @@ void Editor::OnBeforeRender()
 {
 	if (SelectedComponent == nullptr) return;
 
-	Gizmo::GetInstance().UpdateRenderObject(SelectedComponent, TransformationType::Location);
+	Gizmo::GetInstance().UpdateRenderObject();
 	Gizmo::GetInstance().OnBeforeRender();
 }
 

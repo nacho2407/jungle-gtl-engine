@@ -6,7 +6,7 @@ class IGizmoControlStrategy
 {
 public:
 	virtual void Update() = 0;
-	virtual void Draw() = 0;
+	virtual void UpdateRenderObject() = 0;
 
 	virtual void BeginDrag(const Ray& ray) = 0;
 	virtual void UpdateDrag(const Ray& ray) = 0;

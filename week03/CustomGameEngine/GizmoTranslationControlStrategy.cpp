@@ -27,7 +27,7 @@ void GizmoTranslationControlStrategy::Update()
 	// No specific update logic for translation control
 }
 
-void GizmoTranslationControlStrategy::Draw()
+void GizmoTranslationControlStrategy::UpdateRenderObject()
 {
 	ResourceManager* resourceManager = ResourceManager::GetInstance();
 

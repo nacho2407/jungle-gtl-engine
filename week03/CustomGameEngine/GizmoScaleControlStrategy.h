@@ -13,7 +13,7 @@ public:
 
 public:
 	virtual void Update() override;
-	virtual void Draw() override;
+	virtual void UpdateRenderObject() override;
 
 	virtual void BeginDrag(const Ray& ray) override;
 	virtual void UpdateDrag(const Ray& ray) override;
