@@ -6,9 +6,10 @@
 #include "Renderer/Renderer.h"
 
 #include "Sphere.h"
-
+#include "UEngineStatics.h"
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 
 // 각종 메시지를 처리할 함수
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -72,6 +73,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	LARGE_INTEGER startTime, endTime;
 	double elapsedTime = 0.0;
 
+	int delta = 1;
+	int interval = 5;
+	int intervalCounter = 0;
+	//FUObjectFactory factory;
+	TArray<UObject*> objects;
+
 
 	// Main Loop (Quit Message가 들어오기 전까지 아래 Loop를 무한히 실행하게 됨)
 	while (bIsExit == false)
@@ -100,9 +107,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		renderer.Prepare();
 		renderer.PrepareShader();
 
+		if (intervalCounter++ > interval)
+		{
+			if (delta > 0)
+			{
+				auto newObject = FUObjectFactory::ConstructObject<AActor>("Test");
+				objects.push_back(newObject);
+			}
+			else
+			{
+				UObject* garbage = objects.back();
+				objects.pop_back();
+				delete garbage;
+			}
 
+			if (objects.size() <= 0 || objects.size() > 100)
+				delta *= -1;
+			intervalCounter = 0;
+		}
 
-		//FMatrix identity
 
 		renderer.UpdateConstant(FVector(0.f, 0.f, 0.f));
 		renderer.RenderPrimitive(vertexBufferSphere, numVerticesSphere);
@@ -113,6 +136,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		ImGui::Begin("Jungle Property Window");
 		ImGui::Text("Hello Jungle World!");
+
+		ImGui::Text("GTotalAllocationBytes: %d", UEngineStatics::TotalAllocationBytes);
+		ImGui::Text("GTotalAllocationCount: %d", UEngineStatics::TotalAllocationCount);
+		ImGui::Text("ObjectCountInVector: %d", objects.size());
+		if(objects.size() > 0)
+			ImGui::Text("LastID: %d", objects.back()->GetUUID());
 
 		ImGui::End();
 

@@ -1,25 +1,35 @@
 #pragma once
-#include "Core.h"
+#include "CoreTypes.h"
 
 class UObject
 {
-public:
-	void* operator new(size_t size)
-	{
-		return nullptr;
-	}
-	void operator delete(void* ptr) noexcept
-	{
-	}
-	uint32 UUID;
-	uint32 InternalIndex; // Index of GUObjectArray
-	virtual void Init() = 0;
-	virtual void Start() = 0;
-	//const type_info& GetType();
+    size_t AllocatedSize;
+    uint32 InternalIndex;
+    uint32 UUID;
+protected:
 
-	//template<typename T>
-	//T* UObject::CreateDefaultSubobject(FString FName)
-	//{
-	//	return nullptr;
-	//}
+
+public:
+    FString Name;
+
+    virtual ~UObject() = default;
+
+    virtual void Init(uint32 InUUID, FString InName);
+
+    void* operator new(size_t size);
+
+    void operator delete(void* ptr, size_t size) noexcept;
+
+    template<typename T>
+    void CreateDefaultSubobject()
+    {
+
+    }
+
+    uint32 GetUUID() const
+    {
+        return UUID;
+    }
 };
+
+inline TArray<UObject*> GUObjectArray;

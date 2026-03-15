@@ -4,7 +4,8 @@
 class USceneComponent : public UObject
 {
 public:
-	USceneComponent() : Location(0, 0, 0), Rotation(0, 0, 0), Scale(1, 1, 1) {};
+	//USceneComponent() : Location(0, 0, 0), Rotation(0, 0, 0), Scale(1, 1, 1) {};
+	//virtual void Init()
 
 	FVector GetLocation() const { return Location; }
 	FVector SetLocation(const FVector& NewLocation) { Location = NewLocation; }

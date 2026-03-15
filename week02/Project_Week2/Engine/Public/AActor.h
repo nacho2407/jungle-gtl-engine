@@ -1,7 +1,7 @@
 #pragma once
 #include "Core.h"
 
-class AActor : UObject
+class AActor : public UObject
 {
 public:
 	//USceneComponent* RootCompoent = nullptr;
