@@ -198,7 +198,11 @@ Ray UPicker::CreateRay(int ScreenX, int ScreenY, UCamera* Camera)
 	FMatrix InvProjMat = Camera->GetProjectionMatrix().Inverse();
 
 	FVector4 NearView = Near * InvProjMat;
-	NearView = NearView * (1.0f / NearView.w);
+	
+	if (!Camera->IsOrthogonal)
+	{
+		NearView = NearView * (1.0f / NearView.w);
+	}
 
 	FMatrix InvView = Camera->GetViewMatrix().Inverse();
 	FVector4 NearWorld = NearView * InvView;

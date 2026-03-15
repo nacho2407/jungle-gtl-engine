@@ -115,6 +115,11 @@ void GizmoController::EndDrag()
 
 GizmoControllerAxis GizmoController::TryPick(Ray& ray)
 {
+	if (!bDrawEnabled)
+	{
+		return GizmoControllerAxis::None;
+	}
+
 	FString geometryNames[3];
 	switch (Type)
 	{
