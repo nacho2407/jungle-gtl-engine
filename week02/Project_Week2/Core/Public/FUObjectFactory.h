@@ -1,17 +1,28 @@
 #pragma once
+#include "Private/FUObjectAllocator.h"
 #include "UEngineStatics.h"
 #include "UObject.h"
-
 class FUObjectFactory
 {
 public:
-	template<typename T = UObject>
-	static T* ConstructObject(FString InName)
+	template<typename T>
+	T* CreateObject(const FString& InName)
 	{
 		static_assert(std::is_base_of<UObject, T>::value, "T must inherit from UObject");
-		T* NewObject = new T();
 
-		NewObject->Init(UEngineStatics::GenUUID(), InName);
-		return NewObject;
+		FUObjectInitializer initializer;
+
+		initializer.UUID = UEngineStatics::GenUUID();
+		initializer.Name = InName;
+
+		T* object = GUObjectAllocator.AllocateUObject<T>(initializer);
+
+		int32 index = GUObjectArray.GetAvailableIndex();
+		int32 SerialNumber = GUObjectArray.AllocateSerialNumber(index);
+		GUObjectArray.AllocatdUObjectIndex(object, SerialNumber);
+
+		return object;
 	}
-}; 
+};
+
+inline FUObjectFactory GUObjectFactory;

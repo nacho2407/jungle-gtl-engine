@@ -1,30 +1,34 @@
 #pragma once
 #include "CoreTypes.h"
+#include "FUObjectArray.h"
+#include "FUObjectInitializer.h"
+#include "UObjectBaseUtility.h"
 
-class UObject
+class UObject : public UObjectBaseUtility
 {
     size_t AllocatedSize;
-    uint32 InternalIndex;
     uint32 UUID;
+
 protected:
 
 
 public:
     FString Name;
 
-    virtual ~UObject() = default;
+    UObject() : AllocatedSize(0), UUID(0), Name("DefaultObject") {};
+    UObject(const FUObjectInitializer& ObjectInitilizer);
 
-    virtual void Init(uint32 InUUID, FString InName);
+    //virtual void Init() = 0;
 
-    void* operator new(size_t size);
+    //void* operator new(size_t size);
 
-    void operator delete(void* ptr, size_t size) noexcept;
+    //void operator delete(void* ptr, size_t size) noexcept;
 
-    template<typename T>
-    void CreateDefaultSubobject()
-    {
+    //template<typename T>
+    //void CreateDefaultSubobject()
+    //{
 
-    }
+    //}
 
     uint32 GetUUID() const
     {
@@ -32,4 +36,4 @@ public:
     }
 };
 
-inline TArray<UObject*> GUObjectArray;
+//inline TArray<UObject*> GUObjectArray;

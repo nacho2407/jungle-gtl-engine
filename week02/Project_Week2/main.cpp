@@ -5,6 +5,7 @@
 #include "GUI/GUI.h"
 #include "Renderer/Renderer.h"
 
+#include "FUObjectArray.h"
 #include "Sphere.h"
 #include "UEngineStatics.h"
 
@@ -79,7 +80,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	//FUObjectFactory factory;
 	TArray<UObject*> objects;
 
-
 	// Main Loop (Quit Message가 들어오기 전까지 아래 Loop를 무한히 실행하게 됨)
 	while (bIsExit == false)
 	{
@@ -111,14 +111,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		{
 			if (delta > 0)
 			{
-				auto newObject = FUObjectFactory::ConstructObject<AActor>("Test");
+				auto newObject = GUObjectFactory.CreateObject<AActor>("Test");
+
 				objects.push_back(newObject);
+
 			}
 			else
 			{
 				UObject* garbage = objects.back();
 				objects.pop_back();
-				delete garbage;
+
+				auto TargetIndex = garbage->InternalIndex;
+				GUObjectArray.FreeUObjectIndox(garbage);
+				GUObjectAllocator.FreeUObject(garbage);
 			}
 
 			if (objects.size() <= 0 || objects.size() > 100)
@@ -137,8 +142,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		ImGui::Begin("Jungle Property Window");
 		ImGui::Text("Hello Jungle World!");
 
-		ImGui::Text("GTotalAllocationBytes: %d", UEngineStatics::TotalAllocationBytes);
-		ImGui::Text("GTotalAllocationCount: %d", UEngineStatics::TotalAllocationCount);
+		ImGui::Text("GTotalAllocationBytes: %d", FMemory::GetTotalAllocatedMemory());
+		ImGui::Text("GTotalAllocationCount: %d", GUObjectArray.ElementalCount);
 		ImGui::Text("ObjectCountInVector: %d", objects.size());
 		if(objects.size() > 0)
 			ImGui::Text("LastID: %d", objects.back()->GetUUID());

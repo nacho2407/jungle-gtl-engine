@@ -4,6 +4,10 @@
 class AActor : public UObject
 {
 public:
+	AActor() : UObject() {}
+	AActor(const FUObjectInitializer& ObjectInitilizer) : UObject(ObjectInitilizer) {}
+
+
 	//USceneComponent* RootCompoent = nullptr;
 	//FVector GetActorLocation()
 	//{
