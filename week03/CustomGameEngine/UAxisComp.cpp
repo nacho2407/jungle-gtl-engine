@@ -17,4 +17,16 @@ void UAxisComp::Update(float DeltaTime)
 {
 }
 
+RenderObject* UAxisComp::CreateRenderObject()
+{
+	RenderObj = UPrimitiveComponent::CreateRenderObject();
+
+	if (RenderObj == nullptr)
+		return nullptr;
+
+	RenderObj->PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+
+	return RenderObj;
+}
+
 REGISTER_CLASS(UAxisComp);

@@ -27,7 +27,7 @@ public:
 	void SetRelativeScale3D(FVector newScale) override;
 
 	virtual void Update(float DeltaTime);
-	RenderObject* CreateRenderObject();
+	virtual RenderObject* CreateRenderObject();
 	virtual RenderObject* GetRenderObject();
 	void SetMaterial(int Handle) { MaterialHandle = Handle; }
 	void MarkRenderStateDirty();

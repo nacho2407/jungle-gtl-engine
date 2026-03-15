@@ -137,13 +137,15 @@ void EngineApp::Run()
 	cube->SetRelativeLocation(FVector(0.0, 0, 0));
 	cube->SetRelativeScale3D(FVector(2.f, 2.f, 2.f));
 
-	UCubeComp* Cube = Cast<UCubeComp>(FObjectFactory::ConstructObject(UCubeComp::GetClass()));
+	UCubeComp* Cube = GetWorld().AddSceneComponent<UCubeComp>();
 	Cube->SetRelativeLocation(FVector(10.f, 0.f, 0.f));
 	Cube->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
 
-	UCubeComp* Cube3 = Cast<UCubeComp>(FObjectFactory::ConstructObject(UCubeComp::GetClass()));
+	UCubeComp* Cube3 = GetWorld().AddSceneComponent<UCubeComp>();
+	Cube->SetRelativeLocation(FVector(-10.f, 0.f, 0.f));
+	Cube->SetRelativeScale3D(FVector(0.5f, 0.5f, 0.5f));
 
-	UObject* mainAxis = FObjectFactory::ConstructObject(UAxisComp::GetClass());
+	UAxisComp* mainAxis = GetWorld().AddSceneComponent<UAxisComp>();
 
 	Camera->SetPosition(FVector(0, 0, -10.f));
 	//-----TEST

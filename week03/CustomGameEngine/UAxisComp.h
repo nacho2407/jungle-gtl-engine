@@ -8,5 +8,7 @@ public:
 	UAxisComp();
 	virtual ~UAxisComp() override;
 	virtual void Update(float DeltaTime) override;
+
+	virtual RenderObject* CreateRenderObject() override;
 };
 
