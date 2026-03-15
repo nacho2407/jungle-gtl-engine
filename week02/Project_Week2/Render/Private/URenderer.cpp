@@ -527,15 +527,29 @@ void URenderer::Render(const FScene& Scene, const UCameraComponent* Camera)
 
     if (Camera)
     {
-        View = FMatrix::MakeViewMatrix(
-            Camera->GetRelativeLocation(),
-            Camera->GetRelativeRotation());
+        //View = FMatrix::MakeViewMatrix(
+        //    Camera->GetRelativeLocation(),
+        //    Camera->GetRelativeRotation());
 
-        Projection = FMatrix::MakePerspectiveMatrix(
-            Camera->GetFieldOfView(),
-            Camera->GetAspectRatio(),
-            Camera->GetNearClip(),
-            Camera->GetFarClip());
+        //Projection = FMatrix::MakePerspectiveMatrix(
+        //    Camera->GetFieldOfView(),
+        //    Camera->GetAspectRatio(),
+        //    Camera->GetNearClip(),
+        //    Camera->GetFarClip());
+
+        //printf("Camera Aspect: %f\n", Camera->GetAspectRatio());
+        //printf("Viewport: %f x %f\n", ViewportInfo.Width, ViewportInfo.Height);
+        //printf("Viewport Aspect: %f\n", ViewportInfo.Width / ViewportInfo.Height);
+
+        View = Camera->GetViewMatrix();
+        Projection = Camera->GetProjectionMatrix();
+
+        //printf("Proj[0][0] = %f\n", Projection.M[0][0]);
+        //printf("Proj[1][1] = %f\n", Projection.M[1][1]);
+        //printf("Proj[2][2] = %f\n", Projection.M[2][2]);
+        //printf("Proj[2][3] = %f\n", Projection.M[2][3]);
+        //printf("Proj[3][2] = %f\n", Projection.M[3][2]);
+        //printf("Proj[3][3] = %f\n", Projection.M[3][3]);
     }
 
     for (const FRenderItem& Item : Scene.RenderItems)

@@ -72,11 +72,12 @@ FVector FVector::operator/(float Scalar) const
 FVector FVector::GetNormalized() const
 {
 	const float Len = Length();
-	if (Len > 0.000001f)
+	if (Len <= 0.000001f)
 	{
 		return FVector::ZeroVector;
 	}
-	return FVector::ZeroVector;
+
+	return FVector(X / Len, Y / Len, Z / Len);
 }
 
 FVector& FVector::operator+=(const FVector& Rhs)

@@ -23,6 +23,8 @@ public:
 	static FMatrix MakeViewMatrix(const FVector& CameraLocation, const FVector& CameraRotation);
 	static FMatrix MakePerspectiveMatrix(float FOVDegrees, float AspectRatio, float NearClip, float FarClip);
 
+	static FMatrix Transpose(const FMatrix& Mat);
+
 public:
 	FMatrix operator*(const FMatrix& Rhs) const;
 	FVector4 operator*(const FVector4& Vec) const;

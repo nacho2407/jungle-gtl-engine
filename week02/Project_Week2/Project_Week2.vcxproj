@@ -105,7 +105,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)GUI/Public;$(ProjectDir)Render/Public;$(ProjectDir)App;$(ProjectDir)Engine/Public;$(ProjectDir)Core/Public;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\Core\Public;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\Core;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\Engine;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\Engine\Public;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\GUI;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\GUI\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)GUI/Public;$(ProjectDir)ThirdParty;$(ProjectDir)Render/Public;$(ProjectDir)App;$(ProjectDir)Engine/Public;$(ProjectDir)Core/Public;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\Core\Public;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\Core;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\Engine;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\Engine\Public;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\GUI;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\GUI\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -139,7 +139,6 @@
     <ClInclude Include="Engine\Engine.h" />
     <ClInclude Include="Engine\Public\Actor\AActor.h" />
     <ClInclude Include="Engine\Public\Actor\APrimitiveActor.h" />
-    <ClInclude Include="Engine\Public\Camera\FCamera.h" />
     <ClInclude Include="Engine\Public\Component\UActorComponent.h" />
     <ClInclude Include="Engine\Public\Component\UCameraComponent.h" />
     <ClInclude Include="Engine\Public\Component\UCubeComponent.h" />
@@ -149,6 +148,7 @@
     <ClInclude Include="Engine\Public\Component\UStaticMeshComponent.h" />
     <ClInclude Include="Engine\Public\Component\UTriangleComponent.h" />
     <ClInclude Include="Engine\Public\Resource\BuiltInMeshFactory.h" />
+    <ClInclude Include="Engine\Public\Resource\MeshImporter.h" />
     <ClInclude Include="Engine\Public\Resource\MeshTypes.h" />
     <ClInclude Include="Engine\Public\Resource\UStaticMesh.h" />
     <ClInclude Include="Engine\Public\World\FScene.h" />
@@ -166,6 +166,7 @@
     <ClInclude Include="Render\Public\Geometry\Sphere.h" />
     <ClInclude Include="Render\Public\Structs.h" />
     <ClInclude Include="Render\Public\URenderer.h" />
+    <ClInclude Include="ThirdParty\Json\json.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App\FApplication.cpp" />
@@ -177,7 +178,6 @@
     <ClCompile Include="Core\Private\Math\FVector4.cpp" />
     <ClCompile Include="Core\Public\Math\FVector4.h" />
     <ClCompile Include="Engine\Private\Actor\AActor.cpp" />
-    <ClCompile Include="Engine\Private\Camera\FCamera.cpp" />
     <ClCompile Include="Engine\Private\Component\UActorComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\UCameraComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\UPrimitiveComponent.cpp" />
@@ -185,6 +185,7 @@
     <ClCompile Include="Engine\Private\Component\USphereComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\UStaticMeshComponent.cpp" />
     <ClCompile Include="Engine\Private\Resource\BuiltInMeshFactory.cpp" />
+    <ClCompile Include="Engine\Private\Resource\MeshImporter.cpp" />
     <ClCompile Include="Engine\Private\Resource\UStaticMesh.cpp" />
     <ClCompile Include="Render\Private\Geometry\Sphere.cpp" />
     <ClCompile Include="Engine\Public\Component\USphereComponent.h" />
@@ -202,6 +203,8 @@
     <ClCompile Include="Render\Private\URenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Assets\BlueSphere.bin" />
+    <None Include="Assets\BlueSphere.gltf" />
     <None Include="Render\Public\Shaders\Default.hlsl">
       <FileType>Document</FileType>
     </None>

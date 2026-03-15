@@ -173,3 +173,18 @@ FVector4 FMatrix::operator*(const FVector4& Vec) const
 		M[0][3] * Vec.X + M[1][3] * Vec.Y + M[2][3] * Vec.Z + M[3][3] * Vec.W
 	);
 }
+
+FMatrix FMatrix::Transpose(const FMatrix& Mat)
+{
+	FMatrix Result;
+
+	for (int Row = 0; Row < 4; ++Row)
+	{
+		for (int Col = 0; Col < 4; ++Col)
+		{
+			Result.M[Row][Col] = Mat.M[Col][Row];
+		}
+	}
+
+	return Result;
+}

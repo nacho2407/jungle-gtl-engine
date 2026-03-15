@@ -16,3 +16,11 @@ struct FVertexSimple
     FVertexSimple(float x, float y, float z, float r, float g, float b, float a)
         : Position(x, y, z), Color(r, g, b, a) {}
 };
+
+enum class EGizmoAxis
+{
+    None,
+    X,
+    Y,
+    Z
+};

@@ -2,7 +2,7 @@
 
 UCameraComponent::UCameraComponent()
     : FieldOfView(90.0f)
-    , AspectRatio(16.0f / 10.0f)
+    , AspectRatio(16.0f / 9.0f)
     , NearClip(0.1f)
     , FarClip(1000.0f)
 {
@@ -65,4 +65,30 @@ void UCameraComponent::SetFarClip(float InFarClip)
 float UCameraComponent::GetFarClip() const
 {
     return FarClip;
+}
+
+FMatrix UCameraComponent::GetProjectionMatrix() const
+{
+    return FMatrix::MakePerspectiveMatrix(
+        FieldOfView,
+        AspectRatio,
+        NearClip,
+        FarClip);
+}
+
+FMatrix UCameraComponent::GetViewMatrix() const
+{
+    return FMatrix::MakeViewMatrix(
+        GetRelativeLocation(),
+        GetRelativeRotation());
+}
+
+void UCameraComponent::UpdateAspectRatio(uint32 Width, uint32 Height)
+{
+    if (Height == 0)
+    {
+        return;
+    }
+
+    AspectRatio = static_cast<float>(Width) / static_cast<float>(Height);
 }

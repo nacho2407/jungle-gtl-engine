@@ -1,3 +1,5 @@
+#include <windowsx.h>
+
 #include "WindowsApplication.h"
 
 FWindowsApplication::FWindowsApplication()
@@ -123,6 +125,56 @@ bool FWindowsApplication::ConsumeResizeFlag() const
     return bWasResized;
 }
 
+bool FWindowsApplication::ConsumeLeftClick(int& OutX, int& OutY) const
+{
+    if (!bPendingLeftClick)
+    {
+        return false;
+    }
+
+    OutX = PendingClickX;
+    OutY = PendingClickY;
+    bPendingLeftClick = false;
+    return true;
+}
+
+bool FWindowsApplication::ConsumeLeftMouseDown(int& OutX, int& OutY) const
+{
+    if (!bPendingLeftMouseDown)
+    {
+        return false;
+    }
+
+    OutX = PendingMouseDownX;
+    OutY = PendingMouseDownY;
+    bPendingLeftMouseDown = false;
+    return true;
+}
+
+bool FWindowsApplication::ConsumeLeftMouseUp(int& OutX, int& OutY) const
+{
+    if (!bPendingLeftMouseUp)
+    {
+        return false;
+    }
+
+    OutX = PendingMouseUpX;
+    OutY = PendingMouseUpY;
+    bPendingLeftMouseUp = false;
+    return true;
+}
+
+bool FWindowsApplication::IsLeftMousePressed() const
+{
+    return bLeftMousePressed;
+}
+
+void FWindowsApplication::GetMousePosition(int& OutX, int& OutY) const
+{
+    OutX = MouseX;
+    OutY = MouseY;
+}
+
 LRESULT CALLBACK FWindowsApplication::StaticWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
     FWindowsApplication* App = nullptr;
@@ -158,7 +210,6 @@ LRESULT FWindowsApplication::WndProc(HWND InHWnd, UINT Msg, WPARAM wParam, LPARA
         bResized = true;
         return 0;
     }
-
     case WM_KEYDOWN:
     {
         if (wParam == VK_ESCAPE)
@@ -167,19 +218,38 @@ LRESULT FWindowsApplication::WndProc(HWND InHWnd, UINT Msg, WPARAM wParam, LPARA
         }
         return 0;
     }
-
     case WM_LBUTTONDOWN:
     {
-        // 나중에 InputSystem 연결 가능
+        MouseX = GET_X_LPARAM(lParam);
+        MouseY = GET_Y_LPARAM(lParam);
+
+        PendingMouseDownX = MouseX;
+        PendingMouseDownY = MouseY;
+        bPendingLeftMouseDown = true;
+        bLeftMousePressed = true;
+
+        SetCapture(InHWnd);
         return 0;
     }
+    case WM_LBUTTONUP:
+    {
+        MouseX = GET_X_LPARAM(lParam);
+        MouseY = GET_Y_LPARAM(lParam);
 
+        PendingMouseUpX = MouseX;
+        PendingMouseUpY = MouseY;
+        bPendingLeftMouseUp = true;
+        bLeftMousePressed = false;
+
+        ReleaseCapture();
+        return 0;
+    }
     case WM_MOUSEMOVE:
     {
-        // 나중에 마우스 좌표 입력 처리 가능
+        MouseX = GET_X_LPARAM(lParam);
+        MouseY = GET_Y_LPARAM(lParam);
         return 0;
     }
-
     case WM_DESTROY:
     {
         PostQuitMessage(0);
