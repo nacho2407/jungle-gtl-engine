@@ -3,6 +3,7 @@
 #include <windows.h>
 #include "FRay.h"
 #include "Structs.h"
+#include "Component/EGizmoAxis.h"
 
 class UWorld;
 class URenderer;

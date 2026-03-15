@@ -5,6 +5,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "CoreTypes.h"
+
 #include "World/FScene.h"
 #include "Math/FMatrix.h"
 #include "Structs.h"
@@ -28,6 +30,9 @@ public:
 	void EndFrame();
 
 	void Resize(UINT width, UINT Height);
+
+    // 마우스 위치에 따른 Hit Proxy 쿼리
+    const FRenderItem* PickPrimitiveProxy(int MouseX, int MouseY);
 
 public:
 	ID3D11Device* Device = nullptr;
@@ -93,6 +98,43 @@ private:
     D3D11_PRIMITIVE_TOPOLOGY ConvertTopology(EMeshTopology Topology) const;
     void DrawMeshItem(const FRenderItem& Item, const FMatrix& View, const FMatrix& Projection);
 
+    // Hit Proxy를 위한 버퍼 생성 / 해제
+    bool CreateHitProxyBuffer(UINT Width, UINT Height);
+    void ReleaseHitProxyBuffer();
+
+    // Hit Proxy를 위한 셰이더 생성 / 해제
+    bool CreateHitProxyShader(const wchar_t* ShaderPath);
+    void ReleaseHitProxyShader();
+
+    // Hit Proxy를 위한 별도의 파이프라인 준비
+    void PrepareHitProxyPipeline();
+
+    // Hit Proxy Pass 렌더
+    void RenderHitProxy(const FScene& Scene, const UCameraComponent* Camera);
+    void DrawHitProxyItem(const FRenderItem& Item, const FMatrix& View, const FMatrix& Projection, uint32 ProxyId);
+
+    // ID <> 픽셀 색상 변환
+    static FVector4 EncodeHitProxyIdColor(uint32 Id);
+    static uint32 DecodeHitProxyIdColor(uint8 R, uint8 G, uint8 B);
+
 private:
+
     std::unordered_map<UStaticMesh*, FMeshGPUResource> MeshResourceMap;
+
+    // Hit Proxy Pass 결과를 그리는 실제 텍스처
+    ID3D11Texture2D* HitProxyTexture = nullptr;
+
+    // HitProxyTexture를 렌더 타깃으로 쓰기 위한 뷰
+    ID3D11RenderTargetView* HitProxyRTV = nullptr;
+
+    // GPU 결과를 CPU가 읽기 위해 복사해 두는 스테이징 텍스처(Picking을 위해 선택된 곳의 색을 읽음)
+    ID3D11Texture2D* HitProxyReadbackTexture = nullptr; 
+
+    /* 일반 렌더링과 입력 레이아웃이나 정점 셰이더는 같은 것을 쓰지만, 픽셀 셰이더는 
+       ID 별로 색을 칠해줘야하기 때문에 일반 렌더링용 픽셀 셰이더와 별도로 제작 */
+    ID3D11PixelShader* HitProxyPixelShader = nullptr;
+
+    /* Hit Proxy Pass에서 각 RenderItem에 ID를 부여하고, Picking 결과
+       픽셀을 읽은 뒤 그 ID로 다시 RenderItem을 찾아내기 위한 맵 */
+    TMap<uint32, const FRenderItem*> HitProxyMap;
 };
