@@ -5,17 +5,6 @@
 
 namespace
 {
-    //std::vector<FVertexSimple> CreateCubeVertices()
-    //{
-    //    const float s = 0.5f;
-
-    //    return
-    //    {
-    //        FVertexSimple(-s, -s, -s, 1,0,0,1), FVertexSimple(-s, +s, -s, 1,0,0,1), FVertexSimple(+s, +s, -s, 1,0,0,1),
-    //        FVertexSimple(-s, -s, -s, 1,0,0,1), FVertexSimple(+s, +s, -s, 1,0,0,1), FVertexSimple(+s, -s, -s, 1,0,0,1),
-    //    };
-    //}
-
     std::vector<FVertexSimple> CreateTriangleVertices()
     {
         return
@@ -26,13 +15,13 @@ namespace
         };
     }
 
-    std::vector<FVertexSimple> CreateAxesVertices()
+    std::vector<FVertexSimple> CreateAxesVertices() // @@@ 이거 쓰고 있으면 Axes.h는 안 쓰고 있는 거 아닌가??
     {
         return
         {
-            FVertexSimple(0,0,0, 1,0,0,1), FVertexSimple(3,0,0, 1,0,0,1),
-            FVertexSimple(0,0,0, 0,1,0,1), FVertexSimple(0,3,0, 0,1,0,1),
-            FVertexSimple(0,0,0, 0,0,1,1), FVertexSimple(0,0,3, 0,0,1,1),
+            FVertexSimple(0,0,0, 1,0,0,1), FVertexSimple(5,0,0, 1,0,0,1),
+            FVertexSimple(0,0,0, 0,1,0,1), FVertexSimple(0,5,0, 0,1,0,1),
+            FVertexSimple(0,0,0, 0,0,1,1), FVertexSimple(0,0,5, 0,0,1,1),
         };
     }
 }

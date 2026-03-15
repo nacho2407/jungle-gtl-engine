@@ -371,6 +371,7 @@ void FApplication::Tick(float DeltaTime)
     }
 
     World->BuildScene(*Scene);
+    AddSelectionOutlineRenderItem();
 }
 
 void FApplication::RenderFrame()
@@ -854,4 +855,40 @@ void FApplication::EndGizmoDrag()
     ActiveGizmoAxis = EGizmoAxis::None;
     DragAxisDirection = FVector::ZeroVector;
     DragPlaneNormal = FVector::ZeroVector;
+}
+
+void FApplication::AddSelectionOutlineRenderItem()
+{
+    if (!SelectedActor || !Scene)
+    {
+        return;
+    }
+
+    UStaticMeshComponent* MeshComp = FindStaticMeshComponent(SelectedActor);
+    if (!MeshComp || !MeshComp->GetStaticMesh() || !MeshComp->IsVisible())
+    {
+        return;
+    }
+
+    const FVector BaseScale = MeshComp->GetRelativeScale();
+    const FVector OutlineScale(
+        BaseScale.X * 1.02f,
+        BaseScale.Y * 1.02f,
+        BaseScale.Z * 1.02f);
+
+    const FMatrix Scale = FMatrix::MakeScale(OutlineScale);
+    const FMatrix Rotation = FMatrix::MakeRotationXYZ(MeshComp->GetRelativeRotation());
+    const FMatrix Translation = FMatrix::MakeTranslation(MeshComp->GetRelativeLocation());
+
+    FRenderItem OutlineItem;
+    OutlineItem.Mesh = MeshComp->GetStaticMesh();
+    OutlineItem.WorldMatrix = Scale * Rotation * Translation;
+    OutlineItem.Color = FVector4(0.953f, 0.596f, 0.184f, 1.0f);
+
+    // backface 확장 outline 핵심
+    OutlineItem.CullMode = ERenderCullMode::Back;
+    OutlineItem.bDepthEnable = true;
+    OutlineItem.bUseVertexColor = false;
+
+    Scene->RenderItems.push_back(OutlineItem);
 }

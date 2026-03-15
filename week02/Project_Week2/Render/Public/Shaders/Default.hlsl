@@ -4,6 +4,8 @@ cbuffer Constants : register(b0)
     row_major float4x4 View;
     row_major float4x4 Projection;
     float4 BaseColor;
+    uint UseVertexColor;
+    float3 Padding;
 };
 
 struct VS_INPUT
@@ -25,7 +27,15 @@ PS_INPUT mainVS(VS_INPUT input)
     float4 worldPos = mul(float4(input.Pos, 1.0f), World);
     float4 viewPos = mul(worldPos, View);
     output.Pos = mul(viewPos, Projection);
-    output.Color = input.Color * BaseColor;
+    
+    if (UseVertexColor != 0)
+    {
+        output.Color = input.Color * BaseColor;
+    }
+    else
+    {
+        output.Color = BaseColor;
+    }
 
     return output;
 }

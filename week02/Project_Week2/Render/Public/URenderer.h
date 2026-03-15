@@ -9,6 +9,7 @@
 #include "Math/FMatrix.h"
 #include "Structs.h"
 #include "Resource/MeshTypes.h"
+#include "CoreTypes.h"
 
 class UStaticMesh;
 class UCameraComponent;
@@ -40,7 +41,17 @@ public:
 	ID3D11Texture2D* DepthStencilBuffer = nullptr;
 	ID3D11DepthStencilView* DepthStencilView = nullptr;
 
-	ID3D11RasterizerState* RasterizerState = nullptr;
+    // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	// 하이라이트 렌더링
+    //ID3D11RasterizerState* RasterizerState = nullptr;
+
+    ID3D11RasterizerState* RasterizerStateCullBack = nullptr;
+    ID3D11RasterizerState* RasterizerStateCullFront = nullptr;
+    ID3D11RasterizerState* RasterizerStateCullNone = nullptr;
+
+    ID3D11DepthStencilState* DepthStencilStateEnabled = nullptr;
+    ID3D11DepthStencilState* DepthStencilStateDisabled = nullptr;
+    // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 	ID3D11VertexShader* SimpleVertexShader = nullptr;
 	ID3D11PixelShader* SimplePixelShader = nullptr;
@@ -59,6 +70,8 @@ private:
         FMatrix View;
         FMatrix Projection;
         FVector4 Color;
+        uint32 bUseVertexColor;
+        float Padding[3];
     };
 
     struct FMeshGPUResource
@@ -74,20 +87,22 @@ private:
     bool CreateDeviceAndSwapChain(HWND hWindow);
     bool CreateFrameBuffer();
     bool CreateDepthStencilBuffer(UINT Width, UINT Height);
-    bool CreateRasterizerState();
+    bool CreateRasterizerStates();
+    bool CreateDepthStencilStates();
     bool CreateShader(const wchar_t* ShaderPath);
     bool CreateConstantBuffer();
 
     void ReleaseFrameBuffer();
     void ReleaseDepthStencilBuffer();
-    void ReleaseRasterizerState();
+    void ReleaseRasterizerStates();
+	void ReleaseDepthStencilStates();
     void ReleaseShader();
     void ReleaseConstantBuffer();
     void ReleaseDeviceAndSwapChain();
     void ReleaseMeshResources();
 
     void PreparePipeline();
-    void UpdateVSConstants(const FMatrix& World, const FMatrix& View, const FMatrix& Projection, const FVector4& Color);
+    void UpdateVSConstants(const FMatrix& World, const FMatrix& View, const FMatrix& Projection, const FVector4& Color, bool bUseVertexColor);
 
     bool GetOrCreateMeshResource(UStaticMesh* Mesh, FMeshGPUResource& OutResource);
     D3D11_PRIMITIVE_TOPOLOGY ConvertTopology(EMeshTopology Topology) const;

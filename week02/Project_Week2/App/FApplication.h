@@ -49,6 +49,8 @@ private:
     void UpdateGizmoDrag(int MouseX, int MouseY);
     void EndGizmoDrag();
 
+    void AddSelectionOutlineRenderItem();
+
 private:
     FWindowsApplication* WindowApp;
     URenderer* Renderer;

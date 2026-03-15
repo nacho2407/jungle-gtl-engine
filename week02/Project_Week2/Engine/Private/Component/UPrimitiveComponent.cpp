@@ -30,5 +30,8 @@ FRenderItem UPrimitiveComponent::CreateRenderItem() const
 	FRenderItem Item;
 	Item.WorldMatrix = GetWorldTransformMatrix();
 	Item.Mesh = nullptr;
+	Item.Color = FVector4(1, 1, 1, 1);
+	Item.CullMode = ERenderCullMode::Back; // @@@ 뭐하는 놈일까
+	Item.bDepthEnable = true; // @@@ 뭐하는 놈일까
 	return Item;
 }

@@ -71,7 +71,8 @@ bool URenderer::Create(HWND hWindow)
     SwapChain->GetDesc(&Desc);
 
     if (!CreateDepthStencilBuffer(Desc.BufferDesc.Width, Desc.BufferDesc.Height)) return false;
-    if (!CreateRasterizerState()) return false;
+    if (!CreateRasterizerStates()) return false;
+    if (!CreateDepthStencilStates()) return false;
     if (!CreateShader(L"Render\\Public\\Shaders\\Default.hlsl")) return false;
     if (!CreateConstantBuffer()) return false;
 
@@ -88,7 +89,8 @@ void URenderer::Release()
     ReleaseMeshResources();
     ReleaseConstantBuffer();
     ReleaseShader();
-    ReleaseRasterizerState();
+    ReleaseDepthStencilStates();
+    ReleaseRasterizerStates();
     ReleaseDepthStencilBuffer();
     ReleaseFrameBuffer();
     ReleaseDeviceAndSwapChain();
@@ -242,7 +244,7 @@ void URenderer::ReleaseDepthStencilBuffer()
     }
 }
 
-bool URenderer::CreateRasterizerState()
+bool URenderer::CreateRasterizerStates()
 {
     if (!Device)
     {
@@ -251,18 +253,90 @@ bool URenderer::CreateRasterizerState()
 
     D3D11_RASTERIZER_DESC Desc = {};
     Desc.FillMode = D3D11_FILL_SOLID;
-    Desc.CullMode = D3D11_CULL_BACK;
     Desc.DepthClipEnable = TRUE;
 
-    return SUCCEEDED(Device->CreateRasterizerState(&Desc, &RasterizerState));
+    Desc.CullMode = D3D11_CULL_BACK;
+    if (FAILED(Device->CreateRasterizerState(&Desc, &RasterizerStateCullBack)))
+    {
+        return false;
+    }
+
+    Desc.CullMode = D3D11_CULL_FRONT;
+    if (FAILED(Device->CreateRasterizerState(&Desc, &RasterizerStateCullFront)))
+    {
+        return false;
+    }
+
+    Desc.CullMode = D3D11_CULL_NONE;
+    if (FAILED(Device->CreateRasterizerState(&Desc, &RasterizerStateCullNone)))
+    {
+        return false;
+    }
+
+    return true;
 }
 
-void URenderer::ReleaseRasterizerState()
+void URenderer::ReleaseRasterizerStates()
 {
-    if (RasterizerState)
+    if (RasterizerStateCullBack)
     {
-        RasterizerState->Release();
-        RasterizerState = nullptr;
+        RasterizerStateCullBack->Release();
+        RasterizerStateCullBack = nullptr;
+    }
+
+    if (RasterizerStateCullFront)
+    {
+        RasterizerStateCullFront->Release();
+        RasterizerStateCullFront = nullptr;
+    }
+
+    if (RasterizerStateCullNone)
+    {
+        RasterizerStateCullNone->Release();
+        RasterizerStateCullNone = nullptr;
+    }
+}
+
+bool URenderer::CreateDepthStencilStates()
+{
+    if (!Device)
+    {
+        return false;
+    }
+
+    D3D11_DEPTH_STENCIL_DESC Desc = {};
+    Desc.DepthEnable = TRUE;
+    Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+    Desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+
+    if (FAILED(Device->CreateDepthStencilState(&Desc, &DepthStencilStateEnabled)))
+    {
+        return false;
+    }
+
+    Desc.DepthEnable = FALSE;
+    Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+
+    if (FAILED(Device->CreateDepthStencilState(&Desc, &DepthStencilStateDisabled)))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+void URenderer::ReleaseDepthStencilStates()
+{
+    if (DepthStencilStateEnabled)
+    {
+        DepthStencilStateEnabled->Release();
+        DepthStencilStateEnabled = nullptr;
+    }
+
+    if (DepthStencilStateDisabled)
+    {
+        DepthStencilStateDisabled->Release();
+        DepthStencilStateDisabled = nullptr;
     }
 }
 
@@ -394,7 +468,8 @@ void URenderer::PreparePipeline()
     DeviceContext->PSSetShader(SimplePixelShader, nullptr, 0);
 
     DeviceContext->RSSetViewports(1, &ViewportInfo);
-    DeviceContext->RSSetState(RasterizerState);
+    DeviceContext->RSSetState(RasterizerStateCullBack);
+    DeviceContext->OMSetDepthStencilState(DepthStencilStateEnabled, 0);
 
     DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView);
 
@@ -404,7 +479,7 @@ void URenderer::PreparePipeline()
     }
 }
 
-void URenderer::UpdateVSConstants(const FMatrix& World, const FMatrix& View, const FMatrix& Projection, const FVector4& Color)
+void URenderer::UpdateVSConstants(const FMatrix& World, const FMatrix& View, const FMatrix& Projection, const FVector4& Color, bool bUseVertexColor)
 {
     if (!ConstantBuffer)
     {
@@ -422,6 +497,7 @@ void URenderer::UpdateVSConstants(const FMatrix& World, const FMatrix& View, con
     Constants->View = View;
     Constants->Projection = Projection;
     Constants->Color = Color;
+    Constants->bUseVertexColor = bUseVertexColor ? 1u : 0u; // @@@ 1u, 0u가 뭐지
 
     DeviceContext->Unmap(ConstantBuffer, 0);
 }
@@ -520,10 +596,38 @@ void URenderer::DrawMeshItem(const FRenderItem& Item, const FMatrix& View, const
         return;
     }
 
-    UpdateVSConstants(Item.WorldMatrix, View, Projection, FVector4(1, 1, 1, 1));
+    ID3D11RasterizerState* TargetRS = RasterizerStateCullBack;
+    switch (Item.CullMode)
+    {
+    case ERenderCullMode::Back:
+        TargetRS = RasterizerStateCullBack;
+        break;
+    case ERenderCullMode::Front:
+        TargetRS = RasterizerStateCullFront;
+        break;
+    case ERenderCullMode::None:
+        TargetRS = RasterizerStateCullNone;
+        break;
+    }
+    DeviceContext->RSSetState(TargetRS);
+    DeviceContext->OMSetDepthStencilState(
+        Item.bDepthEnable ? DepthStencilStateEnabled : DepthStencilStateDisabled,
+        0);
+
+    UpdateVSConstants(Item.WorldMatrix, View, Projection, Item.Color, Item.bUseVertexColor);
 
     UINT Offset = 0;
     DeviceContext->IASetVertexBuffers(0, 1, &Resource.VertexBuffer, &Stride, &Offset);
+
+    if (Resource.IndexBuffer && Resource.IndexCount > 0)
+    {
+        DeviceContext->IASetIndexBuffer(Resource.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+    }
+    else
+    {
+        DeviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+    }
+
     DeviceContext->IASetPrimitiveTopology(Resource.Topology);
 
     if (Resource.IndexBuffer && Resource.IndexCount > 0)
