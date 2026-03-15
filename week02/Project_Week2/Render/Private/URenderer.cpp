@@ -13,6 +13,7 @@
 
 #include "Component/UCameraComponent.h"
 #include "Structs.h"
+#include "Resource/UStaticMesh.h"
 
 namespace
 {
@@ -147,43 +148,16 @@ URenderer::~URenderer()
 
 bool URenderer::Create(HWND hWindow)
 {
-    if (!CreateDeviceAndSwapChain(hWindow))
-    {
-        return false;
-    }
-
-    if (!CreateFrameBuffer())
-    {
-        return false;
-    }
+    if (!CreateDeviceAndSwapChain(hWindow)) { return false; }
+    if (!CreateFrameBuffer()) { return false; }
 
     DXGI_SWAP_CHAIN_DESC Desc = {};
     SwapChain->GetDesc(&Desc);
 
-    if (!CreateDepthStencilBuffer(Desc.BufferDesc.Width, Desc.BufferDesc.Height))
-    {
-        return false;
-    }
-
-    if (!CreateRasterizerState())
-    {
-        return false;
-    }
-
-    if (!CreateShader(L"Render\\Public\\Shaders\\Default.hlsl"))
-    {
-        return false;
-    }
-
-    if (!CreateConstantBuffer())
-    {
-        return false;
-    }
-
-    if (!CreateBuiltinGeometry())
-    {
-        return false;
-    }
+    if (!CreateDepthStencilBuffer(Desc.BufferDesc.Width, Desc.BufferDesc.Height)) return false;
+    if (!CreateRasterizerState()) return false;
+    if (!CreateShader(L"Render\\Public\\Shaders\\Default.hlsl")) return false;
+    if (!CreateConstantBuffer()) return false;
 
     return true;
 }
@@ -195,7 +169,7 @@ void URenderer::Release()
         DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
     }
 
-    ReleaseBuiltinGeometry();
+    ReleaseMeshResources();
     ReleaseConstantBuffer();
     ReleaseShader();
     ReleaseRasterizerState();
@@ -463,134 +437,32 @@ bool URenderer::CreateConstantBuffer()
     return SUCCEEDED(Device->CreateBuffer(&Desc, nullptr, &ConstantBuffer));
 }
 
+void URenderer::ReleaseMeshResources()
+{
+    for (auto& Pair : MeshResourceMap)
+    {
+        if (Pair.second.VertexBuffer)
+        {
+            Pair.second.VertexBuffer->Release();
+            Pair.second.VertexBuffer = nullptr;
+        }
+
+        if (Pair.second.IndexBuffer)
+        {
+            Pair.second.IndexBuffer->Release();
+            Pair.second.IndexBuffer = nullptr;
+        }
+    }
+
+    MeshResourceMap.clear();
+}
+
 void URenderer::ReleaseConstantBuffer()
 {
     if (ConstantBuffer)
     {
         ConstantBuffer->Release();
         ConstantBuffer = nullptr;
-    }
-}
-
-bool URenderer::CreateBuiltinGeometry()
-{
-    if (!Device)
-    {
-        return false;
-    }
-
-    {
-        const std::vector<FVertexSimple> Vertices = CreateCubeVertices();
-
-        D3D11_BUFFER_DESC Desc = {};
-        Desc.ByteWidth = static_cast<UINT>(Vertices.size() * sizeof(FVertexSimple));
-        Desc.Usage = D3D11_USAGE_IMMUTABLE;
-        Desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-
-        D3D11_SUBRESOURCE_DATA Data = {};
-        Data.pSysMem = Vertices.data();
-
-        if (FAILED(Device->CreateBuffer(&Desc, &Data, &CubeVertexBuffer)))
-        {
-            return false;
-        }
-
-        CubeVertexCount = static_cast<UINT>(Vertices.size());
-    }
-
-    {
-        const std::vector<FVertexSimple> Vertices = CreateSphereVertices();
-
-        D3D11_BUFFER_DESC Desc = {};
-        Desc.ByteWidth = sphere_vertex_count * sizeof(FVertexSimple);
-        Desc.Usage = D3D11_USAGE_IMMUTABLE;
-        Desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-
-        D3D11_SUBRESOURCE_DATA Data = {};
-        Data.pSysMem = sphere_vertices;
-
-        if (FAILED(Device->CreateBuffer(&Desc, &Data, &SphereVertexBuffer)))
-        {
-            return false;
-        }
-
-        SphereVertexCount = static_cast<UINT>(sphere_vertex_count);
-    }
-
-    if (!CreateAxesGeometry())
-    {
-        return false;
-    }
-
-    return true;
-}
-
-bool URenderer::CreateAxesGeometry()
-{
-    if (!Device)
-    {
-        return false;
-    }
-
-    D3D11_BUFFER_DESC Desc = {};
-    Desc.ByteWidth = sizeof(axes_vertices);
-    Desc.Usage = D3D11_USAGE_IMMUTABLE;
-    Desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-
-    D3D11_SUBRESOURCE_DATA Data = {};
-    Data.pSysMem = axes_vertices;
-
-    if (FAILED(Device->CreateBuffer(&Desc, &Data, &AxesVertexBuffer)))
-    {
-        return false;
-    }
-
-    AxesVertexCount = static_cast<UINT>(std::size(axes_vertices));
-    return true;
-}
-
-void URenderer::DrawAxes(const FMatrix& View, const FMatrix& Projection)
-{
-    if (!AxesVertexBuffer || AxesVertexCount == 0)
-    {
-        return;
-    }
-
-    // 축은 월드 원점 기준으로 그대로 그림
-    UpdateVSConstants(FMatrix::Identity, View, Projection, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
-
-    UINT Offset = 0;
-    DeviceContext->IASetVertexBuffers(0, 1, &AxesVertexBuffer, &Stride, &Offset);
-
-    // 축은 선분이므로 LINELIST
-    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-    DeviceContext->Draw(AxesVertexCount, 0);
-
-    // 다른 primitive는 triangle list를 쓰니까 다시 원복
-    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-}
-
-void URenderer::ReleaseBuiltinGeometry()
-{
-    if (CubeVertexBuffer)
-    {
-        CubeVertexBuffer->Release();
-        CubeVertexBuffer = nullptr;
-        CubeVertexCount = 0;
-    }
-
-    if (SphereVertexBuffer)
-    {
-        SphereVertexBuffer->Release();
-        SphereVertexBuffer = nullptr;
-        SphereVertexCount = 0;
-    }
-
-    if (AxesVertexBuffer)
-    {
-        AxesVertexBuffer->Release();
-        AxesVertexBuffer = nullptr;
-        AxesVertexCount = 0;
     }
 }
 
@@ -666,11 +538,9 @@ void URenderer::Render(const FScene& Scene, const UCameraComponent* Camera)
             Camera->GetFarClip());
     }
 
-    DrawAxes(View, Projection);
-
     for (const FRenderItem& Item : Scene.RenderItems)
     {
-        DrawRenderItem(Item, View, Projection);
+        DrawMeshItem(Item, View, Projection);
     }
 }
 
@@ -707,61 +577,108 @@ void URenderer::Resize(UINT Width, UINT Height)
     ViewportInfo.MaxDepth = 1.0f;
 }
 
-void URenderer::DrawRenderItem(const FRenderItem& Item, const FMatrix& View, const FMatrix& Projection)
+void URenderer::DrawMeshItem(const FRenderItem& Item, const FMatrix& View, const FMatrix& Projection)
 {
-    switch (Item.PrimitiveType)
+    if (!Item.Mesh)
     {
-    case EPrimitiveType::Sphere:
-        DrawSphere(Item, View, Projection);
-        break;
+        return;
+    }
 
-    case EPrimitiveType::Cube:
-        DrawCube(Item, View, Projection);
-        break;
+    FMeshGPUResource Resource;
+    if (!GetOrCreateMeshResource(Item.Mesh, Resource))
+    {
+        return;
+    }
 
-    case EPrimitiveType::StaticMesh:
-        DrawStaticMesh(Item, View, Projection);
-        break;
+    UpdateVSConstants(Item.WorldMatrix, View, Projection, FVector4(1, 1, 1, 1));
 
+    UINT Offset = 0;
+    DeviceContext->IASetVertexBuffers(0, 1, &Resource.VertexBuffer, &Stride, &Offset);
+    DeviceContext->IASetPrimitiveTopology(Resource.Topology);
+
+    if (Resource.IndexBuffer && Resource.IndexCount > 0)
+    {
+        DeviceContext->IASetIndexBuffer(Resource.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+        DeviceContext->DrawIndexed(Resource.IndexCount, 0, 0);
+    }
+    else
+    {
+        DeviceContext->Draw(Resource.VertexCount, 0);
+    }
+}
+
+bool URenderer::GetOrCreateMeshResource(UStaticMesh* Mesh, FMeshGPUResource& OutResource)
+{
+    if (!Mesh)
+    {
+        return false;
+    }
+
+    auto Found = MeshResourceMap.find(Mesh);
+    if (Found != MeshResourceMap.end())
+    {
+        OutResource = Found->second;
+        return true;
+    }
+
+    const std::vector<FVertexSimple>& Vertices = Mesh->GetVertices();
+    if (Vertices.empty())
+    {
+        return false;
+    }
+
+    FMeshGPUResource Resource;
+    Resource.VertexCount = static_cast<UINT>(Vertices.size());
+    Resource.IndexCount = Mesh->GetIndexCount();
+    Resource.Topology = ConvertTopology(Mesh->GetTopology());
+
+    D3D11_BUFFER_DESC VBDesc = {};
+    VBDesc.ByteWidth = static_cast<UINT>(Vertices.size() * sizeof(FVertexSimple));
+    VBDesc.Usage = D3D11_USAGE_IMMUTABLE;
+    VBDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+
+    D3D11_SUBRESOURCE_DATA VBData = {};
+    VBData.pSysMem = Vertices.data();
+
+    if (FAILED(Device->CreateBuffer(&VBDesc, &VBData, &Resource.VertexBuffer)))
+    {
+        return false;
+    }
+
+    if (Mesh->HasIndices())
+    {
+        const std::vector<uint32_t>& Indices = Mesh->GetIndices();
+
+        D3D11_BUFFER_DESC IBDesc = {};
+        IBDesc.ByteWidth = static_cast<UINT>(Indices.size() * sizeof(uint32_t));
+        IBDesc.Usage = D3D11_USAGE_IMMUTABLE;
+        IBDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+
+        D3D11_SUBRESOURCE_DATA IBData = {};
+        IBData.pSysMem = Indices.data();
+
+        if (FAILED(Device->CreateBuffer(&IBDesc, &IBData, &Resource.IndexBuffer)))
+        {
+            Resource.VertexBuffer->Release();
+            Resource.VertexBuffer = nullptr;
+            return false;
+        }
+    }
+
+    MeshResourceMap[Mesh] = Resource;
+    OutResource = Resource;
+    return true;
+}
+
+D3D11_PRIMITIVE_TOPOLOGY URenderer::ConvertTopology(EMeshTopology Topology) const
+{
+    switch (Topology)
+    {
+    case EMeshTopology::LineList:
+        return D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+
+    case EMeshTopology::TriangleList:
     default:
-        break;
+        return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
     }
-}
-
-void URenderer::DrawSphere(const FRenderItem& Item, const FMatrix& View, const FMatrix& Projection)
-{
-    if (!SphereVertexBuffer || SphereVertexCount == 0)
-    {
-        return;
-    }
-
-    FMatrix Scale = FMatrix::MakeScale(FVector(Item.SphereRadius, Item.SphereRadius, Item.SphereRadius));
-    FMatrix World = Scale * Item.WorldMatrix;
-
-    UpdateVSConstants(World, View, Projection, FVector4(0.7f, 0.85f, 1.0f, 1.0f));
-
-    UINT Offset = 0;
-    DeviceContext->IASetVertexBuffers(0, 1, &SphereVertexBuffer, &Stride, &Offset);
-    DeviceContext->Draw(SphereVertexCount, 0);
-}
-
-void URenderer::DrawCube(const FRenderItem& Item, const FMatrix& View, const FMatrix& Projection)
-{
-    if (!CubeVertexBuffer || CubeVertexCount == 0)
-    {
-        return;
-    }
-
-    UpdateVSConstants(Item.WorldMatrix, View, Projection, FVector4(1.0f, 1.0f, 1.0f, 1.0f));
-
-    UINT Offset = 0;
-    DeviceContext->IASetVertexBuffers(0, 1, &CubeVertexBuffer, &Stride, &Offset);
-    DeviceContext->Draw(CubeVertexCount, 0);
-}
-
-void URenderer::DrawStaticMesh(const FRenderItem& Item, const FMatrix& View, const FMatrix& Projection)
-{
-    // 아직 Mesh Asset 시스템을 안 만들었으므로
-    // 현재는 임시로 Cube처럼 렌더링.
-    DrawCube(Item, View, Projection);
 }

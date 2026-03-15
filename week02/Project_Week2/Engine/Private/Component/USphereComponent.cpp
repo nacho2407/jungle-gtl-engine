@@ -3,7 +3,6 @@
 USphereComponent::USphereComponent()
     : Radius(50.0f)
 {
-    SetPrimitiveType(EPrimitiveType::Sphere);
 }
 
 USphereComponent::~USphereComponent()
@@ -33,11 +32,4 @@ void USphereComponent::SetRadius(float InRadius)
 float USphereComponent::GetRadius() const
 {
     return Radius;
-}
-
-FRenderItem USphereComponent::CreateRenderItem() const
-{
-    FRenderItem Item = UPrimitiveComponent::CreateRenderItem();
-    Item.SphereRadius = Radius;
-    return Item;
 }

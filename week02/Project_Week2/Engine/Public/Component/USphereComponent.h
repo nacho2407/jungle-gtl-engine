@@ -17,8 +17,6 @@ public:
     void SetRadius(float InRadius);
     float GetRadius() const;
 
-    virtual FRenderItem CreateRenderItem() const override;
-
 private:
     float Radius;
 };

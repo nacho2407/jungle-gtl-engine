@@ -9,6 +9,10 @@
 #include "Actor/AActor.h"
 #include "Component/UCameraComponent.h"
 #include "Component/USphereComponent.h"
+#include "Geometry/Sphere.h"
+#include "Resource/UStaticMesh.h"
+#include "Component/UStaticMeshComponent.h"
+#include "Resource/BuiltInMeshFactory.h"
 
 #include "Math/FVector.h"
 
@@ -22,6 +26,10 @@ FApplication::FApplication()
     , CameraActor(nullptr)
     , MainCamera(nullptr)
     , bIsRunning(false)
+    , SphereMesh(nullptr)
+    , CubeMesh(nullptr)
+    , TriangleMesh(nullptr)
+    , AxesMesh(nullptr)
 {
 }
 
@@ -39,6 +47,11 @@ bool FApplication::Initialize(HINSTANCE hInstance)
     }
 
     if (!InitializeEngine())
+    {
+        return false;
+    }
+
+    if (!InitializeResources())
     {
         return false;
     }
@@ -66,6 +79,16 @@ bool FApplication::InitializeEngine()
     return true;
 }
 
+bool FApplication::InitializeResources()
+{
+    SphereMesh = BuiltInMeshFactory::CreateSphereMesh();
+    CubeMesh = BuiltInMeshFactory::CreateCubeMesh();
+    TriangleMesh = BuiltInMeshFactory::CreateTriangleMesh();
+    AxesMesh = BuiltInMeshFactory::CreateAxesMesh();
+
+    return true;
+}
+
 bool FApplication::InitializeScene()
 {
     // 카메라 액터
@@ -74,7 +97,7 @@ bool FApplication::InitializeScene()
 
     // 카메라가 바라보는 월드 수정 
     MainCamera->SetRelativeLocation(FVector(0.0f, 0.0f, -5.0f));
-    MainCamera->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
+    MainCamera->SetRelativeRotation(FVector(0.0f, 0.6f, 0.0f));
     MainCamera->SetFieldOfView(90.0f);
     MainCamera->SetAspectRatio(
         static_cast<float>(WindowApp->GetClientWidth()) /
@@ -87,20 +110,43 @@ bool FApplication::InitializeScene()
 
     World->AddActor(CameraActor);
 
-    // 테스트용 구 하나
-    AActor* SphereActor = new AActor();
-    USphereComponent* SphereComp = new USphereComponent();
+    // Sphere
+    {
+        AActor* Actor = new AActor();
+        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
+        MeshComp->SetStaticMesh(SphereMesh);
+        MeshComp->SetRelativeLocation(FVector(-2.0f, 0.0f, 5.0f));
+        MeshComp->SetRelativeScale(FVector(3.0f, 3.0f, 3.0f));
+        Actor->AddComponent(MeshComp);
+        Actor->SetRootComponent(MeshComp);
+        World->AddActor(Actor);
+    }
 
-    SphereComp->SetRadius(1.0f);
-    SphereComp->SetRelativeLocation(FVector(0.0f, 0.0f, 5.0f));
+    // Cube
+    {
+        AActor* Actor = new AActor();
+        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
+        MeshComp->SetStaticMesh(CubeMesh);
+        MeshComp->SetRelativeLocation(FVector(2.0f, 0.0f, 5.0f));
+        Actor->AddComponent(MeshComp);
+        Actor->SetRootComponent(MeshComp);
+        World->AddActor(Actor);
+    }
 
-    SphereActor->AddComponent(SphereComp);
-    SphereActor->SetRootComponent(SphereComp);
-
-    World->AddActor(SphereActor);
+    // Axes
+    {
+        AActor* Actor = new AActor();
+        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
+        MeshComp->SetStaticMesh(AxesMesh);
+        MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
+        Actor->AddComponent(MeshComp);
+        Actor->SetRootComponent(MeshComp);
+        World->AddActor(Actor);
+    }
 
     return true;
 }
+
 
 int FApplication::Run()
 {
@@ -143,6 +189,13 @@ void FApplication::MainLoop()
         auto CurrentTime = Clock::now();
         std::chrono::duration<float> Delta = CurrentTime - PrevTime;
         PrevTime = CurrentTime;
+
+
+
+        // test
+        FVector Rot = MainCamera->GetRelativeRotation();
+        Rot.Y += 0.01f;
+        MainCamera->SetRelativeRotation(Rot);
 
         Tick(Delta.count());
         RenderFrame();

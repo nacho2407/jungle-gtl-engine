@@ -8,6 +8,7 @@ class UCameraComponent;
 class AActor;
 class FScene;
 class FWindowsApplication;
+class UStaticMesh;
 
 class FApplication
 {
@@ -22,6 +23,7 @@ public:
 
 private:
     bool InitializeEngine();
+    bool InitializeResources();
     bool InitializeScene();
     void MainLoop();
     void Tick(float DeltaTime);
@@ -35,6 +37,10 @@ private:
 
     AActor* CameraActor;
     UCameraComponent* MainCamera;
+    UStaticMesh* SphereMesh;
+    UStaticMesh* CubeMesh;
+    UStaticMesh* TriangleMesh;
+    UStaticMesh* AxesMesh;
 
     bool bIsRunning;
 };

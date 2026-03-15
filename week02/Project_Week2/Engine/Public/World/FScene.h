@@ -4,21 +4,12 @@
 #include <string>
 #include "Math/FMatrix.h"
 
-enum class EPrimitiveType
-{
-	None,
-	Sphere,
-	Cube,
-	StaticMesh
-};
+class UStaticMesh;
 
 struct FRenderItem
 {
 	FMatrix WorldMatrix = FMatrix::Identity;
-	EPrimitiveType PrimitiveType = EPrimitiveType::None;
-
-	float SphereRadius = 0.0f; // @@@ Sphere만을 위한건데 이렇게 처리해야함??
-	std::string MeshName;
+	UStaticMesh* Mesh = nullptr;
 };
 
 class FScene

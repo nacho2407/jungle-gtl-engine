@@ -2,7 +2,7 @@
 
 UCameraComponent::UCameraComponent()
     : FieldOfView(90.0f)
-    , AspectRatio(16.0f / 9.0f)
+    , AspectRatio(16.0f / 10.0f)
     , NearClip(0.1f)
     , FarClip(1000.0f)
 {

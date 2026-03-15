@@ -1,9 +1,8 @@
 #include "Component/UStaticMeshComponent.h"
 
 UStaticMeshComponent::UStaticMeshComponent()
-    : MeshName("")
+    : StaticMesh(nullptr)
 {
-    SetPrimitiveType(EPrimitiveType::StaticMesh);
 }
 
 UStaticMeshComponent::~UStaticMeshComponent()
@@ -25,19 +24,19 @@ const char* UStaticMeshComponent::GetObjClassName() const
     return "UStaticMeshComponent";
 }
 
-void UStaticMeshComponent::SetMeshName(const std::string& InMeshName)
+void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InMesh)
 {
-    MeshName = InMeshName;
+    StaticMesh = InMesh;
 }
 
-const std::string& UStaticMeshComponent::GetMeshName() const
+UStaticMesh* UStaticMeshComponent::GetStaticMesh() const
 {
-    return MeshName;
+    return StaticMesh;
 }
 
 FRenderItem UStaticMeshComponent::CreateRenderItem() const
 {
     FRenderItem Item = UPrimitiveComponent::CreateRenderItem();
-    Item.MeshName = MeshName;
+    Item.Mesh = StaticMesh;
     return Item;
 }

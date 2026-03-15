@@ -148,6 +148,9 @@
     <ClInclude Include="Engine\Public\Component\USceneComponent.h" />
     <ClInclude Include="Engine\Public\Component\UStaticMeshComponent.h" />
     <ClInclude Include="Engine\Public\Component\UTriangleComponent.h" />
+    <ClInclude Include="Engine\Public\Resource\BuiltInMeshFactory.h" />
+    <ClInclude Include="Engine\Public\Resource\MeshTypes.h" />
+    <ClInclude Include="Engine\Public\Resource\UStaticMesh.h" />
     <ClInclude Include="Engine\Public\World\FScene.h" />
     <ClInclude Include="Engine\Public\World\UWorld.h" />
     <ClInclude Include="GUI\GUI.h" />
@@ -181,6 +184,8 @@
     <ClCompile Include="Engine\Private\Component\USceneComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\USphereComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\UStaticMeshComponent.cpp" />
+    <ClCompile Include="Engine\Private\Resource\BuiltInMeshFactory.cpp" />
+    <ClCompile Include="Engine\Private\Resource\UStaticMesh.cpp" />
     <ClCompile Include="Render\Private\Geometry\Sphere.cpp" />
     <ClCompile Include="Engine\Public\Component\USphereComponent.h" />
     <ClCompile Include="Engine\Private\World\FScene.cpp" />
@@ -195,7 +200,6 @@
     <ClCompile Include="GUI\Private\imgui_tables.cpp" />
     <ClCompile Include="GUI\Private\imgui_widgets.cpp" />
     <ClCompile Include="Render\Private\URenderer.cpp" />
-
   </ItemGroup>
   <ItemGroup>
     <None Include="Render\Public\Shaders\Default.hlsl">

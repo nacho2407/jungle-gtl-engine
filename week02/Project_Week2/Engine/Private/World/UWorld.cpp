@@ -84,7 +84,12 @@ void UWorld::BuildScene(FScene& OutScene) const
                 continue;
             }
 
-            OutScene.RenderItems.push_back(PrimitiveComponent->CreateRenderItem());
+            FRenderItem Item = PrimitiveComponent->CreateRenderItem();
+            if (Item.Mesh == nullptr)
+            {
+                continue;
+            }
+            OutScene.RenderItems.push_back(Item);
         }
     }
 }
