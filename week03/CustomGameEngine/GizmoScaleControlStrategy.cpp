@@ -73,13 +73,13 @@ void GizmoScaleControlStrategy::BeginDrag(const Ray& ray)
 	switch (Controller->GetHoverAxis())
 	{
 	case GizmoControllerAxis::X:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector(1, 0, 0));
+		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Forward());
 		break;
 	case GizmoControllerAxis::Y:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector(0, 0, 1));
+		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Right());
 		break;
 	case GizmoControllerAxis::Z:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector(0, 1, 0));
+		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Up());
 		break;
 	}
 
@@ -96,13 +96,13 @@ void GizmoScaleControlStrategy::UpdateDrag(const Ray& ray)
 	switch (Controller->GetHoverAxis())
 	{
 	case GizmoControllerAxis::X:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector(1, 0, 0));
+		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Forward());
 		break;
 	case GizmoControllerAxis::Y:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector(0, 0, 1));
+		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Right());
 		break;
 	case GizmoControllerAxis::Z:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector(0, 1, 0));
+		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Up());
 		break;
 	}
 
@@ -115,8 +115,8 @@ void GizmoScaleControlStrategy::UpdateDrag(const Ray& ray)
 	FVector newScale = InitialObjectScale;
 	float Sensitivity = 1.0f;
 
-	if (Controller->GetHoverAxis() == GizmoControllerAxis::X) newScale.x += deltaT * Sensitivity;
-	else if (Controller->GetHoverAxis() == GizmoControllerAxis::Y) newScale.z += deltaT * Sensitivity;
+	if (Controller->GetHoverAxis() == GizmoControllerAxis::X) newScale.z += deltaT * Sensitivity;
+	else if (Controller->GetHoverAxis() == GizmoControllerAxis::Y) newScale.x += deltaT * Sensitivity;
 	else if (Controller->GetHoverAxis() == GizmoControllerAxis::Z) newScale.y += deltaT * Sensitivity;
 
 	Controller->GetAttachedComponent()->SetRelativeScale3D(newScale);

@@ -62,21 +62,8 @@ void GizmoRotationControlStrategy::UpdateRenderObject()
 
 void GizmoRotationControlStrategy::BeginDrag(const Ray& ray)
 {
-	FVector axisDir;
-	switch (Controller->GetHoverAxis())
-	{
-	case GizmoControllerAxis::X:
-		axisDir = FVector(1, 0, 0);
-		break;
-	case GizmoControllerAxis::Y:
-		axisDir = FVector(0, 0, 1);
-		break;
-	case GizmoControllerAxis::Z:
-		axisDir = FVector(0, 1, 0);
-		break;
-	}
-
 	InitialTouchPoint = ray.Origin;
+	InitialObjectRotation = Controller->GetAttachedComponent()->GetRelativeRotation();
 }
 
 void GizmoRotationControlStrategy::UpdateDrag(const Ray& ray)
@@ -84,19 +71,17 @@ void GizmoRotationControlStrategy::UpdateDrag(const Ray& ray)
 	FVector currTouchPoint = ray.Origin;
 	float diff = currTouchPoint.y - InitialTouchPoint.y;
 
-	UE_LOG("Diff: %f", diff);
-
 	FVector currRotation = Controller->GetAttachedComponent()->GetRelativeRotation();
 	switch (Controller->GetHoverAxis())
 	{
 	case GizmoControllerAxis::X:
-		currRotation.x = InitialObjectRotation.x + diff * 1000.0f;
+		currRotation.z = InitialObjectRotation.z + diff * 1000.0f;
 		break;
 	case GizmoControllerAxis::Y:
-		currRotation.z = InitialObjectRotation.y + diff * 1000.0f;
+		currRotation.x = InitialObjectRotation.x + diff * 1000.0f;
 		break;
 	case GizmoControllerAxis::Z:
-		currRotation.y = InitialObjectRotation.z + diff * 1000.0f;
+		currRotation.y = InitialObjectRotation.y + diff * 1000.0f;
 		break;
 	}
 

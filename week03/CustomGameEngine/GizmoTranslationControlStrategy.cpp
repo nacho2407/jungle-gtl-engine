@@ -5,6 +5,7 @@
 #include "GizmoController.h"
 #include "USceneComponent.h"
 #include "URender.h"
+#include "Logger.h"
 
 GizmoTranslationControlStrategy::GizmoTranslationControlStrategy(GizmoController* controller)
 {
@@ -68,13 +69,13 @@ void GizmoTranslationControlStrategy::BeginDrag(const Ray& ray)
 	switch (Controller->GetHoverAxis())
 	{
 	case GizmoControllerAxis::X:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector(1, 0, 0));
+		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Forward());
 		break;
 	case GizmoControllerAxis::Y:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector(0, 0, 1));
+		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Right());
 		break;
 	case GizmoControllerAxis::Z:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector(0, 1, 0));
+		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Up());
 		break;
 	}
 
@@ -91,13 +92,13 @@ void GizmoTranslationControlStrategy::UpdateDrag(const Ray& ray)
 	switch (Controller->GetHoverAxis())
 	{
 	case GizmoControllerAxis::X:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector(1, 0, 0));
+		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Forward());
 		break;
 	case GizmoControllerAxis::Y:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector(0, 0, 1));
+		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Right());
 		break;
 	case GizmoControllerAxis::Z:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector(0, 1, 0));
+		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Up());
 		break;
 	}
 
@@ -108,7 +109,8 @@ void GizmoTranslationControlStrategy::UpdateDrag(const Ray& ray)
 	float currentT = Controller->GetClosestPointOnAxis(ray, worldOrigin, worldAxisDir);
 	float deltaT = currentT - InitialDragOffset;
 
-	Controller->GetAttachedComponent()->SetRelativeLocation(Controller->GetAttachedComponent()->GetRelativeLocation() + worldAxisDir * deltaT);
+	FVector newPos = Controller->GetAttachedComponent()->GetRelativeLocation() + axisDir * deltaT;
+	Controller->GetAttachedComponent()->SetRelativeLocation(newPos);
 }
 
 void GizmoTranslationControlStrategy::EndDrag()
