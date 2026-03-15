@@ -27,7 +27,7 @@ void GizmoRotationControlStrategy::Update()
 {
 }
 
-void GizmoRotationControlStrategy::Draw()
+void GizmoRotationControlStrategy::UpdateRenderObject()
 {
 	ResourceManager* resourceManager = ResourceManager::GetInstance();
 

@@ -32,7 +32,7 @@ void GizmoScaleControlStrategy::Update()
 {
 }
 
-void GizmoScaleControlStrategy::Draw()
+void GizmoScaleControlStrategy::UpdateRenderObject()
 {
 	ResourceManager* resourceManager = ResourceManager::GetInstance();
 

@@ -63,7 +63,7 @@ void GizmoController::UpdateRenderObject()
 	if (AttachedComponent == nullptr) return;
 	if (CurrentStrategy == nullptr) return;
 
-	CurrentStrategy->Draw();
+	CurrentStrategy->UpdateRenderObject();
 
 	return;
 }
