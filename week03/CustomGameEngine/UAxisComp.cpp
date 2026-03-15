@@ -12,19 +12,6 @@ UAxisComp::~UAxisComp()
 {
 }
 
-URenderObject* UAxisComp::Render()
-{
-	UObject* renderObj = FObjectFactory::ConstructObject(URenderObject::GetClass());
-	URenderObject* RenderObj = dynamic_cast<URenderObject*>(renderObj);
-	ResourceManager* RM = ResourceManager::GetInstance();
-
-	RenderObj->Geometry = &RM->GetGeometry("Axis");
-	RenderObj->Material = &RM->GetMaterial(L"ShaderW0.hlsl");
-	RenderObj->World = GetRelativeMatrix();
-	RenderObj->bIsLine = true;
-
-	return RenderObj;
-}
 
 void UAxisComp::Update(float DeltaTime)
 {

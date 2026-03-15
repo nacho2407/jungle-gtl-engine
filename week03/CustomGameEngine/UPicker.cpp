@@ -64,7 +64,6 @@ void UPicker::Pick(int ScreenX, int ScreenY, UCamera* Camera, UScene* Scene)
 		UE_LOG("Hit Object at Distance : %f", MinDistance);
 		EditorPtr->SelectComponent(ClosestComp);
 		Scene->IsCompSelected = true;
-		Scene->SelectedCompPos = ClosestComp->RelativeLocation;
 	}
 	else
 	{

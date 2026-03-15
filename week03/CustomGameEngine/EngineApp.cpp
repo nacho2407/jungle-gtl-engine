@@ -142,8 +142,6 @@ void EngineApp::Run()
 	Cube->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
 
 	UCubeComp* Cube3 = Cast<UCubeComp>(FObjectFactory::ConstructObject(UCubeComp::GetClass()));
-	Cube3->RelativeLocation = FVector(5.f, 0.f, 0.f);
-	Cube3->RelativeScale3D = FVector(1.f, 1.f, 1.f);
 
 	UObject* mainAxis = FObjectFactory::ConstructObject(UAxisComp::GetClass());
 

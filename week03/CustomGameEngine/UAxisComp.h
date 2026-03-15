@@ -7,7 +7,6 @@ class UAxisComp : public UPrimitiveComponent
 public:
 	UAxisComp();
 	virtual ~UAxisComp() override;
-	virtual URenderObject* Render() override;
 	virtual void Update(float DeltaTime) override;
 };
 
