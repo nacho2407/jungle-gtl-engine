@@ -12,8 +12,6 @@ void UCamera::SetPosition(const FVector& _input) {
 }
 
 void UCamera::Move(float DeltaTime) {
-	if (!InputManager::GetInstance().IsKeyHold(VK_RBUTTON))
-		return;
 	if (InputManager::GetInstance().IsKeyHold('W') &&
 		!InputManager::GetInstance().IsKeyHold('S')) {
 		Position = Position + Direction * MoveSpeed * DeltaTime;
@@ -65,8 +63,6 @@ void UCamera::SetDirection(const float InputPitch, const float InputYaw,
 
 void UCamera::Rotate(float DeltaTime)
 {
-	if (!InputManager::GetInstance().IsKeyHold(VK_RBUTTON))
-		return;
 	Yaw += (InputManager::GetInstance().MouseDelta.x * RotateSensitivity * DeltaTime);
 	Pitch += (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
 
@@ -77,43 +73,27 @@ void UCamera::Rotate(float DeltaTime)
 	IsChanged = true;
 }
 
-void UCamera::OrbitRotate(FVector* Pivot, float DeltaTime)
+void UCamera::OrbitRotate(float DeltaTime)
 {
-	FVector TargetPivot;
-	if (Pivot == nullptr) {
-		TargetPivot = Position + Direction * 30.0f;
-	}
-	else {
-		TargetPivot = *Pivot;
-	}
+	Yaw -= (InputManager::GetInstance().MouseDelta.x * RotateSensitivity * DeltaTime);
+	Pitch -= (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
 
-	float DeltaYaw = FMatrix::DegToRad(InputManager::GetInstance().MouseDelta.x * RotateSensitivity * DeltaTime);
-	float DeltaPitch = FMatrix::DegToRad(InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
+	const float Limit = 89.9f;
+	if (Pitch > Limit) Pitch = Limit;
+	if (Pitch < -Limit) Pitch = -Limit;
 
-	// 3. 로컬 공간으로 이동 (피벗을 원점 0,0,0 으로 간주)
-	FVector LocalPos = Position - TargetPivot;
+	float Distance = FocusLength;
 
-	// 4. 로컬 공간에서 회전 적용
-	FVector UpAxis(0.0f, 1.0f, 0.0f);
+	float PitchRad = FMatrix::DegToRad(-Pitch);
+	float YawRad = FMatrix::DegToRad(Yaw);
 
-	// 4-1. Yaw 회전 (월드 Up축 기준)
-	float cosY = cos(DeltaYaw);
-	float sinY = sin(DeltaYaw);
-	LocalPos = LocalPos * cosY + UpAxis.Cross(LocalPos) * sinY + UpAxis * UpAxis.Dot(LocalPos) * (1.0f - cosY);
+	FVector NewDirection;
+	NewDirection.x = std::cos(PitchRad) * std::sin(YawRad);
+	NewDirection.y = std::sin(PitchRad);
+	NewDirection.z = std::cos(PitchRad) * std::cos(YawRad);
 
-	// 4-2. Pitch 회전 (카메라의 SideDirection 축 기준)
-	float cosP = cos(DeltaPitch);
-	float sinP = sin(DeltaPitch);
-	LocalPos = LocalPos * cosP + SideDirection.Cross(LocalPos) * sinP + SideDirection * SideDirection.Dot(LocalPos) * (1.0f - cosP);
-
-	// 5. 다시 월드 공간으로 복귀 (피벗 위치를 다시 더함)
-	Position = TargetPivot + LocalPos;
-
-	// 6. 방향 벡터 갱신 (카메라가 피벗을 쳐다보도록 축 재정렬)
-	Direction = (TargetPivot - Position).Normalize();
-	SideDirection = UpAxis.Cross(Direction).Normalize();
-	UpDirection = Direction.Cross(SideDirection).Normalize();
-
+	Direction = NewDirection.Normalize();
+	Position = FocusPoint - Direction * Distance;
 	IsChanged = true;
 }
 
@@ -167,6 +147,8 @@ void UCamera::update() {
 	Direction = Direction.Normalize();
 	SideDirection = Direction.Cross(UpVec);
 	UpDirection = SideDirection.Cross(Direction);
+
+	FocusPoint = Position + Direction * FocusLength;
 
 	CalcViewMatrix();
 	CalcProjectionMatrix();

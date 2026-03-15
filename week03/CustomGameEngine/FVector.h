@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include "ISerializable.h"
 
+struct FMatrix;
+
 // Structure for a 3D vector
 class FVector : public ISerializable
 {
@@ -17,6 +19,7 @@ public:
     FVector Normalize() const;
     float Length() const;
     bool IsNearlyEqual(const FVector& Other, float Epsilon = 1e-6f) const;
+	FVector Transform(const FMatrix &Mat);
 
 	json::JSON Serialize();
 	void Deserialize(json::JSON);

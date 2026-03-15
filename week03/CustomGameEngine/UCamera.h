@@ -36,6 +36,9 @@ public:
 	bool IsOrthogonal{ false };
 	float OrthoHeight{ 10.0f };
 
+	float FocusLength{ 5.0f };
+	FVector FocusPoint;
+
 	//EProjectionType ProjectionType{ EProjectionType::Perspective };
 
 	FVector Direction{ FVector(0.0f, 0.0f, 1.0f) };
@@ -55,7 +58,7 @@ public:
 	void SetDirection(const float InputPitch, const float InputYaw,
 		const float InputRoll);
 	void Rotate(float DeltaTime);
-	void OrbitRotate(FVector* Pivot, float DeltaTime);
+	void OrbitRotate(float DeltaTime);
 	void SetFOV(const float NewFOV);
 	float GetFOV() const;
 	void OnResize(int NewWidth, int NewHeight);

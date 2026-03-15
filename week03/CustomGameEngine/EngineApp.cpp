@@ -210,15 +210,20 @@ void EngineApp::Run()
 
 		if (!io.WantCaptureKeyboard && !io.WantCaptureMouse)
 		{
-			Camera->Move(globalTimer->GetDeltaTime());
-			Camera->Rotate(globalTimer->GetDeltaTime());
-			if (InputManager::GetInstance().IsKeyHold(VK_LBUTTON)
+			if (InputManager::GetInstance().IsKeyHold(VK_RBUTTON))
+			{
+				Camera->Move(globalTimer->GetDeltaTime());
+				Camera->Rotate(globalTimer->GetDeltaTime());
+			}
+			else if (InputManager::GetInstance().IsKeyHold(VK_LBUTTON)
 				&& InputManager::GetInstance().IsKeyHold(VK_MENU))
 			{
-				if (GetWorld().GetActiveScene()->IsCompSelected)
-					Camera->OrbitRotate(&GetWorld().GetActiveScene()->SelectedCompPos, globalTimer->GetDeltaTime());
-				else
-					Camera->OrbitRotate(nullptr, globalTimer->GetDeltaTime());
+				Camera->OrbitRotate(globalTimer->GetDeltaTime());
+			}
+			if (InputManager::GetInstance().IsKeyHold('F')
+				&& GetWorld().GetActiveScene()->IsCompSelected)
+			{
+				Camera->SetPosition(GetWorld().GetActiveScene()->SelectedCompPos - Camera->Direction * Camera->FocusLength);
 			}
 		}
 		Camera->update();
