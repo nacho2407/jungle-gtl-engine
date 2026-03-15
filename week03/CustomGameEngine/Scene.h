@@ -17,6 +17,9 @@ public:
 	int NextUUID;
 	TArray<USceneComponent*> SceneComponents;
 
+	bool IsCompSelected{ false };
+	FVector SelectedCompPos;
+
 
 	void Update(float DeltaTime);
 	std::string ToJson();

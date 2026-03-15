@@ -2,10 +2,10 @@
 
 #include <algorithm>
 
-#include "FMatrix.h"
 #include "FVector.h"
+#include "FQuat.h"
+#include "FMatrix.h"
 #include "UObject.h"
-#include "InputManager.h"
 
 enum class EProjectionType
 {
@@ -24,17 +24,20 @@ public:
 	float Pitch{ 0.0f };
 	float Yaw{ 0.0f };
 	float Roll{ 0.0f };
-	float FOV{ 60.0f };
-	float AspectRatio{ 1.0f };
-	float NearPlane{ 0.1f };
-	float FarPlane{ 1000.0f };
+	float FOV{ 90.0f };
+	float AspectRatio{ 16.0f / 9.0f };
+	float NearPlane{ 1.0f };
+	float FarPlane{ 2000.0f };
 	bool IsChanged{ true };
 	float MoveSpeed{ 10.0f };
 	float ScreenWidth = 0.f;
 	float ScreenHeight = 0.f;
-	float RotateSensitivity = 0.1f;
+	float RotateSensitivity = 500.0f;
 	bool IsOrthogonal{ false };
 	float OrthoHeight{ 10.0f };
+
+	float FocusLength{ 5.0f };
+	FVector FocusPoint;
 
 	//EProjectionType ProjectionType{ EProjectionType::Perspective };
 
@@ -51,10 +54,11 @@ public:
 	virtual ~UCamera() override;
 
 	void SetPosition(const FVector& _input);
-	void Move();
+	void Move(float DeltaTime);
 	void SetDirection(const float InputPitch, const float InputYaw,
 		const float InputRoll);
-	void Rotate();
+	void Rotate(float DeltaTime);
+	void OrbitRotate(float DeltaTime);
 	void SetFOV(const float NewFOV);
 	float GetFOV() const;
 	void OnResize(int NewWidth, int NewHeight);

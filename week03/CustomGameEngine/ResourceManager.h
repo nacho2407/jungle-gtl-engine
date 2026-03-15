@@ -75,6 +75,7 @@ public:
 	static void AddCubeMesh(ID3D11Device* Device);
 	static void AddSphereMesh(ID3D11Device* Device);
 	static void AddTriangleMesh(ID3D11Device* Device);
+	static void AddAxisMesh(ID3D11Device* Device);
 
 	static TArray<FVertexSimple> CreateCubeVertices()
 	{

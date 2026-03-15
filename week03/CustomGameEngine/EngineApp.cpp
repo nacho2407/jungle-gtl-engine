@@ -15,6 +15,8 @@
 #include "UPicker.h"
 #include "ImGui/imgui.h"
 
+#include "UAxisComp.h"
+
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 LRESULT CALLBACK EngineApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -93,6 +95,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	ResourceManager::AddGizmoTranslationMesh(Renderer->Device);
 	ResourceManager::AddGizmoRotationMesh(Renderer->Device);
 	ResourceManager::AddGizmoScaleMesh(Renderer->Device);
+	ResourceManager::AddAxisMesh(Renderer->Device);
 
 	InputManager::GetInstance().hWnd = HWnd;
 	// Init Camera
@@ -139,8 +142,10 @@ void EngineApp::Run()
 	Cube->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
 
 	UCubeComp* Cube3 = Cast<UCubeComp>(FObjectFactory::ConstructObject(UCubeComp::GetClass()));
-	Cube3->SetRelativeLocation(FVector(5.f, 0.f, 0.f));
-	Cube3->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
+	Cube3->RelativeLocation = FVector(5.f, 0.f, 0.f);
+	Cube3->RelativeScale3D = FVector(1.f, 1.f, 1.f);
+
+	UObject* mainAxis = FObjectFactory::ConstructObject(UAxisComp::GetClass());
 
 	Camera->SetPosition(FVector(0, 0, -10.f));
 	//-----TEST
@@ -203,8 +208,21 @@ void EngineApp::Run()
 
 		if (!io.WantCaptureKeyboard && !io.WantCaptureMouse)
 		{
-			Camera->Move();
-			Camera->Rotate();
+			if (InputManager::GetInstance().IsKeyHold(VK_RBUTTON))
+			{
+				Camera->Move(globalTimer->GetDeltaTime());
+				Camera->Rotate(globalTimer->GetDeltaTime());
+			}
+			else if (InputManager::GetInstance().IsKeyHold(VK_LBUTTON)
+				&& InputManager::GetInstance().IsKeyHold(VK_MENU))
+			{
+				Camera->OrbitRotate(globalTimer->GetDeltaTime());
+			}
+			if (InputManager::GetInstance().IsKeyHold('F')
+				&& GetWorld().GetActiveScene()->IsCompSelected)
+			{
+				Camera->SetPosition(GetWorld().GetActiveScene()->SelectedCompPos - Camera->Direction * Camera->FocusLength);
+			}
 		}
 		Camera->update();
 
@@ -249,7 +267,7 @@ void EngineApp::CreateEngineWindow()
 
 	HWnd = CreateWindowExW(0, windowClass, title,
 		WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT, 1024, 1024, nullptr,
+		CW_USEDEFAULT, CW_USEDEFAULT, 1920, 1080, nullptr,
 		nullptr, nullptr, this);//lpParam에 this 넣어서 WndProc에서 접근 가능하도록
 }
 
