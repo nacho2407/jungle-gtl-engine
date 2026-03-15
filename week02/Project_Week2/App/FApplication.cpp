@@ -92,7 +92,7 @@ bool FApplication::InitializeResources()
 {
     //SphereMesh = MeshImporter::LoadStaticMeshFromGltf("Assets/BlueSphere.gltf");
     SphereMesh = BuiltInMeshFactory::CreateSphereMesh();
-    //CubeMesh = BuiltInMeshFactory::CreateCubeMesh();
+    CubeMesh = BuiltInMeshFactory::CreateCubeMesh();
     //TriangleMesh = BuiltInMeshFactory::CreateTriangleMesh();
     AxesMesh = BuiltInMeshFactory::CreateAxesMesh();
 
@@ -144,15 +144,15 @@ bool FApplication::InitializeScene()
     }
 
     // Cube
-    //{
-    //    AActor* Actor = new AActor();
-    //    UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
-    //    MeshComp->SetStaticMesh(CubeMesh);
-    //    MeshComp->SetRelativeLocation(FVector(2.0f, 0.0f, 5.0f));
-    //    Actor->AddComponent(MeshComp);
-    //    Actor->SetRootComponent(MeshComp);
-    //    World->AddActor(Actor);
-    //}
+    {
+        AActor* Actor = new AActor();
+        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
+        MeshComp->SetStaticMesh(CubeMesh);
+        MeshComp->SetRelativeLocation(FVector(2.0f, 0.0f, 5.0f));
+        Actor->AddComponent(MeshComp);
+        Actor->SetRootComponent(MeshComp);
+        World->AddActor(Actor);
+    }
 
     // World Axes
     {

@@ -163,6 +163,7 @@
     <ClInclude Include="GUI\Public\imstb_textedit.h" />
     <ClInclude Include="GUI\Public\imstb_truetype.h" />
     <ClInclude Include="Render\Public\Geometry\Axies.h" />
+    <ClInclude Include="Render\Public\Geometry\Cube.h" />
     <ClInclude Include="Render\Public\Geometry\Sphere.h" />
     <ClInclude Include="Render\Public\Structs.h" />
     <ClInclude Include="Render\Public\URenderer.h" />
@@ -187,6 +188,7 @@
     <ClCompile Include="Engine\Private\Resource\BuiltInMeshFactory.cpp" />
     <ClCompile Include="Engine\Private\Resource\MeshImporter.cpp" />
     <ClCompile Include="Engine\Private\Resource\UStaticMesh.cpp" />
+    <ClCompile Include="Render\Private\Geometry\Cube.cpp" />
     <ClCompile Include="Render\Private\Geometry\Sphere.cpp" />
     <ClCompile Include="Engine\Public\Component\USphereComponent.h" />
     <ClCompile Include="Engine\Private\World\FScene.cpp" />

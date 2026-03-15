@@ -58,7 +58,7 @@ private:
     AActor* CameraActor = nullptr;
     UCameraComponent* MainCamera;
     UStaticMesh* SphereMesh;
-    //UStaticMesh* CubeMesh;
+    UStaticMesh* CubeMesh;
     //UStaticMesh* TriangleMesh;
     UStaticMesh* AxesMesh;
 

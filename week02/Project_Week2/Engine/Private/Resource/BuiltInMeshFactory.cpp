@@ -1,19 +1,20 @@
 #include "Resource/BuiltInMeshFactory.h"
 #include "Resource/UStaticMesh.h"
 #include "Geometry/Sphere.h"
+#include "Geometry/Cube.h"
 
 namespace
 {
-    std::vector<FVertexSimple> CreateCubeVertices()
-    {
-        const float s = 0.5f;
+    //std::vector<FVertexSimple> CreateCubeVertices()
+    //{
+    //    const float s = 0.5f;
 
-        return
-        {
-            FVertexSimple(-s, -s, -s, 1,0,0,1), FVertexSimple(-s, +s, -s, 1,0,0,1), FVertexSimple(+s, +s, -s, 1,0,0,1),
-            FVertexSimple(-s, -s, -s, 1,0,0,1), FVertexSimple(+s, +s, -s, 1,0,0,1), FVertexSimple(+s, -s, -s, 1,0,0,1),
-        };
-    }
+    //    return
+    //    {
+    //        FVertexSimple(-s, -s, -s, 1,0,0,1), FVertexSimple(-s, +s, -s, 1,0,0,1), FVertexSimple(+s, +s, -s, 1,0,0,1),
+    //        FVertexSimple(-s, -s, -s, 1,0,0,1), FVertexSimple(+s, +s, -s, 1,0,0,1), FVertexSimple(+s, -s, -s, 1,0,0,1),
+    //    };
+    //}
 
     std::vector<FVertexSimple> CreateTriangleVertices()
     {
@@ -54,7 +55,16 @@ namespace BuiltInMeshFactory
     UStaticMesh* CreateCubeMesh()
     {
         UStaticMesh* Mesh = new UStaticMesh();
-        Mesh->SetVertices(CreateCubeVertices());
+
+        std::vector<FVertexSimple> Vertices(
+            cube_vertices,
+            cube_vertices + cube_vertex_count);
+        std::vector<uint32_t> Indices(
+            cube_indices,
+            cube_indices + cube_index_count);
+
+        Mesh->SetVertices(Vertices);
+        Mesh->SetIndices(Indices);
         Mesh->SetTopology(EMeshTopology::TriangleList);
         return Mesh;
     }
