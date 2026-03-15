@@ -90,9 +90,6 @@
     <ClInclude Include="GUI\GUI.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Public\Camera\FCamera.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Public\Component\UActorComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -126,9 +123,6 @@
     <ClInclude Include="Engine\Public\World\FScene.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Public\Component\USphereComponent.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Public\Component\UStaticMeshComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -147,7 +141,19 @@
     <ClInclude Include="Render\Public\Geometry\Axies.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Render\Private\Geometry\Sphere.cpp">
+    <ClInclude Include="Engine\Public\Resource\BuiltInMeshFactory.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Resource\MeshImporter.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Resource\MeshTypes.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Resource\UStaticMesh.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\Json\json.hpp">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -194,9 +200,6 @@
     <ClCompile Include="Core\Private\UObject.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Private\Camera\FCamera.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Private\Component\USceneComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -236,6 +239,21 @@
     <ClCompile Include="App\WindowsApplication.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Private\Resource\BuiltInMeshFactory.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Resource\MeshImporter.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Resource\UStaticMesh.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\Private\Geometry\Sphere.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Public\Component\USphereComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ShaderW0.hlsl">
@@ -244,5 +262,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Render\Public\Shaders\Default.hlsl" />
+    <None Include="Assets\BlueSphere.bin">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Assets\BlueSphere.gltf" />
   </ItemGroup>
 </Project>

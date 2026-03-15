@@ -5,6 +5,8 @@ USceneComponent::USceneComponent()
     : RelativeLocation(FVector::ZeroVector)
     , RelativeRotation(FVector::ZeroVector)
     , RelativeScale(FVector::OneVector)
+    , bWorldTransformDirty(true)
+    , CachedWorldTransform(FMatrix::Identity)
 {
 }
 
@@ -25,6 +27,7 @@ void USceneComponent::TickComponent(float DeltaTime)
 void USceneComponent::SetRelativeLocation(const FVector& InLocation)
 {
     RelativeLocation = InLocation;
+    MarkTransformDirty();
 }
 
 const FVector& USceneComponent::GetRelativeLocation() const
@@ -35,6 +38,7 @@ const FVector& USceneComponent::GetRelativeLocation() const
 void USceneComponent::SetRelativeRotation(const FVector& InRotation)
 {
     RelativeRotation = InRotation;
+    MarkTransformDirty();
 }
 
 const FVector& USceneComponent::GetRelativeRotation() const
@@ -45,6 +49,7 @@ const FVector& USceneComponent::GetRelativeRotation() const
 void USceneComponent::SetRelativeScale(const FVector& InScale)
 {
     RelativeScale = InScale;
+    MarkTransformDirty();
 }
 
 const FVector& USceneComponent::GetRelativeScale() const
@@ -53,16 +58,39 @@ const FVector& USceneComponent::GetRelativeScale() const
 }
 FMatrix USceneComponent::GetWorldTransformMatrix() const
 {
+    UpdateWorldTransformIfNeeded();
+    return CachedWorldTransform;
+}
+
+void USceneComponent::MarkTransformDirty()
+{
+    bWorldTransformDirty = true;
+
+    // TODO: 자식 컴포넌트가 있다면, 자식들도 Dirty 처리
+    // for (USceneComponent* Child : Children)
+    // {
+    //     Child->MarkTransformDirty();
+    // }
+}
+
+void USceneComponent::UpdateWorldTransformIfNeeded() const
+{
+    if (!bWorldTransformDirty)
+    {
+        return;
+    }
+
     FMatrix Scale = FMatrix::MakeScale(RelativeScale);
     FMatrix Rotation = FMatrix::MakeRotationXYZ(RelativeRotation);
-	FMatrix Translation = FMatrix::MakeTranslation(RelativeLocation);
+    FMatrix Translation = FMatrix::MakeTranslation(RelativeLocation);
 
-	//FMatrix RotationX = FMatrix::MakeRotationX(RelativeRotation.X);
-	//FMatrix RotationY = FMatrix::MakeRotationY(RelativeRotation.Y);
-	//FMatrix RotationZ = FMatrix::MakeRotationZ(RelativeRotation.Z);
-	//FMatrix Rotation = RotationZ * RotationY * RotationX;
+    CachedWorldTransform = Scale * Rotation * Translation;
 
-	//FMatrix Scale = FMatrix::MakeScale(RelativeScale);
+    // TODO: 부모 컴포넌트가 있다면, 부모 트랜스폼과 합성
+    // if (ParentComponent)
+    // {
+    //     CachedWorldTransform = CachedWorldTransform * ParentComponent->GetWorldTransformMatrix();
+    // }
 
-	return Scale * Rotation * Translation;
+    bWorldTransformDirty = false;
 }

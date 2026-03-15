@@ -28,7 +28,14 @@ public:
     virtual FMatrix GetWorldTransformMatrix() const;
 
 protected:
+    void MarkTransformDirty();
+    void UpdateWorldTransformIfNeeded() const;
+
+protected:
     FVector RelativeLocation;
     FVector RelativeRotation;
     FVector RelativeScale;
+
+    mutable bool bWorldTransformDirty;
+    mutable FMatrix CachedWorldTransform;
 };
