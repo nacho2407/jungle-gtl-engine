@@ -25,6 +25,16 @@ public:
 
     bool IsLeftMousePressed() const;
     void GetMousePosition(int& OutX, int& OutY) const;
+    
+    // 카메라 조작
+    bool ConsumeRightMouseDown(int& OutX, int& OutY) const;
+    bool ConsumeRightMouseUp(int& OutX, int& OutY) const;
+
+    bool IsRightMousePressed() const;
+
+    float ConsumeMouseWheelDelta() const;
+
+    bool IsKeyDown(int Key) const;
 
 private:
     static LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
@@ -55,4 +65,18 @@ private:
     mutable int PendingMouseDownY = 0;
     mutable int PendingMouseUpX = 0;
     mutable int PendingMouseUpY = 0;
+
+    // 카메라 조작
+    mutable bool bPendingRightMouseDown = false;
+    mutable bool bPendingRightMouseUp = false;
+    mutable bool bRightMousePressed = false;
+
+    mutable int PendingRightMouseDownX = 0;
+    mutable int PendingRightMouseDownY = 0;
+    mutable int PendingRightMouseUpX = 0;
+    mutable int PendingRightMouseUpY = 0;
+
+    mutable float MouseWheelDelta = 0.0f;
+
+    bool KeyStates[256] = {};
 };

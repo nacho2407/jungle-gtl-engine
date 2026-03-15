@@ -237,10 +237,13 @@ void FApplication::MainLoop()
 
 void FApplication::Tick(float DeltaTime)
 {
-    if (!World)
+    if (!World || !MainCamera)
     {
         return;
     }
+
+    static int PrevMouseX = 0;
+    static int PrevMouseY = 0;
 
     int MouseX = 0;
     int MouseY = 0;
@@ -273,6 +276,86 @@ void FApplication::Tick(float DeltaTime)
     {
         WindowApp->GetMousePosition(MouseX, MouseY);
         UpdateGizmoDrag(MouseX, MouseY);
+    }
+
+    if (WindowApp->IsRightMousePressed())
+    {
+        WindowApp->GetMousePosition(MouseX, MouseY);
+
+        int DeltaX = MouseX - PrevMouseX;
+        int DeltaY = MouseY - PrevMouseY;
+
+        FVector Rot = MainCamera->GetRelativeRotation();
+
+        const float RotateSpeed = 0.005f;
+
+        Rot.Y += DeltaX * RotateSpeed; // Yaw
+        Rot.X += DeltaY * RotateSpeed; // Pitch
+
+        Rot.X = std::clamp(Rot.X, -1.5f, 1.5f);
+
+        MainCamera->SetRelativeRotation(Rot);
+
+        PrevMouseX = MouseX;
+        PrevMouseY = MouseY;
+    }
+    else
+    {
+        WindowApp->GetMousePosition(PrevMouseX, PrevMouseY);
+    }
+
+    FVector CameraLoc = MainCamera->GetRelativeLocation();
+    FVector Rot = MainCamera->GetRelativeRotation();
+
+    FMatrix RotMatrix = FMatrix::MakeRotationXYZ(Rot);
+
+    FVector4 Forward4 = RotMatrix * FVector4(0, 0, 1, 0);
+    FVector4 Right4 = RotMatrix * FVector4(1, 0, 0, 0);
+    FVector4 Up4 = RotMatrix * FVector4(0, 1, 0, 0);
+
+    FVector Forward(Forward4.X, Forward4.Y, Forward4.Z);
+    FVector Right(Right4.X, Right4.Y, Right4.Z);
+    FVector Up(Up4.X, Up4.Y, Up4.Z);
+
+    float Speed = 5.0f * DeltaTime;
+
+    if (WindowApp->IsKeyDown('W'))
+        CameraLoc += Forward * Speed;
+
+    if (WindowApp->IsKeyDown('S'))
+        CameraLoc -= Forward * Speed;
+
+    if (WindowApp->IsKeyDown('A'))
+        CameraLoc -= Right * Speed;
+
+    if (WindowApp->IsKeyDown('D'))
+        CameraLoc += Right * Speed;
+
+    if (WindowApp->IsKeyDown('Q'))
+        CameraLoc -= Up * Speed;
+
+    if (WindowApp->IsKeyDown('E'))
+        CameraLoc += Up * Speed;
+
+    MainCamera->SetRelativeLocation(CameraLoc);
+
+    float Wheel = WindowApp->ConsumeMouseWheelDelta();
+
+    if (Wheel != 0.0f)
+    {
+        FVector Loc = MainCamera->GetRelativeLocation();
+        FVector Rot = MainCamera->GetRelativeRotation();
+
+        FMatrix RotMatrix = FMatrix::MakeRotationXYZ(Rot);
+
+        FVector4 Forward4 = RotMatrix * FVector4(0, 0, 1, 0);
+        FVector Forward(Forward4.X, Forward4.Y, Forward4.Z);
+
+        float DollySpeed = 2.0f;
+
+        Loc += Forward * Wheel * DollySpeed;
+
+        MainCamera->SetRelativeLocation(Loc);
     }
 
     World->Tick(DeltaTime);

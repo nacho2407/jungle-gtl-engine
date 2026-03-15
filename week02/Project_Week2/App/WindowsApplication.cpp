@@ -175,6 +175,23 @@ void FWindowsApplication::GetMousePosition(int& OutX, int& OutY) const
     OutY = MouseY;
 }
 
+float FWindowsApplication::ConsumeMouseWheelDelta() const
+{
+    float Delta = MouseWheelDelta;
+    MouseWheelDelta = 0.0f;
+    return Delta;
+}
+
+bool FWindowsApplication::IsKeyDown(int Key) const
+{
+    return KeyStates[Key];
+}
+
+bool FWindowsApplication::IsRightMousePressed() const
+{
+    return bRightMousePressed;
+}
+
 LRESULT CALLBACK FWindowsApplication::StaticWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
     FWindowsApplication* App = nullptr;
@@ -212,6 +229,7 @@ LRESULT FWindowsApplication::WndProc(HWND InHWnd, UINT Msg, WPARAM wParam, LPARA
     }
     case WM_KEYDOWN:
     {
+        KeyStates[wParam] = true;
         if (wParam == VK_ESCAPE)
         {
             PostQuitMessage(0);
@@ -248,6 +266,44 @@ LRESULT FWindowsApplication::WndProc(HWND InHWnd, UINT Msg, WPARAM wParam, LPARA
     {
         MouseX = GET_X_LPARAM(lParam);
         MouseY = GET_Y_LPARAM(lParam);
+        return 0;
+    }
+    case WM_RBUTTONDOWN:
+    {
+        MouseX = GET_X_LPARAM(lParam);
+        MouseY = GET_Y_LPARAM(lParam);
+
+        PendingRightMouseDownX = MouseX;
+        PendingRightMouseDownY = MouseY;
+
+        bPendingRightMouseDown = true;
+        bRightMousePressed = true;
+
+        SetCapture(InHWnd);
+        return 0;
+    }
+    case WM_RBUTTONUP:
+    {
+        MouseX = GET_X_LPARAM(lParam);
+        MouseY = GET_Y_LPARAM(lParam);
+
+        PendingRightMouseUpX = MouseX;
+        PendingRightMouseUpY = MouseY;
+
+        bPendingRightMouseUp = true;
+        bRightMousePressed = false;
+
+        ReleaseCapture();
+        return 0;
+    }
+    case WM_MOUSEWHEEL:
+    {
+        MouseWheelDelta += GET_WHEEL_DELTA_WPARAM(wParam) / 120.0f;
+        return 0;
+    }
+    case WM_KEYUP:
+    {
+        KeyStates[wParam] = false;
         return 0;
     }
     case WM_DESTROY:
