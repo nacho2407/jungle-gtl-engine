@@ -19,8 +19,10 @@ UPicker::~UPicker()
 void UPicker::Pick(int ScreenX, int ScreenY, UCamera* Camera, UScene* Scene)
 {
 	UE_LOG("Screen Clicked at: (%d, %d)", ScreenX, ScreenY);
-	//Screenx
-	GizmoControllerAxis selectedAxis = PickGizmo(ScreenX, ScreenY, Camera, Scene);
+
+	Ray ray = CreateRay(ScreenX, ScreenY, Camera);
+	GizmoControllerAxis selectedAxis =
+		Gizmo::GetInstance().GetController()->TryPick(ray);
 	if (selectedAxis != GizmoControllerAxis::None)
 	{
 		Gizmo::GetInstance().GetController()->SetAxis(selectedAxis);
@@ -56,20 +58,6 @@ void UPicker::Pick(int ScreenX, int ScreenY, UCamera* Camera, UScene* Scene)
 			}
 		}
 	}
-	//Ray ray = CreateRay(ScreenX, ScreenY, Camera);
-
-	//for (UPrimitiveComponent* Comp : Scene->PrimitiveContainer)
-	//{
-	//	float Distance = 0.f;
-	//	if (ray.Intersects(Comp, Distance))
-	//	{
-	//		if (Distance < MinDistance)
-	//		{
-	//			MinDistance = Distance;
-	//			ClosestComp = Comp;
-	//		}
-	//	}
-	//}
 
 	if (ClosestComp)
 	{
@@ -261,6 +249,29 @@ bool Ray::IntersectsTriangle(const FVector& V0, const FVector& V1, const FVector
 
 	return false;
 }
+
+
+//UPrimitiveComponent* ClosestComp = nullptr;
+//float MinDistance = FLT_MAX;
+//for (int dx = -1; dx <= 1; ++dx)
+//{
+//	for (int dy = -1; dy <= 1; ++dy)
+//	{
+//		Ray ray = CreateRay(ScreenX + dx, ScreenY + dy, Camera);
+//		for (UPrimitiveComponent* Comp : Scene->PrimitiveContainer)
+//		{
+//			float Distance = 0.f;
+//			if (ray.Intersects(Comp, Distance))
+//			{
+//				if (Distance < MinDistance)
+//				{
+//					MinDistance = Distance;
+//					ClosestComp = Comp;
+//				}
+//			}
+//		}
+//	}
+//}
 
 bool Ray::Intersects(UPrimitiveComponent* Comp, float& OutDistance)
 {

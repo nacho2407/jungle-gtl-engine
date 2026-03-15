@@ -70,5 +70,6 @@ private:
 
 	FVector InitialObjectLocation;
 	float InitialDragOffset;
-	RenderObject* renderObj = nullptr;
+
+	RenderObject* renderObj;
 };

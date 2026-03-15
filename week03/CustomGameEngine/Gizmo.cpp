@@ -48,15 +48,6 @@ void Gizmo::OnBeforeRender()
 	}
 }
 
-void Gizmo::SetControllerTarget(USceneComponent* target)
-{
-	AttachedComponent = target;
-	if (Controller)
-	{
-		Controller->AttachTo(target);
-	}
-}
-
 RenderObject* Gizmo::UpdateLocationGizmo(USceneComponent* target)
 {
 	ResourceManager* resourceManager = ResourceManager::GetInstance();
