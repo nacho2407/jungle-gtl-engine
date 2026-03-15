@@ -32,7 +32,7 @@ public:
 	void Resize(UINT width, UINT Height);
 
     // 마우스 위치에 따른 Hit Proxy 쿼리
-    const FRenderItem* PickPrimitiveProxy(int MouseX, int MouseY);
+    FHitProxy PickPrimitiveProxy(int MouseX, int MouseY);
 
 public:
 	ID3D11Device* Device = nullptr;
@@ -136,5 +136,5 @@ private:
 
     /* Hit Proxy Pass에서 각 RenderItem에 ID를 부여하고, Picking 결과
        픽셀을 읽은 뒤 그 ID로 다시 RenderItem을 찾아내기 위한 맵 */
-    TMap<uint32, const FRenderItem*> HitProxyMap;
+    TMap<uint32, FHitProxy> HitProxyMap;
 };

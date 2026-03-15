@@ -13,7 +13,7 @@ struct FRenderItem
 
 	/* 마우스로 Render Item이 선택되어 컴포넌트 계층으로 선택된 것이
 	   어느 객체인지 반환해주기 위한 용도 */
-	FHitProxy* SourceComponent;
+	FHitProxy HitProxy;
 };
 
 class FScene

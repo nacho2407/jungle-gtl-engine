@@ -154,14 +154,14 @@ bool URenderer::Create(HWND hWindow)
     DXGI_SWAP_CHAIN_DESC Desc = {};
     SwapChain->GetDesc(&Desc);
 
-    if (!CreateDepthStencilBuffer(Desc.BufferDesc.Width, Desc.BufferDesc.Height)) Release(); return false;
-    if (!CreateRasterizerState()) Release(); return false;
-    if (!CreateShader(L"Render\\Public\\Shaders\\Default.hlsl")) Release(); return false;
-    if (!CreateConstantBuffer()) Release(); return false;
+    if (!CreateDepthStencilBuffer(Desc.BufferDesc.Width, Desc.BufferDesc.Height)) { Release(); return false; }
+    if (!CreateRasterizerState()) { Release(); return false; }
+    if (!CreateShader(L"Render\\Public\\Shaders\\Default.hlsl")) { Release(); return false; }
+    if (!CreateConstantBuffer()) { Release(); return false; }
 
     // for Hit Proxy
-    if (!CreateHitProxyBuffer(Desc.BufferDesc.Width, Desc.BufferDesc.Height)) Release(); return false;
-    if (!CreateHitProxyShader(L"Render\\Public\\Shaders\\HitProxy.hlsl")) Release(); return false;
+    if (!CreateHitProxyBuffer(Desc.BufferDesc.Width, Desc.BufferDesc.Height)) { Release(); return false; }
+    if (!CreateHitProxyShader(L"Render\\Public\\Shaders\\HitProxy.hlsl")) { Release(); return false; }
 
     return true;
 }
@@ -175,15 +175,13 @@ void URenderer::Release()
 
     ReleaseMeshResources();
     ReleaseConstantBuffer();
+    ReleaseHitProxyShader(); // for Hit Proxy
     ReleaseShader();
     ReleaseRasterizerState();
+    ReleaseHitProxyBuffer(); // for Hit Proxy
     ReleaseDepthStencilBuffer();
     ReleaseFrameBuffer();
     ReleaseDeviceAndSwapChain();
-
-    // for Hit Proxy
-    ReleaseHitProxyShader();
-    ReleaseHitProxyBuffer();
 }
 
 bool URenderer::CreateDeviceAndSwapChain(HWND hWindow)
@@ -325,10 +323,11 @@ bool URenderer::CreateDepthStencilBuffer(UINT Width, UINT Height)
     Hr = Device->CreateDepthStencilView(DepthStencilBuffer, nullptr, &DepthStencilView);
     if (FAILED(Hr))
     {
-        DepthStencilView->Release();
-        DepthStencilView = nullptr;
+        DepthStencilBuffer->Release();
+        DepthStencilBuffer = nullptr;
         return false;
     }
+
     return SUCCEEDED(Hr);
 }
 
@@ -405,6 +404,7 @@ bool URenderer::CreateShader(const wchar_t* ShaderPath)
         VSBlob->Release();
         PSBlob->Release();
         SimpleVertexShader->Release();
+        SimpleVertexShader = nullptr;
 
         return false;
     }
@@ -416,6 +416,17 @@ bool URenderer::CreateShader(const wchar_t* ShaderPath)
     };
 
     Hr = Device->CreateInputLayout(Layout, ARRAYSIZE(Layout), VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), &SimpleInputLayout);
+    if (FAILED(Hr))
+    {
+        VSBlob->Release();
+        PSBlob->Release();
+        SimpleVertexShader->Release();
+        SimpleVertexShader = nullptr;
+        SimplePixelShader->Release();
+        SimplePixelShader = nullptr;
+
+        return false;
+    }
 
     VSBlob->Release();
     PSBlob->Release();
@@ -726,16 +737,16 @@ D3D11_PRIMITIVE_TOPOLOGY URenderer::ConvertTopology(EMeshTopology Topology) cons
     }
 }
 
-const FRenderItem* URenderer::PickPrimitiveProxy(int MouseX, int MouseY)
+FHitProxy URenderer::PickPrimitiveProxy(int MouseX, int MouseY)
 {
     if (!DeviceContext || !HitProxyTexture || !HitProxyReadbackTexture)
     {
-        return nullptr;
+        return FHitProxy{};
     }
 
     if (MouseX < 0 || MouseY < 0)
     {
-        return nullptr;
+        return FHitProxy{};
     }
 
     D3D11_TEXTURE2D_DESC Desc = {};
@@ -744,7 +755,7 @@ const FRenderItem* URenderer::PickPrimitiveProxy(int MouseX, int MouseY)
     // 마우스 입력 유효 검사
     if (MouseX >= static_cast<int>(Desc.Width) || MouseY >= static_cast<int>(Desc.Height))
     {
-        return nullptr;
+        return FHitProxy{};
     }
 
     // GPU to CPU 텍스처 복사
@@ -754,7 +765,7 @@ const FRenderItem* URenderer::PickPrimitiveProxy(int MouseX, int MouseY)
     HRESULT Hr = DeviceContext->Map(HitProxyReadbackTexture, 0, D3D11_MAP_READ, 0, &MappedResource);
     if (FAILED(Hr))
     {
-        return nullptr;
+        return FHitProxy{};
     }
 
     const uint8* Data = static_cast<const uint8*>(MappedResource.pData);
@@ -773,19 +784,19 @@ const FRenderItem* URenderer::PickPrimitiveProxy(int MouseX, int MouseY)
     if (A == 0 && R == 0 && G == 0 && B == 0)
     {
         // ID = 0 = 배경
-        return nullptr;
+        return FHitProxy{};
     }
 
     const uint32 ProxyId = DecodeHitProxyIdColor(R, G, B);
     if (ProxyId == 0)
     {
-        return nullptr;
+        return FHitProxy{};
     }
 
     auto It = HitProxyMap.find(ProxyId);
     if (It == HitProxyMap.end())
     {
-        return nullptr;
+        return FHitProxy{};
     }
 
     return It->second;
@@ -964,7 +975,13 @@ void URenderer::RenderHitProxy(const FScene& Scene, const UCameraComponent* Came
 
     for (const FRenderItem& Item: Scene.RenderItems)
     {
-        HitProxyMap[NextProxyId] = &Item;
+        // 만약 Hit Proxy를 건너뛰고자 하는 객체는 HitProxyType을 None으로 설정
+        if (Item.HitProxy.Type == EHitProxyType::None)
+        {
+            continue;
+        }
+
+        HitProxyMap[NextProxyId] = Item.HitProxy;
 
         DrawHitProxyItem(Item, View, Projection, NextProxyId);
 

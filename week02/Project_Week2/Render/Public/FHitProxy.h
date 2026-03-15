@@ -6,7 +6,7 @@
 
 class UPrimitiveComponent;
 
-enum EHitProxyType
+enum class EHitProxyType
 {
 	None,
 	Primitive,

@@ -61,6 +61,7 @@ private:
     UStaticMesh* SphereMesh;
     //UStaticMesh* CubeMesh;
     //UStaticMesh* TriangleMesh;
+    UStaticMesh* TorusMesh;
     UStaticMesh* AxesMesh;
 
     AActor* GizmoActor = nullptr;

@@ -30,5 +30,10 @@ FRenderItem UPrimitiveComponent::CreateRenderItem() const
 	FRenderItem Item;
 	Item.WorldMatrix = GetWorldTransformMatrix();
 	Item.Mesh = nullptr;
+
+	Item.HitProxy.Type = EHitProxyType::Primitive;
+	Item.HitProxy.Primitive = const_cast<UPrimitiveComponent*>(this);
+	Item.HitProxy.Axis = EGizmoAxis::None;
+
 	return Item;
 }
