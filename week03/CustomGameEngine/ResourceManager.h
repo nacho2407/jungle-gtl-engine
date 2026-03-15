@@ -309,8 +309,8 @@ public:
 			TArray<FVertexSimple> vertices;
 
 			TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
-			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.5f, 0.0f, 0.0f);
-			FMatrix cylinderRotation = FMatrix::RotationZMatrix(90.0f);
+			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 0.5f);
+			FMatrix cylinderRotation = FMatrix::RotationXMatrix(90.0f);
 			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 1.0f, 0.05f);
 			FMatrix cylinderMatrix = cylinderScale * cylinderRotation * cylinderTransform;
 
@@ -331,8 +331,8 @@ public:
 			vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
 
 			TArray<FVertexSimple> coneVertices = CreateConeVertices();
-			FMatrix coneTransform = FMatrix::TranslationMatrix(1.0f, 0.0f, 0.0f);
-			FMatrix coneRotation = FMatrix::RotationZMatrix(-90.0f);
+			FMatrix coneTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 1.0f);
+			FMatrix coneRotation = FMatrix::RotationXMatrix(90.0f);
 			FMatrix coneScale = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f);
 			FMatrix coneMatrix = coneScale * coneRotation * coneTransform;
 
@@ -367,8 +367,8 @@ public:
 			TArray<FVertexSimple> vertices;
 
 			TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
-			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 0.5f);
-			FMatrix cylinderRotation = FMatrix::RotationXMatrix(90.0f);
+			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.5f, 0.0f, 0.0f);
+			FMatrix cylinderRotation = FMatrix::RotationZMatrix(90.0f);
 			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 1.0f, 0.05f);
 			FMatrix cylinderMatrix = cylinderScale * cylinderRotation * cylinderTransform;
 
@@ -389,8 +389,8 @@ public:
 			vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
 
 			TArray<FVertexSimple> coneVertices = CreateConeVertices();
-			FMatrix coneTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 1.0f);
-			FMatrix coneRotation = FMatrix::RotationXMatrix(90.0f);
+			FMatrix coneTransform = FMatrix::TranslationMatrix(1.0f, 0.0f, 0.0f);
+			FMatrix coneRotation = FMatrix::RotationZMatrix(-90.0f);
 			FMatrix coneScale = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f);
 			FMatrix coneMatrix = coneScale * coneRotation * coneTransform;
 
@@ -480,8 +480,8 @@ public:
 		// X Axis - Red
 		{
 			TArray<FVertexSimple> vertices = CreateTorusVertices();
-			FMatrix torusRotation = FMatrix::RotationZMatrix(90.0f);
-			FMatrix torusScale = FMatrix::ScaleMatrix(2.0, 2.0f, 2.0f);
+			FMatrix torusRotation = FMatrix::RotationXMatrix(90.0f);
+			FMatrix torusScale = FMatrix::ScaleMatrix(1.0f, 1.0f, 1.0f);
 			FMatrix torusMatrix = torusScale * torusRotation;
 
 			for (FVertexSimple& v : vertices)
@@ -511,8 +511,8 @@ public:
 		// Y Axis - Green
 		{
 			TArray<FVertexSimple> vertices = CreateTorusVertices();
-			FMatrix torusRotation = FMatrix::RotationXMatrix(90.0f);
-			FMatrix torusScale = FMatrix::ScaleMatrix(2.0, 2.0f, 2.0f);
+			FMatrix torusRotation = FMatrix::RotationZMatrix(90.0f);
+			FMatrix torusScale = FMatrix::ScaleMatrix(1.0f, 1.0f, 1.0f);
 			FMatrix torusMatrix = torusScale * torusRotation;
 
 			for (FVertexSimple& v : vertices)
@@ -540,7 +540,7 @@ public:
 		// Z Axis - Blue
 		{
 			TArray<FVertexSimple> vertices = CreateTorusVertices();
-			FMatrix torusScale = FMatrix::ScaleMatrix(2.0, 2.0f, 2.0f);
+			FMatrix torusScale = FMatrix::ScaleMatrix(1.0f, 1.0f, 1.0f);
 			FMatrix torusMatrix = torusScale;
 
 			for (FVertexSimple& v : vertices)
@@ -573,8 +573,8 @@ public:
 			TArray<FVertexSimple> vertices;
 
 			TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
-			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.5f, 0.0f, 0.0f);
-			FMatrix cylinderRotation = FMatrix::RotationZMatrix(90.0f);
+			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 0.5f);
+			FMatrix cylinderRotation = FMatrix::RotationXMatrix(90.0f);
 			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 1.0f, 0.05f);
 			FMatrix cylinderMatrix = cylinderScale * cylinderRotation * cylinderTransform;
 
@@ -595,7 +595,7 @@ public:
 			vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
 
 			TArray<FVertexSimple> cubeVertices = CreateCubeVertices();
-			FMatrix cubeTransform = FMatrix::TranslationMatrix(1.0f, 0.0f, 0.0f);
+			FMatrix cubeTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 1.0f);
 			FMatrix cubeScale = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f);
 			FMatrix cubeMatrix = cubeScale * cubeTransform;
 
@@ -630,8 +630,8 @@ public:
 			TArray<FVertexSimple> vertices;
 
 			TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
-			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 0.5f);
-			FMatrix cylinderRotation = FMatrix::RotationXMatrix(90.0f);
+			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.5f, 0.0f, 0.0f);
+			FMatrix cylinderRotation = FMatrix::RotationZMatrix(90.0f);
 			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 1.0f, 0.05f);
 			FMatrix cylinderMatrix = cylinderScale * cylinderRotation * cylinderTransform;
 
@@ -652,7 +652,7 @@ public:
 			vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
 
 			TArray<FVertexSimple> cubeVertices = CreateCubeVertices();
-			FMatrix cubeTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 1.0f);
+			FMatrix cubeTransform = FMatrix::TranslationMatrix(1.0f, 0.0f, 0.0f);
 			FMatrix cubeScale = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f);
 			FMatrix cubeMatrix = cubeScale * cubeTransform;
 

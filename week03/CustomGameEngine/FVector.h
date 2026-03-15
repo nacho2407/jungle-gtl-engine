@@ -18,6 +18,11 @@ public:
     float Length() const;
     bool IsNearlyEqual(const FVector& Other, float Epsilon = 1e-6f) const;
 
+	static FVector Zero() { return FVector(0.0f, 0.0f, 0.0f); }
+	static FVector Up() { return FVector(0.0f, 1.0f, 0.0f); }
+	static FVector Right() { return FVector(1.0f, 0.0f, 0.0f); }
+	static FVector Forward() { return FVector(0.0f, 0.0f, 1.0f); }
+
 	json::JSON Serialize();
 	void Deserialize(json::JSON);
 public:
