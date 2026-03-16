@@ -689,7 +689,7 @@ AActor* FApplication::PickActor(const FRay& Ray) const
     for (AActor* Actor : Actors)
     {
         // @@@ Actor==GizmoActor라는데, 이거 XYZ로 나누면서 nullptr 아닌가?
-        if (!Actor || Actor == CameraActor || Actor == GizmoActor || Actor == WorldAxesActor || Actor == ClickCircleActor)
+        if (!Actor || Actor == CameraActor || Actor == GizmoActor || Actor == WorldAxesActor || Actor == ClickCircleActor || Actor == GridActor)
         {
             continue;
         }
