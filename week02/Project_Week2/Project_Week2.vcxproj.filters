@@ -201,6 +201,15 @@
     <ClInclude Include="Core\Public\FMemory.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Public\FActorInstanceManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\UClassData.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\TObjectBase.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GUI\Private\imgui.cpp">
@@ -320,8 +329,11 @@
     <ClCompile Include="Core\Private\TestMemory.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Private\TestMemory.h">
-      <Filter>헤더 파일</Filter>
+    <ClCompile Include="Core\Private\FActorInstanceManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Public\UClassData.cpp">
+      <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

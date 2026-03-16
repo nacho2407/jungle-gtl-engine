@@ -601,7 +601,7 @@ void FApplication::Shutdown()
     MainCamera = nullptr;
 }
 
-void FApplication::HandleMousePicking()
+void FApplication::HandleMousePicking() //
 {
     if (!WindowApp || !World || !MainCamera)
     {
@@ -1352,6 +1352,12 @@ void FApplication::RenderDebugUI()
     ImGui::Text("GTotalAllocationCount: %d", GUObjectArray.ElementalCount);
     ImGui::Text("ObjectCountInVector: %d", static_cast<int>(TestObjects.size()));
 
+    auto test = NewObject<AActor>("Temp");
+    auto msg = "Typeof :" + test->GetClass()->ClassName;
+    ImGui::Text(msg.c_str());
+    ImGui::Text(("TypeofAActor Static:: =>    " + AActor::GetClass()->ClassName).c_str());
+
+    Destroy(test);
     if (!TestObjects.empty())
     {
         ImGui::Text("LastID: %d", TestObjects.back()->GetUUID());

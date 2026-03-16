@@ -2,12 +2,14 @@
 
 #include <vector>
 #include "UObject.h"
+#include "TObjectBase.h"
 
 class UActorComponent;
 class USceneComponent;
 
 class AActor : public UObject
 {
+DECLARE_ROOT_UClass(AActor)
 public:
 	AActor();
 	AActor(const FUObjectInitializer& ObjectInitializer);
