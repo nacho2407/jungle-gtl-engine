@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "UObject.h"
+#include "TObjectBase.h"
 #include "CoreTypes.h"
 
 class UActorComponent;
@@ -10,6 +11,7 @@ class USceneComponent;
 
 class AActor : public UObject
 {
+DECLARE_ROOT_UClass(AActor)
 public:
 	AActor();
 	AActor(const FUObjectInitializer& ObjectInitializer);
@@ -25,8 +27,6 @@ public:
 
 	void SetRootComponent(USceneComponent* InRootComponent);
 	USceneComponent* GetRootComponent() const;
-
-	FString GetName() const; // 그냥 인터페이스
 protected:
 	TArray<UActorComponent*> Components;
 	USceneComponent* RootComponent;

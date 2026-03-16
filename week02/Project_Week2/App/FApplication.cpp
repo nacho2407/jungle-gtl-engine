@@ -28,7 +28,7 @@
 #include "FUObjectFactory.h"
 #include "FUObjectAllocator.h"
 
-#include "GUI/GUI.h"
+#include "GUI.h"
 
 #include <chrono>
 
@@ -615,7 +615,7 @@ void FApplication::Shutdown()
     MainCamera = nullptr;
 }
 
-void FApplication::HandleMousePicking()
+void FApplication::HandleMousePicking() //
 {
     if (!WindowApp || !World || !MainCamera)
     {
@@ -1335,8 +1335,8 @@ void FApplication::UpdateObjectAllocationTest()
     {
         if (TestDelta > 0)
         {
-            auto NewObject = GUObjectFactory.CreateObject<AActor>("Test");
-            TestObjects.push_back(NewObject);
+            UObject* testObject = NewObject<AActor>("Test");
+            TestObjects.push_back(testObject);
         }
         else
         {
@@ -1345,8 +1345,7 @@ void FApplication::UpdateObjectAllocationTest()
                 UObject* Garbage = TestObjects.back();
                 TestObjects.pop_back();
 
-                GUObjectArray.FreeUObjectIndox(Garbage);
-                GUObjectAllocator.FreeUObject(Garbage);
+                Destroy(Garbage);
             }
         }
 
@@ -1367,6 +1366,12 @@ void FApplication::RenderDebugUI()
     ImGui::Text("GTotalAllocationCount: %d", GUObjectArray.ElementalCount);
     ImGui::Text("ObjectCountInVector: %d", static_cast<int>(TestObjects.size()));
 
+    auto test = NewObject<AActor>("Temp");
+    auto msg = "Typeof :" + test->GetClass()->ClassName;
+    ImGui::Text(msg.c_str());
+    ImGui::Text(("TypeofAActor Static:: =>    " + AActor::GetClass()->ClassName).c_str());
+
+    Destroy(test);
     if (!TestObjects.empty())
     {
         ImGui::Text("LastID: %d", TestObjects.back()->GetUUID());
