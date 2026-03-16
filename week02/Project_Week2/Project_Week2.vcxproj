@@ -222,7 +222,6 @@
     <ClCompile Include="GUI\Private\imgui_tables.cpp" />
     <ClCompile Include="GUI\Private\imgui_widgets.cpp" />
     <ClCompile Include="Render\Private\URenderer.cpp" />
-    <ClCompile Include="Core\Private\UEngineStatics.cpp" />
     <ClCompile Include="Core\Private\UObjectBaseUtility.cpp" />
   </ItemGroup>
   <ItemGroup>

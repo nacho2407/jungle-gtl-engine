@@ -272,9 +272,6 @@
     <ClCompile Include="Core\Private\FObjectManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Private\UEngineStatics.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Private\FUObjectArray.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
