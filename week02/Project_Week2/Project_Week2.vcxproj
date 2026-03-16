@@ -131,6 +131,7 @@
   <ItemGroup>
     <ClInclude Include="App\FApplication.h" />
     <ClInclude Include="App\WindowsApplication.h" />
+    <ClInclude Include="Core\Public\FMemory.h" />
     <ClInclude Include="Core\Public\FUObjectAllocator.h" />
     <ClInclude Include="Core\Public\CoreDefine.h" />
     <ClInclude Include="Core\Public\FAActorFactory.h" />

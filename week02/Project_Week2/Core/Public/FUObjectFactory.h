@@ -1,9 +1,9 @@
 #pragma once
-#include "AActor.h"
-#include "Private/FUObjectAllocator.h"
+#include "Actor/AActor.h"
+#include "FUObjectAllocator.h"
 #include "UEngineStatics.h"
 #include "UObject.h"
-#include "USceneComponent.h"
+#include "Component/USceneComponent.h"
 
 template<typename T>
 concept UObjectType = std::is_base_of_v<UObject, T>;

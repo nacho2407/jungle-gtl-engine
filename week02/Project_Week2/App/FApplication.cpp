@@ -1321,8 +1321,8 @@ void FApplication::UpdateObjectAllocationTest()
     {
         if (TestDelta > 0)
         {
-            auto NewObject = GUObjectFactory.CreateObject<AActor>("Test");
-            TestObjects.push_back(NewObject);
+            UObject* testObject = NewObject<AActor>("Test");
+            TestObjects.push_back(testObject);
         }
         else
         {
@@ -1331,8 +1331,7 @@ void FApplication::UpdateObjectAllocationTest()
                 UObject* Garbage = TestObjects.back();
                 TestObjects.pop_back();
 
-                GUObjectArray.FreeUObjectIndox(Garbage);
-                GUObjectAllocator.FreeUObject(Garbage);
+                Destroy(Garbage);
             }
         }
 
