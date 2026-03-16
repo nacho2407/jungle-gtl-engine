@@ -112,6 +112,8 @@ private:
     void SpawnSelectedMeshActor();
     AActor* SpawnMeshActor(UStaticMesh* Mesh, const FVector& Location);
 
+    void ApplyCameraProjectionMode();
+
 private:
     FWindowsApplication* WindowApp;
     URenderer* Renderer;
@@ -171,4 +173,7 @@ private:
 
     int PrevMouseX = 0;
     int PrevMouseY = 0;
+
+    bool bUseOrthogonalProjection = false;
+    float DebugOrthoWidth = 10.0f;
 };

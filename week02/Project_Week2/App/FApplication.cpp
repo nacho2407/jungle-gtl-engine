@@ -223,6 +223,9 @@ bool FApplication::InitializeScene()
         static_cast<float>(WindowApp->GetClientHeight()));
     MainCamera->SetNearClip(0.1f);
     MainCamera->SetFarClip(1000.0f);
+    bUseOrthogonalProjection = false;
+	DebugOrthoWidth = 10.0f;
+	ApplyCameraProjectionMode();
 
     CameraActor->AddComponent(MainCamera);
     CameraActor->SetRootComponent(MainCamera);
@@ -624,12 +627,6 @@ FRay FApplication::BuildPickRay(int MouseX, int MouseY) const
     const float NdcX = (2.0f * static_cast<float>(MouseX) / Width) - 1.0f;
     const float NdcY = 1.0f - (2.0f * static_cast<float>(MouseY) / Height);
 
-    const float FovRadians = MainCamera->GetFieldOfView() * 3.14159265358979323846f / 180.0f;
-    const float TanHalfFov = std::tan(FovRadians * 0.5f);
-
-    const float ViewX = NdcX * MainCamera->GetAspectRatio() * TanHalfFov;
-    const float ViewY = NdcY * TanHalfFov;
-
     const FVector CameraLocation = MainCamera->GetRelativeLocation();
     const FVector CameraRotation = MainCamera->GetRelativeRotation();
 
@@ -638,10 +635,32 @@ FRay FApplication::BuildPickRay(int MouseX, int MouseY) const
     const FVector4 Right4 = CameraRotationMatrix * FVector4(1.0f, 0.0f, 0.0f, 0.0f);
     const FVector4 Up4 = CameraRotationMatrix * FVector4(0.0f, 1.0f, 0.0f, 0.0f);
     const FVector4 Forward4 = CameraRotationMatrix * FVector4(0.0f, 0.0f, 1.0f, 0.0f);
-
+    
     const FVector Right(Right4.X, Right4.Y, Right4.Z);
     const FVector Up(Up4.X, Up4.Y, Up4.Z);
     const FVector Forward(Forward4.X, Forward4.Y, Forward4.Z);
+
+    if (MainCamera->IsOrthogonal())
+    {
+        const float OrthoWidth = MainCamera->GetOrthoWidth();
+        const float OrthoHeight = OrthoWidth / MainCamera->GetAspectRatio();
+
+        const FVector RayOrigin =
+            CameraLocation +
+            Right * (NdcX * (OrthoWidth * 0.5f)) +
+            Up * (NdcY * (OrthoHeight * 0.5f));
+
+        Ray.Origin = RayOrigin;
+        Ray.Direction = Forward;
+        Ray.Direction.Normalize();
+        return Ray;
+    }
+
+    const float FovRadians = MainCamera->GetFieldOfView() * 3.14159265358979323846f / 180.0f;
+    const float TanHalfFov = std::tan(FovRadians * 0.5f);
+
+    const float ViewX = NdcX * MainCamera->GetAspectRatio() * TanHalfFov;
+    const float ViewY = NdcY * TanHalfFov;
 
     FVector Direction = Right * ViewX + Up * ViewY + Forward;
     Direction.Normalize();
@@ -1249,6 +1268,29 @@ void FApplication::RenderDebugUI()
     ImGui::Text("Hello Jungle World!");
 
     ImGui::Separator();
+    ImGui::Text("Camera");
+
+    bool bProjectionChanged = false;
+
+    if (ImGui::Checkbox("Orthogonal Projection", &bUseOrthogonalProjection))
+    {
+        bProjectionChanged = true;
+    }
+
+    if (bUseOrthogonalProjection)
+    {
+        if (ImGui::SliderFloat("Ortho Width", &DebugOrthoWidth, 1.0f, 100.0f))
+        {
+            bProjectionChanged = true;
+        }
+    }
+
+    if (bProjectionChanged)
+    {
+        ApplyCameraProjectionMode();
+    }
+
+    ImGui::Separator();
     ImGui::Text("Spawn Mesh");
 
     const char* MeshItems[] = { "Sphere", "Cube", "Torus" };
@@ -1330,4 +1372,11 @@ void FApplication::SpawnSelectedMeshActor()
     {
         SetSelectedActor(SpawnedActor);
     }
+}
+
+void FApplication::ApplyCameraProjectionMode()
+{
+    if (!MainCamera) { return; }
+	MainCamera->SetProjectionMode(bUseOrthogonalProjection ? EProjectionMode::Orthogonal : EProjectionMode::Perspective);
+	MainCamera->SetOrthoWidth(DebugOrthoWidth);
 }
