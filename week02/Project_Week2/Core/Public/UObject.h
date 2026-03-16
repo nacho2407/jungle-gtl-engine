@@ -11,7 +11,7 @@
 #include <cstdint>
 
 
-#define CreateMetaData(CurrentType)                           \
+#define DECLARE_ROOT_UClass(CurrentType)                           \
 private:                                                           \
     inline static UClassData* StaticClass = nullptr;               \
 public:                                                            \
@@ -29,7 +29,7 @@ public:                                                            \
 
 class UObject : public UObjectBaseUtility
 {
-	CreateMetaData(UObject)
+	DECLARE_ROOT_UClass(UObject)
 
 public:
 	size_t AllocatedSize;

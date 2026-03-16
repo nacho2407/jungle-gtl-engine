@@ -11,7 +11,7 @@ class USceneComponent;
 
 class AActor : public UObject
 {
-CreateMetaData(AActor)
+DECLARE_ROOT_UClass(AActor)
 public:
 	AActor() : UObject()
 	{
