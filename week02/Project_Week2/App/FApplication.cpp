@@ -1044,13 +1044,13 @@ void FApplication::UpdateGizmoColors()
     {
         HighlightAxis = ActiveGizmoAxis;
     }
-    else
-    {
-        int MouseX = 0;
-        int MouseY = 0;
-        InputManager->GetMousePosition(MouseX, MouseY);
-        HighlightAxis = PickGizmoAxis(MouseX, MouseY);
-    }
+    //else
+    //{
+    //    int MouseX = 0;
+    //    int MouseY = 0;
+    //    InputManager->GetMousePosition(MouseX, MouseY);
+    //    HighlightAxis = PickGizmoAxis(MouseX, MouseY);
+    //}
 
     GizmoActor->UpdateColors(HighlightAxis);
 }
