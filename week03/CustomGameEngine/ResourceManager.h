@@ -81,64 +81,64 @@ public:
 	{
 		TArray<FVertexSimple> cubeVertices =
 		{
-			// Front (+Z) - Red
-			{ -0.5f,-0.5f, 0.5f, 1,0,0,1 },
-			{ 0.5f,-0.5f, 0.5f, 1,0,0,1 },
-			{ 0.5f, 0.5f, 0.5f, 1,0,0,1 },
+			// Front (+X) - Red (과거 +Z)
+			{  0.5f, -0.5f, -0.5f, 1,0,0,1 },
+			{  0.5f,  0.5f, -0.5f, 1,0,0,1 },
+			{  0.5f,  0.5f,  0.5f, 1,0,0,1 },
 
-			{ -0.5f,-0.5f, 0.5f, 1,0,0,1 },
-			{ 0.5f, 0.5f, 0.5f, 1,0,0,1 },
-			{ -0.5f, 0.5f, 0.5f, 1,0,0,1 },
-
-
-			// Back (-Z) - Green
-			{ 0.5f,-0.5f,-0.5f, 0,1,0,1 },
-			{ -0.5f,-0.5f,-0.5f, 0,1,0,1 },
-			{ -0.5f, 0.5f,-0.5f, 0,1,0,1 },
-
-			{ 0.5f,-0.5f,-0.5f, 0,1,0,1 },
-			{ -0.5f, 0.5f,-0.5f, 0,1,0,1 },
-			{ 0.5f, 0.5f,-0.5f, 0,1,0,1 },
+			{  0.5f, -0.5f, -0.5f, 1,0,0,1 },
+			{  0.5f,  0.5f,  0.5f, 1,0,0,1 },
+			{  0.5f, -0.5f,  0.5f, 1,0,0,1 },
 
 
-			// Left (-X) - Blue
-			{ -0.5f,-0.5f,-0.5f, 0,0,1,1 },
-			{ -0.5f,-0.5f, 0.5f, 0,0,1,1 },
-			{ -0.5f, 0.5f, 0.5f, 0,0,1,1 },
+			// Back (-X) - Green (과거 -Z)
+			{ -0.5f,  0.5f, -0.5f, 0,1,0,1 },
+			{ -0.5f, -0.5f, -0.5f, 0,1,0,1 },
+			{ -0.5f, -0.5f,  0.5f, 0,1,0,1 },
 
-			{ -0.5f,-0.5f,-0.5f, 0,0,1,1 },
-			{ -0.5f, 0.5f, 0.5f, 0,0,1,1 },
-			{ -0.5f, 0.5f,-0.5f, 0,0,1,1 },
-
-
-			// Right (+X) - Yellow
-			{ 0.5f,-0.5f, 0.5f, 1,1,0,1 },
-			{ 0.5f,-0.5f,-0.5f, 1,1,0,1 },
-			{ 0.5f, 0.5f,-0.5f, 1,1,0,1 },
-
-			{ 0.5f,-0.5f, 0.5f, 1,1,0,1 },
-			{ 0.5f, 0.5f,-0.5f, 1,1,0,1 },
-			{ 0.5f, 0.5f, 0.5f, 1,1,0,1 },
+			{ -0.5f,  0.5f, -0.5f, 0,1,0,1 },
+			{ -0.5f, -0.5f,  0.5f, 0,1,0,1 },
+			{ -0.5f,  0.5f,  0.5f, 0,1,0,1 },
 
 
-			// Top (+Y) - Cyan
-			{ -0.5f,0.5f, 0.5f, 0,1,1,1 },
-			{ 0.5f,0.5f, 0.5f, 0,1,1,1 },
-			{ 0.5f,0.5f,-0.5f, 0,1,1,1 },
+			// Left (-Y) - Blue (과거 -X)
+			{ -0.5f, -0.5f, -0.5f, 0,0,1,1 },
+			{  0.5f, -0.5f, -0.5f, 0,0,1,1 },
+			{  0.5f, -0.5f,  0.5f, 0,0,1,1 },
 
-			{ -0.5f,0.5f, 0.5f, 0,1,1,1 },
-			{ 0.5f,0.5f,-0.5f, 0,1,1,1 },
-			{ -0.5f,0.5f,-0.5f, 0,1,1,1 },
+			{ -0.5f, -0.5f, -0.5f, 0,0,1,1 },
+			{  0.5f, -0.5f,  0.5f, 0,0,1,1 },
+			{ -0.5f, -0.5f,  0.5f, 0,0,1,1 },
 
 
-			// Bottom (-Y) - Magenta
-			{ -0.5f,-0.5f,-0.5f, 1,0,1,1 },
-			{ 0.5f,-0.5f,-0.5f, 1,0,1,1 },
-			{ 0.5f,-0.5f, 0.5f, 1,0,1,1 },
+			// Right (+Y) - Yellow (과거 +X)
+			{  0.5f,  0.5f, -0.5f, 1,1,0,1 },
+			{ -0.5f,  0.5f, -0.5f, 1,1,0,1 },
+			{ -0.5f,  0.5f,  0.5f, 1,1,0,1 },
 
-			{ -0.5f,-0.5f,-0.5f, 1,0,1,1 },
-			{ 0.5f,-0.5f, 0.5f, 1,0,1,1 },
-			{ -0.5f,-0.5f, 0.5f, 1,0,1,1 },
+			{  0.5f,  0.5f, -0.5f, 1,1,0,1 },
+			{ -0.5f,  0.5f,  0.5f, 1,1,0,1 },
+			{  0.5f,  0.5f,  0.5f, 1,1,0,1 },
+
+
+			// Top (+Z) - Cyan (과거 +Y)
+			{  0.5f, -0.5f,  0.5f, 0,1,1,1 },
+			{  0.5f,  0.5f,  0.5f, 0,1,1,1 },
+			{ -0.5f,  0.5f,  0.5f, 0,1,1,1 },
+
+			{  0.5f, -0.5f,  0.5f, 0,1,1,1 },
+			{ -0.5f,  0.5f,  0.5f, 0,1,1,1 },
+			{ -0.5f, -0.5f,  0.5f, 0,1,1,1 },
+
+
+			// Bottom (-Z) - Magenta (과거 -Y)
+			{ -0.5f, -0.5f, -0.5f, 1,0,1,1 },
+			{ -0.5f,  0.5f, -0.5f, 1,0,1,1 },
+			{  0.5f,  0.5f, -0.5f, 1,0,1,1 },
+
+			{ -0.5f, -0.5f, -0.5f, 1,0,1,1 },
+			{  0.5f,  0.5f, -0.5f, 1,0,1,1 },
+			{  0.5f, -0.5f, -0.5f, 1,0,1,1 },
 		};
 		return cubeVertices;
 	}
@@ -151,12 +151,16 @@ public:
 		{
 			float theta0 = i * dTheta;
 			float theta1 = (i + 1) * dTheta;
-			float x0 = radius * cosf(theta0);
-			float z0 = radius * sinf(theta0);
-			float x1 = radius * cosf(theta1);
-			float z1 = radius * sinf(theta1);
-			circleVertices.push_back({ x0, height, z0, 1, 1, 1, 1 });
-			circleVertices.push_back({ x1, height, z1, 1, 1, 1, 1 });
+
+			// 옛날: X=cos, Z=sin, Y=height
+			// UE변환: oldX->Y, oldZ->X, oldY(height)->Z
+			float y0 = radius * cosf(theta0);
+			float x0 = radius * sinf(theta0);
+			float y1 = radius * cosf(theta1);
+			float x1 = radius * sinf(theta1);
+
+			circleVertices.push_back({ x0, y0, height, 1, 1, 1, 1 });
+			circleVertices.push_back({ x1, y1, height, 1, 1, 1, 1 });
 		}
 		return circleVertices;
 	}
@@ -176,11 +180,16 @@ public:
 				float u2 = (i + 1) * dU;
 				float v2 = (j + 1) * dV;
 
-
 				auto GetTorusPoint = [=](float u, float v) -> FVector {
-					float x = (majorRadius + minorRadius * cosf(v)) * cosf(u);
-					float z = (majorRadius + minorRadius * cosf(v)) * sinf(u);
-					float y = minorRadius * sinf(v);
+					// 옛날 방식:
+					// float oldX = (majorRadius + minorRadius * cosf(v)) * cosf(u);
+					// float oldZ = (majorRadius + minorRadius * cosf(v)) * sinf(u);
+					// float oldY = minorRadius * sinf(v);
+
+					// UE변환 (oldZ, oldX, oldY):
+					float y = (majorRadius + minorRadius * cosf(v)) * cosf(u);
+					float x = (majorRadius + minorRadius * cosf(v)) * sinf(u);
+					float z = minorRadius * sinf(v);
 					return FVector(x, y, z);
 					};
 
@@ -209,23 +218,28 @@ public:
 		float halfHeight = height * 0.5f;
 		float dTheta = 2.0f * 3.14159265359f / sliceCount;
 
+		// UE변환 헬퍼 (oldX -> Y, oldZ -> X, oldY -> Z)
+		auto pushCyl = [&](float oldX, float oldY, float oldZ) {
+			cylinderVertices.push_back({ oldZ, oldX, oldY, 1,0,0,1 });
+			};
+
 		for (int i = 0; i < sliceCount; ++i)
 		{
 			float theta0 = i * dTheta;
 			float theta1 = (i + 1) * dTheta;
 
-			float x0 = radius * cosf(theta0);
-			float z0 = radius * sinf(theta0);
-			float x1 = radius * cosf(theta1);
-			float z1 = radius * sinf(theta1);
+			float oldx0 = radius * cosf(theta0);
+			float oldz0 = radius * sinf(theta0);
+			float oldx1 = radius * cosf(theta1);
+			float oldz1 = radius * sinf(theta1);
 
-			cylinderVertices.push_back({ x0, -halfHeight, z0, 1,0,0,1 });
-			cylinderVertices.push_back({ x1, -halfHeight, z1, 1,0,0,1 });
-			cylinderVertices.push_back({ x1, halfHeight, z1, 1,0,0,1 });
+			pushCyl(oldx0, -halfHeight, oldz0);
+			pushCyl(oldx1, -halfHeight, oldz1);
+			pushCyl(oldx1, halfHeight, oldz1);
 
-			cylinderVertices.push_back({ x0, -halfHeight, z0, 1,0,0,1 });
-			cylinderVertices.push_back({ x1, halfHeight, z1, 1,0,0,1 });
-			cylinderVertices.push_back({ x0, halfHeight, z0, 1,0,0,1 });
+			pushCyl(oldx0, -halfHeight, oldz0);
+			pushCyl(oldx1, halfHeight, oldz1);
+			pushCyl(oldx0, halfHeight, oldz0);
 		}
 
 		for (int i = 0; i < sliceCount; ++i)
@@ -233,14 +247,14 @@ public:
 			float theta0 = i * dTheta;
 			float theta1 = (i + 1) * dTheta;
 
-			float x0 = radius * cosf(theta0);
-			float z0 = radius * sinf(theta0);
-			float x1 = radius * cosf(theta1);
-			float z1 = radius * sinf(theta1);
+			float oldx0 = radius * cosf(theta0);
+			float oldz0 = radius * sinf(theta0);
+			float oldx1 = radius * cosf(theta1);
+			float oldz1 = radius * sinf(theta1);
 
-			cylinderVertices.push_back({ x0, halfHeight, z0, 1,0,0,1 });
-			cylinderVertices.push_back({ x1, halfHeight, z1, 1,0,0,1 });
-			cylinderVertices.push_back({ 0, halfHeight, 0, 1,0,0,1 });
+			pushCyl(oldx0, halfHeight, oldz0);
+			pushCyl(oldx1, halfHeight, oldz1);
+			pushCyl(0.0f, halfHeight, 0.0f);
 		}
 
 		for (int i = 0; i < sliceCount; ++i)
@@ -248,14 +262,14 @@ public:
 			float theta0 = i * dTheta;
 			float theta1 = (i + 1) * dTheta;
 
-			float x0 = radius * cosf(theta0);
-			float z0 = radius * sinf(theta0);
-			float x1 = radius * cosf(theta1);
-			float z1 = radius * sinf(theta1);
+			float oldx0 = radius * cosf(theta0);
+			float oldz0 = radius * sinf(theta0);
+			float oldx1 = radius * cosf(theta1);
+			float oldz1 = radius * sinf(theta1);
 
-			cylinderVertices.push_back({ x0, -halfHeight, z0, 1,0,0,1 });
-			cylinderVertices.push_back({ 0, -halfHeight, 0, 1,0,0,1 });
-			cylinderVertices.push_back({ x1, -halfHeight, z1, 1,0,0,1 });
+			pushCyl(oldx0, -halfHeight, oldz0);
+			pushCyl(0.0f, -halfHeight, 0.0f);
+			pushCyl(oldx1, -halfHeight, oldz1);
 		}
 
 		return cylinderVertices;
@@ -268,20 +282,25 @@ public:
 		float halfHeight = height * 0.5f;
 		float dTheta = 2.0f * 3.14159265359f / sliceCount;
 
+		// UE변환 헬퍼 (oldX -> Y, oldZ -> X, oldY -> Z)
+		auto pushCone = [&](float oldX, float oldY, float oldZ) {
+			coneVertices.push_back({ oldZ, oldX, oldY, 1,1,1,1 });
+			};
+
 		// 측면
 		for (int i = 0; i < sliceCount; ++i)
 		{
 			float theta0 = i * dTheta;
 			float theta1 = (i + 1) * dTheta;
 
-			float x0 = radius * cosf(theta0);
-			float z0 = radius * sinf(theta0);
-			float x1 = radius * cosf(theta1);
-			float z1 = radius * sinf(theta1);
+			float oldx0 = radius * cosf(theta0);
+			float oldz0 = radius * sinf(theta0);
+			float oldx1 = radius * cosf(theta1);
+			float oldz1 = radius * sinf(theta1);
 
-			coneVertices.push_back({ x0, -halfHeight, z0, 1, 1, 1, 1 });
-			coneVertices.push_back({ 0, halfHeight, 0, 1, 1, 1, 1 });
-			coneVertices.push_back({ x1, -halfHeight, z1, 1, 1, 1, 1 });
+			pushCone(oldx0, -halfHeight, oldz0);
+			pushCone(0.0f, halfHeight, 0.0f);
+			pushCone(oldx1, -halfHeight, oldz1);
 		}
 
 		// 밑면
@@ -290,14 +309,14 @@ public:
 			float theta0 = i * dTheta;
 			float theta1 = (i + 1) * dTheta;
 
-			float x0 = radius * cosf(theta0);
-			float z0 = radius * sinf(theta0);
-			float x1 = radius * cosf(theta1);
-			float z1 = radius * sinf(theta1);
+			float oldx0 = radius * cosf(theta0);
+			float oldz0 = radius * sinf(theta0);
+			float oldx1 = radius * cosf(theta1);
+			float oldz1 = radius * sinf(theta1);
 
-			coneVertices.push_back({ 0.0f, -halfHeight, 0.0f, 1, 1, 1, 1 });
-			coneVertices.push_back({ x0, -halfHeight, z0, 1, 1, 1, 1 });
-			coneVertices.push_back({ x1, -halfHeight, z1, 1, 1, 1, 1 });
+			pushCone(0.0f, -halfHeight, 0.0f);
+			pushCone(oldx0, -halfHeight, oldz0);
+			pushCone(oldx1, -halfHeight, oldz1);
 		}
 
 		return coneVertices;
@@ -310,9 +329,9 @@ public:
 			TArray<FVertexSimple> vertices;
 
 			TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
-			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 0.5f);
-			FMatrix cylinderRotation = FMatrix::RotationXMatrix(90.0f);
-			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 1.0f, 0.05f);
+			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.5f, 0.0f, 0.0f);
+			FMatrix cylinderRotation = FMatrix::EulerRotationMatrix(0.0f, 90.0f, 0.0f);
+			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 0.05f, 1.0f);
 			FMatrix cylinderMatrix = cylinderScale * cylinderRotation * cylinderTransform;
 
 			for (FVertexSimple& v : cylinderVertices)
@@ -332,8 +351,8 @@ public:
 			vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
 
 			TArray<FVertexSimple> coneVertices = CreateConeVertices();
-			FMatrix coneTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 1.0f);
-			FMatrix coneRotation = FMatrix::RotationXMatrix(90.0f);
+			FMatrix coneTransform = FMatrix::TranslationMatrix(1.0f, 0.0f, 0.0f);
+			FMatrix coneRotation = FMatrix::EulerRotationMatrix(0.0f, 90.0f, 0.0f);
 			FMatrix coneScale = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f);
 			FMatrix coneMatrix = coneScale * coneRotation * coneTransform;
 
@@ -368,9 +387,9 @@ public:
 			TArray<FVertexSimple> vertices;
 
 			TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
-			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.5f, 0.0f, 0.0f);
-			FMatrix cylinderRotation = FMatrix::RotationZMatrix(90.0f);
-			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 1.0f, 0.05f);
+			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.0f, 0.5f, 0.0f);
+			FMatrix cylinderRotation = FMatrix::RotationXMatrix(-90.0f);
+			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 0.05f, 1.0f);
 			FMatrix cylinderMatrix = cylinderScale * cylinderRotation * cylinderTransform;
 
 			for (FVertexSimple& v : cylinderVertices)
@@ -390,8 +409,8 @@ public:
 			vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
 
 			TArray<FVertexSimple> coneVertices = CreateConeVertices();
-			FMatrix coneTransform = FMatrix::TranslationMatrix(1.0f, 0.0f, 0.0f);
-			FMatrix coneRotation = FMatrix::RotationZMatrix(-90.0f);
+			FMatrix coneTransform = FMatrix::TranslationMatrix(0.0f, 1.0f, 0.0f);
+			FMatrix coneRotation = FMatrix::RotationXMatrix(-90.0f);
 			FMatrix coneScale = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f);
 			FMatrix coneMatrix = coneScale * coneRotation * coneTransform;
 
@@ -425,8 +444,8 @@ public:
 			TArray<FVertexSimple> vertices;
 
 			TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
-			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.0f, 0.5f, 0.0f);
-			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 1.0f, 0.05f);
+			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 0.5f);
+			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 0.05f, 1.0f);
 			FMatrix cylinderMatrix = cylinderScale * cylinderTransform;
 
 			for (FVertexSimple& v : cylinderVertices)
@@ -446,7 +465,7 @@ public:
 			vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
 
 			TArray<FVertexSimple> coneVertices = CreateConeVertices();
-			FMatrix coneTransform = FMatrix::TranslationMatrix(0.0f, 1.0f, 0.0f);
+			FMatrix coneTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 1.0f);
 			FMatrix coneScale = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f);
 			FMatrix coneMatrix = coneScale * coneTransform;
 
@@ -476,12 +495,13 @@ public:
 			CreateGeometry("GizmoTranslationZ", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
 		}
 	}
+
 	static void AddGizmoRotationMesh(ID3D11Device* Device)
 	{
 		// X Axis - Red
 		{
 			TArray<FVertexSimple> vertices = CreateTorusVertices();
-			FMatrix torusRotation = FMatrix::RotationXMatrix(90.0f);
+			FMatrix torusRotation = FMatrix::RotationYMatrix(90.0f);
 			FMatrix torusScale = FMatrix::ScaleMatrix(1.0f, 1.0f, 1.0f);
 			FMatrix torusMatrix = torusScale * torusRotation;
 
@@ -512,7 +532,7 @@ public:
 		// Y Axis - Green
 		{
 			TArray<FVertexSimple> vertices = CreateTorusVertices();
-			FMatrix torusRotation = FMatrix::RotationZMatrix(90.0f);
+			FMatrix torusRotation = FMatrix::RotationXMatrix(90.0f);
 			FMatrix torusScale = FMatrix::ScaleMatrix(1.0f, 1.0f, 1.0f);
 			FMatrix torusMatrix = torusScale * torusRotation;
 
@@ -574,9 +594,9 @@ public:
 			TArray<FVertexSimple> vertices;
 
 			TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
-			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 0.5f);
-			FMatrix cylinderRotation = FMatrix::RotationXMatrix(90.0f);
-			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 1.0f, 0.05f);
+			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.5f, 0.0f, 0.0f);
+			FMatrix cylinderRotation = FMatrix::RotationYMatrix(90.0f);
+			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 0.05f, 1.0f);
 			FMatrix cylinderMatrix = cylinderScale * cylinderRotation * cylinderTransform;
 
 			for (FVertexSimple& v : cylinderVertices)
@@ -596,7 +616,7 @@ public:
 			vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
 
 			TArray<FVertexSimple> cubeVertices = CreateCubeVertices();
-			FMatrix cubeTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 1.0f);
+			FMatrix cubeTransform = FMatrix::TranslationMatrix(1.0f, 0.0f, 0.0f);
 			FMatrix cubeScale = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f);
 			FMatrix cubeMatrix = cubeScale * cubeTransform;
 
@@ -631,9 +651,9 @@ public:
 			TArray<FVertexSimple> vertices;
 
 			TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
-			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.5f, 0.0f, 0.0f);
-			FMatrix cylinderRotation = FMatrix::RotationZMatrix(90.0f);
-			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 1.0f, 0.05f);
+			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.0f, 0.5f, 0.0f);
+			FMatrix cylinderRotation = FMatrix::RotationXMatrix(-90.0f);
+			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 0.05f, 1.0f);
 			FMatrix cylinderMatrix = cylinderScale * cylinderRotation * cylinderTransform;
 
 			for (FVertexSimple& v : cylinderVertices)
@@ -653,7 +673,7 @@ public:
 			vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
 
 			TArray<FVertexSimple> cubeVertices = CreateCubeVertices();
-			FMatrix cubeTransform = FMatrix::TranslationMatrix(1.0f, 0.0f, 0.0f);
+			FMatrix cubeTransform = FMatrix::TranslationMatrix(0.0f, 1.0f, 0.0f);
 			FMatrix cubeScale = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f);
 			FMatrix cubeMatrix = cubeScale * cubeTransform;
 
@@ -687,8 +707,8 @@ public:
 			TArray<FVertexSimple> vertices;
 
 			TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
-			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.0f, 0.5f, 0.0f);
-			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 1.0f, 0.05f);
+			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 0.5f);
+			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 0.05f, 1.0f);
 			FMatrix cylinderMatrix = cylinderScale * cylinderTransform;
 
 			for (FVertexSimple& v : cylinderVertices)
@@ -708,7 +728,7 @@ public:
 			vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
 
 			TArray<FVertexSimple> cubeVertices = CreateCubeVertices();
-			FMatrix cubeTransform = FMatrix::TranslationMatrix(0.0f, 1.0f, 0.0f);
+			FMatrix cubeTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 1.0f);
 			FMatrix cubeScale = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f);
 			FMatrix cubeMatrix = cubeScale * cubeTransform;
 

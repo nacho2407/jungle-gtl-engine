@@ -14,7 +14,7 @@ enum class EProjectionType
 	Isometric
 };
 
-const FVector UpVec(0.0f, 1.0f, 0.0f);
+const FVector UpVec(0.0f, 0.0f, 1.0f);
 const float Epsilon = 1e-6f;
 
 class UCamera : public UObject {
