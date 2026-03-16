@@ -117,9 +117,6 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	Picker = Cast<UPicker>(FObjectFactory::ConstructObject(UPicker::GetClass()));
 	Picker->SetEditor(EditorInst);
 
-	// Init gizmos
-	Gizmo::Initialize();
-
 	//Init World & Scene
 	GetWorld().InjectRenderer(Renderer);
 	SceneManager::GetInstance().NewScene();
@@ -168,7 +165,6 @@ void EngineApp::Run()
 				break;
 			}
 		}
-
 
 		TimerManager::GetInstance().Tick();
 		InputManager::GetInstance().Update();

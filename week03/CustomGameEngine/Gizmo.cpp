@@ -11,10 +11,6 @@ Gizmo::Gizmo()
 	Controller = new GizmoController();
 }
 
-void Gizmo::Initialize()
-{
-}
-
 void Gizmo::UpdateRenderObject()
 {
 	Controller->UpdateRenderObject();

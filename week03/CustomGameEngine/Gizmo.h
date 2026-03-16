@@ -23,8 +23,6 @@ private:
 	Gizmo();
 	~Gizmo();
 public:
-	static void Initialize();
-
 	void UpdateRenderObject();
 
 public:
