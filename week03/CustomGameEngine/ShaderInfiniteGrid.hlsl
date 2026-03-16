@@ -54,9 +54,9 @@ float4 mainPS(VS_OUTPUT input) : SV_Target
     
     float3 color = float3(0.5f, 0.5f, 0.5f);
     if (abs(input.WorldPos.y) < (derivative.y * GridSize * 1.5f)) 
-        color = float3(0.2f, 1.0f, 0.2f);
-    if (abs(input.WorldPos.x) < (derivative.x * GridSize * 1.5f)) 
         color = float3(1.0f, 0.2f, 0.2f);
+    if (abs(input.WorldPos.x) < (derivative.x * GridSize * 1.5f)) 
+        color = float3(0.2f, 1.0f, 0.2f);
 
     float maxDistance = 10000.0f;
     float dist = distance(input.WorldPos, CameraPos);
