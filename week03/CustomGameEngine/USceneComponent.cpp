@@ -14,8 +14,10 @@ USceneComponent::~USceneComponent()
 
 }
 
-FMatrix USceneComponent::GetRelativeMatrix() const
+FMatrix USceneComponent::GetRelativeMatrix()
 {
+	RelativeQuaternion = FQuat::FromEuler(RelativeRotation);
+
 	FMatrix S = FMatrix::ScaleMatrix(RelativeScale3D.x, RelativeScale3D.y, RelativeScale3D.z);
 	FMatrix R = RelativeQuaternion.ToMatrix();
 	FMatrix T = FMatrix::TranslationMatrix(RelativeLocation.x, RelativeLocation.y, RelativeLocation.z);

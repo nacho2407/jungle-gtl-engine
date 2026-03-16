@@ -24,7 +24,7 @@ public:
 
 	bool bIsSelected = false;
 
-	FMatrix GetRelativeMatrix() const;
+	FMatrix GetRelativeMatrix();
 
 	virtual void Update(float deltaTime) {};
 	virtual json::JSON Serialize();
