@@ -10,7 +10,7 @@ class GizmoRotationControlStrategy : public IGizmoControlStrategy
 {
 public:
 	GizmoRotationControlStrategy(GizmoController* controller);
-	~GizmoRotationControlStrategy();
+	~GizmoRotationControlStrategy() override;
 
 public:
 	virtual void Update() override;

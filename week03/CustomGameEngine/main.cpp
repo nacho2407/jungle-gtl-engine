@@ -14,5 +14,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR IpCmdLine
 	app->Run();
 	app->Finalize();
 
+	delete app;
+
 	return 0;
 }

@@ -9,7 +9,7 @@ class GizmoScaleControlStrategy : public IGizmoControlStrategy
 {
 public:
 	GizmoScaleControlStrategy(GizmoController* controller);
-	~GizmoScaleControlStrategy();
+	~GizmoScaleControlStrategy() override;
 
 public:
 	virtual void Update() override;

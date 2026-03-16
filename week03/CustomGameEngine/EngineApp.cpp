@@ -14,6 +14,7 @@
 #include "GizmoController.h"
 #include "UPicker.h"
 #include "ImGui/imgui.h"
+#include "UObject.h"
 
 #include "UAxisComp.h"
 
@@ -71,6 +72,8 @@ EngineApp::EngineApp()
 
 EngineApp::~EngineApp()
 {
+	delete Camera;
+	delete Picker;
 	delete EditorInst;
 	delete Renderer;
 }
@@ -131,17 +134,17 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 void EngineApp::Run()
 {
 	//----TEST
-	UCubeComp* cube = GetWorld().AddSceneComponent<UCubeComp>();
-	cube->SetRelativeLocation(FVector(0.0, 0, 0));
-	cube->SetRelativeScale3D(FVector(2.f, 2.f, 2.f));
+	//UCubeComp* cube = GetWorld().AddSceneComponent<UCubeComp>();
+	//cube->SetRelativeLocation(FVector(0.0, 0, 0));
+	//cube->SetRelativeScale3D(FVector(2.f, 2.f, 2.f));
 
-	UCubeComp* Cube = GetWorld().AddSceneComponent<UCubeComp>();
-	Cube->SetRelativeLocation(FVector(30.f, 0.f, 0.f));
-	Cube->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
+	//UCubeComp* Cube = GetWorld().AddSceneComponent<UCubeComp>();
+	//Cube->SetRelativeLocation(FVector(30.f, 0.f, 0.f));
+	//Cube->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
 
-	UCubeComp* Cube3 = GetWorld().AddSceneComponent<UCubeComp>();
-	Cube->SetRelativeLocation(FVector(-30.f, 0.f, 0.f));
-	Cube->SetRelativeScale3D(FVector(0.5f, 0.5f, 0.5f));
+	//UCubeComp* Cube3 = GetWorld().AddSceneComponent<UCubeComp>();
+	//Cube->SetRelativeLocation(FVector(-30.f, 0.f, 0.f));
+	//Cube->SetRelativeScale3D(FVector(0.5f, 0.5f, 0.5f));
 
 	UAxisComp* mainAxis = GetWorld().AddSceneComponent<UAxisComp>();
 
