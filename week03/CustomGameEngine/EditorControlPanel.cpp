@@ -1,4 +1,5 @@
 ﻿#include "EditorControlPanel.h"
+#include "Editor.h"
 #include "ImGui/imgui.h"
 #include "FVector.h"
 #include "TimerManager.h"
@@ -17,7 +18,7 @@ static float fov = 45.0f;
 static FVector cameraLocation = { 0.0f, 0.0f, 0.0f };
 static FVector cameraRotation = { 0.0f, 0.0f, 0.0f };
 
-EditorControlPanel::EditorControlPanel()
+EditorControlPanel::EditorControlPanel(Editor* editorDependency) : editor(editorDependency)
 {
 }
 
@@ -57,6 +58,7 @@ void EditorControlPanel::Draw(UCamera* camera)
 	ImGui::InputText("Scene Name", sceneName, 128);
 	if (ImGui::Button("New Scene"))
 	{
+		editor->SelectComponent(nullptr);
 		SceneManager::GetInstance().NewScene();
 	}
 	if (ImGui::Button("Save Scene"))
@@ -65,6 +67,7 @@ void EditorControlPanel::Draw(UCamera* camera)
 	}
 	if (ImGui::Button("Load Scene"))
 	{
+		editor->SelectComponent(nullptr);
 		SceneManager::GetInstance().LoadScene(sceneName);
 	}
 	ImGui::Separator();

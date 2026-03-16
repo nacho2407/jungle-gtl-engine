@@ -15,7 +15,7 @@
 
 Editor::Editor()
 {
-	ControlPanel = new EditorControlPanel();
+	ControlPanel = new EditorControlPanel(this);
 	Console = new EditorConsole();
 	PropertyPanel = new EditorPropertyPanel();
 	StatPanel = new EditorStatPanel();
