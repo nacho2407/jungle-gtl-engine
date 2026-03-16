@@ -132,9 +132,12 @@ void URenderer::ReleaseFrameBuffer() {
 void URenderer::CreateRasterizerState() {
 	D3D11_RASTERIZER_DESC rasterizerdesc = {};
 	rasterizerdesc.FillMode = D3D11_FILL_SOLID;
-	rasterizerdesc.CullMode = D3D11_CULL_BACK;
 
+	rasterizerdesc.CullMode = D3D11_CULL_BACK;
 	Device->CreateRasterizerState(&rasterizerdesc, &RasterizerState);
+
+	rasterizerdesc.CullMode = D3D11_CULL_NONE;
+	Device->CreateRasterizerState(&rasterizerdesc, &RasterizerStateNoCull);
 }
 
 void URenderer::ReleaseRasterizerState() {
@@ -142,20 +145,26 @@ void URenderer::ReleaseRasterizerState() {
 		RasterizerState->Release();
 		RasterizerState = nullptr;
 	}
+	if (RasterizerStateNoCull) {
+		RasterizerStateNoCull->Release();
+		RasterizerStateNoCull = nullptr;
+	}
 }
 
 void URenderer::CreateDepthStencilState() {
 	D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
-	depthStencilDesc.DepthEnable = TRUE;
-	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
-
 	depthStencilDesc.StencilEnable = FALSE;
 
+	depthStencilDesc.DepthEnable = TRUE;
+	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 	Device->CreateDepthStencilState(&depthStencilDesc, &DepthStencilState);
 
-	depthStencilDesc.DepthEnable = FALSE;
+	depthStencilDesc.DepthEnable = TRUE;
+	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+	Device->CreateDepthStencilState(&depthStencilDesc, &DepthStencilStateNoWrite);
 
+	depthStencilDesc.DepthEnable = FALSE;
 	Device->CreateDepthStencilState(&depthStencilDesc, &DepthStencilStateNoDepth);
 }
 
@@ -163,6 +172,14 @@ void URenderer::ReleaseDepthStencilState() {
 	if (DepthStencilState) {
 		DepthStencilState->Release();
 		DepthStencilState = nullptr;
+	}
+	if (DepthStencilStateNoWrite) {
+		DepthStencilStateNoWrite->Release();
+		DepthStencilStateNoWrite = nullptr;
+	}
+	if (DepthStencilStateNoDepth) {
+		DepthStencilStateNoDepth->Release();
+		DepthStencilStateNoDepth = nullptr;
 	}
 }
 
@@ -248,11 +265,16 @@ void URenderer::CreateConstantBuffer() {
 	FrameConstantBuffer.Bind(DeviceContext);
 	ObjectConstantBuffer.Create(Device, sizeof(FObjectConstant), 1);
 	ObjectConstantBuffer.Bind(DeviceContext);
+
+	FGridConstantBuffer.Create(Device, sizeof(FGridConstant), 2);
+	FGridConstantBuffer.Bind(DeviceContext);
 }
 
 void URenderer::ReleaseConstantBuffer() {
 	FrameConstantBuffer.Release();
 	ObjectConstantBuffer.Release();
+
+	FGridConstantBuffer.Release();
 }
 
 void URenderer::Render(UCamera* Camera)
@@ -306,4 +328,34 @@ void URenderer::Render(UCamera* Camera)
 	}
 	// ClearRenderObjects();
 	// RenderObjects.clear();
+}
+
+void URenderer::RenderGrid(UCamera* Camera, ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader)
+{
+	FGridConstant GridConst;
+	GridConst.View = Camera->GetViewMatrix();
+	GridConst.Projection = Camera->GetProjectionMatrix();
+	GridConst.CameraPos[0] = Camera->Position.x;
+	GridConst.CameraPos[1] = Camera->Position.y;
+	GridConst.CameraPos[2] = Camera->Position.z;
+	GridConst.GridSize = 10.0f;
+	GridConst.LineThickness = 0.8f;
+	FGridConstantBuffer.Update(DeviceContext, &GridConst, sizeof(FGridConstant));
+	
+	DeviceContext->OMSetDepthStencilState(DepthStencilStateNoWrite, 0);
+	DeviceContext->RSSetState(RasterizerStateNoCull);
+
+	DeviceContext->VSSetShader(VertexShader, nullptr, 0);
+	DeviceContext->PSSetShader(PixelShader, nullptr, 0);
+	DeviceContext->IASetInputLayout(nullptr);
+
+	FGridConstantBuffer.Bind(DeviceContext);
+	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	DeviceContext->Draw(4, 0);
+
+
+
+	DeviceContext->RSSetState(RasterizerState);
+	DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
+	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }

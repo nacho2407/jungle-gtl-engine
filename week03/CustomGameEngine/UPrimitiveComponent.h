@@ -38,8 +38,8 @@ public:
 	virtual void Deserialize(json::JSON) override;
 
 	FGeometry* GetGeometry() { return VResource; }
-private:
-	void UpdateRenderObject();
+	private:
+	virtual void UpdateRenderObject();
 
 protected:
 	FGeometry* VResource;

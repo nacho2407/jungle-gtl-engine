@@ -71,6 +71,50 @@ public:
 		vertexshaderCSO->Release();
 	}
 
+	static void CreateGridMaterial(WFString ShaderFileName, ID3D11Device* Device)
+	{
+		ID3D11VertexShader* VertexShader = nullptr;
+		ID3DBlob* vertexshaderCSO = nullptr;
+		ID3DBlob* errorBlob = nullptr;
+
+		HRESULT hr = D3DCompileFromFile(ShaderFileName.c_str(), nullptr, nullptr,
+			"VS_Main", "vs_5_0", 0, 0, &vertexshaderCSO, &errorBlob);
+
+		if (FAILED(hr)) {
+			if (errorBlob) {
+				OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+				errorBlob->Release();
+			}
+			return;
+		}
+		Device->CreateVertexShader(vertexshaderCSO->GetBufferPointer(),
+			vertexshaderCSO->GetBufferSize(), nullptr, &VertexShader);
+
+		ID3D11PixelShader* PixelShader = nullptr;
+		ID3DBlob* pixelshaderCSO = nullptr;
+
+		hr = D3DCompileFromFile(ShaderFileName.c_str(), nullptr, nullptr,
+			"PS_Main", "ps_5_0", 0, 0, &pixelshaderCSO, &errorBlob);
+
+		if (FAILED(hr)) {
+			if (errorBlob) {
+				OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+				errorBlob->Release();
+			}
+			return;
+		}
+		Device->CreatePixelShader(pixelshaderCSO->GetBufferPointer(),
+			pixelshaderCSO->GetBufferSize(), nullptr, &PixelShader);
+
+		FMaterial& Mat = MaterialMap[ShaderFileName];
+		Mat.VertexShader = VertexShader;
+		Mat.PixelShader = PixelShader;
+		Mat.InputLayout = nullptr;
+
+		if (vertexshaderCSO) vertexshaderCSO->Release();
+		if (pixelshaderCSO) pixelshaderCSO->Release();
+	}
+
 	//Temporary Function
 	static void AddCubeMesh(ID3D11Device* Device);
 	static void AddSphereMesh(ID3D11Device* Device);

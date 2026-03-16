@@ -1,0 +1,68 @@
+cbuffer CameraBuffer : register(b2)
+{
+    row_major matrix View;
+    row_major matrix Projection;
+    float3 CameraPos;
+    float GridSize;
+    float LineThickness;
+    float3 padding;
+};
+
+struct VS_OUTPUT
+{
+    float4 Pos : SV_POSITION; // 클립 공간 좌표
+    float3 WorldPos : TEXCOORD0; // 월드 공간 좌표
+};
+
+// ==========================================
+// Vertex Shader
+// ==========================================
+VS_OUTPUT VS_Main(uint id : SV_VertexID)
+{
+    VS_OUTPUT output;
+
+    float2 positions[4] =
+    {
+        float2(-10000.0f, -10000.0f),
+        float2(10000.0f, -10000.0f),
+        float2(-10000.0f, 10000.0f),
+        float2(10000.0f, 10000.0f)
+    };
+    float4 worldPosition = float4(positions[id].x, 0.0f, positions[id].y, 1.0f);
+    matrix viewProj = mul(View, Projection);
+    output.Pos = mul(worldPosition, viewProj);
+    output.WorldPos = worldPosition.xyz;
+
+    return output;
+}
+
+// ==========================================
+// Pixel Shader
+// ==========================================
+float4 PS_Main(VS_OUTPUT input) : SV_Target
+{
+    float2 coord = input.WorldPos.xz / GridSize;
+    float2 derivative = fwidth(coord);
+    
+    
+    float2 grid = abs(frac(coord - 0.5f) - 0.5f) / derivative;
+    float lineAlpha = clamp(LineThickness - min(grid.x, grid.y), 0.0f, 1.0f);
+    
+    float3 color = float3(0.5f, 0.5f, 0.5f);
+    if (abs(input.WorldPos.z) < (derivative.y * GridSize * 1.5f)) 
+        color = float3(1.0f, 0.2f, 0.2f);
+    if (abs(input.WorldPos.x) < (derivative.x * GridSize * 1.5f)) 
+        color = float3(0.2f, 0.2f, 1.0f);
+
+    float maxDistance = 10000.0f;
+    float dist = distance(input.WorldPos, CameraPos);
+    float fade = 1.0f - saturate(dist / maxDistance);
+    fade = pow(fade, 2.0f);
+
+    float lodFade = saturate(0.8f - max(derivative.x, derivative.y));
+    float finalAlpha = lineAlpha * fade * lodFade;
+    if (finalAlpha < 0.01f)
+        discard;
+
+    return float4(color, finalAlpha);
+}
