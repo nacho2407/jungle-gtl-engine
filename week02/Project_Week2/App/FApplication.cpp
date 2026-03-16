@@ -672,7 +672,7 @@ AActor* FApplication::PickActor(const FRay& Ray) const
     AActor* ClosestActor = nullptr;
     float ClosestT = FLT_MAX;
 
-    const std::vector<AActor*>& Actors = World->GetActors();
+    const TArray<AActor*>& Actors = World->GetActors();
 
     for (AActor* Actor : Actors)
     {
@@ -765,7 +765,7 @@ UStaticMeshComponent* FApplication::FindStaticMeshComponent(AActor* Actor) const
         return nullptr;
     }
 
-    const std::vector<UActorComponent*>& Components = Actor->GetComponents();
+    const TArray<UActorComponent*>& Components = Actor->GetComponents();
     for (UActorComponent* Component : Components)
     {
         UStaticMeshComponent* MeshComp = dynamic_cast<UStaticMeshComponent*>(Component);

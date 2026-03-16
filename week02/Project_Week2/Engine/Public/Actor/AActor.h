@@ -19,11 +19,11 @@ public:
 public:
 	void AddComponent(UActorComponent* InComponent);
 
-	const std::vector<UActorComponent*>& GetComponents() const;
+	const TArray<UActorComponent*>& GetComponents() const;
 
 	void SetRootComponent(USceneComponent* InRootComponent);
 	USceneComponent* GetRootComponent() const;
 protected:
-	std::vector<UActorComponent*> Components;
+	TArray<UActorComponent*> Components;
 	USceneComponent* RootComponent;
 };

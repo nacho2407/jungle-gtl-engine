@@ -22,7 +22,7 @@ namespace
         };
     }
 
-    std::vector<FVertexSimple> CreateAxesVertices() // @@@ 이거 쓰고 있으면 Axes.h는 안 쓰고 있는 거 아닌가??
+    TArray<FVertexSimple> CreateAxesVertices() // @@@ 이거 쓰고 있으면 Axes.h는 안 쓰고 있는 거 아닌가??
     {
         return
         {
@@ -60,7 +60,7 @@ namespace
         };
     }
 
-    std::vector<FVertexSimple> CreateGizmoArrowVertices()
+    TArray<FVertexSimple> CreateGizmoArrowVertices()
     {
         const FVector4 W(1, 1, 1, 1);
 
@@ -88,7 +88,7 @@ namespace
         };
     }
 
-    std::vector<uint32_t> CreateGizmoArrowIndices()
+    TArray<uint32_t> CreateGizmoArrowIndices()
     {
         return
         {
@@ -208,9 +208,9 @@ namespace
     //    return V;
     //}
 
-    std::vector<FVertexSimple> CreateDiscVertices(int Segments)
+    TArray<FVertexSimple> CreateDiscVertices(int Segments)
     {
-        std::vector<FVertexSimple> V;
+        TArray<FVertexSimple> V;
         V.reserve(Segments + 2);
 
         const float PI = 3.14159265358979323846f;
@@ -229,9 +229,9 @@ namespace
         return V;
     }
 
-    std::vector<uint32_t> CreateDiscIndices(int Segments)
+    TArray<uint32_t> CreateDiscIndices(int Segments)
     {
-        std::vector<uint32_t> I;
+        TArray<uint32_t> I;
         I.reserve(Segments * 3);
 
         for (int i = 1; i <= Segments; ++i)
@@ -264,10 +264,10 @@ namespace BuiltInMeshFactory
     {
         UStaticMesh* Mesh = new UStaticMesh();
 
-        std::vector<FVertexSimple> Vertices(
+        TArray<FVertexSimple> Vertices(
             cube_vertices,
             cube_vertices + cube_vertex_count);
-        std::vector<uint32_t> Indices(
+        TArray<uint32_t> Indices(
             cube_indices,
             cube_indices + cube_index_count);
 
