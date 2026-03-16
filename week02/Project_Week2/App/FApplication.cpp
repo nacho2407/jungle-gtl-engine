@@ -28,7 +28,10 @@
 #include "FUObjectFactory.h"
 #include "FUObjectAllocator.h"
 
-#include "GUI/GUI.h"
+#include "Actor/ASphere.h"
+#include "Actor/ACube.h"
+
+#include "GUI.h"
 
 #include <chrono>
 
@@ -150,6 +153,7 @@ bool FApplication::InitializeResources()
     //TriangleMesh = BuiltInMeshFactory::CreateTriangleMesh();
     TorusMesh = BuiltInMeshFactory::CreateTorusMesh(64, 32, 1.2f, 0.35f);
     AxesMesh = BuiltInMeshFactory::CreateAxesMesh();
+    GridMesh = BuiltInMeshFactory::CreateGridMesh(20, 1.0f);
     GizmoArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh();
 
     //ClickCircleMesh = BuiltInMeshFactory::CreateCircleMesh(64);
@@ -180,36 +184,17 @@ bool FApplication::InitializeScene()
 
     // Sphere
     {
-        AActor* Actor = new AActor();
-        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
-        MeshComp->SetStaticMesh(SphereMesh);
-        MeshComp->SetRelativeLocation(FVector(-2.0f, -2.0f, 5.0f));
-        //MeshComp->SetRelativeScale(FVector(3.0f, 3.0f, 3.0f));
-        Actor->AddComponent(MeshComp);
-        Actor->SetRootComponent(MeshComp);
-        World->AddActor(Actor);
-    }
-
-    // Sphere
-    {
-        AActor* Actor = new AActor();
-        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
-        MeshComp->SetStaticMesh(SphereMesh);
-        MeshComp->SetRelativeLocation(FVector(0.0f, 2.0f, 10.0f));
-        //MeshComp->SetRelativeScale(FVector(3.0f, 3.0f, 3.0f));
-        Actor->AddComponent(MeshComp);
-        Actor->SetRootComponent(MeshComp);
+        ASphere* Actor = new ASphere();
+        Actor->SetStaticMesh(SphereMesh);
+        Actor->GetStaticMeshComponent()->SetRelativeLocation(FVector(-2.0f, -2.0f, 5.0f));
         World->AddActor(Actor);
     }
 
     // Cube
     {
-        AActor* Actor = new AActor();
-        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
-        MeshComp->SetStaticMesh(CubeMesh);
-        MeshComp->SetRelativeLocation(FVector(2.0f, 0.0f, 5.0f));
-        Actor->AddComponent(MeshComp);
-        Actor->SetRootComponent(MeshComp);
+        ACube* Actor = new ACube();
+        Actor->SetStaticMesh(CubeMesh);
+        Actor->GetStaticMeshComponent()->SetRelativeLocation(FVector(2.0f, 0.0f, 5.0f));
         World->AddActor(Actor);
     }
 
@@ -238,6 +223,19 @@ bool FApplication::InitializeScene()
         WorldAxesActor->AddComponent(MeshComp);
         WorldAxesActor->SetRootComponent(MeshComp);
         World->AddActor(WorldAxesActor);
+    }
+
+    // Ground Grid
+    {
+        GridActor = new AActor();
+
+        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
+        MeshComp->SetStaticMesh(GridMesh);
+        MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
+
+        GridActor->AddComponent(MeshComp);
+        GridActor->SetRootComponent(MeshComp);
+        World->AddActor(GridActor);
     }
 
     // Gizmo
@@ -397,7 +395,7 @@ void FApplication::Tick(float DeltaTime)
             {
                 HitActor = Proxy.Primitive->GetOwner();
 
-                if (HitActor == GizmoActor || HitActor == WorldAxesActor)
+                if (HitActor == GizmoActor || HitActor == WorldAxesActor || HitActor == GridActor)
                 {
                     HitActor = nullptr;
                 }
@@ -670,12 +668,12 @@ AActor* FApplication::PickActor(const FRay& Ray) const
     AActor* ClosestActor = nullptr;
     float ClosestT = FLT_MAX;
 
-    const std::vector<AActor*>& Actors = World->GetActors();
+    const TArray<AActor*>& Actors = World->GetActors();
 
     for (AActor* Actor : Actors)
     {
         // @@@ Actor==GizmoActor라는데, 이거 XYZ로 나누면서 nullptr 아닌가?
-        if (!Actor || Actor == CameraActor || Actor == GizmoActor || Actor == WorldAxesActor || Actor == ClickCircleActor)
+        if (!Actor || Actor == CameraActor || Actor == GizmoActor || Actor == WorldAxesActor || Actor == ClickCircleActor || Actor == GridActor)
         {
             continue;
         }
@@ -763,7 +761,7 @@ UStaticMeshComponent* FApplication::FindStaticMeshComponent(AActor* Actor) const
         return nullptr;
     }
 
-    const std::vector<UActorComponent*>& Components = Actor->GetComponents();
+    const TArray<UActorComponent*>& Components = Actor->GetComponents();
     for (UActorComponent* Component : Components)
     {
         UStaticMeshComponent* MeshComp = dynamic_cast<UStaticMeshComponent*>(Component);
@@ -1083,7 +1081,7 @@ void FApplication::AddSelectionOutlineRenderItem()
     OutlineItem.Color = FVector4(0.953f, 0.596f, 0.184f, 1.0f);
 
     // backface 확장 outline 핵심
-    OutlineItem.CullMode = ERenderCullMode::Back;
+    OutlineItem.CullMode = ERenderCullMode::Front;
     OutlineItem.bDepthEnable = true;
     OutlineItem.bUseVertexColor = false;
 

@@ -22,7 +22,7 @@ namespace
         };
     }
 
-    std::vector<FVertexSimple> CreateAxesVertices() // @@@ 이거 쓰고 있으면 Axes.h는 안 쓰고 있는 거 아닌가??
+    TArray<FVertexSimple> CreateAxesVertices() // @@@ 이거 쓰고 있으면 Axes.h는 안 쓰고 있는 거 아닌가??
     {
         return
         {
@@ -60,7 +60,7 @@ namespace
         };
     }
 
-    std::vector<FVertexSimple> CreateGizmoArrowVertices()
+    TArray<FVertexSimple> CreateGizmoArrowVertices()
     {
         const FVector4 W(1, 1, 1, 1);
 
@@ -88,7 +88,7 @@ namespace
         };
     }
 
-    std::vector<uint32_t> CreateGizmoArrowIndices()
+    TArray<uint32_t> CreateGizmoArrowIndices()
     {
         return
         {
@@ -208,9 +208,9 @@ namespace
     //    return V;
     //}
 
-    std::vector<FVertexSimple> CreateDiscVertices(int Segments)
+    TArray<FVertexSimple> CreateDiscVertices(int Segments)
     {
-        std::vector<FVertexSimple> V;
+        TArray<FVertexSimple> V;
         V.reserve(Segments + 2);
 
         const float PI = 3.14159265358979323846f;
@@ -229,9 +229,9 @@ namespace
         return V;
     }
 
-    std::vector<uint32_t> CreateDiscIndices(int Segments)
+    TArray<uint32_t> CreateDiscIndices(int Segments)
     {
-        std::vector<uint32_t> I;
+        TArray<uint32_t> I;
         I.reserve(Segments * 3);
 
         for (int i = 1; i <= Segments; ++i)
@@ -242,6 +242,35 @@ namespace
         }
 
         return I;
+    }
+
+    TArray<FVertexSimple> CreateGridVertices(int HalfCount, float Spacing)
+    {
+        TArray<FVertexSimple> Vertices;
+        const float Extent = HalfCount * Spacing;
+
+        for (int i = -HalfCount; i <= HalfCount; ++i)
+        {
+            const float P = i * Spacing;
+            const bool bCenter = (i == 0);
+            const float C = bCenter ? 0.55f : 0.25f;
+
+            Vertices.emplace_back(-Extent, 0.0f, P, C, C, C, 1.0f);
+            Vertices.emplace_back(Extent, 0.0f, P, C, C, C, 1.0f);
+
+            Vertices.emplace_back(P, 0.0f, -Extent, C, C, C, 1.0f);
+            Vertices.emplace_back(P, 0.0f, Extent, C, C, C, 1.0f);
+        }
+
+        return Vertices;
+    }
+
+    UStaticMesh* CreateGridMesh(int HalfCount, float Spacing)
+    {
+        UStaticMesh* Mesh = new UStaticMesh();
+        Mesh->SetVertices(CreateGridVertices(HalfCount, Spacing));
+        Mesh->SetTopology(EMeshTopology::LineList);
+        return Mesh;
     }
 }
 
@@ -264,10 +293,10 @@ namespace BuiltInMeshFactory
     {
         UStaticMesh* Mesh = new UStaticMesh();
 
-        std::vector<FVertexSimple> Vertices(
+        TArray<FVertexSimple> Vertices(
             cube_vertices,
             cube_vertices + cube_vertex_count);
-        std::vector<uint32_t> Indices(
+        TArray<uint32_t> Indices(
             cube_indices,
             cube_indices + cube_index_count);
 
@@ -333,6 +362,14 @@ namespace BuiltInMeshFactory
         Mesh->SetVertices(CreateDiscVertices(Segments));
         Mesh->SetIndices(CreateDiscIndices(Segments));
         Mesh->SetTopology(EMeshTopology::TriangleList);
+        return Mesh;
+    }
+    
+    UStaticMesh* CreateGridMesh(int HalfCount, float Spacing)
+    {
+        UStaticMesh* Mesh = new UStaticMesh();
+        Mesh->SetVertices(CreateGridVertices(HalfCount, Spacing));
+        Mesh->SetTopology(EMeshTopology::LineList);
         return Mesh;
     }
 }

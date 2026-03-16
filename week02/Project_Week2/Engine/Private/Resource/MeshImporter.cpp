@@ -18,7 +18,7 @@ namespace
         float X, Y, Z;
     };
 
-    static std::vector<uint8_t> ReadBinaryFile(const std::string& FilePath)
+    static TArray<uint8_t> ReadBinaryFile(const FString& FilePath)
     {
         std::ifstream File(FilePath, std::ios::binary);
         if (!File)
@@ -30,7 +30,7 @@ namespace
         const std::streamsize Size = File.tellg();
         File.seekg(0, std::ios::beg);
 
-        std::vector<uint8_t> Data(static_cast<size_t>(Size));
+        TArray<uint8_t> Data(static_cast<size_t>(Size));
         if (Size > 0)
         {
             File.read(reinterpret_cast<char*>(Data.data()), Size);
@@ -39,7 +39,7 @@ namespace
         return Data;
     }
 
-    static json ReadJsonFile(const std::string& FilePath)
+    static json ReadJsonFile(const FString& FilePath)
     {
         std::ifstream File(FilePath);
         if (!File)
@@ -55,7 +55,7 @@ namespace
 
 namespace MeshImporter
 {
-    UStaticMesh* LoadStaticMeshFromGltf(const std::string& GltfPath)
+    UStaticMesh* LoadStaticMeshFromGltf(const FString& GltfPath)
     {
         const json Gltf = ReadJsonFile(GltfPath);
         if (Gltf.is_null())
@@ -72,10 +72,10 @@ namespace MeshImporter
         const std::filesystem::path GltfFilePath(GltfPath);
         const std::filesystem::path BaseDir = GltfFilePath.parent_path();
 
-        const std::string BinUri = Gltf["buffers"][0]["uri"].get<std::string>();
+        const FString BinUri = Gltf["buffers"][0]["uri"].get<std::string>();
         const std::filesystem::path BinPath = BaseDir / BinUri;
 
-        const std::vector<uint8_t> BinData = ReadBinaryFile(BinPath.string());
+        const TArray<uint8_t> BinData = ReadBinaryFile(BinPath.string());
         if (BinData.empty())
         {
             return nullptr;
@@ -103,7 +103,7 @@ namespace MeshImporter
             IndexBufferView.value("byteOffset", 0) +
             IndexAccessor.value("byteOffset", 0);
 
-        std::vector<FVertexSimple> Vertices;
+        TArray<FVertexSimple> Vertices;
         Vertices.reserve(PositionCount);
 
         const FVector3Raw* Positions =
@@ -117,7 +117,7 @@ namespace MeshImporter
             Vertices.emplace_back(P.X, P.Y, P.Z, 1.0f, 1.0f, 1.0f, 1.0f);
         }
 
-        std::vector<uint32_t> Indices;
+        TArray<uint32_t> Indices;
         Indices.reserve(IndexCount);
 
         const int ComponentType = IndexAccessor["componentType"].get<int>();

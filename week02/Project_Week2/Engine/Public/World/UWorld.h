@@ -23,9 +23,9 @@ public:
 
     void BuildScene(FScene& OutScene) const;
 
-    const std::vector<AActor*>& GetActors() const;
+    const TArray<AActor*>& GetActors() const;
 
 private:
-    std::vector<AActor*> Actors;
+    TArray<AActor*> Actors;
     bool bHasBegunPlay;
 };

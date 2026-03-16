@@ -14,11 +14,11 @@ public:
 	virtual ~UStaticMesh();
 
 public:
-	void SetVertices(const std::vector<FVertexSimple>& InVertices); // @@@@ 이렇게 하면 VertexSimple 모양 데이터만 가능한 거 아님? 
-	const std::vector<FVertexSimple>& GetVertices() const;
+	void SetVertices(const TArray<FVertexSimple>& InVertices); // @@@@ 이렇게 하면 VertexSimple 모양 데이터만 가능한 거 아님? 
+	const TArray<FVertexSimple>& GetVertices() const;
 
-	void SetIndices(const std::vector<uint32_t>& InIndices);
-	const std::vector<uint32_t>& GetIndices() const;
+	void SetIndices(const TArray<uint32_t>& InIndices);
+	const TArray<uint32_t>& GetIndices() const;
 
 	void SetTopology(EMeshTopology InTopology);
 	EMeshTopology GetTopology() const;
@@ -28,7 +28,7 @@ public:
 	bool HasIndices() const; 
 
 private:
-	std::vector<FVertexSimple> Vertices;
-	std::vector<uint32_t> Indices;
+	TArray<FVertexSimple> Vertices;
+	TArray<uint32_t> Indices;
 	EMeshTopology Topology = EMeshTopology::TriangleList;
 };

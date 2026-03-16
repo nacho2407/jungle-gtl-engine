@@ -35,5 +35,5 @@ protected:
 
     bool bDepthEnable = true;
     bool bUseVertexColor = true; // @@@@ 이름 중복 있음
-    ERenderCullMode CullMode = ERenderCullMode::Back;
+    ERenderCullMode CullMode = ERenderCullMode::Front;
 };

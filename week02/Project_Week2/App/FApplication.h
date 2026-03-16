@@ -134,6 +134,9 @@ private:
     AActor* ClickCircleActor = nullptr;
     UStaticMeshComponent* ClickCircleComp = nullptr;
 
+    UStaticMesh* GridMesh = nullptr;
+    AActor* GridActor = nullptr;
+
     FPointerPulse PointerPulse;
 
     // 상혁 테스트
