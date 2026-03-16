@@ -32,7 +32,7 @@ VS_OUTPUT mainVS(uint id : SV_VertexID)
         float2(-10000.0f, 10000.0f),
         float2(10000.0f, 10000.0f)
     };
-    float4 worldPosition = float4(positions[id].x, 0.0f, positions[id].y, 1.0f);
+    float4 worldPosition = float4(positions[id].x, positions[id].y, 0.0f, 1.0f);
     matrix viewProj = mul(View, Projection);
     output.Pos = mul(worldPosition, viewProj);
     output.WorldPos = worldPosition.xyz;
@@ -45,7 +45,7 @@ VS_OUTPUT mainVS(uint id : SV_VertexID)
 // ==========================================
 float4 mainPS(VS_OUTPUT input) : SV_Target
 {
-    float2 coord = input.WorldPos.xz / GridSize;
+    float2 coord = input.WorldPos.xy / GridSize;
     float2 derivative = fwidth(coord);
     
     
@@ -53,10 +53,10 @@ float4 mainPS(VS_OUTPUT input) : SV_Target
     float lineAlpha = clamp(LineThickness - min(grid.x, grid.y), 0.0f, 1.0f);
     
     float3 color = float3(0.5f, 0.5f, 0.5f);
-    if (abs(input.WorldPos.z) < (derivative.y * GridSize * 1.5f)) 
-        color = float3(1.0f, 0.2f, 0.2f);
+    if (abs(input.WorldPos.y) < (derivative.y * GridSize * 1.5f)) 
+        color = float3(0.2f, 1.0f, 0.2f);
     if (abs(input.WorldPos.x) < (derivative.x * GridSize * 1.5f)) 
-        color = float3(0.2f, 0.2f, 1.0f);
+        color = float3(1.0f, 0.2f, 0.2f);
 
     float maxDistance = 10000.0f;
     float dist = distance(input.WorldPos, CameraPos);
