@@ -15,7 +15,7 @@ void UActorComponent::BeginPlay()
 {
 	bHasBegunPlay = true;
 }
-void UActorComponent::TickComponent(float DeltaTime)
+void UActorComponent::TickComponent(float DeltaTime) // @@@ 음..왜있는거임
 {
 	// Tick이 비활성화되어 있거나, 컴포넌트가 비활성 상태면 실행 안 함
 	if (!bCanEverTick || !bIsActivate)

@@ -34,6 +34,9 @@ struct FPointerPulse
     int StartMouseX = 0;
     int StartMouseY = 0;
 
+    int CurrentMouseX = 0;
+    int CurrentMouseY = 0;
+
     float CurrentRadius = 0.0f;
     float MaxRadius = 0.05f;      // 월드 단위
     float GrowSpeed = 0.5f;       // radius/sec
