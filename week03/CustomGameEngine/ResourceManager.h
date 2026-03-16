@@ -3,12 +3,13 @@
 #include "d3d11.h"
 #include "d3dcompiler.h"
 #include "FVertexSimple.h"
-#include "UEngineTypes.h"
 #include "FMatrix.h"
 
 #include "FVector.h"
 #include "FMaterial.h"
 #include "FGeometry.h"
+#include "Math/MathHelper.h"
+
 class ResourceManager
 {
 public:
@@ -147,7 +148,7 @@ public:
 	static TArray<FVertexSimple> CreateCircleVertices(int sliceCount = 20, float radius = 0.5f, float height = 0.0f)
 	{
 		TArray<FVertexSimple> circleVertices;
-		float dTheta = 2.0f * 3.14159265359f / sliceCount;
+		float dTheta = 2.0f * MathHelper::PI / sliceCount;
 		for (int i = 0; i < sliceCount; ++i)
 		{
 			float theta0 = i * dTheta;
@@ -166,31 +167,34 @@ public:
 		return circleVertices;
 	}
 
-	static TArray<FVertexSimple> CreateTorusVertices(float majorRadius = 1.0f, float minorRadius = 0.05f, int radialSegments = 32, int tubularSegments = 16)
+	static TArray<FVertexSimple> CreateTorusVertices(float majorRadius = 1.0f, float minorRadius = 0.1f, int radialSegments = 32, int tubularSegments = 16)
 	{
 		TArray<FVertexSimple> torusVertices;
-		float dU = 2.0f * 3.14159265359f / radialSegments;
-		float dV = 2.0f * 3.14159265359f / tubularSegments;
+
+		float dU = 0.5f * MathHelper::PI / radialSegments;
+		float dV = 2.0f * MathHelper::PI / tubularSegments;
+
+		float flatScaleZ = 0.2f;
 
 		for (int i = 0; i < radialSegments; ++i)
 		{
 			for (int j = 0; j < tubularSegments; ++j)
 			{
 				float u1 = i * dU;
-				float v1 = j * dV;
+				float v1 = j * dV + MathHelper::PI / 4.0f;
 				float u2 = (i + 1) * dU;
-				float v2 = (j + 1) * dV;
+				float v2 = (j + 1) * dV + (MathHelper::PI / 4.0f);
 
 				auto GetTorusPoint = [=](float u, float v) -> FVector {
-					// 옛날 방식:
-					// float oldX = (majorRadius + minorRadius * cosf(v)) * cosf(u);
-					// float oldZ = (majorRadius + minorRadius * cosf(v)) * sinf(u);
-					// float oldY = minorRadius * sinf(v);
+					float sectionX = minorRadius * cosf(v);
+					float sectionY = minorRadius * sinf(v) * flatScaleZ;
 
-					// UE변환 (oldZ, oldX, oldY):
-					float y = (majorRadius + minorRadius * cosf(v)) * cosf(u);
-					float x = (majorRadius + minorRadius * cosf(v)) * sinf(u);
-					float z = minorRadius * sinf(v);
+					float r = majorRadius + sectionX;
+
+					float y = r * cosf(u);
+					float x = r * sinf(u);
+					float z = sectionY;
+
 					return FVector(x, y, z);
 					};
 
@@ -217,7 +221,7 @@ public:
 		TArray<FVertexSimple> cylinderVertices;
 
 		float halfHeight = height * 0.5f;
-		float dTheta = 2.0f * 3.14159265359f / sliceCount;
+		float dTheta = 2.0f * MathHelper::PI / sliceCount;
 
 		// UE변환 헬퍼 (oldX -> Y, oldZ -> X, oldY -> Z)
 		auto pushCyl = [&](float oldX, float oldY, float oldZ) {
@@ -281,7 +285,7 @@ public:
 		TArray<FVertexSimple> coneVertices;
 
 		float halfHeight = height * 0.5f;
-		float dTheta = 2.0f * 3.14159265359f / sliceCount;
+		float dTheta = 2.0f * MathHelper::PI / sliceCount;
 
 		// UE변환 헬퍼 (oldX -> Y, oldZ -> X, oldY -> Z)
 		auto pushCone = [&](float oldX, float oldY, float oldZ) {
@@ -502,8 +506,8 @@ public:
 		// X Axis - Red
 		{
 			TArray<FVertexSimple> vertices = CreateTorusVertices();
-			FMatrix torusRotation = FMatrix::RotationYMatrix(90.0f);
-			FMatrix torusScale = FMatrix::ScaleMatrix(1.0f, 1.0f, 1.0f);
+			FMatrix torusRotation = FMatrix::RotationYMatrix(-90.0f);
+			FMatrix torusScale = FMatrix::ScaleMatrix(1.5f, 1.5f, 1.5f);
 			FMatrix torusMatrix = torusScale * torusRotation;
 
 			for (FVertexSimple& v : vertices)
@@ -519,6 +523,7 @@ public:
 				v.r = 1.0f;
 				v.g = 0.0f;
 				v.b = 0.0f;
+				v.a = 0.8f;
 			}
 
 			int cnt = vertices.size();
@@ -533,8 +538,8 @@ public:
 		// Y Axis - Green
 		{
 			TArray<FVertexSimple> vertices = CreateTorusVertices();
-			FMatrix torusRotation = FMatrix::RotationXMatrix(90.0f);
-			FMatrix torusScale = FMatrix::ScaleMatrix(1.0f, 1.0f, 1.0f);
+			FMatrix torusRotation = FMatrix::EulerRotationMatrix(0.0f, -90.0f, 90.0f);
+			FMatrix torusScale = FMatrix::ScaleMatrix(1.5f, 1.5f, 1.5f);
 			FMatrix torusMatrix = torusScale * torusRotation;
 
 			for (FVertexSimple& v : vertices)
@@ -550,6 +555,7 @@ public:
 				v.r = 0.0f;
 				v.g = 1.0f;
 				v.b = 0.0f;
+				v.a = 0.8f;
 			}
 			int cnt = vertices.size();
 			TArray<FVector> Vertices(cnt);
@@ -562,8 +568,9 @@ public:
 		// Z Axis - Blue
 		{
 			TArray<FVertexSimple> vertices = CreateTorusVertices();
-			FMatrix torusScale = FMatrix::ScaleMatrix(1.0f, 1.0f, 1.0f);
-			FMatrix torusMatrix = torusScale;
+			FMatrix torusRotation = FMatrix::RotationYMatrix(180.0f);
+			FMatrix torusScale = FMatrix::ScaleMatrix(1.5f, 1.5f, 1.5f);
+			FMatrix torusMatrix = torusRotation * torusScale;
 
 			for (FVertexSimple& v : vertices)
 			{
@@ -578,6 +585,7 @@ public:
 				v.r = 0.0f;
 				v.g = 0.0f;
 				v.b = 1.0f;
+				v.a = 0.8f;
 			}
 			int cnt = vertices.size();
 			TArray<FVector> Vertices(cnt);
