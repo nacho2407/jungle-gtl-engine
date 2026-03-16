@@ -71,7 +71,7 @@ bool URenderer::Create(HWND hWindow)
     SwapChain->GetDesc(&Desc);
 
     if (!CreateDepthStencilBuffer(Desc.BufferDesc.Width, Desc.BufferDesc.Height)) { Release(); return false; }
-    if (!CreateRasterizerState()) { Release(); return false; }
+    if (!CreateRasterizerStates()) { Release(); return false; }
     if (!CreateShader(L"Render\\Public\\Shaders\\Default.hlsl")) { Release(); return false; }
     if (!CreateConstantBuffer()) { Release(); return false; }
 
@@ -1023,7 +1023,7 @@ void URenderer::DrawHitProxyItem(const FRenderItem& Item, const FMatrix& View, c
 
     // Id를 인코딩하여 색으로 사용
     const FVector4 ProxyColor = EncodeHitProxyIdColor(ProxyId);
-    UpdateVSConstants(Item.WorldMatrix, View, Projection, ProxyColor);
+    UpdateVSConstants(Item.WorldMatrix, View, Projection, ProxyColor, false);
 
     UINT Offset = 0;
     DeviceContext->IASetVertexBuffers(0, 1, &Resource.VertexBuffer, &Stride, &Offset);

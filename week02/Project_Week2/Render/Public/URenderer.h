@@ -48,7 +48,7 @@ public:
 
     // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	// 하이라이트 렌더링
-    //ID3D11RasterizerState* RasterizerState = nullptr;
+    ID3D11RasterizerState* RasterizerState = nullptr;
 
     ID3D11RasterizerState* RasterizerStateCullBack = nullptr;
     ID3D11RasterizerState* RasterizerStateCullFront = nullptr;

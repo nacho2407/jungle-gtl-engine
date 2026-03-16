@@ -60,6 +60,34 @@ namespace
         };
     }
 
+    std::vector<FVertexSimple> CreateGizmoArrowVertices()
+    {
+        const FVector4 W(1, 1, 1, 1);
+
+        return
+        {
+            // shaft box: x = [0.0, 2.2], y/z = ±0.08
+            FVertexSimple(0.0f, -0.08f, -0.08f, W.X, W.Y, W.Z, W.W), // 0
+            FVertexSimple(2.2f, -0.08f, -0.08f, W.X, W.Y, W.Z, W.W), // 1
+            FVertexSimple(2.2f,  0.08f, -0.08f, W.X, W.Y, W.Z, W.W), // 2
+            FVertexSimple(0.0f,  0.08f, -0.08f, W.X, W.Y, W.Z, W.W), // 3
+
+            FVertexSimple(0.0f, -0.08f,  0.08f, W.X, W.Y, W.Z, W.W), // 4
+            FVertexSimple(2.2f, -0.08f,  0.08f, W.X, W.Y, W.Z, W.W), // 5
+            FVertexSimple(2.2f,  0.08f,  0.08f, W.X, W.Y, W.Z, W.W), // 6
+            FVertexSimple(0.0f,  0.08f,  0.08f, W.X, W.Y, W.Z, W.W), // 7
+
+            // arrow head base: x = 2.2, y/z = ±0.22
+            FVertexSimple(2.2f, -0.22f, -0.22f, W.X, W.Y, W.Z, W.W), // 8
+            FVertexSimple(2.2f,  0.22f, -0.22f, W.X, W.Y, W.Z, W.W), // 9
+            FVertexSimple(2.2f,  0.22f,  0.22f, W.X, W.Y, W.Z, W.W), // 10
+            FVertexSimple(2.2f, -0.22f,  0.22f, W.X, W.Y, W.Z, W.W), // 11
+
+            // tip
+            FVertexSimple(3.0f, 0.0f, 0.0f, W.X, W.Y, W.Z, W.W),     // 12
+        };
+    }
+
     std::vector<uint32_t> CreateGizmoArrowIndices()
     {
         return
