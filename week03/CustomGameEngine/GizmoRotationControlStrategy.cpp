@@ -63,7 +63,7 @@ void GizmoRotationControlStrategy::UpdateRenderObject()
 void GizmoRotationControlStrategy::BeginDrag(const Ray& ray)
 {
 	InitialTouchPoint = ray.Origin;
-	InitialObjectRotation = Controller->GetAttachedComponent()->GetRelativeRotation();
+	InitialObjectQuaternion = Controller->GetAttachedComponent()->GetRelativeQuaternion();
 }
 
 void GizmoRotationControlStrategy::UpdateDrag(const Ray& ray)
@@ -71,21 +71,25 @@ void GizmoRotationControlStrategy::UpdateDrag(const Ray& ray)
 	FVector currTouchPoint = ray.Origin;
 	float diff = currTouchPoint.y - InitialTouchPoint.y;
 
-	FVector currRotation = Controller->GetAttachedComponent()->GetRelativeRotation();
+	FQuat currQuat = InitialObjectQuaternion;
+	FQuat deltaQuat;
+
 	switch (Controller->GetHoverAxis())
 	{
 	case GizmoControllerAxis::X:
-		currRotation.z = InitialObjectRotation.z + diff * 1000.0f;
+		deltaQuat = FQuat::FromAxisAngle(FVector::Forward(), diff * 20.0f);
 		break;
 	case GizmoControllerAxis::Y:
-		currRotation.x = InitialObjectRotation.x + diff * 1000.0f;
+		deltaQuat = FQuat::FromAxisAngle(FVector::Right(), diff * 20.0f);
 		break;
 	case GizmoControllerAxis::Z:
-		currRotation.y = InitialObjectRotation.y + diff * 1000.0f;
+		deltaQuat = FQuat::FromAxisAngle(FVector::Up(), diff * 20.0f);
 		break;
 	}
 
-	Controller->GetAttachedComponent()->SetRelativeRotation(currRotation);
+	currQuat = currQuat * deltaQuat;
+
+	Controller->GetAttachedComponent()->SetRelativeQuaternion(currQuat);
 }
 
 void GizmoRotationControlStrategy::EndDrag()

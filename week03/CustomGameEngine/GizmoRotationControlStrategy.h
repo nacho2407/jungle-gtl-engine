@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "IGizmoControlStrategy.h"
 #include "FVector.h"
+#include "FQuat.h"
 
 class GizmoController;
 class RenderObject;
@@ -25,7 +26,7 @@ private:
 	GizmoController* Controller;
 
 	FVector InitialTouchPoint;
-	FVector InitialObjectRotation;
+	FQuat InitialObjectQuaternion;
 
 	RenderObject* GizmoX;
 	RenderObject* GizmoY;

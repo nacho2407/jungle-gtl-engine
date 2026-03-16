@@ -69,55 +69,54 @@ void GizmoScaleControlStrategy::BeginDrag(const Ray& ray)
 {
 	InitialObjectScale = Controller->GetAttachedComponent()->GetRelativeScale3D();
 
-	FVector axisDir;
+	FVector localAxis;
 	switch (Controller->GetHoverAxis())
 	{
 	case GizmoControllerAxis::X:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Forward());
+		localAxis = FVector::Forward();
 		break;
 	case GizmoControllerAxis::Y:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Right());
+		localAxis = FVector::Right();
 		break;
 	case GizmoControllerAxis::Z:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Up());
+		localAxis = FVector::Up();
 		break;
 	}
 
-	FVector worldOrigin = Controller->GetRelativeMatrix().TransformPoint(FVector(0, 0, 0));
-	FVector worldAxisPoint = Controller->GetRelativeMatrix().TransformPoint(axisDir);
-	InitialWorldAxisDir = (worldAxisPoint - worldOrigin).Normalize();
+	FVector worldAxisDir = Controller->GetRelativeMatrix().TransformVector(localAxis).Normalize();
+	FVector worldOrigin = Controller->GetRelativeMatrix().TransformPoint(FVector::Zero());
 
-	InitialDragOffset = Controller->GetClosestPointOnAxis(ray, worldOrigin, InitialWorldAxisDir);
+	InitialWorldPos = worldOrigin;
+	InitialDragOffset = Controller->GetClosestPointOnAxis(ray, worldOrigin, worldAxisDir);
 }
 
 void GizmoScaleControlStrategy::UpdateDrag(const Ray& ray)
 {
-	FVector axisDir;
+	FVector localAxis;
 	switch (Controller->GetHoverAxis())
 	{
 	case GizmoControllerAxis::X:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Forward());
+		localAxis = FVector::Forward();
 		break;
 	case GizmoControllerAxis::Y:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Right());
+		localAxis = FVector::Right();
 		break;
 	case GizmoControllerAxis::Z:
-		axisDir = Controller->GetRelativeMatrix().TransformVector(FVector::Up());
+		localAxis = FVector::Up();
 		break;
 	}
 
-	FVector worldOrigin = Controller->GetRelativeMatrix().TransformPoint(FVector(0, 0, 0));
+	FVector worldAxisDir = Controller->GetRelativeMatrix().TransformVector(localAxis).Normalize();
+	FVector worldOrigin = Controller->GetRelativeMatrix().TransformPoint(FVector::Zero());
 
-	float currentT = Controller->GetClosestPointOnAxis(ray, worldOrigin, InitialWorldAxisDir);
-
+	float currentT = Controller->GetClosestPointOnAxis(ray, InitialWorldPos, worldAxisDir);
 	float deltaT = currentT - InitialDragOffset;
 
 	FVector newScale = InitialObjectScale;
-	float Sensitivity = 1.0f;
 
-	if (Controller->GetHoverAxis() == GizmoControllerAxis::X) newScale.z += deltaT * Sensitivity;
-	else if (Controller->GetHoverAxis() == GizmoControllerAxis::Y) newScale.x += deltaT * Sensitivity;
-	else if (Controller->GetHoverAxis() == GizmoControllerAxis::Z) newScale.y += deltaT * Sensitivity;
+	if (Controller->GetHoverAxis() == GizmoControllerAxis::X) newScale.z += deltaT;
+	else if (Controller->GetHoverAxis() == GizmoControllerAxis::Y) newScale.x += deltaT;
+	else if (Controller->GetHoverAxis() == GizmoControllerAxis::Z) newScale.y += deltaT;
 
 	Controller->GetAttachedComponent()->SetRelativeScale3D(newScale);
 }

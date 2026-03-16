@@ -150,6 +150,7 @@
     <ClInclude Include="ISerializable.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="ISingleton.h" />
+    <ClInclude Include="Math\MathHelper.h" />
     <ClInclude Include="RenderObject.h" />
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="Scene.h" />

@@ -10,6 +10,10 @@ struct FQuat {
     FQuat(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
 
     static FQuat FromAxisAngle(const FVector& axis, float angleRadians);
+
+    static FQuat FromEuler(const FVector& eulerDegrees);
+    FVector ToEuler() const;
+
     FQuat operator*(const FQuat& q) const;
     FQuat Conjugate() const;
     void Normalize();
