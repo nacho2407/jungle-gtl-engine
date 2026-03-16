@@ -17,6 +17,7 @@ GizmoRotationControlStrategy::GizmoRotationControlStrategy(GizmoController* cont
 
 GizmoRotationControlStrategy::~GizmoRotationControlStrategy()
 {
+	SetDrawEnable(false);
 	delete GizmoX;
 	delete GizmoY;
 	delete GizmoZ;

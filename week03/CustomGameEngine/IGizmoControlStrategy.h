@@ -5,6 +5,8 @@ struct Ray;
 class IGizmoControlStrategy
 {
 public:
+	virtual ~IGizmoControlStrategy() = default;
+
 	virtual void Update() = 0;
 	virtual void UpdateRenderObject() = 0;
 

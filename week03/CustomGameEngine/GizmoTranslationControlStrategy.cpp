@@ -18,6 +18,7 @@ GizmoTranslationControlStrategy::GizmoTranslationControlStrategy(GizmoController
 
 GizmoTranslationControlStrategy::~GizmoTranslationControlStrategy()
 {
+	SetDrawEnable(false);
 	delete GizmoX;
 	delete GizmoY;
 	delete GizmoZ;

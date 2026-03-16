@@ -19,10 +19,7 @@ GizmoScaleControlStrategy::GizmoScaleControlStrategy(GizmoController* controller
 
 GizmoScaleControlStrategy::~GizmoScaleControlStrategy()
 {
-	FLevel::GetInstance().RemoveRenderObject(GizmoX);
-	FLevel::GetInstance().RemoveRenderObject(GizmoY);
-	FLevel::GetInstance().RemoveRenderObject(GizmoZ);
-
+	SetDrawEnable(false);
 	delete GizmoX;
 	delete GizmoY;
 	delete GizmoZ;

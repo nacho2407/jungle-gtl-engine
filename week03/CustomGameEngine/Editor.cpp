@@ -23,6 +23,10 @@ Editor::Editor()
 
 Editor::~Editor()
 {
+	delete StatPanel;
+	delete PropertyPanel;
+	delete Console;
+	delete ControlPanel;
 }
 
 bool Editor::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* deviceContext)

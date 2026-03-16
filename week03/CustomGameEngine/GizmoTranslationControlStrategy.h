@@ -9,7 +9,7 @@ class GizmoTranslationControlStrategy : public IGizmoControlStrategy
 {
 public:
 	GizmoTranslationControlStrategy(GizmoController* controller);
-	~GizmoTranslationControlStrategy();
+	~GizmoTranslationControlStrategy() override;
 
 public:
 	virtual void Update() override;

@@ -23,6 +23,9 @@ GizmoController::GizmoController()
 
 GizmoController::~GizmoController()
 {
+	delete ScaleStrategy;
+	delete RotationStrategy;
+	delete TranslationStrategy;
 }
 
 void GizmoController::Update(UCamera* Camera)
