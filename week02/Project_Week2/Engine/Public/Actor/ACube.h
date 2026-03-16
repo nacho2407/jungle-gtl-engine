@@ -8,6 +8,7 @@ class UStaticMeshComponent;
 class ACube : public APrimitiveActor
 {
 public:
+    DECLARE_ROOT_UClass(ACube)
     ACube();
     ACube(const FUObjectInitializer& ObjectInitializer);
     virtual ~ACube() override;
