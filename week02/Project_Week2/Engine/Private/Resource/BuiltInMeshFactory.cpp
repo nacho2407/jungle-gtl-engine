@@ -243,6 +243,44 @@ namespace
 
         return I;
     }
+
+    TArray<FVertexSimple> CreateGridVertices(int HalfCount, float Spacing)
+    {
+        TArray<FVertexSimple> Vertices;
+
+        const float Extent = HalfCount * Spacing;
+
+        for (int i = -HalfCount; i <= HalfCount; ++i)
+        {
+            const float P = i * Spacing;
+
+            // 기본 그리드 색
+            float r1 = 0.25f, g1 = 0.25f, b1 = 0.25f, a1 = 1.0f;
+            float r2 = 0.25f, g2 = 0.25f, b2 = 0.25f, a2 = 1.0f;
+
+            // Z = 0 선 -> X축 방향으로 놓인 선 -> 빨간색
+            if (i == 0)
+            {
+                r1 = 1.0f; g1 = 0.0f; b1 = 0.0f; a1 = 1.0f;
+            }
+
+            // X = 0 선 -> Z축 방향으로 놓인 선 -> 파란색
+            if (i == 0)
+            {
+                r2 = 0.0f; g2 = 0.0f; b2 = 1.0f; a2 = 1.0f;
+            }
+
+            // X축 방향 선 (Z = P)
+            Vertices.emplace_back(-Extent, 0.0f, P, r1, g1, b1, a1);
+            Vertices.emplace_back(Extent, 0.0f, P, r1, g1, b1, a1);
+
+            // Z축 방향 선 (X = P)
+            Vertices.emplace_back(P, 0.0f, -Extent, r2, g2, b2, a2);
+            Vertices.emplace_back(P, 0.0f, Extent, r2, g2, b2, a2);
+        }
+
+        return Vertices;
+    }
 }
 
 namespace BuiltInMeshFactory
@@ -333,6 +371,14 @@ namespace BuiltInMeshFactory
         Mesh->SetVertices(CreateDiscVertices(Segments));
         Mesh->SetIndices(CreateDiscIndices(Segments));
         Mesh->SetTopology(EMeshTopology::TriangleList);
+        return Mesh;
+    }
+    
+    UStaticMesh* CreateGridMesh(int HalfCount, float Spacing)
+    {
+        UStaticMesh* Mesh = new UStaticMesh();
+        Mesh->SetVertices(CreateGridVertices(HalfCount, Spacing));
+        Mesh->SetTopology(EMeshTopology::LineList);
         return Mesh;
     }
 }

@@ -150,6 +150,7 @@ bool FApplication::InitializeResources()
     //TriangleMesh = BuiltInMeshFactory::CreateTriangleMesh();
     TorusMesh = BuiltInMeshFactory::CreateTorusMesh(64, 32, 1.2f, 0.35f);
     AxesMesh = BuiltInMeshFactory::CreateAxesMesh();
+    GridMesh = BuiltInMeshFactory::CreateGridMesh(20, 1.0f);
     GizmoArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh();
 
     //ClickCircleMesh = BuiltInMeshFactory::CreateCircleMesh(64);
@@ -238,6 +239,19 @@ bool FApplication::InitializeScene()
         WorldAxesActor->AddComponent(MeshComp);
         WorldAxesActor->SetRootComponent(MeshComp);
         World->AddActor(WorldAxesActor);
+    }
+
+    // Ground Grid
+    {
+        GridActor = new AActor();
+
+        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
+        MeshComp->SetStaticMesh(GridMesh);
+        MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
+
+        GridActor->AddComponent(MeshComp);
+        GridActor->SetRootComponent(MeshComp);
+        World->AddActor(GridActor);
     }
 
     // Gizmo

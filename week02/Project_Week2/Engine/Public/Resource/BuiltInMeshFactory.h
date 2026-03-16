@@ -16,4 +16,5 @@ namespace BuiltInMeshFactory
     UStaticMesh* CreateGizmoArrowMesh();
     //UStaticMesh* CreateCircleMesh(int Segments = 48);
     UStaticMesh* CreateDiscMesh(int Segments = 48);
+    UStaticMesh* CreateGridMesh(int HalfCount = 10, float Spacing = 1.0f);
 }
