@@ -28,7 +28,7 @@
 #include "FUObjectFactory.h"
 #include "FUObjectAllocator.h"
 
-#include "GUI/GUI.h"
+#include "GUI.h"
 
 #include <chrono>
 
@@ -178,7 +178,7 @@ bool FApplication::InitializeScene()
 
     World->AddActor(CameraActor);
 
-    // Sphere
+/*    // Sphere
     {
         AActor* Actor = new AActor();
         UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
@@ -225,7 +225,9 @@ bool FApplication::InitializeScene()
         Actor->AddComponent(MeshComp);
         Actor->SetRootComponent(MeshComp);
         World->AddActor(Actor);
-    }
+    }*/
+
+    SpawnMeshActor(SphereMesh, FVector(-2.0f, -2.0f, 5.0f));
 
     // World Axes
     {
@@ -1353,10 +1355,29 @@ void FApplication::UpdateObjectAllocationTest()
         TestIntervalCounter = 0;
     }
 }
+
 void FApplication::RenderDebugUI()
 {
     ImGui::Begin("Jungle Property Window");
     ImGui::Text("Hello Jungle World!");
+
+    ImGui::Separator();
+    ImGui::Text("Spawn Mesh");
+
+    const char* MeshItems[] = { "Sphere", "Cube", "Torus" };
+    int CurrentMeshIndex = static_cast<int>(SelectedSpawnMeshType);
+
+    if (ImGui::Combo("Mesh Type", &CurrentMeshIndex, MeshItems, IM_ARRAYSIZE(MeshItems)))
+    {
+        SelectedSpawnMeshType = static_cast<ESpawnMeshType>(CurrentMeshIndex);
+    }
+
+    if (ImGui::Button("Spawn At Origin"))
+    {
+        SpawnSelectedMeshActor();
+    }
+
+    ImGui::Separator();
 
     ImGui::Text("GTotalAllocationBytes: %d", FMemory::GetTotalAllocatedMemory());
     ImGui::Text("GTotalAllocationCount: %d", GUObjectArray.ElementalCount);
@@ -1370,3 +1391,50 @@ void FApplication::RenderDebugUI()
     ImGui::End();
 }
 
+AActor* FApplication::SpawnMeshActor(UStaticMesh* Mesh, const FVector& Location)
+{
+    if (!World || !Mesh)
+    {
+        return nullptr;
+    }
+
+    AActor* Actor = new AActor();
+    UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
+
+    MeshComp->SetStaticMesh(Mesh);
+    MeshComp->SetRelativeLocation(Location);
+
+    Actor->AddComponent(MeshComp);
+    Actor->SetRootComponent(MeshComp);
+
+    World->AddActor(Actor);
+    return Actor;
+}
+
+void FApplication::SpawnSelectedMeshActor()
+{
+    UStaticMesh* MeshToSpawn = nullptr;
+
+    switch (SelectedSpawnMeshType)
+    {
+    case ESpawnMeshType::Sphere:
+        MeshToSpawn = SphereMesh;
+        break;
+    case ESpawnMeshType::Cube:
+        MeshToSpawn = CubeMesh;
+        break;
+    case ESpawnMeshType::Torus:
+        MeshToSpawn = TorusMesh;
+        break;
+    default:
+        return;
+    }
+
+    AActor* SpawnedActor = SpawnMeshActor(MeshToSpawn, FVector::ZeroVector);
+
+    // 생성 직후 선택되게 하고 싶으면
+    if (SpawnedActor)
+    {
+        SetSelectedActor(SpawnedActor);
+    }
+}

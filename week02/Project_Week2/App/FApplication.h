@@ -24,6 +24,13 @@ enum class EPointerPulsePhase
     Shrinking
 };
 
+enum class ESpawnMeshType
+{
+    Sphere = 0,
+    Cube,
+    Torus
+};
+
 struct FPointerPulse
 {
     EPointerPulsePhase Phase = EPointerPulsePhase::Hidden;
@@ -97,6 +104,9 @@ private:
     void UpdateObjectAllocationTest();
     void RenderDebugUI();
 
+    void SpawnSelectedMeshActor();
+    AActor* SpawnMeshActor(UStaticMesh* Mesh, const FVector& Location);
+
 private:
     FWindowsApplication* WindowApp;
     URenderer* Renderer;
@@ -144,4 +154,6 @@ private:
     int TestInterval = 5;
     int TestIntervalCounter = 0;
     TArray<UObject*> TestObjects;
+
+    ESpawnMeshType SelectedSpawnMeshType = ESpawnMeshType::Sphere;
 };
