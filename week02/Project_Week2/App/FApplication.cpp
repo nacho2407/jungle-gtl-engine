@@ -28,6 +28,9 @@
 #include "FUObjectFactory.h"
 #include "FUObjectAllocator.h"
 
+#include "Actor/ASphere.h"
+#include "Actor/ACube.h"
+
 #include "GUI.h"
 
 #include <chrono>
@@ -181,36 +184,17 @@ bool FApplication::InitializeScene()
 
     // Sphere
     {
-        AActor* Actor = new AActor();
-        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
-        MeshComp->SetStaticMesh(SphereMesh);
-        MeshComp->SetRelativeLocation(FVector(-2.0f, -2.0f, 5.0f));
-        //MeshComp->SetRelativeScale(FVector(3.0f, 3.0f, 3.0f));
-        Actor->AddComponent(MeshComp);
-        Actor->SetRootComponent(MeshComp);
-        World->AddActor(Actor);
-    }
-
-    // Sphere
-    {
-        AActor* Actor = new AActor();
-        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
-        MeshComp->SetStaticMesh(SphereMesh);
-        MeshComp->SetRelativeLocation(FVector(0.0f, 2.0f, 10.0f));
-        //MeshComp->SetRelativeScale(FVector(3.0f, 3.0f, 3.0f));
-        Actor->AddComponent(MeshComp);
-        Actor->SetRootComponent(MeshComp);
+        ASphere* Actor = new ASphere();
+        Actor->SetStaticMesh(SphereMesh);
+        Actor->GetStaticMeshComponent()->SetRelativeLocation(FVector(-2.0f, -2.0f, 5.0f));
         World->AddActor(Actor);
     }
 
     // Cube
     {
-        AActor* Actor = new AActor();
-        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
-        MeshComp->SetStaticMesh(CubeMesh);
-        MeshComp->SetRelativeLocation(FVector(2.0f, 0.0f, 5.0f));
-        Actor->AddComponent(MeshComp);
-        Actor->SetRootComponent(MeshComp);
+        ACube* Actor = new ACube();
+        Actor->SetStaticMesh(CubeMesh);
+        Actor->GetStaticMeshComponent()->SetRelativeLocation(FVector(2.0f, 0.0f, 5.0f));
         World->AddActor(Actor);
     }
 
@@ -1097,7 +1081,7 @@ void FApplication::AddSelectionOutlineRenderItem()
     OutlineItem.Color = FVector4(0.953f, 0.596f, 0.184f, 1.0f);
 
     // backface 확장 outline 핵심
-    OutlineItem.CullMode = ERenderCullMode::Back;
+    OutlineItem.CullMode = ERenderCullMode::Front;
     OutlineItem.bDepthEnable = true;
     OutlineItem.bUseVertexColor = false;
 

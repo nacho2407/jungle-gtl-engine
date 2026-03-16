@@ -148,6 +148,7 @@
     <ClInclude Include="Core\Public\TObjectBase.h" />
     <ClInclude Include="Engine\Engine.h" />
     <ClInclude Include="Engine\Public\Actor\AActor.h" />
+    <ClInclude Include="Engine\Public\Actor\ACamera.h" />
     <ClInclude Include="Engine\Public\Actor\ACube.h" />
     <ClInclude Include="Engine\Public\Actor\APrimitiveActor.h" />
     <ClInclude Include="Engine\Public\Actor\ASphere.h" />
