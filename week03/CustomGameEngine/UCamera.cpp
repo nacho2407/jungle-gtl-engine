@@ -10,7 +10,7 @@ UCamera::~UCamera() {}
 void UCamera::SetPosition(const FVector& _input) {
 	if (!Position.IsNearlyEqual(_input, Epsilon)) {
 		Position = _input;
-		IsChanged = true;
+		bIsDirty = true;
 	}
 }
 
@@ -18,32 +18,32 @@ void UCamera::Move(float DeltaTime) {
 	if (InputManager::GetInstance().IsKeyHold('W') &&
 		!InputManager::GetInstance().IsKeyHold('S')) {
 		Position = Position + Direction * MoveSpeed * DeltaTime;
-		IsChanged = true;
+		bIsDirty = true;
 	}
 	else if (!InputManager::GetInstance().IsKeyHold('W') &&
 		InputManager::GetInstance().IsKeyHold('S')) {
 		Position = Position - Direction * MoveSpeed * DeltaTime;
-		IsChanged = true;
+		bIsDirty = true;
 	}
 	if (InputManager::GetInstance().IsKeyHold('E') &&
 		!InputManager::GetInstance().IsKeyHold('Q')) {
 		Position = Position + UpVec * MoveSpeed * DeltaTime;
-		IsChanged = true;
+		bIsDirty = true;
 	}
 	else if (!InputManager::GetInstance().IsKeyHold('E') &&
 		InputManager::GetInstance().IsKeyHold('Q')) {
 		Position = Position - UpVec * MoveSpeed * DeltaTime;
-		IsChanged = true;
+		bIsDirty = true;
 	}
 	if (!InputManager::GetInstance().IsKeyHold('D') &&
 		InputManager::GetInstance().IsKeyHold('A')) {
 		Position = Position + SideDirection * MoveSpeed * DeltaTime;
-		IsChanged = true;
+		bIsDirty = true;
 	}
 	else if (InputManager::GetInstance().IsKeyHold('D') &&
 		!InputManager::GetInstance().IsKeyHold('A')) {
 		Position = Position - SideDirection * MoveSpeed * DeltaTime;
-		IsChanged = true;
+		bIsDirty = true;
 	}
 
 }
@@ -52,15 +52,15 @@ void UCamera::SetDirection(const float InputPitch, const float InputYaw,
 	const float InputRoll) {
 	if (std::abs(Pitch - InputPitch) > Epsilon) {
 		Pitch = (std::max)(-89.9f, (std::min)(89.9f, InputPitch));
-		IsChanged = true;
+		bIsDirty = true;
 	}
 	if (std::abs(Yaw - InputYaw) > Epsilon) {
 		Yaw = InputYaw;
-		IsChanged = true;
+		bIsDirty = true;
 	}
 	if (std::abs(Roll - InputRoll) > Epsilon) {
 		Roll = InputRoll;
-		IsChanged = true;
+		bIsDirty = true;
 	}
 }
 
@@ -70,38 +70,31 @@ void UCamera::Rotate(float DeltaTime)
 	Pitch += (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
 	Pitch = MathHelper::Clamp(Pitch, -89.9f, 89.9f);
 
-	IsChanged = true;
+	bIsDirty = true;
 }
 
 void UCamera::OrbitRotate(float DeltaTime)
 {
 	Yaw -= (InputManager::GetInstance().MouseDelta.x * RotateSensitivity * DeltaTime);
-	Pitch += (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
+	Pitch -= (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
+	Pitch = MathHelper::Clamp(Pitch, -89.9f, 89.9f);
 
-	const float Limit = 89.9f;
-	if (Pitch > Limit) Pitch = Limit;
-	if (Pitch < -Limit) Pitch = -Limit;
+	FMatrix RotMatrix = FMatrix::RotationXMatrix(Roll) *
+		FMatrix::RotationYMatrix(Pitch) *
+		FMatrix::RotationZMatrix(Yaw);
 
-	float Distance = FocusLength;
+	FVector ForwardBase = FVector::Forward();
+	FVector ForwardVec = RotMatrix.TransformVector(ForwardBase).Normalize();
 
-	float PitchRad = FMatrix::DegToRad(-Pitch);
-	float YawRad = FMatrix::DegToRad(Yaw);
-
-	FVector NewDirection;
-	NewDirection.x = std::cos(PitchRad) * std::sin(YawRad);
-	NewDirection.y = std::sin(PitchRad);
-	NewDirection.z = std::cos(PitchRad) * std::cos(YawRad);
-
-	Direction = NewDirection.Normalize();
-	Position = FocusPoint - Direction * Distance;
-	IsChanged = true;
+	Position = FocusPoint - ForwardVec * FocusLength;
+	bIsDirty = true;
 }
 
 void UCamera::SetFOV(const float NewFOV)
 {
 	if (std::abs(FOV - NewFOV) > Epsilon) {
 		FOV = std::clamp(NewFOV, 10.0f, 170.0f);
-		IsChanged = true;
+		bIsDirty = true;
 	}
 }
 float UCamera::GetFOV() const
@@ -114,7 +107,7 @@ void UCamera::OnResize(int NewWidth, int NewHeight) {
 	ScreenWidth = static_cast<float>(NewWidth);
 	ScreenHeight = static_cast<float>(NewHeight);
 	AspectRatio = static_cast<float>(NewWidth) / static_cast<float>(NewHeight);
-	IsChanged = true;
+	bIsDirty = true;
 }
 
 float UCamera::GetAspectRatio() const
@@ -125,13 +118,13 @@ float UCamera::GetAspectRatio() const
 void UCamera::SetOrthogonal(bool input)
 {
 	IsOrthogonal = input;
-	IsChanged = true;
+	bIsDirty = true;
 }
 
 //void UCamera::ChangePerpective(EProjectionType NewType)
 //{
 //	ProjectionType = NewType;
-//	IsChanged = true;
+//	bIsDirty = true;
 //}
 
 void UCamera::update() {
@@ -151,7 +144,7 @@ void UCamera::update() {
 	CalcProjectionMatrix();
 	ViewProjection = View * Projection;
 
-	IsChanged = false;
+	bIsDirty = false;
 }
 
 void UCamera::CalcViewMatrix()

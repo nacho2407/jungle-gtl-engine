@@ -28,7 +28,7 @@ public:
 	float AspectRatio{ 16.0f / 9.0f };
 	float NearPlane{ 1.0f };
 	float FarPlane{ 2000.0f };
-	bool IsChanged{ true };
+	bool bIsDirty{ true };
 	float MoveSpeed{ 10.0f };
 	float ScreenWidth = 0.f;
 	float ScreenHeight = 0.f;
