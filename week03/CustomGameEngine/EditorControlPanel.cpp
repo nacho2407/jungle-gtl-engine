@@ -77,6 +77,7 @@ void EditorControlPanel::Draw(UCamera* camera)
 	ImGui::InputFloat3("Camera Location", &camera->Position.x);
 	ImGui::InputFloat3("Camera Rotation", &camera->Pitch);
 	ImGui::InputFloat3("Camera Direction", &camera->Direction.x);
+	ImGui::InputFloat("Camera Speed", &camera->MoveSpeed);
 
 	ImGui::End();
 }
