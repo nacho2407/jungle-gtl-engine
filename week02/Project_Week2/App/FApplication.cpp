@@ -35,6 +35,9 @@
 
 #include <chrono>
 
+#include "Panels/FPropertyPanel.h"
+//#include "Panels/FControlPanel.h"
+
 namespace
 {
     FVector4 LightenColor(const FVector4& C, float T)
@@ -44,6 +47,30 @@ namespace
             C.Y + (1.0f - C.Y) * T,
             C.Z + (1.0f - C.Z) * T,
             C.W);
+    }
+
+    bool DrawFloat3Control(const char* Label, FVector& Value, float Speed = 0.1f)
+    {
+        bool bChanged = false;
+
+        ImGui::PushID(Label);
+
+        ImGui::SetNextItemWidth(90.0f);
+        bChanged |= ImGui::DragFloat("##X", &Value.X, Speed);
+
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(90.0f);
+        bChanged |= ImGui::DragFloat("##Y", &Value.Y, Speed);
+
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(90.0f);
+        bChanged |= ImGui::DragFloat("##Z", &Value.Z, Speed);
+
+        ImGui::SameLine();
+        ImGui::Text("%s", Label);
+
+        ImGui::PopID();
+        return bChanged;
     }
 }
 
@@ -116,6 +143,9 @@ bool FApplication::Initialize(HINSTANCE hInstance)
 
             RenderFrame();
         };
+
+    PropertyPanel = new FPropertyPanel();
+    //ControlPanel = new FControlPanel();
 
     bIsRunning = true;
     return true;
@@ -380,6 +410,10 @@ void FApplication::MainLoop()
 
 void FApplication::Tick(float DeltaTime)
 {
+    ImGuiIO& io = ImGui::GetIO();
+    const bool bUIWantsMouse = io.WantCaptureMouse;
+    const bool bUIWantsKeyboard = io.WantCaptureKeyboard;
+
     if (!World || !MainCamera)
     {
         return;
@@ -398,30 +432,33 @@ void FApplication::Tick(float DeltaTime)
     int DownY = 0;
     if (WindowApp->ConsumeLeftMouseDown(DownX, DownY))
     {
-        BeginPointerPulse(DownX, DownY);
-
-        EGizmoAxis Axis = PickGizmoAxis(DownX, DownY);
-        if (Axis != EGizmoAxis::None)
+        if (!bUIWantsMouse)
         {
-            BeginGizmoDrag(Axis, DownX, DownY);
-        }
-        else
-        {
-            FHitProxy Proxy = Renderer->PickPrimitiveProxy(DownX, DownY);
+            BeginPointerPulse(DownX, DownY);
 
-            AActor* HitActor = nullptr;
-
-            if (Proxy.Type == EHitProxyType::Primitive && Proxy.Primitive)
+            EGizmoAxis Axis = PickGizmoAxis(DownX, DownY);
+            if (Axis != EGizmoAxis::None)
             {
-                HitActor = Proxy.Primitive->GetOwner();
-
-                if (HitActor == GizmoActor || HitActor == WorldAxesActor || HitActor == GridActor)
-                {
-                    HitActor = nullptr;
-                }
+                BeginGizmoDrag(Axis, DownX, DownY);
             }
+            else
+            {
+                FHitProxy Proxy = Renderer->PickPrimitiveProxy(DownX, DownY);
 
-            SetSelectedActor(HitActor);
+                AActor* HitActor = nullptr;
+
+                if (Proxy.Type == EHitProxyType::Primitive && Proxy.Primitive)
+                {
+                    HitActor = Proxy.Primitive->GetOwner();
+
+                    if (HitActor == GizmoActor || HitActor == WorldAxesActor || HitActor == GridActor)
+                    {
+                        HitActor = nullptr;
+                    }
+                }
+
+                SetSelectedActor(HitActor);
+            }
         }
     }
 
@@ -429,8 +466,11 @@ void FApplication::Tick(float DeltaTime)
     int UpY = 0;
     if (WindowApp->ConsumeLeftMouseUp(UpX, UpY))
     {
-        EndGizmoDrag();
-        EndPointerPulse();
+        if (!bUIWantsMouse)
+        {
+            EndGizmoDrag();
+            EndPointerPulse();
+        }
     }
 
     // 우클릭 down에도 원 시작
@@ -438,28 +478,34 @@ void FApplication::Tick(float DeltaTime)
     int RightDownY = 0;
     if (WindowApp->ConsumeRightMouseDown(RightDownX, RightDownY))
     {
-        BeginPointerPulse(RightDownX, RightDownY);
+        if (!bUIWantsMouse)
+        {
+            BeginPointerPulse(RightDownX, RightDownY);
 
-        // Orbit 시작 기준점 맞추기
-        PrevMouseX = RightDownX;
-        PrevMouseY = RightDownY;
+            // Orbit 시작 기준점 맞추기
+            PrevMouseX = RightDownX;
+            PrevMouseY = RightDownY;
+        }
     } 
     // 우클릭 up에도 원 종료
     int RightUpX = 0;
     int RightUpY = 0;
     if (WindowApp->ConsumeRightMouseUp(RightUpX, RightUpY))
     {
-        EndPointerPulse();
+        if (!bUIWantsMouse)
+        {
+            EndPointerPulse();
+        }
     }
 
-    if (bDraggingGizmo && WindowApp->IsLeftMousePressed())
+    if (!bUIWantsMouse && bDraggingGizmo && WindowApp->IsLeftMousePressed())
     {
         WindowApp->GetMousePosition(MouseX, MouseY);
         UpdateGizmoDrag(MouseX, MouseY);
     }
 
 
-    if (WindowApp->IsRightMousePressed())
+    if (!bUIWantsMouse && WindowApp->IsRightMousePressed())
     {
         WindowApp->GetMousePosition(MouseX, MouseY);
 
@@ -572,6 +618,7 @@ void FApplication::RenderFrame()
     ImGui::NewFrame();
 
     RenderDebugUI();
+    RenderEditorUI();
 
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -582,6 +629,18 @@ void FApplication::RenderFrame()
 void FApplication::Shutdown()
 {
     bIsRunning = false;
+
+    if (PropertyPanel)
+    {
+        delete PropertyPanel;
+        PropertyPanel = nullptr;
+    }
+
+    /*if (ControlPanel)
+    {
+        delete ControlPanel;
+        ControlPanel = nullptr;
+    }*/
 
     if (ImGui::GetCurrentContext())
     {
@@ -684,7 +743,7 @@ FRay FApplication::BuildPickRay(int MouseX, int MouseY) const
 }
 
 AActor* FApplication::PickActor(const FRay& Ray) const
-{
+{   
     AActor* ClosestActor = nullptr;
     float ClosestT = FLT_MAX;
 
@@ -1363,7 +1422,7 @@ void FApplication::UpdateObjectAllocationTest()
 }
 void FApplication::RenderDebugUI()
 {
-    ImGui::Begin("Jungle Property Window");
+    ImGui::Begin("Jungle Property Window(Debug)");
     ImGui::Text("Hello Jungle World!");
 
     ImGui::Text("GTotalAllocationBytes: %d", FMemory::GetTotalAllocatedMemory());
@@ -1381,5 +1440,37 @@ void FApplication::RenderDebugUI()
     }
 
     ImGui::End();
+
 }
 
+void FApplication::RenderEditorUI()
+{
+    if (PropertyPanel)
+    {
+        PropertyPanel->Render(this);
+    }
+
+    /*if (ControlPanel)
+    {
+        ControlPanel->Render(this);
+    }*/
+}
+
+AActor* FApplication::GetSelectedActor() const
+{
+    return SelectedActor;
+}
+
+void FApplication::NotifySelectedActorTransformChanged()
+{
+    if (SelectedActor)
+    {
+        UpdateGizmoTransform();
+        UpdateGizmoColors();
+    }
+}
+
+void FApplication::ClearSelection()
+{
+    SetSelectedActor(nullptr);
+}

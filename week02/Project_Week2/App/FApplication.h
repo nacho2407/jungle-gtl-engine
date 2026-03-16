@@ -16,6 +16,9 @@ class UStaticMesh;
 
 class UStaticMeshComponent;
 
+class FPropertyPanel;
+//class FControlPanel;
+
 enum class EPointerPulsePhase
 {
     Hidden,
@@ -52,6 +55,11 @@ public:
     bool Initialize(HINSTANCE hInstance);
     int Run();
     void Shutdown();
+
+    // 패널 렌더링
+    AActor* GetSelectedActor() const;
+    void NotifySelectedActorTransformChanged();
+    void ClearSelection();
 
 private:
     bool InitializeEngine();
@@ -93,6 +101,10 @@ private:
     // 상혁 테스트
     void UpdateObjectAllocationTest();
     void RenderDebugUI();
+
+	// 패널 렌더링
+    void RenderEditorUI();
+
 
 private:
     FWindowsApplication* WindowApp;
@@ -144,4 +156,8 @@ private:
     int TestInterval = 5;
     int TestIntervalCounter = 0;
     TArray<UObject*> TestObjects;
+
+	// 패널 렌더링
+    FPropertyPanel* PropertyPanel = nullptr;
+    //FControlPanel* ControlPanel = nullptr;
 };
