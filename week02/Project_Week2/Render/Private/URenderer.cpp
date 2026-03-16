@@ -273,6 +273,7 @@ bool URenderer::CreateRasterizerStates()
     D3D11_RASTERIZER_DESC Desc = {};
     Desc.FillMode = D3D11_FILL_SOLID;
     Desc.DepthClipEnable = TRUE;
+    Desc.FrontCounterClockwise = TRUE;
 
     Desc.CullMode = D3D11_CULL_BACK;
     if (FAILED(Device->CreateRasterizerState(&Desc, &RasterizerStateCullBack)))
