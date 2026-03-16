@@ -15,6 +15,9 @@ class FWindowsApplication;
 class UStaticMesh;
 
 class UStaticMeshComponent;
+class AGizmoActor;
+
+class FGUIManager;
 
 enum class EPointerPulsePhase
 {
@@ -22,6 +25,13 @@ enum class EPointerPulsePhase
     Growing,
     Holding,
     Shrinking
+};
+
+enum class ESpawnMeshType
+{
+    Sphere = 0,
+    Cube,
+    Torus
 };
 
 struct FPointerPulse
@@ -33,6 +43,9 @@ struct FPointerPulse
 
     int StartMouseX = 0;
     int StartMouseY = 0;
+
+    int CurrentMouseX = 0;
+    int CurrentMouseY = 0;
 
     float CurrentRadius = 0.0f;
     float MaxRadius = 0.05f;      // 월드 단위
@@ -94,6 +107,9 @@ private:
     void UpdateObjectAllocationTest();
     void RenderDebugUI();
 
+    void SpawnSelectedMeshActor();
+    AActor* SpawnMeshActor(UStaticMesh* Mesh, const FVector& Location);
+
 private:
     FWindowsApplication* WindowApp;
     URenderer* Renderer;
@@ -111,11 +127,12 @@ private:
     UStaticMesh* AxesMesh;
     UStaticMesh* GizmoArrowMesh = nullptr;
 
-    AActor* GizmoActor = nullptr;
-    UStaticMeshComponent* GizmoXComp = nullptr;
-    UStaticMeshComponent* GizmoYComp = nullptr;
-    UStaticMeshComponent* GizmoZComp = nullptr;
+    //AActor* GizmoActor = nullptr;
+    //UStaticMeshComponent* GizmoXComp = nullptr;
+    //UStaticMeshComponent* GizmoYComp = nullptr;
+    //UStaticMeshComponent* GizmoZComp = nullptr;
     //UStaticMeshComponent* GizmoMeshComp = nullptr;
+    AGizmoActor* GizmoActor = nullptr;
     AActor* SelectedActor = nullptr;
 
     AActor* WorldAxesActor = nullptr;
@@ -144,4 +161,8 @@ private:
     int TestInterval = 5;
     int TestIntervalCounter = 0;
     TArray<UObject*> TestObjects;
+
+    ESpawnMeshType SelectedSpawnMeshType = ESpawnMeshType::Sphere;
+
+    FGUIManager* GUIManager = nullptr;
 };
