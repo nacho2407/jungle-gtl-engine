@@ -101,6 +101,27 @@ void ResourceManager::AddTriangleMesh(ID3D11Device* Device)
 	CreateGeometry("Triangle", triangle_vertices, sizeof(triangle_vertices), Device, 0, Vertices);
 }
 
+void ResourceManager::AddPlaneMesh(ID3D11Device* Device)
+{
+	FVertexSimple planeVertices[] =
+	{
+		{ -5.0f,-5.0f, 0.0f, 81 / 255.0, 91 / 255.0, 212 / 255.0,1 },
+		{  5.0f,-5.0f, 0.0f, 129 / 255.0, 52 / 255.0, 175 / 255.0,1 },
+		{  5.0f, 5.0f, 0.0f, 221 / 255.0, 42 / 255.0, 123 / 255.0,1 },
+
+		{ -5.0f,-5.0f, 0.0f, 81 / 255.0,91 / 255.0, 212 / 255.0,1 },
+		{  5.0f, 5.0f, 0.0f, 221 / 255.0, 42 / 255.0, 123 / 255.0,1 },
+		{ -5.0f, 5.0f, 0.0f, 254 / 255.0, 218 / 255.0, 119 / 255.0,1 }
+	};
+	int Cnt = sizeof(planeVertices) / sizeof(FVertexSimple);
+	TArray<FVector> Vertices(Cnt);
+	for (int i = 0; i < Cnt; ++i)
+	{
+		Vertices[i] = FVector(planeVertices[i].x, planeVertices[i].y, planeVertices[i].z);
+	}
+	CreateGeometry("Plane", planeVertices, sizeof(planeVertices), Device, 0, Vertices);
+}
+
 void ResourceManager::AddAxisMesh(ID3D11Device* Device)
 {
 	FVertexSimple AxisVertices[] =

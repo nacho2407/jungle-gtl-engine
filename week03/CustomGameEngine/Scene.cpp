@@ -5,6 +5,7 @@
 #include "UCubeComp.h"
 #include "USphereComp.h"
 #include "UTriangleComp.h"
+#include "UPlaneComp.h"
 #include "Logger.h"
 
 UScene::UScene()
@@ -66,6 +67,8 @@ UScene* UScene::FromJson(std::string jsonStr)
 			newSc = GetWorld().AddSceneComponent<USphereComp>(scene);
 		if (typeStr == "Triangle")
 			newSc = GetWorld().AddSceneComponent<UTriangleComp>(scene);
+		if (typeStr == "Plane")
+			newSc = GetWorld().AddSceneComponent<UPlaneComp>(scene);
 
 		if (newSc == nullptr)
 			continue;

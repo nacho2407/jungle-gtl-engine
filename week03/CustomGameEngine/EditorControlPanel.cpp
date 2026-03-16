@@ -38,7 +38,7 @@ void EditorControlPanel::Draw(UCamera* camera)
 		static_cast<int>(TimerManager::GetInstance().GetGlobalDeltaTime() * 1000));
 	ImGui::Separator();
 
-	if (ImGui::Combo("Primitive", (int*)&primitiveType, "Sphere\0Cube\0Triangle\0"))
+	if (ImGui::Combo("Primitive", (int*)&primitiveType, "Sphere\0Cube\0Triangle\0Plane\0"))
 	{
 		// TODO: Change primitive type to spawn.
 	}

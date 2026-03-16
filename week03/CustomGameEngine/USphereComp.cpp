@@ -1,5 +1,4 @@
 ﻿#include "USphereComp.h"
-#include "URender.h"
 #include "ResourceManager.h"
 
 USphereComp::USphereComp()

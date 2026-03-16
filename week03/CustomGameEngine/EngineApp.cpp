@@ -96,6 +96,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	ResourceManager::AddCubeMesh(Renderer->Device);
 	ResourceManager::AddSphereMesh(Renderer->Device);
 	ResourceManager::AddTriangleMesh(Renderer->Device);
+	ResourceManager::AddPlaneMesh(Renderer->Device);
 	ResourceManager::AddGizmoTranslationMesh(Renderer->Device);
 	ResourceManager::AddGizmoRotationMesh(Renderer->Device);
 	ResourceManager::AddGizmoScaleMesh(Renderer->Device);

@@ -4,6 +4,7 @@
 #include "UCubeComp.h"
 #include "USphereComp.h"
 #include "UTriangleComp.h"
+#include "UPlaneComp.h"
 
 UPrimitiveComponent* PrimitiveFactory::AddPrimitive(EPrimitiveType type)
 {
@@ -15,6 +16,8 @@ UPrimitiveComponent* PrimitiveFactory::AddPrimitive(EPrimitiveType type)
 		return GetWorld().AddSceneComponent<USphereComp>();
 	case EPrimitiveType::Triangle:
 		return GetWorld().AddSceneComponent<UTriangleComp>();
+	case EPrimitiveType::Plane:
+		return GetWorld().AddSceneComponent<UPlaneComp>();
 	}
 	return nullptr;
 }

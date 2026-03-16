@@ -9,6 +9,7 @@ enum EPrimitiveType
 	Sphere,
 	Cube,
 	Triangle,
+	Plane,
 	Axis
 };
 
