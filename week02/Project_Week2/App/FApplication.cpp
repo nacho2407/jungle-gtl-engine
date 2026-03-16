@@ -39,6 +39,9 @@
 #include "FGUIManager.h"
 #include "FInputManager.h"
 
+#include "Panels/FPropertyPanel.h"
+#include "Panels/FControlPanel.h"
+
 namespace
 {
     FVector4 LightenColor(const FVector4& C, float T)
@@ -48,6 +51,30 @@ namespace
             C.Y + (1.0f - C.Y) * T,
             C.Z + (1.0f - C.Z) * T,
             C.W);
+    }
+
+    bool DrawFloat3Control(const char* Label, FVector& Value, float Speed = 0.1f)
+    {
+        bool bChanged = false;
+
+        ImGui::PushID(Label);
+
+        ImGui::SetNextItemWidth(90.0f);
+        bChanged |= ImGui::DragFloat("##X", &Value.X, Speed);
+
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(90.0f);
+        bChanged |= ImGui::DragFloat("##Y", &Value.Y, Speed);
+
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(90.0f);
+        bChanged |= ImGui::DragFloat("##Z", &Value.Z, Speed);
+
+        ImGui::SameLine();
+        ImGui::Text("%s", Label);
+
+        ImGui::PopID();
+        return bChanged;
     }
 }
 
@@ -124,6 +151,9 @@ bool FApplication::Initialize(HINSTANCE hInstance)
 
             RenderFrame();
         };
+
+    PropertyPanel = new FPropertyPanel();
+    ControlPanel = new FControlPanel();
 
     bIsRunning = true;
     return true;
@@ -424,8 +454,24 @@ void FApplication::Tick(float DeltaTime)
             {
                 HitActor = nullptr;
             }
+            else
+            {
+                FHitProxy Proxy = Renderer->PickPrimitiveProxy(DownX, DownY);
 
-            SetSelectedActor(HitActor);
+                AActor* HitActor = nullptr;
+
+                if (Proxy.Type == EHitProxyType::Primitive && Proxy.Primitive)
+                {
+                    HitActor = Proxy.Primitive->GetOwner();
+
+                    if (HitActor == GizmoActor || HitActor == WorldAxesActor || HitActor == GridActor)
+                    {
+                        HitActor = nullptr;
+                    }
+                }
+
+                SetSelectedActor(HitActor);
+            }
         }
     }
 
@@ -543,7 +589,12 @@ void FApplication::RenderFrame()
 
     GUIManager->BeginFrame();
     RenderDebugUI();
+    RenderEditorUI();
+    ImGui::Render();
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
     GUIManager->EndFrame();
+
 
     Renderer->EndFrame();
 }
@@ -551,6 +602,18 @@ void FApplication::RenderFrame()
 void FApplication::Shutdown()
 {
     bIsRunning = false;
+
+    if (PropertyPanel)
+    {
+        delete PropertyPanel;
+        PropertyPanel = nullptr;
+    }
+
+    if (ControlPanel)
+    {
+        delete ControlPanel;
+        ControlPanel = nullptr;
+    }
 
     if (GUIManager)
     {
@@ -671,7 +734,7 @@ FRay FApplication::BuildPickRay(int MouseX, int MouseY) const
 }
 
 AActor* FApplication::PickActor(const FRay& Ray) const
-{
+{   
     AActor* ClosestActor = nullptr;
     float ClosestT = FLT_MAX;
 
@@ -1264,7 +1327,7 @@ void FApplication::UpdateObjectAllocationTest()
 
 void FApplication::RenderDebugUI()
 {
-    ImGui::Begin("Jungle Property Window");
+    ImGui::Begin("Jungle Property Window(Debug)");
     ImGui::Text("Hello Jungle World!");
 
     ImGui::Separator();
@@ -1323,6 +1386,7 @@ void FApplication::RenderDebugUI()
     }
 
     ImGui::End();
+
 }
 
 // (*) 이거 UWorld로 옮기는 게 맞지
@@ -1372,6 +1436,56 @@ void FApplication::SpawnSelectedMeshActor()
     {
         SetSelectedActor(SpawnedActor);
     }
+}
+
+void FApplication::RenderEditorUI()
+{
+    if (PropertyPanel)
+    {
+        PropertyPanel->Render(this);
+    }
+
+    if (ControlPanel)
+    {
+        ControlPanel->Render(this);
+    }
+
+    if (bShowBottomConsole && WindowApp)
+    {
+        const float ConsoleHeight = 220.0f;
+        const float Width = static_cast<float>(WindowApp->GetClientWidth());
+        const float Height = static_cast<float>(WindowApp->GetClientHeight());
+
+        ImGui::SetNextWindowPos(ImVec2(0.0f, Height - ConsoleHeight), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(Width, ConsoleHeight), ImGuiCond_Always);
+
+        ShowImGuiDemoConsole(&bShowBottomConsole);
+    }
+}
+
+AActor* FApplication::GetSelectedActor() const
+{
+    return SelectedActor;
+}
+
+void FApplication::NotifySelectedActorTransformChanged()
+{
+    if (SelectedActor)
+    {
+        UpdateGizmoTransform();
+        UpdateGizmoColors();
+    }
+}
+
+void FApplication::ClearSelection()
+{
+    SetSelectedActor(nullptr);
+}
+
+UCameraComponent* FApplication::GetMainCamera() const
+{
+    return MainCamera;
+
 }
 
 void FApplication::ApplyCameraProjectionMode()

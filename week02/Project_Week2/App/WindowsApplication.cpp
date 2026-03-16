@@ -1,10 +1,17 @@
 #include <windowsx.h>
-
+#include "imgui_impl_win32.h"
 #include "WindowsApplication.h"
 #include "GUI.h"
 
 // 이렇게 써야하는건가?
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(
+    HWND hWnd,
+    UINT msg,
+    WPARAM wParam,
+    LPARAM lParam
+);
 
 FWindowsApplication::FWindowsApplication()
     : hWnd(nullptr)
@@ -250,7 +257,7 @@ LRESULT FWindowsApplication::WndProc(HWND InHWnd, UINT Msg, WPARAM wParam, LPARA
 {
     if (ImGui_ImplWin32_WndProcHandler(InHWnd, Msg, wParam, lParam))
     {
-        return true;
+        return 1;
     }
 
     switch (Msg)
