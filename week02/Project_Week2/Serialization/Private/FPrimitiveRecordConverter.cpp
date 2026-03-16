@@ -14,7 +14,7 @@ FPrimitiveRecord FPrimitiveRecordConverter::FromActor(const AActor* Actor)
 	return Record;
 }
 
-AActor* FPrimitiveRecordConverter::ToActor(const FPrimitiveRecord& Record)
-{
-	// 팩토리 코드 완성 후 작성
-}
+//AActor* FPrimitiveRecordConverter::ToActor(const FPrimitiveRecord& Record)
+//{
+//	// 팩토리 코드 완성 후 작성
+//}

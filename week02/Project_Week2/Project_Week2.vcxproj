@@ -148,7 +148,10 @@
     <ClInclude Include="Core\Public\TObjectBase.h" />
     <ClInclude Include="Engine\Engine.h" />
     <ClInclude Include="Engine\Public\Actor\AActor.h" />
+    <ClInclude Include="Engine\Public\Actor\ACube.h" />
     <ClInclude Include="Engine\Public\Actor\APrimitiveActor.h" />
+    <ClInclude Include="Engine\Public\Actor\ASphere.h" />
+    <ClInclude Include="Engine\Public\Actor\ATriangle.h" />
     <ClInclude Include="Engine\Public\Component\EGizmoAxis.h" />
     <ClInclude Include="Engine\Public\Component\UActorComponent.h" />
     <ClInclude Include="Engine\Public\Component\UCameraComponent.h" />
@@ -205,6 +208,10 @@
     <ClCompile Include="Core\Public\Math\FVector4.h" />
     <ClCompile Include="Core\Public\UClassData.cpp" />
     <ClCompile Include="Engine\Private\Actor\AActor.cpp" />
+    <ClCompile Include="Engine\Private\Actor\ACube.cpp" />
+    <ClCompile Include="Engine\Private\Actor\APrimitiveActor.cpp" />
+    <ClCompile Include="Engine\Private\Actor\ASphere.cpp" />
+    <ClCompile Include="Engine\Private\Actor\ATriangle.cpp" />
     <ClCompile Include="Engine\Private\Component\UActorComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\UCameraComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\UGizmoComponent.cpp" />
