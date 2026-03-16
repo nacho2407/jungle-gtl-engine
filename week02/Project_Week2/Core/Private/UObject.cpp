@@ -1,10 +1,10 @@
+#include "UEngineStatics.h"
 #include "UObject.h"
 
-uint64_t UObject::GlobalObjectID = 1;
-
-UObject::UObject()
+UObject::UObject(const FUObjectInitializer& ObjectInitilizer) : UObject()
 {
-    ObjectID = GlobalObjectID++;
+	UUID = ObjectInitilizer.UUID;
+	Name = ObjectInitilizer.Name;
 }
 
 UObject::~UObject()

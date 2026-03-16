@@ -10,6 +10,7 @@ class AActor : public UObject
 {
 public:
 	AActor();
+	AActor(const FUObjectInitializer& ObjectInitializer);
 	virtual ~AActor();
 public:
 	virtual void BeginPlay();

@@ -1,13 +1,22 @@
 #pragma once
+#include "CoreTypes.h"
+#include "FUObjectArray.h"
+#include "FUObjectInitializer.h"
+#include "UObjectBaseUtility.h"
 
 #include <string>
 #include <cstdint>
 
-class UObject
+class UObject : public UObjectBaseUtility
 {
 public:
+    size_t AllocatedSize;
+private:
+    uint32 UUID;
 
-    UObject();
+public:
+    UObject() : AllocatedSize(0), UUID(0), Name("DefaultObject") {};
+    UObject(const FUObjectInitializer& ObjectInitilizer);
     virtual ~UObject();
 
 public:
@@ -26,15 +35,14 @@ public:
     // Runtime type info
     virtual const char* GetObjClassName() const;
 
-protected:
+    uint32 GetUUID() const { return UUID; }
 
-    uint64_t ObjectID = 0;
+public:
 
-    std::string Name;
+    uint64_t ObjectID = 0; // @@@ ???
 
-    UObject* Outer = nullptr;
+    FString Name;
 
-private:
+    UObject* Outer = nullptr; /// 이거는 Private가 맞는듯?
 
-    static uint64_t GlobalObjectID;
 };

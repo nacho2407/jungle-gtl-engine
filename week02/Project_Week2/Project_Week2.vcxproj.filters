@@ -141,6 +141,39 @@
     <ClInclude Include="Render\Public\Geometry\Axies.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Public\FObjectManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\FUObjectFactory.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\UEngineStatics.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\FUObjectArray.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\CoreDefine.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\UObjectBase.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\UObjectBaseUtility.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\FUObjectAllocator.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\FUObjectInitializer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\FAActorFactory.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Component\EGizmoAxis.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Public\Resource\BuiltInMeshFactory.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -153,7 +186,16 @@
     <ClInclude Include="Engine\Public\Resource\UStaticMesh.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Render\Public\FHitProxy.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\Public\Geometry\Cube.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
     <ClInclude Include="ThirdParty\Json\json.hpp">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Private\FMemory.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -178,9 +220,6 @@
     </ClCompile>
     <ClCompile Include="GUI\Private\imgui_widgets.cpp">
       <Filter>ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Private\UFactory.cpp">
-      <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Core\Private\UEngineStatics.cpp">
       <Filter>소스 파일</Filter>
@@ -239,6 +278,24 @@
     <ClCompile Include="App\WindowsApplication.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Private\FUObjectFactory.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\FObjectManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\FUObjectArray.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\UObjectBaseUtility.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\UObjectClusters.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Component\UGizmoComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Private\Resource\BuiltInMeshFactory.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -246,6 +303,9 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Private\Resource\UStaticMesh.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\Private\Geometry\Cube.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Render\Private\Geometry\Sphere.cpp">
@@ -256,9 +316,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="ShaderW0.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
+    <FxCompile Include="Render\Public\Shaders\HitProxy.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Render\Public\Shaders\Default.hlsl" />

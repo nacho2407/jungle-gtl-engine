@@ -1,4 +1,5 @@
 #pragma once
+#include "Structs.h"
 #include "Math/FVector.h"
 #include "Math/FVector4.h"
 
