@@ -92,6 +92,7 @@ void SceneManager::UnloadScene()
 	for (auto obj : deleteList)
 	{
 		GetWorld().RemoveSceneComponent(obj);
+		delete obj;
 	}
 	delete GetWorld().GetActiveScene();
 	GetWorld().SetActiveScene(nullptr);

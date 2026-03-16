@@ -8,6 +8,8 @@ UPrimitiveComponent::UPrimitiveComponent()
 
 UPrimitiveComponent::~UPrimitiveComponent()
 {
+	if (RenderObj != nullptr)
+		delete RenderObj;
 }
 
 EPrimitiveType UPrimitiveComponent::GetType()

@@ -78,7 +78,6 @@ UScene* UScene::FromJson(std::string jsonStr)
 
 		newSc->Deserialize(pair.second);
 		newSc->UUID = std::stoi(pair.first);
-		scene->SceneComponents.push_back(newSc);
 	}
 
 	return scene;
