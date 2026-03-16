@@ -1,7 +1,9 @@
 #pragma once
 
 #include <vector>
+
 #include "UObject.h"
+#include "CoreTypes.h"
 
 class UActorComponent;
 class USceneComponent;
@@ -23,6 +25,8 @@ public:
 
 	void SetRootComponent(USceneComponent* InRootComponent);
 	USceneComponent* GetRootComponent() const;
+
+	FString GetName() const; // 그냥 인터페이스
 protected:
 	TArray<UActorComponent*> Components;
 	USceneComponent* RootComponent;
