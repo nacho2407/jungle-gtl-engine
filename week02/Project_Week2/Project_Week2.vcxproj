@@ -105,7 +105,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty;$(ProjectDir)GUI\Public;$(ProjectDir)Render\Public;$(ProjectDir)App;$(ProjectDir)Engine\Public;$(ProjectDir)Core\Public;$(ProjectDir)GUI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty;$(ProjectDir)GUI\Public;$(ProjectDir)Render\Public;$(ProjectDir)App;$(ProjectDir)Engine\Public;$(ProjectDir)Core\Public;$(ProjectDir)GUI\Public\ImGui;$(ProjectDir)GUI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -163,14 +163,15 @@
     <ClInclude Include="Core\Public\FUObjectFactory.h" />
     <ClInclude Include="Core\Public\FUObjectArray.h" />
     <ClInclude Include="GUI\GUI.h" />
-    <ClInclude Include="GUI\Public\imconfig.h" />
-    <ClInclude Include="GUI\Public\imgui.h" />
-    <ClInclude Include="GUI\Public\imgui_impl_dx11.h" />
-    <ClInclude Include="GUI\Public\imgui_impl_win32.h" />
-    <ClInclude Include="GUI\Public\imgui_internal.h" />
-    <ClInclude Include="GUI\Public\imstb_rectpack.h" />
-    <ClInclude Include="GUI\Public\imstb_textedit.h" />
-    <ClInclude Include="GUI\Public\imstb_truetype.h" />
+    <ClInclude Include="GUI\Public\FGUIManager.h" />
+    <ClInclude Include="GUI\Public\ImGui\imconfig.h" />
+    <ClInclude Include="GUI\Public\ImGui\imgui.h" />
+    <ClInclude Include="GUI\Public\ImGui\imgui_impl_dx11.h" />
+    <ClInclude Include="GUI\Public\ImGui\imgui_impl_win32.h" />
+    <ClInclude Include="GUI\Public\ImGui\imgui_internal.h" />
+    <ClInclude Include="GUI\Public\ImGui\imstb_rectpack.h" />
+    <ClInclude Include="GUI\Public\ImGui\imstb_textedit.h" />
+    <ClInclude Include="GUI\Public\ImGui\imstb_truetype.h" />
     <ClInclude Include="Render\Public\FHitProxy.h" />
     <ClInclude Include="Render\Public\Geometry\Axies.h" />
     <ClInclude Include="Render\Public\Geometry\Cube.h" />
@@ -207,6 +208,7 @@
     <ClCompile Include="Engine\Private\Resource\MeshImporter.cpp" />
     <ClCompile Include="Engine\Private\Resource\UStaticMesh.cpp" />
     <ClCompile Include="Engine\Public\Actor\AGizmoActor.h" />
+    <ClCompile Include="GUI\Private\FGUIManager.cpp" />
     <ClCompile Include="Render\Private\Geometry\Cube.cpp" />
     <ClCompile Include="Render\Private\Geometry\Sphere.cpp" />
     <ClCompile Include="Engine\Public\Component\USphereComponent.h" />
@@ -215,13 +217,13 @@
     <ClCompile Include="Core\Private\UEngineStatics.cpp" />
     <ClCompile Include="Core\Private\FUObjectFactory.cpp" />
     <ClCompile Include="Core\Private\FUObjectArray.cpp" />
-    <ClCompile Include="GUI\Private\imgui.cpp" />
-    <ClCompile Include="GUI\Private\imgui_demo.cpp" />
-    <ClCompile Include="GUI\Private\imgui_draw.cpp" />
-    <ClCompile Include="GUI\Private\imgui_impl_dx11.cpp" />
-    <ClCompile Include="GUI\Private\imgui_impl_win32.cpp" />
-    <ClCompile Include="GUI\Private\imgui_tables.cpp" />
-    <ClCompile Include="GUI\Private\imgui_widgets.cpp" />
+    <ClCompile Include="GUI\Private\ImGui\imgui.cpp" />
+    <ClCompile Include="GUI\Private\ImGui\imgui_demo.cpp" />
+    <ClCompile Include="GUI\Private\ImGui\imgui_draw.cpp" />
+    <ClCompile Include="GUI\Private\ImGui\imgui_impl_dx11.cpp" />
+    <ClCompile Include="GUI\Private\ImGui\imgui_impl_win32.cpp" />
+    <ClCompile Include="GUI\Private\ImGui\imgui_tables.cpp" />
+    <ClCompile Include="GUI\Private\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="Render\Private\URenderer.cpp" />
     <ClCompile Include="Core\Private\UObjectBaseUtility.cpp" />
   </ItemGroup>

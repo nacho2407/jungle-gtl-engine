@@ -32,6 +32,7 @@
 
 #include <chrono>
 #include "Actor/AGizmoActor.h"
+#include "FGUIManager.h"
 
 namespace
 {
@@ -115,32 +116,39 @@ bool FApplication::InitializeEngine()
 
 bool FApplication::InitializeGUI()
 {
-    if (!WindowApp || !Renderer)
+    //if (!WindowApp || !Renderer)
+    //{
+    //    return false;
+    //}
+
+    //IMGUI_CHECKVERSION();
+    //ImGui::CreateContext();
+
+    //ImGuiIO& io = ImGui::GetIO();
+    //(void)io;
+
+    //ImGui::StyleColorsDark();
+
+    //if (!ImGui_ImplWin32_Init(WindowApp->GetHWND()))
+    //{
+    //    return false;
+    //}
+
+    //if (!ImGui_ImplDX11_Init(Renderer->Device, Renderer->DeviceContext))
+    //{
+    //    ImGui_ImplWin32_Shutdown();
+    //    ImGui::DestroyContext();
+    //    return false;
+    //}
+
+    //return true;
+    GUIManager = new FGUIManager();
+    if (!GUIManager)
     {
         return false;
     }
 
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-
-    ImGuiIO& io = ImGui::GetIO();
-    (void)io;
-
-    ImGui::StyleColorsDark();
-
-    if (!ImGui_ImplWin32_Init(WindowApp->GetHWND()))
-    {
-        return false;
-    }
-
-    if (!ImGui_ImplDX11_Init(Renderer->Device, Renderer->DeviceContext))
-    {
-        ImGui_ImplWin32_Shutdown();
-        ImGui::DestroyContext();
-        return false;
-    }
-
-    return true;
+    return GUIManager->Initialize(WindowApp, Renderer);
 }
 
 bool FApplication::InitializeResources()
@@ -509,14 +517,9 @@ void FApplication::RenderFrame()
     // 여기서 메인 백버퍼 다시 바인딩
     Renderer->BindMainRenderTargetForOverlay();
 
-    ImGui_ImplDX11_NewFrame();
-    ImGui_ImplWin32_NewFrame();
-    ImGui::NewFrame();
-
+    GUIManager->BeginFrame();
     RenderDebugUI();
-
-    ImGui::Render();
-    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+    GUIManager->EndFrame();
 
     Renderer->EndFrame();
 }
@@ -1253,6 +1256,7 @@ void FApplication::RenderDebugUI()
     ImGui::End();
 }
 
+// (*) 이거 UWorld로 옮기는 게 맞지
 AActor* FApplication::SpawnMeshActor(UStaticMesh* Mesh, const FVector& Location)
 {
     if (!World || !Mesh)

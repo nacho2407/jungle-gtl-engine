@@ -17,6 +17,8 @@ class UStaticMesh;
 class UStaticMeshComponent;
 class AGizmoActor;
 
+class FGUIManager;
+
 enum class EPointerPulsePhase
 {
     Hidden,
@@ -158,4 +160,6 @@ private:
     TArray<UObject*> TestObjects;
 
     ESpawnMeshType SelectedSpawnMeshType = ESpawnMeshType::Sphere;
+
+    FGUIManager* GUIManager = nullptr;
 };
