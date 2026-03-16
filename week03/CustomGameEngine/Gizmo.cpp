@@ -5,6 +5,7 @@
 #include "UPicker.h"
 #include "Logger.h"
 #include "GizmoController.h"
+#include "UCamera.h"
 
 Gizmo::Gizmo()
 {
@@ -14,18 +15,18 @@ Gizmo::Gizmo()
 void Gizmo::UpdateRenderObject()
 {
 	Controller->UpdateRenderObject();
-}	
+}
 
 Gizmo::~Gizmo()
 {
 	delete Controller;
 }
 
-void Gizmo::OnBeforeRender()
+void Gizmo::OnBeforeRender(UCamera* Camera)
 {
 	if (Controller)
 	{
-		Controller->Update();
+		Controller->Update(Camera);
 		Controller->UpdateRenderObject();
 	}
 }

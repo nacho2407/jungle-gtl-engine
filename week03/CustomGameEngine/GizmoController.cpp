@@ -11,6 +11,7 @@
 #include "GizmoTranslationControlStrategy.h"
 #include "GizmoRotationControlStrategy.h"
 #include "GizmoScaleControlStrategy.h"
+#include "UCamera.h"
 
 GizmoController::GizmoController()
 {
@@ -24,7 +25,7 @@ GizmoController::~GizmoController()
 {
 }
 
-void GizmoController::Update()
+void GizmoController::Update(UCamera* Camera)
 {
 	if (AttachedComponent == nullptr) return;
 
@@ -34,7 +35,13 @@ void GizmoController::Update()
 		SetControlStrategy(Type);
 	}
 
-	RelativeMatrix = FMatrix::TranslationMatrix(AttachedComponent->GetRelativeLocation());
+	FVector CamPos = Camera->Position;
+	FVector CompPos = AttachedComponent->GetRelativeLocation();
+	float Dist = (CamPos - CompPos).Length();
+	float Scale = Dist * BaseScale;
+	RelativeMatrix = FMatrix::ScaleMatrix(Scale, Scale, Scale) * FMatrix::TranslationMatrix(AttachedComponent->GetRelativeLocation());
+
+	//RelativeMatrix = FMatrix::TranslationMatrix(AttachedComponent->GetRelativeLocation());
 
 	if (bLocalSpace)
 	{

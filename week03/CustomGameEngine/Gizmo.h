@@ -8,7 +8,7 @@ class URenderer;
 class RenderObject;
 class USceneComponent;
 class GizmoController;
-
+class UCamera;
 enum class TransformationType
 {
 	Location,
@@ -26,7 +26,7 @@ public:
 	void UpdateRenderObject();
 
 public:
-	void OnBeforeRender();
+	void OnBeforeRender(UCamera* Camera);
 
 	GizmoController* GetController() const { return Controller; }
 

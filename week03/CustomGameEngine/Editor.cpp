@@ -12,7 +12,7 @@
 #include "Gizmo.h"
 #include "GizmoController.h"
 #include "URender.h"
-
+#include "UCamera.h"
 Editor::Editor()
 {
 	ControlPanel = new EditorControlPanel(this);
@@ -41,7 +41,7 @@ void Editor::OnBeforeRender()
 	if (SelectedComponent == nullptr) return;
 
 	Gizmo::GetInstance().UpdateRenderObject();
-	Gizmo::GetInstance().OnBeforeRender();
+	Gizmo::GetInstance().OnBeforeRender(Camera);
 }
 
 void Editor::DrawUI()

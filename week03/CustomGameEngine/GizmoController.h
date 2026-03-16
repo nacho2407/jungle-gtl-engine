@@ -30,7 +30,7 @@ public:
 	~GizmoController();
 
 public:
-	void Update();
+	void Update(class UCamera* Camera);
 	void UpdateRenderObject();
 
 	void BeginDrag(const Ray& ray);
@@ -92,6 +92,8 @@ private:
 	IGizmoControlStrategy* TranslationStrategy = nullptr;
 	IGizmoControlStrategy* RotationStrategy = nullptr;
 	IGizmoControlStrategy* ScaleStrategy = nullptr;
+
+	float BaseScale = 0.07f;
 
 	bool bDrawEnabled = false;
 };
