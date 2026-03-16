@@ -18,6 +18,7 @@ class UStaticMeshComponent;
 class AGizmoActor;
 
 class FGUIManager;
+class FInputManager;
 
 class FPropertyPanel;
 class FControlPanel;
@@ -79,6 +80,7 @@ public:
 private:
     bool InitializeEngine();
     bool InitializeGUI();
+    bool InitializeInput();
     bool InitializeResources();
     bool InitializeScene();
     void MainLoop();
@@ -122,6 +124,8 @@ private:
 	// 패널 렌더링
     void RenderEditorUI();
 
+
+    void ApplyCameraProjectionMode();
 
 private:
     FWindowsApplication* WindowApp;
@@ -186,4 +190,11 @@ private:
     // 하단 콘솔
     bool bShowBottomConsole = true;
 
+    FInputManager* InputManager = nullptr;
+
+    int PrevMouseX = 0;
+    int PrevMouseY = 0;
+
+    bool bUseOrthogonalProjection = false;
+    float DebugOrthoWidth = 10.0f;
 };

@@ -3,6 +3,12 @@
 #include "CoreTypes.h"
 #include "Component/USceneComponent.h"
 
+enum class EProjectionMode
+{
+    Perspective = 0,
+	Orthogonal
+};
+
 class UCameraComponent : public USceneComponent
 {
 public:
@@ -27,6 +33,15 @@ public:
     void SetFarClip(float InFarClip);
     float GetFarClip() const;
 
+    void SetProjectionMode(EProjectionMode InMode);
+    EProjectionMode GetProjectionMode() const;
+
+    void SetOrthoWidth(float InOrthoWidth);
+    float GetOrthoWidth() const;
+
+    bool IsOrthogonal() const;
+
+
     FMatrix GetProjectionMatrix() const;
     FMatrix GetViewMatrix() const;
     void UpdateAspectRatio(uint32 Width, uint32 Height);
@@ -36,5 +51,8 @@ private:
     float AspectRatio;
     float NearClip;
     float FarClip;
+
+    EProjectionMode ProjectionMode = EProjectionMode::Perspective;;
+    float OrthoWidth = 10.0f;
 };
 

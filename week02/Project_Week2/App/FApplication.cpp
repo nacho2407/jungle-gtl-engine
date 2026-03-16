@@ -37,6 +37,7 @@
 #include <chrono>
 #include "Actor/AGizmoActor.h"
 #include "FGUIManager.h"
+#include "FInputManager.h"
 
 #include "Panels/FPropertyPanel.h"
 #include "Panels/FControlPanel.h"
@@ -111,8 +112,12 @@ bool FApplication::Initialize(HINSTANCE hInstance)
         return false;
     }
 
-    // ImGui 초기화
     if (!InitializeGUI())
+    {
+        return false;
+    }
+
+    if (!InitializeInput())
     {
         return false;
     }
@@ -205,6 +210,17 @@ bool FApplication::InitializeGUI()
     return GUIManager->Initialize(WindowApp, Renderer);
 }
 
+bool FApplication::InitializeInput()
+{
+    InputManager = new FInputManager();
+    if (!InputManager)
+    {
+        return false;
+    }
+
+    return InputManager->Initialize(WindowApp, GUIManager);
+}
+
 bool FApplication::InitializeResources()
 {
     //SphereMesh = MeshImporter::LoadStaticMeshFromGltf("Assets/BlueSphere.gltf");
@@ -237,6 +253,9 @@ bool FApplication::InitializeScene()
         static_cast<float>(WindowApp->GetClientHeight()));
     MainCamera->SetNearClip(0.1f);
     MainCamera->SetFarClip(1000.0f);
+    bUseOrthogonalProjection = false;
+	DebugOrthoWidth = 10.0f;
+	ApplyCameraProjectionMode();
 
     CameraActor->AddComponent(MainCamera);
     CameraActor->SetRootComponent(MainCamera);
@@ -393,34 +412,27 @@ void FApplication::MainLoop()
 
 void FApplication::Tick(float DeltaTime)
 {
-    ImGuiIO& io = ImGui::GetIO();
-    const bool bUIWantsMouse = io.WantCaptureMouse;
-    const bool bUIWantsKeyboard = io.WantCaptureKeyboard;
-
-    if (!World || !MainCamera)
+    if (!World || !MainCamera || !InputManager)
     {
         return;
     }
 
-    // 상혁 테스트
     UpdateObjectAllocationTest();
 
-    ImGuiIO& Io = ImGui::GetIO();
-    const bool bImGuiWantsMouse = Io.WantCaptureMouse;
+    InputManager->BeginFrame();
 
-    static int PrevMouseX = 0; // (*) 이거는 private 변수로 수정해야함
-    static int PrevMouseY = 0;
+    const bool bCanProcessMouse = InputManager->CanProcessMouse();
+    const bool bCanProcessKeyboard = InputManager->CanProcessKeyboard();
 
     int MouseX = 0;
     int MouseY = 0;
+    InputManager->GetMousePosition(MouseX, MouseY);
 
-    int DownX = 0;
-    int DownY = 0;
-    if (!bImGuiWantsMouse && WindowApp->ConsumeLeftMouseDown(DownX, DownY))
+    if (bCanProcessMouse && InputManager->WasMousePressed(EMouseButton::Left))
     {
-        BeginPointerPulse(DownX, DownY);
+        BeginPointerPulse(MouseX, MouseY);
 
-        FHitProxy Proxy = Renderer->PickPrimitiveProxy(DownX, DownY);
+        FHitProxy Proxy = Renderer->PickPrimitiveProxy(MouseX, MouseY);
 
         AActor* HitActor = nullptr;
         if (Proxy.Type == EHitProxyType::Primitive && Proxy.Primitive)
@@ -428,16 +440,14 @@ void FApplication::Tick(float DeltaTime)
             HitActor = Proxy.Primitive->GetOwner();
         }
 
-        // 1) 진짜로 gizmo를 클릭한 경우에만 축 판정
         if (HitActor == GizmoActor)
         {
-            EGizmoAxis Axis = PickGizmoAxis(DownX, DownY);
+            EGizmoAxis Axis = PickGizmoAxis(MouseX, MouseY);
             if (Axis != EGizmoAxis::None)
             {
-                BeginGizmoDrag(Axis, DownX, DownY);
+                BeginGizmoDrag(Axis, MouseX, MouseY);
             }
         }
-        // 2) 월드 축 / 그리드 / 클릭 원 등은 선택 불가
         else
         {
             if (HitActor == WorldAxesActor || HitActor == GridActor || HitActor == ClickCircleActor)
@@ -446,7 +456,7 @@ void FApplication::Tick(float DeltaTime)
             }
             else
             {
-                FHitProxy Proxy = Renderer->PickPrimitiveProxy(DownX, DownY);
+                FHitProxy Proxy = Renderer->PickPrimitiveProxy(MouseX, MouseY);
 
                 AActor* HitActor = nullptr;
 
@@ -465,77 +475,59 @@ void FApplication::Tick(float DeltaTime)
         }
     }
 
-    int UpX = 0;
-    int UpY = 0;
-    if (!bImGuiWantsMouse && WindowApp->ConsumeLeftMouseUp(UpX, UpY))
+    if (bCanProcessMouse && InputManager->WasMouseReleased(EMouseButton::Left))
     {
-        EndGizmoDrag(); // 기즈모 드래그 종료
-        EndPointerPulse(); // 클릭 애니메이션 종료
+        EndGizmoDrag();
+        EndPointerPulse();
     }
 
-    int RightDownX = 0;
-    int RightDownY = 0;
-    if (!bImGuiWantsMouse &&  WindowApp->ConsumeRightMouseDown(RightDownX, RightDownY))
+    if (bCanProcessMouse && bDraggingGizmo && InputManager->IsMouseDown(EMouseButton::Left))
     {
-        if (!bUIWantsMouse)
-        {
-            BeginPointerPulse(RightDownX, RightDownY);
-
-            // Orbit 시작 기준점 맞추기
-            PrevMouseX = RightDownX;
-            PrevMouseY = RightDownY;
-        }
-    } 
-
-    int RightUpX = 0; // @@@ 이렇게 좌/우 up/down마다 변수를 해줘야하는거임?? 너무 번거롭?지 않나
-    int RightUpY = 0;
-    if (!bImGuiWantsMouse && WindowApp->ConsumeRightMouseUp(RightUpX, RightUpY))
-    {
-        if (!bUIWantsMouse)
-        {
-            EndPointerPulse();
-        }
-    }
-
-    if (!bImGuiWantsMouse && bDraggingGizmo && WindowApp->IsLeftMousePressed()) // 선택된 기즈모 드래그 유지
-    {
-        WindowApp->GetMousePosition(MouseX, MouseY);
+        InputManager->GetMousePosition(MouseX, MouseY);
         UpdateGizmoDrag(MouseX, MouseY);
     }
 
-
-    if (!bImGuiWantsMouse && WindowApp->IsRightMousePressed()) // 카메라 orbit
+    if (bCanProcessMouse && InputManager->WasMousePressed(EMouseButton::Right))
     {
-        WindowApp->GetMousePosition(MouseX, MouseY);
+        BeginPointerPulse(MouseX, MouseY);
+        PrevMouseX = MouseX;
+        PrevMouseY = MouseY;
+    }
 
-        int DeltaX = MouseX - PrevMouseX; // 마우스 움직인 변위
-        int DeltaY = MouseY - PrevMouseY;
+    if (bCanProcessMouse && InputManager->WasMouseReleased(EMouseButton::Right))
+    {
+        EndPointerPulse();
+    }
 
-        FVector Rot = MainCamera->GetRelativeRotation(); // 회전값 갱신
+    if (bCanProcessMouse && InputManager->IsMouseDown(EMouseButton::Right))
+    {
+        InputManager->GetMousePosition(MouseX, MouseY);
 
+        const int DeltaX = MouseX - PrevMouseX;
+        const int DeltaY = MouseY - PrevMouseY;
+
+        FVector CamRot = MainCamera->GetRelativeRotation();
         const float RotateSpeed = 0.005f;
 
-        Rot.Y += DeltaX * RotateSpeed; // Yaw
-        Rot.X += DeltaY * RotateSpeed; // Pitch
+        CamRot.Y += DeltaX * RotateSpeed;
+        CamRot.X += DeltaY * RotateSpeed;
+        CamRot.X = std::clamp(CamRot.X, -1.5f, 1.5f);
 
-        Rot.X = std::clamp(Rot.X, -1.5f, 1.5f); // @@@ 카메라 너무 위/아래로 돌리면 이상해줄 수 있어서, 오일러 각 기반 회전이라 클램프가 중요하대...
+        MainCamera->SetRelativeRotation(CamRot);
 
-        MainCamera->SetRelativeRotation(Rot); 
-        
-        PrevMouseX = MouseX; // 이번 좌표를 다음 프레임의 이전 좌표로 저장
+        PrevMouseX = MouseX;
         PrevMouseY = MouseY;
     }
     else
     {
-        WindowApp->GetMousePosition(PrevMouseX, PrevMouseY); // 클릭, 드래그 X여도 다음 프레임에 사용될 수 있기 때문에 상시 업데이트
+        InputManager->GetMousePosition(PrevMouseX, PrevMouseY);
     }
 
     FVector CameraLoc = MainCamera->GetRelativeLocation();
     FVector Rot = MainCamera->GetRelativeRotation();
 
-    FMatrix RotMatrix = FMatrix::MakeRotationXYZ(Rot); // 회전행렬
+    FMatrix RotMatrix = FMatrix::MakeRotationXYZ(Rot);
 
-    // 카메라 회전을 했으니, WASD 이동은 카메라가 바라보는 방향 기준이 맞음
     FVector4 Forward4 = RotMatrix * FVector4(0, 0, 1, 0);
     FVector4 Right4 = RotMatrix * FVector4(1, 0, 0, 0);
     FVector4 Up4 = RotMatrix * FVector4(0, 1, 0, 0);
@@ -544,61 +536,42 @@ void FApplication::Tick(float DeltaTime)
     FVector Right(Right4.X, Right4.Y, Right4.Z);
     FVector Up(Up4.X, Up4.Y, Up4.Z);
 
-    float Speed = 5.0f * DeltaTime; // @@@ 프레임 수 상관없이 같은 속도로 움직.
+    const float Speed = 5.0f * DeltaTime;
 
-    if (WindowApp->IsKeyDown('W'))
-        CameraLoc += Forward * Speed;
-
-    if (WindowApp->IsKeyDown('S'))
-        CameraLoc -= Forward * Speed;
-
-    if (WindowApp->IsKeyDown('A'))
-        CameraLoc -= Right * Speed;
-
-    if (WindowApp->IsKeyDown('D'))
-        CameraLoc += Right * Speed;
-
-    if (WindowApp->IsKeyDown('Q'))
-        CameraLoc -= Up * Speed;
-
-    if (WindowApp->IsKeyDown('E'))
-        CameraLoc += Up * Speed;
+    if (bCanProcessKeyboard)
+    {
+        if (InputManager->IsKeyDown('W')) CameraLoc += Forward * Speed;
+        if (InputManager->IsKeyDown('S')) CameraLoc -= Forward * Speed;
+        if (InputManager->IsKeyDown('A')) CameraLoc -= Right * Speed;
+        if (InputManager->IsKeyDown('D')) CameraLoc += Right * Speed;
+        if (InputManager->IsKeyDown('Q')) CameraLoc -= Up * Speed;
+        if (InputManager->IsKeyDown('E')) CameraLoc += Up * Speed;
+    }
 
     MainCamera->SetRelativeLocation(CameraLoc);
 
-    float Wheel = WindowApp->ConsumeMouseWheelDelta();
-
-    // @@@ Zoom = 렌즈/FOV 변경 Dolly = 카메라 자체 이동
-    // 둘이 뭐가...다른거지?? 휠로는 원래 줌인줌아웃 아님?? 이게...FOV랑 관련??아...
-    if (!bImGuiWantsMouse && Wheel != 0.0f)
+    const float Wheel = InputManager->GetMouseWheelDelta();
+    if (bCanProcessMouse && Wheel != 0.0f)
     {
         FVector Loc = MainCamera->GetRelativeLocation();
-        FVector Rot = MainCamera->GetRelativeRotation();
-
-        FMatrix RotMatrix = FMatrix::MakeRotationXYZ(Rot);
-
-        FVector4 Forward4 = RotMatrix * FVector4(0, 0, 1, 0);
-        FVector Forward(Forward4.X, Forward4.Y, Forward4.Z);
-
-        float DollySpeed = 2.0f;
-
-        Loc += Forward * Wheel * DollySpeed;
-
+        Loc += Forward * Wheel * 2.0f;
         MainCamera->SetRelativeLocation(Loc);
     }
 
     UpdatePointerPulse(DeltaTime);
-    World->Tick(DeltaTime); // 월드 업데이트
 
-    if (SelectedActor) // 선택된 액터 있을 때 기즈모 업데이트
+    World->Tick(DeltaTime);
+
+    if (SelectedActor)
     {
-        UpdateGizmoTransform(); // &&& 선택 액터 위치에 기즈모 붙이기
+        UpdateGizmoTransform();
         UpdateGizmoColors();
     }
 
-    // Scene: 이번 프레임에 그릴 것들의 리스트
-    World->BuildScene(*Scene); // &&& 월드의 오브젝트들을 렌더러가 그릴 수 있는 형태로 정리하는 과정
-    AddSelectionOutlineRenderItem(); // 선택된 액터에 outline 효과 
+    World->BuildScene(*Scene);
+    AddSelectionOutlineRenderItem();
+
+    InputManager->EndFrame();
 }
 
 void FApplication::RenderFrame()
@@ -642,11 +615,16 @@ void FApplication::Shutdown()
         ControlPanel = nullptr;
     }
 
-    if (ImGui::GetCurrentContext())
+    if (GUIManager)
     {
-        ImGui_ImplDX11_Shutdown();
-        ImGui_ImplWin32_Shutdown();
-        ImGui::DestroyContext();
+        delete GUIManager;
+        GUIManager = nullptr;
+    }
+
+    if (InputManager)
+    {
+        delete InputManager;
+        InputManager = nullptr;
     }
 
     if (Renderer)
@@ -673,9 +651,6 @@ void FApplication::Shutdown()
         delete WindowApp;
         WindowApp = nullptr;
     }
-
-    CameraActor = nullptr;
-    MainCamera = nullptr;
 }
 
 void FApplication::HandleMousePicking() //
@@ -715,12 +690,6 @@ FRay FApplication::BuildPickRay(int MouseX, int MouseY) const
     const float NdcX = (2.0f * static_cast<float>(MouseX) / Width) - 1.0f;
     const float NdcY = 1.0f - (2.0f * static_cast<float>(MouseY) / Height);
 
-    const float FovRadians = MainCamera->GetFieldOfView() * 3.14159265358979323846f / 180.0f;
-    const float TanHalfFov = std::tan(FovRadians * 0.5f);
-
-    const float ViewX = NdcX * MainCamera->GetAspectRatio() * TanHalfFov;
-    const float ViewY = NdcY * TanHalfFov;
-
     const FVector CameraLocation = MainCamera->GetRelativeLocation();
     const FVector CameraRotation = MainCamera->GetRelativeRotation();
 
@@ -729,10 +698,32 @@ FRay FApplication::BuildPickRay(int MouseX, int MouseY) const
     const FVector4 Right4 = CameraRotationMatrix * FVector4(1.0f, 0.0f, 0.0f, 0.0f);
     const FVector4 Up4 = CameraRotationMatrix * FVector4(0.0f, 1.0f, 0.0f, 0.0f);
     const FVector4 Forward4 = CameraRotationMatrix * FVector4(0.0f, 0.0f, 1.0f, 0.0f);
-
+    
     const FVector Right(Right4.X, Right4.Y, Right4.Z);
     const FVector Up(Up4.X, Up4.Y, Up4.Z);
     const FVector Forward(Forward4.X, Forward4.Y, Forward4.Z);
+
+    if (MainCamera->IsOrthogonal())
+    {
+        const float OrthoWidth = MainCamera->GetOrthoWidth();
+        const float OrthoHeight = OrthoWidth / MainCamera->GetAspectRatio();
+
+        const FVector RayOrigin =
+            CameraLocation +
+            Right * (NdcX * (OrthoWidth * 0.5f)) +
+            Up * (NdcY * (OrthoHeight * 0.5f));
+
+        Ray.Origin = RayOrigin;
+        Ray.Direction = Forward;
+        Ray.Direction.Normalize();
+        return Ray;
+    }
+
+    const float FovRadians = MainCamera->GetFieldOfView() * 3.14159265358979323846f / 180.0f;
+    const float TanHalfFov = std::tan(FovRadians * 0.5f);
+
+    const float ViewX = NdcX * MainCamera->GetAspectRatio() * TanHalfFov;
+    const float ViewY = NdcY * TanHalfFov;
 
     FVector Direction = Right * ViewX + Up * ViewY + Forward;
     Direction.Normalize();
@@ -1116,13 +1107,13 @@ void FApplication::UpdateGizmoColors()
     {
         HighlightAxis = ActiveGizmoAxis;
     }
-    else
-    {
-        int MouseX = 0;
-        int MouseY = 0;
-        WindowApp->GetMousePosition(MouseX, MouseY);
-        HighlightAxis = PickGizmoAxis(MouseX, MouseY);
-    }
+    //else
+    //{
+    //    int MouseX = 0;
+    //    int MouseY = 0;
+    //    InputManager->GetMousePosition(MouseX, MouseY);
+    //    HighlightAxis = PickGizmoAxis(MouseX, MouseY);
+    //}
 
     GizmoActor->UpdateColors(HighlightAxis);
 }
@@ -1222,7 +1213,7 @@ void FApplication::RefreshPointerPulseTransform()
 
 void FApplication::UpdatePointerPulse(float DeltaTime)
 {
-    if (!ClickCircleComp)
+    if (!ClickCircleComp || !InputManager)
     {
         return;
     }
@@ -1338,6 +1329,29 @@ void FApplication::RenderDebugUI()
 {
     ImGui::Begin("Jungle Property Window(Debug)");
     ImGui::Text("Hello Jungle World!");
+
+    ImGui::Separator();
+    ImGui::Text("Camera");
+
+    bool bProjectionChanged = false;
+
+    if (ImGui::Checkbox("Orthogonal Projection", &bUseOrthogonalProjection))
+    {
+        bProjectionChanged = true;
+    }
+
+    if (bUseOrthogonalProjection)
+    {
+        if (ImGui::SliderFloat("Ortho Width", &DebugOrthoWidth, 1.0f, 100.0f))
+        {
+            bProjectionChanged = true;
+        }
+    }
+
+    if (bProjectionChanged)
+    {
+        ApplyCameraProjectionMode();
+    }
 
     ImGui::Separator();
     ImGui::Text("Spawn Mesh");
@@ -1472,4 +1486,11 @@ UCameraComponent* FApplication::GetMainCamera() const
 {
     return MainCamera;
 
+}
+
+void FApplication::ApplyCameraProjectionMode()
+{
+    if (!MainCamera) { return; }
+	MainCamera->SetProjectionMode(bUseOrthogonalProjection ? EProjectionMode::Orthogonal : EProjectionMode::Perspective);
+	MainCamera->SetOrthoWidth(DebugOrthoWidth);
 }

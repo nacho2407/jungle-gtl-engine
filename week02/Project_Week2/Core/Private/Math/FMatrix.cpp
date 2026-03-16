@@ -144,6 +144,19 @@ FMatrix FMatrix::MakePerspectiveMatrix(float FOVDegrees, float AspectRatio, floa
 	return Mat;
 }
 
+FMatrix FMatrix::MakeOrthogonalMatrix(float OrthoWidth, float AspectRatio, float NearClip, float FarClip)
+{
+	const float OrthoHeight = OrthoWidth / AspectRatio;
+
+	FMatrix Mat = FMatrix::MakeIdentity();
+
+	Mat.M[0][0] = 2.0f / OrthoWidth;
+	Mat.M[1][1] = 2.0f / OrthoHeight;
+	Mat.M[2][2] = 1.0f / (FarClip - NearClip);
+	Mat.M[3][2] = -NearClip / (FarClip - NearClip);
+
+	return Mat;
+}
 
 FMatrix FMatrix::operator*(const FMatrix& Rhs) const
 {
