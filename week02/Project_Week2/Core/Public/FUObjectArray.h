@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreDefine.h"
-#include "FMemory.h"
+#include "Private/FMemory.h"
 #include "UObject.h"
 #include "UObjectBaseUtility.h"
 

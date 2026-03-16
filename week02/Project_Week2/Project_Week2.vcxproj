@@ -166,6 +166,8 @@
   <ItemGroup>
     <ClCompile Include="Core\Private\FMemory.h" />
     <ClCompile Include="Core\Private\FObjectManager.cpp" />
+    <ClCompile Include="Core\Private\TestMemory.cpp" />
+    <ClCompile Include="Core\Private\TestMemory.h" />
     <ClCompile Include="Core\Private\UObject.cpp" />
     <ClCompile Include="Core\Private\Math\FMatrix.cpp" />
     <ClCompile Include="Core\Private\Math\FVector.cpp" />

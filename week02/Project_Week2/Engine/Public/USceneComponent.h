@@ -1,5 +1,6 @@
 #pragma once
-#include "Core.h"
+#include "Math/FVector.h"
+#include "UObject.h"
 
 class USceneComponent : public UObject
 {

@@ -194,6 +194,12 @@
     <ClCompile Include="Core\Private\FMemory.h">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Private\TestMemory.h">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\TestMemory.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ShaderW0.hlsl">

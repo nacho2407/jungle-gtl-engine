@@ -9,6 +9,8 @@
 #include "Sphere.h"
 #include "UEngineStatics.h"
 
+#include "Private/TestMemory.h"
+
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
@@ -111,7 +113,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		{
 			if (delta > 0)
 			{
-				auto newObject = GUObjectFactory.CreateObject<AActor>("Test");
+				auto newObject = NewObject<AActor>("Test");
 
 				objects.push_back(newObject);
 
@@ -121,9 +123,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				UObject* garbage = objects.back();
 				objects.pop_back();
 
-				auto TargetIndex = garbage->InternalIndex;
-				GUObjectArray.FreeUObjectIndox(garbage);
-				GUObjectAllocator.FreeUObject(garbage);
+				Destroy(garbage);
 			}
 
 			if (objects.size() <= 0 || objects.size() > 100)
@@ -145,6 +145,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		ImGui::Text("GTotalAllocationBytes: %d", FMemory::GetTotalAllocatedMemory());
 		ImGui::Text("GTotalAllocationCount: %d", GUObjectArray.ElementalCount);
 		ImGui::Text("ObjectCountInVector: %d", objects.size());
+		ImGui::Text("TotalMemory %d", TotalMemory);
 		if(objects.size() > 0)
 			ImGui::Text("LastID: %d", objects.back()->GetUUID());
 
