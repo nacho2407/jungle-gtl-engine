@@ -1,5 +1,7 @@
 #pragma once
+#include "CoreGlobal.h"
 #include "CoreTypes.h"
+#include "CoreDefine.h"
 #include "FUObjectArray.h"
 #include "FUObjectInitializer.h"
 #include "UObjectBaseUtility.h"
@@ -8,7 +10,8 @@
 #include <string>
 #include <cstdint>
 
-#define DECLARE_ROOT_UClass(CurrentType)                           \
+
+#define CreateMetaData(CurrentType)                           \
 private:                                                           \
     inline static UClassData* StaticClass = nullptr;               \
 public:                                                            \
@@ -22,10 +25,12 @@ public:                                                            \
         classData->ClassSize = sizeof(CurrentType);                \
         StaticClass = classData;                                   \
         return StaticClass;                                        \
-    }
+	}
 
 class UObject : public UObjectBaseUtility
 {
+	CreateMetaData(UObject)
+
 public:
 	size_t AllocatedSize;
 private:
@@ -62,4 +67,4 @@ public:
 
 	UObject* Outer = nullptr; /// 이거는 Private가 맞는듯?
 
-	};
+};

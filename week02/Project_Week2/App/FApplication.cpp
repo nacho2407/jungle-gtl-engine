@@ -1355,7 +1355,6 @@ void FApplication::RenderDebugUI()
     auto test = NewObject<AActor>("Temp");
     auto msg = "Typeof :" + test->GetClass()->ClassName;
     ImGui::Text(msg.c_str());
-    ImGui::Text(("TypeofAActor Static:: =>    " + AActor::GetClass()->ClassName).c_str());
 
     Destroy(test);
     if (!TestObjects.empty())

@@ -210,6 +210,9 @@
     <ClInclude Include="Core\Public\TObjectBase.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Public\CoreGlobal.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GUI\Private\imgui.cpp">

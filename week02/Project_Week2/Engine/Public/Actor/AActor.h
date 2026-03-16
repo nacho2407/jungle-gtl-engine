@@ -9,9 +9,12 @@ class USceneComponent;
 
 class AActor : public UObject
 {
-DECLARE_ROOT_UClass(AActor)
+CreateMetaData(AActor)
 public:
-	AActor();
+	AActor() : UObject()
+	{
+		RootComponent = nullptr;
+	}
 	AActor(const FUObjectInitializer& ObjectInitializer);
 	virtual ~AActor();
 public:

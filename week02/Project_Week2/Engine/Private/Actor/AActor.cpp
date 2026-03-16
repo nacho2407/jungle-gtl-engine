@@ -2,7 +2,6 @@
 #include "Component/UActorComponent.h"
 #include "Component/USceneComponent.h"
 
-AActor::AActor() : UObject() { RootComponent = nullptr; }
 AActor::AActor(const FUObjectInitializer& ObjectInitializer) : UObject(ObjectInitializer) { RootComponent = nullptr;  }   // 추가
 AActor::~AActor() { }
 
