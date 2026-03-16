@@ -195,6 +195,7 @@
     <ClCompile Include="Core\Private\UObjectClusters.cpp" />
     <ClCompile Include="Core\Public\Math\FVector4.h" />
     <ClCompile Include="Engine\Private\Actor\AActor.cpp" />
+    <ClCompile Include="Engine\Private\Actor\AGizmoActor.cpp" />
     <ClCompile Include="Engine\Private\Component\UActorComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\UCameraComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\UGizmoComponent.cpp" />
@@ -205,6 +206,7 @@
     <ClCompile Include="Engine\Private\Resource\BuiltInMeshFactory.cpp" />
     <ClCompile Include="Engine\Private\Resource\MeshImporter.cpp" />
     <ClCompile Include="Engine\Private\Resource\UStaticMesh.cpp" />
+    <ClCompile Include="Engine\Public\Actor\AGizmoActor.h" />
     <ClCompile Include="Render\Private\Geometry\Cube.cpp" />
     <ClCompile Include="Render\Private\Geometry\Sphere.cpp" />
     <ClCompile Include="Engine\Public\Component\USphereComponent.h" />

@@ -31,6 +31,7 @@
 #include "GUI.h"
 
 #include <chrono>
+#include "Actor/AGizmoActor.h"
 
 namespace
 {
@@ -160,6 +161,7 @@ bool FApplication::InitializeResources()
 
 bool FApplication::InitializeScene()
 {
+    // (*) ACamereActor로 빼기
     // 카메라 액터
     CameraActor = new AActor();
     MainCamera = new UCameraComponent();
@@ -175,114 +177,70 @@ bool FApplication::InitializeScene()
 
     CameraActor->AddComponent(MainCamera);
     CameraActor->SetRootComponent(MainCamera);
+    // (*) ACamereActor로 빼기
 
     World->AddActor(CameraActor);
+    
+    SpawnMeshActor(SphereMesh, FVector(0.0f, 0.0f, 0.0f));
 
-/*    // Sphere
-    {
-        AActor* Actor = new AActor();
-        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
-        MeshComp->SetStaticMesh(SphereMesh);
-        MeshComp->SetRelativeLocation(FVector(-2.0f, -2.0f, 5.0f));
-        //MeshComp->SetRelativeScale(FVector(3.0f, 3.0f, 3.0f));
-        Actor->AddComponent(MeshComp);
-        Actor->SetRootComponent(MeshComp);
-        World->AddActor(Actor);
-    }
+    //// World Axes
+    //{
+    //    WorldAxesActor = new AActor();
 
-    // Sphere
-    {
-        AActor* Actor = new AActor();
-        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
-        MeshComp->SetStaticMesh(SphereMesh);
-        MeshComp->SetRelativeLocation(FVector(0.0f, 2.0f, 10.0f));
-        //MeshComp->SetRelativeScale(FVector(3.0f, 3.0f, 3.0f));
-        Actor->AddComponent(MeshComp);
-        Actor->SetRootComponent(MeshComp);
-        World->AddActor(Actor);
-    }
+    //    UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
+    //    MeshComp->SetStaticMesh(AxesMesh);
+    //    MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
 
-    // Cube
-    {
-        AActor* Actor = new AActor();
-        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
-        MeshComp->SetStaticMesh(CubeMesh);
-        MeshComp->SetRelativeLocation(FVector(2.0f, 0.0f, 5.0f));
-        Actor->AddComponent(MeshComp);
-        Actor->SetRootComponent(MeshComp);
-        World->AddActor(Actor);
-    }
+    //    WorldAxesActor->AddComponent(MeshComp);
+    //    WorldAxesActor->SetRootComponent(MeshComp);
+    //    World->AddActor(WorldAxesActor);
+    //}
+    SpawnMeshActor(AxesMesh, FVector(0.0f, 0.0f, 0.0f));
 
-    // 도나쓰
-    {
-        AActor* Actor = new AActor();
-        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
-        MeshComp->SetStaticMesh(TorusMesh);
-        MeshComp->SetRelativeLocation(FVector(3.0f, 0.0f, 8.0f));
-        MeshComp->SetRelativeScale(FVector(1.5f, 1.5f, 1.5f));
-        MeshComp->SetRelativeRotation(FVector(0.6f, 0.f, 0.f));
+    //// Gizmo
+    //// @@@ 이렇게 길게 여기서 처리하는 게 맞음????
+    //{
+    //    GizmoActor = new AActor();
 
-        Actor->AddComponent(MeshComp);
-        Actor->SetRootComponent(MeshComp);
-        World->AddActor(Actor);
-    }*/
+    //    GizmoXComp = new UStaticMeshComponent();
+    //    GizmoYComp = new UStaticMeshComponent();
+    //    GizmoZComp = new UStaticMeshComponent();
 
-    SpawnMeshActor(SphereMesh, FVector(-2.0f, -2.0f, 5.0f));
+    //    GizmoXComp->SetStaticMesh(GizmoArrowMesh);
+    //    GizmoYComp->SetStaticMesh(GizmoArrowMesh);
+    //    GizmoZComp->SetStaticMesh(GizmoArrowMesh);
 
-    // World Axes
-    {
-        WorldAxesActor = new AActor();
+    //    GizmoXComp->SetRelativeLocation(FVector::ZeroVector);
+    //    GizmoYComp->SetRelativeLocation(FVector::ZeroVector);
+    //    GizmoZComp->SetRelativeLocation(FVector::ZeroVector);
 
-        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
-        MeshComp->SetStaticMesh(AxesMesh);
-        MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
+    //    // arrow mesh가 +X 방향 기준이라고 가정
+    //    GizmoXComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
+    //    GizmoYComp->SetRelativeRotation(FVector(0.0f, 0.0f, 1.5707963f));
+    //    GizmoZComp->SetRelativeRotation(FVector(0.0f, -1.5707963f, 0.0f));
 
-        WorldAxesActor->AddComponent(MeshComp);
-        WorldAxesActor->SetRootComponent(MeshComp);
-        World->AddActor(WorldAxesActor);
-    }
+    //    GizmoXComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
+    //    GizmoYComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
+    //    GizmoZComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
 
-    // Gizmo
-    // @@@ 이렇게 길게 여기서 처리하는 게 맞음????
-    {
-        GizmoActor = new AActor();
+    //    GizmoXComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
+    //    GizmoYComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
+    //    GizmoZComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
 
-        GizmoXComp = new UStaticMeshComponent();
-        GizmoYComp = new UStaticMeshComponent();
-        GizmoZComp = new UStaticMeshComponent();
+    //    GizmoXComp->SetVisibility(false);
+    //    GizmoYComp->SetVisibility(false);
+    //    GizmoZComp->SetVisibility(false);
 
-        GizmoXComp->SetStaticMesh(GizmoArrowMesh);
-        GizmoYComp->SetStaticMesh(GizmoArrowMesh);
-        GizmoZComp->SetStaticMesh(GizmoArrowMesh);
+    //    GizmoActor->AddComponent(GizmoXComp);
+    //    GizmoActor->AddComponent(GizmoYComp);
+    //    GizmoActor->AddComponent(GizmoZComp);
+    //    GizmoActor->SetRootComponent(GizmoXComp);
 
-        GizmoXComp->SetRelativeLocation(FVector::ZeroVector);
-        GizmoYComp->SetRelativeLocation(FVector::ZeroVector);
-        GizmoZComp->SetRelativeLocation(FVector::ZeroVector);
-
-        // arrow mesh가 +X 방향 기준이라고 가정
-        GizmoXComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
-        GizmoYComp->SetRelativeRotation(FVector(0.0f, 0.0f, 1.5707963f));
-        GizmoZComp->SetRelativeRotation(FVector(0.0f, -1.5707963f, 0.0f));
-
-        GizmoXComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
-        GizmoYComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
-        GizmoZComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
-
-        GizmoXComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
-        GizmoYComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
-        GizmoZComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
-
-        GizmoXComp->SetVisibility(false);
-        GizmoYComp->SetVisibility(false);
-        GizmoZComp->SetVisibility(false);
-
-        GizmoActor->AddComponent(GizmoXComp);
-        GizmoActor->AddComponent(GizmoYComp);
-        GizmoActor->AddComponent(GizmoZComp);
-        GizmoActor->SetRootComponent(GizmoXComp);
-
-        World->AddActor(GizmoActor);
-    }
+    //    World->AddActor(GizmoActor);
+    //}
+    GizmoActor = new AGizmoActor();
+    GizmoActor->Initialize(GizmoArrowMesh);
+    World->AddActor(GizmoActor);
 
     // Click Pulse Circle
     {
@@ -545,8 +503,6 @@ void FApplication::RenderFrame()
         return;
     }
 
-    //World->BuildScene(*Scene);
-
     Renderer->BeginFrame();
     Renderer->Render(*Scene, MainCamera);
 
@@ -785,7 +741,10 @@ void FApplication::SetSelectedActor(AActor* NewSelected)
     if (SelectedActor == NewSelected)
     {
         SelectedActor = nullptr;
-        SetGizmoVisibility(false);
+        if (GizmoActor)
+        {
+            GizmoActor->SetTargetActor(nullptr);
+        }
         return;
     }
 
@@ -793,29 +752,18 @@ void FApplication::SetSelectedActor(AActor* NewSelected)
 
     if (!SelectedActor)
     {
-        SelectedActor = nullptr;
-        SetGizmoVisibility(false);
+        if (GizmoActor)
+        {
+            GizmoActor->SetTargetActor(nullptr);
+        }
         return;
     }
 
-    USceneComponent* Root = SelectedActor->GetRootComponent();
-    if (!Root || !GizmoXComp || !GizmoYComp || !GizmoZComp)
+    if (GizmoActor)
     {
-        return;
+        GizmoActor->SetTargetActor(SelectedActor);
+        GizmoActor->UpdateColors(EGizmoAxis::None);
     }
-
-    if (!Root || !GizmoXComp || !GizmoYComp || !GizmoZComp)
-    {
-        return;
-    }
-
-    UpdateGizmoTransform();
-
-    GizmoXComp->SetVisibility(true);
-    GizmoYComp->SetVisibility(true);
-    GizmoZComp->SetVisibility(true);
-
-    UpdateGizmoColors();
 }
 
 bool FApplication::ProjectWorldToScreen(const FVector& WorldPos, float& OutX, float& OutY) const
@@ -848,83 +796,19 @@ bool FApplication::ProjectWorldToScreen(const FVector& WorldPos, float& OutX, fl
     return true;
 }
 
-EGizmoAxis FApplication::PickGizmoAxis(int MouseX, int MouseY) const // &&&
+EGizmoAxis FApplication::PickGizmoAxis(int MouseX, int MouseY) const
 {
-    if (!SelectedActor || !GizmoXComp || !GizmoXComp->IsVisible()) // 이거 GizmoXComp랑 GizmoXComp->IsVisible 둘 다 검사할 필요가 있나? 
+    if (!GizmoActor || !MainCamera || !WindowApp)
     {
         return EGizmoAxis::None;
     }
 
-    USceneComponent* Root = SelectedActor->GetRootComponent();
-    if (!Root)
-    {
-        return EGizmoAxis::None;
-    }
-
-    const FVector Origin = Root->GetRelativeLocation();
-    const float AxisLength = 3.0f;
-
-    const FVector XEnd = Origin + FVector(AxisLength, 0.0f, 0.0f);
-    const FVector YEnd = Origin + FVector(0.0f, AxisLength, 0.0f);
-    const FVector ZEnd = Origin + FVector(0.0f, 0.0f, AxisLength);
-
-    float OX, OY, XX, XY, YX, YY, ZX, ZY;
-
-    if (!ProjectWorldToScreen(Origin, OX, OY))
-    {
-        return EGizmoAxis::None;
-    }
-
-    bool bX = ProjectWorldToScreen(XEnd, XX, XY);
-    bool bY = ProjectWorldToScreen(YEnd, YX, YY);
-    bool bZ = ProjectWorldToScreen(ZEnd, ZX, ZY);
-
-    const float Threshold = 10.0f;
-
-    float BestDist = FLT_MAX;
-    EGizmoAxis BestAxis = EGizmoAxis::None;
-
-    if (bX && GizmoXComp->IsVisible())
-    {
-        const float Dist = DistancePointToSegment2D(
-            static_cast<float>(MouseX), static_cast<float>(MouseY),
-            OX, OY, XX, XY);
-
-        if (Dist < Threshold && Dist < BestDist)
-        {
-            BestDist = Dist;
-            BestAxis = EGizmoAxis::X;
-        }
-    }
-
-    if (bY && GizmoYComp->IsVisible())
-    {
-        const float Dist = DistancePointToSegment2D(
-            static_cast<float>(MouseX), static_cast<float>(MouseY),
-            OX, OY, YX, YY);
-
-        if (Dist < Threshold && Dist < BestDist)
-        {
-            BestDist = Dist;
-            BestAxis = EGizmoAxis::Y;
-        }
-    }
-
-    if (bZ && GizmoZComp->IsVisible())
-    {
-        const float Dist = DistancePointToSegment2D(
-            static_cast<float>(MouseX), static_cast<float>(MouseY),
-            OX, OY, ZX, ZY);
-
-        if (Dist < Threshold && Dist < BestDist)
-        {
-            BestDist = Dist;
-            BestAxis = EGizmoAxis::Z;
-        }
-    }
-
-
-    return BestAxis;
+    return GizmoActor->PickAxis(
+        MouseX,
+        MouseY,
+        MainCamera,
+        WindowApp->GetClientWidth(),
+        WindowApp->GetClientHeight());
 }
 
 float FApplication::DistancePointToSegment2D(float Px, float Py, float Ax, float Ay, float Bx, float By) const
@@ -1096,34 +980,18 @@ void FApplication::AddSelectionOutlineRenderItem()
 
 void FApplication::UpdateGizmoTransform()
 {
-    if (!SelectedActor || !GizmoXComp || !GizmoYComp || !GizmoZComp)
+    if (GizmoActor)
     {
-        return;
+        GizmoActor->UpdateTransformFromTarget();
     }
-
-    USceneComponent* Root = SelectedActor->GetRootComponent();
-    if (!Root)
-    {
-        return;
-    }
-
-    const FVector Pos = Root->GetRelativeLocation();
-
-    GizmoXComp->SetRelativeLocation(Pos);
-    GizmoYComp->SetRelativeLocation(Pos);
-    GizmoZComp->SetRelativeLocation(Pos);
 }
 
 void FApplication::UpdateGizmoColors()
 {
-    if (!GizmoXComp || !GizmoYComp || !GizmoZComp)
+    if (!GizmoActor)
     {
         return;
     }
-
-    const FVector4 XBase(1.0f, 0.0f, 0.0f, 1.0f);
-    const FVector4 YBase(0.0f, 1.0f, 0.0f, 1.0f);
-    const FVector4 ZBase(0.0f, 0.45f, 1.0f, 1.0f);
 
     EGizmoAxis HighlightAxis = EGizmoAxis::None;
 
@@ -1139,21 +1007,15 @@ void FApplication::UpdateGizmoColors()
         HighlightAxis = PickGizmoAxis(MouseX, MouseY);
     }
 
-    GizmoXComp->SetRenderColor(
-        HighlightAxis == EGizmoAxis::X ? LightenColor(XBase, 0.45f) : XBase);
-
-    GizmoYComp->SetRenderColor(
-        HighlightAxis == EGizmoAxis::Y ? LightenColor(YBase, 0.45f) : YBase);
-
-    GizmoZComp->SetRenderColor(
-        HighlightAxis == EGizmoAxis::Z ? LightenColor(ZBase, 0.45f) : ZBase);
+    GizmoActor->UpdateColors(HighlightAxis);
 }
 
 void FApplication::SetGizmoVisibility(bool bVisible)
 {
-    if (GizmoXComp) GizmoXComp->SetVisibility(bVisible);
-    if (GizmoYComp) GizmoYComp->SetVisibility(bVisible);
-    if (GizmoZComp) GizmoZComp->SetVisibility(bVisible);
+    if (GizmoActor)
+    {
+        GizmoActor->SetGizmoVisible(bVisible);
+    }
 }
 
 bool FApplication::ComputePointerPulseWorldPosition(int MouseX, int MouseY, float Distance, FVector& OutWorldPos) const
@@ -1372,7 +1234,7 @@ void FApplication::RenderDebugUI()
         SelectedSpawnMeshType = static_cast<ESpawnMeshType>(CurrentMeshIndex);
     }
 
-    if (ImGui::Button("Spawn At Origin"))
+    if (ImGui::Button("Spawn"))
     {
         SpawnSelectedMeshActor();
     }

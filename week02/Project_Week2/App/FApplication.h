@@ -15,6 +15,7 @@ class FWindowsApplication;
 class UStaticMesh;
 
 class UStaticMeshComponent;
+class AGizmoActor;
 
 enum class EPointerPulsePhase
 {
@@ -124,11 +125,12 @@ private:
     UStaticMesh* AxesMesh;
     UStaticMesh* GizmoArrowMesh = nullptr;
 
-    AActor* GizmoActor = nullptr;
-    UStaticMeshComponent* GizmoXComp = nullptr;
-    UStaticMeshComponent* GizmoYComp = nullptr;
-    UStaticMeshComponent* GizmoZComp = nullptr;
+    //AActor* GizmoActor = nullptr;
+    //UStaticMeshComponent* GizmoXComp = nullptr;
+    //UStaticMeshComponent* GizmoYComp = nullptr;
+    //UStaticMeshComponent* GizmoZComp = nullptr;
     //UStaticMeshComponent* GizmoMeshComp = nullptr;
+    AGizmoActor* GizmoActor = nullptr;
     AActor* SelectedActor = nullptr;
 
     AActor* WorldAxesActor = nullptr;
