@@ -8,5 +8,5 @@ class FPrimitiveRecordConverter
 {
 public:
 	static FPrimitiveRecord FromActor(const AActor* Actor);
-	static AActor* ToActor(const FPrimitiveRecord& Record);
+	//static AActor* ToActor(const FPrimitiveRecord& Record);
 };
