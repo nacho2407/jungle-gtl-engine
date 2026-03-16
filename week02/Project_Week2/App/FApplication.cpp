@@ -456,7 +456,7 @@ void FApplication::Tick(float DeltaTime)
             }
             else
             {
-                FHitProxy Proxy = Renderer->PickPrimitiveProxy(DownX, DownY);
+                FHitProxy Proxy = Renderer->PickPrimitiveProxy(MouseX, MouseY);
 
                 AActor* HitActor = nullptr;
 
