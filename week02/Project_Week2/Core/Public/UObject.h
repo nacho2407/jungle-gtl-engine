@@ -4,6 +4,9 @@
 #include "FUObjectInitializer.h"
 #include "UObjectBaseUtility.h"
 
+#include <string>
+#include <cstdint>
+
 class UObject : public UObjectBaseUtility
 {
     size_t AllocatedSize;
@@ -13,16 +16,36 @@ protected:
 
 
 public:
-    FString Name;
 
     UObject() : AllocatedSize(0), UUID(0), Name("DefaultObject") {};
     UObject(const FUObjectInitializer& ObjectInitilizer);
+    virtual ~UObject();
 
-    //virtual void Init() = 0;
+public:
 
-    //void* operator new(size_t size);
+    // Unique Object ID
+    uint64_t GetID() const;
 
-    //void operator delete(void* ptr, size_t size) noexcept;
+    // Object Name
+    const std::string& GetName() const;
+    void SetName(const std::string& InName);
+
+    // Owner Object
+    UObject* GetOuter() const;
+    void SetOuter(UObject* InOuter);
+
+    // Runtime type info
+    virtual const char* GetObjClassName() const;
+
+protected:
+
+    uint64_t ObjectID = 0;
+
+    FString Name;
+
+    UObject* Outer = nullptr;
+
+private:
 
     //template<typename T>
     //void CreateDefaultSubobject()

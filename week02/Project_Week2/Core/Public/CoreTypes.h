@@ -15,11 +15,15 @@ using int32 = int;
 using uint32 = unsigned int;
 using uint8 = unsigned char;
 
-using FString = std::string;
+template<typename K, typename V>
+using TMap = std::map<K, V>;
 
-// Dynamic Array
 template<typename T>
 using TArray = std::vector<T>;
+
+typedef std::string FString;
+
+using uint8 = unsigned char; // 1 byte
 
 // Double-ended Queue
 template<typename T>

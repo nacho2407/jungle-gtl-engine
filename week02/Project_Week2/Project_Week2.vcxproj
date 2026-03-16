@@ -105,7 +105,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Project_Week2\Core\Public;$(SolutionDir)\Project_Week2\Core;$(SolutionDir)\Project_Week2\Renderer;$(SolutionDir)\Project_Week2\Renderer\public;$(SolutionDir)\Project_Week2\Engine;$(SolutionDir)\Project_Week2\Engine\Public;$(SolutionDir)\Project_Week2\GUI;$(SolutionDir)\Project_Week2\GUI\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)GUI\Public;$(ProjectDir)ThirdParty;$(ProjectDir)Render\Public;$(ProjectDir)App;$(ProjectDir)Engine\Public;$(ProjectDir)Core\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -121,13 +121,16 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)GUI\Public;$(ProjectDir)ThirdParty;$(ProjectDir)Render\Public;$(ProjectDir)App;$(ProjectDir)Engine\Public;$(ProjectDir)Core\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="App\FApplication.h" />
+    <ClInclude Include="App\WindowsApplication.h" />
     <ClInclude Include="Core\Private\FUObjectAllocator.h" />
     <ClInclude Include="Core\Public\CoreDefine.h" />
     <ClInclude Include="Core\Public\FAActorFactory.h" />
@@ -140,16 +143,26 @@
     <ClInclude Include="Core\Public\FVertex.h" />
     <ClInclude Include="Core\Public\UObjectBase.h" />
     <ClInclude Include="Engine\Engine.h" />
-    <ClInclude Include="Engine\Public\AActor.h" />
-    <ClInclude Include="Engine\Public\UActorComponent.h" />
-    <ClInclude Include="Engine\Public\UPrimitiveComponent.h" />
-    <ClInclude Include="Engine\Public\USceneComponent.h" />
+    <ClInclude Include="Engine\Public\Actor\AActor.h" />
+    <ClInclude Include="Engine\Public\Actor\APrimitiveActor.h" />
+    <ClInclude Include="Engine\Public\Component\EGizmoAxis.h" />
+    <ClInclude Include="Engine\Public\Component\UActorComponent.h" />
+    <ClInclude Include="Engine\Public\Component\UCameraComponent.h" />
+    <ClInclude Include="Engine\Public\Component\UCubeComponent.h" />
+    <ClInclude Include="Engine\Public\Component\UGizmoComponent.h" />
+    <ClInclude Include="Engine\Public\Component\UPrimitiveComponent.h" />
+    <ClInclude Include="Engine\Public\Component\USceneComponent.h" />
+    <ClInclude Include="Engine\Public\Component\UStaticMeshComponent.h" />
+    <ClInclude Include="Engine\Public\Component\UTriangleComponent.h" />
+    <ClInclude Include="Engine\Public\Resource\BuiltInMeshFactory.h" />
+    <ClInclude Include="Engine\Public\Resource\MeshImporter.h" />
+    <ClInclude Include="Engine\Public\Resource\MeshTypes.h" />
+    <ClInclude Include="Engine\Public\Resource\UStaticMesh.h" />
+    <ClInclude Include="Engine\Public\World\FScene.h" />
+    <ClInclude Include="Engine\Public\World\UWorld.h" />
     <ClInclude Include="Core\Public\FUObjectFactory.h" />
     <ClInclude Include="Core\Public\FUObjectArray.h" />
     <ClInclude Include="GUI\GUI.h" />
-    <ClInclude Include="Renderer\Private\FVertex.h" />
-    <ClInclude Include="Renderer\public\URenderer.h" />
-    <ClInclude Include="Renderer\Renderer.h" />
     <ClInclude Include="GUI\Public\imconfig.h" />
     <ClInclude Include="GUI\Public\imgui.h" />
     <ClInclude Include="GUI\Public\imgui_impl_dx11.h" />
@@ -158,12 +171,21 @@
     <ClInclude Include="GUI\Public\imstb_rectpack.h" />
     <ClInclude Include="GUI\Public\imstb_textedit.h" />
     <ClInclude Include="GUI\Public\imstb_truetype.h" />
-    <ClInclude Include="Sphere.h" />
+    <ClInclude Include="Render\Public\FHitProxy.h" />
+    <ClInclude Include="Render\Public\Geometry\Axies.h" />
+    <ClInclude Include="Render\Public\Geometry\Cube.h" />
+    <ClInclude Include="Render\Public\Geometry\Sphere.h" />
+    <ClInclude Include="Render\Public\Structs.h" />
+    <ClInclude Include="Render\Public\URenderer.h" />
+    <ClInclude Include="ThirdParty\Json\json.hpp" />
     <ClInclude Include="Core\Public\UEngineStatics.h" />
     <ClInclude Include="Core\Public\UObjectBaseUtility.h" />
     <ClInclude Include="Core\Public\FUObjectInitializer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="App\FApplication.cpp" />
+    <ClCompile Include="App\Main.cpp" />
+    <ClCompile Include="App\WindowsApplication.cpp" />
     <ClCompile Include="Core\Private\FMemory.h" />
     <ClCompile Include="Core\Private\FObjectManager.cpp" />
     <ClCompile Include="Core\Private\UObject.cpp" />
@@ -172,10 +194,26 @@
     <ClCompile Include="Core\Private\Math\FVector4.cpp" />
     <ClCompile Include="Core\Private\UObjectClusters.cpp" />
     <ClCompile Include="Core\Public\Math\FVector4.h" />
-    <ClCompile Include="Engine\Private\USceneComponent.cpp" />
+    <ClCompile Include="Engine\Private\Actor\AActor.cpp" />
+    <ClCompile Include="Engine\Private\Component\UActorComponent.cpp" />
+    <ClCompile Include="Engine\Private\Component\UCameraComponent.cpp" />
+    <ClCompile Include="Engine\Private\Component\UGizmoComponent.cpp" />
+    <ClCompile Include="Engine\Private\Component\UPrimitiveComponent.cpp" />
+    <ClCompile Include="Engine\Private\Component\USceneComponent.cpp" />
+    <ClCompile Include="Engine\Private\Component\USphereComponent.cpp" />
+    <ClCompile Include="Engine\Private\Component\UStaticMeshComponent.cpp" />
+    <ClCompile Include="Engine\Private\Resource\BuiltInMeshFactory.cpp" />
+    <ClCompile Include="Engine\Private\Resource\MeshImporter.cpp" />
+    <ClCompile Include="Engine\Private\Resource\UStaticMesh.cpp" />
+    <ClCompile Include="Render\Private\Geometry\Cube.cpp" />
+    <ClCompile Include="Render\Private\Geometry\Sphere.cpp" />
+    <ClCompile Include="Engine\Public\Component\USphereComponent.h" />
+    <ClCompile Include="Engine\Private\World\FScene.cpp" />
+    <ClCompile Include="Engine\Private\World\UWorld.cpp" />
+    <ClCompile Include="Core\Private\UEngineStatics.cpp" />
+    <ClCompile Include="Core\Private\UFactory.cpp" />
     <ClCompile Include="Core\Private\FUObjectFactory.cpp" />
     <ClCompile Include="Core\Private\FUObjectArray.cpp" />
-    <ClCompile Include="Renderer\Private\URenderer.cpp" />
     <ClCompile Include="GUI\Private\imgui.cpp" />
     <ClCompile Include="GUI\Private\imgui_demo.cpp" />
     <ClCompile Include="GUI\Private\imgui_draw.cpp" />
@@ -183,13 +221,23 @@
     <ClCompile Include="GUI\Private\imgui_impl_win32.cpp" />
     <ClCompile Include="GUI\Private\imgui_tables.cpp" />
     <ClCompile Include="GUI\Private\imgui_widgets.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Render\Private\URenderer.cpp" />
     <ClCompile Include="Core\Private\UEngineStatics.cpp" />
     <ClCompile Include="Core\Private\UObjectBaseUtility.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="ShaderW0.hlsl">
+    <None Include="Assets\BlueSphere.bin" />
+    <None Include="Assets\BlueSphere.gltf" />
+    <None Include="Render\Public\Shaders\Default.hlsl">
+      <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Render\Public\Shaders\HitProxy.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
