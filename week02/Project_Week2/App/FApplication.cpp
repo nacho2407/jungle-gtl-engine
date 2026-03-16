@@ -100,6 +100,26 @@ bool FApplication::Initialize(HINSTANCE hInstance)
         return false;
     }
 
+    WindowApp->OnResize = [this](int Width, int Height)
+        {
+            if (Width <= 0 || Height <= 0)
+            {
+                return;
+            }
+
+            if (Renderer)
+            {
+                Renderer->Resize((UINT)Width, (UINT)Height);
+            }
+
+            if (MainCamera)
+            {
+                MainCamera->UpdateAspectRatio((float)Width, (float)Height);
+            }
+
+            RenderFrame();
+        };
+
     bIsRunning = true;
     return true;
 }

@@ -260,6 +260,11 @@ LRESULT FWindowsApplication::WndProc(HWND InHWnd, UINT Msg, WPARAM wParam, LPARA
         ClientWidth = LOWORD(lParam);
         ClientHeight = HIWORD(lParam);
         bResized = true;
+
+        if (OnResize && ClientWidth > 0 && ClientHeight > 0)
+        {
+            OnResize(ClientWidth, ClientHeight);
+        }
         return 0;
     }
     case WM_KEYDOWN:
