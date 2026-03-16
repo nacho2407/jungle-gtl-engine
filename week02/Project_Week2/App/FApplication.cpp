@@ -37,6 +37,7 @@
 #include <chrono>
 #include "Actor/AGizmoActor.h"
 #include "FGUIManager.h"
+#include "FInputManager.h"
 
 namespace
 {
@@ -84,8 +85,12 @@ bool FApplication::Initialize(HINSTANCE hInstance)
         return false;
     }
 
-    // ImGui 초기화
     if (!InitializeGUI())
+    {
+        return false;
+    }
+
+    if (!InitializeInput())
     {
         return false;
     }
@@ -173,6 +178,17 @@ bool FApplication::InitializeGUI()
     }
 
     return GUIManager->Initialize(WindowApp, Renderer);
+}
+
+bool FApplication::InitializeInput()
+{
+    InputManager = new FInputManager();
+    if (!InputManager)
+    {
+        return false;
+    }
+
+    return InputManager->Initialize(WindowApp, GUIManager);
 }
 
 bool FApplication::InitializeResources()
@@ -363,30 +379,27 @@ void FApplication::MainLoop()
 
 void FApplication::Tick(float DeltaTime)
 {
-    if (!World || !MainCamera)
+    if (!World || !MainCamera || !InputManager)
     {
         return;
     }
 
-    // 상혁 테스트
     UpdateObjectAllocationTest();
 
-    ImGuiIO& Io = ImGui::GetIO();
-    const bool bImGuiWantsMouse = Io.WantCaptureMouse;
+    InputManager->BeginFrame();
 
-    static int PrevMouseX = 0; // (*) 이거는 private 변수로 수정해야함
-    static int PrevMouseY = 0;
+    const bool bCanProcessMouse = InputManager->CanProcessMouse();
+    const bool bCanProcessKeyboard = InputManager->CanProcessKeyboard();
 
     int MouseX = 0;
     int MouseY = 0;
+    InputManager->GetMousePosition(MouseX, MouseY);
 
-    int DownX = 0;
-    int DownY = 0;
-    if (!bImGuiWantsMouse && WindowApp->ConsumeLeftMouseDown(DownX, DownY))
+    if (bCanProcessMouse && InputManager->WasMousePressed(EMouseButton::Left))
     {
-        BeginPointerPulse(DownX, DownY);
+        BeginPointerPulse(MouseX, MouseY);
 
-        FHitProxy Proxy = Renderer->PickPrimitiveProxy(DownX, DownY);
+        FHitProxy Proxy = Renderer->PickPrimitiveProxy(MouseX, MouseY);
 
         AActor* HitActor = nullptr;
         if (Proxy.Type == EHitProxyType::Primitive && Proxy.Primitive)
@@ -394,16 +407,14 @@ void FApplication::Tick(float DeltaTime)
             HitActor = Proxy.Primitive->GetOwner();
         }
 
-        // 1) 진짜로 gizmo를 클릭한 경우에만 축 판정
         if (HitActor == GizmoActor)
         {
-            EGizmoAxis Axis = PickGizmoAxis(DownX, DownY);
+            EGizmoAxis Axis = PickGizmoAxis(MouseX, MouseY);
             if (Axis != EGizmoAxis::None)
             {
-                BeginGizmoDrag(Axis, DownX, DownY);
+                BeginGizmoDrag(Axis, MouseX, MouseY);
             }
         }
-        // 2) 월드 축 / 그리드 / 클릭 원 등은 선택 불가
         else
         {
             if (HitActor == WorldAxesActor || HitActor == GridActor || HitActor == ClickCircleActor)
@@ -415,71 +426,59 @@ void FApplication::Tick(float DeltaTime)
         }
     }
 
-    int UpX = 0;
-    int UpY = 0;
-    if (!bImGuiWantsMouse && WindowApp->ConsumeLeftMouseUp(UpX, UpY))
+    if (bCanProcessMouse && InputManager->WasMouseReleased(EMouseButton::Left))
     {
-        EndGizmoDrag(); // 기즈모 드래그 종료
-        EndPointerPulse(); // 클릭 애니메이션 종료
+        EndGizmoDrag();
+        EndPointerPulse();
     }
 
-    int RightDownX = 0;
-    int RightDownY = 0;
-    if (!bImGuiWantsMouse &&  WindowApp->ConsumeRightMouseDown(RightDownX, RightDownY))
+    if (bCanProcessMouse && bDraggingGizmo && InputManager->IsMouseDown(EMouseButton::Left))
     {
-        BeginPointerPulse(RightDownX, RightDownY);
+        InputManager->GetMousePosition(MouseX, MouseY);
+        UpdateGizmoDrag(MouseX, MouseY);
+    }
 
-        // Orbit 시작 기준점 맞추기
-        PrevMouseX = RightDownX;
-        PrevMouseY = RightDownY;
-    } 
+    if (bCanProcessMouse && InputManager->WasMousePressed(EMouseButton::Right))
+    {
+        BeginPointerPulse(MouseX, MouseY);
+        PrevMouseX = MouseX;
+        PrevMouseY = MouseY;
+    }
 
-    int RightUpX = 0; // @@@ 이렇게 좌/우 up/down마다 변수를 해줘야하는거임?? 너무 번거롭?지 않나
-    int RightUpY = 0;
-    if (!bImGuiWantsMouse && WindowApp->ConsumeRightMouseUp(RightUpX, RightUpY))
+    if (bCanProcessMouse && InputManager->WasMouseReleased(EMouseButton::Right))
     {
         EndPointerPulse();
     }
 
-    if (!bImGuiWantsMouse && bDraggingGizmo && WindowApp->IsLeftMousePressed()) // 선택된 기즈모 드래그 유지
+    if (bCanProcessMouse && InputManager->IsMouseDown(EMouseButton::Right))
     {
-        WindowApp->GetMousePosition(MouseX, MouseY);
-        UpdateGizmoDrag(MouseX, MouseY);
-    }
+        InputManager->GetMousePosition(MouseX, MouseY);
 
+        const int DeltaX = MouseX - PrevMouseX;
+        const int DeltaY = MouseY - PrevMouseY;
 
-    if (!bImGuiWantsMouse && WindowApp->IsRightMousePressed()) // 카메라 orbit
-    {
-        WindowApp->GetMousePosition(MouseX, MouseY);
-
-        int DeltaX = MouseX - PrevMouseX; // 마우스 움직인 변위
-        int DeltaY = MouseY - PrevMouseY;
-
-        FVector Rot = MainCamera->GetRelativeRotation(); // 회전값 갱신
-
+        FVector CamRot = MainCamera->GetRelativeRotation();
         const float RotateSpeed = 0.005f;
 
-        Rot.Y += DeltaX * RotateSpeed; // Yaw
-        Rot.X += DeltaY * RotateSpeed; // Pitch
+        CamRot.Y += DeltaX * RotateSpeed;
+        CamRot.X += DeltaY * RotateSpeed;
+        CamRot.X = std::clamp(CamRot.X, -1.5f, 1.5f);
 
-        Rot.X = std::clamp(Rot.X, -1.5f, 1.5f); // @@@ 카메라 너무 위/아래로 돌리면 이상해줄 수 있어서, 오일러 각 기반 회전이라 클램프가 중요하대...
+        MainCamera->SetRelativeRotation(CamRot);
 
-        MainCamera->SetRelativeRotation(Rot); 
-        
-        PrevMouseX = MouseX; // 이번 좌표를 다음 프레임의 이전 좌표로 저장
+        PrevMouseX = MouseX;
         PrevMouseY = MouseY;
     }
     else
     {
-        WindowApp->GetMousePosition(PrevMouseX, PrevMouseY); // 클릭, 드래그 X여도 다음 프레임에 사용될 수 있기 때문에 상시 업데이트
+        InputManager->GetMousePosition(PrevMouseX, PrevMouseY);
     }
 
     FVector CameraLoc = MainCamera->GetRelativeLocation();
     FVector Rot = MainCamera->GetRelativeRotation();
 
-    FMatrix RotMatrix = FMatrix::MakeRotationXYZ(Rot); // 회전행렬
+    FMatrix RotMatrix = FMatrix::MakeRotationXYZ(Rot);
 
-    // 카메라 회전을 했으니, WASD 이동은 카메라가 바라보는 방향 기준이 맞음
     FVector4 Forward4 = RotMatrix * FVector4(0, 0, 1, 0);
     FVector4 Right4 = RotMatrix * FVector4(1, 0, 0, 0);
     FVector4 Up4 = RotMatrix * FVector4(0, 1, 0, 0);
@@ -488,61 +487,42 @@ void FApplication::Tick(float DeltaTime)
     FVector Right(Right4.X, Right4.Y, Right4.Z);
     FVector Up(Up4.X, Up4.Y, Up4.Z);
 
-    float Speed = 5.0f * DeltaTime; // @@@ 프레임 수 상관없이 같은 속도로 움직.
+    const float Speed = 5.0f * DeltaTime;
 
-    if (WindowApp->IsKeyDown('W'))
-        CameraLoc += Forward * Speed;
-
-    if (WindowApp->IsKeyDown('S'))
-        CameraLoc -= Forward * Speed;
-
-    if (WindowApp->IsKeyDown('A'))
-        CameraLoc -= Right * Speed;
-
-    if (WindowApp->IsKeyDown('D'))
-        CameraLoc += Right * Speed;
-
-    if (WindowApp->IsKeyDown('Q'))
-        CameraLoc -= Up * Speed;
-
-    if (WindowApp->IsKeyDown('E'))
-        CameraLoc += Up * Speed;
+    if (bCanProcessKeyboard)
+    {
+        if (InputManager->IsKeyDown('W')) CameraLoc += Forward * Speed;
+        if (InputManager->IsKeyDown('S')) CameraLoc -= Forward * Speed;
+        if (InputManager->IsKeyDown('A')) CameraLoc -= Right * Speed;
+        if (InputManager->IsKeyDown('D')) CameraLoc += Right * Speed;
+        if (InputManager->IsKeyDown('Q')) CameraLoc -= Up * Speed;
+        if (InputManager->IsKeyDown('E')) CameraLoc += Up * Speed;
+    }
 
     MainCamera->SetRelativeLocation(CameraLoc);
 
-    float Wheel = WindowApp->ConsumeMouseWheelDelta();
-
-    // @@@ Zoom = 렌즈/FOV 변경 Dolly = 카메라 자체 이동
-    // 둘이 뭐가...다른거지?? 휠로는 원래 줌인줌아웃 아님?? 이게...FOV랑 관련??아...
-    if (!bImGuiWantsMouse && Wheel != 0.0f)
+    const float Wheel = InputManager->GetMouseWheelDelta();
+    if (bCanProcessMouse && Wheel != 0.0f)
     {
         FVector Loc = MainCamera->GetRelativeLocation();
-        FVector Rot = MainCamera->GetRelativeRotation();
-
-        FMatrix RotMatrix = FMatrix::MakeRotationXYZ(Rot);
-
-        FVector4 Forward4 = RotMatrix * FVector4(0, 0, 1, 0);
-        FVector Forward(Forward4.X, Forward4.Y, Forward4.Z);
-
-        float DollySpeed = 2.0f;
-
-        Loc += Forward * Wheel * DollySpeed;
-
+        Loc += Forward * Wheel * 2.0f;
         MainCamera->SetRelativeLocation(Loc);
     }
 
     UpdatePointerPulse(DeltaTime);
-    World->Tick(DeltaTime); // 월드 업데이트
 
-    if (SelectedActor) // 선택된 액터 있을 때 기즈모 업데이트
+    World->Tick(DeltaTime);
+
+    if (SelectedActor)
     {
-        UpdateGizmoTransform(); // &&& 선택 액터 위치에 기즈모 붙이기
+        UpdateGizmoTransform();
         UpdateGizmoColors();
     }
 
-    // Scene: 이번 프레임에 그릴 것들의 리스트
-    World->BuildScene(*Scene); // &&& 월드의 오브젝트들을 렌더러가 그릴 수 있는 형태로 정리하는 과정
-    AddSelectionOutlineRenderItem(); // 선택된 액터에 outline 효과 
+    World->BuildScene(*Scene);
+    AddSelectionOutlineRenderItem();
+
+    InputManager->EndFrame();
 }
 
 void FApplication::RenderFrame()
@@ -569,11 +549,16 @@ void FApplication::Shutdown()
 {
     bIsRunning = false;
 
-    if (ImGui::GetCurrentContext())
+    if (GUIManager)
     {
-        ImGui_ImplDX11_Shutdown();
-        ImGui_ImplWin32_Shutdown();
-        ImGui::DestroyContext();
+        delete GUIManager;
+        GUIManager = nullptr;
+    }
+
+    if (InputManager)
+    {
+        delete InputManager;
+        InputManager = nullptr;
     }
 
     if (Renderer)
@@ -600,9 +585,6 @@ void FApplication::Shutdown()
         delete WindowApp;
         WindowApp = nullptr;
     }
-
-    CameraActor = nullptr;
-    MainCamera = nullptr;
 }
 
 void FApplication::HandleMousePicking() //
@@ -1047,7 +1029,7 @@ void FApplication::UpdateGizmoColors()
     {
         int MouseX = 0;
         int MouseY = 0;
-        WindowApp->GetMousePosition(MouseX, MouseY);
+        InputManager->GetMousePosition(MouseX, MouseY);
         HighlightAxis = PickGizmoAxis(MouseX, MouseY);
     }
 
@@ -1149,7 +1131,7 @@ void FApplication::RefreshPointerPulseTransform()
 
 void FApplication::UpdatePointerPulse(float DeltaTime)
 {
-    if (!ClickCircleComp)
+    if (!ClickCircleComp || !InputManager)
     {
         return;
     }

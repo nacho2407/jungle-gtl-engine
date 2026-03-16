@@ -130,6 +130,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="App\FApplication.h" />
+    <ClInclude Include="App\FInputManager.h" />
     <ClInclude Include="App\WindowsApplication.h" />
     <ClInclude Include="Core\Public\CoreGlobal.h" />
     <ClInclude Include="Core\Public\FActorInstanceManager.h" />
@@ -198,6 +199,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App\FApplication.cpp" />
+    <ClCompile Include="App\FInputManager.cpp" />
     <ClCompile Include="App\Main.cpp" />
     <ClCompile Include="App\WindowsApplication.cpp" />
     <ClCompile Include="Core\Private\FObjectManager.cpp" />

@@ -18,6 +18,7 @@ class UStaticMeshComponent;
 class AGizmoActor;
 
 class FGUIManager;
+class FInputManager;
 
 enum class EPointerPulsePhase
 {
@@ -69,6 +70,7 @@ public:
 private:
     bool InitializeEngine();
     bool InitializeGUI();
+    bool InitializeInput();
     bool InitializeResources();
     bool InitializeScene();
     void MainLoop();
@@ -165,4 +167,8 @@ private:
     ESpawnMeshType SelectedSpawnMeshType = ESpawnMeshType::Sphere;
 
     FGUIManager* GUIManager = nullptr;
+    FInputManager* InputManager = nullptr;
+
+    int PrevMouseX = 0;
+    int PrevMouseY = 0;
 };
