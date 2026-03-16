@@ -76,8 +76,6 @@ public:
 
 	struct FGridConstant
 	{
-		FMatrix View;
-		FMatrix Projection;
 		float CameraPos[3];
 		float GridSize;
 		float LineThickness;

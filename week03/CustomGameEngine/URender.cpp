@@ -332,9 +332,12 @@ void URenderer::Render(UCamera* Camera)
 
 void URenderer::RenderGrid(UCamera* Camera, ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader)
 {
+	FFrameConstant FrameConst;
 	FGridConstant GridConst;
-	GridConst.View = Camera->GetViewMatrix();
-	GridConst.Projection = Camera->GetProjectionMatrix();
+	FrameConst.Projection = Camera->GetProjectionMatrix();
+	FrameConst.View = Camera->GetViewMatrix();
+	FrameConstantBuffer.Update(DeviceContext, &FrameConst, sizeof(FFrameConstant));
+
 	GridConst.CameraPos[0] = Camera->Position.x;
 	GridConst.CameraPos[1] = Camera->Position.y;
 	GridConst.CameraPos[2] = Camera->Position.z;

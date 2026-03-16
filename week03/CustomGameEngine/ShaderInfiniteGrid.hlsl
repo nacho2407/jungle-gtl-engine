@@ -1,7 +1,11 @@
-cbuffer CameraBuffer : register(b2)
+cbuffer FrameConstant : register(b0)
 {
     row_major matrix View;
     row_major matrix Projection;
+};
+
+cbuffer CameraBuffer : register(b2)
+{
     float3 CameraPos;
     float GridSize;
     float LineThickness;
@@ -17,7 +21,7 @@ struct VS_OUTPUT
 // ==========================================
 // Vertex Shader
 // ==========================================
-VS_OUTPUT VS_Main(uint id : SV_VertexID)
+VS_OUTPUT mainVS(uint id : SV_VertexID)
 {
     VS_OUTPUT output;
 
@@ -39,7 +43,7 @@ VS_OUTPUT VS_Main(uint id : SV_VertexID)
 // ==========================================
 // Pixel Shader
 // ==========================================
-float4 PS_Main(VS_OUTPUT input) : SV_Target
+float4 mainPS(VS_OUTPUT input) : SV_Target
 {
     float2 coord = input.WorldPos.xz / GridSize;
     float2 derivative = fwidth(coord);

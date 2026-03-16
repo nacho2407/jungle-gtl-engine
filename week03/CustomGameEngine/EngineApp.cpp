@@ -89,7 +89,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	 D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
 	ResourceManager::CreateMaterial(L"ShaderW0.hlsl", L"ShaderW0.hlsl", Renderer->Device, layout, 2);
-	ResourceManager::CreateGridMaterial(L"ShaderInfiniteGrid.hlsl", Renderer->Device);
+	ResourceManager::CreateMaterial(L"ShaderInfiniteGrid.hlsl", L"ShaderInfiniteGrid.hlsl", Renderer->Device, nullptr, 0);
 	ResourceManager::AddCubeMesh(Renderer->Device);
 	ResourceManager::AddSphereMesh(Renderer->Device);
 	ResourceManager::AddTriangleMesh(Renderer->Device);

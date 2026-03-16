@@ -38,13 +38,16 @@ public:
 	virtual void Deserialize(json::JSON) override;
 
 	FGeometry* GetGeometry() { return VResource; }
-	private:
+
+	bool Pickable = true;
+private:
 	virtual void UpdateRenderObject();
 
 protected:
 	FGeometry* VResource;
 	EPrimitiveType type;
 	RenderObject* RenderObj = nullptr;
+	
 private:
 	int MaterialHandle = -1;
 };

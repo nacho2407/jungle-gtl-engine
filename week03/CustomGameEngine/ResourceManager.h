@@ -40,7 +40,7 @@ public:
 		Geometry.Vertices = Verticies;
 	}
 
-	static void CreateMaterial(WFString VertexShaderName, WFString PixelShaderName, ID3D11Device* Device, D3D11_INPUT_ELEMENT_DESC layout[], UINT layoutCount)
+	static void CreateMaterial(WFString VertexShaderName, WFString PixelShaderName, ID3D11Device* Device, D3D11_INPUT_ELEMENT_DESC* layout, UINT layoutCount)
 	{
 		ID3D11VertexShader* VertexShader = nullptr;
 		ID3D11InputLayout* InputLayout = nullptr;
@@ -50,9 +50,10 @@ public:
 		Device->CreateVertexShader(vertexshaderCSO->GetBufferPointer(),
 			vertexshaderCSO->GetBufferSize(), nullptr,
 			&VertexShader);
-		Device->CreateInputLayout(
-			layout, layoutCount, vertexshaderCSO->GetBufferPointer(),
-			vertexshaderCSO->GetBufferSize(), &InputLayout);
+		if (layout != nullptr)
+			Device->CreateInputLayout(
+				layout, layoutCount, vertexshaderCSO->GetBufferPointer(),
+				vertexshaderCSO->GetBufferSize(), &InputLayout);
 
 		ID3D11PixelShader* PixelShader = nullptr;
 		ID3DBlob* pixelshaderCSO = nullptr;
@@ -69,50 +70,6 @@ public:
 
 		pixelshaderCSO->Release();
 		vertexshaderCSO->Release();
-	}
-
-	static void CreateGridMaterial(WFString ShaderFileName, ID3D11Device* Device)
-	{
-		ID3D11VertexShader* VertexShader = nullptr;
-		ID3DBlob* vertexshaderCSO = nullptr;
-		ID3DBlob* errorBlob = nullptr;
-
-		HRESULT hr = D3DCompileFromFile(ShaderFileName.c_str(), nullptr, nullptr,
-			"VS_Main", "vs_5_0", 0, 0, &vertexshaderCSO, &errorBlob);
-
-		if (FAILED(hr)) {
-			if (errorBlob) {
-				OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-				errorBlob->Release();
-			}
-			return;
-		}
-		Device->CreateVertexShader(vertexshaderCSO->GetBufferPointer(),
-			vertexshaderCSO->GetBufferSize(), nullptr, &VertexShader);
-
-		ID3D11PixelShader* PixelShader = nullptr;
-		ID3DBlob* pixelshaderCSO = nullptr;
-
-		hr = D3DCompileFromFile(ShaderFileName.c_str(), nullptr, nullptr,
-			"PS_Main", "ps_5_0", 0, 0, &pixelshaderCSO, &errorBlob);
-
-		if (FAILED(hr)) {
-			if (errorBlob) {
-				OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-				errorBlob->Release();
-			}
-			return;
-		}
-		Device->CreatePixelShader(pixelshaderCSO->GetBufferPointer(),
-			pixelshaderCSO->GetBufferSize(), nullptr, &PixelShader);
-
-		FMaterial& Mat = MaterialMap[ShaderFileName];
-		Mat.VertexShader = VertexShader;
-		Mat.PixelShader = PixelShader;
-		Mat.InputLayout = nullptr;
-
-		if (vertexshaderCSO) vertexshaderCSO->Release();
-		if (pixelshaderCSO) pixelshaderCSO->Release();
 	}
 
 	//Temporary Function
