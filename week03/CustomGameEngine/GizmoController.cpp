@@ -31,23 +31,7 @@ void GizmoController::Update()
 	if (InputManager::GetInstance().IsKeyDown(VK_SPACE))
 	{
 		Type = static_cast<GizmoControllerType>((static_cast<int32>(Type) + 1) % static_cast<int32>(GizmoControllerType::End));
-
-		CurrentStrategy->SetDrawEnable(false);
-
-		switch (Type)
-		{
-		case GizmoControllerType::Translation:
-			CurrentStrategy = TranslationStrategy;
-			break;
-		case GizmoControllerType::Rotation:
-			CurrentStrategy = RotationStrategy;
-			break;
-		case GizmoControllerType::Scale:
-			CurrentStrategy = ScaleStrategy;
-			break;
-		}
-
-		CurrentStrategy->SetDrawEnable(bDrawEnabled);
+		SetControlStrategy(Type);
 	}
 
 	FVector scale = AttachedComponent->GetRelativeScale3D();
@@ -111,6 +95,25 @@ void GizmoController::EndDrag()
 	bDragging = false;
 
 	CurrentStrategy->EndDrag();
+}
+
+void GizmoController::SetControlStrategy(GizmoControllerType type)
+{
+	Type = type;
+	CurrentStrategy->SetDrawEnable(false);
+	switch (Type)
+	{
+	case GizmoControllerType::Translation:
+		CurrentStrategy = TranslationStrategy;
+		break;
+	case GizmoControllerType::Rotation:
+		CurrentStrategy = RotationStrategy;
+		break;
+	case GizmoControllerType::Scale:
+		CurrentStrategy = ScaleStrategy;
+		break;
+	}
+	CurrentStrategy->SetDrawEnable(bDrawEnabled);
 }
 
 GizmoControllerAxis GizmoController::TryPick(Ray& ray)
