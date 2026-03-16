@@ -19,6 +19,9 @@ class AGizmoActor;
 
 class FGUIManager;
 
+class FPropertyPanel;
+class FControlPanel;
+
 enum class EPointerPulsePhase
 {
     Hidden,
@@ -66,6 +69,13 @@ public:
     int Run();
     void Shutdown();
 
+    // 패널 렌더링
+    AActor* GetSelectedActor() const;
+    void NotifySelectedActorTransformChanged();
+    void ClearSelection();
+
+    UCameraComponent* GetMainCamera() const;
+
 private:
     bool InitializeEngine();
     bool InitializeGUI();
@@ -109,6 +119,9 @@ private:
 
     void SpawnSelectedMeshActor();
     AActor* SpawnMeshActor(UStaticMesh* Mesh, const FVector& Location);
+	// 패널 렌더링
+    void RenderEditorUI();
+
 
 private:
     FWindowsApplication* WindowApp;
@@ -165,4 +178,12 @@ private:
     ESpawnMeshType SelectedSpawnMeshType = ESpawnMeshType::Sphere;
 
     FGUIManager* GUIManager = nullptr;
+
+	// 패널 렌더링
+    FPropertyPanel* PropertyPanel = nullptr;
+    FControlPanel* ControlPanel = nullptr;
+
+    // 하단 콘솔
+    bool bShowBottomConsole = true;
+
 };
