@@ -411,7 +411,7 @@ void FApplication::Tick(float DeltaTime)
             {
                 HitActor = Proxy.Primitive->GetOwner();
 
-                if (HitActor == GizmoActor || HitActor == WorldAxesActor)
+                if (HitActor == GizmoActor || HitActor == WorldAxesActor || HitActor == GridActor)
                 {
                     HitActor = nullptr;
                 }
