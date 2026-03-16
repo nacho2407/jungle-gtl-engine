@@ -2,6 +2,7 @@
 #include <cmath>
 #include "FVector.h"
 #include "FMatrix.h"
+#include "Math/MathHelper.h"
 
 FQuat FQuat::FromAxisAngle(const FVector& axis, float angleRadians) {
     float halfAngle = angleRadians * 0.5f;
@@ -12,6 +13,49 @@ FQuat FQuat::FromAxisAngle(const FVector& axis, float angleRadians) {
         axis.z * s,
         std::cosf(halfAngle)
     );
+}
+
+FQuat FQuat::FromEuler(const FVector& eulerDegrees)
+{
+    // 각 xyz축 반각의 sin/cos 값
+    float cx = std::cosf(FMatrix::DegToRad(eulerDegrees.x) * 0.5f);
+    float sx = std::sinf(FMatrix::DegToRad(eulerDegrees.x) * 0.5f);
+    float cy = std::cosf(FMatrix::DegToRad(eulerDegrees.y) * 0.5f);
+    float sy = std::sinf(FMatrix::DegToRad(eulerDegrees.y) * 0.5f);
+    float cz = std::cosf(FMatrix::DegToRad(eulerDegrees.z) * 0.5f);
+    float sz = std::sinf(FMatrix::DegToRad(eulerDegrees.z) * 0.5f);
+
+    return FQuat(
+        sx * cy * cz - cx * sy * sz,
+        cx * sy * cz + sx * cy * sz,
+        cx * cy * sz - sx * sy * cz,
+        cx * cy * cz + sx * sy * sz
+	);
+}
+
+FVector FQuat::ToEuler() const
+{
+    float xsqr = x * x;
+    float ysqr = y * y;
+    float zsqr = z * z;
+
+    float t0 = +2.0f * (w * x + y * z);
+    float t1 = +1.0f - 2.0f * (xsqr + ysqr);
+    float roll = std::atan2f(t0, t1);
+
+    float t2 = +2.0f * (w * y - z * x);
+    t2 = MathHelper::Clamp(t2, -1.0f, 1.0f);
+    float pitch = std::asinf(t2);
+
+    float t3 = +2.0f * (w * z + x * y);
+    float t4 = +1.0f - 2.0f * (ysqr + zsqr);
+    float yaw = std::atan2f(t3, t4);
+
+    return FVector(
+        MathHelper::RadToDeg(roll),
+        MathHelper::RadToDeg(pitch),
+        MathHelper::RadToDeg(yaw)
+	);
 }
 
 FQuat FQuat::operator*(const FQuat& q) const {

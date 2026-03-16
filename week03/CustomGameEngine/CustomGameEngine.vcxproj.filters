@@ -180,6 +180,21 @@
     <ClInclude Include="GizmoScaleControlStrategy.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="FConstantBuffer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="FGeometry.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="FLevel.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="FQuat.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\MathHelper.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ImGui\imgui.cpp">
@@ -318,6 +333,12 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="GizmoScaleControlStrategy.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="FLevel.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="FQuat.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

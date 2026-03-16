@@ -24,7 +24,7 @@ public:
 private:
 	GizmoController* Controller;
 
-	FVector InitialWorldAxisDir;
+	FVector InitialWorldPos;
 	FVector InitialObjectScale;
 	float InitialDragOffset = 0.0f;
 

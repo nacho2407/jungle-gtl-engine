@@ -2,6 +2,7 @@
 #include "UObject.h"
 #include "FVector.h"
 #include "FMatrix.h"
+#include "FQuat.h"
 #include "ISerializable.h"
 
 class USceneComponent : public UObject, public ISerializable
@@ -15,9 +16,11 @@ public:
 	inline const FVector GetRelativeLocation() { return RelativeLocation; }
 	inline const FVector GetRelativeRotation() { return RelativeRotation; }
 	inline const FVector GetRelativeScale3D() { return RelativeScale3D; }
+	inline const FQuat GetRelativeQuaternion() { return RelativeQuaternion; }
 	inline virtual void SetRelativeLocation(FVector newLocation) { RelativeLocation = newLocation; }
 	inline virtual void SetRelativeRotation(FVector newRotation) { RelativeRotation = newRotation; }
 	inline virtual void SetRelativeScale3D(FVector newScale) { RelativeScale3D = newScale; }
+	inline virtual void SetRelativeQuaternion(FQuat newQuat) { RelativeQuaternion = newQuat; RelativeRotation = newQuat.ToEuler(); }
 
 	bool bIsSelected = false;
 
@@ -35,4 +38,5 @@ private:
 	FVector RelativeLocation;
 	FVector RelativeRotation;
 	FVector RelativeScale3D;
+	FQuat RelativeQuaternion;
 };
