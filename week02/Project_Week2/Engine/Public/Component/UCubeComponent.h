@@ -6,6 +6,6 @@ class UCubeComponent : public UPrimitiveComponent
 public:
 	UCubeComponent() 
 	{
-		PrimitiveType = EPrimitiveType::Cube;
+		//PrimitiveType = EPrimitiveType::Cube;
 	}
 };

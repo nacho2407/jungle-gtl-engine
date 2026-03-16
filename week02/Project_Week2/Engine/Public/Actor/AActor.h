@@ -1,13 +1,17 @@
 #pragma once
 
 #include <vector>
+
 #include "UObject.h"
+#include "TObjectBase.h"
+#include "CoreTypes.h"
 
 class UActorComponent;
 class USceneComponent;
 
 class AActor : public UObject
 {
+DECLARE_ROOT_UClass(AActor)
 public:
 	AActor();
 	AActor(const FUObjectInitializer& ObjectInitializer);
