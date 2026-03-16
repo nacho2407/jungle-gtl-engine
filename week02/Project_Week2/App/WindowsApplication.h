@@ -1,6 +1,7 @@
 #pragma once
 
 #include <windows.h>
+#include <functional>
 
 class FWindowsApplication
 {
@@ -9,6 +10,8 @@ public:
     ~FWindowsApplication();
 
 public:
+	std::function<void(int, int)> OnResize; // 윈도우 사이즈 실시간 변경 이벤트
+
     bool Initialize(HINSTANCE hInstance, const wchar_t* WindowTitle, int Width, int Height);
     bool PumpMessages();
 
