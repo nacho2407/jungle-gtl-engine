@@ -186,7 +186,7 @@ void URenderer::Release() {
 
 }
 
-void URenderer::SwapBuffer() { SwapChain->Present(1, 0); }
+void URenderer::SwapBuffer() { SwapChain->Present(0, 0); }
 
 void URenderer::OnResize(UINT Width, UINT Height)
 {
@@ -255,15 +255,6 @@ void URenderer::ReleaseConstantBuffer() {
 	ObjectConstantBuffer.Release();
 }
 
-
-void URenderer::ClearRenderObjects()
-{
-	for (int i = 0; i < RenderObjects.size();i++)
-	{
-		delete RenderObjects[i];
-	}
-}
-
 void URenderer::Render(UCamera* Camera)
 {
 	FFrameConstant FrameConst;
@@ -273,11 +264,12 @@ void URenderer::Render(UCamera* Camera)
 	DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
 	//FrameConstantBuffer.Bind(DeviceContext);
 
-	TArray<URenderObject*> NormalRenderObjects;
-	TArray<URenderObject*> NoDepthRenderObjects;
+	TArray<RenderObject*> NormalRenderObjects;
+	TArray<RenderObject*> NoDepthRenderObjects;
 
 	FObjectConstant ObjectConst;
-	for (URenderObject* RenderObj : RenderObjects)
+	auto renderObjects = &FLevel::GetInstance().RenderObjects;
+	for (RenderObject* RenderObj : *renderObjects)
 	{
 		if (RenderObj->bDepthEnabled)
 		{
@@ -289,7 +281,7 @@ void URenderer::Render(UCamera* Camera)
 		}
 	}
 
-	for (URenderObject* RenderObj : NormalRenderObjects)
+	for (RenderObject* RenderObj : NormalRenderObjects)
 	{
 		//Camera
 		ObjectConst.World = RenderObj->World;
@@ -302,8 +294,9 @@ void URenderer::Render(UCamera* Camera)
 
 	if (!NoDepthRenderObjects.empty())
 	{
-		DeviceContext->OMSetDepthStencilState(DepthStencilStateNoDepth, 0);
-		for (URenderObject* RenderObj : NoDepthRenderObjects)
+		DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+		for (RenderObject* RenderObj : NoDepthRenderObjects)
 		{
 			ObjectConst.World = RenderObj->World;
 			ObjectConst.bIsSelected = RenderObj->bIsSelected ? 1 : 0;
@@ -311,6 +304,6 @@ void URenderer::Render(UCamera* Camera)
 			RenderObj->Render(DeviceContext);
 		}
 	}
-	ClearRenderObjects();
-	RenderObjects.clear();
+	// ClearRenderObjects();
+	// RenderObjects.clear();
 }

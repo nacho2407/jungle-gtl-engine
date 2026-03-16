@@ -17,12 +17,14 @@ public:
 	int NextUUID;
 	TArray<USceneComponent*> SceneComponents;
 
+	bool IsCompSelected{ false };
+	FVector SelectedCompPos;
+
 
 	void Update(float DeltaTime);
 	std::string ToJson();
 	static std::string ToJson(UScene*);
 	static UScene* FromJson(std::string);
-	std::vector<UPrimitiveComponent*> PrimitiveContainer; // TODO : Change to TArray And Private
 
 public:
 	void Render() const;

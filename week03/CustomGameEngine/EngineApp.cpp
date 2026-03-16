@@ -11,9 +11,11 @@
 #include "UCamera.h"
 #include "InputManager.h"
 #include "Gizmo.h"
+#include "GizmoController.h"
 #include "UPicker.h"
-#include "World.h";
 #include "ImGui/imgui.h"
+
+#include "UAxisComp.h"
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -91,6 +93,9 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	ResourceManager::AddSphereMesh(Renderer->Device);
 	ResourceManager::AddTriangleMesh(Renderer->Device);
 	ResourceManager::AddGizmoTranslationMesh(Renderer->Device);
+	ResourceManager::AddGizmoRotationMesh(Renderer->Device);
+	ResourceManager::AddGizmoScaleMesh(Renderer->Device);
+	ResourceManager::AddAxisMesh(Renderer->Device);
 
 	InputManager::GetInstance().hWnd = HWnd;
 	// Init Camera
@@ -112,6 +117,9 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	Picker = Cast<UPicker>(FObjectFactory::ConstructObject(UPicker::GetClass()));
 	Picker->SetEditor(EditorInst);
 
+	// Init gizmos
+	Gizmo::Initialize();
+
 	//Init World & Scene
 	GetWorld().InjectRenderer(Renderer);
 	SceneManager::GetInstance().NewScene();
@@ -125,22 +133,19 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 void EngineApp::Run()
 {
 	//----TEST
-	UObject* sceneobj = FObjectFactory::ConstructObject(UScene::GetClass());
+	UCubeComp* cube = GetWorld().AddSceneComponent<UCubeComp>();
+	cube->SetRelativeLocation(FVector(0.0, 0, 0));
+	cube->SetRelativeScale3D(FVector(2.f, 2.f, 2.f));
 
-	UCubeComp* Cube2 = Cast<UCubeComp>(FObjectFactory::ConstructObject(UCubeComp::GetClass()));
-	Cube2->RelativeLocation = FVector(0.0, 0, 0);
-	Cube2->RelativeScale3D = FVector(2.f, 2.f, 2.f);
-	GetWorld().GetActiveScene()->PrimitiveContainer.push_back(Cube2);
+	UCubeComp* Cube = GetWorld().AddSceneComponent<UCubeComp>();
+	Cube->SetRelativeLocation(FVector(10.f, 0.f, 0.f));
+	Cube->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
 
-	UCubeComp* Cube = Cast<UCubeComp>(FObjectFactory::ConstructObject(UCubeComp::GetClass()));
-	Cube->RelativeLocation = FVector(10.f, 0.f, 0.f);
-	Cube->RelativeScale3D = FVector(1.f, 1.f, 1.f);
-	GetWorld().GetActiveScene()->PrimitiveContainer.push_back(Cube);
+	UCubeComp* Cube3 = GetWorld().AddSceneComponent<UCubeComp>();
+	Cube->SetRelativeLocation(FVector(-10.f, 0.f, 0.f));
+	Cube->SetRelativeScale3D(FVector(0.5f, 0.5f, 0.5f));
 
-	UCubeComp* Cube3 = Cast<UCubeComp>(FObjectFactory::ConstructObject(UCubeComp::GetClass()));
-	Cube3->RelativeLocation = FVector(5.f, 0.f, 0.f);
-	Cube3->RelativeScale3D = FVector(1.f, 1.f, 1.f);
-	GetWorld().GetActiveScene()->PrimitiveContainer.push_back(Cube3);
+	UAxisComp* mainAxis = GetWorld().AddSceneComponent<UAxisComp>();
 
 	Camera->SetPosition(FVector(0, 0, -10.f));
 	//-----TEST
@@ -177,38 +182,55 @@ void EngineApp::Run()
 			Picker->Pick(Mouse.x, Mouse.y, Camera, GetWorld().GetActiveScene());
 		}
 
+		Ray ray = Picker->CreateRay(Mouse.x, Mouse.y, Camera);
+
+		if (InputManager::GetInstance().IsKeyHold(VK_LBUTTON))
+		{
+			if (Gizmo::GetInstance().GetController()->IsDragging())
+			{
+				Gizmo::GetInstance().GetController()->UpdateDrag(ray);
+			}
+		}
+
+		if (InputManager::GetInstance().IsKeyUp(VK_LBUTTON))
+		{
+			if (Gizmo::GetInstance().GetController()->IsDragging())
+			{
+				Gizmo::GetInstance().GetController()->EndDrag();
+			}
+		}
+
+		if (!InputManager::GetInstance().IsKeyHold(VK_LBUTTON))
+		{
+			GizmoControllerAxis hoveredAxis = Gizmo::GetInstance().GetController()->TryPick(ray);
+			Gizmo::GetInstance().GetController()->SetHoverAxis(hoveredAxis);
+		}
+
 		if (!io.WantCaptureKeyboard && !io.WantCaptureMouse)
 		{
-			Camera->Move();
-			Camera->Rotate();
-		}
-
-		bool bMouseHold = InputManager::GetInstance().IsKeyHold(VK_LBUTTON);
-		if (bMouseHold && !io.WantCaptureMouse)
-		{
-			Ray currentRay = Picker->CreateRay(Mouse.x, Mouse.y, Camera);
-
-			if (Gizmo::GetInstance().IsDragging())
+			if (InputManager::GetInstance().IsKeyHold(VK_RBUTTON))
 			{
-				Gizmo::GetInstance().UpdateDrag(currentRay);
+				Camera->Move(globalTimer->GetDeltaTime());
+				Camera->Rotate(globalTimer->GetDeltaTime());
+			}
+			else if (InputManager::GetInstance().IsKeyHold(VK_LBUTTON)
+				&& InputManager::GetInstance().IsKeyHold(VK_MENU))
+			{
+				Camera->OrbitRotate(globalTimer->GetDeltaTime());
+			}
+			if (InputManager::GetInstance().IsKeyHold('F')
+				&& GetWorld().GetActiveScene()->IsCompSelected)
+			{
+				Camera->SetPosition(GetWorld().GetActiveScene()->SelectedCompPos - Camera->Direction * Camera->FocusLength);
 			}
 		}
-		else
-		{
-			if (Gizmo::GetInstance().IsDragging())
-			{
-				Gizmo::GetInstance().EndDrag();
-				UE_LOG("Ended Gizmo Drag");
-			}
-		}
-
 		Camera->update();
 
 		//Render
 		Renderer->Prepare();
 		Scene->Update(globalTimer->GetDeltaTime());
-		GetWorld().Render();
-		EditorInst->Render();
+		GetWorld().OnBeforeRender();
+		EditorInst->OnBeforeRender();
 
 		Renderer->Render(Camera);
 		EditorInst->DrawUI();
@@ -245,7 +267,7 @@ void EngineApp::CreateEngineWindow()
 
 	HWnd = CreateWindowExW(0, windowClass, title,
 		WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT, 1024, 1024, nullptr,
+		CW_USEDEFAULT, CW_USEDEFAULT, 1920, 1080, nullptr,
 		nullptr, nullptr, this);//lpParam에 this 넣어서 WndProc에서 접근 가능하도록
 }
 

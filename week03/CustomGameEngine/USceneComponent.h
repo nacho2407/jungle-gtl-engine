@@ -12,13 +12,18 @@ public:
 	virtual ~USceneComponent() override;
 
 public:
-	FVector RelativeLocation;
-	FVector RelativeRotation;
-	FVector RelativeScale3D;
+	inline const FVector GetRelativeLocation() { return RelativeLocation; }
+	inline const FVector GetRelativeRotation() { return RelativeRotation; }
+	inline const FVector GetRelativeScale3D() { return RelativeScale3D; }
+	inline virtual void SetRelativeLocation(FVector newLocation) { RelativeLocation = newLocation; }
+	inline virtual void SetRelativeRotation(FVector newRotation) { RelativeRotation = newRotation; }
+	inline virtual void SetRelativeScale3D(FVector newScale) { RelativeScale3D = newScale; }
+
 	bool bIsSelected = false;
 
 	FMatrix GetRelativeMatrix() const;
 
+	virtual void Update(float deltaTime) {};
 	virtual json::JSON Serialize();
 	virtual void Deserialize(json::JSON);
 
@@ -26,4 +31,8 @@ public:
 
 	bool IsSelected() const;
 
+private:
+	FVector RelativeLocation;
+	FVector RelativeRotation;
+	FVector RelativeScale3D;
 };

@@ -51,13 +51,10 @@ void EditorControlPanel::Draw(UCamera* camera)
 	}
 	if (ImGui::Button("Spawn"))
 	{
-		FVector pos = { 0, 0, 0 }, delta = { 1, 0, 0 };
 		for (int i = 0; i < spawnCount; i++)
 		{
 			// TODO: Apply primitive type to spawn
 			auto p = GetWorld().AddSceneComponent<UCubeComp>();
-			p->RelativeLocation = pos;
-			pos = pos + delta;
 		}
 	}
 	ImGui::SameLine();
@@ -84,6 +81,7 @@ void EditorControlPanel::Draw(UCamera* camera)
 	ImGui::InputFloat("FOV", &camera->FOV);
 	ImGui::InputFloat3("Camera Location", &camera->Position.x);
 	ImGui::InputFloat3("Camera Rotation", &camera->Pitch);
+	ImGui::InputFloat3("Camera Direction", &camera->Direction.x);
 
 	ImGui::End();
 }

@@ -1,4 +1,5 @@
 ﻿#include "FVector.h"
+#include "FMatrix.h"
 #include <stdexcept>
 
 FVector::~FVector() {}
@@ -54,6 +55,17 @@ bool FVector::IsNearlyEqual(const FVector& Other, float Epsilon) const
 {
   return (std::abs(x - Other.x) < Epsilon) &&
          (std::abs(y - Other.y) < Epsilon) && (std::abs(z - Other.z) < Epsilon);
+}
+
+FVector FVector::Transform(const FMatrix& Mat)
+{
+	FVector vec;
+	
+	vec.x = x * Mat[0][0] + y * Mat[1][0] + z * Mat[2][0];
+	vec.y = x * Mat[0][1] + y * Mat[1][1] + z * Mat[2][1];
+	vec.y = x * Mat[0][2] + y * Mat[1][2] + z * Mat[2][2];
+
+	return vec;
 }
 
 json::JSON FVector::Serialize()

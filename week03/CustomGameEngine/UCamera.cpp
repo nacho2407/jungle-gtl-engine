@@ -1,4 +1,7 @@
 ﻿#include "UCamera.h"
+#include "InputManager.h"
+
+#include "TimerManager.h"
 
 UCamera::~UCamera() {}
 
@@ -9,35 +12,35 @@ void UCamera::SetPosition(const FVector& _input) {
 	}
 }
 
-void UCamera::Move() {
+void UCamera::Move(float DeltaTime) {
 	if (InputManager::GetInstance().IsKeyHold('W') &&
 		!InputManager::GetInstance().IsKeyHold('S')) {
-		Position = Position + Direction * MoveSpeed;
+		Position = Position + Direction * MoveSpeed * DeltaTime;
 		IsChanged = true;
 	}
 	else if (!InputManager::GetInstance().IsKeyHold('W') &&
 		InputManager::GetInstance().IsKeyHold('S')) {
-		Position = Position - Direction * MoveSpeed;
+		Position = Position - Direction * MoveSpeed * DeltaTime;
 		IsChanged = true;
 	}
 	if (InputManager::GetInstance().IsKeyHold('E') &&
 		!InputManager::GetInstance().IsKeyHold('Q')) {
-		Position = Position + UpVec * MoveSpeed;
+		Position = Position + UpVec * MoveSpeed * DeltaTime;
 		IsChanged = true;
 	}
 	else if (!InputManager::GetInstance().IsKeyHold('E') &&
 		InputManager::GetInstance().IsKeyHold('Q')) {
-		Position = Position - UpVec * MoveSpeed;
+		Position = Position - UpVec * MoveSpeed * DeltaTime;
 		IsChanged = true;
 	}
 	if (!InputManager::GetInstance().IsKeyHold('D') &&
 		InputManager::GetInstance().IsKeyHold('A')) {
-		Position = Position + SideDirection * MoveSpeed;
+		Position = Position + SideDirection * MoveSpeed * DeltaTime;
 		IsChanged = true;
 	}
 	else if (InputManager::GetInstance().IsKeyHold('D') &&
 		!InputManager::GetInstance().IsKeyHold('A')) {
-		Position = Position - SideDirection * MoveSpeed;
+		Position = Position - SideDirection * MoveSpeed * DeltaTime;
 		IsChanged = true;
 	}
 
@@ -59,14 +62,40 @@ void UCamera::SetDirection(const float InputPitch, const float InputYaw,
 	}
 }
 
-void UCamera::Rotate()
+void UCamera::Rotate(float DeltaTime)
 {
-	if (InputManager::GetInstance().IsKeyHold(VK_RBUTTON))
-	{
-		Yaw += InputManager::GetInstance().MouseDelta.x * RotateSensitivity;
-		Pitch -= InputManager::GetInstance().MouseDelta.y * RotateSensitivity;
-		IsChanged = true;
-	}
+	Yaw += (InputManager::GetInstance().MouseDelta.x * RotateSensitivity * DeltaTime);
+	Pitch += (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
+
+	const float Limit = 89.9f;
+	if (Pitch > Limit) Pitch = Limit;
+	if (Pitch < -Limit) Pitch = -Limit;
+
+	IsChanged = true;
+}
+
+void UCamera::OrbitRotate(float DeltaTime)
+{
+	Yaw -= (InputManager::GetInstance().MouseDelta.x * RotateSensitivity * DeltaTime);
+	Pitch -= (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
+
+	const float Limit = 89.9f;
+	if (Pitch > Limit) Pitch = Limit;
+	if (Pitch < -Limit) Pitch = -Limit;
+
+	float Distance = FocusLength;
+
+	float PitchRad = FMatrix::DegToRad(-Pitch);
+	float YawRad = FMatrix::DegToRad(Yaw);
+
+	FVector NewDirection;
+	NewDirection.x = std::cos(PitchRad) * std::sin(YawRad);
+	NewDirection.y = std::sin(PitchRad);
+	NewDirection.z = std::cos(PitchRad) * std::cos(YawRad);
+
+	Direction = NewDirection.Normalize();
+	Position = FocusPoint - Direction * Distance;
+	IsChanged = true;
 }
 
 void UCamera::SetFOV(const float NewFOV)
@@ -109,11 +138,7 @@ void UCamera::SetOrthogonal(bool input)
 void UCamera::update() {
 	//if (!IsChanged) return;
 
-	CalcViewMatrix();
-	CalcProjectionMatrix();
-	ViewProjection = View * Projection;
-
-	float p = FMatrix::DegToRad(Pitch);
+	float p = FMatrix::DegToRad(-Pitch);
 	float y = FMatrix::DegToRad(Yaw);
 
 	Direction.x = std::cos(p) * std::sin(y);
@@ -123,6 +148,12 @@ void UCamera::update() {
 	Direction = Direction.Normalize();
 	SideDirection = Direction.Cross(UpVec);
 	UpDirection = SideDirection.Cross(Direction);
+
+	FocusPoint = Position + Direction * FocusLength;
+
+	CalcViewMatrix();
+	CalcProjectionMatrix();
+	ViewProjection = View * Projection;
 
 	IsChanged = false;
 }
@@ -137,6 +168,7 @@ void UCamera::CalcViewMatrix()
 	FMatrix InvR = FMatrix::RotationZMatrix(-Roll) *
 		FMatrix::RotationYMatrix(-Yaw) *
 		FMatrix::RotationXMatrix(-Pitch);
+
 	View = InvT * InvR;
 }
 

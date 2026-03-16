@@ -1,14 +1,14 @@
 ﻿#pragma once
-
 #include "UPrimitiveComponent.h"
 
 class UAxisComp : public UPrimitiveComponent
 {
-  DECLARE_RTTI(UAxisComp, UPrimitiveComponent)
- public:
+	DECLARE_RTTI(UAxisComp, UPrimitiveComponent)
+public:
+	UAxisComp();
+	virtual ~UAxisComp() override;
+	virtual void Update(float DeltaTime) override;
 
-
- public:
-  UAxisComp();
-  virtual ~UAxisComp() override;
+	virtual RenderObject* CreateRenderObject() override;
 };
+
