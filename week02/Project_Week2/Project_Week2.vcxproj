@@ -105,7 +105,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)GUI/Public;$(ProjectDir)ThirdParty;$(ProjectDir)Render/Public;$(ProjectDir)App;$(ProjectDir)Engine/Public;$(ProjectDir)Core/Public;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\Core\Public;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\Core;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\Engine;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\Engine\Public;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\GUI;C:\Users\jungle\Desktop\cpp-gametechlab-project-w02\Project_Week2\GUI\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)GUI\Public;$(ProjectDir)ThirdParty;$(ProjectDir)Render\Public;$(ProjectDir)App;$(ProjectDir)Engine\Public;$(ProjectDir)Core\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -121,9 +121,10 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)GUI\Public;$(ProjectDir)ThirdParty;$(ProjectDir)Render\Public;$(ProjectDir)App;$(ProjectDir)Engine\Public;$(ProjectDir)Core\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -139,6 +140,7 @@
     <ClInclude Include="Engine\Engine.h" />
     <ClInclude Include="Engine\Public\Actor\AActor.h" />
     <ClInclude Include="Engine\Public\Actor\APrimitiveActor.h" />
+    <ClInclude Include="Engine\Public\Component\EGizmoAxis.h" />
     <ClInclude Include="Engine\Public\Component\UActorComponent.h" />
     <ClInclude Include="Engine\Public\Component\UCameraComponent.h" />
     <ClInclude Include="Engine\Public\Component\UCubeComponent.h" />
@@ -162,6 +164,7 @@
     <ClInclude Include="GUI\Public\imstb_rectpack.h" />
     <ClInclude Include="GUI\Public\imstb_textedit.h" />
     <ClInclude Include="GUI\Public\imstb_truetype.h" />
+    <ClInclude Include="Render\Public\FHitProxy.h" />
     <ClInclude Include="Render\Public\Geometry\Axies.h" />
     <ClInclude Include="Render\Public\Geometry\Cube.h" />
     <ClInclude Include="Render\Public\Geometry\Sphere.h" />
@@ -181,6 +184,7 @@
     <ClCompile Include="Engine\Private\Actor\AActor.cpp" />
     <ClCompile Include="Engine\Private\Component\UActorComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\UCameraComponent.cpp" />
+    <ClCompile Include="Engine\Private\Component\UGizmoComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\UPrimitiveComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\USceneComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\USphereComponent.cpp" />
@@ -209,9 +213,14 @@
     <None Include="Assets\BlueSphere.gltf" />
     <None Include="Render\Public\Shaders\Default.hlsl">
       <FileType>Document</FileType>
-    </None>
-    <FxCompile Include="ShaderW0.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Render\Public\Shaders\HitProxy.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

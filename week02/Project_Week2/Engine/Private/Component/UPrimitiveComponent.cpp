@@ -30,6 +30,11 @@ FRenderItem UPrimitiveComponent::CreateRenderItem() const
 	FRenderItem Item;
 	Item.WorldMatrix = GetWorldTransformMatrix();
 	Item.Mesh = nullptr;
+
+	Item.HitProxy.Type = EHitProxyType::Primitive;
+	Item.HitProxy.Primitive = const_cast<UPrimitiveComponent*>(this);
+	Item.HitProxy.Axis = EGizmoAxis::None;
+
 	Item.Color = RenderColor;
 	Item.CullMode = CullMode; // @@@ 뭐하는 놈일까
 	Item.bDepthEnable = bDepthEnable; // @@@ 뭐하는 놈일까

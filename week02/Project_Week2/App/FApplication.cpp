@@ -50,6 +50,7 @@ FApplication::FApplication()
     , SphereMesh(nullptr)
     //, CubeMesh(nullptr)
     //, TriangleMesh(nullptr)
+    , TorusMesh(nullptr)
     , AxesMesh(nullptr)
 {
 }
@@ -106,6 +107,7 @@ bool FApplication::InitializeResources()
     SphereMesh = BuiltInMeshFactory::CreateSphereMesh();
     CubeMesh = BuiltInMeshFactory::CreateCubeMesh();
     //TriangleMesh = BuiltInMeshFactory::CreateTriangleMesh();
+    TorusMesh = BuiltInMeshFactory::CreateTorusMesh(64, 32, 1.2f, 0.35f);
     AxesMesh = BuiltInMeshFactory::CreateAxesMesh();
     GizmoArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh();
 
@@ -165,6 +167,20 @@ bool FApplication::InitializeScene()
         UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
         MeshComp->SetStaticMesh(CubeMesh);
         MeshComp->SetRelativeLocation(FVector(2.0f, 0.0f, 5.0f));
+        Actor->AddComponent(MeshComp);
+        Actor->SetRootComponent(MeshComp);
+        World->AddActor(Actor);
+    }
+
+    // 도나쓰
+    {
+        AActor* Actor = new AActor();
+        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
+        MeshComp->SetStaticMesh(TorusMesh);
+        MeshComp->SetRelativeLocation(FVector(3.0f, 0.0f, 8.0f));
+        MeshComp->SetRelativeScale(FVector(1.5f, 1.5f, 1.5f));
+        MeshComp->SetRelativeRotation(FVector(0.6f, 0.f, 0.f));
+
         Actor->AddComponent(MeshComp);
         Actor->SetRootComponent(MeshComp);
         World->AddActor(Actor);
@@ -329,8 +345,20 @@ void FApplication::Tick(float DeltaTime)
         }
         else
         {
-            FRay Ray = BuildPickRay(DownX, DownY);
-            AActor* HitActor = PickActor(Ray);
+            FHitProxy Proxy = Renderer->PickPrimitiveProxy(DownX, DownY);
+
+            AActor* HitActor = nullptr;
+
+            if (Proxy.Type == EHitProxyType::Primitive && Proxy.Primitive)
+            {
+                HitActor = Proxy.Primitive->GetOwner();
+
+                if (HitActor == GizmoActor || HitActor == WorldAxesActor)
+                {
+                    HitActor = nullptr;
+                }
+            }
+
             SetSelectedActor(HitActor);
         }
     }

@@ -3,6 +3,7 @@
 #include <windows.h>
 #include "FRay.h"
 #include "Structs.h"
+#include "Component/EGizmoAxis.h"
 
 class UWorld;
 class URenderer;
@@ -100,6 +101,7 @@ private:
     UStaticMesh* CubeMesh; 
     UStaticMesh* SphereMesh;
     //UStaticMesh* TriangleMesh;
+    UStaticMesh* TorusMesh;
     UStaticMesh* AxesMesh;
     UStaticMesh* GizmoArrowMesh = nullptr;
 
