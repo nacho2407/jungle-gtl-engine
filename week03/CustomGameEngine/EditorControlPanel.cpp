@@ -4,20 +4,12 @@
 #include "TimerManager.h"
 #include "SceneManager.h"
 #include "World.h"
-#include "UCubeComp.h"
+#include "UPrimitiveComponent.h"
+#include "PrimitiveFactory.h"
 #include "UCamera.h"
 #include <string>
 
-// Remove later.
-enum class PrimitiveType
-{
-	Triangle,
-	Cube,
-	Sphere
-};
-
-// Remove later.
-static PrimitiveType type = PrimitiveType::Triangle;
+static EPrimitiveType primitiveType = EPrimitiveType::Triangle;
 static int spawnCount = 0;
 static char sceneName[128] = "Default";
 static bool orthogonal = false;
@@ -45,7 +37,7 @@ void EditorControlPanel::Draw(UCamera* camera)
 		static_cast<int>(TimerManager::GetInstance().GetGlobalDeltaTime() * 1000));
 	ImGui::Separator();
 
-	if (ImGui::Combo("Primitive", (int*)&type, "Triangle\0Cube\0Sphere\0"))
+	if (ImGui::Combo("Primitive", (int*)&primitiveType, "Sphere\0Cube\0Triangle\0"))
 	{
 		// TODO: Change primitive type to spawn.
 	}
@@ -54,7 +46,7 @@ void EditorControlPanel::Draw(UCamera* camera)
 		for (int i = 0; i < spawnCount; i++)
 		{
 			// TODO: Apply primitive type to spawn
-			auto p = GetWorld().AddSceneComponent<UCubeComp>();
+			auto p = PrimitiveFactory::AddPrimitive(primitiveType);
 		}
 	}
 	ImGui::SameLine();

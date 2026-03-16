@@ -152,6 +152,7 @@
     <ClInclude Include="Logger.h" />
     <ClInclude Include="ISingleton.h" />
     <ClInclude Include="Math\MathHelper.h" />
+    <ClInclude Include="PrimitiveFactory.h" />
     <ClInclude Include="RenderObject.h" />
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="Scene.h" />
@@ -210,6 +211,7 @@
     <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="json.cpp" />
     <ClCompile Include="Logger.cpp" />
+    <ClCompile Include="PrimitiveFactory.cpp" />
     <ClCompile Include="RenderObject.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="Scene.cpp" />
