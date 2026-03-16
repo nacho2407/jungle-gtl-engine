@@ -1,6 +1,7 @@
 ﻿#include "EditorPropertyPanel.h"
 #include "ImGui/imgui.h"
 #include "USceneComponent.h"
+#include "UPrimitiveComponent.h"	
 
 EditorPropertyPanel::EditorPropertyPanel()
 {
@@ -20,6 +21,12 @@ void EditorPropertyPanel::Draw(USceneComponent* selectedComponent)
 	if (selectedComponent)
 	{
 		selectedComponent->DrawProperties();
+		
+		if (selectedComponent->IsA(UPrimitiveComponent::GetClass()))
+		{
+			UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(selectedComponent);
+			primitive->MarkRenderStateDirty();
+		}
 	}
 
 	ImGui::End();

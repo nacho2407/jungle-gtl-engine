@@ -14,10 +14,6 @@ UCubeComp::~UCubeComp()
 
 void UCubeComp::Update(float DeltaTime)
 {
-	float Speed = 10.f;
-	FVector rot = GetRelativeRotation();
-	//rot.y += DeltaTime * Speed;
-	SetRelativeRotation(rot);
 }
 
 REGISTER_CLASS(UCubeComp);
