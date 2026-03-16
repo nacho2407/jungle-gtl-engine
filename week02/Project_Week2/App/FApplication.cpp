@@ -36,7 +36,7 @@
 #include <chrono>
 
 #include "Panels/FPropertyPanel.h"
-//#include "Panels/FControlPanel.h"
+#include "Panels/FControlPanel.h"
 
 namespace
 {
@@ -145,7 +145,7 @@ bool FApplication::Initialize(HINSTANCE hInstance)
         };
 
     PropertyPanel = new FPropertyPanel();
-    //ControlPanel = new FControlPanel();
+    ControlPanel = new FControlPanel();
 
     bIsRunning = true;
     return true;
@@ -636,11 +636,11 @@ void FApplication::Shutdown()
         PropertyPanel = nullptr;
     }
 
-    /*if (ControlPanel)
+    if (ControlPanel)
     {
         delete ControlPanel;
         ControlPanel = nullptr;
-    }*/
+    }
 
     if (ImGui::GetCurrentContext())
     {
@@ -1450,10 +1450,22 @@ void FApplication::RenderEditorUI()
         PropertyPanel->Render(this);
     }
 
-    /*if (ControlPanel)
+    if (ControlPanel)
     {
         ControlPanel->Render(this);
-    }*/
+    }
+
+    if (bShowBottomConsole && WindowApp)
+    {
+        const float ConsoleHeight = 220.0f;
+        const float Width = static_cast<float>(WindowApp->GetClientWidth());
+        const float Height = static_cast<float>(WindowApp->GetClientHeight());
+
+        ImGui::SetNextWindowPos(ImVec2(0.0f, Height - ConsoleHeight), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(Width, ConsoleHeight), ImGuiCond_Always);
+
+        ShowImGuiDemoConsole(&bShowBottomConsole);
+    }
 }
 
 AActor* FApplication::GetSelectedActor() const
@@ -1473,4 +1485,9 @@ void FApplication::NotifySelectedActorTransformChanged()
 void FApplication::ClearSelection()
 {
     SetSelectedActor(nullptr);
+}
+
+UCameraComponent* FApplication::GetMainCamera() const
+{
+    return MainCamera;
 }

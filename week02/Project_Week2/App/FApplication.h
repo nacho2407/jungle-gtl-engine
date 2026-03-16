@@ -17,7 +17,7 @@ class UStaticMesh;
 class UStaticMeshComponent;
 
 class FPropertyPanel;
-//class FControlPanel;
+class FControlPanel;
 
 enum class EPointerPulsePhase
 {
@@ -60,6 +60,8 @@ public:
     AActor* GetSelectedActor() const;
     void NotifySelectedActorTransformChanged();
     void ClearSelection();
+
+    UCameraComponent* GetMainCamera() const;
 
 private:
     bool InitializeEngine();
@@ -159,5 +161,8 @@ private:
 
 	// 패널 렌더링
     FPropertyPanel* PropertyPanel = nullptr;
-    //FControlPanel* ControlPanel = nullptr;
+    FControlPanel* ControlPanel = nullptr;
+
+    // 하단 콘솔
+    bool bShowBottomConsole = true;
 };
