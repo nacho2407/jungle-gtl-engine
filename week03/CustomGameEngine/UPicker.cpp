@@ -153,56 +153,56 @@ GizmoAxis UPicker::PickGizmo(int ScreenX, int ScreenY, UCamera* Camera, UScene* 
 Ray UPicker::CreateRay(int ScreenX, int ScreenY, UCamera* Camera)
 {
 	//Screen Space -> NDC Space
-	//float ndcX = (2.0f * (static_cast<float>(ScreenX) + 0.5f)) / Camera->ScreenWidth - 1.0f;
-	//float ndcY = 1.0f - (2.0f * (static_cast<float>(ScreenY) + 0.5f)) / Camera->ScreenHeight;
-	////NDC -> View Space
-	//FVector4 Near = FVector4(ndcX, ndcY, 0.f, 1.f);
-	//FVector4 Far = FVector4(ndcX, ndcY, 1.f, 1.f);
-	//FMatrix InvProjMat = Camera->GetProjectionMatrix().Inverse();
-	//FVector4 NearView = Near * InvProjMat;
-	//FVector4 FarView = Far * InvProjMat;
-	//NearView = NearView * (1.0f / NearView.w);
-	//FarView = FarView * (1.0f / FarView.w);
-	////View Space -> World Space
-	//FMatrix InvView = Camera->GetViewMatrix().Inverse();
-	//FVector4 NearWorld = NearView * InvView;
-	//FVector4 FarWorld = FarView * InvView;
-
-
-	////FVector ViewDir = FVector(NearView.x, NearView.y, NearView.z).Normalize();
-
-	//Ray ray;
-	//ray.Origin = FVector(NearWorld.x, NearWorld.y, NearWorld.z);
-	//ray.Direction = FVector((FarWorld.x - ray.Origin.x),
-	//	(FarWorld.y - ray.Origin.y),
-	//	(FarWorld.z - ray.Origin.z)).Normalize();
-
-	//return ray;
-
-	// 1. 픽셀 중앙을 향하도록 +0.5f 보정 적용
 	float ndcX = (2.0f * (static_cast<float>(ScreenX) + 0.5f)) / Camera->ScreenWidth - 1.0f;
 	float ndcY = 1.0f - (2.0f * (static_cast<float>(ScreenY) + 0.5f)) / Camera->ScreenHeight;
-
+	//NDC -> View Space
 	FVector4 Near = FVector4(ndcX, ndcY, 0.f, 1.f);
+	FVector4 Far = FVector4(ndcX, ndcY, 1.f, 1.f);
 	FMatrix InvProjMat = Camera->GetProjectionMatrix().Inverse();
-
 	FVector4 NearView = Near * InvProjMat;
+	FVector4 FarView = Far * InvProjMat;
 	NearView = NearView * (1.0f / NearView.w);
-
+	FarView = FarView * (1.0f / FarView.w);
+	//View Space -> World Space
 	FMatrix InvView = Camera->GetViewMatrix().Inverse();
 	FVector4 NearWorld = NearView * InvView;
+	FVector4 FarWorld = FarView * InvView;
+
+
+	//FVector ViewDir = FVector(NearView.x, NearView.y, NearView.z).Normalize();
 
 	Ray ray;
-	// 레이의 시작점은 여전히 NearWorld를 사용
 	ray.Origin = FVector(NearWorld.x, NearWorld.y, NearWorld.z);
-
-	// 2. FarWorld를 배제하고 View 좌표계 원점(0,0,0)을 기준으로 즉각적인 View 방향 도출
-	FVector ViewDir = FVector(NearView.x, NearView.y, NearView.z).Normalize();
-
-	// 3. Row-Major 방식에 맞춰 View 방향 벡터를 World 방향 벡터로 변환 (w=0 역할)
-	ray.Direction = InvView.TransformVector(ViewDir).Normalize();
+	ray.Direction = FVector((FarWorld.x - ray.Origin.x),
+		(FarWorld.y - ray.Origin.y),
+		(FarWorld.z - ray.Origin.z)).Normalize();
 
 	return ray;
+
+	//// 1. 픽셀 중앙을 향하도록 +0.5f 보정 적용
+	//float ndcX = (2.0f * (static_cast<float>(ScreenX) + 0.5f)) / Camera->ScreenWidth - 1.0f;
+	//float ndcY = 1.0f - (2.0f * (static_cast<float>(ScreenY) + 0.5f)) / Camera->ScreenHeight;
+
+	//FVector4 Near = FVector4(ndcX, ndcY, 0.f, 1.f);
+	//FMatrix InvProjMat = Camera->GetProjectionMatrix().Inverse();
+
+	//FVector4 NearView = Near * InvProjMat;
+	//NearView = NearView * (1.0f / NearView.w);
+
+	//FMatrix InvView = Camera->GetViewMatrix().Inverse();
+	//FVector4 NearWorld = NearView * InvView;
+
+	//Ray ray;
+	//// 레이의 시작점은 여전히 NearWorld를 사용
+	//ray.Origin = FVector(NearWorld.x, NearWorld.y, NearWorld.z);
+
+	//// 2. FarWorld를 배제하고 View 좌표계 원점(0,0,0)을 기준으로 즉각적인 View 방향 도출
+	//FVector ViewDir = FVector(NearView.x, NearView.y, NearView.z).Normalize();
+
+	//// 3. Row-Major 방식에 맞춰 View 방향 벡터를 World 방향 벡터로 변환 (w=0 역할)
+	//ray.Direction = InvView.TransformVector(ViewDir).Normalize();
+
+	//return ray;
 }
 
 bool Ray::IntersectsTriangle(const FVector& V0, const FVector& V1, const FVector& V2, float& OutT, const Ray& ray)
