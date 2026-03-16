@@ -34,12 +34,13 @@ void GizmoController::Update()
 		SetControlStrategy(Type);
 	}
 
-	FVector scale = AttachedComponent->GetRelativeScale3D();
-	FMatrix invScaleMatrix = FMatrix::ScaleMatrix(
-		1.0f / scale.x,
-		1.0f / scale.y,
-		1.0f / scale.z);
-	RelativeMatrix = invScaleMatrix * AttachedComponent->GetRelativeMatrix();
+	RelativeMatrix = FMatrix::TranslationMatrix(AttachedComponent->GetRelativeLocation());
+
+	if (bLocalSpace)
+	{
+		FMatrix rotMatrix = AttachedComponent->GetRelativeQuaternion().ToMatrix();
+		RelativeMatrix = rotMatrix * RelativeMatrix;
+	}
 }
 
 void GizmoController::UpdateRenderObject()

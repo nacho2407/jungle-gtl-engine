@@ -12,9 +12,14 @@ EditorToolbar::~EditorToolbar()
 
 void EditorToolbar::Draw()
 {
-	ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-	ImGui::SetWindowPos(ImVec2(0, 0));
-	ImGui::SetWindowSize(ImVec2(200, 30));
+	ImGui::Begin("Toolbar");
+
+	bool bLocalSpace = Gizmo::GetInstance().GetController()->IsLocalSpace();
+	if (bLocalSpace ? ImGui::Button("Local") : ImGui::Button("World"))
+	{
+		Gizmo::GetInstance().GetController()->SetLocalSpace(!bLocalSpace);
+	}
+
 	if (ImGui::Button("Translate"))
 	{
 		Gizmo::GetInstance().GetController()->SetControlStrategy(GizmoControllerType::Translation);

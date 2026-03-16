@@ -69,47 +69,47 @@ void GizmoScaleControlStrategy::BeginDrag(const Ray& ray)
 {
 	InitialObjectScale = Controller->GetAttachedComponent()->GetRelativeScale3D();
 
-	FVector localAxis;
+	FVector worldAxis;
 	switch (Controller->GetHoverAxis())
 	{
 	case GizmoControllerAxis::X:
-		localAxis = FVector::Forward();
+		worldAxis = FVector::Forward();
 		break;
 	case GizmoControllerAxis::Y:
-		localAxis = FVector::Right();
+		worldAxis = FVector::Right();
 		break;
 	case GizmoControllerAxis::Z:
-		localAxis = FVector::Up();
+		worldAxis = FVector::Up();
 		break;
 	}
 
-	FVector worldAxisDir = Controller->GetRelativeMatrix().TransformVector(localAxis).Normalize();
+	FVector axisDir = Controller->GetRelativeMatrix().TransformVector(worldAxis).Normalize();
 	FVector worldOrigin = Controller->GetRelativeMatrix().TransformPoint(FVector::Zero());
 
 	InitialWorldPos = worldOrigin;
-	InitialDragOffset = Controller->GetClosestPointOnAxis(ray, worldOrigin, worldAxisDir);
+	InitialDragOffset = Controller->GetClosestPointOnAxis(ray, worldOrigin, axisDir);
 }
 
 void GizmoScaleControlStrategy::UpdateDrag(const Ray& ray)
 {
-	FVector localAxis;
+	FVector worldAxis;
 	switch (Controller->GetHoverAxis())
 	{
 	case GizmoControllerAxis::X:
-		localAxis = FVector::Forward();
+		worldAxis = FVector::Forward();
 		break;
 	case GizmoControllerAxis::Y:
-		localAxis = FVector::Right();
+		worldAxis = FVector::Right();
 		break;
 	case GizmoControllerAxis::Z:
-		localAxis = FVector::Up();
+		worldAxis = FVector::Up();
 		break;
 	}
 
-	FVector worldAxisDir = Controller->GetRelativeMatrix().TransformVector(localAxis).Normalize();
+	FVector axisDir = Controller->GetRelativeMatrix().TransformVector(worldAxis).Normalize();
 	FVector worldOrigin = Controller->GetRelativeMatrix().TransformPoint(FVector::Zero());
 
-	float currentT = Controller->GetClosestPointOnAxis(ray, InitialWorldPos, worldAxisDir);
+	float currentT = Controller->GetClosestPointOnAxis(ray, InitialWorldPos, axisDir);
 	float deltaT = currentT - InitialDragOffset;
 
 	FVector newScale = InitialObjectScale;
