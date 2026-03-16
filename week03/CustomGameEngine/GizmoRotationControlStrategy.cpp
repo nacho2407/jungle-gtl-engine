@@ -69,7 +69,7 @@ void GizmoRotationControlStrategy::BeginDrag(const Ray& ray)
 void GizmoRotationControlStrategy::UpdateDrag(const Ray& ray)
 {
 	FVector currTouchPoint = ray.Origin;
-	float diff = currTouchPoint.y - InitialTouchPoint.y;
+	float diff = currTouchPoint.z - InitialTouchPoint.z;
 
 	FQuat currQuat = InitialObjectQuaternion;
 	FQuat deltaQuat;
