@@ -39,6 +39,9 @@ public:
 
 	void SetControlStrategy(GizmoControllerType type);
 
+	bool IsLocalSpace() const { return bLocalSpace; }
+	void SetLocalSpace(bool bLocal) { bLocalSpace = bLocal; }
+
 	GizmoControllerAxis GetHoverAxis() const { return HoverAxis; }
 	void SetHoverAxis(GizmoControllerAxis axis) { HoverAxis = axis; }
 	bool IsDragging() const { return bDragging; }
@@ -78,6 +81,7 @@ private:
 	USceneComponent* AttachedComponent = nullptr;
 
 	GizmoControllerType Type = GizmoControllerType::Translation;
+	bool bLocalSpace = true;
 
 	GizmoControllerAxis CurrentAxis = GizmoControllerAxis::None;
 	GizmoControllerAxis HoverAxis = GizmoControllerAxis::None;
@@ -88,8 +92,6 @@ private:
 	IGizmoControlStrategy* TranslationStrategy = nullptr;
 	IGizmoControlStrategy* RotationStrategy = nullptr;
 	IGizmoControlStrategy* ScaleStrategy = nullptr;
-	FVector InitialObjectLocation;
-	float InitialDragOffset = 0.0f;
 
 	bool bDrawEnabled = false;
 };

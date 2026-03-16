@@ -74,6 +74,8 @@ void GizmoRotationControlStrategy::UpdateDrag(const Ray& ray)
 	FQuat currQuat = InitialObjectQuaternion;
 	FQuat deltaQuat;
 
+	USceneComponent* attachedComp = Controller->GetAttachedComponent();
+
 	switch (Controller->GetHoverAxis())
 	{
 	case GizmoControllerAxis::X:
@@ -87,7 +89,14 @@ void GizmoRotationControlStrategy::UpdateDrag(const Ray& ray)
 		break;
 	}
 
-	currQuat = currQuat * deltaQuat;
+	if (Controller->IsLocalSpace())
+	{
+		currQuat = currQuat * deltaQuat;
+	}
+	else
+	{
+		currQuat = deltaQuat * currQuat;
+	}
 
 	Controller->GetAttachedComponent()->SetRelativeQuaternion(currQuat);
 }

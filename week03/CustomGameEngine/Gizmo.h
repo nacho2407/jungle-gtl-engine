@@ -60,7 +60,4 @@ private:
 
 	bool bIsDragging = false;
 	GizmoAxis CurrentAxis = GizmoAxis::None;
-
-	FVector InitialObjectLocation;
-	float InitialDragOffset;
 };
