@@ -7,6 +7,7 @@
 #include "EditorControlPanel.h"
 #include "EditorPropertyPanel.h"
 #include "EditorStatPanel.h"
+#include "EditorToolbar.h"
 #include "UCamera.h"
 #include "Gizmo.h"
 #include "GizmoController.h"
@@ -53,6 +54,7 @@ void Editor::DrawUI()
 	DrawConsole();
 	DrawPropertyPanel();
 	DrawStatPanel();
+	DrawToolbar();
 
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -100,4 +102,9 @@ void Editor::DrawPropertyPanel()
 void Editor::DrawStatPanel()
 {
 	StatPanel->Draw();
+}
+
+void Editor::DrawToolbar()
+{
+	Toolbar->Draw();
 }

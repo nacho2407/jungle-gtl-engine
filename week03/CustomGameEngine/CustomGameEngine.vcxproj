@@ -132,6 +132,7 @@
     <ClInclude Include="EditorControlPanel.h" />
     <ClInclude Include="EditorPropertyPanel.h" />
     <ClInclude Include="EditorStatPanel.h" />
+    <ClInclude Include="EditorToolbar.h" />
     <ClInclude Include="EngineApp.h" />
     <ClInclude Include="FColor.h" />
     <ClInclude Include="FConstantBuffer.h" />
@@ -194,6 +195,7 @@
     <ClCompile Include="EditorControlPanel.cpp" />
     <ClCompile Include="EditorPropertyPanel.cpp" />
     <ClCompile Include="EditorStatPanel.cpp" />
+    <ClCompile Include="EditorToolbar.cpp" />
     <ClCompile Include="EngineApp.cpp" />
     <ClCompile Include="FColor.cpp" />
     <ClCompile Include="FLevel.cpp" />

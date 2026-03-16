@@ -37,6 +37,8 @@ public:
 	void UpdateDrag(const Ray& ray);
 	void EndDrag();
 
+	void SetControlStrategy(GizmoControllerType type);
+
 	GizmoControllerAxis GetHoverAxis() const { return HoverAxis; }
 	void SetHoverAxis(GizmoControllerAxis axis) { HoverAxis = axis; }
 	bool IsDragging() const { return bDragging; }
