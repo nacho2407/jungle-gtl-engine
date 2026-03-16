@@ -230,6 +230,18 @@ bool FApplication::InitializeScene()
     //}
     WorldAxesActor = SpawnMeshActor(AxesMesh, FVector(0.0f, 0.0f, 0.0f));
 
+    {
+        GridActor = new AActor();
+
+        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
+        MeshComp->SetStaticMesh(GridMesh);
+        MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
+
+        GridActor->AddComponent(MeshComp);
+        GridActor->SetRootComponent(MeshComp);
+        World->AddActor(GridActor);
+    }
+
     //// Gizmo
     //// @@@ 이렇게 길게 여기서 처리하는 게 맞음????
     //{
