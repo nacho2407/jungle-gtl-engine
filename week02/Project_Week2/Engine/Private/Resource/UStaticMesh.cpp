@@ -3,22 +3,22 @@
 UStaticMesh::UStaticMesh(){}
 UStaticMesh::~UStaticMesh(){}
 
-void UStaticMesh::SetVertices(const std::vector<FVertexSimple>& InVertices)
+void UStaticMesh::SetVertices(const TArray<FVertexSimple>& InVertices)
 {
 	Vertices = InVertices;
 }
 
-const std::vector<FVertexSimple>& UStaticMesh::GetVertices() const
+const TArray<FVertexSimple>& UStaticMesh::GetVertices() const
 {
 	return Vertices;
 }
 
-void UStaticMesh::SetIndices(const std::vector<uint32_t>& InIndices)
+void UStaticMesh::SetIndices(const TArray<uint32_t>& InIndices)
 {
     Indices = InIndices;
 }
 
-const std::vector<uint32_t>& UStaticMesh::GetIndices() const
+const TArray<uint32_t>& UStaticMesh::GetIndices() const
 {
     return Indices;
 }

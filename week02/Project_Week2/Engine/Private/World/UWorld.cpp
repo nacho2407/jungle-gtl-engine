@@ -68,7 +68,7 @@ void UWorld::BuildScene(FScene& OutScene) const
             continue;
         }
 
-        const std::vector<UActorComponent*>& Components = Actor->GetComponents();
+        const TArray<UActorComponent*>& Components = Actor->GetComponents();
 
         for (UActorComponent* Component : Components)
         {
@@ -94,7 +94,7 @@ void UWorld::BuildScene(FScene& OutScene) const
     }
 }
 
-const std::vector<AActor*>& UWorld::GetActors() const
+const TArray<AActor*>& UWorld::GetActors() const
 {
     return Actors;
 }

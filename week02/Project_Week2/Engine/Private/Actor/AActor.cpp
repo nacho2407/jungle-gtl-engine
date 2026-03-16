@@ -39,7 +39,7 @@ void AActor::AddComponent(UActorComponent* InComponent)
 	Components.push_back(InComponent);
 }
 
-const std::vector<UActorComponent*>& AActor::GetComponents() const
+const TArray<UActorComponent*>& AActor::GetComponents() const
 {
 	return Components;
 }
