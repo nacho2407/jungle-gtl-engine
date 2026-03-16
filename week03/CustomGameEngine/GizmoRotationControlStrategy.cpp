@@ -5,7 +5,6 @@
 #include "URender.h"
 #include "RenderObject.h"
 #include "USceneComponent.h"
-#include "Logger.h"
 
 GizmoRotationControlStrategy::GizmoRotationControlStrategy(GizmoController* controller)
 {
@@ -74,8 +73,6 @@ void GizmoRotationControlStrategy::UpdateDrag(const Ray& ray)
 	FQuat currQuat = InitialObjectQuaternion;
 	FQuat deltaQuat;
 
-	USceneComponent* attachedComp = Controller->GetAttachedComponent();
-
 	switch (Controller->GetHoverAxis())
 	{
 	case GizmoControllerAxis::X:
@@ -103,7 +100,6 @@ void GizmoRotationControlStrategy::UpdateDrag(const Ray& ray)
 
 void GizmoRotationControlStrategy::EndDrag()
 {
-	// Rotation drag finalization logic can be implemented here
 }
 
 void GizmoRotationControlStrategy::SetDrawEnable(bool bEnable)
