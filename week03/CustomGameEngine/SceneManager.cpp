@@ -54,15 +54,15 @@ void SceneManager::SaveScene(FString sceneName)
 
 UScene* SceneManager::LoadScene(FString sceneName)
 {
-	if (GetWorld().GetActiveScene() != nullptr)
-		UnloadScene();
-
 	// TODO: 리소스 관리자 완성되면 리소스 관리자 통하여 파일 입출력하도록 수정
 	const FString filePath = sceneName + ".scene";
 	std::ifstream inFile;
 	inFile.open(filePath);
 	if (inFile.is_open())
 	{
+		if (GetWorld().GetActiveScene() != nullptr)
+			UnloadScene();
+
 		FString jsonStr((std::istreambuf_iterator<char>(inFile)),
 			std::istreambuf_iterator<char>());
 		inFile >> jsonStr;
