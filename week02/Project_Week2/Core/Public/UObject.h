@@ -4,36 +4,45 @@
 #include "FUObjectInitializer.h"
 #include "UObjectBaseUtility.h"
 
+#include <string>
+#include <cstdint>
+
 class UObject : public UObjectBaseUtility
 {
+public:
     size_t AllocatedSize;
+private:
     uint32 UUID;
 
-protected:
-
-
 public:
-    FString Name;
-
     UObject() : AllocatedSize(0), UUID(0), Name("DefaultObject") {};
     UObject(const FUObjectInitializer& ObjectInitilizer);
+    virtual ~UObject();
 
-    //virtual void Init() = 0;
+public:
 
-    //void* operator new(size_t size);
+    // Unique Object ID
+    uint64_t GetID() const;
 
-    //void operator delete(void* ptr, size_t size) noexcept;
+    // Object Name
+    const std::string& GetName() const;
+    void SetName(const std::string& InName);
 
-    //template<typename T>
-    //void CreateDefaultSubobject()
-    //{
+    // Owner Object
+    UObject* GetOuter() const;
+    void SetOuter(UObject* InOuter);
 
-    //}
+    // Runtime type info
+    virtual const char* GetObjClassName() const;
 
-    uint32 GetUUID() const
-    {
-        return UUID;
-    }
+    uint32 GetUUID() const { return UUID; }
+
+public:
+
+    uint64_t ObjectID = 0; // @@@ ???
+
+    FString Name;
+
+    UObject* Outer = nullptr; /// 이거는 Private가 맞는듯?
+
 };
-
-//inline TArray<UObject*> GUObjectArray;
