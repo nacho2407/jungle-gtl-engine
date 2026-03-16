@@ -6,12 +6,6 @@ UObject::UObject(const FUObjectInitializer& ObjectInitilizer) : UObject()
 	UUID = ObjectInitilizer.UUID;
 	Name = ObjectInitilizer.Name;
 }
-uint64_t UObject::GlobalObjectID = 1;
-
-UObject::UObject()
-{
-    ObjectID = GlobalObjectID++;
-}
 
 UObject::~UObject()
 {

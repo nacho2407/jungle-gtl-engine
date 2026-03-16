@@ -34,6 +34,8 @@ public:
 
     // 마우스 위치에 따른 Hit Proxy 쿼리
     FHitProxy PickPrimitiveProxy(int MouseX, int MouseY);
+    
+    void BindMainRenderTargetForOverlay();
 
 public:
 	ID3D11Device* Device = nullptr;
@@ -108,7 +110,7 @@ private:
 
     void PreparePipeline();
     void UpdateVSConstants(const FMatrix& World, const FMatrix& View, const FMatrix& Projection, const FVector4& Color, bool bUseVertexColor);
-
+    
     bool GetOrCreateMeshResource(UStaticMesh* Mesh, FMeshGPUResource& OutResource);
     D3D11_PRIMITIVE_TOPOLOGY ConvertTopology(EMeshTopology Topology) const;
     void DrawMeshItem(const FRenderItem& Item, const FMatrix& View, const FMatrix& Projection);

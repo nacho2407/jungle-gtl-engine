@@ -105,7 +105,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)GUI\Public;$(ProjectDir)ThirdParty;$(ProjectDir)Render\Public;$(ProjectDir)App;$(ProjectDir)Engine\Public;$(ProjectDir)Core\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)GUI\Public;$(ProjectDir)ThirdParty;$(ProjectDir)Render\Public;$(ProjectDir)App;$(ProjectDir)Engine\Public;$(ProjectDir)Core\Public;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -131,7 +131,7 @@
   <ItemGroup>
     <ClInclude Include="App\FApplication.h" />
     <ClInclude Include="App\WindowsApplication.h" />
-    <ClInclude Include="Core\Private\FUObjectAllocator.h" />
+    <ClInclude Include="Core\Public\FUObjectAllocator.h" />
     <ClInclude Include="Core\Public\CoreDefine.h" />
     <ClInclude Include="Core\Public\FAActorFactory.h" />
     <ClInclude Include="Core\Public\FObjectManager.h" />
@@ -181,12 +181,12 @@
     <ClInclude Include="Core\Public\UEngineStatics.h" />
     <ClInclude Include="Core\Public\UObjectBaseUtility.h" />
     <ClInclude Include="Core\Public\FUObjectInitializer.h" />
+    <ClInclude Include="Core\Private\FMemory.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App\FApplication.cpp" />
     <ClCompile Include="App\Main.cpp" />
     <ClCompile Include="App\WindowsApplication.cpp" />
-    <ClCompile Include="Core\Private\FMemory.h" />
     <ClCompile Include="Core\Private\FObjectManager.cpp" />
     <ClCompile Include="Core\Private\UObject.cpp" />
     <ClCompile Include="Core\Private\Math\FMatrix.cpp" />
@@ -211,7 +211,6 @@
     <ClCompile Include="Engine\Private\World\FScene.cpp" />
     <ClCompile Include="Engine\Private\World\UWorld.cpp" />
     <ClCompile Include="Core\Private\UEngineStatics.cpp" />
-    <ClCompile Include="Core\Private\UFactory.cpp" />
     <ClCompile Include="Core\Private\FUObjectFactory.cpp" />
     <ClCompile Include="Core\Private\FUObjectArray.cpp" />
     <ClCompile Include="GUI\Private\imgui.cpp" />

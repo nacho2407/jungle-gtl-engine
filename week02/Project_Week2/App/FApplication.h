@@ -4,6 +4,7 @@
 #include "FRay.h"
 #include "Structs.h"
 #include "Component/EGizmoAxis.h"
+#include "UObject.h"
 
 class UWorld;
 class URenderer;
@@ -54,6 +55,7 @@ public:
 
 private:
     bool InitializeEngine();
+    bool InitializeGUI();
     bool InitializeResources();
     bool InitializeScene();
     void MainLoop();
@@ -87,6 +89,10 @@ private:
     void EndPointerPulse();
     bool ComputePointerPulseWorldPosition(int MouseX, int MouseY, float Distance, FVector& OutWorldPos) const;
     void RefreshPointerPulseTransform();
+
+    // 상혁 테스트
+    void UpdateObjectAllocationTest();
+    void RenderDebugUI();
 
 private:
     FWindowsApplication* WindowApp;
@@ -129,4 +135,10 @@ private:
     UStaticMeshComponent* ClickCircleComp = nullptr;
 
     FPointerPulse PointerPulse;
+
+    // 상혁 테스트
+    int TestDelta = 1;
+    int TestInterval = 5;
+    int TestIntervalCounter = 0;
+    TArray<UObject*> TestObjects;
 };

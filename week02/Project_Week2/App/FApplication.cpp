@@ -25,6 +25,11 @@
 
 #include "Math/FVector.h"
 
+#include "FUObjectFactory.h"
+#include "FUObjectAllocator.h"
+
+#include "GUI/GUI.h"
+
 #include <chrono>
 
 namespace
@@ -73,6 +78,12 @@ bool FApplication::Initialize(HINSTANCE hInstance)
         return false;
     }
 
+    // ImGui 초기화
+    if (!InitializeGUI())
+    {
+        return false;
+    }
+
     if (!InitializeResources())
     {
         return false;
@@ -97,6 +108,36 @@ bool FApplication::InitializeEngine()
 
     World = new UWorld();
     Scene = new FScene();
+
+    return true;
+}
+
+bool FApplication::InitializeGUI()
+{
+    if (!WindowApp || !Renderer)
+    {
+        return false;
+    }
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+
+    ImGuiIO& io = ImGui::GetIO();
+    (void)io;
+
+    ImGui::StyleColorsDark();
+
+    if (!ImGui_ImplWin32_Init(WindowApp->GetHWND()))
+    {
+        return false;
+    }
+
+    if (!ImGui_ImplDX11_Init(Renderer->Device, Renderer->DeviceContext))
+    {
+        ImGui_ImplWin32_Shutdown();
+        ImGui::DestroyContext();
+        return false;
+    }
 
     return true;
 }
@@ -326,6 +367,9 @@ void FApplication::Tick(float DeltaTime)
         return;
     }
 
+    // 상혁 테스트
+    UpdateObjectAllocationTest();
+
     static int PrevMouseX = 0;
     static int PrevMouseY = 0;
 
@@ -497,14 +541,36 @@ void FApplication::RenderFrame()
         return;
     }
 
+    //World->BuildScene(*Scene);
+
     Renderer->BeginFrame();
     Renderer->Render(*Scene, MainCamera);
+
+    // 여기서 메인 백버퍼 다시 바인딩
+    Renderer->BindMainRenderTargetForOverlay();
+
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+
+    RenderDebugUI();
+
+    ImGui::Render();
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
     Renderer->EndFrame();
 }
 
 void FApplication::Shutdown()
 {
     bIsRunning = false;
+
+    if (ImGui::GetCurrentContext())
+    {
+        ImGui_ImplDX11_Shutdown();
+        ImGui_ImplWin32_Shutdown();
+        ImGui::DestroyContext();
+    }
 
     if (Renderer)
     {
@@ -1247,3 +1313,51 @@ void FApplication::UpdatePointerPulse(float DeltaTime)
 
     RefreshPointerPulseTransform();
 }
+
+// 상혁 테스트 
+void FApplication::UpdateObjectAllocationTest()
+{
+    if (TestIntervalCounter++ > TestInterval)
+    {
+        if (TestDelta > 0)
+        {
+            auto NewObject = GUObjectFactory.CreateObject<AActor>("Test");
+            TestObjects.push_back(NewObject);
+        }
+        else
+        {
+            if (!TestObjects.empty())
+            {
+                UObject* Garbage = TestObjects.back();
+                TestObjects.pop_back();
+
+                GUObjectArray.FreeUObjectIndox(Garbage);
+                GUObjectAllocator.FreeUObject(Garbage);
+            }
+        }
+
+        if (TestObjects.size() <= 0 || TestObjects.size() > 100)
+        {
+            TestDelta *= -1;
+        }
+
+        TestIntervalCounter = 0;
+    }
+}
+void FApplication::RenderDebugUI()
+{
+    ImGui::Begin("Jungle Property Window");
+    ImGui::Text("Hello Jungle World!");
+
+    ImGui::Text("GTotalAllocationBytes: %d", FMemory::GetTotalAllocatedMemory());
+    ImGui::Text("GTotalAllocationCount: %d", GUObjectArray.ElementalCount);
+    ImGui::Text("ObjectCountInVector: %d", static_cast<int>(TestObjects.size()));
+
+    if (!TestObjects.empty())
+    {
+        ImGui::Text("LastID: %d", TestObjects.back()->GetUUID());
+    }
+
+    ImGui::End();
+}
+

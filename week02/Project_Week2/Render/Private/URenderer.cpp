@@ -1056,3 +1056,14 @@ uint32 URenderer::DecodeHitProxyIdColor(uint8 R, uint8 G, uint8 B)
     // 하위 24bit 이어 붙이기
     return (uint32) R | ((uint32) G << 8) | ((uint32) B << 16);
 }
+
+void URenderer::BindMainRenderTargetForOverlay()
+{
+    if (!DeviceContext || !FrameBufferRTV || !DepthStencilView)
+    {
+        return;
+    }
+
+    DeviceContext->RSSetViewports(1, &ViewportInfo);
+    DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView);
+}

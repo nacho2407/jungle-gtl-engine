@@ -1,5 +1,5 @@
 #pragma once
-#include "Private/FUObjectAllocator.h"
+#include "FUObjectAllocator.h"
 #include "UEngineStatics.h"
 #include "UObject.h"
 class FUObjectFactory

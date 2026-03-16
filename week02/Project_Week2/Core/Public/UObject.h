@@ -9,14 +9,12 @@
 
 class UObject : public UObjectBaseUtility
 {
+public:
     size_t AllocatedSize;
+private:
     uint32 UUID;
 
-protected:
-
-
 public:
-
     UObject() : AllocatedSize(0), UUID(0), Name("DefaultObject") {};
     UObject(const FUObjectInitializer& ObjectInitilizer);
     virtual ~UObject();
@@ -37,26 +35,14 @@ public:
     // Runtime type info
     virtual const char* GetObjClassName() const;
 
-protected:
+    uint32 GetUUID() const { return UUID; }
 
-    uint64_t ObjectID = 0;
+public:
+
+    uint64_t ObjectID = 0; // @@@ ???
 
     FString Name;
 
-    UObject* Outer = nullptr;
+    UObject* Outer = nullptr; /// 이거는 Private가 맞는듯?
 
-private:
-
-    //template<typename T>
-    //void CreateDefaultSubobject()
-    //{
-
-    //}
-
-    uint32 GetUUID() const
-    {
-        return UUID;
-    }
 };
-
-//inline TArray<UObject*> GUObjectArray;
