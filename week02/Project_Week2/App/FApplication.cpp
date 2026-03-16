@@ -208,7 +208,7 @@ bool FApplication::InitializeScene()
     //    WorldAxesActor->SetRootComponent(MeshComp);
     //    World->AddActor(WorldAxesActor);
     //}
-    SpawnMeshActor(AxesMesh, FVector(0.0f, 0.0f, 0.0f));
+    WorldAxesActor = SpawnMeshActor(AxesMesh, FVector(0.0f, 0.0f, 0.0f));
 
     //// Gizmo
     //// @@@ 이렇게 길게 여기서 처리하는 게 맞음????
@@ -350,32 +350,36 @@ void FApplication::Tick(float DeltaTime)
 
     int DownX = 0;
     int DownY = 0;
-    if (!bImGuiWantsMouse &&  WindowApp->ConsumeLeftMouseDown(DownX, DownY)) // @@@ IsLeftMousePressed() 로 하지 않은 건???
+    if (!bImGuiWantsMouse && WindowApp->ConsumeLeftMouseDown(DownX, DownY))
     {
-        BeginPointerPulse(DownX, DownY); // &&& 
+        BeginPointerPulse(DownX, DownY);
 
-        EGizmoAxis Axis = PickGizmoAxis(DownX, DownY); // &&& 픽한게 Actor인지 Gizmo인지 검사
-        if (Axis != EGizmoAxis::None)
+        FHitProxy Proxy = Renderer->PickPrimitiveProxy(DownX, DownY);
+
+        AActor* HitActor = nullptr;
+        if (Proxy.Type == EHitProxyType::Primitive && Proxy.Primitive)
         {
-            BeginGizmoDrag(Axis, DownX, DownY);
+            HitActor = Proxy.Primitive->GetOwner();
         }
-        else // 액터 클릭
+
+        // 1) 진짜로 gizmo를 클릭한 경우에만 축 판정
+        if (HitActor == GizmoActor)
         {
-            FHitProxy Proxy = Renderer->PickPrimitiveProxy(DownX, DownY); // &&& 화면 좌표 (DownX, DownY) 기준으로 어떤 Primitive가 클릭됐는지 렌더러에게 물어보는 과정
-
-            AActor* HitActor = nullptr;
-
-            if (Proxy.Type == EHitProxyType::Primitive && Proxy.Primitive) // @@@ 둘이 성격이 다름?
+            EGizmoAxis Axis = PickGizmoAxis(DownX, DownY);
+            if (Axis != EGizmoAxis::None)
             {
-                HitActor = Proxy.Primitive->GetOwner(); 
-
-                if (HitActor == GizmoActor || HitActor == WorldAxesActor || HitActor == GridActor)
-                {
-                    HitActor = nullptr;
-                }
+                BeginGizmoDrag(Axis, DownX, DownY);
+            }
+        }
+        // 2) 월드 축 / 그리드 / 클릭 원 등은 선택 불가
+        else
+        {
+            if (HitActor == WorldAxesActor || HitActor == GridActor || HitActor == ClickCircleActor)
+            {
+                HitActor = nullptr;
             }
 
-            SetSelectedActor(HitActor); // &&& 현재 선택 액터로 바꾸기
+            SetSelectedActor(HitActor);
         }
     }
 
