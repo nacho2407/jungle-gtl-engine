@@ -89,6 +89,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	 D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
 	ResourceManager::CreateMaterial(L"ShaderW0.hlsl", L"ShaderW0.hlsl", Renderer->Device, layout, 2);
+	ResourceManager::CreateMaterial(L"ShaderInfiniteGrid.hlsl", L"ShaderInfiniteGrid.hlsl", Renderer->Device, nullptr, 0);
 	ResourceManager::AddCubeMesh(Renderer->Device);
 	ResourceManager::AddSphereMesh(Renderer->Device);
 	ResourceManager::AddTriangleMesh(Renderer->Device);
@@ -135,11 +136,11 @@ void EngineApp::Run()
 	cube->SetRelativeScale3D(FVector(2.f, 2.f, 2.f));
 
 	UCubeComp* Cube = GetWorld().AddSceneComponent<UCubeComp>();
-	Cube->SetRelativeLocation(FVector(10.f, 0.f, 0.f));
+	Cube->SetRelativeLocation(FVector(30.f, 0.f, 0.f));
 	Cube->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
 
 	UCubeComp* Cube3 = GetWorld().AddSceneComponent<UCubeComp>();
-	Cube->SetRelativeLocation(FVector(-10.f, 0.f, 0.f));
+	Cube->SetRelativeLocation(FVector(-30.f, 0.f, 0.f));
 	Cube->SetRelativeScale3D(FVector(0.5f, 0.5f, 0.5f));
 
 	UAxisComp* mainAxis = GetWorld().AddSceneComponent<UAxisComp>();
@@ -168,6 +169,7 @@ void EngineApp::Run()
 
 		TimerManager::GetInstance().Tick();
 		InputManager::GetInstance().Update();
+		float TempDelta = globalTimer->GetDeltaTime();
 		UScene* Scene = GetWorld().GetActiveScene();
 
 		ImGuiIO& io = ImGui::GetIO();
@@ -206,25 +208,29 @@ void EngineApp::Run()
 		{
 			if (InputManager::GetInstance().IsKeyHold(VK_RBUTTON))
 			{
-				Camera->Move(globalTimer->GetDeltaTime());
-				Camera->Rotate(globalTimer->GetDeltaTime());
+				Camera->Move(TempDelta);
+				Camera->Rotate(TempDelta);
 			}
 			else if (InputManager::GetInstance().IsKeyHold(VK_LBUTTON)
 				&& InputManager::GetInstance().IsKeyHold(VK_MENU))
 			{
-				Camera->OrbitRotate(globalTimer->GetDeltaTime());
+				Camera->OrbitRotate(TempDelta);
 			}
 			if (InputManager::GetInstance().IsKeyHold('F')
 				&& GetWorld().GetActiveScene()->IsCompSelected)
 			{
-				Camera->SetPosition(GetWorld().GetActiveScene()->SelectedCompPos - Camera->Direction * Camera->FocusLength);
+				Camera->SetPosition(EditorInst->GetSelectedComponent()->GetRelativeLocation() - Camera->Direction * Camera->FocusLength);
 			}
 		}
 		Camera->update();
 
 		//Render
 		Renderer->Prepare();
-		Scene->Update(globalTimer->GetDeltaTime());
+
+		ResourceManager* RM = ResourceManager::GetInstance();
+		Renderer->RenderGrid(Camera, RM->GetMaterial(L"ShaderInfiniteGrid.hlsl").VertexShader, RM->GetMaterial(L"ShaderInfiniteGrid.hlsl").PixelShader);
+		
+		Scene->Update(TempDelta);
 		GetWorld().OnBeforeRender();
 		EditorInst->OnBeforeRender();
 

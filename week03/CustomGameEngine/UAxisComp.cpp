@@ -25,6 +25,7 @@ RenderObject* UAxisComp::CreateRenderObject()
 		return nullptr;
 
 	RenderObj->PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+	Pickable = false;
 
 	return RenderObj;
 }

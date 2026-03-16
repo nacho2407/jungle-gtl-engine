@@ -43,7 +43,7 @@ void UPicker::Pick(int ScreenX, int ScreenY, UCamera* Camera, UScene* Scene)
 			for (USceneComponent* sc : Scene->SceneComponents)
 			{
 				UPrimitiveComponent* Comp = Cast<UPrimitiveComponent>(sc);
-				if (Comp == nullptr)
+				if (Comp == nullptr || !(Comp->Pickable))
 					continue;
 
 				float Distance = 0.f;

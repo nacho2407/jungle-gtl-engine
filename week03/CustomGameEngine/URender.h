@@ -24,7 +24,9 @@ public:
 	ID3D11Texture2D* FrameBuffer = nullptr;
 	ID3D11RenderTargetView* FrameBufferRTV = nullptr;
 	ID3D11RasterizerState* RasterizerState = nullptr;
+	ID3D11RasterizerState* RasterizerStateNoCull = nullptr;
 	ID3D11DepthStencilState* DepthStencilState = nullptr;
+	ID3D11DepthStencilState* DepthStencilStateNoWrite = nullptr;
 	ID3D11DepthStencilState* DepthStencilStateNoDepth = nullptr;
 	ID3D11Texture2D* DepthStencilBuffer = nullptr;
 	ID3D11DepthStencilView* DepthStencilView = nullptr;
@@ -71,8 +73,19 @@ public:
 		int bIsSelected;
 		float Padding[3];
 	};
+
+	struct FGridConstant
+	{
+		float CameraPos[3];
+		float GridSize;
+		float LineThickness;
+		float Padding[3];
+	};
+
 	FConstantBuffer FrameConstantBuffer; //View Proj
 	FConstantBuffer ObjectConstantBuffer; //World
+
+	FConstantBuffer FGridConstantBuffer;
 
 	void ReleaseConstantBuffer();
 	void CreateConstantBuffer();
@@ -80,5 +93,6 @@ public:
 
 public:
 	void Render(class UCamera* Camera);
+	void RenderGrid(UCamera* Camera, ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader);
 	FLevel drawLevel;
 };

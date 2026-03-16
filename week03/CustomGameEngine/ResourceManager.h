@@ -40,7 +40,7 @@ public:
 		Geometry.Vertices = Verticies;
 	}
 
-	static void CreateMaterial(WFString VertexShaderName, WFString PixelShaderName, ID3D11Device* Device, D3D11_INPUT_ELEMENT_DESC layout[], UINT layoutCount)
+	static void CreateMaterial(WFString VertexShaderName, WFString PixelShaderName, ID3D11Device* Device, D3D11_INPUT_ELEMENT_DESC* layout, UINT layoutCount)
 	{
 		ID3D11VertexShader* VertexShader = nullptr;
 		ID3D11InputLayout* InputLayout = nullptr;
@@ -50,9 +50,10 @@ public:
 		Device->CreateVertexShader(vertexshaderCSO->GetBufferPointer(),
 			vertexshaderCSO->GetBufferSize(), nullptr,
 			&VertexShader);
-		Device->CreateInputLayout(
-			layout, layoutCount, vertexshaderCSO->GetBufferPointer(),
-			vertexshaderCSO->GetBufferSize(), &InputLayout);
+		if (layout != nullptr)
+			Device->CreateInputLayout(
+				layout, layoutCount, vertexshaderCSO->GetBufferPointer(),
+				vertexshaderCSO->GetBufferSize(), &InputLayout);
 
 		ID3D11PixelShader* PixelShader = nullptr;
 		ID3DBlob* pixelshaderCSO = nullptr;
