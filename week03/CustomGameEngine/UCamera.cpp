@@ -3,6 +3,8 @@
 
 #include "TimerManager.h"
 
+#include "Math/MathHelper.h"
+
 UCamera::~UCamera() {}
 
 void UCamera::SetPosition(const FVector& _input) {
@@ -66,10 +68,7 @@ void UCamera::Rotate(float DeltaTime)
 {
 	Yaw += (InputManager::GetInstance().MouseDelta.x * RotateSensitivity * DeltaTime);
 	Pitch += (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
-
-	const float Limit = 89.9f;
-	if (Pitch > Limit) Pitch = Limit;
-	if (Pitch < -Limit) Pitch = -Limit;
+	Pitch = MathHelper::Clamp(Pitch, -89.9f, 89.9f);
 
 	IsChanged = true;
 }
@@ -77,7 +76,7 @@ void UCamera::Rotate(float DeltaTime)
 void UCamera::OrbitRotate(float DeltaTime)
 {
 	Yaw -= (InputManager::GetInstance().MouseDelta.x * RotateSensitivity * DeltaTime);
-	Pitch -= (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
+	Pitch += (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
 
 	const float Limit = 89.9f;
 	if (Pitch > Limit) Pitch = Limit;
@@ -136,22 +135,19 @@ void UCamera::SetOrthogonal(bool input)
 //}
 
 void UCamera::update() {
-	//if (!IsChanged) return;
+	FMatrix RotMatrix = FMatrix::RotationXMatrix(Roll) *
+		FMatrix::RotationYMatrix(Pitch) *
+		FMatrix::RotationZMatrix(Yaw);
 
-	float p = FMatrix::DegToRad(-Pitch);
-	float y = FMatrix::DegToRad(Yaw);
+	FVector ForwardBase = FVector::Forward();
+	Direction = RotMatrix.TransformVector(ForwardBase).Normalize();
 
-	Direction.x = std::cos(p) * std::sin(y);
-	Direction.y = std::sin(p);
-	Direction.z = std::cos(p) * std::cos(y);
-
-	Direction = Direction.Normalize();
-	SideDirection = Direction.Cross(UpVec);
+	SideDirection = Direction.Cross(FVector::Up());
 	UpDirection = SideDirection.Cross(Direction);
 
 	FocusPoint = Position + Direction * FocusLength;
 
-	CalcViewMatrix();
+	View = FMatrix::ViewMatrix(Position, FocusPoint, UpDirection);
 	CalcProjectionMatrix();
 	ViewProjection = View * Projection;
 
@@ -161,9 +157,9 @@ void UCamera::update() {
 void UCamera::CalcViewMatrix()
 {
 	FMatrix InvT;
-	InvT[3][0] = -Position.x;
-	InvT[3][1] = -Position.y;
-	InvT[3][2] = -Position.z;
+	InvT[3][2] = -Position.x;
+	InvT[3][0] = -Position.y;
+	InvT[3][1] = -Position.z;
 
 	FMatrix InvR = FMatrix::RotationZMatrix(-Roll) *
 		FMatrix::RotationYMatrix(-Yaw) *
@@ -204,8 +200,8 @@ void UCamera::CalcPerspectiveProjectionMatrix()
 	FMatrix M = FMatrix::ZeroMatrix();
 
 	float rad = FMatrix::DegToRad(FOV);
-	float h = 1.0f / std::tan(rad * 0.5f);
-	float w = h / AspectRatio;
+	float w = 1.0f / std::tan(rad * 0.5f);
+	float h = w * AspectRatio;
 
 	float q = FarPlane / (FarPlane - NearPlane);
 	float b = (-NearPlane * FarPlane) / (FarPlane - NearPlane);

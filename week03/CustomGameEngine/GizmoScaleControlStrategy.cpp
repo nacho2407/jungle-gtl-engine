@@ -114,9 +114,9 @@ void GizmoScaleControlStrategy::UpdateDrag(const Ray& ray)
 
 	FVector newScale = InitialObjectScale;
 
-	if (Controller->GetHoverAxis() == GizmoControllerAxis::X) newScale.z += deltaT;
-	else if (Controller->GetHoverAxis() == GizmoControllerAxis::Y) newScale.x += deltaT;
-	else if (Controller->GetHoverAxis() == GizmoControllerAxis::Z) newScale.y += deltaT;
+	if (Controller->GetHoverAxis() == GizmoControllerAxis::X) newScale.x += deltaT;
+	else if (Controller->GetHoverAxis() == GizmoControllerAxis::Y) newScale.y += deltaT;
+	else if (Controller->GetHoverAxis() == GizmoControllerAxis::Z) newScale.z += deltaT;
 
 	Controller->GetAttachedComponent()->SetRelativeScale3D(newScale);
 }

@@ -144,7 +144,7 @@ void EngineApp::Run()
 
 	UAxisComp* mainAxis = GetWorld().AddSceneComponent<UAxisComp>();
 
-	Camera->SetPosition(FVector(0, 0, -10.f));
+	Camera->SetPosition(FVector(-10, 0, 0));
 	//-----TEST
 
 	Timer* globalTimer = TimerManager::GetInstance().GetGlobalTimer();
