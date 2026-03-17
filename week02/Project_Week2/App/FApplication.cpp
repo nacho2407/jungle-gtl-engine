@@ -1518,27 +1518,6 @@ void FApplication::RenderDebugUI()
 
 }
 
-// (*) 이거 UWorld로 옮기는 게 맞지
-AActor* FApplication::SpawnMeshActor(UStaticMesh* Mesh, const FVector& Location)
-{
-    if (!World || !Mesh)
-    {
-        return nullptr;
-    }
-
-    AActor* Actor = NewObject<AActor>();
-    UStaticMeshComponent* MeshComp = NewObject<UStaticMeshComponent>();
-
-    MeshComp->SetStaticMesh(Mesh);
-    MeshComp->SetRelativeLocation(Location);
-
-    Actor->AddComponent(MeshComp);
-    Actor->SetRootComponent(MeshComp);
-
-    World->AddActor(Actor);
-    return Actor;
-}
-
 void FApplication::SpawnSelectedMeshActor()
 {
     UStaticMesh* MeshToSpawn = nullptr;

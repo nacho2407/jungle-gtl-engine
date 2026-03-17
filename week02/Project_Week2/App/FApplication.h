@@ -6,6 +6,7 @@
 #include "Actor/ACamera.h"
 #include "Actor/AGridActor.h"
 #include "Actor/AAxisActor.h"
+#include "World/ESpawnMeshType.h"
 
 class UWorld;
 class URenderer;
@@ -30,13 +31,6 @@ enum class EPointerPulsePhase
     Growing,
     Holding,
     Shrinking
-};
-
-enum class ESpawnMeshType
-{
-    Sphere = 0,
-    Cube,
-    Torus
 };
 
 struct FPointerPulse
@@ -139,7 +133,6 @@ private:
     void UpdateObjectAllocationTest();
     void RenderDebugUI();
 
-    AActor* SpawnMeshActor(UStaticMesh* Mesh, const FVector& Location);
 	// 패널 렌더링
     void RenderEditorUI();
 
@@ -155,26 +148,11 @@ private:
     UWorld* World;
     FScene* Scene;
 
-    //AActor* CameraActor = nullptr;
-    //UCameraComponent* MainCamera;
-    // @@@ 액터의 mesh 별로 이렇게 하나씩 다 선언하는 게 맞음?? 하나로 편하게 관리 못하나?
-    // 지금 Spawn이 아니라 미리 만들어놓아야 해서 이렇게 한건가?
-    UStaticMesh* CubeMesh; 
-    UStaticMesh* SphereMesh;
-    //UStaticMesh* TriangleMesh;
     UStaticMesh* TorusMesh;
     UStaticMesh* AxesMesh;
     UStaticMesh* GizmoArrowMesh = nullptr;
 
-    //AActor* GizmoActor = nullptr;
-    //UStaticMeshComponent* GizmoXComp = nullptr;
-    //UStaticMeshComponent* GizmoYComp = nullptr;
-    //UStaticMeshComponent* GizmoZComp = nullptr;
-    //UStaticMeshComponent* GizmoMeshComp = nullptr;
-    //AGizmoActor* GizmoActor = nullptr;
     AActor* SelectedActor = nullptr;
-
-    //AActor* WorldAxesActor;
 
     bool bIsRunning;
 
@@ -191,7 +169,6 @@ private:
     UStaticMeshComponent* ClickCircleComp = nullptr;
 
     UStaticMesh* GridMesh = nullptr;
-    //AActor* GridActor = nullptr;
 
     FPointerPulse PointerPulse;
 

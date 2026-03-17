@@ -1,5 +1,9 @@
 #include "World/UWorld.h"
 
+#include "Actor/ASphere.h"
+#include "Actor/ACube.h"
+#include "Actor/ATorus.h"
+#include "Actor/ATriangle.h"
 
 UWorld::UWorld() : bHasBegunPlay(false)
 {
@@ -34,14 +38,50 @@ void UWorld::RemoveActor(AActor* InActor)
     int targetIndex = 0;
     for (targetIndex = 0; targetIndex < Actors.size(); targetIndex++)
     {
-        Actors[targetIndex] == InActor;
-        break;
+        if (Actors[targetIndex] == InActor)
+        {
+            break;
+        }
     }
 
     auto target = Actors[targetIndex];
     Actors[targetIndex] = Actors.back();
     Actors.pop_back();
     Destroy(target);
+}
+
+void UWorld::SpawnMeshActor(
+    ESpawnMeshType Type,
+    const FVector& Location = { 0.f, 0.f, 0.f },
+    const FVector& Rotation = { 0.f, 0.f, 0.f },
+    const FVector& Scale = { 1.f, 1.f, 1.f }
+)
+{
+    AActor* Actor = nullptr;
+
+    switch (Type)
+    {
+    case ESpawnMeshType::Sphere:
+        Actor = NewObject<ASphere>();
+        break;
+    case ESpawnMeshType::Cube:
+        Actor = NewObject<ACube>();
+        break;
+    case ESpawnMeshType::Torus:
+        Actor = NewObject<ATorus>();
+        break;
+    case ESpawnMeshType::Triangle:
+        Actor = NewObject<ATriangle>();
+        break;
+    default:
+        return;
+    }
+
+    Actor->GetRootComponent()->SetRelativeLocation(Location);
+    Actor->GetRootComponent()->SetRelativeRotation(Rotation);
+    Actor->GetRootComponent()->SetRelativeScale(Scale);
+
+    AddActor(Actor);
 }
 
 void UWorld::BeginPlay()
