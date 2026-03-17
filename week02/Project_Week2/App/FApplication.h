@@ -10,6 +10,8 @@
 #include "Actor/AAxisActor.h"
 #include "Component/EGizmoMode.h"
 
+#include "Math/FQuat.h"
+
 class UWorld;
 class URenderer;
 class UCameraComponent;
@@ -225,4 +227,6 @@ private:
     EGizmoMode DragStartGizmoMode = EGizmoMode::Translate;
     FVector DragStartActorRotation = FVector::ZeroVector;
     FVector DragStartVectorOnPlane = FVector::ZeroVector;
+
+    FQuat DragStartActorQuat = FQuat::Identity();
 };

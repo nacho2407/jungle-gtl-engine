@@ -3,6 +3,7 @@
 #include "Component/UActorComponent.h"
 #include "Math/FVector.h"
 #include "Math/FMatrix.h"
+#include "Math/FQuat.h"
 
 // @@@@ 현재 USceneComponent에 Attachment 하는 게 없는거 아님??
 class USceneComponent : public UActorComponent
@@ -21,8 +22,13 @@ public:
     void SetRelativeLocation(const FVector& InLocation);
     const FVector& GetRelativeLocation() const;
 
-    void SetRelativeRotation(const FVector& InRotation);
+    // UI/기존 코드 호환용
+    void SetRelativeRotation(const FVector& InRotationEuler);
     const FVector& GetRelativeRotation() const;
+
+    // 실제 회전용
+    void SetRelativeRotationQuat(const FQuat& InQuat);
+    const FQuat& GetRelativeRotationQuat() const;
 
     void SetRelativeScale(const FVector& InScale);
     const FVector& GetRelativeScale() const;
@@ -35,7 +41,8 @@ protected:
 
 protected:
     FVector RelativeLocation;
-    FVector RelativeRotation;
+    FVector RelativeRotationEuler;
+    FQuat RelativeRotationQuat;
     FVector RelativeScale;
 
     mutable bool bWorldTransformDirty;

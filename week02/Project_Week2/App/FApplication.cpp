@@ -43,6 +43,7 @@
 #include "Panels/FControlPanel.h"
 #include "Panels/FConsolePanel.h"
 
+
 namespace
 {
     FVector4 LightenColor(const FVector4& C, float T)
@@ -1072,6 +1073,7 @@ void FApplication::BeginGizmoDrag(EGizmoAxis Axis, int MouseX, int MouseY)
     DragAxisDirection = AxisDir;
     DragStartActorLocation = Root->GetRelativeLocation();
     DragStartActorRotation = Root->GetRelativeRotation();
+    DragStartActorQuat = Root->GetRelativeRotationQuat();
 
     if (CurrentGizmoMode == EGizmoMode::Rotate)
     {
@@ -1160,55 +1162,19 @@ void FApplication::UpdateGizmoDrag(int MouseX, int MouseY)
 
         CurrentVec.Normalize();
 
-        // 드래그 시작 시점 벡터 -> 현재 벡터까지의 월드 축 기준 부호 있는 각도
-        // SignedAngleAroundAxis는 오른손 법칙(반시계) 양수이지만
-        // MakeRotationX/Y/Z는 행벡터 시스템에서 시계 방향이 양수이므로 부호 반전
-        const float DeltaAngle = -SignedAngleAroundAxis(
+        const float DeltaAngle = SignedAngleAroundAxis(
             DragStartVectorOnPlane,
             CurrentVec,
             DragAxisDirection);
 
-        const FMatrix StartRot = FMatrix::MakeRotationXYZ(DragStartActorRotation);
+        const FQuat DeltaQuat = FQuat::FromAxisAngle(DragAxisDirection, DeltaAngle);
 
-        FMatrix DeltaRot = FMatrix::MakeIdentity();
-        switch (ActiveGizmoAxis)
-        {
-        case EGizmoAxis::X: DeltaRot = FMatrix::MakeRotationX(DeltaAngle); break;
-        case EGizmoAxis::Y: DeltaRot = FMatrix::MakeRotationY(DeltaAngle); break;
-        case EGizmoAxis::Z: DeltaRot = FMatrix::MakeRotationZ(DeltaAngle); break;
-        default: return;
-        }
+        // 월드 축 기준으로 누적하고 싶으면 Delta * Start
+        // 로컬 축 기준으로 누적하고 싶으면 Start * Delta
+        FQuat NewQuat = DeltaQuat * DragStartActorQuat;
+        NewQuat.Normalize();
 
-        // 행벡터 시스템에서 월드 축 기준 회전: DeltaRot * StartRot
-        const FMatrix NewRotMat = StartRot * DeltaRot;
-
-        // R = RX * RY * RZ (행벡터, v*M 방식) Euler 역추출
-        // 전개 결과:
-        //   M[0][2] =  sinY
-        //   M[1][2] = -sinX * cosY
-        //   M[2][2] =  cosX * cosY
-        //   M[0][1] = -sinZ * cosY
-        //   M[0][0] =  cosZ * cosY
-        const float SinY = NewRotMat.M[0][2];
-        const float NewYaw = std::asin(std::clamp(SinY, -1.0f, 1.0f));
-
-        float NewPitch = 0.0f;
-        float NewRoll = 0.0f;
-
-        const float CosY = std::cos(NewYaw);
-        if (std::fabs(CosY) > 0.0001f)
-        {
-            NewPitch = std::atan2(-NewRotMat.M[1][2], NewRotMat.M[2][2]);
-            NewRoll = std::atan2(-NewRotMat.M[0][1], NewRotMat.M[0][0]);
-        }
-        else
-        {
-            // 짐벌락: Y축이 +-90도일 때
-            NewPitch = std::atan2(NewRotMat.M[2][1], NewRotMat.M[1][1]);
-            NewRoll = 0.0f;
-        }
-
-        Root->SetRelativeRotation(FVector(NewPitch, NewYaw, NewRoll));
+        Root->SetRelativeRotationQuat(NewQuat);
 
         if (GizmoActor)
         {
@@ -1260,22 +1226,14 @@ void FApplication::AddSelectionOutlineRenderItem()
         return;
     }
 
-    const FVector BaseScale = MeshComp->GetRelativeScale();
-    const FVector OutlineScale(
-        BaseScale.X * 1.02f,
-        BaseScale.Y * 1.02f,
-        BaseScale.Z * 1.02f);
-
-    const FMatrix Scale = FMatrix::MakeScale(OutlineScale);
-    const FMatrix Rotation = FMatrix::MakeRotationXYZ(MeshComp->GetRelativeRotation());
-    const FMatrix Translation = FMatrix::MakeTranslation(MeshComp->GetRelativeLocation());
+    const FMatrix BaseWorld = MeshComp->GetWorldTransformMatrix();
+    const FMatrix OutlineScale = FMatrix::MakeScale(FVector(1.02f, 1.02f, 1.02f));
 
     FRenderItem OutlineItem;
     OutlineItem.Mesh = MeshComp->GetStaticMesh();
-    OutlineItem.WorldMatrix = Scale * Rotation * Translation;
+    OutlineItem.WorldMatrix = OutlineScale * BaseWorld;
     OutlineItem.Color = FVector4(0.953f, 0.596f, 0.184f, 1.0f);
 
-    // backface 확장 outline 핵심
     OutlineItem.CullMode = ERenderCullMode::Front;
     OutlineItem.bDepthEnable = true;
     OutlineItem.bUseVertexColor = false;
