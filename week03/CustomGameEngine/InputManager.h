@@ -1,8 +1,8 @@
 ﻿#pragma once
 
-#include <Windows.h>
 #include "Singleton.h"
 #include "Vector.h"
+#include <Windows.h>
 
 class InputManager : public ISingleton<InputManager>
 {

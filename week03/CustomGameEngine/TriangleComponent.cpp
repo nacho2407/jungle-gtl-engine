@@ -1,5 +1,4 @@
 ﻿#include "TriangleComponent.h"
-#include "Renderer.h"
 #include "ResourceManager.h"
 
 UTriangleComp::UTriangleComp()

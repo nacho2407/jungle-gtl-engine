@@ -1,11 +1,8 @@
 ﻿#pragma once
 
-#include <algorithm>
-
-#include "Vector.h"
-#include "Quaternion.h"
-#include "Matrix.h"
 #include "Object.h"
+#include "Matrix.h"
+#include "Vector.h"
 
 enum class EProjectionType
 {

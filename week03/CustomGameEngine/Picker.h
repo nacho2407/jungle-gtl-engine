@@ -1,9 +1,8 @@
 ﻿#pragma once
 
+#include "EngineTypes.h"
 #include "Object.h"
 #include "Vector.h"
-#include "Gizmo.h"
-#include "EngineTypes.h"
 
 class UCamera;
 class UScene;

@@ -1,7 +1,7 @@
 ﻿#pragma once
-#include "Object.h"
-#include "d3d11.h"
+
 #include "Matrix.h"
+#include <d3d11.h>
 
 class FMaterial;
 class FGeometry;

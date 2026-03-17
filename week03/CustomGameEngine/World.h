@@ -1,9 +1,9 @@
 ﻿#pragma once
 
-#include "Scene.h"
 #include "Singleton.h"
-#include "Renderer.h"
 #include "Logger.h"		// TEST
+#include "Renderer.h"
+#include "Scene.h"
 
 class UWorld : public UObject, public ISingleton<UWorld>
 {

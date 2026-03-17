@@ -1,7 +1,7 @@
 ﻿#include "EditorPropertyPanel.h"
 #include "ImGui/imgui.h"
-#include "SceneComponent.h"
 #include "PrimitiveComponent.h"	
+#include "SceneComponent.h"
 
 EditorPropertyPanel::EditorPropertyPanel()
 {

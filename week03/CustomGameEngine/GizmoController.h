@@ -1,8 +1,9 @@
 ﻿#pragma once
+
 #include "EngineTypes.h"
+#include "GizmoControlStrategy.h"
 #include "Matrix.h"
 #include "Picker.h"
-#include "GizmoControlStrategy.h"
 
 enum class GizmoControllerAxis
 {

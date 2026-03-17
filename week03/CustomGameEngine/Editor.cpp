@@ -1,17 +1,15 @@
 ﻿#include "Editor.h"
-#include "ImGui/imgui.h"
-#include "ImGui/imgui_impl_dx11.h"
-#include "ImGui/imgui_impl_win32.h"
-#include "SceneComponent.h"
 #include "EditorConsole.h"
 #include "EditorControlPanel.h"
 #include "EditorPropertyPanel.h"
 #include "EditorStatPanel.h"
 #include "EditorToolbar.h"
-#include "Camera.h"
 #include "Gizmo.h"
 #include "GizmoController.h"
-#include "Renderer.h"
+#include "SceneComponent.h"
+#include "ImGui/imgui.h"
+#include "ImGui/imgui_impl_dx11.h"
+#include "ImGui/imgui_impl_win32.h"
 
 Editor::Editor()
 {

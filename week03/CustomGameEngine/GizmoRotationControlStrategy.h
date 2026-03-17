@@ -1,4 +1,5 @@
 ﻿#pragma once
+
 #include "GizmoControlStrategy.h"
 #include "Vector.h"
 #include "Quaternion.h"

@@ -1,7 +1,8 @@
 ﻿#pragma once
-#include <string>
+
 #include "EngineTypes.h"
 #include "SceneComponent.h"
+#include <string>
 
 class UPrimitiveComponent;
 class URenderer;

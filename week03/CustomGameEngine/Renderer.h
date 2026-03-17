@@ -1,18 +1,10 @@
 ﻿#pragma once
 
-#include <d3d11.h>
-#include <d3dcompiler.h>
-#include "VertexSimple.h"
-#include "Matrix.h"
-#include "Vector.h"
-#include <vector>
-#include <memory>
-#include <string>
-#include <unordered_map>
-#include "RenderObject.h"
-#include "EngineTypes.h"
 #include "ConstantBuffer.h"
 #include "Level.h"
+#include "Matrix.h"
+#include "VertexSimple.h"
+#include <d3d11.h>
 
 
 class URenderer {

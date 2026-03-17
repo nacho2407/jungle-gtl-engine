@@ -1,4 +1,5 @@
 ﻿#pragma once
+
 #include "EngineTypes.h"
 #include <functional>
 

@@ -1,12 +1,13 @@
 ﻿#include "Picker.h"
 #include "Camera.h"
-#include "Math/Vector4.h"
+#include "Editor.h"
+#include "Geometry.h"
+#include "Gizmo.h"
+#include "GizmoController.h"
 #include "PrimitiveComponent.h"
 #include "Scene.h"
-#include "ResourceManager.h"
+#include "Math/Vector4.h"
 #include "Logger.h"
-#include "Editor.h"
-#include "GizmoController.h"
 
 UPicker::UPicker()
 {

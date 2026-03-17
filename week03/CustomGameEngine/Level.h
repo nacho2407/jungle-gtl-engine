@@ -1,6 +1,8 @@
 ﻿#pragma once
-#include "RenderObject.h"
+
 #include "Singleton.h"
+#include "RenderObject.h"
+#include "EngineTypes.h"
 
 class FLevel : public ISingleton<FLevel>
 {

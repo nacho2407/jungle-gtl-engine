@@ -1,14 +1,11 @@
 ﻿#pragma once
+
 #include "Singleton.h"
-#include "Geometry.h"
-#include "Matrix.h"
 
 struct Ray;
-class URenderer;
-class RenderObject;
-class USceneComponent;
 class GizmoController;
 class UCamera;
+
 enum class TransformationType
 {
 	Location,
