@@ -3,12 +3,11 @@
 #include <windows.h>
 #include "FRay.h"
 #include "Structs.h"
-//#include "Component/EGizmoAxis.h"
-//#include "UObject.h"
 #include "Actor/ACamera.h"
 #include "Actor/AGridActor.h"
 #include "Actor/AAxisActor.h"
 #include "Component/EGizmoMode.h"
+#include "World/ESpawnMeshType.h"
 
 #include "Math/FQuat.h"
 
@@ -35,13 +34,6 @@ enum class EPointerPulsePhase
     Growing,
     Holding,
     Shrinking
-};
-
-enum class ESpawnMeshType
-{
-    Sphere = 0,
-    Cube,
-    Torus
 };
 
 struct FPointerPulse
@@ -91,6 +83,13 @@ public:
     ESpawnMeshType SelectedSpawnMeshType = ESpawnMeshType::Sphere;
     void SpawnSelectedMeshActor();
 
+    // Scene save / load 관련 함수들
+    const FString& GetSceneFileNameInput() const;
+    void SetSceneFileNameInput(const FString& InSceneFileName);
+    
+    void NewScene();
+    bool SaveScene();
+    bool LoadScene();
 
 private:
     bool InitializeEngine();
@@ -130,11 +129,13 @@ private:
     bool ComputePointerPulseWorldPosition(int MouseX, int MouseY, float Distance, FVector& OutWorldPos) const;
     void RefreshPointerPulseTransform();
 
+    // ClickCircle 생성해서 월드에 추가하는 함수인데, 이 기능 자체를 빼는 걸 고려중
+    void CreatePointerPulseActor();
+
     // 상혁 테스트
     void UpdateObjectAllocationTest();
     void RenderDebugUI();
 
-    AActor* SpawnMeshActor(UStaticMesh* Mesh, const FVector& Location);
 	// 패널 렌더링
     void RenderEditorUI();
 
@@ -148,19 +149,18 @@ private:
         const FVector& Axis) const;
     
 
+
+    // Scene save / load 파일 경로 생성 관련 함수
+    FString BuildSceneFilePath() const;
+    
+
 private:
     FWindowsApplication* WindowApp;
     URenderer* Renderer;
     UWorld* World;
     FScene* Scene;
 
-    //AActor* CameraActor = nullptr;
-    //UCameraComponent* MainCamera;
-    // @@@ 액터의 mesh 별로 이렇게 하나씩 다 선언하는 게 맞음?? 하나로 편하게 관리 못하나?
-    // 지금 Spawn이 아니라 미리 만들어놓아야 해서 이렇게 한건가?
-    UStaticMesh* CubeMesh; 
-    UStaticMesh* SphereMesh;
-    //UStaticMesh* TriangleMesh;
+    UStaticMesh* CubeMesh;
     UStaticMesh* TorusMesh;
     UStaticMesh* AxesMesh;
     UStaticMesh* GizmoArrowMesh = nullptr;
@@ -191,7 +191,6 @@ private:
     UStaticMeshComponent* ClickCircleComp = nullptr;
 
     UStaticMesh* GridMesh = nullptr;
-    //AActor* GridActor = nullptr;
 
     FPointerPulse PointerPulse;
 
@@ -215,6 +214,9 @@ private:
 
     int PrevMouseX = 0;
     int PrevMouseY = 0;
+    
+    // Scene save / load에 사용할 파일 이름(확장자 제외)
+    FString SceneFileNameInput = "Default";
 
     ACamera* Camera;
     AAxisActor* WorldAxisActor;

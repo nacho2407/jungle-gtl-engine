@@ -221,6 +221,9 @@ void AGizmoActor::Initialize(UStaticMesh* ArrowMesh, UStaticMesh* InScaleMesh, U
 
     //SetRootComponent(XAxisComp);
     SetRootComponent(PivotComp);
+
+    // 초기 모드가 기본값과 같더라도 기즈모 메시/회전/스케일이 한 번은 세팅되어야 함
+    ApplyModeVisual();
 }
 
 void AGizmoActor::SetTargetActor(AActor* InTarget)

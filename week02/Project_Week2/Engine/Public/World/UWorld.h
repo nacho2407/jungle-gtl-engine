@@ -13,8 +13,8 @@
 #include "World/FScene.h"
 #include "Actor/AGizmoActor.h"
 #include "Actor/AGridActor.h"
-
-
+#include "Actor/APrimitiveActor.h"
+#include "World/ESpawnMeshType.h"
 
 class UWorld : public UObject
 {
@@ -27,21 +27,23 @@ public:
     void Clear();
     void AddActor(AActor* InActor);
     void RemoveActor(AActor* InActor);
+    void Destroy(AActor* InActor);
+
+    AActor* SpawnMeshActor(
+        ESpawnMeshType Type, 
+        const FVector& Location = { 0.f, 0.f, 0.f },
+        const FVector& Rotation = { 0.f, 0.f, 0.f },
+        const FVector& Scale = { 1.f, 1.f, 1.f }
+    );
 
     void BeginPlay();
     void Tick(float DeltaTime);
 
     void BuildScene(FScene& OutScene) const;
 
-    //ACamera* GetCameraActor();
-    //AActor* GetWorldAxisActor();
-    //AActor* GetGridActor();
-    //AActor* GetGizmoActor();
-
-      
-
     const TArray<AActor*>& GetActors() const;
 public:
+    TArray<AActor*> EditorOnly;
     TArray<AActor*> Actors;
     bool bHasBegunPlay;
 };

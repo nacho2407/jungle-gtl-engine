@@ -15,7 +15,7 @@
 private:                                                           \
     inline static UClassData* StaticClass = nullptr;               \
 public:                                                            \
-    static UClassData* GetClass()                                  \
+    static UClassData* GetStaticClass()                            \
     {                                                              \
         if (StaticClass != nullptr)                                \
             return StaticClass;                                    \
@@ -28,6 +28,11 @@ public:                                                            \
         return StaticClass;                                        \
 	}															   \
 																   \
+	virtual UClassData* GetClass() const		                   \
+    {                                                              \
+        return CurrentType::GetStaticClass();                      \
+    }															   \
+																   \
 	void Initialize(const FUObjectInitializer& ObjectInitilizer)   \
 	{															   \
 		UUID = ObjectInitilizer.UUID;							   \
@@ -38,7 +43,7 @@ public:                                                            \
 private:                                                           \
     inline static UClassData* StaticClass = nullptr;               \
 public:                                                            \
-    static UClassData* GetClass()                                  \
+    static UClassData* GetStaticClass()                            \
     {                                                              \
         if (StaticClass != nullptr)                                \
             return StaticClass;                                    \
@@ -46,9 +51,14 @@ public:                                                            \
         UClassData* ClassData = new UClassData();                  \
         ClassData->ClassName = #CurrentType;                       \
         ClassData->ClassSize = sizeof(CurrentType);                \
-        ClassData->SuperClass = SuperType::GetClass();             \
+        ClassData->SuperClass = SuperType::GetStaticClass();       \
         StaticClass = ClassData;                                   \
         return StaticClass;                                        \
+    }															   \
+																   \
+	virtual UClassData* GetClass() const override                  \
+    {                                                              \
+        return CurrentType::GetStaticClass();                      \
     }															   \
 																   \
 	void Initialize(const FUObjectInitializer& ObjectInitilizer)   \
