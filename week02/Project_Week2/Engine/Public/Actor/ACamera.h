@@ -6,13 +6,13 @@ class UCameraComponent;
 
 class ACamera : public AActor
 {
+DECLARE_ROOT_UClass(AActor)
+
 public:
+
     ACamera();
     ACamera(const FUObjectInitializer& ObjectInitializer);
     virtual ~ACamera() override;
-
-public:
-    virtual const char* GetObjClassName() const override;
 
 public:
     UCameraComponent* GetCameraComponent() const;

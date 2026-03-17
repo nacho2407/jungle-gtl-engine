@@ -6,7 +6,10 @@
 class UPrimitiveComponent : public USceneComponent
 {
 public:
+    DECLARE_ROOT_UClass(UPrimitiveComponent)
+
     UPrimitiveComponent();
+    UPrimitiveComponent(const FUObjectInitializer& ObjectInitializer);
     virtual ~UPrimitiveComponent();
 
 public:

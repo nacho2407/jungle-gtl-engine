@@ -1,7 +1,16 @@
 #include "Component/UPrimitiveComponent.h"
 
-UPrimitiveComponent::UPrimitiveComponent() 
-	: bVisible(true) {}
+UPrimitiveComponent::UPrimitiveComponent()
+	: USceneComponent()
+	, bVisible(true)
+{
+}
+
+UPrimitiveComponent::UPrimitiveComponent(const FUObjectInitializer& ObjectInitializer)
+	: USceneComponent(ObjectInitializer)
+	, bVisible(true)
+{
+}
 
 UPrimitiveComponent::~UPrimitiveComponent() {}
 

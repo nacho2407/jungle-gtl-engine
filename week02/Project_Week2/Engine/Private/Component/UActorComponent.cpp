@@ -2,7 +2,17 @@
 #include "Actor/AActor.h"
 
 UActorComponent::UActorComponent()
-	: Owner(nullptr)
+	: UObject()
+	, Owner(nullptr)
+	, bCanEverTick(true)
+	, bIsActivate(true)
+	, bHasBegunPlay(false)
+{
+}
+
+UActorComponent::UActorComponent(const FUObjectInitializer& ObjectInitializer)
+	: UObject(ObjectInitializer)
+	, Owner(nullptr)
 	, bCanEverTick(true)
 	, bIsActivate(true)
 	, bHasBegunPlay(false)
@@ -15,9 +25,10 @@ void UActorComponent::BeginPlay()
 {
 	bHasBegunPlay = true;
 }
-void UActorComponent::TickComponent(float DeltaTime) // @@@ À½..¿ÖÀÖ´Â°ÅÀÓ
+
+void UActorComponent::TickComponent(float DeltaTime) // @@@ ï¿½ï¿½..ï¿½ï¿½ï¿½Ö´Â°ï¿½ï¿½ï¿½
 {
-	// TickÀÌ ºñÈ°¼ºÈ­µÇ¾î ÀÖ°Å³ª, ÄÄÆ÷³ÍÆ®°¡ ºñÈ°¼º »óÅÂ¸é ½ÇÇà ¾È ÇÔ
+	// Tickï¿½ï¿½ ï¿½ï¿½È°ï¿½ï¿½È­ï¿½Ç¾ï¿½ ï¿½Ö°Å³ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½È°ï¿½ï¿½ ï¿½ï¿½ï¿½Â¸ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½
 	if (!bCanEverTick || !bIsActivate)
 	{
 		return;
@@ -28,7 +39,7 @@ void UActorComponent::Activate()
 {
 	bIsActivate = true;
 
-	// °ÔÀÓÀÌ ÀÌ¹Ì ½ÃÀÛµÇ¾ú´Âµ¥ ¾ÆÁ÷ BeginPlay°¡ È£ÃâµÇÁö ¾Ê¾Ò´Ù¸é È£Ãâ
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ì¹ï¿½ ï¿½ï¿½ï¿½ÛµÇ¾ï¿½ï¿½Âµï¿½ ï¿½ï¿½ï¿½ï¿½ BeginPlayï¿½ï¿½ È£ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¾Ò´Ù¸ï¿½ È£ï¿½ï¿½
 	if (!bHasBegunPlay)
 	{
 		BeginPlay();
@@ -44,6 +55,7 @@ void UActorComponent::SetOwner(AActor* InOwner)
 {
 	Owner = InOwner;
 }
+
 AActor* UActorComponent::GetOwner() const
 {
 	return Owner;

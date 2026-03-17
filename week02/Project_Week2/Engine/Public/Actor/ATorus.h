@@ -7,11 +7,11 @@ class UStaticMeshComponent;
 
 class ATorus : public APrimitiveActor
 {
+DECLARE_ROOT_UClass(ATorus)
+
 public:
-    DECLARE_ROOT_UClass(ATorus)
 
     ATorus();
-    ATorus(const FUObjectInitializer& ObjectInitializer);
     virtual ~ATorus() override;
 
 public:

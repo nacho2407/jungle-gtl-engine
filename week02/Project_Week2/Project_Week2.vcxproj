@@ -156,6 +156,7 @@
     <ClInclude Include="Engine\Public\Actor\ACube.h" />
     <ClInclude Include="Engine\Public\Actor\APrimitiveActor.h" />
     <ClInclude Include="Engine\Public\Actor\ASphere.h" />
+    <ClInclude Include="Engine\Public\Actor\ATorus.h" />
     <ClInclude Include="Engine\Public\Actor\ATriangle.h" />
     <ClInclude Include="Engine\Public\Component\EGizmoAxis.h" />
     <ClInclude Include="Engine\Public\Component\UActorComponent.h" />
@@ -221,6 +222,7 @@
     <ClCompile Include="Engine\Private\Actor\ACube.cpp" />
     <ClCompile Include="Engine\Private\Actor\APrimitiveActor.cpp" />
     <ClCompile Include="Engine\Private\Actor\ASphere.cpp" />
+    <ClCompile Include="Engine\Private\Actor\ATorus.cpp" />
     <ClCompile Include="Engine\Private\Actor\ATriangle.cpp" />
     <ClCompile Include="Engine\Private\Component\UActorComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\UCameraComponent.cpp" />

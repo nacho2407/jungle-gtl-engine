@@ -6,13 +6,11 @@ class UPrimitiveComponent;
 
 class APrimitiveActor : public AActor
 {
-public:
-    APrimitiveActor();
-    APrimitiveActor(const FUObjectInitializer& ObjectInitializer);
-    virtual ~APrimitiveActor() override;
+DECLARE_ROOT_UClass(APrimitiveActor)
 
 public:
-    virtual const char* GetObjClassName() const override;
+    APrimitiveActor();
+    virtual ~APrimitiveActor() override;
 
 public:
     UPrimitiveComponent* GetPrimitiveComponent() const;

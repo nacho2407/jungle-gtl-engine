@@ -1,7 +1,14 @@
 #include "Component/UStaticMeshComponent.h"
 
 UStaticMeshComponent::UStaticMeshComponent()
-    : StaticMesh(nullptr)
+    : UPrimitiveComponent()
+    , StaticMesh(nullptr)
+{
+}
+
+UStaticMeshComponent::UStaticMeshComponent(const FUObjectInitializer& ObjectInitializer)
+    : UPrimitiveComponent(ObjectInitializer)
+    , StaticMesh(nullptr)
 {
 }
 
@@ -17,11 +24,6 @@ void UStaticMeshComponent::BeginPlay()
 void UStaticMeshComponent::TickComponent(float DeltaTime)
 {
     UPrimitiveComponent::TickComponent(DeltaTime);
-}
-
-const char* UStaticMeshComponent::GetObjClassName() const
-{
-    return "UStaticMeshComponent";
 }
 
 void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InMesh)

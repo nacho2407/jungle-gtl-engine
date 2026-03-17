@@ -8,7 +8,10 @@
 class USceneComponent : public UActorComponent
 {
 public:
+    DECLARE_ROOT_UClass(USceneComponent)
+
     USceneComponent();
+    USceneComponent(const FUObjectInitializer& ObjectInitializer);
     virtual ~USceneComponent();
 
 public:

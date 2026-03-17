@@ -10,6 +10,7 @@ class UCameraComponent;
 
 class AGizmoActor : public AActor 
 {
+DECLARE_ROOT_UClass(AGizmoActor)
 public:
     AGizmoActor();
     virtual ~AGizmoActor() override; // 왜 가상함수로 했을까

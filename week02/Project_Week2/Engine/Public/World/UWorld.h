@@ -1,7 +1,7 @@
 #pragma once
+
 #include <vector>
 #include "UObject.h"
-
 
 class AActor;
 class UActorComponent;
@@ -26,6 +26,6 @@ public:
     const TArray<AActor*>& GetActors() const;
 
 private:
-    TArray<AActor*> Actors;
+    TArray<AActor*> Actors; // 실제 Actor와 에디터용 객체(기즈모, 월드 축, 카메라 등) 저장하는 리스트 분리 예정
     bool bHasBegunPlay;
 };

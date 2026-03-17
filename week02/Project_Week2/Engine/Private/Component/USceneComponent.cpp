@@ -2,7 +2,18 @@
 #include "Math/FMatrix.h"
 
 USceneComponent::USceneComponent()
-    : RelativeLocation(FVector::ZeroVector)
+    : UActorComponent()
+    , RelativeLocation(FVector::ZeroVector)
+    , RelativeRotation(FVector::ZeroVector)
+    , RelativeScale(FVector::OneVector)
+    , bWorldTransformDirty(true)
+    , CachedWorldTransform(FMatrix::Identity)
+{
+}
+
+USceneComponent::USceneComponent(const FUObjectInitializer& ObjectInitializer)
+    : UActorComponent(ObjectInitializer)
+    , RelativeLocation(FVector::ZeroVector)
     , RelativeRotation(FVector::ZeroVector)
     , RelativeScale(FVector::OneVector)
     , bWorldTransformDirty(true)
@@ -66,7 +77,7 @@ void USceneComponent::MarkTransformDirty()
 {
     bWorldTransformDirty = true;
 
-    // TODO: ÀÚ½Ä ÄÄÆ÷³ÍÆ®°¡ ÀÖ´Ù¸é, ÀÚ½Äµéµµ Dirty Ã³¸®
+    // TODO: ï¿½Ú½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½Ö´Ù¸ï¿½, ï¿½Ú½Äµéµµ Dirty Ã³ï¿½ï¿½
     // for (USceneComponent* Child : Children)
     // {
     //     Child->MarkTransformDirty();
@@ -86,7 +97,7 @@ void USceneComponent::UpdateWorldTransformIfNeeded() const
 
     CachedWorldTransform = Scale * Rotation * Translation;
 
-    // TODO: ºÎ¸ð ÄÄÆ÷³ÍÆ®°¡ ÀÖ´Ù¸é, ºÎ¸ð Æ®·£½ºÆû°ú ÇÕ¼º
+    // TODO: ï¿½Î¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½Ö´Ù¸ï¿½, ï¿½Î¸ï¿½ Æ®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Õ¼ï¿½
     // if (ParentComponent)
     // {
     //     CachedWorldTransform = CachedWorldTransform * ParentComponent->GetWorldTransformMatrix();

@@ -7,13 +7,11 @@ class UStaticMeshComponent;
 
 class ASphere : public APrimitiveActor
 {
-public:
-    ASphere();
-    ASphere(const FUObjectInitializer& ObjectInitializer);
-    virtual ~ASphere() override;
+DECLARE_ROOT_UClass(ASphere)
 
 public:
-    virtual const char* GetObjClassName() const override;
+    ASphere();
+    virtual ~ASphere() override;
 
 public:
     void SetStaticMesh(UStaticMesh* InStaticMesh);

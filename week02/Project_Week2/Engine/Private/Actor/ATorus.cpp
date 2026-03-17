@@ -10,12 +10,6 @@ ATorus::ATorus()
     InitializeActor();
 }
 
-ATorus::ATorus(const FUObjectInitializer& ObjectInitializer)
-    : APrimitiveActor(ObjectInitializer)
-{
-    InitializeActor();
-}
-
 ATorus::~ATorus()
 {
 }
