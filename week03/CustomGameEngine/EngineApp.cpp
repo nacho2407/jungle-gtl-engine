@@ -104,6 +104,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	InputManager::GetInstance().hWnd = HWnd;
 	// Init Camera
 	Camera = Cast<UCameraComponent>(GetWorld().AddPermanentSceneComponent<UCameraComponent>());
+	Camera->SetPosition(FVector(-10, 0, 0));
 	EditorInst->SetCamera(Camera);
 	EditorInst->SetRenderer(Renderer);
 
@@ -120,6 +121,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	//Init Picker
 	Picker = Cast<UPicker>(FObjectFactory::ConstructObject(UPicker::GetClass()));
 	Picker->SetEditor(EditorInst);
+	Picker->SetCamera(Camera);
 
 	//Init World & Scene
 	GetWorld().InjectRenderer(Renderer);
@@ -148,7 +150,6 @@ void EngineApp::Run()
 	//-----TEST
 
 	UAxisComp* mainAxis = GetWorld().AddPermanentSceneComponent<UAxisComp>();
-	Camera->SetPosition(FVector(-10, 0, 0));
 
 	Timer* globalTimer = TimerManager::GetInstance().GetGlobalTimer();
 	globalTimer->Reset();
@@ -178,10 +179,10 @@ void EngineApp::Run()
 		FVector Mouse = InputManager::GetInstance().MousePos;
 		if (!io.WantCaptureMouse && InputManager::GetInstance().IsKeyDown(VK_LBUTTON))
 		{
-			Picker->Pick(Mouse.x, Mouse.y, Camera, GetWorld().GetActiveScene());
+			Picker->Pick(Mouse.x, Mouse.y, GetWorld().GetActiveScene());
 		}
 
-		Ray ray = Picker->CreateRay(Mouse.x, Mouse.y, Camera);
+		Ray ray = Picker->CreateRay(Mouse.x, Mouse.y);
 
 		if (InputManager::GetInstance().IsKeyHold(VK_LBUTTON))
 		{

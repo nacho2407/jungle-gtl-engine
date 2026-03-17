@@ -2,6 +2,7 @@
 
 #include "EngineTypes.h"
 #include "Object.h"
+#include "Component/CameraComponent.h"
 #include "Math/Vector.h"
 
 class UCameraComponent;
@@ -27,14 +28,16 @@ class UPicker : public UObject
 public:
 	UPicker();
 	virtual ~UPicker() override;
-	void Pick(int x, int y, UCameraComponent* Camera, UScene* Scene);
-	GizmoControllerAxis PickGizmo(int x, int y, UCameraComponent* Camera, UScene* Scene);
-	Ray CreateRay(int x, int y, UCameraComponent* Camera);
+	void Pick(int x, int y, UScene* Scene);
+	GizmoControllerAxis PickGizmo(int x, int y, UScene* Scene);
+	Ray CreateRay(int x, int y);
 
 	void SetEditor(Editor* pEditor) { EditorPtr = pEditor; }
+	void SetCamera(UCameraComponent* pCamera) { CameraPtr = pCamera; }
 
 private:
 	UCameraComponent* Camera;
 	UScene* Scene;
 	Editor* EditorPtr;
+	UCameraComponent* CameraPtr;
 };

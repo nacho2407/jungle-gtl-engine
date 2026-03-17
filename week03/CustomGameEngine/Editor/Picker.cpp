@@ -17,18 +17,18 @@ UPicker::~UPicker()
 {
 }
 
-void UPicker::Pick(int ScreenX, int ScreenY, UCameraComponent* Camera, UScene* Scene)
+void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene)
 {
 	UE_LOG("Screen Clicked at: (%d, %d)", ScreenX, ScreenY);
 
-	Ray ray = CreateRay(ScreenX, ScreenY, Camera);
+	Ray ray = CreateRay(ScreenX, ScreenY);
 	GizmoControllerAxis selectedAxis =
 		Gizmo::GetInstance().GetController()->TryPick(ray);
 	if (selectedAxis != GizmoControllerAxis::None)
 	{
 		Gizmo::GetInstance().GetController()->SetAxis(selectedAxis);
 
-		Ray ray = CreateRay(ScreenX, ScreenY, Camera);
+		Ray ray = CreateRay(ScreenX, ScreenY);
 		Gizmo::GetInstance().GetController()->BeginDrag(ray);
 		UE_LOG("Gizmo picked!");
 		return;
@@ -40,7 +40,7 @@ void UPicker::Pick(int ScreenX, int ScreenY, UCameraComponent* Camera, UScene* S
 	{
 		for (int dy = -1; dy <= 1;++dy)
 		{
-			Ray ray = CreateRay(ScreenX + dx, ScreenY + dy, Camera);
+			Ray ray = CreateRay(ScreenX + dx, ScreenY + dy);
 			for (USceneComponent* sc : Scene->SceneComponents)
 			{
 				UPrimitiveComponent* Comp = Cast<UPrimitiveComponent>(sc);
@@ -74,9 +74,9 @@ void UPicker::Pick(int ScreenX, int ScreenY, UCameraComponent* Camera, UScene* S
 }
 
 // TODO: Optimize later...
-GizmoControllerAxis UPicker::PickGizmo(int ScreenX, int ScreenY, UCameraComponent* Camera, UScene* Scene)
+GizmoControllerAxis UPicker::PickGizmo(int ScreenX, int ScreenY, UScene* Scene)
 {
-	Ray ray = CreateRay(ScreenX, ScreenY, Camera);
+	Ray ray = CreateRay(ScreenX, ScreenY);
 	GizmoControllerAxis SelectedAxis = GizmoControllerAxis::None;
 	GizmoController* Controller = Gizmo::GetInstance().GetController();
 
@@ -161,21 +161,21 @@ GizmoControllerAxis UPicker::PickGizmo(int ScreenX, int ScreenY, UCameraComponen
 	return SelectedAxis;
 }
 
-Ray UPicker::CreateRay(int ScreenX, int ScreenY, UCameraComponent* Camera)
+Ray UPicker::CreateRay(int ScreenX, int ScreenY)
 {
 	//Screen Space -> NDC Space
-	float ndcX = (2.0f * (static_cast<float>(ScreenX) + 0.5f)) / Camera->ScreenWidth - 1.0f;
-	float ndcY = 1.0f - (2.0f * (static_cast<float>(ScreenY) + 0.5f)) / Camera->ScreenHeight;
+	float ndcX = (2.0f * (static_cast<float>(ScreenX) + 0.5f)) / CameraPtr->ScreenWidth - 1.0f;
+	float ndcY = 1.0f - (2.0f * (static_cast<float>(ScreenY) + 0.5f)) / CameraPtr->ScreenHeight;
 	//NDC -> View Space
 	FVector4 Near = FVector4(ndcX, ndcY, 0.f, 1.f);
 	FVector4 Far = FVector4(ndcX, ndcY, 1.f, 1.f);
-	FMatrix InvProjMat = Camera->GetProjectionMatrix().Inverse();
+	FMatrix InvProjMat = CameraPtr->GetProjectionMatrix().Inverse();
 	FVector4 NearView = Near * InvProjMat;
 	FVector4 FarView = Far * InvProjMat;
 	NearView = NearView * (1.0f / NearView.w);
 	FarView = FarView * (1.0f / FarView.w);
 	//View Space -> World Space
-	FMatrix InvView = Camera->GetViewMatrix().Inverse();
+	FMatrix InvView = CameraPtr->GetViewMatrix().Inverse();
 	FVector4 NearWorld = NearView * InvView;
 	FVector4 FarWorld = FarView * InvView;
 
