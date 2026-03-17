@@ -37,7 +37,7 @@ public:
 inline FUObjectFactory GUObjectFactory;
 
 template<UObjectType T>
-T* NewObject(const FString& InName)
+T* NewObject(const FString& InName = "GameObject")
 {
 	return GUObjectFactory.CreateObject<T>(InName);
 }

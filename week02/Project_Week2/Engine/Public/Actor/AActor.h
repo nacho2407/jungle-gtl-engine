@@ -11,13 +11,14 @@ class USceneComponent;
 
 class AActor : public UObject
 {
-DECLARE_ROOT_UClass(AActor)
+DECLARE_UClass(AActor, UObject)
+
 public:
 	AActor() : UObject()
 	{
 		RootComponent = nullptr;
 	}
-	AActor(const FUObjectInitializer& ObjectInitializer);
+
 	virtual ~AActor();
 public:
 	virtual void BeginPlay();

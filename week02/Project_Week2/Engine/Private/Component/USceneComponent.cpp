@@ -2,7 +2,8 @@
 #include "Math/FMatrix.h"
 
 USceneComponent::USceneComponent()
-    : RelativeLocation(FVector::ZeroVector)
+    : UActorComponent()
+    , RelativeLocation(FVector::ZeroVector)
     , RelativeRotation(FVector::ZeroVector)
     , RelativeScale(FVector::OneVector)
     , bWorldTransformDirty(true)
@@ -62,7 +63,7 @@ FMatrix USceneComponent::GetWorldTransformMatrix() const
     return CachedWorldTransform;
 }
 
-void USceneComponent::MarkTransformDirty() // (*) ±Ÿµ• ø÷ ¿Ã∏ß¿Ã dirty¿œ±Ó?
+void USceneComponent::MarkTransformDirty() // (*) Í∑ºÎç∞ Ïôú Ïù¥Î¶ÑÏù¥ dirtyÏùºÍπå?
 {
     bWorldTransformDirty = true;
 

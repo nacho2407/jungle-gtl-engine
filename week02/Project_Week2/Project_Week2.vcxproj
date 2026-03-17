@@ -130,10 +130,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="App\FApplication.h" />
+    <ClInclude Include="App\Panels\FConsolePanel.h" />
     <ClInclude Include="App\Panels\FControlPanel.h" />
     <ClInclude Include="App\Panels\FPropertyPanel.h" />
     <ClInclude Include="App\FInputManager.h" />
     <ClInclude Include="App\WindowsApplication.h" />
+    <ClInclude Include="Engine\Public\Actor\AAxisActor.h" />
     <ClInclude Include="Core\Public\CoreGlobal.h" />
     <ClInclude Include="Core\Public\FActorInstanceManager.h" />
     <ClInclude Include="Core\Public\FMemory.h" />
@@ -154,10 +156,13 @@
     <ClInclude Include="Engine\Public\Actor\AActor.h" />
     <ClInclude Include="Engine\Public\Actor\ACamera.h" />
     <ClInclude Include="Engine\Public\Actor\ACube.h" />
+    <ClInclude Include="Engine\Public\Actor\AGridActor.h" />
     <ClInclude Include="Engine\Public\Actor\APrimitiveActor.h" />
     <ClInclude Include="Engine\Public\Actor\ASphere.h" />
+    <ClInclude Include="Engine\Public\Actor\ATorus.h" />
     <ClInclude Include="Engine\Public\Actor\ATriangle.h" />
     <ClInclude Include="Engine\Public\Component\EGizmoAxis.h" />
+    <ClInclude Include="Engine\Public\Component\EGizmoMode.h" />
     <ClInclude Include="Engine\Public\Component\UActorComponent.h" />
     <ClInclude Include="Engine\Public\Component\UCameraComponent.h" />
     <ClInclude Include="Engine\Public\Component\UCubeComponent.h" />
@@ -191,8 +196,8 @@
     <ClInclude Include="Render\Public\Structs.h" />
     <ClInclude Include="Render\Public\URenderer.h" />
     <ClInclude Include="Serialization\Public\FPrimitiveJsonConverter.h" />
-    <ClInclude Include="Serialization\Public\FPrimitiveRecord.h" />
-    <ClInclude Include="Serialization\Public\FPrimitiveRecordConverter.h" />
+    <ClInclude Include="Serialization\Public\FWorldSaveConverter.h" />
+    <ClInclude Include="Serialization\Public\FWorldSaveData.h" />
     <ClInclude Include="ThirdParty\Json\json.hpp" />
     <ClInclude Include="Core\Public\UEngineStatics.h" />
     <ClInclude Include="Core\Public\UObjectBaseUtility.h" />
@@ -203,6 +208,7 @@
     <ClCompile Include="App\FApplication.cpp" />
     <ClCompile Include="App\FInputManager.cpp" />
     <ClCompile Include="App\Main.cpp" />
+    <ClCompile Include="App\Panels\FConsolePanel.cpp" />
     <ClCompile Include="App\Panels\FControlPanel.cpp" />
     <ClCompile Include="App\Panels\FPropertyPanel.cpp" />
     <ClCompile Include="App\WindowsApplication.cpp" />
@@ -217,10 +223,13 @@
     <ClCompile Include="Core\Public\Math\FVector4.h" />
     <ClCompile Include="Core\Public\UClassData.cpp" />
     <ClCompile Include="Engine\Private\Actor\AActor.cpp" />
+    <ClCompile Include="Engine\Private\Actor\AAxisActor.cpp" />
     <ClCompile Include="Engine\Private\Actor\AGizmoActor.cpp" />
     <ClCompile Include="Engine\Private\Actor\ACube.cpp" />
+    <ClCompile Include="Engine\Private\Actor\AGridActor.cpp" />
     <ClCompile Include="Engine\Private\Actor\APrimitiveActor.cpp" />
     <ClCompile Include="Engine\Private\Actor\ASphere.cpp" />
+    <ClCompile Include="Engine\Private\Actor\ATorus.cpp" />
     <ClCompile Include="Engine\Private\Actor\ATriangle.cpp" />
     <ClCompile Include="Engine\Private\Component\UActorComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\UCameraComponent.cpp" />
@@ -234,6 +243,7 @@
     <ClCompile Include="Engine\Private\Resource\UStaticMesh.cpp" />
     <ClCompile Include="Engine\Public\Actor\AGizmoActor.h" />
     <ClCompile Include="GUI\Private\FGUIManager.cpp" />
+    <ClCompile Include="Engine\Private\Actor\ACamera.cpp" />
     <ClCompile Include="Render\Private\Geometry\Cube.cpp" />
     <ClCompile Include="Render\Private\Geometry\Sphere.cpp" />
     <ClCompile Include="Engine\Public\Component\USphereComponent.h" />
@@ -252,11 +262,8 @@
     <ClCompile Include="Render\Private\URenderer.cpp" />
     <ClCompile Include="Core\Private\UObjectBaseUtility.cpp" />
     <ClCompile Include="Serialization\Private\FPrimitiveJsonConverter.cpp" />
-    <ClCompile Include="Serialization\Private\FPrimitiveRecordConverter.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Assets\BlueSphere.bin" />
-    <None Include="Assets\BlueSphere.gltf" />
     <None Include="Render\Public\Shaders\Default.hlsl">
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

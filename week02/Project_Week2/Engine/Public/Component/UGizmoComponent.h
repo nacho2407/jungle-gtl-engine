@@ -7,6 +7,8 @@
 
 class UGizmoComponent : public USceneComponent
 {
+	DECLARE_UClass(UGizmoComponent, USceneComponent)
+
 public:
 	UGizmoComponent();
 

@@ -8,6 +8,8 @@
 class USceneComponent : public UActorComponent
 {
 public:
+    DECLARE_UClass(USceneComponent, UActorComponent)
+
     USceneComponent();
     virtual ~USceneComponent();
 

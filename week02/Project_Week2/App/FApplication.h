@@ -3,8 +3,12 @@
 #include <windows.h>
 #include "FRay.h"
 #include "Structs.h"
-#include "Component/EGizmoAxis.h"
-#include "UObject.h"
+//#include "Component/EGizmoAxis.h"
+//#include "UObject.h"
+#include "Actor/ACamera.h"
+#include "Actor/AGridActor.h"
+#include "Actor/AAxisActor.h"
+#include "Component/EGizmoMode.h"
 
 class UWorld;
 class URenderer;
@@ -77,6 +81,15 @@ public:
 
     UCameraComponent* GetMainCamera() const;
 
+    bool bUseOrthogonalProjection = false;
+    float DebugOrthoWidth = 10.0f;
+
+    void ApplyCameraProjectionMode();
+
+    ESpawnMeshType SelectedSpawnMeshType = ESpawnMeshType::Sphere;
+    void SpawnSelectedMeshActor();
+
+
 private:
     bool InitializeEngine();
     bool InitializeGUI();
@@ -119,13 +132,14 @@ private:
     void UpdateObjectAllocationTest();
     void RenderDebugUI();
 
-    void SpawnSelectedMeshActor();
     AActor* SpawnMeshActor(UStaticMesh* Mesh, const FVector& Location);
 	// 패널 렌더링
     void RenderEditorUI();
 
+    void TempFunc(AActor* actor);
 
-    void ApplyCameraProjectionMode();
+    void CycleGizmoMode();
+    
 
 private:
     FWindowsApplication* WindowApp;
@@ -133,8 +147,8 @@ private:
     UWorld* World;
     FScene* Scene;
 
-    AActor* CameraActor = nullptr;
-    UCameraComponent* MainCamera;
+    //AActor* CameraActor = nullptr;
+    //UCameraComponent* MainCamera;
     // @@@ 액터의 mesh 별로 이렇게 하나씩 다 선언하는 게 맞음?? 하나로 편하게 관리 못하나?
     // 지금 Spawn이 아니라 미리 만들어놓아야 해서 이렇게 한건가?
     UStaticMesh* CubeMesh; 
@@ -144,10 +158,15 @@ private:
     UStaticMesh* AxesMesh;
     UStaticMesh* GizmoArrowMesh = nullptr;
 
+    //AActor* GizmoActor = nullptr;
+    //UStaticMeshComponent* GizmoXComp = nullptr;
+    //UStaticMeshComponent* GizmoYComp = nullptr;
+    //UStaticMeshComponent* GizmoZComp = nullptr;
+    //UStaticMeshComponent* GizmoMeshComp = nullptr;
     AGizmoActor* GizmoActor = nullptr;
     AActor* SelectedActor = nullptr;
 
-    AActor* WorldAxesActor = nullptr;
+    AActor* WorldAxesActor;
 
     bool bIsRunning;
 
@@ -164,7 +183,7 @@ private:
     UStaticMeshComponent* ClickCircleComp = nullptr;
 
     UStaticMesh* GridMesh = nullptr;
-    AActor* GridActor = nullptr;
+    //AActor* GridActor = nullptr;
 
     FPointerPulse PointerPulse;
 
@@ -174,7 +193,6 @@ private:
     int TestIntervalCounter = 0;
     TArray<UObject*> TestObjects;
 
-    ESpawnMeshType SelectedSpawnMeshType = ESpawnMeshType::Sphere;
 
     FGUIManager* GUIManager = nullptr;
 
@@ -190,6 +208,9 @@ private:
     int PrevMouseX = 0;
     int PrevMouseY = 0;
 
-    bool bUseOrthogonalProjection = false;
-    float DebugOrthoWidth = 10.0f;
+    ACamera* Camera;
+    AAxisActor* WorldAxisActor;
+    AGridActor* GridActor;
+
+    EGizmoMode CurrentGizmoMode = EGizmoMode::Translate;
 };

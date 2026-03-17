@@ -9216,15 +9216,39 @@ struct ExampleAppConsole
     }
 };
 
+//static void ShowExampleAppConsole(bool* p_open)
+//{
+//    static ExampleAppConsole console;
+//    console.Draw("Example: Console", p_open);
+//}
+//
+//void ShowImGuiDemoConsole(bool* p_open)
+//{
+//    ShowExampleAppConsole(p_open);
+//}
+
+static ExampleAppConsole GDemoConsole;  // 파일 스코프로 승격
+
 static void ShowExampleAppConsole(bool* p_open)
 {
-    static ExampleAppConsole console;
-    console.Draw("Example: Console", p_open);
+    GDemoConsole.Draw("Example: Console", p_open);
 }
 
 void ShowImGuiDemoConsole(bool* p_open)
 {
     ShowExampleAppConsole(p_open);
+}
+
+// 오버로드: 외부에서 로그 추가용
+void ShowImGuiDemoConsole(const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    char buf[1024];
+    vsnprintf(buf, IM_COUNTOF(buf), fmt, args);
+    buf[IM_COUNTOF(buf) - 1] = 0;
+    va_end(args);
+    GDemoConsole.AddLog("%s", buf);
 }
 
 //-----------------------------------------------------------------------------

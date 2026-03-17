@@ -18,9 +18,51 @@ void FControlPanel::Render(FApplication* App)
     }
 
     ImGui::SetNextWindowPos(ImVec2(15.0f, 200.0f), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(420.0f, 220.0f), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(420.0f, 250.0f), ImGuiCond_Once);
 
     ImGui::Begin("Jungle Control Panel");
+
+    ImGui::Text("Hello Jungle World!");
+
+    ImGui::Separator();
+    ImGui::Text("Camera");
+
+    const char* MeshItems[] = { "Sphere", "Cube", "Torus" };
+    int CurrentMeshIndex = static_cast<int>(App->SelectedSpawnMeshType);
+
+    if (ImGui::Combo("Mesh Type", &CurrentMeshIndex, MeshItems, IM_ARRAYSIZE(MeshItems)))
+    {
+        App->SelectedSpawnMeshType = static_cast<ESpawnMeshType>(CurrentMeshIndex);
+    }
+
+    if (ImGui::Button("Spawn"))
+    {
+        App->SpawnSelectedMeshActor();
+    }
+
+    ImGui::Separator();
+
+    bool bProjectionChanged = false;
+
+    if (ImGui::Checkbox("Orthogonal Projection", &App->bUseOrthogonalProjection))
+    {
+        bProjectionChanged = true;
+    }
+
+    if (&App->bUseOrthogonalProjection)
+    {
+        if (ImGui::SliderFloat("Ortho Width", &App->DebugOrthoWidth, 1.0f, 100.0f))
+        {
+            bProjectionChanged = true;
+        }
+    }
+
+    if (bProjectionChanged)
+    {
+        App->ApplyCameraProjectionMode();
+    }
+
+    ImGui::Separator();
 
     float FOV = Camera->GetFieldOfView();
     FVector Location = Camera->GetRelativeLocation();

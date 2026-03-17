@@ -3,20 +3,26 @@
 #include "Actor/AActor.h"
 #include "Component/EGizmoAxis.h"
 #include "Math/FVector4.h"
+#include "Resource/BuiltInMeshFactory.h"
+#include "Component/UCameraComponent.h"
+#include "Component/UStaticMeshComponent.h"
+#include "Component/EGizmoMode.h"
 
-class UStaticMesh;
-class UStaticMeshComponent;
-class UCameraComponent;
+//class UStaticMesh;
+//class UStaticMeshComponent;
+//class UCameraComponent;
 class USceneComponent;
 
-class AGizmoActor : public AActor 
+class AGizmoActor : public AActor
 {
+    DECLARE_UClass(AGizmoActor, AActor)
 public:
     AGizmoActor();
     virtual ~AGizmoActor() override; // 왜 가상함수로 했을까
 
 public:
-    void Initialize(UStaticMesh* ArrowMesh);
+    void Initialize(UStaticMesh* ArrowMesh, UStaticMesh* CubeMesh, UStaticMesh* TorusMesh);
+
     void SetTargetActor(AActor* InTarget);
     AActor* GetTargetActor() const;
 
@@ -35,6 +41,9 @@ public:
 
     UStaticMeshComponent* GetAxisComponent(EGizmoAxis Axis) const;
 
+    void SetMode(EGizmoMode InMode);
+    EGizmoMode GetMode() const;
+
 private:
     bool ProjectWorldToScreen(
         const FVector& WorldPos,
@@ -51,6 +60,8 @@ private:
 
     FVector4 LightenColor(const FVector4& Color, float T) const;
 
+    void ApplyModeVisual();
+
 private:
     UStaticMeshComponent* XAxisComp = nullptr;
     UStaticMeshComponent* YAxisComp = nullptr;
@@ -61,6 +72,55 @@ private:
     float AxisLength = 3.0f;
     float PickThreshold = 10.0f;
     float GizmoScale = 0.8f;
+
+    UStaticMesh* TranslateMesh = nullptr;
+    UStaticMesh* ScaleMesh = nullptr;
+    UStaticMesh* RotateMesh = nullptr;
+
+    EGizmoMode CurrentMode = EGizmoMode::Translate;
+
+    EGizmoAxis PickAxisTranslate(
+        int MouseX,
+		int MouseY,
+        const UCameraComponent* Camera,
+        int ViewWidth,
+		int ViewHeight) const;
+
+    EGizmoAxis PickAxisRotate(
+		int MouseX,
+        int MouseY,
+        const UCameraComponent* Camera,
+		int ViewWidth,
+        int ViewHeight) const;
+
+	EGizmoAxis PickAxisScale(
+        int MouseX,
+        int MouseY,
+        const UCameraComponent* Camera,
+        int ViewWidth,
+		int ViewHeight) const;
+
+    bool ProjectAxisEndToScreen(
+        const FVector& Origin,
+		const FVector& AxisDir,
+        float Length,
+		const UCameraComponent* Camera,
+        int ViewWidth,
+        int ViewHeight,
+		float& OutOriginX,
+		float& OutOriginY,
+        float& OutX,
+		float& OutY) const;
+
+    float DistancePointToCircle2D(
+        float Px, float Py,
+        float Cx, float Cy,
+		float Radius) const;
+
+    private:
+        UStaticMeshComponent* XAxisShaftComp = nullptr;
+        UStaticMeshComponent* YAxisShaftComp = nullptr;
+        UStaticMeshComponent* ZAxisShaftComp = nullptr;
 
     USceneComponent* PivotComp = nullptr;
 };
