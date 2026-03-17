@@ -59,6 +59,11 @@ LRESULT CALLBACK EngineApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		}
 		break;
 
+	case WM_ACTIVATE:
+	{
+		InputManager::GetInstance().bIsActive = (LOWORD(wParam) != WA_INACTIVE);
+		break;
+	}
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}

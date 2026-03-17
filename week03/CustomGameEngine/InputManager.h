@@ -13,7 +13,8 @@ public:
 	~InputManager();
 
 	void Update();
-	void UpdateKeyboard();
+	void UpdateKeyState();
+	void ClearKeyState();
 
 	bool IsKeyDown(int key);
 	bool IsKeyHold(int key);
@@ -24,6 +25,8 @@ public:
 public:
 	bool CurrentState[256];
 	bool PrevState[256];
+	bool bIsActive{ true };
+	bool bJustGainedFocus{ true };
 
 	FVector MousePos;
 	FVector LastMousePos;
