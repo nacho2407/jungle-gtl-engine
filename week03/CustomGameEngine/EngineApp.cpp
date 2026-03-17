@@ -53,11 +53,13 @@ LRESULT CALLBACK EngineApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 			}
 		}
 		break;
-	/*case WM_ACTIVATE:
-	{
-		InputManager::GetInstance().bIsActive = (LOWORD(wParam) != WA_INACTIVE);
+	case WM_SETFOCUS:
+		InputManager::GetInstance().hWnd = (hWnd);
 		break;
-	}*/
+
+	case WM_KILLFOCUS:
+		InputManager::GetInstance().hWnd = NULL;
+		break;
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
