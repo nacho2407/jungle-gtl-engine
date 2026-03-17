@@ -148,7 +148,7 @@ void EngineApp::Run()
 	//Cube->SetRelativeLocation(FVector(-30.f, 0.f, 0.f));
 	//Cube->SetRelativeScale3D(FVector(0.5f, 0.5f, 0.5f));
 
-	UAxisComp* mainAxis = GetWorld().AddSceneComponent<UAxisComp>();
+	//UAxisComp* mainAxis = GetWorld().AddSceneComponent<UAxisComp>();
 
 	Camera->SetPosition(FVector(-10, 0, 0));
 	//-----TEST
