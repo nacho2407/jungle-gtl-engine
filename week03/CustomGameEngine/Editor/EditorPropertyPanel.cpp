@@ -1,9 +1,11 @@
 ﻿#include "EditorPropertyPanel.h"
+#include "Editor.h"
 #include "ImGui/imgui.h"
 #include "Component/PrimitiveComponent.h"	
 #include "Component/SceneComponent.h"
+#include "World.h"
 
-EditorPropertyPanel::EditorPropertyPanel()
+EditorPropertyPanel::EditorPropertyPanel(Editor* parent) : editor(parent)
 {
 }
 
@@ -27,7 +29,18 @@ void EditorPropertyPanel::Draw(USceneComponent* selectedComponent)
 			UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(selectedComponent);
 			primitive->MarkRenderStateDirty();
 		}
+
+		if (ImGui::Button("Delete", { 100, 30 }))
+		{
+			RemoveSelected(selectedComponent);
+		}
 	}
 
 	ImGui::End();
+}
+
+void EditorPropertyPanel::RemoveSelected(USceneComponent* selectedComponent)
+{
+	GetWorld().RemoveSceneComponent(selectedComponent);
+	editor->SelectComponent(nullptr);
 }

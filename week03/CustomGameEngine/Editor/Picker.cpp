@@ -19,7 +19,6 @@ UPicker::~UPicker()
 
 void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene)
 {
-	UE_LOG("Screen Clicked at: (%d, %d)", ScreenX, ScreenY);
 
 	Ray ray = CreateRay(ScreenX, ScreenY);
 	GizmoControllerAxis selectedAxis =
@@ -30,7 +29,6 @@ void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene)
 
 		Ray ray = CreateRay(ScreenX, ScreenY);
 		Gizmo::GetInstance().GetController()->BeginDrag(ray);
-		UE_LOG("Gizmo picked!");
 		return;
 	}
 
@@ -62,7 +60,6 @@ void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene)
 
 	if (ClosestComp)
 	{
-		UE_LOG("Hit Object at Distance : %f", MinDistance);
 		EditorPtr->SelectComponent(ClosestComp);
 		Scene->IsCompSelected = true;
 	}
