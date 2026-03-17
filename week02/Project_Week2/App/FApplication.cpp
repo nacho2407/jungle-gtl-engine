@@ -145,10 +145,12 @@ bool FApplication::Initialize(HINSTANCE hInstance)
                 Renderer->Resize((UINT)Width, (UINT)Height);
             }
 
-            check(World)
-            check(World->GetCameraActor())
-            check(World->GetCameraActor()->GetCameraComponent())
-            World->GetCameraActor()->GetCameraComponent()->UpdateAspectRatio((float)Width, (float)Height);
+            //check(World)
+            //check(World->GetCameraActor())
+            //check(World->GetCameraActor()->GetCameraComponent())
+            auto MainCamera = Camera->GetCameraComponent();
+
+            MainCamera->UpdateAspectRatio((float)Width, (float)Height);
 
             RenderFrame();
         };
@@ -243,26 +245,26 @@ bool FApplication::InitializeScene()
 {
     // (*) ACamereActor로 빼기
     // 카메라 액터
-    CameraActor = new AActor();
-    MainCamera = new UCameraComponent();
-    // 카메라가 바라보는 월드 수정 
-    MainCamera->SetRelativeLocation(FVector(2.0f, 4.0f, -7.0f));
-    MainCamera->SetRelativeRotation(FVector(0.3f, 0.0f, 0.0f)); // Pitch Yaw Roll
-    MainCamera->SetFieldOfView(39.6f);
-    MainCamera->SetAspectRatio(
-        static_cast<float>(WindowApp->GetClientWidth()) /
-        static_cast<float>(WindowApp->GetClientHeight()));
-    MainCamera->SetNearClip(0.1f);
-    MainCamera->SetFarClip(1000.0f);
-    bUseOrthogonalProjection = false;
-	DebugOrthoWidth = 10.0f;
-	ApplyCameraProjectionMode();
+ //   CameraActor = new AActor();
+ //   MainCamera = new UCameraComponent();
+ //   // 카메라가 바라보는 월드 수정 
+ //   MainCamera->SetRelativeLocation(FVector(2.0f, 4.0f, -7.0f));
+ //   MainCamera->SetRelativeRotation(FVector(0.3f, 0.0f, 0.0f)); // Pitch Yaw Roll
+ //   MainCamera->SetFieldOfView(39.6f);
+ //   MainCamera->SetAspectRatio(
+ //       static_cast<float>(WindowApp->GetClientWidth()) /
+ //       static_cast<float>(WindowApp->GetClientHeight()));
+ //   MainCamera->SetNearClip(0.1f);
+ //   MainCamera->SetFarClip(1000.0f);
+ //   bUseOrthogonalProjection = false;
+	//DebugOrthoWidth = 10.0f;
+	//ApplyCameraProjectionMode();
 
-    CameraActor->AddComponent(MainCamera);
-    CameraActor->SetRootComponent(MainCamera);
+ //   CameraActor->AddComponent(MainCamera);
+ //   CameraActor->SetRootComponent(MainCamera);
     // (*) ACamereActor로 빼기
 
-    World->AddActor(CameraActor);
+    //World->AddActor(CameraActor);
     
     SpawnMeshActor(SphereMesh, FVector(0.0f, 0.0f, 0.0f));
 
@@ -278,18 +280,18 @@ bool FApplication::InitializeScene()
     //    WorldAxesActor->SetRootComponent(MeshComp);
     //    World->AddActor(WorldAxesActor);
     //}
-    WorldAxesActor = SpawnMeshActor(AxesMesh, FVector(0.0f, 0.0f, 0.0f));
+    //WorldAxesActor = SpawnMeshActor(AxesMesh, FVector(0.0f, 0.0f, 0.0f));
 
     {
-        GridActor = new AActor();
+        //GridActor = new AActor();
 
-        UStaticMeshComponent* MeshComp = NewObject<UStaticMeshComponent>();
-        MeshComp->SetStaticMesh(GridMesh);
-        MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
+        //UStaticMeshComponent* MeshComp = NewObject<UStaticMeshComponent>();
+        //MeshComp->SetStaticMesh(GridMesh);
+        //MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
 
-        GridActor->AddComponent(MeshComp);
-        GridActor->SetRootComponent(MeshComp);
-        World->AddActor(GridActor);
+        //GridActor->AddComponent(MeshComp);
+        //GridActor->SetRootComponent(MeshComp);
+        //World->AddActor(GridActor);
     }
 
     //// Gizmo
@@ -333,9 +335,9 @@ bool FApplication::InitializeScene()
 
     //    World->AddActor(GizmoActor);
     //}
-    GizmoActor = new AGizmoActor();
-    GizmoActor->Initialize(GizmoArrowMesh);
-    World->AddActor(GizmoActor);
+    //GizmoActor = new AGizmoActor();
+    //GizmoActor->Initialize(GizmoArrowMesh);
+    //World->AddActor(GizmoActor);
 
     // Click Pulse Circle
     {
@@ -377,8 +379,18 @@ void FApplication::MainLoop()
     //using Clock = std::chrono::steady_clock; // @@@ (+) 이거로 교체해보는 거 고려해보셈
     auto PrevTime = Clock::now();
 
+    Camera = NewObject<ACamera>();
+    WorldAxisActor = NewObject<AAxisActor>();
+    GizmoActor = NewObject<AGizmoActor>();
+    GridActor = NewObject<AGridActor>();
+    check(Camera)
+    check(WorldAxisActor)
+    check(GizmoActor)
+    check(GridActor)
+
     // @@@ VSync 있는거임??
     // 의도적으로 프레임을 조정할 수 있는 거는 필요없나?
+    auto MainCamera = Camera->GetCameraComponent();
     while (bIsRunning)
     {
         if (!WindowApp->PumpMessages()) // OS 입력,창 이벤트 반영
@@ -415,6 +427,10 @@ void FApplication::MainLoop()
 
 void FApplication::Tick(float DeltaTime)
 {
+    Scene->Clear();
+
+    auto MainCamera = Camera->GetCameraComponent();
+    //auto GizmoActor = World->GizmoActor;
     if (!World || !MainCamera || !InputManager)
     {
         return;
@@ -453,7 +469,7 @@ void FApplication::Tick(float DeltaTime)
         }
         else
         {
-            if (HitActor == WorldAxesActor || HitActor == GridActor || HitActor == ClickCircleActor)
+            if (HitActor == WorldAxisActor || HitActor == GridActor || HitActor == ClickCircleActor)
             {
                 HitActor = nullptr;
             }
@@ -467,7 +483,7 @@ void FApplication::Tick(float DeltaTime)
                 {
                     HitActor = Proxy.Primitive->GetOwner();
 
-                    if (HitActor == GizmoActor || HitActor == WorldAxesActor || HitActor == GridActor)
+                    if (HitActor == GizmoActor || HitActor == WorldAxisActor || HitActor == GridActor)
                     {
                         HitActor = nullptr;
                     }
@@ -483,7 +499,10 @@ void FApplication::Tick(float DeltaTime)
         EndGizmoDrag();
         EndPointerPulse();
     }
-
+    check(Camera)
+        check(WorldAxisActor)
+        check(GizmoActor)
+        check(GridActor)
     if (bCanProcessMouse && bDraggingGizmo && InputManager->IsMouseDown(EMouseButton::Left))
     {
         InputManager->GetMousePosition(MouseX, MouseY);
@@ -530,7 +549,10 @@ void FApplication::Tick(float DeltaTime)
     FVector Rot = MainCamera->GetRelativeRotation();
 
     FMatrix RotMatrix = FMatrix::MakeRotationXYZ(Rot);
-
+    check(Camera)
+        check(WorldAxisActor)
+        check(GizmoActor)
+        check(GridActor)
     FVector4 Forward4 = RotMatrix * FVector4(0, 0, 1, 0);
     FVector4 Right4 = RotMatrix * FVector4(1, 0, 0, 0);
     FVector4 Up4 = RotMatrix * FVector4(0, 1, 0, 0);
@@ -571,15 +593,46 @@ void FApplication::Tick(float DeltaTime)
         UpdateGizmoColors();
     }
 
+    TempFunc(WorldAxisActor);
+    TempFunc(GridActor);
+    TempFunc(GizmoActor);
     World->BuildScene(*Scene);
+
     AddSelectionOutlineRenderItem();
 
     InputManager->EndFrame();
 }
 
+void FApplication::TempFunc(AActor* Actor)
+{
+    check(Actor)
+    const TArray<UActorComponent*>& Components = Actor->GetComponents();
+    for (UActorComponent* Component : Components)
+    {
+        // @@@ 아직 이거는 Primitive 외에 확장성은 고려하지 않은건가? <- BuildScene이라 필요없네ㅎ,ㅎ
+        UPrimitiveComponent* PrimitiveComponent = dynamic_cast<UPrimitiveComponent*>(Component);
+        if (!PrimitiveComponent)
+        {
+            continue;
+        }
+
+        if (!PrimitiveComponent->IsVisible())
+        {
+            continue;
+        }
+
+        FRenderItem Item = PrimitiveComponent->CreateRenderItem();
+        if (Item.Mesh == nullptr)
+        {
+            continue;
+        }
+        Scene->RenderItems.push_back(Item);
+    }
+}
+
 void FApplication::RenderFrame()
 {
-    auto MainCamera = World->GetCameraActor()->GetCameraComponent();
+    auto MainCamera = Camera->GetCameraComponent();
     if (!Renderer || !Scene)
     {
         return;
@@ -656,7 +709,7 @@ void FApplication::Shutdown()
 
 void FApplication::HandleMousePicking() //
 {
-    auto MainCamera = World->GetCameraActor()->GetCameraComponent();
+    auto MainCamera = Camera->GetCameraComponent();
 
     if (!WindowApp || !World || !MainCamera)
     {
@@ -685,7 +738,7 @@ void FApplication::HandleMousePicking() //
 
 FRay FApplication::BuildPickRay(int MouseX, int MouseY) const
 {
-    auto MainCamera = World->GetCameraActor()->GetCameraComponent();
+    auto MainCamera = Camera->GetCameraComponent();
 
     FRay Ray;
 
@@ -742,13 +795,15 @@ AActor* FApplication::PickActor(const FRay& Ray) const
 {   
     AActor* ClosestActor = nullptr;
     float ClosestT = FLT_MAX;
+    auto MainCamera = Camera->GetCameraComponent();
 
     const TArray<AActor*>& Actors = World->GetActors();
+    //auto GizmoActor = World->GizmoActor;
 
     for (AActor* Actor : Actors)
     {
         // @@@ Actor==GizmoActor라는데, 이거 XYZ로 나누면서 nullptr 아닌가?
-        if (!Actor || Actor == World->GetCameraActor() || Actor == GizmoActor || Actor == WorldAxesActor|| Actor == ClickCircleActor || Actor == GridActor)
+        if (!Actor || Actor == Camera || Actor == GizmoActor || Actor == WorldAxisActor || Actor == ClickCircleActor || Actor == GridActor)
         {
             continue;
         }
@@ -851,6 +906,8 @@ UStaticMeshComponent* FApplication::FindStaticMeshComponent(AActor* Actor) const
 
 void FApplication::SetSelectedActor(AActor* NewSelected)
 {
+    //auto GizmoActor = World->GizmoActor;
+
     if (SelectedActor == NewSelected)
     {
         SelectedActor = nullptr;
@@ -881,6 +938,8 @@ void FApplication::SetSelectedActor(AActor* NewSelected)
 
 bool FApplication::ProjectWorldToScreen(const FVector& WorldPos, float& OutX, float& OutY) const
 {
+    auto MainCamera = Camera->GetCameraComponent();
+
     if (!MainCamera || !WindowApp)
     {
         return false;
@@ -911,6 +970,10 @@ bool FApplication::ProjectWorldToScreen(const FVector& WorldPos, float& OutX, fl
 
 EGizmoAxis FApplication::PickGizmoAxis(int MouseX, int MouseY) const
 {
+    //auto GizmoActor = World->GizmoActor;
+
+    auto MainCamera = Camera->GetCameraComponent();
+
     if (!GizmoActor || !MainCamera || !WindowApp)
     {
         return EGizmoAxis::None;
@@ -990,6 +1053,7 @@ void FApplication::BeginGizmoDrag(EGizmoAxis Axis, int MouseX, int MouseY)
     case EGizmoAxis::Z: AxisDir = FVector(0.0f, 0.0f, 1.0f); break;
     default: return;
     }
+    auto MainCamera = Camera->GetCameraComponent();
 
     const FMatrix CamRot = FMatrix::MakeRotationXYZ(MainCamera->GetRelativeRotation());
     const FVector4 Forward4 = CamRot * FVector4(0.0f, 0.0f, 1.0f, 0.0f);
@@ -1093,6 +1157,8 @@ void FApplication::AddSelectionOutlineRenderItem()
 
 void FApplication::UpdateGizmoTransform()
 {
+    //auto GizmoActor = GizmoActor;
+
     if (GizmoActor)
     {
         GizmoActor->UpdateTransformFromTarget();
@@ -1101,6 +1167,8 @@ void FApplication::UpdateGizmoTransform()
 
 void FApplication::UpdateGizmoColors()
 {
+    //auto GizmoActor = World->GizmoActor;
+
     if (!GizmoActor)
     {
         return;
@@ -1125,6 +1193,8 @@ void FApplication::UpdateGizmoColors()
 
 void FApplication::SetGizmoVisibility(bool bVisible)
 {
+    //auto GizmoActor = World->GizmoActor;
+
     if (GizmoActor)
     {
         GizmoActor->SetGizmoVisible(bVisible);
@@ -1133,6 +1203,8 @@ void FApplication::SetGizmoVisibility(bool bVisible)
 
 bool FApplication::ComputePointerPulseWorldPosition(int MouseX, int MouseY, float Distance, FVector& OutWorldPos) const
 {
+    auto MainCamera = Camera->GetCameraComponent();
+
     if (!MainCamera)
     {
         return false;
@@ -1185,6 +1257,8 @@ void FApplication::EndPointerPulse()
 
 void FApplication::RefreshPointerPulseTransform()
 {
+    auto MainCamera = Camera->GetCameraComponent();
+
     if (!ClickCircleComp || !MainCamera)
     {
         return;
@@ -1447,12 +1521,16 @@ void FApplication::ClearSelection()
 
 UCameraComponent* FApplication::GetMainCamera() const
 {
+    auto MainCamera = Camera->GetCameraComponent();
+
     return MainCamera;
 
 }
 
 void FApplication::ApplyCameraProjectionMode()
 {
+    auto MainCamera = Camera->GetCameraComponent();
+
     if (!MainCamera) { return; }
 	MainCamera->SetProjectionMode(bUseOrthogonalProjection ? EProjectionMode::Orthogonal : EProjectionMode::Perspective);
 	MainCamera->SetOrthoWidth(DebugOrthoWidth);

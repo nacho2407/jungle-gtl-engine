@@ -11,6 +11,8 @@ enum class EProjectionMode
 
 class UCameraComponent : public USceneComponent
 {
+    DECLARE_UClass(UCameraComponent, USceneComponent)
+
 public:
     UCameraComponent();
     virtual ~UCameraComponent();

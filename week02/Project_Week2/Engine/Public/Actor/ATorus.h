@@ -7,7 +7,7 @@ class UStaticMeshComponent;
 
 class ATorus : public APrimitiveActor
 {
-DECLARE_ROOT_UClass(ATorus)
+    DECLARE_UClass(ATorus, APrimitiveActor)
 
 public:
 

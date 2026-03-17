@@ -7,7 +7,7 @@ class UStaticMeshComponent;
 
 class ASphere : public APrimitiveActor
 {
-DECLARE_ROOT_UClass(ASphere)
+    DECLARE_UClass(ASphere, APrimitiveActor)
 
 public:
     ASphere();

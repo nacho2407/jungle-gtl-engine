@@ -135,6 +135,7 @@
     <ClInclude Include="App\Panels\FPropertyPanel.h" />
     <ClInclude Include="App\FInputManager.h" />
     <ClInclude Include="App\WindowsApplication.h" />
+    <ClInclude Include="Engine\Public\Actor\AAxisActor.h" />
     <ClInclude Include="Core\Public\CoreGlobal.h" />
     <ClInclude Include="Core\Public\FActorInstanceManager.h" />
     <ClInclude Include="Core\Public\FMemory.h" />
@@ -155,6 +156,7 @@
     <ClInclude Include="Engine\Public\Actor\AActor.h" />
     <ClInclude Include="Engine\Public\Actor\ACamera.h" />
     <ClInclude Include="Engine\Public\Actor\ACube.h" />
+    <ClInclude Include="Engine\Public\Actor\AGridActor.h" />
     <ClInclude Include="Engine\Public\Actor\APrimitiveActor.h" />
     <ClInclude Include="Engine\Public\Actor\ASphere.h" />
     <ClInclude Include="Engine\Public\Actor\ATorus.h" />
@@ -220,8 +222,10 @@
     <ClCompile Include="Core\Public\Math\FVector4.h" />
     <ClCompile Include="Core\Public\UClassData.cpp" />
     <ClCompile Include="Engine\Private\Actor\AActor.cpp" />
+    <ClCompile Include="Engine\Private\Actor\AAxisActor.cpp" />
     <ClCompile Include="Engine\Private\Actor\AGizmoActor.cpp" />
     <ClCompile Include="Engine\Private\Actor\ACube.cpp" />
+    <ClCompile Include="Engine\Private\Actor\AGridActor.cpp" />
     <ClCompile Include="Engine\Private\Actor\APrimitiveActor.cpp" />
     <ClCompile Include="Engine\Private\Actor\ASphere.cpp" />
     <ClCompile Include="Engine\Private\Actor\ATorus.cpp" />

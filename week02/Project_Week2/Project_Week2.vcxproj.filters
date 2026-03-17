@@ -264,10 +264,13 @@
     <ClInclude Include="Serialization\Public\FPrimitiveJsonConverter.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Serialization\Public\FPrimitiveRecord.h">
+    <ClInclude Include="App\Panels\FConsolePanel.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Serialization\Public\FPrimitiveRecordConverter.h">
+    <ClInclude Include="Engine\Public\Actor\AAxisActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Actor\AGridActor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -446,10 +449,16 @@
     <ClCompile Include="Serialization\Private\FPrimitiveJsonConverter.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Serialization\Private\FPrimitiveRecordConverter.cpp">
+    <ClCompile Include="App\Panels\FConsolePanel.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Public\Actor\ACamera.cpp">
+    <ClCompile Include="Engine\Private\Actor\ACamera.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Actor\AAxisActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Actor\AGridActor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

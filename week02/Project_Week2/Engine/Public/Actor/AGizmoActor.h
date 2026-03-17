@@ -3,14 +3,17 @@
 #include "Actor/AActor.h"
 #include "Component/EGizmoAxis.h"
 #include "Math/FVector4.h"
+#include "Resource/BuiltInMeshFactory.h"
+#include "Component/UCameraComponent.h"
+#include "Component/UStaticMeshComponent.h"
 
-class UStaticMesh;
-class UStaticMeshComponent;
-class UCameraComponent;
+//class UStaticMesh;
+//class UStaticMeshComponent;
+//class UCameraComponent;
 
 class AGizmoActor : public AActor 
 {
-DECLARE_ROOT_UClass(AGizmoActor)
+DECLARE_UClass(AGizmoActor, AActor)
 public:
     AGizmoActor();
     virtual ~AGizmoActor() override; // 왜 가상함수로 했을까

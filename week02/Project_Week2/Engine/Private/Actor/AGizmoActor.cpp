@@ -11,8 +11,57 @@
 #include "Math/FVector4.h"
 
 AGizmoActor::AGizmoActor()
-    : AActor()
 {
+    auto ArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh();
+    if (!ArrowMesh)
+    {
+        return;
+    }
+
+    if (!XAxisComp)
+    {
+        XAxisComp = new UStaticMeshComponent();
+        AddComponent(XAxisComp);
+    }
+
+    if (!YAxisComp)
+    {
+        YAxisComp = new UStaticMeshComponent();
+        AddComponent(YAxisComp);
+    }
+
+    if (!ZAxisComp)
+    {
+        ZAxisComp = new UStaticMeshComponent();
+        AddComponent(ZAxisComp);
+    }
+
+    XAxisComp->SetStaticMesh(ArrowMesh);
+    YAxisComp->SetStaticMesh(ArrowMesh);
+    ZAxisComp->SetStaticMesh(ArrowMesh);
+
+    XAxisComp->SetRelativeLocation(FVector::ZeroVector);
+    YAxisComp->SetRelativeLocation(FVector::ZeroVector);
+    ZAxisComp->SetRelativeLocation(FVector::ZeroVector);
+
+    // Arrow mesh가 +X 방향 기준이라고 가정
+    XAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
+    YAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 1.5707963f));
+    ZAxisComp->SetRelativeRotation(FVector(0.0f, -1.5707963f, 0.0f));
+
+    XAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
+    YAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
+    ZAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
+
+    XAxisComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
+    YAxisComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
+    ZAxisComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
+
+    XAxisComp->SetVisibility(false);
+    YAxisComp->SetVisibility(false);
+    ZAxisComp->SetVisibility(false);
+
+    SetRootComponent(XAxisComp);
 }
 
 AGizmoActor::~AGizmoActor()
