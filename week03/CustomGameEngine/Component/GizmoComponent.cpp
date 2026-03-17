@@ -1,19 +1,16 @@
-﻿#include "GizmoController.h"
+﻿#include "GizmoComponent.h"
 #include "Component/CameraComponent.h"
 #include "Component/SceneComponent.h"
 #include "EngineTypes.h"
-#include "GizmoRotationControlStrategy.h"
-#include "GizmoScaleControlStrategy.h"
-#include "GizmoTranslationControlStrategy.h"
+#include "Editor/Gizmo/GizmoTranslationControlStrategy.h"
+#include "Editor/Gizmo/GizmoRotationControlStrategy.h"
+#include "Editor/Gizmo/GizmoScaleControlStrategy.h"
 #include "InputManager.h"
-#include "Logger.h"
-#include "Object.h"
-#include "Picker.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderObject.h"
 #include "ResourceManager.h"
 
-GizmoController::GizmoController()
+UGizmoComponent::UGizmoComponent()
 {
 	TranslationStrategy = new GizmoTranslationControlStrategy(this);
 	RotationStrategy = new GizmoRotationControlStrategy(this);
@@ -21,16 +18,43 @@ GizmoController::GizmoController()
 	CurrentStrategy = TranslationStrategy;
 }
 
-GizmoController::~GizmoController()
+UGizmoComponent::~UGizmoComponent()
 {
 	delete ScaleStrategy;
 	delete RotationStrategy;
 	delete TranslationStrategy;
 }
 
-void GizmoController::Update(UCameraComponent* Camera)
+void UGizmoComponent::Update(float deltaTime)
 {
 	if (AttachedComponent == nullptr) return;
+
+	UCameraComponent* camera = UCameraComponent::GetMainCamera();
+
+	FVector mousePos = InputManager::GetInstance().MousePos;
+	Ray ray = Ray::CreateRay(mousePos.x, mousePos.y, camera);
+
+	if (InputManager::GetInstance().IsKeyHold(VK_LBUTTON))
+	{
+		if (IsDragging())
+		{
+			UpdateDrag(ray);
+		}
+	}
+
+	if (InputManager::GetInstance().IsKeyUp(VK_LBUTTON))
+	{
+		if (IsDragging())
+		{
+			EndDrag();
+		}
+	}
+
+	if (!InputManager::GetInstance().IsKeyHold(VK_LBUTTON))
+	{
+		GizmoControllerAxis hoveredAxis = TryPick(ray);
+		SetHoverAxis(hoveredAxis);
+	}
 
 	if (InputManager::GetInstance().IsKeyDown(VK_SPACE))
 	{
@@ -38,22 +62,25 @@ void GizmoController::Update(UCameraComponent* Camera)
 		SetControlStrategy(Type);
 	}
 
-	FVector CamPos = Camera->GetRelativeLocation();
+	SetRelativeLocation(AttachedComponent->GetRelativeLocation());
+	SetRelativeQuaternion(AttachedComponent->GetRelativeQuaternion());
+
+	FVector CamPos = camera->GetRelativeLocation();
 	FVector CompPos = AttachedComponent->GetRelativeLocation();
 	float Dist = (CamPos - CompPos).Length();
 	float Scale = Dist * BaseScale;
-	RelativeMatrix = FMatrix::ScaleMatrix(Scale, Scale, Scale) * FMatrix::TranslationMatrix(AttachedComponent->GetRelativeLocation());
 
-	//RelativeMatrix = FMatrix::TranslationMatrix(AttachedComponent->GetRelativeLocation());
+	SetRelativeScale3D(FVector(Scale, Scale, Scale));
 
-	if (bLocalSpace)
+	if (!bLocalSpace)
 	{
-		FMatrix rotMatrix = AttachedComponent->GetRelativeQuaternion().ToMatrix();
-		RelativeMatrix = rotMatrix * RelativeMatrix;
+		SetRelativeQuaternion(FQuat());
 	}
+
+	UpdateRenderObject();
 }
 
-void GizmoController::UpdateRenderObject()
+void UGizmoComponent::UpdateRenderObject()
 {
 	if (AttachedComponent == nullptr) return;
 	if (CurrentStrategy == nullptr) return;
@@ -63,7 +90,7 @@ void GizmoController::UpdateRenderObject()
 	return;
 }
 
-float GizmoController::GetClosestPointOnAxis(const Ray& ray, const FVector& axisOrigin, const FVector& axisDir)
+float UGizmoComponent::GetClosestPointOnAxis(const Ray& ray, const FVector& axisOrigin, const FVector& axisDir)
 {
 	FVector u = ray.Direction;
 	FVector v = axisDir;
@@ -81,7 +108,7 @@ float GizmoController::GetClosestPointOnAxis(const Ray& ray, const FVector& axis
 	return (a * e - b * d) / denominator;
 }
 
-void GizmoController::BeginDrag(const Ray& ray)
+void UGizmoComponent::BeginDrag(const Ray& ray)
 {
 	if (IsDragging()) return;
 	if (AttachedComponent == nullptr) return;
@@ -91,7 +118,7 @@ void GizmoController::BeginDrag(const Ray& ray)
 	CurrentStrategy->BeginDrag(ray);
 }
 
-void GizmoController::UpdateDrag(const Ray& ray)
+void UGizmoComponent::UpdateDrag(const Ray& ray)
 {
 	if (!IsDragging()) return;
 	if (AttachedComponent == nullptr) return;
@@ -99,7 +126,7 @@ void GizmoController::UpdateDrag(const Ray& ray)
 	CurrentStrategy->UpdateDrag(ray);
 }
 
-void GizmoController::EndDrag()
+void UGizmoComponent::EndDrag()
 {
 	if (!IsDragging()) return;
 
@@ -108,7 +135,7 @@ void GizmoController::EndDrag()
 	CurrentStrategy->EndDrag();
 }
 
-void GizmoController::SetControlStrategy(GizmoControllerType type)
+void UGizmoComponent::SetControlStrategy(GizmoControllerType type)
 {
 	Type = type;
 	CurrentStrategy->SetDrawEnable(false);
@@ -127,7 +154,7 @@ void GizmoController::SetControlStrategy(GizmoControllerType type)
 	CurrentStrategy->SetDrawEnable(bDrawEnabled);
 }
 
-GizmoControllerAxis GizmoController::TryPick(Ray& ray)
+GizmoControllerAxis UGizmoComponent::TryPick(Ray& ray)
 {
 	if (!bDrawEnabled)
 	{
@@ -144,8 +171,8 @@ GizmoControllerAxis GizmoController::TryPick(Ray& ray)
 	for (int i = 0; i < 3; ++i)
 	{
 		Ray localRay;
-		localRay.Direction = (relativeMatrices[i] * RelativeMatrix).Inverse().TransformVector(ray.Direction).Normalize();
-		localRay.Origin = (relativeMatrices[i] * RelativeMatrix).Inverse().TransformPoint(ray.Origin);
+		localRay.Direction = (relativeMatrices[i] * GetRelativeMatrix()).Inverse().TransformVector(ray.Direction).Normalize();
+		localRay.Origin = (relativeMatrices[i] * GetRelativeMatrix()).Inverse().TransformPoint(ray.Origin);
 
 		FGeometry& geometry = resourceManager->GetGeometry(CurrentStrategy->GetGeometryName());
 		for (int j = 0; j < geometry.Vertices.size(); j += 3)
@@ -175,3 +202,5 @@ GizmoControllerAxis GizmoController::TryPick(Ray& ray)
 	}
 	return GizmoControllerAxis::None;
 }
+
+REGISTER_CLASS(UGizmoComponent)

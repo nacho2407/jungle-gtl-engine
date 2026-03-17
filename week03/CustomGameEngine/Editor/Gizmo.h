@@ -3,7 +3,7 @@
 #include "Singleton.h"
 
 struct Ray;
-class GizmoController;
+class UGizmoComponent;
 class UCameraComponent;
 
 enum class TransformationType
@@ -19,14 +19,12 @@ class Gizmo : public ISingleton<Gizmo>
 private:
 	Gizmo();
 	~Gizmo();
-public:
-	void UpdateRenderObject();
 
 public:
-	void OnBeforeRender(UCameraComponent* Camera);
+	UGizmoComponent* GetController() const { return Controller; }
 
-	GizmoController* GetController() const { return Controller; }
+	void CreateGizmoController();
 
 private:
-	GizmoController* Controller = nullptr;
+	UGizmoComponent* Controller = nullptr;
 };

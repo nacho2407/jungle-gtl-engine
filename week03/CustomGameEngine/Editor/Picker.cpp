@@ -1,9 +1,9 @@
 ﻿#include "Picker.h"
 #include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/GizmoComponent.h"
 #include "Editor.h"
 #include "Gizmo.h"
-#include "GizmoController.h"
 #include "Renderer/Geometry.h"
 #include "Scene.h"
 #include "Math/Vector4.h"
@@ -19,17 +19,18 @@ UPicker::~UPicker()
 
 void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene)
 {
-
 	Ray ray = CreateRay(ScreenX, ScreenY);
-	GizmoControllerAxis selectedAxis =
-		Gizmo::GetInstance().GetController()->TryPick(ray);
-	if (selectedAxis != GizmoControllerAxis::None)
-	{
-		Gizmo::GetInstance().GetController()->SetAxis(selectedAxis);
 
-		Ray ray = CreateRay(ScreenX, ScreenY);
-		Gizmo::GetInstance().GetController()->BeginDrag(ray);
-		return;
+	UGizmoComponent* controller = Gizmo::GetInstance().GetController();
+	if (controller)
+	{
+		GizmoControllerAxis selectedAxis = controller->TryPick(ray);
+		if (selectedAxis != GizmoControllerAxis::None)
+		{
+			controller->SetAxis(selectedAxis);
+			controller->BeginDrag(ray);
+			return;
+		}
 	}
 
 	UPrimitiveComponent* ClosestComp = nullptr;
@@ -75,7 +76,7 @@ GizmoControllerAxis UPicker::PickGizmo(int ScreenX, int ScreenY, UScene* Scene)
 {
 	Ray ray = CreateRay(ScreenX, ScreenY);
 	GizmoControllerAxis SelectedAxis = GizmoControllerAxis::None;
-	GizmoController* Controller = Gizmo::GetInstance().GetController();
+	UGizmoComponent* Controller = Gizmo::GetInstance().GetController();
 
 	USceneComponent* comp = Controller->GetAttachedComponent();
 	if (comp == nullptr) return SelectedAxis;
@@ -211,6 +212,36 @@ Ray UPicker::CreateRay(int ScreenX, int ScreenY)
 	//ray.Direction = InvView.TransformVector(ViewDir).Normalize();
 
 	//return ray;
+}
+
+Ray Ray::CreateRay(int x, int y, UCameraComponent* camera)
+{
+	//Screen Space -> NDC Space
+	float ndcX = (2.0f * (static_cast<float>(x) + 0.5f)) / camera->ScreenWidth - 1.0f;
+	float ndcY = 1.0f - (2.0f * (static_cast<float>(y) + 0.5f)) / camera->ScreenHeight;
+	//NDC -> View Space
+	FVector4 Near = FVector4(ndcX, ndcY, 0.f, 1.f);
+	FVector4 Far = FVector4(ndcX, ndcY, 1.f, 1.f);
+	FMatrix InvProjMat = camera->GetProjectionMatrix().Inverse();
+	FVector4 NearView = Near * InvProjMat;
+	FVector4 FarView = Far * InvProjMat;
+	NearView = NearView * (1.0f / NearView.w);
+	FarView = FarView * (1.0f / FarView.w);
+	//View Space -> World Space
+	FMatrix InvView = camera->GetViewMatrix().Inverse();
+	FVector4 NearWorld = NearView * InvView;
+	FVector4 FarWorld = FarView * InvView;
+
+
+	//FVector ViewDir = FVector(NearView.x, NearView.y, NearView.z).Normalize();
+
+	Ray ray;
+	ray.Origin = FVector(NearWorld.x, NearWorld.y, NearWorld.z);
+	ray.Direction = FVector((FarWorld.x - ray.Origin.x),
+		(FarWorld.y - ray.Origin.y),
+		(FarWorld.z - ray.Origin.z)).Normalize();
+
+	return ray;
 }
 
 bool Ray::IntersectsTriangle(const FVector& V0, const FVector& V1, const FVector& V2, float& OutT, const Ray& ray)

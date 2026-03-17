@@ -1,5 +1,5 @@
 ﻿#include "GizmoRotationControlStrategy.h"
-#include "GizmoController.h"
+#include "Component/GizmoComponent.h"
 #include "ResourceManager.h"
 #include "Object.h"
 #include "Renderer/Renderer.h"
@@ -7,7 +7,7 @@
 #include "Component/SceneComponent.h"
 #include "Logger.h"
 
-GizmoRotationControlStrategy::GizmoRotationControlStrategy(GizmoController* controller)
+GizmoRotationControlStrategy::GizmoRotationControlStrategy(UGizmoComponent* controller)
 {
 	ResourceManager* resourceManager = ResourceManager::GetInstance();
 
@@ -77,16 +77,18 @@ void GizmoRotationControlStrategy::UpdateDrag(const Ray& ray)
 	FQuat currQuat = InitialObjectQuaternion;
 	FQuat deltaQuat;
 
+	float sensitivity = 2000.0f;
+
 	switch (Controller->GetHoverAxis())
 	{
 	case GizmoControllerAxis::X:
-		deltaQuat = FQuat::FromAxisAngle(FVector::Forward(), diff * 20.0f);
+		deltaQuat = FQuat::FromAxisAngle(FVector::Forward(), diff * sensitivity);
 		break;
 	case GizmoControllerAxis::Y:
-		deltaQuat = FQuat::FromAxisAngle(FVector::Right(), diff * 20.0f);
+		deltaQuat = FQuat::FromAxisAngle(FVector::Right(), diff * sensitivity);
 		break;
 	case GizmoControllerAxis::Z:
-		deltaQuat = FQuat::FromAxisAngle(FVector::Up(), diff * 20.0f);
+		deltaQuat = FQuat::FromAxisAngle(FVector::Up(), diff * sensitivity);
 		break;
 	}
 

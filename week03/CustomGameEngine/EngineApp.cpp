@@ -2,10 +2,10 @@
 #include "Component/CameraComponent.h"
 #include "Component/AxisComponent.h"
 #include "Component/CubeComponent.h"
+#include "Component/GizmoComponent.h"
 #include "Renderer/Renderer.h"
 #include "Editor/Editor.h"
 #include "Editor/Gizmo.h"
-#include "Editor/GizmoController.h"
 #include "Editor/Picker.h"
 #include "ImGui/imgui.h"
 #include "InputManager.h"
@@ -111,6 +111,8 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	Renderer->SetRenderCamera(Camera);
 	EditorInst->SetCamera(Camera);
 	EditorInst->SetRenderer(Renderer);
+	
+	Gizmo::GetInstance().CreateGizmoController();
 
 	//Resize Callback
 	OnResizeCallback.push_back([Camera](int width, int height) {
@@ -189,36 +191,11 @@ void EngineApp::Run()
 			Picker->Pick(Mouse.x, Mouse.y, GetWorld().GetActiveScene());
 		}
 
-		Ray ray = Picker->CreateRay(Mouse.x, Mouse.y);
-
-		if (InputManager::GetInstance().IsKeyHold(VK_LBUTTON))
-		{
-			if (Gizmo::GetInstance().GetController()->IsDragging())
-			{
-				Gizmo::GetInstance().GetController()->UpdateDrag(ray);
-			}
-		}
-
-		if (InputManager::GetInstance().IsKeyUp(VK_LBUTTON))
-		{
-			if (Gizmo::GetInstance().GetController()->IsDragging())
-			{
-				Gizmo::GetInstance().GetController()->EndDrag();
-			}
-		}
-
-		if (!InputManager::GetInstance().IsKeyHold(VK_LBUTTON))
-		{
-			GizmoControllerAxis hoveredAxis = Gizmo::GetInstance().GetController()->TryPick(ray);
-			Gizmo::GetInstance().GetController()->SetHoverAxis(hoveredAxis);
-		}
-
 		// Update Game World
 		GetWorld().Update(TempDelta);
 
 		//Render
 		GetWorld().OnBeforeRender();
-		EditorInst->OnBeforeRender();
 
 		Renderer->Prepare();
 
