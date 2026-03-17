@@ -10,6 +10,8 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 
+class URenderer;
+
 class ResourceManager
 {
 public:
@@ -18,6 +20,8 @@ public:
 		static ResourceManager instance;
 		return &instance;
 	};
+
+
 
 	~ResourceManager() {};
 
@@ -451,7 +455,6 @@ public:
 	{
 		return GeometryMap[ResourceName];
 	}
-
 	void Release()
 	{
 		GeometryMap.clear();
@@ -461,4 +464,5 @@ private:
 	ResourceManager() {};
 	TMap<FString, FGeometry> GeometryMap;
 	TMap<WFString, FMaterial> MaterialMap;
+	URenderer* Renderer = nullptr;
 };

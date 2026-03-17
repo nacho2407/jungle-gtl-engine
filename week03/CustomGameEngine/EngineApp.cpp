@@ -49,11 +49,10 @@ LRESULT CALLBACK EngineApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 			UINT height = HIWORD(lParam);
 			if (width > 0 && height > 0)
 			{
-				if (pApp->Camera)
-					pApp->Camera->OnResize(width, height);
-
-				if (pApp->Renderer)
-					pApp->Renderer->OnResize(width, height);
+				for (auto& callback : pApp->OnResizeCallback)
+				{
+					callback(width, height);
+				}
 			}
 		}
 		break;
@@ -116,6 +115,14 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 		height = rc.bottom - rc.top;
 	}
 	Camera->OnResize(width, height);
+
+	//Resize Callback
+	OnResizeCallback.push_back([this](int width, int height) {
+		Camera->OnResize(width, height);
+		});
+	OnResizeCallback.push_back([this](int width, int height) {
+		Renderer->OnResize(width, height);
+		});
 
 	//Init Picker
 	Picker = Cast<UPicker>(FObjectFactory::ConstructObject(UPicker::GetClass()));

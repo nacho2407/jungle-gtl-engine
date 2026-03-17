@@ -1,7 +1,8 @@
 ﻿#pragma once
 
 #include <windows.h>
-
+#include <functional>
+#include "EngineTypes.h"
 class URenderer;
 class Editor;
 class UCameraComponent;
@@ -29,5 +30,6 @@ private:
 	Editor* EditorInst = nullptr;
 	UCameraComponent* Camera = nullptr;
 	UPicker* Picker = nullptr;
+	TArray<std::function<void(int width, int height)>> OnResizeCallback;
 };
 
