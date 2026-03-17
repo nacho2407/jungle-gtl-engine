@@ -1,81 +1,73 @@
-﻿#include "Camera.h"
+﻿#include "CameraComponent.h"
 #include "InputManager.h"
 #include "Math/MathHelper.h"
 #include "Math/Matrix.h"
 #include "Math/Quaternion.h"
 #include "Math/Vector.h"
+#include "World.h"
 #include "TimerManager.h"
 #include <algorithm>
 
-UCamera::~UCamera() {}
+UCameraComponent::UCameraComponent() : io(ImGui::GetIO())
+{}
 
-void UCamera::SetPosition(const FVector& _input) {
+UCameraComponent::~UCameraComponent() {}
+
+void UCameraComponent::SetPosition(const FVector& _input) {
 	if (!Position.IsNearlyEqual(_input, Epsilon)) {
 		Position = _input;
-		bIsDirty = true;
 	}
 }
 
-void UCamera::Move(float DeltaTime) {
+void UCameraComponent::Move(float DeltaTime) {
 	if (InputManager::GetInstance().IsKeyHold('W') &&
 		!InputManager::GetInstance().IsKeyHold('S')) {
 		Position = Position + Direction * MoveSpeed * DeltaTime;
-		bIsDirty = true;
 	}
 	else if (!InputManager::GetInstance().IsKeyHold('W') &&
 		InputManager::GetInstance().IsKeyHold('S')) {
 		Position = Position - Direction * MoveSpeed * DeltaTime;
-		bIsDirty = true;
 	}
 	if (InputManager::GetInstance().IsKeyHold('E') &&
 		!InputManager::GetInstance().IsKeyHold('Q')) {
 		Position = Position + UpVec * MoveSpeed * DeltaTime;
-		bIsDirty = true;
 	}
 	else if (!InputManager::GetInstance().IsKeyHold('E') &&
 		InputManager::GetInstance().IsKeyHold('Q')) {
 		Position = Position - UpVec * MoveSpeed * DeltaTime;
-		bIsDirty = true;
 	}
 	if (!InputManager::GetInstance().IsKeyHold('D') &&
 		InputManager::GetInstance().IsKeyHold('A')) {
 		Position = Position + SideDirection * MoveSpeed * DeltaTime;
-		bIsDirty = true;
 	}
 	else if (InputManager::GetInstance().IsKeyHold('D') &&
 		!InputManager::GetInstance().IsKeyHold('A')) {
 		Position = Position - SideDirection * MoveSpeed * DeltaTime;
-		bIsDirty = true;
 	}
 
 }
 
-void UCamera::SetDirection(const float InputPitch, const float InputYaw,
+void UCameraComponent::SetDirection(const float InputPitch, const float InputYaw,
 	const float InputRoll) {
 	if (std::abs(Pitch - InputPitch) > Epsilon) {
 		Pitch = (std::max)(-89.9f, (std::min)(89.9f, InputPitch));
-		bIsDirty = true;
 	}
 	if (std::abs(Yaw - InputYaw) > Epsilon) {
 		Yaw = InputYaw;
-		bIsDirty = true;
 	}
 	if (std::abs(Roll - InputRoll) > Epsilon) {
 		Roll = InputRoll;
-		bIsDirty = true;
 	}
 }
 
-void UCamera::Rotate(float DeltaTime)
+void UCameraComponent::Rotate(float DeltaTime)
 {
 	Yaw += (InputManager::GetInstance().MouseDelta.x * RotateSensitivity * DeltaTime);
 	Pitch += (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
 	Pitch = MathHelper::Clamp(Pitch, -89.9f, 89.9f);
-
-	bIsDirty = true;
 }
 
-void UCamera::OrbitRotate(float DeltaTime)
+void UCameraComponent::OrbitRotate(float DeltaTime)
 {
 	Yaw -= (InputManager::GetInstance().MouseDelta.x * RotateSensitivity * DeltaTime);
 	Pitch -= (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
@@ -89,38 +81,34 @@ void UCamera::OrbitRotate(float DeltaTime)
 	FVector ForwardVec = RotMatrix.TransformVector(ForwardBase).Normalize();
 
 	Position = FocusPoint - ForwardVec * FocusLength;
-	bIsDirty = true;
 }
 
-void UCamera::SetFOV(const float NewFOV)
+void UCameraComponent::SetFOV(const float NewFOV)
 {
 	if (std::abs(FOV - NewFOV) > Epsilon) {
 		FOV = std::clamp(NewFOV, 10.0f, 170.0f);
-		bIsDirty = true;
 	}
 }
-float UCamera::GetFOV() const
+float UCameraComponent::GetFOV() const
 {
 	return FOV;
 }
 
-void UCamera::OnResize(int NewWidth, int NewHeight) {
+void UCameraComponent::OnResize(int NewWidth, int NewHeight) {
 	if (NewHeight == 0) return;
 	ScreenWidth = static_cast<float>(NewWidth);
 	ScreenHeight = static_cast<float>(NewHeight);
 	AspectRatio = static_cast<float>(NewWidth) / static_cast<float>(NewHeight);
-	bIsDirty = true;
 }
 
-float UCamera::GetAspectRatio() const
+float UCameraComponent::GetAspectRatio() const
 {
 	return AspectRatio;
 }
 
-void UCamera::SetOrthogonal(bool input)
+void UCameraComponent::SetOrthogonal(bool input)
 {
 	IsOrthogonal = input;
-	bIsDirty = true;
 }
 
 //void UCamera::ChangePerpective(EProjectionType NewType)
@@ -129,7 +117,35 @@ void UCamera::SetOrthogonal(bool input)
 //	bIsDirty = true;
 //}
 
-void UCamera::update() {
+void UCameraComponent::Update(float deltaTime) {
+	HandleCameraMove(deltaTime);
+	UpdateCameraMatrices();
+}
+
+void UCameraComponent::HandleCameraMove(float deltaTime)
+{
+	if (!io.WantCaptureKeyboard && !io.WantCaptureMouse)
+	{
+		if (InputManager::GetInstance().IsKeyHold(VK_RBUTTON))
+		{
+			Move(deltaTime);
+			Rotate(deltaTime);
+		}
+		else if (InputManager::GetInstance().IsKeyHold(VK_LBUTTON)
+			&& InputManager::GetInstance().IsKeyHold(VK_MENU))
+		{
+			OrbitRotate(deltaTime);
+		}
+		if (InputManager::GetInstance().IsKeyHold('F')
+			&& GetWorld().GetActiveScene()->IsCompSelected)
+		{
+			// SetPosition(EditorInst->GetSelectedComponent()->GetRelativeLocation() - Direction * FocusLength);
+		}
+	}
+}
+
+void UCameraComponent::UpdateCameraMatrices()
+{
 	FMatrix RotMatrix = FMatrix::RotationXMatrix(Roll) *
 		FMatrix::RotationYMatrix(Pitch) *
 		FMatrix::RotationZMatrix(Yaw);
@@ -145,11 +161,9 @@ void UCamera::update() {
 	View = FMatrix::ViewMatrix(Position, FocusPoint, UpDirection);
 	CalcProjectionMatrix();
 	ViewProjection = View * Projection;
-
-	bIsDirty = false;
 }
 
-void UCamera::CalcViewMatrix()
+void UCameraComponent::CalcViewMatrix()
 {
 	FMatrix InvT;
 	InvT[3][2] = -Position.x;
@@ -164,7 +178,7 @@ void UCamera::CalcViewMatrix()
 }
 
 
-FMatrix UCamera::GetViewMatrix() const
+FMatrix UCameraComponent::GetViewMatrix() const
 {
 	return View;
 }
@@ -177,7 +191,7 @@ FMatrix UCamera::GetViewMatrix() const
 //		CalcOrthogonalProjectionMatrix();
 //}
 
-void UCamera::CalcProjectionMatrix()
+void UCameraComponent::CalcProjectionMatrix()
 {
 	if (!IsOrthogonal)
 		CalcPerspectiveProjectionMatrix();
@@ -185,12 +199,12 @@ void UCamera::CalcProjectionMatrix()
 		CalcOrthogonalProjectionMatrix();
 }
 
-FMatrix UCamera::GetProjectionMatrix() const
+FMatrix UCameraComponent::GetProjectionMatrix() const
 {
 	return Projection;
 }
 
-void UCamera::CalcPerspectiveProjectionMatrix()
+void UCameraComponent::CalcPerspectiveProjectionMatrix()
 {
 	FMatrix M = FMatrix::ZeroMatrix();
 
@@ -210,7 +224,7 @@ void UCamera::CalcPerspectiveProjectionMatrix()
 	Projection = M;
 }
 
-void UCamera::CalcOrthogonalProjectionMatrix()
+void UCameraComponent::CalcOrthogonalProjectionMatrix()
 {
 	FMatrix M;
 
@@ -231,6 +245,6 @@ void UCamera::CalcOrthogonalProjectionMatrix()
 	Projection = M;
 }
 
-FMatrix UCamera::GetViewProjectionMatrix() const { return ViewProjection; }
+FMatrix UCameraComponent::GetViewProjectionMatrix() const { return ViewProjection; }
 
-REGISTER_CLASS(UCamera);
+REGISTER_CLASS(UCameraComponent);

@@ -47,7 +47,7 @@ To* Cast(From* obj)
 {
 	if (obj && obj->IsA(To::GetClass()))
 	{
-		return static_cast<To*>(obj);
+		return (To*)(obj);
 	}
 	return nullptr;
 }

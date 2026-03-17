@@ -4,7 +4,7 @@
 
 class URenderer;
 class Editor;
-class UCamera;
+class UCameraComponent;
 class UPicker;
 class EngineApp
 {
@@ -27,7 +27,7 @@ private:
 	HWND HWnd = nullptr;
 	URenderer* Renderer = nullptr;
 	Editor* EditorInst = nullptr;
-	UCamera* Camera = nullptr;
+	UCameraComponent* Camera = nullptr;
 	UPicker* Picker = nullptr;
 };
 

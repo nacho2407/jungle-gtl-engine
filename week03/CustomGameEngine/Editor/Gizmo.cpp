@@ -1,11 +1,11 @@
 ﻿#include "Gizmo.h"
 #include "Component/SceneComponent.h"
+#include "Component/CameraComponent.h"
 #include "Renderer/RenderObject.h"
 #include "ResourceManager.h"
 #include "Picker.h"
 #include "Logger.h"
 #include "GizmoController.h"
-#include "Camera.h"
 
 Gizmo::Gizmo()
 {
@@ -22,7 +22,7 @@ Gizmo::~Gizmo()
 	delete Controller;
 }
 
-void Gizmo::OnBeforeRender(UCamera* Camera)
+void Gizmo::OnBeforeRender(UCameraComponent* Camera)
 {
 	if (Controller)
 	{

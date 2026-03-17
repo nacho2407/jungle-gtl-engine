@@ -5,14 +5,36 @@
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderObject.h"
 #include "Component/SceneComponent.h"
+#include "Logger.h"
 
 GizmoRotationControlStrategy::GizmoRotationControlStrategy(GizmoController* controller)
 {
+	ResourceManager* resourceManager = ResourceManager::GetInstance();
+
 	GizmoX = new RenderObject();
+	GizmoX->Geometry = &resourceManager->GetGeometry("GizmoRotation");
+	GizmoX->Material = &resourceManager->GetMaterial(L"Shader/ShaderW0.hlsl");
+	GizmoX->bDepthEnabled = false;
+	GizmoX->Color = FColor(1.0f, 0.0f, 0.0f, 1.0f);
+
 	GizmoY = new RenderObject();
+	GizmoY->Geometry = &resourceManager->GetGeometry("GizmoRotation");
+	GizmoY->Material = &resourceManager->GetMaterial(L"Shader/ShaderW0.hlsl");
+	GizmoY->bDepthEnabled = false;
+	GizmoY->Color = FColor(0.0f, 1.0f, 0.0f, 1.0f);
+
 	GizmoZ = new RenderObject();
+	GizmoZ->Geometry = &resourceManager->GetGeometry("GizmoRotation");
+	GizmoZ->Material = &resourceManager->GetMaterial(L"Shader/ShaderW0.hlsl");
+	GizmoZ->bDepthEnabled = false;
+	GizmoZ->Color = FColor(0.0f, 0.0f, 1.0f, 1.0f);
 
 	Controller = controller;
+
+	RelativeMatrices.resize(3);
+	RelativeMatrices[0] = FMatrix::RotationYMatrix(-90.0f);
+	RelativeMatrices[1] = FMatrix::RotationXMatrix(90.0f);
+	RelativeMatrices[2] = FMatrix::IdentityMatrix();
 }
 
 GizmoRotationControlStrategy::~GizmoRotationControlStrategy()
@@ -29,41 +51,22 @@ void GizmoRotationControlStrategy::Update()
 
 void GizmoRotationControlStrategy::UpdateRenderObject()
 {
-	ResourceManager* resourceManager = ResourceManager::GetInstance();
+	GizmoX->World = RelativeMatrices[0] * Controller->GetRelativeMatrix();
+	GizmoX->bIsSelected = Controller->GetHoverAxis() == GizmoControllerAxis::X;
 
-	{
-		GizmoX->Geometry = &resourceManager->GetGeometry("GizmoRotationX");
-		GizmoX->Material = &resourceManager->GetMaterial(L"Shader/ShaderW0.hlsl");
+	GizmoY->World = RelativeMatrices[1] * Controller->GetRelativeMatrix();
+	GizmoY->bIsSelected = Controller->GetHoverAxis() == GizmoControllerAxis::Y;
 
-		GizmoX->World = Controller->GetRelativeMatrix();
-		GizmoX->bDepthEnabled = false;
-
-		GizmoX->bIsSelected = Controller->GetHoverAxis() == GizmoControllerAxis::X;
-	}
-	{
-		GizmoY->Geometry = &resourceManager->GetGeometry("GizmoRotationY");
-		GizmoY->Material = &resourceManager->GetMaterial(L"Shader/ShaderW0.hlsl");
-
-		GizmoY->World = Controller->GetRelativeMatrix();
-		GizmoY->bDepthEnabled = false;
-
-		GizmoY->bIsSelected = Controller->GetHoverAxis() == GizmoControllerAxis::Y;
-	}
-	{
-		GizmoZ->Geometry = &resourceManager->GetGeometry("GizmoRotationZ");
-		GizmoZ->Material = &resourceManager->GetMaterial(L"Shader/ShaderW0.hlsl");
-
-		GizmoZ->World = Controller->GetRelativeMatrix();
-		GizmoZ->bDepthEnabled = false;
-
-		GizmoZ->bIsSelected = Controller->GetHoverAxis() == GizmoControllerAxis::Z;
-	}
+	GizmoZ->World = Controller->GetRelativeMatrix();
+	GizmoZ->bIsSelected = Controller->GetHoverAxis() == GizmoControllerAxis::Z;
 }
 
 void GizmoRotationControlStrategy::BeginDrag(const Ray& ray)
 {
 	InitialTouchPoint = ray.Origin;
 	InitialObjectQuaternion = Controller->GetAttachedComponent()->GetRelativeQuaternion();
+
+	ShowCursor(false);
 }
 
 void GizmoRotationControlStrategy::UpdateDrag(const Ray& ray)
@@ -101,6 +104,7 @@ void GizmoRotationControlStrategy::UpdateDrag(const Ray& ray)
 
 void GizmoRotationControlStrategy::EndDrag()
 {
+	ShowCursor(true);
 }
 
 void GizmoRotationControlStrategy::SetDrawEnable(bool bEnable)

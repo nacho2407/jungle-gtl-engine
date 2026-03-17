@@ -6,6 +6,7 @@
 #include "VertexSimple.h"
 #include <d3d11.h>
 #include "EngineTypes.h"
+#include "Color.h"
 
 class URenderer {
 public:
@@ -64,6 +65,7 @@ public:
 	struct FObjectConstant
 	{
 		FMatrix World;
+		FColor Color;
 		int bIsSelected;
 		float Padding[3];
 	};
@@ -81,7 +83,7 @@ public:
 
 
 public:
-	void Render(class UCamera* Camera);
-	void RenderGrid(UCamera* Camera, ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader);
+	void Render(class UCameraComponent* Camera);
+	void RenderGrid(UCameraComponent* Camera, ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader);
 	FLevel drawLevel;
 };

@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-class UCamera;
+class UCameraComponent;
 class Editor;
 
 struct EditorControlPanel
@@ -8,7 +8,7 @@ struct EditorControlPanel
 	EditorControlPanel(Editor* editorDependency);
 	~EditorControlPanel();
 
-	void Draw(UCamera* camera);
+	void Draw(UCameraComponent* camera);
 
 	Editor* editor;
 };

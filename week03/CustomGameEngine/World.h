@@ -16,8 +16,14 @@ private:
 public:
 	~UWorld();
 
+	// === Scene Management
 	UScene* GetActiveScene();
 	void SetActiveScene(UScene*);
+	UScene* NewScene();
+	void SaveScene(FString sceneName);
+	UScene* LoadScene(FString sceneName);
+	void UnloadScene();
+	// === Scene Management
 
 public:
 	template <typename T>
@@ -48,12 +54,21 @@ public:
 		return AddSceneComponent<T>(activeScene);
 	}
 
+	template <typename T>
+	T* AddPermanentSceneComponent()
+	{
+		return AddSceneComponent<T>(permanentScene);
+	}
+
 	void RemoveSceneComponent(USceneComponent* toDespawn);
+
+	void Update(float deltaTime);
 	inline void InjectRenderer(URenderer* InRenderer) { Renderer = InRenderer; }
 	void OnBeforeRender() const;
 
 private:
 	static UScene* activeScene;
+	static UScene* permanentScene;
 	URenderer* Renderer;
 };
 
