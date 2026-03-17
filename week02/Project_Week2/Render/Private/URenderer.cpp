@@ -67,17 +67,20 @@ bool URenderer::Create(HWND hWindow)
     if (!CreateDeviceAndSwapChain(hWindow)) { Release(); return false; }
     if (!CreateFrameBuffer()) { Release(); return false; }
 
-    DXGI_SWAP_CHAIN_DESC Desc = {};
-    SwapChain->GetDesc(&Desc);
+    // (X) CreateDeviceAndSwapChain 내부와 중복
+    //DXGI_SWAP_CHAIN_DESC Desc = {};
+    //SwapChain->GetDesc(&Desc);
+    float Width = ViewportInfo.Width;
+    float Height = ViewportInfo.Height;
 
-    if (!CreateDepthStencilBuffer(Desc.BufferDesc.Width, Desc.BufferDesc.Height)) { Release(); return false; }
+    if (!CreateDepthStencilBuffer(Width, Height)) { Release(); return false; }
     if (!CreateRasterizerStates()) { Release(); return false; }
     if (!CreateDepthStencilStates()) { Release(); return false; }
     if (!CreateShader(L"Render\\Public\\Shaders\\Default.hlsl")) { Release(); return false; }
     if (!CreateConstantBuffer()) { Release(); return false; }
 
     // for Hit Proxy
-    if (!CreateHitProxyBuffer(Desc.BufferDesc.Width, Desc.BufferDesc.Height)) { Release(); return false; }
+    if (!CreateHitProxyBuffer(Width, Height)) { Release(); return false; }
     if (!CreateHitProxyShader(L"Render\\Public\\Shaders\\HitProxy.hlsl")) { Release(); return false; }
 
     return true;
@@ -353,11 +356,23 @@ bool URenderer::CreateDepthStencilStates()
 
     Desc.DepthEnable = FALSE;
     Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    Desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 
     if (FAILED(Device->CreateDepthStencilState(&Desc, &DepthStencilStateDisabled)))
     {
         return false;
     }
+
+    // 추가: depth test만 하고 write는 안 함
+    Desc.DepthEnable = TRUE;
+    Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    Desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+
+    if (FAILED(Device->CreateDepthStencilState(&Desc, &DepthStencilStateTestOnly)))
+    {
+        return false;
+    }
+
 
     return true;
 }
@@ -374,6 +389,11 @@ void URenderer::ReleaseDepthStencilStates()
     {
         DepthStencilStateDisabled->Release();
         DepthStencilStateDisabled = nullptr;
+    }
+    if (DepthStencilStateTestOnly)
+    {
+        DepthStencilStateTestOnly->Release();
+        DepthStencilStateTestOnly = nullptr;
     }
 }
 
@@ -611,17 +631,24 @@ void URenderer::Render(const FScene& Scene, const UCameraComponent* Camera)
         DrawMeshItem(Item, View, Projection);
     }
 
-    // 2) overlay 성격 오브젝트 나중
+    ClearDepthOnly();
+
+    //// 2) overlay 성격 오브젝트 나중
+    //for (const FRenderItem& Item : Scene.RenderItems)
+    //{
+    //    if (Item.bDepthEnable)
+    //    {
+    //        continue;
+    //    }
+
+    //    DrawMeshItem(Item, View, Projection);
+    //}
+    // 2차: gizmo만
     for (const FRenderItem& Item : Scene.RenderItems)
     {
-        if (Item.bDepthEnable)
-        {
-            continue;
-        }
-
+        if (!Item.bIsGizmo) continue;
         DrawMeshItem(Item, View, Projection);
     }
-
 
     RenderHitProxy(Scene, Camera);
 }
@@ -726,6 +753,15 @@ void URenderer::DrawMeshItem(const FRenderItem& Item, const FMatrix& View, const
     {
         DeviceContext->Draw(Resource.VertexCount, 0);
     }
+
+    ID3D11DepthStencilState* DepthState = DepthStencilStateDisabled;
+
+    if (Item.bDepthEnable)
+    {
+        DepthState = Item.bDepthWrite ? DepthStencilStateEnabled : DepthStencilStateTestOnly;
+    }
+
+    DeviceContext->OMSetDepthStencilState(DepthState, 0);
 }
 
 bool URenderer::GetOrCreateMeshResource(UStaticMesh* Mesh, FMeshGPUResource& OutResource)
@@ -1168,4 +1204,17 @@ void URenderer::BindMainRenderTargetForOverlay()
 
     DeviceContext->RSSetViewports(1, &ViewportInfo);
     DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView);
+}
+
+void URenderer::ClearDepthOnly()
+{
+    if (DeviceContext && DepthStencilView)
+    {
+        DeviceContext->ClearDepthStencilView(
+            DepthStencilView,
+            D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
+            1.0f,
+            0
+        );
+    }
 }

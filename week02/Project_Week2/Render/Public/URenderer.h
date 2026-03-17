@@ -137,6 +137,8 @@ private:
     // ID <> 픽셀 색상 변환
     static FVector4 EncodeHitProxyIdColor(uint32 Id);
     static uint32 DecodeHitProxyIdColor(uint8 R, uint8 G, uint8 B);
+    
+    void ClearDepthOnly();
 
 private:
 
@@ -158,4 +160,6 @@ private:
     /* Hit Proxy Pass에서 각 RenderItem에 ID를 부여하고, Picking 결과
        픽셀을 읽은 뒤 그 ID로 다시 RenderItem을 찾아내기 위한 맵 */
     TMap<uint32, FHitProxy> HitProxyMap;
+
+    ID3D11DepthStencilState* DepthStencilStateTestOnly = nullptr;
 };

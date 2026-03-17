@@ -175,32 +175,6 @@ bool FApplication::InitializeEngine()
 
 bool FApplication::InitializeGUI()
 {
-    //if (!WindowApp || !Renderer)
-    //{
-    //    return false;
-    //}
-
-    //IMGUI_CHECKVERSION();
-    //ImGui::CreateContext();
-
-    //ImGuiIO& io = ImGui::GetIO();
-    //(void)io;
-
-    //ImGui::StyleColorsDark();
-
-    //if (!ImGui_ImplWin32_Init(WindowApp->GetHWND()))
-    //{
-    //    return false;
-    //}
-
-    //if (!ImGui_ImplDX11_Init(Renderer->Device, Renderer->DeviceContext))
-    //{
-    //    ImGui_ImplWin32_Shutdown();
-    //    ImGui::DestroyContext();
-    //    return false;
-    //}
-
-    //return true;
     GUIManager = new FGUIManager();
     if (!GUIManager)
     {
@@ -302,47 +276,6 @@ bool FApplication::InitializeScene()
         }
     }
 
-    //// Gizmo
-    //// @@@ 이렇게 길게 여기서 처리하는 게 맞음????
-    //{
-    //    GizmoActor = new AActor();
-
-    //    GizmoXComp = new UStaticMeshComponent();
-    //    GizmoYComp = new UStaticMeshComponent();
-    //    GizmoZComp = new UStaticMeshComponent();
-
-    //    GizmoXComp->SetStaticMesh(GizmoArrowMesh);
-    //    GizmoYComp->SetStaticMesh(GizmoArrowMesh);
-    //    GizmoZComp->SetStaticMesh(GizmoArrowMesh);
-
-    //    GizmoXComp->SetRelativeLocation(FVector::ZeroVector);
-    //    GizmoYComp->SetRelativeLocation(FVector::ZeroVector);
-    //    GizmoZComp->SetRelativeLocation(FVector::ZeroVector);
-
-    //    // arrow mesh가 +X 방향 기준이라고 가정
-    //    GizmoXComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
-    //    GizmoYComp->SetRelativeRotation(FVector(0.0f, 0.0f, 1.5707963f));
-    //    GizmoZComp->SetRelativeRotation(FVector(0.0f, -1.5707963f, 0.0f));
-
-    //    GizmoXComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
-    //    GizmoYComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
-    //    GizmoZComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
-
-    //    GizmoXComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
-    //    GizmoYComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
-    //    GizmoZComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
-
-    //    GizmoXComp->SetVisibility(false);
-    //    GizmoYComp->SetVisibility(false);
-    //    GizmoZComp->SetVisibility(false);
-
-    //    GizmoActor->AddComponent(GizmoXComp);
-    //    GizmoActor->AddComponent(GizmoYComp);
-    //    GizmoActor->AddComponent(GizmoZComp);
-    //    GizmoActor->SetRootComponent(GizmoXComp);
-
-    //    World->AddActor(GizmoActor);
-    //}
     GizmoActor = new AGizmoActor();
     GizmoActor->Initialize(GizmoArrowMesh);
     World->AddActor(GizmoActor);

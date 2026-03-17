@@ -75,9 +75,12 @@ void AGizmoActor::Initialize(UStaticMesh* ArrowMesh)
     YAxisComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
     ZAxisComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
 
-    XAxisComp->SetDepthEnable(false);
-    YAxisComp->SetDepthEnable(false);
-    ZAxisComp->SetDepthEnable(false);
+    XAxisComp->SetDepthEnable(true);
+    YAxisComp->SetDepthEnable(true);
+    ZAxisComp->SetDepthEnable(true);
+    XAxisComp->SetDepthWrite(false);
+    YAxisComp->SetDepthWrite(false);
+    ZAxisComp->SetDepthWrite(false);
 
     XAxisComp->SetCullMode(ERenderCullMode::None);
     YAxisComp->SetCullMode(ERenderCullMode::None);

@@ -30,6 +30,7 @@ public:
     void SetUseVertexColor(bool bInUseVertexColor);
 
     void SetUseDepthBias(bool bInUseDepthBias);
+    void SetDepthWrite(bool bInDepthWrite);
 
 protected:
     bool bVisible;
@@ -40,4 +41,6 @@ protected:
     ERenderCullMode CullMode = ERenderCullMode::Back;
 
     bool bUseDepthBias = false;
+
+    bool bDepthWrite = true;
 };
