@@ -139,6 +139,11 @@ private:
     void TempFunc(AActor* actor);
 
     void CycleGizmoMode();
+
+    float SignedAngleAroundAxis(
+        const FVector& From,
+        const FVector& To,
+        const FVector& Axis) const;
     
 
 private:
@@ -214,4 +219,10 @@ private:
     AGizmoActor* GizmoActor;
 
     EGizmoMode CurrentGizmoMode = EGizmoMode::Translate;
+
+    UStaticMesh* GizmoRotateRingMesh = nullptr;
+
+    EGizmoMode DragStartGizmoMode = EGizmoMode::Translate;
+    FVector DragStartActorRotation = FVector::ZeroVector;
+    FVector DragStartVectorOnPlane = FVector::ZeroVector;
 };

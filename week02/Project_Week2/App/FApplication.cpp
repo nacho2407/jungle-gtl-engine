@@ -234,6 +234,7 @@ bool FApplication::InitializeResources()
     AxesMesh = BuiltInMeshFactory::CreateAxesMesh();
     GridMesh = BuiltInMeshFactory::CreateGridMesh(20, 1.0f);
     GizmoArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh();
+    GizmoRotateRingMesh = BuiltInMeshFactory::CreateGizmoRotateRingMesh();
 
     //ClickCircleMesh = BuiltInMeshFactory::CreateCircleMesh(64);
     ClickCircleMesh = BuiltInMeshFactory::CreateDiscMesh(64);
@@ -389,7 +390,7 @@ void FApplication::MainLoop()
     check(GizmoActor)
     check(GridActor)
 
-    GizmoActor->Initialize(GizmoArrowMesh, CubeMesh, TorusMesh);
+    GizmoActor->Initialize(GizmoArrowMesh, CubeMesh, GizmoRotateRingMesh);
     GizmoActor->SetMode(CurrentGizmoMode);
     World->AddActor(GizmoActor);
 
@@ -1063,7 +1064,45 @@ void FApplication::BeginGizmoDrag(EGizmoAxis Axis, int MouseX, int MouseY)
     case EGizmoAxis::Z: AxisDir = FVector(0.0f, 0.0f, 1.0f); break;
     default: return;
     }
+
+    FRay Ray = BuildPickRay(MouseX, MouseY);
+
+    DragStartGizmoMode = CurrentGizmoMode;
+    ActiveGizmoAxis = Axis;
+    DragAxisDirection = AxisDir;
+    DragStartActorLocation = Root->GetRelativeLocation();
+    DragStartActorRotation = Root->GetRelativeRotation();
+
+    if (CurrentGizmoMode == EGizmoMode::Rotate)
+    {
+        FVector HitPoint;
+        if (!IntersectRayPlane(Ray, DragStartActorLocation, AxisDir, HitPoint))
+        {
+            return;
+        }
+
+        FVector StartVec = HitPoint - DragStartActorLocation;
+        StartVec = StartVec - AxisDir * StartVec.Dot(AxisDir);
+
+        if (StartVec.LengthSquared() < 0.000001f)
+        {
+            return;
+        }
+
+        StartVec.Normalize();
+
+        bDraggingGizmo = true;
+        DragPlaneNormal = AxisDir;
+        DragStartVectorOnPlane = StartVec;
+        DragStartHitPoint = HitPoint;
+        return;
+    }
+
     auto MainCamera = Camera->GetCameraComponent();
+    if (!MainCamera)
+    {
+        return;
+    }
 
     const FMatrix CamRot = FMatrix::MakeRotationXYZ(MainCamera->GetRelativeRotation());
     const FVector4 Forward4 = CamRot * FVector4(0.0f, 0.0f, 1.0f, 0.0f);
@@ -1077,8 +1116,6 @@ void FApplication::BeginGizmoDrag(EGizmoAxis Axis, int MouseX, int MouseY)
         return;
     }
 
-    FRay Ray = BuildPickRay(MouseX, MouseY);
-
     FVector HitPoint;
     if (!IntersectRayPlane(Ray, Root->GetRelativeLocation(), PlaneNormal, HitPoint))
     {
@@ -1086,10 +1123,7 @@ void FApplication::BeginGizmoDrag(EGizmoAxis Axis, int MouseX, int MouseY)
     }
 
     bDraggingGizmo = true;
-    ActiveGizmoAxis = Axis;
-    DragAxisDirection = AxisDir;
     DragPlaneNormal = PlaneNormal;
-    DragStartActorLocation = Root->GetRelativeLocation();
     DragStartHitPoint = HitPoint;
 }
 
@@ -1108,6 +1142,83 @@ void FApplication::UpdateGizmoDrag(int MouseX, int MouseY)
 
     FRay Ray = BuildPickRay(MouseX, MouseY);
 
+    if (DragStartGizmoMode == EGizmoMode::Rotate)
+    {
+        FVector HitPoint;
+        if (!IntersectRayPlane(Ray, DragStartActorLocation, DragPlaneNormal, HitPoint))
+        {
+            return;
+        }
+
+        FVector CurrentVec = HitPoint - DragStartActorLocation;
+        CurrentVec = CurrentVec - DragAxisDirection * CurrentVec.Dot(DragAxisDirection);
+
+        if (CurrentVec.LengthSquared() < 0.000001f)
+        {
+            return;
+        }
+
+        CurrentVec.Normalize();
+
+        // 드래그 시작 시점 벡터 -> 현재 벡터까지의 월드 축 기준 부호 있는 각도
+        // SignedAngleAroundAxis는 오른손 법칙(반시계) 양수이지만
+        // MakeRotationX/Y/Z는 행벡터 시스템에서 시계 방향이 양수이므로 부호 반전
+        const float DeltaAngle = -SignedAngleAroundAxis(
+            DragStartVectorOnPlane,
+            CurrentVec,
+            DragAxisDirection);
+
+        const FMatrix StartRot = FMatrix::MakeRotationXYZ(DragStartActorRotation);
+
+        FMatrix DeltaRot = FMatrix::MakeIdentity();
+        switch (ActiveGizmoAxis)
+        {
+        case EGizmoAxis::X: DeltaRot = FMatrix::MakeRotationX(DeltaAngle); break;
+        case EGizmoAxis::Y: DeltaRot = FMatrix::MakeRotationY(DeltaAngle); break;
+        case EGizmoAxis::Z: DeltaRot = FMatrix::MakeRotationZ(DeltaAngle); break;
+        default: return;
+        }
+
+        // 행벡터 시스템에서 월드 축 기준 회전: DeltaRot * StartRot
+        const FMatrix NewRotMat = StartRot * DeltaRot;
+
+        // R = RX * RY * RZ (행벡터, v*M 방식) Euler 역추출
+        // 전개 결과:
+        //   M[0][2] =  sinY
+        //   M[1][2] = -sinX * cosY
+        //   M[2][2] =  cosX * cosY
+        //   M[0][1] = -sinZ * cosY
+        //   M[0][0] =  cosZ * cosY
+        const float SinY = NewRotMat.M[0][2];
+        const float NewYaw = std::asin(std::clamp(SinY, -1.0f, 1.0f));
+
+        float NewPitch = 0.0f;
+        float NewRoll = 0.0f;
+
+        const float CosY = std::cos(NewYaw);
+        if (std::fabs(CosY) > 0.0001f)
+        {
+            NewPitch = std::atan2(-NewRotMat.M[1][2], NewRotMat.M[2][2]);
+            NewRoll = std::atan2(-NewRotMat.M[0][1], NewRotMat.M[0][0]);
+        }
+        else
+        {
+            // 짐벌락: Y축이 +-90도일 때
+            NewPitch = std::atan2(NewRotMat.M[2][1], NewRotMat.M[1][1]);
+            NewRoll = 0.0f;
+        }
+
+        Root->SetRelativeRotation(FVector(NewPitch, NewYaw, NewRoll));
+
+        if (GizmoActor)
+        {
+            GizmoActor->UpdateTransformFromTarget();
+            GizmoActor->UpdateColors(ActiveGizmoAxis);
+        }
+
+        return;
+    }
+
     FVector HitPoint;
     if (!IntersectRayPlane(Ray, DragStartActorLocation, DragPlaneNormal, HitPoint))
     {
@@ -1119,6 +1230,11 @@ void FApplication::UpdateGizmoDrag(int MouseX, int MouseY)
 
     const FVector NewLocation = DragStartActorLocation + DragAxisDirection * MoveAmount;
     Root->SetRelativeLocation(NewLocation);
+
+    if (GizmoActor)
+    {
+        GizmoActor->UpdateTransformFromTarget();
+    }
 }
 
 void FApplication::EndGizmoDrag()
@@ -1127,6 +1243,8 @@ void FApplication::EndGizmoDrag()
     ActiveGizmoAxis = EGizmoAxis::None;
     DragAxisDirection = FVector::ZeroVector;
     DragPlaneNormal = FVector::ZeroVector;
+    DragStartVectorOnPlane = FVector::ZeroVector;
+    DragStartActorRotation = FVector::ZeroVector;
 }
 
 void FApplication::AddSelectionOutlineRenderItem()
@@ -1568,4 +1686,19 @@ void FApplication::CycleGizmoMode()
         GizmoActor->UpdateColors(EGizmoAxis::None);
         GizmoActor->UpdateTransformFromTarget();
     }
+}
+
+float FApplication::SignedAngleAroundAxis(
+    const FVector& From,
+    const FVector& To,
+    const FVector& Axis) const
+{
+    FVector NFrom = From.GetNormalized();
+    FVector NTo = To.GetNormalized();
+    FVector NAxis = Axis.GetNormalized();
+
+    const float SinValue = NAxis.Dot(NFrom.Cross(NTo));
+    const float CosValue = NFrom.Dot(NTo);
+
+    return std::atan2(SinValue, CosValue);
 }
