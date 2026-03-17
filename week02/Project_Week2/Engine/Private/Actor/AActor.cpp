@@ -3,7 +3,14 @@
 #include "Component/USceneComponent.h"
 
 AActor::AActor(const FUObjectInitializer& ObjectInitializer) : UObject(ObjectInitializer) { RootComponent = nullptr;  }   // 추가
-AActor::~AActor() { }
+AActor::~AActor()
+{
+	for (UActorComponent* Comp : Components)
+	{
+		delete Comp;
+	}
+	Components.clear();
+}
 
 void AActor::BeginPlay()
 {

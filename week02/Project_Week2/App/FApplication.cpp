@@ -296,8 +296,8 @@ bool FApplication::InitializeScene()
     {
         if (UStaticMeshComponent* AxesComp = FindStaticMeshComponent(WorldAxesActor))
         {
-            //AxesComp->SetDepthEnable(false);
-
+            AxesComp->SetDepthEnable(true);
+            AxesComp->SetUseDepthBias(false);
             AxesComp->SetCullMode(ERenderCullMode::None);
         }
     }
