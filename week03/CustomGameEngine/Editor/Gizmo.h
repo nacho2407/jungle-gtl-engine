@@ -4,7 +4,7 @@
 
 struct Ray;
 class GizmoController;
-class UCamera;
+class UCameraComponent;
 
 enum class TransformationType
 {
@@ -23,7 +23,7 @@ public:
 	void UpdateRenderObject();
 
 public:
-	void OnBeforeRender(UCamera* Camera);
+	void OnBeforeRender(UCameraComponent* Camera);
 
 	GizmoController* GetController() const { return Controller; }
 

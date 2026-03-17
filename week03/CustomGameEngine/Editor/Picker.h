@@ -4,7 +4,7 @@
 #include "Object.h"
 #include "Math/Vector.h"
 
-class UCamera;
+class UCameraComponent;
 class UScene;
 class UPrimitiveComponent;
 class Editor;
@@ -27,14 +27,14 @@ class UPicker : public UObject
 public:
 	UPicker();
 	virtual ~UPicker() override;
-	void Pick(int x, int y, UCamera* Camera, UScene* Scene);
-	GizmoControllerAxis PickGizmo(int x, int y, UCamera* Camera, UScene* Scene);
-	Ray CreateRay(int x, int y, UCamera* Camera);
+	void Pick(int x, int y, UCameraComponent* Camera, UScene* Scene);
+	GizmoControllerAxis PickGizmo(int x, int y, UCameraComponent* Camera, UScene* Scene);
+	Ray CreateRay(int x, int y, UCameraComponent* Camera);
 
 	void SetEditor(Editor* pEditor) { EditorPtr = pEditor; }
 
 private:
-	UCamera* Camera;
+	UCameraComponent* Camera;
 	UScene* Scene;
 	Editor* EditorPtr;
 };

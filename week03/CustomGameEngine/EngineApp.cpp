@@ -1,5 +1,5 @@
 ﻿#include "EngineApp.h"
-#include "Camera.h"
+#include "Component/CameraComponent.h"
 #include "Component/AxisComponent.h"
 #include "Component/CubeComponent.h"
 #include "Renderer/Renderer.h"
@@ -104,7 +104,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 
 	InputManager::GetInstance().hWnd = HWnd;
 	// Init Camera
-	Camera = Cast<UCamera>(FObjectFactory::ConstructObject(UCamera::GetClass()));
+	Camera = Cast<UCameraComponent>(FObjectFactory::ConstructObject(UCameraComponent::GetClass()));
 	EditorInst->SetCamera(Camera);
 	EditorInst->SetRenderer(Renderer);
 

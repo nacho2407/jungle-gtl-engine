@@ -1,6 +1,6 @@
 ﻿#include "EditorControlPanel.h"
-#include "Camera.h"
 #include "Editor.h"
+#include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "PrimitiveFactory.h"
 #include "TimerManager.h"
@@ -25,7 +25,7 @@ EditorControlPanel::~EditorControlPanel()
 {
 }
 
-void EditorControlPanel::Draw(UCamera* camera)
+void EditorControlPanel::Draw(UCameraComponent* camera)
 {
 	ImGui::SetNextWindowPos(ImVec2(50, 50), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);

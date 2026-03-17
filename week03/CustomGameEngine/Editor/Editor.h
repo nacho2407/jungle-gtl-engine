@@ -9,7 +9,7 @@ struct EditorPropertyPanel;
 struct EditorStatPanel;
 struct EditorToolbar;
 class USceneComponent;
-class UCamera;
+class UCameraComponent;
 class URenderer;
 
 class Editor
@@ -25,7 +25,7 @@ public:
 	void Finalize();
 
 	void SetRenderer(URenderer* renderer) { Renderer = renderer; }
-	void SetCamera(UCamera* camera) { Camera = camera; }
+	void SetCamera(UCameraComponent* camera) { Camera = camera; }
 	void SelectComponent(USceneComponent* component);
 	USceneComponent* GetSelectedComponent() const { return SelectedComponent; }
 
@@ -44,6 +44,6 @@ private:
 	EditorToolbar* Toolbar = nullptr;
 
 	URenderer* Renderer = nullptr;
-	UCamera* Camera = nullptr;
+	UCameraComponent* Camera = nullptr;
 	USceneComponent* SelectedComponent = nullptr;
 };

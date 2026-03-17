@@ -31,7 +31,7 @@ public:
 	~GizmoController();
 
 public:
-	void Update(class UCamera* Camera);
+	void Update(class UCameraComponent* Camera);
 	void UpdateRenderObject();
 
 	void BeginDrag(const Ray& ray);

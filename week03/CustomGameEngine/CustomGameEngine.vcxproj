@@ -132,6 +132,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Component\AxisComponent.h" />
+    <ClInclude Include="Component\CameraComponent.h" />
     <ClInclude Include="Component\CubeComponent.h" />
     <ClInclude Include="Component\PlaneComponent.h" />
     <ClInclude Include="Component\PrimitiveComponent.h" />
@@ -184,7 +185,6 @@
     <ClInclude Include="Timer.h" />
     <ClInclude Include="TimerManager.h" />
     <ClInclude Include="Triangle.h" />
-    <ClInclude Include="Camera.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Math\Vector4.h" />
     <ClInclude Include="json.h" />
@@ -196,6 +196,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Component\AxisComponent.cpp" />
+    <ClCompile Include="Component\CameraComponent.cpp" />
     <ClCompile Include="Component\CubeComponent.cpp" />
     <ClCompile Include="Component\PlaneComponent.cpp" />
     <ClCompile Include="Component\PrimitiveComponent.cpp" />
@@ -239,7 +240,6 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="TimerManager.cpp" />
-    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="EngineStatics.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="World.cpp" />

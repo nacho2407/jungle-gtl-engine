@@ -1,5 +1,5 @@
 ﻿#include "Picker.h"
-#include "Camera.h"
+#include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Editor.h"
 #include "Gizmo.h"
@@ -17,7 +17,7 @@ UPicker::~UPicker()
 {
 }
 
-void UPicker::Pick(int ScreenX, int ScreenY, UCamera* Camera, UScene* Scene)
+void UPicker::Pick(int ScreenX, int ScreenY, UCameraComponent* Camera, UScene* Scene)
 {
 	UE_LOG("Screen Clicked at: (%d, %d)", ScreenX, ScreenY);
 
@@ -74,7 +74,7 @@ void UPicker::Pick(int ScreenX, int ScreenY, UCamera* Camera, UScene* Scene)
 }
 
 // TODO: Optimize later...
-GizmoControllerAxis UPicker::PickGizmo(int ScreenX, int ScreenY, UCamera* Camera, UScene* Scene)
+GizmoControllerAxis UPicker::PickGizmo(int ScreenX, int ScreenY, UCameraComponent* Camera, UScene* Scene)
 {
 	Ray ray = CreateRay(ScreenX, ScreenY, Camera);
 	GizmoControllerAxis SelectedAxis = GizmoControllerAxis::None;
@@ -161,7 +161,7 @@ GizmoControllerAxis UPicker::PickGizmo(int ScreenX, int ScreenY, UCamera* Camera
 	return SelectedAxis;
 }
 
-Ray UPicker::CreateRay(int ScreenX, int ScreenY, UCamera* Camera)
+Ray UPicker::CreateRay(int ScreenX, int ScreenY, UCameraComponent* Camera)
 {
 	//Screen Space -> NDC Space
 	float ndcX = (2.0f * (static_cast<float>(ScreenX) + 0.5f)) / Camera->ScreenWidth - 1.0f;

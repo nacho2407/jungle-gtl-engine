@@ -14,8 +14,8 @@ enum class EProjectionType
 const FVector UpVec(0.0f, 0.0f, 1.0f);
 const float Epsilon = 1e-6f;
 
-class UCamera : public UObject {
-	DECLARE_RTTI(UCamera, UObject)
+class UCameraComponent : public UObject {
+	DECLARE_RTTI(UCameraComponent, UObject)
 public:
 	FVector Position{ FVector(0.0f, 0.0f, 0.0f) };
 	float Pitch{ 0.0f };
@@ -47,8 +47,8 @@ public:
 	FMatrix ViewProjection;
 
 public:
-	UCamera() {}
-	virtual ~UCamera() override;
+	UCameraComponent() {}
+	virtual ~UCameraComponent() override;
 
 	void SetPosition(const FVector& _input);
 	void Move(float DeltaTime);
