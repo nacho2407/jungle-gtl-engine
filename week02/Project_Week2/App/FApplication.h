@@ -157,6 +157,7 @@ private:
     UStaticMesh* TorusMesh;
     UStaticMesh* AxesMesh;
     UStaticMesh* GizmoArrowMesh = nullptr;
+    UStaticMesh* GizmoScaleMesh = nullptr;
 
     //AActor* GizmoActor = nullptr;
     //UStaticMeshComponent* GizmoXComp = nullptr;
@@ -213,4 +214,6 @@ private:
     AGridActor* GridActor;
 
     EGizmoMode CurrentGizmoMode = EGizmoMode::Translate;
+    FVector DragStartActorScale = FVector::OneVector;
+    float GizmoScaleSensitivity = 0.35f; // 모드별 감도
 };

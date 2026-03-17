@@ -172,6 +172,8 @@
     <ClInclude Include="Engine\Public\Component\UStaticMeshComponent.h" />
     <ClInclude Include="Engine\Public\Component\UTriangleComponent.h" />
     <ClInclude Include="Engine\Public\Resource\BuiltInMeshFactory.h" />
+    <ClInclude Include="Engine\Public\Resource\FBuiltInMeshes.h" />
+    <ClInclude Include="Engine\Public\Resource\FBuiltInMeshRepository.h" />
     <ClInclude Include="Engine\Public\Resource\MeshImporter.h" />
     <ClInclude Include="Engine\Public\Resource\MeshTypes.h" />
     <ClInclude Include="Engine\Public\Resource\UStaticMesh.h" />
@@ -239,6 +241,7 @@
     <ClCompile Include="Engine\Private\Component\USphereComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\UStaticMeshComponent.cpp" />
     <ClCompile Include="Engine\Private\Resource\BuiltInMeshFactory.cpp" />
+    <ClCompile Include="Engine\Private\Resource\FBuiltInMeshRepository.cpp" />
     <ClCompile Include="Engine\Private\Resource\MeshImporter.cpp" />
     <ClCompile Include="Engine\Private\Resource\UStaticMesh.cpp" />
     <ClCompile Include="Engine\Public\Actor\AGizmoActor.h" />

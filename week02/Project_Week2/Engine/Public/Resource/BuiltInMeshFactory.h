@@ -14,6 +14,7 @@ namespace BuiltInMeshFactory
         float MajorRadius = 1.2f,
         float MinorRadius = 0.35f);
     UStaticMesh* CreateGizmoArrowMesh();
+    UStaticMesh* CreateGizmoScaleMesh();
     //UStaticMesh* CreateCircleMesh(int Segments = 48);
     UStaticMesh* CreateDiscMesh(int Segments = 48);
     UStaticMesh* CreateGridMesh(int HalfCount = 10, float Spacing = 1.0f);

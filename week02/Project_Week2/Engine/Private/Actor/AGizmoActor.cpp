@@ -102,15 +102,15 @@ AGizmoActor::~AGizmoActor()
 {
 }
 
-void AGizmoActor::Initialize(UStaticMesh* ArrowMesh, UStaticMesh* CubeMesh, UStaticMesh* TorusMesh)
+void AGizmoActor::Initialize(UStaticMesh* ArrowMesh, UStaticMesh* InScaleMesh, UStaticMesh* CubeMesh, UStaticMesh* TorusMesh)
 {
-    if (!ArrowMesh || !CubeMesh || !TorusMesh)
+    if (!ArrowMesh || !InScaleMesh || !CubeMesh || !TorusMesh)
     {
         return;
     }
 
     TranslateMesh = ArrowMesh;
-    ScaleMesh = CubeMesh;
+    ScaleMesh = InScaleMesh;
     RotateMesh = TorusMesh;
 
     if (!PivotComp)
@@ -141,6 +141,27 @@ void AGizmoActor::Initialize(UStaticMesh* ArrowMesh, UStaticMesh* CubeMesh, USta
         ZAxisComp->SetupAttachment(PivotComp);
     }
 
+    if (!XAxisShaftComp)
+    {
+        XAxisShaftComp = new UStaticMeshComponent();
+        AddComponent(XAxisShaftComp);
+        XAxisShaftComp->SetupAttachment(PivotComp);
+    }
+
+    if (!YAxisShaftComp)
+    {
+        YAxisShaftComp = new UStaticMeshComponent();
+        AddComponent(YAxisShaftComp);
+        YAxisShaftComp->SetupAttachment(PivotComp);
+    }
+
+    if (!ZAxisShaftComp)
+    {
+        ZAxisShaftComp = new UStaticMeshComponent();
+        AddComponent(ZAxisShaftComp);
+        ZAxisShaftComp->SetupAttachment(PivotComp);
+    }
+
     //XAxisComp->SetStaticMesh(ArrowMesh);
     //YAxisComp->SetStaticMesh(ArrowMesh);
     //ZAxisComp->SetStaticMesh(ArrowMesh);
@@ -162,9 +183,9 @@ void AGizmoActor::Initialize(UStaticMesh* ArrowMesh, UStaticMesh* CubeMesh, USta
     YAxisComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
     ZAxisComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
 
-    XAxisComp->SetDepthEnable(true);
-    YAxisComp->SetDepthEnable(true);
-    ZAxisComp->SetDepthEnable(true);
+    XAxisComp->SetDepthEnable(false);
+    YAxisComp->SetDepthEnable(false);
+    ZAxisComp->SetDepthEnable(false);
     XAxisComp->SetDepthWrite(false);
     YAxisComp->SetDepthWrite(false);
     ZAxisComp->SetDepthWrite(false);
@@ -176,6 +197,26 @@ void AGizmoActor::Initialize(UStaticMesh* ArrowMesh, UStaticMesh* CubeMesh, USta
     XAxisComp->SetVisibility(false);
     YAxisComp->SetVisibility(false);
     ZAxisComp->SetVisibility(false);
+
+    XAxisShaftComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
+    YAxisShaftComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
+    ZAxisShaftComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
+
+    XAxisShaftComp->SetDepthEnable(false);
+    YAxisShaftComp->SetDepthEnable(false);
+    ZAxisShaftComp->SetDepthEnable(false);
+
+    XAxisShaftComp->SetDepthWrite(false);
+    YAxisShaftComp->SetDepthWrite(false);
+    ZAxisShaftComp->SetDepthWrite(false);
+
+    XAxisShaftComp->SetCullMode(ERenderCullMode::None);
+    YAxisShaftComp->SetCullMode(ERenderCullMode::None);
+    ZAxisShaftComp->SetCullMode(ERenderCullMode::None);
+
+    XAxisShaftComp->SetVisibility(false);
+    YAxisShaftComp->SetVisibility(false);
+    ZAxisShaftComp->SetVisibility(false);
 
     //SetRootComponent(XAxisComp);
     SetRootComponent(PivotComp);
@@ -238,26 +279,33 @@ void AGizmoActor::UpdateTransformFromTarget()
     PivotComp->SetRelativeRotation(Root->GetRelativeRotation());
     PivotComp->SetRelativeScale(FVector::OneVector);
 
-    if (CurrentMode == EGizmoMode::Scale)
-    {
-        if (XAxisComp) XAxisComp->SetRelativeLocation(FVector(AxisLength, 0.0f, 0.0f));
-        if (YAxisComp) YAxisComp->SetRelativeLocation(FVector(0.0f, AxisLength, 0.0f));
-        if (ZAxisComp) ZAxisComp->SetRelativeLocation(FVector(0.0f, 0.0f, AxisLength));
+    //if (CurrentMode == EGizmoMode::Scale)
+    //{
+    //    if (XAxisComp) XAxisComp->SetRelativeLocation(FVector(AxisLength, 0.0f, 0.0f));
+    //    if (YAxisComp) YAxisComp->SetRelativeLocation(FVector(0.0f, AxisLength, 0.0f));
+    //    if (ZAxisComp) ZAxisComp->SetRelativeLocation(FVector(0.0f, 0.0f, AxisLength));
 
-        if (XAxisShaftComp) XAxisShaftComp->SetRelativeLocation(FVector::ZeroVector);
-        if (YAxisShaftComp) YAxisShaftComp->SetRelativeLocation(FVector::ZeroVector);
-        if (ZAxisShaftComp) ZAxisShaftComp->SetRelativeLocation(FVector::ZeroVector);
-    }
-    else
-    {
-        if (XAxisComp) XAxisComp->SetRelativeLocation(FVector::ZeroVector);
-        if (YAxisComp) YAxisComp->SetRelativeLocation(FVector::ZeroVector);
-        if (ZAxisComp) ZAxisComp->SetRelativeLocation(FVector::ZeroVector);
+    //    if (XAxisShaftComp) XAxisShaftComp->SetRelativeLocation(FVector(AxisLength * 0.5f, 0.0f, 0.0f));
+    //    if (YAxisShaftComp) YAxisShaftComp->SetRelativeLocation(FVector(0.0f, AxisLength * 0.5f, 0.0f));
+    //    if (ZAxisShaftComp) ZAxisShaftComp->SetRelativeLocation(FVector(0.0f, 0.0f, AxisLength * 0.5f));
 
-        if (XAxisShaftComp) XAxisShaftComp->SetVisibility(false);
-        if (YAxisShaftComp) YAxisShaftComp->SetVisibility(false);
-        if (ZAxisShaftComp) ZAxisShaftComp->SetVisibility(false);
-    }
+    //    if (XAxisShaftComp) XAxisShaftComp->SetVisibility(IsGizmoVisible());
+    //    if (YAxisShaftComp) YAxisShaftComp->SetVisibility(IsGizmoVisible());
+    //    if (ZAxisShaftComp) ZAxisShaftComp->SetVisibility(IsGizmoVisible());
+    //}
+    //else
+    //{
+    //    if (XAxisComp) XAxisComp->SetRelativeLocation(FVector::ZeroVector);
+    //    if (YAxisComp) YAxisComp->SetRelativeLocation(FVector::ZeroVector);
+    //    if (ZAxisComp) ZAxisComp->SetRelativeLocation(FVector::ZeroVector);
+
+    //    if (XAxisShaftComp) XAxisShaftComp->SetVisibility(false);
+    //    if (YAxisShaftComp) YAxisShaftComp->SetVisibility(false);
+    //    if (ZAxisShaftComp) ZAxisShaftComp->SetVisibility(false);
+    //}
+    if (XAxisComp) XAxisComp->SetRelativeLocation(FVector::ZeroVector);
+    if (YAxisComp) YAxisComp->SetRelativeLocation(FVector::ZeroVector);
+    if (ZAxisComp) ZAxisComp->SetRelativeLocation(FVector::ZeroVector);
 }
 
 void AGizmoActor::UpdateColors(EGizmoAxis HighlightAxis)
@@ -437,22 +485,9 @@ void AGizmoActor::ApplyModeVisual()
         YAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
         ZAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
 
-        if (XAxisShaftComp) XAxisShaftComp->SetStaticMesh(TranslateMesh);
-        if (YAxisShaftComp) YAxisShaftComp->SetStaticMesh(TranslateMesh);
-        if (ZAxisShaftComp) ZAxisShaftComp->SetStaticMesh(TranslateMesh);
-
-        if (XAxisShaftComp) XAxisShaftComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
-        if (YAxisShaftComp) YAxisShaftComp->SetRelativeRotation(FVector(0.0f, 0.0f, 1.5707963f));
-        if (ZAxisShaftComp) ZAxisShaftComp->SetRelativeRotation(FVector(0.0f, -1.5707963f, 0.0f));
-
-        if (XAxisShaftComp) XAxisShaftComp->SetRelativeScale(FVector(0.42f, 0.10f, 0.10f));
-        if (YAxisShaftComp) YAxisShaftComp->SetRelativeScale(FVector(0.42f, 0.10f, 0.10f));
-        if (ZAxisShaftComp) ZAxisShaftComp->SetRelativeScale(FVector(0.42f, 0.10f, 0.10f));
-
         if (XAxisShaftComp) XAxisShaftComp->SetVisibility(IsGizmoVisible());
         if (YAxisShaftComp) YAxisShaftComp->SetVisibility(IsGizmoVisible());
         if (ZAxisShaftComp) ZAxisShaftComp->SetVisibility(IsGizmoVisible());
-        break;
         break;
     }
 
@@ -484,12 +519,12 @@ void AGizmoActor::ApplyModeVisual()
         ZAxisComp->SetStaticMesh(ScaleMesh);
 
         XAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
-        YAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
-        ZAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
+        YAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 1.5707963f));
+        ZAxisComp->SetRelativeRotation(FVector(0.0f, -1.5707963f, 0.0f));
 
-        XAxisComp->SetRelativeScale(FVector(0.18f, 0.18f, 0.18f));
-        YAxisComp->SetRelativeScale(FVector(0.18f, 0.18f, 0.18f));
-        ZAxisComp->SetRelativeScale(FVector(0.18f, 0.18f, 0.18f));
+        XAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
+        YAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
+        ZAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
 
         if (XAxisShaftComp) XAxisShaftComp->SetVisibility(false);
         if (YAxisShaftComp) YAxisShaftComp->SetVisibility(false);
@@ -763,10 +798,11 @@ EGizmoAxis AGizmoActor::PickAxisScale(
             const FVector4 W = PivotWorld * FVector4(LocalPoint, 1.0f);
             return FVector(W.X, W.Y, W.Z);
         };
+    const float ScaleCubeCenter = 3.0f * GizmoScale;
 
-    const FVector XPos = TransformPoint(FVector(AxisLength, 0.0f, 0.0f));
-    const FVector YPos = TransformPoint(FVector(0.0f, AxisLength, 0.0f));
-    const FVector ZPos = TransformPoint(FVector(0.0f, 0.0f, AxisLength));
+    const FVector XPos = TransformPoint(FVector(ScaleCubeCenter, 0.0f, 0.0f));
+    const FVector YPos = TransformPoint(FVector(0.0f, ScaleCubeCenter, 0.0f));
+    const FVector ZPos = TransformPoint(FVector(0.0f, 0.0f, ScaleCubeCenter));
 
     float XX = 0.0f, XY = 0.0f;
     float YX = 0.0f, YY = 0.0f;
