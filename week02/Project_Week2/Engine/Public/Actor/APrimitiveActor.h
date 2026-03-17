@@ -6,7 +6,7 @@ class UPrimitiveComponent;
 
 class APrimitiveActor : public AActor
 {
-DECLARE_ROOT_UClass(APrimitiveActor)
+DECLARE_UClass(APrimitiveActor, AActor)
 
 public:
     APrimitiveActor();

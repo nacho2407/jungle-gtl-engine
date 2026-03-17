@@ -83,8 +83,8 @@ FApplication::FApplication()
     , Renderer(nullptr)
     , World(nullptr)
     , Scene(nullptr)
-    , CameraActor(nullptr)
-    , MainCamera(nullptr)
+    //, CameraActor(nullptr)
+    //, MainCamera(nullptr)
     , bIsRunning(false)
     , SphereMesh(nullptr)
     //, CubeMesh(nullptr)
@@ -144,10 +144,10 @@ bool FApplication::Initialize(HINSTANCE hInstance)
                 Renderer->Resize((UINT)Width, (UINT)Height);
             }
 
-            if (MainCamera)
-            {
-                MainCamera->UpdateAspectRatio((float)Width, (float)Height);
-            }
+            check(World)
+            check(World->GetCameraActor())
+            check(World->GetCameraActor()->GetCameraComponent())
+            World->GetCameraActor()->GetCameraComponent()->UpdateAspectRatio((float)Width, (float)Height);
 
             RenderFrame();
         };
@@ -282,7 +282,7 @@ bool FApplication::InitializeScene()
     {
         GridActor = new AActor();
 
-        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
+        UStaticMeshComponent* MeshComp = NewObject<UStaticMeshComponent>();
         MeshComp->SetStaticMesh(GridMesh);
         MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
 
@@ -576,6 +576,7 @@ void FApplication::Tick(float DeltaTime)
 
 void FApplication::RenderFrame()
 {
+    auto MainCamera = World->GetCameraActor()->GetCameraComponent();
     if (!Renderer || !Scene)
     {
         return;
@@ -652,6 +653,8 @@ void FApplication::Shutdown()
 
 void FApplication::HandleMousePicking() //
 {
+    auto MainCamera = World->GetCameraActor()->GetCameraComponent();
+
     if (!WindowApp || !World || !MainCamera)
     {
         return;
@@ -679,6 +682,8 @@ void FApplication::HandleMousePicking() //
 
 FRay FApplication::BuildPickRay(int MouseX, int MouseY) const
 {
+    auto MainCamera = World->GetCameraActor()->GetCameraComponent();
+
     FRay Ray;
 
     const float Width = static_cast<float>(WindowApp->GetClientWidth());
@@ -740,7 +745,7 @@ AActor* FApplication::PickActor(const FRay& Ray) const
     for (AActor* Actor : Actors)
     {
         // @@@ Actor==GizmoActor라는데, 이거 XYZ로 나누면서 nullptr 아닌가?
-        if (!Actor || Actor == CameraActor || Actor == GizmoActor || Actor == WorldAxesActor || Actor == ClickCircleActor || Actor == GridActor)
+        if (!Actor || Actor == World->GetCameraActor() || Actor == GizmoActor || Actor == WorldAxesActor|| Actor == ClickCircleActor || Actor == GridActor)
         {
             continue;
         }

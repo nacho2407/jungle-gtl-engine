@@ -6,12 +6,6 @@ UPrimitiveComponent::UPrimitiveComponent()
 {
 }
 
-UPrimitiveComponent::UPrimitiveComponent(const FUObjectInitializer& ObjectInitializer)
-	: USceneComponent(ObjectInitializer)
-	, bVisible(true)
-{
-}
-
 UPrimitiveComponent::~UPrimitiveComponent() {}
 
 void UPrimitiveComponent::BeginPlay()

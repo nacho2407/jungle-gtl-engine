@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Actor/AActor.h"
-
-class UCameraComponent;
+#include "FUObjectFactory.h"
+#include "Component/UCameraComponent.h"
 
 class ACamera : public AActor
 {
@@ -11,8 +11,11 @@ DECLARE_ROOT_UClass(AActor)
 public:
 
     ACamera();
-    ACamera(const FUObjectInitializer& ObjectInitializer);
     virtual ~ACamera() override;
+
+public:
+
+    void SetAspectRatio(float Ratio);
 
 public:
     UCameraComponent* GetCameraComponent() const;

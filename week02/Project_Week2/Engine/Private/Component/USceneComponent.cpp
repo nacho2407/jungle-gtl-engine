@@ -11,16 +11,6 @@ USceneComponent::USceneComponent()
 {
 }
 
-USceneComponent::USceneComponent(const FUObjectInitializer& ObjectInitializer)
-    : UActorComponent(ObjectInitializer)
-    , RelativeLocation(FVector::ZeroVector)
-    , RelativeRotation(FVector::ZeroVector)
-    , RelativeScale(FVector::OneVector)
-    , bWorldTransformDirty(true)
-    , CachedWorldTransform(FMatrix::Identity)
-{
-}
-
 USceneComponent::~USceneComponent()
 {
 }

@@ -9,7 +9,6 @@ public:
 	DECLARE_ROOT_UClass(UActorComponent)
 
 	UActorComponent();
-	UActorComponent(const FUObjectInitializer& ObjectInitializer);
 	virtual ~UActorComponent();
 
 public:

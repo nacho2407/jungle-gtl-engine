@@ -10,15 +10,6 @@ UActorComponent::UActorComponent()
 {
 }
 
-UActorComponent::UActorComponent(const FUObjectInitializer& ObjectInitializer)
-	: UObject(ObjectInitializer)
-	, Owner(nullptr)
-	, bCanEverTick(true)
-	, bIsActivate(true)
-	, bHasBegunPlay(false)
-{
-}
-
 UActorComponent::~UActorComponent() {}
 
 void UActorComponent::BeginPlay()

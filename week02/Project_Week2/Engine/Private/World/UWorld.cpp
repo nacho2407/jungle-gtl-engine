@@ -7,6 +7,62 @@
 UWorld::UWorld()
     : bHasBegunPlay(false)
 {
+    // 카메라 액터
+    Camera = NewObject<ACamera>();
+
+    WorldAxisActor = NewObject<AActor>();
+    UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
+    MeshComp->SetStaticMesh(BuiltInMeshFactory::CreateAxesMesh());
+    MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
+
+    WorldAxisActor->AddComponent(MeshComp);
+    WorldAxisActor->SetRootComponent(MeshComp);
+
+    //GridActor = NewObject<AActor>();
+
+    //MeshComp = NewObject<UStaticMeshComponent>("UStaticMeshComponent");
+    //MeshComp->SetStaticMesh(BuiltInMeshFactory::CreateGridMesh(20, 1.0f));
+    //MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
+
+    //GridActor->AddComponent(MeshComp);
+    //GridActor->SetRootComponent(MeshComp);
+
+    //GizmoActor = NewObject<AActor>();
+
+    //auto GizmoArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh();
+    //UStaticMeshComponent* GizmoXComp = NewObject<UStaticMeshComponent>();
+    //UStaticMeshComponent* GizmoYComp = NewObject<UStaticMeshComponent>();
+    //UStaticMeshComponent* GizmoZComp = NewObject<UStaticMeshComponent>();
+
+    //GizmoXComp->SetStaticMesh(GizmoArrowMesh);
+    //GizmoYComp->SetStaticMesh(GizmoArrowMesh);
+    //GizmoZComp->SetStaticMesh(GizmoArrowMesh);
+
+    //GizmoXComp->SetRelativeLocation(FVector::ZeroVector);
+    //GizmoYComp->SetRelativeLocation(FVector::ZeroVector);
+    //GizmoZComp->SetRelativeLocation(FVector::ZeroVector);
+
+    //// arrow mesh가 +X 방향 기준이라고 가정
+    //GizmoXComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
+    //GizmoYComp->SetRelativeRotation(FVector(0.0f, 0.0f, 1.5707963f));
+    //GizmoZComp->SetRelativeRotation(FVector(0.0f, -1.5707963f, 0.0f));
+
+    //GizmoXComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
+    //GizmoYComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
+    //GizmoZComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
+
+    //GizmoXComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
+    //GizmoYComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
+    //GizmoZComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
+
+    //GizmoXComp->SetVisibility(false);
+    //GizmoYComp->SetVisibility(false);
+    //GizmoZComp->SetVisibility(false);
+
+    //GizmoActor->AddComponent(GizmoXComp);
+    //GizmoActor->AddComponent(GizmoYComp);
+    //GizmoActor->AddComponent(GizmoZComp);
+    //GizmoActor->SetRootComponent(GizmoXComp);
 }
 
 UWorld::~UWorld()
@@ -61,7 +117,12 @@ void UWorld::BuildScene(FScene& OutScene) const
 {
     OutScene.Clear();
 
-    for (AActor* Actor : Actors)
+    TArray target = Actors;
+    //target.push_back(WorldAxisActor);
+    //target.push_back(GridActor);
+    //target.push_back(GizmoActor);
+
+    for (AActor* Actor : target)
     {
         if (!Actor)
         {
@@ -69,7 +130,7 @@ void UWorld::BuildScene(FScene& OutScene) const
         }
 
         const TArray<UActorComponent*>& Components = Actor->GetComponents();
-
+        
         for (UActorComponent* Component : Components)
         {
             // @@@ 아직 이거는 Primitive 외에 확장성은 고려하지 않은건가? <- BuildScene이라 필요없네ㅎ,ㅎ
@@ -93,6 +154,26 @@ void UWorld::BuildScene(FScene& OutScene) const
         }
     }
 }
+
+ACamera* UWorld::GetCameraActor()
+{
+    return Camera;
+}
+
+//AActor* UWorld::GetWorldAxisActor()
+//{
+//    return WorldAxisActor;
+//}
+//
+//AActor* UWorld::GetGridActor()
+//{
+//    return GridActor;
+//}
+//
+//AActor* UWorld::GetGizmoActor()
+//{
+//    return GizmoActor;
+//}
 
 const TArray<AActor*>& UWorld::GetActors() const
 {
