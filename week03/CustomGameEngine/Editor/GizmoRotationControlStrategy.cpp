@@ -5,6 +5,7 @@
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderObject.h"
 #include "Component/SceneComponent.h"
+#include "Logger.h"
 
 GizmoRotationControlStrategy::GizmoRotationControlStrategy(GizmoController* controller)
 {
@@ -64,6 +65,8 @@ void GizmoRotationControlStrategy::BeginDrag(const Ray& ray)
 {
 	InitialTouchPoint = ray.Origin;
 	InitialObjectQuaternion = Controller->GetAttachedComponent()->GetRelativeQuaternion();
+
+	ShowCursor(false);
 }
 
 void GizmoRotationControlStrategy::UpdateDrag(const Ray& ray)
@@ -101,6 +104,7 @@ void GizmoRotationControlStrategy::UpdateDrag(const Ray& ray)
 
 void GizmoRotationControlStrategy::EndDrag()
 {
+	ShowCursor(true);
 }
 
 void GizmoRotationControlStrategy::SetDrawEnable(bool bEnable)
