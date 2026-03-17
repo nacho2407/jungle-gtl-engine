@@ -102,7 +102,7 @@ AGizmoActor::~AGizmoActor()
 {
 }
 
-void AGizmoActor::Initialize(UStaticMesh* ArrowMesh, UStaticMesh* InScaleMesh, UStaticMesh* CubeMesh, UStaticMesh* TorusMesh, UStaticMesh* RotateRingMeshda)
+void AGizmoActor::Initialize(UStaticMesh* ArrowMesh, UStaticMesh* InScaleMesh, UStaticMesh* CubeMesh, UStaticMesh* TorusMesh, UStaticMesh* RotateRingMesh)
 {
     if (!ArrowMesh || !InScaleMesh || !CubeMesh || !TorusMesh || !RotateRingMesh)
     {

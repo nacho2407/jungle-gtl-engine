@@ -607,7 +607,7 @@ void FApplication::RenderFrame()
     Renderer->BeginFrame();
     Renderer->Render(*Scene, MainCamera);
 
-    // 여기서 메인 백버퍼 다시 바인딩
+    // 여기서 메인 백버퍼 다시d 바인딩
     Renderer->BindMainRenderTargetForOverlay();
 
     //Renderer->BeginOverlayRenderState(); // 오버레이 변경 -> Gizmo, Mesh 오버레이 무시
@@ -1114,15 +1114,17 @@ void FApplication::UpdateGizmoDrag(int MouseX, int MouseY)
 
     FRay Ray = BuildPickRay(MouseX, MouseY);
 
+    FVector HitPoint;
+    if (!IntersectRayPlane(Ray, DragStartActorLocation, DragPlaneNormal, HitPoint))
+    {
+        return;
+    }
+
     if (DragStartGizmoMode == EGizmoMode::Rotate)
     {
-        FVector HitPoint;
-        if (!IntersectRayPlane(Ray, DragStartActorLocation, DragPlaneNormal, HitPoint))
-        {
-            return;
-        }
-
         FVector CurrentVec = HitPoint - DragStartActorLocation;
+
+        // 축 제거 → 평면 projection
         CurrentVec = CurrentVec - DragAxisDirection * CurrentVec.Dot(DragAxisDirection);
 
         if (CurrentVec.LengthSquared() < 0.000001f)
@@ -1139,41 +1141,26 @@ void FApplication::UpdateGizmoDrag(int MouseX, int MouseY)
 
         const FQuat DeltaQuat = FQuat::FromAxisAngle(DragAxisDirection, DeltaAngle);
 
-        // 월드 축 기준으로 누적하고 싶으면 Delta * Start
-        // 로컬 축 기준으로 누적하고 싶으면 Start * Delta
         FQuat NewQuat = DeltaQuat * DragStartActorQuat;
         NewQuat.Normalize();
 
         Root->SetRelativeRotationQuat(NewQuat);
-
-        if (GizmoActor)
-        {
-            GizmoActor->UpdateTransformFromTarget();
-            GizmoActor->UpdateColors(ActiveGizmoAxis);
-        }
-
-        return;
     }
-
-    FVector HitPoint;
-    if (!IntersectRayPlane(Ray, DragStartActorLocation, DragPlaneNormal, HitPoint))
+    else if (DragStartGizmoMode == EGizmoMode::Translate)
     {
-        return;
-    }
+        const FVector Delta = HitPoint - DragStartHitPoint;
+        const float MoveAmount = Delta.Dot(DragAxisDirection);
 
-    const FVector Delta = HitPoint - DragStartHitPoint;
-    const float Amount = Delta.Dot(DragAxisDirection);
+        const FVector NewLocation =
+            DragStartActorLocation + DragAxisDirection * MoveAmount;
 
-    switch (GizmoActor->GetMode())
-    {
-    case EGizmoMode::Translate:
-    {
-        const FVector NewLocation = DragStartActorLocation + DragAxisDirection * Amount;
         Root->SetRelativeLocation(NewLocation);
-        break;
     }
-    case EGizmoMode::Scale:
+    else if (DragStartGizmoMode == EGizmoMode::Scale)
     {
+        const FVector Delta = HitPoint - DragStartHitPoint;
+        const float Amount = Delta.Dot(DragAxisDirection);
+
         FVector NewScale = DragStartActorScale;
 
         const float ScaleDelta = Amount * GizmoScaleSensitivity;
@@ -1195,25 +1182,12 @@ void FApplication::UpdateGizmoDrag(int MouseX, int MouseY)
         }
 
         Root->SetRelativeScale(NewScale);
-        break;
     }
-
-    case EGizmoMode::Rotate:
-    {
-        // Rotate 구현부
-        break;
-    }
-
-    default:
-        break;
-    }
-
-    const FVector NewLocation = DragStartActorLocation + DragAxisDirection * MoveAmount;
-    Root->SetRelativeLocation(NewLocation);
 
     if (GizmoActor)
     {
         GizmoActor->UpdateTransformFromTarget();
+        GizmoActor->UpdateColors(ActiveGizmoAxis); 
     }
 }
 
