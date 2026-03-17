@@ -63,15 +63,17 @@ FMatrix USceneComponent::GetWorldTransformMatrix() const
     return CachedWorldTransform;
 }
 
-void USceneComponent::MarkTransformDirty()
+void USceneComponent::MarkTransformDirty() // (*) 근데 왜 이름이 dirty일까?
 {
     bWorldTransformDirty = true;
 
-    // TODO: �ڽ� ������Ʈ�� �ִٸ�, �ڽĵ鵵 Dirty ó��
-    // for (USceneComponent* Child : Children)
-    // {
-    //     Child->MarkTransformDirty();
-    // }
+    for (USceneComponent* Child : Children)
+    {
+        if (Child)
+        {
+            Child->MarkTransformDirty();
+        }
+    }
 }
 
 void USceneComponent::UpdateWorldTransformIfNeeded() const
@@ -87,11 +89,24 @@ void USceneComponent::UpdateWorldTransformIfNeeded() const
 
     CachedWorldTransform = Scale * Rotation * Translation;
 
-    // TODO: �θ� ������Ʈ�� �ִٸ�, �θ� Ʈ�������� �ռ�
-    // if (ParentComponent)
-    // {
-    //     CachedWorldTransform = CachedWorldTransform * ParentComponent->GetWorldTransformMatrix();
-    // }
+     if (ParentComponent)
+     {
+         CachedWorldTransform = CachedWorldTransform * ParentComponent->GetWorldTransformMatrix();
+     }
 
     bWorldTransformDirty = false;
+}
+
+void USceneComponent::SetupAttachment(USceneComponent* InParent)
+{
+    ParentComponent = InParent;
+    if (ParentComponent)
+    {
+        ParentComponent->Children.push_back(this);
+    }
+}
+
+USceneComponent* USceneComponent::GetParentComponent() const
+{
+    return ParentComponent;
 }

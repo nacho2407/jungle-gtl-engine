@@ -48,7 +48,7 @@ bool FWindowsApplication::Initialize(HINSTANCE InHInstance, const wchar_t* Windo
         return false;
     }
 
-    bInitialized = true;
+    bInitialized = true; // window create 확인 bool
     return true;
 }
 

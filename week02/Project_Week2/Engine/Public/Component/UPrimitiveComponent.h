@@ -31,6 +31,9 @@ public:
     void SetCullMode(ERenderCullMode InCullMode);
     void SetUseVertexColor(bool bInUseVertexColor);
 
+    void SetUseDepthBias(bool bInUseDepthBias);
+    void SetDepthWrite(bool bInDepthWrite);
+
 protected:
     bool bVisible;
     FVector4 RenderColor = FVector4(1, 1, 1, 1);
@@ -38,4 +41,8 @@ protected:
     bool bDepthEnable = true;
     bool bUseVertexColor = true; // @@@@ 이름 중복 있음
     ERenderCullMode CullMode = ERenderCullMode::Back;
+
+    bool bUseDepthBias = false;
+
+    bool bDepthWrite = true;
 };

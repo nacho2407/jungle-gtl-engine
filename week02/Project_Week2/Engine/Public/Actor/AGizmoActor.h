@@ -11,6 +11,7 @@
 //class UStaticMesh;
 //class UStaticMeshComponent;
 //class UCameraComponent;
+class USceneComponent;
 
 class AGizmoActor : public AActor
 {
@@ -70,7 +71,7 @@ private:
 
     float AxisLength = 3.0f;
     float PickThreshold = 10.0f;
-    float GizmoScale = 0.5f;
+    float GizmoScale = 0.8f;
 
     UStaticMesh* TranslateMesh = nullptr;
     UStaticMesh* ScaleMesh = nullptr;
@@ -120,4 +121,6 @@ private:
         UStaticMeshComponent* XAxisShaftComp = nullptr;
         UStaticMeshComponent* YAxisShaftComp = nullptr;
         UStaticMeshComponent* ZAxisShaftComp = nullptr;
+
+    USceneComponent* PivotComp = nullptr;
 };

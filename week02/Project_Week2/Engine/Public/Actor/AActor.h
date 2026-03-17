@@ -31,6 +31,7 @@ public:
 
 	void SetRootComponent(USceneComponent* InRootComponent);
 	USceneComponent* GetRootComponent() const;
+
 protected:
 	TArray<UActorComponent*> Components;
 	USceneComponent* RootComponent;
