@@ -188,7 +188,7 @@
     <ClInclude Include="Render\Public\Structs.h" />
     <ClInclude Include="Render\Public\URenderer.h" />
     <ClInclude Include="Serialization\Public\FPrimitiveJsonConverter.h" />
-    <ClInclude Include="Serialization\Public\FPrimitiveRecord.h" />
+    <ClInclude Include="Serialization\Public\FWorldSaveData.h" />
     <ClInclude Include="Serialization\Public\FPrimitiveRecordConverter.h" />
     <ClInclude Include="ThirdParty\Json\json.hpp" />
     <ClInclude Include="Core\Public\UEngineStatics.h" />
@@ -249,8 +249,6 @@
     <ClCompile Include="Serialization\Private\FPrimitiveRecordConverter.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Assets\BlueSphere.bin" />
-    <None Include="Assets\BlueSphere.gltf" />
     <None Include="Render\Public\Shaders\Default.hlsl">
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

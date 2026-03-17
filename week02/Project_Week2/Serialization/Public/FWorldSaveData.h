@@ -10,3 +10,10 @@ struct FPrimitiveRecord
     FVector Rotation;
     FVector Scale;
 };
+
+struct FWorldSaveData
+{
+    uint32 Version = 1;
+    uint32 NextUUID;
+    TArray<FPrimitiveRecord> Primitives;
+};
