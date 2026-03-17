@@ -221,6 +221,9 @@ void AGizmoActor::Initialize(UStaticMesh* ArrowMesh, UStaticMesh* InScaleMesh, U
 
     //SetRootComponent(XAxisComp);
     SetRootComponent(PivotComp);
+
+    ApplyModeVisual();
+    SetGizmoVisible(false);
 }
 
 void AGizmoActor::SetTargetActor(AActor* InTarget)

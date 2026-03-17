@@ -404,7 +404,12 @@ void FApplication::Tick(float DeltaTime)
     const bool bCanProcessMouse = InputManager->CanProcessMouse();
     const bool bCanProcessKeyboard = InputManager->CanProcessKeyboard();
 
-    if (bCanProcessKeyboard && InputManager->WasKeyPressed(VK_SPACE))
+    if (bCanProcessKeyboard &&
+        !bDraggingGizmo &&
+        InputManager->WasKeyPressed(VK_SPACE) &&
+        SelectedActor &&
+        GizmoActor &&
+        GizmoActor->GetTargetActor())
     {
         CycleGizmoMode();
     }
