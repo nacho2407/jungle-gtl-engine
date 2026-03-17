@@ -27,8 +27,9 @@ public:
     void Clear();
     void AddActor(AActor* InActor);
     void RemoveActor(AActor* InActor);
+    void Destroy(AActor* InActor);
 
-    void SpawnMeshActor(
+    AActor* SpawnMeshActor(
         ESpawnMeshType Type, 
         const FVector& Location = { 0.f, 0.f, 0.f },
         const FVector& Rotation = { 0.f, 0.f, 0.f },

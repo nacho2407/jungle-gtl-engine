@@ -92,9 +92,6 @@ FApplication::FApplication()
     //, CameraActor(nullptr)
     //, MainCamera(nullptr)
     , bIsRunning(false)
-    , SphereMesh(nullptr)
-    //, CubeMesh(nullptr)
-    //, TriangleMesh(nullptr)
     , TorusMesh(nullptr)
     , AxesMesh(nullptr)
 {
@@ -231,10 +228,6 @@ bool FApplication::InitializeInput()
 
 bool FApplication::InitializeResources()
 {
-    //SphereMesh = MeshImporter::LoadStaticMeshFromGltf("Assets/BlueSphere.gltf");
-    SphereMesh = BuiltInMeshFactory::CreateSphereMesh();
-    CubeMesh = BuiltInMeshFactory::CreateCubeMesh();
-    //TriangleMesh = BuiltInMeshFactory::CreateTriangleMesh();
     TorusMesh = BuiltInMeshFactory::CreateTorusMesh(64, 32, 1.2f, 0.35f);
     AxesMesh = BuiltInMeshFactory::CreateAxesMesh();
     GridMesh = BuiltInMeshFactory::CreateGridMesh(20, 1.0f);
@@ -271,7 +264,7 @@ bool FApplication::InitializeScene()
 
     //World->AddActor(CameraActor);
     
-    SpawnMeshActor(SphereMesh, FVector(0.0f, 0.0f, 0.0f));
+    World->SpawnMeshActor(ESpawnMeshType::Sphere, FVector(0.0f, 0.0f, 0.0f));
 
     //// World Axes
     //{
@@ -1520,24 +1513,12 @@ void FApplication::RenderDebugUI()
 
 void FApplication::SpawnSelectedMeshActor()
 {
-    UStaticMesh* MeshToSpawn = nullptr;
-
-    switch (SelectedSpawnMeshType)
+    if (!World)
     {
-    case ESpawnMeshType::Sphere:
-        MeshToSpawn = SphereMesh;
-        break;
-    case ESpawnMeshType::Cube:
-        MeshToSpawn = CubeMesh;
-        break;
-    case ESpawnMeshType::Torus:
-        MeshToSpawn = TorusMesh;
-        break;
-    default:
         return;
     }
 
-    AActor* SpawnedActor = SpawnMeshActor(MeshToSpawn, FVector::ZeroVector);
+    AActor* SpawnedActor = World->SpawnMeshActor(SelectedSpawnMeshType, FVector::ZeroVector);
 
     // 생성 직후 선택되게 하고 싶으면
     if (SpawnedActor)

@@ -21,6 +21,7 @@ void UWorld::Clear()
     }
 
     Actors.clear();
+    bHasBegunPlay = false;
 }
 
 void UWorld::AddActor(AActor* InActor)
@@ -35,26 +36,29 @@ void UWorld::AddActor(AActor* InActor)
 
 void UWorld::RemoveActor(AActor* InActor)
 {
-    int targetIndex = 0;
-    for (targetIndex = 0; targetIndex < Actors.size(); targetIndex++)
+    for (int targetIndex = 0; targetIndex < Actors.size(); targetIndex++)
     {
         if (Actors[targetIndex] == InActor)
         {
+            AActor* Target = Actors[targetIndex];
+            Actors[targetIndex] = Actors.back();
+            Actors.pop_back();
+            Destroy(Target);
             break;
         }
     }
-
-    auto target = Actors[targetIndex];
-    Actors[targetIndex] = Actors.back();
-    Actors.pop_back();
-    Destroy(target);
 }
 
-void UWorld::SpawnMeshActor(
+void UWorld::Destroy(AActor* InActor)
+{
+    RemoveActor(InActor);
+}
+
+AActor* UWorld::SpawnMeshActor(
     ESpawnMeshType Type,
-    const FVector& Location = { 0.f, 0.f, 0.f },
-    const FVector& Rotation = { 0.f, 0.f, 0.f },
-    const FVector& Scale = { 1.f, 1.f, 1.f }
+    const FVector& Location,
+    const FVector& Rotation,
+    const FVector& Scale
 )
 {
     AActor* Actor = nullptr;
@@ -74,7 +78,7 @@ void UWorld::SpawnMeshActor(
         Actor = NewObject<ATriangle>();
         break;
     default:
-        return;
+        return nullptr;
     }
 
     Actor->GetRootComponent()->SetRelativeLocation(Location);
@@ -82,6 +86,7 @@ void UWorld::SpawnMeshActor(
     Actor->GetRootComponent()->SetRelativeScale(Scale);
 
     AddActor(Actor);
+    return Actor;
 }
 
 void UWorld::BeginPlay()
