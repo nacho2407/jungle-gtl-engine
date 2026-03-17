@@ -1,4 +1,5 @@
 #pragma once
+
 #include <vector>
 #include "UObject.h"
 #include "Actor/ACamera.h"
@@ -6,11 +7,6 @@
 #include "Component/UStaticMeshComponent.h"
 #include "Resource/BuiltInMeshFactory.h"
 
-class AActor;
-class UActorComponent;
-class UPrimitiveComponent;
-class FScene;
-class APrimitiveActor;
 
 
 class UWorld : public UObject

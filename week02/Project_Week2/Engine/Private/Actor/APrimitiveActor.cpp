@@ -7,18 +7,8 @@ APrimitiveActor::APrimitiveActor()
 {
 }
 
-//APrimitiveActor::APrimitiveActor(const FUObjectInitializer& ObjectInitializer)
-//    : AActor(ObjectInitializer)
-//{
-//}
-
 APrimitiveActor::~APrimitiveActor()
 {
-}
-
-const char* APrimitiveActor::GetObjClassName() const
-{
-    return "APrimitiveActor";
 }
 
 UPrimitiveComponent* APrimitiveActor::GetPrimitiveComponent() const

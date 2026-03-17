@@ -7,13 +7,11 @@ class UStaticMeshComponent;
 
 class ATriangle : public APrimitiveActor
 {
-public:
-    ATriangle();
-    //ATriangle(const FUObjectInitializer& ObjectInitializer);
-    virtual ~ATriangle() override;
+DECLARE_ROOT_UClass(ATriangle)
 
 public:
-    virtual const char* GetObjClassName() const override;
+    ATriangle();
+    virtual ~ATriangle() override;
 
 public:
     void SetStaticMesh(UStaticMesh* InStaticMesh);

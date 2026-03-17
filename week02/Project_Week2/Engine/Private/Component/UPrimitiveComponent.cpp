@@ -1,7 +1,10 @@
 #include "Component/UPrimitiveComponent.h"
 
-UPrimitiveComponent::UPrimitiveComponent() 
-	: bVisible(true) {}
+UPrimitiveComponent::UPrimitiveComponent()
+	: USceneComponent()
+	, bVisible(true)
+{
+}
 
 UPrimitiveComponent::~UPrimitiveComponent() {}
 
@@ -36,8 +39,8 @@ FRenderItem UPrimitiveComponent::CreateRenderItem() const
 	Item.HitProxy.Axis = EGizmoAxis::None;
 
 	Item.Color = RenderColor;
-	Item.CullMode = CullMode; // @@@ 뭐하는 놈일까
-	Item.bDepthEnable = bDepthEnable; // @@@ 뭐하는 놈일까
+	Item.CullMode = CullMode; // @@@ front/back
+	Item.bDepthEnable = bDepthEnable; // @@@ 
 	Item.bUseVertexColor = bUseVertexColor;
 	return Item;
 }

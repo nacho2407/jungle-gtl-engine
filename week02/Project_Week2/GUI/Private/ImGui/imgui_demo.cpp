@@ -9222,6 +9222,11 @@ static void ShowExampleAppConsole(bool* p_open)
     console.Draw("Example: Console", p_open);
 }
 
+void ShowImGuiDemoConsole(bool* p_open)
+{
+    ShowExampleAppConsole(p_open);
+}
+
 //-----------------------------------------------------------------------------
 // [SECTION] Example App: Debug Log / ShowExampleAppLog()
 //-----------------------------------------------------------------------------

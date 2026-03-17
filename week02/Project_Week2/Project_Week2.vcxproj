@@ -42,7 +42,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -105,7 +105,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)GUI\Public;$(ProjectDir)ThirdParty;$(ProjectDir)Render\Public;$(ProjectDir)App;$(ProjectDir)Engine\Public;$(ProjectDir)Core\Public;$(ProjectDir)Serialization\Public;$(ProjectDir)GUI</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty;$(ProjectDir)GUI\Public;$(ProjectDir)Render\Public;$(ProjectDir)App;$(ProjectDir)Engine\Public;$(ProjectDir)Core\Public;$(ProjectDir)GUI\Public\ImGui;$(ProjectDir)Serialization\Public;$(ProjectDir)GUI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -130,6 +130,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="App\FApplication.h" />
+    <ClInclude Include="App\Panels\FControlPanel.h" />
+    <ClInclude Include="App\Panels\FPropertyPanel.h" />
+    <ClInclude Include="App\FInputManager.h" />
     <ClInclude Include="App\WindowsApplication.h" />
     <ClInclude Include="Core\Public\CoreGlobal.h" />
     <ClInclude Include="Core\Public\FActorInstanceManager.h" />
@@ -153,6 +156,7 @@
     <ClInclude Include="Engine\Public\Actor\ACube.h" />
     <ClInclude Include="Engine\Public\Actor\APrimitiveActor.h" />
     <ClInclude Include="Engine\Public\Actor\ASphere.h" />
+    <ClInclude Include="Engine\Public\Actor\ATorus.h" />
     <ClInclude Include="Engine\Public\Actor\ATriangle.h" />
     <ClInclude Include="Engine\Public\Component\EGizmoAxis.h" />
     <ClInclude Include="Engine\Public\Component\UActorComponent.h" />
@@ -172,14 +176,15 @@
     <ClInclude Include="Core\Public\FUObjectFactory.h" />
     <ClInclude Include="Core\Public\FUObjectArray.h" />
     <ClInclude Include="GUI\GUI.h" />
-    <ClInclude Include="GUI\Public\imconfig.h" />
-    <ClInclude Include="GUI\Public\imgui.h" />
-    <ClInclude Include="GUI\Public\imgui_impl_dx11.h" />
-    <ClInclude Include="GUI\Public\imgui_impl_win32.h" />
-    <ClInclude Include="GUI\Public\imgui_internal.h" />
-    <ClInclude Include="GUI\Public\imstb_rectpack.h" />
-    <ClInclude Include="GUI\Public\imstb_textedit.h" />
-    <ClInclude Include="GUI\Public\imstb_truetype.h" />
+    <ClInclude Include="GUI\Public\FGUIManager.h" />
+    <ClInclude Include="GUI\Public\ImGui\imconfig.h" />
+    <ClInclude Include="GUI\Public\ImGui\imgui.h" />
+    <ClInclude Include="GUI\Public\ImGui\imgui_impl_dx11.h" />
+    <ClInclude Include="GUI\Public\ImGui\imgui_impl_win32.h" />
+    <ClInclude Include="GUI\Public\ImGui\imgui_internal.h" />
+    <ClInclude Include="GUI\Public\ImGui\imstb_rectpack.h" />
+    <ClInclude Include="GUI\Public\ImGui\imstb_textedit.h" />
+    <ClInclude Include="GUI\Public\ImGui\imstb_truetype.h" />
     <ClInclude Include="Render\Public\FHitProxy.h" />
     <ClInclude Include="Render\Public\Geometry\Axies.h" />
     <ClInclude Include="Render\Public\Geometry\Cube.h" />
@@ -187,8 +192,8 @@
     <ClInclude Include="Render\Public\Structs.h" />
     <ClInclude Include="Render\Public\URenderer.h" />
     <ClInclude Include="Serialization\Public\FPrimitiveJsonConverter.h" />
-    <ClInclude Include="Serialization\Public\FPrimitiveRecord.h" />
-    <ClInclude Include="Serialization\Public\FPrimitiveRecordConverter.h" />
+    <ClInclude Include="Serialization\Public\FWorldSaveConverter.h" />
+    <ClInclude Include="Serialization\Public\FWorldSaveData.h" />
     <ClInclude Include="ThirdParty\Json\json.hpp" />
     <ClInclude Include="Core\Public\UEngineStatics.h" />
     <ClInclude Include="Core\Public\UObjectBaseUtility.h" />
@@ -197,7 +202,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App\FApplication.cpp" />
+    <ClCompile Include="App\FInputManager.cpp" />
     <ClCompile Include="App\Main.cpp" />
+    <ClCompile Include="App\Panels\FControlPanel.cpp" />
+    <ClCompile Include="App\Panels\FPropertyPanel.cpp" />
     <ClCompile Include="App\WindowsApplication.cpp" />
     <ClCompile Include="Core\Private\FObjectManager.cpp" />
     <ClCompile Include="Core\Private\TestMemory.cpp" />
@@ -210,9 +218,11 @@
     <ClCompile Include="Core\Public\Math\FVector4.h" />
     <ClCompile Include="Core\Public\UClassData.cpp" />
     <ClCompile Include="Engine\Private\Actor\AActor.cpp" />
+    <ClCompile Include="Engine\Private\Actor\AGizmoActor.cpp" />
     <ClCompile Include="Engine\Private\Actor\ACube.cpp" />
     <ClCompile Include="Engine\Private\Actor\APrimitiveActor.cpp" />
     <ClCompile Include="Engine\Private\Actor\ASphere.cpp" />
+    <ClCompile Include="Engine\Private\Actor\ATorus.cpp" />
     <ClCompile Include="Engine\Private\Actor\ATriangle.cpp" />
     <ClCompile Include="Engine\Private\Component\UActorComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\UCameraComponent.cpp" />
@@ -224,7 +234,9 @@
     <ClCompile Include="Engine\Private\Resource\BuiltInMeshFactory.cpp" />
     <ClCompile Include="Engine\Private\Resource\MeshImporter.cpp" />
     <ClCompile Include="Engine\Private\Resource\UStaticMesh.cpp" />
-    <ClCompile Include="Engine\Public\Actor\ACamera.cpp" />
+    <ClCompile Include="Engine\Public\Actor\AGizmoActor.h" />
+    <ClCompile Include="GUI\Private\FGUIManager.cpp" />
+    <ClCompile Include="Engine\Private\Actor\ACamera.cpp" />
     <ClCompile Include="Render\Private\Geometry\Cube.cpp" />
     <ClCompile Include="Render\Private\Geometry\Sphere.cpp" />
     <ClCompile Include="Engine\Public\Component\USphereComponent.h" />
@@ -233,21 +245,18 @@
     <ClCompile Include="Core\Private\UEngineStatics.cpp" />
     <ClCompile Include="Core\Private\FUObjectFactory.cpp" />
     <ClCompile Include="Core\Private\FUObjectArray.cpp" />
-    <ClCompile Include="GUI\Private\imgui.cpp" />
-    <ClCompile Include="GUI\Private\imgui_demo.cpp" />
-    <ClCompile Include="GUI\Private\imgui_draw.cpp" />
-    <ClCompile Include="GUI\Private\imgui_impl_dx11.cpp" />
-    <ClCompile Include="GUI\Private\imgui_impl_win32.cpp" />
-    <ClCompile Include="GUI\Private\imgui_tables.cpp" />
-    <ClCompile Include="GUI\Private\imgui_widgets.cpp" />
+    <ClCompile Include="GUI\Private\ImGui\imgui.cpp" />
+    <ClCompile Include="GUI\Private\ImGui\imgui_demo.cpp" />
+    <ClCompile Include="GUI\Private\ImGui\imgui_draw.cpp" />
+    <ClCompile Include="GUI\Private\ImGui\imgui_impl_dx11.cpp" />
+    <ClCompile Include="GUI\Private\ImGui\imgui_impl_win32.cpp" />
+    <ClCompile Include="GUI\Private\ImGui\imgui_tables.cpp" />
+    <ClCompile Include="GUI\Private\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="Render\Private\URenderer.cpp" />
     <ClCompile Include="Core\Private\UObjectBaseUtility.cpp" />
     <ClCompile Include="Serialization\Private\FPrimitiveJsonConverter.cpp" />
-    <ClCompile Include="Serialization\Private\FPrimitiveRecordConverter.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Assets\BlueSphere.bin" />
-    <None Include="Assets\BlueSphere.gltf" />
     <None Include="Render\Public\Shaders\Default.hlsl">
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

@@ -15,6 +15,13 @@ class FWindowsApplication;
 class UStaticMesh;
 
 class UStaticMeshComponent;
+class AGizmoActor;
+
+class FGUIManager;
+class FInputManager;
+
+class FPropertyPanel;
+class FControlPanel;
 
 enum class EPointerPulsePhase
 {
@@ -22,6 +29,13 @@ enum class EPointerPulsePhase
     Growing,
     Holding,
     Shrinking
+};
+
+enum class ESpawnMeshType
+{
+    Sphere = 0,
+    Cube,
+    Torus
 };
 
 struct FPointerPulse
@@ -33,6 +47,9 @@ struct FPointerPulse
 
     int StartMouseX = 0;
     int StartMouseY = 0;
+
+    int CurrentMouseX = 0;
+    int CurrentMouseY = 0;
 
     float CurrentRadius = 0.0f;
     float MaxRadius = 0.05f;      // 월드 단위
@@ -53,9 +70,26 @@ public:
     int Run();
     void Shutdown();
 
+    // 패널 렌더링
+    AActor* GetSelectedActor() const;
+    void NotifySelectedActorTransformChanged();
+    void ClearSelection();
+
+    UCameraComponent* GetMainCamera() const;
+
+    bool bUseOrthogonalProjection = false;
+    float DebugOrthoWidth = 10.0f;
+
+    void ApplyCameraProjectionMode();
+
+    ESpawnMeshType SelectedSpawnMeshType = ESpawnMeshType::Sphere;
+    void SpawnSelectedMeshActor();
+
+
 private:
     bool InitializeEngine();
     bool InitializeGUI();
+    bool InitializeInput();
     bool InitializeResources();
     bool InitializeScene();
     void MainLoop();
@@ -94,6 +128,13 @@ private:
     void UpdateObjectAllocationTest();
     void RenderDebugUI();
 
+    AActor* SpawnMeshActor(UStaticMesh* Mesh, const FVector& Location);
+	// 패널 렌더링
+    void RenderEditorUI();
+
+
+    
+
 private:
     FWindowsApplication* WindowApp;
     URenderer* Renderer;
@@ -111,11 +152,12 @@ private:
     UStaticMesh* AxesMesh;
     UStaticMesh* GizmoArrowMesh = nullptr;
 
-    AActor* GizmoActor = nullptr;
-    UStaticMeshComponent* GizmoXComp = nullptr;
-    UStaticMeshComponent* GizmoYComp = nullptr;
-    UStaticMeshComponent* GizmoZComp = nullptr;
-    UStaticMeshComponent* GizmoMeshComp = nullptr;
+    //AActor* GizmoActor = nullptr;
+    //UStaticMeshComponent* GizmoXComp = nullptr;
+    //UStaticMeshComponent* GizmoYComp = nullptr;
+    //UStaticMeshComponent* GizmoZComp = nullptr;
+    //UStaticMeshComponent* GizmoMeshComp = nullptr;
+    AGizmoActor* GizmoActor = nullptr;
     AActor* SelectedActor = nullptr;
 
     AActor* WorldAxesActor = nullptr;
@@ -144,4 +186,19 @@ private:
     int TestInterval = 5;
     int TestIntervalCounter = 0;
     TArray<UObject*> TestObjects;
+
+
+    FGUIManager* GUIManager = nullptr;
+
+	// 패널 렌더링
+    FPropertyPanel* PropertyPanel = nullptr;
+    FControlPanel* ControlPanel = nullptr;
+
+    // 하단 콘솔
+    bool bShowBottomConsole = true;
+
+    FInputManager* InputManager = nullptr;
+
+    int PrevMouseX = 0;
+    int PrevMouseY = 0;
 };

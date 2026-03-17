@@ -6,12 +6,14 @@
 
 class ACamera : public AActor
 {
+DECLARE_ROOT_UClass(AActor)
+
 public:
+
     ACamera();
     virtual ~ACamera() override;
 
-//public:
-//    virtual const char* GetObjClassName() const override;
+public:
 
     void SetAspectRatio(float Ratio);
 

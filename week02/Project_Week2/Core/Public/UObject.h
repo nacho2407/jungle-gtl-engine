@@ -23,20 +23,43 @@ public:                                                            \
         UClassData* classData = new UClassData();                  \
         classData->ClassName = #CurrentType;                       \
         classData->ClassSize = sizeof(CurrentType);                \
+		classData->SuperClass = nullptr;						   \
         StaticClass = classData;                                   \
         return StaticClass;                                        \
-	}																\
-public:\
-	void Initialize(const FUObjectInitializer& ObjectInitilizer)\
-	{\
-		UUID = ObjectInitilizer.UUID;\
-		Name = ObjectInitilizer.Name;\
-	}\
-private:
+	}															   \
+																   \
+	void Initialize(const FUObjectInitializer& ObjectInitilizer)   \
+	{															   \
+		UUID = ObjectInitilizer.UUID;							   \
+		Name = ObjectInitilizer.Name;							   \
+	}
+
+#define DECLARE_UClass(CurrentType, SuperType)                     \
+private:                                                           \
+    inline static UClassData* StaticClass = nullptr;               \
+public:                                                            \
+    static UClassData* GetClass()                                  \
+    {                                                              \
+        if (StaticClass != nullptr)                                \
+            return StaticClass;                                    \
+                                                                   \
+        UClassData* ClassData = new UClassData();                  \
+        ClassData->ClassName = #CurrentType;                       \
+        ClassData->ClassSize = sizeof(CurrentType);                \
+        ClassData->SuperClass = SuperType::GetClass();             \
+        StaticClass = ClassData;                                   \
+        return StaticClass;                                        \
+    }															   \
+																   \
+	void Initialize(const FUObjectInitializer& ObjectInitilizer)   \
+	{															   \
+		UUID = ObjectInitilizer.UUID;							   \
+		Name = ObjectInitilizer.Name;							   \
+	}
 
 class UObject : public UObjectBaseUtility
 {
-	DECLARE_ROOT_UClass(UObject)
+DECLARE_ROOT_UClass(UObject)
 
 public:
 	size_t AllocatedSize;

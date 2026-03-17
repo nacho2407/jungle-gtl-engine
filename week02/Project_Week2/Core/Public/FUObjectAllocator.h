@@ -23,9 +23,9 @@ public:
 	T* AllocateUObject(const FUObjectInitializer& initializer)
 	{
 		void* mem = AllocateUObject(sizeof(T));
-		T* allocatedPtr = new (mem) T();
-		allocatedPtr->Initialize(initializer);
-		return allocatedPtr;
+		T* UObjectPtr = new (mem) T();
+		UObjectPtr->Initialize(initializer);
+		return UObjectPtr;
 	}
 
 	template<typename T>

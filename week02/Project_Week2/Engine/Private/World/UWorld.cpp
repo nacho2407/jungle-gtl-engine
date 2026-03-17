@@ -133,7 +133,7 @@ void UWorld::BuildScene(FScene& OutScene) const
         
         for (UActorComponent* Component : Components)
         {
-            // @@@ 아직 이거는 Primitive 외에 확장성은 고려하지 않은건가?
+            // @@@ 아직 이거는 Primitive 외에 확장성은 고려하지 않은건가? <- BuildScene이라 필요없네ㅎ,ㅎ
             UPrimitiveComponent* PrimitiveComponent = dynamic_cast<UPrimitiveComponent*>(Component);
             if (!PrimitiveComponent)
             {
