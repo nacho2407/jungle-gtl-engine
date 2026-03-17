@@ -96,6 +96,9 @@ json::JSON UPrimitiveComponent::Serialize()
 	case EPrimitiveType::Triangle:
 		jsonObj["Type"] = "Triangle";
 		break;
+	case EPrimitiveType::Plane:
+		jsonObj["Type"] = "Plane";
+		break;
 	}
 	return jsonObj;
 }
@@ -110,6 +113,8 @@ void UPrimitiveComponent::Deserialize(json::JSON jsonObj)
 		type = EPrimitiveType::Cube;
 	else if (jsonObj["Type"].ToString() == "Triangle")
 		type = EPrimitiveType::Triangle;
+	else if (jsonObj["Type"].ToString() == "Plane")
+		type = EPrimitiveType::Plane;
 }
 
 

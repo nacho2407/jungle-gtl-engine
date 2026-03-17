@@ -21,7 +21,7 @@ class UCameraComponent : public USceneComponent {
 public:
 	float FOV{ 90.0f };
 	float AspectRatio{ 16.0f / 9.0f };
-	float NearPlane{ 1.0f };
+	float NearPlane{ 0.01f };
 	float FarPlane{ 2000.0f };
 	float MoveSpeed{ 10.0f };
 	float ScreenWidth = 0.f;
