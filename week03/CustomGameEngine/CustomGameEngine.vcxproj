@@ -241,7 +241,6 @@
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="TimerManager.cpp" />
     <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="CubeComponent.cpp" />
     <ClCompile Include="EngineStatics.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="World.cpp" />
