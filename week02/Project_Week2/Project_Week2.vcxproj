@@ -130,6 +130,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="App\FApplication.h" />
+    <ClInclude Include="App\Panels\FConsolePanel.h" />
     <ClInclude Include="App\Panels\FControlPanel.h" />
     <ClInclude Include="App\Panels\FPropertyPanel.h" />
     <ClInclude Include="App\FInputManager.h" />
@@ -204,6 +205,7 @@
     <ClCompile Include="App\FApplication.cpp" />
     <ClCompile Include="App\FInputManager.cpp" />
     <ClCompile Include="App\Main.cpp" />
+    <ClCompile Include="App\Panels\FConsolePanel.cpp" />
     <ClCompile Include="App\Panels\FControlPanel.cpp" />
     <ClCompile Include="App\Panels\FPropertyPanel.cpp" />
     <ClCompile Include="App\WindowsApplication.cpp" />

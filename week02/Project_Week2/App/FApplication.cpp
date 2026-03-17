@@ -41,6 +41,7 @@
 
 #include "Panels/FPropertyPanel.h"
 #include "Panels/FControlPanel.h"
+#include "Panels/FConsolePanel.h" 
 
 namespace
 {
@@ -357,6 +358,8 @@ bool FApplication::InitializeScene()
 
         World->AddActor(ClickCircleActor);
     }
+
+    UE_LOG("Hello World %d", 2025);
 
     return true;
 }
