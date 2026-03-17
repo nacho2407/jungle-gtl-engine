@@ -55,11 +55,11 @@ void UCameraComponent::Move(float DeltaTime) {
 	}
 	if (!InputManager::GetInstance().IsKeyHold('D') &&
 		InputManager::GetInstance().IsKeyHold('A')) {
-		position = position + SideDirection * MoveSpeed * DeltaTime;
+		position = position - SideDirection * MoveSpeed * DeltaTime;
 	}
 	else if (InputManager::GetInstance().IsKeyHold('D') &&
 		!InputManager::GetInstance().IsKeyHold('A')) {
-		position = position - SideDirection * MoveSpeed * DeltaTime;
+		position = position + SideDirection * MoveSpeed * DeltaTime;
 	}
 
 	SetRelativeLocation(position);
@@ -193,8 +193,8 @@ void UCameraComponent::UpdateCameraMatrices()
 	FVector ForwardBase = FVector::Forward();
 	Direction = RotMatrix.TransformVector(ForwardBase).Normalize();
 
-	SideDirection = Direction.Cross(FVector::Up());
-	UpDirection = SideDirection.Cross(Direction);
+	SideDirection = FVector::Up().Cross(Direction);
+	UpDirection = Direction.Cross(SideDirection);
 
 	auto position = GetRelativeLocation();
 	FocusPoint = position + Direction * FocusLength;
