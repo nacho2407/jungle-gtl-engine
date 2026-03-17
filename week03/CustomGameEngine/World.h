@@ -54,12 +54,19 @@ public:
 		return AddSceneComponent<T>(activeScene);
 	}
 
+	template <typename T>
+	T* AddPermanentSceneComponent()
+	{
+		return AddSceneComponent<T>(permanentScene);
+	}
+
 	void RemoveSceneComponent(USceneComponent* toDespawn);
 	inline void InjectRenderer(URenderer* InRenderer) { Renderer = InRenderer; }
 	void OnBeforeRender() const;
 
 private:
 	static UScene* activeScene;
+	static UScene* permanentScene;
 	URenderer* Renderer;
 };
 

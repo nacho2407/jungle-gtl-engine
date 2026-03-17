@@ -16,3 +16,8 @@ void FLevel::RemoveRenderObject(RenderObject* RenderObj)
 		}
 	}
 }
+
+void FLevel::Clear()
+{
+	RenderObjects.clear();
+}

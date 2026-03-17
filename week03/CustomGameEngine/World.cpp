@@ -5,6 +5,7 @@
 #include "SerializeHelper.h"
 
 UScene* UWorld::activeScene;
+UScene* UWorld::permanentScene;
 
 UWorld::UWorld() 
 {
@@ -13,7 +14,14 @@ UWorld::UWorld()
 
 UWorld::~UWorld() {
 	UnloadScene();
-	// TODO: permanentScene 정리
+
+	// permanentScene 정리
+	FLevel::GetInstance().Clear();
+	for (auto it = permanentScene->SceneComponents.begin(); it != permanentScene->SceneComponents.end(); it++)
+	{
+		delete *it;
+	}
+	permanentScene->SceneComponents.clear();
 }
 
 UScene* UWorld::GetActiveScene()

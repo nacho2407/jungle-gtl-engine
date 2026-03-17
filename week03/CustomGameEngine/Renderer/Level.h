@@ -11,6 +11,7 @@ class FLevel : public ISingleton<FLevel>
 public:
 	void PushRenderObject(RenderObject* RenderObj);
 	void RemoveRenderObject(RenderObject* RenderObj);
+	void Clear();
 	TArray<RenderObject*> RenderObjects;
 };
 
