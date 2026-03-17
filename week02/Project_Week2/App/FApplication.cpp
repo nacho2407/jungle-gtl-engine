@@ -1128,7 +1128,7 @@ void FApplication::UpdateGizmoDrag(int MouseX, int MouseY)
     {
         FVector CurrentVec = HitPoint - DragStartActorLocation;
 
-        // 축 제거 → 평면 projection
+        // 축 제거 -> 평면 projection
         CurrentVec = CurrentVec - DragAxisDirection * CurrentVec.Dot(DragAxisDirection);
 
         if (CurrentVec.LengthSquared() < 0.000001f)
