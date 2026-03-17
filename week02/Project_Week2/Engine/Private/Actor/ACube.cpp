@@ -8,19 +8,8 @@ ACube::ACube()
     InitializeActor();
 }
 
-ACube::ACube(const FUObjectInitializer& ObjectInitializer)
-    : APrimitiveActor(ObjectInitializer)
-{
-    InitializeActor();
-}
-
 ACube::~ACube()
 {
-}
-
-const char* ACube::GetObjClassName() const
-{
-    return "ACube";
 }
 
 void ACube::SetStaticMesh(UStaticMesh* InStaticMesh)

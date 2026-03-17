@@ -2,7 +2,7 @@
 
 #include "Json/json.hpp"
 
-#include "FPrimitiveRecord.h"
+#include "FWorldSaveData.h"
 
 class FPrimitiveJsonConverter
 {

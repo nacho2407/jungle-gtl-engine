@@ -6,14 +6,15 @@ class UStaticMesh;
 
 class UStaticMeshComponent : public UPrimitiveComponent
 {
+    DECLARE_UClass(UStaticMeshComponent, UPrimitiveComponent)
 public:
+
     UStaticMeshComponent();
     virtual ~UStaticMeshComponent();
 
 public:
     virtual void BeginPlay() override;
     virtual void TickComponent(float DeltaTime) override;
-    virtual const char* GetObjClassName() const override;
 
 public:
     void SetStaticMesh(UStaticMesh* InMesh);
@@ -22,5 +23,5 @@ public:
     virtual FRenderItem CreateRenderItem() const override;
 
 private:
-    UStaticMesh* StaticMesh;
+    UStaticMesh* StaticMesh = nullptr;
 };

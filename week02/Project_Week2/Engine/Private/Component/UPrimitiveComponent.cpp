@@ -1,7 +1,10 @@
 #include "Component/UPrimitiveComponent.h"
 
-UPrimitiveComponent::UPrimitiveComponent() 
-	: bVisible(true) {}
+UPrimitiveComponent::UPrimitiveComponent()
+	: USceneComponent()
+	, bVisible(true)
+{
+}
 
 UPrimitiveComponent::~UPrimitiveComponent() {}
 

@@ -4,6 +4,8 @@
 
 class USphereComponent : public UPrimitiveComponent
 {
+    DECLARE_UClass(USphereComponent, UPrimitiveComponent)
+
 public:
     USphereComponent();
     virtual ~USphereComponent();

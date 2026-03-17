@@ -6,6 +6,8 @@
 class UPrimitiveComponent : public USceneComponent
 {
 public:
+    DECLARE_UClass(UPrimitiveComponent, USceneComponent)
+
     UPrimitiveComponent();
     virtual ~UPrimitiveComponent();
 

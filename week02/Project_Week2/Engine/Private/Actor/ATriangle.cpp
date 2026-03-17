@@ -8,19 +8,8 @@ ATriangle::ATriangle()
     InitializeActor();
 }
 
-ATriangle::ATriangle(const FUObjectInitializer& ObjectInitializer)
-    : APrimitiveActor(ObjectInitializer)
-{
-    InitializeActor();
-}
-
 ATriangle::~ATriangle()
 {
-}
-
-const char* ATriangle::GetObjClassName() const
-{
-    return "ATriangle";
 }
 
 void ATriangle::SetStaticMesh(UStaticMesh* InStaticMesh)
