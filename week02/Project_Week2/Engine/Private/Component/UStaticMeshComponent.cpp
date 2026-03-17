@@ -6,12 +6,6 @@ UStaticMeshComponent::UStaticMeshComponent()
 {
 }
 
-UStaticMeshComponent::UStaticMeshComponent(const FUObjectInitializer& ObjectInitializer)
-    : UPrimitiveComponent(ObjectInitializer)
-    , StaticMesh(nullptr)
-{
-}
-
 UStaticMeshComponent::~UStaticMeshComponent()
 {
 }

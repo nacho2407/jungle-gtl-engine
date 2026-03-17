@@ -7,10 +7,13 @@ class UStaticMesh;
 class UStaticMeshComponent : public UPrimitiveComponent
 {
 public:
-    DECLARE_ROOT_UClass(UStaticMeshComponent)
+private: inline static UClassData* StaticClass = nullptr; public: static UClassData* GetClass() {
+    if (StaticClass != nullptr) return StaticClass; UClassData* classData = new UClassData(); classData->ClassName = "UStaticMeshComponent"; classData->ClassSize = sizeof(UStaticMeshComponent); classData->SuperClass = nullptr; StaticClass = classData; return StaticClass;
+} void Initialize(const FUObjectInitializer& ObjectInitilizer) {
+    UUID = ObjectInitilizer.UUID; Name = ObjectInitilizer.Name;
+}
 
     UStaticMeshComponent();
-    UStaticMeshComponent(const FUObjectInitializer& ObjectInitializer);
     virtual ~UStaticMeshComponent();
 
 public:

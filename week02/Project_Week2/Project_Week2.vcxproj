@@ -192,8 +192,8 @@
     <ClInclude Include="Render\Public\Structs.h" />
     <ClInclude Include="Render\Public\URenderer.h" />
     <ClInclude Include="Serialization\Public\FPrimitiveJsonConverter.h" />
+    <ClInclude Include="Serialization\Public\FWorldSaveConverter.h" />
     <ClInclude Include="Serialization\Public\FWorldSaveData.h" />
-    <ClInclude Include="Serialization\Public\FPrimitiveRecordConverter.h" />
     <ClInclude Include="ThirdParty\Json\json.hpp" />
     <ClInclude Include="Core\Public\UEngineStatics.h" />
     <ClInclude Include="Core\Public\UObjectBaseUtility.h" />
@@ -254,7 +254,6 @@
     <ClCompile Include="Render\Private\URenderer.cpp" />
     <ClCompile Include="Core\Private\UObjectBaseUtility.cpp" />
     <ClCompile Include="Serialization\Private\FPrimitiveJsonConverter.cpp" />
-    <ClCompile Include="Serialization\Private\FPrimitiveRecordConverter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Render\Public\Shaders\Default.hlsl">

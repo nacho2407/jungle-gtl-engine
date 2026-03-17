@@ -243,10 +243,10 @@
     <ClInclude Include="Serialization\Public\FWorldSaveData.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Serialization\Public\FPrimitiveRecordConverter.h">
+    <ClInclude Include="Engine\Public\Actor\ATorus.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Public\Actor\ATorus.h">
+    <ClInclude Include="Serialization\Public\FWorldSaveConverter.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -405,9 +405,6 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Serialization\Private\FPrimitiveJsonConverter.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Serialization\Private\FPrimitiveRecordConverter.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Private\Actor\ATorus.cpp">
