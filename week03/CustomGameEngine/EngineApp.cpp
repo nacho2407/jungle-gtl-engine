@@ -102,25 +102,15 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 
 	InputManager::GetInstance().hWnd = HWnd;
 	// Init Camera
-	auto camera = Cast<UCameraComponent>(GetWorld().AddPermanentSceneComponent<UCameraComponent>());
-	camera->SetRelativeLocation(FVector(- 10, 10, 10));
-	camera->SetRelativeRotation(FVector(30, -45, 0));
-	Renderer->SetRenderCamera(camera);
-	EditorInst->SetCamera(camera);
+	auto Camera = Cast<UCameraComponent>(GetWorld().AddPermanentSceneComponent<UCameraComponent>());
+	Camera->SetRelativeLocation(FVector(-10, 10, 10));
+	Camera->SetRelativeRotation(FVector(30, -45, 0));
+	Renderer->SetRenderCamera(Camera);
+	EditorInst->SetCamera(Camera);
 	EditorInst->SetRenderer(Renderer);
 
-	RECT rc;
-	int width = 0;
-	int height = 0;
-	if (GetClientRect(HWnd, &rc))
-	{
-		width = rc.right - rc.left;
-		height = rc.bottom - rc.top;
-	}
-	camera->OnResize(width, height);
-
 	//Resize Callback
-	OnResizeCallback.push_back([this](int width, int height) {
+	OnResizeCallback.push_back([Camera](int width, int height) {
 		Camera->OnResize(width, height);
 		});
 	OnResizeCallback.push_back([this](int width, int height) {
@@ -130,7 +120,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	//Init Picker
 	Picker = Cast<UPicker>(FObjectFactory::ConstructObject(UPicker::GetClass()));
 	Picker->SetEditor(EditorInst);
-	Picker->SetCamera(camera);
+	Picker->SetCamera(Camera);
 
 	//Init World & Scene
 	GetWorld().InjectRenderer(Renderer);
