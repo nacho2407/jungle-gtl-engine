@@ -8,6 +8,7 @@ bool FBuiltInMeshRepository::Initialize()
 	Meshes.TorusMesh = BuiltInMeshFactory::CreateTorusMesh(64, 32, 1.2f, 0.35f);
 	Meshes.AxesMesh = BuiltInMeshFactory::CreateAxesMesh();
 	Meshes.GizmoArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh();
+	Meshes.GizmoShaftMesh = BuiltInMeshFactory::CreateGizmoScaleMesh();
 	Meshes.ClickCircleMesh = BuiltInMeshFactory::CreateDiscMesh(64);
 
 	return true;

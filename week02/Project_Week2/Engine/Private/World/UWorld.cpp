@@ -159,6 +159,10 @@ void UWorld::BuildScene(FScene& OutScene) const
             {
                 continue;
             }
+            if (dynamic_cast<AGizmoActor*>(Actor))
+            {
+                Item.bIsGizmo = true;
+            }
             OutScene.RenderItems.push_back(Item);
         }
     }

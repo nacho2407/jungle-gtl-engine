@@ -22,7 +22,7 @@ public:
     virtual ~AGizmoActor() override; // 왜 가상함수로 했을까
 
 public:
-    void Initialize(UStaticMesh* ArrowMesh, UStaticMesh* CubeMesh, UStaticMesh* RotateRingMesh);
+    void Initialize(UStaticMesh* ArrowMesh, UStaticMesh* ScaleMesh, UStaticMesh* CubeMesh, UStaticMesh* TorusMesh, UStaticMesh* RotateRingMesh);
 
     void SetTargetActor(AActor* InTarget);
     AActor* GetTargetActor() const;
@@ -87,7 +87,7 @@ private:
 
     float AxisLength = 3.0f;
     float PickThreshold = 10.0f;
-    float GizmoScale = 0.8f;
+    float GizmoScale = 0.5;
 
     UStaticMesh* TranslateMesh = nullptr;
     UStaticMesh* ScaleMesh = nullptr;

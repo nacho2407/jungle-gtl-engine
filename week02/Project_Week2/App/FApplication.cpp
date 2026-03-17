@@ -211,6 +211,7 @@ bool FApplication::InitializeResources()
     AxesMesh = BuiltInMeshFactory::CreateAxesMesh();
     GridMesh = BuiltInMeshFactory::CreateGridMesh(20, 1.0f);
     GizmoArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh();
+    GizmoScaleMesh = BuiltInMeshFactory::CreateGizmoScaleMesh();
     GizmoRotateRingMesh = BuiltInMeshFactory::CreateGizmoRotateRingMesh();
 
     //ClickCircleMesh = BuiltInMeshFactory::CreateCircleMesh(64);
@@ -286,9 +287,9 @@ bool FApplication::InitializeScene()
         }
     }
 
-    GizmoActor = new AGizmoActor();
-    GizmoActor->Initialize(GizmoArrowMesh, CubeMesh, TorusMesh);
-    World->AddActor(GizmoActor);
+    //GizmoActor = new AGizmoActor();
+    //GizmoActor->Initialize(GizmoArrowMesh, GizmoScaleMesh, CubeMesh, TorusMesh);
+    //World->AddActor(GizmoActor);
 
     // Click Pulse Circle
     {
@@ -344,7 +345,7 @@ void FApplication::MainLoop()
     check(GizmoActor)
     check(GridActor)
 
-    GizmoActor->Initialize(GizmoArrowMesh, CubeMesh, GizmoRotateRingMesh);
+    GizmoActor->Initialize(GizmoArrowMesh, GizmoScaleMesh, CubeMesh, TorusMesh, GizmoRotateRingMesh);
     GizmoActor->SetMode(CurrentGizmoMode);
     World->AddActor(GizmoActor);
 
@@ -558,9 +559,9 @@ void FApplication::Tick(float DeltaTime)
         UpdateGizmoColors();
     }
 
-    TempFunc(WorldAxisActor);
-    TempFunc(GridActor);
-    TempFunc(GizmoActor);
+    //TempFunc(WorldAxisActor);
+    //TempFunc(GridActor);
+    //TempFunc(GizmoActor);
     World->BuildScene(*Scene);
 
     AddSelectionOutlineRenderItem();
@@ -606,7 +607,7 @@ void FApplication::RenderFrame()
     Renderer->BeginFrame();
     Renderer->Render(*Scene, MainCamera);
 
-    // 여기서 메인 백버퍼 다시 바인딩
+    // 여기서 메인 백버퍼 다시d 바인딩
     Renderer->BindMainRenderTargetForOverlay();
 
     //Renderer->BeginOverlayRenderState(); // 오버레이 변경 -> Gizmo, Mesh 오버레이 무시
@@ -1095,6 +1096,7 @@ void FApplication::BeginGizmoDrag(EGizmoAxis Axis, int MouseX, int MouseY)
     DragPlaneNormal = PlaneNormal;
     DragStartActorLocation = ActorPos;
     DragStartHitPoint = HitPoint;
+    DragStartActorScale = Root->GetRelativeScale();
 }
 
 void FApplication::UpdateGizmoDrag(int MouseX, int MouseY)
@@ -1112,15 +1114,17 @@ void FApplication::UpdateGizmoDrag(int MouseX, int MouseY)
 
     FRay Ray = BuildPickRay(MouseX, MouseY);
 
+    FVector HitPoint;
+    if (!IntersectRayPlane(Ray, DragStartActorLocation, DragPlaneNormal, HitPoint))
+    {
+        return;
+    }
+
     if (DragStartGizmoMode == EGizmoMode::Rotate)
     {
-        FVector HitPoint;
-        if (!IntersectRayPlane(Ray, DragStartActorLocation, DragPlaneNormal, HitPoint))
-        {
-            return;
-        }
-
         FVector CurrentVec = HitPoint - DragStartActorLocation;
+
+        // 축 제거 → 평면 projection
         CurrentVec = CurrentVec - DragAxisDirection * CurrentVec.Dot(DragAxisDirection);
 
         if (CurrentVec.LengthSquared() < 0.000001f)
@@ -1137,37 +1141,53 @@ void FApplication::UpdateGizmoDrag(int MouseX, int MouseY)
 
         const FQuat DeltaQuat = FQuat::FromAxisAngle(DragAxisDirection, DeltaAngle);
 
-        // 월드 축 기준으로 누적하고 싶으면 Delta * Start
-        // 로컬 축 기준으로 누적하고 싶으면 Start * Delta
         FQuat NewQuat = DeltaQuat * DragStartActorQuat;
         NewQuat.Normalize();
 
         Root->SetRelativeRotationQuat(NewQuat);
+    }
+    else if (DragStartGizmoMode == EGizmoMode::Translate)
+    {
+        const FVector Delta = HitPoint - DragStartHitPoint;
+        const float MoveAmount = Delta.Dot(DragAxisDirection);
 
-        if (GizmoActor)
+        const FVector NewLocation =
+            DragStartActorLocation + DragAxisDirection * MoveAmount;
+
+        Root->SetRelativeLocation(NewLocation);
+    }
+    else if (DragStartGizmoMode == EGizmoMode::Scale)
+    {
+        const FVector Delta = HitPoint - DragStartHitPoint;
+        const float Amount = Delta.Dot(DragAxisDirection);
+
+        FVector NewScale = DragStartActorScale;
+
+        const float ScaleDelta = Amount * GizmoScaleSensitivity;
+        const float MinScale = 0.05f;
+
+        switch (ActiveGizmoAxis)
         {
-            GizmoActor->UpdateTransformFromTarget();
-            GizmoActor->UpdateColors(ActiveGizmoAxis);
+        case EGizmoAxis::X:
+            NewScale.X = std::max(MinScale, DragStartActorScale.X + ScaleDelta);
+            break;
+        case EGizmoAxis::Y:
+            NewScale.Y = std::max(MinScale, DragStartActorScale.Y + ScaleDelta);
+            break;
+        case EGizmoAxis::Z:
+            NewScale.Z = std::max(MinScale, DragStartActorScale.Z + ScaleDelta);
+            break;
+        default:
+            return;
         }
 
-        return;
+        Root->SetRelativeScale(NewScale);
     }
-
-    FVector HitPoint;
-    if (!IntersectRayPlane(Ray, DragStartActorLocation, DragPlaneNormal, HitPoint))
-    {
-        return;
-    }
-
-    const FVector Delta = HitPoint - DragStartHitPoint;
-    const float MoveAmount = Delta.Dot(DragAxisDirection);
-
-    const FVector NewLocation = DragStartActorLocation + DragAxisDirection * MoveAmount;
-    Root->SetRelativeLocation(NewLocation);
 
     if (GizmoActor)
     {
         GizmoActor->UpdateTransformFromTarget();
+        GizmoActor->UpdateColors(ActiveGizmoAxis); 
     }
 }
 
