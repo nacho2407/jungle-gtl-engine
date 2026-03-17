@@ -1,6 +1,6 @@
 ﻿#include "EditorToolbar.h"
 #include "Gizmo.h"
-#include "GizmoController.h"
+#include "Component/GizmoComponent.h"
 #include "ImGui/imgui.h"
 
 EditorToolbar::EditorToolbar()

@@ -2,22 +2,23 @@
 
 #include "GizmoControlStrategy.h"
 #include "Math/Vector.h"
+#include "Math/Matrix.h"
 
-class GizmoController;
+class UGizmoComponent;
 class RenderObject;
 
-class GizmoScaleControlStrategy : public IGizmoControlStrategy
+class GizmoTranslationControlStrategy : public IGizmoControlStrategy
 {
 public:
-	GizmoScaleControlStrategy(GizmoController* controller);
-	~GizmoScaleControlStrategy() override;
+	GizmoTranslationControlStrategy(UGizmoComponent* controller);
+	~GizmoTranslationControlStrategy() override;
 
 public:
 	virtual void Update() override;
 	virtual void UpdateRenderObject() override;
 
 	virtual TArray<FMatrix> GetRelativeMatrices() override { return RelativeMatrices; }
-	virtual FString GetGeometryName() override { return "GizmoScale"; }
+	virtual FString GetGeometryName() override { return "GizmoTranslation"; }
 
 	virtual void BeginDrag(const Ray& ray) override;
 	virtual void UpdateDrag(const Ray& ray) override;
@@ -26,12 +27,12 @@ public:
 	virtual void SetDrawEnable(bool bEnable) override;
 
 private:
-	GizmoController* Controller;
+	UGizmoComponent* Controller;
 
 	TArray<FMatrix> RelativeMatrices;
 
+	FVector InitialObjectLocation;
 	FVector InitialWorldPos;
-	FVector InitialObjectScale;
 	float InitialDragOffset = 0.0f;
 
 	RenderObject* GizmoX;

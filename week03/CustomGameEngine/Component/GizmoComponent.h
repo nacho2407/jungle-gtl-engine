@@ -1,9 +1,10 @@
 ﻿#pragma once
 
 #include "EngineTypes.h"
-#include "GizmoControlStrategy.h"
+#include "Editor/Gizmo/GizmoControlStrategy.h"
 #include "Math/Matrix.h"
-#include "Picker.h"
+#include "Editor/Picker.h"
+#include "Component/SceneComponent.h"
 
 enum class GizmoControllerAxis
 {
@@ -22,16 +23,16 @@ enum class GizmoControllerType : int32
 };
 
 class URenderer;
-class USceneComponent;
 
-class GizmoController
+class UGizmoComponent : public USceneComponent
 {
+	DECLARE_RTTI(UGizmoComponent, USceneComponent)
 public:
-	GizmoController();
-	~GizmoController();
+	UGizmoComponent();
+	virtual ~UGizmoComponent() override;
 
 public:
-	void Update(class UCameraComponent* Camera);
+	void Update(float deltaTime) override;
 	void UpdateRenderObject();
 
 	void BeginDrag(const Ray& ray);
@@ -65,8 +66,6 @@ public:
 	}
 	USceneComponent* GetAttachedComponent() const { return AttachedComponent; }
 
-	FMatrix GetRelativeMatrix() const { return RelativeMatrix; }
-
 	void SetAxis(GizmoControllerAxis axis) { CurrentAxis = axis; }
 
 	void SetDrawEnable(bool bEnable)
@@ -77,8 +76,6 @@ public:
 	}
 
 private:
-	FMatrix RelativeMatrix;
-
 	USceneComponent* AttachedComponent = nullptr;
 
 	GizmoControllerType Type = GizmoControllerType::Translation;

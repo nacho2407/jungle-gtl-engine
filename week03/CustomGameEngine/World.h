@@ -4,6 +4,7 @@
 #include "Logger.h"		// TEST
 #include "Scene.h"
 #include "Renderer/Level.h"
+#include "Component/PrimitiveComponent.h"
 
 class FLevel;
 

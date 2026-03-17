@@ -5,7 +5,7 @@
 #include "EditorStatPanel.h"
 #include "EditorToolbar.h"
 #include "Gizmo.h"
-#include "GizmoController.h"
+#include "Component/GizmoComponent.h"
 #include "Component/SceneComponent.h"
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
@@ -36,14 +36,6 @@ bool Editor::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* de
 	ImGui_ImplDX11_Init(device, deviceContext);
 
 	return true;
-}
-
-void Editor::OnBeforeRender()
-{
-	if (SelectedComponent == nullptr) return;
-
-	Gizmo::GetInstance().UpdateRenderObject();
-	Gizmo::GetInstance().OnBeforeRender(Camera);
 }
 
 void Editor::DrawUI()

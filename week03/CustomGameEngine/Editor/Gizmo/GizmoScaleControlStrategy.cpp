@@ -1,30 +1,31 @@
-﻿#include "GizmoTranslationControlStrategy.h"
+﻿#include "GizmoScaleControlStrategy.h"
+#include "Component/GizmoComponent.h"
 #include "ResourceManager.h"
 #include "Object.h"
-#include "GizmoController.h"
-#include "Component/SceneComponent.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderObject.h"
+#include "Component/SceneComponent.h"
+#include "Editor/Picker.h"
 #include "Logger.h"
 
-GizmoTranslationControlStrategy::GizmoTranslationControlStrategy(GizmoController* controller)
+GizmoScaleControlStrategy::GizmoScaleControlStrategy(UGizmoComponent* controller)
 {
 	ResourceManager* resourceManager = ResourceManager::GetInstance();
 
 	GizmoX = new RenderObject();
-	GizmoX->Geometry = &resourceManager->GetGeometry("GizmoTranslation");
+	GizmoX->Geometry = &resourceManager->GetGeometry("GizmoScale");
 	GizmoX->Material = &resourceManager->GetMaterial(L"Shader/ShaderW0.hlsl");
 	GizmoX->bDepthEnabled = false;
 	GizmoX->Color = FColor(1.0f, 0.0f, 0.0f, 1.0f);
 
 	GizmoY = new RenderObject();
-	GizmoY->Geometry = &resourceManager->GetGeometry("GizmoTranslation");
+	GizmoY->Geometry = &resourceManager->GetGeometry("GizmoScale");
 	GizmoY->Material = &resourceManager->GetMaterial(L"Shader/ShaderW0.hlsl");
 	GizmoY->bDepthEnabled = false;
 	GizmoY->Color = FColor(0.0f, 1.0f, 0.0f, 1.0f);
 	
 	GizmoZ = new RenderObject();
-	GizmoZ->Geometry = &resourceManager->GetGeometry("GizmoTranslation");
+	GizmoZ->Geometry = &resourceManager->GetGeometry("GizmoScale");
 	GizmoZ->Material = &resourceManager->GetMaterial(L"Shader/ShaderW0.hlsl");
 	GizmoZ->bDepthEnabled = false;
 	GizmoZ->Color = FColor(0.0f, 0.0f, 1.0f, 1.0f);
@@ -37,7 +38,7 @@ GizmoTranslationControlStrategy::GizmoTranslationControlStrategy(GizmoController
 	RelativeMatrices[2] = FMatrix::TranslationMatrix(0.0f, 0.0f, 0.5f);
 }
 
-GizmoTranslationControlStrategy::~GizmoTranslationControlStrategy()
+GizmoScaleControlStrategy::~GizmoScaleControlStrategy()
 {
 	SetDrawEnable(false);
 	delete GizmoX;
@@ -45,13 +46,12 @@ GizmoTranslationControlStrategy::~GizmoTranslationControlStrategy()
 	delete GizmoZ;
 }
 
-void GizmoTranslationControlStrategy::Update()
+void GizmoScaleControlStrategy::Update()
 {
 }
 
-void GizmoTranslationControlStrategy::UpdateRenderObject()
+void GizmoScaleControlStrategy::UpdateRenderObject()
 {
-
 	GizmoX->World = RelativeMatrices[0] * Controller->GetRelativeMatrix();
 	GizmoX->bIsSelected = Controller->GetHoverAxis() == GizmoControllerAxis::X;
 
@@ -62,9 +62,9 @@ void GizmoTranslationControlStrategy::UpdateRenderObject()
 	GizmoZ->bIsSelected = Controller->GetHoverAxis() == GizmoControllerAxis::Z;
 }
 
-void GizmoTranslationControlStrategy::BeginDrag(const Ray& ray)
+void GizmoScaleControlStrategy::BeginDrag(const Ray& ray)
 {
-	InitialObjectLocation = Controller->GetAttachedComponent()->GetRelativeLocation();
+	InitialObjectScale = Controller->GetAttachedComponent()->GetRelativeScale3D();
 
 	FVector worldAxis;
 	switch (Controller->GetHoverAxis())
@@ -80,18 +80,14 @@ void GizmoTranslationControlStrategy::BeginDrag(const Ray& ray)
 		break;
 	}
 
-	FVector axisDir = worldAxis;
-	if (Controller->IsLocalSpace())
-	{
-		axisDir = Controller->GetRelativeMatrix().TransformVector(worldAxis).Normalize();
-	}
+	FVector axisDir = Controller->GetRelativeMatrix().TransformVector(worldAxis).Normalize();
 	FVector worldOrigin = Controller->GetRelativeMatrix().TransformPoint(FVector::Zero());
 
 	InitialWorldPos = worldOrigin;
 	InitialDragOffset = Controller->GetClosestPointOnAxis(ray, worldOrigin, axisDir);
 }
 
-void GizmoTranslationControlStrategy::UpdateDrag(const Ray& ray)
+void GizmoScaleControlStrategy::UpdateDrag(const Ray& ray)
 {
 	FVector worldAxis;
 	switch (Controller->GetHoverAxis())
@@ -107,25 +103,26 @@ void GizmoTranslationControlStrategy::UpdateDrag(const Ray& ray)
 		break;
 	}
 
-	FVector axisDir = worldAxis;
-	if (Controller->IsLocalSpace())
-	{
-		axisDir = Controller->GetRelativeMatrix().TransformVector(worldAxis).Normalize();
-	}
-	FVector worldOrigin = Controller->GetRelativeMatrix().TransformPoint(FVector(0, 0, 0));
+	FVector axisDir = Controller->GetRelativeMatrix().TransformVector(worldAxis).Normalize();
+	FVector worldOrigin = Controller->GetRelativeMatrix().TransformPoint(FVector::Zero());
 
 	float currentT = Controller->GetClosestPointOnAxis(ray, InitialWorldPos, axisDir);
 	float deltaT = currentT - InitialDragOffset;
 
-	FVector newPos = InitialObjectLocation + axisDir * deltaT;
-	Controller->GetAttachedComponent()->SetRelativeLocation(newPos);
+	FVector newScale = InitialObjectScale;
+
+	if (Controller->GetHoverAxis() == GizmoControllerAxis::X) newScale.x += deltaT;
+	else if (Controller->GetHoverAxis() == GizmoControllerAxis::Y) newScale.y += deltaT;
+	else if (Controller->GetHoverAxis() == GizmoControllerAxis::Z) newScale.z += deltaT;
+
+	Controller->GetAttachedComponent()->SetRelativeScale3D(newScale);
 }
 
-void GizmoTranslationControlStrategy::EndDrag()
+void GizmoScaleControlStrategy::EndDrag()
 {
 }
 
-void GizmoTranslationControlStrategy::SetDrawEnable(bool bEnable)
+void GizmoScaleControlStrategy::SetDrawEnable(bool bEnable)
 {
 	if (bEnable)
 	{

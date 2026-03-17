@@ -1,33 +1,22 @@
 ﻿#include "Gizmo.h"
 #include "Component/SceneComponent.h"
 #include "Component/CameraComponent.h"
+#include "Component/GizmoComponent.h"
 #include "Renderer/RenderObject.h"
 #include "ResourceManager.h"
 #include "Picker.h"
 #include "Logger.h"
-#include "GizmoController.h"
+#include "World.h"
 
 Gizmo::Gizmo()
 {
-	Controller = new GizmoController();
-}
-
-void Gizmo::UpdateRenderObject()
-{
-	Controller->UpdateRenderObject();
 }
 
 Gizmo::~Gizmo()
 {
-	delete Controller;
 }
 
-void Gizmo::OnBeforeRender(UCameraComponent* Camera)
+void Gizmo::CreateGizmoController()
 {
-	if (Controller)
-	{
-		Controller->Update(Camera);
-		Controller->UpdateRenderObject();
-	}
+	Controller = Cast<UGizmoComponent>(GetWorld().AddPermanentSceneComponent<UGizmoComponent>());
 }
-

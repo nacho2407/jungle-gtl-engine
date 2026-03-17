@@ -4,13 +4,13 @@
 #include "Math/Vector.h"
 #include "Math/Quaternion.h"
 
-class GizmoController;
+class UGizmoComponent;
 class RenderObject;
 
 class GizmoRotationControlStrategy : public IGizmoControlStrategy
 {
 public:
-	GizmoRotationControlStrategy(GizmoController* controller);
+	GizmoRotationControlStrategy(UGizmoComponent* controller);
 	~GizmoRotationControlStrategy() override;
 
 public:
@@ -27,7 +27,7 @@ public:
 	virtual void SetDrawEnable(bool bEnable) override;
 
 private:
-	GizmoController* Controller;
+	UGizmoComponent* Controller;
 
 	TArray<FMatrix> RelativeMatrices;
 
