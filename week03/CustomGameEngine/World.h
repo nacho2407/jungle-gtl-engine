@@ -15,7 +15,7 @@ private:
 	UWorld();
 
 public:
-	~UWorld();
+	~UWorld() override;
 
 	// === Scene Management
 	UScene* GetActiveScene();
@@ -45,7 +45,7 @@ public:
 			if(renderObj != nullptr)
 				FLevel::GetInstance().PushRenderObject(renderObj);
 		}
-		UE_LOG("Added new scene component with uuid = %d\n", obj->UUID);
+		//UE_LOG("Added new scene component with uuid = %d\n", obj->UUID);
 		return instance;
 	}
 
