@@ -18,6 +18,10 @@ class UStaticMeshComponent;
 class AGizmoActor;
 
 class FGUIManager;
+class FInputManager;
+
+class FPropertyPanel;
+class FControlPanel;
 
 enum class EPointerPulsePhase
 {
@@ -66,9 +70,26 @@ public:
     int Run();
     void Shutdown();
 
+    // 패널 렌더링
+    AActor* GetSelectedActor() const;
+    void NotifySelectedActorTransformChanged();
+    void ClearSelection();
+
+    UCameraComponent* GetMainCamera() const;
+
+    bool bUseOrthogonalProjection = false;
+    float DebugOrthoWidth = 10.0f;
+
+    void ApplyCameraProjectionMode();
+
+    ESpawnMeshType SelectedSpawnMeshType = ESpawnMeshType::Sphere;
+    void SpawnSelectedMeshActor();
+
+
 private:
     bool InitializeEngine();
     bool InitializeGUI();
+    bool InitializeInput();
     bool InitializeResources();
     bool InitializeScene();
     void MainLoop();
@@ -107,8 +128,12 @@ private:
     void UpdateObjectAllocationTest();
     void RenderDebugUI();
 
-    void SpawnSelectedMeshActor();
     AActor* SpawnMeshActor(UStaticMesh* Mesh, const FVector& Location);
+	// 패널 렌더링
+    void RenderEditorUI();
+
+
+    
 
 private:
     FWindowsApplication* WindowApp;
@@ -162,7 +187,18 @@ private:
     int TestIntervalCounter = 0;
     TArray<UObject*> TestObjects;
 
-    ESpawnMeshType SelectedSpawnMeshType = ESpawnMeshType::Sphere;
 
     FGUIManager* GUIManager = nullptr;
+
+	// 패널 렌더링
+    FPropertyPanel* PropertyPanel = nullptr;
+    FControlPanel* ControlPanel = nullptr;
+
+    // 하단 콘솔
+    bool bShowBottomConsole = true;
+
+    FInputManager* InputManager = nullptr;
+
+    int PrevMouseX = 0;
+    int PrevMouseY = 0;
 };

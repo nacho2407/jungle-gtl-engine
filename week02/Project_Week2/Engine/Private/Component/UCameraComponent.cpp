@@ -67,8 +67,46 @@ float UCameraComponent::GetFarClip() const
     return FarClip;
 }
 
+void UCameraComponent::SetProjectionMode(EProjectionMode InMode)
+{
+    ProjectionMode = InMode;
+}
+
+EProjectionMode UCameraComponent::GetProjectionMode() const
+{
+    return ProjectionMode;
+}
+
+void UCameraComponent::SetOrthoWidth(float InOrthoWidth)
+{
+    if (InOrthoWidth > 0.001f)
+    {
+        OrthoWidth = InOrthoWidth;
+    }
+}
+
+float UCameraComponent::GetOrthoWidth() const
+{
+    return OrthoWidth;
+}
+
+bool UCameraComponent::IsOrthogonal() const
+{
+    return ProjectionMode == EProjectionMode::Orthogonal;
+}
+
+
 FMatrix UCameraComponent::GetProjectionMatrix() const
 {
+    if (ProjectionMode == EProjectionMode::Orthogonal)
+    {
+        return FMatrix::MakeOrthogonalMatrix(
+            OrthoWidth,
+            AspectRatio,
+            NearClip,
+            FarClip);
+    }
+
     return FMatrix::MakePerspectiveMatrix(
         FieldOfView,
         AspectRatio,
