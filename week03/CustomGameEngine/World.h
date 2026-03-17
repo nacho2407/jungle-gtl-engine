@@ -16,8 +16,14 @@ private:
 public:
 	~UWorld();
 
+	// === Scene Management
 	UScene* GetActiveScene();
 	void SetActiveScene(UScene*);
+	UScene* NewScene();
+	void SaveScene(FString sceneName);
+	UScene* LoadScene(FString sceneName);
+	void UnloadScene();
+	// === Scene Management
 
 public:
 	template <typename T>

@@ -3,7 +3,6 @@
 #include "Editor.h"
 #include "Component/PrimitiveComponent.h"
 #include "PrimitiveFactory.h"
-#include "SceneManager.h"
 #include "TimerManager.h"
 #include "World.h"
 #include "Math/Vector.h"
@@ -59,16 +58,16 @@ void EditorControlPanel::Draw(UCamera* camera)
 	if (ImGui::Button("New Scene"))
 	{
 		editor->SelectComponent(nullptr);
-		SceneManager::GetInstance().NewScene();
+		GetWorld().NewScene();
 	}
 	if (ImGui::Button("Save Scene"))
 	{
-		SceneManager::GetInstance().SaveScene(sceneName);
+		GetWorld().SaveScene(sceneName);
 	}
 	if (ImGui::Button("Load Scene"))
 	{
 		editor->SelectComponent(nullptr);
-		SceneManager::GetInstance().LoadScene(sceneName);
+		GetWorld().LoadScene(sceneName);
 	}
 	ImGui::Separator();
 

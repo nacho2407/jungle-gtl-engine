@@ -1,12 +1,20 @@
 ﻿#include "World.h"
 #include "ObjectFactory.h"
 #include "Component/PrimitiveComponent.h"
+#include "EngineStatics.h"
+#include "SerializeHelper.h"
 
 UScene* UWorld::activeScene;
 
-UWorld::UWorld() {}
+UWorld::UWorld() 
+{
+	permanentScene = Cast<UScene>(FObjectFactory::ConstructObject(UScene::GetClass()));
+}
 
-UWorld::~UWorld() {}
+UWorld::~UWorld() {
+	UnloadScene();
+	// TODO: permanentScene 정리
+}
 
 UScene* UWorld::GetActiveScene()
 {
@@ -16,6 +24,60 @@ UScene* UWorld::GetActiveScene()
 void UWorld::SetActiveScene(UScene* scene)
 {
 	activeScene = scene;
+}
+
+UScene* UWorld::NewScene()
+{
+	if (GetActiveScene() != nullptr)
+		UnloadScene();
+
+	UScene* newScene = Cast<UScene>(FObjectFactory::ConstructObject(UScene::GetClass()));
+	SetActiveScene(newScene);
+	UEngineStatics::NextUUID = 0;
+
+	UE_LOG("Created new scene\n");
+	return GetActiveScene();
+}
+
+void UWorld::SaveScene(FString sceneName)
+{
+	UScene* activeScene = GetWorld().GetActiveScene();
+	activeScene->NextUUID = UEngineStatics::NextUUID;
+
+	SerializeHelper::SaveAsJson(activeScene, sceneName + ".Scene");
+	return;
+}
+
+UScene* UWorld::LoadScene(FString sceneName)
+{
+	const FString filePath = sceneName + ".Scene";
+	
+	UScene* loadedScene = SerializeHelper::LoadFromJson<UScene>(filePath);
+
+	if (loadedScene != nullptr)
+	{
+		if (GetActiveScene() != nullptr)
+			UnloadScene();
+		SetActiveScene(loadedScene);
+		UEngineStatics::NextUUID = loadedScene->NextUUID;
+	}
+
+	return loadedScene;
+}
+
+void UWorld::UnloadScene()
+{
+	UScene* curScene = GetWorld().GetActiveScene();
+
+	// loop 내에서의 삽입/삭제로 인한 오류 방지
+	auto deleteList = curScene->SceneComponents;
+	for (auto obj : deleteList)
+	{
+		RemoveSceneComponent(obj);
+		delete obj;
+	}
+	delete GetActiveScene();
+	SetActiveScene(nullptr);
 }
 
 void UWorld::RemoveSceneComponent(USceneComponent* toDespawn)

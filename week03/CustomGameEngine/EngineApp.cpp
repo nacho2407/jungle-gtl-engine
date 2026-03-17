@@ -14,7 +14,6 @@
 #include "ObjectFactory.h"
 #include "ResourceManager.h"
 #include "Scene.h"
-#include "SceneManager.h"
 #include "TimerManager.h"
 #include "World.h"
 
@@ -125,7 +124,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 
 	//Init World & Scene
 	GetWorld().InjectRenderer(Renderer);
-	SceneManager::GetInstance().NewScene();
+	GetWorld().NewScene();
 
 	// Init Timer
 	TimerManager::GetInstance().CreateGlobalTimer();
