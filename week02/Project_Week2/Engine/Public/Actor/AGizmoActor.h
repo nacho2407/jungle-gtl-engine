@@ -12,9 +12,9 @@
 //class UStaticMeshComponent;
 //class UCameraComponent;
 
-class AGizmoActor : public AActor 
+class AGizmoActor : public AActor
 {
-DECLARE_UClass(AGizmoActor, AActor)
+    DECLARE_UClass(AGizmoActor, AActor)
 public:
     AGizmoActor();
     virtual ~AGizmoActor() override; // 왜 가상함수로 했을까
@@ -77,4 +77,47 @@ private:
     UStaticMesh* RotateMesh = nullptr;
 
     EGizmoMode CurrentMode = EGizmoMode::Translate;
+
+    EGizmoAxis PickAxisTranslate(
+        int MouseX,
+		int MouseY,
+        const UCameraComponent* Camera,
+        int ViewWidth,
+		int ViewHeight) const;
+
+    EGizmoAxis PickAxisRotate(
+		int MouseX,
+        int MouseY,
+        const UCameraComponent* Camera,
+		int ViewWidth,
+        int ViewHeight) const;
+
+	EGizmoAxis PickAxisScale(
+        int MouseX,
+        int MouseY,
+        const UCameraComponent* Camera,
+        int ViewWidth,
+		int ViewHeight) const;
+
+    bool ProjectAxisEndToScreen(
+        const FVector& Origin,
+		const FVector& AxisDir,
+        float Length,
+		const UCameraComponent* Camera,
+        int ViewWidth,
+        int ViewHeight,
+		float& OutOriginX,
+		float& OutOriginY,
+        float& OutX,
+		float& OutY) const;
+
+    float DistancePointToCircle2D(
+        float Px, float Py,
+        float Cx, float Cy,
+		float Radius) const;
+
+    private:
+        UStaticMeshComponent* XAxisShaftComp = nullptr;
+        UStaticMeshComponent* YAxisShaftComp = nullptr;
+        UStaticMeshComponent* ZAxisShaftComp = nullptr;
 };
