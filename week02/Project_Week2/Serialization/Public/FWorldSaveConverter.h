@@ -14,9 +14,6 @@ private:
     static FPrimitiveRecord MakePrimitiveRecord(const AActor* Actor);
     static AActor* MakeActorFromRecord(const FPrimitiveRecord& Record);
 
-    static bool IsSavablePrimitiveActor(const AActor* Actor);
-    static void RemoveSavablePrimitiveActors(UWorld* World);
-
 private:
     static const TMap<FString, FString> ClassNameMap;
 };

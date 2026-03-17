@@ -11,7 +11,8 @@ class USceneComponent;
 
 class AActor : public UObject
 {
-DECLARE_ROOT_UClass(AActor)
+DECLARE_UClass(AActor, UObject)
+
 public:
 	AActor() : UObject()
 	{
