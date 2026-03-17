@@ -13,6 +13,7 @@
 #include "World/FScene.h"
 #include "Actor/AGizmoActor.h"
 #include "Actor/AGridActor.h"
+#include "Actor/APrimitiveActor.h"
 
 class UWorld : public UObject
 {
@@ -33,6 +34,7 @@ public:
 
     const TArray<AActor*>& GetActors() const;
 public:
+    TArray<AActor*> EditorOnly;
     TArray<AActor*> Actors;
     bool bHasBegunPlay;
 };
