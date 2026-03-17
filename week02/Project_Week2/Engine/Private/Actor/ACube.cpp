@@ -1,6 +1,7 @@
 #include "Actor/ACube.h"
 #include "Component/UStaticMeshComponent.h"
 #include "Resource/UStaticMesh.h"
+#include "Resource/BuiltInMeshFactory.h"
 
 ACube::ACube()
     : APrimitiveActor()
@@ -39,6 +40,7 @@ UStaticMeshComponent* ACube::GetStaticMeshComponent() const
 
 void ACube::InitializeActor()
 {
-    StaticMeshComponent = new UStaticMeshComponent();
+    StaticMeshComponent = NewObject<UStaticMeshComponent>();
     SetPrimitiveComponent(StaticMeshComponent);
+    SetStaticMesh(BuiltInMeshFactory::CreateCubeMesh());
 }

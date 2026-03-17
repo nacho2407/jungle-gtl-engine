@@ -1,6 +1,8 @@
 #include "Actor/ASphere.h"
+
 #include "Component/UStaticMeshComponent.h"
 #include "Resource/UStaticMesh.h"
+#include "Resource/BuiltInMeshFactory.h"
 
 ASphere::ASphere()
     : APrimitiveActor()
@@ -39,6 +41,7 @@ UStaticMeshComponent* ASphere::GetStaticMeshComponent() const
 
 void ASphere::InitializeActor()
 {
-    StaticMeshComponent = new UStaticMeshComponent();
+    StaticMeshComponent = NewObject<UStaticMeshComponent>();
     SetPrimitiveComponent(StaticMeshComponent);
+    SetStaticMesh(BuiltInMeshFactory::CreateSphereMesh());
 }

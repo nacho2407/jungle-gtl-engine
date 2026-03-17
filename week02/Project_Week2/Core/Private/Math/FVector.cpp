@@ -9,6 +9,7 @@ const FVector FVector::RightVector = FVector(1.0f, 0.0f, 0.0f);
 const FVector FVector::ForwardVector = FVector(0.0f, 0.0f, 1.0f);
 // DirectX는 왼손 좌표계 아님? 그러면 UpVector는...Z축 아님??
 // forward는 x축? right는 y축?
+// ㄴ 왼손 좌표계라도 Y-up, Z-up 별도로 있음요 D3D는 관례적으로 Y-up
 
 FVector::FVector() : X(0.0f), Y(0.0f), Z(0.0f) { }
 

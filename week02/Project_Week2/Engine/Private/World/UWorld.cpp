@@ -1,59 +1,12 @@
 #include "World/UWorld.h"
 
+#include "Actor/ASphere.h"
+#include "Actor/ACube.h"
+#include "Actor/ATorus.h"
+#include "Actor/ATriangle.h"
 
 UWorld::UWorld() : bHasBegunPlay(false)
 {
-    // 카메라 액터
-    //Camera = NewObject<ACamera>();
-    //WorldAxisActor = NewObject<AAxisActor>();
-    //GizmoActor = NewObject<AGizmoActor>();
-    //GridActor = NewObject<AGridActor>();
-
-    //GridActor = NewObject<AActor>();
-
-    //MeshComp = NewObject<UStaticMeshComponent>("UStaticMeshComponent");
-    //MeshComp->SetStaticMesh(BuiltInMeshFactory::CreateGridMesh(20, 1.0f));
-    //MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
-
-    //GridActor->AddComponent(MeshComp);
-    //GridActor->SetRootComponent(MeshComp);
-
-    //GizmoActor = NewObject<AActor>();
-
-    //auto GizmoArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh();
-    //UStaticMeshComponent* GizmoXComp = NewObject<UStaticMeshComponent>();
-    //UStaticMeshComponent* GizmoYComp = NewObject<UStaticMeshComponent>();
-    //UStaticMeshComponent* GizmoZComp = NewObject<UStaticMeshComponent>();
-
-    //GizmoXComp->SetStaticMesh(GizmoArrowMesh);
-    //GizmoYComp->SetStaticMesh(GizmoArrowMesh);
-    //GizmoZComp->SetStaticMesh(GizmoArrowMesh);
-
-    //GizmoXComp->SetRelativeLocation(FVector::ZeroVector);
-    //GizmoYComp->SetRelativeLocation(FVector::ZeroVector);
-    //GizmoZComp->SetRelativeLocation(FVector::ZeroVector);
-
-    //// arrow mesh가 +X 방향 기준이라고 가정
-    //GizmoXComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
-    //GizmoYComp->SetRelativeRotation(FVector(0.0f, 0.0f, 1.5707963f));
-    //GizmoZComp->SetRelativeRotation(FVector(0.0f, -1.5707963f, 0.0f));
-
-    //GizmoXComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
-    //GizmoYComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
-    //GizmoZComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
-
-    //GizmoXComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
-    //GizmoYComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
-    //GizmoZComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
-
-    //GizmoXComp->SetVisibility(false);
-    //GizmoYComp->SetVisibility(false);
-    //GizmoZComp->SetVisibility(false);
-
-    //GizmoActor->AddComponent(GizmoXComp);
-    //GizmoActor->AddComponent(GizmoYComp);
-    //GizmoActor->AddComponent(GizmoZComp);
-    //GizmoActor->SetRootComponent(GizmoXComp);
 }
 
 UWorld::~UWorld()
@@ -62,10 +15,13 @@ UWorld::~UWorld()
 
 void UWorld::Clear()
 {
-    for (const auto& actor : Actors)
+    for (AActor* Actor : Actors)
     {
-        Destroy(actor);
+        ::Destroy(Actor);
     }
+
+    Actors.clear();
+    bHasBegunPlay = false;
 }
 
 void UWorld::AddActor(AActor* InActor)
@@ -80,17 +36,72 @@ void UWorld::AddActor(AActor* InActor)
 
 void UWorld::RemoveActor(AActor* InActor)
 {
-    int targetIndex = 0;
-    for (targetIndex = 0; targetIndex < Actors.size(); targetIndex++)
+    for (int targetIndex = 0; targetIndex < Actors.size(); targetIndex++)
     {
-        Actors[targetIndex] == InActor;
+        if (Actors[targetIndex] == InActor)
+        {
+            Actors[targetIndex] = Actors.back();
+            Actors.pop_back();
+            break;
+        }
+    }
+}
+
+void UWorld::Destroy(AActor* InActor)
+{
+    RemoveActor(InActor);
+    ::Destroy(InActor);
+}
+
+AActor* UWorld::SpawnMeshActor(
+    ESpawnMeshType Type,
+    const FVector& Location,
+    const FVector& Rotation,
+    const FVector& Scale
+)
+{
+    AActor* Actor = nullptr;
+
+    switch (Type)
+    {
+    case ESpawnMeshType::Sphere:
+        Actor = NewObject<ASphere>();
+        if (ASphere* SphereActor = dynamic_cast<ASphere*>(Actor))
+        {
+            SphereActor->SetStaticMesh(BuiltInMeshFactory::CreateSphereMesh());
+        }
         break;
+    case ESpawnMeshType::Cube:
+        Actor = NewObject<ACube>();
+        if (ACube* CubeActor = dynamic_cast<ACube*>(Actor))
+        {
+            CubeActor->SetStaticMesh(BuiltInMeshFactory::CreateCubeMesh());
+        }
+        break;
+    case ESpawnMeshType::Torus:
+        Actor = NewObject<ATorus>();
+        if (ATorus* TorusActor = dynamic_cast<ATorus*>(Actor))
+        {
+            TorusActor->SetStaticMesh(BuiltInMeshFactory::CreateTorusMesh(64, 32, 1.2f, 0.35f));
+        }
+        break;
+    case ESpawnMeshType::Triangle:
+        Actor = NewObject<ATriangle>();
+        if (ATriangle* TriangleActor = dynamic_cast<ATriangle*>(Actor))
+        {
+            TriangleActor->SetStaticMesh(BuiltInMeshFactory::CreateTriangleMesh());
+        }
+        break;
+    default:
+        return nullptr;
     }
 
-    auto target = Actors[targetIndex];
-    Actors[targetIndex] = Actors.back();
-    Actors.pop_back();
-    Destroy(target);
+    Actor->GetRootComponent()->SetRelativeLocation(Location);
+    Actor->GetRootComponent()->SetRelativeRotation(Rotation);
+    Actor->GetRootComponent()->SetRelativeScale(Scale);
+
+    AddActor(Actor);
+    return Actor;
 }
 
 void UWorld::BeginPlay()
@@ -126,8 +137,6 @@ void UWorld::Tick(float DeltaTime)
         }
     }
 }
-
-
 
 void UWorld::BuildScene(FScene& OutScene) const
 {

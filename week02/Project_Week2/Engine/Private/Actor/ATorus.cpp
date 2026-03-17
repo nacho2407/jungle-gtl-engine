@@ -1,8 +1,8 @@
 #include "Actor/ATorus.h"
 
-#include "FUObjectFactory.h"
 #include "Component/UStaticMeshComponent.h"
 #include "Resource/UStaticMesh.h"
+#include "Resource/BuiltInMeshFactory.h"
 
 ATorus::ATorus()
     : APrimitiveActor()
@@ -43,4 +43,5 @@ void ATorus::InitializeActor()
 {
     StaticMeshComponent = NewObject<UStaticMeshComponent>("TorusStaticMeshComponent");
     SetPrimitiveComponent(StaticMeshComponent);
+    SetStaticMesh(BuiltInMeshFactory::CreateTorusMesh(64, 32, 1.2f, 0.35f));
 }
