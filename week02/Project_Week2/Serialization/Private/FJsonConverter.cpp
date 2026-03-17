@@ -1,5 +1,6 @@
 #include "FJsonConverter.h"
 
+#include <fstream>
 #include <string>
 
 using Json = nlohmann::json;
@@ -45,6 +46,8 @@ bool FJsonConverter::FromJson(const Json& InJson, FWorldSaveData& OutWorldSaveDa
     }
 
     OutWorldSaveData.Version = InJson["Version"].get<uint32>();
+    
+    OutWorldSaveData.NextUUID = InJson["NextUUID"].get<uint32>();
 
     // 기존 데이터 초기화
     OutWorldSaveData.Primitives.clear();
@@ -93,6 +96,30 @@ bool FJsonConverter::FromString(const FString& JsonString, FWorldSaveData& OutWo
     {
         return false;
     }
+}
+
+bool FJsonConverter::SaveToFile(const FString& FilePath, const FWorldSaveData& WorldSaveData, int32 Indent)
+{
+    std::ofstream OutputStream(FilePath, std::ios::out | std::ios::trunc);
+    if (!OutputStream.is_open())
+    {
+        return false;
+    }
+
+    OutputStream << ToString(WorldSaveData, Indent);
+    return OutputStream.good();
+}
+
+bool FJsonConverter::LoadFromFile(const FString& FilePath, FWorldSaveData& OutWorldSaveData)
+{
+    std::ifstream InputStream(FilePath);
+    if (!InputStream.is_open())
+    {
+        return false;
+    }
+
+    const FString JsonString((std::istreambuf_iterator<char>(InputStream)), std::istreambuf_iterator<char>());
+    return FromString(JsonString, OutWorldSaveData);
 }
 
 Json FJsonConverter::ToJson(const FPrimitiveRecord& Record)

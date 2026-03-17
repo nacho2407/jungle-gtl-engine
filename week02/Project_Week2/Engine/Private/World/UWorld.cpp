@@ -3,57 +3,6 @@
 
 UWorld::UWorld() : bHasBegunPlay(false)
 {
-    // 카메라 액터
-    //Camera = NewObject<ACamera>();
-    //WorldAxisActor = NewObject<AAxisActor>();
-    //GizmoActor = NewObject<AGizmoActor>();
-    //GridActor = NewObject<AGridActor>();
-
-    //GridActor = NewObject<AActor>();
-
-    //MeshComp = NewObject<UStaticMeshComponent>("UStaticMeshComponent");
-    //MeshComp->SetStaticMesh(BuiltInMeshFactory::CreateGridMesh(20, 1.0f));
-    //MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
-
-    //GridActor->AddComponent(MeshComp);
-    //GridActor->SetRootComponent(MeshComp);
-
-    //GizmoActor = NewObject<AActor>();
-
-    //auto GizmoArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh();
-    //UStaticMeshComponent* GizmoXComp = NewObject<UStaticMeshComponent>();
-    //UStaticMeshComponent* GizmoYComp = NewObject<UStaticMeshComponent>();
-    //UStaticMeshComponent* GizmoZComp = NewObject<UStaticMeshComponent>();
-
-    //GizmoXComp->SetStaticMesh(GizmoArrowMesh);
-    //GizmoYComp->SetStaticMesh(GizmoArrowMesh);
-    //GizmoZComp->SetStaticMesh(GizmoArrowMesh);
-
-    //GizmoXComp->SetRelativeLocation(FVector::ZeroVector);
-    //GizmoYComp->SetRelativeLocation(FVector::ZeroVector);
-    //GizmoZComp->SetRelativeLocation(FVector::ZeroVector);
-
-    //// arrow mesh가 +X 방향 기준이라고 가정
-    //GizmoXComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
-    //GizmoYComp->SetRelativeRotation(FVector(0.0f, 0.0f, 1.5707963f));
-    //GizmoZComp->SetRelativeRotation(FVector(0.0f, -1.5707963f, 0.0f));
-
-    //GizmoXComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
-    //GizmoYComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
-    //GizmoZComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
-
-    //GizmoXComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
-    //GizmoYComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
-    //GizmoZComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
-
-    //GizmoXComp->SetVisibility(false);
-    //GizmoYComp->SetVisibility(false);
-    //GizmoZComp->SetVisibility(false);
-
-    //GizmoActor->AddComponent(GizmoXComp);
-    //GizmoActor->AddComponent(GizmoYComp);
-    //GizmoActor->AddComponent(GizmoZComp);
-    //GizmoActor->SetRootComponent(GizmoXComp);
 }
 
 UWorld::~UWorld()
@@ -128,8 +77,6 @@ void UWorld::Tick(float DeltaTime)
         }
     }
 }
-
-
 
 void UWorld::BuildScene(FScene& OutScene) const
 {

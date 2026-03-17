@@ -43,6 +43,11 @@
 #include "Panels/FControlPanel.h"
 #include "Panels/FConsolePanel.h" 
 
+#include "FJsonConverter.h"
+#include "FWorldSaveConverter.h"
+
+#include <filesystem>
+
 namespace
 {
     FVector4 LightenColor(const FVector4& C, float T)
@@ -339,27 +344,8 @@ bool FApplication::InitializeScene()
     //GizmoActor->Initialize(GizmoArrowMesh);
     //World->AddActor(GizmoActor);
 
-    // Click Pulse Circle
-    {
-        ClickCircleActor = new AActor();
-        ClickCircleComp = new UStaticMeshComponent();
-
-        ClickCircleComp->SetStaticMesh(ClickCircleMesh);
-        ClickCircleComp->SetRelativeLocation(FVector::ZeroVector);
-        ClickCircleComp->SetRelativeRotation(FVector::ZeroVector);
-        ClickCircleComp->SetRelativeScale(FVector(0.0f, 0.0f, 0.0f));
-
-        ClickCircleComp->SetRenderColor(FVector4(0.98f, 0.84f, 0.10f, 1.0f));
-        ClickCircleComp->SetUseVertexColor(false);
-        ClickCircleComp->SetDepthEnable(false);
-        ClickCircleComp->SetCullMode(ERenderCullMode::None);
-        ClickCircleComp->SetVisibility(false);
-
-        ClickCircleActor->AddComponent(ClickCircleComp);
-        ClickCircleActor->SetRootComponent(ClickCircleComp);
-
-        World->AddActor(ClickCircleActor);
-    }
+    // 마우스 클릭 펄스 생성 및 World 추가
+    CreatePointerPulseActor();
 
     UE_LOG("Hello World %d", 2025);
 
@@ -707,7 +693,70 @@ void FApplication::Shutdown()
     }
 }
 
-void FApplication::HandleMousePicking() //
+const FString& FApplication::GetSceneFileNameInput() const
+{
+    return SceneFileNameInput;
+}
+
+void FApplication::SetSceneFileNameInput(const FString& InSceneFileName)
+{
+    SceneFileNameInput = InSceneFileName;
+}
+
+void FApplication::NewScene()
+{
+    if (!World)
+    {
+        return;
+    }
+
+    // 현재 선택된 Actor를 선택 해제하여 Gizmo 등 해제..?
+    SetSelectedActor(nullptr);
+    World->Clear();
+    
+    // World를 초기화하기 때문에 일단 마우스 펄스도 월드에 다시 추가
+    CreatePointerPulseActor();
+}
+
+bool FApplication::SaveScene()
+{
+    if (!World)
+    {
+        return false;
+    }
+
+    const FWorldSaveData SaveData = FWorldSaveConverter::FromWorld(World);
+    return FJsonConverter::SaveToFile(BuildSceneFilePath(), SaveData, 2);
+}
+
+bool FApplication::LoadScene()
+{
+    if (!World)
+    {
+        return false;
+    }
+
+    FWorldSaveData SaveData;
+
+    // 멤버 변수인 SceneFileNameInput를 이용해서 파일 저장 위치 확인
+    if (!FJsonConverter::LoadFromFile(BuildSceneFilePath(), SaveData))
+    {
+        return false;
+    }
+
+    SetSelectedActor(nullptr);
+
+    if (!FWorldSaveConverter::ToWorld(SaveData, World))
+    {
+        return false;
+    }
+
+    // FWorldSaveConverter::ToWorld는 World 초기화 후 Scene 파일에 있는 Actor들만 World에 추가하기 때문에 마우스 펄스도 여기서 다시 추가
+    CreatePointerPulseActor();
+    return true;
+}
+
+void FApplication::HandleMousePicking()
 {
     auto MainCamera = Camera->GetCameraComponent();
 
@@ -1290,6 +1339,49 @@ void FApplication::RefreshPointerPulseTransform()
     ClickCircleComp->SetRelativeScale(FVector(S, S, S));
 }
 
+void FApplication::CreatePointerPulseActor()
+{
+    // 원래 있던 마우스 펄스 생성 부분 복붙
+    if (!World || !ClickCircleMesh)
+    {
+        return;
+    }
+
+    ClickCircleActor = new AActor();
+    ClickCircleComp = new UStaticMeshComponent();
+
+    ClickCircleComp->SetStaticMesh(ClickCircleMesh);
+    ClickCircleComp->SetRelativeLocation(FVector::ZeroVector);
+    ClickCircleComp->SetRelativeRotation(FVector::ZeroVector);
+    ClickCircleComp->SetRelativeScale(FVector(0.0f, 0.0f, 0.0f));
+
+    ClickCircleComp->SetRenderColor(FVector4(0.98f, 0.84f, 0.10f, 1.0f));
+    ClickCircleComp->SetUseVertexColor(false);
+    ClickCircleComp->SetDepthEnable(false);
+    ClickCircleComp->SetCullMode(ERenderCullMode::None);
+    ClickCircleComp->SetVisibility(false);
+
+    ClickCircleActor->AddComponent(ClickCircleComp);
+    ClickCircleActor->SetRootComponent(ClickCircleComp);
+
+    World->AddActor(ClickCircleActor);
+}
+
+FString FApplication::BuildSceneFilePath() const
+{
+    namespace fs = std::filesystem;
+
+    // 입력된 파일 이름이 없으면 그냥 "Default"로 판단
+    fs::path ScenePath(SceneFileNameInput.empty() ? "Default" : SceneFileNameInput);
+    if (ScenePath.extension().empty())
+    {
+        // 확장자가 있으면 그걸로 쓰고, 없으면 기본 ".Scene" 사용
+        ScenePath += ".Scene";
+    }
+
+    return ScenePath.string();
+}
+
 void FApplication::UpdatePointerPulse(float DeltaTime)
 {
     if (!ClickCircleComp || !InputManager)
@@ -1434,8 +1526,8 @@ AActor* FApplication::SpawnMeshActor(UStaticMesh* Mesh, const FVector& Location)
         return nullptr;
     }
 
-    AActor* Actor = new AActor();
-    UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
+    AActor* Actor = NewObject<AActor>();
+    UStaticMeshComponent* MeshComp = NewObject<UStaticMeshComponent>();
 
     MeshComp->SetStaticMesh(Mesh);
     MeshComp->SetRelativeLocation(Location);

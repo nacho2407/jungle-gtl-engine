@@ -14,6 +14,9 @@ public:
 
     static FString ToString(const FWorldSaveData& WorldSaveData, int32 Indent = 4);
     static bool FromString(const FString& JsonString, FWorldSaveData& OutWorldSaveData);
+    
+    static bool SaveToFile(const FString& FilePath, const FWorldSaveData& WorldSaveData, int32 Indent = 4);
+    static bool LoadFromFile(const FString& FilePath, FWorldSaveData& OutWorldSaveData);
 
     static Json ToJson(const FPrimitiveRecord& Record);
     static bool FromJson(const Json& InJson, FPrimitiveRecord& OutRecord);

@@ -4,6 +4,8 @@
 #include "Actor/ACube.h"
 #include "Actor/ATriangle.h"
 #include "Actor/ATorus.h"
+#include "Component/UStaticMeshComponent.h"
+#include "Resource/BuiltInMeshFactory.h"
 
 const TMap<FString, FString> FWorldSaveConverter::ClassNameMap =
 {
@@ -25,15 +27,22 @@ FWorldSaveData FWorldSaveConverter::FromWorld(const UWorld* World)
     SaveData.Version = 1;
 
     // 런타임 UUID를 저장하고 복원할 필요는 없기 때문에 과제 요구사항이 SaveID를 말하는 것이라 가정하고 설정
-    // 영속성 있는 SaveID는 임시 ID긴 하지만 저장 파일 구조 내에서 Actor 간 부모-자식 관계 파악 등에 사용될 수 있음ㄴ
+    // 영속성 있는 SaveID는 임시 ID긴 하지만 저장 파일 구조 내에서 Actor 간 부모-자식 관계 파악 등에 사용될 수 있음
     uint32 SaveID = 0;
     const TArray<AActor*>& Actors = World->GetActors();
     for (SaveID = 0; SaveID < Actors.size(); SaveID++)
     {
-        SaveData.Primitives.push_back(MakePrimitiveRecord(Actors[SaveID], SaveID));
+        const FPrimitiveRecord Record = MakePrimitiveRecord(Actors[SaveID], SaveID);
+        
+        if (Record.Type.empty())
+        {
+            continue;
+        }
+
+        SaveData.Primitives.push_back(Record);
     }
 
-    SaveData.NextUUID = SaveID;
+    SaveData.NextUUID = static_cast<uint32>(SaveData.Primitives.size());
 
     return SaveData;
 }
@@ -77,8 +86,12 @@ FPrimitiveRecord FWorldSaveConverter::MakePrimitiveRecord(const AActor* Actor, u
     FString SavedType = FindSavedTypeByClassName(ClassName);
     if (SavedType.empty())
     {
-        // 매핑이 없으면 클래스 이름 자체를 저장
-        SavedType = ClassName;
+        return Record;
+    }
+
+    if (Actor->GetRootComponent() == nullptr)
+    {
+        return Record;
     }
 
     Record.Type = SavedType;
@@ -96,19 +109,19 @@ AActor* FWorldSaveConverter::MakeActorFromRecord(const FPrimitiveRecord& Record)
 
     if (Record.Type == "Sphere")
     {
-        NewActor = new ASphere();
+        NewActor = NewObject<ASphere>();
     }
     else if (Record.Type == "Cube")
     {
-        NewActor = new ACube();
+        NewActor = NewObject<ACube>();
     }
     else if (Record.Type == "Triangle")
     {
-        NewActor = new ATriangle();
+        NewActor = NewObject<ATriangle>();
     }
     else if (Record.Type == "Torus")
     {
-        NewActor = new ATorus();
+        NewActor = NewObject<ATorus>();
     }
     else
     {

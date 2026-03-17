@@ -1,6 +1,7 @@
 #include "Actor/ATriangle.h"
 #include "Component/UStaticMeshComponent.h"
 #include "Resource/UStaticMesh.h"
+#include "Resource/BuiltInMeshFactory.h"
 
 ATriangle::ATriangle()
     : APrimitiveActor()
@@ -39,6 +40,7 @@ UStaticMeshComponent* ATriangle::GetStaticMeshComponent() const
 
 void ATriangle::InitializeActor()
 {
-    StaticMeshComponent = new UStaticMeshComponent();
+    StaticMeshComponent = NewObject<UStaticMeshComponent>();
     SetPrimitiveComponent(StaticMeshComponent);
+    SetStaticMesh(BuiltInMeshFactory::CreateTriangleMesh());
 }

@@ -4,6 +4,8 @@
 #include "Component/UCameraComponent.h"
 #include "GUI.h"
 
+#include <cstring>
+
 void FControlPanel::Render(FApplication* App)
 {
     if (!App)
@@ -38,6 +40,40 @@ void FControlPanel::Render(FApplication* App)
     if (ImGui::Button("Spawn"))
     {
         App->SpawnSelectedMeshActor();
+    }
+
+    ImGui::Separator();
+
+    static char SceneFileNameBuffer[256] = {};
+    static FString LastSceneFileName;
+
+    if (LastSceneFileName != App->GetSceneFileNameInput())
+    {
+        LastSceneFileName = App->GetSceneFileNameInput();
+        std::memset(SceneFileNameBuffer, 0, sizeof(SceneFileNameBuffer));
+        strncpy_s(SceneFileNameBuffer, LastSceneFileName.c_str(), _TRUNCATE);
+    }
+
+    ImGui::SetNextItemWidth(220.0f);
+    if (ImGui::InputText("Scene Name", SceneFileNameBuffer, IM_ARRAYSIZE(SceneFileNameBuffer)))
+    {
+        App->SetSceneFileNameInput(SceneFileNameBuffer);
+        LastSceneFileName = App->GetSceneFileNameInput();
+    }
+
+    if (ImGui::Button("New scene"))
+    {
+        App->NewScene();
+    }
+
+    if (ImGui::Button("Save scene"))
+    {
+        App->SaveScene();
+    }
+
+    if (ImGui::Button("Load scene"))
+    {
+        App->LoadScene();
     }
 
     ImGui::Separator();

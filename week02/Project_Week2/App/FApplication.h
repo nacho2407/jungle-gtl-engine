@@ -3,8 +3,6 @@
 #include <windows.h>
 #include "FRay.h"
 #include "Structs.h"
-//#include "Component/EGizmoAxis.h"
-//#include "UObject.h"
 #include "Actor/ACamera.h"
 #include "Actor/AGridActor.h"
 #include "Actor/AAxisActor.h"
@@ -88,6 +86,13 @@ public:
     ESpawnMeshType SelectedSpawnMeshType = ESpawnMeshType::Sphere;
     void SpawnSelectedMeshActor();
 
+    // Scene save / load 관련 함수들
+    const FString& GetSceneFileNameInput() const;
+    void SetSceneFileNameInput(const FString& InSceneFileName);
+    
+    void NewScene();
+    bool SaveScene();
+    bool LoadScene();
 
 private:
     bool InitializeEngine();
@@ -127,6 +132,9 @@ private:
     bool ComputePointerPulseWorldPosition(int MouseX, int MouseY, float Distance, FVector& OutWorldPos) const;
     void RefreshPointerPulseTransform();
 
+    // ClickCircle 생성해서 월드에 추가하는 함수인데, 이 기능 자체를 빼는 걸 고려중
+    void CreatePointerPulseActor();
+
     // 상혁 테스트
     void UpdateObjectAllocationTest();
     void RenderDebugUI();
@@ -136,6 +144,9 @@ private:
     void RenderEditorUI();
 
     void TempFunc(AActor* actor);
+
+    // Scene save / load 파일 경로 생성 관련 함수
+    FString BuildSceneFilePath() const;
     
 
 private:
@@ -204,6 +215,9 @@ private:
 
     int PrevMouseX = 0;
     int PrevMouseY = 0;
+    
+    // Scene save / load에 사용할 파일 이름(확장자 제외)
+    FString SceneFileNameInput = "Default";
 
     ACamera* Camera;
     AAxisActor* WorldAxisActor;
