@@ -99,7 +99,7 @@ GizmoControllerAxis UPicker::PickGizmo(int ScreenX, int ScreenY, UScene* Scene)
 	FVector Axes[3] = { xDir, yDir, zDir };
 	GizmoControllerAxis AxisEnums[3] = { GizmoControllerAxis::X, GizmoControllerAxis::Y, GizmoControllerAxis::Z };
 
-	float distanceToCamera = (origin - Camera->Position).Length();
+	float distanceToCamera = (origin - Camera->GetRelativeLocation()).Length();
 
 	float dynamicRadius = distanceToCamera * 0.02f;
 

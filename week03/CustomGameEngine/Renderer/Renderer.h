@@ -83,7 +83,11 @@ public:
 
 
 public:
-	void Render(class UCameraComponent* Camera);
-	void RenderGrid(UCameraComponent* Camera, ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader);
+	void SetRenderCamera(class UCameraComponent* camera);
+	void Render();
+	void RenderGrid(ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader);
 	FLevel drawLevel;
+
+private:
+	UCameraComponent* renderCamera = nullptr;
 };

@@ -22,19 +22,19 @@ void UPrimitiveComponent::SetType(EPrimitiveType type)
 	this->type = type;
 }
 
-void UPrimitiveComponent::SetRelativeLocation(FVector newLocation)
+void UPrimitiveComponent::SetRelativeLocation(const FVector& newLocation)
 {
 	USceneComponent::SetRelativeLocation(newLocation);
 	MarkRenderStateDirty();
 }
 
-void UPrimitiveComponent::SetRelativeRotation(FVector newRotation)
+void UPrimitiveComponent::SetRelativeRotation(const FVector& newRotation)
 {
 	USceneComponent::SetRelativeRotation(newRotation);
 	MarkRenderStateDirty();
 }
 
-void UPrimitiveComponent::SetRelativeScale3D(FVector newScale)
+void UPrimitiveComponent::SetRelativeScale3D(const FVector& newScale)
 {
 	USceneComponent::SetRelativeScale3D(newScale);
 	MarkRenderStateDirty();

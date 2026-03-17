@@ -216,11 +216,18 @@ void URenderer::ReleaseConstantBuffer() {
 	FGridConstantBuffer.Release();
 }
 
-void URenderer::Render(UCameraComponent* Camera)
+void URenderer::SetRenderCamera(class UCameraComponent* camera)
 {
+	renderCamera = camera;
+}
+
+void URenderer::Render()
+{
+	if (renderCamera == nullptr) return;
+
 	FFrameConstant FrameConst;
-	FrameConst.Projection = Camera->GetProjectionMatrix();
-	FrameConst.View = Camera->GetViewMatrix();
+	FrameConst.Projection = renderCamera->GetProjectionMatrix();
+	FrameConst.View = renderCamera->GetViewMatrix();
 	FrameConstantBuffer.Update(DeviceContext.Get(), &FrameConst, sizeof(FFrameConstant));
 	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
 	//FrameConstantBuffer.Bind(DeviceContext);
@@ -271,17 +278,22 @@ void URenderer::Render(UCameraComponent* Camera)
 	// RenderObjects.clear();
 }
 
-void URenderer::RenderGrid(UCameraComponent* Camera, ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader)
+void URenderer::RenderGrid(ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader)
 {
+	auto camera = UCameraComponent::GetMainCamera();
+	if (camera == nullptr)
+		return;
+
 	FFrameConstant FrameConst;
 	FGridConstant GridConst;
-	FrameConst.Projection = Camera->GetProjectionMatrix();
-	FrameConst.View = Camera->GetViewMatrix();
+	FrameConst.Projection = camera->GetProjectionMatrix();
+	FrameConst.View = camera->GetViewMatrix();
 	FrameConstantBuffer.Update(DeviceContext.Get(), &FrameConst, sizeof(FFrameConstant));
 
-	GridConst.CameraPos[0] = Camera->Position.x;
-	GridConst.CameraPos[1] = Camera->Position.y;
-	GridConst.CameraPos[2] = Camera->Position.z;
+	FVector camPosition = camera->GetRelativeLocation();
+	GridConst.CameraPos[0] = camPosition.x;
+	GridConst.CameraPos[1] = camPosition.y;
+	GridConst.CameraPos[2] = camPosition.z;
 	GridConst.GridSize = 10.0f;
 	GridConst.LineThickness = 0.8f;
 	FGridConstantBuffer.Update(DeviceContext.Get(), &GridConst, sizeof(FGridConstant));

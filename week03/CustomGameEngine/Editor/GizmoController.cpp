@@ -38,7 +38,7 @@ void GizmoController::Update(UCameraComponent* Camera)
 		SetControlStrategy(Type);
 	}
 
-	FVector CamPos = Camera->Position;
+	FVector CamPos = Camera->GetRelativeLocation();
 	FVector CompPos = AttachedComponent->GetRelativeLocation();
 	float Dist = (CamPos - CompPos).Length();
 	float Scale = Dist * BaseScale;
