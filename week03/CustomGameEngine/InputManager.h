@@ -25,7 +25,7 @@ public:
 public:
 	bool CurrentState[256];
 	bool PrevState[256];
-	bool bIsActive{ true };
+	//bool bIsActive{ true };
 	bool bJustGainedFocus{ true };
 
 	FVector MousePos;

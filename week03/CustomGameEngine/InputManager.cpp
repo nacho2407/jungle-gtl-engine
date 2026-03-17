@@ -11,7 +11,7 @@ InputManager::~InputManager() {}
 
 void InputManager::Update()
 {
-	if (bIsActive)
+	if (GetActiveWindow() == hWnd)
 	{
 		GetInstance().UpdateKeyState();
 		GetInstance().UpdateMouse();
