@@ -5,24 +5,27 @@
 #include "Math/Matrix.h"
 #include "VertexSimple.h"
 #include <d3d11.h>
-
+#include "EngineTypes.h"
 
 class URenderer {
 public:
-	ID3D11Device* Device = nullptr;
-	ID3D11DeviceContext* DeviceContext = nullptr;
-	IDXGISwapChain* SwapChain = nullptr;
+	TComPtr<ID3D11Device> Device = nullptr;
+	TComPtr<ID3D11DeviceContext> DeviceContext = nullptr;
+	TComPtr<IDXGISwapChain> SwapChain = nullptr;
 
-	ID3D11Texture2D* FrameBuffer = nullptr;
-	ID3D11RenderTargetView* FrameBufferRTV = nullptr;
-	ID3D11RasterizerState* RasterizerState = nullptr;
-	ID3D11RasterizerState* RasterizerStateNoCull = nullptr;
-	ID3D11DepthStencilState* DepthStencilState = nullptr;
-	ID3D11DepthStencilState* DepthStencilStateNoWrite = nullptr;
-	ID3D11DepthStencilState* DepthStencilStateNoDepth = nullptr;
-	ID3D11Texture2D* DepthStencilBuffer = nullptr;
-	ID3D11DepthStencilView* DepthStencilView = nullptr;
-	ID3D11BlendState* BlendState = nullptr;
+	TComPtr<ID3D11Texture2D> FrameBuffer = nullptr;
+	TComPtr<ID3D11RenderTargetView> FrameBufferRTV = nullptr;
+	TComPtr<ID3D11Texture2D> DepthStencilBuffer = nullptr;
+	TComPtr<ID3D11DepthStencilView> DepthStencilView = nullptr;
+
+	TComPtr<ID3D11RasterizerState> RasterizerState = nullptr;
+	TComPtr<ID3D11RasterizerState> RasterizerStateNoCull = nullptr;
+
+	TComPtr<ID3D11DepthStencilState> DepthStencilState = nullptr;
+	TComPtr<ID3D11DepthStencilState> DepthStencilStateNoWrite = nullptr;
+	TComPtr<ID3D11DepthStencilState> DepthStencilStateNoDepth = nullptr;
+
+	TComPtr<ID3D11BlendState> BlendState = nullptr;
 
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 	D3D11_VIEWPORT ViewportInfo;
@@ -30,27 +33,26 @@ public:
 public:
 	void Create(HWND hWindow);
 	void CreateDeviceAndSwapChain(HWND hWindow);
-	void CreateBlendState();
-	void ReleaseDeviceAndSwapChain();
 	void CreateFrameBuffer();
-	void ReleaseFrameBuffer();
 	void CreateRasterizerState();
-	void ReleaseRasterizerState();
 	void CreateDepthStencilState();
+	void CreateBlendState();
+	void CreateConstantBuffer();
+
+	void ReleaseDeviceAndSwapChain();
+	void ReleaseFrameBuffer();
+	void ReleaseRasterizerState();
 	void ReleaseDepthStencilState();
 	void ReleaseBlendState();
+	void ReleaseConstantBuffer();
 	void Release();
+
 	void SwapBuffer();
 	void OnResize(UINT Width, UINT Height);
 
 public:
 
 	void Prepare();
-
-public:
-	ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT byteWidth);
-
-	void ReleaseVertexBuffer(ID3D11Buffer* vertexBuffer);
 
 
 public:
@@ -65,7 +67,6 @@ public:
 		int bIsSelected;
 		float Padding[3];
 	};
-
 	struct FGridConstant
 	{
 		float CameraPos[3];
@@ -76,11 +77,7 @@ public:
 
 	FConstantBuffer FrameConstantBuffer; //View Proj
 	FConstantBuffer ObjectConstantBuffer; //World
-
 	FConstantBuffer FGridConstantBuffer;
-
-	void ReleaseConstantBuffer();
-	void CreateConstantBuffer();
 
 
 public:

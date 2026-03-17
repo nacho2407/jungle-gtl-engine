@@ -22,65 +22,59 @@ public:
 	~ResourceManager() {};
 
 	template<typename T>
-	static void CreateGeometry(FString ResourceName, T* vertices, UINT byteWidth, ID3D11Device* Device, int offset, const TArray<FVector>& Verticies)
+	void CreateGeometry(FString ResourceName, T* vertices, UINT byteWidth, ID3D11Device* Device, int offset, const TArray<FVector>& Verticies)
 	{
 		D3D11_BUFFER_DESC vertexbufferdesc = {};
 		vertexbufferdesc.ByteWidth = byteWidth;
 		vertexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE;
 		vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 
-		D3D11_SUBRESOURCE_DATA vertexbufferSRD = { vertices };
-		ID3D11Buffer* vertexBuffer;
-		Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, &vertexBuffer);
-
 		FGeometry& Geometry = GeometryMap[ResourceName];
-		Geometry.VertexBuffer = vertexBuffer;
+
+
+		D3D11_SUBRESOURCE_DATA vertexbufferSRD = { vertices };
+		Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, Geometry.VertexBuffer.GetAddressOf());
+
 		Geometry.VertexStride = sizeof(T);
 		Geometry.VertexCount = byteWidth / sizeof(T);
 		Geometry.Offset = offset;
 		Geometry.Vertices = Verticies;
 	}
 
-	static void CreateMaterial(WFString VertexShaderName, WFString PixelShaderName, ID3D11Device* Device, D3D11_INPUT_ELEMENT_DESC* layout, UINT layoutCount)
+	void CreateMaterial(WFString VertexShaderName, WFString PixelShaderName, ID3D11Device* Device, D3D11_INPUT_ELEMENT_DESC* layout, UINT layoutCount)
 	{
-		ID3D11VertexShader* VertexShader = nullptr;
-		ID3D11InputLayout* InputLayout = nullptr;
+		FMaterial& Mat = MaterialMap[VertexShaderName];
+
 		ID3DBlob* vertexshaderCSO = nullptr;
 		D3DCompileFromFile(VertexShaderName.c_str(), nullptr, nullptr, "mainVS", "vs_5_0", 0,
 			0, &vertexshaderCSO, nullptr);
 		Device->CreateVertexShader(vertexshaderCSO->GetBufferPointer(),
 			vertexshaderCSO->GetBufferSize(), nullptr,
-			&VertexShader);
+			Mat.VertexShader.GetAddressOf());
 		if (layout != nullptr)
 			Device->CreateInputLayout(
 				layout, layoutCount, vertexshaderCSO->GetBufferPointer(),
-				vertexshaderCSO->GetBufferSize(), &InputLayout);
+				vertexshaderCSO->GetBufferSize(), Mat.InputLayout.GetAddressOf());
 
-		ID3D11PixelShader* PixelShader = nullptr;
 		ID3DBlob* pixelshaderCSO = nullptr;
 		D3DCompileFromFile(PixelShaderName.c_str(), nullptr, nullptr, "mainPS", "ps_5_0", 0,
 			0, &pixelshaderCSO, nullptr);
 		Device->CreatePixelShader(pixelshaderCSO->GetBufferPointer(),
 			pixelshaderCSO->GetBufferSize(), nullptr,
-			&PixelShader);
+			Mat.PixelShader.GetAddressOf());
 
-		FMaterial& Mat = MaterialMap[VertexShaderName];
-		Mat.VertexShader = VertexShader;
-		Mat.PixelShader = PixelShader;
-		Mat.InputLayout = InputLayout;
 
 		pixelshaderCSO->Release();
 		vertexshaderCSO->Release();
 	}
 
-	//Temporary Function
-	static void AddCubeMesh(ID3D11Device* Device);
-	static void AddSphereMesh(ID3D11Device* Device);
-	static void AddTriangleMesh(ID3D11Device* Device);
-	static void AddPlaneMesh(ID3D11Device* Device);
-	static void AddAxisMesh(ID3D11Device* Device);
+	void AddCubeMesh(ID3D11Device* Device);
+	void AddSphereMesh(ID3D11Device* Device);
+	void AddTriangleMesh(ID3D11Device* Device);
+	void AddPlaneMesh(ID3D11Device* Device);
+	void AddAxisMesh(ID3D11Device* Device);
 
-	static TArray<FVertexSimple> CreateCubeVertices()
+	TArray<FVertexSimple> CreateCubeVertices()
 	{
 		TArray<FVertexSimple> cubeVertices =
 		{
@@ -146,7 +140,7 @@ public:
 		return cubeVertices;
 	}
 
-	static TArray<FVertexSimple> CreateCircleVertices(int sliceCount = 20, float radius = 0.5f, float height = 0.0f)
+	TArray<FVertexSimple> CreateCircleVertices(int sliceCount = 20, float radius = 0.5f, float height = 0.0f)
 	{
 		TArray<FVertexSimple> circleVertices;
 		float dTheta = 2.0f * MathHelper::PI / sliceCount;
@@ -168,7 +162,7 @@ public:
 		return circleVertices;
 	}
 
-	static TArray<FVertexSimple> CreateTorusVertices(float majorRadius = 1.0f, float minorRadius = 0.1f, int radialSegments = 32, int tubularSegments = 16)
+	TArray<FVertexSimple> CreateTorusVertices(float majorRadius = 1.0f, float minorRadius = 0.1f, int radialSegments = 32, int tubularSegments = 16)
 	{
 		TArray<FVertexSimple> torusVertices;
 
@@ -217,7 +211,7 @@ public:
 		return torusVertices;
 	}
 
-	static TArray<FVertexSimple> CreateCylinderVertices(int sliceCount = 20, float radius = 0.5f, float height = 1.0f)
+	TArray<FVertexSimple> CreateCylinderVertices(int sliceCount = 20, float radius = 0.5f, float height = 1.0f)
 	{
 		TArray<FVertexSimple> cylinderVertices;
 
@@ -281,7 +275,7 @@ public:
 		return cylinderVertices;
 	}
 
-	static TArray<FVertexSimple> CreateConeVertices(int sliceCount = 20, float radius = 0.5f, float height = 1.0f)
+	TArray<FVertexSimple> CreateConeVertices(int sliceCount = 20, float radius = 0.5f, float height = 1.0f)
 	{
 		TArray<FVertexSimple> coneVertices;
 
@@ -328,7 +322,7 @@ public:
 		return coneVertices;
 	}
 
-	static void AddGizmoTranslationMesh(ID3D11Device* Device)
+	void AddGizmoTranslationMesh(ID3D11Device* Device)
 	{
 		// X Axis - Red
 		{
@@ -502,7 +496,7 @@ public:
 		}
 	}
 
-	static void AddGizmoRotationMesh(ID3D11Device* Device)
+	void AddGizmoRotationMesh(ID3D11Device* Device)
 	{
 		// X Axis - Red
 		{
@@ -597,7 +591,7 @@ public:
 			CreateGeometry("GizmoRotationZ", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
 		}
 	}
-	static void AddGizmoScaleMesh(ID3D11Device* Device)
+	void AddGizmoScaleMesh(ID3D11Device* Device)
 	{
 		// X Axis - Red
 		{
@@ -769,16 +763,22 @@ public:
 		}
 	}
 
-	static FMaterial& GetMaterial(WFString ResourceName)
+	FMaterial& GetMaterial(WFString ResourceName)
 	{
 		return MaterialMap[ResourceName];
 	}
-	static FGeometry& GetGeometry(FString ResourceName)
+	FGeometry& GetGeometry(FString ResourceName)
 	{
 		return GeometryMap[ResourceName];
 	}
+
+	void Release()
+	{
+		GeometryMap.clear();
+		MaterialMap.clear();
+	}
 private:
 	ResourceManager() {};
-	static TMap<FString, FGeometry> GeometryMap;
-	static TMap<WFString, FMaterial> MaterialMap;
+	TMap<FString, FGeometry> GeometryMap;
+	TMap<WFString, FMaterial> MaterialMap;
 };

@@ -83,7 +83,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 {
 	CreateEngineWindow();
 	Renderer->Create(HWnd);
-	EditorInst->Initialize(HWnd, Renderer->Device, Renderer->DeviceContext);
+	EditorInst->Initialize(HWnd, Renderer->Device.Get(), Renderer->DeviceContext.Get());
 
 	// Init ResoureManager
 	D3D11_INPUT_ELEMENT_DESC layout[] = {
@@ -92,16 +92,16 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12,
 	 D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
-	ResourceManager::CreateMaterial(L"Shader/ShaderW0.hlsl", L"Shader/ShaderW0.hlsl", Renderer->Device, layout, 2);
-	ResourceManager::CreateMaterial(L"Shader/ShaderInfiniteGrid.hlsl", L"Shader/ShaderInfiniteGrid.hlsl", Renderer->Device, nullptr, 0);
-	ResourceManager::AddCubeMesh(Renderer->Device);
-	ResourceManager::AddSphereMesh(Renderer->Device);
-	ResourceManager::AddTriangleMesh(Renderer->Device);
-	ResourceManager::AddPlaneMesh(Renderer->Device);
-	ResourceManager::AddGizmoTranslationMesh(Renderer->Device);
-	ResourceManager::AddGizmoRotationMesh(Renderer->Device);
-	ResourceManager::AddGizmoScaleMesh(Renderer->Device);
-	ResourceManager::AddAxisMesh(Renderer->Device);
+	ResourceManager::GetInstance()->CreateMaterial(L"Shader/ShaderW0.hlsl", L"Shader/ShaderW0.hlsl", Renderer->Device.Get(), layout, 2);
+	ResourceManager::GetInstance()->CreateMaterial(L"Shader/ShaderInfiniteGrid.hlsl", L"Shader/ShaderInfiniteGrid.hlsl", Renderer->Device.Get(), nullptr, 0);
+	ResourceManager::GetInstance()->AddCubeMesh(Renderer->Device.Get());
+	ResourceManager::GetInstance()->AddSphereMesh(Renderer->Device.Get());
+	ResourceManager::GetInstance()->AddTriangleMesh(Renderer->Device.Get());
+	ResourceManager::GetInstance()->AddPlaneMesh(Renderer->Device.Get());
+	ResourceManager::GetInstance()->AddGizmoTranslationMesh(Renderer->Device.Get());
+	ResourceManager::GetInstance()->AddGizmoRotationMesh(Renderer->Device.Get());
+	ResourceManager::GetInstance()->AddGizmoScaleMesh(Renderer->Device.Get());
+	ResourceManager::GetInstance()->AddAxisMesh(Renderer->Device.Get());
 
 	InputManager::GetInstance().hWnd = HWnd;
 	// Init Camera
@@ -233,8 +233,8 @@ void EngineApp::Run()
 		Renderer->Prepare();
 
 		ResourceManager* RM = ResourceManager::GetInstance();
-		Renderer->RenderGrid(Camera, RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").VertexShader, RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").PixelShader);
-		
+		Renderer->RenderGrid(Camera, RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").VertexShader.Get(), RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").PixelShader.Get());
+
 		Scene->Update(TempDelta);
 		GetWorld().OnBeforeRender();
 		EditorInst->OnBeforeRender();
@@ -262,6 +262,7 @@ void EngineApp::Finalize()
 	{
 		ReleaseEngineWindow();
 	}
+	ResourceManager::GetInstance()->Release();
 }
 
 void EngineApp::CreateEngineWindow()

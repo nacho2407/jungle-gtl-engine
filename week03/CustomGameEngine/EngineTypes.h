@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <array>
 #include <queue>
+#include <wrl.h>
 
 typedef int int32;
 typedef unsigned int uint32;
@@ -14,6 +15,9 @@ typedef unsigned int uint32;
 using FString = std::string;
 
 using WFString = std::wstring;
+
+template <typename T>
+using TComPtr = Microsoft::WRL::ComPtr<T>;
 
 template <typename T>
 using TArray = std::vector<T>;

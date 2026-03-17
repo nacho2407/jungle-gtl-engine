@@ -3,8 +3,6 @@
 #include "Sphere.h"
 #include "Triangle.h"
 
-TMap<FString, FGeometry> ResourceManager::GeometryMap;
-TMap<WFString, FMaterial> ResourceManager::MaterialMap;
 
 void ResourceManager::AddCubeMesh(ID3D11Device* Device)
 {
@@ -126,17 +124,17 @@ void ResourceManager::AddAxisMesh(ID3D11Device* Device)
 {
 	FVertexSimple AxisVertices[] =
 	{
-		 /*X축 (Red): (0,0,0) -> (1,0,0)
-		{ 0.0f, 0.0f, 0.0f, 1,0,0,1 },
-		{ 10000000.0f, 0.0f, 0.0f, 1,0,0,1 },*/
+		/*X축 (Red): (0,0,0) -> (1,0,0)
+	   { 0.0f, 0.0f, 0.0f, 1,0,0,1 },
+	   { 10000000.0f, 0.0f, 0.0f, 1,0,0,1 },*/
 
-		// Y축 (Green): (0,0,0) -> (0,1,0)
-		{ 0.0f, 0.0f, -10000.0f, 0.2f,0.2f,1.0f,1 },
-		{ 0.0f, 0.0f, 10000.0f, 0.2f,0.2f,1.0f,1 },
+	   // Y축 (Green): (0,0,0) -> (0,1,0)
+	   { 0.0f, 0.0f, -10000.0f, 0.2f,0.2f,1.0f,1 },
+	   { 0.0f, 0.0f, 10000.0f, 0.2f,0.2f,1.0f,1 },
 
-		//// Z축 (Blue): (0,0,0) -> (0,0,1)
-		//{ 0.0f, 0.0f, 0.0f, 0,0,1,1 },
-		//{ 0.0f, 0.0f, 10000000.0f, 0,0,1,1 }
+	   //// Z축 (Blue): (0,0,0) -> (0,0,1)
+	   //{ 0.0f, 0.0f, 0.0f, 0,0,1,1 },
+	   //{ 0.0f, 0.0f, 10000000.0f, 0,0,1,1 }
 	};
 
 	int Cnt = sizeof(AxisVertices) / sizeof(FVertexSimple);
