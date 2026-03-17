@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <cmath>
+
 class MathHelper
 {
 public:
@@ -27,4 +29,23 @@ public:
 		return radian * (180.0f / PI);
 	}
 
+	static float Atan2(float y, float x)
+	{
+		return std::atan2(y, x);
+	}
+
+	static float ClampAngle(float Angle, float Min, float Max)
+	{
+		return Clamp(NormalizeAngle(Angle), Min, Max);
+	}
+
+	static float NormalizeAngle(float Angle)
+	{
+		Angle = std::fmod(Angle, 360.0f);
+		if (Angle > 180.0f) Angle -= 360.0f;
+		if (Angle <= -180.0f) Angle += 360.0f;
+		return Angle;
+	}
+
+	static float Sqrt(float Value) { return std::sqrt(Value); }
 };

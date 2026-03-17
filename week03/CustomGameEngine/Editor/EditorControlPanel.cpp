@@ -6,6 +6,7 @@
 #include "TimerManager.h"
 #include "World.h"
 #include "Math/Vector.h"
+#include "Math/Rotator.h"
 #include "ImGui/imgui.h"
 #include <string>
 
@@ -75,11 +76,11 @@ void EditorControlPanel::Draw(UCameraComponent* camera)
 	ImGui::InputFloat("FOV", &camera->FOV);
 
 	FVector camPosition = camera->GetRelativeLocation();
-	FVector camRotation = camera->GetRelativeRotation();
+	FRotator camRotation = camera->GetRelativeRotation1();
 	ImGui::InputFloat3("Camera Location", &camPosition.x);
-	ImGui::InputFloat3("Camera Rotation", &camRotation.x);
+	ImGui::InputFloat3("Camera Rotation", &camRotation.Pitch);
 	camera->SetRelativeLocation(camPosition);
-	camera->SetRelativeRotation(camRotation);
+	camera->SetRelativeRotation1(camRotation);
 
 	ImGui::InputFloat3("Camera Direction", &camera->Direction.x);
 	ImGui::InputFloat("Camera Speed", &camera->MoveSpeed);

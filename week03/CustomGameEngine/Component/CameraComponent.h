@@ -25,6 +25,7 @@ public:
 	float FarPlane{ 2000.0f };
 	float MoveSpeed{ 10.0f };
 	float ScreenWidth = 0.f;
+
 	float ScreenHeight = 0.f;
 	float RotateSensitivity = 500.0f;
 	bool IsOrthogonal{ false };
@@ -35,9 +36,9 @@ public:
 
 	//EProjectionType ProjectionType{ EProjectionType::Perspective };
 
-	FVector Direction{ FVector(0.0f, 0.0f, 1.0f) };
-	FVector SideDirection{ FVector(1.0f, 0.0f, 0.0f) };
-	FVector UpDirection{ FVector(0.0f, 1.0f, 0.0f) };
+	FVector Direction{ FVector(1.0f, 0.0f, 0.0f) };
+	FVector SideDirection{ FVector(0.0f, 1.0f, 0.0f) };
+	FVector UpDirection{ FVector(0.0f, 0.0f, 1.0f) };
 
 	FMatrix View;
 	FMatrix Projection;

@@ -3,6 +3,7 @@
 #include "Math/Matrix.h"
 #include "Math/Quaternion.h"
 #include "Math/Vector.h"
+#include "Math/Rotator.h"
 #include "Object.h"
 #include "Serializable.h"
 
@@ -23,6 +24,10 @@ public:
 	inline virtual void SetRelativeScale3D(const FVector& newScale) { RelativeScale3D = newScale; }
 	inline virtual void SetRelativeQuaternion(FQuat newQuat) { RelativeQuaternion = newQuat; RelativeRotation = newQuat.ToEuler(); }
 
+	inline const FRotator GetRelativeRotation1() { return RelativeRotation1; }
+	inline virtual void SetRelativeRotation1(const FRotator& newRotation) { RelativeRotation1 = newRotation; }
+
+
 	bool bIsSelected = false;
 
 	FMatrix GetRelativeMatrix();
@@ -40,4 +45,6 @@ private:
 	FVector RelativeRotation;
 	FVector RelativeScale3D;
 	FQuat RelativeQuaternion;
+
+	FRotator RelativeRotation1;
 };
