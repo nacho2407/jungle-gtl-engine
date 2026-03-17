@@ -45,6 +45,11 @@ public:
     void SetMode(EGizmoMode InMode);
     EGizmoMode GetMode() const;
 
+    void UpdateConstantScreenScale(
+        const UCameraComponent* Camera,
+        int ViewWidth,
+        int ViewHeight);
+
 private:
     bool ProjectWorldToScreen(
         const FVector& WorldPos,
@@ -77,6 +82,8 @@ private:
         const FVector& PlanePoint,
         const FVector& PlaneNormal,
         FVector& OutHitPoint) const;
+
+    float GetCurrentVisualScale() const;
 
 private:
     UStaticMeshComponent* XAxisComp = nullptr;
@@ -144,4 +151,9 @@ private:
 
     USceneComponent* PivotComp = nullptr;
 
+    float GizmoReferenceDistance = 10.0f;
+    float GizmoReferenceFovDeg = 90.0f;
+    float GizmoReferenceOrthoWidth = 10.0f;
+    int GizmoReferenceViewportWidth = 1280;
+    int GizmoReferenceViewportHeight = 720;
 };

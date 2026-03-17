@@ -1236,12 +1236,17 @@ void FApplication::AddSelectionOutlineRenderItem()
 
 void FApplication::UpdateGizmoTransform()
 {
-    //auto GizmoActor = GizmoActor;
-
-    if (GizmoActor)
+    UCameraComponent* MainCamera = GetMainCamera();
+    if (!GizmoActor || !MainCamera || !WindowApp)
     {
-        GizmoActor->UpdateTransformFromTarget();
+        return;
     }
+
+    GizmoActor->UpdateTransformFromTarget();
+    GizmoActor->UpdateConstantScreenScale(
+        MainCamera,
+        WindowApp->GetClientWidth(),
+        WindowApp->GetClientHeight());
 }
 
 void FApplication::UpdateGizmoColors()

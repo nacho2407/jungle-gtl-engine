@@ -288,7 +288,7 @@ void AGizmoActor::UpdateTransformFromTarget()
     {
         PivotComp->SetRelativeRotation(FVector::ZeroVector);
     }
-    PivotComp->SetRelativeScale(FVector::OneVector);
+    //PivotComp->SetRelativeScale(FVector::OneVector);
 
     //if (CurrentMode == EGizmoMode::Scale)
     //{
@@ -584,13 +584,17 @@ EGizmoAxis AGizmoActor::PickAxisTranslate(
 
     const FVector Origin = TransformPoint(FVector::ZeroVector);
 
-    const FVector XDir = TransformDirection(FVector(1.0f, 0.0f, 0.0f));
-    const FVector YDir = TransformDirection(FVector(0.0f, 1.0f, 0.0f));
-    const FVector ZDir = TransformDirection(FVector(0.0f, 0.0f, 1.0f));
+    //const FVector XDir = TransformDirection(FVector(1.0f, 0.0f, 0.0f));
+    //const FVector YDir = TransformDirection(FVector(0.0f, 1.0f, 0.0f));
+    //const FVector ZDir = TransformDirection(FVector(0.0f, 0.0f, 1.0f));
 
-    const FVector XEnd = Origin + XDir * AxisLength;
-    const FVector YEnd = Origin + YDir * AxisLength;
-    const FVector ZEnd = Origin + ZDir * AxisLength;
+    //const FVector XEnd = Origin + XDir * AxisLength;
+    //const FVector YEnd = Origin + YDir * AxisLength;
+    //const FVector ZEnd = Origin + ZDir * AxisLength;
+
+    const FVector XEnd = TransformPoint(FVector(AxisLength, 0.0f, 0.0f));
+    const FVector YEnd = TransformPoint(FVector(0.0f, AxisLength, 0.0f));
+    const FVector ZEnd = TransformPoint(FVector(0.0f, 0.0f, AxisLength));
 
     float OX = 0.0f, OY = 0.0f;
     float XX = 0.0f, XY = 0.0f;
@@ -1008,7 +1012,8 @@ EGizmoAxis AGizmoActor::PickAxisRotate(
     const FVector Origin = Root->GetRelativeLocation();
 
     // 링 월드 반지름
-    const float RingRadius = RotateRingMajorRadius * RotateRingVisualScale;
+    const float RingRadius =
+        RotateRingMajorRadius * RotateRingVisualScale * GetCurrentVisualScale();
 
     // 마우스 → 3D 레이
     const FRay Ray = BuildPickRay(MouseX, MouseY, Camera, ViewWidth, ViewHeight);
@@ -1062,4 +1067,60 @@ EGizmoAxis AGizmoActor::PickAxisRotate(
     }
 
     return BestAxis;
+}
+
+float AGizmoActor::GetCurrentVisualScale() const
+{
+    if (!PivotComp)
+    {
+        return 1.0f;
+    }
+
+    return PivotComp->GetRelativeScale().X;
+}
+
+void AGizmoActor::UpdateConstantScreenScale(
+    const UCameraComponent* Camera,
+    int ViewWidth,
+    int ViewHeight)
+{
+    if (!PivotComp || !TargetActor || !Camera || ViewWidth <= 0 || ViewHeight <= 0)
+    {
+        return;
+    }
+
+    float UniformScale = 1.0f;
+
+    if (Camera->IsOrthogonal())
+    {
+        // 직교 투영: 화면 픽셀 크기는 거리와 무관, OrthoWidth에만 비례
+        UniformScale =
+            (Camera->GetOrthoWidth() / GizmoReferenceOrthoWidth) *
+            (static_cast<float>(GizmoReferenceViewportWidth) / static_cast<float>(ViewWidth));
+    }
+    else
+    {
+        // 원근 투영: depth * tan(fov/2)에 비례해야 화면 크기 유지
+        const FVector CamLoc = Camera->GetRelativeLocation();
+        const FMatrix RotMat = FMatrix::MakeRotationXYZ(Camera->GetRelativeRotation());
+
+        const FVector4 Forward4 = RotMat * FVector4(0.0f, 0.0f, 1.0f, 0.0f);
+        FVector Forward(Forward4.X, Forward4.Y, Forward4.Z);
+        Forward.Normalize();
+
+        const FVector GizmoLoc = PivotComp->GetRelativeLocation();
+
+        float ViewDepth = (GizmoLoc - CamLoc).Dot(Forward);
+        ViewDepth = std::max(ViewDepth, Camera->GetNearClip() + 0.001f);
+
+        const float FovRad = Camera->GetFieldOfView() * 3.14159265358979323846f / 180.0f;
+        const float RefFovRad = GizmoReferenceFovDeg * 3.14159265358979323846f / 180.0f;
+
+        UniformScale =
+            (ViewDepth / GizmoReferenceDistance) *
+            (std::tan(FovRad * 0.5f) / std::tan(RefFovRad * 0.5f)) *
+            (static_cast<float>(GizmoReferenceViewportHeight) / static_cast<float>(ViewHeight));
+    }
+
+    PivotComp->SetRelativeScale(FVector(UniformScale, UniformScale, UniformScale));
 }
