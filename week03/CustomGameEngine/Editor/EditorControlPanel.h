@@ -5,7 +5,7 @@ class Editor;
 
 struct EditorControlPanel
 {
-	EditorControlPanel(Editor* editorDependency);
+	EditorControlPanel(Editor* parent);
 	~EditorControlPanel();
 
 	void Draw(UCameraComponent* camera);

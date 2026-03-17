@@ -17,7 +17,7 @@ static float fov = 45.0f;
 static FVector cameraLocation = { 0.0f, 0.0f, 0.0f };
 static FVector cameraRotation = { 0.0f, 0.0f, 0.0f };
 
-EditorControlPanel::EditorControlPanel(Editor* editorDependency) : editor(editorDependency)
+EditorControlPanel::EditorControlPanel(Editor* parent) : editor(parent)
 {
 }
 

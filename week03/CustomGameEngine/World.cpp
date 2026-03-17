@@ -82,7 +82,6 @@ void UWorld::UnloadScene()
 	for (auto obj : deleteList)
 	{
 		RemoveSceneComponent(obj);
-		delete obj;
 	}
 	delete GetActiveScene();
 	SetActiveScene(nullptr);
@@ -101,6 +100,7 @@ void UWorld::RemoveSceneComponent(USceneComponent* toDespawn)
 	{
 		if ((*it) == toDespawn)
 		{
+			delete toDespawn;
 			activeScene->SceneComponents.erase(it);
 			break;
 		}
