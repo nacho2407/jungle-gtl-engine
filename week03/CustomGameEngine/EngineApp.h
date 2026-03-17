@@ -1,7 +1,8 @@
 ﻿#pragma once
-#include "URender.h"
 
-class USceneComponent;
+#include <windows.h>
+
+class URenderer;
 class Editor;
 class UCamera;
 class UPicker;

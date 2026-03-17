@@ -1,5 +1,5 @@
 ﻿#include "ResourceManager.h"
-#include "FVertexSimple.h"
+#include "VertexSimple.h"
 #include "Sphere.h"
 #include "Triangle.h"
 

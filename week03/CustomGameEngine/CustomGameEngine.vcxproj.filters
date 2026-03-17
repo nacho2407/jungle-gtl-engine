@@ -63,22 +63,22 @@
     <ClInclude Include="EngineApp.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="FColor.h">
+    <ClInclude Include="Color.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="FMatrix.h">
+    <ClInclude Include="Matrix.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="FObjectFactory.h">
+    <ClInclude Include="ObjectFactory.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="FVector.h">
+    <ClInclude Include="Vector.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Math\FVector4.h">
+    <ClInclude Include="Math\Vector4.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="FVertexSimple.h">
+    <ClInclude Include="VertexSimple.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Gizmo.h">
@@ -87,10 +87,10 @@
     <ClInclude Include="InputManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="ISerializable.h">
+    <ClInclude Include="Serializable.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="ISingleton.h">
+    <ClInclude Include="Singleton.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="json.h">
@@ -117,43 +117,43 @@
     <ClInclude Include="TimerManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="UAxisComp.h">
+    <ClInclude Include="AxisComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="UCamera.h">
+    <ClInclude Include="Camera.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="UCubeComp.h">
+    <ClInclude Include="CubeComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="UEngineStatics.h">
+    <ClInclude Include="EngineStatics.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="UEngineTypes.h">
+    <ClInclude Include="EngineTypes.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="UMesh.h">
+    <ClInclude Include="Mesh.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="UObject.h">
+    <ClInclude Include="Object.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="UPicker.h">
+    <ClInclude Include="Picker.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="UPlaneComp.h">
+    <ClInclude Include="PlaneComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="UPrimitiveComponent.h">
+    <ClInclude Include="PrimitiveComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="URender.h">
+    <ClInclude Include="Renderer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="USceneComponent.h">
+    <ClInclude Include="SceneComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="USphereComp.h">
+    <ClInclude Include="SphereComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="World.h">
@@ -162,13 +162,13 @@
     <ClInclude Include="Triangle.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="UTriangleComp.h">
+    <ClInclude Include="TriangleComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="GizmoController.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="IGizmoControlStrategy.h">
+    <ClInclude Include="GizmoControlStrategy.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="GizmoTranslationControlStrategy.h">
@@ -180,19 +180,28 @@
     <ClInclude Include="GizmoScaleControlStrategy.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="FConstantBuffer.h">
+    <ClInclude Include="ConstantBuffer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="FGeometry.h">
+    <ClInclude Include="Geometry.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="FLevel.h">
+    <ClInclude Include="Level.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="FQuat.h">
+    <ClInclude Include="Quaternion.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Math\MathHelper.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="EditorToolbar.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="PrimitiveFactory.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Material.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -218,40 +227,40 @@
     <ClCompile Include="ImGui\imgui_widgets.cpp">
       <Filter>imGui</Filter>
     </ClCompile>
-    <ClCompile Include="FVector.cpp">
+    <ClCompile Include="Vector.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="URender.cpp">
+    <ClCompile Include="Renderer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="FMatrix.cpp">
+    <ClCompile Include="Matrix.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="UCubeComp.cpp">
+    <ClCompile Include="CubeComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="UPrimitiveComponent.cpp">
+    <ClCompile Include="PrimitiveComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="USceneComponent.cpp">
+    <ClCompile Include="SceneComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="UEngineStatics.cpp">
+    <ClCompile Include="EngineStatics.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="UObject.cpp">
+    <ClCompile Include="Object.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="USphereComp.cpp">
+    <ClCompile Include="SphereComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="EngineApp.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="FObjectFactory.cpp">
+    <ClCompile Include="ObjectFactory.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Scene.cpp">
@@ -278,7 +287,7 @@
     <ClCompile Include="EditorStatPanel.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="FColor.cpp">
+    <ClCompile Include="Color.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="InputManager.cpp">
@@ -299,13 +308,13 @@
     <ClCompile Include="TimerManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="UAxisComp.cpp">
+    <ClCompile Include="AxisComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="UCamera.cpp">
+    <ClCompile Include="Camera.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="UPlaneComp.cpp">
+    <ClCompile Include="PlaneComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="World.cpp">
@@ -314,13 +323,13 @@
     <ClCompile Include="Gizmo.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="UPicker.cpp">
+    <ClCompile Include="Picker.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="EditorConsole.h">
       <Filter>헤더 파일</Filter>
     </ClCompile>
-    <ClCompile Include="UTriangleComp.cpp">
+    <ClCompile Include="TriangleComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="GizmoController.cpp">
@@ -335,10 +344,16 @@
     <ClCompile Include="GizmoScaleControlStrategy.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="FLevel.cpp">
+    <ClCompile Include="Level.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="FQuat.cpp">
+    <ClCompile Include="Quaternion.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="EditorToolbar.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="PrimitiveFactory.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

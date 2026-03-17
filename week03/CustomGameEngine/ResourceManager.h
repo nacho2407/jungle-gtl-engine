@@ -1,14 +1,14 @@
 ﻿#pragma once
-#include "UEngineTypes.h"
-#include "d3d11.h"
-#include "d3dcompiler.h"
-#include "FVertexSimple.h"
-#include "FMatrix.h"
 
-#include "FVector.h"
-#include "FMaterial.h"
-#include "FGeometry.h"
+#include "EngineTypes.h"
+#include "Renderer/Geometry.h"
+#include "Renderer/Material.h"
 #include "Math/MathHelper.h"
+#include "Math/Matrix.h"
+#include "Math/Vector.h"
+#include "VertexSimple.h"
+#include <d3d11.h>
+#include <d3dcompiler.h>
 
 class ResourceManager
 {

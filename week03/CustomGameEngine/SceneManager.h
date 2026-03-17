@@ -1,8 +1,8 @@
 ﻿#pragma once
 
 #include "Scene.h"
-#include "ISingleton.h"
-#include "UEngineTypes.h"
+#include "Singleton.h"
+#include "EngineTypes.h"
 
 class SceneManager : public ISingleton<SceneManager>
 {

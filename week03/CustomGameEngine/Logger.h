@@ -1,6 +1,6 @@
 ﻿#pragma once
+
 #include <functional>
-#include <cstdarg>
 
 class Logger
 {

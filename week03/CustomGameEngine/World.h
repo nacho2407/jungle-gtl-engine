@@ -1,9 +1,11 @@
 ﻿#pragma once
 
-#include "Scene.h"
-#include "ISingleton.h"
-#include "URender.h"
+#include "Singleton.h"
 #include "Logger.h"		// TEST
+#include "Scene.h"
+#include "Renderer/Level.h"
+
+class FLevel;
 
 class UWorld : public UObject, public ISingleton<UWorld>
 {
