@@ -130,10 +130,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="App\FApplication.h" />
+    <ClInclude Include="App\Panels\FConsolePanel.h" />
     <ClInclude Include="App\Panels\FControlPanel.h" />
     <ClInclude Include="App\Panels\FPropertyPanel.h" />
     <ClInclude Include="App\FInputManager.h" />
     <ClInclude Include="App\WindowsApplication.h" />
+    <ClInclude Include="Engine\Public\Actor\AAxisActor.h" />
     <ClInclude Include="Core\Public\CoreGlobal.h" />
     <ClInclude Include="Core\Public\FActorInstanceManager.h" />
     <ClInclude Include="Core\Public\FMemory.h" />
@@ -154,6 +156,7 @@
     <ClInclude Include="Engine\Public\Actor\AActor.h" />
     <ClInclude Include="Engine\Public\Actor\ACamera.h" />
     <ClInclude Include="Engine\Public\Actor\ACube.h" />
+    <ClInclude Include="Engine\Public\Actor\AGridActor.h" />
     <ClInclude Include="Engine\Public\Actor\APrimitiveActor.h" />
     <ClInclude Include="Engine\Public\Actor\ASphere.h" />
     <ClInclude Include="Engine\Public\Actor\ATorus.h" />
@@ -191,7 +194,7 @@
     <ClInclude Include="Render\Public\Geometry\Sphere.h" />
     <ClInclude Include="Render\Public\Structs.h" />
     <ClInclude Include="Render\Public\URenderer.h" />
-    <ClInclude Include="Serialization\Public\FPrimitiveJsonConverter.h" />
+    <ClInclude Include="Serialization\Public\FJsonConverter.h" />
     <ClInclude Include="Serialization\Public\FWorldSaveConverter.h" />
     <ClInclude Include="Serialization\Public\FWorldSaveData.h" />
     <ClInclude Include="ThirdParty\Json\json.hpp" />
@@ -204,6 +207,7 @@
     <ClCompile Include="App\FApplication.cpp" />
     <ClCompile Include="App\FInputManager.cpp" />
     <ClCompile Include="App\Main.cpp" />
+    <ClCompile Include="App\Panels\FConsolePanel.cpp" />
     <ClCompile Include="App\Panels\FControlPanel.cpp" />
     <ClCompile Include="App\Panels\FPropertyPanel.cpp" />
     <ClCompile Include="App\WindowsApplication.cpp" />
@@ -218,8 +222,10 @@
     <ClCompile Include="Core\Public\Math\FVector4.h" />
     <ClCompile Include="Core\Public\UClassData.cpp" />
     <ClCompile Include="Engine\Private\Actor\AActor.cpp" />
+    <ClCompile Include="Engine\Private\Actor\AAxisActor.cpp" />
     <ClCompile Include="Engine\Private\Actor\AGizmoActor.cpp" />
     <ClCompile Include="Engine\Private\Actor\ACube.cpp" />
+    <ClCompile Include="Engine\Private\Actor\AGridActor.cpp" />
     <ClCompile Include="Engine\Private\Actor\APrimitiveActor.cpp" />
     <ClCompile Include="Engine\Private\Actor\ASphere.cpp" />
     <ClCompile Include="Engine\Private\Actor\ATorus.cpp" />
@@ -254,8 +260,8 @@
     <ClCompile Include="GUI\Private\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="Render\Private\URenderer.cpp" />
     <ClCompile Include="Core\Private\UObjectBaseUtility.cpp" />
-    <ClCompile Include="Serialization\Private\FPrimitiveJsonConverter.cpp" />
-    <ClCompile Include="Serialization\Private\FWorldSaveData.cpp" />
+    <ClCompile Include="Serialization\Private\FJsonConverter.cpp" />
+    <ClCompile Include="Serialization\Private\FWorldSaveConverter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Render\Public\Shaders\Default.hlsl">

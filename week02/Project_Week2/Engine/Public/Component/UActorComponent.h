@@ -6,7 +6,7 @@ class AActor;
 class UActorComponent : public UObject
 {
 public:
-	DECLARE_ROOT_UClass(UActorComponent)
+	DECLARE_UClass(UActorComponent, UObject)
 
 	UActorComponent();
 	virtual ~UActorComponent();

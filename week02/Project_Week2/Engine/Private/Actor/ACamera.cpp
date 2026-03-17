@@ -9,6 +9,10 @@ ACamera::ACamera()
     MainCamera->SetFieldOfView(39.6f);
     MainCamera->SetNearClip(0.1f);
     MainCamera->SetFarClip(1000.0f);
+    bUseOrthogonalProjection = false;
+    DebugOrthoWidth = 10.0f;
+    MainCamera->SetProjectionMode(bUseOrthogonalProjection ? EProjectionMode::Orthogonal : EProjectionMode::Perspective);
+    MainCamera->SetOrthoWidth(DebugOrthoWidth);
     //MainCamera->SetAspectRatio(static_cast<float>(WindowApp->GetClientWidth()) / static_cast<float>(WindowApp->GetClientHeight()));
     CameraComponent = MainCamera;
     AddComponent(MainCamera);

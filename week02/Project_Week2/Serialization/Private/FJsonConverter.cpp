@@ -1,6 +1,6 @@
-#include "FPrimitiveJsonConverter.h"
+#include "FJsonConverter.h"
 
-FPrimitiveJsonConverter::Json FPrimitiveJsonConverter::ToJson(const FPrimitiveRecord& Record)
+FJsonConverter::Json FJsonConverter::ToJson(const FPrimitiveRecord& Record)
 {
     Json Json;
     Json["Type"] = Record.Type;
@@ -10,7 +10,7 @@ FPrimitiveJsonConverter::Json FPrimitiveJsonConverter::ToJson(const FPrimitiveRe
     return Json;
 }
 
-bool FPrimitiveJsonConverter::FromJson(const Json& Json, FPrimitiveRecord& OutRecord)
+bool FJsonConverter::FromJson(const Json& Json, FPrimitiveRecord& OutRecord)
 {
     if (!Json.is_object())
     {
@@ -47,12 +47,12 @@ bool FPrimitiveJsonConverter::FromJson(const Json& Json, FPrimitiveRecord& OutRe
     return true;
 }
 
-FString FPrimitiveJsonConverter::ToString(const FPrimitiveRecord& Record, int32 Indent)
+FString FJsonConverter::ToString(const FPrimitiveRecord& Record, int32 Indent)
 {
     return ToJson(Record).dump(Indent);
 }
 
-bool FPrimitiveJsonConverter::FromString(const FString& JsonString, FPrimitiveRecord& OutRecord)
+bool FJsonConverter::FromString(const FString& JsonString, FPrimitiveRecord& OutRecord)
 {
     try
     {
@@ -65,12 +65,12 @@ bool FPrimitiveJsonConverter::FromString(const FString& JsonString, FPrimitiveRe
     }
 }
 
-FPrimitiveJsonConverter::Json FPrimitiveJsonConverter::VectorToJson(const FVector& Value)
+FJsonConverter::Json FJsonConverter::VectorToJson(const FVector& Value)
 {
     return Json::array({ Value.X, Value.Y, Value.Z });
 }
 
-bool FPrimitiveJsonConverter::JsonToVector(const Json& Json, FVector& OutValue)
+bool FJsonConverter::JsonToVector(const Json& Json, FVector& OutValue)
 {
     if (!Json.is_array() || Json.size() != 3)
     {

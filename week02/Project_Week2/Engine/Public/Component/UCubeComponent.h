@@ -3,6 +3,8 @@
 
 class UCubeComponent : public UPrimitiveComponent
 {
+	DECLARE_UClass(UCubeComponent, UPrimitiveComponent)
+
 public:
 	UCubeComponent() 
 	{

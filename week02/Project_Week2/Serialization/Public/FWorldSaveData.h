@@ -5,6 +5,7 @@
 
 struct FPrimitiveRecord
 {
+    uint32 SaveID;
     FString Type;
     FVector Location;
     FVector Rotation;

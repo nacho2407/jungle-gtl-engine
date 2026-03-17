@@ -6,7 +6,7 @@
 
 class ACamera : public AActor
 {
-DECLARE_ROOT_UClass(AActor)
+    DECLARE_UClass(ACamera, AActor)
 
 public:
 
@@ -25,4 +25,6 @@ private:
 
 private:
     UCameraComponent* CameraComponent = nullptr;
+    bool bUseOrthogonalProjection;
+    float DebugOrthoWidth;
 };

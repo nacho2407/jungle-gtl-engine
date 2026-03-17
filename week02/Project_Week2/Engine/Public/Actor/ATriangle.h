@@ -7,7 +7,7 @@ class UStaticMeshComponent;
 
 class ATriangle : public APrimitiveActor
 {
-DECLARE_ROOT_UClass(ATriangle)
+    DECLARE_UClass(ATriangle, APrimitiveActor)
 
 public:
     ATriangle();

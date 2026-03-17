@@ -6,7 +6,7 @@ class UStaticMesh;
 
 class UStaticMeshComponent : public UPrimitiveComponent
 {
-    DECLARE_ROOT_UClass(UStaticMeshComponent)
+    DECLARE_UClass(UStaticMeshComponent, UPrimitiveComponent)
 public:
 
     UStaticMeshComponent();

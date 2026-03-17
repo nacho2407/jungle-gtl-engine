@@ -4,7 +4,7 @@
 
 #include "FWorldSaveData.h"
 
-class FPrimitiveJsonConverter
+class FJsonConverter
 {
 public:
     using Json = nlohmann::json;

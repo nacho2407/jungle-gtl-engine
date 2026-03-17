@@ -1,22 +1,13 @@
 #include "World/UWorld.h"
-#include "Actor/AActor.h"
-#include "Component/UActorComponent.h"
-#include "Component/UPrimitiveComponent.h"
-#include "World/FScene.h"
 
-UWorld::UWorld()
-    : bHasBegunPlay(false)
+
+UWorld::UWorld() : bHasBegunPlay(false)
 {
     // 카메라 액터
-    Camera = NewObject<ACamera>();
-
-    WorldAxisActor = NewObject<AActor>();
-    UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
-    MeshComp->SetStaticMesh(BuiltInMeshFactory::CreateAxesMesh());
-    MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
-
-    WorldAxisActor->AddComponent(MeshComp);
-    WorldAxisActor->SetRootComponent(MeshComp);
+    //Camera = NewObject<ACamera>();
+    //WorldAxisActor = NewObject<AAxisActor>();
+    //GizmoActor = NewObject<AGizmoActor>();
+    //GridActor = NewObject<AGridActor>();
 
     //GridActor = NewObject<AActor>();
 
@@ -69,6 +60,14 @@ UWorld::~UWorld()
 {
 }
 
+void UWorld::Clear()
+{
+    for (const auto& actor : Actors)
+    {
+        Destroy(actor);
+    }
+}
+
 void UWorld::AddActor(AActor* InActor)
 {
     if (!InActor)
@@ -77,6 +76,21 @@ void UWorld::AddActor(AActor* InActor)
     }
 
     Actors.push_back(InActor);
+}
+
+void UWorld::RemoveActor(AActor* InActor)
+{
+    int targetIndex = 0;
+    for (targetIndex = 0; targetIndex < Actors.size(); targetIndex++)
+    {
+        Actors[targetIndex] == InActor;
+        break;
+    }
+
+    auto target = Actors[targetIndex];
+    Actors[targetIndex] = Actors.back();
+    Actors.pop_back();
+    Destroy(target);
 }
 
 void UWorld::BeginPlay()
@@ -113,16 +127,11 @@ void UWorld::Tick(float DeltaTime)
     }
 }
 
+
+
 void UWorld::BuildScene(FScene& OutScene) const
 {
-    OutScene.Clear();
-
-    TArray target = Actors;
-    //target.push_back(WorldAxisActor);
-    //target.push_back(GridActor);
-    //target.push_back(GizmoActor);
-
-    for (AActor* Actor : target)
+    for (AActor* Actor : Actors)
     {
         if (!Actor)
         {
@@ -155,10 +164,10 @@ void UWorld::BuildScene(FScene& OutScene) const
     }
 }
 
-ACamera* UWorld::GetCameraActor()
-{
-    return Camera;
-}
+//ACamera* UWorld::GetCameraActor()
+//{
+//    return Camera;
+//}
 
 //AActor* UWorld::GetWorldAxisActor()
 //{
