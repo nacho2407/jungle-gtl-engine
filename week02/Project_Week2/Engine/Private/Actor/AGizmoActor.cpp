@@ -241,7 +241,7 @@ void AGizmoActor::UpdateTransformFromTarget()
     }
     else
     {
-        PivotComp->SetRelativeRotation(Root->GetRelativeRotation());
+        PivotComp->SetRelativeRotation(FVector::ZeroVector);
     }
     PivotComp->SetRelativeScale(FVector::OneVector);
 
