@@ -102,9 +102,9 @@ AGizmoActor::~AGizmoActor()
 {
 }
 
-void AGizmoActor::Initialize(UStaticMesh* ArrowMesh, UStaticMesh* InScaleMesh, UStaticMesh* CubeMesh, UStaticMesh* TorusMesh)
+void AGizmoActor::Initialize(UStaticMesh* ArrowMesh, UStaticMesh* InScaleMesh, UStaticMesh* CubeMesh, UStaticMesh* TorusMesh, UStaticMesh* RotateRingMeshda)
 {
-    if (!ArrowMesh || !InScaleMesh || !CubeMesh || !TorusMesh)
+    if (!ArrowMesh || !InScaleMesh || !CubeMesh || !TorusMesh || !RotateRingMesh)
     {
         return;
     }
@@ -112,6 +112,7 @@ void AGizmoActor::Initialize(UStaticMesh* ArrowMesh, UStaticMesh* InScaleMesh, U
     TranslateMesh = ArrowMesh;
     ScaleMesh = InScaleMesh;
     RotateMesh = TorusMesh;
+    RotateMesh = RotateRingMesh;
 
     if (!PivotComp)
     {
@@ -276,7 +277,14 @@ void AGizmoActor::UpdateTransformFromTarget()
     //if (YAxisComp) YAxisComp->SetRelativeLocation(Pos);
     //if (ZAxisComp) ZAxisComp->SetRelativeLocation(Pos);
     PivotComp->SetRelativeLocation(Root->GetRelativeLocation());
-    PivotComp->SetRelativeRotation(Root->GetRelativeRotation());
+    if (CurrentMode != EGizmoMode::Rotate)
+    {
+        PivotComp->SetRelativeRotation(Root->GetRelativeRotation());
+    }
+    else
+    {
+        PivotComp->SetRelativeRotation(FVector::ZeroVector);
+    }
     PivotComp->SetRelativeScale(FVector::OneVector);
 
     //if (CurrentMode == EGizmoMode::Scale)
@@ -319,6 +327,12 @@ void AGizmoActor::UpdateColors(EGizmoAxis HighlightAxis)
     const FVector4 YBase(0.0f, 1.0f, 0.0f, 1.0f);
     const FVector4 ZBase(0.0f, 0.45f, 1.0f, 1.0f);
 
+    // 링/화살표/큐브 컴포넌트 색 업데이트
+    XAxisComp->SetRenderColor(HighlightAxis == EGizmoAxis::X ? LightenColor(XBase, 0.45f) : XBase);
+    YAxisComp->SetRenderColor(HighlightAxis == EGizmoAxis::Y ? LightenColor(YBase, 0.45f) : YBase);
+    ZAxisComp->SetRenderColor(HighlightAxis == EGizmoAxis::Z ? LightenColor(ZBase, 0.45f) : ZBase);
+
+    //scale 모드 전용 샤프트 색 업데이트
     if (XAxisShaftComp)
     {
         XAxisShaftComp->SetRenderColor(
@@ -502,9 +516,9 @@ void AGizmoActor::ApplyModeVisual()
         YAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
         ZAxisComp->SetRelativeRotation(FVector(1.5707963f, 0.0f, 0.0f));
 
-        XAxisComp->SetRelativeScale(FVector(0.22f, 0.22f, 0.22f));
-        YAxisComp->SetRelativeScale(FVector(0.22f, 0.22f, 0.22f));
-        ZAxisComp->SetRelativeScale(FVector(0.22f, 0.22f, 0.22f));
+        XAxisComp->SetRelativeScale(FVector(RotateRingVisualScale, RotateRingVisualScale, RotateRingVisualScale));
+        YAxisComp->SetRelativeScale(FVector(RotateRingVisualScale, RotateRingVisualScale, RotateRingVisualScale));
+        ZAxisComp->SetRelativeScale(FVector(RotateRingVisualScale, RotateRingVisualScale, RotateRingVisualScale));
 
         if (XAxisShaftComp) XAxisShaftComp->SetVisibility(false);
         if (YAxisShaftComp) YAxisShaftComp->SetVisibility(false);
@@ -635,128 +649,131 @@ float AGizmoActor::DistancePointToCircle2D(
     return std::fabs(DistToCenter - Radius);
 }
 
-EGizmoAxis AGizmoActor::PickAxisRotate(
-    int MouseX,
-    int MouseY,
-    const UCameraComponent* Camera,
-    int ViewWidth,
-    int ViewHeight) const
-{
-    if (!PivotComp)
-    {
-        return EGizmoAxis::None;
-    }
 
-    const FMatrix PivotWorld = PivotComp->GetWorldTransformMatrix();
-
-    auto TransformPoint = [&](const FVector& LocalPoint) -> FVector
-        {
-            const FVector4 W = PivotWorld * FVector4(LocalPoint, 1.0f);
-            return FVector(W.X, W.Y, W.Z);
-        };
-
-    auto TransformDirection = [&](const FVector& LocalDir) -> FVector
-        {
-            const FVector4 W = PivotWorld * FVector4(LocalDir, 0.0f);
-            FVector Dir(W.X, W.Y, W.Z);
-            Dir.Normalize();
-            return Dir;
-        };
-
-    const FVector Origin = TransformPoint(FVector::ZeroVector);
-
-    auto PickRing = [&](const FVector& LocalBasisU, const FVector& LocalBasisV) -> float
-        {
-            constexpr int NumSegments = 64;
-            float BestDist = FLT_MAX;
-            bool bHasValidSegment = false;
-
-            const FVector U = TransformDirection(LocalBasisU);
-            const FVector V = TransformDirection(LocalBasisV);
-
-            float PrevX = 0.0f, PrevY = 0.0f;
-            bool bPrevValid = false;
-
-            for (int i = 0; i <= NumSegments; ++i)
-            {
-                const float T = (float)i / (float)NumSegments;
-                const float Angle = T * 6.28318530718f; // 2pi
-
-                const FVector WorldPoint =
-                    Origin +
-                    U * (std::cos(Angle) * AxisLength) +
-                    V * (std::sin(Angle) * AxisLength);
-
-                float SX = 0.0f, SY = 0.0f;
-                const bool bValid = ProjectWorldToScreen(WorldPoint, Camera, ViewWidth, ViewHeight, SX, SY);
-
-                if (bPrevValid && bValid)
-                {
-                    const float Dist = DistancePointToSegment2D(
-                        (float)MouseX, (float)MouseY,
-                        PrevX, PrevY, SX, SY);
-
-                    if (Dist < BestDist)
-                    {
-                        BestDist = Dist;
-                    }
-
-                    bHasValidSegment = true;
-                }
-
-                PrevX = SX;
-                PrevY = SY;
-                bPrevValid = bValid;
-            }
-
-            if (!bHasValidSegment)
-            {
-                return FLT_MAX;
-            }
-
-            return BestDist;
-        };
-
-    float BestDist = FLT_MAX;
-    EGizmoAxis BestAxis = EGizmoAxis::None;
-
-    const float RingPickThickness = 12.0f;
-
-    // X ring = YZ plane
-    if (XAxisComp && XAxisComp->IsVisible())
-    {
-        const float Dist = PickRing(FVector(0.0f, 1.0f, 0.0f), FVector(0.0f, 0.0f, 1.0f));
-        if (Dist < RingPickThickness && Dist < BestDist)
-        {
-            BestDist = Dist;
-            BestAxis = EGizmoAxis::X;
-        }
-    }
-
-    // Y ring = XZ plane
-    if (YAxisComp && YAxisComp->IsVisible())
-    {
-        const float Dist = PickRing(FVector(1.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 1.0f));
-        if (Dist < RingPickThickness && Dist < BestDist)
-        {
-            BestDist = Dist;
-            BestAxis = EGizmoAxis::Y;
-        }
-    }
-
-    // Z ring = XY plane
-    if (ZAxisComp && ZAxisComp->IsVisible())
-    {
-        const float Dist = PickRing(FVector(1.0f, 0.0f, 0.0f), FVector(0.0f, 1.0f, 0.0f));
-        if (Dist < RingPickThickness && Dist < BestDist)
-        {
-            BestDist = Dist;
-            BestAxis = EGizmoAxis::Z;
-        }
-    }
-
-    return BestAxis;
-}
+//EGizmoAxis AGizmoActor::PickAxisRotate(
+//    int MouseX,
+//    int MouseY,
+//    const UCameraComponent* Camera,
+//    int ViewWidth,
+//    int ViewHeight) const
+//{
+//    if (!PivotComp)
+//    {
+//        return EGizmoAxis::None;
+//    }
+//
+//    const FMatrix PivotWorld = PivotComp->GetWorldTransformMatrix();
+//
+//    auto TransformPoint = [&](const FVector& LocalPoint) -> FVector
+//        {
+//            const FVector4 W = PivotWorld * FVector4(LocalPoint, 1.0f);
+//            return FVector(W.X, W.Y, W.Z);
+//        };
+//
+//    auto TransformDirection = [&](const FVector& LocalDir) -> FVector
+//        {
+//            const FVector4 W = PivotWorld * FVector4(LocalDir, 0.0f);
+//            FVector Dir(W.X, W.Y, W.Z);
+//            Dir.Normalize();
+//            return Dir;
+//        };
+//
+//    const FVector Origin = TransformPoint(FVector::ZeroVector);
+//
+//    auto PickRing = [&](const FVector& LocalBasisU, const FVector& LocalBasisV) -> float
+//        {
+//            constexpr int NumSegments = 64;
+//            float BestDist = FLT_MAX;
+//            bool bHasValidSegment = false;
+//
+//            const FVector U = TransformDirection(LocalBasisU);
+//            const FVector V = TransformDirection(LocalBasisV);
+//
+//            float PrevX = 0.0f, PrevY = 0.0f;
+//            bool bPrevValid = false;
+//
+//            for (int i = 0; i <= NumSegments; ++i)
+//            {
+//                const float T = (float)i / (float)NumSegments;
+//                const float Angle = T * 6.28318530718f; // 2pi
+//
+//                const FVector WorldPoint =
+//                    Origin +
+//                    U * (std::cos(Angle) * AxisLength) +
+//                    V * (std::sin(Angle) * AxisLength);
+//
+//                float SX = 0.0f, SY = 0.0f;
+//                const bool bValid = ProjectWorldToScreen(WorldPoint, Camera, ViewWidth, ViewHeight, SX, SY);
+//
+//                if (bPrevValid && bValid)
+//                {
+//                    const float Dist = DistancePointToSegment2D(
+//                        (float)MouseX, (float)MouseY,
+//                        PrevX, PrevY, SX, SY);
+//
+//                    if (Dist < BestDist)
+//                    {
+//                        BestDist = Dist;
+//                    }
+//
+//                    bHasValidSegment = true;
+//                }
+//
+//                PrevX = SX;
+//                PrevY = SY;
+//                bPrevValid = bValid;
+//            }
+//
+//            if (!bHasValidSegment)
+//            {
+//                return FLT_MAX;
+//            }
+//
+//            return BestDist;
+//        };
+//
+//    float BestDist = FLT_MAX;
+//    EGizmoAxis BestAxis = EGizmoAxis::None;
+//
+//    const float RingPickThickness = 12.0f;
+//
+//    // X ring = YZ plane
+//    if (XAxisComp && XAxisComp->IsVisible())
+//    {
+//        const float Dist = PickRing(FVector(0.0f, 1.0f, 0.0f), FVector(0.0f, 0.0f, 1.0f));
+//        if (Dist < RingPickThickness && Dist < BestDist)
+//        {
+//            BestDist = Dist;
+//            BestAxis = EGizmoAxis::X;
+//        }
+//    }
+//
+//    // Y ring = XZ plane
+//    if (YAxisComp && YAxisComp->IsVisible())
+//    {
+//        const float Dist = PickRing(FVector(1.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 1.0f));
+//        if (Dist < RingPickThickness && Dist < BestDist)
+//        {
+//            BestDist = Dist;
+//            BestAxis = EGizmoAxis::Y;
+//        }
+//    }
+//
+//    // Z ring = XY plane
+//    if (ZAxisComp && ZAxisComp->IsVisible())
+//    {
+//        const float Dist = PickRing(FVector(1.0f, 0.0f, 0.0f), FVector(0.0f, 1.0f, 0.0f));
+//        if (Dist < RingPickThickness && Dist < BestDist)
+//        {
+//            BestDist = Dist;
+//            BestAxis = EGizmoAxis::Z;
+//        }
+//    }
+//
+//    return BestAxis;
+//}
+//
+//>>>>>>> dev
 
 bool AGizmoActor::ProjectAxisEndToScreen(
     const FVector& Origin,
@@ -851,6 +868,154 @@ EGizmoAxis AGizmoActor::PickAxisScale(
         {
             BestDist = Dist;
             BestAxis = EGizmoAxis::Z;
+        }
+    }
+
+    return BestAxis;
+
+}
+
+// 기존 BuildPickRay / IntersectRayPlane 대신 AGizmoActor 내부에 추가
+
+FRay AGizmoActor::BuildPickRay(
+    int MouseX,
+    int MouseY,
+    const UCameraComponent* Camera,
+    int ViewWidth,
+    int ViewHeight) const
+{
+    const float Width = static_cast<float>(ViewWidth);
+    const float Height = static_cast<float>(ViewHeight);
+
+    const float NdcX = (2.0f * static_cast<float>(MouseX) / Width) - 1.0f;
+    const float NdcY = 1.0f - (2.0f * static_cast<float>(MouseY) / Height);
+
+    const FVector CamLoc = Camera->GetRelativeLocation();
+    const FVector CamRot = Camera->GetRelativeRotation();
+
+    const FMatrix RotMat = FMatrix::MakeRotationXYZ(CamRot);
+
+    const FVector4 Right4 = RotMat * FVector4(1.0f, 0.0f, 0.0f, 0.0f);
+    const FVector4 Up4 = RotMat * FVector4(0.0f, 1.0f, 0.0f, 0.0f);
+    const FVector4 Forward4 = RotMat * FVector4(0.0f, 0.0f, 1.0f, 0.0f);
+
+    const FVector Right(Right4.X, Right4.Y, Right4.Z);
+    const FVector Up(Up4.X, Up4.Y, Up4.Z);
+    const FVector Forward(Forward4.X, Forward4.Y, Forward4.Z);
+
+    if (Camera->IsOrthogonal())
+    {
+        const float OrthoWidth = Camera->GetOrthoWidth();
+        const float OrthoHeight = OrthoWidth / Camera->GetAspectRatio();
+
+        const FVector Origin =
+            CamLoc
+            + Right * (NdcX * OrthoWidth * 0.5f)
+            + Up * (NdcY * OrthoHeight * 0.5f);
+
+        return FRay(Origin, Forward);
+    }
+
+    const float FovRad = Camera->GetFieldOfView() * 3.14159265358979323846f / 180.0f;
+    const float TanHalfFov = std::tan(FovRad * 0.5f);
+
+    const float ViewX = NdcX * Camera->GetAspectRatio() * TanHalfFov;
+    const float ViewY = NdcY * TanHalfFov;
+
+    FVector Dir = Right * ViewX + Up * ViewY + Forward;
+    Dir.Normalize();
+
+    return FRay(CamLoc, Dir);
+}
+
+bool AGizmoActor::IntersectRayPlane(
+    const FRay& Ray,
+    const FVector& PlanePoint,
+    const FVector& PlaneNormal,
+    FVector& OutHitPoint) const
+{
+    const float Denom = PlaneNormal.Dot(Ray.Direction);
+    if (std::fabs(Denom) < 0.000001f)
+    {
+        return false;
+    }
+
+    const float T = PlaneNormal.Dot(PlanePoint - Ray.Origin) / Denom;
+    if (T < 0.0f)
+    {
+        return false;
+    }
+
+    OutHitPoint = Ray.Origin + Ray.Direction * T;
+    return true;
+}
+
+EGizmoAxis AGizmoActor::PickAxisRotate(
+    int MouseX,
+    int MouseY,
+    const UCameraComponent* Camera,
+    int ViewWidth,
+    int ViewHeight) const
+{
+    USceneComponent* Root = TargetActor->GetRootComponent();
+    if (!Root)
+    {
+        return EGizmoAxis::None;
+    }
+
+    const FVector Origin = Root->GetRelativeLocation();
+
+    // 링 월드 반지름
+    const float RingRadius = RotateRingMajorRadius * RotateRingVisualScale;
+
+    // 마우스 → 3D 레이
+    const FRay Ray = BuildPickRay(MouseX, MouseY, Camera, ViewWidth, ViewHeight);
+
+    float BestDist = FLT_MAX;
+    EGizmoAxis BestAxis = EGizmoAxis::None;
+
+    // 각 축의 링 평면 법선
+    // XAxisComp: 회전(0,0,π/2) → 토러스 원래 법선 +Y를 X축으로 회전 → 법선 = +X
+    // YAxisComp: 회전(0,0,0)   → 법선 = +Y
+    // ZAxisComp: 회전(π/2,0,0) → 법선 = +Z
+    struct RingInfo
+    {
+        FVector Normal;
+        EGizmoAxis Axis;
+        const UStaticMeshComponent* Comp;
+    };
+
+    const RingInfo Rings[3] =
+    {
+        { FVector(1.0f, 0.0f, 0.0f), EGizmoAxis::X, XAxisComp },
+        { FVector(0.0f, 1.0f, 0.0f), EGizmoAxis::Y, YAxisComp },
+        { FVector(0.0f, 0.0f, 1.0f), EGizmoAxis::Z, ZAxisComp },
+    };
+
+    for (const RingInfo& Ring : Rings)
+    {
+        if (!Ring.Comp || !Ring.Comp->IsVisible())
+        {
+            continue;
+        }
+
+        FVector HitPoint;
+        if (!IntersectRayPlane(Ray, Origin, Ring.Normal, HitPoint))
+        {
+            continue;
+        }
+
+        // 교차점과 링 중심 사이의 거리 (평면 위이므로 2D 거리와 동일)
+        const FVector Offset = HitPoint - Origin;
+        const float DistToCenter = Offset.Length();
+
+        // 링 반지름과의 오차
+        const float DistToRing = std::fabs(DistToCenter - RingRadius);
+
+        if (DistToRing < RotatePickThickness3D && DistToRing < BestDist)
+        {
+            BestDist = DistToRing;
+            BestAxis = Ring.Axis;
         }
     }
 

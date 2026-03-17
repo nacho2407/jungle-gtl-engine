@@ -10,6 +10,8 @@
 #include "Actor/AAxisActor.h"
 #include "Component/EGizmoMode.h"
 
+#include "Math/FQuat.h"
+
 class UWorld;
 class URenderer;
 class UCameraComponent;
@@ -139,6 +141,11 @@ private:
     void TempFunc(AActor* actor);
 
     void CycleGizmoMode();
+
+    float SignedAngleAroundAxis(
+        const FVector& From,
+        const FVector& To,
+        const FVector& Axis) const;
     
 
 private:
@@ -214,6 +221,14 @@ private:
     AGridActor* GridActor;
 
     EGizmoMode CurrentGizmoMode = EGizmoMode::Translate;
+
+    UStaticMesh* GizmoRotateRingMesh = nullptr;
+
+    EGizmoMode DragStartGizmoMode = EGizmoMode::Translate;
+    FVector DragStartActorRotation = FVector::ZeroVector;
+    FVector DragStartVectorOnPlane = FVector::ZeroVector;
+
+    FQuat DragStartActorQuat = FQuat::Identity();
     FVector DragStartActorScale = FVector::OneVector;
     float GizmoScaleSensitivity = 0.35f; // 모드별 감도
 };

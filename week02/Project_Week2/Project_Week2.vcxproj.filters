@@ -273,6 +273,9 @@
     <ClInclude Include="Engine\Public\Actor\AGridActor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Public\Component\EGizmoMode.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Private\UEngineStatics.cpp">
@@ -459,6 +462,12 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Private\Actor\AGridActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Public\Math\FQuat.h">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\Math\FQuat.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

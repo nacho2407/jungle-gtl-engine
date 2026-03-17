@@ -445,4 +445,19 @@ namespace BuiltInMeshFactory
         Mesh->SetTopology(EMeshTopology::LineList);
         return Mesh;
     }
+
+    UStaticMesh* CreateGizmoRotateRingMesh()
+    {
+        UStaticMesh* Mesh = new UStaticMesh();
+
+        Mesh->SetVertices(CreateTorusVertices(
+            96,     // MajorSegments
+            20,     // MinorSegments
+            2.0f,   // MajorRadius
+            0.06f   // MinorRadius
+        ));
+
+        Mesh->SetTopology(EMeshTopology::TriangleList);
+        return Mesh;
+    }
 }

@@ -4,7 +4,8 @@
 USceneComponent::USceneComponent()
     : UActorComponent()
     , RelativeLocation(FVector::ZeroVector)
-    , RelativeRotation(FVector::ZeroVector)
+    , RelativeRotationEuler(FVector::ZeroVector)
+    , RelativeRotationQuat(FQuat::Identity())
     , RelativeScale(FVector::OneVector)
     , bWorldTransformDirty(true)
     , CachedWorldTransform(FMatrix::Identity)
@@ -36,15 +37,33 @@ const FVector& USceneComponent::GetRelativeLocation() const
     return RelativeLocation;
 }
 
-void USceneComponent::SetRelativeRotation(const FVector& InRotation)
+void USceneComponent::SetRelativeRotation(const FVector& InRotationEuler)
 {
-    RelativeRotation = InRotation;
+    RelativeRotationEuler = InRotationEuler;
+    RelativeRotationQuat = FQuat::FromEulerXYZ(InRotationEuler);
+    RelativeRotationQuat.Normalize();
     MarkTransformDirty();
 }
 
 const FVector& USceneComponent::GetRelativeRotation() const
 {
-    return RelativeRotation;
+    return RelativeRotationEuler;
+}
+
+void USceneComponent::SetRelativeRotationQuat(const FQuat& InQuat)
+{
+    RelativeRotationQuat = InQuat;
+    RelativeRotationQuat.Normalize();
+
+    // 패널 표시용 캐시
+    RelativeRotationEuler = RelativeRotationQuat.ToEulerXYZ();
+
+    MarkTransformDirty();
+}
+
+const FQuat& USceneComponent::GetRelativeRotationQuat() const
+{
+    return RelativeRotationQuat;
 }
 
 void USceneComponent::SetRelativeScale(const FVector& InScale)
@@ -67,6 +86,7 @@ void USceneComponent::MarkTransformDirty() // (*) 근데 왜 이름이 dirty일�
 {
     bWorldTransformDirty = true;
 
+
     for (USceneComponent* Child : Children)
     {
         if (Child)
@@ -74,6 +94,7 @@ void USceneComponent::MarkTransformDirty() // (*) 근데 왜 이름이 dirty일�
             Child->MarkTransformDirty();
         }
     }
+
 }
 
 void USceneComponent::UpdateWorldTransformIfNeeded() const
@@ -84,10 +105,11 @@ void USceneComponent::UpdateWorldTransformIfNeeded() const
     }
 
     FMatrix Scale = FMatrix::MakeScale(RelativeScale);
-    FMatrix Rotation = FMatrix::MakeRotationXYZ(RelativeRotation);
+	FMatrix Rotation = RelativeRotationQuat.ToMatrix();
     FMatrix Translation = FMatrix::MakeTranslation(RelativeLocation);
 
     CachedWorldTransform = Scale * Rotation * Translation;
+
 
      if (ParentComponent)
      {

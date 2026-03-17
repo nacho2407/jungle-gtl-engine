@@ -7,6 +7,7 @@
 #include "Component/UCameraComponent.h"
 #include "Component/UStaticMeshComponent.h"
 #include "Component/EGizmoMode.h"
+#include "FRay.h"
 
 //class UStaticMesh;
 //class UStaticMeshComponent;
@@ -21,7 +22,7 @@ public:
     virtual ~AGizmoActor() override; // 왜 가상함수로 했을까
 
 public:
-    void Initialize(UStaticMesh* ArrowMesh, UStaticMesh* ScaleMesh, UStaticMesh* CubeMesh, UStaticMesh* TorusMesh);
+    void Initialize(UStaticMesh* ArrowMesh, UStaticMesh* ScaleMesh, UStaticMesh* CubeMesh, UStaticMesh* TorusMesh, UStaticMesh* RotateRingMesh);
 
     void SetTargetActor(AActor* InTarget);
     AActor* GetTargetActor() const;
@@ -61,6 +62,21 @@ private:
     FVector4 LightenColor(const FVector4& Color, float T) const;
 
     void ApplyModeVisual();
+
+    // 마우스 좌표 → 3D 레이 생성
+    FRay BuildPickRay(
+        int MouseX,
+        int MouseY,
+        const UCameraComponent* Camera,
+        int ViewWidth,
+        int ViewHeight) const;
+
+    // 레이와 평면 교차
+    bool IntersectRayPlane(
+        const FRay& Ray,
+        const FVector& PlanePoint,
+        const FVector& PlaneNormal,
+        FVector& OutHitPoint) const;
 
 private:
     UStaticMeshComponent* XAxisComp = nullptr;
@@ -122,5 +138,10 @@ private:
         UStaticMeshComponent* YAxisShaftComp = nullptr;
         UStaticMeshComponent* ZAxisShaftComp = nullptr;
 
+        float RotateRingMajorRadius = 2.0f;
+        float RotateRingVisualScale = 0.7f;
+        float RotatePickThickness3D = 0.35f;
+
     USceneComponent* PivotComp = nullptr;
+
 };
