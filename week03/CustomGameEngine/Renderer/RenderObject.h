@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Math/Matrix.h"
+#include "Color.h"
 #include <d3d11.h>
 
 class FMaterial;
@@ -16,6 +17,8 @@ public:
 	FGeometry* Geometry;//Mesh
 	FMaterial* Material;//Material
 	FMatrix World;
+	FColor Color = FColor(1.0f, 1.0f, 1.0f, 1.0f);
+
 	//Texture
 
 	bool bIsSelected = false;

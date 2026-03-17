@@ -6,6 +6,7 @@
 #include "VertexSimple.h"
 #include <d3d11.h>
 #include "EngineTypes.h"
+#include "Color.h"
 
 class URenderer {
 public:
@@ -64,6 +65,7 @@ public:
 	struct FObjectConstant
 	{
 		FMatrix World;
+		FColor Color;
 		int bIsSelected;
 		float Padding[3];
 	};

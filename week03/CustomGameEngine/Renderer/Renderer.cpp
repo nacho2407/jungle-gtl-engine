@@ -246,6 +246,7 @@ void URenderer::Render(UCamera* Camera)
 	{
 		//Camera
 		ObjectConst.World = RenderObj->World;
+		ObjectConst.Color = RenderObj->Color;
 		ObjectConst.bIsSelected = RenderObj->bIsSelected ? 1 : 0;
 		ObjectConstantBuffer.Update(DeviceContext.Get(), &ObjectConst, sizeof(FObjectConstant));
 
@@ -260,6 +261,7 @@ void URenderer::Render(UCamera* Camera)
 		for (RenderObject* RenderObj : NoDepthRenderObjects)
 		{
 			ObjectConst.World = RenderObj->World;
+			ObjectConst.Color = RenderObj->Color;
 			ObjectConst.bIsSelected = RenderObj->bIsSelected ? 1 : 0;
 			ObjectConstantBuffer.Update(DeviceContext.Get(), &ObjectConst, sizeof(FObjectConstant));
 			RenderObj->Render(DeviceContext.Get());
