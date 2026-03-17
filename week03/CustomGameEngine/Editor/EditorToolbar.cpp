@@ -13,12 +13,18 @@ EditorToolbar::~EditorToolbar()
 
 void EditorToolbar::Draw()
 {
+	UGizmoComponent* gizmoController = Gizmo::GetInstance().GetController();
+
 	ImGui::Begin("Toolbar");
 
-	bool bLocalSpace = Gizmo::GetInstance().GetController()->IsLocalSpace();
-	if (bLocalSpace ? ImGui::Button("Local") : ImGui::Button("World"))
+	bool bLocalSpace = gizmoController->IsLocalSpace();
+	bool bScaleMode = gizmoController->GetControlStrategyType() == GizmoControllerType::Scale;
+	if (!bLocalSpace && !bScaleMode ? ImGui::Button("World") : ImGui::Button("Local"))
 	{
-		Gizmo::GetInstance().GetController()->SetLocalSpace(!bLocalSpace);
+		if (gizmoController->GetControlStrategyType() != GizmoControllerType::Scale)
+		{
+			gizmoController->SetLocalSpace(!bLocalSpace);
+		}
 	}
 
 	if (ImGui::Button("Translate"))

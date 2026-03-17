@@ -72,7 +72,7 @@ void UGizmoComponent::Update(float deltaTime)
 
 	SetRelativeScale3D(FVector(Scale, Scale, Scale));
 
-	if (!bLocalSpace)
+	if (!bLocalSpace && Type != GizmoControllerType::Scale)
 	{
 		SetRelativeQuaternion(FQuat());
 	}
