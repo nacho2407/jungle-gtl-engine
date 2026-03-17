@@ -1,5 +1,5 @@
 ﻿#include "Renderer.h"
-#include "Camera.h"
+#include "Component/CameraComponent.h"
 
 void URenderer::Create(HWND hWindow) {
 	CreateDeviceAndSwapChain(hWindow);
@@ -216,7 +216,7 @@ void URenderer::ReleaseConstantBuffer() {
 	FGridConstantBuffer.Release();
 }
 
-void URenderer::Render(UCamera* Camera)
+void URenderer::Render(UCameraComponent* Camera)
 {
 	FFrameConstant FrameConst;
 	FrameConst.Projection = Camera->GetProjectionMatrix();
@@ -269,7 +269,7 @@ void URenderer::Render(UCamera* Camera)
 	// RenderObjects.clear();
 }
 
-void URenderer::RenderGrid(UCamera* Camera, ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader)
+void URenderer::RenderGrid(UCameraComponent* Camera, ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader)
 {
 	FFrameConstant FrameConst;
 	FGridConstant GridConst;

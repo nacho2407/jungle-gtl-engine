@@ -18,9 +18,9 @@ UScene::~UScene()
 
 void UScene::Update(float DeltaTime)
 {
-	for (USceneComponent* Prim : SceneComponents)
+	for (USceneComponent* sc : SceneComponents)
 	{
-		Prim->Update(DeltaTime);
+		sc->Update(DeltaTime);
 	}
 }
 

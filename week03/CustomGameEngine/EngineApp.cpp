@@ -1,5 +1,5 @@
 ﻿#include "EngineApp.h"
-#include "Camera.h"
+#include "Component/CameraComponent.h"
 #include "Component/AxisComponent.h"
 #include "Component/CubeComponent.h"
 #include "Renderer/Renderer.h"
@@ -14,7 +14,6 @@
 #include "ObjectFactory.h"
 #include "ResourceManager.h"
 #include "Scene.h"
-#include "SceneManager.h"
 #include "TimerManager.h"
 #include "World.h"
 
@@ -73,7 +72,6 @@ EngineApp::EngineApp()
 
 EngineApp::~EngineApp()
 {
-	delete Camera;
 	delete Picker;
 	delete EditorInst;
 	delete Renderer;
@@ -105,7 +103,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 
 	InputManager::GetInstance().hWnd = HWnd;
 	// Init Camera
-	Camera = Cast<UCamera>(FObjectFactory::ConstructObject(UCamera::GetClass()));
+	Camera = Cast<UCameraComponent>(GetWorld().AddPermanentSceneComponent<UCameraComponent>());
 	EditorInst->SetCamera(Camera);
 	EditorInst->SetRenderer(Renderer);
 
@@ -125,7 +123,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 
 	//Init World & Scene
 	GetWorld().InjectRenderer(Renderer);
-	SceneManager::GetInstance().NewScene();
+	GetWorld().NewScene();
 
 	// Init Timer
 	TimerManager::GetInstance().CreateGlobalTimer();
@@ -147,11 +145,10 @@ void EngineApp::Run()
 	//UCubeComp* Cube3 = GetWorld().AddSceneComponent<UCubeComp>();
 	//Cube->SetRelativeLocation(FVector(-30.f, 0.f, 0.f));
 	//Cube->SetRelativeScale3D(FVector(0.5f, 0.5f, 0.5f));
-
-	UAxisComp* mainAxis = GetWorld().AddSceneComponent<UAxisComp>();
-
-	Camera->SetPosition(FVector(-10, 0, 0));
 	//-----TEST
+
+	UAxisComp* mainAxis = GetWorld().AddPermanentSceneComponent<UAxisComp>();
+	Camera->SetPosition(FVector(-10, 0, 0));
 
 	Timer* globalTimer = TimerManager::GetInstance().GetGlobalTimer();
 	globalTimer->Reset();
@@ -175,7 +172,6 @@ void EngineApp::Run()
 		TimerManager::GetInstance().Tick();
 		InputManager::GetInstance().Update();
 		float TempDelta = globalTimer->GetDeltaTime();
-		UScene* Scene = GetWorld().GetActiveScene();
 
 		ImGuiIO& io = ImGui::GetIO();
 
@@ -209,35 +205,17 @@ void EngineApp::Run()
 			Gizmo::GetInstance().GetController()->SetHoverAxis(hoveredAxis);
 		}
 
-		if (!io.WantCaptureKeyboard && !io.WantCaptureMouse)
-		{
-			if (InputManager::GetInstance().IsKeyHold(VK_RBUTTON))
-			{
-				Camera->Move(TempDelta);
-				Camera->Rotate(TempDelta);
-			}
-			else if (InputManager::GetInstance().IsKeyHold(VK_LBUTTON)
-				&& InputManager::GetInstance().IsKeyHold(VK_MENU))
-			{
-				Camera->OrbitRotate(TempDelta);
-			}
-			if (InputManager::GetInstance().IsKeyHold('F')
-				&& GetWorld().GetActiveScene()->IsCompSelected)
-			{
-				Camera->SetPosition(EditorInst->GetSelectedComponent()->GetRelativeLocation() - Camera->Direction * Camera->FocusLength);
-			}
-		}
-		Camera->update();
+		// Update Game World
+		GetWorld().Update(TempDelta);
 
 		//Render
+		GetWorld().OnBeforeRender();
+		EditorInst->OnBeforeRender();
+
 		Renderer->Prepare();
 
 		ResourceManager* RM = ResourceManager::GetInstance();
 		Renderer->RenderGrid(Camera, RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").VertexShader.Get(), RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").PixelShader.Get());
-
-		Scene->Update(TempDelta);
-		GetWorld().OnBeforeRender();
-		EditorInst->OnBeforeRender();
 
 		Renderer->Render(Camera);
 		EditorInst->DrawUI();

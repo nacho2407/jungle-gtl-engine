@@ -1,5 +1,5 @@
 ﻿#include "GizmoController.h"
-#include "Camera.h"
+#include "Component/CameraComponent.h"
 #include "Component/SceneComponent.h"
 #include "EngineTypes.h"
 #include "GizmoRotationControlStrategy.h"
@@ -28,7 +28,7 @@ GizmoController::~GizmoController()
 	delete TranslationStrategy;
 }
 
-void GizmoController::Update(UCamera* Camera)
+void GizmoController::Update(UCameraComponent* Camera)
 {
 	if (AttachedComponent == nullptr) return;
 

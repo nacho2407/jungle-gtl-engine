@@ -132,6 +132,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Component\AxisComponent.h" />
+    <ClInclude Include="Component\CameraComponent.h" />
     <ClInclude Include="Component\CubeComponent.h" />
     <ClInclude Include="Component\PlaneComponent.h" />
     <ClInclude Include="Component\PrimitiveComponent.h" />
@@ -166,6 +167,7 @@
     <ClInclude Include="Renderer\RenderObject.h" />
     <ClInclude Include="Serializable.h" />
     <ClInclude Include="Logger.h" />
+    <ClInclude Include="SerializeHelper.h" />
     <ClInclude Include="Singleton.h" />
     <ClInclude Include="Math\MathHelper.h" />
     <ClInclude Include="PrimitiveFactory.h" />
@@ -180,11 +182,9 @@
     <ClInclude Include="ImGui\imstb_rectpack.h" />
     <ClInclude Include="ImGui\imstb_textedit.h" />
     <ClInclude Include="ImGui\imstb_truetype.h" />
-    <ClInclude Include="SceneManager.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="TimerManager.h" />
     <ClInclude Include="Triangle.h" />
-    <ClInclude Include="Camera.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Math\Vector4.h" />
     <ClInclude Include="json.h" />
@@ -196,6 +196,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Component\AxisComponent.cpp" />
+    <ClCompile Include="Component\CameraComponent.cpp" />
     <ClCompile Include="Component\CubeComponent.cpp" />
     <ClCompile Include="Component\PlaneComponent.cpp" />
     <ClCompile Include="Component\PrimitiveComponent.cpp" />
@@ -237,10 +238,8 @@
     <ClCompile Include="ImGui\imgui_tables.cpp" />
     <ClCompile Include="ImGui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="TimerManager.cpp" />
-    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="EngineStatics.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="World.cpp" />
