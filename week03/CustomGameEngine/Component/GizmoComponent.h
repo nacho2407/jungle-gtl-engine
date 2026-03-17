@@ -39,6 +39,7 @@ public:
 	void UpdateDrag(const Ray& ray);
 	void EndDrag();
 
+	GizmoControllerType GetControlStrategyType() const { return Type; }
 	void SetControlStrategy(GizmoControllerType type);
 
 	bool IsLocalSpace() const { return bLocalSpace; }
