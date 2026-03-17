@@ -184,12 +184,12 @@ void AGizmoActor::Initialize(UStaticMesh* ArrowMesh, UStaticMesh* InScaleMesh, U
     YAxisComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
     ZAxisComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
 
-    XAxisComp->SetDepthEnable(false);
-    YAxisComp->SetDepthEnable(false);
-    ZAxisComp->SetDepthEnable(false);
-    XAxisComp->SetDepthWrite(false);
-    YAxisComp->SetDepthWrite(false);
-    ZAxisComp->SetDepthWrite(false);
+    XAxisComp->SetDepthEnable(true);
+    YAxisComp->SetDepthEnable(true);
+    ZAxisComp->SetDepthEnable(true);
+    XAxisComp->SetDepthWrite(true);
+    YAxisComp->SetDepthWrite(true);
+    ZAxisComp->SetDepthWrite(true);
 
     XAxisComp->SetCullMode(ERenderCullMode::None);
     YAxisComp->SetCullMode(ERenderCullMode::None);
@@ -815,11 +815,19 @@ EGizmoAxis AGizmoActor::PickAxisScale(
             const FVector4 W = PivotWorld * FVector4(LocalPoint, 1.0f);
             return FVector(W.X, W.Y, W.Z);
         };
-    const float ScaleCubeCenter = 3.0f * GizmoScale;
+    const FVector Origin = TransformPoint(FVector::ZeroVector);
+
+    const float ScaleCubeCenter = 2.4f * GizmoScale;
 
     const FVector XPos = TransformPoint(FVector(ScaleCubeCenter, 0.0f, 0.0f));
     const FVector YPos = TransformPoint(FVector(0.0f, ScaleCubeCenter, 0.0f));
     const FVector ZPos = TransformPoint(FVector(0.0f, 0.0f, ScaleCubeCenter));
+
+    float OX = 0.0f, OY = 0.0f;
+    if (!ProjectWorldToScreen(Origin, Camera, ViewWidth, ViewHeight, OX, OY))
+    {
+        return EGizmoAxis::None;
+    }
 
     float XX = 0.0f, XY = 0.0f;
     float YX = 0.0f, YY = 0.0f;
@@ -829,9 +837,6 @@ EGizmoAxis AGizmoActor::PickAxisScale(
     const bool bY = ProjectWorldToScreen(YPos, Camera, ViewWidth, ViewHeight, YX, YY);
     const bool bZ = ProjectWorldToScreen(ZPos, Camera, ViewWidth, ViewHeight, ZX, ZY);
 
-    float BestDist = FLT_MAX;
-    EGizmoAxis BestAxis = EGizmoAxis::None;
-
     auto DistToPoint = [&](float Px, float Py) -> float
         {
             const float Dx = (float)MouseX - Px;
@@ -839,37 +844,71 @@ EGizmoAxis AGizmoActor::PickAxisScale(
             return std::sqrt(Dx * Dx + Dy * Dy);
         };
 
-    const float CubePickRadius = 14.0f;
+    const float LineThreshold = 10.0f;
+    const float CubeThreshold = 22.0f;
 
-    if (bX && XAxisComp && XAxisComp->IsVisible())
-    {
-        const float Dist = DistToPoint(XX, XY);
-        if (Dist < CubePickRadius && Dist < BestDist)
-        {
-            BestDist = Dist;
-            BestAxis = EGizmoAxis::X;
-        }
-    }
+    float BestDist = FLT_MAX;
+    EGizmoAxis BestAxis = EGizmoAxis::None;
 
-    if (bY && YAxisComp && YAxisComp->IsVisible())
-    {
-        const float Dist = DistToPoint(YX, YY);
-        if (Dist < CubePickRadius && Dist < BestDist)
-        {
-            BestDist = Dist;
-            BestAxis = EGizmoAxis::Y;
-        }
-    }
+    //auto DistToPoint = [&](float Px, float Py) -> float
+    //    {
+    //        const float Dx = (float)MouseX - Px;
+    //        const float Dy = (float)MouseY - Py;
+    //        return std::sqrt(Dx * Dx + Dy * Dy);
+    //    };
 
-    if (bZ && ZAxisComp && ZAxisComp->IsVisible())
-    {
-        const float Dist = DistToPoint(ZX, ZY);
-        if (Dist < CubePickRadius && Dist < BestDist)
+    //const float CubePickRadius = 14.0f;
+
+    //if (bX && XAxisComp && XAxisComp->IsVisible())
+    //{
+    //    const float Dist = DistToPoint(XX, XY);
+    //    if (Dist < CubePickRadius && Dist < BestDist)
+    //    {
+    //        BestDist = Dist;
+    //        BestAxis = EGizmoAxis::X;
+    //    }
+    //}
+
+    //if (bY && YAxisComp && YAxisComp->IsVisible())
+    //{
+    //    const float Dist = DistToPoint(YX, YY);
+    //    if (Dist < CubePickRadius && Dist < BestDist)
+    //    {
+    //        BestDist = Dist;
+    //        BestAxis = EGizmoAxis::Y;
+    //    }
+    //}
+
+    //if (bZ && ZAxisComp && ZAxisComp->IsVisible())
+    //{
+    //    const float Dist = DistToPoint(ZX, ZY);
+    //    if (Dist < CubePickRadius && Dist < BestDist)
+    //    {
+    //        BestDist = Dist;
+    //        BestAxis = EGizmoAxis::Z;
+    //    }
+    //}
+    auto TestAxis = [&](bool bValid, UStaticMeshComponent* Comp, float AX, float AY, EGizmoAxis Axis)
         {
-            BestDist = Dist;
-            BestAxis = EGizmoAxis::Z;
-        }
-    }
+            if (!bValid || !Comp || !Comp->IsVisible())
+            {
+                return;
+            }
+
+            const float LineDist = DistancePointToSegment2D((float)MouseX, (float)MouseY, OX, OY, AX, AY);
+            const float PointDist = DistToPoint(AX, AY);
+            const float Score = std::min(LineDist, PointDist);
+
+            if ((LineDist < LineThreshold || PointDist < CubeThreshold) && Score < BestDist)
+            {
+                BestDist = Score;
+                BestAxis = Axis;
+            }
+        };
+
+    TestAxis(bX, XAxisComp, XX, XY, EGizmoAxis::X);
+    TestAxis(bY, YAxisComp, YX, YY, EGizmoAxis::Y);
+    TestAxis(bZ, ZAxisComp, ZX, ZY, EGizmoAxis::Z);
 
     return BestAxis;
 
