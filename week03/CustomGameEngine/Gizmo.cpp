@@ -1,11 +1,11 @@
 ﻿#include "Gizmo.h"
-#include "USceneComponent.h"
+#include "SceneComponent.h"
 #include "RenderObject.h"
 #include "ResourceManager.h"
-#include "UPicker.h"
+#include "Picker.h"
 #include "Logger.h"
 #include "GizmoController.h"
-#include "UCamera.h"
+#include "Camera.h"
 
 Gizmo::Gizmo()
 {

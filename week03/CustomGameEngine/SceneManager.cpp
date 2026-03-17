@@ -3,8 +3,8 @@
 #include <fstream>
 #include <sstream>
 #include "World.h"
-#include "UEngineStatics.h"
-#include "UPrimitiveComponent.h"
+#include "EngineStatics.h"
+#include "PrimitiveComponent.h"
 #include "Logger.h"
 
 SceneManager::SceneManager()

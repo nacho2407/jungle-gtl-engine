@@ -1,10 +1,10 @@
 ﻿#include "PrimitiveFactory.h"
-#include "FObjectFactory.h"
+#include "ObjectFactory.h"
 #include "World.h"
-#include "UCubeComp.h"
-#include "USphereComp.h"
-#include "UTriangleComp.h"
-#include "UPlaneComp.h"
+#include "CubeComponent.h"
+#include "SphereComponent.h"
+#include "TriangleComponent.h"
+#include "PlaneComponent.h"
 
 UPrimitiveComponent* PrimitiveFactory::AddPrimitive(EPrimitiveType type)
 {

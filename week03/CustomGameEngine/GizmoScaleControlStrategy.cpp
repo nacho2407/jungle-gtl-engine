@@ -1,11 +1,11 @@
 ﻿#include "GizmoScaleControlStrategy.h"
 #include "GizmoController.h"
 #include "ResourceManager.h"
-#include "UObject.h"
-#include "URender.h"
+#include "Object.h"
+#include "Renderer.h"
 #include "RenderObject.h"
-#include "USceneComponent.h"
-#include "UPicker.h"
+#include "SceneComponent.h"
+#include "Picker.h"
 #include "Logger.h"
 
 GizmoScaleControlStrategy::GizmoScaleControlStrategy(GizmoController* controller)

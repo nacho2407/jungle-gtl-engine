@@ -1,7 +1,7 @@
 ﻿#pragma once
-#include "ISingleton.h"
-#include "FGeometry.h"
-#include "FMatrix.h"
+#include "Singleton.h"
+#include "Geometry.h"
+#include "Matrix.h"
 
 struct Ray;
 class URenderer;

@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "UPrimitiveComponent.h"
+#include "PrimitiveComponent.h"
 
 struct PrimitiveFactory
 {

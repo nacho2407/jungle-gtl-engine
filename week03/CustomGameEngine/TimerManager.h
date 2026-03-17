@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include "ISingleton.h"
-#include "UEngineTypes.h"
+#include "Singleton.h"
+#include "EngineTypes.h"
 #include "Timer.h"
 
 class TimerManager : public ISingleton<TimerManager>

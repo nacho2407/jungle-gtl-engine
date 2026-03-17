@@ -1,10 +1,10 @@
 ﻿#include "GizmoTranslationControlStrategy.h"
 #include "ResourceManager.h"
-#include "UObject.h"
+#include "Object.h"
 #include "RenderObject.h"
 #include "GizmoController.h"
-#include "USceneComponent.h"
-#include "URender.h"
+#include "SceneComponent.h"
+#include "Renderer.h"
 #include "Logger.h"
 
 GizmoTranslationControlStrategy::GizmoTranslationControlStrategy(GizmoController* controller)

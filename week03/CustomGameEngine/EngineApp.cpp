@@ -1,22 +1,22 @@
 ﻿#include "EngineApp.h"
 #include "ResourceManager.h"
 #include "Scene.h"
-#include "FObjectFactory.h"
-#include "UCubeComp.h"
+#include "ObjectFactory.h"
+#include "CubeComponent.h"
+#include "AxisComponent.h"
 #include "Editor.h"
 #include "Logger.h"
 #include "TimerManager.h"
 #include "SceneManager.h"
 #include "World.h"
-#include "UCamera.h"
+#include "Camera.h"
 #include "InputManager.h"
 #include "Gizmo.h"
 #include "GizmoController.h"
-#include "UPicker.h"
+#include "Picker.h"
 #include "ImGui/imgui.h"
-#include "UObject.h"
+#include "Object.h"
 
-#include "UAxisComp.h"
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 

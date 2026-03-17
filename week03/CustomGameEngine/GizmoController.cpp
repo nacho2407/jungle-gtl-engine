@@ -1,17 +1,17 @@
 ﻿#include "GizmoController.h"
-#include "UObject.h"
+#include "Object.h"
 #include "RenderObject.h"
 #include "ResourceManager.h"
-#include "USceneComponent.h"
-#include "URender.h"
+#include "SceneComponent.h"
+#include "Renderer.h"
 #include "Logger.h"
 #include "InputManager.h"
-#include "UPicker.h"
-#include "UEngineTypes.h"
+#include "Picker.h"
+#include "EngineTypes.h"
 #include "GizmoTranslationControlStrategy.h"
 #include "GizmoRotationControlStrategy.h"
 #include "GizmoScaleControlStrategy.h"
-#include "UCamera.h"
+#include "Camera.h"
 
 GizmoController::GizmoController()
 {

@@ -1,13 +1,13 @@
 ﻿#include "EditorControlPanel.h"
 #include "Editor.h"
 #include "ImGui/imgui.h"
-#include "FVector.h"
+#include "Vector.h"
 #include "TimerManager.h"
 #include "SceneManager.h"
 #include "World.h"
-#include "UPrimitiveComponent.h"
+#include "PrimitiveComponent.h"
 #include "PrimitiveFactory.h"
-#include "UCamera.h"
+#include "Camera.h"
 #include <string>
 
 static EPrimitiveType primitiveType = EPrimitiveType::Triangle;

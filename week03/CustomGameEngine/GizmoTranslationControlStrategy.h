@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include "IGizmoControlStrategy.h"
-#include "FVector.h"
+#include "GizmoControlStrategy.h"
+#include "Vector.h"
 
 class GizmoController;
 class RenderObject;

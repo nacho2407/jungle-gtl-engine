@@ -1,7 +1,7 @@
 ﻿#pragma once
-#include "IGizmoControlStrategy.h"
-#include "FVector.h"
-#include "FQuat.h"
+#include "GizmoControlStrategy.h"
+#include "Vector.h"
+#include "Quaternion.h"
 
 class GizmoController;
 class RenderObject;

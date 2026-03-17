@@ -1,11 +1,11 @@
 ﻿#include "Scene.h"
 #include "World.h"
 #include "json.h"
-#include "USceneComponent.h"
-#include "UCubeComp.h"
-#include "USphereComp.h"
-#include "UTriangleComp.h"
-#include "UPlaneComp.h"
+#include "SceneComponent.h"
+#include "CubeComponent.h"
+#include "SphereComponent.h"
+#include "TriangleComponent.h"
+#include "PlaneComponent.h"
 #include "Logger.h"
 
 UScene::UScene()

@@ -1,6 +1,6 @@
 ﻿#include "RenderObject.h"
-#include "FGeometry.h"
-#include "FMaterial.h"
+#include "Geometry.h"
+#include "Material.h"
 
 void RenderObject::Render(ID3D11DeviceContext* Context)
 {

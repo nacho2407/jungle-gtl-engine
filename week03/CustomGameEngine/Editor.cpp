@@ -2,17 +2,17 @@
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
-#include "USceneComponent.h"
+#include "SceneComponent.h"
 #include "EditorConsole.h"
 #include "EditorControlPanel.h"
 #include "EditorPropertyPanel.h"
 #include "EditorStatPanel.h"
 #include "EditorToolbar.h"
-#include "UCamera.h"
+#include "Camera.h"
 #include "Gizmo.h"
 #include "GizmoController.h"
-#include "URender.h"
-#include "UCamera.h"
+#include "Renderer.h"
+
 Editor::Editor()
 {
 	ControlPanel = new EditorControlPanel(this);
