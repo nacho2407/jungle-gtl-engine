@@ -77,6 +77,15 @@ public:
 
     UCameraComponent* GetMainCamera() const;
 
+    bool bUseOrthogonalProjection = false;
+    float DebugOrthoWidth = 10.0f;
+
+    void ApplyCameraProjectionMode();
+
+    ESpawnMeshType SelectedSpawnMeshType = ESpawnMeshType::Sphere;
+    void SpawnSelectedMeshActor();
+
+
 private:
     bool InitializeEngine();
     bool InitializeGUI();
@@ -119,13 +128,12 @@ private:
     void UpdateObjectAllocationTest();
     void RenderDebugUI();
 
-    void SpawnSelectedMeshActor();
     AActor* SpawnMeshActor(UStaticMesh* Mesh, const FVector& Location);
 	// 패널 렌더링
     void RenderEditorUI();
 
 
-    void ApplyCameraProjectionMode();
+    
 
 private:
     FWindowsApplication* WindowApp;
@@ -179,7 +187,6 @@ private:
     int TestIntervalCounter = 0;
     TArray<UObject*> TestObjects;
 
-    ESpawnMeshType SelectedSpawnMeshType = ESpawnMeshType::Sphere;
 
     FGUIManager* GUIManager = nullptr;
 
@@ -194,7 +201,4 @@ private:
 
     int PrevMouseX = 0;
     int PrevMouseY = 0;
-
-    bool bUseOrthogonalProjection = false;
-    float DebugOrthoWidth = 10.0f;
 };

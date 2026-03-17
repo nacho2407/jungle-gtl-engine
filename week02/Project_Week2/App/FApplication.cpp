@@ -590,9 +590,6 @@ void FApplication::RenderFrame()
     GUIManager->BeginFrame();
     RenderDebugUI();
     RenderEditorUI();
-    ImGui::Render();
-    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-
     GUIManager->EndFrame();
 
 
@@ -1328,48 +1325,6 @@ void FApplication::UpdateObjectAllocationTest()
 void FApplication::RenderDebugUI()
 {
     ImGui::Begin("Jungle Property Window(Debug)");
-    ImGui::Text("Hello Jungle World!");
-
-    ImGui::Separator();
-    ImGui::Text("Camera");
-
-    bool bProjectionChanged = false;
-
-    if (ImGui::Checkbox("Orthogonal Projection", &bUseOrthogonalProjection))
-    {
-        bProjectionChanged = true;
-    }
-
-    if (bUseOrthogonalProjection)
-    {
-        if (ImGui::SliderFloat("Ortho Width", &DebugOrthoWidth, 1.0f, 100.0f))
-        {
-            bProjectionChanged = true;
-        }
-    }
-
-    if (bProjectionChanged)
-    {
-        ApplyCameraProjectionMode();
-    }
-
-    ImGui::Separator();
-    ImGui::Text("Spawn Mesh");
-
-    const char* MeshItems[] = { "Sphere", "Cube", "Torus" };
-    int CurrentMeshIndex = static_cast<int>(SelectedSpawnMeshType);
-
-    if (ImGui::Combo("Mesh Type", &CurrentMeshIndex, MeshItems, IM_ARRAYSIZE(MeshItems)))
-    {
-        SelectedSpawnMeshType = static_cast<ESpawnMeshType>(CurrentMeshIndex);
-    }
-
-    if (ImGui::Button("Spawn"))
-    {
-        SpawnSelectedMeshActor();
-    }
-
-    ImGui::Separator();
 
     ImGui::Text("GTotalAllocationBytes: %d", FMemory::GetTotalAllocatedMemory());
     ImGui::Text("GTotalAllocationCount: %d", GUObjectArray.ElementalCount);
@@ -1456,8 +1411,8 @@ void FApplication::RenderEditorUI()
         const float Width = static_cast<float>(WindowApp->GetClientWidth());
         const float Height = static_cast<float>(WindowApp->GetClientHeight());
 
-        ImGui::SetNextWindowPos(ImVec2(0.0f, Height - ConsoleHeight), ImGuiCond_Always);
-        ImGui::SetNextWindowSize(ImVec2(Width, ConsoleHeight), ImGuiCond_Always);
+        ImGui::SetNextWindowPos(ImVec2(0.0f, Height - ConsoleHeight), ImGuiCond_Once);
+        ImGui::SetNextWindowSize(ImVec2(Width, ConsoleHeight), ImGuiCond_Once);
 
         ShowImGuiDemoConsole(&bShowBottomConsole);
     }
@@ -1494,3 +1449,4 @@ void FApplication::ApplyCameraProjectionMode()
 	MainCamera->SetProjectionMode(bUseOrthogonalProjection ? EProjectionMode::Orthogonal : EProjectionMode::Perspective);
 	MainCamera->SetOrthoWidth(DebugOrthoWidth);
 }
+
