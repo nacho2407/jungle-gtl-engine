@@ -6,7 +6,10 @@
 #include "Actor/ACamera.h"
 #include "Actor/AGridActor.h"
 #include "Actor/AAxisActor.h"
+#include "Component/EGizmoMode.h"
 #include "World/ESpawnMeshType.h"
+
+#include "Math/FQuat.h"
 
 class UWorld;
 class URenderer;
@@ -47,7 +50,7 @@ struct FPointerPulse
     int CurrentMouseY = 0;
 
     float CurrentRadius = 0.0f;
-    float MaxRadius = 0.05f;      // 월드 단위
+    float MaxRadius = 0.02f;      // 월드 단위
     float GrowSpeed = 0.5f;       // radius/sec
     float ShrinkSpeed = 2.4f;     // radius/sec
 
@@ -138,6 +141,15 @@ private:
 
     void TempFunc(AActor* actor);
 
+    void CycleGizmoMode();
+
+    float SignedAngleAroundAxis(
+        const FVector& From,
+        const FVector& To,
+        const FVector& Axis) const;
+    
+
+
     // Scene save / load 파일 경로 생성 관련 함수
     FString BuildSceneFilePath() const;
     
@@ -148,11 +160,21 @@ private:
     UWorld* World;
     FScene* Scene;
 
+    UStaticMesh* CubeMesh;
     UStaticMesh* TorusMesh;
     UStaticMesh* AxesMesh;
     UStaticMesh* GizmoArrowMesh = nullptr;
+    UStaticMesh* GizmoScaleMesh = nullptr;
 
+    //AActor* GizmoActor = nullptr;
+    //UStaticMeshComponent* GizmoXComp = nullptr;
+    //UStaticMeshComponent* GizmoYComp = nullptr;
+    //UStaticMeshComponent* GizmoZComp = nullptr;
+    //UStaticMeshComponent* GizmoMeshComp = nullptr;
+    AGizmoActor* GizmoActor = nullptr;
     AActor* SelectedActor = nullptr;
+
+    AActor* WorldAxesActor;
 
     bool bIsRunning;
 
@@ -199,5 +221,16 @@ private:
     ACamera* Camera;
     AAxisActor* WorldAxisActor;
     AGridActor* GridActor;
-    AGizmoActor* GizmoActor;
+
+    EGizmoMode CurrentGizmoMode = EGizmoMode::Translate;
+
+    UStaticMesh* GizmoRotateRingMesh = nullptr;
+
+    EGizmoMode DragStartGizmoMode = EGizmoMode::Translate;
+    FVector DragStartActorRotation = FVector::ZeroVector;
+    FVector DragStartVectorOnPlane = FVector::ZeroVector;
+
+    FQuat DragStartActorQuat = FQuat::Identity();
+    FVector DragStartActorScale = FVector::OneVector;
+    float GizmoScaleSensitivity = 0.35f; // 모드별 감도
 };

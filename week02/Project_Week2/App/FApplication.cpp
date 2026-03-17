@@ -41,7 +41,7 @@
 
 #include "Panels/FPropertyPanel.h"
 #include "Panels/FControlPanel.h"
-#include "Panels/FConsolePanel.h" 
+#include "Panels/FConsolePanel.h"
 
 #include "FJsonConverter.h"
 #include "FWorldSaveConverter.h"
@@ -136,26 +136,28 @@ bool FApplication::Initialize(HINSTANCE hInstance)
     }
 
     WindowApp->OnResize = [this](int Width, int Height)
+    {
+        if (Width <= 0 || Height <= 0)
         {
-            if (Width <= 0 || Height <= 0)
-            {
-                return;
-            }
+            return;
+        }
 
-            if (Renderer)
-            {
-                Renderer->Resize((UINT)Width, (UINT)Height);
-            }
+        if (Renderer)
+        {
+            Renderer->Resize((UINT)Width, (UINT)Height);
+        }
 
-            //check(World)
-            //check(World->GetCameraActor())
-            //check(World->GetCameraActor()->GetCameraComponent())
-            auto MainCamera = Camera->GetCameraComponent();
+        //if (MainCamera)
+        //{
+        //    MainCamera->UpdateAspectRatio((float)Width, (float)Height);
+        //}
+        if (Camera && Camera->GetCameraComponent())
+        {
+            Camera->GetCameraComponent()->UpdateAspectRatio((float)Width, (float)Height);
+        }
 
-            MainCamera->UpdateAspectRatio((float)Width, (float)Height);
-
-            RenderFrame();
-        };
+        RenderFrame();
+    };
 
     PropertyPanel = new FPropertyPanel();
     ControlPanel = new FControlPanel();
@@ -180,32 +182,6 @@ bool FApplication::InitializeEngine()
 
 bool FApplication::InitializeGUI()
 {
-    //if (!WindowApp || !Renderer)
-    //{
-    //    return false;
-    //}
-
-    //IMGUI_CHECKVERSION();
-    //ImGui::CreateContext();
-
-    //ImGuiIO& io = ImGui::GetIO();
-    //(void)io;
-
-    //ImGui::StyleColorsDark();
-
-    //if (!ImGui_ImplWin32_Init(WindowApp->GetHWND()))
-    //{
-    //    return false;
-    //}
-
-    //if (!ImGui_ImplDX11_Init(Renderer->Device, Renderer->DeviceContext))
-    //{
-    //    ImGui_ImplWin32_Shutdown();
-    //    ImGui::DestroyContext();
-    //    return false;
-    //}
-
-    //return true;
     GUIManager = new FGUIManager();
     if (!GUIManager)
     {
@@ -232,6 +208,8 @@ bool FApplication::InitializeResources()
     AxesMesh = BuiltInMeshFactory::CreateAxesMesh();
     GridMesh = BuiltInMeshFactory::CreateGridMesh(20, 1.0f);
     GizmoArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh();
+    GizmoScaleMesh = BuiltInMeshFactory::CreateGizmoScaleMesh();
+    GizmoRotateRingMesh = BuiltInMeshFactory::CreateGizmoRotateRingMesh();
 
     //ClickCircleMesh = BuiltInMeshFactory::CreateCircleMesh(64);
     ClickCircleMesh = BuiltInMeshFactory::CreateDiscMesh(64);
@@ -264,6 +242,23 @@ bool FApplication::InitializeScene()
 
     //World->AddActor(CameraActor);
     
+    {
+        //GridActor = new AGridActor();
+
+        //UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
+        //MeshComp->SetStaticMesh(GridMesh);
+        //MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
+        //MeshComp->SetCullMode(ERenderCullMode::None);
+        //MeshComp->SetUseDepthBias(true);
+
+        //GridActor->AddComponent(MeshComp);
+        //GridActor->SetRootComponent(MeshComp);
+        //World->AddActor(GridActor);
+
+        GridActor = new AGridActor();
+        World->AddActor(GridActor);
+    }
+    
     World->SpawnMeshActor(ESpawnMeshType::Sphere, FVector(0.0f, 0.0f, 0.0f));
 
     //// World Axes
@@ -278,63 +273,19 @@ bool FApplication::InitializeScene()
     //    WorldAxesActor->SetRootComponent(MeshComp);
     //    World->AddActor(WorldAxesActor);
     //}
-    //WorldAxesActor = SpawnMeshActor(AxesMesh, FVector(0.0f, 0.0f, 0.0f));
-
+    WorldAxesActor = NewObject<AAxisActor>();
+    if (WorldAxesActor)
     {
-        //GridActor = new AActor();
-
-        //UStaticMeshComponent* MeshComp = NewObject<UStaticMeshComponent>();
-        //MeshComp->SetStaticMesh(GridMesh);
-        //MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
-
-        //GridActor->AddComponent(MeshComp);
-        //GridActor->SetRootComponent(MeshComp);
-        //World->AddActor(GridActor);
+        if (UStaticMeshComponent* AxesComp = FindStaticMeshComponent(WorldAxesActor))
+        {
+            AxesComp->SetDepthEnable(true);
+            AxesComp->SetUseDepthBias(false);
+            AxesComp->SetCullMode(ERenderCullMode::None);
+        }
     }
 
-    //// Gizmo
-    //// @@@ 이렇게 길게 여기서 처리하는 게 맞음????
-    //{
-    //    GizmoActor = new AActor();
-
-    //    GizmoXComp = new UStaticMeshComponent();
-    //    GizmoYComp = new UStaticMeshComponent();
-    //    GizmoZComp = new UStaticMeshComponent();
-
-    //    GizmoXComp->SetStaticMesh(GizmoArrowMesh);
-    //    GizmoYComp->SetStaticMesh(GizmoArrowMesh);
-    //    GizmoZComp->SetStaticMesh(GizmoArrowMesh);
-
-    //    GizmoXComp->SetRelativeLocation(FVector::ZeroVector);
-    //    GizmoYComp->SetRelativeLocation(FVector::ZeroVector);
-    //    GizmoZComp->SetRelativeLocation(FVector::ZeroVector);
-
-    //    // arrow mesh가 +X 방향 기준이라고 가정
-    //    GizmoXComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
-    //    GizmoYComp->SetRelativeRotation(FVector(0.0f, 0.0f, 1.5707963f));
-    //    GizmoZComp->SetRelativeRotation(FVector(0.0f, -1.5707963f, 0.0f));
-
-    //    GizmoXComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
-    //    GizmoYComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
-    //    GizmoZComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
-
-    //    GizmoXComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
-    //    GizmoYComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
-    //    GizmoZComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
-
-    //    GizmoXComp->SetVisibility(false);
-    //    GizmoYComp->SetVisibility(false);
-    //    GizmoZComp->SetVisibility(false);
-
-    //    GizmoActor->AddComponent(GizmoXComp);
-    //    GizmoActor->AddComponent(GizmoYComp);
-    //    GizmoActor->AddComponent(GizmoZComp);
-    //    GizmoActor->SetRootComponent(GizmoXComp);
-
-    //    World->AddActor(GizmoActor);
-    //}
     //GizmoActor = new AGizmoActor();
-    //GizmoActor->Initialize(GizmoArrowMesh);
+    //GizmoActor->Initialize(GizmoArrowMesh, GizmoScaleMesh, CubeMesh, TorusMesh);
     //World->AddActor(GizmoActor);
 
     // 마우스 클릭 펄스 생성 및 World 추가
@@ -359,13 +310,22 @@ void FApplication::MainLoop()
     auto PrevTime = Clock::now();
 
     Camera = NewObject<ACamera>();
+    World->AddActor(Camera);
     WorldAxisActor = NewObject<AAxisActor>();
+    World->AddActor(WorldAxisActor);
     GizmoActor = NewObject<AGizmoActor>();
+    World->AddActor(GizmoActor);
     GridActor = NewObject<AGridActor>();
+    World->AddActor(GridActor);
+
     check(Camera)
     check(WorldAxisActor)
     check(GizmoActor)
     check(GridActor)
+
+    GizmoActor->Initialize(GizmoArrowMesh, GizmoScaleMesh, CubeMesh, TorusMesh, GizmoRotateRingMesh);
+    GizmoActor->SetMode(CurrentGizmoMode);
+    World->AddActor(GizmoActor);
 
     // @@@ VSync 있는거임??
     // 의도적으로 프레임을 조정할 수 있는 거는 필요없나?
@@ -421,6 +381,11 @@ void FApplication::Tick(float DeltaTime)
 
     const bool bCanProcessMouse = InputManager->CanProcessMouse();
     const bool bCanProcessKeyboard = InputManager->CanProcessKeyboard();
+
+    if (bCanProcessKeyboard && InputManager->WasKeyPressed(VK_SPACE))
+    {
+        CycleGizmoMode();
+    }
 
     int MouseX = 0;
     int MouseY = 0;
@@ -572,9 +537,9 @@ void FApplication::Tick(float DeltaTime)
         UpdateGizmoColors();
     }
 
-    TempFunc(WorldAxisActor);
-    TempFunc(GridActor);
-    TempFunc(GizmoActor);
+    //TempFunc(WorldAxisActor);
+    //TempFunc(GridActor);
+    //TempFunc(GizmoActor);
     World->BuildScene(*Scene);
 
     AddSelectionOutlineRenderItem();
@@ -620,8 +585,12 @@ void FApplication::RenderFrame()
     Renderer->BeginFrame();
     Renderer->Render(*Scene, MainCamera);
 
-    // 여기서 메인 백버퍼 다시 바인딩
+    // 여기서 메인 백버퍼 다시d 바인딩
     Renderer->BindMainRenderTargetForOverlay();
+
+    //Renderer->BeginOverlayRenderState(); // 오버레이 변경 -> Gizmo, Mesh 오버레이 무시
+    //Renderer->RenderGizmo(*Scene, Maincamera); //
+    //Renderer->EndOverlayRenderState(); // 
 
     GUIManager->BeginFrame();
     RenderDebugUI();
@@ -1087,42 +1056,88 @@ void FApplication::BeginGizmoDrag(EGizmoAxis Axis, int MouseX, int MouseY)
         return;
     }
 
-    FVector AxisDir = FVector::ZeroVector;
+    const FMatrix ActorRot = FMatrix::MakeRotationXYZ(Root->GetRelativeRotation());
+
+    FVector LocalAxis = FVector::ZeroVector;
     switch (Axis)
     {
-    case EGizmoAxis::X: AxisDir = FVector(1.0f, 0.0f, 0.0f); break;
-    case EGizmoAxis::Y: AxisDir = FVector(0.0f, 1.0f, 0.0f); break;
-    case EGizmoAxis::Z: AxisDir = FVector(0.0f, 0.0f, 1.0f); break;
+    case EGizmoAxis::X: LocalAxis = FVector(1.0f, 0.0f, 0.0f); break;
+    case EGizmoAxis::Y: LocalAxis = FVector(0.0f, 1.0f, 0.0f); break;
+    case EGizmoAxis::Z: LocalAxis = FVector(0.0f, 0.0f, 1.0f); break;
     default: return;
     }
+    FVector4 Axis4 = ActorRot * FVector4(LocalAxis, 0.0f);
+    FVector AxisDir(Axis4.X, Axis4.Y, Axis4.Z);
+    AxisDir.Normalize();
+
+    FRay Ray = BuildPickRay(MouseX, MouseY);
+
+    DragStartGizmoMode = CurrentGizmoMode;
+    ActiveGizmoAxis = Axis;
+    DragAxisDirection = AxisDir;
+    DragStartActorLocation = Root->GetRelativeLocation();
+    DragStartActorRotation = Root->GetRelativeRotation();
+    DragStartActorQuat = Root->GetRelativeRotationQuat();
+
+    if (CurrentGizmoMode == EGizmoMode::Rotate)
+    {
+        FVector HitPoint;
+        if (!IntersectRayPlane(Ray, DragStartActorLocation, AxisDir, HitPoint))
+        {
+            return;
+        }
+
+        FVector StartVec = HitPoint - DragStartActorLocation;
+        StartVec = StartVec - AxisDir * StartVec.Dot(AxisDir);
+
+        if (StartVec.LengthSquared() < 0.000001f)
+        {
+            return;
+        }
+
+        StartVec.Normalize();
+
+        bDraggingGizmo = true;
+        DragPlaneNormal = AxisDir;
+        DragStartVectorOnPlane = StartVec;
+        DragStartHitPoint = HitPoint;
+        return;
+    }
+
     auto MainCamera = Camera->GetCameraComponent();
-
-    const FMatrix CamRot = FMatrix::MakeRotationXYZ(MainCamera->GetRelativeRotation());
-    const FVector4 Forward4 = CamRot * FVector4(0.0f, 0.0f, 1.0f, 0.0f);
-    const FVector CameraForward(Forward4.X, Forward4.Y, Forward4.Z);
-
-    FVector PlaneNormal = AxisDir.Cross(CameraForward.Cross(AxisDir));
-    PlaneNormal.Normalize();
-
-    if (PlaneNormal.LengthSquared() < 0.000001f)
+    if (!MainCamera)
     {
         return;
     }
 
-    FRay Ray = BuildPickRay(MouseX, MouseY);
+    /*FVector4 Axis4 = ActorRot * FVector4(LocalAxis, 0.0f);
+    FVector AxisDir(Axis4.X, Axis4.Y, Axis4.Z);
+    AxisDir.Normalize();*/
+
+    const FMatrix CamRot = FMatrix::MakeRotationXYZ(MainCamera->GetRelativeRotation());
+    const FVector4 Forward4 = CamRot * FVector4(0.0f, 0.0f, 1.0f, 0.0f);
+    FVector CameraForward(Forward4.X, Forward4.Y, Forward4.Z);
+    CameraForward.Normalize();
+
+    FVector PlaneNormal = AxisDir.Cross(CameraForward.Cross(AxisDir));
+    if (PlaneNormal.LengthSquared() < 0.000001f)
+    {
+        return;
+    }
+    PlaneNormal.Normalize();
 
     FVector HitPoint;
-    if (!IntersectRayPlane(Ray, Root->GetRelativeLocation(), PlaneNormal, HitPoint))
+    const FVector ActorPos = Root->GetRelativeLocation();
+    if (!IntersectRayPlane(Ray, ActorPos, PlaneNormal, HitPoint))
     {
         return;
     }
 
     bDraggingGizmo = true;
-    ActiveGizmoAxis = Axis;
-    DragAxisDirection = AxisDir;
     DragPlaneNormal = PlaneNormal;
-    DragStartActorLocation = Root->GetRelativeLocation();
+    DragStartActorLocation = ActorPos;
     DragStartHitPoint = HitPoint;
+    DragStartActorScale = Root->GetRelativeScale();
 }
 
 void FApplication::UpdateGizmoDrag(int MouseX, int MouseY)
@@ -1146,11 +1161,75 @@ void FApplication::UpdateGizmoDrag(int MouseX, int MouseY)
         return;
     }
 
-    const FVector Delta = HitPoint - DragStartHitPoint;
-    const float MoveAmount = Delta.Dot(DragAxisDirection);
+    if (DragStartGizmoMode == EGizmoMode::Rotate)
+    {
+        FVector CurrentVec = HitPoint - DragStartActorLocation;
 
-    const FVector NewLocation = DragStartActorLocation + DragAxisDirection * MoveAmount;
-    Root->SetRelativeLocation(NewLocation);
+        // 축 제거 → 평면 projection
+        CurrentVec = CurrentVec - DragAxisDirection * CurrentVec.Dot(DragAxisDirection);
+
+        if (CurrentVec.LengthSquared() < 0.000001f)
+        {
+            return;
+        }
+
+        CurrentVec.Normalize();
+
+        const float DeltaAngle = SignedAngleAroundAxis(
+            DragStartVectorOnPlane,
+            CurrentVec,
+            DragAxisDirection);
+
+        const FQuat DeltaQuat = FQuat::FromAxisAngle(DragAxisDirection, DeltaAngle);
+
+        FQuat NewQuat = DeltaQuat * DragStartActorQuat;
+        NewQuat.Normalize();
+
+        Root->SetRelativeRotationQuat(NewQuat);
+    }
+    else if (DragStartGizmoMode == EGizmoMode::Translate)
+    {
+        const FVector Delta = HitPoint - DragStartHitPoint;
+        const float MoveAmount = Delta.Dot(DragAxisDirection);
+
+        const FVector NewLocation =
+            DragStartActorLocation + DragAxisDirection * MoveAmount;
+
+        Root->SetRelativeLocation(NewLocation);
+    }
+    else if (DragStartGizmoMode == EGizmoMode::Scale)
+    {
+        const FVector Delta = HitPoint - DragStartHitPoint;
+        const float Amount = Delta.Dot(DragAxisDirection);
+
+        FVector NewScale = DragStartActorScale;
+
+        const float ScaleDelta = Amount * GizmoScaleSensitivity;
+        const float MinScale = 0.05f;
+
+        switch (ActiveGizmoAxis)
+        {
+        case EGizmoAxis::X:
+            NewScale.X = std::max(MinScale, DragStartActorScale.X + ScaleDelta);
+            break;
+        case EGizmoAxis::Y:
+            NewScale.Y = std::max(MinScale, DragStartActorScale.Y + ScaleDelta);
+            break;
+        case EGizmoAxis::Z:
+            NewScale.Z = std::max(MinScale, DragStartActorScale.Z + ScaleDelta);
+            break;
+        default:
+            return;
+        }
+
+        Root->SetRelativeScale(NewScale);
+    }
+
+    if (GizmoActor)
+    {
+        GizmoActor->UpdateTransformFromTarget();
+        GizmoActor->UpdateColors(ActiveGizmoAxis); 
+    }
 }
 
 void FApplication::EndGizmoDrag()
@@ -1159,6 +1238,8 @@ void FApplication::EndGizmoDrag()
     ActiveGizmoAxis = EGizmoAxis::None;
     DragAxisDirection = FVector::ZeroVector;
     DragPlaneNormal = FVector::ZeroVector;
+    DragStartVectorOnPlane = FVector::ZeroVector;
+    DragStartActorRotation = FVector::ZeroVector;
 }
 
 void FApplication::AddSelectionOutlineRenderItem()
@@ -1174,22 +1255,14 @@ void FApplication::AddSelectionOutlineRenderItem()
         return;
     }
 
-    const FVector BaseScale = MeshComp->GetRelativeScale();
-    const FVector OutlineScale(
-        BaseScale.X * 1.02f,
-        BaseScale.Y * 1.02f,
-        BaseScale.Z * 1.02f);
-
-    const FMatrix Scale = FMatrix::MakeScale(OutlineScale);
-    const FMatrix Rotation = FMatrix::MakeRotationXYZ(MeshComp->GetRelativeRotation());
-    const FMatrix Translation = FMatrix::MakeTranslation(MeshComp->GetRelativeLocation());
+    const FMatrix BaseWorld = MeshComp->GetWorldTransformMatrix();
+    const FMatrix OutlineScale = FMatrix::MakeScale(FVector(1.02f, 1.02f, 1.02f));
 
     FRenderItem OutlineItem;
     OutlineItem.Mesh = MeshComp->GetStaticMesh();
-    OutlineItem.WorldMatrix = Scale * Rotation * Translation;
+    OutlineItem.WorldMatrix = OutlineScale * BaseWorld;
     OutlineItem.Color = FVector4(0.953f, 0.596f, 0.184f, 1.0f);
 
-    // backface 확장 outline 핵심
     OutlineItem.CullMode = ERenderCullMode::Front;
     OutlineItem.bDepthEnable = true;
     OutlineItem.bUseVertexColor = false;
@@ -1588,3 +1661,41 @@ void FApplication::ApplyCameraProjectionMode()
 	MainCamera->SetOrthoWidth(DebugOrthoWidth);
 }
 
+void FApplication::CycleGizmoMode()
+{
+    switch (CurrentGizmoMode)
+    {
+    case EGizmoMode::Translate:
+        CurrentGizmoMode = EGizmoMode::Rotate;
+        break;
+    case EGizmoMode::Rotate:
+        CurrentGizmoMode = EGizmoMode::Scale;
+        break;
+    case EGizmoMode::Scale:
+    default:
+        CurrentGizmoMode = EGizmoMode::Translate;
+        break;
+    }
+
+    if (GizmoActor)
+    {
+        GizmoActor->SetMode(CurrentGizmoMode);
+        GizmoActor->UpdateColors(EGizmoAxis::None);
+        GizmoActor->UpdateTransformFromTarget();
+    }
+}
+
+float FApplication::SignedAngleAroundAxis(
+    const FVector& From,
+    const FVector& To,
+    const FVector& Axis) const
+{
+    FVector NFrom = From.GetNormalized();
+    FVector NTo = To.GetNormalized();
+    FVector NAxis = Axis.GetNormalized();
+
+    const float SinValue = NAxis.Dot(NFrom.Cross(NTo));
+    const float CosValue = NFrom.Dot(NTo);
+
+    return std::atan2(SinValue, CosValue);
+}

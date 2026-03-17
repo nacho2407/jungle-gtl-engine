@@ -22,14 +22,20 @@ namespace
         };
     }
 
-    TArray<FVertexSimple> CreateAxesVertices() // @@@ 이거 쓰고 있으면 Axes.h는 안 쓰고 있는 거 아닌가??
-    {
-        return
-        {
-            FVertexSimple(0,0,0, 1,0,0,1), FVertexSimple(5,0,0, 1,0,0,1),
-            FVertexSimple(0,0,0, 0,1,0,1), FVertexSimple(0,5,0, 0,1,0,1),
-            FVertexSimple(0,0,0, 0,0,1,1), FVertexSimple(0,0,5, 0,0,1,1),
-        };
+    TArray<FVertexSimple> CreateAxesVertices() {
+        TArray<FVertexSimple> Vertices; 
+        const float Extent = 20.0f; 
+        Vertices.reserve(6); 
+        // X axis : -X ~ +X 
+        Vertices.emplace_back(-Extent, 0, 0, 1, 0, 0, 1); 
+        Vertices.emplace_back( Extent, 0, 0, 1, 0, 0, 1); 
+        // Y axis : 0 ~ +Y 
+        Vertices.emplace_back(0, 0, 0, 0, 1, 0, 1); 
+        Vertices.emplace_back(0, Extent, 0, 0, 1, 0, 1); 
+        // Z axis : -Z ~ +Z 
+        Vertices.emplace_back(0, 0, -Extent, 0, 0, 1, 1); 
+        Vertices.emplace_back(0, 0, Extent, 0, 0, 1, 1); 
+        return Vertices;
     }
 
     TArray<FVertexSimple> CreateTriangleVertices()
@@ -111,6 +117,60 @@ namespace
             9,10,12,
             10,11,12,
             11,8,12
+        };
+    }
+
+    TArray<FVertexSimple> CreateGizmoScaleVertices()
+    {
+        const FVector4 W(1, 1, 1, 1);
+
+        return
+        {
+            FVertexSimple(0.0f, -0.08f, -0.08f, W.X, W.Y, W.Z, W.W), // 0
+            FVertexSimple(2.2f, -0.08f, -0.08f, W.X, W.Y, W.Z, W.W), // 1
+            FVertexSimple(2.2f,  0.08f, -0.08f, W.X, W.Y, W.Z, W.W), // 2
+            FVertexSimple(0.0f,  0.08f, -0.08f, W.X, W.Y, W.Z, W.W), // 3
+
+            FVertexSimple(0.0f, -0.08f,  0.08f, W.X, W.Y, W.Z, W.W), // 4
+            FVertexSimple(2.2f, -0.08f,  0.08f, W.X, W.Y, W.Z, W.W), // 5
+            FVertexSimple(2.2f,  0.08f,  0.08f, W.X, W.Y, W.Z, W.W), // 6
+            FVertexSimple(0.0f,  0.08f,  0.08f, W.X, W.Y, W.Z, W.W), // 7
+
+            FVertexSimple(2.2f, -0.22f, -0.22f, W.X, W.Y, W.Z, W.W), // 8
+            FVertexSimple(2.6f, -0.22f, -0.22f, W.X, W.Y, W.Z, W.W), // 9
+            FVertexSimple(2.6f,  0.22f, -0.22f, W.X, W.Y, W.Z, W.W), // 10
+            FVertexSimple(2.2f,  0.22f, -0.22f, W.X, W.Y, W.Z, W.W), // 11
+
+            FVertexSimple(2.2f, -0.22f,  0.22f, W.X, W.Y, W.Z, W.W), // 12
+            FVertexSimple(2.6f, -0.22f,  0.22f, W.X, W.Y, W.Z, W.W), // 13
+            FVertexSimple(2.6f,  0.22f,  0.22f, W.X, W.Y, W.Z, W.W), // 14
+            FVertexSimple(2.2f,  0.22f,  0.22f, W.X, W.Y, W.Z, W.W), // 15
+        };
+    }
+
+    TArray<uint32_t> CreateGizmoScaleIndices()
+    {
+        return
+        {
+            // shaft
+            0,2,1,  0,3,2,
+            4,5,6,  4,6,7,
+
+            0,1,5,  0,5,4,
+            3,7,6,  3,6,2,
+
+            0,4,7,  0,7,3,
+            1,2,6,  1,6,5,
+
+            // cube
+            8,10,9,   8,11,10,
+            12,13,14, 12,14,15,
+
+            8,9,13,   8,13,12,
+            11,15,14, 11,14,10,
+
+            8,12,15,  8,15,11,
+            9,10,14,  9,14,13
         };
     }
 
@@ -251,9 +311,13 @@ namespace
 
         for (int i = -HalfCount; i <= HalfCount; ++i)
         {
+            if (i == 0)
+            {
+                continue; // 중심 X/Z 선은 axes가 대신 표현
+            }
+
             const float P = i * Spacing;
-            const bool bCenter = (i == 0);
-            const float C = bCenter ? 0.55f : 0.25f;
+            const float C = 0.25f;
 
             Vertices.emplace_back(-Extent, 0.0f, P, C, C, C, 1.0f);
             Vertices.emplace_back(Extent, 0.0f, P, C, C, C, 1.0f);
@@ -348,6 +412,15 @@ namespace BuiltInMeshFactory
         return Mesh;
     }
 
+    UStaticMesh* CreateGizmoScaleMesh()
+    {
+        UStaticMesh* Mesh = new UStaticMesh();
+        Mesh->SetVertices(CreateGizmoScaleVertices());
+        Mesh->SetIndices(CreateGizmoScaleIndices());
+        Mesh->SetTopology(EMeshTopology::TriangleList);
+        return Mesh;
+	}
+
 //    UStaticMesh* CreateCircleMesh(int Segments)
 //    {
 //        UStaticMesh* Mesh = new UStaticMesh();
@@ -370,6 +443,21 @@ namespace BuiltInMeshFactory
         UStaticMesh* Mesh = new UStaticMesh();
         Mesh->SetVertices(CreateGridVertices(HalfCount, Spacing));
         Mesh->SetTopology(EMeshTopology::LineList);
+        return Mesh;
+    }
+
+    UStaticMesh* CreateGizmoRotateRingMesh()
+    {
+        UStaticMesh* Mesh = new UStaticMesh();
+
+        Mesh->SetVertices(CreateTorusVertices(
+            96,     // MajorSegments
+            20,     // MinorSegments
+            2.0f,   // MajorRadius
+            0.06f   // MinorRadius
+        ));
+
+        Mesh->SetTopology(EMeshTopology::TriangleList);
         return Mesh;
     }
 }

@@ -162,6 +162,7 @@
     <ClInclude Include="Engine\Public\Actor\ATorus.h" />
     <ClInclude Include="Engine\Public\Actor\ATriangle.h" />
     <ClInclude Include="Engine\Public\Component\EGizmoAxis.h" />
+    <ClInclude Include="Engine\Public\Component\EGizmoMode.h" />
     <ClInclude Include="Engine\Public\Component\UActorComponent.h" />
     <ClInclude Include="Engine\Public\Component\UCameraComponent.h" />
     <ClInclude Include="Engine\Public\Component\UCubeComponent.h" />
@@ -171,6 +172,8 @@
     <ClInclude Include="Engine\Public\Component\UStaticMeshComponent.h" />
     <ClInclude Include="Engine\Public\Component\UTriangleComponent.h" />
     <ClInclude Include="Engine\Public\Resource\BuiltInMeshFactory.h" />
+    <ClInclude Include="Engine\Public\Resource\FBuiltInMeshes.h" />
+    <ClInclude Include="Engine\Public\Resource\FBuiltInMeshRepository.h" />
     <ClInclude Include="Engine\Public\Resource\MeshImporter.h" />
     <ClInclude Include="Engine\Public\Resource\MeshTypes.h" />
     <ClInclude Include="Engine\Public\Resource\UStaticMesh.h" />
@@ -213,6 +216,7 @@
     <ClCompile Include="App\Panels\FPropertyPanel.cpp" />
     <ClCompile Include="App\WindowsApplication.cpp" />
     <ClCompile Include="Core\Private\FObjectManager.cpp" />
+    <ClCompile Include="Core\Private\Math\FQuat.cpp" />
     <ClCompile Include="Core\Private\TestMemory.cpp" />
     <ClCompile Include="Core\Private\FActorInstanceManager.cpp" />
     <ClCompile Include="Core\Private\UObject.cpp" />
@@ -220,6 +224,7 @@
     <ClCompile Include="Core\Private\Math\FVector.cpp" />
     <ClCompile Include="Core\Private\Math\FVector4.cpp" />
     <ClCompile Include="Core\Private\UObjectClusters.cpp" />
+    <ClCompile Include="Core\Public\Math\FQuat.h" />
     <ClCompile Include="Core\Public\Math\FVector4.h" />
     <ClCompile Include="Core\Public\UClassData.cpp" />
     <ClCompile Include="Engine\Private\Actor\AActor.cpp" />

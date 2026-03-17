@@ -4,7 +4,8 @@
 USceneComponent::USceneComponent()
     : UActorComponent()
     , RelativeLocation(FVector::ZeroVector)
-    , RelativeRotation(FVector::ZeroVector)
+    , RelativeRotationEuler(FVector::ZeroVector)
+    , RelativeRotationQuat(FQuat::Identity())
     , RelativeScale(FVector::OneVector)
     , bWorldTransformDirty(true)
     , CachedWorldTransform(FMatrix::Identity)
@@ -36,15 +37,33 @@ const FVector& USceneComponent::GetRelativeLocation() const
     return RelativeLocation;
 }
 
-void USceneComponent::SetRelativeRotation(const FVector& InRotation)
+void USceneComponent::SetRelativeRotation(const FVector& InRotationEuler)
 {
-    RelativeRotation = InRotation;
+    RelativeRotationEuler = InRotationEuler;
+    RelativeRotationQuat = FQuat::FromEulerXYZ(InRotationEuler);
+    RelativeRotationQuat.Normalize();
     MarkTransformDirty();
 }
 
 const FVector& USceneComponent::GetRelativeRotation() const
 {
-    return RelativeRotation;
+    return RelativeRotationEuler;
+}
+
+void USceneComponent::SetRelativeRotationQuat(const FQuat& InQuat)
+{
+    RelativeRotationQuat = InQuat;
+    RelativeRotationQuat.Normalize();
+
+    // 패널 표시용 캐시
+    RelativeRotationEuler = RelativeRotationQuat.ToEulerXYZ();
+
+    MarkTransformDirty();
+}
+
+const FQuat& USceneComponent::GetRelativeRotationQuat() const
+{
+    return RelativeRotationQuat;
 }
 
 void USceneComponent::SetRelativeScale(const FVector& InScale)
@@ -63,15 +82,19 @@ FMatrix USceneComponent::GetWorldTransformMatrix() const
     return CachedWorldTransform;
 }
 
-void USceneComponent::MarkTransformDirty()
+void USceneComponent::MarkTransformDirty() // (*) 근데 왜 이름이 dirty일까?
 {
     bWorldTransformDirty = true;
 
-    // TODO: �ڽ� ������Ʈ�� �ִٸ�, �ڽĵ鵵 Dirty ó��
-    // for (USceneComponent* Child : Children)
-    // {
-    //     Child->MarkTransformDirty();
-    // }
+
+    for (USceneComponent* Child : Children)
+    {
+        if (Child)
+        {
+            Child->MarkTransformDirty();
+        }
+    }
+
 }
 
 void USceneComponent::UpdateWorldTransformIfNeeded() const
@@ -82,16 +105,30 @@ void USceneComponent::UpdateWorldTransformIfNeeded() const
     }
 
     FMatrix Scale = FMatrix::MakeScale(RelativeScale);
-    FMatrix Rotation = FMatrix::MakeRotationXYZ(RelativeRotation);
+	FMatrix Rotation = RelativeRotationQuat.ToMatrix();
     FMatrix Translation = FMatrix::MakeTranslation(RelativeLocation);
 
     CachedWorldTransform = Scale * Rotation * Translation;
 
-    // TODO: �θ� ������Ʈ�� �ִٸ�, �θ� Ʈ�������� �ռ�
-    // if (ParentComponent)
-    // {
-    //     CachedWorldTransform = CachedWorldTransform * ParentComponent->GetWorldTransformMatrix();
-    // }
+
+     if (ParentComponent)
+     {
+         CachedWorldTransform = CachedWorldTransform * ParentComponent->GetWorldTransformMatrix();
+     }
 
     bWorldTransformDirty = false;
+}
+
+void USceneComponent::SetupAttachment(USceneComponent* InParent)
+{
+    ParentComponent = InParent;
+    if (ParentComponent)
+    {
+        ParentComponent->Children.push_back(this);
+    }
+}
+
+USceneComponent* USceneComponent::GetParentComponent() const
+{
+    return ParentComponent;
 }
