@@ -113,7 +113,7 @@ void UCameraComponent::HandleOrbitRotate(float DeltaTime)
 	float newPitch = eulerAngle.x - (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
 	newPitch = MathHelper::Clamp(newPitch, -89.9f, 89.9f);
 	eulerAngle.x = newPitch;
-	eulerAngle.z -= (InputManager::GetInstance().MouseDelta.x * RotateSensitivity * DeltaTime);
+	eulerAngle.y -= (InputManager::GetInstance().MouseDelta.x * RotateSensitivity * DeltaTime);
 
 	SetRelativeRotation(eulerAngle);
 
