@@ -4,15 +4,18 @@
 #include "Math/Matrix.h"
 #include "Math/Quaternion.h"
 #include "Math/Vector.h"
+#include "World.h"
 #include "TimerManager.h"
 #include <algorithm>
+
+UCameraComponent::UCameraComponent() : io(ImGui::GetIO())
+{}
 
 UCameraComponent::~UCameraComponent() {}
 
 void UCameraComponent::SetPosition(const FVector& _input) {
 	if (!Position.IsNearlyEqual(_input, Epsilon)) {
 		Position = _input;
-		bIsDirty = true;
 	}
 }
 
@@ -20,32 +23,26 @@ void UCameraComponent::Move(float DeltaTime) {
 	if (InputManager::GetInstance().IsKeyHold('W') &&
 		!InputManager::GetInstance().IsKeyHold('S')) {
 		Position = Position + Direction * MoveSpeed * DeltaTime;
-		bIsDirty = true;
 	}
 	else if (!InputManager::GetInstance().IsKeyHold('W') &&
 		InputManager::GetInstance().IsKeyHold('S')) {
 		Position = Position - Direction * MoveSpeed * DeltaTime;
-		bIsDirty = true;
 	}
 	if (InputManager::GetInstance().IsKeyHold('E') &&
 		!InputManager::GetInstance().IsKeyHold('Q')) {
 		Position = Position + UpVec * MoveSpeed * DeltaTime;
-		bIsDirty = true;
 	}
 	else if (!InputManager::GetInstance().IsKeyHold('E') &&
 		InputManager::GetInstance().IsKeyHold('Q')) {
 		Position = Position - UpVec * MoveSpeed * DeltaTime;
-		bIsDirty = true;
 	}
 	if (!InputManager::GetInstance().IsKeyHold('D') &&
 		InputManager::GetInstance().IsKeyHold('A')) {
 		Position = Position + SideDirection * MoveSpeed * DeltaTime;
-		bIsDirty = true;
 	}
 	else if (InputManager::GetInstance().IsKeyHold('D') &&
 		!InputManager::GetInstance().IsKeyHold('A')) {
 		Position = Position - SideDirection * MoveSpeed * DeltaTime;
-		bIsDirty = true;
 	}
 
 }
@@ -54,15 +51,12 @@ void UCameraComponent::SetDirection(const float InputPitch, const float InputYaw
 	const float InputRoll) {
 	if (std::abs(Pitch - InputPitch) > Epsilon) {
 		Pitch = (std::max)(-89.9f, (std::min)(89.9f, InputPitch));
-		bIsDirty = true;
 	}
 	if (std::abs(Yaw - InputYaw) > Epsilon) {
 		Yaw = InputYaw;
-		bIsDirty = true;
 	}
 	if (std::abs(Roll - InputRoll) > Epsilon) {
 		Roll = InputRoll;
-		bIsDirty = true;
 	}
 }
 
@@ -71,8 +65,6 @@ void UCameraComponent::Rotate(float DeltaTime)
 	Yaw += (InputManager::GetInstance().MouseDelta.x * RotateSensitivity * DeltaTime);
 	Pitch += (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
 	Pitch = MathHelper::Clamp(Pitch, -89.9f, 89.9f);
-
-	bIsDirty = true;
 }
 
 void UCameraComponent::OrbitRotate(float DeltaTime)
@@ -89,14 +81,12 @@ void UCameraComponent::OrbitRotate(float DeltaTime)
 	FVector ForwardVec = RotMatrix.TransformVector(ForwardBase).Normalize();
 
 	Position = FocusPoint - ForwardVec * FocusLength;
-	bIsDirty = true;
 }
 
 void UCameraComponent::SetFOV(const float NewFOV)
 {
 	if (std::abs(FOV - NewFOV) > Epsilon) {
 		FOV = std::clamp(NewFOV, 10.0f, 170.0f);
-		bIsDirty = true;
 	}
 }
 float UCameraComponent::GetFOV() const
@@ -109,7 +99,6 @@ void UCameraComponent::OnResize(int NewWidth, int NewHeight) {
 	ScreenWidth = static_cast<float>(NewWidth);
 	ScreenHeight = static_cast<float>(NewHeight);
 	AspectRatio = static_cast<float>(NewWidth) / static_cast<float>(NewHeight);
-	bIsDirty = true;
 }
 
 float UCameraComponent::GetAspectRatio() const
@@ -120,7 +109,6 @@ float UCameraComponent::GetAspectRatio() const
 void UCameraComponent::SetOrthogonal(bool input)
 {
 	IsOrthogonal = input;
-	bIsDirty = true;
 }
 
 //void UCamera::ChangePerpective(EProjectionType NewType)
@@ -129,7 +117,35 @@ void UCameraComponent::SetOrthogonal(bool input)
 //	bIsDirty = true;
 //}
 
-void UCameraComponent::update() {
+void UCameraComponent::Update(float deltaTime) {
+	HandleCameraMove(deltaTime);
+	UpdateCameraMatrices();
+}
+
+void UCameraComponent::HandleCameraMove(float deltaTime)
+{
+	if (!io.WantCaptureKeyboard && !io.WantCaptureMouse)
+	{
+		if (InputManager::GetInstance().IsKeyHold(VK_RBUTTON))
+		{
+			Move(deltaTime);
+			Rotate(deltaTime);
+		}
+		else if (InputManager::GetInstance().IsKeyHold(VK_LBUTTON)
+			&& InputManager::GetInstance().IsKeyHold(VK_MENU))
+		{
+			OrbitRotate(deltaTime);
+		}
+		if (InputManager::GetInstance().IsKeyHold('F')
+			&& GetWorld().GetActiveScene()->IsCompSelected)
+		{
+			// SetPosition(EditorInst->GetSelectedComponent()->GetRelativeLocation() - Direction * FocusLength);
+		}
+	}
+}
+
+void UCameraComponent::UpdateCameraMatrices()
+{
 	FMatrix RotMatrix = FMatrix::RotationXMatrix(Roll) *
 		FMatrix::RotationYMatrix(Pitch) *
 		FMatrix::RotationZMatrix(Yaw);
@@ -145,8 +161,6 @@ void UCameraComponent::update() {
 	View = FMatrix::ViewMatrix(Position, FocusPoint, UpDirection);
 	CalcProjectionMatrix();
 	ViewProjection = View * Projection;
-
-	bIsDirty = false;
 }
 
 void UCameraComponent::CalcViewMatrix()

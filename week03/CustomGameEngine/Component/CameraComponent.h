@@ -1,8 +1,10 @@
 ﻿#pragma once
 
 #include "Object.h"
+#include "SceneComponent.h"
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
+#include "ImGui/imgui.h"
 
 enum class EProjectionType
 {
@@ -14,8 +16,8 @@ enum class EProjectionType
 const FVector UpVec(0.0f, 0.0f, 1.0f);
 const float Epsilon = 1e-6f;
 
-class UCameraComponent : public UObject {
-	DECLARE_RTTI(UCameraComponent, UObject)
+class UCameraComponent : public USceneComponent {
+	DECLARE_RTTI(UCameraComponent, USceneComponent)
 public:
 	FVector Position{ FVector(0.0f, 0.0f, 0.0f) };
 	float Pitch{ 0.0f };
@@ -25,7 +27,6 @@ public:
 	float AspectRatio{ 16.0f / 9.0f };
 	float NearPlane{ 1.0f };
 	float FarPlane{ 2000.0f };
-	bool bIsDirty{ true };
 	float MoveSpeed{ 10.0f };
 	float ScreenWidth = 0.f;
 	float ScreenHeight = 0.f;
@@ -47,7 +48,7 @@ public:
 	FMatrix ViewProjection;
 
 public:
-	UCameraComponent() {}
+	UCameraComponent();
 	virtual ~UCameraComponent() override;
 
 	void SetPosition(const FVector& _input);
@@ -62,7 +63,7 @@ public:
 	float GetAspectRatio() const;
 	void SetOrthogonal(bool input);
 	//void ChangePerpective(EProjectionType NewType);
-	void update();
+	void Update(float deltaTime) override;
 	void CalcViewMatrix();
 	FMatrix GetViewMatrix() const;
 	void CalcProjectionMatrix();
@@ -72,5 +73,7 @@ public:
 	FMatrix GetViewProjectionMatrix() const;
 
 private:
-
+	ImGuiIO& io;
+	void HandleCameraMove(float deltaTime);
+	void UpdateCameraMatrices();
 };

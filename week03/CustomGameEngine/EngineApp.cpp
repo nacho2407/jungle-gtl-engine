@@ -72,7 +72,6 @@ EngineApp::EngineApp()
 
 EngineApp::~EngineApp()
 {
-	delete Camera;
 	delete Picker;
 	delete EditorInst;
 	delete Renderer;
@@ -104,7 +103,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 
 	InputManager::GetInstance().hWnd = HWnd;
 	// Init Camera
-	Camera = Cast<UCameraComponent>(FObjectFactory::ConstructObject(UCameraComponent::GetClass()));
+	Camera = Cast<UCameraComponent>(GetWorld().AddPermanentSceneComponent<UCameraComponent>());
 	EditorInst->SetCamera(Camera);
 	EditorInst->SetRenderer(Renderer);
 
@@ -173,7 +172,6 @@ void EngineApp::Run()
 		TimerManager::GetInstance().Tick();
 		InputManager::GetInstance().Update();
 		float TempDelta = globalTimer->GetDeltaTime();
-		UScene* Scene = GetWorld().GetActiveScene();
 
 		ImGuiIO& io = ImGui::GetIO();
 
@@ -207,35 +205,17 @@ void EngineApp::Run()
 			Gizmo::GetInstance().GetController()->SetHoverAxis(hoveredAxis);
 		}
 
-		if (!io.WantCaptureKeyboard && !io.WantCaptureMouse)
-		{
-			if (InputManager::GetInstance().IsKeyHold(VK_RBUTTON))
-			{
-				Camera->Move(TempDelta);
-				Camera->Rotate(TempDelta);
-			}
-			else if (InputManager::GetInstance().IsKeyHold(VK_LBUTTON)
-				&& InputManager::GetInstance().IsKeyHold(VK_MENU))
-			{
-				Camera->OrbitRotate(TempDelta);
-			}
-			if (InputManager::GetInstance().IsKeyHold('F')
-				&& GetWorld().GetActiveScene()->IsCompSelected)
-			{
-				Camera->SetPosition(EditorInst->GetSelectedComponent()->GetRelativeLocation() - Camera->Direction * Camera->FocusLength);
-			}
-		}
-		Camera->update();
+		// Update Game World
+		GetWorld().Update(TempDelta);
 
 		//Render
+		GetWorld().OnBeforeRender();
+		EditorInst->OnBeforeRender();
+
 		Renderer->Prepare();
 
 		ResourceManager* RM = ResourceManager::GetInstance();
 		Renderer->RenderGrid(Camera, RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").VertexShader.Get(), RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").PixelShader.Get());
-
-		Scene->Update(TempDelta);
-		GetWorld().OnBeforeRender();
-		EditorInst->OnBeforeRender();
 
 		Renderer->Render(Camera);
 		EditorInst->DrawUI();

@@ -107,6 +107,13 @@ void UWorld::RemoveSceneComponent(USceneComponent* toDespawn)
 	}
 }
 
+void UWorld::Update(float deltaTime)
+{
+	permanentScene->Update(deltaTime);
+	// TODO: 멀티 씬 구조에서 for each scene 루프 중첩 추가
+	activeScene->Update(deltaTime);
+}
+
 void UWorld::OnBeforeRender() const
 {
 	// TODO: 멀티 씬 구조에서 for each scene 루프 중첩 추가

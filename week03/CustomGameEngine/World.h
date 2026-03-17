@@ -61,6 +61,8 @@ public:
 	}
 
 	void RemoveSceneComponent(USceneComponent* toDespawn);
+
+	void Update(float deltaTime);
 	inline void InjectRenderer(URenderer* InRenderer) { Renderer = InRenderer; }
 	void OnBeforeRender() const;
 
