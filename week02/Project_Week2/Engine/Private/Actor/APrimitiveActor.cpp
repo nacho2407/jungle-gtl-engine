@@ -7,10 +7,10 @@ APrimitiveActor::APrimitiveActor()
 {
 }
 
-APrimitiveActor::APrimitiveActor(const FUObjectInitializer& ObjectInitializer)
-    : AActor(ObjectInitializer)
-{
-}
+//APrimitiveActor::APrimitiveActor(const FUObjectInitializer& ObjectInitializer)
+//    : AActor(ObjectInitializer)
+//{
+//}
 
 APrimitiveActor::~APrimitiveActor()
 {

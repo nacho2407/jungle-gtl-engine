@@ -100,25 +100,25 @@ private:
     UWorld* World;
     FScene* Scene;
 
-    AActor* CameraActor = nullptr;
-    UCameraComponent* MainCamera;
+    //AActor* CameraActor = nullptr;
+    //UCameraComponent* MainCamera;
     // @@@ 액터의 mesh 별로 이렇게 하나씩 다 선언하는 게 맞음?? 하나로 편하게 관리 못하나?
     // 지금 Spawn이 아니라 미리 만들어놓아야 해서 이렇게 한건가?
     UStaticMesh* CubeMesh; 
     UStaticMesh* SphereMesh;
     //UStaticMesh* TriangleMesh;
     UStaticMesh* TorusMesh;
-    UStaticMesh* AxesMesh;
-    UStaticMesh* GizmoArrowMesh = nullptr;
+    //UStaticMesh* AxesMesh;
+    //UStaticMesh* GizmoArrowMesh = nullptr;
 
-    AActor* GizmoActor = nullptr;
-    UStaticMeshComponent* GizmoXComp = nullptr;
-    UStaticMeshComponent* GizmoYComp = nullptr;
-    UStaticMeshComponent* GizmoZComp = nullptr;
+    //AActor* GizmoActor = nullptr;
+    //UStaticMeshComponent* GizmoXComp = nullptr;
+    //UStaticMeshComponent* GizmoYComp = nullptr;
+    //UStaticMeshComponent* GizmoZComp = nullptr;
     //UStaticMeshComponent* GizmoMeshComp = nullptr;
     AActor* SelectedActor = nullptr;
 
-    AActor* WorldAxesActor = nullptr;
+    //AActor* WorldAxesActor = nullptr;
 
     bool bIsRunning;
 
@@ -134,8 +134,8 @@ private:
     AActor* ClickCircleActor = nullptr;
     UStaticMeshComponent* ClickCircleComp = nullptr;
 
-    UStaticMesh* GridMesh = nullptr;
-    AActor* GridActor = nullptr;
+    //UStaticMesh* GridMesh = nullptr;
+    //AActor* GridActor = nullptr;
 
     FPointerPulse PointerPulse;
 

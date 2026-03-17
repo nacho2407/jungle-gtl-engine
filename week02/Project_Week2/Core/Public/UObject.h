@@ -38,7 +38,7 @@ private:
 
 public:
 	UObject() : AllocatedSize(0), UUID(0), Name("DefaultObject") {};
-	UObject(const FUObjectInitializer& ObjectInitilizer);
+	void Initialize(const FUObjectInitializer& ObjectInitilizer);
 	virtual ~UObject();
 
 public:

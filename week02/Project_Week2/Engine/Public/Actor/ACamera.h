@@ -1,18 +1,19 @@
 #pragma once
 
 #include "Actor/AActor.h"
-
-class UCameraComponent;
+#include "FUObjectFactory.h"
+#include "Component/UCameraComponent.h"
 
 class ACamera : public AActor
 {
 public:
     ACamera();
-    ACamera(const FUObjectInitializer& ObjectInitializer);
     virtual ~ACamera() override;
 
-public:
-    virtual const char* GetObjClassName() const override;
+//public:
+//    virtual const char* GetObjClassName() const override;
+
+    void SetAspectRatio(float Ratio);
 
 public:
     UCameraComponent* GetCameraComponent() const;

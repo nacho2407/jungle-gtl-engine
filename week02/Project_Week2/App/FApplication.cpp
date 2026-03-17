@@ -52,8 +52,8 @@ FApplication::FApplication()
     , Renderer(nullptr)
     , World(nullptr)
     , Scene(nullptr)
-    , CameraActor(nullptr)
-    , MainCamera(nullptr)
+    //, CameraActor(nullptr)
+    //, MainCamera(nullptr)
     , bIsRunning(false)
     , SphereMesh(nullptr)
     //, CubeMesh(nullptr)
@@ -109,10 +109,10 @@ bool FApplication::Initialize(HINSTANCE hInstance)
                 Renderer->Resize((UINT)Width, (UINT)Height);
             }
 
-            if (MainCamera)
-            {
-                MainCamera->UpdateAspectRatio((float)Width, (float)Height);
-            }
+            check(World)
+            check(World->GetCameraActor())
+            check(World->GetCameraActor()->GetCameraComponent())
+            World->GetCameraActor()->GetCameraComponent()->UpdateAspectRatio((float)Width, (float)Height);
 
             RenderFrame();
         };
@@ -172,9 +172,9 @@ bool FApplication::InitializeResources()
     CubeMesh = BuiltInMeshFactory::CreateCubeMesh();
     //TriangleMesh = BuiltInMeshFactory::CreateTriangleMesh();
     TorusMesh = BuiltInMeshFactory::CreateTorusMesh(64, 32, 1.2f, 0.35f);
-    AxesMesh = BuiltInMeshFactory::CreateAxesMesh();
-    GridMesh = BuiltInMeshFactory::CreateGridMesh(20, 1.0f);
-    GizmoArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh();
+    //AxesMesh = BuiltInMeshFactory::CreateAxesMesh();
+    //GridMesh = BuiltInMeshFactory::CreateGridMesh(20, 1.0f);
+    //GizmoArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh();
 
     //ClickCircleMesh = BuiltInMeshFactory::CreateCircleMesh(64);
     ClickCircleMesh = BuiltInMeshFactory::CreateDiscMesh(64);
@@ -184,24 +184,28 @@ bool FApplication::InitializeResources()
 
 bool FApplication::InitializeScene()
 {
-    // 카메라 액터
-    CameraActor = new AActor();
-    MainCamera = new UCameraComponent();
-    // 카메라가 바라보는 월드 수정 
-    MainCamera->SetRelativeLocation(FVector(2.0f, 4.0f, -7.0f));
-    MainCamera->SetRelativeRotation(FVector(0.3f, 0.0f, 0.0f)); // Pitch Yaw Roll
-    MainCamera->SetFieldOfView(39.6f);
+    //// 카메라 액터
+    //CameraActor = NewObject<AActor>();
+    //MainCamera = NewObject<UCameraComponent>();
+    //// 카메라가 바라보는 월드 수정 
+    //MainCamera->SetRelativeLocation(FVector(2.0f, 4.0f, -7.0f));
+    //MainCamera->SetRelativeRotation(FVector(0.3f, 0.0f, 0.0f)); // Pitch Yaw Roll
+    //MainCamera->SetFieldOfView(39.6f);
+    //MainCamera->SetAspectRatio(
+    //    static_cast<float>(WindowApp->GetClientWidth()) /
+    //    static_cast<float>(WindowApp->GetClientHeight()));
+    //MainCamera->SetNearClip(0.1f);
+    //MainCamera->SetFarClip(1000.0f);
+
+    //CameraActor->AddComponent(MainCamera);
+    //CameraActor->SetRootComponent(MainCamera);
+
+    //World->AddActor(CameraActor);
+
+    UCameraComponent* MainCamera = World->GetCameraActor()->GetCameraComponent();
     MainCamera->SetAspectRatio(
-        static_cast<float>(WindowApp->GetClientWidth()) /
-        static_cast<float>(WindowApp->GetClientHeight()));
-    MainCamera->SetNearClip(0.1f);
-    MainCamera->SetFarClip(1000.0f);
-
-    CameraActor->AddComponent(MainCamera);
-    CameraActor->SetRootComponent(MainCamera);
-
-    World->AddActor(CameraActor);
-
+    static_cast<float>(WindowApp->GetClientWidth()) /
+    static_cast<float>(WindowApp->GetClientHeight()));
     // Sphere
     {
         ASphere* Actor = new ASphere();
@@ -220,8 +224,8 @@ bool FApplication::InitializeScene()
 
     // 도나쓰
     {
-        AActor* Actor = new AActor();
-        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
+        AActor* Actor = NewObject<AActor>();
+        UStaticMeshComponent* MeshComp = NewObject<UStaticMeshComponent>();
         MeshComp->SetStaticMesh(TorusMesh);
         MeshComp->SetRelativeLocation(FVector(3.0f, 0.0f, 8.0f));
         MeshComp->SetRelativeScale(FVector(1.5f, 1.5f, 1.5f));
@@ -234,70 +238,70 @@ bool FApplication::InitializeScene()
 
     // World Axes
     {
-        WorldAxesActor = new AActor();
+        //WorldAxesActor = new AActor();
 
-        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
-        MeshComp->SetStaticMesh(AxesMesh);
-        MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
+        //UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
+        //MeshComp->SetStaticMesh(AxesMesh);
+        //MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
 
-        WorldAxesActor->AddComponent(MeshComp);
-        WorldAxesActor->SetRootComponent(MeshComp);
-        World->AddActor(WorldAxesActor);
+        //WorldAxesActor->AddComponent(MeshComp);
+        //WorldAxesActor->SetRootComponent(MeshComp);
+        //World->AddActor(WorldAxesActor);
     }
 
     // Ground Grid
     {
-        GridActor = new AActor();
+        //GridActor = new AActor();
 
-        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
-        MeshComp->SetStaticMesh(GridMesh);
-        MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
+        //UStaticMeshComponent* MeshComp = NewObject<UStaticMeshComponent>("UStaticMeshComponent");
+        //MeshComp->SetStaticMesh(GridMesh);
+        //MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
 
-        GridActor->AddComponent(MeshComp);
-        GridActor->SetRootComponent(MeshComp);
-        World->AddActor(GridActor);
+        //GridActor->AddComponent(MeshComp);
+        //GridActor->SetRootComponent(MeshComp);
+        //World->AddActor(GridActor);
     }
 
     // Gizmo
     // @@@ 이렇게 길게 여기서 처리하는 게 맞음????
     {
-        GizmoActor = new AActor();
+        //GizmoActor = new AActor();
 
-        GizmoXComp = new UStaticMeshComponent();
-        GizmoYComp = new UStaticMeshComponent();
-        GizmoZComp = new UStaticMeshComponent();
+        //GizmoXComp = new UStaticMeshComponent();
+        //GizmoYComp = new UStaticMeshComponent();
+        //GizmoZComp = new UStaticMeshComponent();
 
-        GizmoXComp->SetStaticMesh(GizmoArrowMesh);
-        GizmoYComp->SetStaticMesh(GizmoArrowMesh);
-        GizmoZComp->SetStaticMesh(GizmoArrowMesh);
+        //GizmoXComp->SetStaticMesh(GizmoArrowMesh);
+        //GizmoYComp->SetStaticMesh(GizmoArrowMesh);
+        //GizmoZComp->SetStaticMesh(GizmoArrowMesh);
 
-        GizmoXComp->SetRelativeLocation(FVector::ZeroVector);
-        GizmoYComp->SetRelativeLocation(FVector::ZeroVector);
-        GizmoZComp->SetRelativeLocation(FVector::ZeroVector);
+        //GizmoXComp->SetRelativeLocation(FVector::ZeroVector);
+        //GizmoYComp->SetRelativeLocation(FVector::ZeroVector);
+        //GizmoZComp->SetRelativeLocation(FVector::ZeroVector);
 
-        // arrow mesh가 +X 방향 기준이라고 가정
-        GizmoXComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
-        GizmoYComp->SetRelativeRotation(FVector(0.0f, 0.0f, 1.5707963f));
-        GizmoZComp->SetRelativeRotation(FVector(0.0f, -1.5707963f, 0.0f));
+        //// arrow mesh가 +X 방향 기준이라고 가정
+        //GizmoXComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
+        //GizmoYComp->SetRelativeRotation(FVector(0.0f, 0.0f, 1.5707963f));
+        //GizmoZComp->SetRelativeRotation(FVector(0.0f, -1.5707963f, 0.0f));
 
-        GizmoXComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
-        GizmoYComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
-        GizmoZComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
+        //GizmoXComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
+        //GizmoYComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
+        //GizmoZComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
 
-        GizmoXComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
-        GizmoYComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
-        GizmoZComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
+        //GizmoXComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
+        //GizmoYComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
+        //GizmoZComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
 
-        GizmoXComp->SetVisibility(false);
-        GizmoYComp->SetVisibility(false);
-        GizmoZComp->SetVisibility(false);
+        //GizmoXComp->SetVisibility(false);
+        //GizmoYComp->SetVisibility(false);
+        //GizmoZComp->SetVisibility(false);
 
-        GizmoActor->AddComponent(GizmoXComp);
-        GizmoActor->AddComponent(GizmoYComp);
-        GizmoActor->AddComponent(GizmoZComp);
-        GizmoActor->SetRootComponent(GizmoXComp);
+        //GizmoActor->AddComponent(GizmoXComp);
+        //GizmoActor->AddComponent(GizmoYComp);
+        //GizmoActor->AddComponent(GizmoZComp);
+        //GizmoActor->SetRootComponent(GizmoXComp);
 
-        World->AddActor(GizmoActor);
+        //World->AddActor(GizmoActor);
     }
 
     // Click Pulse Circle
@@ -336,7 +340,7 @@ void FApplication::MainLoop()
 {
     using Clock = std::chrono::high_resolution_clock;
     auto PrevTime = Clock::now();
-
+    auto MainCamera = World->GetCameraActor()->GetCameraComponent();
     while (bIsRunning)
     {
         if (!WindowApp->PumpMessages())
@@ -380,6 +384,7 @@ void FApplication::MainLoop()
 
 void FApplication::Tick(float DeltaTime)
 {
+    auto MainCamera = World->GetCameraActor()->GetCameraComponent();
     if (!World || !MainCamera)
     {
         return;
@@ -415,7 +420,7 @@ void FApplication::Tick(float DeltaTime)
             {
                 HitActor = Proxy.Primitive->GetOwner();
 
-                if (HitActor == GizmoActor || HitActor == WorldAxesActor || HitActor == GridActor)
+                if (HitActor == World->GetGizmoActor() || HitActor == World->GetWorldAxisActor() || HitActor == World->GetGridActor())
                 {
                     HitActor = nullptr;
                 }
@@ -554,6 +559,7 @@ void FApplication::Tick(float DeltaTime)
 
 void FApplication::RenderFrame()
 {
+    auto MainCamera = World->GetCameraActor()->GetCameraComponent();
     if (!Renderer || !Scene)
     {
         return;
@@ -615,12 +621,14 @@ void FApplication::Shutdown()
         WindowApp = nullptr;
     }
 
-    CameraActor = nullptr;
-    MainCamera = nullptr;
+    //CameraActor = nullptr;
+    //MainCamera = nullptr;
 }
 
 void FApplication::HandleMousePicking() //
 {
+    auto MainCamera = World->GetCameraActor()->GetCameraComponent();
+
     if (!WindowApp || !World || !MainCamera)
     {
         return;
@@ -648,6 +656,8 @@ void FApplication::HandleMousePicking() //
 
 FRay FApplication::BuildPickRay(int MouseX, int MouseY) const
 {
+    auto MainCamera = World->GetCameraActor()->GetCameraComponent();
+
     FRay Ray;
 
     const float Width = static_cast<float>(WindowApp->GetClientWidth());
@@ -693,7 +703,7 @@ AActor* FApplication::PickActor(const FRay& Ray) const
     for (AActor* Actor : Actors)
     {
         // @@@ Actor==GizmoActor라는데, 이거 XYZ로 나누면서 nullptr 아닌가?
-        if (!Actor || Actor == CameraActor || Actor == GizmoActor || Actor == WorldAxesActor || Actor == ClickCircleActor || Actor == GridActor)
+        if (!Actor || Actor == World->GetCameraActor() || Actor == World->GetGizmoActor() || Actor == World->GetWorldAxisActor()|| Actor == ClickCircleActor || Actor == World->GetGridActor())
         {
             continue;
         }
@@ -812,16 +822,13 @@ void FApplication::SetSelectedActor(AActor* NewSelected)
         return;
     }
 
-    USceneComponent* Root = SelectedActor->GetRootComponent();
-    if (!Root || !GizmoXComp || !GizmoYComp || !GizmoZComp)
-    {
-        return;
-    }
+    //USceneComponent* Root = SelectedActor->GetRootComponent();
+    //if (!Root || !GizmoXComp || !GizmoYComp || !GizmoZComp)
+    //{
+    //    return;
+    //}
 
-    if (!Root || !GizmoXComp || !GizmoYComp || !GizmoZComp)
-    {
-        return;
-    }
+    check(SelectedActor == World->GetGizmoActor())
 
     UpdateGizmoTransform();
 

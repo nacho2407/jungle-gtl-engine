@@ -224,6 +224,7 @@
     <ClCompile Include="Engine\Private\Resource\BuiltInMeshFactory.cpp" />
     <ClCompile Include="Engine\Private\Resource\MeshImporter.cpp" />
     <ClCompile Include="Engine\Private\Resource\UStaticMesh.cpp" />
+    <ClCompile Include="Engine\Public\Actor\ACamera.cpp" />
     <ClCompile Include="Render\Private\Geometry\Cube.cpp" />
     <ClCompile Include="Render\Private\Geometry\Sphere.cpp" />
     <ClCompile Include="Engine\Public\Component\USphereComponent.h" />

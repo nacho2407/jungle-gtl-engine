@@ -8,11 +8,11 @@ ASphere::ASphere()
     InitializeActor();
 }
 
-ASphere::ASphere(const FUObjectInitializer& ObjectInitializer)
-    : APrimitiveActor(ObjectInitializer)
-{
-    InitializeActor();
-}
+//ASphere::ASphere(const FUObjectInitializer& ObjectInitializer)
+//    : APrimitiveActor(ObjectInitializer)
+//{
+//    InitializeActor();
+//}
 
 ASphere::~ASphere()
 {

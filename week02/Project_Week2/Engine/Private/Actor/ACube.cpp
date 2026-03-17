@@ -8,11 +8,11 @@ ACube::ACube()
     InitializeActor();
 }
 
-ACube::ACube(const FUObjectInitializer& ObjectInitializer)
-    : APrimitiveActor(ObjectInitializer)
-{
-    InitializeActor();
-}
+//ACube::ACube(const FUObjectInitializer& ObjectInitializer)
+//    : APrimitiveActor(ObjectInitializer)
+//{
+//    InitializeActor();
+//}
 
 ACube::~ACube()
 {

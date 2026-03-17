@@ -8,11 +8,11 @@ ATriangle::ATriangle()
     InitializeActor();
 }
 
-ATriangle::ATriangle(const FUObjectInitializer& ObjectInitializer)
-    : APrimitiveActor(ObjectInitializer)
-{
-    InitializeActor();
-}
+//ATriangle::ATriangle(const FUObjectInitializer& ObjectInitializer)
+//    : APrimitiveActor(ObjectInitializer)
+//{
+//    InitializeActor();
+//}
 
 ATriangle::~ATriangle()
 {

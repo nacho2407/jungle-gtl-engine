@@ -9,7 +9,7 @@ class ATriangle : public APrimitiveActor
 {
 public:
     ATriangle();
-    ATriangle(const FUObjectInitializer& ObjectInitializer);
+    //ATriangle(const FUObjectInitializer& ObjectInitializer);
     virtual ~ATriangle() override;
 
 public:

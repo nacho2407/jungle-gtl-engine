@@ -17,7 +17,7 @@ public:
 	{
 		RootComponent = nullptr;
 	}
-	AActor(const FUObjectInitializer& ObjectInitializer);
+	//AActor(const FUObjectInitializer& ObjectInitializer);
 	virtual ~AActor();
 public:
 	virtual void BeginPlay();

@@ -9,7 +9,7 @@ class ASphere : public APrimitiveActor
 {
 public:
     ASphere();
-    ASphere(const FUObjectInitializer& ObjectInitializer);
+    //ASphere(const FUObjectInitializer& ObjectInitializer);
     virtual ~ASphere() override;
 
 public:

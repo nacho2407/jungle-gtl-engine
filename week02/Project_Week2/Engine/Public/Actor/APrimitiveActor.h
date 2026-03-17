@@ -8,7 +8,7 @@ class APrimitiveActor : public AActor
 {
 public:
     APrimitiveActor();
-    APrimitiveActor(const FUObjectInitializer& ObjectInitializer);
+    //APrimitiveActor(const FUObjectInitializer& ObjectInitializer);
     virtual ~APrimitiveActor() override;
 
 public:
