@@ -459,10 +459,14 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Private\Actor\AAxisActor.cpp">
+		<Filter>소스 파일</Filter>
+	</ClCompile>
     <ClCompile Include="Engine\Private\Actor\ACamera.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Private\Actor\AGridActor.cpp">
+		<Filter>소스 파일</Filter>
+	</ClCompile>
     <ClCompile Include="Serialization\Private\FWorldSaveData.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>

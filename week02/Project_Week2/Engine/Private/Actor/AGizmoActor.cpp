@@ -184,12 +184,12 @@ void AGizmoActor::Initialize(UStaticMesh* ArrowMesh, UStaticMesh* InScaleMesh, U
     YAxisComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
     ZAxisComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
 
-    XAxisComp->SetDepthEnable(false);
-    YAxisComp->SetDepthEnable(false);
-    ZAxisComp->SetDepthEnable(false);
-    XAxisComp->SetDepthWrite(false);
-    YAxisComp->SetDepthWrite(false);
-    ZAxisComp->SetDepthWrite(false);
+    XAxisComp->SetDepthEnable(true);
+    YAxisComp->SetDepthEnable(true);
+    ZAxisComp->SetDepthEnable(true);
+    XAxisComp->SetDepthWrite(true);
+    YAxisComp->SetDepthWrite(true);
+    ZAxisComp->SetDepthWrite(true);
 
     XAxisComp->SetCullMode(ERenderCullMode::None);
     YAxisComp->SetCullMode(ERenderCullMode::None);
@@ -222,8 +222,8 @@ void AGizmoActor::Initialize(UStaticMesh* ArrowMesh, UStaticMesh* InScaleMesh, U
     //SetRootComponent(XAxisComp);
     SetRootComponent(PivotComp);
 
-    // 초기 모드가 기본값과 같더라도 기즈모 메시/회전/스케일이 한 번은 세팅되어야 함
     ApplyModeVisual();
+    SetGizmoVisible(false);
 }
 
 void AGizmoActor::SetTargetActor(AActor* InTarget)
@@ -288,7 +288,7 @@ void AGizmoActor::UpdateTransformFromTarget()
     {
         PivotComp->SetRelativeRotation(FVector::ZeroVector);
     }
-    PivotComp->SetRelativeScale(FVector::OneVector);
+    //PivotComp->SetRelativeScale(FVector::OneVector);
 
     //if (CurrentMode == EGizmoMode::Scale)
     //{
@@ -584,13 +584,17 @@ EGizmoAxis AGizmoActor::PickAxisTranslate(
 
     const FVector Origin = TransformPoint(FVector::ZeroVector);
 
-    const FVector XDir = TransformDirection(FVector(1.0f, 0.0f, 0.0f));
-    const FVector YDir = TransformDirection(FVector(0.0f, 1.0f, 0.0f));
-    const FVector ZDir = TransformDirection(FVector(0.0f, 0.0f, 1.0f));
+    //const FVector XDir = TransformDirection(FVector(1.0f, 0.0f, 0.0f));
+    //const FVector YDir = TransformDirection(FVector(0.0f, 1.0f, 0.0f));
+    //const FVector ZDir = TransformDirection(FVector(0.0f, 0.0f, 1.0f));
 
-    const FVector XEnd = Origin + XDir * AxisLength;
-    const FVector YEnd = Origin + YDir * AxisLength;
-    const FVector ZEnd = Origin + ZDir * AxisLength;
+    //const FVector XEnd = Origin + XDir * AxisLength;
+    //const FVector YEnd = Origin + YDir * AxisLength;
+    //const FVector ZEnd = Origin + ZDir * AxisLength;
+
+    const FVector XEnd = TransformPoint(FVector(AxisLength, 0.0f, 0.0f));
+    const FVector YEnd = TransformPoint(FVector(0.0f, AxisLength, 0.0f));
+    const FVector ZEnd = TransformPoint(FVector(0.0f, 0.0f, AxisLength));
 
     float OX = 0.0f, OY = 0.0f;
     float XX = 0.0f, XY = 0.0f;
@@ -818,11 +822,19 @@ EGizmoAxis AGizmoActor::PickAxisScale(
             const FVector4 W = PivotWorld * FVector4(LocalPoint, 1.0f);
             return FVector(W.X, W.Y, W.Z);
         };
-    const float ScaleCubeCenter = 3.0f * GizmoScale;
+    const FVector Origin = TransformPoint(FVector::ZeroVector);
+
+    const float ScaleCubeCenter = 2.4f * GizmoScale;
 
     const FVector XPos = TransformPoint(FVector(ScaleCubeCenter, 0.0f, 0.0f));
     const FVector YPos = TransformPoint(FVector(0.0f, ScaleCubeCenter, 0.0f));
     const FVector ZPos = TransformPoint(FVector(0.0f, 0.0f, ScaleCubeCenter));
+
+    float OX = 0.0f, OY = 0.0f;
+    if (!ProjectWorldToScreen(Origin, Camera, ViewWidth, ViewHeight, OX, OY))
+    {
+        return EGizmoAxis::None;
+    }
 
     float XX = 0.0f, XY = 0.0f;
     float YX = 0.0f, YY = 0.0f;
@@ -832,9 +844,6 @@ EGizmoAxis AGizmoActor::PickAxisScale(
     const bool bY = ProjectWorldToScreen(YPos, Camera, ViewWidth, ViewHeight, YX, YY);
     const bool bZ = ProjectWorldToScreen(ZPos, Camera, ViewWidth, ViewHeight, ZX, ZY);
 
-    float BestDist = FLT_MAX;
-    EGizmoAxis BestAxis = EGizmoAxis::None;
-
     auto DistToPoint = [&](float Px, float Py) -> float
         {
             const float Dx = (float)MouseX - Px;
@@ -842,37 +851,71 @@ EGizmoAxis AGizmoActor::PickAxisScale(
             return std::sqrt(Dx * Dx + Dy * Dy);
         };
 
-    const float CubePickRadius = 14.0f;
+    const float LineThreshold = 10.0f;
+    const float CubeThreshold = 22.0f;
 
-    if (bX && XAxisComp && XAxisComp->IsVisible())
-    {
-        const float Dist = DistToPoint(XX, XY);
-        if (Dist < CubePickRadius && Dist < BestDist)
-        {
-            BestDist = Dist;
-            BestAxis = EGizmoAxis::X;
-        }
-    }
+    float BestDist = FLT_MAX;
+    EGizmoAxis BestAxis = EGizmoAxis::None;
 
-    if (bY && YAxisComp && YAxisComp->IsVisible())
-    {
-        const float Dist = DistToPoint(YX, YY);
-        if (Dist < CubePickRadius && Dist < BestDist)
-        {
-            BestDist = Dist;
-            BestAxis = EGizmoAxis::Y;
-        }
-    }
+    //auto DistToPoint = [&](float Px, float Py) -> float
+    //    {
+    //        const float Dx = (float)MouseX - Px;
+    //        const float Dy = (float)MouseY - Py;
+    //        return std::sqrt(Dx * Dx + Dy * Dy);
+    //    };
 
-    if (bZ && ZAxisComp && ZAxisComp->IsVisible())
-    {
-        const float Dist = DistToPoint(ZX, ZY);
-        if (Dist < CubePickRadius && Dist < BestDist)
+    //const float CubePickRadius = 14.0f;
+
+    //if (bX && XAxisComp && XAxisComp->IsVisible())
+    //{
+    //    const float Dist = DistToPoint(XX, XY);
+    //    if (Dist < CubePickRadius && Dist < BestDist)
+    //    {
+    //        BestDist = Dist;
+    //        BestAxis = EGizmoAxis::X;
+    //    }
+    //}
+
+    //if (bY && YAxisComp && YAxisComp->IsVisible())
+    //{
+    //    const float Dist = DistToPoint(YX, YY);
+    //    if (Dist < CubePickRadius && Dist < BestDist)
+    //    {
+    //        BestDist = Dist;
+    //        BestAxis = EGizmoAxis::Y;
+    //    }
+    //}
+
+    //if (bZ && ZAxisComp && ZAxisComp->IsVisible())
+    //{
+    //    const float Dist = DistToPoint(ZX, ZY);
+    //    if (Dist < CubePickRadius && Dist < BestDist)
+    //    {
+    //        BestDist = Dist;
+    //        BestAxis = EGizmoAxis::Z;
+    //    }
+    //}
+    auto TestAxis = [&](bool bValid, UStaticMeshComponent* Comp, float AX, float AY, EGizmoAxis Axis)
         {
-            BestDist = Dist;
-            BestAxis = EGizmoAxis::Z;
-        }
-    }
+            if (!bValid || !Comp || !Comp->IsVisible())
+            {
+                return;
+            }
+
+            const float LineDist = DistancePointToSegment2D((float)MouseX, (float)MouseY, OX, OY, AX, AY);
+            const float PointDist = DistToPoint(AX, AY);
+            const float Score = std::min(LineDist, PointDist);
+
+            if ((LineDist < LineThreshold || PointDist < CubeThreshold) && Score < BestDist)
+            {
+                BestDist = Score;
+                BestAxis = Axis;
+            }
+        };
+
+    TestAxis(bX, XAxisComp, XX, XY, EGizmoAxis::X);
+    TestAxis(bY, YAxisComp, YX, YY, EGizmoAxis::Y);
+    TestAxis(bZ, ZAxisComp, ZX, ZY, EGizmoAxis::Z);
 
     return BestAxis;
 
@@ -969,7 +1012,8 @@ EGizmoAxis AGizmoActor::PickAxisRotate(
     const FVector Origin = Root->GetRelativeLocation();
 
     // 링 월드 반지름
-    const float RingRadius = RotateRingMajorRadius * RotateRingVisualScale;
+    const float RingRadius =
+        RotateRingMajorRadius * RotateRingVisualScale * GetCurrentVisualScale();
 
     // 마우스 → 3D 레이
     const FRay Ray = BuildPickRay(MouseX, MouseY, Camera, ViewWidth, ViewHeight);
@@ -1023,4 +1067,60 @@ EGizmoAxis AGizmoActor::PickAxisRotate(
     }
 
     return BestAxis;
+}
+
+float AGizmoActor::GetCurrentVisualScale() const
+{
+    if (!PivotComp)
+    {
+        return 1.0f;
+    }
+
+    return PivotComp->GetRelativeScale().X;
+}
+
+void AGizmoActor::UpdateConstantScreenScale(
+    const UCameraComponent* Camera,
+    int ViewWidth,
+    int ViewHeight)
+{
+    if (!PivotComp || !TargetActor || !Camera || ViewWidth <= 0 || ViewHeight <= 0)
+    {
+        return;
+    }
+
+    float UniformScale = 1.0f;
+
+    if (Camera->IsOrthogonal())
+    {
+        // 직교 투영: 화면 픽셀 크기는 거리와 무관, OrthoWidth에만 비례
+        UniformScale =
+            (Camera->GetOrthoWidth() / GizmoReferenceOrthoWidth) *
+            (static_cast<float>(GizmoReferenceViewportWidth) / static_cast<float>(ViewWidth));
+    }
+    else
+    {
+        // 원근 투영: depth * tan(fov/2)에 비례해야 화면 크기 유지
+        const FVector CamLoc = Camera->GetRelativeLocation();
+        const FMatrix RotMat = FMatrix::MakeRotationXYZ(Camera->GetRelativeRotation());
+
+        const FVector4 Forward4 = RotMat * FVector4(0.0f, 0.0f, 1.0f, 0.0f);
+        FVector Forward(Forward4.X, Forward4.Y, Forward4.Z);
+        Forward.Normalize();
+
+        const FVector GizmoLoc = PivotComp->GetRelativeLocation();
+
+        float ViewDepth = (GizmoLoc - CamLoc).Dot(Forward);
+        ViewDepth = std::max(ViewDepth, Camera->GetNearClip() + 0.001f);
+
+        const float FovRad = Camera->GetFieldOfView() * 3.14159265358979323846f / 180.0f;
+        const float RefFovRad = GizmoReferenceFovDeg * 3.14159265358979323846f / 180.0f;
+
+        UniformScale =
+            (ViewDepth / GizmoReferenceDistance) *
+            (std::tan(FovRad * 0.5f) / std::tan(RefFovRad * 0.5f)) *
+            (static_cast<float>(GizmoReferenceViewportHeight) / static_cast<float>(ViewHeight));
+    }
+
+    PivotComp->SetRelativeScale(FVector(UniformScale, UniformScale, UniformScale));
 }

@@ -615,15 +615,14 @@ void URenderer::Render(const FScene& Scene, const UCameraComponent* Camera)
         //printf("Proj[3][3] = %f\n", Projection.M[3][3]);
     }
 
-    //for (const FRenderItem& Item : Scene.RenderItems)
-    //{
-    //    DrawMeshItem(Item, View, Projection);
-    //}
-
-    // 1) 일반 오브젝트 먼저
+    // 일반 오브젝트 먼저
     for (const FRenderItem& Item : Scene.RenderItems)
     {
-        if (!Item.bDepthEnable)
+        //if (!Item.bDepthEnable)
+        //{
+        //    continue;
+        //}
+        if (Item.bIsGizmo)
         {
             continue;
         }
@@ -633,17 +632,7 @@ void URenderer::Render(const FScene& Scene, const UCameraComponent* Camera)
 
     ClearDepthOnly();
 
-    //// 2) overlay 성격 오브젝트 나중
-    //for (const FRenderItem& Item : Scene.RenderItems)
-    //{
-    //    if (Item.bDepthEnable)
-    //    {
-    //        continue;
-    //    }
-
-    //    DrawMeshItem(Item, View, Projection);
-    //}
-    // 2차: gizmo만
+    // gizmo만
     for (const FRenderItem& Item : Scene.RenderItems)
     {
         if (!Item.bIsGizmo) continue;
@@ -724,9 +713,14 @@ void URenderer::DrawMeshItem(const FRenderItem& Item, const FMatrix& View, const
         }
     }
     DeviceContext->RSSetState(TargetRS);
-    DeviceContext->OMSetDepthStencilState(
-        Item.bDepthEnable ? DepthStencilStateEnabled : DepthStencilStateDisabled,
-        0);
+    ID3D11DepthStencilState* DepthState = DepthStencilStateDisabled;
+
+    if (Item.bDepthEnable)
+    {
+        DepthState = Item.bDepthWrite ? DepthStencilStateEnabled : DepthStencilStateTestOnly;
+    }
+
+    DeviceContext->OMSetDepthStencilState(DepthState, 0);
 
     UpdateVSConstants(Item.WorldMatrix, View, Projection, Item.Color, Item.bUseVertexColor);
 
@@ -753,15 +747,6 @@ void URenderer::DrawMeshItem(const FRenderItem& Item, const FMatrix& View, const
     {
         DeviceContext->Draw(Resource.VertexCount, 0);
     }
-
-    ID3D11DepthStencilState* DepthState = DepthStencilStateDisabled;
-
-    if (Item.bDepthEnable)
-    {
-        DepthState = Item.bDepthWrite ? DepthStencilStateEnabled : DepthStencilStateTestOnly;
-    }
-
-    DeviceContext->OMSetDepthStencilState(DepthState, 0);
 }
 
 bool URenderer::GetOrCreateMeshResource(UStaticMesh* Mesh, FMeshGPUResource& OutResource)
@@ -1086,7 +1071,7 @@ void URenderer::RenderHitProxy(const FScene& Scene, const UCameraComponent* Came
             continue;
         }
 
-        if (!Item.bDepthEnable)
+        if (Item.bIsGizmo)
         {
             continue;
         }
@@ -1096,6 +1081,8 @@ void URenderer::RenderHitProxy(const FScene& Scene, const UCameraComponent* Came
         NextProxyId++;
     }
 
+    ClearDepthOnly();
+
     // 2) Overlay 성격 오브젝트 나중
     for (const FRenderItem& Item : Scene.RenderItems)
     {
@@ -1104,7 +1091,7 @@ void URenderer::RenderHitProxy(const FScene& Scene, const UCameraComponent* Came
             continue;
         }
 
-        if (Item.bDepthEnable)
+        if (!Item.bIsGizmo)
         {
             continue;
         }

@@ -354,7 +354,12 @@ void FApplication::Tick(float DeltaTime)
     const bool bCanProcessMouse = InputManager->CanProcessMouse();
     const bool bCanProcessKeyboard = InputManager->CanProcessKeyboard();
 
-    if (bCanProcessKeyboard && InputManager->WasKeyPressed(VK_SPACE))
+    if (bCanProcessKeyboard &&
+        !bDraggingGizmo &&
+        InputManager->WasKeyPressed(VK_SPACE) &&
+        SelectedActor &&
+        GizmoActor &&
+        GizmoActor->GetTargetActor())
     {
         CycleGizmoMode();
     }
@@ -1254,12 +1259,17 @@ void FApplication::AddSelectionOutlineRenderItem()
 
 void FApplication::UpdateGizmoTransform()
 {
-    //auto GizmoActor = GizmoActor;
-
-    if (GizmoActor)
+    UCameraComponent* MainCamera = GetMainCamera();
+    if (!GizmoActor || !MainCamera || !WindowApp)
     {
-        GizmoActor->UpdateTransformFromTarget();
+        return;
     }
+
+    GizmoActor->UpdateTransformFromTarget();
+    GizmoActor->UpdateConstantScreenScale(
+        MainCamera,
+        WindowApp->GetClientWidth(),
+        WindowApp->GetClientHeight());
 }
 
 void FApplication::UpdateGizmoColors()
