@@ -38,12 +38,18 @@ public:
     float GetMouseWheelDelta() const;
 
     bool IsKeyDown(int Key) const;
+    bool WasKeyPressed(int Key) const;
+    bool WasKeyReleased(int Key) const;
 
 private:
     FWindowsApplication* WindowApp = nullptr;
     FGUIManager* GUIManager = nullptr;
 
     FButtonState MouseButtons[(int)EMouseButton::Count];
+
+    bool KeyDown[256] = {};
+    bool KeyPressed[256] = {};
+    bool KeyReleased[256] = {};
 
     int MouseX = 0;
     int MouseY = 0;

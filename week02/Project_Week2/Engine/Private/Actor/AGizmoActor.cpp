@@ -12,46 +12,53 @@
 
 AGizmoActor::AGizmoActor()
 {
-    auto ArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh();
-    if (!ArrowMesh)
-    {
-        return;
-    }
+    //auto ArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh();
+    //if (!ArrowMesh)
+    //{
+    //    return;
+    //}
 
-    if (!XAxisComp)
-    {
-        XAxisComp = new UStaticMeshComponent();
-        AddComponent(XAxisComp);
-    }
+    //if (!XAxisComp)
+    //{
+    //    XAxisComp = new UStaticMeshComponent();
+    //    AddComponent(XAxisComp);
+    //}
 
-    if (!YAxisComp)
-    {
-        YAxisComp = new UStaticMeshComponent();
-        AddComponent(YAxisComp);
-    }
+    //if (!YAxisComp)
+    //{
+    //    YAxisComp = new UStaticMeshComponent();
+    //    AddComponent(YAxisComp);
+    //}
 
-    if (!ZAxisComp)
-    {
-        ZAxisComp = new UStaticMeshComponent();
-        AddComponent(ZAxisComp);
-    }
+    //if (!ZAxisComp)
+    //{
+    //    ZAxisComp = new UStaticMeshComponent();
+    //    AddComponent(ZAxisComp);
+    //}
 
-    XAxisComp->SetStaticMesh(ArrowMesh);
-    YAxisComp->SetStaticMesh(ArrowMesh);
-    ZAxisComp->SetStaticMesh(ArrowMesh);
+    //XAxisComp->SetStaticMesh(ArrowMesh);
+    //YAxisComp->SetStaticMesh(ArrowMesh);
+    //ZAxisComp->SetStaticMesh(ArrowMesh);
 
-    XAxisComp->SetRelativeLocation(FVector::ZeroVector);
-    YAxisComp->SetRelativeLocation(FVector::ZeroVector);
-    ZAxisComp->SetRelativeLocation(FVector::ZeroVector);
+    //XAxisComp->SetRelativeLocation(FVector::ZeroVector);
+    //YAxisComp->SetRelativeLocation(FVector::ZeroVector);
+    //ZAxisComp->SetRelativeLocation(FVector::ZeroVector);
 
-    // Arrow mesh가 +X 방향 기준이라고 가정
-    XAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
-    YAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 1.5707963f));
-    ZAxisComp->SetRelativeRotation(FVector(0.0f, -1.5707963f, 0.0f));
+    //// Arrow mesh가 +X 방향 기준이라고 가정
+    //XAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
+    //YAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 1.5707963f));
+    //ZAxisComp->SetRelativeRotation(FVector(0.0f, -1.5707963f, 0.0f));
 
-    XAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
-    YAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
-    ZAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
+    //XAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
+    //YAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
+    //ZAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
+    XAxisComp = new UStaticMeshComponent();
+    YAxisComp = new UStaticMeshComponent();
+    ZAxisComp = new UStaticMeshComponent();
+
+    AddComponent(XAxisComp);
+    AddComponent(YAxisComp);
+    AddComponent(ZAxisComp);
 
     XAxisComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
     YAxisComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
@@ -68,57 +75,22 @@ AGizmoActor::~AGizmoActor()
 {
 }
 
-void AGizmoActor::Initialize(UStaticMesh* ArrowMesh)
+void AGizmoActor::Initialize(UStaticMesh* ArrowMesh, UStaticMesh* CubeMesh, UStaticMesh* TorusMesh)
 {
-    if (!ArrowMesh)
+    if (!ArrowMesh || !CubeMesh || !TorusMesh)
     {
         return;
     }
 
-    if (!XAxisComp)
-    {
-        XAxisComp = new UStaticMeshComponent();
-        AddComponent(XAxisComp);
-    }
-
-    if (!YAxisComp)
-    {
-        YAxisComp = new UStaticMeshComponent();
-        AddComponent(YAxisComp);
-    }
-
-    if (!ZAxisComp)
-    {
-        ZAxisComp = new UStaticMeshComponent();
-        AddComponent(ZAxisComp);
-    }
-
-    XAxisComp->SetStaticMesh(ArrowMesh);
-    YAxisComp->SetStaticMesh(ArrowMesh);
-    ZAxisComp->SetStaticMesh(ArrowMesh);
+    TranslateMesh = ArrowMesh;
+    ScaleMesh = CubeMesh;
+    RotateMesh = TorusMesh;
 
     XAxisComp->SetRelativeLocation(FVector::ZeroVector);
     YAxisComp->SetRelativeLocation(FVector::ZeroVector);
     ZAxisComp->SetRelativeLocation(FVector::ZeroVector);
 
-    // Arrow mesh가 +X 방향 기준이라고 가정
-    XAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
-    YAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 1.5707963f));
-    ZAxisComp->SetRelativeRotation(FVector(0.0f, -1.5707963f, 0.0f));
-
-    XAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
-    YAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
-    ZAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
-
-    XAxisComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
-    YAxisComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
-    ZAxisComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
-
-    XAxisComp->SetVisibility(false);
-    YAxisComp->SetVisibility(false);
-    ZAxisComp->SetVisibility(false);
-
-    SetRootComponent(XAxisComp);
+    ApplyModeVisual();
 }
 
 void AGizmoActor::SetTargetActor(AActor* InTarget)
@@ -167,9 +139,18 @@ void AGizmoActor::UpdateTransformFromTarget()
 
     const FVector Pos = Root->GetRelativeLocation();
 
-    if (XAxisComp) XAxisComp->SetRelativeLocation(Pos);
-    if (YAxisComp) YAxisComp->SetRelativeLocation(Pos);
-    if (ZAxisComp) ZAxisComp->SetRelativeLocation(Pos);
+    if (CurrentMode == EGizmoMode::Scale)
+    {
+        if (XAxisComp) XAxisComp->SetRelativeLocation(Pos + FVector(AxisLength, 0.0f, 0.0f));
+        if (YAxisComp) YAxisComp->SetRelativeLocation(Pos + FVector(0.0f, AxisLength, 0.0f));
+        if (ZAxisComp) ZAxisComp->SetRelativeLocation(Pos + FVector(0.0f, 0.0f, AxisLength));
+    }
+    else
+    {
+        if (XAxisComp) XAxisComp->SetRelativeLocation(Pos);
+        if (YAxisComp) YAxisComp->SetRelativeLocation(Pos);
+        if (ZAxisComp) ZAxisComp->SetRelativeLocation(Pos);
+    }
 }
 
 void AGizmoActor::UpdateColors(EGizmoAxis HighlightAxis)
@@ -357,4 +338,83 @@ FVector4 AGizmoActor::LightenColor(const FVector4& Color, float T) const
         Color.Y + (1.0f - Color.Y) * T,
         Color.Z + (1.0f - Color.Z) * T,
         Color.W);
+}
+
+void AGizmoActor::SetMode(EGizmoMode InMode)
+{
+    if (CurrentMode == InMode)
+    {
+        return;
+    }
+
+    CurrentMode = InMode;
+    ApplyModeVisual();
+    UpdateTransformFromTarget();
+}
+
+EGizmoMode AGizmoActor::GetMode() const
+{
+    return CurrentMode;
+}
+void AGizmoActor::ApplyModeVisual()
+{
+    if (!XAxisComp || !YAxisComp || !ZAxisComp)
+    {
+        return;
+    }
+
+    switch (CurrentMode)
+    {
+    case EGizmoMode::Translate:
+    {
+        XAxisComp->SetStaticMesh(TranslateMesh);
+        YAxisComp->SetStaticMesh(TranslateMesh);
+        ZAxisComp->SetStaticMesh(TranslateMesh);
+
+        XAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
+        YAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 1.5707963f));
+        ZAxisComp->SetRelativeRotation(FVector(0.0f, -1.5707963f, 0.0f));
+
+        XAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
+        YAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
+        ZAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
+        break;
+    }
+
+    case EGizmoMode::Rotate:
+    {
+        XAxisComp->SetStaticMesh(RotateMesh);
+        YAxisComp->SetStaticMesh(RotateMesh);
+        ZAxisComp->SetStaticMesh(RotateMesh);
+
+        // 현재 Torus는 XZ 평면(노멀 +Y) 기준으로 만들어져 있음
+        XAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 1.5707963f));
+        YAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
+        ZAxisComp->SetRelativeRotation(FVector(1.5707963f, 0.0f, 0.0f));
+
+        XAxisComp->SetRelativeScale(FVector(0.22f, 0.22f, 0.22f));
+        YAxisComp->SetRelativeScale(FVector(0.22f, 0.22f, 0.22f));
+        ZAxisComp->SetRelativeScale(FVector(0.22f, 0.22f, 0.22f));
+        break;
+    }
+
+    case EGizmoMode::Scale:
+    {
+        XAxisComp->SetStaticMesh(ScaleMesh);
+        YAxisComp->SetStaticMesh(ScaleMesh);
+        ZAxisComp->SetStaticMesh(ScaleMesh);
+
+        XAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
+        YAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
+        ZAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
+
+        XAxisComp->SetRelativeScale(FVector(0.18f, 0.18f, 0.18f));
+        YAxisComp->SetRelativeScale(FVector(0.18f, 0.18f, 0.18f));
+        ZAxisComp->SetRelativeScale(FVector(0.18f, 0.18f, 0.18f));
+        break;
+    }
+
+    default:
+        break;
+    }
 }

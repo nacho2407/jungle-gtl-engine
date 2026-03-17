@@ -42,7 +42,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v145</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -162,6 +162,7 @@
     <ClInclude Include="Engine\Public\Actor\ATorus.h" />
     <ClInclude Include="Engine\Public\Actor\ATriangle.h" />
     <ClInclude Include="Engine\Public\Component\EGizmoAxis.h" />
+    <ClInclude Include="Engine\Public\Component\EGizmoMode.h" />
     <ClInclude Include="Engine\Public\Component\UActorComponent.h" />
     <ClInclude Include="Engine\Public\Component\UCameraComponent.h" />
     <ClInclude Include="Engine\Public\Component\UCubeComponent.h" />

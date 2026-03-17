@@ -6,6 +6,7 @@
 #include "Resource/BuiltInMeshFactory.h"
 #include "Component/UCameraComponent.h"
 #include "Component/UStaticMeshComponent.h"
+#include "Component/EGizmoMode.h"
 
 //class UStaticMesh;
 //class UStaticMeshComponent;
@@ -19,7 +20,8 @@ public:
     virtual ~AGizmoActor() override; // 왜 가상함수로 했을까
 
 public:
-    void Initialize(UStaticMesh* ArrowMesh);
+    void Initialize(UStaticMesh* ArrowMesh, UStaticMesh* CubeMesh, UStaticMesh* TorusMesh);
+
     void SetTargetActor(AActor* InTarget);
     AActor* GetTargetActor() const;
 
@@ -38,6 +40,9 @@ public:
 
     UStaticMeshComponent* GetAxisComponent(EGizmoAxis Axis) const;
 
+    void SetMode(EGizmoMode InMode);
+    EGizmoMode GetMode() const;
+
 private:
     bool ProjectWorldToScreen(
         const FVector& WorldPos,
@@ -54,6 +59,8 @@ private:
 
     FVector4 LightenColor(const FVector4& Color, float T) const;
 
+    void ApplyModeVisual();
+
 private:
     UStaticMeshComponent* XAxisComp = nullptr;
     UStaticMeshComponent* YAxisComp = nullptr;
@@ -64,4 +71,10 @@ private:
     float AxisLength = 3.0f;
     float PickThreshold = 10.0f;
     float GizmoScale = 0.5f;
+
+    UStaticMesh* TranslateMesh = nullptr;
+    UStaticMesh* ScaleMesh = nullptr;
+    UStaticMesh* RotateMesh = nullptr;
+
+    EGizmoMode CurrentMode = EGizmoMode::Translate;
 };

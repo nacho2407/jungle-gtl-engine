@@ -8,6 +8,7 @@
 #include "Actor/ACamera.h"
 #include "Actor/AGridActor.h"
 #include "Actor/AAxisActor.h"
+#include "Component/EGizmoMode.h"
 
 class UWorld;
 class URenderer;
@@ -136,6 +137,8 @@ private:
     void RenderEditorUI();
 
     void TempFunc(AActor* actor);
+
+    void CycleGizmoMode();
     
 
 private:
@@ -209,4 +212,6 @@ private:
     AAxisActor* WorldAxisActor;
     AGridActor* GridActor;
     AGizmoActor* GizmoActor;
+
+    EGizmoMode CurrentGizmoMode = EGizmoMode::Translate;
 };

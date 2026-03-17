@@ -41,7 +41,7 @@
 
 #include "Panels/FPropertyPanel.h"
 #include "Panels/FControlPanel.h"
-#include "Panels/FConsolePanel.h" 
+#include "Panels/FConsolePanel.h"
 
 namespace
 {
@@ -339,6 +339,7 @@ bool FApplication::InitializeScene()
     //GizmoActor->Initialize(GizmoArrowMesh);
     //World->AddActor(GizmoActor);
 
+
     // Click Pulse Circle
     {
         ClickCircleActor = new AActor();
@@ -387,6 +388,10 @@ void FApplication::MainLoop()
     check(WorldAxisActor)
     check(GizmoActor)
     check(GridActor)
+
+    GizmoActor->Initialize(GizmoArrowMesh, CubeMesh, TorusMesh);
+    GizmoActor->SetMode(CurrentGizmoMode);
+    World->AddActor(GizmoActor);
 
     // @@@ VSync 있는거임??
     // 의도적으로 프레임을 조정할 수 있는 거는 필요없나?
@@ -442,6 +447,11 @@ void FApplication::Tick(float DeltaTime)
 
     const bool bCanProcessMouse = InputManager->CanProcessMouse();
     const bool bCanProcessKeyboard = InputManager->CanProcessKeyboard();
+
+    if (bCanProcessKeyboard && InputManager->WasKeyPressed(VK_SPACE))
+    {
+        CycleGizmoMode();
+    }
 
     int MouseX = 0;
     int MouseY = 0;
@@ -1536,3 +1546,26 @@ void FApplication::ApplyCameraProjectionMode()
 	MainCamera->SetOrthoWidth(DebugOrthoWidth);
 }
 
+void FApplication::CycleGizmoMode()
+{
+    switch (CurrentGizmoMode)
+    {
+    case EGizmoMode::Translate:
+        CurrentGizmoMode = EGizmoMode::Rotate;
+        break;
+    case EGizmoMode::Rotate:
+        CurrentGizmoMode = EGizmoMode::Scale;
+        break;
+    case EGizmoMode::Scale:
+    default:
+        CurrentGizmoMode = EGizmoMode::Translate;
+        break;
+    }
+
+    if (GizmoActor)
+    {
+        GizmoActor->SetMode(CurrentGizmoMode);
+        GizmoActor->UpdateColors(EGizmoAxis::None);
+        GizmoActor->UpdateTransformFromTarget();
+    }
+}

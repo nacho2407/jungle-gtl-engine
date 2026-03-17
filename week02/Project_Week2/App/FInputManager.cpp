@@ -18,6 +18,13 @@ bool FInputManager::Initialize(FWindowsApplication* InWindowApp, FGUIManager* In
         MouseButtons[i] = FButtonState{};
     }
 
+    for (int i = 0; i < 256; ++i)
+    {
+        KeyDown[i] = false;
+        KeyPressed[i] = false;
+        KeyReleased[i] = false;
+    }
+
     return WindowApp != nullptr;
 }
 
@@ -32,6 +39,17 @@ void FInputManager::BeginFrame()
     {
         MouseButtons[i].bPressed = false;
         MouseButtons[i].bReleased = false;
+    }
+
+    for (int i = 0; i < 256; ++i)
+    {
+        KeyPressed[i] = false;
+        KeyReleased[i] = false;
+
+        const bool bNowDown = WindowApp->IsKeyDown(i);
+        KeyPressed[i] = (!KeyDown[i] && bNowDown);
+        KeyReleased[i] = (KeyDown[i] && !bNowDown);
+        KeyDown[i] = bNowDown;
     }
 
     PrevMouseX = MouseX;
@@ -135,4 +153,24 @@ bool FInputManager::IsKeyDown(int Key) const
     }
 
     return WindowApp->IsKeyDown(Key);
+}
+
+bool FInputManager::WasKeyPressed(int Key) const
+{
+    if (Key < 0 || Key >= 256)
+    {
+        return false;
+    }
+
+    return KeyPressed[Key];
+}
+
+bool FInputManager::WasKeyReleased(int Key) const
+{
+    if (Key < 0 || Key >= 256)
+    {
+        return false;
+    }
+
+    return KeyReleased[Key];
 }
