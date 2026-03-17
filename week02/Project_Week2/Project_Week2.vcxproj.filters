@@ -264,12 +264,6 @@
     <ClInclude Include="Serialization\Public\FPrimitiveJsonConverter.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Serialization\Public\FPrimitiveRecord.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Serialization\Public\FPrimitiveRecordConverter.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Private\UEngineStatics.cpp">
@@ -446,10 +440,10 @@
     <ClCompile Include="Serialization\Private\FPrimitiveJsonConverter.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Serialization\Private\FPrimitiveRecordConverter.cpp">
+    <ClCompile Include="Engine\Private\Actor\ACamera.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Public\Actor\ACamera.cpp">
+    <ClCompile Include="Serialization\Private\FWorldSaveData.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

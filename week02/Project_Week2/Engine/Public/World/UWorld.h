@@ -7,8 +7,6 @@
 #include "Component/UStaticMeshComponent.h"
 #include "Resource/BuiltInMeshFactory.h"
 
-
-
 class UWorld : public UObject
 {
 public:

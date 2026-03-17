@@ -14,6 +14,6 @@ private:
     static FPrimitiveRecord MakePrimitiveRecord(const AActor* Actor);
     static AActor* MakeActorFromRecord(const FPrimitiveRecord& Record);
 
-private:
+public:
     static const TMap<FString, FString> ClassNameMap;
 };

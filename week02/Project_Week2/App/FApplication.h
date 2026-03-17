@@ -145,6 +145,7 @@ private:
     UCameraComponent* MainCamera;
     // @@@ 액터의 mesh 별로 이렇게 하나씩 다 선언하는 게 맞음?? 하나로 편하게 관리 못하나?
     // 지금 Spawn이 아니라 미리 만들어놓아야 해서 이렇게 한건가?
+    // 개인 메모는 공용 브랜치 올릴 때 지웁시다!! 공용 브랜치에 낙서하지 마시오!!
     UStaticMesh* CubeMesh; 
     UStaticMesh* SphereMesh;
     //UStaticMesh* TriangleMesh;

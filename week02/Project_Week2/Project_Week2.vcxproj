@@ -255,6 +255,7 @@
     <ClCompile Include="Render\Private\URenderer.cpp" />
     <ClCompile Include="Core\Private\UObjectBaseUtility.cpp" />
     <ClCompile Include="Serialization\Private\FPrimitiveJsonConverter.cpp" />
+    <ClCompile Include="Serialization\Private\FWorldSaveData.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Render\Public\Shaders\Default.hlsl">
