@@ -49,8 +49,9 @@ LRESULT CALLBACK EngineApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 			UINT height = HIWORD(lParam);
 			if (width > 0 && height > 0)
 			{
-				if (pApp->Camera)
-					pApp->Camera->OnResize(width, height);
+				auto camera = UCameraComponent::GetMainCamera();
+				if (camera)
+					camera->OnResize(width, height);
 
 				if (pApp->Renderer)
 					pApp->Renderer->OnResize(width, height);
@@ -103,9 +104,11 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 
 	InputManager::GetInstance().hWnd = HWnd;
 	// Init Camera
-	Camera = Cast<UCameraComponent>(GetWorld().AddPermanentSceneComponent<UCameraComponent>());
-	Camera->SetPosition(FVector(-10, 0, 0));
-	EditorInst->SetCamera(Camera);
+	auto camera = Cast<UCameraComponent>(GetWorld().AddPermanentSceneComponent<UCameraComponent>());
+	camera->SetRelativeLocation(FVector(- 10, 10, 10));
+	camera->SetRelativeRotation(FVector(30, -45, 0));
+	Renderer->SetRenderCamera(camera);
+	EditorInst->SetCamera(camera);
 	EditorInst->SetRenderer(Renderer);
 
 	RECT rc;
@@ -116,12 +119,12 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 		width = rc.right - rc.left;
 		height = rc.bottom - rc.top;
 	}
-	Camera->OnResize(width, height);
+	camera->OnResize(width, height);
 
 	//Init Picker
 	Picker = Cast<UPicker>(FObjectFactory::ConstructObject(UPicker::GetClass()));
 	Picker->SetEditor(EditorInst);
-	Picker->SetCamera(Camera);
+	Picker->SetCamera(camera);
 
 	//Init World & Scene
 	GetWorld().InjectRenderer(Renderer);
@@ -216,9 +219,9 @@ void EngineApp::Run()
 		Renderer->Prepare();
 
 		ResourceManager* RM = ResourceManager::GetInstance();
-		Renderer->RenderGrid(Camera, RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").VertexShader.Get(), RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").PixelShader.Get());
+		Renderer->RenderGrid(RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").VertexShader.Get(), RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").PixelShader.Get());
 
-		Renderer->Render(Camera);
+		Renderer->Render();
 		EditorInst->DrawUI();
 
 		Renderer->SwapBuffer();

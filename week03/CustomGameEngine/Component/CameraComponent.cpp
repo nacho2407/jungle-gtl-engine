@@ -6,81 +6,122 @@
 #include "Math/Vector.h"
 #include "World.h"
 #include "TimerManager.h"
+#include "Logger.h"
 #include <algorithm>
 
+UCameraComponent* UCameraComponent::mainCamera = nullptr;
+
 UCameraComponent::UCameraComponent() : io(ImGui::GetIO())
-{}
+{
+	if (mainCamera != nullptr)
+		UE_LOG("2 or more camera exist at the same time!\n");
+	mainCamera = this;
+}
 
-UCameraComponent::~UCameraComponent() {}
+UCameraComponent::~UCameraComponent() {
+	if (mainCamera == this)
+		mainCamera = nullptr;
+}
 
-void UCameraComponent::SetPosition(const FVector& _input) {
-	if (!Position.IsNearlyEqual(_input, Epsilon)) {
-		Position = _input;
+UCameraComponent* UCameraComponent::GetMainCamera()
+{
+	return mainCamera;
+}
+
+void UCameraComponent::SetRelativeLocation(const FVector& _input) {
+	if (!GetRelativeLocation().IsNearlyEqual(_input, Epsilon)) {
+		USceneComponent::SetRelativeLocation(_input);
 	}
 }
 
 void UCameraComponent::Move(float DeltaTime) {
+	FVector position = GetRelativeLocation();
+
 	if (InputManager::GetInstance().IsKeyHold('W') &&
 		!InputManager::GetInstance().IsKeyHold('S')) {
-		Position = Position + Direction * MoveSpeed * DeltaTime;
+		position = position + Direction * MoveSpeed * DeltaTime;
 	}
 	else if (!InputManager::GetInstance().IsKeyHold('W') &&
 		InputManager::GetInstance().IsKeyHold('S')) {
-		Position = Position - Direction * MoveSpeed * DeltaTime;
+		position = position - Direction * MoveSpeed * DeltaTime;
 	}
 	if (InputManager::GetInstance().IsKeyHold('E') &&
 		!InputManager::GetInstance().IsKeyHold('Q')) {
-		Position = Position + UpVec * MoveSpeed * DeltaTime;
+		position = position + UpVec * MoveSpeed * DeltaTime;
 	}
 	else if (!InputManager::GetInstance().IsKeyHold('E') &&
 		InputManager::GetInstance().IsKeyHold('Q')) {
-		Position = Position - UpVec * MoveSpeed * DeltaTime;
+		position = position - UpVec * MoveSpeed * DeltaTime;
 	}
 	if (!InputManager::GetInstance().IsKeyHold('D') &&
 		InputManager::GetInstance().IsKeyHold('A')) {
-		Position = Position + SideDirection * MoveSpeed * DeltaTime;
+		position = position + SideDirection * MoveSpeed * DeltaTime;
 	}
 	else if (InputManager::GetInstance().IsKeyHold('D') &&
 		!InputManager::GetInstance().IsKeyHold('A')) {
-		Position = Position - SideDirection * MoveSpeed * DeltaTime;
+		position = position - SideDirection * MoveSpeed * DeltaTime;
 	}
 
+	SetRelativeLocation(position);
+}
+
+FMatrix GetRotationMatrix(float pitch, float yaw, float roll)
+{
+	return FMatrix::RotationXMatrix(roll)*
+		FMatrix::RotationYMatrix(pitch)*
+		FMatrix::RotationZMatrix(yaw);
+}
+
+FMatrix GetRotationMatrix(FVector eulerAngle)
+{
+	return GetRotationMatrix(eulerAngle.x, eulerAngle.y, eulerAngle.z);
 }
 
 void UCameraComponent::SetDirection(const float InputPitch, const float InputYaw,
 	const float InputRoll) {
-	if (std::abs(Pitch - InputPitch) > Epsilon) {
-		Pitch = (std::max)(-89.9f, (std::min)(89.9f, InputPitch));
+	FVector eulerAngle = GetRelativeRotation();
+
+	if (std::abs(eulerAngle.x - InputPitch) > Epsilon) {
+		eulerAngle.x = (std::max)(-89.9f, (std::min)(89.9f, InputPitch));
 	}
-	if (std::abs(Yaw - InputYaw) > Epsilon) {
-		Yaw = InputYaw;
+	if (std::abs(eulerAngle.z - InputYaw) > Epsilon) {
+		eulerAngle.z = InputYaw;
 	}
-	if (std::abs(Roll - InputRoll) > Epsilon) {
-		Roll = InputRoll;
+	if (std::abs(eulerAngle.y - InputRoll) > Epsilon) {
+		eulerAngle.y = InputRoll;
 	}
+
+	SetRelativeRotation(eulerAngle);
 }
 
-void UCameraComponent::Rotate(float DeltaTime)
+void UCameraComponent::HandleRotate(float DeltaTime)
 {
-	Yaw += (InputManager::GetInstance().MouseDelta.x * RotateSensitivity * DeltaTime);
-	Pitch += (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
-	Pitch = MathHelper::Clamp(Pitch, -89.9f, 89.9f);
+	FVector eulerAngle = GetRelativeRotation();
+
+	float newPitch = eulerAngle.x + (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
+	newPitch = MathHelper::Clamp(newPitch, -89.9f, 89.9f);
+	eulerAngle.x = newPitch;
+	eulerAngle.y = (InputManager::GetInstance().MouseDelta.x * RotateSensitivity * DeltaTime);
+
+	SetRelativeRotation(eulerAngle);
 }
 
-void UCameraComponent::OrbitRotate(float DeltaTime)
+void UCameraComponent::HandleOrbitRotate(float DeltaTime)
 {
-	Yaw -= (InputManager::GetInstance().MouseDelta.x * RotateSensitivity * DeltaTime);
-	Pitch -= (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
-	Pitch = MathHelper::Clamp(Pitch, -89.9f, 89.9f);
+	FVector eulerAngle = GetRelativeRotation();
 
-	FMatrix RotMatrix = FMatrix::RotationXMatrix(Roll) *
-		FMatrix::RotationYMatrix(Pitch) *
-		FMatrix::RotationZMatrix(Yaw);
+	float newPitch = eulerAngle.x - (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
+	newPitch = MathHelper::Clamp(newPitch, -89.9f, 89.9f);
+	eulerAngle.x = newPitch;
+	eulerAngle.z -= (InputManager::GetInstance().MouseDelta.x * RotateSensitivity * DeltaTime);
 
+	SetRelativeRotation(eulerAngle);
+
+	FMatrix RotMatrix = GetRotationMatrix(eulerAngle);
 	FVector ForwardBase = FVector::Forward();
 	FVector ForwardVec = RotMatrix.TransformVector(ForwardBase).Normalize();
 
-	Position = FocusPoint - ForwardVec * FocusLength;
+	SetRelativeLocation(FocusPoint - ForwardVec * FocusLength);
 }
 
 void UCameraComponent::SetFOV(const float NewFOV)
@@ -129,16 +170,17 @@ void UCameraComponent::HandleCameraMove(float deltaTime)
 		if (InputManager::GetInstance().IsKeyHold(VK_RBUTTON))
 		{
 			Move(deltaTime);
-			Rotate(deltaTime);
+			HandleRotate(deltaTime);
 		}
 		else if (InputManager::GetInstance().IsKeyHold(VK_LBUTTON)
 			&& InputManager::GetInstance().IsKeyHold(VK_MENU))
 		{
-			OrbitRotate(deltaTime);
+			HandleOrbitRotate(deltaTime);
 		}
 		if (InputManager::GetInstance().IsKeyHold('F')
 			&& GetWorld().GetActiveScene()->IsCompSelected)
 		{
+			// TODO: 오브젝트 포커싱 재구현
 			// SetPosition(EditorInst->GetSelectedComponent()->GetRelativeLocation() - Direction * FocusLength);
 		}
 	}
@@ -146,9 +188,7 @@ void UCameraComponent::HandleCameraMove(float deltaTime)
 
 void UCameraComponent::UpdateCameraMatrices()
 {
-	FMatrix RotMatrix = FMatrix::RotationXMatrix(Roll) *
-		FMatrix::RotationYMatrix(Pitch) *
-		FMatrix::RotationZMatrix(Yaw);
+	FMatrix RotMatrix = GetRotationMatrix(GetRelativeRotation());
 
 	FVector ForwardBase = FVector::Forward();
 	Direction = RotMatrix.TransformVector(ForwardBase).Normalize();
@@ -156,27 +196,12 @@ void UCameraComponent::UpdateCameraMatrices()
 	SideDirection = Direction.Cross(FVector::Up());
 	UpDirection = SideDirection.Cross(Direction);
 
-	FocusPoint = Position + Direction * FocusLength;
-
-	View = FMatrix::ViewMatrix(Position, FocusPoint, UpDirection);
+	auto position = GetRelativeLocation();
+	FocusPoint = position + Direction * FocusLength;
+	View = FMatrix::ViewMatrix(position, FocusPoint, UpDirection);
 	CalcProjectionMatrix();
 	ViewProjection = View * Projection;
 }
-
-void UCameraComponent::CalcViewMatrix()
-{
-	FMatrix InvT;
-	InvT[3][2] = -Position.x;
-	InvT[3][0] = -Position.y;
-	InvT[3][1] = -Position.z;
-
-	FMatrix InvR = FMatrix::RotationZMatrix(-Roll) *
-		FMatrix::RotationYMatrix(-Yaw) *
-		FMatrix::RotationXMatrix(-Pitch);
-
-	View = InvT * InvR;
-}
-
 
 FMatrix UCameraComponent::GetViewMatrix() const
 {

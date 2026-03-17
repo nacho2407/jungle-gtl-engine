@@ -73,8 +73,14 @@ void EditorControlPanel::Draw(UCameraComponent* camera)
 
 	ImGui::Checkbox("Orthogonal", &camera->IsOrthogonal);
 	ImGui::InputFloat("FOV", &camera->FOV);
-	ImGui::InputFloat3("Camera Location", &camera->Position.x);
-	ImGui::InputFloat3("Camera Rotation", &camera->Pitch);
+
+	FVector camPosition = camera->GetRelativeLocation();
+	FVector camRotation = camera->GetRelativeRotation();
+	ImGui::InputFloat3("Camera Location", &camPosition.x);
+	ImGui::InputFloat3("Camera Rotation", &camRotation.x);
+	camera->SetRelativeLocation(camPosition);
+	camera->SetRelativeRotation(camRotation);
+
 	ImGui::InputFloat3("Camera Direction", &camera->Direction.x);
 	ImGui::InputFloat("Camera Speed", &camera->MoveSpeed);
 

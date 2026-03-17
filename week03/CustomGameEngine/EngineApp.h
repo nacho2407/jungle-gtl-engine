@@ -27,7 +27,6 @@ private:
 	HWND HWnd = nullptr;
 	URenderer* Renderer = nullptr;
 	Editor* EditorInst = nullptr;
-	UCameraComponent* Camera = nullptr;
 	UPicker* Picker = nullptr;
 };
 

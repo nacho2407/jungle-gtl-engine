@@ -25,9 +25,9 @@ public:
 	EPrimitiveType GetType();
 	void SetType(EPrimitiveType);
 
-	void SetRelativeLocation(FVector newLocation) override;
-	void SetRelativeRotation(FVector newRotation) override;
-	void SetRelativeScale3D(FVector newScale) override;
+	void SetRelativeLocation(const FVector& newLocation) override;
+	void SetRelativeRotation(const FVector& newRotation) override;
+	void SetRelativeScale3D(const FVector& newScale) override;
 
 	virtual void Update(float DeltaTime);
 	virtual RenderObject* CreateRenderObject();

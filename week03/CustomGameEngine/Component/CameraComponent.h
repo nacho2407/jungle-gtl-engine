@@ -19,10 +19,6 @@ const float Epsilon = 1e-6f;
 class UCameraComponent : public USceneComponent {
 	DECLARE_RTTI(UCameraComponent, USceneComponent)
 public:
-	FVector Position{ FVector(0.0f, 0.0f, 0.0f) };
-	float Pitch{ 0.0f };
-	float Yaw{ 0.0f };
-	float Roll{ 0.0f };
 	float FOV{ 90.0f };
 	float AspectRatio{ 16.0f / 9.0f };
 	float NearPlane{ 1.0f };
@@ -51,12 +47,14 @@ public:
 	UCameraComponent();
 	virtual ~UCameraComponent() override;
 
-	void SetPosition(const FVector& _input);
+	static UCameraComponent* GetMainCamera();
+
+	void SetRelativeLocation(const FVector& _input) override;
 	void Move(float DeltaTime);
 	void SetDirection(const float InputPitch, const float InputYaw,
 		const float InputRoll);
-	void Rotate(float DeltaTime);
-	void OrbitRotate(float DeltaTime);
+	void HandleRotate(float DeltaTime);
+	void HandleOrbitRotate(float DeltaTime);
 	void SetFOV(const float NewFOV);
 	float GetFOV() const;
 	void OnResize(int NewWidth, int NewHeight);
@@ -64,7 +62,7 @@ public:
 	void SetOrthogonal(bool input);
 	//void ChangePerpective(EProjectionType NewType);
 	void Update(float deltaTime) override;
-	void CalcViewMatrix();
+
 	FMatrix GetViewMatrix() const;
 	void CalcProjectionMatrix();
 	FMatrix GetProjectionMatrix() const;
@@ -76,4 +74,5 @@ private:
 	ImGuiIO& io;
 	void HandleCameraMove(float deltaTime);
 	void UpdateCameraMatrices();
+	static UCameraComponent* mainCamera;
 };
