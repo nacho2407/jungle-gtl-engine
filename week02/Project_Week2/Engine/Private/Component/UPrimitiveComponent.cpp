@@ -41,7 +41,10 @@ FRenderItem UPrimitiveComponent::CreateRenderItem() const
 	Item.Color = RenderColor;
 	Item.CullMode = CullMode; // @@@ front/back
 	Item.bDepthEnable = bDepthEnable; // @@@ 
+	Item.bDepthWrite = bDepthWrite;
 	Item.bUseVertexColor = bUseVertexColor;
+
+	Item.bUseDepthBias = bUseDepthBias;
 	return Item;
 }
 
@@ -68,4 +71,14 @@ void UPrimitiveComponent::SetCullMode(ERenderCullMode InCullMode)
 void UPrimitiveComponent::SetUseVertexColor(bool bInUseVertexColor)
 {
 	bUseVertexColor = bInUseVertexColor;
+}
+
+void UPrimitiveComponent::SetUseDepthBias(bool bInUseDepthBias)
+{
+	bUseDepthBias = bInUseDepthBias;
+}
+
+void UPrimitiveComponent::SetDepthWrite(bool bInDepthWrite)
+{
+	bDepthWrite = bInDepthWrite;
 }

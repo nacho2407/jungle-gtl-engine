@@ -34,6 +34,9 @@ public:
     const FVector& GetRelativeScale() const;
 
     virtual FMatrix GetWorldTransformMatrix() const;
+    
+    void SetupAttachment(USceneComponent* InParent);
+    USceneComponent* GetParentComponent() const;
 
 protected:
     void MarkTransformDirty();
@@ -47,4 +50,8 @@ protected:
 
     mutable bool bWorldTransformDirty;
     mutable FMatrix CachedWorldTransform;
+
+    USceneComponent* ParentComponent = nullptr;
+    TArray<USceneComponent*> Children;
+
 };

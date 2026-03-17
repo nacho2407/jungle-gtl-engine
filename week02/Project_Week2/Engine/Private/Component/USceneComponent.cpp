@@ -82,9 +82,19 @@ FMatrix USceneComponent::GetWorldTransformMatrix() const
     return CachedWorldTransform;
 }
 
-void USceneComponent::MarkTransformDirty()
+void USceneComponent::MarkTransformDirty() // (*) 근데 왜 이름이 dirty일까?
 {
     bWorldTransformDirty = true;
+
+
+    for (USceneComponent* Child : Children)
+    {
+        if (Child)
+        {
+            Child->MarkTransformDirty();
+        }
+    }
+
 }
 
 void USceneComponent::UpdateWorldTransformIfNeeded() const
@@ -100,5 +110,25 @@ void USceneComponent::UpdateWorldTransformIfNeeded() const
 
     CachedWorldTransform = Scale * Rotation * Translation;
 
+
+     if (ParentComponent)
+     {
+         CachedWorldTransform = CachedWorldTransform * ParentComponent->GetWorldTransformMatrix();
+     }
+
     bWorldTransformDirty = false;
+}
+
+void USceneComponent::SetupAttachment(USceneComponent* InParent)
+{
+    ParentComponent = InParent;
+    if (ParentComponent)
+    {
+        ParentComponent->Children.push_back(this);
+    }
+}
+
+USceneComponent* USceneComponent::GetParentComponent() const
+{
+    return ParentComponent;
 }

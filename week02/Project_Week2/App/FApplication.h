@@ -58,7 +58,7 @@ struct FPointerPulse
     int CurrentMouseY = 0;
 
     float CurrentRadius = 0.0f;
-    float MaxRadius = 0.05f;      // 월드 단위
+    float MaxRadius = 0.02f;      // 월드 단위
     float GrowSpeed = 0.5f;       // radius/sec
     float ShrinkSpeed = 2.4f;     // radius/sec
 
@@ -170,10 +170,10 @@ private:
     //UStaticMeshComponent* GizmoYComp = nullptr;
     //UStaticMeshComponent* GizmoZComp = nullptr;
     //UStaticMeshComponent* GizmoMeshComp = nullptr;
-    //AGizmoActor* GizmoActor = nullptr;
+    AGizmoActor* GizmoActor = nullptr;
     AActor* SelectedActor = nullptr;
 
-    //AActor* WorldAxesActor;
+    AActor* WorldAxesActor;
 
     bool bIsRunning;
 
@@ -218,7 +218,6 @@ private:
     ACamera* Camera;
     AAxisActor* WorldAxisActor;
     AGridActor* GridActor;
-    AGizmoActor* GizmoActor;
 
     EGizmoMode CurrentGizmoMode = EGizmoMode::Translate;
 

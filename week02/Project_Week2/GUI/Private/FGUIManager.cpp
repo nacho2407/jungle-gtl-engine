@@ -37,7 +37,7 @@ bool FGUIManager::Initialize(FWindowsApplication* InWindowApp, URenderer* InRend
     ImGuiIO& Io = ImGui::GetIO();
     (void)Io;
 
-    Io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    //Io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     ImGui::StyleColorsDark();
 
     if (!ImGui_ImplWin32_Init(WindowApp->GetHWND()))

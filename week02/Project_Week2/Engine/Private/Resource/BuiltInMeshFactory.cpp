@@ -22,14 +22,20 @@ namespace
         };
     }
 
-    TArray<FVertexSimple> CreateAxesVertices() // @@@ 이거 쓰고 있으면 Axes.h는 안 쓰고 있는 거 아닌가??
-    {
-        return
-        {
-            FVertexSimple(0,0,0, 1,0,0,1), FVertexSimple(5,0,0, 1,0,0,1),
-            FVertexSimple(0,0,0, 0,1,0,1), FVertexSimple(0,5,0, 0,1,0,1),
-            FVertexSimple(0,0,0, 0,0,1,1), FVertexSimple(0,0,5, 0,0,1,1),
-        };
+    TArray<FVertexSimple> CreateAxesVertices() {
+        TArray<FVertexSimple> Vertices; 
+        const float Extent = 20.0f; 
+        Vertices.reserve(6); 
+        // X axis : -X ~ +X 
+        Vertices.emplace_back(-Extent, 0, 0, 1, 0, 0, 1); 
+        Vertices.emplace_back( Extent, 0, 0, 1, 0, 0, 1); 
+        // Y axis : 0 ~ +Y 
+        Vertices.emplace_back(0, 0, 0, 0, 1, 0, 1); 
+        Vertices.emplace_back(0, Extent, 0, 0, 1, 0, 1); 
+        // Z axis : -Z ~ +Z 
+        Vertices.emplace_back(0, 0, -Extent, 0, 0, 1, 1); 
+        Vertices.emplace_back(0, 0, Extent, 0, 0, 1, 1); 
+        return Vertices;
     }
 
     TArray<FVertexSimple> CreateTriangleVertices()
@@ -251,9 +257,13 @@ namespace
 
         for (int i = -HalfCount; i <= HalfCount; ++i)
         {
+            if (i == 0)
+            {
+                continue; // 중심 X/Z 선은 axes가 대신 표현
+            }
+
             const float P = i * Spacing;
-            const bool bCenter = (i == 0);
-            const float C = bCenter ? 0.55f : 0.25f;
+            const float C = 0.25f;
 
             Vertices.emplace_back(-Extent, 0.0f, P, C, C, C, 1.0f);
             Vertices.emplace_back(Extent, 0.0f, P, C, C, C, 1.0f);

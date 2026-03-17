@@ -52,39 +52,50 @@ AGizmoActor::AGizmoActor()
     //XAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
     //YAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
     //ZAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
-    XAxisComp = new UStaticMeshComponent();
-    YAxisComp = new UStaticMeshComponent();
-    ZAxisComp = new UStaticMeshComponent();
+    //XAxisComp = new UStaticMeshComponent();
+    //YAxisComp = new UStaticMeshComponent();
+    //ZAxisComp = new UStaticMeshComponent();
 
-    AddComponent(XAxisComp);
-    AddComponent(YAxisComp);
-    AddComponent(ZAxisComp);
+    //AddComponent(XAxisComp);
+    //AddComponent(YAxisComp);
+    //AddComponent(ZAxisComp);
 
-    XAxisComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
-    YAxisComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
-    ZAxisComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
+    //XAxisComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
+    //YAxisComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
+    //ZAxisComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
 
-    XAxisComp->SetVisibility(false);
-    YAxisComp->SetVisibility(false);
-    ZAxisComp->SetVisibility(false);
+    //XAxisComp->SetDepthEnable(true);
+    //YAxisComp->SetDepthEnable(true);
+    //ZAxisComp->SetDepthEnable(true);
+    //XAxisComp->SetDepthWrite(false);
+    //YAxisComp->SetDepthWrite(false);
+    //ZAxisComp->SetDepthWrite(false);
 
-    XAxisShaftComp = new UStaticMeshComponent();
-    YAxisShaftComp = new UStaticMeshComponent();
-    ZAxisShaftComp = new UStaticMeshComponent();
+    //XAxisComp->SetCullMode(ERenderCullMode::None);
+    //YAxisComp->SetCullMode(ERenderCullMode::None);
+    //ZAxisComp->SetCullMode(ERenderCullMode::None);
 
-    AddComponent(XAxisShaftComp);
-    AddComponent(YAxisShaftComp);
-    AddComponent(ZAxisShaftComp);
+    //XAxisComp->SetVisibility(false);
+    //YAxisComp->SetVisibility(false);
+    //ZAxisComp->SetVisibility(false);
 
-    XAxisShaftComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
-    YAxisShaftComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
-    ZAxisShaftComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
+    //XAxisShaftComp = new UStaticMeshComponent();
+    //YAxisShaftComp = new UStaticMeshComponent();
+    //ZAxisShaftComp = new UStaticMeshComponent();
 
-    XAxisShaftComp->SetVisibility(false);
-    YAxisShaftComp->SetVisibility(false);
-    ZAxisShaftComp->SetVisibility(false);
+    //AddComponent(XAxisShaftComp);
+    //AddComponent(YAxisShaftComp);
+    //AddComponent(ZAxisShaftComp);
 
-    SetRootComponent(XAxisComp);
+    //XAxisShaftComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
+    //YAxisShaftComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
+    //ZAxisShaftComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
+
+    //XAxisShaftComp->SetVisibility(false);
+    //YAxisShaftComp->SetVisibility(false);
+    //ZAxisShaftComp->SetVisibility(false);
+
+    //SetRootComponent(XAxisComp);
 }
 
 AGizmoActor::~AGizmoActor()
@@ -102,11 +113,72 @@ void AGizmoActor::Initialize(UStaticMesh* ArrowMesh, UStaticMesh* CubeMesh, USta
     ScaleMesh = CubeMesh;
     RotateMesh = RotateRingMesh;
 
-    XAxisComp->SetRelativeLocation(FVector::ZeroVector);
-    YAxisComp->SetRelativeLocation(FVector::ZeroVector);
-    ZAxisComp->SetRelativeLocation(FVector::ZeroVector);
+    if (!PivotComp)
+    {
+        PivotComp = new USceneComponent();
+        AddComponent(PivotComp);
+        SetRootComponent(PivotComp);
+    }
 
-    ApplyModeVisual();
+    if (!XAxisComp)
+    {
+        XAxisComp = new UStaticMeshComponent();
+        AddComponent(XAxisComp);
+        XAxisComp->SetupAttachment(PivotComp);
+    }
+
+    if (!YAxisComp)
+    {
+        YAxisComp = new UStaticMeshComponent();
+        AddComponent(YAxisComp);
+        YAxisComp->SetupAttachment(PivotComp);
+    }
+
+    if (!ZAxisComp)
+    {
+        ZAxisComp = new UStaticMeshComponent();
+        AddComponent(ZAxisComp);
+        ZAxisComp->SetupAttachment(PivotComp);
+    }
+
+    //XAxisComp->SetStaticMesh(ArrowMesh);
+    //YAxisComp->SetStaticMesh(ArrowMesh);
+    //ZAxisComp->SetStaticMesh(ArrowMesh);
+
+    //XAxisComp->SetRelativeLocation(FVector::ZeroVector);
+    //YAxisComp->SetRelativeLocation(FVector::ZeroVector);
+    //ZAxisComp->SetRelativeLocation(FVector::ZeroVector);
+
+    //// Arrow mesh가 +X 방향 기준이라고 가정
+    //XAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
+    //YAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 1.5707963f));
+    //ZAxisComp->SetRelativeRotation(FVector(0.0f, -1.5707963f, 0.0f));
+
+    //XAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
+    //YAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
+    //ZAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
+
+    XAxisComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
+    YAxisComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
+    ZAxisComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
+
+    XAxisComp->SetDepthEnable(true);
+    YAxisComp->SetDepthEnable(true);
+    ZAxisComp->SetDepthEnable(true);
+    XAxisComp->SetDepthWrite(false);
+    YAxisComp->SetDepthWrite(false);
+    ZAxisComp->SetDepthWrite(false);
+
+    XAxisComp->SetCullMode(ERenderCullMode::None);
+    YAxisComp->SetCullMode(ERenderCullMode::None);
+    ZAxisComp->SetCullMode(ERenderCullMode::None);
+
+    XAxisComp->SetVisibility(false);
+    YAxisComp->SetVisibility(false);
+    ZAxisComp->SetVisibility(false);
+
+    //SetRootComponent(XAxisComp);
+    SetRootComponent(PivotComp);
 }
 
 void AGizmoActor::SetTargetActor(AActor* InTarget)
@@ -146,7 +218,7 @@ bool AGizmoActor::IsGizmoVisible() const
 
 void AGizmoActor::UpdateTransformFromTarget()
 {
-    if (!TargetActor)
+    if (!TargetActor || !PivotComp)
     {
         return;
     }
@@ -157,23 +229,37 @@ void AGizmoActor::UpdateTransformFromTarget()
         return;
     }
 
-    const FVector Pos = Root->GetRelativeLocation();
+    //const FVector Pos = Root->GetRelativeLocation();
 
-    if (CurrentMode == EGizmoMode::Scale)
+    //if (XAxisComp) XAxisComp->SetRelativeLocation(Pos);
+    //if (YAxisComp) YAxisComp->SetRelativeLocation(Pos);
+    //if (ZAxisComp) ZAxisComp->SetRelativeLocation(Pos);
+    PivotComp->SetRelativeLocation(Root->GetRelativeLocation());
+    if (CurrentMode != EGizmoMode::Rotate)
     {
-        if (XAxisComp) XAxisComp->SetRelativeLocation(Pos + FVector(AxisLength, 0.0f, 0.0f));
-        if (YAxisComp) YAxisComp->SetRelativeLocation(Pos + FVector(0.0f, AxisLength, 0.0f));
-        if (ZAxisComp) ZAxisComp->SetRelativeLocation(Pos + FVector(0.0f, 0.0f, AxisLength));
-
-        if (XAxisShaftComp) XAxisShaftComp->SetRelativeLocation(Pos);
-        if (YAxisShaftComp) YAxisShaftComp->SetRelativeLocation(Pos);
-        if (ZAxisShaftComp) ZAxisShaftComp->SetRelativeLocation(Pos);
+        PivotComp->SetRelativeRotation(Root->GetRelativeRotation());
     }
     else
     {
-        if (XAxisComp) XAxisComp->SetRelativeLocation(Pos);
-        if (YAxisComp) YAxisComp->SetRelativeLocation(Pos);
-        if (ZAxisComp) ZAxisComp->SetRelativeLocation(Pos);
+        PivotComp->SetRelativeRotation(Root->GetRelativeRotation());
+    }
+    PivotComp->SetRelativeScale(FVector::OneVector);
+
+    if (CurrentMode == EGizmoMode::Scale)
+    {
+        if (XAxisComp) XAxisComp->SetRelativeLocation(FVector(AxisLength, 0.0f, 0.0f));
+        if (YAxisComp) YAxisComp->SetRelativeLocation(FVector(0.0f, AxisLength, 0.0f));
+        if (ZAxisComp) ZAxisComp->SetRelativeLocation(FVector(0.0f, 0.0f, AxisLength));
+
+        if (XAxisShaftComp) XAxisShaftComp->SetRelativeLocation(FVector::ZeroVector);
+        if (YAxisShaftComp) YAxisShaftComp->SetRelativeLocation(FVector::ZeroVector);
+        if (ZAxisShaftComp) ZAxisShaftComp->SetRelativeLocation(FVector::ZeroVector);
+    }
+    else
+    {
+        if (XAxisComp) XAxisComp->SetRelativeLocation(FVector::ZeroVector);
+        if (YAxisComp) YAxisComp->SetRelativeLocation(FVector::ZeroVector);
+        if (ZAxisComp) ZAxisComp->SetRelativeLocation(FVector::ZeroVector);
 
         if (XAxisShaftComp) XAxisShaftComp->SetVisibility(false);
         if (YAxisShaftComp) YAxisShaftComp->SetVisibility(false);
@@ -436,60 +522,77 @@ EGizmoAxis AGizmoActor::PickAxisTranslate(
     int ViewWidth,
     int ViewHeight) const
 {
-	USceneComponent* Root = TargetActor->GetRootComponent();
-    if (!Root)
+    if (!PivotComp)
     {
         return EGizmoAxis::None;
-	}
+    }
 
-	const FVector Origin = Root->GetRelativeLocation();
+    const FMatrix PivotWorld = PivotComp->GetWorldTransformMatrix();
 
-	const FVector XEnd = Origin + FVector(AxisLength, 0.0f, 0.0f);
-	const FVector YEnd = Origin + FVector(0.0f, AxisLength, 0.0f);
-	const FVector ZEnd = Origin + FVector(0.0f, 0.0f, AxisLength);
+    auto TransformPoint = [&](const FVector& LocalPoint) -> FVector
+        {
+            const FVector4 W = PivotWorld * FVector4(LocalPoint, 1.0f);
+            return FVector(W.X, W.Y, W.Z);
+        };
 
-	float OX = 0.0f, OY = 0.0f;
-	float XX = 0.0f, XY = 0.0f;
-	float YX = 0.0f, YY = 0.0f;
-	float ZX = 0.0f, ZY = 0.0f;
+    auto TransformDirection = [&](const FVector& LocalDir) -> FVector
+        {
+            const FVector4 W = PivotWorld * FVector4(LocalDir, 0.0f);
+            FVector Dir(W.X, W.Y, W.Z);
+            Dir.Normalize();
+            return Dir;
+        };
+
+    const FVector Origin = TransformPoint(FVector::ZeroVector);
+
+    const FVector XDir = TransformDirection(FVector(1.0f, 0.0f, 0.0f));
+    const FVector YDir = TransformDirection(FVector(0.0f, 1.0f, 0.0f));
+    const FVector ZDir = TransformDirection(FVector(0.0f, 0.0f, 1.0f));
+
+    const FVector XEnd = Origin + XDir * AxisLength;
+    const FVector YEnd = Origin + YDir * AxisLength;
+    const FVector ZEnd = Origin + ZDir * AxisLength;
+
+    float OX = 0.0f, OY = 0.0f;
+    float XX = 0.0f, XY = 0.0f;
+    float YX = 0.0f, YY = 0.0f;
+    float ZX = 0.0f, ZY = 0.0f;
 
     if (!ProjectWorldToScreen(Origin, Camera, ViewWidth, ViewHeight, OX, OY))
     {
         return EGizmoAxis::None;
     }
 
-	const bool bx = ProjectWorldToScreen(XEnd, Camera, ViewWidth, ViewHeight, XX, XY);
-	const bool by = ProjectWorldToScreen(YEnd, Camera, ViewWidth, ViewHeight, YX, YY);
-	const bool bz = ProjectWorldToScreen(ZEnd, Camera, ViewWidth, ViewHeight, ZX, ZY);
+    const bool bx = ProjectWorldToScreen(XEnd, Camera, ViewWidth, ViewHeight, XX, XY);
+    const bool by = ProjectWorldToScreen(YEnd, Camera, ViewWidth, ViewHeight, YX, YY);
+    const bool bz = ProjectWorldToScreen(ZEnd, Camera, ViewWidth, ViewHeight, ZX, ZY);
 
     float BestDist = FLT_MAX;
-	EGizmoAxis BestAxis = EGizmoAxis::None;
+    EGizmoAxis BestAxis = EGizmoAxis::None;
 
     if (bx && XAxisComp && XAxisComp->IsVisible())
     {
-        const float Dist = DistancePointToSegment2D((float)MouseX, (float)MouseY,
-            OX, OY, XX, XY);
+        const float Dist = DistancePointToSegment2D((float)MouseX, (float)MouseY, OX, OY, XX, XY);
         if (Dist < PickThreshold && Dist < BestDist)
         {
             BestDist = Dist;
             BestAxis = EGizmoAxis::X;
         }
-	}
+    }
 
     if (by && YAxisComp && YAxisComp->IsVisible())
     {
-        const float Dist = DistancePointToSegment2D((float)MouseX, (float)MouseY,
-            OX, OY, YX, YY);
+        const float Dist = DistancePointToSegment2D((float)MouseX, (float)MouseY, OX, OY, YX, YY);
         if (Dist < PickThreshold && Dist < BestDist)
         {
             BestDist = Dist;
             BestAxis = EGizmoAxis::Y;
         }
     }
+
     if (bz && ZAxisComp && ZAxisComp->IsVisible())
     {
-        const float Dist = DistancePointToSegment2D((float)MouseX, (float)MouseY,
-            OX, OY, ZX, ZY);
+        const float Dist = DistancePointToSegment2D((float)MouseX, (float)MouseY, OX, OY, ZX, ZY);
         if (Dist < PickThreshold && Dist < BestDist)
         {
             BestDist = Dist;
@@ -509,6 +612,132 @@ float AGizmoActor::DistancePointToCircle2D(
     const float DistToCenter = std::sqrt(Dx * Dx + Dy * Dy);
     return std::fabs(DistToCenter - Radius);
 }
+
+
+//EGizmoAxis AGizmoActor::PickAxisRotate(
+//    int MouseX,
+//    int MouseY,
+//    const UCameraComponent* Camera,
+//    int ViewWidth,
+//    int ViewHeight) const
+//{
+//    if (!PivotComp)
+//    {
+//        return EGizmoAxis::None;
+//    }
+//
+//    const FMatrix PivotWorld = PivotComp->GetWorldTransformMatrix();
+//
+//    auto TransformPoint = [&](const FVector& LocalPoint) -> FVector
+//        {
+//            const FVector4 W = PivotWorld * FVector4(LocalPoint, 1.0f);
+//            return FVector(W.X, W.Y, W.Z);
+//        };
+//
+//    auto TransformDirection = [&](const FVector& LocalDir) -> FVector
+//        {
+//            const FVector4 W = PivotWorld * FVector4(LocalDir, 0.0f);
+//            FVector Dir(W.X, W.Y, W.Z);
+//            Dir.Normalize();
+//            return Dir;
+//        };
+//
+//    const FVector Origin = TransformPoint(FVector::ZeroVector);
+//
+//    auto PickRing = [&](const FVector& LocalBasisU, const FVector& LocalBasisV) -> float
+//        {
+//            constexpr int NumSegments = 64;
+//            float BestDist = FLT_MAX;
+//            bool bHasValidSegment = false;
+//
+//            const FVector U = TransformDirection(LocalBasisU);
+//            const FVector V = TransformDirection(LocalBasisV);
+//
+//            float PrevX = 0.0f, PrevY = 0.0f;
+//            bool bPrevValid = false;
+//
+//            for (int i = 0; i <= NumSegments; ++i)
+//            {
+//                const float T = (float)i / (float)NumSegments;
+//                const float Angle = T * 6.28318530718f; // 2pi
+//
+//                const FVector WorldPoint =
+//                    Origin +
+//                    U * (std::cos(Angle) * AxisLength) +
+//                    V * (std::sin(Angle) * AxisLength);
+//
+//                float SX = 0.0f, SY = 0.0f;
+//                const bool bValid = ProjectWorldToScreen(WorldPoint, Camera, ViewWidth, ViewHeight, SX, SY);
+//
+//                if (bPrevValid && bValid)
+//                {
+//                    const float Dist = DistancePointToSegment2D(
+//                        (float)MouseX, (float)MouseY,
+//                        PrevX, PrevY, SX, SY);
+//
+//                    if (Dist < BestDist)
+//                    {
+//                        BestDist = Dist;
+//                    }
+//
+//                    bHasValidSegment = true;
+//                }
+//
+//                PrevX = SX;
+//                PrevY = SY;
+//                bPrevValid = bValid;
+//            }
+//
+//            if (!bHasValidSegment)
+//            {
+//                return FLT_MAX;
+//            }
+//
+//            return BestDist;
+//        };
+//
+//    float BestDist = FLT_MAX;
+//    EGizmoAxis BestAxis = EGizmoAxis::None;
+//
+//    const float RingPickThickness = 12.0f;
+//
+//    // X ring = YZ plane
+//    if (XAxisComp && XAxisComp->IsVisible())
+//    {
+//        const float Dist = PickRing(FVector(0.0f, 1.0f, 0.0f), FVector(0.0f, 0.0f, 1.0f));
+//        if (Dist < RingPickThickness && Dist < BestDist)
+//        {
+//            BestDist = Dist;
+//            BestAxis = EGizmoAxis::X;
+//        }
+//    }
+//
+//    // Y ring = XZ plane
+//    if (YAxisComp && YAxisComp->IsVisible())
+//    {
+//        const float Dist = PickRing(FVector(1.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 1.0f));
+//        if (Dist < RingPickThickness && Dist < BestDist)
+//        {
+//            BestDist = Dist;
+//            BestAxis = EGizmoAxis::Y;
+//        }
+//    }
+//
+//    // Z ring = XY plane
+//    if (ZAxisComp && ZAxisComp->IsVisible())
+//    {
+//        const float Dist = PickRing(FVector(1.0f, 0.0f, 0.0f), FVector(0.0f, 1.0f, 0.0f));
+//        if (Dist < RingPickThickness && Dist < BestDist)
+//        {
+//            BestDist = Dist;
+//            BestAxis = EGizmoAxis::Z;
+//        }
+//    }
+//
+//    return BestAxis;
+//}
+//
+//>>>>>>> dev
 
 bool AGizmoActor::ProjectAxisEndToScreen(
     const FVector& Origin,
@@ -538,17 +767,22 @@ EGizmoAxis AGizmoActor::PickAxisScale(
     int ViewWidth,
     int ViewHeight) const
 {
-    USceneComponent* Root = TargetActor->GetRootComponent();
-    if (!Root)
+    if (!PivotComp)
     {
         return EGizmoAxis::None;
     }
 
-    const FVector Origin = Root->GetRelativeLocation();
+    const FMatrix PivotWorld = PivotComp->GetWorldTransformMatrix();
 
-    const FVector XPos = Origin + FVector(AxisLength, 0.0f, 0.0f);
-    const FVector YPos = Origin + FVector(0.0f, AxisLength, 0.0f);
-    const FVector ZPos = Origin + FVector(0.0f, 0.0f, AxisLength);
+    auto TransformPoint = [&](const FVector& LocalPoint) -> FVector
+        {
+            const FVector4 W = PivotWorld * FVector4(LocalPoint, 1.0f);
+            return FVector(W.X, W.Y, W.Z);
+        };
+
+    const FVector XPos = TransformPoint(FVector(AxisLength, 0.0f, 0.0f));
+    const FVector YPos = TransformPoint(FVector(0.0f, AxisLength, 0.0f));
+    const FVector ZPos = TransformPoint(FVector(0.0f, 0.0f, AxisLength));
 
     float XX = 0.0f, XY = 0.0f;
     float YX = 0.0f, YY = 0.0f;
@@ -601,6 +835,7 @@ EGizmoAxis AGizmoActor::PickAxisScale(
     }
 
     return BestAxis;
+
 }
 
 // 기존 BuildPickRay / IntersectRayPlane 대신 AGizmoActor 내부에 추가
