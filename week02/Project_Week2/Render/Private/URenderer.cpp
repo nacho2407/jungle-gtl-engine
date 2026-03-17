@@ -72,6 +72,7 @@ bool URenderer::Create(HWND hWindow)
 
     if (!CreateDepthStencilBuffer(Desc.BufferDesc.Width, Desc.BufferDesc.Height)) { Release(); return false; }
     if (!CreateRasterizerStates()) { Release(); return false; }
+    if (!CreateDepthStencilStates()) { Release(); return false; }
     if (!CreateShader(L"Render\\Public\\Shaders\\Default.hlsl")) { Release(); return false; }
     if (!CreateConstantBuffer()) { Release(); return false; }
 
@@ -272,6 +273,7 @@ bool URenderer::CreateRasterizerStates()
 
     D3D11_RASTERIZER_DESC Desc = {};
     Desc.FillMode = D3D11_FILL_SOLID;
+    Desc.CullMode = D3D11_CULL_NONE;
     Desc.DepthClipEnable = TRUE;
     Desc.FrontCounterClockwise = TRUE;
 
@@ -289,6 +291,15 @@ bool URenderer::CreateRasterizerStates()
 
     Desc.CullMode = D3D11_CULL_NONE;
     if (FAILED(Device->CreateRasterizerState(&Desc, &RasterizerStateCullNone)))
+    {
+        return false;
+    }
+
+    Desc.DepthBias = 16;
+    Desc.SlopeScaledDepthBias = 1.0f;
+    Desc.DepthBiasClamp = 0.0f;
+
+    if (FAILED(Device->CreateRasterizerState(&Desc, &RasterizerStateCullNoneDepthBiased)))
     {
         return false;
     }
@@ -314,6 +325,12 @@ void URenderer::ReleaseRasterizerStates()
     {
         RasterizerStateCullNone->Release();
         RasterizerStateCullNone = nullptr;
+    }
+
+    if (RasterizerStateCullNoneDepthBiased)
+    {
+        RasterizerStateCullNoneDepthBiased->Release();
+        RasterizerStateCullNoneDepthBiased = nullptr;
     }
 }
 
@@ -578,10 +595,33 @@ void URenderer::Render(const FScene& Scene, const UCameraComponent* Camera)
         //printf("Proj[3][3] = %f\n", Projection.M[3][3]);
     }
 
+    //for (const FRenderItem& Item : Scene.RenderItems)
+    //{
+    //    DrawMeshItem(Item, View, Projection);
+    //}
+
+    // 1) 일반 오브젝트 먼저
     for (const FRenderItem& Item : Scene.RenderItems)
     {
+        if (!Item.bDepthEnable)
+        {
+            continue;
+        }
+
         DrawMeshItem(Item, View, Projection);
     }
+
+    // 2) overlay 성격 오브젝트 나중
+    for (const FRenderItem& Item : Scene.RenderItems)
+    {
+        if (Item.bDepthEnable)
+        {
+            continue;
+        }
+
+        DrawMeshItem(Item, View, Projection);
+    }
+
 
     RenderHitProxy(Scene, Camera);
 }
@@ -637,17 +677,24 @@ void URenderer::DrawMeshItem(const FRenderItem& Item, const FMatrix& View, const
     }
 
     ID3D11RasterizerState* TargetRS = RasterizerStateCullBack;
-    switch (Item.CullMode)
+    if (Item.bUseDepthBias)
     {
-    case ERenderCullMode::Back:
-        TargetRS = RasterizerStateCullBack;
-        break;
-    case ERenderCullMode::Front:
-        TargetRS = RasterizerStateCullFront;
-        break;
-    case ERenderCullMode::None:
-        TargetRS = RasterizerStateCullNone;
-        break;
+        TargetRS = RasterizerStateCullNoneDepthBiased;
+    }
+    else
+    {
+        switch (Item.CullMode)
+        {
+        case ERenderCullMode::Back:
+            TargetRS = RasterizerStateCullBack;
+            break;
+        case ERenderCullMode::Front:
+            TargetRS = RasterizerStateCullFront;
+            break;
+        case ERenderCullMode::None:
+            TargetRS = RasterizerStateCullNone;
+            break;
+        }
     }
     DeviceContext->RSSetState(TargetRS);
     DeviceContext->OMSetDepthStencilState(
@@ -957,7 +1004,9 @@ void URenderer::PrepareHitProxyPipeline()
     DeviceContext->PSSetShader(HitProxyPixelShader, nullptr, 0);
 
     DeviceContext->RSSetViewports(1, &ViewportInfo);
-    DeviceContext->RSSetState(RasterizerState);
+    //DeviceContext->RSSetState(RasterizerState);
+    DeviceContext->RSSetState(RasterizerStateCullBack);
+    DeviceContext->OMSetDepthStencilState(DepthStencilStateEnabled, 0);
 
     DeviceContext->OMSetRenderTargets(1, &HitProxyRTV, DepthStencilView);
 
@@ -993,18 +1042,39 @@ void URenderer::RenderHitProxy(const FScene& Scene, const UCameraComponent* Came
 
     uint32 NextProxyId = 1;
 
-    for (const FRenderItem& Item: Scene.RenderItems)
+    // 1) 일반 오브젝트 먼저
+    for (const FRenderItem& Item : Scene.RenderItems)
     {
-        // 만약 Hit Proxy를 건너뛰고자 하는 객체는 HitProxyType을 None으로 설정
         if (Item.HitProxy.Type == EHitProxyType::None)
         {
             continue;
         }
 
+        if (!Item.bDepthEnable)
+        {
+            continue;
+        }
+
         HitProxyMap[NextProxyId] = Item.HitProxy;
-
         DrawHitProxyItem(Item, View, Projection, NextProxyId);
+        NextProxyId++;
+    }
 
+    // 2) Overlay 성격 오브젝트 나중
+    for (const FRenderItem& Item : Scene.RenderItems)
+    {
+        if (Item.HitProxy.Type == EHitProxyType::None)
+        {
+            continue;
+        }
+
+        if (Item.bDepthEnable)
+        {
+            continue;
+        }
+
+        HitProxyMap[NextProxyId] = Item.HitProxy;
+        DrawHitProxyItem(Item, View, Projection, NextProxyId);
         NextProxyId++;
     }
 }
@@ -1022,6 +1092,25 @@ void URenderer::DrawHitProxyItem(const FRenderItem& Item, const FMatrix& View, c
         return;
     }
 
+    ID3D11RasterizerState* TargetRS = RasterizerStateCullBack;
+    switch (Item.CullMode)
+    {
+    case ERenderCullMode::Back:
+        TargetRS = RasterizerStateCullBack;
+        break;
+    case ERenderCullMode::Front:
+        TargetRS = RasterizerStateCullFront;
+        break;
+    case ERenderCullMode::None:
+        TargetRS = RasterizerStateCullNone;
+        break;
+    }
+
+    DeviceContext->RSSetState(TargetRS);
+    DeviceContext->OMSetDepthStencilState(
+        Item.bDepthEnable ? DepthStencilStateEnabled : DepthStencilStateDisabled,
+        0);
+
     // Id를 인코딩하여 색으로 사용
     const FVector4 ProxyColor = EncodeHitProxyIdColor(ProxyId);
     UpdateVSConstants(Item.WorldMatrix, View, Projection, ProxyColor, false);
@@ -1033,6 +1122,18 @@ void URenderer::DrawHitProxyItem(const FRenderItem& Item, const FMatrix& View, c
     if (Resource.IndexBuffer && Resource.IndexCount > 0)
     {
         DeviceContext->IASetIndexBuffer(Resource.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+        //DeviceContext->DrawIndexed(Resource.IndexCount, 0, 0);
+    }
+    else
+    {
+        //DeviceContext->Draw(Resource.VertexCount, 0);
+        DeviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+    }
+
+    DeviceContext->IASetPrimitiveTopology(Resource.Topology);
+
+    if (Resource.IndexBuffer && Resource.IndexCount > 0)
+    {
         DeviceContext->DrawIndexed(Resource.IndexCount, 0, 0);
     }
     else

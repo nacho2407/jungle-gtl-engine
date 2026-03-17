@@ -27,6 +27,7 @@ struct FRenderItem
 	ERenderCullMode CullMode = ERenderCullMode::Back;
 	bool bDepthEnable = true;
 	bool bUseVertexColor = true;
+	bool bUseDepthBias = false;
 };
 
 class FScene
@@ -36,6 +37,5 @@ public:
 	void Clear();
 
 public:
-
 	TArray<FRenderItem> RenderItems;
 };

@@ -62,15 +62,17 @@ FMatrix USceneComponent::GetWorldTransformMatrix() const
     return CachedWorldTransform;
 }
 
-void USceneComponent::MarkTransformDirty()
+void USceneComponent::MarkTransformDirty() // (*) 근데 왜 이름이 dirty일까?
 {
     bWorldTransformDirty = true;
 
-    // TODO: 자식 컴포넌트가 있다면, 자식들도 Dirty 처리
-    // for (USceneComponent* Child : Children)
-    // {
-    //     Child->MarkTransformDirty();
-    // }
+    for (USceneComponent* Child : Children)
+    {
+        if (Child)
+        {
+            Child->MarkTransformDirty();
+        }
+    }
 }
 
 void USceneComponent::UpdateWorldTransformIfNeeded() const
@@ -86,11 +88,24 @@ void USceneComponent::UpdateWorldTransformIfNeeded() const
 
     CachedWorldTransform = Scale * Rotation * Translation;
 
-    // TODO: 부모 컴포넌트가 있다면, 부모 트랜스폼과 합성
-    // if (ParentComponent)
-    // {
-    //     CachedWorldTransform = CachedWorldTransform * ParentComponent->GetWorldTransformMatrix();
-    // }
+     if (ParentComponent)
+     {
+         CachedWorldTransform = CachedWorldTransform * ParentComponent->GetWorldTransformMatrix();
+     }
 
     bWorldTransformDirty = false;
+}
+
+void USceneComponent::SetupAttachment(USceneComponent* InParent)
+{
+    ParentComponent = InParent;
+    if (ParentComponent)
+    {
+        ParentComponent->Children.push_back(this);
+    }
+}
+
+USceneComponent* USceneComponent::GetParentComponent() const
+{
+    return ParentComponent;
 }

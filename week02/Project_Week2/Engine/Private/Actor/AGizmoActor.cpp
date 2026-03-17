@@ -26,22 +26,32 @@ void AGizmoActor::Initialize(UStaticMesh* ArrowMesh)
         return;
     }
 
+    if (!PivotComp)
+    {
+        PivotComp = new USceneComponent();
+        AddComponent(PivotComp);
+        SetRootComponent(PivotComp);
+    }
+
     if (!XAxisComp)
     {
         XAxisComp = new UStaticMeshComponent();
         AddComponent(XAxisComp);
+        XAxisComp->SetupAttachment(PivotComp);
     }
 
     if (!YAxisComp)
     {
         YAxisComp = new UStaticMeshComponent();
         AddComponent(YAxisComp);
+        YAxisComp->SetupAttachment(PivotComp);
     }
 
     if (!ZAxisComp)
     {
         ZAxisComp = new UStaticMeshComponent();
         AddComponent(ZAxisComp);
+        ZAxisComp->SetupAttachment(PivotComp);
     }
 
     XAxisComp->SetStaticMesh(ArrowMesh);
@@ -64,6 +74,14 @@ void AGizmoActor::Initialize(UStaticMesh* ArrowMesh)
     XAxisComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
     YAxisComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
     ZAxisComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
+
+    XAxisComp->SetDepthEnable(false);
+    YAxisComp->SetDepthEnable(false);
+    ZAxisComp->SetDepthEnable(false);
+
+    XAxisComp->SetCullMode(ERenderCullMode::None);
+    YAxisComp->SetCullMode(ERenderCullMode::None);
+    ZAxisComp->SetCullMode(ERenderCullMode::None);
 
     XAxisComp->SetVisibility(false);
     YAxisComp->SetVisibility(false);
@@ -105,7 +123,7 @@ bool AGizmoActor::IsGizmoVisible() const
 
 void AGizmoActor::UpdateTransformFromTarget()
 {
-    if (!TargetActor)
+    if (!TargetActor || !PivotComp)
     {
         return;
     }
@@ -116,11 +134,14 @@ void AGizmoActor::UpdateTransformFromTarget()
         return;
     }
 
-    const FVector Pos = Root->GetRelativeLocation();
+    //const FVector Pos = Root->GetRelativeLocation();
 
-    if (XAxisComp) XAxisComp->SetRelativeLocation(Pos);
-    if (YAxisComp) YAxisComp->SetRelativeLocation(Pos);
-    if (ZAxisComp) ZAxisComp->SetRelativeLocation(Pos);
+    //if (XAxisComp) XAxisComp->SetRelativeLocation(Pos);
+    //if (YAxisComp) YAxisComp->SetRelativeLocation(Pos);
+    //if (ZAxisComp) ZAxisComp->SetRelativeLocation(Pos);
+    PivotComp->SetRelativeLocation(Root->GetRelativeLocation());
+    PivotComp->SetRelativeRotation(Root->GetRelativeRotation());
+    PivotComp->SetRelativeScale(FVector::OneVector);
 }
 
 void AGizmoActor::UpdateColors(EGizmoAxis HighlightAxis)
@@ -163,10 +184,24 @@ EGizmoAxis AGizmoActor::PickAxis(
     }
 
     const FVector Origin = Root->GetRelativeLocation();
+    const FMatrix ActorRot = FMatrix::MakeRotationXYZ(Root->GetRelativeRotation());
 
-    const FVector XEnd = Origin + FVector(AxisLength, 0.0f, 0.0f);
-    const FVector YEnd = Origin + FVector(0.0f, AxisLength, 0.0f);
-    const FVector ZEnd = Origin + FVector(0.0f, 0.0f, AxisLength);
+    // (*) [&] 처음보는 친구인데?
+    auto RotateDir = [&](const FVector& Dir) -> FVector
+        {
+            FVector4 R = ActorRot * FVector4(Dir, 0.0f);
+            FVector Out(R.X, R.Y, R.Z);
+            Out.Normalize();
+            return Out;
+        };
+
+    const FVector XDir = RotateDir(FVector(1.0f, 0.0f, 0.0f));
+    const FVector YDir = RotateDir(FVector(0.0f, 1.0f, 0.0f));
+    const FVector ZDir = RotateDir(FVector(0.0f, 0.0f, 1.0f));
+
+    const FVector XEnd = Origin + XDir * AxisLength;
+    const FVector YEnd = Origin + YDir * AxisLength;
+    const FVector ZEnd = Origin + ZDir * AxisLength;
 
     float OX = 0.0f, OY = 0.0f;
     float XX = 0.0f, XY = 0.0f;

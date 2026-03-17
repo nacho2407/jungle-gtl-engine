@@ -133,24 +133,24 @@ bool FApplication::Initialize(HINSTANCE hInstance)
     }
 
     WindowApp->OnResize = [this](int Width, int Height)
+    {
+        if (Width <= 0 || Height <= 0)
         {
-            if (Width <= 0 || Height <= 0)
-            {
-                return;
-            }
+            return;
+        }
 
-            if (Renderer)
-            {
-                Renderer->Resize((UINT)Width, (UINT)Height);
-            }
+        if (Renderer)
+        {
+            Renderer->Resize((UINT)Width, (UINT)Height);
+        }
 
-            if (MainCamera)
-            {
-                MainCamera->UpdateAspectRatio((float)Width, (float)Height);
-            }
+        if (MainCamera)
+        {
+            MainCamera->UpdateAspectRatio((float)Width, (float)Height);
+        }
 
-            RenderFrame();
-        };
+        RenderFrame();
+    };
 
     PropertyPanel = new FPropertyPanel();
     ControlPanel = new FControlPanel();
@@ -263,6 +263,20 @@ bool FApplication::InitializeScene()
 
     World->AddActor(CameraActor);
     
+    {
+        GridActor = new AActor();
+
+        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
+        MeshComp->SetStaticMesh(GridMesh);
+        MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
+        MeshComp->SetCullMode(ERenderCullMode::None);
+        MeshComp->SetUseDepthBias(true);
+
+        GridActor->AddComponent(MeshComp);
+        GridActor->SetRootComponent(MeshComp);
+        World->AddActor(GridActor);
+    }
+    
     SpawnMeshActor(SphereMesh, FVector(0.0f, 0.0f, 0.0f));
 
     //// World Axes
@@ -278,17 +292,14 @@ bool FApplication::InitializeScene()
     //    World->AddActor(WorldAxesActor);
     //}
     WorldAxesActor = SpawnMeshActor(AxesMesh, FVector(0.0f, 0.0f, 0.0f));
-
+    if (WorldAxesActor)
     {
-        GridActor = new AActor();
+        if (UStaticMeshComponent* AxesComp = FindStaticMeshComponent(WorldAxesActor))
+        {
+            //AxesComp->SetDepthEnable(false);
 
-        UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
-        MeshComp->SetStaticMesh(GridMesh);
-        MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
-
-        GridActor->AddComponent(MeshComp);
-        GridActor->SetRootComponent(MeshComp);
-        World->AddActor(GridActor);
+            AxesComp->SetCullMode(ERenderCullMode::None);
+        }
     }
 
     //// Gizmo
@@ -587,11 +598,15 @@ void FApplication::RenderFrame()
     // 여기서 메인 백버퍼 다시 바인딩
     Renderer->BindMainRenderTargetForOverlay();
 
+    //Renderer->BeginOverlayRenderState(); // 오버레이 변경 -> Gizmo, Mesh 오버레이 무시
+    //Renderer->RenderGizmo(*Scene, Maincamera); //
+    //Renderer->EndOverlayRenderState(); // 
+
     GUIManager->BeginFrame();
     RenderDebugUI();
     RenderEditorUI();
-    ImGui::Render();
-    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+    //ImGui::Render();
+    //ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
     GUIManager->EndFrame();
 
@@ -977,31 +992,38 @@ void FApplication::BeginGizmoDrag(EGizmoAxis Axis, int MouseX, int MouseY)
         return;
     }
 
-    FVector AxisDir = FVector::ZeroVector;
+    const FMatrix ActorRot = FMatrix::MakeRotationXYZ(Root->GetRelativeRotation());
+
+    FVector LocalAxis = FVector::ZeroVector;
     switch (Axis)
     {
-    case EGizmoAxis::X: AxisDir = FVector(1.0f, 0.0f, 0.0f); break;
-    case EGizmoAxis::Y: AxisDir = FVector(0.0f, 1.0f, 0.0f); break;
-    case EGizmoAxis::Z: AxisDir = FVector(0.0f, 0.0f, 1.0f); break;
+    case EGizmoAxis::X: LocalAxis = FVector(1.0f, 0.0f, 0.0f); break;
+    case EGizmoAxis::Y: LocalAxis = FVector(0.0f, 1.0f, 0.0f); break;
+    case EGizmoAxis::Z: LocalAxis = FVector(0.0f, 0.0f, 1.0f); break;
     default: return;
     }
 
+    FVector4 Axis4 = ActorRot * FVector4(LocalAxis, 0.0f);
+    FVector AxisDir(Axis4.X, Axis4.Y, Axis4.Z);
+    AxisDir.Normalize();
+
     const FMatrix CamRot = FMatrix::MakeRotationXYZ(MainCamera->GetRelativeRotation());
     const FVector4 Forward4 = CamRot * FVector4(0.0f, 0.0f, 1.0f, 0.0f);
-    const FVector CameraForward(Forward4.X, Forward4.Y, Forward4.Z);
+    FVector CameraForward(Forward4.X, Forward4.Y, Forward4.Z);
+    CameraForward.Normalize();
 
     FVector PlaneNormal = AxisDir.Cross(CameraForward.Cross(AxisDir));
-    PlaneNormal.Normalize();
-
     if (PlaneNormal.LengthSquared() < 0.000001f)
     {
         return;
     }
+    PlaneNormal.Normalize();
 
     FRay Ray = BuildPickRay(MouseX, MouseY);
 
     FVector HitPoint;
-    if (!IntersectRayPlane(Ray, Root->GetRelativeLocation(), PlaneNormal, HitPoint))
+    const FVector ActorPos = Root->GetRelativeLocation();
+    if (!IntersectRayPlane(Ray, ActorPos, PlaneNormal, HitPoint))
     {
         return;
     }
@@ -1010,7 +1032,7 @@ void FApplication::BeginGizmoDrag(EGizmoAxis Axis, int MouseX, int MouseY)
     ActiveGizmoAxis = Axis;
     DragAxisDirection = AxisDir;
     DragPlaneNormal = PlaneNormal;
-    DragStartActorLocation = Root->GetRelativeLocation();
+    DragStartActorLocation = ActorPos;
     DragStartHitPoint = HitPoint;
 }
 
@@ -1402,7 +1424,7 @@ AActor* FApplication::SpawnMeshActor(UStaticMesh* Mesh, const FVector& Location)
 
     MeshComp->SetStaticMesh(Mesh);
     MeshComp->SetRelativeLocation(Location);
-
+    
     Actor->AddComponent(MeshComp);
     Actor->SetRootComponent(MeshComp);
 

@@ -65,6 +65,10 @@ public:
 	ID3D11InputLayout* SimpleInputLayout = nullptr;
 	ID3D11Buffer* ConstantBuffer = nullptr;
 
+    ID3D11DepthStencilState* DefaultDepthState = nullptr;
+    ID3D11DepthStencilState* OverlayDepthState = nullptr;
+    ID3D11RasterizerState* RasterizerStateCullNoneDepthBiased = nullptr;
+
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 	D3D11_VIEWPORT ViewportInfo = {};
 
