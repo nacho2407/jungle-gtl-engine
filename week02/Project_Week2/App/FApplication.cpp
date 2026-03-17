@@ -172,9 +172,9 @@ bool FApplication::InitializeResources()
     CubeMesh = BuiltInMeshFactory::CreateCubeMesh();
     //TriangleMesh = BuiltInMeshFactory::CreateTriangleMesh();
     TorusMesh = BuiltInMeshFactory::CreateTorusMesh(64, 32, 1.2f, 0.35f);
-    //AxesMesh = BuiltInMeshFactory::CreateAxesMesh();
-    //GridMesh = BuiltInMeshFactory::CreateGridMesh(20, 1.0f);
-    //GizmoArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh();
+    AxesMesh = BuiltInMeshFactory::CreateAxesMesh();
+    GridMesh = BuiltInMeshFactory::CreateGridMesh(20, 1.0f);
+    GizmoArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh();
 
     //ClickCircleMesh = BuiltInMeshFactory::CreateCircleMesh(64);
     ClickCircleMesh = BuiltInMeshFactory::CreateDiscMesh(64);
@@ -238,70 +238,70 @@ bool FApplication::InitializeScene()
 
     // World Axes
     {
-        //WorldAxesActor = new AActor();
+        WorldAxesActor = new AActor();
 
-        //UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
-        //MeshComp->SetStaticMesh(AxesMesh);
-        //MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
+        UStaticMeshComponent* MeshComp = NewObject<UStaticMeshComponent>();
+        MeshComp->SetStaticMesh(AxesMesh);
+        MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
 
-        //WorldAxesActor->AddComponent(MeshComp);
-        //WorldAxesActor->SetRootComponent(MeshComp);
-        //World->AddActor(WorldAxesActor);
+        WorldAxesActor->AddComponent(MeshComp);
+        WorldAxesActor->SetRootComponent(MeshComp);
+        World->AddActor(WorldAxesActor);
     }
 
     // Ground Grid
     {
-        //GridActor = new AActor();
+        GridActor = new AActor();
 
-        //UStaticMeshComponent* MeshComp = NewObject<UStaticMeshComponent>("UStaticMeshComponent");
-        //MeshComp->SetStaticMesh(GridMesh);
-        //MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
+        UStaticMeshComponent* MeshComp = NewObject<UStaticMeshComponent>();
+        MeshComp->SetStaticMesh(GridMesh);
+        MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
 
-        //GridActor->AddComponent(MeshComp);
-        //GridActor->SetRootComponent(MeshComp);
-        //World->AddActor(GridActor);
+        GridActor->AddComponent(MeshComp);
+        GridActor->SetRootComponent(MeshComp);
+        World->AddActor(GridActor);
     }
 
     // Gizmo
     // @@@ 이렇게 길게 여기서 처리하는 게 맞음????
     {
-        //GizmoActor = new AActor();
+        GizmoActor = new AActor();
 
-        //GizmoXComp = new UStaticMeshComponent();
-        //GizmoYComp = new UStaticMeshComponent();
-        //GizmoZComp = new UStaticMeshComponent();
+        GizmoXComp = new UStaticMeshComponent();
+        GizmoYComp = new UStaticMeshComponent();
+        GizmoZComp = new UStaticMeshComponent();
 
-        //GizmoXComp->SetStaticMesh(GizmoArrowMesh);
-        //GizmoYComp->SetStaticMesh(GizmoArrowMesh);
-        //GizmoZComp->SetStaticMesh(GizmoArrowMesh);
+        GizmoXComp->SetStaticMesh(GizmoArrowMesh);
+        GizmoYComp->SetStaticMesh(GizmoArrowMesh);
+        GizmoZComp->SetStaticMesh(GizmoArrowMesh);
 
-        //GizmoXComp->SetRelativeLocation(FVector::ZeroVector);
-        //GizmoYComp->SetRelativeLocation(FVector::ZeroVector);
-        //GizmoZComp->SetRelativeLocation(FVector::ZeroVector);
+        GizmoXComp->SetRelativeLocation(FVector::ZeroVector);
+        GizmoYComp->SetRelativeLocation(FVector::ZeroVector);
+        GizmoZComp->SetRelativeLocation(FVector::ZeroVector);
 
         //// arrow mesh가 +X 방향 기준이라고 가정
-        //GizmoXComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
-        //GizmoYComp->SetRelativeRotation(FVector(0.0f, 0.0f, 1.5707963f));
-        //GizmoZComp->SetRelativeRotation(FVector(0.0f, -1.5707963f, 0.0f));
+        GizmoXComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
+        GizmoYComp->SetRelativeRotation(FVector(0.0f, 0.0f, 1.5707963f));
+        GizmoZComp->SetRelativeRotation(FVector(0.0f, -1.5707963f, 0.0f));
 
-        //GizmoXComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
-        //GizmoYComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
-        //GizmoZComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
+        GizmoXComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
+        GizmoYComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
+        GizmoZComp->SetRelativeScale(FVector(0.5f, 0.5f, 0.5f));
 
-        //GizmoXComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
-        //GizmoYComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
-        //GizmoZComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
+        GizmoXComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
+        GizmoYComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
+        GizmoZComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
 
-        //GizmoXComp->SetVisibility(false);
-        //GizmoYComp->SetVisibility(false);
-        //GizmoZComp->SetVisibility(false);
+        GizmoXComp->SetVisibility(false);
+        GizmoYComp->SetVisibility(false);
+        GizmoZComp->SetVisibility(false);
 
-        //GizmoActor->AddComponent(GizmoXComp);
-        //GizmoActor->AddComponent(GizmoYComp);
-        //GizmoActor->AddComponent(GizmoZComp);
-        //GizmoActor->SetRootComponent(GizmoXComp);
+        GizmoActor->AddComponent(GizmoXComp);
+        GizmoActor->AddComponent(GizmoYComp);
+        GizmoActor->AddComponent(GizmoZComp);
+        GizmoActor->SetRootComponent(GizmoXComp);
 
-        //World->AddActor(GizmoActor);
+        World->AddActor(GizmoActor);
     }
 
     // Click Pulse Circle
@@ -420,7 +420,7 @@ void FApplication::Tick(float DeltaTime)
             {
                 HitActor = Proxy.Primitive->GetOwner();
 
-                if (HitActor == World->GetGizmoActor() || HitActor == World->GetWorldAxisActor() || HitActor == World->GetGridActor())
+                if (HitActor == GizmoActor || HitActor == WorldAxesActor || HitActor == GridActor)
                 {
                     HitActor = nullptr;
                 }
@@ -703,7 +703,7 @@ AActor* FApplication::PickActor(const FRay& Ray) const
     for (AActor* Actor : Actors)
     {
         // @@@ Actor==GizmoActor라는데, 이거 XYZ로 나누면서 nullptr 아닌가?
-        if (!Actor || Actor == World->GetCameraActor() || Actor == World->GetGizmoActor() || Actor == World->GetWorldAxisActor()|| Actor == ClickCircleActor || Actor == World->GetGridActor())
+        if (!Actor || Actor == World->GetCameraActor() || Actor == GizmoActor || Actor == WorldAxesActor|| Actor == ClickCircleActor || Actor == GridActor)
         {
             continue;
         }
@@ -822,13 +822,11 @@ void FApplication::SetSelectedActor(AActor* NewSelected)
         return;
     }
 
-    //USceneComponent* Root = SelectedActor->GetRootComponent();
-    //if (!Root || !GizmoXComp || !GizmoYComp || !GizmoZComp)
-    //{
-    //    return;
-    //}
-
-    check(SelectedActor == World->GetGizmoActor())
+    USceneComponent* Root = SelectedActor->GetRootComponent();
+    if (!Root || !GizmoXComp || !GizmoYComp || !GizmoZComp)
+    {
+        return;
+    }
 
     UpdateGizmoTransform();
 

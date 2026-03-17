@@ -25,7 +25,14 @@ public:                                                            \
         classData->ClassSize = sizeof(CurrentType);                \
         StaticClass = classData;                                   \
         return StaticClass;                                        \
-	}
+	}																\
+public:\
+	void Initialize(const FUObjectInitializer& ObjectInitilizer)\
+	{\
+		UUID = ObjectInitilizer.UUID;\
+		Name = ObjectInitilizer.Name;\
+	}\
+private:
 
 class UObject : public UObjectBaseUtility
 {
@@ -33,12 +40,11 @@ class UObject : public UObjectBaseUtility
 
 public:
 	size_t AllocatedSize;
-private:
+protected:
 	uint32 UUID;
 
 public:
 	UObject() : AllocatedSize(0), UUID(0), Name("DefaultObject") {};
-	void Initialize(const FUObjectInitializer& ObjectInitilizer);
 	virtual ~UObject();
 
 public:

@@ -9,7 +9,7 @@ ACamera::ACamera()
     MainCamera->SetFieldOfView(39.6f);
     MainCamera->SetNearClip(0.1f);
     MainCamera->SetFarClip(1000.0f);
-    MainCamera->SetAspectRatio(static_cast<float>(WindowApp->GetClientWidth()) / static_cast<float>(WindowApp->GetClientHeight()));
+    //MainCamera->SetAspectRatio(static_cast<float>(WindowApp->GetClientWidth()) / static_cast<float>(WindowApp->GetClientHeight()));
     CameraComponent = MainCamera;
     AddComponent(MainCamera);
     SetRootComponent(MainCamera);
@@ -26,7 +26,7 @@ void ACamera::SetAspectRatio(float Ratio)
 
 UCameraComponent* ACamera::GetCameraComponent() const
 {
-	return nullptr;
+	return CameraComponent;
 }
 
 void ACamera::InitializeActor()

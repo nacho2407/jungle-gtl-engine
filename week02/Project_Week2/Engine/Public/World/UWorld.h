@@ -28,9 +28,9 @@ public:
     void BuildScene(FScene& OutScene) const;
 
     ACamera* GetCameraActor();
-    AActor* GetWorldAxisActor();
-    AActor* GetGridActor();
-    AActor* GetGizmoActor();
+    //AActor* GetWorldAxisActor();
+    //AActor* GetGridActor();
+    //AActor* GetGizmoActor();
 
        
     const TArray<AActor*>& GetActors() const;

@@ -1,11 +1,11 @@
 #include "UEngineStatics.h"
 #include "UObject.h"
 
-void UObject::Initialize(const FUObjectInitializer& ObjectInitilizer)
-{
-	UUID = ObjectInitilizer.UUID;
-	Name = ObjectInitilizer.Name;
-}
+//void UObject::Initialize(const FUObjectInitializer& ObjectInitilizer)
+//{
+//	UUID = ObjectInitilizer.UUID;
+//	Name = ObjectInitilizer.Name;
+//}
 
 //void UObject::Initialize(const FUObjectInitializer& ObjectInitilizer)
 //{
