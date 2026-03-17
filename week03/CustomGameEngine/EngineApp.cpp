@@ -1,16 +1,17 @@
 ﻿#include "EngineApp.h"
-#include "AxisComponent.h"
 #include "Camera.h"
-#include "CubeComponent.h"
-#include "Editor.h"
-#include "Gizmo.h"
-#include "GizmoController.h"
+#include "Component/AxisComponent.h"
+#include "Component/CubeComponent.h"
+#include "Renderer/Renderer.h"
+#include "Editor/Editor.h"
+#include "Editor/Gizmo.h"
+#include "Editor/GizmoController.h"
+#include "Editor/Picker.h"
 #include "ImGui/imgui.h"
 #include "InputManager.h"
 #include "Logger.h"
 #include "Object.h"
 #include "ObjectFactory.h"
-#include "Picker.h"
 #include "ResourceManager.h"
 #include "Scene.h"
 #include "SceneManager.h"
@@ -91,8 +92,8 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12,
 	 D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
-	ResourceManager::CreateMaterial(L"ShaderW0.hlsl", L"ShaderW0.hlsl", Renderer->Device, layout, 2);
-	ResourceManager::CreateMaterial(L"ShaderInfiniteGrid.hlsl", L"ShaderInfiniteGrid.hlsl", Renderer->Device, nullptr, 0);
+	ResourceManager::CreateMaterial(L"Shader/ShaderW0.hlsl", L"Shader/ShaderW0.hlsl", Renderer->Device, layout, 2);
+	ResourceManager::CreateMaterial(L"Shader/ShaderInfiniteGrid.hlsl", L"Shader/ShaderInfiniteGrid.hlsl", Renderer->Device, nullptr, 0);
 	ResourceManager::AddCubeMesh(Renderer->Device);
 	ResourceManager::AddSphereMesh(Renderer->Device);
 	ResourceManager::AddTriangleMesh(Renderer->Device);
@@ -232,7 +233,7 @@ void EngineApp::Run()
 		Renderer->Prepare();
 
 		ResourceManager* RM = ResourceManager::GetInstance();
-		Renderer->RenderGrid(Camera, RM->GetMaterial(L"ShaderInfiniteGrid.hlsl").VertexShader, RM->GetMaterial(L"ShaderInfiniteGrid.hlsl").PixelShader);
+		Renderer->RenderGrid(Camera, RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").VertexShader, RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").PixelShader);
 		
 		Scene->Update(TempDelta);
 		GetWorld().OnBeforeRender();

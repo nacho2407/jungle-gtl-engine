@@ -2,9 +2,9 @@
 #include "GizmoController.h"
 #include "ResourceManager.h"
 #include "Object.h"
-#include "Renderer.h"
-#include "RenderObject.h"
-#include "SceneComponent.h"
+#include "Renderer/Renderer.h"
+#include "Renderer/RenderObject.h"
+#include "Component/SceneComponent.h"
 #include "Picker.h"
 #include "Logger.h"
 
@@ -35,7 +35,7 @@ void GizmoScaleControlStrategy::UpdateRenderObject()
 
 	{
 		GizmoX->Geometry = &resourceManager->GetGeometry("GizmoScaleX");
-		GizmoX->Material = &resourceManager->GetMaterial(L"ShaderW0.hlsl");
+		GizmoX->Material = &resourceManager->GetMaterial(L"Shader/ShaderW0.hlsl");
 
 		GizmoX->World = Controller->GetRelativeMatrix();
 		GizmoX->bDepthEnabled = false;
@@ -44,7 +44,7 @@ void GizmoScaleControlStrategy::UpdateRenderObject()
 	}
 	{
 		GizmoY->Geometry = &resourceManager->GetGeometry("GizmoScaleY");
-		GizmoY->Material = &resourceManager->GetMaterial(L"ShaderW0.hlsl");
+		GizmoY->Material = &resourceManager->GetMaterial(L"Shader/ShaderW0.hlsl");
 
 		GizmoY->World = Controller->GetRelativeMatrix();
 		GizmoY->bDepthEnabled = false;
@@ -53,7 +53,7 @@ void GizmoScaleControlStrategy::UpdateRenderObject()
 	}
 	{
 		GizmoZ->Geometry = &resourceManager->GetGeometry("GizmoScaleZ");
-		GizmoZ->Material = &resourceManager->GetMaterial(L"ShaderW0.hlsl");
+		GizmoZ->Material = &resourceManager->GetMaterial(L"Shader/ShaderW0.hlsl");
 
 		GizmoZ->World = Controller->GetRelativeMatrix();
 		GizmoZ->bDepthEnabled = false;

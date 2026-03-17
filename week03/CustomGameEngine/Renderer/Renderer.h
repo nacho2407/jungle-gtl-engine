@@ -2,7 +2,7 @@
 
 #include "ConstantBuffer.h"
 #include "Level.h"
-#include "Matrix.h"
+#include "Math/Matrix.h"
 #include "VertexSimple.h"
 #include <d3d11.h>
 

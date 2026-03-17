@@ -2,7 +2,7 @@
 
 #include "EngineTypes.h"
 #include "GizmoControlStrategy.h"
-#include "Matrix.h"
+#include "Math/Matrix.h"
 #include "Picker.h"
 
 enum class GizmoControllerAxis

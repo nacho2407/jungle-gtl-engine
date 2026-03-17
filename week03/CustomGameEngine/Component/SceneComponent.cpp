@@ -1,6 +1,6 @@
 ﻿#include "SceneComponent.h"
 #include "ImGui/imgui.h"
-#include "Editor.h"
+#include "Editor/Editor.h"
 
 USceneComponent::USceneComponent()
 {

@@ -1,6 +1,6 @@
 ﻿#include "World.h"
 #include "ObjectFactory.h"
-#include "PrimitiveComponent.h"
+#include "Component/PrimitiveComponent.h"
 
 UScene* UWorld::activeScene;
 

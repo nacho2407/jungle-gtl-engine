@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "GizmoControlStrategy.h"
-#include "Vector.h"
+#include "Math/Vector.h"
 
 class GizmoController;
 class RenderObject;

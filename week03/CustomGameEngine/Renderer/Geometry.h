@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "EngineTypes.h"
-#include "Vector.h"
+#include "Math/Vector.h"
 #include <d3d11.h>
 
 struct FGeometry

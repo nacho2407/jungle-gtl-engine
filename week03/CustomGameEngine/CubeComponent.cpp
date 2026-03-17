@@ -1,4 +1,4 @@
-﻿#include "CubeComponent.h"
+﻿#include "Component/CubeComponent.h"
 #include "ResourceManager.h"
 
 UCubeComp::UCubeComp()

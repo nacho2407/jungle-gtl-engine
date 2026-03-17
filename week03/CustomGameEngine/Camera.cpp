@@ -1,10 +1,10 @@
 ﻿#include "Camera.h"
 #include "InputManager.h"
 #include "Math/MathHelper.h"
-#include "Matrix.h"
-#include "Quaternion.h"
+#include "Math/Matrix.h"
+#include "Math/Quaternion.h"
+#include "Math/Vector.h"
 #include "TimerManager.h"
-#include "Vector.h"
 #include <algorithm>
 
 UCamera::~UCamera() {}

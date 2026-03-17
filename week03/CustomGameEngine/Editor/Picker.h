@@ -2,7 +2,7 @@
 
 #include "EngineTypes.h"
 #include "Object.h"
-#include "Vector.h"
+#include "Math/Vector.h"
 
 class UCamera;
 class UScene;

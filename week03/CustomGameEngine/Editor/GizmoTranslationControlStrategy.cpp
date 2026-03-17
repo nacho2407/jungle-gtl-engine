@@ -1,10 +1,10 @@
 ﻿#include "GizmoTranslationControlStrategy.h"
 #include "ResourceManager.h"
 #include "Object.h"
-#include "RenderObject.h"
 #include "GizmoController.h"
-#include "SceneComponent.h"
-#include "Renderer.h"
+#include "Component/SceneComponent.h"
+#include "Renderer/Renderer.h"
+#include "Renderer/RenderObject.h"
 #include "Logger.h"
 
 GizmoTranslationControlStrategy::GizmoTranslationControlStrategy(GizmoController* controller)
@@ -37,7 +37,7 @@ void GizmoTranslationControlStrategy::UpdateRenderObject()
 
 	{
 		GizmoX->Geometry = &resourceManager->GetGeometry("GizmoTranslationX");
-		GizmoX->Material = &resourceManager->GetMaterial(L"ShaderW0.hlsl");
+		GizmoX->Material = &resourceManager->GetMaterial(L"Shader/ShaderW0.hlsl");
 
 		GizmoX->World = Controller->GetRelativeMatrix();
 		GizmoX->bDepthEnabled = false;
@@ -46,7 +46,7 @@ void GizmoTranslationControlStrategy::UpdateRenderObject()
 	}
 	{
 		GizmoY->Geometry = &resourceManager->GetGeometry("GizmoTranslationY");
-		GizmoY->Material = &resourceManager->GetMaterial(L"ShaderW0.hlsl");
+		GizmoY->Material = &resourceManager->GetMaterial(L"Shader/ShaderW0.hlsl");
 
 		GizmoY->World = Controller->GetRelativeMatrix();
 		GizmoY->bDepthEnabled = false;
@@ -55,7 +55,7 @@ void GizmoTranslationControlStrategy::UpdateRenderObject()
 	}
 	{
 		GizmoZ->Geometry = &resourceManager->GetGeometry("GizmoTranslationZ");
-		GizmoZ->Material = &resourceManager->GetMaterial(L"ShaderW0.hlsl");
+		GizmoZ->Material = &resourceManager->GetMaterial(L"Shader/ShaderW0.hlsl");
 
 		GizmoZ->World = Controller->GetRelativeMatrix();
 		GizmoZ->bDepthEnabled = false;

@@ -1,17 +1,16 @@
 ﻿#pragma once
 
 #include "GizmoControlStrategy.h"
-#include "Vector.h"
-#include "Quaternion.h"
+#include "Math/Vector.h"
 
 class GizmoController;
 class RenderObject;
 
-class GizmoRotationControlStrategy : public IGizmoControlStrategy
+class GizmoScaleControlStrategy : public IGizmoControlStrategy
 {
 public:
-	GizmoRotationControlStrategy(GizmoController* controller);
-	~GizmoRotationControlStrategy() override;
+	GizmoScaleControlStrategy(GizmoController* controller);
+	~GizmoScaleControlStrategy() override;
 
 public:
 	virtual void Update() override;
@@ -26,10 +25,12 @@ public:
 private:
 	GizmoController* Controller;
 
-	FVector InitialTouchPoint;
-	FQuat InitialObjectQuaternion;
+	FVector InitialWorldPos;
+	FVector InitialObjectScale;
+	float InitialDragOffset = 0.0f;
 
 	RenderObject* GizmoX;
 	RenderObject* GizmoY;
 	RenderObject* GizmoZ;
 };
+

@@ -1,10 +1,10 @@
 ﻿#pragma once
 
-#include "Matrix.h"
+#include "Math/Matrix.h"
+#include "Math/Quaternion.h"
+#include "Math/Vector.h"
 #include "Object.h"
-#include "Quaternion.h"
 #include "Serializable.h"
-#include "Vector.h"
 
 class USceneComponent : public UObject, public ISerializable
 {

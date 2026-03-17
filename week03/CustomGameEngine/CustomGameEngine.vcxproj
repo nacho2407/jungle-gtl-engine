@@ -105,6 +105,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -119,45 +120,57 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Editor.h" />
-    <ClInclude Include="EditorControlPanel.h" />
-    <ClInclude Include="EditorPropertyPanel.h" />
-    <ClInclude Include="EditorStatPanel.h" />
-    <ClInclude Include="EditorToolbar.h" />
+    <ClInclude Include="Component\AxisComponent.h" />
+    <ClInclude Include="Component\CubeComponent.h" />
+    <ClInclude Include="Component\PlaneComponent.h" />
+    <ClInclude Include="Component\PrimitiveComponent.h" />
+    <ClInclude Include="Component\SceneComponent.h" />
+    <ClInclude Include="Component\SphereComponent.h" />
+    <ClInclude Include="Component\TriangleComponent.h" />
+    <ClInclude Include="Editor\Editor.h" />
+    <ClInclude Include="Editor\EditorConsole.h" />
+    <ClInclude Include="Editor\EditorControlPanel.h" />
+    <ClInclude Include="Editor\EditorPropertyPanel.h" />
+    <ClInclude Include="Editor\EditorStatPanel.h" />
+    <ClInclude Include="Editor\EditorToolbar.h" />
+    <ClInclude Include="Editor\Gizmo.h" />
+    <ClInclude Include="Editor\GizmoController.h" />
+    <ClInclude Include="Editor\GizmoControlStrategy.h" />
+    <ClInclude Include="Editor\GizmoRotationControlStrategy.h" />
+    <ClInclude Include="Editor\GizmoScaleControlStrategy.h" />
+    <ClInclude Include="Editor\GizmoTranslationControlStrategy.h" />
+    <ClInclude Include="Editor\Picker.h" />
     <ClInclude Include="EngineApp.h" />
     <ClInclude Include="Color.h" />
-    <ClInclude Include="ConstantBuffer.h" />
-    <ClInclude Include="Material.h" />
-    <ClInclude Include="Geometry.h" />
-    <ClInclude Include="Level.h" />
-    <ClInclude Include="Matrix.h" />
+    <ClInclude Include="Math\Matrix.h" />
+    <ClInclude Include="Math\Quaternion.h" />
+    <ClInclude Include="Math\Vector.h" />
     <ClInclude Include="ObjectFactory.h" />
-    <ClInclude Include="Quaternion.h" />
-    <ClInclude Include="Gizmo.h" />
-    <ClInclude Include="GizmoController.h" />
-    <ClInclude Include="GizmoRotationControlStrategy.h" />
-    <ClInclude Include="GizmoScaleControlStrategy.h" />
-    <ClInclude Include="GizmoTranslationControlStrategy.h" />
-    <ClInclude Include="GizmoControlStrategy.h" />
     <ClInclude Include="InputManager.h" />
+    <ClInclude Include="Renderer\ConstantBuffer.h" />
+    <ClInclude Include="Renderer\Geometry.h" />
+    <ClInclude Include="Renderer\Level.h" />
+    <ClInclude Include="Renderer\Material.h" />
+    <ClInclude Include="Renderer\Renderer.h" />
+    <ClInclude Include="Renderer\RenderObject.h" />
     <ClInclude Include="Serializable.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Singleton.h" />
     <ClInclude Include="Math\MathHelper.h" />
     <ClInclude Include="PrimitiveFactory.h" />
-    <ClInclude Include="RenderObject.h" />
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="Scene.h" />
-    <ClInclude Include="Vector.h" />
     <ClInclude Include="VertexSimple.h" />
     <ClInclude Include="ImGui\imconfig.h" />
     <ClInclude Include="ImGui\imgui.h" />
@@ -171,52 +184,51 @@
     <ClInclude Include="Timer.h" />
     <ClInclude Include="TimerManager.h" />
     <ClInclude Include="Triangle.h" />
-    <ClInclude Include="AxisComponent.h" />
     <ClInclude Include="Camera.h" />
-    <ClInclude Include="CubeComponent.h" />
     <ClInclude Include="Mesh.h" />
-    <ClInclude Include="Picker.h" />
-    <ClInclude Include="PlaneComponent.h" />
-    <ClInclude Include="PrimitiveComponent.h" />
-    <ClInclude Include="SceneComponent.h" />
     <ClInclude Include="Math\Vector4.h" />
     <ClInclude Include="json.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="EngineStatics.h" />
     <ClInclude Include="EngineTypes.h" />
     <ClInclude Include="Object.h" />
-    <ClInclude Include="Renderer.h" />
-    <ClInclude Include="SphereComponent.h" />
-    <ClInclude Include="TriangleComponent.h" />
     <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Editor.cpp" />
-    <ClCompile Include="EditorConsole.cpp" />
-    <ClCompile Include="EditorConsole.h" />
-    <ClCompile Include="EditorControlPanel.cpp" />
-    <ClCompile Include="EditorPropertyPanel.cpp" />
-    <ClCompile Include="EditorStatPanel.cpp" />
-    <ClCompile Include="EditorToolbar.cpp" />
+    <ClCompile Include="Component\AxisComponent.cpp" />
+    <ClCompile Include="Component\CubeComponent.cpp" />
+    <ClCompile Include="Component\PlaneComponent.cpp" />
+    <ClCompile Include="Component\PrimitiveComponent.cpp" />
+    <ClCompile Include="Component\SceneComponent.cpp" />
+    <ClCompile Include="Component\SphereComponent.cpp" />
+    <ClCompile Include="Component\TriangleComponent.cpp" />
+    <ClCompile Include="Editor\Editor.cpp" />
+    <ClCompile Include="Editor\EditorConsole.cpp" />
+    <ClCompile Include="Editor\EditorControlPanel.cpp" />
+    <ClCompile Include="Editor\EditorPropertyPanel.cpp" />
+    <ClCompile Include="Editor\EditorStatPanel.cpp" />
+    <ClCompile Include="Editor\EditorToolbar.cpp" />
+    <ClCompile Include="Editor\Gizmo.cpp" />
+    <ClCompile Include="Editor\GizmoController.cpp" />
+    <ClCompile Include="Editor\GizmoRotationControlStrategy.cpp" />
+    <ClCompile Include="Editor\GizmoScaleControlStrategy.cpp" />
+    <ClCompile Include="Editor\GizmoTranslationControlStrategy.cpp" />
+    <ClCompile Include="Editor\Picker.cpp" />
     <ClCompile Include="EngineApp.cpp" />
     <ClCompile Include="Color.cpp" />
-    <ClCompile Include="Level.cpp" />
-    <ClCompile Include="Matrix.cpp" />
+    <ClCompile Include="Math\Matrix.cpp" />
+    <ClCompile Include="Math\Quaternion.cpp" />
+    <ClCompile Include="Math\Vector.cpp" />
     <ClCompile Include="ObjectFactory.cpp" />
-    <ClCompile Include="Quaternion.cpp" />
-    <ClCompile Include="Gizmo.cpp" />
-    <ClCompile Include="GizmoController.cpp" />
-    <ClCompile Include="GizmoRotationControlStrategy.cpp" />
-    <ClCompile Include="GizmoScaleControlStrategy.cpp" />
-    <ClCompile Include="GizmoTranslationControlStrategy.cpp" />
     <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="json.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="PrimitiveFactory.cpp" />
-    <ClCompile Include="RenderObject.cpp" />
+    <ClCompile Include="Renderer\Level.cpp" />
+    <ClCompile Include="Renderer\Renderer.cpp" />
+    <ClCompile Include="Renderer\RenderObject.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="Scene.cpp" />
-    <ClCompile Include="Vector.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
     <ClCompile Include="ImGui\imgui_demo.cpp" />
     <ClCompile Include="ImGui\imgui_draw.cpp" />
@@ -228,25 +240,29 @@
     <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="TimerManager.cpp" />
-    <ClCompile Include="AxisComponent.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CubeComponent.cpp" />
-    <ClCompile Include="Picker.cpp" />
-    <ClCompile Include="PlaneComponent.cpp" />
-    <ClCompile Include="PrimitiveComponent.cpp" />
-    <ClCompile Include="SceneComponent.cpp" />
     <ClCompile Include="EngineStatics.cpp" />
     <ClCompile Include="Object.cpp" />
-    <ClCompile Include="Renderer.cpp" />
-    <ClCompile Include="SphereComponent.cpp" />
-    <ClCompile Include="TriangleComponent.cpp" />
     <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="ShaderW0.hlsl">
+    <FxCompile Include="Shader\ShaderInfiniteGrid.hlsl">
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mainVS</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mainVS</EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Library</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Library</ShaderType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <FileType>Document</FileType>
-    </Text>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shader\ShaderW0.hlsl">
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mainVS</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mainVS</EntryPointName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "PrimitiveComponent.h"
+#include "Component/PrimitiveComponent.h"
 
 struct PrimitiveFactory
 {

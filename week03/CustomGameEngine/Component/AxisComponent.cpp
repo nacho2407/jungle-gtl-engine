@@ -1,5 +1,5 @@
 ﻿#include "AxisComponent.h"
-#include "Renderer.h"
+#include "Renderer/Renderer.h"
 #include "ResourceManager.h"
 
 UAxisComp::UAxisComp()

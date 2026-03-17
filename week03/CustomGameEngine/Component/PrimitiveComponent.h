@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "SceneComponent.h"
-#include "RenderObject.h"
+#include "Renderer/RenderObject.h"
 
 class URenderer;
 class FGeometry;

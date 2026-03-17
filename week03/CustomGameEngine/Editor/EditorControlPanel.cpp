@@ -1,12 +1,12 @@
 ﻿#include "EditorControlPanel.h"
 #include "Camera.h"
 #include "Editor.h"
-#include "PrimitiveComponent.h"
+#include "Component/PrimitiveComponent.h"
 #include "PrimitiveFactory.h"
 #include "SceneManager.h"
 #include "TimerManager.h"
-#include "Vector.h"
 #include "World.h"
+#include "Math/Vector.h"
 #include "ImGui/imgui.h"
 #include <string>
 

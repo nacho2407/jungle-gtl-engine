@@ -1,6 +1,6 @@
 ﻿#include "Gizmo.h"
-#include "SceneComponent.h"
-#include "RenderObject.h"
+#include "Component/SceneComponent.h"
+#include "Renderer/RenderObject.h"
 #include "ResourceManager.h"
 #include "Picker.h"
 #include "Logger.h"

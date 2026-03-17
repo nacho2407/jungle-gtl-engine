@@ -1,5 +1,5 @@
 ﻿#include "PrimitiveComponent.h"
-#include "Renderer.h"
+#include "Renderer/Renderer.h"
 #include "ResourceManager.h"
 
 UPrimitiveComponent::UPrimitiveComponent()
@@ -60,7 +60,7 @@ void UPrimitiveComponent::UpdateRenderObject()
 	ResourceManager* RM = ResourceManager::GetInstance();
 
 	RenderObj->Geometry = this->VResource;
-	RenderObj->Material = &RM->GetMaterial(L"ShaderW0.hlsl");
+	RenderObj->Material = &RM->GetMaterial(L"Shader/ShaderW0.hlsl");
 	RenderObj->World = GetRelativeMatrix();
 	RenderObj->bIsSelected = bIsSelected;
 }

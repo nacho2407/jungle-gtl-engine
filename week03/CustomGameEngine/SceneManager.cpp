@@ -4,7 +4,7 @@
 #include <sstream>
 #include "World.h"
 #include "EngineStatics.h"
-#include "PrimitiveComponent.h"
+#include "Component/PrimitiveComponent.h"
 #include "Logger.h"
 
 SceneManager::SceneManager()

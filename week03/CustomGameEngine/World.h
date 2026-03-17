@@ -2,8 +2,10 @@
 
 #include "Singleton.h"
 #include "Logger.h"		// TEST
-#include "Renderer.h"
 #include "Scene.h"
+#include "Renderer/Level.h"
+
+class FLevel;
 
 class UWorld : public UObject, public ISingleton<UWorld>
 {
