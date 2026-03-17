@@ -16,6 +16,9 @@ public:
 	virtual void Update() override;
 	virtual void UpdateRenderObject() override;
 
+	virtual TArray<FMatrix> GetRelativeMatrices() override { return RelativeMatrices; }
+	virtual FString GetGeometryName() override { return "GizmoScale"; }
+
 	virtual void BeginDrag(const Ray& ray) override;
 	virtual void UpdateDrag(const Ray& ray) override;
 	virtual void EndDrag() override;
@@ -24,6 +27,8 @@ public:
 
 private:
 	GizmoController* Controller;
+
+	TArray<FMatrix> RelativeMatrices;
 
 	FVector InitialWorldPos;
 	FVector InitialObjectScale;

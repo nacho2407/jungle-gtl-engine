@@ -246,6 +246,7 @@ void URenderer::Render(UCameraComponent* Camera)
 	{
 		//Camera
 		ObjectConst.World = RenderObj->World;
+		ObjectConst.Color = RenderObj->Color;
 		ObjectConst.bIsSelected = RenderObj->bIsSelected ? 1 : 0;
 		ObjectConstantBuffer.Update(DeviceContext.Get(), &ObjectConst, sizeof(FObjectConstant));
 
@@ -260,6 +261,7 @@ void URenderer::Render(UCameraComponent* Camera)
 		for (RenderObject* RenderObj : NoDepthRenderObjects)
 		{
 			ObjectConst.World = RenderObj->World;
+			ObjectConst.Color = RenderObj->Color;
 			ObjectConst.bIsSelected = RenderObj->bIsSelected ? 1 : 0;
 			ObjectConstantBuffer.Update(DeviceContext.Get(), &ObjectConst, sizeof(FObjectConstant));
 			RenderObj->Render(DeviceContext.Get());
@@ -284,20 +286,13 @@ void URenderer::RenderGrid(UCameraComponent* Camera, ID3D11VertexShader* VertexS
 	GridConst.LineThickness = 0.8f;
 	FGridConstantBuffer.Update(DeviceContext.Get(), &GridConst, sizeof(FGridConstant));
 
-	DeviceContext->OMSetDepthStencilState(DepthStencilStateNoWrite.Get(), 0);
 	DeviceContext->RSSetState(RasterizerStateNoCull.Get());
 
 	DeviceContext->VSSetShader(VertexShader, nullptr, 0);
 	DeviceContext->PSSetShader(PixelShader, nullptr, 0);
 	DeviceContext->IASetInputLayout(nullptr);
-
 	FGridConstantBuffer.Bind(DeviceContext.Get());
-	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	DeviceContext->Draw(4, 0);
-
-
+	DeviceContext->Draw(12, 0);
 
 	DeviceContext->RSSetState(RasterizerState.Get());
-	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
-	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }

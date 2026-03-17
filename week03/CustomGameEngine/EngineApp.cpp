@@ -149,7 +149,7 @@ void EngineApp::Run()
 	//Cube->SetRelativeScale3D(FVector(0.5f, 0.5f, 0.5f));
 	//-----TEST
 
-	UAxisComp* mainAxis = GetWorld().AddPermanentSceneComponent<UAxisComp>();
+	//UAxisComp* mainAxis = GetWorld().AddSceneComponent<UAxisComp>();
 
 	Timer* globalTimer = TimerManager::GetInstance().GetGlobalTimer();
 	globalTimer->Reset();

@@ -134,25 +134,7 @@ GizmoControllerAxis GizmoController::TryPick(Ray& ray)
 		return GizmoControllerAxis::None;
 	}
 
-	FString geometryNames[3];
-	switch (Type)
-	{
-	case GizmoControllerType::Translation:
-		geometryNames[0] = "GizmoTranslationX";
-		geometryNames[1] = "GizmoTranslationY";
-		geometryNames[2] = "GizmoTranslationZ";
-		break;
-	case GizmoControllerType::Rotation:
-		geometryNames[0] = "GizmoRotationX";
-		geometryNames[1] = "GizmoRotationY";
-		geometryNames[2] = "GizmoRotationZ";
-		break;
-	case GizmoControllerType::Scale:
-		geometryNames[0] = "GizmoScaleX";
-		geometryNames[1] = "GizmoScaleY";
-		geometryNames[2] = "GizmoScaleZ";
-		break;
-	}
+	TArray<FMatrix> relativeMatrices = CurrentStrategy->GetRelativeMatrices(); // x, y, z: length is 3
 
 	ResourceManager* resourceManager = ResourceManager::GetInstance();
 
@@ -161,19 +143,20 @@ GizmoControllerAxis GizmoController::TryPick(Ray& ray)
 
 	for (int i = 0; i < 3; ++i)
 	{
-		FGeometry& geometry = resourceManager->GetGeometry(geometryNames[i]);
+		Ray localRay;
+		localRay.Direction = (relativeMatrices[i] * RelativeMatrix).Inverse().TransformVector(ray.Direction).Normalize();
+		localRay.Origin = (relativeMatrices[i] * RelativeMatrix).Inverse().TransformPoint(ray.Origin);
+
+		FGeometry& geometry = resourceManager->GetGeometry(CurrentStrategy->GetGeometryName());
 		for (int j = 0; j < geometry.Vertices.size(); j += 3)
 		{
 			const FVector& v0 = geometry.Vertices[j];
 			const FVector& v1 = geometry.Vertices[j + 1];
 			const FVector& v2 = geometry.Vertices[j + 2];
-			FVector worldV0 = RelativeMatrix.TransformPoint(v0);
-			FVector worldV1 = RelativeMatrix.TransformPoint(v1);
-			FVector worldV2 = RelativeMatrix.TransformPoint(v2);
 
 			float t;
 
-			if (ray.IntersectsTriangle(worldV0, worldV1, worldV2, t, ray))
+			if (ray.IntersectsTriangle(v0, v1, v2, t, localRay))
 			{
 				if (t < closestT)
 				{

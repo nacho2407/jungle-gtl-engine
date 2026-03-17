@@ -79,63 +79,63 @@ public:
 		TArray<FVertexSimple> cubeVertices =
 		{
 			// Front (+X) - Red (과거 +Z)
-			{  0.5f, -0.5f, -0.5f, 1,0,0,1 },
-			{  0.5f,  0.5f, -0.5f, 1,0,0,1 },
-			{  0.5f,  0.5f,  0.5f, 1,0,0,1 },
+			{  0.5f, -0.5f, -0.5f, 1,1,1,1 },
+			{  0.5f,  0.5f, -0.5f, 1,1,1,1 },
+			{  0.5f,  0.5f,  0.5f, 1,1,1,1 },
 
-			{  0.5f, -0.5f, -0.5f, 1,0,0,1 },
-			{  0.5f,  0.5f,  0.5f, 1,0,0,1 },
-			{  0.5f, -0.5f,  0.5f, 1,0,0,1 },
+			{  0.5f, -0.5f, -0.5f, 1,1,1,1 },
+			{  0.5f,  0.5f,  0.5f, 1,1,1,1 },
+			{  0.5f, -0.5f,  0.5f, 1,1,1,1 },
 
 
 			// Back (-X) - Green (과거 -Z)
-			{ -0.5f,  0.5f, -0.5f, 0,1,0,1 },
-			{ -0.5f, -0.5f, -0.5f, 0,1,0,1 },
-			{ -0.5f, -0.5f,  0.5f, 0,1,0,1 },
+			{ -0.5f,  0.5f, -0.5f, 1,1,1,1 },
+			{ -0.5f, -0.5f, -0.5f, 1,1,1,1 },
+			{ -0.5f, -0.5f,  0.5f, 1,1,1,1 },
 
-			{ -0.5f,  0.5f, -0.5f, 0,1,0,1 },
-			{ -0.5f, -0.5f,  0.5f, 0,1,0,1 },
-			{ -0.5f,  0.5f,  0.5f, 0,1,0,1 },
+			{ -0.5f,  0.5f, -0.5f, 1,1,1,1 },
+			{ -0.5f, -0.5f,  0.5f, 1,1,1,1 },
+			{ -0.5f,  0.5f,  0.5f, 1,1,1,1 },
 
 
 			// Left (-Y) - Blue (과거 -X)
-			{ -0.5f, -0.5f, -0.5f, 0,0,1,1 },
-			{  0.5f, -0.5f, -0.5f, 0,0,1,1 },
-			{  0.5f, -0.5f,  0.5f, 0,0,1,1 },
+			{ -0.5f, -0.5f, -0.5f, 1,1,1,1 },
+			{  0.5f, -0.5f, -0.5f, 1,1,1,1 },
+			{  0.5f, -0.5f,  0.5f, 1,1,1,1 },
 
-			{ -0.5f, -0.5f, -0.5f, 0,0,1,1 },
-			{  0.5f, -0.5f,  0.5f, 0,0,1,1 },
-			{ -0.5f, -0.5f,  0.5f, 0,0,1,1 },
+			{ -0.5f, -0.5f, -0.5f, 1,1,1,1 },
+			{  0.5f, -0.5f,  0.5f, 1,1,1,1 },
+			{ -0.5f, -0.5f,  0.5f, 1,1,1,1 },
 
 
 			// Right (+Y) - Yellow (과거 +X)
-			{  0.5f,  0.5f, -0.5f, 1,1,0,1 },
-			{ -0.5f,  0.5f, -0.5f, 1,1,0,1 },
-			{ -0.5f,  0.5f,  0.5f, 1,1,0,1 },
+			{  0.5f,  0.5f, -0.5f, 1,1,1,1 },
+			{ -0.5f,  0.5f, -0.5f, 1,1,1,1 },
+			{ -0.5f,  0.5f,  0.5f, 1,1,1,1 },
 
-			{  0.5f,  0.5f, -0.5f, 1,1,0,1 },
-			{ -0.5f,  0.5f,  0.5f, 1,1,0,1 },
-			{  0.5f,  0.5f,  0.5f, 1,1,0,1 },
-
-
-			// Top (+Z) - Cyan (과거 +Y)
-			{  0.5f, -0.5f,  0.5f, 0,1,1,1 },
-			{  0.5f,  0.5f,  0.5f, 0,1,1,1 },
-			{ -0.5f,  0.5f,  0.5f, 0,1,1,1 },
-
-			{  0.5f, -0.5f,  0.5f, 0,1,1,1 },
-			{ -0.5f,  0.5f,  0.5f, 0,1,1,1 },
-			{ -0.5f, -0.5f,  0.5f, 0,1,1,1 },
+			{  0.5f,  0.5f, -0.5f, 1,1,1,1 },
+			{ -0.5f,  0.5f,  0.5f, 1,1,1,1 },
+			{  0.5f,  0.5f,  0.5f, 1,1,1,1 },
 
 
-			// Bottom (-Z) - Magenta (과거 -Y)
-			{ -0.5f, -0.5f, -0.5f, 1,0,1,1 },
-			{ -0.5f,  0.5f, -0.5f, 1,0,1,1 },
-			{  0.5f,  0.5f, -0.5f, 1,0,1,1 },
+			// Top (+Z)
+			{  0.5f, -0.5f,  0.5f, 1,1,1,1 },
+			{  0.5f,  0.5f,  0.5f, 1,1,1,1 },
+			{ -0.5f,  0.5f,  0.5f, 1,1,1,1 },
 
-			{ -0.5f, -0.5f, -0.5f, 1,0,1,1 },
-			{  0.5f,  0.5f, -0.5f, 1,0,1,1 },
-			{  0.5f, -0.5f, -0.5f, 1,0,1,1 },
+			{  0.5f, -0.5f,  0.5f, 1,1,1,1 },
+			{ -0.5f,  0.5f,  0.5f, 1,1,1,1 },
+			{ -0.5f, -0.5f,  0.5f, 1,1,1,1 },
+
+
+			// Bottom (-Z)
+			{ -0.5f, -0.5f, -0.5f, 1,1,1,1 },
+			{ -0.5f,  0.5f, -0.5f, 1,1,1,1 },
+			{  0.5f,  0.5f, -0.5f, 1,1,1,1 },
+
+			{ -0.5f, -0.5f, -0.5f, 1,1,1,1 },
+			{  0.5f,  0.5f, -0.5f, 1,1,1,1 },
+			{  0.5f, -0.5f, -0.5f, 1,1,1,1 },
 		};
 		return cubeVertices;
 	}
@@ -220,7 +220,7 @@ public:
 
 		// UE변환 헬퍼 (oldX -> Y, oldZ -> X, oldY -> Z)
 		auto pushCyl = [&](float oldX, float oldY, float oldZ) {
-			cylinderVertices.push_back({ oldZ, oldX, oldY, 1,0,0,1 });
+			cylinderVertices.push_back({ oldZ, oldX, oldY, 1,1,1,1 });
 			};
 
 		for (int i = 0; i < sliceCount; ++i)
@@ -324,443 +324,123 @@ public:
 
 	void AddGizmoTranslationMesh(ID3D11Device* Device)
 	{
-		// X Axis - Red
+		TArray<FVertexSimple> vertices;
+
+		TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
+		FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 0.05f, 1.0f);
+		FMatrix cylinderMatrix = cylinderScale;
+
+		for (FVertexSimple& v : cylinderVertices)
 		{
-			TArray<FVertexSimple> vertices;
+			float px = v.x;
+			float py = v.y;
+			float pz = v.z;
 
-			TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
-			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.5f, 0.0f, 0.0f);
-			FMatrix cylinderRotation = FMatrix::EulerRotationMatrix(0.0f, 90.0f, 0.0f);
-			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 0.05f, 1.0f);
-			FMatrix cylinderMatrix = cylinderScale * cylinderRotation * cylinderTransform;
-
-			for (FVertexSimple& v : cylinderVertices)
-			{
-				float px = v.x;
-				float py = v.y;
-				float pz = v.z;
-
-				v.x = px * cylinderMatrix[0][0] + py * cylinderMatrix[1][0] + pz * cylinderMatrix[2][0] + 1.0f * cylinderMatrix[3][0];
-				v.y = px * cylinderMatrix[0][1] + py * cylinderMatrix[1][1] + pz * cylinderMatrix[2][1] + 1.0f * cylinderMatrix[3][1];
-				v.z = px * cylinderMatrix[0][2] + py * cylinderMatrix[1][2] + pz * cylinderMatrix[2][2] + 1.0f * cylinderMatrix[3][2];
-
-				v.r = 1.0f;
-				v.g = 0.0f;
-				v.b = 0.0f;
-			}
-			vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
-
-			TArray<FVertexSimple> coneVertices = CreateConeVertices();
-			FMatrix coneTransform = FMatrix::TranslationMatrix(1.0f, 0.0f, 0.0f);
-			FMatrix coneRotation = FMatrix::EulerRotationMatrix(0.0f, 90.0f, 0.0f);
-			FMatrix coneScale = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f);
-			FMatrix coneMatrix = coneScale * coneRotation * coneTransform;
-
-			for (FVertexSimple& v : coneVertices)
-			{
-				float px = v.x;
-				float py = v.y;
-				float pz = v.z;
-
-				v.x = px * coneMatrix[0][0] + py * coneMatrix[1][0] + pz * coneMatrix[2][0] + 1.0f * coneMatrix[3][0];
-				v.y = px * coneMatrix[0][1] + py * coneMatrix[1][1] + pz * coneMatrix[2][1] + 1.0f * coneMatrix[3][1];
-				v.z = px * coneMatrix[0][2] + py * coneMatrix[1][2] + pz * coneMatrix[2][2] + 1.0f * coneMatrix[3][2];
-
-				v.r = 1.0f;
-				v.g = 0.0f;
-				v.b = 0.0f;
-			}
-			vertices.insert(vertices.end(), coneVertices.begin(), coneVertices.end());
-
-			size_t cnt = vertices.size();
-			TArray<FVector> Vertices(cnt);
-			for (size_t i = 0; i < cnt; ++i)
-			{
-				Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
-			}
-
-			CreateGeometry("GizmoTranslationX", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
-
+			v.x = px * cylinderMatrix[0][0] + py * cylinderMatrix[1][0] + pz * cylinderMatrix[2][0] + 1.0f * cylinderMatrix[3][0];
+			v.y = px * cylinderMatrix[0][1] + py * cylinderMatrix[1][1] + pz * cylinderMatrix[2][1] + 1.0f * cylinderMatrix[3][1];
+			v.z = px * cylinderMatrix[0][2] + py * cylinderMatrix[1][2] + pz * cylinderMatrix[2][2] + 1.0f * cylinderMatrix[3][2];
 		}
-		// Y Axis - Green
+		vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
+
+		TArray<FVertexSimple> coneVertices = CreateConeVertices();
+		FMatrix coneTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 0.5f);
+		FMatrix coneScale = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f);
+		FMatrix coneMatrix = coneScale * coneTransform;
+
+		for (FVertexSimple& v : coneVertices)
 		{
-			TArray<FVertexSimple> vertices;
+			float px = v.x;
+			float py = v.y;
+			float pz = v.z;
 
-			TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
-			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.0f, 0.5f, 0.0f);
-			FMatrix cylinderRotation = FMatrix::RotationXMatrix(-90.0f);
-			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 0.05f, 1.0f);
-			FMatrix cylinderMatrix = cylinderScale * cylinderRotation * cylinderTransform;
-
-			for (FVertexSimple& v : cylinderVertices)
-			{
-				float px = v.x;
-				float py = v.y;
-				float pz = v.z;
-
-				v.x = px * cylinderMatrix[0][0] + py * cylinderMatrix[1][0] + pz * cylinderMatrix[2][0] + 1.0f * cylinderMatrix[3][0];
-				v.y = px * cylinderMatrix[0][1] + py * cylinderMatrix[1][1] + pz * cylinderMatrix[2][1] + 1.0f * cylinderMatrix[3][1];
-				v.z = px * cylinderMatrix[0][2] + py * cylinderMatrix[1][2] + pz * cylinderMatrix[2][2] + 1.0f * cylinderMatrix[3][2];
-
-				v.r = 0.0f;
-				v.g = 1.0f;
-				v.b = 0.0f;
-			}
-			vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
-
-			TArray<FVertexSimple> coneVertices = CreateConeVertices();
-			FMatrix coneTransform = FMatrix::TranslationMatrix(0.0f, 1.0f, 0.0f);
-			FMatrix coneRotation = FMatrix::RotationXMatrix(-90.0f);
-			FMatrix coneScale = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f);
-			FMatrix coneMatrix = coneScale * coneRotation * coneTransform;
-
-			for (FVertexSimple& v : coneVertices)
-			{
-				float px = v.x;
-				float py = v.y;
-				float pz = v.z;
-
-				v.x = px * coneMatrix[0][0] + py * coneMatrix[1][0] + pz * coneMatrix[2][0] + 1.0f * coneMatrix[3][0];
-				v.y = px * coneMatrix[0][1] + py * coneMatrix[1][1] + pz * coneMatrix[2][1] + 1.0f * coneMatrix[3][1];
-				v.z = px * coneMatrix[0][2] + py * coneMatrix[1][2] + pz * coneMatrix[2][2] + 1.0f * coneMatrix[3][2];
-
-				v.r = 0.0f;
-				v.g = 1.0f;
-				v.b = 0.0f;
-			}
-			vertices.insert(vertices.end(), coneVertices.begin(), coneVertices.end());
-
-			size_t cnt = vertices.size();
-			TArray<FVector> Vertices(cnt);
-			for (size_t i = 0; i < cnt; ++i)
-			{
-				Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
-			}
-
-			CreateGeometry("GizmoTranslationY", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
+			v.x = px * coneMatrix[0][0] + py * coneMatrix[1][0] + pz * coneMatrix[2][0] + 1.0f * coneMatrix[3][0];
+			v.y = px * coneMatrix[0][1] + py * coneMatrix[1][1] + pz * coneMatrix[2][1] + 1.0f * coneMatrix[3][1];
+			v.z = px * coneMatrix[0][2] + py * coneMatrix[1][2] + pz * coneMatrix[2][2] + 1.0f * coneMatrix[3][2];
 		}
-		// Z Axis - Blue
+		vertices.insert(vertices.end(), coneVertices.begin(), coneVertices.end());
+
+		size_t cnt = vertices.size();
+		TArray<FVector> Vertices(cnt);
+		for (size_t i = 0; i < cnt; ++i)
 		{
-			TArray<FVertexSimple> vertices;
-
-			TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
-			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 0.5f);
-			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 0.05f, 1.0f);
-			FMatrix cylinderMatrix = cylinderScale * cylinderTransform;
-
-			for (FVertexSimple& v : cylinderVertices)
-			{
-				float px = v.x;
-				float py = v.y;
-				float pz = v.z;
-
-				v.x = px * cylinderMatrix[0][0] + py * cylinderMatrix[1][0] + pz * cylinderMatrix[2][0] + 1.0f * cylinderMatrix[3][0];
-				v.y = px * cylinderMatrix[0][1] + py * cylinderMatrix[1][1] + pz * cylinderMatrix[2][1] + 1.0f * cylinderMatrix[3][1];
-				v.z = px * cylinderMatrix[0][2] + py * cylinderMatrix[1][2] + pz * cylinderMatrix[2][2] + 1.0f * cylinderMatrix[3][2];
-
-				v.r = 0.0f;
-				v.g = 0.0f;
-				v.b = 1.0f;
-			}
-			vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
-
-			TArray<FVertexSimple> coneVertices = CreateConeVertices();
-			FMatrix coneTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 1.0f);
-			FMatrix coneScale = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f);
-			FMatrix coneMatrix = coneScale * coneTransform;
-
-			for (FVertexSimple& v : coneVertices)
-			{
-				float px = v.x;
-				float py = v.y;
-				float pz = v.z;
-
-				v.x = px * coneMatrix[0][0] + py * coneMatrix[1][0] + pz * coneMatrix[2][0] + 1.0f * coneMatrix[3][0];
-				v.y = px * coneMatrix[0][1] + py * coneMatrix[1][1] + pz * coneMatrix[2][1] + 1.0f * coneMatrix[3][1];
-				v.z = px * coneMatrix[0][2] + py * coneMatrix[1][2] + pz * coneMatrix[2][2] + 1.0f * coneMatrix[3][2];
-
-				v.r = 0.0f;
-				v.g = 0.0f;
-				v.b = 1.0f;
-			}
-			vertices.insert(vertices.end(), coneVertices.begin(), coneVertices.end());
-
-			size_t cnt = vertices.size();
-			TArray<FVector> Vertices(cnt);
-			for (size_t i = 0; i < cnt; ++i)
-			{
-				Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
-			}
-
-			CreateGeometry("GizmoTranslationZ", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
+			Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
 		}
+
+		CreateGeometry("GizmoTranslation", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
 	}
 
 	void AddGizmoRotationMesh(ID3D11Device* Device)
 	{
-		// X Axis - Red
+		TArray<FVertexSimple> vertices = CreateTorusVertices();
+		FMatrix torusScale = FMatrix::ScaleMatrix(1.5f, 1.5f, 1.5f);
+		FMatrix torusMatrix = torusScale;
+
+		for (FVertexSimple& v : vertices)
 		{
-			TArray<FVertexSimple> vertices = CreateTorusVertices();
-			FMatrix torusRotation = FMatrix::RotationYMatrix(-90.0f);
-			FMatrix torusScale = FMatrix::ScaleMatrix(1.5f, 1.5f, 1.5f);
-			FMatrix torusMatrix = torusScale * torusRotation;
+			float px = v.x;
+			float py = v.y;
+			float pz = v.z;
 
-			for (FVertexSimple& v : vertices)
-			{
-				float px = v.x;
-				float py = v.y;
-				float pz = v.z;
-
-				v.x = px * torusMatrix[0][0] + py * torusMatrix[1][0] + pz * torusMatrix[2][0] + 1.0f * torusMatrix[3][0];
-				v.y = px * torusMatrix[0][1] + py * torusMatrix[1][1] + pz * torusMatrix[2][1] + 1.0f * torusMatrix[3][1];
-				v.z = px * torusMatrix[0][2] + py * torusMatrix[1][2] + pz * torusMatrix[2][2] + 1.0f * torusMatrix[3][2];
-
-				v.r = 1.0f;
-				v.g = 0.0f;
-				v.b = 0.0f;
-				v.a = 0.8f;
-			}
-
-			int cnt = vertices.size();
-			TArray<FVector> Vertices(cnt);
-			for (int i = 0; i < cnt; ++i)
-			{
-				Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
-			}
-
-			CreateGeometry("GizmoRotationX", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
+			v.x = px * torusMatrix[0][0] + py * torusMatrix[1][0] + pz * torusMatrix[2][0] + 1.0f * torusMatrix[3][0];
+			v.y = px * torusMatrix[0][1] + py * torusMatrix[1][1] + pz * torusMatrix[2][1] + 1.0f * torusMatrix[3][1];
+			v.z = px * torusMatrix[0][2] + py * torusMatrix[1][2] + pz * torusMatrix[2][2] + 1.0f * torusMatrix[3][2];
 		}
-		// Y Axis - Green
+
+		int cnt = vertices.size();
+		TArray<FVector> Vertices(cnt);
+		for (int i = 0; i < cnt; ++i)
 		{
-			TArray<FVertexSimple> vertices = CreateTorusVertices();
-			FMatrix torusRotation = FMatrix::EulerRotationMatrix(0.0f, -90.0f, 90.0f);
-			FMatrix torusScale = FMatrix::ScaleMatrix(1.5f, 1.5f, 1.5f);
-			FMatrix torusMatrix = torusScale * torusRotation;
-
-			for (FVertexSimple& v : vertices)
-			{
-				float px = v.x;
-				float py = v.y;
-				float pz = v.z;
-
-				v.x = px * torusMatrix[0][0] + py * torusMatrix[1][0] + pz * torusMatrix[2][0] + 1.0f * torusMatrix[3][0];
-				v.y = px * torusMatrix[0][1] + py * torusMatrix[1][1] + pz * torusMatrix[2][1] + 1.0f * torusMatrix[3][1];
-				v.z = px * torusMatrix[0][2] + py * torusMatrix[1][2] + pz * torusMatrix[2][2] + 1.0f * torusMatrix[3][2];
-
-				v.r = 0.0f;
-				v.g = 1.0f;
-				v.b = 0.0f;
-				v.a = 0.8f;
-			}
-			int cnt = vertices.size();
-			TArray<FVector> Vertices(cnt);
-			for (int i = 0; i < cnt; ++i)
-			{
-				Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
-			}
-			CreateGeometry("GizmoRotationY", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
+			Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
 		}
-		// Z Axis - Blue
-		{
-			TArray<FVertexSimple> vertices = CreateTorusVertices();
-			FMatrix torusRotation = FMatrix::RotationYMatrix(180.0f);
-			FMatrix torusScale = FMatrix::ScaleMatrix(1.5f, 1.5f, 1.5f);
-			FMatrix torusMatrix = torusRotation * torusScale;
 
-			for (FVertexSimple& v : vertices)
-			{
-				float px = v.x;
-				float py = v.y;
-				float pz = v.z;
-
-				v.x = px * torusMatrix[0][0] + py * torusMatrix[1][0] + pz * torusMatrix[2][0] + 1.0f * torusMatrix[3][0];
-				v.y = px * torusMatrix[0][1] + py * torusMatrix[1][1] + pz * torusMatrix[2][1] + 1.0f * torusMatrix[3][1];
-				v.z = px * torusMatrix[0][2] + py * torusMatrix[1][2] + pz * torusMatrix[2][2] + 1.0f * torusMatrix[3][2];
-
-				v.r = 0.0f;
-				v.g = 0.0f;
-				v.b = 1.0f;
-				v.a = 0.8f;
-			}
-			int cnt = vertices.size();
-			TArray<FVector> Vertices(cnt);
-			for (int i = 0; i < cnt; ++i)
-			{
-				Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
-			}
-			CreateGeometry("GizmoRotationZ", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
-		}
+		CreateGeometry("GizmoRotation", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
 	}
+
 	void AddGizmoScaleMesh(ID3D11Device* Device)
 	{
-		// X Axis - Red
+		TArray<FVertexSimple> vertices;
+
+		TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
+		FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 0.05f, 1.0f);
+		FMatrix cylinderMatrix = cylinderScale;
+
+		for (FVertexSimple& v : cylinderVertices)
 		{
-			TArray<FVertexSimple> vertices;
+			float px = v.x;
+			float py = v.y;
+			float pz = v.z;
 
-			TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
-			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.5f, 0.0f, 0.0f);
-			FMatrix cylinderRotation = FMatrix::RotationYMatrix(90.0f);
-			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 0.05f, 1.0f);
-			FMatrix cylinderMatrix = cylinderScale * cylinderRotation * cylinderTransform;
-
-			for (FVertexSimple& v : cylinderVertices)
-			{
-				float px = v.x;
-				float py = v.y;
-				float pz = v.z;
-
-				v.x = px * cylinderMatrix[0][0] + py * cylinderMatrix[1][0] + pz * cylinderMatrix[2][0] + 1.0f * cylinderMatrix[3][0];
-				v.y = px * cylinderMatrix[0][1] + py * cylinderMatrix[1][1] + pz * cylinderMatrix[2][1] + 1.0f * cylinderMatrix[3][1];
-				v.z = px * cylinderMatrix[0][2] + py * cylinderMatrix[1][2] + pz * cylinderMatrix[2][2] + 1.0f * cylinderMatrix[3][2];
-
-				v.r = 1.0f;
-				v.g = 0.0f;
-				v.b = 0.0f;
-			}
-			vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
-
-			TArray<FVertexSimple> cubeVertices = CreateCubeVertices();
-			FMatrix cubeTransform = FMatrix::TranslationMatrix(1.0f, 0.0f, 0.0f);
-			FMatrix cubeScale = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f);
-			FMatrix cubeMatrix = cubeScale * cubeTransform;
-
-			for (FVertexSimple& v : cubeVertices)
-			{
-				float px = v.x;
-				float py = v.y;
-				float pz = v.z;
-
-				v.x = px * cubeMatrix[0][0] + py * cubeMatrix[1][0] + pz * cubeMatrix[2][0] + 1.0f * cubeMatrix[3][0];
-				v.y = px * cubeMatrix[0][1] + py * cubeMatrix[1][1] + pz * cubeMatrix[2][1] + 1.0f * cubeMatrix[3][1];
-				v.z = px * cubeMatrix[0][2] + py * cubeMatrix[1][2] + pz * cubeMatrix[2][2] + 1.0f * cubeMatrix[3][2];
-
-				v.r = 1.0f;
-				v.g = 0.0f;
-				v.b = 0.0f;
-			}
-			vertices.insert(vertices.end(), cubeVertices.begin(), cubeVertices.end());
-
-			size_t cnt = vertices.size();
-			TArray<FVector> Vertices(cnt);
-			for (size_t i = 0; i < cnt; ++i)
-			{
-				Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
-			}
-
-			CreateGeometry("GizmoScaleX", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
-
+			v.x = px * cylinderMatrix[0][0] + py * cylinderMatrix[1][0] + pz * cylinderMatrix[2][0] + 1.0f * cylinderMatrix[3][0];
+			v.y = px * cylinderMatrix[0][1] + py * cylinderMatrix[1][1] + pz * cylinderMatrix[2][1] + 1.0f * cylinderMatrix[3][1];
+			v.z = px * cylinderMatrix[0][2] + py * cylinderMatrix[1][2] + pz * cylinderMatrix[2][2] + 1.0f * cylinderMatrix[3][2];
 		}
-		// Y Axis - Green
+		vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
+
+		TArray<FVertexSimple> cubeVertices = CreateCubeVertices();
+		FMatrix cubeTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 0.5f);
+		FMatrix cubeScale = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f);
+		FMatrix cubeMatrix = cubeScale * cubeTransform;
+
+		for (FVertexSimple& v : cubeVertices)
 		{
-			TArray<FVertexSimple> vertices;
+			float px = v.x;
+			float py = v.y;
+			float pz = v.z;
 
-			TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
-			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.0f, 0.5f, 0.0f);
-			FMatrix cylinderRotation = FMatrix::RotationXMatrix(-90.0f);
-			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 0.05f, 1.0f);
-			FMatrix cylinderMatrix = cylinderScale * cylinderRotation * cylinderTransform;
-
-			for (FVertexSimple& v : cylinderVertices)
-			{
-				float px = v.x;
-				float py = v.y;
-				float pz = v.z;
-
-				v.x = px * cylinderMatrix[0][0] + py * cylinderMatrix[1][0] + pz * cylinderMatrix[2][0] + 1.0f * cylinderMatrix[3][0];
-				v.y = px * cylinderMatrix[0][1] + py * cylinderMatrix[1][1] + pz * cylinderMatrix[2][1] + 1.0f * cylinderMatrix[3][1];
-				v.z = px * cylinderMatrix[0][2] + py * cylinderMatrix[1][2] + pz * cylinderMatrix[2][2] + 1.0f * cylinderMatrix[3][2];
-
-				v.r = 0.0f;
-				v.g = 1.0f;
-				v.b = 0.0f;
-			}
-			vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
-
-			TArray<FVertexSimple> cubeVertices = CreateCubeVertices();
-			FMatrix cubeTransform = FMatrix::TranslationMatrix(0.0f, 1.0f, 0.0f);
-			FMatrix cubeScale = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f);
-			FMatrix cubeMatrix = cubeScale * cubeTransform;
-
-			for (FVertexSimple& v : cubeVertices)
-			{
-				float px = v.x;
-				float py = v.y;
-				float pz = v.z;
-
-				v.x = px * cubeMatrix[0][0] + py * cubeMatrix[1][0] + pz * cubeMatrix[2][0] + 1.0f * cubeMatrix[3][0];
-				v.y = px * cubeMatrix[0][1] + py * cubeMatrix[1][1] + pz * cubeMatrix[2][1] + 1.0f * cubeMatrix[3][1];
-				v.z = px * cubeMatrix[0][2] + py * cubeMatrix[1][2] + pz * cubeMatrix[2][2] + 1.0f * cubeMatrix[3][2];
-
-				v.r = 0.0f;
-				v.g = 1.0f;
-				v.b = 0.0f;
-			}
-			vertices.insert(vertices.end(), cubeVertices.begin(), cubeVertices.end());
-
-			size_t cnt = vertices.size();
-			TArray<FVector> Vertices(cnt);
-			for (size_t i = 0; i < cnt; ++i)
-			{
-				Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
-			}
-
-			CreateGeometry("GizmoScaleY", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
+			v.x = px * cubeMatrix[0][0] + py * cubeMatrix[1][0] + pz * cubeMatrix[2][0] + 1.0f * cubeMatrix[3][0];
+			v.y = px * cubeMatrix[0][1] + py * cubeMatrix[1][1] + pz * cubeMatrix[2][1] + 1.0f * cubeMatrix[3][1];
+			v.z = px * cubeMatrix[0][2] + py * cubeMatrix[1][2] + pz * cubeMatrix[2][2] + 1.0f * cubeMatrix[3][2];
 		}
-		// Z Axis - Blue
+		vertices.insert(vertices.end(), cubeVertices.begin(), cubeVertices.end());
+
+		size_t cnt = vertices.size();
+		TArray<FVector> Vertices(cnt);
+		for (size_t i = 0; i < cnt; ++i)
 		{
-			TArray<FVertexSimple> vertices;
-
-			TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
-			FMatrix cylinderTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 0.5f);
-			FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 0.05f, 1.0f);
-			FMatrix cylinderMatrix = cylinderScale * cylinderTransform;
-
-			for (FVertexSimple& v : cylinderVertices)
-			{
-				float px = v.x;
-				float py = v.y;
-				float pz = v.z;
-
-				v.x = px * cylinderMatrix[0][0] + py * cylinderMatrix[1][0] + pz * cylinderMatrix[2][0] + 1.0f * cylinderMatrix[3][0];
-				v.y = px * cylinderMatrix[0][1] + py * cylinderMatrix[1][1] + pz * cylinderMatrix[2][1] + 1.0f * cylinderMatrix[3][1];
-				v.z = px * cylinderMatrix[0][2] + py * cylinderMatrix[1][2] + pz * cylinderMatrix[2][2] + 1.0f * cylinderMatrix[3][2];
-
-				v.r = 0.0f;
-				v.g = 0.0f;
-				v.b = 1.0f;
-			}
-			vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
-
-			TArray<FVertexSimple> cubeVertices = CreateCubeVertices();
-			FMatrix cubeTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 1.0f);
-			FMatrix cubeScale = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f);
-			FMatrix cubeMatrix = cubeScale * cubeTransform;
-
-			for (FVertexSimple& v : cubeVertices)
-			{
-				float px = v.x;
-				float py = v.y;
-				float pz = v.z;
-
-				v.x = px * cubeMatrix[0][0] + py * cubeMatrix[1][0] + pz * cubeMatrix[2][0] + 1.0f * cubeMatrix[3][0];
-				v.y = px * cubeMatrix[0][1] + py * cubeMatrix[1][1] + pz * cubeMatrix[2][1] + 1.0f * cubeMatrix[3][1];
-				v.z = px * cubeMatrix[0][2] + py * cubeMatrix[1][2] + pz * cubeMatrix[2][2] + 1.0f * cubeMatrix[3][2];
-
-				v.r = 0.0f;
-				v.g = 0.0f;
-				v.b = 1.0f;
-			}
-			vertices.insert(vertices.end(), cubeVertices.begin(), cubeVertices.end());
-
-			size_t cnt = vertices.size();
-			TArray<FVector> Vertices(cnt);
-			for (size_t i = 0; i < cnt; ++i)
-			{
-				Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
-			}
-
-			CreateGeometry("GizmoScaleZ", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
+			Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
 		}
+
+		CreateGeometry("GizmoScale", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
 	}
 
 	FMaterial& GetMaterial(WFString ResourceName)

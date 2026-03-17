@@ -7,6 +7,7 @@ cbuffer FrameConstant : register(b0)
 cbuffer ObjectConstant : register(b1)
 {
     row_major matrix Model;
+    float4 Color;
     int bIsSelected;
     float3 Padding;
 };
@@ -38,9 +39,11 @@ PS_INPUT mainVS(VS_INPUT input)
 
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
+    float4 finalColor = input.Color * Color;
+    
     if (bIsSelected > 0)
     {
-        return float4(input.Color.xyz, input.Color.w * 0.5f); // 선택 시 투명화.
+        return float4(finalColor.xyz, finalColor.w * 0.5f); // 선택 시 투명화.
     }
-    return input.Color;
+    return finalColor;
 }
