@@ -92,6 +92,7 @@ FApplication::FApplication()
     //, CameraActor(nullptr)
     //, MainCamera(nullptr)
     , bIsRunning(false)
+    , CubeMesh(nullptr)
     , TorusMesh(nullptr)
     , AxesMesh(nullptr)
 {
@@ -204,6 +205,7 @@ bool FApplication::InitializeInput()
 
 bool FApplication::InitializeResources()
 {
+    CubeMesh = BuiltInMeshFactory::CreateCubeMesh();
     TorusMesh = BuiltInMeshFactory::CreateTorusMesh(64, 32, 1.2f, 0.35f);
     AxesMesh = BuiltInMeshFactory::CreateAxesMesh();
     GridMesh = BuiltInMeshFactory::CreateGridMesh(20, 1.0f);
@@ -242,23 +244,6 @@ bool FApplication::InitializeScene()
 
     //World->AddActor(CameraActor);
     
-    {
-        //GridActor = new AGridActor();
-
-        //UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
-        //MeshComp->SetStaticMesh(GridMesh);
-        //MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
-        //MeshComp->SetCullMode(ERenderCullMode::None);
-        //MeshComp->SetUseDepthBias(true);
-
-        //GridActor->AddComponent(MeshComp);
-        //GridActor->SetRootComponent(MeshComp);
-        //World->AddActor(GridActor);
-
-        GridActor = new AGridActor();
-        World->AddActor(GridActor);
-    }
-    
     World->SpawnMeshActor(ESpawnMeshType::Sphere, FVector(0.0f, 0.0f, 0.0f));
 
     //// World Axes
@@ -273,21 +258,6 @@ bool FApplication::InitializeScene()
     //    WorldAxesActor->SetRootComponent(MeshComp);
     //    World->AddActor(WorldAxesActor);
     //}
-    WorldAxesActor = NewObject<AAxisActor>();
-    if (WorldAxesActor)
-    {
-        if (UStaticMeshComponent* AxesComp = FindStaticMeshComponent(WorldAxesActor))
-        {
-            AxesComp->SetDepthEnable(true);
-            AxesComp->SetUseDepthBias(false);
-            AxesComp->SetCullMode(ERenderCullMode::None);
-        }
-    }
-
-    //GizmoActor = new AGizmoActor();
-    //GizmoActor->Initialize(GizmoArrowMesh, GizmoScaleMesh, CubeMesh, TorusMesh);
-    //World->AddActor(GizmoActor);
-
     // 마우스 클릭 펄스 생성 및 World 추가
     CreatePointerPulseActor();
 
@@ -310,22 +280,24 @@ void FApplication::MainLoop()
     auto PrevTime = Clock::now();
 
     Camera = NewObject<ACamera>();
-    World->AddActor(Camera);
     WorldAxisActor = NewObject<AAxisActor>();
-    World->AddActor(WorldAxisActor);
     GizmoActor = NewObject<AGizmoActor>();
-    World->AddActor(GizmoActor);
     GridActor = NewObject<AGridActor>();
-    World->AddActor(GridActor);
 
     check(Camera)
     check(WorldAxisActor)
     check(GizmoActor)
     check(GridActor)
 
+    if (UStaticMeshComponent* AxesComp = FindStaticMeshComponent(WorldAxisActor))
+    {
+        AxesComp->SetDepthEnable(true);
+        AxesComp->SetUseDepthBias(false);
+        AxesComp->SetCullMode(ERenderCullMode::None);
+    }
+
     GizmoActor->Initialize(GizmoArrowMesh, GizmoScaleMesh, CubeMesh, TorusMesh, GizmoRotateRingMesh);
     GizmoActor->SetMode(CurrentGizmoMode);
-    World->AddActor(GizmoActor);
 
     // @@@ VSync 있는거임??
     // 의도적으로 프레임을 조정할 수 있는 거는 필요없나?
@@ -537,10 +509,10 @@ void FApplication::Tick(float DeltaTime)
         UpdateGizmoColors();
     }
 
-    //TempFunc(WorldAxisActor);
-    //TempFunc(GridActor);
-    //TempFunc(GizmoActor);
     World->BuildScene(*Scene);
+    TempFunc(WorldAxisActor);
+    TempFunc(GridActor);
+    TempFunc(GizmoActor);
 
     AddSelectionOutlineRenderItem();
 
@@ -570,6 +542,12 @@ void FApplication::TempFunc(AActor* Actor)
         {
             continue;
         }
+
+        if (dynamic_cast<AGizmoActor*>(Actor))
+        {
+            Item.bIsGizmo = true;
+        }
+
         Scene->RenderItems.push_back(Item);
     }
 }
