@@ -235,7 +235,6 @@
     <ClCompile Include="Engine\Private\Component\UGizmoComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\UPrimitiveComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\USceneComponent.cpp" />
-    <ClCompile Include="Engine\Private\Component\USphereComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\UStaticMeshComponent.cpp" />
     <ClCompile Include="Engine\Private\Resource\BuiltInMeshFactory.cpp" />
     <ClCompile Include="Engine\Private\Resource\MeshImporter.cpp" />

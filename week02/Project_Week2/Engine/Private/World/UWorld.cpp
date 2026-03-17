@@ -66,6 +66,8 @@ void UWorld::Clear()
     {
         Destroy(actor);
     }
+
+    Actors.clear();
 }
 
 void UWorld::AddActor(AActor* InActor)

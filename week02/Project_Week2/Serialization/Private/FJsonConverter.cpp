@@ -47,7 +47,7 @@ bool FJsonConverter::FromJson(const Json& InJson, FWorldSaveData& OutWorldSaveDa
     OutWorldSaveData.Version = InJson["Version"].get<uint32>();
 
     // 기존 데이터 초기화
-    OutWorldSaveData.Primitives.empty();
+    OutWorldSaveData.Primitives.clear();
 
     const Json& PrimitivesJson = InJson["Primitives"];
 
@@ -60,6 +60,8 @@ bool FJsonConverter::FromJson(const Json& InJson, FWorldSaveData& OutWorldSaveDa
         {
             return false;
         }
+
+        Record.SaveID = static_cast<uint32>(std::stoul(It.key()));
 
         OutWorldSaveData.Primitives.push_back(Record);
     }

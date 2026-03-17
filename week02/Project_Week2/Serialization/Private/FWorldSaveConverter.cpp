@@ -10,7 +10,7 @@ const TMap<FString, FString> FWorldSaveConverter::ClassNameMap =
     { "Sphere", "ASphere" },
     { "Cube", "ACube" },
     { "Triangle", "ATriangle" },
-    { "Toruso", "AToruso" }
+    { "Torus", "ATorus" }
 };
 
 FWorldSaveData FWorldSaveConverter::FromWorld(const UWorld* World)
@@ -69,6 +69,8 @@ FPrimitiveRecord FWorldSaveConverter::MakePrimitiveRecord(const AActor* Actor, u
     {
         return Record;
     }
+
+    Record.SaveID = SaveID;
 
     const FString ClassName = Actor->GetClass()->ClassName;
 
