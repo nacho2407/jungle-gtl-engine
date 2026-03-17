@@ -49,10 +49,7 @@ LRESULT CALLBACK EngineApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 			UINT height = HIWORD(lParam);
 			if (width > 0 && height > 0)
 			{
-				for (auto& callback : pApp->OnResizeCallback)
-				{
-					callback(width, height);
-				}
+				pApp->ProcessOnResizeCallback(width, height);
 			}
 		}
 		break;
@@ -116,6 +113,11 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	OnResizeCallback.push_back([this](int width, int height) {
 		Renderer->OnResize(width, height);
 		});
+	RECT Rect;
+	if (GetClientRect(HWnd, &Rect))
+	{
+		ProcessOnResizeCallback(Rect.right - Rect.left, Rect.bottom - Rect.top);
+	}
 
 	//Init Picker
 	Picker = Cast<UPicker>(FObjectFactory::ConstructObject(UPicker::GetClass()));
@@ -263,5 +265,13 @@ void EngineApp::ReleaseEngineWindow()
 	{
 		DestroyWindow(HWnd);
 		HWnd = nullptr;
+	}
+}
+
+void EngineApp::ProcessOnResizeCallback(int width, int height)
+{
+	for (auto& callback : OnResizeCallback)
+	{
+		callback(width, height);
 	}
 }

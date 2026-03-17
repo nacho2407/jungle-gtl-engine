@@ -21,6 +21,7 @@ public:
 private:
 	void CreateEngineWindow();
 	void ReleaseEngineWindow();
+	void ProcessOnResizeCallback(int width, int height);
 
 	static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 

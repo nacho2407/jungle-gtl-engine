@@ -11,6 +11,14 @@ InputManager::~InputManager() {}
 
 void InputManager::Update()
 {
+	if (GetActiveWindow() != hWnd)
+	{
+		for (int i = 0; i < 256; ++i) {
+			PrevState[i] = CurrentState[i];
+			CurrentState[i] = false;
+		}
+		return;
+	}
 	GetInstance().UpdateKeyboard();
 	GetInstance().UpdateMouse();
 }
