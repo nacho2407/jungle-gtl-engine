@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core.h"
 #include "Actor/APrimitiveActor.h"
 
 class UStaticMesh;

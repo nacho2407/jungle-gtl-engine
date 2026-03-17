@@ -1,10 +1,10 @@
 #pragma once
 
-// ÄÜ¼Ö Ã¢ ±×¸®±â
+// ï¿½Ü¼ï¿½ Ã¢ ï¿½×¸ï¿½ï¿½ï¿½
 void ShowImGuiDemoConsole(bool* p_open);
 
-// ¿À¹ö·Îµå: ÄÜ¼Ö¿¡ ·Î±× Ãß°¡
+// ï¿½ï¿½ï¿½ï¿½ï¿½Îµï¿½: ï¿½Ü¼Ö¿ï¿½ ï¿½Î±ï¿½ ï¿½ß°ï¿½
 void ShowImGuiDemoConsole(const char* fmt, ...);
 
-// UE_LOG ¸ÅÅ©·Î
+// UE_LOG ï¿½ï¿½Å©ï¿½ï¿½
 #define UE_LOG(fmt, ...) ShowImGuiDemoConsole("[LOG] " fmt, ##__VA_ARGS__)

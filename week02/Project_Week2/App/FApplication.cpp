@@ -43,6 +43,10 @@
 #include "Panels/FControlPanel.h"
 #include "Panels/FConsolePanel.h"
 
+#include "FJsonConverter.h"
+#include "FWorldSaveConverter.h"
+
+#include <filesystem>
 
 namespace
 {
@@ -88,9 +92,7 @@ FApplication::FApplication()
     //, CameraActor(nullptr)
     //, MainCamera(nullptr)
     , bIsRunning(false)
-    , SphereMesh(nullptr)
-    //, CubeMesh(nullptr)
-    //, TriangleMesh(nullptr)
+    , CubeMesh(nullptr)
     , TorusMesh(nullptr)
     , AxesMesh(nullptr)
 {
@@ -203,10 +205,7 @@ bool FApplication::InitializeInput()
 
 bool FApplication::InitializeResources()
 {
-    //SphereMesh = MeshImporter::LoadStaticMeshFromGltf("Assets/BlueSphere.gltf");
-    SphereMesh = BuiltInMeshFactory::CreateSphereMesh();
     CubeMesh = BuiltInMeshFactory::CreateCubeMesh();
-    //TriangleMesh = BuiltInMeshFactory::CreateTriangleMesh();
     TorusMesh = BuiltInMeshFactory::CreateTorusMesh(64, 32, 1.2f, 0.35f);
     AxesMesh = BuiltInMeshFactory::CreateAxesMesh();
     GridMesh = BuiltInMeshFactory::CreateGridMesh(20, 1.0f);
@@ -245,24 +244,7 @@ bool FApplication::InitializeScene()
 
     //World->AddActor(CameraActor);
     
-    {
-        //GridActor = new AGridActor();
-
-        //UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
-        //MeshComp->SetStaticMesh(GridMesh);
-        //MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
-        //MeshComp->SetCullMode(ERenderCullMode::None);
-        //MeshComp->SetUseDepthBias(true);
-
-        //GridActor->AddComponent(MeshComp);
-        //GridActor->SetRootComponent(MeshComp);
-        //World->AddActor(GridActor);
-
-        GridActor = new AGridActor();
-        World->AddActor(GridActor);
-    }
-    
-    SpawnMeshActor(SphereMesh, FVector(0.0f, 0.0f, 0.0f));
+    World->SpawnMeshActor(ESpawnMeshType::Sphere, FVector(0.0f, 0.0f, 0.0f));
 
     //// World Axes
     //{
@@ -276,42 +258,8 @@ bool FApplication::InitializeScene()
     //    WorldAxesActor->SetRootComponent(MeshComp);
     //    World->AddActor(WorldAxesActor);
     //}
-    WorldAxesActor = SpawnMeshActor(AxesMesh, FVector(0.0f, 0.0f, 0.0f));
-    if (WorldAxesActor)
-    {
-        if (UStaticMeshComponent* AxesComp = FindStaticMeshComponent(WorldAxesActor))
-        {
-            AxesComp->SetDepthEnable(true);
-            AxesComp->SetUseDepthBias(false);
-            AxesComp->SetCullMode(ERenderCullMode::None);
-        }
-    }
-
-    //GizmoActor = new AGizmoActor();
-    //GizmoActor->Initialize(GizmoArrowMesh, GizmoScaleMesh, CubeMesh, TorusMesh);
-    //World->AddActor(GizmoActor);
-
-    // Click Pulse Circle
-    {
-        ClickCircleActor = new AActor();
-        ClickCircleComp = new UStaticMeshComponent();
-
-        ClickCircleComp->SetStaticMesh(ClickCircleMesh);
-        ClickCircleComp->SetRelativeLocation(FVector::ZeroVector);
-        ClickCircleComp->SetRelativeRotation(FVector::ZeroVector);
-        ClickCircleComp->SetRelativeScale(FVector(0.0f, 0.0f, 0.0f));
-
-        ClickCircleComp->SetRenderColor(FVector4(0.98f, 0.84f, 0.10f, 1.0f));
-        ClickCircleComp->SetUseVertexColor(false);
-        ClickCircleComp->SetDepthEnable(false);
-        ClickCircleComp->SetCullMode(ERenderCullMode::None);
-        ClickCircleComp->SetVisibility(false);
-
-        ClickCircleActor->AddComponent(ClickCircleComp);
-        ClickCircleActor->SetRootComponent(ClickCircleComp);
-
-        World->AddActor(ClickCircleActor);
-    }
+    // 마우스 클릭 펄스 생성 및 World 추가
+    CreatePointerPulseActor();
 
     UE_LOG("Hello World %d", 2025);
 
@@ -332,22 +280,24 @@ void FApplication::MainLoop()
     auto PrevTime = Clock::now();
 
     Camera = NewObject<ACamera>();
-    World->AddActor(Camera);
     WorldAxisActor = NewObject<AAxisActor>();
-    World->AddActor(WorldAxisActor);
     GizmoActor = NewObject<AGizmoActor>();
-    World->AddActor(GizmoActor);
     GridActor = NewObject<AGridActor>();
-    World->AddActor(GridActor);
 
     check(Camera)
     check(WorldAxisActor)
     check(GizmoActor)
     check(GridActor)
 
+    if (UStaticMeshComponent* AxesComp = FindStaticMeshComponent(WorldAxisActor))
+    {
+        AxesComp->SetDepthEnable(true);
+        AxesComp->SetUseDepthBias(false);
+        AxesComp->SetCullMode(ERenderCullMode::None);
+    }
+
     GizmoActor->Initialize(GizmoArrowMesh, GizmoScaleMesh, CubeMesh, TorusMesh, GizmoRotateRingMesh);
     GizmoActor->SetMode(CurrentGizmoMode);
-    World->AddActor(GizmoActor);
 
     // @@@ VSync 있는거임??
     // 의도적으로 프레임을 조정할 수 있는 거는 필요없나?
@@ -559,10 +509,10 @@ void FApplication::Tick(float DeltaTime)
         UpdateGizmoColors();
     }
 
-    //TempFunc(WorldAxisActor);
-    //TempFunc(GridActor);
-    //TempFunc(GizmoActor);
     World->BuildScene(*Scene);
+    TempFunc(WorldAxisActor);
+    TempFunc(GridActor);
+    TempFunc(GizmoActor);
 
     AddSelectionOutlineRenderItem();
 
@@ -592,6 +542,12 @@ void FApplication::TempFunc(AActor* Actor)
         {
             continue;
         }
+
+        if (dynamic_cast<AGizmoActor*>(Actor))
+        {
+            Item.bIsGizmo = true;
+        }
+
         Scene->RenderItems.push_back(Item);
     }
 }
@@ -677,7 +633,70 @@ void FApplication::Shutdown()
     }
 }
 
-void FApplication::HandleMousePicking() //
+const FString& FApplication::GetSceneFileNameInput() const
+{
+    return SceneFileNameInput;
+}
+
+void FApplication::SetSceneFileNameInput(const FString& InSceneFileName)
+{
+    SceneFileNameInput = InSceneFileName;
+}
+
+void FApplication::NewScene()
+{
+    if (!World)
+    {
+        return;
+    }
+
+    // 현재 선택된 Actor를 선택 해제하여 Gizmo 등 해제..?
+    SetSelectedActor(nullptr);
+    World->Clear();
+    
+    // World를 초기화하기 때문에 일단 마우스 펄스도 월드에 다시 추가
+    CreatePointerPulseActor();
+}
+
+bool FApplication::SaveScene()
+{
+    if (!World)
+    {
+        return false;
+    }
+
+    const FWorldSaveData SaveData = FWorldSaveConverter::FromWorld(World);
+    return FJsonConverter::SaveToFile(BuildSceneFilePath(), SaveData, 2);
+}
+
+bool FApplication::LoadScene()
+{
+    if (!World)
+    {
+        return false;
+    }
+
+    FWorldSaveData SaveData;
+
+    // 멤버 변수인 SceneFileNameInput를 이용해서 파일 저장 위치 확인
+    if (!FJsonConverter::LoadFromFile(BuildSceneFilePath(), SaveData))
+    {
+        return false;
+    }
+
+    SetSelectedActor(nullptr);
+
+    if (!FWorldSaveConverter::ToWorld(SaveData, World))
+    {
+        return false;
+    }
+
+    // FWorldSaveConverter::ToWorld는 World 초기화 후 Scene 파일에 있는 Actor들만 World에 추가하기 때문에 마우스 펄스도 여기서 다시 추가
+    CreatePointerPulseActor();
+    return true;
+}
+
+void FApplication::HandleMousePicking()
 {
     auto MainCamera = Camera->GetCameraComponent();
 
@@ -1364,6 +1383,49 @@ void FApplication::RefreshPointerPulseTransform()
     ClickCircleComp->SetRelativeScale(FVector(S, S, S));
 }
 
+void FApplication::CreatePointerPulseActor()
+{
+    // 원래 있던 마우스 펄스 생성 부분 복붙
+    if (!World || !ClickCircleMesh)
+    {
+        return;
+    }
+
+    ClickCircleActor = new AActor();
+    ClickCircleComp = new UStaticMeshComponent();
+
+    ClickCircleComp->SetStaticMesh(ClickCircleMesh);
+    ClickCircleComp->SetRelativeLocation(FVector::ZeroVector);
+    ClickCircleComp->SetRelativeRotation(FVector::ZeroVector);
+    ClickCircleComp->SetRelativeScale(FVector(0.0f, 0.0f, 0.0f));
+
+    ClickCircleComp->SetRenderColor(FVector4(0.98f, 0.84f, 0.10f, 1.0f));
+    ClickCircleComp->SetUseVertexColor(false);
+    ClickCircleComp->SetDepthEnable(false);
+    ClickCircleComp->SetCullMode(ERenderCullMode::None);
+    ClickCircleComp->SetVisibility(false);
+
+    ClickCircleActor->AddComponent(ClickCircleComp);
+    ClickCircleActor->SetRootComponent(ClickCircleComp);
+
+    World->AddActor(ClickCircleActor);
+}
+
+FString FApplication::BuildSceneFilePath() const
+{
+    namespace fs = std::filesystem;
+
+    // 입력된 파일 이름이 없으면 그냥 "Default"로 판단
+    fs::path ScenePath(SceneFileNameInput.empty() ? "Default" : SceneFileNameInput);
+    if (ScenePath.extension().empty())
+    {
+        // 확장자가 있으면 그걸로 쓰고, 없으면 기본 ".Scene" 사용
+        ScenePath += ".Scene";
+    }
+
+    return ScenePath.string();
+}
+
 void FApplication::UpdatePointerPulse(float DeltaTime)
 {
     if (!ClickCircleComp || !InputManager)
@@ -1500,47 +1562,14 @@ void FApplication::RenderDebugUI()
 
 }
 
-// (*) 이거 UWorld로 옮기는 게 맞지
-AActor* FApplication::SpawnMeshActor(UStaticMesh* Mesh, const FVector& Location)
-{
-    if (!World || !Mesh)
-    {
-        return nullptr;
-    }
-
-    AActor* Actor = new AActor();
-    UStaticMeshComponent* MeshComp = new UStaticMeshComponent();
-
-    MeshComp->SetStaticMesh(Mesh);
-    MeshComp->SetRelativeLocation(Location);
-    
-    Actor->AddComponent(MeshComp);
-    Actor->SetRootComponent(MeshComp);
-
-    World->AddActor(Actor);
-    return Actor;
-}
-
 void FApplication::SpawnSelectedMeshActor()
 {
-    UStaticMesh* MeshToSpawn = nullptr;
-
-    switch (SelectedSpawnMeshType)
+    if (!World)
     {
-    case ESpawnMeshType::Sphere:
-        MeshToSpawn = SphereMesh;
-        break;
-    case ESpawnMeshType::Cube:
-        MeshToSpawn = CubeMesh;
-        break;
-    case ESpawnMeshType::Torus:
-        MeshToSpawn = TorusMesh;
-        break;
-    default:
         return;
     }
 
-    AActor* SpawnedActor = SpawnMeshActor(MeshToSpawn, FVector::ZeroVector);
+    AActor* SpawnedActor = World->SpawnMeshActor(SelectedSpawnMeshType, FVector::ZeroVector);
 
     // 생성 직후 선택되게 하고 싶으면
     if (SpawnedActor)

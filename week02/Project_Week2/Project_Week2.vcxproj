@@ -42,7 +42,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -105,7 +105,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty;$(ProjectDir)GUI\Public;$(ProjectDir)Render\Public;$(ProjectDir)App;$(ProjectDir)Engine\Public;$(ProjectDir)Core\Public;$(ProjectDir)GUI\Public\ImGui;$(ProjectDir)Serialization\Public;$(ProjectDir)GUI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty;$(ProjectDir)GUI\Public;$(ProjectDir)Render\Public;$(ProjectDir)App;$(ProjectDir)Engine\Public;$(ProjectDir)Core\Public;$(ProjectDir)GUI\Public\ImGui;$(ProjectDir)Serialization\Public;$(ProjectDir)GUI;$(ProjectDir)Core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -121,7 +121,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)GUI\Public;$(ProjectDir)ThirdParty;$(ProjectDir)Render\Public;$(ProjectDir)App;$(ProjectDir)Engine\Public;$(ProjectDir)Core\Public;$(ProjectDir)Serialization\Public;$(ProjectDir)GUI</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty;$(ProjectDir)GUI\Public;$(ProjectDir)Render\Public;$(ProjectDir)App;$(ProjectDir)Engine\Public;$(ProjectDir)Core\Public;$(ProjectDir)GUI\Public\ImGui;$(ProjectDir)Serialization\Public;$(ProjectDir)GUI;$(ProjectDir)Core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -177,6 +177,7 @@
     <ClInclude Include="Engine\Public\Resource\MeshImporter.h" />
     <ClInclude Include="Engine\Public\Resource\MeshTypes.h" />
     <ClInclude Include="Engine\Public\Resource\UStaticMesh.h" />
+    <ClInclude Include="Engine\Public\World\ESpawnMeshType.h" />
     <ClInclude Include="Engine\Public\World\FScene.h" />
     <ClInclude Include="Engine\Public\World\UWorld.h" />
     <ClInclude Include="Core\Public\FUObjectFactory.h" />
@@ -197,7 +198,7 @@
     <ClInclude Include="Render\Public\Geometry\Sphere.h" />
     <ClInclude Include="Render\Public\Structs.h" />
     <ClInclude Include="Render\Public\URenderer.h" />
-    <ClInclude Include="Serialization\Public\FPrimitiveJsonConverter.h" />
+    <ClInclude Include="Serialization\Public\FJsonConverter.h" />
     <ClInclude Include="Serialization\Public\FWorldSaveConverter.h" />
     <ClInclude Include="Serialization\Public\FWorldSaveData.h" />
     <ClInclude Include="ThirdParty\Json\json.hpp" />
@@ -240,10 +241,8 @@
     <ClCompile Include="Engine\Private\Component\UGizmoComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\UPrimitiveComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\USceneComponent.cpp" />
-    <ClCompile Include="Engine\Private\Component\USphereComponent.cpp" />
     <ClCompile Include="Engine\Private\Component\UStaticMeshComponent.cpp" />
     <ClCompile Include="Engine\Private\Resource\BuiltInMeshFactory.cpp" />
-    <ClCompile Include="Engine\Private\Resource\FBuiltInMeshRepository.cpp" />
     <ClCompile Include="Engine\Private\Resource\MeshImporter.cpp" />
     <ClCompile Include="Engine\Private\Resource\UStaticMesh.cpp" />
     <ClCompile Include="Engine\Public\Actor\AGizmoActor.h" />
@@ -266,7 +265,8 @@
     <ClCompile Include="GUI\Private\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="Render\Private\URenderer.cpp" />
     <ClCompile Include="Core\Private\UObjectBaseUtility.cpp" />
-    <ClCompile Include="Serialization\Private\FPrimitiveJsonConverter.cpp" />
+    <ClCompile Include="Serialization\Private\FJsonConverter.cpp" />
+    <ClCompile Include="Serialization\Private\FWorldSaveConverter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Render\Public\Shaders\Default.hlsl">
