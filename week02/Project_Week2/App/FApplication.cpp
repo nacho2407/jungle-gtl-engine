@@ -278,7 +278,7 @@ void FApplication::MainLoop()
     GizmoActor->SetMode(CurrentGizmoMode);
 
     // @@@ VSync 있는거임??
-    // 의도적으로 프레임을 조정할 수 있는 거는 필요없나?
+    // 의도적으로 프레임을 조정할 수 있는 거는 필요없나?dd
     auto MainCamera = Camera->GetCameraComponent();
     while (bIsRunning)
     {
@@ -531,17 +531,47 @@ void FApplication::TempFunc(AActor* Actor)
             continue;
         }
 
+        //FRenderItem Item = PrimitiveComponent->CreateRenderItem();
+        //if (Item.Mesh == nullptr)
+        //{
+        //    continue;
+        //}
+
+        //if (dynamic_cast<AGizmoActor*>(Actor))
+        //{
+        //    Item.bIsGizmo = true;
+        //}
+
+        //Scene->RenderItems.push_back(Item);
         FRenderItem Item = PrimitiveComponent->CreateRenderItem();
         if (Item.Mesh == nullptr)
         {
             continue;
         }
 
+        // world matrix 3x3 determinant
+        const FMatrix& M = Item.WorldMatrix;
+        const float Det3x3 =
+            M.M[0][0] * (M.M[1][1] * M.M[2][2] - M.M[1][2] * M.M[2][1]) -
+            M.M[0][1] * (M.M[1][0] * M.M[2][2] - M.M[1][2] * M.M[2][0]) +
+            M.M[0][2] * (M.M[1][0] * M.M[2][1] - M.M[1][1] * M.M[2][0]);
+
+        if (Det3x3 < 0.0f)
+        {
+            if (Item.CullMode == ERenderCullMode::Back)
+            {
+                Item.CullMode = ERenderCullMode::Front;
+            }
+            else if (Item.CullMode == ERenderCullMode::Front)
+            {
+                Item.CullMode = ERenderCullMode::Back;
+            }
+        }
+
         if (dynamic_cast<AGizmoActor*>(Actor))
         {
             Item.bIsGizmo = true;
         }
-
         Scene->RenderItems.push_back(Item);
     }
 }
@@ -1185,22 +1215,20 @@ void FApplication::UpdateGizmoDrag(int MouseX, int MouseY)
         const FVector Delta = HitPoint - DragStartHitPoint;
         const float Amount = Delta.Dot(DragAxisDirection);
 
-        const float MinScale = 0.05f;
+        //const float MinScale = 0.05f;
         FVector NewScale = DragStartActorScale;
 
         switch (ActiveGizmoAxis)
         {
         case EGizmoAxis::X:
-            NewScale.X = std::max(MinScale, DragStartActorScale.X * (1.0f + Amount * GizmoScaleSensitivity));
+            NewScale.X = DragStartActorScale.X + Amount * GizmoScaleSensitivity;
             break;
         case EGizmoAxis::Y:
-            NewScale.Y = std::max(MinScale, DragStartActorScale.Y * (1.0f + Amount * GizmoScaleSensitivity));
+            NewScale.Y = DragStartActorScale.Y + Amount * GizmoScaleSensitivity;
             break;
         case EGizmoAxis::Z:
-            NewScale.Z = std::max(MinScale, DragStartActorScale.Z * (1.0f + Amount * GizmoScaleSensitivity));
+            NewScale.Z = DragStartActorScale.Z + Amount * GizmoScaleSensitivity;
             break;
-        default:
-            return;
         }
 
         Root->SetRelativeScale(NewScale);
@@ -1237,14 +1265,23 @@ void FApplication::AddSelectionOutlineRenderItem()
     }
 
     const FMatrix BaseWorld = MeshComp->GetWorldTransformMatrix();
-    const FMatrix OutlineScale = FMatrix::MakeScale(FVector(1.02f, 1.02f, 1.02f));
+    const FMatrix OutlineScale = FMatrix::MakeScale(FVector(1.04f, 1.04f, 1.04f));
 
     FRenderItem OutlineItem;
     OutlineItem.Mesh = MeshComp->GetStaticMesh();
     OutlineItem.WorldMatrix = OutlineScale * BaseWorld;
-    OutlineItem.Color = FVector4(0.953f, 0.596f, 0.184f, 1.0f);
+    OutlineItem.Color = FVector4(1.0f, 0.333f, 0.0f, 1.0f);
 
-    OutlineItem.CullMode = ERenderCullMode::Front;
+    //OutlineItem.CullMode = ERenderCullMode::Front;
+    const float Det3x3 =
+        BaseWorld.M[0][0] * (BaseWorld.M[1][1] * BaseWorld.M[2][2] - BaseWorld.M[1][2] * BaseWorld.M[2][1]) -
+        BaseWorld.M[0][1] * (BaseWorld.M[1][0] * BaseWorld.M[2][2] - BaseWorld.M[1][2] * BaseWorld.M[2][0]) +
+        BaseWorld.M[0][2] * (BaseWorld.M[1][0] * BaseWorld.M[2][1] - BaseWorld.M[1][1] * BaseWorld.M[2][0]);
+
+    OutlineItem.CullMode = (Det3x3 < 0.0f)
+        ? ERenderCullMode::Back
+        : ERenderCullMode::Front;
+
     OutlineItem.bDepthEnable = true;
     OutlineItem.bUseVertexColor = false;
 

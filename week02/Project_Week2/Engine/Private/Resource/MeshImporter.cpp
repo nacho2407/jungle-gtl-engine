@@ -117,7 +117,7 @@ namespace MeshImporter
             Vertices.emplace_back(P.X, P.Y, P.Z, 1.0f, 1.0f, 1.0f, 1.0f);
         }
 
-        TArray<uint32_t> Indices;
+        TArray<uint32> Indices;
         Indices.reserve(IndexCount);
 
         const int ComponentType = IndexAccessor["componentType"].get<int>();
@@ -129,13 +129,13 @@ namespace MeshImporter
 
             for (size_t i = 0; i < IndexCount; ++i)
             {
-                Indices.push_back(static_cast<uint32_t>(Src[i]));
+                Indices.push_back(static_cast<uint32>(Src[i]));
             }
         }
         else if (ComponentType == 5125) // UNSIGNED_INT
         {
-            const uint32_t* Src =
-                reinterpret_cast<const uint32_t*>(BinData.data() + IndexByteOffset);
+            const uint32* Src =
+                reinterpret_cast<const uint32*>(BinData.data() + IndexByteOffset);
 
             for (size_t i = 0; i < IndexCount; ++i)
             {

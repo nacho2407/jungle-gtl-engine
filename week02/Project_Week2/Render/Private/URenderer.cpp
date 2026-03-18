@@ -847,10 +847,10 @@ bool URenderer::GetOrCreateMeshResource(UStaticMesh* Mesh, FMeshGPUResource& Out
 
     if (Mesh->HasIndices())
     {
-        const std::vector<uint32_t>& Indices = Mesh->GetIndices();
+        const std::vector<uint32>& Indices = Mesh->GetIndices();
 
         D3D11_BUFFER_DESC IBDesc = {};
-        IBDesc.ByteWidth = static_cast<UINT>(Indices.size() * sizeof(uint32_t));
+        IBDesc.ByteWidth = static_cast<UINT>(Indices.size() * sizeof(uint32));
         IBDesc.Usage = D3D11_USAGE_IMMUTABLE;
         IBDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 

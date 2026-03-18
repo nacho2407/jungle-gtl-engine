@@ -13,12 +13,12 @@ const TArray<FVertexSimple>& UStaticMesh::GetVertices() const
 	return Vertices;
 }
 
-void UStaticMesh::SetIndices(const TArray<uint32_t>& InIndices)
+void UStaticMesh::SetIndices(const TArray<uint32>& InIndices)
 {
     Indices = InIndices;
 }
 
-const TArray<uint32_t>& UStaticMesh::GetIndices() const
+const TArray<uint32>& UStaticMesh::GetIndices() const
 {
     return Indices;
 }
@@ -33,14 +33,14 @@ EMeshTopology UStaticMesh::GetTopology() const
     return Topology;
 }
 
-uint32_t UStaticMesh::GetVertexCount() const
+uint32 UStaticMesh::GetVertexCount() const
 {
-    return static_cast<uint32_t>(Vertices.size());
+    return static_cast<uint32>(Vertices.size());
 }
 
-uint32_t UStaticMesh::GetIndexCount() const
+uint32 UStaticMesh::GetIndexCount() const
 {
-    return static_cast<uint32_t>(Indices.size());
+    return static_cast<uint32>(Indices.size());
 }
 
 bool UStaticMesh::HasIndices() const

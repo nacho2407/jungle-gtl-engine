@@ -146,8 +146,8 @@ private:
         UStaticMeshComponent* ZAxisShaftComp = nullptr;
 
         float RotateRingMajorRadius = 2.0f;
-        float RotateRingVisualScale = 0.7f;
-        float RotatePickThickness3D = 0.35f;
+        float RotateRingVisualScale = 1.2f;
+        float RotatePickThickness3D = 0.45f;
 
     USceneComponent* PivotComp = nullptr;
 
