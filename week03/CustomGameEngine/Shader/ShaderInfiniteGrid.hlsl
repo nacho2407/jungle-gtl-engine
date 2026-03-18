@@ -60,7 +60,6 @@ VS_OUTPUT mainVS(uint id : SV_VertexID)
     output.Pos = mul(worldPosition, viewProj);
     output.WorldPos = worldPosition.xyz;
     output.PlaneNo = planeno[id / 6];
-
     return output;
 }
 

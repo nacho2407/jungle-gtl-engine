@@ -22,6 +22,8 @@ UWorld::~UWorld() {
 		delete *it;
 	}
 	permanentScene->SceneComponents.clear();
+
+	delete permanentScene;
 }
 
 UScene* UWorld::GetActiveScene()
