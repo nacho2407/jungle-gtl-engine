@@ -1051,15 +1051,7 @@ void FApplication::BeginGizmoDrag(EGizmoAxis Axis, int MouseX, int MouseY)
     }
 
     FVector AxisDir = LocalAxis;
-
-    if (CurrentGizmoMode != EGizmoMode::Rotate)
-    {
-        const FMatrix ActorRot = FMatrix::MakeRotationXYZ(Root->GetRelativeRotation());
-        FVector4 Axis4 = ActorRot * FVector4(LocalAxis, 0.0f);
-        AxisDir = FVector(Axis4.X, Axis4.Y, Axis4.Z);
-        AxisDir.Normalize();
-    }
-
+    AxisDir.Normalize();
 
     FRay Ray = BuildPickRay(MouseX, MouseY);
 
