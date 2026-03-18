@@ -63,34 +63,68 @@ void GizmoRotationControlStrategy::UpdateRenderObject()
 
 void GizmoRotationControlStrategy::BeginDrag(const Ray& ray)
 {
-	InitialTouchPoint = ray.Origin;
 	InitialObjectQuaternion = Controller->GetAttachedComponent()->GetRelativeQuaternion();
-
+	AccumulatedAngle = 0.0f;
+	GetCursorPos(&InitialCursorPos);
 	ShowCursor(false);
 }
 
 void GizmoRotationControlStrategy::UpdateDrag(const Ray& ray)
 {
-	FVector currTouchPoint = ray.Origin;
-	float diff = currTouchPoint.z - InitialTouchPoint.z;
+	FVector worldAxis;
+	switch (Controller->GetHoverAxis())
+	{
+	case GizmoControllerAxis::X:
+		worldAxis = FVector::Forward();
+		break;
+	case GizmoControllerAxis::Y:
+		worldAxis = FVector::Right();
+		break;
+	case GizmoControllerAxis::Z:
+		worldAxis = FVector::Up();
+		break;
+	}
+
+	FVector axisDir = worldAxis;
+	if (Controller->IsLocalSpace())
+	{
+		axisDir = Controller->GetRelativeMatrix().TransformVector(worldAxis).Normalize();
+	}
+
+	POINT currPos;
+	GetCursorPos(&currPos);
+
+	int deltaX = currPos.x - InitialCursorPos.x;
+	int deltaY = currPos.y - InitialCursorPos.y;
+
+	UCameraComponent* camera = UCameraComponent::GetMainCamera();
+	FVector screenOrigin = camera->WorldToScreen(Controller->GetAttachedComponent()->GetRelativeLocation());
+	FVector screenAxisEnd = camera->WorldToScreen(Controller->GetAttachedComponent()->GetRelativeLocation() + axisDir);
+	FVector screenAxisVector = (screenAxisEnd - screenOrigin).Normalize();
+
+	FVector screenTangent = FVector(-screenAxisVector.y, screenAxisVector.x, 0.0f);
+
+	if (deltaX == 0 && deltaY == 0) return;
 
 	FQuat currQuat = InitialObjectQuaternion;
 	FQuat deltaQuat;
 
-	float sensitivity = 2000.0f;
+	float sensitivity = 0.01f;
+	FVector mouseDeltaVec = FVector((float)deltaX, (float)deltaY, 0.0f);
+	float effectiveDelta = mouseDeltaVec.Dot(screenTangent);
 
-	switch (Controller->GetHoverAxis())
+	float deltaAngle = -effectiveDelta * sensitivity;
+
+	AccumulatedAngle += deltaAngle;
+
+	float applyAngle = AccumulatedAngle;
+	if (bEnableSnap)
 	{
-	case GizmoControllerAxis::X:
-		deltaQuat = FQuat::FromAxisAngle(FVector::Forward(), diff * sensitivity);
-		break;
-	case GizmoControllerAxis::Y:
-		deltaQuat = FQuat::FromAxisAngle(FVector::Right(), diff * sensitivity);
-		break;
-	case GizmoControllerAxis::Z:
-		deltaQuat = FQuat::FromAxisAngle(FVector::Up(), diff * sensitivity);
-		break;
+		float snapStepRad = SnapStep * (MathHelper::PI / 180.0f);
+		applyAngle = roundf(AccumulatedAngle / snapStepRad) * snapStepRad;
 	}
+
+	deltaQuat = FQuat::FromAxisAngle(worldAxis, applyAngle);
 
 	if (Controller->IsLocalSpace())
 	{
@@ -102,6 +136,8 @@ void GizmoRotationControlStrategy::UpdateDrag(const Ray& ray)
 	}
 
 	Controller->GetAttachedComponent()->SetRelativeQuaternion(currQuat);
+
+	SetCursorPos(InitialCursorPos.x, InitialCursorPos.y);
 }
 
 void GizmoRotationControlStrategy::EndDrag()

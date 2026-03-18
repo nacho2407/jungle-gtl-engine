@@ -3,6 +3,7 @@
 #include "GizmoControlStrategy.h"
 #include "Math/Vector.h"
 #include "Math/Quaternion.h"
+#include "Math/Matrix.h"
 
 class UGizmoComponent;
 class RenderObject;
@@ -29,10 +30,15 @@ public:
 private:
 	UGizmoComponent* Controller;
 
+	FMatrix BaseMatrix;
 	TArray<FMatrix> RelativeMatrices;
 
-	FVector InitialTouchPoint;
+	POINT InitialCursorPos;
 	FQuat InitialObjectQuaternion;
+
+	float AccumulatedAngle = 0.0f;
+	float SnapStep = 15.0f;
+	bool bEnableSnap = true;
 
 	RenderObject* GizmoX;
 	RenderObject* GizmoY;

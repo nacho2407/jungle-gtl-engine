@@ -77,6 +77,8 @@ void UGizmoComponent::Update(float deltaTime)
 		SetRelativeQuaternion(FQuat());
 	}
 
+	CurrentStrategy->Update();
+
 	UpdateRenderObject();
 }
 

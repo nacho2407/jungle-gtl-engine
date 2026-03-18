@@ -272,4 +272,16 @@ void UCameraComponent::CalcOrthogonalProjectionMatrix()
 
 FMatrix UCameraComponent::GetViewProjectionMatrix() const { return ViewProjection; }
 
+FVector UCameraComponent::WorldToScreen(const FVector& worldPos) const
+{
+	FVector clipSpacePos = ViewProjection.TransformPoint(worldPos);
+	if (clipSpacePos.z == 0.0f) return FVector(-1.0f, -1.0f, -1.0f);
+
+	FVector ndcSpacePos = clipSpacePos / clipSpacePos.z;
+	float screenX = (ndcSpacePos.x + 1.0f) * 0.5f * ScreenWidth;
+	float screenY = (1.0f - (ndcSpacePos.y + 1.0f) * 0.5f) * ScreenHeight;
+
+	return FVector(screenX, screenY, ndcSpacePos.z);
+}
+
 REGISTER_CLASS(UCameraComponent);
