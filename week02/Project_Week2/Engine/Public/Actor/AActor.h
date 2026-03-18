@@ -3,7 +3,6 @@
 #include <vector>
 
 #include "UObject.h"
-#include "TObjectBase.h"
 #include "CoreTypes.h"
 
 class UActorComponent;

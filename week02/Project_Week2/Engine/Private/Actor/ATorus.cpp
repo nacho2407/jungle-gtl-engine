@@ -41,7 +41,7 @@ UStaticMeshComponent* ATorus::GetStaticMeshComponent() const
 
 void ATorus::InitializeActor()
 {
-    StaticMeshComponent = NewObject<UStaticMeshComponent>("TorusStaticMeshComponent");
+    StaticMeshComponent = NewObject<UStaticMeshComponent>(this);
     SetPrimitiveComponent(StaticMeshComponent);
-    SetStaticMesh(BuiltInMeshFactory::CreateTorusMesh(64, 32, 1.2f, 0.35f));
+    SetStaticMesh(BuiltInMeshFactory::CreateTorusMesh(64, 32, 1.2f, 0.35f, StaticMeshComponent));
 }

@@ -1,10 +1,8 @@
 #pragma once
-#include "CoreGlobal.h"
 #include "CoreTypes.h"
 #include "CoreDefine.h"
-#include "FUObjectArray.h"
+//#include "FUObjectArray.h"
 #include "FUObjectInitializer.h"
-#include "UObjectBaseUtility.h"
 #include "UClassData.h"
 
 #include <string>
@@ -32,6 +30,11 @@ public:                                                            \
     {                                                              \
         return CurrentType::GetStaticClass();                      \
     }															   \
+																   \
+	virtual void DestroyInstance()                                 \
+	{                                                              \
+		this->~CurrentType();                                      \
+	}                                                              \
 																   \
 	void Initialize(const FUObjectInitializer& ObjectInitilizer)   \
 	{															   \
@@ -61,49 +64,59 @@ public:                                                            \
         return CurrentType::GetStaticClass();                      \
     }															   \
 																   \
+	virtual void DestroyInstance() override                        \
+	{                                                              \
+		this->~CurrentType();                                      \
+	}                                                              \
+																   \
 	void Initialize(const FUObjectInitializer& ObjectInitilizer)   \
 	{															   \
 		UUID = ObjectInitilizer.UUID;							   \
 		Name = ObjectInitilizer.Name;							   \
 	}
 
-class UObject : public UObjectBaseUtility
+class UObject
 {
 DECLARE_ROOT_UClass(UObject)
-
-public:
-	size_t AllocatedSize;
+private:
+	int32 DaechungGarbageCollectionGuanryeon;
+	UObject* Outer = nullptr;
 protected:
 	uint32 UUID;
 
 public:
-	UObject() : AllocatedSize(0), UUID(0), Name("DefaultObject") {};
+	UObject() : UUID(0), Name("DefaultObject") {};
 	virtual ~UObject();
 
 public:
 
-	// Unique Object ID
-	uint64_t GetID() const;
-
-	// Object Name
-	const std::string& GetName() const;
-	void SetName(const std::string& InName);
+	uint32 InternalIndex;
 
 	// Owner Object
 	UObject* GetOuter() const;
 	void SetOuter(UObject* InOuter);
 
+
+	//template<typename T>
+	//CreateDefaultSubobject(FString InName)
+	// Unique Object ID
+	uint64_t GetID() const;
+
+	// Object Name
+	const FString GetName() const;
+	void SetName(const FString& InName);
+
 	// Runtime type info
 	virtual const char* GetObjClassName() const;
 
+	virtual void Destroy();
+
 	uint32 GetUUID() const { return UUID; }
+
 
 public:
 
-	uint64_t ObjectID = 0; // @@@ ???
+	uint64_t ObjectID = 0;
 
 	FString Name;
-
-	UObject* Outer = nullptr; /// 이거는 Private가 맞는듯?
-
 };

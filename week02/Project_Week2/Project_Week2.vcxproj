@@ -135,14 +135,11 @@
     <ClInclude Include="App\Panels\FPropertyPanel.h" />
     <ClInclude Include="App\FInputManager.h" />
     <ClInclude Include="App\WindowsApplication.h" />
+    <ClInclude Include="Core\Public\FGarbageCollector.h" />
     <ClInclude Include="Engine\Public\Actor\AAxisActor.h" />
-    <ClInclude Include="Core\Public\CoreGlobal.h" />
-    <ClInclude Include="Core\Public\FActorInstanceManager.h" />
     <ClInclude Include="Core\Public\FMemory.h" />
     <ClInclude Include="Core\Public\FUObjectAllocator.h" />
     <ClInclude Include="Core\Public\CoreDefine.h" />
-    <ClInclude Include="Core\Public\FAActorFactory.h" />
-    <ClInclude Include="Core\Public\FObjectManager.h" />
     <ClInclude Include="Core\Public\UClassData.h" />
     <ClInclude Include="Core\Public\UObject.h" />
     <ClInclude Include="Core\Core.h" />
@@ -150,8 +147,6 @@
     <ClInclude Include="Core\Public\Math\FMatrix.h" />
     <ClInclude Include="Core\Public\Math\FVector.h" />
     <ClInclude Include="Core\Public\FVertex.h" />
-    <ClInclude Include="Core\Public\UObjectBase.h" />
-    <ClInclude Include="Core\Public\TObjectBase.h" />
     <ClInclude Include="Engine\Engine.h" />
     <ClInclude Include="Engine\Public\Actor\AActor.h" />
     <ClInclude Include="Engine\Public\Actor\ACamera.h" />
@@ -203,7 +198,6 @@
     <ClInclude Include="Serialization\Public\FWorldSaveData.h" />
     <ClInclude Include="ThirdParty\Json\json.hpp" />
     <ClInclude Include="Core\Public\UEngineStatics.h" />
-    <ClInclude Include="Core\Public\UObjectBaseUtility.h" />
     <ClInclude Include="Core\Public\FUObjectInitializer.h" />
     <ClInclude Include="Core\Private\FMemory.h" />
   </ItemGroup>
@@ -215,10 +209,8 @@
     <ClCompile Include="App\Panels\FControlPanel.cpp" />
     <ClCompile Include="App\Panels\FPropertyPanel.cpp" />
     <ClCompile Include="App\WindowsApplication.cpp" />
-    <ClCompile Include="Core\Private\FObjectManager.cpp" />
+    <ClCompile Include="Core\Private\FGarbageCollecter.cpp" />
     <ClCompile Include="Core\Private\Math\FQuat.cpp" />
-    <ClCompile Include="Core\Private\TestMemory.cpp" />
-    <ClCompile Include="Core\Private\FActorInstanceManager.cpp" />
     <ClCompile Include="Core\Private\UObject.cpp" />
     <ClCompile Include="Core\Private\Math\FMatrix.cpp" />
     <ClCompile Include="Core\Private\Math\FVector.cpp" />
@@ -226,7 +218,6 @@
     <ClCompile Include="Core\Private\UObjectClusters.cpp" />
     <ClCompile Include="Core\Public\Math\FQuat.h" />
     <ClCompile Include="Core\Public\Math\FVector4.h" />
-    <ClCompile Include="Core\Public\UClassData.cpp" />
     <ClCompile Include="Engine\Private\Actor\AActor.cpp" />
     <ClCompile Include="Engine\Private\Actor\AAxisActor.cpp" />
     <ClCompile Include="Engine\Private\Actor\AGizmoActor.cpp" />
@@ -254,7 +245,6 @@
     <ClCompile Include="Engine\Private\World\FScene.cpp" />
     <ClCompile Include="Engine\Private\World\UWorld.cpp" />
     <ClCompile Include="Core\Private\UEngineStatics.cpp" />
-    <ClCompile Include="Core\Private\FUObjectFactory.cpp" />
     <ClCompile Include="Core\Private\FUObjectArray.cpp" />
     <ClCompile Include="GUI\Private\ImGui\imgui.cpp" />
     <ClCompile Include="GUI\Private\ImGui\imgui_demo.cpp" />
@@ -264,7 +254,6 @@
     <ClCompile Include="GUI\Private\ImGui\imgui_tables.cpp" />
     <ClCompile Include="GUI\Private\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="Render\Private\URenderer.cpp" />
-    <ClCompile Include="Core\Private\UObjectBaseUtility.cpp" />
     <ClCompile Include="Serialization\Private\FJsonConverter.cpp" />
     <ClCompile Include="Serialization\Private\FWorldSaveConverter.cpp" />
   </ItemGroup>

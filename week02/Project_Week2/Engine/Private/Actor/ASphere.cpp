@@ -20,7 +20,7 @@ void ASphere::SetStaticMesh(UStaticMesh* InStaticMesh)
     {
         return;
     }
-
+    StaticMeshComponent->SetOuter(this);
     StaticMeshComponent->SetStaticMesh(InStaticMesh);
 }
 
@@ -41,7 +41,7 @@ UStaticMeshComponent* ASphere::GetStaticMeshComponent() const
 
 void ASphere::InitializeActor()
 {
-    StaticMeshComponent = NewObject<UStaticMeshComponent>();
+    StaticMeshComponent = NewObject<UStaticMeshComponent>(this);
     SetPrimitiveComponent(StaticMeshComponent);
-    SetStaticMesh(BuiltInMeshFactory::CreateSphereMesh());
+    SetStaticMesh(BuiltInMeshFactory::CreateSphereMesh(StaticMeshComponent));
 }

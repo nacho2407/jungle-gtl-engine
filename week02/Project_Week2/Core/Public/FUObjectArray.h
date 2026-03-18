@@ -1,26 +1,29 @@
 #pragma once
-
 #include "CoreDefine.h"
 #include "FMemory.h"
 #include "UObject.h"
-#include "UObjectBaseUtility.h"
 
-class UObject;
 
+//class UObject;
 class FUObjectItem
 {
 private:
-	UObjectBase* Object;
+	UObject* Object;
 
 public:
-	UObjectBase* GetObject();
+	UObject* GetItemObject();
 
 	int32 SerialNumber;
 	int32 ClusterRootIndex;
 	int32 ClusterIndex;
-	int32 ObjectSize;
 
-	inline void SetObject(UObjectBase* InObject)
+	bool bIsGCTarget;
+	bool bPendingKill;
+	bool bIsClusterRoot;
+
+	//int32 FRefNodeIndex;
+
+	inline void SetObject(UObject* InObject)
 	{
 		Object = InObject;
 	}
@@ -103,13 +106,13 @@ private:
 	int32 ObjAvailableListEstimateCount;
 public:
 	uint32 ElementalCount;
-	FUObjectArray() : ObjAvailableListEstimateCount(0) 
+	FUObjectArray() : ObjAvailableListEstimateCount(0) , ElementalCount(0)
 	{
 		Objects.PreAllocate(1024);
 	};
-	void AllocatdUObjectIndex(UObjectBaseUtility* Object, int32 SerialNumber);
+	void AllocatdUObjectIndex(UObject* Object, int32 SerialNumber);
 	void FreeUObjectIndox(UObject* Object);
-	int32 ObjectToIndex(UObjectBaseUtility* Object) const
+	int32 ObjectToIndex(UObject* Object) const
 	{
 		return Object->InternalIndex;
 	}
@@ -121,14 +124,14 @@ public:
 		//	return const_cast<FUObjectItem*>(&Objects[Index]);
 		//}
 
-		if (Index <= Objects.Num())
+		if (Index < Objects.Num())
 		{
 			return const_cast<FUObjectItem*>(&Objects[Index]);
 		}
 
 		return nullptr;
 	}
-	FUObjectItem* ObjectToObjectItem(const UObjectBaseUtility* Object)
+	FUObjectItem* ObjectToObjectItem(const UObject* Object)
 	{
 		FUObjectItem* ObjectItem = IndexToObject(Object->InternalIndex);
 		return ObjectItem;
@@ -151,9 +154,19 @@ public:
 		return ObjAvailableList.size() != 0 ? ObjAvailableList.back() : Objects.Num();
 	}
 
+	FUObjectItem& operator[](int32 Index)
+	{
+		return Objects[Index];
+	}
+
 	int32 Num() const
 	{
 		return Objects.Num();
+	}
+
+	int32 Capacity() const
+	{
+		return Objects.Capacity();
 	}
 };
 
@@ -175,10 +188,6 @@ struct FUObjectCluster
 	TArray<int32> MutableObjects;
 	/** List of clusters that direcly reference this cluster. Used when dissolving a cluster. */
 	TArray<int32> ReferencedByClusters;
-#if WITH_VERSE_VM || defined(__INTELLISENSE__)
-	/** All verse cells are considered mutable.  They will just be added directly to verse gc when the cluster is marked */
-	//TArray<Verse::VCell*> MutableCells;
-#endif
 
 	/** Cluster needs dissolving, probably due to PendingKill reference */
 	bool bNeedsDissolving;
@@ -204,8 +213,8 @@ public:
 
 	 FUObjectCluster& operator[](int32 Index)
 	{
-		check(Index > 0 || Index <= Clusters.size())
-		return Clusters[Index];
+		 check(Index >= 0 && Index < static_cast<int32>(Clusters.size()));		
+		 return Clusters[Index];
 	}
 
 	/** Returns an index to a new cluster */
@@ -218,14 +227,14 @@ public:
 	* Gets the cluster the specified object is a root of or belongs to.
 	* @Param ClusterRootOrObjectFromCluster Root cluster object or object that belongs to a cluster
 	*/
-	FUObjectCluster* GetObjectCluster(UObjectBaseUtility* ClusterRootOrObjectFromCluster);
+	FUObjectCluster* GetObjectCluster(UObject* ClusterRootOrObjectFromCluster);
 
 
 	/**
 	 * Dissolves a cluster and all clusters that reference it
 	 * @Param ClusterRootOrObjectFromCluster Root cluster object or object that belongs to a cluster
 	 */
-	void DissolveCluster(UObjectBaseUtility* ClusterRootOrObjectFromCluster);
+	void DissolveCluster(UObject* ClusterRootOrObjectFromCluster);
 
 	/** Gets the clusters array (for internal use only!) */
 	TArray<FUObjectCluster>& GetClustersUnsafe()

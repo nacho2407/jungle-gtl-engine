@@ -7,10 +7,21 @@
 #include "Geometry/Sphere.h"
 #include "Geometry/Cube.h"
 #include <cmath>
+#include "FUObjectFactory.h"
 
 namespace
 {
     const float Pi = 3.14159265358979323846f;
+
+    UStaticMesh* CreateMeshObject(UObject* Owner)
+    {
+        if (Owner)
+        {
+            return NewObject<UStaticMesh>(Owner);
+        }
+
+        return NewObjectRoot<UStaticMesh>();
+    }
 
     TArray<FVertexSimple> CreateCubeVertices()
     {
@@ -377,7 +388,7 @@ namespace
 
     UStaticMesh* CreateGridMesh(int HalfCount, float Spacing)
     {
-        UStaticMesh* Mesh = new UStaticMesh();
+        UStaticMesh* Mesh = NewObjectRoot<UStaticMesh>();
         Mesh->SetVertices(CreateGridVertices(HalfCount, Spacing));
         Mesh->SetTopology(EMeshTopology::LineList);
         return Mesh;
@@ -386,9 +397,9 @@ namespace
 
 namespace BuiltInMeshFactory
 {
-    UStaticMesh* CreateSphereMesh()
+    UStaticMesh* CreateSphereMesh(UObject* Owner)
     {
-        UStaticMesh* Mesh = new UStaticMesh();
+        UStaticMesh* Mesh = CreateMeshObject(Owner);
 
         TArray<FVertexSimple> Vertices(
             sphere_vertices,
@@ -399,9 +410,9 @@ namespace BuiltInMeshFactory
         return Mesh;
     }
 
-    UStaticMesh* CreateCubeMesh()
+    UStaticMesh* CreateCubeMesh(UObject* Owner)
     {
-        UStaticMesh* Mesh = new UStaticMesh();
+        UStaticMesh* Mesh = CreateMeshObject(Owner);
 
         TArray<FVertexSimple> Vertices(
             cube_vertices,
@@ -412,17 +423,17 @@ namespace BuiltInMeshFactory
         return Mesh;
     }
 
-    UStaticMesh* CreateTriangleMesh()
+    UStaticMesh* CreateTriangleMesh(UObject* Owner)
     {
-        UStaticMesh* Mesh = new UStaticMesh();
+        UStaticMesh* Mesh = CreateMeshObject(Owner);
         Mesh->SetVertices(CreateTriangleVertices());
         Mesh->SetTopology(EMeshTopology::TriangleList);
         return Mesh;
     }
 
-    UStaticMesh* CreateAxesMesh()
+    UStaticMesh* CreateAxesMesh(UObject* Owner)
     {
-        UStaticMesh* Mesh = new UStaticMesh();
+        UStaticMesh* Mesh = CreateMeshObject(Owner);
         Mesh->SetVertices(CreateAxesVertices());
         Mesh->SetTopology(EMeshTopology::LineList);
         return Mesh;
@@ -433,9 +444,10 @@ namespace BuiltInMeshFactory
         int MajorSegments,
         int MinorSegments,
         float MajorRadius,
-        float MinorRadius)
+        float MinorRadius,
+        UObject* Owner)
     {
-        UStaticMesh* Mesh = new UStaticMesh();
+        UStaticMesh* Mesh = CreateMeshObject(Owner);
         Mesh->SetVertices(CreateTorusVertices(
             MajorSegments,
             MinorSegments,
@@ -445,18 +457,18 @@ namespace BuiltInMeshFactory
         return Mesh;
     }
 
-    UStaticMesh* CreateGizmoArrowMesh()
+    UStaticMesh* CreateGizmoArrowMesh(UObject* Owner)
     {
-        UStaticMesh* Mesh = new UStaticMesh();
+        UStaticMesh* Mesh = CreateMeshObject(Owner);
         Mesh->SetVertices(CreateGizmoArrowVertices());
         Mesh->SetIndices(CreateGizmoArrowIndices());
         Mesh->SetTopology(EMeshTopology::TriangleList);
         return Mesh;
     }
 
-    UStaticMesh* CreateGizmoScaleMesh()
+    UStaticMesh* CreateGizmoScaleMesh(UObject* Owner)
     {
-        UStaticMesh* Mesh = new UStaticMesh();
+        UStaticMesh* Mesh = CreateMeshObject(Owner);
         Mesh->SetVertices(CreateGizmoScaleVertices());
         Mesh->SetIndices(CreateGizmoScaleIndices());
         Mesh->SetTopology(EMeshTopology::TriangleList);
@@ -465,32 +477,32 @@ namespace BuiltInMeshFactory
 
 //    UStaticMesh* CreateCircleMesh(int Segments)
 //    {
-//        UStaticMesh* Mesh = new UStaticMesh();
+//        UStaticMesh* Mesh = NewObject<UStaticMesh>(this);
 //        Mesh->SetVertices(CreateCircleVertices(Segments));
 //        Mesh->SetTopology(EMeshTopology::LineList);
 //        return Mesh;
 //    }
 
-    UStaticMesh* CreateDiscMesh(int Segments)
+    UStaticMesh* CreateDiscMesh(int Segments, UObject* Owner)
     {
-        UStaticMesh* Mesh = new UStaticMesh();
+        UStaticMesh* Mesh = CreateMeshObject(Owner);
         Mesh->SetVertices(CreateDiscVertices(Segments));
         Mesh->SetIndices(CreateDiscIndices(Segments));
         Mesh->SetTopology(EMeshTopology::TriangleList);
         return Mesh;
     }
     
-    UStaticMesh* CreateGridMesh(int HalfCount, float Spacing)
+    UStaticMesh* CreateGridMesh(int HalfCount, float Spacing, UObject* Owner)
     {
-        UStaticMesh* Mesh = new UStaticMesh();
+        UStaticMesh* Mesh = CreateMeshObject(Owner);
         Mesh->SetVertices(CreateGridVertices(HalfCount, Spacing));
         Mesh->SetTopology(EMeshTopology::LineList);
         return Mesh;
     }
 
-    UStaticMesh* CreateGizmoRotateRingMesh()
+    UStaticMesh* CreateGizmoRotateRingMesh(UObject* Owner)
     {
-        UStaticMesh* Mesh = new UStaticMesh();
+        UStaticMesh* Mesh = CreateMeshObject(Owner);
 
         Mesh->SetVertices(CreateTorusVertices(
             96,     // MajorSegments

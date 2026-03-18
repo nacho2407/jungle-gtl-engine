@@ -41,13 +41,21 @@ void FUObjectClusterContainer::FreeCluster(int32 InClusterIndex)
 	check(NumAllocatedClusters >= 0);
 }
 
-FUObjectCluster* FUObjectClusterContainer::GetObjectCluster(UObjectBaseUtility* ClusterRootOrObjectFromCluster)
+FUObjectCluster* FUObjectClusterContainer::GetObjectCluster(UObject* ClusterRootOrObjectFromCluster)
 {
 	check(ClusterRootOrObjectFromCluster);
 
 	const int32 OuterIndex = GUObjectArray.ObjectToIndex(ClusterRootOrObjectFromCluster);
 	FUObjectItem* OuterItem = GUObjectArray.IndexToObject(OuterIndex);
 	int32 ClusterRootIndex = 0;
+	if (OuterItem->bIsClusterRoot)
+	{
+		ClusterRootIndex = OuterIndex;
+	}
+	else
+	{
+		ClusterRootIndex = OuterItem->GetOwnerIndex();
+	}
 	FUObjectCluster* Cluster = nullptr;
 	if (ClusterRootIndex != 0)
 	{
@@ -57,7 +65,7 @@ FUObjectCluster* FUObjectClusterContainer::GetObjectCluster(UObjectBaseUtility* 
 	return Cluster;
 }
 
-void FUObjectClusterContainer::DissolveCluster(UObjectBaseUtility* ClusterRootOrObjectFromCluster)
+void FUObjectClusterContainer::DissolveCluster(UObject* ClusterRootOrObjectFromCluster)
 {
 	FUObjectCluster* Cluster = GetObjectCluster(ClusterRootOrObjectFromCluster);
 	if (Cluster)

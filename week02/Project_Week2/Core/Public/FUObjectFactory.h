@@ -4,12 +4,16 @@
 #include "UEngineStatics.h"
 #include "UObject.h"
 #include "Component/USceneComponent.h"
+#include "FUObjectArray.h"
 
 template<typename T>
 concept UObjectType = std::is_base_of_v<UObject, T>;
 
 template<typename T>
 concept SceneComponentType = std::is_base_of_v<USceneComponent, T>;
+
+template<typename T>
+concept AActprType = std::is_base_of_v<AActor, T>;
 
 class FUObjectFactory
 {
@@ -36,24 +40,55 @@ public:
 
 inline FUObjectFactory GUObjectFactory;
 
+//template<UObjectType T>
+//T* NewObject(const FString& InName = "GameObject")
+//{
+//	return GUObjectFactory.CreateObject<T>(InName);
+//}
+
 template<UObjectType T>
-T* NewObject(const FString& InName = "GameObject")
+T* NewObjectRoot(const FString& InName = "GameObject")
 {
 	return GUObjectFactory.CreateObject<T>(InName);
 }
 
+template<UObjectType T>
+T* NewObject(UObject* Dependency, const FString& InName = "GameObject")
+{
+	T* NewT = GUObjectFactory.CreateObject<T>(InName);
+	NewT->SetOuter(Dependency);
+	return NewT;
+}
+
 template<SceneComponentType T>
-T* NewObject(const FString& InName, const FVector& Location)
+T* NewObject(const FVector& Location, const FString& InName = "GameObject")
 {
 	T* object = NewObject<T>(InName);
-	object->SetLocation(Location);
+	object->SetRelativeLocation(Location);
 	return object;
 }
 
-inline void* Destroy(UObject* object)
+template<AActprType T>
+T* NewObject(const FVector& Location, const FString& InName = "GameObject")
+{
+	T* object = NewObject<T>(InName);
+	object->SetRelativeLocation(Location);
+	return object;
+}
+
+//template<UObjectType T>
+//inline void* DestroyObject(T* object)
+//{
+//	auto TargetIndex = object->InternalIndex;
+//	GUObjectArray.FreeUObjectIndox(object);
+//	GUObjectAllocator.FreeUObject(object);
+//	return nullptr;
+//}
+
+template<UObjectType T>
+inline void* DestroyObjectGC(T* object)
 {
 	auto TargetIndex = object->InternalIndex;
-	GUObjectArray.FreeUObjectIndox(object);
-	GUObjectAllocator.FreeUObject(object);
+	GUObjectArray.IndexToObject(TargetIndex)->bPendingKill = true;
 	return nullptr;
 }

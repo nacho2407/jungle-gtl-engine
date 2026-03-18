@@ -9,93 +9,10 @@
 #include "Resource/UStaticMesh.h"
 #include "Math/FMatrix.h"
 #include "Math/FVector4.h"
+#include "FUObjectFactory.h"
 
 AGizmoActor::AGizmoActor()
 {
-    //auto ArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh();
-    //if (!ArrowMesh)
-    //{
-    //    return;
-    //}
-
-    //if (!XAxisComp)
-    //{
-    //    XAxisComp = new UStaticMeshComponent();
-    //    AddComponent(XAxisComp);
-    //}
-
-    //if (!YAxisComp)
-    //{
-    //    YAxisComp = new UStaticMeshComponent();
-    //    AddComponent(YAxisComp);
-    //}
-
-    //if (!ZAxisComp)
-    //{
-    //    ZAxisComp = new UStaticMeshComponent();
-    //    AddComponent(ZAxisComp);
-    //}
-
-    //XAxisComp->SetStaticMesh(ArrowMesh);
-    //YAxisComp->SetStaticMesh(ArrowMesh);
-    //ZAxisComp->SetStaticMesh(ArrowMesh);
-
-    //XAxisComp->SetRelativeLocation(FVector::ZeroVector);
-    //YAxisComp->SetRelativeLocation(FVector::ZeroVector);
-    //ZAxisComp->SetRelativeLocation(FVector::ZeroVector);
-
-    //// Arrow mesh가 +X 방향 기준이라고 가정
-    //XAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
-    //YAxisComp->SetRelativeRotation(FVector(0.0f, 0.0f, 1.5707963f));
-    //ZAxisComp->SetRelativeRotation(FVector(0.0f, -1.5707963f, 0.0f));
-
-    //XAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
-    //YAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
-    //ZAxisComp->SetRelativeScale(FVector(GizmoScale, GizmoScale, GizmoScale));
-    //XAxisComp = new UStaticMeshComponent();
-    //YAxisComp = new UStaticMeshComponent();
-    //ZAxisComp = new UStaticMeshComponent();
-
-    //AddComponent(XAxisComp);
-    //AddComponent(YAxisComp);
-    //AddComponent(ZAxisComp);
-
-    //XAxisComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
-    //YAxisComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
-    //ZAxisComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
-
-    //XAxisComp->SetDepthEnable(true);
-    //YAxisComp->SetDepthEnable(true);
-    //ZAxisComp->SetDepthEnable(true);
-    //XAxisComp->SetDepthWrite(false);
-    //YAxisComp->SetDepthWrite(false);
-    //ZAxisComp->SetDepthWrite(false);
-
-    //XAxisComp->SetCullMode(ERenderCullMode::None);
-    //YAxisComp->SetCullMode(ERenderCullMode::None);
-    //ZAxisComp->SetCullMode(ERenderCullMode::None);
-
-    //XAxisComp->SetVisibility(false);
-    //YAxisComp->SetVisibility(false);
-    //ZAxisComp->SetVisibility(false);
-
-    //XAxisShaftComp = new UStaticMeshComponent();
-    //YAxisShaftComp = new UStaticMeshComponent();
-    //ZAxisShaftComp = new UStaticMeshComponent();
-
-    //AddComponent(XAxisShaftComp);
-    //AddComponent(YAxisShaftComp);
-    //AddComponent(ZAxisShaftComp);
-
-    //XAxisShaftComp->SetRenderColor(FVector4(1.0f, 0.0f, 0.0f, 1.0f));
-    //YAxisShaftComp->SetRenderColor(FVector4(0.0f, 1.0f, 0.0f, 1.0f));
-    //ZAxisShaftComp->SetRenderColor(FVector4(0.0f, 0.45f, 1.0f, 1.0f));
-
-    //XAxisShaftComp->SetVisibility(false);
-    //YAxisShaftComp->SetVisibility(false);
-    //ZAxisShaftComp->SetVisibility(false);
-
-    //SetRootComponent(XAxisComp);
 }
 
 AGizmoActor::~AGizmoActor()
@@ -115,49 +32,49 @@ void AGizmoActor::Initialize(UStaticMesh* ArrowMesh, UStaticMesh* InScaleMesh, U
 
     if (!PivotComp)
     {
-        PivotComp = new USceneComponent();
+        PivotComp =  NewObject<USceneComponent>(this);
         AddComponent(PivotComp);
         SetRootComponent(PivotComp);
     }
 
     if (!XAxisComp)
     {
-        XAxisComp = new UStaticMeshComponent();
+        XAxisComp = NewObject<UStaticMeshComponent>(this);
         AddComponent(XAxisComp);
         XAxisComp->SetupAttachment(PivotComp);
     }
 
     if (!YAxisComp)
     {
-        YAxisComp = new UStaticMeshComponent();
+        YAxisComp = NewObject<UStaticMeshComponent>(this);
         AddComponent(YAxisComp);
         YAxisComp->SetupAttachment(PivotComp);
     }
 
     if (!ZAxisComp)
     {
-        ZAxisComp = new UStaticMeshComponent();
+        ZAxisComp = NewObject<UStaticMeshComponent>(this);
         AddComponent(ZAxisComp);
         ZAxisComp->SetupAttachment(PivotComp);
     }
 
     if (!XAxisShaftComp)
     {
-        XAxisShaftComp = new UStaticMeshComponent();
+        XAxisShaftComp = NewObject<UStaticMeshComponent>(this);
         AddComponent(XAxisShaftComp);
         XAxisShaftComp->SetupAttachment(PivotComp);
     }
 
     if (!YAxisShaftComp)
     {
-        YAxisShaftComp = new UStaticMeshComponent();
+        YAxisShaftComp = NewObject<UStaticMeshComponent>(this);
         AddComponent(YAxisShaftComp);
         YAxisShaftComp->SetupAttachment(PivotComp);
     }
 
     if (!ZAxisShaftComp)
     {
-        ZAxisShaftComp = new UStaticMeshComponent();
+        ZAxisShaftComp = NewObject<UStaticMeshComponent>(this);
         AddComponent(ZAxisShaftComp);
         ZAxisShaftComp->SetupAttachment(PivotComp);
     }

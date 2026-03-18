@@ -45,6 +45,7 @@
 
 #include "FJsonConverter.h"
 #include "FWorldSaveConverter.h"
+#include "FGarbageCollector.h"
 
 #include <filesystem>
 
@@ -171,7 +172,7 @@ bool FApplication::InitializeEngine()
         return false;
     }
 
-    World = new UWorld();
+    World = NewObjectRoot<UWorld>();
     Scene = new FScene();
 
     return true;
@@ -201,16 +202,16 @@ bool FApplication::InitializeInput()
 
 bool FApplication::InitializeResources()
 {
-    CubeMesh = BuiltInMeshFactory::CreateCubeMesh();
-    TorusMesh = BuiltInMeshFactory::CreateTorusMesh(64, 32, 1.2f, 0.35f);
-    AxesMesh = BuiltInMeshFactory::CreateAxesMesh();
-    GridMesh = BuiltInMeshFactory::CreateGridMesh(200, 1.0f);
-    GizmoArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh();
-    GizmoScaleMesh = BuiltInMeshFactory::CreateGizmoScaleMesh();
-    GizmoRotateRingMesh = BuiltInMeshFactory::CreateGizmoRotateRingMesh();
+    CubeMesh = BuiltInMeshFactory::CreateCubeMesh(World);
+    TorusMesh = BuiltInMeshFactory::CreateTorusMesh(64, 32, 1.2f, 0.35f, World);
+    AxesMesh = BuiltInMeshFactory::CreateAxesMesh(World);
+    GridMesh = BuiltInMeshFactory::CreateGridMesh(200, 1.0f, World);
+    GizmoArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh(World);
+    GizmoScaleMesh = BuiltInMeshFactory::CreateGizmoScaleMesh(World);
+    GizmoRotateRingMesh = BuiltInMeshFactory::CreateGizmoRotateRingMesh(World);
 
     //ClickCircleMesh = BuiltInMeshFactory::CreateCircleMesh(64);
-    ClickCircleMesh = BuiltInMeshFactory::CreateDiscMesh(64);
+    ClickCircleMesh = BuiltInMeshFactory::CreateDiscMesh(64, World);
 
     return true;
 }
@@ -275,10 +276,10 @@ void FApplication::MainLoop()
     //using Clock = std::chrono::steady_clock; // @@@ (+) 이거로 교체해보는 거 고려해보셈
     auto PrevTime = Clock::now();
 
-    Camera = NewObject<ACamera>();
-    WorldAxisActor = NewObject<AAxisActor>();
-    GizmoActor = NewObject<AGizmoActor>();
-    GridActor = NewObject<AGridActor>();
+    Camera = NewObject<ACamera>(World);
+    WorldAxisActor = NewObject<AAxisActor>(World);
+    GizmoActor = NewObject<AGizmoActor>(World);
+    GridActor = NewObject<AGridActor>(World);
 
     check(Camera)
     check(WorldAxisActor)
@@ -311,6 +312,9 @@ void FApplication::MainLoop()
 
         Tick(Delta.count()); // 엔진 상태 업데이트
         RenderFrame(); // 화면 출력
+
+        // 이거 없으면 메모리 해제 전혀 안됨!!!
+        FGarbageCollector::CollectGarbage();
     }
 }
 
@@ -646,7 +650,8 @@ void FApplication::Shutdown()
 
     if (World)
     {
-        delete World;
+        DestroyObjectGC(World);
+        FGarbageCollector::CollectGarbage();
         World = nullptr;
     }
 
@@ -1436,8 +1441,8 @@ void FApplication::CreatePointerPulseActor()
         return;
     }
 
-    ClickCircleActor = new AActor();
-    ClickCircleComp = new UStaticMeshComponent();
+    ClickCircleActor = NewObject<AActor>(World);
+    ClickCircleComp = NewObject<UStaticMeshComponent>(ClickCircleActor);
 
     ClickCircleComp->SetStaticMesh(ClickCircleMesh);
     ClickCircleComp->SetRelativeLocation(FVector::ZeroVector);
@@ -1558,31 +1563,31 @@ void FApplication::UpdatePointerPulse(float DeltaTime)
 // 상혁 테스트 
 void FApplication::UpdateObjectAllocationTest()
 {
-    if (TestIntervalCounter++ > TestInterval)
-    {
-        if (TestDelta > 0)
-        {
-            UObject* testObject = NewObject<AActor>("Test");
-            TestObjects.push_back(testObject);
-        }
-        else
-        {
-            if (!TestObjects.empty())
-            {
-                UObject* Garbage = TestObjects.back();
-                TestObjects.pop_back();
+    //if (TestIntervalCounter++ > TestInterval)
+    //{
+    //    if (TestDelta > 0)
+    //    {
+    //        UObject* testObject = NewObject<AActor>(this);
+    //        TestObjects.push_back(testObject);
+    //    }
+    //    else
+    //    {
+    //        if (!TestObjects.empty())
+    //        {
+    //            UObject* Garbage = TestObjects.back();
+    //            TestObjects.pop_back();
 
-                Destroy(Garbage);
-            }
-        }
+    //            DestroyObject(Garbage);
+    //        }
+    //    }
 
-        if (TestObjects.size() <= 0 || TestObjects.size() > 100)
-        {
-            TestDelta *= -1;
-        }
+    //    if (TestObjects.size() <= 0 || TestObjects.size() > 100)
+    //    {
+    //        TestDelta *= -1;
+    //    }
 
-        TestIntervalCounter = 0;
-    }
+    //    TestIntervalCounter = 0;
+    //}
 }
 
 void FApplication::RenderDebugUI()
@@ -1590,17 +1595,25 @@ void FApplication::RenderDebugUI()
     ImGui::Begin("Jungle Property Window(Debug)");
 
     ImGui::Text("GTotalAllocationBytes: %d", FMemory::GetTotalAllocatedMemory());
-    ImGui::Text("GTotalAllocationCount: %d", GUObjectArray.ElementalCount);
+    ImGui::Text("GTotalAllocationCount: %d", FMemory::GetTotalCreatedCount());
     ImGui::Text("ObjectCountInVector: %d", static_cast<int>(TestObjects.size()));
 
-    auto test = NewObject<AActor>("Temp");
-    auto msg = "Typeof :" + test->GetClass()->ClassName;
-    ImGui::Text(msg.c_str());
+    //auto test = NewObject<AActor>("Temp");
+    //auto msg = "Typeof :" + test->GetClass()->ClassName;
+    //ImGui::Text(msg.c_str());
 
-    Destroy(test);
+    //DestroyObject(test);
     if (!TestObjects.empty())
     {
         ImGui::Text("LastID: %d", TestObjects.back()->GetUUID());
+    }
+
+    for (int i = 0; i < GUObjectArray.Num(); i++)
+    {
+        auto object = GUObjectArray[i].GetItemObject();
+        if (object == nullptr)
+            continue;
+        ImGui::Text(object->GetClass()->ClassName.c_str());
     }
 
     ImGui::End();

@@ -17,7 +17,7 @@ void UWorld::Clear()
 {
     for (AActor* Actor : Actors)
     {
-        ::Destroy(Actor);
+        ::DestroyObjectGC(Actor);
     }
 
     Actors.clear();
@@ -50,7 +50,7 @@ void UWorld::RemoveActor(AActor* InActor)
 void UWorld::Destroy(AActor* InActor)
 {
     RemoveActor(InActor);
-    ::Destroy(InActor);
+    ::DestroyObjectGC(InActor);
 }
 
 AActor* UWorld::SpawnMeshActor(
@@ -65,32 +65,16 @@ AActor* UWorld::SpawnMeshActor(
     switch (Type)
     {
     case ESpawnMeshType::Sphere:
-        Actor = NewObject<ASphere>();
-        if (ASphere* SphereActor = dynamic_cast<ASphere*>(Actor))
-        {
-            SphereActor->SetStaticMesh(BuiltInMeshFactory::CreateSphereMesh());
-        }
+        Actor = NewObject<ASphere>(this);
         break;
     case ESpawnMeshType::Cube:
-        Actor = NewObject<ACube>();
-        if (ACube* CubeActor = dynamic_cast<ACube*>(Actor))
-        {
-            CubeActor->SetStaticMesh(BuiltInMeshFactory::CreateCubeMesh());
-        }
+        Actor = NewObject<ACube>(this);
         break;
     case ESpawnMeshType::Torus:
-        Actor = NewObject<ATorus>();
-        if (ATorus* TorusActor = dynamic_cast<ATorus*>(Actor))
-        {
-            TorusActor->SetStaticMesh(BuiltInMeshFactory::CreateTorusMesh(64, 32, 1.2f, 0.35f));
-        }
+        Actor = NewObject<ATorus>(this);
         break;
     case ESpawnMeshType::Triangle:
-        Actor = NewObject<ATriangle>();
-        if (ATriangle* TriangleActor = dynamic_cast<ATriangle*>(Actor))
-        {
-            TriangleActor->SetStaticMesh(BuiltInMeshFactory::CreateTriangleMesh());
-        }
+        Actor = NewObject<ATriangle>(this);
         break;
     default:
         return nullptr;

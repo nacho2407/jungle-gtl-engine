@@ -9,7 +9,7 @@ public:
 
 	void* AllocateUObject(uint32 Size)
 	{
-		return (UObjectBase*) FMemory::Malloc(Size);
+		return (UObject*) FMemory::Malloc(Size);
 	}
 
 	template<typename T>
@@ -31,10 +31,10 @@ public:
 	template<typename T>
 	void FreeUObject(T* obj)
 	{
-		size_t Size = obj->GetClass()->ClassSize;
 		if (!obj) return;
-		obj->~T();
-		FMemory::Free(obj, static_cast<size_t>(Size));
+		size_t Size = obj->GetClass()->ClassSize;
+		obj->DestroyInstance();
+		FMemory::Free(obj, Size);
 	}
 };
 
