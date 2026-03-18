@@ -8,6 +8,7 @@
 #include "Scene.h"
 #include "Math/Vector4.h"
 #include "Logger.h"
+#include <algorithm>
 
 UPicker::UPicker()
 {
@@ -33,8 +34,7 @@ void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene)
 		}
 	}
 
-	UPrimitiveComponent* ClosestComp = nullptr;
-	float MinDistance = FLT_MAX;
+	TArray<TPair<float, USceneComponent*>> RayHits;
 
 	for (USceneComponent* sc : Scene->SceneComponents)
 	{
@@ -45,17 +45,22 @@ void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene)
 		float Distance = 0.f;
 		if (ray.Intersects(Comp, Distance))
 		{
-			if (Distance < MinDistance)
-			{
-				MinDistance = Distance;
-				ClosestComp = Comp;
-			}
+			RayHits.push_back({ Distance, Comp });
 		}
 	}
 
-	if (ClosestComp)
+	if (!RayHits.empty())
 	{
-		EditorPtr->SelectComponent(ClosestComp);
+		// RayHits 안에 이미 선택된 오브젝트가 있다면 거리순으로 정렬해 그 다음 것을 선택
+		std::sort(RayHits.begin(), RayHits.end());
+		int nextIndex = 0;
+		for (int i = 0; i < RayHits.size(); ++i) {
+			if (RayHits[i].second == EditorPtr->GetSelectedComponent()) {
+				nextIndex = (i + 1) % RayHits.size();
+				break;
+			}
+		}
+		EditorPtr->SelectComponent(RayHits[nextIndex].second);
 		Scene->IsCompSelected = true;
 	}
 	else
@@ -71,8 +76,8 @@ Ray UPicker::CreateRay(int ScreenX, int ScreenY)
 	float ndcX = (2.0f * (static_cast<float>(ScreenX) + 0.5f)) / CameraPtr->ScreenWidth - 1.0f;
 	float ndcY = 1.0f - (2.0f * (static_cast<float>(ScreenY) + 0.5f)) / CameraPtr->ScreenHeight;
 	//NDC -> View Space
-	FVector4 Near = FVector4(ndcX, ndcY, 0.f, 1.f);
-	FVector4 Far = FVector4(ndcX, ndcY, 1.f, 1.f);
+	FVector4 Near = FVector4(ndcX, ndcY, 1.f, 1.f);
+	FVector4 Far = FVector4(ndcX, ndcY, 0.f, 1.f);
 	FMatrix InvProjMat = CameraPtr->GetProjectionMatrix().Inverse();
 	FVector4 NearView = Near * InvProjMat;
 	FVector4 FarView = Far * InvProjMat;
@@ -126,8 +131,8 @@ Ray Ray::CreateRay(int x, int y, UCameraComponent* camera)
 	float ndcX = (2.0f * (static_cast<float>(x) + 0.5f)) / camera->ScreenWidth - 1.0f;
 	float ndcY = 1.0f - (2.0f * (static_cast<float>(y) + 0.5f)) / camera->ScreenHeight;
 	//NDC -> View Space
-	FVector4 Near = FVector4(ndcX, ndcY, 0.f, 1.f);
-	FVector4 Far = FVector4(ndcX, ndcY, 1.f, 1.f);
+	FVector4 Near = FVector4(ndcX, ndcY, 1.f, 1.f);
+	FVector4 Far = FVector4(ndcX, ndcY, 0.f, 1.f);
 	FMatrix InvProjMat = camera->GetProjectionMatrix().Inverse();
 	FVector4 NearView = Near * InvProjMat;
 	FVector4 FarView = Far * InvProjMat;
