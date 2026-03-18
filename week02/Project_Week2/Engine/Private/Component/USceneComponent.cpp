@@ -101,7 +101,7 @@ void USceneComponent::SyncTRSCachesFromMatrixApprox()
     Rot.M[2][1] = ZAxis.Y;
     Rot.M[2][2] = ZAxis.Z;
 
-    const float SinY = Rot.M[0][2];
+    const float SinY = -Rot.M[0][2];
     const float Yaw = std::asin(std::clamp(SinY, -1.0f, 1.0f));
 
     float Pitch = 0.0f;
@@ -110,12 +110,12 @@ void USceneComponent::SyncTRSCachesFromMatrixApprox()
     const float CosY = std::cos(Yaw);
     if (std::fabs(CosY) > 0.0001f)
     {
-        Pitch = std::atan2(-Rot.M[1][2], Rot.M[2][2]);
-        Roll = std::atan2(-Rot.M[0][1], Rot.M[0][0]);
+        Pitch = std::atan2(Rot.M[1][2], Rot.M[2][2]);
+        Roll = std::atan2(Rot.M[0][1], Rot.M[0][0]);
     }
     else
     {
-        Pitch = std::atan2(Rot.M[2][1], Rot.M[1][1]);
+        Pitch = std::atan2(-Rot.M[2][1], Rot.M[1][1]);
         Roll = 0.0f;
     }
 

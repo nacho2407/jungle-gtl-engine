@@ -16,7 +16,7 @@ public:
 	static void Free(void* ptr, size_t size)
 	{
 		TotalAllocatedBytes -= static_cast<uint32>(size);
-		delete ptr;
+		::operator delete(ptr, size);
 	}
 
 	static uint32 GetTotalAllocatedMemory()

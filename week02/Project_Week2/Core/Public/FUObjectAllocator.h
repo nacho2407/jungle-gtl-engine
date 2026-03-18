@@ -31,7 +31,7 @@ public:
 	template<typename T>
 	void FreeUObject(T* obj)
 	{
-		size_t Size = sizeof(T);
+		size_t Size = obj->GetClass()->ClassSize;
 		if (!obj) return;
 		obj->~T();
 		FMemory::Free(obj, static_cast<size_t>(Size));
