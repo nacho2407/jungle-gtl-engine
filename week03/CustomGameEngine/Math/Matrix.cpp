@@ -171,10 +171,10 @@ FMatrix FMatrix::PerspectiveMatrix(float FovDegree, float Aspect, float Near, fl
 	M.m[1][1] = ScaleY;
 
 	// Z축 정규화 (0 ~ 1 범위로 변환)
-	M.m[2][2] = Far / (Far - Near);
+	M.m[2][2] = -Near / (Far - Near);
 	M.m[2][3] = 1.0f; // 이 위치가 핵심: 나중에 w값이 z가 됨
 
-	M.m[3][2] = -(Far * Near) / (Far - Near);
+	M.m[3][2] = (Far * Near) / (Far - Near);
 	M.m[3][3] = 0.0f;
 
 	return M;

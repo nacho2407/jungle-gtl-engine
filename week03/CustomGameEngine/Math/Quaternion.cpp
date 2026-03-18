@@ -40,7 +40,7 @@ FQuat FQuat::FromEuler(const FRotator& eulerDegrees)
     FQuat qPitch = FromAxisAngle(FVector(0, 1, 0), MathHelper::DegToRad(eulerDegrees.Pitch));
     FQuat qYaw = FromAxisAngle(FVector(0, 0, 1), MathHelper::DegToRad(eulerDegrees.Yaw));
 
-    return qRoll * qPitch * qYaw;
+    return qYaw * qPitch* qRoll;
 }
 
 FRotator FQuat::ToEuler() const

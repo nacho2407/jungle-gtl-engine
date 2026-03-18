@@ -26,7 +26,7 @@ VS_OUTPUT mainVS(uint id : SV_VertexID)
 {
     VS_OUTPUT output;
 
-    float3 positions[12] =
+    float3 positions[18] =
     {
         float3(-10000.0f, -10000.0f, 0.0f),
         float3(10000.0f, -10000.0f, 0.0f),
@@ -36,16 +36,24 @@ VS_OUTPUT mainVS(uint id : SV_VertexID)
         float3(-10000.0f, 10000.0f, 0.0f),
         float3(10000.0f, 10000.0f, 0.0f),
         
-        float3(0.001f, -1.0f, -10000.0f),
-        float3(0.001f, 1.0f, -10000.0f),
-        float3(0.001f, -1.0f, 10000.0f),
+        float3(0.0f, -1.0f, -10000.0f),
+        float3(0.0f, 1.0f, -10000.0f),
+        float3(0.0f, -1.0f, 10000.0f),
         
-        float3(0.001f, 1.0f, -10000.0f),
-        float3(0.001f, -1.0f, 10000.0f),
-        float3(0.001f, 1.0f, 10000.0f)
+        float3(0.0f, 1.0f, -10000.0f),
+        float3(0.0f, -1.0f, 10000.0f),
+        float3(0.0f, 1.0f, 10000.0f),
+        
+        float3(-1.0f, 0.0f, -10000.0f),
+        float3( 1.0f, 0.0f,-10000.0f),
+        float3( -1.0f,0.0f, 10000.0f),
+        
+        float3( 1.0f, 0.0f,-10000.0f),
+        float3( -1.0f,0.0f, 10000.0f),
+        float3( 1.0f, 0.0f,10000.0f)
         
     };
-    int planeno[2] = {0, 1};
+    int planeno[3] = {0, 1, 2};
     
     float4 worldPosition = float4(positions[id].x, positions[id].y, positions[id].z, 1.0f);
     matrix viewProj = mul(View, Projection);
@@ -69,12 +77,13 @@ float4 mainPS(VS_OUTPUT input) : SV_Target
     if (input.PlaneNo == 0)
     {
         float2 coord = input.WorldPos.xy / GridSize;
-        float2 derivative = fwidth(coord);
+        float2 derivative = fwidth(input.WorldPos.xy) / GridSize;
     
-        float2 grid = abs(frac(coord - 0.5f) - 0.5f) / max(derivative, 0.00001f);
+        float2 grid = abs(frac(coord - 0.5f) - 0.5f) / max(derivative, 0.0001f);
         float lineAlpha = clamp(LineThickness - min(grid.x, grid.y), 0.0f, 1.0f);
 
         float2 axisDrawWidth = derivative * GridSize * 1.5f;
+        axisDrawWidth = clamp(axisDrawWidth, 0.01f, 5.0f);
         float axisX = 1.0f - smoothstep(0.0f, axisDrawWidth.x + 0.001f, abs(input.WorldPos.x));
         float axisY = 1.0f - smoothstep(0.0f, axisDrawWidth.y + 0.001f, abs(input.WorldPos.y));
         
@@ -93,10 +102,23 @@ float4 mainPS(VS_OUTPUT input) : SV_Target
     }
     else
     {
-        float derivativeY = fwidth(input.WorldPos.y);
+        float derivative = 0.0f;
+        float WolrdPos = 0.0f;
+        
+        if (input.PlaneNo == 1)
+        {
+            derivative = fwidth(input.WorldPos.y);
+            WolrdPos = input.WorldPos.y;
+        }
+           
+        else
+        {
+            derivative = fwidth(input.WorldPos.x);
+            WolrdPos = input.WorldPos.x;
+        }
 
-        float axisDrawWidth = derivativeY * 1.5f;
-        float axisZ_Line = 1.0f - smoothstep(0.0f, axisDrawWidth + 0.001f, abs(input.WorldPos.y));
+        float axisDrawWidth = derivative * 1.5f;
+        float axisZ_Line = 1.0f - smoothstep(0.0f, axisDrawWidth + 0.0f, abs(WolrdPos));
 
         float3 color = float3(0.2f, 0.2f, 1.0f); // Z축 표준 색상: Blue
     

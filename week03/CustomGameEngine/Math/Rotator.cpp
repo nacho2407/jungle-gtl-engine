@@ -25,26 +25,26 @@ void FRotator::Normalize()
 }
 
 FRotator FRotator::operator+(const FRotator& Other) const
-{ 
-	FRotator r{ Roll + Other.Roll, Pitch + Other.Pitch, Yaw + Other.Yaw};
-	r.Normalize();
-	return r; 
-
-}
-FRotator FRotator::operator-(const FRotator& Other) const 
-{ 
-	FRotator r{ Roll - Other.Roll, Pitch - Other.Pitch, Yaw - Other.Yaw  };
+{
+	FRotator r{ Roll + Other.Roll, Pitch + Other.Pitch, Yaw + Other.Yaw };
 	r.Normalize();
 	return r;
 }
 
-FRotator& FRotator::operator+=(const FRotator& Other) 
-{ 
+FRotator FRotator::operator-(const FRotator& Other) const
+{
+	FRotator r{ Roll - Other.Roll, Pitch - Other.Pitch, Yaw - Other.Yaw };
+	r.Normalize();
+	return r;
+}
+
+FRotator& FRotator::operator+=(const FRotator& Other)
+{
 	Roll += Other.Roll;
 	Pitch += Other.Pitch;
-	Yaw += Other.Yaw; 
+	Yaw += Other.Yaw;
 	this->Normalize();
-	return *this; 
+	return *this;
 }
 
 json::JSON FRotator::Serialize()
