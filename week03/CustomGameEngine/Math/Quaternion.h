@@ -1,7 +1,8 @@
 ﻿#pragma once
 
 struct FMatrix;
-class FVector;
+struct FVector;
+struct FRotator;
 
 struct FQuat {
     float x, y, z, w;
@@ -11,8 +12,8 @@ struct FQuat {
 
     static FQuat FromAxisAngle(const FVector& axis, float angleRadians);
 
-    static FQuat FromEuler(const FVector& eulerDegrees);
-    FVector ToEuler() const;
+    static FQuat FromEuler(const FRotator& eulerDegrees);
+    FRotator ToEuler() const;
 
     FQuat operator*(const FQuat& q) const;
     FQuat Conjugate() const;

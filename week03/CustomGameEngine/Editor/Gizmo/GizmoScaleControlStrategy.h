@@ -4,7 +4,7 @@
 #include "Math/Vector.h"
 
 class UGizmoComponent;
-class RenderObject;
+struct RenderObject;
 
 class GizmoScaleControlStrategy : public IGizmoControlStrategy
 {

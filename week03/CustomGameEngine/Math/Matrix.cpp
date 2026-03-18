@@ -1,5 +1,5 @@
 ﻿#include "Matrix.h"
-#include "Vector.h"
+#include "Rotator.h"
 
 FMatrix FMatrix::ZeroMatrix()
 {
@@ -47,11 +47,11 @@ FVector FMatrix::TransformVector(const FVector& V) const
 	);
 }
 
-FMatrix FMatrix::RotationXMatrix(float InXDegree)
+FMatrix FMatrix::RotationXMatrix(float InRoll)
 {
 	FMatrix Mat = IdentityMatrix();
 
-	float Rad = DegToRad(InXDegree);
+	float Rad = DegToRad(InRoll);
 	float C = std::cos(Rad);
 	float S = std::sin(Rad);
 
@@ -63,11 +63,11 @@ FMatrix FMatrix::RotationXMatrix(float InXDegree)
 	return Mat;
 }
 
-FMatrix FMatrix::RotationYMatrix(float InYDegree)
+FMatrix FMatrix::RotationYMatrix(float InPitch)
 {
 	FMatrix Mat = IdentityMatrix();
 
-	float Rad = DegToRad(InYDegree);
+	float Rad = DegToRad(InPitch);
 	float C = std::cos(Rad);
 	float S = std::sin(Rad);
 
@@ -79,11 +79,11 @@ FMatrix FMatrix::RotationYMatrix(float InYDegree)
 	return Mat;
 }
 
-FMatrix FMatrix::RotationZMatrix(float InZDegree)
+FMatrix FMatrix::RotationZMatrix(float InYaw)
 {
 	FMatrix Mat = IdentityMatrix();
 
-	float Rad = DegToRad(InZDegree);
+	float Rad = DegToRad(InYaw);
 	float C = std::cos(Rad);
 	float S = std::sin(Rad);
 
@@ -95,11 +95,16 @@ FMatrix FMatrix::RotationZMatrix(float InZDegree)
 	return Mat;
 }
 
-FMatrix FMatrix::EulerRotationMatrix(float InX, float InY, float InZ)
+FMatrix FMatrix::EulerRotationMatrix(const FRotator& InRot)
+{ 
+	return EulerRotationMatrix(InRot.Roll, InRot.Pitch, InRot.Yaw);
+}
+
+FMatrix FMatrix::EulerRotationMatrix(float InRoll, float InPitch, float InYaw)
 {
-	FMatrix Rx = RotationXMatrix(InX);
-	FMatrix Ry = RotationYMatrix(InY);
-	FMatrix Rz = RotationZMatrix(InZ);
+	FMatrix Rx = RotationXMatrix(InRoll);
+	FMatrix Ry = RotationYMatrix(InPitch);
+	FMatrix Rz = RotationZMatrix(InYaw);
 
 	return Rx * Ry * Rz;
 }
@@ -166,10 +171,10 @@ FMatrix FMatrix::PerspectiveMatrix(float FovDegree, float Aspect, float Near, fl
 	M.m[1][1] = ScaleY;
 
 	// Z축 정규화 (0 ~ 1 범위로 변환)
-	M.m[2][2] = Far / (Far - Near);
+	M.m[2][2] = -Near / (Far - Near);
 	M.m[2][3] = 1.0f; // 이 위치가 핵심: 나중에 w값이 z가 됨
 
-	M.m[3][2] = -(Far * Near) / (Far - Near);
+	M.m[3][2] = (Far * Near) / (Far - Near);
 	M.m[3][3] = 0.0f;
 
 	return M;

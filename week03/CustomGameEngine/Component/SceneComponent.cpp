@@ -5,7 +5,7 @@
 USceneComponent::USceneComponent()
 {
 	RelativeLocation = FVector(0.0f, 0.0f, 0.0f);
-	RelativeRotation = FVector(0.0f, 0.0f, 0.0f);
+	RelativeRotation = FRotator(0.0f, 0.0f, 0.0f);
 	RelativeScale3D = FVector(1.0f, 1.0f, 1.0f);
 	RelativeQuaternion = FQuat::FromEuler(RelativeRotation);
 }
@@ -45,7 +45,7 @@ void USceneComponent::Deserialize(json::JSON jsonObj)
 void USceneComponent::DrawProperties()
 {
 	ImGui::InputFloat3("Location", &RelativeLocation.x);
-	ImGui::InputFloat3("Rotation", &RelativeRotation.x);
+	ImGui::InputFloat3("Rotation", &RelativeRotation.Pitch);
 	ImGui::InputFloat3("Scale", &RelativeScale3D.x);
 }
 

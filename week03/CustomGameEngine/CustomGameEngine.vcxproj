@@ -167,6 +167,7 @@
     <ClInclude Include="Renderer\Material.h" />
     <ClInclude Include="Renderer\Renderer.h" />
     <ClInclude Include="Renderer\RenderObject.h" />
+    <ClInclude Include="Math\Rotator.h" />
     <ClInclude Include="Serializable.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="SerializeHelper.h" />
@@ -232,6 +233,7 @@
     <ClCompile Include="Renderer\Renderer.cpp" />
     <ClCompile Include="Renderer\RenderObject.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
+    <ClCompile Include="Math\Rotator.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
     <ClCompile Include="ImGui\imgui_demo.cpp" />

@@ -126,6 +126,7 @@ void URenderer::ReleaseRasterizerState() {
 void URenderer::CreateDepthStencilState() {
 	D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
 	depthStencilDesc.DepthFunc = D3D11_COMPARISON_GREATER;
+	depthStencilDesc.DepthFunc = D3D11_COMPARISON_GREATER;
 	depthStencilDesc.StencilEnable = FALSE;
 
 	depthStencilDesc.DepthEnable = TRUE;
@@ -304,7 +305,7 @@ void URenderer::RenderGrid(ID3D11VertexShader* VertexShader, ID3D11PixelShader* 
 	DeviceContext->PSSetShader(PixelShader, nullptr, 0);
 	DeviceContext->IASetInputLayout(nullptr);
 	FGridConstantBuffer.Bind(DeviceContext.Get());
-	DeviceContext->Draw(12, 0);
+	DeviceContext->Draw(18, 0);
 
 	DeviceContext->RSSetState(RasterizerState.Get());
 }

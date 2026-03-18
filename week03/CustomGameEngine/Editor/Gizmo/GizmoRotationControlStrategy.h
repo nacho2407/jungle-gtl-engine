@@ -6,7 +6,7 @@
 #include "Math/Matrix.h"
 
 class UGizmoComponent;
-class RenderObject;
+struct RenderObject;
 
 class GizmoRotationControlStrategy : public IGizmoControlStrategy
 {

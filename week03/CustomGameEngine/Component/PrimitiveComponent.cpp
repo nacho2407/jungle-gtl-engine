@@ -28,7 +28,7 @@ void UPrimitiveComponent::SetRelativeLocation(const FVector& newLocation)
 	MarkRenderStateDirty();
 }
 
-void UPrimitiveComponent::SetRelativeRotation(const FVector& newRotation)
+void UPrimitiveComponent::SetRelativeRotation(const FRotator& newRotation)
 {
 	USceneComponent::SetRelativeRotation(newRotation);
 	MarkRenderStateDirty();
