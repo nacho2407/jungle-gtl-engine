@@ -65,10 +65,18 @@ void UGizmoComponent::Update(float deltaTime)
 	SetRelativeLocation(AttachedComponent->GetRelativeLocation());
 	SetRelativeQuaternion(AttachedComponent->GetRelativeQuaternion());
 
-	FVector CamPos = camera->GetRelativeLocation();
-	FVector CompPos = AttachedComponent->GetRelativeLocation();
-	float Dist = (CamPos - CompPos).Length();
-	float Scale = Dist * BaseScale;
+	float Scale = BaseScale;
+	if (!camera->IsOrthogonal)
+	{
+		FVector CamPos = camera->GetRelativeLocation();
+		FVector CompPos = AttachedComponent->GetRelativeLocation();
+		float Dist = (CamPos - CompPos).Length();
+		Scale *= Dist;
+	}
+	else
+	{
+		Scale *= 15.0f;
+	}
 
 	SetRelativeScale3D(FVector(Scale, Scale, Scale));
 
@@ -76,6 +84,8 @@ void UGizmoComponent::Update(float deltaTime)
 	{
 		SetRelativeQuaternion(FQuat());
 	}
+
+	CurrentStrategy->Update();
 
 	UpdateRenderObject();
 }

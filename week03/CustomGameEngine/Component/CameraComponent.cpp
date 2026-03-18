@@ -122,10 +122,10 @@ void UCameraComponent::HandleRotate(float DeltaTime)
 {
 	/*FVector eulerAngle = GetRelativeRotation();
 
-	float newPitch = eulerAngle.x + (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
+	float newPitch = eulerAngle.x + (InputManager::GetInstance().MouseDelta.y * RotateSensitivity);
 	newPitch = MathHelper::Clamp(newPitch, -89.9f, 89.9f);
 	eulerAngle.x = newPitch;
-	eulerAngle.y = eulerAngle.y + (InputManager::GetInstance().MouseDelta.x * RotateSensitivity * DeltaTime);
+	eulerAngle.y = eulerAngle.y + (InputManager::GetInstance().MouseDelta.x * RotateSensitivity);
 
 	SetRelativeRotation(eulerAngle);*/
 
@@ -287,8 +287,8 @@ void UCameraComponent::CalcPerspectiveProjectionMatrix()
 	float w = 1.0f / std::tan(rad * 0.5f);
 	float h = w * AspectRatio;
 
-	float q = FarPlane / (FarPlane - NearPlane);
-	float b = (-NearPlane * FarPlane) / (FarPlane - NearPlane);
+	float q = -NearPlane / (FarPlane - NearPlane);
+	float b = (NearPlane * FarPlane) / (FarPlane - NearPlane);
 
 	M[0][0] = w;
 	M[1][1] = h;
@@ -321,5 +321,17 @@ void UCameraComponent::CalcOrthogonalProjectionMatrix()
 }
 
 FMatrix UCameraComponent::GetViewProjectionMatrix() const { return ViewProjection; }
+
+FVector UCameraComponent::WorldToScreen(const FVector& worldPos) const
+{
+	FVector clipSpacePos = ViewProjection.TransformPoint(worldPos);
+	if (clipSpacePos.z == 0.0f) return FVector(-1.0f, -1.0f, -1.0f);
+
+	FVector ndcSpacePos = clipSpacePos / clipSpacePos.z;
+	float screenX = (ndcSpacePos.x + 1.0f) * 0.5f * ScreenWidth;
+	float screenY = (1.0f - (ndcSpacePos.y + 1.0f) * 0.5f) * ScreenHeight;
+
+	return FVector(screenX, screenY, ndcSpacePos.z);
+}
 
 REGISTER_CLASS(UCameraComponent);
