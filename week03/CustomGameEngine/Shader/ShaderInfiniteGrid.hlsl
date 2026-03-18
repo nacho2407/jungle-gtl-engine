@@ -16,7 +16,8 @@ struct VS_OUTPUT
 {
     float4 Pos : SV_POSITION; // 클립 공간 좌표
     float3 WorldPos : TEXCOORD0; // 월드 공간 좌표
-    int PlaneNo : TEXCOORD1;
+    float3 LocalPos : TEXCOORD1;
+    int PlaneNo : TEXCOORD2;
 };
 
 // ==========================================
@@ -28,38 +29,46 @@ VS_OUTPUT mainVS(uint id : SV_VertexID)
 
     float3 positions[18] =
     {
-        float3(-10000.0f, -10000.0f, 0.0f),
-        float3(10000.0f, -10000.0f, 0.0f),
-        float3(-10000.0f, 10000.0f, 0.0f),
+        float3(-1.0f, -1.0f, 0.0f),
+        float3(1.0f, -1.0f, 0.0f),
+        float3(-1.0f, 1.0f, 0.0f),
         
-        float3(10000.0f, -10000.0f, 0.0f),
-        float3(-10000.0f, 10000.0f, 0.0f),
-        float3(10000.0f, 10000.0f, 0.0f),
+        float3(1.0f, -1.0f, 0.0f),
+        float3(-1.0f, 1.0f, 0.0f),
+        float3(1.0f, 1.0f, 0.0f),
         
-        float3(0.0f, -1.0f, -10000.0f),
-        float3(0.0f, 1.0f, -10000.0f),
-        float3(0.0f, -1.0f, 10000.0f),
+        float3(0.0f, -0.0001f, -1.0f),
+        float3(0.0f, 0.0001f, -1.0f),
+        float3(0.0f, -0.0001f, 1.0f),
         
-        float3(0.0f, 1.0f, -10000.0f),
-        float3(0.0f, -1.0f, 10000.0f),
-        float3(0.0f, 1.0f, 10000.0f),
+        float3(0.0f, 0.0001f, -1.0f),
+        float3(0.0f, -0.0001f, 1.0f),
+        float3(0.0f, 0.0001f, 1.0f),
         
-        float3(-1.0f, 0.0f, -10000.0f),
-        float3( 1.0f, 0.0f,-10000.0f),
-        float3( -1.0f,0.0f, 10000.0f),
+        float3(-0.0001f, 0.0f, -1.0f),
+        float3(0.0001f, 0.0f, -1.0f),
+        float3(-0.0001f, 0.0f, 1.0f),
         
-        float3( 1.0f, 0.0f,-10000.0f),
-        float3( -1.0f,0.0f, 10000.0f),
-        float3( 1.0f, 0.0f,10000.0f)
+        float3(0.0001f, 0.0f, -1.0f),
+        float3(-0.0001f, 0.0f, 1.0f),
+        float3(0.0001f, 0.0f, 1.0f)
         
     };
     int planeno[3] = {0, 1, 2};
     
-    float4 worldPosition = float4(positions[id].x, positions[id].y, positions[id].z, 1.0f);
-    matrix viewProj = mul(View, Projection);
-    output.Pos = mul(worldPosition, viewProj);
-    output.WorldPos = worldPosition.xyz;
+    float3 worldPosition;
+    float range = 10000.0f;
+    float3 lPos = positions[id];
     output.PlaneNo = planeno[id / 6];
+    if (output.PlaneNo == 0)
+        worldPosition = float3(CameraPos.x + lPos.x * range, CameraPos.y + lPos.y * range, 0.0f);
+    else
+        worldPosition = float3(lPos.x * range, lPos.y * range, lPos.z * range);
+    output.WorldPos = worldPosition;
+    output.Pos = mul(float4(worldPosition, 1.0f), mul(View, Projection));
+    output.LocalPos = lPos;
+    
+ 
     return output;
 }
 
@@ -73,10 +82,12 @@ float4 mainPS(VS_OUTPUT input) : SV_Target
         discard;
     
     float maxDistance = 10000.0f;
+    float range = 10000.0f;
     if (input.PlaneNo == 0)
     {
+        
+        float2 derivative = fwidth(input.LocalPos.xy) * (range / GridSize);
         float2 coord = input.WorldPos.xy / GridSize;
-        float2 derivative = fwidth(input.WorldPos.xy) / GridSize;
     
         float2 grid = abs(frac(coord - 0.5f) - 0.5f) / max(derivative, 0.0001f);
         float lineAlpha = clamp(LineThickness - min(grid.x, grid.y), 0.0f, 1.0f);
@@ -102,22 +113,22 @@ float4 mainPS(VS_OUTPUT input) : SV_Target
     else
     {
         float derivative = 0.0f;
-        float WolrdPos = 0.0f;
+        float WorldPos = 0.0f;
         
         if (input.PlaneNo == 1)
         {
             derivative = fwidth(input.WorldPos.y);
-            WolrdPos = input.WorldPos.y;
+            WorldPos = input.WorldPos.y;
         }
            
         else
         {
             derivative = fwidth(input.WorldPos.x);
-            WolrdPos = input.WorldPos.x;
+            WorldPos = input.WorldPos.x;
         }
 
         float axisDrawWidth = derivative * 1.5f;
-        float axisZ_Line = 1.0f - smoothstep(0.0f, axisDrawWidth + 0.0f, abs(WolrdPos));
+        float axisZ_Line = 1.0f - smoothstep(0.0f, axisDrawWidth + 0.0f, abs(WorldPos));
 
         float3 color = float3(0.2f, 0.2f, 1.0f); // Z축 표준 색상: Blue
     
