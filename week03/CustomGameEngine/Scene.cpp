@@ -35,6 +35,12 @@ std::string UScene::ToJson(UScene* scene)
 	json["Version"] = scene->Version;
 	json["NextUUID"] = scene->NextUUID;
 
+	// Sort ScenComponents with UUID
+	auto compare = [](USceneComponent* a, USceneComponent* b) { return a->UUID < b->UUID; };
+	if (!std::is_sorted(scene->SceneComponents.begin(), scene->SceneComponents.end(), compare))
+	{
+		std::sort(scene->SceneComponents.begin(), scene->SceneComponents.end(), compare);
+	}
 	json::JSON arr;
 	for (auto s : scene->SceneComponents)
 	{

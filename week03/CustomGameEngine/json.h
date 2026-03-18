@@ -10,10 +10,12 @@
 #include <ostream>
 #include <string>
 #include <type_traits>
+#include "fifo_map.hpp"
 
 namespace json {
 
-    using std::map;
+    template<typename U, typename V>
+    using map = nlohmann::fifo_map<U, V>;
     using std::deque;
     using std::string;
     using std::enable_if;

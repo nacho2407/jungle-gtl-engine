@@ -154,6 +154,7 @@
     <ClInclude Include="Editor\Picker.h" />
     <ClInclude Include="EngineApp.h" />
     <ClInclude Include="Color.h" />
+    <ClInclude Include="fifo_map.hpp" />
     <ClInclude Include="Math\Matrix.h" />
     <ClInclude Include="Math\Quaternion.h" />
     <ClInclude Include="Math\Vector.h" />
