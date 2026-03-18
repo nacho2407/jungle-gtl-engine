@@ -52,6 +52,14 @@ void FControlPanel::Render(FApplication* App)
     {
         App->SpawnSelectedMeshActor();
     }
+	ImGui::SameLine();
+    ImGui::SetNextItemWidth(150.0f);
+    ImGui::InputInt("Number of Spawn", &App->NumberOfSpawn);
+
+    if (App->NumberOfSpawn < 1)
+    {
+        App->NumberOfSpawn = 1;
+    }
 
     ImGui::Separator();
 
@@ -116,8 +124,6 @@ void FControlPanel::Render(FApplication* App)
     FVector Rotation = Camera->GetRelativeRotation();
 
     bool bChanged = false;
-
-    ImGui::Separator;
 
     bChanged |= DrawFloatControl("FOV", FOV, 0.1f);
     bChanged |= DrawFloat3Control("Camera Location", Location, 0.1f);

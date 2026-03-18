@@ -4,6 +4,7 @@
 #include "Actor/AActor.h"
 #include "Component/USceneComponent.h"
 #include "GUI.h"
+#include "Component/EGizmoMode.h"
 
 void FPropertyPanel::Render(FApplication* App)
 {
@@ -19,6 +20,54 @@ void FPropertyPanel::Render(FApplication* App)
 
     AActor* SelectedActor = App->GetSelectedActor();
     USceneComponent* Root = SelectedActor ? SelectedActor->GetRootComponent() : nullptr;
+
+    ImGui::SeparatorText("Gizmo Mode");
+
+    const EGizmoMode CurrentMode = App->GetCurrentGizmoMode();
+
+    if (CurrentMode == EGizmoMode::Translate)
+    {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.6f, 1.0f, 1.0f));
+    }
+    if (ImGui::Button("Translate"))
+    {
+        App->SetGizmoMode(EGizmoMode::Translate);
+    }
+    if (CurrentMode == EGizmoMode::Translate)
+    {
+        ImGui::PopStyleColor();
+    }
+
+    ImGui::SameLine();
+
+    if (CurrentMode == EGizmoMode::Rotate)
+    {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.6f, 1.0f, 1.0f));
+    }
+    if (ImGui::Button("Rotate"))
+    {
+        App->SetGizmoMode(EGizmoMode::Rotate);
+    }
+    if (CurrentMode == EGizmoMode::Rotate)
+    {
+        ImGui::PopStyleColor();
+    }
+
+    ImGui::SameLine();
+
+    if (CurrentMode == EGizmoMode::Scale)
+    {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.6f, 1.0f, 1.0f));
+    }
+    if (ImGui::Button("Scale"))
+    {
+        App->SetGizmoMode(EGizmoMode::Scale);
+    }
+    if (CurrentMode == EGizmoMode::Scale)
+    {
+        ImGui::PopStyleColor();
+    }
+
 
     if (Root)
     {

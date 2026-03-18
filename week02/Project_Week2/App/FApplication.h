@@ -83,6 +83,7 @@ public:
     void ApplyCameraProjectionMode();
 
     ESpawnMeshType SelectedSpawnMeshType = ESpawnMeshType::Sphere;
+    int NumberOfSpawn = 1;
     void SpawnSelectedMeshActor();
 
     // Scene save / load 관련 함수들
@@ -92,6 +93,9 @@ public:
     void NewScene();
     bool SaveScene();
     bool LoadScene();
+
+    EGizmoMode GetCurrentGizmoMode() const;
+    void SetGizmoMode(EGizmoMode InMode);
 
 private:
     bool InitializeEngine();

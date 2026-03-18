@@ -12,7 +12,7 @@ namespace BuiltInMeshFactory
         int MajorSegments = 48,
         int MinorSegments = 24,
         float MajorRadius = 1.2f,
-        float MinorRadius = 0.35f);
+        float MinorRadius = 0.5f);
     UStaticMesh* CreateGizmoArrowMesh();
     UStaticMesh* CreateGizmoScaleMesh();
     //UStaticMesh* CreateCircleMesh(int Segments = 48);
