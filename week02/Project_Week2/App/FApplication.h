@@ -74,6 +74,8 @@ public:
     void ClearSelection();
 
     UCameraComponent* GetMainCamera() const;
+    bool IsVSyncEnabled() const;
+    void SetVSyncEnabled(bool bEnabled);
 
     bool bUseOrthogonalProjection = false;
     float DebugOrthoWidth = 10.0f;
