@@ -15,7 +15,7 @@ void FPropertyPanel::Render(FApplication* App)
     ImGui::SetNextWindowPos(ImVec2(320.0f, 10.f), ImGuiCond_Once);
     ImGui::SetNextWindowSize(ImVec2(400.0f, 160.0f), ImGuiCond_Once);
 
-    ImGui::Begin("Jungle Property Property");
+    ImGui::Begin("Jungle Property Window");
 
     AActor* SelectedActor = App->GetSelectedActor();
     USceneComponent* Root = SelectedActor ? SelectedActor->GetRootComponent() : nullptr;

@@ -31,6 +31,8 @@ public:
 	void EndFrame();
 
 	void Resize(UINT width, UINT Height);
+    void SetVSyncEnabled(bool bEnabled);
+    bool IsVSyncEnabled() const;
 
     // 마우스 위치에 따른 Hit Proxy 쿼리
     FHitProxy PickPrimitiveProxy(int MouseX, int MouseY);
@@ -140,6 +142,9 @@ private:
     
     void ClearDepthOnly();
 
+    // 실행하는 시스템이 FPS 제한을 해제하고 Tearing 현상을 허용하는지 확인
+    bool CheckTearingSupport() const;
+
 private:
 
     std::unordered_map<UStaticMesh*, FMeshGPUResource> MeshResourceMap;
@@ -162,4 +167,6 @@ private:
     TMap<uint32, FHitProxy> HitProxyMap;
 
     ID3D11DepthStencilState* DepthStencilStateTestOnly = nullptr;
+    bool bAllowTearing = false;
+    bool bUseVSync = false;
 };

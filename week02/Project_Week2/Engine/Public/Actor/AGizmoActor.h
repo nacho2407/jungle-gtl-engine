@@ -22,7 +22,7 @@ public:
     virtual ~AGizmoActor() override; // 왜 가상함수로 했을까
 
 public:
-    void Initialize(UStaticMesh* ArrowMesh, UStaticMesh* ScaleMesh, UStaticMesh* CubeMesh, UStaticMesh* TorusMesh, UStaticMesh* RotateRingMesh);
+    void Initialize(UStaticMesh* ArrowMesh, UStaticMesh* ScaleMesh, UStaticMesh* RotateRingMesh);
 
     void SetTargetActor(AActor* InTarget);
     AActor* GetTargetActor() const;

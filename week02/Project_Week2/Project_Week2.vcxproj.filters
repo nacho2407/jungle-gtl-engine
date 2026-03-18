@@ -237,9 +237,6 @@
     <ClInclude Include="GUI\Public\ImGui\imstb_truetype.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Serialization\Public\FPrimitiveJsonConverter.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Serialization\Public\FWorldSaveData.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -274,6 +271,18 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Public\Component\EGizmoMode.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Resource\FBuiltInMeshes.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Resource\FBuiltInMeshRepository.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\World\ESpawnMeshType.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Serialization\Public\FJsonConverter.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -321,9 +330,6 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Private\Component\UCameraComponent.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Private\Component\USphereComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Private\Component\UStaticMeshComponent.cpp">
@@ -431,9 +437,6 @@
     <ClCompile Include="GUI\Private\ImGui\imgui_widgets.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Serialization\Private\FPrimitiveJsonConverter.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Private\Actor\ATorus.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -459,21 +462,24 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Private\Actor\AAxisActor.cpp">
-		<Filter>소스 파일</Filter>
-	</ClCompile>
+      <Filter>소스 파일</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Private\Actor\ACamera.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Private\Actor\AGridActor.cpp">
-		<Filter>소스 파일</Filter>
-	</ClCompile>
-    <ClCompile Include="Serialization\Private\FWorldSaveData.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Core\Public\Math\FQuat.h">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Core\Private\Math\FQuat.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Serialization\Private\FJsonConverter.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Serialization\Private\FWorldSaveConverter.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

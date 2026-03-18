@@ -1,5 +1,6 @@
 #include "FControlPanel.h"
 
+#include "Core.h"
 #include "FApplication.h"
 #include "Component/UCameraComponent.h"
 #include "GUI.h"
@@ -25,6 +26,17 @@ void FControlPanel::Render(FApplication* App)
     ImGui::Begin("Jungle Control Panel");
 
     ImGui::Text("Hello Jungle World!");
+
+    // FPS 표시
+    const uint32 FPS = static_cast<uint32>(ImGui::GetIO().Framerate); // 최근 프레임들의 평균 FPS 반환
+    const uint32 FrameTimeMs = static_cast<uint32>((FPS > 0.0f) ? (1000.0f / FPS) : 0.0f); // FPS가 0인 경우 방어
+    ImGui::Text("FPS %d (%d ms)", FPS, FrameTimeMs);
+
+    bool bUseVSync = App->IsVSyncEnabled();
+    if (ImGui::Checkbox("VSync", &bUseVSync))
+    {
+        App->SetVSyncEnabled(bUseVSync);
+    }
 
     ImGui::Separator();
     ImGui::Text("Camera");
