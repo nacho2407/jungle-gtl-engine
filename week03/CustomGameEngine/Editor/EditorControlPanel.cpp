@@ -17,6 +17,11 @@ static float fov = 45.0f;
 static FVector cameraLocation = { 0.0f, 0.0f, 0.0f };
 static FVector cameraRotation = { 0.0f, 0.0f, 0.0f };
 
+static float frameCount = 0;
+static float elapsedTime = 0.0f;
+static float displayFPS = 0.0f;
+const float fpsUpdateInterval = 0.5f; // 초 단위
+
 EditorControlPanel::EditorControlPanel(Editor* parent) : editor(parent)
 {
 }
@@ -25,15 +30,31 @@ EditorControlPanel::~EditorControlPanel()
 {
 }
 
+void UpdateFPS(float deltaTime)
+{
+	frameCount++;
+	elapsedTime += deltaTime;
+
+	if (elapsedTime >= fpsUpdateInterval)
+	{
+		displayFPS = frameCount / elapsedTime;
+
+		frameCount = 0;
+		elapsedTime = 0.0f;
+	}
+}
+
 void EditorControlPanel::Draw(UCameraComponent* camera)
 {
+	UpdateFPS(TimerManager::GetInstance().GetGlobalDeltaTime());
+
 	ImGui::SetNextWindowPos(ImVec2(50, 50), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);
 
 	ImGui::Begin("Jungle Control Panel");
 	ImGui::Text("Hello Jungle World!");
-	ImGui::Text("FPS %d (%d ms)",
-		TimerManager::GetInstance().GetGlobalFPS(),
+	ImGui::Text("FPS %.0f (%d ms)",
+		displayFPS,
 		static_cast<int>(TimerManager::GetInstance().GetGlobalDeltaTime() * 1000));
 	ImGui::Separator();
 
