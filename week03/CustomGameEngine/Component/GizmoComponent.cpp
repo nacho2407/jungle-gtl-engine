@@ -32,7 +32,7 @@ void UGizmoComponent::Update(float deltaTime)
 	UCameraComponent* camera = UCameraComponent::GetMainCamera();
 
 	FVector mousePos = InputManager::GetInstance().MousePos;
-	Ray ray = Ray::CreateRay(mousePos.x, mousePos.y, camera);
+	Ray ray = camera->ScreenPointToRay(mousePos.x, mousePos.y);
 
 	if (InputManager::GetInstance().IsKeyHold(VK_LBUTTON))
 	{

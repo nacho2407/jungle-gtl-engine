@@ -5,6 +5,7 @@
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
 #include "ImGui/imgui.h"
+#include "Ray.h"
 
 enum class EProjectionType
 {
@@ -71,7 +72,7 @@ public:
 	FMatrix GetViewProjectionMatrix() const;
 
 	FVector WorldToScreen(const FVector& worldPos) const;
-
+	Ray ScreenPointToRay(int x, int y);
 private:
 	ImGuiIO& io;
 	void HandleCameraMove(float deltaTime);

@@ -4,6 +4,7 @@
 #include "Math/Matrix.h"
 #include "Math/Quaternion.h"
 #include "Math/Vector.h"
+#include "Math/Vector4.h"
 #include "World.h"
 #include "TimerManager.h"
 #include "Logger.h"
@@ -282,6 +283,28 @@ FVector UCameraComponent::WorldToScreen(const FVector& worldPos) const
 	float screenY = (1.0f - (ndcSpacePos.y + 1.0f) * 0.5f) * ScreenHeight;
 
 	return FVector(screenX, screenY, ndcSpacePos.z);
+}
+
+Ray UCameraComponent::ScreenPointToRay(int x, int y)
+{
+	//Screen Space -> NDC Space
+	float ndcX = (2.0f * (static_cast<float>(x) + 0.5f)) / ScreenWidth - 1.0f;
+	float ndcY = 1.0f - (2.0f * (static_cast<float>(y) + 0.5f)) / ScreenHeight;
+	//NDC -> View Space
+	FVector4 Near = FVector4(ndcX, ndcY, 1.f, 1.f);
+	FVector4 Far = FVector4(ndcX, ndcY, 0.f, 1.f);
+	FMatrix InvProjMat = GetProjectionMatrix().Inverse();
+	FVector4 NearView = Near * InvProjMat;
+	FVector4 FarView = Far * InvProjMat;
+	NearView = NearView * (1.0f / NearView.w);
+	FarView = FarView * (1.0f / FarView.w);
+	//View Space -> World Space
+	FMatrix InvView = GetViewMatrix().Inverse();
+	FVector4 NearWorld4 = NearView * InvView;
+	FVector4 FarWorld4 = FarView * InvView;
+	FVector NearWorld = FVector(NearWorld4.x, NearWorld4.y, NearWorld4.z);
+	FVector FarWorld = FVector(FarWorld4.x, FarWorld4.y, FarWorld4.z);
+	return Ray(NearWorld, FarWorld - NearWorld);
 }
 
 REGISTER_CLASS(UCameraComponent);

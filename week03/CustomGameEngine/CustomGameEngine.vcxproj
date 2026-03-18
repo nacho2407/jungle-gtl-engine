@@ -160,6 +160,7 @@
     <ClInclude Include="Math\Vector.h" />
     <ClInclude Include="ObjectFactory.h" />
     <ClInclude Include="InputManager.h" />
+    <ClInclude Include="Ray.h" />
     <ClInclude Include="Renderer\ConstantBuffer.h" />
     <ClInclude Include="Renderer\Geometry.h" />
     <ClInclude Include="Renderer\Level.h" />
@@ -226,6 +227,7 @@
     <ClCompile Include="json.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="PrimitiveFactory.cpp" />
+    <ClCompile Include="Ray.cpp" />
     <ClCompile Include="Renderer\Level.cpp" />
     <ClCompile Include="Renderer\Renderer.cpp" />
     <ClCompile Include="Renderer\RenderObject.cpp" />
@@ -262,6 +264,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
