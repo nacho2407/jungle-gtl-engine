@@ -296,7 +296,7 @@ void FApplication::MainLoop()
         AxesComp->SetCullMode(ERenderCullMode::None);
     }
 
-    GizmoActor->Initialize(GizmoArrowMesh, GizmoScaleMesh, CubeMesh, TorusMesh, GizmoRotateRingMesh);
+    GizmoActor->Initialize(GizmoArrowMesh, GizmoScaleMesh, GizmoRotateRingMesh);
     GizmoActor->SetMode(CurrentGizmoMode);
 
     // @@@ VSync 있는거임??
