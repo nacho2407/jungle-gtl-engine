@@ -70,6 +70,8 @@ public:
 	void CalcOrthogonalProjectionMatrix();
 	FMatrix GetViewProjectionMatrix() const;
 
+	FVector WorldToScreen(const FVector& worldPos) const;
+
 private:
 	ImGuiIO& io;
 	void HandleCameraMove(float deltaTime);
