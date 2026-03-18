@@ -41,7 +41,10 @@ public:
 
 	static float NormalizeAngle(float Angle)
 	{
-		Angle = std::fmod(Angle, 360.0f);
+		while (Angle > 360.f)
+			Angle -= 360.f;
+		while (Angle < -360.0f)
+			Angle += 360.0f;
 		if (Angle > 180.0f) Angle -= 360.0f;
 		if (Angle <= -180.0f) Angle += 360.0f;
 		return Angle;

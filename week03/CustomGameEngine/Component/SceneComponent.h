@@ -16,17 +16,13 @@ public:
 
 public:
 	inline const FVector GetRelativeLocation() { return RelativeLocation; }
-	//inline const FVector GetRelativeRotation() { return RelativeRotation; }
+	inline const FRotator GetRelativeRotation() { return RelativeRotation; }
 	inline const FVector GetRelativeScale3D() { return RelativeScale3D; }
 	inline const FQuat GetRelativeQuaternion() { return RelativeQuaternion; }
 	inline virtual void SetRelativeLocation(const FVector& newLocation) { RelativeLocation = newLocation; }
-	//inline virtual void SetRelativeRotation(const FVector& newRotation) { RelativeRotation = newRotation; }
+	inline virtual void SetRelativeRotation(const FRotator& newRotation) { RelativeRotation = newRotation; }
 	inline virtual void SetRelativeScale3D(const FVector& newScale) { RelativeScale3D = newScale; }
 	inline virtual void SetRelativeQuaternion(FQuat newQuat) { RelativeQuaternion = newQuat; RelativeRotation = newQuat.ToEuler(); }
-
-	inline const FRotator GetRelativeRotation() { return RelativeRotation; }
-	inline virtual void SetRelativeRotation(const FRotator& newRotation) { RelativeRotation = newRotation; }
-
 
 	bool bIsSelected = false;
 
@@ -42,9 +38,9 @@ public:
 
 private:
 	FVector RelativeLocation;
-	//FVector RelativeRotation;
+	FRotator RelativeRotation;
 	FVector RelativeScale3D;
 	FQuat RelativeQuaternion;
 
-	FRotator RelativeRotation;
+	
 };
