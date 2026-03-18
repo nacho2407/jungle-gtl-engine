@@ -201,3 +201,78 @@ FMatrix FMatrix::Transpose(const FMatrix& Mat)
 
 	return Result;
 }
+
+FMatrix FMatrix::InverseAffine(const FMatrix& Mat)
+{
+	const float A00 = Mat.M[0][0];
+	const float A01 = Mat.M[0][1];
+	const float A02 = Mat.M[0][2];
+
+	const float A10 = Mat.M[1][0];
+	const float A11 = Mat.M[1][1];
+	const float A12 = Mat.M[1][2];
+
+	const float A20 = Mat.M[2][0];
+	const float A21 = Mat.M[2][1];
+	const float A22 = Mat.M[2][2];
+
+	const float Det =
+		A00 * (A11 * A22 - A12 * A21)
+		- A01 * (A10 * A22 - A12 * A20)
+		+ A02 * (A10 * A21 - A11 * A20);
+
+	if (std::fabs(Det) < 0.000001f)
+	{
+		return FMatrix::Identity;
+	}
+
+	const float InvDet = 1.0f / Det;
+
+	FMatrix Inv = FMatrix::MakeIdentity();
+
+	Inv.M[0][0] = (A11 * A22 - A12 * A21) * InvDet;
+	Inv.M[0][1] = -(A01 * A22 - A02 * A21) * InvDet;
+	Inv.M[0][2] = (A01 * A12 - A02 * A11) * InvDet;
+
+	Inv.M[1][0] = -(A10 * A22 - A12 * A20) * InvDet;
+	Inv.M[1][1] = (A00 * A22 - A02 * A20) * InvDet;
+	Inv.M[1][2] = -(A00 * A12 - A02 * A10) * InvDet;
+
+	Inv.M[2][0] = (A10 * A21 - A11 * A20) * InvDet;
+	Inv.M[2][1] = -(A00 * A21 - A01 * A20) * InvDet;
+	Inv.M[2][2] = (A00 * A11 - A01 * A10) * InvDet;
+
+	const float Tx = Mat.M[3][0];
+	const float Ty = Mat.M[3][1];
+	const float Tz = Mat.M[3][2];
+
+	Inv.M[3][0] = -(Tx * Inv.M[0][0] + Ty * Inv.M[1][0] + Tz * Inv.M[2][0]);
+	Inv.M[3][1] = -(Tx * Inv.M[0][1] + Ty * Inv.M[1][1] + Tz * Inv.M[2][1]);
+	Inv.M[3][2] = -(Tx * Inv.M[0][2] + Ty * Inv.M[1][2] + Tz * Inv.M[2][2]);
+
+	return Inv;
+}
+
+FVector FMatrix::TransformPosition(const FVector& Vec) const
+{
+	const FVector4 R = (*this) * FVector4(Vec, 1.0f);
+	return FVector(R.X, R.Y, R.Z);
+}
+
+FVector FMatrix::TransformVector(const FVector& Vec) const
+{
+	const FVector4 R = (*this) * FVector4(Vec, 0.0f);
+	return FVector(R.X, R.Y, R.Z);
+}
+
+FVector FMatrix::GetTranslation() const
+{
+	return FVector(M[3][0], M[3][1], M[3][2]);
+}
+
+void FMatrix::SetTranslation(const FVector& Translation)
+{
+	M[3][0] = Translation.X;
+	M[3][1] = Translation.Y;
+	M[3][2] = Translation.Z;
+}

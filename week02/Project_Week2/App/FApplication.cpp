@@ -1039,8 +1039,6 @@ void FApplication::BeginGizmoDrag(EGizmoAxis Axis, int MouseX, int MouseY)
         return;
     }
 
-    const FMatrix ActorRot = FMatrix::MakeRotationXYZ(Root->GetRelativeRotation());
-
     FVector LocalAxis = FVector::ZeroVector;
     switch (Axis)
     {
@@ -1053,24 +1051,32 @@ void FApplication::BeginGizmoDrag(EGizmoAxis Axis, int MouseX, int MouseY)
     FVector AxisDir = LocalAxis;
     AxisDir.Normalize();
 
+    const FMatrix ActorWorld = Root->GetWorldTransformMatrix();
+    const FVector ActorWorldPivot = ActorWorld.GetTranslation();
+
     FRay Ray = BuildPickRay(MouseX, MouseY);
 
     DragStartGizmoMode = CurrentGizmoMode;
     ActiveGizmoAxis = Axis;
     DragAxisDirection = AxisDir;
-    DragStartActorLocation = Root->GetRelativeLocation();
+
+    DragStartActorLocation = ActorWorldPivot;
+    DragStartActorWorldPivot = ActorWorldPivot;
+    DragStartActorWorldMatrix = ActorWorld;
+
     DragStartActorRotation = Root->GetRelativeRotation();
     DragStartActorQuat = Root->GetRelativeRotationQuat();
+    DragStartActorScale = Root->GetRelativeScale();
 
     if (CurrentGizmoMode == EGizmoMode::Rotate)
     {
         FVector HitPoint;
-        if (!IntersectRayPlane(Ray, DragStartActorLocation, AxisDir, HitPoint))
+        if (!IntersectRayPlane(Ray, ActorWorldPivot, AxisDir, HitPoint))
         {
             return;
         }
 
-        FVector StartVec = HitPoint - DragStartActorLocation;
+        FVector StartVec = HitPoint - ActorWorldPivot;
         StartVec = StartVec - AxisDir * StartVec.Dot(AxisDir);
 
         if (StartVec.LengthSquared() < 0.000001f)
@@ -1106,17 +1112,14 @@ void FApplication::BeginGizmoDrag(EGizmoAxis Axis, int MouseX, int MouseY)
     PlaneNormal.Normalize();
 
     FVector HitPoint;
-    const FVector ActorPos = Root->GetRelativeLocation();
-    if (!IntersectRayPlane(Ray, ActorPos, PlaneNormal, HitPoint))
+    if (!IntersectRayPlane(Ray, ActorWorldPivot, PlaneNormal, HitPoint))
     {
         return;
     }
 
     bDraggingGizmo = true;
     DragPlaneNormal = PlaneNormal;
-    DragStartActorLocation = ActorPos;
     DragStartHitPoint = HitPoint;
-    DragStartActorScale = Root->GetRelativeScale();
 }
 
 void FApplication::UpdateGizmoDrag(int MouseX, int MouseY)
@@ -1135,16 +1138,18 @@ void FApplication::UpdateGizmoDrag(int MouseX, int MouseY)
     FRay Ray = BuildPickRay(MouseX, MouseY);
 
     FVector HitPoint;
-    if (!IntersectRayPlane(Ray, DragStartActorLocation, DragPlaneNormal, HitPoint))
+    if (!IntersectRayPlane(Ray, DragStartActorWorldPivot, DragPlaneNormal, HitPoint))
     {
         return;
     }
 
+    const FVector Pivot = DragStartActorWorldPivot;
+    const FMatrix ToPivot = FMatrix::MakeTranslation(FVector(-Pivot.X, -Pivot.Y, -Pivot.Z));
+    const FMatrix FromPivot = FMatrix::MakeTranslation(Pivot);
+
     if (DragStartGizmoMode == EGizmoMode::Rotate)
     {
-        FVector CurrentVec = HitPoint - DragStartActorLocation;
-
-        // 축 제거 -> 평면 projection
+        FVector CurrentVec = HitPoint - DragStartActorWorldPivot;
         CurrentVec = CurrentVec - DragAxisDirection * CurrentVec.Dot(DragAxisDirection);
 
         if (CurrentVec.LengthSquared() < 0.000001f)
@@ -1160,54 +1165,60 @@ void FApplication::UpdateGizmoDrag(int MouseX, int MouseY)
             DragAxisDirection);
 
         const FQuat DeltaQuat = FQuat::FromAxisAngle(DragAxisDirection, DeltaAngle);
+        const FMatrix DeltaRot = DeltaQuat.ToMatrix();
 
-        FQuat NewQuat = DeltaQuat * DragStartActorQuat;
-        NewQuat.Normalize();
+        const FMatrix NewWorld =
+            DragStartActorWorldMatrix * ToPivot * DeltaRot * FromPivot;
 
-        Root->SetRelativeRotationQuat(NewQuat);
+        Root->SetWorldTransformMatrix(NewWorld);
     }
     else if (DragStartGizmoMode == EGizmoMode::Translate)
     {
         const FVector Delta = HitPoint - DragStartHitPoint;
         const float MoveAmount = Delta.Dot(DragAxisDirection);
+        const FVector WorldDelta = DragAxisDirection * MoveAmount;
 
-        const FVector NewLocation =
-            DragStartActorLocation + DragAxisDirection * MoveAmount;
+        const FMatrix DeltaTranslation = FMatrix::MakeTranslation(WorldDelta);
+        const FMatrix NewWorld = DragStartActorWorldMatrix * DeltaTranslation;
 
-        Root->SetRelativeLocation(NewLocation);
+        Root->SetWorldTransformMatrix(NewWorld);
     }
     else if (DragStartGizmoMode == EGizmoMode::Scale)
     {
         const FVector Delta = HitPoint - DragStartHitPoint;
         const float Amount = Delta.Dot(DragAxisDirection);
 
-        FVector NewScale = DragStartActorScale;
+        const float MinFactor = 0.05f;
+        const float ScaleFactor = std::max(MinFactor, 1.0f + Amount * GizmoScaleSensitivity);
 
-        const float ScaleDelta = Amount * GizmoScaleSensitivity;
-        const float MinScale = 0.05f;
-
+        FVector AxisScale(1.0f, 1.0f, 1.0f);
         switch (ActiveGizmoAxis)
         {
         case EGizmoAxis::X:
-            NewScale.X = std::max(MinScale, DragStartActorScale.X + ScaleDelta);
+            AxisScale.X = ScaleFactor;
             break;
         case EGizmoAxis::Y:
-            NewScale.Y = std::max(MinScale, DragStartActorScale.Y + ScaleDelta);
+            AxisScale.Y = ScaleFactor;
             break;
         case EGizmoAxis::Z:
-            NewScale.Z = std::max(MinScale, DragStartActorScale.Z + ScaleDelta);
+            AxisScale.Z = ScaleFactor;
             break;
         default:
             return;
         }
 
-        Root->SetRelativeScale(NewScale);
+        const FMatrix WorldAxisScale = FMatrix::MakeScale(AxisScale);
+
+        const FMatrix NewWorld =
+            DragStartActorWorldMatrix * ToPivot * WorldAxisScale * FromPivot;
+
+        Root->SetWorldTransformMatrix(NewWorld);
     }
 
     if (GizmoActor)
     {
         GizmoActor->UpdateTransformFromTarget();
-        GizmoActor->UpdateColors(ActiveGizmoAxis); 
+        GizmoActor->UpdateColors(ActiveGizmoAxis);
     }
 }
 

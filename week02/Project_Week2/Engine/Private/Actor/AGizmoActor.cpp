@@ -274,12 +274,7 @@ void AGizmoActor::UpdateTransformFromTarget()
         return;
     }
 
-    //const FVector Pos = Root->GetRelativeLocation();
-
-    //if (XAxisComp) XAxisComp->SetRelativeLocation(Pos);
-    //if (YAxisComp) YAxisComp->SetRelativeLocation(Pos);
-    //if (ZAxisComp) ZAxisComp->SetRelativeLocation(Pos);
-    PivotComp->SetRelativeLocation(Root->GetRelativeLocation());
+    PivotComp->SetRelativeLocation(Root->GetWorldTransformMatrix().GetTranslation());
     PivotComp->SetRelativeRotation(FVector::ZeroVector);
     
     if (XAxisComp) XAxisComp->SetRelativeLocation(FVector::ZeroVector);

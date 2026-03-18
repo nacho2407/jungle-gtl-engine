@@ -33,20 +33,31 @@ public:
     void SetRelativeScale(const FVector& InScale);
     const FVector& GetRelativeScale() const;
 
+    void SetRelativeTransformMatrix(const FMatrix& InMatrix);
+    const FMatrix& GetRelativeTransformMatrix() const;
+
+    void SetWorldTransformMatrix(const FMatrix& InMatrix);
+
     virtual FMatrix GetWorldTransformMatrix() const;
-    
+
     void SetupAttachment(USceneComponent* InParent);
     USceneComponent* GetParentComponent() const;
+
 
 protected:
     void MarkTransformDirty();
     void UpdateWorldTransformIfNeeded() const;
+
+    void RebuildRelativeMatrixFromTRS();
+    void SyncTRSCachesFromMatrixApprox();
 
 protected:
     FVector RelativeLocation;
     FVector RelativeRotationEuler;
     FQuat RelativeRotationQuat;
     FVector RelativeScale;
+
+    FMatrix RelativeTransformMatrix;
 
     mutable bool bWorldTransformDirty;
     mutable FMatrix CachedWorldTransform;

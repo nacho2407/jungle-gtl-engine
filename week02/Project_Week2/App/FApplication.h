@@ -233,4 +233,7 @@ private:
     FQuat DragStartActorQuat = FQuat::Identity();
     FVector DragStartActorScale = FVector::OneVector;
     float GizmoScaleSensitivity = 0.35f; // 모드별 감도
+
+    FMatrix DragStartActorWorldMatrix = FMatrix::Identity;
+    FVector DragStartActorWorldPivot = FVector::ZeroVector;
 };

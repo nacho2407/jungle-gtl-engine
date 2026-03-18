@@ -26,7 +26,15 @@ public:
 
 	static FMatrix Transpose(const FMatrix& Mat);
 
+	static FMatrix InverseAffine(const FMatrix& Mat);
+
 public:
 	FMatrix operator*(const FMatrix& Rhs) const;
 	FVector4 operator*(const FVector4& Vec) const;
+
+	FVector TransformPosition(const FVector& Vec) const;
+	FVector TransformVector(const FVector& Vec) const;
+
+	FVector GetTranslation() const;
+	void SetTranslation(const FVector& Translation);
 };
