@@ -7,7 +7,7 @@ UObject<br />
 │  ├─ ACamera<br />
 │  ├─ AGizmoActor<br />
 │  └─ APrimitiveActor<br />
-|	  ├─ ACube<br />
+|	  ├─ APlane<br />
 │     ├─ ACube<br />
 │     ├─ ASphere<br />
 │     └─ ATorus<br />
