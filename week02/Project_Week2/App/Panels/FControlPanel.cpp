@@ -39,7 +39,6 @@ void FControlPanel::Render(FApplication* App)
     }
 
     ImGui::Separator();
-    ImGui::Text("Camera");
 
     const char* MeshItems[] = { "Sphere", "Cube", "Torus" };
     int CurrentMeshIndex = static_cast<int>(App->SelectedSpawnMeshType);

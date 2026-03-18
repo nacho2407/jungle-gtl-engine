@@ -136,7 +136,25 @@ bool FApplication::Initialize(HINSTANCE hInstance)
         return false;
     }
 
-    // 메인 루프에서 플래그를 통해 이미 리사이즈 이벤트 처리를 하고 있기 때문에 여기 원래 있던 OnResize()는 그냥 지워도 무방!@!!
+    // 실시간 화면 변경 대응을 위해 여기로 돌림
+    WindowApp->OnResize = [this](int Width, int Height)
+    {
+        if (Width <= 0 || Height <= 0 || !Renderer)
+        {
+            return;
+        }
+
+        Renderer->Resize(static_cast<UINT>(Width), static_cast<UINT>(Height));
+
+        if (Camera && Camera->GetCameraComponent())
+        {
+            Camera->GetCameraComponent()->UpdateAspectRatio(
+                static_cast<uint32>(Width),
+                static_cast<uint32>(Height));
+        }
+
+        RenderFrame();
+    };
 
     PropertyPanel = new FPropertyPanel();
     ControlPanel = new FControlPanel();
@@ -278,31 +296,13 @@ void FApplication::MainLoop()
     GizmoActor->SetMode(CurrentGizmoMode);
 
     // @@@ VSync 있는거임??
-    // 의도적으로 프레임을 조정할 수 있는 거는 필요없나?dd
-    auto MainCamera = Camera->GetCameraComponent();
+    // 의도적으로 프레임을 조정할 수 있는 거는 필요없나?
     while (bIsRunning)
     {
         if (!WindowApp->PumpMessages()) // OS 입력,창 이벤트 반영
         {
             bIsRunning = false;
             break;
-        }
-
-        const bool bResized = WindowApp->ConsumeResizeFlag(); // 창 리사이즈 이벤트 플래그
-        if (bResized && Renderer)
-        {
-            const UINT Width = static_cast<UINT>(WindowApp->GetClientWidth());
-            const UINT Height = static_cast<UINT>(WindowApp->GetClientHeight());
-
-            if (Width > 0 && Height > 0)
-            {
-                Renderer->Resize(Width, Height); // 백버퍼, 렌더 타깃, 뷰포트 크기 변경해주어야 함
-
-                if (MainCamera)
-                {
-                    MainCamera->UpdateAspectRatio(Width, Height);
-                }
-            }
         }
 
         auto CurrentTime = Clock::now();
