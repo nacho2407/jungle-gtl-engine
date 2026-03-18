@@ -29,6 +29,7 @@ public:
 	void SetRelativeRotation(const FRotator& newRotation) override;
 	void SetRelativeScale3D(const FVector& newScale) override;
 
+	virtual void OnComponentAdded() override;
 	virtual void Update(float DeltaTime);
 	virtual RenderObject* CreateRenderObject();
 	virtual RenderObject* GetRenderObject();

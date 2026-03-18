@@ -40,6 +40,13 @@ void UPrimitiveComponent::SetRelativeScale3D(const FVector& newScale)
 	MarkRenderStateDirty();
 }
 
+void UPrimitiveComponent::OnComponentAdded()
+{
+	auto RenderObj = CreateRenderObject();
+	if (RenderObj != nullptr)
+		FLevel::GetInstance().RegisterRenderObject(RenderObj);
+}
+
 void UPrimitiveComponent::Update(float DeltaTime)
 {
 
@@ -51,16 +58,15 @@ RenderObject* UPrimitiveComponent::CreateRenderObject()
 		return nullptr;
 
 	RenderObj = new RenderObject();
+	ResourceManager* RM = ResourceManager::GetInstance();
+	RenderObj->Geometry = this->VResource;
+	RenderObj->Material = &RM->GetMaterial(L"Shader/ShaderW0.hlsl");
 	UpdateRenderObject();
 	return RenderObj;
 }
 
 void UPrimitiveComponent::UpdateRenderObject()
 {
-	ResourceManager* RM = ResourceManager::GetInstance();
-
-	RenderObj->Geometry = this->VResource;
-	RenderObj->Material = &RM->GetMaterial(L"Shader/ShaderW0.hlsl");
 	RenderObj->World = GetRelativeMatrix();
 	RenderObj->bIsSelected = bIsSelected;
 }
