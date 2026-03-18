@@ -3,7 +3,7 @@
 #include <fstream>
 #include <string>
 
-using Json = nlohmann::json;
+using Json = nlohmann::ordered_json;
 
 Json FJsonConverter::ToJson(const FWorldSaveData& WorldSaveData)
 {

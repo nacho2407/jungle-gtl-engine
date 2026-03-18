@@ -364,6 +364,17 @@ void FApplication::Tick(float DeltaTime)
         CycleGizmoMode();
     }
 
+    // Delete키로 선택된 Object 삭제
+    if (bCanProcessKeyboard &&
+        InputManager->WasKeyPressed(VK_DELETE) &&
+        SelectedActor)
+    {
+        AActor* ActorToDelete = SelectedActor;
+        EndGizmoDrag();
+        SetSelectedActor(nullptr);
+        World->Destroy(ActorToDelete);
+    }
+
     int MouseX = 0;
     int MouseY = 0;
     InputManager->GetMousePosition(MouseX, MouseY);
