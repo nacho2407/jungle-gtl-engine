@@ -36,13 +36,13 @@ VS_OUTPUT mainVS(uint id : SV_VertexID)
         float3(-10000.0f, 10000.0f, 0.0f),
         float3(10000.0f, 10000.0f, 0.0f),
         
-        float3(0.001f, -1.0f, -10000.0f),
-        float3(0.001f, 1.0f, -10000.0f),
-        float3(0.001f, -1.0f, 10000.0f),
+        float3(0.0f, -1.0f, -10000.0f),
+        float3(0.0f, 1.0f, -10000.0f),
+        float3(0.0f, -1.0f, 10000.0f),
         
-        float3(0.001f, 1.0f, -10000.0f),
-        float3(0.001f, -1.0f, 10000.0f),
-        float3(0.001f, 1.0f, 10000.0f)
+        float3(0.0f, 1.0f, -10000.0f),
+        float3(0.0f, -1.0f, 10000.0f),
+        float3(0.0f, 1.0f, 10000.0f)
         
     };
     int planeno[2] = {0, 1};
@@ -52,7 +52,6 @@ VS_OUTPUT mainVS(uint id : SV_VertexID)
     output.Pos = mul(worldPosition, viewProj);
     output.WorldPos = worldPosition.xyz;
     output.PlaneNo = planeno[id / 6];
-
     return output;
 }
 

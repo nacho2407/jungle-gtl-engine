@@ -237,8 +237,8 @@ void UCameraComponent::CalcPerspectiveProjectionMatrix()
 	float w = 1.0f / std::tan(rad * 0.5f);
 	float h = w * AspectRatio;
 
-	float q = FarPlane / (FarPlane - NearPlane);
-	float b = (-NearPlane * FarPlane) / (FarPlane - NearPlane);
+	float q = -NearPlane / (FarPlane - NearPlane);
+	float b = (NearPlane * FarPlane) / (FarPlane - NearPlane);
 
 	M[0][0] = w;
 	M[1][1] = h;
