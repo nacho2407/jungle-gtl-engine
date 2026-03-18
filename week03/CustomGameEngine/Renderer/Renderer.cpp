@@ -263,7 +263,7 @@ void URenderer::Render()
 
 	if (!NoDepthRenderObjects.empty())
 	{
-		DeviceContext->ClearDepthStencilView(DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+		DeviceContext->ClearDepthStencilView(DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 0.0f, 0);
 
 		for (RenderObject* RenderObj : NoDepthRenderObjects)
 		{
