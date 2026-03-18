@@ -7,7 +7,7 @@ UObject<br />
 │  ├─ ACamera<br />
 │  ├─ AGizmoActor<br />
 │  └─ APrimitiveActor<br />
-|	  ├─ APlane<br />
+│     ├─ APlane<br />
 │     ├─ ACube<br />
 │     ├─ ASphere<br />
 │     └─ ATorus<br />
@@ -21,6 +21,7 @@ UObject<br />
 │<br />
 ├─ UStaticMesh<br />
 └─ UWorld<br />
+
 <br />
 App : 애플리케이션의 실행 흐름을 관리하는 최상위 계층<br />
 	- 프로그램 초기화, 메인 루프 실행, 입력 처리, UI 패널 호출, 오브젝트 선택 및 기즈모 조작, 씬 저장/로드 제어<br />
