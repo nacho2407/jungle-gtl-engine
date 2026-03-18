@@ -6,7 +6,7 @@
 class FJsonConverter
 {
 public:
-    using Json = nlohmann::json;
+    using Json = nlohmann::ordered_json;
 
 public:
     static Json ToJson(const FWorldSaveData& WorldSaveData);
