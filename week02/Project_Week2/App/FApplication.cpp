@@ -1577,12 +1577,18 @@ void FApplication::SpawnSelectedMeshActor()
         return;
     }
 
-    AActor* SpawnedActor = World->SpawnMeshActor(SelectedSpawnMeshType, FVector::ZeroVector);
+    const int SpawnCount = (NumberOfSpawn < 1) ? 1 : NumberOfSpawn;
 
-    // 생성 직후 선택되게 하고 싶으면
-    if (SpawnedActor)
+    AActor* LastSpawnedActor = nullptr;
+
+    for (int i = 0; i < SpawnCount; ++i)
     {
-        SetSelectedActor(SpawnedActor);
+        LastSpawnedActor = World->SpawnMeshActor(SelectedSpawnMeshType, FVector::ZeroVector);
+    }
+
+    if (LastSpawnedActor)
+    {
+        SetSelectedActor(LastSpawnedActor);
     }
 }
 
@@ -1665,22 +1671,15 @@ void FApplication::CycleGizmoMode()
     switch (CurrentGizmoMode)
     {
     case EGizmoMode::Translate:
-        CurrentGizmoMode = EGizmoMode::Rotate;
+        SetGizmoMode(EGizmoMode::Rotate);
         break;
     case EGizmoMode::Rotate:
-        CurrentGizmoMode = EGizmoMode::Scale;
+        SetGizmoMode(EGizmoMode::Scale);
         break;
     case EGizmoMode::Scale:
     default:
-        CurrentGizmoMode = EGizmoMode::Translate;
+        SetGizmoMode(EGizmoMode::Translate);
         break;
-    }
-
-    if (GizmoActor)
-    {
-        GizmoActor->SetMode(CurrentGizmoMode);
-        GizmoActor->UpdateColors(EGizmoAxis::None);
-        GizmoActor->UpdateTransformFromTarget();
     }
 }
 
@@ -1697,4 +1696,26 @@ float FApplication::SignedAngleAroundAxis(
     const float CosValue = NFrom.Dot(NTo);
 
     return std::atan2(SinValue, CosValue);
+}
+
+EGizmoMode FApplication::GetCurrentGizmoMode() const
+{
+    return CurrentGizmoMode;
+}
+
+void FApplication::SetGizmoMode(EGizmoMode InMode)
+{
+    if (CurrentGizmoMode == InMode)
+    {
+        return;
+    }
+
+    CurrentGizmoMode = InMode;
+
+    if (GizmoActor)
+    {
+        GizmoActor->SetMode(CurrentGizmoMode);
+        GizmoActor->UpdateColors(EGizmoAxis::None);
+        GizmoActor->UpdateTransformFromTarget();
+    }
 }
