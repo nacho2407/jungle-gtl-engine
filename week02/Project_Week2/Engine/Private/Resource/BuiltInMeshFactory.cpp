@@ -98,7 +98,7 @@ namespace
         };
     }
 
-    TArray<uint32_t> CreateGizmoArrowIndices()
+    TArray<uint32> CreateGizmoArrowIndices()
     {
         return
         {
@@ -152,7 +152,7 @@ namespace
         };
     }
 
-    TArray<uint32_t> CreateGizmoScaleIndices()
+    TArray<uint32> CreateGizmoScaleIndices()
     {
         return
         {
@@ -293,9 +293,9 @@ namespace
         return V;
     }
 
-    TArray<uint32_t> CreateDiscIndices(int Segments)
+    TArray<uint32> CreateDiscIndices(int Segments)
     {
-        TArray<uint32_t> I;
+        TArray<uint32> I;
         I.reserve(Segments * 3);
 
         for (int i = 1; i <= Segments; ++i)
@@ -406,12 +406,8 @@ namespace BuiltInMeshFactory
         TArray<FVertexSimple> Vertices(
             cube_vertices,
             cube_vertices + cube_vertex_count);
-        TArray<uint32_t> Indices(
-            cube_indices,
-            cube_indices + cube_index_count);
 
         Mesh->SetVertices(Vertices);
-        Mesh->SetIndices(Indices);
         Mesh->SetTopology(EMeshTopology::TriangleList);
         return Mesh;
     }
@@ -500,7 +496,7 @@ namespace BuiltInMeshFactory
             96,     // MajorSegments
             20,     // MinorSegments
             2.0f,   // MajorRadius
-            0.06f   // MinorRadius
+            0.15f   // MinorRadius
         ));
 
         Mesh->SetTopology(EMeshTopology::TriangleList);
