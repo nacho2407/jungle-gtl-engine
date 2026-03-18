@@ -31,7 +31,6 @@ public:
 	UPicker();
 	virtual ~UPicker() override;
 	void Pick(int x, int y, UScene* Scene);
-	GizmoControllerAxis PickGizmo(int x, int y, UScene* Scene);
 	Ray CreateRay(int x, int y);
 
 	void SetEditor(Editor* pEditor) { EditorPtr = pEditor; }

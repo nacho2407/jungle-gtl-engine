@@ -35,26 +35,20 @@ void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene)
 
 	UPrimitiveComponent* ClosestComp = nullptr;
 	float MinDistance = FLT_MAX;
-	for (int dx = -1;dx <= 1;++dx)
-	{
-		for (int dy = -1; dy <= 1;++dy)
-		{
-			Ray ray = CreateRay(ScreenX + dx, ScreenY + dy);
-			for (USceneComponent* sc : Scene->SceneComponents)
-			{
-				UPrimitiveComponent* Comp = Cast<UPrimitiveComponent>(sc);
-				if (Comp == nullptr || !(Comp->Pickable))
-					continue;
 
-				float Distance = 0.f;
-				if (ray.Intersects(Comp, Distance))
-				{
-					if (Distance < MinDistance)
-					{
-						MinDistance = Distance;
-						ClosestComp = Comp;
-					}
-				}
+	for (USceneComponent* sc : Scene->SceneComponents)
+	{
+		UPrimitiveComponent* Comp = Cast<UPrimitiveComponent>(sc);
+		if (Comp == nullptr || !(Comp->Pickable))
+			continue;
+
+		float Distance = 0.f;
+		if (ray.Intersects(Comp, Distance))
+		{
+			if (Distance < MinDistance)
+			{
+				MinDistance = Distance;
+				ClosestComp = Comp;
 			}
 		}
 	}
@@ -69,94 +63,6 @@ void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene)
 		EditorPtr->SelectComponent(nullptr);
 		Scene->IsCompSelected = false;
 	}
-}
-
-// TODO: Optimize later...
-GizmoControllerAxis UPicker::PickGizmo(int ScreenX, int ScreenY, UScene* Scene)
-{
-	Ray ray = CreateRay(ScreenX, ScreenY);
-	GizmoControllerAxis SelectedAxis = GizmoControllerAxis::None;
-	UGizmoComponent* Controller = Gizmo::GetInstance().GetController();
-
-	USceneComponent* comp = Controller->GetAttachedComponent();
-	if (comp == nullptr) return SelectedAxis;
-
-	FMatrix gizmoMatrix = Controller->GetRelativeMatrix();
-
-	//for (int i = 0; i < 4; ++i)
-	//{
-	//	UE_LOG("%f %f %f %f", gizmoMatrix[i][0], gizmoMatrix[i][1], gizmoMatrix[i][2], gizmoMatrix[i][3]);
-	//}
-
-	FVector origin = gizmoMatrix.TransformPoint(FVector(0, 0, 0));
-
-	FVector xDir = (gizmoMatrix.TransformPoint(FVector(1, 0, 0)) - origin).Normalize();
-	FVector yDir = (gizmoMatrix.TransformPoint(FVector(0, 0, 1)) - origin).Normalize();
-	FVector zDir = (gizmoMatrix.TransformPoint(FVector(0, 1, 0)) - origin).Normalize();
-
-	FVector Axes[3] = { xDir, yDir, zDir };
-	GizmoControllerAxis AxisEnums[3] = { GizmoControllerAxis::X, GizmoControllerAxis::Y, GizmoControllerAxis::Z };
-
-	float distanceToCamera = (origin - Camera->GetRelativeLocation()).Length();
-
-	float dynamicRadius = distanceToCamera * 0.02f;
-
-	float MaxGizmoLength = 1.2f;
-	float ThickPickRadius = dynamicRadius;
-	if (dynamicRadius < 0.1f) ThickPickRadius = 0.1f;
-	else if (dynamicRadius > 0.5f) ThickPickRadius = 0.5f;
-
-	float ClosestT = FLT_MAX;
-
-	for (int i = 0; i < 3; ++i)
-	{
-		FVector u = ray.Direction;
-		FVector v = Axes[i];
-		FVector w = ray.Origin - origin;
-		float a = Dot(u, u); // 항상 1 (정규화됨)
-		float b = Dot(u, v);
-		float c = Dot(v, v); // 항상 1 (정규화됨)
-		float d = Dot(u, w);
-		float e = Dot(v, w);
-
-		float D = a * c - b * b;
-		float sc, tc;
-
-		// 평행 방어
-		if (D < 1e-6f) {
-			sc = 0.0f;
-			tc = (b > c ? d / b : e / c);
-		}
-		else {
-			sc = (b * e - c * d) / D; // Ray 파라미터 (카메라에서부터의 거리)
-			tc = (a * e - b * d) / D; // 축 파라미터 (월드 원점에서부터의 거리)
-		}
-
-		// 2. 축의 길이 제한 (0 ~ 기즈모 화살표 끝부분까지만 클릭 가능하게)
-		if (tc < 0.0f) tc = 0.0f;
-		else if (tc > MaxGizmoLength) tc = MaxGizmoLength;
-
-		// Ray는 카메라 뒤(음수)로 갈 수 없음
-		if (sc < 0.0f) continue;
-
-		// 3. 최단 거점을 구하여 두 지점 사이의 실제 거리를 계산
-		FVector PointOnRay = ray.Origin + ray.Direction * sc;
-		FVector PointOnAxis = origin + Axes[i] * tc;
-
-		float Distance = (PointOnRay - PointOnAxis).Length();
-
-		// 4. 거리가 마우스 피킹 두께 내에 들어오고, 카메라에서 더 가까운 축이라면 갱신
-		if (Distance <= ThickPickRadius)
-		{
-			if (sc < ClosestT)
-			{
-				ClosestT = sc;
-				SelectedAxis = AxisEnums[i];
-			}
-		}
-	}
-
-	return SelectedAxis;
 }
 
 Ray UPicker::CreateRay(int ScreenX, int ScreenY)
