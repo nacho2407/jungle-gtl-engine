@@ -275,7 +275,15 @@ void AGizmoActor::UpdateTransformFromTarget()
     }
 
     PivotComp->SetRelativeLocation(Root->GetWorldTransformMatrix().GetTranslation());
-    PivotComp->SetRelativeRotation(FVector::ZeroVector);
+
+    if (CurrentMode == EGizmoMode::Scale) // Scale만 로컬 좌표계
+    {
+        PivotComp->SetRelativeRotationQuat(Root->GetRelativeRotationQuat());
+    }
+    else
+    {
+        PivotComp->SetRelativeRotation(FVector::ZeroVector);
+    }
     
     if (XAxisComp) XAxisComp->SetRelativeLocation(FVector::ZeroVector);
     if (YAxisComp) YAxisComp->SetRelativeLocation(FVector::ZeroVector);

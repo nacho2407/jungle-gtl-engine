@@ -94,7 +94,7 @@ private:
 
     float AxisLength = 3.0f;
     float PickThreshold = 10.0f;
-    float GizmoScale = 0.5;
+    float GizmoScale = 1.0;
 
     UStaticMesh* TranslateMesh = nullptr;
     UStaticMesh* ScaleMesh = nullptr;

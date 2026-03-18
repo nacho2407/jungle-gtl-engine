@@ -2,7 +2,8 @@
 
 AGridActor::AGridActor()
 {
-	auto GridMesh = BuiltInMeshFactory::CreateGridMesh(20, 1.0f);
+    // (*) 이거 InitializeResource에 있는데..확인 해봐야함
+	auto GridMesh = BuiltInMeshFactory::CreateGridMesh(200, 1.0f);
 
     UStaticMeshComponent* MeshComp = NewObject<UStaticMeshComponent>();
     MeshComp->SetStaticMesh(GridMesh);

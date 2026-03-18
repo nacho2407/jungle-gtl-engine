@@ -208,7 +208,7 @@ bool FApplication::InitializeResources()
     CubeMesh = BuiltInMeshFactory::CreateCubeMesh();
     TorusMesh = BuiltInMeshFactory::CreateTorusMesh(64, 32, 1.2f, 0.35f);
     AxesMesh = BuiltInMeshFactory::CreateAxesMesh();
-    GridMesh = BuiltInMeshFactory::CreateGridMesh(20, 1.0f);
+    GridMesh = BuiltInMeshFactory::CreateGridMesh(200, 1.0f);
     GizmoArrowMesh = BuiltInMeshFactory::CreateGizmoArrowMesh();
     GizmoScaleMesh = BuiltInMeshFactory::CreateGizmoScaleMesh();
     GizmoRotateRingMesh = BuiltInMeshFactory::CreateGizmoRotateRingMesh();
@@ -1060,6 +1060,14 @@ void FApplication::BeginGizmoDrag(EGizmoAxis Axis, int MouseX, int MouseY)
     }
 
     FVector AxisDir = LocalAxis;
+
+    if (CurrentGizmoMode == EGizmoMode::Scale)
+    {
+        const FMatrix ActorWorld = Root->GetWorldTransformMatrix();
+        const FVector4 Axis4 = ActorWorld * FVector4(LocalAxis, 0.0f);
+        AxisDir = FVector(Axis4.X, Axis4.Y, Axis4.Z);
+    }
+
     AxisDir.Normalize();
 
     const FMatrix ActorWorld = Root->GetWorldTransformMatrix();
@@ -1157,7 +1165,7 @@ void FApplication::UpdateGizmoDrag(int MouseX, int MouseY)
     const FVector Pivot = DragStartActorWorldPivot;
     const FMatrix ToPivot = FMatrix::MakeTranslation(FVector(-Pivot.X, -Pivot.Y, -Pivot.Z));
     const FMatrix FromPivot = FMatrix::MakeTranslation(Pivot);
-
+    // (*) HitPoint - DragStartActorWorldPivot; 다 중복임
     if (DragStartGizmoMode == EGizmoMode::Rotate)
     {
         FVector CurrentVec = HitPoint - DragStartActorWorldPivot;
@@ -1199,31 +1207,25 @@ void FApplication::UpdateGizmoDrag(int MouseX, int MouseY)
         const FVector Delta = HitPoint - DragStartHitPoint;
         const float Amount = Delta.Dot(DragAxisDirection);
 
-        const float MinFactor = 0.05f;
-        const float ScaleFactor = std::max(MinFactor, 1.0f + Amount * GizmoScaleSensitivity);
+        const float MinScale = 0.05f;
+        FVector NewScale = DragStartActorScale;
 
-        FVector AxisScale(1.0f, 1.0f, 1.0f);
         switch (ActiveGizmoAxis)
         {
         case EGizmoAxis::X:
-            AxisScale.X = ScaleFactor;
+            NewScale.X = std::max(MinScale, DragStartActorScale.X * (1.0f + Amount * GizmoScaleSensitivity));
             break;
         case EGizmoAxis::Y:
-            AxisScale.Y = ScaleFactor;
+            NewScale.Y = std::max(MinScale, DragStartActorScale.Y * (1.0f + Amount * GizmoScaleSensitivity));
             break;
         case EGizmoAxis::Z:
-            AxisScale.Z = ScaleFactor;
+            NewScale.Z = std::max(MinScale, DragStartActorScale.Z * (1.0f + Amount * GizmoScaleSensitivity));
             break;
         default:
             return;
         }
 
-        const FMatrix WorldAxisScale = FMatrix::MakeScale(AxisScale);
-
-        const FMatrix NewWorld =
-            DragStartActorWorldMatrix * ToPivot * WorldAxisScale * FromPivot;
-
-        Root->SetWorldTransformMatrix(NewWorld);
+        Root->SetRelativeScale(NewScale);
     }
 
     if (GizmoActor)

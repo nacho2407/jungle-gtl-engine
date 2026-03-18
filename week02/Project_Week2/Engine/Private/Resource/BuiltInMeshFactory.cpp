@@ -24,17 +24,21 @@ namespace
 
     TArray<FVertexSimple> CreateAxesVertices() {
         TArray<FVertexSimple> Vertices; 
-        const float Extent = 20.0f; 
-        Vertices.reserve(6); 
-        // X axis : -X ~ +X 
-        Vertices.emplace_back(-Extent, 0, 0, 1, 0, 0, 1); 
-        Vertices.emplace_back( Extent, 0, 0, 1, 0, 0, 1); 
-        // Y axis : 0 ~ +Y 
-        Vertices.emplace_back(0, 0, 0, 0, 1, 0, 1); 
-        Vertices.emplace_back(0, Extent, 0, 0, 1, 0, 1); 
-        // Z axis : -Z ~ +Z 
-        Vertices.emplace_back(0, 0, -Extent, 0, 0, 1, 1); 
-        Vertices.emplace_back(0, 0, Extent, 0, 0, 1, 1); 
+        //const float Extent = 20.0f; 
+        //Vertices.reserve(6); 
+        //Vertices.emplace_back(-Extent, 0, 0, 1, 0, 0, 1); 
+        //Vertices.emplace_back( Extent, 0, 0, 1, 0, 0, 1); 
+
+        //Vertices.emplace_back(0, 0, 0, 0, 1, 0, 1); 
+        //Vertices.emplace_back(0, Extent, 0, 0, 1, 0, 1); 
+        //
+        //Vertices.emplace_back(0, 0, -Extent, 0, 0, 1, 1); 
+        //Vertices.emplace_back(0, 0, Extent, 0, 0, 1, 1); 
+
+        // Y axis only
+        Vertices.emplace_back(0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+        Vertices.emplace_back(0.0f, 20.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+
         return Vertices;
     }
 
@@ -304,6 +308,30 @@ namespace
         return I;
     }
 
+    //TArray<FVertexSimple> CreateGridVertices(int HalfCount, float Spacing)
+    //{
+    //    TArray<FVertexSimple> Vertices;
+    //    const float Extent = HalfCount * Spacing;
+
+    //    for (int i = -HalfCount; i <= HalfCount; ++i)
+    //    {
+    //        if (i == 0)
+    //        {
+    //            continue; // 중심 X/Z 선은 axes가 대신 표현
+    //        }
+
+    //        const float P = i * Spacing;
+    //        const float C = 0.25f;
+
+    //        Vertices.emplace_back(-Extent, 0.0f, P, C, C, C, 1.0f);
+    //        Vertices.emplace_back(Extent, 0.0f, P, C, C, C, 1.0f);
+
+    //        Vertices.emplace_back(P, 0.0f, -Extent, C, C, C, 1.0f);
+    //        Vertices.emplace_back(P, 0.0f, Extent, C, C, C, 1.0f);
+    //    }
+
+    //    return Vertices;
+    //}
     TArray<FVertexSimple> CreateGridVertices(int HalfCount, float Spacing)
     {
         TArray<FVertexSimple> Vertices;
@@ -311,19 +339,37 @@ namespace
 
         for (int i = -HalfCount; i <= HalfCount; ++i)
         {
+            const float P = i * Spacing;
+
             if (i == 0)
             {
-                continue; // 중심 X/Z 선은 axes가 대신 표현
+                // z = 0 선 (x축 방향 선)
+                // 음의 X 쪽: 흰색
+                Vertices.emplace_back(-Extent, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+                Vertices.emplace_back(0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+
+                // 양의 X 쪽: 빨강
+                Vertices.emplace_back(0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f);
+                Vertices.emplace_back(Extent, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f);
+
+                // x = 0 선 (z축 방향 선)
+                // 음의 Z 쪽: 흰색
+                Vertices.emplace_back(0.0f, 0.0f, -Extent, 1.0f, 1.0f, 1.0f, 1.0f);
+                Vertices.emplace_back(0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+
+                // 양의 Z 쪽: 파랑
+                Vertices.emplace_back(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f);
+                Vertices.emplace_back(0.0f, 0.0f, Extent, 0.0f, 0.0f, 1.0f, 1.0f);
+
+                continue;
             }
 
-            const float P = i * Spacing;
-            const float C = 0.25f;
+            // 나머지 일반 grid 선은 흰색
+            Vertices.emplace_back(-Extent, 0.0f, P, 1.0f, 1.0f, 1.0f, 1.0f);
+            Vertices.emplace_back(Extent, 0.0f, P, 1.0f, 1.0f, 1.0f, 1.0f);
 
-            Vertices.emplace_back(-Extent, 0.0f, P, C, C, C, 1.0f);
-            Vertices.emplace_back(Extent, 0.0f, P, C, C, C, 1.0f);
-
-            Vertices.emplace_back(P, 0.0f, -Extent, C, C, C, 1.0f);
-            Vertices.emplace_back(P, 0.0f, Extent, C, C, C, 1.0f);
+            Vertices.emplace_back(P, 0.0f, -Extent, 1.0f, 1.0f, 1.0f, 1.0f);
+            Vertices.emplace_back(P, 0.0f, Extent, 1.0f, 1.0f, 1.0f, 1.0f);
         }
 
         return Vertices;
