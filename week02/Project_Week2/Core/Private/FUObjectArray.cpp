@@ -143,7 +143,7 @@ int32 FChunckedFixedObjectArray::AddSingle()
     return AddRange(1);
 }
 
-UObject* FUObjectItem::GetObject()
+UObject* FUObjectItem::GetItemObject()
 {
     return Object;
 }

@@ -40,7 +40,7 @@ UStaticMeshComponent* ATriangle::GetStaticMeshComponent() const
 
 void ATriangle::InitializeActor()
 {
-    StaticMeshComponent = NewObject<UStaticMeshComponent>();
+    StaticMeshComponent = NewObject<UStaticMeshComponent>(this);
     SetPrimitiveComponent(StaticMeshComponent);
     SetStaticMesh(BuiltInMeshFactory::CreateTriangleMesh());
 }

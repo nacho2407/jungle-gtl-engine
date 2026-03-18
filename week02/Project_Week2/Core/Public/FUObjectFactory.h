@@ -40,10 +40,24 @@ public:
 
 inline FUObjectFactory GUObjectFactory;
 
+//template<UObjectType T>
+//T* NewObject(const FString& InName = "GameObject")
+//{
+//	return GUObjectFactory.CreateObject<T>(InName);
+//}
+
 template<UObjectType T>
-T* NewObject(const FString& InName = "GameObject")
+T* NewObjectRoot(const FString& InName = "GameObject")
 {
 	return GUObjectFactory.CreateObject<T>(InName);
+}
+
+template<UObjectType T>
+T* NewObject(UObject* Dependency, const FString& InName = "GameObject")
+{
+	T* NewT = GUObjectFactory.CreateObject<T>(InName);
+	NewT->SetOuter(Dependency);
+	return NewT;
 }
 
 template<SceneComponentType T>
@@ -62,11 +76,19 @@ T* NewObject(const FVector& Location, const FString& InName = "GameObject")
 	return object;
 }
 
+//template<UObjectType T>
+//inline void* DestroyObject(T* object)
+//{
+//	auto TargetIndex = object->InternalIndex;
+//	GUObjectArray.FreeUObjectIndox(object);
+//	GUObjectAllocator.FreeUObject(object);
+//	return nullptr;
+//}
+
 template<UObjectType T>
-inline void* DestroyObject(T* object)
+inline void* DestroyObjectGC(T* object)
 {
 	auto TargetIndex = object->InternalIndex;
-	GUObjectArray.FreeUObjectIndox(object);
-	GUObjectAllocator.FreeUObject(object);
+	GUObjectArray.IndexToObject(TargetIndex)->bPendingKill = true;
 	return nullptr;
 }

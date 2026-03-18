@@ -3,5 +3,6 @@
 
 class FGarbageCollector
 {
-	static void CheckUObjectArray();
+public:
+	static void CollectGarbage();
 };

@@ -49,6 +49,6 @@ const char* UObject::GetObjClassName() const
 
 void UObject::Destroy()
 {
-    DestroyObject(this);
+    DestroyObjectGC(this);
 }
 

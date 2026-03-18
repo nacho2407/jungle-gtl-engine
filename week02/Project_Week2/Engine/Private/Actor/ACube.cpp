@@ -40,7 +40,7 @@ UStaticMeshComponent* ACube::GetStaticMeshComponent() const
 
 void ACube::InitializeActor()
 {
-    StaticMeshComponent = NewObject<UStaticMeshComponent>();
+    StaticMeshComponent = NewObject<UStaticMeshComponent>(this);
     SetPrimitiveComponent(StaticMeshComponent);
     SetStaticMesh(BuiltInMeshFactory::CreateCubeMesh());
 }

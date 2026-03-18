@@ -32,49 +32,49 @@ void AGizmoActor::Initialize(UStaticMesh* ArrowMesh, UStaticMesh* InScaleMesh, U
 
     if (!PivotComp)
     {
-        PivotComp =  NewObject<USceneComponent>();
+        PivotComp =  NewObject<USceneComponent>(this);
         AddComponent(PivotComp);
         SetRootComponent(PivotComp);
     }
 
     if (!XAxisComp)
     {
-        XAxisComp = NewObject<UStaticMeshComponent>();
+        XAxisComp = NewObject<UStaticMeshComponent>(this);
         AddComponent(XAxisComp);
         XAxisComp->SetupAttachment(PivotComp);
     }
 
     if (!YAxisComp)
     {
-        YAxisComp = NewObject<UStaticMeshComponent>();
+        YAxisComp = NewObject<UStaticMeshComponent>(this);
         AddComponent(YAxisComp);
         YAxisComp->SetupAttachment(PivotComp);
     }
 
     if (!ZAxisComp)
     {
-        ZAxisComp = NewObject<UStaticMeshComponent>();
+        ZAxisComp = NewObject<UStaticMeshComponent>(this);
         AddComponent(ZAxisComp);
         ZAxisComp->SetupAttachment(PivotComp);
     }
 
     if (!XAxisShaftComp)
     {
-        XAxisShaftComp = NewObject<UStaticMeshComponent>();
+        XAxisShaftComp = NewObject<UStaticMeshComponent>(this);
         AddComponent(XAxisShaftComp);
         XAxisShaftComp->SetupAttachment(PivotComp);
     }
 
     if (!YAxisShaftComp)
     {
-        YAxisShaftComp = NewObject<UStaticMeshComponent>();
+        YAxisShaftComp = NewObject<UStaticMeshComponent>(this);
         AddComponent(YAxisShaftComp);
         YAxisShaftComp->SetupAttachment(PivotComp);
     }
 
     if (!ZAxisShaftComp)
     {
-        ZAxisShaftComp = NewObject<UStaticMeshComponent>();
+        ZAxisShaftComp = NewObject<UStaticMeshComponent>(this);
         AddComponent(ZAxisShaftComp);
         ZAxisShaftComp->SetupAttachment(PivotComp);
     }

@@ -109,19 +109,19 @@ AActor* FWorldSaveConverter::MakeActorFromRecord(const FPrimitiveRecord& Record)
 
     if (Record.Type == "Sphere")
     {
-        NewActor = NewObject<ASphere>();
+        NewActor = NewObjectRoot<ASphere>();
     }
     else if (Record.Type == "Cube")
     {
-        NewActor = NewObject<ACube>();
+        NewActor = NewObjectRoot<ACube>();
     }
     else if (Record.Type == "Triangle")
     {
-        NewActor = NewObject<ATriangle>();
+        NewActor = NewObjectRoot<ATriangle>();
     }
     else if (Record.Type == "Torus")
     {
-        NewActor = NewObject<ATorus>();
+        NewActor = NewObjectRoot<ATorus>();
     }
     else
     {

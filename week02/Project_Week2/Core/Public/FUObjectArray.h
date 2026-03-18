@@ -11,7 +11,7 @@ private:
 	UObject* Object;
 
 public:
-	UObject* GetObject();
+	UObject* GetItemObject();
 
 	int32 SerialNumber;
 	int32 ClusterRootIndex;

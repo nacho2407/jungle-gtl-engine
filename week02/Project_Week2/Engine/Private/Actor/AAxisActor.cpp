@@ -2,7 +2,7 @@
 
 AAxisActor::AAxisActor()
 {
-	UStaticMeshComponent* MeshComp = NewObject<UStaticMeshComponent>();
+	UStaticMeshComponent* MeshComp = NewObject<UStaticMeshComponent>(this);
 	MeshComp->SetStaticMesh(BuiltInMeshFactory::CreateAxesMesh());
 	MeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
 

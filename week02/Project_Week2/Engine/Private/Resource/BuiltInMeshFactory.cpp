@@ -378,7 +378,7 @@ namespace
 
     UStaticMesh* CreateGridMesh(int HalfCount, float Spacing)
     {
-        UStaticMesh* Mesh = NewObject<UStaticMesh>();
+        UStaticMesh* Mesh = NewObjectRoot<UStaticMesh>();
         Mesh->SetVertices(CreateGridVertices(HalfCount, Spacing));
         Mesh->SetTopology(EMeshTopology::LineList);
         return Mesh;
@@ -389,7 +389,7 @@ namespace BuiltInMeshFactory
 {
     UStaticMesh* CreateSphereMesh()
     {
-        UStaticMesh* Mesh = NewObject<UStaticMesh>();
+        UStaticMesh* Mesh = NewObjectRoot<UStaticMesh>();
 
         TArray<FVertexSimple> Vertices(
             sphere_vertices,
@@ -402,7 +402,7 @@ namespace BuiltInMeshFactory
 
     UStaticMesh* CreateCubeMesh()
     {
-        UStaticMesh* Mesh = NewObject<UStaticMesh>();
+        UStaticMesh* Mesh = NewObjectRoot<UStaticMesh>();
 
         TArray<FVertexSimple> Vertices(
             cube_vertices,
@@ -415,7 +415,7 @@ namespace BuiltInMeshFactory
 
     UStaticMesh* CreateTriangleMesh()
     {
-        UStaticMesh* Mesh = NewObject<UStaticMesh>();
+        UStaticMesh* Mesh = NewObjectRoot<UStaticMesh>();
         Mesh->SetVertices(CreateTriangleVertices());
         Mesh->SetTopology(EMeshTopology::TriangleList);
         return Mesh;
@@ -423,7 +423,7 @@ namespace BuiltInMeshFactory
 
     UStaticMesh* CreateAxesMesh()
     {
-        UStaticMesh* Mesh = NewObject<UStaticMesh>();
+        UStaticMesh* Mesh = NewObjectRoot<UStaticMesh>();
         Mesh->SetVertices(CreateAxesVertices());
         Mesh->SetTopology(EMeshTopology::LineList);
         return Mesh;
@@ -436,7 +436,7 @@ namespace BuiltInMeshFactory
         float MajorRadius,
         float MinorRadius)
     {
-        UStaticMesh* Mesh = NewObject<UStaticMesh>();
+        UStaticMesh* Mesh = NewObjectRoot<UStaticMesh>();
         Mesh->SetVertices(CreateTorusVertices(
             MajorSegments,
             MinorSegments,
@@ -448,7 +448,7 @@ namespace BuiltInMeshFactory
 
     UStaticMesh* CreateGizmoArrowMesh()
     {
-        UStaticMesh* Mesh = NewObject<UStaticMesh>();
+        UStaticMesh* Mesh = NewObjectRoot<UStaticMesh>();
         Mesh->SetVertices(CreateGizmoArrowVertices());
         Mesh->SetIndices(CreateGizmoArrowIndices());
         Mesh->SetTopology(EMeshTopology::TriangleList);
@@ -457,7 +457,7 @@ namespace BuiltInMeshFactory
 
     UStaticMesh* CreateGizmoScaleMesh()
     {
-        UStaticMesh* Mesh = NewObject<UStaticMesh>();
+        UStaticMesh* Mesh = NewObjectRoot<UStaticMesh>();
         Mesh->SetVertices(CreateGizmoScaleVertices());
         Mesh->SetIndices(CreateGizmoScaleIndices());
         Mesh->SetTopology(EMeshTopology::TriangleList);
@@ -466,7 +466,7 @@ namespace BuiltInMeshFactory
 
 //    UStaticMesh* CreateCircleMesh(int Segments)
 //    {
-//        UStaticMesh* Mesh = NewObject<UStaticMesh>();
+//        UStaticMesh* Mesh = NewObject<UStaticMesh>(this);
 //        Mesh->SetVertices(CreateCircleVertices(Segments));
 //        Mesh->SetTopology(EMeshTopology::LineList);
 //        return Mesh;
@@ -474,7 +474,7 @@ namespace BuiltInMeshFactory
 
     UStaticMesh* CreateDiscMesh(int Segments)
     {
-        UStaticMesh* Mesh = NewObject<UStaticMesh>();
+        UStaticMesh* Mesh = NewObjectRoot<UStaticMesh>();
         Mesh->SetVertices(CreateDiscVertices(Segments));
         Mesh->SetIndices(CreateDiscIndices(Segments));
         Mesh->SetTopology(EMeshTopology::TriangleList);
@@ -483,7 +483,7 @@ namespace BuiltInMeshFactory
     
     UStaticMesh* CreateGridMesh(int HalfCount, float Spacing)
     {
-        UStaticMesh* Mesh = NewObject<UStaticMesh>();
+        UStaticMesh* Mesh = NewObjectRoot<UStaticMesh>();
         Mesh->SetVertices(CreateGridVertices(HalfCount, Spacing));
         Mesh->SetTopology(EMeshTopology::LineList);
         return Mesh;
@@ -491,7 +491,7 @@ namespace BuiltInMeshFactory
 
     UStaticMesh* CreateGizmoRotateRingMesh()
     {
-        UStaticMesh* Mesh = NewObject<UStaticMesh>();
+        UStaticMesh* Mesh = NewObjectRoot<UStaticMesh>();
 
         Mesh->SetVertices(CreateTorusVertices(
             96,     // MajorSegments
