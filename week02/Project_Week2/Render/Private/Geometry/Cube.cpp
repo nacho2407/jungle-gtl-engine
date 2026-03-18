@@ -1,44 +1,55 @@
 #include "Geometry/Cube.h"
+#include "CoreTypes.h"
 
 FVertexSimple cube_vertices[] =
 {
-    FVertexSimple(1.0f, 1.0f, 1.0f, 0.759124f, 0.079568f, 0.962616f, 1.0f),
-    FVertexSimple(1.0f, 1.0f, -1.0f, 0.759124f, 0.079568f, 0.962616f, 1.0f),
-    FVertexSimple(1.0f, -1.0f, 1.0f, 0.759124f, 0.079568f, 0.962616f, 1.0f),
-    FVertexSimple(1.0f, -1.0f, -1.0f, 0.759124f, 0.079568f, 0.962616f, 1.0f),
-    FVertexSimple(-1.0f, 1.0f, 1.0f, 0.087058f, 0.165636f, 0.962616f, 1.0f),
-    FVertexSimple(-1.0f, 1.0f, -1.0f, 0.087058f, 0.165636f, 0.962616f, 1.0f),
-    FVertexSimple(-1.0f, -1.0f, 1.0f, 0.087058f, 0.165636f, 0.962616f, 1.0f),
-    FVertexSimple(-1.0f, -1.0f, -1.0f, 0.087058f, 0.165636f, 0.962616f, 1.0f),
+	// Front face (Z+)
+	{ -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f, 1.0f }, // Bottom-left (red)
+	{ -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f, 1.0f }, // Top-left (yellow)
+	{  0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 1.0f }, // Bottom-right (green)
+	{ -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f, 1.0f }, // Top-left (yellow)
+	{  0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f, 1.0f }, // Top-right (blue)
+	{  0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 1.0f }, // Bottom-right (green)
+
+	// Back face (Z-)
+	{ -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f, 1.0f }, // Bottom-left (cyan)
+	{  0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 1.0f, 1.0f }, // Bottom-right (magenta)
+	{ -0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 1.0f }, // Top-left (blue)
+	{ -0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 1.0f }, // Top-left (blue)
+	{  0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 1.0f, 1.0f }, // Bottom-right (magenta)
+	{  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 0.0f, 1.0f }, // Top-right (yellow)
+
+	// Left face (X-)
+	{ -0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 1.0f, 1.0f }, // Bottom-left (purple)
+	{ -0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 1.0f }, // Top-left (blue)
+	{ -0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 1.0f }, // Bottom-right (green)
+	{ -0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 1.0f }, // Top-left (blue)
+	{ -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f, 1.0f }, // Top-right (yellow)
+	{ -0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 1.0f }, // Bottom-right (green)
+
+	// Right face (X+)
+	{  0.5f, -0.5f, -0.5f,  1.0f, 0.5f, 0.0f, 1.0f }, // Bottom-left (orange)
+	{  0.5f, -0.5f,  0.5f,  0.5f, 0.5f, 0.5f, 1.0f }, // Bottom-right (gray)
+	{  0.5f,  0.5f, -0.5f,  0.5f, 0.0f, 0.5f, 1.0f }, // Top-left (purple)
+	{  0.5f,  0.5f, -0.5f,  0.5f, 0.0f, 0.5f, 1.0f }, // Top-left (purple)
+	{  0.5f, -0.5f,  0.5f,  0.5f, 0.5f, 0.5f, 1.0f }, // Bottom-right (gray)
+	{  0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 0.5f, 1.0f }, // Top-right (dark blue)
+
+	// Top face (Y+)
+	{ -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.5f, 1.0f }, // Bottom-left (light green)
+	{  0.5f,  0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f }, // Top-left (cyan)
+	{ -0.5f,  0.5f,  0.5f,  0.0f, 0.5f, 1.0f, 1.0f }, // Bottom-right (white)
+	{ -0.5f,  0.5f,  0.5f,  0.0f, 0.5f, 1.0f, 1.0f }, // Top-left (cyan)
+	{  0.5f,  0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f }, // Top-right (brown)
+	{  0.5f,  0.5f,  0.5f,  0.5f, 0.5f, 0.0f, 1.0f }, // Bottom-right (white)
+
+	// Bottom face (Y-)
+	{ -0.5f, -0.5f, -0.5f,  0.5f, 0.5f, 0.0f, 1.0f }, // Bottom-left (brown)
+	{ -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f, 1.0f }, //awaw Top-left (red)
+	{  0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.5f, 1.0f }, // Bottom-right (purple)
+	{ -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f, 1.0f }, // Top-left (red)
+	{  0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 1.0f }, // Top-right (green)
+	{  0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.5f, 1.0f }, // Bottom-right (purple)
 };
-
-uint32_t cube_indices[] =
-{
-    // +X
-    0, 1, 3,
-    0, 3, 2,
-
-    // -X
-    4, 6, 7,
-    4, 7, 5,
-
-    // +Y
-    4, 5, 1,
-    4, 1, 0,
-
-    // -Y
-    6, 2, 3,
-    6, 3, 7,
-
-    // +Z
-    4, 0, 2,
-    4, 2, 6,
-
-    // -Z
-    5, 7, 3,
-    5, 3, 1
-};
-
-const size_t cube_index_count = sizeof(cube_indices) / sizeof(uint32_t);
 
 const size_t cube_vertex_count = sizeof(cube_vertices) / sizeof(FVertexSimple);

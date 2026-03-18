@@ -17,18 +17,18 @@ public:
 	void SetVertices(const TArray<FVertexSimple>& InVertices); // @@@@ 이렇게 하면 VertexSimple 모양 데이터만 가능한 거 아님? 
 	const TArray<FVertexSimple>& GetVertices() const;
 
-	void SetIndices(const TArray<uint32_t>& InIndices);
-	const TArray<uint32_t>& GetIndices() const;
+	void SetIndices(const TArray<uint32>& InIndices);
+	const TArray<uint32>& GetIndices() const;
 
 	void SetTopology(EMeshTopology InTopology);
 	EMeshTopology GetTopology() const;
 
-	uint32_t GetVertexCount() const;
-	uint32_t GetIndexCount() const;
+	uint32 GetVertexCount() const;
+	uint32 GetIndexCount() const;
 	bool HasIndices() const; 
 
 private:
 	TArray<FVertexSimple> Vertices;
-	TArray<uint32_t> Indices;
+	TArray<uint32> Indices;
 	EMeshTopology Topology = EMeshTopology::TriangleList;
 };
