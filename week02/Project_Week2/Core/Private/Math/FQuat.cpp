@@ -34,7 +34,8 @@ FQuat FQuat::FromEulerXYZ(const FVector& EulerRadians)
     const FQuat Qy = FromAxisAngle(FVector(0.0f, 1.0f, 0.0f), EulerRadians.Y);
     const FQuat Qz = FromAxisAngle(FVector(0.0f, 0.0f, 1.0f), EulerRadians.Z);
 
-    FQuat Result = Qx * Qy * Qz;
+    // 현재 엔진의 규약은 행 벡터 기준, ZYX 순서로 계산
+    FQuat Result = Qz * Qy * Qx;
     Result.Normalize();
     return Result;
 }
@@ -43,7 +44,7 @@ FVector FQuat::ToEulerXYZ() const
 {
     const FMatrix M = ToMatrix();
 
-    const float SinY = M.M[0][2];
+    const float SinY = -M.M[0][2];
     const float Yaw = std::asin(std::clamp(SinY, -1.0f, 1.0f));
 
     float Pitch = 0.0f;
@@ -52,12 +53,12 @@ FVector FQuat::ToEulerXYZ() const
     const float CosY = std::cos(Yaw);
     if (std::fabs(CosY) > 0.0001f)
     {
-        Pitch = std::atan2(-M.M[1][2], M.M[2][2]);
-        Roll = std::atan2(-M.M[0][1], M.M[0][0]);
+        Pitch = std::atan2(M.M[1][2], M.M[2][2]);
+        Roll = std::atan2(M.M[0][1], M.M[0][0]);
     }
     else
     {
-        Pitch = std::atan2(M.M[2][1], M.M[1][1]);
+        Pitch = std::atan2(-M.M[2][1], M.M[1][1]);
         Roll = 0.0f;
     }
 
