@@ -15,7 +15,7 @@ public:
 
 	float GetDeltaTime() const { return DeltaTime; }
 	float GetTotalTime() const { return TotalTime; }
-	int GetFPS() const { return 1 / DeltaTime; }
+	int GetFPS() const { return static_cast<int>(1 / DeltaTime); }
 
 private:
 	float DeltaTime = 0.0f;

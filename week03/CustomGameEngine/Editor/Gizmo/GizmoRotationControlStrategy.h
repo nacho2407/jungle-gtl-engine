@@ -5,7 +5,7 @@
 #include "Math/Quaternion.h"
 
 class UGizmoComponent;
-class RenderObject;
+struct RenderObject;
 
 class GizmoRotationControlStrategy : public IGizmoControlStrategy
 {

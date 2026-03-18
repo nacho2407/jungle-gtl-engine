@@ -2,6 +2,8 @@
 
 #include "Vector.h"
 
+struct FRotator;
+
 struct FMatrix {
 public:
 	float m[4][4];
@@ -29,15 +31,17 @@ public:
 	static float DegToRad(float Degree) { return Degree * 3.14159265358979323846f / 180.0f; }
 
 	//Euler Angle
-	static FMatrix RotationXMatrix(float InXDegree);
+	static FMatrix RotationXMatrix(float InRoll);
 
-	static FMatrix RotationYMatrix(float InYDegree);
+	static FMatrix RotationYMatrix(float InPitch);
 
-	static FMatrix RotationZMatrix(float InZDegree);
+	static FMatrix RotationZMatrix(float InYaw);
 
-	static FMatrix EulerRotationMatrix(FVector InVec) { return EulerRotationMatrix(InVec.x, InVec.y, InVec.z); }
+	//static FMatrix EulerRotationMatrix(FVector InVec) { return EulerRotationMatrix(InVec.x, InVec.y, InVec.z); }
+	static FMatrix EulerRotationMatrix(const FRotator& InRot);
+
 	//X->Y->Z
-	static FMatrix EulerRotationMatrix(float InX = 0.f, float InY = 0.f, float InZ = 0.f);
+	static FMatrix EulerRotationMatrix(float InRoll = 0.0f, float InPitch = 0.0f, float InYaw = 0.0f);
 
 	FMatrix operator*(const FMatrix& Other) const;
 

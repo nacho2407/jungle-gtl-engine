@@ -1,5 +1,6 @@
 ﻿#include "Vector.h"
 #include "Matrix.h"
+#include "MathHelper.h"
 #include <stdexcept>
 
 FVector::~FVector() {}
@@ -39,7 +40,7 @@ FVector  FVector::operator/(const float s) const
 FVector FVector::Normalize() const
 {
 	float SquareSum = x * x + y * y + z * z;
-	float Denominator = sqrtf(SquareSum);
+	float Denominator = std::sqrtf(SquareSum);
 
 	if (Denominator == 0) return FVector(0.0f, 0.0f, 0.0f);
 
@@ -48,7 +49,7 @@ FVector FVector::Normalize() const
 
 float FVector::Length() const
 {
-	return sqrtf(x * x + y * y + z * z);
+	return std::sqrtf(x * x + y * y + z * z);
 }
 
 bool FVector::IsNearlyEqual(const FVector& Other, float Epsilon) const

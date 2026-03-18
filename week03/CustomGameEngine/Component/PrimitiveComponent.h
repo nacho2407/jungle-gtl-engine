@@ -4,7 +4,7 @@
 #include "Renderer/RenderObject.h"
 
 class URenderer;
-class FGeometry;
+struct FGeometry;
 
 enum EPrimitiveType
 {
@@ -26,7 +26,7 @@ public:
 	void SetType(EPrimitiveType);
 
 	void SetRelativeLocation(const FVector& newLocation) override;
-	void SetRelativeRotation(const FVector& newRotation) override;
+	void SetRelativeRotation(const FRotator& newRotation) override;
 	void SetRelativeScale3D(const FVector& newScale) override;
 
 	virtual void Update(float DeltaTime);

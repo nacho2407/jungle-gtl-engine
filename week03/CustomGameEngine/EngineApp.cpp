@@ -106,8 +106,8 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	InputManager::GetInstance().hWnd = HWnd;
 	// Init Camera
 	auto Camera = Cast<UCameraComponent>(GetWorld().AddPermanentSceneComponent<UCameraComponent>());
-	Camera->SetRelativeLocation(FVector(-10, 10, 10));
-	Camera->SetRelativeRotation(FVector(30, -45, 0));
+	Camera->SetRelativeLocation(FVector(-20.f, -20.0f, 20.0f));
+	Camera->SetRelativeRotation(FRotator(0.f, 45.f, 45.f));
 	Renderer->SetRenderCamera(Camera);
 	EditorInst->SetCamera(Camera);
 	EditorInst->SetRenderer(Renderer);

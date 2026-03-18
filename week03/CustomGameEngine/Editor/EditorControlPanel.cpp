@@ -76,11 +76,11 @@ void EditorControlPanel::Draw(UCameraComponent* camera)
 	ImGui::InputFloat("FOV", &camera->FOV);
 
 	FVector camPosition = camera->GetRelativeLocation();
-	FRotator camRotation = camera->GetRelativeRotation1();
+	FRotator camRotation = camera->GetRelativeRotation();
 	ImGui::InputFloat3("Camera Location", &camPosition.x);
-	ImGui::InputFloat3("Camera Rotation", &camRotation.Pitch);
+	ImGui::InputFloat3("Camera Rotation", &camRotation.Roll);
 	camera->SetRelativeLocation(camPosition);
-	camera->SetRelativeRotation1(camRotation);
+	camera->SetRelativeRotation(camRotation);
 
 	ImGui::InputFloat3("Camera Direction", &camera->Direction.x);
 	ImGui::InputFloat("Camera Speed", &camera->MoveSpeed);

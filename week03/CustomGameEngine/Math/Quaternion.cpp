@@ -1,8 +1,9 @@
 ﻿#include "Quaternion.h"
-#include <cmath>
+#include "MathHelper.h"
 #include "Vector.h"
 #include "Matrix.h"
-#include "Math/MathHelper.h"
+#include "Rotator.h"
+
 
 FQuat FQuat::FromAxisAngle(const FVector& axis, float angleRadians) {
     float halfAngle = angleRadians * 0.5f;
@@ -15,25 +16,34 @@ FQuat FQuat::FromAxisAngle(const FVector& axis, float angleRadians) {
     );
 }
 
-FQuat FQuat::FromEuler(const FVector& eulerDegrees)
-{
-    // 각 xyz축 반각의 sin/cos 값
-    float cx = std::cosf(FMatrix::DegToRad(eulerDegrees.x) * 0.5f);
-    float sx = std::sinf(FMatrix::DegToRad(eulerDegrees.x) * 0.5f);
-    float cy = std::cosf(FMatrix::DegToRad(eulerDegrees.y) * 0.5f);
-    float sy = std::sinf(FMatrix::DegToRad(eulerDegrees.y) * 0.5f);
-    float cz = std::cosf(FMatrix::DegToRad(eulerDegrees.z) * 0.5f);
-    float sz = std::sinf(FMatrix::DegToRad(eulerDegrees.z) * 0.5f);
+//FQuat FQuat::FromEuler(const FRotator& eulerDegrees)
+//{
+//    // 각 xyz축 반각의 sin/cos 값
+//    float cx = std::cosf(FMatrix::DegToRad(eulerDegrees.Roll) * 0.5f);
+//    float sx = std::sinf(FMatrix::DegToRad(eulerDegrees.Roll) * 0.5f);
+//    float cy = std::cosf(FMatrix::DegToRad(eulerDegrees.Pitch) * 0.5f);
+//    float sy = std::sinf(FMatrix::DegToRad(eulerDegrees.Pitch) * 0.5f);
+//    float cz = std::cosf(FMatrix::DegToRad(eulerDegrees.Yaw) * 0.5f);
+//    float sz = std::sinf(FMatrix::DegToRad(eulerDegrees.Yaw) * 0.5f);
+//
+//    return FQuat(
+//        sx * cy * cz - cx * sy * sz,
+//        cx * sy * cz + sx * cy * sz,
+//        cx * cy * sz - sx * sy * cz,
+//        cx * cy * cz + sx * sy * sz
+//	);
+//}
 
-    return FQuat(
-        sx * cy * cz - cx * sy * sz,
-        cx * sy * cz + sx * cy * sz,
-        cx * cy * sz - sx * sy * cz,
-        cx * cy * cz + sx * sy * sz
-	);
+FQuat FQuat::FromEuler(const FRotator& eulerDegrees)
+{
+    FQuat qRoll = FromAxisAngle(FVector(1, 0, 0), MathHelper::DegToRad(eulerDegrees.Roll));
+    FQuat qPitch = FromAxisAngle(FVector(0, 1, 0), MathHelper::DegToRad(eulerDegrees.Pitch));
+    FQuat qYaw = FromAxisAngle(FVector(0, 0, 1), MathHelper::DegToRad(eulerDegrees.Yaw));
+
+    return qRoll * qPitch * qYaw;
 }
 
-FVector FQuat::ToEuler() const
+FRotator FQuat::ToEuler() const
 {
     float xsqr = x * x;
     float ysqr = y * y;
@@ -51,7 +61,7 @@ FVector FQuat::ToEuler() const
     float t4 = +1.0f - 2.0f * (ysqr + zsqr);
     float yaw = std::atan2f(t3, t4);
 
-    return FVector(
+    return FRotator(
         MathHelper::RadToDeg(roll),
         MathHelper::RadToDeg(pitch),
         MathHelper::RadToDeg(yaw)
@@ -87,7 +97,7 @@ FVector FQuat::RotateVector(const FVector& v) const {
 }
 
 FMatrix FQuat::ToMatrix() const {
-    float xx = x * x, yy = y * y, zz = z * z;
+    float xx = x * x, yy = y * y, zz = z * z; 
     float xy = x * y, xz = x * z, yz = y * z;
     float wx = w * x, wy = w * y, wz = w * z;
 

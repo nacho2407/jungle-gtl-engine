@@ -4,8 +4,8 @@
 #include "Color.h"
 #include <d3d11.h>
 
-class FMaterial;
-class FGeometry;
+struct FMaterial;
+struct FGeometry;
 
 struct RenderObject
 {

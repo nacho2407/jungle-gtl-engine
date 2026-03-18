@@ -65,21 +65,26 @@ void UCameraComponent::Move(float DeltaTime) {
 	SetRelativeLocation(position);
 }
 
-FMatrix GetRotationMatrix(float pitch, float yaw, float roll)
+FMatrix GetRotationMatrix(float roll, float pitch, float yaw)
 {
 	return FMatrix::RotationXMatrix(roll)*
 		FMatrix::RotationYMatrix(pitch)*
 		FMatrix::RotationZMatrix(yaw);
 }
 
-FMatrix GetRotationMatrix(FVector eulerAngle)
-{
-	return GetRotationMatrix(eulerAngle.x, eulerAngle.y, eulerAngle.z);
-}
+//FMatrix GetRotationMatrix(FVector eulerAngle)
+//{
+//	return GetRotationMatrix(eulerAngle.x, eulerAngle.y, eulerAngle.z);
+//}
 
 FMatrix GetRotationMatrix(FRotator eulerAngle)
 {
 	return eulerAngle.ToMatrix();
+}
+
+FMatrix UCameraComponent::GetRotationMatrix()
+{
+	return GetRelativeRotation().ToMatrix();
 }
 
 void UCameraComponent::SetDirection(const float InputPitch, const float InputYaw, const float InputRoll)
@@ -98,19 +103,19 @@ void UCameraComponent::SetDirection(const float InputPitch, const float InputYaw
 
 	SetRelativeRotation(eulerAngle);*/
 
-	FRotator eulerAngle = GetRelativeRotation1();
+	FRotator eulerAngle = GetRelativeRotation();
 
+	if (std::abs(eulerAngle.Roll - InputRoll) > Epsilon) {
+		eulerAngle.Roll = InputRoll;
+	}
 	if (std::abs(eulerAngle.Pitch - InputPitch) > Epsilon) {
 		eulerAngle.Pitch = (std::max)(-89.9f, (std::min)(89.9f, InputPitch));
 	}
 	if (std::abs(eulerAngle.Yaw - InputYaw) > Epsilon) {
 		eulerAngle.Yaw = InputYaw;
 	}
-	if (std::abs(eulerAngle.Roll - InputRoll) > Epsilon) {
-		eulerAngle.Roll = InputRoll;
-	}
 	eulerAngle.Normalize();
-	SetRelativeRotation1(eulerAngle);
+	SetRelativeRotation(eulerAngle);
 }
 
 void UCameraComponent::HandleRotate(float DeltaTime)
@@ -124,7 +129,7 @@ void UCameraComponent::HandleRotate(float DeltaTime)
 
 	SetRelativeRotation(eulerAngle);*/
 
-	FRotator eulerAngle = GetRelativeRotation1();
+	FRotator eulerAngle = GetRelativeRotation();
 
 	float newPitch = eulerAngle.Pitch + (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
 	newPitch = MathHelper::Clamp(newPitch, -89.9f, 89.9f);
@@ -132,7 +137,7 @@ void UCameraComponent::HandleRotate(float DeltaTime)
 	eulerAngle.Yaw = eulerAngle.Yaw + (InputManager::GetInstance().MouseDelta.x * RotateSensitivity * DeltaTime);
 
 	eulerAngle.Normalize();
-	SetRelativeRotation1(eulerAngle);
+	SetRelativeRotation(eulerAngle);
 }
 
 void UCameraComponent::HandleOrbitRotate(float DeltaTime)
@@ -152,7 +157,7 @@ void UCameraComponent::HandleOrbitRotate(float DeltaTime)
 
 	SetRelativeLocation(FocusPoint - ForwardVec * FocusLength);*/
 
-	FRotator eulerAngle = GetRelativeRotation1();
+	FRotator eulerAngle = GetRelativeRotation();
 
 	float newPitch = eulerAngle.Pitch + (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
 	newPitch = MathHelper::Clamp(newPitch, -89.9f, 89.9f);
@@ -160,9 +165,9 @@ void UCameraComponent::HandleOrbitRotate(float DeltaTime)
 	eulerAngle.Yaw = eulerAngle.Yaw + (InputManager::GetInstance().MouseDelta.x * RotateSensitivity * DeltaTime);
 
 	eulerAngle.Normalize();
-	SetRelativeRotation1(eulerAngle);
+	SetRelativeRotation(eulerAngle);
 
-	FMatrix RotMatrix = GetRotationMatrix(eulerAngle);
+	FMatrix RotMatrix = GetRotationMatrix();
 	FVector ForwardBase = FVector::Forward();
 	FVector ForwardVec = RotMatrix.TransformVector(ForwardBase).Normalize();
 
@@ -233,7 +238,7 @@ void UCameraComponent::HandleCameraMove(float deltaTime)
 
 void UCameraComponent::UpdateCameraMatrices()
 {
-	FMatrix RotMatrix = GetRotationMatrix(GetRelativeRotation1());
+	FMatrix RotMatrix = GetRotationMatrix();
 
 	FVector ForwardBase = FVector::Forward();
 	Direction = RotMatrix.TransformVector(ForwardBase).Normalize();

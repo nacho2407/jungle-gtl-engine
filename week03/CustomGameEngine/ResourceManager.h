@@ -390,9 +390,9 @@ public:
 			v.z = px * torusMatrix[0][2] + py * torusMatrix[1][2] + pz * torusMatrix[2][2] + 1.0f * torusMatrix[3][2];
 		}
 
-		int cnt = vertices.size();
+		size_t cnt = vertices.size();
 		TArray<FVector> Vertices(cnt);
-		for (int i = 0; i < cnt; ++i)
+		for (size_t i = 0; i < cnt; ++i)
 		{
 			Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
 		}

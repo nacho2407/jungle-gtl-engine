@@ -52,6 +52,7 @@ public:
 
 	void SetRelativeLocation(const FVector& _input) override;
 	void Move(float DeltaTime);
+	FMatrix GetRotationMatrix();
 	void SetDirection(const float InputPitch, const float InputYaw,
 		const float InputRoll);
 	void HandleRotate(float DeltaTime);
