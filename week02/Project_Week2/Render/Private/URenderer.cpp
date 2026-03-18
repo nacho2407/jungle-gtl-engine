@@ -2,6 +2,7 @@
 
 #include <d3d11.h>
 #include <dxgi.h>
+#include <dxgi1_5.h>
 #include <d3dcompiler.h>
 
 #pragma comment(lib, "d3d11.lib")
@@ -119,6 +120,11 @@ bool URenderer::CreateDeviceAndSwapChain(HWND hWindow)
     SwapChainDesc.OutputWindow = hWindow;
     SwapChainDesc.Windowed = TRUE;
     SwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+    bAllowTearing = CheckTearingSupport();
+    if (bAllowTearing)
+    {
+        SwapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+    }
 
     const HRESULT Hr = D3D11CreateDeviceAndSwapChain(
         nullptr,
@@ -147,6 +153,27 @@ bool URenderer::CreateDeviceAndSwapChain(HWND hWindow)
     ViewportInfo = { 0.0f, 0.0f, static_cast<float>(SwapChainDesc.BufferDesc.Width), static_cast<float>(SwapChainDesc.BufferDesc.Height), 0.0f, 1.0f };
 
     return true;
+}
+
+bool URenderer::CheckTearingSupport() const
+{
+    // DXGI 주요 인터페이스
+    IDXGIFactory5* Factory5 = nullptr;
+    const HRESULT Hr = CreateDXGIFactory1(IID_PPV_ARGS(&Factory5));
+    if (FAILED(Hr) || !Factory5)
+    {
+        return false;
+    }
+
+    // DXGI_FEATURE_PRESENT_ALLOW_TEARING 플래그를 시스템이 지원하는지 검사 
+    BOOL AllowTearing = FALSE;
+    const HRESULT FeatureHr = Factory5->CheckFeatureSupport(
+        DXGI_FEATURE_PRESENT_ALLOW_TEARING,
+        &AllowTearing,
+        sizeof(AllowTearing));
+
+    Factory5->Release();
+    return SUCCEEDED(FeatureHr) && AllowTearing == TRUE;
 }
 
 void URenderer::ReleaseDeviceAndSwapChain()
@@ -646,8 +673,22 @@ void URenderer::EndFrame()
 {
     if (SwapChain)
     {
-        SwapChain->Present(1, 0);
+        // VSync를 사용할 것인지, 시스템이 Tearing을 허용하는지 여부에 따라 SwapChain의 Present 플래그를 다르게 설정
+        UINT SyncInterval = bUseVSync ? 1u : 0u;
+        UINT PresentFlags = (!bUseVSync && bAllowTearing) ? DXGI_PRESENT_ALLOW_TEARING : 0;
+
+        SwapChain->Present(SyncInterval, PresentFlags);
     }
+}
+
+void URenderer::SetVSyncEnabled(bool bEnabled)
+{
+    bUseVSync = bEnabled;
+}
+
+bool URenderer::IsVSyncEnabled() const
+{
+    return bUseVSync;
 }
 
 void URenderer::Resize(UINT Width, UINT Height)
@@ -662,10 +703,27 @@ void URenderer::Resize(UINT Width, UINT Height)
     ReleaseDepthStencilBuffer();
     ReleaseFrameBuffer();
 
-    SwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, 0);
+    // Resize시에도 Tearing 관련 플래그 추가 + 버퍼 리사이징 실패 시 방어 코드 추가
+    const UINT ResizeFlags = bAllowTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
+    const HRESULT Hr = SwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, ResizeFlags);
+    if (FAILED(Hr))
+    {
+        CreateFrameBuffer();
+        CreateDepthStencilBuffer(
+            static_cast<UINT>(ViewportInfo.Width),
+            static_cast<UINT>(ViewportInfo.Height));
+        return;
+    }
 
-    CreateFrameBuffer();
-    CreateDepthStencilBuffer(Width, Height);
+    if (!CreateFrameBuffer())
+    {
+        return;
+    }
+
+    if (!CreateDepthStencilBuffer(Width, Height))
+    {
+        return;
+    }
 
     ViewportInfo.TopLeftX = 0.0f;
     ViewportInfo.TopLeftY = 0.0f;

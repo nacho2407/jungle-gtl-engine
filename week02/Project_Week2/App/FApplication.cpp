@@ -136,29 +136,7 @@ bool FApplication::Initialize(HINSTANCE hInstance)
         return false;
     }
 
-    WindowApp->OnResize = [this](int Width, int Height)
-    {
-        if (Width <= 0 || Height <= 0)
-        {
-            return;
-        }
-
-        if (Renderer)
-        {
-            Renderer->Resize((UINT)Width, (UINT)Height);
-        }
-
-        //if (MainCamera)
-        //{
-        //    MainCamera->UpdateAspectRatio((float)Width, (float)Height);
-        //}
-        if (Camera && Camera->GetCameraComponent())
-        {
-            Camera->GetCameraComponent()->UpdateAspectRatio((float)Width, (float)Height);
-        }
-
-        RenderFrame();
-    };
+    // 메인 루프에서 플래그를 통해 이미 리사이즈 이벤트 처리를 하고 있기 때문에 여기 원래 있던 OnResize()는 그냥 지워도 무방!@!!
 
     PropertyPanel = new FPropertyPanel();
     ControlPanel = new FControlPanel();
@@ -1656,6 +1634,19 @@ UCameraComponent* FApplication::GetMainCamera() const
 
     return MainCamera;
 
+}
+
+bool FApplication::IsVSyncEnabled() const
+{
+    return Renderer && Renderer->IsVSyncEnabled();
+}
+
+void FApplication::SetVSyncEnabled(bool bEnabled)
+{
+    if (Renderer)
+    {
+        Renderer->SetVSyncEnabled(bEnabled);
+    }
 }
 
 void FApplication::ApplyCameraProjectionMode()
