@@ -42,5 +42,5 @@ void ATriangle::InitializeActor()
 {
     StaticMeshComponent = NewObject<UStaticMeshComponent>(this);
     SetPrimitiveComponent(StaticMeshComponent);
-    SetStaticMesh(BuiltInMeshFactory::CreateTriangleMesh());
+    SetStaticMesh(BuiltInMeshFactory::CreateTriangleMesh(StaticMeshComponent));
 }

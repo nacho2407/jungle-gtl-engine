@@ -31,6 +31,11 @@ public:                                                            \
         return CurrentType::GetStaticClass();                      \
     }															   \
 																   \
+	virtual void DestroyInstance()                                 \
+	{                                                              \
+		this->~CurrentType();                                      \
+	}                                                              \
+																   \
 	void Initialize(const FUObjectInitializer& ObjectInitilizer)   \
 	{															   \
 		UUID = ObjectInitilizer.UUID;							   \
@@ -58,6 +63,11 @@ public:                                                            \
     {                                                              \
         return CurrentType::GetStaticClass();                      \
     }															   \
+																   \
+	virtual void DestroyInstance() override                        \
+	{                                                              \
+		this->~CurrentType();                                      \
+	}                                                              \
 																   \
 	void Initialize(const FUObjectInitializer& ObjectInitilizer)   \
 	{															   \

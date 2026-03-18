@@ -43,5 +43,5 @@ void ASphere::InitializeActor()
 {
     StaticMeshComponent = NewObject<UStaticMeshComponent>(this);
     SetPrimitiveComponent(StaticMeshComponent);
-    SetStaticMesh(BuiltInMeshFactory::CreateSphereMesh());
+    SetStaticMesh(BuiltInMeshFactory::CreateSphereMesh(StaticMeshComponent));
 }

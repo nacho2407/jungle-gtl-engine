@@ -58,7 +58,7 @@ bool FWorldSaveConverter::ToWorld(const FWorldSaveData& SaveData, UWorld* World)
 
     for (const FPrimitiveRecord& Record : SaveData.Primitives)
     {
-        AActor* NewActor = MakeActorFromRecord(Record);
+        AActor* NewActor = MakeActorFromRecord(Record, World);
         if (NewActor == nullptr)
         {
             continue;
@@ -103,25 +103,30 @@ FPrimitiveRecord FWorldSaveConverter::MakePrimitiveRecord(const AActor* Actor, u
     return Record;
 }
 
-AActor* FWorldSaveConverter::MakeActorFromRecord(const FPrimitiveRecord& Record)
+AActor* FWorldSaveConverter::MakeActorFromRecord(const FPrimitiveRecord& Record, UWorld* World)
 {
+    if (World == nullptr)
+    {
+        return nullptr;
+    }
+
     AActor* NewActor = nullptr;
 
     if (Record.Type == "Sphere")
     {
-        NewActor = NewObjectRoot<ASphere>();
+        NewActor = NewObject<ASphere>(World);
     }
     else if (Record.Type == "Cube")
     {
-        NewActor = NewObjectRoot<ACube>();
+        NewActor = NewObject<ACube>(World);
     }
     else if (Record.Type == "Triangle")
     {
-        NewActor = NewObjectRoot<ATriangle>();
+        NewActor = NewObject<ATriangle>(World);
     }
     else if (Record.Type == "Torus")
     {
-        NewActor = NewObjectRoot<ATorus>();
+        NewActor = NewObject<ATorus>(World);
     }
     else
     {

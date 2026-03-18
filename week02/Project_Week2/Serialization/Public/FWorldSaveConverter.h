@@ -12,7 +12,7 @@ public:
 
 private:
     static FPrimitiveRecord MakePrimitiveRecord(const AActor* Actor, uint32 SaveID);
-    static AActor* MakeActorFromRecord(const FPrimitiveRecord& Record);
+    static AActor* MakeActorFromRecord(const FPrimitiveRecord& Record, UWorld* World);
     static FString FindSavedTypeByClassName(const FString& ClassName);
 
 public:

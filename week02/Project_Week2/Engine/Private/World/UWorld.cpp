@@ -66,31 +66,15 @@ AActor* UWorld::SpawnMeshActor(
     {
     case ESpawnMeshType::Sphere:
         Actor = NewObject<ASphere>(this);
-        if (ASphere* SphereActor = dynamic_cast<ASphere*>(Actor))
-        {
-            SphereActor->SetStaticMesh(BuiltInMeshFactory::CreateSphereMesh());
-        }
         break;
     case ESpawnMeshType::Cube:
         Actor = NewObject<ACube>(this);
-        if (ACube* CubeActor = dynamic_cast<ACube*>(Actor))
-        {
-            CubeActor->SetStaticMesh(BuiltInMeshFactory::CreateCubeMesh());
-        }
         break;
     case ESpawnMeshType::Torus:
         Actor = NewObject<ATorus>(this);
-        if (ATorus* TorusActor = dynamic_cast<ATorus*>(Actor))
-        {
-            TorusActor->SetStaticMesh(BuiltInMeshFactory::CreateTorusMesh(64, 32, 1.2f, 0.35f));
-        }
         break;
     case ESpawnMeshType::Triangle:
         Actor = NewObject<ATriangle>(this);
-        if (ATriangle* TriangleActor = dynamic_cast<ATriangle*>(Actor))
-        {
-            TriangleActor->SetStaticMesh(BuiltInMeshFactory::CreateTriangleMesh());
-        }
         break;
     default:
         return nullptr;
