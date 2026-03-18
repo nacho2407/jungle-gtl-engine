@@ -28,6 +28,7 @@ public:
 
 	FMatrix GetRelativeMatrix();
 
+	virtual void OnComponentAdded() {};
 	virtual void Update(float deltaTime) {};
 	virtual json::JSON Serialize();
 	virtual void Deserialize(json::JSON);

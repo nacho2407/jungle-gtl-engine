@@ -9,8 +9,8 @@ class FLevel : public ISingleton<FLevel>
 	friend class ISingleton<FLevel>;
 
 public:
-	void PushRenderObject(RenderObject* RenderObj);
-	void RemoveRenderObject(RenderObject* RenderObj);
+	void RegisterRenderObject(RenderObject* RenderObj);
+	void UnregisterRenderObject(RenderObject* RenderObj);
 	void Clear();
 	TArray<RenderObject*> RenderObjects;
 };

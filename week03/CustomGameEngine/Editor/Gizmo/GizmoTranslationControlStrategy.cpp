@@ -129,14 +129,14 @@ void GizmoTranslationControlStrategy::SetDrawEnable(bool bEnable)
 {
 	if (bEnable)
 	{
-		FLevel::GetInstance().PushRenderObject(GizmoX);
-		FLevel::GetInstance().PushRenderObject(GizmoY);
-		FLevel::GetInstance().PushRenderObject(GizmoZ);
+		FLevel::GetInstance().RegisterRenderObject(GizmoX);
+		FLevel::GetInstance().RegisterRenderObject(GizmoY);
+		FLevel::GetInstance().RegisterRenderObject(GizmoZ);
 	}
 	else
 	{
-		FLevel::GetInstance().RemoveRenderObject(GizmoX);
-		FLevel::GetInstance().RemoveRenderObject(GizmoY);
-		FLevel::GetInstance().RemoveRenderObject(GizmoZ);
+		FLevel::GetInstance().UnregisterRenderObject(GizmoX);
+		FLevel::GetInstance().UnregisterRenderObject(GizmoY);
+		FLevel::GetInstance().UnregisterRenderObject(GizmoZ);
 	}
 }

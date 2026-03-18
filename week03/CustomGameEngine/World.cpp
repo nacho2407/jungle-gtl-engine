@@ -95,7 +95,7 @@ void UWorld::RemoveSceneComponent(USceneComponent* toDespawn)
 	auto primToDespawn = Cast<UPrimitiveComponent>(toDespawn);
 	if (primToDespawn != nullptr)
 	{
-		FLevel::GetInstance().RemoveRenderObject(primToDespawn->GetRenderObject());
+		FLevel::GetInstance().UnregisterRenderObject(primToDespawn->GetRenderObject());
 	}
 
 	for (auto it = activeScene->SceneComponents.begin(); it != activeScene->SceneComponents.end(); it++)

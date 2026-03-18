@@ -38,13 +38,7 @@ public:
 
 		targetScene->SceneComponents.push_back(instance);
 
-		auto primitive = Cast<UPrimitiveComponent>(instance);
-		if (primitive != nullptr)
-		{
-			auto renderObj = primitive->CreateRenderObject();
-			if(renderObj != nullptr)
-				FLevel::GetInstance().PushRenderObject(renderObj);
-		}
+		instance->OnComponentAdded();
 		//UE_LOG("Added new scene component with uuid = %d\n", obj->UUID);
 		return instance;
 	}
