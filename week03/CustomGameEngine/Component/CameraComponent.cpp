@@ -98,10 +98,10 @@ void UCameraComponent::HandleRotate(float DeltaTime)
 {
 	FVector eulerAngle = GetRelativeRotation();
 
-	float newPitch = eulerAngle.x + (InputManager::GetInstance().MouseDelta.y * RotateSensitivity * DeltaTime);
+	float newPitch = eulerAngle.x + (InputManager::GetInstance().MouseDelta.y * RotateSensitivity);
 	newPitch = MathHelper::Clamp(newPitch, -89.9f, 89.9f);
 	eulerAngle.x = newPitch;
-	eulerAngle.y = eulerAngle.y + (InputManager::GetInstance().MouseDelta.x * RotateSensitivity * DeltaTime);
+	eulerAngle.y = eulerAngle.y + (InputManager::GetInstance().MouseDelta.x * RotateSensitivity);
 
 	SetRelativeRotation(eulerAngle);
 }

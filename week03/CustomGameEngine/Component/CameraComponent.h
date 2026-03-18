@@ -26,7 +26,7 @@ public:
 	float MoveSpeed{ 10.0f };
 	float ScreenWidth = 0.f;
 	float ScreenHeight = 0.f;
-	float RotateSensitivity = 500.0f;
+	float RotateSensitivity = 1.0f;
 	bool IsOrthogonal{ false };
 	float OrthoHeight{ 10.0f };
 
