@@ -40,6 +40,7 @@ public:
 	void EndDrag();
 
 	GizmoControllerType GetControlStrategyType() const { return Type; }
+	IGizmoControlStrategy* GetControlStrategy() const { return CurrentStrategy; }
 	void SetControlStrategy(GizmoControllerType type);
 
 	bool IsLocalSpace() const { return bLocalSpace; }

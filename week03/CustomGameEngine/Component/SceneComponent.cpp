@@ -45,7 +45,7 @@ void USceneComponent::Deserialize(json::JSON jsonObj)
 void USceneComponent::DrawProperties()
 {
 	ImGui::InputFloat3("Location", &RelativeLocation.x);
-	ImGui::InputFloat3("Rotation", &RelativeRotation.Pitch);
+	ImGui::InputFloat3("Rotation", &RelativeRotation.Roll);
 	ImGui::InputFloat3("Scale", &RelativeScale3D.x);
 }
 

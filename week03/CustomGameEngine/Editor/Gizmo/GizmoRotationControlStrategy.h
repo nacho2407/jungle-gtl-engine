@@ -27,6 +27,8 @@ public:
 
 	virtual void SetDrawEnable(bool bEnable) override;
 
+	bool bEnableSnap = true;
+
 private:
 	UGizmoComponent* Controller;
 
@@ -38,7 +40,6 @@ private:
 
 	float AccumulatedAngle = 0.0f;
 	float SnapStep = 15.0f;
-	bool bEnableSnap = true;
 
 	RenderObject* GizmoX;
 	RenderObject* GizmoY;

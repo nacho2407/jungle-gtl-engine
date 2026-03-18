@@ -1,6 +1,7 @@
 ﻿#include "EditorToolbar.h"
 #include "Gizmo.h"
 #include "Component/GizmoComponent.h"
+#include "Editor/Gizmo/GizmoRotationControlStrategy.h"
 #include "ImGui/imgui.h"
 
 EditorToolbar::EditorToolbar()
@@ -26,6 +27,19 @@ void EditorToolbar::Draw()
 			gizmoController->SetLocalSpace(!bLocalSpace);
 		}
 	}
+
+
+	if (gizmoController->GetControlStrategyType() == GizmoControllerType::Rotation)
+	{
+		GizmoRotationControlStrategy* rotationStrategy = dynamic_cast<GizmoRotationControlStrategy*>(gizmoController->GetControlStrategy());
+		bool bSnapping = rotationStrategy->bEnableSnap;
+		ImGui::SameLine();
+		if (!bSnapping ? ImGui::Button("Enable Snapping") : ImGui::Button("Disable Snapping"))
+		{
+			rotationStrategy->bEnableSnap = !bSnapping;
+		}
+	}
+
 
 	if (ImGui::Button("Translate"))
 	{
