@@ -7,4 +7,4 @@ void ShowImGuiDemoConsole(bool* p_open);
 void ShowImGuiDemoConsole(const char* fmt, ...);
 
 // UE_LOG ��ũ��
-#define UE_LOG(fmt, ...) ShowImGuiDemoConsole("[LOG] " fmt, ##__VA_ARGS__)
+#define UE_LOG(fmt, ...) ShowImGuiDemoConsole(fmt, ##__VA_ARGS__)

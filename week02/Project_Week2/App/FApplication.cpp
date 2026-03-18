@@ -239,7 +239,7 @@ bool FApplication::InitializeScene()
     // 마우스 클릭 펄스 생성 및 World 추가
     CreatePointerPulseActor();
 
-    UE_LOG("Hello World %d", 2025);
+    UE_LOG("Hello World %d", 2026);
 
     return true;
 }
