@@ -117,9 +117,6 @@
     <ClInclude Include="Render\Public\Geometry\Axies.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Public\FObjectManager.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Public\FUObjectFactory.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -132,19 +129,10 @@
     <ClInclude Include="Core\Public\CoreDefine.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Public\UObjectBase.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Public\UObjectBaseUtility.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Public\FUObjectAllocator.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Core\Public\FUObjectInitializer.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Public\FAActorFactory.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Public\Component\EGizmoAxis.h">
@@ -177,16 +165,7 @@
     <ClInclude Include="Core\Public\FMemory.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Public\FActorInstanceManager.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Public\UClassData.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Public\TObjectBase.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Public\CoreGlobal.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="App\Panels\FControlPanel.h">
@@ -258,9 +237,6 @@
     <ClInclude Include="Engine\Public\Actor\ATriangle.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Serialization\Public\FPrimitiveJsonConverter.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="App\Panels\FConsolePanel.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -283,6 +259,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Serialization\Public\FJsonConverter.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\FGarbageCollector.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -341,16 +320,7 @@
     <ClCompile Include="App\WindowsApplication.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Private\FUObjectFactory.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Private\FObjectManager.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Private\FUObjectArray.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Private\UObjectBaseUtility.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Core\Private\UObjectClusters.cpp">
@@ -376,15 +346,6 @@
     </ClCompile>
     <ClCompile Include="Engine\Public\Component\USphereComponent.h">
       <Filter>헤더 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Private\TestMemory.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Private\FActorInstanceManager.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Public\UClassData.cpp">
-      <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="App\FInputManager.cpp">
       <Filter>소스 파일</Filter>
@@ -452,12 +413,6 @@
     <ClCompile Include="Engine\Private\Actor\ATriangle.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Serialization\Private\FPrimitiveJsonConverter.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="App\Panels\FConsolePanel.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Private\Actor\ACamera.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -480,6 +435,12 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Serialization\Private\FWorldSaveConverter.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\FGarbageCollecter.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="App\Panels\FConsolePanel.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

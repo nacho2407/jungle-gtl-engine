@@ -1,5 +1,6 @@
 #include "FUObjectArray.h"
 
+
 FChunckedFixedObjectArray::FChunckedFixedObjectArray()
     : Objects(nullptr)
     , PreAllocatedObjects(nullptr)
@@ -142,12 +143,12 @@ int32 FChunckedFixedObjectArray::AddSingle()
     return AddRange(1);
 }
 
-UObjectBase* FUObjectItem::GetObject()
+UObject* FUObjectItem::GetObject()
 {
     return Object;
 }
 
-void FUObjectArray::AllocatdUObjectIndex(UObjectBaseUtility* Object, int32 SerialNumber)
+void FUObjectArray::AllocatdUObjectIndex(UObject* Object, int32 SerialNumber)
 {
     check(Object != nullptr);
 
@@ -192,6 +193,7 @@ void FUObjectArray::FreeUObjectIndox(UObject* Object)
 
     ObjectItem->SetObject(nullptr);
     ObjectItem->ClusterRootIndex = 0;
+    ObjectItem->bPendingKill = false;
     ObjectItem->SerialNumber = 0;
 
     Object->InternalIndex = -1;

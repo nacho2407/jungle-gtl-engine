@@ -4,19 +4,20 @@
 class FMemory
 {
 private:
+public:
 	static uint32 TotalAllocatedBytes;
 
 public:
 	static void* Malloc(size_t size)
 	{
 		TotalAllocatedBytes += static_cast<uint32>(size);
-		return ::operator new(size);
+		return malloc(size);
 	}
 
 	static void Free(void* ptr, size_t size)
 	{
 		TotalAllocatedBytes -= static_cast<uint32>(size);
-		::operator delete(ptr, size);
+		::operator delete(ptr);
 	}
 
 	static uint32 GetTotalAllocatedMemory()

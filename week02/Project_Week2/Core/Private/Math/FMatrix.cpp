@@ -1,7 +1,7 @@
 #include "Math/FMatrix.h"
 #include <cmath>
 
-const FMatrix FMatrix::Identity = FMatrix::MakeIdentity(); 
+const FMatrix FMatrix::Identity = FMatrix::MakeIdentity();
 
 FMatrix::FMatrix()
 {
@@ -44,7 +44,7 @@ FMatrix FMatrix::MakeScale(const FVector& Scale)
 	Result.M[0][0] = Scale.X;
 	Result.M[1][1] = Scale.Y;
 	Result.M[2][2] = Scale.Z;
-	
+
 	return Result;
 }
 

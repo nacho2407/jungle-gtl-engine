@@ -8,6 +8,7 @@
 
 #include "Resource/UStaticMesh.h"
 #include "Json/json.hpp"
+#include "FUObjectFactory.h"
 
 using json = nlohmann::json;
 
@@ -147,7 +148,7 @@ namespace MeshImporter
             return nullptr;
         }
 
-        UStaticMesh* StaticMesh = new UStaticMesh();
+        UStaticMesh* StaticMesh = NewObject<UStaticMesh>();
         StaticMesh->SetVertices(Vertices);
         StaticMesh->SetIndices(Indices);
         StaticMesh->SetTopology(EMeshTopology::TriangleList);

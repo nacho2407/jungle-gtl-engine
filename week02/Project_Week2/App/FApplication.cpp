@@ -171,7 +171,7 @@ bool FApplication::InitializeEngine()
         return false;
     }
 
-    World = new UWorld();
+    World = NewObject<UWorld>();
     Scene = new FScene();
 
     return true;
@@ -1399,8 +1399,8 @@ void FApplication::CreatePointerPulseActor()
         return;
     }
 
-    ClickCircleActor = new AActor();
-    ClickCircleComp = new UStaticMeshComponent();
+    ClickCircleActor = NewObject<AActor>();
+    ClickCircleComp = NewObject<UStaticMeshComponent>();
 
     ClickCircleComp->SetStaticMesh(ClickCircleMesh);
     ClickCircleComp->SetRelativeLocation(FVector::ZeroVector);
@@ -1535,7 +1535,7 @@ void FApplication::UpdateObjectAllocationTest()
                 UObject* Garbage = TestObjects.back();
                 TestObjects.pop_back();
 
-                Destroy(Garbage);
+                DestroyObject(Garbage);
             }
         }
 
@@ -1560,7 +1560,7 @@ void FApplication::RenderDebugUI()
     auto msg = "Typeof :" + test->GetClass()->ClassName;
     ImGui::Text(msg.c_str());
 
-    Destroy(test);
+    DestroyObject(test);
     if (!TestObjects.empty())
     {
         ImGui::Text("LastID: %d", TestObjects.back()->GetUUID());

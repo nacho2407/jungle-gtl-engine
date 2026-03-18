@@ -17,7 +17,7 @@ void UWorld::Clear()
 {
     for (AActor* Actor : Actors)
     {
-        ::Destroy(Actor);
+        ::DestroyObject(Actor);
     }
 
     Actors.clear();
@@ -50,7 +50,7 @@ void UWorld::RemoveActor(AActor* InActor)
 void UWorld::Destroy(AActor* InActor)
 {
     RemoveActor(InActor);
-    ::Destroy(InActor);
+    ::DestroyObject(InActor);
 }
 
 AActor* UWorld::SpawnMeshActor(
