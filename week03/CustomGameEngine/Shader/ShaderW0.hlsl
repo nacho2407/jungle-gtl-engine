@@ -28,9 +28,9 @@ PS_INPUT mainVS(VS_INPUT input)
 {
     PS_INPUT output;
     
-    float4 pos = mul(input.Pos, Model);
-    pos = mul(pos, View);
-    pos = mul(pos, Projection);
+    matrix worldViewProj = mul(mul(Model, View), Projection);
+    
+    float4 pos = mul(input.Pos, worldViewProj);
     output.Pos = pos;
     
     output.Color = input.Color;
