@@ -22,35 +22,23 @@
     <Filter Include="StateMachine">
       <UniqueIdentifier>{3abe7e3e-4200-4c7d-ba12-a9a668bcdc83}</UniqueIdentifier>
     </Filter>
+    <Filter Include="App">
+      <UniqueIdentifier>{28a1efcd-e4a6-461f-aba2-306c55df0302}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core">
+      <UniqueIdentifier>{db1d7f4b-376f-422b-b305-9f75bf4909d7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Private">
+      <UniqueIdentifier>{fb8c265a-03be-424e-9121-ff633e4f13b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Public">
+      <UniqueIdentifier>{87a11ee7-09d4-417a-b148-cb258071961d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Public\Math">
+      <UniqueIdentifier>{c086c1e9-8645-4302-b3c2-08bafda1f868}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GUI\Public\imconfig.h">
-      <Filter>ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="GUI\Public\imgui.h">
-      <Filter>ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="GUI\Public\imgui_impl_dx11.h">
-      <Filter>ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="GUI\Public\imgui_impl_win32.h">
-      <Filter>ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="GUI\Public\imgui_internal.h">
-      <Filter>ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="GUI\Public\imstb_rectpack.h">
-      <Filter>ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="GUI\Public\imstb_textedit.h">
-      <Filter>ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="GUI\Public\imstb_truetype.h">
-      <Filter>ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="Sphere.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Public\Math\FVector.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -66,65 +54,239 @@
     <ClInclude Include="Core\Core.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Renderer.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\public\URenderer.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Private\FVertex.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Public\UObject.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Public\UActorComponent.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Public\USceneComponent.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Public\AActor.h">
+    <ClInclude Include="Engine\Public\Actor\AActor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Engine.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Public\UPrimitiveComponent.h">
+    <ClInclude Include="GUI\GUI.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="GUI\GUI.h">
+    <ClInclude Include="Engine\Public\Component\UActorComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Component\UCameraComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Component\UCubeComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Component\UGizmoComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Component\UPrimitiveComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Component\USceneComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Component\UTriangleComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Actor\APrimitiveActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\World\UWorld.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\Public\URenderer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\World\FScene.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Component\UStaticMeshComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\Public\Structs.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="App\FApplication.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="App\WindowsApplication.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\Public\Geometry\Sphere.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\Public\Geometry\Axies.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\FObjectManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\FUObjectFactory.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\UEngineStatics.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\FUObjectArray.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\CoreDefine.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\UObjectBase.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\UObjectBaseUtility.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\FUObjectAllocator.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\FUObjectInitializer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\FAActorFactory.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Component\EGizmoAxis.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Resource\BuiltInMeshFactory.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Resource\MeshImporter.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Resource\MeshTypes.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Resource\UStaticMesh.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\Public\FHitProxy.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\Public\Geometry\Cube.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\Json\json.hpp">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Private\FMemory.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\FMemory.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\FActorInstanceManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\UClassData.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\TObjectBase.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\CoreGlobal.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="App\Panels\FControlPanel.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="App\Panels\FPropertyPanel.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="App\FInputManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Actor\ACamera.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Actor\ACube.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Actor\ASphere.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Actor\ATriangle.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="GUI\Public\FGUIManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="GUI\Public\ImGui\imconfig.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="GUI\Public\ImGui\imgui.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="GUI\Public\ImGui\imgui_impl_dx11.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="GUI\Public\ImGui\imgui_impl_win32.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="GUI\Public\ImGui\imgui_internal.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="GUI\Public\ImGui\imstb_rectpack.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="GUI\Public\ImGui\imstb_textedit.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="GUI\Public\ImGui\imstb_truetype.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Serialization\Public\FWorldSaveData.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Actor\ATorus.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Serialization\Public\FWorldSaveConverter.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Actor\ACamera.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Actor\ACube.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Actor\ASphere.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Actor\ATriangle.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Serialization\Public\FPrimitiveJsonConverter.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="App\Panels\FConsolePanel.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Actor\AAxisActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Actor\AGridActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Component\EGizmoMode.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Resource\FBuiltInMeshes.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Resource\FBuiltInMeshRepository.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\World\ESpawnMeshType.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Serialization\Public\FJsonConverter.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="GUI\Private\imgui.cpp">
-      <Filter>ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="GUI\Private\imgui_demo.cpp">
-      <Filter>ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="GUI\Private\imgui_draw.cpp">
-      <Filter>ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="GUI\Private\imgui_impl_dx11.cpp">
-      <Filter>ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="GUI\Private\imgui_impl_win32.cpp">
-      <Filter>ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="GUI\Private\imgui_tables.cpp">
-      <Filter>ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="GUI\Private\imgui_widgets.cpp">
-      <Filter>ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Private\UFactory.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Private\UEngineStatics.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -140,19 +302,191 @@
     <ClCompile Include="Core\Private\Math\FVector.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Private\URenderer.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Private\UObject.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Private\USceneComponent.cpp">
+    <ClCompile Include="Engine\Private\Component\USceneComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\World\UWorld.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="App\Main.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\Private\URenderer.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Component\UActorComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\World\FScene.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Component\UPrimitiveComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Actor\AActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Component\UCameraComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Component\UStaticMeshComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="App\FApplication.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="App\WindowsApplication.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\FUObjectFactory.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\FObjectManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\FUObjectArray.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\UObjectBaseUtility.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\UObjectClusters.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Component\UGizmoComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Resource\BuiltInMeshFactory.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Resource\MeshImporter.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Resource\UStaticMesh.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\Private\Geometry\Cube.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\Private\Geometry\Sphere.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Public\Component\USphereComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\TestMemory.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\FActorInstanceManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Public\UClassData.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="App\FInputManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="App\Panels\FControlPanel.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="App\Panels\FPropertyPanel.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Actor\AGizmoActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Actor\ACube.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Actor\APrimitiveActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Actor\ASphere.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Actor\ATriangle.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Public\Actor\AGizmoActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="GUI\Private\FGUIManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="GUI\Private\ImGui\imgui.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="GUI\Private\ImGui\imgui_demo.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="GUI\Private\ImGui\imgui_draw.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="GUI\Private\ImGui\imgui_impl_dx11.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="GUI\Private\ImGui\imgui_impl_win32.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="GUI\Private\ImGui\imgui_tables.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="GUI\Private\ImGui\imgui_widgets.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Actor\ATorus.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Actor\ACube.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Actor\APrimitiveActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Actor\ASphere.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Actor\ATriangle.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Serialization\Private\FPrimitiveJsonConverter.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="App\Panels\FConsolePanel.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Actor\ACamera.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Actor\AAxisActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Actor\ACamera.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Actor\AGridActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Public\Math\FQuat.h">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\Math\FQuat.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Serialization\Private\FJsonConverter.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Serialization\Private\FWorldSaveConverter.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="ShaderW0.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
+    <FxCompile Include="Render\Public\Shaders\HitProxy.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Render\Public\Shaders\Default.hlsl" />
   </ItemGroup>
 </Project>

@@ -1,49 +1,124 @@
 #include "Math/FVector.h"
 
-FVector::FVector(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
+#include <cmath>
 
-float FVector::Dot(const FVector& rhs)
+const FVector FVector::ZeroVector = FVector(0.0f, 0.0f, 0.0f);
+const FVector FVector::OneVector = FVector(1.0f, 1.0f, 1.0f);
+const FVector FVector::UpVector = FVector(0.0f, 1.0f, 0.0f);
+const FVector FVector::RightVector = FVector(1.0f, 0.0f, 0.0f);
+const FVector FVector::ForwardVector = FVector(0.0f, 0.0f, 1.0f);
+// DirectX는 왼손 좌표계 아님? 그러면 UpVector는...Z축 아님??
+// forward는 x축? right는 y축?
+// ㄴ 왼손 좌표계라도 Y-up, Z-up 별도로 있음요 D3D는 관례적으로 Y-up
+
+FVector::FVector() : X(0.0f), Y(0.0f), Z(0.0f) { }
+
+FVector::FVector(float InX, float InY, float InZ) : X(InX), Y(InY), Z(InZ) {}
+
+float FVector::Dot(const FVector& Rhs) const
 {
-	return x * rhs.x + y * rhs.y + z * rhs.z;
+	return X * Rhs.X + Y * Rhs.Y + Z * Rhs.Z;
 }
 
-FVector FVector::Cross(const FVector& rhs)
+FVector FVector::Cross(const FVector& Rhs) const
 {
-	return FVector(y * rhs.z - z * rhs.y, z * rhs.x - x * rhs.z, x * rhs.y - y * rhs.x);
+	return FVector(
+		Y * Rhs.Z - Z * Rhs.Y,
+		Z * Rhs.X - X * Rhs.Z,
+		X * Rhs.Y - Y * Rhs.X
+	);
+}
+
+float FVector::LengthSquared() const
+{
+	return X * X + Y * Y + Z * Z;
 }
 
 float FVector::Length() const
 {
-	return sqrt(x * x + y * y + z * z);
+	return std::sqrt(LengthSquared());
 }
 
-FVector FVector::Normalize()
+void FVector::Normalize()
 {
-	float length = Length();
-	return FVector(x /= length, y /= length, z /= length);
+	const float Len = Length();
+	if (Len > 0.000001f)
+	{
+		X /= Len;
+		Y /= Len;
+		Z /= Len;
+	}
 }
 
-FVector FVector::operator+(const float rhs)
+FVector FVector::operator+(const FVector& Rhs) const
 {
-	return FVector(x + rhs, y + rhs, z + rhs);
+	return FVector(X + Rhs.X, Y + Rhs.Y, Z + Rhs.Z);
 }
 
-FVector FVector::operator-(const float rhs)
+FVector FVector::operator-(const FVector& Rhs) const
 {
-	return FVector(x - rhs, y - rhs, z - rhs);
+	return FVector(X - Rhs.X, Y - Rhs.Y, Z - Rhs.Z);
 }
 
-FVector FVector::operator*(const float rhs)
+FVector FVector::operator*(float Scalar) const
 {
-	return FVector(x * rhs, y * rhs, z * rhs);
+	return FVector(X * Scalar, Y * Scalar, Z * Scalar);
 }
 
-FVector FVector::operator/(const float rhs)
+FVector FVector::operator/(float Scalar) const
 {
-	return FVector(x / rhs, y * rhs, z * rhs);
+	return FVector(X / Scalar, Y / Scalar, Z / Scalar);
 }
 
-FVector FVector::operator-(const FVector rhs)
+FVector FVector::GetNormalized() const
 {
-	return FVector(x - rhs.x, y - rhs.y, z - rhs.z);
+	const float Len = Length();
+	if (Len <= 0.000001f)
+	{
+		return FVector::ZeroVector;
+	}
+
+	return FVector(X / Len, Y / Len, Z / Len);
+}
+
+FVector& FVector::operator+=(const FVector& Rhs)
+{
+	X += Rhs.X;
+	Y += Rhs.Y;
+	Z += Rhs.Z;
+	return *this;
+}
+
+FVector& FVector::operator-=(const FVector& Rhs)
+{
+	X -= Rhs.X;
+	Y -= Rhs.Y;
+	Z -= Rhs.Z;
+	return *this;
+}
+
+FVector& FVector::operator*=(float Scalar)
+{
+	X *= Scalar;
+	Y *= Scalar;
+	Z *= Scalar;
+	return *this;
+}
+
+FVector& FVector::operator/=(float Scalar)
+{
+	X /= Scalar;
+	Y /= Scalar;
+	Z /= Scalar;
+	return *this;
+}
+
+bool FVector::operator==(const FVector& Rhs) const
+{
+	return X == Rhs.X && Y == Rhs.Y && Z == Rhs.Z;
+}
+
+bool FVector::operator!=(const FVector& Rhs) const
+{
+	return !(*this == Rhs);
 }

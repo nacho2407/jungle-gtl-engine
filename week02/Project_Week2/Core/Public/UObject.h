@@ -1,25 +1,109 @@
 #pragma once
-#include "Core.h"
+#include "CoreGlobal.h"
+#include "CoreTypes.h"
+#include "CoreDefine.h"
+#include "FUObjectArray.h"
+#include "FUObjectInitializer.h"
+#include "UObjectBaseUtility.h"
+#include "UClassData.h"
 
-class UObject
+#include <string>
+#include <cstdint>
+
+
+#define DECLARE_ROOT_UClass(CurrentType)                           \
+private:                                                           \
+    inline static UClassData* StaticClass = nullptr;               \
+public:                                                            \
+    static UClassData* GetStaticClass()                            \
+    {                                                              \
+        if (StaticClass != nullptr)                                \
+            return StaticClass;                                    \
+                                                                   \
+        UClassData* classData = new UClassData();                  \
+        classData->ClassName = #CurrentType;                       \
+        classData->ClassSize = sizeof(CurrentType);                \
+		classData->SuperClass = nullptr;						   \
+        StaticClass = classData;                                   \
+        return StaticClass;                                        \
+	}															   \
+																   \
+	virtual UClassData* GetClass() const		                   \
+    {                                                              \
+        return CurrentType::GetStaticClass();                      \
+    }															   \
+																   \
+	void Initialize(const FUObjectInitializer& ObjectInitilizer)   \
+	{															   \
+		UUID = ObjectInitilizer.UUID;							   \
+		Name = ObjectInitilizer.Name;							   \
+	}
+
+#define DECLARE_UClass(CurrentType, SuperType)                     \
+private:                                                           \
+    inline static UClassData* StaticClass = nullptr;               \
+public:                                                            \
+    static UClassData* GetStaticClass()                            \
+    {                                                              \
+        if (StaticClass != nullptr)                                \
+            return StaticClass;                                    \
+                                                                   \
+        UClassData* ClassData = new UClassData();                  \
+        ClassData->ClassName = #CurrentType;                       \
+        ClassData->ClassSize = sizeof(CurrentType);                \
+        ClassData->SuperClass = SuperType::GetStaticClass();       \
+        StaticClass = ClassData;                                   \
+        return StaticClass;                                        \
+    }															   \
+																   \
+	virtual UClassData* GetClass() const override                  \
+    {                                                              \
+        return CurrentType::GetStaticClass();                      \
+    }															   \
+																   \
+	void Initialize(const FUObjectInitializer& ObjectInitilizer)   \
+	{															   \
+		UUID = ObjectInitilizer.UUID;							   \
+		Name = ObjectInitilizer.Name;							   \
+	}
+
+class UObject : public UObjectBaseUtility
 {
-public:
-	void* operator new(size_t size)
-	{
-		return nullptr;
-	}
-	void operator delete(void* ptr) noexcept
-	{
-	}
-	uint32 UUID;
-	uint32 InternalIndex; // Index of GUObjectArray
-	virtual void Init() = 0;
-	virtual void Start() = 0;
-	//const type_info& GetType();
+DECLARE_ROOT_UClass(UObject)
 
-	//template<typename T>
-	//T* UObject::CreateDefaultSubobject(FString FName)
-	//{
-	//	return nullptr;
-	//}
+public:
+	size_t AllocatedSize;
+protected:
+	uint32 UUID;
+
+public:
+	UObject() : AllocatedSize(0), UUID(0), Name("DefaultObject") {};
+	virtual ~UObject();
+
+public:
+
+	// Unique Object ID
+	uint64_t GetID() const;
+
+	// Object Name
+	const std::string& GetName() const;
+	void SetName(const std::string& InName);
+
+	// Owner Object
+	UObject* GetOuter() const;
+	void SetOuter(UObject* InOuter);
+
+	// Runtime type info
+	virtual const char* GetObjClassName() const;
+
+	uint32 GetUUID() const { return UUID; }
+
+public:
+
+	uint64_t ObjectID = 0; // @@@ ???
+
+	FString Name;
+
+	UObject* Outer = nullptr; /// 이거는 Private가 맞는듯?
+
 };
