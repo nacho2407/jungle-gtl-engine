@@ -354,6 +354,7 @@ void Game::ShutDown()
 }
 
 void Game::Update()
+
 {
 	switch (GameState)
 	{
