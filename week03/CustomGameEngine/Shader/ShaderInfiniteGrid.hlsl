@@ -57,7 +57,7 @@ VS_OUTPUT mainVS(uint id : SV_VertexID)
     int planeno[3] = {0, 1, 2};
     
     float3 worldPosition;
-    float range = 10000.0f;
+    float range = 1000.0f;
     float3 lPos = positions[id];
     output.PlaneNo = planeno[id / 6];
     if (output.PlaneNo == 0)
@@ -81,8 +81,8 @@ float4 mainPS(VS_OUTPUT input) : SV_Target
     if (dist < 0.5)
         discard;
     
-    float maxDistance = 10000.0f;
-    float range = 10000.0f;
+    float maxDistance = 1000.0f;
+    float range = 1000.0f;
     if (input.PlaneNo == 0)
     {
         
