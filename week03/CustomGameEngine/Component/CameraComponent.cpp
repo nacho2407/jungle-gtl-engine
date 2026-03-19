@@ -264,8 +264,8 @@ void UCameraComponent::CalcOrthogonalProjectionMatrix()
 	float w = 2.0f / OrthoWidth;
 	float h = 2.0f / OrthoHeight;
 
-	float q = 1.0f / (FarPlane - NearPlane);
-	float b = -NearPlane / (FarPlane - NearPlane);
+	float q = -1.0f / (FarPlane - NearPlane);
+	float b = FarPlane / (FarPlane - NearPlane);
 
 	M[0][0] = w;
 	M[1][1] = h;
