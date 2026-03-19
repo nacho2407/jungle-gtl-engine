@@ -6,6 +6,7 @@
 #include "GUI.h"
 
 #include <cstring>
+#include <string>
 
 void FControlPanel::Render(FApplication* App)
 {
@@ -20,8 +21,8 @@ void FControlPanel::Render(FApplication* App)
         return;
     }
 
-    ImGui::SetNextWindowPos(ImVec2(15.0f, 200.0f), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(420.0f, 250.0f), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(15.0f, 10.0f), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(420.0f, 430.f), ImGuiCond_Once);
 
     ImGui::Begin("Jungle Control Panel");
 
@@ -31,6 +32,15 @@ void FControlPanel::Render(FApplication* App)
     const uint32 FPS = static_cast<uint32>(ImGui::GetIO().Framerate); // 최근 프레임들의 평균 FPS 반환
     const uint32 FrameTimeMs = static_cast<uint32>((FPS > 0.0f) ? (1000.0f / FPS) : 0.0f); // FPS가 0인 경우 방어
     ImGui::Text("FPS %d (%d ms)", FPS, FrameTimeMs);
+
+    float memorySize = FMemory::GetTotalAllocatedMemory();
+    memorySize /= 1000.f;
+    FString memoryText = std::to_string(memorySize);
+    int dotIndex = memoryText.find('.');
+    memoryText = memoryText.substr(0, dotIndex) + memoryText.substr(dotIndex , 2);
+
+    ImGui::Text(("AllocationSize: " + (memoryText + "(KB)")).c_str());
+    ImGui::Text("AllocationCount: %d", FMemory::GetTotalCreatedCount());
 
     bool bUseVSync = App->IsVSyncEnabled();
     if (ImGui::Checkbox("VSync", &bUseVSync))

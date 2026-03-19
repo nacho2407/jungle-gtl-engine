@@ -545,6 +545,11 @@ void URenderer::ReleaseMeshResources()
     MeshResourceMap.clear();
 }
 
+void URenderer::InvalidateMeshResourceCache()
+{
+    ReleaseMeshResources();
+}
+
 void URenderer::ReleaseConstantBuffer()
 {
     if (ConstantBuffer)

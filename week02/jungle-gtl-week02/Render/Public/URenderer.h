@@ -29,6 +29,7 @@ public:
 	void BeginFrame();
 	void Render(const FScene& Scene, const UCameraComponent* Camera);
 	void EndFrame();
+    void InvalidateMeshResourceCache();
 
 	void Resize(UINT width, UINT Height);
     void SetVSyncEnabled(bool bEnabled);

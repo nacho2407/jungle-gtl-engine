@@ -215,7 +215,7 @@ bool FApplication::InitializeResources()
 
     return true;
 }
-
+            
 bool FApplication::InitializeScene()
 {
     // (*) ACamereActor로 빼기
@@ -224,7 +224,7 @@ bool FApplication::InitializeScene()
  //   MainCamera = new UCameraComponent();
  //   // 카메라가 바라보는 월드 수정 
  //   MainCamera->SetRelativeLocation(FVector(2.0f, 4.0f, -7.0f));
- //   MainCamera->SetRelativeRotation(FVector(0.3f, 0.0f, 0.0f)); // Pitch Yaw Roll
+ //   MainCamera->SetRelativeR              otation(FVector(0.3f, 0.0f, 0.0f)); // Pitch Yaw Roll
  //   MainCamera->SetFieldOfView(39.6f);
  //   MainCamera->SetAspectRatio(
  //       static_cast<float>(WindowApp->GetClientWidth()) /
@@ -599,7 +599,7 @@ void FApplication::RenderFrame()
     //Renderer->EndOverlayRenderState(); // 
 
     GUIManager->BeginFrame();
-    RenderDebugUI();
+    //RenderDebugUI();
     RenderEditorUI();
     GUIManager->EndFrame();
 
@@ -681,6 +681,10 @@ void FApplication::NewScene()
 
     // 현재 선택된 Actor를 선택 해제하여 Gizmo 등 해제..?
     SetSelectedActor(nullptr);
+    if (Renderer)
+    {
+        Renderer->InvalidateMeshResourceCache();
+    }
     World->Clear();
     
     // World를 초기화하기 때문에 일단 마우스 펄스도 월드에 다시 추가
@@ -714,6 +718,10 @@ bool FApplication::LoadScene()
     }
 
     SetSelectedActor(nullptr);
+    if (Renderer)
+    {
+        Renderer->InvalidateMeshResourceCache();
+    }
 
     if (!FWorldSaveConverter::ToWorld(SaveData, World))
     {
@@ -1588,36 +1596,6 @@ void FApplication::UpdateObjectAllocationTest()
 
     //    TestIntervalCounter = 0;
     //}
-}
-
-void FApplication::RenderDebugUI()
-{
-    ImGui::Begin("Jungle Property Window(Debug)");
-
-    ImGui::Text("GTotalAllocationBytes: %d", FMemory::GetTotalAllocatedMemory());
-    ImGui::Text("GTotalAllocationCount: %d", FMemory::GetTotalCreatedCount());
-    ImGui::Text("ObjectCountInVector: %d", static_cast<int>(TestObjects.size()));
-
-    //auto test = NewObject<AActor>("Temp");
-    //auto msg = "Typeof :" + test->GetClass()->ClassName;
-    //ImGui::Text(msg.c_str());
-
-    //DestroyObject(test);
-    if (!TestObjects.empty())
-    {
-        ImGui::Text("LastID: %d", TestObjects.back()->GetUUID());
-    }
-
-    for (int i = 0; i < GUObjectArray.Num(); i++)
-    {
-        auto object = GUObjectArray[i].GetItemObject();
-        if (object == nullptr)
-            continue;
-        ImGui::Text(object->GetClass()->ClassName.c_str());
-    }
-
-    ImGui::End();
-
 }
 
 void FApplication::SpawnSelectedMeshActor()

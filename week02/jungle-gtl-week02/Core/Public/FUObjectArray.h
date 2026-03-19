@@ -108,7 +108,7 @@ public:
 	uint32 ElementalCount;
 	FUObjectArray() : ObjAvailableListEstimateCount(0) , ElementalCount(0)
 	{
-		Objects.PreAllocate(1024);
+		Objects.PreAllocate(1024 * 64 * 256);
 	};
 	void AllocatdUObjectIndex(UObject* Object, int32 SerialNumber);
 	void FreeUObjectIndox(UObject* Object);
