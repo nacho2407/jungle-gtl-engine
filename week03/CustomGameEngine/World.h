@@ -59,6 +59,7 @@ public:
 
 	void Update(float deltaTime);
 	inline void InjectRenderer(URenderer* InRenderer) { Renderer = InRenderer; }
+	URenderer* GetRenderer() const { return Renderer; }
 	void OnBeforeRender() const;
 
 private:

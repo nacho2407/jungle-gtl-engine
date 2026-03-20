@@ -2,9 +2,9 @@
 #include <algorithm>
 #include <cctype>
 
-TMap<FString, int32> FName::ComparisonLookupTable; //이미 존재하는지 존재하지 않는지
+TUMap<FString, int32> FName::ComparisonLookupTable; //이미 존재하는지 존재하지 않는지
 TArray<FString> FName::ComparisonEntries; //id -> 실제 비교 String
-TMap<FString, int32> FName::DisplayLookupTable; // 이미 존재하는지 존재하지 않는지
+TUMap<FString, int32> FName::DisplayLookupTable; // 이미 존재하는지 존재하지 않는지
 TArray<FString> FName::DisplayEntries; //id -> 실제 출력 String
 TArray<FNumberState> FUniqueNameGenerator::ComparisonNumberStates; //비교이름의 제일작은 Number을 관리
 

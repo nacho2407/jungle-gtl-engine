@@ -19,8 +19,10 @@ struct FGeometry
 		VertexBuffer.Reset();
 	}
 
-	void BindBuffers(ID3D11DeviceContext* Context)
+	void Bind(ID3D11DeviceContext* Context)
 	{
+		if (VertexBuffer == nullptr)
+			return;
 		Context->IASetVertexBuffers(0, 1, VertexBuffer.GetAddressOf(), &VertexStride, &Offset);
 		//Context->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	}

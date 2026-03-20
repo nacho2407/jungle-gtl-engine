@@ -219,6 +219,9 @@
     <ClInclude Include="EngineCore\Name.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Component\GridComp.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ImGui\imgui.cpp">
@@ -372,6 +375,9 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="EngineCore\Name.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Component\GridComp.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

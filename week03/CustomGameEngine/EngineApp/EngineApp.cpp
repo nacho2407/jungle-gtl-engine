@@ -15,6 +15,7 @@
 #include "EngineCore/ResourceManager.h"
 #include "Scene.h"
 #include "EngineCore/TimerManager.h"
+#include "Component/GridComp.h"
 #include "World.h"
 
 
@@ -86,33 +87,22 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	EditorInst->Initialize(HWnd, Renderer->Device.Get(), Renderer->DeviceContext.Get());
 
 	// Init ResoureManager
-	D3D11_INPUT_ELEMENT_DESC layout[] = {
-	{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
-	 D3D11_INPUT_PER_VERTEX_DATA, 0},
-	{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12,
-	 D3D11_INPUT_PER_VERTEX_DATA, 0},
-	};
-	ResourceManager::GetInstance()->CreateMaterial(L"Shader/ShaderW0.hlsl", L"Shader/ShaderW0.hlsl", Renderer->Device.Get(), layout, 2);
-	ResourceManager::GetInstance()->CreateMaterial(L"Shader/ShaderInfiniteGrid.hlsl", L"Shader/ShaderInfiniteGrid.hlsl", Renderer->Device.Get(), nullptr, 0);
-	ResourceManager::GetInstance()->AddCubeMesh(Renderer->Device.Get());
-	ResourceManager::GetInstance()->AddSphereMesh(Renderer->Device.Get());
-	ResourceManager::GetInstance()->AddTriangleMesh(Renderer->Device.Get());
-	ResourceManager::GetInstance()->AddPlaneMesh(Renderer->Device.Get());
-	ResourceManager::GetInstance()->AddGizmoTranslationMesh(Renderer->Device.Get());
-	ResourceManager::GetInstance()->AddGizmoRotationMesh(Renderer->Device.Get());
-	ResourceManager::GetInstance()->AddGizmoScaleMesh(Renderer->Device.Get());
-	ResourceManager::GetInstance()->AddAxisMesh(Renderer->Device.Get());
+	ResourceManager::GetInstance()->Initialize(Renderer);
 
 	InputManager::GetInstance().hWnd = HWnd;
 	// Init Camera
 	auto Camera = Cast<UCameraComponent>(GetWorld().AddPermanentSceneComponent<UCameraComponent>());
+	auto Grid = Cast<UGridComp>(GetWorld().AddPermanentSceneComponent<UGridComp>());
 	Camera->SetRelativeLocation(FVector(-20.f, -20.f, 20));
 	Camera->SetRelativeRotation(FRotator(0, 45.0f, 45.0f));
 	Renderer->SetRenderCamera(Camera);
 	EditorInst->SetCamera(Camera);
 	EditorInst->SetRenderer(Renderer);
+	EditorInst->SetGrid(Grid);
+
 
 	Gizmo::GetInstance().CreateGizmoController();
+
 
 	//Resize Callback
 	OnResizeCallback.push_back([Camera](int width, int height) {
@@ -144,22 +134,6 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 
 void EngineApp::Run()
 {
-	//----TEST
-	//UCubeComp* cube = GetWorld().AddSceneComponent<UCubeComp>();
-	//cube->SetRelativeLocation(FVector(0.0, 0, 0));
-	//cube->SetRelativeScale3D(FVector(2.f, 2.f, 2.f));
-
-	//UCubeComp* Cube = GetWorld().AddSceneComponent<UCubeComp>();
-	//Cube->SetRelativeLocation(FVector(30.f, 0.f, 0.f));
-	//Cube->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
-
-	//UCubeComp* Cube3 = GetWorld().AddSceneComponent<UCubeComp>();
-	//Cube->SetRelativeLocation(FVector(-30.f, 0.f, 0.f));
-	//Cube->SetRelativeScale3D(FVector(0.5f, 0.5f, 0.5f));
-	//-----TEST
-
-	//UAxisComp* mainAxis = GetWorld().AddSceneComponent<UAxisComp>();
-
 	Timer* globalTimer = TimerManager::GetInstance().GetGlobalTimer();
 	globalTimer->Reset();
 
@@ -199,8 +173,8 @@ void EngineApp::Run()
 
 		Renderer->Prepare();
 
-		ResourceManager* RM = ResourceManager::GetInstance();
-		Renderer->RenderGrid(RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").VertexShader.Get(), RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").PixelShader.Get());
+		//ResourceManager* RM = ResourceManager::GetInstance();
+		//Renderer->RenderGrid(RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").VertexShader.Get(), RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").PixelShader.Get());
 
 		Renderer->Render();
 		EditorInst->DrawUI();
