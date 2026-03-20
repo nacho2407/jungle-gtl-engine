@@ -27,12 +27,12 @@ struct ENGINE_API FColor
 
     static constexpr FColor Transparent() { return FColor(0.0f, 0.0f, 0.0f, 0.0f); }
 
-    FColor operator+(float num) const;
-    FColor operator+(const FColor &c) const;
-    FColor operator-(float num) const;
-    FColor operator-(const FColor &c) const;
-    FColor operator*(float num) const;
-    FColor operator*(const FColor &c) const;
+    FColor operator+(float Num) const;
+    FColor operator+(const FColor &Other) const;
+    FColor operator-(float Num) const;
+    FColor operator-(const FColor &Other) const;
+    FColor operator*(float Num) const;
+    FColor operator*(const FColor &Other) const;
     uint32 ToPackedABGR() const;
 
     static FColor Lerp(const FColor &A, const FColor &B, float T);

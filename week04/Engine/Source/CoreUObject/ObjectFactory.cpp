@@ -14,7 +14,7 @@ UObject* FObjectFactory::ConstructObject(const void* Id)
 	return nullptr;
 }
 
-void FObjectFactory::RegisterObjectType(const void* Id, std::function<UObject*()> Func)
+void FObjectFactory::RegisterObjectType(const void* Id, std::function<UObject*()> FactoryFunction)
 {
-	GetRegistry()[id] = Func;
+	GetRegistry()[Id] = FactoryFunction;
 }

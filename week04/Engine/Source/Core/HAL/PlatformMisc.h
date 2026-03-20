@@ -9,7 +9,7 @@ class FPlatformMisc
     static void DebugBreak();
 
     static int32       NumberOfCores();
-    static void        RequestExit(bool bForce);
+    static void        RequestExit(bool Force);
     static const char *GetOSName();
     static const char *GetExecutablePath();
 };
