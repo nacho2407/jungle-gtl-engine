@@ -6,9 +6,15 @@
 #include "Math/Matrix.h"
 #include "Render/Common/RenderTypes.h"
 
-// ============================================================
+
+struct CharacterInfo {
+	float u;
+	float v;
+	float width;
+	float height;
+};
+
 // FFontVertex — 폰트 렌더링용 버텍스 (Position + UV + Color)
-// ============================================================
 struct FFontVertex
 {
 	FVector Position;
@@ -67,6 +73,7 @@ private:
 
 	ID3D11Buffer* VertexBuffer = nullptr;
 	ID3D11Buffer* IndexBuffer = nullptr;
+	ID3D11Resource* FontResource = nullptr;
 	ID3D11ShaderResourceView* FontAtlasSRV = nullptr;
 	ID3D11SamplerState* SamplerState = nullptr;
 
@@ -75,4 +82,6 @@ private:
 
 	// 폰트 아틀라스 내 문자별 UV 좌표 계산
 	void GetCharUV(char Ch, FVector2& OutUVMin, FVector2& OutUVMax) const;
+
+	TMap<char, CharacterInfo> CharInfoMap;
 };
