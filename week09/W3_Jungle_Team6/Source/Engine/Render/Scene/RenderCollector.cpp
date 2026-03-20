@@ -112,8 +112,18 @@ void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, cons
 		Cmd.Type = ERenderCommandType::Gizmo;
 		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
 		Cmd.TransformConstants = FTransformConstants{ Gizmo->GetWorldMatrix(), ViewMat, ProjMat };
-
-		Cmd.GizmoConstants.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+		if (bInner)
+		{
+			Cmd.DepthStencilState = EDepthStencilState::None;
+			Cmd.BlendState = EBlendState::AlphaBlend;
+			Cmd.GizmoConstants.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 0.4f);
+		}
+		else
+		{
+			Cmd.DepthStencilState = EDepthStencilState::Default;
+			Cmd.BlendState = EBlendState::Opaque;
+			Cmd.GizmoConstants.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+		}
 		Cmd.GizmoConstants.bIsInnerGizmo = bInner ? 1 : 0;
 		Cmd.GizmoConstants.bClicking = Gizmo->IsHolding() ? 1 : 0;
 		Cmd.GizmoConstants.SelectedAxis = Gizmo->GetSelectedAxis() >= 0 ? (uint32)Gizmo->GetSelectedAxis() : 0xffffffffu;
@@ -124,7 +134,6 @@ void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, cons
 	// Inner Gizmo
 	RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(true));
 
-	// Holding ���� �ƴ� ���� Outer �׸�
 	if (!Gizmo->IsHolding())
 	{
 		RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(false));
