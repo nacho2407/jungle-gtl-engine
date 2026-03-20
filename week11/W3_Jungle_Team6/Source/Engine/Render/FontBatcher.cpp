@@ -9,7 +9,6 @@
 
 void FFontBatcher::Create(ID3D11Device* Device)
 {
-
 	HRESULT hr = DirectX::CreateDDSTextureFromFileEx(
 		Device,
 		L"./Resources/Textures/FontAtlas.dds",
@@ -27,33 +26,79 @@ void FFontBatcher::Create(ID3D11Device* Device)
 	{
 		return;
 	}
-	const int32 ColCount = 16;
-	const float CellW = 1.0f / ColCount;   // 텍스쳐 정규화 너비
-	const float CellH = 1.0f / ColCount;    // 텍스쳐 정규화 높이 (96개 / 16열 = 6행)
 
-	for (int i = 0; i < 96; ++i)           // ASCII 32(space) ~ 127
+	BuildCharInfoMap();
+
+	FVector2 OutX, OutY;
+	GetCharUV('c', OutX, OutY);
+}
+
+void FFontBatcher::BuildCharInfoMap()
+{
+	const int32 Count = 16;
+	const float CellW = 1.0f / Count;
+	const float CellH = 1.0f / Count;
+
+	// ASCII 32(space) ~ 127
+	for (int32 i = 0; i < 16; ++i)
 	{
-		char ch = static_cast<char>(32 + i);
-		int col = i % ColCount;
-		int row = i / ColCount;
+		for (int32 j = 0; j < 16; ++j)
+		{
+			int32 Idx = i * 16 + j;
+			if (Idx < 32) continue;
+			if (Idx > 126) return;
 
-		charInfoMap[ch] = { col * CellW, row * CellH, CellW, CellH };
+			CharInfoMap[static_cast<char>(i * 16 + j)] = { j * CellW, i * CellH, CellW, CellH };
+		}
 	}
-
-	UE_LOG("Texture Load!");
 }
 
 void FFontBatcher::Release()
 {
+	CharInfoMap.clear();
+	Clear();
+
+	// DX11 Release
+	VertexBuffer->Release();
+	IndexBuffer->Release();
 }
 
-void FFontBatcher::AddText(const FString& Text,
-	const FVector& WorldPos,
-	const FVector& CamRight,
-	const FVector& CamUp,
-	const FColor& Color,
-	float Scale)
+
+void FFontBatcher::AddText(const FString& Text, const FVector& WorldPos)
 {
+	const float CharW = 0.5f;
+	const float CharH = 0.8f;
+	float PenX = 0.f;
+
+	for (const auto& Ch : Text)
+	{
+		FVector2 UVMin, UVMax;
+		GetCharUV(Ch, UVMin, UVMax); 
+
+		uint32 Base = static_cast<uint32>(Vertices.size());
+
+		// 4개의 정점 추가
+		Vertices.push_back({ {PenX,         +CharH}, {UVMin.X, UVMin.Y} });
+		Vertices.push_back({ {PenX + CharW, +CharH}, {UVMax.X, UVMin.Y} });
+		Vertices.push_back({ {PenX,         -CharH}, {UVMin.X, UVMax.Y} });
+		Vertices.push_back({ {PenX + CharW, -CharH}, {UVMax.X, UVMax.Y} });
+
+		// 6 개의 인덱스 정보 추가
+		// 
+		// Triangle 1: v0 → v2 → v1  (CW)
+		Indices.push_back(Base + 0);
+		Indices.push_back(Base + 2);
+		Indices.push_back(Base + 1);
+
+		// Triangle 2: v1 → v2 → v3  (CW)
+		Indices.push_back(Base + 1);
+		Indices.push_back(Base + 2);
+		Indices.push_back(Base + 3);
+
+		PenX += CharW;
+	}
+
+	// Vertex Buffer, Index Buffer 위치?
 }
 
 void FFontBatcher::Clear()
@@ -62,8 +107,10 @@ void FFontBatcher::Clear()
 	Indices.clear();
 }
 
-void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FMatrix& ViewProj)
+void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FMatrix& View, const FMatrix& Proj)
 {
+
+	
 }
 
 uint32 FFontBatcher::GetQuadCount() const
@@ -73,6 +120,14 @@ uint32 FFontBatcher::GetQuadCount() const
 
 void FFontBatcher::GetCharUV(char Ch, FVector2& OutUVMin, FVector2& OutUVMax) const
 {
-	OutUVMin = FVector2(0.0f, 0.0f);
-	OutUVMax = FVector2(1.0f, 1.0f);
+	auto it = CharInfoMap.find(Ch);
+
+	if (it == CharInfoMap.end()) {
+		OutUVMin = FVector2(0, 0); OutUVMax = FVector2(1, 1);
+		return;
+	}
+
+	const FCharacterInfo& ci = it->second;
+	OutUVMin = FVector2(ci.u, ci.v);
+	OutUVMax = FVector2(ci.u + ci.width, ci.v - ci.height);
 }
