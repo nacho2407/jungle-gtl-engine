@@ -1,5 +1,5 @@
-#pragma once
-#include "Math/Vector.h" // ÇÊ¿äÇÑ ÃÖ¼ÒÇÑÀÇ ¼öÇĞ ¶óÀÌºê·¯¸®¸¸
+ï»¿#pragma once
+#include "Math/Vector.h" // í•„ìš”í•œ ìµœì†Œí•œì˜ ìˆ˜í•™ ë¼ì´ë¸ŒëŸ¬ë¦¬ë§Œ
 
 struct FHitResult 
 {

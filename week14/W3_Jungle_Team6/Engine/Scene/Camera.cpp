@@ -1,4 +1,4 @@
-#include "Engine/Scene/Camera.h"
+ï»¿#include "Engine/Scene/Camera.h"
 #include <cmath>
 
 DEFINE_CLASS(UCamera, USceneComponent)
@@ -108,7 +108,7 @@ void UCamera::ApplyCameraState()
 	//SetRelativeRotation(CameraState.Rotation);
 }
 
-//	Camera »óÅÂ °»½ÅÀ» ÀÌ·Î ÅëÀÏ
+//	Camera ìƒíƒœ ê°±ì‹ ì„ ì´ë¡œ í†µì¼
 void UCamera::SetCameraState(const FCameraState& NewState)
 {
 	CameraState = NewState;
@@ -122,7 +122,7 @@ void UCamera::RebuildView() {
 	auto E = GetWorldLocation(); // Eye (Position)
 
 	// [Z-up View Matrix]
-	// Row-Major ±âÁØÀÌ¸ç, Ä«¸Ş¶ó ÁÂÇ¥°è(¿À¸¥ÂÊ, À§, ¾Õ) ¼ø¼­·Î ¹èÄ¡
+	// Row-Major ê¸°ì¤€ì´ë©°, ì¹´ë©”ë¼ ì¢Œí‘œê³„(ì˜¤ë¥¸ìª½, ìœ„, ì•) ìˆœì„œë¡œ ë°°ì¹˜
 	FMatrix mat(
 		R.X, U.X, F.X, 0,
 		R.Y, U.Y, F.Y, 0,
@@ -145,12 +145,12 @@ void UCamera::RebuildProjection() {
 	float denom = FarZ - NearZ;
 
 	if (ProjectionMode == EProjectionMode::Perspective) {
-		// [Z-up Àü¿ë Perspective Matrix]
-		// ·»´õ·¯°¡ Y-up(DirectX Ç¥ÁØ)À» ±â´ëÇÑ´Ù¸é ¾Æ·¡¿Í °°ÀÌ ¸ÅÇÎµÇ¾î¾ß ÇÕ´Ï´Ù.
+		// [Z-up ì „ìš© Perspective Matrix]
+		// ë Œë”ëŸ¬ê°€ Y-up(DirectX í‘œì¤€)ì„ ê¸°ëŒ€í•œë‹¤ë©´ ì•„ë˜ì™€ ê°™ì´ ë§¤í•‘ë˜ì–´ì•¼ í•©ë‹ˆë‹¤.
 		FMatrix mat(
 			cot / AspectRatio, 0, 0, 0,
 			0, cot, 0, 0,
-			0, 0, FarZ / denom, 1, // Depth Ãà
+			0, 0, FarZ / denom, 1, // Depth ì¶•
 			0, 0, -(FarZ * NearZ) / denom, 0
 		);
 		CachedProjection = mat;

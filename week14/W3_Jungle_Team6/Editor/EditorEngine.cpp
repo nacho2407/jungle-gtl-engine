@@ -1,4 +1,4 @@
-#include "Editor/EditorEngine.h"
+ï»¿#include "Editor/EditorEngine.h"
 
 #include "Engine/Core/InputSystem.h"
 
@@ -163,7 +163,7 @@ void FEditorEngine::Render(float DeltaTime)
 	Renderer.BeginFrame();
 	Renderer.Render(RenderBus);
 	MainPanel.Render(DeltaTime, ViewportClient.GetViewOutput());
-	Renderer.RenderOverlay(RenderBus);	//	UI°¡ ±×·ÁÁø ÈÄ Overlay ±×¸®±â
+	Renderer.RenderOverlay(RenderBus);	//	UIê°€ ê·¸ë ¤ì§„ í›„ Overlay ê·¸ë¦¬ê¸°
 	Renderer.EndFrame();
 }
 

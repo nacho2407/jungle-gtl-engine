@@ -1,4 +1,4 @@
-#include "MeshBufferManager.h"
+ï»¿#include "MeshBufferManager.h"
 
 void FMeshBufferManager::Create(ID3D11Device* InDevice)
 {
@@ -13,7 +13,7 @@ void FMeshBufferManager::Create(ID3D11Device* InDevice)
 	MeshBufferMap[EPrimitiveType::EPT_MouseOverlay].Create(InDevice, FMeshManager::GetMouseOverlay());
 }
 
-//	TODO : ³»ÀÏ ÇÏ±â
+//	TODO : ë‚´ì¼ í•˜ê¸°
 void FMeshBufferManager::Release()
 {
 	for (auto& pair : MeshBufferMap)
@@ -23,7 +23,7 @@ void FMeshBufferManager::Release()
 	MeshBufferMap.clear();
 }
 
-//	MeshBuffer´Â VB, IB¸¦ ¸ğµÎ Æ÷ÇÔÇÏ°í ÀÖ½À´Ï´Ù.
+//	MeshBufferëŠ” VB, IBë¥¼ ëª¨ë‘ í¬í•¨í•˜ê³  ìˆìŠµë‹ˆë‹¤.
 FMeshBuffer& FMeshBufferManager::GetMeshBuffer(EPrimitiveType InPrimitiveType)
 {
 	auto it = MeshBufferMap.find(InPrimitiveType);
@@ -32,6 +32,6 @@ FMeshBuffer& FMeshBufferManager::GetMeshBuffer(EPrimitiveType InPrimitiveType)
 		return it->second;
 	}
 	
-	//	Á¸ÀçÇÏÁö ¾Ê´Â PrimitiveTypeÀÌ ¿äÃ»µÈ °æ¿ì, ±âº»ÀûÀ¸·Î CubeMeshBuffer¸¦ ¹İÈ¯ÇÏµµ·Ï ÇÕ´Ï´Ù.
+	//	ì¡´ì¬í•˜ì§€ ì•ŠëŠ” PrimitiveTypeì´ ìš”ì²­ëœ ê²½ìš°, ê¸°ë³¸ì ìœ¼ë¡œ CubeMeshBufferë¥¼ ë°˜í™˜í•˜ë„ë¡ í•©ë‹ˆë‹¤.
 	return MeshBufferMap.at(EPrimitiveType::EPT_Cube);
 }

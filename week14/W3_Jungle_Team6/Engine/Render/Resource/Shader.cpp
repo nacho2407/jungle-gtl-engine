@@ -1,4 +1,4 @@
-#include "Shader.h"
+ï»¿#include "Shader.h"
 
 #include <codecvt>
 #include <iostream>
@@ -74,7 +74,7 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 	}
 #endif
 
-	//	Vertex ShaderÀÇ Input LayoutÀ» »ý¼ºÇÕ´Ï´Ù. (¿ø·¡´Â InInputElementCount ´ë½Å ARRAYSIZE(InInputElements)ÀÎµ¥, ÀÌ´Â ¹è¿­¿¡¼­¸¸ µ¿ÀÛÇÕ´Ï´Ù.)
+	//	Vertex Shaderì˜ Input Layoutì„ ìƒì„±í•©ë‹ˆë‹¤. (ì›ëž˜ëŠ” InInputElementCount ëŒ€ì‹  ARRAYSIZE(InInputElements)ì¸ë°, ì´ëŠ” ë°°ì—´ì—ì„œë§Œ ë™ìž‘í•©ë‹ˆë‹¤.)
 	InDevice->CreateInputLayout(InInputElements, InInputElementCount, vertexShaderCSO->GetBufferPointer(), vertexShaderCSO->GetBufferSize(), &InputLayout);
 	
 	vertexShaderCSO->Release();
