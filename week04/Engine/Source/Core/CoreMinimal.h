@@ -46,6 +46,7 @@
 #include "Math/Rotator.h"
 #include "Math/Vector.h"
 #include "Math/Vector4.h"
+#include "Math/Vector2.h"
 
 //=============================================================================
 // Geometry
