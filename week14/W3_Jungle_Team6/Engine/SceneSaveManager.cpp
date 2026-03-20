@@ -242,9 +242,9 @@ void FSceneSaveManager::DeserializeSpaceVectors(USceneComponent* SceneComp, json
     auto& Pos = Savedata["Location"];
     auto& Rot = Savedata["Rotation"];
     auto& Scale = Savedata["Scale"];
-    SceneComp->SetRelativeLocation(FVector(Pos["X"].ToFloat(), Pos["Y"].ToFloat(), Pos["Z"].ToFloat()));
-    SceneComp->SetRelativeRotation(FVector(Rot["X"].ToFloat(), Rot["Y"].ToFloat(), Rot["Z"].ToFloat()));
-    SceneComp->SetRelativeScale(FVector(Scale["X"].ToFloat(), Scale["Y"].ToFloat(), Scale["Z"].ToFloat()));
+    SceneComp->SetRelativeLocation(FVector(static_cast<float>(Pos["X"].ToFloat()), static_cast<float>(Pos["Y"].ToFloat()), static_cast<float>(Pos["Z"].ToFloat())));
+    SceneComp->SetRelativeRotation(FVector(static_cast<float>(Rot["X"].ToFloat()), static_cast<float>(Rot["Y"].ToFloat()), static_cast<float>(Rot["Z"].ToFloat())));
+    SceneComp->SetRelativeScale(FVector(static_cast<float>(Scale["X"].ToFloat()), static_cast<float>(Scale["Y"].ToFloat()), static_cast<float>(Scale["Z"].ToFloat())));
 }
 
 void FSceneSaveManager::DecodeCamera(UCamera* Camera, json::JSON& Savedata) {
