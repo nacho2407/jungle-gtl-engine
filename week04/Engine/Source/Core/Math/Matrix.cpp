@@ -1,13 +1,13 @@
 #include "../CoreMinimal.h"
 
-FMatrix::FMatrix()
+constexpr FMatrix::FMatrix()
 {
     for (int i{0}; i < 4; i++)
         for (int j{0}; j < 4; j++)
             m[i][j] = (i == j) ? 1.0f : 0.0f;
 }
 
-FMatrix::~FMatrix() {}
+FMatrix::~FMatrix() = default;
 
 FMatrix FMatrix::IdentityMatrix() { return FMatrix(); }
 

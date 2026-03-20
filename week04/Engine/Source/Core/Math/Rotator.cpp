@@ -1,11 +1,10 @@
 #include "../CoreMinimal.h"
 
-FRotator() : Roll(0.0f), Pitch(0.0f), Yaw(0.0f)
-{
+FRotator::FRotator() : Roll(0.0f), Pitch(0.0f), Yaw(0.0f) {
 
 }
 
-FRotator(float InRoll, float InPitch, float InYaw)
+FRotator::FRotator(float InRoll, float InPitch, float InYaw)
 	: Roll(InRoll), Pitch(InPitch), Yaw(InYaw)
 {
 
@@ -55,10 +54,10 @@ FRotator FRotator::FromVector(const FVector& Forward)
 {
 	float Yaw = MathHelper::Atan2(Forward.y, Forward.x) * (180.0f / MathHelper::PI);
 	float Pitch = MathHelper::Atan2(Forward.z, MathHelper::Sqrt(Forward.x * Forward.x + Forward.y * Forward.y)) * (180.0f / MathHelper::PI);
-	return FRotator(0.0f, Pitch, Yaw);
+	return {0.0f, Pitch, Yaw};
 }
 
 FRotator FRotator::ZeroRotator()
 {
-	return FRotator(0.0f, 0.0f, 0.0f);
+	return {0.0f, 0.0f, 0.0f};
 }
