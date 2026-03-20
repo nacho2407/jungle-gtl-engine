@@ -1,8 +1,8 @@
 ﻿#pragma once
 
-#include "World.h"
-#include "Engine/Scene/Camera.h"
-#include "World/GizmoComponent.h"
+#include "GameFramework/World.h"
+#include "Component/Camera.h"
+#include "Component/GizmoComponent.h"
 
 #include "Render/Renderer/Renderer.h"
 #include "Render/Scene/RenderBus.h"
@@ -10,7 +10,7 @@
 #include "Editor/Viewport/EditorViewportClient.h"
 #include "Editor/UI/EditorMainPanel.h"
 
-#include "Engine/SceneSaveManager.h"
+#include "Engine/Serialization/SceneSaveManager.h"
 #include "Render/FontBatcher.h"
 
 class FEditorEngine

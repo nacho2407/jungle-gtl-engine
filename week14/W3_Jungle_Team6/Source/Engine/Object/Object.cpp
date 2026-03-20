@@ -32,7 +32,7 @@ UObject::~UObject()
 
 const FTypeInfo UObject::s_TypeInfo = { "UObject", nullptr, sizeof(UObject) };
 
-#include "Engine/World.h"
+#include "GameFramework/World.h"
 void UObjectManager::PurgeScene() {
 	for (UObject* Obj : GUObjectArray) {
 		if (Obj->IsA<UWorld>()) {

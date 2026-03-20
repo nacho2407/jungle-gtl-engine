@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Object.h"
+#include "Object/Object.h"
 
 class AActor;
 

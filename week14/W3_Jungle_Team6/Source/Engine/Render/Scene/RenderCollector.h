@@ -1,8 +1,8 @@
 ﻿#pragma once
 #include "RenderBus.h"
 #include "RenderCollectorContext.h"
-#include "Engine/Scene/Camera.h"
-#include "World/PrimitiveComponent.h"
+#include "Component/Camera.h"
+#include "Component/PrimitiveComponent.h"
 #include "Render/Resource/MeshBufferManager.h"
 
 class UWorld;
