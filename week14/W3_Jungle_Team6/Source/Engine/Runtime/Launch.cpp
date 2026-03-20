@@ -8,7 +8,7 @@ namespace
 	int GuardedMain(HINSTANCE hInstance, int nShowCmd)
 	{
 		FEngineLoop EngineLoop;
-		if (!EngineLoop.PreInit(hInstance, nShowCmd))
+		if (!EngineLoop.Init(hInstance, nShowCmd))
 		{
 			return -1;
 		}
