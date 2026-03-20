@@ -53,7 +53,6 @@ public:
 		return true;
 	}
 
-	//	�� Primitive Component�� �ڽ��� � Primitive Type���� Renderer���� �˷��� �� �־�� �մϴ�. (Dynamic Binding)
 	virtual EPrimitiveType GetPrimitiveType() const = 0;
 };
 

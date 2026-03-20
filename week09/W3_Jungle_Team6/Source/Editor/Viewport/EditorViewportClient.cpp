@@ -43,7 +43,7 @@ void FEditorViewportClient::Tick(float DeltaTime)
 	TickCursorOverlay(DeltaTime);
 }
 
-void FEditorViewportClient::FlushViewOutput() {
+void FEditorViewportClient::ClearViewOutput() {
 	ViewOutput = {};
 }
 
@@ -265,9 +265,9 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 	}
 	else
 	{
-		FlushViewOutput();
+		ClearViewOutput();
 		UPrimitiveComponent* bestTarget = nullptr;
-		float closetDistance = FLT_MAX;
+		float closestDistance = FLT_MAX;
 
 		for (auto* it : World->GetActors())
 		{
@@ -280,9 +280,9 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 				hitResult = {};
 				if (primitiveComp->Raycast(Ray, hitResult))
 				{
-					if (hitResult.Distance < closetDistance)
+					if (hitResult.Distance < closestDistance)
 					{
-						closetDistance = hitResult.Distance;
+						closestDistance = hitResult.Distance;
 						bestTarget = primitiveComp;
 
 						ViewOutput.ObjectPicked = primitiveComp->GetTypeInfo()->name;
