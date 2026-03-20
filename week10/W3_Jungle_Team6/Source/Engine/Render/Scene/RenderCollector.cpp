@@ -82,7 +82,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 				OutlineCmd.OutlineConstants.PrimitiveType = 1u;
 			}
 
-			RenderBus.AddCommand(ERenderPass::Overlay,OutlineCmd);
+			RenderBus.AddCommand(ERenderPass::Outline,OutlineCmd);
 		}
 	}
 
