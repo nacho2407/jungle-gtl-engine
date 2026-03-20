@@ -1,4 +1,4 @@
-#include "Editor/Core/EditorConsole.h"
+﻿#include "Editor/Core/EditorConsole.h"
 
 void FEditorConsole::AddLog(const char* fmt, ...) {
     char buf[1024];

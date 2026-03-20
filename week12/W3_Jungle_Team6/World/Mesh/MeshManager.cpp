@@ -1,4 +1,4 @@
-#include "MeshManager.h"
+Ôªø#include "MeshManager.h"
 #include "Math/Utils.h"
 
 #include <fstream>
@@ -79,12 +79,12 @@ void FMeshManager::CreateCube()
 
     auto MakeColor = [](float x, float y, float z) -> FVector4
         {
-            // -0.5 ~ 0.5 °Ê 0 ~ 1
+            // -0.5 ~ 0.5 ‚Üí 0 ~ 1
             float r = (x + 0.5f);
             float g = (y + 0.5f);
             float b = (z + 0.5f);
 
-            // ªÏ¬¶ ¥Î∫Ò ¡÷±‚ (optional)
+            // ÏÇ¥Ïßù ÎåÄÎπÑ Ï£ºÍ∏∞ (optional)
             r = powf(r, 0.8f);
             g = powf(g, 0.8f);
             b = powf(b, 0.8f);
@@ -221,7 +221,7 @@ void FMeshManager::CreateRotationGizmo()
         FVector4(0.0f, 0.0f, 1.0f, 1.0f)  // Z-Axis (Blue)
     };
 
-    // ∞¢ √‡(X, Y, Z)ø° ¥Î«ÿ ∞Ì∏Æ ª˝º∫
+    // Í∞Å Ï∂ï(X, Y, Z)Ïóê ÎåÄÌï¥ Í≥†Î¶¨ ÏÉùÏÑ±
     for (int axis = 0; axis < 3; ++axis)
     {
         uint32 StartVertexIdx = (uint32)vertices.size();
@@ -238,22 +238,22 @@ void FMeshManager::CreateRotationGizmo()
                 float sinLat = sin(latitude);
                 float cosLat = cos(latitude);
 
-                // 1. ∑Œƒ√ ≈‰∑ØΩ∫ ¡¬«• ∞ËªÍ (±‚∫ª Z√‡ ¡ﬂΩ…)
+                // 1. Î°úÏª¨ ÌÜ†Îü¨Ïä§ Ï¢åÌëú Í≥ÑÏÇ∞ (Í∏∞Î≥∏ ZÏ∂ï Ï§ëÏã¨)
                 float x = (Radius + Thickness * cosLat) * cosLong;
                 float y = (Radius + Thickness * cosLat) * sinLong;
                 float z = Thickness * sinLat;
 
                 FVector pos;
-                // 2. √‡ πÊ«‚ø° µ˚∏• »∏¿¸ ¡§∑ƒ
-                if (axis == 0)      pos = FVector(z, x, y); // X√‡ »∏¿¸ (YZ ∆Ú∏È)
-                else if (axis == 1) pos = FVector(x, z, y); // Y√‡ »∏¿¸ (XZ ∆Ú∏È)
-                else                pos = FVector(x, y, z); // Z√‡ »∏¿¸ (XY ∆Ú∏È)
+                // 2. Ï∂ï Î∞©Ìñ•Ïóê Îî∞Î•∏ ÌöåÏ†Ñ Ï†ïÎ†¨
+                if (axis == 0)      pos = FVector(z, x, y); // XÏ∂ï ÌöåÏ†Ñ (YZ ÌèâÎ©¥)
+                else if (axis == 1) pos = FVector(x, z, y); // YÏ∂ï ÌöåÏ†Ñ (XZ ÌèâÎ©¥)
+                else                pos = FVector(x, y, z); // ZÏ∂ï ÌöåÏ†Ñ (XY ÌèâÎ©¥)
 
                 vertices.push_back({ pos, Colors[axis], axis });
             }
         }
 
-        // ¿Œµ¶Ω∫ ª˝º∫ (Side Quads)
+        // Ïù∏Îç±Ïä§ ÏÉùÏÑ± (Side Quads)
         for (int i = 0; i < Segments; ++i)
         {
             for (int j = 0; j < TubeSegments; ++j)
@@ -358,7 +358,7 @@ void FMeshManager::CreateTranslationGizmo()
             return P;
             };
 
-        // ∏µ πˆ≈ÿΩ∫ ª˝º∫
+        // ÎßÅ Î≤ÑÌÖçÏä§ ÏÉùÏÑ±
         for (int32 i = 0; i <= segments; ++i)
         {
             float angle = (2.0f * M_PI * i) / segments;
@@ -370,7 +370,7 @@ void FMeshManager::CreateTranslationGizmo()
             vertices.push_back({ GetRotatedPos(c * headRadius, s * headRadius, stemLength), colors[axis], axis });
         }
 
-        // »≠ªÏ«• ≥°
+        // ÌôîÏÇ¥Ìëú ÎÅù
         FVector TipPos = (axis == 0) ? FVector(totalLength, 0, 0) :
             (axis == 1) ? FVector(0, totalLength, 0) :
             FVector(0, 0, totalLength);
@@ -378,7 +378,7 @@ void FMeshManager::CreateTranslationGizmo()
         vertices.push_back({ TipPos, colors[axis], axis });
         int32 tipIndex = (int32)vertices.size() - 1;
 
-        // === √ﬂ∞° 1: cone πÿ∏È ¡ﬂΩ…¡° ===
+        // === Ï∂îÍ∞Ä 1: cone Î∞ëÎ©¥ Ï§ëÏã¨Ï†ê ===
         FVector baseCenterPos = (axis == 0) ? FVector(stemLength, 0, 0) :
             (axis == 1) ? FVector(0, stemLength, 0) :
             FVector(0, 0, stemLength);
@@ -391,7 +391,7 @@ void FMeshManager::CreateTranslationGizmo()
             int32 curr = axisStartVertex + (i * 3);
             int32 next = axisStartVertex + ((i + 1) * 3);
 
-            // ∏ˆ≈Î
+            // Î™∏ÌÜµ
             indices.push_back(curr);
             indices.push_back(curr + 1);
             indices.push_back(next + 1);
@@ -400,7 +400,7 @@ void FMeshManager::CreateTranslationGizmo()
             indices.push_back(next + 1);
             indices.push_back(next);
 
-            // ∏ˆ≈Î ≥° ~ cone Ω√¿€ ø¨∞·
+            // Î™∏ÌÜµ ÎÅù ~ cone ÏãúÏûë Ïó∞Í≤∞
             indices.push_back(curr + 1);
             indices.push_back(next + 2);
             indices.push_back(curr + 2);
@@ -409,12 +409,12 @@ void FMeshManager::CreateTranslationGizmo()
             indices.push_back(next + 1);
             indices.push_back(next + 2);
 
-            // cone ø∑∏È
+            // cone ÏòÜÎ©¥
             indices.push_back(curr + 2);
             indices.push_back(next + 2);
             indices.push_back(tipIndex);
 
-            // === √ﬂ∞° 2: cone πÿ∏È cap ===
+            // === Ï∂îÍ∞Ä 2: cone Î∞ëÎ©¥ cap ===
             indices.push_back(baseCenterIndex);
             indices.push_back(next + 2);
             indices.push_back(curr + 2);

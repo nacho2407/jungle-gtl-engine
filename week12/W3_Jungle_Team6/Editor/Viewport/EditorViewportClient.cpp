@@ -1,4 +1,4 @@
-#include "Editor/Viewport/EditorViewportClient.h"
+ï»¿#include "Editor/Viewport/EditorViewportClient.h"
 
 
 #include <iostream>
@@ -224,7 +224,7 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	}
 	else if (InputSystem::GetLeftDragging())
 	{
-		//	´­·ÁÀÖ°í, HoldingµÇÁö ¾Ê¾Ò´Ù¸é ´ÙÀ½ LoopºÎÅÍ µå·¡±× ¾÷µ¥ÀÌÆ® ½ÃÀÛ
+		//	ëˆŒë ¤ìžˆê³ , Holdingë˜ì§€ ì•Šì•˜ë‹¤ë©´ ë‹¤ìŒ Loopë¶€í„° ë“œëž˜ê·¸ ì—…ë°ì´íŠ¸ ì‹œìž‘
 		if (Gizmo->IsPressedOnHandle() && !Gizmo->IsHolding())
 		{
 			Gizmo->SetHolding(true);

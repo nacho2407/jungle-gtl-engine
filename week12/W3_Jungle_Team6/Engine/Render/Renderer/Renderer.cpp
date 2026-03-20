@@ -1,4 +1,4 @@
-#include "Renderer.h"
+ï»¿#include "Renderer.h"
 
 #include "Render/Common/RenderTypes.h"
 
@@ -58,13 +58,13 @@ void FRenderer::Release()
 	Device.Release();
 }
 
-//	Prepare the rendering state for a new frame. ¹İµå½Ã Render ÀÌÀü¿¡ È£ÃâµÇ¾î¾ß ÇÔ.
+//	Prepare the rendering state for a new frame. ë°˜ë“œì‹œ Render ì´ì „ì— í˜¸ì¶œë˜ì–´ì•¼ í•¨.
 void FRenderer::BeginFrame()
 {
 	Device.BeginFrame();
 }
 
-//	Render Update Main function. RenderBus¿¡ ´ã±ä ¸ğµç RenderCommand¿¡ ´ëÇØ¼­ Draw Call ¼öÇà
+//	Render Update Main function. RenderBusì— ë‹´ê¸´ ëª¨ë“  RenderCommandì— ëŒ€í•´ì„œ Draw Call ìˆ˜í–‰
 void FRenderer::Render(const FRenderBus& InRenderBus)
 {
 	ID3D11DeviceContext* context = Device.GetDeviceContext();
@@ -81,8 +81,8 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 	//const FGizmoConstants ZeroGizmoConstants = {};
 	//Resources.GizmoPerObjectConstantBuffer.Update(context, &ZeroGizmoConstants, sizeof(FGizmoConstants));
 
-	//	¼ø¼­ ÁöÄÑ¾ß ÇÔ. (Component -> Axis -> Grid -> Outline -> Gizmo -> Overlay)
-	//	State CachingÀ¸·Î ÀÎÇØ Áßº¹ ¼³Á¤Àº ÀÚµ¿À¸·Î ½ºÅµµÊ.
+	//	ìˆœì„œ ì§€ì¼œì•¼ í•¨. (Component -> Axis -> Grid -> Outline -> Gizmo -> Overlay)
+	//	State Cachingìœ¼ë¡œ ì¸í•´ ì¤‘ë³µ ì„¤ì •ì€ ìë™ìœ¼ë¡œ ìŠ¤í‚µë¨.
 
 	//	Primitive
 	Device.SetDepthStencilState(EDepthStencilState::StencilWrite);
@@ -122,7 +122,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 	//	Reset to default
 	Device.SetRasterizerState(ERasterizerState::SolidBackCull);
 
-	//	NOTE : Overlay´Â ¹İµå½Ã µû·Î È£ÃâÇØ¾ß ÇÔ. (Engine Loop¿¡¼­ µ¹°í ÀÖÀ½)
+	//	NOTE : OverlayëŠ” ë°˜ë“œì‹œ ë”°ë¡œ í˜¸ì¶œí•´ì•¼ í•¨. (Engine Loopì—ì„œ ëŒê³  ìˆìŒ)
 }
 
 void FRenderer::RenderOverlay(const FRenderBus& InRenderBus)
@@ -159,7 +159,7 @@ void FRenderer::RenderDepthLessPass(ID3D11DeviceContext* InDeviceContext, const 
 	//RenderDepthLessPass(InDeviceContext, InRenderBus);
 
 
-	//	¼±ÅÃµÈ °æ¿ì ±×¸®Áö ¾ÊÀ½
+	//	ì„ íƒëœ ê²½ìš° ê·¸ë¦¬ì§€ ì•ŠìŒ
 	if (InRenderBus.GetDepthLessCommands().size() < 2) return;
 
 	//	Non-DepthLess (Gizmo)
@@ -299,7 +299,7 @@ void FRenderer::DrawCommand(ID3D11DeviceContext * InDeviceContext, const FRender
 	}
 }
 
-//	Present the rendered frame to the screen. ¹İµå½Ã Render ÀÌÈÄ¿¡ È£ÃâµÇ¾î¾ß ÇÔ.
+//	Present the rendered frame to the screen. ë°˜ë“œì‹œ Render ì´í›„ì— í˜¸ì¶œë˜ì–´ì•¼ í•¨.
 void FRenderer::EndFrame()
 {
 	Device.EndFrame();

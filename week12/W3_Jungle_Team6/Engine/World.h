@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Object/Object.h"
 #include "Classes/AActor.h"
 #include "Engine/Scene/Camera.h"
