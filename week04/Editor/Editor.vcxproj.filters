@@ -1,72 +1,97 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="소스 파일">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    <Filter Include="Source">
+      <UniqueIdentifier>{eda2fbce-2e37-c3c8-8f8c-35f2a4ff4e59}</UniqueIdentifier>
     </Filter>
-    <Filter Include="헤더 파일">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    <Filter Include="Source\Gizmo">
+      <UniqueIdentifier>{2997c27c-11e9-54ee-4b0c-5a71dc20396c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="리소스 파일">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    <Filter Include="Source\Launch">
+      <UniqueIdentifier>{90ac0f15-c775-3ba7-f780-7222e93b8ddd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Panel">
+      <UniqueIdentifier>{110cb42a-bc8d-dcb7-321e-1bd33a00b562}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\ThirdParty">
+      <UniqueIdentifier>{5726d692-7686-5f00-2fce-2f6dc385fdc4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Viewport">
+      <UniqueIdentifier>{76033aac-1e00-3e72-af05-fad596f6ac30}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\ThirdParty\ImGui">
+      <UniqueIdentifier>{32e4b986-b3a8-5f87-38d0-7d76493d7618}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source\main.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Editor.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\main.cpp">
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="Source\ThirdParty\ImGui\imgui.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source\ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="Source\ThirdParty\ImGui\imgui_demo.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source\ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="Source\ThirdParty\ImGui\imgui_draw.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source\ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="Source\ThirdParty\ImGui\imgui_impl_dx11.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source\ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="Source\ThirdParty\ImGui\imgui_impl_win32.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source\ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="Source\ThirdParty\ImGui\imgui_tables.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source\ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="Source\ThirdParty\ImGui\imgui_widgets.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source\ThirdParty\ImGui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\ThirdParty\ImGui\imconfig.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Source\ThirdParty\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="Source\ThirdParty\ImGui\imgui.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Source\ThirdParty\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="Source\ThirdParty\ImGui\imgui_impl_dx11.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Source\ThirdParty\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="Source\ThirdParty\ImGui\imgui_impl_win32.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Source\ThirdParty\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="Source\ThirdParty\ImGui\imgui_internal.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Source\ThirdParty\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="Source\ThirdParty\ImGui\imstb_rectpack.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Source\ThirdParty\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="Source\ThirdParty\ImGui\imstb_textedit.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Source\ThirdParty\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="Source\ThirdParty\ImGui\imstb_truetype.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Source\ThirdParty\ImGui</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Viewport\EditorViewport.h">
+      <Filter>Source\Viewport</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\EditorViewportClient.h">
+      <Filter>Source\Viewport</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Source\ThirdParty\ImGui\imgui.natstepfilter">
+      <Filter>Source\ThirdParty\ImGui</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="Source\ThirdParty\ImGui\imgui.natvis">
+      <Filter>Source\ThirdParty\ImGui</Filter>
+    </Natvis>
   </ItemGroup>
 </Project>
