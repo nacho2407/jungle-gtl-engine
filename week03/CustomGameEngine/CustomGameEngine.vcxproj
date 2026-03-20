@@ -220,6 +220,7 @@
     <ClCompile Include="Editor\Picker.cpp" />
     <ClCompile Include="EngineApp\EngineApp.cpp" />
     <ClCompile Include="EngineCore\Color.cpp" />
+    <ClCompile Include="EngineCore\Name.cpp" />
     <ClCompile Include="Math\Matrix.cpp" />
     <ClCompile Include="Math\Quaternion.cpp" />
     <ClCompile Include="Math\Vector.cpp" />
