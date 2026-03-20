@@ -91,78 +91,88 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 void FRenderCollector::CollectFromEditor(const FRenderCollectorContext& Context, const FMatrix& ViewMat, const FMatrix& ProjMat, FRenderBus& RenderBus)
 {
 	//	Gizmo
+
+	CollectGizmo(Context, ViewMat, ProjMat, RenderBus);
+	CollectGridAndAxis(Context, ViewMat, ProjMat, RenderBus);
+	CollectMouseOverlay(Context, ViewMat, ProjMat, RenderBus);
+}
+
+
+void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, const FMatrix& ViewMat, const FMatrix& ProjMat, FRenderBus& RenderBus)
+{
 	UGizmoComponent* Gizmo = Context.Gizmo;
-	if (Gizmo && Gizmo->IsVisible())
+	if (!Gizmo || !Gizmo->IsVisible()) return;
+
+	auto CreateGizmoCmd = [&](bool bInner) {
+		FRenderCommand Cmd = {};
+		Cmd.Type = ERenderCommandType::Gizmo;
+		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
+		Cmd.TransformConstants = FTransformConstants{ Gizmo->GetWorldMatrix(), ViewMat, ProjMat };
+
+		Cmd.GizmoConstants.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+		Cmd.GizmoConstants.bIsInnerGizmo = bInner ? 1 : 0;
+		Cmd.GizmoConstants.bClicking = Gizmo->IsHolding() ? 1 : 0;
+		Cmd.GizmoConstants.SelectedAxis = Gizmo->GetSelectedAxis() >= 0 ? (uint32)Gizmo->GetSelectedAxis() : 0xffffffffu;
+		Cmd.GizmoConstants.HoveredAxisOpacity = 0.55f;
+		return Cmd;
+		};
+
+	// Inner Gizmo
+	RenderBus.AddDepthLessCommand(CreateGizmoCmd(true));
+
+	// Holding ���� �ƴ� ���� Outer �׸�
+	if (!Gizmo->IsHolding())
 	{
-		FRenderCommand Cmd1 = {};
-		Cmd1.Type = ERenderCommandType::Gizmo;
-		Cmd1.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
-		Cmd1.TransformConstants = FTransformConstants{ Gizmo->GetWorldMatrix(), ViewMat, ProjMat };
-		Cmd1.GizmoConstants.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-		Cmd1.GizmoConstants.bIsInnerGizmo = 1;
-		Cmd1.GizmoConstants.bClicking = Gizmo->IsHolding() ? 1 : 0;
-		Cmd1.GizmoConstants.SelectedAxis = Gizmo->GetSelectedAxis() >= 0 ? static_cast<uint32>(Gizmo->GetSelectedAxis()) : 0xffffffffu;
-		Cmd1.GizmoConstants.HoveredAxisOpacity = 0.55f;
+		RenderBus.AddDepthLessCommand(CreateGizmoCmd(false));
+	}
+}
 
-		RenderBus.AddDepthLessCommand(Cmd1);
-
-		//	선택되지 않은 경우에 Outer를 그림
-		if (!Gizmo->IsHolding())
-		{
-			FRenderCommand Cmd2 = {};
-			Cmd2.Type = ERenderCommandType::Gizmo;
-			Cmd2.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
-			Cmd2.TransformConstants = FTransformConstants{ Gizmo->GetWorldMatrix(), ViewMat, ProjMat };
-			Cmd2.GizmoConstants.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-			Cmd2.GizmoConstants.bIsInnerGizmo = 0;
-			Cmd2.GizmoConstants.bClicking = Gizmo->IsHolding() ? 1 : 0;
-			Cmd2.GizmoConstants.SelectedAxis = Gizmo->GetSelectedAxis() >= 0 ? static_cast<uint32>(Gizmo->GetSelectedAxis()) : 0xffffffffu;
-			Cmd2.GizmoConstants.HoveredAxisOpacity = 0.55f;
-
-			RenderBus.AddDepthLessCommand(Cmd2);
-		}
+void FRenderCollector::CollectGridAndAxis(const FRenderCollectorContext& Context, const FMatrix& ViewMat, const FMatrix& ProjMat, FRenderBus& RenderBus)
+{
+	if (Context.bGridVisible == false)
+	{
+		return;
 	}
 
-	if (Context.bGridVisible)
-	{
-		//	Axis 추가
-		FRenderCommand AxisCmd = {};
-		AxisCmd.Type = ERenderCommandType::Axis;
-		AxisCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_Axis);
-		AxisCmd.TransformConstants = FTransformConstants{ FMatrix::Identity, ViewMat, ProjMat };	//	Model은 고정
+	FVector CamPos = Context.Camera->GetWorldLocation();
+	FTransformConstants StaticTransform = { FMatrix::Identity, ViewMat, ProjMat };
 
-		FVector camPos = Context.Camera->GetWorldLocation();
-		AxisCmd.EditorConstants.CameraPosition = FVector4{ camPos.X,camPos.Y,camPos.Z,0.0f };
-		AxisCmd.EditorConstants.Flag = 0; // Axis : 0
+	// Axis
+	FRenderCommand AxisCmd = {};
+	AxisCmd.Type = ERenderCommandType::Axis;
+	AxisCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_Axis);
+	AxisCmd.TransformConstants = StaticTransform;
+	AxisCmd.EditorConstants.CameraPosition = FVector4{ CamPos.X, CamPos.Y, CamPos.Z, 0.0f };
+	AxisCmd.EditorConstants.Flag = 0;
+	RenderBus.AddEditorCommand(AxisCmd);
 
-		RenderBus.AddEditorCommand(AxisCmd);
+	// Grid
+	FRenderCommand GridCmd = AxisCmd; // ���� �ʵ� ����
+	GridCmd.Type = ERenderCommandType::Grid;
+	GridCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_Grid);
+	GridCmd.EditorConstants.Flag = 1;
+	RenderBus.AddGridEditorCommand(GridCmd);
+}
 
-		FRenderCommand GridCmd = {};
-		GridCmd.Type = ERenderCommandType::Grid;
-		GridCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_Grid);
-		GridCmd.TransformConstants = FTransformConstants{ FMatrix::Identity, ViewMat, ProjMat };
-
-		GridCmd.EditorConstants.CameraPosition = FVector4{ camPos.X,camPos.Y,camPos.Z,0.0f };
-		GridCmd.EditorConstants.Flag = 1; // Grid : 1
-
-		RenderBus.AddGridEditorCommand(GridCmd);
-	}
-    
-
+void FRenderCollector::CollectMouseOverlay(const FRenderCollectorContext& Context, const FMatrix& ViewMat, const FMatrix& ProjMat, FRenderBus& RenderBus)
+{
 	//	Cursor Overlay (null checking +)
-	if (Context.CursorOverlayState && Context.CursorOverlayState->bVisible)
+	if (Context.CursorOverlayState == nullptr || Context.CursorOverlayState->bVisible == false)
 	{
-		FRenderCommand OverlayCmd = {};
-		OverlayCmd.Type = ERenderCommandType::Overlay;
-		OverlayCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_MouseOverlay);
-
-		OverlayCmd.OverlayConstants.CenterScreen.X = Context.CursorOverlayState->ScreenX;
-		OverlayCmd.OverlayConstants.CenterScreen.Y = Context.CursorOverlayState->ScreenY;
-		OverlayCmd.OverlayConstants.ViewportSize.X = static_cast<float>(Context.ViewportWidth);
-		OverlayCmd.OverlayConstants.ViewportSize.Y = static_cast<float>(Context.ViewportHeight);
-		OverlayCmd.OverlayConstants.Radius = Context.CursorOverlayState->CurrentRadius;
-		OverlayCmd.OverlayConstants.Color = Context.CursorOverlayState->Color;
-
-		RenderBus.AddOverlayCommand(OverlayCmd);
+		return;
 	}
+
+	FRenderCommand OverlayCmd = {};
+	OverlayCmd.Type = ERenderCommandType::Overlay;
+	OverlayCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_MouseOverlay);
+
+	OverlayCmd.OverlayConstants.CenterScreen.X = Context.CursorOverlayState->ScreenX;
+	OverlayCmd.OverlayConstants.CenterScreen.Y = Context.CursorOverlayState->ScreenY;
+	OverlayCmd.OverlayConstants.ViewportSize.X = static_cast<float>(Context.ViewportWidth);
+	OverlayCmd.OverlayConstants.ViewportSize.Y = static_cast<float>(Context.ViewportHeight);
+	OverlayCmd.OverlayConstants.Radius = Context.CursorOverlayState->CurrentRadius;
+	OverlayCmd.OverlayConstants.Color = Context.CursorOverlayState->Color;
+
+	RenderBus.AddOverlayCommand(OverlayCmd);
+
 }
