@@ -8,6 +8,7 @@ struct FMaterial
 	TComPtr<ID3D11VertexShader> VertexShader = nullptr;
 	TComPtr<ID3D11InputLayout> InputLayout = nullptr;
 	TComPtr<ID3D11PixelShader> PixelShader = nullptr;
+	//ID3D11Texture2D* Texture = nullptr;
 
 	FMaterial()
 	{

@@ -154,6 +154,7 @@
     <ClInclude Include="Editor\Picker.h" />
     <ClInclude Include="EngineApp\EngineApp.h" />
     <ClInclude Include="EngineCore\Color.h" />
+    <ClInclude Include="EngineCore\Name.h" />
     <ClInclude Include="ThirdParty\fifo_map.hpp" />
     <ClInclude Include="Math\Matrix.h" />
     <ClInclude Include="Math\Quaternion.h" />
@@ -220,6 +221,7 @@
     <ClCompile Include="Editor\Picker.cpp" />
     <ClCompile Include="EngineApp\EngineApp.cpp" />
     <ClCompile Include="EngineCore\Color.cpp" />
+    <ClCompile Include="EngineCore\Name.cpp" />
     <ClCompile Include="Math\Matrix.cpp" />
     <ClCompile Include="Math\Quaternion.cpp" />
     <ClCompile Include="Math\Vector.cpp" />

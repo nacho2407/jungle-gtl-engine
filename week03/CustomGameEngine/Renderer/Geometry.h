@@ -8,6 +8,7 @@
 struct FGeometry
 {
 	TComPtr<ID3D11Buffer> VertexBuffer = nullptr;
+	//TComPtr<ID3D11Buffer> IndexBuffer = nullptr;
 	TArray<FVector> Vertices;
 	UINT VertexCount = 0;
 	UINT VertexStride = 0;

@@ -39,3 +39,6 @@ using TStaticArray = std::array<T1, N>;
 
 template <typename T>
 using TQueue = std::queue<T>;
+
+template<typename T, typename Container = TArray<T>, typename Compare = std::less<T>>
+using TPriorityQueue = std::priority_queue<T, Container, Compare>;
