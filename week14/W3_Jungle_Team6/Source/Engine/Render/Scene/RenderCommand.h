@@ -36,7 +36,7 @@ struct FTransformConstants
 struct FGizmoConstants
 {
 	FVector4 ColorTint;
-	uint32 bIsInnerGizmo;	//	Translation Gizmo의 경우, Inner Gizmo는 항상 카메라를 향하도록 처리할 수 있습니다.
+	uint32 bIsInnerGizmo;	
 	uint32 bClicking;
 	uint32 SelectedAxis;
 	float HoveredAxisOpacity;
@@ -89,15 +89,13 @@ struct FRenderCommand
 	//	VB, IB 모두 담고 있는 MB
 	FMeshBuffer* MeshBuffer = nullptr;
 	FTransformConstants TransformConstants = {};
-	EDepthStencilState DepthStencilState = EDepthStencilState::Default;
-	EBlendState BlendState = EBlendState::Opaque;
-	//union{
 
 	FGizmoConstants GizmoConstants;
 	FEditorConstants EditorConstants;
 	FOverlayConstants OverlayConstants;
 	FOutlineConstants OutlineConstants ;
-	//};
 
+	EDepthStencilState DepthStencilState = EDepthStencilState::Default;
+	EBlendState BlendState = EBlendState::Opaque;
 	ERenderCommandType Type = ERenderCommandType::Primitive;
 };
