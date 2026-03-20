@@ -38,6 +38,9 @@ public:
 
 private:
 	void SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* OutDeviceContext);
+	void BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContext* Context);
+	EDepthStencilState GetDefaultDepthForPass(ERenderPass Pass) const;
+	EBlendState GetDefaultBlendForPass(ERenderPass Pass) const;
 
 	void DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderCommand& InCommand);
 
