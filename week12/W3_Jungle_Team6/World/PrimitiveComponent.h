@@ -6,6 +6,7 @@
 #include "Render/Common/RenderTypes.h"
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
+#include "Core/EngineTypes.h"
 
 struct FMeshData;
 
@@ -27,6 +28,12 @@ public:
 
 	inline void SetVisibility(bool bVisible) { bIsVisible = bVisible; }
 
+	// ì›”ë“œ ê³µê°„ AABBë¥¼ FBoundingBoxë¡œ ë°˜í™˜ (íŒŒíŠ¸ B LineBatcherì™€ì˜ ì¸í„°í˜ì´ìŠ¤)
+	FBoundingBox GetWorldBoundingBox() const
+	{
+		return FBoundingBox(WorldAABBMinLocation, WorldAABBMaxLocation);
+	}
+
 	//Collision
 	void UpdateWorldAABB();
 	bool CheckAABB(const FRay& Ray);
@@ -46,7 +53,7 @@ public:
 		return true;
 	}
 
-	//	°¢ Primitive Component´Â ÀÚ½ÅÀÌ ¾î¶² Primitive TypeÀÎÁö Renderer¿¡°Ô ¾Ë·ÁÁÙ ¼ö ÀÖ¾î¾ß ÇÕ´Ï´Ù. (Dynamic Binding)
+	//	ï¿½ï¿½ Primitive Componentï¿½ï¿½ ï¿½Ú½ï¿½ï¿½ï¿½ ï¿½î¶² Primitive Typeï¿½ï¿½ï¿½ï¿½ Rendererï¿½ï¿½ï¿½ï¿½ ï¿½Ë·ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ö¾ï¿½ï¿½ ï¿½Õ´Ï´ï¿½. (Dynamic Binding)
 	virtual EPrimitiveType GetPrimitiveType() const = 0;
 };
 
