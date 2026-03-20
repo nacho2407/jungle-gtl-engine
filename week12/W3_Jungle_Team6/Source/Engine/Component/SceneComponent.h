@@ -1,7 +1,7 @@
 ﻿#pragma once
 
-#include "Transform.h"
-#include "Object/ActorComponent.h"
+#include "Math/Transform.h"
+#include "Component/ActorComponent.h"
 #include "Math/Utils.h"
 
 class AActor;
