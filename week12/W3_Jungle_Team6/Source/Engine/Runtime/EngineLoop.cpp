@@ -67,7 +67,7 @@ LRESULT FEngineLoop::WndProc(HWND hWnd, uint32 message, WPARAM wParam, LPARAM lP
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
-bool FEngineLoop::PreInit(HINSTANCE hInstance, int nShowCmd)
+bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
 {
 	(void)nShowCmd;
 
@@ -96,11 +96,6 @@ bool FEngineLoop::PreInit(HINSTANCE hInstance, int nShowCmd)
 	Editor.SpawnNewPrimitiveActor<UCubeComponent>(FVector(-3.f, 0, 0));
 	Editor.BeginPlay();
 
-	// 콘솔 헬퍼는 초기화 효과만 필요해서 지역 정적으로 유지
-	//static ConsoleHelper ConsoleHelperInstance;
-	//(void)ConsoleHelperInstance;
-	//(void)bShowConsole;
-
 	InitializeTiming();
 	return true;
 }
@@ -110,7 +105,6 @@ void FEngineLoop::InitializeTiming()
 	QueryPerformanceFrequency(&Frequency);
 	QueryPerformanceCounter(&PrevTime);
 	DeltaTime = 0.0f;
-	Accumulator = 0.0;
 }
 
 void FEngineLoop::TickFrame()
@@ -119,7 +113,7 @@ void FEngineLoop::TickFrame()
 	DeltaTime = static_cast<float>(CurrTime.QuadPart - PrevTime.QuadPart) / static_cast<float>(Frequency.QuadPart);
 	PrevTime = CurrTime;
 
-	MainLoopFps = (DeltaTime > 1e-6f) ? (1.0f / DeltaTime) : 0.0f;
+	float MainLoopFps = (DeltaTime > 1e-6f) ? (1.0f / DeltaTime) : 0.0f;
 	Editor.SetMainLoopFPS(MainLoopFps);
 
 	// 리사이즈 중에는 렌더만 진행해서 화면 반응성을 유지
@@ -136,8 +130,6 @@ void FEngineLoop::TickFrame()
 
 	Editor.Render(DeltaTime);
 	Editor.EndFrame();
-
-	Sleep(0);
 }
 
 int FEngineLoop::Run()
@@ -172,21 +164,4 @@ void FEngineLoop::Shutdown()
 {
 	Editor.Release();
 	UObjectManager::Get().CollectGarbage();
-	//std::cout << "Checking Memory Leaks...\n";
-	//for (int i = 0; i < GUObjectArray.size(); i++) {
-	//	if (GUObjectArray[i]) {
-	//		std::cout << "Slot " << i
-	//			<< " Type: " << GUObjectArray[i]->GetTypeInfo()->name
-	//			<< " PendingKill: " << GUObjectArray[i]->bPendingKill
-	//			<< " UUID: " << GUObjectArray[i]->UUID
-	//			<< "\n";
-	//	}
-	//}
-
-	//// -1 = gizmo
-	////std::cout << "Memory Leaks: " << Nullcount - 1 << std::endl;
-	//for (uint32 i = 5; i > 0; i--) {
-	//	std::cout << "Program closing in " << i << " seconds\n";
-	//	Sleep(1000);
-	//}
 }

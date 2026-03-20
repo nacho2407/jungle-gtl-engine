@@ -35,12 +35,15 @@ const FTypeInfo UObject::s_TypeInfo = { "UObject", nullptr, sizeof(UObject) };
 #include "GameFramework/World.h"
 void UObjectManager::PurgeScene() {
 	for (UObject* Obj : GUObjectArray) {
-		if (Obj->IsA<UWorld>()) {
+		if (Obj && Obj->IsA<UWorld>()) {
 			UWorld* World = Obj->Cast<UWorld>();
-				World->EndPlay();
+			World->EndPlay();
 		}
 	}
 
 	CollectGarbage();
-	GUObjectArray.clear();
+	GUObjectArray.erase(
+		std::remove(GUObjectArray.begin(), GUObjectArray.end(), nullptr),
+		GUObjectArray.end()
+	);
 }

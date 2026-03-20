@@ -68,8 +68,12 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 			FRenderCommand OutlineCmd = Cmd;
 			OutlineCmd.Type = ERenderCommandType::SelectionOutline;
 			OutlineCmd.OutlineConstants.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
-			OutlineCmd.OutlineConstants.OutlineInvScale = FVector(1.0f / primitiveComponent->GetRelativeScale().X,
-				1.0f / primitiveComponent->GetRelativeScale().Y, 1.0f / primitiveComponent->GetRelativeScale().Z);
+			FVector scale = primitiveComponent->GetRelativeScale();
+			const float kMinScale = 0.001f;
+			if (std::abs(scale.X) < kMinScale) scale.X = kMinScale;
+			if (std::abs(scale.Y) < kMinScale) scale.Y = kMinScale;
+			if (std::abs(scale.Z) < kMinScale) scale.Z = kMinScale;
+			OutlineCmd.OutlineConstants.OutlineInvScale = FVector(1.0f / scale.X, 1.0f / scale.Y, 1.0f / scale.Z);
 			OutlineCmd.OutlineConstants.OutlineOffset = 0.03f;
 
 			if(primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Plane)

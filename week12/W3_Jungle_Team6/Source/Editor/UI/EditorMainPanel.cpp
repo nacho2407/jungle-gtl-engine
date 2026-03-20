@@ -130,10 +130,6 @@ void FEditorMainPanel::Render(float DeltaTime, FViewOutput& ViewOutput)
 		SceneLoadNotificationTimer -= DeltaTime;
 		ImGui::Text("Scene loaded");
 	}
-	if (SceneLoadNotificationTimer > 0.0f) {
-		SceneLoadNotificationTimer -= DeltaTime;
-		ImGui::Text("Scene loaded");
-	}
 
 	ImGui::SameLine();
 	ImGui::InputText("Load Path", LoadPath, IM_ARRAYSIZE(LoadPath));
@@ -262,9 +258,9 @@ void FEditorMainPanel::RenderObjectWindow(UObject*& ObjectPicked) {
 			ObjectPicked->bPendingKill = true;
 			if (ObjectPicked->IsA<USceneComponent>()) {
 				USceneComponent* SceneComp = ObjectPicked->Cast<USceneComponent>();
-				if (SceneComp->GetOwningActor()) {
+				if (SceneComp->GetOwner()) {
 					// TODO:: Do this recursively
-					UObjectManager::Get().DestroyObject(SceneComp->GetOwningActor());
+					UObjectManager::Get().DestroyObject(SceneComp->GetOwner());
 				}
 			}
 			EditorEngine->GetGizmo()->SetVisibility(false);
