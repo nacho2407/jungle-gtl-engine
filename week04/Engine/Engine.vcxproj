@@ -52,6 +52,7 @@
     <ClInclude Include="Source\CoreUObject\ObjectFactory.h" />
     <ClInclude Include="Source\Engine\EngineStatics.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11Common.h" />
+    <ClInclude Include="Source\Core\Math\Vector2.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -73,6 +74,7 @@
     <ClCompile Include="Source\CoreUObject\Object.cpp" />
     <ClCompile Include="Source\CoreUObject\ObjectFactory.cpp" />
     <ClCompile Include="Source\Engine\EngineStatics.cpp" />
+    <ClCompile Include="Source\Core\Math\Vector2.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

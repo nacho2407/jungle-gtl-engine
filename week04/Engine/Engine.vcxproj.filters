@@ -112,6 +112,7 @@
       <Filter>Source\Engine</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Asset\Asset.cpp" />
+    <ClCompile Include="Source\Core\Math\Vector2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Sphere.h">
@@ -235,6 +236,7 @@
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\Asset.h" />
+    <ClInclude Include="Source\Core\Math\Vector2.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
