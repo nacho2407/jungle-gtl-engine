@@ -30,11 +30,11 @@ enum class EPrimitiveType
 
 enum class ERenderPass : uint32
 {
-	Component,      
+	Component,     
+	Editor,
+	Grid,
 	Outline,        
 	DepthLess,      
-	Editor,         
-	Grid,           
 	Overlay,        
 	MAX             
 };
