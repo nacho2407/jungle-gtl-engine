@@ -104,7 +104,8 @@ void EditorControlPanel::Draw(UCameraComponent* camera)
 	camera->SetRelativeRotation(camRotation);
 
 	ImGui::InputFloat3("Camera Direction", &camera->Direction.x);
-	ImGui::InputFloat("Camera Speed", &camera->MoveSpeed);
+	ImGui::SliderFloat("Camera Move Speed", &camera->MoveSpeed, 0.0f, 20.0f, "%.0f");
+	ImGui::SliderFloat("Camera Rotation Speed", &camera->RotateSensitivity, 0.0f, 20.0f, "%.0f");
 
 	ImGui::End();
 }
