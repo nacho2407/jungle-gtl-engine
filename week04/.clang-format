@@ -6,3 +6,4 @@ BreakBeforeBraces: Allman
 AlignConsecutiveDeclarations: true
 IncludeBlocks: Merge # 만약 카테고리 별로 띄우고싶으면 Regroup으로 변경
 SortIncludes: false
+PointerAlignment: Left
