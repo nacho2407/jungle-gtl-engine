@@ -80,16 +80,16 @@ void EditorControlPanel::Draw(UCameraComponent* camera)
 	if (ImGui::Button("New Scene"))
 	{
 		editor->SelectComponent(nullptr);
-		GetWorld().NewScene();
+		GetWorld().GetSceneManager()->NewScene();
 	}
 	if (ImGui::Button("Save Scene"))
 	{
-		GetWorld().SaveScene(sceneName);
+		GetWorld().GetSceneManager()->SaveScene(sceneName);
 	}
 	if (ImGui::Button("Load Scene"))
 	{
 		editor->SelectComponent(nullptr);
-		GetWorld().LoadScene(sceneName);
+		GetWorld().GetSceneManager()->LoadScene(sceneName);
 	}
 	ImGui::Separator();
 

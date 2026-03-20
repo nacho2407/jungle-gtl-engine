@@ -11,13 +11,13 @@ UPrimitiveComponent* PrimitiveFactory::AddPrimitive(EPrimitiveType type)
 	switch (type)
 	{
 	case EPrimitiveType::Cube:
-		return GetWorld().AddSceneComponent<UCubeComp>();
+		return GetWorld().GetSceneManager()->AddSceneComponent<UCubeComp>();
 	case EPrimitiveType::Sphere:
-		return GetWorld().AddSceneComponent<USphereComp>();
+		return GetWorld().GetSceneManager()->AddSceneComponent<USphereComp>();
 	case EPrimitiveType::Triangle:
-		return GetWorld().AddSceneComponent<UTriangleComp>();
+		return GetWorld().GetSceneManager()->AddSceneComponent<UTriangleComp>();
 	case EPrimitiveType::Plane:
-		return GetWorld().AddSceneComponent<UPlaneComp>();
+		return GetWorld().GetSceneManager()->AddSceneComponent<UPlaneComp>();
 	}
 	return nullptr;
 }

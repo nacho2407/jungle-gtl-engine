@@ -105,7 +105,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 
 	InputManager::GetInstance().hWnd = HWnd;
 	// Init Camera
-	auto Camera = Cast<UCameraComponent>(GetWorld().AddPermanentSceneComponent<UCameraComponent>());
+	auto Camera = Cast<UCameraComponent>(GetWorld().GetSceneManager()->AddPermanentSceneComponent<UCameraComponent>());
 	Camera->SetRelativeLocation(FVector(-20.f, -20.f, 20));
 	Camera->SetRelativeRotation(FRotator(0, 45.0f, 45.0f));
 	Renderer->SetRenderCamera(Camera);
@@ -134,7 +134,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 
 	//Init World & Scene
 	GetWorld().InjectRenderer(Renderer);
-	GetWorld().NewScene();
+	GetWorld().GetSceneManager()->NewScene();
 
 	// Init Timer
 	TimerManager::GetInstance().CreateGlobalTimer();
@@ -188,7 +188,7 @@ void EngineApp::Run()
 		FVector Mouse = InputManager::GetInstance().MousePos;
 		if (!io.WantCaptureMouse && InputManager::GetInstance().IsKeyDown(VK_LBUTTON))
 		{
-			Picker->Pick(Mouse.x, Mouse.y, GetWorld().GetActiveScene());
+			Picker->Pick(Mouse.x, Mouse.y, GetWorld().GetSceneManager()->GetActiveScene());
 		}
 
 		// Update Game World

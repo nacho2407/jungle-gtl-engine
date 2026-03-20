@@ -184,7 +184,7 @@ void UCameraComponent::HandleCameraMove(float deltaTime)
 			HandleOrbitRotate(deltaTime);
 		}
 		if (InputManager::GetInstance().IsKeyHold('F')
-			&& GetWorld().GetActiveScene()->IsCompSelected)
+			&& GetWorld().GetSceneManager()->GetActiveScene()->IsCompSelected)
 		{
 			// TODO: 오브젝트 포커싱 재구현
 			// SetPosition(EditorInst->GetSelectedComponent()->GetRelativeLocation() - Direction * FocusLength);
