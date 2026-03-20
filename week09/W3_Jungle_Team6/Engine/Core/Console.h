@@ -178,7 +178,7 @@ struct Console {
 			}
 
 			if (candidates.Size == 1) {
-				data->DeleteChars(word_start - data->Buf, word_end - word_start);
+				data->DeleteChars(static_cast<int>(word_start - data->Buf), static_cast<int>(word_end - word_start));
 				data->InsertChars(data->CursorPos, candidates[0]);
 				data->InsertChars(data->CursorPos, " ");
 			}

@@ -245,9 +245,8 @@ bool FMatrix::IsIdentity() const
 			float expected = (i == j) ? 1.0f : 0.0f;
 			if (std::fabsf(M[i][j] - expected) > 1e-4f) return false;
 		}
-
-		return true;
 	}
+	return true;
 }
 
 FMatrix FMatrix::MakeTranslationMatrix(const FVector& Location)
