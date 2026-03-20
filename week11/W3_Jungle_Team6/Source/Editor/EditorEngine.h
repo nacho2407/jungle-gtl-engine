@@ -11,6 +11,7 @@
 #include "Editor/UI/EditorMainPanel.h"
 
 #include "Engine/SceneSaveManager.h"
+#include "Render/FontBatcher.h"
 
 class FEditorEngine
 {
@@ -45,6 +46,7 @@ private:
 	FEditorViewportClient ViewportClient;
 	float MainLoopFPS = 0.0f;
 	FRuntimeSettings RuntimeSettings;
+	FFontBatcher FontAtlasBatcher; //TODO eric1306: 지워야함
 
 	
 private:
