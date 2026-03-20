@@ -64,8 +64,6 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Engine.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)..\Engine\Bin\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
       <Command>if not exist "$(OutDir)" mkdir "$(OutDir)"
@@ -88,8 +86,6 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Engine.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)..\Engine\Bin\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
       <Command>if not exist "$(OutDir)" mkdir "$(OutDir)"
@@ -130,6 +126,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ProjectReference Include="..\Engine\Engine.vcxproj">
       <Project>{F44237E2-379F-4018-A189-153730228C6B}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

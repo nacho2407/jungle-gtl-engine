@@ -51,7 +51,6 @@ class ProjectSpec:
     root_namespace: str
     scan_roots: tuple[str, ...]
     extra_items: dict[str, tuple[str, ...]] = field(default_factory=dict)
-    dependencies: tuple[str, ...] = ()
 
 
 PROJECTS = (
@@ -70,7 +69,6 @@ PROJECTS = (
         guid="{910D7C84-AF56-42A5-8FD5-77FAB20D77C6}",
         root_namespace="Editor",
         scan_roots=("Source",),
-        dependencies=("{F44237E2-379F-4018-A189-153730228C6B}",),
     ),
 )
 
@@ -256,9 +254,7 @@ def add_engine_project(files: dict[str, list[str]]) -> None:
     for configuration, platform in CONFIGURATIONS:
         condition = f"'$(Configuration)|$(Platform)'=='{configuration}|{platform}'"
         property_group = ET.SubElement(root, "PropertyGroup", Condition=condition, Label="Configuration")
-        ET.SubElement(property_group, "ConfigurationType").text = (
-            "DynamicLibrary" if platform == "x64" else "Application"
-        )
+        ET.SubElement(property_group, "ConfigurationType").text = "DynamicLibrary"
         ET.SubElement(property_group, "UseDebugLibraries").text = (
             "false" if configuration == "Release" else "true"
         )
@@ -281,18 +277,11 @@ def add_engine_project(files: dict[str, list[str]]) -> None:
             ET.SubElement(cl_compile, "FunctionLevelLinking").text = "true"
             ET.SubElement(cl_compile, "IntrinsicFunctions").text = "true"
         ET.SubElement(cl_compile, "SDLCheck").text = "true"
-        if platform == "Win32":
-            preprocessor_definitions = (
-                "WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)"
-                if configuration == "Release"
-                else "WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)"
-            )
-        else:
-            preprocessor_definitions = (
-                "ENGINECORE_EXPORTS;NOMINMAX;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)"
-                if configuration == "Release"
-                else "ENGINECORE_EXPORTS;NOMINMAX;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)"
-            )
+        preprocessor_definitions = (
+            "ENGINECORE_EXPORTS;NOMINMAX;NDEBUG;%(PreprocessorDefinitions)"
+            if configuration == "Release"
+            else "ENGINECORE_EXPORTS;NOMINMAX;_DEBUG;%(PreprocessorDefinitions)"
+        )
         ET.SubElement(cl_compile, "PreprocessorDefinitions").text = preprocessor_definitions
         ET.SubElement(cl_compile, "ConformanceMode").text = "true"
         if platform == "x64":
@@ -405,10 +394,6 @@ def add_editor_project(files: dict[str, list[str]]) -> None:
         ET.SubElement(link, "SubSystem").text = "Windows"
         ET.SubElement(link, "GenerateDebugInformation").text = "true"
         if platform == "x64":
-            ET.SubElement(link, "AdditionalDependencies").text = "Engine.lib;%(AdditionalDependencies)"
-            ET.SubElement(link, "AdditionalLibraryDirectories").text = (
-                "$(ProjectDir)..\\Engine\\Bin\\$(Configuration);%(AdditionalLibraryDirectories)"
-            )
             pre_build_event = ET.SubElement(item_definition_group, "PreBuildEvent")
             ET.SubElement(pre_build_event, "Command").text = (
                 'if not exist "$(OutDir)" mkdir "$(OutDir)"\n'
@@ -443,6 +428,7 @@ def add_editor_project(files: dict[str, list[str]]) -> None:
     )
     ET.SubElement(project_reference, "Project").text = PROJECTS[0].guid
     ET.SubElement(project_reference, "ReferenceOutputAssembly").text = "false"
+    ET.SubElement(project_reference, "LinkLibraryDependencies").text = "true"
 
     ET.SubElement(root, "Import", Project="$(VCTargetsPath)\\Microsoft.Cpp.targets")
     add_empty_import_group(root, Label="ExtensionTargets")
@@ -487,11 +473,6 @@ def generate_solution(projects: tuple[ProjectSpec, ...]) -> None:
         lines.append(
             f'Project("{VS_PROJECT_TYPE}") = "{project.name}", "{project.name}\\{project.name}.vcxproj", "{project.guid}"'
         )
-        if project.dependencies:
-            lines.append("\tProjectSection(ProjectDependencies) = postProject")
-            for dependency in project.dependencies:
-                lines.append(f"\t\t{dependency} = {dependency}")
-            lines.append("\tEndProjectSection")
         lines.append("EndProject")
 
     lines.extend(
