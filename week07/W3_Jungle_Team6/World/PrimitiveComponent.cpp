@@ -117,7 +117,7 @@ bool UPrimitiveComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 			{
 				closestT = t;
 				bHit = true;
-				OutHitResult.FaceIndex = i;
+				OutHitResult.FaceIndex = static_cast<int>(i);
 			}
 		}
 	}
