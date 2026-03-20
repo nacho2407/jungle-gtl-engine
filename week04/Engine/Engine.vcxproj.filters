@@ -37,6 +37,33 @@
     <Filter Include="Source\ThirdParty">
       <UniqueIdentifier>{b8e8bd27-1e61-2aa5-0088-7e70dd22287c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Core\Containers">
+      <UniqueIdentifier>{912017d8-8df8-694a-9f3f-b99826c544c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Geometry">
+      <UniqueIdentifier>{7399648a-ed81-18a3-20da-1cbd8e6140ad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\HAL">
+      <UniqueIdentifier>{ad1f9b80-0e1a-0d71-cd6b-b630f2985514}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Logging">
+      <UniqueIdentifier>{10f7d8a3-a3d1-142d-af3b-06dd7d240880}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Math">
+      <UniqueIdentifier>{b359914c-202a-e69b-dc67-51d523cb3e2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Misc">
+      <UniqueIdentifier>{822fce81-821e-1b1b-adaf-11c91675259f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Component">
+      <UniqueIdentifier>{009757f7-27d2-e9f2-4fdf-fa550fbfb1ff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Game">
+      <UniqueIdentifier>{b40c0879-15f3-b5bd-98bc-875a35ed9e05}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\ViewPort">
+      <UniqueIdentifier>{3f58abac-aa9e-06f1-348e-4d37ab560ccd}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\FileIO\Ini">
       <UniqueIdentifier>{1e4f96e3-8b6d-f192-3313-76777e4652c0}</UniqueIdentifier>
     </Filter>
@@ -107,6 +134,27 @@
     </ClCompile>
     <ClCompile Include="Source\CoreUObject\ObjectFactory.cpp">
       <Filter>Source\CoreUObject</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\CameraComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\CubeComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PlaneComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\SceneComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\SphereComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\TriangleComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\EngineStatics.cpp">
       <Filter>Source\Engine</Filter>
@@ -227,6 +275,27 @@
     </ClInclude>
     <ClInclude Include="Source\CoreUObject\ObjectFactory.h">
       <Filter>Source\CoreUObject</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\CameraComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\CubeComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\PlaneComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\SceneComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\SphereComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\TriangleComponent.h">
+      <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\EngineStatics.h">
       <Filter>Source\Engine</Filter>

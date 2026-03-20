@@ -98,13 +98,13 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClCompile Include="Source\Launch\EditorEngineLoop.cpp" />
     <ClCompile Include="Source\Launch\Launch.cpp" />
     <ClCompile Include="Source\main.cpp" />
-    <ClCompile Include="Source\ThirdParty\imgui\imgui.cpp" />
-    <ClCompile Include="Source\ThirdParty\imgui\imgui_demo.cpp" />
-    <ClCompile Include="Source\ThirdParty\imgui\imgui_draw.cpp" />
-    <ClCompile Include="Source\ThirdParty\imgui\imgui_impl_dx11.cpp" />
-    <ClCompile Include="Source\ThirdParty\imgui\imgui_impl_win32.cpp" />
-    <ClCompile Include="Source\ThirdParty\imgui\imgui_tables.cpp" />
-    <ClCompile Include="Source\ThirdParty\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui.cpp" />
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_demo.cpp" />
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_draw.cpp" />
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_impl_dx11.cpp" />
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_impl_win32.cpp" />
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_tables.cpp" />
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor.h" />
@@ -122,10 +122,10 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClInclude Include="Source\Viewport\EditorViewportClient.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Source\ThirdParty\imgui\imgui.natstepfilter" />
+    <None Include="Source\ThirdParty\ImGui\imgui.natstepfilter" />
   </ItemGroup>
   <ItemGroup>
-    <Natvis Include="Source\ThirdParty\imgui\imgui.natvis" />
+    <Natvis Include="Source\ThirdParty\ImGui\imgui.natvis" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Engine\Engine.vcxproj">

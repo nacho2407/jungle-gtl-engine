@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include "../Core/CoreMinimal.h"
 #include "ObjectFactory.h"
 
 #define DECLARE_RTTI(Cls, ParentCls) \
