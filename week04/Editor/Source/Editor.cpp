@@ -20,12 +20,9 @@ void FEditor::BeginPlay()
 }
 
 
-void FEditor::Update()
+void FEditor::Tick(float DeltaTime)
 {
-    //  Input
-    
-    //  Update World
-    
+    //  TODO : Editor Updates
 }
 
 void FEditor::OnWindowResized(float Width, float Height)
