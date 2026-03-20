@@ -10,7 +10,7 @@
 #include "Editor/Viewport/EditorViewportClient.h"
 #include "Editor/UI/EditorMainPanel.h"
 
-#include "Engine/SceneSaveManager.h"
+#include "Engine/Serialization/SceneSaveManager.h"
 
 class FEditorEngine
 {
