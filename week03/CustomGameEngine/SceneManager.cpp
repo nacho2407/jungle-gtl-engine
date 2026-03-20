@@ -81,7 +81,7 @@ UScene* SceneManager::LoadScene(FString sceneName)
 void SceneManager::UnloadScene()
 {
 	UScene* curScene = GetActiveScene();
-	if (curScene)
+	if (curScene == nullptr)
 	{
 		return;
 	}
