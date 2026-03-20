@@ -1,4 +1,4 @@
 #pragma once
 
 class FLogOutputDevice;
-extern FLogOutputDevice *GLog;
+extern FLogOutputDevice* GLog;

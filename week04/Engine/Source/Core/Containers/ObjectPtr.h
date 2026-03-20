@@ -1,8 +1,9 @@
 #pragma once
-#include "EngineAPI.h"
-#include "Types/Map.h"
-#include <cstdint>
+#include "Core/EngineAPI.h"
 #include <type_traits>
+
+#include "Map.h"
+#include "CoreUObject/Object.h"
 
 class UObject;
 
@@ -16,7 +17,7 @@ ENGINE_API uint32_t ExtractUObjectUUID(const void* Ptr);
 // UUID 기반 간접 참조 스마트 포인터
 // GC에 의해 raw pointer가 무효화되어도 UUID를 통해 안전하게 접근 가능
 template <typename T>
-class TObjectPtr
+class ENGINE_API TObjectPtr
 {
 public:
 	TObjectPtr() = default;
@@ -30,6 +31,8 @@ public:
 		: ObjectUUID(ExtractUObjectUUID(InPtr)), CachedPtr(InPtr)
 	{
 	}
+
+	~TObjectPtr() = default;
 
 	TObjectPtr(const TObjectPtr& Other) = default;
 

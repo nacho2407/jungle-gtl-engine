@@ -2,34 +2,34 @@
 
 static float ClampColor(float Value) { return FMath::Clamp(Value, 0.0f, 1.0f); }
 
-FColor FColor::operator+(float num) const
+FColor FColor::operator+(float Num) const
 {
-    return {ClampColor(r + num), ClampColor(g + num), ClampColor(b + num), a};
+    return {ClampColor(r + Num), ClampColor(g + Num), ClampColor(b + Num), a};
 }
 
-FColor FColor::operator+(const FColor &c) const
+FColor FColor::operator+(const FColor &Other) const
 {
-    return {ClampColor(r + c.r), ClampColor(g + c.g), ClampColor(b + c.b), ClampColor(a + c.a)};
+    return {ClampColor(r + Other.r), ClampColor(g + Other.g), ClampColor(b + Other.b), ClampColor(a + Other.a)};
 }
 
-FColor FColor::operator-(float num) const
+FColor FColor::operator-(float Num) const
 {
-    return {ClampColor(r - num), ClampColor(g - num), ClampColor(b - num), a};
+    return {ClampColor(r - Num), ClampColor(g - Num), ClampColor(b - Num), a};
 }
 
-FColor FColor::operator-(const FColor &c) const
+FColor FColor::operator-(const FColor &Other) const
 {
-    return {ClampColor(r - c.r), ClampColor(g - c.g), ClampColor(b - c.b), ClampColor(a - c.a)};
+    return {ClampColor(r - Other.r), ClampColor(g - Other.g), ClampColor(b - Other.b), ClampColor(a - Other.a)};
 }
 
-FColor FColor::operator*(float num) const
+FColor FColor::operator*(float Num) const
 {
-    return {ClampColor(r * num), ClampColor(g * num), ClampColor(b * num), a};
+    return {ClampColor(r * Num), ClampColor(g * Num), ClampColor(b * Num), a};
 }
 
-FColor FColor::operator*(const FColor &c) const
+FColor FColor::operator*(const FColor &Other) const
 {
-    return {ClampColor(r * c.r), ClampColor(g * c.g), ClampColor(b * c.b), ClampColor(a * c.a)};
+    return {ClampColor(r * Other.r), ClampColor(g * Other.g), ClampColor(b * Other.b), ClampColor(a * Other.a)};
 }
 
 uint32 FColor::ToPackedABGR() const

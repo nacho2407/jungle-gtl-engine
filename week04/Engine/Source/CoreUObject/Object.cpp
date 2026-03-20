@@ -19,21 +19,21 @@ UObject::~UObject()
 	}
 }
 
-void* UObject::operator new(size_t size)
+void* UObject::operator new(size_t Size)
 {
-	UEngineStatics::TotalAllocatedBytes += size;
+	UEngineStatics::TotalAllocatedBytes += Size;
 	UEngineStatics::TotalAllocationCount++;
 
-	void* p = ::operator new(size);
-	return p;
+	void* Pointer = ::operator new(Size);
+	return Pointer;
 }
 
-void UObject::operator delete(void* p, size_t size)
+void UObject::operator delete(void* Pointer, size_t Size)
 {
-	UEngineStatics::TotalAllocatedBytes -= size;
+	UEngineStatics::TotalAllocatedBytes -= Size;
 	UEngineStatics::TotalAllocationCount--;
 
-	::operator delete(p, size);
+	::operator delete(Pointer, Size);
 }
 
 REGISTER_CLASS(UObject);
