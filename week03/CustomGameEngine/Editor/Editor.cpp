@@ -4,6 +4,7 @@
 #include "UI/EditorPropertyPanel.h"
 #include "UI/EditorStatPanel.h"
 #include "UI/EditorToolbar.h"
+#include "UI/EditorSceneManagerPanel.h"
 #include "Gizmo.h"
 #include "Component/GizmoComponent.h"
 #include "Component/SceneComponent.h"
@@ -17,6 +18,7 @@ Editor::Editor()
 	Console = new EditorConsole();
 	PropertyPanel = new EditorPropertyPanel(this);
 	StatPanel = new EditorStatPanel();
+	SceneMgrPanel = new EditorSceneManagerPanel();
 }
 
 Editor::~Editor()
