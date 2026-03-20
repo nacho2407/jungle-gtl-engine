@@ -114,12 +114,6 @@
     <ClCompile Include="Source\Engine\Asset\Asset.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\Actor.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\CameraComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Component\CubeComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
@@ -144,6 +138,7 @@
     <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp">
       <Filter>Source\Engine\ViewPort</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Actor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Sphere.h">
@@ -263,12 +258,6 @@
     <ClInclude Include="Source\Engine\Asset\Asset.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\Actor.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\CameraComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Component\CubeComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
@@ -296,6 +285,7 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11Common.h">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Actor.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
