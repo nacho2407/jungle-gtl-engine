@@ -1,5 +1,8 @@
 #pragma once
-class FVector4
+
+#include "../EngineAPI.h"
+
+struct ENGINE_API FVector4
 {
 
 };
