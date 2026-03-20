@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Rotator.h"
 #include "../EngineAPI.h"
 
 struct FVector;

@@ -28,7 +28,8 @@ FVector4 FVector4::operator/(const float s) const
         assert(s != 0.0f && "Division by zero in FVector4::operator/");
         return FVector4::Zero();
     }
-    return FVector4(x / s, y / s, z / s);
+    float Denominator = 1.0f / s;
+    return FVector4(x * Denominator, y * Denominator, z * Denominator);
 }
 
 FVector4 FVector4::Normalize() const

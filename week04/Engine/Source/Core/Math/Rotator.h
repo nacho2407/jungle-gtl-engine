@@ -24,7 +24,6 @@ struct ENGINE_API FRotator
     FRotator &operator-=(const FRotator &Other);
 
     static FRotator FromVector(const FVector &Forward);
-    static FRotator ZeroRotator();
 
   public:
     float Roll;  // X축 회전

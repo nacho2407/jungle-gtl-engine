@@ -49,5 +49,3 @@ FRotator FRotator::FromVector(const FVector &Forward)
                   (180.0f / MathHelper::PI);
     return FRotator(0.0f, Pitch, Yaw);
 }
-
-FRotator FRotator::ZeroRotator() { return FRotator(0.0f, 0.0f, 0.0f); }

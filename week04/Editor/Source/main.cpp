@@ -1,6 +1,6 @@
+#include "Core/CoreMinimal.h"
 
-
-int main()
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nShowCmd)
 {
 	return 0;
 }
