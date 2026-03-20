@@ -5,7 +5,7 @@
 struct ENGINE_API FColor
 {
 public:
-	FColor(float InR = 0.f, float InG = 0.f, float InB = 0.f, float InA = 1.0f);
+	constexpr FColor(float InR = 0.f, float InG = 0.f, float InB = 0.f, float InA = 1.0f);
 	~FColor();
 
 	FColor operator+(float num) const;
