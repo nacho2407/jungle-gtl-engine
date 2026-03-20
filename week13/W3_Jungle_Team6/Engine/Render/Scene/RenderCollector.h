@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "RenderBus.h"
 #include "RenderCollectorContext.h"
 #include "Engine/Scene/Camera.h"

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/ObjectFactory.h"
 #include "SceneComponent.h"

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 #include "Object/FName.h"
@@ -6,7 +6,7 @@
 
 class UWorld;
 
-class AActor : public UObject{
+class AActor : public UObject {
 public:
 	DECLARE_CLASS(AActor, UObject)
 	AActor() = default;
@@ -54,7 +54,7 @@ public:
 		return ExistingComp;
 	}
 
-	void RemoveComponent(USceneComponent* Component){
+	void RemoveComponent(USceneComponent* Component) {
 		if (!Component) return;
 
 		auto it = std::find(Components.begin(),
@@ -107,7 +107,7 @@ protected:
 	bool bVisible = true;
 
 	TArray<USceneComponent*> Components;
-	
+
 private:
 	void RegisterComponentRecursive(USceneComponent* Comp);
 };
