@@ -1,11 +1,13 @@
 #pragma once
 
+#include "../EngineAPI.h"
+
 struct FMatrix;
 
-struct  FVector
+struct ENGINE_API FVector
 {
 public:
-	FVector(float InX = 0.0f, float InY = 0.0f, float InZ = 0.0f);
+	constexpr FVector(float InX = 0.0f, float InY = 0.0f, float InZ = 0.0f);
 	~FVector();
 	float Dot(const FVector& Other) const;
 	FVector Cross(const FVector& Other) const;
@@ -28,4 +30,3 @@ public:
 public:
 	float x, y, z;
 };
-

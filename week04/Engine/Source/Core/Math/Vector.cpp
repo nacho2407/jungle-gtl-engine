@@ -1,8 +1,5 @@
+#include "../CoreMinimal.h"
 #include <cassert>
-
-#include "MathHelper.h"
-#include "Vector.h"
-#include "Matrix.h"
 
 FVector::FVector(float InX, float InY, float InZ) : x(InX), y(InY), z(InZ)
 {
