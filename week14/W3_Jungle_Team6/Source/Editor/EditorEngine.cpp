@@ -52,9 +52,6 @@ void FEditorEngine::Create(HWND InHWindow)
 	//EditorGizmo = UObjectManager::Get().CreateObject<UGizmoComponent>();
 	//EditorGizmo->SetWorldLocation(FVector(0.0f, 0.0f, 0.0f));
 	//ViewportClient.SetGizmo(EditorGizmo);
-
-	// TODO eric1306: 테스트코드
-	FontAtlasBatcher.Create(Renderer.GetFD3DDevice().GetDevice());
 }
 
 void FEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
