@@ -1,9 +1,9 @@
 ﻿#pragma once
 
-#include "EngineTypes.h"
+#include "EngineCore/EngineTypes.h"
 #include "Math/Vector.h"
 #include <d3d11.h>
-#include "EngineTypes.h"
+#include "EngineCore/EngineTypes.h"
 
 struct FGeometry
 {

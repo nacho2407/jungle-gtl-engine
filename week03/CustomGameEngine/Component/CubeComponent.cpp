@@ -1,5 +1,5 @@
 ﻿#include "CubeComponent.h"
-#include "ResourceManager.h"
+#include "EngineCore/ResourceManager.h"
 
 UCubeComp::UCubeComp()
 {

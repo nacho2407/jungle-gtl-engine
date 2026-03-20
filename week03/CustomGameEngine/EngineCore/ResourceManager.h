@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "EngineTypes.h"
+#include "EngineCore/EngineTypes.h"
 #include "Renderer/Geometry.h"
 #include "Renderer/Material.h"
 #include "Math/MathHelper.h"

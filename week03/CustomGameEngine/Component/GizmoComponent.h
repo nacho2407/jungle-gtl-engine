@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "EngineTypes.h"
+#include "EngineCore/EngineTypes.h"
 #include "Editor/Gizmo/GizmoControlStrategy.h"
 #include "Math/Matrix.h"
 #include "Editor/Picker.h"

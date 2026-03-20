@@ -1,11 +1,11 @@
 ﻿#include "GizmoRotationControlStrategy.h"
 #include "Component/GizmoComponent.h"
-#include "ResourceManager.h"
-#include "Object.h"
+#include "EngineCore/ResourceManager.h"
+#include "Component/Object.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderObject.h"
 #include "Component/SceneComponent.h"
-#include "Logger.h"
+#include "EngineCore/Logger.h"
 
 GizmoRotationControlStrategy::GizmoRotationControlStrategy(UGizmoComponent* controller)
 {

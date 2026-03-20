@@ -1,13 +1,13 @@
 ﻿#include "CameraComponent.h"
-#include "InputManager.h"
+#include "EngineCore/InputManager.h"
 #include "Math/MathHelper.h"
 #include "Math/Matrix.h"
 #include "Math/Quaternion.h"
 #include "Math/Vector.h"
 #include "Math/Vector4.h"
 #include "World.h"
-#include "TimerManager.h"
-#include "Logger.h"
+#include "EngineCore/TimerManager.h"
+#include "EngineCore/Logger.h"
 #include <algorithm>
 
 UCameraComponent* UCameraComponent::mainCamera = nullptr;
@@ -68,8 +68,8 @@ void UCameraComponent::Move(float DeltaTime) {
 
 FMatrix GetRotationMatrix(float roll, float pitch, float yaw)
 {
-	return FMatrix::RotationXMatrix(roll)*
-		FMatrix::RotationYMatrix(pitch)*
+	return FMatrix::RotationXMatrix(roll) *
+		FMatrix::RotationYMatrix(pitch) *
 		FMatrix::RotationZMatrix(yaw);
 }
 
@@ -84,7 +84,7 @@ FMatrix UCameraComponent::GetRotationMatrix()
 }
 
 void UCameraComponent::SetDirection(const float InputPitch, const float InputYaw, const float InputRoll)
-{ 	
+{
 	FRotator eulerAngle = GetRelativeRotation();
 
 	if (std::abs(eulerAngle.Roll - InputRoll) > Epsilon) {

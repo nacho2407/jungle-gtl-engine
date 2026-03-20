@@ -1,13 +1,13 @@
 ﻿#include "World.h"
-#include "ObjectFactory.h"
+#include "EngineCore/ObjectFactory.h"
 #include "Component/PrimitiveComponent.h"
-#include "EngineStatics.h"
+#include "EngineCore/EngineStatics.h"
 #include "SerializeHelper.h"
 
 UScene* UWorld::activeScene;
 UScene* UWorld::permanentScene;
 
-UWorld::UWorld() 
+UWorld::UWorld()
 {
 	permanentScene = Cast<UScene>(FObjectFactory::ConstructObject(UScene::GetClass()));
 }
@@ -19,7 +19,7 @@ UWorld::~UWorld() {
 	FLevel::GetInstance().Clear();
 	for (auto it = permanentScene->SceneComponents.begin(); it != permanentScene->SceneComponents.end(); it++)
 	{
-		delete *it;
+		delete* it;
 	}
 	permanentScene->SceneComponents.clear();
 
@@ -61,7 +61,7 @@ void UWorld::SaveScene(FString sceneName)
 UScene* UWorld::LoadScene(FString sceneName)
 {
 	const FString filePath = sceneName + ".Scene";
-	
+
 	UScene* loadedScene = SerializeHelper::LoadFromJson<UScene>(filePath);
 
 	if (loadedScene != nullptr)

@@ -1,5 +1,5 @@
 ﻿#include "SphereComponent.h"
-#include "ResourceManager.h"
+#include "EngineCore/ResourceManager.h"
 
 USphereComp::USphereComp()
 {

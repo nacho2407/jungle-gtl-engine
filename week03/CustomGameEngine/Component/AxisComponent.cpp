@@ -1,6 +1,6 @@
 ﻿#include "AxisComponent.h"
 #include "Renderer/Renderer.h"
-#include "ResourceManager.h"
+#include "EngineCore/ResourceManager.h"
 
 UAxisComp::UAxisComp()
 {

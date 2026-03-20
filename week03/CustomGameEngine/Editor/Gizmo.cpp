@@ -3,9 +3,9 @@
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Renderer/RenderObject.h"
-#include "ResourceManager.h"
+#include "EngineCore/ResourceManager.h"
 #include "Picker.h"
-#include "Logger.h"
+#include "EngineCore/Logger.h"
 #include "World.h"
 
 Gizmo::Gizmo()

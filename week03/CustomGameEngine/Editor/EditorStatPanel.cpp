@@ -1,5 +1,5 @@
 ﻿#include "EditorStatPanel.h"
-#include "EngineStatics.h"
+#include "EngineCore/EngineStatics.h"
 #include "ImGui/imgui.h"
 
 EditorStatPanel::EditorStatPanel()

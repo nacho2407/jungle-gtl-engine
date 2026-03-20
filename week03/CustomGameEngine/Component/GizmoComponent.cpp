@@ -1,14 +1,14 @@
 ﻿#include "GizmoComponent.h"
 #include "Component/CameraComponent.h"
 #include "Component/SceneComponent.h"
-#include "EngineTypes.h"
+#include "EngineCore/EngineTypes.h"
 #include "Editor/Gizmo/GizmoTranslationControlStrategy.h"
 #include "Editor/Gizmo/GizmoRotationControlStrategy.h"
 #include "Editor/Gizmo/GizmoScaleControlStrategy.h"
-#include "InputManager.h"
+#include "EngineCore/InputManager.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderObject.h"
-#include "ResourceManager.h"
+#include "EngineCore/ResourceManager.h"
 
 UGizmoComponent::UGizmoComponent()
 {

@@ -1,7 +1,7 @@
 ﻿#include "ResourceManager.h"
 #include "VertexSimple.h"
-#include "Sphere.h"
-#include "Triangle.h"
+#include "Geometry/Sphere.h"
+#include "Geometry/Triangle.h"
 
 
 void ResourceManager::AddCubeMesh(ID3D11Device* Device)

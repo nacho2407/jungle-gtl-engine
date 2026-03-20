@@ -8,13 +8,13 @@
 #include "Editor/Gizmo.h"
 #include "Editor/Picker.h"
 #include "ImGui/imgui.h"
-#include "InputManager.h"
-#include "Logger.h"
-#include "Object.h"
-#include "ObjectFactory.h"
-#include "ResourceManager.h"
+#include "EngineCore/InputManager.h"
+#include "EngineCore/Logger.h"
+#include "Component/Object.h"
+#include "EngineCore/ObjectFactory.h"
+#include "EngineCore/ResourceManager.h"
 #include "Scene.h"
-#include "TimerManager.h"
+#include "EngineCore/TimerManager.h"
 #include "World.h"
 
 
@@ -111,7 +111,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	Renderer->SetRenderCamera(Camera);
 	EditorInst->SetCamera(Camera);
 	EditorInst->SetRenderer(Renderer);
-	
+
 	Gizmo::GetInstance().CreateGizmoController();
 
 	//Resize Callback

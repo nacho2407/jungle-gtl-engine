@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Math/Matrix.h"
-#include "Color.h"
+#include "EngineCore/Color.h"
 #include <d3d11.h>
 
 struct FMaterial;

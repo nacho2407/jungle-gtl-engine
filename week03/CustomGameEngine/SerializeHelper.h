@@ -1,8 +1,8 @@
 ﻿#pragma once
 
 #include "Serializable.h"
-#include "EngineTypes.h"
-#include "Logger.h"
+#include "EngineCore/EngineTypes.h"
+#include "EngineCore/Logger.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>

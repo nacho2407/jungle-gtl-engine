@@ -5,8 +5,8 @@
 #include "Math/Matrix.h"
 #include "VertexSimple.h"
 #include <d3d11.h>
-#include "EngineTypes.h"
-#include "Color.h"
+#include "EngineCore/EngineTypes.h"
+#include "EngineCore/Color.h"
 
 class URenderer {
 public:

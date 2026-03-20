@@ -1,7 +1,7 @@
 ﻿#pragma once
 
-#include "EngineTypes.h"
-#include "ObjectFactory.h"
+#include "EngineCore/EngineTypes.h"
+#include "EngineCore/ObjectFactory.h"
 
 #define DECLARE_RTTI(cls, parent_cls) \
 	public: \

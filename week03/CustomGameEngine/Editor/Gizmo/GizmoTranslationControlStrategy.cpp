@@ -1,11 +1,11 @@
 ﻿#include "GizmoTranslationControlStrategy.h"
-#include "ResourceManager.h"
-#include "Object.h"
+#include "EngineCore/ResourceManager.h"
+#include "Component/Object.h"
 #include "Component/GizmoComponent.h"
 #include "Component/SceneComponent.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderObject.h"
-#include "Logger.h"
+#include "EngineCore/Logger.h"
 
 GizmoTranslationControlStrategy::GizmoTranslationControlStrategy(UGizmoComponent* controller)
 {
@@ -22,7 +22,7 @@ GizmoTranslationControlStrategy::GizmoTranslationControlStrategy(UGizmoComponent
 	GizmoY->Material = &resourceManager->GetMaterial(L"Shader/ShaderW0.hlsl");
 	GizmoY->bDepthEnabled = false;
 	GizmoY->Color = FColor(0.0f, 1.0f, 0.0f, 1.0f);
-	
+
 	GizmoZ = new RenderObject();
 	GizmoZ->Geometry = &resourceManager->GetGeometry("GizmoTranslation");
 	GizmoZ->Material = &resourceManager->GetMaterial(L"Shader/ShaderW0.hlsl");

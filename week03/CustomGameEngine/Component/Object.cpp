@@ -1,5 +1,5 @@
 ﻿#include "Object.h"
-#include "EngineStatics.h"
+#include "EngineCore/EngineStatics.h"
 
 TArray<UObject*> GUObjectArray;
 

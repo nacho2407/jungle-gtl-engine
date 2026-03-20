@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include <d3d11.h>
-#include "EngineTypes.h"
+#include "EngineCore/EngineTypes.h"
 class FConstantBuffer {
 public:
 	TComPtr<ID3D11Buffer> Buffer = nullptr;

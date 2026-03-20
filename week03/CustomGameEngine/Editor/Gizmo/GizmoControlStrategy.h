@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "EngineTypes.h"
+#include "EngineCore/EngineTypes.h"
 
 struct Ray;
 struct FMatrix;

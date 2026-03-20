@@ -3,7 +3,7 @@
 #endif
 
 #include "EditorConsole.h"
-#include "Logger.h"
+#include "EngineCore/Logger.h"
 #include <cstdio>
 
 EditorConsole::EditorConsole()

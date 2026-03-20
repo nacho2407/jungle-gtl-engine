@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "json.h"
+#include "ThirdParty/json.h"
 
 class ISerializable
 {

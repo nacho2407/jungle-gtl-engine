@@ -1,5 +1,5 @@
 ﻿#include "PrimitiveFactory.h"
-#include "ObjectFactory.h"
+#include "EngineCore/ObjectFactory.h"
 #include "World.h"
 #include "Component/CubeComponent.h"
 #include "Component/SphereComponent.h"

@@ -2,7 +2,7 @@
 
 #include <windows.h>
 #include <functional>
-#include "EngineTypes.h"
+#include "EngineCore/EngineTypes.h"
 class URenderer;
 class Editor;
 class UCameraComponent;

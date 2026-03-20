@@ -45,16 +45,16 @@
     <ClInclude Include="ImGui\imstb_truetype.h">
       <Filter>imGui</Filter>
     </ClInclude>
-    <ClInclude Include="Sphere.h">
+    <ClInclude Include="Geometry\Sphere.h">
       <Filter>리소스 파일</Filter>
     </ClInclude>
-    <ClInclude Include="EngineApp.h">
+    <ClInclude Include="EngineApp\EngineApp.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Color.h">
+    <ClInclude Include="EngineCore\Color.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="ObjectFactory.h">
+    <ClInclude Include="EngineCore\ObjectFactory.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Math\Vector4.h">
@@ -63,7 +63,7 @@
     <ClInclude Include="VertexSimple.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="InputManager.h">
+    <ClInclude Include="EngineCore\InputManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Serializable.h">
@@ -72,40 +72,40 @@
     <ClInclude Include="Singleton.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="json.h">
+    <ClInclude Include="ThirdParty\json.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Logger.h">
+    <ClInclude Include="EngineCore\Logger.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="ResourceManager.h">
+    <ClInclude Include="EngineCore\ResourceManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Scene.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Timer.h">
+    <ClInclude Include="EngineCore\Timer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="TimerManager.h">
+    <ClInclude Include="EngineCore\TimerManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="EngineStatics.h">
+    <ClInclude Include="EngineCore\EngineStatics.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="EngineTypes.h">
+    <ClInclude Include="EngineCore\EngineTypes.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Mesh.h">
+    <ClInclude Include="Renderer\Mesh.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Object.h">
+    <ClInclude Include="Component\Object.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="World.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Triangle.h">
+    <ClInclude Include="Geometry\Triangle.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Math\MathHelper.h">
@@ -207,7 +207,13 @@
     <ClInclude Include="SerializeHelper.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="fifo_map.hpp">
+    <ClInclude Include="ThirdParty\fifo_map.hpp">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Ray.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Rotator.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -236,40 +242,40 @@
     <ClCompile Include="main.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="EngineStatics.cpp">
+    <ClCompile Include="EngineCore\EngineStatics.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Object.cpp">
+    <ClCompile Include="Component\Object.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="EngineApp.cpp">
+    <ClCompile Include="EngineApp\EngineApp.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="ObjectFactory.cpp">
+    <ClCompile Include="EngineCore\ObjectFactory.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Scene.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="ResourceManager.cpp">
+    <ClCompile Include="EngineCore\ResourceManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Color.cpp">
+    <ClCompile Include="EngineCore\Color.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="InputManager.cpp">
+    <ClCompile Include="EngineCore\InputManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="json.cpp">
+    <ClCompile Include="ThirdParty\json.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Logger.cpp">
+    <ClCompile Include="EngineCore\Logger.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Timer.cpp">
+    <ClCompile Include="EngineCore\Timer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="TimerManager.cpp">
+    <ClCompile Include="EngineCore\TimerManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="World.cpp">
@@ -356,9 +362,18 @@
     <ClCompile Include="Renderer\RenderObject.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Math\Ray.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\Rotator.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shader\ShaderInfiniteGrid.hlsl" />
     <FxCompile Include="Shader\ShaderW0.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
 </Project>

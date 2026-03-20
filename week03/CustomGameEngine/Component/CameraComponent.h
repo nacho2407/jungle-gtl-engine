@@ -5,7 +5,7 @@
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
 #include "ImGui/imgui.h"
-#include "Ray.h"
+#include "Math/Ray.h"
 
 enum class EProjectionType
 {

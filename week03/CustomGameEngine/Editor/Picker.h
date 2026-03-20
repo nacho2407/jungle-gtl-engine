@@ -1,8 +1,8 @@
 ﻿#pragma once
 
-#include "Ray.h"
-#include "EngineTypes.h"
-#include "Object.h"
+#include "Math/Ray.h"
+#include "EngineCore/EngineTypes.h"
+#include "Component/Object.h"
 #include "Component/CameraComponent.h"
 #include "Math/Vector.h"
 

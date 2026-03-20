@@ -1,5 +1,5 @@
 ﻿#include "PlaneComponent.h"
-#include "ResourceManager.h"
+#include "EngineCore/ResourceManager.h"
 
 UPlaneComp::UPlaneComp()
 {
