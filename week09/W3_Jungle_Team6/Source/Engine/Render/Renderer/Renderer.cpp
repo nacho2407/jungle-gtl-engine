@@ -69,18 +69,6 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 {
 	ID3D11DeviceContext* context = Device.GetDeviceContext();
 
-	//ID3D11Buffer* VSConstantBuffers[3] =
-	//{
-	//	Resources.PerObjectConstantBuffer.GetBuffer(),
-	//	Resources.GizmoPerObjectConstantBuffer.GetBuffer(),
-	//	Resources.OverlayConstantBuffer.GetBuffer()
-	//};
-	//context->VSSetConstantBuffers(0, 3, VSConstantBuffers);
-	//context->PSSetConstantBuffers(0, 3, VSConstantBuffers);
-
-	//const FGizmoConstants ZeroGizmoConstants = {};
-	//Resources.GizmoPerObjectConstantBuffer.Update(context, &ZeroGizmoConstants, sizeof(FGizmoConstants));
-
 	//	순서 지켜야 함. (Component -> Axis -> Grid -> Outline -> Gizmo -> Overlay)
 	//	State Caching으로 인해 중복 설정은 자동으로 스킵됨.
 
@@ -156,7 +144,6 @@ void FRenderer::RenderDepthLessPass(ID3D11DeviceContext* InDeviceContext, const 
 
 	InDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	DrawCommand(InDeviceContext, InRenderBus.GetDepthLessCommands()[0]);
-	//RenderDepthLessPass(InDeviceContext, InRenderBus);
 
 
 	//	선택된 경우 그리지 않음
@@ -169,12 +156,6 @@ void FRenderer::RenderDepthLessPass(ID3D11DeviceContext* InDeviceContext, const 
 
 	InDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	DrawCommand(InDeviceContext, InRenderBus.GetDepthLessCommands()[1]);
-
-	//RenderDepthLessPass(InDeviceContext, InRenderBus);
-	//for (const FRenderCommand& command : InRenderBus.GetDepthLessCommands())
-	//{
-	//	DrawCommand(InDeviceContext, command);
-	//}
 }
 
 void FRenderer::RenderEditorPass(ID3D11DeviceContext* InDeviceContext, const FRenderBus& InRenderBus)
@@ -223,7 +204,6 @@ void FRenderer::DrawCommand(ID3D11DeviceContext * InDeviceContext, const FRender
 		
 		ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
 		InDeviceContext->VSSetConstantBuffers(0, 1, &cb);
-		//InDeviceContext->PSSetConstantBuffers(0, 1, &cb);
 	}
 
 	if (InCommand.Type == ERenderCommandType::Gizmo)
@@ -267,7 +247,6 @@ void FRenderer::DrawCommand(ID3D11DeviceContext * InDeviceContext, const FRender
 
 		cb = Resources.PerObjectConstantBuffer.GetBuffer();
 		InDeviceContext->VSSetConstantBuffers(0, 1, &cb);
-		//InDeviceContext->PSSetConstantBuffers(0, 1, &cb);
 	}
 
 	uint32 offset = 0;
