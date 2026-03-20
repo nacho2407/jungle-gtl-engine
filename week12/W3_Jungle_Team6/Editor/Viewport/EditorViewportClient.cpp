@@ -212,7 +212,7 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		}
 	}
 	
-	FRay ray = Camera->DeprojectScreenToWorld(mousepoint.x, mousepoint.y, WindowWidth, WindowHeight);
+	FRay ray = Camera->DeprojectScreenToWorld(static_cast<float>(mousepoint.x), static_cast<float>(mousepoint.y), WindowWidth, WindowHeight);
 	FHitResult hitResult;
 
 	//Gizmo Hover
