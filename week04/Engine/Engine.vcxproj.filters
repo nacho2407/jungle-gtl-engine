@@ -70,6 +70,9 @@
     <Filter Include="Source\Renderer\D3D11">
       <UniqueIdentifier>{7d49e81e-9894-3ffe-a35e-b64d3056e0ba}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Renderer\Types">
+      <UniqueIdentifier>{2a470593-b470-7a69-2874-61b9dc3a78a3}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Core\Geometry\Primitives">
       <UniqueIdentifier>{243ace44-3495-fff3-c265-ad18f16b3c35}</UniqueIdentifier>
     </Filter>
@@ -141,9 +144,10 @@
     <ClCompile Include="Source\Engine\Game\Actor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp">
-      <Filter>Source\Engine\ViewPort</Filter>
+    <ClCompile Include="Source\Engine\Game\Actor.cpp">
+      <Filter>Source\Engine\Game</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Core\HAL\PlatformTime.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Sphere.h">
@@ -293,12 +297,52 @@
     <ClInclude Include="Source\Engine\Game\Actor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\ViewPort\Viewport.h">
-      <Filter>Source\Engine\ViewPort</Filter>
+    <ClInclude Include="Source\Engine\Game\Actor.h">
+      <Filter>Source\Engine\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\D3D11\D3D11Common.h">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Renderer\D3D11\D3D11DynamicRHI.h">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\D3D11\D3D11FontBatchRenderer.h">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.h">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.h">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\D3D11\D3D11PickingPass.h">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\RendererModule.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Scene.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Types\EditorRenderData.h">
+      <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Types\SceneRenderData.h">
+      <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Types\ShaderConstants.h">
+      <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Types\VertexTypes.h">
+      <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Types\ViewMode.h">
+      <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Launch\EngineLoop.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "HAL/PlatformTypes.h"
+#include "Core/HAL/PlatformTypes.h"
 
 #if defined(_WIN32)
 #include <Windows.h>
@@ -9,10 +9,9 @@
 #include <thread>
 #endif
 
-// TODO
 struct FPlatformTime
 {
-    static double Seconds();
+    static float Seconds();
     static uint64 Cycles64();
     static void   Sleep(float Seconds);
 };

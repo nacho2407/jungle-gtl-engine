@@ -15,7 +15,7 @@ namespace
         
         const int32 ExitCode = EditorEngineLoop.Run();
         
-        EditorEngineLoop.Shutdown();
+        EditorEngineLoop.ShutDown();
         
         return ExitCode;
     }

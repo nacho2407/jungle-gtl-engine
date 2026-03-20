@@ -1,18 +1,24 @@
 #pragma once
 
 #include "Core/CoreMinimal.h"
+#include "Renderer/Scene.h"
 
-class FEditor
+class ENGINE_API FEditor
 {
 public:
+    /* Default Functions */
     void Create(HWND);
     void Release();
     
     void BeginPlay();
-    void Update();
+    void Tick(float DeltaTime);
     
-    void BeginFrame();
-    void EndFrame();
+    void OnWindowResized(float Width, float Height);
+    void SetMainLoopFPS(float FPS) { CurFPS = FPS; }
+    
+    /* From Panel */
+    void CreateNewScene();
+    void ClearScene();
     
 private:
     
@@ -25,8 +31,13 @@ private:
     
     /* Gizmo */
     
+    /* Scene */
+    FScene * CurScene = nullptr;
+    
+    /* Properties */
     float WindowWidth = 0.0f;
     float WindowHeight = 0.0f;
     
+    float CurFPS = 0.0f;    //  Panel에 Display
     
 };

@@ -51,7 +51,6 @@
     <ClInclude Include="Source\CoreUObject\Object.h" />
     <ClInclude Include="Source\CoreUObject\ObjectFactory.h" />
     <ClInclude Include="Source\Engine\Asset\Asset.h" />
-    <ClInclude Include="Source\Engine\Component\CameraComponent.h" />
     <ClInclude Include="Source\Engine\Component\CubeComponent.h" />
     <ClInclude Include="Source\Engine\Component\PlaneComponent.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
@@ -60,8 +59,21 @@
     <ClInclude Include="Source\Engine\Component\TriangleComponent.h" />
     <ClInclude Include="Source\Engine\EngineStatics.h" />
     <ClInclude Include="Source\Engine\Game\Actor.h" />
-    <ClInclude Include="Source\Engine\ViewPort\Viewport.h" />
+    <ClInclude Include="Source\Launch\EngineLoop.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11Common.h" />
+    <ClInclude Include="Source\Renderer\D3D11\D3D11DynamicRHI.h" />
+    <ClInclude Include="Source\Renderer\D3D11\D3D11FontBatchRenderer.h" />
+    <ClInclude Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.h" />
+    <ClInclude Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.h" />
+    <ClInclude Include="Source\Renderer\D3D11\D3D11PickingPass.h" />
+    <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h" />
+    <ClInclude Include="Source\Renderer\RendererModule.h" />
+    <ClInclude Include="Source\Renderer\Scene.h" />
+    <ClInclude Include="Source\Renderer\Types\EditorRenderData.h" />
+    <ClInclude Include="Source\Renderer\Types\SceneRenderData.h" />
+    <ClInclude Include="Source\Renderer\Types\ShaderConstants.h" />
+    <ClInclude Include="Source\Renderer\Types\VertexTypes.h" />
+    <ClInclude Include="Source\Renderer\Types\ViewMode.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -73,6 +85,7 @@
       <PrecompiledHeaderFile>Core/CoreMinimal.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="Source\Core\Geometry\Transform.cpp" />
+    <ClCompile Include="Source\Core\HAL\PlatformTime.cpp" />
     <ClCompile Include="Source\Core\Math\Color.cpp" />
     <ClCompile Include="Source\Core\Math\Matrix.cpp" />
     <ClCompile Include="Source\Core\Math\Quat.cpp" />
@@ -83,16 +96,8 @@
     <ClCompile Include="Source\CoreUObject\Object.cpp" />
     <ClCompile Include="Source\CoreUObject\ObjectFactory.cpp" />
     <ClCompile Include="Source\Engine\Asset\Asset.cpp" />
-    <ClCompile Include="Source\Engine\Component\CameraComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\CubeComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\PlaneComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\SceneComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\SphereComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\TriangleComponent.cpp" />
     <ClCompile Include="Source\Engine\EngineStatics.cpp" />
     <ClCompile Include="Source\Engine\Game\Actor.cpp" />
-    <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

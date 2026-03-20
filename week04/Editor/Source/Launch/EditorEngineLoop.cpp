@@ -1,4 +1,4 @@
-﻿#include "EditorEngineLoop.h"
+#include "EditorEngineLoop.h"
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, uint32 msg, WPARAM wParam, LPARAM lParam);
 
@@ -36,6 +36,13 @@ LRESULT FEditorEngineLoop::WndProc(HWND HWnd, uint32 Message, WPARAM WParam, LPA
         bIsExit = true;
         PostQuitMessage(0);
         return 0;
+    case WM_SIZE:
+        if (Editor)
+        {
+            Editor->OnWindowResized(LOWORD(LParam), HIWORD(LParam));    
+        }
+    case WM_SIZING:
+        //  Render for Re-Sizing
     default:
         break;
     }
@@ -71,8 +78,9 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
     }
     
     /* Editor Initialize */
-    Editor.Create(HWindow);
-    Editor.BeginPlay();
+    Editor = new FEditor();
+    Editor->Create(HWindow);
+    Editor->BeginPlay();
 
     InitializeForTime();
     return true;
@@ -106,31 +114,41 @@ int32 FEditorEngineLoop::Run()
     return 0;
 }
 
-void FEditorEngineLoop::Shutdown()
+void FEditorEngineLoop::ShutDown()
 {
-    Editor.Release();
+    Editor->Release();
+    delete Editor;
+    Editor = nullptr;
+    
     //  TODO : Garbage Sweep
 }
 
 void FEditorEngineLoop::Tick()
 {
+    /* Application Pump Message */
+    
     /* Time Measuring */
-    QueryPerformanceCounter(&CurTime);
-    DeltaTime = static_cast<float>(CurTime.QuadPart - PrevTime.QuadPart);
-    PrevTime = CurTime;
+    DeltaTime = FPlatformTime::Seconds() - PrevTime;
+    PrevTime = FPlatformTime::Seconds();
 
+    MainLoopFPS = 1.0f / DeltaTime;
+
+    /* Engine Tick */
+    //  Engine->Tick(DeltaTime);
     /* Editor Update */
-    Editor.BeginFrame();
-    Editor.Update();
-    Editor.EndFrame();
+    Editor->Tick(DeltaTime);
+    
+    /* Rendering Prepare Stage */
+    
+    /* Editor Viewport Client */
+    
+    /* Render End Stage */
 
-    Sleep(0);
+    FPlatformTime::Sleep(0.f);
 }
 
 void FEditorEngineLoop::InitializeForTime()
 {
-    QueryPerformanceFrequency(&Frequency);
-    QueryPerformanceCounter(&PrevTime);
+    PrevTime = FPlatformTime::Seconds();
     DeltaTime = 0.0f;
-    Accumulator = 0.0f;
 }
