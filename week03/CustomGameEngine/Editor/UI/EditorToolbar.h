@@ -7,4 +7,3 @@ struct EditorToolbar
 
 	void Draw();
 };
-

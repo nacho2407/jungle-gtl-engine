@@ -21,7 +21,6 @@ public:
 	bool IsCompSelected{ false };
 	FVector SelectedCompPos;
 
-
 	void Update(float DeltaTime);
 	std::string ToJson();
 	static std::string ToJson(UScene*);

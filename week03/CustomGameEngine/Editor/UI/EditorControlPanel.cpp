@@ -49,7 +49,7 @@ void EditorControlPanel::Draw(UCameraComponent* camera)
 {
 	UpdateFPS(TimerManager::GetInstance().GetGlobalDeltaTime());
 
-	ImGui::SetNextWindowPos(ImVec2(50, 50), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);
 
 	ImGui::Begin("Jungle Control Panel");
@@ -80,16 +80,16 @@ void EditorControlPanel::Draw(UCameraComponent* camera)
 	if (ImGui::Button("New Scene"))
 	{
 		editor->SelectComponent(nullptr);
-		GetWorld().NewScene();
+		GetWorld().GetSceneManager()->NewScene();
 	}
 	if (ImGui::Button("Save Scene"))
 	{
-		GetWorld().SaveScene(sceneName);
+		GetWorld().GetSceneManager()->SaveScene(sceneName);
 	}
 	if (ImGui::Button("Load Scene"))
 	{
 		editor->SelectComponent(nullptr);
-		GetWorld().LoadScene(sceneName);
+		GetWorld().GetSceneManager()->LoadScene(sceneName);
 	}
 	ImGui::Separator();
 

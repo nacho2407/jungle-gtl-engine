@@ -1,5 +1,5 @@
 ﻿#include "EditorToolbar.h"
-#include "Gizmo.h"
+#include "Editor/Gizmo.h"
 #include "Component/GizmoComponent.h"
 #include "Editor/Gizmo/GizmoRotationControlStrategy.h"
 #include "ImGui/imgui.h"
@@ -14,6 +14,8 @@ EditorToolbar::~EditorToolbar()
 
 void EditorToolbar::Draw()
 {
+	ImGui::SetNextWindowPos(ImVec2(10, 415), ImGuiCond_FirstUseEver);
+
 	UGizmoComponent* gizmoController = Gizmo::GetInstance().GetController();
 
 	ImGui::Begin("Toolbar");

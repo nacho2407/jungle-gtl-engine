@@ -18,5 +18,5 @@ Gizmo::~Gizmo()
 
 void Gizmo::CreateGizmoController()
 {
-	Controller = Cast<UGizmoComponent>(GetWorld().AddPermanentSceneComponent<UGizmoComponent>());
+	Controller = Cast<UGizmoComponent>(GetWorld().GetSceneManager()->AddPermanentSceneComponent<UGizmoComponent>());
 }

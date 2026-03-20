@@ -68,13 +68,13 @@ UScene* UScene::FromJson(std::string jsonStr)
 		USceneComponent* newSc = nullptr;
 		FString typeStr = pair.second["Type"].ToString();
 		if (typeStr == "Cube")
-			newSc = GetWorld().AddSceneComponent<UCubeComp>(scene);
+			newSc = GetWorld().GetSceneManager()->AddSceneComponent<UCubeComp>(scene);
 		if (typeStr == "Sphere")
-			newSc = GetWorld().AddSceneComponent<USphereComp>(scene);
+			newSc = GetWorld().GetSceneManager()->AddSceneComponent<USphereComp>(scene);
 		if (typeStr == "Triangle")
-			newSc = GetWorld().AddSceneComponent<UTriangleComp>(scene);
+			newSc = GetWorld().GetSceneManager()->AddSceneComponent<UTriangleComp>(scene);
 		if (typeStr == "Plane")
-			newSc = GetWorld().AddSceneComponent<UPlaneComp>(scene);
+			newSc = GetWorld().GetSceneManager()->AddSceneComponent<UPlaneComp>(scene);
 
 		if (newSc == nullptr)
 			continue;

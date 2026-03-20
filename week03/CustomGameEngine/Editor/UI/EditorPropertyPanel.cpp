@@ -1,5 +1,5 @@
 ﻿#include "EditorPropertyPanel.h"
-#include "Editor.h"
+#include "Editor/Editor.h"
 #include "ImGui/imgui.h"
 #include "Component/PrimitiveComponent.h"	
 #include "Component/SceneComponent.h"
@@ -15,7 +15,7 @@ EditorPropertyPanel::~EditorPropertyPanel()
 
 void EditorPropertyPanel::Draw(USceneComponent* selectedComponent)
 {
-	ImGui::SetNextWindowPos(ImVec2(500, 50), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos(ImVec2(1600, 10), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
 
 	ImGui::Begin("Jungle Property Panel");
@@ -41,6 +41,6 @@ void EditorPropertyPanel::Draw(USceneComponent* selectedComponent)
 
 void EditorPropertyPanel::RemoveSelected(USceneComponent* selectedComponent)
 {
-	GetWorld().RemoveSceneComponent(selectedComponent);
+	GetWorld().GetSceneManager()->RemoveSceneComponent(selectedComponent);
 	editor->SelectComponent(nullptr);
 }

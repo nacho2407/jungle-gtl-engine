@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -140,11 +140,11 @@
     <ClInclude Include="Component\SphereComponent.h" />
     <ClInclude Include="Component\TriangleComponent.h" />
     <ClInclude Include="Editor\Editor.h" />
-    <ClInclude Include="Editor\EditorConsole.h" />
-    <ClInclude Include="Editor\EditorControlPanel.h" />
-    <ClInclude Include="Editor\EditorPropertyPanel.h" />
-    <ClInclude Include="Editor\EditorStatPanel.h" />
-    <ClInclude Include="Editor\EditorToolbar.h" />
+    <ClInclude Include="Editor\UI\EditorConsole.h" />
+    <ClInclude Include="Editor\UI\EditorControlPanel.h" />
+    <ClInclude Include="Editor\UI\EditorPropertyPanel.h" />
+    <ClInclude Include="Editor\UI\EditorStatPanel.h" />
+    <ClInclude Include="Editor\UI\EditorToolbar.h" />
     <ClInclude Include="Editor\Gizmo.h" />
     <ClInclude Include="Component\GizmoComponent.h" />
     <ClInclude Include="Editor\Gizmo\GizmoControlStrategy.h" />
@@ -152,9 +152,11 @@
     <ClInclude Include="Editor\Gizmo\GizmoScaleControlStrategy.h" />
     <ClInclude Include="Editor\Gizmo\GizmoTranslationControlStrategy.h" />
     <ClInclude Include="Editor\Picker.h" />
+    <ClInclude Include="Editor\UI\SceneManagerPanel.h" />
     <ClInclude Include="EngineApp\EngineApp.h" />
     <ClInclude Include="EngineCore\Color.h" />
     <ClInclude Include="EngineCore\Name.h" />
+    <ClInclude Include="SceneManager.h" />
     <ClInclude Include="ThirdParty\fifo_map.hpp" />
     <ClInclude Include="Math\Matrix.h" />
     <ClInclude Include="Math\Quaternion.h" />
@@ -189,7 +191,6 @@
     <ClInclude Include="EngineCore\Timer.h" />
     <ClInclude Include="EngineCore\TimerManager.h" />
     <ClInclude Include="Geometry\Triangle.h" />
-    <ClInclude Include="Renderer\Mesh.h" />
     <ClInclude Include="Math\Vector4.h" />
     <ClInclude Include="ThirdParty\json.h" />
     <ClInclude Include="Geometry\Sphere.h" />
@@ -208,11 +209,11 @@
     <ClCompile Include="Component\SphereComponent.cpp" />
     <ClCompile Include="Component\TriangleComponent.cpp" />
     <ClCompile Include="Editor\Editor.cpp" />
-    <ClCompile Include="Editor\EditorConsole.cpp" />
-    <ClCompile Include="Editor\EditorControlPanel.cpp" />
-    <ClCompile Include="Editor\EditorPropertyPanel.cpp" />
-    <ClCompile Include="Editor\EditorStatPanel.cpp" />
-    <ClCompile Include="Editor\EditorToolbar.cpp" />
+    <ClCompile Include="Editor\UI\EditorConsole.cpp" />
+    <ClCompile Include="Editor\UI\EditorControlPanel.cpp" />
+    <ClCompile Include="Editor\UI\EditorPropertyPanel.cpp" />
+    <ClCompile Include="Editor\UI\EditorStatPanel.cpp" />
+    <ClCompile Include="Editor\UI\EditorToolbar.cpp" />
     <ClCompile Include="Editor\Gizmo.cpp" />
     <ClCompile Include="Component\GizmoComponent.cpp" />
     <ClCompile Include="Editor\Gizmo\GizmoRotationControlStrategy.cpp" />
@@ -227,6 +228,7 @@
     <ClCompile Include="Math\Vector.cpp" />
     <ClCompile Include="EngineCore\ObjectFactory.cpp" />
     <ClCompile Include="EngineCore\InputManager.cpp" />
+    <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="ThirdParty\json.cpp" />
     <ClCompile Include="EngineCore\Logger.cpp" />
     <ClCompile Include="PrimitiveFactory.cpp" />
