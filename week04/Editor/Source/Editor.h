@@ -1,8 +1,9 @@
 #pragma once
 
 #include "Core/CoreMinimal.h"
+#include "Renderer/Scene.h"
 
-class FEditor
+class ENGINE_API FEditor
 {
 public:
     /* 기본 기능 */
@@ -27,9 +28,12 @@ public:
 
 private:
     /* Panel */
-
+    
     /* Gizmo */
 
+    /* Scene */
+    FScene * CurScene = nullptr;
+    
     /* Properties */
     float WindowWidth = 0.0f;
     float WindowHeight = 0.0f;
