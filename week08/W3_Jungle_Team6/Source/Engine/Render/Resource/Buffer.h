@@ -15,7 +15,7 @@
 class FVertexBuffer
 {
 private:
-	ID3D11Buffer* Buffer;
+	ID3D11Buffer* Buffer = nullptr;
 	uint32 VertexCount = 0;
 	uint32 Stride = 0;
 
@@ -91,10 +91,10 @@ public:
 	void Create(ID3D11Device* InDevice, const FMeshData& InMeshData);
 	void Release();
 
-	FVertexBuffer& GetFVertexBuffer() { return VertexBuffer; }
-	FIndexBuffer& GetFIndexBuffer() { return IndexBuffer; }
-	const FVertexBuffer& GetFVertexBuffer() const { return VertexBuffer; }
-	const FIndexBuffer& GetFIndexBuffer() const { return IndexBuffer; }
+	FVertexBuffer& GetVertexBuffer() { return VertexBuffer; }
+	FIndexBuffer& GetIndexBuffer() { return IndexBuffer; }
+	const FVertexBuffer& GetVertexBuffer() const { return VertexBuffer; }
+	const FIndexBuffer& GetIndexBuffer() const { return IndexBuffer; }
 	bool IsValid() const { return VertexBuffer.GetBuffer() != nullptr && VertexBuffer.GetVertexCount() > 0; }
 
 };

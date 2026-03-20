@@ -20,7 +20,7 @@ void UActorComponent::Deactivate()
 	bCanEverTick = false;
 }
 
-void UActorComponent::ExcuteTick(float DeltaTime)
+void UActorComponent::ExecuteTick(float DeltaTime)
 {
 	if (bCanEverTick == false || bIsActive == false)
 	{

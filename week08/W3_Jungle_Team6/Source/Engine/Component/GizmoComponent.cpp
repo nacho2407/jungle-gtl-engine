@@ -70,13 +70,13 @@ void UGizmoComponent::HandleDrag(float DragAmount)
 {
 	switch (CurMode)
 	{
-	case 0:
+	case EGizmoMode::Translate:
 		TranslateTarget(DragAmount);
 		break;
-	case 1:
+	case EGizmoMode::Rotate:
 		RotateTarget(DragAmount);
 		break;
-	case 2:
+	case EGizmoMode::Scale:
 		ScaleTarget(DragAmount);
 		break;
 	default:
@@ -88,16 +88,18 @@ void UGizmoComponent::HandleDrag(float DragAmount)
 
 void UGizmoComponent::TranslateTarget(float DragAmount)
 {
+	if (TargetComponent == nullptr) return;
 
 	FVector constrainedDelta = GetVectorForAxis(SelectedAxis) * DragAmount;
 
 	AddWorldOffset(constrainedDelta);
 	TargetComponent->AddWorldOffset(constrainedDelta);
-
 }
 
 void UGizmoComponent::RotateTarget(float DragAmount)
 {
+	if (TargetComponent == nullptr) return;
+
 	FMatrix curMatrix = FMatrix::MakeRotationEuler(TargetComponent->RelativeRotation);
 
 	FVector rotationAxis = GetVectorForAxis(SelectedAxis);
@@ -110,6 +112,7 @@ void UGizmoComponent::RotateTarget(float DragAmount)
 
 void UGizmoComponent::ScaleTarget(float DragAmount)
 {
+	if (TargetComponent == nullptr) return;
 
 	float scaleDelta = DragAmount * ScaleSensitivity;
 
