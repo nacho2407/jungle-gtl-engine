@@ -49,7 +49,7 @@ void EditorControlPanel::Draw(UCameraComponent* camera)
 {
 	UpdateFPS(TimerManager::GetInstance().GetGlobalDeltaTime());
 
-	ImGui::SetNextWindowPos(ImVec2(50, 50), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);
 
 	ImGui::Begin("Jungle Control Panel");
