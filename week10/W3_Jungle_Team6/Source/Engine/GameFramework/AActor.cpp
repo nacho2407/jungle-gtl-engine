@@ -1,4 +1,4 @@
-﻿#include "Classes/AActor.h"
+﻿#include "GameFramework/AActor.h"
 
 DEFINE_CLASS(AActor, UObject)
 REGISTER_FACTORY(AActor)
