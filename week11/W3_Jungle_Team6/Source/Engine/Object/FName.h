@@ -14,10 +14,10 @@
 class FName
 {
 public:
-	FName();
-	FName(const char* InName);
-	FName(const FString& InName);
-
+	FName() {};
+	FName(const char* InName) {};
+	FName(const FString& InName) {};
+	
 	// 비교 (대소문자 무시)
 	bool operator==(const FName& Other) const;
 	bool operator!=(const FName& Other) const;
@@ -35,7 +35,7 @@ public:
 	bool IsValid() const;
 
 	// None 이름
-	static const FName None;
+	//static const FName None;
 
 private:
 	uint32 ComparisonIndex;	// 소문자 변환된 문자열의 풀 인덱스 (비교용)
