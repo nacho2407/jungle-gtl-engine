@@ -4,9 +4,9 @@
 #include <fstream>
 #include <filesystem>
 #include <chrono>
-#include "World.h"
-#include "Engine/Scene/Camera.h"
-#include "World/PrimitiveComponent.h"
+#include "GameFramework/World.h"
+#include "Component/Camera.h"
+#include "Component/PrimitiveComponent.h"
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 

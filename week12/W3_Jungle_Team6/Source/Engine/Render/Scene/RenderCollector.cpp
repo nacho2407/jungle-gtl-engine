@@ -1,8 +1,8 @@
 ﻿#include "RenderCollector.h"
 
-#include "World.h"
-#include "Engine/Scene/Camera.h"
-#include "World/GizmoComponent.h"
+#include "GameFramework/World.h"
+#include "Component/Camera.h"
+#include "Component/GizmoComponent.h"
 
 FMeshBufferManager FRenderCollector::MeshBufferManager;
 
