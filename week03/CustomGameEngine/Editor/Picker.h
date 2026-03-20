@@ -25,7 +25,7 @@ public:
 	void SetCamera(UCameraComponent* pCamera) { CameraPtr = pCamera; }
 
 private:
-	UCameraComponent* Camera;
+	//UCameraComponent* Camera;
 	UScene* Scene;
 	Editor* EditorPtr;
 	UCameraComponent* CameraPtr;
