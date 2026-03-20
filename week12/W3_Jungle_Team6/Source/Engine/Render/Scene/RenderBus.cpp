@@ -8,65 +8,18 @@
 
 void FRenderBus::Clear()
 {
-	ComponentCommands.clear();
-	DepthLessCommands.clear();
-	EditorCommands.clear();
-	EditorGridCommands.clear();
-	OverlayCommands.clear();
-	OutlineCommands.clear();
-}
-
-void FRenderBus::AddComponentCommand(const FRenderCommand& InCommand)
-{
-	if (InCommand.MeshBuffer == nullptr)
+	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
 	{
-		return;
+		PassQueues[i].clear();
 	}
-	ComponentCommands.push_back(InCommand);
 }
 
-void FRenderBus::AddDepthLessCommand(const FRenderCommand& InCommand)
+void FRenderBus::AddCommand(ERenderPass Pass, const FRenderCommand& InCommand)
 {
-	if (InCommand.MeshBuffer == nullptr)
-	{
-		return;
-	}
-	DepthLessCommands.push_back(InCommand);
+	PassQueues[(uint32)Pass].push_back(InCommand);
 }
 
-void FRenderBus::AddEditorCommand(const FRenderCommand& InCommand)
+const TArray<FRenderCommand>& FRenderBus::GetCommands(ERenderPass Pass) const
 {
-	if(InCommand.MeshBuffer == nullptr)
-	{
-		return;
-	}
-	EditorCommands.push_back(InCommand);
+	return PassQueues[(uint32)Pass];
 }
-
-void FRenderBus::AddGridEditorCommand(const FRenderCommand& InCommand)
-{
-	if (InCommand.MeshBuffer == nullptr)
-	{
-		return;
-	}
-	EditorGridCommands.push_back(InCommand);
-}
-
-void FRenderBus::AddOutlineCommand(const FRenderCommand& InCommand)
-{
-	if(InCommand.MeshBuffer == nullptr)
-	{
-		return;
-	}
-	OutlineCommands.push_back(InCommand);
-}
-
-void FRenderBus::AddOverlayCommand(const FRenderCommand& InCommand)
-{
-	if (InCommand.MeshBuffer == nullptr)
-	{
-		return;
-	}
-	OverlayCommands.push_back(InCommand);
-}
-
