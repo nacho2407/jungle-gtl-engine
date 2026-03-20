@@ -1,49 +1,46 @@
 ﻿#pragma once
 #include "Core/CoreTypes.h"
-#include <string>
 #include <cstdarg> 
 #include <functional>
-#include <unordered_map>
 #include <sstream>
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
 
-
 class FEditorConsole
 {
 public:
-    static void AddLog(const char* fmt, ...);
+	static void AddLog(const char* fmt, ...);
 
-    void Draw(const char* Title, bool* p_open);
-    void Clear()
-    {
-        for (int i = 0; i < Messages.Size; i++) free(Messages[i]);
-        Messages.clear();
-    }
-    static void ClearHistory()
-    {
-        for (int i = 0; i < History.Size; i++) free(History[i]);
-        History.clear();
-    }
+	void Draw(const char* Title, bool* p_open);
+	void Clear()
+	{
+		for (int32 i = 0; i < Messages.Size; i++) free(Messages[i]);
+		Messages.clear();
+	}
+	static void ClearHistory()
+	{
+		for (int32 i = 0; i < History.Size; i++) free(History[i]);
+		History.clear();
+	}
 
 private:
-    char InputBuf[256]{};
-    static ImVector<char*> Messages;
-    static ImVector<char*> History;
-    int HistoryPos = -1;
-    ImGuiTextFilter Filter;
-    static bool AutoScroll;
-    static bool ScrollToBottom;
+	char InputBuf[256]{};
+	static ImVector<char*> Messages;
+	static ImVector<char*> History;
+	int32 HistoryPos = -1;
+	ImGuiTextFilter Filter;
+	static bool AutoScroll;
+	static bool ScrollToBottom;
 
-    //Command Dispatch System
-    using CommandFn = std::function<void(const std::vector<std::string>& args)>;
-    std::unordered_map<std::string, CommandFn> commands;
+	//Command Dispatch System
+	using CommandFn = std::function<void(const TArray<FString>& args)>;
+	TMap<FString, CommandFn> Commands;
 
-    void RegisterCommand(const std::string& name, CommandFn fn);
-    void ExecCommand(const char* command_line);
-    static int TextEditCallback(ImGuiInputTextCallbackData* data);
+	void RegisterCommand(const FString& Name, CommandFn Fn);
+	void ExecCommand(const char* CommandLine);
+	static int32 TextEditCallback(ImGuiInputTextCallbackData* Data);
 };
 
 #define UE_LOG(Format, ...) \

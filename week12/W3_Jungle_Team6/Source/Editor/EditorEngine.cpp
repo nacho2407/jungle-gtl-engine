@@ -9,6 +9,8 @@ void FEditorEngine::Create(HWND InHWindow)
 {
 	HWindow = InHWindow;
 
+	Settings.LoadFromFile(FEditorSettings::DefaultSettingsPath);
+
 	Renderer.Create(HWindow);
 	FRenderCollector::Initialize(Renderer.GetFD3DDevice().GetDevice());
 
@@ -35,6 +37,7 @@ void FEditorEngine::Create(HWND InHWindow)
 	WindowWidth = static_cast<float>(rect.right - rect.left);
 	WindowHeight = static_cast<float>(rect.bottom - rect.top);
 
+	ViewportClient.SetSettings(&Settings);
 	ViewportClient.Initialize(HWindow);
 	ViewportClient.SetViewportSize(WindowWidth, WindowHeight);
 	ViewportClient.SetWorld(Scene[CurrentWorld]);
@@ -70,8 +73,8 @@ void FEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
 
 void FEditorEngine::ResetCamera(UCamera* Camera) {
 	if (!Camera) return;
-	Camera->SetWorldLocation(InitViewPos);
-	Camera->LookAt(InitLookAt);
+	Camera->SetWorldLocation(Settings.InitViewPos);
+	Camera->LookAt(Settings.InitLookAt);
 }
 
 void FEditorEngine::ResetViewport() {
@@ -117,6 +120,7 @@ void FEditorEngine::NewScene() {
 
 void FEditorEngine::Release()
 {
+	Settings.SaveToFile(FEditorSettings::DefaultSettingsPath);
 	CloseScene();
 	MainPanel.Release();
 	Renderer.Release();

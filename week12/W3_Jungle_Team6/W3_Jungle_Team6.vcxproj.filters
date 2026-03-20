@@ -13,6 +13,9 @@
     <Filter Include="Source\Editor\Core">
       <UniqueIdentifier>{455acf13-4357-8aae-790c-0f95672a30b1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\Settings">
+      <UniqueIdentifier>{d787f5b7-1afa-e269-d3f4-b58c3fbd3301}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\UI">
       <UniqueIdentifier>{08046398-110a-9b75-d53d-049fd85f18ad}</UniqueIdentifier>
     </Filter>
@@ -83,11 +86,11 @@
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
       <Filter>Source\Editor</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\EditorSettings.cpp">
-      <Filter>Source\Editor</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Editor\Core\EditorConsole.cpp">
       <Filter>Source\Editor\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Settings\EditorSettings.cpp">
+      <Filter>Source\Editor\Settings</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
@@ -209,11 +212,11 @@
     <ClInclude Include="Source\Editor\EditorEngine.h">
       <Filter>Source\Editor</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\EditorSettings.h">
-      <Filter>Source\Editor</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Core\EditorConsole.h">
       <Filter>Source\Editor\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Settings\EditorSettings.h">
+      <Filter>Source\Editor\Settings</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h">
       <Filter>Source\Editor\UI</Filter>
