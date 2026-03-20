@@ -1,6 +1,7 @@
 #pragma once
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
+#include "Object/FName.h"
 #include "World/SceneComponent.h"
 
 class UWorld;
@@ -93,7 +94,12 @@ public:
 	bool IsVisible() const { return bVisible; }
 	void SetVisible(bool Visible) { bVisible = Visible; }
 
+	// FName 기반 액터 이름 (파트 D 구현)
+	FName GetFName() const { return ActorName; }
+	void SetFName(const FName& InName) { ActorName = InName; }
+
 protected:
+	FName ActorName;
 	USceneComponent* RootComponent = nullptr;
 	UWorld* OwningWorld = nullptr;
 
