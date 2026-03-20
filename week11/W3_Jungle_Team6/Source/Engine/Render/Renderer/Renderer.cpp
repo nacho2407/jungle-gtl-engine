@@ -271,14 +271,14 @@ void FRenderer::DrawCommand(ID3D11DeviceContext * InDeviceContext, const FRender
 	}
 
 	uint32 offset = 0;
-	ID3D11Buffer* vertexBuffer = InCommand.MeshBuffer->GetFVertexBuffer().GetBuffer();
+	ID3D11Buffer* vertexBuffer = InCommand.MeshBuffer->GetVertexBuffer().GetBuffer();
 	if (vertexBuffer == nullptr)
 	{
 		return;
 	}
 
-	uint32 vertexCount = InCommand.MeshBuffer->GetFVertexBuffer().GetVertexCount();
-	uint32 stride = InCommand.MeshBuffer->GetFVertexBuffer().GetStride();
+	uint32 vertexCount = InCommand.MeshBuffer->GetVertexBuffer().GetVertexCount();
+	uint32 stride = InCommand.MeshBuffer->GetVertexBuffer().GetStride();
 	if (vertexCount == 0 || stride == 0)
 	{
 		return;
@@ -286,10 +286,10 @@ void FRenderer::DrawCommand(ID3D11DeviceContext * InDeviceContext, const FRender
 
 	InDeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
 
-	ID3D11Buffer* indexBuffer = InCommand.MeshBuffer->GetFIndexBuffer().GetBuffer();
+	ID3D11Buffer* indexBuffer = InCommand.MeshBuffer->GetIndexBuffer().GetBuffer();
 	if (indexBuffer != nullptr)
 	{
-		uint32 indexCount = InCommand.MeshBuffer->GetFIndexBuffer().GetIndexCount();
+		uint32 indexCount = InCommand.MeshBuffer->GetIndexBuffer().GetIndexCount();
 		InDeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 		InDeviceContext->DrawIndexed(indexCount, 0, 0);
 	}

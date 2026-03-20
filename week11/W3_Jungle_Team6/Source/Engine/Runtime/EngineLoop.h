@@ -3,13 +3,12 @@
 #include <windows.h>
 
 #include "Editor/EditorEngine.h"
-#include "Engine/Core/Console.h"
 
 // 엔진의 전체 생명주기(초기화/루프/종료)를 담당하는 루프 클래스
 class FEngineLoop
 {
 public:
-	bool PreInit(HINSTANCE hInstance, int nShowCmd);
+	bool Init(HINSTANCE hInstance, int nShowCmd);
 	int Run();
 	void Shutdown();
 

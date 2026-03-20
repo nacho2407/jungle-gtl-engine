@@ -1,6 +1,5 @@
 ﻿#include "Shader.h"
 
-#include <codecvt>
 #include <iostream>
 
 void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const char * InVSEntryPoint, const char * InPSEntryPoint,
@@ -8,75 +7,56 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 {
 	ID3DBlob* vertexShaderCSO = nullptr;
 	ID3DBlob* pixelShaderCSO = nullptr;
-	ID3DBlob* errorBlob = nullptr;	//	For Debugging
+	ID3DBlob* errorBlob = nullptr;
+
+	// Vertex Shader 컴파일
 	HRESULT hr = D3DCompileFromFile(InFilePath, nullptr, nullptr, InVSEntryPoint, "vs_5_0", 0, 0, &vertexShaderCSO, &errorBlob);
-#if DEBUG
-	//	Vertex Shader Compile Error
 	if (FAILED(hr))
 	{
 		if (errorBlob)
 		{
-			MessageBoxA(nullptr,
-				(char*)errorBlob->GetBufferPointer(),
-				"Vertex Shader Compile Error",
-				MB_OK | MB_ICONERROR);
+			MessageBoxA(nullptr, (char*)errorBlob->GetBufferPointer(), "Vertex Shader Compile Error", MB_OK | MB_ICONERROR);
 			errorBlob->Release();
 		}
+		return;
 	}
-#endif
-	hr = D3DCompileFromFile(InFilePath, nullptr, nullptr, InPSEntryPoint, "ps_5_0", 0, 0, &pixelShaderCSO, nullptr);
 
-#if DEBUG
-	//	Vertex Shader Compile Error
+	// Pixel Shader 컴파일
+	hr = D3DCompileFromFile(InFilePath, nullptr, nullptr, InPSEntryPoint, "ps_5_0", 0, 0, &pixelShaderCSO, &errorBlob);
 	if (FAILED(hr))
 	{
 		if (errorBlob)
 		{
-			MessageBoxA(nullptr,
-				(char*)errorBlob->GetBufferPointer(),
-				"Vertex Shader Compile Error",
-				MB_OK | MB_ICONERROR);
+			MessageBoxA(nullptr, (char*)errorBlob->GetBufferPointer(), "Pixel Shader Compile Error", MB_OK | MB_ICONERROR);
 			errorBlob->Release();
 		}
+		vertexShaderCSO->Release();
+		return;
 	}
-#endif
+
+	// Vertex Shader 생성
 	hr = InDevice->CreateVertexShader(vertexShaderCSO->GetBufferPointer(), vertexShaderCSO->GetBufferSize(), nullptr, &VertexShader);
-
-#if DEBUG
-	//	Vertex Shader Compile Error
 	if (FAILED(hr))
 	{
-		if (errorBlob)
-		{
-			MessageBoxA(nullptr,
-				(char*)errorBlob->GetBufferPointer(),
-				"Vertex Shader Compile Error",
-				MB_OK | MB_ICONERROR);
-			errorBlob->Release();
-		}
+		std::cerr << "Failed to create Vertex Shader (HRESULT: " << hr << ")" << std::endl;
+		vertexShaderCSO->Release();
+		pixelShaderCSO->Release();
+		return;
 	}
-#endif
 
+	// Pixel Shader 생성
 	hr = InDevice->CreatePixelShader(pixelShaderCSO->GetBufferPointer(), pixelShaderCSO->GetBufferSize(), nullptr, &PixelShader);
-
-#if DEBUG
-	//	Vertex Shader Compile Error
 	if (FAILED(hr))
 	{
-		if (errorBlob)
-		{
-			MessageBoxA(nullptr,
-				(char*)errorBlob->GetBufferPointer(),
-				"Vertex Shader Compile Error",
-				MB_OK | MB_ICONERROR);
-			errorBlob->Release();
-		}
+		std::cerr << "Failed to create Pixel Shader (HRESULT: " << hr << ")" << std::endl;
+		vertexShaderCSO->Release();
+		pixelShaderCSO->Release();
+		return;
 	}
-#endif
 
-	//	Vertex Shader의 Input Layout을 생성합니다. (원래는 InInputElementCount 대신 ARRAYSIZE(InInputElements)인데, 이는 배열에서만 동작합니다.)
+	// Input Layout 생성
 	InDevice->CreateInputLayout(InInputElements, InInputElementCount, vertexShaderCSO->GetBufferPointer(), vertexShaderCSO->GetBufferSize(), &InputLayout);
-	
+
 	vertexShaderCSO->Release();
 	pixelShaderCSO->Release();
 }

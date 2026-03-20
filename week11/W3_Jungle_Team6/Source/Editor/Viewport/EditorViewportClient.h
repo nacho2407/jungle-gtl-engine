@@ -31,7 +31,7 @@ public:
 	FViewOutput& GetViewOutput() { return ViewOutput;  }
 
 private:
-	void FlushViewOutput();
+	void ClearViewOutput();
 	void TickInput(float DeltaTime);
 	void TickInteraction(float DeltaTime);
 	void TickCursorOverlay(float DeltaTime);

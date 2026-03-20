@@ -63,7 +63,7 @@ void FEditorConsole::Draw(const char* Title, bool* p_open)
                 color = ImVec4(1, 0.8f, 0.2f, 1);
                 has_color = true;
             }
-            else if (strncmp(item, "#", 2) == 0) {
+            else if (strncmp(item, "#", 1) == 0) {
                 color = ImVec4(1, 0.8f, 0.6f, 1);
                 has_color = true;
             }
@@ -114,20 +114,19 @@ void FEditorConsole::ExecCommand(const char* command_line) {
     History.push_back(_strdup(command_line));
     HistoryPos = -1;
 
-    // Parse tokens
     std::vector<std::string> tokens;
     std::istringstream iss(command_line);
     std::string token;
     while (iss >> token) tokens.push_back(token);
     if (tokens.empty()) return;
 
-    /*auto it = commands.find(tokens[0]);
+    auto it = commands.find(tokens[0]);
     if (it != commands.end()) {
         it->second(tokens);
     }
     else {
         AddLog("[ERROR] Unknown command: '%s'\n", tokens[0].c_str());
-    */
+    }
 }
 
 // History & Tab-Completion Callback____________________________________________________________

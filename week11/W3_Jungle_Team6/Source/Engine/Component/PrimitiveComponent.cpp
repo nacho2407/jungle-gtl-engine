@@ -154,58 +154,8 @@ bool UCubeComponent::GetRenderCommand(const FMatrix& viewMatrix, const FMatrix& 
 		return false;
 	}
 
-	// Fetch vertexbuffer info here
-	/*OutCommand.VertexBuffer = ...;
-	OutCommand.VertexCount = ...;
-	OutCommand.Stride = sizeof(vbuffer);*/
-
 	return UPrimitiveComponent::GetRenderCommand(viewMatrix, projMatrix, OutCommand);
 }
-
-//bool UCubeComponent::Raycast(const FRay& Ray, float& OutDistance)
-//{
-//	FVector center = RelativeLocation;
-//	FVector rotation = RelativeRotation;
-//	FVector extents = RelativeScale3D / 2;
-//
-//	FMatrix rotationMatrix = FMatrix::MakeRotationEuler(RelativeRotation);
-//
-//	FVector Axes[3];
-//	Axes[0] = FVector(rotationMatrix.M[0][0], rotationMatrix.M[0][1], rotationMatrix.M[0][2]);
-//	Axes[1] = FVector(rotationMatrix.M[1][0], rotationMatrix.M[1][1], rotationMatrix.M[1][2]);
-//	Axes[2] = FVector(rotationMatrix.M[2][0], rotationMatrix.M[2][1], rotationMatrix.M[2][2]);
-//
-//	float tMin = -INFINITY;
-//	float tMax = INFINITY;
-//	FVector delta = center - Ray.Origin;
-//	float ext[3] = { extents.X, extents.Y, extents.Z };
-//
-//	for (int i = 0; i < 3; ++i)
-//	{
-//		float e = Axes[i].Dot(delta);
-//		float f = Axes[i].Dot(Ray.Direction);
-//
-//		if (std::abs(f) > 0.00001f)
-//		{
-//			float t1 = (e + ext[i]) / f;
-//			float t2 = (e - ext[i]) / f;
-//
-//			if (t1 > t2) std::swap(t1, t2);
-//
-//			if (t1 > tMin) tMin = t1;
-//			if (t2 < tMax) tMax = t2;
-//
-//			if (tMin > tMax) return false;
-//			if (tMax < 0.0f) return false;
-//		}
-//		else
-//		{
-//			if (-e - ext[i] > 0.0f || -e + ext[i] < 0.0f) return false;
-//		}
-//	}
-//	return true;
-//}
-
 
 USphereComponent::USphereComponent()
 {
@@ -216,46 +166,8 @@ bool USphereComponent::GetRenderCommand(const FMatrix& viewMatrix, const FMatrix
 		return false;
 	}
 
-	// Fetch vertexbuffer info here
-	/*OutCommand.VertexBuffer = ...;
-	OutCommand.VertexCount = ...;
-	OutCommand.Stride = sizeof(vbuffer);*/
-
 	return UPrimitiveComponent::GetRenderCommand(viewMatrix, projMatrix, OutCommand);
 }
-
-//bool USphereComponent::Raycast(const FRay& Ray, float& OutDistance)
-//{
-//	FMatrix invWorld = CachedWorldMatrix.GetInverse();
-//
-//	FVector localOrigin = invWorld.TransformVector(Ray.Origin);
-//	FVector localDirection = invWorld.TransformVector(Ray.Direction);
-//
-//	float a = localDirection.Dot(localDirection);
-//	float b = localOrigin.Dot(localDirection);
-//	float c = localOrigin.Dot(localOrigin) - 1.0f;
-//
-//	float discriminant = (b * b) - (a * c);
-//
-//	if (discriminant < 0.0f)
-//	{
-//		return false;
-//	}
-//
-//	float sqrtD = std::sqrt(discriminant);
-//
-//	float t0 = (-b - sqrtD) / a;
-//	float t1 = (-b + sqrtD) / a;
-//
-//	if (t1 < 0.0f)
-//	{
-//		return false;
-//	}
-//
-//	OutDistance = (t0 < 0.0f) ? t1 : t0;
-//
-//	return true;
-//}
 
 UPlaneComponent::UPlaneComponent()
 {
@@ -266,61 +178,5 @@ bool UPlaneComponent::GetRenderCommand(const FMatrix& viewMatrix, const FMatrix&
 		return false;
 	}
 
-	// Fetch vertexbuffer info here
-	/*OutCommand.VertexBuffer = ...;
-	OutCommand.VertexCount = ...;
-	OutCommand.Stride = sizeof(vbuffer);*/
-
 	return UPrimitiveComponent::GetRenderCommand(viewMatrix, projMatrix, OutCommand);
 }
-
-//bool UPlaneComponent::Raycast(const FRay& Ray, float& OutDistance)
-//{
-//	FMatrix invWorld = CachedWorldMatrix.GetInverse();
-//
-//	FVector localOrigin = invWorld.TransformVector(Ray.Origin);
-//	FVector localDirection = invWorld.TransformVector(Ray.Direction);
-//
-//	float halfX = RelativeScale3D.X / 2.0f;
-//	float halfZ = RelativeScale3D.Z / 2.0f;
-//
-//	FVector v0(-halfX, 0.0f, -halfZ);
-//	FVector v1(-halfX, 0.0f, halfZ);
-//	FVector v2(halfX, 0.0f, halfZ);
-//	FVector v3(halfX, 0.0f, -halfZ);
-//
-//	auto intersectTriangle = [&](const FVector& V0, const FVector& V1, const FVector& V2, float& T) -> bool
-//		{
-//			FVector edge1 = V1 - V0;
-//			FVector edge2 = V2 - V0;
-//			FVector pvec = localDirection.Cross(edge2);
-//			float det = edge1.Dot(pvec);
-//
-//			if (std::abs(det) < 0.0001f) return false;
-//
-//			float invDet = 1.0f / det;
-//			FVector tvec = localOrigin - V0;
-//			float u = tvec.Dot(pvec) * invDet;
-//
-//			if (u < 0.0f || u > 1.0f) return false;
-//
-//			FVector qvec = tvec.Cross(edge1);
-//			float v = localDirection.Dot(qvec) * invDet;
-//
-//			if (v < 0.0f || u + v > 1.0f) return false;
-//
-//			T = edge2.Dot(qvec) * invDet;
-//			return T > 0.0f;
-//		};
-//
-//	float t1 = FLT_MAX, t2 = FLT_MAX;
-//	bool hit1 = intersectTriangle(v0, v1, v2, t1);
-//	bool hit2 = intersectTriangle(v0, v2, v3, t2);
-//
-//	if (hit1 || hit2)
-//	{
-//		OutDistance = std::min(t1, t2);
-//		return true;
-//	}
-//	return false;
-//}
