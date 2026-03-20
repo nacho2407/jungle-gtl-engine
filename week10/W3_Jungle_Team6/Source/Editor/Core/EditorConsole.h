@@ -17,13 +17,22 @@ public:
     static void AddLog(const char* fmt, ...);
 
     void Draw(const char* Title, bool* p_open);
-    void Clear() { Messages.clear(); }
+    void Clear()
+    {
+        for (int i = 0; i < Messages.Size; i++) free(Messages[i]);
+        Messages.clear();
+    }
+    static void ClearHistory()
+    {
+        for (int i = 0; i < History.Size; i++) free(History[i]);
+        History.clear();
+    }
 
 private:
     char InputBuf[256]{};
     static ImVector<char*> Messages;
     static ImVector<char*> History;
-    int HistoryPos;
+    int HistoryPos = -1;
     ImGuiTextFilter Filter;
     static bool AutoScroll;
     static bool ScrollToBottom;

@@ -87,7 +87,7 @@ void FConstantBuffer::Create(ID3D11Device* InDevice, uint32 InByteWidth)
 {
 	D3D11_BUFFER_DESC constantBufferDesc = {};
 
-	constantBufferDesc.ByteWidth = InByteWidth + 0xf &0xfffffff0;
+	constantBufferDesc.ByteWidth = (InByteWidth + 0xf) & 0xfffffff0;
 	constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;	
 	constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -114,11 +114,7 @@ void FConstantBuffer::Update(ID3D11DeviceContext* InDeviceContext, const void * 
 		D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
 		InDeviceContext->Map(Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
 
-		//std::memcpy(constantbufferMSR.pData, InData, InByteWidth);
-		FConstantBuffer* constants = (FConstantBuffer*)constantbufferMSR.pData;
-		{
-			std::memcpy(constants, InData, InByteWidth);
-		}
+		std::memcpy(constantbufferMSR.pData, InData, InByteWidth);
 
 		InDeviceContext->Unmap(Buffer, 0);
 	}
@@ -159,14 +155,6 @@ void FIndexBuffer::Create(ID3D11Device* InDevice, const TArray<uint32>& InData, 
 	}
 
 	IndexCount = static_cast<uint32>(InData.size());
-
-#if DEBUG
-	if (FAILED(hr))
-	{
-		MessageBox(nullptr, L"Failed to create index buffer", L"Error", MB_OK);
-	}
-#endif
-
 }
 
 void FIndexBuffer::Release()
