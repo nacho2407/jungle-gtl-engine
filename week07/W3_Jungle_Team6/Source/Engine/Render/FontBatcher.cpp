@@ -1,7 +1,46 @@
 ﻿#include "FontBatcher.h"
 
+// DirectXTK 라이브러리
+#pragma comment(lib, "DirectXTK.lib")
+#include "DDSTextureLoader.h"
+#include "Editor/Core/EditorConsole.h"
+#include "Core/CoreTypes.h"
+
+
 void FFontBatcher::Create(ID3D11Device* Device)
 {
+
+	HRESULT hr = DirectX::CreateDDSTextureFromFileEx(
+		Device,
+		L"./Resources/Textures/FontAtlas.dds",
+		0,
+		D3D11_USAGE_IMMUTABLE,
+		D3D11_BIND_SHADER_RESOURCE,
+		0,
+		0,
+		DirectX::DDS_LOADER_DEFAULT,
+		&FontResource,
+		&FontAtlasSRV
+	);
+
+	if (FAILED(hr))
+	{
+		return;
+	}
+	const int32 ColCount = 16;
+	const float CellW = 1.0f / ColCount;   // 텍스쳐 정규화 너비
+	const float CellH = 1.0f / ColCount;    // 텍스쳐 정규화 높이 (96개 / 16열 = 6행)
+
+	for (int i = 0; i < 96; ++i)           // ASCII 32(space) ~ 127
+	{
+		char ch = static_cast<char>(32 + i);
+		int col = i % ColCount;
+		int row = i / ColCount;
+
+		charInfoMap[ch] = { col * CellW, row * CellH, CellW, CellH };
+	}
+
+	UE_LOG("Texture Load!");
 }
 
 void FFontBatcher::Release()
