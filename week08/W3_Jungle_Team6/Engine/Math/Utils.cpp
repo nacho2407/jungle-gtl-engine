@@ -1,4 +1,4 @@
-#include "Utils.h"
+﻿#include "Utils.h"
 float Clamp(float val, float lo, float hi) {
 	if (val >= hi) {
 		return hi;

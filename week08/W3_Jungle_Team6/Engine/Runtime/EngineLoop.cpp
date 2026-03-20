@@ -1,4 +1,4 @@
-#include "Engine/Runtime/EngineLoop.h"
+ï»¿#include "Engine/Runtime/EngineLoop.h"
 
 #include <windowsx.h>
 
@@ -8,7 +8,7 @@
 #include "Engine/Core/InputSystem.h"
 #include "World/PrimitiveComponent.h"
 
-// ImGui Win32 ¸Ş½ÃÁö ÇÚµé·¯
+// ImGui Win32 ë©”ì‹œì§€ í•¸ë“¤ëŸ¬
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, uint32 msg, WPARAM wParam, LPARAM lParam);
 
 LRESULT CALLBACK FEngineLoop::StaticWndProc(HWND hWnd, uint32 message, WPARAM wParam, LPARAM lParam)
@@ -91,12 +91,12 @@ bool FEngineLoop::PreInit(HINSTANCE hInstance, int nShowCmd)
 		return false;
 	}
 
-	// ¿¡µğÅÍ ÃÊ±âÈ­ ¹× Å×½ºÆ®¿ë »ùÇÃ ¾×ÅÍ »ı¼º
+	// ì—ë””í„° ì´ˆê¸°í™” ë° í…ŒìŠ¤íŠ¸ìš© ìƒ˜í”Œ ì•¡í„° ìƒì„±
 	Editor.Create(HWindow);
 	Editor.SpawnNewPrimitiveActor<UCubeComponent>(FVector(-3.f, 0, 0));
 	Editor.BeginPlay();
 
-	// ÄÜ¼Ö ÇïÆÛ´Â ÃÊ±âÈ­ È¿°ú¸¸ ÇÊ¿äÇØ¼­ Áö¿ª Á¤ÀûÀ¸·Î À¯Áö
+	// ì½˜ì†” í—¬í¼ëŠ” ì´ˆê¸°í™” íš¨ê³¼ë§Œ í•„ìš”í•´ì„œ ì§€ì—­ ì •ì ìœ¼ë¡œ ìœ ì§€
 	//static ConsoleHelper ConsoleHelperInstance;
 	//(void)ConsoleHelperInstance;
 	//(void)bShowConsole;
@@ -122,7 +122,7 @@ void FEngineLoop::TickFrame()
 	MainLoopFps = (DeltaTime > 1e-6f) ? (1.0f / DeltaTime) : 0.0f;
 	Editor.SetMainLoopFPS(MainLoopFps);
 
-	// ¸®»çÀÌÁî Áß¿¡´Â ·»´õ¸¸ ÁøÇàÇØ¼­ È­¸é ¹İÀÀ¼ºÀ» À¯Áö
+	// ë¦¬ì‚¬ì´ì¦ˆ ì¤‘ì—ëŠ” ë Œë”ë§Œ ì§„í–‰í•´ì„œ í™”ë©´ ë°˜ì‘ì„±ì„ ìœ ì§€
 	if (bIsResizing)
 	{
 		Editor.Update(DeltaTime);

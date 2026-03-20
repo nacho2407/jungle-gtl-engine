@@ -1,4 +1,4 @@
-#include "ActorComponent.h"
+﻿#include "ActorComponent.h"
 
 DEFINE_CLASS(UActorComponent, UObject)
 
