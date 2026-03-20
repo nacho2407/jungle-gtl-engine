@@ -94,21 +94,3 @@ public:
 
 	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
 };
-
-#if TEST
-
-//class UStandfordBunnyComponent : public UPrimitiveComponent
-//{
-//private:
-//
-//public:
-//	DECLARE_CLASS(UStandfordBunnyComponent, UPrimitiveComponent)
-//	UStandfordBunnyComponent();
-//	bool Raycast(const FRay& Ray, float& OutDistance) override;
-//	bool GetRenderCommand(const FMatrix& viewMatrix, const FMatrix& projMatrix, FRenderCommand& OutCommand) override;
-//	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_StandfordBunny;
-//
-//	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
-//};
-
-#endif
