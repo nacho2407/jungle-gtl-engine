@@ -20,6 +20,7 @@ void FRenderer::Create(HWND hWindow)
 		std::cout << "Failed to create D3D Device." << std::endl;
 	}
 
+	// 아직 단일 셰이더네요
 	Resources.PrimitiveShader.Create(Device.GetDevice(), ShaderFilePath,
 		"PrimitiveVS", "PrimitivePS",PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
 	Resources.GizmoShader.Create(Device.GetDevice(), ShaderFilePath,
@@ -83,9 +84,12 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 		{
 	
 			EDepthStencilState TargetDepth = (Cmd.DepthStencilState != EDepthStencilState::Default)
-				? Cmd.DepthStencilState : GetDefaultDepthForPass(CurrentPass);
+				? Cmd.DepthStencilState
+				: GetDefaultDepthForPass(CurrentPass);
+
 			EBlendState TargetBlend = (Cmd.BlendState != EBlendState::Opaque)
-				? Cmd.BlendState : GetDefaultBlendForPass(CurrentPass);
+				? Cmd.BlendState
+				: GetDefaultBlendForPass(CurrentPass);
 
 			Device.SetDepthStencilState(TargetDepth);
 			Device.SetBlendState(TargetBlend);
@@ -99,7 +103,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 	//Reset
 	Device.SetRasterizerState(ERasterizerState::SolidBackCull);
 
-	//	NOTE : Overlay는 반드시 따로 호출해야 함. (Engine Loop에서 돌고 있음)????
+	//	NOTE : Overlay Engine Loop에서 돌고 있음 수정 필요
 }
 
 void FRenderer::RenderOverlay(const FRenderBus& InRenderBus)
@@ -126,11 +130,13 @@ void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceCo
 		Device.SetDepthStencilState(EDepthStencilState::StencilOutline);
 		Device.SetRasterizerState(ERasterizerState::SolidFrontCull);
 		Device.SetBlendState(EBlendState::Opaque);
+
+		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		Resources.OutlineShader.Bind(DeviceContext);
 		break;
 
 	case ERenderPass::DepthLess:
-		Device.SetDepthStencilState(EDepthStencilState::None);
+		Device.SetDepthStencilState(EDepthStencilState::DepthReadOnly);
 		Device.SetBlendState(EBlendState::AlphaBlend);
 		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		Resources.GizmoShader.Bind(DeviceContext);
@@ -231,7 +237,7 @@ EDepthStencilState FRenderer::GetDefaultDepthForPass(ERenderPass Pass) const
 	{
 	case ERenderPass::Component: return EDepthStencilState::StencilWrite;
 	case ERenderPass::Outline:   return EDepthStencilState::StencilOutline;
-	case ERenderPass::DepthLess: return EDepthStencilState::None; 
+	case ERenderPass::DepthLess: return EDepthStencilState::Default; 
 	case ERenderPass::Editor:    return EDepthStencilState::Default;
 	case ERenderPass::Grid:      return EDepthStencilState::DepthReadOnly;
 	case ERenderPass::Overlay:   return EDepthStencilState::None;
@@ -244,13 +250,18 @@ EBlendState FRenderer::GetDefaultBlendForPass(ERenderPass Pass) const
 	switch (Pass)
 	{
 	case ERenderPass::Grid:
-	case ERenderPass::DepthLess: return EBlendState::AlphaBlend; // 그리드와 기즈모는 기본이 알파
+	case ERenderPass::DepthLess: return EBlendState::AlphaBlend;
 	default:                     return EBlendState::Opaque;
 	}
 }
 
 void FRenderer::DrawCommand(ID3D11DeviceContext * InDeviceContext, const FRenderCommand& InCommand)
 {
+	if (InCommand.MeshBuffer == nullptr || !InCommand.MeshBuffer->IsValid())
+	{
+		return;
+	}
+
 	uint32 offset = 0;
 	ID3D11Buffer* vertexBuffer = InCommand.MeshBuffer->GetFVertexBuffer().GetBuffer();
 	if (vertexBuffer == nullptr)

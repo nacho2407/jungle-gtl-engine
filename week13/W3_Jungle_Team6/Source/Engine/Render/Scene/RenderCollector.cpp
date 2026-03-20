@@ -90,8 +90,6 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 
 void FRenderCollector::CollectFromEditor(const FRenderCollectorContext& Context, const FMatrix& ViewMat, const FMatrix& ProjMat, FRenderBus& RenderBus)
 {
-	//	Gizmo
-
 	CollectGizmo(Context, ViewMat, ProjMat, RenderBus);
 	CollectGridAndAxis(Context, ViewMat, ProjMat, RenderBus);
 	CollectMouseOverlay(Context, ViewMat, ProjMat, RenderBus);
@@ -112,7 +110,7 @@ void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, cons
 		{
 			Cmd.DepthStencilState = EDepthStencilState::None;
 			Cmd.BlendState = EBlendState::AlphaBlend;
-			Cmd.GizmoConstants.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 0.4f);
+			Cmd.GizmoConstants.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 		else
 		{
@@ -123,16 +121,16 @@ void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, cons
 		Cmd.GizmoConstants.bIsInnerGizmo = bInner ? 1 : 0;
 		Cmd.GizmoConstants.bClicking = Gizmo->IsHolding() ? 1 : 0;
 		Cmd.GizmoConstants.SelectedAxis = Gizmo->GetSelectedAxis() >= 0 ? (uint32)Gizmo->GetSelectedAxis() : 0xffffffffu;
-		Cmd.GizmoConstants.HoveredAxisOpacity = 0.55f;
+		Cmd.GizmoConstants.HoveredAxisOpacity = 0.3f;
 		return Cmd;
 		};
 
 	// Inner Gizmo
-	RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(true));
+	RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(false));
 
 	if (!Gizmo->IsHolding())
 	{
-		RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(false));
+		RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(true));
 	}
 }
 
