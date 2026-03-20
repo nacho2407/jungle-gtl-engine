@@ -6,7 +6,7 @@
 
 #include "Engine/Core/ConsoleHelper.h"
 #include "Engine/Core/InputSystem.h"
-#include "World/PrimitiveComponent.h"
+#include "Component/PrimitiveComponent.h"
 
 // ImGui Win32 메시지 핸들러
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, uint32 msg, WPARAM wParam, LPARAM lParam);
