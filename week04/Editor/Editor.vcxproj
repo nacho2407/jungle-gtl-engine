@@ -137,7 +137,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Editor.cpp" />
+    <ClCompile Include="Source\main.cpp" />
+    <ClCompile Include="Source\ThirdParty\imgui.cpp" />
+    <ClCompile Include="Source\ThirdParty\imgui_demo.cpp" />
+    <ClCompile Include="Source\ThirdParty\imgui_draw.cpp" />
+    <ClCompile Include="Source\ThirdParty\imgui_impl_dx11.cpp" />
+    <ClCompile Include="Source\ThirdParty\imgui_impl_win32.cpp" />
+    <ClCompile Include="Source\ThirdParty\imgui_tables.cpp" />
+    <ClCompile Include="Source\ThirdParty\imgui_widgets.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\ThirdParty\imconfig.h" />
+    <ClInclude Include="Source\ThirdParty\imgui.h" />
+    <ClInclude Include="Source\ThirdParty\imgui_impl_dx11.h" />
+    <ClInclude Include="Source\ThirdParty\imgui_impl_win32.h" />
+    <ClInclude Include="Source\ThirdParty\imgui_internal.h" />
+    <ClInclude Include="Source\ThirdParty\imstb_rectpack.h" />
+    <ClInclude Include="Source\ThirdParty\imstb_textedit.h" />
+    <ClInclude Include="Source\ThirdParty\imstb_truetype.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

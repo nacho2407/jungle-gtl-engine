@@ -19,10 +19,31 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\EngineAPI.h" />
+    <ClInclude Include="Resources\Sphere.h" />
+    <ClInclude Include="Resources\Triangle.h" />
+    <ClInclude Include="Source\Core\Math\Color.h" />
+    <ClInclude Include="Source\Core\Math\Matrix.h" />
+    <ClInclude Include="Source\Core\Math\Quatanion.h" />
+    <ClInclude Include="Source\Core\Math\Rotator.h" />
+    <ClInclude Include="Source\Core\EngineAPI.h" />
+    <ClInclude Include="Source\Core\CoreMinimal.h" />
+    <ClInclude Include="Source\Engine\EngineStatics.h" />
+    <ClInclude Include="Source\Core\EngineTypes.h" />
+    <ClInclude Include="Source\Core\Math\Vector.h" />
+    <ClInclude Include="Source\Core\Math\Vector4.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\Core\Math\Color.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Core\Math\Matrix.cpp" />
+    <ClCompile Include="Source\Core\Math\Quatanion.cpp" />
+    <ClCompile Include="Source\Core\Math\Rotator.cpp" />
+    <ClCompile Include="Source\Core\Math\Vector.cpp" />
+    <ClCompile Include="Source\Engine\EngineStatics.cpp" />
+    <ClCompile Include="Source\Core\Math\Vector4.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
