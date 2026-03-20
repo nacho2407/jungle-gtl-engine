@@ -22,11 +22,14 @@
     <Filter Include="Source\Engine">
       <UniqueIdentifier>{eda94427-1edc-1dfb-bb28-625b966ad870}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Classes">
-      <UniqueIdentifier>{195c1803-197b-2f56-a2ef-822a0234cb75}</UniqueIdentifier>
+    <Filter Include="Source\Engine\Component">
+      <UniqueIdentifier>{3971b5d5-7bfd-7292-41a2-6060f8a5d107}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Core">
       <UniqueIdentifier>{55e3403d-6f17-df82-439d-f99e44708d70}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\GameFramework">
+      <UniqueIdentifier>{66b0661a-8dc1-c042-0da0-eceab3dc855f}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Math">
       <UniqueIdentifier>{8fa52000-b619-dc76-0c59-088c9bdf1958}</UniqueIdentifier>
@@ -46,6 +49,9 @@
     <Filter Include="Source\Engine\Render\Device">
       <UniqueIdentifier>{f3a8ddc0-41e8-5dce-a96f-0e6e603a416b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Render\Mesh">
+      <UniqueIdentifier>{334fd104-4324-649f-9188-4c0c5daff938}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Render\Renderer">
       <UniqueIdentifier>{f9d79c72-b78a-d042-c1f3-e7512f12c171}</UniqueIdentifier>
     </Filter>
@@ -58,14 +64,8 @@
     <Filter Include="Source\Engine\Runtime">
       <UniqueIdentifier>{ee46d74c-4164-40e5-e6d1-70e34545baa8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Scene">
-      <UniqueIdentifier>{ca43f689-7d59-0d83-2916-a948db5f0be5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\World">
-      <UniqueIdentifier>{4e83a347-ef02-ba4f-87cd-ddc98f7df8c5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\World\Mesh">
-      <UniqueIdentifier>{f3b5dda0-75eb-3e89-c1ea-205d42566cdc}</UniqueIdentifier>
+    <Filter Include="Source\Engine\Serialization">
+      <UniqueIdentifier>{334cd158-cd7e-f105-c4cf-a3909c6e1655}</UniqueIdentifier>
     </Filter>
     <Filter Include="ThirdParty">
       <UniqueIdentifier>{7fdab8d2-b376-c6b6-9ab6-6234fa5b26ea}</UniqueIdentifier>
@@ -98,14 +98,20 @@
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp">
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\SceneSaveManager.cpp">
-      <Filter>Source\Engine</Filter>
+    <ClCompile Include="Source\Engine\Component\ActorComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\World.cpp">
-      <Filter>Source\Engine</Filter>
+    <ClCompile Include="Source\Engine\Component\Camera.cpp">
+      <Filter>Source\Engine\Component</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Classes\AActor.cpp">
-      <Filter>Source\Engine\Classes</Filter>
+    <ClCompile Include="Source\Engine\Component\GizmoComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\SceneComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp">
       <Filter>Source\Engine\Core</Filter>
@@ -113,7 +119,16 @@
     <ClCompile Include="Source\Engine\Core\InputSystem.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\AActor.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\World.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Math\Matrix.cpp">
+      <Filter>Source\Engine\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Math\Transform.cpp">
       <Filter>Source\Engine\Math</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Math\Utils.cpp">
@@ -121,9 +136,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Math\Vector.cpp">
       <Filter>Source\Engine\Math</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Object\ActorComponent.cpp">
-      <Filter>Source\Engine\Object</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Object\EngineStatics.cpp">
       <Filter>Source\Engine\Object</Filter>
@@ -145,6 +157,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp">
       <Filter>Source\Engine\Render\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Mesh\MeshManager.cpp">
+      <Filter>Source\Engine\Render\Mesh</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\Renderer.cpp">
       <Filter>Source\Engine\Render\Renderer</Filter>
@@ -170,23 +185,8 @@
     <ClCompile Include="Source\Engine\Runtime\Launch.cpp">
       <Filter>Source\Engine\Runtime</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Scene\Camera.cpp">
-      <Filter>Source\Engine\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\World\GizmoComponent.cpp">
-      <Filter>Source\Engine\World</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\World\PrimitiveComponent.cpp">
-      <Filter>Source\Engine\World</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\World\SceneComponent.cpp">
-      <Filter>Source\Engine\World</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\World\Transform.cpp">
-      <Filter>Source\Engine\World</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\World\Mesh\MeshManager.cpp">
-      <Filter>Source\Engine\World\Mesh</Filter>
+    <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp">
+      <Filter>Source\Engine\Serialization</Filter>
     </ClCompile>
     <ClCompile Include="ThirdParty\ImGui\imgui.cpp">
       <Filter>ThirdParty\ImGui</Filter>
@@ -230,14 +230,20 @@
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\SceneSaveManager.h">
-      <Filter>Source\Engine</Filter>
+    <ClInclude Include="Source\Engine\Component\ActorComponent.h">
+      <Filter>Source\Engine\Component</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\World.h">
-      <Filter>Source\Engine</Filter>
+    <ClInclude Include="Source\Engine\Component\Camera.h">
+      <Filter>Source\Engine\Component</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Classes\AActor.h">
-      <Filter>Source\Engine\Classes</Filter>
+    <ClInclude Include="Source\Engine\Component\GizmoComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\SceneComponent.h">
+      <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\CollisionTypes.h">
       <Filter>Source\Engine\Core</Filter>
@@ -266,7 +272,16 @@
     <ClInclude Include="Source\Engine\Core\RayTypes.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\AActor.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\World.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Math\Matrix.h">
+      <Filter>Source\Engine\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Math\Transform.h">
       <Filter>Source\Engine\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Math\Utils.h">
@@ -274,9 +289,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Math\Vector.h">
       <Filter>Source\Engine\Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Object\ActorComponent.h">
-      <Filter>Source\Engine\Object</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Object\EngineStatics.h">
       <Filter>Source\Engine\Object</Filter>
@@ -304,6 +316,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Device\D3DDevice.h">
       <Filter>Source\Engine\Render\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Mesh\MeshManager.h">
+      <Filter>Source\Engine\Render\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderPipeline.h">
       <Filter>Source\Engine\Render\Renderer</Filter>
@@ -344,23 +359,8 @@
     <ClInclude Include="Source\Engine\Runtime\Launch.h">
       <Filter>Source\Engine\Runtime</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Scene\Camera.h">
-      <Filter>Source\Engine\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\World\GizmoComponent.h">
-      <Filter>Source\Engine\World</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\World\PrimitiveComponent.h">
-      <Filter>Source\Engine\World</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\World\SceneComponent.h">
-      <Filter>Source\Engine\World</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\World\Transform.h">
-      <Filter>Source\Engine\World</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\World\Mesh\MeshManager.h">
-      <Filter>Source\Engine\World\Mesh</Filter>
+    <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h">
+      <Filter>Source\Engine\Serialization</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\ImGui\imconfig.h">
       <Filter>ThirdParty\ImGui</Filter>
