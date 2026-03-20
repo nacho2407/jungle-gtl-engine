@@ -221,6 +221,12 @@
     <ClInclude Include="Source\Engine\EngineStatics.h">
       <Filter>Source\Engine</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\Containers\String.h" />
+    <ClInclude Include="Source\Core\HAL\PlatformMemory.h" />
+    <ClInclude Include="Source\Core\HAL\PlatformMisc.h" />
+    <ClInclude Include="Source\Core\HAL\PlatformTime.h" />
+    <ClInclude Include="Source\Core\HAL\PlatformTypes.h" />
+    <ClInclude Include="Source\Core\Misc\Name.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
