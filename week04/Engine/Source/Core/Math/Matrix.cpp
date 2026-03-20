@@ -1,26 +1,5 @@
 #include "../CoreMinimal.h"
 
-constexpr FMatrix::FMatrix()
-{
-    for (int i{0}; i < 4; i++)
-        for (int j{0}; j < 4; j++)
-            m[i][j] = (i == j) ? 1.0f : 0.0f;
-}
-
-FMatrix::~FMatrix() = default;
-
-FMatrix FMatrix::IdentityMatrix() { return FMatrix(); }
-
-FMatrix FMatrix::ZeroMatrix()
-{
-    FMatrix M = IdentityMatrix();
-    M[0][0] = 0;
-    M[1][1] = 0;
-    M[2][2] = 0;
-    M[3][3] = 0;
-    return M;
-}
-
 FMatrix FMatrix::TranslationMatrix(const FVector &InVec)
 {
     return TranslationMatrix(InVec.x, InVec.y, InVec.z);
@@ -184,7 +163,7 @@ FMatrix FMatrix::PerspectiveMatrix(float FovDegree, float Aspect, float Near, fl
 
     // Z축 정규화 (0 ~ 1 범위로 변환)
     M.m[2][2] = -Near / (Far - Near);
-    M.m[2][3] = 1.0f; // 이 위치가 핵심: 나중에 w값이 z가 됨
+    M.m[2][3] = 1.0f;
     M.m[3][2] = (Far * Near) / (Far - Near);
     M.m[3][3] = 0.0f;
 

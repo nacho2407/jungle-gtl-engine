@@ -1,36 +1,24 @@
 #include "../CoreMinimal.h"
 #include <cassert>
 
-constexpr FVector::FVector(float InX, float InY, float InZ) : x(InX), y(InY), z(InZ)
+float FVector::Dot(const FVector &Other) const { return x * Other.x + y * Other.y + z * Other.z; }
+
+FVector FVector::Cross(const FVector &Other) const
 {
+    return FVector(y * Other.z - z * Other.y, z * Other.x - x * Other.z, x * Other.y - y * Other.x);
 }
 
-FVector::~FVector() = default;
-
-float FVector::Dot(const FVector& Other) const
+FVector FVector::operator+(const FVector &Other) const
 {
-    return x * Other.x + y * Other.y + z * Other.z;
+    return FVector(x + Other.x, y + Other.y, z + Other.z);
 }
 
-FVector FVector::Cross(const FVector& Other) const
+FVector FVector::operator-(const FVector &Other) const
 {
-    return {y * Other.z - z * Other.y, z * Other.x - x * Other.z, x * Other.y - y * Other.x};
+    return FVector(x - Other.x, y - Other.y, z - Other.z);
 }
 
-FVector FVector::operator+(const FVector& Other) const
-{
-    return {x + Other.x, y + Other.y, z + Other.z};
-}
-
-FVector FVector::operator-(const FVector& Other) const
-{
-    return {x - Other.x, y - Other.y, z - Other.z};
-}
-
-FVector FVector::operator*(const float s) const
-{
-    return {x * s, y * s, z * s};
-}
+FVector FVector::operator*(const float s) const { return FVector(x * s, y * s, z * s); }
 
 FVector FVector::operator/(const float s) const
 {
@@ -39,7 +27,8 @@ FVector FVector::operator/(const float s) const
         assert(s != 0.0f && "Division by zero in FVector::operator/");
         return FVector::Zero();
     }
-    return {x / s, y / s, z / s};
+    float Denominator = 1.0f / s;
+    return FVector(x * Denominator, y * Denominator, z * Denominator);
 }
 
 FVector FVector::Normalize() const
@@ -50,43 +39,17 @@ FVector FVector::Normalize() const
     if (std::abs(Denominator) < MathHelper::Epsilon)
         return FVector::Zero();
     Denominator = 1.0f / Denominator;
-	
-    return {x * Denominator, y * Denominator, z * Denominator};
+
+    return FVector(x * Denominator, y * Denominator, z * Denominator);
 }
 
-float FVector::Length() const
+float FVector::Length() const { return MathHelper::Sqrt(x * x + y * y + z * z); }
+
+bool FVector::IsNearlyEqual(const FVector &Other) const
 {
-	return MathHelper::Sqrt(x * x + y * y + z * z);
+    return (std::abs(x - Other.x) < MathHelper::Epsilon) &&
+           (std::abs(y - Other.y) < MathHelper::Epsilon) &&
+           (std::abs(z - Other.z) < MathHelper::Epsilon);
 }
 
-bool FVector::IsNearlyEqual(const FVector& Other) const
-{
-	return (std::abs(x - Other.x) < MathHelper::Epsilon)
-		&& (std::abs(y - Other.y) < MathHelper::Epsilon)
-		&& (std::abs(z - Other.z) < MathHelper::Epsilon);
-}
-
-bool FVector::operator==(const FVector& Other) const
-{
-	return IsNearlyEqual(Other);
-}
-
-FVector FVector::Zero()
-{
-	return {0.0f, 0.0f, 0.0f};
-}
-
-FVector FVector::Up()
-{
-	return {0.0f, 0.0f, 1.0f};
-}
-
-FVector FVector::Right()
-{
-	return {0.0f, 1.0f, 0.0f};
-}
-
-FVector FVector::Forward()
-{
-	return {1.0f, 0.0f, 0.0f};
-}
+bool FVector::operator==(const FVector &Other) const { return IsNearlyEqual(Other); }

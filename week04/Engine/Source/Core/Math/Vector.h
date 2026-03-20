@@ -6,27 +6,30 @@ struct FMatrix;
 
 struct ENGINE_API FVector
 {
-public:
-	constexpr FVector(float InX = 0.0f, float InY = 0.0f, float InZ = 0.0f);
-	~FVector();
-	float Dot(const FVector& Other) const;
-	FVector Cross(const FVector& Other) const;
-	FVector operator+(const FVector& Other) const;
-	FVector operator-(const FVector& Other) const;
-	FVector operator*(const float s) const;
-	FVector operator/(const float s) const;
+  public:
+    constexpr FVector(float InX = 0.0f, float InY = 0.0f, float InZ = 0.0f) : x(InX), y(InY), z(InZ)
+    {
+    }
+    ~FVector() = default;
 
-	FVector Normalize() const;
-	float Length() const;
+    constexpr static FVector Zero() { return FVector(0.0f, 0.0f, 0.0f); }
+    constexpr static FVector Up() { return FVector(0.0f, 0.0f, 1.0f); }
+    constexpr static FVector Right() { return FVector(0.0f, 1.0f, 0.0f); }
+    constexpr static FVector Forward() { return FVector(1.0f, 0.0f, 0.0f); }
 
-	bool IsNearlyEqual(const FVector& Other) const;
-	bool operator==(const FVector& Other) const;
+    float   Dot(const FVector &Other) const;
+    FVector Cross(const FVector &Other) const;
+    FVector operator+(const FVector &Other) const;
+    FVector operator-(const FVector &Other) const;
+    FVector operator*(const float s) const;
+    FVector operator/(const float s) const;
 
-	static FVector Zero();
-	static FVector Up();
-	static FVector Right();
-	static FVector Forward();
+    FVector Normalize() const;
+    float   Length() const;
 
-public:
-	float x, y, z;
+    bool IsNearlyEqual(const FVector &Other) const;
+    bool operator==(const FVector &Other) const;
+
+  public:
+    float x, y, z;
 };
