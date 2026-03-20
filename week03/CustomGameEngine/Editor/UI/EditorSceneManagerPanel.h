@@ -1,4 +1,5 @@
 ﻿#pragma once
+class UScene;
 
 struct EditorSceneManagerPanel
 {
@@ -6,4 +7,7 @@ struct EditorSceneManagerPanel
 	~EditorSceneManagerPanel();
 
 	void Draw();
+
+private:
+	UScene* ActiveScene = nullptr;
 };

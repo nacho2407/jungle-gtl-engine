@@ -51,6 +51,7 @@ void Editor::DrawUI()
 	DrawPropertyPanel();
 	DrawStatPanel();
 	DrawToolbar();
+	DrawSceneManagerPanel();
 
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -103,4 +104,9 @@ void Editor::DrawStatPanel()
 void Editor::DrawToolbar()
 {
 	Toolbar->Draw();
+}
+
+void Editor::DrawSceneManagerPanel()
+{
+	SceneMgrPanel->Draw();
 }

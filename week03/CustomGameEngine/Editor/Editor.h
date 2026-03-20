@@ -35,6 +35,7 @@ private:
 	void DrawPropertyPanel();
 	void DrawStatPanel();
 	void DrawToolbar();
+	void DrawSceneManagerPanel();
 
 private:
 	//panel
