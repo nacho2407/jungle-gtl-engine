@@ -1,84 +1,163 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="소스 파일">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{176e3101-af0c-2900-5e63-8a490022129a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="헤더 파일">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    <Filter Include="Source">
+      <UniqueIdentifier>{4f6c83fe-a134-3484-3756-8c697b723468}</UniqueIdentifier>
     </Filter>
-    <Filter Include="리소스 파일">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    <Filter Include="Resources\Mesh">
+      <UniqueIdentifier>{611fd08d-c5f2-636f-d61c-0405906a469d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Scene">
+      <UniqueIdentifier>{6f21998c-ad3f-4295-5a94-62d9702a0e9b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shader">
+      <UniqueIdentifier>{d32ca5c8-c821-11f5-dfa1-d5050d286dcf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Texture">
+      <UniqueIdentifier>{a2187649-a844-6073-73c0-7c7d7cb99990}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\ApplicationCore">
+      <UniqueIdentifier>{57812f21-7fc5-e713-3694-11639c1953c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core">
+      <UniqueIdentifier>{238c320c-6dd1-5946-035c-35da4bd61493}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\CoreUObject">
+      <UniqueIdentifier>{edf12b0a-6dcc-905b-5fdf-154d878d9835}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine">
+      <UniqueIdentifier>{b3c5f926-6c8b-bd77-5999-bbaf53eba42b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\FileIO">
+      <UniqueIdentifier>{28be4e18-fd03-92be-0581-b05a55778a3c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Renderer">
+      <UniqueIdentifier>{b4935566-c566-3c8c-ae88-5cc13eba9d31}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\ThirdParty">
+      <UniqueIdentifier>{b8e8bd27-1e61-2aa5-0088-7e70dd22287c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Containers">
+      <UniqueIdentifier>{912017d8-8df8-694a-9f3f-b99826c544c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Geometry">
+      <UniqueIdentifier>{7399648a-ed81-18a3-20da-1cbd8e6140ad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Logging">
+      <UniqueIdentifier>{10f7d8a3-a3d1-142d-af3b-06dd7d240880}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Math">
+      <UniqueIdentifier>{b359914c-202a-e69b-dc67-51d523cb3e2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Memory">
+      <UniqueIdentifier>{74fd7a75-e9ca-4871-f77e-4608b5a4e4c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Misc">
+      <UniqueIdentifier>{822fce81-821e-1b1b-adaf-11c91675259f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Templates">
+      <UniqueIdentifier>{2753246a-93aa-8d10-f0ab-169e9d5d9a2f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\FileIO\Ini">
+      <UniqueIdentifier>{1e4f96e3-8b6d-f192-3313-76777e4652c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\FileIO\Json">
+      <UniqueIdentifier>{e0dd298e-b23c-9574-77be-3d46bdf1cfae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\FileIO\Texture">
+      <UniqueIdentifier>{2b39fcf1-ff9d-690d-ec52-c659318c850b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Core\EngineAPI.h">
-      <Filter>소스 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Math\Vector.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\EngineTypes.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\EngineStatics.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\CoreMinimal.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Math\Color.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Math\Rotator.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Math\Matrix.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Math\Quatanion.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Math\Vector4.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Core\Math\Color.cpp">
+      <Filter>Source\Core\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Math\Matrix.cpp">
+      <Filter>Source\Core\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Math\Quatanion.cpp">
+      <Filter>Source\Core\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Math\Rotator.cpp">
+      <Filter>Source\Core\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Math\Transform.cpp">
+      <Filter>Source\Core\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Math\Vector.cpp">
+      <Filter>Source\Core\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Math\Vector4.cpp">
+      <Filter>Source\Core\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\CoreUObject\Object.cpp">
+      <Filter>Source\CoreUObject</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\CoreUObject\ObjectFactory.cpp">
+      <Filter>Source\CoreUObject</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\EngineStatics.cpp">
+      <Filter>Source\Engine</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="Resources\Sphere.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Resources</Filter>
     </ClInclude>
     <ClInclude Include="Resources\Triangle.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources\VertexSimple.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\CoreMinimal.h">
+      <Filter>Source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\EngineAPI.h">
+      <Filter>Source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\EngineTypes.h">
+      <Filter>Source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Math\Color.h">
+      <Filter>Source\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Math\MathHelper.h">
+      <Filter>Source\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Math\Matrix.h">
+      <Filter>Source\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Math\Quatanion.h">
+      <Filter>Source\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Math\Rotator.h">
+      <Filter>Source\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Math\Transform.h">
+      <Filter>Source\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Math\Vector.h">
+      <Filter>Source\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Math\Vector4.h">
+      <Filter>Source\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CoreUObject\Object.h">
+      <Filter>Source\CoreUObject</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CoreUObject\ObjectFactory.h">
+      <Filter>Source\CoreUObject</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\EngineStatics.h">
+      <Filter>Source\Engine</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Math\Vector.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\EngineStatics.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Math\Color.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Math\Rotator.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Math\Matrix.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Math\Quatanion.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Math\Vector4.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>
