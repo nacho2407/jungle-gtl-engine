@@ -1,6 +1,6 @@
 ﻿#include "PrimitiveComponent.h"
 #include "Core/RayTypes.h"
-#include "Mesh/MeshManager.h"
+#include "Render/Mesh/MeshManager.h"
 #include "Core/CollisionTypes.h"
 
 DEFINE_CLASS(UPrimitiveComponent, USceneComponent)
