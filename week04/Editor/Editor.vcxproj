@@ -139,23 +139,31 @@
   <ItemGroup>
     <ClCompile Include="Source\Editor.cpp" />
     <ClCompile Include="Source\main.cpp" />
-    <ClCompile Include="Source\ThirdParty\imgui.cpp" />
-    <ClCompile Include="Source\ThirdParty\imgui_demo.cpp" />
-    <ClCompile Include="Source\ThirdParty\imgui_draw.cpp" />
-    <ClCompile Include="Source\ThirdParty\imgui_impl_dx11.cpp" />
-    <ClCompile Include="Source\ThirdParty\imgui_impl_win32.cpp" />
-    <ClCompile Include="Source\ThirdParty\imgui_tables.cpp" />
-    <ClCompile Include="Source\ThirdParty\imgui_widgets.cpp" />
+    <ClCompile Include="Source\ThirdParty\imgui\imgui.cpp" />
+    <ClCompile Include="Source\ThirdParty\imgui\imgui_demo.cpp" />
+    <ClCompile Include="Source\ThirdParty\imgui\imgui_draw.cpp" />
+    <ClCompile Include="Source\ThirdParty\imgui\imgui_impl_dx11.cpp" />
+    <ClCompile Include="Source\ThirdParty\imgui\imgui_impl_win32.cpp" />
+    <ClCompile Include="Source\ThirdParty\imgui\imgui_tables.cpp" />
+    <ClCompile Include="Source\ThirdParty\imgui\imgui_widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\ThirdParty\imconfig.h" />
-    <ClInclude Include="Source\ThirdParty\imgui.h" />
-    <ClInclude Include="Source\ThirdParty\imgui_impl_dx11.h" />
-    <ClInclude Include="Source\ThirdParty\imgui_impl_win32.h" />
-    <ClInclude Include="Source\ThirdParty\imgui_internal.h" />
-    <ClInclude Include="Source\ThirdParty\imstb_rectpack.h" />
-    <ClInclude Include="Source\ThirdParty\imstb_textedit.h" />
-    <ClInclude Include="Source\ThirdParty\imstb_truetype.h" />
+    <ClInclude Include="Source\ThirdParty\imgui\imconfig.h" />
+    <ClInclude Include="Source\ThirdParty\imgui\imgui.h" />
+    <ClInclude Include="Source\ThirdParty\imgui\imgui_impl_dx11.h" />
+    <ClInclude Include="Source\ThirdParty\imgui\imgui_impl_win32.h" />
+    <ClInclude Include="Source\ThirdParty\imgui\imgui_internal.h" />
+    <ClInclude Include="Source\ThirdParty\imgui\imstb_rectpack.h" />
+    <ClInclude Include="Source\ThirdParty\imgui\imstb_textedit.h" />
+    <ClInclude Include="Source\ThirdParty\imgui\imstb_truetype.h" />
+    <ClInclude Include="Source\Viewport\EditorViewport.h" />
+    <ClInclude Include="Source\Viewport\EditorViewportClient.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Source\ThirdParty\imgui\imgui.natstepfilter" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="Source\ThirdParty\imgui\imgui.natvis" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
