@@ -61,7 +61,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 
 	if (primitiveComponent->GetRenderCommand(Context.Camera->GetViewMatrix(), Context.Camera->GetProjectionMatrix(), Cmd))
 	{
-		RenderBus.AddComponentCommand(Cmd);
+		RenderBus.AddCommand(ERenderPass::Component,Cmd);
 
 		if(Context.SelectedComponent == primitiveComponent)
 		{
@@ -86,7 +86,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 				OutlineCmd.OutlineConstants.PrimitiveType = 1u;
 			}
 
-			RenderBus.AddOutlineCommand(OutlineCmd);
+			RenderBus.AddCommand(ERenderPass::Overlay,OutlineCmd);
 		}
 	}
 
@@ -122,12 +122,12 @@ void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, cons
 		};
 
 	// Inner Gizmo
-	RenderBus.AddDepthLessCommand(CreateGizmoCmd(true));
+	RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(true));
 
 	// Holding ���� �ƴ� ���� Outer �׸�
 	if (!Gizmo->IsHolding())
 	{
-		RenderBus.AddDepthLessCommand(CreateGizmoCmd(false));
+		RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(false));
 	}
 }
 
@@ -148,14 +148,14 @@ void FRenderCollector::CollectGridAndAxis(const FRenderCollectorContext& Context
 	AxisCmd.TransformConstants = StaticTransform;
 	AxisCmd.EditorConstants.CameraPosition = FVector4{ CamPos.X, CamPos.Y, CamPos.Z, 0.0f };
 	AxisCmd.EditorConstants.Flag = 0;
-	RenderBus.AddEditorCommand(AxisCmd);
+	RenderBus.AddCommand(ERenderPass::Editor, AxisCmd);
 
 	// Grid
 	FRenderCommand GridCmd = AxisCmd; // ���� �ʵ� ����
 	GridCmd.Type = ERenderCommandType::Grid;
 	GridCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_Grid);
 	GridCmd.EditorConstants.Flag = 1;
-	RenderBus.AddGridEditorCommand(GridCmd);
+	RenderBus.AddCommand(ERenderPass::Grid,GridCmd);
 }
 
 void FRenderCollector::CollectMouseOverlay(const FRenderCollectorContext& Context, const FMatrix& ViewMat, const FMatrix& ProjMat, FRenderBus& RenderBus)
@@ -177,6 +177,6 @@ void FRenderCollector::CollectMouseOverlay(const FRenderCollectorContext& Contex
 	OverlayCmd.OverlayConstants.Radius = Context.CursorOverlayState->CurrentRadius;
 	OverlayCmd.OverlayConstants.Color = Context.CursorOverlayState->Color;
 
-	RenderBus.AddOverlayCommand(OverlayCmd);
+	RenderBus.AddCommand(ERenderPass::Overlay, OverlayCmd);
 
 }
