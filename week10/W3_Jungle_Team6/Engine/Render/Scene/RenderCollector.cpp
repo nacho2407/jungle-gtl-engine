@@ -1,4 +1,4 @@
-#include "RenderCollector.h"
+ï»¿#include "RenderCollector.h"
 
 #include "World.h"
 #include "Engine/Scene/Camera.h"
@@ -78,7 +78,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 			}
 			else
 			{
-				//	PlaneÀº OutlineÀÌ Á¦´ë·Î ¾È³ª¿À´Â ÀÌ½´°¡ ÀÖ¾î¼­, ÀÏ´Ü Cube·Î ´ëÃ¼ÇÏ¿© ±×¸³´Ï´Ù.
+				//	Planeì€ Outlineì´ ì œëŒ€ë¡œ ì•ˆë‚˜ì˜¤ëŠ” ì´ìŠˆê°€ ìžˆì–´ì„œ, ì¼ë‹¨ Cubeë¡œ ëŒ€ì²´í•˜ì—¬ ê·¸ë¦½ë‹ˆë‹¤.
 				OutlineCmd.OutlineConstants.PrimitiveType = 1u;
 			}
 
@@ -106,7 +106,7 @@ void FRenderCollector::CollectFromEditor(const FRenderCollectorContext& Context,
 
 		RenderBus.AddDepthLessCommand(Cmd1);
 
-		//	¼±ÅÃµÇÁö ¾ÊÀº °æ¿ì¿¡ Outer¸¦ ±×¸²
+		//	ì„ íƒë˜ì§€ ì•Šì€ ê²½ìš°ì— Outerë¥¼ ê·¸ë¦¼
 		if (!Gizmo->IsHolding())
 		{
 			FRenderCommand Cmd2 = {};
@@ -125,11 +125,11 @@ void FRenderCollector::CollectFromEditor(const FRenderCollectorContext& Context,
 
 	if (Context.bGridVisible)
 	{
-		//	Axis Ãß°¡
+		//	Axis ì¶”ê°€
 		FRenderCommand AxisCmd = {};
 		AxisCmd.Type = ERenderCommandType::Axis;
 		AxisCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_Axis);
-		AxisCmd.TransformConstants = FTransformConstants{ FMatrix::Identity, ViewMat, ProjMat };	//	ModelÀº °íÁ¤
+		AxisCmd.TransformConstants = FTransformConstants{ FMatrix::Identity, ViewMat, ProjMat };	//	Modelì€ ê³ ì •
 
 		FVector camPos = Context.Camera->GetWorldLocation();
 		AxisCmd.EditorConstants.CameraPosition = FVector4{ camPos.X,camPos.Y,camPos.Z,0.0f };

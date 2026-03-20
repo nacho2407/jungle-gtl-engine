@@ -1,4 +1,4 @@
-#include "D3DDevice.h"
+ï»¿#include "D3DDevice.h"
 
 //	Safe Release Macro
 #define SAFE_RELEASE(Obj) if (Obj) { Obj->Release(); Obj = nullptr; }
@@ -286,7 +286,7 @@ void FD3DDevice::CreateDepthStencilBuffer()
 	// Stencil Test (Not Equal)
 	D3D11_DEPTH_STENCIL_DESC depthStencilStateStencilOutlineDesc = {};
 	depthStencilStateStencilOutlineDesc.DepthEnable = FALSE;
-	// ¶Ç´Â TRUE + ZERO·Î Å×½ºÆ® °¡´É, Áö±İÀº ¸ÕÀú ´Ü¼øÇÏ°Ô
+	// ë˜ëŠ” TRUE + ZEROë¡œ í…ŒìŠ¤íŠ¸ ê°€ëŠ¥, ì§€ê¸ˆì€ ë¨¼ì € ë‹¨ìˆœí•˜ê²Œ
 	depthStencilStateStencilOutlineDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 	depthStencilStateStencilOutlineDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
 
