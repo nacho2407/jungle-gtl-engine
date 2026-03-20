@@ -438,3 +438,21 @@ FodyWeavers.xsd
 # Additional files built by Visual Studio
 
 # End of https://www.toptal.com/developers/gitignore/api/c++,visualstudio
+
+# Using Jetbrain Rider
+.idea/
+
+# Rider user settings
+*.sln.DotSettings.user
+*.user
+*.userosscache
+*.suo
+
+# Rider workspace
+*.sln.iml
+
+# Rider caches
+.idea_modules/
+
+#Rider CMake Project for Showing Dependency diagram
+CMakeLists.txt
