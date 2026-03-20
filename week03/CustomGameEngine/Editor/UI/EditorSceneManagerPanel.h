@@ -3,6 +3,7 @@ class UScene;
 
 struct EditorSceneManagerPanel
 {
+public:
 	EditorSceneManagerPanel();
 	~EditorSceneManagerPanel();
 
@@ -10,4 +11,5 @@ struct EditorSceneManagerPanel
 
 private:
 	UScene* ActiveScene = nullptr;
+
 };
