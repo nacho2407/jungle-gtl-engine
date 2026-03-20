@@ -110,14 +110,14 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClInclude Include="Source\Editor.h" />
     <ClInclude Include="Source\Launch\EditorEngineLoop.h" />
     <ClInclude Include="Source\Launch\Launch.h" />
-    <ClInclude Include="Source\ThirdParty\imgui\imconfig.h" />
-    <ClInclude Include="Source\ThirdParty\imgui\imgui.h" />
-    <ClInclude Include="Source\ThirdParty\imgui\imgui_impl_dx11.h" />
-    <ClInclude Include="Source\ThirdParty\imgui\imgui_impl_win32.h" />
-    <ClInclude Include="Source\ThirdParty\imgui\imgui_internal.h" />
-    <ClInclude Include="Source\ThirdParty\imgui\imstb_rectpack.h" />
-    <ClInclude Include="Source\ThirdParty\imgui\imstb_textedit.h" />
-    <ClInclude Include="Source\ThirdParty\imgui\imstb_truetype.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imconfig.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imgui.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imgui_impl_dx11.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imgui_impl_win32.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imgui_internal.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imstb_rectpack.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imstb_textedit.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imstb_truetype.h" />
     <ClInclude Include="Source\Viewport\EditorViewport.h" />
     <ClInclude Include="Source\Viewport\EditorViewportClient.h" />
   </ItemGroup>

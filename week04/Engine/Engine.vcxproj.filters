@@ -22,14 +22,14 @@
     <Filter Include="Source\ApplicationCore">
       <UniqueIdentifier>{57812f21-7fc5-e713-3694-11639c1953c0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Core">
+      <UniqueIdentifier>{238c320c-6dd1-5946-035c-35da4bd61493}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\CoreUObject">
       <UniqueIdentifier>{edf12b0a-6dcc-905b-5fdf-154d878d9835}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine">
       <UniqueIdentifier>{b3c5f926-6c8b-bd77-5999-bbaf53eba42b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\FileIO">
-      <UniqueIdentifier>{28be4e18-fd03-92be-0581-b05a55778a3c}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Renderer">
       <UniqueIdentifier>{b4935566-c566-3c8c-ae88-5cc13eba9d31}</UniqueIdentifier>
@@ -55,6 +55,9 @@
     <Filter Include="Source\Core\Misc">
       <UniqueIdentifier>{822fce81-821e-1b1b-adaf-11c91675259f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Asset">
+      <UniqueIdentifier>{292084ae-a847-4cb7-dedc-b9cf3c9c5e97}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Component">
       <UniqueIdentifier>{009757f7-27d2-e9f2-4fdf-fa550fbfb1ff}</UniqueIdentifier>
     </Filter>
@@ -64,76 +67,55 @@
     <Filter Include="Source\Engine\ViewPort">
       <UniqueIdentifier>{3f58abac-aa9e-06f1-348e-4d37ab560ccd}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\FileIO\Ini">
-      <UniqueIdentifier>{1e4f96e3-8b6d-f192-3313-76777e4652c0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\FileIO\Json">
-      <UniqueIdentifier>{e0dd298e-b23c-9574-77be-3d46bdf1cfae}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\FileIO\Texture">
-      <UniqueIdentifier>{2b39fcf1-ff9d-690d-ec52-c659318c850b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Renderer\D3D11">
       <UniqueIdentifier>{7d49e81e-9894-3ffe-a35e-b64d3056e0ba}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\CoreUObject\Core">
-      <UniqueIdentifier>{238c320c-6dd1-5946-035c-35da4bd61493}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\CoreUObject\Core\Containers">
-      <UniqueIdentifier>{912017d8-8df8-694a-9f3f-b99826c544c4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\CoreUObject\Core\Geometry">
-      <UniqueIdentifier>{7399648a-ed81-18a3-20da-1cbd8e6140ad}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\CoreUObject\Core\Geometry\Primitives">
+    <Filter Include="Source\Core\Geometry\Primitives">
       <UniqueIdentifier>{243ace44-3495-fff3-c265-ad18f16b3c35}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\CoreUObject\Core\HAL">
-      <UniqueIdentifier>{ad1f9b80-0e1a-0d71-cd6b-b630f2985514}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\CoreUObject\Core\Logging">
-      <UniqueIdentifier>{10f7d8a3-a3d1-142d-af3b-06dd7d240880}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\CoreUObject\Core\Math">
-      <UniqueIdentifier>{b359914c-202a-e69b-dc67-51d523cb3e2d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\CoreUObject\Core\Misc">
-      <UniqueIdentifier>{822fce81-821e-1b1b-adaf-11c91675259f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Core\CoreGlobals.cpp">
-      <Filter>Source\CoreUObject\Core</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\CoreMinimal.cpp">
-      <Filter>Source\CoreUObject\Core</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Geometry\Transform.cpp">
-      <Filter>Source\CoreUObject\Core\Geometry</Filter>
+      <Filter>Source\Core\Geometry</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Math\Color.cpp">
-      <Filter>Source\CoreUObject\Core\Math</Filter>
+      <Filter>Source\Core\Math</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Math\Matrix.cpp">
-      <Filter>Source\CoreUObject\Core\Math</Filter>
+      <Filter>Source\Core\Math</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Math\Quat.cpp">
-      <Filter>Source\CoreUObject\Core\Math</Filter>
+      <Filter>Source\Core\Math</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Math\Rotator.cpp">
-      <Filter>Source\CoreUObject\Core\Math</Filter>
+      <Filter>Source\Core\Math</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Math\Vector.cpp">
-      <Filter>Source\CoreUObject\Core\Math</Filter>
+      <Filter>Source\Core\Math</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Math\Vector4.cpp">
-      <Filter>Source\CoreUObject\Core\Math</Filter>
+      <Filter>Source\Core\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Misc\Name.cpp">
+      <Filter>Source\Core\Misc</Filter>
     </ClCompile>
     <ClCompile Include="Source\CoreUObject\Object.cpp">
       <Filter>Source\CoreUObject</Filter>
     </ClCompile>
     <ClCompile Include="Source\CoreUObject\ObjectFactory.cpp">
       <Filter>Source\CoreUObject</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\Asset.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Actor.cpp">
+      <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\CameraComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
@@ -159,7 +141,9 @@
     <ClCompile Include="Source\Engine\EngineStatics.cpp">
       <Filter>Source\Engine</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Asset\Asset.cpp" />
+    <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp">
+      <Filter>Source\Engine\ViewPort</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Sphere.h">
@@ -172,109 +156,115 @@
       <Filter>Resources</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Containers\Array.h">
-      <Filter>Source\CoreUObject\Core\Containers</Filter>
+      <Filter>Source\Core\Containers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Containers\LinkedList.h">
-      <Filter>Source\CoreUObject\Core\Containers</Filter>
+      <Filter>Source\Core\Containers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Containers\Map.h">
-      <Filter>Source\CoreUObject\Core\Containers</Filter>
+      <Filter>Source\Core\Containers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Containers\Pair.h">
-      <Filter>Source\CoreUObject\Core\Containers</Filter>
+      <Filter>Source\Core\Containers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Containers\Queue.h">
-      <Filter>Source\CoreUObject\Core\Containers</Filter>
+      <Filter>Source\Core\Containers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Containers\Set.h">
-      <Filter>Source\CoreUObject\Core\Containers</Filter>
+      <Filter>Source\Core\Containers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Containers\StaticArray.h">
-      <Filter>Source\CoreUObject\Core\Containers</Filter>
+      <Filter>Source\Core\Containers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Containers\String.h">
-      <Filter>Source\CoreUObject\Core\Containers</Filter>
+      <Filter>Source\Core\Containers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\CoreGlobals.h">
-      <Filter>Source\CoreUObject\Core</Filter>
+      <Filter>Source\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\CoreMinimal.h">
-      <Filter>Source\CoreUObject\Core</Filter>
+      <Filter>Source\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\EngineAPI.h">
-      <Filter>Source\CoreUObject\Core</Filter>
+      <Filter>Source\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Geometry\BoundsUtility.h">
-      <Filter>Source\CoreUObject\Core\Geometry</Filter>
+      <Filter>Source\Core\Geometry</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Geometry\Geometry.h">
-      <Filter>Source\CoreUObject\Core\Geometry</Filter>
+      <Filter>Source\Core\Geometry</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Geometry\Intersection.h">
-      <Filter>Source\CoreUObject\Core\Geometry</Filter>
+      <Filter>Source\Core\Geometry</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Geometry\Primitives\AABB.h">
-      <Filter>Source\CoreUObject\Core\Geometry\Primitives</Filter>
+      <Filter>Source\Core\Geometry\Primitives</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Geometry\Primitives\Ray.h">
-      <Filter>Source\CoreUObject\Core\Geometry\Primitives</Filter>
+      <Filter>Source\Core\Geometry\Primitives</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Geometry\Primitives\Segment.h">
-      <Filter>Source\CoreUObject\Core\Geometry\Primitives</Filter>
+      <Filter>Source\Core\Geometry\Primitives</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Geometry\Primitives\Triangle.h">
-      <Filter>Source\CoreUObject\Core\Geometry\Primitives</Filter>
+      <Filter>Source\Core\Geometry\Primitives</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Geometry\Transform.h">
-      <Filter>Source\CoreUObject\Core\Geometry</Filter>
+      <Filter>Source\Core\Geometry</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\HAL\PlatformMemory.h">
-      <Filter>Source\CoreUObject\Core\HAL</Filter>
+      <Filter>Source\Core\HAL</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\HAL\PlatformMisc.h">
-      <Filter>Source\CoreUObject\Core\HAL</Filter>
+      <Filter>Source\Core\HAL</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\HAL\PlatformTime.h">
-      <Filter>Source\CoreUObject\Core\HAL</Filter>
+      <Filter>Source\Core\HAL</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\HAL\PlatformTypes.h">
-      <Filter>Source\CoreUObject\Core\HAL</Filter>
+      <Filter>Source\Core\HAL</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Logging\LogMacros.h">
-      <Filter>Source\CoreUObject\Core\Logging</Filter>
+      <Filter>Source\Core\Logging</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Logging\LogOutputDevice.h">
-      <Filter>Source\CoreUObject\Core\Logging</Filter>
+      <Filter>Source\Core\Logging</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Math\Color.h">
-      <Filter>Source\CoreUObject\Core\Math</Filter>
+      <Filter>Source\Core\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Math\MathUtility.h">
-      <Filter>Source\CoreUObject\Core\Math</Filter>
+      <Filter>Source\Core\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Math\Matrix.h">
-      <Filter>Source\CoreUObject\Core\Math</Filter>
+      <Filter>Source\Core\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Math\Quat.h">
-      <Filter>Source\CoreUObject\Core\Math</Filter>
+      <Filter>Source\Core\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Math\Rotator.h">
-      <Filter>Source\CoreUObject\Core\Math</Filter>
+      <Filter>Source\Core\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Math\Vector.h">
-      <Filter>Source\CoreUObject\Core\Math</Filter>
+      <Filter>Source\Core\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Math\Vector4.h">
-      <Filter>Source\CoreUObject\Core\Math</Filter>
+      <Filter>Source\Core\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Misc\Name.h">
-      <Filter>Source\CoreUObject\Core\Misc</Filter>
+      <Filter>Source\Core\Misc</Filter>
     </ClInclude>
     <ClInclude Include="Source\CoreUObject\Object.h">
       <Filter>Source\CoreUObject</Filter>
     </ClInclude>
     <ClInclude Include="Source\CoreUObject\ObjectFactory.h">
       <Filter>Source\CoreUObject</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\Asset.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Actor.h">
+      <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\CameraComponent.h">
       <Filter>Source\Engine\Component</Filter>
@@ -300,10 +290,12 @@
     <ClInclude Include="Source\Engine\EngineStatics.h">
       <Filter>Source\Engine</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\ViewPort\Viewport.h">
+      <Filter>Source\Engine\ViewPort</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Renderer\D3D11\D3D11Common.h">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Asset\Asset.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

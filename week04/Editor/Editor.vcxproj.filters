@@ -27,6 +27,12 @@
     <ClCompile Include="Source\Editor.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Launch\EditorEngineLoop.cpp">
+      <Filter>Source\Launch</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Launch\Launch.cpp">
+      <Filter>Source\Launch</Filter>
+    </ClCompile>
     <ClCompile Include="Source\main.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -53,6 +59,15 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Editor.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Launch\EditorEngineLoop.h">
+      <Filter>Source\Launch</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Launch\Launch.h">
+      <Filter>Source\Launch</Filter>
+    </ClInclude>
     <ClInclude Include="Source\ThirdParty\ImGui\imconfig.h">
       <Filter>Source\ThirdParty\ImGui</Filter>
     </ClInclude>
