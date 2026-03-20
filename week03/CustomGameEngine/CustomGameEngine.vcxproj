@@ -106,6 +106,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -152,7 +153,7 @@
     <ClInclude Include="Editor\Gizmo\GizmoScaleControlStrategy.h" />
     <ClInclude Include="Editor\Gizmo\GizmoTranslationControlStrategy.h" />
     <ClInclude Include="Editor\Picker.h" />
-    <ClInclude Include="Editor\UI\SceneManagerPanel.h" />
+    <ClInclude Include="Editor\UI\EditorSceneManagerPanel.h" />
     <ClInclude Include="EngineApp\EngineApp.h" />
     <ClInclude Include="EngineCore\Color.h" />
     <ClInclude Include="EngineCore\Name.h" />
@@ -212,6 +213,7 @@
     <ClCompile Include="Editor\UI\EditorConsole.cpp" />
     <ClCompile Include="Editor\UI\EditorControlPanel.cpp" />
     <ClCompile Include="Editor\UI\EditorPropertyPanel.cpp" />
+    <ClCompile Include="Editor\UI\EditorSceneManagerPanel.cpp" />
     <ClCompile Include="Editor\UI\EditorStatPanel.cpp" />
     <ClCompile Include="Editor\UI\EditorToolbar.cpp" />
     <ClCompile Include="Editor\Gizmo.cpp" />

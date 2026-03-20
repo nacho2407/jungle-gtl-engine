@@ -1,5 +1,5 @@
 ﻿#include "EditorControlPanel.h"
-#include "Editor.h"
+#include "Editor/Editor.h"
 #include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "PrimitiveFactory.h"

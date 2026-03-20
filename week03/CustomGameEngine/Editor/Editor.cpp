@@ -4,6 +4,7 @@
 #include "UI/EditorPropertyPanel.h"
 #include "UI/EditorStatPanel.h"
 #include "UI/EditorToolbar.h"
+#include "UI/EditorSceneManagerPanel.h"
 #include "Gizmo.h"
 #include "Component/GizmoComponent.h"
 #include "Component/SceneComponent.h"
@@ -17,6 +18,7 @@ Editor::Editor()
 	Console = new EditorConsole();
 	PropertyPanel = new EditorPropertyPanel(this);
 	StatPanel = new EditorStatPanel();
+	SceneMgrPanel = new EditorSceneManagerPanel();
 }
 
 Editor::~Editor()
@@ -49,6 +51,7 @@ void Editor::DrawUI()
 	DrawPropertyPanel();
 	DrawStatPanel();
 	DrawToolbar();
+	DrawSceneManagerPanel();
 
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -101,4 +104,9 @@ void Editor::DrawStatPanel()
 void Editor::DrawToolbar()
 {
 	Toolbar->Draw();
+}
+
+void Editor::DrawSceneManagerPanel()
+{
+	SceneMgrPanel->Draw();
 }

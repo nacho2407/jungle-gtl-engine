@@ -8,6 +8,7 @@ struct EditorConsole;
 struct EditorPropertyPanel;
 struct EditorStatPanel;
 struct EditorToolbar;
+struct EditorSceneManagerPanel;
 class USceneComponent;
 class UCameraComponent;
 class URenderer;
@@ -34,13 +35,16 @@ private:
 	void DrawPropertyPanel();
 	void DrawStatPanel();
 	void DrawToolbar();
+	void DrawSceneManagerPanel();
 
 private:
+	//panel
 	EditorControlPanel* ControlPanel = nullptr;
 	EditorConsole* Console = nullptr;
 	EditorPropertyPanel* PropertyPanel = nullptr;
 	EditorStatPanel* StatPanel = nullptr;
 	EditorToolbar* Toolbar = nullptr;
+	EditorSceneManagerPanel* SceneMgrPanel = nullptr;
 
 	URenderer* Renderer = nullptr;
 	UCameraComponent* Camera = nullptr;

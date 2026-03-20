@@ -68,6 +68,7 @@ LRESULT CALLBACK EngineApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 
 EngineApp::EngineApp()
 {
+	GetWorld();
 	Renderer = new URenderer();
 	EditorInst = new Editor();
 }
