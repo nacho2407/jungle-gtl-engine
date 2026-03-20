@@ -7,8 +7,8 @@
 #include "ImGui/imgui_impl_win32.h"
 
 #include "Render/Renderer/Renderer.h"
-#include "World/PrimitiveComponent.h"
-#include "SceneSaveManager.h"
+#include "Component/PrimitiveComponent.h"
+#include "Serialization/SceneSaveManager.h"
 #include "Core/Common.h"
 #include "Engine/Core/InputSystem.h"
 

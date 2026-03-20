@@ -1,4 +1,4 @@
-﻿#include "World.h"
+﻿#include "GameFramework/World.h"
 
 DEFINE_CLASS(UWorld, UObject)
 REGISTER_FACTORY(UWorld)

@@ -6,10 +6,10 @@
 #include "Editor/Core/EditorConsole.h"
 #include "Engine/Core/InputSystem.h"
 
-#include "Engine/Scene/Camera.h"
-#include "World.h"
-#include "World/GizmoComponent.h"
-#include "World/PrimitiveComponent.h"
+#include "Component/Camera.h"
+#include "GameFramework/World.h"
+#include "Component/GizmoComponent.h"
+#include "Component/PrimitiveComponent.h"
 
 void FEditorViewportClient::Initialize(HWND InHWindow)
 {
