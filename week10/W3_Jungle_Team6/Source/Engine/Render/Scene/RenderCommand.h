@@ -68,16 +68,33 @@ struct FOutlineConstants
 	float Padding0[3];
 };
 
+// [B] Line Batcher Constants 
+struct FLineConstants {
+	FVector4 Color;
+	float Thickness;
+	float Padding[3];
+};
+
+// [C] Billboard Constants
+struct FBillboardConstants {
+	FVector4 ColorTint;
+	uint32 BillboardType; // 0: Spherical, 1: Cylindrical
+	float Opacity;
+	float Padding[2];
+};
+
 struct FRenderCommand
 {
 	//	VB, IB 모두 담고 있는 MB
 	FMeshBuffer* MeshBuffer = nullptr;
-
 	FTransformConstants TransformConstants = {};
-	FGizmoConstants GizmoConstants = {};
-	FEditorConstants EditorConstants = {};
-	FOverlayConstants OverlayConstants = {};
-	FOutlineConstants OutlineConstants = {};
-	
+	//union{
+
+	FGizmoConstants GizmoConstants;
+	FEditorConstants EditorConstants;
+	FOverlayConstants OverlayConstants;
+	FOutlineConstants OutlineConstants ;
+	//};
+
 	ERenderCommandType Type = ERenderCommandType::Primitive;
 };
