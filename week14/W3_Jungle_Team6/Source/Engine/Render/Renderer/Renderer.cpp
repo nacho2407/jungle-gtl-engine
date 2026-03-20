@@ -81,32 +81,25 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 
 		for (const auto& Cmd : Commands)
 		{
+	
+			EDepthStencilState TargetDepth = (Cmd.DepthStencilState != EDepthStencilState::Default)
+				? Cmd.DepthStencilState : GetDefaultDepthForPass(CurrentPass);
+			EBlendState TargetBlend = (Cmd.BlendState != EBlendState::Opaque)
+				? Cmd.BlendState : GetDefaultBlendForPass(CurrentPass);
+
+			Device.SetDepthStencilState(TargetDepth);
+			Device.SetBlendState(TargetBlend);
+
+			BindShaderByType(Cmd, context);
+
 			DrawCommand(context, Cmd);
 		}
 	}
 
+	//Reset
+	Device.SetRasterizerState(ERasterizerState::SolidBackCull);
 
-	//RenderComponentPass(context, InRenderBus);
-
-	//RenderEditorPass(context, InRenderBus);
-
-	////	Grid (AlphaBlend)
-	////	Grid should not overwrite depth, otherwise gizmo behind z=0 gets culled.
-	//
-	//RenderGridEditorPass(context, InRenderBus);
-
-	////	Selection Outline (Stencil)
-
-	//RenderOutlinePass(context, InRenderBus);
-
-	//// Gizmo (Depth-less Variable)
-	//Device.SetBlendState(EBlendState::Opaque);
-	//RenderDepthLessPass(context, InRenderBus);
-
-	////	Reset to default
-	//Device.SetRasterizerState(ERasterizerState::SolidBackCull);
-
-	//	NOTE : Overlay는 반드시 따로 호출해야 함. (Engine Loop에서 돌고 있음)
+	//	NOTE : Overlay는 반드시 따로 호출해야 함. (Engine Loop에서 돌고 있음)????
 }
 
 void FRenderer::RenderOverlay(const FRenderBus& InRenderBus)
@@ -123,18 +116,19 @@ void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceCo
 	switch (Pass)
 	{
 	case ERenderPass::Component:
-		//	Primitive
 		Device.SetDepthStencilState(EDepthStencilState::StencilWrite);
 		Device.SetBlendState(EBlendState::Opaque);
 		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		Resources.PrimitiveShader.Bind(DeviceContext);
 		break;
+
 	case ERenderPass::Outline:
 		Device.SetDepthStencilState(EDepthStencilState::StencilOutline);
 		Device.SetRasterizerState(ERasterizerState::SolidFrontCull);
 		Device.SetBlendState(EBlendState::Opaque);
 		Resources.OutlineShader.Bind(DeviceContext);
 		break;
+
 	case ERenderPass::DepthLess:
 		Device.SetDepthStencilState(EDepthStencilState::None);
 		Device.SetBlendState(EBlendState::AlphaBlend);
@@ -143,7 +137,6 @@ void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceCo
 		break;
 
 	case ERenderPass::Editor:
-		//	Axis (LINELIST)
 		Device.SetDepthStencilState(EDepthStencilState::Default);
 		Device.SetRasterizerState(ERasterizerState::SolidBackCull);
 		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
@@ -156,6 +149,7 @@ void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceCo
 		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		Resources.EditorShader.Bind(DeviceContext);
 		break;
+
 	case ERenderPass::Overlay:
 		Device.SetDepthStencilState(EDepthStencilState::None);
 		Device.SetBlendState(EBlendState::Opaque);
@@ -165,65 +159,98 @@ void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceCo
 	}
 }
 
+void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContext* Context)
+{
+	if (InCmd.Type != ERenderCommandType::Overlay)
+	{
+		Resources.PerObjectConstantBuffer.Update(Context, &InCmd.TransformConstants, sizeof(FTransformConstants));
+		ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
+		Context->VSSetConstantBuffers(0, 1, &cb);
+		//InDeviceContext->PSSetConstantBuffers(0, 1, &cb);
+
+	}
+
+	switch (InCmd.Type)
+	{
+	case ERenderCommandType::Gizmo:
+		Resources.GizmoShader.Bind(Context);
+		Resources.GizmoPerObjectConstantBuffer.Update(Context, &InCmd.GizmoConstants, sizeof(FGizmoConstants));
+
+		{
+			ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
+			Context->VSSetConstantBuffers(0, 1, &cb);
+
+			cb = Resources.GizmoPerObjectConstantBuffer.GetBuffer();
+			Context->VSSetConstantBuffers(1, 1, &cb);
+			Context->PSSetConstantBuffers(1, 1, &cb);
+		}
+		break;
+
+	case ERenderCommandType::Overlay:
+		Resources.OverlayConstantBuffer.Update(Context, &InCmd.OverlayConstants, sizeof(FOverlayConstants));
+
+		{
+			ID3D11Buffer* cb = Resources.OverlayConstantBuffer.GetBuffer();
+			Context->VSSetConstantBuffers(2, 1, &cb);
+			Context->PSSetConstantBuffers(2, 1, &cb);
+		}
+		break;
+
+	case ERenderCommandType::Axis:
+	case ERenderCommandType::Grid:
+		Resources.EditorConstantBuffer.Update(Context, &InCmd.EditorConstants, sizeof(FEditorConstants));
+
+		{
+			ID3D11Buffer* cb = Resources.EditorConstantBuffer.GetBuffer();
+			Context->VSSetConstantBuffers(3, 1, &cb);
+			Context->PSSetConstantBuffers(3, 1, &cb);
+
+			cb = Resources.PerObjectConstantBuffer.GetBuffer();
+			Context->VSSetConstantBuffers(0, 1, &cb);
+			Context->PSSetConstantBuffers(0, 1, &cb);
+		}
+		break;
+
+	case ERenderCommandType::SelectionOutline:
+		Resources.OutlineConstantBuffer.Update(Context, &InCmd.OutlineConstants, sizeof(FOutlineConstants));
+
+		ID3D11Buffer* cb = Resources.OutlineConstantBuffer.GetBuffer();
+		Context->VSSetConstantBuffers(4, 1, &cb);
+		Context->PSSetConstantBuffers(4, 1, &cb);
+
+		cb = Resources.PerObjectConstantBuffer.GetBuffer();
+		Context->VSSetConstantBuffers(0, 1, &cb);
+		//InDeviceContext->PSSetConstantBuffers(0, 1, &cb);
+		break;
+	}
+}
+
+EDepthStencilState FRenderer::GetDefaultDepthForPass(ERenderPass Pass) const
+{
+	switch (Pass)
+	{
+	case ERenderPass::Component: return EDepthStencilState::StencilWrite;
+	case ERenderPass::Outline:   return EDepthStencilState::StencilOutline;
+	case ERenderPass::DepthLess: return EDepthStencilState::None; 
+	case ERenderPass::Editor:    return EDepthStencilState::Default;
+	case ERenderPass::Grid:      return EDepthStencilState::DepthReadOnly;
+	case ERenderPass::Overlay:   return EDepthStencilState::None;
+	default:                     return EDepthStencilState::Default;
+	}
+}
+
+EBlendState FRenderer::GetDefaultBlendForPass(ERenderPass Pass) const
+{
+	switch (Pass)
+	{
+	case ERenderPass::Grid:
+	case ERenderPass::DepthLess: return EBlendState::AlphaBlend; // 그리드와 기즈모는 기본이 알파
+	default:                     return EBlendState::Opaque;
+	}
+}
 
 void FRenderer::DrawCommand(ID3D11DeviceContext * InDeviceContext, const FRenderCommand& InCommand)
 {
-	if (InCommand.MeshBuffer == nullptr || !InCommand.MeshBuffer->IsValid())
-	{
-		return;
-	}
-
-	if (InCommand.Type != ERenderCommandType::Overlay)
-	{
-		Resources.PerObjectConstantBuffer.Update(InDeviceContext, &InCommand.TransformConstants, sizeof(FTransformConstants));
-		
-		ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
-		InDeviceContext->VSSetConstantBuffers(0, 1, &cb);
-	}
-
-	if (InCommand.Type == ERenderCommandType::Gizmo)
-	{
-		Resources.GizmoPerObjectConstantBuffer.Update(InDeviceContext, &InCommand.GizmoConstants, sizeof(FGizmoConstants));
-
-		ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
-		InDeviceContext->VSSetConstantBuffers(0, 1, &cb);
-
-		cb = Resources.GizmoPerObjectConstantBuffer.GetBuffer();
-		InDeviceContext->VSSetConstantBuffers(1, 1, &cb);
-		InDeviceContext->PSSetConstantBuffers(1, 1, &cb);
-	}
-	else if (InCommand.Type == ERenderCommandType::Overlay)
-	{
-		Resources.OverlayConstantBuffer.Update(InDeviceContext, &InCommand.OverlayConstants, sizeof(FOverlayConstants));
-
-		ID3D11Buffer* cb = Resources.OverlayConstantBuffer.GetBuffer();
-		InDeviceContext->VSSetConstantBuffers(2, 1, &cb);
-		InDeviceContext->PSSetConstantBuffers(2, 1, &cb);
-	}
-	else if (InCommand.Type == ERenderCommandType::Axis || InCommand.Type == ERenderCommandType::Grid)
-	{
-		Resources.EditorConstantBuffer.Update(InDeviceContext, &InCommand.EditorConstants, sizeof(FEditorConstants));
-
-		ID3D11Buffer* cb = Resources.EditorConstantBuffer.GetBuffer();
-		InDeviceContext->VSSetConstantBuffers(3, 1, &cb);
-		InDeviceContext->PSSetConstantBuffers(3, 1, &cb);
-
-		cb = Resources.PerObjectConstantBuffer.GetBuffer();
-		InDeviceContext->VSSetConstantBuffers(0, 1, &cb);
-		InDeviceContext->PSSetConstantBuffers(0, 1, &cb);
-	}
-	else if(InCommand.Type == ERenderCommandType::SelectionOutline)
-	{
-		Resources.OutlineConstantBuffer.Update(InDeviceContext, &InCommand.OutlineConstants, sizeof(FOutlineConstants));
-
-		ID3D11Buffer* cb = Resources.OutlineConstantBuffer.GetBuffer();
-		InDeviceContext->VSSetConstantBuffers(4, 1, &cb);
-		InDeviceContext->PSSetConstantBuffers(4, 1, &cb);
-
-		cb = Resources.PerObjectConstantBuffer.GetBuffer();
-		InDeviceContext->VSSetConstantBuffers(0, 1, &cb);
-	}
-
 	uint32 offset = 0;
 	ID3D11Buffer* vertexBuffer = InCommand.MeshBuffer->GetVertexBuffer().GetBuffer();
 	if (vertexBuffer == nullptr)
