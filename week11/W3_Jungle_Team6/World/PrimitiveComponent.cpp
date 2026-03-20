@@ -1,4 +1,4 @@
-#include "PrimitiveComponent.h"
+﻿#include "PrimitiveComponent.h"
 #include "Core/RayTypes.h"
 #include "Mesh/MeshManager.h"
 #include "Core/CollisionTypes.h"

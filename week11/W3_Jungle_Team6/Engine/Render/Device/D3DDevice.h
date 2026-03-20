@@ -1,7 +1,7 @@
-#pragma once
+ï»¿#pragma once
 
 /*
-	Direct3D Device, Context, SwapchainÀ» °ü¸®ÇÏ´Â Class ÀÔ´Ï´Ù.
+	Direct3D Device, Context, Swapchainì„ ê´€ë¦¬í•˜ëŠ” Class ì…ë‹ˆë‹¤.
 */
 
 #include "Render/Common/RenderTypes.h"

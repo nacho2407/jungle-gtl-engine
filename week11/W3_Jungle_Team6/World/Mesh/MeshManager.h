@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <iostream>
 
@@ -6,7 +6,7 @@
 #include "Math/Vector.h"
 #include "Render/Resource/VertexTypes.h"
 
-//	Render/Resource/VertexTypes.h·Î ÀÌµ¿Çß½À´Ï´Ù.
+//	Render/Resource/VertexTypes.hë¡œ ì´ë™í–ˆìŠµë‹ˆë‹¤.
 //struct FVertex
 //{
 //	FVector Postion;
