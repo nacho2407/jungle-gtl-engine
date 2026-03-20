@@ -2,7 +2,7 @@
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 #include "Object/FName.h"
-#include "World/SceneComponent.h"
+#include "Component/SceneComponent.h"
 
 class UWorld;
 
