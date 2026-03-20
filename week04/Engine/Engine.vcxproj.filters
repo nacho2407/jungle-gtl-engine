@@ -132,9 +132,6 @@
     <ClInclude Include="Source\Core\Containers\Map.h">
       <Filter>Source\CoreUObject\Core\Containers</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Containers\ObjectPtr.h">
-      <Filter>Source\CoreUObject\Core\Containers</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\Containers\Pair.h">
       <Filter>Source\CoreUObject\Core\Containers</Filter>
     </ClInclude>

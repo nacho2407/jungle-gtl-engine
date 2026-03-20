@@ -18,7 +18,6 @@
     <ClInclude Include="Source\Core\Containers\Array.h" />
     <ClInclude Include="Source\Core\Containers\LinkedList.h" />
     <ClInclude Include="Source\Core\Containers\Map.h" />
-    <ClInclude Include="Source\Core\Containers\ObjectPtr.h" />
     <ClInclude Include="Source\Core\Containers\Pair.h" />
     <ClInclude Include="Source\Core\Containers\Queue.h" />
     <ClInclude Include="Source\Core\Containers\Set.h" />
