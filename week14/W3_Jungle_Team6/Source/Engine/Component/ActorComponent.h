@@ -23,7 +23,7 @@ public:
 	virtual void Activate();
 	virtual void Deactivate();
 	
-	void ExcuteTick(float DeltaTime);
+	void ExecuteTick(float DeltaTime);
 	void SetActive(bool bNewActive);
 	inline void SetAutoActivate(bool bNewAutoActivate) { bAutoActivate = bNewAutoActivate; }
 	inline void SetComponentTickEnabled(bool bEnabled) { bCanEverTick = bEnabled; }

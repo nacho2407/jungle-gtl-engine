@@ -37,9 +37,6 @@
     <Filter Include="Source\Engine\Object">
       <UniqueIdentifier>{b5a4e84d-14eb-06be-b35c-1bbcfdf0dd7b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Physics">
-      <UniqueIdentifier>{4f8f1e9d-ff94-7137-ee5f-2a519225df03}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Render">
       <UniqueIdentifier>{28426556-46d8-9493-5d6f-90428af5b868}</UniqueIdentifier>
     </Filter>
@@ -146,9 +143,6 @@
     <ClCompile Include="Source\Engine\Object\Object.cpp">
       <Filter>Source\Engine\Object</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Physics\CollisionManager.cpp">
-      <Filter>Source\Engine\Physics</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Render\FontBatcher.cpp">
       <Filter>Source\Engine\Render</Filter>
     </ClCompile>
@@ -251,9 +245,6 @@
     <ClInclude Include="Source\Engine\Core\Common.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Core\Console.h">
-      <Filter>Source\Engine\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Core\ConsoleHelper.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
@@ -302,9 +293,6 @@
     <ClInclude Include="Source\Engine\Object\ObjectFactory.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Physics\CollisionManager.h">
-      <Filter>Source\Engine\Physics</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Render\FontBatcher.h">
       <Filter>Source\Engine\Render</Filter>
     </ClInclude>
@@ -319,9 +307,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Mesh\MeshManager.h">
       <Filter>Source\Engine\Render\Mesh</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Renderer\RenderPipeline.h">
-      <Filter>Source\Engine\Render\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\Renderer.h">
       <Filter>Source\Engine\Render\Renderer</Filter>
