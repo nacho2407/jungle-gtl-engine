@@ -99,11 +99,11 @@
     <ClCompile Include="Source\Core\Math\Vector.cpp">
       <Filter>Source\Core\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Math\Vector4.cpp">
+    <ClCompile Include="Source\Core\Math\Vector2.cpp">
       <Filter>Source\Core\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Misc\Name.cpp">
-      <Filter>Source\Core\Misc</Filter>
+    <ClCompile Include="Source\Core\Math\Vector4.cpp">
+      <Filter>Source\Core\Math</Filter>
     </ClCompile>
     <ClCompile Include="Source\CoreUObject\Object.cpp">
       <Filter>Source\CoreUObject</Filter>
@@ -113,6 +113,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Asset\Asset.cpp">
       <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Actor.cpp">
+      <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\CubeComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
@@ -134,6 +137,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\EngineStatics.cpp">
       <Filter>Source\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Game\Actor.cpp">
+      <Filter>Source\Engine\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp">
       <Filter>Source\Engine\ViewPort</Filter>
@@ -243,6 +249,9 @@
     <ClInclude Include="Source\Core\Math\Vector.h">
       <Filter>Source\Core\Math</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\Math\Vector2.h">
+      <Filter>Source\Core\Math</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Core\Math\Vector4.h">
       <Filter>Source\Core\Math</Filter>
     </ClInclude>
@@ -257,6 +266,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\Asset.h">
       <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Actor.h">
+      <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\CubeComponent.h">
       <Filter>Source\Engine\Component</Filter>
@@ -278,6 +290,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\EngineStatics.h">
       <Filter>Source\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Game\Actor.h">
+      <Filter>Source\Engine\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\ViewPort\Viewport.h">
       <Filter>Source\Engine\ViewPort</Filter>

@@ -3,7 +3,7 @@
 
 namespace Engine::Component
 {
-    class USphereComp : public UPrimitiveComponent
+    class ENGINE_API USphereComp : public UPrimitiveComponent
     {
         DECLARE_RTTI(USphereComp, UPrimitiveComponent)
       public:

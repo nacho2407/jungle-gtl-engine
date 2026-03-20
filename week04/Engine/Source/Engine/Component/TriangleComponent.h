@@ -1,11 +1,14 @@
 #pragma once
+
+#include <Core/CoreMinimal.h>
 #include "PrimitiveComponent.h"
 
 namespace Engine::Component
 {
-    class UTriangleComp : public UPrimitiveComponent
+    class ENGINE_API UTriangleComp : public UPrimitiveComponent
     {
         DECLARE_RTTI(UTriangleComp, UPrimitiveComponent)
+
       public:
         UTriangleComp();
         virtual ~UTriangleComp() override;
