@@ -70,7 +70,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 			OutlineCmd.OutlineConstants.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
 			OutlineCmd.OutlineConstants.OutlineInvScale = FVector(1.0f / primitiveComponent->GetRelativeScale().X,
 				1.0f / primitiveComponent->GetRelativeScale().Y, 1.0f / primitiveComponent->GetRelativeScale().Z);
-			OutlineCmd.OutlineConstants.OutlineOffset = 0.03;
+			OutlineCmd.OutlineConstants.OutlineOffset = 0.03f;
 
 			if(primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Plane)
 			{
