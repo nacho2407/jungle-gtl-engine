@@ -1,38 +1,66 @@
 #pragma once
 
-// Platform / basic types
+//=============================================================================
+// Platform Types
+// 기본 정수 타입, 플랫폼별 타입 정의
+// 예: int32, uint32, TCHAR 류
+//=============================================================================
 #include "HAL/PlatformTypes.h"
 
-// Core globals / export macros
+//=============================================================================
+// Core Globals / Export Macros
+// 전역 코어 설정, 공용 전역 변수/매크로, DLL export/import 매크로
+//=============================================================================
 #include "EngineAPI.h"
 #include "CoreGlobals.h"
 
+//=============================================================================
 // Containers
+// 코어에서 자주 사용하는 기본 컨테이너 및 문자열
+//=============================================================================
 #include "Containers/Array.h"
-#include "Containers/List.h"
-#include "Containers/Map.h"
-#include "Containers/Queue.h"
-#include "Containers/Set.h"
-#include "Containers/StaticArray.h"
 #include "Containers/String.h"
 
+//=============================================================================
 // Logging
+// 로그 출력 매크로 및 로그 디바이스 인터페이스
+//=============================================================================
 #include "Logging/LogMacros.h"
-#include "Logging/LogOutputDevice.h"
 
+//=============================================================================
 // Math
+// 기본 수학 타입 및 유틸리티
+// 벡터, 행렬, 회전, 변환, 색상 등
+//=============================================================================
 #include "Math/Color.h"
 #include "Math/MathHelper.h"
 #include "Math/Matrix.h"
 #include "Math/Quaternion.h"
 #include "Math/Rotator.h"
-#include "Math/Transform.h"
 #include "Math/Vector.h"
 #include "Math/Vector4.h"
 
+//=============================================================================
+// Geometry
+// 기하 프리미티브 및 기하 유틸리티
+// AABB, Ray, Segment, Triangle, 교차 판정, Bounds 보조 함수 등
+//=============================================================================
+#include "Geometry/Geometry.h"
+#include "Geometry/BoundsUtility.h"
+#include "Geometry/Intersection.h"
+#include "Geometry/Transform.h"
+
+//=============================================================================
 // Misc
+// 이름 타입, 시간 등 기타 범용 유틸리티
+//=============================================================================
 #include "Misc/Name.h"
 
-// HAL utilities often needed
+//=============================================================================
+// Platform Utilities
+// 플랫폼별 메모리/시스템 기능
+// 예: 메모리 정보, 코어 수, 디버거 감지, 종료 요청 등
+//=============================================================================
 #include "HAL/PlatformMemory.h"
 #include "HAL/PlatformMisc.h"
+#include "HAL/PlatformTime.h"

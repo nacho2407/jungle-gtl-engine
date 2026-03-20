@@ -61,6 +61,15 @@
     <Filter Include="Source\Core\Templates">
       <UniqueIdentifier>{2753246a-93aa-8d10-f0ab-169e9d5d9a2f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Component">
+      <UniqueIdentifier>{009757f7-27d2-e9f2-4fdf-fa550fbfb1ff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Game">
+      <UniqueIdentifier>{b40c0879-15f3-b5bd-98bc-875a35ed9e05}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\ViewPort">
+      <UniqueIdentifier>{3f58abac-aa9e-06f1-348e-4d37ab560ccd}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\FileIO\Ini">
       <UniqueIdentifier>{1e4f96e3-8b6d-f192-3313-76777e4652c0}</UniqueIdentifier>
     </Filter>
@@ -75,8 +84,14 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Core\CoreGlobals.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Core\CoreMinimal.cpp">
       <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Geometry\Transform.cpp">
+      <Filter>Source\Core\Geometry</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Math\Color.cpp">
       <Filter>Source\Core\Math</Filter>
@@ -88,9 +103,6 @@
       <Filter>Source\Core\Math</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Math\Rotator.cpp">
-      <Filter>Source\Core\Math</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Math\Transform.cpp">
       <Filter>Source\Core\Math</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Math\Vector.cpp">
@@ -108,7 +120,6 @@
     <ClCompile Include="Source\Engine\EngineStatics.cpp">
       <Filter>Source\Engine</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\CoreGlobals.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Sphere.h">
@@ -137,6 +148,9 @@
     </ClInclude>
     <ClInclude Include="Source\Core\Containers\StaticArray.h">
       <Filter>Source\Core\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\CoreGlobals.h">
+      <Filter>Source\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\CoreMinimal.h">
       <Filter>Source\Core</Filter>
@@ -168,6 +182,15 @@
     <ClInclude Include="Source\Core\Geometry\Primitives\Triangle.h">
       <Filter>Source\Core\Geometry\Primitives</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\Geometry\Transform.h">
+      <Filter>Source\Core\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Logging\LogMacros.h">
+      <Filter>Source\Core\Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Logging\LogOutputDevice.h">
+      <Filter>Source\Core\Logging</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Core\Math\Color.h">
       <Filter>Source\Core\Math</Filter>
     </ClInclude>
@@ -181,9 +204,6 @@
       <Filter>Source\Core\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Math\Rotator.h">
-      <Filter>Source\Core\Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Math\Transform.h">
       <Filter>Source\Core\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Math\Vector.h">
@@ -201,9 +221,12 @@
     <ClInclude Include="Source\Engine\EngineStatics.h">
       <Filter>Source\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\CoreGlobals.h" />
-    <ClInclude Include="Source\Core\Logging\LogOutputDevice.h" />
-    <ClInclude Include="Source\Core\Logging\LogMacros.h" />
+    <ClInclude Include="Source\Core\Containers\String.h" />
+    <ClInclude Include="Source\Core\HAL\PlatformMemory.h" />
+    <ClInclude Include="Source\Core\HAL\PlatformMisc.h" />
+    <ClInclude Include="Source\Core\HAL\PlatformTime.h" />
+    <ClInclude Include="Source\Core\HAL\PlatformTypes.h" />
+    <ClInclude Include="Source\Core\Misc\Name.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

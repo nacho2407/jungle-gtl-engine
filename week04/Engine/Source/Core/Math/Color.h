@@ -4,30 +4,39 @@
 
 struct ENGINE_API FColor
 {
-public:
-	constexpr FColor(float InR = 0.f, float InG = 0.f, float InB = 0.f, float InA = 1.0f);
-	~FColor();
+  public:
+    constexpr FColor(float InR, float InG, float InB, float InA) : r(InR), g(InG), b(InB), a(InA) {}
+    ~FColor() = default;
 
-	FColor operator+(float num) const;
-	FColor operator+(const FColor& c) const;
-	FColor operator-(float num) const;
-	FColor operator-(const FColor& c) const;
-	FColor operator*(float num) const;
-	FColor operator*(const FColor& c) const;
-	uint32 ToPackedABGR() const;
+  public:
+    static constexpr FColor White() { return FColor(1.0f, 1.0f, 1.0f, 1.0f); }
 
-	static FColor Lerp(const FColor& A, const FColor& B, float T);
+    static constexpr FColor Black() { return FColor(0.0f, 0.0f, 0.0f, 1.0f); }
 
-	static FColor White();
-	static FColor Black();
-	static FColor Red();
-	static FColor Green();
-	static FColor Blue();
-	static FColor Yellow();
-	static FColor Magenta();
-	static FColor Cyan();
-	static FColor Transparent();
+    static constexpr FColor Red() { return FColor(1.0f, 0.0f, 0.0f, 1.0f); }
 
-public:
-	float r, g, b, a;
+    static constexpr FColor Green() { return FColor(0.0f, 1.0f, 0.0f, 1.0f); }
+
+    static constexpr FColor Blue() { return FColor(0.0f, 0.0f, 1.0f, 1.0f); }
+
+    static constexpr FColor Yellow() { return FColor(1.0f, 1.0f, 0.0f, 1.0f); }
+
+    static constexpr FColor Magenta() { return FColor(1.0f, 0.0f, 1.0f, 1.0f); }
+
+    static constexpr FColor Cyan() { return FColor(0.0f, 1.0f, 1.0f, 1.0f); }
+
+    static constexpr FColor Transparent() { return FColor(0.0f, 0.0f, 0.0f, 0.0f); }
+
+    FColor operator+(float num) const;
+    FColor operator+(const FColor &c) const;
+    FColor operator-(float num) const;
+    FColor operator-(const FColor &c) const;
+    FColor operator*(float num) const;
+    FColor operator*(const FColor &c) const;
+    uint32 ToPackedABGR() const;
+
+    static FColor Lerp(const FColor &A, const FColor &B, float T);
+
+  public:
+    float r, g, b, a;
 };

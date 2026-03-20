@@ -20,6 +20,7 @@
     <ClInclude Include="Source\Core\Containers\Queue.h" />
     <ClInclude Include="Source\Core\Containers\Set.h" />
     <ClInclude Include="Source\Core\Containers\StaticArray.h" />
+    <ClInclude Include="Source\Core\Containers\String.h" />
     <ClInclude Include="Source\Core\CoreGlobals.h" />
     <ClInclude Include="Source\Core\CoreMinimal.h" />
     <ClInclude Include="Source\Core\EngineAPI.h" />
@@ -31,6 +32,11 @@
     <ClInclude Include="Source\Core\Geometry\Primitives\Ray.h" />
     <ClInclude Include="Source\Core\Geometry\Primitives\Segment.h" />
     <ClInclude Include="Source\Core\Geometry\Primitives\Triangle.h" />
+    <ClInclude Include="Source\Core\Geometry\Transform.h" />
+    <ClInclude Include="Source\Core\HAL\PlatformMemory.h" />
+    <ClInclude Include="Source\Core\HAL\PlatformMisc.h" />
+    <ClInclude Include="Source\Core\HAL\PlatformTime.h" />
+    <ClInclude Include="Source\Core\HAL\PlatformTypes.h" />
     <ClInclude Include="Source\Core\Logging\LogMacros.h" />
     <ClInclude Include="Source\Core\Logging\LogOutputDevice.h" />
     <ClInclude Include="Source\Core\Math\Color.h" />
@@ -38,11 +44,11 @@
     <ClInclude Include="Source\Core\Math\Matrix.h" />
     <ClInclude Include="Source\Core\Math\Quaternion.h" />
     <ClInclude Include="Source\Core\Math\Rotator.h" />
-    <ClInclude Include="Source\Core\Math\Transform.h" />
     <ClInclude Include="Source\Core\Math\Vector.h" />
     <ClInclude Include="Source\Core\Math\Vector4.h" />
     <ClInclude Include="Source\CoreUObject\Object.h" />
     <ClInclude Include="Source\CoreUObject\ObjectFactory.h" />
+    <ClInclude Include="Source\Core\Misc\Name.h" />
     <ClInclude Include="Source\Engine\EngineStatics.h" />
   </ItemGroup>
   <ItemGroup>
@@ -51,11 +57,11 @@
   <ItemGroup>
     <ClCompile Include="Source\Core\CoreGlobals.cpp" />
     <ClCompile Include="Source\Core\CoreMinimal.cpp" />
+    <ClCompile Include="Source\Core\Geometry\Transform.cpp" />
     <ClCompile Include="Source\Core\Math\Color.cpp" />
     <ClCompile Include="Source\Core\Math\Matrix.cpp" />
     <ClCompile Include="Source\Core\Math\Quaternion.cpp" />
     <ClCompile Include="Source\Core\Math\Rotator.cpp" />
-    <ClCompile Include="Source\Core\Math\Transform.cpp" />
     <ClCompile Include="Source\Core\Math\Vector.cpp" />
     <ClCompile Include="Source\Core\Math\Vector4.cpp" />
     <ClCompile Include="Source\CoreUObject\Object.cpp" />
@@ -107,7 +113,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>ENGINECORE_EXPORTS;NOMINMAX;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ENGINECORE_EXPORTS;NOMINMAX;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -124,7 +130,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>ENGINECORE_EXPORTS;NOMINMAX;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ENGINECORE_EXPORTS;NOMINMAX;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
