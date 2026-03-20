@@ -18,34 +18,11 @@ struct FRenderHandler
 class FRenderBus
 {
 private:
-
-public:
-
-private:
-	TArray<FRenderCommand> ComponentCommands;
-	TArray<FRenderCommand> DepthLessCommands;
-	TArray<FRenderCommand> EditorCommands;
-	TArray<FRenderCommand> EditorGridCommands;
-	
-	//	Array로 하지 않아도 되지만, 추후를 위한 확장성을 고려하여 추가하였습니다.
-	TArray<FRenderCommand> OutlineCommands;
-	TArray<FRenderCommand> OverlayCommands;
+	TArray<FRenderCommand> PassQueues[(uint32)ERenderPass::MAX];
 
 public:
 	void Clear();
-	//	Draw Call 요청을 RenderBus에 추가하는 함수
-	void AddComponentCommand(const FRenderCommand& InCommand);
-	void AddDepthLessCommand(const FRenderCommand& InCommand);
-	void AddEditorCommand(const FRenderCommand& InCommand);
-	void AddGridEditorCommand(const FRenderCommand& InCommand);
-	void AddOutlineCommand(const FRenderCommand& InCommand);
-	void AddOverlayCommand(const FRenderCommand& InCommand);
-
-	const TArray<FRenderCommand>& GetComponentCommands() const { return ComponentCommands; }
-	const TArray<FRenderCommand>& GetDepthLessCommands() const { return DepthLessCommands; }
-	const TArray<FRenderCommand>& GetEditorCommand() const { return EditorCommands; }
-	const TArray<FRenderCommand>& GetGridEditorCommand() const { return EditorGridCommands; }
-	const TArray<FRenderCommand>& GetSelectionOutlineCommands() const { return OutlineCommands; }
-	const TArray<FRenderCommand>& GetOverlayCommands() const { return OverlayCommands; }
+	void AddCommand(ERenderPass Pass, const FRenderCommand& InCommand);
+	const TArray<FRenderCommand>& GetCommands(ERenderPass Pass) const;
 };
 
