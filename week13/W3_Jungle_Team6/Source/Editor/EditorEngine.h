@@ -1,8 +1,8 @@
 ﻿#pragma once
 
-#include "World.h"
-#include "Engine/Scene/Camera.h"
-#include "World/GizmoComponent.h"
+#include "GameFramework/World.h"
+#include "Component/Camera.h"
+#include "Component/GizmoComponent.h"
 
 #include "Render/Renderer/Renderer.h"
 #include "Render/Scene/RenderBus.h"
