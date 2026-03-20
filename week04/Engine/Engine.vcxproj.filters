@@ -112,6 +112,8 @@
       <Filter>Source\Engine</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Asset\Asset.cpp" />
+    <ClCompile Include="Source\Core\Path.cpp" />
+    <ClCompile Include="Source\Engine\Asset\AssetManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Sphere.h">
@@ -130,9 +132,6 @@
       <Filter>Source\CoreUObject\Core\Containers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Containers\Map.h">
-      <Filter>Source\CoreUObject\Core\Containers</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Containers\ObjectPtr.h">
       <Filter>Source\CoreUObject\Core\Containers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Containers\Pair.h">
@@ -238,6 +237,8 @@
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\Asset.h" />
+    <ClInclude Include="Source\Core\Path.h" />
+    <ClInclude Include="Source\Engine\Asset\AssetManager.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

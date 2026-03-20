@@ -9,15 +9,18 @@ public:
 	UAsset() = default;
 	~UAsset() override = default;
 	
+
+
 public:
-	FString GetPath() const { return SourcePath; }
-	FString GetHash() const { return ImportedHash; }
+	const WFString& GetPath() const { return SourcePath; }
+	const FString& GetHash() const { return ImportedHash; }
 
 
 
 protected:
-	FString SourcePath;
+	WFString SourcePath;
 	FString ImportedHash;
 	FString AssetName;
+
 	bool bDirty = false;
 };
