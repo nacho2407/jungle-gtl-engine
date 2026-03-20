@@ -8,7 +8,7 @@ class UActorComponent : public UObject
 {
 protected:
 	virtual void TickComponent(float DeltaTime) {};
-	AActor* OwningActor = nullptr;
+	AActor* Owner = nullptr;
 
 private:
 	bool bIsActive = true;
@@ -31,8 +31,8 @@ public:
 
 	inline bool IsActive() { return bIsActive; }
 
-	void SetOwningActor(AActor* Actor) { OwningActor = Actor; }
-	AActor* GetOwningActor() const { return OwningActor; }
+	void SetOwner(AActor* Actor) { Owner = Actor; }
+	AActor* GetOwner() const { return Owner; }
 };
 
 

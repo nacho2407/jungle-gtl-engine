@@ -13,7 +13,7 @@ namespace common {
 
 	namespace constants {
 		namespace ImGui {
-			const float NotificationTimer = 1.5f;
+			constexpr float NotificationTimer = 1.5f;
 		}
 	}
 }
