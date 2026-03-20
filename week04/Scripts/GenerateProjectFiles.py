@@ -240,7 +240,10 @@ def add_engine_project(files: dict[str, list[str]]) -> None:
 
     compile_group = ET.SubElement(root, "ItemGroup")
     for path in files["ClCompile"]:
-        ET.SubElement(compile_group, "ClCompile", Include=path)
+        compile_item = ET.SubElement(compile_group, "ClCompile", Include=path)
+        if path == "Source\\Core\\CoreMinimal.cpp":
+            ET.SubElement(compile_item, "PrecompiledHeader").text = "Create"
+            ET.SubElement(compile_item, "PrecompiledHeaderFile").text = "Core/CoreMinimal.h"
 
     globals_group = ET.SubElement(root, "PropertyGroup", Label="Globals")
     ET.SubElement(globals_group, "VCProjectVersion").text = "17.0"
@@ -290,6 +293,10 @@ def add_engine_project(files: dict[str, list[str]]) -> None:
                 "$(ProjectDir)Source;%(AdditionalIncludeDirectories)"
             )
             ET.SubElement(cl_compile, "AdditionalOptions").text = "/utf-8 %(AdditionalOptions)"
+            ET.SubElement(cl_compile, "PrecompiledHeader").text = "Use"
+            ET.SubElement(cl_compile, "PrecompiledHeaderFile").text = "Core/CoreMinimal.h"
+            ET.SubElement(cl_compile, "ForcedIncludeFiles").text = "Core/CoreMinimal.h;%(ForcedIncludeFiles)"
+            ET.SubElement(cl_compile, "PrecompiledHeaderOutputFile").text = "$(IntDir)CoreMinimal.pch"
 
         link = ET.SubElement(item_definition_group, "Link")
         ET.SubElement(link, "SubSystem").text = "Console"

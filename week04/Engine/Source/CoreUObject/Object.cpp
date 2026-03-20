@@ -1,5 +1,6 @@
 #include "Object.h"
 #include "../Engine/EngineStatics.h"
+#include "Core/Containers/Array.h"
 
 TArray<UObject*> GUObjectArray;
 

@@ -1,55 +1,13 @@
-#include "../CoreMinimal.h"
-#include <cassert>
+#include "Vector.h"
 
-float FVector::Dot(const FVector &Other) const { return x * Other.x + y * Other.y + z * Other.z; }
-
-FVector FVector::Cross(const FVector &Other) const
-{
-    return FVector(y * Other.z - z * Other.y, z * Other.x - x * Other.z, x * Other.y - y * Other.x);
-}
-
-FVector FVector::operator+(const FVector &Other) const
-{
-    return FVector(x + Other.x, y + Other.y, z + Other.z);
-}
-
-FVector FVector::operator-(const FVector &Other) const
-{
-    return FVector(x - Other.x, y - Other.y, z - Other.z);
-}
-
-FVector FVector::operator*(const float s) const { return FVector(x * s, y * s, z * s); }
-
-FVector FVector::operator/(const float s) const
-{
-    if (std::abs(s) < MathHelper::Epsilon)
-    {
-        assert(s != 0.0f && "Division by zero in FVector::operator/");
-        return FVector::Zero();
-    }
-    float Denominator = 1.0f / s;
-    return FVector(x * Denominator, y * Denominator, z * Denominator);
-}
-
-FVector FVector::Normalize() const
-{
-    float SquareSum = x * x + y * y + z * z;
-    float Denominator = MathHelper::Sqrt(SquareSum);
-
-    if (std::abs(Denominator) < MathHelper::Epsilon)
-        return FVector::Zero();
-    Denominator = 1.0f / Denominator;
-
-    return FVector(x * Denominator, y * Denominator, z * Denominator);
-}
-
-float FVector::Length() const { return MathHelper::Sqrt(x * x + y * y + z * z); }
-
-bool FVector::IsNearlyEqual(const FVector &Other) const
-{
-    return (std::abs(x - Other.x) < MathHelper::Epsilon) &&
-           (std::abs(y - Other.y) < MathHelper::Epsilon) &&
-           (std::abs(z - Other.z) < MathHelper::Epsilon);
-}
-
-bool FVector::operator==(const FVector &Other) const { return IsNearlyEqual(Other); }
+const FVector FVector::ZeroVector(0.f, 0.f, 0.f);
+const FVector FVector::OneVector(1.0f, 1.0f, 1.0f);
+const FVector FVector::UpVector(0.0f, 0.0f, 1.0f);
+const FVector FVector::DownVector(0.0f, 0.0f, -1.0f);
+const FVector FVector::ForwardVector(1.0f, 0.0f, 0.0f);
+const FVector FVector::BackwardVector(-1.0f, 0.0f, 0.0f);
+const FVector FVector::RightVector(0.0f, 1.0f, 0.0f);
+const FVector FVector::LeftVector(0.0f, -1.0f, 0.0f);
+const FVector FVector::XAxisVector(1.0f, 0.0f, 0.0f);
+const FVector FVector::YAxisVector(0.0f, 1.0f, 0.0f);
+const FVector FVector::ZAxisVector(0.0f, 0.0f, 1.0f);

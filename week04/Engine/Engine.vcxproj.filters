@@ -61,15 +61,6 @@
     <Filter Include="Source\Core\Templates">
       <UniqueIdentifier>{2753246a-93aa-8d10-f0ab-169e9d5d9a2f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Component">
-      <UniqueIdentifier>{009757f7-27d2-e9f2-4fdf-fa550fbfb1ff}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Game">
-      <UniqueIdentifier>{b40c0879-15f3-b5bd-98bc-875a35ed9e05}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\ViewPort">
-      <UniqueIdentifier>{3f58abac-aa9e-06f1-348e-4d37ab560ccd}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\FileIO\Ini">
       <UniqueIdentifier>{1e4f96e3-8b6d-f192-3313-76777e4652c0}</UniqueIdentifier>
     </Filter>
@@ -99,7 +90,7 @@
     <ClCompile Include="Source\Core\Math\Matrix.cpp">
       <Filter>Source\Core\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Math\Quaternion.cpp">
+    <ClCompile Include="Source\Core\Math\Quat.cpp">
       <Filter>Source\Core\Math</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Math\Rotator.cpp">
@@ -134,10 +125,16 @@
     <ClInclude Include="Source\Core\Containers\Array.h">
       <Filter>Source\Core\Containers</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Containers\List.h">
+    <ClInclude Include="Source\Core\Containers\LinkedList.h">
       <Filter>Source\Core\Containers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Containers\Map.h">
+      <Filter>Source\Core\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Containers\ObjectPtr.h">
+      <Filter>Source\Core\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Containers\Pair.h">
       <Filter>Source\Core\Containers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Containers\Queue.h">
@@ -147,6 +144,9 @@
       <Filter>Source\Core\Containers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Containers\StaticArray.h">
+      <Filter>Source\Core\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Containers\String.h">
       <Filter>Source\Core\Containers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\CoreGlobals.h">
@@ -194,13 +194,13 @@
     <ClInclude Include="Source\Core\Math\Color.h">
       <Filter>Source\Core\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Math\MathHelper.h">
+    <ClInclude Include="Source\Core\Math\MathUtility.h">
       <Filter>Source\Core\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Math\Matrix.h">
       <Filter>Source\Core\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Math\Quaternion.h">
+    <ClInclude Include="Source\Core\Math\Quat.h">
       <Filter>Source\Core\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Math\Rotator.h">

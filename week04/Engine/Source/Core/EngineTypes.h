@@ -1,48 +1,31 @@
 #pragma once
+#include <DirectXMath.h>
+#include <wrl/client.h>
 
-#include <cstdint>
-#include<string>
-#include<vector>
-#include<list>
-#include<unordered_set>
-#include<unordered_map>
-#include<array>
-#include<queue>
-#include<wrl.h>
+using int8 = signed char;
+using uint8 = unsigned char;
+using int16 = short;
+using uint16 = unsigned short;
+using int32 = int;
+using uint32 = unsigned int;
+using int64 = long long;
+using uint64 = unsigned long long;
 
-using uint8 = std::uint8_t;
-using uint16 = std::uint16_t;
-using uint32 = std::uint32_t;
-using uint64 = std::uint64_t;
+using Float2 = DirectX::XMFLOAT2;
+using Float3 = DirectX::XMFLOAT3;
+using Float4 = DirectX::XMFLOAT4;
 
-using int8 = std::int8_t;
-using int16 = std::int16_t;
-using int32 = std::int32_t;
-using int64 = std::int64_t;
+using XMVector = DirectX::XMVECTOR;
+using FXMVector = DirectX::FXMVECTOR;
+using GXMVector = DirectX::GXMVECTOR;
+using HXMVector = DirectX::HXMVECTOR;
+using CXMVector = DirectX::CXMVECTOR;
 
-using FString = std::string;
-using WFString = std::wstring;
+using Float4X4 = DirectX::XMFLOAT4X4;
+
+using XMMatrix = DirectX::XMMATRIX;
+using FXMMatrix = DirectX::FXMMATRIX;
+using CXMMatrix = DirectX::CXMMATRIX;
 
 template <typename T>
 using TComPtr = Microsoft::WRL::ComPtr<T>;
-
-template <typename T>
-using TArray = std::vector<T>;
-
-template <typename T>
-using TLinkedList = std::list<T>;
-
-template <typename T>
-using TSet = std::unordered_set<T>;
-
-template <typename T0, typename T1>
-using TMap = std::unordered_map<T0, T1>;
-
-template <typename T0, typename T1>
-using TPair = std::pair<T0, T1>;
-
-template <typename T, int N>
-using TStaticArray = std::array<T, N>;
-
-template <typename T>
-using TQueue = std::queue<T>;

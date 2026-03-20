@@ -1,60 +1,67 @@
 #include "../CoreMinimal.h"
 #include <cassert>
 
-float FVector4::Dot(const FVector4 &Other) const { return x * Other.x + y * Other.y + z * Other.z; }
+#include "MathUtility.h"
+
+float FVector4::Dot(const FVector4 &Other) const { return X * Other.X + Y * Other.Y + Z * Other.Z; }
 
 FVector4 FVector4::Cross(const FVector4 &Other) const
 {
-    return FVector4(y * Other.z - z * Other.y, z * Other.x - x * Other.z,
-                    x * Other.y - y * Other.x);
+    return { Y * Other.Z - Z * Other.Y, Z * Other.X - X * Other.Z,
+                    X * Other.Y - Y * Other.X };
 }
 
 FVector4 FVector4::operator+(const FVector4 &Other) const
 {
-    return FVector4(x + Other.x, y + Other.y, z + Other.z);
+    return { X + Other.X, Y + Other.Y, Z + Other.Z };
 }
 
 FVector4 FVector4::operator-(const FVector4 &Other) const
 {
-    return FVector4(x - Other.x, y - Other.y, z - Other.z);
+    return { X - Other.X, Y - Other.Y, Z - Other.Z };
 }
 
-FVector4 FVector4::operator*(const float s) const { return FVector4(x * s, y * s, z * s); }
+FVector4 FVector4::operator*(const float S) const { return { X * S, Y * S, Z * S }; }
 
-FVector4 FVector4::operator/(const float s) const
+FVector4 FVector4::operator/(const float S) const
 {
-    if (std::abs(s) < MathHelper::Epsilon)
+    if (std::abs(S) < FMath::Epsilon)
     {
-        assert(s != 0.0f && "Division by zero in FVector4::operator/");
-        return FVector4::Zero();
+        assert(S != 0.0f && "Division by zero in FVector4::operator/");
+        return Zero();
     }
-    float Denominator = 1.0f / s;
-    return FVector4(x * Denominator, y * Denominator, z * Denominator);
+    float Denominator = 1.0f / S;
+    return { X * Denominator, Y * Denominator, Z * Denominator };
 }
 
 FVector4 FVector4::Normalize() const
 {
-    float SquareSum = x * x + y * y + z * z;
-    float Denominator = MathHelper::Sqrt(SquareSum);
+    float SquareSum = X * X + Y * Y + Z * Z;
+    float Denominator = std::sqrt(SquareSum);
 
-    if (std::abs(Denominator) < MathHelper::Epsilon)
-        return FVector4::Zero();
+    if (std::abs(Denominator) < FMath::Epsilon)
+    {
+        return Zero();
+    }
     Denominator = 1.0f / Denominator;
 
-    return FVector4(x * Denominator, y * Denominator, z * Denominator);
+    return { X * Denominator, Y * Denominator, Z * Denominator };
 }
 
-float FVector4::Length() const { return MathHelper::Sqrt(x * x + y * y + z * z); }
+float FVector4::Length() const
+{
+	return std::sqrt(X * X + Y * Y + Z * Z);
+}
 
 bool FVector4::IsNearlyEqual(const FVector4 &Other) const
 {
-    return (std::abs(x - Other.x) < MathHelper::Epsilon) &&
-           (std::abs(y - Other.y) < MathHelper::Epsilon) &&
-           (std::abs(z - Other.z) < MathHelper::Epsilon);
+    return (std::abs(X - Other.X) < FMath::Epsilon) &&
+           (std::abs(Y - Other.Y) < FMath::Epsilon) &&
+           (std::abs(Z - Other.Z) < FMath::Epsilon);
 }
 
 bool FVector4::operator==(const FVector4 &Other) const { return IsNearlyEqual(Other); }
 
-bool FVector4::IsPoint() const { return std::abs(w - 1) < MathHelper::Epsilon; }
+bool FVector4::IsPoint() const { return std::abs(W - 1) < FMath::Epsilon; }
 
-bool FVector4::IsVector() const { return std::abs(w) < MathHelper::Epsilon; }
+bool FVector4::IsVector() const { return std::abs(W) < FMath::Epsilon; }

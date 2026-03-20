@@ -15,11 +15,14 @@
     <ClInclude Include="Resources\Triangle.h" />
     <ClInclude Include="Resources\VertexSimple.h" />
     <ClInclude Include="Source\Core\Containers\Array.h" />
-    <ClInclude Include="Source\Core\Containers\List.h" />
+    <ClInclude Include="Source\Core\Containers\LinkedList.h" />
     <ClInclude Include="Source\Core\Containers\Map.h" />
+    <ClInclude Include="Source\Core\Containers\ObjectPtr.h" />
+    <ClInclude Include="Source\Core\Containers\Pair.h" />
     <ClInclude Include="Source\Core\Containers\Queue.h" />
     <ClInclude Include="Source\Core\Containers\Set.h" />
     <ClInclude Include="Source\Core\Containers\StaticArray.h" />
+    <ClInclude Include="Source\Core\Containers\String.h" />
     <ClInclude Include="Source\Core\CoreGlobals.h" />
     <ClInclude Include="Source\Core\CoreMinimal.h" />
     <ClInclude Include="Source\Core\EngineAPI.h" />
@@ -35,9 +38,9 @@
     <ClInclude Include="Source\Core\Logging\LogMacros.h" />
     <ClInclude Include="Source\Core\Logging\LogOutputDevice.h" />
     <ClInclude Include="Source\Core\Math\Color.h" />
-    <ClInclude Include="Source\Core\Math\MathHelper.h" />
+    <ClInclude Include="Source\Core\Math\MathUtility.h" />
     <ClInclude Include="Source\Core\Math\Matrix.h" />
-    <ClInclude Include="Source\Core\Math\Quaternion.h" />
+    <ClInclude Include="Source\Core\Math\Quat.h" />
     <ClInclude Include="Source\Core\Math\Rotator.h" />
     <ClInclude Include="Source\Core\Math\Vector.h" />
     <ClInclude Include="Source\Core\Math\Vector4.h" />
@@ -50,11 +53,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Core\CoreGlobals.cpp" />
-    <ClCompile Include="Source\Core\CoreMinimal.cpp" />
+    <ClCompile Include="Source\Core\CoreMinimal.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+      <PrecompiledHeaderFile>Core/CoreMinimal.h</PrecompiledHeaderFile>
+    </ClCompile>
     <ClCompile Include="Source\Core\Geometry\Transform.cpp" />
     <ClCompile Include="Source\Core\Math\Color.cpp" />
     <ClCompile Include="Source\Core\Math\Matrix.cpp" />
-    <ClCompile Include="Source\Core\Math\Quaternion.cpp" />
+    <ClCompile Include="Source\Core\Math\Quat.cpp" />
     <ClCompile Include="Source\Core\Math\Rotator.cpp" />
     <ClCompile Include="Source\Core\Math\Vector.cpp" />
     <ClCompile Include="Source\Core\Math\Vector4.cpp" />
@@ -112,6 +118,10 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>Core/CoreMinimal.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>Core/CoreMinimal.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <PrecompiledHeaderOutputFile>$(IntDir)CoreMinimal.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -129,6 +139,10 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>Core/CoreMinimal.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>Core/CoreMinimal.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <PrecompiledHeaderOutputFile>$(IntDir)CoreMinimal.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

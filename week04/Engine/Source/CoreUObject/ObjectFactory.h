@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Core/CoreMinimal.h"
+#include "Core/Containers/Map.h"
 #include <functional>
 
 class UObject;

@@ -1,6 +1,6 @@
 #include "../CoreMinimal.h"
 
-static float ClampColor(float Value) { return MathHelper::Clamp(Value, 0.0f, 1.0f); }
+static float ClampColor(float Value) { return FMath::Clamp(Value, 0.0f, 1.0f); }
 
 FColor FColor::operator+(float num) const
 {
