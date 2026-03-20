@@ -108,5 +108,5 @@ void Editor::DrawToolbar()
 
 void Editor::DrawSceneManagerPanel()
 {
-	SceneMgrPanel->Draw();
+	SceneMgrPanel->Draw(this);
 }

@@ -1,6 +1,10 @@
 ﻿#include "EditorSceneManagerPanel.h"
 #include "ImGui/imgui.h"
 #include "World.h"
+#include "Editor/Editor.h"
+#include "Scene.h"
+#include "Component/SceneComponent.h"
+#include "SceneManager.h"
 
 EditorSceneManagerPanel::EditorSceneManagerPanel()
 {
@@ -12,7 +16,7 @@ EditorSceneManagerPanel::~EditorSceneManagerPanel()
 
 }
 
-void EditorSceneManagerPanel::Draw()
+void EditorSceneManagerPanel::Draw(Editor* editor)
 {
 	//일단 매 프레임마다 씬을 가져옵니다. 씬이 바뀌는 경우 때문.
 	ActiveScene = GetWorld().GetSceneManager()->GetActiveScene();
@@ -37,7 +41,16 @@ void EditorSceneManagerPanel::Draw()
 		{
 			continue;
 		}
-
+		bool isSelected = (editor->GetSelectedComponent() == component);
+		FString	displayName = component->Name.GetDisplayName();
+		if (ImGui::Selectable(displayName.c_str(), isSelected))
+		{
+			editor->SelectComponent(component);
+		}
+		if (isSelected)
+		{
+			ImGui::SetItemDefaultFocus();
+		}
 		ImGui::Text("UUID: %u", component->UUID);
 	}
 
