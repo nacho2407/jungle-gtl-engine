@@ -3,7 +3,7 @@
 #include <cassert>
 #include <cmath>
 #include <Core/EngineAPI.h>
-#include "Core/EngineTypes.h"
+#include "Core/HAL/PlatformTypes.h"
 
 struct ENGINE_API FVector
 {

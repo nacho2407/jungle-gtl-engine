@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Core/EngineTypes.h"
+#include "Core/HAL/PlatformTypes.h"
 
 class UEngineStatics
 {

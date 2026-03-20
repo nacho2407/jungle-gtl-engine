@@ -26,7 +26,6 @@
     <ClInclude Include="Source\Core\CoreGlobals.h" />
     <ClInclude Include="Source\Core\CoreMinimal.h" />
     <ClInclude Include="Source\Core\EngineAPI.h" />
-    <ClInclude Include="Source\Core\EngineTypes.h" />
     <ClInclude Include="Source\Core\Geometry\BoundsUtility.h" />
     <ClInclude Include="Source\Core\Geometry\Geometry.h" />
     <ClInclude Include="Source\Core\Geometry\Intersection.h" />

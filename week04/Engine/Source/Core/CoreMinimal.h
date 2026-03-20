@@ -33,7 +33,7 @@
 // 벡터, 행렬, 회전, 변환, 색상 등
 //=============================================================================
 #include "Math/Color.h"
-#include "Math/MathHelper.h"
+#include "Math/MathUtility.h"
 #include "Math/Matrix.h"
 #include "Math/Quat.h"
 #include "Math/Rotator.h"

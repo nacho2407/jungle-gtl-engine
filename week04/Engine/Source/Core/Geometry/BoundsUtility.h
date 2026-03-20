@@ -7,12 +7,12 @@ namespace Geometry
 {
     inline void ExpandAABB(const FVector &InPoint, FVector &InOutMin, FVector &InOutMax)
     {
-        InOutMin.x = std::min(InOutMin.x, InPoint.x);
-        InOutMin.y = std::min(InOutMin.y, InPoint.y);
-        InOutMin.z = std::min(InOutMin.z, InPoint.z);
+        InOutMin.X = std::min(InOutMin.X, InPoint.X);
+        InOutMin.Y = std::min(InOutMin.Y, InPoint.Y);
+        InOutMin.Z = std::min(InOutMin.Z, InPoint.Z);
 
-        InOutMax.x = std::max(InOutMax.x, InPoint.x);
-        InOutMax.y = std::max(InOutMax.y, InPoint.y);
-        InOutMax.z = std::max(InOutMax.z, InPoint.z);
+        InOutMax.X = std::max(InOutMax.X, InPoint.X);
+        InOutMax.Y = std::max(InOutMax.Y, InPoint.Y);
+        InOutMax.Z = std::max(InOutMax.Z, InPoint.Z);
     }
 } // namespace Geometry

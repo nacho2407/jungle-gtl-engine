@@ -158,9 +158,6 @@
     <ClInclude Include="Source\Core\EngineAPI.h">
       <Filter>Source\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\EngineTypes.h">
-      <Filter>Source\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\Geometry\BoundsUtility.h">
       <Filter>Source\Core\Geometry</Filter>
     </ClInclude>
