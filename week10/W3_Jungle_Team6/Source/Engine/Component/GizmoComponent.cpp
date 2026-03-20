@@ -1,5 +1,5 @@
 ﻿#include "GizmoComponent.h"
-#include "Mesh/MeshManager.h"
+#include "Render/Mesh/MeshManager.h"
 
 DEFINE_CLASS(UGizmoComponent, UPrimitiveComponent)
 REGISTER_FACTORY(UGizmoComponent)
