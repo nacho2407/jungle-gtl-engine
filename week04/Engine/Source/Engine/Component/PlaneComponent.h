@@ -4,7 +4,7 @@
 
 namespace Engine::Component
 {
-    class UPlaneComp : public UPrimitiveComponent
+    class ENGINE_API UPlaneComp : public UPrimitiveComponent
     {
         DECLARE_RTTI(UPlaneComp, UPrimitiveComponent)
       public:

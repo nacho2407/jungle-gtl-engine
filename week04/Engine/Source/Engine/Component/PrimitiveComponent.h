@@ -26,7 +26,5 @@ namespace Engine::Component
 
         bool Pickable = true;
         EPrimitiveType Type;
-
     };
-
 } // namespace Engine::Component
