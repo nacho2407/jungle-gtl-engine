@@ -1,4 +1,4 @@
-﻿#include "Engine/Scene/Camera.h"
+﻿#include "Component/Camera.h"
 #include <cmath>
 
 DEFINE_CLASS(UCamera, USceneComponent)
