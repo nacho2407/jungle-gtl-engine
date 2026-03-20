@@ -10,6 +10,7 @@
 
 #include "Render/Common/RenderTypes.h"
 #include "Render/Resource/Buffer.h"
+#include "Render/Device/D3DDevice.h"
 
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
@@ -88,6 +89,8 @@ struct FRenderCommand
 	//	VB, IB 모두 담고 있는 MB
 	FMeshBuffer* MeshBuffer = nullptr;
 	FTransformConstants TransformConstants = {};
+	EDepthStencilState DepthStencilState = EDepthStencilState::Default;
+	EBlendState BlendState = EBlendState::Opaque;
 	//union{
 
 	FGizmoConstants GizmoConstants;
