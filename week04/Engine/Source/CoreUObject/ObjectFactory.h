@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../Core/CoreMinimal.h"
-#include "Core/Containers/Map.h"
+#include <Core/CoreMinimal.h>
 #include <functional>
 
 class UObject;
@@ -9,15 +8,15 @@ class UObject;
 struct FObjectFactory
 {
 public:
-	static UObject* ConstructObject(const void* id);
+	static UObject* ConstructObject(const void* Id);
 
-	static void RegisterObjectType(const void* id, std::function<UObject*()> func);
+	static void RegisterObjectType(const void* Id, std::function<UObject*()> Func);
 
 private:
 	static TMap<const void*, std::function<UObject*()>>& GetRegistry()
 	{
-		static TMap<const void*, std::function<UObject*()>> registry;
-		return registry;
+		static TMap<const void*, std::function<UObject*()>> Registry;
+		return Registry;
 	}
 };
 

@@ -1,19 +1,20 @@
-﻿#include "ObjectFactory.h"
+#include <Core/CoreMinimal.h>
+#include "ObjectFactory.h"
 
 /** 
  * If the class is not registered, return nullptr.
  */
-UObject* FObjectFactory::ConstructObject(const void* id)
+UObject* FObjectFactory::ConstructObject(const void* Id)
 {
-	auto it = GetRegistry().find(id);
-	if (it != GetRegistry().end())
+	auto It = GetRegistry().find(Id);
+	if (It != GetRegistry().end())
 	{
-		return it->second();
+		return It->second();
 	}
 	return nullptr;
 }
 
-void FObjectFactory::RegisterObjectType(const void* id, std::function<UObject*()> func)
+void FObjectFactory::RegisterObjectType(const void* Id, std::function<UObject*()> Func)
 {
-	GetRegistry()[id] = func;
+	GetRegistry()[id] = Func;
 }

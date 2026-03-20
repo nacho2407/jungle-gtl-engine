@@ -1,6 +1,6 @@
+#include "Core/CoreMinimal.h"
+#include "Engine/EngineStatics.h"
 #include "Object.h"
-#include "../Engine/EngineStatics.h"
-#include "Core/Containers/Array.h"
 
 TArray<UObject*> GUObjectArray;
 
