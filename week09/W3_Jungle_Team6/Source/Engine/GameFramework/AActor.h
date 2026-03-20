@@ -21,7 +21,7 @@ public:
 		T* component = UObjectManager::Get().CreateObject<T>();
 
 		// Remeber to add this later
-		component->SetOwningActor(this);
+		component->SetOwner(this);
 
 		// First component added becomes the root
 		if (!RootComponent)

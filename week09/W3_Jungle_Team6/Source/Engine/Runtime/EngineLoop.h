@@ -26,13 +26,10 @@ private:
 	bool bIsResizing = false;
 
 	float DeltaTime = 0.0f;
-	double Accumulator = 0.0;
 
 	LARGE_INTEGER Frequency = {};
 	LARGE_INTEGER PrevTime = {};
 	LARGE_INTEGER CurrTime = {};
-
-	float MainLoopFps = 0.0f;
 
 	FEditorEngine Editor;
 };

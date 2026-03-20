@@ -229,7 +229,7 @@ void FSceneSaveManager::LinkReferences(const TMap<uint32, UObject*>& uuidMap, js
                 if (RootIt != uuidMap.end()) {
                     auto* RootComp = static_cast<USceneComponent*>(RootIt->second);
                     Actor->SetRootComponent(RootComp);
-                    RootComp->SetOwningActor(Actor);
+                    RootComp->SetOwner(Actor);
                 }
             }
 

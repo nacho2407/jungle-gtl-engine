@@ -34,7 +34,7 @@ public:
         UObjectManager::Get().DestroyObject(Actor);
     }
 
-    TArray<AActor*> GetActors() const { return Actors;  }
+    const TArray<AActor*>& GetActors() const { return Actors; }
     void AddActor(AActor* Actor) { Actors.push_back(Actor); }
 
     void InitWorld();      // Set up the world before gameplay begins
