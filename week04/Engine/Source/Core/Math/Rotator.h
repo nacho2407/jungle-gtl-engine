@@ -6,23 +6,28 @@ struct FMatrix;
 
 struct ENGINE_API FRotator
 {
-public:
-	FRotator();
-	FRotator(float InRoll, float InPitch, float InYaw);
+  public:
+    constexpr FRotator(float InRoll = 0.0f, float InPitch = 0.0f, float InYaw = 0.0f)
+        : Roll(InRoll), Pitch(InPitch), Yaw(InYaw)
+    {
+    }
+    ~FRotator() = default;
 
-	FMatrix ToMatrix() const;
-	void Normalize();
+    constexpr FRotator Zero() { return FRotator(); }
 
-	FRotator operator+(const FRotator& Other) const;
-	FRotator operator-(const FRotator& Other) const;
-	FRotator& operator+=(const FRotator& Other);
-	FRotator& operator-=(const FRotator& Other);
+    FMatrix ToMatrix() const;
+    void    Normalize();
 
-	static FRotator FromVector(const FVector& Forward);
-	static FRotator ZeroRotator();
+    FRotator  operator+(const FRotator &Other) const;
+    FRotator  operator-(const FRotator &Other) const;
+    FRotator &operator+=(const FRotator &Other);
+    FRotator &operator-=(const FRotator &Other);
 
-public:
-	float Roll;  // X축 회전
-	float Pitch; // Y축 회전
-	float Yaw;  // Z축 회전
+    static FRotator FromVector(const FVector &Forward);
+    static FRotator ZeroRotator();
+
+  public:
+    float Roll;  // X축 회전
+    float Pitch; // Y축 회전
+    float Yaw;   // Z축 회전
 };

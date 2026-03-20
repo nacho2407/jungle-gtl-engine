@@ -1,17 +1,32 @@
 #pragma once
 
 #include "../EngineAPI.h"
-#include "Vector.h"
+
+struct FVector;
+struct FRotator;
 
 struct ENGINE_API FMatrix
 {
   public:
-    constexpr FMatrix();
-    ~FMatrix();
+    constexpr FMatrix()
+    {
+        for (int i{0}; i < 4; i++)
+            for (int j{0}; j < 4; j++)
+                m[i][j] = (i == j) ? 1.0f : 0.0f;
+    }
+    ~FMatrix() = default;
 
   public:
-    static FMatrix IdentityMatrix();
-    static FMatrix ZeroMatrix();
+    static constexpr FMatrix IdentityMatrix() { return FMatrix(); }
+    static constexpr FMatrix ZeroMatrix()
+    {
+        FMatrix M = IdentityMatrix();
+        M[0][0] = 0;
+        M[1][1] = 0;
+        M[2][2] = 0;
+        M[3][3] = 0;
+        return M;
+    }
 
     static FMatrix TranslationMatrix(const FVector &InVec);
     static FMatrix TranslationMatrix(float InX = 0.f, float InY = 0.f, float InZ = 0.f);
@@ -30,14 +45,13 @@ struct ENGINE_API FMatrix
     static FMatrix EulerRotationMatrix(float InRoll = 0.0f, float InPitch = 0.0f,
                                        float InYaw = 0.0f);
 
-
     FMatrix operator*(const FMatrix &Other) const;
 
     static FMatrix ViewMatrix(FVector Eye, FVector Target, FVector Up);
     static FMatrix PerspectiveMatrix(float FovDegree, float Aspect, float Near, float Far);
-    FMatrix Inverse() const;
+    FMatrix        Inverse() const;
 
-    float *operator[](int Row) { return m[Row]; }
+    float       *operator[](int Row) { return m[Row]; }
     const float *operator[](int Row) const { return m[Row]; }
 
   public:
