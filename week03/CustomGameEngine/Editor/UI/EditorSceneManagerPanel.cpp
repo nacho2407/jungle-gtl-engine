@@ -34,6 +34,9 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 
 	ImGui::Text("SceneComponents: %d", static_cast<int>(ActiveScene->SceneComponents.size()));
 	ImGui::Separator();
+	ImGui::Text("NAME");
+	ImGui::SameLine(0.0f, 90.0f);
+	ImGui::Text("UUID");
 
 	for (USceneComponent* component : ActiveScene->SceneComponents)
 	{
@@ -49,9 +52,11 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 		}
 		if (isSelected)
 		{
+			//마우스 없이도 사용할 수 있게 도와주는 내비게이션용.
 			ImGui::SetItemDefaultFocus();
 		}
-		ImGui::Text("UUID: %u", component->UUID);
+		ImGui::SameLine(0.0f, 20.0f);
+		ImGui::Text("%u", component->UUID);
 	}
 
 	ImGui::End();
