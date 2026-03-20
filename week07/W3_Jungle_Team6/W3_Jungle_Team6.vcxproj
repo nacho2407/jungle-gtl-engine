@@ -53,10 +53,8 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
-  <ImportGroup Label="Shared">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -70,11 +68,17 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;Source\Editor;.;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;Source\Editor;.;$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>Engine;.;Editor;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;Source\Editor;.;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>Engine;.;Editor;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;Source\Editor;.;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -110,8 +114,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -126,8 +130,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -135,115 +139,113 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Editor\Core\EditorConsole.cpp" />
-    <ClCompile Include="Editor\EditorEngine.cpp" />
-    <ClCompile Include="Editor\UI\EditorMainPanel.cpp" />
-    <ClCompile Include="Editor\Viewport\EditorViewportClient.cpp" />
-    <ClCompile Include="Engine\Runtime\EngineLoop.cpp" />
-    <ClCompile Include="Engine\Classes\AActor.cpp" />
-    <ClCompile Include="Engine\Math\Utils.cpp" />
-    <ClCompile Include="Engine\Physics\CollisionManager.cpp" />
-    <ClCompile Include="Engine\Render\Resource\Buffer.cpp" />
-    <ClCompile Include="Engine\Render\Device\D3DDevice.cpp" />
-    <ClCompile Include="Engine\Math\Matrix.cpp" />
-    <ClCompile Include="Engine\Math\Vector.cpp" />
-    <ClCompile Include="Engine\Render\Scene\RenderCollector.cpp" />
-    <ClCompile Include="Engine\Render\Scene\RenderCommand.h" />
-    <ClCompile Include="Engine\SceneSaveManager.cpp" />
-    <ClCompile Include="Engine\Scene\Camera.cpp" />
-    <ClCompile Include="Engine\World.cpp" />
-    <ClCompile Include="ImGui\imgui.cpp" />
-    <ClCompile Include="ImGui\imgui_demo.cpp" />
-    <ClCompile Include="ImGui\imgui_draw.cpp" />
-    <ClCompile Include="ImGui\imgui_impl_dx11.cpp" />
-    <ClCompile Include="ImGui\imgui_impl_win32.cpp" />
-    <ClCompile Include="ImGui\imgui_tables.cpp" />
-    <ClCompile Include="ImGui\imgui_widgets.cpp" />
-    <ClCompile Include="Engine\Core\InputSystem.cpp" />
-    <ClCompile Include="Engine\Render\Resource\Shader.cpp" />
-    <ClCompile Include="Engine\Render\Scene\RenderBus.cpp" />
-    <ClCompile Include="Engine\Render\Renderer\Renderer.cpp" />
-    <ClCompile Include="Engine\Render\Resource\MeshBufferManager.cpp" />
-    <ClCompile Include="Engine\Runtime\Launch.cpp" />
+    <ClCompile Include="Source\Editor\EditorEngine.cpp" />
+    <ClCompile Include="Source\Editor\EditorSettings.cpp" />
+    <ClCompile Include="Source\Editor\Core\EditorConsole.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
+    <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Camera.cpp" />
+    <ClCompile Include="Source\Engine\Component\GizmoComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\SceneComponent.cpp" />
+    <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
+    <ClCompile Include="Source\Engine\Core\InputSystem.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\World.cpp" />
+    <ClCompile Include="Source\Engine\Math\Matrix.cpp" />
+    <ClCompile Include="Source\Engine\Math\Transform.cpp" />
+    <ClCompile Include="Source\Engine\Math\Utils.cpp" />
+    <ClCompile Include="Source\Engine\Math\Vector.cpp" />
+    <ClCompile Include="Source\Engine\Object\EngineStatics.cpp" />
+    <ClCompile Include="Source\Engine\Object\FName.cpp" />
+    <ClCompile Include="Source\Engine\Object\Object.cpp" />
+    <ClCompile Include="Source\Engine\Render\FontBatcher.cpp" />
+    <ClCompile Include="Source\Engine\Render\LineBatcher.cpp" />
+    <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp" />
+    <ClCompile Include="Source\Engine\Render\Mesh\MeshManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\Renderer.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\MeshBufferManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\Shader.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\RenderBus.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\RenderCollector.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\EngineLoop.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Launch.cpp" />
+    <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_demo.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_draw.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_impl_dx11.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_impl_win32.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Object\ActorComponent.cpp" />
-    <ClCompile Include="Object\EngineStatics.cpp" />
-    <ClCompile Include="Object\FName.cpp" />
-    <ClCompile Include="Object\Object.cpp" />
-    <ClCompile Include="World\GizmoComponent.cpp" />
-    <ClCompile Include="World\Mesh\MeshManager.cpp" />
-    <ClCompile Include="World\PrimitiveComponent.cpp" />
-    <ClCompile Include="World\SceneComponent.cpp" />
-    <ClCompile Include="World\Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Engine\Core\ConsoleHelper.h" />
-    <ClInclude Include="Editor\Core\EditorEngine\Core\Console.h" />
-    <ClInclude Include="Editor\Viewport\CursorOverlayState.h" />
-    <ClInclude Include="Editor\EditorEngine.h" />
-    <ClInclude Include="Editor\UI\EditorMainPanel.h" />
-    <ClInclude Include="Editor\Viewport\EditorViewportClient.h" />
-    <ClInclude Include="Engine\Runtime\EngineLoop.h" />
-    <ClInclude Include="Engine\Classes\ACubeActor.h" />
-    <ClInclude Include="Engine\Core\CollisionTypes.h" />
-    <ClInclude Include="Engine\Core\Common.h" />
-    <ClInclude Include="Engine\Core\Debug.h" />
-    <ClInclude Include="Engine\Math\CollisionMath.h" />
-    <ClInclude Include="Engine\Physics\Collider.h" />
-    <ClInclude Include="Engine\Physics\CollisionManager.h" />
-    <ClInclude Include="Engine\Classes\AActor.h" />
-    <ClInclude Include="Engine\Render\Common\RenderTypes.h" />
-    <ClInclude Include="Engine\Math\Utils.h" />
-    <ClInclude Include="Engine\Render\Renderer\RenderPipeline.h" />
-    <ClInclude Include="Engine\Render\Resource\Buffer.h" />
-    <ClInclude Include="Engine\SceneSaveManager.h" />
-    <ClInclude Include="Engine\Scene\Camera.h" />
-    <ClInclude Include="Engine\Core\Console.h" />
-    <ClInclude Include="Engine\Render\Device\D3DDevice.h" />
-    <ClInclude Include="Engine\Math\Matrix.h" />
-    <ClInclude Include="Engine\Math\Vector.h" />
-    <ClInclude Include="Engine\Render\Resource\RenderResources.h" />
-    <ClInclude Include="Engine\Render\Resource\VertexTypes.h" />
-    <ClInclude Include="Engine\Render\Scene\RenderCollector.h" />
-    <ClInclude Include="Engine\Render\Scene\RenderCollectorContext.h" />
-    <ClInclude Include="Engine\World.h" />
-    <ClInclude Include="ImGui\imconfig.h" />
-    <ClInclude Include="ImGui\imgui.h" />
-    <ClInclude Include="ImGui\imgui_impl_dx11.h" />
-    <ClInclude Include="ImGui\imgui_impl_win32.h" />
-    <ClInclude Include="ImGui\imgui_internal.h" />
-    <ClInclude Include="ImGui\imstb_rectpack.h" />
-    <ClInclude Include="ImGui\imstb_textedit.h" />
-    <ClInclude Include="ImGui\imstb_truetype.h" />
-    <ClInclude Include="Engine\Render\Resource\Shader.h" />
-    <ClInclude Include="Engine\Render\Scene\RenderBus.h" />
-    <ClInclude Include="Engine\Render\Renderer\Renderer.h" />
-    <ClInclude Include="Engine\Core\InputSystem.h" />
-    <ClInclude Include="Engine\Render\Resource\MeshBufferManager.h" />
-    <ClInclude Include="Engine\Runtime\Launch.h" />
-    <ClInclude Include="Object\EngineStatics.h" />
-    <ClInclude Include="Object\Object.h" />
-    <ClInclude Include="Object\ActorComponent.h" />
-    <ClInclude Include="Object\ObjectFactory.h" />
-    <ClInclude Include="SimpleJSON\json.hpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="World\GizmoComponent.h" />
-    <ClInclude Include="World\Mesh\MeshManager.h" />
-    <ClInclude Include="World\PrimitiveComponent.h" />
-    <ClInclude Include="World\SceneComponent.h" />
-    <ClInclude Include="World\Transform.h" />
+    <ClInclude Include="Source\Editor\EditorEngine.h" />
+    <ClInclude Include="Source\Editor\EditorSettings.h" />
+    <ClInclude Include="Source\Editor\Core\EditorConsole.h" />
+    <ClInclude Include="Source\Editor\UI\EditorMainPanel.h" />
+    <ClInclude Include="Source\Editor\Viewport\CursorOverlayState.h" />
+    <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
+    <ClInclude Include="Source\Engine\Component\ActorComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Camera.h" />
+    <ClInclude Include="Source\Engine\Component\GizmoComponent.h" />
+    <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
+    <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
+    <ClInclude Include="Source\Engine\Core\CollisionTypes.h" />
+    <ClInclude Include="Source\Engine\Core\Common.h" />
+    <ClInclude Include="Source\Engine\Core\ConsoleHelper.h" />
+    <ClInclude Include="Source\Engine\Core\CoreTypes.h" />
+    <ClInclude Include="Source\Engine\Core\Debug.h" />
+    <ClInclude Include="Source\Engine\Core\EngineTypes.h" />
+    <ClInclude Include="Source\Engine\Core\InputSystem.h" />
+    <ClInclude Include="Source\Engine\Core\RayTypes.h" />
+    <ClInclude Include="Source\Engine\GameFramework\AActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\World.h" />
+    <ClInclude Include="Source\Engine\Math\Matrix.h" />
+    <ClInclude Include="Source\Engine\Math\Transform.h" />
+    <ClInclude Include="Source\Engine\Math\Utils.h" />
+    <ClInclude Include="Source\Engine\Math\Vector.h" />
+    <ClInclude Include="Source\Engine\Object\EngineStatics.h" />
+    <ClInclude Include="Source\Engine\Object\FName.h" />
+    <ClInclude Include="Source\Engine\Object\Object.h" />
+    <ClInclude Include="Source\Engine\Object\ObjectFactory.h" />
+    <ClInclude Include="Source\Engine\Render\FontBatcher.h" />
+    <ClInclude Include="Source\Engine\Render\LineBatcher.h" />
+    <ClInclude Include="Source\Engine\Render\Common\RenderTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Device\D3DDevice.h" />
+    <ClInclude Include="Source\Engine\Render\Mesh\MeshManager.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\Renderer.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\Buffer.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\MeshBufferManager.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\RenderResources.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\Shader.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\VertexTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\RenderBus.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\RenderCollector.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\RenderCollectorContext.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\RenderCommand.h" />
+    <ClInclude Include="Source\Engine\Runtime\EngineLoop.h" />
+    <ClInclude Include="Source\Engine\Runtime\Launch.h" />
+    <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />
+    <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
+    <ClInclude Include="ThirdParty\ImGui\imgui.h" />
+    <ClInclude Include="ThirdParty\ImGui\imgui_impl_dx11.h" />
+    <ClInclude Include="ThirdParty\ImGui\imgui_impl_win32.h" />
+    <ClInclude Include="ThirdParty\ImGui\imgui_internal.h" />
+    <ClInclude Include="ThirdParty\ImGui\imstb_rectpack.h" />
+    <ClInclude Include="ThirdParty\ImGui\imstb_textedit.h" />
+    <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h" />
+    <ClInclude Include="ThirdParty\SimpleJSON\json.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="ShaderW0.hlsl">
+    <FxCompile Include="Shaders\ShaderW0.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="CMakeLists.txt" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionTargets" />
 </Project>
