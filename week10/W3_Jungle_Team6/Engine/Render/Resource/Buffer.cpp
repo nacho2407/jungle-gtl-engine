@@ -11,10 +11,10 @@ void FMeshBuffer::Create(ID3D11Device* InDevice, const FMeshData& InMeshData)
 		return;
 	}
 
-	VertexBuffer.Create(InDevice, InMeshData.Vertices, sizeof(FVertex) * InMeshData.Vertices.size(), sizeof(FVertex));
+	VertexBuffer.Create(InDevice, InMeshData.Vertices, static_cast<uint32>(sizeof(FVertex) * InMeshData.Vertices.size()), sizeof(FVertex));
 	if (!InMeshData.Indices.empty())
 	{
-		IndexBuffer.Create(InDevice, InMeshData.Indices, sizeof(uint32) * InMeshData.Indices.size());
+		IndexBuffer.Create(InDevice, InMeshData.Indices, static_cast<uint32>(sizeof(uint32) * InMeshData.Indices.size()));
 	}
 }
 
