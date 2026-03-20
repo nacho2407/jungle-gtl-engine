@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Engine/Core/RayTypes.h"
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
@@ -16,21 +16,17 @@ struct FCameraState
 	bool bIsOrthogonal = false;
 };
 
-enum class EProjectionMode { Perspective, Orthographic };
-
 class UCamera : public USceneComponent {
 public:
 	DECLARE_CLASS(UCamera, USceneComponent)
 	UCamera() = default;
 
-	//	카메라의 상태는 카메라가 소유하고 적용합니다.
 	void LookAt(const FVector& target);
-	void SyncStateLookAt();
 	void ApplyCameraState();
 	void SetCameraState(const FCameraState& NewState);
 	FCameraState& GetCameraState() { return CameraState; }
 	const FCameraState& GetCameraState() const { return CameraState; }
-	
+
 	void OnResize(int w, int h);
 
 	const FMatrix& GetViewMatrix();
@@ -38,44 +34,24 @@ public:
 	const FMatrix& GetViewProjection();
 	void SetRelativeRotation(const FVector newrotation) override;
 
-	float GetFOV() const;
-	float GetNearPlane() const;
-	float GetFarPlane() const;
-	float GetOrthoWidth() const { return OrthoWidth; }
-	
-	EProjectionMode GetProjectionMode() const { return ProjectionMode;  }
-	
+	float GetFOV() const { return CameraState.FOV; }
+	float GetNearPlane() const { return CameraState.NearZ; }
+	float GetFarPlane() const { return CameraState.FarZ; }
+	float GetOrthoWidth() const { return CameraState.OrthoWidth; }
+	bool IsOrthogonal() const { return CameraState.bIsOrthogonal; }
 
 	FRay DeprojectScreenToWorld(float MouseX, float MouseY, float ScreenWidth, float ScreenHeight);
 private:
-	float NearZ = 0.01f;
-	float FarZ = 1000.0f;
-	float FOV = M_PI / 3.0f; // In Radians
-	//float AspectRatio = 16.0f / 9.0f;
-	float AspectRatio = 1.f;
-	float OrthoWidth = 10.0f;
-
 	FMatrix CachedView;
 	FMatrix CachedProjection;
 	FMatrix CachedVP;
 
-	EProjectionMode ProjectionMode = EProjectionMode::Perspective;
-
-	bool bViewDirty = true;     // rebuild View if position/rotation changed
-	bool bProjectionDirty = true;     // rebuild Projection if FOV/aspect changed
+	bool bViewDirty = true;
+	bool bProjectionDirty = true;
 
 	FCameraState CameraState;
 
-	//void RebuildAxis();
 	void RebuildView();
 	void RebuildProjection();
 	void SetRelativeLocation(const FVector newlocaiton) override;
-
-	void BuildLookAtRotation();
-
-	void SetProjectionMode(EProjectionMode mode);
-
-	void  SetFOV(float newFOV);
-
-	
 };
