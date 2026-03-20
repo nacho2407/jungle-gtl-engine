@@ -7,6 +7,7 @@
 #include "Component/PrimitiveComponent.h"
 
 class FLevel;
+class SceneManger;
 
 class UWorld : public UObject, public ISingleton<UWorld>
 {
@@ -64,6 +65,8 @@ public:
 private:
 	static UScene* activeScene;
 	static UScene* permanentScene;
+
+	SceneManger* SceneMgr;
 	URenderer* Renderer;
 };
 

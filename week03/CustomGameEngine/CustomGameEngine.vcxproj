@@ -154,6 +154,7 @@
     <ClInclude Include="Editor\Picker.h" />
     <ClInclude Include="EngineApp\EngineApp.h" />
     <ClInclude Include="EngineCore\Color.h" />
+    <ClInclude Include="SceneManager.h" />
     <ClInclude Include="ThirdParty\fifo_map.hpp" />
     <ClInclude Include="Math\Matrix.h" />
     <ClInclude Include="Math\Quaternion.h" />
@@ -224,6 +225,7 @@
     <ClCompile Include="Math\Vector.cpp" />
     <ClCompile Include="EngineCore\ObjectFactory.cpp" />
     <ClCompile Include="EngineCore\InputManager.cpp" />
+    <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="ThirdParty\json.cpp" />
     <ClCompile Include="EngineCore\Logger.cpp" />
     <ClCompile Include="PrimitiveFactory.cpp" />

@@ -96,9 +96,6 @@
     <ClInclude Include="EngineCore\EngineTypes.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Mesh.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Component\Object.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -214,6 +211,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Math\Rotator.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -366,6 +366,9 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Math\Rotator.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
