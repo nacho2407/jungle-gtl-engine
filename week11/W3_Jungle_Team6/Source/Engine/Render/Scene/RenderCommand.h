@@ -22,7 +22,8 @@ enum class ERenderCommandType
 	Overlay,
 	Axis,
 	Grid,
-	SelectionOutline
+	SelectionOutline,
+	Billboard
 };
 
 //	Object를 위한 Constant Buffer입니다.

@@ -85,6 +85,8 @@ struct FMatrix {
 	static FMatrix MakeRotationX(float Angle);
 	static FMatrix MakeRotationY(float Angle);
 	static FMatrix MakeRotationZ(float Angle);
+
+	static FMatrix GetCancelRotationMatrix(const FMatrix& InMatrix);
 	void Print() const;
 
 	FVector TransformVector(const FVector& vector) const;
