@@ -139,6 +139,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Engine\World\BillboardComponent.cpp" />
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\EditorSettings.cpp" />
     <ClCompile Include="Source\Editor\Core\EditorConsole.cpp" />
@@ -184,6 +185,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Engine\World\BillboardComponent.h" />
     <ClInclude Include="Source\Editor\EditorEngine.h" />
     <ClInclude Include="Source\Editor\EditorSettings.h" />
     <ClInclude Include="Source\Editor\Core\EditorConsole.h" />
