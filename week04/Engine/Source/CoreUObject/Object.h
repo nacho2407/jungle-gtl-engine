@@ -1,41 +1,41 @@
-#pragma once
+﻿#pragma once
 
 #include "../Core/CoreMinimal.h"
 #include "ObjectFactory.h"
 
-#define DECLARE_RTTI(cls, parent_cls) \
+#define DECLARE_RTTI(Cls, ParentCls) \
 	public: \
-		static const void* GetClass() { static int id = 0; return &id; } \
-		virtual bool IsA(const void* id) const override \
+		static const void* GetClass() { static int Id = 0; return &Id; } \
+		virtual bool IsA(const void* Id) const override \
 		{ \
-			 if (GetClass() == id) return true; \
-			 return parent_cls::IsA(id); \
+			 if (GetClass() == Id) return true; \
+			 return ParentCls::IsA(Id); \
 		}
 
-#define REGISTER_CLASS(cls) \
+#define REGISTER_CLASS(Cls) \
 	namespace { \
-		struct cls##Register \
+		struct Cls##Register \
 		{ \
-			cls##Register() \
+			Cls##Register() \
 			{ \
-				FObjectFactory::RegisterObjectType(cls::GetClass(), []() -> UObject* { return new cls(); }); \
+				FObjectFactory::RegisterObjectType(Cls::GetClass(), []() -> UObject* { return new Cls(); }); \
 			} \
 		}; \
-		static cls##Register global_##cls##Register; \
+		static Cls##Register Global_##Cls##Register; \
 	}
 
-class UObject
+class ENGINE_API UObject
 {
 public:
 	UObject();
 	virtual ~UObject();
 
 public:
-	static const void* GetClass() { static int id = 0; return &id; }
-	virtual bool IsA(const void* id) const { return GetClass() == id; }
+	static const void* GetClass() { static int Id = 0; return &Id; }
+	virtual bool IsA(const void* Id) const { return GetClass() == Id; }
 
-	void* operator new(size_t size);
-	void operator delete(void* p, size_t size);
+	void* operator new(size_t Size);
+	void operator delete(void* Pointer, size_t Size);
 
 public:
 	uint32 UUID;
@@ -43,11 +43,11 @@ public:
 };
 
 template <typename To, typename From>
-To* Cast(From* obj)
+To* Cast(From* Object)
 {
-	if (obj && obj->IsA(To::GetClass()))
+	if (Object && Object->IsA(To::GetClass()))
 	{
-		return reinterpret_cast<To*>(obj);
+		return reinterpret_cast<To*>(Object);
 	}
 	return nullptr;
 }

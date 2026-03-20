@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Engine\Asset\Asset.h" />
     <ClInclude Include="Resources\Sphere.h" />
     <ClInclude Include="Resources\Triangle.h" />
     <ClInclude Include="Resources\VertexSimple.h" />
@@ -57,6 +58,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Engine\Asset\Asset.cpp" />
     <ClCompile Include="Source\Core\CoreGlobals.cpp" />
     <ClCompile Include="Source\Core\CoreMinimal.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
