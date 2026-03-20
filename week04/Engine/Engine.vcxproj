@@ -22,13 +22,25 @@
     <ClInclude Include="Resources\Sphere.h" />
     <ClInclude Include="Resources\Triangle.h" />
     <ClInclude Include="Resources\VertexSimple.h" />
+    <ClInclude Include="Source\Core\Containers\Array.h" />
+    <ClInclude Include="Source\Core\Containers\List.h" />
+    <ClInclude Include="Source\Core\Containers\Map.h" />
+    <ClInclude Include="Source\Core\Containers\Queue.h" />
+    <ClInclude Include="Source\Core\Containers\Set.h" />
+    <ClInclude Include="Source\Core\Containers\StaticArray.h" />
     <ClInclude Include="Source\Core\CoreMinimal.h" />
     <ClInclude Include="Source\Core\EngineAPI.h" />
     <ClInclude Include="Source\Core\EngineTypes.h" />
+    <ClInclude Include="Source\Core\Geometry\BoundsUtility.h" />
+    <ClInclude Include="Source\Core\Geometry\Geometry.h" />
+    <ClInclude Include="Source\Core\Geometry\Intersection.h" />
+    <ClInclude Include="Source\Core\Geometry\Primitives\AABB.h" />
+    <ClInclude Include="Source\Core\Geometry\Primitives\Ray.h" />
+    <ClInclude Include="Source\Core\Geometry\Primitives\Segment.h" />
+    <ClInclude Include="Source\Core\Geometry\Primitives\Triangle.h" />
     <ClInclude Include="Source\Core\Math\Color.h" />
     <ClInclude Include="Source\Core\Math\MathHelper.h" />
     <ClInclude Include="Source\Core\Math\Matrix.h" />
-    <ClInclude Include="Source\Core\Math\Quatanion.h" />
     <ClInclude Include="Source\Core\Math\Quaternion.h" />
     <ClInclude Include="Source\Core\Math\Rotator.h" />
     <ClInclude Include="Source\Core\Math\Transform.h" />
@@ -43,9 +55,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Core\CoreMinimal.cpp" />
     <ClCompile Include="Source\Core\Math\Color.cpp" />
     <ClCompile Include="Source\Core\Math\Matrix.cpp" />
-    <ClCompile Include="Source\Core\Math\Quatanion.cpp" />
     <ClCompile Include="Source\Core\Math\Quaternion.cpp" />
     <ClCompile Include="Source\Core\Math\Rotator.cpp" />
     <ClCompile Include="Source\Core\Math\Transform.cpp" />

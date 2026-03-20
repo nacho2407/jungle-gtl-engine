@@ -70,16 +70,22 @@
     <Filter Include="Source\FileIO\Texture">
       <UniqueIdentifier>{2b39fcf1-ff9d-690d-ec52-c659318c850b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Core\Geometry\Primitives">
+      <UniqueIdentifier>{243ace44-3495-fff3-c265-ad18f16b3c35}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Core\CoreMinimal.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Core\Math\Color.cpp">
       <Filter>Source\Core\Math</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Math\Matrix.cpp">
       <Filter>Source\Core\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Math\Quatanion.cpp">
+    <ClCompile Include="Source\Core\Math\Quaternion.cpp">
       <Filter>Source\Core\Math</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Math\Rotator.cpp">
@@ -114,6 +120,24 @@
     <ClInclude Include="Resources\VertexSimple.h">
       <Filter>Resources</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\Containers\Array.h">
+      <Filter>Source\Core\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Containers\List.h">
+      <Filter>Source\Core\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Containers\Map.h">
+      <Filter>Source\Core\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Containers\Queue.h">
+      <Filter>Source\Core\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Containers\Set.h">
+      <Filter>Source\Core\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Containers\StaticArray.h">
+      <Filter>Source\Core\Containers</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Core\CoreMinimal.h">
       <Filter>Source\Core</Filter>
     </ClInclude>
@@ -122,6 +146,27 @@
     </ClInclude>
     <ClInclude Include="Source\Core\EngineTypes.h">
       <Filter>Source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Geometry\BoundsUtility.h">
+      <Filter>Source\Core\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Geometry\Geometry.h">
+      <Filter>Source\Core\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Geometry\Intersection.h">
+      <Filter>Source\Core\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Geometry\Primitives\AABB.h">
+      <Filter>Source\Core\Geometry\Primitives</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Geometry\Primitives\Ray.h">
+      <Filter>Source\Core\Geometry\Primitives</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Geometry\Primitives\Segment.h">
+      <Filter>Source\Core\Geometry\Primitives</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Geometry\Primitives\Triangle.h">
+      <Filter>Source\Core\Geometry\Primitives</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Math\Color.h">
       <Filter>Source\Core\Math</Filter>
@@ -132,7 +177,7 @@
     <ClInclude Include="Source\Core\Math\Matrix.h">
       <Filter>Source\Core\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Math\Quatanion.h">
+    <ClInclude Include="Source\Core\Math\Quaternion.h">
       <Filter>Source\Core\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Math\Rotator.h">
@@ -155,54 +200,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\EngineStatics.h">
       <Filter>Source\Engine</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Math\Transform.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Math\Quaternion.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Math\MathHelper.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Geometry\BoundsUtility.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Geometry\Geometry.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Geometry\Intersection.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Geometry\Primitives\AABB.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Geometry\Primitives\Ray.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Geometry\Primitives\Segment.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Geometry\Primitives\Triangle.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Containers\Array.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Containers\List.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Containers\Map.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Containers\Queue.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Containers\Set.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Containers\StaticArray.h">
-      <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
