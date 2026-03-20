@@ -1,4 +1,4 @@
-#include "GizmoComponent.h"
+﻿#include "GizmoComponent.h"
 #include "Mesh/MeshManager.h"
 
 DEFINE_CLASS(UGizmoComponent, UPrimitiveComponent)

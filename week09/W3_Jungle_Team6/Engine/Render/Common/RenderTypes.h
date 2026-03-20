@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 //	Windows API Include
 #define NOMINMAX

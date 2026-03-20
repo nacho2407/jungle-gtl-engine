@@ -1,4 +1,4 @@
-#include "Object.h"
+﻿#include "Object.h"
 #include "EngineStatics.h"
 
 TArray<UObject*> GUObjectArray;

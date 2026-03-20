@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "CoreTypes.h"
 #include "Object/Object.h"
 

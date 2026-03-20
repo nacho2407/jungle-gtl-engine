@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Core/EngineTypes.h"
@@ -43,11 +43,11 @@ public:
 	// 월드 좌표(WorldPos) 위에 빌보드 텍스트 1개 추가
 	// CamRight, CamUp: 카메라의 Right/Up 벡터 (빌보드 회전에 사용)
 	void AddText(const FString& Text,
-				 const FVector& WorldPos,
-				 const FVector& CamRight,
-				 const FVector& CamUp,
-				 const FColor& Color = FColor::White(),
-				 float Scale = 1.0f);
+		const FVector& WorldPos,
+		const FVector& CamRight,
+		const FVector& CamUp,
+		const FColor& Color = FColor::White(),
+		float Scale = 1.0f);
 
 	// 이번 프레임에 축적된 텍스트 모두 제거
 	void Clear();
