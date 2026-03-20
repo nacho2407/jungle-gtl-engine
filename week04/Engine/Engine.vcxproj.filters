@@ -99,6 +99,9 @@
     <ClCompile Include="Source\Core\Math\Vector.cpp">
       <Filter>Source\Core\Math</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Core\Math\Vector2.cpp">
+      <Filter>Source\Core\Math</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Core\Math\Vector4.cpp">
       <Filter>Source\Core\Math</Filter>
     </ClCompile>
@@ -135,6 +138,12 @@
     <ClCompile Include="Source\Engine\EngineStatics.cpp">
       <Filter>Source\Engine</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Game\Actor.cpp">
+      <Filter>Source\Engine\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp">
+      <Filter>Source\Engine\ViewPort</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Sphere.h">
@@ -153,9 +162,6 @@
       <Filter>Source\Core\Containers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Containers\Map.h">
-      <Filter>Source\Core\Containers</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Containers\ObjectPtr.h">
       <Filter>Source\Core\Containers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Containers\Pair.h">
@@ -242,6 +248,9 @@
     <ClInclude Include="Source\Core\Math\Vector.h">
       <Filter>Source\Core\Math</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\Math\Vector2.h">
+      <Filter>Source\Core\Math</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Core\Math\Vector4.h">
       <Filter>Source\Core\Math</Filter>
     </ClInclude>
@@ -280,6 +289,12 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\EngineStatics.h">
       <Filter>Source\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Game\Actor.h">
+      <Filter>Source\Engine\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ViewPort\Viewport.h">
+      <Filter>Source\Engine\ViewPort</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\D3D11\D3D11Common.h">
       <Filter>Source\Renderer\D3D11</Filter>

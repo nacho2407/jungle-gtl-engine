@@ -11,14 +11,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Engine\Asset\Asset.h" />
     <ClInclude Include="Resources\Sphere.h" />
     <ClInclude Include="Resources\Triangle.h" />
     <ClInclude Include="Resources\VertexSimple.h" />
     <ClInclude Include="Source\Core\Containers\Array.h" />
     <ClInclude Include="Source\Core\Containers\LinkedList.h" />
     <ClInclude Include="Source\Core\Containers\Map.h" />
-    <ClInclude Include="Source\Core\Containers\ObjectPtr.h" />
     <ClInclude Include="Source\Core\Containers\Pair.h" />
     <ClInclude Include="Source\Core\Containers\Queue.h" />
     <ClInclude Include="Source\Core\Containers\Set.h" />
@@ -47,10 +45,12 @@
     <ClInclude Include="Source\Core\Math\Quat.h" />
     <ClInclude Include="Source\Core\Math\Rotator.h" />
     <ClInclude Include="Source\Core\Math\Vector.h" />
+    <ClInclude Include="Source\Core\Math\Vector2.h" />
     <ClInclude Include="Source\Core\Math\Vector4.h" />
     <ClInclude Include="Source\Core\Misc\Name.h" />
     <ClInclude Include="Source\CoreUObject\Object.h" />
     <ClInclude Include="Source\CoreUObject\ObjectFactory.h" />
+    <ClInclude Include="Source\Engine\Asset\Asset.h" />
     <ClInclude Include="Source\Engine\Component\CameraComponent.h" />
     <ClInclude Include="Source\Engine\Component\CubeComponent.h" />
     <ClInclude Include="Source\Engine\Component\PlaneComponent.h" />
@@ -59,13 +59,14 @@
     <ClInclude Include="Source\Engine\Component\SphereComponent.h" />
     <ClInclude Include="Source\Engine\Component\TriangleComponent.h" />
     <ClInclude Include="Source\Engine\EngineStatics.h" />
+    <ClInclude Include="Source\Engine\Game\Actor.h" />
+    <ClInclude Include="Source\Engine\ViewPort\Viewport.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11Common.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Engine\Asset\Asset.cpp" />
     <ClCompile Include="Source\Core\CoreGlobals.cpp" />
     <ClCompile Include="Source\Core\CoreMinimal.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -77,9 +78,11 @@
     <ClCompile Include="Source\Core\Math\Quat.cpp" />
     <ClCompile Include="Source\Core\Math\Rotator.cpp" />
     <ClCompile Include="Source\Core\Math\Vector.cpp" />
+    <ClCompile Include="Source\Core\Math\Vector2.cpp" />
     <ClCompile Include="Source\Core\Math\Vector4.cpp" />
     <ClCompile Include="Source\CoreUObject\Object.cpp" />
     <ClCompile Include="Source\CoreUObject\ObjectFactory.cpp" />
+    <ClCompile Include="Source\Engine\Asset\Asset.cpp" />
     <ClCompile Include="Source\Engine\Component\CameraComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\CubeComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PlaneComponent.cpp" />
@@ -88,6 +91,8 @@
     <ClCompile Include="Source\Engine\Component\SphereComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\TriangleComponent.cpp" />
     <ClCompile Include="Source\Engine\EngineStatics.cpp" />
+    <ClCompile Include="Source\Engine\Game\Actor.cpp" />
+    <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
