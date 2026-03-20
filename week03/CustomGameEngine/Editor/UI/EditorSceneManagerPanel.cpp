@@ -4,8 +4,7 @@
 
 EditorSceneManagerPanel::EditorSceneManagerPanel()
 {
-	/*TODO : 멀티 scene을 위해 추후에 ActiveScene을 바꾸는 기능 추가 필요*/
-	///ActiveScene = GetWorld().GetSceneManager()->GetActiveScene();
+
 }
 
 EditorSceneManagerPanel::~EditorSceneManagerPanel()
@@ -15,7 +14,7 @@ EditorSceneManagerPanel::~EditorSceneManagerPanel()
 
 void EditorSceneManagerPanel::Draw()
 {
-	//일단 매 프레임마다 씬을 가져오지는 않습니다.
+	//일단 매 프레임마다 씬을 가져옵니다. 씬이 바뀌는 경우 때문.
 	ActiveScene = GetWorld().GetSceneManager()->GetActiveScene();
 
 	ImGui::SetNextWindowPos(ImVec2(1600, 315), ImGuiCond_FirstUseEver);
