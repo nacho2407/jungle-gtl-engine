@@ -355,7 +355,7 @@ def generate_filters(files: dict[str, list[str]]):
             if filt:
                 ET.SubElement(elem, "Filter").text = filt
 
-    write_xml(proj, PROJECT_DIR / f"{PROJECT_NAME}.filters", bom=True)
+    write_xml(proj, PROJECT_DIR / f"{PROJECT_NAME}.vcxproj.filters", bom=True)
 
 
 # ──────────────────────────────────────────────
@@ -429,7 +429,7 @@ def main():
     print(f"  {PROJECT_NAME}.vcxproj")
 
     generate_filters(files)
-    print(f"  {PROJECT_NAME}.filters")
+    print(f"  {PROJECT_NAME}.vcxproj.filters")
 
     generate_sln()
     print(f"  {PROJECT_NAME}.sln")
