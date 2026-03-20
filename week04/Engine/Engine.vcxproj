@@ -28,6 +28,7 @@
     <ClInclude Include="Source\Core\Containers\Queue.h" />
     <ClInclude Include="Source\Core\Containers\Set.h" />
     <ClInclude Include="Source\Core\Containers\StaticArray.h" />
+    <ClInclude Include="Source\Core\CoreGlobals.h" />
     <ClInclude Include="Source\Core\CoreMinimal.h" />
     <ClInclude Include="Source\Core\EngineAPI.h" />
     <ClInclude Include="Source\Core\EngineTypes.h" />
@@ -38,6 +39,8 @@
     <ClInclude Include="Source\Core\Geometry\Primitives\Ray.h" />
     <ClInclude Include="Source\Core\Geometry\Primitives\Segment.h" />
     <ClInclude Include="Source\Core\Geometry\Primitives\Triangle.h" />
+    <ClInclude Include="Source\Core\Logging\LogMacros.h" />
+    <ClInclude Include="Source\Core\Logging\LogOutputDevice.h" />
     <ClInclude Include="Source\Core\Math\Color.h" />
     <ClInclude Include="Source\Core\Math\MathHelper.h" />
     <ClInclude Include="Source\Core\Math\Matrix.h" />
@@ -54,6 +57,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Core\CoreGlobals.cpp" />
     <ClCompile Include="Source\Core\CoreMinimal.cpp" />
     <ClCompile Include="Source\Core\Math\Color.cpp" />
     <ClCompile Include="Source\Core\Math\Matrix.cpp" />

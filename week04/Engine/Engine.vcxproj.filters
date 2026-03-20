@@ -108,6 +108,7 @@
     <ClCompile Include="Source\Engine\EngineStatics.cpp">
       <Filter>Source\Engine</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Core\CoreGlobals.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Sphere.h">
@@ -200,6 +201,9 @@
     <ClInclude Include="Source\Engine\EngineStatics.h">
       <Filter>Source\Engine</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\CoreGlobals.h" />
+    <ClInclude Include="Source\Core\Logging\LogOutputDevice.h" />
+    <ClInclude Include="Source\Core\Logging\LogMacros.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
