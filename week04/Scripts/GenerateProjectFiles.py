@@ -22,16 +22,12 @@ WINDOWS_TARGET_PLATFORM_VERSION = "10.0"
 NS = "http://schemas.microsoft.com/developer/msbuild/2003"
 
 CONFIGURATIONS = [
-    ("Debug", "Win32"),
-    ("Release", "Win32"),
     ("Debug", "x64"),
     ("Release", "x64"),
 ]
 SOLUTION_CONFIGURATION_ORDER = [
     ("Debug", "x64"),
-    ("Debug", "Win32"),
     ("Release", "x64"),
-    ("Release", "Win32"),
 ]
 SOURCE_EXTS = {".c", ".cc", ".cpp", ".cxx"}
 HEADER_EXTS = {".h", ".hpp", ".hxx", ".inl"}
@@ -178,22 +174,17 @@ def write_xml(root_element: ET.Element, destination: Path, bom: bool = False) ->
     destination.parent.mkdir(parents=True, exist_ok=True)
     indent_xml(root_element)
     xml_body = ET.tostring(root_element, encoding="utf-8")
-    xml_body = xml_body.replace(
-        b'<ImportGroup Label="ExtensionSettings" />',
-        b'<ImportGroup Label="ExtensionSettings">\n  </ImportGroup>',
-    )
-    xml_body = xml_body.replace(
-        b'<ImportGroup Label="Shared" />',
-        b'<ImportGroup Label="Shared">\n  </ImportGroup>',
-    )
-    xml_body = xml_body.replace(
-        b'<ImportGroup Label="ExtensionTargets" />',
-        b'<ImportGroup Label="ExtensionTargets">\n  </ImportGroup>',
-    )
     xml_bytes = b'<?xml version="1.0" encoding="utf-8"?>\n' + xml_body
     if bom:
         xml_bytes = b"\xef\xbb\xbf" + xml_bytes
     destination.write_bytes(xml_bytes)
+
+
+def add_empty_import_group(root: ET.Element, **attributes: str) -> ET.Element:
+    element = ET.SubElement(root, "ImportGroup", **attributes)
+    # Keep empty import groups stable without serializer-specific byte replacements.
+    element.text = "\n  "
+    return element
 
 
 def filter_guid(project_name: str, filter_path: str) -> str:
@@ -212,8 +203,8 @@ def add_project_configurations(root: ET.Element) -> None:
 
 
 def add_import_groups(root: ET.Element) -> None:
-    ET.SubElement(root, "ImportGroup", Label="ExtensionSettings")
-    ET.SubElement(root, "ImportGroup", Label="Shared")
+    add_empty_import_group(root, Label="ExtensionSettings")
+    add_empty_import_group(root, Label="Shared")
 
     for configuration, platform in CONFIGURATIONS:
         condition = f"'$(Configuration)|$(Platform)'=='{configuration}|{platform}'"
@@ -233,7 +224,7 @@ def add_x64_output_dirs(root: ET.Element) -> None:
     for configuration in ("Debug", "Release"):
         condition = f"'$(Configuration)|$(Platform)'=='{configuration}|x64'"
         property_group = ET.SubElement(root, "PropertyGroup", Condition=condition)
-        ET.SubElement(property_group, "OutDir").text = "$(ProjectDir)$(Configuration)\\"
+        ET.SubElement(property_group, "OutDir").text = "$(ProjectDir)Bin\\$(Configuration)\\"
         ET.SubElement(property_group, "IntDir").text = "Build\\$(Configuration)\\"
 
 
@@ -309,6 +300,7 @@ def add_engine_project(files: dict[str, list[str]]) -> None:
             ET.SubElement(cl_compile, "AdditionalIncludeDirectories").text = (
                 "$(ProjectDir)Source;%(AdditionalIncludeDirectories)"
             )
+            ET.SubElement(cl_compile, "AdditionalOptions").text = "/utf-8 %(AdditionalOptions)"
 
         link = ET.SubElement(item_definition_group, "Link")
         ET.SubElement(link, "SubSystem").text = "Console"
@@ -396,24 +388,35 @@ def add_editor_project(files: dict[str, list[str]]) -> None:
             )
         else:
             preprocessor_definitions = (
-                "NOMINMAX;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)"
+                "NOMINMAX;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)"
                 if configuration == "Release"
-                else "NOMINMAX;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)"
+                else "NOMINMAX;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)"
             )
         ET.SubElement(cl_compile, "PreprocessorDefinitions").text = preprocessor_definitions
         ET.SubElement(cl_compile, "ConformanceMode").text = "true"
         if platform == "x64":
             ET.SubElement(cl_compile, "LanguageStandard").text = "stdcpp20"
             ET.SubElement(cl_compile, "AdditionalIncludeDirectories").text = (
-                "$(ProjectDir)Source;$(SolutionDir)Engine\\Source;%(AdditionalIncludeDirectories)"
+                "$(ProjectDir)Source;$(ProjectDir)Source\\ThirdParty\\imgui;$(ProjectDir)..\\Engine\\Source;%(AdditionalIncludeDirectories)"
             )
+            ET.SubElement(cl_compile, "AdditionalOptions").text = "/utf-8 %(AdditionalOptions)"
 
         link = ET.SubElement(item_definition_group, "Link")
-        ET.SubElement(link, "SubSystem").text = "Console"
+        ET.SubElement(link, "SubSystem").text = "Windows"
         ET.SubElement(link, "GenerateDebugInformation").text = "true"
         if platform == "x64":
             ET.SubElement(link, "AdditionalDependencies").text = "Engine.lib;%(AdditionalDependencies)"
-
+            ET.SubElement(link, "AdditionalLibraryDirectories").text = (
+                "$(ProjectDir)..\\Engine\\Bin\\$(Configuration);%(AdditionalLibraryDirectories)"
+            )
+            pre_build_event = ET.SubElement(item_definition_group, "PreBuildEvent")
+            ET.SubElement(pre_build_event, "Command").text = (
+                'if not exist "$(OutDir)" mkdir "$(OutDir)"\n'
+                'if exist "$(ProjectDir)..\\Engine\\Bin\\$(Configuration)\\Engine.dll" '
+                'copy /Y "$(ProjectDir)..\\Engine\\Bin\\$(Configuration)\\Engine.dll" "$(OutDir)"\n'
+                'if exist "$(ProjectDir)..\\Engine\\Bin\\$(Configuration)\\Engine.pdb" '
+                'copy /Y "$(ProjectDir)..\\Engine\\Bin\\$(Configuration)\\Engine.pdb" "$(OutDir)"'
+            )
     compile_group = ET.SubElement(root, "ItemGroup")
     for path in files["ClCompile"]:
         ET.SubElement(compile_group, "ClCompile", Include=path)
@@ -432,8 +435,17 @@ def add_editor_project(files: dict[str, list[str]]) -> None:
         for path in files["Natvis"]:
             ET.SubElement(natvis_group, "Natvis", Include=path)
 
+    project_reference_group = ET.SubElement(root, "ItemGroup")
+    project_reference = ET.SubElement(
+        project_reference_group,
+        "ProjectReference",
+        Include="..\\Engine\\Engine.vcxproj",
+    )
+    ET.SubElement(project_reference, "Project").text = PROJECTS[0].guid
+    ET.SubElement(project_reference, "ReferenceOutputAssembly").text = "false"
+
     ET.SubElement(root, "Import", Project="$(VCTargetsPath)\\Microsoft.Cpp.targets")
-    ET.SubElement(root, "ImportGroup", Label="ExtensionTargets")
+    add_empty_import_group(root, Label="ExtensionTargets")
 
     write_xml(root, ROOT / "Editor" / "Editor.vcxproj")
 

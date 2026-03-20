@@ -1,59 +1,57 @@
 #include "../CoreMinimal.h"
 #include <cassert>
 
-FVector::FVector(float InX, float InY, float InZ) : x(InX), y(InY), z(InZ)
+constexpr FVector::FVector(float InX, float InY, float InZ) : x(InX), y(InY), z(InZ)
 {
 }
 
-FVector::~FVector()
-{
-}
+FVector::~FVector() = default;
 
 float FVector::Dot(const FVector& Other) const
 {
-	return x * Other.x + y * Other.y + z * Other.z;
+    return x * Other.x + y * Other.y + z * Other.z;
 }
 
 FVector FVector::Cross(const FVector& Other) const
 {
-	return FVector(y * Other.z - z * Other.y, z * Other.x - x * Other.z, x * Other.y - y * Other.x);
+    return {y * Other.z - z * Other.y, z * Other.x - x * Other.z, x * Other.y - y * Other.x};
 }
 
 FVector FVector::operator+(const FVector& Other) const
 {
-	return FVector(x + Other.x, y + Other.y, z + Other.z);
+    return {x + Other.x, y + Other.y, z + Other.z};
 }
 
 FVector FVector::operator-(const FVector& Other) const
 {
-	return FVector(x - Other.x, y - Other.y, z - Other.z);
+    return {x - Other.x, y - Other.y, z - Other.z};
 }
 
 FVector FVector::operator*(const float s) const
 {
-	return FVector(x * s, y * s, z * s);
+    return {x * s, y * s, z * s};
 }
 
 FVector FVector::operator/(const float s) const
 {
-	if (std::abs(s) < MathHelper::Epsilon)
-	{
-		assert(s != 0.0f && "Division by zero in FVector::operator/");
-		return FVector::Zero();
-	}
-	return FVector(x / s, y / s, z / s);
+    if (std::abs(s) < MathHelper::Epsilon)
+    {
+        assert(s != 0.0f && "Division by zero in FVector::operator/");
+        return FVector::Zero();
+    }
+    return {x / s, y / s, z / s};
 }
 
 FVector FVector::Normalize() const
 {
-	float SquareSum = x * x + y * y + z * z;
-	float Denominator = MathHelper::Sqrt(SquareSum);
+    float SquareSum = x * x + y * y + z * z;
+    float Denominator = MathHelper::Sqrt(SquareSum);
 
-	if (std::abs(Denominator) < MathHelper::Epsilon)
-		return FVector::Zero();
-	Denominator = 1.0f / Denominator;
-
-	return FVector(x * Denominator, y * Denominator, z * Denominator);
+    if (std::abs(Denominator) < MathHelper::Epsilon)
+        return FVector::Zero();
+    Denominator = 1.0f / Denominator;
+	
+    return {x * Denominator, y * Denominator, z * Denominator};
 }
 
 float FVector::Length() const
@@ -75,20 +73,20 @@ bool FVector::operator==(const FVector& Other) const
 
 FVector FVector::Zero()
 {
-	return FVector(0.0f, 0.0f, 0.0f);
+	return {0.0f, 0.0f, 0.0f};
 }
 
 FVector FVector::Up()
 {
-	return FVector(0.0f, 0.0f, 1.0f);
+	return {0.0f, 0.0f, 1.0f};
 }
 
 FVector FVector::Right()
 {
-	return FVector(0.0f, 1.0f, 0.0f);
+	return {0.0f, 1.0f, 0.0f};
 }
 
 FVector FVector::Forward()
 {
-	return FVector(1.0f, 0.0f, 0.0f);
+	return {1.0f, 0.0f, 0.0f};
 }

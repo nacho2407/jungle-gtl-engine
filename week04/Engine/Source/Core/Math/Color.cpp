@@ -1,6 +1,6 @@
 #include "../CoreMinimal.h"
 
-FColor::FColor(float InR, float InG, float InB, float InA)
+constexpr FColor::FColor(float InR, float InG, float InB, float InA)
 	: r(InR), g(InG), b(InB), a(InA) {
 }
 
