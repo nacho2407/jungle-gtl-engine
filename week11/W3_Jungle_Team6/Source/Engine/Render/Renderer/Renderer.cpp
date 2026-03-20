@@ -69,58 +69,42 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 {
 	ID3D11DeviceContext* context = Device.GetDeviceContext();
 
-	//ID3D11Buffer* VSConstantBuffers[3] =
-	//{
-	//	Resources.PerObjectConstantBuffer.GetBuffer(),
-	//	Resources.GizmoPerObjectConstantBuffer.GetBuffer(),
-	//	Resources.OverlayConstantBuffer.GetBuffer()
-	//};
-	//context->VSSetConstantBuffers(0, 3, VSConstantBuffers);
-	//context->PSSetConstantBuffers(0, 3, VSConstantBuffers);
+	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
+	{
+		ERenderPass CurrentPass = static_cast<ERenderPass>(i);
+		const auto& Commands = InRenderBus.GetCommands(CurrentPass);
 
-	//const FGizmoConstants ZeroGizmoConstants = {};
-	//Resources.GizmoPerObjectConstantBuffer.Update(context, &ZeroGizmoConstants, sizeof(FGizmoConstants));
-
-	//	순서 지켜야 함. (Component -> Axis -> Grid -> Outline -> Gizmo -> Overlay)
-	//	State Caching으로 인해 중복 설정은 자동으로 스킵됨.
-
-	//	Primitive
-	Device.SetDepthStencilState(EDepthStencilState::StencilWrite);
-	Device.SetBlendState(EBlendState::Opaque);
-	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	Resources.PrimitiveShader.Bind(context);
-	RenderComponentPass(context, InRenderBus);
+		if (Commands.empty()) continue;
 
 
-	//	Axis (LINELIST)
-	Device.SetDepthStencilState(EDepthStencilState::Default);
-	Device.SetRasterizerState(ERasterizerState::SolidBackCull);
-	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-	Resources.EditorShader.Bind(context);
-	RenderEditorPass(context, InRenderBus);
+		SetupRenderState(CurrentPass, context);
 
-	//	Grid (AlphaBlend)
-	//	Grid should not overwrite depth, otherwise gizmo behind z=0 gets culled.
-	Device.SetDepthStencilState(EDepthStencilState::DepthReadOnly);
-	Device.SetBlendState(EBlendState::AlphaBlend);
-	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	Resources.EditorShader.Bind(context);
-	RenderGridEditorPass(context, InRenderBus);
+		for (const auto& Cmd : Commands)
+		{
+			DrawCommand(context, Cmd);
+		}
+	}
 
-	//	Selection Outline (Stencil)
-	Device.SetDepthStencilState(EDepthStencilState::StencilOutline);
-	Device.SetRasterizerState(ERasterizerState::SolidFrontCull);
-	Device.SetBlendState(EBlendState::Opaque);
-	Resources.OutlineShader.Bind(context);
-	RenderOutlinePass(context, InRenderBus);
 
-	// Gizmo (Depth-less Variable)
-	Device.SetBlendState(EBlendState::Opaque);
-	RenderDepthLessPass(context, InRenderBus);
+	//RenderComponentPass(context, InRenderBus);
 
-	//	Reset to default
-	Device.SetRasterizerState(ERasterizerState::SolidBackCull);
+	//RenderEditorPass(context, InRenderBus);
+
+	////	Grid (AlphaBlend)
+	////	Grid should not overwrite depth, otherwise gizmo behind z=0 gets culled.
+	//
+	//RenderGridEditorPass(context, InRenderBus);
+
+	////	Selection Outline (Stencil)
+
+	//RenderOutlinePass(context, InRenderBus);
+
+	//// Gizmo (Depth-less Variable)
+	//Device.SetBlendState(EBlendState::Opaque);
+	//RenderDepthLessPass(context, InRenderBus);
+
+	////	Reset to default
+	//Device.SetRasterizerState(ERasterizerState::SolidBackCull);
 
 	//	NOTE : Overlay는 반드시 따로 호출해야 함. (Engine Loop에서 돌고 있음)
 }
@@ -129,86 +113,92 @@ void FRenderer::RenderOverlay(const FRenderBus& InRenderBus)
 {
 	ID3D11DeviceContext* context = Device.GetDeviceContext();
 
-	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	Device.SetDepthStencilState(EDepthStencilState::None);
-	Device.SetBlendState(EBlendState::Opaque);
-	Resources.OverlayShader.Bind(context);
 
-	RenderOverlayPass(context, InRenderBus);
+	//RenderOverlayPass(context, InRenderBus);
 }
 
-void FRenderer::RenderComponentPass(ID3D11DeviceContext* InDeviceContext, const FRenderBus& InRenderBus)
+void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceContext)
 {
-	for (const FRenderCommand& command : InRenderBus.GetComponentCommands())
+	switch (Pass)
 	{
-		DrawCommand(InDeviceContext, command);
+	case ERenderPass::Component:
+		//	Primitive
+		Device.SetDepthStencilState(EDepthStencilState::StencilWrite);
+		Device.SetBlendState(EBlendState::Opaque);
+		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		Resources.PrimitiveShader.Bind(DeviceContext);
+		break;
+	case ERenderPass::Outline:
+		Device.SetDepthStencilState(EDepthStencilState::StencilOutline);
+		Device.SetRasterizerState(ERasterizerState::SolidFrontCull);
+		Device.SetBlendState(EBlendState::Opaque);
+		Resources.OutlineShader.Bind(DeviceContext);
+		break;
+	case ERenderPass::DepthLess:
+		Device.SetDepthStencilState(EDepthStencilState::None);
+		Device.SetBlendState(EBlendState::AlphaBlend);
+		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		Resources.GizmoShader.Bind(DeviceContext);
+		break;
+
+	case ERenderPass::Editor:
+		//	Axis (LINELIST)
+		Device.SetDepthStencilState(EDepthStencilState::Default);
+		Device.SetRasterizerState(ERasterizerState::SolidBackCull);
+		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+		Resources.EditorShader.Bind(DeviceContext);
+		break;
+
+	case ERenderPass::Grid:
+		Device.SetDepthStencilState(EDepthStencilState::DepthReadOnly);
+		Device.SetBlendState(EBlendState::AlphaBlend);
+		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		Resources.EditorShader.Bind(DeviceContext);
+		break;
+	case ERenderPass::Overlay:
+		Device.SetDepthStencilState(EDepthStencilState::None);
+		Device.SetBlendState(EBlendState::Opaque);
+		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		Resources.OverlayShader.Bind(DeviceContext);
+		break;
 	}
 }
 
-void FRenderer::RenderDepthLessPass(ID3D11DeviceContext* InDeviceContext, const FRenderBus& InRenderBus)
-{
-	if (InRenderBus.GetDepthLessCommands().size() == 0) return;
-	//	DepthLess (Gizmo)
-	Device.SetDepthStencilState(EDepthStencilState::None);
-	Device.SetBlendState(EBlendState::AlphaBlend);
-	Resources.GizmoShader.Bind(InDeviceContext);
+//void FRenderer::RenderComponentPass(ID3D11DeviceContext* InDeviceContext, const FRenderBus& InRenderBus)
+//{
+//	for (const FRenderCommand& command : InRenderBus.GetCommands(ERenderPass::Component))
+//	{
+//		DrawCommand(InDeviceContext, command);
+//	}
+//}
 
-	InDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	DrawCommand(InDeviceContext, InRenderBus.GetDepthLessCommands()[0]);
+//void FRenderer::RenderDepthLessPass(ID3D11DeviceContext* InDeviceContext, const FRenderBus& InRenderBus)
+//{
+//	if (InRenderBus.GetDepthLessCommands().size() == 0) return;
+//	//	DepthLess (Gizmo)
+//
+//	DrawCommand(InDeviceContext, InRenderBus.GetDepthLessCommands()[0]);
 	//RenderDepthLessPass(InDeviceContext, InRenderBus);
 
 
-	//	선택된 경우 그리지 않음
-	if (InRenderBus.GetDepthLessCommands().size() < 2) return;
+	//	���õ� ��� �׸��� ����
+	//if (InRenderBus.GetDepthLessCommands().size() < 2) return;
 
-	//	Non-DepthLess (Gizmo)
-	Device.SetDepthStencilState(EDepthStencilState::Default);
-	Device.SetBlendState(EBlendState::Opaque);
-	Resources.GizmoShader.Bind(InDeviceContext);
+	////	Non-DepthLess (Gizmo)
+	//Device.SetDepthStencilState(EDepthStencilState::Default);
+	//Device.SetBlendState(EBlendState::Opaque);
+	//Resources.GizmoShader.Bind(InDeviceContext);
 
-	InDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	DrawCommand(InDeviceContext, InRenderBus.GetDepthLessCommands()[1]);
+	//InDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//DrawCommand(InDeviceContext, InRenderBus.GetDepthLessCommands()[1]);
 
 	//RenderDepthLessPass(InDeviceContext, InRenderBus);
 	//for (const FRenderCommand& command : InRenderBus.GetDepthLessCommands())
 	//{
 	//	DrawCommand(InDeviceContext, command);
 	//}
-}
-
-void FRenderer::RenderEditorPass(ID3D11DeviceContext* InDeviceContext, const FRenderBus& InRenderBus)
-{
-	for (const FRenderCommand& command : InRenderBus.GetEditorCommand())
-	{
-		DrawCommand(InDeviceContext, command);
-	}
-}
-
-void FRenderer::RenderGridEditorPass(ID3D11DeviceContext* InDeviceContext, const FRenderBus& InRenderBus)
-{
-	for (const FRenderCommand& command : InRenderBus.GetGridEditorCommand())
-	{
-		DrawCommand(InDeviceContext, command);
-	}
-}
-
-void FRenderer::RenderOverlayPass(ID3D11DeviceContext* InDeviceContext, const FRenderBus& InRenderBus)
-{
-	for(const FRenderCommand& command : InRenderBus.GetOverlayCommands())
-	{
-		DrawCommand(InDeviceContext, command);
-	}
-}
-
-void FRenderer::RenderOutlinePass(ID3D11DeviceContext* InDeviceContext, const FRenderBus& InRenderBus)
-{
-
-	for(const FRenderCommand& command : InRenderBus.GetSelectionOutlineCommands())
-	{
-		DrawCommand(InDeviceContext, command);
-	}
-}
+//}
 
 void FRenderer::DrawCommand(ID3D11DeviceContext * InDeviceContext, const FRenderCommand& InCommand)
 {
