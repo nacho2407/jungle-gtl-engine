@@ -12,6 +12,7 @@
 
 #include <d3d11.h>
 #include <d3dcompiler.h>
+#include "Core/CoreTypes.h"
 
 //	Primtive Type Enum
 enum class EPrimitiveType
@@ -25,4 +26,15 @@ enum class EPrimitiveType
 	EPT_Axis,
 	EPT_Grid,
 	EPT_MouseOverlay
+};
+
+enum class ERenderPass : uint32
+{
+	Component,      
+	Outline,        
+	DepthLess,      
+	Editor,         
+	Grid,           
+	Overlay,        
+	MAX             
 };
