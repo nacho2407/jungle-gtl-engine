@@ -1,4 +1,4 @@
-#include "Matrix.h"
+Ôªø#include "Matrix.h"
 #include "Utils.h"
 
 const FMatrix FMatrix::Identity(1, 0, 0, 0,
@@ -272,7 +272,7 @@ FMatrix FMatrix::MakeRotationEuler(const FVector& Rotation)
 {
 	float degreeToRad = 3.1415926535f / 180.0f;
 
-	// æ∏ÆæÛ ±‚¡ÿ: X:Roll, Y:Pitch, Z:Yaw
+	// Ïñ∏Î¶¨Ïñº Í∏∞Ï§Ä: X:Roll, Y:Pitch, Z:Yaw
 	float roll = Rotation.X * degreeToRad;
 	float pitch = Rotation.Y * degreeToRad;
 	float yaw = Rotation.Z * degreeToRad;
@@ -366,7 +366,7 @@ FVector FMatrix::GetEuler() const
 
 	if (std::abs(sp) > 0.9999f)
 	{
-		Euler.X = 0.0f; // Roll ∞Ì¡§
+		Euler.X = 0.0f; // Roll Í≥†Ï†ï
 		Euler.Z = std::atan2(-M[1][0], M[1][1]) * Rad2Deg;
 	}
 	else

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Math/Vector.h"
@@ -12,7 +12,8 @@ struct FColor
 
 	FColor() : R(255), G(255), B(255), A(255) {}
 	FColor(uint32 InR, uint32 InG, uint32 InB, uint32 InA = 255)
-		: R(InR), G(InG), B(InB), A(InA) {}
+		: R(InR), G(InG), B(InB), A(InA) {
+	}
 
 	// 0.0~1.0 범위의 FVector4로 변환
 	FVector4 ToVector4() const
@@ -20,12 +21,12 @@ struct FColor
 		return FVector4(R / 255.0f, G / 255.0f, B / 255.0f, A / 255.0f);
 	}
 
-	static FColor Red()   { return FColor(255, 0, 0); }
+	static FColor Red() { return FColor(255, 0, 0); }
 	static FColor Green() { return FColor(0, 255, 0); }
-	static FColor Blue()  { return FColor(0, 0, 255); }
+	static FColor Blue() { return FColor(0, 0, 255); }
 	static FColor White() { return FColor(255, 255, 255); }
 	static FColor Black() { return FColor(0, 0, 0); }
-	static FColor Yellow(){ return FColor(255, 255, 0); }
+	static FColor Yellow() { return FColor(255, 255, 0); }
 };
 
 // ============================================================
@@ -37,12 +38,14 @@ struct FBoundingBox
 	FVector Max;
 
 	FBoundingBox()
-		: Min(FVector( FLT_MAX,  FLT_MAX,  FLT_MAX))
+		: Min(FVector(FLT_MAX, FLT_MAX, FLT_MAX))
 		, Max(FVector(-FLT_MAX, -FLT_MAX, -FLT_MAX))
-	{}
+	{
+	}
 
 	FBoundingBox(const FVector& InMin, const FVector& InMax)
-		: Min(InMin), Max(InMax) {}
+		: Min(InMin), Max(InMax) {
+	}
 
 	// 점을 포함하도록 확장
 	void Expand(const FVector& Point);
@@ -72,12 +75,12 @@ enum class EViewModeIndex
 // ============================================================
 enum EEngineShowFlags : uint32
 {
-	SF_None          = 0,
-	SF_Primitives    = 1 << 0,   // 프리미티브 메시
-	SF_Grid          = 1 << 1,   // 월드 그리드
-	SF_BoundingBox   = 1 << 2,   // AABB 바운딩 박스
+	SF_None = 0,
+	SF_Primitives = 1 << 0,   // 프리미티브 메시
+	SF_Grid = 1 << 1,   // 월드 그리드
+	SF_BoundingBox = 1 << 2,   // AABB 바운딩 박스
 	SF_BillboardText = 1 << 3,   // 빌보드 UUID 텍스트
-	SF_Gizmo         = 1 << 4,   // 트랜스폼 기즈모
+	SF_Gizmo = 1 << 4,   // 트랜스폼 기즈모
 
 	SF_All = SF_Primitives | SF_Grid | SF_BoundingBox | SF_BillboardText | SF_Gizmo
 };

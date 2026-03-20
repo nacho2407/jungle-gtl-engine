@@ -1,4 +1,4 @@
-#include "SceneSaveManager.h"
+﻿#include "SceneSaveManager.h"
 #include "SimpleJSON/json.hpp"
 
 void FSceneSaveManager::SaveSceneAsJSON(const string& filepath, TArray<UWorld*>& Scene) {

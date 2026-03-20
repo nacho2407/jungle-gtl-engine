@@ -1,4 +1,4 @@
-#include "EngineStatics.h"
+﻿#include "EngineStatics.h"
 
 uint32 EngineStatics::NextUUID = 1;
 

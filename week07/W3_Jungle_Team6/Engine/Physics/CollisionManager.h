@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 /*#include "Engine/Core/CoreTypes.h"
 #include "Engine/Math/CollisionMath.h"
