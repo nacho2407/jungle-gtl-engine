@@ -16,6 +16,7 @@ UObject::~UObject()
 	{
 		GUObjectArray[InternalIndex] = nullptr;
 	}
+	FUniqueNameGenerator::ReleaseName(Name);
 }
 
 void* UObject::operator new(size_t size)

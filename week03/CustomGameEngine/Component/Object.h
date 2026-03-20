@@ -2,7 +2,7 @@
 
 #include "EngineCore/EngineTypes.h"
 #include "EngineCore/ObjectFactory.h"
-
+#include "EngineCore/Name.h"
 #define DECLARE_RTTI(cls, parent_cls) \
 	public: \
 		static const void* GetClass() { static int id = 0; return &id; } \
@@ -18,7 +18,10 @@
 		{ \
 			cls##Register() \
 			{ \
-				FObjectFactory::RegisterObjectType(cls::GetClass(), []() -> UObject* { return new cls(); }); \
+				FObjectFactory::RegisterObjectType(cls::GetClass(), []() -> UObject* {\
+					UObject* obj = new cls(); \
+					obj->Name = FUniqueNameGenerator::MakeUniqueName(#cls); \
+					return obj; }); \
 			} \
 		}; \
 		static cls##Register global_##cls##Register; \
@@ -40,6 +43,7 @@ public:
 public:
 	uint32 UUID;
 	uint32 InternalIndex;
+	FName Name;
 };
 
 template <typename To, typename From>

@@ -44,6 +44,8 @@ void USceneComponent::Deserialize(json::JSON jsonObj)
 
 void USceneComponent::DrawProperties()
 {
+	FString DisplayName = Name.GetDisplayName();
+	ImGui::Text("Object Name : %s", DisplayName.c_str());
 	ImGui::InputFloat3("Location", &RelativeLocation.x);
 	ImGui::InputFloat3("Rotation", &RelativeRotation.Roll);
 	ImGui::InputFloat3("Scale", &RelativeScale3D.x);
