@@ -8,13 +8,12 @@ struct FMaterial;
 struct FGeometry;
 
 struct BatchKey {
-	FGeometry* Geometry;
 	FMaterial* Material;
 	D3D11_PRIMITIVE_TOPOLOGY PrimitiveTopology;
 
 	bool operator<(const BatchKey& other) const {
-		return std::tie(Geometry, Material, PrimitiveTopology) <
-			std::tie(other.Geometry, other.Material, other.PrimitiveTopology);
+		return std::tie(Material, PrimitiveTopology) <
+			std::tie(other.Material, other.PrimitiveTopology);
 	};
 };
 
@@ -32,7 +31,7 @@ public:
 
 	BatchKey GetBatchKey() const
 	{
-		return { Geometry, Material, PrimitiveTopology };
+		return { Material, PrimitiveTopology };
 	}
 	//Texture
 

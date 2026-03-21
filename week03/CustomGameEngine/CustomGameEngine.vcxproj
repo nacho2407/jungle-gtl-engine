@@ -42,13 +42,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -160,7 +160,7 @@
     <ClInclude Include="EngineCore\Name.h" />
     <ClInclude Include="Renderer\Constants.h" />
     <ClInclude Include="Renderer\GeneralGeometry.h" />
-    <ClInclude Include="Renderer\UV.h" />
+    <ClInclude Include="Renderer\TexCoord.h" />
     <ClInclude Include="SceneManager.h" />
     <ClInclude Include="ThirdParty\fifo_map.hpp" />
     <ClInclude Include="Math\Matrix.h" />
@@ -235,6 +235,7 @@
     <ClCompile Include="Math\Vector.cpp" />
     <ClCompile Include="EngineCore\ObjectFactory.cpp" />
     <ClCompile Include="EngineCore\InputManager.cpp" />
+    <ClCompile Include="Renderer\VertextFont.h" />
     <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="ThirdParty\json.cpp" />
     <ClCompile Include="EngineCore\Logger.cpp" />
@@ -261,6 +262,10 @@
     <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Shader\ShaderFont.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="Shader\ShaderInfiniteGrid.hlsl">
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mainVS</EntryPointName>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mainVS</EntryPointName>

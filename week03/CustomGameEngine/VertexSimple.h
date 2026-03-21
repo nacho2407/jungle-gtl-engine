@@ -1,6 +1,6 @@
-#pragma once
+ï»¿#pragma once
 
-// Á¤Á¡ ±¸Á¶Ã¼ ¼±¾ð
+// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ã¼ ï¿½ï¿½ï¿½ï¿½
 struct FVertexSimple
 {
     float x, y, z;    // Position
