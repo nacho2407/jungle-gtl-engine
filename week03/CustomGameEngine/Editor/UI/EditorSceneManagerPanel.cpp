@@ -10,13 +10,13 @@ EditorSceneManagerPanel::~EditorSceneManagerPanel()
 
 }
 
-void EditorSceneManagerPanel::Draw(Editor* editor)
+void EditorSceneManagerPanel::Draw(Editor* editor, ImGuiWindowLayout& layout)
 {
 	//일단 매 프레임마다 씬을 가져옵니다. 씬이 바뀌는 경우 때문.
 	ActiveScene = GetWorld().GetSceneManager()->GetActiveScene();
 
-	ImGui::SetNextWindowPos(ImVec2(1600, 315), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSize(ImVec2(300, 600), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos(layout.PosXY, ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(layout.SizeWH, ImGuiCond_FirstUseEver);
 	ImGui::Begin("Scene Manager");
 
 	if (ActiveScene == nullptr)

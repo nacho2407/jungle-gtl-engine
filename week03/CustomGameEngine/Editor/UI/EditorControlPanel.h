@@ -7,8 +7,8 @@
 #include "World.h"
 #include "Math/Vector.h"
 #include "Math/Rotator.h"
-#include "ImGui/imgui.h"
 #include <string>
+#include "ImGuiLayout.h"
 
 class UCameraComponent;
 class Editor;
@@ -18,7 +18,7 @@ struct EditorControlPanel
 	EditorControlPanel(Editor* parent);
 	~EditorControlPanel();
 
-	void Draw(UCameraComponent* camera);
+	void Draw(UCameraComponent* camera, ImGuiWindowLayout& layout);
 
 	Editor* editor;
 };

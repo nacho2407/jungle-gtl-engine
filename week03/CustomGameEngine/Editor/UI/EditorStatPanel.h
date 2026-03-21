@@ -1,12 +1,13 @@
 ﻿#pragma once
+#include "Editor/Editor.h"
 #include "EngineCore/EngineStatics.h"
-#include "ImGui/imgui.h"
+#include "ImGuiLayout.h"
 
 struct EditorStatPanel
 {
 	EditorStatPanel();
 	~EditorStatPanel();
 
-	void Draw();
+	void Draw(ImGuiWindowLayout& layout);
 };
 

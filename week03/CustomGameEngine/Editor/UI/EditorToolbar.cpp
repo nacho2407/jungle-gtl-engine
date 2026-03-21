@@ -8,9 +8,9 @@ EditorToolbar::~EditorToolbar()
 {
 }
 
-void EditorToolbar::Draw()
+void EditorToolbar::Draw(ImGuiWindowLayout& layout)
 {
-	ImGui::SetNextWindowPos(ImVec2(10, 415), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos(layout.PosXY, ImGuiCond_FirstUseEver);
 
 	UGizmoComponent* gizmoController = Gizmo::GetInstance().GetController();
 
