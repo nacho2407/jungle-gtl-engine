@@ -9,7 +9,7 @@
 #include "Core/Common.h"
 
 class UWorld;
-class UCamera;
+class UCameraComponent;
 class UGizmoComponent;
 class FEditorSettings;
 class FWindowsWindow;
@@ -21,7 +21,7 @@ class FEditorViewportClient
 public:
 	void Initialize(FWindowsWindow* InWindow);
 	void SetWorld(UWorld* InWorld) { World = InWorld; }
-	void SetCamera(UCamera* InCamera) { Camera = InCamera; }
+	void SetCamera(UCameraComponent* InCamera) { Camera = InCamera; }
 	void SetGizmo(UGizmoComponent* InGizmo) { Gizmo = InGizmo; }
 	void SetSettings(const FEditorSettings* InSettings) { Settings = InSettings; }
 	UGizmoComponent* GetGizmo() { return Gizmo; }
@@ -43,7 +43,7 @@ private:
 private:
 	FWindowsWindow* Window = nullptr;
 	UWorld* World = nullptr;
-	UCamera* Camera = nullptr;
+	UCameraComponent* Camera = nullptr;
 	UGizmoComponent* Gizmo = nullptr;
 	const FEditorSettings* Settings = nullptr;
 

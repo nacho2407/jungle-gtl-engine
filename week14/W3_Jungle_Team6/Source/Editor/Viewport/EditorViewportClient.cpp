@@ -60,7 +60,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		return;
 	}
 
-	FCameraState& CameraState = Camera->GetCameraState();
+	const FCameraState& CameraState = Camera->GetCameraState();
 
 	const float MoveSensitivity = Settings ? Settings->CameraMoveSensitivity : 1.f;
 	const float CameraSpeed = (Settings ? Settings->CameraSpeed : 10.f) * MoveSensitivity;
@@ -119,7 +119,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	Camera->Rotate(Rotation.Y + MouseRotation.Y, Rotation.Z + MouseRotation.Z);
 
 	if (InputSystem::GetKeyDown('O')) {
-		CameraState.bIsOrthogonal = !CameraState.bIsOrthogonal;
+		Camera->SetOrthographic(!CameraState.bIsOrthogonal);
 	}
 }
 
@@ -140,19 +140,17 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	}
 
 
-	FCameraState& CameraState = Camera->GetCameraState();
 	const float ZoomSpeed = Settings ? Settings->CameraZoomSpeed : 300.f;
 
 	float ScrollNotches = InputSystem::GetScrollNotches();
 	if (ScrollNotches != 0.0f) {
-		if (CameraState.bIsOrthogonal) {
-			float NewWidth = CameraState.OrthoWidth - ScrollNotches * ZoomSpeed * DeltaTime;
-			CameraState.OrthoWidth = Clamp(NewWidth, 0.1f, 1000.0f);
+		if (Camera->IsOrthogonal()) {
+			float NewWidth = Camera->GetOrthoWidth() - ScrollNotches * ZoomSpeed * DeltaTime;
+			Camera->SetOrthoWidth(Clamp(NewWidth, 0.1f, 1000.0f));
 		}
 		else {
-			float NewFOV = CameraState.FOV - ScrollNotches * ZoomSpeed * DeltaTime;
-			NewFOV = Clamp(NewFOV, 1.f * DEG_TO_RAD, 90.0f * DEG_TO_RAD);
-			CameraState.FOV = NewFOV;
+			float NewFOV = Camera->GetFOV() - ScrollNotches * ZoomSpeed * DeltaTime;
+			Camera->SetFOV(Clamp(NewFOV, 1.f * DEG_TO_RAD, 90.0f * DEG_TO_RAD));
 		}
 	}
 	
@@ -276,7 +274,7 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 
 		for (auto* it : World->GetActors())
 		{
-			if (!it || it->bPendingKill || (it->GetRootComponent() && it->GetRootComponent()->bPendingKill)) {
+			if (!it || !it->GetRootComponent()) {
 				continue;
 			}
 			UPrimitiveComponent* PrimitiveComp = dynamic_cast<UPrimitiveComponent*>(it->GetRootComponent());

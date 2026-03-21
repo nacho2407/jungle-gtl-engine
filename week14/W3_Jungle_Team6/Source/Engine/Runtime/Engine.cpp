@@ -40,10 +40,8 @@ void UEngine::BeginPlay()
 void UEngine::Tick(float DeltaTime)
 {
 	InputSystem::Update();
-	SyncCameraFromRenderHandler();
 	UpdateWorld(DeltaTime);
 	Render(DeltaTime);
-	UObjectManager::Get().CollectGarbage();
 }
 
 void UEngine::Render(float DeltaTime)
@@ -70,10 +68,3 @@ void UEngine::UpdateWorld(float DeltaTime)
 	}
 }
 
-void UEngine::SyncCameraFromRenderHandler()
-{
-	if (Camera)
-	{
-		Camera->ApplyCameraState();
-	}
-}

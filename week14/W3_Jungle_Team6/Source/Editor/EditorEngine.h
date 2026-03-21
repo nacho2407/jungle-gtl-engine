@@ -26,7 +26,7 @@ public:
 	// Editor-specific API
 	UGizmoComponent* GetGizmo() const { return EditorGizmo; }
 
-	void ResetCamera(UCamera* InCamera);
+	void ResetCamera(UCameraComponent* InCamera);
 	void ClearScene();
 	void ResetViewport();
 	void CloseScene();
@@ -42,10 +42,8 @@ public:
 
 	// Legacy names for compatibility during migration
 	UWorld* GetEditorWorld() const { return GetWorld(); }
-	UCamera* GetEditorCamera() const { return GetCamera(); }
+	UCameraComponent* GetEditorCamera() const { return GetCamera(); }
 	UGizmoComponent* GetEditorGizmo() const { return GetGizmo(); }
-	FCameraState& GetEditorCameraState() { return GetCameraState(); }
-	const FCameraState& GetEditorCameraState() const { return GetCameraState(); }
 
 protected:
 	void Render(float DeltaTime) override;

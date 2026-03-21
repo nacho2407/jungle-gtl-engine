@@ -4,14 +4,14 @@
 #include "Editor/Settings/EditorSettings.h"
 
 class UWorld;
-class UCamera;
+class UCameraComponent;
 class UGizmoComponent;
 class UPrimitiveComponent;
 
 struct FRenderCollectorContext
 {
 	UWorld* World = nullptr;
-	UCamera* Camera = nullptr;
+	UCameraComponent* Camera = nullptr;
 	UGizmoComponent* Gizmo = nullptr;
 	const FCursorOverlayState* CursorOverlayState = nullptr;
 

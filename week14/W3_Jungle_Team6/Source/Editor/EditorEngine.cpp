@@ -41,11 +41,9 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	ViewportClient.SetGizmo(EditorGizmo);
 
 	// Camera
-	Camera = UObjectManager::Get().CreateObject<UCamera>();
+	Camera = UObjectManager::Get().CreateObject<UCameraComponent>();
 	ViewportClient.SetCamera(Camera);
 	ResetCamera(Camera);
-	Camera->ApplyCameraState();
-	SyncCameraFromRenderHandler();
 	Scene[CurrentWorld]->SetActiveCamera(Camera);
 }
 
@@ -91,7 +89,7 @@ void UEditorEngine::Render(float DeltaTime)
 	Renderer.EndFrame();
 }
 
-void UEditorEngine::ResetCamera(UCamera* InCamera)
+void UEditorEngine::ResetCamera(UCameraComponent* InCamera)
 {
 	if (!InCamera) return;
 	InCamera->SetWorldLocation(FEditorSettings::Get().InitViewPos);
@@ -100,30 +98,30 @@ void UEditorEngine::ResetCamera(UCamera* InCamera)
 
 void UEditorEngine::ResetViewport()
 {
-	Camera->bPendingKill = true;
-	UObjectManager::Get().CollectGarbage();
-
-	Camera = UObjectManager::Get().CreateObject<UCamera>();
+	UObjectManager::Get().DestroyObject(Camera);
+	Camera = UObjectManager::Get().CreateObject<UCameraComponent>();
 	ViewportClient.SetWorld(Scene[CurrentWorld]);
 	ViewportClient.SetCamera(Camera);
 	ViewportClient.SetViewportSize(Window->GetWidth(), Window->GetHeight());
-	Camera->ApplyCameraState();
 	ResetCamera(Camera);
-	SyncCameraFromRenderHandler();
 	Scene[CurrentWorld]->SetActiveCamera(Camera);
 }
 
 void UEditorEngine::CloseScene()
 {
-	EditorGizmo->bPendingKill = true;
-
 	if (!Scene.empty()) {
 		for (UWorld* World : Scene) {
 			World->EndPlay();
+			UObjectManager::Get().DestroyObject(World);
 		}
+		Scene.clear();
 	}
 
-	UObjectManager::Get().CollectGarbage();
+	UObjectManager::Get().DestroyObject(Camera);
+	Camera = nullptr;
+
+	UObjectManager::Get().DestroyObject(EditorGizmo);
+	EditorGizmo = nullptr;
 }
 
 void UEditorEngine::NewScene()
@@ -140,13 +138,13 @@ void UEditorEngine::ClearScene()
 	if (!Scene.empty()) {
 		for (UWorld* World : Scene) {
 			World->EndPlay();
-		}
-		UObjectManager::Get().CollectGarbage();
-		for (auto* W : Scene) {
-			W = nullptr;
+			UObjectManager::Get().DestroyObject(World);
 		}
 		Scene.clear();
 	}
+
+	UObjectManager::Get().DestroyObject(Camera);
+	Camera = nullptr;
 }
 
 void UEditorEngine::BuildRenderCommands()
