@@ -1,6 +1,7 @@
 #include "Editor/UI/EditorControlWidget.h"
 
 #include "Editor/EditorEngine.h"
+#include "Engine/Core/Timer.h"
 
 #include "ImGui/imgui.h"
 #include "Component/PrimitiveComponent.h"
@@ -27,7 +28,7 @@ void FEditorControlWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 	ImGui::Begin("Jungle Control Panel");
 
 	// Stats
-	ImGui::Text("FPS : %.1f", EditorEngine->GetMainLoopFPS());
+	ImGui::Text("FPS : %.1f", EditorEngine->GetTimer()->GetDisplayFPS());
 	ImGui::SameLine();
 	ImGui::Text("Memory Allocated : %d", EngineStatics::GetTotalAllocationBytes());
 	ImGui::SameLine();
