@@ -22,17 +22,19 @@ void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBu
 	CollectFromEditor(Context, View, Projection, RenderBus);
 
 	//	Draw from World
-	//	Iterate through GUObjects
-	for (auto* Object : GUObjectArray) 
+	if (Context.ShowFlags.bPrimitives)
 	{
-		if (!Object) continue;
-
-		if (Object->IsA<AActor>() && !Object->bPendingKill)
+		for (auto* Object : GUObjectArray)
 		{
-			auto* Actor = Object->Cast<AActor>();
-			if (Actor->GetWorld() == Context.World)
+			if (!Object) continue;
+
+			if (Object->IsA<AActor>() && !Object->bPendingKill)
 			{
-				CollectFromActor(Actor, Context, RenderBus);
+				auto* Actor = Object->Cast<AActor>();
+				if (Actor->GetWorld() == Context.World)
+				{
+					CollectFromActor(Actor, Context, RenderBus);
+				}
 			}
 		}
 	}
@@ -96,7 +98,7 @@ void FRenderCollector::CollectFromEditor(const FRenderCollectorContext& Context,
 {
 	//	Gizmo
 	UGizmoComponent* Gizmo = Context.Gizmo;
-	if (Gizmo && Gizmo->IsVisible())
+	if (Context.ShowFlags.bGizmo && Gizmo && Gizmo->IsVisible())
 	{
 		FRenderCommand Cmd1 = {};
 		Cmd1.Type = ERenderCommandType::Gizmo;
@@ -127,7 +129,7 @@ void FRenderCollector::CollectFromEditor(const FRenderCollectorContext& Context,
 		}
 	}
 
-	if (Context.bGridVisible)
+	if (Context.ShowFlags.bGrid)
 	{
 		//	Axis 추가
 		FRenderCommand AxisCmd = {};

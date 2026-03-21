@@ -164,8 +164,14 @@ void FEditorEngine::Render(float DeltaTime)
 	RenderBus.Clear();
 	BuildRenderCommands();
 
+	ERasterizerState ViewModeRasterizer = ERasterizerState::SolidBackCull;
+	if (Settings.ViewMode == EViewMode::Wireframe)
+	{
+		ViewModeRasterizer = ERasterizerState::WireFrame;
+	}
+
 	Renderer.BeginFrame();
-	Renderer.Render(RenderBus);
+	Renderer.Render(RenderBus, ViewModeRasterizer);
 	MainPanel.Render(DeltaTime, ViewportClient.GetViewOutput());
 	Renderer.RenderOverlay(RenderBus);	//	UI가 그려진 후 Overlay 그리기
 	Renderer.EndFrame();
@@ -198,7 +204,8 @@ void FEditorEngine::BuildRenderCommands()
 	Context.World = Scene[CurrentWorld];
 	Context.Camera = EditorCamera;
 	Context.Gizmo = EditorGizmo;
-	Context.bGridVisible = RenderHandler.bGridVisible;
+	Context.ViewMode = Settings.ViewMode;
+	Context.ShowFlags = Settings.ShowFlags;
 	Context.CursorOverlayState = &ViewportClient.GetCursorOverlayState();
 	Context.ViewportHeight = WindowHeight;
 	Context.ViewportWidth = WindowWidth;
