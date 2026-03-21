@@ -20,6 +20,7 @@ public:
 
 public:
 	// === Scene Management
+	TArray<UScene*> GetLoadedScenes();
 	UScene* GetActiveScene();
 	void SetActiveScene(UScene*);
 	UScene* GetPermanentScene();
@@ -27,7 +28,7 @@ public:
 	UScene* NewScene();
 	void SaveScene(FString sceneName);
 	UScene* LoadScene(FString sceneName);
-	void UnloadScene(UScene targetScene);
+	void UnloadScene(UScene* targetScene);
 	// === Scene Management
 	
 	template <typename T>

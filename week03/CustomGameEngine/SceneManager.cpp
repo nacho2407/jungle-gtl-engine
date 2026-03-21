@@ -19,6 +19,11 @@ SceneManager::~SceneManager()
 }
 
 
+TArray<UScene*> SceneManager::GetLoadedScenes()
+{
+	return TArray<UScene*>();
+}
+
 UScene* SceneManager::GetActiveScene()
 {
 	return ActiveScene;

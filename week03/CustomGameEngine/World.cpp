@@ -14,7 +14,11 @@ UWorld::UWorld()
 }
 
 UWorld::~UWorld() {
-	SceneMgr->UnloadScene();
+	for (auto* del : SceneMgr->GetLoadedScenes())
+	{
+		SceneMgr->UnloadScene(del);
+		delete del;
+	}
 	delete SceneMgr; SceneMgr = nullptr;
 	FLevel::GetInstance().Clear();
 }
