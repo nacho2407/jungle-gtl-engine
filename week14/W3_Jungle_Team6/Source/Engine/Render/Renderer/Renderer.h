@@ -56,6 +56,9 @@ public:
 	void RenderOverlay(const FRenderBus& InRenderBus);	//	반드시 따로 호출해야 함
 	void EndFrame();
 
+	void RenderPasses(const FRenderBus& RenderBus, ID3D11DeviceContext* Context);
+	void RenderEditorHelpers(const FRenderBus& Bus, ID3D11DeviceContext* context);
+
 	FD3DDevice& GetFD3DDevice() { return Device; }
 	FRenderResources& GetResources() { return Resources; }
 };
