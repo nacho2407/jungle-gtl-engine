@@ -40,4 +40,6 @@ struct FEditorSettings
 		if (bEnabled) ShowFlags |= Flag;
 		else          ShowFlags &= ~Flag;
 	}
+
+	static FEditorSettings& Get();
 };
