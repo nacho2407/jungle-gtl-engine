@@ -79,7 +79,6 @@
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\PlaneComponent.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\SphereComponent.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.h" />
-    <ClInclude Include="Source\Engine\Component\CameraComponent.h" />
     <ClInclude Include="Source\Engine\Component\CubeComponent.h" />
     <ClInclude Include="Source\Engine\Component\PlaneComponent.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
@@ -143,7 +142,6 @@
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\PlaneComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\SphereComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\CameraComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp" />
     <ClCompile Include="Source\Engine\EngineStatics.cpp" />

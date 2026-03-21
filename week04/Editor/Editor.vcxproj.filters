@@ -105,27 +105,6 @@
     <ClCompile Include="Source\ThirdParty\imgui\imgui_widgets.cpp">
       <Filter>Source\ThirdParty\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Viewport\EditorViewport.cpp">
-      <Filter>Source\Viewport</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Viewport\EditorViewportClient.cpp">
-      <Filter>Source\Viewport</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Viewport\Gizmo\ViewportGizmoController.cpp">
-      <Filter>Source\Viewport\Gizmo</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Viewport\Interaction\ViewportInteractionState.cpp">
-      <Filter>Source\Viewport\Interaction</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Viewport\Navigation\ViewportNavigationController.cpp">
-      <Filter>Source\Viewport\Navigation</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Viewport\RenderSetting\ViewportRenderSetting.cpp">
-      <Filter>Source\Viewport\RenderSetting</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Viewport\Selection\ViewportSelectionController.cpp">
-      <Filter>Source\Viewport\Selection</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\Editor.h">
@@ -191,21 +170,7 @@
     <ClInclude Include="Source\Viewport\EditorViewportClient.h">
       <Filter>Source\Viewport</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Viewport\Gizmo\ViewportGizmoController.h">
-      <Filter>Source\Viewport\Gizmo</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Viewport\Interaction\ViewportInteractionState.h">
-      <Filter>Source\Viewport\Interaction</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Viewport\Navigation\ViewportNavigationController.h">
-      <Filter>Source\Viewport\Navigation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Viewport\RenderSetting\ViewportRenderSetting.h">
-      <Filter>Source\Viewport\RenderSetting</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Viewport\Selection\ViewportSelectionController.h">
-      <Filter>Source\Viewport\Selection</Filter>
-    </ClInclude>
+    <ClInclude Include="Source\Editor.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Source\ThirdParty\imgui\imgui.natstepfilter">
