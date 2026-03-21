@@ -264,6 +264,15 @@
     <ClInclude Include="Text\FontAsset.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Text\Test.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Text\FGlyphAtlas.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Text\GlyphAtlas.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ImGui\imgui.cpp">
@@ -453,6 +462,18 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Text\FontAsset.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Text\Test.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Component\GridComp.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Text\FGlyphAtlas.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Text\GlyphAtlas.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

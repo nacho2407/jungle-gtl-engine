@@ -87,31 +87,28 @@ bool FFontAsset::LoadFromFile(const FString& FontPath, float PixelHeight)
 	return true;
 }
 
-FGlyphInfo& FFontAsset::EnsureGlyph(uint32 Codepoint)
+FGlyphInfo* FFontAsset::EnsureGlyph(uint32 Codepoint)
 {
 	auto iter = GlyphMap.find(Codepoint);
 	if (iter != GlyphMap.end())
 	{
-		return iter->second;
+		return &(iter->second);
 	}
 
-	// begin test
 	FGlyphInfo NewGlyph{};
 	NewGlyph.Codepoint = Codepoint;
 
 	if (!bLoaded)
 	{
 		UE_LOG("[Text/FontAsset][Error] Font is not loaded");
-		auto Result = GlyphMap.emplace(Codepoint, NewGlyph);
-		return Result.first->second;
+		return nullptr;
 	}
 
 	const int GlyphIndex = stbtt_FindGlyphIndex(&FontInfo, static_cast<int>(Codepoint));
 	if (GlyphIndex == 0)
 	{
 		UE_LOG("[Text/FontAsset][Warning] Missing glyph for codepoint");
-		auto Result = GlyphMap.emplace(Codepoint, NewGlyph);
-		return Result.first->second;
+		return nullptr;
 	}
 
 	const float Scale = stbtt_ScaleForPixelHeight(&FontInfo, FontPixelHeight);
@@ -132,8 +129,7 @@ FGlyphInfo& FFontAsset::EnsureGlyph(uint32 Codepoint)
 	NewGlyph.Metrics.Height = static_cast<float>(Y1 - Y0);
 
 	auto Result = GlyphMap.emplace(Codepoint, NewGlyph);
-	return Result.first->second;
-	// end test
+	return &(Result.first->second);
 }
 
 bool FFontAsset::BuildGlyphBitmap(uint32 Codepoint, FGlyphBitmap& OutBitmap) const

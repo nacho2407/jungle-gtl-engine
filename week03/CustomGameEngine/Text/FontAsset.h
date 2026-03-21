@@ -1,8 +1,8 @@
 ﻿#pragma once
 
 #include "EngineCore/EngineTypes.h"
-#include "Text/FontTypes.h"
 #include "ImGui/imstb_truetype.h"
+#include "Text/FontTypes.h"
 
 /**
  * @brief 하나의 폰트에 대한 Asset 객체
@@ -46,7 +46,7 @@ public:
 	 * 
 	 * @return Codepoint에 해당하는 Glyph 정보
 	 */
-	FGlyphInfo& EnsureGlyph(uint32 Codepoint);
+	FGlyphInfo* EnsureGlyph(uint32 Codepoint);
 
 	/**
 	 * @brief Codepoint에 해당하는 glyph 비트맵을 생성합니다.
