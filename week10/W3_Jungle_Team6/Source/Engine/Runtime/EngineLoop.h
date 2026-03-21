@@ -2,6 +2,7 @@
 
 #include "Engine/Runtime/Engine.h"
 #include "Engine/Runtime/WindowsApplication.h"
+#include "Engine/Core/Timer.h"
 
 class FEngineLoop
 {
@@ -11,16 +12,9 @@ public:
 	void Shutdown();
 
 private:
-	void TickFrame();
-	void InitializeTiming();
 	void CreateEngine();
 
 private:
 	FWindowsApplication Application;
-
-	float DeltaTime = 0.0f;
-
-	LARGE_INTEGER Frequency = {};
-	LARGE_INTEGER PrevTime = {};
-	LARGE_INTEGER CurrTime = {};
+	FTimer Timer;
 };
