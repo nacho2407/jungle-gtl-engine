@@ -17,7 +17,7 @@ private:
 	USceneComponent* TargetComponent = nullptr;
 	EGizmoMode CurMode = EGizmoMode::Translate;
 	FVector LastIntersectionLocation;
-	const float axisLength = 1.0f;
+	const float AxisLength = 1.0f;
 	float Radius = 0.1f;
 	const float ScaleSensitivity = 1.0f;
 	int32 SelectedAxis = -1;
@@ -43,11 +43,11 @@ public:
 
 	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
 
-	FVector GetVectorForAxis(int32 axis);
+	FVector GetVectorForAxis(int32 Axis);
 	void RenderGizmo() {}
 	void SetTarget(USceneComponent* NewTargetComponent);
 	inline void SetHolding(bool bHold) { bIsHolding = bHold; }
-	inline bool IsHolding() { return bIsHolding; }
+	inline bool IsHolding() const { return bIsHolding; }
 	inline bool IsHovered() const { return SelectedAxis != -1; }
 	inline bool HasTarget() const { return TargetComponent != nullptr; }
 	inline USceneComponent* GetTarget() const { return TargetComponent; }

@@ -14,8 +14,8 @@ struct FMeshData;
 class UPrimitiveComponent : public USceneComponent
 {
 private:
-	FVector WorldAABBMinLocation;
-	FVector WorldAABBMaxLocation;
+	mutable FVector WorldAABBMinLocation;
+	mutable FVector WorldAABBMaxLocation;
 
 protected:
 	const FMeshData* MeshData = nullptr;
@@ -35,14 +35,14 @@ public:
 	}
 
 	//Collision
-	void UpdateWorldAABB();
-	bool CheckAABB(const FRay& Ray);
+	void UpdateWorldAABB() const;
+	bool CheckAABB(const FRay& Ray) const;
 	bool Raycast(const FRay& Ray, FHitResult& OutHitResult);
 	bool IntersectTriangle(const FVector& RayOrigin, const FVector& RayDir, const FVector& V0, const FVector& V1, const FVector& V2, float& OutT);
 	virtual bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult);
 	inline bool IsVisible() const { return bIsVisible; }
 
-	void UpdateWorldMatrix() override;
+	void UpdateWorldMatrix() const override;
 
 	virtual bool GetRenderCommand(const FMatrix& viewMatrix, const FMatrix& projMatrix, FRenderCommand& OutCommand) {
 		OutCommand.Type = ERenderCommandType::Primitive;

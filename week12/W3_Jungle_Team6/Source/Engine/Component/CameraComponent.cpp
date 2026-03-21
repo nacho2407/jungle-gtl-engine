@@ -4,7 +4,7 @@
 DEFINE_CLASS(UCameraComponent, USceneComponent)
 REGISTER_FACTORY(UCameraComponent)
 
-FMatrix UCameraComponent::GetViewMatrix() {
+FMatrix UCameraComponent::GetViewMatrix() const {
 	UpdateWorldMatrix();
 
 	auto F = GetForwardVector();
@@ -20,7 +20,7 @@ FMatrix UCameraComponent::GetViewMatrix() {
 	);
 }
 
-FMatrix UCameraComponent::GetProjectionMatrix() {
+FMatrix UCameraComponent::GetProjectionMatrix() const {
 	float Cot = 1.0f / tanf(CameraState.FOV * 0.5f);
 	float Denom = CameraState.FarZ - CameraState.NearZ;
 
