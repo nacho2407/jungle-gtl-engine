@@ -209,13 +209,7 @@
     <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplication.h">
       <Filter>Source\ApplicationCore\GenericPlatform</Filter>
     </ClInclude>
-    <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplicationMessageHandler.h">
-      <Filter>Source\ApplicationCore\GenericPlatform</Filter>
-    </ClInclude>
     <ClInclude Include="Source\ApplicationCore\Input\IInputContext.h">
-      <Filter>Source\ApplicationCore\Input</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\ApplicationCore\Input\InputEvent.h">
       <Filter>Source\ApplicationCore\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\ApplicationCore\Input\InputRouter.h">
