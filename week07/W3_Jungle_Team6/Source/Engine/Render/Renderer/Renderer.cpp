@@ -44,6 +44,7 @@ void FRenderer::Create(HWND hWindow)
 	FMeshManager::Initialize();
 
 	LineBatcher.Create(Device.GetDevice());
+	FontBatcher.Create(Device.GetDevice());
 }
 
 void FRenderer::Release()
@@ -62,6 +63,7 @@ void FRenderer::Release()
 	Resources.OutlineConstantBuffer.Release();
 
 	LineBatcher.Release();
+	FontBatcher.Release();
 
 	Device.Release();
 }
@@ -72,6 +74,7 @@ void FRenderer::BeginFrame()
 	Device.BeginFrame();
 
 	LineBatcher.Clear();
+	FontBatcher.Clear();
 }
 
 //	Render Update Main function. RenderBus에 담긴 모든 RenderCommand에 대해서 Draw Call 수행
@@ -101,7 +104,7 @@ void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceCo
 {
 	switch (Pass)
 	{
-	case ERenderPass::Component:
+	case ERenderPass::Opaque:
 		Device.SetDepthStencilState(EDepthStencilState::StencilWrite);
 		Device.SetBlendState(EBlendState::Opaque);
 		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -208,7 +211,7 @@ EDepthStencilState FRenderer::GetDefaultDepthForPass(ERenderPass Pass) const
 {
 	switch (Pass)
 	{
-	case ERenderPass::Component: return EDepthStencilState::StencilWrite;
+	case ERenderPass::Opaque:	 return EDepthStencilState::StencilWrite;
 	case ERenderPass::Outline:   return EDepthStencilState::StencilOutline;
 	case ERenderPass::DepthLess: return EDepthStencilState::Default;
 	case ERenderPass::Editor:    return EDepthStencilState::Default;
@@ -308,6 +311,19 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 		}
 	}
 
+	//임시 구현
+	{
+		const auto& TranslucentCmds = RenderBus.GetCommands(ERenderPass::Translucent);
+		for (auto& Cmd : TranslucentCmds)
+		{
+			if (Cmd.Type == ERenderCommandType::Billboard)
+			{
+				FontBatcher.AddText(Cmd.TextData, Cmd.TransformConstants.Model.GetLocation(), RenderBus.GetCameraRight(), RenderBus.GetCameraUp());
+			}
+		}
+	}
+
+
 	Device.SetDepthStencilState(EDepthStencilState::Default);
 	Device.SetBlendState(EBlendState::Opaque);
 
@@ -322,9 +338,10 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 	Context->PSSetConstantBuffers(1, 1, &cb);
 
 	LineBatcher.AddWorldGrid(100.0f, 20);
-
-
 	LineBatcher.Flush(Context);
+
+
+	FontBatcher.Flush(Context);
 }
 
 void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix)
