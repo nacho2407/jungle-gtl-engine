@@ -121,15 +121,6 @@ void FEngineLoop::TickFrame()
 
 	MainLoopFps = (DeltaTime > 1e-6f) ? (1.0f / DeltaTime) : 0.0f;
 	Editor.SetMainLoopFPS(MainLoopFps);
-
-	// 리사이즈 중에는 렌더만 진행해서 화면 반응성을 유지
-	if (bIsResizing)
-	{
-		Editor.Update(DeltaTime);
-		Editor.Render(DeltaTime);
-		return;
-	}
-
 	UObjectManager::Get().CollectGarbage();
 	Editor.BeginFrame(DeltaTime);
 	Editor.Update(DeltaTime);
