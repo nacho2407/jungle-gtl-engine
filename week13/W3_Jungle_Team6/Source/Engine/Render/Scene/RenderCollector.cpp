@@ -15,11 +15,11 @@ void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBu
 
 	//	Must be the active camera
 	
-	FMatrix View = Context.Camera->GetViewMatrix();
-	FMatrix Projection = Context.Camera->GetProjectionMatrix();
+	UCamera* Camera = Context.Camera;
+	RenderBus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix());
 
 	//	Draw from Editor (Gizmo, Axis, etc.)
-	CollectFromEditor(Context, View, Projection, RenderBus);
+	CollectFromEditor(Context,RenderBus);
 
 	//	Draw from World
 	//	Iterate through GUObjects
@@ -65,9 +65,13 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 		{
 
 		case ERenderCommandType::Primitive:
-			CollectComponentOutline(primitiveComponent, Context, RenderBus);
-
 			selectedRenderPass = ERenderPass::Component;
+			if (Context.SelectedComponent == primitiveComponent)
+			{
+				CollectComponentOutline(primitiveComponent, Context, RenderBus);
+				CollectAABBCommand(primitiveComponent, RenderBus);
+			}
+
 			break;
 
 		case ERenderCommandType::Billboard:
@@ -82,15 +86,16 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 
 }
 
-void FRenderCollector::CollectFromEditor(const FRenderCollectorContext& Context, const FMatrix& ViewMat, const FMatrix& ProjMat, FRenderBus& RenderBus)
+void FRenderCollector::CollectFromEditor(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
-	CollectGizmo(Context, ViewMat, ProjMat, RenderBus);
-	CollectGridAndAxis(Context, ViewMat, ProjMat, RenderBus);
-	CollectMouseOverlay(Context, ViewMat, ProjMat, RenderBus);
+
+	CollectGizmo(Context, RenderBus);
+	CollectGridAndAxis(Context, RenderBus);
+	CollectMouseOverlay(Context, RenderBus);
 }
 
 
-void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, const FMatrix& ViewMat, const FMatrix& ProjMat, FRenderBus& RenderBus)
+void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
 	UGizmoComponent* Gizmo = Context.Gizmo;
 	if (!Gizmo || !Gizmo->IsVisible()) return;
@@ -99,7 +104,9 @@ void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, cons
 		FRenderCommand Cmd = {};
 		Cmd.Type = ERenderCommandType::Gizmo;
 		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
-		Cmd.TransformConstants = FTransformConstants{ Gizmo->GetWorldMatrix(), ViewMat, ProjMat };
+		Cmd.TransformConstants = FTransformConstants{ Gizmo->GetWorldMatrix(), 
+													RenderBus.GetView(), 
+													RenderBus.GetProj()};
 		if (bInner)
 		{
 			Cmd.DepthStencilState = EDepthStencilState::None;
@@ -128,7 +135,7 @@ void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, cons
 	}
 }
 
-void FRenderCollector::CollectGridAndAxis(const FRenderCollectorContext& Context, const FMatrix& ViewMat, const FMatrix& ProjMat, FRenderBus& RenderBus)
+void FRenderCollector::CollectGridAndAxis(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
 	if (Context.bGridVisible == false)
 	{
@@ -136,7 +143,9 @@ void FRenderCollector::CollectGridAndAxis(const FRenderCollectorContext& Context
 	}
 
 	FVector CamPos = Context.Camera->GetWorldLocation();
-	FTransformConstants StaticTransform = { FMatrix::Identity, ViewMat, ProjMat };
+	FTransformConstants StaticTransform = { FMatrix::Identity, 
+											RenderBus.GetView(),
+											RenderBus.GetProj()};
 
 	// Axis
 	FRenderCommand AxisCmd = {};
@@ -155,7 +164,7 @@ void FRenderCollector::CollectGridAndAxis(const FRenderCollectorContext& Context
 	RenderBus.AddCommand(ERenderPass::Grid,GridCmd);
 }
 
-void FRenderCollector::CollectMouseOverlay(const FRenderCollectorContext& Context, const FMatrix& ViewMat, const FMatrix& ProjMat, FRenderBus& RenderBus)
+void FRenderCollector::CollectMouseOverlay(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
 	//	Cursor Overlay (null checking +)
 	if (Context.CursorOverlayState == nullptr || Context.CursorOverlayState->bVisible == false)
@@ -184,6 +193,7 @@ void FRenderCollector::CollectComponentOutline(UPrimitiveComponent* primitiveCom
 	OutlineCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
 	OutlineCmd.TransformConstants = FTransformConstants{ primitiveComponent->GetWorldMatrix(), Context.Camera->GetViewMatrix(), Context.Camera->GetProjectionMatrix() };
 	OutlineCmd.Type = ERenderCommandType::SelectionOutline;
+
 	OutlineCmd.Constants.Outline.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
 	OutlineCmd.Constants.Outline.OutlineInvScale = FVector(1.0f / primitiveComponent->GetRelativeScale().X,
 		1.0f / primitiveComponent->GetRelativeScale().Y, 1.0f / primitiveComponent->GetRelativeScale().Z);
@@ -200,4 +210,20 @@ void FRenderCollector::CollectComponentOutline(UPrimitiveComponent* primitiveCom
 	}
 
 	RenderBus.AddCommand(ERenderPass::Outline, OutlineCmd);
+}
+
+void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponent, FRenderBus& RenderBus)
+{
+	FRenderCommand AABBCmd = {};
+	AABBCmd.Type = ERenderCommandType::DebugBox; 
+
+	FBoundingBox Box = PrimitiveComponent->GetWorldBoundingBox();
+
+	// 이전에 정의한 union 구조체의 AABB 영역에 데이터를 채웁니다.
+	AABBCmd.Constants.AABB.Min = Box.Min;
+	AABBCmd.Constants.AABB.Max = Box.Max;
+	AABBCmd.Constants.AABB.Color = FColor(1.0f, 0.6f, 0.0f, 1.0f); // 선택 강조용 주황색
+
+	// 렌더러가 마지막에 몰아서 그릴 수 있게 특정 패스(예: Editor/Overlay)에 푸시합니다.
+	RenderBus.AddCommand(ERenderPass::Editor, AABBCmd);
 }
