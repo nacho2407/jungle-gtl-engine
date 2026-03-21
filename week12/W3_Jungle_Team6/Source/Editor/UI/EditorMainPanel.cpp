@@ -12,6 +12,8 @@
 #include "Core/Common.h"
 #include "Engine/Core/InputSystem.h"
 
+#include "EditorSettings.h"
+
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
 void FEditorMainPanel::Create(HWND InHWindow, FRenderer& InRenderer, FEditorEngine* InEditorEngine)
@@ -202,6 +204,18 @@ void FEditorMainPanel::Render(float DeltaTime, FViewOutput& ViewOutput)
 	if (ImGui::Button(EditorEngine->GetRenderHandler().bGridVisible ? "Grid : OFF" : "Grid : ON"))
 	{
 		EditorEngine->GetRenderHandler().bGridVisible = !EditorEngine->GetRenderHandler().bGridVisible;
+	}
+
+	FEditorSettings& Settings = FEditorSettings::Get();
+	float Spacing = Settings.GridSpacing;
+
+	if (ImGui::DragFloat("Grid Spacing",
+		&Spacing,
+		0.005f,  
+		0.001f,
+		100.0f))
+	{
+		Settings.GridSpacing = Spacing;
 	}
 
 
