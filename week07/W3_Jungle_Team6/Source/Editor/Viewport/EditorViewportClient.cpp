@@ -5,15 +5,16 @@
 #include "Editor/UI/EditorConsoleWidget.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Engine/Core/InputSystem.h"
+#include "Engine/Runtime/WindowsWindow.h"
 
 #include "Component/Camera.h"
 #include "GameFramework/World.h"
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
 
-void FEditorViewportClient::Initialize(HWND InHWindow)
+void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
 {
-	HWindow = InHWindow;
+	Window = InWindow;
 
 	UE_LOG("Hello ZZup Engine! %d", 2026);
 }
@@ -157,7 +158,7 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	
 
 	POINT MousePoint = InputSystem::mousePos;
-	ScreenToClient(HWindow, &MousePoint);
+	MousePoint = Window->ScreenToClientPoint(MousePoint);
 
 	//	Cursor
 	CursorOverlayState.ScreenX = static_cast<float>(MousePoint.x);
