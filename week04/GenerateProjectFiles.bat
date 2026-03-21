@@ -4,7 +4,7 @@ setlocal
 set "ROOT_DIR=%~dp0"
 pushd "%ROOT_DIR%" >nul
 
-py .\Scripts\GenerateProjectFiles.py
+python .\Scripts\GenerateProjectFiles.py
 set "EXIT_CODE=%ERRORLEVEL%"
 
 popd >nul

@@ -1,13 +1,6 @@
 #pragma once
 
-#include "Core/Math/Vector4.h"
-
-enum class EAxis : uint8
-{
-    X = 0,
-    Y,
-    Z
-};
+#include "Core/Math/Matrix.h"
 
 static FVector4 GetAxisBaseColor(EAxis Axis)
 {

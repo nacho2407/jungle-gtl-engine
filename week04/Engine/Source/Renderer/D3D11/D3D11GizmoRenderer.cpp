@@ -5,9 +5,9 @@
 #include "Renderer/Types/AxisColors.h"
 #include "Renderer/Types/ShaderConstants.h"
 
-#include "Resources/Mesh/Gizmo/GizmoRotation.h"
-#include "Resources/Mesh/Gizmo/GizmoScaling.h"
-#include "Resources/Mesh/Gizmo/GizmoTranslation.h"
+#include "../../../Resources/Mesh/Gizmo/GizmoRotation.h"
+#include "../../../Resources/Mesh/Gizmo/GizmoScaling.h"
+#include "../../../Resources/Mesh/Gizmo/GizmoTranslation.h"
 
 bool FD3D11GizmoRenderer::Initialize(FD3D11DynamicRHI* InRHI)
 {

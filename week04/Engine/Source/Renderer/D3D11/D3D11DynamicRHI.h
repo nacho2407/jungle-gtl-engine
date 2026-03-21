@@ -4,8 +4,6 @@
 #include "Core/HAL/PlatformTypes.h"
 #include <Windows.h>
 #include <d3dcompiler.h>
-#include "Core/HAL/PlatformTypes.h"
-#include "Renderer/D3D11/D3D11Common.h"
 
 class FD3D11DynamicRHI
 {

@@ -4,7 +4,7 @@
 #include "Engine/Component/PrimitiveComponent.h"
 #include "Renderer/Types/BasicMeshType.h"
 
-enum class EBasicMeshType;
+enum class EBasicMeshType : uint8;
 
 namespace Engine::Component
 {
@@ -16,7 +16,7 @@ namespace Engine::Component
         UTriangleComponent() = default;
         virtual ~UTriangleComponent() override = default;
 
-        virtual void   Update(float DeltaTime) override;
+        void   Update(float DeltaTime) override;
         EBasicMeshType GetBasicMeshType() const override;
     };
 } // namespace Engine::Component

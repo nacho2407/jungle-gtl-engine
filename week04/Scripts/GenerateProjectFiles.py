@@ -300,6 +300,9 @@ def add_engine_project(files: dict[str, list[str]]) -> None:
 
         link = ET.SubElement(item_definition_group, "Link")
         ET.SubElement(link, "SubSystem").text = "Console"
+        ET.SubElement(link, "AdditionalDependencies").text = (
+            "d3d11.lib;dxgi.lib;d3dcompiler.lib;%(AdditionalDependencies)"
+        )
         ET.SubElement(link, "GenerateDebugInformation").text = "true"
 
     ET.SubElement(root, "Import", Project="$(VCTargetsPath)\\Microsoft.Cpp.targets")
@@ -548,3 +551,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

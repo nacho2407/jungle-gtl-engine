@@ -312,7 +312,7 @@ bool FD3D11DynamicRHI::CreateDeviceAndSwapChain(HWND InWindowHandle)
     SwapChainDesc.Flags = 0;
 
     UINT CreateDeviceFlags = 0;
-#if defined(_DEBUG)
+#ifdef _DEBUG
     CreateDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
@@ -326,18 +326,18 @@ bool FD3D11DynamicRHI::CreateDeviceAndSwapChain(HWND InWindowHandle)
 
     HRESULT Hr = D3D11CreateDeviceAndSwapChain(
         nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, CreateDeviceFlags, FeatureLevels,
-        static_cast<UINT>(SIZE_T(FeatureLevels)), D3D11_SDK_VERSION, &SwapChainDesc,
+        static_cast<UINT>(reinterpret_cast<SIZE_T>(FeatureLevels)), D3D11_SDK_VERSION, &SwapChainDesc,
         SwapChain.GetAddressOf(), Device.GetAddressOf(), &CreatedFeatureLevel,
         DeviceContext.GetAddressOf());
 
-#if defined(_DEBUG)
+#ifdef _DEBUG
     if (FAILED(Hr))
     {
         CreateDeviceFlags &= ~D3D11_CREATE_DEVICE_DEBUG;
 
         Hr = D3D11CreateDeviceAndSwapChain(
             nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, CreateDeviceFlags, FeatureLevels,
-            static_cast<UINT>(SIZE_T(FeatureLevels)), D3D11_SDK_VERSION, &SwapChainDesc,
+            static_cast<UINT>(reinterpret_cast<SIZE_T>(FeatureLevels)), D3D11_SDK_VERSION, &SwapChainDesc,
             SwapChain.GetAddressOf(), Device.GetAddressOf(), &CreatedFeatureLevel,
             DeviceContext.GetAddressOf());
     }

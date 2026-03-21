@@ -15,9 +15,6 @@ namespace Engine::Component
         EBasicMeshType GetBasicMeshType() const override { return EBasicMeshType::Plane; }
 
       protected:
-        Geometry::FAABB GetLocalAABB() const override
-        {
-            return Geometry::FAABB(FVector(-1.0f, 0.0f, -1.0f), FVector(1.0f, 0.0f, 1.0f));
-        }
+          Geometry::FAABB GetLocalAABB() const override;
     };
 } // namespace Engine::Component

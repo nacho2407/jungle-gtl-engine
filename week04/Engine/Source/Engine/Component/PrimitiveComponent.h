@@ -5,7 +5,7 @@
 #include "Core/Math/Vector4.h"
 #include "SceneComponent.h"
 
-enum class EBasicMeshType;
+enum class EBasicMeshType : uint8;
 
 namespace Engine::Component
 {

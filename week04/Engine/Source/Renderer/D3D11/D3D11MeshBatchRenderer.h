@@ -15,12 +15,6 @@ class FSceneView;
 
 struct FVertexSimple;
 
-// Per-vertex
-struct FMeshVertex
-{
-    FVector Position;
-};
-
 // Per-instance
 struct FMeshInstanceData
 {
