@@ -1,7 +1,7 @@
 #pragma once
 
-#include "D3D11/D3D11Common.h"
-#include "HAL/PlatformTypes.h"
+#include "Renderer/D3D11/D3D11Common.h"
+#include "Core/HAL/PlatformTypes.h"
 #include <Windows.h>
 
 class FD3D11DynamicRHI

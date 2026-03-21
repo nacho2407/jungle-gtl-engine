@@ -4,6 +4,9 @@
 #include <cwctype>
 #include <filesystem>
 #include <fstream>
+#include <sstream>
+#include <iomanip>
+#include <algorithm>
 
 #include "Asset.h"
 #include "AssetLoader.h"
@@ -280,12 +283,17 @@ IAssetLoader* UAssetManager::FindLoader(const FWString& Path, const FAssetLoadPa
 {
 	for (IAssetLoader* Loader : Loaders)
 	{
+		if (!Loader)
+		{
+			continue;
+		}
+
 		if (Params.ExplicitType != EAssetType::Unknown && Loader->GetAssetType() != Params.ExplicitType)
 		{
 			continue;
 		}
 
-		if (Loader && Loader->CanLoad(Path, Params))
+		if (Loader->CanLoad(Path, Params))
 		{
 			return Loader;
 		}

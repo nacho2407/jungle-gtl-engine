@@ -52,17 +52,30 @@ struct FTextureBuildSettings
 	// adress mode, filter 같은 sampler 성격은 texture build key 보다는
 	// 추후 material / sampler state 쪽으로 간다.
 };
+inline bool operator==(const FTextureBuildSettings& Lhs, const FTextureBuildSettings& Rhs)
+{
+	return Lhs.bSRGB == Rhs.bSRGB
+		&& Lhs.bGenerateMips == Rhs.bGenerateMips
+		&& Lhs.bIsNormalMap == Rhs.bIsNormalMap
+		&& Lhs.Format == Rhs.Format;
+}
 
 struct FTextureBuildKey	// 최종 asset/resource 재사용용
 {
 	FString SourceHash;
 	FTextureBuildSettings Settings;
 };
+inline bool operator==(const FTextureBuildKey& Lhs, const FTextureBuildKey& Rhs)
+{
+	return Lhs.SourceHash == Rhs.SourceHash
+		&& Lhs.Settings == Rhs.Settings;
+}
 
 struct FAssetLoadParams
 {
 	EAssetType ExplicitType = EAssetType::Unknown;
 	bool bForceReload = false;
+	FTextureBuildSettings TextureSettings = {};
 };
 
 class FSourceCache
@@ -93,6 +106,25 @@ struct FAssetKeyHasher
 		size_t Result = H1;
 		Result ^= H2 + 0x9e3779b9 + (Result << 6) + (Result >> 2);
 		Result ^= H3 + 0x9e3779b9 + (Result << 6) + (Result >> 2);
+		return Result;
+	}
+};
+
+struct FTextureBuildKeyHasher
+{
+	size_t operator()(const FTextureBuildKey& Key) const noexcept
+	{
+		const size_t H1 = std::hash<FString>{}(Key.SourceHash);
+		const size_t H2 = std::hash<bool>{}(Key.Settings.bSRGB);
+		const size_t H3 = std::hash<bool>{}(Key.Settings.bGenerateMips);
+		const size_t H4 = std::hash<bool>{}(Key.Settings.bIsNormalMap);
+		const size_t H5 = std::hash<int>{}(static_cast<int>(Key.Settings.Format));
+
+		size_t Result = H1;
+		Result ^= H2 + 0x9e3779b9 + (Result << 6) + (Result >> 2);
+		Result ^= H3 + 0x9e3779b9 + (Result << 6) + (Result >> 2);
+		Result ^= H4 + 0x9e3779b9 + (Result << 6) + (Result >> 2);
+		Result ^= H5 + 0x9e3779b9 + (Result << 6) + (Result >> 2);
 		return Result;
 	}
 };

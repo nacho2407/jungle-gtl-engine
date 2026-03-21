@@ -181,6 +181,8 @@
       <Filter>Source\Engine\ViewPort</Filter>
     </ClCompile>
     <ClCompile Include="Source\Renderer\Scene.cpp" />
+    <ClCompile Include="Source\Engine\Asset\Texture2DAsset.cpp" />
+    <ClCompile Include="Source\Engine\Asset\TextureLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Sphere.h">
@@ -402,6 +404,9 @@
     <ClInclude Include="Source\Renderer\Types\ViewMode.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\Texture2DAsset.h" />
+    <ClInclude Include="Source\Engine\Asset\TextureLoader.h" />
+    <ClInclude Include="Source\Renderer\RenderAsset\FTextureResource.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
