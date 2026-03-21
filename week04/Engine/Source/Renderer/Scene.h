@@ -7,14 +7,7 @@ class AActor;
 class FScene
 {
   public:
-    ~FScene()
-    {
-        for (auto &Actor : Actors)
-        {
-            delete Actor;
-        }
-        Actors.clear();
-    }
+    ~FScene();
     TArray<AActor *> Actors;
 
     void AddActor(AActor *InActor) { Actors.push_back(InActor); }

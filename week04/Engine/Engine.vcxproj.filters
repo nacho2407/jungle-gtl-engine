@@ -144,6 +144,9 @@
     <ClCompile Include="Source\Engine\Asset\Asset.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\AssetLoader.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Asset\AssetManager.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
@@ -177,7 +180,7 @@
     <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp">
       <Filter>Source\Engine\ViewPort</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Asset\AssetLoader.cpp" />
+    <ClCompile Include="Source\Renderer\Scene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Sphere.h">
@@ -318,6 +321,9 @@
     <ClInclude Include="Source\Engine\Asset\Asset.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\AssetLoader.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Asset\AssetManager.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
@@ -396,7 +402,6 @@
     <ClInclude Include="Source\Renderer\Types\ViewMode.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Asset\AssetLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
