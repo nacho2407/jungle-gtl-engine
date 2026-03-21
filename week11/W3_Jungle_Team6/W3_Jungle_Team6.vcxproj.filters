@@ -143,6 +143,9 @@
     <ClCompile Include="Source\Engine\Core\ResourceManager.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Timer.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
@@ -327,6 +330,9 @@
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Singleton.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Timer.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\AActor.h">
