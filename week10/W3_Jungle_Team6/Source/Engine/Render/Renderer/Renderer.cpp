@@ -40,6 +40,8 @@ void FRenderer::Create(HWND hWindow)
 
 	//	MeshManager init
 	FMeshManager::Initialize();
+
+	LineBatcher.Create(Device.GetDevice());
 }
 
 void FRenderer::Release()
@@ -56,6 +58,8 @@ void FRenderer::Release()
 	Resources.EditorConstantBuffer.Release();
 	Resources.OutlineConstantBuffer.Release();
 
+	LineBatcher.Release();
+
 	Device.Release();
 }
 
@@ -63,6 +67,8 @@ void FRenderer::Release()
 void FRenderer::BeginFrame()
 {
 	Device.BeginFrame();
+
+	LineBatcher.Clear();
 }
 
 //	Render Update Main function. RenderBus에 담긴 모든 RenderCommand에 대해서 Draw Call 수행
@@ -177,6 +183,7 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 
 	case ERenderCommandType::Axis:
 	case ERenderCommandType::Grid:
+	case ERenderCommandType::DebugBox:
 		Resources.EditorConstantBuffer.Update(Context, &InCmd.Constants.Editor, sizeof(FEditorConstants));
 
 		{
@@ -201,6 +208,7 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 		Context->VSSetConstantBuffers(0, 1, &cb);
 		//InDeviceContext->PSSetConstantBuffers(0, 1, &cb);
 		break;
+
 	}
 }
 
@@ -301,10 +309,10 @@ void FRenderer::RenderPasses(const FRenderBus& RenderBus, ID3D11DeviceContext* C
 	}
 }
 
-void FRenderer::RenderEditorHelpers(const FRenderBus& Bus, ID3D11DeviceContext* context)
+void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceContext* Context)
 {
 	// 1. 버스에서 라인 커맨드들만 골라 담기 (이미 월드 좌표)
-	const auto& EditorCmds = Bus.GetCommands(ERenderPass::Editor);
+	const auto& EditorCmds = RenderBus.GetCommands(ERenderPass::Editor);
 	for (const auto& Cmd : EditorCmds)
 	{
 		if (Cmd.Type == ERenderCommandType::DebugBox)
@@ -313,8 +321,21 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& Bus, ID3D11DeviceContext* 
 		}
 	}
 
+	Device.SetDepthStencilState(EDepthStencilState::Default);
+	Device.SetBlendState(EBlendState::Opaque);
+
+	Resources.EditorShader.Bind(Context);
+
+	ID3D11Buffer* cb = Resources.EditorConstantBuffer.GetBuffer();
+	Context->VSSetConstantBuffers(3, 1, &cb);
+	Context->PSSetConstantBuffers(3, 1, &cb);
+
+	cb = Resources.PerObjectConstantBuffer.GetBuffer();
+	Context->VSSetConstantBuffers(0, 1, &cb);
+	Context->PSSetConstantBuffers(0, 1, &cb);
+
 	LineBatcher.AddWorldGrid(100.0f, 20);
 
 	
-	//LineBatcher.Flush(context);
+	LineBatcher.Flush(Context);
 }

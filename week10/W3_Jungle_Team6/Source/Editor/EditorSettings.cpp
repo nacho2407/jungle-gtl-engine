@@ -8,7 +8,7 @@ void FEditorSettings::SaveToFile(const FString& FilePath) const
 {
 }
 
-static FEditorSettings& Get()
+FEditorSettings& FEditorSettings::Get()
 {
 	static FEditorSettings Instance;
 	return Instance;
