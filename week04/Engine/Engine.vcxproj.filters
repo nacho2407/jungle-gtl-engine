@@ -162,6 +162,7 @@
     <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp">
       <Filter>Source\Engine\ViewPort</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\AssetLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Sphere.h">
@@ -365,6 +366,7 @@
     <ClInclude Include="Source\Renderer\Types\ViewMode.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\AssetLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

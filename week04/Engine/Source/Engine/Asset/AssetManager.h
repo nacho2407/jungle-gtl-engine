@@ -3,6 +3,7 @@
 
 #include "CoreUObject/Object.h"
 
+class IAssetLoader;
 class UAsset;
 
 enum class EAssetType : uint8
@@ -33,6 +34,13 @@ struct FAssetKey
 	FWString NormalizedPath;
 	uint64 BuildSignature = 0; // 최종 asset/resource 재사용용
 };
+
+inline bool operator==(const FAssetKey& Lhs, const FAssetKey& Rhs)
+{
+	return Lhs.Type == Rhs.Type
+		&& Lhs.NormalizedPath == Rhs.NormalizedPath
+		&& Lhs.BuildSignature == Rhs.BuildSignature;
+}
 
 struct FTextureBuildSettings
 {
@@ -74,9 +82,43 @@ private:
 	TMap<FWString, FSourceRecord> Records;
 };
 
+struct FAssetKeyHasher
+{
+	size_t operator()(const FAssetKey& Key) const noexcept
+	{
+		const size_t H1 = std::hash<int>{}(static_cast<int>(Key.Type));
+		const size_t H2 = std::hash<FWString>{}(Key.NormalizedPath);
+		const size_t H3 = std::hash<uint64>{}(Key.BuildSignature);
+
+		size_t Result = H1;
+		Result ^= H2 + 0x9e3779b9 + (Result << 6) + (Result >> 2);
+		Result ^= H3 + 0x9e3779b9 + (Result << 6) + (Result >> 2);
+		return Result;
+	}
+};
+
+/*
+ * AssetManager 의 담당
+ * 1. Loader 등록
+ * 2. Source Cache 사용
+ * 3. Loaded asset cache 조회
+ * 4. Loader에게 실제 로드 위임
+ */
+
 class UAssetManager : public UObject
 {
 public:
+	void RegisterLoader(IAssetLoader* Loader);
+	UAsset* Load(const FWString& Path, const FAssetLoadParams& Params = {});
+	void Invalidate(const FWString& Path);
+	void Clear();
 
+private:
+	IAssetLoader* FindLoader(const FWString& Path, const FAssetLoadParams& Params) const;
+	FAssetKey MakeAssetKey(const FSourceRecord& Source, const IAssetLoader& Loader, const FAssetLoadParams& Params) const;
+
+private:
+	FSourceCache SourceCache;
+	TArray<IAssetLoader*> Loaders;
+	TMap<FAssetKey, UAsset*, FAssetKeyHasher> LoadedAssets;
 };
-

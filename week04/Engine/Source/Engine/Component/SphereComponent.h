@@ -6,9 +6,9 @@ namespace Engine::Component
     class ENGINE_API USphereComp : public UPrimitiveComponent
     {
         DECLARE_RTTI(USphereComp, UPrimitiveComponent)
-      public:
+    public:
         USphereComp();
-        virtual ~USphereComp() override;
-        virtual void Update(float DeltaTime) override;
+        ~USphereComp() override;
+        void Update(float DeltaTime) override;
     };
 } // namespace Engine::Component
