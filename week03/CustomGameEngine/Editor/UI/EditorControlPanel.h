@@ -4,11 +4,13 @@
 #include "Component/PrimitiveComponent.h"
 #include "PrimitiveFactory.h"
 #include "EngineCore/TimerManager.h"
+#include "EngineCore/EngineTypes.h"
 #include "World.h"
 #include "Math/Vector.h"
 #include "Math/Rotator.h"
 #include <string>
 #include "ImGuiLayout.h"
+#include <filesystem>
 
 class UCameraComponent;
 class Editor;

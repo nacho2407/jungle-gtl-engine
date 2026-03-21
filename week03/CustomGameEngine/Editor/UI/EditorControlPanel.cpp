@@ -21,6 +21,39 @@ EditorControlPanel::~EditorControlPanel()
 {
 }
 
+namespace
+{
+	static TArray<FString> GetSceneFileList(const FString& sceneDir)
+	{
+		TArray<FString> SceneList;
+
+		namespace fs = std::filesystem;
+
+		if (!fs::exists(sceneDir) || !fs::is_directory(sceneDir))
+		{
+			return SceneList;
+		}
+
+		for (const auto& Entry : fs::directory_iterator(sceneDir))
+		{
+			if (!Entry.is_regular_file())
+			{
+				continue;
+			}
+
+			const fs::path& Path = Entry.path();
+
+			if (Path.extension() == ".scene")
+			{
+				SceneList.push_back(Path.stem().string());
+			}
+		}
+
+		std::sort(SceneList.begin(), SceneList.end());
+		return SceneList;
+	}
+} // namespace
+
 void UpdateFPS(float deltaTime)
 {
 	frameCount++;
@@ -66,21 +99,60 @@ void EditorControlPanel::Draw(UCameraComponent* camera, ImGuiWindowLayout& layou
 	ImGui::SameLine();
 	ImGui::Separator();
 
-	ImGui::InputText("Scene Name", sceneName, 128);
-	if (ImGui::Button("New Scene"))
-	{
-		editor->SelectComponent(nullptr);
-		GetWorld().GetSceneManager()->NewScene();
-	}
-	if (ImGui::Button("Save Scene"))
-	{
-		GetWorld().GetSceneManager()->SaveScene(sceneName);
-	}
+	//ImGui::InputText("Scene Name", sceneName, 128);
+	//if (ImGui::Button("New Scene"))
+	//{
+	//	editor->SelectComponent(nullptr);
+	//	GetWorld().GetSceneManager()->NewScene();
+	//}
+	//if (ImGui::Button("Save Scene"))
+	//{
+	//	GetWorld().GetSceneManager()->SaveScene(sceneName);
+	//}
+	//if (ImGui::Button("Load Scene"))
+	//{
+	//	editor->SelectComponent(nullptr);
+	//	GetWorld().GetSceneManager()->LoadScene(sceneName);
+	//}
+
+	static bool bOpenScenePopup = false;
+	static TArray<FString> SceneList;
+	static int32 SelectedSceneIndex = -1;
+
 	if (ImGui::Button("Load Scene"))
 	{
-		editor->SelectComponent(nullptr);
-		GetWorld().GetSceneManager()->LoadScene(sceneName);
+		SceneList = GetSceneFileList("Scenes/");
+		SelectedSceneIndex = -1;
+		ImGui::OpenPopup("Load Scene Popup");
 	}
+
+	if (ImGui::BeginPopupModal("Load Scene Popup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		for (int32 i = 0; i < (int32)(SceneList.size()); ++i)
+		{
+			bool bSelected = (SelectedSceneIndex == i);
+			if (ImGui::Selectable(SceneList[i].c_str(), bSelected))
+			{
+				SelectedSceneIndex = i;
+			}
+		}
+
+		if (ImGui::Button("Load") && SelectedSceneIndex >= 0)
+		{
+			editor->SelectComponent(nullptr);
+			GetWorld().GetSceneManager()->LoadScene(SceneList[SelectedSceneIndex].c_str());
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel"))
+		{
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::EndPopup();
+	}
+
 	ImGui::Separator();
 
 	ImGui::Checkbox("Orthogonal", &camera->IsOrthogonal);

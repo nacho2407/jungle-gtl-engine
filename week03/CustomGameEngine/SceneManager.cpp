@@ -57,13 +57,13 @@ void SceneManager::SaveScene(FString sceneName)
 	UScene* activeScene = GetActiveScene();
 	activeScene->NextUUID = UEngineStatics::NextUUID;
 
-	SerializeHelper::SaveAsJson(activeScene, sceneName + ".Scene");
+	SerializeHelper::SaveAsJson(activeScene, "Scenes/" + sceneName + ".Scene");
 	return;
 }
 
 UScene* SceneManager::LoadScene(FString sceneName)
 {
-	const FString filePath = sceneName + ".Scene";
+	const FString filePath = "Scenes/" + sceneName + ".Scene";
 
 	UScene* loadedScene = SerializeHelper::LoadFromJson<UScene>(filePath);
 
