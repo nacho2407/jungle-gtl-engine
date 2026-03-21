@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ApplicationCore/Input/InputRouter.h"
 #include "Core/CoreMinimal.h"
 #include "Renderer/Scene.h"
 
@@ -27,6 +28,9 @@ public:
 
 
 private:
+    /* Input System */
+    Engine::ApplicationCore::FInputRouter FInputRouter;
+    
     /* Panel */
     
     /* Gizmo */
