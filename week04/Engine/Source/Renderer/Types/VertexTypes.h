@@ -6,8 +6,7 @@
 
 struct FMeshVertex
 {
-    FVector  Position;
-    FVector4 Color;
+    FVector Position;
 };
 
 struct FLineVertex

@@ -3,12 +3,20 @@
 #include "Core/Math/Matrix.h"
 #include "Core/Math/Vector4.h"
 
+// Non-instanced unlit mesh
 struct alignas(16) FMeshUnlitConstants
 {
     FMatrix  MVP;
     FVector4 BaseColor;
 };
 
+// Instanced unlit mesh
+struct alignas(16) FMeshUnlitInstancedConstants
+{
+    FMatrix VP;
+};
+
+// Reserved. Not used in this project.
 struct alignas(16) FMeshLitConstants
 {
     FMatrix  W;
