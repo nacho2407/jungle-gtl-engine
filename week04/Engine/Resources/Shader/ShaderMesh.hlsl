@@ -1,15 +1,12 @@
 cbuffer FMeshUnlitConstants : register(b0)
 {
-    row_major float4x4 VP;
+    row_major float4x4 MVP;
     float4 BaseColor;
 };
 
 struct VSInput
 {
-    float3 Position      : POSITION;
-
-    row_major float4x4 World : WORLD;
-    float4 InstanceColor : COLOR1;
+    float3 Position : POSITION;
 };
 
 struct PSInput
@@ -21,11 +18,8 @@ struct PSInput
 PSInput VSMain(VSInput In)
 {
     PSInput Out;
-
-    float4 WorldPosition = mul(float4(In.Position, 1.0f), In.World);
-    Out.Position = mul(WorldPosition, VP);
-    Out.Color = In.InstanceColor * BaseColor;
-
+    Out.Position = mul(float4(In.Position, 1.0f), MVP);
+    Out.Color = BaseColor;
     return Out;
 }
 
