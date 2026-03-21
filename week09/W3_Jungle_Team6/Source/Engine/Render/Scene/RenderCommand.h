@@ -91,10 +91,16 @@ struct FRenderCommand
 	FMeshBuffer* MeshBuffer = nullptr;
 	FTransformConstants TransformConstants = {};
 
-	FGizmoConstants GizmoConstants;
-	FEditorConstants EditorConstants;
-	FOverlayConstants OverlayConstants;
-	FOutlineConstants OutlineConstants ;
+	union
+	{
+		FGizmoConstants Gizmo;
+		FEditorConstants Editor;
+		FOverlayConstants Overlay;
+		FOutlineConstants Outline;
+		FLineConstants Line;
+		FBillboardConstants Billboard;
+	} Constants;
+
 
 	EDepthStencilState DepthStencilState = EDepthStencilState::Default;
 	EBlendState BlendState = EBlendState::Opaque;

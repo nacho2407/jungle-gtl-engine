@@ -9,6 +9,7 @@
 #include "Render/Scene/RenderBus.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/RenderResources.h"
+#include "Render/LineBatcher.h"
 
 #include <cstddef>
 
@@ -17,6 +18,8 @@ class FRenderer
 private:
 	FD3DDevice Device;
 	FRenderResources Resources;
+	FLineBatcher LineBatcher;
+	
 
 	//	File Path
 	const wchar_t * ShaderFilePath  = L"Shaders/ShaderW0.hlsl";
