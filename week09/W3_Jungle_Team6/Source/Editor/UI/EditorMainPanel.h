@@ -1,7 +1,5 @@
 #pragma once
 
-#include <windows.h>
-
 #include "Core/Common.h"
 #include "Editor/UI/EditorConsoleWidget.h"
 #include "Editor/UI/EditorControlWidget.h"
@@ -11,13 +9,14 @@
 
 class FRenderer;
 class UEditorEngine;
+class FWindowsWindow;
 
 using namespace common::structs;
 
 class FEditorMainPanel
 {
 public:
-	void Create(HWND InHWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine);
+	void Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine);
 	void Release();
 	void Render(float DeltaTime, FViewOutput& ViewOutput);
 	void Update();

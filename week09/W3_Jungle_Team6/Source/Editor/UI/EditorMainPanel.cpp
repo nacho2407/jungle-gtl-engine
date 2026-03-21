@@ -1,6 +1,7 @@
 #include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
+#include "Engine/Runtime/WindowsWindow.h"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
@@ -9,7 +10,7 @@
 #include "Render/Renderer/Renderer.h"
 #include "Engine/Core/InputSystem.h"
 
-void FEditorMainPanel::Create(HWND InHWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine)
+void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine)
 {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -17,7 +18,7 @@ void FEditorMainPanel::Create(HWND InHWindow, FRenderer& InRenderer, UEditorEngi
 	ImGuiIO& IO = ImGui::GetIO();
 	IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-	ImGui_ImplWin32_Init((void*)InHWindow);
+	ImGui_ImplWin32_Init((void*)InWindow->GetHWND());
 	ImGui_ImplDX11_Init(InRenderer.GetFD3DDevice().GetDevice(), InRenderer.GetFD3DDevice().GetDeviceContext());
 
 	ConsoleWidget.Initialize(InEditorEngine);
