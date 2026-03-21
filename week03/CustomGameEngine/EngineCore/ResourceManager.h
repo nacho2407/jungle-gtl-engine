@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "EngineCore/EngineTypes.h"
 #include "Renderer/Geometry.h"
@@ -12,6 +12,12 @@
 #include <d3dcompiler.h>
 
 class URenderer;
+
+struct MeshData
+{
+	TArray<FVertexSimple> Vertices;
+	TArray<uint32_t> Indices;
+};
 
 class ResourceManager
 {
@@ -27,28 +33,46 @@ public:
 	~ResourceManager() {};
 
 	template<typename T>
-	void CreateStaticGeometry(FString ResourceName, T* vertices, UINT byteWidth, ID3D11Device* Device, int offset, const TArray<FVector>& Verticies)
+	FGeometry* CreateStaticGeometry(FString ResourceName, T* vertices, UINT byteWidth, ID3D11Device* Device, int offset, const TArray<FVector>& Verticies, void* Indices = nullptr, UINT IndicesByteWidth = 0)
 	{
+		auto iter = GeometryMap.find(ResourceName);
+		if (iter != GeometryMap.end())
+		{
+			return nullptr;
+		}
+
+		FGeometry& Geometry = GeometryMap[ResourceName];
+
 		D3D11_BUFFER_DESC vertexbufferdesc = {};
 		vertexbufferdesc.ByteWidth = byteWidth;
 		vertexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE;
 		vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 
-		auto iter = GeometryMap.find(ResourceName);
-		if (iter != GeometryMap.end())
-		{
-			return;
-		}
-		FGeometry& Geometry = GeometryMap[ResourceName];
-
-
 		D3D11_SUBRESOURCE_DATA vertexbufferSRD = { vertices };
 		Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, Geometry.VertexBuffer.GetAddressOf());
+
+		if (Indices != nullptr && IndicesByteWidth > 0)
+		{
+			D3D11_BUFFER_DESC ibDesc = {};
+			ibDesc.Usage = D3D11_USAGE_IMMUTABLE;
+			ibDesc.ByteWidth = IndicesByteWidth;
+			ibDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+
+			D3D11_SUBRESOURCE_DATA ibData = { Indices };
+			Device->CreateBuffer(&ibDesc, &ibData, Geometry.IndexBuffer.GetAddressOf());
+
+			Geometry.IndexCount = IndicesByteWidth / sizeof(uint32_t);
+			Geometry.IndexFormat = DXGI_FORMAT_R32_UINT;
+
+			// Store CPU side indices for picking
+			Geometry.Indices.assign((uint32_t*)Indices, (uint32_t*)Indices + Geometry.IndexCount);
+		}
 
 		Geometry.VertexStride = sizeof(T);
 		Geometry.VertexCount = byteWidth / sizeof(T);
 		Geometry.Offset = offset;
 		Geometry.Vertices = Verticies;
+		return &Geometry;
 	}
 	void CreateNoBufferGeometry(FString ResourceName, const TArray<FVector>& Verticies);
 
@@ -90,7 +114,7 @@ public:
 		Geometry.Vertices = Verticies;
 	}
 
-	void CreateMaterial(WFString VertexShaderName, WFString PixelShaderName, ID3D11Device* Device, D3D11_INPUT_ELEMENT_DESC* layout, UINT layoutCount);
+	FMaterial& CreateMaterial(WFString VertexShaderName, WFString PixelShaderName, ID3D11Device* Device, D3D11_INPUT_ELEMENT_DESC* layout, UINT layoutCount);
 
 	void AddCubeMesh(ID3D11Device* Device);
 	void AddSphereMesh(ID3D11Device* Device);
@@ -98,15 +122,15 @@ public:
 	void AddPlaneMesh(ID3D11Device* Device);
 	void AddAxisMesh(ID3D11Device* Device);
 
-	TArray<FVertexSimple> CreateCubeVertices();
+	MeshData CreateCubeMeshData();
 
-	TArray<FVertexSimple> CreateCircleVertices(int sliceCount = 20, float radius = 0.5f, float height = 0.0f);
+	MeshData CreateCircleMeshData(int sliceCount = 20, float radius = 0.5f, float height = 0.0f);
 
-	TArray<FVertexSimple> CreateTorusVertices(float majorRadius = 1.0f, float minorRadius = 0.1f, int radialSegments = 32, int tubularSegments = 16);
+	MeshData CreateTorusMeshData(float majorRadius = 1.0f, float minorRadius = 0.1f, int radialSegments = 32, int tubularSegments = 16);
 
-	TArray<FVertexSimple> CreateCylinderVertices(int sliceCount = 20, float radius = 0.5f, float height = 1.0f);
+	MeshData CreateCylinderMeshData(int sliceCount = 20, float radius = 0.5f, float height = 1.0f);
 
-	TArray<FVertexSimple> CreateConeVertices(int sliceCount = 20, float radius = 0.5f, float height = 1.0f);
+	MeshData CreateConeMeshData(int sliceCount = 20, float radius = 0.5f, float height = 1.0f);
 
 	void AddGizmoTranslationMesh(ID3D11Device* Device);
 

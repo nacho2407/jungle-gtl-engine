@@ -38,9 +38,10 @@ public:
 	void DrawUI();
 	void Finalize();
 
-	void SetRenderer(URenderer* renderer) { Renderer = renderer; }
+	void SetRenderer(URenderer* renderer);
+	URenderer* GetRenderer() const { return Renderer; }
 	void SetCamera(UCameraComponent* camera) { Camera = camera; }
-	void SetGrid(UGridComp* grid) { Grid = grid; }
+	void SetGrid(UGridComp* grid);
 	void SelectComponent(USceneComponent* component);
 	USceneComponent* GetSelectedComponent() const { return SelectedComponent; }
 

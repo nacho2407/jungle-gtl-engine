@@ -13,6 +13,10 @@ void URenderer::Create(HWND hWindow) {
 
 	CreateConstantBuffer();
 	CreateDynamicVertexBuffer();
+
+	ShowFlagMap[EEngineShowFlags::SF_Primitives] = true;
+	ShowFlagMap[EEngineShowFlags::SF_BillboardText] = true;
+	ShowFlagMap[EEngineShowFlags::SF_EditorPrimitives] = true;
 }
 
 void URenderer::CreateDeviceAndSwapChain(HWND hWindow) {
@@ -128,7 +132,6 @@ void URenderer::ReleaseRasterizerState() {
 void URenderer::CreateDepthStencilState() {
 	D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
 	depthStencilDesc.DepthFunc = D3D11_COMPARISON_GREATER;
-	depthStencilDesc.DepthFunc = D3D11_COMPARISON_GREATER;
 	depthStencilDesc.StencilEnable = FALSE;
 
 	depthStencilDesc.DepthEnable = TRUE;
@@ -242,17 +245,10 @@ void URenderer::Prepare() {
 void URenderer::CreateConstantBuffer() {
 	FrameConstantBuffer.Create(Device.Get(), sizeof(FFrameConstant), 0);
 	FrameConstantBuffer.Bind(DeviceContext.Get());
-	ObjectConstantBuffer.Create(Device.Get(), sizeof(FObjectConstant), 1);
-	ObjectConstantBuffer.Bind(DeviceContext.Get());
-
-	FGridConstantBuffer.Create(Device.Get(), sizeof(FGridConstant), 2);
-	FGridConstantBuffer.Bind(DeviceContext.Get());
 }
 
 void URenderer::ReleaseConstantBuffer() {
 	FrameConstantBuffer.Release();
-	ObjectConstantBuffer.Release();
-	FGridConstantBuffer.Release();
 }
 
 void URenderer::SetRenderCamera(class UCameraComponent* camera)
@@ -268,12 +264,14 @@ void URenderer::Render(const TArray<FLevel*>& Levels)
 	FrameConst.Projection = renderCamera->GetProjectionMatrix();
 	FrameConst.View = renderCamera->GetViewMatrix();
 	FrameConstantBuffer.Update(DeviceContext.Get(), &FrameConst, sizeof(FFrameConstant));
-	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
-	//FrameConstantBuffer.Bind(DeviceContext);
+	FrameConstantBuffer.Bind(DeviceContext.Get());
 
+
+	//Phase 1 : Distribute RenderObjects into 3 groups : Batch, Normal, NoDepth
 	TArray<RenderObject*> NormalRenderObjects;
 	TArray<RenderObject*> NoDepthRenderObjects;
 	TMap<BatchKey, TArray<RenderObject*>> BatchGroups;
+	DistributeRenderObjects(BatchGroups, NormalRenderObjects, NoDepthRenderObjects);
 
 	for (FLevel* Level : Levels)
 	{
@@ -291,55 +289,75 @@ void URenderer::Render(const TArray<FLevel*>& Levels)
 		}
 	}
 
-	BatchRender(BatchGroups);
-
+void URenderer::RenderNormalObjects(TArray<RenderObject*>& NormalRenderObjects)
+{
+	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
 	FObjectConstant ObjectConst;
+
 	for (RenderObject* RenderObj : NormalRenderObjects)
 	{
 		//Camera
 		ObjectConst.World = RenderObj->World;
 		ObjectConst.Color = RenderObj->Color;
 		ObjectConst.bIsSelected = RenderObj->bIsSelected ? 1 : 0;
-		ObjectConstantBuffer.Update(DeviceContext.Get(), &ObjectConst, sizeof(FObjectConstant));
-
-		//GPU에 ConstantBuffer가 오브젝트마다 생기는 것을 방지하기 위해 ObjectConstantBuffer를 하나만 만들어서 매 오브젝트마다 업데이트해서 사용.
+		RenderObj->Material->ConstantBuffer.Update(DeviceContext.Get(), &ObjectConst, sizeof(FObjectConstant));
+		RenderObj->Material->ConstantBuffer.Bind(DeviceContext.Get());
 		RenderObj->Render(DeviceContext.Get());
 	}
+}
 
-	if (!NoDepthRenderObjects.empty())
+void URenderer::DistributeRenderObjects(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups, TArray<RenderObject*>& NormalRenderObjects, TArray<RenderObject*>& NoDepthRenderObjects)
+{
+	auto renderObjects = &FLevel::GetInstance().RenderObjects;
+	for (RenderObject* RenderObj : *renderObjects)
 	{
-		DeviceContext->ClearDepthStencilView(DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 0.0f, 0);
-
-		for (RenderObject* RenderObj : NoDepthRenderObjects)
+		if (!ShowFlagMap[RenderObj->ShowFlag])
+			continue;
+		if (RenderObj->bBatch)
 		{
-			ObjectConst.World = RenderObj->World;
-			ObjectConst.Color = RenderObj->Color;
-			ObjectConst.bIsSelected = RenderObj->bIsSelected ? 1 : 0;
-			ObjectConstantBuffer.Update(DeviceContext.Get(), &ObjectConst, sizeof(FObjectConstant));
-			RenderObj->Render(DeviceContext.Get());
+			BatchKey key{ RenderObj->GetBatchKey() };
+			BatchGroups[key].push_back(RenderObj);
+		}
+		else
+		{
+			if (RenderObj->bDepthEnabled)
+			{
+				NormalRenderObjects.push_back(RenderObj);
+			}
+			else
+			{
+				NoDepthRenderObjects.push_back(RenderObj);
+			}
 		}
 	}
 }
 
 void URenderer::BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups)
 {
+	//DeviceContext->OMSetDepthStencilState(DepthStencilStateNoDepth.Get(), 0);
 	FObjectConstant ObjectConst;
 	for (auto& [key, objects] : BatchGroups)
 	{
 		key.Material->Bind(DeviceContext.Get());
 		DeviceContext->IASetPrimitiveTopology(key.PrimitiveTopology);
 		TArray<FVertexSimple> Vertices;
+		FConstantBuffer* ConstBuffer = &key.Material->ConstantBuffer;
 		for (RenderObject* RenderObj : objects)
 		{
-			for (FVector& vec : RenderObj->Geometry->Vertices)
+			const bool bHasVertexColors = !RenderObj->Geometry->Colors.empty();
+			for (size_t i = 0; i < RenderObj->Geometry->Vertices.size(); ++i)
 			{
-				Vertices.push_back({ vec.x, vec.y, vec.z, RenderObj->Color.r, RenderObj->Color.g, RenderObj->Color.b, RenderObj->Color.a });
+				const FVector& localVec = RenderObj->Geometry->Vertices[i];
+				FVector worldVec = RenderObj->World.TransformPoint(localVec);
+				const FColor& col = bHasVertexColors ? RenderObj->Geometry->Colors[i] : RenderObj->Color;
+				Vertices.push_back({ worldVec.x, worldVec.y, worldVec.z, col.r, col.g, col.b, col.a });
 			}
 		}
 		ObjectConst.World = FMatrix::IdentityMatrix();
 		ObjectConst.Color = FColor(1, 1, 1, 1);
 		ObjectConst.bIsSelected = 0;
-		ObjectConstantBuffer.Update(DeviceContext.Get(), &ObjectConst, sizeof(FObjectConstant));
+		ConstBuffer->Bind(DeviceContext.Get());
+		ConstBuffer->Update(DeviceContext.Get(), &ObjectConst, sizeof(FObjectConstant));
 		UpdateDynamicVertexBuffer(Vertices.data(), Vertices.size());
 		UINT stride = sizeof(FVertexSimple);
 		UINT offset = 0;
@@ -348,33 +366,3 @@ void URenderer::BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups)
 	}
 }
 
-void URenderer::RenderGrid(ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader)
-{
-	auto camera = UCameraComponent::GetMainCamera();
-	if (camera == nullptr)
-		return;
-
-	FFrameConstant FrameConst;
-	FGridConstant GridConst;
-	FrameConst.Projection = camera->GetProjectionMatrix();
-	FrameConst.View = camera->GetViewMatrix();
-	FrameConstantBuffer.Update(DeviceContext.Get(), &FrameConst, sizeof(FFrameConstant));
-
-	FVector camPosition = camera->GetRelativeLocation();
-	GridConst.CameraPos[0] = camPosition.x;
-	GridConst.CameraPos[1] = camPosition.y;
-	GridConst.CameraPos[2] = camPosition.z;
-	GridConst.GridSize = 10.0f;
-	GridConst.LineThickness = 0.8f;
-	FGridConstantBuffer.Update(DeviceContext.Get(), &GridConst, sizeof(FGridConstant));
-
-	DeviceContext->RSSetState(RasterizerStateNoCull.Get());
-
-	DeviceContext->VSSetShader(VertexShader, nullptr, 0);
-	DeviceContext->PSSetShader(PixelShader, nullptr, 0);
-	DeviceContext->IASetInputLayout(nullptr);
-	FGridConstantBuffer.Bind(DeviceContext.Get());
-	DeviceContext->Draw(18, 0);
-
-	DeviceContext->RSSetState(RasterizerState.Get());
-}

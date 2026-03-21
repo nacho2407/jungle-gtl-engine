@@ -68,6 +68,7 @@ RenderObject* UPrimitiveComponent::CreateRenderObject()
 	ResourceManager* RM = ResourceManager::GetInstance();
 	RenderObj->Geometry = this->VResource;
 	RenderObj->Material = &RM->GetMaterial(L"Shader/ShaderW0.hlsl");
+	RenderObj->ShowFlag = EEngineShowFlags::SF_Primitives;
 	UpdateRenderObject();
 	return RenderObj;
 }
@@ -76,6 +77,7 @@ void UPrimitiveComponent::UpdateRenderObject()
 {
 	RenderObj->World = GetRelativeMatrix();
 	RenderObj->bIsSelected = bIsSelected;
+	RenderObj->ShowFlag = EEngineShowFlags::SF_Primitives;
 }
 
 RenderObject* UPrimitiveComponent::GetRenderObject()

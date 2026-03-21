@@ -50,26 +50,49 @@ bool Ray::Intersects(UPrimitiveComponent* Comp, float& OutDistance)
 	bool bHit = false;
 	float ClosestT = FLT_MAX;
 
-	const auto& Vertices = Comp->GetGeometry()->Vertices;
-	int VertexCount = Comp->GetGeometry()->VertexCount;
+	FGeometry* Geometry = Comp->GetGeometry();
+	const auto& Vertices = Geometry->Vertices;
+	const auto& Indices = Geometry->Indices;
 
 	Ray LocalRay;
 	LocalRay.Direction = Comp->GetRelativeMatrix().Inverse().TransformVector(Direction);
 	LocalRay.Origin = Comp->GetRelativeMatrix().Inverse().TransformPoint(Origin);
 
-	for (int i = 0; i + 2 < VertexCount; i += 3)
+	if (!Indices.empty())
 	{
-		FVector V0 = Vertices[i];
-		FVector V1 = Vertices[i + 1];
-		FVector V2 = Vertices[i + 2];
-
-		float t;
-		if (IntersectsTriangle(V0, V1, V2, t, LocalRay))
+		for (size_t i = 0; i + 2 < Indices.size(); i += 3)
 		{
-			if (t < ClosestT)
+			const FVector& V0 = Vertices[Indices[i]];
+			const FVector& V1 = Vertices[Indices[i + 1]];
+			const FVector& V2 = Vertices[Indices[i + 2]];
+
+			float t;
+			if (IntersectsTriangle(V0, V1, V2, t, LocalRay))
 			{
-				ClosestT = t;
-				bHit = true;
+				if (t < ClosestT)
+				{
+					ClosestT = t;
+					bHit = true;
+				}
+			}
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i + 2 < Vertices.size(); i += 3)
+		{
+			const FVector& V0 = Vertices[i];
+			const FVector& V1 = Vertices[i + 1];
+			const FVector& V2 = Vertices[i + 2];
+
+			float t;
+			if (IntersectsTriangle(V0, V1, V2, t, LocalRay))
+			{
+				if (t < ClosestT)
+				{
+					ClosestT = t;
+					bHit = true;
+				}
 			}
 		}
 	}

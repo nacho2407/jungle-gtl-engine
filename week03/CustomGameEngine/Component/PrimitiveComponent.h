@@ -44,6 +44,8 @@ public:
 	FGeometry* GetGeometry() { return VResource; }
 
 	bool Pickable = true;
+	bool bVisible = true;
+	void SetVisible(bool bNewVisible) { bVisible = bNewVisible; MarkRenderStateDirty(); }
 private:
 	virtual void UpdateRenderObject();
 

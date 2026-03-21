@@ -16,6 +16,7 @@
 #include "Scene.h"
 #include "EngineCore/TimerManager.h"
 #include "Component/GridComp.h"
+#include "Component/AxisComponent.h"
 #include "World.h"
 
 
@@ -91,8 +92,9 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 
 	InputManager::GetInstance().hWnd = HWnd;
 	// Init Camera
-	auto Camera = Cast<UCameraComponent>(GetWorld().AddPermanentSceneComponent<UCameraComponent>());
-	auto Grid = Cast<UGridComp>(GetWorld().AddPermanentSceneComponent<UGridComp>());
+	auto Camera = Cast<UCameraComponent>(GetWorld().GetSceneManager()->AddPermanentSceneComponent<UCameraComponent>());
+	auto Grid = Cast<UGridComp>(GetWorld().GetSceneManager()->AddPermanentSceneComponent<UGridComp>());
+	auto Axis = Cast<UAxisComp>(GetWorld().GetSceneManager()->AddPermanentSceneComponent<UAxisComp>());
 	Camera->SetRelativeLocation(FVector(-20.f, -20.f, 20));
 	Camera->SetRelativeRotation(FRotator(0, 45.0f, 45.0f));
 	Renderer->SetRenderCamera(Camera);

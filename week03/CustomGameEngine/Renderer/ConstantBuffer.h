@@ -2,6 +2,7 @@
 
 #include <d3d11.h>
 #include "EngineCore/EngineTypes.h"
+#include "Renderer/Constants.h"
 class FConstantBuffer {
 public:
 	TComPtr<ID3D11Buffer> Buffer = nullptr;
@@ -20,6 +21,7 @@ public:
 
 	void Update(ID3D11DeviceContext* Context, const void* Data, UINT Size)
 	{
+		if (Buffer == nullptr) return;
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
 		if (SUCCEEDED(Context->Map(Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))
 		{
@@ -35,6 +37,7 @@ public:
 
 	void Bind(ID3D11DeviceContext* Context)
 	{
+		if (Buffer == nullptr) return;
 		Context->VSSetConstantBuffers(Slot, 1, Buffer.GetAddressOf());
 		Context->PSSetConstantBuffers(Slot, 1, Buffer.GetAddressOf());
 	}
