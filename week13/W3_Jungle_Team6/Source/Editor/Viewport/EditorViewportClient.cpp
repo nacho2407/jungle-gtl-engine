@@ -7,7 +7,7 @@
 #include "Engine/Core/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
 
-#include "Component/Camera.h"
+#include "Component/CameraComponent.h"
 #include "GameFramework/World.h"
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
@@ -277,20 +277,20 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 			if (!it || !it->GetRootComponent()) {
 				continue;
 			}
-			UPrimitiveComponent* PrimitiveComp = dynamic_cast<UPrimitiveComponent*>(it->GetRootComponent());
-			if (PrimitiveComp != nullptr)
-			{
-				HitResult = {};
-				if (PrimitiveComp->Raycast(Ray, HitResult))
-				{
-					if (HitResult.Distance < ClosestDistance)
-					{
-						ClosestDistance = HitResult.Distance;
-						BestTarget = PrimitiveComp;
+			USceneComponent* RootComp = it->GetRootComponent();
+			if (!RootComp->IsA<UPrimitiveComponent>()) continue;
+			UPrimitiveComponent* PrimitiveComp = static_cast<UPrimitiveComponent*>(RootComp);
 
-						ViewOutput.ObjectPicked = PrimitiveComp->GetTypeInfo()->name;
-						ViewOutput.Object = PrimitiveComp;
-					}
+			HitResult = {};
+			if (PrimitiveComp->Raycast(Ray, HitResult))
+			{
+				if (HitResult.Distance < ClosestDistance)
+				{
+					ClosestDistance = HitResult.Distance;
+					BestTarget = PrimitiveComp;
+
+					ViewOutput.ObjectPicked = PrimitiveComp->GetTypeInfo()->name;
+					ViewOutput.Object = PrimitiveComp;
 				}
 			}
 		}

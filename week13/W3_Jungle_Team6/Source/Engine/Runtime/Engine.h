@@ -2,7 +2,7 @@
 
 #include "Object/Object.h"
 #include "GameFramework/World.h"
-#include "Component/Camera.h"
+#include "Component/CameraComponent.h"
 #include "Render/Renderer/Renderer.h"
 #include "Render/Scene/RenderBus.h"
 
