@@ -1,12 +1,12 @@
 #pragma once
 
-#include "ViewMode.h"
+#include "Renderer/Types/ViewMode.h"
 
 class FSceneView;
 
 struct FSceneRenderData
 {
-    const FSceneView *SceneView = nullptr;
+    const FSceneView* SceneView = nullptr;
 
     EViewModeIndex ViewMode = EViewModeIndex::Lit;
 };

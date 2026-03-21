@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Math/Matrix.h"
-#include "Math/Vector4.h"
+#include "Core/Math/Matrix.h"
+#include "Core/Math/Vector4.h"
 
 struct alignas(16) FMeshUnlitConstants
 {

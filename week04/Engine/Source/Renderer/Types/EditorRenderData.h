@@ -1,7 +1,7 @@
 #pragma once
 
-#include "HAL/PlatformTypes.h"
-#include "Math/Matrix.h"
+#include "Core/HAL/PlatformTypes.h"
+#include "Core/Math/Matrix.h"
 
 class FSceneView;
 
@@ -31,7 +31,7 @@ struct FGizmoDrawData
 
 struct FEditorRenderData
 {
-    const FSceneView *SceneView = nullptr;
+    const FSceneView* SceneView = nullptr;
 
     bool bShowGrid = true;
     bool bShowWorldAxes = true;

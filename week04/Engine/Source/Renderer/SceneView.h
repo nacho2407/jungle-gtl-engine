@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Math/Matrix.h"
-#include "Math/Vector.h"
-#include "HAL/PlatformTypes.h"
+#include "Core/HAL/PlatformTypes.h"
+#include "Core/Math/Matrix.h"
+#include "Core/Math/Vector.h"
 
 // TODO: Reverse-Z 적용
 
