@@ -1,8 +1,7 @@
 ﻿#include "Renderer.h"
-#include "Component/CameraComponent.h"
-#include "Renderer/Material.h"
-#include "Renderer/Geometry.h"
-void URenderer::Create(HWND hWindow) {
+
+void URenderer::Create(HWND hWindow)
+{
 	CreateDeviceAndSwapChain(hWindow);
 
 	CreateFrameBuffer();
@@ -19,7 +18,8 @@ void URenderer::Create(HWND hWindow) {
 	ShowFlagMap[EEngineShowFlags::SF_EditorPrimitives] = true;
 }
 
-void URenderer::CreateDeviceAndSwapChain(HWND hWindow) {
+void URenderer::CreateDeviceAndSwapChain(HWND hWindow)
+{
 	D3D_FEATURE_LEVEL featurelevels[] = { D3D_FEATURE_LEVEL_11_0 };
 
 	DXGI_SWAP_CHAIN_DESC swapchaindesc = {};
@@ -72,8 +72,10 @@ void URenderer::CreateBlendState()
 	Device->CreateBlendState(&desc, BlendState.GetAddressOf());
 }
 
-void URenderer::ReleaseDeviceAndSwapChain() {
-	if (DeviceContext) {
+void URenderer::ReleaseDeviceAndSwapChain()
+{
+	if (DeviceContext)
+	{
 		DeviceContext->Flush();
 	}
 	SwapChain.Reset();
@@ -81,7 +83,8 @@ void URenderer::ReleaseDeviceAndSwapChain() {
 	Device.Reset();
 }
 
-void URenderer::CreateFrameBuffer() {
+void URenderer::CreateFrameBuffer()
+{
 	SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)FrameBuffer.GetAddressOf()); //백버퍼 가져오기
 
 	D3D11_RENDER_TARGET_VIEW_DESC framebufferRTVdesc = {};
@@ -106,14 +109,16 @@ void URenderer::CreateFrameBuffer() {
 	}
 }
 
-void URenderer::ReleaseFrameBuffer() {
+void URenderer::ReleaseFrameBuffer()
+{
 	DepthStencilView.Reset();
 	DepthStencilBuffer.Reset();
 	FrameBuffer.Reset();
 	FrameBufferRTV.Reset();
 }
 
-void URenderer::CreateRasterizerState() {
+void URenderer::CreateRasterizerState()
+{
 	D3D11_RASTERIZER_DESC rasterizerdesc = {};
 	rasterizerdesc.FillMode = D3D11_FILL_SOLID;
 
@@ -124,12 +129,14 @@ void URenderer::CreateRasterizerState() {
 	Device->CreateRasterizerState(&rasterizerdesc, RasterizerStateNoCull.GetAddressOf());
 }
 
-void URenderer::ReleaseRasterizerState() {
+void URenderer::ReleaseRasterizerState()
+{
 	RasterizerState.Reset();
 	RasterizerStateNoCull.Reset();
 }
 
-void URenderer::CreateDepthStencilState() {
+void URenderer::CreateDepthStencilState()
+{
 	D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
 	depthStencilDesc.DepthFunc = D3D11_COMPARISON_GREATER;
 	depthStencilDesc.StencilEnable = FALSE;
@@ -146,7 +153,8 @@ void URenderer::CreateDepthStencilState() {
 	Device->CreateDepthStencilState(&depthStencilDesc, DepthStencilStateNoDepth.GetAddressOf());
 }
 
-void URenderer::ReleaseDepthStencilState() {
+void URenderer::ReleaseDepthStencilState()
+{
 	DepthStencilState.Reset();
 	DepthStencilStateNoWrite.Reset();
 	DepthStencilStateNoDepth.Reset();
@@ -157,7 +165,8 @@ void URenderer::ReleaseBlendState()
 	BlendState.Reset();
 }
 
-void URenderer::Release() {
+void URenderer::Release()
+{
 	ReleaseDynamicVertexBuffer();
 	ReleaseBlendState();
 	ReleaseDepthStencilState();
@@ -180,7 +189,8 @@ void URenderer::OnResize(UINT Width, UINT Height)
 	ReleaseFrameBuffer();
 
 	HRESULT hr = SwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, 0);
-	if (FAILED(hr)) {
+	if (FAILED(hr))
+	{
 		return;
 	}
 
@@ -213,7 +223,8 @@ void URenderer::CreateDynamicVertexBuffer()
 void URenderer::UpdateDynamicVertexBuffer(FVertexSimple* Vertices, UINT VertexCount)
 {
 	const int32 MaxVertexCount = 20000;
-	if (VertexCount > MaxVertexCount) {
+	if (VertexCount > MaxVertexCount)
+	{
 		//ERROR HANDLE
 		return;
 	}
@@ -230,7 +241,8 @@ void URenderer::ReleaseDynamicVertexBuffer()
 	DynamicVertexBuffer.Reset();
 }
 
-void URenderer::Prepare() {
+void URenderer::Prepare()
+{
 	DeviceContext->ClearRenderTargetView(FrameBufferRTV.Get(), ClearColor);
 	DeviceContext->ClearDepthStencilView(DepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -242,18 +254,39 @@ void URenderer::Prepare() {
 	DeviceContext->OMSetBlendState(BlendState.Get(), blendFactor, 0xffffffff);
 }
 
-void URenderer::CreateConstantBuffer() {
+void URenderer::CreateConstantBuffer()
+{
 	FrameConstantBuffer.Create(Device.Get(), sizeof(FFrameConstant), 0);
 	FrameConstantBuffer.Bind(DeviceContext.Get());
 }
 
-void URenderer::ReleaseConstantBuffer() {
+void URenderer::ReleaseConstantBuffer()
+{
 	FrameConstantBuffer.Release();
 }
 
 void URenderer::SetRenderCamera(class UCameraComponent* camera)
 {
 	renderCamera = camera;
+}
+
+void URenderer::RenderNoDepthObjects(TArray<RenderObject*>& NoDepthRenderObjects)
+{
+	FObjectConstant ObjectConst;
+	if (!NoDepthRenderObjects.empty())
+	{
+		DeviceContext->ClearDepthStencilView(DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 0.0f, 0);
+
+		for (RenderObject* RenderObj : NoDepthRenderObjects)
+		{
+			ObjectConst.World = RenderObj->World;
+			ObjectConst.Color = RenderObj->Color;
+			ObjectConst.bIsSelected = RenderObj->bIsSelected ? 1 : 0;
+			RenderObj->Material->ConstantBuffer.Update(DeviceContext.Get(), &ObjectConst, sizeof(FObjectConstant));
+			RenderObj->Material->ConstantBuffer.Bind(DeviceContext.Get());
+			RenderObj->Render(DeviceContext.Get());
+		}
+	}
 }
 
 void URenderer::Render(const TArray<FLevel*>& Levels)
@@ -271,23 +304,26 @@ void URenderer::Render(const TArray<FLevel*>& Levels)
 	TArray<RenderObject*> NormalRenderObjects;
 	TArray<RenderObject*> NoDepthRenderObjects;
 	TMap<BatchKey, TArray<RenderObject*>> BatchGroups;
-	DistributeRenderObjects(BatchGroups, NormalRenderObjects, NoDepthRenderObjects);
+	DistributeRenderObjects(Levels, BatchGroups, NormalRenderObjects, NoDepthRenderObjects);
+	RenderNormalObjects(NormalRenderObjects);
+	RenderNoDepthObjects(NoDepthRenderObjects);
 
-	for (FLevel* Level : Levels)
-	{
-		if (Level == nullptr) continue;
-		for (RenderObject* RenderObj : Level->RenderObjects)
-		{
-			if (RenderObj->bDepthEnabled)
-			{
-				NormalRenderObjects.push_back(RenderObj);
-			}
-			else
-			{
-				NoDepthRenderObjects.push_back(RenderObj);
-			}
-		}
-	}
+	//for (FLevel* Level : Levels)
+	//{
+	//	if (Level == nullptr) continue;
+	//	for (RenderObject* RenderObj : Level->RenderObjects)
+	//	{
+	//		if (RenderObj->bDepthEnabled)
+	//		{
+	//			NormalRenderObjects.push_back(RenderObj);
+	//		}
+	//		else
+	//		{
+	//			NoDepthRenderObjects.push_back(RenderObj);
+	//		}
+	//	}
+	//}
+}
 
 void URenderer::RenderNormalObjects(TArray<RenderObject*>& NormalRenderObjects)
 {
@@ -306,27 +342,37 @@ void URenderer::RenderNormalObjects(TArray<RenderObject*>& NormalRenderObjects)
 	}
 }
 
-void URenderer::DistributeRenderObjects(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups, TArray<RenderObject*>& NormalRenderObjects, TArray<RenderObject*>& NoDepthRenderObjects)
+void URenderer::DistributeRenderObjects(
+	const TArray<FLevel*>& Levels,
+	TMap<BatchKey, TArray<RenderObject*>>& BatchGroups,
+	TArray<RenderObject*>& NormalRenderObjects,
+	TArray<RenderObject*>& NoDepthRenderObjects)
 {
-	auto renderObjects = &FLevel::GetInstance().RenderObjects;
-	for (RenderObject* RenderObj : *renderObjects)
+	for (FLevel* Level : Levels)
 	{
-		if (!ShowFlagMap[RenderObj->ShowFlag])
+		if (Level == nullptr)
+		{
 			continue;
-		if (RenderObj->bBatch)
-		{
-			BatchKey key{ RenderObj->GetBatchKey() };
-			BatchGroups[key].push_back(RenderObj);
 		}
-		else
+		for (RenderObject* RenderObj : Level->RenderObjects)
 		{
-			if (RenderObj->bDepthEnabled)
+			if (!ShowFlagMap[RenderObj->ShowFlag])
+				continue;
+			if (RenderObj->bBatch)
 			{
-				NormalRenderObjects.push_back(RenderObj);
+				BatchKey key{ RenderObj->GetBatchKey() };
+				BatchGroups[key].push_back(RenderObj);
 			}
 			else
 			{
-				NoDepthRenderObjects.push_back(RenderObj);
+				if (RenderObj->bDepthEnabled)
+				{
+					NormalRenderObjects.push_back(RenderObj);
+				}
+				else
+				{
+					NoDepthRenderObjects.push_back(RenderObj);
+				}
 			}
 		}
 	}

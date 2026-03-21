@@ -15,6 +15,8 @@
 #include "Component/SceneComponent.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
+#include "EngineCore/ResourceManager.h"
+#include "Component/GridComp.h"
 
 struct EditorControlPanel;
 struct EditorConsole;

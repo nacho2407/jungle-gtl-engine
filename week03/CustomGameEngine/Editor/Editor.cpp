@@ -95,7 +95,7 @@ void Editor::DrawConsole(ImGuiLayout& layout)
 
 void Editor::DrawControlPanel(ImGuiLayout& layout)
 {
-	ControlPanel->Draw(Camera, layout.ControlPanel);
+	ControlPanel->Draw(Camera, layout.ControlPanel, Grid);
 }
 
 void Editor::DrawPropertyPanel(ImGuiLayout& layout)

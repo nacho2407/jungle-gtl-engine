@@ -9,8 +9,11 @@
 #include "Math/Vector.h"
 #include "Math/Rotator.h"
 #include <string>
+#include "Renderer/Renderer.h"
 #include "ImGuiLayout.h"
 #include <filesystem>
+#include "Component/GridComp.h"
+#include "EngineCore/ResourceManager.h"
 
 class UCameraComponent;
 class Editor;
@@ -21,7 +24,7 @@ struct EditorControlPanel
 	EditorControlPanel(Editor* parent, URenderer* Renderer);
 	~EditorControlPanel();
 
-	void Draw(UCameraComponent* camera, ImGuiWindowLayout& layout);
+	void Draw(UCameraComponent* camera, ImGuiWindowLayout& layout, UGridComp* Grid);
 
 	Editor* editor;
 	URenderer* Renderer;

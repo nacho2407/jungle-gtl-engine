@@ -7,6 +7,9 @@
 #include <d3d11.h>
 #include "EngineCore/EngineTypes.h"
 #include "EngineCore/Color.h"
+#include "Component/CameraComponent.h"
+#include "Renderer/Material.h"
+#include "Renderer/Geometry.h"
 
 class URenderer {
 public:
@@ -76,7 +79,12 @@ public:
 	void SetRenderCamera(class UCameraComponent* camera);
 	void RenderNoDepthObjects(TArray<RenderObject*>& NoDepthRenderObjects);
 	void RenderNormalObjects(TArray<RenderObject*>& NormalRenderObjects);
-	void DistributeRenderObjects(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups, TArray<RenderObject*>& NormalRenderObjects, TArray<RenderObject*>& NoDepthRenderObjects);
+	void DistributeRenderObjects(
+		const TArray<FLevel*>& Levels,
+		TMap<BatchKey, TArray<RenderObject*>>& BatchGroups,
+		TArray<RenderObject*>& NormalRenderObjects,
+		TArray<RenderObject*>& NoDepthRenderObjects
+	);
 	void BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups);
 	void Render(const TArray<FLevel*>& Levels);
 	void RenderGrid(ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader);
