@@ -13,6 +13,10 @@ void FEditorMainPanel::Create(HWND InHWindow, FRenderer& InRenderer, FEditorEngi
 {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
+
+	ImGuiIO& IO = ImGui::GetIO();
+	IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
 	ImGui_ImplWin32_Init((void*)InHWindow);
 	ImGui_ImplDX11_Init(InRenderer.GetFD3DDevice().GetDevice(), InRenderer.GetFD3DDevice().GetDeviceContext());
 
@@ -34,6 +38,8 @@ void FEditorMainPanel::Render(float DeltaTime, FViewOutput& ViewOutput)
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
+
+	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
 	ConsoleWidget.Render(DeltaTime, ViewOutput);
 	ControlWidget.Render(DeltaTime, ViewOutput);
