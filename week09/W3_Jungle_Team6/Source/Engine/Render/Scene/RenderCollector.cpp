@@ -56,9 +56,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 {
 	FRenderCommand Cmd = {};
 	Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
-	Cmd.TransformConstants = FTransformConstants{ primitiveComponent->GetWorldMatrix(), Context.Camera->GetViewMatrix(), Context.Camera->GetProjectionMatrix() };
-
-	if (primitiveComponent->GetRenderCommand(Context.Camera->GetViewMatrix(), Context.Camera->GetProjectionMatrix(), Cmd))
+	Cmd.TransformConstants = FTransformConstants{ primitiveComponent->GetWorldMatrix() };
+	if (primitiveComponent->GetRenderCommand(Cmd))
 	{
 		ERenderPass selectedRenderPass = ERenderPass::Component;
 		switch (Cmd.Type)
@@ -90,7 +89,6 @@ void FRenderCollector::CollectFromEditor(const FRenderCollectorContext& Context,
 {
 
 	CollectGizmo(Context, RenderBus);
-	CollectGridAndAxis(Context, RenderBus);
 	CollectMouseOverlay(Context, RenderBus);
 }
 
@@ -104,9 +102,7 @@ void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, FRen
 		FRenderCommand Cmd = {};
 		Cmd.Type = ERenderCommandType::Gizmo;
 		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
-		Cmd.TransformConstants = FTransformConstants{ Gizmo->GetWorldMatrix(), 
-													RenderBus.GetView(), 
-													RenderBus.GetProj()};
+		Cmd.TransformConstants = FTransformConstants{ Gizmo->GetWorldMatrix()};
 		if (bInner)
 		{
 			Cmd.DepthStencilState = EDepthStencilState::None;
@@ -133,37 +129,6 @@ void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, FRen
 	{
 		RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(true));
 	}
-}
-
-void FRenderCollector::CollectGridAndAxis(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
-{
-	return;
-
-	if (Context.bGridVisible == false)
-	{
-		return;
-	}
-
-	FVector CamPos = Context.Camera->GetWorldLocation();
-	FTransformConstants StaticTransform = { FMatrix::Identity, 
-											RenderBus.GetView(),
-											RenderBus.GetProj()};
-
-	// Axis
-	FRenderCommand AxisCmd = {};
-	AxisCmd.Type = ERenderCommandType::Axis;
-	AxisCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_Axis);
-	AxisCmd.TransformConstants = StaticTransform;
-	AxisCmd.Constants.Editor.CameraPosition = FVector4{ CamPos.X, CamPos.Y, CamPos.Z, 0.0f };
-	AxisCmd.Constants.Editor.Flag = 0;
-	RenderBus.AddCommand(ERenderPass::Editor, AxisCmd);
-
-	// Grid
-	FRenderCommand GridCmd = AxisCmd; // ���� �ʵ� ����
-	GridCmd.Type = ERenderCommandType::Grid;
-	GridCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_Grid);
-	GridCmd.Constants.Editor.Flag = 1;
-	RenderBus.AddCommand(ERenderPass::Grid,GridCmd);
 }
 
 void FRenderCollector::CollectMouseOverlay(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
@@ -193,7 +158,7 @@ void FRenderCollector::CollectComponentOutline(UPrimitiveComponent* primitiveCom
 {
 	FRenderCommand OutlineCmd{};
 	OutlineCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
-	OutlineCmd.TransformConstants = FTransformConstants{ primitiveComponent->GetWorldMatrix(), Context.Camera->GetViewMatrix(), Context.Camera->GetProjectionMatrix() };
+	OutlineCmd.TransformConstants = FTransformConstants{ primitiveComponent->GetWorldMatrix() };
 	OutlineCmd.Type = ERenderCommandType::SelectionOutline;
 
 	OutlineCmd.Constants.Outline.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA

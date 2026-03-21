@@ -43,6 +43,7 @@ void FRenderer::Create(HWND hWindow)
 		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
 
 	Resources.PerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FTransformConstants));
+	Resources.FrameBuffer.Create(Device.GetDevice(), sizeof(FFrameConstants));
 	Resources.GizmoPerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FGizmoConstants));
 	Resources.OverlayConstantBuffer.Create(Device.GetDevice(), sizeof(FOverlayConstants));
 	Resources.EditorConstantBuffer.Create(Device.GetDevice(), sizeof(FEditorConstants));
@@ -63,6 +64,7 @@ void FRenderer::Release()
 	Resources.OutlineShader.Release();
 
 	Resources.PerObjectConstantBuffer.Release();
+	Resources.FrameBuffer.Release();
 	Resources.GizmoPerObjectConstantBuffer.Release();
 	Resources.OverlayConstantBuffer.Release();
 	Resources.EditorConstantBuffer.Release();
@@ -85,6 +87,7 @@ void FRenderer::BeginFrame()
 void FRenderer::Render(const FRenderBus& InRenderBus)
 {
 	ID3D11DeviceContext* context = Device.GetDeviceContext();
+	UpdateFrameBuffer(context, InRenderBus.GetView(), InRenderBus.GetProj());
 
 	RenderPasses(InRenderBus, context);
 	RenderEditorHelpers(InRenderBus, context);
@@ -138,13 +141,6 @@ void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceCo
 		Resources.EditorShader.Bind(DeviceContext);
 		break;
 
-	case ERenderPass::Grid:
-		Device.SetDepthStencilState(EDepthStencilState::DepthReadOnly);
-		Device.SetBlendState(EBlendState::AlphaBlend);
-		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		Resources.EditorShader.Bind(DeviceContext);
-		break;
-
 	case ERenderPass::Overlay:
 		Device.SetDepthStencilState(EDepthStencilState::None);
 		Device.SetBlendState(EBlendState::Opaque);
@@ -160,7 +156,7 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 	{
 		Resources.PerObjectConstantBuffer.Update(Context, &InCmd.TransformConstants, sizeof(FTransformConstants));
 		ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
-		Context->VSSetConstantBuffers(0, 1, &cb);
+		Context->VSSetConstantBuffers(1, 1, &cb);
 		//InDeviceContext->PSSetConstantBuffers(0, 1, &cb);
 
 	}
@@ -173,11 +169,11 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 
 		{
 			ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
-			Context->VSSetConstantBuffers(0, 1, &cb);
+			Context->VSSetConstantBuffers(1, 1, &cb);
 
 			cb = Resources.GizmoPerObjectConstantBuffer.GetBuffer();
-			Context->VSSetConstantBuffers(1, 1, &cb);
-			Context->PSSetConstantBuffers(1, 1, &cb);
+			Context->VSSetConstantBuffers(2, 1, &cb);
+			Context->PSSetConstantBuffers(2, 1, &cb);
 		}
 		break;
 
@@ -186,24 +182,22 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 
 		{
 			ID3D11Buffer* cb = Resources.OverlayConstantBuffer.GetBuffer();
-			Context->VSSetConstantBuffers(2, 1, &cb);
-			Context->PSSetConstantBuffers(2, 1, &cb);
+			Context->VSSetConstantBuffers(3, 1, &cb);
+			Context->PSSetConstantBuffers(3, 1, &cb);
 		}
 		break;
 
-	case ERenderCommandType::Axis:
-	case ERenderCommandType::Grid:
 	case ERenderCommandType::DebugBox:
 		Resources.EditorConstantBuffer.Update(Context, &InCmd.Constants.Editor, sizeof(FEditorConstants));
 
 		{
 			ID3D11Buffer* cb = Resources.EditorConstantBuffer.GetBuffer();
-			Context->VSSetConstantBuffers(3, 1, &cb);
-			Context->PSSetConstantBuffers(3, 1, &cb);
+			Context->VSSetConstantBuffers(4, 1, &cb);
+			Context->PSSetConstantBuffers(4, 1, &cb);
 
 			cb = Resources.PerObjectConstantBuffer.GetBuffer();
-			Context->VSSetConstantBuffers(0, 1, &cb);
-			Context->PSSetConstantBuffers(0, 1, &cb);
+			Context->VSSetConstantBuffers(1, 1, &cb);
+			Context->PSSetConstantBuffers(1, 1, &cb);
 		}
 		break;
 
@@ -211,12 +205,11 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 		Resources.OutlineConstantBuffer.Update(Context, &InCmd.Constants.Editor, sizeof(FOutlineConstants));
 
 		ID3D11Buffer* cb = Resources.OutlineConstantBuffer.GetBuffer();
-		Context->VSSetConstantBuffers(4, 1, &cb);
-		Context->PSSetConstantBuffers(4, 1, &cb);
+		Context->VSSetConstantBuffers(5, 1, &cb);
+		Context->PSSetConstantBuffers(5, 1, &cb);
 
 		cb = Resources.PerObjectConstantBuffer.GetBuffer();
-		Context->VSSetConstantBuffers(0, 1, &cb);
-		//InDeviceContext->PSSetConstantBuffers(0, 1, &cb);
+		Context->VSSetConstantBuffers(1, 1, &cb);
 		break;
 
 	}
@@ -230,7 +223,6 @@ EDepthStencilState FRenderer::GetDefaultDepthForPass(ERenderPass Pass) const
 	case ERenderPass::Outline:   return EDepthStencilState::StencilOutline;
 	case ERenderPass::DepthLess: return EDepthStencilState::Default;
 	case ERenderPass::Editor:    return EDepthStencilState::Default;
-	case ERenderPass::Grid:      return EDepthStencilState::DepthReadOnly;
 	case ERenderPass::Overlay:   return EDepthStencilState::None;
 	default:                     return EDepthStencilState::Default;
 	}
@@ -240,7 +232,6 @@ EBlendState FRenderer::GetDefaultBlendForPass(ERenderPass Pass) const
 {
 	switch (Pass)
 	{
-	case ERenderPass::Grid:
 	case ERenderPass::DepthLess: return EBlendState::AlphaBlend;
 	default:                     return EBlendState::Opaque;
 	}
@@ -300,8 +291,6 @@ void FRenderer::RenderPasses(const FRenderBus& RenderBus, ID3D11DeviceContext* C
 
 		for (const auto& Cmd : Commands)
 		{
-			// 메쉬가 없는 라인 타입은 여기서 거름
-
 			EDepthStencilState TargetDepth = (Cmd.DepthStencilState != EDepthStencilState::Default)
 				? Cmd.DepthStencilState
 				: GetDefaultDepthForPass(CurPass);
@@ -321,7 +310,6 @@ void FRenderer::RenderPasses(const FRenderBus& RenderBus, ID3D11DeviceContext* C
 
 void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceContext* Context)
 {
-	// 1. 버스에서 라인 커맨드들만 골라 담기 (이미 월드 좌표)
 	const auto& EditorCmds = RenderBus.GetCommands(ERenderPass::Editor);
 	for (const auto& Cmd : EditorCmds)
 	{
@@ -337,14 +325,26 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 	Resources.EditorShader.Bind(Context);
 
 	ID3D11Buffer* cb = Resources.EditorConstantBuffer.GetBuffer();
-	Context->VSSetConstantBuffers(3, 1, &cb);
-	Context->PSSetConstantBuffers(3, 1, &cb);
+	Context->VSSetConstantBuffers(4, 1, &cb);
+	Context->PSSetConstantBuffers(4, 1, &cb);
 
 	cb = Resources.PerObjectConstantBuffer.GetBuffer();
-	Context->VSSetConstantBuffers(0, 1, &cb);
-	Context->PSSetConstantBuffers(0, 1, &cb);
+	Context->VSSetConstantBuffers(1, 1, &cb);
+	Context->PSSetConstantBuffers(1, 1, &cb);
 
 	LineBatcher.AddWorldHelpers(FEditorSettings::Get());
 
 	LineBatcher.Flush(Context);
+}
+
+void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix)
+{
+	FFrameConstants frameConstantData;
+	frameConstantData.View = ViewMatrix;
+	frameConstantData.Projection = ProjMatrix;
+
+	Resources.FrameBuffer.Update(Context, &frameConstantData, sizeof(FFrameConstants));
+	ID3D11Buffer* b0 = Resources.FrameBuffer.GetBuffer();
+	Context->VSSetConstantBuffers(0, 1, &b0);
+	Context->PSSetConstantBuffers(0, 1, &b0);
 }

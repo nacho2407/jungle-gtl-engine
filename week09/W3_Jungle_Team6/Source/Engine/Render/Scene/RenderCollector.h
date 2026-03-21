@@ -22,7 +22,6 @@ private:
 	static void CollectFromComponent(UPrimitiveComponent* primitiveComponent, const FRenderCollectorContext& Context, FRenderBus& RenderBus);
 	static void CollectFromEditor(const FRenderCollectorContext& Context, FRenderBus& RenderBus);
 	static void CollectGizmo(const FRenderCollectorContext& Context,  FRenderBus& RenderBus);
-	static void CollectGridAndAxis(const FRenderCollectorContext& Context, FRenderBus& RenderBus);
 	static void CollectMouseOverlay(const FRenderCollectorContext& Context, FRenderBus& RenderBus);
 	static void CollectComponentOutline(UPrimitiveComponent* primitiveComponent, const FRenderCollectorContext& Context, FRenderBus& RenderBus);
 	static void CollectAABBCommand(UPrimitiveComponent* PrimitiveComponent, FRenderBus& RenderBus);
