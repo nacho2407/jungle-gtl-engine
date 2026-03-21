@@ -1,4 +1,5 @@
 #include "GameFramework/World.h"
+#include "Component/CameraComponent.h"
 
 DEFINE_CLASS(UWorld, UObject)
 REGISTER_FACTORY(UWorld)
