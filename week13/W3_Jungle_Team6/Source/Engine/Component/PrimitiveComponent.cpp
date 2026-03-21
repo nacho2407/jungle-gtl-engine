@@ -149,34 +149,34 @@ UCubeComponent::UCubeComponent()
 	MeshData = &FMeshManager::GetCube();
 }
 
-bool UCubeComponent::GetRenderCommand(const FMatrix& viewMatrix, const FMatrix& projMatrix, FRenderCommand& OutCommand) {
+bool UCubeComponent::GetRenderCommand(FRenderCommand& OutCommand) {
 	if (!MeshData || !bIsVisible) {
 		return false;
 	}
 
-	return UPrimitiveComponent::GetRenderCommand(viewMatrix, projMatrix, OutCommand);
+	return UPrimitiveComponent::GetRenderCommand(OutCommand);
 }
 
 USphereComponent::USphereComponent()
 {
 	MeshData = &FMeshManager::GetSphere();
 }
-bool USphereComponent::GetRenderCommand(const FMatrix& viewMatrix, const FMatrix& projMatrix, FRenderCommand& OutCommand) {
+bool USphereComponent::GetRenderCommand(FRenderCommand& OutCommand) {
 	if (!MeshData || !bIsVisible) {
 		return false;
 	}
 
-	return UPrimitiveComponent::GetRenderCommand(viewMatrix, projMatrix, OutCommand);
+	return UPrimitiveComponent::GetRenderCommand(OutCommand);
 }
 
 UPlaneComponent::UPlaneComponent()
 {
 	MeshData = &FMeshManager::GetPlane();
 }
-bool UPlaneComponent::GetRenderCommand(const FMatrix& viewMatrix, const FMatrix& projMatrix, FRenderCommand& OutCommand) {
+bool UPlaneComponent::GetRenderCommand(FRenderCommand& OutCommand) {
 	if (!MeshData || !bIsVisible) {
 		return false;
 	}
 
-	return UPrimitiveComponent::GetRenderCommand(viewMatrix, projMatrix, OutCommand);
+	return UPrimitiveComponent::GetRenderCommand(OutCommand);
 }
