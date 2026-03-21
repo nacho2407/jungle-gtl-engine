@@ -7,7 +7,7 @@ TArray<UObject*> GUObjectArray;
 UObject::UObject()
 {
 	UUID = UEngineStatics::GenUUID();
-	InternalIndex = GUObjectArray.size();
+	InternalIndex = static_cast<uint32>(GUObjectArray.size());
 	GUObjectArray.push_back(this);
 }
 
@@ -21,7 +21,7 @@ UObject::~UObject()
 
 void* UObject::operator new(size_t Size)
 {
-	UEngineStatics::TotalAllocatedBytes += Size;
+	UEngineStatics::TotalAllocatedBytes += static_cast<uint32>(Size);
 	UEngineStatics::TotalAllocationCount++;
 
 	void* Pointer = ::operator new(Size);
@@ -30,10 +30,10 @@ void* UObject::operator new(size_t Size)
 
 void UObject::operator delete(void* Pointer, size_t Size)
 {
-	UEngineStatics::TotalAllocatedBytes -= Size;
+	UEngineStatics::TotalAllocatedBytes -= static_cast<uint32>(Size);
 	UEngineStatics::TotalAllocationCount--;
 
 	::operator delete(Pointer, Size);
 }
 
-REGISTER_CLASS(UObject);
+REGISTER_CLASS(, UObject)
