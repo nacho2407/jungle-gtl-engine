@@ -379,13 +379,13 @@ void UGizmoComponent::SetWorldSpace(bool bWorldSpace)
 	UpdateGizmoTransform();
 }
 
-bool UGizmoComponent::GetRenderCommand(const FMatrix& viewMatrix, const FMatrix& projMatrix, FRenderCommand& OutCommand)
+bool UGizmoComponent::GetRenderCommand(FRenderCommand& OutCommand)
 {
 	if (!MeshData || !bIsVisible) {
 		return false;
 	}
 
-	return UPrimitiveComponent::GetRenderCommand(viewMatrix, projMatrix, OutCommand);
+	return UPrimitiveComponent::GetRenderCommand(OutCommand);
 
 }
 
