@@ -1,5 +1,6 @@
 #include "Engine/Runtime/Engine.h"
 
+#include "Core/Paths.h"
 #include "Engine/Core/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Core/ResourceManager.h"
