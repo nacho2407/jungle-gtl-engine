@@ -11,6 +11,8 @@
 
 #include "Render/Mesh/MeshManager.h"
 
+#include "EditorSettings.h"
+
 void FRenderer::Create(HWND hWindow)
 {
 	Device.Create(hWindow);
@@ -342,8 +344,7 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 	Context->VSSetConstantBuffers(0, 1, &cb);
 	Context->PSSetConstantBuffers(0, 1, &cb);
 
-	LineBatcher.AddWorldGrid(100.0f, 20);
-
+	LineBatcher.AddWorldHelpers(FEditorSettings::Get());
 
 	LineBatcher.Flush(Context);
 }
