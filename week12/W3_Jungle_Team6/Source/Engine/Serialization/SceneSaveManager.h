@@ -1,17 +1,17 @@
 ﻿#pragma once
 
-#include <iostream>
-#include <fstream>
+#include <string>
 #include <filesystem>
-#include <chrono>
-#include "GameFramework/World.h"
-#include "Component/CameraComponent.h"
-#include "Component/PrimitiveComponent.h"
-#include "Object/Object.h"
-#include "Object/ObjectFactory.h"
+#include "Core/CoreTypes.h"
 #include "Core/Paths.h"
 
-// Forward decl.
+// Forward declarations
+class UObject;
+class UWorld;
+class USceneComponent;
+class UCameraComponent;
+class UPrimitiveComponent;
+
 namespace json {
 	class JSON;
 }

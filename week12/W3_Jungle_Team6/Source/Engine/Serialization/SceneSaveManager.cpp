@@ -1,5 +1,15 @@
 ﻿#include "SceneSaveManager.h"
+
+#include <iostream>
+#include <fstream>
+#include <chrono>
+
 #include "SimpleJSON/json.hpp"
+#include "GameFramework/World.h"
+#include "Component/CameraComponent.h"
+#include "Component/PrimitiveComponent.h"
+#include "Object/Object.h"
+#include "Object/ObjectFactory.h"
 
 void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, TArray<UWorld*>& Scene) {
     using namespace json;

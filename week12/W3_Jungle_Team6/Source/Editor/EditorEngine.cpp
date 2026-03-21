@@ -1,6 +1,11 @@
 #include "Editor/EditorEngine.h"
 
 #include "Engine/Runtime/WindowsWindow.h"
+#include "Engine/Serialization/SceneSaveManager.h"
+#include "Component/GizmoComponent.h"
+#include "Component/CameraComponent.h"
+#include "Component/PrimitiveComponent.h"
+#include "GameFramework/World.h"
 #include "Render/Scene/RenderCollector.h"
 #include "Render/Scene/RenderCollectorContext.h"
 
