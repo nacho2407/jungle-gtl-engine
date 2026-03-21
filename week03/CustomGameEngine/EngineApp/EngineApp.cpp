@@ -134,7 +134,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 
 	//Init World & Scene
 	GetWorld().InjectRenderer(Renderer);
-	GetWorld().GetSceneManager()->NewScene();
+	LastActiveScene = GetWorld().GetSceneManager()->NewScene();
 
 	// Init Timer
 	TimerManager::GetInstance().CreateGlobalTimer();
@@ -177,6 +177,14 @@ void EngineApp::Run()
 				bIsExit = true;
 				break;
 			}
+		}
+
+		// Check for scene change
+		UScene* currentActiveScene = GetWorld().GetSceneManager()->GetActiveScene();
+		if (currentActiveScene != LastActiveScene)
+		{
+			EditorInst->SelectComponent(nullptr);
+			LastActiveScene = currentActiveScene;
 		}
 
 		TimerManager::GetInstance().Tick();
