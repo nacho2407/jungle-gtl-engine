@@ -16,9 +16,10 @@ private:
 	TArray<FRenderCommand> PassQueues[(uint32)ERenderPass::MAX];
 
 	//구현이 급해서 잠깐 두겠습니다..ㅠ
-	FMatrix mView;
-	FMatrix mProj;
-	FMatrix mViewProj;
+	FMatrix View;
+	FMatrix Proj;
+	FVector CameraRight;
+	FVector CameraUp;
 
 public:
 	void Clear();
@@ -27,14 +28,16 @@ public:
 
 
 	// Getter,Setter
-	void SetViewProjection(const FMatrix& InView, const FMatrix& InProj) {
-		mView = InView;
-		mProj = InProj;
-		mViewProj = InView * InProj;
+	void SetViewProjection(const FMatrix& InView, const FMatrix& InProj, const FVector& CameraRightVector, const FVector& CameraUpVector) {
+		View = InView;
+		Proj = InProj;
+		CameraRight = CameraRightVector;
+		CameraUp = CameraUpVector;
 	}
 
-	const FMatrix& GetViewProj() const { return mViewProj; }
-	const FMatrix& GetView() const { return mView; }
-	const FMatrix& GetProj() const { return mProj; }
+	const FMatrix& GetView() const { return View; }
+	const FMatrix& GetProj() const { return Proj; }
+	const FVector& GetCameraUp() const { return CameraUp; }
+	const FVector& GetCameraRight() const { return CameraRight; }
 };
 
