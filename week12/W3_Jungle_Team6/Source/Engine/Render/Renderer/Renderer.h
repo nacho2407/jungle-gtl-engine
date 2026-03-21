@@ -57,7 +57,7 @@ public:
 	void EndFrame();
 
 	void RenderPasses(const FRenderBus& RenderBus, ID3D11DeviceContext* Context);
-	void RenderEditorHelpers(const FRenderBus& Bus, ID3D11DeviceContext* context);
+	void RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceContext* Context);
 
 	FD3DDevice& GetFD3DDevice() { return Device; }
 	FRenderResources& GetResources() { return Resources; }
