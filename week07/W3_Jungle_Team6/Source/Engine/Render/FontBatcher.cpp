@@ -2,8 +2,7 @@
 
 // DirectXTK 라이브러리
 #pragma comment(lib, "DirectXTK.lib")
-#include "DDSTextureLoader.h"
-#include "Editor/Core/EditorConsole.h"
+#include "ThirdParty/DirectXTK/DDSTextureLoader.h"
 #include "Core/CoreTypes.h"
 
 void FFontBatcher::Create(ID3D11Device* Device)
