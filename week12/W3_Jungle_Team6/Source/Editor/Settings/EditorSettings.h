@@ -17,7 +17,7 @@ struct FEditorSettings
 	int32 UpdateRate = 60;
 
 	// File paths
-	FString DefaultSavePath = "Saves/";
+	FString DefaultSavePath = "Asset/Scene/";
 
 	void SaveToFile(const FString& Path) const;
 	void LoadFromFile(const FString& Path);
