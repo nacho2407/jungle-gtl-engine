@@ -11,8 +11,8 @@ public:
 	~UGridComp() {}
 	void Update(float deltaTime) override;
 	RenderObject* CreateRenderObject() override;
-	float HalfExtent = 10.f;
-	float CellSize = 1.f;
+	float HalfExtent = 3000.f;
+	float CellSize = 10.f;
 private:
 
 };

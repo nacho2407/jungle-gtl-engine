@@ -27,7 +27,7 @@ public:
 
 	void SetRenderer(URenderer* renderer) { Renderer = renderer; }
 	void SetCamera(UCameraComponent* camera) { Camera = camera; }
-	void SetGrid(UGridComp* grid) { Grid = grid; }
+	void SetGrid(UGridComp* grid);
 	void SelectComponent(USceneComponent* component);
 	USceneComponent* GetSelectedComponent() const { return SelectedComponent; }
 

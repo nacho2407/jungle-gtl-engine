@@ -113,7 +113,7 @@ void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 	ImGui::Text("Grid Settings");
 
 	bool bChanged = false;
-	if (ImGui::DragFloat("Half Extent", &Grid->HalfExtent, 1.0f, 1.0f, 1000.0f)) bChanged = true;
+	//if (ImGui::DragFloat("Half Extent", &Grid->HalfExtent, 1.0f, 1.0f, 1000.0f)) bChanged = true;
 	if (ImGui::DragFloat("Cell Size", &Grid->CellSize, 0.1f, 0.1f, 10.0f)) bChanged = true;
 	if (bChanged)
 	{

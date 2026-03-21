@@ -174,10 +174,6 @@ void EngineApp::Run()
 		GetWorld().OnBeforeRender();
 
 		Renderer->Prepare();
-
-		//ResourceManager* RM = ResourceManager::GetInstance();
-		//Renderer->RenderGrid(RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").VertexShader.Get(), RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").PixelShader.Get());
-
 		Renderer->Render();
 		EditorInst->DrawUI();
 

@@ -204,26 +204,29 @@ void ResourceManager::AddAxisMesh(ID3D11Device* Device)
 {
 	FVertexSimple AxisVertices[] =
 	{
-		//X축 (Red): (0,0,0) -> (1,0,0)
+		//X축 (Red): (0,0,0) -> (Inf,0,0)
 	   { 0.0f, 0.0f, 0.0f, 1,0,0,1 },
 	   { 10000000.0f, 0.0f, 0.0f, 1,0,0,1 },
 
-	   // Y축 (Green): (0,0,0) -> (0,1,0)
-	   { 0.0f, 0.0f, -10000.0f, 0.2f,0.2f,1.0f,1 },
-	   { 0.0f, 0.0f, 10000.0f, 0.2f,0.2f,1.0f,1 },
+	   // Y축 (Green): (0,0,0) -> (0,Inf,0)
+	   { 0.0f, 0.0f, 0.0f, 0,1,0,1 },
+	   { 0.0f, 10000000.0f, 0.0f, 0,1,0,1 },
 
-	   // Z축 (Blue): (0,0,0) -> (0,0,1)
+	   // Z축 (Blue): (0,0,0) -> (0,0,Inf)
 	   { 0.0f, 0.0f, 0.0f, 0,0,1,1 },
 	   { 0.0f, 0.0f, 10000000.0f, 0,0,1,1 }
 	};
 
 	int Cnt = sizeof(AxisVertices) / sizeof(FVertexSimple);
 	TArray<FVector> Vertices(Cnt);
+	TArray<FColor> Colors(Cnt);
 	for (int i = 0; i < Cnt; ++i)
 	{
 		Vertices[i] = FVector(AxisVertices[i].x, AxisVertices[i].y, AxisVertices[i].z);
+		Colors[i] = FColor(AxisVertices[i].r, AxisVertices[i].g, AxisVertices[i].b, AxisVertices[i].a);
 	}
-	CreateStaticGeometry("Axis", AxisVertices, sizeof(AxisVertices), Device, 0, Vertices);
+	FGeometry* Geo = CreateStaticGeometry("Axis", AxisVertices, sizeof(AxisVertices), Device, 0, Vertices);
+	Geo->Colors = Colors;
 }
 
 TArray<FVertexSimple> ResourceManager::CreateCubeVertices()

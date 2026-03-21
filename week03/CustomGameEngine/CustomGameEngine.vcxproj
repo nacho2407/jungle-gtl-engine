@@ -159,6 +159,8 @@
     <ClInclude Include="EngineCore\Color.h" />
     <ClInclude Include="EngineCore\Name.h" />
     <ClInclude Include="Renderer\Constants.h" />
+    <ClInclude Include="Renderer\GeneralGeometry.h" />
+    <ClInclude Include="Renderer\UV.h" />
     <ClInclude Include="SceneManager.h" />
     <ClInclude Include="ThirdParty\fifo_map.hpp" />
     <ClInclude Include="Math\Matrix.h" />

@@ -346,9 +346,13 @@ void URenderer::BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups)
 		FConstantBuffer* ConstBuffer = &key.Material->ConstantBuffer;
 		for (RenderObject* RenderObj : objects)
 		{
-			for (FVector& vec : RenderObj->Geometry->Vertices)
+			const bool bHasVertexColors = !RenderObj->Geometry->Colors.empty();
+			for (size_t i = 0; i < RenderObj->Geometry->Vertices.size(); ++i)
 			{
-				Vertices.push_back({ vec.x, vec.y, vec.z, RenderObj->Color.r, RenderObj->Color.g, RenderObj->Color.b, RenderObj->Color.a });
+				const FVector& localVec = RenderObj->Geometry->Vertices[i];
+				FVector worldVec = RenderObj->World.TransformPoint(localVec);
+				const FColor& col = bHasVertexColors ? RenderObj->Geometry->Colors[i] : RenderObj->Color;
+				Vertices.push_back({ worldVec.x, worldVec.y, worldVec.z, col.r, col.g, col.b, col.a });
 			}
 		}
 		ObjectConst.World = FMatrix::IdentityMatrix();

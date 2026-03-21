@@ -11,6 +11,8 @@
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
+#include "EngineCore/ResourceManager.h"
+#include "Component/GridComp.h"
 
 Editor::Editor()
 {
@@ -62,6 +64,12 @@ void Editor::Finalize()
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
+}
+
+void Editor::SetGrid(UGridComp* grid)
+{
+	Grid = grid;
+	ResourceManager::GetInstance()->UpdateGridMesh(Grid->HalfExtent, Grid->CellSize, 0.f);
 }
 
 void Editor::SelectComponent(USceneComponent* component)

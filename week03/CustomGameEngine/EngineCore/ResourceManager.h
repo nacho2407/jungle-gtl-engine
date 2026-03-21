@@ -27,7 +27,7 @@ public:
 	~ResourceManager() {};
 
 	template<typename T>
-	void CreateStaticGeometry(FString ResourceName, T* vertices, UINT byteWidth, ID3D11Device* Device, int offset, const TArray<FVector>& Verticies)
+	FGeometry* CreateStaticGeometry(FString ResourceName, T* vertices, UINT byteWidth, ID3D11Device* Device, int offset, const TArray<FVector>& Verticies)
 	{
 		D3D11_BUFFER_DESC vertexbufferdesc = {};
 		vertexbufferdesc.ByteWidth = byteWidth;
@@ -37,7 +37,7 @@ public:
 		auto iter = GeometryMap.find(ResourceName);
 		if (iter != GeometryMap.end())
 		{
-			return;
+			return nullptr;
 		}
 		FGeometry& Geometry = GeometryMap[ResourceName];
 
@@ -49,6 +49,7 @@ public:
 		Geometry.VertexCount = byteWidth / sizeof(T);
 		Geometry.Offset = offset;
 		Geometry.Vertices = Verticies;
+		return &Geometry;
 	}
 	void CreateNoBufferGeometry(FString ResourceName, const TArray<FVector>& Verticies);
 

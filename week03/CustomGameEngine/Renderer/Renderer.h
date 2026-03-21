@@ -79,7 +79,6 @@ public:
 	void RenderNormalObjects(TArray<RenderObject*>& NormalRenderObjects);
 	void DistributeRenderObjects(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups, TArray<RenderObject*>& NormalRenderObjects, TArray<RenderObject*>& NoDepthRenderObjects);
 	void BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups);
-	//void RenderGrid(ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader);
 	FLevel drawLevel;
 
 private:

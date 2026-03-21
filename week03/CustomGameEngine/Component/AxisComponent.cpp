@@ -27,7 +27,8 @@ RenderObject* UAxisComp::CreateRenderObject()
 
 	RenderObj->PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 	Pickable = false;
-	RenderObj->bBatch = true;
+	RenderObj->bBatch = false;
+	RenderObj->bDepthEnabled = false;
 
 	return RenderObj;
 }
