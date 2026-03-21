@@ -9,6 +9,9 @@ namespace Engine::ApplicationCore
     class ENGINE_API FInputSystem
     {
       public:
+        constexpr FInputSystem() = default;
+        ~FInputSystem() = default;
+
         void BeginFrame();
         void ProcessWin32Message(UINT Msg, WPARAM WParam, LPARAM LParam);
 

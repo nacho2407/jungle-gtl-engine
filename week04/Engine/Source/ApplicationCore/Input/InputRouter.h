@@ -9,6 +9,9 @@ namespace Engine::ApplicationCore
     class ENGINE_API FInputRouter
     {
       public:
+        constexpr FInputRouter() = default;
+        ~FInputRouter() = default;
+
         void AddContext(IInputContext* Context);
         bool RouteEvent(const FInputEvent& Event, const FInputState& State);
         void TickContexts(const FInputState& State);
