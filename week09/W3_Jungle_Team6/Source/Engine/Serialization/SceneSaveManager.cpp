@@ -60,8 +60,8 @@ json::JSON FSceneSaveManager::SerializeObject(UObject* Object) {
 
     // Base UObject fields
     j["ClassName"] = Object->GetTypeInfo()->name;
-    j["UUID"] = Object->UUID;
-    j["InternalIndex"] = Object->InternalIndex;
+    j["UUID"] = Object->GetUUID();
+    j["InternalIndex"] = Object->GetInternalIndex();
 
     if (Object->IsA<USceneComponent>()) {
         USceneComponent* Comp = Object->Cast<USceneComponent>();
@@ -74,7 +74,7 @@ json::JSON FSceneSaveManager::SerializeObject(UObject* Object) {
 
         // Parent in the component hierarchy
         j["ParentUUID"] = Comp->GetParent()
-            ? (int)Comp->GetParent()->UUID
+            ? (int)Comp->GetParent()->GetUUID()
             : 0;
     }
 
@@ -82,12 +82,12 @@ json::JSON FSceneSaveManager::SerializeObject(UObject* Object) {
         AActor* Actor = Object->Cast<AActor>();
         j["bVisible"] = Actor->IsVisible();
         j["RootComponentUUID"] = Actor->GetRootComponent()
-            ? (int)Actor->GetRootComponent()->UUID
+            ? (int)Actor->GetRootComponent()->GetUUID()
             : 0;
 
         // Guard against null world
         j["OwningWorldUUID"] = Actor->GetWorld()
-            ? (int)Actor->GetWorld()->UUID
+            ? (int)Actor->GetWorld()->GetUUID()
             : 0;
     }
 
@@ -134,13 +134,13 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, TArray<UWorld*
             continue;
         }
 
-        // Give essenmtial information
-        Obj->InternalIndex = JSONObject["InternalIndex"].ToInt();
-        uint32 UUID = JSONObject["UUID"].ToInt(); MaxUUID = MaxUUID > UUID ? MaxUUID : UUID;
-        Obj->UUID = UUID;
+        // Give essential information
+        Obj->SetInternalIndex(JSONObject["InternalIndex"].ToInt());
+        uint32 LoadedUUID = JSONObject["UUID"].ToInt(); MaxUUID = MaxUUID > LoadedUUID ? MaxUUID : LoadedUUID;
+        Obj->SetUUID(LoadedUUID);
 
         // Register Object to UUID Map
-        uuidObjectMap[UUID] = Obj;
+        uuidObjectMap[LoadedUUID] = Obj;
 
         // Perform necessary transformations for USceneComponents
         if (Obj->IsA<USceneComponent>()) {
@@ -152,7 +152,7 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, TArray<UWorld*
         }
 
         if (Obj->IsA<UWorld>()) {
-            Worlds.push_back(Obj->UUID);
+            Worlds.push_back(Obj->GetUUID());
         }
     }
 
