@@ -7,7 +7,7 @@
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
-void FEditorControlWidget::Initialize(FEditorEngine* InEditorEngine)
+void FEditorControlWidget::Initialize(UEditorEngine* InEditorEngine)
 {
 	FEditorWidget::Initialize(InEditorEngine);
 	SelectedPrimitiveType = static_cast<int32>(EPrimitiveType::EPT_Cube);
