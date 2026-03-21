@@ -5,6 +5,8 @@
 #include "ImGui/imgui.h"
 #include "Serialization/SceneSaveManager.h"
 
+#include <filesystem>
+
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
 void FEditorSceneWidget::Initialize(FEditorEngine* InEditorEngine)
@@ -91,9 +93,9 @@ void FEditorSceneWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 
 		if (ImGui::Button("Load Scene") && SelectedSceneIndex >= 0)
 		{
-			FString FilePath = FString(FSceneSaveManager::SceneDirectory)
-				+ SceneFiles[SelectedSceneIndex]
-				+ FSceneSaveManager::SceneExtension;
+			std::filesystem::path ScenePath = std::filesystem::path(FSceneSaveManager::GetSceneDirectory())
+				/ (FPaths::ToWide(SceneFiles[SelectedSceneIndex]) + FSceneSaveManager::SceneExtension);
+			FString FilePath = FPaths::ToUtf8(ScenePath.wstring());
 
 			EditorEngine->GetGizmo()->SetVisibility(false);
 			EditorEngine->ClearScene();
@@ -111,7 +113,7 @@ void FEditorSceneWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 	}
 	else
 	{
-		ImGui::Text("No scene files found in %s", FSceneSaveManager::SceneDirectory);
+		ImGui::Text("No scene files found in %s", FPaths::ToUtf8(FSceneSaveManager::GetSceneDirectory()).c_str());
 	}
 
 	SEPARATOR();

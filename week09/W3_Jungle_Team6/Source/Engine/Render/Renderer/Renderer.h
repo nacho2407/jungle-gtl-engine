@@ -18,9 +18,6 @@ private:
 	FD3DDevice Device;
 	FRenderResources Resources;
 
-	//	File Path
-	const wchar_t * ShaderFilePath  = L"Shaders/ShaderW0.hlsl";
-
 	//	Primitive and Gizmo Input Layout
 	D3D11_INPUT_ELEMENT_DESC PrimitiveInputLayout[2] =
 	{

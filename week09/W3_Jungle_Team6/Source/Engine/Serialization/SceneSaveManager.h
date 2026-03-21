@@ -9,6 +9,7 @@
 #include "Component/PrimitiveComponent.h"
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
+#include "Core/Paths.h"
 
 // Forward decl.
 namespace json {
@@ -19,8 +20,10 @@ using std::string;
 
 class FSceneSaveManager {
 public:
-	static constexpr const char* SceneDirectory = "Asset/Scene/";
-	static constexpr const char* SceneExtension = ".Scene";
+	static constexpr const wchar_t* SceneExtension = L".Scene";
+
+	// FPaths 기반 Scene 디렉터리 (wstring)
+	static std::wstring GetSceneDirectory() { return FPaths::SceneDir(); }
 
 	// Creates a .json save file at the given destination
 	static void SaveSceneAsJSON(const string& SceneName, TArray<UWorld*>& Scene);
