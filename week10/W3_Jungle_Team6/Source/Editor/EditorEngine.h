@@ -18,7 +18,7 @@ public:
 	~UEditorEngine() override = default;
 
 	// Lifecycle overrides
-	void Init(HWND InHWindow) override;
+	void Init(FWindowsWindow* InWindow) override;
 	void Shutdown() override;
 	void Tick(float DeltaTime) override;
 	void Render(float DeltaTime) override;
