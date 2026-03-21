@@ -310,12 +310,10 @@ FMatrix FMatrix::GetCancelRotationMatrix(const FMatrix& InMatrix)
 {
 	FMatrix ret = FMatrix::Identity;
 
-	// Row 0
 	ret.M[0][0] = InMatrix.M[0][0];
 	ret.M[0][1] = InMatrix.M[1][0];
 	ret.M[0][2] = InMatrix.M[2][0];
 
-	// Row 1
 	ret.M[1][0] = InMatrix.M[0][1];
 	ret.M[1][1] = InMatrix.M[1][1];
 	ret.M[1][2] = InMatrix.M[2][1];
