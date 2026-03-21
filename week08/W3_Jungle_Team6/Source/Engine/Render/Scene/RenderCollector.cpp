@@ -1,7 +1,7 @@
 ﻿#include "RenderCollector.h"
 
 #include "GameFramework/World.h"
-#include "Component/Camera.h"
+#include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 
 FMeshBufferManager FRenderCollector::MeshBufferManager;
@@ -47,8 +47,7 @@ void FRenderCollector::CollectFromActor(AActor* Actor, const FRenderCollectorCon
 	{
 		if (!Comp) continue;
 		if (!Comp->IsA<UPrimitiveComponent>()) continue;
-
-		UPrimitiveComponent* Primitive = dynamic_cast<UPrimitiveComponent*>(Comp);
+		UPrimitiveComponent* Primitive = static_cast<UPrimitiveComponent*>(Comp);
 		CollectFromComponent(Primitive, Context, RenderBus);
 
 	}

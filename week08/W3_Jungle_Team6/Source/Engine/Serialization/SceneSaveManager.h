@@ -5,7 +5,7 @@
 #include <filesystem>
 #include <chrono>
 #include "GameFramework/World.h"
-#include "Component/Camera.h"
+#include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
