@@ -1,64 +1,102 @@
 #pragma once
 
-#include "Containers/Array.h"
-#include "D3D11/D3D11Common.h"
-#include "HAL/PlatformTypes.h"
+#include "Core/Containers/Array.h"
+#include "Core/HAL/PlatformTypes.h"
+#include "Core/Math/Matrix.h"
+#include "Core/Math/Vector.h"
+#include "Core/Math/Vector4.h"
+#include "Renderer/D3D11/D3D11Common.h"
+#include "Renderer/SceneRenderData.h"
+#include "Renderer/Types/BasicMeshType.h"
 #include "Renderer/Types/ViewMode.h"
 
 class FD3D11DynamicRHI;
 class FSceneView;
-class UPrimitiveComponent;
 
-struct FMeshDrawCommand
+struct FVertexSimple;
+
+// Per-vertex
+struct FMeshVertex
 {
-    const UPrimitiveComponent *Primitive = nullptr;
+    FVector Position;
+};
+
+// Per-instance
+struct FMeshInstanceData
+{
+    FMatrix  World;
+    FVector4 Color = FVector4(1, 1, 1, 1);
+};
+
+struct FBasicMeshResource
+{
+    TComPtr<ID3D11Buffer> VertexBuffer = nullptr;
+    TComPtr<ID3D11Buffer> IndexBuffer = nullptr;
+    uint32                IndexCount = 0;
 };
 
 class FD3D11MeshBatchRenderer
 {
   public:
-    void Initialize(FD3D11DynamicRHI *InRHI) {}
-    void Shutdown() {}
+    static constexpr const wchar_t* DefaultShaderPath =
+        L"Resources/Shaders/ShaderInstancedMesh.hlsl";
+    static constexpr uint32 DefaultMaxInstances = 4096;
 
-    void BeginFrame(EViewModeIndex InViewMode) {}
-    void SubmitPrimitive(const UPrimitiveComponent *InPrimitive) {}
-    void EndFrame(const FSceneView *InSceneView) {}
+  public:
+    bool Initialize(FD3D11DynamicRHI* InRHI);
+    void Shutdown();
 
-  private:
-    void CreateShaders() {}
-    void CreateInputLayouts() {}
-    void CreateConstantBuffers() {}
-    void CreateStates() {}
-
-    void SortDrawCommands() {}
-    void Flush(const FSceneView *InSceneView) {}
-
-    void BindLitPipeline() {}
-    void BindUnlitPipeline() {}
-    void BindSolidRasterizer() {}
-    void BindWireframeRasterizer() {}
-
-    void DrawPrimitiveLit(const UPrimitiveComponent *InPrimitive, const FSceneView *InSceneView) {}
-    void DrawPrimitiveUnlit(const UPrimitiveComponent *InPrimitive, const FSceneView *InSceneView)
-    {
-    }
+    void Render(const FSceneRenderData& InRenderData);
 
   private:
-    FD3D11DynamicRHI *RHI = nullptr;
+    bool CreateShaders();
+    bool CreateConstantBuffers();
+    bool CreateStates();
+    bool CreateDynamicInstanceBuffer(uint32 InMaxInstanceCount);
+
+    bool CreateBasicMeshes();
+    void ReleaseBasicMeshes();
+
+    bool CreateBasicCubeMesh(FBasicMeshResource& OutResource);
+    bool CreateBasicPlaneMesh(FBasicMeshResource& OutResource);
+    bool CreateBasicTriangleMesh(FBasicMeshResource& OutResource);
+    bool CreateBasicSphereMesh(FBasicMeshResource& OutResource);
+
+    bool CreateBasicMeshResource(const FVertexSimple* InVertices, uint32 InVertexCount,
+                                 const uint16* InIndices, uint32 InIndexCount,
+                                 FBasicMeshResource& OutResource);
+
+    void ResetBatches();
+    void GatherRenderItems(const FSceneRenderData& InRenderData);
+
+    void Flush(const FSceneView* InSceneView);
+    void UpdatePerFrameConstants(const FSceneView* InSceneView);
+
+    void BindPipeline();
+    void BindSolidRasterizer();
+    void BindWireframeRasterizer();
+
+    void DrawMeshBatch(EBasicMeshType InType, const FSceneView* InSceneView);
+
+    FBasicMeshResource*       GetMeshResource(EBasicMeshType InType);
+    const FBasicMeshResource* GetMeshResource(EBasicMeshType InType) const;
+
+  private:
+    FD3D11DynamicRHI* RHI = nullptr;
     EViewModeIndex    ViewMode = EViewModeIndex::Lit;
+    uint32            MaxInstanceCount = DefaultMaxInstances;
+    bool              bUseInstancing = true; // TODO
 
-    TArray<FMeshDrawCommand> DrawCommands;
-
-    TComPtr<ID3D11VertexShader> LitVertexShader;
-    TComPtr<ID3D11PixelShader>  LitPixelShader;
-    TComPtr<ID3D11VertexShader> UnlitVertexShader;
-    TComPtr<ID3D11PixelShader>  UnlitPixelShader;
+    TComPtr<ID3D11VertexShader> VertexShader;
+    TComPtr<ID3D11PixelShader>  PixelShader;
     TComPtr<ID3D11InputLayout>  InputLayout;
-
-    TComPtr<ID3D11Buffer> LitConstantBuffer;
-    TComPtr<ID3D11Buffer> UnlitConstantBuffer;
+    TComPtr<ID3D11Buffer>       ConstantBuffer;
+    TComPtr<ID3D11Buffer>       InstanceBuffer;
 
     TComPtr<ID3D11RasterizerState>   SolidRasterizerState;
     TComPtr<ID3D11RasterizerState>   WireframeRasterizerState;
     TComPtr<ID3D11DepthStencilState> DepthStencilState;
+
+    FBasicMeshResource        BasicMeshes[static_cast<int32>(EBasicMeshType::Count)];
+    TArray<FMeshInstanceData> MeshInstances[static_cast<int32>(EBasicMeshType::Count)];
 };

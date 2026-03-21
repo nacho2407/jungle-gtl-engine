@@ -12,7 +12,12 @@ class ENGINE_API AActor : public UObject
     AActor();
     virtual ~AActor() = default;
 
-    protected:
-    USceneComponent* RootComponent;
-      TArray<USceneComponent*> OwnedComponents;
+    bool IsPickable() const;
+    void SetPickable(bool bInPickable);
+
+  protected:
+    USceneComponent*         RootComponent = nullptr;
+    TArray<USceneComponent*> OwnedComponents;
+
+    bool bPickable = true;
 };

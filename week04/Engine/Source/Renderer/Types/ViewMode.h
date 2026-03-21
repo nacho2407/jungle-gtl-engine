@@ -1,6 +1,6 @@
 #pragma once
 
-#include "HAL/PlatformTypes.h"
+#include "Core/HAL/PlatformTypes.h"
 
 enum class EViewModeIndex : uint8
 {

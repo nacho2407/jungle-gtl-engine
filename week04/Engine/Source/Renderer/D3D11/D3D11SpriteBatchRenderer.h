@@ -5,6 +5,7 @@
 #include "Core/Math/Vector.h"
 #include "Core/Math/Vector4.h"
 #include "Renderer/Types/VertexTypes.h"
+#include "Renderer/D3D11/D3D11Common.h"
 
 class FD3D11DynamicRHI;
 class FSceneView;
@@ -13,25 +14,25 @@ class UParticleSubUVComp;
 class FD3D11SpriteBatchRenderer
 {
   public:
-    void Initialize(FD3D11DynamicRHI *InRHI) {}
+    void Initialize(FD3D11DynamicRHI* InRHI) {}
     void Shutdown() {}
 
     void BeginFrame() {}
 
-    void SubmitSpriteWorldSpace(const FVector &InCenter, float InWidth, float InHeight,
-                                ID3D11ShaderResourceView *InTextureSRV, const FVector4 &InColor)
+    void SubmitSpriteWorldSpace(const FVector& InCenter, float InWidth, float InHeight,
+                                ID3D11ShaderResourceView* InTextureSRV, const FVector4& InColor)
     {
     }
 
-    void SubmitSubUVWorldSpace(const FVector &InCenter, float InWidth, float InHeight,
+    void SubmitSubUVWorldSpace(const FVector& InCenter, float InWidth, float InHeight,
                                int32 InFrameIndex, int32 InNumFramesX, int32 InNumFramesY,
-                               ID3D11ShaderResourceView *InTextureSRV, const FVector4 &InColor)
+                               ID3D11ShaderResourceView* InTextureSRV, const FVector4& InColor)
     {
     }
 
-    void SubmitParticle(const UParticleSubUVComp *InParticleComp, const FSceneView *InSceneView) {}
+    void SubmitParticle(const UParticleSubUVComp* InParticleComp, const FSceneView* InSceneView) {}
 
-    void EndFrame(const FSceneView *InSceneView) {}
+    void EndFrame(const FSceneView* InSceneView) {}
 
   private:
     void CreateShaders() {}
@@ -40,21 +41,21 @@ class FD3D11SpriteBatchRenderer
     void CreateStates() {}
     void CreateBuffers() {}
 
-    void BuildBillboardQuad(const FSceneView *InSceneView, const FVector &InCenter, float InWidth,
+    void BuildBillboardQuad(const FSceneView* InSceneView, const FVector& InCenter, float InWidth,
                             float InHeight, float InU0, float InV0, float InU1, float InV1,
-                            const FVector4 &InColor)
+                            const FVector4& InColor)
     {
     }
 
-    void CalcSubUV(int32 InFrameIndex, int32 InNumFramesX, int32 InNumFramesY, float &OutU0,
-                   float &OutV0, float &OutU1, float &OutV1) const
+    void CalcSubUV(int32 InFrameIndex, int32 InNumFramesX, int32 InNumFramesY, float& OutU0,
+                   float& OutV0, float& OutU1, float& OutV1) const
     {
     }
 
-    void Flush(const FSceneView *InSceneView) {}
+    void Flush(const FSceneView* InSceneView) {}
 
   private:
-    FD3D11DynamicRHI *RHI = nullptr;
+    FD3D11DynamicRHI* RHI = nullptr;
 
     TArray<FSpriteVertex> Vertices;
     TArray<uint32>        Indices;
