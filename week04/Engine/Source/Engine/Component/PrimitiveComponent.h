@@ -16,14 +16,15 @@ namespace Engine::Component
     class ENGINE_API UPrimitiveComponent : public Engine::Component::USceneComponent
     {
         DECLARE_RTTI(UPrimitiveComponent, USceneComponent)
-      public:
+    public:
         UPrimitiveComponent();
-        virtual ~UPrimitiveComponent() override;
+        ~UPrimitiveComponent() override;
 
         EPrimitiveType GetType();
         void           SetType(EPrimitiveType NewType);
-        virtual void   Update(float DeltaTime) override;
+        void           Update(float DeltaTime) override;
 
+    private:
         bool Pickable = true;
         EPrimitiveType Type;
     };
