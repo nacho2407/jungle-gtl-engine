@@ -105,7 +105,7 @@ void EditorControlPanel::Draw(UCameraComponent* camera, ImGuiWindowLayout& layou
 
     if (ImGui::Button("New Scene"))
     {
-        ImGui::OpenPopup("New Scene Popup");
+		GetWorld().GetSceneManager()->NewScene();
     }
     ImGui::SameLine();
     if (ImGui::Button("Save Scene"))
@@ -119,35 +119,6 @@ void EditorControlPanel::Draw(UCameraComponent* camera, ImGuiWindowLayout& layou
         SelectedSceneIndex = -1;
         ImGui::OpenPopup("Load Scene Popup");
     }
-    ImGui::SetNextWindowSize(ImVec2(320, 120), ImGuiCond_Appearing);
-    if (ImGui::BeginPopupModal("New Scene Popup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        ImGui::Text("Scene Save???");
-
-        if (ImGui::Button("Save"))
-        {
-            bCreateNewSceneAfterSave = true;
-            ImGui::CloseCurrentPopup();
-            ImGui::OpenPopup("Save Scene Popup");
-        }
-
-        ImGui::SameLine();
-        if (ImGui::Button("Don't Save"))
-        {
-            editor->SelectComponent(nullptr);
-            GetWorld().GetSceneManager()->NewScene();
-            ImGui::CloseCurrentPopup();
-        }
-
-        ImGui::SameLine();
-        if (ImGui::Button("Cancel"))
-        {
-            ImGui::CloseCurrentPopup();
-        }
-
-        ImGui::EndPopup();
-    }
-
     ImGui::SetNextWindowSize(ImVec2(360, 140), ImGuiCond_Appearing);
     if (ImGui::BeginPopupModal("Save Scene Popup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {

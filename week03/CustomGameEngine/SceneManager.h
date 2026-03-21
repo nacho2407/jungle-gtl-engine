@@ -36,8 +36,17 @@ public:
 	{
 		static_assert(std::is_base_of<USceneComponent, T>::value, "T must derive from USceneComponent");
 
+		if (targetScene == nullptr)
+		{
+			return nullptr;
+		}
+
 		UObject* obj = FObjectFactory::ConstructObject(T::GetClass());
 		T* instance = Cast<T>(obj);
+		if (instance == nullptr)
+		{
+			return nullptr;
+		}
 
 		targetScene->SceneComponents.push_back(instance);
 		instance->OnComponentAdded();
@@ -63,5 +72,5 @@ private:
 	UWorld* OwnerWorld = nullptr;
 	UScene* ActiveScene = nullptr;
 	UScene* PermanentScene = nullptr;
-	TArray<UScene*> LoadedScene;
+	TArray<UScene*> LoadedScenes;
 };

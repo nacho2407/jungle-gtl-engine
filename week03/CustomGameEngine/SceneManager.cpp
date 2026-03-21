@@ -21,7 +21,7 @@ SceneManager::~SceneManager()
 
 TArray<UScene*> SceneManager::GetLoadedScenes()
 {
-	return TArray<UScene*>();
+	return LoadedScenes;
 }
 
 UScene* SceneManager::GetActiveScene()
@@ -47,9 +47,9 @@ void SceneManager::SetPermanentScene(UScene* scene)
 UScene* SceneManager::NewScene()
 {
 	UScene* newScene = Cast<UScene>(FObjectFactory::ConstructObject(UScene::GetClass()));
-	newScene->Name = FName("NewScene_" + std::to_string((int32)LoadedScene.size()));
+	newScene->Name = FName("NewScene_" + std::to_string((int32)LoadedScenes.size()));
 	SetActiveScene(newScene);
-	LoadedScene.push_back(newScene);
+	LoadedScenes.push_back(newScene);
 	UEngineStatics::NextUUID = 0;
 
 	UE_LOG("Created new scene\n");
@@ -71,7 +71,7 @@ UScene* SceneManager::LoadScene(FString sceneName)
 
 	if (loadedScene != nullptr)
 	{
-		LoadedScene.push_back(loadedScene);
+		LoadedScenes.push_back(loadedScene);
 		SetActiveScene(loadedScene);
 		UEngineStatics::NextUUID = loadedScene->NextUUID;
 	}
@@ -87,8 +87,8 @@ void SceneManager::UnloadScene(UScene* targetScene)
 	{
 		return;
 	}
-	auto sceneIt = std::find(LoadedScene.begin(), LoadedScene.end(), sceneToUnload);
-	if (sceneIt == LoadedScene.end())
+	auto sceneIt = std::find(LoadedScenes.begin(), LoadedScenes.end(), sceneToUnload);
+	if (sceneIt == LoadedScenes.end())
 	{
 		return;
 	}
@@ -100,11 +100,11 @@ void SceneManager::UnloadScene(UScene* targetScene)
 	}
 
 	delete sceneToUnload;
-	LoadedScene.erase(sceneIt);
+	LoadedScenes.erase(sceneIt);
 
 	if (ActiveScene == sceneToUnload)
 	{
-		SetActiveScene(LoadedScene.empty() ? nullptr : LoadedScene.back());
+		SetActiveScene(LoadedScenes.empty() ? nullptr : LoadedScenes.back());
 		UEngineStatics::NextUUID = (ActiveScene != nullptr) ? ActiveScene->NextUUID : 0;
 	}
 }
