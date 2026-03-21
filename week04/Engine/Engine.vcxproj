@@ -67,13 +67,8 @@
     <ClInclude Include="Source\Engine\Asset\AssetManager.h" />
     <ClInclude Include="Source\Engine\Asset\Texture2DAsset.h" />
     <ClInclude Include="Source\Engine\Asset\TextureLoader.h" />
-    <ClInclude Include="Source\Engine\Component\CameraComponent.h" />
-    <ClInclude Include="Source\Engine\Component\CubeComponent.h" />
-    <ClInclude Include="Source\Engine\Component\PlaneComponent.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
-    <ClInclude Include="Source\Engine\Component\SphereComponent.h" />
-    <ClInclude Include="Source\Engine\Component\TriangleComponent.h" />
     <ClInclude Include="Source\Engine\EngineStatics.h" />
     <ClInclude Include="Source\Engine\Game\Actor.h" />
     <ClInclude Include="Source\Engine\ViewPort\Viewport.h" />
@@ -87,7 +82,6 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\FTextureResource.h" />
     <ClInclude Include="Source\Renderer\RendererModule.h" />
-    <ClInclude Include="Source\Renderer\Scene.h" />
     <ClInclude Include="Source\Renderer\Types\EditorRenderData.h" />
     <ClInclude Include="Source\Renderer\Types\SceneRenderData.h" />
     <ClInclude Include="Source\Renderer\Types\ShaderConstants.h" />
@@ -124,17 +118,11 @@
     <ClCompile Include="Source\Engine\Asset\AssetManager.cpp" />
     <ClCompile Include="Source\Engine\Asset\Texture2DAsset.cpp" />
     <ClCompile Include="Source\Engine\Asset\TextureLoader.cpp" />
-    <ClCompile Include="Source\Engine\Component\CameraComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\CubeComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\PlaneComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\SphereComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\TriangleComponent.cpp" />
     <ClCompile Include="Source\Engine\EngineStatics.cpp" />
     <ClCompile Include="Source\Engine\Game\Actor.cpp" />
     <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp" />
-    <ClCompile Include="Source\Renderer\Scene.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

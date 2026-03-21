@@ -8,55 +8,50 @@
 #include "Input/EditorGlobalContext.h"
 #include "Input/GizmoInputContext.h"
 #include "Input/ViewPortInputContext.h"
-#include "Renderer/Scene.h"
+#include "Engine/Scene.h"
 
 class FPanelManager;
 
 class FEditor
 {
-public:
+  public:
     /* Default Functions */
     void Create(HWND);
     void Release();
-    
+
     void Initialize();
-    void Tick(Engine::ApplicationCore::FInputSystem * InputSystem);
-    
+    void Tick(Engine::ApplicationCore::FInputSystem* InputSystem);
+
     void OnWindowResized(float Width, float Height);
     void SetMainLoopFPS(float FPS) { CurFPS = FPS; }
-    
+
     /* From Panel */
     void CreateNewScene();
     void ClearScene();
-    
-private:
-    
-    
-public:
-    
-    
-private:
+
+  private:
+  public:
+  private:
     /* Input Routing */
     Engine::ApplicationCore::FInputRouter InputRouter;
-    
+
     /* Input Contexts */
-    FEditorGlobalContext EditorGlobalContext;
+    FEditorGlobalContext  EditorGlobalContext;
     FViewPortInputContext ViewPortInputContext;
-    FGizmoInputContext GizmoInputContext;
-    FEditorContext EditorContext;
-    
+    FGizmoInputContext    GizmoInputContext;
+    FEditorContext        EditorContext;
+
     /* Panel */
     FPanelManager* PanelManager = nullptr;
 
     /* Gizmo */
-    
+
     /* Scene */
-    FScene * CurScene = nullptr;
-    
+    FScene* CurScene = nullptr;
+
     /* Properties */
     float WindowWidth = 0.0f;
     float WindowHeight = 0.0f;
-    
-    float CurFPS = 0.0f;    //  Panel에 Display
-    
+
+    float CurFPS = 0.0f; //  Panel에 Display
 };
