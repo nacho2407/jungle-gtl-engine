@@ -33,7 +33,7 @@ private:
 
     /* Window */
 #if defined(_WIN32)
-    Engine::ApplicationCore::FWindowsWindow * WindowsWindow = nullptr;
+    
 #endif  
 
     /* Editor */

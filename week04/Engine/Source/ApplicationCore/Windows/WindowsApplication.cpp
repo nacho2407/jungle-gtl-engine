@@ -15,7 +15,8 @@ namespace Engine::ApplicationCore
     {
         if (GWindowsApplication != nullptr)
         {
-            return GWindowsApplication->GetInputSystem()->ProcessWin32Message(HWnd, Message, WParam, LParam);
+            return GWindowsApplication->GetInputSystem()->ProcessWin32Message(
+                HWnd, Message, WParam, LParam);
         }
         return DefWindowProcW(HWnd, Message, WParam, LParam);
     }
@@ -43,10 +44,13 @@ namespace Engine::ApplicationCore
         InputSystem = InInputSystem;
     }
 
-    FInputSystem* FWindowsApplication::GetInputSystem() const { return InputSystem; }
+    FInputSystem* FWindowsApplication::GetInputSystem() const
+    {
+        return InputSystem;
+    }
 
     bool FWindowsApplication::CreateApplicationWindow(const wchar_t* InTitle, int32 InWidth,
-                                                      int32 InHeight)
+                                                      int32          InHeight)
     {
         HINSTANCE Instance = GetModuleHandleW(nullptr);
         if (!Window.Create(Instance, InTitle, InWidth, InHeight))
@@ -57,7 +61,10 @@ namespace Engine::ApplicationCore
         return true;
     }
 
-    void FWindowsApplication::DestroyApplicationWindow() { Window.Destroy(); }
+    void FWindowsApplication::DestroyApplicationWindow()
+    {
+        Window.Destroy();
+    }
 
     void FWindowsApplication::PumpMessages()
     {
@@ -70,10 +77,20 @@ namespace Engine::ApplicationCore
         }
     }
 
-    void FWindowsApplication::ShowWindow() { Window.Show(); }
-    void FWindowsApplication::HideWindow() { Window.Hide(); }
+    void FWindowsApplication::ShowWindow()
+    {
+        Window.Show();
+    }
 
-    void* FWindowsApplication::GetNativeWindowHandle() const { return Window.GetHWnd(); }
+    void FWindowsApplication::HideWindow()
+    {
+        Window.Hide();
+    }
+
+    void* FWindowsApplication::GetNativeWindowHandle() const
+    {
+        return Window.GetHWnd();
+    }
 
     void FWindowsApplication::RegisterRawMouseInput()
     {

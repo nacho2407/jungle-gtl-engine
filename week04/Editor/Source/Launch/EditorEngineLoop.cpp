@@ -68,9 +68,9 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
 #if defined(_WIN32)
     Application = Engine::ApplicationCore::FWindowsApplication::Create();
     Application->SetInputSystem(InputSystem);
-
-    WindowsWindow = new Engine::ApplicationCore::FWindowsWindow();
-    WindowsWindow->Create(HInstance, L"JungleWindowClass", 1920, 1080);
+    Application->CreateApplicationWindow(L"JungleWindowClass", 1920, 1080);
+    // WindowsWindow = new Engine::ApplicationCore::FWindowsWindow();
+    // WindowsWindow->Create(HInstance, L"JungleWindowClass", 1920, 1080);
     
 
 #else
@@ -106,10 +106,6 @@ void FEditorEngineLoop::ShutDown()
     Editor->Release();
     delete Editor;
     Editor = nullptr;
-
-    WindowsWindow->Destroy();
-    delete WindowsWindow;
-    WindowsWindow = nullptr;
 
     Application->DestroyApplicationWindow();
     delete Application;
