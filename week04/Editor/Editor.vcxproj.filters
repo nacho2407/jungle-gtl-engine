@@ -45,6 +45,15 @@
     <ClCompile Include="Source\Input\ViewPortInputContext.cpp">
       <Filter>Source\Input</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Input\EditorGlobalContext.cpp">
+      <Filter>Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\GizmoInputContext.cpp">
+      <Filter>Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\ViewPortInputContext.cpp">
+      <Filter>Source\Input</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Launch\EditorEngineLoop.cpp">
       <Filter>Source\Launch</Filter>
     </ClCompile>
