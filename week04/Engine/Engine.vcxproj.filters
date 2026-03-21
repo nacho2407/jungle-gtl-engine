@@ -215,7 +215,7 @@
     <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplication.h">
       <Filter>Source\ApplicationCore\GenericPlatform</Filter>
     </ClInclude>
-    <ClInclude Include="Source\ApplicationCore\Input\IInputContext.h">
+    <ClInclude Include="Source\ApplicationCore\Input\InputContext.h">
       <Filter>Source\ApplicationCore\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\ApplicationCore\Input\InputRouter.h">
