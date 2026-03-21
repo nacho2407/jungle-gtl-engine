@@ -13,39 +13,29 @@ namespace Engine::Component
         virtual ~USceneComponent() override = default;
 
       public:
-        inline const FVector  GetRelativeLocation() { return WorldTransform.GetLocation(); }
-        inline const FRotator GetRelativeRotation() { return WorldTransform.Rotator(); }
-        inline const FVector  GetRelativeScale3D() { return WorldTransform.GetScale3D(); }
-        inline const FQuat    GetRelativeQuaternion() { return WorldTransform.GetRotation(); }
+        FVector  GetRelativeLocation() const { return WorldTransform.GetLocation(); }
+        FRotator GetRelativeRotation() const { return WorldTransform.Rotator(); }
+        FVector  GetRelativeScale3D() const { return WorldTransform.GetScale3D(); }
+        FQuat    GetRelativeQuaternion() const { return WorldTransform.GetRotation(); }
 
-        inline virtual void SetRelativeLocation(const FVector& NewLocation)
-        {
-            WorldTransform.SetLocation(NewLocation);
-        }
-        inline virtual void SetRelativeRotation(const FQuat& NewRotation)
-        {
-            WorldTransform.SetRotation(NewRotation);
-        }
-        inline virtual void SetRelativeRotation(const FRotator& NewRotation)
-        {
-            WorldTransform.SetRotation(NewRotation);
-        }
-        inline virtual void SetRelativeScale3D(const FVector& NewScale)
-        {
-            WorldTransform.SetScale3D(NewScale);
-        }
+        virtual void SetRelativeLocation(const FVector& NewLocation);
+        virtual void SetRelativeRotation(const FQuat& NewRotation);
+        virtual void SetRelativeRotation(const FRotator& NewRotation);
+        virtual void SetRelativeScale3D(const FVector& NewScale);
+
         virtual void Update(float DeltaTime);
 
-        FMatrix GetRelativeMatrix();
+        FMatrix GetRelativeMatrix() const;
 
-        // virtual void OnComponentAdded() {};
-        //  virtual void Update(float deltaTime) {};
         virtual void DrawProperties();
 
-        bool IsSelected() const;
+        bool IsSelected() const { return bIsSelected; }
 
-        bool            bIsSelected = false;
-        Geometry::FAABB AABB;
+      protected:
+        virtual void OnTransformChanged() {}
+
+      protected:
+        bool bIsSelected = false;
 
       private:
         FTransform WorldTransform;

@@ -1,17 +1,37 @@
-#include "Core/CoreMinimal.h"
 #include "PrimitiveComponent.h"
 
 namespace Engine::Component
 {
-    EPrimitiveType UPrimitiveComponent::GetType() { return Type; }
-
-    void UPrimitiveComponent::SetType(EPrimitiveType NewType) { Type = NewType; }
-
     const FVector4& UPrimitiveComponent::GetColor() const { return Color; }
 
     void UPrimitiveComponent::SetColor(const FVector4& NewColor) { Color = NewColor; }
 
-    void UPrimitiveComponent::Update(float DeltaTime) { USceneComponent::Update(DeltaTime); }
+    const Geometry::FAABB& UPrimitiveComponent::GetAABB() const
+    {
+        if (bBoundsDirty)
+        {
+            const_cast<UPrimitiveComponent*>(this)->UpdateBounds();
+            const_cast<UPrimitiveComponent*>(this)->bBoundsDirty = false;
+        }
 
-    REGISTER_CLASS(Engine::Component, UPrimitiveComponent);
+        return WorldAABB;
+    }
+
+    void UPrimitiveComponent::Update(float DeltaTime)
+    {
+        USceneComponent::Update(DeltaTime);
+
+        if (bBoundsDirty)
+        {
+            UpdateBounds();
+            bBoundsDirty = false;
+        }
+    }
+
+    void UPrimitiveComponent::UpdateBounds()
+    {
+        WorldAABB = Geometry::TransformAABB(GetLocalAABB(), GetRelativeMatrix());
+    }
+
+    void UPrimitiveComponent::OnTransformChanged() { bBoundsDirty = true; }
 } // namespace Engine::Component
