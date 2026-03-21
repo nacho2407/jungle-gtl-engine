@@ -61,7 +61,8 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 
 	FCameraState& CameraState = Camera->GetCameraState();
 
-	const float CameraSpeed = Settings ? Settings->CameraSpeed : 10.f;
+	const float MoveSensitivity = Settings ? Settings->CameraMoveSensitivity : 1.f;
+	const float CameraSpeed = (Settings ? Settings->CameraSpeed : 10.f) * MoveSensitivity;
 
 	FVector Move = FVector(0, 0, 0);
 
@@ -84,7 +85,8 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	FVector Rotation = FVector(0, 0, 0);
 	FVector MouseRotation = FVector(0, 0, 0);
 
-	const float AngleVelocity = Settings ? Settings->CameraRotationSpeed : 60.f;
+	const float RotateSensitivity = Settings ? Settings->CameraRotateSensitivity : 1.f;
+	const float AngleVelocity = (Settings ? Settings->CameraRotationSpeed : 60.f) * RotateSensitivity;
 	if (InputSystem::GetKey(VK_UP))
 		Rotation.Z -= AngleVelocity;
 	if (InputSystem::GetKey(VK_LEFT))
@@ -95,7 +97,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		Rotation.Y += AngleVelocity;
 
 	// Mouse sensitivity is degrees per pixel (do not multiply by DeltaTime)
-	float MouseRotationSpeed = 0.15f;
+	float MouseRotationSpeed = 0.15f * RotateSensitivity;
 
 	if (InputSystem::GetKey(VK_RBUTTON))
 	{
