@@ -90,7 +90,7 @@ public:
 		Geometry.Vertices = Verticies;
 	}
 
-	void CreateMaterial(WFString VertexShaderName, WFString PixelShaderName, ID3D11Device* Device, D3D11_INPUT_ELEMENT_DESC* layout, UINT layoutCount);
+	FMaterial& CreateMaterial(WFString VertexShaderName, WFString PixelShaderName, ID3D11Device* Device, D3D11_INPUT_ELEMENT_DESC* layout, UINT layoutCount);
 
 	void AddCubeMesh(ID3D11Device* Device);
 	void AddSphereMesh(ID3D11Device* Device);

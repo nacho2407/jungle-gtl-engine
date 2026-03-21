@@ -2,6 +2,7 @@
 
 #include <d3d11.h>
 #include "EngineCore/EngineTypes.h"
+#include "Renderer/Constants.h"
 class FConstantBuffer {
 public:
 	TComPtr<ID3D11Buffer> Buffer = nullptr;

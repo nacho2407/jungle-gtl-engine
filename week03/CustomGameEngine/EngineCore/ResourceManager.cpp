@@ -25,8 +25,10 @@ void ResourceManager::Initialize(URenderer* InRenderer)
 {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12,
  D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
-	CreateMaterial(L"Shader/ShaderW0.hlsl", L"Shader/ShaderW0.hlsl", Renderer->Device.Get(), layout, 2);
-	CreateMaterial(L"Shader/ShaderInfiniteGrid.hlsl", L"Shader/ShaderInfiniteGrid.hlsl", Renderer->Device.Get(), nullptr, 0);
+	FMaterial& Mat = CreateMaterial(L"Shader/ShaderW0.hlsl", L"Shader/ShaderW0.hlsl", Renderer->Device.Get(), layout, 2);
+	Mat.ConstantBuffer.Create(Renderer->Device.Get(), sizeof(FObjectConstant), 1);
+
+	//CreateMaterial(L"Shader/ShaderInfiniteGrid.hlsl", L"Shader/ShaderInfiniteGrid.hlsl", Renderer->Device.Get(), nullptr, 0);
 	AddCubeMesh(Renderer->Device.Get());
 	AddSphereMesh(Renderer->Device.Get());
 	AddTriangleMesh(Renderer->Device.Get());
@@ -54,7 +56,7 @@ void ResourceManager::CreateNoBufferGeometry(FString ResourceName, const TArray<
 	Geometry.Vertices = Verticies;
 }
 
-void ResourceManager::CreateMaterial(WFString VertexShaderName, WFString PixelShaderName, ID3D11Device* Device, D3D11_INPUT_ELEMENT_DESC* layout, UINT layoutCount)
+FMaterial& ResourceManager::CreateMaterial(WFString VertexShaderName, WFString PixelShaderName, ID3D11Device* Device, D3D11_INPUT_ELEMENT_DESC* layout, UINT layoutCount)
 {
 	FMaterial& Mat = MaterialMap[VertexShaderName];
 
@@ -79,6 +81,7 @@ void ResourceManager::CreateMaterial(WFString VertexShaderName, WFString PixelSh
 
 	pixelshaderCSO->Release();
 	vertexshaderCSO->Release();
+	return Mat;
 }
 
 void ResourceManager::AddCubeMesh(ID3D11Device* Device)
@@ -201,17 +204,17 @@ void ResourceManager::AddAxisMesh(ID3D11Device* Device)
 {
 	FVertexSimple AxisVertices[] =
 	{
-		/*X축 (Red): (0,0,0) -> (1,0,0)
+		//X축 (Red): (0,0,0) -> (1,0,0)
 	   { 0.0f, 0.0f, 0.0f, 1,0,0,1 },
-	   { 10000000.0f, 0.0f, 0.0f, 1,0,0,1 },*/
+	   { 10000000.0f, 0.0f, 0.0f, 1,0,0,1 },
 
 	   // Y축 (Green): (0,0,0) -> (0,1,0)
 	   { 0.0f, 0.0f, -10000.0f, 0.2f,0.2f,1.0f,1 },
 	   { 0.0f, 0.0f, 10000.0f, 0.2f,0.2f,1.0f,1 },
 
-	   //// Z축 (Blue): (0,0,0) -> (0,0,1)
-	   //{ 0.0f, 0.0f, 0.0f, 0,0,1,1 },
-	   //{ 0.0f, 0.0f, 10000000.0f, 0,0,1,1 }
+	   // Z축 (Blue): (0,0,0) -> (0,0,1)
+	   { 0.0f, 0.0f, 0.0f, 0,0,1,1 },
+	   { 0.0f, 0.0f, 10000000.0f, 0,0,1,1 }
 	};
 
 	int Cnt = sizeof(AxisVertices) / sizeof(FVertexSimple);

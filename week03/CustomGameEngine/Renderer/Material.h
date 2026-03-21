@@ -2,12 +2,13 @@
 
 #include <d3d11.h>
 #include "EngineCore/EngineTypes.h"
-
+#include "ConstantBuffer.h"
 struct FMaterial
 {
 	TComPtr<ID3D11VertexShader> VertexShader = nullptr;
 	TComPtr<ID3D11InputLayout> InputLayout = nullptr;
 	TComPtr<ID3D11PixelShader> PixelShader = nullptr;
+	FConstantBuffer ConstantBuffer;
 	//ID3D11Texture2D* Texture = nullptr;
 
 	FMaterial()

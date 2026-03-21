@@ -68,31 +68,18 @@ public:
 		FMatrix View;
 		FMatrix Projection;
 	};
-	struct FObjectConstant
-	{
-		FMatrix World;
-		FColor Color;
-		int bIsSelected;
-		float Padding[3];
-	};
-	struct FGridConstant
-	{
-		float CameraPos[3];
-		float GridSize;
-		float LineThickness;
-		float Padding[3];
-	};
 
 	FConstantBuffer FrameConstantBuffer; //View Proj
-	FConstantBuffer ObjectConstantBuffer; //World
-	FConstantBuffer FGridConstantBuffer;
 
 
 public:
 	void SetRenderCamera(class UCameraComponent* camera);
 	void Render();
+	void RenderNoDepthObjects(TArray<RenderObject*>& NoDepthRenderObjects);
+	void RenderNormalObjects(TArray<RenderObject*>& NormalRenderObjects);
+	void DistributeRenderObjects(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups, TArray<RenderObject*>& NormalRenderObjects, TArray<RenderObject*>& NoDepthRenderObjects);
 	void BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups);
-	void RenderGrid(ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader);
+	//void RenderGrid(ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader);
 	FLevel drawLevel;
 
 private:
