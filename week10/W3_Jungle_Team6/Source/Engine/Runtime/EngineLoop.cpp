@@ -6,7 +6,6 @@
 
 #include "Engine/Core/ConsoleHelper.h"
 #include "Engine/Core/InputSystem.h"
-#include "Component/PrimitiveComponent.h"
 
 // ImGui Win32 메시지 핸들러
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, uint32 msg, WPARAM wParam, LPARAM lParam);
@@ -91,9 +90,7 @@ bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
 		return false;
 	}
 
-	// 에디터 초기화 및 테스트용 샘플 액터 생성
 	Editor.Create(HWindow);
-	Editor.SpawnNewPrimitiveActor<UCubeComponent>(FVector(-3.f, 0, 0));
 	Editor.BeginPlay();
 
 	InitializeTiming();
@@ -124,11 +121,8 @@ void FEngineLoop::TickFrame()
 		return;
 	}
 
-	UObjectManager::Get().CollectGarbage();
 	Editor.BeginFrame(DeltaTime);
 	Editor.Update(DeltaTime);
-
-
 	Editor.Render(DeltaTime);
 	Editor.EndFrame();
 }
