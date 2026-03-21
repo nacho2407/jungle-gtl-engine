@@ -32,7 +32,6 @@ private:
 	FEditorMainPanel MainPanel;
 	FEditorViewportClient ViewportClient;
 	float MainLoopFPS = 0.0f;
-	FEditorSettings Settings;
 
 
 private:
@@ -69,13 +68,13 @@ public:
 	void SetMainLoopFPS(float InFPS) { MainLoopFPS = InFPS; }
 	float GetMainLoopFPS() const { return MainLoopFPS; }
 
-	FEditorSettings& GetSettings() { return Settings; }
-	const FEditorSettings& GetSettings() const { return Settings; }
+	FEditorSettings& GetSettings() { return FEditorSettings::Get(); }
+	const FEditorSettings& GetSettings() const { return FEditorSettings::Get(); }
 
-	bool IsUpdateRateLimited() const { return Settings.bLimitUpdateRate; }
-	void SetUpdateRateLimited(bool bLimited) { Settings.bLimitUpdateRate = bLimited; }
-	int32 GetUpdateRate() const { return Settings.UpdateRate; }
-	void SetUpdateRate(int32 NewRate) { Settings.UpdateRate = (NewRate < 1) ? 1 : NewRate; }
+	bool IsUpdateRateLimited() const { return FEditorSettings::Get().bLimitUpdateRate; }
+	void SetUpdateRateLimited(bool bLimited) { FEditorSettings::Get().bLimitUpdateRate = bLimited; }
+	int32 GetUpdateRate() const { return FEditorSettings::Get().UpdateRate; }
+	void SetUpdateRate(int32 NewRate) { FEditorSettings::Get().UpdateRate = (NewRate < 1) ? 1 : NewRate; }
 
 	// Legacy names for compatibility during migration
 	UWorld* GetEditorWorld() const { return GetWorld(); }
