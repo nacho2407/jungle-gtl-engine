@@ -4,6 +4,9 @@
     <Filter Include="Source">
       <UniqueIdentifier>{eda2fbce-2e37-c3c8-8f8c-35f2a4ff4e59}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor">
+      <UniqueIdentifier>{68b5e2a9-3ba4-999f-3e91-8d1308eb9a6e}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Gizmo">
       <UniqueIdentifier>{2997c27c-11e9-54ee-4b0c-5a71dc20396c}</UniqueIdentifier>
     </Filter>
@@ -28,7 +31,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\Editor.cpp">
-      <Filter>Source</Filter>
+      <Filter>Source\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\EditorContext.cpp">
+      <Filter>Source\Editor</Filter>
     </ClCompile>
     <ClCompile Include="Source\Input\EditorGlobalContext.cpp">
       <Filter>Source\Input</Filter>
@@ -47,6 +53,12 @@
     </ClCompile>
     <ClCompile Include="Source\main.cpp">
       <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Panel\Panel.cpp">
+      <Filter>Source\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Panel\PanelManager.cpp">
+      <Filter>Source\Panel</Filter>
     </ClCompile>
     <ClCompile Include="Source\ThirdParty\imgui\imgui.cpp">
       <Filter>Source\ThirdParty\imgui</Filter>
@@ -69,13 +81,13 @@
     <ClCompile Include="Source\ThirdParty\imgui\imgui_widgets.cpp">
       <Filter>Source\ThirdParty\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Panel\PanelManager.cpp" />
-    <ClCompile Include="Source\Panel\Panel.cpp" />
-    <ClCompile Include="Source\Editor\EditorContext.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\Editor.h">
-      <Filter>Source</Filter>
+      <Filter>Source\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\EditorContext.h">
+      <Filter>Source\Editor</Filter>
     </ClInclude>
     <ClInclude Include="Source\Gizmo\EditorGizmoTypes.h">
       <Filter>Source\Gizmo</Filter>
@@ -97,6 +109,12 @@
     </ClInclude>
     <ClInclude Include="Source\Launch\Launch.h">
       <Filter>Source\Launch</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Panel\Panel.h">
+      <Filter>Source\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Panel\PanelManager.h">
+      <Filter>Source\Panel</Filter>
     </ClInclude>
     <ClInclude Include="Source\ThirdParty\imgui\imconfig.h">
       <Filter>Source\ThirdParty\imgui</Filter>
@@ -128,9 +146,6 @@
     <ClInclude Include="Source\Viewport\EditorViewportClient.h">
       <Filter>Source\Viewport</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Panel\PanelManager.h" />
-    <ClInclude Include="Source\Panel\Panel.h" />
-    <ClInclude Include="Source\Editor\EditorContext.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Source\ThirdParty\imgui\imgui.natstepfilter">
