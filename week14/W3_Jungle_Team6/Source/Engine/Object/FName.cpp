@@ -5,12 +5,6 @@
 // ============================================================
 // FNamePool
 // ============================================================
-FNamePool& FNamePool::Get()
-{
-	static FNamePool Instance;
-	return Instance;
-}
-
 uint32 FNamePool::Store(const FString& InString)
 {
 	auto It = LookupMap.find(InString);
@@ -45,7 +39,7 @@ static FString ToLower(const FString& Str)
 	return Result;
 }
 
-const FName FName::None;
+const FName FName::None = "Name_None";
 
 FName::FName()
 	: ComparisonIndex(0)
