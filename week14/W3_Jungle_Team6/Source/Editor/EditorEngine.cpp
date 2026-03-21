@@ -70,8 +70,7 @@ void UEditorEngine::Tick(float DeltaTime)
 {
 	ViewportClient.Tick(DeltaTime);
 	MainPanel.Update();
-	SyncCameraFromRenderHandler();
-	UpdateWorld(DeltaTime);
+	UEngine::Tick(DeltaTime);
 }
 
 void UEditorEngine::Render(float DeltaTime)

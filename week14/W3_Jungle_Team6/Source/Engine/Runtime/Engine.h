@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/Object.h"
 #include "GameFramework/World.h"
@@ -7,6 +7,7 @@
 #include "Render/Scene/RenderBus.h"
 
 class FWindowsWindow;
+class FTimer;
 
 class UEngine : public UObject
 {
@@ -20,10 +21,7 @@ public:
 	virtual void Init(FWindowsWindow* InWindow);
 	virtual void Shutdown();
 	virtual void BeginPlay();
-	virtual void BeginFrame(float DeltaTime);
 	virtual void Tick(float DeltaTime);
-	virtual void Render(float DeltaTime);
-	virtual void EndFrame();
 
 	virtual void OnWindowResized(uint32 Width, uint32 Height);
 
@@ -37,8 +35,8 @@ public:
 	FCameraState& GetCameraState() { return Camera->GetCameraState(); }
 	const FCameraState& GetCameraState() const { return Camera->GetCameraState(); }
 
-	void SetMainLoopFPS(float InFPS) { MainLoopFPS = InFPS; }
-	float GetMainLoopFPS() const { return MainLoopFPS; }
+	void SetTimer(FTimer* InTimer) { Timer = InTimer; }
+	FTimer* GetTimer() const { return Timer; }
 
 	FRenderer& GetRenderer() { return Renderer; }
 
@@ -52,6 +50,7 @@ public:
 	}
 
 protected:
+	virtual void Render(float DeltaTime);
 	void UpdateWorld(float DeltaTime);
 	void SyncCameraFromRenderHandler();
 
@@ -62,9 +61,10 @@ protected:
 	TArray<UWorld*> Scene;
 	UCamera* Camera = nullptr;
 
+	FTimer* Timer = nullptr;
+
 	FRenderer Renderer;
 	FRenderBus RenderBus;
-	float MainLoopFPS = 0.0f;
 };
 
 extern UEngine* GEngine;
