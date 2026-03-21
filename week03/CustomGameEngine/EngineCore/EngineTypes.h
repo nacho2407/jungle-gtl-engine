@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <list>
@@ -10,11 +11,13 @@
 #include <queue>
 #include <wrl.h>
 
+using uint8 = std::uint8_t;
+
 typedef int int32;
 typedef unsigned int uint32;
 
 using FString = std::string;
-
+using FU32String = std::u32string;
 using WFString = std::wstring;
 
 template <typename T>

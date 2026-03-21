@@ -162,6 +162,7 @@
     <ClInclude Include="Renderer\GeneralGeometry.h" />
     <ClInclude Include="Renderer\TexCoord.h" />
     <ClInclude Include="SceneManager.h" />
+    <ClInclude Include="Text\TextEncoding.h" />
     <ClInclude Include="ThirdParty\fifo_map.hpp" />
     <ClInclude Include="Math\Matrix.h" />
     <ClInclude Include="Math\Quaternion.h" />
@@ -237,6 +238,7 @@
     <ClCompile Include="EngineCore\InputManager.cpp" />
     <ClCompile Include="Renderer\VertextFont.h" />
     <ClCompile Include="SceneManager.cpp" />
+    <ClCompile Include="Text\TextEncoding.cpp" />
     <ClCompile Include="ThirdParty\json.cpp" />
     <ClCompile Include="EngineCore\Logger.cpp" />
     <ClCompile Include="PrimitiveFactory.cpp" />
