@@ -57,6 +57,6 @@ void FEditorMainPanel::Update()
 {
 	ImGuiIO& IO = ImGui::GetIO();
 
-	InputSystem::GuiInputState.bUsingMouse = IO.WantCaptureMouse;
-	InputSystem::GuiInputState.bUsingKeyboard = IO.WantCaptureKeyboard;
+	InputSystem::Get().GetGuiInputState().bUsingMouse = IO.WantCaptureMouse;
+	InputSystem::Get().GetGuiInputState().bUsingKeyboard = IO.WantCaptureKeyboard;
 }
