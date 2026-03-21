@@ -2,12 +2,12 @@
 
 #include "Object/Object.h"
 #include "GameFramework/World.h"
-#include "Component/CameraComponent.h"
 #include "Render/Renderer/Renderer.h"
 #include "Render/Scene/RenderBus.h"
 
 class FWindowsWindow;
 class FTimer;
+class UCameraComponent;
 
 class UEngine : public UObject
 {

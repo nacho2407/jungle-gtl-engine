@@ -1,9 +1,8 @@
 ﻿#pragma once
 #include "Object/Object.h"
 #include "GameFramework/AActor.h"
-#include "Component/CameraComponent.h"
 
-#include "Engine/Core/InputSystem.h"
+class UCameraComponent;
 
 class UWorld : public UObject {
 public:
