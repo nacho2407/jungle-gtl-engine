@@ -45,11 +45,13 @@ struct FTypeInfo {
 class UObject
 {
 public:
-	uint32 UUID;
-	uint32 InternalIndex;
-
 	UObject();
 	virtual ~UObject();
+
+	uint32 GetUUID() const { return UUID; }
+	uint32 GetInternalIndex() const { return InternalIndex; }
+	void SetUUID(uint32 InUUID) { UUID = InUUID; }
+	void SetInternalIndex(uint32 InIndex) { InternalIndex = InIndex; }
 
 	static void* operator new(size_t Size)
 	{
@@ -90,6 +92,10 @@ public:
 
 protected:
 	FName ObjectName;
+
+private:
+	uint32 UUID;
+	uint32 InternalIndex;
 };
 
 extern TArray<UObject*> GUObjectArray;
@@ -117,10 +123,10 @@ public:
 		delete Obj;
 	}
 
-	UObject* FindByUUID(uint32 UUID)
+	UObject* FindByUUID(uint32 InUUID)
 	{
 		for (auto* Obj : GUObjectArray)
-			if (Obj && Obj->UUID == UUID)
+			if (Obj && Obj->GetUUID() == InUUID)
 				return Obj;
 		return nullptr;
 	}

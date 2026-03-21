@@ -13,53 +13,53 @@ UGizmoComponent::UGizmoComponent()
 
 bool UGizmoComponent::IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float& OutRayT)
 {
-	FVector axisStart = GetWorldLocation();
-	FVector rayOrigin = Ray.Origin;
-	FVector rayDirection = Ray.Direction;
+	FVector AxisStart = GetWorldLocation();
+	FVector RayOrigin = Ray.Origin;
+	FVector RayDirection = Ray.Direction;
 
-	FVector axisVector = AxisEnd - axisStart;
-	FVector diffOrigin = rayOrigin - axisStart;
+	FVector AxisVector = AxisEnd - AxisStart;
+	FVector DiffOrigin = RayOrigin - AxisStart;
 
-	float RayDirDotRayDir = rayDirection.X * rayDirection.X + rayDirection.Y * rayDirection.Y + rayDirection.Z * rayDirection.Z;
-	float RayDirDotAxis = rayDirection.X * axisVector.X + rayDirection.Y * axisVector.Y + rayDirection.Z * axisVector.Z;
-	float AxisDotAxis = axisVector.X * axisVector.X + axisVector.Y * axisVector.Y + axisVector.Z * axisVector.Z;
-	float RayDirDotDiff = rayDirection.X * diffOrigin.X + rayDirection.Y * diffOrigin.Y + rayDirection.Z * diffOrigin.Z;
-	float AxisDotDiff = axisVector.X * diffOrigin.X + axisVector.Y * diffOrigin.Y + axisVector.Z * diffOrigin.Z;
+	float RayDirDotRayDir = RayDirection.X * RayDirection.X + RayDirection.Y * RayDirection.Y + RayDirection.Z * RayDirection.Z;
+	float RayDirDotAxis = RayDirection.X * AxisVector.X + RayDirection.Y * AxisVector.Y + RayDirection.Z * AxisVector.Z;
+	float AxisDotAxis = AxisVector.X * AxisVector.X + AxisVector.Y * AxisVector.Y + AxisVector.Z * AxisVector.Z;
+	float RayDirDotDiff = RayDirection.X * DiffOrigin.X + RayDirection.Y * DiffOrigin.Y + RayDirection.Z * DiffOrigin.Z;
+	float AxisDotDiff = AxisVector.X * DiffOrigin.X + AxisVector.Y * DiffOrigin.Y + AxisVector.Z * DiffOrigin.Z;
 
 	float Denominator = (RayDirDotRayDir * AxisDotAxis) - (RayDirDotAxis * RayDirDotAxis);
 
-	float rayT;
-	float axisS;
+	float RayT;
+	float AxisS;
 
 	if (Denominator < 1e-6f)
 	{
-		rayT = 0.0f;
-		axisS = (AxisDotAxis > 0.0f) ? (AxisDotDiff / AxisDotAxis) : 0.0f;
+		RayT = 0.0f;
+		AxisS = (AxisDotAxis > 0.0f) ? (AxisDotDiff / AxisDotAxis) : 0.0f;
 	}
 	else
 	{
-		rayT = (RayDirDotAxis * AxisDotDiff - AxisDotAxis * RayDirDotDiff) / Denominator;
-		axisS = (RayDirDotRayDir * AxisDotDiff - RayDirDotAxis * RayDirDotDiff) / Denominator;
+		RayT = (RayDirDotAxis * AxisDotDiff - AxisDotAxis * RayDirDotDiff) / Denominator;
+		AxisS = (RayDirDotRayDir * AxisDotDiff - RayDirDotAxis * RayDirDotDiff) / Denominator;
 	}
 
-	if (rayT < 0.0f) rayT = 0.0f;
+	if (RayT < 0.0f) RayT = 0.0f;
 
-	if (axisS < 0.0f) axisS = 0.0f;
-	else if (axisS > 1.0f) axisS = 1.0f;
+	if (AxisS < 0.0f) AxisS = 0.0f;
+	else if (AxisS > 1.0f) AxisS = 1.0f;
 
-	FVector closestPointOnRay = rayOrigin + (rayDirection * rayT);
-	FVector closestPointOnAxis = axisStart + (axisVector * axisS);
+	FVector ClosestPointOnRay = RayOrigin + (RayDirection * RayT);
+	FVector ClosestPointOnAxis = AxisStart + (AxisVector * AxisS);
 
-	FVector distanceVector = closestPointOnRay - closestPointOnAxis;
-	float distanceSquared = (distanceVector.X * distanceVector.X) +
-		(distanceVector.Y * distanceVector.Y) +
-		(distanceVector.Z * distanceVector.Z);
+	FVector DistanceVector = ClosestPointOnRay - ClosestPointOnAxis;
+	float DistanceSquared = (DistanceVector.X * DistanceVector.X) +
+		(DistanceVector.Y * DistanceVector.Y) +
+		(DistanceVector.Z * DistanceVector.Z);
 
-	float clickThresholdSquared = Radius * Radius;
+	float ClickThresholdSquared = Radius * Radius;
 
-	if (distanceSquared < clickThresholdSquared)
+	if (DistanceSquared < ClickThresholdSquared)
 	{
-		OutRayT = rayT;
+		OutRayT = RayT;
 		return true;
 	}
 
@@ -90,23 +90,23 @@ void UGizmoComponent::TranslateTarget(float DragAmount)
 {
 	if (TargetComponent == nullptr) return;
 
-	FVector constrainedDelta = GetVectorForAxis(SelectedAxis) * DragAmount;
+	FVector ConstrainedDelta = GetVectorForAxis(SelectedAxis) * DragAmount;
 
-	AddWorldOffset(constrainedDelta);
-	TargetComponent->AddWorldOffset(constrainedDelta);
+	AddWorldOffset(ConstrainedDelta);
+	TargetComponent->AddWorldOffset(ConstrainedDelta);
 }
 
 void UGizmoComponent::RotateTarget(float DragAmount)
 {
 	if (TargetComponent == nullptr) return;
 
-	FMatrix curMatrix = FMatrix::MakeRotationEuler(TargetComponent->GetRelativeRotation());
+	FMatrix CurMatrix = FMatrix::MakeRotationEuler(TargetComponent->GetRelativeRotation());
 
-	FVector rotationAxis = GetVectorForAxis(SelectedAxis);
+	FVector RotationAxis = GetVectorForAxis(SelectedAxis);
 
-	FMatrix deltaMatrix = FMatrix::MakeRotationAxis(rotationAxis, DragAmount);
+	FMatrix DeltaMatrix = FMatrix::MakeRotationAxis(RotationAxis, DragAmount);
 
-	FMatrix NewMatrix = curMatrix * deltaMatrix;
+	FMatrix NewMatrix = CurMatrix * DeltaMatrix;
 	TargetComponent->SetRelativeRotation(NewMatrix.GetEuler());
 }
 
@@ -114,19 +114,19 @@ void UGizmoComponent::ScaleTarget(float DragAmount)
 {
 	if (TargetComponent == nullptr) return;
 
-	float scaleDelta = DragAmount * ScaleSensitivity;
+	float ScaleDelta = DragAmount * ScaleSensitivity;
 
 	FVector NewScale = TargetComponent->GetRelativeScale();
 	switch (SelectedAxis)
 	{
 	case 0:
-		NewScale.X += scaleDelta;
+		NewScale.X += ScaleDelta;
 		break;
 	case 1:
-		NewScale.Y += scaleDelta;
+		NewScale.Y += ScaleDelta;
 		break;
 	case 2:
-		NewScale.Z += scaleDelta;
+		NewScale.Z += ScaleDelta;
 		break;
 	}
 
@@ -172,9 +172,9 @@ bool UGizmoComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 }
 
 
-FVector UGizmoComponent::GetVectorForAxis(int32 axis)
+FVector UGizmoComponent::GetVectorForAxis(int32 Axis)
 {
-	switch (axis)
+	switch (Axis)
 	{
 	case 0:
 		return GetForwardVector();
@@ -203,15 +203,15 @@ void UGizmoComponent::SetTarget(USceneComponent* NewTargetComponent)
 
 void UGizmoComponent::UpdateLinearDrag(const FRay& Ray)
 {
-	FVector axisVector = GetVectorForAxis(SelectedAxis);
+	FVector AxisVector = GetVectorForAxis(SelectedAxis);
 
-	FVector planeNormal = axisVector.Cross(Ray.Direction);
-	FVector projectDir = planeNormal.Cross(axisVector);
+	FVector PlaneNormal = AxisVector.Cross(Ray.Direction);
+	FVector ProjectDir = PlaneNormal.Cross(AxisVector);
 
-	float Denom = Ray.Direction.Dot(projectDir);
+	float Denom = Ray.Direction.Dot(ProjectDir);
 	if (std::abs(Denom) < 1e-6f) return;
 
-	float DistanceToPlane = (GetWorldLocation() - Ray.Origin).Dot(projectDir) / Denom;
+	float DistanceToPlane = (GetWorldLocation() - Ray.Origin).Dot(ProjectDir) / Denom;
 	FVector CurrentIntersectionLocation = Ray.Origin + (Ray.Direction * DistanceToPlane);
 
 	if (bIsFirstFrameOfDrag)
@@ -221,9 +221,9 @@ void UGizmoComponent::UpdateLinearDrag(const FRay& Ray)
 		return;
 	}
 
-	FVector fullDelta = CurrentIntersectionLocation - LastIntersectionLocation;
+	FVector FullDelta = CurrentIntersectionLocation - LastIntersectionLocation;
 
-	float DragAmount = fullDelta.Dot(axisVector);
+	float DragAmount = FullDelta.Dot(AxisVector);
 
 	HandleDrag(DragAmount);
 
@@ -232,13 +232,13 @@ void UGizmoComponent::UpdateLinearDrag(const FRay& Ray)
 
 void UGizmoComponent::UpdateAngularDrag(const FRay& Ray)
 {
-	FVector axisVector = GetVectorForAxis(SelectedAxis);
-	FVector planeNormal = axisVector;
+	FVector AxisVector = GetVectorForAxis(SelectedAxis);
+	FVector PlaneNormal = AxisVector;
 
-	float Denom = Ray.Direction.Dot(planeNormal);
+	float Denom = Ray.Direction.Dot(PlaneNormal);
 	if (std::abs(Denom) < 1e-6f) return;
 
-	float DistanceToPlane = (GetWorldLocation() - Ray.Origin).Dot(planeNormal) / Denom;
+	float DistanceToPlane = (GetWorldLocation() - Ray.Origin).Dot(PlaneNormal) / Denom;
 	FVector CurrentIntersectionLocation = Ray.Origin + (Ray.Direction * DistanceToPlane);
 
 	if (bIsFirstFrameOfDrag)
@@ -255,7 +255,7 @@ void UGizmoComponent::UpdateAngularDrag(const FRay& Ray)
 	float AngleRadians = std::acos(DotProduct);
 
 	FVector CrossProduct = CenterToLast.Cross(CenterToCurrent);
-	float Sign = (CrossProduct.Dot(axisVector) >= 0.0f) ? 1.0f : -1.0f;
+	float Sign = (CrossProduct.Dot(AxisVector) >= 0.0f) ? 1.0f : -1.0f;
 
 	float DeltaAngle = Sign * AngleRadians;
 
@@ -313,8 +313,8 @@ void UGizmoComponent::DragEnd()
 
 void UGizmoComponent::SetNextMode()
 {
-	EGizmoMode newMode = static_cast<EGizmoMode>((static_cast<int>(CurMode) + 1) % EGizmoMode::End);
-	UpdateGizmoMode(newMode);
+	EGizmoMode NextMode = static_cast<EGizmoMode>((static_cast<int>(CurMode) + 1) % EGizmoMode::End);
+	UpdateGizmoMode(NextMode);
 }
 
 void UGizmoComponent::UpdateGizmoMode(EGizmoMode NewMode)
@@ -398,19 +398,19 @@ void UGizmoComponent::Deactivate()
 
 EPrimitiveType UGizmoComponent::GetPrimitiveType() const
 {
-	EPrimitiveType curPrimitiveType = EPrimitiveType::EPT_TransGizmo;
+	EPrimitiveType CurPrimitiveType = EPrimitiveType::EPT_TransGizmo;
 	switch (CurMode)
 	{
 	case EGizmoMode::Translate:
 		break;
 	case EGizmoMode::Rotate:
-		curPrimitiveType = EPrimitiveType::EPT_RotGizmo;
+		CurPrimitiveType = EPrimitiveType::EPT_RotGizmo;
 		break;
 	case EGizmoMode::Scale:
-		curPrimitiveType = EPrimitiveType::EPT_ScaleGizmo;
+		CurPrimitiveType = EPrimitiveType::EPT_ScaleGizmo;
 		break;
 	}
-	return curPrimitiveType;
+	return CurPrimitiveType;
 }
 
 
