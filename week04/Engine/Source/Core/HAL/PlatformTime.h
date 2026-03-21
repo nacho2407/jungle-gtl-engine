@@ -9,7 +9,7 @@
 #include <thread>
 #endif
 
-struct FPlatformTime
+struct ENGINE_API FPlatformTime
 {
     static float Seconds();
     static uint64 Cycles64();

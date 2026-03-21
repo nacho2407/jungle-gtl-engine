@@ -4,7 +4,7 @@
 #include "Editor.h" //  이후에 Directory 만들어야 하나?
 #include "Launch/EngineLoop.h"
 
-class ENGINE_API FEditorEngineLoop : public IEngineLoop
+class FEditorEngineLoop : public IEngineLoop
 {
 public:
     bool PreInit(HINSTANCE HInstance, uint32 NCmdShow) override;

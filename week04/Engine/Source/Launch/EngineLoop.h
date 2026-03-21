@@ -5,10 +5,11 @@
 /*
     Interface for FEditorEngineLoop, FClientEngineLoop
 */
-class ENGINE_API IEngineLoop
+class IEngineLoop
 {
 protected :
-    virtual ~IEngineLoop() {}
+    IEngineLoop() = default;
+    virtual ~IEngineLoop() = default;
     virtual bool PreInit(HINSTANCE HInstance, uint32 NCmdShow) = 0;
     virtual int32 Run() = 0;
     virtual void ShutDown() = 0;
