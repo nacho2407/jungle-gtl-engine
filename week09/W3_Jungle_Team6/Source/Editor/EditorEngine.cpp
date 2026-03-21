@@ -10,13 +10,33 @@ void FEditorEngine::Create(HWND InHWindow)
 {
 	HWindow = InHWindow;
 
-	FEditorSettings::Get().LoadFromFile(FEditorSettings::GetDefaultSettingsPath());
+	RECT Rect;
+	GetClientRect(HWindow, &Rect);
+	WindowWidth = static_cast<float>(Rect.right - Rect.left);
+	WindowHeight = static_cast<float>(Rect.bottom - Rect.top);
+
+	InitEngine();
+	InitEditor();
+}
+
+void FEditorEngine::InitEngine()
+{
+	// 싱글턴 초기화 순서 보장
+	FNamePool::Get();
+	FObjectFactory::Get();
 
 	Renderer.Create(HWindow);
 	FRenderCollector::Initialize(Renderer.GetFD3DDevice().GetDevice());
+	FResourceManager::Get().LoadFromFile(FPaths::ToUtf8(FPaths::ResourceFilePath()));
+}
+
+void FEditorEngine::InitEditor()
+{
+	FEditorSettings::Get().LoadFromFile(FEditorSettings::GetDefaultSettingsPath());
 
 	MainPanel.Create(HWindow, Renderer, this);
 
+	// World
 	if (!Scene.empty()) {
 		EditorWorld = Scene[0];
 	}
@@ -27,30 +47,24 @@ void FEditorEngine::Create(HWND InHWindow)
 	CurrentWorld = 0;
 	Scene[CurrentWorld]->InitWorld();
 
+	// Gizmo
 	EditorGizmo = UObjectManager::Get().CreateObject<UGizmoComponent>();
 	EditorGizmo->SetWorldLocation(FVector(0.0f, 0.0f, 0.0f));
-	ViewportClient.SetGizmo(EditorGizmo);
+	EditorGizmo->Deactivate();
 
-	EditorGizmo->Deactivate();	//	Initially hide the gizmo until an object is selected
-
-	RECT rect;
-	GetClientRect(HWindow, &rect);
-	WindowWidth = static_cast<float>(rect.right - rect.left);
-	WindowHeight = static_cast<float>(rect.bottom - rect.top);
-
+	// ViewportClient
 	ViewportClient.SetSettings(&FEditorSettings::Get());
 	ViewportClient.Initialize(HWindow);
 	ViewportClient.SetViewportSize(WindowWidth, WindowHeight);
 	ViewportClient.SetWorld(Scene[CurrentWorld]);
+	ViewportClient.SetGizmo(EditorGizmo);
 
+	// Camera
 	EditorCamera = UObjectManager::Get().CreateObject<UCamera>();
 	ViewportClient.SetCamera(EditorCamera);
-	ViewportClient.SetViewportSize(WindowWidth, WindowHeight);
-
 	ResetCamera(EditorCamera);
 	EditorCamera->ApplyCameraState();
 	SyncCameraFromRenderHandler();
-
 	Scene[CurrentWorld]->SetActiveCamera(EditorCamera);
 }
 
@@ -98,7 +112,6 @@ void FEditorEngine::CloseScene() {
 	}
 
 	UObjectManager::Get().CollectGarbage();
-	FRenderCollector::Release();
 }
 
 void FEditorEngine::NewScene() {
@@ -111,10 +124,21 @@ void FEditorEngine::NewScene() {
 
 void FEditorEngine::Release()
 {
+	ShutdownEditor();
+	ShutdownEngine();
+}
+
+void FEditorEngine::ShutdownEditor()
+{
 	FEditorSettings::Get().SaveToFile(FEditorSettings::GetDefaultSettingsPath());
 	CloseScene();
 	MainPanel.Release();
-	FResourceManager::Get().ReleaseGPUResources();	// Device 해제 전에 GPU 리소스 정리
+}
+
+void FEditorEngine::ShutdownEngine()
+{
+	FResourceManager::Get().ReleaseGPUResources();
+	FRenderCollector::Release();
 	Renderer.Release();
 }
 
@@ -142,13 +166,14 @@ void FEditorEngine::BeginPlay()
 void FEditorEngine::BeginFrame(float DeltaTime)
 {
 	InputSystem::Update();
-	ViewportClient.Tick(DeltaTime);
-	MainPanel.Update();
-	SyncCameraFromRenderHandler();
 }
 
 void FEditorEngine::Update(float DeltaTime)
 {
+	ViewportClient.Tick(DeltaTime);
+	MainPanel.Update();
+	SyncCameraFromRenderHandler();
+	UpdateWorld(DeltaTime);
 }
 
 void FEditorEngine::Render(float DeltaTime)

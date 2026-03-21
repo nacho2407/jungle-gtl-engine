@@ -69,6 +69,11 @@ public:
 	}
 
 private:
+	void InitEngine();
+	void InitEditor();
+	void ShutdownEditor();
+	void ShutdownEngine();
+
 	void UpdateWorld(float DeltaTime);
 	void SyncCameraFromRenderHandler();
 	void BuildRenderCommands();
