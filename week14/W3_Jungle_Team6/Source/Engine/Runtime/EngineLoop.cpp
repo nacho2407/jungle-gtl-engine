@@ -1,71 +1,6 @@
 #include "Engine/Runtime/EngineLoop.h"
 
-#include <windowsx.h>
-
-#include "ImGui/imgui_impl_win32.h"
-
-#include "Engine/Core/ConsoleHelper.h"
-#include "Engine/Core/InputSystem.h"
 #include "Editor/EditorEngine.h"
-
-// ImGui Win32 메시지 핸들러
-extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, uint32 msg, WPARAM wParam, LPARAM lParam);
-
-LRESULT CALLBACK FEngineLoop::StaticWndProc(HWND hWnd, uint32 message, WPARAM wParam, LPARAM lParam)
-{
-	FEngineLoop* EngineLoop = reinterpret_cast<FEngineLoop*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
-
-	if (message == WM_NCCREATE)
-	{
-		CREATESTRUCT* createStruct = reinterpret_cast<CREATESTRUCT*>(lParam);
-		EngineLoop = reinterpret_cast<FEngineLoop*>(createStruct->lpCreateParams);
-		SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(EngineLoop));
-	}
-
-	if (EngineLoop)
-	{
-		return EngineLoop->WndProc(hWnd, message, wParam, lParam);
-	}
-
-	return DefWindowProc(hWnd, message, wParam, lParam);
-}
-
-LRESULT FEngineLoop::WndProc(HWND hWnd, uint32 message, WPARAM wParam, LPARAM lParam)
-{
-	if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
-	{
-		return true;
-	}
-
-	switch (message)
-	{
-	case WM_DESTROY:
-		PostQuitMessage(0);
-		return 0;
-	case WM_MOUSEWHEEL:
-		InputSystem::AddScrollDelta(GET_WHEEL_DELTA_WPARAM(wParam));
-		return 0;
-	case WM_SIZE:
-		if (wParam != SIZE_MINIMIZED && GEngine)
-		{
-			GEngine->OnWindowResized(LOWORD(lParam), HIWORD(lParam));
-		}
-		return 0;
-	case WM_ENTERSIZEMOVE:
-		bIsResizing = true;
-		return 0;
-	case WM_EXITSIZEMOVE:
-		bIsResizing = false;
-		return 0;
-	case WM_SIZING:
-		TickFrame();
-		return 0;
-	default:
-		break;
-	}
-
-	return DefWindowProc(hWnd, message, wParam, lParam);
-}
 
 void FEngineLoop::CreateEngine()
 {
@@ -80,28 +15,22 @@ bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
 {
 	(void)nShowCmd;
 
-	WCHAR WindowClass[] = L"JungleWindowClass";
-	WCHAR Title[] = L"Game Tech Lab";
-	WNDCLASSW wndclass = { 0, StaticWndProc, 0, 0, 0, 0, 0, 0, 0, WindowClass };
-
-	RegisterClassW(&wndclass);
-
-	HWindow = CreateWindowExW(
-		0,
-		WindowClass,
-		Title,
-		WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT,
-		1920, 1080,
-		nullptr, nullptr, hInstance, this);
-
-	if (!HWindow)
+	if (!Application.Init(hInstance))
 	{
 		return false;
 	}
 
+	Application.SetOnSizingCallback([this]() { TickFrame(); });
+	Application.SetOnResizedCallback([](unsigned int Width, unsigned int Height)
+	{
+		if (GEngine)
+		{
+			GEngine->OnWindowResized(Width, Height);
+		}
+	});
+
 	CreateEngine();
-	GEngine->Init(HWindow);
+	GEngine->Init(&Application.GetWindow());
 	GEngine->BeginPlay();
 
 	InitializeTiming();
@@ -124,7 +53,7 @@ void FEngineLoop::TickFrame()
 	float MainLoopFps = (DeltaTime > 1e-6f) ? (1.0f / DeltaTime) : 0.0f;
 	GEngine->SetMainLoopFPS(MainLoopFps);
 
-	if (bIsResizing)
+	if (Application.IsResizing())
 	{
 		GEngine->Tick(DeltaTime);
 		GEngine->Render(DeltaTime);
@@ -139,22 +68,11 @@ void FEngineLoop::TickFrame()
 
 int FEngineLoop::Run()
 {
-	while (!bIsExit)
+	while (!Application.IsExitRequested())
 	{
-		MSG msg;
-		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+		Application.PumpMessages();
 
-			if (msg.message == WM_QUIT)
-			{
-				bIsExit = true;
-				break;
-			}
-		}
-
-		if (bIsExit)
+		if (Application.IsExitRequested())
 		{
 			break;
 		}

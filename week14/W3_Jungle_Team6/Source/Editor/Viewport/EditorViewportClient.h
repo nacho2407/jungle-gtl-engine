@@ -3,7 +3,6 @@
 #include "Render/Common/RenderTypes.h"
 
 #include "Viewport/CursorOverlayState.h"
-#include <windows.h>
 #include <string>
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
@@ -13,13 +12,14 @@ class UWorld;
 class UCamera;
 class UGizmoComponent;
 class FEditorSettings;
+class FWindowsWindow;
 
 using namespace common::structs;
 
 class FEditorViewportClient
 {
 public:
-	void Initialize(HWND InHWindow);
+	void Initialize(FWindowsWindow* InWindow);
 	void SetWorld(UWorld* InWorld) { World = InWorld; }
 	void SetCamera(UCamera* InCamera) { Camera = InCamera; }
 	void SetGizmo(UGizmoComponent* InGizmo) { Gizmo = InGizmo; }
@@ -41,7 +41,7 @@ private:
 	void HandleDragStart(const FRay& Ray);
 
 private:
-	HWND HWindow = nullptr;
+	FWindowsWindow* Window = nullptr;
 	UWorld* World = nullptr;
 	UCamera* Camera = nullptr;
 	UGizmoComponent* Gizmo = nullptr;

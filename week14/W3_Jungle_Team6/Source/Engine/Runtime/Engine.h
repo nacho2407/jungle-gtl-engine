@@ -6,6 +6,8 @@
 #include "Render/Renderer/Renderer.h"
 #include "Render/Scene/RenderBus.h"
 
+class FWindowsWindow;
+
 class UEngine : public UObject
 {
 public:
@@ -15,7 +17,7 @@ public:
 	~UEngine() override = default;
 
 	// Lifecycle
-	virtual void Init(HWND InHWindow);
+	virtual void Init(FWindowsWindow* InWindow);
 	virtual void Shutdown();
 	virtual void BeginPlay();
 	virtual void BeginFrame(float DeltaTime);
@@ -26,6 +28,7 @@ public:
 	virtual void OnWindowResized(uint32 Width, uint32 Height);
 
 	// Accessors
+	FWindowsWindow* GetWindow() const { return Window; }
 	UWorld* GetWorld() const { return Scene.empty() ? nullptr : Scene[CurrentWorld]; }
 	TArray<UWorld*>& GetScene() { return Scene; }
 	uint32 GetCurrentWorld() const { return CurrentWorld; }
@@ -53,9 +56,7 @@ protected:
 	void SyncCameraFromRenderHandler();
 
 protected:
-	HWND HWindow = nullptr;
-	float WindowWidth = 1920.f;
-	float WindowHeight = 1080.f;
+	FWindowsWindow* Window = nullptr;
 
 	uint32 CurrentWorld = 0;
 	TArray<UWorld*> Scene;
