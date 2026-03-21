@@ -1,13 +1,12 @@
 #pragma once
 
 #include "Engine/Runtime/Engine.h"
-#include "Component/GizmoComponent.h"
 
 #include "Editor/Viewport/EditorViewportClient.h"
 #include "Editor/UI/EditorMainPanel.h"
-
-#include "Engine/Serialization/SceneSaveManager.h"
 #include "Editor/Settings/EditorSettings.h"
+
+class UGizmoComponent;
 
 class UEditorEngine : public UEngine
 {

@@ -3,8 +3,6 @@
 #include <cstring>
 #include "Vector.h"
 
-#include <iostream>
-
 struct FMatrix {
 	static const FMatrix Identity;
 

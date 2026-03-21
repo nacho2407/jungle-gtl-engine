@@ -3,6 +3,7 @@
 #include "Editor/EditorEngine.h"
 
 #include "ImGui/imgui.h"
+#include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
