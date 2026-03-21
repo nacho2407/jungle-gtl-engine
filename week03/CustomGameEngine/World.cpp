@@ -21,7 +21,6 @@ UWorld::~UWorld() {
 	}
 	delete SceneMgr;
 	SceneMgr = nullptr;
-	FLevel::GetInstance().Clear();
 }
 
 SceneManager* UWorld::GetSceneManager()
@@ -42,18 +41,24 @@ void UWorld::OnBeforeRender() const
 {
 	// 향후 확작성을 위한 TODO: 멀티 씬 구조에서 for each scene 루프 중첩 추가
 	UScene* activeScene = SceneMgr->GetActiveScene();
-	if (activeScene == nullptr) return;
+	UScene* permanentScene = SceneMgr->GetPermanentScene();
 
-	auto sceneComponents = activeScene->SceneComponents;
-	for (USceneComponent* s : sceneComponents)
-	{
-		UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(s);
-		if (primitive != nullptr)
+	auto UpdateScene = [](UScene* scene) {
+		if (scene == nullptr) return;
+		auto sceneComponents = scene->SceneComponents;
+		for (USceneComponent* s : sceneComponents)
 		{
-			if (primitive->GetRenderObject()->bIsDirty)
-				primitive->ResolveRenderStateDirty();
+			UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(s);
+			if (primitive != nullptr)
+			{
+				if (primitive->GetRenderObject() && primitive->GetRenderObject()->bIsDirty)
+					primitive->ResolveRenderStateDirty();
+			}
 		}
-	}
+	};
+
+	UpdateScene(activeScene);
+	UpdateScene(permanentScene);
 }
 
 UWorld& GetWorld()

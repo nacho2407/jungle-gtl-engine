@@ -7,6 +7,8 @@
 #include "Object.h"
 #include "Serializable.h"
 
+class UScene;
+
 class USceneComponent : public UObject, public ISerializable
 {
 	DECLARE_RTTI(USceneComponent, UObject)
@@ -15,6 +17,8 @@ public:
 	virtual ~USceneComponent() override;
 
 public:
+	UScene* Scene = nullptr;
+
 	inline const FVector GetRelativeLocation() { return RelativeLocation; }
 	inline const FRotator GetRelativeRotation() { return RelativeRotation; }
 	inline const FVector GetRelativeScale3D() { return RelativeScale3D; }
