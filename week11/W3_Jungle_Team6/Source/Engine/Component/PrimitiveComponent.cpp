@@ -11,7 +11,7 @@ REGISTER_FACTORY(UCubeComponent)
 REGISTER_FACTORY(USphereComponent)
 REGISTER_FACTORY(UPlaneComponent)
 
-void UPrimitiveComponent::UpdateWorldAABB()
+void UPrimitiveComponent::UpdateWorldAABB() const
 {
 	FVector LExt = LocalExtents;
 
@@ -26,7 +26,7 @@ void UPrimitiveComponent::UpdateWorldAABB()
 	WorldAABBMaxLocation = WorldCenter + FVector(NewEx, NewEy, NewEz);
 }
 
-bool UPrimitiveComponent::CheckAABB(const FRay& Ray)
+bool UPrimitiveComponent::CheckAABB(const FRay& Ray) const
 {
 	float tMin = -INFINITY;
 	float tMax = INFINITY;
@@ -136,7 +136,7 @@ bool UPrimitiveComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 	return false;
 }
 
-void UPrimitiveComponent::UpdateWorldMatrix()
+void UPrimitiveComponent::UpdateWorldMatrix() const
 {
 	USceneComponent::UpdateWorldMatrix();
 

@@ -1,13 +1,11 @@
 ﻿#pragma once
 #include "RenderBus.h"
 #include "RenderCollectorContext.h"
-#include "Component/CameraComponent.h"
-#include "Component/PrimitiveComponent.h"
 #include "Render/Resource/MeshBufferManager.h"
 
 class UWorld;
 class AActor;
-//class FMeshBufferManager;
+class UPrimitiveComponent;
 
 class FRenderCollector {
 private:
