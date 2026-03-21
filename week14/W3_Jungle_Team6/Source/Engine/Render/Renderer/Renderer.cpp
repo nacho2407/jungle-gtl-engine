@@ -209,7 +209,6 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 		cb = Resources.PerObjectConstantBuffer.GetBuffer();
 		Context->VSSetConstantBuffers(1, 1, &cb);
 		break;
-
 	}
 }
 

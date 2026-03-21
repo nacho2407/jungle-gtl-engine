@@ -11,6 +11,7 @@
 #include "Editor/UI/EditorMainPanel.h"
 
 #include "Engine/Serialization/SceneSaveManager.h"
+#include "Render/FontBatcher.h"
 
 class FEditorEngine
 {
