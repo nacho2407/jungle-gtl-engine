@@ -1,19 +1,18 @@
 #pragma once
 #include <Core/CoreMinimal.h>
-#include "ApplicationCore/Input/InputEvent.h"
 
 namespace Engine::ApplicationCore
 {
-    class IApplicationMessageHandler;
+    class FInputSystem;
 
-    class IApplication
+    class ENGINE_API IApplication
     {
       public:
         constexpr IApplication() = default;
         virtual ~IApplication() = default;
 
-        virtual void SetMessageHandler(IApplicationMessageHandler* InMessageHandler) = 0;
-        virtual IApplicationMessageHandler* GetMessageHandler() const = 0;
+        virtual void          SetInputSystem(FInputSystem* InInputSystem) = 0;
+        virtual FInputSystem* GetInputSystem() const = 0;
 
         virtual bool CreateApplicationWindow(const wchar_t* InTitle, int32 InWidth,
                                              int32 InHeight) = 0;
@@ -29,7 +28,7 @@ namespace Engine::ApplicationCore
 
         virtual void* GetNativeWindowHandle() const = 0;
 
-        virtual bool ProcessKeyDownEvent(EKey Key, bool bIsRepeat) = 0;
+       /* virtual bool ProcessKeyDownEvent(EKey Key, bool bIsRepeat) = 0;
         virtual bool ProcessKeyUpEvent(EKey Key) = 0;
 
         virtual bool ProcessMouseDownEvent(EKey Button, int32 X, int32 Y) = 0;
@@ -38,6 +37,6 @@ namespace Engine::ApplicationCore
 
         virtual bool ProcessMouseMoveEvent(int32 X, int32 Y) = 0;
         virtual bool ProcessRawMouseMoveEvent(int32 DeltaX, int32 DeltaY) = 0;
-        virtual bool ProcessMouseWheelEvent(float Delta, int32 X, int32 Y) = 0;
+        virtual bool ProcessMouseWheelEvent(float Delta, int32 X, int32 Y) = 0;*/
     };
 } // namespace Engine::ApplicationCore

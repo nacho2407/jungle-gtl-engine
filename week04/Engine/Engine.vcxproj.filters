@@ -93,6 +93,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\ApplicationCore\Input\InputRouter.cpp">
+      <Filter>Source\ApplicationCore\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ApplicationCore\Input\InputSystem.cpp">
+      <Filter>Source\ApplicationCore\Input</Filter>
+    </ClCompile>
     <ClCompile Include="Source\ApplicationCore\Windows\WindowsApplication.cpp">
       <Filter>Source\ApplicationCore\Windows</Filter>
     </ClCompile>
@@ -206,7 +212,22 @@
     <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplicationMessageHandler.h">
       <Filter>Source\ApplicationCore\GenericPlatform</Filter>
     </ClInclude>
+    <ClInclude Include="Source\ApplicationCore\Input\IInputContext.h">
+      <Filter>Source\ApplicationCore\Input</Filter>
+    </ClInclude>
     <ClInclude Include="Source\ApplicationCore\Input\InputEvent.h">
+      <Filter>Source\ApplicationCore\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ApplicationCore\Input\InputRouter.h">
+      <Filter>Source\ApplicationCore\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ApplicationCore\Input\InputState.h">
+      <Filter>Source\ApplicationCore\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ApplicationCore\Input\InputSystem.h">
+      <Filter>Source\ApplicationCore\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ApplicationCore\Input\InputTypes.h">
       <Filter>Source\ApplicationCore\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\ApplicationCore\Windows\WindowsApplication.h">
