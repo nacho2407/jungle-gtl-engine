@@ -197,15 +197,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Resources\Sphere.h">
-      <Filter>Resources</Filter>
-    </ClInclude>
-    <ClInclude Include="Resources\Triangle.h">
-      <Filter>Resources</Filter>
-    </ClInclude>
-    <ClInclude Include="Resources\VertexSimple.h">
-      <Filter>Resources</Filter>
-    </ClInclude>
     <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplication.h">
       <Filter>Source\ApplicationCore\GenericPlatform</Filter>
     </ClInclude>
@@ -434,6 +425,11 @@
     <ClInclude Include="Source\Renderer\Types\ViewMode.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
+    <ClInclude Include="Resources\Primitives\Cube.h" />
+    <ClInclude Include="Resources\Primitives\Plane.h" />
+    <ClInclude Include="Resources\Primitives\Sphere.h" />
+    <ClInclude Include="Resources\Primitives\Triangle.h" />
+    <ClInclude Include="Resources\Primitives\VertexSimple.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
