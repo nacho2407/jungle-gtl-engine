@@ -140,9 +140,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
-    <ClCompile Include="Source\Editor\Core\EditorConsole.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorConsoleWidget.cpp" />
     <ClCompile Include="Source\Editor\Settings\EditorSettings.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorControlWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorPropertyWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorSceneWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorWidget.cpp" />
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Camera.cpp" />
@@ -184,9 +188,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h" />
-    <ClInclude Include="Source\Editor\Core\EditorConsole.h" />
+    <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h" />
     <ClInclude Include="Source\Editor\Settings\EditorSettings.h" />
+    <ClInclude Include="Source\Editor\UI\EditorControlWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h" />
+    <ClInclude Include="Source\Editor\UI\EditorPropertyWidget.h" />
+    <ClInclude Include="Source\Editor\UI\EditorSceneWidget.h" />
+    <ClInclude Include="Source\Editor\UI\EditorWidget.h" />
     <ClInclude Include="Source\Editor\Viewport\CursorOverlayState.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />
