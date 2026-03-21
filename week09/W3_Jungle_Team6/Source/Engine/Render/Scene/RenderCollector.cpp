@@ -56,9 +56,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 {
 	FRenderCommand Cmd = {};
 	Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
-	Cmd.TransformConstants = FTransformConstants{ primitiveComponent->GetWorldMatrix(), Context.Camera->GetViewMatrix(), Context.Camera->GetProjectionMatrix() };
-
-	if (primitiveComponent->GetRenderCommand(Context.Camera->GetViewMatrix(), Context.Camera->GetProjectionMatrix(), Cmd))
+	Cmd.TransformConstants = FTransformConstants{ primitiveComponent->GetWorldMatrix() };
+	if (primitiveComponent->GetRenderCommand(Cmd))
 	{
 		ERenderPass selectedRenderPass = ERenderPass::Component;
 		switch (Cmd.Type)
@@ -103,9 +102,7 @@ void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, FRen
 		FRenderCommand Cmd = {};
 		Cmd.Type = ERenderCommandType::Gizmo;
 		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
-		Cmd.TransformConstants = FTransformConstants{ Gizmo->GetWorldMatrix(), 
-													RenderBus.GetView(), 
-													RenderBus.GetProj()};
+		Cmd.TransformConstants = FTransformConstants{ Gizmo->GetWorldMatrix()};
 		if (bInner)
 		{
 			Cmd.DepthStencilState = EDepthStencilState::None;
@@ -161,7 +158,7 @@ void FRenderCollector::CollectComponentOutline(UPrimitiveComponent* primitiveCom
 {
 	FRenderCommand OutlineCmd{};
 	OutlineCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
-	OutlineCmd.TransformConstants = FTransformConstants{ primitiveComponent->GetWorldMatrix(), Context.Camera->GetViewMatrix(), Context.Camera->GetProjectionMatrix() };
+	OutlineCmd.TransformConstants = FTransformConstants{ primitiveComponent->GetWorldMatrix() };
 	OutlineCmd.Type = ERenderCommandType::SelectionOutline;
 
 	OutlineCmd.Constants.Outline.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
