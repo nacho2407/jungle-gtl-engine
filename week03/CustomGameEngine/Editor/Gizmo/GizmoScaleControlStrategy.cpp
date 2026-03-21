@@ -1,9 +1,10 @@
-﻿#include "GizmoScaleControlStrategy.h"
+#include "GizmoScaleControlStrategy.h"
 #include "Component/GizmoComponent.h"
 #include "EngineCore/ResourceManager.h"
 #include "Component/Object.h"
 #include "Renderer/Renderer.h"
-#include "Renderer/RenderObject.h"
+#include "Renderer/Level.h"
+#include "Scene.h"
 #include "Component/SceneComponent.h"
 #include "Editor/Picker.h"
 #include "EngineCore/Logger.h"
@@ -124,16 +125,18 @@ void GizmoScaleControlStrategy::EndDrag()
 
 void GizmoScaleControlStrategy::SetDrawEnable(bool bEnable)
 {
+	if (Controller == nullptr || Controller->Scene == nullptr) return;
+
 	if (bEnable)
 	{
-		FLevel::GetInstance().RegisterRenderObject(GizmoX);
-		FLevel::GetInstance().RegisterRenderObject(GizmoY);
-		FLevel::GetInstance().RegisterRenderObject(GizmoZ);
+		Controller->Scene->Level.RegisterRenderObject(GizmoX);
+		Controller->Scene->Level.RegisterRenderObject(GizmoY);
+		Controller->Scene->Level.RegisterRenderObject(GizmoZ);
 	}
 	else
 	{
-		FLevel::GetInstance().UnregisterRenderObject(GizmoX);
-		FLevel::GetInstance().UnregisterRenderObject(GizmoY);
-		FLevel::GetInstance().UnregisterRenderObject(GizmoZ);
+		Controller->Scene->Level.UnregisterRenderObject(GizmoX);
+		Controller->Scene->Level.UnregisterRenderObject(GizmoY);
+		Controller->Scene->Level.UnregisterRenderObject(GizmoZ);
 	}
 }

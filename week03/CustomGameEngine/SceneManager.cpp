@@ -119,7 +119,7 @@ void SceneManager::RemoveSceneComponent(USceneComponent* toDespawn, UScene* targ
 	auto primToDespawn = Cast<UPrimitiveComponent>(toDespawn);
 	if (primToDespawn != nullptr)
 	{
-		FLevel::GetInstance().UnregisterRenderObject(primToDespawn->GetRenderObject());
+		scene->Level.UnregisterRenderObject(primToDespawn->GetRenderObject());
 	}
 
 	for (auto it = scene->SceneComponents.begin(); it != scene->SceneComponents.end(); ++it)

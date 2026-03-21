@@ -206,7 +206,18 @@ void EngineApp::Run()
 		ResourceManager* RM = ResourceManager::GetInstance();
 		Renderer->RenderGrid(RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").VertexShader.Get(), RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").PixelShader.Get());
 
-		Renderer->Render();
+		SceneManager* SceneMgr = GetWorld().GetSceneManager();
+		TArray<FLevel*> LevelsToRender;
+		if (SceneMgr->GetPermanentScene())
+		{
+			LevelsToRender.push_back(&SceneMgr->GetPermanentScene()->Level);
+		}
+		if (SceneMgr->GetActiveScene())
+		{
+			LevelsToRender.push_back(&SceneMgr->GetActiveScene()->Level);
+		}
+		Renderer->Render(LevelsToRender);
+		
 		EditorInst->DrawUI();
 
 		Renderer->SwapBuffer();
