@@ -40,11 +40,6 @@ public:
 	int32 GetUpdateRate() const { return FEditorSettings::Get().UpdateRate; }
 	void SetUpdateRate(int32 NewRate) { FEditorSettings::Get().UpdateRate = (NewRate < 1) ? 1 : NewRate; }
 
-	// Legacy names for compatibility during migration
-	UWorld* GetEditorWorld() const { return GetWorld(); }
-	UCameraComponent* GetEditorCamera() const { return GetCamera(); }
-	UGizmoComponent* GetEditorGizmo() const { return GetGizmo(); }
-
 protected:
 	void Render(float DeltaTime) override;
 

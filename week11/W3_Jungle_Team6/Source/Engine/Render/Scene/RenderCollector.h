@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "RenderBus.h"
 #include "RenderCollectorContext.h"
-#include "Component/Camera.h"
+#include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Render/Resource/MeshBufferManager.h"
 

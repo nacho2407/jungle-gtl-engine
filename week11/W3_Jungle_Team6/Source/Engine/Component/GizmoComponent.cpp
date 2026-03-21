@@ -100,7 +100,7 @@ void UGizmoComponent::RotateTarget(float DragAmount)
 {
 	if (TargetComponent == nullptr) return;
 
-	FMatrix curMatrix = FMatrix::MakeRotationEuler(TargetComponent->RelativeRotation);
+	FMatrix curMatrix = FMatrix::MakeRotationEuler(TargetComponent->GetRelativeRotation());
 
 	FVector rotationAxis = GetVectorForAxis(SelectedAxis);
 
@@ -116,7 +116,7 @@ void UGizmoComponent::ScaleTarget(float DragAmount)
 
 	float scaleDelta = DragAmount * ScaleSensitivity;
 
-	FVector NewScale = TargetComponent->RelativeScale3D;
+	FVector NewScale = TargetComponent->GetRelativeScale();
 	switch (SelectedAxis)
 	{
 	case 0:
@@ -332,7 +332,7 @@ void UGizmoComponent::UpdateGizmoTransform()
 	switch (CurMode)
 	{
 	case EGizmoMode::Scale:
-		SetRelativeRotation(TargetComponent->RelativeRotation);
+		SetRelativeRotation(TargetComponent->GetRelativeRotation());
 		MeshData = &FMeshManager::Get().GetScaleGizmo();
 		break;
 
@@ -343,7 +343,7 @@ void UGizmoComponent::UpdateGizmoTransform()
 		}
 		else
 		{
-			SetRelativeRotation(TargetComponent->RelativeRotation);
+			SetRelativeRotation(TargetComponent->GetRelativeRotation());
 		}
 		MeshData = &FMeshManager::Get().GetRotationGizmo();
 		break;
@@ -355,7 +355,7 @@ void UGizmoComponent::UpdateGizmoTransform()
 		}
 		else
 		{
-			SetRelativeRotation(TargetComponent->RelativeRotation);
+			SetRelativeRotation(TargetComponent->GetRelativeRotation());
 		}
 		MeshData = &FMeshManager::Get().GetTranslationGizmo();
 		break;

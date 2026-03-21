@@ -31,13 +31,14 @@ public:
 	const FMatrix& GetWorldMatrix();
 	void SetWorldLocation(FVector NewWorldLocation);
 	FVector GetWorldLocation();
-	FVector GetRelativeRotation() { return RelativeRotation; }
-	FVector GetRelativeScale() { return RelativeScale3D; }
+	FVector GetRelativeLocation() const { return RelativeLocation; }
+	FVector GetRelativeRotation() const { return RelativeRotation; }
+	FVector GetRelativeScale() const { return RelativeScale3D; }
 	FVector GetForwardVector();
 	FVector GetUpVector();
 	FVector GetRightVector();
 
-	FMatrix GetRelativeMatrixTemp() const;
+	FMatrix GetRelativeMatrix() const;
 
 	// Make sure we are not facing gimbal lock
 	void Move(const FVector& delta);
@@ -52,7 +53,6 @@ protected:
 
 	bool bTransformDirty = true;
 
-public:
 	FVector RelativeLocation{};
 	FVector RelativeRotation{};
 	FVector RelativeScale3D{ 1.0f, 1.0f ,1.0f };
