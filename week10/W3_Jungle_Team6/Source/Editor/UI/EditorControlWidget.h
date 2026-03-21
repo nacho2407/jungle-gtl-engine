@@ -8,7 +8,7 @@ enum class EPrimitiveType;
 class FEditorControlWidget : public FEditorWidget
 {
 public:
-	virtual void Initialize(FEditorEngine* InEditorEngine) override;
+	virtual void Initialize(UEditorEngine* InEditorEngine) override;
 	virtual void Render(float DeltaTime, FViewOutput& ViewOutput) override;
 
 private:

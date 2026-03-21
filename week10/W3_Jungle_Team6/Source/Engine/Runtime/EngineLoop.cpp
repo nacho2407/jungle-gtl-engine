@@ -1,4 +1,4 @@
-﻿#include "Engine/Runtime/EngineLoop.h"
+#include "Engine/Runtime/EngineLoop.h"
 
 #include <windowsx.h>
 
@@ -6,6 +6,7 @@
 
 #include "Engine/Core/ConsoleHelper.h"
 #include "Engine/Core/InputSystem.h"
+#include "Editor/EditorEngine.h"
 
 // ImGui Win32 메시지 핸들러
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, uint32 msg, WPARAM wParam, LPARAM lParam);
@@ -45,9 +46,9 @@ LRESULT FEngineLoop::WndProc(HWND hWnd, uint32 message, WPARAM wParam, LPARAM lP
 		InputSystem::AddScrollDelta(GET_WHEEL_DELTA_WPARAM(wParam));
 		return 0;
 	case WM_SIZE:
-		if (wParam != SIZE_MINIMIZED)
+		if (wParam != SIZE_MINIMIZED && GEngine)
 		{
-			Editor.OnWindowResized(LOWORD(lParam), HIWORD(lParam));
+			GEngine->OnWindowResized(LOWORD(lParam), HIWORD(lParam));
 		}
 		return 0;
 	case WM_ENTERSIZEMOVE:
@@ -64,6 +65,15 @@ LRESULT FEngineLoop::WndProc(HWND hWnd, uint32 message, WPARAM wParam, LPARAM lP
 	}
 
 	return DefWindowProc(hWnd, message, wParam, lParam);
+}
+
+void FEngineLoop::CreateEngine()
+{
+#if WITH_EDITOR
+	GEngine = UObjectManager::Get().CreateObject<UEditorEngine>();
+#else
+	GEngine = UObjectManager::Get().CreateObject<UEngine>();
+#endif
 }
 
 bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
@@ -90,8 +100,9 @@ bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
 		return false;
 	}
 
-	Editor.Create(HWindow);
-	Editor.BeginPlay();
+	CreateEngine();
+	GEngine->Init(HWindow);
+	GEngine->BeginPlay();
 
 	InitializeTiming();
 	return true;
@@ -111,20 +122,19 @@ void FEngineLoop::TickFrame()
 	PrevTime = CurrTime;
 
 	float MainLoopFps = (DeltaTime > 1e-6f) ? (1.0f / DeltaTime) : 0.0f;
-	Editor.SetMainLoopFPS(MainLoopFps);
+	GEngine->SetMainLoopFPS(MainLoopFps);
 
-	// 리사이즈 중에는 렌더만 진행해서 화면 반응성을 유지
 	if (bIsResizing)
 	{
-		Editor.Update(DeltaTime);
-		Editor.Render(DeltaTime);
+		GEngine->Tick(DeltaTime);
+		GEngine->Render(DeltaTime);
 		return;
 	}
 
-	Editor.BeginFrame(DeltaTime);
-	Editor.Update(DeltaTime);
-	Editor.Render(DeltaTime);
-	Editor.EndFrame();
+	GEngine->BeginFrame(DeltaTime);
+	GEngine->Tick(DeltaTime);
+	GEngine->Render(DeltaTime);
+	GEngine->EndFrame();
 }
 
 int FEngineLoop::Run()
@@ -157,6 +167,10 @@ int FEngineLoop::Run()
 
 void FEngineLoop::Shutdown()
 {
-	Editor.Release();
+	if (GEngine)
+	{
+		GEngine->Shutdown();
+	}
 	UObjectManager::Get().CollectGarbage();
+	GEngine = nullptr;
 }
