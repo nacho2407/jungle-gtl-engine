@@ -21,7 +21,6 @@ public:
 	void Init(FWindowsWindow* InWindow) override;
 	void Shutdown() override;
 	void Tick(float DeltaTime) override;
-	void Render(float DeltaTime) override;
 	void OnWindowResized(uint32 Width, uint32 Height) override;
 
 	// Editor-specific API
@@ -47,6 +46,9 @@ public:
 	UGizmoComponent* GetEditorGizmo() const { return GetGizmo(); }
 	FCameraState& GetEditorCameraState() { return GetCameraState(); }
 	const FCameraState& GetEditorCameraState() const { return GetCameraState(); }
+
+protected:
+	void Render(float DeltaTime) override;
 
 private:
 	void BuildRenderCommands();

@@ -37,26 +37,19 @@ void UEngine::BeginPlay()
 	}
 }
 
-void UEngine::BeginFrame(float DeltaTime)
-{
-	InputSystem::Update();
-}
-
 void UEngine::Tick(float DeltaTime)
 {
+	InputSystem::Update();
 	SyncCameraFromRenderHandler();
 	UpdateWorld(DeltaTime);
+	Render(DeltaTime);
+	UObjectManager::Get().CollectGarbage();
 }
 
 void UEngine::Render(float DeltaTime)
 {
 	Renderer.BeginFrame();
 	Renderer.EndFrame();
-}
-
-void UEngine::EndFrame()
-{
-	UObjectManager::Get().CollectGarbage();
 }
 
 void UEngine::OnWindowResized(uint32 Width, uint32 Height)
