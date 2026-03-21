@@ -40,6 +40,15 @@
     <Filter Include="Source\ThirdParty">
       <UniqueIdentifier>{b8e8bd27-1e61-2aa5-0088-7e70dd22287c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\ApplicationCore\GenericPlatform">
+      <UniqueIdentifier>{387b5035-7247-ab88-2751-c494bed9266f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\ApplicationCore\Input">
+      <UniqueIdentifier>{658e0f79-2d67-eb9d-c8d8-0c89acb03947}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\ApplicationCore\Windows">
+      <UniqueIdentifier>{2548a85b-9fa1-e3d9-af0b-dee02015da10}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Core\Containers">
       <UniqueIdentifier>{912017d8-8df8-694a-9f3f-b99826c544c4}</UniqueIdentifier>
     </Filter>
@@ -84,6 +93,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\ApplicationCore\Windows\WindowsApplication.cpp">
+      <Filter>Source\ApplicationCore\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ApplicationCore\Windows\WindowsWindow.cpp">
+      <Filter>Source\ApplicationCore\Windows</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Core\CoreGlobals.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
@@ -173,6 +188,21 @@
     </ClInclude>
     <ClInclude Include="Resources\VertexSimple.h">
       <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplication.h">
+      <Filter>Source\ApplicationCore\GenericPlatform</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplicationMessageHandler.h">
+      <Filter>Source\ApplicationCore\GenericPlatform</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ApplicationCore\Input\InputEvent.h">
+      <Filter>Source\ApplicationCore\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ApplicationCore\Windows\WindowsApplication.h">
+      <Filter>Source\ApplicationCore\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ApplicationCore\Windows\WindowsWindow.h">
+      <Filter>Source\ApplicationCore\Windows</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Containers\Array.h">
       <Filter>Source\Core\Containers</Filter>

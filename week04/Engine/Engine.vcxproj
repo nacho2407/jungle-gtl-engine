@@ -15,6 +15,11 @@
     <ClInclude Include="Resources\Sphere.h" />
     <ClInclude Include="Resources\Triangle.h" />
     <ClInclude Include="Resources\VertexSimple.h" />
+    <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplication.h" />
+    <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplicationMessageHandler.h" />
+    <ClInclude Include="Source\ApplicationCore\Input\InputEvent.h" />
+    <ClInclude Include="Source\ApplicationCore\Windows\WindowsApplication.h" />
+    <ClInclude Include="Source\ApplicationCore\Windows\WindowsWindow.h" />
     <ClInclude Include="Source\Core\Containers\Array.h" />
     <ClInclude Include="Source\Core\Containers\LinkedList.h" />
     <ClInclude Include="Source\Core\Containers\Map.h" />
@@ -84,7 +89,8 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Engine\Asset\AssetLoader.cpp" />
+    <ClCompile Include="Source\ApplicationCore\Windows\WindowsApplication.cpp" />
+    <ClCompile Include="Source\ApplicationCore\Windows\WindowsWindow.cpp" />
     <ClCompile Include="Source\Core\CoreGlobals.cpp" />
     <ClCompile Include="Source\Core\CoreMinimal.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
