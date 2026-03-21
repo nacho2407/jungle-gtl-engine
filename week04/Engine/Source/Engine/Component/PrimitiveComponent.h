@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SceneComponent.h"
+#include "Core/Math/Vector4.h"
 
 namespace Engine::Component
 {
@@ -20,12 +21,15 @@ namespace Engine::Component
         UPrimitiveComponent() = default;
         ~UPrimitiveComponent() override = default;
 
-        EPrimitiveType GetType();
-        void           SetType(EPrimitiveType NewType);
-        void           Update(float DeltaTime) override;
+        EPrimitiveType  GetType();
+        void            SetType(EPrimitiveType NewType);
+        const FVector4& GetColor() const;
+        void            SetColor(const FVector4& NewColor);
+        void            Update(float DeltaTime) override;
 
       private:
         bool           Pickable = true;
-        EPrimitiveType Type;
+        EPrimitiveType Type = Sphere;
+        FVector4       Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
     };
 } // namespace Engine::Component
