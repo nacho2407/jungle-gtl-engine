@@ -17,7 +17,7 @@ public:
 	int Version;
 	int NextUUID;
 	TArray<USceneComponent*> SceneComponents;
-
+	
 	bool IsCompSelected{ false };
 	FVector SelectedCompPos;
 

@@ -88,7 +88,7 @@ void EditorControlPanel::Draw(UCameraComponent* camera, ImGuiWindowLayout& layou
 	}
 	if (ImGui::Button("Spawn"))
 	{
-		for (int i = 0; i < spawnCount; i++)
+		for (int i = 0; i < spawnCount; ++i)
 		{
 			// TODO: Apply primitive type to spawn
 			auto p = PrimitiveFactory::AddPrimitive(primitiveType);
@@ -99,59 +99,128 @@ void EditorControlPanel::Draw(UCameraComponent* camera, ImGuiWindowLayout& layou
 	ImGui::SameLine();
 	ImGui::Separator();
 
-	//ImGui::InputText("Scene Name", sceneName, 128);
-	//if (ImGui::Button("New Scene"))
-	//{
-	//	editor->SelectComponent(nullptr);
-	//	GetWorld().GetSceneManager()->NewScene();
-	//}
-	//if (ImGui::Button("Save Scene"))
-	//{
-	//	GetWorld().GetSceneManager()->SaveScene(sceneName);
-	//}
-	//if (ImGui::Button("Load Scene"))
-	//{
-	//	editor->SelectComponent(nullptr);
-	//	GetWorld().GetSceneManager()->LoadScene(sceneName);
-	//}
+    static TArray<FString> SceneList;
+    static int32 SelectedSceneIndex = -1;
+    static bool bCreateNewSceneAfterSave = false;
 
-	static bool bOpenScenePopup = false;
-	static TArray<FString> SceneList;
-	static int32 SelectedSceneIndex = -1;
+    if (ImGui::Button("New Scene"))
+    {
+        ImGui::OpenPopup("New Scene Popup");
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Save Scene"))
+    {
+        ImGui::OpenPopup("Save Scene Popup");
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Load Scene"))
+    {
+        SceneList = GetSceneFileList("Scenes/");
+        SelectedSceneIndex = -1;
+        ImGui::OpenPopup("Load Scene Popup");
+    }
+    ImGui::SetNextWindowSize(ImVec2(320, 120), ImGuiCond_Appearing);
+    if (ImGui::BeginPopupModal("New Scene Popup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("Scene Save???");
 
-	if (ImGui::Button("Load Scene"))
-	{
-		SceneList = GetSceneFileList("Scenes/");
-		SelectedSceneIndex = -1;
-		ImGui::OpenPopup("Load Scene Popup");
-	}
+        if (ImGui::Button("Save"))
+        {
+            bCreateNewSceneAfterSave = true;
+            ImGui::CloseCurrentPopup();
+            ImGui::OpenPopup("Save Scene Popup");
+        }
 
-	if (ImGui::BeginPopupModal("Load Scene Popup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-	{
-		for (int32 i = 0; i < (int32)(SceneList.size()); ++i)
-		{
-			bool bSelected = (SelectedSceneIndex == i);
-			if (ImGui::Selectable(SceneList[i].c_str(), bSelected))
-			{
-				SelectedSceneIndex = i;
-			}
-		}
+        ImGui::SameLine();
+        if (ImGui::Button("Don't Save"))
+        {
+            editor->SelectComponent(nullptr);
+            GetWorld().GetSceneManager()->NewScene();
+            ImGui::CloseCurrentPopup();
+        }
 
-		if (ImGui::Button("Load") && SelectedSceneIndex >= 0)
-		{
-			editor->SelectComponent(nullptr);
-			GetWorld().GetSceneManager()->LoadScene(SceneList[SelectedSceneIndex].c_str());
-			ImGui::CloseCurrentPopup();
-		}
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel"))
+        {
+            ImGui::CloseCurrentPopup();
+        }
 
-		ImGui::SameLine();
-		if (ImGui::Button("Cancel"))
-		{
-			ImGui::CloseCurrentPopup();
-		}
+        ImGui::EndPopup();
+    }
 
-		ImGui::EndPopup();
-	}
+    ImGui::SetNextWindowSize(ImVec2(360, 140), ImGuiCond_Appearing);
+    if (ImGui::BeginPopupModal("Save Scene Popup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::InputText("Scene Name", sceneName, IM_ARRAYSIZE(sceneName));
+
+        if (ImGui::Button("Save"))
+        {
+            editor->SelectComponent(nullptr);
+            GetWorld().GetSceneManager()->SaveScene(sceneName);
+
+            ImGui::CloseCurrentPopup();
+
+            if (bCreateNewSceneAfterSave)
+            {
+                bCreateNewSceneAfterSave = false;
+                GetWorld().GetSceneManager()->NewScene();
+            }
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel"))
+        {
+            bCreateNewSceneAfterSave = false;
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+
+    // Load Scene 팝업
+    ImGui::SetNextWindowSize(ImVec2(500, 300), ImGuiCond_Appearing);
+    if (ImGui::BeginPopupModal("Load Scene Popup", nullptr))
+    {
+        if (ImGui::BeginChild("SceneList", ImVec2(0, 220), true))
+        {
+            for (int32 i = 0; i < (int32)SceneList.size(); ++i)
+            {
+                const bool bSelected = (SelectedSceneIndex == i);
+                if (ImGui::Selectable(SceneList[i].c_str(), bSelected))
+                {
+                    SelectedSceneIndex = i;
+                }
+            }
+            ImGui::EndChild();
+        }
+
+        const bool bCanLoad = (SelectedSceneIndex >= 0 && SelectedSceneIndex < (int32)SceneList.size());
+
+        if (!bCanLoad)
+        {
+            ImGui::BeginDisabled();
+        }
+
+        if (ImGui::Button("Load"))
+        {
+            editor->SelectComponent(nullptr);
+            GetWorld().GetSceneManager()->LoadScene(SceneList[SelectedSceneIndex].c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (!bCanLoad)
+        {
+            ImGui::EndDisabled();
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel"))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
 
 	ImGui::Separator();
 
