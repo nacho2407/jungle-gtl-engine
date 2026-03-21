@@ -136,13 +136,6 @@ void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceCo
 		Resources.EditorShader.Bind(DeviceContext);
 		break;
 
-	case ERenderPass::Grid:
-		Device.SetDepthStencilState(EDepthStencilState::DepthReadOnly);
-		Device.SetBlendState(EBlendState::AlphaBlend);
-		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		Resources.EditorShader.Bind(DeviceContext);
-		break;
-
 	case ERenderPass::Overlay:
 		Device.SetDepthStencilState(EDepthStencilState::None);
 		Device.SetBlendState(EBlendState::Opaque);
@@ -189,8 +182,6 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 		}
 		break;
 
-	case ERenderCommandType::Axis:
-	case ERenderCommandType::Grid:
 	case ERenderCommandType::DebugBox:
 		Resources.EditorConstantBuffer.Update(Context, &InCmd.Constants.Editor, sizeof(FEditorConstants));
 
@@ -228,7 +219,6 @@ EDepthStencilState FRenderer::GetDefaultDepthForPass(ERenderPass Pass) const
 	case ERenderPass::Outline:   return EDepthStencilState::StencilOutline;
 	case ERenderPass::DepthLess: return EDepthStencilState::Default;
 	case ERenderPass::Editor:    return EDepthStencilState::Default;
-	case ERenderPass::Grid:      return EDepthStencilState::DepthReadOnly;
 	case ERenderPass::Overlay:   return EDepthStencilState::None;
 	default:                     return EDepthStencilState::Default;
 	}
@@ -238,7 +228,6 @@ EBlendState FRenderer::GetDefaultBlendForPass(ERenderPass Pass) const
 {
 	switch (Pass)
 	{
-	case ERenderPass::Grid:
 	case ERenderPass::DepthLess: return EBlendState::AlphaBlend;
 	default:                     return EBlendState::Opaque;
 	}
