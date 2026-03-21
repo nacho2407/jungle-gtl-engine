@@ -188,7 +188,11 @@ void EngineApp::Run()
 		FVector Mouse = InputManager::GetInstance().MousePos;
 		if (!io.WantCaptureMouse && InputManager::GetInstance().IsKeyDown(VK_LBUTTON))
 		{
-			Picker->Pick(Mouse.x, Mouse.y, GetWorld().GetSceneManager()->GetActiveScene());
+			UScene* activeScene = GetWorld().GetSceneManager()->GetActiveScene();
+			if (activeScene != nullptr)
+			{
+				Picker->Pick(Mouse.x, Mouse.y, activeScene);
+			}
 		}
 
 		// Update Game World

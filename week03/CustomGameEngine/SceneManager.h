@@ -48,6 +48,8 @@ public:
 			return nullptr;
 		}
 
+		instance->UUID = UEngineStatics::GenUUID();
+
 		targetScene->SceneComponents.push_back(instance);
 		instance->OnComponentAdded();
 		return instance;

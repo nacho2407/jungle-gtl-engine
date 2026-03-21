@@ -64,7 +64,7 @@ const FString& FName::GetComparisonName() const
 FName FUniqueNameGenerator::MakeUniqueName(const FString& BaseName)
 {
 	FName Name(BaseName);
-	if (Name.ComparisonIndex >= ComparisonNumberStates.size())
+	while (Name.ComparisonIndex >= ComparisonNumberStates.size())
 	{
 		ComparisonNumberStates.push_back({});
 	}

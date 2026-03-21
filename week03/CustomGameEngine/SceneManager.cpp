@@ -50,7 +50,6 @@ UScene* SceneManager::NewScene()
 	newScene->Name = FName("NewScene_" + std::to_string((int32)LoadedScenes.size()));
 	SetActiveScene(newScene);
 	LoadedScenes.push_back(newScene);
-	UEngineStatics::NextUUID = 0;
 
 	UE_LOG("Created new scene\n");
 	return GetActiveScene();
@@ -105,7 +104,6 @@ void SceneManager::UnloadScene(UScene* targetScene)
 	if (ActiveScene == sceneToUnload)
 	{
 		SetActiveScene(LoadedScenes.empty() ? nullptr : LoadedScenes.back());
-		UEngineStatics::NextUUID = (ActiveScene != nullptr) ? ActiveScene->NextUUID : 0;
 	}
 }
 

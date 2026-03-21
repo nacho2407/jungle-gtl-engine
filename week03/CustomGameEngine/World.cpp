@@ -31,15 +31,20 @@ SceneManager* UWorld::GetSceneManager()
 
 void UWorld::Update(float deltaTime)
 {
-	SceneMgr->GetPermanentScene()->Update(deltaTime);
+	if (SceneMgr->GetPermanentScene())
+		SceneMgr->GetPermanentScene()->Update(deltaTime);
 	// 향후 확작성을 위한 TODO: 멀티 씬 구조에서 for each scene 루프 중첩 추가
-	SceneMgr->GetActiveScene()->Update(deltaTime);
+	if (SceneMgr->GetActiveScene())
+		SceneMgr->GetActiveScene()->Update(deltaTime);
 }
 
 void UWorld::OnBeforeRender() const
 {
 	// 향후 확작성을 위한 TODO: 멀티 씬 구조에서 for each scene 루프 중첩 추가
-	auto sceneComponents = SceneMgr->GetActiveScene()->SceneComponents;
+	UScene* activeScene = SceneMgr->GetActiveScene();
+	if (activeScene == nullptr) return;
+
+	auto sceneComponents = activeScene->SceneComponents;
 	for (USceneComponent* s : sceneComponents)
 	{
 		UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(s);
