@@ -1,11 +1,9 @@
-//#pragma once
+#pragma once
 //
-//#include "Object.h"
+//#include "CoreUObject/Object.h"
 //#include "SceneComponent.h"
-//#include "Math/Matrix.h"
-//#include "Math/Vector.h"
-//#include "ImGui/imgui.h"
-//#include "Ray.h"
+//#include "Core/Math/Matrix.h"
+//#include "Core/Math/Vector.h"
 //
 //enum class EProjectionType
 //{
@@ -17,7 +15,7 @@
 //const FVector UpVec(0.0f, 0.0f, 1.0f);
 //const float Epsilon = 1e-6f;
 //
-//class UCameraComponent : public USceneComponent {
+//class UCameraComponent : public Engine::Component::USceneComponent {
 //	DECLARE_RTTI(UCameraComponent, USceneComponent)
 //public:
 //	float FOV{ 90.0f };
@@ -75,8 +73,8 @@
 //
 //	FVector WorldToScreen(const FVector& worldPos) const;
 //	Ray ScreenPointToRay(int x, int y);
+//
 //private:
-//	ImGuiIO& io;
 //	void HandleCameraMove(float deltaTime);
 //	void UpdateCameraMatrices();
 //	static UCameraComponent* mainCamera;

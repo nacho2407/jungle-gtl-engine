@@ -3,7 +3,7 @@
 #include "Core/CoreMinimal.h"
 #include "Renderer/Scene.h"
 
-class ENGINE_API FEditor
+class FEditor
 {
 public:
     /* Default Functions */

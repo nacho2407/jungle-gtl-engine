@@ -129,6 +129,9 @@
     <ClCompile Include="Source\Core\Math\Vector4.cpp">
       <Filter>Source\Core\Math</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Core\Path.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Source\CoreUObject\Object.cpp">
       <Filter>Source\CoreUObject</Filter>
     </ClCompile>
@@ -136,6 +139,12 @@
       <Filter>Source\CoreUObject</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Asset\Asset.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\AssetLoader.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\AssetManager.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\CameraComponent.cpp">
@@ -167,6 +176,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp">
       <Filter>Source\Engine\ViewPort</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\Scene.cpp">
+      <Filter>Source\Renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -296,6 +308,9 @@
     <ClInclude Include="Source\Core\Misc\Name.h">
       <Filter>Source\Core\Misc</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\Path.h">
+      <Filter>Source\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\CoreUObject\Object.h">
       <Filter>Source\CoreUObject</Filter>
     </ClInclude>
@@ -303,6 +318,12 @@
       <Filter>Source\CoreUObject</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\Asset.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\AssetLoader.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\AssetManager.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\CameraComponent.h">

@@ -158,11 +158,11 @@
 //	IsOrthogonal = input;
 //}
 //
-////void UCamera::ChangePerpective(EProjectionType NewType)
-////{
-////	ProjectionType = NewType;
-////	bIsDirty = true;
-////}
+//void UCamera::ChangePerpective(EProjectionType NewType)
+//{
+//	ProjectionType = NewType;
+//	bIsDirty = true;
+//}
 //
 //void UCameraComponent::Update(float deltaTime) {
 //	HandleCameraMove(deltaTime);
@@ -186,8 +186,8 @@
 //		if (InputManager::GetInstance().IsKeyHold('F')
 //			&& GetWorld().GetActiveScene()->IsCompSelected)
 //		{
-//			// TODO: 오브젝트 포커싱 재구현
-//			// SetPosition(EditorInst->GetSelectedComponent()->GetRelativeLocation() - Direction * FocusLength);
+//			 TODO: 오브젝트 포커싱 재구현
+//			 SetPosition(EditorInst->GetSelectedComponent()->GetRelativeLocation() - Direction * FocusLength);
 //		}
 //	}
 //}
@@ -214,13 +214,13 @@
 //	return View;
 //}
 //
-////void UCamera::CalcProjectionMatrix()
-////{
-////	if (ProjectionType == EProjectionType::Perspective)
-////		CalcPerspectiveProjectionMatrix();
-////	else
-////		CalcOrthogonalProjectionMatrix();
-////}
+//void UCamera::CalcProjectionMatrix()
+//{
+//	if (ProjectionType == EProjectionType::Perspective)
+//		CalcPerspectiveProjectionMatrix();
+//	else
+//		CalcOrthogonalProjectionMatrix();
+//}
 //
 //void UCameraComponent::CalcProjectionMatrix()
 //{
@@ -292,10 +292,10 @@
 //
 //Ray UCameraComponent::ScreenPointToRay(int x, int y)
 //{
-//	//Screen Space -> NDC Space
+//	Screen Space -> NDC Space
 //	float ndcX = (2.0f * (static_cast<float>(x) + 0.5f)) / ScreenWidth - 1.0f;
 //	float ndcY = 1.0f - (2.0f * (static_cast<float>(y) + 0.5f)) / ScreenHeight;
-//	//NDC -> View Space
+//	NDC -> View Space
 //	FVector4 Near = FVector4(ndcX, ndcY, 1.f, 1.f);
 //	FVector4 Far = FVector4(ndcX, ndcY, 0.f, 1.f);
 //	FMatrix InvProjMat = GetProjectionMatrix().Inverse();
@@ -303,7 +303,7 @@
 //	FVector4 FarView = Far * InvProjMat;
 //	NearView = NearView * (1.0f / NearView.w);
 //	FarView = FarView * (1.0f / FarView.w);
-//	//View Space -> World Space
+//	View Space -> World Space
 //	FMatrix InvView = GetViewMatrix().Inverse();
 //	FVector4 NearWorld4 = NearView * InvView;
 //	FVector4 FarWorld4 = FarView * InvView;
