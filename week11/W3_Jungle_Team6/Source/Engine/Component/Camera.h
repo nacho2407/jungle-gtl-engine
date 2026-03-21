@@ -8,7 +8,7 @@
 
 struct FCameraState
 {
-	float FOV = M_PI / 3.0f;
+	float FOV = 3.14159265358979f / 3.0f;
 	float AspectRatio = 16.0f / 9.0f;
 	float NearZ = 0.1f;
 	float FarZ = 1000.0f;
@@ -16,23 +16,25 @@ struct FCameraState
 	bool bIsOrthogonal = false;
 };
 
-class UCamera : public USceneComponent {
+class UCameraComponent : public USceneComponent
+{
 public:
-	DECLARE_CLASS(UCamera, USceneComponent)
-	UCamera() = default;
+	DECLARE_CLASS(UCameraComponent, USceneComponent)
 
-	void LookAt(const FVector& target);
-	void ApplyCameraState();
+	UCameraComponent() = default;
+
+	void LookAt(const FVector& Target);
 	void SetCameraState(const FCameraState& NewState);
-	FCameraState& GetCameraState() { return CameraState; }
 	const FCameraState& GetCameraState() const { return CameraState; }
 
-	void OnResize(int w, int h);
+	void SetFOV(float InFOV) { CameraState.FOV = InFOV; }
+	void SetOrthoWidth(float InWidth) { CameraState.OrthoWidth = InWidth; }
+	void SetOrthographic(bool bOrtho) { CameraState.bIsOrthogonal = bOrtho; }
 
-	const FMatrix& GetViewMatrix();
-	const FMatrix& GetProjectionMatrix();
-	const FMatrix& GetViewProjection();
-	void SetRelativeRotation(const FVector newrotation) override;
+	void OnResize(int32 Width, int32 Height);
+
+	FMatrix GetViewMatrix();
+	FMatrix GetProjectionMatrix();
 
 	float GetFOV() const { return CameraState.FOV; }
 	float GetNearPlane() const { return CameraState.NearZ; }
@@ -41,17 +43,7 @@ public:
 	bool IsOrthogonal() const { return CameraState.bIsOrthogonal; }
 
 	FRay DeprojectScreenToWorld(float MouseX, float MouseY, float ScreenWidth, float ScreenHeight);
+
 private:
-	FMatrix CachedView;
-	FMatrix CachedProjection;
-	FMatrix CachedVP;
-
-	bool bViewDirty = true;
-	bool bProjectionDirty = true;
-
 	FCameraState CameraState;
-
-	void RebuildView();
-	void RebuildProjection();
-	void SetRelativeLocation(const FVector newlocaiton) override;
 };

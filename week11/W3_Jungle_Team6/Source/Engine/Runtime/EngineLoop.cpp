@@ -25,6 +25,7 @@ bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
 			Timer.Tick();
 			GEngine->Tick(Timer.GetDeltaTime());
 		});
+
 	Application.SetOnResizedCallback([](unsigned int Width, unsigned int Height)
 		{
 			if (GEngine)
@@ -39,6 +40,7 @@ bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
 	GEngine->BeginPlay();
 
 	Timer.Initialize();
+
 	return true;
 }
 
@@ -66,6 +68,5 @@ void FEngineLoop::Shutdown()
 	{
 		GEngine->Shutdown();
 	}
-	UObjectManager::Get().CollectGarbage();
 	GEngine = nullptr;
 }
