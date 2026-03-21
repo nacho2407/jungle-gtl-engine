@@ -53,6 +53,12 @@ public:
 
 public:
 
+
+	//Dynamic Batching Test
+	void CreateDynamicVertexBuffer();
+	void UpdateDynamicVertexBuffer(FVertexSimple* vertices, UINT vertexCount);
+	void ReleaseDynamicVertexBuffer();
+	TComPtr<ID3D11Buffer> DynamicVertexBuffer = nullptr;
 	void Prepare();
 
 
@@ -85,6 +91,7 @@ public:
 public:
 	void SetRenderCamera(class UCameraComponent* camera);
 	void Render();
+	void BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups);
 	void RenderGrid(ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader);
 	FLevel drawLevel;
 

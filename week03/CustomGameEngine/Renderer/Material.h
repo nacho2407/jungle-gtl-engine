@@ -20,7 +20,7 @@ struct FMaterial
 		PixelShader.Reset();
 	}
 
-	void BindShaders(ID3D11DeviceContext* deviceContext)
+	void Bind(ID3D11DeviceContext* deviceContext)
 	{
 		deviceContext->IASetInputLayout(InputLayout.Get());
 		deviceContext->VSSetShader(VertexShader.Get(), nullptr, 0);

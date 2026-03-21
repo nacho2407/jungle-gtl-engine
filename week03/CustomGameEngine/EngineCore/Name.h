@@ -23,9 +23,9 @@ struct FName
 	FString GetDisplayName() const;
 	const FString& GetComparisonName() const;
 
-	static TMap<FString, int32> ComparisonLookupTable; //이미 존재하는지 존재하지 않는지
+	static TUMap<FString, int32> ComparisonLookupTable; //이미 존재하는지 존재하지 않는지
 	static TArray<FString> ComparisonEntries; //id -> 실제 비교 String
-	static TMap<FString, int32> DisplayLookupTable; // 이미 존재하는지 존재하지 않는지
+	static TUMap<FString, int32> DisplayLookupTable; // 이미 존재하는지 존재하지 않는지
 	static TArray<FString> DisplayEntries; //id -> 실제 출력 String
 };
 

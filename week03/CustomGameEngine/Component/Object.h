@@ -55,3 +55,5 @@ To* Cast(From* obj)
 	}
 	return nullptr;
 }
+
+

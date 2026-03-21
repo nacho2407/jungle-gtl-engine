@@ -1,6 +1,7 @@
 ﻿#include "Renderer.h"
 #include "Component/CameraComponent.h"
-
+#include "Renderer/Material.h"
+#include "Renderer/Geometry.h"
 void URenderer::Create(HWND hWindow) {
 	CreateDeviceAndSwapChain(hWindow);
 
@@ -11,6 +12,7 @@ void URenderer::Create(HWND hWindow) {
 	CreateBlendState();
 
 	CreateConstantBuffer();
+	CreateDynamicVertexBuffer();
 }
 
 void URenderer::CreateDeviceAndSwapChain(HWND hWindow) {
@@ -153,6 +155,7 @@ void URenderer::ReleaseBlendState()
 }
 
 void URenderer::Release() {
+	ReleaseDynamicVertexBuffer();
 	ReleaseBlendState();
 	ReleaseDepthStencilState();
 	DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
@@ -187,6 +190,41 @@ void URenderer::OnResize(UINT Width, UINT Height)
 	ViewportInfo.TopLeftX = 0.0f;
 	ViewportInfo.TopLeftY = 0.0f;
 	DeviceContext->RSSetViewports(1, &ViewportInfo);
+}
+
+void URenderer::CreateDynamicVertexBuffer()
+{
+	D3D11_BUFFER_DESC vertexbufferdesc = {};
+	vertexbufferdesc.ByteWidth = sizeof(FVertexSimple) * 20000;
+	vertexbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
+	vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vertexbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	HRESULT hr = Device->CreateBuffer(&vertexbufferdesc, nullptr, DynamicVertexBuffer.GetAddressOf());
+	if (FAILED(hr))
+	{
+		//ERROR HANDLE
+	}
+}
+
+void URenderer::UpdateDynamicVertexBuffer(FVertexSimple* Vertices, UINT VertexCount)
+{
+	const int32 MaxVertexCount = 20000;
+	if (VertexCount > MaxVertexCount) {
+		//ERROR HANDLE
+		return;
+	}
+
+	D3D11_MAPPED_SUBRESOURCE Mapped = {};
+	HRESULT hr = DeviceContext->Map(
+		DynamicVertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped);
+	memcpy(Mapped.pData, Vertices, sizeof(FVertexSimple) * VertexCount);
+	DeviceContext->Unmap(DynamicVertexBuffer.Get(), 0);
+}
+
+void URenderer::ReleaseDynamicVertexBuffer()
+{
+	DynamicVertexBuffer.Reset();
 }
 
 void URenderer::Prepare() {
@@ -235,12 +273,12 @@ void URenderer::Render()
 
 	TArray<RenderObject*> NormalRenderObjects;
 	TArray<RenderObject*> NoDepthRenderObjects;
+	TMap<BatchKey, TArray<RenderObject*>> BatchGroups;
 
-	FObjectConstant ObjectConst;
 	auto renderObjects = &FLevel::GetInstance().RenderObjects;
 	for (RenderObject* RenderObj : *renderObjects)
 	{
-		if (RenderObj->bDepthEnabled)
+		if (RenderObj->bDepthEnabled && !RenderObj->bBatch)
 		{
 			NormalRenderObjects.push_back(RenderObj);
 		}
@@ -248,8 +286,16 @@ void URenderer::Render()
 		{
 			NoDepthRenderObjects.push_back(RenderObj);
 		}
+		if (RenderObj->bBatch)
+		{
+			BatchKey key{ RenderObj->GetBatchKey() };
+			BatchGroups[key].push_back(RenderObj);
+		}
 	}
 
+	BatchRender(BatchGroups);
+
+	FObjectConstant ObjectConst;
 	for (RenderObject* RenderObj : NormalRenderObjects)
 	{
 		//Camera
@@ -275,8 +321,33 @@ void URenderer::Render()
 			RenderObj->Render(DeviceContext.Get());
 		}
 	}
-	// ClearRenderObjects();
-	// RenderObjects.clear();
+}
+
+void URenderer::BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups)
+{
+	FObjectConstant ObjectConst;
+	for (auto& [key, objects] : BatchGroups)
+	{
+		key.Material->Bind(DeviceContext.Get());
+		DeviceContext->IASetPrimitiveTopology(key.PrimitiveTopology);
+		TArray<FVertexSimple> Vertices;
+		for (RenderObject* RenderObj : objects)
+		{
+			for (FVector& vec : RenderObj->Geometry->Vertices)
+			{
+				Vertices.push_back({ vec.x, vec.y, vec.z, RenderObj->Color.r, RenderObj->Color.g, RenderObj->Color.b, RenderObj->Color.a });
+			}
+		}
+		ObjectConst.World = FMatrix::IdentityMatrix();
+		ObjectConst.Color = FColor(1, 1, 1, 1);
+		ObjectConst.bIsSelected = 0;
+		ObjectConstantBuffer.Update(DeviceContext.Get(), &ObjectConst, sizeof(FObjectConstant));
+		UpdateDynamicVertexBuffer(Vertices.data(), Vertices.size());
+		UINT stride = sizeof(FVertexSimple);
+		UINT offset = 0;
+		DeviceContext->IASetVertexBuffers(0, 1, DynamicVertexBuffer.GetAddressOf(), &stride, &offset);
+		DeviceContext->Draw(Vertices.size(), 0);
+	}
 }
 
 void URenderer::RenderGrid(ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader)
