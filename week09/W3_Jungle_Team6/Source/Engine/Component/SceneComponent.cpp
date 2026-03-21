@@ -103,7 +103,7 @@ void USceneComponent::UpdateWorldMatrix()
 		return;
 	}
 
-	FMatrix relativeMatrix = GetRelativeMatrixTemp();
+	FMatrix relativeMatrix = GetRelativeMatrix();
 
 	if (ParentComponent != nullptr)
 	{
@@ -249,8 +249,7 @@ void USceneComponent::Rotate(float dx, float dy)
 	SetRelativeRotation(RelativeRotation);   // keeps RelativeTransform in sync
 }
 
-//Temp
-FMatrix USceneComponent::GetRelativeMatrixTemp() const
+FMatrix USceneComponent::GetRelativeMatrix() const
 {
 	return FTransform(RelativeLocation, RelativeRotation, RelativeScale3D).ToMatrix();
 }

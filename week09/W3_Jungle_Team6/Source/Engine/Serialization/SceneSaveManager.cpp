@@ -65,18 +65,12 @@ json::JSON FSceneSaveManager::SerializeObject(UObject* Object) {
 
     if (Object->IsA<USceneComponent>()) {
         USceneComponent* Comp = Object->Cast<USceneComponent>();
-        j["Location"] = SerializeVector(
-            Comp->RelativeLocation.X,
-            Comp->RelativeLocation.Y,
-            Comp->RelativeLocation.Z);
-        j["Rotation"] = SerializeVector(
-            Comp->RelativeRotation.X,
-            Comp->RelativeRotation.Y,
-            Comp->RelativeRotation.Z);
-        j["Scale"] = SerializeVector(
-            Comp->RelativeScale3D.X,
-            Comp->RelativeScale3D.Y,
-            Comp->RelativeScale3D.Z);
+        FVector Loc = Comp->GetRelativeLocation();
+        j["Location"] = SerializeVector(Loc.X, Loc.Y, Loc.Z);
+        FVector Rot = Comp->GetRelativeRotation();
+        j["Rotation"] = SerializeVector(Rot.X, Rot.Y, Rot.Z);
+        FVector Scale = Comp->GetRelativeScale();
+        j["Scale"] = SerializeVector(Scale.X, Scale.Y, Scale.Z);
 
         // Parent in the component hierarchy
         j["ParentUUID"] = Comp->GetParent()

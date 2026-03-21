@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "Object/Object.h"
 #include "GameFramework/AActor.h"
-#include "Component/Camera.h"
+#include "Component/CameraComponent.h"
 
 #include "Engine/Core/InputSystem.h"
 
