@@ -36,13 +36,13 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	Root["Paths"] = Paths;
 
 	// Ensure directory exists
-	std::filesystem::path FilePath(Path);
+	std::filesystem::path FilePath(FPaths::ToWide(Path));
 	if (FilePath.has_parent_path())
 	{
 		std::filesystem::create_directories(FilePath.parent_path());
 	}
 
-	std::ofstream File(Path);
+	std::ofstream File(FilePath);
 	if (File.is_open())
 	{
 		File << Root;
@@ -53,7 +53,7 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 {
 	using namespace json;
 
-	std::ifstream File(Path);
+	std::ifstream File(std::filesystem::path(FPaths::ToWide(Path)));
 	if (!File.is_open())
 	{
 		return;
