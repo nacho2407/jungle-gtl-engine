@@ -20,17 +20,25 @@ void FRenderer::Create(HWND hWindow)
 		std::cout << "Failed to create D3D Device." << std::endl;
 	}
 
-	// 아직 단일 셰이더네요
-	Resources.PrimitiveShader.Create(Device.GetDevice(), ShaderFilePath,
-		"PrimitiveVS", "PrimitivePS",PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-	Resources.GizmoShader.Create(Device.GetDevice(), ShaderFilePath,
-		"GizmoVS", "GizmoPS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-	Resources.OverlayShader.Create(Device.GetDevice(), ShaderFilePath,
-		"OverlayVS", "OverlayPS", OverlayInputLayout, ARRAYSIZE(OverlayInputLayout));
-	Resources.EditorShader.Create(Device.GetDevice(), ShaderFilePath,
-		"EditorVS", "EditorPS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-	Resources.OutlineShader.Create(Device.GetDevice(), ShaderFilePath,
-		"OutlineVS", "OutlinePS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
+	// 1. 일반 메쉬 (Primitive.hlsl)
+	Resources.PrimitiveShader.Create(Device.GetDevice(), L"Shaders/Primitive.hlsl",
+		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
+
+	// 2. 기즈모 (Gizmo.hlsl)
+	Resources.GizmoShader.Create(Device.GetDevice(), L"Shaders/Gizmo.hlsl",
+		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
+
+	// 3. 오버레이 (Overlay.hlsl)
+	Resources.OverlayShader.Create(Device.GetDevice(), L"Shaders/Overlay.hlsl",
+		"VS", "PS", OverlayInputLayout, ARRAYSIZE(OverlayInputLayout));
+
+	// 4. 에디터/라인 (Editor.hlsl)
+	Resources.EditorShader.Create(Device.GetDevice(), L"Shaders/Editor.hlsl",
+		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
+
+	// 5. 아웃라인 (Outline.hlsl)
+	Resources.OutlineShader.Create(Device.GetDevice(), L"Shaders/Outline.hlsl",
+		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
 
 	Resources.PerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FTransformConstants));
 	Resources.GizmoPerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FGizmoConstants));
@@ -218,7 +226,7 @@ EDepthStencilState FRenderer::GetDefaultDepthForPass(ERenderPass Pass) const
 	{
 	case ERenderPass::Component: return EDepthStencilState::StencilWrite;
 	case ERenderPass::Outline:   return EDepthStencilState::StencilOutline;
-	case ERenderPass::DepthLess: return EDepthStencilState::Default; 
+	case ERenderPass::DepthLess: return EDepthStencilState::Default;
 	case ERenderPass::Editor:    return EDepthStencilState::Default;
 	case ERenderPass::Grid:      return EDepthStencilState::DepthReadOnly;
 	case ERenderPass::Overlay:   return EDepthStencilState::None;
@@ -236,7 +244,7 @@ EBlendState FRenderer::GetDefaultBlendForPass(ERenderPass Pass) const
 	}
 }
 
-void FRenderer::DrawCommand(ID3D11DeviceContext * InDeviceContext, const FRenderCommand& InCommand)
+void FRenderer::DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderCommand& InCommand)
 {
 	if (InCommand.MeshBuffer == nullptr || !InCommand.MeshBuffer->IsValid())
 	{
@@ -336,6 +344,6 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 
 	LineBatcher.AddWorldGrid(100.0f, 20);
 
-	
+
 	LineBatcher.Flush(Context);
 }
