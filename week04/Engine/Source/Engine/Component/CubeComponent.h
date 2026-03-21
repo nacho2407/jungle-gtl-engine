@@ -10,6 +10,6 @@ namespace Engine::Component
       public:
         UCubeComp();
         virtual ~UCubeComp() override;
-        virtual void Update(float DeltaTime) override;
+        // virtual void Update(float DeltaTime) override;
     };
 } // namespace Engine::Component

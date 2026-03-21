@@ -62,6 +62,12 @@
     <ClInclude Include="Source\Editor.h">
       <Filter>Source</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Gizmo\EditorGizmoTypes.h">
+      <Filter>Source\Gizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Gizmo\GizmoDrawDataBuilder.h">
+      <Filter>Source\Gizmo</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Launch\EditorEngineLoop.h">
       <Filter>Source\Launch</Filter>
     </ClInclude>

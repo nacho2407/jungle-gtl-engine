@@ -37,9 +37,9 @@ namespace Engine::Component
 
         FMatrix GetRelativeMatrix();
 
-        virtual void OnComponentAdded() {};
-        virtual void Update(float deltaTime) {};
-        virtual void DrawProperties();
+        //virtual void OnComponentAdded() {};
+        // virtual void Update(float deltaTime) {};
+        //virtual void DrawProperties();
 
         bool IsSelected() const;
 

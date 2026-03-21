@@ -12,7 +12,7 @@ namespace Engine::Component
       public:
         UTriangleComp();
         virtual ~UTriangleComp() override;
-        virtual void Update(float DeltaTime) override;
+        //virtual void Update(float DeltaTime) override;
     };
 
 } // namespace Engine::Component

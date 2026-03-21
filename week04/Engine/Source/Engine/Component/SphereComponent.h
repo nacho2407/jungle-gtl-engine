@@ -9,6 +9,6 @@ namespace Engine::Component
       public:
         USphereComp();
         virtual ~USphereComp() override;
-        virtual void Update(float DeltaTime) override;
+        // virtual void Update(float DeltaTime) override;
     };
 } // namespace Engine::Component

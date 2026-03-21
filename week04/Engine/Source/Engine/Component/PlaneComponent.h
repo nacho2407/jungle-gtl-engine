@@ -10,6 +10,6 @@ namespace Engine::Component
       public:
         UPlaneComp();
         virtual ~UPlaneComp() override;
-        virtual void Update(float DeltaTime) override;
+        // virtual void Update(float DeltaTime) override;
     };
 } // namespace Engine::Component

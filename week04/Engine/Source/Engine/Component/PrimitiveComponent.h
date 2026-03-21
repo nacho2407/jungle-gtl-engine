@@ -22,7 +22,7 @@ namespace Engine::Component
 
         EPrimitiveType GetType();
         void           SetType(EPrimitiveType NewType);
-        virtual void   Update(float DeltaTime) override;
+        // virtual void   Update(float DeltaTime) override;
 
         bool Pickable = true;
         EPrimitiveType Type;
