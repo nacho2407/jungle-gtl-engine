@@ -1,6 +1,7 @@
 #include "Engine/Runtime/Engine.h"
 
 #include "Engine/Core/InputSystem.h"
+#include "Engine/Runtime/WindowsWindow.h"
 #include "Core/ResourceManager.h"
 #include "Render/Scene/RenderCollector.h"
 
@@ -8,20 +9,15 @@ DEFINE_CLASS(UEngine, UObject)
 
 UEngine* GEngine = nullptr;
 
-void UEngine::Init(HWND InHWindow)
+void UEngine::Init(FWindowsWindow* InWindow)
 {
-	HWindow = InHWindow;
-
-	RECT Rect;
-	GetClientRect(HWindow, &Rect);
-	WindowWidth = static_cast<float>(Rect.right - Rect.left);
-	WindowHeight = static_cast<float>(Rect.bottom - Rect.top);
+	Window = InWindow;
 
 	// 싱글턴 초기화 순서 보장
 	FNamePool::Get();
 	FObjectFactory::Get();
 
-	Renderer.Create(HWindow);
+	Renderer.Create(Window->GetHWND());
 	FRenderCollector::Initialize(Renderer.GetFD3DDevice().GetDevice());
 	FResourceManager::Get().LoadFromFile(FPaths::ToUtf8(FPaths::ResourceFilePath()));
 }
@@ -70,8 +66,6 @@ void UEngine::OnWindowResized(uint32 Width, uint32 Height)
 		return;
 	}
 
-	WindowWidth = static_cast<float>(Width);
-	WindowHeight = static_cast<float>(Height);
 	Renderer.GetFD3DDevice().OnResizeViewport(Width, Height);
 }
 

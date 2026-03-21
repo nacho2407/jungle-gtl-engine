@@ -1,8 +1,7 @@
 #pragma once
 
-#include <windows.h>
-
 #include "Engine/Runtime/Engine.h"
+#include "Engine/Runtime/WindowsApplication.h"
 
 class FEngineLoop
 {
@@ -12,18 +11,12 @@ public:
 	void Shutdown();
 
 private:
-	static LRESULT CALLBACK StaticWndProc(HWND hWnd, uint32 message, WPARAM wParam, LPARAM lParam);
-	LRESULT WndProc(HWND hWnd, uint32 message, WPARAM wParam, LPARAM lParam);
-
 	void TickFrame();
 	void InitializeTiming();
 	void CreateEngine();
 
 private:
-	HWND HWindow = nullptr;
-
-	bool bIsExit = false;
-	bool bIsResizing = false;
+	FWindowsApplication Application;
 
 	float DeltaTime = 0.0f;
 

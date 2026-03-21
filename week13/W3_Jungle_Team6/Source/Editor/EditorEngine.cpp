@@ -1,20 +1,21 @@
 #include "Editor/EditorEngine.h"
 
+#include "Engine/Runtime/WindowsWindow.h"
 #include "Render/Scene/RenderCollector.h"
 #include "Render/Scene/RenderCollectorContext.h"
 
 DEFINE_CLASS(UEditorEngine, UEngine)
 REGISTER_FACTORY(UEditorEngine)
 
-void UEditorEngine::Init(HWND InHWindow)
+void UEditorEngine::Init(FWindowsWindow* InWindow)
 {
 	// 엔진 공통 초기화 (Renderer, D3D, 싱글턴 등)
-	UEngine::Init(InHWindow);
+	UEngine::Init(InWindow);
 
 	// 에디터 전용 초기화
 	FEditorSettings::Get().LoadFromFile(FEditorSettings::GetDefaultSettingsPath());
 
-	MainPanel.Create(HWindow, Renderer, this);
+	MainPanel.Create(Window, Renderer, this);
 
 	// World
 	if (!Scene.empty()) {
@@ -34,8 +35,8 @@ void UEditorEngine::Init(HWND InHWindow)
 
 	// ViewportClient
 	ViewportClient.SetSettings(&FEditorSettings::Get());
-	ViewportClient.Initialize(HWindow);
-	ViewportClient.SetViewportSize(WindowWidth, WindowHeight);
+	ViewportClient.Initialize(Window);
+	ViewportClient.SetViewportSize(Window->GetWidth(), Window->GetHeight());
 	ViewportClient.SetWorld(Scene[CurrentWorld]);
 	ViewportClient.SetGizmo(EditorGizmo);
 
@@ -62,7 +63,7 @@ void UEditorEngine::Shutdown()
 void UEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
 {
 	UEngine::OnWindowResized(Width, Height);
-	ViewportClient.SetViewportSize(WindowWidth, WindowHeight);
+	ViewportClient.SetViewportSize(Window->GetWidth(), Window->GetHeight());
 }
 
 void UEditorEngine::Tick(float DeltaTime)
@@ -106,7 +107,7 @@ void UEditorEngine::ResetViewport()
 	Camera = UObjectManager::Get().CreateObject<UCamera>();
 	ViewportClient.SetWorld(Scene[CurrentWorld]);
 	ViewportClient.SetCamera(Camera);
-	ViewportClient.SetViewportSize(WindowWidth, WindowHeight);
+	ViewportClient.SetViewportSize(Window->GetWidth(), Window->GetHeight());
 	Camera->ApplyCameraState();
 	ResetCamera(Camera);
 	SyncCameraFromRenderHandler();
@@ -158,8 +159,8 @@ void UEditorEngine::BuildRenderCommands()
 	Context.ViewMode = FEditorSettings::Get().ViewMode;
 	Context.ShowFlags = FEditorSettings::Get().ShowFlags;
 	Context.CursorOverlayState = &ViewportClient.GetCursorOverlayState();
-	Context.ViewportHeight = WindowHeight;
-	Context.ViewportWidth = WindowWidth;
+	Context.ViewportHeight = Window->GetHeight();
+	Context.ViewportWidth = Window->GetWidth();
 	Context.SelectedComponent = ViewportClient.GetGizmo()->HasTarget() ? (UPrimitiveComponent*)ViewportClient.GetGizmo()->GetTarget() : nullptr;
 
 	FRenderCollector::Collect(Context, RenderBus);
