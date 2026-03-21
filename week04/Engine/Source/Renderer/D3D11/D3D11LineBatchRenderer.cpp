@@ -3,6 +3,7 @@
 #include "Renderer/D3D11/D3D11DynamicRHI.h"
 #include "Renderer/SceneView.h"
 #include "Renderer/Types/ShaderConstants.h"
+#include "Renderer/Types/AxisColors.h"
 
 bool FD3D11LineBatchRenderer::Initialize(FD3D11DynamicRHI* InRHI)
 {
@@ -94,9 +95,12 @@ void FD3D11LineBatchRenderer::AddGrid(int32 InHalfLineCount, float InSpacing,
 
 void FD3D11LineBatchRenderer::AddWorldAxes(float InAxisLength)
 {
-    AddLine(FVector(0.0f, 0.0f, 0.0f), FVector(InAxisLength, 0.0f, 0.0f), FVector4(1, 0, 0, 1));
-    AddLine(FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, InAxisLength, 0.0f), FVector4(0, 1, 0, 1));
-    AddLine(FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, InAxisLength), FVector4(0, 0, 1, 1));
+    AddLine(FVector(0.0f, 0.0f, 0.0f), FVector(InAxisLength, 0.0f, 0.0f),
+            GetAxisBaseColor(EAxis::X));
+    AddLine(FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, InAxisLength, 0.0f),
+            GetAxisBaseColor(EAxis::Y));
+    AddLine(FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, InAxisLength),
+            GetAxisBaseColor(EAxis::Z));
 }
 
 void FD3D11LineBatchRenderer::AddAABB(const Geometry::FAABB& InBounds, const FVector4& InColor)

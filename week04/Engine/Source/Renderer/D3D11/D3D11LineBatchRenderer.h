@@ -3,6 +3,7 @@
 #include "Core/Containers/Array.h"
 #include "Renderer/Types/VertexTypes.h"
 #include "Renderer/D3D11/D3D11Common.h"
+#include "Core/Geometry/Primitives/AABB.h"
 
 class FD3D11DynamicRHI;
 class FSceneView;
