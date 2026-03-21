@@ -10,11 +10,6 @@
 #include "Core/CoreTypes.h"
 #include "Render/Scene/RenderCommand.h"
 
-struct FRenderHandler
-{
-	bool bGridVisible = true;
-};
-
 class FRenderBus
 {
 private:

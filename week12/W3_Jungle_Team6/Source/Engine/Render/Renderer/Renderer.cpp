@@ -2,14 +2,6 @@
 
 #include "Core/Paths.h"
 #include "Render/Common/RenderTypes.h"
-
-#if DEBUG
-
-#include <iostream>
-#include <cassert>
-
-#endif
-
 #include "Render/Mesh/MeshManager.h"
 
 void FRenderer::Create(HWND hWindow)
@@ -23,7 +15,7 @@ void FRenderer::Create(HWND hWindow)
 
 	const std::wstring ShaderPath = FPaths::ShaderFilePath();
 	Resources.PrimitiveShader.Create(Device.GetDevice(), ShaderPath.c_str(),
-		"PrimitiveVS", "PrimitivePS",PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
+		"PrimitiveVS", "PrimitivePS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
 	Resources.GizmoShader.Create(Device.GetDevice(), ShaderPath.c_str(),
 		"GizmoVS", "GizmoPS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
 	Resources.OverlayShader.Create(Device.GetDevice(), ShaderPath.c_str(),
@@ -67,7 +59,7 @@ void FRenderer::BeginFrame()
 }
 
 //	Render Update Main function. RenderBus에 담긴 모든 RenderCommand에 대해서 Draw Call 수행
-void FRenderer::Render(const FRenderBus& InRenderBus)
+void FRenderer::Render(const FRenderBus& InRenderBus, ERasterizerState InViewModeRasterizer)
 {
 	ID3D11DeviceContext* context = Device.GetDeviceContext();
 
@@ -77,6 +69,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 	//	Primitive
 	Device.SetDepthStencilState(EDepthStencilState::StencilWrite);
 	Device.SetBlendState(EBlendState::Opaque);
+	Device.SetRasterizerState(InViewModeRasterizer);
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	Resources.PrimitiveShader.Bind(context);
@@ -178,7 +171,7 @@ void FRenderer::RenderGridEditorPass(ID3D11DeviceContext* InDeviceContext, const
 
 void FRenderer::RenderOverlayPass(ID3D11DeviceContext* InDeviceContext, const FRenderBus& InRenderBus)
 {
-	for(const FRenderCommand& command : InRenderBus.GetOverlayCommands())
+	for (const FRenderCommand& command : InRenderBus.GetOverlayCommands())
 	{
 		DrawCommand(InDeviceContext, command);
 	}
@@ -187,13 +180,13 @@ void FRenderer::RenderOverlayPass(ID3D11DeviceContext* InDeviceContext, const FR
 void FRenderer::RenderOutlinePass(ID3D11DeviceContext* InDeviceContext, const FRenderBus& InRenderBus)
 {
 
-	for(const FRenderCommand& command : InRenderBus.GetSelectionOutlineCommands())
+	for (const FRenderCommand& command : InRenderBus.GetSelectionOutlineCommands())
 	{
 		DrawCommand(InDeviceContext, command);
 	}
 }
 
-void FRenderer::DrawCommand(ID3D11DeviceContext * InDeviceContext, const FRenderCommand& InCommand)
+void FRenderer::DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderCommand& InCommand)
 {
 	if (InCommand.MeshBuffer == nullptr || !InCommand.MeshBuffer->IsValid())
 	{
@@ -203,7 +196,7 @@ void FRenderer::DrawCommand(ID3D11DeviceContext * InDeviceContext, const FRender
 	if (InCommand.Type != ERenderCommandType::Overlay)
 	{
 		Resources.PerObjectConstantBuffer.Update(InDeviceContext, &InCommand.TransformConstants, sizeof(FTransformConstants));
-		
+
 		ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
 		InDeviceContext->VSSetConstantBuffers(0, 1, &cb);
 	}
@@ -239,7 +232,7 @@ void FRenderer::DrawCommand(ID3D11DeviceContext * InDeviceContext, const FRender
 		InDeviceContext->VSSetConstantBuffers(0, 1, &cb);
 		InDeviceContext->PSSetConstantBuffers(0, 1, &cb);
 	}
-	else if(InCommand.Type == ERenderCommandType::SelectionOutline)
+	else if (InCommand.Type == ERenderCommandType::SelectionOutline)
 	{
 		Resources.OutlineConstantBuffer.Update(InDeviceContext, &InCommand.OutlineConstants, sizeof(FOutlineConstants));
 
