@@ -1,5 +1,6 @@
 ﻿#include "LineBatcher.h"
 #include "Core/EngineTypes.h"
+#include "EditorSettings.h"
 
 void FLineBatcher::Create(ID3D11Device* InDevice)
 {
@@ -88,34 +89,38 @@ void FLineBatcher::AddAABB(const FBoundingBox& Box, const FColor& InColor)
 	AddLine(v3, v7, BoxColor);
 }
 
-void FLineBatcher::AddWorldGrid(float GridSpacing, int HalfLineCount)
+void FLineBatcher::AddWorldGrid(float GridSpacing, int HalfGridCount)
 {
 	if (GridSpacing <= 0.0f) return;
+
+	FEditorSettings& Settings = FEditorSettings::Get();
+	float Spacing = Settings.GridSpacing;         // 그리드 간격
+	int32 HalfCount = Settings.GridHalfLineCount; // 반쪽 라인 수
 
 	const FVector4 AxisColor = FColor::White().ToVector4();
 	
 	// @@@ Z축
 	AddLine(
-		FVector(0.0f, 0.0f, -HalfGridCount * GridSpacing),
-		FVector(0.0f, 0.0f, HalfGridCount * GridSpacing),
+		FVector(0.0f, 0.0f, -HalfCount * Spacing),
+		FVector(0.0f, 0.0f, HalfCount * Spacing),
 		FColor::Blue().ToVector4()
 	);
 	
-	for (int i = -HalfLineCount; i <= HalfLineCount; i++)
+	for (int i = -HalfCount; i <= HalfCount; i++)
 	{
-		const float Offset = i * GridSpacing;
+		const float Offset = i * Spacing;
 
 		// @@@ X축 평행선
 		AddLine(
-			FVector(-HalfLineCount * GridSpacing, Offset, 0.0f),
-			FVector(HalfLineCount * GridSpacing, Offset, 0.0f),
+			FVector(-HalfCount * Spacing, Offset, 0.0f),
+			FVector(HalfCount * Spacing, Offset, 0.0f),
 			(i == 0) ? FVector4{ 1.0f, 0.0f, 0.0f, 1.0f } : AxisColor
 		);
 
 		// @@@ Y축 평행선
 		AddLine(
-			FVector(Offset, -HalfLineCount * GridSpacing, 0.0f),
-			FVector(Offset, HalfLineCount * GridSpacing, 0.0f),
+			FVector(Offset, -HalfCount * Spacing, 0.0f),
+			FVector(Offset, HalfCount * Spacing, 0.0f),
 			(i == 0) ? FVector4{ 0.0f, 1.0f, 0.0f, 1.0f } : AxisColor
 		);
 	}

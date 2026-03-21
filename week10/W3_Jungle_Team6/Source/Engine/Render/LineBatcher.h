@@ -47,7 +47,7 @@ public:
 
 	// 월드 그리드 생성 (GridSpacing 간격으로 라인 생성, X축=빨강, Y축=초록)
 	// @@@ AddLine <- Z축 + AddGridXY()
-	void AddWorldGrid(float GridSpacing, int HalfLineCount);
+	void AddWorldGrid(float GridSpacing, int HalfGridCount);
 
 	// 이번 프레임에 축적된 라인 모두 제거
 	void Clear();
