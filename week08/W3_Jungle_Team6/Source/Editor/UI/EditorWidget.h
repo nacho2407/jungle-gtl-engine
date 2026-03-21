@@ -2,7 +2,7 @@
 
 #include "Core/Common.h"
 
-class FEditorEngine;
+class UEditorEngine;
 
 using namespace common::structs;
 
@@ -11,9 +11,9 @@ class FEditorWidget
 public:
 	virtual ~FEditorWidget() = default;
 
-	virtual void Initialize(FEditorEngine* InEditorEngine);
+	virtual void Initialize(UEditorEngine* InEditorEngine);
 	virtual void Render(float DeltaTime, FViewOutput& ViewOutput) = 0;
 
 protected:
-	FEditorEngine* EditorEngine = nullptr;
+	UEditorEngine* EditorEngine = nullptr;
 };
