@@ -16,7 +16,8 @@ void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBu
 	//	Must be the active camera
 	
 	UCamera* Camera = Context.Camera;
-	RenderBus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix());
+	RenderBus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix(),
+								Camera->GetRightVector(), Camera->GetUpVector());
 
 	//	Draw from Editor (Gizmo, Axis, etc.)
 	CollectFromEditor(Context,RenderBus);
@@ -61,11 +62,11 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 	Cmd.TransformConstants = FTransformConstants{ primitiveComponent->GetWorldMatrix() };
 	if (primitiveComponent->GetRenderCommand(Cmd))
 	{
-		ERenderPass selectedRenderPass = ERenderPass::Component;
+		ERenderPass selectedRenderPass = ERenderPass::Opaque;
 		switch (Cmd.Type)
 		{
 		case ERenderCommandType::Primitive:
-			selectedRenderPass = ERenderPass::Component;
+			selectedRenderPass = ERenderPass::Opaque;
 			if (Context.SelectedComponent == primitiveComponent)
 			{
 				CollectComponentOutline(primitiveComponent, Context, RenderBus);
@@ -77,7 +78,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 		case ERenderCommandType::Billboard:
 			Cmd.BlendState = EBlendState::AlphaBlend;
 			Cmd.DepthStencilState = EDepthStencilState::Default;
-			selectedRenderPass = ERenderPass::Component;
+			Cmd.TextData = "Hello Jungle";
+			selectedRenderPass = ERenderPass::Translucent;
 			break;
 		}
 

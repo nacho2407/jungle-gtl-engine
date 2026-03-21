@@ -10,10 +10,8 @@ void UBillboardComponent::UpdateBillboardMatrix(const FMatrix& ViewMatrix)
 							* FMatrix::MakeTranslationMatrix(GetWorldLocation());
 }
 
-bool UBillboardComponent::GetRenderCommand(const FMatrix& viewMatrix, const FMatrix& projMatrix, FRenderCommand& OutCommand)
+bool UBillboardComponent::GetRenderCommand(FRenderCommand& OutCommand)
 {
-	UpdateBillboardMatrix(viewMatrix);
-
 	OutCommand.Type = ERenderCommandType::Billboard;
 	OutCommand.TransformConstants.Model = CachedWorldMatrix;
 
