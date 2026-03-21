@@ -1,11 +1,14 @@
 ﻿#include "EditorSceneManagerPanel.h"
 #include "ImGui/imgui.h"
 #include "World.h"
+#include "Editor/Editor.h"
+#include "Scene.h"
+#include "Component/SceneComponent.h"
+#include "SceneManager.h"
 
 EditorSceneManagerPanel::EditorSceneManagerPanel()
 {
-	/*TODO : 멀티 scene을 위해 추후에 ActiveScene을 바꾸는 기능 추가 필요*/
-	///ActiveScene = GetWorld().GetSceneManager()->GetActiveScene();
+
 }
 
 EditorSceneManagerPanel::~EditorSceneManagerPanel()
@@ -13,9 +16,9 @@ EditorSceneManagerPanel::~EditorSceneManagerPanel()
 
 }
 
-void EditorSceneManagerPanel::Draw()
+void EditorSceneManagerPanel::Draw(Editor* editor)
 {
-	//일단 매 프레임마다 씬을 가져오지는 않습니다.
+	//일단 매 프레임마다 씬을 가져옵니다. 씬이 바뀌는 경우 때문.
 	ActiveScene = GetWorld().GetSceneManager()->GetActiveScene();
 
 	ImGui::SetNextWindowPos(ImVec2(1600, 315), ImGuiCond_FirstUseEver);
@@ -31,6 +34,9 @@ void EditorSceneManagerPanel::Draw()
 
 	ImGui::Text("SceneComponents: %d", static_cast<int>(ActiveScene->SceneComponents.size()));
 	ImGui::Separator();
+	ImGui::Text("NAME");
+	ImGui::SameLine(0.0f, 90.0f);
+	ImGui::Text("UUID");
 
 	for (USceneComponent* component : ActiveScene->SceneComponents)
 	{
@@ -38,8 +44,19 @@ void EditorSceneManagerPanel::Draw()
 		{
 			continue;
 		}
-
-		ImGui::Text("UUID: %u", component->UUID);
+		bool isSelected = (editor->GetSelectedComponent() == component);
+		FString	displayName = component->Name.GetDisplayName();
+		if (ImGui::Selectable(displayName.c_str(), isSelected))
+		{
+			editor->SelectComponent(component);
+		}
+		if (isSelected)
+		{
+			//마우스 없이도 사용할 수 있게 도와주는 내비게이션용.
+			ImGui::SetItemDefaultFocus();
+		}
+		ImGui::SameLine(0.0f, 20.0f);
+		ImGui::Text("%u", component->UUID);
 	}
 
 	ImGui::End();

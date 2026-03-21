@@ -102,11 +102,11 @@ void UCameraComponent::SetDirection(const float InputPitch, const float InputYaw
 void UCameraComponent::HandleRotate(float DeltaTime)
 {
 	FRotator eulerAngle = GetRelativeRotation();
-
-	float newPitch = eulerAngle.Pitch + (InputManager::GetInstance().MouseDelta.y * RotateSensitivity);
+	float rotateFactor = RotateSensitivity * 0.1f;
+	float newPitch = eulerAngle.Pitch + (InputManager::GetInstance().MouseDelta.y * rotateFactor);
 	newPitch = MathHelper::Clamp(newPitch, -89.9f, 89.9f);
 	eulerAngle.Pitch = newPitch;
-	eulerAngle.Yaw = eulerAngle.Yaw + (InputManager::GetInstance().MouseDelta.x * RotateSensitivity);
+	eulerAngle.Yaw = eulerAngle.Yaw + (InputManager::GetInstance().MouseDelta.x * rotateFactor);
 
 	SetRelativeRotation(eulerAngle);
 }

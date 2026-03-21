@@ -20,14 +20,6 @@ public:
 	~UWorld() override;
 
 	SceneManager* GetSceneManager();
-	// === Scene Management
-	//UScene* GetActiveScene();
-	//void SetActiveScene(UScene*);
-	//UScene* NewScene();
-	//void SaveScene(FString sceneName);
-	//UScene* LoadScene(FString sceneName);
-	//void UnloadScene();
-	// === Scene Management
 
 	void Update(float deltaTime);
 	inline void InjectRenderer(URenderer* InRenderer) { Renderer = InRenderer; }
