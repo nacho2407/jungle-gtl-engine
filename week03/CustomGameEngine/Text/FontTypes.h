@@ -34,3 +34,13 @@ struct FGlyphInfo
 	float U0, V0; // Atlas Bitmap 내 정규화된 시작 좌표
 	float U1, V1; // Atlas Bitmap 내 정규화된 끝 좌표
 };
+
+/**
+ * @brief 임시 비트맵 저장 구조체
+ */
+struct FGlyphBitmap
+{
+	int Width, Height; // 생성된 비트맵 크기
+	int OffsetX, OffsetY; // stb_truetype에서 자동 생성되는 bearing 계열 오프셋
+	TArray<uint8> Pixels; // 8-bit alpha 비트맵
+};

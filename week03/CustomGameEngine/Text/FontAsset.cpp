@@ -2,6 +2,7 @@
 
 #include "Text/FontAsset.h"
 
+#include <cstring>
 #include <fstream>
 
 #include "EngineCore/Logger.h"
@@ -94,6 +95,7 @@ FGlyphInfo& FFontAsset::EnsureGlyph(uint32 Codepoint)
 		return iter->second;
 	}
 
+	// begin test
 	FGlyphInfo NewGlyph{};
 	NewGlyph.Codepoint = Codepoint;
 
@@ -131,4 +133,59 @@ FGlyphInfo& FFontAsset::EnsureGlyph(uint32 Codepoint)
 
 	auto Result = GlyphMap.emplace(Codepoint, NewGlyph);
 	return Result.first->second;
+	// end test
+}
+
+bool FFontAsset::BuildGlyphBitmap(uint32 Codepoint, FGlyphBitmap& OutBitmap) const
+{
+	OutBitmap = FGlyphBitmap{};
+
+	if (!bLoaded)
+	{
+		UE_LOG("[Text/FontAsset][Error] The font file has not yet been loaded");
+		return false;
+	}
+
+	const int32 GlyphIndex = stbtt_FindGlyphIndex(&FontInfo, static_cast<int>(Codepoint));
+	if (GlyphIndex == 0)
+	{
+		UE_LOG("[Text/FontAsset][Warning] Missing glyph for codepoint");
+		return false;
+	}
+
+	const float FontScale = stbtt_ScaleForPixelHeight(&FontInfo, FontPixelHeight);
+
+	int Width = 0, Height = 0;
+	int OffsetX = 0, OffsetY = 0;
+
+	uint8* BitmapBuffer = stbtt_GetCodepointBitmap(
+		&FontInfo,
+		FontScale,
+		FontScale,
+		static_cast<int>(Codepoint),
+		&Width,
+		&Height,
+		&OffsetX,
+		&OffsetY
+	);
+
+	if (BitmapBuffer == nullptr)
+	{
+		UE_LOG("[Text/FontAsset][Error] Failed to build glyph bitmap");
+		return false;
+	}
+
+	OutBitmap.Width = Width;
+	OutBitmap.Height = Height;
+	OutBitmap.OffsetX = OffsetX;
+	OutBitmap.OffsetY = OffsetY;
+
+	const int32 PixelCount = static_cast<int32>(Width * Height);
+	OutBitmap.Pixels.resize(PixelCount);
+
+	std::memcpy(OutBitmap.Pixels.data(), BitmapBuffer, static_cast<size_t>(PixelCount));
+
+	stbtt_FreeBitmap(BitmapBuffer, nullptr);
+
+	return true;
 }

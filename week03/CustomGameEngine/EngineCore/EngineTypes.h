@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include <cstdint>
 #include <string>
 #include <vector>
 #include <list>
@@ -11,11 +10,10 @@
 #include <queue>
 #include <wrl.h>
 
-using uint8 = std::uint8_t;
-using uint64 = std::uint64_t;
-
+typedef unsigned char uint8;
 typedef int int32;
 typedef unsigned int uint32;
+typedef unsigned long long int uint64;
 
 using FString = std::string; // UTF-8 assumed
 using FU32String = std::u32string; // C++ 20 표준에 std::string과 std::u32string 간 변환 표준 API가 없음(deprecated)

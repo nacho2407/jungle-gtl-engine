@@ -42,11 +42,22 @@ public:
 	/**
 	 * @brief Glyph 정보 캐시에 Codepoint에 해당하는 glyph 정보가 존재하는지 확인하고, 없다면 폰트 파일에서 찾아 등록합니다.
 	 * 
-	 * @param Codepoint Glyph 정보 캐시에서 정보가 존재하는지 확인할 UTF-32 Codepoint 정보
+	 * @param Codepoint Glyph 정보 캐시에서 정보가 존재하는지 확인할 UTF-32 Codepoint
 	 * 
 	 * @return Codepoint에 해당하는 Glyph 정보
 	 */
 	FGlyphInfo& EnsureGlyph(uint32 Codepoint);
+
+	/**
+	 * @brief Codepoint에 해당하는 glyph 비트맵을 생성합니다.
+	 * 
+	 * @param Codepoint glyph 비트맵을 생성할 UTF-32 Codepoint
+	 * 
+	 * @param OutBitmap 생성된 비트맵 정보를 저장할 FGlyphBitmap 구조체
+	 * 
+	 * @return Glyph 비트맵 생성 성공 여부
+	 */
+	bool BuildGlyphBitmap(uint32 Codepoint, FGlyphBitmap& OutBitmap) const;
 
 private:
 	/**
