@@ -10,7 +10,7 @@ static const FVertexSimple plane_vertices[] = {
     {-1.0f, 0.0f, 1.0f},  // 3
 };
 
-static const uint32_t plane_indices[] = {
+static const uint16_t plane_indices[] = {
     0, 2, 1, 0, 3, 2,
 };
 
