@@ -28,6 +28,10 @@ namespace Engine::ApplicationCore
         int32 GetWindowWidth() const override { return Window.GetWidth(); }
         int32 GetWindowHeight() const override { return Window.GetHeight(); }
 
+        void OnResizeWindow(int32 NewWidth, int32 NewHeight);
+        void OnFocusGained();
+        void OnFocusLost();
+
         void PumpMessages() override;
         bool IsExitRequested() const override { return bExitRequested; }
 

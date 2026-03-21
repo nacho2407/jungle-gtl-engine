@@ -1,9 +1,8 @@
 #pragma once
 
-#include "Core/Containers/Array.h"
-#include "D3D11Common.h"
 #include "Core/Math/Vector.h"
 #include "Core/Math/Vector4.h"
+#include "Core/Containers/Array.h"
 #include "Renderer/Types/VertexTypes.h"
 #include "Renderer/D3D11/D3D11Common.h"
 

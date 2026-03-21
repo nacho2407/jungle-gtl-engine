@@ -1,6 +1,8 @@
 #pragma once
+#pragma once
 
-#include "ApplicationCore/Input/InputTypes.h"
+#include "Core/CoreMinimal.h"
+#include "InputTypes.h"
 
 namespace Engine::ApplicationCore
 {

@@ -1,13 +1,15 @@
 #pragma once
 
-#include "Core/CoreMinimal.h"//  이후에 Directory 만들어야 하나?
+#include "Core/CoreMinimal.h"
 #include "ApplicationCore/GenericPlatform/IApplication.h"
 #include "ApplicationCore/Input/InputSystem.h"
 #include "Editor/Editor.h"
 #include "Launch/EngineLoop.h"
 
 #if defined(_WIN32)
+
 #include "ApplicationCore/Windows/WindowsApplication.h"
+
 #endif
 
 class FPanelManager;
@@ -58,4 +60,8 @@ private:
     
     /* Properties */
     HWND HWindow = nullptr;
+    
+    
+    /* Engine */
+    //  FEngine * Engine = nullptr;
 };

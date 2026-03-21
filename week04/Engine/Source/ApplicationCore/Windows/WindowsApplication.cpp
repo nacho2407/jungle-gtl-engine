@@ -2,7 +2,6 @@
 #include "WindowsApplication.h"
 #include "ApplicationCore/Input/InputSystem.h"
 
-// #include <windowsx.h>
 
 namespace Engine::ApplicationCore
 {
@@ -25,8 +24,19 @@ namespace Engine::ApplicationCore
                 GWindowsApplication->RequestExit();
                 PostQuitMessage(0);
                 return 0;
-            default:
-                break;
+            case WM_SIZE:
+            {
+                int32 NewWidth = static_cast<int32>(LOWORD(LParam));
+                int32 NewHeight = static_cast<int32>(HIWORD(LParam));
+                GWindowsApplication->OnResizeWindow(NewWidth, NewHeight);
+                return 0;
+            }
+            case WM_SETFOCUS:
+                GWindowsApplication->OnFocusGained();
+                return 0;
+            case WM_KILLFOCUS:
+                GWindowsApplication->OnFocusLost();
+                return 0;
             }
 
             if (FInputSystem* InputSystem = GWindowsApplication->GetInputSystem())
@@ -37,10 +47,7 @@ namespace Engine::ApplicationCore
         return DefWindowProcW(HWnd, Message, WParam, LParam);
     }
 
-    FWindowsApplication::FWindowsApplication()
-    {
-        GWindowsApplication = this;
-    }
+    FWindowsApplication::FWindowsApplication() { GWindowsApplication = this; }
 
     FWindowsApplication::~FWindowsApplication()
     {
@@ -50,23 +57,17 @@ namespace Engine::ApplicationCore
         }
     }
 
-    FWindowsApplication* FWindowsApplication::Create()
-    {
-        return new FWindowsApplication();
-    }
+    FWindowsApplication* FWindowsApplication::Create() { return new FWindowsApplication(); }
 
     void FWindowsApplication::SetInputSystem(FInputSystem* InInputSystem)
     {
         InputSystem = InInputSystem;
     }
 
-    FInputSystem* FWindowsApplication::GetInputSystem() const
-    {
-        return InputSystem;
-    }
+    FInputSystem* FWindowsApplication::GetInputSystem() const { return InputSystem; }
 
     bool FWindowsApplication::CreateApplicationWindow(const wchar_t* InTitle, int32 InWidth,
-                                                      int32          InHeight)
+                                                      int32 InHeight)
     {
         HINSTANCE Instance = GetModuleHandleW(nullptr);
         if (!Window.Create(Instance, InTitle, InWidth, InHeight))
@@ -77,10 +78,16 @@ namespace Engine::ApplicationCore
         return true;
     }
 
-    void FWindowsApplication::DestroyApplicationWindow()
+    void FWindowsApplication::DestroyApplicationWindow() { Window.Destroy(); }
+
+    void FWindowsApplication::OnResizeWindow(int32 NewWidth, int32 NewHeight)
     {
-        Window.Destroy();
+        Window.SetSize(NewWidth, NewHeight);
     }
+
+    void FWindowsApplication::OnFocusGained() {}
+
+    void FWindowsApplication::OnFocusLost() {}
 
     void FWindowsApplication::PumpMessages()
     {
@@ -99,25 +106,13 @@ namespace Engine::ApplicationCore
         }
     }
 
-    void FWindowsApplication::RequestExit()
-    {
-        bExitRequested = true;
-    }
+    void FWindowsApplication::RequestExit() { bExitRequested = true; }
 
-    void FWindowsApplication::ShowWindow()
-    {
-        Window.Show();
-    }
+    void FWindowsApplication::ShowWindow() { Window.Show(); }
 
-    void FWindowsApplication::HideWindow()
-    {
-        Window.Hide();
-    }
+    void FWindowsApplication::HideWindow() { Window.Hide(); }
 
-    void* FWindowsApplication::GetNativeWindowHandle() const
-    {
-        return Window.GetHWnd();
-    }
+    void* FWindowsApplication::GetNativeWindowHandle() const { return Window.GetHWnd(); }
 
     void FWindowsApplication::RegisterRawMouseInput()
     {

@@ -28,6 +28,21 @@
     <Filter Include="Source\ThirdParty\imgui">
       <UniqueIdentifier>{14727bfa-61bb-1229-bb2b-782b3aace65f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Viewport\Gizmo">
+      <UniqueIdentifier>{a4a5fb1b-42c4-c447-1a35-66493bab83fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Viewport\Interaction">
+      <UniqueIdentifier>{272e7142-94bf-a8cb-262e-e0148bdeb16a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Viewport\Navigation">
+      <UniqueIdentifier>{8f405a6f-69cc-5924-64a5-aeb8f417b3cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Viewport\RenderSetting">
+      <UniqueIdentifier>{811fb41f-c966-1264-d519-6c49918c512e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Viewport\Selection">
+      <UniqueIdentifier>{c02bdf14-d23c-3f72-e5f4-7a918dc1b5dc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\Editor.cpp">
@@ -35,6 +50,15 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\EditorContext.cpp">
       <Filter>Source\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\EditorGlobalContext.cpp">
+      <Filter>Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\GizmoInputContext.cpp">
+      <Filter>Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\ViewPortInputContext.cpp">
+      <Filter>Source\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Input\EditorGlobalContext.cpp">
       <Filter>Source\Input</Filter>
@@ -146,6 +170,7 @@
     <ClInclude Include="Source\Viewport\EditorViewportClient.h">
       <Filter>Source\Viewport</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Source\ThirdParty\imgui\imgui.natstepfilter">

@@ -1,6 +1,6 @@
 #include "Editor.h"
 
-void FEditor::Create(HWND HWindow)
+void FEditor::Create()
 {
     //  TODO : Viewport Client
     
