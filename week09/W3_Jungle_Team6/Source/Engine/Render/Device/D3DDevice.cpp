@@ -285,10 +285,10 @@ void FD3DDevice::CreateDepthStencilBuffer()
 
 	// Stencil Test (Not Equal)
 	D3D11_DEPTH_STENCIL_DESC depthStencilStateStencilOutlineDesc = {};
-	depthStencilStateStencilOutlineDesc.DepthEnable = FALSE;
+	depthStencilStateStencilOutlineDesc.DepthEnable = TRUE;
 	// 또는 TRUE + ZERO로 테스트 가능, 지금은 먼저 단순하게
 	depthStencilStateStencilOutlineDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-	depthStencilStateStencilOutlineDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+	depthStencilStateStencilOutlineDesc.DepthFunc = D3D11_COMPARISON_LESS;
 
 	depthStencilStateStencilOutlineDesc.StencilEnable = TRUE;
 	depthStencilStateStencilOutlineDesc.StencilReadMask = 0xFF;
