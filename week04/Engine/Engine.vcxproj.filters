@@ -500,11 +500,6 @@
     <ClInclude Include="Source\Renderer\Types\ViewMode.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
-    <ClInclude Include="Resources\Primitives\Cube.h" />
-    <ClInclude Include="Resources\Primitives\Plane.h" />
-    <ClInclude Include="Resources\Primitives\Sphere.h" />
-    <ClInclude Include="Resources\Primitives\Triangle.h" />
-    <ClInclude Include="Resources\Primitives\VertexSimple.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
