@@ -8,77 +8,69 @@
 #include "Render/Resource/Shader.h"
 #include "Render/Resource/Buffer.h"
 
-// Texture Atlas UV 조정을 위해 선언한 구조체
-struct FCharacterInfo {
+// Texture Atlas UV 정보
+struct FCharacterInfo
+{
 	float u;
 	float v;
 	float width;
 	float height;
 };
 
-// FFontVertex — 폰트 렌더링용 버텍스 (position + Color)
-struct FFontVertex
-{
-	FVector	 position;
-	FVector2 TexCoord;
-};
 
-// GPU로 전달하는 상수버퍼 구조체 (GPU Billboard)
-struct FFontTransformConstants
-{
-	FMatrix ViewProj;
-	FVector WorldPos; float _pad0;
-	FVector CamRight; float _pad1;
-	FVector CamUp;    float _pad2;
-};
 
-// Immutable Mesh
-struct FFontMesh
-{
-	ID3D11Buffer* VertexBuffer = nullptr;
-	ID3D11Buffer* IndexBuffer  = nullptr;
-	uint32        IndexCount   = 0;
-
-	bool IsValid() const { return VertexBuffer && IndexBuffer && IndexCount > 0; }
-	void Release()
-	{
-		if (VertexBuffer) { VertexBuffer->Release(); VertexBuffer = nullptr; }
-		if (IndexBuffer)  { IndexBuffer->Release();  IndexBuffer = nullptr;  }
-		IndexCount = 0;
-	}
-};
-
-// FFontBatcher — 셰이더/텍스처/샘플러/CB 공유 리소스 관리
+// FFontBatcher — 텍스트를 배치로 모아 1회 드로우콜로 처리
 class FFontBatcher
 {
 public:
 	FFontBatcher() = default;
 	~FFontBatcher() = default;
 
-	// 공유 리소스 초기화 (셰이더, 텍스처, 샘플러, CB)
-	void Create(ID3D11Device* Device);
+	// 공유 리소스 초기화 (셰이더, 텍스처, 샘플러, Dynamic VB/IB, CB)
+	void Create(ID3D11Device* InDevice);
 	void Release();
 
-	// 스폰 시 1회 — 문자열로 IMMUTABLE VB/IB 생성
-	FFontMesh BuildMesh(ID3D11Device* Device, const FString& Text);
+	// 월드 좌표 위에 빌보드 텍스트 추가 (배치에 누적)
+	void AddText(const FString& Text,
+		const FVector& WorldPos,
+		const FVector& CamRight,
+		const FVector& CamUp,
+		float Scale = 1.0f);
 
-	// 매 프레임 — CB 갱신 + DrawIndexed
-	void DrawText(ID3D11DeviceContext* Context,
-		const FFontMesh& Mesh,
-		const FVector&   WorldPos,
-		const FVector&   CamRight,
-		const FVector&   CamUp,
-		const FMatrix&   ViewProjection);
+	// 이번 프레임 누적 텍스트 초기화
+	void Clear();
+
+	// Dynamic VB 업로드 + 드로우콜 (1회)
+	void Flush(ID3D11DeviceContext* Context);
+
+	// 현재 누적된 Quad(문자) 수
+	uint32 GetQuadCount() const { return static_cast<uint32>(Vertices.size() / 4); }
 
 private:
+	// CPU 누적 배열
+	TArray<FFontVertex> Vertices;
+	TArray<uint32>      Indices;
+
+	// GPU 버퍼 (Dynamic)
+	ID3D11Buffer* VertexBuffer = nullptr;
+	ID3D11Buffer* IndexBuffer  = nullptr;
+
+	uint32 MaxVertexCount      = 0; // 정점 버퍼에 할당 가능한 최대 정점 개수
+	uint32 MaxIndexCount       = 0; // 색인 버퍼에 할당 가능한 최대 정점 개수
+
+	// 공유 DX 리소스
+	ID3D11Device*             Device       = nullptr;  // 버퍼 재할당 시 사용
 	ID3D11Resource*           FontResource = nullptr;
 	ID3D11ShaderResourceView* FontAtlasSRV = nullptr;
 	ID3D11SamplerState*       SamplerState = nullptr;
 
 	TMap<char, FCharacterInfo> CharInfoMap;
-	FShader         FontShader;
-	FConstantBuffer FontCB;
+	FShader FontShader;
 
+	// Dynamic VB/IB 생성 (MaxVertexCount/MaxIndexCount 기준)
+	void CreateBuffers();
+	// Texture Atlas Slicing
 	void BuildCharInfoMap();
+	// 해당 문자열을 key로 가지는 구조체의 UV값 얻는 함수
 	void GetCharUV(char Ch, FVector2& OutUVMin, FVector2& OutUVMax) const;
 };

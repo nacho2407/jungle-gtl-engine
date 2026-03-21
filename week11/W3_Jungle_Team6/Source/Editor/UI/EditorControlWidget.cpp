@@ -1,9 +1,10 @@
-#include "Editor/UI/EditorControlWidget.h"
+﻿#include "Editor/UI/EditorControlWidget.h"
 
 #include "Editor/EditorEngine.h"
 
 #include "ImGui/imgui.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/BillboardComponent.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -52,6 +53,9 @@ void FEditorControlWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 				break;
 			case EPrimitiveType::EPT_Plane:
 				EditorEngine->SpawnNewPrimitiveActor<UPlaneComponent>(CurSpawnPoint);
+				break;
+			case EPrimitiveType::EPT_Quad:
+				EditorEngine->SpawnNewPrimitiveActor <UBillboardComponent>(CurSpawnPoint);
 				break;
 			}
 		}
