@@ -201,12 +201,13 @@ void FEditorMainPanel::Render(float DeltaTime, FViewOutput& ViewOutput)
 
 	SEPARATOR();
 
-	if (ImGui::Button(EditorEngine->GetRenderHandler().bGridVisible ? "Grid : OFF" : "Grid : ON"))
+	FEditorSettings& Settings = FEditorSettings::Get();
+	const bool bGridVisible = Settings.HasShowFlag(SF_Grid);
+	if (ImGui::Button(bGridVisible ? "Grid : ON" : "Grid : OFF"))
 	{
-		EditorEngine->GetRenderHandler().bGridVisible = !EditorEngine->GetRenderHandler().bGridVisible;
+		Settings.SetShowFlag(SF_Grid, !bGridVisible);
 	}
 
-	FEditorSettings& Settings = FEditorSettings::Get();
 	float Spacing = Settings.GridSpacing;
 
 	if (ImGui::DragFloat("Grid Spacing",

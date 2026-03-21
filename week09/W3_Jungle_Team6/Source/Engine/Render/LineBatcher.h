@@ -6,6 +6,8 @@
 #include "Math/Matrix.h"
 #include "Render/Common/RenderTypes.h"
 
+#include "EditorSettings.h"
+
 // ============================================================
 // FLineVertex — 라인 렌더링용 버텍스 (Position + Color)
 // ============================================================
@@ -48,6 +50,8 @@ public:
 	// 월드 그리드 생성 (GridSpacing 간격으로 라인 생성, X축=빨강, Y축=초록)
 	// @@@ AddLine <- Z축 + AddGridXY()
 	void AddWorldGrid(float GridSpacing, int HalfGridCount);
+	void AddWorldAxes(float GridSpacing, int HalfGridCount);
+	void AddWorldHelpers(FEditorSettings& Settings);
 
 	// 이번 프레임에 축적된 라인 모두 제거
 	void Clear();
