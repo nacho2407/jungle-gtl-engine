@@ -1,32 +1,31 @@
 #pragma once
 
-#include "Math/Vector.h"
-#include "Math/Vector2.h"
-#include "Math/Vector4.h"
+#include "Core/Math/Vector.h"
+#include "Core/Math/Vector2.h"
+#include "Core/Math/Vector4.h"
 
 struct FMeshVertex
 {
-    FVector Position;
-    FVector Normal;
-    FVector2 UV;
+    FVector  Position;
+    FVector4 Color;
 };
 
 struct FLineVertex
 {
-    FVector Position;
+    FVector  Position;
     FVector4 Color;
 };
 
 struct FFontVertex
 {
-    FVector Position;
+    FVector  Position;
     FVector2 UV;
     FVector4 Color;
 };
 
 struct FSpriteVertex
 {
-    FVector Position;
+    FVector  Position;
     FVector2 UV;
     FVector4 Color;
 };
