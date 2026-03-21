@@ -16,7 +16,7 @@ enum class EAssetType : uint8
 
 struct FSourceRecord
 {
-	WFString NormalizedPath;			// 캐시의 1차 키 Source 조회용
+	FWString NormalizedPath;			// 캐시의 1차 키 Source 조회용
 	FString SourceHash;					// 진짜 내용 기반 재사용 키 decode 재사용용
 	uint64 FileSize = 0;				// 빠른 변경 감지용
 	uint64 LastWriteTimeTicks = 0;		// 빠른 변경 감지용
@@ -30,7 +30,7 @@ struct FAssetKey
 	// - 같은 파일이라도 텍스처 설정이 다를 때
 	// 서로 다른 Asset으로 취급할 수 있게 BuildSignature 를 두는 것.
 	EAssetType Type = EAssetType::Unknown;
-	WFString NormalizedPath;
+	FWString NormalizedPath;
 	uint64 BuildSignature = 0; // 최종 asset/resource 재사용용
 };
 
@@ -60,17 +60,18 @@ struct FAssetLoadParams
 class FSourceCache
 {
 public:
-	const FSourceRecord* GetOrLoad(const WFString& Path);
-	void Invalidate(const WFString& Path);
+	const FSourceRecord* GetOrLoad(const FWString& Path);
+	void Invalidate(const FWString& Path);
 	void Clear();
 
 private:
-	bool BuildSourceRecord(const WFString& NormalizedPath, FSourceRecord& OutRecord);
+	// 파일을 실제로 읽어서 record를 완성하는 역할만 하는 함수
+	bool BuildSourceRecord(const FWString& NormalizedPath, FSourceRecord& OutRecord);
 	bool HasFileChanged(const FSourceRecord& Record, uint64 CurrentFileSize, uint64 CurrentWriteTimeTicks) const;
-	WFString NormalizePath(const WFString& Path) const;
+	FWString NormalizePath(const FWString& Path) const;
 
 private:
-	TMap<WFString, FSourceRecord> Records;
+	TMap<FWString, FSourceRecord> Records;
 };
 
 class UAssetManager : public UObject

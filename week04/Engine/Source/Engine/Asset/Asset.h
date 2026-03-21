@@ -12,13 +12,13 @@ public:
 
 
 public:
-	const WFString& GetPath() const { return SourcePath; }
+	const FWString& GetPath() const { return SourcePath; }
 	const FString& GetHash() const { return ImportedHash; }
 
 
 
 protected:
-	WFString SourcePath;
+	FWString SourcePath;
 	FString ImportedHash;
 	FString AssetName;
 
