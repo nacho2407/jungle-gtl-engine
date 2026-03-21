@@ -11,5 +11,12 @@ void RenderObject::Render(ID3D11DeviceContext* Context)
 
 	Context->IASetPrimitiveTopology(PrimitiveTopology);
 
-	Context->Draw(Geometry->VertexCount, 0);
+	if (Geometry->IndexBuffer != nullptr)
+	{
+		Context->DrawIndexed(Geometry->IndexCount, 0, 0);
+	}
+	else
+	{
+		Context->Draw(Geometry->VertexCount, 0);
+	}
 }

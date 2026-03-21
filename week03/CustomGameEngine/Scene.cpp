@@ -79,6 +79,7 @@ UScene* UScene::FromJson(std::string jsonStr)
 		if (newSc == nullptr)
 			continue;
 
+		newSc->Scene = scene;
 		UPrimitiveComponent* prim = Cast<UPrimitiveComponent>(newSc);
 		if (prim != nullptr)
 		{

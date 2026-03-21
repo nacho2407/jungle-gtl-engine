@@ -8,5 +8,7 @@
  *        동적 Glype Atlas 구현 시 Glype Lookup에 필요합니다.
  * 
  * @param Text 변환할 FString 문자열
+ * 
+ * @return 변환된 UTF-32 문자열
  */
 FU32String Utf8ToCodepoints(const FString& Text);

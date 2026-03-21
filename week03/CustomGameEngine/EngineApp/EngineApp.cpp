@@ -126,7 +126,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 
 	//Init World & Scene
 	GetWorld().InjectRenderer(Renderer);
-	GetWorld().GetSceneManager()->NewScene();
+	LastActiveScene = GetWorld().GetSceneManager()->NewScene();
 
 	// Init Timer
 	TimerManager::GetInstance().CreateGlobalTimer();
@@ -155,6 +155,14 @@ void EngineApp::Run()
 			}
 		}
 
+		// Check for scene change
+		UScene* currentActiveScene = GetWorld().GetSceneManager()->GetActiveScene();
+		if (currentActiveScene != LastActiveScene)
+		{
+			EditorInst->SelectComponent(nullptr);
+			LastActiveScene = currentActiveScene;
+		}
+
 		TimerManager::GetInstance().Tick();
 		InputManager::GetInstance().Update();
 		float TempDelta = globalTimer->GetDeltaTime();
@@ -164,7 +172,11 @@ void EngineApp::Run()
 		FVector Mouse = InputManager::GetInstance().MousePos;
 		if (!io.WantCaptureMouse && InputManager::GetInstance().IsKeyDown(VK_LBUTTON))
 		{
-			Picker->Pick(Mouse.x, Mouse.y, GetWorld().GetSceneManager()->GetActiveScene());
+			UScene* activeScene = GetWorld().GetSceneManager()->GetActiveScene();
+			if (activeScene != nullptr)
+			{
+				Picker->Pick(Mouse.x, Mouse.y, activeScene);
+			}
 		}
 
 		// Update Game World
@@ -174,7 +186,22 @@ void EngineApp::Run()
 		GetWorld().OnBeforeRender();
 
 		Renderer->Prepare();
-		Renderer->Render();
+
+		//ResourceManager* RM = ResourceManager::GetInstance();
+		//Renderer->RenderGrid(RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").VertexShader.Get(), RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").PixelShader.Get());
+
+		SceneManager* SceneMgr = GetWorld().GetSceneManager();
+		TArray<FLevel*> LevelsToRender;
+		if (SceneMgr->GetPermanentScene())
+		{
+			LevelsToRender.push_back(&SceneMgr->GetPermanentScene()->Level);
+		}
+		if (SceneMgr->GetActiveScene())
+		{
+			LevelsToRender.push_back(&SceneMgr->GetActiveScene()->Level);
+		}
+		Renderer->Render(LevelsToRender);
+		
 		EditorInst->DrawUI();
 
 		Renderer->SwapBuffer();

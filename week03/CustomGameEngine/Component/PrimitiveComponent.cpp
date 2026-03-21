@@ -1,6 +1,7 @@
 ﻿#include "PrimitiveComponent.h"
 #include "Renderer/Renderer.h"
 #include "EngineCore/ResourceManager.h"
+#include "Scene.h"
 
 UPrimitiveComponent::UPrimitiveComponent()
 {
@@ -9,7 +10,13 @@ UPrimitiveComponent::UPrimitiveComponent()
 UPrimitiveComponent::~UPrimitiveComponent()
 {
 	if (RenderObj != nullptr)
+	{
+		if (Scene != nullptr)
+		{
+			Scene->Level.UnregisterRenderObject(RenderObj);
+		}
 		delete RenderObj;
+	}
 }
 
 EPrimitiveType UPrimitiveComponent::GetType()
@@ -43,8 +50,8 @@ void UPrimitiveComponent::SetRelativeScale3D(const FVector& newScale)
 void UPrimitiveComponent::OnComponentAdded()
 {
 	auto RenderObj = CreateRenderObject();
-	if (RenderObj != nullptr)
-		FLevel::GetInstance().RegisterRenderObject(RenderObj);
+	if (RenderObj != nullptr && Scene != nullptr)
+		Scene->Level.RegisterRenderObject(RenderObj);
 }
 
 void UPrimitiveComponent::Update(float DeltaTime)
@@ -61,6 +68,7 @@ RenderObject* UPrimitiveComponent::CreateRenderObject()
 	ResourceManager* RM = ResourceManager::GetInstance();
 	RenderObj->Geometry = this->VResource;
 	RenderObj->Material = &RM->GetMaterial(L"Shader/ShaderW0.hlsl");
+	RenderObj->ShowFlag = EEngineShowFlags::SF_Primitives;
 	UpdateRenderObject();
 	return RenderObj;
 }
@@ -69,6 +77,7 @@ void UPrimitiveComponent::UpdateRenderObject()
 {
 	RenderObj->World = GetRelativeMatrix();
 	RenderObj->bIsSelected = bIsSelected;
+	RenderObj->ShowFlag = EEngineShowFlags::SF_Primitives;
 }
 
 RenderObject* UPrimitiveComponent::GetRenderObject()

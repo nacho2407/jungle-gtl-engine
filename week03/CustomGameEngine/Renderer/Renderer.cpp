@@ -1,8 +1,7 @@
 ﻿#include "Renderer.h"
-#include "Component/CameraComponent.h"
-#include "Renderer/Material.h"
-#include "Renderer/Geometry.h"
-void URenderer::Create(HWND hWindow) {
+
+void URenderer::Create(HWND hWindow)
+{
 	CreateDeviceAndSwapChain(hWindow);
 
 	CreateFrameBuffer();
@@ -13,9 +12,14 @@ void URenderer::Create(HWND hWindow) {
 
 	CreateConstantBuffer();
 	CreateDynamicVertexBuffer();
+
+	ShowFlagMap[EEngineShowFlags::SF_Primitives] = true;
+	ShowFlagMap[EEngineShowFlags::SF_BillboardText] = true;
+	ShowFlagMap[EEngineShowFlags::SF_EditorPrimitives] = true;
 }
 
-void URenderer::CreateDeviceAndSwapChain(HWND hWindow) {
+void URenderer::CreateDeviceAndSwapChain(HWND hWindow)
+{
 	D3D_FEATURE_LEVEL featurelevels[] = { D3D_FEATURE_LEVEL_11_0 };
 
 	DXGI_SWAP_CHAIN_DESC swapchaindesc = {};
@@ -68,8 +72,10 @@ void URenderer::CreateBlendState()
 	Device->CreateBlendState(&desc, BlendState.GetAddressOf());
 }
 
-void URenderer::ReleaseDeviceAndSwapChain() {
-	if (DeviceContext) {
+void URenderer::ReleaseDeviceAndSwapChain()
+{
+	if (DeviceContext)
+	{
 		DeviceContext->Flush();
 	}
 	SwapChain.Reset();
@@ -77,7 +83,8 @@ void URenderer::ReleaseDeviceAndSwapChain() {
 	Device.Reset();
 }
 
-void URenderer::CreateFrameBuffer() {
+void URenderer::CreateFrameBuffer()
+{
 	SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)FrameBuffer.GetAddressOf()); //백버퍼 가져오기
 
 	D3D11_RENDER_TARGET_VIEW_DESC framebufferRTVdesc = {};
@@ -102,14 +109,16 @@ void URenderer::CreateFrameBuffer() {
 	}
 }
 
-void URenderer::ReleaseFrameBuffer() {
+void URenderer::ReleaseFrameBuffer()
+{
 	DepthStencilView.Reset();
 	DepthStencilBuffer.Reset();
 	FrameBuffer.Reset();
 	FrameBufferRTV.Reset();
 }
 
-void URenderer::CreateRasterizerState() {
+void URenderer::CreateRasterizerState()
+{
 	D3D11_RASTERIZER_DESC rasterizerdesc = {};
 	rasterizerdesc.FillMode = D3D11_FILL_SOLID;
 
@@ -120,14 +129,15 @@ void URenderer::CreateRasterizerState() {
 	Device->CreateRasterizerState(&rasterizerdesc, RasterizerStateNoCull.GetAddressOf());
 }
 
-void URenderer::ReleaseRasterizerState() {
+void URenderer::ReleaseRasterizerState()
+{
 	RasterizerState.Reset();
 	RasterizerStateNoCull.Reset();
 }
 
-void URenderer::CreateDepthStencilState() {
+void URenderer::CreateDepthStencilState()
+{
 	D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
-	depthStencilDesc.DepthFunc = D3D11_COMPARISON_GREATER;
 	depthStencilDesc.DepthFunc = D3D11_COMPARISON_GREATER;
 	depthStencilDesc.StencilEnable = FALSE;
 
@@ -143,7 +153,8 @@ void URenderer::CreateDepthStencilState() {
 	Device->CreateDepthStencilState(&depthStencilDesc, DepthStencilStateNoDepth.GetAddressOf());
 }
 
-void URenderer::ReleaseDepthStencilState() {
+void URenderer::ReleaseDepthStencilState()
+{
 	DepthStencilState.Reset();
 	DepthStencilStateNoWrite.Reset();
 	DepthStencilStateNoDepth.Reset();
@@ -154,7 +165,8 @@ void URenderer::ReleaseBlendState()
 	BlendState.Reset();
 }
 
-void URenderer::Release() {
+void URenderer::Release()
+{
 	ReleaseDynamicVertexBuffer();
 	ReleaseBlendState();
 	ReleaseDepthStencilState();
@@ -177,7 +189,8 @@ void URenderer::OnResize(UINT Width, UINT Height)
 	ReleaseFrameBuffer();
 
 	HRESULT hr = SwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, 0);
-	if (FAILED(hr)) {
+	if (FAILED(hr))
+	{
 		return;
 	}
 
@@ -210,7 +223,8 @@ void URenderer::CreateDynamicVertexBuffer()
 void URenderer::UpdateDynamicVertexBuffer(FVertexSimple* Vertices, UINT VertexCount)
 {
 	const int32 MaxVertexCount = 20000;
-	if (VertexCount > MaxVertexCount) {
+	if (VertexCount > MaxVertexCount)
+	{
 		//ERROR HANDLE
 		return;
 	}
@@ -227,7 +241,8 @@ void URenderer::ReleaseDynamicVertexBuffer()
 	DynamicVertexBuffer.Reset();
 }
 
-void URenderer::Prepare() {
+void URenderer::Prepare()
+{
 	DeviceContext->ClearRenderTargetView(FrameBufferRTV.Get(), ClearColor);
 	DeviceContext->ClearDepthStencilView(DepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -239,42 +254,20 @@ void URenderer::Prepare() {
 	DeviceContext->OMSetBlendState(BlendState.Get(), blendFactor, 0xffffffff);
 }
 
-void URenderer::CreateConstantBuffer() {
+void URenderer::CreateConstantBuffer()
+{
 	FrameConstantBuffer.Create(Device.Get(), sizeof(FFrameConstant), 0);
 	FrameConstantBuffer.Bind(DeviceContext.Get());
 }
 
-void URenderer::ReleaseConstantBuffer() {
+void URenderer::ReleaseConstantBuffer()
+{
 	FrameConstantBuffer.Release();
 }
 
 void URenderer::SetRenderCamera(class UCameraComponent* camera)
 {
 	renderCamera = camera;
-}
-
-void URenderer::Render()
-{
-	if (renderCamera == nullptr) return;
-
-	FFrameConstant FrameConst;
-	FrameConst.Projection = renderCamera->GetProjectionMatrix();
-	FrameConst.View = renderCamera->GetViewMatrix();
-	FrameConstantBuffer.Update(DeviceContext.Get(), &FrameConst, sizeof(FFrameConstant));
-	FrameConstantBuffer.Bind(DeviceContext.Get());
-	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
-
-
-	//Phase 1 : Distribute RenderObjects into 3 groups : Batch, Normal, NoDepth
-	TArray<RenderObject*> NormalRenderObjects;
-	TArray<RenderObject*> NoDepthRenderObjects;
-	TMap<BatchKey, TArray<RenderObject*>> BatchGroups;
-	DistributeRenderObjects(BatchGroups, NormalRenderObjects, NoDepthRenderObjects);
-
-	//Phase 2 : Do Render
-	BatchRender(BatchGroups);
-	RenderNormalObjects(NormalRenderObjects);
-	RenderNoDepthObjects(NoDepthRenderObjects);
 }
 
 void URenderer::RenderNoDepthObjects(TArray<RenderObject*>& NoDepthRenderObjects)
@@ -296,9 +289,32 @@ void URenderer::RenderNoDepthObjects(TArray<RenderObject*>& NoDepthRenderObjects
 	}
 }
 
+void URenderer::Render(const TArray<FLevel*>& Levels)
+{
+	if (renderCamera == nullptr) return;
+
+	FFrameConstant FrameConst;
+	FrameConst.Projection = renderCamera->GetProjectionMatrix();
+	FrameConst.View = renderCamera->GetViewMatrix();
+	FrameConstantBuffer.Update(DeviceContext.Get(), &FrameConst, sizeof(FFrameConstant));
+	FrameConstantBuffer.Bind(DeviceContext.Get());
+
+
+	//Phase 1 : Distribute RenderObjects into 3 groups : Batch, Normal, NoDepth
+	TArray<RenderObject*> NormalRenderObjects;
+	TArray<RenderObject*> NoDepthRenderObjects;
+	TMap<BatchKey, TArray<RenderObject*>> BatchGroups;
+	DistributeRenderObjects(Levels, BatchGroups, NormalRenderObjects, NoDepthRenderObjects);
+	RenderNormalObjects(NormalRenderObjects);
+	RenderNoDepthObjects(NoDepthRenderObjects);
+	BatchRender(BatchGroups);
+}
+
 void URenderer::RenderNormalObjects(TArray<RenderObject*>& NormalRenderObjects)
 {
+	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
 	FObjectConstant ObjectConst;
+
 	for (RenderObject* RenderObj : NormalRenderObjects)
 	{
 		//Camera
@@ -311,25 +327,37 @@ void URenderer::RenderNormalObjects(TArray<RenderObject*>& NormalRenderObjects)
 	}
 }
 
-void URenderer::DistributeRenderObjects(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups, TArray<RenderObject*>& NormalRenderObjects, TArray<RenderObject*>& NoDepthRenderObjects)
+void URenderer::DistributeRenderObjects(
+	const TArray<FLevel*>& Levels,
+	TMap<BatchKey, TArray<RenderObject*>>& BatchGroups,
+	TArray<RenderObject*>& NormalRenderObjects,
+	TArray<RenderObject*>& NoDepthRenderObjects)
 {
-	auto renderObjects = &FLevel::GetInstance().RenderObjects;
-	for (RenderObject* RenderObj : *renderObjects)
+	for (FLevel* Level : Levels)
 	{
-		if (RenderObj->bBatch)
+		if (Level == nullptr)
 		{
-			BatchKey key{ RenderObj->GetBatchKey() };
-			BatchGroups[key].push_back(RenderObj);
+			continue;
 		}
-		else
+		for (RenderObject* RenderObj : Level->RenderObjects)
 		{
-			if (RenderObj->bDepthEnabled)
+			if (!ShowFlagMap[RenderObj->ShowFlag])
+				continue;
+			if (RenderObj->bBatch)
 			{
-				NormalRenderObjects.push_back(RenderObj);
+				BatchKey key{ RenderObj->GetBatchKey() };
+				BatchGroups[key].push_back(RenderObj);
 			}
 			else
 			{
-				NoDepthRenderObjects.push_back(RenderObj);
+				if (RenderObj->bDepthEnabled)
+				{
+					NormalRenderObjects.push_back(RenderObj);
+				}
+				else
+				{
+					NoDepthRenderObjects.push_back(RenderObj);
+				}
 			}
 		}
 	}
@@ -337,6 +365,7 @@ void URenderer::DistributeRenderObjects(TMap<BatchKey, TArray<RenderObject*>>& B
 
 void URenderer::BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups)
 {
+	//DeviceContext->OMSetDepthStencilState(DepthStencilStateNoDepth.Get(), 0);
 	FObjectConstant ObjectConst;
 	for (auto& [key, objects] : BatchGroups)
 	{
