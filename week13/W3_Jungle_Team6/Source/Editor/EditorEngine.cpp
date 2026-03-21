@@ -130,6 +130,15 @@ void UEditorEngine::NewScene()
 	UWorld* World = UObjectManager::Get().CreateObject<UWorld>();
 	Scene.push_back(World);
 	CurrentWorld = 0;
+
+	// EditorGizmo가 CloseScene()으로 파괴된 경우 재생성
+	if (!EditorGizmo)
+	{
+		EditorGizmo = UObjectManager::Get().CreateObject<UGizmoComponent>();
+		EditorGizmo->Deactivate();
+		ViewportClient.SetGizmo(EditorGizmo);
+	}
+
 	ResetViewport();
 }
 
