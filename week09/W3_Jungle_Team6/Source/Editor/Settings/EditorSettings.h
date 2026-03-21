@@ -21,6 +21,12 @@ struct FShowFlags
 
 struct FEditorSettings
 {
+	static FEditorSettings& Get()
+	{
+		static FEditorSettings Instance;
+		return Instance;
+	}
+
 	// Viewport
 	float CameraSpeed = 10.f;
 	float CameraRotationSpeed = 60.f;
@@ -31,6 +37,14 @@ struct FEditorSettings
 	// View
 	EViewMode ViewMode = EViewMode::Lit;
 	FShowFlags ShowFlags;
+
+	// Grid
+	float GridSpacing = 1.0f;
+	int32 GridHalfLineCount = 100;
+
+	// Camera Sensitivity
+	float CameraMoveSensitivity = 1.0f;
+	float CameraRotateSensitivity = 1.0f;
 
 	// Runtime
 	bool bLimitUpdateRate = true;

@@ -1,8 +1,32 @@
-﻿#include "Editor/Settings/EditorSettings.h"
+#include "Editor/Settings/EditorSettings.h"
 #include "SimpleJSON/json.hpp"
 
 #include <fstream>
 #include <filesystem>
+
+namespace Key
+{
+	// Section
+	constexpr const char* Viewport = "Viewport";
+	constexpr const char* Runtime = "Runtime";
+	constexpr const char* Paths = "Paths";
+
+	// Viewport
+	constexpr const char* CameraSpeed = "CameraSpeed";
+	constexpr const char* CameraRotationSpeed = "CameraRotationSpeed";
+	constexpr const char* CameraZoomSpeed = "CameraZoomSpeed";
+	constexpr const char* CameraMoveSensitivity = "CameraMoveSensitivity";
+	constexpr const char* CameraRotateSensitivity = "CameraRotateSensitivity";
+	constexpr const char* InitViewPos = "InitViewPos";
+	constexpr const char* InitLookAt = "InitLookAt";
+
+	// Runtime
+	constexpr const char* bLimitUpdateRate = "bLimitUpdateRate";
+	constexpr const char* UpdateRate = "UpdateRate";
+
+	// Paths
+	constexpr const char* DefaultSavePath = "DefaultSavePath";
+}
 
 void FEditorSettings::SaveToFile(const FString& Path) const
 {
@@ -12,28 +36,30 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 
 	// Viewport
 	JSON Viewport = Object();
-	Viewport["CameraSpeed"] = CameraSpeed;
-	Viewport["CameraRotationSpeed"] = CameraRotationSpeed;
-	Viewport["CameraZoomSpeed"] = CameraZoomSpeed;
+	Viewport[Key::CameraSpeed] = CameraSpeed;
+	Viewport[Key::CameraRotationSpeed] = CameraRotationSpeed;
+	Viewport[Key::CameraZoomSpeed] = CameraZoomSpeed;
+	Viewport[Key::CameraMoveSensitivity] = CameraMoveSensitivity;
+	Viewport[Key::CameraRotateSensitivity] = CameraRotateSensitivity;
 
 	JSON InitPos = Array(InitViewPos.X, InitViewPos.Y, InitViewPos.Z);
-	Viewport["InitViewPos"] = InitPos;
+	Viewport[Key::InitViewPos] = InitPos;
 
 	JSON LookAt = Array(InitLookAt.X, InitLookAt.Y, InitLookAt.Z);
-	Viewport["InitLookAt"] = LookAt;
+	Viewport[Key::InitLookAt] = LookAt;
 
-	Root["Viewport"] = Viewport;
+	Root[Key::Viewport] = Viewport;
 
 	// Runtime
 	JSON Runtime = Object();
-	Runtime["bLimitUpdateRate"] = bLimitUpdateRate;
-	Runtime["UpdateRate"] = UpdateRate;
-	Root["Runtime"] = Runtime;
+	Runtime[Key::bLimitUpdateRate] = bLimitUpdateRate;
+	Runtime[Key::UpdateRate] = UpdateRate;
+	Root[Key::Runtime] = Runtime;
 
 	// Paths
-	JSON Paths = Object();
-	Paths["DefaultSavePath"] = DefaultSavePath;
-	Root["Paths"] = Paths;
+	JSON PathsObj = Object();
+	PathsObj[Key::DefaultSavePath] = DefaultSavePath;
+	Root[Key::Paths] = PathsObj;
 
 	// Ensure directory exists
 	std::filesystem::path FilePath(FPaths::ToWide(Path));
@@ -65,29 +91,33 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 	JSON Root = JSON::Load(Content);
 
 	// Viewport
-	if (Root.hasKey("Viewport"))
+	if (Root.hasKey(Key::Viewport))
 	{
-		JSON Viewport = Root["Viewport"];
+		JSON Viewport = Root[Key::Viewport];
 
-		if (Viewport.hasKey("CameraSpeed"))
-			CameraSpeed = static_cast<float>(Viewport["CameraSpeed"].ToFloat());
-		if (Viewport.hasKey("CameraRotationSpeed"))
-			CameraRotationSpeed = static_cast<float>(Viewport["CameraRotationSpeed"].ToFloat());
-		if (Viewport.hasKey("CameraZoomSpeed"))
-			CameraZoomSpeed = static_cast<float>(Viewport["CameraZoomSpeed"].ToFloat());
+		if (Viewport.hasKey(Key::CameraSpeed))
+			CameraSpeed = static_cast<float>(Viewport[Key::CameraSpeed].ToFloat());
+		if (Viewport.hasKey(Key::CameraRotationSpeed))
+			CameraRotationSpeed = static_cast<float>(Viewport[Key::CameraRotationSpeed].ToFloat());
+		if (Viewport.hasKey(Key::CameraZoomSpeed))
+			CameraZoomSpeed = static_cast<float>(Viewport[Key::CameraZoomSpeed].ToFloat());
+		if (Viewport.hasKey(Key::CameraMoveSensitivity))
+			CameraMoveSensitivity = static_cast<float>(Viewport[Key::CameraMoveSensitivity].ToFloat());
+		if (Viewport.hasKey(Key::CameraRotateSensitivity))
+			CameraRotateSensitivity = static_cast<float>(Viewport[Key::CameraRotateSensitivity].ToFloat());
 
-		if (Viewport.hasKey("InitViewPos"))
+		if (Viewport.hasKey(Key::InitViewPos))
 		{
-			JSON Pos = Viewport["InitViewPos"];
+			JSON Pos = Viewport[Key::InitViewPos];
 			InitViewPos = FVector(
 				static_cast<float>(Pos[0].ToFloat()),
 				static_cast<float>(Pos[1].ToFloat()),
 				static_cast<float>(Pos[2].ToFloat()));
 		}
 
-		if (Viewport.hasKey("InitLookAt"))
+		if (Viewport.hasKey(Key::InitLookAt))
 		{
-			JSON Look = Viewport["InitLookAt"];
+			JSON Look = Viewport[Key::InitLookAt];
 			InitLookAt = FVector(
 				static_cast<float>(Look[0].ToFloat()),
 				static_cast<float>(Look[1].ToFloat()),
@@ -96,22 +126,22 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 	}
 
 	// Runtime
-	if (Root.hasKey("Runtime"))
+	if (Root.hasKey(Key::Runtime))
 	{
-		JSON Runtime = Root["Runtime"];
+		JSON Runtime = Root[Key::Runtime];
 
-		if (Runtime.hasKey("bLimitUpdateRate"))
-			bLimitUpdateRate = Runtime["bLimitUpdateRate"].ToBool();
-		if (Runtime.hasKey("UpdateRate"))
-			UpdateRate = Runtime["UpdateRate"].ToInt();
+		if (Runtime.hasKey(Key::bLimitUpdateRate))
+			bLimitUpdateRate = Runtime[Key::bLimitUpdateRate].ToBool();
+		if (Runtime.hasKey(Key::UpdateRate))
+			UpdateRate = Runtime[Key::UpdateRate].ToInt();
 	}
 
 	// Paths
-	if (Root.hasKey("Paths"))
+	if (Root.hasKey(Key::Paths))
 	{
-		JSON PathsObj = Root["Paths"];
+		JSON PathsObj = Root[Key::Paths];
 
-		if (PathsObj.hasKey("DefaultSavePath"))
-			DefaultSavePath = PathsObj["DefaultSavePath"].ToString();
+		if (PathsObj.hasKey(Key::DefaultSavePath))
+			DefaultSavePath = PathsObj[Key::DefaultSavePath].ToString();
 	}
 }
