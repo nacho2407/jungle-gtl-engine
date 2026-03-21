@@ -5,7 +5,7 @@ REGISTER_FACTORY(AActor)
 
 AActor::~AActor() {
 	for (auto* Comp : Components) {
-		delete Comp;
+		UObjectManager::Get().DestroyObject(Comp);
 	}
 
 	Components.clear();
