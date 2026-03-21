@@ -214,12 +214,15 @@ def generate_vcxproj(files: dict[str, list[str]]):
 
     ET.SubElement(proj, "PropertyGroup", Label="UserMacros")
 
-    # IncludePath for all configurations
+    # OutDir, IntDir, IncludePath, WorkingDirectory for all configurations
     include_path_value = ";".join(INCLUDE_PATHS) + ";$(IncludePath)"
     for cfg, plat in CONFIGURATIONS:
         cond = f"'$(Configuration)|$(Platform)'=='{cfg}|{plat}'"
         pg = ET.SubElement(proj, "PropertyGroup", Condition=cond)
+        ET.SubElement(pg, "OutDir").text = f"$(ProjectDir)Bin\\$(Configuration)\\"
+        ET.SubElement(pg, "IntDir").text = f"$(ProjectDir)Build\\$(Configuration)\\"
         ET.SubElement(pg, "IncludePath").text = include_path_value
+        ET.SubElement(pg, "LocalDebuggerWorkingDirectory").text = "$(ProjectDir)"
 
     # ItemDefinitionGroups
     for cfg, plat in CONFIGURATIONS:
