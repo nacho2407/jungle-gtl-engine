@@ -67,6 +67,7 @@ void FEngineLoop::Shutdown()
 	if (GEngine)
 	{
 		GEngine->Shutdown();
+		UObjectManager::Get().DestroyObject(GEngine);
+		GEngine = nullptr;
 	}
-	GEngine = nullptr;
 }
