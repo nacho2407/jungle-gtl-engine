@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorViewportOverlayWidget.h"
+﻿#include "Editor/UI/EditorViewportOverlayWidget.h"
 
 #include "Editor/Settings/EditorSettings.h"
 #include "ImGui/imgui.h"
@@ -55,6 +55,7 @@ void FEditorViewportOverlayWidget::Render(float DeltaTime, FViewOutput& ViewOutp
 		// Show Flags
 		ImGui::Text("Show");
 		ImGui::Checkbox("Primitives", &Settings.ShowFlags.bPrimitives);
+		ImGui::Checkbox("BillboardText", &Settings.ShowFlags.bBillboardText);
 		ImGui::Checkbox("Grid", &Settings.ShowFlags.bGrid);
 		ImGui::Checkbox("Gizmo", &Settings.ShowFlags.bGizmo);
 
