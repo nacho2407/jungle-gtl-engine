@@ -80,12 +80,11 @@ void FEditorSceneWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 
 	if (!SceneFiles.empty())
 	{
-		auto SceneNameGetter = [](void* Data, int32 Idx, const char** OutText) -> bool
+		auto SceneNameGetter = [](void* Data, int32 Idx) -> const char*
 		{
 			auto* Files = static_cast<TArray<FString>*>(Data);
-			if (Idx < 0 || Idx >= static_cast<int32>(Files->size())) return false;
-			*OutText = (*Files)[Idx].c_str();
-			return true;
+			if (Idx < 0 || Idx >= static_cast<int32>(Files->size())) return nullptr;
+			return (*Files)[Idx].c_str();
 		};
 
 		ImGui::Combo("Scene File", &SelectedSceneIndex, SceneNameGetter, &SceneFiles, static_cast<int32>(SceneFiles.size()));
