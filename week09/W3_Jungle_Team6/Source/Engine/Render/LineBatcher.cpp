@@ -1,6 +1,6 @@
 ﻿#include "LineBatcher.h"
 #include "Core/EngineTypes.h"
-#include "EditorSettings.h"
+#include "Editor/Settings/EditorSettings.h"
 
 void FLineBatcher::Create(ID3D11Device* InDevice)
 {
