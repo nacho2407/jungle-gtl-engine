@@ -374,6 +374,9 @@
     <ClInclude Include="Source\Engine\Render\Common\RenderTypes.h">
       <Filter>Source\Engine\Render\Common</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Common\ViewTypes.h">
+      <Filter>Source\Engine\Render\Common</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Device\D3DDevice.h">
       <Filter>Source\Engine\Render\Device</Filter>
     </ClInclude>

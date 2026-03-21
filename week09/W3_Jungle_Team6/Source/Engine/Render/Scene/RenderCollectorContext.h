@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Viewport/CursorOverlayState.h"
-#include "Editor/Settings/EditorSettings.h"
+#include "Render/Common/ViewTypes.h"
 
 class UWorld;
 class UCameraComponent;

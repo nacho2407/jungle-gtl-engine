@@ -251,6 +251,7 @@
     <ClInclude Include="Source\Engine\Render\FontBatcher.h" />
     <ClInclude Include="Source\Engine\Render\LineBatcher.h" />
     <ClInclude Include="Source\Engine\Render\Common\RenderTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Common\ViewTypes.h" />
     <ClInclude Include="Source\Engine\Render\Device\D3DDevice.h" />
     <ClInclude Include="Source\Engine\Render\Mesh\MeshManager.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\Renderer.h" />
