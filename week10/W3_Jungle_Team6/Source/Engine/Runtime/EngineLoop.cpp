@@ -128,6 +128,7 @@ void FEngineLoop::TickFrame()
 	Editor.BeginFrame(DeltaTime);
 	Editor.Update(DeltaTime);
 
+
 	Editor.Render(DeltaTime);
 	Editor.EndFrame();
 }
