@@ -1,4 +1,4 @@
-#include "Editor/Settings/EditorSettings.h"
+﻿#include "Editor/Settings/EditorSettings.h"
 #include "SimpleJSON/json.hpp"
 
 #include <fstream>
@@ -19,6 +19,19 @@ namespace Key
 	constexpr const char* CameraRotateSensitivity = "CameraRotateSensitivity";
 	constexpr const char* InitViewPos = "InitViewPos";
 	constexpr const char* InitLookAt = "InitLookAt";
+
+	// View
+	constexpr const char* View = "View";
+	constexpr const char* ViewMode = "ViewMode";
+	constexpr const char* bPrimitives = "bPrimitives";
+	constexpr const char* bGrid = "bGrid";
+	constexpr const char* bGizmo = "bGizmo";
+	constexpr const char* bBillboardText = "bBillboardText";
+
+	// Grid
+	constexpr const char* Grid = "Grid";
+	constexpr const char* GridSpacing = "GridSpacing";
+	constexpr const char* GridHalfLineCount = "GridHalfLineCount";
 
 	// Runtime
 	constexpr const char* bLimitUpdateRate = "bLimitUpdateRate";
@@ -49,6 +62,21 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	Viewport[Key::InitLookAt] = LookAt;
 
 	Root[Key::Viewport] = Viewport;
+
+	// View
+	JSON ViewObj = Object();
+	ViewObj[Key::ViewMode] = static_cast<int32>(ViewMode);
+	ViewObj[Key::bPrimitives] = ShowFlags.bPrimitives;
+	ViewObj[Key::bGrid] = ShowFlags.bGrid;
+	ViewObj[Key::bGizmo] = ShowFlags.bGizmo;
+	ViewObj[Key::bBillboardText] = ShowFlags.bBillboardText;
+	Root[Key::View] = ViewObj;
+
+	// Grid
+	JSON GridObj = Object();
+	GridObj[Key::GridSpacing] = GridSpacing;
+	GridObj[Key::GridHalfLineCount] = GridHalfLineCount;
+	Root[Key::Grid] = GridObj;
 
 	// Runtime
 	JSON Runtime = Object();
@@ -123,6 +151,38 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 				static_cast<float>(Look[1].ToFloat()),
 				static_cast<float>(Look[2].ToFloat()));
 		}
+	}
+
+	// View
+	if (Root.hasKey(Key::View))
+	{
+		JSON ViewObj = Root[Key::View];
+
+		if (ViewObj.hasKey(Key::ViewMode))
+		{
+			int32 Mode = ViewObj[Key::ViewMode].ToInt();
+			if (Mode >= 0 && Mode < static_cast<int32>(EViewMode::Count))
+				ViewMode = static_cast<EViewMode>(Mode);
+		}
+		if (ViewObj.hasKey(Key::bPrimitives))
+			ShowFlags.bPrimitives = ViewObj[Key::bPrimitives].ToBool();
+		if (ViewObj.hasKey(Key::bGrid))
+			ShowFlags.bGrid = ViewObj[Key::bGrid].ToBool();
+		if (ViewObj.hasKey(Key::bGizmo))
+			ShowFlags.bGizmo = ViewObj[Key::bGizmo].ToBool();
+		if (ViewObj.hasKey(Key::bBillboardText))
+			ShowFlags.bBillboardText = ViewObj[Key::bBillboardText].ToBool();
+	}
+
+	// Grid
+	if (Root.hasKey(Key::Grid))
+	{
+		JSON GridObj = Root[Key::Grid];
+
+		if (GridObj.hasKey(Key::GridSpacing))
+			GridSpacing = static_cast<float>(GridObj[Key::GridSpacing].ToFloat());
+		if (GridObj.hasKey(Key::GridHalfLineCount))
+			GridHalfLineCount = GridObj[Key::GridHalfLineCount].ToInt();
 	}
 
 	// Runtime
