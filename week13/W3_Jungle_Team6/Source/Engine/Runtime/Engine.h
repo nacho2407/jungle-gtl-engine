@@ -31,9 +31,7 @@ public:
 	TArray<UWorld*>& GetScene() { return Scene; }
 	uint32 GetCurrentWorld() const { return CurrentWorld; }
 	void SetCurrentWorld(uint32 NewWorldIndex) { CurrentWorld = NewWorldIndex; }
-	UCamera* GetCamera() const { return Camera; }
-	FCameraState& GetCameraState() { return Camera->GetCameraState(); }
-	const FCameraState& GetCameraState() const { return Camera->GetCameraState(); }
+	UCameraComponent* GetCamera() const { return Camera; }
 
 	void SetTimer(FTimer* InTimer) { Timer = InTimer; }
 	FTimer* GetTimer() const { return Timer; }
@@ -52,14 +50,13 @@ public:
 protected:
 	virtual void Render(float DeltaTime);
 	void UpdateWorld(float DeltaTime);
-	void SyncCameraFromRenderHandler();
 
 protected:
 	FWindowsWindow* Window = nullptr;
 
 	uint32 CurrentWorld = 0;
 	TArray<UWorld*> Scene;
-	UCamera* Camera = nullptr;
+	UCameraComponent* Camera = nullptr;
 
 	FTimer* Timer = nullptr;
 
