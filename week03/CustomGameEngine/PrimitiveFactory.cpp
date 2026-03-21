@@ -8,16 +8,26 @@
 
 UPrimitiveComponent* PrimitiveFactory::AddPrimitive(EPrimitiveType type)
 {
+	SceneManager* sceneMgr = GetWorld().GetSceneManager();
+	if (sceneMgr == nullptr)
+	{
+		return nullptr;
+	}
+	if (sceneMgr->GetActiveScene() == nullptr)
+	{
+		sceneMgr->NewScene();
+	}
+
 	switch (type)
 	{
 	case EPrimitiveType::Cube:
-		return GetWorld().GetSceneManager()->AddSceneComponent<UCubeComp>();
+		return sceneMgr->AddSceneComponent<UCubeComp>();
 	case EPrimitiveType::Sphere:
-		return GetWorld().GetSceneManager()->AddSceneComponent<USphereComp>();
+		return sceneMgr->AddSceneComponent<USphereComp>();
 	case EPrimitiveType::Triangle:
-		return GetWorld().GetSceneManager()->AddSceneComponent<UTriangleComp>();
+		return sceneMgr->AddSceneComponent<UTriangleComp>();
 	case EPrimitiveType::Plane:
-		return GetWorld().GetSceneManager()->AddSceneComponent<UPlaneComp>();
+		return sceneMgr->AddSceneComponent<UPlaneComp>();
 	}
 	return nullptr;
 }

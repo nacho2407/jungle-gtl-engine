@@ -20,6 +20,7 @@ public:
 
 public:
 	// === Scene Management
+	TArray<UScene*> GetLoadedScenes();
 	UScene* GetActiveScene();
 	void SetActiveScene(UScene*);
 	UScene* GetPermanentScene();
@@ -27,7 +28,7 @@ public:
 	UScene* NewScene();
 	void SaveScene(FString sceneName);
 	UScene* LoadScene(FString sceneName);
-	void UnloadScene();
+	void UnloadScene(UScene* targetScene);
 	// === Scene Management
 	
 	template <typename T>
@@ -35,8 +36,20 @@ public:
 	{
 		static_assert(std::is_base_of<USceneComponent, T>::value, "T must derive from USceneComponent");
 
+		if (targetScene == nullptr)
+		{
+			return nullptr;
+		}
+
 		UObject* obj = FObjectFactory::ConstructObject(T::GetClass());
 		T* instance = Cast<T>(obj);
+		if (instance == nullptr)
+		{
+			return nullptr;
+		}
+
+		instance->UUID = UEngineStatics::GenUUID();
+		instance->Scene = targetScene;
 
 		targetScene->SceneComponents.push_back(instance);
 		instance->OnComponentAdded();
@@ -55,11 +68,12 @@ public:
 		return AddSceneComponent<T>(PermanentScene);
 	}
 
-	void RemoveSceneComponent(USceneComponent* toDespawn);
+	void RemoveSceneComponent(USceneComponent* toDespawn, UScene* targetScene= nullptr);
 
 
 private:
 	UWorld* OwnerWorld = nullptr;
 	UScene* ActiveScene = nullptr;
 	UScene* PermanentScene = nullptr;
+	TArray<UScene*> LoadedScenes;
 };

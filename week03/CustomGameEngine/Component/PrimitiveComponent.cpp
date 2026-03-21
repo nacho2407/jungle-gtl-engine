@@ -1,6 +1,7 @@
 ﻿#include "PrimitiveComponent.h"
 #include "Renderer/Renderer.h"
 #include "EngineCore/ResourceManager.h"
+#include "Scene.h"
 
 UPrimitiveComponent::UPrimitiveComponent()
 {
@@ -9,7 +10,13 @@ UPrimitiveComponent::UPrimitiveComponent()
 UPrimitiveComponent::~UPrimitiveComponent()
 {
 	if (RenderObj != nullptr)
+	{
+		if (Scene != nullptr)
+		{
+			Scene->Level.UnregisterRenderObject(RenderObj);
+		}
 		delete RenderObj;
+	}
 }
 
 EPrimitiveType UPrimitiveComponent::GetType()
@@ -43,8 +50,8 @@ void UPrimitiveComponent::SetRelativeScale3D(const FVector& newScale)
 void UPrimitiveComponent::OnComponentAdded()
 {
 	auto RenderObj = CreateRenderObject();
-	if (RenderObj != nullptr)
-		FLevel::GetInstance().RegisterRenderObject(RenderObj);
+	if (RenderObj != nullptr && Scene != nullptr)
+		Scene->Level.RegisterRenderObject(RenderObj);
 }
 
 void UPrimitiveComponent::Update(float DeltaTime)

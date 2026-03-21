@@ -90,10 +90,9 @@ public:
 
 public:
 	void SetRenderCamera(class UCameraComponent* camera);
-	void Render();
 	void BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups);
+	void Render(const TArray<FLevel*>& Levels);
 	void RenderGrid(ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader);
-	FLevel drawLevel;
 
 private:
 	UCameraComponent* renderCamera = nullptr;

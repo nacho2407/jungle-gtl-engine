@@ -4,10 +4,8 @@
 #include "RenderObject.h"
 #include "EngineCore/EngineTypes.h"
 
-class FLevel : public ISingleton<FLevel>
+class FLevel
 {
-	friend class ISingleton<FLevel>;
-
 public:
 	void RegisterRenderObject(RenderObject* RenderObj);
 	void UnregisterRenderObject(RenderObject* RenderObj);

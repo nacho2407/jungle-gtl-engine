@@ -1,16 +1,4 @@
 ﻿#include "EditorControlPanel.h"
-#include "Editor/Editor.h"
-#include "Component/CameraComponent.h"
-#include "Component/PrimitiveComponent.h"
-#include "PrimitiveFactory.h"
-#include "EngineCore/TimerManager.h"
-#include "World.h"
-#include "Math/Vector.h"
-#include "Math/Rotator.h"
-#include "ImGui/imgui.h"
-#include "Component/GridComp.h"
-#include "EngineCore/ResourceManager.h"
-#include <string>
 
 static EPrimitiveType primitiveType = EPrimitiveType::Triangle;
 static int spawnCount = 0;
@@ -33,6 +21,39 @@ EditorControlPanel::~EditorControlPanel()
 {
 }
 
+namespace
+{
+	static TArray<FString> GetSceneFileList(const FString& sceneDir)
+	{
+		TArray<FString> SceneList;
+
+		namespace fs = std::filesystem;
+
+		if (!fs::exists(sceneDir) || !fs::is_directory(sceneDir))
+		{
+			return SceneList;
+		}
+
+		for (const auto& Entry : fs::directory_iterator(sceneDir))
+		{
+			if (!Entry.is_regular_file())
+			{
+				continue;
+			}
+
+			const fs::path& Path = Entry.path();
+
+			if (Path.extension() == ".scene")
+			{
+				SceneList.push_back(Path.stem().string());
+			}
+		}
+
+		std::sort(SceneList.begin(), SceneList.end());
+		return SceneList;
+	}
+} // namespace
+
 void UpdateFPS(float deltaTime)
 {
 	frameCount++;
@@ -47,12 +68,12 @@ void UpdateFPS(float deltaTime)
 	}
 }
 
-void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
+void EditorControlPanel::Draw(UCameraComponent* camera, ImGuiWindowLayout& layout)
 {
 	UpdateFPS(TimerManager::GetInstance().GetGlobalDeltaTime());
 
-	ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos(layout.PosXY, ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(layout.SizeWH, ImGuiCond_FirstUseEver);
 
 	ImGui::Begin("Jungle Control Panel");
 	ImGui::Text("Hello Jungle World!");
@@ -67,7 +88,7 @@ void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 	}
 	if (ImGui::Button("Spawn"))
 	{
-		for (int i = 0; i < spawnCount; i++)
+		for (int i = 0; i < spawnCount; ++i)
 		{
 			// TODO: Apply primitive type to spawn
 			auto p = PrimitiveFactory::AddPrimitive(primitiveType);
@@ -78,21 +99,100 @@ void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 	ImGui::SameLine();
 	ImGui::Separator();
 
-	ImGui::InputText("Scene Name", sceneName, 128);
-	if (ImGui::Button("New Scene"))
-	{
-		editor->SelectComponent(nullptr);
+    static TArray<FString> SceneList;
+    static int32 SelectedSceneIndex = -1;
+    static bool bCreateNewSceneAfterSave = false;
+
+    if (ImGui::Button("New Scene"))
+    {
 		GetWorld().GetSceneManager()->NewScene();
-	}
-	if (ImGui::Button("Save Scene"))
-	{
-		GetWorld().GetSceneManager()->SaveScene(sceneName);
-	}
-	if (ImGui::Button("Load Scene"))
-	{
-		editor->SelectComponent(nullptr);
-		GetWorld().GetSceneManager()->LoadScene(sceneName);
-	}
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Save Scene"))
+    {
+        ImGui::OpenPopup("Save Scene Popup");
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Load Scene"))
+    {
+        SceneList = GetSceneFileList("Scenes/");
+        SelectedSceneIndex = -1;
+        ImGui::OpenPopup("Load Scene Popup");
+    }
+    ImGui::SetNextWindowSize(ImVec2(360, 140), ImGuiCond_Appearing);
+    if (ImGui::BeginPopupModal("Save Scene Popup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::InputText("Scene Name", sceneName, IM_ARRAYSIZE(sceneName));
+
+        if (ImGui::Button("Save"))
+        {
+            editor->SelectComponent(nullptr);
+            GetWorld().GetSceneManager()->SaveScene(sceneName);
+
+            ImGui::CloseCurrentPopup();
+
+            if (bCreateNewSceneAfterSave)
+            {
+                bCreateNewSceneAfterSave = false;
+                GetWorld().GetSceneManager()->NewScene();
+            }
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel"))
+        {
+            bCreateNewSceneAfterSave = false;
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+
+    // Load Scene 팝업
+    ImGui::SetNextWindowSize(ImVec2(500, 300), ImGuiCond_Appearing);
+    if (ImGui::BeginPopupModal("Load Scene Popup", nullptr))
+    {
+        if (ImGui::BeginChild("SceneList", ImVec2(0, 220), true))
+        {
+            for (int32 i = 0; i < (int32)SceneList.size(); ++i)
+            {
+                const bool bSelected = (SelectedSceneIndex == i);
+                if (ImGui::Selectable(SceneList[i].c_str(), bSelected))
+                {
+                    SelectedSceneIndex = i;
+                }
+            }
+            ImGui::EndChild();
+        }
+
+        const bool bCanLoad = (SelectedSceneIndex >= 0 && SelectedSceneIndex < (int32)SceneList.size());
+
+        if (!bCanLoad)
+        {
+            ImGui::BeginDisabled();
+        }
+
+        if (ImGui::Button("Load"))
+        {
+            editor->SelectComponent(nullptr);
+            GetWorld().GetSceneManager()->LoadScene(SceneList[SelectedSceneIndex].c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (!bCanLoad)
+        {
+            ImGui::EndDisabled();
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel"))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+
 	ImGui::Separator();
 
 	ImGui::Checkbox("Orthogonal", &camera->IsOrthogonal);

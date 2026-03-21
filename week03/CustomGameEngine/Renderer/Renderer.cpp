@@ -260,7 +260,7 @@ void URenderer::SetRenderCamera(class UCameraComponent* camera)
 	renderCamera = camera;
 }
 
-void URenderer::Render()
+void URenderer::Render(const TArray<FLevel*>& Levels)
 {
 	if (renderCamera == nullptr) return;
 
@@ -275,21 +275,19 @@ void URenderer::Render()
 	TArray<RenderObject*> NoDepthRenderObjects;
 	TMap<BatchKey, TArray<RenderObject*>> BatchGroups;
 
-	auto renderObjects = &FLevel::GetInstance().RenderObjects;
-	for (RenderObject* RenderObj : *renderObjects)
+	for (FLevel* Level : Levels)
 	{
-		if (RenderObj->bDepthEnabled && !RenderObj->bBatch)
+		if (Level == nullptr) continue;
+		for (RenderObject* RenderObj : Level->RenderObjects)
 		{
-			NormalRenderObjects.push_back(RenderObj);
-		}
-		else
-		{
-			NoDepthRenderObjects.push_back(RenderObj);
-		}
-		if (RenderObj->bBatch)
-		{
-			BatchKey key{ RenderObj->GetBatchKey() };
-			BatchGroups[key].push_back(RenderObj);
+			if (RenderObj->bDepthEnabled)
+			{
+				NormalRenderObjects.push_back(RenderObj);
+			}
+			else
+			{
+				NoDepthRenderObjects.push_back(RenderObj);
+			}
 		}
 	}
 

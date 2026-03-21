@@ -7,6 +7,7 @@ class URenderer;
 class Editor;
 class UCameraComponent;
 class UPicker;
+class UScene;
 class EngineApp
 {
 public:
@@ -31,5 +32,7 @@ private:
 	Editor* EditorInst = nullptr;
 	UPicker* Picker = nullptr;
 	TArray<std::function<void(int width, int height)>> OnResizeCallback;
+
+	UScene* LastActiveScene = nullptr;
 };
 

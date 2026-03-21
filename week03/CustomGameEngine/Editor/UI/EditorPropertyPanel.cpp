@@ -1,10 +1,4 @@
 ﻿#include "EditorPropertyPanel.h"
-#include "Editor/Editor.h"
-#include "ImGui/imgui.h"
-#include "Component/PrimitiveComponent.h"	
-#include "Component/SceneComponent.h"
-#include "World.h"
-
 EditorPropertyPanel::EditorPropertyPanel(Editor* parent) : editor(parent)
 {
 }
@@ -13,10 +7,10 @@ EditorPropertyPanel::~EditorPropertyPanel()
 {
 }
 
-void EditorPropertyPanel::Draw(USceneComponent* selectedComponent)
+void EditorPropertyPanel::Draw(USceneComponent* selectedComponent, ImGuiWindowLayout& layout)
 {
-	ImGui::SetNextWindowPos(ImVec2(1600, 10), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos(layout.PosXY, ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(layout.SizeWH, ImGuiCond_FirstUseEver);
 
 	ImGui::Begin("Jungle Property Panel");
 

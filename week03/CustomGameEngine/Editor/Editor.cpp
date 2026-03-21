@@ -1,23 +1,14 @@
 ﻿#include "Editor.h"
-#include "UI/EditorConsole.h"
-#include "UI/EditorControlPanel.h"
-#include "UI/EditorPropertyPanel.h"
-#include "UI/EditorStatPanel.h"
-#include "UI/EditorToolbar.h"
-#include "UI/EditorSceneManagerPanel.h"
-#include "Gizmo.h"
-#include "Component/GizmoComponent.h"
-#include "Component/SceneComponent.h"
-#include "ImGui/imgui.h"
-#include "ImGui/imgui_impl_dx11.h"
-#include "ImGui/imgui_impl_win32.h"
 
 Editor::Editor()
 {
+	UILayout = ImGuiLayout();
+
 	ControlPanel = new EditorControlPanel(this);
 	Console = new EditorConsole();
 	PropertyPanel = new EditorPropertyPanel(this);
 	StatPanel = new EditorStatPanel();
+	Toolbar = new EditorToolbar();
 	SceneMgrPanel = new EditorSceneManagerPanel();
 }
 
@@ -34,6 +25,7 @@ bool Editor::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* de
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
+	ImFont* DefaultFont = io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/malgun.ttf", 18.0f);
 	ImGui_ImplWin32_Init(hWnd);
 	ImGui_ImplDX11_Init(device, deviceContext);
 
@@ -46,12 +38,12 @@ void Editor::DrawUI()
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 
-	DrawControlPanel();
-	DrawConsole();
-	DrawPropertyPanel();
-	DrawStatPanel();
-	DrawToolbar();
-	DrawSceneManagerPanel();
+	DrawControlPanel(UILayout);
+	DrawConsole(UILayout);
+	DrawPropertyPanel(UILayout);
+	DrawStatPanel(UILayout);
+	DrawToolbar(UILayout);
+	DrawSceneManagerPanel(UILayout);
 
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -80,33 +72,33 @@ void Editor::SelectComponent(USceneComponent* component)
 	}
 }
 
-void Editor::DrawControlPanel()
-{
-	ControlPanel->Draw(Camera, Grid);
-}
-
-void Editor::DrawConsole()
+void Editor::DrawConsole(ImGuiLayout& layout)
 {
 	bool flag = true;
-	Console->Draw("Example: Console", &flag);
+	Console->Draw("Example: Console", &flag, layout.Console);
 }
 
-void Editor::DrawPropertyPanel()
+void Editor::DrawControlPanel(ImGuiLayout& layout)
 {
-	PropertyPanel->Draw(SelectedComponent);
+	ControlPanel->Draw(Camera, layout.ControlPanel);
 }
 
-void Editor::DrawStatPanel()
+void Editor::DrawPropertyPanel(ImGuiLayout& layout)
 {
-	StatPanel->Draw();
+	PropertyPanel->Draw(SelectedComponent, layout.PropertyPanel);
 }
 
-void Editor::DrawToolbar()
+void Editor::DrawStatPanel(ImGuiLayout& layout)
 {
-	Toolbar->Draw();
+	StatPanel->Draw(layout.StatPanel);
 }
 
-void Editor::DrawSceneManagerPanel()
+void Editor::DrawToolbar(ImGuiLayout& layout)
 {
-	SceneMgrPanel->Draw(this);
+	Toolbar->Draw(layout.Toolbar);
+}
+
+void Editor::DrawSceneManagerPanel(ImGuiLayout& layout)
+{
+	SceneMgrPanel->Draw(this, layout.SceneMgrPanel);
 }

@@ -19,6 +19,11 @@ SceneManager::~SceneManager()
 }
 
 
+TArray<UScene*> SceneManager::GetLoadedScenes()
+{
+	return LoadedScenes;
+}
+
 UScene* SceneManager::GetActiveScene()
 {
 	return ActiveScene;
@@ -41,12 +46,10 @@ void SceneManager::SetPermanentScene(UScene* scene)
 
 UScene* SceneManager::NewScene()
 {
-	if (GetActiveScene() != nullptr)
-		UnloadScene();
-
 	UScene* newScene = Cast<UScene>(FObjectFactory::ConstructObject(UScene::GetClass()));
+	newScene->Name = FName("NewScene_" + std::to_string((int32)LoadedScenes.size()));
 	SetActiveScene(newScene);
-	UEngineStatics::NextUUID = 0;
+	LoadedScenes.push_back(newScene);
 
 	UE_LOG("Created new scene\n");
 	return GetActiveScene();
@@ -57,20 +60,17 @@ void SceneManager::SaveScene(FString sceneName)
 	UScene* activeScene = GetActiveScene();
 	activeScene->NextUUID = UEngineStatics::NextUUID;
 
-	SerializeHelper::SaveAsJson(activeScene, sceneName + ".Scene");
-	return;
+	SerializeHelper::SaveAsJson(activeScene, "Scenes/" + sceneName + ".Scene");
 }
 
 UScene* SceneManager::LoadScene(FString sceneName)
 {
-	const FString filePath = sceneName + ".Scene";
-
+	const FString filePath = "Scenes/" + sceneName + ".Scene";
 	UScene* loadedScene = SerializeHelper::LoadFromJson<UScene>(filePath);
 
 	if (loadedScene != nullptr)
 	{
-		if (GetActiveScene() != nullptr)
-			UnloadScene();
+		LoadedScenes.push_back(loadedScene);
 		SetActiveScene(loadedScene);
 		UEngineStatics::NextUUID = loadedScene->NextUUID;
 	}
@@ -78,38 +78,56 @@ UScene* SceneManager::LoadScene(FString sceneName)
 	return loadedScene;
 }
 
-void SceneManager::UnloadScene()
+void SceneManager::UnloadScene(UScene* targetScene)
 {
-	UScene* curScene = GetActiveScene();
-	if (curScene == nullptr)
+	//UScene* curScene = GetActiveScene();
+	UScene* sceneToUnload = (targetScene != nullptr) ? targetScene : GetActiveScene();
+	if (sceneToUnload == nullptr)
+	{
+		return;
+	}
+	auto sceneIt = std::find(LoadedScenes.begin(), LoadedScenes.end(), sceneToUnload);
+	if (sceneIt == LoadedScenes.end())
 	{
 		return;
 	}
 	// loop 내에서의 삽입/삭제로 인한 오류 방지
-	auto deleteList = curScene->SceneComponents;
-	for (auto obj : deleteList)
+	auto deleteList = sceneToUnload->SceneComponents;
+	for (auto* obj : deleteList)
 	{
-		RemoveSceneComponent(obj);
+		RemoveSceneComponent(obj, sceneToUnload);
 	}
-	delete GetActiveScene();
-	SetActiveScene(nullptr);
+
+	delete sceneToUnload;
+	LoadedScenes.erase(sceneIt);
+
+	if (ActiveScene == sceneToUnload)
+	{
+		SetActiveScene(LoadedScenes.empty() ? nullptr : LoadedScenes.back());
+	}
 }
 
-void SceneManager::RemoveSceneComponent(USceneComponent* toDespawn)
+void SceneManager::RemoveSceneComponent(USceneComponent* toDespawn, UScene* targetScene)
 {
+	UScene* scene = (targetScene != nullptr) ? targetScene : ActiveScene;
+	if (scene == nullptr || toDespawn == nullptr)
+	{
+		return;
+	}
+
 	// Remove render object first
 	auto primToDespawn = Cast<UPrimitiveComponent>(toDespawn);
 	if (primToDespawn != nullptr)
 	{
-		FLevel::GetInstance().UnregisterRenderObject(primToDespawn->GetRenderObject());
+		scene->Level.UnregisterRenderObject(primToDespawn->GetRenderObject());
 	}
 
-	for (auto it = ActiveScene->SceneComponents.begin(); it != ActiveScene->SceneComponents.end(); it++)
+	for (auto it = scene->SceneComponents.begin(); it != scene->SceneComponents.end(); ++it)
 	{
-		if ((*it) == toDespawn)
+		if (*it == toDespawn)
 		{
 			delete toDespawn;
-			ActiveScene->SceneComponents.erase(it);
+			scene->SceneComponents.erase(it);
 			break;
 		}
 	}
