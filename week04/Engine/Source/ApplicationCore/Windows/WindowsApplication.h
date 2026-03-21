@@ -4,7 +4,6 @@
 #include <windows.h>
 #include "ApplicationCore/Windows/WindowsWindow.h"
 #include "ApplicationCore/GenericPlatform/IApplication.h"
-// #include "ApplicationCore/GenericPlatform/IApplicationMessageHandler.h"
 
 class FInputSystem;
 
@@ -36,29 +35,13 @@ namespace Engine::ApplicationCore
 
         virtual void* GetNativeWindowHandle() const override;
 
-        /* virtual bool ProcessKeyDownEvent(EKey Key, bool bIsRepeat) override;
-         virtual bool ProcessKeyUpEvent(EKey Key) override;
-
-         virtual bool ProcessMouseDownEvent(EKey Button, int32 X, int32 Y) override;
-         virtual bool ProcessMouseUpEvent(EKey Button, int32 X, int32 Y) override;
-         virtual bool ProcessMouseDoubleClickEvent(EKey Button, int32 X, int32 Y) override;
-
-         virtual bool ProcessMouseMoveEvent(int32 X, int32 Y) override;
-         virtual bool ProcessRawMouseMoveEvent(int32 DeltaX, int32 DeltaY) override;
-         virtual bool ProcessMouseWheelEvent(float Delta, int32 X, int32 Y) override;
-
-         LRESULT ProcessMessage(HWND InHWnd, UINT InMessage, WPARAM InWParam, LPARAM InLParam);*/
-
         FWindowsWindow&       GetWindow() { return Window; }
         const FWindowsWindow& GetWindow() const { return Window; }
 
       private:
-        /*EKey TranslateKey(WPARAM InWParam) const;
-        EKey TranslateMouseButton(UINT InMessage) const;*/
         void RegisterRawMouseInput();
 
       private:
-        // IApplicationMessageHandler* MessageHandler = nullptr;
         FWindowsWindow Window;
         FInputSystem*  InputSystem = nullptr;
         bool           bRawMouseInputRegistered = false;

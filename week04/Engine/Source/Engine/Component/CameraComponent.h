@@ -1,81 +1,56 @@
-#pragma once
-//
-//#include "CoreUObject/Object.h"
-//#include "SceneComponent.h"
-//#include "Core/Math/Matrix.h"
-//#include "Core/Math/Vector.h"
-//
-//enum class EProjectionType
-//{
-//	Perspective,
-//	Orthogonal,
-//	Isometric
-//};
-//
-//const FVector UpVec(0.0f, 0.0f, 1.0f);
-//const float Epsilon = 1e-6f;
-//
-//class UCameraComponent : public Engine::Component::USceneComponent {
-//	DECLARE_RTTI(UCameraComponent, USceneComponent)
-//public:
-//	float FOV{ 90.0f };
-//	float AspectRatio{ 16.0f / 9.0f };
-//	float NearPlane{ 0.01f };
-//	float FarPlane{ 2000.0f };
-//	float MoveSpeed{ 10.0f };
-//	float ScreenWidth = 0.f;
-//
-//	float ScreenHeight = 0.f;
-//	float RotateSensitivity = 1.0f;
-//	bool IsOrthogonal{ false };
-//	float OrthoHeight{ 10.0f };
-//
-//	float FocusLength{ 5.0f };
-//	FVector FocusPoint;
-//
-//	//EProjectionType ProjectionType{ EProjectionType::Perspective };
-//
-//	FVector Direction{ FVector(1.0f, 0.0f, 0.0f) };
-//	FVector SideDirection{ FVector(0.0f, 1.0f, 0.0f) };
-//	FVector UpDirection{ FVector(0.0f, 0.0f, 1.0f) };
-//
-//	FMatrix View;
-//	FMatrix Projection;
-//	FMatrix ViewProjection;
-//
-//public:
-//	UCameraComponent();
-//	virtual ~UCameraComponent() override;
-//
-//	static UCameraComponent* GetMainCamera();
-//
-//	void SetRelativeLocation(const FVector& _input) override;
-//	void Move(float DeltaTime);
-//	FMatrix GetRotationMatrix();
-//	void SetDirection(const float InputPitch, const float InputYaw,
-//		const float InputRoll);
-//	void HandleRotate(float DeltaTime);
-//	void HandleOrbitRotate(float DeltaTime);
-//	void SetFOV(const float NewFOV);
-//	float GetFOV() const;
-//	void OnResize(int NewWidth, int NewHeight);
-//	float GetAspectRatio() const;
-//	void SetOrthogonal(bool input);
-//	//void ChangePerpective(EProjectionType NewType);
-//	void Update(float deltaTime) override;
-//
-//	FMatrix GetViewMatrix() const;
-//	void CalcProjectionMatrix();
-//	FMatrix GetProjectionMatrix() const;
-//	void CalcPerspectiveProjectionMatrix();
-//	void CalcOrthogonalProjectionMatrix();
-//	FMatrix GetViewProjectionMatrix() const;
-//
-//	FVector WorldToScreen(const FVector& worldPos) const;
-//	Ray ScreenPointToRay(int x, int y);
-//
-//private:
-//	void HandleCameraMove(float deltaTime);
-//	void UpdateCameraMatrices();
-//	static UCameraComponent* mainCamera;
-//};
+#include <Core/CoreMinimal.h>
+#include "SceneComponent.h"
+
+namespace Engine::Component
+{
+    enum class EProjectionType
+    {
+        Perspective,
+        Orthographic
+    };
+
+    class ENGINE_API UCameraComponent : public USceneComponent
+    {
+        DECLARE_RTTI(UCameraComponent, USceneComponent)
+
+      public:
+        UCameraComponent() = default;
+        virtual ~UCameraComponent() override = default;
+
+        inline void SetRelativeLocation(const FVector& NewLocation) override;
+        inline void SetRelativeRotation(const FQuat& NewRotation) override;
+        inline void SetRelativeRotation(const FRotator& NewRotation) override;
+
+        virtual void Update(float InDeltaTime) override;
+
+        FMatrix GetViewMatrix() const;
+        FMatrix GetProjectionMatrix() const;
+        FMatrix GetViewProjectionMatrix() const;
+
+        void SetProjectionType(EProjectionType InType);
+        void SetFOV(float InFOV);
+        void SetNearPlane(float InNear);
+        void SetFarPlane(float InFar);
+        void SetOrthoHeight(float InHeight);
+
+        void OnResize(uint32 InWidth, uint32 InHeight);
+
+        FVector WorldToScreen(const FVector& InWorldPos) const;
+
+      private:
+        EProjectionType ProjectionType = EProjectionType::Perspective;
+        int32           Height{1080};
+        int32           Width{1920};
+        float           AspectRatio{16.0f / 9.0f};
+        float           FOV{90.0f};
+        float           NearPlane{0.1f};
+        float           FarPlane{2000.0f};
+        float           OrthoHeight{30.0f};
+
+        mutable FMatrix CachedViewMatrix;
+        mutable FMatrix CachedProjectionMatrix;
+        mutable bool    bIsViewDirty = true;
+        mutable bool    bIsProjectionDirty = true;
+        // bool            bIsReverseZ = false;
+    };
+} // namespace Engine::Component

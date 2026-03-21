@@ -28,7 +28,6 @@ namespace Engine::Component
         void            Update(float DeltaTime) override;
 
       private:
-        bool           Pickable = true;
         EPrimitiveType Type = Sphere;
         FVector4       Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
     };

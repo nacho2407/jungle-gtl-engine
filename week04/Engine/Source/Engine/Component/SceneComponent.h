@@ -38,16 +38,12 @@ namespace Engine::Component
 
         FMatrix GetRelativeMatrix();
 
-        // virtual void OnComponentAdded() {};
-        //  virtual void Update(float deltaTime) {};
-        virtual void DrawProperties();
-
         bool IsSelected() const;
 
         bool            bIsSelected = false;
         Geometry::FAABB AABB;
 
-      private:
+      protected:
         FTransform WorldTransform;
     };
 } // namespace Engine::Component
