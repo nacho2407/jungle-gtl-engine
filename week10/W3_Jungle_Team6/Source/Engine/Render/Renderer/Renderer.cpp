@@ -77,7 +77,6 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 
 		if (Commands.empty()) continue;
 
-
 		SetupRenderState(CurrentPass, context);
 
 		for (const auto& Cmd : Commands)
@@ -180,7 +179,7 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 	{
 	case ERenderCommandType::Gizmo:
 		Resources.GizmoShader.Bind(Context);
-		Resources.GizmoPerObjectConstantBuffer.Update(Context, &InCmd.GizmoConstants, sizeof(FGizmoConstants));
+		Resources.GizmoPerObjectConstantBuffer.Update(Context, &InCmd.Constants.Gizmo, sizeof(FGizmoConstants));
 
 		{
 			ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
@@ -193,7 +192,7 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 		break;
 
 	case ERenderCommandType::Overlay:
-		Resources.OverlayConstantBuffer.Update(Context, &InCmd.OverlayConstants, sizeof(FOverlayConstants));
+		Resources.OverlayConstantBuffer.Update(Context, &InCmd.Constants.Overlay, sizeof(FOverlayConstants));
 
 		{
 			ID3D11Buffer* cb = Resources.OverlayConstantBuffer.GetBuffer();
@@ -204,7 +203,7 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 
 	case ERenderCommandType::Axis:
 	case ERenderCommandType::Grid:
-		Resources.EditorConstantBuffer.Update(Context, &InCmd.EditorConstants, sizeof(FEditorConstants));
+		Resources.EditorConstantBuffer.Update(Context, &InCmd.Constants.Editor, sizeof(FEditorConstants));
 
 		{
 			ID3D11Buffer* cb = Resources.EditorConstantBuffer.GetBuffer();
@@ -218,7 +217,7 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 		break;
 
 	case ERenderCommandType::SelectionOutline:
-		Resources.OutlineConstantBuffer.Update(Context, &InCmd.OutlineConstants, sizeof(FOutlineConstants));
+		Resources.OutlineConstantBuffer.Update(Context, &InCmd.Constants.Editor, sizeof(FOutlineConstants));
 
 		ID3D11Buffer* cb = Resources.OutlineConstantBuffer.GetBuffer();
 		Context->VSSetConstantBuffers(4, 1, &cb);
