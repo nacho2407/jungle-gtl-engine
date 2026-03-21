@@ -28,12 +28,18 @@ enum class ERenderCommandType
 	DebugBox
 };
 
-//	Object를 위한 Constant Buffer입니다.
+//PerObject
 struct FTransformConstants
 {
 	FMatrix Model;
-	FMatrix View;
-	FMatrix Projection;
+};
+
+struct FFrameConstants
+{
+	FMatrix View;          
+	FMatrix Projection;    
+
+	FVector4 CameraPosition; 
 };
 
 struct FGizmoConstants
