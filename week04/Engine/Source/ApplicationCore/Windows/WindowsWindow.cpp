@@ -33,7 +33,9 @@ namespace Engine::ApplicationCore
         WindowClass.lpszClassName = WindowClassName;
         WindowClass.hCursor = LoadCursorW(nullptr, IDC_ARROW);
         WindowClass.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
-        RegisterClass(&WindowClass);
+        
+        RegisterClassW(&WindowClass);
+
 
         RECT WindowRect = {0, 0, InWidth, InHeight};
         AdjustWindowRect(&WindowRect, WS_OVERLAPPEDWINDOW, FALSE);
@@ -44,6 +46,7 @@ namespace Engine::ApplicationCore
         HWnd = CreateWindowExW(
             0, WindowClassName, InTitle, WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW, CW_USEDEFAULT,
             CW_USEDEFAULT, WindowWidth, WindowHeight, nullptr, nullptr, InInstance, this);
+        
         if (HWnd == nullptr)
         {
             return false;

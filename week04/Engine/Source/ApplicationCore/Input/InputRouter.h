@@ -1,14 +1,13 @@
 #pragma once
 
-#pragma once
-#include <vector>
-#include "InputContext.h"
+#include "Core/CoreMinimal.h"
+#include "ApplicationCore/Input/InputContext.h"
 
 namespace Engine::ApplicationCore
 {
     class ENGINE_API FInputRouter
     {
-      public:
+    public:
         constexpr FInputRouter() = default;
         ~FInputRouter() = default;
 
