@@ -11,6 +11,7 @@
 #include "Component/GridComp.h"
 #include "EngineCore/ResourceManager.h"
 #include <string>
+#include "Renderer/Renderer.h"
 
 static EPrimitiveType primitiveType = EPrimitiveType::Triangle;
 static int spawnCount = 0;
@@ -25,7 +26,7 @@ static float elapsedTime = 0.0f;
 static float displayFPS = 0.0f;
 const float fpsUpdateInterval = 0.5f; // 초 단위
 
-EditorControlPanel::EditorControlPanel(Editor* parent) : editor(parent)
+EditorControlPanel::EditorControlPanel(Editor* parent, URenderer* InRenderer) : editor(parent), Renderer(InRenderer)
 {
 }
 
@@ -95,30 +96,45 @@ void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 	}
 	ImGui::Separator();
 
-	ImGui::Checkbox("Orthogonal", &camera->IsOrthogonal);
-	ImGui::InputFloat("FOV", &camera->FOV);
+	if (camera)
+	{
+		ImGui::Checkbox("Orthogonal", &camera->IsOrthogonal);
+		ImGui::InputFloat("FOV", &camera->FOV);
 
-	FVector camPosition = camera->GetRelativeLocation();
-	FRotator camRotation = camera->GetRelativeRotation();
-	ImGui::InputFloat3("Camera Location", &camPosition.x);
-	ImGui::InputFloat3("Camera Rotation", &camRotation.Roll);
-	camera->SetRelativeLocation(camPosition);
-	camera->SetRelativeRotation(camRotation);
+		FVector camPosition = camera->GetRelativeLocation();
+		FRotator camRotation = camera->GetRelativeRotation();
+		ImGui::InputFloat3("Camera Location", &camPosition.x);
+		ImGui::InputFloat3("Camera Rotation", &camRotation.Roll);
+		camera->SetRelativeLocation(camPosition);
+		camera->SetRelativeRotation(camRotation);
 
-	ImGui::InputFloat3("Camera Direction", &camera->Direction.x);
-	ImGui::SliderFloat("Camera Move Speed", &camera->MoveSpeed, 0.0f, 20.0f, "%.0f");
-	ImGui::SliderFloat("Camera Rotation Speed", &camera->RotateSensitivity, 0.0f, 20.0f, "%.0f");
+		ImGui::InputFloat3("Camera Direction", &camera->Direction.x);
+		ImGui::SliderFloat("Camera Move Speed", &camera->MoveSpeed, 0.0f, 20.0f, "%.0f");
+		ImGui::SliderFloat("Camera Rotation Speed", &camera->RotateSensitivity, 0.0f, 20.0f, "%.0f");
+	}
 
 	ImGui::Separator();
 	ImGui::Text("Grid Settings");
 
 	bool bChanged = false;
-	//if (ImGui::DragFloat("Half Extent", &Grid->HalfExtent, 1.0f, 1.0f, 1000.0f)) bChanged = true;
+	if (ImGui::DragFloat("Half Extent", &Grid->HalfExtent, 1.0f, 1.0f, 1000.0f)) bChanged = true;
 	if (ImGui::DragFloat("Cell Size", &Grid->CellSize, 0.1f, 0.1f, 10.0f)) bChanged = true;
 	if (bChanged)
 	{
 		ResourceManager::GetInstance()->UpdateGridMesh(Grid->HalfExtent, Grid->CellSize, 0.f);
 	}
+
+	ImGui::Separator();
+	if (Renderer)
+	{
+		ImGui::Checkbox("Show Primitives", &Renderer->ShowFlagMap[EEngineShowFlags::SF_Primitives]);
+		ImGui::Checkbox("Show Billboard Text", &Renderer->ShowFlagMap[EEngineShowFlags::SF_BillboardText]);
+		ImGui::Checkbox("Show Editor Primitives", &Renderer->ShowFlagMap[EEngineShowFlags::SF_EditorPrimitives]);
+	}
+	//for (auto& elem : Renderer->ShowFlagMap)
+	//{
+	//	ImGui::Checkbox(elem.first.c_str(), &elem.second);
+	//}
 
 	ImGui::End();
 }

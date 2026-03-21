@@ -21,13 +21,14 @@ void UAxisComp::Update(float DeltaTime)
 RenderObject* UAxisComp::CreateRenderObject()
 {
 	RenderObj = UPrimitiveComponent::CreateRenderObject();
-
+	RenderObj->Material = &ResourceManager::GetInstance()->GetMaterial(L"Shader/ShaderLine.hlsl");
 	if (RenderObj == nullptr)
 		return nullptr;
 
 	RenderObj->PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 	Pickable = false;
 	RenderObj->bBatch = false;
+	RenderObj->ShowFlag = EEngineShowFlags::SF_EditorPrimitives;
 	RenderObj->bDepthEnabled = false;
 
 	return RenderObj;

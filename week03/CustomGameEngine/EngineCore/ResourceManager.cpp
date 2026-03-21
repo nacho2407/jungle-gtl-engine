@@ -25,10 +25,13 @@ void ResourceManager::Initialize(URenderer* InRenderer)
 {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12,
  D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
-	FMaterial& Mat = CreateMaterial(L"Shader/ShaderW0.hlsl", L"Shader/ShaderW0.hlsl", Renderer->Device.Get(), layout, 2);
-	Mat.ConstantBuffer.Create(Renderer->Device.Get(), sizeof(FObjectConstant), 1);
+	FMaterial& MainShader = CreateMaterial(L"Shader/ShaderW0.hlsl", L"Shader/ShaderW0.hlsl", Renderer->Device.Get(), layout, 2);
+	MainShader.ConstantBuffer.Create(Renderer->Device.Get(), sizeof(FObjectConstant), 1);
 
-	//CreateMaterial(L"Shader/ShaderInfiniteGrid.hlsl", L"Shader/ShaderInfiniteGrid.hlsl", Renderer->Device.Get(), nullptr, 0);
+	FMaterial& LineShader = CreateMaterial(L"Shader/ShaderLine.hlsl", L"Shader/ShaderLine.hlsl", Renderer->Device.Get(), layout, 2);
+	//LineShader.ConstantBuffer.Create(Renderer->Device.Get(), sizeof(FObjectConstant), 1);
+
+
 	AddCubeMesh(Renderer->Device.Get());
 	AddSphereMesh(Renderer->Device.Get());
 	AddTriangleMesh(Renderer->Device.Get());
@@ -51,7 +54,7 @@ void ResourceManager::CreateNoBufferGeometry(FString ResourceName, const TArray<
 	FGeometry& Geometry = GeometryMap[ResourceName];
 	Geometry.VertexBuffer.Reset();
 	Geometry.VertexStride = sizeof(FVector);
-	Geometry.VertexCount = Verticies.size();
+	Geometry.VertexCount = (UINT)Verticies.size();
 	Geometry.Offset = 0;
 	Geometry.Vertices = Verticies;
 }
@@ -86,97 +89,35 @@ FMaterial& ResourceManager::CreateMaterial(WFString VertexShaderName, WFString P
 
 void ResourceManager::AddCubeMesh(ID3D11Device* Device)
 {
-	FVertexSimple cubeVertices[] =
+	MeshData data = CreateCubeMeshData();
+	TArray<FVector> Vertices(data.Vertices.size());
+	for (size_t i = 0; i < data.Vertices.size(); ++i)
 	{
-		// Front (+Z) - Red
-		{ -0.5f,-0.5f, 0.5f, 1,0,0,1 },
-		{  0.5f,-0.5f, 0.5f, 1,0,0,1 },
-		{  0.5f, 0.5f, 0.5f, 1,0,0,1 },
-
-		{ -0.5f,-0.5f, 0.5f, 1,0,0,1 },
-		{  0.5f, 0.5f, 0.5f, 1,0,0,1 },
-		{ -0.5f, 0.5f, 0.5f, 1,0,0,1 },
-
-
-		// Back (-Z) - Green
-		{  0.5f,-0.5f,-0.5f, 0,1,0,1 },
-		{ -0.5f,-0.5f,-0.5f, 0,1,0,1 },
-		{ -0.5f, 0.5f,-0.5f, 0,1,0,1 },
-
-		{  0.5f,-0.5f,-0.5f, 0,1,0,1 },
-		{ -0.5f, 0.5f,-0.5f, 0,1,0,1 },
-		{  0.5f, 0.5f,-0.5f, 0,1,0,1 },
-
-
-		// Left (-X) - Blue
-		{ -0.5f,-0.5f,-0.5f, 0,0,1,1 },
-		{ -0.5f,-0.5f, 0.5f, 0,0,1,1 },
-		{ -0.5f, 0.5f, 0.5f, 0,0,1,1 },
-
-		{ -0.5f,-0.5f,-0.5f, 0,0,1,1 },
-		{ -0.5f, 0.5f, 0.5f, 0,0,1,1 },
-		{ -0.5f, 0.5f,-0.5f, 0,0,1,1 },
-
-
-		// Right (+X) - Yellow
-		{ 0.5f,-0.5f, 0.5f, 1,1,0,1 },
-		{ 0.5f,-0.5f,-0.5f, 1,1,0,1 },
-		{ 0.5f, 0.5f,-0.5f, 1,1,0,1 },
-
-		{ 0.5f,-0.5f, 0.5f, 1,1,0,1 },
-		{ 0.5f, 0.5f,-0.5f, 1,1,0,1 },
-		{ 0.5f, 0.5f, 0.5f, 1,1,0,1 },
-
-
-		// Top (+Y) - Cyan
-		{ -0.5f,0.5f, 0.5f, 0,1,1,1 },
-		{  0.5f,0.5f, 0.5f, 0,1,1,1 },
-		{  0.5f,0.5f,-0.5f, 0,1,1,1 },
-
-		{ -0.5f,0.5f, 0.5f, 0,1,1,1 },
-		{  0.5f,0.5f,-0.5f, 0,1,1,1 },
-		{ -0.5f,0.5f,-0.5f, 0,1,1,1 },
-
-
-		// Bottom (-Y) - Magenta
-		{ -0.5f,-0.5f,-0.5f, 1,0,1,1 },
-		{  0.5f,-0.5f,-0.5f, 1,0,1,1 },
-		{  0.5f,-0.5f, 0.5f, 1,0,1,1 },
-
-		{ -0.5f,-0.5f,-0.5f, 1,0,1,1 },
-		{  0.5f,-0.5f, 0.5f, 1,0,1,1 },
-		{ -0.5f,-0.5f, 0.5f, 1,0,1,1 },
-	};
-
-	int Cnt = sizeof(cubeVertices) / sizeof(FVertexSimple);
-	TArray<FVector> Vertices(Cnt);
-	for (int i = 0; i < Cnt; ++i)
-	{
-		Vertices[i] = FVector(cubeVertices[i].x, cubeVertices[i].y, cubeVertices[i].z);
+		Vertices[i] = FVector(data.Vertices[i].x, data.Vertices[i].y, data.Vertices[i].z);
 	}
-	CreateStaticGeometry("Cube", cubeVertices, sizeof(cubeVertices), Device, 0, Vertices);
+	CreateStaticGeometry("Cube", data.Vertices.data(), (UINT)(sizeof(FVertexSimple) * data.Vertices.size()), Device, 0, Vertices, data.Indices.data(), (UINT)(sizeof(uint32_t) * data.Indices.size()));
 }
 
 void ResourceManager::AddSphereMesh(ID3D11Device* Device)
 {
-	int Cnt = sizeof(sphere_vertices) / sizeof(FVertexSimple);
-	TArray<FVector> Vertices(Cnt);
-	for (int i = 0; i < Cnt; ++i)
+	TArray<FVector> Vertices(sphere_vertex_count);
+	for (int i = 0; i < sphere_vertex_count; ++i)
 	{
 		Vertices[i] = FVector(sphere_vertices[i].x, sphere_vertices[i].y, sphere_vertices[i].z);
 	}
-	CreateStaticGeometry("Sphere", sphere_vertices, sizeof(sphere_vertices), Device, 0, Vertices);
+	CreateStaticGeometry("Sphere", sphere_vertices, sizeof(sphere_vertices), Device, 0, Vertices, (void*)sphere_indices, sizeof(sphere_indices));
 }
 
 void ResourceManager::AddTriangleMesh(ID3D11Device* Device)
 {
-	int Cnt = sizeof(triangle_vertices) / sizeof(FVertexSimple);
-	TArray<FVector> Vertices(Cnt);
-	for (int i = 0; i < Cnt; ++i)
+	uint32_t triangleIndices[] = { 0, 1, 2 };
+	int vCnt = sizeof(triangle_vertices) / sizeof(FVertexSimple);
+	TArray<FVector> Vertices(vCnt);
+	for (int i = 0; i < vCnt; ++i)
 	{
 		Vertices[i] = FVector(triangle_vertices[i].x, triangle_vertices[i].y, triangle_vertices[i].z);
 	}
-	CreateStaticGeometry("Triangle", triangle_vertices, sizeof(triangle_vertices), Device, 0, Vertices);
+	CreateStaticGeometry("Triangle", triangle_vertices, sizeof(triangle_vertices), Device, 0, Vertices, triangleIndices, sizeof(triangleIndices));
 }
 
 void ResourceManager::AddPlaneMesh(ID3D11Device* Device)
@@ -186,18 +127,17 @@ void ResourceManager::AddPlaneMesh(ID3D11Device* Device)
 		{ -5.0f,-5.0f, 0.0f, 81 / 255.0f, 91 / 255.0f, 212 / 255.0f,1.f },
 		{  5.0f,-5.0f, 0.0f, 129 / 255.0f, 52 / 255.0f, 175 / 255.0f,1.f },
 		{  5.0f, 5.0f, 0.0f, 221 / 255.0f, 42 / 255.0f, 123 / 255.0f,1.f },
-
-		{ -5.0f,-5.0f, 0.0f, 81 / 255.0,91 / 255.0f, 212 / 255.0f,1.f },
-		{  5.0f, 5.0f, 0.0f, 221 / 255.0, 42 / 255.0f, 123 / 255.0f,1.f },
-		{ -5.0f, 5.0f, 0.0f, 254 / 255.0, 218 / 255.0f, 119 / 255.0f,1.f }
+		{ -5.0f, 5.0f, 0.0f, 254 / 255.0f, 218 / 255.0f, 119 / 255.0f,1.f }
 	};
-	int Cnt = sizeof(planeVertices) / sizeof(FVertexSimple);
-	TArray<FVector> Vertices(Cnt);
-	for (int i = 0; i < Cnt; ++i)
+	uint32_t planeIndices[] = { 0, 1, 2, 0, 2, 3 };
+
+	int vCnt = sizeof(planeVertices) / sizeof(FVertexSimple);
+	TArray<FVector> Vertices(vCnt);
+	for (int i = 0; i < vCnt; ++i)
 	{
 		Vertices[i] = FVector(planeVertices[i].x, planeVertices[i].y, planeVertices[i].z);
 	}
-	CreateStaticGeometry("Plane", planeVertices, sizeof(planeVertices), Device, 0, Vertices);
+	CreateStaticGeometry("Plane", planeVertices, sizeof(planeVertices), Device, 0, Vertices, planeIndices, sizeof(planeIndices));
 }
 
 void ResourceManager::AddAxisMesh(ID3D11Device* Device)
@@ -229,373 +169,267 @@ void ResourceManager::AddAxisMesh(ID3D11Device* Device)
 	Geo->Colors = Colors;
 }
 
-TArray<FVertexSimple> ResourceManager::CreateCubeVertices()
+MeshData ResourceManager::CreateCubeMeshData()
 {
-	TArray<FVertexSimple> cubeVertices =
+	MeshData data;
+	data.Vertices =
 	{
-		// Front (+X) - Red (과거 +Z)
-		{  0.5f, -0.5f, -0.5f, 1,1,1,1 },
-		{  0.5f,  0.5f, -0.5f, 1,1,1,1 },
-		{  0.5f,  0.5f,  0.5f, 1,1,1,1 },
-
-		{  0.5f, -0.5f, -0.5f, 1,1,1,1 },
-		{  0.5f,  0.5f,  0.5f, 1,1,1,1 },
-		{  0.5f, -0.5f,  0.5f, 1,1,1,1 },
-
-
-		// Back (-X) - Green (과거 -Z)
-		{ -0.5f,  0.5f, -0.5f, 1,1,1,1 },
-		{ -0.5f, -0.5f, -0.5f, 1,1,1,1 },
-		{ -0.5f, -0.5f,  0.5f, 1,1,1,1 },
-
-		{ -0.5f,  0.5f, -0.5f, 1,1,1,1 },
-		{ -0.5f, -0.5f,  0.5f, 1,1,1,1 },
-		{ -0.5f,  0.5f,  0.5f, 1,1,1,1 },
-
-
-		// Left (-Y) - Blue (과거 -X)
-		{ -0.5f, -0.5f, -0.5f, 1,1,1,1 },
-		{  0.5f, -0.5f, -0.5f, 1,1,1,1 },
-		{  0.5f, -0.5f,  0.5f, 1,1,1,1 },
-
-		{ -0.5f, -0.5f, -0.5f, 1,1,1,1 },
-		{  0.5f, -0.5f,  0.5f, 1,1,1,1 },
-		{ -0.5f, -0.5f,  0.5f, 1,1,1,1 },
-
-
-		// Right (+Y) - Yellow (과거 +X)
-		{  0.5f,  0.5f, -0.5f, 1,1,1,1 },
-		{ -0.5f,  0.5f, -0.5f, 1,1,1,1 },
-		{ -0.5f,  0.5f,  0.5f, 1,1,1,1 },
-
-		{  0.5f,  0.5f, -0.5f, 1,1,1,1 },
-		{ -0.5f,  0.5f,  0.5f, 1,1,1,1 },
-		{  0.5f,  0.5f,  0.5f, 1,1,1,1 },
-
-
+		// Front (+X)
+		{  0.5f, -0.5f, -0.5f, 1,1,1,1 }, {  0.5f,  0.5f, -0.5f, 1,1,1,1 },
+		{  0.5f,  0.5f,  0.5f, 1,1,1,1 }, {  0.5f, -0.5f,  0.5f, 1,1,1,1 },
+		// Back (-X)
+		{ -0.5f, -0.5f, -0.5f, 1,1,1,1 }, { -0.5f,  0.5f, -0.5f, 1,1,1,1 },
+		{ -0.5f,  0.5f,  0.5f, 1,1,1,1 }, { -0.5f, -0.5f,  0.5f, 1,1,1,1 },
+		// Left (-Y)
+		{ -0.5f, -0.5f, -0.5f, 1,1,1,1 }, {  0.5f, -0.5f, -0.5f, 1,1,1,1 },
+		{  0.5f, -0.5f,  0.5f, 1,1,1,1 }, { -0.5f, -0.5f,  0.5f, 1,1,1,1 },
+		// Right (+Y)
+		{ -0.5f,  0.5f, -0.5f, 1,1,1,1 }, {  0.5f,  0.5f, -0.5f, 1,1,1,1 },
+		{  0.5f,  0.5f,  0.5f, 1,1,1,1 }, { -0.5f,  0.5f,  0.5f, 1,1,1,1 },
 		// Top (+Z)
-		{  0.5f, -0.5f,  0.5f, 1,1,1,1 },
-		{  0.5f,  0.5f,  0.5f, 1,1,1,1 },
-		{ -0.5f,  0.5f,  0.5f, 1,1,1,1 },
-
-		{  0.5f, -0.5f,  0.5f, 1,1,1,1 },
-		{ -0.5f,  0.5f,  0.5f, 1,1,1,1 },
-		{ -0.5f, -0.5f,  0.5f, 1,1,1,1 },
-
-
+		{ -0.5f, -0.5f,  0.5f, 1,1,1,1 }, {  0.5f, -0.5f,  0.5f, 1,1,1,1 },
+		{  0.5f,  0.5f,  0.5f, 1,1,1,1 }, { -0.5f,  0.5f,  0.5f, 1,1,1,1 },
 		// Bottom (-Z)
-		{ -0.5f, -0.5f, -0.5f, 1,1,1,1 },
-		{ -0.5f,  0.5f, -0.5f, 1,1,1,1 },
-		{  0.5f,  0.5f, -0.5f, 1,1,1,1 },
-
-		{ -0.5f, -0.5f, -0.5f, 1,1,1,1 },
-		{  0.5f,  0.5f, -0.5f, 1,1,1,1 },
-		{  0.5f, -0.5f, -0.5f, 1,1,1,1 },
+		{ -0.5f, -0.5f, -0.5f, 1,1,1,1 }, {  0.5f, -0.5f, -0.5f, 1,1,1,1 },
+		{  0.5f,  0.5f, -0.5f, 1,1,1,1 }, { -0.5f,  0.5f, -0.5f, 1,1,1,1 },
 	};
-	return cubeVertices;
-}
 
-TArray<FVertexSimple> ResourceManager::CreateCircleVertices(int sliceCount, float radius, float height)
-{
-	TArray<FVertexSimple> circleVertices;
-	float dTheta = 2.0f * MathHelper::PI / sliceCount;
-	for (int i = 0; i < sliceCount; ++i)
+	for (uint32_t i = 0; i < 6; ++i)
 	{
-		float theta0 = i * dTheta;
-		float theta1 = (i + 1) * dTheta;
-
-		// 옛날: X=cos, Z=sin, Y=height
-		// UE변환: oldX->Y, oldZ->X, oldY(height)->Z
-		float y0 = radius * cosf(theta0);
-		float x0 = radius * sinf(theta0);
-		float y1 = radius * cosf(theta1);
-		float x1 = radius * sinf(theta1);
-
-		circleVertices.push_back({ x0, y0, height, 1, 1, 1, 1 });
-		circleVertices.push_back({ x1, y1, height, 1, 1, 1, 1 });
+		uint32_t base = i * 4;
+		data.Indices.push_back(base); data.Indices.push_back(base + 1); data.Indices.push_back(base + 2);
+		data.Indices.push_back(base); data.Indices.push_back(base + 2); data.Indices.push_back(base + 3);
 	}
-	return circleVertices;
+	return data;
 }
 
-TArray<FVertexSimple> ResourceManager::CreateTorusVertices(float majorRadius, float minorRadius, int radialSegments, int tubularSegments)
+MeshData ResourceManager::CreateCircleMeshData(int sliceCount, float radius, float height)
 {
-	TArray<FVertexSimple> torusVertices;
+	MeshData data;
+	data.Vertices.push_back({ 0.0f, 0.0f, height, 1, 1, 1, 1 }); // Center
 
+	float dTheta = 2.0f * MathHelper::PI / sliceCount;
+	for (int i = 0; i <= sliceCount; ++i)
+	{
+		float theta = i * dTheta;
+		float y = radius * cosf(theta);
+		float x = radius * sinf(theta);
+		data.Vertices.push_back({ x, y, height, 1, 1, 1, 1 });
+	}
+
+	for (int i = 1; i <= sliceCount; ++i)
+	{
+		data.Indices.push_back(0);
+		data.Indices.push_back(i);
+		data.Indices.push_back(i + 1);
+	}
+	return data;
+}
+
+MeshData ResourceManager::CreateTorusMeshData(float majorRadius, float minorRadius, int radialSegments, int tubularSegments)
+{
+	MeshData data;
 	float dU = 0.5f * MathHelper::PI / radialSegments;
 	float dV = 2.0f * MathHelper::PI / tubularSegments;
-
 	float flatScaleZ = 0.2f;
+
+	for (int i = 0; i <= radialSegments; ++i)
+	{
+		float u = i * dU;
+		for (int j = 0; j <= tubularSegments; ++j)
+		{
+			float v = j * dV + MathHelper::PI / 4.0f;
+			float sectionX = minorRadius * cosf(v);
+			float sectionY = minorRadius * sinf(v) * flatScaleZ;
+			float r = majorRadius + sectionX;
+			float y = r * cosf(u);
+			float x = r * sinf(u);
+			float z = sectionY;
+			data.Vertices.push_back({ x, y, z, 1, 1, 1, 1 });
+		}
+	}
 
 	for (int i = 0; i < radialSegments; ++i)
 	{
 		for (int j = 0; j < tubularSegments; ++j)
 		{
-			float u1 = i * dU;
-			float v1 = j * dV + MathHelper::PI / 4.0f;
-			float u2 = (i + 1) * dU;
-			float v2 = (j + 1) * dV + (MathHelper::PI / 4.0f);
+			uint32_t first = i * (tubularSegments + 1) + j;
+			uint32_t second = first + tubularSegments + 1;
 
-			auto GetTorusPoint = [=](float u, float v) -> FVector {
-				float sectionX = minorRadius * cosf(v);
-				float sectionY = minorRadius * sinf(v) * flatScaleZ;
+			data.Indices.push_back(first);
+			data.Indices.push_back(second);
+			data.Indices.push_back(first + 1);
 
-				float r = majorRadius + sectionX;
-
-				float y = r * cosf(u);
-				float x = r * sinf(u);
-				float z = sectionY;
-
-				return FVector(x, y, z);
-				};
-
-			FVector p00 = GetTorusPoint(u1, v1);
-			FVector p10 = GetTorusPoint(u2, v1);
-			FVector p11 = GetTorusPoint(u2, v2);
-			FVector p01 = GetTorusPoint(u1, v2);
-
-			torusVertices.push_back({ p00.x, p00.y, p00.z, 1, 1, 1, 1 });
-			torusVertices.push_back({ p10.x, p10.y, p10.z, 1, 1, 1, 1 });
-			torusVertices.push_back({ p11.x, p11.y, p11.z, 1, 1, 1, 1 });
-
-			torusVertices.push_back({ p00.x, p00.y, p00.z, 1, 1, 1, 1 });
-			torusVertices.push_back({ p11.x, p11.y, p11.z, 1, 1, 1, 1 });
-			torusVertices.push_back({ p01.x, p01.y, p01.z, 1, 1, 1, 1 });
+			data.Indices.push_back(second);
+			data.Indices.push_back(second + 1);
+			data.Indices.push_back(first + 1);
 		}
 	}
-
-	return torusVertices;
+	return data;
 }
 
-TArray<FVertexSimple> ResourceManager::CreateCylinderVertices(int sliceCount, float radius, float height)
+MeshData ResourceManager::CreateCylinderMeshData(int sliceCount, float radius, float height)
 {
-	TArray<FVertexSimple> cylinderVertices;
-
+	MeshData data;
 	float halfHeight = height * 0.5f;
 	float dTheta = 2.0f * MathHelper::PI / sliceCount;
 
-	// UE변환 헬퍼 (oldX -> Y, oldZ -> X, oldY -> Z)
-	auto pushCyl = [&](float oldX, float oldY, float oldZ) {
-		cylinderVertices.push_back({ oldZ, oldX, oldY, 1,1,1,1 });
-		};
-
-	for (int i = 0; i < sliceCount; ++i)
+	// Side vertices
+	for (int i = 0; i <= sliceCount; ++i)
 	{
-		float theta0 = i * dTheta;
-		float theta1 = (i + 1) * dTheta;
+		float theta = i * dTheta;
+		float x = radius * sinf(theta);
+		float y = radius * cosf(theta);
 
-		float oldx0 = radius * cosf(theta0);
-		float oldz0 = radius * sinf(theta0);
-		float oldx1 = radius * cosf(theta1);
-		float oldz1 = radius * sinf(theta1);
-
-		pushCyl(oldx0, -halfHeight, oldz0);
-		pushCyl(oldx1, -halfHeight, oldz1);
-		pushCyl(oldx1, halfHeight, oldz1);
-
-		pushCyl(oldx0, -halfHeight, oldz0);
-		pushCyl(oldx1, halfHeight, oldz1);
-		pushCyl(oldx0, halfHeight, oldz0);
+		data.Vertices.push_back({ x, y, -halfHeight, 1, 1, 1, 1 }); // Bottom
+		data.Vertices.push_back({ x, y, halfHeight, 1, 1, 1, 1 });  // Top
 	}
 
 	for (int i = 0; i < sliceCount; ++i)
 	{
-		float theta0 = i * dTheta;
-		float theta1 = (i + 1) * dTheta;
+		uint32_t base = i * 2;
+		data.Indices.push_back(base);
+		data.Indices.push_back(base + 1);
+		data.Indices.push_back(base + 3);
 
-		float oldx0 = radius * cosf(theta0);
-		float oldz0 = radius * sinf(theta0);
-		float oldx1 = radius * cosf(theta1);
-		float oldz1 = radius * sinf(theta1);
-
-		pushCyl(oldx0, halfHeight, oldz0);
-		pushCyl(oldx1, halfHeight, oldz1);
-		pushCyl(0.0f, halfHeight, 0.0f);
+		data.Indices.push_back(base);
+		data.Indices.push_back(base + 3);
+		data.Indices.push_back(base + 2);
 	}
+
+	// Caps (Reuse or create new for flat shading if needed, but here we share)
+	uint32_t bottomCenterIndex = (uint32_t)data.Vertices.size();
+	data.Vertices.push_back({ 0, 0, -halfHeight, 1, 1, 1, 1 });
+	uint32_t topCenterIndex = (uint32_t)data.Vertices.size();
+	data.Vertices.push_back({ 0, 0, halfHeight, 1, 1, 1, 1 });
 
 	for (int i = 0; i < sliceCount; ++i)
 	{
-		float theta0 = i * dTheta;
-		float theta1 = (i + 1) * dTheta;
+		data.Indices.push_back(bottomCenterIndex);
+		data.Indices.push_back((i + 1) * 2);
+		data.Indices.push_back(i * 2);
 
-		float oldx0 = radius * cosf(theta0);
-		float oldz0 = radius * sinf(theta0);
-		float oldx1 = radius * cosf(theta1);
-		float oldz1 = radius * sinf(theta1);
-
-		pushCyl(oldx0, -halfHeight, oldz0);
-		pushCyl(0.0f, -halfHeight, 0.0f);
-		pushCyl(oldx1, -halfHeight, oldz1);
+		data.Indices.push_back(topCenterIndex);
+		data.Indices.push_back(i * 2 + 1);
+		data.Indices.push_back((i + 1) * 2 + 1);
 	}
 
-	return cylinderVertices;
+	return data;
 }
 
-TArray<FVertexSimple> ResourceManager::CreateConeVertices(int sliceCount, float radius, float height)
+MeshData ResourceManager::CreateConeMeshData(int sliceCount, float radius, float height)
 {
-	TArray<FVertexSimple> coneVertices;
-
+	MeshData data;
 	float halfHeight = height * 0.5f;
 	float dTheta = 2.0f * MathHelper::PI / sliceCount;
 
-	// UE변환 헬퍼 (oldX -> Y, oldZ -> X, oldY -> Z)
-	auto pushCone = [&](float oldX, float oldY, float oldZ) {
-		coneVertices.push_back({ oldZ, oldX, oldY, 1,1,1,1 });
-		};
+	uint32_t tipIndex = 0;
+	data.Vertices.push_back({ 0, 0, halfHeight, 1, 1, 1, 1 });
 
-	// 측면
-	for (int i = 0; i < sliceCount; ++i)
+	for (int i = 0; i <= sliceCount; ++i)
 	{
-		float theta0 = i * dTheta;
-		float theta1 = (i + 1) * dTheta;
-
-		float oldx0 = radius * cosf(theta0);
-		float oldz0 = radius * sinf(theta0);
-		float oldx1 = radius * cosf(theta1);
-		float oldz1 = radius * sinf(theta1);
-
-		pushCone(oldx0, -halfHeight, oldz0);
-		pushCone(0.0f, halfHeight, 0.0f);
-		pushCone(oldx1, -halfHeight, oldz1);
+		float theta = i * dTheta;
+		float x = radius * sinf(theta);
+		float y = radius * cosf(theta);
+		data.Vertices.push_back({ x, y, -halfHeight, 1, 1, 1, 1 });
 	}
 
-	// 밑면
-	for (int i = 0; i < sliceCount; ++i)
+	for (int i = 1; i <= sliceCount; ++i)
 	{
-		float theta0 = i * dTheta;
-		float theta1 = (i + 1) * dTheta;
-
-		float oldx0 = radius * cosf(theta0);
-		float oldz0 = radius * sinf(theta0);
-		float oldx1 = radius * cosf(theta1);
-		float oldz1 = radius * sinf(theta1);
-
-		pushCone(0.0f, -halfHeight, 0.0f);
-		pushCone(oldx0, -halfHeight, oldz0);
-		pushCone(oldx1, -halfHeight, oldz1);
+		data.Indices.push_back(tipIndex);
+		data.Indices.push_back(i);
+		data.Indices.push_back(i + 1);
 	}
 
-	return coneVertices;
+	uint32_t bottomCenterIndex = (uint32_t)data.Vertices.size();
+	data.Vertices.push_back({ 0, 0, -halfHeight, 1, 1, 1, 1 });
+
+	for (int i = 1; i <= sliceCount; ++i)
+	{
+		data.Indices.push_back(bottomCenterIndex);
+		data.Indices.push_back(i + 1);
+		data.Indices.push_back(i);
+	}
+
+	return data;
 }
 
 void ResourceManager::AddGizmoTranslationMesh(ID3D11Device* Device)
 {
-	TArray<FVertexSimple> vertices;
-
-	TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
+	MeshData cylinder = CreateCylinderMeshData();
 	FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 0.05f, 1.0f);
-	FMatrix cylinderMatrix = cylinderScale;
-
-	for (FVertexSimple& v : cylinderVertices)
+	for (auto& v : cylinder.Vertices)
 	{
-		float px = v.x;
-		float py = v.y;
-		float pz = v.z;
-
-		v.x = px * cylinderMatrix[0][0] + py * cylinderMatrix[1][0] + pz * cylinderMatrix[2][0] + 1.0f * cylinderMatrix[3][0];
-		v.y = px * cylinderMatrix[0][1] + py * cylinderMatrix[1][1] + pz * cylinderMatrix[2][1] + 1.0f * cylinderMatrix[3][1];
-		v.z = px * cylinderMatrix[0][2] + py * cylinderMatrix[1][2] + pz * cylinderMatrix[2][2] + 1.0f * cylinderMatrix[3][2];
-	}
-	vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
-
-	TArray<FVertexSimple> coneVertices = CreateConeVertices();
-	FMatrix coneTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 0.5f);
-	FMatrix coneScale = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f);
-	FMatrix coneMatrix = coneScale * coneTransform;
-
-	for (FVertexSimple& v : coneVertices)
-	{
-		float px = v.x;
-		float py = v.y;
-		float pz = v.z;
-
-		v.x = px * coneMatrix[0][0] + py * coneMatrix[1][0] + pz * coneMatrix[2][0] + 1.0f * coneMatrix[3][0];
-		v.y = px * coneMatrix[0][1] + py * coneMatrix[1][1] + pz * coneMatrix[2][1] + 1.0f * coneMatrix[3][1];
-		v.z = px * coneMatrix[0][2] + py * coneMatrix[1][2] + pz * coneMatrix[2][2] + 1.0f * coneMatrix[3][2];
-	}
-	vertices.insert(vertices.end(), coneVertices.begin(), coneVertices.end());
-
-	size_t cnt = vertices.size();
-	TArray<FVector> Vertices(cnt);
-	for (size_t i = 0; i < cnt; ++i)
-	{
-		Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
+		FVector p = cylinderScale.TransformPoint(FVector(v.x, v.y, v.z));
+		v.x = p.x; v.y = p.y; v.z = p.z;
 	}
 
-	CreateStaticGeometry("GizmoTranslation", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
+	MeshData cone = CreateConeMeshData();
+	FMatrix coneTransform = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f) * FMatrix::TranslationMatrix(0.0f, 0.0f, 0.5f);
+	uint32_t offset = (uint32_t)cylinder.Vertices.size();
+	for (auto& v : cone.Vertices)
+	{
+		FVector p = coneTransform.TransformPoint(FVector(v.x, v.y, v.z));
+		v.x = p.x; v.y = p.y; v.z = p.z;
+		cylinder.Vertices.push_back(v);
+	}
+	for (auto idx : cone.Indices)
+	{
+		cylinder.Indices.push_back(idx + offset);
+	}
+
+	TArray<FVector> Vertices(cylinder.Vertices.size());
+	for (size_t i = 0; i < cylinder.Vertices.size(); ++i)
+	{
+		Vertices[i] = FVector(cylinder.Vertices[i].x, cylinder.Vertices[i].y, cylinder.Vertices[i].z);
+	}
+	CreateStaticGeometry("GizmoTranslation", cylinder.Vertices.data(), (UINT)(sizeof(FVertexSimple) * cylinder.Vertices.size()), Device, 0, Vertices, cylinder.Indices.data(), (UINT)(sizeof(uint32_t) * cylinder.Indices.size()));
 }
 
 void ResourceManager::AddGizmoRotationMesh(ID3D11Device* Device)
 {
-	TArray<FVertexSimple> vertices = CreateTorusVertices();
+	MeshData torus = CreateTorusMeshData();
 	FMatrix torusScale = FMatrix::ScaleMatrix(1.5f, 1.5f, 1.5f);
-	FMatrix torusMatrix = torusScale;
-
-	for (FVertexSimple& v : vertices)
+	TArray<FVector> Vertices(torus.Vertices.size());
+	for (size_t i = 0; i < torus.Vertices.size(); ++i)
 	{
-		float px = v.x;
-		float py = v.y;
-		float pz = v.z;
-
-		v.x = px * torusMatrix[0][0] + py * torusMatrix[1][0] + pz * torusMatrix[2][0] + 1.0f * torusMatrix[3][0];
-		v.y = px * torusMatrix[0][1] + py * torusMatrix[1][1] + pz * torusMatrix[2][1] + 1.0f * torusMatrix[3][1];
-		v.z = px * torusMatrix[0][2] + py * torusMatrix[1][2] + pz * torusMatrix[2][2] + 1.0f * torusMatrix[3][2];
+		FVector p = torusScale.TransformPoint(FVector(torus.Vertices[i].x, torus.Vertices[i].y, torus.Vertices[i].z));
+		torus.Vertices[i].x = p.x; torus.Vertices[i].y = p.y; torus.Vertices[i].z = p.z;
+		Vertices[i] = p;
 	}
-
-	size_t cnt = vertices.size();
-	TArray<FVector> Vertices(cnt);
-	for (size_t i = 0; i < cnt; ++i)
-	{
-		Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
-	}
-
-	CreateStaticGeometry("GizmoRotation", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
+	CreateStaticGeometry("GizmoRotation", torus.Vertices.data(), (UINT)(sizeof(FVertexSimple) * torus.Vertices.size()), Device, 0, Vertices, torus.Indices.data(), (UINT)(sizeof(uint32_t) * torus.Indices.size()));
 }
 
 void ResourceManager::AddGizmoScaleMesh(ID3D11Device* Device)
 {
-	TArray<FVertexSimple> vertices;
-
-	TArray<FVertexSimple> cylinderVertices = CreateCylinderVertices();
+	MeshData cylinder = CreateCylinderMeshData();
 	FMatrix cylinderScale = FMatrix::ScaleMatrix(0.05f, 0.05f, 1.0f);
-	FMatrix cylinderMatrix = cylinderScale;
-
-	for (FVertexSimple& v : cylinderVertices)
+	for (auto& v : cylinder.Vertices)
 	{
-		float px = v.x;
-		float py = v.y;
-		float pz = v.z;
-
-		v.x = px * cylinderMatrix[0][0] + py * cylinderMatrix[1][0] + pz * cylinderMatrix[2][0] + 1.0f * cylinderMatrix[3][0];
-		v.y = px * cylinderMatrix[0][1] + py * cylinderMatrix[1][1] + pz * cylinderMatrix[2][1] + 1.0f * cylinderMatrix[3][1];
-		v.z = px * cylinderMatrix[0][2] + py * cylinderMatrix[1][2] + pz * cylinderMatrix[2][2] + 1.0f * cylinderMatrix[3][2];
-	}
-	vertices.insert(vertices.end(), cylinderVertices.begin(), cylinderVertices.end());
-
-	TArray<FVertexSimple> cubeVertices = CreateCubeVertices();
-	FMatrix cubeTransform = FMatrix::TranslationMatrix(0.0f, 0.0f, 0.5f);
-	FMatrix cubeScale = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f);
-	FMatrix cubeMatrix = cubeScale * cubeTransform;
-
-	for (FVertexSimple& v : cubeVertices)
-	{
-		float px = v.x;
-		float py = v.y;
-		float pz = v.z;
-
-		v.x = px * cubeMatrix[0][0] + py * cubeMatrix[1][0] + pz * cubeMatrix[2][0] + 1.0f * cubeMatrix[3][0];
-		v.y = px * cubeMatrix[0][1] + py * cubeMatrix[1][1] + pz * cubeMatrix[2][1] + 1.0f * cubeMatrix[3][1];
-		v.z = px * cubeMatrix[0][2] + py * cubeMatrix[1][2] + pz * cubeMatrix[2][2] + 1.0f * cubeMatrix[3][2];
-	}
-	vertices.insert(vertices.end(), cubeVertices.begin(), cubeVertices.end());
-
-	size_t cnt = vertices.size();
-	TArray<FVector> Vertices(cnt);
-	for (size_t i = 0; i < cnt; ++i)
-	{
-		Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
+		FVector p = cylinderScale.TransformPoint(FVector(v.x, v.y, v.z));
+		v.x = p.x; v.y = p.y; v.z = p.z;
 	}
 
-	CreateStaticGeometry("GizmoScale", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Device, 0, Vertices);
+	MeshData cube = CreateCubeMeshData();
+	FMatrix cubeTransform = FMatrix::ScaleMatrix(0.2f, 0.2f, 0.2f) * FMatrix::TranslationMatrix(0.0f, 0.0f, 0.5f);
+	uint32_t offset = (uint32_t)cylinder.Vertices.size();
+	for (auto& v : cube.Vertices)
+	{
+		FVector p = cubeTransform.TransformPoint(FVector(v.x, v.y, v.z));
+		v.x = p.x; v.y = p.y; v.z = p.z;
+		cylinder.Vertices.push_back(v);
+	}
+	for (auto idx : cube.Indices)
+	{
+		cylinder.Indices.push_back(idx + offset);
+	}
+
+	TArray<FVector> Vertices(cylinder.Vertices.size());
+	for (size_t i = 0; i < cylinder.Vertices.size(); ++i)
+	{
+		Vertices[i] = FVector(cylinder.Vertices[i].x, cylinder.Vertices[i].y, cylinder.Vertices[i].z);
+	}
+	CreateStaticGeometry("GizmoScale", cylinder.Vertices.data(), (UINT)(sizeof(FVertexSimple) * cylinder.Vertices.size()), Device, 0, Vertices, cylinder.Indices.data(), (UINT)(sizeof(uint32_t) * cylinder.Indices.size()));
 }
 
 TArray<FVertexSimple> ResourceManager::MakeGridMesh(ID3D11Device* Device, float halfExtent, float cellSize, float z)
@@ -658,7 +492,7 @@ void ResourceManager::UpdateGridMesh(float halfExtent, float cellSize, float z)
 	{
 		Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
 	}
-	UpdateStaticGeomtry("Grid", vertices.data(), sizeof(FVertexSimple) * vertices.size(), Renderer->Device.Get(), 0, Vertices);
+	UpdateStaticGeomtry("Grid", vertices.data(), (UINT)(sizeof(FVertexSimple) * vertices.size()), Renderer->Device.Get(), 0, Vertices);
 }
 
 

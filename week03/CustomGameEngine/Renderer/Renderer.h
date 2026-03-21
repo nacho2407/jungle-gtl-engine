@@ -81,6 +81,8 @@ public:
 	void BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups);
 	FLevel drawLevel;
 
+	TMap<EEngineShowFlags, bool> ShowFlagMap;
+
 private:
 	UCameraComponent* renderCamera = nullptr;
 };

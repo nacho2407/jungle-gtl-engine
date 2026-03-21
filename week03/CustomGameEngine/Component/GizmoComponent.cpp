@@ -177,6 +177,7 @@ GizmoControllerAxis UGizmoComponent::TryPick(Ray& ray)
 
 	bool bHit = false;
 	float closestT = FLT_MAX;
+	GizmoControllerAxis selectedAxis = GizmoControllerAxis::None;
 
 	for (int i = 0; i < 3; ++i)
 	{
@@ -185,32 +186,58 @@ GizmoControllerAxis UGizmoComponent::TryPick(Ray& ray)
 		localRay.Origin = (relativeMatrices[i] * GetRelativeMatrix()).Inverse().TransformPoint(ray.Origin);
 
 		FGeometry& geometry = resourceManager->GetGeometry(CurrentStrategy->GetGeometryName());
-		for (int j = 0; j < geometry.Vertices.size(); j += 3)
+		
+		bool bAxisHit = false;
+
+		if (!geometry.Indices.empty())
 		{
-			const FVector& v0 = geometry.Vertices[j];
-			const FVector& v1 = geometry.Vertices[j + 1];
-			const FVector& v2 = geometry.Vertices[j + 2];
-
-			float t;
-
-			if (ray.IntersectsTriangle(v0, v1, v2, t, localRay))
+			for (size_t j = 0; j + 2 < geometry.Indices.size(); j += 3)
 			{
-				if (t < closestT)
+				const FVector& v0 = geometry.Vertices[geometry.Indices[j]];
+				const FVector& v1 = geometry.Vertices[geometry.Indices[j + 1]];
+				const FVector& v2 = geometry.Vertices[geometry.Indices[j + 2]];
+
+				float t;
+				if (ray.IntersectsTriangle(v0, v1, v2, t, localRay))
 				{
-					closestT = t;
-					bHit = true;
+					if (t < closestT)
+					{
+						closestT = t;
+						bAxisHit = true;
+						bHit = true;
+					}
+				}
+			}
+		}
+		else
+		{
+			for (size_t j = 0; j + 2 < geometry.Vertices.size(); j += 3)
+			{
+				const FVector& v0 = geometry.Vertices[j];
+				const FVector& v1 = geometry.Vertices[j + 1];
+				const FVector& v2 = geometry.Vertices[j + 2];
+
+				float t;
+				if (ray.IntersectsTriangle(v0, v1, v2, t, localRay))
+				{
+					if (t < closestT)
+					{
+						closestT = t;
+						bAxisHit = true;
+						bHit = true;
+					}
 				}
 			}
 		}
 
-		if (bHit)
+		if (bAxisHit)
 		{
-			if (i == 0) return GizmoControllerAxis::X;
-			else if (i == 1) return GizmoControllerAxis::Y;
-			else if (i == 2) return GizmoControllerAxis::Z;
+			if (i == 0) selectedAxis = GizmoControllerAxis::X;
+			else if (i == 1) selectedAxis = GizmoControllerAxis::Y;
+			else if (i == 2) selectedAxis = GizmoControllerAxis::Z;
 		}
 	}
-	return GizmoControllerAxis::None;
+	return selectedAxis;
 }
 
 REGISTER_CLASS(UGizmoComponent)

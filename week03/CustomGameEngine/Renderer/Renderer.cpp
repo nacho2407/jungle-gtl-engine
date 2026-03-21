@@ -13,6 +13,10 @@ void URenderer::Create(HWND hWindow) {
 
 	CreateConstantBuffer();
 	CreateDynamicVertexBuffer();
+
+	ShowFlagMap[EEngineShowFlags::SF_Primitives] = true;
+	ShowFlagMap[EEngineShowFlags::SF_BillboardText] = true;
+	ShowFlagMap[EEngineShowFlags::SF_EditorPrimitives] = true;
 }
 
 void URenderer::CreateDeviceAndSwapChain(HWND hWindow) {
@@ -316,6 +320,8 @@ void URenderer::DistributeRenderObjects(TMap<BatchKey, TArray<RenderObject*>>& B
 	auto renderObjects = &FLevel::GetInstance().RenderObjects;
 	for (RenderObject* RenderObj : *renderObjects)
 	{
+		if (!ShowFlagMap[RenderObj->ShowFlag])
+			continue;
 		if (RenderObj->bBatch)
 		{
 			BatchKey key{ RenderObj->GetBatchKey() };

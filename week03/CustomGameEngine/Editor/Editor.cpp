@@ -16,7 +16,7 @@
 
 Editor::Editor()
 {
-	ControlPanel = new EditorControlPanel(this);
+	ControlPanel = new EditorControlPanel(this, Renderer);
 	Console = new EditorConsole();
 	PropertyPanel = new EditorPropertyPanel(this);
 	StatPanel = new EditorStatPanel();
@@ -64,6 +64,15 @@ void Editor::Finalize()
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
+}
+
+void Editor::SetRenderer(URenderer* renderer)
+{
+	Renderer = renderer;
+	if (ControlPanel)
+	{
+		ControlPanel->Renderer = renderer;
+	}
 }
 
 void Editor::SetGrid(UGridComp* grid)
