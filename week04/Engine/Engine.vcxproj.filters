@@ -401,6 +401,9 @@
     <ClInclude Include="Source\Renderer\Types\ViewMode.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\Texture2DAsset.h" />
+    <ClInclude Include="Source\Engine\Asset\TextureLoader.h" />
+    <ClInclude Include="Source\Renderer\RenderAsset\FTextureResource.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

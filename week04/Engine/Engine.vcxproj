@@ -77,6 +77,7 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11PickingPass.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h" />
+    <ClInclude Include="Source\Renderer\RenderAsset\FTextureResource.h" />
     <ClInclude Include="Source\Renderer\RendererModule.h" />
     <ClInclude Include="Source\Renderer\Scene.h" />
     <ClInclude Include="Source\Renderer\Types\EditorRenderData.h" />
@@ -84,6 +85,8 @@
     <ClInclude Include="Source\Renderer\Types\ShaderConstants.h" />
     <ClInclude Include="Source\Renderer\Types\VertexTypes.h" />
     <ClInclude Include="Source\Renderer\Types\ViewMode.h" />
+    <ClInclude Include="Source\Engine\Asset\Texture2DAsset.h" />
+    <ClInclude Include="Source\Engine\Asset\TextureLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -122,6 +125,8 @@
     <ClCompile Include="Source\Engine\Game\Actor.cpp" />
     <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp" />
     <ClCompile Include="Source\Renderer\Scene.cpp" />
+    <ClCompile Include="Source\Engine\Asset\Texture2DAsset.cpp" />
+    <ClCompile Include="Source\Engine\Asset\TextureLoader.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
