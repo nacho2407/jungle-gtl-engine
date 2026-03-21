@@ -3,6 +3,7 @@
 #include "Editor/EditorEngine.h"
 
 #include "ImGui/imgui.h"
+#include "Component/GizmoComponent.h"
 #include "Serialization/SceneSaveManager.h"
 
 #include <filesystem>

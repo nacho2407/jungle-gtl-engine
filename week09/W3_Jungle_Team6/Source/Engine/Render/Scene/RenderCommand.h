@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#pragma once
-
 /*
 	Constants Buffer에 사용될 구조체와 
 	에 담길 RenderCommand 구조체를 정의하고 있습니다.

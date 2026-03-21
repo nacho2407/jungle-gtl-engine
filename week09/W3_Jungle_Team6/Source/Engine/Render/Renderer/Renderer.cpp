@@ -1,5 +1,6 @@
 ﻿#include "Renderer.h"
 
+#include <iostream>
 #include "Core/Paths.h"
 #include "Render/Common/RenderTypes.h"
 #include "Render/Mesh/MeshManager.h"
