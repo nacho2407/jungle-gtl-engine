@@ -21,9 +21,6 @@ private:
 	FLineBatcher LineBatcher;
 	
 
-	//	File Path
-	const wchar_t * ShaderFilePath  = L"Shaders/ShaderW0.hlsl";
-
 	//	Primitive and Gizmo Input Layout
 	D3D11_INPUT_ELEMENT_DESC PrimitiveInputLayout[2] =
 	{
@@ -52,7 +49,7 @@ public:
 	void Release();
 
 	void BeginFrame();
-	void Render(const FRenderBus& InRenderBus);
+	void Render(const FRenderBus& InRenderBus, ERasterizerState InViewModeRasterizer = ERasterizerState::SolidBackCull);
 	void RenderOverlay(const FRenderBus& InRenderBus);	//	반드시 따로 호출해야 함
 	void EndFrame();
 
