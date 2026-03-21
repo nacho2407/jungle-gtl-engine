@@ -16,7 +16,12 @@
     <ClInclude Include="Resources\VertexSimple.h" />
     <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplication.h" />
     <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplicationMessageHandler.h" />
+    <ClInclude Include="Source\ApplicationCore\Input\IInputContext.h" />
     <ClInclude Include="Source\ApplicationCore\Input\InputEvent.h" />
+    <ClInclude Include="Source\ApplicationCore\Input\InputRouter.h" />
+    <ClInclude Include="Source\ApplicationCore\Input\InputState.h" />
+    <ClInclude Include="Source\ApplicationCore\Input\InputSystem.h" />
+    <ClInclude Include="Source\ApplicationCore\Input\InputTypes.h" />
     <ClInclude Include="Source\ApplicationCore\Windows\WindowsApplication.h" />
     <ClInclude Include="Source\ApplicationCore\Windows\WindowsWindow.h" />
     <ClInclude Include="Source\Core\Containers\Array.h" />
@@ -89,6 +94,8 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\ApplicationCore\Input\InputRouter.cpp" />
+    <ClCompile Include="Source\ApplicationCore\Input\InputSystem.cpp" />
     <ClCompile Include="Source\ApplicationCore\Windows\WindowsApplication.cpp" />
     <ClCompile Include="Source\ApplicationCore\Windows\WindowsWindow.cpp" />
     <ClCompile Include="Source\Core\CoreGlobals.cpp" />

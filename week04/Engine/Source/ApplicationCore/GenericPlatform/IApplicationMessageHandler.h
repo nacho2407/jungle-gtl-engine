@@ -25,3 +25,4 @@ namespace Engine::ApplicationCore
         virtual void OnFocusLost() = 0;
     };
 } // namespace Engine::ApplicationCore
+

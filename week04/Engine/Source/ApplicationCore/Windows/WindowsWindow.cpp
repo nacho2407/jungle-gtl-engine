@@ -81,4 +81,4 @@ namespace Engine::ApplicationCore
             ShowWindow(HWnd, SW_HIDE);
         }
     }
-}
+} // namespace Engine::ApplicationCore
