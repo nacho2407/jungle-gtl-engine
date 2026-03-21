@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Containers/Array.h"
-#include "D3D11/D3D11Common.h"
+#include "Core/Containers/Array.h"
+#include "Renderer/D3D11/D3D11Common.h"
 #include "Renderer/Types/VertexTypes.h"
 
 class FD3D11DynamicRHI;

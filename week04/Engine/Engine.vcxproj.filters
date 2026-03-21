@@ -82,6 +82,9 @@
     <Filter Include="Source\Renderer\D3D11">
       <UniqueIdentifier>{7d49e81e-9894-3ffe-a35e-b64d3056e0ba}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Renderer\RenderAsset">
+      <UniqueIdentifier>{37df3f3d-06b0-91a9-da82-c1929332f7ef}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Renderer\Types">
       <UniqueIdentifier>{2a470593-b470-7a69-2874-61b9dc3a78a3}</UniqueIdentifier>
     </Filter>
@@ -145,6 +148,12 @@
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Asset\AssetManager.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\Texture2DAsset.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\TextureLoader.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\CameraComponent.cpp">
@@ -326,6 +335,12 @@
     <ClInclude Include="Source\Engine\Asset\AssetManager.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\Texture2DAsset.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\TextureLoader.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\CameraComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
@@ -380,6 +395,9 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Renderer\RenderAsset\FTextureResource.h">
+      <Filter>Source\Renderer\RenderAsset</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Renderer\RendererModule.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>
@@ -401,9 +419,6 @@
     <ClInclude Include="Source\Renderer\Types\ViewMode.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Asset\Texture2DAsset.h" />
-    <ClInclude Include="Source\Engine\Asset\TextureLoader.h" />
-    <ClInclude Include="Source\Renderer\RenderAsset\FTextureResource.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

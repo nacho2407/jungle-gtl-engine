@@ -59,6 +59,8 @@
     <ClInclude Include="Source\Engine\Asset\Asset.h" />
     <ClInclude Include="Source\Engine\Asset\AssetLoader.h" />
     <ClInclude Include="Source\Engine\Asset\AssetManager.h" />
+    <ClInclude Include="Source\Engine\Asset\Texture2DAsset.h" />
+    <ClInclude Include="Source\Engine\Asset\TextureLoader.h" />
     <ClInclude Include="Source\Engine\Component\CameraComponent.h" />
     <ClInclude Include="Source\Engine\Component\CubeComponent.h" />
     <ClInclude Include="Source\Engine\Component\PlaneComponent.h" />
@@ -85,8 +87,6 @@
     <ClInclude Include="Source\Renderer\Types\ShaderConstants.h" />
     <ClInclude Include="Source\Renderer\Types\VertexTypes.h" />
     <ClInclude Include="Source\Renderer\Types\ViewMode.h" />
-    <ClInclude Include="Source\Engine\Asset\Texture2DAsset.h" />
-    <ClInclude Include="Source\Engine\Asset\TextureLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -114,6 +114,8 @@
     <ClCompile Include="Source\Engine\Asset\Asset.cpp" />
     <ClCompile Include="Source\Engine\Asset\AssetLoader.cpp" />
     <ClCompile Include="Source\Engine\Asset\AssetManager.cpp" />
+    <ClCompile Include="Source\Engine\Asset\Texture2DAsset.cpp" />
+    <ClCompile Include="Source\Engine\Asset\TextureLoader.cpp" />
     <ClCompile Include="Source\Engine\Component\CameraComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\CubeComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PlaneComponent.cpp" />
@@ -125,8 +127,6 @@
     <ClCompile Include="Source\Engine\Game\Actor.cpp" />
     <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp" />
     <ClCompile Include="Source\Renderer\Scene.cpp" />
-    <ClCompile Include="Source\Engine\Asset\Texture2DAsset.cpp" />
-    <ClCompile Include="Source\Engine\Asset\TextureLoader.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
