@@ -1,12 +1,13 @@
 #include "Core/CoreMinimal.h"
 #include "Core/Path.h"
+#include "Launch/Launch.h"
 
 #include <filesystem>
 
 namespace fs = std::filesystem;
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nShowCmd)
-{
+{  
 	// Path Init =====================================
 	wchar_t ExecutablePath[MAX_PATH] = {};
 	::GetModuleFileNameW(nullptr, ExecutablePath, MAX_PATH);
@@ -28,5 +29,5 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nShowCmd)
 	FPaths::EnsureRuntimeDirectories();
 	// ===============================================
 
-	return 0;
+    return Launch(hInstance, nShowCmd);
 }

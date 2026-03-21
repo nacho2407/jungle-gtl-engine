@@ -1,3 +1,4 @@
+#include <Core/CoreMinimal.h>
 #include "ObjectFactory.h"
 
 /** 

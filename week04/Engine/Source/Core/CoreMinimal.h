@@ -19,6 +19,13 @@
 // 코어에서 자주 사용하는 기본 컨테이너 및 문자열
 //=============================================================================
 #include "Containers/Array.h"
+#include "Containers/LinkedList.h"
+#include "Containers/Map.h"
+#include "Containers/ObjectPtr.h"
+#include "Containers/Pair.h"
+#include "Containers/Queue.h"
+#include "Containers/Set.h"
+#include "Containers/StaticArray.h"
 #include "Containers/String.h"
 
 //=============================================================================
@@ -39,6 +46,7 @@
 #include "Math/Rotator.h"
 #include "Math/Vector.h"
 #include "Math/Vector4.h"
+#include "Math/Vector2.h"
 
 //=============================================================================
 // Geometry
@@ -49,6 +57,10 @@
 #include "Geometry/BoundsUtility.h"
 #include "Geometry/Intersection.h"
 #include "Geometry/Transform.h"
+#include "Geometry/Primitives/AABB.h"
+#include "Geometry/Primitives/Ray.h"
+#include "Geometry/Primitives/Segment.h"
+#include "Geometry/Primitives/Triangle.h"
 
 //=============================================================================
 // Misc
