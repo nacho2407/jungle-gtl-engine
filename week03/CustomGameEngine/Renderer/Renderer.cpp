@@ -222,7 +222,7 @@ void URenderer::SetRenderCamera(class UCameraComponent* camera)
 	renderCamera = camera;
 }
 
-void URenderer::Render()
+void URenderer::Render(const TArray<FLevel*>& Levels)
 {
 	if (renderCamera == nullptr) return;
 
@@ -236,20 +236,23 @@ void URenderer::Render()
 	TArray<RenderObject*> NormalRenderObjects;
 	TArray<RenderObject*> NoDepthRenderObjects;
 
-	FObjectConstant ObjectConst;
-	auto renderObjects = &FLevel::GetInstance().RenderObjects;
-	for (RenderObject* RenderObj : *renderObjects)
+	for (FLevel* Level : Levels)
 	{
-		if (RenderObj->bDepthEnabled)
+		if (Level == nullptr) continue;
+		for (RenderObject* RenderObj : Level->RenderObjects)
 		{
-			NormalRenderObjects.push_back(RenderObj);
-		}
-		else
-		{
-			NoDepthRenderObjects.push_back(RenderObj);
+			if (RenderObj->bDepthEnabled)
+			{
+				NormalRenderObjects.push_back(RenderObj);
+			}
+			else
+			{
+				NoDepthRenderObjects.push_back(RenderObj);
+			}
 		}
 	}
 
+	FObjectConstant ObjectConst;
 	for (RenderObject* RenderObj : NormalRenderObjects)
 	{
 		//Camera
@@ -275,8 +278,6 @@ void URenderer::Render()
 			RenderObj->Render(DeviceContext.Get());
 		}
 	}
-	// ClearRenderObjects();
-	// RenderObjects.clear();
 }
 
 void URenderer::RenderGrid(ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader)
