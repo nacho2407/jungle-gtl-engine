@@ -122,6 +122,10 @@ void UEditorEngine::CloseScene()
 
 	UObjectManager::Get().DestroyObject(EditorGizmo);
 	EditorGizmo = nullptr;
+
+	ViewportClient.SetCamera(nullptr);
+	ViewportClient.SetGizmo(nullptr);
+	ViewportClient.SetWorld(nullptr);
 }
 
 void UEditorEngine::NewScene()
@@ -154,6 +158,9 @@ void UEditorEngine::ClearScene()
 
 	UObjectManager::Get().DestroyObject(Camera);
 	Camera = nullptr;
+
+	ViewportClient.SetCamera(nullptr);
+	ViewportClient.SetWorld(nullptr);
 }
 
 void UEditorEngine::BuildRenderCommands()

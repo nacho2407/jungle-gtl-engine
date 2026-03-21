@@ -4,22 +4,7 @@
 #include "Core/Paths.h"
 #include "Core/Singleton.h"
 #include "Math/Vector.h"
-
-enum class EViewMode : int32
-{
-	Lit = 0,
-	Unlit,
-	Wireframe,
-	Count
-};
-
-struct FShowFlags
-{
-	bool bPrimitives = true;
-	bool bGrid = true;
-	bool bGizmo = true;
-	bool bBillboardText = true;
-};
+#include "Render/Common/ViewTypes.h"
 
 class FEditorSettings : public TSingleton<FEditorSettings>
 {
