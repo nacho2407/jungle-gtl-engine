@@ -20,9 +20,26 @@ class FRenderBus
 private:
 	TArray<FRenderCommand> PassQueues[(uint32)ERenderPass::MAX];
 
+	//구현이 급해서 잠깐 두겠습니다..ㅠ
+	FMatrix mView;
+	FMatrix mProj;
+	FMatrix mViewProj;
+
 public:
 	void Clear();
 	void AddCommand(ERenderPass Pass, const FRenderCommand& InCommand);
 	const TArray<FRenderCommand>& GetCommands(ERenderPass Pass) const;
+
+
+	// Getter,Setter
+	void SetViewProjection(const FMatrix& InView, const FMatrix& InProj) {
+		mView = InView;
+		mProj = InProj;
+		mViewProj = InView * InProj;
+	}
+
+	const FMatrix& GetViewProj() const { return mViewProj; }
+	const FMatrix& GetView() const { return mView; }
+	const FMatrix& GetProj() const { return mProj; }
 };
 
