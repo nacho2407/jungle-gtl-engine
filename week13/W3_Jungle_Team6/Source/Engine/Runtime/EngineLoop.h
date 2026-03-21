@@ -1,10 +1,9 @@
-﻿#pragma once
+#pragma once
 
 #include <windows.h>
 
-#include "Editor/EditorEngine.h"
+#include "Engine/Runtime/Engine.h"
 
-// 엔진의 전체 생명주기(초기화/루프/종료)를 담당하는 루프 클래스
 class FEngineLoop
 {
 public:
@@ -18,6 +17,7 @@ private:
 
 	void TickFrame();
 	void InitializeTiming();
+	void CreateEngine();
 
 private:
 	HWND HWindow = nullptr;
@@ -30,6 +30,4 @@ private:
 	LARGE_INTEGER Frequency = {};
 	LARGE_INTEGER PrevTime = {};
 	LARGE_INTEGER CurrTime = {};
-
-	FEditorEngine Editor;
 };
