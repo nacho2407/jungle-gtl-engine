@@ -54,7 +54,7 @@ private:
 	// Generate spatial vectors for USceneCompoents from a json save
 	static void DeserializeSpaceVectors(USceneComponent* SceneComp, json::JSON& Savedata);
 
-	static void DecodeCamera(UCamera* Camera, json::JSON& Savedata);
+	static void DecodeCamera(UCameraComponent* Camera, json::JSON& Savedata);
 
 	static void DecodePrimitiveComponents(UPrimitiveComponent* Prim, json::JSON& Savedata);
 

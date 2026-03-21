@@ -42,12 +42,12 @@ public:
     void Tick(float DeltaTime);  // Drives the game loop every frame
     void EndPlay();        // Cleanup before world is destroyed
 
-    void SetActiveCamera(UCamera* Cam);
-    UCamera* GetActiveCamera() const { return ActiveCamera;  }
+    void SetActiveCamera(UCameraComponent* Cam);
+    UCameraComponent* GetActiveCamera() const { return ActiveCamera;  }
 
 private:
     TArray<AActor*> Actors;
-    UCamera* ActiveCamera = nullptr;
+    UCameraComponent* ActiveCamera = nullptr;
 
     void CameraControls(float DeltaTime);
 };

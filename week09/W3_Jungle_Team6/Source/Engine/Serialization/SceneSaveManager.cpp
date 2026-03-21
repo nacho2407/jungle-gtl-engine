@@ -22,19 +22,19 @@ void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, TArray<UWorld
     JSON Objects = json::Array();
 
     for (UWorld* World : Scene) {
-        if (!World || World->bPendingKill) continue;
+        if (!World) continue;
 
         // Serialize world itself
         Objects.append(SerializeObject(World));
 
         for (AActor* Actor : World->GetActors()) {
-            if (!Actor || Actor->bPendingKill) continue;
+            if (!Actor) continue;
 
             // Serialize actor
             Objects.append(SerializeObject(Actor));
 
             for (USceneComponent* Component : Actor->GetComponents()) {
-                if (!Component || Component->bPendingKill) continue;
+                if (!Component) continue;
 
                 // Serialize component
                 Objects.append(SerializeObject(Component));
@@ -112,8 +112,8 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, TArray<UWorld*
     // Purge current scene
     for (UWorld* World : Scene) {
         World->EndPlay();
+        UObjectManager::Get().DestroyObject(World);
     }
-    UObjectManager::Get().CollectGarbage();
     Scene.clear();
     using json::JSON;
     std::ifstream File(std::filesystem::path(FPaths::ToWide(filepath)));
@@ -154,7 +154,7 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, TArray<UWorld*
             DeserializeSpaceVectors(Obj->Cast<USceneComponent>(), JSONObject);
 
             // Handle camera objects
-            if (Obj->IsA<UCamera>()) { DecodeCamera(Obj->Cast<UCamera>(), JSONObject); }
+            if (Obj->IsA<UCameraComponent>()) { DecodeCamera(Obj->Cast<UCameraComponent>(), JSONObject); }
         }
 
         if (Obj->IsA<UWorld>()) {
@@ -243,7 +243,7 @@ void FSceneSaveManager::DeserializeSpaceVectors(USceneComponent* SceneComp, json
     SceneComp->SetRelativeScale(FVector(static_cast<float>(Scale["X"].ToFloat()), static_cast<float>(Scale["Y"].ToFloat()), static_cast<float>(Scale["Z"].ToFloat())));
 }
 
-void FSceneSaveManager::DecodeCamera(UCamera* Camera, json::JSON& Savedata) {
+void FSceneSaveManager::DecodeCamera(UCameraComponent* Camera, json::JSON& Savedata) {
     // TODO
 }
 

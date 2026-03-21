@@ -47,7 +47,6 @@ class UObject
 public:
 	uint32 UUID;
 	uint32 InternalIndex;
-	bool bPendingKill;
 
 	UObject();
 	virtual ~UObject();
@@ -108,25 +107,14 @@ public:
 	template<typename T>
 	T* CreateObject() {
 		T* Obj = new T();
-		//GUObjectArray.push_back(Obj);
 		return Obj;
 	}
 
-	// Does not detroy the target object right away. Only marks for death
 	void DestroyObject(UObject* Obj) {
 		if (!Obj) {
 			return;
 		}
-		Obj->bPendingKill = true;
-	}
-
-	void CollectGarbage() {
-		for (int i = 0; i < GUObjectArray.size(); i++) {
-			if (GUObjectArray[i] && GUObjectArray[i]->bPendingKill) {
-				delete GUObjectArray[i];
-				GUObjectArray[i] = nullptr;
-			}
-		}
+		delete Obj;
 	}
 
 	UObject* FindByUUID(uint32 UUID)
@@ -140,15 +128,10 @@ public:
 	UObject* FindByIndex(uint32 Index)
 	{
 		if (Index >= GUObjectArray.size()) return nullptr;
-		return GUObjectArray[Index];   // may be null if destroyed
+		return GUObjectArray[Index];
 	}
-
-	// Used to kill the current rendering scene (i.e for loading a new savefile)
-	void PurgeScene();
 
 private:
 	UObjectManager() = default;
-	~UObjectManager() { CollectGarbage(); }
-
-	//TArray<UObject*> GUObjectArray;
+	~UObjectManager() = default;
 };
