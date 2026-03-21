@@ -33,8 +33,8 @@ public:
 
 	void OnResize(int32 Width, int32 Height);
 
-	FMatrix GetViewMatrix();
-	FMatrix GetProjectionMatrix();
+	FMatrix GetViewMatrix() const;
+	FMatrix GetProjectionMatrix() const;
 
 	float GetFOV() const { return CameraState.FOV; }
 	float GetNearPlane() const { return CameraState.NearZ; }
