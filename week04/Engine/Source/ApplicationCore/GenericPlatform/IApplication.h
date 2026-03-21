@@ -8,7 +8,7 @@ namespace Engine::ApplicationCore
     class ENGINE_API IApplication
     {
       public:
-        constexpr IApplication() = default;
+        IApplication() = default;
         virtual ~IApplication() = default;
 
         virtual void          SetInputSystem(FInputSystem* InInputSystem) = 0;

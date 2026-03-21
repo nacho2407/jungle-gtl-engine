@@ -9,7 +9,7 @@ namespace Engine::ApplicationCore
     class ENGINE_API FWindowsWindow
     {
       public:
-        constexpr FWindowsWindow() = default;
+        FWindowsWindow() = default;
         ~FWindowsWindow() = default;
 
         bool Create(HINSTANCE InInstance, const wchar_t* InTitle, int32 InWidth, int32 InHeight);
