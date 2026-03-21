@@ -10,6 +10,7 @@
 
 #include "Render/Common/RenderTypes.h"
 #include "Render/Resource/Buffer.h"
+#include "Render/Device/D3DDevice.h"
 
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
@@ -21,7 +22,8 @@ enum class ERenderCommandType
 	Overlay,
 	Axis,
 	Grid,
-	SelectionOutline
+	SelectionOutline,
+	Billboard
 };
 
 //	Object를 위한 Constant Buffer입니다.
@@ -35,7 +37,7 @@ struct FTransformConstants
 struct FGizmoConstants
 {
 	FVector4 ColorTint;
-	uint32 bIsInnerGizmo;	//	Translation Gizmo의 경우, Inner Gizmo는 항상 카메라를 향하도록 처리할 수 있습니다.
+	uint32 bIsInnerGizmo;	
 	uint32 bClicking;
 	uint32 SelectedAxis;
 	float HoveredAxisOpacity;
@@ -68,16 +70,39 @@ struct FOutlineConstants
 	float Padding0[3];
 };
 
+// [B] Line Batcher Constants 
+struct FLineConstants {
+	FVector4 Color;
+	float Thickness;
+	float Padding[3];
+};
+
+// [C] Billboard Constants
+struct FBillboardConstants {
+	FVector4 ColorTint;
+	uint32 BillboardType; // 0: Spherical, 1: Cylindrical
+	float Opacity;
+	float Padding[2];
+};
+
 struct FRenderCommand
 {
 	//	VB, IB 모두 담고 있는 MB
 	FMeshBuffer* MeshBuffer = nullptr;
-
 	FTransformConstants TransformConstants = {};
-	FGizmoConstants GizmoConstants = {};
-	FEditorConstants EditorConstants = {};
-	FOverlayConstants OverlayConstants = {};
-	FOutlineConstants OutlineConstants = {};
-	
+
+	union
+	{
+		FGizmoConstants Gizmo;
+		FEditorConstants Editor;
+		FOverlayConstants Overlay;
+		FOutlineConstants Outline;
+		FLineConstants Line;
+		FBillboardConstants Billboard;
+	} Constants;
+
+
+	EDepthStencilState DepthStencilState = EDepthStencilState::Default;
+	EBlendState BlendState = EBlendState::Opaque;
 	ERenderCommandType Type = ERenderCommandType::Primitive;
 };
