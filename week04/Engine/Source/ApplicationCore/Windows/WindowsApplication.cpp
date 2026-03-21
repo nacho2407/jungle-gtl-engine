@@ -15,8 +15,24 @@ namespace Engine::ApplicationCore
     {
         if (GWindowsApplication != nullptr)
         {
-            return GWindowsApplication->GetInputSystem()->ProcessWin32Message(
-                HWnd, Message, WParam, LParam);
+            switch (Message)
+            {
+            case WM_CLOSE:
+                DestroyWindow(HWnd);
+                return 0;
+            case WM_DESTROY:
+                GWindowsApplication->Window.MarkClosed();
+                GWindowsApplication->RequestExit();
+                PostQuitMessage(0);
+                return 0;
+            default:
+                break;
+            }
+
+            if (FInputSystem* InputSystem = GWindowsApplication->GetInputSystem())
+            {
+                return InputSystem->ProcessWin32Message(HWnd, Message, WParam, LParam);
+            }
         }
         return DefWindowProcW(HWnd, Message, WParam, LParam);
     }
@@ -72,9 +88,20 @@ namespace Engine::ApplicationCore
 
         while (PeekMessageW(&Message, nullptr, 0, 0, PM_REMOVE))
         {
+            if (Message.message == WM_QUIT)
+            {
+                RequestExit();
+                continue;
+            }
+
             TranslateMessage(&Message);
             DispatchMessageW(&Message);
         }
+    }
+
+    void FWindowsApplication::RequestExit()
+    {
+        bExitRequested = true;
     }
 
     void FWindowsApplication::ShowWindow()

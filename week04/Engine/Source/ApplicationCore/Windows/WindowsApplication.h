@@ -14,27 +14,28 @@ namespace Engine::ApplicationCore
     {
       public:
         FWindowsApplication();
-        virtual ~FWindowsApplication() override;
+        ~FWindowsApplication() override;
 
         static FWindowsApplication* Create();
 
       public:
-        virtual void          SetInputSystem(FInputSystem* InInputSystem) override;
-        virtual FInputSystem* GetInputSystem() const override;
+        void          SetInputSystem(FInputSystem* InInputSystem) override;
+        FInputSystem* GetInputSystem() const override;
 
-        virtual bool CreateApplicationWindow(const wchar_t* InTitle, int32 InWidth,
-                                             int32 InHeight) override;
-        virtual void DestroyApplicationWindow() override;
+        bool CreateApplicationWindow(const wchar_t* InTitle, int32 InWidth,
+                                     int32 InHeight) override;
+        void DestroyApplicationWindow() override;
 
-        virtual int32 GetWindowWidth() const override { return Window.GetWidth(); }
-        virtual int32 GetWindowHeight() const override { return Window.GetHeight(); }
+        int32 GetWindowWidth() const override { return Window.GetWidth(); }
+        int32 GetWindowHeight() const override { return Window.GetHeight(); }
 
-        virtual void PumpMessages() override;
+        void PumpMessages() override;
+        bool IsExitRequested() const override { return bExitRequested; }
 
-        virtual void ShowWindow() override;
-        virtual void HideWindow() override;
+        void ShowWindow() override;
+        void HideWindow() override;
 
-        virtual void* GetNativeWindowHandle() const override;
+        void* GetNativeWindowHandle() const override;
 
         /* virtual bool ProcessKeyDownEvent(EKey Key, bool bIsRepeat) override;
          virtual bool ProcessKeyUpEvent(EKey Key) override;
@@ -56,14 +57,18 @@ namespace Engine::ApplicationCore
         /*EKey TranslateKey(WPARAM InWParam) const;
         EKey TranslateMouseButton(UINT InMessage) const;*/
         void RegisterRawMouseInput();
+        void RequestExit();
 
       private:
         // IApplicationMessageHandler* MessageHandler = nullptr;
         FWindowsWindow Window;
         FInputSystem*  InputSystem = nullptr;
+        bool           bExitRequested = false;
         bool           bRawMouseInputRegistered = false;
         bool           bHasLastMousePosition = false;
         int32          LastMouseX = 0;
         int32          LastMouseY = 0;
+
+        friend LRESULT CALLBACK AppWndProc(HWND HWnd, UINT Message, WPARAM WParam, LPARAM LParam);
     };
 } // namespace Engine::ApplicationCore

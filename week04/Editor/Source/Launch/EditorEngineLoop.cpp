@@ -121,6 +121,12 @@ void FEditorEngineLoop::Tick()
 {
     /* Application Pump Message */
     Application->PumpMessages();
+    if (Application->IsExitRequested())
+    {
+        bIsExit = true;
+        return;
+    }
+
     InputSystem->BeginFrame();
 
     
