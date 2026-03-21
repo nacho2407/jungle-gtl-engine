@@ -12,7 +12,7 @@
 class UWorld;
 class UCamera;
 class UGizmoComponent;
-struct FEditorSettings;
+class FEditorSettings;
 
 using namespace common::structs;
 
