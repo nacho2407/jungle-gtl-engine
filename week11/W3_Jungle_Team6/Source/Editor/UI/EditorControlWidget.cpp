@@ -117,9 +117,9 @@ void FEditorControlWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 	SEPARATOR();
 
 	// Grid
-	if (ImGui::Button(EditorEngine->GetRenderHandler().bGridVisible ? "Grid : OFF" : "Grid : ON"))
+	if (ImGui::Button(EditorEngine->GetSettings().ShowFlags.bGrid ? "Grid : OFF" : "Grid : ON"))
 	{
-		EditorEngine->GetRenderHandler().bGridVisible = !EditorEngine->GetRenderHandler().bGridVisible;
+		EditorEngine->GetSettings().ShowFlags.bGrid = !EditorEngine->GetSettings().ShowFlags.bGrid;
 	}
 
 	ImGui::End();

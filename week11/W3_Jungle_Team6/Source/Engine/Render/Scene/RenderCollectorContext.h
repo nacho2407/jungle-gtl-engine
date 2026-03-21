@@ -1,7 +1,7 @@
 ﻿#pragma once
-#pragma once
 
 #include "Viewport/CursorOverlayState.h"
+#include "Editor/Settings/EditorSettings.h"
 
 class UWorld;
 class UCamera;
@@ -20,5 +20,6 @@ struct FRenderCollectorContext
 	float ViewportWidth = 0.f;
 	float ViewportHeight = 0.f;
 
-	bool bGridVisible = true;
+	EViewMode ViewMode = EViewMode::Lit;
+	FShowFlags ShowFlags;
 };

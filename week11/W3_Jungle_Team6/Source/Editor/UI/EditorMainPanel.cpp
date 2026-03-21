@@ -24,6 +24,7 @@ void FEditorMainPanel::Create(HWND InHWindow, FRenderer& InRenderer, FEditorEngi
 	ControlWidget.Initialize(InEditorEngine);
 	PropertyWidget.Initialize(InEditorEngine);
 	SceneWidget.Initialize(InEditorEngine);
+	ViewportOverlayWidget.Initialize(InEditorEngine);
 }
 
 void FEditorMainPanel::Release()
@@ -45,6 +46,7 @@ void FEditorMainPanel::Render(float DeltaTime, FViewOutput& ViewOutput)
 	ControlWidget.Render(DeltaTime, ViewOutput);
 	PropertyWidget.Render(DeltaTime, ViewOutput);
 	SceneWidget.Render(DeltaTime, ViewOutput);
+	ViewportOverlayWidget.Render(DeltaTime, ViewOutput);
 
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
