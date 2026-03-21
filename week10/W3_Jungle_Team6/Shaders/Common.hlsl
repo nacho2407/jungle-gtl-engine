@@ -1,13 +1,18 @@
 /* Constant Buffers */
 
-cbuffer TransformBuffer : register(b0)
+
+cbuffer FrameBuffer : register(b0)
 {
-    row_major float4x4 Model;
     row_major float4x4 View;
     row_major float4x4 Projection;
+}
+
+cbuffer TransformBuffer : register(b1)
+{
+    row_major float4x4 Model;
 };
 
-cbuffer GizmoBuffer : register(b1)
+cbuffer GizmoBuffer : register(b2)
 {
     float4 GizmoColorTint;
     uint bIsInnerGizmo;
@@ -17,7 +22,7 @@ cbuffer GizmoBuffer : register(b1)
 };
 
 
-cbuffer OverlayBuffer : register(b2)
+cbuffer OverlayBuffer : register(b3)
 {
     float2 OverlayCenterScreen;
     float2 ViewportSize;
@@ -28,14 +33,14 @@ cbuffer OverlayBuffer : register(b2)
     float4 OverlayColor;
 };
 
-cbuffer EditorBuffer : register(b3)
+cbuffer EditorBuffer : register(b4)
 {
     float4 CameraPosition;
     uint EditorFlag;
     float3 Padding3;
 };
 
-cbuffer OutlineConstants : register(b4)
+cbuffer OutlineConstants : register(b5)
 {
     float4 OutlineColor;
     float3 OutlineInvScale;
