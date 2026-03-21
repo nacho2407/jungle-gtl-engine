@@ -3,7 +3,7 @@
 #include "Core/CoreMinimal.h"//  이후에 Directory 만들어야 하나?
 #include "ApplicationCore/GenericPlatform/IApplication.h"
 #include "ApplicationCore/Input/InputSystem.h"
-#include "Editor.h"
+#include "Editor/Editor.h"
 #include "Launch/EngineLoop.h"
 
 #if defined(_WIN32)
