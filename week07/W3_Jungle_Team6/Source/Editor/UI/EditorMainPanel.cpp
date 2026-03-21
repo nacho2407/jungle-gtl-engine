@@ -9,7 +9,7 @@
 #include "Render/Renderer/Renderer.h"
 #include "Engine/Core/InputSystem.h"
 
-void FEditorMainPanel::Create(HWND InHWindow, FRenderer& InRenderer, FEditorEngine* InEditorEngine)
+void FEditorMainPanel::Create(HWND InHWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine)
 {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();

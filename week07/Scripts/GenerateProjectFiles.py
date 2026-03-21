@@ -242,9 +242,9 @@ def generate_vcxproj(files: dict[str, list[str]]):
         ET.SubElement(cl, "SDLCheck").text = "true"
 
         if is_win32:
-            defs = f"WIN32;{'NDEBUG' if is_release else '_DEBUG'};_CONSOLE;%(PreprocessorDefinitions)"
+            defs = f"WIN32;{'NDEBUG' if is_release else '_DEBUG'};_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)"
         else:
-            defs = f"{'NDEBUG' if is_release else '_DEBUG'};_CONSOLE;%(PreprocessorDefinitions)"
+            defs = f"{'NDEBUG' if is_release else '_DEBUG'};_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)"
         ET.SubElement(cl, "PreprocessorDefinitions").text = defs
 
         ET.SubElement(cl, "ConformanceMode").text = "true"
