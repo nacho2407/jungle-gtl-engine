@@ -11,9 +11,7 @@ FMeshData FMeshManager::SphereMeshData;
 FMeshData FMeshManager::TranslationGizmoMeshData;
 FMeshData FMeshManager::RotationGizmoMeshData;
 FMeshData FMeshManager::ScaleGizmoMeshData;
-FMeshData FMeshManager::AxisMeshData;
 FMeshData FMeshManager::MouseOverlayMeshData;
-FMeshData FMeshManager::GridMeshData;
 
 bool FMeshManager::bIsInitialized = false;
 
@@ -49,16 +47,6 @@ void FMeshManager::Initialize()
     if (RotationGizmoMeshData.Vertices.empty())
     {
         CreateRotationGizmo();
-    }
-
-    if (AxisMeshData.Vertices.empty())
-    {
-        CreateAxis();
-    }
-
-    if (GridMeshData.Vertices.empty())
-    {
-        CreateGrid();
     }
 
     if (MouseOverlayMeshData.Vertices.empty())
@@ -455,62 +443,6 @@ void FMeshManager::CreatePlane()
 		4, 6, 5,  // Back tri 1
 		4, 5, 7   // Back tri 2
 	};
-}
-
-void FMeshManager::CreateAxis()
-{
-    TArray<FVertex>& vertices = AxisMeshData.Vertices;
-    TArray<uint32>& indices = AxisMeshData.Indices;
-
-    vertices.clear();
-    indices.clear();
-
-    FVector4 Red(1.0f, 0.0f, 0.0f, 1.0f);
-    FVector4 Green(0.0f, 1.0f, 0.0f, 1.0f);
-    FVector4 Blue(0.0f, 0.0f, 1.0f, 1.0f);
-
-    vertices.push_back({ FVector(-1.0f, 0.0f, 0.0f), Red });
-    vertices.push_back({ FVector(1.0f, 0.0f, 0.0f), Red });
-
-    vertices.push_back({ FVector(0.0f, -1.0f, 0.0f), Green });
-    vertices.push_back({ FVector(0.0f,  1.0f, 0.0f), Green });
-
-    vertices.push_back({ FVector(0.0f, 0.0f, -1.0f), Blue });
-    vertices.push_back({ FVector(0.0f, 0.0f,  1.0f), Blue });
-
-    for (int i = 0; i < 6; i++) indices.push_back(i);
-}
-
-void FMeshManager::CreateGrid()
-{
-    TArray<FVertex>& vertices = GridMeshData.Vertices;
-    TArray<uint32>& indices = GridMeshData.Indices;
-
-    vertices.clear();
-    indices.clear();
-
-    FVector4 Color(1.0f, 1.0f, 1.0f, 1.0f);
-
-    vertices.push_back({ FVector(-1.0f, -1.0f, 0.0f), Color });
-    vertices.push_back({ FVector(-1.0f, 1.0f,  0.0f), Color });
-    vertices.push_back({ FVector(1.0f, 1.0f,  0.0f), Color });
-    vertices.push_back({ FVector(1.0f, -1.0f, 0.0f), Color });
-
-    indices.push_back(0);
-    indices.push_back(1);
-    indices.push_back(2);
-
-    indices.push_back(0);
-    indices.push_back(2);
-    indices.push_back(3);
-
-    indices.push_back(0);
-    indices.push_back(2);
-    indices.push_back(1);
-
-    indices.push_back(0);
-    indices.push_back(3);
-    indices.push_back(2);
 }
 
 void FMeshManager::CreateMouseOverlay()

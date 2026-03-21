@@ -90,7 +90,6 @@ void FRenderCollector::CollectFromEditor(const FRenderCollectorContext& Context,
 {
 
 	CollectGizmo(Context, RenderBus);
-	CollectGridAndAxis(Context, RenderBus);
 	CollectMouseOverlay(Context, RenderBus);
 }
 
@@ -133,37 +132,6 @@ void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, FRen
 	{
 		RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(true));
 	}
-}
-
-void FRenderCollector::CollectGridAndAxis(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
-{
-	return;
-
-	if (Context.bGridVisible == false)
-	{
-		return;
-	}
-
-	FVector CamPos = Context.Camera->GetWorldLocation();
-	FTransformConstants StaticTransform = { FMatrix::Identity, 
-											RenderBus.GetView(),
-											RenderBus.GetProj()};
-
-	// Axis
-	FRenderCommand AxisCmd = {};
-	AxisCmd.Type = ERenderCommandType::Axis;
-	AxisCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_Axis);
-	AxisCmd.TransformConstants = StaticTransform;
-	AxisCmd.Constants.Editor.CameraPosition = FVector4{ CamPos.X, CamPos.Y, CamPos.Z, 0.0f };
-	AxisCmd.Constants.Editor.Flag = 0;
-	RenderBus.AddCommand(ERenderPass::Editor, AxisCmd);
-
-	// Grid
-	FRenderCommand GridCmd = AxisCmd; // ���� �ʵ� ����
-	GridCmd.Type = ERenderCommandType::Grid;
-	GridCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_Grid);
-	GridCmd.Constants.Editor.Flag = 1;
-	RenderBus.AddCommand(ERenderPass::Grid,GridCmd);
 }
 
 void FRenderCollector::CollectMouseOverlay(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
