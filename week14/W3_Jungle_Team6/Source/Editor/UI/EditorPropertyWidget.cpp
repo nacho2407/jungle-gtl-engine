@@ -63,12 +63,12 @@ void FEditorPropertyWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 			if (ObjectPicked->IsA<USceneComponent>())
 			{
 				USceneComponent* Comp = ObjectPicked->Cast<USceneComponent>();
-				if (Comp->GetOwner())
+				AActor* Owner = Comp->GetOwner();
+				if (Owner && Owner->GetWorld())
 				{
-					UObjectManager::Get().DestroyObject(Comp->GetOwner());
+					Owner->GetWorld()->DestroyActor(Owner);
 				}
 			}
-			EditorEngine->GetGizmo()->SetVisibility(false);
 			EditorEngine->GetGizmo()->Deactivate();
 			ViewOutput.Object = nullptr;
 		}
