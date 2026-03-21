@@ -11,6 +11,7 @@
 #include "Render/Common/RenderTypes.h"
 #include "Render/Resource/Buffer.h"
 #include "Render/Device/D3DDevice.h"
+#include "Core/EngineTypes.h"
 
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
@@ -23,7 +24,8 @@ enum class ERenderCommandType
 	Axis,
 	Grid,
 	SelectionOutline,
-	Billboard
+	Billboard,
+	DebugBox
 };
 
 //	Object를 위한 Constant Buffer입니다.
@@ -70,19 +72,23 @@ struct FOutlineConstants
 	float Padding0[3];
 };
 
-// [B] Line Batcher Constants 
-struct FLineConstants {
-	FVector4 Color;
-	float Thickness;
-	float Padding[3];
-};
-
-// [C] Billboard Constants
-struct FBillboardConstants {
+struct FBillboardConstants 
+{
 	FVector4 ColorTint;
 	uint32 BillboardType; // 0: Spherical, 1: Cylindrical
 	float Opacity;
 	float Padding[2];
+};
+
+struct FAABBConstants
+{
+	FVector Min;
+	float Padding0;
+
+	FVector Max;
+	float Padding1;
+
+	FColor Color;
 };
 
 struct FRenderCommand
@@ -97,8 +103,8 @@ struct FRenderCommand
 		FEditorConstants Editor;
 		FOverlayConstants Overlay;
 		FOutlineConstants Outline;
-		FLineConstants Line;
 		FBillboardConstants Billboard;
+		FAABBConstants AABB;
 	} Constants;
 
 

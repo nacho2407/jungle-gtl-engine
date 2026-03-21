@@ -70,35 +70,8 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 {
 	ID3D11DeviceContext* context = Device.GetDeviceContext();
 
-
-	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
-	{
-		ERenderPass CurrentPass = static_cast<ERenderPass>(i);
-		const auto& Commands = InRenderBus.GetCommands(CurrentPass);
-
-		if (Commands.empty()) continue;
-
-		SetupRenderState(CurrentPass, context);
-
-		for (const auto& Cmd : Commands)
-		{
-	
-			EDepthStencilState TargetDepth = (Cmd.DepthStencilState != EDepthStencilState::Default)
-				? Cmd.DepthStencilState
-				: GetDefaultDepthForPass(CurrentPass);
-
-			EBlendState TargetBlend = (Cmd.BlendState != EBlendState::Opaque)
-				? Cmd.BlendState
-				: GetDefaultBlendForPass(CurrentPass);
-
-			Device.SetDepthStencilState(TargetDepth);
-			Device.SetBlendState(TargetBlend);
-
-			BindShaderByType(Cmd, context);
-
-			DrawCommand(context, Cmd);
-		}
-	}
+	RenderPasses(InRenderBus, context);
+	RenderEditorHelpers(InRenderBus, context);
 
 	//Reset
 	Device.SetRasterizerState(ERasterizerState::SolidBackCull);
@@ -295,4 +268,53 @@ void FRenderer::DrawCommand(ID3D11DeviceContext * InDeviceContext, const FRender
 void FRenderer::EndFrame()
 {
 	Device.EndFrame();
+}
+
+void FRenderer::RenderPasses(const FRenderBus& RenderBus, ID3D11DeviceContext* Context)
+{
+	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
+	{
+		ERenderPass CurPass = static_cast<ERenderPass>(i);
+		const auto& Commands = RenderBus.GetCommands(CurPass);
+		if (Commands.empty()) continue;
+
+		SetupRenderState(CurPass, Context);
+
+		for (const auto& Cmd : Commands)
+		{
+			// 메쉬가 없는 라인 타입은 여기서 거름
+
+			EDepthStencilState TargetDepth = (Cmd.DepthStencilState != EDepthStencilState::Default)
+				? Cmd.DepthStencilState
+				: GetDefaultDepthForPass(CurPass);
+
+			EBlendState TargetBlend = (Cmd.BlendState != EBlendState::Opaque)
+				? Cmd.BlendState
+				: GetDefaultBlendForPass(CurPass);
+
+			Device.SetDepthStencilState(TargetDepth);
+			Device.SetBlendState(TargetBlend);
+
+			BindShaderByType(Cmd, Context);
+			DrawCommand(Context, Cmd);
+		}
+	}
+}
+
+void FRenderer::RenderEditorHelpers(const FRenderBus& Bus, ID3D11DeviceContext* context)
+{
+	// 1. 버스에서 라인 커맨드들만 골라 담기 (이미 월드 좌표)
+	const auto& EditorCmds = Bus.GetCommands(ERenderPass::Editor);
+	for (const auto& Cmd : EditorCmds)
+	{
+		if (Cmd.Type == ERenderCommandType::DebugBox)
+		{
+			LineBatcher.AddAABB(FBoundingBox{ Cmd.Constants.AABB.Min, Cmd.Constants.AABB.Max }, Cmd.Constants.AABB.Color);
+		}
+	}
+
+	LineBatcher.AddWorldGrid(100.0f, 20);
+
+	
+	//LineBatcher.Flush(context);
 }
