@@ -62,7 +62,6 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 		ERenderPass selectedRenderPass = ERenderPass::Component;
 		switch (Cmd.Type)
 		{
-
 		case ERenderCommandType::Primitive:
 			selectedRenderPass = ERenderPass::Component;
 			if (Context.SelectedComponent == primitiveComponent)
@@ -95,6 +94,7 @@ void FRenderCollector::CollectFromEditor(const FRenderCollectorContext& Context,
 
 void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
+
 	UGizmoComponent* Gizmo = Context.Gizmo;
 	if (!Gizmo || !Gizmo->IsVisible()) return;
 
@@ -103,6 +103,7 @@ void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, FRen
 		Cmd.Type = ERenderCommandType::Gizmo;
 		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
 		Cmd.TransformConstants = FTransformConstants{ Gizmo->GetWorldMatrix()};
+
 		if (bInner)
 		{
 			Cmd.DepthStencilState = EDepthStencilState::None;
@@ -160,7 +161,6 @@ void FRenderCollector::CollectComponentOutline(UPrimitiveComponent* primitiveCom
 	OutlineCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
 	OutlineCmd.TransformConstants = FTransformConstants{ primitiveComponent->GetWorldMatrix() };
 	OutlineCmd.Type = ERenderCommandType::SelectionOutline;
-
 	OutlineCmd.Constants.Outline.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
 	OutlineCmd.Constants.Outline.OutlineInvScale = FVector(1.0f / primitiveComponent->GetRelativeScale().X,
 		1.0f / primitiveComponent->GetRelativeScale().Y, 1.0f / primitiveComponent->GetRelativeScale().Z);
@@ -194,3 +194,4 @@ void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponen
 	// 렌더러가 마지막에 몰아서 그릴 수 있게 특정 패스(예: Editor/Overlay)에 푸시합니다.
 	RenderBus.AddCommand(ERenderPass::Editor, AABBCmd);
 }
+
