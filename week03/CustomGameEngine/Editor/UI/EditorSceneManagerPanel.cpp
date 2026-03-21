@@ -1,10 +1,4 @@
 ﻿#include "EditorSceneManagerPanel.h"
-#include "ImGui/imgui.h"
-#include "World.h"
-#include "Editor/Editor.h"
-#include "Scene.h"
-#include "Component/SceneComponent.h"
-#include "SceneManager.h"
 
 EditorSceneManagerPanel::EditorSceneManagerPanel()
 {
@@ -33,10 +27,11 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 	}
 
 	ImGui::Text("SceneComponents: %d", static_cast<int>(ActiveScene->SceneComponents.size()));
-	ImGui::Separator();
+	ImGui::Spacing();
 	ImGui::Text("NAME");
 	ImGui::SameLine(0.0f, 90.0f);
 	ImGui::Text("UUID");
+	ImGui::Separator();
 
 	for (USceneComponent* component : ActiveScene->SceneComponents)
 	{

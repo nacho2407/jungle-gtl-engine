@@ -154,6 +154,7 @@
     <ClInclude Include="Editor\Gizmo\GizmoTranslationControlStrategy.h" />
     <ClInclude Include="Editor\Picker.h" />
     <ClInclude Include="Editor\UI\EditorSceneManagerPanel.h" />
+    <ClInclude Include="Editor\UI\ImGuiLayout.h" />
     <ClInclude Include="EngineApp\EngineApp.h" />
     <ClInclude Include="EngineCore\Color.h" />
     <ClInclude Include="EngineCore\Name.h" />

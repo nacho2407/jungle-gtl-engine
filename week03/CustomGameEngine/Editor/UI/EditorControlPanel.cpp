@@ -1,14 +1,4 @@
 ﻿#include "EditorControlPanel.h"
-#include "Editor/Editor.h"
-#include "Component/CameraComponent.h"
-#include "Component/PrimitiveComponent.h"
-#include "PrimitiveFactory.h"
-#include "EngineCore/TimerManager.h"
-#include "World.h"
-#include "Math/Vector.h"
-#include "Math/Rotator.h"
-#include "ImGui/imgui.h"
-#include <string>
 
 static EPrimitiveType primitiveType = EPrimitiveType::Triangle;
 static int spawnCount = 0;

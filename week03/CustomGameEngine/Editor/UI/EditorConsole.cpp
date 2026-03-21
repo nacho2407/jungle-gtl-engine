@@ -3,8 +3,6 @@
 #endif
 
 #include "EditorConsole.h"
-#include "EngineCore/Logger.h"
-#include <cstdio>
 
 EditorConsole::EditorConsole()
 	: HistoryPos(-1), AutoScroll(true), ScrollToBottom(false)

@@ -1,4 +1,9 @@
 ﻿#pragma once
+#include "Editor/Editor.h"
+#include "ImGui/imgui.h"
+#include "Component/PrimitiveComponent.h"	
+#include "Component/SceneComponent.h"
+#include "World.h"
 
 class Editor;
 class USceneComponent;

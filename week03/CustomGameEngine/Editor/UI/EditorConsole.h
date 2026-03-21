@@ -1,7 +1,9 @@
 ﻿#pragma once
 
 #include "ImGui/imgui.h"
+#include "EngineCore/Logger.h"
 #include <cctype>
+#include <cstdio>
 
 struct EditorConsole
 {

@@ -34,6 +34,7 @@ bool Editor::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* de
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
+	ImFont* DefaultFont = io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/malgun.ttf", 18.0f);
 	ImGui_ImplWin32_Init(hWnd);
 	ImGui_ImplDX11_Init(device, deviceContext);
 

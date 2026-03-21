@@ -1,10 +1,4 @@
 ﻿#include "EditorPropertyPanel.h"
-#include "Editor/Editor.h"
-#include "ImGui/imgui.h"
-#include "Component/PrimitiveComponent.h"	
-#include "Component/SceneComponent.h"
-#include "World.h"
-
 EditorPropertyPanel::EditorPropertyPanel(Editor* parent) : editor(parent)
 {
 }

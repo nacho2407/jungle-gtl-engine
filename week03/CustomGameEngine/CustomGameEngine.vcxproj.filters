@@ -138,21 +138,6 @@
     <ClInclude Include="Editor\Editor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\EditorConsole.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Editor\EditorControlPanel.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Editor\EditorPropertyPanel.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Editor\EditorStatPanel.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Editor\EditorToolbar.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Editor\Gizmo.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -217,6 +202,27 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="EngineCore\Name.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\UI\EditorConsole.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\UI\EditorControlPanel.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\UI\EditorPropertyPanel.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\UI\EditorStatPanel.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\UI\EditorToolbar.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\UI\EditorSceneManagerPanel.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\UI\ImGuiLayout.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -314,21 +320,6 @@
     <ClCompile Include="Editor\Editor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\EditorConsole.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Editor\EditorControlPanel.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Editor\EditorPropertyPanel.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Editor\EditorStatPanel.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Editor\EditorToolbar.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Editor\Gizmo.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -369,6 +360,30 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Math\Rotator.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\UI\EditorConsole.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\UI\EditorControlPanel.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\UI\EditorPropertyPanel.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\UI\EditorSceneManagerPanel.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\UI\EditorStatPanel.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\UI\EditorToolbar.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="EngineCore\Name.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
