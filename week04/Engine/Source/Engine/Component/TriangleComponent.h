@@ -10,9 +10,9 @@ namespace Engine::Component
         DECLARE_RTTI(UTriangleComp, UPrimitiveComponent)
 
       public:
-        UTriangleComp();
-        virtual ~UTriangleComp() override;
-        //virtual void Update(float DeltaTime) override;
-    };
+        UTriangleComp() = default;
+        virtual ~UTriangleComp() override = default;
 
+        virtual void Update(float DeltaTime) override;
+    };
 } // namespace Engine::Component

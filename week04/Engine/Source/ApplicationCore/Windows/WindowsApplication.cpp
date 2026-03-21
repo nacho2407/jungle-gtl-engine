@@ -270,6 +270,7 @@ namespace Engine::ApplicationCore
         {
             //
             //extern bool GIsRequestingExit;
+            // 창 종료 
             bool GIsRequestingExit;
             GIsRequestingExit = true;
             //

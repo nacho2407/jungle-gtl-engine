@@ -9,8 +9,8 @@ namespace Engine::Component
     {
         DECLARE_RTTI(USceneComponent, UObject)
       public:
-        USceneComponent();
-        virtual ~USceneComponent() override;
+        USceneComponent() = default;
+        virtual ~USceneComponent() override = default;
 
       public:
         inline const FVector  GetRelativeLocation() { return WorldTransform.GetLocation(); }
@@ -18,7 +18,7 @@ namespace Engine::Component
         inline const FVector  GetRelativeScale3D() { return WorldTransform.GetScale3D(); }
         inline const FQuat    GetRelativeQuaternion() { return WorldTransform.GetRotation(); }
 
-        inline virtual void   SetRelativeLocation(const FVector& NewLocation)
+        inline virtual void SetRelativeLocation(const FVector& NewLocation)
         {
             WorldTransform.SetLocation(NewLocation);
         }
@@ -34,12 +34,13 @@ namespace Engine::Component
         {
             WorldTransform.SetScale3D(NewScale);
         }
+        virtual void Update(float DeltaTime);
 
         FMatrix GetRelativeMatrix();
 
-        //virtual void OnComponentAdded() {};
-        // virtual void Update(float deltaTime) {};
-        //virtual void DrawProperties();
+        // virtual void OnComponentAdded() {};
+        //  virtual void Update(float deltaTime) {};
+        virtual void DrawProperties();
 
         bool IsSelected() const;
 

@@ -1,22 +1,15 @@
 #include "Core/CoreMinimal.h"
 #include "SceneComponent.h"
 
-Engine::Component::USceneComponent::USceneComponent() = default;
-
-Engine::Component::USceneComponent ::~USceneComponent() = default;
-
-FMatrix Engine::Component::USceneComponent::GetRelativeMatrix()
+namespace Engine::Component
 {
-	return {};
-}
+    FMatrix USceneComponent::GetRelativeMatrix() { return {}; }
 
-void Engine::Component::USceneComponent::DrawProperties()
-{
-}
+    void USceneComponent::DrawProperties() {}
 
-bool Engine::Component::USceneComponent::IsSelected() const
-{
-	return {};
-}
+    bool USceneComponent::IsSelected() const { return false; }
 
-REGISTER_CLASS(Engine::Component, USceneComponent);
+    void USceneComponent::Update(float DeltaTime) {}
+
+    REGISTER_CLASS(Engine::Component, USceneComponent);
+} // namespace Engine::Component

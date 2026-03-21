@@ -8,8 +8,9 @@ namespace Engine::Component
     {
         DECLARE_RTTI(UCubeComp, UPrimitiveComponent)
       public:
-        UCubeComp();
-        virtual ~UCubeComp() override;
-        // virtual void Update(float DeltaTime) override;
+        UCubeComp() = default;
+        virtual ~UCubeComp() override = default;
+
+        virtual void Update(float DeltaTime) override;
     };
 } // namespace Engine::Component
