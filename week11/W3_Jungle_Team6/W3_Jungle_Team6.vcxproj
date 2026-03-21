@@ -69,20 +69,20 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;Source\Editor;ThirdParty\DirectXTK;.;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\W3_Jungle_Team6\ThirdParty\DirectXTK\Library\;$(LibraryPath)</LibraryPath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;Source\Editor;ThirdParty\DirectXTK;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\ThirdParty\DirectXTK\Library;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;Source\Editor;ThirdParty\DirectXTK;.;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\W3_Jungle_Team6\ThirdParty\DirectXTK\Library\;$(LibraryPath)</LibraryPath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;Source\Editor;ThirdParty\DirectXTK;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\ThirdParty\DirectXTK\Library;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;Source\Editor;ThirdParty\DirectXTK;.;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\W3_Jungle_Team6\ThirdParty\DirectXTK\Library\;$(LibraryPath)</LibraryPath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;Source\Editor;ThirdParty\DirectXTK;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\W3_Jungle_Team6\ThirdParty\DirectXTK\Library;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;Source\Editor;ThirdParty\DirectXTK;.;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\W3_Jungle_Team6\ThirdParty\DirectXTK\Library\;$(LibraryPath)</LibraryPath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;Source\Editor;ThirdParty\DirectXTK;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\W3_Jungle_Team6\ThirdParty\DirectXTK\Library;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -143,13 +143,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Engine\World\BillboardComponent.cpp" />
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\EditorSettings.cpp" />
     <ClCompile Include="Source\Editor\Core\EditorConsole.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp" />
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\BillboardComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Camera.cpp" />
     <ClCompile Include="Source\Engine\Component\GizmoComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
@@ -189,7 +189,6 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Engine\World\BillboardComponent.h" />
     <ClInclude Include="Source\Editor\EditorEngine.h" />
     <ClInclude Include="Source\Editor\EditorSettings.h" />
     <ClInclude Include="Source\Editor\Core\EditorConsole.h" />
@@ -197,6 +196,7 @@
     <ClInclude Include="Source\Editor\Viewport\CursorOverlayState.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />
+    <ClInclude Include="Source\Engine\Component\BillboardComponent.h" />
     <ClInclude Include="Source\Engine\Component\Camera.h" />
     <ClInclude Include="Source\Engine\Component\GizmoComponent.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
@@ -240,6 +240,28 @@
     <ClInclude Include="Source\Engine\Runtime\EngineLoop.h" />
     <ClInclude Include="Source\Engine\Runtime\Launch.h" />
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\Audio.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\BufferHelpers.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\CommonStates.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\DDSTextureLoader.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\DirectXHelpers.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\Effects.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\GamePad.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\GeometricPrimitive.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\GraphicsMemory.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\Keyboard.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\Model.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\Mouse.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\PostProcess.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\PrimitiveBatch.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\ScreenGrab.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\SimpleMath.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\SimpleMath.inl" />
+    <ClInclude Include="ThirdParty\DirectXTK\SpriteBatch.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\SpriteFont.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\VertexTypes.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\WICTextureLoader.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\XboxDDSTextureLoader.h" />
     <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui_impl_dx11.h" />
