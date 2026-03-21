@@ -1,6 +1,6 @@
-﻿#include "Editor/UI/EditorViewportOverlayWidget.h"
+#include "Editor/UI/EditorViewportOverlayWidget.h"
 
-#include "Editor/EditorEngine.h"
+#include "Editor/Settings/EditorSettings.h"
 #include "ImGui/imgui.h"
 
 void FEditorViewportOverlayWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
@@ -8,14 +8,8 @@ void FEditorViewportOverlayWidget::Render(float DeltaTime, FViewOutput& ViewOutp
 	(void)DeltaTime;
 	(void)ViewOutput;
 
-	if (!EditorEngine)
-	{
-		return;
-	}
+	FEditorSettings& Settings = FEditorSettings::Get();
 
-	FEditorSettings& Settings = EditorEngine->GetSettings();
-
-	// 뷰포트 우상단에 오버레이 배치
 	ImGuiViewport* Viewport = ImGui::GetMainViewport();
 	const float Padding = 10.0f;
 	ImVec2 WindowPos(Viewport->WorkPos.x + Viewport->WorkSize.x - Padding, Viewport->WorkPos.y + Padding);
@@ -37,23 +31,47 @@ void FEditorViewportOverlayWidget::Render(float DeltaTime, FViewOutput& ViewOutp
 		return;
 	}
 
-	// View Mode
-	ImGui::Text("View Mode");
-	int32 CurrentMode = static_cast<int32>(Settings.ViewMode);
-	ImGui::RadioButton("Lit", &CurrentMode, static_cast<int32>(EViewMode::Lit));
-	ImGui::SameLine();
-	ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
-	ImGui::SameLine();
-	ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
-	Settings.ViewMode = static_cast<EViewMode>(CurrentMode);
+	if (ImGui::Button(bExpanded ? "Settings <<" : "Settings >>"))
+	{
+		bExpanded = !bExpanded;
+	}
 
-	ImGui::Separator();
+	if (bExpanded)
+	{
+		ImGui::Separator();
 
-	// Show Flags
-	ImGui::Text("Show");
-	ImGui::Checkbox("Primitives", &Settings.ShowFlags.bPrimitives);
-	ImGui::Checkbox("Grid", &Settings.ShowFlags.bGrid);
-	ImGui::Checkbox("Gizmo", &Settings.ShowFlags.bGizmo);
+		// View Mode
+		ImGui::Text("View Mode");
+		int32 CurrentMode = static_cast<int32>(Settings.ViewMode);
+		ImGui::RadioButton("Lit", &CurrentMode, static_cast<int32>(EViewMode::Lit));
+		ImGui::SameLine();
+		ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
+		ImGui::SameLine();
+		ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
+		Settings.ViewMode = static_cast<EViewMode>(CurrentMode);
+
+		ImGui::Separator();
+
+		// Show Flags
+		ImGui::Text("Show");
+		ImGui::Checkbox("Primitives", &Settings.ShowFlags.bPrimitives);
+		ImGui::Checkbox("Grid", &Settings.ShowFlags.bGrid);
+		ImGui::Checkbox("Gizmo", &Settings.ShowFlags.bGizmo);
+
+		ImGui::Separator();
+
+		// Grid Settings
+		ImGui::Text("Grid");
+		ImGui::SliderFloat("Spacing", &Settings.GridSpacing, 0.1f, 10.0f, "%.1f");
+		ImGui::SliderInt("Half Line Count", &Settings.GridHalfLineCount, 10, 500);
+
+		ImGui::Separator();
+
+		// Camera Sensitivity
+		ImGui::Text("Camera");
+		ImGui::SliderFloat("Move Sensitivity", &Settings.CameraMoveSensitivity, 0.1f, 5.0f, "%.1f");
+		ImGui::SliderFloat("Rotate Sensitivity", &Settings.CameraRotateSensitivity, 0.1f, 5.0f, "%.1f");
+	}
 
 	ImGui::End();
 }
