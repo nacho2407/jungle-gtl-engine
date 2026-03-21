@@ -36,11 +36,8 @@ public:
 		return TotalAllocationCount;
 	}
 
-
 	static uint32 GenUUID()
 	{
 		return NextUUID++;
 	}
-
-
 };

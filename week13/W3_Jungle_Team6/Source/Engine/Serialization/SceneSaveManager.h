@@ -9,6 +9,7 @@
 #include "Component/PrimitiveComponent.h"
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
+#include "Core/Paths.h"
 
 // Forward decl.
 namespace json {
@@ -19,9 +20,17 @@ using std::string;
 
 class FSceneSaveManager {
 public:
+	static constexpr const wchar_t* SceneExtension = L".Scene";
+
+	// FPaths 기반 Scene 디렉터리 (wstring)
+	static std::wstring GetSceneDirectory() { return FPaths::SceneDir(); }
+
 	// Creates a .json save file at the given destination
-	static void SaveSceneAsJSON(const string& filepath, TArray<UWorld*>& Scene);
+	static void SaveSceneAsJSON(const string& SceneName, TArray<UWorld*>& Scene);
 	static void LoadSceneFromJSON(const string& filepath, TArray<UWorld*>& Scene);
+
+	// Returns list of .Scene file names (without extension) in SceneDirectory
+	static TArray<FString> GetSceneFileList();
 
 	// If file exists at given path, delete, then save. Otherwise, simply create a new save
 	static void OverwriteSave(const string& filepath, UWorld* World);
