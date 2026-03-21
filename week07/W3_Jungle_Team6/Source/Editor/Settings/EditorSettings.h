@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
+#include "Core/Paths.h"
 #include "Math/Vector.h"
 
 struct FEditorSettings
@@ -17,10 +18,10 @@ struct FEditorSettings
 	int32 UpdateRate = 60;
 
 	// File paths
-	FString DefaultSavePath = "Asset/Scene/";
+	FString DefaultSavePath = FPaths::ToUtf8(FPaths::SceneDir());
 
 	void SaveToFile(const FString& Path) const;
 	void LoadFromFile(const FString& Path);
 
-	static constexpr const char* DefaultSettingsPath = "Settings/Editor.ini";
+	static FString GetDefaultSettingsPath() { return FPaths::ToUtf8(FPaths::SettingsFilePath()); }
 };

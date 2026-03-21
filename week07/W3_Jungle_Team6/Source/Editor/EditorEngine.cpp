@@ -9,7 +9,7 @@ void FEditorEngine::Create(HWND InHWindow)
 {
 	HWindow = InHWindow;
 
-	Settings.LoadFromFile(FEditorSettings::DefaultSettingsPath);
+	Settings.LoadFromFile(FEditorSettings::GetDefaultSettingsPath());
 
 	Renderer.Create(HWindow);
 	FRenderCollector::Initialize(Renderer.GetFD3DDevice().GetDevice());
@@ -120,7 +120,7 @@ void FEditorEngine::NewScene() {
 
 void FEditorEngine::Release()
 {
-	Settings.SaveToFile(FEditorSettings::DefaultSettingsPath);
+	Settings.SaveToFile(FEditorSettings::GetDefaultSettingsPath());
 	CloseScene();
 	MainPanel.Release();
 	Renderer.Release();

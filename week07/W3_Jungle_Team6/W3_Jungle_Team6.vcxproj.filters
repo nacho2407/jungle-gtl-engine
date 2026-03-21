@@ -10,9 +10,6 @@
     <Filter Include="Source\Editor">
       <UniqueIdentifier>{956d68db-8267-b6c9-ee17-de994a7dc814}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Editor\Core">
-      <UniqueIdentifier>{455acf13-4357-8aae-790c-0f95672a30b1}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Editor\Settings">
       <UniqueIdentifier>{d787f5b7-1afa-e269-d3f4-b58c3fbd3301}</UniqueIdentifier>
     </Filter>
@@ -86,11 +83,11 @@
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
       <Filter>Source\Editor</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorConsoleWidget.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Editor\Settings\EditorSettings.cpp">
       <Filter>Source\Editor\Settings</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorConsoleWidget.cpp">
+      <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorControlWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
@@ -125,10 +122,16 @@
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Core\CrashDump.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\InputSystem.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Paths.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp">
@@ -224,11 +227,11 @@
     <ClInclude Include="Source\Editor\EditorEngine.h">
       <Filter>Source\Editor</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Settings\EditorSettings.h">
       <Filter>Source\Editor\Settings</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h">
+      <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorControlWidget.h">
       <Filter>Source\Editor\UI</Filter>
@@ -278,6 +281,9 @@
     <ClInclude Include="Source\Engine\Core\CoreTypes.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\CrashDump.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Core\Debug.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
@@ -285,6 +291,9 @@
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\InputSystem.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Paths.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\RayTypes.h">
