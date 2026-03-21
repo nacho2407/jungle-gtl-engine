@@ -2,6 +2,7 @@
 
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
+#include "Component/PrimitiveComponent.h"
 #include "Component/GizmoComponent.h"
 
 FMeshBufferManager FRenderCollector::MeshBufferManager;
