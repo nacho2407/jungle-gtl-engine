@@ -10,6 +10,8 @@
 #include "ApplicationCore/Windows/WindowsApplication.h"
 #endif
 
+class FPanelManager;
+
 class FEditorEngineLoop : public IEngineLoop
 {
 public:
@@ -41,7 +43,10 @@ private:
     
     /* Engine */
     //  FEngine * Engine = nullptr;
-    
+
+    /* Panel */
+    FPanelManager* PanelManager = nullptr;
+
     /* Time Measure */
     float DeltaTime = 0.0f;
     float MainLoopFPS = 0.0f;

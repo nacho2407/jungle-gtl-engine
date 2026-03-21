@@ -37,6 +37,39 @@ namespace
 		Stream << std::hex << std::setw(16) << std::setfill('0') << Value;
 		return Stream.str();
 	}
+
+	FWString NormalizeAssetPath(const FWString& Path)
+	{
+		if (Path.empty())
+		{
+			return {};
+		}
+
+		fs::path FilePath(Path);
+		std::error_code ErrorCode;
+
+		fs::path Normalized = fs::weakly_canonical(FilePath, ErrorCode);
+		if (ErrorCode)
+		{
+			ErrorCode.clear();
+			Normalized = FilePath.lexically_normal();
+		}
+		else
+		{
+			Normalized = Normalized.lexically_normal();
+		}
+
+		FWString Result = Normalized.native();
+
+		std::ranges::replace(Result, L'/', L'\\');
+		std::ranges::transform(Result, Result.begin(),
+		                       [](wchar_t Ch)
+		                       {
+			                       return static_cast<wchar_t>(std::towlower(Ch));
+		                       });
+
+		return Result;
+	}
 }
 
 const FSourceRecord* FSourceCache::GetOrLoad(const FWString& Path)
@@ -171,35 +204,7 @@ bool FSourceCache::HasFileChanged(const FSourceRecord& Record, uint64 CurrentFil
 
 FWString FSourceCache::NormalizePath(const FWString& Path) const
 {
-	if (Path.empty())
-	{
-		return {};
-	}
-
-	fs::path FilePath(Path);
-	std::error_code ErrorCode;
-
-	fs::path Normalized = fs::weakly_canonical(FilePath, ErrorCode);
-	if (ErrorCode)
-	{
-		ErrorCode.clear();
-		Normalized = FilePath.lexically_normal();
-	}
-	else
-	{
-		Normalized = Normalized.lexically_normal();
-	}
-
-	FWString Result = Normalized.native();
-
-	std::ranges::replace(Result, L'/', L'\\');
-	std::ranges::transform(Result, Result.begin(),
-	                       [](wchar_t Ch)
-	                       {
-		                       return static_cast<wchar_t>(std::towlower(Ch));
-	                       });
-
-	return Result;
+	return NormalizeAssetPath(Path);
 }
 
 void UAssetManager::RegisterLoader(IAssetLoader* Loader)
@@ -214,6 +219,11 @@ void UAssetManager::RegisterLoader(IAssetLoader* Loader)
 	{
 		Loaders.push_back(Loader);
 	}
+}
+
+UAssetManager::~UAssetManager()
+{
+	Clear();
 }
 
 UAsset* UAssetManager::Load(const FWString& Path, const FAssetLoadParams& Params)
@@ -243,7 +253,7 @@ UAsset* UAssetManager::Load(const FWString& Path, const FAssetLoadParams& Params
 		auto It = LoadedAssets.find(Key);
 		if (It != LoadedAssets.end())
 		{
-			UAsset* ExistingAsset = It->second;
+			UAsset* ExistingAsset = It->second.get();
 			//	7. 캐시 hit면 UAsset::GetHash()와 Source.SourceHash 비교
 			if (ExistingAsset && ExistingAsset->GetHash() == Source->SourceHash)
 			{
@@ -262,15 +272,32 @@ UAsset* UAssetManager::Load(const FWString& Path, const FAssetLoadParams& Params
 	}
 
 	//	11. 성공하면 LoadedAssets[Key] = NewAsset
-	LoadedAssets.insert_or_assign(Key, NewAsset);
+	LoadedAssets.insert_or_assign(Key, std::unique_ptr<UAsset>(NewAsset));
 	//	12. 반환
 	return NewAsset;
 }
 
 void UAssetManager::Invalidate(const FWString& Path)
 {
-	SourceCache.Invalidate(Path);
-	LoadedAssets.clear();
+	const FWString NormalizedPath = NormalizeAssetPath(Path);
+	if (NormalizedPath.empty())
+	{
+		return;
+	}
+
+	SourceCache.Invalidate(NormalizedPath);
+
+	for (auto It = LoadedAssets.begin(); It != LoadedAssets.end();)
+	{
+		if (It->first.NormalizedPath == NormalizedPath)
+		{
+			It = LoadedAssets.erase(It);
+		}
+		else
+		{
+			++It;
+		}
+	}
 }
 
 void UAssetManager::Clear()

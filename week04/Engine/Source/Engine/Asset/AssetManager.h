@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include <dxgiformat.h>
 
 #include "CoreUObject/Object.h"
@@ -140,6 +141,8 @@ struct FTextureBuildKeyHasher
 class UAssetManager : public UObject
 {
 public:
+	~UAssetManager() override;
+
 	void RegisterLoader(IAssetLoader* Loader);
 	UAsset* Load(const FWString& Path, const FAssetLoadParams& Params = {});
 	void Invalidate(const FWString& Path);
@@ -152,5 +155,5 @@ private:
 private:
 	FSourceCache SourceCache;
 	TArray<IAssetLoader*> Loaders;
-	TMap<FAssetKey, UAsset*, FAssetKeyHasher> LoadedAssets;
+	TMap<FAssetKey, std::unique_ptr<UAsset>, FAssetKeyHasher> LoadedAssets;
 };
