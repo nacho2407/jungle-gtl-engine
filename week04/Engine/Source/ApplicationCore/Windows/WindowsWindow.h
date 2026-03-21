@@ -9,22 +9,26 @@ namespace Engine::ApplicationCore
     class ENGINE_API FWindowsWindow
     {
       public:
-        FWindowsWindow();
-        ~FWindowsWindow();
+        FWindowsWindow() = default;
+        ~FWindowsWindow() = default;
 
-        bool Initialize(const wchar_t* InTitle, int32 InWidth, int32 InHeight);
+        bool Create(HINSTANCE InInstance, const wchar_t* InTitle, int32 InWidth, int32 InHeight);
         void Destroy();
+        void Show();
+        void Hide();
+
 
         HWND  GetHWnd() const { return HWnd; }
         int32 GetWidth() const { return Width; }
         int32 GetHeight() const { return Height; }
         float GetAspectRatio() const { return static_cast<float>(Width) / Height; }
-
+        void  SetSize(int32 InWidth, int32 InHeight)
+        {
+            Width = InWidth;
+            Height = InHeight;
+        }
         bool IsVisible() const { return bIsVisible; }
         bool IsClosed() const { return bIsClosed; }
-
-      protected:
-        static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
       private:
         HWND HWnd = nullptr;

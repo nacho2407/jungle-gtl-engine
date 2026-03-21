@@ -1,30 +1,33 @@
 #pragma once
 
-enum class EKey
+namespace Engine::ApplicationCore
 {
-    Invalid,
-    W,
-    A,
-    S,
-    D,
-    Q,
-    E,
-    F,
-    L,
-    LeftShift,
-    SpaceBar,
+    enum class EKey
+    {
+        Invalid,
+        W,
+        A,
+        S,
+        D,
+        Q,
+        E,
+        F,
+        L,
+        LeftShift,
+        SpaceBar,
 
-    LeftMouseButton,
-    RightMouseButton,
-    MiddleMouseButton,
-    MouseWheelAxis
-};
+        LeftMouseButton,
+        RightMouseButton,
+        MiddleMouseButton,
+        MouseWheelAxis
+    };
 
-enum class EInputEvent
-{
-    Pressed,
-    Released,
-    Repeat,
-    DoubleClick,
-    Axis
-};
+    enum class EInputEvent
+    {
+        Pressed,
+        Released,
+        Repeat,
+        DoubleClick,
+        Axis
+    };
+} // namespace Engine::ApplicationCore

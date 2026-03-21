@@ -1,46 +1,85 @@
 #include <Core/CoreMinimal.h>
 #include "WindowsWindow.h"
 
-Engine::ApplicationCore::FWindowsWindow::FWindowsWindow() {}
-
-Engine::ApplicationCore::FWindowsWindow::~FWindowsWindow() {}
-
-bool Engine::ApplicationCore::FWindowsWindow::Initialize(const wchar_t* InTitle, int32 InWidth,
-                                                         int32 InHeight)
+namespace
 {
-    WCHAR     WindowClass[] = L"JungleWindowClass";
-    WCHAR     Title[] = L"Custom Engine";
-    WNDCLASSW WndClass = {0, FWindowsWindow::WindowProc, 0, 0, 0, 0, 0, 0, 0, WindowClass};
-
-    RegisterClass(&WndClass);
-
-    HWnd =
-        CreateWindowExW(0, WindowClass, Title, WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW,
-                        CW_USEDEFAULT, CW_USEDEFAULT, 1920, 1080, nullptr, nullptr, nullptr, this);
+    constexpr const wchar_t* WindowClassName = L"FWindowsApplicationWindowClass";
 }
 
-void Engine::ApplicationCore::FWindowsWindow::Destroy()
-{
-    if (HWnd)
-    {
-        DestroyWindow(HWnd);
-        HWnd = nullptr;
-    }
-}
+LRESULT CALLBACK AppWndProc(HWND Hwnd, UINT Message, WPARAM WParam, LPARAM LParam);
 
-LRESULT CALLBACK Engine::ApplicationCore::FWindowsWindow::WindowProc(HWND hWnd, UINT message,
-                                                                     WPARAM wParam, LPARAM lParam)
+namespace Engine::ApplicationCore
 {
-    switch (message)
+    /**
+     * Create the native window.
+     *
+     * @param InInstance The application instance handle.
+     * @param InTitle The window title.
+     * @param InWidth The client area width.
+     * @param InHeight The client area height.
+     * @return true if the window was created, otherwise false.
+     */
+    bool FWindowsWindow::Create(HINSTANCE InInstance, const wchar_t* InTitle, int32 InWidth,
+                                int32 InHeight)
     {
-    case WM_DESTROY:
-    {
-        PostQuitMessage(0);
-        break;
+        if (HWnd != nullptr)
+        {
+            return false;
+        }
+
+        WNDCLASSW WindowClass = {};
+        WindowClass.lpfnWndProc = AppWndProc;
+        WindowClass.hInstance = InInstance;
+        WindowClass.lpszClassName = WindowClassName;
+        WindowClass.hCursor = LoadCursorW(nullptr, IDC_ARROW);
+        WindowClass.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
+        RegisterClass(&WindowClass);
+
+        RECT WindowRect = {0, 0, InWidth, InHeight};
+        AdjustWindowRect(&WindowRect, WS_OVERLAPPEDWINDOW, FALSE);
+
+        const int32 WindowWidth = WindowRect.right - WindowRect.left;
+        const int32 WindowHeight = WindowRect.bottom - WindowRect.top;
+
+        HWnd = CreateWindowExW(
+            0, WindowClassName, InTitle, WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW, CW_USEDEFAULT,
+            CW_USEDEFAULT, WindowWidth, WindowHeight, nullptr, nullptr, InInstance, this);
+        if (HWnd == nullptr)
+        {
+            return false;
+        }
+
+        Width = InWidth;
+        Height = InHeight;
+        return true;
     }
-    case WM_NCCREATE:
+
+    void FWindowsWindow::Destroy()
     {
-        LPCREATESTRUCT pcs = reinterpret_cast<LPCREATESTRUCT>(lParam);
-        break;
+        if (HWnd)
+        {
+            DestroyWindow(HWnd);
+            HWnd = nullptr;
+        }
+        Width = 0;
+        Height = 0;
     }
-}
+
+    void FWindowsWindow::Show()
+    {
+        if (HWnd != nullptr)
+        {
+            ShowWindow(HWnd, SW_SHOW);
+            UpdateWindow(HWnd);
+        }
+    }
+
+    void FWindowsWindow::Hide()
+    {
+        if (HWnd != nullptr)
+        {
+            ShowWindow(HWnd, SW_HIDE);
+        }
+    }
+
+} // namespace Engine::ApplicationCore
