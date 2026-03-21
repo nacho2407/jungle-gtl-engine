@@ -10,6 +10,7 @@
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/LineBatcher.h"
+#include "Render/FontBatcher.h"
 
 #include <cstddef>
 
@@ -19,7 +20,8 @@ private:
 	FD3DDevice Device;
 	FRenderResources Resources;
 	FLineBatcher LineBatcher;
-	
+	FFontBatcher FontBatcher;
+
 
 	//	Primitive and Gizmo Input Layout
 	D3D11_INPUT_ELEMENT_DESC PrimitiveInputLayout[2] =
