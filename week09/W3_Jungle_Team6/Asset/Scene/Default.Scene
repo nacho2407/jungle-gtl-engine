@@ -1,0 +1,65 @@
+{
+  "Scene" : {
+    "Name" : "Default",
+    "Objects" : [{
+        "ClassName" : "UWorld",
+        "InternalIndex" : 0,
+        "UUID" : 1
+      }, {
+        "ClassName" : "AActor",
+        "InternalIndex" : 3,
+        "OwningWorldUUID" : 1,
+        "RootComponentUUID" : 5,
+        "UUID" : 4,
+        "bVisible" : true
+      }, {
+        "ClassName" : "UCubeComponent",
+        "InternalIndex" : 4,
+        "Location" : {
+          "X" : -3.000000,
+          "Y" : 0.000000,
+          "Z" : 0.000000
+        },
+        "ParentUUID" : 0,
+        "Rotation" : {
+          "X" : 0.000000,
+          "Y" : 0.000000,
+          "Z" : 0.000000
+        },
+        "Scale" : {
+          "X" : 1.000000,
+          "Y" : 1.000000,
+          "Z" : 1.000000
+        },
+        "UUID" : 5
+      }, {
+        "ClassName" : "AActor",
+        "InternalIndex" : 5,
+        "OwningWorldUUID" : 1,
+        "RootComponentUUID" : 7,
+        "UUID" : 6,
+        "bVisible" : true
+      }, {
+        "ClassName" : "UCubeComponent",
+        "InternalIndex" : 6,
+        "Location" : {
+          "X" : 0.000000,
+          "Y" : -3.472172,
+          "Z" : 0.000000
+        },
+        "ParentUUID" : 0,
+        "Rotation" : {
+          "X" : 0.000000,
+          "Y" : 0.000000,
+          "Z" : 0.000000
+        },
+        "Scale" : {
+          "X" : 1.000000,
+          "Y" : 1.000000,
+          "Z" : 1.000000
+        },
+        "UUID" : 7
+      }],
+    "Version" : 1
+  }
+}

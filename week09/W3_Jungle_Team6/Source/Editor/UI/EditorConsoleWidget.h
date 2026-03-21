@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 #include "Core/CoreTypes.h"
-#include <cstdarg> 
+#include <cstdarg>
 #include <functional>
 #include <sstream>
 
@@ -8,12 +8,15 @@
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
 
-class FEditorConsole
+#include "Editor/UI/EditorWidget.h"
+
+class FEditorConsoleWidget : public FEditorWidget
 {
 public:
 	static void AddLog(const char* fmt, ...);
 
-	void Draw(const char* Title, bool* p_open);
+	virtual void Render(float DeltaTime, FViewOutput& ViewOutput) override;
+
 	void Clear()
 	{
 		for (int32 i = 0; i < Messages.Size; i++) free(Messages[i]);
@@ -44,4 +47,4 @@ private:
 };
 
 #define UE_LOG(Format, ...) \
-    FEditorConsole::AddLog(Format, ##__VA_ARGS__)
+    FEditorConsoleWidget::AddLog(Format, ##__VA_ARGS__)

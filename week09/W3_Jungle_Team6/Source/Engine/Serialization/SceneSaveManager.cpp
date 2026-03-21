@@ -1,27 +1,22 @@
 ﻿#include "SceneSaveManager.h"
 #include "SimpleJSON/json.hpp"
 
-void FSceneSaveManager::SaveSceneAsJSON(const string& filepath, TArray<UWorld*>& Scene) {
+void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, TArray<UWorld*>& Scene) {
     using namespace json;
 
-    string FileDestination;
-    string SceneName;
-    if (!filepath.length()) {
-        SceneName = "Save_" + GetCurrentTimeStamp();
-        FileDestination = "Saves/" + SceneName + ".Scene";
-    }
-    else {
-        SceneName = filepath;
-        FileDestination = "Saves/" + filepath + ".Scene";
-    }
+    string FinalName = InSceneName.empty()
+        ? "Save_" + GetCurrentTimeStamp()
+        : InSceneName;
 
-    std::filesystem::create_directories("Saves");
+    string FileDestination = string(SceneDirectory) + FinalName + SceneExtension;
+
+    std::filesystem::create_directories(SceneDirectory);
 
     JSON Root;
 
     // Metadata
     Root["Scene"]["Version"] = 1;
-    Root["Scene"]["Name"] = SceneName;
+    Root["Scene"]["Name"] = FinalName;
 
     JSON Objects = json::Array();
 
@@ -271,4 +266,21 @@ string FSceneSaveManager::GetCurrentTimeStamp() {
     char buf[20];
     std::strftime(buf, sizeof(buf), "%Y%m%d_%H%M%S", &tm);
     return buf;
+}
+
+TArray<FString> FSceneSaveManager::GetSceneFileList() {
+    TArray<FString> Result;
+    if (!std::filesystem::exists(SceneDirectory))
+    {
+        return Result;
+    }
+
+    for (auto& Entry : std::filesystem::directory_iterator(SceneDirectory))
+    {
+        if (Entry.is_regular_file() && Entry.path().extension() == SceneExtension)
+        {
+            Result.push_back(Entry.path().stem().string());
+        }
+    }
+    return Result;
 }

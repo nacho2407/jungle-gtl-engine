@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "Editor/Core/EditorConsole.h"
+#include "Editor/UI/EditorConsoleWidget.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Engine/Core/InputSystem.h"
 
