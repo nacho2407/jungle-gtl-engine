@@ -110,7 +110,7 @@ void Editor::DrawStatPanel(ImGuiLayout& layout)
 
 void Editor::DrawToolbar(ImGuiLayout& layout)
 {
-	Toolbar->Draw(layout.Toolbar);
+	Toolbar->Draw(layout.Toolbar, Grid);
 }
 
 void Editor::DrawSceneManagerPanel(ImGuiLayout& layout)
