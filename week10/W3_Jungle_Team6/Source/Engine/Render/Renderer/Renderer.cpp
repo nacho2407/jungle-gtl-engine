@@ -1,5 +1,6 @@
 ﻿#include "Renderer.h"
 
+#include "Core/Paths.h"
 #include "Render/Common/RenderTypes.h"
 
 #if DEBUG
@@ -20,15 +21,16 @@ void FRenderer::Create(HWND hWindow)
 		std::cout << "Failed to create D3D Device." << std::endl;
 	}
 
-	Resources.PrimitiveShader.Create(Device.GetDevice(), ShaderFilePath,
+	const std::wstring ShaderPath = FPaths::ShaderFilePath();
+	Resources.PrimitiveShader.Create(Device.GetDevice(), ShaderPath.c_str(),
 		"PrimitiveVS", "PrimitivePS",PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-	Resources.GizmoShader.Create(Device.GetDevice(), ShaderFilePath,
+	Resources.GizmoShader.Create(Device.GetDevice(), ShaderPath.c_str(),
 		"GizmoVS", "GizmoPS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-	Resources.OverlayShader.Create(Device.GetDevice(), ShaderFilePath,
+	Resources.OverlayShader.Create(Device.GetDevice(), ShaderPath.c_str(),
 		"OverlayVS", "OverlayPS", OverlayInputLayout, ARRAYSIZE(OverlayInputLayout));
-	Resources.EditorShader.Create(Device.GetDevice(), ShaderFilePath,
+	Resources.EditorShader.Create(Device.GetDevice(), ShaderPath.c_str(),
 		"EditorVS", "EditorPS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-	Resources.OutlineShader.Create(Device.GetDevice(), ShaderFilePath,
+	Resources.OutlineShader.Create(Device.GetDevice(), ShaderPath.c_str(),
 		"OutlineVS", "OutlinePS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
 
 	Resources.PerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FTransformConstants));
