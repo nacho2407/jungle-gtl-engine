@@ -48,10 +48,6 @@ void FEditorEngine::Create(HWND InHWindow)
 	SyncCameraFromRenderHandler();
 
 	Scene[CurrentWorld]->SetActiveCamera(EditorCamera);
-	
-	//EditorGizmo = UObjectManager::Get().CreateObject<UGizmoComponent>();
-	//EditorGizmo->SetWorldLocation(FVector(0.0f, 0.0f, 0.0f));
-	//ViewportClient.SetGizmo(EditorGizmo);
 }
 
 void FEditorEngine::OnWindowResized(uint32 Width, uint32 Height)

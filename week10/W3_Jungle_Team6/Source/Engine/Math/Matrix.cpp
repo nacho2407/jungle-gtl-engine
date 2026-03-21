@@ -306,6 +306,25 @@ FMatrix FMatrix::MakeRotationZ(float Angle)
 	return ret;
 }
 
+FMatrix FMatrix::GetCancelRotationMatrix(const FMatrix& InMatrix)
+{
+	FMatrix ret = FMatrix::Identity;
+
+	ret.M[0][0] = InMatrix.M[0][0];
+	ret.M[0][1] = InMatrix.M[1][0];
+	ret.M[0][2] = InMatrix.M[2][0];
+
+	ret.M[1][0] = InMatrix.M[0][1];
+	ret.M[1][1] = InMatrix.M[1][1];
+	ret.M[1][2] = InMatrix.M[2][1];
+
+	ret.M[2][0] = InMatrix.M[0][2];
+	ret.M[2][1] = InMatrix.M[1][2];
+	ret.M[2][2] = InMatrix.M[2][2];
+
+	return ret;
+}
+
 FVector operator*(const FVector& vector, const FMatrix& matrix)
 {
 	FVector ret{};
