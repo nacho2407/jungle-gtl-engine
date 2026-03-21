@@ -307,22 +307,7 @@ void URenderer::Render(const TArray<FLevel*>& Levels)
 	DistributeRenderObjects(Levels, BatchGroups, NormalRenderObjects, NoDepthRenderObjects);
 	RenderNormalObjects(NormalRenderObjects);
 	RenderNoDepthObjects(NoDepthRenderObjects);
-
-	//for (FLevel* Level : Levels)
-	//{
-	//	if (Level == nullptr) continue;
-	//	for (RenderObject* RenderObj : Level->RenderObjects)
-	//	{
-	//		if (RenderObj->bDepthEnabled)
-	//		{
-	//			NormalRenderObjects.push_back(RenderObj);
-	//		}
-	//		else
-	//		{
-	//			NoDepthRenderObjects.push_back(RenderObj);
-	//		}
-	//	}
-	//}
+	BatchRender(BatchGroups);
 }
 
 void URenderer::RenderNormalObjects(TArray<RenderObject*>& NormalRenderObjects)

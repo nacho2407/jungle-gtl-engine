@@ -29,7 +29,7 @@ void ResourceManager::Initialize(URenderer* InRenderer)
 	MainShader.ConstantBuffer.Create(Renderer->Device.Get(), sizeof(FObjectConstant), 1);
 
 	FMaterial& LineShader = CreateMaterial(L"Shader/ShaderLine.hlsl", L"Shader/ShaderLine.hlsl", Renderer->Device.Get(), layout, 2);
-	//LineShader.ConstantBuffer.Create(Renderer->Device.Get(), sizeof(FObjectConstant), 1);
+	LineShader.ConstantBuffer.Create(Renderer->Device.Get(), sizeof(FObjectConstant), 1);
 
 
 	AddCubeMesh(Renderer->Device.Get());
