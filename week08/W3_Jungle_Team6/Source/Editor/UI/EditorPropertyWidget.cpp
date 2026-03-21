@@ -68,7 +68,6 @@ void FEditorPropertyWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 					UObjectManager::Get().DestroyObject(Comp->GetOwner());
 				}
 			}
-			ObjectPicked->bPendingKill = true;
 			EditorEngine->GetGizmo()->SetVisibility(false);
 			EditorEngine->GetGizmo()->Deactivate();
 			ViewOutput.Object = nullptr;

@@ -1,134 +1,92 @@
 #include "Component/Camera.h"
 #include <cmath>
 
-DEFINE_CLASS(UCamera, USceneComponent)
-REGISTER_FACTORY(UCamera)
+DEFINE_CLASS(UCameraComponent, USceneComponent)
+REGISTER_FACTORY(UCameraComponent)
 
-void UCamera::SetRelativeLocation(const FVector newlocation) {
-	USceneComponent::SetRelativeLocation(newlocation);
-	bViewDirty = true;
-}
+FMatrix UCameraComponent::GetViewMatrix() {
+	UpdateWorldMatrix();
 
-void UCamera::SetRelativeRotation(const FVector newrotation) {
-	USceneComponent::SetRelativeRotation(newrotation);
-	bViewDirty = true;
-}
-
-const FMatrix& UCamera::GetViewMatrix() {
-	if (bUpdateFlag || bViewDirty) {
-		RebuildView();
-		bViewDirty = false;
-		bUpdateFlag = false;
-	}
-	return CachedView;
-}
-
-const FMatrix& UCamera::GetProjectionMatrix() {
-	if (bUpdateFlag || bProjectionDirty) {
-		RebuildProjection();
-		bProjectionDirty = false;
-	}
-	return CachedProjection;
-}
-
-const FMatrix& UCamera::GetViewProjection() {
-	CachedVP = GetViewMatrix() * GetProjectionMatrix();
-	return CachedVP;
-}
-
-void UCamera::LookAt(const FVector& target) {
-	FVector Position = GetWorldLocation();
-	FVector diff = (target - Position).Normalized();
-
-	const float Rad2Deg = 180.0f / 3.1415926535f;
-
-	RelativeRotation.Y = -1 * asinf(diff.Z) * Rad2Deg;
-
-	if (fabsf(diff.Z) < 0.999f) {
-		RelativeRotation.Z = atan2f(diff.Y, diff.X) * Rad2Deg;
-	}
-
-	SetRelativeRotation(RelativeRotation);
-	bViewDirty = true;
-}
-
-void UCamera::OnResize(int w, int h) {
-	CameraState.AspectRatio = static_cast<float>(w) / static_cast<float>(h);
-	bProjectionDirty = true;
-}
-
-void UCamera::ApplyCameraState()
-{
-	bProjectionDirty = true;
-}
-
-void UCamera::SetCameraState(const FCameraState& NewState)
-{
-	CameraState = NewState;
-	ApplyCameraState();
-}
-
-void UCamera::RebuildView() {
 	auto F = GetForwardVector();
 	auto R = GetRightVector();
 	auto U = GetUpVector();
 	auto E = GetWorldLocation();
 
-	FMatrix mat(
+	return FMatrix(
 		R.X, U.X, F.X, 0,
 		R.Y, U.Y, F.Y, 0,
 		R.Z, U.Z, F.Z, 0,
 		-E.Dot(R), -E.Dot(U), -E.Dot(F), 1
 	);
-
-	CachedView = mat;
 }
 
-void UCamera::RebuildProjection() {
-	float cot = 1.0f / tanf(CameraState.FOV * 0.5f);
-	float denom = CameraState.FarZ - CameraState.NearZ;
+FMatrix UCameraComponent::GetProjectionMatrix() {
+	float Cot = 1.0f / tanf(CameraState.FOV * 0.5f);
+	float Denom = CameraState.FarZ - CameraState.NearZ;
 
 	if (!CameraState.bIsOrthogonal) {
-		FMatrix mat(
-			cot / CameraState.AspectRatio, 0, 0, 0,
-			0, cot, 0, 0,
-			0, 0, CameraState.FarZ / denom, 1,
-			0, 0, -(CameraState.FarZ * CameraState.NearZ) / denom, 0
+		return FMatrix(
+			Cot / CameraState.AspectRatio, 0, 0, 0,
+			0, Cot, 0, 0,
+			0, 0, CameraState.FarZ / Denom, 1,
+			0, 0, -(CameraState.FarZ * CameraState.NearZ) / Denom, 0
 		);
-		CachedProjection = mat;
 	}
 	else {
-		float halfW = CameraState.OrthoWidth * 0.5f;
-		float halfH = halfW / CameraState.AspectRatio;
-		FMatrix mat(
-			1.0f / halfW, 0, 0, 0,
-			0, 1.0f / halfH, 0, 0,
-			0, 0, 1.0f / denom, 0,
-			0, 0, -CameraState.NearZ / denom, 1
+		float HalfW = CameraState.OrthoWidth * 0.5f;
+		float HalfH = HalfW / CameraState.AspectRatio;
+		return FMatrix(
+			1.0f / HalfW, 0, 0, 0,
+			0, 1.0f / HalfH, 0, 0,
+			0, 0, 1.0f / Denom, 0,
+			0, 0, -CameraState.NearZ / Denom, 1
 		);
-		CachedProjection = mat;
 	}
 }
 
-FRay UCamera::DeprojectScreenToWorld(float MouseX, float MouseY, float ScreenWidth, float ScreenHeight) {
-	float ndcX = (2.0f * MouseX) / ScreenWidth - 1.0f;
-	float ndcY = 1.0f - (2.0f * MouseY) / ScreenHeight;
+void UCameraComponent::LookAt(const FVector& Target) {
+	FVector Position = GetWorldLocation();
+	FVector Diff = (Target - Position).Normalized();
 
-	FVector ndcNear(ndcX, ndcY, 0.0f);
-	FVector ndcFar(ndcX, ndcY, 1.0f);
+	constexpr float Rad2Deg = 180.0f / 3.14159265358979f;
 
-	FMatrix viewProj = GetViewMatrix() * GetProjectionMatrix();
-	FMatrix inverseViewProjection = viewProj.GetInverse();
+	RelativeRotation.Y = -asinf(Diff.Z) * Rad2Deg;
 
-	FVector worldNear = inverseViewProjection.TransformPositionWithW(ndcNear);
-	FVector worldFar = inverseViewProjection.TransformPositionWithW(ndcFar);
+	if (fabsf(Diff.Z) < 0.999f) {
+		RelativeRotation.Z = atan2f(Diff.Y, Diff.X) * Rad2Deg;
+	}
 
-	FRay ray;
-	ray.Origin = worldNear;
+	SetRelativeRotation(RelativeRotation);
+}
 
-	FVector dir = worldFar - worldNear;
-	float length = std::sqrt(dir.X * dir.X + dir.Y * dir.Y + dir.Z * dir.Z);
-	ray.Direction = (length > 1e-4f) ? dir / length : FVector(1, 0, 0);
+void UCameraComponent::OnResize(int32 Width, int32 Height) {
+	CameraState.AspectRatio = static_cast<float>(Width) / static_cast<float>(Height);
+}
 
-	return ray;
+void UCameraComponent::SetCameraState(const FCameraState& NewState)
+{
+	CameraState = NewState;
+}
+
+FRay UCameraComponent::DeprojectScreenToWorld(float MouseX, float MouseY, float ScreenWidth, float ScreenHeight) {
+	float NdcX = (2.0f * MouseX) / ScreenWidth - 1.0f;
+	float NdcY = 1.0f - (2.0f * MouseY) / ScreenHeight;
+
+	FVector NdcNear(NdcX, NdcY, 0.0f);
+	FVector NdcFar(NdcX, NdcY, 1.0f);
+
+	FMatrix ViewProj = GetViewMatrix() * GetProjectionMatrix();
+	FMatrix InverseViewProjection = ViewProj.GetInverse();
+
+	FVector WorldNear = InverseViewProjection.TransformPositionWithW(NdcNear);
+	FVector WorldFar = InverseViewProjection.TransformPositionWithW(NdcFar);
+
+	FRay Ray;
+	Ray.Origin = WorldNear;
+
+	FVector Dir = WorldFar - WorldNear;
+	float Length = std::sqrt(Dir.X * Dir.X + Dir.Y * Dir.Y + Dir.Z * Dir.Z);
+	Ray.Direction = (Length > 1e-4f) ? Dir / Length : FVector(1, 0, 0);
+
+	return Ray;
 }
