@@ -54,7 +54,7 @@ bool UPrimitiveComponent::CheckAABB(const FRay& Ray)
 
 bool UPrimitiveComponent::Raycast(const FRay& Ray, FHitResult& OutHitResult)
 {
-	if(bPendingKill || !bIsVisible)
+	if(!bIsVisible)
 		return false;
 	
 	if (!CheckAABB(Ray))

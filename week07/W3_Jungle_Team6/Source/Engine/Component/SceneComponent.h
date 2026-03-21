@@ -27,7 +27,7 @@ public:
 	virtual void SetRelativeLocation(const FVector NewLocation);
 	virtual void SetRelativeRotation(const FVector NewRotation);
 	void SetRelativeScale(const FVector NewScale);
-	void SetUpdateFlag();
+	void MarkTransformDirty();
 	const FMatrix& GetWorldMatrix();
 	void SetWorldLocation(FVector NewWorldLocation);
 	FVector GetWorldLocation();
@@ -50,7 +50,7 @@ protected:
 
 	FMatrix CachedWorldMatrix{};
 
-	bool bUpdateFlag = true;
+	bool bTransformDirty = true;
 
 public:
 	FVector RelativeLocation{};
