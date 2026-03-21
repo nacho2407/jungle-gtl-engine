@@ -1,5 +1,6 @@
 #pragma once
 
+#include "EditorContext.h"
 #include "Core/CoreMinimal.h"
 
 #include "ApplicationCore/Input/InputRouter.h"
@@ -8,6 +9,8 @@
 #include "Input/GizmoInputContext.h"
 #include "Input/ViewPortInputContext.h"
 #include "Renderer/Scene.h"
+
+class FPanelManager;
 
 class FEditor
 {
@@ -40,9 +43,11 @@ private:
     FEditorGlobalContext EditorGlobalContext;
     FViewPortInputContext ViewPortInputContext;
     FGizmoInputContext GizmoInputContext;
+    FEditorContext EditorContext;
     
     /* Panel */
-    
+    FPanelManager* PanelManager = nullptr;
+
     /* Gizmo */
     
     /* Scene */
