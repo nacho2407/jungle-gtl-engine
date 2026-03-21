@@ -7,8 +7,8 @@
     <Filter Include="Source">
       <UniqueIdentifier>{4f6c83fe-a134-3484-3756-8c697b723468}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Resources\Mesh">
-      <UniqueIdentifier>{611fd08d-c5f2-636f-d61c-0405906a469d}</UniqueIdentifier>
+    <Filter Include="Resources\Primitives">
+      <UniqueIdentifier>{7de5503a-8149-ef69-ab35-ccf0d4d50701}</UniqueIdentifier>
     </Filter>
     <Filter Include="Resources\Scene">
       <UniqueIdentifier>{6f21998c-ad3f-4295-5a94-62d9702a0e9b}</UniqueIdentifier>
@@ -197,14 +197,20 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Resources\Sphere.h">
-      <Filter>Resources</Filter>
+    <ClInclude Include="Resources\Primitives\Cube.h">
+      <Filter>Resources\Primitives</Filter>
     </ClInclude>
-    <ClInclude Include="Resources\Triangle.h">
-      <Filter>Resources</Filter>
+    <ClInclude Include="Resources\Primitives\Plane.h">
+      <Filter>Resources\Primitives</Filter>
     </ClInclude>
-    <ClInclude Include="Resources\VertexSimple.h">
-      <Filter>Resources</Filter>
+    <ClInclude Include="Resources\Primitives\Sphere.h">
+      <Filter>Resources\Primitives</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources\Primitives\Triangle.h">
+      <Filter>Resources\Primitives</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources\Primitives\VertexSimple.h">
+      <Filter>Resources\Primitives</Filter>
     </ClInclude>
     <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplication.h">
       <Filter>Source\ApplicationCore\GenericPlatform</Filter>
