@@ -5,6 +5,7 @@
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Core/ResourceManager.h"
 #include "Render/Scene/RenderCollector.h"
+#include "GameFramework/World.h"
 
 DEFINE_CLASS(UEngine, UObject)
 
@@ -40,7 +41,7 @@ void UEngine::BeginPlay()
 
 void UEngine::Tick(float DeltaTime)
 {
-	InputSystem::Update();
+	InputSystem::Get().Update();
 	UpdateWorld(DeltaTime);
 	Render(DeltaTime);
 }
