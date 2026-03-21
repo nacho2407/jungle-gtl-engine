@@ -132,7 +132,6 @@ void URenderer::ReleaseRasterizerState() {
 void URenderer::CreateDepthStencilState() {
 	D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
 	depthStencilDesc.DepthFunc = D3D11_COMPARISON_GREATER;
-	depthStencilDesc.DepthFunc = D3D11_COMPARISON_GREATER;
 	depthStencilDesc.StencilEnable = FALSE;
 
 	depthStencilDesc.DepthEnable = TRUE;
@@ -266,7 +265,6 @@ void URenderer::Render()
 	FrameConst.View = renderCamera->GetViewMatrix();
 	FrameConstantBuffer.Update(DeviceContext.Get(), &FrameConst, sizeof(FFrameConstant));
 	FrameConstantBuffer.Bind(DeviceContext.Get());
-	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
 
 
 	//Phase 1 : Distribute RenderObjects into 3 groups : Batch, Normal, NoDepth
@@ -276,8 +274,8 @@ void URenderer::Render()
 	DistributeRenderObjects(BatchGroups, NormalRenderObjects, NoDepthRenderObjects);
 
 	//Phase 2 : Do Render
-	BatchRender(BatchGroups);
 	RenderNormalObjects(NormalRenderObjects);
+	BatchRender(BatchGroups);
 	RenderNoDepthObjects(NoDepthRenderObjects);
 }
 
@@ -286,7 +284,8 @@ void URenderer::RenderNoDepthObjects(TArray<RenderObject*>& NoDepthRenderObjects
 	FObjectConstant ObjectConst;
 	if (!NoDepthRenderObjects.empty())
 	{
-		DeviceContext->ClearDepthStencilView(DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 0.0f, 0);
+		// 중간에 깊이를 지우지 않고, 깊이 판정만 끄고 그립니다.
+		DeviceContext->OMSetDepthStencilState(DepthStencilStateNoDepth.Get(), 0);
 
 		for (RenderObject* RenderObj : NoDepthRenderObjects)
 		{
@@ -302,7 +301,9 @@ void URenderer::RenderNoDepthObjects(TArray<RenderObject*>& NoDepthRenderObjects
 
 void URenderer::RenderNormalObjects(TArray<RenderObject*>& NormalRenderObjects)
 {
+	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
 	FObjectConstant ObjectConst;
+
 	for (RenderObject* RenderObj : NormalRenderObjects)
 	{
 		//Camera
@@ -343,6 +344,7 @@ void URenderer::DistributeRenderObjects(TMap<BatchKey, TArray<RenderObject*>>& B
 
 void URenderer::BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups)
 {
+	//DeviceContext->OMSetDepthStencilState(DepthStencilStateNoDepth.Get(), 0);
 	FObjectConstant ObjectConst;
 	for (auto& [key, objects] : BatchGroups)
 	{
