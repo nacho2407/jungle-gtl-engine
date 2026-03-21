@@ -2,6 +2,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Core/Paths.h"
+#include "Core/Singleton.h"
 #include "Math/Vector.h"
 
 enum class EViewMode : int32
@@ -19,14 +20,11 @@ struct FShowFlags
 	bool bGizmo = true;
 };
 
-struct FEditorSettings
+class FEditorSettings : public TSingleton<FEditorSettings>
 {
-	static FEditorSettings& Get()
-	{
-		static FEditorSettings Instance;
-		return Instance;
-	}
+	friend class TSingleton<FEditorSettings>;
 
+public:
 	// Viewport
 	float CameraSpeed = 10.f;
 	float CameraRotationSpeed = 60.f;
