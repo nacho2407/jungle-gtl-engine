@@ -24,18 +24,10 @@ void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBu
 	//	Draw from World
 	if (Context.ShowFlags.bPrimitives)
 	{
-		for (auto* Object : GUObjectArray)
+		for (AActor* Actor : Context.World->GetActors())
 		{
-			if (!Object) continue;
-
-			if (Object->IsA<AActor>())
-			{
-				auto* Actor = Object->Cast<AActor>();
-				if (Actor->GetWorld() == Context.World)
-				{
-					CollectFromActor(Actor, Context, RenderBus);
-				}
-			}
+			if (!Actor) continue;
+			CollectFromActor(Actor, Context, RenderBus);
 		}
 	}
 }
