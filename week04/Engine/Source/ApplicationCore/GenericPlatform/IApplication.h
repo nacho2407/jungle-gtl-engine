@@ -5,7 +5,7 @@ namespace Engine::ApplicationCore
 {
     class FInputSystem;
 
-    class IApplication
+    class ENGINE_API IApplication
     {
       public:
         constexpr IApplication() = default;
