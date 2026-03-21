@@ -137,6 +137,8 @@ void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, FRen
 
 void FRenderCollector::CollectGridAndAxis(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
+	return;
+
 	if (Context.bGridVisible == false)
 	{
 		return;
