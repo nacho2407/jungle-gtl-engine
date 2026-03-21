@@ -27,7 +27,7 @@ public:
 	UScene* NewScene();
 	void SaveScene(FString sceneName);
 	UScene* LoadScene(FString sceneName);
-	void UnloadScene();
+	void UnloadScene(UScene targetScene);
 	// === Scene Management
 	
 	template <typename T>
@@ -55,11 +55,12 @@ public:
 		return AddSceneComponent<T>(PermanentScene);
 	}
 
-	void RemoveSceneComponent(USceneComponent* toDespawn);
+	void RemoveSceneComponent(USceneComponent* toDespawn, UScene* targetScene= nullptr);
 
 
 private:
 	UWorld* OwnerWorld = nullptr;
 	UScene* ActiveScene = nullptr;
 	UScene* PermanentScene = nullptr;
+	TArray<UScene*> LoadedScene;
 };

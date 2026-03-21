@@ -17,7 +17,8 @@ public:
 	int Version;
 	int NextUUID;
 	TArray<USceneComponent*> SceneComponents;
-	
+	FName Name;
+
 	bool IsCompSelected{ false };
 	FVector SelectedCompPos;
 
