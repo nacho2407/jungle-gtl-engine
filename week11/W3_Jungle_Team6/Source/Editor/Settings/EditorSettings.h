@@ -18,6 +18,7 @@ struct FShowFlags
 	bool bPrimitives = true;
 	bool bGrid = true;
 	bool bGizmo = true;
+	bool bBillboardText = true;
 };
 
 class FEditorSettings : public TSingleton<FEditorSettings>
