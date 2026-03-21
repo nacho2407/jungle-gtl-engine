@@ -15,30 +15,6 @@
 
 class FEditorEngine
 {
-private:
-	UWorld* EditorWorld = nullptr;
-	UCamera* EditorCamera = nullptr;
-	UGizmoComponent* EditorGizmo = nullptr;
-	HWND HWindow = nullptr;
-
-	float WindowWidth = 1920.f;
-	float WindowHeight = 1080.f;
-
-	uint32 CurrentWorld = 0;
-	TArray<UWorld*> Scene;
-
-	FRenderer Renderer;
-	FRenderBus RenderBus;
-	FEditorMainPanel MainPanel;
-	FEditorViewportClient ViewportClient;
-	float MainLoopFPS = 0.0f;
-
-
-private:
-	void UpdateWorld(float DeltaTime);
-	void SyncCameraFromRenderHandler();
-	void BuildRenderCommands();
-
 public:
 	void Create(HWND InHWindow);
 	void Release();
@@ -91,4 +67,27 @@ public:
 		NewActor->AddComponent<T>();
 		return NewActor;
 	}
+
+private:
+	void UpdateWorld(float DeltaTime);
+	void SyncCameraFromRenderHandler();
+	void BuildRenderCommands();
+
+private:
+	UWorld* EditorWorld = nullptr;
+	UCamera* EditorCamera = nullptr;
+	UGizmoComponent* EditorGizmo = nullptr;
+	HWND HWindow = nullptr;
+
+	float WindowWidth = 1920.f;
+	float WindowHeight = 1080.f;
+
+	uint32 CurrentWorld = 0;
+	TArray<UWorld*> Scene;
+
+	FRenderer Renderer;
+	FRenderBus RenderBus;
+	FEditorMainPanel MainPanel;
+	FEditorViewportClient ViewportClient;
+	float MainLoopFPS = 0.0f;
 };

@@ -1,6 +1,7 @@
 ﻿#include "Editor/EditorEngine.h"
 
 #include "Engine/Core/InputSystem.h"
+#include "Core/ResourceManager.h"
 
 #include "Render/Scene/RenderCollector.h"
 #include "Render/Scene/RenderCollectorContext.h"
@@ -51,10 +52,6 @@ void FEditorEngine::Create(HWND InHWindow)
 	SyncCameraFromRenderHandler();
 
 	Scene[CurrentWorld]->SetActiveCamera(EditorCamera);
-
-	//EditorGizmo = UObjectManager::Get().CreateObject<UGizmoComponent>();
-	//EditorGizmo->SetWorldLocation(FVector(0.0f, 0.0f, 0.0f));
-	//ViewportClient.SetGizmo(EditorGizmo);
 }
 
 void FEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
@@ -117,6 +114,7 @@ void FEditorEngine::Release()
 	FEditorSettings::Get().SaveToFile(FEditorSettings::GetDefaultSettingsPath());
 	CloseScene();
 	MainPanel.Release();
+	FResourceManager::Get().ReleaseGPUResources();	// Device 해제 전에 GPU 리소스 정리
 	Renderer.Release();
 }
 
@@ -176,19 +174,19 @@ void FEditorEngine::EndFrame()
 	UObjectManager::Get().CollectGarbage();
 }
 
-void FEditorEngine::SyncCameraFromRenderHandler()
-{
-	if (EditorCamera)
-	{
-		EditorCamera->ApplyCameraState();
-	}
-}
-
 void FEditorEngine::UpdateWorld(float DeltaTime)
 {
 	if (!Scene.empty() && Scene[CurrentWorld])
 	{
 		Scene[CurrentWorld]->Tick(DeltaTime);
+	}
+}
+
+void FEditorEngine::SyncCameraFromRenderHandler()
+{
+	if (EditorCamera)
+	{
+		EditorCamera->ApplyCameraState();
 	}
 }
 
