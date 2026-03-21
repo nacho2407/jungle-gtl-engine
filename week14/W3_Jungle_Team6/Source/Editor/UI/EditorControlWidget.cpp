@@ -114,13 +114,5 @@ void FEditorControlWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 	ImGui::SameLine();
 	if (ImGui::Button("Scale")) EditorEngine->GetGizmo()->SetScaleMode();
 
-	SEPARATOR();
-
-	// Grid
-	if (ImGui::Button(EditorEngine->GetSettings().ShowFlags.bGrid ? "Grid : OFF" : "Grid : ON"))
-	{
-		EditorEngine->GetSettings().ShowFlags.bGrid = !EditorEngine->GetSettings().ShowFlags.bGrid;
-	}
-
 	ImGui::End();
 }
