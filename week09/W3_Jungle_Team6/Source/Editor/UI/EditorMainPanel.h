@@ -10,14 +10,14 @@
 #include "Editor/UI/EditorViewportOverlayWidget.h"
 
 class FRenderer;
-class FEditorEngine;
+class UEditorEngine;
 
 using namespace common::structs;
 
 class FEditorMainPanel
 {
 public:
-	void Create(HWND InHWindow, FRenderer& InRenderer, FEditorEngine* InEditorEngine);
+	void Create(HWND InHWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine);
 	void Release();
 	void Render(float DeltaTime, FViewOutput& ViewOutput);
 	void Update();
