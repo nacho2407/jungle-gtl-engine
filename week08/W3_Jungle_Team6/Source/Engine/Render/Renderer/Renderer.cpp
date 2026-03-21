@@ -1,14 +1,7 @@
 ﻿#include "Renderer.h"
 
+#include "Core/Paths.h"
 #include "Render/Common/RenderTypes.h"
-
-#if DEBUG
-
-#include <iostream>
-#include <cassert>
-
-#endif
-
 #include "Render/Mesh/MeshManager.h"
 
 void FRenderer::Create(HWND hWindow)
@@ -82,7 +75,7 @@ void FRenderer::BeginFrame()
 }
 
 //	Render Update Main function. RenderBus에 담긴 모든 RenderCommand에 대해서 Draw Call 수행
-void FRenderer::Render(const FRenderBus& InRenderBus)
+void FRenderer::Render(const FRenderBus& InRenderBus, ERasterizerState InViewModeRasterizer)
 {
 	ID3D11DeviceContext* context = Device.GetDeviceContext();
 	UpdateFrameBuffer(context, InRenderBus.GetView(), InRenderBus.GetProj());
@@ -90,7 +83,6 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 	RenderPasses(InRenderBus, context);
 	RenderEditorHelpers(InRenderBus, context);
 
-	//Reset
 	Device.SetRasterizerState(ERasterizerState::SolidBackCull);
 
 	//	NOTE : Overlay Engine Loop에서 돌고 있음 수정 필요

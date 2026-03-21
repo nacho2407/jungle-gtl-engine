@@ -3,6 +3,7 @@
 #include <iostream>
 #include <functional>
 #include "Object/Object.h"
+#include "Core/Singleton.h"
 
 #define REGISTER_FACTORY(TypeName)															\
 namespace {																					\
@@ -17,13 +18,11 @@ namespace {																					\
 TypeName##_RegisterFactory G##TypeName##_RegisterFactory;} 																												
 
 // Different from UFactory class
-class FObjectFactory {
-public:
-	static FObjectFactory& Get() {
-		static FObjectFactory FactorySingleton;
-		return FactorySingleton;
-	}
+class FObjectFactory : public TSingleton<FObjectFactory>
+{
+	friend class TSingleton<FObjectFactory>;
 
+public:
 	void Register(const char* TypeName, std::function<UObject*()> Spawner) {
 		Registry[TypeName] = Spawner;
 	}
