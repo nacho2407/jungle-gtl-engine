@@ -12,6 +12,7 @@ struct EditorSceneManagerPanel;
 class USceneComponent;
 class UCameraComponent;
 class URenderer;
+class UGridComp;
 
 class Editor
 {
@@ -26,6 +27,7 @@ public:
 
 	void SetRenderer(URenderer* renderer) { Renderer = renderer; }
 	void SetCamera(UCameraComponent* camera) { Camera = camera; }
+	void SetGrid(UGridComp* grid) { Grid = grid; }
 	void SelectComponent(USceneComponent* component);
 	USceneComponent* GetSelectedComponent() const { return SelectedComponent; }
 
@@ -49,4 +51,5 @@ private:
 	URenderer* Renderer = nullptr;
 	UCameraComponent* Camera = nullptr;
 	USceneComponent* SelectedComponent = nullptr;
+	UGridComp* Grid = nullptr;
 };

@@ -152,6 +152,7 @@
     <ClInclude Include="Editor\Gizmo\GizmoRotationControlStrategy.h" />
     <ClInclude Include="Editor\Gizmo\GizmoScaleControlStrategy.h" />
     <ClInclude Include="Editor\Gizmo\GizmoTranslationControlStrategy.h" />
+    <ClInclude Include="Component\GridComp.h" />
     <ClInclude Include="Editor\Picker.h" />
     <ClInclude Include="Editor\UI\EditorSceneManagerPanel.h" />
     <ClInclude Include="EngineApp\EngineApp.h" />
@@ -221,6 +222,7 @@
     <ClCompile Include="Editor\Gizmo\GizmoRotationControlStrategy.cpp" />
     <ClCompile Include="Editor\Gizmo\GizmoScaleControlStrategy.cpp" />
     <ClCompile Include="Editor\Gizmo\GizmoTranslationControlStrategy.cpp" />
+    <ClCompile Include="Component\GridComp.cpp" />
     <ClCompile Include="Editor\Picker.cpp" />
     <ClCompile Include="EngineApp\EngineApp.cpp" />
     <ClCompile Include="EngineCore\Color.cpp" />

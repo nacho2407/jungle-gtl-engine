@@ -8,6 +8,8 @@
 #include "Math/Vector.h"
 #include "Math/Rotator.h"
 #include "ImGui/imgui.h"
+#include "Component/GridComp.h"
+#include "EngineCore/ResourceManager.h"
 #include <string>
 
 static EPrimitiveType primitiveType = EPrimitiveType::Triangle;
@@ -45,7 +47,7 @@ void UpdateFPS(float deltaTime)
 	}
 }
 
-void EditorControlPanel::Draw(UCameraComponent* camera)
+void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 {
 	UpdateFPS(TimerManager::GetInstance().GetGlobalDeltaTime());
 
@@ -106,6 +108,17 @@ void EditorControlPanel::Draw(UCameraComponent* camera)
 	ImGui::InputFloat3("Camera Direction", &camera->Direction.x);
 	ImGui::SliderFloat("Camera Move Speed", &camera->MoveSpeed, 0.0f, 20.0f, "%.0f");
 	ImGui::SliderFloat("Camera Rotation Speed", &camera->RotateSensitivity, 0.0f, 20.0f, "%.0f");
+
+	ImGui::Separator();
+	ImGui::Text("Grid Settings");
+
+	bool bChanged = false;
+	if (ImGui::DragFloat("Half Extent", &Grid->HalfExtent, 1.0f, 1.0f, 1000.0f)) bChanged = true;
+	if (ImGui::DragFloat("Cell Size", &Grid->CellSize, 0.1f, 0.1f, 10.0f)) bChanged = true;
+	if (bChanged)
+	{
+		ResourceManager::GetInstance()->UpdateGridMesh(Grid->HalfExtent, Grid->CellSize, 0.f);
+	}
 
 	ImGui::End();
 }

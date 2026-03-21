@@ -82,7 +82,7 @@ void Editor::SelectComponent(USceneComponent* component)
 
 void Editor::DrawControlPanel()
 {
-	ControlPanel->Draw(Camera);
+	ControlPanel->Draw(Camera, Grid);
 }
 
 void Editor::DrawConsole()
