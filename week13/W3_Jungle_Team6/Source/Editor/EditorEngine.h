@@ -27,8 +27,6 @@ private:
 	uint32 CurrentWorld = 0;
 	TArray<UWorld*> Scene;
 
-	FRenderHandler RenderHandler;
-
 	FRenderer Renderer;
 	FRenderBus RenderBus;
 	FEditorMainPanel MainPanel;
@@ -61,7 +59,6 @@ public:
 	void SetCurrentWorld(uint32 NewWorldIndex) { CurrentWorld = NewWorldIndex; }
 	UCamera* GetCamera() const { return EditorCamera; }
 	UGizmoComponent* GetGizmo() const { return EditorGizmo; }
-	FRenderHandler& GetRenderHandler() { return RenderHandler; }
 	FCameraState& GetCameraState() { return EditorCamera->GetCameraState(); }
 	const FCameraState& GetCameraState() const { return EditorCamera->GetCameraState(); }
 	void ResetCamera(UCamera* Camera);

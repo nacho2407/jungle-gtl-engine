@@ -1,4 +1,4 @@
-#include "Engine/Core/Paths.h"
+﻿#include "Engine/Core/Paths.h"
 
 #include <filesystem>
 
@@ -26,12 +26,12 @@ std::wstring FPaths::RootDir()
 	return Cached;
 }
 
-std::wstring FPaths::ShaderDir()      { return RootDir() + L"Shaders\\"; }
-std::wstring FPaths::SceneDir()       { return RootDir() + L"Asset\\Scene\\"; }
-std::wstring FPaths::DumpDir()        { return RootDir() + L"Saves\\Dump\\"; }
-std::wstring FPaths::SettingsDir()    { return RootDir() + L"Settings\\"; }
+std::wstring FPaths::ShaderDir() { return RootDir() + L"Shaders\\"; }
+std::wstring FPaths::SceneDir() { return RootDir() + L"Asset\\Scene\\"; }
+std::wstring FPaths::DumpDir() { return RootDir() + L"Saves\\Dump\\"; }
+std::wstring FPaths::SettingsDir() { return RootDir() + L"Settings\\"; }
 
-std::wstring FPaths::ShaderFilePath()   { return RootDir() + L"Shaders\\ShaderW0.hlsl"; }
+std::wstring FPaths::ShaderFilePath() { return RootDir() + L"Shaders\\ShaderW0.hlsl"; }
 std::wstring FPaths::SettingsFilePath() { return RootDir() + L"Settings\\Editor.ini"; }
 
 std::wstring FPaths::Combine(const std::wstring& Base, const std::wstring& Child)
