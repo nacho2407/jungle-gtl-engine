@@ -215,9 +215,6 @@
     <ClInclude Include="Source\ApplicationCore\Input\IInputContext.h">
       <Filter>Source\ApplicationCore\Input</Filter>
     </ClInclude>
-    <ClInclude Include="Source\ApplicationCore\Input\InputEvent.h">
-      <Filter>Source\ApplicationCore\Input</Filter>
-    </ClInclude>
     <ClInclude Include="Source\ApplicationCore\Input\InputRouter.h">
       <Filter>Source\ApplicationCore\Input</Filter>
     </ClInclude>
