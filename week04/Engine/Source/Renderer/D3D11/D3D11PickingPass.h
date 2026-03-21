@@ -1,7 +1,7 @@
 #pragma once
 
-#include "D3D11/D3D11Common.h"
-#include "Math/Matrix.h"
+#include "Core/Math/Matrix.h"
+#include "Renderer/D3D11/D3D11Common.h"
 
 class FD3D11DynamicRHI;
 class FScene;
@@ -11,15 +11,17 @@ struct FEditorGizmoState;
 class FD3D11PickingPass
 {
   public:
-    void Initialize(FD3D11DynamicRHI *InRHI) {}
+    void Initialize(FD3D11DynamicRHI* InRHI) {}
     void Shutdown() {}
 
     void OnWindowResized(int32 InWidth, int32 InHeight) {}
 
-    void RequestPick(FScene *InScene, const FSceneView *InSceneView, int32 MouseX, int32 MouseY,
-                     const FEditorGizmoState &InGizmoState) {}
+    void RequestPick(FScene* InScene, const FSceneView* InSceneView, int32 MouseX, int32 MouseY,
+                     const FEditorGizmoState& InGizmoState)
+    {
+    }
 
-    bool TryConsumePickResult(uint32 &OutPickId) {}
+    bool TryConsumePickResult(uint32& OutPickId) {}
 
   private:
     void CreateShaders() {}
@@ -28,7 +30,7 @@ class FD3D11PickingPass
     void ReleasePickingTargets() {}
 
   private:
-    FD3D11DynamicRHI *RHI = nullptr;
+    FD3D11DynamicRHI* RHI = nullptr;
 
     int32 Width = 0;
     int32 Height = 0;
