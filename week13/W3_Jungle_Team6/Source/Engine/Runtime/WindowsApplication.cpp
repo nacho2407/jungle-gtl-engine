@@ -39,7 +39,7 @@ LRESULT FWindowsApplication::WndProc(HWND hWnd, unsigned int Msg, WPARAM wParam,
 		PostQuitMessage(0);
 		return 0;
 	case WM_MOUSEWHEEL:
-		InputSystem::AddScrollDelta(GET_WHEEL_DELTA_WPARAM(wParam));
+		InputSystem::Get().AddScrollDelta(GET_WHEEL_DELTA_WPARAM(wParam));
 		return 0;
 	case WM_SIZE:
 		if (wParam != SIZE_MINIMIZED)

@@ -2,6 +2,7 @@
 
 #include "EngineStatics.h"
 #include "Object/FName.h"
+#include "Core/Singleton.h"
 
 #define DECLARE_CLASS(ClassName, ParentClass)                          \
     static const FTypeInfo s_TypeInfo;                                 \
@@ -101,15 +102,11 @@ private:
 extern TArray<UObject*> GUObjectArray;
 
 
-class UObjectManager {
-public:
-	// Singleton
-	static UObjectManager& Get()
-	{
-		static UObjectManager instance;
-		return instance;
-	}
+class UObjectManager : public TSingleton<UObjectManager>
+{
+	friend class TSingleton<UObjectManager>;
 
+public:
 	template<typename T>
 	T* CreateObject() {
 		T* Obj = new T();
@@ -136,8 +133,4 @@ public:
 		if (Index >= GUObjectArray.size()) return nullptr;
 		return GUObjectArray[Index];
 	}
-
-private:
-	UObjectManager() = default;
-	~UObjectManager() = default;
 };
