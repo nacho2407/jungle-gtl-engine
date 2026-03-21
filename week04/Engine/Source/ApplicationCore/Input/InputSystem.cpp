@@ -3,9 +3,33 @@
 #include "InputSystem.h"
 
 
+
 namespace Engine::ApplicationCore
 {
-    void FInputSystem::BeginFrame() { State.BeginFrame(); }
+    // LRESULT FInputSystem::StaticWndProc(HWND HWnd, UINT Message, WPARAM WParam, LPARAM LParam)
+    // {
+    //     FInputSystem *EditorEngineLoop = reinterpret_cast<FInputSystem *>(GetWindowLongPtr(
+    //         HWnd, GWLP_USERDATA));
+    //
+    //     if (Message == WM_NCCREATE)
+    //     {
+    //         CREATESTRUCTW *CreateStruct = reinterpret_cast<CREATESTRUCTW *>(LParam);
+    //         EditorEngineLoop = reinterpret_cast<FInputSystem *>(CreateStruct->lpCreateParams);
+    //         SetWindowLongPtr(HWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(EditorEngineLoop));
+    //     }
+    //
+    //     if (EditorEngineLoop)
+    //     {
+    //         return EditorEngineLoop->WndProc(Message, WParam, LParam);
+    //     }
+    //
+    //     return DefWindowProc(HWnd, Message, WParam, LParam);
+    // }
+    
+    void FInputSystem::BeginFrame()
+    {
+        State.BeginFrame();
+    }
 
     bool FInputSystem::PollEvent(FInputEvent& OutEvent)
     {
@@ -26,7 +50,7 @@ namespace Engine::ApplicationCore
         State.Modifiers.bAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
     }
 
-    void FInputSystem::ProcessWin32Message(UINT Msg, WPARAM WParam, LPARAM LParam)
+    LRESULT FInputSystem::ProcessWin32Message(HWND HWnd,UINT Msg, WPARAM WParam, LPARAM LParam)
     {
         switch (Msg)
         {
@@ -50,7 +74,7 @@ namespace Engine::ApplicationCore
             else if (WParam == VK_DELETE)
                 E.Key = EKey::Delete;
 
-            State.bKeysDown[static_cast<int32>(E.Key)] = true;
+            State.KeysDown[static_cast<int32>(E.Key)] = true;
             EventQueue.push(E);
             break;
         }
@@ -73,13 +97,13 @@ namespace Engine::ApplicationCore
             else if (WParam == VK_DELETE)
                 E.Key = EKey::Delete;
 
-            State.bKeysDown[static_cast<int32>(E.Key)] = false;
+            State.KeysDown[static_cast<int32>(E.Key)] = false;
             EventQueue.push(E);
             break;
         }
         case WM_LBUTTONDOWN:
         {
-            State.bKeysDown[static_cast<int32>(EKey::MouseLeft)] = true;
+            State.KeysDown[static_cast<int32>(EKey::MouseLeft)] = true;
 
             FInputEvent E;
             E.Type = EInputEventType::MouseButtonDown;
@@ -91,7 +115,7 @@ namespace Engine::ApplicationCore
         }
         case WM_LBUTTONUP:
         {
-            State.bKeysDown[static_cast<int32>(EKey::MouseLeft)] = false;
+            State.KeysDown[static_cast<int32>(EKey::MouseLeft)] = false;
 
             FInputEvent E;
             E.Type = EInputEventType::MouseButtonUp;
@@ -102,11 +126,11 @@ namespace Engine::ApplicationCore
             break;
         }
         case WM_RBUTTONDOWN:
-            State.bKeysDown[static_cast<int32>(EKey::MouseRight)] = true;
+            State.KeysDown[static_cast<int32>(EKey::MouseRight)] = true;
             break;
 
         case WM_RBUTTONUP:
-            State.bKeysDown[static_cast<int32>(EKey::MouseRight)] = false;
+            State.KeysDown[static_cast<int32>(EKey::MouseRight)] = false;
             break;
 
         case WM_MOUSEMOVE:
@@ -143,5 +167,7 @@ namespace Engine::ApplicationCore
         default:
             break;
         }
+
+        return DefWindowProc(HWnd, Msg, WParam, LParam);
     }
 } // namespace Engine::ApplicationCore

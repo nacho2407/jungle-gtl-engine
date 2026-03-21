@@ -7,6 +7,9 @@
     <Filter Include="Source\Gizmo">
       <UniqueIdentifier>{2997c27c-11e9-54ee-4b0c-5a71dc20396c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Input">
+      <UniqueIdentifier>{6a2850c9-e58a-f648-6b89-623ded1d763f}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Launch">
       <UniqueIdentifier>{90ac0f15-c775-3ba7-f780-7222e93b8ddd}</UniqueIdentifier>
     </Filter>
@@ -26,6 +29,15 @@
   <ItemGroup>
     <ClCompile Include="Source\Editor.cpp">
       <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\EditorGlobalContext.cpp">
+      <Filter>Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\GizmoInputContext.cpp">
+      <Filter>Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\ViewPortInputContext.cpp">
+      <Filter>Source\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Launch\EditorEngineLoop.cpp">
       <Filter>Source\Launch</Filter>
@@ -67,6 +79,15 @@
     </ClInclude>
     <ClInclude Include="Source\Gizmo\GizmoDrawDataBuilder.h">
       <Filter>Source\Gizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Input\EditorGlobalContext.h">
+      <Filter>Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Input\GizmoInputContext.h">
+      <Filter>Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Input\ViewPortInputContext.h">
+      <Filter>Source\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Launch\EditorEngineLoop.h">
       <Filter>Source\Launch</Filter>

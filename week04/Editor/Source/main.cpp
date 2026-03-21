@@ -6,8 +6,11 @@
 
 namespace fs = std::filesystem;
 
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nShowCmd)
+int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nShowCmd)
 {  
+	(void)hPrevInstance;
+	(void)lpCmdLine;
+
 	// Path Init =====================================
 	wchar_t ExecutablePath[MAX_PATH] = {};
 	::GetModuleFileNameW(nullptr, ExecutablePath, MAX_PATH);

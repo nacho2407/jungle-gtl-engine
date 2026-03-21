@@ -15,13 +15,32 @@ namespace Engine::ApplicationCore
     {
         if (GWindowsApplication != nullptr)
         {
-            GWindowsApplication->GetInputSystem()->ProcessWin32Message(Message, WParam, LParam);
-            return 0;
+            switch (Message)
+            {
+            case WM_CLOSE:
+                DestroyWindow(HWnd);
+                return 0;
+            case WM_DESTROY:
+                GWindowsApplication->Window.MarkClosed();
+                GWindowsApplication->RequestExit();
+                PostQuitMessage(0);
+                return 0;
+            default:
+                break;
+            }
+
+            if (FInputSystem* InputSystem = GWindowsApplication->GetInputSystem())
+            {
+                return InputSystem->ProcessWin32Message(HWnd, Message, WParam, LParam);
+            }
         }
         return DefWindowProcW(HWnd, Message, WParam, LParam);
     }
 
-    FWindowsApplication::FWindowsApplication() { GWindowsApplication = this; }
+    FWindowsApplication::FWindowsApplication()
+    {
+        GWindowsApplication = this;
+    }
 
     FWindowsApplication::~FWindowsApplication()
     {
@@ -31,17 +50,23 @@ namespace Engine::ApplicationCore
         }
     }
 
-    FWindowsApplication* FWindowsApplication::Create() { return new FWindowsApplication(); }
+    FWindowsApplication* FWindowsApplication::Create()
+    {
+        return new FWindowsApplication();
+    }
 
     void FWindowsApplication::SetInputSystem(FInputSystem* InInputSystem)
     {
         InputSystem = InInputSystem;
     }
 
-    FInputSystem* FWindowsApplication::GetInputSystem() const { return InputSystem; }
+    FInputSystem* FWindowsApplication::GetInputSystem() const
+    {
+        return InputSystem;
+    }
 
     bool FWindowsApplication::CreateApplicationWindow(const wchar_t* InTitle, int32 InWidth,
-                                                      int32 InHeight)
+                                                      int32          InHeight)
     {
         HINSTANCE Instance = GetModuleHandleW(nullptr);
         if (!Window.Create(Instance, InTitle, InWidth, InHeight))
@@ -52,7 +77,10 @@ namespace Engine::ApplicationCore
         return true;
     }
 
-    void FWindowsApplication::DestroyApplicationWindow() { Window.Destroy(); }
+    void FWindowsApplication::DestroyApplicationWindow()
+    {
+        Window.Destroy();
+    }
 
     void FWindowsApplication::PumpMessages()
     {
@@ -60,15 +88,36 @@ namespace Engine::ApplicationCore
 
         while (PeekMessageW(&Message, nullptr, 0, 0, PM_REMOVE))
         {
+            if (Message.message == WM_QUIT)
+            {
+                RequestExit();
+                continue;
+            }
+
             TranslateMessage(&Message);
             DispatchMessageW(&Message);
         }
     }
 
-    void FWindowsApplication::ShowWindow() { Window.Show(); }
-    void FWindowsApplication::HideWindow() { Window.Hide(); }
+    void FWindowsApplication::RequestExit()
+    {
+        bExitRequested = true;
+    }
 
-    void* FWindowsApplication::GetNativeWindowHandle() const { return Window.GetHWnd(); }
+    void FWindowsApplication::ShowWindow()
+    {
+        Window.Show();
+    }
+
+    void FWindowsApplication::HideWindow()
+    {
+        Window.Hide();
+    }
+
+    void* FWindowsApplication::GetNativeWindowHandle() const
+    {
+        return Window.GetHWnd();
+    }
 
     void FWindowsApplication::RegisterRawMouseInput()
     {

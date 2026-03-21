@@ -14,14 +14,26 @@ void FEditor::Release()
     //  TODO : Call Release Functions
 }
 
-void FEditor::BeginPlay()
+void FEditor::Initialize()
 {
+    InputRouter.AddContext(&EditorGlobalContext);
+    InputRouter.AddContext(&ViewPortInputContext);
+    InputRouter.AddContext(&GizmoInputContext);
     //  TODO : Scene의 Begin Play 호출
 }
 
 
-void FEditor::Tick(float DeltaTime)
+void FEditor::Tick(Engine::ApplicationCore::FInputSystem * InputSystem)
 {
+    //  TODO : Build 오류로 인해 주석 처리 해놓음 이후에 풀기
+    // FInputEvent Event;
+    //  InputSystem에서 Raw Event 및 State 받기
+    // while (InputSystem->PollEvent(&Event))
+    // {
+    //     InputRouter.RouteEvent(Event, InputSystem->GetInputState());
+    // }
+    // InputRouter.TickContexts(InputSystem->GetInputState());
+    
     //  TODO : Editor Updates
 }
 

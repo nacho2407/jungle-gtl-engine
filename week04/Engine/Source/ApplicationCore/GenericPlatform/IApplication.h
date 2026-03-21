@@ -19,9 +19,11 @@ namespace Engine::ApplicationCore
         virtual void DestroyApplicationWindow() = 0;
 
         virtual int32 GetWindowWidth() const = 0;
+        
         virtual int32 GetWindowHeight() const = 0;
 
         virtual void PumpMessages() = 0;
+        virtual bool IsExitRequested() const = 0;
 
         virtual void ShowWindow() = 0;
         virtual void HideWindow() = 0;

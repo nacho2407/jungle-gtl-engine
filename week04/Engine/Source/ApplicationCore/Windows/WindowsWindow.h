@@ -21,6 +21,14 @@ namespace Engine::ApplicationCore
         int32 GetWidth() const { return Width; }
         int32 GetHeight() const { return Height; }
         float GetAspectRatio() const { return static_cast<float>(Width) / Height; }
+        void  MarkClosed()
+        {
+            HWnd = nullptr;
+            Width = 0;
+            Height = 0;
+            bIsVisible = false;
+            bIsClosed = true;
+        }
         void  SetSize(int32 InWidth, int32 InHeight)
         {
             Width = InWidth;

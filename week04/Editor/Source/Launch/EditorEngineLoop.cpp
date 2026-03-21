@@ -1,89 +1,86 @@
 #include "EditorEngineLoop.h"
+
+#include <wrl/client.h>
+
 #include "imgui.h"
 #include "imgui_internal.h"
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, uint32 msg, WPARAM wParam, LPARAM lParam);
 
-LRESULT FEditorEngineLoop::StaticWndProc(HWND HWnd, UINT Message, WPARAM WParam, LPARAM LParam)
-{
-    FEditorEngineLoop *EditorEngineLoop = reinterpret_cast<FEditorEngineLoop *>(GetWindowLongPtr(
-        HWnd, GWLP_USERDATA));
-
-    if (Message == WM_NCCREATE)
-    {
-        CREATESTRUCTW *CreateStruct = reinterpret_cast<CREATESTRUCTW *>(LParam);
-        EditorEngineLoop = reinterpret_cast<FEditorEngineLoop *>(CreateStruct->lpCreateParams);
-        SetWindowLongPtr(HWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(EditorEngineLoop));
-    }
-
-    if (EditorEngineLoop)
-    {
-        return EditorEngineLoop->WndProc(HWnd, Message, WParam, LParam);
-    }
-
-    return DefWindowProc(HWnd, Message, WParam, LParam);
-}
-
-LRESULT FEditorEngineLoop::WndProc(HWND HWnd, uint32 Message, WPARAM WParam, LPARAM LParam)
-{
-    if (ImGui_ImplWin32_WndProcHandler(HWnd, Message, WParam, LParam))
-    {
-        return 1;
-    }
-
-    switch (Message)
-    {
-    case WM_DESTROY:
-
-        bIsExit = true;
-        PostQuitMessage(0);
-        return 0;
-    case WM_SIZE:
-        if (Editor)
-        {
-            Editor->OnWindowResized(LOWORD(LParam), HIWORD(LParam));    
-        }
-    case WM_SIZING:
-        //  Render for Re-Sizing
-        break;
-    default:
-        break;
-    }
-
-    return DefWindowProc(HWnd, Message, WParam, LParam);
-}
+// LRESULT FEditorEngineLoop::StaticWndProc(HWND HWnd, UINT Message, WPARAM WParam, LPARAM LParam)
+// {
+//     FEditorEngineLoop *EditorEngineLoop = reinterpret_cast<FEditorEngineLoop *>(GetWindowLongPtr(
+//         HWnd, GWLP_USERDATA));
+//
+//     if (Message == WM_NCCREATE)
+//     {
+//         CREATESTRUCTW *CreateStruct = reinterpret_cast<CREATESTRUCTW *>(LParam);
+//         EditorEngineLoop = reinterpret_cast<FEditorEngineLoop *>(CreateStruct->lpCreateParams);
+//         SetWindowLongPtr(HWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(EditorEngineLoop));
+//     }
+//
+//     if (EditorEngineLoop)
+//     {
+//         return EditorEngineLoop->WndProc(HWnd, Message, WParam, LParam);
+//     }
+//
+//     return DefWindowProc(HWnd, Message, WParam, LParam);
+// }
+//
+// LRESULT FEditorEngineLoop::WndProc(HWND HWnd, uint32 Message, WPARAM WParam, LPARAM LParam)
+// {
+//     if (ImGui_ImplWin32_WndProcHandler(HWnd, Message, WParam, LParam))
+//     {
+//         return 1;
+//     }
+//
+//     switch (Message)
+//     {
+//     case WM_DESTROY:
+//
+//         bIsExit = true;
+//         PostQuitMessage(0);
+//         return 0;
+//     case WM_SIZE:
+//         if (Editor)
+//         {
+//             Editor->OnWindowResized(LOWORD(LParam), HIWORD(LParam));    
+//         }
+//         break;
+//     case WM_SIZING:
+//         //  Render for Re-Sizing
+//         break;
+//     default:
+//         break;
+//     }
+//
+//     return DefWindowProc(HWnd, Message, WParam, LParam);
+// }
 
 bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
 {
     (void)NCmdShow;
 
-    WCHAR     WindowClass[] = L"JungleWindowClass";
-    WCHAR     Title[] = L"Game Tech Lab";
-    WNDCLASSW Wndclass = {0, StaticWndProc, 0, 0, 0, 0, 0, 0, 0, WindowClass};
+    /* Input System Initialize */
+    InputSystem = new Engine::ApplicationCore::FInputSystem();
 
-    if (!RegisterClassW(&Wndclass))
-    {
-        return false;
-    }
-
-    HWindow = CreateWindowExW(
-        0,
-        WindowClass,
-        Title,
-        WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT,
-        1920, 1080,
-        nullptr, nullptr, HInstance, this);
-
-    if (!HWindow)
-    {
-        return false;
-    }
+    /* Application Setting */
+#if defined(_WIN32)
+    Application = Engine::ApplicationCore::FWindowsApplication::Create();
+    Application->SetInputSystem(InputSystem);
+    Application->CreateApplicationWindow(L"JungleWindowClass", 1920, 1080);
+    // WindowsWindow = new Engine::ApplicationCore::FWindowsWindow();
+    // WindowsWindow->Create(HInstance, L"JungleWindowClass", 1920, 1080);
     
+
+#else
+
+#endif
+
     /* Editor Initialize */
     Editor = new FEditor();
     Editor->Create(HWindow);
-    Editor->BeginPlay();
+    Editor->Initialize();
 
     InitializeForTime();
     return true;
@@ -93,19 +90,6 @@ int32 FEditorEngineLoop::Run()
 {
     while (!bIsExit)
     {
-        MSG Message;
-        while (PeekMessage(&Message, nullptr, 0, 0,PM_REMOVE))
-        {
-            TranslateMessage(&Message);
-            DispatchMessage(&Message);
-
-            if (Message.message == WM_QUIT)
-            {
-                bIsExit = true;
-                break;
-            }
-        }
-
         if (bIsExit)
         {
             break;
@@ -122,13 +106,29 @@ void FEditorEngineLoop::ShutDown()
     Editor->Release();
     delete Editor;
     Editor = nullptr;
-    
+
+    Application->DestroyApplicationWindow();
+    delete Application;
+    Application = nullptr;
+   
+    delete InputSystem;
+    InputSystem = nullptr;
+
     //  TODO : Garbage Sweep
 }
 
 void FEditorEngineLoop::Tick()
 {
     /* Application Pump Message */
+    Application->PumpMessages();
+    if (Application->IsExitRequested())
+    {
+        bIsExit = true;
+        return;
+    }
+
+    InputSystem->BeginFrame();
+
     
     /* Time Measuring */
     DeltaTime = FPlatformTime::Seconds() - PrevTime;
@@ -139,12 +139,12 @@ void FEditorEngineLoop::Tick()
     /* Engine Tick */
     //  Engine->Tick(DeltaTime);
     /* Editor Update */
-    Editor->Tick(DeltaTime);
-    
+    Editor->Tick(InputSystem);
+
     /* Rendering Prepare Stage */
-    
+
     /* Editor Viewport Client */
-    
+
     /* Render End Stage */
 
     FPlatformTime::Sleep(0.f);

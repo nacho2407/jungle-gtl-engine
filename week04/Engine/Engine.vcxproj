@@ -17,6 +17,7 @@
     <ClInclude Include="Resources\Primitives\Triangle.h" />
     <ClInclude Include="Resources\Primitives\VertexSimple.h" />
     <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplication.h" />
+    <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplicationMessageHandler.h" />
     <ClInclude Include="Source\ApplicationCore\Input\InputContext.h" />
     <ClInclude Include="Source\ApplicationCore\Input\InputRouter.h" />
     <ClInclude Include="Source\ApplicationCore\Input\InputState.h" />
