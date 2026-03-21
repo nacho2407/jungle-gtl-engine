@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Containers/Array.h"
-#include "D3D11/D3D11Common.h"
+#include "Core/Containers/Array.h"
 #include "Renderer/Types/VertexTypes.h"
+#include "Renderer/D3D11/D3D11Common.h"
 
 class FD3D11DynamicRHI;
 class FSceneView;
@@ -11,27 +11,34 @@ struct FAABB;
 class FD3D11LineBatchRenderer
 {
   public:
-    void Initialize(FD3D11DynamicRHI *InRHI) {}
-    void Shutdown() {}
+    static constexpr const wchar_t* DefaultShaderPath = L"Resources/Shaders/Line.hlsl";
+    static constexpr uint32         DefaultMaxLineCount = 8192;
 
-    void BeginFrame() {}
-    void AddLine(const FVector &InStart, const FVector &InEnd, const FVector4 &InColor) {}
-    void AddGrid(int32 InHalfLineCount, float InSpacing, const FVector4 &InColor) {}
-    void AddWorldAxes(float InAxisLength) {}
-    void AddAABB(const FAABB &InBounds, const FVector4 &InColor) {}
-    void EndFrame(const FSceneView *InSceneView) {}
+  public:
+    bool Initialize(FD3D11DynamicRHI* InRHI);
+    void Shutdown();
 
-  private:
-    void CreateShaders() {}
-    void CreateInputLayout() {}
-    void CreateConstantBuffer() {}
-    void CreateDynamicVertexBuffer() {}
-    void Flush(const FSceneView *InSceneView) {}
+    void BeginFrame(const FSceneView* InSceneView);
+    void AddLine(const FVector& InStart, const FVector& InEnd, const FVector4& InColor);
+    void AddGrid(int32 InHalfLineCount, float InSpacing, const FVector4& InColor);
+    void AddWorldAxes(float InAxisLength);
+    void AddAABB(const Geometry::FAABB& InBounds, const FVector4& InColor);
+    void EndFrame();
 
   private:
-    FD3D11DynamicRHI *RHI = nullptr;
+    bool CreateShaders();
+    bool CreateConstantBuffer();
+    bool CreateDynamicVertexBuffer(uint32 InMaxVertexCount);
+    void Flush();
+
+  private:
+    FD3D11DynamicRHI* RHI = nullptr;
+    const FSceneView* CurrentSceneView = nullptr;
 
     TArray<FLineVertex> Vertices;
+
+    uint32 MaxLineCount = DefaultMaxLineCount;
+    uint32 MaxVertexCount = DefaultMaxLineCount * 2;
 
     TComPtr<ID3D11VertexShader> VertexShader;
     TComPtr<ID3D11PixelShader>  PixelShader;
