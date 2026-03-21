@@ -64,7 +64,7 @@ void EditorSceneManagerPanel::Draw(Editor* editor, ImGuiWindowLayout& layout)
 				if (component == nullptr) continue;
 
 				bool isSelected = (editor->GetSelectedComponent() == component);
-				std::string label = component->Name.GetDisplayName() + " (UUID: " + std::to_string(component->UUID) + ")";
+				FString label = component->Name.GetDisplayName() + " (UUID: " + std::to_string(component->UUID) + ")";
 
 				if (ImGui::Selectable(label.c_str(), isSelected))
 				{
@@ -83,7 +83,7 @@ void EditorSceneManagerPanel::Draw(Editor* editor, ImGuiWindowLayout& layout)
 			if (component == nullptr) continue;
 
 			bool isSelected = (editor->GetSelectedComponent() == component);
-			std::string label = component->Name.GetDisplayName() + " (UUID: " + std::to_string(component->UUID) + ")";
+			FString label = component->Name.GetDisplayName() + " (UUID: " + std::to_string(component->UUID) + ")";
 
 			if (ImGui::Selectable(label.c_str(), isSelected))
 			{
