@@ -28,7 +28,7 @@ void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBu
 		{
 			if (!Object) continue;
 
-			if (Object->IsA<AActor>() && !Object->bPendingKill)
+			if (Object->IsA<AActor>())
 			{
 				auto* Actor = Object->Cast<AActor>();
 				if (Actor->GetWorld() == Context.World)
@@ -45,7 +45,7 @@ void FRenderCollector::CollectFromActor(AActor* Actor, const FRenderCollectorCon
 	// Iterate through the components of the actor and retrieve their render properties
 	for (auto* Comp : Actor->GetComponents()) 
 	{
-		if (!Comp || Comp->bPendingKill) continue;
+		if (!Comp) continue;
 		if (!Comp->IsA<UPrimitiveComponent>()) continue;
 
 		UPrimitiveComponent* Primitive = dynamic_cast<UPrimitiveComponent*>(Comp);
