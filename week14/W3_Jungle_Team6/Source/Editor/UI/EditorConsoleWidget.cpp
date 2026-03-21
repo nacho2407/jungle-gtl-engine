@@ -1,6 +1,6 @@
-﻿#include "Editor/Core/EditorConsole.h"
+#include "Editor/UI/EditorConsoleWidget.h"
 
-void FEditorConsole::AddLog(const char* fmt, ...) {
+void FEditorConsoleWidget::AddLog(const char* fmt, ...) {
 	char buf[1024];
 	va_list args;
 	va_start(args, fmt);
@@ -10,26 +10,19 @@ void FEditorConsole::AddLog(const char* fmt, ...) {
 	if (AutoScroll) ScrollToBottom = true;
 }
 
-void FEditorConsole::Draw(const char* Title, bool* p_open)
+void FEditorConsoleWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 {
+	(void)DeltaTime;
+	(void)ViewOutput;
+
 	ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
-	if (!ImGui::Begin(Title, p_open))
+	if (!ImGui::Begin("Console"))
 	{
 		ImGui::End();
 		return;
 	}
 
-	if (ImGui::BeginPopupContextItem())
-	{
-		if (ImGui::MenuItem("Close Console"))
-			*p_open = false;
-		ImGui::EndPopup();
-	}
-
-	//// TODO: display items starting from the bottom
-
 	if (ImGui::SmallButton("Clear")) { Clear(); }
-	//static float t = 0.0f; if (ImGui::GetTime() - t > 0.02f) { t = ImGui::GetTime(); AddLog("Spam %f", t); }
 
 	ImGui::Separator();
 
@@ -105,11 +98,11 @@ void FEditorConsole::Draw(const char* Title, bool* p_open)
 	ImGui::End();
 }
 
-void FEditorConsole::RegisterCommand(const FString& Name, CommandFn Fn) {
+void FEditorConsoleWidget::RegisterCommand(const FString& Name, CommandFn Fn) {
 	Commands[Name] = Fn;
 }
 
-void FEditorConsole::ExecCommand(const char* CommandLine) {
+void FEditorConsoleWidget::ExecCommand(const char* CommandLine) {
 	AddLog("# %s\n", CommandLine);
 	History.push_back(_strdup(CommandLine));
 	HistoryPos = -1;
@@ -130,8 +123,8 @@ void FEditorConsole::ExecCommand(const char* CommandLine) {
 }
 
 // History & Tab-Completion Callback____________________________________________________________
-int32 FEditorConsole::TextEditCallback(ImGuiInputTextCallbackData* Data) {
-	FEditorConsole* Console = (FEditorConsole*)Data->UserData;
+int32 FEditorConsoleWidget::TextEditCallback(ImGuiInputTextCallbackData* Data) {
+	FEditorConsoleWidget* Console = (FEditorConsoleWidget*)Data->UserData;
 
 	if (Data->EventFlag == ImGuiInputTextFlags_CallbackHistory) {
 		const int32 PrevPos = Console->HistoryPos;
@@ -183,9 +176,8 @@ int32 FEditorConsole::TextEditCallback(ImGuiInputTextCallbackData* Data) {
 	return 0;
 }
 
-ImVector<char*> FEditorConsole::Messages;
-ImVector<char*> FEditorConsole::History;
+ImVector<char*> FEditorConsoleWidget::Messages;
+ImVector<char*> FEditorConsoleWidget::History;
 
-bool FEditorConsole::AutoScroll = true;
-bool FEditorConsole::ScrollToBottom = true;
-
+bool FEditorConsoleWidget::AutoScroll = true;
+bool FEditorConsoleWidget::ScrollToBottom = true;
