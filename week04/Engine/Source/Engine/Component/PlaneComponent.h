@@ -8,8 +8,9 @@ namespace Engine::Component
     {
         DECLARE_RTTI(UPlaneComp, UPrimitiveComponent)
     public:
-        UPlaneComp();
-        ~UPlaneComp() override;
+        UPlaneComp() = default;
+        ~UPlaneComp() override = default;
+
         void Update(float DeltaTime) override;
     };
 } // namespace Engine::Component

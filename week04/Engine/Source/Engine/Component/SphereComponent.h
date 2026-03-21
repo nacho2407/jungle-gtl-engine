@@ -7,8 +7,9 @@ namespace Engine::Component
     {
         DECLARE_RTTI(USphereComp, UPrimitiveComponent)
     public:
-        USphereComp();
-        ~USphereComp() override;
+        USphereComp() = default;
+        ~USphereComp() override = default;
+
         void Update(float DeltaTime) override;
     };
 } // namespace Engine::Component

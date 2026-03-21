@@ -82,9 +82,6 @@
     <Filter Include="Source\Renderer\D3D11">
       <UniqueIdentifier>{7d49e81e-9894-3ffe-a35e-b64d3056e0ba}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Renderer\RenderAsset">
-      <UniqueIdentifier>{37df3f3d-06b0-91a9-da82-c1929332f7ef}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Renderer\Types">
       <UniqueIdentifier>{2a470593-b470-7a69-2874-61b9dc3a78a3}</UniqueIdentifier>
     </Filter>
@@ -180,9 +177,9 @@
     <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp">
       <Filter>Source\Engine\ViewPort</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Renderer\Scene.cpp" />
-    <ClCompile Include="Source\Engine\Asset\Texture2DAsset.cpp" />
-    <ClCompile Include="Source\Engine\Asset\TextureLoader.cpp" />
+    <ClCompile Include="Source\Renderer\Scene.cpp">
+      <Filter>Source\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Sphere.h">

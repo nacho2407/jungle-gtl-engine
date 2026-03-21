@@ -1,15 +1,11 @@
 #include "PlaneComponent.h"
 
-Engine::Component::UPlaneComp::UPlaneComp() {
-
-}
-
-Engine::Component::UPlaneComp::~UPlaneComp() {
-}
-
-void Engine::Component::UPlaneComp::Update(float DeltaTime)
+namespace Engine::Component
 {
-	UPrimitiveComponent::Update(DeltaTime);
-}
+    void UPlaneComp::Update(float DeltaTime)
+    {
+        UPrimitiveComponent::Update(DeltaTime);
+    }
 
-REGISTER_CLASS(Engine::Component, UPlaneComp);
+    REGISTER_CLASS(Engine::Component, UPlaneComp);
+}
