@@ -1,4 +1,4 @@
-#include "Engine/Runtime/EngineLoop.h"
+﻿#include "Engine/Runtime/EngineLoop.h"
 
 #include "Editor/EditorEngine.h"
 
@@ -20,50 +20,26 @@ bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
 		return false;
 	}
 
-	Application.SetOnSizingCallback([this]() { TickFrame(); });
-	Application.SetOnResizedCallback([](unsigned int Width, unsigned int Height)
-	{
-		if (GEngine)
+	Application.SetOnSizingCallback([this]()
 		{
-			GEngine->OnWindowResized(Width, Height);
-		}
-	});
+			Timer.Tick();
+			GEngine->Tick(Timer.GetDeltaTime());
+		});
+	Application.SetOnResizedCallback([](unsigned int Width, unsigned int Height)
+		{
+			if (GEngine)
+			{
+				GEngine->OnWindowResized(Width, Height);
+			}
+		});
 
 	CreateEngine();
 	GEngine->Init(&Application.GetWindow());
+	GEngine->SetTimer(&Timer);
 	GEngine->BeginPlay();
 
-	InitializeTiming();
+	Timer.Initialize();
 	return true;
-}
-
-void FEngineLoop::InitializeTiming()
-{
-	QueryPerformanceFrequency(&Frequency);
-	QueryPerformanceCounter(&PrevTime);
-	DeltaTime = 0.0f;
-}
-
-void FEngineLoop::TickFrame()
-{
-	QueryPerformanceCounter(&CurrTime);
-	DeltaTime = static_cast<float>(CurrTime.QuadPart - PrevTime.QuadPart) / static_cast<float>(Frequency.QuadPart);
-	PrevTime = CurrTime;
-
-	float MainLoopFps = (DeltaTime > 1e-6f) ? (1.0f / DeltaTime) : 0.0f;
-	GEngine->SetMainLoopFPS(MainLoopFps);
-
-	if (Application.IsResizing())
-	{
-		GEngine->Tick(DeltaTime);
-		GEngine->Render(DeltaTime);
-		return;
-	}
-
-	GEngine->BeginFrame(DeltaTime);
-	GEngine->Tick(DeltaTime);
-	GEngine->Render(DeltaTime);
-	GEngine->EndFrame();
 }
 
 int FEngineLoop::Run()
@@ -77,7 +53,8 @@ int FEngineLoop::Run()
 			break;
 		}
 
-		TickFrame();
+		Timer.Tick();
+		GEngine->Tick(Timer.GetDeltaTime());
 	}
 
 	return 0;
