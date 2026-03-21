@@ -237,6 +237,12 @@
     <ClInclude Include="Text\TextEncoding.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Text\FontTypes.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Text\FontAsset.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ImGui\imgui.cpp">
@@ -405,6 +411,9 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Text\TextEncoding.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Text\FontAsset.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

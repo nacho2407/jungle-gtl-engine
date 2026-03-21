@@ -2,6 +2,11 @@
 
 #include "EngineCore/Logger.h"
 
+/**
+ * @def REP_CHR 유니코드 대체 문자
+ */
+#define REP_CHR 0xFFFD
+
 FU32String Utf8ToCodepoints(const FString& Text)
 {
     FU32String Output;
@@ -28,7 +33,7 @@ FU32String Utf8ToCodepoints(const FString& Text)
             {
                 UE_LOG("[Text/TextEncoding][Error] Unexpected UTF-8 bit pattern!");
 
-                Codepoint = 0xFFFD;
+                Codepoint = REP_CHR;
 
                 i += 1;
             }
@@ -41,7 +46,7 @@ FU32String Utf8ToCodepoints(const FString& Text)
                 {
                     UE_LOG("[Text/TextEncoding][Error] Unexpected UTF-8 bit pattern!");
 
-                    Codepoint = 0xFFFD;
+                    Codepoint = REP_CHR;
 
                     i += 1;
                 }
@@ -55,7 +60,7 @@ FU32String Utf8ToCodepoints(const FString& Text)
                     {
                         UE_LOG("[Text/TextEncoding][Error] Unexpected UTF-8 bit pattern!");
 
-                        Codepoint = 0xFFFD;
+                        Codepoint = REP_CHR;
                         
                         i += 1;
                     }
@@ -73,7 +78,7 @@ FU32String Utf8ToCodepoints(const FString& Text)
             {
                 UE_LOG("[Text/TextEncoding][Error] Unexpected UTF-8 bit pattern!");
                 
-                Codepoint = 0xFFFD;
+                Codepoint = REP_CHR;
 
                 i += 1;
             }
@@ -86,7 +91,7 @@ FU32String Utf8ToCodepoints(const FString& Text)
                 {
                     UE_LOG("[Text/TextEncoding][Error] Unexpected UTF-8 bit pattern!");
 
-                    Codepoint = 0xFFFD;
+                    Codepoint = REP_CHR;
                     
                     i += 1;
                 }
@@ -100,7 +105,7 @@ FU32String Utf8ToCodepoints(const FString& Text)
                     {
                         UE_LOG("[Text/TextEncoding][Error] Unexpected UTF-8 bit pattern!");
 
-                        Codepoint = 0xFFFD;
+                        Codepoint = REP_CHR;
                         
                         i += 1;
                     }
@@ -118,7 +123,7 @@ FU32String Utf8ToCodepoints(const FString& Text)
             {
                 UE_LOG("[Text/TextEncoding][Error] Unexpected UTF-8 bit pattern!");
 
-                Codepoint = 0xFFFD;
+                Codepoint = REP_CHR;
                 
                 i += 1;
             }
@@ -132,7 +137,7 @@ FU32String Utf8ToCodepoints(const FString& Text)
                 {
                     UE_LOG("[Text/TextEncoding][Error] Unexpected UTF-8 bit pattern!");
 
-                    Codepoint = 0xFFFD;
+                    Codepoint = REP_CHR;
                     
                     i += 1;
                 }
@@ -146,7 +151,7 @@ FU32String Utf8ToCodepoints(const FString& Text)
                     {
                         UE_LOG("[Text/TextEncoding][Error] Unexpected UTF-8 bit pattern!");
 
-                        Codepoint = 0xFFFD;
+                        Codepoint = REP_CHR;
                         
                         i += 1;
                     }
@@ -162,7 +167,7 @@ FU32String Utf8ToCodepoints(const FString& Text)
             // invalid UTF-8
             UE_LOG("[Text/TextEncoding][Error] Unexpected UTF-8 bit pattern!");
 
-            Codepoint = 0xFFFD;
+            Codepoint = REP_CHR;
             
             i += 1;
         }
