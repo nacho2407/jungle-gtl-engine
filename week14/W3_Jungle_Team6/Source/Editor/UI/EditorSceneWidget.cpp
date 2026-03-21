@@ -9,7 +9,7 @@
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
-void FEditorSceneWidget::Initialize(FEditorEngine* InEditorEngine)
+void FEditorSceneWidget::Initialize(UEditorEngine* InEditorEngine)
 {
 	FEditorWidget::Initialize(InEditorEngine);
 	RefreshSceneFileList();
