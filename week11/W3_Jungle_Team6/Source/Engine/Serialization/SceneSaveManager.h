@@ -19,9 +19,15 @@ using std::string;
 
 class FSceneSaveManager {
 public:
+	static constexpr const char* SceneDirectory = "Asset/Scene/";
+	static constexpr const char* SceneExtension = ".Scene";
+
 	// Creates a .json save file at the given destination
-	static void SaveSceneAsJSON(const string& filepath, TArray<UWorld*>& Scene);
+	static void SaveSceneAsJSON(const string& SceneName, TArray<UWorld*>& Scene);
 	static void LoadSceneFromJSON(const string& filepath, TArray<UWorld*>& Scene);
+
+	// Returns list of .Scene file names (without extension) in SceneDirectory
+	static TArray<FString> GetSceneFileList();
 
 	// If file exists at given path, delete, then save. Otherwise, simply create a new save
 	static void OverwriteSave(const string& filepath, UWorld* World);
