@@ -69,7 +69,5 @@ class FD3D11GizmoRenderer
     TComPtr<ID3D11RasterizerState>   SolidRasterizerState;
     TComPtr<ID3D11DepthStencilState> DepthStencilState;
 
-    FGizmoMeshResource TranslationMesh;
-    FGizmoMeshResource RotationMesh;
-    FGizmoMeshResource ScalingMesh;
+    FGizmoMeshResource GizmoMeshes[static_cast<uint8>(EGizmoType::Count)];
 };
