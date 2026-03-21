@@ -1,9 +1,21 @@
-﻿#include "ViewPortInputContext.h"
+#include "ViewPortInputContext.h"
 
-bool FViewPortInputContext::HandleEvent(const Engine::ApplicationCore::FInputEvent& Event,
-    const Engine::ApplicationCore::FInputState&                                     State)
+using Engine::ApplicationCore::EInputEventType;
+using Engine::ApplicationCore::EKey;
+using Engine::ApplicationCore::FInputEvent;
+using Engine::ApplicationCore::FInputState;
+
+bool FViewPortInputContext::HandleEvent(const FInputEvent& Event, const FInputState& State)
 {
-    //  TODO : Event Type 관련해서 Event 분기 처리 하기
+    if (Event.Type == EInputEventType::MouseButtonDown && Event.Key == EKey::MouseRight)
+    {
+
+    }
+    if (Event.Type == EInputEventType::MouseButtonUp && Event.Key == EKey::MouseRight)
+    {
+
+    }
+    
     return false;
 }
 
@@ -11,4 +23,3 @@ void FViewPortInputContext::Tick(const Engine::ApplicationCore::FInputState& Sta
 {
     //  Camera 관련해서 State로 처리
 }
-

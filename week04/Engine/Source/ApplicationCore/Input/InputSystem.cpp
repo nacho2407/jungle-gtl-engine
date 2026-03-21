@@ -2,34 +2,72 @@
 #include <windowsx.h>
 #include "InputSystem.h"
 
-
-
 namespace Engine::ApplicationCore
 {
-    // LRESULT FInputSystem::StaticWndProc(HWND HWnd, UINT Message, WPARAM WParam, LPARAM LParam)
-    // {
-    //     FInputSystem *EditorEngineLoop = reinterpret_cast<FInputSystem *>(GetWindowLongPtr(
-    //         HWnd, GWLP_USERDATA));
-    //
-    //     if (Message == WM_NCCREATE)
-    //     {
-    //         CREATESTRUCTW *CreateStruct = reinterpret_cast<CREATESTRUCTW *>(LParam);
-    //         EditorEngineLoop = reinterpret_cast<FInputSystem *>(CreateStruct->lpCreateParams);
-    //         SetWindowLongPtr(HWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(EditorEngineLoop));
-    //     }
-    //
-    //     if (EditorEngineLoop)
-    //     {
-    //         return EditorEngineLoop->WndProc(Message, WParam, LParam);
-    //     }
-    //
-    //     return DefWindowProc(HWnd, Message, WParam, LParam);
-    // }
-    
-    void FInputSystem::BeginFrame()
+    namespace
     {
-        State.BeginFrame();
-    }
+        static EKey TranslationVirtualKey(WPARAM WParam)
+        {
+            switch (WParam)
+            {
+            case 'W':
+                return EKey::W;
+            case 'A':
+                return EKey::A;
+            case 'S':
+                return EKey::S;
+            case 'D':
+                return EKey::D;
+            case 'E':
+                return EKey::E;
+            case 'Q':
+                return EKey::Q;
+            // case VK_DELETE:
+            //     return EKey::Delete;
+            default:
+                return EKey::Unknown;
+            }
+        }
+
+        static EKey TranslationMouseButton(WPARAM WParam)
+        {
+            switch (WParam)
+            {
+            case WM_LBUTTONDOWN:
+            case WM_LBUTTONUP:
+                return EKey::MouseLeft;
+
+            case WM_RBUTTONDOWN:
+            case WM_RBUTTONUP:
+                return EKey::MouseRight;
+
+            case WM_MBUTTONDOWN:
+            case WM_MBUTTONUP:
+                return EKey::MouseMiddle;
+
+            default:
+                return EKey::Unknown;
+            }
+        }
+
+        // static bool IsMouseMessage(UINT Msg)
+        //{
+        //     switch (Msg)
+        //     {
+        //     case WM_LBUTTONDOWN:
+        //     case WM_LBUTTONUP:
+        //     case WM_RBUTTONDOWN:
+        //     case WM_RBUTTONUP:
+        //     case WM_MOUSEMOVE:
+        //     case WM_MOUSEWHEEL:
+        //         return true;
+        //     default:
+        //         return false;
+        //     }
+        // }
+    } // namespace
+
+    void FInputSystem::BeginFrame() { State.BeginFrame(); }
 
     bool FInputSystem::PollEvent(FInputEvent& OutEvent)
     {
@@ -50,88 +88,59 @@ namespace Engine::ApplicationCore
         State.Modifiers.bAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
     }
 
-    LRESULT FInputSystem::ProcessWin32Message(HWND HWnd,UINT Msg, WPARAM WParam, LPARAM LParam)
+    LRESULT FInputSystem::ProcessWin32Message(HWND HWnd, UINT Msg, WPARAM WParam, LPARAM LParam)
     {
         switch (Msg)
         {
         case WM_KEYDOWN:
-        {
-            UpdateModifiers();
-
-            FInputEvent E;
-            E.Type = EInputEventType::KeyDown;
-            E.bRepeat = (LParam & 0x40000000) != 0;
-            E.Modifiers = State.Modifiers;
-
-            if (WParam == 'W')
-                E.Key = EKey::W;
-            else if (WParam == 'E')
-                E.Key = EKey::E;
-            else if (WParam == 'R')
-                E.Key = EKey::R;
-            else if (WParam == 'F')
-                E.Key = EKey::F;
-            else if (WParam == VK_DELETE)
-                E.Key = EKey::Delete;
-
-            State.KeysDown[static_cast<int32>(E.Key)] = true;
-            EventQueue.push(E);
-            break;
-        }
         case WM_KEYUP:
         {
+            const EKey Key = TranslationVirtualKey(WParam);
+            if (Key == EKey::Unknown)
+            {
+                break;
+            }
+
             UpdateModifiers();
 
-            FInputEvent E;
-            E.Type = EInputEventType::KeyUp;
-            E.Modifiers = State.Modifiers;
+            FInputEvent Event;
+            Event.Type = (Msg == WM_KEYDOWN) ? EInputEventType::KeyDown : EInputEventType::KeyUp;
+            Event.Modifiers = State.Modifiers;
+            Event.Key = Key;
+            Event.bRepeat = (Msg == WM_KEYDOWN) &&
+                            ((LParam & (1 << 30)) != 0); // Check the previous key state bit
+            Event.Modifiers = State.Modifiers;
 
-            if (WParam == 'W')
-                E.Key = EKey::W;
-            else if (WParam == 'E')
-                E.Key = EKey::E;
-            else if (WParam == 'R')
-                E.Key = EKey::R;
-            else if (WParam == 'F')
-                E.Key = EKey::F;
-            else if (WParam == VK_DELETE)
-                E.Key = EKey::Delete;
-
-            State.KeysDown[static_cast<int32>(E.Key)] = false;
-            EventQueue.push(E);
+            State.KeysDown[static_cast<int32>(Event.Key)] = (Msg == WM_KEYDOWN);
+            EventQueue.push(Event);
             break;
         }
         case WM_LBUTTONDOWN:
-        {
-            State.KeysDown[static_cast<int32>(EKey::MouseLeft)] = true;
-
-            FInputEvent E;
-            E.Type = EInputEventType::MouseButtonDown;
-            E.Key = EKey::MouseLeft;
-            E.MouseX = GET_X_LPARAM(LParam);
-            E.MouseY = GET_Y_LPARAM(LParam);
-            EventQueue.push(E);
-            break;
-        }
         case WM_LBUTTONUP:
-        {
-            State.KeysDown[static_cast<int32>(EKey::MouseLeft)] = false;
-
-            FInputEvent E;
-            E.Type = EInputEventType::MouseButtonUp;
-            E.Key = EKey::MouseLeft;
-            E.MouseX = GET_X_LPARAM(LParam);
-            E.MouseY = GET_Y_LPARAM(LParam);
-            EventQueue.push(E);
-            break;
-        }
         case WM_RBUTTONDOWN:
-            State.KeysDown[static_cast<int32>(EKey::MouseRight)] = true;
-            break;
-
         case WM_RBUTTONUP:
-            State.KeysDown[static_cast<int32>(EKey::MouseRight)] = false;
-            break;
+        {
+            EKey Key = TranslationMouseButton(Msg);
+            if (Key == EKey::Unknown)
+            {
+                break;
+            }
+
+            UpdateModifiers();
+
+            const bool bPressed = (Msg == WM_LBUTTONDOWN || Msg == WM_RBUTTONDOWN);
+
+            State.KeysDown[static_cast<int32>(Key)] = bPressed;
+
+            FInputEvent Event;
+            Event.Type = EInputEventType::MouseButtonUp;
+            Event.Key = EKey::MouseLeft;
+            Event.MouseX = GET_X_LPARAM(LParam);
+            Event.MouseY = GET_Y_LPARAM(LParam);
+            Event.Modifiers = State.Modifiers;
+
+            EventQueue.push(Event);
+        }
 
         case WM_MOUSEMOVE:
         {
@@ -142,28 +151,23 @@ namespace Engine::ApplicationCore
             State.MouseDeltaY += (NewY - State.MouseY);
             State.MouseX = NewX;
             State.MouseY = NewY;
+
             break;
         }
         case WM_MOUSEWHEEL:
         {
-            int32 Delta = GET_WHEEL_DELTA_WPARAM(WParam);
+            UpdateModifiers();
+
+            const int32 Delta = GET_WHEEL_DELTA_WPARAM(WParam);
             State.WheelDelta += Delta;
 
-            FInputEvent E;
-            E.Type = EInputEventType::MouseWheel;
-            E.WheelDelta = Delta;
-            EventQueue.push(E);
-            break;
+            FInputEvent Event;
+            Event.Type = EInputEventType::MouseWheel;
+            Event.WheelDelta = Delta;
+            Event.WheelDelta = GET_X_LPARAM(LParam);
+            Event.Modifiers = State.Modifiers;
         }
-        case WM_SIZE:
-        {
-            FInputEvent E;
-            E.Type = EInputEventType::WindowResize;
-            E.Width = LOWORD(LParam);
-            E.Height = HIWORD(LParam);
-            EventQueue.push(E);
-            break;
-        }
+
         default:
             break;
         }

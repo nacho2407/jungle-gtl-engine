@@ -28,6 +28,21 @@
     <Filter Include="Source\ThirdParty\imgui">
       <UniqueIdentifier>{14727bfa-61bb-1229-bb2b-782b3aace65f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Viewport\Gizmo">
+      <UniqueIdentifier>{a4a5fb1b-42c4-c447-1a35-66493bab83fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Viewport\Interaction">
+      <UniqueIdentifier>{272e7142-94bf-a8cb-262e-e0148bdeb16a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Viewport\Navigation">
+      <UniqueIdentifier>{8f405a6f-69cc-5924-64a5-aeb8f417b3cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Viewport\RenderSetting">
+      <UniqueIdentifier>{811fb41f-c966-1264-d519-6c49918c512e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Viewport\Selection">
+      <UniqueIdentifier>{c02bdf14-d23c-3f72-e5f4-7a918dc1b5dc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\Editor.cpp">
@@ -89,6 +104,27 @@
     </ClCompile>
     <ClCompile Include="Source\ThirdParty\imgui\imgui_widgets.cpp">
       <Filter>Source\ThirdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\EditorViewport.cpp">
+      <Filter>Source\Viewport</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\EditorViewportClient.cpp">
+      <Filter>Source\Viewport</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\Gizmo\ViewportGizmoController.cpp">
+      <Filter>Source\Viewport\Gizmo</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\Interaction\ViewportInteractionState.cpp">
+      <Filter>Source\Viewport\Interaction</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\Navigation\ViewportNavigationController.cpp">
+      <Filter>Source\Viewport\Navigation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\RenderSetting\ViewportRenderSetting.cpp">
+      <Filter>Source\Viewport\RenderSetting</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\Selection\ViewportSelectionController.cpp">
+      <Filter>Source\Viewport\Selection</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -154,6 +190,21 @@
     </ClInclude>
     <ClInclude Include="Source\Viewport\EditorViewportClient.h">
       <Filter>Source\Viewport</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\Gizmo\ViewportGizmoController.h">
+      <Filter>Source\Viewport\Gizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\Interaction\ViewportInteractionState.h">
+      <Filter>Source\Viewport\Interaction</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\Navigation\ViewportNavigationController.h">
+      <Filter>Source\Viewport\Navigation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\RenderSetting\ViewportRenderSetting.h">
+      <Filter>Source\Viewport\RenderSetting</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\Selection\ViewportSelectionController.h">
+      <Filter>Source\Viewport\Selection</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

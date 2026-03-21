@@ -5,7 +5,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
-extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, uint32 msg, WPARAM wParam, LPARAM lParam);
+//extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, uint32 msg, WPARAM wParam, LPARAM lParam);
 
 // LRESULT FEditorEngineLoop::StaticWndProc(HWND HWnd, UINT Message, WPARAM WParam, LPARAM LParam)
 // {
@@ -69,17 +69,14 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
     Application = Engine::ApplicationCore::FWindowsApplication::Create();
     Application->SetInputSystem(InputSystem);
     Application->CreateApplicationWindow(L"JungleWindowClass", 1920, 1080);
-    // WindowsWindow = new Engine::ApplicationCore::FWindowsWindow();
-    // WindowsWindow->Create(HInstance, L"JungleWindowClass", 1920, 1080);
-    
-
+  
 #else
 
 #endif
 
     /* Editor Initialize */
     Editor = new FEditor();
-    Editor->Create(HWindow);
+    Editor->Create();
     Editor->Initialize();
 
     InitializeForTime();

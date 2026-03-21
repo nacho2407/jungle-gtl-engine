@@ -1,8 +1,13 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/CoreMinimal.h"
 
 #include "ApplicationCore/Input/InputContext.h"
+
+namespace
+{
+    //enum class
+}
 
 class FViewPortInputContext : public Engine::ApplicationCore::IInputContext
 {
