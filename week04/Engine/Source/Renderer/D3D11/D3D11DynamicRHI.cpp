@@ -412,22 +412,179 @@ void FD3D11DynamicRHI::ReleaseBackBufferResources()
 bool FD3D11DynamicRHI::UpdateConstantBuffer(ID3D11Buffer* InConstantBuffer, const void* InData,
                                             uint32 InDataSize) const
 {
-    if (DeviceContext == nullptr || InConstantBuffer == nullptr || InData == nullptr ||
-        InDataSize == 0)
+    return UpdateDynamicBuffer(InConstantBuffer, InData, InDataSize);
+}
+
+bool FD3D11DynamicRHI::UpdateDynamicBuffer(ID3D11Buffer* InBuffer, const void* InData,
+                                           uint32 InDataSize) const
+{
+    if (DeviceContext == nullptr || InBuffer == nullptr || InData == nullptr || InDataSize == 0)
     {
         return false;
     }
 
     D3D11_MAPPED_SUBRESOURCE MappedResource = {};
-    HRESULT                  Hr =
-        DeviceContext->Map(InConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource);
+    HRESULT Hr = DeviceContext->Map(InBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource);
     if (FAILED(Hr))
     {
         return false;
     }
 
     memcpy(MappedResource.pData, InData, InDataSize);
-    DeviceContext->Unmap(InConstantBuffer, 0);
+    DeviceContext->Unmap(InBuffer, 0);
 
     return true;
+}
+
+void FD3D11DynamicRHI::SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY InTopology) const
+{
+    if (DeviceContext)
+    {
+        DeviceContext->IASetPrimitiveTopology(InTopology);
+    }
+}
+
+void FD3D11DynamicRHI::SetInputLayout(ID3D11InputLayout* InInputLayout) const
+{
+    if (DeviceContext)
+    {
+        DeviceContext->IASetInputLayout(InInputLayout);
+    }
+}
+
+void FD3D11DynamicRHI::SetVertexBuffer(uint32 InSlot, ID3D11Buffer* InVertexBuffer, uint32 InStride,
+                                       uint32 InOffset) const
+{
+    if (DeviceContext == nullptr)
+    {
+        return;
+    }
+
+    UINT Slot = static_cast<UINT>(InSlot);
+    UINT Stride = static_cast<UINT>(InStride);
+    UINT Offset = static_cast<UINT>(InOffset);
+    DeviceContext->IASetVertexBuffers(Slot, 1, &InVertexBuffer, &Stride, &Offset);
+}
+
+void FD3D11DynamicRHI::SetVertexBuffers(uint32 InStartSlot, uint32 InBufferCount,
+                                        ID3D11Buffer* const* InBuffers, const uint32* InStrides,
+                                        const uint32* InOffsets) const
+{
+    if (DeviceContext == nullptr || InBuffers == nullptr || InStrides == nullptr ||
+        InOffsets == nullptr || InBufferCount == 0)
+    {
+        return;
+    }
+
+    UINT Strides[8] = {};
+    UINT Offsets[8] = {};
+    if (InBufferCount > 8)
+    {
+        return;
+    }
+
+    for (uint32 Index = 0; Index < InBufferCount; ++Index)
+    {
+        Strides[Index] = static_cast<UINT>(InStrides[Index]);
+        Offsets[Index] = static_cast<UINT>(InOffsets[Index]);
+    }
+
+    DeviceContext->IASetVertexBuffers(static_cast<UINT>(InStartSlot), static_cast<UINT>(InBufferCount),
+                                      InBuffers, Strides, Offsets);
+}
+
+void FD3D11DynamicRHI::SetIndexBuffer(ID3D11Buffer* InIndexBuffer, DXGI_FORMAT InFormat,
+                                      uint32 InOffset) const
+{
+    if (DeviceContext)
+    {
+        DeviceContext->IASetIndexBuffer(InIndexBuffer, InFormat, static_cast<UINT>(InOffset));
+    }
+}
+
+void FD3D11DynamicRHI::SetVertexShader(ID3D11VertexShader* InVertexShader) const
+{
+    if (DeviceContext)
+    {
+        DeviceContext->VSSetShader(InVertexShader, nullptr, 0);
+    }
+}
+
+void FD3D11DynamicRHI::SetPixelShader(ID3D11PixelShader* InPixelShader) const
+{
+    if (DeviceContext)
+    {
+        DeviceContext->PSSetShader(InPixelShader, nullptr, 0);
+    }
+}
+
+void FD3D11DynamicRHI::SetVSConstantBuffer(uint32 InSlot, ID3D11Buffer* InConstantBuffer) const
+{
+    if (DeviceContext == nullptr)
+    {
+        return;
+    }
+
+    UINT Slot = static_cast<UINT>(InSlot);
+    DeviceContext->VSSetConstantBuffers(Slot, 1, &InConstantBuffer);
+}
+
+void FD3D11DynamicRHI::SetPSConstantBuffer(uint32 InSlot, ID3D11Buffer* InConstantBuffer) const
+{
+    if (DeviceContext == nullptr)
+    {
+        return;
+    }
+
+    UINT Slot = static_cast<UINT>(InSlot);
+    DeviceContext->PSSetConstantBuffers(Slot, 1, &InConstantBuffer);
+}
+
+void FD3D11DynamicRHI::SetRasterizerState(ID3D11RasterizerState* InRasterizerState) const
+{
+    if (DeviceContext)
+    {
+        DeviceContext->RSSetState(InRasterizerState);
+    }
+}
+
+void FD3D11DynamicRHI::SetDepthStencilState(ID3D11DepthStencilState* InDepthStencilState,
+                                            uint32 InStencilRef) const
+{
+    if (DeviceContext)
+    {
+        DeviceContext->OMSetDepthStencilState(InDepthStencilState, static_cast<UINT>(InStencilRef));
+    }
+}
+
+void FD3D11DynamicRHI::Draw(uint32 InVertexCount, uint32 InStartVertexLocation) const
+{
+    if (DeviceContext)
+    {
+        DeviceContext->Draw(static_cast<UINT>(InVertexCount), static_cast<UINT>(InStartVertexLocation));
+    }
+}
+
+void FD3D11DynamicRHI::DrawIndexed(uint32 InIndexCount, uint32 InStartIndexLocation,
+                                   int32 InBaseVertexLocation) const
+{
+    if (DeviceContext)
+    {
+        DeviceContext->DrawIndexed(static_cast<UINT>(InIndexCount), static_cast<UINT>(InStartIndexLocation),
+                                   static_cast<INT>(InBaseVertexLocation));
+    }
+}
+
+void FD3D11DynamicRHI::DrawIndexedInstanced(uint32 InIndexCountPerInstance, uint32 InInstanceCount,
+                                            uint32 InStartIndexLocation, int32 InBaseVertexLocation,
+                                            uint32 InStartInstanceLocation) const
+{
+    if (DeviceContext)
+    {
+        DeviceContext->DrawIndexedInstanced(static_cast<UINT>(InIndexCountPerInstance),
+                                            static_cast<UINT>(InInstanceCount),
+                                            static_cast<UINT>(InStartIndexLocation),
+                                            static_cast<INT>(InBaseVertexLocation),
+                                            static_cast<UINT>(InStartInstanceLocation));
+    }
 }

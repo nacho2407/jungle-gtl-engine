@@ -213,21 +213,11 @@ void FD3D11LineBatchRenderer::Flush()
         return;
     }
 
-    ID3D11DeviceContext* Context = RHI->GetDeviceContext();
-    if (Context == nullptr)
+    if (!RHI->UpdateDynamicBuffer(DynamicVertexBuffer.Get(), Vertices.data(),
+                                 static_cast<uint32>(sizeof(FLineVertex) * Vertices.size())))
     {
         return;
     }
-
-    D3D11_MAPPED_SUBRESOURCE Mapped = {};
-    HRESULT Hr = Context->Map(DynamicVertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped);
-    if (FAILED(Hr))
-    {
-        return;
-    }
-
-    memcpy(Mapped.pData, Vertices.data(), sizeof(FLineVertex) * Vertices.size());
-    Context->Unmap(DynamicVertexBuffer.Get(), 0);
 
     FLineConstants Constants = {};
     Constants.VP = CurrentSceneView->GetViewProjectionMatrix();
@@ -238,16 +228,16 @@ void FD3D11LineBatchRenderer::Flush()
     const UINT    Offset = 0;
     ID3D11Buffer* VertexBuffer = DynamicVertexBuffer.Get();
 
-    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-    Context->IASetInputLayout(InputLayout.Get());
-    Context->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
+    RHI->SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+    RHI->SetInputLayout(InputLayout.Get());
+    RHI->SetVertexBuffer(0, VertexBuffer, Stride, Offset);
 
-    Context->VSSetShader(VertexShader.Get(), nullptr, 0);
-    Context->VSSetConstantBuffers(0, 1, ConstantBuffer.GetAddressOf());
+    RHI->SetVertexShader(VertexShader.Get());
+    RHI->SetVSConstantBuffer(0, ConstantBuffer.Get());
 
-    Context->PSSetShader(PixelShader.Get(), nullptr, 0);
+    RHI->SetPixelShader(PixelShader.Get());
 
-    Context->Draw(static_cast<UINT>(Vertices.size()), 0);
+    RHI->Draw(static_cast<uint32>(Vertices.size()), 0);
 
     Vertices.clear();
 }

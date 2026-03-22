@@ -484,7 +484,7 @@ void FD3D11MeshBatchRenderer::GatherRenderItems(const FSceneRenderData& InRender
 
 void FD3D11MeshBatchRenderer::Flush(EMeshDrawPath DrawPath, const FSceneView* InSceneView)
 {
-    if (RHI == nullptr || InSceneView == nullptr || RHI->GetDeviceContext() == nullptr)
+    if (RHI == nullptr || InSceneView == nullptr)
     {
         return;
     }
@@ -527,45 +527,35 @@ void FD3D11MeshBatchRenderer::UpdatePerFrameConstants(const FSceneView* InSceneV
 
 void FD3D11MeshBatchRenderer::BindPipeline(EMeshDrawPath DrawPath)
 {
-    if (RHI == nullptr || RHI->GetDeviceContext() == nullptr)
+    if (RHI == nullptr)
     {
         return;
     }
 
-    ID3D11DeviceContext* Context = RHI->GetDeviceContext();
-
-    Context->OMSetDepthStencilState(DepthStencilState.Get(), 0);
+    RHI->SetDepthStencilState(DepthStencilState.Get(), 0);
 
     if (DrawPath == EMeshDrawPath::Instanced)
     {
-        Context->IASetInputLayout(InstancedInputLayout.Get());
-        Context->VSSetShader(InstancedVertexShader.Get(), nullptr, 0);
-        Context->PSSetShader(InstancedPixelShader.Get(), nullptr, 0);
-
-        ID3D11Buffer* VSConstantBuffers[] = {InstancedConstantBuffer.Get()};
-        Context->VSSetConstantBuffers(0, 1, VSConstantBuffers);
-
-        ID3D11Buffer* PSConstantBuffers[] = {InstancedConstantBuffer.Get()};
-        Context->PSSetConstantBuffers(0, 1, PSConstantBuffers);
+        RHI->SetInputLayout(InstancedInputLayout.Get());
+        RHI->SetVertexShader(InstancedVertexShader.Get());
+        RHI->SetPixelShader(InstancedPixelShader.Get());
+        RHI->SetVSConstantBuffer(0, InstancedConstantBuffer.Get());
+        RHI->SetPSConstantBuffer(0, InstancedConstantBuffer.Get());
     }
     else
     {
-        Context->IASetInputLayout(SingleInputLayout.Get());
-        Context->VSSetShader(SingleVertexShader.Get(), nullptr, 0);
-        Context->PSSetShader(SinglePixelShader.Get(), nullptr, 0);
-
-        ID3D11Buffer* VSConstantBuffers[] = {SingleConstantBuffer.Get()};
-        Context->VSSetConstantBuffers(0, 1, VSConstantBuffers);
-
-        ID3D11Buffer* PSConstantBuffers[] = {SingleConstantBuffer.Get()};
-        Context->PSSetConstantBuffers(0, 1, PSConstantBuffers);
+        RHI->SetInputLayout(SingleInputLayout.Get());
+        RHI->SetVertexShader(SingleVertexShader.Get());
+        RHI->SetPixelShader(SinglePixelShader.Get());
+        RHI->SetVSConstantBuffer(0, SingleConstantBuffer.Get());
+        RHI->SetPSConstantBuffer(0, SingleConstantBuffer.Get());
     }
 
 }
 
 void FD3D11MeshBatchRenderer::BindPrimitiveTopology(EMeshPrimitiveTopology InTopology)
 {
-    if (RHI == nullptr || RHI->GetDeviceContext() == nullptr)
+    if (RHI == nullptr)
     {
         return;
     }
@@ -591,33 +581,33 @@ void FD3D11MeshBatchRenderer::BindPrimitiveTopology(EMeshPrimitiveTopology InTop
         break;
     }
 
-    RHI->GetDeviceContext()->IASetPrimitiveTopology(PrimitiveTopology);
+    RHI->SetPrimitiveTopology(PrimitiveTopology);
 }
 
 void FD3D11MeshBatchRenderer::BindSolidRasterizer()
 {
-    if (RHI == nullptr || RHI->GetDeviceContext() == nullptr)
+    if (RHI == nullptr)
     {
         return;
     }
 
-    RHI->GetDeviceContext()->RSSetState(SolidRasterizerState.Get());
+    RHI->SetRasterizerState(SolidRasterizerState.Get());
 }
 
 void FD3D11MeshBatchRenderer::BindWireframeRasterizer()
 {
-    if (RHI == nullptr || RHI->GetDeviceContext() == nullptr)
+    if (RHI == nullptr)
     {
         return;
     }
 
-    RHI->GetDeviceContext()->RSSetState(WireframeRasterizerState.Get());
+    RHI->SetRasterizerState(WireframeRasterizerState.Get());
 }
 
 void FD3D11MeshBatchRenderer::DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath DrawPath,
                                             const FSceneView* InSceneView)
 {
-    if (RHI == nullptr || RHI->GetDeviceContext() == nullptr || InSceneView == nullptr)
+    if (RHI == nullptr || InSceneView == nullptr)
     {
         return;
     }
@@ -641,43 +631,37 @@ void FD3D11MeshBatchRenderer::DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath
         return;
     }
 
-    ID3D11DeviceContext* Context = RHI->GetDeviceContext();
-
     BindPrimitiveTopology(MeshResource->Topology);
 
     if (DrawPath == EMeshDrawPath::Instanced)
     {
-        D3D11_MAPPED_SUBRESOURCE Mapped = {};
-        if (FAILED(Context->Map(InstanceBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
+        const uint32 InstanceCount = static_cast<uint32>(Draws.size());
+        if (!RHI->UpdateDynamicBuffer(InstanceBuffer.Get(), Draws.data(),
+                                      static_cast<uint32>(sizeof(FMeshDrawData) * InstanceCount)))
         {
             return;
         }
 
-        const uint32 InstanceCount = static_cast<uint32>(Draws.size());
-        memcpy(Mapped.pData, Draws.data(), sizeof(FMeshDrawData) * InstanceCount);
-
-        Context->Unmap(InstanceBuffer.Get(), 0);
-
         ID3D11Buffer* Buffers[] = {MeshResource->VertexBuffer.Get(), InstanceBuffer.Get()};
-        UINT          Strides[] = {sizeof(FVertexSimple), sizeof(FMeshDrawData)};
-        UINT          Offsets[] = {0, 0};
+        uint32        Strides[] = {sizeof(FVertexSimple), sizeof(FMeshDrawData)};
+        uint32        Offsets[] = {0, 0};
 
-        Context->IASetVertexBuffers(0, 2, Buffers, Strides, Offsets);
-        Context->IASetIndexBuffer(MeshResource->IndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+        RHI->SetVertexBuffers(0, 2, Buffers, Strides, Offsets);
+        RHI->SetIndexBuffer(MeshResource->IndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
 
-        Context->DrawIndexedInstanced(MeshResource->IndexCount, InstanceCount, 0, 0, 0);
+        RHI->DrawIndexedInstanced(MeshResource->IndexCount, InstanceCount, 0, 0, 0);
     }
     else
     {
         // single path는 ShaderMesh.hlsl 기준:
         // cbuffer FMeshUnlitConstants { row_major float4x4 MVP; float4 BaseColor; }
 
-        const UINT VertexStride = sizeof(FVertexSimple);
-        const UINT VertexOffset = 0;
+        const uint32 VertexStride = sizeof(FVertexSimple);
+        const uint32 VertexOffset = 0;
 
         ID3D11Buffer* VB = MeshResource->VertexBuffer.Get();
-        Context->IASetVertexBuffers(0, 1, &VB, &VertexStride, &VertexOffset);
-        Context->IASetIndexBuffer(MeshResource->IndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+        RHI->SetVertexBuffer(0, VB, VertexStride, VertexOffset);
+        RHI->SetIndexBuffer(MeshResource->IndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
 
         for (const FMeshDrawData& Draw : Draws)
         {
@@ -686,7 +670,7 @@ void FD3D11MeshBatchRenderer::DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath
             Constants.BaseColor = Draw.Color;
 
             RHI->UpdateConstantBuffer(SingleConstantBuffer.Get(), &Constants, sizeof(Constants));
-            Context->DrawIndexed(MeshResource->IndexCount, 0, 0);
+            RHI->DrawIndexed(MeshResource->IndexCount, 0, 0);
         }
     }
 }
