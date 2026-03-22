@@ -127,12 +127,16 @@ void URenderer::CreateRasterizerState()
 
 	rasterizerdesc.CullMode = D3D11_CULL_NONE;
 	Device->CreateRasterizerState(&rasterizerdesc, RasterizerStateNoCull.GetAddressOf());
+
+	rasterizerdesc.FillMode = D3D11_FILL_WIREFRAME;
+	Device->CreateRasterizerState(&rasterizerdesc, RasterizerStateWireframe.GetAddressOf());
 }
 
 void URenderer::ReleaseRasterizerState()
 {
 	RasterizerState.Reset();
 	RasterizerStateNoCull.Reset();
+	RasterizerStateWireframe.Reset();
 }
 
 void URenderer::CreateDepthStencilState()
@@ -247,7 +251,19 @@ void URenderer::Prepare()
 	DeviceContext->ClearDepthStencilView(DepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	DeviceContext->RSSetViewports(1, &ViewportInfo);
-	DeviceContext->RSSetState(RasterizerState.Get());
+	//향후 레스터라이저 관련 모드 추가를 위해 siwtch문으로 만들어 두겠습니다.
+	switch(RsSetMode)
+	{
+	case 0: 
+		DeviceContext->RSSetState(RasterizerState.Get());
+		break;
+	case 1:
+		DeviceContext->RSSetState(RasterizerStateNoCull.Get());
+		break;
+	case 2:
+		DeviceContext->RSSetState(RasterizerStateWireframe.Get());
+		break;
+	}
 	DeviceContext->OMSetRenderTargets(1, FrameBufferRTV.GetAddressOf(), DepthStencilView.Get());
 	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
 	float blendFactor[4] = { 0,0,0,0 };
@@ -308,6 +324,11 @@ void URenderer::Render(const TArray<FLevel*>& Levels)
 	RenderNormalObjects(NormalRenderObjects);
 	RenderNoDepthObjects(NoDepthRenderObjects);
 	BatchRender(BatchGroups);
+}
+
+void URenderer::SetRasterizerMode(int32 mode)
+{
+	RsSetMode = mode;
 }
 
 void URenderer::RenderNormalObjects(TArray<RenderObject*>& NormalRenderObjects)

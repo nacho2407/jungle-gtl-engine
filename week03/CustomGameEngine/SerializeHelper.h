@@ -38,7 +38,6 @@ public:
 		{
 			FString jsonStr((std::istreambuf_iterator<char>(inFile)),
 				std::istreambuf_iterator<char>());
-			inFile >> jsonStr;
 			inFile.close();
 
 			T* loaded = T::FromJson(jsonStr);

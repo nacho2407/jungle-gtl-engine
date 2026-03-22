@@ -1,4 +1,6 @@
 ﻿#include "EditorToolbar.h"
+#include "Component/GridComp.h"
+#include "EngineCore/ResourceManager.h"
 
 EditorToolbar::EditorToolbar()
 {
@@ -8,7 +10,7 @@ EditorToolbar::~EditorToolbar()
 {
 }
 
-void EditorToolbar::Draw(ImGuiWindowLayout& layout)
+void EditorToolbar::Draw(ImGuiWindowLayout& layout, UGridComp* Grid)
 {
 	ImGui::SetNextWindowPos(layout.PosXY, ImGuiCond_FirstUseEver);
 
@@ -53,5 +55,6 @@ void EditorToolbar::Draw(ImGuiWindowLayout& layout)
 	{
 		Gizmo::GetInstance().GetController()->SetControlStrategy(GizmoControllerType::Scale);
 	}
+
 	ImGui::End();
 }

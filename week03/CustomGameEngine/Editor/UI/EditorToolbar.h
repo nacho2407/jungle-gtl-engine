@@ -4,10 +4,12 @@
 #include "Editor/Gizmo/GizmoRotationControlStrategy.h"
 #include "ImGuiLayout.h"
 
+class UGridComp;
+
 struct EditorToolbar
 {
 	EditorToolbar();
 	~EditorToolbar();
 
-	void Draw(ImGuiWindowLayout& layout);
+	void Draw(ImGuiWindowLayout& layout, UGridComp* Grid);
 };

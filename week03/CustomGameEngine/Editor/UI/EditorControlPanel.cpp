@@ -43,7 +43,8 @@ namespace
 
 			const fs::path& Path = Entry.path();
 
-			if (Path.extension() == ".scene")
+			const FString extension = Path.extension().string();
+			if (extension == ".Scene")
 			{
 				SceneList.push_back(Path.stem().string());
 			}
@@ -102,10 +103,18 @@ void EditorControlPanel::Draw(UCameraComponent* camera, ImGuiWindowLayout& layou
     static TArray<FString> SceneList;
     static int32 SelectedSceneIndex = -1;
     static bool bCreateNewSceneAfterSave = false;
+    SceneManager* sceneMgr = GetWorld().GetSceneManager();
+
+    if (sceneMgr == nullptr)
+    {
+		ImGui::Text("Scene manager is not initialized.");
+		ImGui::End();
+		return;
+    }
 
     if (ImGui::Button("New Scene"))
     {
-		GetWorld().GetSceneManager()->NewScene();
+		sceneMgr->NewScene();
     }
     ImGui::SameLine();
     if (ImGui::Button("Save Scene"))
@@ -127,14 +136,14 @@ void EditorControlPanel::Draw(UCameraComponent* camera, ImGuiWindowLayout& layou
         if (ImGui::Button("Save"))
         {
             editor->SelectComponent(nullptr);
-            GetWorld().GetSceneManager()->SaveScene(sceneName);
+            sceneMgr->SaveScene(sceneName);
 
             ImGui::CloseCurrentPopup();
 
             if (bCreateNewSceneAfterSave)
             {
                 bCreateNewSceneAfterSave = false;
-                GetWorld().GetSceneManager()->NewScene();
+                sceneMgr->NewScene();
             }
         }
 
@@ -175,7 +184,7 @@ void EditorControlPanel::Draw(UCameraComponent* camera, ImGuiWindowLayout& layou
         if (ImGui::Button("Load"))
         {
             editor->SelectComponent(nullptr);
-            GetWorld().GetSceneManager()->LoadScene(SceneList[SelectedSceneIndex].c_str());
+            sceneMgr->LoadScene(SceneList[SelectedSceneIndex].c_str());
             ImGui::CloseCurrentPopup();
         }
 
@@ -217,7 +226,7 @@ void EditorControlPanel::Draw(UCameraComponent* camera, ImGuiWindowLayout& layou
 
 	bool bChanged = false;
 	if (ImGui::DragFloat("Half Extent", &Grid->HalfExtent, 1.0f, 1.0f, 1000.0f)) bChanged = true;
-	if (ImGui::DragFloat("Cell Size", &Grid->CellSize, 0.1f, 0.1f, 10.0f)) bChanged = true;
+	if (ImGui::DragFloat("Cell Size", &Grid->CellSize, 0.1f, 1.0f, 10.0f)) bChanged = true;
 	if (bChanged)
 	{
 		ResourceManager::GetInstance()->UpdateGridMesh(Grid->HalfExtent, Grid->CellSize, 0.f);
@@ -229,6 +238,11 @@ void EditorControlPanel::Draw(UCameraComponent* camera, ImGuiWindowLayout& layou
 		ImGui::Checkbox("Show Primitives", &Renderer->ShowFlagMap[EEngineShowFlags::SF_Primitives]);
 		ImGui::Checkbox("Show Billboard Text", &Renderer->ShowFlagMap[EEngineShowFlags::SF_BillboardText]);
 		ImGui::Checkbox("Show Editor Primitives", &Renderer->ShowFlagMap[EEngineShowFlags::SF_EditorPrimitives]);
+	}
+	static int32 RenderingMode = 0;
+	if(ImGui::Combo("RenderingMode", &RenderingMode, "Normal\0NoCull\0Wireframe\0"))
+	{
+		Renderer->SetRasterizerMode(RenderingMode);
 	}
 	//for (auto& elem : Renderer->ShowFlagMap)
 	//{
