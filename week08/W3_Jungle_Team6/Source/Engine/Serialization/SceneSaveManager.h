@@ -4,6 +4,7 @@
 #include <filesystem>
 #include "Core/CoreTypes.h"
 #include "Core/Paths.h"
+#include "GameFramework/WorldContext.h"
 
 // Forward declarations
 class UObject;
@@ -26,8 +27,8 @@ public:
 	static std::wstring GetSceneDirectory() { return FPaths::SceneDir(); }
 
 	// Creates a .json save file at the given destination
-	static void SaveSceneAsJSON(const string& SceneName, TArray<UWorld*>& Scene);
-	static void LoadSceneFromJSON(const string& filepath, TArray<UWorld*>& Scene);
+	static void SaveSceneAsJSON(const string& SceneName, TArray<FWorldContext>& WorldList);
+	static void LoadSceneFromJSON(const string& filepath, TArray<FWorldContext>& WorldList);
 
 	// Returns list of .Scene file names (without extension) in SceneDirectory
 	static TArray<FString> GetSceneFileList();
