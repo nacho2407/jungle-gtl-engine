@@ -5,7 +5,7 @@
 #include "Editor/Viewport/EditorViewportClient.h"
 #include "Editor/UI/EditorMainPanel.h"
 #include "Editor/Settings/EditorSettings.h"
-#include "Editor/SelectionManager.h"
+#include "Editor/Selection/SelectionManager.h"
 
 class UGizmoComponent;
 
