@@ -6,15 +6,12 @@
 #include <string>
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
-#include "Core/Common.h"
-
 class UWorld;
 class UCameraComponent;
 class UGizmoComponent;
 class FEditorSettings;
 class FWindowsWindow;
-
-using namespace common::structs;
+class FSelectionManager;
 
 class FEditorViewportClient
 {
@@ -23,6 +20,7 @@ public:
 	void SetWorld(UWorld* InWorld) { World = InWorld; }
 	void SetGizmo(UGizmoComponent* InGizmo) { Gizmo = InGizmo; }
 	void SetSettings(const FEditorSettings* InSettings) { Settings = InSettings; }
+	void SetSelectionManager(FSelectionManager* InSelectionManager) { SelectionManager = InSelectionManager; }
 	UGizmoComponent* GetGizmo() { return Gizmo; }
 	void SetViewportSize(float InWidth, float InHeight);
 
@@ -35,10 +33,8 @@ public:
 	void Tick(float DeltaTime);
 
 	const FCursorOverlayState& GetCursorOverlayState() const { return CursorOverlayState; }
-	FViewOutput& GetViewOutput() { return ViewOutput; }
 
 private:
-	void ClearViewOutput();
 	void TickInput(float DeltaTime);
 	void TickInteraction(float DeltaTime);
 	void TickCursorOverlay(float DeltaTime);
@@ -51,6 +47,7 @@ private:
 	UCameraComponent* Camera = nullptr;
 	UGizmoComponent* Gizmo = nullptr;
 	const FEditorSettings* Settings = nullptr;
+	FSelectionManager* SelectionManager = nullptr;
 
 	float WindowWidth = 1920.f;
 	float WindowHeight = 1080.f;
@@ -58,5 +55,4 @@ private:
 	bool bIsCursorVisible = true;
 
 	FCursorOverlayState CursorOverlayState;
-	FViewOutput ViewOutput;
 };
