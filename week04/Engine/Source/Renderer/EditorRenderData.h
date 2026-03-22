@@ -7,22 +7,23 @@ class FSceneView;
 
 enum class EGizmoType : uint8
 {
-    None,
-    Translation,
-    Rotation,
-    Scaling,
+    None = 0,
+    Translation = 1,
+    Rotation = 2,
+    Scaling = 3,
+    Count = 4
 };
 
 enum class EGizmoHighlight : uint8
 {
-    None,
-    X,
-    Y,
-    Z,
-    XY,
-    YZ,
-    ZX,
-    XYZ,
+    None = 0,
+    X = 1,
+    Y = 2,
+    Z = 3,
+    XY = 4,
+    YZ = 5,
+    ZX = 6,
+    XYZ = 7,
 };
 
 struct FGizmoDrawData

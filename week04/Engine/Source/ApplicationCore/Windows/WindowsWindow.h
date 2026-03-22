@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Core/CoreMinimal.h>
+#include "Core/CoreMinimal.h"
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 

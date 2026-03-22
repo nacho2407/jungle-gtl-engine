@@ -1,144 +1,526 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Source\ApplicationCore\Input\InputRouter.cpp" />
-    <ClCompile Include="Source\ApplicationCore\Input\InputSystem.cpp" />
-    <ClCompile Include="Source\ApplicationCore\Windows\WindowsApplication.cpp" />
-    <ClCompile Include="Source\ApplicationCore\Windows\WindowsWindow.cpp" />
-    <ClCompile Include="Source\Core\CoreGlobals.cpp" />
-    <ClCompile Include="Source\Core\CoreMinimal.cpp" />
-    <ClCompile Include="Source\Core\Geometry\Transform.cpp" />
-    <ClCompile Include="Source\Core\HAL\PlatformTime.cpp" />
-    <ClCompile Include="Source\Core\Math\Color.cpp" />
-    <ClCompile Include="Source\Core\Math\Matrix.cpp" />
-    <ClCompile Include="Source\Core\Math\Quat.cpp" />
-    <ClCompile Include="Source\Core\Math\Rotator.cpp" />
-    <ClCompile Include="Source\Core\Math\Vector.cpp" />
-    <ClCompile Include="Source\Core\Math\Vector2.cpp" />
-    <ClCompile Include="Source\Core\Math\Vector4.cpp" />
-    <ClCompile Include="Source\Core\Path.cpp" />
-    <ClCompile Include="Source\CoreUObject\Object.cpp" />
-    <ClCompile Include="Source\CoreUObject\ObjectFactory.cpp" />
-    <ClCompile Include="Source\Engine\Asset\Asset.cpp" />
-    <ClCompile Include="Source\Engine\Asset\AssetLoader.cpp" />
-    <ClCompile Include="Source\Engine\Asset\AssetManager.cpp" />
-    <ClCompile Include="Source\Engine\Asset\Texture2DAsset.cpp" />
-    <ClCompile Include="Source\Engine\Asset\TextureLoader.cpp" />
-    <ClCompile Include="Source\Engine\Component\BasicPrimitives\CubeComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\BasicPrimitives\PlaneComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\BasicPrimitives\SphereComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\SceneComponent.cpp" />
-    <ClCompile Include="Source\Engine\EngineStatics.cpp" />
-    <ClCompile Include="Source\Engine\Game\Actor.cpp" />
-    <ClCompile Include="Source\Engine\Scene.cpp" />
-    <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp" />
-    <ClCompile Include="Source\Renderer\D3D11\D3D11DynamicRHI.cpp" />
-    <ClCompile Include="Source\Renderer\D3D11\D3D11GizmoRenderer.cpp" />
-    <ClCompile Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.cpp" />
-    <ClCompile Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.cpp" />
-    <ClCompile Include="Source\Renderer\RendererModule.cpp" />
-    <ClCompile Include="Source\Engine\Component\CameraComponent.cpp" />
+    <Filter Include="Resources">
+      <UniqueIdentifier>{176e3101-af0c-2900-5e63-8a490022129a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{4f6c83fe-a134-3484-3756-8c697b723468}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Mesh">
+      <UniqueIdentifier>{611fd08d-c5f2-636f-d61c-0405906a469d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Primitives">
+      <UniqueIdentifier>{7de5503a-8149-ef69-ab35-ccf0d4d50701}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Scene">
+      <UniqueIdentifier>{6f21998c-ad3f-4295-5a94-62d9702a0e9b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shader">
+      <UniqueIdentifier>{d32ca5c8-c821-11f5-dfa1-d5050d286dcf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Texture">
+      <UniqueIdentifier>{a2187649-a844-6073-73c0-7c7d7cb99990}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\ApplicationCore">
+      <UniqueIdentifier>{57812f21-7fc5-e713-3694-11639c1953c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core">
+      <UniqueIdentifier>{238c320c-6dd1-5946-035c-35da4bd61493}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\CoreUObject">
+      <UniqueIdentifier>{edf12b0a-6dcc-905b-5fdf-154d878d9835}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine">
+      <UniqueIdentifier>{b3c5f926-6c8b-bd77-5999-bbaf53eba42b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Launch">
+      <UniqueIdentifier>{3ff2eba7-1724-b5b0-ebd8-4a23450e4f65}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Renderer">
+      <UniqueIdentifier>{b4935566-c566-3c8c-ae88-5cc13eba9d31}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\ThirdParty">
+      <UniqueIdentifier>{b8e8bd27-1e61-2aa5-0088-7e70dd22287c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Mesh\Gizmo">
+      <UniqueIdentifier>{9e95f97f-dddc-0f45-a582-5a1c3a4d9e57}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\ApplicationCore\GenericPlatform">
+      <UniqueIdentifier>{387b5035-7247-ab88-2751-c494bed9266f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\ApplicationCore\Input">
+      <UniqueIdentifier>{658e0f79-2d67-eb9d-c8d8-0c89acb03947}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\ApplicationCore\Windows">
+      <UniqueIdentifier>{2548a85b-9fa1-e3d9-af0b-dee02015da10}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Containers">
+      <UniqueIdentifier>{912017d8-8df8-694a-9f3f-b99826c544c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Geometry">
+      <UniqueIdentifier>{7399648a-ed81-18a3-20da-1cbd8e6140ad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\HAL">
+      <UniqueIdentifier>{ad1f9b80-0e1a-0d71-cd6b-b630f2985514}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Logging">
+      <UniqueIdentifier>{10f7d8a3-a3d1-142d-af3b-06dd7d240880}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Math">
+      <UniqueIdentifier>{b359914c-202a-e69b-dc67-51d523cb3e2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Misc">
+      <UniqueIdentifier>{822fce81-821e-1b1b-adaf-11c91675259f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Asset">
+      <UniqueIdentifier>{292084ae-a847-4cb7-dedc-b9cf3c9c5e97}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Component">
+      <UniqueIdentifier>{009757f7-27d2-e9f2-4fdf-fa550fbfb1ff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Game">
+      <UniqueIdentifier>{b40c0879-15f3-b5bd-98bc-875a35ed9e05}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\ViewPort">
+      <UniqueIdentifier>{3f58abac-aa9e-06f1-348e-4d37ab560ccd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Renderer\D3D11">
+      <UniqueIdentifier>{7d49e81e-9894-3ffe-a35e-b64d3056e0ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Renderer\RenderAsset">
+      <UniqueIdentifier>{37df3f3d-06b0-91a9-da82-c1929332f7ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Renderer\Types">
+      <UniqueIdentifier>{2a470593-b470-7a69-2874-61b9dc3a78a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Geometry\Primitives">
+      <UniqueIdentifier>{243ace44-3495-fff3-c265-ad18f16b3c35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Component\BasicPrimitives">
+      <UniqueIdentifier>{e0106b29-8ace-ce65-987c-01d4f18b866d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Resources\Mesh\Cube.h" />
-    <ClInclude Include="Resources\Mesh\Gizmo\GizmoRotation.h" />
-    <ClInclude Include="Resources\Mesh\Gizmo\GizmoScaling.h" />
-    <ClInclude Include="Resources\Mesh\Gizmo\GizmoTranslation.h" />
-    <ClInclude Include="Resources\Mesh\Plane.h" />
-    <ClInclude Include="Resources\Mesh\Sphere.h" />
-    <ClInclude Include="Resources\Mesh\Triangle.h" />
-    <ClInclude Include="Resources\Mesh\VertexSimple.h" />
-    <ClInclude Include="Resources\Primitives\Cube.h" />
-    <ClInclude Include="Resources\Primitives\Plane.h" />
-    <ClInclude Include="Resources\Primitives\Triangle.h" />
-    <ClInclude Include="Resources\Primitives\VertexSimple.h" />
-    <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplication.h" />
-    <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplicationMessageHandler.h" />
-    <ClInclude Include="Source\ApplicationCore\Input\InputContext.h" />
-    <ClInclude Include="Source\ApplicationCore\Input\InputRouter.h" />
-    <ClInclude Include="Source\ApplicationCore\Input\InputState.h" />
-    <ClInclude Include="Source\ApplicationCore\Input\InputSystem.h" />
-    <ClInclude Include="Source\ApplicationCore\Input\InputTypes.h" />
-    <ClInclude Include="Source\ApplicationCore\Windows\WindowsApplication.h" />
-    <ClInclude Include="Source\ApplicationCore\Windows\WindowsWindow.h" />
-    <ClInclude Include="Source\Core\Containers\Array.h" />
-    <ClInclude Include="Source\Core\Containers\LinkedList.h" />
-    <ClInclude Include="Source\Core\Containers\Map.h" />
-    <ClInclude Include="Source\Core\Containers\Pair.h" />
-    <ClInclude Include="Source\Core\Containers\Queue.h" />
-    <ClInclude Include="Source\Core\Containers\Set.h" />
-    <ClInclude Include="Source\Core\Containers\StaticArray.h" />
-    <ClInclude Include="Source\Core\Containers\String.h" />
-    <ClInclude Include="Source\Core\CoreGlobals.h" />
-    <ClInclude Include="Source\Core\CoreMinimal.h" />
-    <ClInclude Include="Source\Core\EngineAPI.h" />
-    <ClInclude Include="Source\Core\Geometry\BoundsUtility.h" />
-    <ClInclude Include="Source\Core\Geometry\Geometry.h" />
-    <ClInclude Include="Source\Core\Geometry\Intersection.h" />
-    <ClInclude Include="Source\Core\Geometry\Primitives\AABB.h" />
-    <ClInclude Include="Source\Core\Geometry\Primitives\AABBUtility.h" />
-    <ClInclude Include="Source\Core\Geometry\Primitives\Ray.h" />
-    <ClInclude Include="Source\Core\Geometry\Primitives\Segment.h" />
-    <ClInclude Include="Source\Core\Geometry\Primitives\Triangle.h" />
-    <ClInclude Include="Source\Core\Geometry\Transform.h" />
-    <ClInclude Include="Source\Core\HAL\PlatformMemory.h" />
-    <ClInclude Include="Source\Core\HAL\PlatformMisc.h" />
-    <ClInclude Include="Source\Core\HAL\PlatformTime.h" />
-    <ClInclude Include="Source\Core\HAL\PlatformTypes.h" />
-    <ClInclude Include="Source\Core\Logging\LogMacros.h" />
-    <ClInclude Include="Source\Core\Logging\LogOutputDevice.h" />
-    <ClInclude Include="Source\Core\Math\Color.h" />
-    <ClInclude Include="Source\Core\Math\MathUtility.h" />
-    <ClInclude Include="Source\Core\Math\Matrix.h" />
-    <ClInclude Include="Source\Core\Math\Quat.h" />
-    <ClInclude Include="Source\Core\Math\Rotator.h" />
-    <ClInclude Include="Source\Core\Math\Vector.h" />
-    <ClInclude Include="Source\Core\Math\Vector2.h" />
-    <ClInclude Include="Source\Core\Math\Vector4.h" />
-    <ClInclude Include="Source\Core\Misc\Name.h" />
-    <ClInclude Include="Source\Core\Path.h" />
-    <ClInclude Include="Source\CoreUObject\Object.h" />
-    <ClInclude Include="Source\CoreUObject\ObjectFactory.h" />
-    <ClInclude Include="Source\Engine\Asset\Asset.h" />
-    <ClInclude Include="Source\Engine\Asset\AssetLoader.h" />
-    <ClInclude Include="Source\Engine\Asset\AssetManager.h" />
-    <ClInclude Include="Source\Engine\Asset\Texture2DAsset.h" />
-    <ClInclude Include="Source\Engine\Asset\TextureLoader.h" />
-    <ClInclude Include="Source\Engine\Component\BasicPrimitives\CubeComponent.h" />
-    <ClInclude Include="Source\Engine\Component\BasicPrimitives\PlaneComponent.h" />
-    <ClInclude Include="Source\Engine\Component\BasicPrimitives\SphereComponent.h" />
-    <ClInclude Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.h" />
-    <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
-    <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
-    <ClInclude Include="Source\Engine\EngineStatics.h" />
-    <ClInclude Include="Source\Engine\Game\Actor.h" />
-    <ClInclude Include="Source\Engine\Scene.h" />
-    <ClInclude Include="Source\Engine\ViewPort\Viewport.h" />
-    <ClInclude Include="Source\Launch\EngineLoop.h" />
-    <ClInclude Include="Source\Renderer\D3D11\D3D11Common.h" />
-    <ClInclude Include="Source\Renderer\D3D11\D3D11DynamicRHI.h" />
-    <ClInclude Include="Source\Renderer\D3D11\D3D11FontBatchRenderer.h" />
-    <ClInclude Include="Source\Renderer\D3D11\D3D11GizmoRenderer.h" />
-    <ClInclude Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.h" />
-    <ClInclude Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.h" />
-    <ClInclude Include="Source\Renderer\D3D11\D3D11PickingPass.h" />
-    <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h" />
-    <ClInclude Include="Source\Renderer\EditorRenderData.h" />
-    <ClInclude Include="Source\Renderer\RenderAsset\FTextureResource.h" />
-    <ClInclude Include="Source\Renderer\RendererModule.h" />
-    <ClInclude Include="Source\Renderer\SceneRenderData.h" />
-    <ClInclude Include="Source\Renderer\SceneView.h" />
-    <ClInclude Include="Source\Renderer\Types\AxisColors.h" />
-    <ClInclude Include="Source\Renderer\Types\BasicMeshType.h" />
-    <ClInclude Include="Source\Renderer\Types\MeshInstanceData.h" />
-    <ClInclude Include="Source\Renderer\Types\ShaderConstants.h" />
-    <ClInclude Include="Source\Renderer\Types\VertexTypes.h" />
-    <ClInclude Include="Source\Renderer\Types\ViewMode.h" />
-    <ClInclude Include="Source\Engine\Component\CameraComponent.h" />
-    <ClInclude Include="Source\Engine\Component\CubeComponent.h" />
-    <ClInclude Include="Source\Engine\Component\PlaneComponent.h" />
+    <ClCompile Include="Source\ApplicationCore\Input\InputRouter.cpp">
+      <Filter>Source\ApplicationCore\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ApplicationCore\Input\InputSystem.cpp">
+      <Filter>Source\ApplicationCore\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ApplicationCore\Windows\WindowsApplication.cpp">
+      <Filter>Source\ApplicationCore\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ApplicationCore\Windows\WindowsWindow.cpp">
+      <Filter>Source\ApplicationCore\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\CoreGlobals.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\CoreMinimal.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Geometry\Transform.cpp">
+      <Filter>Source\Core\Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\HAL\PlatformTime.cpp">
+      <Filter>Source\Core\HAL</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Math\Color.cpp">
+      <Filter>Source\Core\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Math\Matrix.cpp">
+      <Filter>Source\Core\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Math\Quat.cpp">
+      <Filter>Source\Core\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Math\Rotator.cpp">
+      <Filter>Source\Core\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Math\Vector.cpp">
+      <Filter>Source\Core\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Math\Vector2.cpp">
+      <Filter>Source\Core\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Math\Vector4.cpp">
+      <Filter>Source\Core\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Misc\Name.cpp">
+      <Filter>Source\Core\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Misc\NameSubsystem.cpp">
+      <Filter>Source\Core\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Path.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\CoreUObject\Object.cpp">
+      <Filter>Source\CoreUObject</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\CoreUObject\ObjectFactory.cpp">
+      <Filter>Source\CoreUObject</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\Asset.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\AssetLoader.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\AssetManager.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\Texture2DAsset.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\TextureLoader.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\BasicPrimitives\CameraComponent.cpp">
+      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\BasicPrimitives\CubeComponent.cpp">
+      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\BasicPrimitives\PlaneComponent.cpp">
+      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\BasicPrimitives\SphereComponent.cpp">
+      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.cpp">
+      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\SceneComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\EngineStatics.cpp">
+      <Filter>Source\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Game\Actor.cpp">
+      <Filter>Source\Engine\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Scene.cpp">
+      <Filter>Source\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp">
+      <Filter>Source\Engine\ViewPort</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\D3D11\D3D11DynamicRHI.cpp">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\D3D11\D3D11GizmoRenderer.cpp">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.cpp">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.cpp">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\RendererModule.cpp">
+      <Filter>Source\Renderer</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Resources\Mesh\Cube.h">
+      <Filter>Resources\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources\Mesh\Gizmo\GizmoRotation.h">
+      <Filter>Resources\Mesh\Gizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources\Mesh\Gizmo\GizmoScaling.h">
+      <Filter>Resources\Mesh\Gizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources\Mesh\Gizmo\GizmoTranslation.h">
+      <Filter>Resources\Mesh\Gizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources\Mesh\Plane.h">
+      <Filter>Resources\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources\Mesh\Sphere.h">
+      <Filter>Resources\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources\Mesh\Triangle.h">
+      <Filter>Resources\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources\Mesh\VertexSimple.h">
+      <Filter>Resources\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources\Primitives\Cube.h">
+      <Filter>Resources\Primitives</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources\Primitives\Plane.h">
+      <Filter>Resources\Primitives</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources\Primitives\Triangle.h">
+      <Filter>Resources\Primitives</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources\Primitives\VertexSimple.h">
+      <Filter>Resources\Primitives</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplication.h">
+      <Filter>Source\ApplicationCore\GenericPlatform</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplicationMessageHandler.h">
+      <Filter>Source\ApplicationCore\GenericPlatform</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ApplicationCore\Input\InputContext.h">
+      <Filter>Source\ApplicationCore\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ApplicationCore\Input\InputRouter.h">
+      <Filter>Source\ApplicationCore\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ApplicationCore\Input\InputState.h">
+      <Filter>Source\ApplicationCore\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ApplicationCore\Input\InputSystem.h">
+      <Filter>Source\ApplicationCore\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ApplicationCore\Input\InputTypes.h">
+      <Filter>Source\ApplicationCore\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ApplicationCore\Windows\WindowsApplication.h">
+      <Filter>Source\ApplicationCore\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ApplicationCore\Windows\WindowsWindow.h">
+      <Filter>Source\ApplicationCore\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Containers\Array.h">
+      <Filter>Source\Core\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Containers\LinkedList.h">
+      <Filter>Source\Core\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Containers\Map.h">
+      <Filter>Source\Core\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Containers\Pair.h">
+      <Filter>Source\Core\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Containers\Queue.h">
+      <Filter>Source\Core\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Containers\Set.h">
+      <Filter>Source\Core\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Containers\StaticArray.h">
+      <Filter>Source\Core\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Containers\String.h">
+      <Filter>Source\Core\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\CoreGlobals.h">
+      <Filter>Source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\CoreMinimal.h">
+      <Filter>Source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\EngineAPI.h">
+      <Filter>Source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Geometry\BoundsUtility.h">
+      <Filter>Source\Core\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Geometry\Geometry.h">
+      <Filter>Source\Core\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Geometry\Intersection.h">
+      <Filter>Source\Core\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Geometry\Primitives\AABB.h">
+      <Filter>Source\Core\Geometry\Primitives</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Geometry\Primitives\AABBUtility.h">
+      <Filter>Source\Core\Geometry\Primitives</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Geometry\Primitives\Ray.h">
+      <Filter>Source\Core\Geometry\Primitives</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Geometry\Primitives\Segment.h">
+      <Filter>Source\Core\Geometry\Primitives</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Geometry\Primitives\Triangle.h">
+      <Filter>Source\Core\Geometry\Primitives</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Geometry\Transform.h">
+      <Filter>Source\Core\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\HAL\PlatformMemory.h">
+      <Filter>Source\Core\HAL</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\HAL\PlatformMisc.h">
+      <Filter>Source\Core\HAL</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\HAL\PlatformTime.h">
+      <Filter>Source\Core\HAL</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\HAL\PlatformTypes.h">
+      <Filter>Source\Core\HAL</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Logging\LogMacros.h">
+      <Filter>Source\Core\Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Logging\LogOutputDevice.h">
+      <Filter>Source\Core\Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Math\Color.h">
+      <Filter>Source\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Math\MathUtility.h">
+      <Filter>Source\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Math\Matrix.h">
+      <Filter>Source\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Math\Quat.h">
+      <Filter>Source\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Math\Rotator.h">
+      <Filter>Source\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Math\Vector.h">
+      <Filter>Source\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Math\Vector2.h">
+      <Filter>Source\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Math\Vector4.h">
+      <Filter>Source\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Misc\BitMaskEnum.h">
+      <Filter>Source\Core\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Misc\Name.h">
+      <Filter>Source\Core\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Misc\NameSubsystem.h">
+      <Filter>Source\Core\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Path.h">
+      <Filter>Source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CoreUObject\Object.h">
+      <Filter>Source\CoreUObject</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CoreUObject\ObjectFactory.h">
+      <Filter>Source\CoreUObject</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\Asset.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\AssetLoader.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\AssetManager.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\Texture2DAsset.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\TextureLoader.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\BasicPrimitives\CameraComponent.h">
+      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\BasicPrimitives\CubeComponent.h">
+      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\BasicPrimitives\PlaneComponent.h">
+      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\BasicPrimitives\SphereComponent.h">
+      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.h">
+      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\SceneComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\EngineStatics.h">
+      <Filter>Source\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Game\Actor.h">
+      <Filter>Source\Engine\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Scene.h">
+      <Filter>Source\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ViewPort\Viewport.h">
+      <Filter>Source\Engine\ViewPort</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Launch\EngineLoop.h">
+      <Filter>Source\Launch</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\D3D11\D3D11Common.h">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\D3D11\D3D11DynamicRHI.h">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\D3D11\D3D11FontBatchRenderer.h">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\D3D11\D3D11GizmoRenderer.h">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.h">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.h">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\D3D11\D3D11PickingPass.h">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\EditorRenderData.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\RenderAsset\FTextureResource.h">
+      <Filter>Source\Renderer\RenderAsset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\RendererModule.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\SceneRenderData.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\SceneView.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Types\AxisColors.h">
+      <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Types\BasicMeshType.h">
+      <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Types\MeshInstanceData.h">
+      <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Types\ShaderConstants.h">
+      <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Types\ShowFlags.h">
+      <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Types\VertexTypes.h">
+      <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Types\ViewMode.h">
+      <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

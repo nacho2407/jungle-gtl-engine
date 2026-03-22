@@ -3,16 +3,17 @@
 #include "Core/Containers/Array.h"
 #include "Core/HAL/PlatformTypes.h"
 #include "Core/Math/Matrix.h"
-#include "Core/Math/Vector4.h"
+#include "Core/Math/Color.h"
 #include "Renderer/Types/BasicMeshType.h"
 #include "Renderer/Types/ViewMode.h"
+#include "Renderer/Types/ShowFlags.h"
 
 class FSceneView;
 
 struct FPrimitiveRenderItem
 {
     FMatrix        World;
-    FVector4       Color = FVector4(1, 1, 1, 1);
+    FColor         Color = FColor::White();
     EBasicMeshType MeshType;
 
     uint32 ObjectId = 0;
@@ -27,6 +28,8 @@ struct FSceneRenderData
 {
     const FSceneView* SceneView = nullptr;
     EViewModeIndex    ViewMode = EViewModeIndex::Lit;
+
+    ESceneShowFlags ShowFlags = ESceneShowFlags::SF_Primitives | ESceneShowFlags::SF_BillboardText;
 
     bool bUseInstancing = true;
 

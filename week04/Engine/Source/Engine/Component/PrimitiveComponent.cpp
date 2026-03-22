@@ -34,4 +34,5 @@ namespace Engine::Component
     }
 
     void UPrimitiveComponent::OnTransformChanged() { bBoundsDirty = true; }
+
 } // namespace Engine::Component

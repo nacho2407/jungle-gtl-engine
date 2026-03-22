@@ -1,12 +1,13 @@
 #pragma once
 
 #include "ObjectFactory.h"
+#include "Core/Misc/Name.h"
 
 #define DECLARE_RTTI(Cls, ParentCls)\
   public:\
     static const void* GetClass()\
     {\
-        static int Id = 0;\
+        static int Id {0};\
         return &Id;\
     } \
     virtual bool IsA(const void* Id) const override\
@@ -50,6 +51,7 @@ class ENGINE_API UObject
 
   public:
     uint32 UUID;
+    Engine::Core::Misc::FName  Name;
     uint32 InternalIndex;
 };
 

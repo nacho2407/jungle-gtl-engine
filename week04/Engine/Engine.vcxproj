@@ -66,7 +66,9 @@
     <ClInclude Include="Source\Core\Math\Vector.h" />
     <ClInclude Include="Source\Core\Math\Vector2.h" />
     <ClInclude Include="Source\Core\Math\Vector4.h" />
+    <ClInclude Include="Source\Core\Misc\BitMaskEnum.h" />
     <ClInclude Include="Source\Core\Misc\Name.h" />
+    <ClInclude Include="Source\Core\Misc\NameSubsystem.h" />
     <ClInclude Include="Source\Core\Path.h" />
     <ClInclude Include="Source\CoreUObject\Object.h" />
     <ClInclude Include="Source\CoreUObject\ObjectFactory.h" />
@@ -75,6 +77,7 @@
     <ClInclude Include="Source\Engine\Asset\AssetManager.h" />
     <ClInclude Include="Source\Engine\Asset\Texture2DAsset.h" />
     <ClInclude Include="Source\Engine\Asset\TextureLoader.h" />
+    <ClInclude Include="Source\Engine\Component\BasicPrimitives\CameraComponent.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\CubeComponent.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\PlaneComponent.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\SphereComponent.h" />
@@ -105,6 +108,7 @@
     <ClInclude Include="Source\Renderer\Types\BasicMeshType.h" />
     <ClInclude Include="Source\Renderer\Types\MeshInstanceData.h" />
     <ClInclude Include="Source\Renderer\Types\ShaderConstants.h" />
+    <ClInclude Include="Source\Renderer\Types\ShowFlags.h" />
     <ClInclude Include="Source\Renderer\Types\VertexTypes.h" />
     <ClInclude Include="Source\Renderer\Types\ViewMode.h" />
   </ItemGroup>
@@ -130,6 +134,8 @@
     <ClCompile Include="Source\Core\Math\Vector.cpp" />
     <ClCompile Include="Source\Core\Math\Vector2.cpp" />
     <ClCompile Include="Source\Core\Math\Vector4.cpp" />
+    <ClCompile Include="Source\Core\Misc\Name.cpp" />
+    <ClCompile Include="Source\Core\Misc\NameSubsystem.cpp" />
     <ClCompile Include="Source\Core\Path.cpp" />
     <ClCompile Include="Source\CoreUObject\Object.cpp" />
     <ClCompile Include="Source\CoreUObject\ObjectFactory.cpp" />
@@ -138,6 +144,7 @@
     <ClCompile Include="Source\Engine\Asset\AssetManager.cpp" />
     <ClCompile Include="Source\Engine\Asset\Texture2DAsset.cpp" />
     <ClCompile Include="Source\Engine\Asset\TextureLoader.cpp" />
+    <ClCompile Include="Source\Engine\Component\BasicPrimitives\CameraComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\CubeComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\PlaneComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\SphereComponent.cpp" />

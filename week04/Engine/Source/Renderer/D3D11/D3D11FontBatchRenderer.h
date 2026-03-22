@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/Math/Vector.h"
-#include "Core/Math/Vector4.h"
+#include "Core/Math/Color.h"
 #include "Core/Containers/Array.h"
 #include "Renderer/D3D11/D3D11Common.h"
 #include "Renderer/Types/VertexTypes.h"
@@ -19,11 +19,11 @@ class FD3D11FontBatchRenderer
 
     void BeginFrame() {}
     void DrawTextScreenSpace(float InX, float InY, const char* InText, float InScale,
-                             const FVector4& InColor)
+                             const FColor& InColor)
     {
     }
     void DrawTextWorldSpace(const FSceneView* InSceneView, const FVector& InWorldPosition,
-                            const char* InText, float InScale, const FVector4& InColor)
+                            const char* InText, float InScale, const FColor& InColor)
     {
     }
     void EndFrame(const FSceneView* InSceneView) {}

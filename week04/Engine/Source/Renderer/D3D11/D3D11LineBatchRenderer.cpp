@@ -50,7 +50,7 @@ void FD3D11LineBatchRenderer::BeginFrame(const FSceneView* InSceneView)
 }
 
 void FD3D11LineBatchRenderer::AddLine(const FVector& InStart, const FVector& InEnd,
-                                      const FVector4& InColor)
+                                      const FColor& InColor)
 {
     if (RHI == nullptr || CurrentSceneView == nullptr)
     {
@@ -80,7 +80,7 @@ void FD3D11LineBatchRenderer::AddLine(const FVector& InStart, const FVector& InE
 }
 
 void FD3D11LineBatchRenderer::AddGrid(int32 InHalfLineCount, float InSpacing,
-                                      const FVector4& InColor)
+                                      const FColor& InColor)
 {
     const float Extent = static_cast<float>(InHalfLineCount) * InSpacing;
 
@@ -103,7 +103,7 @@ void FD3D11LineBatchRenderer::AddWorldAxes(float InAxisLength)
             GetAxisBaseColor(EAxis::Z));
 }
 
-void FD3D11LineBatchRenderer::AddAABB(const Geometry::FAABB& InBounds, const FVector4& InColor)
+void FD3D11LineBatchRenderer::AddAABB(const Geometry::FAABB& InBounds, const FColor& InColor)
 {
     const FVector Min = InBounds.Min;
     const FVector Max = InBounds.Max;

@@ -1,4 +1,4 @@
-#include <Core/CoreMinimal.h>
+#include "Core/CoreMinimal.h"
 #include "WindowsWindow.h"
 
 namespace Engine::ApplicationCore

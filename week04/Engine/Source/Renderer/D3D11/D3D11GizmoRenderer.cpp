@@ -67,13 +67,20 @@ void FD3D11GizmoRenderer::Render(const FEditorRenderData& InEditorRenderData)
         return;
     }
 
-    if (!InEditorRenderData.bShowGizmo || InEditorRenderData.SceneView == nullptr)
+    if (!InEditorRenderData.bShowGizmo)
     {
         return;
     }
 
     const FGizmoDrawData& Gizmo = InEditorRenderData.Gizmo;
-    if (!Gizmo.bVisible || Gizmo.GizmoType == EGizmoType::None)
+    const FSceneView*     SceneView = InEditorRenderData.SceneView;
+
+    if (!Gizmo.bVisible || SceneView == nullptr)
+    {
+        return;
+    }
+
+    if (Gizmo.GizmoType == EGizmoType::None || Gizmo.GizmoType == EGizmoType::Count)
     {
         return;
     }
@@ -83,17 +90,19 @@ void FD3D11GizmoRenderer::Render(const FEditorRenderData& InEditorRenderData)
     switch (Gizmo.GizmoType)
     {
     case EGizmoType::Translation:
-        DrawTranslation(Gizmo, InEditorRenderData.SceneView);
+        DrawTranslation(Gizmo, SceneView);
         break;
 
     case EGizmoType::Rotation:
-        DrawRotation(Gizmo, InEditorRenderData.SceneView);
+        DrawRotation(Gizmo, SceneView);
         break;
 
     case EGizmoType::Scaling:
-        DrawScaling(Gizmo, InEditorRenderData.SceneView);
+        DrawScaling(Gizmo, SceneView);
         break;
 
+    case EGizmoType::None:
+    case EGizmoType::Count:
     default:
         break;
     }
@@ -179,17 +188,19 @@ bool FD3D11GizmoRenderer::CreateStates()
 
 bool FD3D11GizmoRenderer::CreateGizmoMeshes()
 {
-    if (!CreateTranslationMesh(TranslationMesh))
+    ReleaseGizmoMeshes();
+
+    if (!CreateTranslationMesh(GizmoMeshes[static_cast<uint8>(EGizmoType::Translation)]))
     {
         return false;
     }
 
-    if (!CreateRotationMesh(RotationMesh))
+    if (!CreateRotationMesh(GizmoMeshes[static_cast<uint8>(EGizmoType::Rotation)]))
     {
         return false;
     }
 
-    if (!CreateScalingMesh(ScalingMesh))
+    if (!CreateScalingMesh(GizmoMeshes[static_cast<uint8>(EGizmoType::Scaling)]))
     {
         return false;
     }
@@ -199,17 +210,12 @@ bool FD3D11GizmoRenderer::CreateGizmoMeshes()
 
 void FD3D11GizmoRenderer::ReleaseGizmoMeshes()
 {
-    TranslationMesh.VertexBuffer.Reset();
-    TranslationMesh.IndexBuffer.Reset();
-    TranslationMesh.IndexCount = 0;
-
-    RotationMesh.VertexBuffer.Reset();
-    RotationMesh.IndexBuffer.Reset();
-    RotationMesh.IndexCount = 0;
-
-    ScalingMesh.VertexBuffer.Reset();
-    ScalingMesh.IndexBuffer.Reset();
-    ScalingMesh.IndexCount = 0;
+    for (uint32 i = 0; i < static_cast<uint32>(EGizmoType::Count); ++i)
+    {
+        GizmoMeshes[i].VertexBuffer = nullptr;
+        GizmoMeshes[i].IndexBuffer = nullptr;
+        GizmoMeshes[i].IndexCount = 0;
+    }
 }
 
 bool FD3D11GizmoRenderer::CreateTranslationMesh(FGizmoMeshResource& OutResource)
@@ -311,42 +317,48 @@ void FD3D11GizmoRenderer::BindPipeline()
 void FD3D11GizmoRenderer::DrawTranslation(const FGizmoDrawData& InGizmo,
                                           const FSceneView*     InSceneView)
 {
-    DrawAxisMesh(TranslationMesh, InGizmo.Transform * MakeAxisRotationX(), InSceneView,
+    const FGizmoMeshResource& Mesh = GizmoMeshes[static_cast<uint8>(EGizmoType::Translation)];
+
+    DrawAxisMesh(Mesh, MakeAxisRotationX() * InGizmo.Transform, InSceneView,
                  GetAxisColor(EAxis::X, InGizmo.Highlight));
 
-    DrawAxisMesh(TranslationMesh, InGizmo.Transform * MakeAxisRotationY(), InSceneView,
+    DrawAxisMesh(Mesh, MakeAxisRotationY() * InGizmo.Transform, InSceneView,
                  GetAxisColor(EAxis::Y, InGizmo.Highlight));
 
-    DrawAxisMesh(TranslationMesh, InGizmo.Transform * MakeAxisRotationZ(), InSceneView,
+    DrawAxisMesh(Mesh, MakeAxisRotationZ() * InGizmo.Transform, InSceneView,
                  GetAxisColor(EAxis::Z, InGizmo.Highlight));
 }
 
 void FD3D11GizmoRenderer::DrawRotation(const FGizmoDrawData& InGizmo, const FSceneView* InSceneView)
 {
-    DrawAxisMesh(RotationMesh, InGizmo.Transform * MakeAxisRotationX(), InSceneView,
+    const FGizmoMeshResource& Mesh = GizmoMeshes[static_cast<uint8>(EGizmoType::Rotation)];
+
+    DrawAxisMesh(Mesh, MakeAxisRotationX() * InGizmo.Transform, InSceneView,
                  GetAxisColor(EAxis::X, InGizmo.Highlight));
 
-    DrawAxisMesh(RotationMesh, InGizmo.Transform * MakeAxisRotationY(), InSceneView,
+    DrawAxisMesh(Mesh, MakeAxisRotationY() * InGizmo.Transform, InSceneView,
                  GetAxisColor(EAxis::Y, InGizmo.Highlight));
 
-    DrawAxisMesh(RotationMesh, InGizmo.Transform * MakeAxisRotationZ(), InSceneView,
+    DrawAxisMesh(Mesh, MakeAxisRotationZ() * InGizmo.Transform, InSceneView,
                  GetAxisColor(EAxis::Z, InGizmo.Highlight));
 }
 
 void FD3D11GizmoRenderer::DrawScaling(const FGizmoDrawData& InGizmo, const FSceneView* InSceneView)
 {
-    DrawAxisMesh(ScalingMesh, InGizmo.Transform * MakeAxisRotationX(), InSceneView,
+    const FGizmoMeshResource& Mesh = GizmoMeshes[static_cast<uint8>(EGizmoType::Scaling)];
+
+    DrawAxisMesh(Mesh, MakeAxisRotationX() * InGizmo.Transform, InSceneView,
                  GetAxisColor(EAxis::X, InGizmo.Highlight));
 
-    DrawAxisMesh(ScalingMesh, InGizmo.Transform * MakeAxisRotationY(), InSceneView,
+    DrawAxisMesh(Mesh, MakeAxisRotationY() * InGizmo.Transform, InSceneView,
                  GetAxisColor(EAxis::Y, InGizmo.Highlight));
 
-    DrawAxisMesh(ScalingMesh, InGizmo.Transform * MakeAxisRotationZ(), InSceneView,
+    DrawAxisMesh(Mesh, MakeAxisRotationZ() * InGizmo.Transform, InSceneView,
                  GetAxisColor(EAxis::Z, InGizmo.Highlight));
 }
 
 void FD3D11GizmoRenderer::DrawAxisMesh(const FGizmoMeshResource& InMesh, const FMatrix& InWorld,
-                                       const FSceneView* InSceneView, const FVector4& InColor)
+                                       const FSceneView* InSceneView, const FColor& InColor)
 {
     if (RHI == nullptr || InSceneView == nullptr)
     {
@@ -376,7 +388,7 @@ void FD3D11GizmoRenderer::DrawAxisMesh(const FGizmoMeshResource& InMesh, const F
     Context->DrawIndexed(InMesh.IndexCount, 0, 0);
 }
 
-FVector4 FD3D11GizmoRenderer::GetAxisColor(EAxis InAxis, EGizmoHighlight InHighlight) const
+FColor FD3D11GizmoRenderer::GetAxisColor(EAxis InAxis, EGizmoHighlight InHighlight) const
 {
     switch (InHighlight)
     {
