@@ -82,14 +82,9 @@ void FRenderer::Render(const FRenderBus& InRenderBus, ERasterizerState InViewMod
 {
 	ID3D11DeviceContext* context = Device.GetDeviceContext();
 	UpdateFrameBuffer(context, InRenderBus.GetView(), InRenderBus.GetProj());
-	SetRenderSettings(InRenderBus);
 
 	RenderPasses(InRenderBus, context);
 	RenderEditorHelpers(InRenderBus, context);
-
-	Device.SetRasterizerState(ERasterizerState::SolidBackCull);
-
-	//	NOTE : Overlay Engine Loop에서 돌고 있음 수정 필요
 }
 
 void FRenderer::RenderOverlay(const FRenderBus& InRenderBus)
@@ -101,11 +96,20 @@ void FRenderer::RenderOverlay(const FRenderBus& InRenderBus)
 	//RenderOverlayPass(context, InRenderBus);
 }
 
-void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceContext)
+void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceContext, EViewMode CurViewMode)
 {
 	switch (Pass)
 	{
 	case ERenderPass::Opaque:
+		if (CurViewMode == EViewMode::Wireframe)
+		{
+			Device.SetRasterizerState(ERasterizerState::WireFrame);
+		}
+		else
+		{
+			Device.SetRasterizerState(ERasterizerState::SolidBackCull);
+		}
+
 		Device.SetDepthStencilState(EDepthStencilState::StencilWrite);
 		Device.SetBlendState(EBlendState::Opaque);
 		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -124,6 +128,7 @@ void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceCo
 	case ERenderPass::DepthLess:
 		Device.SetDepthStencilState(EDepthStencilState::DepthReadOnly);
 		Device.SetBlendState(EBlendState::AlphaBlend);
+		Device.SetRasterizerState(ERasterizerState::SolidBackCull);
 		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		Resources.GizmoShader.Bind(DeviceContext);
 		break;
@@ -138,6 +143,7 @@ void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceCo
 	case ERenderPass::Overlay:
 		Device.SetDepthStencilState(EDepthStencilState::None);
 		Device.SetBlendState(EBlendState::Opaque);
+		Device.SetRasterizerState(ERasterizerState::SolidBackCull);
 		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		Resources.OverlayShader.Bind(DeviceContext);
 		break;
@@ -280,7 +286,7 @@ void FRenderer::RenderPasses(const FRenderBus& RenderBus, ID3D11DeviceContext* C
 		const auto& Commands = RenderBus.GetCommands(CurPass);
 		if (Commands.empty()) continue;
 
-		SetupRenderState(CurPass, Context);
+		SetupRenderState(CurPass, Context, RenderBus.GetViewMode());
 
 		for (const auto& Cmd : Commands)
 		{
@@ -355,20 +361,4 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FMatrix& V
 	ID3D11Buffer* b0 = Resources.FrameBuffer.GetBuffer();
 	Context->VSSetConstantBuffers(0, 1, &b0);
 	Context->PSSetConstantBuffers(0, 1, &b0);
-}
-
-void FRenderer::SetRenderSettings(const FRenderBus& InRenderBus)
-{
-	EViewMode curViewMode = InRenderBus.GetViewMode();
-	switch (curViewMode)
-	{
-	case EViewMode::Lit:
-		Device.SetRasterizerState(ERasterizerState::SolidBackCull);
-		break;
-	case EViewMode::Unlit:
-		break;
-	case EViewMode::Wireframe:
-		Device.SetRasterizerState(ERasterizerState::WireFrame);
-		break;
-	}
 }
