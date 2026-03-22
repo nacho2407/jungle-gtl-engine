@@ -12,7 +12,7 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 	// 폰트 아틀라스 텍스처 로드
 	HRESULT hr = DirectX::CreateDDSTextureFromFileEx(
 		Device,
-		L"./Resources/Textures/FontAtlas.dds",
+		L"./Asset/font/FontAtlas.dds",
 		0,
 		D3D11_USAGE_IMMUTABLE,
 		D3D11_BIND_SHADER_RESOURCE,
@@ -57,7 +57,7 @@ void FFontBatcher::CreateBuffers()
 
 	D3D11_BUFFER_DESC vbDesc = {};
 	vbDesc.Usage          = D3D11_USAGE_DYNAMIC;
-	vbDesc.ByteWidth      = sizeof(FFontVertex) * MaxVertexCount;
+	vbDesc.ByteWidth      = sizeof(FTextureVertex) * MaxVertexCount;
 	vbDesc.BindFlags      = D3D11_BIND_VERTEX_BUFFER;
 	vbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	Device->CreateBuffer(&vbDesc, nullptr, &VertexBuffer);
@@ -171,7 +171,7 @@ void FFontBatcher::Flush(ID3D11DeviceContext* Context)
 	// VB 업로드
 	D3D11_MAPPED_SUBRESOURCE mapped = {};
 	if (FAILED(Context->Map(VertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return;
-	memcpy(mapped.pData, Vertices.data(), sizeof(FFontVertex) * Vertices.size());
+	memcpy(mapped.pData, Vertices.data(), sizeof(FTextureVertex) * Vertices.size());
 	Context->Unmap(VertexBuffer, 0);
 
 	// IB 업로드
@@ -182,7 +182,7 @@ void FFontBatcher::Flush(ID3D11DeviceContext* Context)
 	// Binding Shader
 	FontShader.Bind(Context);
 
-	uint32 stride = sizeof(FFontVertex), offset = 0;
+	uint32 stride = sizeof(FTextureVertex), offset = 0;
 	Context->IASetVertexBuffers(0, 1, &VertexBuffer, &stride, &offset);
 	Context->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
