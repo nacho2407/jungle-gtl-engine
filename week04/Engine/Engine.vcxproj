@@ -123,6 +123,7 @@
       <PrecompiledHeaderFile>Core/CoreMinimal.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="Source\Core\Geometry\Transform.cpp" />
+    <ClCompile Include="Source\Core\HAL\PlatformMisc.cpp" />
     <ClCompile Include="Source\Core\HAL\PlatformTime.cpp" />
     <ClCompile Include="Source\Core\Math\Color.cpp" />
     <ClCompile Include="Source\Core\Math\Matrix.cpp" />
