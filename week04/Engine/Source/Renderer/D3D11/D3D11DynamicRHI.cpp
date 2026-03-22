@@ -326,8 +326,8 @@ bool FD3D11DynamicRHI::CreateDeviceAndSwapChain(HWND InWindowHandle)
 
     HRESULT Hr = D3D11CreateDeviceAndSwapChain(
         nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, CreateDeviceFlags, FeatureLevels,
-        static_cast<UINT>(reinterpret_cast<SIZE_T>(FeatureLevels)), D3D11_SDK_VERSION, &SwapChainDesc,
-        SwapChain.GetAddressOf(), Device.GetAddressOf(), &CreatedFeatureLevel,
+        static_cast<UINT>(reinterpret_cast<SIZE_T>(FeatureLevels)), D3D11_SDK_VERSION,
+        &SwapChainDesc, SwapChain.GetAddressOf(), Device.GetAddressOf(), &CreatedFeatureLevel,
         DeviceContext.GetAddressOf());
 
 #ifdef _DEBUG
@@ -337,8 +337,8 @@ bool FD3D11DynamicRHI::CreateDeviceAndSwapChain(HWND InWindowHandle)
 
         Hr = D3D11CreateDeviceAndSwapChain(
             nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, CreateDeviceFlags, FeatureLevels,
-            static_cast<UINT>(reinterpret_cast<SIZE_T>(FeatureLevels)), D3D11_SDK_VERSION, &SwapChainDesc,
-            SwapChain.GetAddressOf(), Device.GetAddressOf(), &CreatedFeatureLevel,
+            static_cast<UINT>(reinterpret_cast<SIZE_T>(FeatureLevels)), D3D11_SDK_VERSION,
+            &SwapChainDesc, SwapChain.GetAddressOf(), Device.GetAddressOf(), &CreatedFeatureLevel,
             DeviceContext.GetAddressOf());
     }
 #endif
@@ -407,4 +407,27 @@ void FD3D11DynamicRHI::ReleaseBackBufferResources()
 
     BackBufferRTV.Reset();
     BackBufferTexture.Reset();
+}
+
+bool FD3D11DynamicRHI::UpdateConstantBuffer(ID3D11Buffer* InConstantBuffer, const void* InData,
+                                            uint32 InDataSize) const
+{
+    if (DeviceContext == nullptr || InConstantBuffer == nullptr || InData == nullptr ||
+        InDataSize == 0)
+    {
+        return false;
+    }
+
+    D3D11_MAPPED_SUBRESOURCE MappedResource = {};
+    HRESULT                  Hr =
+        DeviceContext->Map(InConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource);
+    if (FAILED(Hr))
+    {
+        return false;
+    }
+
+    memcpy(MappedResource.pData, InData, InDataSize);
+    DeviceContext->Unmap(InConstantBuffer, 0);
+
+    return true;
 }
