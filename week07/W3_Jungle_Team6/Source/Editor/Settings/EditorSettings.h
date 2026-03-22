@@ -4,22 +4,7 @@
 #include "Core/Paths.h"
 #include "Core/Singleton.h"
 #include "Math/Vector.h"
-
-enum class EViewMode : int32
-{
-	Lit = 0,
-	Unlit,
-	Wireframe,
-	Count
-};
-
-struct FShowFlags
-{
-	bool bPrimitives = true;
-	bool bGrid = true;
-	bool bGizmo = true;
-	bool bBillboardText = true;
-};
+#include "Render/Common/ViewTypes.h"
 
 class FEditorSettings : public TSingleton<FEditorSettings>
 {
@@ -44,10 +29,6 @@ public:
 	// Camera Sensitivity
 	float CameraMoveSensitivity = 1.0f;
 	float CameraRotateSensitivity = 1.0f;
-
-	// Runtime
-	bool bLimitUpdateRate = true;
-	int32 UpdateRate = 60;
 
 	// File paths
 	FString DefaultSavePath = FPaths::ToUtf8(FPaths::SceneDir());

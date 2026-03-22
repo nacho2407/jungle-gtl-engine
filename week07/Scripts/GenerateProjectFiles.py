@@ -57,6 +57,11 @@ INCLUDE_PATHS = [
     ".",
 ]
 
+# Library paths (relative to project dir)
+LIBRARY_PATHS = [
+    "ThirdParty\\DirectXTK\\Library",
+]
+
 NS = "http://schemas.microsoft.com/developer/msbuild/2003"
 
 
@@ -214,14 +219,16 @@ def generate_vcxproj(files: dict[str, list[str]]):
 
     ET.SubElement(proj, "PropertyGroup", Label="UserMacros")
 
-    # OutDir, IntDir, IncludePath, WorkingDirectory for all configurations
+    # OutDir, IntDir, IncludePath, LibraryPath, WorkingDirectory for all configurations
     include_path_value = ";".join(INCLUDE_PATHS) + ";$(IncludePath)"
+    library_path_value = ";".join(LIBRARY_PATHS) + ";$(LibraryPath)"
     for cfg, plat in CONFIGURATIONS:
         cond = f"'$(Configuration)|$(Platform)'=='{cfg}|{plat}'"
         pg = ET.SubElement(proj, "PropertyGroup", Condition=cond)
         ET.SubElement(pg, "OutDir").text = f"$(ProjectDir)Bin\\$(Configuration)\\"
         ET.SubElement(pg, "IntDir").text = f"$(ProjectDir)Build\\$(Configuration)\\"
         ET.SubElement(pg, "IncludePath").text = include_path_value
+        ET.SubElement(pg, "LibraryPath").text = library_path_value
         ET.SubElement(pg, "LocalDebuggerWorkingDirectory").text = "$(ProjectDir)"
 
     # ItemDefinitionGroups
@@ -242,16 +249,17 @@ def generate_vcxproj(files: dict[str, list[str]]):
         ET.SubElement(cl, "SDLCheck").text = "true"
 
         if is_win32:
-            defs = f"WIN32;{'NDEBUG' if is_release else '_DEBUG'};_CONSOLE;%(PreprocessorDefinitions)"
+            defs = f"WIN32;{'NDEBUG' if is_release else '_DEBUG'};_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)"
         else:
-            defs = f"{'NDEBUG' if is_release else '_DEBUG'};_CONSOLE;%(PreprocessorDefinitions)"
+            defs = f"{'NDEBUG' if is_release else '_DEBUG'};_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)"
         ET.SubElement(cl, "PreprocessorDefinitions").text = defs
 
         ET.SubElement(cl, "ConformanceMode").text = "true"
         ET.SubElement(cl, "AdditionalOptions").text = "/utf-8 %(AdditionalOptions)"
+        ET.SubElement(cl, "ExceptionHandling").text = "Async"
 
         if is_x64:
-            ET.SubElement(cl, "LanguageStandard").text = "stdcpp17"
+            ET.SubElement(cl, "LanguageStandard").text = "stdcpp20"
 
         link = ET.SubElement(idg, "Link")
         ET.SubElement(link, "SubSystem").text = "Windows" if is_x64 else "Console"

@@ -6,5 +6,5 @@
 class FEditorPropertyWidget : public FEditorWidget
 {
 public:
-	virtual void Render(float DeltaTime, FViewOutput& ViewOutput) override;
+	virtual void Render(float DeltaTime) override;
 };

@@ -1,15 +1,18 @@
-#include "Editor/UI/EditorSceneWidget.h"
+﻿#include "Editor/UI/EditorSceneWidget.h"
 
 #include "Editor/EditorEngine.h"
+#include "Engine/Core/Common.h"
+#include "GameFramework/WorldContext.h"
 
 #include "ImGui/imgui.h"
+#include "Component/GizmoComponent.h"
 #include "Serialization/SceneSaveManager.h"
 
 #include <filesystem>
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
-void FEditorSceneWidget::Initialize(FEditorEngine* InEditorEngine)
+void FEditorSceneWidget::Initialize(UEditorEngine* InEditorEngine)
 {
 	FEditorWidget::Initialize(InEditorEngine);
 	RefreshSceneFileList();
@@ -24,7 +27,7 @@ void FEditorSceneWidget::RefreshSceneFileList()
 	}
 }
 
-void FEditorSceneWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
+void FEditorSceneWidget::Render(float DeltaTime)
 {
 	using namespace common::constants::ImGui;
 
@@ -40,8 +43,6 @@ void FEditorSceneWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 	// New Scene
 	if (ImGui::Button("New Scene"))
 	{
-		EditorEngine->GetGizmo()->SetVisibility(false);
-		ViewOutput.Object = nullptr;
 		EditorEngine->NewScene();
 		NewSceneNotificationTimer = NotificationTimer;
 	}
@@ -59,7 +60,7 @@ void FEditorSceneWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 
 	if (ImGui::Button("Save Scene"))
 	{
-		FSceneSaveManager::SaveSceneAsJSON(SceneName, EditorEngine->GetScene());
+		FSceneSaveManager::SaveSceneAsJSON(SceneName, EditorEngine->GetWorldList());
 		SceneSaveNotificationTimer = NotificationTimer;
 		RefreshSceneFileList();
 	}
@@ -83,11 +84,11 @@ void FEditorSceneWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 	if (!SceneFiles.empty())
 	{
 		auto SceneNameGetter = [](void* Data, int32 Idx) -> const char*
-		{
-			auto* Files = static_cast<TArray<FString>*>(Data);
-			if (Idx < 0 || Idx >= static_cast<int32>(Files->size())) return nullptr;
-			return (*Files)[Idx].c_str();
-		};
+			{
+				auto* Files = static_cast<TArray<FString>*>(Data);
+				if (Idx < 0 || Idx >= static_cast<int32>(Files->size())) return nullptr;
+				return (*Files)[Idx].c_str();
+			};
 
 		ImGui::Combo("Scene File", &SelectedSceneIndex, SceneNameGetter, &SceneFiles, static_cast<int32>(SceneFiles.size()));
 
@@ -97,10 +98,12 @@ void FEditorSceneWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 				/ (FPaths::ToWide(SceneFiles[SelectedSceneIndex]) + FSceneSaveManager::SceneExtension);
 			FString FilePath = FPaths::ToUtf8(ScenePath.wstring());
 
-			EditorEngine->GetGizmo()->SetVisibility(false);
 			EditorEngine->ClearScene();
-			ViewOutput.Object = nullptr;
-			FSceneSaveManager::LoadSceneFromJSON(FilePath, EditorEngine->GetScene());
+			FSceneSaveManager::LoadSceneFromJSON(FilePath, EditorEngine->GetWorldList());
+			if (!EditorEngine->GetWorldList().empty())
+			{
+				EditorEngine->SetActiveWorld(EditorEngine->GetWorldList()[0].ContextHandle);
+			}
 			EditorEngine->ResetViewport();
 			SceneLoadNotificationTimer = NotificationTimer;
 		}
@@ -118,26 +121,46 @@ void FEditorSceneWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 
 	SEPARATOR();
 
-	// Active Scene List
-	ImGui::Text("Active Scenes (%d)", static_cast<int32>(EditorEngine->GetScene().size()));
-	ImGui::Separator();
-
-	TArray<UWorld*>& Scenes = EditorEngine->GetScene();
-	uint32 CurrentWorld = EditorEngine->GetCurrentWorld();
-
-	for (uint32 i = 0; i < static_cast<uint32>(Scenes.size()); i++)
+	// Actor Outliner
+	UWorld* World = EditorEngine->GetWorld();
+	if (World)
 	{
-		FString Label = "Scene " + std::to_string(i);
-		if (i == CurrentWorld)
-		{
-			Label += " (Active)";
-		}
+		const TArray<AActor*>& Actors = World->GetActors();
+		ImGui::Text("Actors (%d)", static_cast<int32>(Actors.size()));
+		ImGui::Separator();
 
-		bool bSelected = (i == CurrentWorld);
-		if (ImGui::Selectable(Label.c_str(), bSelected))
+		// Fill remaining space with scrollable child region
+		FSelectionManager& Selection = EditorEngine->GetSelectionManager();
+
+		ImGui::BeginChild("ActorList", ImVec2(0, 0), ImGuiChildFlags_Borders);
+		for (AActor* Actor : Actors)
 		{
-			EditorEngine->SetCurrentWorld(i);
+			if (!Actor) continue;
+
+			FString ActorName = Actor->GetFName().ToString();
+			if (ActorName.empty())
+			{
+				ActorName = Actor->GetTypeInfo()->name;
+			}
+
+			bool bIsSelected = Selection.IsSelected(Actor);
+			if (ImGui::Selectable(ActorName.c_str(), bIsSelected))
+			{
+				if (ImGui::GetIO().KeyShift)
+				{
+					Selection.SelectRange(Actor, Actors);
+				}
+				else if (ImGui::GetIO().KeyCtrl)
+				{
+					Selection.ToggleSelect(Actor);
+				}
+				else
+				{
+					Selection.Select(Actor);
+				}
+			}
 		}
+		ImGui::EndChild();
 	}
 
 	ImGui::End();

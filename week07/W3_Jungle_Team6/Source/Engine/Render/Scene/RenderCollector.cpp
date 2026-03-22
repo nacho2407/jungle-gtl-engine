@@ -1,7 +1,8 @@
 ﻿#include "RenderCollector.h"
 
 #include "GameFramework/World.h"
-#include "Component/Camera.h"
+#include "Component/CameraComponent.h"
+#include "Component/PrimitiveComponent.h"
 #include "Component/GizmoComponent.h"
 
 void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
@@ -12,41 +13,32 @@ void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBu
 	}
 
 	//	Must be the active camera
-	
-	UCamera* Camera = Context.Camera;
+
+	UCameraComponent* Camera = Context.Camera;
 	RenderBus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix(),
-								Camera->GetRightVector(), Camera->GetUpVector());
+		Camera->GetRightVector(), Camera->GetUpVector());
 	RenderBus.SetRenderSettings(Context.ViewMode, Context.ShowFlags);
 
 
 	//	Draw from Editor (Gizmo, Axis, etc.)
-	CollectFromEditor(Context,RenderBus);
+	CollectFromEditor(Context, RenderBus);
 
 	//	Draw from World
-	for (auto* Object : GUObjectArray)
+	for (AActor* Actor : Context.World->GetActors())
 	{
-		if (!Object) continue;
-
-		if (Object->IsA<AActor>() && !Object->bPendingKill)
-		{
-			auto* Actor = Object->Cast<AActor>();
-			if (Actor->GetWorld() == Context.World)
-			{
-				CollectFromActor(Actor, Context, RenderBus);
-			}
-		}
+		if (!Actor) continue;
+		CollectFromActor(Actor, Context, RenderBus);
 	}
 }
 
 void FRenderCollector::CollectFromActor(AActor* Actor, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
 	// Iterate through the components of the actor and retrieve their render properties
-	for (auto* Comp : Actor->GetComponents()) 
+	for (auto* Comp : Actor->GetComponents())
 	{
-		if (!Comp || Comp->bPendingKill) continue;
+		if (!Comp) continue;
 		if (!Comp->IsA<UPrimitiveComponent>()) continue;
-
-		UPrimitiveComponent* Primitive = dynamic_cast<UPrimitiveComponent*>(Comp);
+		UPrimitiveComponent* Primitive = static_cast<UPrimitiveComponent*>(Comp);
 		CollectFromComponent(Primitive, Context, RenderBus);
 
 	}
@@ -55,7 +47,7 @@ void FRenderCollector::CollectFromActor(AActor* Actor, const FRenderCollectorCon
 void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveComponent, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
 	FRenderCommand Cmd = {};
-	Cmd.TransformConstants = FTransformConstants{ primitiveComponent->GetWorldMatrix() };
+	Cmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix(), FColor::White().ToVector4(), 0.f};
 	if (primitiveComponent->GetRenderCommand(Cmd))
 	{
 		ERenderPass selectedRenderPass = ERenderPass::Opaque;
@@ -67,8 +59,24 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 			Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
 			if (Context.SelectedComponent == primitiveComponent)
 			{
+
+				if (Context.ViewMode == EViewMode::Wireframe)
+				{
+					Cmd.PerObjectConstants.IsSelected = 1.0f;
+					Cmd.PerObjectConstants.Color = FColor(255,153,0,255).ToVector4();
+				}
+				else
+				{
+					CollectAABBCommand(primitiveComponent, RenderBus);
+				}
+
+				Cmd.DepthStencilState = EDepthStencilState::StencilWrite;
 				CollectComponentOutline(primitiveComponent, Context, RenderBus);
-				CollectAABBCommand(primitiveComponent, RenderBus);
+			}
+			else
+			{
+				// 선택되지 않은 객체는 기본값(Default) 사용
+				Cmd.DepthStencilState = EDepthStencilState::Default;
 			}
 
 			break;
@@ -83,7 +91,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 			break;
 		}
 
-		RenderBus.AddCommand(selectedRenderPass,Cmd);
+		RenderBus.AddCommand(selectedRenderPass, Cmd);
 	}
 
 }
@@ -107,17 +115,17 @@ void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, FRen
 		FRenderCommand Cmd = {};
 		Cmd.Type = ERenderCommandType::Gizmo;
 		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
-		Cmd.TransformConstants = FTransformConstants{ Gizmo->GetWorldMatrix()};
+		Cmd.PerObjectConstants = FPerObjectConstants{ Gizmo->GetWorldMatrix() };
 
 		if (bInner)
 		{
-			Cmd.DepthStencilState = EDepthStencilState::None;
+			Cmd.DepthStencilState = EDepthStencilState::GizmoInside;
 			Cmd.BlendState = EBlendState::AlphaBlend;
 			Cmd.Constants.Gizmo.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 		else
 		{
-			Cmd.DepthStencilState = EDepthStencilState::Default;
+			Cmd.DepthStencilState = EDepthStencilState::GizmoOutside;
 			Cmd.BlendState = EBlendState::Opaque;
 			Cmd.Constants.Gizmo.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 		}
@@ -165,12 +173,21 @@ void FRenderCollector::CollectComponentOutline(UPrimitiveComponent* primitiveCom
 {
 	FRenderCommand OutlineCmd{};
 	OutlineCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
-	OutlineCmd.TransformConstants = FTransformConstants{ primitiveComponent->GetWorldMatrix() };
+	OutlineCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
 	OutlineCmd.Type = ERenderCommandType::SelectionOutline;
+	OutlineCmd.DepthStencilState = EDepthStencilState::StencilOutline;
 	OutlineCmd.Constants.Outline.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
 	OutlineCmd.Constants.Outline.OutlineInvScale = FVector(1.0f / primitiveComponent->GetRelativeScale().X,
 		1.0f / primitiveComponent->GetRelativeScale().Y, 1.0f / primitiveComponent->GetRelativeScale().Z);
-	OutlineCmd.Constants.Outline.OutlineOffset = 0.03f;
+
+	if (Context.ViewMode == EViewMode::Wireframe)
+	{
+		OutlineCmd.Constants.Outline.OutlineOffset = 0.003f;
+	}
+	else
+	{
+		OutlineCmd.Constants.Outline.OutlineOffset = 0.03f;
+	}
 
 	if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Plane)
 	{
@@ -188,7 +205,7 @@ void FRenderCollector::CollectComponentOutline(UPrimitiveComponent* primitiveCom
 void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponent, FRenderBus& RenderBus)
 {
 	FRenderCommand AABBCmd = {};
-	AABBCmd.Type = ERenderCommandType::DebugBox; 
+	AABBCmd.Type = ERenderCommandType::DebugBox;
 
 	FBoundingBox Box = PrimitiveComponent->GetWorldBoundingBox();
 

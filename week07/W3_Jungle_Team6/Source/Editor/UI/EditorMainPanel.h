@@ -1,8 +1,5 @@
 #pragma once
 
-#include <windows.h>
-
-#include "Core/Common.h"
 #include "Editor/UI/EditorConsoleWidget.h"
 #include "Editor/UI/EditorControlWidget.h"
 #include "Editor/UI/EditorPropertyWidget.h"
@@ -10,16 +7,15 @@
 #include "Editor/UI/EditorViewportOverlayWidget.h"
 
 class FRenderer;
-class FEditorEngine;
-
-using namespace common::structs;
+class UEditorEngine;
+class FWindowsWindow;
 
 class FEditorMainPanel
 {
 public:
-	void Create(HWND InHWindow, FRenderer& InRenderer, FEditorEngine* InEditorEngine);
+	void Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine);
 	void Release();
-	void Render(float DeltaTime, FViewOutput& ViewOutput);
+	void Render(float DeltaTime);
 	void Update();
 
 private:

@@ -1,157 +1,77 @@
 ﻿#include "Editor/EditorEngine.h"
 
-#include "Engine/Core/InputSystem.h"
-#include "Core/ResourceManager.h"
-
+#include "Engine/Runtime/WindowsWindow.h"
+#include "Engine/Serialization/SceneSaveManager.h"
+#include "Component/GizmoComponent.h"
+#include "Component/CameraComponent.h"
+#include "Component/PrimitiveComponent.h"
+#include "GameFramework/World.h"
 #include "Render/Scene/RenderCollector.h"
 #include "Render/Scene/RenderCollectorContext.h"
 
-void FEditorEngine::Create(HWND InHWindow)
-{
-	HWindow = InHWindow;
+DEFINE_CLASS(UEditorEngine, UEngine)
+REGISTER_FACTORY(UEditorEngine)
 
+void UEditorEngine::Init(FWindowsWindow* InWindow)
+{
+	// 엔진 공통 초기화 (Renderer, D3D, 싱글턴 등)
+	UEngine::Init(InWindow);
+
+	// 에디터 전용 초기화
 	FEditorSettings::Get().LoadFromFile(FEditorSettings::GetDefaultSettingsPath());
 
-	Renderer.Create(HWindow);
-	RenderCollector.Initialize(Renderer.GetFD3DDevice().GetDevice());
+	MainPanel.Create(Window, Renderer, this);
 
-	MainPanel.Create(HWindow, Renderer, this);
-
-	if (!Scene.empty()) {
-		EditorWorld = Scene[0];
-	}
-	else {
-		EditorWorld = UObjectManager::Get().CreateObject<UWorld>();
-		Scene.push_back(EditorWorld);
-	}
-	CurrentWorld = 0;
-	Scene[CurrentWorld]->InitWorld();
-
-	EditorGizmo = UObjectManager::Get().CreateObject<UGizmoComponent>();
-	EditorGizmo->SetWorldLocation(FVector(0.0f, 0.0f, 0.0f));
-	ViewportClient.SetGizmo(EditorGizmo);
-
-	EditorGizmo->Deactivate();	//	Initially hide the gizmo until an object is selected
-
-	RECT rect;
-	GetClientRect(HWindow, &rect);
-	WindowWidth = static_cast<float>(rect.right - rect.left);
-	WindowHeight = static_cast<float>(rect.bottom - rect.top);
-
-	ViewportClient.SetSettings(&FEditorSettings::Get());
-	ViewportClient.Initialize(HWindow);
-	ViewportClient.SetViewportSize(WindowWidth, WindowHeight);
-	ViewportClient.SetWorld(Scene[CurrentWorld]);
-
-	EditorCamera = UObjectManager::Get().CreateObject<UCamera>();
-	ViewportClient.SetCamera(EditorCamera);
-	ViewportClient.SetViewportSize(WindowWidth, WindowHeight);
-
-	ResetCamera(EditorCamera);
-	EditorCamera->ApplyCameraState();
-	SyncCameraFromRenderHandler();
-
-	Scene[CurrentWorld]->SetActiveCamera(EditorCamera);
-}
-
-void FEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
-{
-	if (Width <= 0 || Height <= 0)
+	// World
+	if (WorldList.empty())
 	{
-		return;
+		CreateWorldContext(EWorldType::Editor, FName("Default"));
 	}
+	SetActiveWorld(WorldList[0].ContextHandle);
+	GetWorld()->InitWorld();
 
-	WindowWidth = static_cast<float>(Width);
-	WindowHeight = static_cast<float>(Height);
-	ViewportClient.SetViewportSize(WindowWidth, WindowHeight);
+	// Selection & Gizmo
+	SelectionManager.Init();
 
-	Renderer.GetFD3DDevice().OnResizeViewport(Width, Height);
+	// ViewportClient
+	ViewportClient.SetSettings(&FEditorSettings::Get());
+	ViewportClient.Initialize(Window);
+	ViewportClient.SetViewportSize(Window->GetWidth(), Window->GetHeight());
+	ViewportClient.SetWorld(GetWorld());
+	ViewportClient.SetGizmo(SelectionManager.GetGizmo());
+	ViewportClient.SetSelectionManager(&SelectionManager);
+
+	// Camera
+	ViewportClient.CreateCamera();
+	ViewportClient.ResetCamera();
 }
 
-void FEditorEngine::ResetCamera(UCamera* Camera) {
-	if (!Camera) return;
-	Camera->SetWorldLocation(FEditorSettings::Get().InitViewPos);
-	Camera->LookAt(FEditorSettings::Get().InitLookAt);
-}
-
-void FEditorEngine::ResetViewport() {
-	EditorCamera->bPendingKill = true;
-	UObjectManager::Get().CollectGarbage();
-
-	EditorCamera = UObjectManager::Get().CreateObject<UCamera>();
-	ViewportClient.SetWorld(Scene[CurrentWorld]);
-	ViewportClient.SetCamera(EditorCamera);
-	ViewportClient.SetViewportSize(WindowWidth, WindowHeight);
-	EditorCamera->ApplyCameraState();
-	ResetCamera(EditorCamera);
-	SyncCameraFromRenderHandler();
-	Scene[CurrentWorld]->SetActiveCamera(EditorCamera);
-}
-
-void FEditorEngine::CloseScene() {
-	EditorGizmo->bPendingKill = true;
-
-	if (!Scene.empty()) {
-		for (UWorld* World : Scene) {
-			World->EndPlay();
-		}
-	}
-
-	UObjectManager::Get().CollectGarbage();
-	RenderCollector.Release();
-}
-
-void FEditorEngine::NewScene() {
-	ClearScene();
-	UWorld* World = UObjectManager::Get().CreateObject<UWorld>();
-	Scene.push_back(World);
-	CurrentWorld = 0;
-	ResetViewport();
-}
-
-void FEditorEngine::Release()
+void UEditorEngine::Shutdown()
 {
+	// 에디터 해제 (엔진보다 먼저)
 	FEditorSettings::Get().SaveToFile(FEditorSettings::GetDefaultSettingsPath());
 	CloseScene();
+	SelectionManager.Shutdown();
 	MainPanel.Release();
-	FResourceManager::Get().ReleaseGPUResources();	// Device 해제 전에 GPU 리소스 정리
-	Renderer.Release();
+
+	// 엔진 공통 해제 (Renderer, D3D 등)
+	UEngine::Shutdown();
 }
 
-void FEditorEngine::ClearScene() {
-	if (!Scene.empty()) {
-		for (UWorld* World : Scene) {
-			World->EndPlay();
-		}
-		UObjectManager::Get().CollectGarbage();
-		for (auto* W : Scene) {
-			W = nullptr;
-		}
-		Scene.clear();
-	}
-}
-
-void FEditorEngine::BeginPlay()
+void UEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
 {
-	if (!Scene.empty() && Scene[CurrentWorld])
-	{
-		Scene[CurrentWorld]->BeginPlay();
-	}
+	UEngine::OnWindowResized(Width, Height);
+	ViewportClient.SetViewportSize(Window->GetWidth(), Window->GetHeight());
 }
 
-void FEditorEngine::BeginFrame(float DeltaTime)
+void UEditorEngine::Tick(float DeltaTime)
 {
-	InputSystem::Update();
 	ViewportClient.Tick(DeltaTime);
 	MainPanel.Update();
-	SyncCameraFromRenderHandler();
+	UEngine::Tick(DeltaTime);
 }
 
-void FEditorEngine::Update(float DeltaTime)
-{
-}
-
-void FEditorEngine::Render(float DeltaTime)
+void UEditorEngine::Render(float DeltaTime)
 {
 	RenderBus.Clear();
 	BuildRenderCommands();
@@ -164,44 +84,75 @@ void FEditorEngine::Render(float DeltaTime)
 
 	Renderer.BeginFrame();
 	Renderer.Render(RenderBus, ViewModeRasterizer);
-	MainPanel.Render(DeltaTime, ViewportClient.GetViewOutput());
-	Renderer.RenderOverlay(RenderBus);	//	UI가 그려진 후 Overlay 그리기
+	MainPanel.Render(DeltaTime);
+	Renderer.RenderOverlay(RenderBus);
 	Renderer.EndFrame();
 }
 
-void FEditorEngine::EndFrame()
+void UEditorEngine::ResetViewport()
 {
-	UObjectManager::Get().CollectGarbage();
+	ViewportClient.CreateCamera();
+	ViewportClient.SetWorld(GetWorld());
+	ViewportClient.SetViewportSize(Window->GetWidth(), Window->GetHeight());
+	ViewportClient.ResetCamera();
 }
 
-void FEditorEngine::UpdateWorld(float DeltaTime)
+void UEditorEngine::CloseScene()
 {
-	if (!Scene.empty() && Scene[CurrentWorld])
-	{
-		Scene[CurrentWorld]->Tick(DeltaTime);
+	SelectionManager.ClearSelection();
+
+	for (FWorldContext& Ctx : WorldList) {
+		Ctx.World->EndPlay();
+		UObjectManager::Get().DestroyObject(Ctx.World);
 	}
+	WorldList.clear();
+	ActiveWorldHandle = FName::None;
+
+	ViewportClient.DestroyCamera();
+	ViewportClient.SetWorld(nullptr);
 }
 
-void FEditorEngine::SyncCameraFromRenderHandler()
+void UEditorEngine::NewScene()
 {
-	if (EditorCamera)
-	{
-		EditorCamera->ApplyCameraState();
-	}
+	ClearScene();
+	FWorldContext& Ctx = CreateWorldContext(EWorldType::Editor, FName("NewScene"), "New Scene");
+	SetActiveWorld(Ctx.ContextHandle);
+
+	ResetViewport();
 }
 
-void FEditorEngine::BuildRenderCommands()
+void UEditorEngine::ClearScene()
+{
+	SelectionManager.ClearSelection();
+
+	for (FWorldContext& Ctx : WorldList) {
+		Ctx.World->EndPlay();
+		UObjectManager::Get().DestroyObject(Ctx.World);
+	}
+	WorldList.clear();
+	ActiveWorldHandle = FName::None;
+
+	ViewportClient.DestroyCamera();
+	ViewportClient.SetWorld(nullptr);
+}
+
+void UEditorEngine::BuildRenderCommands()
 {
 	FRenderCollectorContext Context;
-	Context.World = Scene[CurrentWorld];
-	Context.Camera = EditorCamera;
-	Context.Gizmo = EditorGizmo;
+	Context.World = GetWorld();
+	Context.Camera = ViewportClient.GetCamera();
+	Context.Gizmo = SelectionManager.GetGizmo();
 	Context.ViewMode = FEditorSettings::Get().ViewMode;
 	Context.ShowFlags = FEditorSettings::Get().ShowFlags;
 	Context.CursorOverlayState = &ViewportClient.GetCursorOverlayState();
-	Context.ViewportHeight = WindowHeight;
-	Context.ViewportWidth = WindowWidth;
-	Context.SelectedComponent = ViewportClient.GetGizmo()->HasTarget() ? (UPrimitiveComponent*)ViewportClient.GetGizmo()->GetTarget() : nullptr;
+	Context.ViewportHeight = Window->GetHeight();
+	Context.ViewportWidth = Window->GetWidth();
+	Context.SelectedComponent = nullptr;
+	AActor* Primary = SelectionManager.GetPrimarySelection();
+	if (Primary && Primary->GetRootComponent() && Primary->GetRootComponent()->IsA<UPrimitiveComponent>())
+	{
+		Context.SelectedComponent = static_cast<UPrimitiveComponent*>(Primary->GetRootComponent());
+	}
 
 	RenderCollector.Collect(Context, RenderBus);
 }
