@@ -57,6 +57,11 @@ INCLUDE_PATHS = [
     ".",
 ]
 
+# Library paths (relative to project dir)
+LIBRARY_PATHS = [
+    "ThirdParty\\DirectXTK\\Library",
+]
+
 NS = "http://schemas.microsoft.com/developer/msbuild/2003"
 
 
@@ -214,14 +219,16 @@ def generate_vcxproj(files: dict[str, list[str]]):
 
     ET.SubElement(proj, "PropertyGroup", Label="UserMacros")
 
-    # OutDir, IntDir, IncludePath, WorkingDirectory for all configurations
+    # OutDir, IntDir, IncludePath, LibraryPath, WorkingDirectory for all configurations
     include_path_value = ";".join(INCLUDE_PATHS) + ";$(IncludePath)"
+    library_path_value = ";".join(LIBRARY_PATHS) + ";$(LibraryPath)"
     for cfg, plat in CONFIGURATIONS:
         cond = f"'$(Configuration)|$(Platform)'=='{cfg}|{plat}'"
         pg = ET.SubElement(proj, "PropertyGroup", Condition=cond)
         ET.SubElement(pg, "OutDir").text = f"$(ProjectDir)Bin\\$(Configuration)\\"
         ET.SubElement(pg, "IntDir").text = f"$(ProjectDir)Build\\$(Configuration)\\"
         ET.SubElement(pg, "IncludePath").text = include_path_value
+        ET.SubElement(pg, "LibraryPath").text = library_path_value
         ET.SubElement(pg, "LocalDebuggerWorkingDirectory").text = "$(ProjectDir)"
 
     # ItemDefinitionGroups
