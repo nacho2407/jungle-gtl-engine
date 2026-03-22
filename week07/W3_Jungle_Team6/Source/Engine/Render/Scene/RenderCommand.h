@@ -21,8 +21,6 @@ enum class ERenderCommandType
 	Primitive,
 	Gizmo,
 	Overlay,
-	Axis,
-	Grid,
 	SelectionOutline,
 	Billboard,
 	DebugBox
