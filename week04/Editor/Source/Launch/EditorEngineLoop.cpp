@@ -1,4 +1,5 @@
 #include "EditorEngineLoop.h"
+#include "EditorEngineLoop.h"
 
 #include <wrl/client.h>
 
@@ -7,6 +8,7 @@
 
 bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
 {
+    (void)HInstance;
     (void)NCmdShow;
 
     InputSystem = new Engine::ApplicationCore::FInputSystem();
@@ -14,7 +16,16 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
     /* Application Setting */
 #if defined(_WIN32)
     Application = Engine::ApplicationCore::FWindowsApplication::Create();
-    Application->CreateApplicationWindow(L"JungleWindowClass", 1920, 1080);
+    if (Application == nullptr)
+    {
+        return false;
+    }
+
+    if (!Application->CreateApplicationWindow(L"JungleWindowClass", 1920, 1080))
+    {
+        return false;
+    }
+
     Application->SetInputSystem(InputSystem);
 #else
 
@@ -24,6 +35,24 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
     Editor = new FEditor();
     Editor->Create();
     Editor->Initialize();
+
+    /* Renderer Initialize */
+    Renderer = new FRendererModule();
+    if (Renderer == nullptr)
+    {
+        return false;
+    }
+
+    HWND WindowHandle = static_cast<HWND>(Application->GetNativeWindowHandle());
+    if (WindowHandle == nullptr)
+    {
+        return false;
+    }
+
+    if (!Renderer->StartupModule(WindowHandle))
+    {
+        return false;
+    }
 
     InitializeForTime();
     return true;
@@ -46,6 +75,13 @@ int32 FEditorEngineLoop::Run()
 
 void FEditorEngineLoop::ShutDown()
 {
+    if (Renderer != nullptr)
+    {
+        Renderer->ShutdownModule();
+        delete Renderer;
+        Renderer = nullptr;
+    }
+
     Editor->Release();
     delete Editor;
     Editor = nullptr;
@@ -83,12 +119,15 @@ void FEditorEngineLoop::Tick()
     /* Editor Update */
     Editor->Tick(DeltaTime, InputSystem);
 
-    /* Rendering Prepare Stage */
+
 
     /* Editor Viewport Client */
-    Renderer->RenderFrame(Editor->GetEditorRenderData(), Editor->GetSceneRenderData());
-
-    /* Render End Stage */
+    
+    /* Render */
+    if (Renderer != nullptr)
+    {
+        Renderer->RenderFrame(Editor->GetEditorRenderData(), Editor->GetSceneRenderData());
+    }
 
     FPlatformTime::Sleep(0.f);
 }

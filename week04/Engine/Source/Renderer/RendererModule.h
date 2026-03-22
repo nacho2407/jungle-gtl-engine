@@ -17,10 +17,10 @@
 
 // TODO: Font, Sprite, Pick 렌더러 사용
 
-class FRendererModule
+class ENGINE_API FRendererModule
 {
   public:
-    void StartupModule(HWND hWnd);
+    bool StartupModule(HWND hWnd);
     void ShutdownModule();
 
     void BeginFrame();

@@ -5,7 +5,7 @@
 
 class AActor;
 
-class FScene
+class ENGINE_API FScene
 {
   public:
     ~FScene();

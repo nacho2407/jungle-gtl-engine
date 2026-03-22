@@ -4,7 +4,10 @@
 #include "CoreUObject/Object.h"
 #include "Renderer/Types/BasicMeshType.h"
 
-class USceneComponent;
+namespace Engine::Component
+{
+    class USceneComponent;
+}
 
 class ENGINE_API AActor : public UObject
 {
@@ -17,7 +20,7 @@ class ENGINE_API AActor : public UObject
     bool IsPickable() const;
     void SetPickable(bool bInPickable);
 
-    USceneComponent* GetRootComponent() const { return RootComponent; }
+    Engine::Component::USceneComponent* GetRootComponent() const { return RootComponent; }
 
     // Render bridge용 최소 API
     virtual bool IsRenderable() const { return false; }
@@ -31,8 +34,8 @@ class ENGINE_API AActor : public UObject
     virtual uint32         GetObjectId() const { return 0; }
 
   protected:
-    USceneComponent*         RootComponent = nullptr;
-    TArray<USceneComponent*> OwnedComponents;
+    Engine::Component::USceneComponent*         RootComponent = nullptr;
+    TArray<Engine::Component::USceneComponent*> OwnedComponents;
 
     bool bPickable = true;
 };

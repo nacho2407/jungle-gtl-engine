@@ -9,7 +9,7 @@ struct VSInput
     float3 Position      : POSITION;
 
     row_major float4x4 World : WORLD;
-    float4 InstanceColor : COLOR1;
+    float4 InstanceColor : COLOR0;
 };
 
 struct PSInput
