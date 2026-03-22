@@ -175,6 +175,26 @@ void ResourceManager::Initialize(URenderer* InRenderer)
 		BillboardFont.EnsureGlyph(static_cast<uint32>(c));
 	}
 	BillboardFont.EnsureGlyph(static_cast<uint32>('-'));
+
+	ID3D11ShaderResourceView* createdSRV = nullptr;
+	ID3D11SamplerState* createdSampler = nullptr;
+
+	const bool bAtlasTextureCreated = CreateFontAtlasTexture(
+		Renderer->Device.Get(),
+		BillboardFont.GetAtlas(),
+		&createdSRV,
+		&createdSampler
+	);
+
+	if (!bAtlasTextureCreated)
+	{
+		UE_LOG("[EngineCore/ResourceManager][Error] Failed to create font atlas texture");
+	}
+	else
+	{
+		FontShader.ShaderResourceView = createdSRV;
+		FontShader.SamplerState = createdSampler;
+	}
 }
 
 void ResourceManager::CreateNoBufferGeometry(FString ResourceName, const TArray<FVector>& Verticies)
