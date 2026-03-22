@@ -18,7 +18,7 @@ FString UTextRenderComponent::GetOwnerUUIDToString() const
 	{
 		return FName::None.ToString();
 	}
-	return std::to_string(OwnerActor->UUID);
+	return std::to_string(OwnerActor->GetUUID());
 }
 
 FString UTextRenderComponent::GetOwnerNameToString() const

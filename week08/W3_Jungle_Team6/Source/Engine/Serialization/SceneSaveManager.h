@@ -1,17 +1,18 @@
 ﻿#pragma once
 
-#include <iostream>
-#include <fstream>
+#include <string>
 #include <filesystem>
-#include <chrono>
-#include "GameFramework/World.h"
-#include "Component/Camera.h"
-#include "Component/PrimitiveComponent.h"
-#include "Object/Object.h"
-#include "Object/ObjectFactory.h"
+#include "Core/CoreTypes.h"
 #include "Core/Paths.h"
+#include "GameFramework/WorldContext.h"
 
-// Forward decl.
+// Forward declarations
+class UObject;
+class UWorld;
+class USceneComponent;
+class UCameraComponent;
+class UPrimitiveComponent;
+
 namespace json {
 	class JSON;
 }
@@ -26,8 +27,8 @@ public:
 	static std::wstring GetSceneDirectory() { return FPaths::SceneDir(); }
 
 	// Creates a .json save file at the given destination
-	static void SaveSceneAsJSON(const string& SceneName, TArray<UWorld*>& Scene);
-	static void LoadSceneFromJSON(const string& filepath, TArray<UWorld*>& Scene);
+	static void SaveSceneAsJSON(const string& SceneName, TArray<FWorldContext>& WorldList);
+	static void LoadSceneFromJSON(const string& filepath, TArray<FWorldContext>& WorldList);
 
 	// Returns list of .Scene file names (without extension) in SceneDirectory
 	static TArray<FString> GetSceneFileList();
@@ -54,7 +55,7 @@ private:
 	// Generate spatial vectors for USceneCompoents from a json save
 	static void DeserializeSpaceVectors(USceneComponent* SceneComp, json::JSON& Savedata);
 
-	static void DecodeCamera(UCamera* Camera, json::JSON& Savedata);
+	static void DecodeCamera(UCameraComponent* Camera, json::JSON& Savedata);
 
 	static void DecodePrimitiveComponents(UPrimitiveComponent* Prim, json::JSON& Savedata);
 

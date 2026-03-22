@@ -1,90 +1,106 @@
-﻿#include "Engine/Core/InputSystem.h"
+#include "Engine/Core/InputSystem.h"
 #include <cmath>
 
-// Keyboard definition
-bool InputSystem::currentStates[256] = { false };
-bool InputSystem::prevStates[256] = { false };
-
-// Mouse definition
-POINT InputSystem::mousePos = { 0,0 };
-POINT InputSystem::prevMousePos = { 0,0 };
-bool InputSystem::leftDragCandidate = false;
-bool InputSystem::rightDragCandidate = false;
-POINT InputSystem::leftDragStartPos = { 0, 0 };
-POINT InputSystem::leftMouseDownPos = { 0, 0 };
-POINT InputSystem::rightDragStartPos = { 0, 0 };
-POINT InputSystem::rightMouseDownPos = { 0, 0 };
-bool InputSystem::leftDragging = false;
-bool InputSystem::rightDragging = false;
-bool InputSystem::leftDragJustStarted = false;
-bool InputSystem::rightDragJustStarted = false;
-bool InputSystem::leftDragJustEnded = false;
-bool InputSystem::rightDragJustEnded = false;
-int InputSystem::scrollDelta = 0;
-int InputSystem::prevScrollDelta = 0;
-
-
-FGuiInputState InputSystem::GuiInputState{};
-
-
-void InputSystem::FilterDragThresholdLeft() {
-    if (leftDragCandidate && !leftDragging)
+void InputSystem::Tick()
+{
+    for (int i = 0; i < 256; ++i)
     {
-        int dx = mousePos.x - leftMouseDownPos.x;
-        int dy = mousePos.y - leftMouseDownPos.y;
+        PrevStates[i] = CurrentStates[i];
+        CurrentStates[i] = (GetAsyncKeyState(i) & 0x8000) != 0;
+    }
 
-        int distSq = dx * dx + dy * dy;
+    bLeftDragJustStarted = false;
+    bRightDragJustStarted = false;
+    bLeftDragJustEnded = false;
+    bRightDragJustEnded = false;
 
-        if (distSq >= DRAG_THRESHOLD * DRAG_THRESHOLD)
+    PrevScrollDelta = ScrollDelta;
+    ScrollDelta = 0;
+
+    PrevMousePos = MousePos;
+    GetCursorPos(&MousePos);
+
+    if (GetKeyDown(VK_LBUTTON))
+    {
+        bLeftDragCandidate = true;
+        LeftMouseDownPos = MousePos;
+    }
+    if (GetKeyDown(VK_RBUTTON))
+    {
+        bRightDragCandidate = true;
+        RightMouseDownPos = MousePos;
+    }
+
+    // Left drag
+    if (!bLeftDragging && IsDraggingLeft())
+    {
+        FilterDragThreshold(bLeftDragCandidate, bLeftDragging, bLeftDragJustStarted,
+            LeftMouseDownPos, LeftDragStartPos);
+    }
+    else if (GetKeyUp(VK_LBUTTON))
+    {
+        if (bLeftDragging) bLeftDragJustEnded = true;
+        bLeftDragging = false;
+        bLeftDragCandidate = false;
+    }
+
+    // Right drag
+    if (!bRightDragging && IsDraggingRight())
+    {
+        FilterDragThreshold(bRightDragCandidate, bRightDragging, bRightDragJustStarted,
+            RightMouseDownPos, RightDragStartPos);
+    }
+    else if (GetKeyUp(VK_RBUTTON))
+    {
+        if (bRightDragging) bRightDragJustEnded = true;
+        bRightDragging = false;
+        bRightDragCandidate = false;
+    }
+}
+
+void InputSystem::FilterDragThreshold(
+    bool& bCandidate, bool& bDragging, bool& bJustStarted,
+    const POINT& MouseDownPos, POINT& DragStartPos)
+{
+    if (bCandidate && !bDragging)
+    {
+        int DX = MousePos.x - MouseDownPos.x;
+        int DY = MousePos.y - MouseDownPos.y;
+        int DistSq = DX * DX + DY * DY;
+
+        if (DistSq >= DRAG_THRESHOLD * DRAG_THRESHOLD)
         {
-            leftDragJustStarted = true;
-            leftDragging = true;
-            leftDragStartPos = leftMouseDownPos;
+            bJustStarted = true;
+            bDragging = true;
+            DragStartPos = MouseDownPos;
         }
     }
 }
 
-void InputSystem::FilterDragThresholdRight() {
-    if (rightDragCandidate && !rightDragging)
-    {
-        int dx = mousePos.x - rightMouseDownPos.x;
-        int dy = mousePos.y - rightMouseDownPos.y;
-
-        int distSq = dx * dx + dy * dy;
-
-        if (distSq >= DRAG_THRESHOLD * DRAG_THRESHOLD)
-        {
-            rightDragJustStarted = true;
-            rightDragging = true;
-            rightDragStartPos = rightMouseDownPos;
-        }
-    }
+POINT InputSystem::GetLeftDragVector() const
+{
+    POINT V;
+    V.x = MousePos.x - LeftDragStartPos.x;
+    V.y = MousePos.y - LeftDragStartPos.y;
+    return V;
 }
 
-
-POINT InputSystem::GetLeftDragVector()
+POINT InputSystem::GetRightDragVector() const
 {
-    POINT v;
-    v.x = mousePos.x - leftDragStartPos.x;
-    v.y = mousePos.y - leftDragStartPos.y;
-    return v;
-}
-POINT InputSystem::GetRightDragVector()
-{
-    POINT v;
-    v.x = mousePos.x - rightDragStartPos.x;
-    v.y = mousePos.y - rightDragStartPos.y;
-    return v;
+    POINT V;
+    V.x = MousePos.x - RightDragStartPos.x;
+    V.y = MousePos.y - RightDragStartPos.y;
+    return V;
 }
 
-float InputSystem::GetLeftDragDistance()
+float InputSystem::GetLeftDragDistance() const
 {
-    POINT v = GetLeftDragVector();
-    return std::sqrt((float)(v.x * v.x + v.y * v.y));
+    POINT V = GetLeftDragVector();
+    return std::sqrt((float)(V.x * V.x + V.y * V.y));
 }
 
-float InputSystem::GetRightDragDistance()
+float InputSystem::GetRightDragDistance() const
 {
-    POINT v = GetRightDragVector();
-    return std::sqrt((float)(v.x * v.x + v.y * v.y));
+    POINT V = GetRightDragVector();
+    return std::sqrt((float)(V.x * V.x + V.y * V.y));
 }

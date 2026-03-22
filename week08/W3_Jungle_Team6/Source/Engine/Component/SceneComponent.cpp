@@ -7,9 +7,8 @@ USceneComponent::USceneComponent()
 {
 	CachedWorldMatrix = FMatrix::Identity;
 
-	bUpdateFlag = true;
+	bTransformDirty = true;
 	UpdateWorldMatrix();
-
 }
 
 USceneComponent::~USceneComponent()
@@ -20,12 +19,12 @@ USceneComponent::~USceneComponent()
 		ParentComponent = nullptr;
 	}
 
-	for (auto* child : ChildComponents)
+	for (auto* Child : ChildComponents)
 	{
-		if (child)
+		if (Child)
 		{
-			child->ParentComponent = nullptr;
-			child->SetUpdateFlag();
+			Child->ParentComponent = nullptr;
+			Child->MarkTransformDirty();
 		}
 	}
 	ChildComponents.clear();
@@ -82,7 +81,6 @@ void USceneComponent::RemoveChild(USceneComponent* Child)
 
 		ChildComponents.erase(iter);
 	}
-
 }
 
 bool USceneComponent::ContainsChild(const USceneComponent* Child) const
@@ -92,31 +90,29 @@ bool USceneComponent::ContainsChild(const USceneComponent* Child) const
 		return false;
 	}
 
-	bool result = std::find(ChildComponents.begin(),
+	return std::find(ChildComponents.begin(),
 		ChildComponents.end(), Child) != ChildComponents.end();
-
-	return result;
 }
 
-void USceneComponent::UpdateWorldMatrix()
+void USceneComponent::UpdateWorldMatrix() const
 {
-	if (bUpdateFlag == false)
+	if (bTransformDirty == false)
 	{
 		return;
 	}
 
-	FMatrix relativeMatrix = GetRelativeMatrixTemp();
+	FMatrix RelativeMatrix = GetRelativeMatrix();
 
 	if (ParentComponent != nullptr)
 	{
-		CachedWorldMatrix = relativeMatrix * ParentComponent->GetWorldMatrix();
+		CachedWorldMatrix = RelativeMatrix * ParentComponent->GetWorldMatrix();
 	}
 	else
 	{
-		CachedWorldMatrix = relativeMatrix;
+		CachedWorldMatrix = RelativeMatrix;
 	}
 
-	bUpdateFlag = false;
+	bTransformDirty = false;
 }
 
 void USceneComponent::AddWorldOffset(const FVector& WorldDelta)
@@ -137,39 +133,38 @@ void USceneComponent::AddWorldOffset(const FVector& WorldDelta)
 	}
 }
 
-
-void USceneComponent::SetRelativeLocation(const FVector NewLocation)
+void USceneComponent::SetRelativeLocation(const FVector& NewLocation)
 {
 	RelativeLocation = NewLocation;
-	SetUpdateFlag();
+	MarkTransformDirty();
 }
 
-void USceneComponent::SetRelativeRotation(const FVector NewRotation)
+void USceneComponent::SetRelativeRotation(const FVector& NewRotation)
 {
 	RelativeRotation = NewRotation;
-	SetUpdateFlag();
+	MarkTransformDirty();
 }
 
 
-void USceneComponent::SetRelativeScale(const FVector NewScale)
+void USceneComponent::SetRelativeScale(const FVector& NewScale)
 {
 	RelativeScale3D = NewScale;
-	SetUpdateFlag();
+	MarkTransformDirty();
 }
 
 
-void USceneComponent::SetUpdateFlag()
+void USceneComponent::MarkTransformDirty()
 {
-	bUpdateFlag = true;
-	for (auto* child : ChildComponents)
+	bTransformDirty = true;
+	for (auto* Child : ChildComponents)
 	{
-		child->SetUpdateFlag();
+		Child->MarkTransformDirty();
 	}
 }
 
-const FMatrix& USceneComponent::GetWorldMatrix()
+const FMatrix& USceneComponent::GetWorldMatrix() const
 {
-	if (bUpdateFlag == true)
+	if (bTransformDirty == true)
 	{
 		UpdateWorldMatrix();
 	}
@@ -194,63 +189,65 @@ void USceneComponent::SetWorldLocation(FVector NewWorldLocation)
 	}
 }
 
-FVector USceneComponent::GetWorldLocation()
+FVector USceneComponent::GetWorldLocation() const
 {
-	const FMatrix& worldMatrix = GetWorldMatrix();
-	return FVector(worldMatrix.M[3][0], worldMatrix.M[3][1], worldMatrix.M[3][2]);
+	const FMatrix& WorldMatrix = GetWorldMatrix();
+	return FVector(WorldMatrix.M[3][0], WorldMatrix.M[3][1], WorldMatrix.M[3][2]);
 }
 
-FVector USceneComponent::GetForwardVector()
+FVector USceneComponent::GetForwardVector() const
 {
-	const FMatrix& matrix = GetWorldMatrix();
-	FVector forward(matrix.M[0][0], matrix.M[0][1], matrix.M[0][2]);
-	forward.Normalize();
-	return forward;
+	const FMatrix& Matrix = GetWorldMatrix();
+	FVector Forward(Matrix.M[0][0], Matrix.M[0][1], Matrix.M[0][2]);
+	Forward.Normalize();
+	return Forward;
 }
 
-FVector USceneComponent::GetRightVector()
+FVector USceneComponent::GetRightVector() const
 {
-	const FMatrix& matrix = GetWorldMatrix();
-	FVector right(matrix.M[1][0], matrix.M[1][1], matrix.M[1][2]);
-	right.Normalize();
-	return right;
+	const FMatrix& Matrix = GetWorldMatrix();
+	FVector Right(Matrix.M[1][0], Matrix.M[1][1], Matrix.M[1][2]);
+	Right.Normalize();
+	return Right;
 }
 
-FVector USceneComponent::GetUpVector()
+FVector USceneComponent::GetUpVector() const
 {
-	const FMatrix& matrix = GetWorldMatrix();
-	FVector up(matrix.M[2][0], matrix.M[2][1], matrix.M[2][2]);
-	up.Normalize();
-	return up;
+	const FMatrix& Matrix = GetWorldMatrix();
+	FVector Up(Matrix.M[2][0], Matrix.M[2][1], Matrix.M[2][2]);
+	Up.Normalize();
+	return Up;
 }
 
-void USceneComponent::Move(const FVector& delta) {
-	SetRelativeLocation(RelativeLocation + delta);
+void USceneComponent::Move(const FVector& Delta)
+{
+	SetRelativeLocation(RelativeLocation + Delta);
 }
 
-void USceneComponent::MoveLocal(const FVector& delta) {
-	FVector forward = GetForwardVector();
-	FVector right = GetRightVector();
-	FVector up = GetUpVector();
+void USceneComponent::MoveLocal(const FVector& Delta)
+{
+	FVector Forward = GetForwardVector();
+	FVector Right = GetRightVector();
+	FVector Up = GetUpVector();
 
 	SetRelativeLocation(RelativeLocation
-		+ forward * delta.X
-		+ right * delta.Y
-		+ up * delta.Z);
+		+ Forward * Delta.X
+		+ Right * Delta.Y
+		+ Up * Delta.Z);
 }
 
-void USceneComponent::Rotate(float dx, float dy) {
-	RelativeRotation.Z += dx;
-	RelativeRotation.Y += dy;
+void USceneComponent::Rotate(float DeltaYaw, float DeltaPitch)
+{
+	RelativeRotation.Z += DeltaYaw;
+	RelativeRotation.Y += DeltaPitch;
 	RelativeRotation.Y = Clamp(RelativeRotation.Y, -89.9f, 89.9f);
 
 	RelativeRotation.X = 0.0f;
 
-	SetRelativeRotation(RelativeRotation);   // keeps RelativeTransform in sync
+	SetRelativeRotation(RelativeRotation);
 }
 
-//Temp
-FMatrix USceneComponent::GetRelativeMatrixTemp() const
+FMatrix USceneComponent::GetRelativeMatrix() const
 {
 	return FTransform(RelativeLocation, RelativeRotation, RelativeScale3D).ToMatrix();
 }
