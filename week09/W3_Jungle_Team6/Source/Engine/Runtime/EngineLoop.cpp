@@ -15,6 +15,8 @@ bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
 {
 	(void)nShowCmd;
 
+	UE_LOG("FEngineLoop::Init");
+
 	if (!Application.Init(hInstance))
 	{
 		return false;
