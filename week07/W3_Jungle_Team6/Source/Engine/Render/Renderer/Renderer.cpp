@@ -119,13 +119,14 @@ void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceCo
 	case ERenderPass::Outline:
 		if (CurViewMode == EViewMode::Wireframe)
 		{
-			Device.SetDepthStencilState(EDepthStencilState::StencilWriteOnlyEqual);
+			Device.SetDepthStencilState(EDepthStencilState::GizmoOutside);
+			Device.SetRasterizerState(ERasterizerState::WireFrame);
 		}
 		else
 		{
 			Device.SetDepthStencilState(EDepthStencilState::StencilOutline);
+			Device.SetRasterizerState(ERasterizerState::SolidFrontCull);
 		}
-		Device.SetRasterizerState(ERasterizerState::SolidFrontCull);
 		Device.SetBlendState(EBlendState::Opaque);
 
 		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
