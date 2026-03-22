@@ -10,9 +10,6 @@
     <Filter Include="Resources\Mesh">
       <UniqueIdentifier>{611fd08d-c5f2-636f-d61c-0405906a469d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Resources\Primitives">
-      <UniqueIdentifier>{7de5503a-8149-ef69-ab35-ccf0d4d50701}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Resources\Scene">
       <UniqueIdentifier>{6f21998c-ad3f-4295-5a94-62d9702a0e9b}</UniqueIdentifier>
     </Filter>
@@ -42,9 +39,6 @@
     </Filter>
     <Filter Include="Source\ThirdParty">
       <UniqueIdentifier>{b8e8bd27-1e61-2aa5-0088-7e70dd22287c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Resources\Mesh\Gizmo">
-      <UniqueIdentifier>{9e95f97f-dddc-0f45-a582-5a1c3a4d9e57}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\ApplicationCore\GenericPlatform">
       <UniqueIdentifier>{387b5035-7247-ab88-2751-c494bed9266f}</UniqueIdentifier>
@@ -87,6 +81,9 @@
     </Filter>
     <Filter Include="Source\Renderer\D3D11">
       <UniqueIdentifier>{7d49e81e-9894-3ffe-a35e-b64d3056e0ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Renderer\EditorDraw">
+      <UniqueIdentifier>{eb1df9ee-26d3-0e30-f337-23e04acff4de}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Renderer\RenderAsset">
       <UniqueIdentifier>{37df3f3d-06b0-91a9-da82-c1929332f7ef}</UniqueIdentifier>
@@ -213,33 +210,42 @@
     <ClCompile Include="Source\Renderer\D3D11\D3D11DynamicRHI.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Renderer\D3D11\D3D11GizmoRenderer.cpp">
-      <Filter>Source\Renderer\D3D11</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
     <ClCompile Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Renderer\EditorDraw\GizmoDrawer.cpp">
+      <Filter>Source\Renderer\EditorDraw</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\EditorDraw\WorldAxesDrawer.cpp">
+      <Filter>Source\Renderer\EditorDraw</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\EditorDraw\WorldGridDrawer.cpp">
+      <Filter>Source\Renderer\EditorDraw</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Renderer\RendererModule.cpp">
       <Filter>Source\Renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Resources\Mesh\Cone.h">
+      <Filter>Resources\Mesh</Filter>
+    </ClInclude>
     <ClInclude Include="Resources\Mesh\Cube.h">
       <Filter>Resources\Mesh</Filter>
     </ClInclude>
-    <ClInclude Include="Resources\Mesh\Gizmo\GizmoRotation.h">
-      <Filter>Resources\Mesh\Gizmo</Filter>
+    <ClInclude Include="Resources\Mesh\Cylinder.h">
+      <Filter>Resources\Mesh</Filter>
     </ClInclude>
-    <ClInclude Include="Resources\Mesh\Gizmo\GizmoScaling.h">
-      <Filter>Resources\Mesh\Gizmo</Filter>
-    </ClInclude>
-    <ClInclude Include="Resources\Mesh\Gizmo\GizmoTranslation.h">
-      <Filter>Resources\Mesh\Gizmo</Filter>
+    <ClInclude Include="Resources\Mesh\MeshPrimitiveTopology.h">
+      <Filter>Resources\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="Resources\Mesh\Plane.h">
+      <Filter>Resources\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources\Mesh\Ring.h">
       <Filter>Resources\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="Resources\Mesh\Sphere.h">
@@ -250,18 +256,6 @@
     </ClInclude>
     <ClInclude Include="Resources\Mesh\VertexSimple.h">
       <Filter>Resources\Mesh</Filter>
-    </ClInclude>
-    <ClInclude Include="Resources\Primitives\Cube.h">
-      <Filter>Resources\Primitives</Filter>
-    </ClInclude>
-    <ClInclude Include="Resources\Primitives\Plane.h">
-      <Filter>Resources\Primitives</Filter>
-    </ClInclude>
-    <ClInclude Include="Resources\Primitives\Triangle.h">
-      <Filter>Resources\Primitives</Filter>
-    </ClInclude>
-    <ClInclude Include="Resources\Primitives\VertexSimple.h">
-      <Filter>Resources\Primitives</Filter>
     </ClInclude>
     <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplication.h">
       <Filter>Source\ApplicationCore\GenericPlatform</Filter>
@@ -470,9 +464,6 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11FontBatchRenderer.h">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\D3D11\D3D11GizmoRenderer.h">
-      <Filter>Source\Renderer\D3D11</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.h">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
@@ -484,6 +475,15 @@
     </ClInclude>
     <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h">
       <Filter>Source\Renderer\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\EditorDraw\GizmoDrawer.h">
+      <Filter>Source\Renderer\EditorDraw</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\EditorDraw\WorldAxesDrawer.h">
+      <Filter>Source\Renderer\EditorDraw</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\EditorDraw\WorldGridDrawer.h">
+      <Filter>Source\Renderer\EditorDraw</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\EditorRenderData.h">
       <Filter>Source\Renderer</Filter>
