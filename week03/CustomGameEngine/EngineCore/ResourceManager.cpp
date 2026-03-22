@@ -20,17 +20,16 @@ void ResourceManager::Initialize(URenderer* InRenderer)
 {
 	Renderer = InRenderer;
 	D3D11_INPUT_ELEMENT_DESC layout[] = {
-{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
- D3D11_INPUT_PER_VERTEX_DATA, 0},
-{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12,
- D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
+		 D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12,
+		 D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
 	FMaterial& MainShader = CreateMaterial(L"Shader/ShaderW0.hlsl", L"Shader/ShaderW0.hlsl", Renderer->Device.Get(), layout, 2);
 	MainShader.ConstantBuffer.Create(Renderer->Device.Get(), sizeof(FObjectConstant), 1);
 
 	FMaterial& LineShader = CreateMaterial(L"Shader/ShaderLine.hlsl", L"Shader/ShaderLine.hlsl", Renderer->Device.Get(), layout, 2);
 	LineShader.ConstantBuffer.Create(Renderer->Device.Get(), sizeof(FObjectConstant), 1);
-
 
 	AddCubeMesh(Renderer->Device.Get());
 	AddSphereMesh(Renderer->Device.Get());
@@ -41,7 +40,6 @@ void ResourceManager::Initialize(URenderer* InRenderer)
 	AddGizmoScaleMesh(Renderer->Device.Get());
 	AddAxisMesh(Renderer->Device.Get());
 	AddGridMesh(Renderer->Device.Get(), 1000.f, 100.f);
-
 }
 
 void ResourceManager::CreateNoBufferGeometry(FString ResourceName, const TArray<FVector>& Verticies)

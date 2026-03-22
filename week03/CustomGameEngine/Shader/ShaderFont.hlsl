@@ -31,7 +31,7 @@ struct PS_INPUT
 Texture2D FontAtlas : register(t0);
 SamplerState FontSampler : register(s0);
 
-PS_INPUT FontVS(VS_INPUT Input)
+PS_INPUT mainVS(VS_INPUT Input)
 {
     PS_INPUT Output;
     
@@ -47,7 +47,7 @@ PS_INPUT FontVS(VS_INPUT Input)
     return Output;
 }
 
-float4 fontPS(PS_INPUT input) : SV_TARGET
+float4 mainPS(PS_INPUT input) : SV_TARGET
 {
     float mask = FontAtlas.Sample(FontSampler, input.UV).r;
 

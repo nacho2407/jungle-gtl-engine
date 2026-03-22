@@ -282,14 +282,27 @@ FMatrix UCameraComponent::GetViewProjectionMatrix() const { return ViewProjectio
 
 FVector UCameraComponent::WorldToScreen(const FVector& worldPos) const
 {
-	FVector clipSpacePos = ViewProjection.TransformPoint(worldPos);
-	if (clipSpacePos.z == 0.0f) return FVector(-1.0f, -1.0f, -1.0f);
+	if (ScreenWidth <= 0.0f || ScreenHeight <= 0.0f)
+	{
+		return FVector(-1.0f, -1.0f, -1.0f);
+	}
 
-	FVector ndcSpacePos = clipSpacePos / clipSpacePos.z;
-	float screenX = (ndcSpacePos.x + 1.0f) * 0.5f * ScreenWidth;
-	float screenY = (1.0f - (ndcSpacePos.y + 1.0f) * 0.5f) * ScreenHeight;
+	const FVector4 clip = FVector4(worldPos.x, worldPos.y, worldPos.z, 1.0f) * ViewProjection;
 
-	return FVector(screenX, screenY, ndcSpacePos.z);
+	if (std::abs(clip.w) < Epsilon || clip.w <= 0.0f)
+	{
+		return FVector(-1.0f, -1.0f, -1.0f);
+	}
+
+	const float invW = 1.0f / clip.w;
+	const float ndcX = clip.x * invW;
+	const float ndcY = clip.y * invW;
+	const float ndcZ = clip.z * invW;
+
+	const float screenX = (ndcX + 1.0f) * 0.5f * ScreenWidth;
+	const float screenY = (1.0f - (ndcY + 1.0f) * 0.5f) * ScreenHeight;
+
+	return FVector(screenX, screenY, ndcZ);
 }
 
 Ray UCameraComponent::ScreenPointToRay(int x, int y)
