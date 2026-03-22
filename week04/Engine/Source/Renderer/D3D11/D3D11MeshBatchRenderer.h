@@ -15,11 +15,16 @@ class FSceneView;
 
 struct FVertexSimple;
 
-// Per-instance
-struct FMeshInstanceData
+enum class EMeshDrawPath : uint8
 {
-    FMatrix  World;
-    FColor Color = FColor::White();
+    Single,
+    Instanced
+};
+
+struct FMeshDrawData
+{
+    FMatrix World;
+    FColor  Color = FColor::White();
 };
 
 struct FBasicMeshResource
@@ -29,20 +34,20 @@ struct FBasicMeshResource
     uint32                IndexCount = 0;
 };
 
-// TODO: Instance 유무에 따라 분기
-
 class FD3D11MeshBatchRenderer
 {
   public:
-    static constexpr const wchar_t* DefaultShaderPath =
+    static constexpr const wchar_t* InstancedShaderPath =
         L"Resources/Shaders/ShaderInstancedMesh.hlsl";
-    static constexpr uint32 DefaultMaxInstances = 4096;
+    static constexpr const wchar_t* SingleShaderPath = L"Resources/Shaders/ShaderMesh.hlsl";
+    static constexpr uint32         MaxInstanceCapacity = 4096;
 
   public:
     bool Initialize(FD3D11DynamicRHI* InRHI);
     void Shutdown();
 
     void Render(const FSceneRenderData& InRenderData);
+    void Flush(EMeshDrawPath DrawPath, const FSceneView* InSceneView);
 
   private:
     bool CreateShaders();
@@ -50,13 +55,16 @@ class FD3D11MeshBatchRenderer
     bool CreateStates();
     bool CreateDynamicInstanceBuffer(uint32 InMaxInstanceCount);
 
+    // Basic Meshes (Sphere, Cube, Plane, Triangle, Cone, Cylinder, Ring)
     bool CreateBasicMeshes();
-    void ReleaseBasicMeshes();
-
     bool CreateBasicCubeMesh(FBasicMeshResource& OutResource);
     bool CreateBasicPlaneMesh(FBasicMeshResource& OutResource);
     bool CreateBasicTriangleMesh(FBasicMeshResource& OutResource);
     bool CreateBasicSphereMesh(FBasicMeshResource& OutResource);
+    bool CreateBasicConeMesh(FBasicMeshResource& OutResource);
+    bool CreateBasicCylinderMesh(FBasicMeshResource& OutResource);
+    bool CreateBasicRingMesh(FBasicMeshResource& OutResource);
+    void ReleaseBasicMeshes();
 
     bool CreateBasicMeshResource(const FVertexSimple* InVertices, uint32 InVertexCount,
                                  const uint16* InIndices, uint32 InIndexCount,
@@ -65,34 +73,38 @@ class FD3D11MeshBatchRenderer
     void ResetBatches();
     void GatherRenderItems(const FSceneRenderData& InRenderData);
 
-    void Flush(const FSceneView* InSceneView);
-    void UpdatePerFrameConstants(const FSceneView* InSceneView);
+    void UpdatePerFrameConstants(const FSceneView* InSceneView, EMeshDrawPath DrawPath);
 
-    void BindPipeline();
+    void BindPipeline(EMeshDrawPath DrawPath);
     void BindSolidRasterizer();
     void BindWireframeRasterizer();
 
-    void DrawMeshBatch(EBasicMeshType InType, const FSceneView* InSceneView);
+    void DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath DrawPath,
+                       const FSceneView* InSceneView);
 
-    FBasicMeshResource*       GetMeshResource(EBasicMeshType InType);
-    const FBasicMeshResource* GetMeshResource(EBasicMeshType InType) const;
+    FBasicMeshResource*       GetBasicMeshResource(EBasicMeshType InType);
+    const FBasicMeshResource* GetBasicMeshResource(EBasicMeshType InType) const;
 
   private:
     FD3D11DynamicRHI* RHI = nullptr;
     EViewModeIndex    ViewMode = EViewModeIndex::Lit;
-    uint32            MaxInstanceCount = DefaultMaxInstances;
-    bool              bUseInstancing = true; // TODO
+    uint32            MaxInstanceCount = MaxInstanceCapacity;
 
-    TComPtr<ID3D11VertexShader> VertexShader;
-    TComPtr<ID3D11PixelShader>  PixelShader;
-    TComPtr<ID3D11InputLayout>  InputLayout;
-    TComPtr<ID3D11Buffer>       ConstantBuffer;
+    TComPtr<ID3D11VertexShader> InstancedVertexShader;
+    TComPtr<ID3D11PixelShader>  InstancedPixelShader;
+    TComPtr<ID3D11InputLayout>  InstancedInputLayout;
+    TComPtr<ID3D11Buffer>       InstancedConstantBuffer;
     TComPtr<ID3D11Buffer>       InstanceBuffer;
+
+    TComPtr<ID3D11VertexShader> SingleVertexShader;
+    TComPtr<ID3D11PixelShader>  SinglePixelShader;
+    TComPtr<ID3D11InputLayout>  SingleInputLayout;
+    TComPtr<ID3D11Buffer>       SingleConstantBuffer;
 
     TComPtr<ID3D11RasterizerState>   SolidRasterizerState;
     TComPtr<ID3D11RasterizerState>   WireframeRasterizerState;
     TComPtr<ID3D11DepthStencilState> DepthStencilState;
 
-    FBasicMeshResource        BasicMeshes[static_cast<int32>(EBasicMeshType::Count)];
-    TArray<FMeshInstanceData> MeshInstances[static_cast<int32>(EBasicMeshType::Count)];
+    FBasicMeshResource    BasicMeshResources[static_cast<int32>(EBasicMeshType::Count)];
+    TArray<FMeshDrawData> MeshDraws[static_cast<int32>(EBasicMeshType::Count)];
 };
