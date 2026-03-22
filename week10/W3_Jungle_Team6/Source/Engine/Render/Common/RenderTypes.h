@@ -15,6 +15,7 @@
 #include <dxgi1_5.h>
 
 #pragma comment(lib, "dxgi")
+#include "Core/CoreTypes.h"
 
 //	Primtive Type Enum
 enum class EPrimitiveType
@@ -22,10 +23,23 @@ enum class EPrimitiveType
 	EPT_Cube,
 	EPT_Sphere,
 	EPT_Plane,
+	EPT_Quad,
 	EPT_TransGizmo,
 	EPT_RotGizmo,
 	EPT_ScaleGizmo,
 	EPT_Axis,
 	EPT_Grid,
 	EPT_MouseOverlay
+};
+
+enum class ERenderPass : uint32
+{
+	Opaque,
+	Translucent,
+	Editor,
+	Grid,
+	Outline,        
+	DepthLess,      
+	Overlay,        
+	MAX             
 };
