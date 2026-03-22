@@ -13,7 +13,7 @@ void UBillboardComponent::UpdateBillboardMatrix(const FMatrix& ViewMatrix)
 bool UBillboardComponent::GetRenderCommand(FRenderCommand& OutCommand)
 {
 	OutCommand.Type = ERenderCommandType::Billboard;
-	OutCommand.TransformConstants.Model = CachedWorldMatrix;
+	OutCommand.PerObjectConstants.Model = CachedWorldMatrix;
 
 	return true;
 }

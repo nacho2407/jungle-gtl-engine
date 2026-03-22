@@ -1,19 +1,17 @@
 #pragma once
 
-#include "Core/Common.h"
+#include "Core/CoreTypes.h"
 
-class FEditorEngine;
-
-using namespace common::structs;
+class UEditorEngine;
 
 class FEditorWidget
 {
 public:
 	virtual ~FEditorWidget() = default;
 
-	virtual void Initialize(FEditorEngine* InEditorEngine);
-	virtual void Render(float DeltaTime, FViewOutput& ViewOutput) = 0;
+	virtual void Initialize(UEditorEngine* InEditorEngine);
+	virtual void Render(float DeltaTime) = 0;
 
 protected:
-	FEditorEngine* EditorEngine = nullptr;
+	UEditorEngine* EditorEngine = nullptr;
 };

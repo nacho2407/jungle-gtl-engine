@@ -2,6 +2,7 @@
 
 #include "EngineStatics.h"
 #include "Object/FName.h"
+#include "Core/Singleton.h"
 
 #define DECLARE_CLASS(ClassName, ParentClass)                          \
     static const FTypeInfo s_TypeInfo;                                 \
@@ -19,14 +20,16 @@
         sizeof(ClassName)                                              \
     };
 
-enum EClassFlags : uint32_t {
-	CF_None		 = 0,
-	CF_Actor	 = 1 << 0,
+enum EClassFlags : uint32_t
+{
+	CF_None = 0,
+	CF_Actor = 1 << 0,
 	CF_Component = 1 << 1,
-	CF_Camera	 = 1 << 2,
+	CF_Camera = 1 << 2,
 };
 
-struct FTypeInfo {
+struct FTypeInfo
+{
 	const char* name;
 	const FTypeInfo* Parent;
 	size_t size;
@@ -45,12 +48,13 @@ struct FTypeInfo {
 class UObject
 {
 public:
-	uint32 UUID;
-	uint32 InternalIndex;
-	bool bPendingKill;
-
 	UObject();
 	virtual ~UObject();
+
+	uint32 GetUUID() const { return UUID; }
+	uint32 GetInternalIndex() const { return InternalIndex; }
+	void SetUUID(uint32 InUUID) { UUID = InUUID; }
+	void SetInternalIndex(uint32 InIndex) { InternalIndex = InIndex; }
 
 	static void* operator new(size_t Size)
 	{
@@ -68,7 +72,8 @@ public:
 		{
 			EngineStatics::OnDeallocated(static_cast<uint32>(Size));
 			std::free(Ptr);
-;		}
+			;
+		}
 	}
 
 	// FName
@@ -91,48 +96,50 @@ public:
 
 protected:
 	FName ObjectName;
+
+private:
+	uint32 UUID;
+	uint32 InternalIndex;
 };
 
 extern TArray<UObject*> GUObjectArray;
 
+class UObjectManager : public TSingleton<UObjectManager>
+{
+	friend class TSingleton<UObjectManager>;
 
-class UObjectManager {
 public:
-	// Singleton
-	static UObjectManager& Get()
-	{
-		static UObjectManager instance;
-		return instance;
-	}
-
 	template<typename T>
-	T* CreateObject() {
+	T* CreateObject()
+	{
+		static_assert(std::is_base_of<UObject, T>::value, "T must derive from UObject");
 		T* Obj = new T();
-		//GUObjectArray.push_back(Obj);
+
+		const char* ClassName = T::s_TypeInfo.name;
+		uint32& Counter = NameCounters[ClassName];
+		FString Name = FString(ClassName) + "_" + std::to_string(Counter++);
+		Obj->SetFName(FName(Name));
+
 		return Obj;
 	}
 
-	// Does not detroy the target object right away. Only marks for death
-	void DestroyObject(UObject* Obj) {
-		if (!Obj) {
+	void DestroyObject(UObject* Obj)
+	{
+		if (!Obj)
+		{
 			return;
 		}
-		Obj->bPendingKill = true;
+		delete Obj;
 	}
 
-	void CollectGarbage() {
-		for (int i = 0; i < GUObjectArray.size(); i++) {
-			if (GUObjectArray[i] && GUObjectArray[i]->bPendingKill) {
-				delete GUObjectArray[i];
-				GUObjectArray[i] = nullptr;
-			}
-		}
-	}
+private:
+	TMap<FString, uint32> NameCounters;
 
-	UObject* FindByUUID(uint32 UUID)
+public:
+	UObject* FindByUUID(uint32 InUUID)
 	{
 		for (auto* Obj : GUObjectArray)
-			if (Obj && Obj->UUID == UUID)
+			if (Obj && Obj->GetUUID() == InUUID)
 				return Obj;
 		return nullptr;
 	}
@@ -140,15 +147,6 @@ public:
 	UObject* FindByIndex(uint32 Index)
 	{
 		if (Index >= GUObjectArray.size()) return nullptr;
-		return GUObjectArray[Index];   // may be null if destroyed
+		return GUObjectArray[Index];
 	}
-
-	// Used to kill the current rendering scene (i.e for loading a new savefile)
-	void PurgeScene();
-
-private:
-	UObjectManager() = default;
-	~UObjectManager() { CollectGarbage(); }
-
-	//TArray<UObject*> GUObjectArray;
 };
