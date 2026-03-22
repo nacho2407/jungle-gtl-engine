@@ -259,7 +259,7 @@ def generate_vcxproj(files: dict[str, list[str]]):
         ET.SubElement(cl, "ExceptionHandling").text = "Async"
 
         if is_x64:
-            ET.SubElement(cl, "LanguageStandard").text = "stdcpp17"
+            ET.SubElement(cl, "LanguageStandard").text = "stdcpp20"
 
         link = ET.SubElement(idg, "Link")
         ET.SubElement(link, "SubSystem").text = "Windows" if is_x64 else "Console"
