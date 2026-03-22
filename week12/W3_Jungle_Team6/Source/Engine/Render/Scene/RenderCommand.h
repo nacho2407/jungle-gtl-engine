@@ -8,6 +8,8 @@
 
 #include "Render/Common/RenderTypes.h"
 #include "Render/Resource/Buffer.h"
+#include "Render/Device/D3DDevice.h"
+#include "Core/EngineTypes.h"
 
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
@@ -17,23 +19,32 @@ enum class ERenderCommandType
 	Primitive,
 	Gizmo,
 	Overlay,
-	Axis,
-	Grid,
-	SelectionOutline
+	SelectionOutline,
+	Billboard,
+	DebugBox
 };
 
-//	Object를 위한 Constant Buffer입니다.
-struct FTransformConstants
+//PerObject
+struct FPerObjectConstants
 {
 	FMatrix Model;
-	FMatrix View;
-	FMatrix Projection;
+	FVector4 Color;
+	float IsSelected;
+	float Padding[3];
+};
+
+struct FFrameConstants
+{
+	FMatrix View;          
+	FMatrix Projection;    
+
+	FVector4 CameraPosition; 
 };
 
 struct FGizmoConstants
 {
 	FVector4 ColorTint;
-	uint32 bIsInnerGizmo;	//	Translation Gizmo의 경우, Inner Gizmo는 항상 카메라를 향하도록 처리할 수 있습니다.
+	uint32 bIsInnerGizmo;	
 	uint32 bClicking;
 	uint32 SelectedAxis;
 	float HoveredAxisOpacity;
@@ -66,16 +77,35 @@ struct FOutlineConstants
 	float Padding0[3];
 };
 
+struct FAABBConstants
+{
+	FVector Min;
+	float Padding0;
+
+	FVector Max;
+	float Padding1;
+
+	FColor Color;
+};
+
 struct FRenderCommand
 {
 	//	VB, IB 모두 담고 있는 MB
 	FMeshBuffer* MeshBuffer = nullptr;
+	FPerObjectConstants PerObjectConstants = {};
+	FString TextData;
 
-	FTransformConstants TransformConstants = {};
-	FGizmoConstants GizmoConstants = {};
-	FEditorConstants EditorConstants = {};
-	FOverlayConstants OverlayConstants = {};
-	FOutlineConstants OutlineConstants = {};
-	
+	union
+	{
+		FGizmoConstants Gizmo;
+		FEditorConstants Editor;
+		FOverlayConstants Overlay;
+		FOutlineConstants Outline;
+		FAABBConstants AABB;
+	} Constants;
+
+
+	EDepthStencilState DepthStencilState = EDepthStencilState::Default;
+	EBlendState BlendState = EBlendState::Opaque;
 	ERenderCommandType Type = ERenderCommandType::Primitive;
 };

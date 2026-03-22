@@ -5,8 +5,6 @@
 #include "Component/PrimitiveComponent.h"
 #include "Component/GizmoComponent.h"
 
-FMeshBufferManager FRenderCollector::MeshBufferManager;
-
 void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
 	if (!Context.Camera || !Context.World)
@@ -15,28 +13,28 @@ void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBu
 	}
 
 	//	Must be the active camera
-	
-	FMatrix View = Context.Camera->GetViewMatrix();
-	FMatrix Projection = Context.Camera->GetProjectionMatrix();
+
+	UCameraComponent* Camera = Context.Camera;
+	RenderBus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix(),
+		Camera->GetRightVector(), Camera->GetUpVector());
+	RenderBus.SetRenderSettings(Context.ViewMode, Context.ShowFlags);
+
 
 	//	Draw from Editor (Gizmo, Axis, etc.)
-	CollectFromEditor(Context, View, Projection, RenderBus);
+	CollectFromEditor(Context, RenderBus);
 
 	//	Draw from World
-	if (Context.ShowFlags.bPrimitives)
+	for (AActor* Actor : Context.World->GetActors())
 	{
-		for (AActor* Actor : Context.World->GetActors())
-		{
-			if (!Actor) continue;
-			CollectFromActor(Actor, Context, RenderBus);
-		}
+		if (!Actor) continue;
+		CollectFromActor(Actor, Context, RenderBus);
 	}
 }
 
 void FRenderCollector::CollectFromActor(AActor* Actor, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
 	// Iterate through the components of the actor and retrieve their render properties
-	for (auto* Comp : Actor->GetComponents()) 
+	for (auto* Comp : Actor->GetComponents())
 	{
 		if (!Comp) continue;
 		if (!Comp->IsA<UPrimitiveComponent>()) continue;
@@ -49,118 +47,174 @@ void FRenderCollector::CollectFromActor(AActor* Actor, const FRenderCollectorCon
 void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveComponent, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
 	FRenderCommand Cmd = {};
-	Cmd.Type = ERenderCommandType::Primitive;
-	Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
-	Cmd.TransformConstants = FTransformConstants{ primitiveComponent->GetWorldMatrix(), Context.Camera->GetViewMatrix(), Context.Camera->GetProjectionMatrix()};
-
-	if (primitiveComponent->GetRenderCommand(Context.Camera->GetViewMatrix(), Context.Camera->GetProjectionMatrix(), Cmd))
+	Cmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix(), FColor::White().ToVector4(), 0.f};
+	if (primitiveComponent->GetRenderCommand(Cmd))
 	{
-		RenderBus.AddComponentCommand(Cmd);
-
-		if(Context.SelectedComponent == primitiveComponent)
+		ERenderPass selectedRenderPass = ERenderPass::Opaque;
+		switch (Cmd.Type)
 		{
-			FRenderCommand OutlineCmd = Cmd;
-			OutlineCmd.Type = ERenderCommandType::SelectionOutline;
-			OutlineCmd.OutlineConstants.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
-			FVector scale = primitiveComponent->GetRelativeScale();
-			const float kMinScale = 0.001f;
-			if (std::abs(scale.X) < kMinScale) scale.X = kMinScale;
-			if (std::abs(scale.Y) < kMinScale) scale.Y = kMinScale;
-			if (std::abs(scale.Z) < kMinScale) scale.Z = kMinScale;
-			OutlineCmd.OutlineConstants.OutlineInvScale = FVector(1.0f / scale.X, 1.0f / scale.Y, 1.0f / scale.Z);
-			OutlineCmd.OutlineConstants.OutlineOffset = 0.03f;
-
-			if(primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Plane)
+		case ERenderCommandType::Primitive:
+			if (Context.ShowFlags.bPrimitives == false) return;
+			selectedRenderPass = ERenderPass::Opaque;
+			Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
+			if (Context.SelectedComponent == primitiveComponent)
 			{
-				OutlineCmd.OutlineConstants.PrimitiveType = 0u;
+
+				if (Context.ViewMode == EViewMode::Wireframe)
+				{
+					Cmd.PerObjectConstants.IsSelected = 1.0f;
+					Cmd.PerObjectConstants.Color = FColor(255,153,0,255).ToVector4();
+				}
+				else
+				{
+					CollectAABBCommand(primitiveComponent, RenderBus);
+				}
+
+				Cmd.DepthStencilState = EDepthStencilState::StencilWrite;
+				CollectComponentOutline(primitiveComponent, Context, RenderBus);
 			}
 			else
 			{
-				//	Plane은 Outline이 제대로 안나오는 이슈가 있어서, 일단 Cube로 대체하여 그립니다.
-				OutlineCmd.OutlineConstants.PrimitiveType = 1u;
+				// 선택되지 않은 객체는 기본값(Default) 사용
+				Cmd.DepthStencilState = EDepthStencilState::Default;
 			}
 
-			RenderBus.AddOutlineCommand(OutlineCmd);
+			break;
+
+		case ERenderCommandType::Billboard:
+
+			if (Context.ShowFlags.bBillboardText == false) return;
+			Cmd.BlendState = EBlendState::AlphaBlend;
+			Cmd.DepthStencilState = EDepthStencilState::Default;
+			Cmd.TextData = "Hello Jungle";
+			selectedRenderPass = ERenderPass::Translucent;
+			break;
 		}
+
+		RenderBus.AddCommand(selectedRenderPass, Cmd);
 	}
 
 }
 
-void FRenderCollector::CollectFromEditor(const FRenderCollectorContext& Context, const FMatrix& ViewMat, const FMatrix& ProjMat, FRenderBus& RenderBus)
+void FRenderCollector::CollectFromEditor(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
-	//	Gizmo
+
+	CollectGizmo(Context, RenderBus);
+	CollectMouseOverlay(Context, RenderBus);
+}
+
+
+void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
+{
+
 	UGizmoComponent* Gizmo = Context.Gizmo;
-	if (Context.ShowFlags.bGizmo && Gizmo && Gizmo->IsVisible())
-	{
-		FRenderCommand Cmd1 = {};
-		Cmd1.Type = ERenderCommandType::Gizmo;
-		Cmd1.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
-		Cmd1.TransformConstants = FTransformConstants{ Gizmo->GetWorldMatrix(), ViewMat, ProjMat };
-		Cmd1.GizmoConstants.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-		Cmd1.GizmoConstants.bIsInnerGizmo = 1;
-		Cmd1.GizmoConstants.bClicking = Gizmo->IsHolding() ? 1 : 0;
-		Cmd1.GizmoConstants.SelectedAxis = Gizmo->GetSelectedAxis() >= 0 ? static_cast<uint32>(Gizmo->GetSelectedAxis()) : 0xffffffffu;
-		Cmd1.GizmoConstants.HoveredAxisOpacity = 0.55f;
+	if (Context.ShowFlags.bGizmo == false) return;
+	if (!Gizmo || !Gizmo->IsVisible()) return;
 
-		RenderBus.AddDepthLessCommand(Cmd1);
+	auto CreateGizmoCmd = [&](bool bInner) {
+		FRenderCommand Cmd = {};
+		Cmd.Type = ERenderCommandType::Gizmo;
+		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
+		Cmd.PerObjectConstants = FPerObjectConstants{ Gizmo->GetWorldMatrix() };
 
-		//	선택되지 않은 경우에 Outer를 그림
-		if (!Gizmo->IsHolding())
+		if (bInner)
 		{
-			FRenderCommand Cmd2 = {};
-			Cmd2.Type = ERenderCommandType::Gizmo;
-			Cmd2.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
-			Cmd2.TransformConstants = FTransformConstants{ Gizmo->GetWorldMatrix(), ViewMat, ProjMat };
-			Cmd2.GizmoConstants.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-			Cmd2.GizmoConstants.bIsInnerGizmo = 0;
-			Cmd2.GizmoConstants.bClicking = Gizmo->IsHolding() ? 1 : 0;
-			Cmd2.GizmoConstants.SelectedAxis = Gizmo->GetSelectedAxis() >= 0 ? static_cast<uint32>(Gizmo->GetSelectedAxis()) : 0xffffffffu;
-			Cmd2.GizmoConstants.HoveredAxisOpacity = 0.55f;
-
-			RenderBus.AddDepthLessCommand(Cmd2);
+			Cmd.DepthStencilState = EDepthStencilState::GizmoInside;
+			Cmd.BlendState = EBlendState::AlphaBlend;
+			Cmd.Constants.Gizmo.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 		}
-	}
+		else
+		{
+			Cmd.DepthStencilState = EDepthStencilState::GizmoOutside;
+			Cmd.BlendState = EBlendState::Opaque;
+			Cmd.Constants.Gizmo.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+		}
+		Cmd.Constants.Gizmo.bIsInnerGizmo = bInner ? 1 : 0;
+		Cmd.Constants.Gizmo.bClicking = Gizmo->IsHolding() ? 1 : 0;
+		Cmd.Constants.Gizmo.SelectedAxis = Gizmo->GetSelectedAxis() >= 0 ? (uint32)Gizmo->GetSelectedAxis() : 0xffffffffu;
+		Cmd.Constants.Gizmo.HoveredAxisOpacity = 0.3f;
+		return Cmd;
+		};
 
-	if (Context.ShowFlags.bGrid)
+
+	// Inner Gizmo
+	RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(false));
+
+	if (!Gizmo->IsHolding())
 	{
-		//	Axis 추가
-		FRenderCommand AxisCmd = {};
-		AxisCmd.Type = ERenderCommandType::Axis;
-		AxisCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_Axis);
-		AxisCmd.TransformConstants = FTransformConstants{ FMatrix::Identity, ViewMat, ProjMat };	//	Model은 고정
-
-		FVector camPos = Context.Camera->GetWorldLocation();
-		AxisCmd.EditorConstants.CameraPosition = FVector4{ camPos.X,camPos.Y,camPos.Z,0.0f };
-		AxisCmd.EditorConstants.Flag = 0; // Axis : 0
-
-		RenderBus.AddEditorCommand(AxisCmd);
-
-		FRenderCommand GridCmd = {};
-		GridCmd.Type = ERenderCommandType::Grid;
-		GridCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_Grid);
-		GridCmd.TransformConstants = FTransformConstants{ FMatrix::Identity, ViewMat, ProjMat };
-
-		GridCmd.EditorConstants.CameraPosition = FVector4{ camPos.X,camPos.Y,camPos.Z,0.0f };
-		GridCmd.EditorConstants.Flag = 1; // Grid : 1
-
-		RenderBus.AddGridEditorCommand(GridCmd);
-	}
-    
-
-	//	Cursor Overlay (null checking +)
-	if (Context.CursorOverlayState && Context.CursorOverlayState->bVisible)
-	{
-		FRenderCommand OverlayCmd = {};
-		OverlayCmd.Type = ERenderCommandType::Overlay;
-		OverlayCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_MouseOverlay);
-
-		OverlayCmd.OverlayConstants.CenterScreen.X = Context.CursorOverlayState->ScreenX;
-		OverlayCmd.OverlayConstants.CenterScreen.Y = Context.CursorOverlayState->ScreenY;
-		OverlayCmd.OverlayConstants.ViewportSize.X = static_cast<float>(Context.ViewportWidth);
-		OverlayCmd.OverlayConstants.ViewportSize.Y = static_cast<float>(Context.ViewportHeight);
-		OverlayCmd.OverlayConstants.Radius = Context.CursorOverlayState->CurrentRadius;
-		OverlayCmd.OverlayConstants.Color = Context.CursorOverlayState->Color;
-
-		RenderBus.AddOverlayCommand(OverlayCmd);
+		RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(true));
 	}
 }
+
+void FRenderCollector::CollectMouseOverlay(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
+{
+	//	Cursor Overlay (null checking +)
+	if (Context.CursorOverlayState == nullptr || Context.CursorOverlayState->bVisible == false)
+	{
+		return;
+	}
+
+	FRenderCommand OverlayCmd = {};
+	OverlayCmd.Type = ERenderCommandType::Overlay;
+	OverlayCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_MouseOverlay);
+
+	OverlayCmd.Constants.Overlay.CenterScreen.X = Context.CursorOverlayState->ScreenX;
+	OverlayCmd.Constants.Overlay.CenterScreen.Y = Context.CursorOverlayState->ScreenY;
+	OverlayCmd.Constants.Overlay.ViewportSize.X = static_cast<float>(Context.ViewportWidth);
+	OverlayCmd.Constants.Overlay.ViewportSize.Y = static_cast<float>(Context.ViewportHeight);
+	OverlayCmd.Constants.Overlay.Radius = Context.CursorOverlayState->CurrentRadius;
+	OverlayCmd.Constants.Overlay.Color = Context.CursorOverlayState->Color;
+
+	RenderBus.AddCommand(ERenderPass::Overlay, OverlayCmd);
+
+}
+
+void FRenderCollector::CollectComponentOutline(UPrimitiveComponent* primitiveComponent, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
+{
+	FRenderCommand OutlineCmd{};
+	OutlineCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
+	OutlineCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
+	OutlineCmd.Type = ERenderCommandType::SelectionOutline;
+	OutlineCmd.DepthStencilState = EDepthStencilState::StencilOutline;
+	OutlineCmd.Constants.Outline.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
+	OutlineCmd.Constants.Outline.OutlineInvScale = FVector(1.0f / primitiveComponent->GetRelativeScale().X,
+		1.0f / primitiveComponent->GetRelativeScale().Y, 1.0f / primitiveComponent->GetRelativeScale().Z);
+
+	if (Context.ViewMode == EViewMode::Wireframe)
+	{
+		OutlineCmd.Constants.Outline.OutlineOffset = 0.003f;
+	}
+	else
+	{
+		OutlineCmd.Constants.Outline.OutlineOffset = 0.03f;
+	}
+
+	if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Plane)
+	{
+		OutlineCmd.Constants.Outline.PrimitiveType = 0u;
+	}
+	else
+	{
+		//	Plane은 Outline이 제대로 안나오는 이슈가 있어서, 일단 Cube로 대체하여 그립니다.
+		OutlineCmd.Constants.Outline.PrimitiveType = 1u;
+	}
+
+	RenderBus.AddCommand(ERenderPass::Outline, OutlineCmd);
+}
+
+void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponent, FRenderBus& RenderBus)
+{
+	FRenderCommand AABBCmd = {};
+	AABBCmd.Type = ERenderCommandType::DebugBox;
+
+	FBoundingBox Box = PrimitiveComponent->GetWorldBoundingBox();
+
+	// 이전에 정의한 union 구조체의 AABB 영역에 데이터를 채웁니다.
+	AABBCmd.Constants.AABB.Min = Box.Min;
+	AABBCmd.Constants.AABB.Max = Box.Max;
+	AABBCmd.Constants.AABB.Color = FColor(1.0f, 0.6f, 0.0f, 1.0f); // 선택 강조용 주황색
+
+	// 렌더러가 마지막에 몰아서 그릴 수 있게 특정 패스(예: Editor/Overlay)에 푸시합니다.
+	RenderBus.AddCommand(ERenderPass::Editor, AABBCmd);
+}
+

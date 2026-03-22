@@ -18,7 +18,7 @@ public:
 	FName();
 	FName(const char* InName);
 	FName(const FString& InName);
-
+	
 	// 비교 (대소문자 무시)
 	bool operator==(const FName& Other) const;
 	bool operator!=(const FName& Other) const;
