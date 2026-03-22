@@ -195,6 +195,21 @@ UPlaneComponent::UPlaneComponent()
 {
 	MeshData = &FMeshManager::GetPlane();
 }
+
+void UPlaneComponent::UpdateWorldAABB()
+{
+	// Plane mesh: XY 평면, Z 두께 ±0.01f
+	FVector LExt = { 0.5f, 0.5f, 0.01f };
+
+	float NewEx = std::abs(CachedWorldMatrix.M[0][0]) * LExt.X + std::abs(CachedWorldMatrix.M[1][0]) * LExt.Y + std::abs(CachedWorldMatrix.M[2][0]) * LExt.Z;
+	float NewEy = std::abs(CachedWorldMatrix.M[0][1]) * LExt.X + std::abs(CachedWorldMatrix.M[1][1]) * LExt.Y + std::abs(CachedWorldMatrix.M[2][1]) * LExt.Z;
+	float NewEz = std::abs(CachedWorldMatrix.M[0][2]) * LExt.X + std::abs(CachedWorldMatrix.M[1][2]) * LExt.Y + std::abs(CachedWorldMatrix.M[2][2]) * LExt.Z;
+
+	FVector WorldCenter = GetWorldLocation();
+	WorldAABBMinLocation = WorldCenter - FVector(NewEx, NewEy, NewEz);
+	WorldAABBMaxLocation = WorldCenter + FVector(NewEx, NewEy, NewEz);
+}
+
 bool UPlaneComponent::GetRenderCommand(FRenderCommand& OutCommand) {
 	if (!MeshData || !bIsVisible) {
 		return false;
