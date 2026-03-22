@@ -1,9 +1,9 @@
 ﻿#include "Editor/Viewport/EditorViewportClient.h"
 
-
 #include <iostream>
 
-#include "Editor/Core/EditorConsole.h"
+#include "Editor/UI/EditorConsoleWidget.h"
+#include "Editor/Settings/EditorSettings.h"
 #include "Engine/Core/InputSystem.h"
 
 #include "Component/Camera.h"
@@ -32,7 +32,7 @@ void FEditorViewportClient::SetViewportSize(float InWidth, float InHeight)
 
 	if (Camera)
 	{
-		Camera->OnResize(static_cast<int>(WindowWidth), static_cast<int>(WindowHeight));
+		Camera->OnResize(static_cast<int32>(WindowWidth), static_cast<int32>(WindowHeight));
 	}
 }
 
@@ -61,57 +61,61 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 
 	FCameraState& CameraState = Camera->GetCameraState();
 
-	FVector move = FVector(0, 0, 0);
+	const float MoveSensitivity = Settings ? Settings->CameraMoveSensitivity : 1.f;
+	const float CameraSpeed = (Settings ? Settings->CameraSpeed : 10.f) * MoveSensitivity;
+
+	FVector Move = FVector(0, 0, 0);
 
 	if (InputSystem::GetKey('W') && !CameraState.bIsOrthogonal)
-		move.X += CameraVelocity;
+		Move.X += CameraSpeed;
 	if (InputSystem::GetKey('A'))
-		move.Y -= CameraVelocity;
+		Move.Y -= CameraSpeed;
 	if (InputSystem::GetKey('S') && !CameraState.bIsOrthogonal)
-		move.X -= CameraVelocity;
+		Move.X -= CameraSpeed;
 	if (InputSystem::GetKey('D'))
-		move.Y += CameraVelocity;
+		Move.Y += CameraSpeed;
 	if(InputSystem::GetKey('Q'))
-		move.Z -= CameraVelocity;
+		Move.Z -= CameraSpeed;
 	if (InputSystem::GetKey('E'))
-		move.Z += CameraVelocity;
+		Move.Z += CameraSpeed;
 
-	move *= DeltaTime;
-	Camera->MoveLocal(move);
+	Move *= DeltaTime;
+	Camera->MoveLocal(Move);
 
-	FVector rotation = FVector(0, 0, 0);
-	FVector mouseRotation = FVector(0, 0, 0);
+	FVector Rotation = FVector(0, 0, 0);
+	FVector MouseRotation = FVector(0, 0, 0);
 
-	float AngleVelocity = 50.0f;
+	const float RotateSensitivity = Settings ? Settings->CameraRotateSensitivity : 1.f;
+	const float AngleVelocity = (Settings ? Settings->CameraRotationSpeed : 60.f) * RotateSensitivity;
 	if (InputSystem::GetKey(VK_UP))
-		rotation.Z -= AngleVelocity;
+		Rotation.Z -= AngleVelocity;
 	if (InputSystem::GetKey(VK_LEFT))
-		rotation.Y -= AngleVelocity;
+		Rotation.Y -= AngleVelocity;
 	if (InputSystem::GetKey(VK_DOWN))
-		rotation.Z += AngleVelocity;
+		Rotation.Z += AngleVelocity;
 	if (InputSystem::GetKey(VK_RIGHT))
-		rotation.Y += AngleVelocity;
+		Rotation.Y += AngleVelocity;
 
 	// Mouse sensitivity is degrees per pixel (do not multiply by DeltaTime)
-	float MouseRotationSpeed = 0.15f;
+	float MouseRotationSpeed = 0.15f * RotateSensitivity;
 
 	if (InputSystem::GetKey(VK_RBUTTON))
 	{
-		float deltaX = static_cast<float>(InputSystem::MouseDeltaX());
-		float deltaY = static_cast<float>(InputSystem::MouseDeltaY());
+		float DeltaX = static_cast<float>(InputSystem::MouseDeltaX());
+		float DeltaY = static_cast<float>(InputSystem::MouseDeltaY());
 
-		mouseRotation.Y += deltaX * MouseRotationSpeed; // yaw
-		mouseRotation.Z += deltaY * MouseRotationSpeed; // pitch
+		MouseRotation.Y += DeltaX * MouseRotationSpeed; // yaw
+		MouseRotation.Z += DeltaY * MouseRotationSpeed; // pitch
 
-		mouseRotation.Y = Clamp(mouseRotation.Y, -89.0f, 89.0f);
-		mouseRotation.Z = Clamp(mouseRotation.Z, -89.0f, 89.0f);
+		MouseRotation.Y = Clamp(MouseRotation.Y, -89.0f, 89.0f);
+		MouseRotation.Z = Clamp(MouseRotation.Z, -89.0f, 89.0f);
 	}
 
 	if (InputSystem::GetKeyUp(VK_SPACE))
 		Gizmo->SetNextMode();
 
-	rotation *= DeltaTime;
-	Camera->Rotate(rotation.Y + mouseRotation.Y, rotation.Z + mouseRotation.Z);
+	Rotation *= DeltaTime;
+	Camera->Rotate(Rotation.Y + MouseRotation.Y, Rotation.Z + MouseRotation.Z);
 
 	if (InputSystem::GetKeyDown('O')) {
 		CameraState.bIsOrthogonal = !CameraState.bIsOrthogonal;
@@ -136,28 +140,28 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 
 
 	FCameraState& CameraState = Camera->GetCameraState();
-	uint32 zoomspeed = 300;
+	const float ZoomSpeed = Settings ? Settings->CameraZoomSpeed : 300.f;
 
-	float scrollNotches = InputSystem::GetScrollNotches();
-	if (scrollNotches != 0.0f) {
+	float ScrollNotches = InputSystem::GetScrollNotches();
+	if (ScrollNotches != 0.0f) {
 		if (CameraState.bIsOrthogonal) {
-			float newWidth = CameraState.OrthoWidth - scrollNotches * zoomspeed * DeltaTime;
-			CameraState.OrthoWidth = Clamp(newWidth, 0.1f, 1000.0f);
+			float NewWidth = CameraState.OrthoWidth - ScrollNotches * ZoomSpeed * DeltaTime;
+			CameraState.OrthoWidth = Clamp(NewWidth, 0.1f, 1000.0f);
 		}
 		else {
-			float newFOV = CameraState.FOV - scrollNotches * zoomspeed * DeltaTime;
-			newFOV = Clamp(newFOV, 1.f * DEG_TO_RAD, 90.0f * DEG_TO_RAD);
-			CameraState.FOV = newFOV;
+			float NewFOV = CameraState.FOV - ScrollNotches * ZoomSpeed * DeltaTime;
+			NewFOV = Clamp(NewFOV, 1.f * DEG_TO_RAD, 90.0f * DEG_TO_RAD);
+			CameraState.FOV = NewFOV;
 		}
 	}
 	
 
-	POINT mousepoint = InputSystem::mousePos;
-	ScreenToClient(HWindow, &mousepoint);
+	POINT MousePoint = InputSystem::mousePos;
+	ScreenToClient(HWindow, &MousePoint);
 
 	//	Cursor
-	CursorOverlayState.ScreenX = static_cast<float>(mousepoint.x);
-	CursorOverlayState.ScreenY = static_cast<float>(mousepoint.y);
+	CursorOverlayState.ScreenX = static_cast<float>(MousePoint.x);
+	CursorOverlayState.ScreenY = static_cast<float>(MousePoint.y);
 
 	if (InputSystem::GetKeyDown(VK_LBUTTON))
 	{
@@ -212,15 +216,15 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		}
 	}
 	
-	FRay ray = Camera->DeprojectScreenToWorld(static_cast<float>(mousepoint.x), static_cast<float>(mousepoint.y), WindowWidth, WindowHeight);
-	FHitResult hitResult;
+	FRay Ray = Camera->DeprojectScreenToWorld(static_cast<float>(MousePoint.x), static_cast<float>(MousePoint.y), WindowWidth, WindowHeight);
+	FHitResult HitResult;
 
 	//Gizmo Hover
-	Gizmo->Raycast(ray, hitResult);
+	Gizmo->Raycast(Ray, HitResult);
 
 	if (InputSystem::GetKeyDown(VK_LBUTTON))
 	{
-		HandleDragStart(ray);
+		HandleDragStart(Ray);
 	}
 	else if (InputSystem::GetLeftDragging())
 	{
@@ -232,7 +236,7 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 
 		if (Gizmo->IsHolding())
 		{
-			Gizmo->UpdateDrag(ray);
+			Gizmo->UpdateDrag(Ray);
 		}
 	}
 	else if (InputSystem::GetLeftDragEnd())
@@ -255,8 +259,8 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 
 void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 {
-	FHitResult hitResult{};
-	if (Gizmo->Raycast(Ray, hitResult))
+	FHitResult HitResult{};
+	if (Gizmo->Raycast(Ray, HitResult))
 	{
 		Gizmo->SetPressedOnHandle(true);
 		//Gizmo->SetHolding(true);
@@ -266,39 +270,39 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 	else
 	{
 		ClearViewOutput();
-		UPrimitiveComponent* bestTarget = nullptr;
-		float closestDistance = FLT_MAX;
+		UPrimitiveComponent* BestTarget = nullptr;
+		float ClosestDistance = FLT_MAX;
 
 		for (auto* it : World->GetActors())
 		{
 			if (!it || it->bPendingKill || (it->GetRootComponent() && it->GetRootComponent()->bPendingKill)) {
 				continue;
 			}
-			UPrimitiveComponent* primitiveComp = dynamic_cast<UPrimitiveComponent*>(it->GetRootComponent());
-			if (primitiveComp != nullptr)
+			UPrimitiveComponent* PrimitiveComp = dynamic_cast<UPrimitiveComponent*>(it->GetRootComponent());
+			if (PrimitiveComp != nullptr)
 			{
-				hitResult = {};
-				if (primitiveComp->Raycast(Ray, hitResult))
+				HitResult = {};
+				if (PrimitiveComp->Raycast(Ray, HitResult))
 				{
-					if (hitResult.Distance < closestDistance)
+					if (HitResult.Distance < ClosestDistance)
 					{
-						closestDistance = hitResult.Distance;
-						bestTarget = primitiveComp;
+						ClosestDistance = HitResult.Distance;
+						BestTarget = PrimitiveComp;
 
-						ViewOutput.ObjectPicked = primitiveComp->GetTypeInfo()->name;
-						ViewOutput.Object = primitiveComp;
+						ViewOutput.ObjectPicked = PrimitiveComp->GetTypeInfo()->name;
+						ViewOutput.Object = PrimitiveComp;
 					}
 				}
 			}
 		}
 
-		if (bestTarget == nullptr)
+		if (BestTarget == nullptr)
 		{
 			Gizmo->Deactivate();
 		}
 		else
 		{
-			Gizmo->SetTarget(bestTarget);
+			Gizmo->SetTarget(BestTarget);
 		}
 	}
 }
