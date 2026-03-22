@@ -10,6 +10,10 @@
 #include "Core/CoreTypes.h"
 #include "Render/Scene/RenderCommand.h"
 
+// 헤더 분리 필요
+#include "Editor/Settings/EditorSettings.h"
+
+
 class FRenderBus
 {
 private:
@@ -21,6 +25,11 @@ private:
 	FVector CameraRight;
 	FVector CameraUp;
 
+
+	//Editor Settings
+	EViewMode ViewMode;
+	FShowFlags ShowFlags;
+
 public:
 	void Clear();
 	void AddCommand(ERenderPass Pass, const FRenderCommand& InCommand);
@@ -28,16 +37,14 @@ public:
 
 
 	// Getter,Setter
-	void SetViewProjection(const FMatrix& InView, const FMatrix& InProj, const FVector& CameraRightVector, const FVector& CameraUpVector) {
-		View = InView;
-		Proj = InProj;
-		CameraRight = CameraRightVector;
-		CameraUp = CameraUpVector;
-	}
+	void SetViewProjection(const FMatrix& InView, const FMatrix& InProj, const FVector& CameraRightVector, const FVector& CameraUpVector);
+	void SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags);
 
 	const FMatrix& GetView() const { return View; }
 	const FMatrix& GetProj() const { return Proj; }
 	const FVector& GetCameraUp() const { return CameraUp; }
 	const FVector& GetCameraRight() const { return CameraRight; }
+	EViewMode GetViewMode() const { return ViewMode; }
+	FShowFlags GetShowFlags() const { return ShowFlags; }
 };
 
