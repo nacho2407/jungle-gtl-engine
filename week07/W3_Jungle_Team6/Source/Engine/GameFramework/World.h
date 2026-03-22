@@ -2,8 +2,6 @@
 #include "Object/Object.h"
 #include "GameFramework/AActor.h"
 
-class UCameraComponent;
-
 class UWorld : public UObject {
 public:
     DECLARE_CLASS(UWorld, UObject)
@@ -16,7 +14,10 @@ public:
         // create and register an actor
         T* Actor = UObjectManager::Get().CreateObject<T>();
         Actor->SetWorld(this);
-        Actor->BeginPlay();
+        if (bHasBegunPlay)
+        {
+            Actor->BeginPlay();
+        }
         Actors.push_back(Actor);
         return Actor;
     }
@@ -41,12 +42,9 @@ public:
     void Tick(float DeltaTime);  // Drives the game loop every frame
     void EndPlay();        // Cleanup before world is destroyed
 
-    void SetActiveCamera(UCameraComponent* Cam);
-    UCameraComponent* GetActiveCamera() const { return ActiveCamera;  }
+    bool HasBegunPlay() const { return bHasBegunPlay; }
 
 private:
     TArray<AActor*> Actors;
-    UCameraComponent* ActiveCamera = nullptr;
-
-    void CameraControls(float DeltaTime);
+    bool bHasBegunPlay = false;
 };
