@@ -8,13 +8,13 @@ namespace Engine::Component
     class ENGINE_API USphereComponent : public UPrimitiveComponent
     {
         DECLARE_RTTI(USphereComponent, UPrimitiveComponent)
-    public:
+      public:
         USphereComponent() = default;
         ~USphereComponent() override = default;
 
         EBasicMeshType GetBasicMeshType() const override { return EBasicMeshType::Sphere; }
 
-    protected:
+      protected:
         Geometry::FAABB GetLocalAABB() const override;
     };
 } // namespace Engine::Component

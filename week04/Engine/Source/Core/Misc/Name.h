@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/EngineAPI.h"
+#include "Core/HAL/PlatformTypes.h"
 
 namespace Engine::Core::Misc
 {

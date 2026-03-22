@@ -177,6 +177,9 @@
     <ClCompile Include="Source\Engine\Asset\TextureLoader.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\BasicPrimitives\CameraComponent.cpp">
+      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\CubeComponent.cpp">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClCompile>
@@ -189,16 +192,10 @@
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.cpp">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\CameraComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\TriangleComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\EngineStatics.cpp">
@@ -428,6 +425,9 @@
     <ClInclude Include="Source\Engine\Asset\TextureLoader.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\BasicPrimitives\CameraComponent.h">
+      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\CubeComponent.h">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClInclude>
@@ -440,16 +440,10 @@
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.h">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\CameraComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\SceneComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\TriangleComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\EngineStatics.h">

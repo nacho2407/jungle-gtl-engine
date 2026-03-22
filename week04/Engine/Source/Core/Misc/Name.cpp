@@ -1,8 +1,6 @@
 #include "Core/CoreMinimal.h"
 #include "Name.h"
 #include "NameSubsystem.h"
-#include <algorithm> // std::transform
-#include <cctype>    // std::tolower
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN

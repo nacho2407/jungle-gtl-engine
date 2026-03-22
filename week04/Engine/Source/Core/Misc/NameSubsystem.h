@@ -1,7 +1,7 @@
 #pragma once
-#include "Core/CoreMinimal.h"
+#include "Core/Containers/Array.h"
 #include "Core/Containers/Map.h"
-#include "Core/Logging/LogMacros.h"
+#include "Core/HAL/PlatformTypes.h"
 
 namespace Engine::Core::Misc
 {
