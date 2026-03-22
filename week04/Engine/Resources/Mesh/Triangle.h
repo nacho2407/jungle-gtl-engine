@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VertexSimple.h"
+#include "MeshPrimitiveTopology.h"
 #include <cstdint>
 
 static const FVertexSimple triangle_vertices[] = {
@@ -15,5 +16,6 @@ static const uint16_t triangle_indices[] = {
     1,
 };
 
+static constexpr EMeshPrimitiveTopology triangle_topology = EMeshPrimitiveTopology::TriangleList;
 static const uint32_t triangle_vertex_count = 3;
 static const uint32_t triangle_index_count = 3;

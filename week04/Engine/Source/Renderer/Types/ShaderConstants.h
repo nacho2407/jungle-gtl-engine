@@ -7,8 +7,8 @@
 // Non-instanced unlit mesh
 struct alignas(16) FMeshUnlitConstants
 {
-    FMatrix  MVP;
-    FColor BaseColor;
+    FMatrix MVP;
+    FColor  BaseColor;
 };
 
 // Instanced unlit mesh
@@ -20,10 +20,7 @@ struct alignas(16) FMeshUnlitInstancedConstants
 // Reserved. Not used in this project.
 struct alignas(16) FMeshLitConstants
 {
-    FMatrix  W;
-    FMatrix  MVP;
-    FColor BaseColor;
-    FVector4 LightDirection;
+    // ...
 };
 
 struct alignas(16) FLineConstants
@@ -33,8 +30,8 @@ struct alignas(16) FLineConstants
 
 struct alignas(16) FFontConstants
 {
-    FMatrix  P;
-    FColor TintColor;
+    FMatrix P;
+    FColor  TintColor;
 };
 
 struct alignas(16) FSpriteConstants

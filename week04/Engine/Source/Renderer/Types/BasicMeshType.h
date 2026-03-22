@@ -8,5 +8,8 @@ enum class EBasicMeshType : uint8
     Cube,
     Triangle,
     Plane,
+    Cone,
+    Cylinder,
+    Ring,
     Count
 };

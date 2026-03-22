@@ -11,18 +11,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Resources\Mesh\Cone.h" />
     <ClInclude Include="Resources\Mesh\Cube.h" />
-    <ClInclude Include="Resources\Mesh\Gizmo\GizmoRotation.h" />
-    <ClInclude Include="Resources\Mesh\Gizmo\GizmoScaling.h" />
-    <ClInclude Include="Resources\Mesh\Gizmo\GizmoTranslation.h" />
+    <ClInclude Include="Resources\Mesh\Cylinder.h" />
+    <ClInclude Include="Resources\Mesh\MeshPrimitiveTopology.h" />
     <ClInclude Include="Resources\Mesh\Plane.h" />
+    <ClInclude Include="Resources\Mesh\Ring.h" />
     <ClInclude Include="Resources\Mesh\Sphere.h" />
     <ClInclude Include="Resources\Mesh\Triangle.h" />
     <ClInclude Include="Resources\Mesh\VertexSimple.h" />
-    <ClInclude Include="Resources\Primitives\Cube.h" />
-    <ClInclude Include="Resources\Primitives\Plane.h" />
-    <ClInclude Include="Resources\Primitives\Triangle.h" />
-    <ClInclude Include="Resources\Primitives\VertexSimple.h" />
     <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplication.h" />
     <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplicationMessageHandler.h" />
     <ClInclude Include="Source\ApplicationCore\Input\InputContext.h" />
@@ -92,11 +89,13 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11Common.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11DynamicRHI.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11FontBatchRenderer.h" />
-    <ClInclude Include="Source\Renderer\D3D11\D3D11GizmoRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11PickingPass.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h" />
+    <ClInclude Include="Source\Renderer\EditorDraw\GizmoDrawer.h" />
+    <ClInclude Include="Source\Renderer\EditorDraw\WorldAxesDrawer.h" />
+    <ClInclude Include="Source\Renderer\EditorDraw\WorldGridDrawer.h" />
     <ClInclude Include="Source\Renderer\EditorRenderData.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\FTextureResource.h" />
     <ClInclude Include="Source\Renderer\RendererModule.h" />
@@ -154,9 +153,11 @@
     <ClCompile Include="Source\Engine\Scene.cpp" />
     <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11DynamicRHI.cpp" />
-    <ClCompile Include="Source\Renderer\D3D11\D3D11GizmoRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.cpp" />
+    <ClCompile Include="Source\Renderer\EditorDraw\GizmoDrawer.cpp" />
+    <ClCompile Include="Source\Renderer\EditorDraw\WorldAxesDrawer.cpp" />
+    <ClCompile Include="Source\Renderer\EditorDraw\WorldGridDrawer.cpp" />
     <ClCompile Include="Source\Renderer\RendererModule.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

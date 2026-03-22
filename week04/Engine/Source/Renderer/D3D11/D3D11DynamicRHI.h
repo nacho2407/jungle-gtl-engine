@@ -50,6 +50,8 @@ class FD3D11DynamicRHI
                            ID3D11PixelShader** OutPixelShader) const;
 
     bool CreateConstantBuffer(uint32 InByteWidth, ID3D11Buffer** OutConstantBuffer) const;
+    bool UpdateConstantBuffer(ID3D11Buffer* InConstantBuffer, const void* InData,
+                              uint32 InDataSize) const;
 
   private:
     bool CreateDeviceAndSwapChain(HWND InWindowHandle);
