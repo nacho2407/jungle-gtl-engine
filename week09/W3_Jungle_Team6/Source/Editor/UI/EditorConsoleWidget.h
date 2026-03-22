@@ -15,7 +15,7 @@ class FEditorConsoleWidget : public FEditorWidget
 public:
 	static void AddLog(const char* fmt, ...);
 
-	virtual void Render(float DeltaTime, FViewOutput& ViewOutput) override;
+	virtual void Render(float DeltaTime) override;
 
 	void Clear()
 	{

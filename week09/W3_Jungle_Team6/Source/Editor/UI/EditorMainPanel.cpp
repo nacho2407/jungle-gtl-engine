@@ -35,7 +35,7 @@ void FEditorMainPanel::Release()
 	ImGui::DestroyContext();
 }
 
-void FEditorMainPanel::Render(float DeltaTime, FViewOutput& ViewOutput)
+void FEditorMainPanel::Render(float DeltaTime)
 {
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
@@ -43,11 +43,11 @@ void FEditorMainPanel::Render(float DeltaTime, FViewOutput& ViewOutput)
 
 	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
-	ConsoleWidget.Render(DeltaTime, ViewOutput);
-	ControlWidget.Render(DeltaTime, ViewOutput);
-	PropertyWidget.Render(DeltaTime, ViewOutput);
-	SceneWidget.Render(DeltaTime, ViewOutput);
-	ViewportOverlayWidget.Render(DeltaTime, ViewOutput);
+	ConsoleWidget.Render(DeltaTime);
+	ControlWidget.Render(DeltaTime);
+	PropertyWidget.Render(DeltaTime);
+	SceneWidget.Render(DeltaTime);
+	ViewportOverlayWidget.Render(DeltaTime);
 
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
