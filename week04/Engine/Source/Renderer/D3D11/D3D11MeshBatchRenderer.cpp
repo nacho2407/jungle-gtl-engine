@@ -8,6 +8,7 @@
 #include "Renderer/SceneRenderData.h"
 #include "Renderer/SceneView.h"
 #include "Renderer/Types/ViewMode.h"
+#include "Renderer/Types/ShowFlags.h"
 
 #include "../../../Resources/Mesh/VertexSimple.h"
 #include "../../../Resources/Mesh/Sphere.h"
@@ -108,6 +109,11 @@ void FD3D11MeshBatchRenderer::Shutdown()
 void FD3D11MeshBatchRenderer::Render(const FSceneRenderData& InRenderData)
 {
     if (RHI == nullptr || InRenderData.SceneView == nullptr)
+    {
+        return;
+    }
+    
+    if (!IsFlagSet(InRenderData.ShowFlags, ESceneShowFlags::SF_Primitives))
     {
         return;
     }
