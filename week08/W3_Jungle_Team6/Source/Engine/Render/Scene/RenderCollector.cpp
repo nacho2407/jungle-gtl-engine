@@ -4,8 +4,6 @@
 #include "Component/Camera.h"
 #include "Component/GizmoComponent.h"
 
-FMeshBufferManager FRenderCollector::MeshBufferManager;
-
 void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
 	if (!Context.Camera || !Context.World)
