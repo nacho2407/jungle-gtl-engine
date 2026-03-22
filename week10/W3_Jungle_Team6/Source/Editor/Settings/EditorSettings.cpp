@@ -8,7 +8,6 @@ namespace Key
 {
 	// Section
 	constexpr const char* Viewport = "Viewport";
-	constexpr const char* Runtime = "Runtime";
 	constexpr const char* Paths = "Paths";
 
 	// Viewport
@@ -32,10 +31,6 @@ namespace Key
 	constexpr const char* Grid = "Grid";
 	constexpr const char* GridSpacing = "GridSpacing";
 	constexpr const char* GridHalfLineCount = "GridHalfLineCount";
-
-	// Runtime
-	constexpr const char* bLimitUpdateRate = "bLimitUpdateRate";
-	constexpr const char* UpdateRate = "UpdateRate";
 
 	// Paths
 	constexpr const char* DefaultSavePath = "DefaultSavePath";
@@ -77,12 +72,6 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	GridObj[Key::GridSpacing] = GridSpacing;
 	GridObj[Key::GridHalfLineCount] = GridHalfLineCount;
 	Root[Key::Grid] = GridObj;
-
-	// Runtime
-	JSON Runtime = Object();
-	Runtime[Key::bLimitUpdateRate] = bLimitUpdateRate;
-	Runtime[Key::UpdateRate] = UpdateRate;
-	Root[Key::Runtime] = Runtime;
 
 	// Paths
 	JSON PathsObj = Object();
@@ -183,17 +172,6 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 			GridSpacing = static_cast<float>(GridObj[Key::GridSpacing].ToFloat());
 		if (GridObj.hasKey(Key::GridHalfLineCount))
 			GridHalfLineCount = GridObj[Key::GridHalfLineCount].ToInt();
-	}
-
-	// Runtime
-	if (Root.hasKey(Key::Runtime))
-	{
-		JSON Runtime = Root[Key::Runtime];
-
-		if (Runtime.hasKey(Key::bLimitUpdateRate))
-			bLimitUpdateRate = Runtime[Key::bLimitUpdateRate].ToBool();
-		if (Runtime.hasKey(Key::UpdateRate))
-			UpdateRate = Runtime[Key::UpdateRate].ToInt();
 	}
 
 	// Paths
