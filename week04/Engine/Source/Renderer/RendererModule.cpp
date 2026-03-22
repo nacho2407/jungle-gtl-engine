@@ -19,11 +19,6 @@ void FRendererModule::StartupModule(HWND hWnd)
         return;
     }
 
-    if (!GizmoRenderer.Initialize(&RHI))
-    {
-        ShutdownModule();
-        return;
-    }
 
 #if defined(_DEBUG)
     if (RHI.GetDevice() != nullptr)
@@ -39,7 +34,6 @@ void FRendererModule::ShutdownModule()
     // D3D 리소스들을 먼저 해제
     LineRenderer.Shutdown();
     MeshRenderer.Shutdown();
-    GizmoRenderer.Shutdown();
 
     // TODO: 나중에 사용 시작하면 활성화
     // FontRenderer.Shutdown();
@@ -82,16 +76,15 @@ void FRendererModule::OnWindowResized(int32 InWidth, int32 InHeight)
 void FRendererModule::RenderFrame(const FEditorRenderData& InEditorRenderData,
                                   const FSceneRenderData&  InSceneRenderData)
 {
-    (void)InEditorRenderData;
-
     BeginFrame();
 
     // Scene
     MeshRenderer.Render(InSceneRenderData);
 
     // Editor Overlay (Grid -> World Axes -> Gizmo)
-    // TODO: 그리드, 월드 축은 나중에 추가
-    GizmoRenderer.Render(InEditorRenderData);
+    WorldGridDrawer.Draw(LineRenderer, InEditorRenderData);
+    WorldAxesDrawer.Draw(LineRenderer, InEditorRenderData);
+    GizmoDrawer.Draw(MeshRenderer, InEditorRenderData);
 
     EndFrame();
 }
