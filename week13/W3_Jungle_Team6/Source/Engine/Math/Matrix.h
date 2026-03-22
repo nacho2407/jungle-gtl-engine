@@ -82,12 +82,15 @@ struct FMatrix {
 	static FMatrix MakeRotationX(float Angle);
 	static FMatrix MakeRotationY(float Angle);
 	static FMatrix MakeRotationZ(float Angle);
+
+	static FMatrix GetCancelRotationMatrix(const FMatrix& InMatrix);
 	void Print() const;
 
 	FVector TransformVector(const FVector& vector) const;
 	FVector TransformPositionWithW(const FVector& V) const;
 
 	FVector GetEuler() const;
+	FVector GetLocation() const;
 };
 
 FVector operator* (const FVector& vector, const FMatrix& matrix);
