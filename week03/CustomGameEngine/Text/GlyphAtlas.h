@@ -44,6 +44,8 @@ public:
 
 	const uint32 GetHeight(void) const { return AtlasHeight; }
 
+	const TArray<uint8>& GetPixels(void) const { return Pixels; }
+
 private:
 	/**
 	 * @brief Atlas 크기

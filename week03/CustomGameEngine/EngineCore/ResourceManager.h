@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "EngineCore/EngineTypes.h"
 #include "Renderer/Geometry.h"
@@ -10,6 +10,8 @@
 #include "EngineCore/Name.h"
 #include <d3d11.h>
 #include <d3dcompiler.h>
+
+#include "Text/FontAsset.h"
 
 class URenderer;
 
@@ -27,8 +29,6 @@ public:
 		static ResourceManager instance;
 		return &instance;
 	};
-
-
 
 	~ResourceManager() {};
 
@@ -149,9 +149,16 @@ public:
 
 	//void InjectRenderer(URenderer* InRenderer) { Renderer = InRenderer; }
 	void Initialize(URenderer* InRenderer);
+
+	FFontAsset& GetBillboardFont() { return BillboardFont; }
 private:
 	ResourceManager() {}
 	TUMap<FString, FGeometry> GeometryMap;
 	TUMap<WFString, FMaterial> MaterialMap;
 	URenderer* Renderer = nullptr;
+
+	/**
+	 * @brief Billboard 텍스트 용 폰트 에셋
+	 */
+	FFontAsset BillboardFont;
 };

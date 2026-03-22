@@ -4,6 +4,8 @@
 #include "Geometry/Triangle.h"
 #include "Renderer/Renderer.h"
 
+#include "EngineCore/Logger.h"
+
 void AddLine(
 	std::vector<FVertexSimple>& outVertices,
 	float x0, float y0, float z0,
@@ -15,6 +17,97 @@ void AddLine(
 }
 //------------------------------Helper Functions------------------------------
 
+static bool CreateFontAtlasTexture(
+	ID3D11Device* Device,
+	const FGlyphAtlas& Atlas,
+	ID3D11ShaderResourceView** OutSRV,
+	ID3D11SamplerState** OutSampler)
+{
+	if (Device == nullptr || OutSRV == nullptr || OutSampler == nullptr)
+	{
+		return false;
+	}
+
+	*OutSRV = nullptr;
+	*OutSampler = nullptr;
+
+	const uint32 AtlasWidth = Atlas.GetWidth();
+	const uint32 AtlasHeight = Atlas.GetHeight();
+	const TArray<uint8>& Pixels = Atlas.GetPixels();
+
+	if (AtlasWidth == 0 || AtlasHeight == 0 || Pixels.empty())
+	{
+		return false;
+	}
+
+	// Texture2D desc 작성
+	D3D11_TEXTURE2D_DESC textureDesc = {};
+	textureDesc.Width = AtlasWidth;
+	textureDesc.Height = AtlasHeight;
+	textureDesc.MipLevels = 1;
+	textureDesc.ArraySize = 1;
+	textureDesc.Format = DXGI_FORMAT_R8_UNORM;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+	textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.MiscFlags = 0;
+
+	// 초기 데이터 지정
+	D3D11_SUBRESOURCE_DATA initData = {};
+	initData.pSysMem = Pixels.data();
+	initData.SysMemPitch = AtlasWidth * sizeof(uint8);
+	initData.SysMemSlicePitch = 0;
+
+	ID3D11Texture2D* atlasTexture = nullptr;
+	HRESULT hr = Device->CreateTexture2D(&textureDesc, &initData, &atlasTexture);
+	if (FAILED(hr) || atlasTexture == nullptr)
+	{
+		return false;
+	}
+
+	// SRV 생성
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = textureDesc.Format;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	srvDesc.Texture2D.MipLevels = 1;
+
+	hr = Device->CreateShaderResourceView(atlasTexture, &srvDesc, OutSRV);
+
+	atlasTexture->Release();
+	atlasTexture = nullptr;
+
+	if (FAILED(hr) || *OutSRV == nullptr)
+	{
+		return false;
+	}
+
+	// Sampler 생성
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	hr = Device->CreateSamplerState(&samplerDesc, OutSampler);
+	if (FAILED(hr) || *OutSampler == nullptr)
+	{
+		if (*OutSRV)
+		{
+			(*OutSRV)->Release();
+			*OutSRV = nullptr;
+		}
+		return false;
+	}
+
+	return true;
+}
+
 
 void ResourceManager::Initialize(URenderer* InRenderer)
 {
@@ -25,11 +118,39 @@ void ResourceManager::Initialize(URenderer* InRenderer)
 		{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12,
 		 D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
+
 	FMaterial& MainShader = CreateMaterial(L"Shader/ShaderW0.hlsl", L"Shader/ShaderW0.hlsl", Renderer->Device.Get(), layout, 2);
 	MainShader.ConstantBuffer.Create(Renderer->Device.Get(), sizeof(FObjectConstant), 1);
 
 	FMaterial& LineShader = CreateMaterial(L"Shader/ShaderLine.hlsl", L"Shader/ShaderLine.hlsl", Renderer->Device.Get(), layout, 2);
 	LineShader.ConstantBuffer.Create(Renderer->Device.Get(), sizeof(FObjectConstant), 1);
+
+	// for ShaderFont.hlsl
+	D3D11_INPUT_ELEMENT_DESC fontLayout[] =
+	{
+		{ "POSITION",  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
+		  D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD",  0, DXGI_FORMAT_R32G32_FLOAT,    0, 12,
+		  D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD",  1, DXGI_FORMAT_R32G32_FLOAT,    0, 20,
+		  D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
+	FMaterial& FontShader = CreateMaterial(
+		L"Shader/ShaderFont.hlsl",
+		L"Shader/ShaderFont.hlsl",
+		Renderer->Device.Get(),
+		fontLayout,
+		3
+	);
+
+	FontShader.ConstantBuffer.Create(
+		Renderer->Device.Get(),
+		sizeof(FFontConstant),
+		1
+	);
+
+	FontShader.bUseTexture = true;
 
 	AddCubeMesh(Renderer->Device.Get());
 	AddSphereMesh(Renderer->Device.Get());
@@ -40,6 +161,20 @@ void ResourceManager::Initialize(URenderer* InRenderer)
 	AddGizmoScaleMesh(Renderer->Device.Get());
 	AddAxisMesh(Renderer->Device.Get());
 	AddGridMesh(Renderer->Device.Get(), 1000.f, 100.f);
+
+	// Font asset 로딩
+	const bool bFontLoaded = BillboardFont.LoadFromFile("Assets/Fonts/D2CodingSubset.ttf", 32.0f);
+	if (!bFontLoaded)
+	{
+		UE_LOG("[EngineCore/ResourceManager][Error] Failed to load billboard font");
+	}
+
+	// 숫자 등 자주 사용하는 문자는 미리 bake
+	for (char c = '0'; c <= '9'; c++)
+	{
+		BillboardFont.EnsureGlyph(static_cast<uint32>(c));
+	}
+	BillboardFont.EnsureGlyph(static_cast<uint32>('-'));
 }
 
 void ResourceManager::CreateNoBufferGeometry(FString ResourceName, const TArray<FVector>& Verticies)
