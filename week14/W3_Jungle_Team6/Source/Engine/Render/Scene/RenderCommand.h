@@ -27,9 +27,12 @@ enum class ERenderCommandType
 };
 
 //PerObject
-struct FTransformConstants
+struct FPerObjectConstants
 {
 	FMatrix Model;
+	FVector4 Color;
+	float IsSelected;
+	float Padding[3];
 };
 
 struct FFrameConstants
@@ -91,7 +94,7 @@ struct FRenderCommand
 {
 	//	VB, IB 모두 담고 있는 MB
 	FMeshBuffer* MeshBuffer = nullptr;
-	FTransformConstants TransformConstants = {};
+	FPerObjectConstants PerObjectConstants = {};
 	FString TextData;
 
 	union

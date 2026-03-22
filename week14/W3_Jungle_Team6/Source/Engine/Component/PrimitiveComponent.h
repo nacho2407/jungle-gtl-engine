@@ -44,7 +44,7 @@ public:
 
 	virtual bool GetRenderCommand(FRenderCommand& OutCommand) {
 		OutCommand.Type = ERenderCommandType::Primitive;
-		OutCommand.TransformConstants.Model = GetWorldMatrix();
+		OutCommand.PerObjectConstants.Model = GetWorldMatrix();
 		return true;
 	}
 
