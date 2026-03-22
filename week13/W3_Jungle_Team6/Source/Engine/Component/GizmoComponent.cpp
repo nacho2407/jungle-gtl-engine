@@ -1,4 +1,5 @@
 ﻿#include "GizmoComponent.h"
+#include "GameFramework/AActor.h"
 #include "Render/Mesh/MeshManager.h"
 
 DEFINE_CLASS(UGizmoComponent, UPrimitiveComponent)
@@ -88,78 +89,111 @@ void UGizmoComponent::HandleDrag(float DragAmount)
 
 void UGizmoComponent::TranslateTarget(float DragAmount)
 {
-	if (TargetComponent == nullptr) return;
+	if (!TargetActor || !TargetActor->GetRootComponent()) return;
 
 	FVector ConstrainedDelta = GetVectorForAxis(SelectedAxis) * DragAmount;
 
 	AddWorldOffset(ConstrainedDelta);
-	TargetComponent->AddWorldOffset(ConstrainedDelta);
+
+	if (AllSelectedActors)
+	{
+		for (AActor* Actor : *AllSelectedActors)
+		{
+			if (Actor) Actor->AddActorWorldOffset(ConstrainedDelta);
+		}
+	}
+	else
+	{
+		TargetActor->AddActorWorldOffset(ConstrainedDelta);
+	}
 }
 
 void UGizmoComponent::RotateTarget(float DragAmount)
 {
-	if (TargetComponent == nullptr) return;
-
-	FMatrix CurMatrix = FMatrix::MakeRotationEuler(TargetComponent->GetRelativeRotation());
+	if (!TargetActor || !TargetActor->GetRootComponent()) return;
 
 	FVector RotationAxis = GetVectorForAxis(SelectedAxis);
-
 	FMatrix DeltaMatrix = FMatrix::MakeRotationAxis(RotationAxis, DragAmount);
 
-	FMatrix NewMatrix = CurMatrix * DeltaMatrix;
-	TargetComponent->SetRelativeRotation(NewMatrix.GetEuler());
+	auto ApplyRotation = [&](AActor* Actor)
+		{
+			if (!Actor || !Actor->GetRootComponent()) return;
+			FMatrix CurMatrix = FMatrix::MakeRotationEuler(Actor->GetActorRotation());
+			FMatrix NewMatrix = CurMatrix * DeltaMatrix;
+			Actor->SetActorRotation(NewMatrix.GetEuler());
+		};
+
+	if (AllSelectedActors)
+	{
+		for (AActor* Actor : *AllSelectedActors)
+		{
+			ApplyRotation(Actor);
+		}
+	}
+	else
+	{
+		ApplyRotation(TargetActor);
+	}
 }
 
 void UGizmoComponent::ScaleTarget(float DragAmount)
 {
-	if (TargetComponent == nullptr) return;
+	if (!TargetActor || !TargetActor->GetRootComponent()) return;
 
 	float ScaleDelta = DragAmount * ScaleSensitivity;
 
-	FVector NewScale = TargetComponent->GetRelativeScale();
-	switch (SelectedAxis)
-	{
-	case 0:
-		NewScale.X += ScaleDelta;
-		break;
-	case 1:
-		NewScale.Y += ScaleDelta;
-		break;
-	case 2:
-		NewScale.Z += ScaleDelta;
-		break;
-	}
+	auto ApplyScale = [&](AActor* Actor)
+		{
+			if (!Actor) return;
+			FVector NewScale = Actor->GetActorScale();
+			switch (SelectedAxis)
+			{
+			case 0: NewScale.X += ScaleDelta; break;
+			case 1: NewScale.Y += ScaleDelta; break;
+			case 2: NewScale.Z += ScaleDelta; break;
+			}
+			Actor->SetActorScale(NewScale);
+		};
 
-	TargetComponent->SetRelativeScale(NewScale);
+	if (AllSelectedActors)
+	{
+		for (AActor* Actor : *AllSelectedActors)
+		{
+			ApplyScale(Actor);
+		}
+	}
+	else
+	{
+		ApplyScale(TargetActor);
+	}
 }
 
 void UGizmoComponent::SetTargetLocation(FVector NewLocation)
 {
-	if (TargetComponent == nullptr) return;
+	if (!TargetActor) return;
 
-	TargetComponent->SetRelativeLocation(NewLocation);
+	TargetActor->SetActorLocation(NewLocation);
 	UpdateGizmoTransform();
 }
 
 void UGizmoComponent::SetTargetRotation(FVector NewRotation)
 {
-	if (TargetComponent == nullptr) return;
+	if (!TargetActor) return;
 
-	TargetComponent->SetRelativeRotation(NewRotation);
-
+	TargetActor->SetActorRotation(NewRotation);
 	UpdateGizmoTransform();
 }
 
 void UGizmoComponent::SetTargetScale(FVector NewScale)
 {
-	if (TargetComponent == nullptr) return;
+	if (!TargetActor) return;
 
 	FVector SafeScale = NewScale;
 	if (SafeScale.X < 0.001f) SafeScale.X = 0.001f;
 	if (SafeScale.Y < 0.001f) SafeScale.Y = 0.001f;
 	if (SafeScale.Z < 0.001f) SafeScale.Z = 0.001f;
 
-	TargetComponent->SetRelativeScale(SafeScale);
+	TargetActor->SetActorScale(SafeScale);
 }
 
 bool UGizmoComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
@@ -187,16 +221,16 @@ FVector UGizmoComponent::GetVectorForAxis(int32 Axis)
 	}
 }
 
-void UGizmoComponent::SetTarget(USceneComponent* NewTargetComponent)
+void UGizmoComponent::SetTarget(AActor* NewTarget)
 {
-	if (NewTargetComponent == nullptr)
+	if (!NewTarget || !NewTarget->GetRootComponent())
 	{
 		return;
 	}
 
-	TargetComponent = NewTargetComponent;
+	TargetActor = NewTarget;
 
-	SetWorldLocation(TargetComponent->GetWorldLocation());
+	SetWorldLocation(TargetActor->GetActorLocation());
 	UpdateGizmoTransform();
 	SetVisibility(true);
 }
@@ -287,7 +321,8 @@ void UGizmoComponent::UpdateDrag(const FRay& Ray)
 	{
 		return;
 	}
-	if (SelectedAxis == -1 || TargetComponent == nullptr)
+
+	if (SelectedAxis == -1 || TargetActor == nullptr)
 	{
 		return;
 	}
@@ -302,7 +337,6 @@ void UGizmoComponent::UpdateDrag(const FRay& Ray)
 		UpdateLinearDrag(Ray);
 
 	}
-
 }
 
 void UGizmoComponent::DragEnd()
@@ -325,38 +359,26 @@ void UGizmoComponent::UpdateGizmoMode(EGizmoMode NewMode)
 
 void UGizmoComponent::UpdateGizmoTransform()
 {
-	if (TargetComponent == nullptr) return;
+	if (!TargetActor || !TargetActor->GetRootComponent()) return;
 
-	SetWorldLocation(TargetComponent->GetWorldLocation());
+	SetWorldLocation(TargetActor->GetActorLocation());
+
+	FVector ActorRot = TargetActor->GetActorRotation();
 
 	switch (CurMode)
 	{
 	case EGizmoMode::Scale:
-		SetRelativeRotation(TargetComponent->GetRelativeRotation());
+		SetRelativeRotation(ActorRot);
 		MeshData = &FMeshManager::Get().GetScaleGizmo();
 		break;
 
 	case EGizmoMode::Rotate:
-		if (bIsWorldSpace)
-		{
-			SetRelativeRotation(FVector());
-		}
-		else
-		{
-			SetRelativeRotation(TargetComponent->GetRelativeRotation());
-		}
+		SetRelativeRotation(bIsWorldSpace ? FVector() : ActorRot);
 		MeshData = &FMeshManager::Get().GetRotationGizmo();
 		break;
 
 	case EGizmoMode::Translate:
-		if (bIsWorldSpace)
-		{
-			SetRelativeRotation(FVector());
-		}
-		else
-		{
-			SetRelativeRotation(TargetComponent->GetRelativeRotation());
-		}
+		SetRelativeRotation(bIsWorldSpace ? FVector() : ActorRot);
 		MeshData = &FMeshManager::Get().GetTranslationGizmo();
 		break;
 	}
@@ -391,7 +413,8 @@ bool UGizmoComponent::GetRenderCommand(const FMatrix& viewMatrix, const FMatrix&
 
 void UGizmoComponent::Deactivate()
 {
-	TargetComponent = nullptr;
+	TargetActor = nullptr;
+	AllSelectedActors = nullptr;
 	SetVisibility(false);
 	SelectedAxis = -1;
 }
@@ -412,5 +435,3 @@ EPrimitiveType UGizmoComponent::GetPrimitiveType() const
 	}
 	return CurPrimitiveType;
 }
-
-

@@ -10,6 +10,7 @@
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Object/Object.h"
+#include "Editor/SelectionManager.h"
 
 void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
 {
@@ -63,11 +64,6 @@ void FEditorViewportClient::Tick(float DeltaTime)
 	TickInput(DeltaTime);
 	TickInteraction(DeltaTime);
 	TickCursorOverlay(DeltaTime);
-}
-
-void FEditorViewportClient::ClearViewOutput()
-{
-	ViewOutput = {};
 }
 
 void FEditorViewportClient::TickInput(float DeltaTime)
@@ -280,22 +276,19 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 	if (Gizmo->Raycast(Ray, HitResult))
 	{
 		Gizmo->SetPressedOnHandle(true);
-		//Gizmo->SetHolding(true);
-		FString PickLog = "Gizmo is Holding: " + ViewOutput.ObjectPicked;
-		UE_LOG(PickLog.c_str(), true);
+		UE_LOG("Gizmo is Holding");
 	}
 	else
 	{
-		ClearViewOutput();
-		UPrimitiveComponent* BestTarget = nullptr;
+		AActor* BestActor = nullptr;
 		float ClosestDistance = FLT_MAX;
 
-		for (auto* it : World->GetActors())
+		for (AActor* Actor : World->GetActors())
 		{
-			if (!it || !it->GetRootComponent()) {
+			if (!Actor || !Actor->GetRootComponent()) {
 				continue;
 			}
-			USceneComponent* RootComp = it->GetRootComponent();
+			USceneComponent* RootComp = Actor->GetRootComponent();
 			if (!RootComp->IsA<UPrimitiveComponent>()) continue;
 			UPrimitiveComponent* PrimitiveComp = static_cast<UPrimitiveComponent*>(RootComp);
 
@@ -305,21 +298,30 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 				if (HitResult.Distance < ClosestDistance)
 				{
 					ClosestDistance = HitResult.Distance;
-					BestTarget = PrimitiveComp;
-
-					ViewOutput.ObjectPicked = PrimitiveComp->GetTypeInfo()->name;
-					ViewOutput.Object = PrimitiveComp;
+					BestActor = Actor;
 				}
 			}
 		}
 
-		if (BestTarget == nullptr)
+		bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);
+
+		if (BestActor == nullptr)
 		{
-			Gizmo->Deactivate();
+			if (!bCtrlHeld)
+			{
+				SelectionManager->ClearSelection();
+			}
 		}
 		else
 		{
-			Gizmo->SetTarget(BestTarget);
+			if (bCtrlHeld)
+			{
+				SelectionManager->ToggleSelect(BestActor);
+			}
+			else
+			{
+				SelectionManager->Select(BestActor);
+			}
 		}
 	}
 }
