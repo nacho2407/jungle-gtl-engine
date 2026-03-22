@@ -10,37 +10,41 @@
 #include "Core/CoreTypes.h"
 #include "Render/Scene/RenderCommand.h"
 
+// 헤더 분리 필요
+#include "Editor/Settings/EditorSettings.h"
+
+
 class FRenderBus
 {
 private:
+	TArray<FRenderCommand> PassQueues[(uint32)ERenderPass::MAX];
 
-public:
+	//구현이 급해서 잠깐 두겠습니다..ㅠ
+	FMatrix View;
+	FMatrix Proj;
+	FVector CameraRight;
+	FVector CameraUp;
 
-private:
-	TArray<FRenderCommand> ComponentCommands;
-	TArray<FRenderCommand> DepthLessCommands;
-	TArray<FRenderCommand> EditorCommands;
-	TArray<FRenderCommand> EditorGridCommands;
-	
-	//	Array로 하지 않아도 되지만, 추후를 위한 확장성을 고려하여 추가하였습니다.
-	TArray<FRenderCommand> OutlineCommands;
-	TArray<FRenderCommand> OverlayCommands;
+
+	//Editor Settings
+	EViewMode ViewMode;
+	FShowFlags ShowFlags;
 
 public:
 	void Clear();
-	//	Draw Call 요청을 RenderBus에 추가하는 함수
-	void AddComponentCommand(const FRenderCommand& InCommand);
-	void AddDepthLessCommand(const FRenderCommand& InCommand);
-	void AddEditorCommand(const FRenderCommand& InCommand);
-	void AddGridEditorCommand(const FRenderCommand& InCommand);
-	void AddOutlineCommand(const FRenderCommand& InCommand);
-	void AddOverlayCommand(const FRenderCommand& InCommand);
+	void AddCommand(ERenderPass Pass, const FRenderCommand& InCommand);
+	const TArray<FRenderCommand>& GetCommands(ERenderPass Pass) const;
 
-	const TArray<FRenderCommand>& GetComponentCommands() const { return ComponentCommands; }
-	const TArray<FRenderCommand>& GetDepthLessCommands() const { return DepthLessCommands; }
-	const TArray<FRenderCommand>& GetEditorCommand() const { return EditorCommands; }
-	const TArray<FRenderCommand>& GetGridEditorCommand() const { return EditorGridCommands; }
-	const TArray<FRenderCommand>& GetSelectionOutlineCommands() const { return OutlineCommands; }
-	const TArray<FRenderCommand>& GetOverlayCommands() const { return OverlayCommands; }
+
+	// Getter,Setter
+	void SetViewProjection(const FMatrix& InView, const FMatrix& InProj, const FVector& CameraRightVector, const FVector& CameraUpVector);
+	void SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags);
+
+	const FMatrix& GetView() const { return View; }
+	const FMatrix& GetProj() const { return Proj; }
+	const FVector& GetCameraUp() const { return CameraUp; }
+	const FVector& GetCameraRight() const { return CameraRight; }
+	EViewMode GetViewMode() const { return ViewMode; }
+	FShowFlags GetShowFlags() const { return ShowFlags; }
 };
 

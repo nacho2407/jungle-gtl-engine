@@ -9,6 +9,8 @@
 #include "Render/Scene/RenderBus.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/RenderResources.h"
+#include "Render/LineBatcher.h"
+#include "Render/FontBatcher.h"
 
 #include <cstddef>
 
@@ -17,6 +19,9 @@ class FRenderer
 private:
 	FD3DDevice Device;
 	FRenderResources Resources;
+	FLineBatcher LineBatcher;
+	FFontBatcher FontBatcher;
+
 
 	//	Primitive and Gizmo Input Layout
 	D3D11_INPUT_ELEMENT_DESC PrimitiveInputLayout[2] =
@@ -34,12 +39,10 @@ private:
 public:
 
 private:
-	void RenderComponentPass(ID3D11DeviceContext* InDeviceContext, const FRenderBus& InRenderBus);
-	void RenderDepthLessPass(ID3D11DeviceContext* InDeviceContext, const FRenderBus& InRenderBus);
-	void RenderEditorPass(ID3D11DeviceContext* InDeviceContext, const FRenderBus& InRenderBus);
-	void RenderGridEditorPass(ID3D11DeviceContext* InDeviceContext, const FRenderBus& InRenderBus);
-	void RenderOverlayPass(ID3D11DeviceContext* InDeviceContext, const FRenderBus& InRenderBus);
-	void RenderOutlinePass(ID3D11DeviceContext* InDeviceContext, const FRenderBus& InRenderBus);
+	void SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* OutDeviceContext, EViewMode ViewMode);
+	void BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContext* Context);
+	EDepthStencilState GetDefaultDepthForPass(ERenderPass Pass) const;
+	EBlendState GetDefaultBlendForPass(ERenderPass Pass) const;
 
 	void DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderCommand& InCommand);
 
@@ -51,6 +54,10 @@ public:
 	void Render(const FRenderBus& InRenderBus, ERasterizerState InViewModeRasterizer = ERasterizerState::SolidBackCull);
 	void RenderOverlay(const FRenderBus& InRenderBus);	//	반드시 따로 호출해야 함
 	void EndFrame();
+
+	void RenderPasses(const FRenderBus& InRenderBus, ID3D11DeviceContext* Context);
+	void RenderEditorHelpers(const FRenderBus& InRenderBus, ID3D11DeviceContext* Context);
+	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix);
 
 	FD3DDevice& GetFD3DDevice() { return Device; }
 	FRenderResources& GetResources() { return Resources; }
