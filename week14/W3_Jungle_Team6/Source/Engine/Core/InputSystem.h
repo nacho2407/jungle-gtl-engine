@@ -1,5 +1,6 @@
-﻿#pragma once
+#pragma once
 #include <windows.h>
+#include "Singleton.h"
 
 struct FGuiInputState
 {
@@ -7,154 +8,86 @@ struct FGuiInputState
     bool bUsingKeyboard = false;
 };
 
-class InputSystem {
-private:
+class InputSystem : public TSingleton<InputSystem>
+{
+	friend class TSingleton<InputSystem>;
+
 public:
-    static bool currentStates[256];
-    static bool prevStates[256];
+    void Tick();
+
+    // Keyboard
+    bool GetKeyDown(int VK) const { return CurrentStates[VK] && !PrevStates[VK]; }
+    bool GetKey(int VK) const { return CurrentStates[VK]; }
+    bool GetKeyUp(int VK) const { return !CurrentStates[VK] && PrevStates[VK]; }
+
+    // Mouse position
+    POINT GetMousePos() const { return MousePos; }
+    int MouseDeltaX() const { return MousePos.x - PrevMousePos.x; }
+    int MouseDeltaY() const { return MousePos.y - PrevMousePos.y; }
+    bool MouseMoved() const { return MouseDeltaX() != 0 || MouseDeltaY() != 0; }
+
+    // Left drag
+    bool IsDraggingLeft() const { return GetKey(VK_LBUTTON) && MouseMoved(); }
+    bool GetLeftDragStart() const { return bLeftDragJustStarted; }
+    bool GetLeftDragging() const { return bLeftDragging; }
+    bool GetLeftDragEnd() const { return bLeftDragJustEnded; }
+    POINT GetLeftDragVector() const;
+    float GetLeftDragDistance() const;
+
+    // Right drag
+    bool IsDraggingRight() const { return GetKey(VK_RBUTTON) && MouseMoved(); }
+    bool GetRightDragStart() const { return bRightDragJustStarted; }
+    bool GetRightDragging() const { return bRightDragging; }
+    bool GetRightDragEnd() const { return bRightDragJustEnded; }
+    POINT GetRightDragVector() const;
+    float GetRightDragDistance() const;
+
+    // Scrolling
+    void AddScrollDelta(int Delta) { ScrollDelta += Delta; }
+    int GetScrollDelta() const { return PrevScrollDelta; }
+    bool ScrolledUp() const { return PrevScrollDelta > 0; }
+    bool ScrolledDown() const { return PrevScrollDelta < 0; }
+    float GetScrollNotches() const { return PrevScrollDelta / (float)WHEEL_DELTA; }
+
+    // GUI state
+    FGuiInputState& GetGuiInputState() { return GuiState; }
+    const FGuiInputState& GetGuiInputState() const { return GuiState; }
+
+private:
+    bool CurrentStates[256] = { false };
+    bool PrevStates[256] = { false };
 
     // Mouse members
-    static POINT mousePos;
-    static POINT prevMousePos;
-    static bool leftDragCandidate;
-    static bool rightDragCandidate;
-    static bool leftDragging;
-    static bool rightDragging;
-    static const int DRAG_THRESHOLD = 5;
+    POINT MousePos = { 0, 0 };
+    POINT PrevMousePos = { 0, 0 };
 
-    static bool leftDragJustStarted;
-    static bool rightDragJustStarted;
-    static bool leftDragJustEnded;
-    static bool rightDragJustEnded;
+    bool bLeftDragCandidate = false;
+    bool bRightDragCandidate = false;
+    bool bLeftDragging = false;
+    bool bRightDragging = false;
 
-    // Drag origin and destination
-    static POINT leftDragStartPos;
-    static POINT leftMouseDownPos;
-    static POINT rightDragStartPos;
-    static POINT rightMouseDownPos;
+    bool bLeftDragJustStarted = false;
+    bool bRightDragJustStarted = false;
+    bool bLeftDragJustEnded = false;
+    bool bRightDragJustEnded = false;
 
-    // Scrolling
-    static int scrollDelta;      // accumulated this frame
-    static int prevScrollDelta;
-
-    //UI InputState
-    static FGuiInputState GuiInputState;
-
-
-    //__________________________________________________________________________________________
-
-
-    static void Update() {
-        for (int i = 0; i < 256; ++i) {
-            prevStates[i] = currentStates[i];
-            currentStates[i] = (GetAsyncKeyState(i) & 0x8000) != 0;
-        }
-
-        leftDragJustStarted = false;
-        rightDragJustStarted = false;
-        leftDragJustEnded = false;
-        rightDragJustEnded = false;
-
-        prevScrollDelta = scrollDelta;
-        scrollDelta = 0;
-
-        prevMousePos = mousePos;
-        GetCursorPos(&mousePos);
-
-        if (GetKeyDown(VK_LBUTTON)) {
-            leftDragCandidate = true;
-            leftMouseDownPos = mousePos;
-        }
-        if (GetKeyDown(VK_RBUTTON)) {
-            rightDragCandidate = true;
-            rightMouseDownPos = mousePos;
-        }
-
-        if (!leftDragging && IsDraggingLeft()) {
-            FilterDragThresholdLeft();
-        }
-        else {
-            if (GetKeyUp(VK_LBUTTON)) {
-                if (leftDragging) leftDragJustEnded = true;
-                leftDragging = false;
-                leftDragCandidate = false;
-            }
-        }
-        if (!rightDragging && IsDraggingRight()) {
-            FilterDragThresholdRight();
-        }
-        else {
-            if (GetKeyUp(VK_RBUTTON)) {
-                if (rightDragging) rightDragJustEnded = true;
-                rightDragging = false;
-                rightDragCandidate = false;
-            }
-        }
-    }
-
-    static void UpdateMousePosition(int x, int y) {
-        prevMousePos = mousePos;
-        mousePos.x = x;
-        mousePos.y = y;
-    }
-
-    static bool GetKeyDown(int vk) { return currentStates[vk] && !prevStates[vk]; }
-    static bool GetKey(int vk) { return currentStates[vk]; }
-    static bool GetKeyUp(int vk) { return !currentStates[vk] && prevStates[vk]; }
-
-
-    // Mouse func
-    static int MouseDeltaX() { return mousePos.x - prevMousePos.x; }
-    static int MouseDeltaY() { return mousePos.y - prevMousePos.y; }
-    static float MouseDeltaXPerSecond(float DeltaTime) 
-    { 
-        return DeltaTime > 1e-6f ? (mousePos.x - prevMousePos.x) / DeltaTime : 0.0f;
-    }
-    static float MouseDeltaYPerSecond(float DeltaTime)
-    {
-        return DeltaTime > 1e-6f ? (mousePos.y - prevMousePos.y) / DeltaTime : 0.0f;
-    }
-    static bool mouseMoved() { return MouseDeltaX() != 0 || MouseDeltaY() != 0; }
-
-    static bool IsDraggingLeft() {
-        return GetKey(VK_LBUTTON) && mouseMoved();
-    }
-    static bool GetLeftDragStart() {
-        return leftDragJustStarted;
-    }
-
-    static bool GetLeftDragging() {
-        return leftDragging;
-    }
-
-    static bool GetLeftDragEnd() { return leftDragJustEnded; }
-
-    static bool IsDraggingRight() {
-        return GetKey(VK_RBUTTON) && mouseMoved();
-    }
-    static bool GetRightDragStart() {
-        return rightDragJustStarted;
-    }
-
-    static bool GetRightDragging() {
-        return rightDragging;
-    }
-
-    static bool GetRightDragEnd() { return rightDragJustEnded; }
-
-    static void FilterDragThresholdLeft();
-    static void FilterDragThresholdRight();
-
-    // Drag vectors
-    static POINT GetLeftDragVector();
-    static float GetLeftDragDistance();
-    static POINT GetRightDragVector();
-    static float GetRightDragDistance();
+    // Drag origin
+    POINT LeftDragStartPos = { 0, 0 };
+    POINT LeftMouseDownPos = { 0, 0 };
+    POINT RightDragStartPos = { 0, 0 };
+    POINT RightMouseDownPos = { 0, 0 };
 
     // Scrolling
-    static void AddScrollDelta(int delta) { scrollDelta += delta; }
-    static int GetScrollDelta() { return prevScrollDelta; }
-    static bool ScrolledUp() { return prevScrollDelta > 0; }
-    static bool ScrolledDown() { return prevScrollDelta < 0; }
-    static float GetScrollNotches() { return prevScrollDelta / (float)WHEEL_DELTA; }
+    int ScrollDelta = 0;
+    int PrevScrollDelta = 0;
+
+    // GUI InputState
+    FGuiInputState GuiState{};
+
+    static constexpr int DRAG_THRESHOLD = 5;
+
+    // Internal drag threshold helper — unified Left/Right logic
+    void FilterDragThreshold(
+        bool& bCandidate, bool& bDragging, bool& bJustStarted,
+        const POINT& MouseDownPos, POINT& DragStartPos);
 };

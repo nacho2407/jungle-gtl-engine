@@ -3,11 +3,12 @@
 #include "Editor/EditorEngine.h"
 
 #include "ImGui/imgui.h"
+#include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
-void FEditorPropertyWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
+void FEditorPropertyWidget::Render(float DeltaTime)
 {
 	(void)DeltaTime;
 
@@ -15,63 +16,106 @@ void FEditorPropertyWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 
 	ImGui::Begin("Jungle Property Window");
 
-	UObject* ObjectPicked = ViewOutput.Object;
-	if (!ObjectPicked)
+	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
+	AActor* PrimaryActor = Selection.GetPrimarySelection();
+	if (!PrimaryActor)
 	{
 		ImGui::Text("No object selected.");
 		ImGui::End();
 		return;
 	}
 
-	ImGui::Text("Class: %s", ObjectPicked->GetTypeInfo()->name);
-	ImGui::Text("Object Size: %d", sizeof(*ObjectPicked));
+	const TArray<AActor*>& SelectedActors = Selection.GetSelectedActors();
+	const int32 SelectionCount = static_cast<int32>(SelectedActors.size());
 
-	if (ObjectPicked->IsA<USceneComponent>())
+	if (SelectionCount > 1)
+	{
+		ImGui::Text("%d objects selected", SelectionCount);
+		ImGui::Separator();
+		for (AActor* Actor : SelectedActors)
+		{
+			if (!Actor) continue;
+			FString Name = Actor->GetFName().ToString();
+			if (Name.empty()) Name = Actor->GetTypeInfo()->name;
+			ImGui::BulletText("%s", Name.c_str());
+		}
+	}
+	else
+	{
+		ImGui::Text("Class: %s", PrimaryActor->GetTypeInfo()->name);
+		ImGui::Text("Name: %s", PrimaryActor->GetFName().ToString().c_str());
+	}
+
+	if (PrimaryActor->GetRootComponent())
 	{
 		SEPARATOR();
-		ImGui::Text("Transform");
+		ImGui::Text("Transform (Primary)");
 		ImGui::Separator();
 
-		USceneComponent* SceneComp = ObjectPicked->Cast<USceneComponent>();
-		FVector Pos = SceneComp->GetWorldLocation();
+		FVector Pos = PrimaryActor->GetActorLocation();
 		float PosArray[3] = { Pos.X, Pos.Y, Pos.Z };
 
-		FVector Rot = SceneComp->GetRelativeRotation();
+		FVector Rot = PrimaryActor->GetActorRotation();
 		float RotArray[3] = { Rot.X, Rot.Y, Rot.Z };
 
-		FVector Scale = SceneComp->GetRelativeScale();
+		FVector Scale = PrimaryActor->GetActorScale();
 		float ScaleArray[3] = { Scale.X, Scale.Y, Scale.Z };
 
-		UGizmoComponent* Gizmo = EditorEngine->GetGizmo();
 		if (ImGui::DragFloat3("Location", PosArray, 0.1f))
 		{
-			Gizmo->SetTargetLocation(FVector(PosArray[0], PosArray[1], PosArray[2]));
+			FVector Delta = FVector(PosArray[0], PosArray[1], PosArray[2]) - Pos;
+			for (AActor* Actor : SelectedActors)
+			{
+				if (Actor) Actor->AddActorWorldOffset(Delta);
+			}
+			EditorEngine->GetGizmo()->UpdateGizmoTransform();
 		}
 		if (ImGui::DragFloat3("Rotation", RotArray, 0.1f))
 		{
-			Gizmo->SetTargetRotation(FVector(RotArray[0], RotArray[1], RotArray[2]));
+			FVector Delta = FVector(RotArray[0], RotArray[1], RotArray[2]) - Rot;
+			for (AActor* Actor : SelectedActors)
+			{
+				if (Actor) Actor->SetActorRotation(Actor->GetActorRotation() + Delta);
+			}
+			EditorEngine->GetGizmo()->UpdateGizmoTransform();
 		}
 		if (ImGui::DragFloat3("Scale", ScaleArray, 0.1f))
 		{
-			Gizmo->SetTargetScale(FVector(ScaleArray[0], ScaleArray[1], ScaleArray[2]));
+			FVector Delta = FVector(ScaleArray[0], ScaleArray[1], ScaleArray[2]) - Scale;
+			for (AActor* Actor : SelectedActors)
+			{
+				if (Actor) Actor->SetActorScale(Actor->GetActorScale() + Delta);
+			}
 		}
 
 		SEPARATOR();
 
-		if (ImGui::Button("Remove Object"))
+		if (SelectionCount > 1)
 		{
-			if (ObjectPicked->IsA<USceneComponent>())
+			char RemoveLabel[64];
+			snprintf(RemoveLabel, sizeof(RemoveLabel), "Remove %d Objects", SelectionCount);
+			if (ImGui::Button(RemoveLabel))
 			{
-				USceneComponent* Comp = ObjectPicked->Cast<USceneComponent>();
-				if (Comp->GetOwner())
+				for (AActor* Actor : SelectedActors)
 				{
-					UObjectManager::Get().DestroyObject(Comp->GetOwner());
+					if (Actor && Actor->GetWorld())
+					{
+						Actor->GetWorld()->DestroyActor(Actor);
+					}
 				}
+				Selection.ClearSelection();
 			}
-			ObjectPicked->bPendingKill = true;
-			EditorEngine->GetGizmo()->SetVisibility(false);
-			EditorEngine->GetGizmo()->Deactivate();
-			ViewOutput.Object = nullptr;
+		}
+		else
+		{
+			if (ImGui::Button("Remove Object"))
+			{
+				if (PrimaryActor->GetWorld())
+				{
+					PrimaryActor->GetWorld()->DestroyActor(PrimaryActor);
+				}
+				Selection.ClearSelection();
+			}
 		}
 	}
 
