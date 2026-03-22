@@ -6,6 +6,7 @@
 
 #include "Render/Renderer/Renderer.h"
 #include "Render/Scene/RenderBus.h"
+#include "Render/Scene/RenderCollector.h"
 
 #include "Editor/Viewport/EditorViewportClient.h"
 #include "Editor/UI/EditorMainPanel.h"
@@ -86,6 +87,7 @@ private:
 	TArray<UWorld*> Scene;
 
 	FRenderer Renderer;
+	FRenderCollector RenderCollector;
 	FRenderBus RenderBus;
 	FEditorMainPanel MainPanel;
 	FEditorViewportClient ViewportClient;
