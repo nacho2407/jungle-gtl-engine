@@ -20,14 +20,16 @@
         sizeof(ClassName)                                              \
     };
 
-enum EClassFlags : uint32_t {
-	CF_None		 = 0,
-	CF_Actor	 = 1 << 0,
+enum EClassFlags : uint32_t
+{
+	CF_None = 0,
+	CF_Actor = 1 << 0,
 	CF_Component = 1 << 1,
-	CF_Camera	 = 1 << 2,
+	CF_Camera = 1 << 2,
 };
 
-struct FTypeInfo {
+struct FTypeInfo
+{
 	const char* name;
 	const FTypeInfo* Parent;
 	size_t size;
@@ -70,7 +72,8 @@ public:
 		{
 			EngineStatics::OnDeallocated(static_cast<uint32>(Size));
 			std::free(Ptr);
-;		}
+			;
+		}
 	}
 
 	// FName
@@ -101,20 +104,23 @@ private:
 
 extern TArray<UObject*> GUObjectArray;
 
-
 class UObjectManager : public TSingleton<UObjectManager>
 {
 	friend class TSingleton<UObjectManager>;
 
 public:
 	template<typename T>
-	T* CreateObject() {
+	T* CreateObject()
+	{
+		static_assert(std::is_base_of<UObject, T>::value, "T must derive from UObject");
 		T* Obj = new T();
 		return Obj;
 	}
 
-	void DestroyObject(UObject* Obj) {
-		if (!Obj) {
+	void DestroyObject(UObject* Obj)
+	{
+		if (!Obj)
+		{
 			return;
 		}
 		delete Obj;
