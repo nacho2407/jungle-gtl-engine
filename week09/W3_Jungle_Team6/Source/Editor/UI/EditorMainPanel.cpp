@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorMainPanel.h"
+﻿#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
 
@@ -9,7 +9,6 @@
 #include "Render/Renderer/Renderer.h"
 #include "Engine/Core/InputSystem.h"
 
-#include "EditorSettings.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
