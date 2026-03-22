@@ -14,6 +14,11 @@ void EditorSceneManagerPanel::Draw(Editor* editor, ImGuiWindowLayout& layout)
 {
 	//일단 매 프레임마다 씬을 가져옵니다. 씬이 바뀌는 경우 때문.
 	SceneManager* sceneMgr = GetWorld().GetSceneManager();
+	if (sceneMgr == nullptr)
+	{
+		return;
+	}
+
 	ActiveScene = sceneMgr->GetActiveScene();
 	const TArray<UScene*>& loadedScenes = sceneMgr->GetLoadedScenes();
 	UScene* permanentScene = sceneMgr->GetPermanentScene();

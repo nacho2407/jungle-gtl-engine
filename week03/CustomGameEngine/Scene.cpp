@@ -51,11 +51,47 @@ std::string UScene::ToJson(UScene* scene)
 	return json.dump();
 }
 
+namespace
+{
+	static USceneComponent* CreateSceneComponentFromType(const FString& typeStr, UScene* scene)
+	{
+		if (scene == nullptr)
+		{
+			return nullptr;
+		}
+
+		UObject* object = nullptr;
+		if (typeStr == "Cube")
+			object = FObjectFactory::ConstructObject(UCubeComp::GetClass());
+		else if (typeStr == "Sphere")
+			object = FObjectFactory::ConstructObject(USphereComp::GetClass());
+		else if (typeStr == "Triangle")
+			object = FObjectFactory::ConstructObject(UTriangleComp::GetClass());
+		else if (typeStr == "Plane")
+			object = FObjectFactory::ConstructObject(UPlaneComp::GetClass());
+
+		USceneComponent* newSc = Cast<USceneComponent>(object);
+		if (newSc == nullptr)
+		{
+			return nullptr;
+		}
+
+		newSc->Scene = scene;
+		scene->SceneComponents.push_back(newSc);
+		newSc->OnComponentAdded();
+		return newSc;
+	}
+}
+
 UScene* UScene::FromJson(std::string jsonStr)
 {
 	//TODO : UScene = new UScene
 	UObject* Object = FObjectFactory::ConstructObject(UScene::GetClass());
 	UScene* scene = Cast<UScene>(Object);
+	if (scene == nullptr)
+	{
+		return nullptr;
+	}
 
 	json::JSON obj;
 	obj = json::JSON::Load(jsonStr);
@@ -63,18 +99,16 @@ UScene* UScene::FromJson(std::string jsonStr)
 	scene->Version = obj["Version"].ToInt();
 	scene->NextUUID = obj["NextUUID"].ToInt();
 
-	for (auto pair : obj["Primitives"].ObjectRange())
+	json::JSON primitives = obj["Primitives"];
+	if (primitives.JSONType() != json::JSON::Class::Object)
 	{
-		USceneComponent* newSc = nullptr;
+		return scene;
+	}
+
+	for (auto pair : primitives.ObjectRange())
+	{
 		FString typeStr = pair.second["Type"].ToString();
-		if (typeStr == "Cube")
-			newSc = GetWorld().GetSceneManager()->AddSceneComponent<UCubeComp>(scene);
-		if (typeStr == "Sphere")
-			newSc = GetWorld().GetSceneManager()->AddSceneComponent<USphereComp>(scene);
-		if (typeStr == "Triangle")
-			newSc = GetWorld().GetSceneManager()->AddSceneComponent<UTriangleComp>(scene);
-		if (typeStr == "Plane")
-			newSc = GetWorld().GetSceneManager()->AddSceneComponent<UPlaneComp>(scene);
+		USceneComponent* newSc = CreateSceneComponentFromType(typeStr, scene);
 
 		if (newSc == nullptr)
 			continue;
