@@ -13,7 +13,7 @@ class InputSystem : public TSingleton<InputSystem>
 	friend class TSingleton<InputSystem>;
 
 public:
-    void Update();
+    void Tick();
 
     // Keyboard
     bool GetKeyDown(int VK) const { return CurrentStates[VK] && !PrevStates[VK]; }
