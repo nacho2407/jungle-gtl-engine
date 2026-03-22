@@ -6,14 +6,14 @@
 
 #include "Renderer/D3D11/D3D11DynamicRHI.h"
 
-#include "Resources/Mesh/VertexSimple.h"
-#include "Resources/Mesh/Cube.h"
-#include "Resources/Mesh/Plane.h"
-#include "Resources/Mesh/Triangle.h"
-#include "Resources/Mesh/Sphere.h"
-#include "Resources/Mesh/Cone.h"
-#include "Resources/Mesh/Cylinder.h"
-#include "Resources/Mesh/Ring.h"
+#include "../../Resources/Mesh/VertexSimple.h"
+#include "../../Resources/Mesh/Cube.h"
+#include "../../Resources/Mesh/Plane.h"
+#include "../../Resources/Mesh/Triangle.h"
+#include "../../Resources/Mesh/Sphere.h"
+#include "../../Resources/Mesh/Cone.h"
+#include "../../Resources/Mesh/Cylinder.h"
+#include "../../Resources/Mesh/Ring.h"
 
 #include <d3dcompiler.h>
 
@@ -91,6 +91,8 @@ void FD3D11MeshBatchRenderer::Shutdown()
 
 void FD3D11MeshBatchRenderer::Render(const FSceneRenderData& InRenderData)
 {
+    ViewMode = InRenderData.ViewMode;
+
     ResetBatches();
     GatherRenderItems(InRenderData);
 
@@ -335,6 +337,7 @@ void FD3D11MeshBatchRenderer::ReleaseBasicMeshes()
         BasicMeshResources[Index].VertexBuffer.Reset();
         BasicMeshResources[Index].IndexBuffer.Reset();
         BasicMeshResources[Index].IndexCount = 0;
+        BasicMeshResources[Index].Topology = EMeshPrimitiveTopology::TriangleList;
     }
 }
 
@@ -342,54 +345,55 @@ bool FD3D11MeshBatchRenderer::CreateBasicCubeMesh(FBasicMeshResource& OutResourc
 {
     return CreateBasicMeshResource(cube_vertices, static_cast<uint32>(std::size(cube_vertices)),
                                    cube_indices, static_cast<uint32>(std::size(cube_indices)),
-                                   OutResource);
+                                   cube_topology, OutResource);
 }
 
 bool FD3D11MeshBatchRenderer::CreateBasicPlaneMesh(FBasicMeshResource& OutResource)
 {
     return CreateBasicMeshResource(plane_vertices, static_cast<uint32>(std::size(plane_vertices)),
                                    plane_indices, static_cast<uint32>(std::size(plane_indices)),
-                                   OutResource);
+                                   plane_topology, OutResource);
 }
 
 bool FD3D11MeshBatchRenderer::CreateBasicTriangleMesh(FBasicMeshResource& OutResource)
 {
     return CreateBasicMeshResource(
         triangle_vertices, static_cast<uint32>(std::size(triangle_vertices)), triangle_indices,
-        static_cast<uint32>(std::size(triangle_indices)), OutResource);
+        static_cast<uint32>(std::size(triangle_indices)), triangle_topology, OutResource);
 }
 
 bool FD3D11MeshBatchRenderer::CreateBasicSphereMesh(FBasicMeshResource& OutResource)
 {
     return CreateBasicMeshResource(sphere_vertices, static_cast<uint32>(std::size(sphere_vertices)),
                                    sphere_indices, static_cast<uint32>(std::size(sphere_indices)),
-                                   OutResource);
+                                   sphere_topology, OutResource);
 }
 
 bool FD3D11MeshBatchRenderer::CreateBasicConeMesh(FBasicMeshResource& OutResource)
 {
     return CreateBasicMeshResource(cone_vertices, static_cast<uint32>(std::size(cone_vertices)),
                                    cone_indices, static_cast<uint32>(std::size(cone_indices)),
-                                   OutResource);
+                                   cone_topology, OutResource);
 }
 
 bool FD3D11MeshBatchRenderer::CreateBasicCylinderMesh(FBasicMeshResource& OutResource)
 {
     return CreateBasicMeshResource(
         cylinder_vertices, static_cast<uint32>(std::size(cylinder_vertices)), cylinder_indices,
-        static_cast<uint32>(std::size(cylinder_indices)), OutResource);
+        static_cast<uint32>(std::size(cylinder_indices)), cylinder_topology, OutResource);
 }
 
 bool FD3D11MeshBatchRenderer::CreateBasicRingMesh(FBasicMeshResource& OutResource)
 {
     return CreateBasicMeshResource(ring_vertices, static_cast<uint32>(std::size(ring_vertices)),
                                    ring_indices, static_cast<uint32>(std::size(ring_indices)),
-                                   OutResource);
+                                   ring_topology, OutResource);
 }
 
 bool FD3D11MeshBatchRenderer::CreateBasicMeshResource(const FVertexSimple* InVertices,
                                                       uint32 InVertexCount, const uint16* InIndices,
-                                                      uint32              InIndexCount,
+                                                      uint32 InIndexCount,
+                                                      EMeshPrimitiveTopology InTopology,
                                                       FBasicMeshResource& OutResource)
 {
     if (RHI == nullptr || RHI->GetDevice() == nullptr || InVertices == nullptr ||
@@ -431,6 +435,7 @@ bool FD3D11MeshBatchRenderer::CreateBasicMeshResource(const FVertexSimple* InVer
     }
 
     OutResource.IndexCount = InIndexCount;
+    OutResource.Topology = InTopology;
     return true;
 }
 
@@ -556,7 +561,37 @@ void FD3D11MeshBatchRenderer::BindPipeline(EMeshDrawPath DrawPath)
         Context->PSSetConstantBuffers(0, 1, PSConstantBuffers);
     }
 
-    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+}
+
+void FD3D11MeshBatchRenderer::BindPrimitiveTopology(EMeshPrimitiveTopology InTopology)
+{
+    if (RHI == nullptr || RHI->GetDeviceContext() == nullptr)
+    {
+        return;
+    }
+
+    D3D11_PRIMITIVE_TOPOLOGY PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+
+    switch (InTopology)
+    {
+    case EMeshPrimitiveTopology::TriangleList:
+        PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+        break;
+    case EMeshPrimitiveTopology::TriangleStrip:
+        PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+        break;
+    case EMeshPrimitiveTopology::LineList:
+        PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+        break;
+    case EMeshPrimitiveTopology::LineStrip:
+        PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
+        break;
+    default:
+        PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+        break;
+    }
+
+    RHI->GetDeviceContext()->IASetPrimitiveTopology(PrimitiveTopology);
 }
 
 void FD3D11MeshBatchRenderer::BindSolidRasterizer()
@@ -607,6 +642,8 @@ void FD3D11MeshBatchRenderer::DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath
     }
 
     ID3D11DeviceContext* Context = RHI->GetDeviceContext();
+
+    BindPrimitiveTopology(MeshResource->Topology);
 
     if (DrawPath == EMeshDrawPath::Instanced)
     {

@@ -9,6 +9,7 @@
 #include "Renderer/SceneRenderData.h"
 #include "Renderer/Types/BasicMeshType.h"
 #include "Renderer/Types/ViewMode.h"
+#include "../../Resources/Mesh/MeshPrimitiveTopology.h"
 
 class FD3D11DynamicRHI;
 class FSceneView;
@@ -29,9 +30,10 @@ struct FMeshDrawData
 
 struct FBasicMeshResource
 {
-    TComPtr<ID3D11Buffer> VertexBuffer = nullptr;
-    TComPtr<ID3D11Buffer> IndexBuffer = nullptr;
-    uint32                IndexCount = 0;
+    TComPtr<ID3D11Buffer>  VertexBuffer = nullptr;
+    TComPtr<ID3D11Buffer>  IndexBuffer = nullptr;
+    uint32                 IndexCount = 0;
+    EMeshPrimitiveTopology Topology = EMeshPrimitiveTopology::TriangleList;
 };
 
 class FD3D11MeshBatchRenderer
@@ -68,7 +70,8 @@ class FD3D11MeshBatchRenderer
 
     bool CreateBasicMeshResource(const FVertexSimple* InVertices, uint32 InVertexCount,
                                  const uint16* InIndices, uint32 InIndexCount,
-                                 FBasicMeshResource& OutResource);
+                                 EMeshPrimitiveTopology InTopology,
+                                 FBasicMeshResource&    OutResource);
 
     void ResetBatches();
     void GatherRenderItems(const FSceneRenderData& InRenderData);
@@ -76,6 +79,7 @@ class FD3D11MeshBatchRenderer
     void UpdatePerFrameConstants(const FSceneView* InSceneView, EMeshDrawPath DrawPath);
 
     void BindPipeline(EMeshDrawPath DrawPath);
+    void BindPrimitiveTopology(EMeshPrimitiveTopology InTopology);
     void BindSolidRasterizer();
     void BindWireframeRasterizer();
 
