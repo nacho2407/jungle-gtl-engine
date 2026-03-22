@@ -32,7 +32,7 @@ void FD3DDevice::BeginFrame()
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	DeviceContext->RSSetViewports(1, &ViewportInfo);
-	
+
 	SetRasterizerState(ERasterizerState::SolidBackCull);
 	SetDepthStencilState(EDepthStencilState::Default);
 	SetBlendState(EBlendState::Opaque);
@@ -43,7 +43,8 @@ void FD3DDevice::BeginFrame()
 
 void FD3DDevice::EndFrame()
 {
-	SwapChain->Present(0, 0);
+	UINT PresentFlags = bTearingSupported ? DXGI_PRESENT_ALLOW_TEARING : 0;
+	SwapChain->Present(0, PresentFlags);
 }
 
 void FD3DDevice::OnResizeViewport(int Width, int Height)
@@ -123,15 +124,15 @@ void FD3DDevice::SetRasterizerState(ERasterizerState InState)
 
 	switch (InState)
 	{
-		case ERasterizerState::SolidBackCull:
-			DeviceContext->RSSetState(RasterizerStateBackCull);
-			break;
-		case ERasterizerState::SolidFrontCull:
-			DeviceContext->RSSetState(RasterizerStateFrontCull);
-			break;
-		case ERasterizerState::WireFrame:
-			DeviceContext->RSSetState(RasterizerStateWireFrame);
-			break;
+	case ERasterizerState::SolidBackCull:
+		DeviceContext->RSSetState(RasterizerStateBackCull);
+		break;
+	case ERasterizerState::SolidFrontCull:
+		DeviceContext->RSSetState(RasterizerStateFrontCull);
+		break;
+	case ERasterizerState::WireFrame:
+		DeviceContext->RSSetState(RasterizerStateWireFrame);
+		break;
 	}
 
 	CurrentRasterizerState = InState;
@@ -152,10 +153,36 @@ void FD3DDevice::CreateDeviceAndSwapChain(HWND InHWindow)
 	swapChainDesc.Windowed = TRUE;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
+	// Check tearing support for no-vsync with flip model
+	IDXGIFactory5* Factory5 = nullptr;
+	{
+		IDXGIFactory1* Factory1 = nullptr;
+		if (SUCCEEDED(CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&Factory1)))
+		{
+			if (SUCCEEDED(Factory1->QueryInterface(__uuidof(IDXGIFactory5), (void**)&Factory5)))
+			{
+				Factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING,
+					&bTearingSupported, sizeof(bTearingSupported));
+			}
+			Factory1->Release();
+		}
+	}
+
+	if (bTearingSupported)
+	{
+		swapChainDesc.Flags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+	}
+
+	UINT CreateDeviceFlags = 0;
+#ifdef _DEBUG
+	CreateDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+
 	D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
-		D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_DEBUG,
-		featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION,
+		CreateDeviceFlags, featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION,
 		&swapChainDesc, &SwapChain, &Device, nullptr, &DeviceContext);
+
+	if (Factory5) Factory5->Release();
 
 	SwapChain->GetDesc(&swapChainDesc);
 
@@ -197,7 +224,7 @@ void FD3DDevice::CreateRasterizerState()
 	D3D11_RASTERIZER_DESC rasterizerDesc = {};
 	rasterizerDesc.FillMode = D3D11_FILL_SOLID;
 	rasterizerDesc.CullMode = D3D11_CULL_BACK;
-	
+
 	Device->CreateRasterizerState(&rasterizerDesc, &RasterizerStateBackCull);
 
 	D3D11_RASTERIZER_DESC frontCullDesc = {};
