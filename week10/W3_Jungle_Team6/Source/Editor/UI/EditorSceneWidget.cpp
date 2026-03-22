@@ -1,6 +1,7 @@
-#include "Editor/UI/EditorSceneWidget.h"
+﻿#include "Editor/UI/EditorSceneWidget.h"
 
 #include "Editor/EditorEngine.h"
+#include "Engine/Core/Common.h"
 #include "GameFramework/WorldContext.h"
 
 #include "ImGui/imgui.h"
@@ -26,7 +27,7 @@ void FEditorSceneWidget::RefreshSceneFileList()
 	}
 }
 
-void FEditorSceneWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
+void FEditorSceneWidget::Render(float DeltaTime)
 {
 	using namespace common::constants::ImGui;
 
@@ -42,8 +43,6 @@ void FEditorSceneWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 	// New Scene
 	if (ImGui::Button("New Scene"))
 	{
-		EditorEngine->GetGizmo()->SetVisibility(false);
-		ViewOutput.Object = nullptr;
 		EditorEngine->NewScene();
 		NewSceneNotificationTimer = NotificationTimer;
 	}
@@ -85,11 +84,11 @@ void FEditorSceneWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 	if (!SceneFiles.empty())
 	{
 		auto SceneNameGetter = [](void* Data, int32 Idx) -> const char*
-		{
-			auto* Files = static_cast<TArray<FString>*>(Data);
-			if (Idx < 0 || Idx >= static_cast<int32>(Files->size())) return nullptr;
-			return (*Files)[Idx].c_str();
-		};
+			{
+				auto* Files = static_cast<TArray<FString>*>(Data);
+				if (Idx < 0 || Idx >= static_cast<int32>(Files->size())) return nullptr;
+				return (*Files)[Idx].c_str();
+			};
 
 		ImGui::Combo("Scene File", &SelectedSceneIndex, SceneNameGetter, &SceneFiles, static_cast<int32>(SceneFiles.size()));
 
@@ -99,9 +98,7 @@ void FEditorSceneWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 				/ (FPaths::ToWide(SceneFiles[SelectedSceneIndex]) + FSceneSaveManager::SceneExtension);
 			FString FilePath = FPaths::ToUtf8(ScenePath.wstring());
 
-			EditorEngine->GetGizmo()->SetVisibility(false);
 			EditorEngine->ClearScene();
-			ViewOutput.Object = nullptr;
 			FSceneSaveManager::LoadSceneFromJSON(FilePath, EditorEngine->GetWorldList());
 			if (!EditorEngine->GetWorldList().empty())
 			{
@@ -124,30 +121,46 @@ void FEditorSceneWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 
 	SEPARATOR();
 
-	// Active Scene List
-	const TArray<FWorldContext>& Worlds = EditorEngine->GetWorldList();
-	ImGui::Text("Active Scenes (%d)", static_cast<int32>(Worlds.size()));
-	ImGui::Separator();
-
-	FName ActiveHandle = EditorEngine->GetActiveWorldHandle();
-
-	for (uint32 i = 0; i < static_cast<uint32>(Worlds.size()); i++)
+	// Actor Outliner
+	UWorld* World = EditorEngine->GetWorld();
+	if (World)
 	{
-		const char* TypeStr = "Editor";
-		if (Worlds[i].WorldType == EWorldType::Game) TypeStr = "Game";
-		else if (Worlds[i].WorldType == EWorldType::PIE) TypeStr = "PIE";
+		const TArray<AActor*>& Actors = World->GetActors();
+		ImGui::Text("Actors (%d)", static_cast<int32>(Actors.size()));
+		ImGui::Separator();
 
-		bool bIsActive = (Worlds[i].ContextHandle == ActiveHandle);
-		FString Label = Worlds[i].ContextName + " [" + TypeStr + "]";
-		if (bIsActive)
-		{
-			Label += " (Active)";
-		}
+		// Fill remaining space with scrollable child region
+		FSelectionManager& Selection = EditorEngine->GetSelectionManager();
 
-		if (ImGui::Selectable(Label.c_str(), bIsActive))
+		ImGui::BeginChild("ActorList", ImVec2(0, 0), ImGuiChildFlags_Borders);
+		for (AActor* Actor : Actors)
 		{
-			EditorEngine->SetActiveWorld(Worlds[i].ContextHandle);
+			if (!Actor) continue;
+
+			FString ActorName = Actor->GetFName().ToString();
+			if (ActorName.empty())
+			{
+				ActorName = Actor->GetTypeInfo()->name;
+			}
+
+			bool bIsSelected = Selection.IsSelected(Actor);
+			if (ImGui::Selectable(ActorName.c_str(), bIsSelected))
+			{
+				if (ImGui::GetIO().KeyShift)
+				{
+					Selection.SelectRange(Actor, Actors);
+				}
+				else if (ImGui::GetIO().KeyCtrl)
+				{
+					Selection.ToggleSelect(Actor);
+				}
+				else
+				{
+					Selection.Select(Actor);
+				}
+			}
 		}
+		ImGui::EndChild();
 	}
 
 	ImGui::End();
