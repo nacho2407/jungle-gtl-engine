@@ -217,7 +217,7 @@ void FD3DDevice::CreateRasterizerState()
 
 	D3D11_RASTERIZER_DESC wireFrameDesc = {};
 	wireFrameDesc.FillMode = D3D11_FILL_WIREFRAME;
-	wireFrameDesc.CullMode = D3D11_CULL_BACK;
+	wireFrameDesc.CullMode = D3D11_CULL_NONE;
 
 	Device->CreateRasterizerState(&wireFrameDesc, &RasterizerStateWireFrame);
 
