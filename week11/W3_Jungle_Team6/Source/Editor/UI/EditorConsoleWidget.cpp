@@ -10,10 +10,9 @@ void FEditorConsoleWidget::AddLog(const char* fmt, ...) {
 	if (AutoScroll) ScrollToBottom = true;
 }
 
-void FEditorConsoleWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
+void FEditorConsoleWidget::Render(float DeltaTime)
 {
 	(void)DeltaTime;
-	(void)ViewOutput;
 
 	ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
 	if (!ImGui::Begin("Console"))
