@@ -30,10 +30,6 @@ public:
 	float CameraMoveSensitivity = 1.0f;
 	float CameraRotateSensitivity = 1.0f;
 
-	// Runtime
-	bool bLimitUpdateRate = true;
-	int32 UpdateRate = 60;
-
 	// File paths
 	FString DefaultSavePath = FPaths::ToUtf8(FPaths::SceneDir());
 
