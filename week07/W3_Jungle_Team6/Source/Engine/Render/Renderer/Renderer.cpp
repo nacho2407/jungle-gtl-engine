@@ -33,7 +33,7 @@ void FRenderer::Create(HWND hWindow)
 	Resources.OutlineShader.Create(Device.GetDevice(), L"Shaders/Outline.hlsl",
 		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
 
-	Resources.PerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FTransformConstants));
+	Resources.PerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FPerObjectConstants));
 	Resources.FrameBuffer.Create(Device.GetDevice(), sizeof(FFrameConstants));
 	Resources.GizmoPerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FGizmoConstants));
 	Resources.OverlayConstantBuffer.Create(Device.GetDevice(), sizeof(FOverlayConstants));
@@ -110,14 +110,21 @@ void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceCo
 			Device.SetRasterizerState(ERasterizerState::SolidBackCull);
 		}
 
-		Device.SetDepthStencilState(EDepthStencilState::StencilWrite);
+		Device.SetDepthStencilState(EDepthStencilState::Default);
 		Device.SetBlendState(EBlendState::Opaque);
 		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		Resources.PrimitiveShader.Bind(DeviceContext);
 		break;
 
 	case ERenderPass::Outline:
-		Device.SetDepthStencilState(EDepthStencilState::StencilOutline);
+		if (CurViewMode == EViewMode::Wireframe)
+		{
+			Device.SetDepthStencilState(EDepthStencilState::StencilWriteOnlyEqual);
+		}
+		else
+		{
+			Device.SetDepthStencilState(EDepthStencilState::StencilOutline);
+		}
 		Device.SetRasterizerState(ERasterizerState::SolidFrontCull);
 		Device.SetBlendState(EBlendState::Opaque);
 
@@ -141,7 +148,7 @@ void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceCo
 		break;
 
 	case ERenderPass::Overlay:
-		Device.SetDepthStencilState(EDepthStencilState::None);
+		Device.SetDepthStencilState(EDepthStencilState::DepthGreater);
 		Device.SetBlendState(EBlendState::Opaque);
 		Device.SetRasterizerState(ERasterizerState::SolidBackCull);
 		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -154,7 +161,7 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 {
 	if (InCmd.Type != ERenderCommandType::Overlay)
 	{
-		Resources.PerObjectConstantBuffer.Update(Context, &InCmd.TransformConstants, sizeof(FTransformConstants));
+		Resources.PerObjectConstantBuffer.Update(Context, &InCmd.PerObjectConstants, sizeof(FPerObjectConstants));
 		ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
 		Context->VSSetConstantBuffers(1, 1, &cb);
 		//InDeviceContext->PSSetConstantBuffers(0, 1, &cb);
@@ -218,11 +225,11 @@ EDepthStencilState FRenderer::GetDefaultDepthForPass(ERenderPass Pass) const
 {
 	switch (Pass)
 	{
-	case ERenderPass::Opaque:	 return EDepthStencilState::StencilWrite;
+	case ERenderPass::Opaque:	 return EDepthStencilState::Default;
 	case ERenderPass::Outline:   return EDepthStencilState::StencilOutline;
 	case ERenderPass::DepthLess: return EDepthStencilState::Default;
 	case ERenderPass::Editor:    return EDepthStencilState::Default;
-	case ERenderPass::Overlay:   return EDepthStencilState::None;
+	case ERenderPass::Overlay:   return EDepthStencilState::DepthGreater;
 	default:                     return EDepthStencilState::Default;
 	}
 }
@@ -325,7 +332,7 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 		{
 			if (Cmd.Type == ERenderCommandType::Billboard)
 			{
-				FontBatcher.AddText(Cmd.TextData, Cmd.TransformConstants.Model.GetLocation(), RenderBus.GetCameraRight(), RenderBus.GetCameraUp());
+				FontBatcher.AddText(Cmd.TextData, Cmd.PerObjectConstants.Model.GetLocation(), RenderBus.GetCameraRight(), RenderBus.GetCameraUp());
 			}
 		}
 	}
