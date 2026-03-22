@@ -267,9 +267,9 @@ bool FD3D11DynamicRHI::CreateConstantBuffer(uint32         InByteWidth,
 
     D3D11_BUFFER_DESC Desc = {};
     Desc.ByteWidth = (InByteWidth + 15u) & ~15u;
-    Desc.Usage = D3D11_USAGE_DEFAULT;
+    Desc.Usage = D3D11_USAGE_DYNAMIC;
     Desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    Desc.CPUAccessFlags = 0;
+    Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     Desc.MiscFlags = 0;
     Desc.StructureByteStride = 0;
 
