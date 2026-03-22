@@ -13,7 +13,7 @@ void FEditorEngine::Create(HWND InHWindow)
 	FEditorSettings::Get().LoadFromFile(FEditorSettings::GetDefaultSettingsPath());
 
 	Renderer.Create(HWindow);
-	FRenderCollector::Initialize(Renderer.GetFD3DDevice().GetDevice());
+	RenderCollector.Initialize(Renderer.GetFD3DDevice().GetDevice());
 
 	MainPanel.Create(HWindow, Renderer, this);
 
@@ -98,7 +98,7 @@ void FEditorEngine::CloseScene() {
 	}
 
 	UObjectManager::Get().CollectGarbage();
-	FRenderCollector::Release();
+	RenderCollector.Release();
 }
 
 void FEditorEngine::NewScene() {
@@ -203,5 +203,5 @@ void FEditorEngine::BuildRenderCommands()
 	Context.ViewportWidth = WindowWidth;
 	Context.SelectedComponent = ViewportClient.GetGizmo()->HasTarget() ? (UPrimitiveComponent*)ViewportClient.GetGizmo()->GetTarget() : nullptr;
 
-	FRenderCollector::Collect(Context, RenderBus);
+	RenderCollector.Collect(Context, RenderBus);
 }
