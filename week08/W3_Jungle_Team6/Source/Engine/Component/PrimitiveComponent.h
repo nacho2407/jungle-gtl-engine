@@ -85,6 +85,7 @@ private:
 public:
 	DECLARE_CLASS(UPlaneComponent, UPrimitiveComponent)
 	UPlaneComponent();
+	void UpdateWorldAABB() override;
 	bool GetRenderCommand(FRenderCommand& OutCommand) override;
 	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_Plane;
 
