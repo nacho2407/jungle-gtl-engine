@@ -4,7 +4,7 @@
 #include "Core/HAL/PlatformTypes.h"
 #include "Core/Math/Matrix.h"
 #include "Core/Math/Vector.h"
-#include "Core/Math/Vector4.h"
+#include "Core/Math/Color.h"
 #include "Renderer/D3D11/D3D11Common.h"
 #include "Renderer/SceneRenderData.h"
 #include "Renderer/Types/BasicMeshType.h"
@@ -19,7 +19,7 @@ struct FVertexSimple;
 struct FMeshInstanceData
 {
     FMatrix  World;
-    FVector4 Color = FVector4(1, 1, 1, 1);
+    FColor Color = FColor::White();
 };
 
 struct FBasicMeshResource
@@ -28,6 +28,8 @@ struct FBasicMeshResource
     TComPtr<ID3D11Buffer> IndexBuffer = nullptr;
     uint32                IndexCount = 0;
 };
+
+// TODO: Instance 유무에 따라 분기
 
 class FD3D11MeshBatchRenderer
 {

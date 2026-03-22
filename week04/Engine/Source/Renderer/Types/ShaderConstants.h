@@ -1,13 +1,14 @@
 #pragma once
 
 #include "Core/Math/Matrix.h"
+#include "Core/Math/Color.h"
 #include "Core/Math/Vector4.h"
 
 // Non-instanced unlit mesh
 struct alignas(16) FMeshUnlitConstants
 {
     FMatrix  MVP;
-    FVector4 BaseColor;
+    FColor BaseColor;
 };
 
 // Instanced unlit mesh
@@ -21,7 +22,7 @@ struct alignas(16) FMeshLitConstants
 {
     FMatrix  W;
     FMatrix  MVP;
-    FVector4 BaseColor;
+    FColor BaseColor;
     FVector4 LightDirection;
 };
 
@@ -33,7 +34,7 @@ struct alignas(16) FLineConstants
 struct alignas(16) FFontConstants
 {
     FMatrix  P;
-    FVector4 TintColor;
+    FColor TintColor;
 };
 
 struct alignas(16) FSpriteConstants

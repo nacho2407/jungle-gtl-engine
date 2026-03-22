@@ -358,7 +358,7 @@ void FD3D11GizmoRenderer::DrawScaling(const FGizmoDrawData& InGizmo, const FScen
 }
 
 void FD3D11GizmoRenderer::DrawAxisMesh(const FGizmoMeshResource& InMesh, const FMatrix& InWorld,
-                                       const FSceneView* InSceneView, const FVector4& InColor)
+                                       const FSceneView* InSceneView, const FColor& InColor)
 {
     if (RHI == nullptr || InSceneView == nullptr)
     {
@@ -388,7 +388,7 @@ void FD3D11GizmoRenderer::DrawAxisMesh(const FGizmoMeshResource& InMesh, const F
     Context->DrawIndexed(InMesh.IndexCount, 0, 0);
 }
 
-FVector4 FD3D11GizmoRenderer::GetAxisColor(EAxis InAxis, EGizmoHighlight InHighlight) const
+FColor FD3D11GizmoRenderer::GetAxisColor(EAxis InAxis, EGizmoHighlight InHighlight) const
 {
     switch (InHighlight)
     {

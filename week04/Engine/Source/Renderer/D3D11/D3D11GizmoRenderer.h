@@ -50,9 +50,9 @@ class FD3D11GizmoRenderer
     void DrawScaling(const FGizmoDrawData& InGizmo, const FSceneView* InSceneView);
 
     void DrawAxisMesh(const FGizmoMeshResource& InMesh, const FMatrix& InWorld,
-                      const FSceneView* InSceneView, const FVector4& InColor);
+                      const FSceneView* InSceneView, const FColor& InColor);
 
-    FVector4 GetAxisColor(EAxis InAxis, EGizmoHighlight InHighlight) const;
+    FColor GetAxisColor(EAxis InAxis, EGizmoHighlight InHighlight) const;
 
     FMatrix MakeAxisRotationX() const;
     FMatrix MakeAxisRotationY() const;

@@ -5,6 +5,8 @@
 struct ENGINE_API FColor
 {
   public:
+    constexpr FColor() noexcept : r(0.f), g(0.f), b(0.f), a(1.f) {}
+
     constexpr FColor(float InR, float InG, float InB, float InA) : r(InR), g(InG), b(InB), a(InA) {}
     ~FColor() = default;
 
@@ -28,14 +30,14 @@ struct ENGINE_API FColor
     static constexpr FColor Transparent() { return FColor(0.0f, 0.0f, 0.0f, 0.0f); }
 
     FColor operator+(float Num) const;
-    FColor operator+(const FColor &Other) const;
+    FColor operator+(const FColor& Other) const;
     FColor operator-(float Num) const;
-    FColor operator-(const FColor &Other) const;
+    FColor operator-(const FColor& Other) const;
     FColor operator*(float Num) const;
-    FColor operator*(const FColor &Other) const;
+    FColor operator*(const FColor& Other) const;
     uint32 ToPackedABGR() const;
 
-    static FColor Lerp(const FColor &A, const FColor &B, float T);
+    static FColor Lerp(const FColor& A, const FColor& B, float T);
 
   public:
     float r, g, b, a;

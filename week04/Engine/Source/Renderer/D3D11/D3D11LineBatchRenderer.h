@@ -13,7 +13,7 @@ struct FAABB;
 class FD3D11LineBatchRenderer
 {
   public:
-    static constexpr const wchar_t* DefaultShaderPath = L"Resources/Shaders/Line.hlsl";
+    static constexpr const wchar_t* DefaultShaderPath = L"Resources/Shaders/ShaderLine.hlsl";
     static constexpr uint32         DefaultMaxLineCount = 8192;
 
   public:
@@ -21,10 +21,10 @@ class FD3D11LineBatchRenderer
     void Shutdown();
 
     void BeginFrame(const FSceneView* InSceneView);
-    void AddLine(const FVector& InStart, const FVector& InEnd, const FVector4& InColor);
-    void AddGrid(int32 InHalfLineCount, float InSpacing, const FVector4& InColor);
+    void AddLine(const FVector& InStart, const FVector& InEnd, const FColor& InColor);
+    void AddGrid(int32 InHalfLineCount, float InSpacing, const FColor& InColor);
     void AddWorldAxes(float InAxisLength);
-    void AddAABB(const Geometry::FAABB& InBounds, const FVector4& InColor);
+    void AddAABB(const Geometry::FAABB& InBounds, const FColor& InColor);
     void EndFrame();
 
   private:

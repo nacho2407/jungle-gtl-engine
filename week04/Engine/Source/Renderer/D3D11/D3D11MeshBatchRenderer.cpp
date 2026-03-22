@@ -164,8 +164,9 @@ bool FD3D11MeshBatchRenderer::CreateConstantBuffers()
         return false;
     }
 
-    return RHI->CreateConstantBuffer(Align16(static_cast<uint32>(sizeof(FMeshUnlitInstancedConstants))),
-                                     ConstantBuffer.GetAddressOf());
+    return RHI->CreateConstantBuffer(
+        Align16(static_cast<uint32>(sizeof(FMeshUnlitInstancedConstants))),
+        ConstantBuffer.GetAddressOf());
 }
 
 bool FD3D11MeshBatchRenderer::CreateStates()
@@ -395,14 +396,14 @@ void FD3D11MeshBatchRenderer::GatherRenderItems(const FSceneRenderData& InRender
 
         if (Item.bSelected)
         {
-            Instance.Color.Z *= 0.6f;
+            Instance.Color.b *= 0.6f;
         }
 
         if (Item.bHovered)
         {
-            Instance.Color.X *= 1.15f;
-            Instance.Color.Y *= 1.15f;
-            Instance.Color.Z *= 1.15f;
+            Instance.Color.r *= 1.15f;
+            Instance.Color.g *= 1.15f;
+            Instance.Color.b *= 1.15f;
         }
 
         MeshInstances[MeshIndex].push_back(Instance);

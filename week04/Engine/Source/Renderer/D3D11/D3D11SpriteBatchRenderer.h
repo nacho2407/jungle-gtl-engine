@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/Math/Vector.h"
-#include "Core/Math/Vector4.h"
+#include "Core/Math/Color.h"
 #include "Core/Containers/Array.h"
 #include "Renderer/Types/VertexTypes.h"
 #include "Renderer/D3D11/D3D11Common.h"
@@ -19,13 +19,13 @@ class FD3D11SpriteBatchRenderer
     void BeginFrame() {}
 
     void SubmitSpriteWorldSpace(const FVector& InCenter, float InWidth, float InHeight,
-                                ID3D11ShaderResourceView* InTextureSRV, const FVector4& InColor)
+                                ID3D11ShaderResourceView* InTextureSRV, const FColor& InColor)
     {
     }
 
     void SubmitSubUVWorldSpace(const FVector& InCenter, float InWidth, float InHeight,
                                int32 InFrameIndex, int32 InNumFramesX, int32 InNumFramesY,
-                               ID3D11ShaderResourceView* InTextureSRV, const FVector4& InColor)
+                               ID3D11ShaderResourceView* InTextureSRV, const FColor& InColor)
     {
     }
 
@@ -42,7 +42,7 @@ class FD3D11SpriteBatchRenderer
 
     void BuildBillboardQuad(const FSceneView* InSceneView, const FVector& InCenter, float InWidth,
                             float InHeight, float InU0, float InV0, float InU1, float InV1,
-                            const FVector4& InColor)
+                            const FColor& InColor)
     {
     }
 

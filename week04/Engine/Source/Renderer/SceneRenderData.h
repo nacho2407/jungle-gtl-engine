@@ -3,7 +3,7 @@
 #include "Core/Containers/Array.h"
 #include "Core/HAL/PlatformTypes.h"
 #include "Core/Math/Matrix.h"
-#include "Core/Math/Vector4.h"
+#include "Core/Math/Color.h"
 #include "Renderer/Types/BasicMeshType.h"
 #include "Renderer/Types/ViewMode.h"
 
@@ -12,7 +12,7 @@ class FSceneView;
 struct FPrimitiveRenderItem
 {
     FMatrix        World;
-    FVector4       Color = FVector4(1, 1, 1, 1);
+    FColor       Color = FColor::White();
     EBasicMeshType MeshType;
 
     uint32 ObjectId = 0;

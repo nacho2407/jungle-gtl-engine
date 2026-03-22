@@ -2,7 +2,7 @@
 
 #include "Core/Math/Vector.h"
 #include "Core/Math/Vector2.h"
-#include "Core/Math/Vector4.h"
+#include "Core/Math/Color.h"
 
 struct FMeshVertex
 {
@@ -12,19 +12,19 @@ struct FMeshVertex
 struct FLineVertex
 {
     FVector  Position;
-    FVector4 Color;
+    FColor Color;
 };
 
 struct FFontVertex
 {
     FVector  Position;
     FVector2 UV;
-    FVector4 Color;
+    FColor Color;
 };
 
 struct FSpriteVertex
 {
     FVector  Position;
     FVector2 UV;
-    FVector4 Color;
+    FColor Color;
 };

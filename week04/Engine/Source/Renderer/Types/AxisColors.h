@@ -1,33 +1,33 @@
 #pragma once
 
-#include "Core/Math/Matrix.h"
+#include "Core/Math/Color.h"
 
-static FVector4 GetAxisBaseColor(EAxis Axis)
+static FColor GetAxisBaseColor(EAxis Axis)
 {
     switch (Axis)
     {
     case EAxis::X:
-        return FVector4(1.0f, 0.0f, 0.0f, 1.0f);
+        return FColor(1.0f, 0.0f, 0.0f, 1.0f); // Red
     case EAxis::Y:
-        return FVector4(0.0f, 1.0f, 0.0f, 1.0f);
+        return FColor(0.0f, 1.0f, 0.0f, 1.0f); // Green
     case EAxis::Z:
-        return FVector4(0.0f, 0.5f, 1.0f, 1.0f);
+        return FColor(0.0f, 0.5f, 1.0f, 1.0f); // Blue
     default:
-        return FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+        return FColor(1.0f, 1.0f, 1.0f, 1.0f); // White
     }
 }
 
-static FVector4 GetAxisHighlightColor(EAxis Axis)
+static FColor GetAxisHighlightColor(EAxis Axis)
 {
     switch (Axis)
     {
     case EAxis::X:
-        return FVector4(1.0f, 0.4f, 0.4f, 1.0f);
+        return FColor(1.0f, 0.4f, 0.4f, 1.0f); // Light Red
     case EAxis::Y:
-        return FVector4(0.4f, 1.0f, 0.4f, 1.0f);
+        return FColor(0.4f, 1.0f, 0.4f, 1.0f); // Light Green
     case EAxis::Z:
-        return FVector4(0.4f, 0.6f, 1.0f, 1.0f);
+        return FColor(0.4f, 0.6f, 1.0f, 1.0f); // Light Blue
     default:
-        return FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+        return FColor(1.0f, 1.0f, 1.0f, 1.0f); // White
     }
 }
