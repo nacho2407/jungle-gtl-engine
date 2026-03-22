@@ -30,17 +30,16 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	SetActiveWorld(WorldList[0].ContextHandle);
 	GetWorld()->InitWorld();
 
-	// Gizmo
-	EditorGizmo = UObjectManager::Get().CreateObject<UGizmoComponent>();
-	EditorGizmo->SetWorldLocation(FVector(0.0f, 0.0f, 0.0f));
-	EditorGizmo->Deactivate();
+	// Selection & Gizmo
+	SelectionManager.Init();
 
 	// ViewportClient
 	ViewportClient.SetSettings(&FEditorSettings::Get());
 	ViewportClient.Initialize(Window);
 	ViewportClient.SetViewportSize(Window->GetWidth(), Window->GetHeight());
 	ViewportClient.SetWorld(GetWorld());
-	ViewportClient.SetGizmo(EditorGizmo);
+	ViewportClient.SetGizmo(SelectionManager.GetGizmo());
+	ViewportClient.SetSelectionManager(&SelectionManager);
 
 	// Camera
 	ViewportClient.CreateCamera();
@@ -52,6 +51,7 @@ void UEditorEngine::Shutdown()
 	// 에디터 해제 (엔진보다 먼저)
 	FEditorSettings::Get().SaveToFile(FEditorSettings::GetDefaultSettingsPath());
 	CloseScene();
+	SelectionManager.Shutdown();
 	MainPanel.Release();
 
 	// 엔진 공통 해제 (Renderer, D3D 등)
@@ -84,7 +84,7 @@ void UEditorEngine::Render(float DeltaTime)
 
 	Renderer.BeginFrame();
 	Renderer.Render(RenderBus, ViewModeRasterizer);
-	MainPanel.Render(DeltaTime, ViewportClient.GetViewOutput());
+	MainPanel.Render(DeltaTime);
 	Renderer.RenderOverlay(RenderBus);
 	Renderer.EndFrame();
 }
@@ -99,6 +99,8 @@ void UEditorEngine::ResetViewport()
 
 void UEditorEngine::CloseScene()
 {
+	SelectionManager.ClearSelection();
+
 	for (FWorldContext& Ctx : WorldList) {
 		Ctx.World->EndPlay();
 		UObjectManager::Get().DestroyObject(Ctx.World);
@@ -107,11 +109,6 @@ void UEditorEngine::CloseScene()
 	ActiveWorldHandle = FName::None;
 
 	ViewportClient.DestroyCamera();
-
-	UObjectManager::Get().DestroyObject(EditorGizmo);
-	EditorGizmo = nullptr;
-
-	ViewportClient.SetGizmo(nullptr);
 	ViewportClient.SetWorld(nullptr);
 }
 
@@ -121,19 +118,13 @@ void UEditorEngine::NewScene()
 	FWorldContext& Ctx = CreateWorldContext(EWorldType::Editor, FName("NewScene"), "New Scene");
 	SetActiveWorld(Ctx.ContextHandle);
 
-	// EditorGizmo가 CloseScene()으로 파괴된 경우 재생성
-	if (!EditorGizmo)
-	{
-		EditorGizmo = UObjectManager::Get().CreateObject<UGizmoComponent>();
-		EditorGizmo->Deactivate();
-		ViewportClient.SetGizmo(EditorGizmo);
-	}
-
 	ResetViewport();
 }
 
 void UEditorEngine::ClearScene()
 {
+	SelectionManager.ClearSelection();
+
 	for (FWorldContext& Ctx : WorldList) {
 		Ctx.World->EndPlay();
 		UObjectManager::Get().DestroyObject(Ctx.World);
@@ -150,13 +141,18 @@ void UEditorEngine::BuildRenderCommands()
 	FRenderCollectorContext Context;
 	Context.World = GetWorld();
 	Context.Camera = ViewportClient.GetCamera();
-	Context.Gizmo = EditorGizmo;
+	Context.Gizmo = SelectionManager.GetGizmo();
 	Context.ViewMode = FEditorSettings::Get().ViewMode;
 	Context.ShowFlags = FEditorSettings::Get().ShowFlags;
 	Context.CursorOverlayState = &ViewportClient.GetCursorOverlayState();
 	Context.ViewportHeight = Window->GetHeight();
 	Context.ViewportWidth = Window->GetWidth();
-	Context.SelectedComponent = ViewportClient.GetGizmo()->HasTarget() ? (UPrimitiveComponent*)ViewportClient.GetGizmo()->GetTarget() : nullptr;
+	Context.SelectedComponent = nullptr;
+	AActor* Primary = SelectionManager.GetPrimarySelection();
+	if (Primary && Primary->GetRootComponent() && Primary->GetRootComponent()->IsA<UPrimitiveComponent>())
+	{
+		Context.SelectedComponent = static_cast<UPrimitiveComponent*>(Primary->GetRootComponent());
+	}
 
 	FRenderCollector::Collect(Context, RenderBus);
 }
