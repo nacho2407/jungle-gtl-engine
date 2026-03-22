@@ -1,6 +1,9 @@
 ﻿#pragma once
 
 #include "PrimitiveComponent.h"
+#include "Core/CoreTypes.h"
+
+class AActor;
 
 class UGizmoComponent : public UPrimitiveComponent
 {
@@ -14,7 +17,8 @@ private:
 		End
 	};
 
-	USceneComponent* TargetComponent = nullptr;
+	AActor* TargetActor = nullptr;
+	const TArray<AActor*>* AllSelectedActors = nullptr;
 	EGizmoMode CurMode = EGizmoMode::Translate;
 	FVector LastIntersectionLocation;
 	const float AxisLength = 1.0f;
@@ -45,12 +49,13 @@ public:
 
 	FVector GetVectorForAxis(int32 Axis);
 	void RenderGizmo() {}
-	void SetTarget(USceneComponent* NewTargetComponent);
+	void SetTarget(AActor* NewTarget);
+	void SetSelectedActors(const TArray<AActor*>* InSelectedActors) { AllSelectedActors = InSelectedActors; }
 	inline void SetHolding(bool bHold) { bIsHolding = bHold; }
 	inline bool IsHolding() const { return bIsHolding; }
 	inline bool IsHovered() const { return SelectedAxis != -1; }
-	inline bool HasTarget() const { return TargetComponent != nullptr; }
-	inline USceneComponent* GetTarget() const { return TargetComponent; }
+	inline bool HasTarget() const { return TargetActor != nullptr; }
+	inline AActor* GetTarget() const { return TargetActor; }
 	inline int32 GetSelectedAxis() const { return SelectedAxis; }
 
 	inline void SetPressedOnHandle(bool bPressed) { bPressedOnHandle = bPressed; }
