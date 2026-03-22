@@ -5,6 +5,7 @@
 #include "Editor/Viewport/EditorViewportClient.h"
 #include "Editor/UI/EditorMainPanel.h"
 #include "Editor/Settings/EditorSettings.h"
+#include "Editor/SelectionManager.h"
 
 class UGizmoComponent;
 
@@ -23,7 +24,7 @@ public:
 	void OnWindowResized(uint32 Width, uint32 Height) override;
 
 	// Editor-specific API
-	UGizmoComponent* GetGizmo() const { return EditorGizmo; }
+	UGizmoComponent* GetGizmo() const { return SelectionManager.GetGizmo(); }
 	UCameraComponent* GetCamera() const { return ViewportClient.GetCamera(); }
 
 	void ClearScene();
@@ -34,6 +35,8 @@ public:
 	FEditorSettings& GetSettings() { return FEditorSettings::Get(); }
 	const FEditorSettings& GetSettings() const { return FEditorSettings::Get(); }
 
+	FSelectionManager& GetSelectionManager() { return SelectionManager; }
+
 protected:
 	void Render(float DeltaTime) override;
 
@@ -41,7 +44,7 @@ private:
 	void BuildRenderCommands();
 
 private:
-	UGizmoComponent* EditorGizmo = nullptr;
+	FSelectionManager SelectionManager;
 	FEditorMainPanel MainPanel;
 	FEditorViewportClient ViewportClient;
 };
