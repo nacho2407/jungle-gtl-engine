@@ -12,15 +12,15 @@ void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBu
 	}
 
 	//	Must be the active camera
-	
+
 	UCamera* Camera = Context.Camera;
 	RenderBus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix(),
-								Camera->GetRightVector(), Camera->GetUpVector());
+		Camera->GetRightVector(), Camera->GetUpVector());
 	RenderBus.SetRenderSettings(Context.ViewMode, Context.ShowFlags);
 
 
 	//	Draw from Editor (Gizmo, Axis, etc.)
-	CollectFromEditor(Context,RenderBus);
+	CollectFromEditor(Context, RenderBus);
 
 	//	Draw from World
 	for (auto* Object : GUObjectArray)
@@ -41,7 +41,7 @@ void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBu
 void FRenderCollector::CollectFromActor(AActor* Actor, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
 	// Iterate through the components of the actor and retrieve their render properties
-	for (auto* Comp : Actor->GetComponents()) 
+	for (auto* Comp : Actor->GetComponents())
 	{
 		if (!Comp || Comp->bPendingKill) continue;
 		if (!Comp->IsA<UPrimitiveComponent>()) continue;
@@ -55,7 +55,7 @@ void FRenderCollector::CollectFromActor(AActor* Actor, const FRenderCollectorCon
 void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveComponent, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
 	FRenderCommand Cmd = {};
-	Cmd.TransformConstants = FTransformConstants{ primitiveComponent->GetWorldMatrix() };
+	Cmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix(), FColor::White().ToVector4(), 0.f};
 	if (primitiveComponent->GetRenderCommand(Cmd))
 	{
 		ERenderPass selectedRenderPass = ERenderPass::Opaque;
@@ -67,8 +67,24 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 			Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
 			if (Context.SelectedComponent == primitiveComponent)
 			{
+
+				if (Context.ViewMode == EViewMode::Wireframe)
+				{
+					Cmd.PerObjectConstants.IsSelected = 1.0f;
+					Cmd.PerObjectConstants.Color = FColor(255,153,0,255).ToVector4();
+				}
+				else
+				{
+					CollectAABBCommand(primitiveComponent, RenderBus);
+				}
+
+				Cmd.DepthStencilState = EDepthStencilState::StencilWrite;
 				CollectComponentOutline(primitiveComponent, Context, RenderBus);
-				CollectAABBCommand(primitiveComponent, RenderBus);
+			}
+			else
+			{
+				// 선택되지 않은 객체는 기본값(Default) 사용
+				Cmd.DepthStencilState = EDepthStencilState::Default;
 			}
 
 			break;
@@ -83,7 +99,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 			break;
 		}
 
-		RenderBus.AddCommand(selectedRenderPass,Cmd);
+		RenderBus.AddCommand(selectedRenderPass, Cmd);
 	}
 
 }
@@ -107,17 +123,17 @@ void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, FRen
 		FRenderCommand Cmd = {};
 		Cmd.Type = ERenderCommandType::Gizmo;
 		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
-		Cmd.TransformConstants = FTransformConstants{ Gizmo->GetWorldMatrix()};
+		Cmd.PerObjectConstants = FPerObjectConstants{ Gizmo->GetWorldMatrix() };
 
 		if (bInner)
 		{
-			Cmd.DepthStencilState = EDepthStencilState::None;
+			Cmd.DepthStencilState = EDepthStencilState::GizmoInside;
 			Cmd.BlendState = EBlendState::AlphaBlend;
 			Cmd.Constants.Gizmo.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 		else
 		{
-			Cmd.DepthStencilState = EDepthStencilState::Default;
+			Cmd.DepthStencilState = EDepthStencilState::GizmoOutside;
 			Cmd.BlendState = EBlendState::Opaque;
 			Cmd.Constants.Gizmo.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 		}
@@ -165,8 +181,9 @@ void FRenderCollector::CollectComponentOutline(UPrimitiveComponent* primitiveCom
 {
 	FRenderCommand OutlineCmd{};
 	OutlineCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
-	OutlineCmd.TransformConstants = FTransformConstants{ primitiveComponent->GetWorldMatrix() };
+	OutlineCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
 	OutlineCmd.Type = ERenderCommandType::SelectionOutline;
+	OutlineCmd.DepthStencilState = EDepthStencilState::StencilOutline;
 	OutlineCmd.Constants.Outline.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
 	OutlineCmd.Constants.Outline.OutlineInvScale = FVector(1.0f / primitiveComponent->GetRelativeScale().X,
 		1.0f / primitiveComponent->GetRelativeScale().Y, 1.0f / primitiveComponent->GetRelativeScale().Z);
@@ -188,7 +205,7 @@ void FRenderCollector::CollectComponentOutline(UPrimitiveComponent* primitiveCom
 void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponent, FRenderBus& RenderBus)
 {
 	FRenderCommand AABBCmd = {};
-	AABBCmd.Type = ERenderCommandType::DebugBox; 
+	AABBCmd.Type = ERenderCommandType::DebugBox;
 
 	FBoundingBox Box = PrimitiveComponent->GetWorldBoundingBox();
 
