@@ -17,6 +17,7 @@ class FD3D11DynamicRHI
     bool Resize(int32 InWidth, int32 InHeight);
 
     ID3D11Device*   GetDevice() const { return Device.Get(); }
+    // TODO : 직접 참조 거는거 TextureResource 쪽에서 빼고, GetDeviceContext 제거해야함.
     ID3D11DeviceContext* GetDeviceContext() const { return DeviceContext.Get(); }
     IDXGISwapChain* GetSwapChain() const { return SwapChain.Get(); }
 
