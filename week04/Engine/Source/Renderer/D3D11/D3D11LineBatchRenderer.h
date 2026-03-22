@@ -13,7 +13,8 @@ struct FAABB;
 class FD3D11LineBatchRenderer
 {
   public:
-    static constexpr const wchar_t* DefaultShaderPath = L"Resources/Shaders/ShaderLine.hlsl";
+    static constexpr const wchar_t* DefaultShaderPath =
+        L"../Engine/Resources/Shader/ShaderLine.hlsl";
     static constexpr uint32         DefaultMaxLineCount = 8192;
 
   public:

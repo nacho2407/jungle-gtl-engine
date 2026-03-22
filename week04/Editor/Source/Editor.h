@@ -7,7 +7,7 @@ class FEditor
 {
   public:
     /* Default Functions */
-    void Create(HWND);
+    void Create();
     void Release();
 
     void BeginPlay();

@@ -98,7 +98,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClCompile Include="Source\Editor\EditorContext.cpp" />
     <ClCompile Include="Source\Input\EditorGlobalContext.cpp" />
     <ClCompile Include="Source\Input\GizmoInputContext.cpp" />
-    <ClCompile Include="Source\Input\ViewPortInputContext.cpp" />
+    <ClCompile Include="Source\Input\ViewportInputContext.cpp" />
     <ClCompile Include="Source\Launch\EditorEngineLoop.cpp" />
     <ClCompile Include="Source\Launch\Launch.cpp" />
     <ClCompile Include="Source\main.cpp" />
@@ -118,6 +118,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClCompile Include="Source\Viewport\Navigation\ViewportNavigationController.cpp" />
     <ClCompile Include="Source\Viewport\RenderSetting\ViewportRenderSetting.cpp" />
     <ClCompile Include="Source\Viewport\Selection\ViewportSelectionController.cpp" />
+    <ClCompile Include="Source\Camera\ViewportCamera.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor.h" />
@@ -127,7 +128,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClInclude Include="Source\Gizmo\GizmoDrawDataBuilder.h" />
     <ClInclude Include="Source\Input\EditorGlobalContext.h" />
     <ClInclude Include="Source\Input\GizmoInputContext.h" />
-    <ClInclude Include="Source\Input\ViewPortInputContext.h" />
+    <ClInclude Include="Source\Input\ViewportInputContext.h" />
     <ClInclude Include="Source\Launch\EditorEngineLoop.h" />
     <ClInclude Include="Source\Launch\Launch.h" />
     <ClInclude Include="Source\Panel\Panel.h" />
@@ -147,6 +148,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClInclude Include="Source\Viewport\Navigation\ViewportNavigationController.h" />
     <ClInclude Include="Source\Viewport\RenderSetting\ViewportRenderSetting.h" />
     <ClInclude Include="Source\Viewport\Selection\ViewportSelectionController.h" />
+    <ClInclude Include="Source\Camera\ViewportCamera.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Source\ThirdParty\imgui\imgui.natstepfilter" />

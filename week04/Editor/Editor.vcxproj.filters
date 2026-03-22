@@ -57,7 +57,7 @@
     <ClCompile Include="Source\Input\GizmoInputContext.cpp">
       <Filter>Source\Input</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Input\ViewPortInputContext.cpp">
+    <ClCompile Include="Source\Input\ViewportInputContext.cpp">
       <Filter>Source\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Launch\EditorEngineLoop.cpp">
@@ -117,6 +117,7 @@
     <ClCompile Include="Source\Viewport\Selection\ViewportSelectionController.cpp">
       <Filter>Source\Viewport\Selection</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Camera\ViewportCamera.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor.h">
@@ -140,7 +141,7 @@
     <ClInclude Include="Source\Input\GizmoInputContext.h">
       <Filter>Source\Input</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Input\ViewPortInputContext.h">
+    <ClInclude Include="Source\Input\ViewportInputContext.h">
       <Filter>Source\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Launch\EditorEngineLoop.h">
@@ -200,6 +201,7 @@
     <ClInclude Include="Source\Viewport\Selection\ViewportSelectionController.h">
       <Filter>Source\Viewport\Selection</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Camera\ViewportCamera.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Source\ThirdParty\imgui\imgui.natstepfilter">

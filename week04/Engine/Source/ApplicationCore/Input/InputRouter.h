@@ -13,7 +13,7 @@ namespace Engine::ApplicationCore
 
         void AddContext(IInputContext* Context);
         bool RouteEvent(const FInputEvent& Event, const FInputState& State);
-        void TickContexts(const FInputState& State);
+        void Tick(const FInputState& State);
 
       private:
         std::vector<IInputContext*> Contexts;

@@ -1,22 +1,22 @@
 #include "Renderer/RendererModule.h"
 
-void FRendererModule::StartupModule(HWND hWnd)
+bool FRendererModule::StartupModule(HWND hWnd)
 {
     if (!RHI.Initialize(hWnd))
     {
-        return;
+        return false;
     }
 
     if (!MeshRenderer.Initialize(&RHI))
     {
         ShutdownModule();
-        return;
+        return false;
     }
 
     if (!LineRenderer.Initialize(&RHI))
     {
         ShutdownModule();
-        return;
+        return false;
     }
 
 
@@ -27,6 +27,8 @@ void FRendererModule::StartupModule(HWND hWnd)
                                         reinterpret_cast<void**>(DebugDevice.GetAddressOf()));
     }
 #endif
+
+    return true;
 }
 
 void FRendererModule::ShutdownModule()
@@ -55,7 +57,7 @@ void FRendererModule::BeginFrame()
 {
     RHI.BeginFrame();
 
-    static const FLOAT ClearColor[4] = {0.10f, 0.10f, 0.12f, 1.0f};
+    static const FLOAT ClearColor[4] = {1.0f, 0.0f, 0.0f, 1.0f};
 
     RHI.SetDefaultRenderTargets();
     RHI.Clear(ClearColor, 1.0f, 0);
@@ -79,12 +81,12 @@ void FRendererModule::RenderFrame(const FEditorRenderData& InEditorRenderData,
     BeginFrame();
 
     // Scene
-    MeshRenderer.Render(InSceneRenderData);
+    //MeshRenderer.Render(InSceneRenderData);
 
-    // Editor Overlay (Grid -> World Axes -> Gizmo)
-    WorldGridDrawer.Draw(LineRenderer, InEditorRenderData);
-    WorldAxesDrawer.Draw(LineRenderer, InEditorRenderData);
-    GizmoDrawer.Draw(MeshRenderer, InEditorRenderData);
+    //// Editor Overlay (Grid -> World Axes -> Gizmo)
+    //WorldGridDrawer.Draw(LineRenderer, InEditorRenderData);
+    //WorldAxesDrawer.Draw(LineRenderer, InEditorRenderData);
+    //GizmoDrawer.Draw(MeshRenderer, InEditorRenderData);
 
     EndFrame();
 }

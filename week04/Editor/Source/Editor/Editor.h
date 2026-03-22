@@ -9,6 +9,11 @@
 #include "Input/GizmoInputContext.h"
 #include "Input/ViewPortInputContext.h"
 #include "Engine/Scene.h"
+#include "Viewport/EditorViewport.h"
+#include "Viewport/EditorViewportClient.h"
+#include "Renderer/EditorRenderData.h"
+#include "Renderer/SceneRenderData.h"
+#include "Renderer/SceneView.h"
 
 class FPanelManager;
 
@@ -20,7 +25,7 @@ class FEditor
     void Release();
 
     void Initialize();
-    void Tick(Engine::ApplicationCore::FInputSystem* InputSystem);
+    void Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* InputSystem);
 
     void OnWindowResized(float Width, float Height);
     void SetMainLoopFPS(float FPS) { CurFPS = FPS; }
@@ -29,20 +34,30 @@ class FEditor
     void CreateNewScene();
     void ClearScene();
 
+    /* For Render */
+    const FEditorRenderData& GetEditorRenderData() const { return EditorRenderData; }
+    const FSceneRenderData&  GetSceneRenderData() const { return SceneRenderData; }
+
   private:
+    void BuildRenderData();
+    void BuildSceneView();
+
   public:
   private:
-    /* Input Routing */
-    Engine::ApplicationCore::FInputRouter InputRouter;
+    /* Viewports */
+    // FEditorViewport MainViewport;
+    FEditorViewportClient ViewportClient;
 
     /* Input Contexts */
-    FEditorGlobalContext  EditorGlobalContext;
-    FViewPortInputContext ViewPortInputContext;
-    FGizmoInputContext    GizmoInputContext;
-    FEditorContext        EditorContext;
+    FEditorContext EditorContext;
 
     /* Panel */
     FPanelManager* PanelManager = nullptr;
+
+    /* Render Datas */
+    FEditorRenderData EditorRenderData;
+    FSceneRenderData  SceneRenderData;
+    FSceneView        SceneView;
 
     /* Gizmo */
 

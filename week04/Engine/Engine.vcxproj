@@ -79,12 +79,15 @@
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\PlaneComponent.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\SphereComponent.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.h" />
+    <ClInclude Include="Source\Engine\Component\CubeComponent.h" />
+    <ClInclude Include="Source\Engine\Component\PlaneComponent.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
     <ClInclude Include="Source\Engine\EngineStatics.h" />
     <ClInclude Include="Source\Engine\Game\Actor.h" />
     <ClInclude Include="Source\Engine\Scene.h" />
     <ClInclude Include="Source\Engine\ViewPort\Viewport.h" />
+    <ClInclude Include="Source\Engine\ViewPort\ViewportClient.h" />
     <ClInclude Include="Source\Launch\EngineLoop.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11Common.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11DynamicRHI.h" />

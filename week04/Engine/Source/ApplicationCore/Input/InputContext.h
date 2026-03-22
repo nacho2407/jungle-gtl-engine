@@ -6,7 +6,7 @@
 
 namespace Engine::ApplicationCore
 {
-    class IInputContext
+    class ENGINE_API IInputContext
     {
       public:
         constexpr IInputContext() = default;

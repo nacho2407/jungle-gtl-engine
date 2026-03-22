@@ -326,7 +326,7 @@ bool FD3D11DynamicRHI::CreateDeviceAndSwapChain(HWND InWindowHandle)
 
     HRESULT Hr = D3D11CreateDeviceAndSwapChain(
         nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, CreateDeviceFlags, FeatureLevels,
-        static_cast<UINT>(reinterpret_cast<SIZE_T>(FeatureLevels)), D3D11_SDK_VERSION,
+        static_cast<UINT>(ARRAYSIZE(FeatureLevels)), D3D11_SDK_VERSION,
         &SwapChainDesc, SwapChain.GetAddressOf(), Device.GetAddressOf(), &CreatedFeatureLevel,
         DeviceContext.GetAddressOf());
 
@@ -337,7 +337,7 @@ bool FD3D11DynamicRHI::CreateDeviceAndSwapChain(HWND InWindowHandle)
 
         Hr = D3D11CreateDeviceAndSwapChain(
             nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, CreateDeviceFlags, FeatureLevels,
-            static_cast<UINT>(reinterpret_cast<SIZE_T>(FeatureLevels)), D3D11_SDK_VERSION,
+            static_cast<UINT>(ARRAYSIZE(FeatureLevels)), D3D11_SDK_VERSION,
             &SwapChainDesc, SwapChain.GetAddressOf(), Device.GetAddressOf(), &CreatedFeatureLevel,
             DeviceContext.GetAddressOf());
     }
