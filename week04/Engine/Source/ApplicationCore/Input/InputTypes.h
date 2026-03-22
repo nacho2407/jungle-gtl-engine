@@ -6,14 +6,15 @@ namespace Engine::ApplicationCore
     {
         Unknown,
         W,
+        A,
+        S,
+        D,
         E,
-        R,
         Q,
-        F,
-        Delete,
-        LeftCtrl,
-        LeftShift,
-        LeftAlt,
+        //Delete,
+        //LeftCtrl,
+        //LeftShift,
+        //LeftAlt,
         MouseLeft,
         MouseRight,
         MouseMiddle,
@@ -28,11 +29,7 @@ namespace Engine::ApplicationCore
         MouseButtonDown,
         MouseButtonUp,
         MouseWheel,
-        CharInput,
-        WindowResize,
-        FocusGained,
-        FocusLost,
-        Quit
+        //CharInput,
     };
 
     struct FModifierKeysState
@@ -47,14 +44,14 @@ namespace Engine::ApplicationCore
         EInputEventType Type = EInputEventType::None;
         EKey            Key = EKey::Unknown;
 
-        int MouseX = 0;
-        int MouseY = 0;
-        int WheelDelta = 0;
+        int32 MouseX = 0;
+        int32 MouseY = 0;
+        int32 WheelDelta = 0;
 
         wchar_t Character = 0;
 
-        int Width = 0;
-        int Height = 0;
+        int32 Width = 0;
+        int32 Height = 0;
 
         bool               bRepeat = false;
         FModifierKeysState Modifiers;
