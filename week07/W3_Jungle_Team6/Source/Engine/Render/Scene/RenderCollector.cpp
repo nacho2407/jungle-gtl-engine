@@ -4,8 +4,6 @@
 #include "Component/Camera.h"
 #include "Component/GizmoComponent.h"
 
-FMeshBufferManager FRenderCollector::MeshBufferManager;
-
 void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
 	if (!Context.Camera || !Context.World)
@@ -102,6 +100,7 @@ void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, FRen
 {
 
 	UGizmoComponent* Gizmo = Context.Gizmo;
+	if (Context.ShowFlags.bGizmo == false) return;
 	if (!Gizmo || !Gizmo->IsVisible()) return;
 
 	auto CreateGizmoCmd = [&](bool bInner) {
