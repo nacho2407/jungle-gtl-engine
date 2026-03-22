@@ -232,7 +232,7 @@ void FD3D11LineBatchRenderer::Flush()
     FLineConstants Constants = {};
     Constants.VP = CurrentSceneView->GetViewProjectionMatrix();
 
-    Context->UpdateSubresource(ConstantBuffer.Get(), 0, nullptr, &Constants, 0, 0);
+    RHI->UpdateConstantBuffer(ConstantBuffer.Get(), &Constants, sizeof(Constants));
 
     const UINT    Stride = sizeof(FLineVertex);
     const UINT    Offset = 0;
