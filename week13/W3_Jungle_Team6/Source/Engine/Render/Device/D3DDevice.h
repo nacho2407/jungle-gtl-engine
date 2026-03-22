@@ -10,10 +10,15 @@
 enum class EDepthStencilState
 {
 	Default,
-	None,
+	DepthGreater,
 	DepthReadOnly,
 	StencilWrite,
-	StencilOutline
+	StencilOutline,
+	StencilWriteOnlyEqual,
+
+	// --- 기즈모 전용 ---
+	GizmoInside,         
+	GizmoOutside         
 };
 
 enum class EBlendState
@@ -47,10 +52,14 @@ private:
 	ID3D11DepthStencilView* DepthStencilView = nullptr;
 
 	ID3D11DepthStencilState* DepthStencilStateDefault = nullptr;
-	ID3D11DepthStencilState* DepthStencilStateNone = nullptr;
+	ID3D11DepthStencilState* DepthStencilStateDepthGreater = nullptr;
 	ID3D11DepthStencilState* DepthStencilStateDepthReadOnly = nullptr;
 	ID3D11DepthStencilState* DepthStencilStateStencilWrite = nullptr;
 	ID3D11DepthStencilState* DepthStencilStateStencilOutline = nullptr;
+	ID3D11DepthStencilState* DepthStencilStateStencilMaskEqual = nullptr;
+
+	ID3D11DepthStencilState* DepthStencilStateGizmoInside = nullptr;  
+	ID3D11DepthStencilState* DepthStencilStateGizmoOutside = nullptr; 
 
 	ID3D11BlendState* BlendStateAlpha = nullptr;
 
