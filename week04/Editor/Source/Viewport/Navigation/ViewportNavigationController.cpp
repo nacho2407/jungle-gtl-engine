@@ -2,56 +2,58 @@
 
 void FViewportNavigationController::Tick(float DeltaTime)
 {
-	//  Tick에서 카메라 이동 처리
+    //  Tick에서 카메라 이동 처리
 }
 
 void FViewportNavigationController::MoveForward(float Value, float DeltaTime)
 {
-	Position += GetForwardVector() * Value * MoveSpeed * DeltaTime;
+    if (ViewportCamera == nullptr || FMath::IsNearlyZero(Value))
+        return;
+
+    FVector NewLocation = ViewportCamera->GetLocation();
+    NewLocation += ViewportCamera->GetForwardVector() * (Value * MoveSpeed * DeltaTime);
+    ViewportCamera->SetLocation(NewLocation);
 }
 
 void FViewportNavigationController::MoveRight(float Value, float DeltaTime)
 {
-	Position += GetRightVector() * Value * MoveSpeed * DeltaTime;
+    if (ViewportCamera == nullptr || FMath::IsNearlyZero(Value))
+        return;
+
+    FVector NewLocation = ViewportCamera->GetLocation();
+    NewLocation += ViewportCamera->GetRightVector() * (Value * MoveSpeed * DeltaTime);
+    ViewportCamera->SetLocation(NewLocation);
 }
 
 void FViewportNavigationController::MoveUp(float Value, float DeltaTime)
 {
-	Position += GetUpVector() * Value * MoveSpeed;
+    if (ViewportCamera == nullptr || FMath::IsNearlyZero(Value))
+        return;
+
+    FVector NewLocation = ViewportCamera->GetLocation();
+    NewLocation += ViewportCamera->GetUpVector() * (Value * MoveSpeed * DeltaTime);
+    ViewportCamera->SetLocation(NewLocation);
 }
 
 void FViewportNavigationController::AddYawInput(float Value)
 {
-	Yaw += Value * RotationSpeed;
+    Yaw += Value * RotationSpeed;
+    UpdateCameraRotation();
 }
 
 void FViewportNavigationController::AddPitchInput(float Value)
 {
-	Pitch += Value * RotationSpeed; 
+    Pitch += Value * RotationSpeed;
+    Pitch = FMath::Clamp(Pitch, -89.f, 89.f); // Pitch는 -89도에서 89도로 제한
+    UpdateCameraRotation();
 }
 
-FVector FViewportNavigationController::GetForwardVector() const
+void FViewportNavigationController::UpdateCameraRotation()
 {
-	const float RadYaw = FMath::DegreesToRadians(Yaw);
-	const float RadPitch = FMath::DegreesToRadians(Pitch);
-	
-	return FVector(
-		std::cos(RadPitch) * std::cos(RadYaw),
-		std::cos(RadPitch) * std::sin(RadYaw),
-		std::sin(RadPitch)
-	).GetSafeNormal();
-}
+    if (ViewportCamera == nullptr)
+    {
+        return;
+    }
 
-FVector FViewportNavigationController::GetRightVector() const
-{
-    const FVector Forward = GetForwardVector();
-    const FVector WorldUP = FVector::UpVector; // 월드 업 벡터
-    return FVector::CrossProduct(WorldUP, Forward).GetSafeNormal();
-}
-
-FVector FViewportNavigationController::GetUpVector() const
-{
-	const FVector Forward = GetForwardVector();
-	const FVector Right = GetRightVector();
-	return FVector::CrossProduct(Forward, Right).GetSafeNormal();
+    ViewportCamera->SetRotation(FRotator(Pitch, Yaw, 0.f));
 }

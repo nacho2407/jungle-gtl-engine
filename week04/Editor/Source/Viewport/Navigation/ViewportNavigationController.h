@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/CoreMinimal.h"
+#include "Camera/ViewportCamera.h"
 
 /*
         카메라/뷰 이동 계층
@@ -13,6 +14,8 @@
 class FViewportNavigationController
 {
   public:
+    void SetCamera(FViewportCamera* InCamera) { ViewportCamera = InCamera; }
+
     void Tick(float DeltaTime);
 
     void MoveForward(float Value, float DeltaTime);
@@ -25,23 +28,17 @@ class FViewportNavigationController
     void SetRotating(bool bInRotating) { bRotating = bInRotating; }
     bool IsRotating() { return bRotating; }
 
-    FVector GetPosition() const { return Position; }
-    float   GetYaw() const { return Yaw; }
-    float   GetPitch() const { return Pitch; }
+  private:
+    void UpdateCameraRotation();
 
   private:
-    FVector Position = FVector::Zero();
-
-    float Yaw = 0.f;
-    float Pitch = 0.f;
+    FViewportCamera* ViewportCamera = nullptr;
 
     float MoveSpeed = 100.f;   // 이동 속도
     float RotationSpeed = 5.f; // 회전 속도 (degrees per second)
 
-    bool bRotating = false;
+    float Yaw = 0.f;   // Yaw 회전값
+    float Pitch = 0.f; // Pitch 회전값
 
-  private:
-    FVector GetForwardVector() const;
-    FVector GetRightVector() const;
-    FVector GetUpVector() const;
+    bool bRotating = false;
 };

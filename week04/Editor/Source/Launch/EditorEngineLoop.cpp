@@ -5,58 +5,6 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
-//extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, uint32 msg, WPARAM wParam, LPARAM lParam);
-
-// LRESULT FEditorEngineLoop::StaticWndProc(HWND HWnd, UINT Message, WPARAM WParam, LPARAM LParam)
-// {
-//     FEditorEngineLoop *EditorEngineLoop = reinterpret_cast<FEditorEngineLoop *>(GetWindowLongPtr(
-//         HWnd, GWLP_USERDATA));
-//
-//     if (Message == WM_NCCREATE)
-//     {
-//         CREATESTRUCTW *CreateStruct = reinterpret_cast<CREATESTRUCTW *>(LParam);
-//         EditorEngineLoop = reinterpret_cast<FEditorEngineLoop *>(CreateStruct->lpCreateParams);
-//         SetWindowLongPtr(HWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(EditorEngineLoop));
-//     }
-//
-//     if (EditorEngineLoop)
-//     {
-//         return EditorEngineLoop->WndProc(HWnd, Message, WParam, LParam);
-//     }
-//
-//     return DefWindowProc(HWnd, Message, WParam, LParam);
-// }
-//
-// LRESULT FEditorEngineLoop::WndProc(HWND HWnd, uint32 Message, WPARAM WParam, LPARAM LParam)
-// {
-//     if (ImGui_ImplWin32_WndProcHandler(HWnd, Message, WParam, LParam))
-//     {
-//         return 1;
-//     }
-//
-//     switch (Message)
-//     {
-//     case WM_DESTROY:
-//
-//         bIsExit = true;
-//         PostQuitMessage(0);
-//         return 0;
-//     case WM_SIZE:
-//         if (Editor)
-//         {
-//             Editor->OnWindowResized(LOWORD(LParam), HIWORD(LParam));    
-//         }
-//         break;
-//     case WM_SIZING:
-//         //  Render for Re-Sizing
-//         break;
-//     default:
-//         break;
-//     }
-//
-//     return DefWindowProc(HWnd, Message, WParam, LParam);
-// }
-
 bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
 {
     (void)NCmdShow;
@@ -105,7 +53,7 @@ void FEditorEngineLoop::ShutDown()
     Application->DestroyApplicationWindow();
     delete Application;
     Application = nullptr;
-   
+
     delete InputSystem;
     InputSystem = nullptr;
 
@@ -124,7 +72,6 @@ void FEditorEngineLoop::Tick()
 
     InputSystem->BeginFrame();
 
-    
     /* Time Measuring */
     DeltaTime = FPlatformTime::Seconds() - PrevTime;
     PrevTime = FPlatformTime::Seconds();
@@ -139,6 +86,7 @@ void FEditorEngineLoop::Tick()
     /* Rendering Prepare Stage */
 
     /* Editor Viewport Client */
+    Renderer->RenderFrame(Editor->GetEditorRenderData(), Editor->GetSceneRenderData());
 
     /* Render End Stage */
 

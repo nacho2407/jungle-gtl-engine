@@ -5,19 +5,32 @@ void FEditorViewportClient::Create()
     // InputRouter 생성 및 필요한 InputContext 등록
     InputRouter = new Engine::ApplicationCore::FInputRouter();
     InputRouter->AddContext(&ViewportInputContext);
+
+    NavigationController.SetCamera(&ViewportCamera);
+
+    ViewportCamera.SetProjectionType(EViewportProjectionType::Perspective);
+    ViewportCamera.SetFOV(90.0f);
+    ViewportCamera.SetNearPlane(0.1f);
+    ViewportCamera.SetFarPlane(2000.0f);
+    ViewportCamera.SetLocation(FVector(0.0f, 3.0f, -8.0f));
+    ViewportCamera.SetRotation(FRotator(0.0f, 0.0f, 0.0f));
 }
 
 void FEditorViewportClient::Release()
 {
-    // 필요한 리소스 해제
-    delete InputRouter;
-    InputRouter = nullptr;
+    if (InputRouter)
+    {
+        // 필요한 경우 InputRouter에서 등록된 Context 해제
+        // 필요한 리소스 해제
+        delete InputRouter;
+        InputRouter = nullptr;
+    }
 }
 
-void FEditorViewportClient::Tick(float DeltaTime, const Engine::ApplicationCore::FInputState & State)
+void FEditorViewportClient::Tick(float DeltaTime, const Engine::ApplicationCore::FInputState& State)
 {
     ViewportInputContext.SetDeltaTime(DeltaTime);
-    
+
     if (InputRouter)
     {
         InputRouter->Tick(State);
@@ -40,4 +53,23 @@ void FEditorViewportClient::HandleInputEvent(const Engine::ApplicationCore::FInp
     {
         InputRouter->RouteEvent(Event, State);
     }
+}
+
+void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData) const
+{
+    OutRenderData.bShowGrid = true;
+    OutRenderData.bShowWorldAxes = true;
+    OutRenderData.bShowGizmo = true;
+    OutRenderData.bShowSelectionOutline = true;
+    OutRenderData.bShowObjectLabels = true;
+
+    OutRenderData.Gizmo.bVisible = true;
+    OutRenderData.Gizmo.GizmoType = EGizmoType::Translation;
+    OutRenderData.Gizmo.Highlight = EGizmoHighlight::None;
+    OutRenderData.Gizmo.Transform = FMatrix::Identity;
+}
+
+void FEditorViewportClient::OnResize(uint32 Width, uint32 Height)
+{
+    ViewportCamera.OnResize(Width, Height);
 }

@@ -32,23 +32,29 @@ namespace Engine::ApplicationCore
                 return 0;
             }
             case WM_SETFOCUS:
+            {
                 GWindowsApplication->OnFocusGained();
                 return 0;
+            }
             case WM_KILLFOCUS:
+            {
                 GWindowsApplication->OnFocusLost();
                 return 0;
             }
 
-
-            if (FInputSystem* InputSystem = GWindowsApplication->GetInputSystem())
-            {
-                return InputSystem->ProcessWin32Message(HWnd, Message, WParam, LParam);
+                if (FInputSystem* InputSystem = GWindowsApplication->GetInputSystem())
+                {
+                    return InputSystem->ProcessWin32Message(HWnd, Message, WParam, LParam);
+                }
             }
+            return DefWindowProcW(HWnd, Message, WParam, LParam);
         }
-        return DefWindowProcW(HWnd, Message, WParam, LParam);
     }
 
-    FWindowsApplication::FWindowsApplication() { GWindowsApplication = this; }
+    FWindowsApplication::FWindowsApplication() 
+    {
+        GWindowsApplication = this; 
+    }
 
     FWindowsApplication::~FWindowsApplication()
     {

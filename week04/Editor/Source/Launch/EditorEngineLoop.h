@@ -6,6 +6,8 @@
 #include "Editor/Editor.h"
 #include "Launch/EngineLoop.h"
 
+#include "Renderer/RendererModule.h"
+
 #if defined(_WIN32)
 
 #include "ApplicationCore/Windows/WindowsApplication.h"
@@ -45,6 +47,8 @@ private:
     
     /* Engine */
     //  FEngine * Engine = nullptr;
+    //  임시로 Renderer 직접 접근
+    FRendererModule* Renderer = nullptr;
 
     /* Panel */
     FPanelManager* PanelManager = nullptr;

@@ -6,6 +6,8 @@
 #include "Interaction/ViewportInteractionState.h"
 #include "Engine/ViewPort/ViewportClient.h"
 #include "Input/ViewportInputContext.h"
+#include "Renderer/EditorRenderData.h"
+
 
 /*
         하위에 Controller 계층과 Render Setting 계층을 포함하는 Viewport의 최상위 관리 계층입니다.
@@ -27,13 +29,20 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     void HandleInputEvent(const Engine::ApplicationCore::FInputEvent& Event,
                           const Engine::ApplicationCore::FInputState& State) override;
 
+    void BuildRenderData(FEditorRenderData& OutRenderData) const;
+
+    void OnResize(uint32 InWidth, uint32 InHeight);
 
     FViewportNavigationController& GetNavigationController() { return NavigationController; }
     FViewportSelectionController&  GetSelectionController() { return SelectionController; }
     FViewportGizmoController&      GetGizmoController() { return GizmoController; }
     FViewportInteractionState&     GetInteractionState() { return InteractionState; }
 
+    FViewportCamera& GetCamera() { return ViewportCamera; }
+
   private:
+    FViewportCamera ViewportCamera;
+
     FViewportNavigationController NavigationController; 
     FViewportSelectionController  SelectionController;
     FViewportGizmoController      GizmoController;

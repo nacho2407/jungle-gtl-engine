@@ -11,6 +11,9 @@
 #include "Engine/Scene.h"
 #include "Viewport/EditorViewport.h"
 #include "Viewport/EditorViewportClient.h"
+#include "Renderer/EditorRenderData.h"
+#include "Renderer/SceneRenderData.h"
+#include "Renderer/SceneView.h"
 
 class FPanelManager;
 
@@ -31,20 +34,35 @@ class FEditor
     void CreateNewScene();
     void ClearScene();
 
+    /* For Render */
+    const FEditorRenderData& GetEditorRenderData() const { return EditorRenderData; }
+    const FSceneRenderData&  GetSceneRenderData() const { return SceneRenderData; }
+
   private:
+    void BuildRenderData();
+    void BuildSceneView();
+
   public:
   private:
     /* Viewports */
-    //FEditorViewport MainViewport;
+    // FEditorViewport MainViewport;
     FEditorViewportClient ViewportClient;
 
     /* Input Contexts */
-    FEditorContext        EditorContext;
+    FEditorContext EditorContext;
 
     /* Panel */
     FPanelManager* PanelManager = nullptr;
 
+    /* Render Datas */
+    FEditorRenderData EditorRenderData;
+    FSceneRenderData  SceneRenderData;
+    FSceneView        SceneView;
+
     /* Gizmo */
+
+    /* Scene */
+    FScene* CurScene = nullptr;
 
     /* Properties */
     float WindowWidth = 0.0f;
