@@ -11,7 +11,7 @@ REGISTER_FACTORY(UCubeComponent)
 REGISTER_FACTORY(USphereComponent)
 REGISTER_FACTORY(UPlaneComponent)
 
-void UPrimitiveComponent::UpdateWorldAABB() const
+void UPrimitiveComponent::UpdateWorldAABB()
 {
 	FVector LExt = LocalExtents;
 
@@ -26,7 +26,7 @@ void UPrimitiveComponent::UpdateWorldAABB() const
 	WorldAABBMaxLocation = WorldCenter + FVector(NewEx, NewEy, NewEz);
 }
 
-bool UPrimitiveComponent::CheckAABB(const FRay& Ray) const
+bool UPrimitiveComponent::CheckAABB(const FRay& Ray)
 {
 	float tMin = -INFINITY;
 	float tMax = INFINITY;
@@ -56,7 +56,8 @@ bool UPrimitiveComponent::Raycast(const FRay& Ray, FHitResult& OutHitResult)
 {
 	if(!bIsVisible)
 		return false;
-	
+
+	UpdateWorldAABB();
 	if (!CheckAABB(Ray))
 		return false;
 
@@ -139,8 +140,6 @@ bool UPrimitiveComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 void UPrimitiveComponent::UpdateWorldMatrix() const
 {
 	USceneComponent::UpdateWorldMatrix();
-
-	UpdateWorldAABB();
 }
 
 
@@ -149,34 +148,71 @@ UCubeComponent::UCubeComponent()
 	MeshData = &FMeshManager::GetCube();
 }
 
-bool UCubeComponent::GetRenderCommand(const FMatrix& viewMatrix, const FMatrix& projMatrix, FRenderCommand& OutCommand) {
+bool UCubeComponent::GetRenderCommand(FRenderCommand& OutCommand) {
 	if (!MeshData || !bIsVisible) {
 		return false;
 	}
 
-	return UPrimitiveComponent::GetRenderCommand(viewMatrix, projMatrix, OutCommand);
+	return UPrimitiveComponent::GetRenderCommand(OutCommand);
 }
 
 USphereComponent::USphereComponent()
 {
 	MeshData = &FMeshManager::GetSphere();
 }
-bool USphereComponent::GetRenderCommand(const FMatrix& viewMatrix, const FMatrix& projMatrix, FRenderCommand& OutCommand) {
+
+void USphereComponent::UpdateWorldAABB()
+{
+	FVector Center = { CachedWorldMatrix.M[3][0], CachedWorldMatrix.M[3][1], CachedWorldMatrix.M[3][2] };
+
+	float ExtentX = LocalExtents.X * std::sqrt(std::pow(CachedWorldMatrix.M[0][0], 2) +
+		std::pow(CachedWorldMatrix.M[1][0], 2) +
+		std::pow(CachedWorldMatrix.M[2][0], 2));
+								  
+	float ExtentY = LocalExtents.Y * std::sqrt(std::pow(CachedWorldMatrix.M[0][1], 2) +
+		std::pow(CachedWorldMatrix.M[1][1], 2) +
+		std::pow(CachedWorldMatrix.M[2][1], 2));
+								  
+	float ExtentZ = LocalExtents.Z * std::sqrt(std::pow(CachedWorldMatrix.M[0][2], 2) +
+		std::pow(CachedWorldMatrix.M[1][2], 2) +
+		std::pow(CachedWorldMatrix.M[2][2], 2));
+
+	WorldAABBMinLocation = { Center.X - ExtentX, Center.Y - ExtentY, Center.Z - ExtentZ };
+	WorldAABBMaxLocation = { Center.X + ExtentX, Center.Y + ExtentY, Center.Z + ExtentZ };
+}
+
+
+bool USphereComponent::GetRenderCommand(FRenderCommand& OutCommand) {
 	if (!MeshData || !bIsVisible) {
 		return false;
 	}
 
-	return UPrimitiveComponent::GetRenderCommand(viewMatrix, projMatrix, OutCommand);
+	return UPrimitiveComponent::GetRenderCommand(OutCommand);
 }
 
 UPlaneComponent::UPlaneComponent()
 {
 	MeshData = &FMeshManager::GetPlane();
 }
-bool UPlaneComponent::GetRenderCommand(const FMatrix& viewMatrix, const FMatrix& projMatrix, FRenderCommand& OutCommand) {
+
+void UPlaneComponent::UpdateWorldAABB()
+{
+	// Plane mesh: XY 평면, Z 두께 ±0.01f
+	FVector LExt = { 0.5f, 0.5f, 0.01f };
+
+	float NewEx = std::abs(CachedWorldMatrix.M[0][0]) * LExt.X + std::abs(CachedWorldMatrix.M[1][0]) * LExt.Y + std::abs(CachedWorldMatrix.M[2][0]) * LExt.Z;
+	float NewEy = std::abs(CachedWorldMatrix.M[0][1]) * LExt.X + std::abs(CachedWorldMatrix.M[1][1]) * LExt.Y + std::abs(CachedWorldMatrix.M[2][1]) * LExt.Z;
+	float NewEz = std::abs(CachedWorldMatrix.M[0][2]) * LExt.X + std::abs(CachedWorldMatrix.M[1][2]) * LExt.Y + std::abs(CachedWorldMatrix.M[2][2]) * LExt.Z;
+
+	FVector WorldCenter = GetWorldLocation();
+	WorldAABBMinLocation = WorldCenter - FVector(NewEx, NewEy, NewEz);
+	WorldAABBMaxLocation = WorldCenter + FVector(NewEx, NewEy, NewEz);
+}
+
+bool UPlaneComponent::GetRenderCommand(FRenderCommand& OutCommand) {
 	if (!MeshData || !bIsVisible) {
 		return false;
 	}
 
-	return UPrimitiveComponent::GetRenderCommand(viewMatrix, projMatrix, OutCommand);
+	return UPrimitiveComponent::GetRenderCommand(OutCommand);
 }

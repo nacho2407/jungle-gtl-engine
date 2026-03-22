@@ -5,6 +5,7 @@
 #include "GameFramework/WorldContext.h"
 #include "Render/Renderer/Renderer.h"
 #include "Render/Scene/RenderBus.h"
+#include "Render/Scene/RenderCollector.h"
 
 class FWindowsWindow;
 class FTimer;
@@ -63,6 +64,7 @@ protected:
 	FTimer* Timer = nullptr;
 
 	FRenderer Renderer;
+	FRenderCollector RenderCollector;
 	FRenderBus RenderBus;
 };
 

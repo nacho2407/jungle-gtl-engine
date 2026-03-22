@@ -85,8 +85,8 @@ void FD3DDevice::SetDepthStencilState(EDepthStencilState InState)
 	case EDepthStencilState::Default:
 		DeviceContext->OMSetDepthStencilState(DepthStencilStateDefault, 0);
 		break;
-	case EDepthStencilState::None:
-		DeviceContext->OMSetDepthStencilState(DepthStencilStateNone, 0);
+	case EDepthStencilState::DepthGreater:
+		DeviceContext->OMSetDepthStencilState(DepthStencilStateDepthGreater, 0);
 		break;
 	case EDepthStencilState::DepthReadOnly:
 		DeviceContext->OMSetDepthStencilState(DepthStencilStateDepthReadOnly, 0);
@@ -96,6 +96,15 @@ void FD3DDevice::SetDepthStencilState(EDepthStencilState InState)
 		break;
 	case EDepthStencilState::StencilOutline:
 		DeviceContext->OMSetDepthStencilState(DepthStencilStateStencilOutline, 1);
+		break;
+	case EDepthStencilState::StencilWriteOnlyEqual:
+		DeviceContext->OMSetDepthStencilState(DepthStencilStateStencilMaskEqual, 1);
+		break;
+	case EDepthStencilState::GizmoInside:
+		DeviceContext->OMSetDepthStencilState(DepthStencilStateGizmoInside, 1);
+		break;
+	case EDepthStencilState::GizmoOutside:
+		DeviceContext->OMSetDepthStencilState(DepthStencilStateGizmoOutside, 1);
 		break;
 	}
 
@@ -235,7 +244,7 @@ void FD3DDevice::CreateRasterizerState()
 
 	D3D11_RASTERIZER_DESC wireFrameDesc = {};
 	wireFrameDesc.FillMode = D3D11_FILL_WIREFRAME;
-	wireFrameDesc.CullMode = D3D11_CULL_BACK;
+	wireFrameDesc.CullMode = D3D11_CULL_NONE;
 
 	Device->CreateRasterizerState(&wireFrameDesc, &RasterizerStateWireFrame);
 
@@ -268,19 +277,19 @@ void FD3DDevice::CreateDepthStencilBuffer()
 	D3D11_DEPTH_STENCIL_DESC depthStencilStateDefaultDesc = {};
 	depthStencilStateDefaultDesc.DepthEnable = TRUE;
 	depthStencilStateDefaultDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	depthStencilStateDefaultDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	depthStencilStateDefaultDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
 	depthStencilStateDefaultDesc.StencilEnable = FALSE;
 
 	Device->CreateDepthStencilState(&depthStencilStateDefaultDesc, &DepthStencilStateDefault);
 
-	//	None
-	D3D11_DEPTH_STENCIL_DESC depthStencilStateNoneDesc = {};
-	depthStencilStateNoneDesc.DepthEnable = FALSE;
-	depthStencilStateNoneDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-	depthStencilStateNoneDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-	depthStencilStateNoneDesc.StencilEnable = FALSE;
+	// Depth Greater
+	D3D11_DEPTH_STENCIL_DESC depthGreaterDesc = {};
+	depthGreaterDesc.DepthEnable = TRUE;
+	depthGreaterDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+	depthGreaterDesc.DepthFunc = D3D11_COMPARISON_GREATER;
+	depthGreaterDesc.StencilEnable = FALSE;
 
-	Device->CreateDepthStencilState(&depthStencilStateNoneDesc, &DepthStencilStateNone);
+	Device->CreateDepthStencilState(&depthGreaterDesc, &DepthStencilStateDepthGreater);
 
 	//	Depth Read Only
 	D3D11_DEPTH_STENCIL_DESC depthStencilStateDepthReadOnlyDesc = {};
@@ -295,7 +304,8 @@ void FD3DDevice::CreateDepthStencilBuffer()
 	D3D11_DEPTH_STENCIL_DESC depthStencilStateStencilWriteDesc = {};
 	depthStencilStateStencilWriteDesc.DepthEnable = TRUE;
 	depthStencilStateStencilWriteDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	depthStencilStateStencilWriteDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+	depthStencilStateStencilWriteDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+	depthStencilStateStencilWriteDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 
 	depthStencilStateStencilWriteDesc.StencilEnable = TRUE;
 	depthStencilStateStencilWriteDesc.StencilReadMask = 0xFF;
@@ -310,9 +320,69 @@ void FD3DDevice::CreateDepthStencilBuffer()
 
 	Device->CreateDepthStencilState(&depthStencilStateStencilWriteDesc, &DepthStencilStateStencilWrite);
 
+	{//Gizmo DepthStencil State
+		D3D11_DEPTH_STENCIL_DESC gizmoInsideDesc = {};
+		gizmoInsideDesc.DepthEnable = TRUE;
+		gizmoInsideDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+		gizmoInsideDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+
+		gizmoInsideDesc.StencilEnable = TRUE;
+		gizmoInsideDesc.StencilReadMask = 0xFF;
+		gizmoInsideDesc.StencilWriteMask = 0x00;
+
+		gizmoInsideDesc.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
+		gizmoInsideDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+		gizmoInsideDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+		gizmoInsideDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+
+		gizmoInsideDesc.BackFace = gizmoInsideDesc.FrontFace;
+
+		Device->CreateDepthStencilState(&gizmoInsideDesc, &DepthStencilStateGizmoInside);
+
+
+		D3D11_DEPTH_STENCIL_DESC gizmoOutsideDesc = {};
+		gizmoOutsideDesc.DepthEnable = TRUE;
+		gizmoOutsideDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+		gizmoOutsideDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+
+		gizmoOutsideDesc.StencilEnable = TRUE;
+		gizmoOutsideDesc.StencilReadMask = 0xFF;
+		gizmoOutsideDesc.StencilWriteMask = 0x00;
+
+		gizmoOutsideDesc.FrontFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;
+		gizmoOutsideDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+		gizmoOutsideDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+		gizmoOutsideDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+
+		gizmoOutsideDesc.BackFace = gizmoOutsideDesc.FrontFace;
+
+		Device->CreateDepthStencilState(&gizmoOutsideDesc, &DepthStencilStateGizmoOutside);
+	}
+
+
+
+	//Stencil Mask Equal
+	D3D11_DEPTH_STENCIL_DESC maskDesc = {};
+	maskDesc.DepthEnable = TRUE;
+	maskDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+	maskDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+
+	maskDesc.StencilEnable = TRUE;
+	maskDesc.StencilReadMask = 0xFF;
+	maskDesc.StencilWriteMask = 0x00;
+
+	maskDesc.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
+	maskDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	maskDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	maskDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+
+	maskDesc.BackFace = maskDesc.FrontFace;
+
+	Device->CreateDepthStencilState(&maskDesc, &DepthStencilStateStencilMaskEqual);
+
 	// Stencil Test (Not Equal)
 	D3D11_DEPTH_STENCIL_DESC depthStencilStateStencilOutlineDesc = {};
-	depthStencilStateStencilOutlineDesc.DepthEnable = FALSE;
+	depthStencilStateStencilOutlineDesc.DepthEnable = TRUE;
 	// 또는 TRUE + ZERO로 테스트 가능, 지금은 먼저 단순하게
 	depthStencilStateStencilOutlineDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 	depthStencilStateStencilOutlineDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
@@ -349,12 +419,13 @@ void FD3DDevice::CreateBlendState()
 void FD3DDevice::ReleaseDepthStencilBuffer()
 {
 	SAFE_RELEASE(DepthStencilStateDefault);
-	SAFE_RELEASE(DepthStencilStateNone);
+	SAFE_RELEASE(DepthStencilStateDepthGreater);
 	SAFE_RELEASE(DepthStencilStateDepthReadOnly);
 	SAFE_RELEASE(DepthStencilStateStencilWrite);
 	SAFE_RELEASE(DepthStencilStateStencilOutline);
 	SAFE_RELEASE(DepthStencilView);
 	SAFE_RELEASE(DepthStencilBuffer);
+	SAFE_RELEASE(DepthStencilStateStencilMaskEqual);
 }
 
 void FD3DDevice::ReleaseBlendState()
