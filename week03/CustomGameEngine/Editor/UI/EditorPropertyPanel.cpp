@@ -9,9 +9,6 @@ EditorPropertyPanel::~EditorPropertyPanel()
 
 void EditorPropertyPanel::Draw(USceneComponent* selectedComponent, ImGuiWindowLayout& layout)
 {
-	ImGui::SetNextWindowPos(layout.PosXY, ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSize(layout.SizeWH, ImGuiCond_FirstUseEver);
-
 	ImGui::Begin("Jungle Property Panel");
 
 	if (selectedComponent)

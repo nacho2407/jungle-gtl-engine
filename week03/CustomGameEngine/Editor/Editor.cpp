@@ -1,6 +1,7 @@
 ﻿#include "Editor.h"
 #include "ThirdParty/json.h"
 #include "Component/CameraComponent.h"
+#include "ImGui/imgui_internal.h"
 #include <fstream>
 #include <streambuf>
 
@@ -22,6 +23,8 @@ Editor::~Editor()
 	delete Console;
 	delete PropertyPanel;
 	delete StatPanel;
+	delete Toolbar;
+	delete SceneMgrPanel;
 }
 
 bool Editor::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
@@ -42,6 +45,7 @@ void Editor::DrawUI()
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
+	DrawDockSpace();
 
 	DrawControlPanel(UILayout);
 	DrawConsole(UILayout);
@@ -60,6 +64,67 @@ void Editor::Finalize()
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
+}
+
+void Editor::DrawDockSpace()
+{
+	const ImGuiViewport* viewport = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(viewport->WorkPos);
+	ImGui::SetNextWindowSize(viewport->WorkSize);
+	ImGui::SetNextWindowViewport(viewport->ID);
+
+	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
+		ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_MenuBar;
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+	ImGui::Begin("MainDockSpace", nullptr, windowFlags);
+
+	ImGui::PopStyleVar(3);
+
+	ImGuiID dockspaceID = ImGui::GetID("EditorDockSpace");
+	ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_PassthruCentralNode;
+	ImGui::DockSpace(dockspaceID, ImVec2(0.0f, 0.0f), dockspaceFlags);
+
+	if (!bDockLayoutInitialized)
+	{
+		SetupDefaultDockLayout(dockspaceID);
+		bDockLayoutInitialized = true;
+	}
+
+	ImGui::End();
+}
+
+void Editor::SetupDefaultDockLayout(ImGuiID dockspaceID)
+{
+	ImGuiViewport* viewport = ImGui::GetMainViewport();
+	ImGui::DockBuilderRemoveNode(dockspaceID);
+	ImGui::DockBuilderAddNode(dockspaceID, ImGuiDockNodeFlags_DockSpace | ImGuiDockNodeFlags_PassthruCentralNode);
+	ImGui::DockBuilderSetNodeSize(dockspaceID, viewport->WorkSize);
+
+	ImGuiID dockMain = dockspaceID;
+	ImGuiID dockLeft = 0;
+	ImGuiID dockRight = 0;
+	ImGuiID dockBottom = 0;
+	ImGuiID dockToolbar = 0;
+
+	ImGui::DockBuilderSplitNode(dockMain, ImGuiDir_Left, 0.28f, &dockLeft, &dockMain);
+	ImGui::DockBuilderSplitNode(dockMain, ImGuiDir_Right, 0.24f, &dockRight, &dockMain);
+	ImGui::DockBuilderSplitNode(dockMain, ImGuiDir_Down, 0.26f, &dockBottom, &dockMain);
+	ImGui::DockBuilderSplitNode(dockLeft, ImGuiDir_Down, 0.18f, &dockToolbar, &dockLeft);
+
+	ImGui::DockBuilderDockWindow("Jungle Control Panel", dockLeft);
+	ImGui::DockBuilderDockWindow("Toolbar", dockToolbar);
+	ImGui::DockBuilderDockWindow("Example: Console", dockBottom);
+	ImGui::DockBuilderDockWindow("Jungle Property Panel", dockRight);
+	ImGui::DockBuilderDockWindow("Scene Manager", dockRight);
+	ImGui::DockBuilderDockWindow("Jungle Stats Panel", dockRight);
+
+	ImGui::DockBuilderFinish(dockspaceID);
 }
 
 void Editor::SetRenderer(URenderer* renderer)
