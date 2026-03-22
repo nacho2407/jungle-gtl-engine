@@ -1,6 +1,9 @@
 ﻿#pragma once
 
 #include "PrimitiveComponent.h"
+#include "Core/CoreTypes.h"
+
+class AActor;
 
 class UGizmoComponent : public UPrimitiveComponent
 {
@@ -14,10 +17,11 @@ private:
 		End
 	};
 
-	USceneComponent* TargetComponent = nullptr;
+	AActor* TargetActor = nullptr;
+	const TArray<AActor*>* AllSelectedActors = nullptr;
 	EGizmoMode CurMode = EGizmoMode::Translate;
 	FVector LastIntersectionLocation;
-	const float axisLength = 1.0f;
+	const float AxisLength = 1.0f;
 	float Radius = 0.1f;
 	const float ScaleSensitivity = 1.0f;
 	int32 SelectedAxis = -1;
@@ -43,14 +47,15 @@ public:
 
 	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
 
-	FVector GetVectorForAxis(int32 axis);
+	FVector GetVectorForAxis(int32 Axis);
 	void RenderGizmo() {}
-	void SetTarget(USceneComponent* NewTargetComponent);
+	void SetTarget(AActor* NewTarget);
+	void SetSelectedActors(const TArray<AActor*>* InSelectedActors) { AllSelectedActors = InSelectedActors; }
 	inline void SetHolding(bool bHold) { bIsHolding = bHold; }
-	inline bool IsHolding() { return bIsHolding; }
+	inline bool IsHolding() const { return bIsHolding; }
 	inline bool IsHovered() const { return SelectedAxis != -1; }
-	inline bool HasTarget() const { return TargetComponent != nullptr; }
-	inline USceneComponent* GetTarget() const { return TargetComponent; }
+	inline bool HasTarget() const { return TargetActor != nullptr; }
+	inline AActor* GetTarget() const { return TargetActor; }
 	inline int32 GetSelectedAxis() const { return SelectedAxis; }
 
 	inline void SetPressedOnHandle(bool bPressed) { bPressedOnHandle = bPressed; }

@@ -7,9 +7,12 @@ cbuffer FrameBuffer : register(b0)
     row_major float4x4 Projection;
 }
 
-cbuffer TransformBuffer : register(b1)
+cbuffer PerObjectBuffer : register(b1)
 {
     row_major float4x4 Model;
+    float4 PrimitiveColor; 
+    float SelectionWeight; 
+    float3 Padding; 
 };
 
 cbuffer GizmoBuffer : register(b2)

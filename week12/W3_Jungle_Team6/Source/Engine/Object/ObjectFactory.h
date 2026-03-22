@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include <iostream>
 #include <functional>
 #include "Object/Object.h"
 #include "Core/Singleton.h"

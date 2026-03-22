@@ -40,11 +40,11 @@ public:
 	virtual bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult);
 	inline bool IsVisible() const { return bIsVisible; }
 
-	void UpdateWorldMatrix() override;
+	void UpdateWorldMatrix() const override;
 
 	virtual bool GetRenderCommand(FRenderCommand& OutCommand) {
 		OutCommand.Type = ERenderCommandType::Primitive;
-		OutCommand.TransformConstants.Model = GetWorldMatrix();
+		OutCommand.PerObjectConstants.Model = GetWorldMatrix();
 		return true;
 	}
 

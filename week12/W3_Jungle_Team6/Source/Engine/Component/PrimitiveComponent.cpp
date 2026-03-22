@@ -54,9 +54,10 @@ bool UPrimitiveComponent::CheckAABB(const FRay& Ray)
 
 bool UPrimitiveComponent::Raycast(const FRay& Ray, FHitResult& OutHitResult)
 {
-	if(bPendingKill || !bIsVisible)
+	if(!bIsVisible)
 		return false;
-	
+
+	UpdateWorldAABB();
 	if (!CheckAABB(Ray))
 		return false;
 
@@ -136,11 +137,9 @@ bool UPrimitiveComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 	return false;
 }
 
-void UPrimitiveComponent::UpdateWorldMatrix()
+void UPrimitiveComponent::UpdateWorldMatrix() const
 {
 	USceneComponent::UpdateWorldMatrix();
-
-	UpdateWorldAABB();
 }
 
 

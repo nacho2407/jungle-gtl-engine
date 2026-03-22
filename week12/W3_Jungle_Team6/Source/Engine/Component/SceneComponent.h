@@ -16,43 +16,42 @@ public:
 
 	// Parent Relation Manager
 	void SetParent(USceneComponent* NewParent);
-	USceneComponent* GetParent() { return ParentComponent; }
+	USceneComponent* GetParent() const { return ParentComponent; }
 	void AddChild(USceneComponent* NewChild);
 	void RemoveChild(USceneComponent* Child);
 	bool ContainsChild(const USceneComponent* Child) const;
 	const TArray<USceneComponent*>& GetChildren() const { return ChildComponents; }
 
-	virtual void UpdateWorldMatrix();
+	virtual void UpdateWorldMatrix() const;
 	void AddWorldOffset(const FVector& WorldDelta);
-	virtual void SetRelativeLocation(const FVector NewLocation);
-	virtual void SetRelativeRotation(const FVector NewRotation);
-	void SetRelativeScale(const FVector NewScale);
-	void SetUpdateFlag();
-	const FMatrix& GetWorldMatrix();
+	virtual void SetRelativeLocation(const FVector& NewLocation);
+	virtual void SetRelativeRotation(const FVector& NewRotation);
+	void SetRelativeScale(const FVector& NewScale);
+	void MarkTransformDirty();
+	const FMatrix& GetWorldMatrix() const;
 	void SetWorldLocation(FVector NewWorldLocation);
-	FVector GetWorldLocation();
-	FVector GetRelativeRotation() { return RelativeRotation; }
-	FVector GetRelativeScale() { return RelativeScale3D; }
-	FVector GetForwardVector();
-	FVector GetUpVector();
-	FVector GetRightVector();
+	FVector GetWorldLocation() const;
+	FVector GetRelativeLocation() const { return RelativeLocation; }
+	FVector GetRelativeRotation() const { return RelativeRotation; }
+	FVector GetRelativeScale() const { return RelativeScale3D; }
+	FVector GetForwardVector() const;
+	FVector GetUpVector() const;
+	FVector GetRightVector() const;
 
-	FMatrix GetRelativeMatrixTemp() const;
+	FMatrix GetRelativeMatrix() const;
 
-	// Make sure we are not facing gimbal lock
-	void Move(const FVector& delta);
-	void MoveLocal(const FVector& delta);
-	void Rotate(float dx, float dy);
+	void Move(const FVector& Delta);
+	void MoveLocal(const FVector& Delta);
+	void Rotate(float DeltaYaw, float DeltaPitch);
 
 protected:
 	USceneComponent* ParentComponent = nullptr;
 	TArray<USceneComponent*> ChildComponents;
 
-	FMatrix CachedWorldMatrix{};
+	mutable FMatrix CachedWorldMatrix{};
 
-	bool bUpdateFlag = true;
+	mutable bool bTransformDirty = true;
 
-public:
 	FVector RelativeLocation{};
 	FVector RelativeRotation{};
 	FVector RelativeScale3D{ 1.0f, 1.0f ,1.0f };

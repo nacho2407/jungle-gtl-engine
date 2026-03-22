@@ -1,5 +1,6 @@
 ﻿#include "Matrix.h"
 #include "Utils.h"
+#include <iostream>
 
 const FMatrix FMatrix::Identity(1, 0, 0, 0,
 								0, 1, 0, 0,
