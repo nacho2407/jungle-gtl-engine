@@ -24,11 +24,11 @@ public:
 
 	TComPtr<ID3D11RasterizerState> RasterizerState = nullptr;
 	TComPtr<ID3D11RasterizerState> RasterizerStateNoCull = nullptr;
+	TComPtr<ID3D11RasterizerState> RasterizerStateWireframe = nullptr;
 
 	TComPtr<ID3D11DepthStencilState> DepthStencilState = nullptr;
 	TComPtr<ID3D11DepthStencilState> DepthStencilStateNoWrite = nullptr;
 	TComPtr<ID3D11DepthStencilState> DepthStencilStateNoDepth = nullptr;
-
 	TComPtr<ID3D11BlendState> BlendState = nullptr;
 
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
@@ -87,10 +87,12 @@ public:
 	);
 	void BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups);
 	void Render(const TArray<FLevel*>& Levels);
-	void RenderGrid(ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader);
+	//void RenderGrid(ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader);
+	void SetRasterizerMode(int32 mode);
 
 	TMap<EEngineShowFlags, bool> ShowFlagMap;
 
 private:
 	UCameraComponent* renderCamera = nullptr;
+	int32 RsSetMode = 0;
 };

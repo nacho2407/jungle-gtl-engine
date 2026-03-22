@@ -56,22 +56,5 @@ void EditorToolbar::Draw(ImGuiWindowLayout& layout, UGridComp* Grid)
 		Gizmo::GetInstance().GetController()->SetControlStrategy(GizmoControllerType::Scale);
 	}
 
-	if (Grid)
-	{
-		ImGui::Separator();
-		ImGui::Text("Grid Settings");
-		ImGui::SetNextItemWidth(100.0f);
-		if (ImGui::DragFloat("Half Extent", &Grid->HalfExtent, 1.0f, 1.0f, 1000.0f))
-		{
-			ResourceManager::GetInstance()->UpdateGridMesh(Grid->HalfExtent, Grid->CellSize, 0.f);
-		}
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(100.0f);
-		if (ImGui::DragFloat("Cell Size", &Grid->CellSize, 0.1f, 0.1f, 10.0f))
-		{
-			ResourceManager::GetInstance()->UpdateGridMesh(Grid->HalfExtent, Grid->CellSize, 0.f);
-		}
-	}
-
 	ImGui::End();
 }

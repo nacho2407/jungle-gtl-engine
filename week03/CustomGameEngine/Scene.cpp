@@ -100,6 +100,7 @@ UScene* UScene::FromJson(std::string jsonStr)
 	scene->NextUUID = obj["NextUUID"].ToInt();
 
 	json::JSON primitives = obj["Primitives"];
+	//비어있는 Scene의 경우에는 primitives가 NULL이므로 여기서 따로 처리해줍니다.
 	if (primitives.JSONType() != json::JSON::Class::Object)
 	{
 		return scene;
