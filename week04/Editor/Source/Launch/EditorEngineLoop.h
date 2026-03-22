@@ -61,7 +61,4 @@ private:
     /* Properties */
     HWND HWindow = nullptr;
     
-    
-    /* Engine */
-    //  FEngine * Engine = nullptr;
 };

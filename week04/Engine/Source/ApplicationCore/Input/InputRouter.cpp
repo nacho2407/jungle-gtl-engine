@@ -28,7 +28,7 @@ namespace Engine::ApplicationCore
         return false;
     }
 
-    void FInputRouter::TickContexts(const FInputState& State)
+    void FInputRouter::Tick(const FInputState& State)
     {
         for (IInputContext* Context : Contexts)
         {

@@ -57,7 +57,7 @@
     <ClCompile Include="Source\Input\GizmoInputContext.cpp">
       <Filter>Source\Input</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Input\ViewPortInputContext.cpp">
+    <ClCompile Include="Source\Input\ViewportInputContext.cpp">
       <Filter>Source\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Launch\EditorEngineLoop.cpp">
@@ -140,7 +140,7 @@
     <ClInclude Include="Source\Input\GizmoInputContext.h">
       <Filter>Source\Input</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Input\ViewPortInputContext.h">
+    <ClInclude Include="Source\Input\ViewportInputContext.h">
       <Filter>Source\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Launch\EditorEngineLoop.h">

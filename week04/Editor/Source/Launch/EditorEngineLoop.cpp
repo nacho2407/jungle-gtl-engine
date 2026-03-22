@@ -61,15 +61,13 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
 {
     (void)NCmdShow;
 
-    /* Input System Initialize */
     InputSystem = new Engine::ApplicationCore::FInputSystem();
 
     /* Application Setting */
 #if defined(_WIN32)
     Application = Engine::ApplicationCore::FWindowsApplication::Create();
-    Application->SetInputSystem(InputSystem);
     Application->CreateApplicationWindow(L"JungleWindowClass", 1920, 1080);
-  
+    Application->SetInputSystem(InputSystem);
 #else
 
 #endif
@@ -136,7 +134,7 @@ void FEditorEngineLoop::Tick()
     /* Engine Tick */
     //  Engine->Tick(DeltaTime);
     /* Editor Update */
-    Editor->Tick(InputSystem);
+    Editor->Tick(DeltaTime, InputSystem);
 
     /* Rendering Prepare Stage */
 

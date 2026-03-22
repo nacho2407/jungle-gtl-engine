@@ -1,9 +1,11 @@
 #include "Editor.h"
+#include "Viewport/EditorViewportClient.h"
 
 void FEditor::Create()
 {
     //  TODO : Viewport Client
-    
+    ViewportClient.Create();
+   
     //  TODO : Panel UI
     
     //  TODO : Gizmo
@@ -12,18 +14,17 @@ void FEditor::Create()
 void FEditor::Release()
 {
     //  TODO : Call Release Functions
+    ViewportClient.Release();
 }
 
 void FEditor::Initialize()
 {
-    InputRouter.AddContext(&EditorGlobalContext);
-    InputRouter.AddContext(&ViewPortInputContext);
-    InputRouter.AddContext(&GizmoInputContext);
+
     //  TODO : Scene의 Begin Play 호출
 }
 
 
-void FEditor::Tick(Engine::ApplicationCore::FInputSystem * InputSystem)
+void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem * InputSystem)
 {
     //  TODO : Build 오류로 인해 주석 처리 해놓음 이후에 풀기
     // FInputEvent Event;
@@ -35,6 +36,7 @@ void FEditor::Tick(Engine::ApplicationCore::FInputSystem * InputSystem)
     // InputRouter.TickContexts(InputSystem->GetInputState());
     
     //  TODO : Editor Updates
+    ViewportClient.Tick(DeltaTime,InputSystem->GetInputState());
 }
 
 void FEditor::OnWindowResized(float Width, float Height)

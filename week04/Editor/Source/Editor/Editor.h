@@ -9,6 +9,8 @@
 #include "Input/GizmoInputContext.h"
 #include "Input/ViewPortInputContext.h"
 #include "Engine/Scene.h"
+#include "Viewport/EditorViewport.h"
+#include "Viewport/EditorViewportClient.h"
 
 class FPanelManager;
 
@@ -20,7 +22,7 @@ class FEditor
     void Release();
 
     void Initialize();
-    void Tick(Engine::ApplicationCore::FInputSystem* InputSystem);
+    void Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* InputSystem);
 
     void OnWindowResized(float Width, float Height);
     void SetMainLoopFPS(float FPS) { CurFPS = FPS; }
@@ -32,22 +34,17 @@ class FEditor
   private:
   public:
   private:
-    /* Input Routing */
-    Engine::ApplicationCore::FInputRouter InputRouter;
+    /* Viewports */
+    //FEditorViewport MainViewport;
+    FEditorViewportClient ViewportClient;
 
     /* Input Contexts */
-    FEditorGlobalContext  EditorGlobalContext;
-    FViewPortInputContext ViewPortInputContext;
-    FGizmoInputContext    GizmoInputContext;
     FEditorContext        EditorContext;
 
     /* Panel */
     FPanelManager* PanelManager = nullptr;
 
     /* Gizmo */
-
-    /* Scene */
-    FScene* CurScene = nullptr;
 
     /* Properties */
     float WindowWidth = 0.0f;
