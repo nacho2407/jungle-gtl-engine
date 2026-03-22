@@ -226,7 +226,7 @@ void EditorControlPanel::Draw(UCameraComponent* camera, ImGuiWindowLayout& layou
 
 	bool bChanged = false;
 	if (ImGui::DragFloat("Half Extent", &Grid->HalfExtent, 1.0f, 1.0f, 1000.0f)) bChanged = true;
-	if (ImGui::DragFloat("Cell Size", &Grid->CellSize, 0.1f, 0.1f, 10.0f)) bChanged = true;
+	if (ImGui::DragFloat("Cell Size", &Grid->CellSize, 1.0f, 1.0f, 10.0f)) bChanged = true;
 	if (bChanged)
 	{
 		ResourceManager::GetInstance()->UpdateGridMesh(Grid->HalfExtent, Grid->CellSize, 0.f);
@@ -238,6 +238,11 @@ void EditorControlPanel::Draw(UCameraComponent* camera, ImGuiWindowLayout& layou
 		ImGui::Checkbox("Show Primitives", &Renderer->ShowFlagMap[EEngineShowFlags::SF_Primitives]);
 		ImGui::Checkbox("Show Billboard Text", &Renderer->ShowFlagMap[EEngineShowFlags::SF_BillboardText]);
 		ImGui::Checkbox("Show Editor Primitives", &Renderer->ShowFlagMap[EEngineShowFlags::SF_EditorPrimitives]);
+	}
+	static int32 RenderingMode = 0;
+	if(ImGui::Combo("RenderingMode", &RenderingMode, "Normal\0NoCull\0Wireframe\0"))
+	{
+		Renderer->SetRasterizerMode(RenderingMode);
 	}
 	//for (auto& elem : Renderer->ShowFlagMap)
 	//{
