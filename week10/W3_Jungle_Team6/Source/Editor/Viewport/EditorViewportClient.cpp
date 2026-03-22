@@ -10,7 +10,7 @@
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Object/Object.h"
-#include "Editor/SelectionManager.h"
+#include "Editor/Selection/SelectionManager.h"
 
 void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
 {

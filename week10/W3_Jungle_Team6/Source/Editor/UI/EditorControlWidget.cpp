@@ -6,14 +6,14 @@
 #include "ImGui/imgui.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
-#include "Component/PrimitiveComponent.h"
+#include "GameFramework/PrimitiveActors.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
 void FEditorControlWidget::Initialize(UEditorEngine* InEditorEngine)
 {
 	FEditorWidget::Initialize(InEditorEngine);
-	SelectedPrimitiveType = static_cast<int32>(EPrimitiveType::EPT_Cube);
+	SelectedPrimitiveType = 0;
 }
 
 void FEditorControlWidget::Render(float DeltaTime)
@@ -43,19 +43,32 @@ void FEditorControlWidget::Render(float DeltaTime)
 
 	if (ImGui::Button("Spawn"))
 	{
+		UWorld* World = EditorEngine->GetWorld();
 		for (int32 i = 0; i < NumberOfSpawnedActors; i++)
 		{
-			switch (static_cast<EPrimitiveType>(SelectedPrimitiveType))
+			switch (SelectedPrimitiveType)
 			{
-			case EPrimitiveType::EPT_Cube:
-				EditorEngine->SpawnNewPrimitiveActor<UCubeComponent>(CurSpawnPoint);
+			case 0: // Cube
+			{
+				ACubeActor* Actor = World->SpawnActor<ACubeActor>();
+				Actor->SetActorLocation(CurSpawnPoint);
+				Actor->InitDefaultComponents();
 				break;
-			case EPrimitiveType::EPT_Sphere:
-				EditorEngine->SpawnNewPrimitiveActor<USphereComponent>(CurSpawnPoint);
+			}
+			case 1: // Sphere
+			{
+				ASphereActor* Actor = World->SpawnActor<ASphereActor>();
+				Actor->SetActorLocation(CurSpawnPoint);
+				Actor->InitDefaultComponents();
 				break;
-			case EPrimitiveType::EPT_Plane:
-				EditorEngine->SpawnNewPrimitiveActor<UPlaneComponent>(CurSpawnPoint);
+			}
+			case 2: // Plane
+			{
+				APlaneActor* Actor = World->SpawnActor<APlaneActor>();
+				Actor->SetActorLocation(CurSpawnPoint);
+				Actor->InitDefaultComponents();
 				break;
+			}
 			}
 		}
 		NumberOfSpawnedActors = 1;
