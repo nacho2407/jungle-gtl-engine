@@ -1,4 +1,5 @@
 #include "Viewport/EditorViewportClient.h"
+#include "ApplicationCore/Input/InputRouter.h"
 
 void FEditorViewportClient::Create()
 {
@@ -9,10 +10,10 @@ void FEditorViewportClient::Create()
     NavigationController.SetCamera(&ViewportCamera);
 
     ViewportCamera.SetProjectionType(EViewportProjectionType::Perspective);
-    ViewportCamera.SetFOV(90.0f);
+    ViewportCamera.SetFOV(3.141592f * 0.5f); // TODO: 라디안으로 고치기
     ViewportCamera.SetNearPlane(0.1f);
     ViewportCamera.SetFarPlane(2000.0f);
-    ViewportCamera.SetLocation(FVector(0.0f, 3.0f, -8.0f));
+    ViewportCamera.SetLocation(FVector(-10.0f, 5.0f, 0.0f));
     ViewportCamera.SetRotation(FRotator(0.0f, 0.0f, 0.0f));
 }
 

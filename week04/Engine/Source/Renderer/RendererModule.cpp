@@ -75,20 +75,16 @@ void FRendererModule::OnWindowResized(int32 InWidth, int32 InHeight)
     RHI.Resize(InWidth, InHeight);
 }
 
-void FRendererModule::RenderFrame(const FEditorRenderData& InEditorRenderData,
+void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
                                   const FSceneRenderData&  InSceneRenderData)
 {
-    BeginFrame();
-
     // Scene
-    //MeshRenderer.Render(InSceneRenderData);
+    MeshRenderer.Render(InSceneRenderData);
 
     //// Editor Overlay (Grid -> World Axes -> Gizmo)
-    //WorldGridDrawer.Draw(LineRenderer, InEditorRenderData);
-    //WorldAxesDrawer.Draw(LineRenderer, InEditorRenderData);
-    //GizmoDrawer.Draw(MeshRenderer, InEditorRenderData);
-
-    EndFrame();
+    // WorldGridDrawer.Draw(LineRenderer, InEditorRenderData);
+    // WorldAxesDrawer.Draw(LineRenderer, InEditorRenderData);
+    // GizmoDrawer.Draw(MeshRenderer, InEditorRenderData);
 }
 
 bool FRendererModule::TryConsumePickResult(uint32& OutPickId)

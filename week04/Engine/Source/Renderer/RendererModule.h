@@ -28,8 +28,8 @@ class ENGINE_API FRendererModule
 
     void OnWindowResized(int32 InWidth, int32 InHeight);
 
-    void RenderFrame(const FEditorRenderData& InEditorRenderData,
-                     const FSceneRenderData&  InSceneRenderData);
+    void Render(const FEditorRenderData& InEditorRenderData,
+                const FSceneRenderData&  InSceneRenderData);
 
     bool TryConsumePickResult(uint32& OutPickId);
     void RequestPick(const FEditorRenderData& InEditorRenderData, int32 MouseX, int32 MouseY);
@@ -45,8 +45,8 @@ class ENGINE_API FRendererModule
     FD3D11SpriteBatchRenderer SpriteRenderer;
     FD3D11PickingPass         PickingPass;
 
-    FWorldGridDrawer WorldGridDrawer;
-    FWorldAxesDrawer WorldAxesDrawer;
-    FGizmoDrawer     GizmoDrawer;
+    FWorldGridDrawer     WorldGridDrawer;
+    FWorldAxesDrawer     WorldAxesDrawer;
+    FGizmoDrawer         GizmoDrawer;
     TComPtr<ID3D11Debug> DebugDevice;
 };

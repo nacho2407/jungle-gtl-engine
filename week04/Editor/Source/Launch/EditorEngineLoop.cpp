@@ -119,14 +119,14 @@ void FEditorEngineLoop::Tick()
     /* Editor Update */
     Editor->Tick(DeltaTime, InputSystem);
 
-
-
     /* Editor Viewport Client */
-    
+
     /* Render */
     if (Renderer != nullptr)
     {
-        Renderer->RenderFrame(Editor->GetEditorRenderData(), Editor->GetSceneRenderData());
+        Renderer->BeginFrame();
+        Renderer->Render(Editor->GetEditorRenderData(), Editor->GetSceneRenderData());
+        Renderer->EndFrame();
     }
 
     FPlatformTime::Sleep(0.f);
