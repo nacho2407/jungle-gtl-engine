@@ -39,7 +39,7 @@ private:
 public:
 
 private:
-	void SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* OutDeviceContext);
+	void SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* OutDeviceContext, EViewMode ViewMode);
 	void BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContext* Context);
 	EDepthStencilState GetDefaultDepthForPass(ERenderPass Pass) const;
 	EBlendState GetDefaultBlendForPass(ERenderPass Pass) const;
@@ -58,7 +58,6 @@ public:
 	void RenderPasses(const FRenderBus& InRenderBus, ID3D11DeviceContext* Context);
 	void RenderEditorHelpers(const FRenderBus& InRenderBus, ID3D11DeviceContext* Context);
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix);
-	void SetRenderSettings(const FRenderBus& InRenderBus);
 
 	FD3DDevice& GetFD3DDevice() { return Device; }
 	FRenderResources& GetResources() { return Resources; }
