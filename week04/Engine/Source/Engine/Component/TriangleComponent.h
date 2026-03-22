@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Core/CoreMinimal.h>
+#include "Core/CoreMinimal.h"
 #include "PrimitiveComponent.h"
 
 namespace Engine::Component

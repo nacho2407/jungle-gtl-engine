@@ -138,6 +138,12 @@
     <ClCompile Include="Source\Core\Math\Vector4.cpp">
       <Filter>Source\Core\Math</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Core\Misc\Name.cpp">
+      <Filter>Source\Core\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Misc\NameSubsystem.cpp">
+      <Filter>Source\Core\Misc</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Core\Path.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
@@ -339,6 +345,9 @@
       <Filter>Source\Core\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Misc\Name.h">
+      <Filter>Source\Core\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Misc\NameSubsystem.h">
       <Filter>Source\Core\Misc</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Path.h">

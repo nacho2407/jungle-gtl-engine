@@ -1,4 +1,4 @@
-#include <Core/CoreMinimal.h>
+#include "Core/CoreMinimal.h"
 #include "TriangleComponent.h"
 
 namespace Engine::Component

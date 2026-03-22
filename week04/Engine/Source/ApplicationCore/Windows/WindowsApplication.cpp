@@ -1,4 +1,4 @@
-#include <Core/CoreMinimal.h>
+#include "Core/CoreMinimal.h"
 #include "WindowsApplication.h"
 #include "ApplicationCore/Input/InputSystem.h"
 
@@ -28,6 +28,7 @@ namespace Engine::ApplicationCore
             default:
                 break;
             }
+
 
             if (FInputSystem* InputSystem = GWindowsApplication->GetInputSystem())
             {

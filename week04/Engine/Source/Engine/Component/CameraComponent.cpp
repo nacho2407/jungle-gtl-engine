@@ -1,4 +1,4 @@
-#include <Core/CoreMinimal.h>
+#include "Core/CoreMinimal.h"
 #include "CameraComponent.h"
 
 namespace Engine::Component
