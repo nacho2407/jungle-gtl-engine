@@ -1,27 +1,23 @@
 ﻿#include "SceneSaveManager.h"
 #include "SimpleJSON/json.hpp"
 
-void FSceneSaveManager::SaveSceneAsJSON(const string& filepath, TArray<UWorld*>& Scene) {
+void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, TArray<UWorld*>& Scene) {
     using namespace json;
 
-    string FileDestination;
-    string SceneName;
-    if (!filepath.length()) {
-        SceneName = "Save_" + GetCurrentTimeStamp();
-        FileDestination = "Saves/" + SceneName + ".Scene";
-    }
-    else {
-        SceneName = filepath;
-        FileDestination = "Saves/" + filepath + ".Scene";
-    }
+    string FinalName = InSceneName.empty()
+        ? "Save_" + GetCurrentTimeStamp()
+        : InSceneName;
 
-    std::filesystem::create_directories("Saves");
+    std::wstring SceneDir = GetSceneDirectory();
+    std::filesystem::path FileDestination = std::filesystem::path(SceneDir) / (FPaths::ToWide(FinalName) + SceneExtension);
+
+    std::filesystem::create_directories(SceneDir);
 
     JSON Root;
 
     // Metadata
     Root["Scene"]["Version"] = 1;
-    Root["Scene"]["Name"] = SceneName;
+    Root["Scene"]["Name"] = FinalName;
 
     JSON Objects = json::Array();
 
@@ -120,7 +116,7 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, TArray<UWorld*
     UObjectManager::Get().CollectGarbage();
     Scene.clear();
     using json::JSON;
-    std::ifstream File(filepath);
+    std::ifstream File(std::filesystem::path(FPaths::ToWide(filepath)));
     if (!File.is_open()) {
         // Failed to open file at target destination
         std::cerr << "Failed to open file at target destination" << std::endl;
@@ -271,4 +267,22 @@ string FSceneSaveManager::GetCurrentTimeStamp() {
     char buf[20];
     std::strftime(buf, sizeof(buf), "%Y%m%d_%H%M%S", &tm);
     return buf;
+}
+
+TArray<FString> FSceneSaveManager::GetSceneFileList() {
+    TArray<FString> Result;
+    std::wstring SceneDir = GetSceneDirectory();
+    if (!std::filesystem::exists(SceneDir))
+    {
+        return Result;
+    }
+
+    for (auto& Entry : std::filesystem::directory_iterator(SceneDir))
+    {
+        if (Entry.is_regular_file() && Entry.path().extension() == SceneExtension)
+        {
+            Result.push_back(FPaths::ToUtf8(Entry.path().stem().wstring()));
+        }
+    }
+    return Result;
 }

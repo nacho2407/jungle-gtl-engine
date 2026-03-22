@@ -46,7 +46,7 @@ void USceneComponent::SetParent(USceneComponent* NewParent)
 	ParentComponent = NewParent;
 	if (ParentComponent)
 	{
-	
+
 		if (ParentComponent->ContainsChild(this) == false)
 		{
 			ParentComponent->ChildComponents.push_back(this);
@@ -92,7 +92,7 @@ bool USceneComponent::ContainsChild(const USceneComponent* Child) const
 		return false;
 	}
 
-	bool result = std::find(ChildComponents.begin(), 
+	bool result = std::find(ChildComponents.begin(),
 		ChildComponents.end(), Child) != ChildComponents.end();
 
 	return result;
@@ -182,9 +182,9 @@ void USceneComponent::SetWorldLocation(FVector NewWorldLocation)
 	if (ParentComponent != nullptr)
 	{
 		const FMatrix& parentWorldInverseMatrix = ParentComponent->GetWorldMatrix().GetInverse();
-		
+
 		FVector newRelativeLocation = NewWorldLocation * parentWorldInverseMatrix;
-		
+
 		SetRelativeLocation(newRelativeLocation);
 	}
 

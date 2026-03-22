@@ -13,13 +13,11 @@ struct FMeshData;
 
 class UPrimitiveComponent : public USceneComponent
 {
-private:
-	FVector WorldAABBMinLocation;
-	FVector WorldAABBMaxLocation;
-
 protected:
 	const FMeshData* MeshData = nullptr;
 	FVector LocalExtents = { 0.5f, 0.5f, 0.5f };
+	FVector WorldAABBMinLocation;
+	FVector WorldAABBMaxLocation;
 	bool bIsVisible = true;
 
 public:
@@ -35,7 +33,7 @@ public:
 	}
 
 	//Collision
-	void UpdateWorldAABB();
+	virtual void UpdateWorldAABB();
 	bool CheckAABB(const FRay& Ray);
 	bool Raycast(const FRay& Ray, FHitResult& OutHitResult);
 	bool IntersectTriangle(const FVector& RayOrigin, const FVector& RayDir, const FVector& V0, const FVector& V1, const FVector& V2, float& OutT);
@@ -73,6 +71,7 @@ private:
 public:
 	DECLARE_CLASS(USphereComponent, UPrimitiveComponent)
 	USphereComponent();
+	void UpdateWorldAABB()override;
 	bool GetRenderCommand(FRenderCommand& OutCommand) override;
 	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_Sphere;
 

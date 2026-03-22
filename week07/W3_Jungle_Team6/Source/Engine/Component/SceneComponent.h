@@ -8,23 +8,9 @@ class AActor;
 
 class USceneComponent : public UActorComponent
 {
-protected:
-	USceneComponent* ParentComponent = nullptr;
-	TArray<USceneComponent*> ChildComponents;
-
-	FMatrix CachedWorldMatrix{};
-	
-
 public:
 	DECLARE_CLASS(USceneComponent, UActorComponent)
-	FVector RelativeLocation{};
-	FVector RelativeRotation{};
-	FVector RelativeScale3D{1.0f, 1.0f ,1.0f};
 
-protected:
-	bool bUpdateFlag = true;
-
-public:
 	USceneComponent();
 	~USceneComponent();
 
@@ -58,5 +44,17 @@ public:
 	void MoveLocal(const FVector& delta);
 	void Rotate(float dx, float dy);
 
+protected:
+	USceneComponent* ParentComponent = nullptr;
+	TArray<USceneComponent*> ChildComponents;
+
+	FMatrix CachedWorldMatrix{};
+
+	bool bUpdateFlag = true;
+
+public:
+	FVector RelativeLocation{};
+	FVector RelativeRotation{};
+	FVector RelativeScale3D{ 1.0f, 1.0f ,1.0f };
 };
 
