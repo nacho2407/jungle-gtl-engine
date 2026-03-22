@@ -114,6 +114,12 @@ public:
 	{
 		static_assert(std::is_base_of<UObject, T>::value, "T must derive from UObject");
 		T* Obj = new T();
+
+		const char* ClassName = T::s_TypeInfo.name;
+		uint32& Counter = NameCounters[ClassName];
+		FString Name = FString(ClassName) + "_" + std::to_string(Counter++);
+		Obj->SetFName(FName(Name));
+
 		return Obj;
 	}
 
@@ -126,6 +132,10 @@ public:
 		delete Obj;
 	}
 
+private:
+	TMap<FString, uint32> NameCounters;
+
+public:
 	UObject* FindByUUID(uint32 InUUID)
 	{
 		for (auto* Obj : GUObjectArray)
