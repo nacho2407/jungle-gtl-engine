@@ -8,5 +8,5 @@ private:
 	bool bExpanded = false;
 
 public:
-	void Render(float DeltaTime, FViewOutput& ViewOutput) override;
+	void Render(float DeltaTime) override;
 };

@@ -1,20 +1,22 @@
 ﻿#include "Editor/UI/EditorControlWidget.h"
 
 #include "Editor/EditorEngine.h"
+#include "Engine/Core/Timer.h"
 
 #include "ImGui/imgui.h"
-#include "Component/PrimitiveComponent.h"
-#include "Component/BillboardComponent.h"
+#include "Component/CameraComponent.h"
+#include "Component/GizmoComponent.h"
+#include "GameFramework/PrimitiveActors.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
-void FEditorControlWidget::Initialize(FEditorEngine* InEditorEngine)
+void FEditorControlWidget::Initialize(UEditorEngine* InEditorEngine)
 {
 	FEditorWidget::Initialize(InEditorEngine);
-	SelectedPrimitiveType = static_cast<int32>(EPrimitiveType::EPT_Cube);
+	SelectedPrimitiveType = 0;
 }
 
-void FEditorControlWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
+void FEditorControlWidget::Render(float DeltaTime)
 {
 	(void)DeltaTime;
 	if (!EditorEngine)
@@ -28,7 +30,7 @@ void FEditorControlWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 	ImGui::Begin("Jungle Control Panel");
 
 	// Stats
-	ImGui::Text("FPS : %.1f", EditorEngine->GetMainLoopFPS());
+	ImGui::Text("FPS : %.1f", EditorEngine->GetTimer()->GetDisplayFPS());
 	ImGui::SameLine();
 	ImGui::Text("Memory Allocated : %d", EngineStatics::GetTotalAllocationBytes());
 	ImGui::SameLine();
@@ -41,22 +43,32 @@ void FEditorControlWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 
 	if (ImGui::Button("Spawn"))
 	{
+		UWorld* World = EditorEngine->GetWorld();
 		for (int32 i = 0; i < NumberOfSpawnedActors; i++)
 		{
-			switch (static_cast<EPrimitiveType>(SelectedPrimitiveType))
+			switch (SelectedPrimitiveType)
 			{
-			case EPrimitiveType::EPT_Cube:
-				EditorEngine->SpawnNewPrimitiveActor<UCubeComponent>(CurSpawnPoint);
+			case 0: // Cube
+			{
+				ACubeActor* Actor = World->SpawnActor<ACubeActor>();
+				Actor->SetActorLocation(CurSpawnPoint);
+				Actor->InitDefaultComponents();
 				break;
-			case EPrimitiveType::EPT_Sphere:
-				EditorEngine->SpawnNewPrimitiveActor<USphereComponent>(CurSpawnPoint);
+			}
+			case 1: // Sphere
+			{
+				ASphereActor* Actor = World->SpawnActor<ASphereActor>();
+				Actor->SetActorLocation(CurSpawnPoint);
+				Actor->InitDefaultComponents();
 				break;
-			case EPrimitiveType::EPT_Plane:
-				EditorEngine->SpawnNewPrimitiveActor<UPlaneComponent>(CurSpawnPoint);
+			}
+			case 2: // Plane
+			{
+				APlaneActor* Actor = World->SpawnActor<APlaneActor>();
+				Actor->SetActorLocation(CurSpawnPoint);
+				Actor->InitDefaultComponents();
 				break;
-			case EPrimitiveType::EPT_Quad:
-				EditorEngine->SpawnNewPrimitiveActor <UBillboardComponent>(CurSpawnPoint);
-				break;
+			}
 			}
 		}
 		NumberOfSpawnedActors = 1;
@@ -66,22 +78,25 @@ void FEditorControlWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 	SEPARATOR();
 
 	// Camera
-	FCameraState& CameraState = EditorEngine->GetCameraState();
-	ImGui::Checkbox("Orthographic", &(CameraState.bIsOrthogonal));
+	UCameraComponent* Camera = EditorEngine->GetCamera();
+	bool bIsOrtho = Camera->IsOrthogonal();
+	if (ImGui::Checkbox("Orthographic", &bIsOrtho))
+	{
+		Camera->SetOrthographic(bIsOrtho);
+	}
 
-	float CameraFOV_Deg = CameraState.FOV * RAD_TO_DEG;
+	float CameraFOV_Deg = Camera->GetFOV() * RAD_TO_DEG;
 	if (ImGui::DragFloat("Camera FOV", &CameraFOV_Deg, 0.5f, 1.0f, 90.0f))
 	{
-		CameraState.FOV = CameraFOV_Deg * DEG_TO_RAD;
+		Camera->SetFOV(CameraFOV_Deg * DEG_TO_RAD);
 	}
 
-	float OrthoWidth = CameraState.OrthoWidth;
+	float OrthoWidth = Camera->GetOrthoWidth();
 	if (ImGui::DragFloat("Ortho Width", &OrthoWidth, 0.1f, 0.1f, 1000.0f))
 	{
-		CameraState.OrthoWidth = Clamp(OrthoWidth, 0.1f, 1000.0f);
+		Camera->SetOrthoWidth(Clamp(OrthoWidth, 0.1f, 1000.0f));
 	}
 
-	UCamera* Camera = EditorEngine->GetCamera();
 	FVector CamPos = Camera->GetWorldLocation();
 	float CameraLocation[3] = { CamPos.X, CamPos.Y, CamPos.Z };
 	if (ImGui::DragFloat3("Camera Location", CameraLocation, 0.1f))

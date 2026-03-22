@@ -3,13 +3,11 @@
 #include "Editor/UI/EditorWidget.h"
 #include "Math/Vector.h"
 
-enum class EPrimitiveType;
-
 class FEditorControlWidget : public FEditorWidget
 {
 public:
-	virtual void Initialize(FEditorEngine* InEditorEngine) override;
-	virtual void Render(float DeltaTime, FViewOutput& ViewOutput) override;
+	virtual void Initialize(UEditorEngine* InEditorEngine) override;
+	virtual void Render(float DeltaTime) override;
 
 private:
 	const char* PrimitiveTypes[4] = { "Cube", "Sphere", "Plane", "Quad"};

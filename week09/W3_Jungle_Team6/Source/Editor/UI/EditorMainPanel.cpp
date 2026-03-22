@@ -1,6 +1,7 @@
 ﻿#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
+#include "Engine/Runtime/WindowsWindow.h"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
@@ -9,10 +10,7 @@
 #include "Render/Renderer/Renderer.h"
 #include "Engine/Core/InputSystem.h"
 
-
-#define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
-
-void FEditorMainPanel::Create(HWND InHWindow, FRenderer& InRenderer, FEditorEngine* InEditorEngine)
+void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine)
 {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -20,7 +18,7 @@ void FEditorMainPanel::Create(HWND InHWindow, FRenderer& InRenderer, FEditorEngi
 	ImGuiIO& IO = ImGui::GetIO();
 	IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-	ImGui_ImplWin32_Init((void*)InHWindow);
+	ImGui_ImplWin32_Init((void*)InWindow->GetHWND());
 	ImGui_ImplDX11_Init(InRenderer.GetFD3DDevice().GetDevice(), InRenderer.GetFD3DDevice().GetDeviceContext());
 
 	ConsoleWidget.Initialize(InEditorEngine);
@@ -37,7 +35,7 @@ void FEditorMainPanel::Release()
 	ImGui::DestroyContext();
 }
 
-void FEditorMainPanel::Render(float DeltaTime, FViewOutput& ViewOutput)
+void FEditorMainPanel::Render(float DeltaTime)
 {
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
@@ -45,11 +43,11 @@ void FEditorMainPanel::Render(float DeltaTime, FViewOutput& ViewOutput)
 
 	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
-	ConsoleWidget.Render(DeltaTime, ViewOutput);
-	ControlWidget.Render(DeltaTime, ViewOutput);
-	PropertyWidget.Render(DeltaTime, ViewOutput);
-	SceneWidget.Render(DeltaTime, ViewOutput);
-	ViewportOverlayWidget.Render(DeltaTime, ViewOutput);
+	ConsoleWidget.Render(DeltaTime);
+	ControlWidget.Render(DeltaTime);
+	PropertyWidget.Render(DeltaTime);
+	SceneWidget.Render(DeltaTime);
+	ViewportOverlayWidget.Render(DeltaTime);
 
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -59,6 +57,6 @@ void FEditorMainPanel::Update()
 {
 	ImGuiIO& IO = ImGui::GetIO();
 
-	InputSystem::GuiInputState.bUsingMouse = IO.WantCaptureMouse;
-	InputSystem::GuiInputState.bUsingKeyboard = IO.WantCaptureKeyboard;
+	InputSystem::Get().GetGuiInputState().bUsingMouse = IO.WantCaptureMouse;
+	InputSystem::Get().GetGuiInputState().bUsingKeyboard = IO.WantCaptureKeyboard;
 }

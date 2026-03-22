@@ -3,62 +3,55 @@
 DEFINE_CLASS(UWorld, UObject)
 REGISTER_FACTORY(UWorld)
 
-UWorld::~UWorld() {
-    if (!Actors.empty()) {
-        EndPlay();
-    }
-}
-
-void UWorld::InitWorld() {
-}
-
-void UWorld::SetActiveCamera(UCamera* Cam)
+UWorld::~UWorld()
 {
-    if (ActiveCamera == Cam)
-    {
-        return;
-    }
-
-    if (ActiveCamera)
-    {
-        UObjectManager::Get().DestroyObject(ActiveCamera);
-    }
-
-    ActiveCamera = Cam;
+	if (!Actors.empty())
+	{
+		EndPlay();
+	}
 }
 
-void UWorld::BeginPlay() {
-    for (AActor* Actor : Actors) {
-        if (Actor && !Actor->bPendingKill) {
-            Actor->BeginPlay();
-        }
-    }
+void UWorld::InitWorld()
+{
+
 }
 
-void UWorld::Tick(float DeltaTime) {
-    for (AActor* Actor : Actors) {
-        if (Actor && !Actor->bPendingKill) {
-            Actor->Tick(DeltaTime);
-        }
-    }
+void UWorld::BeginPlay()
+{
+	bHasBegunPlay = true;
 
-    // Cleanup destroyed objects here
+	for (AActor* Actor : Actors)
+	{
+		if (Actor)
+		{
+			Actor->BeginPlay();
+		}
+	}
 }
 
-void UWorld::EndPlay() {
-    for (AActor* Actor : Actors) {
-        if (Actor && !Actor->bPendingKill) {
-            Actor->EndPlay();
-            UObjectManager::Get().DestroyObject(Actor);
-        }
-    }
+void UWorld::Tick(float DeltaTime)
+{
+	for (AActor* Actor : Actors)
+	{
+		if (Actor)
+		{
+			Actor->Tick(DeltaTime);
+		}
+	}
+}
 
-    Actors.clear();
+void UWorld::EndPlay()
+{
+	bHasBegunPlay = false;
 
-    if (ActiveCamera) {
-        UObjectManager::Get().DestroyObject(ActiveCamera);
-    }
+	for (AActor* Actor : Actors)
+	{
+		if (Actor)
+		{
+			Actor->EndPlay();
+			UObjectManager::Get().DestroyObject(Actor);
+		}
+	}
 
-    ActiveCamera = nullptr;
-    bPendingKill = true;
+	Actors.clear();
 }
