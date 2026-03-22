@@ -100,6 +100,7 @@ void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, FRen
 {
 
 	UGizmoComponent* Gizmo = Context.Gizmo;
+	if (Context.ShowFlags.bGizmo == false) return;
 	if (!Gizmo || !Gizmo->IsVisible()) return;
 
 	auto CreateGizmoCmd = [&](bool bInner) {
