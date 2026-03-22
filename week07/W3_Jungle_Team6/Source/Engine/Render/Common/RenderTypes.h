@@ -12,6 +12,9 @@
 
 #include <d3d11.h>
 #include <d3dcompiler.h>
+#include <dxgi1_5.h>
+
+#pragma comment(lib, "dxgi")
 
 //	Primtive Type Enum
 enum class EPrimitiveType
