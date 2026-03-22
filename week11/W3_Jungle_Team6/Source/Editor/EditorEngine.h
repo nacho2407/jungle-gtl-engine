@@ -34,11 +34,6 @@ public:
 	FEditorSettings& GetSettings() { return FEditorSettings::Get(); }
 	const FEditorSettings& GetSettings() const { return FEditorSettings::Get(); }
 
-	bool IsUpdateRateLimited() const { return FEditorSettings::Get().bLimitUpdateRate; }
-	void SetUpdateRateLimited(bool bLimited) { FEditorSettings::Get().bLimitUpdateRate = bLimited; }
-	int32 GetUpdateRate() const { return FEditorSettings::Get().UpdateRate; }
-	void SetUpdateRate(int32 NewRate) { FEditorSettings::Get().UpdateRate = (NewRate < 1) ? 1 : NewRate; }
-
 protected:
 	void Render(float DeltaTime) override;
 
