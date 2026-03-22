@@ -1,7 +1,7 @@
 #include "Engine/Core/InputSystem.h"
 #include <cmath>
 
-void InputSystem::Update()
+void InputSystem::Tick()
 {
     for (int i = 0; i < 256; ++i)
     {
