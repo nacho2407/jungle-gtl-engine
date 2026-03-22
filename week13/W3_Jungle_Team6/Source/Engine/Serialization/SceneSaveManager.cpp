@@ -11,7 +11,21 @@
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 
-void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, TArray<UWorld*>& Scene) {
+static const char* WorldTypeToString(EWorldType Type) {
+    switch (Type) {
+    case EWorldType::Game: return "Game";
+    case EWorldType::PIE:  return "PIE";
+    default:               return "Editor";
+    }
+}
+
+static EWorldType StringToWorldType(const string& Str) {
+    if (Str == "Game") return EWorldType::Game;
+    if (Str == "PIE")  return EWorldType::PIE;
+    return EWorldType::Editor;
+}
+
+void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, TArray<FWorldContext>& WorldList) {
     using namespace json;
 
     string FinalName = InSceneName.empty()
@@ -31,11 +45,16 @@ void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, TArray<UWorld
 
     JSON Objects = json::Array();
 
-    for (UWorld* World : Scene) {
+    for (FWorldContext& Ctx : WorldList) {
+        UWorld* World = Ctx.World;
         if (!World) continue;
 
         // Serialize world itself
-        Objects.append(SerializeObject(World));
+        JSON WorldObj = SerializeObject(World);
+        WorldObj["WorldType"] = WorldTypeToString(Ctx.WorldType);
+        WorldObj["ContextName"] = Ctx.ContextName;
+        WorldObj["ContextHandle"] = Ctx.ContextHandle.ToString();
+        Objects.append(WorldObj);
 
         for (AActor* Actor : World->GetActors()) {
             if (!Actor) continue;
@@ -112,13 +131,13 @@ json::JSON FSceneSaveManager::SerializeVector(float X, float Y, float Z) {
     return v;
 }
 
-void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, TArray<UWorld*>& Scene) {
+void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, TArray<FWorldContext>& WorldList) {
     // Purge current scene
-    for (UWorld* World : Scene) {
-        World->EndPlay();
-        UObjectManager::Get().DestroyObject(World);
+    for (FWorldContext& Ctx : WorldList) {
+        Ctx.World->EndPlay();
+        UObjectManager::Get().DestroyObject(Ctx.World);
     }
-    Scene.clear();
+    WorldList.clear();
     using json::JSON;
     std::ifstream File(std::filesystem::path(FPaths::ToWide(filepath)));
     if (!File.is_open()) {
@@ -133,7 +152,14 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, TArray<UWorld*
     JSON root = JSON::Load(FileContent);
     TMap<uint32, UObject*> uuidObjectMap;
     uint32 MaxUUID = 0;
-    TArray<uint32> Worlds;
+
+    struct FWorldLoadInfo {
+        uint32 UUID;
+        EWorldType WorldType;
+        FString ContextName;
+        FString ContextHandle;
+    };
+    TArray<FWorldLoadInfo> WorldInfos;
 
     // Retrieve UObject info
     for (auto& JSONObject : root["Scene"]["Objects"].ArrayRange()) {
@@ -154,7 +180,7 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, TArray<UWorld*
 
         // Perform necessary transformations for USceneComponents
         if (Obj->IsA<USceneComponent>()) {
-            // GIve Space vectors
+            // Give Space vectors
             DeserializeSpaceVectors(Obj->Cast<USceneComponent>(), JSONObject);
 
             // Handle camera objects
@@ -162,7 +188,19 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, TArray<UWorld*
         }
 
         if (Obj->IsA<UWorld>()) {
-            Worlds.push_back(Obj->GetUUID());
+            FWorldLoadInfo Info;
+            Info.UUID = Obj->GetUUID();
+            // Read WorldType with backward compatibility (default to Editor)
+            Info.WorldType = JSONObject.hasKey("WorldType")
+                ? StringToWorldType(JSONObject["WorldType"].ToString())
+                : EWorldType::Editor;
+            Info.ContextName = JSONObject.hasKey("ContextName")
+                ? JSONObject["ContextName"].ToString()
+                : "Loaded Scene";
+            Info.ContextHandle = JSONObject.hasKey("ContextHandle")
+                ? JSONObject["ContextHandle"].ToString()
+                : Info.ContextName;
+            WorldInfos.push_back(Info);
         }
     }
 
@@ -170,10 +208,15 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, TArray<UWorld*
     LinkReferences(uuidObjectMap, root["Scene"]["Objects"]);
 
     // Reload Scene with cooked worlds
-    for (auto i : Worlds) {
-        auto it = uuidObjectMap.find(i);
+    for (const auto& Info : WorldInfos) {
+        auto it = uuidObjectMap.find(Info.UUID);
         if (it != uuidObjectMap.end()) {
-            Scene.push_back(static_cast<UWorld*>(it->second));
+            FWorldContext Ctx;
+            Ctx.WorldType = Info.WorldType;
+            Ctx.World = static_cast<UWorld*>(it->second);
+            Ctx.ContextName = Info.ContextName;
+            Ctx.ContextHandle = FName(Info.ContextHandle);
+            WorldList.push_back(Ctx);
         }
     }
 
