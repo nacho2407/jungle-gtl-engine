@@ -19,7 +19,7 @@ void FEditor::Release()
 
 void FEditor::Initialize()
 {
-
+    CurScene = new FScene();
     //  TODO : Scene의 Begin Play 호출
 }
 
