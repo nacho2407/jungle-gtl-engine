@@ -66,6 +66,7 @@
     <ClInclude Include="Source\Core\Math\Vector.h" />
     <ClInclude Include="Source\Core\Math\Vector2.h" />
     <ClInclude Include="Source\Core\Math\Vector4.h" />
+    <ClInclude Include="Source\Core\Misc\BitMaskEnum.h" />
     <ClInclude Include="Source\Core\Misc\Name.h" />
     <ClInclude Include="Source\Core\Path.h" />
     <ClInclude Include="Source\CoreUObject\Object.h" />

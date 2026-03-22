@@ -39,7 +39,6 @@
     <ClCompile Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\RendererModule.cpp" />
-    <ClCompile Include="Source\Engine\Component\CameraComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Mesh\Cube.h" />
@@ -136,9 +135,9 @@
     <ClInclude Include="Source\Renderer\Types\ShaderConstants.h" />
     <ClInclude Include="Source\Renderer\Types\VertexTypes.h" />
     <ClInclude Include="Source\Renderer\Types\ViewMode.h" />
-    <ClInclude Include="Source\Engine\Component\CameraComponent.h" />
     <ClInclude Include="Source\Engine\Component\CubeComponent.h" />
     <ClInclude Include="Source\Engine\Component\PlaneComponent.h" />
+    <ClInclude Include="Source\Core\Misc\BitMaskEnum.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
