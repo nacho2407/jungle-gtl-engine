@@ -50,15 +50,6 @@ public:
 
 	FRenderer& GetRenderer() { return Renderer; }
 
-	template <typename T>
-	AActor* SpawnNewPrimitiveActor(FVector InitLocation)
-	{
-		AActor* NewActor = GetWorld()->SpawnActor<AActor>();
-		NewActor->SetActorLocation(InitLocation);
-		NewActor->AddComponent<T>();
-		return NewActor;
-	}
-
 protected:
 	virtual void Render(float DeltaTime);
 	void WorldTick(float DeltaTime);
