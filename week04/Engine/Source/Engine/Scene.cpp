@@ -42,4 +42,14 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
 
         OutRenderData.Primitives.push_back(Item);
     }
+
+    OutRenderData.Primitives.push_back(FPrimitiveRenderItem{
+        .World = FMatrix::Identity,
+        .Color = FColor::Blue(),
+        .MeshType = EBasicMeshType::Cube,
+        .ObjectId = 0,
+        .bVisible = true,
+        .bPickable = false,
+        .bSelected = false,
+        .bHovered = false});
 }

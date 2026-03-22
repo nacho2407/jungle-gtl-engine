@@ -1,4 +1,5 @@
 #include "Viewport/EditorViewportClient.h"
+#include "ApplicationCore/Input/InputRouter.h"
 
 void FEditorViewportClient::Create()
 {
@@ -12,7 +13,7 @@ void FEditorViewportClient::Create()
     ViewportCamera.SetFOV(90.0f);
     ViewportCamera.SetNearPlane(0.1f);
     ViewportCamera.SetFarPlane(2000.0f);
-    ViewportCamera.SetLocation(FVector(0.0f, 3.0f, -8.0f));
+    ViewportCamera.SetLocation(FVector(2.0f, 0.0f, 0.0f));
     ViewportCamera.SetRotation(FRotator(0.0f, 0.0f, 0.0f));
 }
 
@@ -37,6 +38,7 @@ void FEditorViewportClient::Tick(float DeltaTime, const Engine::ApplicationCore:
     }
 
     NavigationController.Tick(DeltaTime);
+
 }
 
 void FEditorViewportClient::Draw()

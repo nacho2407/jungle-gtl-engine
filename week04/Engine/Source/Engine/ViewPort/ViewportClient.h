@@ -2,7 +2,13 @@
 #pragma once
 
 #include "Core/CoreMinimal.h"
-#include "ApplicationCore/Input/InputRouter.h"
+
+namespace Engine::ApplicationCore
+{
+    class FInputRouter;
+    struct FInputState;
+    struct FInputEvent;
+} // namespace Engine::ApplicationCore
 
 namespace Engine::Viewport
 {

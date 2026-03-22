@@ -13,6 +13,8 @@ void FViewportNavigationController::MoveForward(float Value, float DeltaTime)
     FVector NewLocation = ViewportCamera->GetLocation();
     NewLocation += ViewportCamera->GetForwardVector() * (Value * MoveSpeed * DeltaTime);
     ViewportCamera->SetLocation(NewLocation);
+
+    MessageBox(nullptr, L"MoveForward called", L"Debug", MB_OK);
 }
 
 void FViewportNavigationController::MoveRight(float Value, float DeltaTime)

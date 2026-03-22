@@ -25,17 +25,16 @@ void FEditor::Initialize()
 
 void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* InputSystem)
 {
-    //  TODO : Build 오류로 인해 주석 처리 해놓음 이후에 풀기
-    // FInputEvent Event;
-    //  InputSystem에서 Raw Event 및 State 받기
-    // while (InputSystem->PollEvent(&Event))
-    // {
-    //     InputRouter.RouteEvent(Event, InputSystem->GetInputState());
-    // }
-    // InputRouter.TickContexts(InputSystem->GetInputState());
+    Engine::ApplicationCore::FInputEvent Event;
 
-    //  TODO : Editor Updates
+    while (InputSystem->PollEvent(Event))
+    {
+        ViewportClient.HandleInputEvent(Event, InputSystem->GetInputState());
+    }
+
     ViewportClient.Tick(DeltaTime, InputSystem->GetInputState());
+
+    BuildRenderData();
 }
 
 void FEditor::OnWindowResized(float Width, float Height)
@@ -75,9 +74,8 @@ void FEditor::BuildSceneView()
 
     SceneView.SetViewRect(ViewRect);
     SceneView.SetClipPlanes(ViewportClient.GetCamera().GetNearPlane(),
-                                ViewportClient.GetCamera().GetFarPlane());
+                            ViewportClient.GetCamera().GetFarPlane());
 }
-
 
 void FEditor::BuildRenderData()
 {
