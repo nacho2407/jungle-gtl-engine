@@ -3,10 +3,9 @@
 #include "Editor/Settings/EditorSettings.h"
 #include "ImGui/imgui.h"
 
-void FEditorViewportOverlayWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
+void FEditorViewportOverlayWidget::Render(float DeltaTime)
 {
 	(void)DeltaTime;
-	(void)ViewOutput;
 
 	FEditorSettings& Settings = FEditorSettings::Get();
 

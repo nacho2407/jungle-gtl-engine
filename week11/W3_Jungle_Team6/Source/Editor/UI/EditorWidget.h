@@ -1,10 +1,8 @@
 #pragma once
 
-#include "Core/Common.h"
+#include "Core/CoreTypes.h"
 
 class UEditorEngine;
-
-using namespace common::structs;
 
 class FEditorWidget
 {
@@ -12,7 +10,7 @@ public:
 	virtual ~FEditorWidget() = default;
 
 	virtual void Initialize(UEditorEngine* InEditorEngine);
-	virtual void Render(float DeltaTime, FViewOutput& ViewOutput) = 0;
+	virtual void Render(float DeltaTime) = 0;
 
 protected:
 	UEditorEngine* EditorEngine = nullptr;
