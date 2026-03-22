@@ -159,19 +159,19 @@
     <ClCompile Include="Source\CoreUObject\ObjectFactory.cpp">
       <Filter>Source\CoreUObject</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Asset\Asset.cpp">
+    <ClCompile Include="Source\Asset\Asset.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Asset\AssetLoader.cpp">
+    <ClCompile Include="Source\Asset\AssetLoader.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Asset\AssetManager.cpp">
+    <ClCompile Include="Source\Asset\AssetManager.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Asset\Texture2DAsset.cpp">
+    <ClCompile Include="Source\Asset\Texture2DAsset.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Asset\TextureLoader.cpp">
+    <ClCompile Include="Source\Asset\TextureLoader.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\CameraComponent.cpp">
@@ -405,19 +405,19 @@
     <ClInclude Include="Source\CoreUObject\ObjectFactory.h">
       <Filter>Source\CoreUObject</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Asset\Asset.h">
+    <ClInclude Include="Source\Asset\Asset.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Asset\AssetLoader.h">
+    <ClInclude Include="Source\Asset\AssetLoader.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Asset\AssetManager.h">
+    <ClInclude Include="Source\Asset\AssetManager.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Asset\Texture2DAsset.h">
+    <ClInclude Include="Source\Asset\Texture2DAsset.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Asset\TextureLoader.h">
+    <ClInclude Include="Source\Asset\TextureLoader.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\CameraComponent.h">
