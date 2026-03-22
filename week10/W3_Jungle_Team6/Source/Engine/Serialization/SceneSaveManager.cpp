@@ -1,7 +1,31 @@
 ﻿#include "SceneSaveManager.h"
-#include "SimpleJSON/json.hpp"
 
-void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, TArray<UWorld*>& Scene) {
+#include <iostream>
+#include <fstream>
+#include <chrono>
+
+#include "SimpleJSON/json.hpp"
+#include "GameFramework/World.h"
+#include "Component/CameraComponent.h"
+#include "Component/PrimitiveComponent.h"
+#include "Object/Object.h"
+#include "Object/ObjectFactory.h"
+
+static const char* WorldTypeToString(EWorldType Type) {
+    switch (Type) {
+    case EWorldType::Game: return "Game";
+    case EWorldType::PIE:  return "PIE";
+    default:               return "Editor";
+    }
+}
+
+static EWorldType StringToWorldType(const string& Str) {
+    if (Str == "Game") return EWorldType::Game;
+    if (Str == "PIE")  return EWorldType::PIE;
+    return EWorldType::Editor;
+}
+
+void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, TArray<FWorldContext>& WorldList) {
     using namespace json;
 
     string FinalName = InSceneName.empty()
@@ -21,20 +45,25 @@ void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, TArray<UWorld
 
     JSON Objects = json::Array();
 
-    for (UWorld* World : Scene) {
-        if (!World || World->bPendingKill) continue;
+    for (FWorldContext& Ctx : WorldList) {
+        UWorld* World = Ctx.World;
+        if (!World) continue;
 
         // Serialize world itself
-        Objects.append(SerializeObject(World));
+        JSON WorldObj = SerializeObject(World);
+        WorldObj["WorldType"] = WorldTypeToString(Ctx.WorldType);
+        WorldObj["ContextName"] = Ctx.ContextName;
+        WorldObj["ContextHandle"] = Ctx.ContextHandle.ToString();
+        Objects.append(WorldObj);
 
         for (AActor* Actor : World->GetActors()) {
-            if (!Actor || Actor->bPendingKill) continue;
+            if (!Actor) continue;
 
             // Serialize actor
             Objects.append(SerializeObject(Actor));
 
             for (USceneComponent* Component : Actor->GetComponents()) {
-                if (!Component || Component->bPendingKill) continue;
+                if (!Component) continue;
 
                 // Serialize component
                 Objects.append(SerializeObject(Component));
@@ -60,27 +89,21 @@ json::JSON FSceneSaveManager::SerializeObject(UObject* Object) {
 
     // Base UObject fields
     j["ClassName"] = Object->GetTypeInfo()->name;
-    j["UUID"] = Object->UUID;
-    j["InternalIndex"] = Object->InternalIndex;
+    j["UUID"] = Object->GetUUID();
+    j["InternalIndex"] = Object->GetInternalIndex();
 
     if (Object->IsA<USceneComponent>()) {
         USceneComponent* Comp = Object->Cast<USceneComponent>();
-        j["Location"] = SerializeVector(
-            Comp->RelativeLocation.X,
-            Comp->RelativeLocation.Y,
-            Comp->RelativeLocation.Z);
-        j["Rotation"] = SerializeVector(
-            Comp->RelativeRotation.X,
-            Comp->RelativeRotation.Y,
-            Comp->RelativeRotation.Z);
-        j["Scale"] = SerializeVector(
-            Comp->RelativeScale3D.X,
-            Comp->RelativeScale3D.Y,
-            Comp->RelativeScale3D.Z);
+        FVector Loc = Comp->GetRelativeLocation();
+        j["Location"] = SerializeVector(Loc.X, Loc.Y, Loc.Z);
+        FVector Rot = Comp->GetRelativeRotation();
+        j["Rotation"] = SerializeVector(Rot.X, Rot.Y, Rot.Z);
+        FVector Scale = Comp->GetRelativeScale();
+        j["Scale"] = SerializeVector(Scale.X, Scale.Y, Scale.Z);
 
         // Parent in the component hierarchy
         j["ParentUUID"] = Comp->GetParent()
-            ? (int)Comp->GetParent()->UUID
+            ? (int)Comp->GetParent()->GetUUID()
             : 0;
     }
 
@@ -88,12 +111,12 @@ json::JSON FSceneSaveManager::SerializeObject(UObject* Object) {
         AActor* Actor = Object->Cast<AActor>();
         j["bVisible"] = Actor->IsVisible();
         j["RootComponentUUID"] = Actor->GetRootComponent()
-            ? (int)Actor->GetRootComponent()->UUID
+            ? (int)Actor->GetRootComponent()->GetUUID()
             : 0;
 
         // Guard against null world
         j["OwningWorldUUID"] = Actor->GetWorld()
-            ? (int)Actor->GetWorld()->UUID
+            ? (int)Actor->GetWorld()->GetUUID()
             : 0;
     }
 
@@ -108,13 +131,13 @@ json::JSON FSceneSaveManager::SerializeVector(float X, float Y, float Z) {
     return v;
 }
 
-void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, TArray<UWorld*>& Scene) {
+void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, TArray<FWorldContext>& WorldList) {
     // Purge current scene
-    for (UWorld* World : Scene) {
-        World->EndPlay();
+    for (FWorldContext& Ctx : WorldList) {
+        Ctx.World->EndPlay();
+        UObjectManager::Get().DestroyObject(Ctx.World);
     }
-    UObjectManager::Get().CollectGarbage();
-    Scene.clear();
+    WorldList.clear();
     using json::JSON;
     std::ifstream File(std::filesystem::path(FPaths::ToWide(filepath)));
     if (!File.is_open()) {
@@ -129,7 +152,14 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, TArray<UWorld*
     JSON root = JSON::Load(FileContent);
     TMap<uint32, UObject*> uuidObjectMap;
     uint32 MaxUUID = 0;
-    TArray<uint32> Worlds;
+
+    struct FWorldLoadInfo {
+        uint32 UUID;
+        EWorldType WorldType;
+        FString ContextName;
+        FString ContextHandle;
+    };
+    TArray<FWorldLoadInfo> WorldInfos;
 
     // Retrieve UObject info
     for (auto& JSONObject : root["Scene"]["Objects"].ArrayRange()) {
@@ -140,25 +170,37 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, TArray<UWorld*
             continue;
         }
 
-        // Give essenmtial information
-        Obj->InternalIndex = JSONObject["InternalIndex"].ToInt();
-        uint32 UUID = JSONObject["UUID"].ToInt(); MaxUUID = MaxUUID > UUID ? MaxUUID : UUID;
-        Obj->UUID = UUID;
+        // Give essential information
+        Obj->SetInternalIndex(JSONObject["InternalIndex"].ToInt());
+        uint32 LoadedUUID = JSONObject["UUID"].ToInt(); MaxUUID = MaxUUID > LoadedUUID ? MaxUUID : LoadedUUID;
+        Obj->SetUUID(LoadedUUID);
 
         // Register Object to UUID Map
-        uuidObjectMap[UUID] = Obj;
+        uuidObjectMap[LoadedUUID] = Obj;
 
         // Perform necessary transformations for USceneComponents
         if (Obj->IsA<USceneComponent>()) {
-            // GIve Space vectors
+            // Give Space vectors
             DeserializeSpaceVectors(Obj->Cast<USceneComponent>(), JSONObject);
 
             // Handle camera objects
-            if (Obj->IsA<UCamera>()) { DecodeCamera(Obj->Cast<UCamera>(), JSONObject); }
+            if (Obj->IsA<UCameraComponent>()) { DecodeCamera(Obj->Cast<UCameraComponent>(), JSONObject); }
         }
 
         if (Obj->IsA<UWorld>()) {
-            Worlds.push_back(Obj->UUID);
+            FWorldLoadInfo Info;
+            Info.UUID = Obj->GetUUID();
+            // Read WorldType with backward compatibility (default to Editor)
+            Info.WorldType = JSONObject.hasKey("WorldType")
+                ? StringToWorldType(JSONObject["WorldType"].ToString())
+                : EWorldType::Editor;
+            Info.ContextName = JSONObject.hasKey("ContextName")
+                ? JSONObject["ContextName"].ToString()
+                : "Loaded Scene";
+            Info.ContextHandle = JSONObject.hasKey("ContextHandle")
+                ? JSONObject["ContextHandle"].ToString()
+                : Info.ContextName;
+            WorldInfos.push_back(Info);
         }
     }
 
@@ -166,10 +208,15 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, TArray<UWorld*
     LinkReferences(uuidObjectMap, root["Scene"]["Objects"]);
 
     // Reload Scene with cooked worlds
-    for (auto i : Worlds) {
-        auto it = uuidObjectMap.find(i);
+    for (const auto& Info : WorldInfos) {
+        auto it = uuidObjectMap.find(Info.UUID);
         if (it != uuidObjectMap.end()) {
-            Scene.push_back(static_cast<UWorld*>(it->second));
+            FWorldContext Ctx;
+            Ctx.WorldType = Info.WorldType;
+            Ctx.World = static_cast<UWorld*>(it->second);
+            Ctx.ContextName = Info.ContextName;
+            Ctx.ContextHandle = FName(Info.ContextHandle);
+            WorldList.push_back(Ctx);
         }
     }
 
@@ -243,7 +290,7 @@ void FSceneSaveManager::DeserializeSpaceVectors(USceneComponent* SceneComp, json
     SceneComp->SetRelativeScale(FVector(static_cast<float>(Scale["X"].ToFloat()), static_cast<float>(Scale["Y"].ToFloat()), static_cast<float>(Scale["Z"].ToFloat())));
 }
 
-void FSceneSaveManager::DecodeCamera(UCamera* Camera, json::JSON& Savedata) {
+void FSceneSaveManager::DecodeCamera(UCameraComponent* Camera, json::JSON& Savedata) {
     // TODO
 }
 

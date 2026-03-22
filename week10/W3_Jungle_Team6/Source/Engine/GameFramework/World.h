@@ -1,9 +1,6 @@
 ﻿#pragma once
 #include "Object/Object.h"
 #include "GameFramework/AActor.h"
-#include "Component/Camera.h"
-
-#include "Engine/Core/InputSystem.h"
 
 class UWorld : public UObject {
 public:
@@ -17,7 +14,10 @@ public:
         // create and register an actor
         T* Actor = UObjectManager::Get().CreateObject<T>();
         Actor->SetWorld(this);
-        Actor->BeginPlay();
+        if (bHasBegunPlay)
+        {
+            Actor->BeginPlay();
+        }
         Actors.push_back(Actor);
         return Actor;
     }
@@ -42,12 +42,9 @@ public:
     void Tick(float DeltaTime);  // Drives the game loop every frame
     void EndPlay();        // Cleanup before world is destroyed
 
-    void SetActiveCamera(UCamera* Cam);
-    UCamera* GetActiveCamera() const { return ActiveCamera;  }
+    bool HasBegunPlay() const { return bHasBegunPlay; }
 
 private:
     TArray<AActor*> Actors;
-    UCamera* ActiveCamera = nullptr;
-
-    void CameraControls(float DeltaTime);
+    bool bHasBegunPlay = false;
 };
