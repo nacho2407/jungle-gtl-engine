@@ -344,7 +344,11 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 	Context->VSSetConstantBuffers(1, 1, &cb);
 	Context->PSSetConstantBuffers(1, 1, &cb);
 
-	LineBatcher.AddWorldGrid(100.0f, 20);
+	if (RenderBus.GetShowFlags().bGrid)
+	{
+		LineBatcher.AddWorldGrid(100.0f, 20);
+	}
+
 	LineBatcher.Flush(Context);
 
 
