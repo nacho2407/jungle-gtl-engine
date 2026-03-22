@@ -1,7 +1,7 @@
 ﻿#include "Engine/Runtime/Launch.h"
 
 #include "Engine/Runtime/EngineLoop.h"
-#include "Engine/Core/ConsoleHelper.h"
+#include "Engine/Core/CrashDump.h"
 
 namespace
 {
@@ -21,6 +21,12 @@ namespace
 
 int Launch(HINSTANCE hInstance, int nShowCmd)
 {
-	//ConsoleHelper console;
-	return GuardedMain(hInstance, nShowCmd);
+	__try
+	{
+		return GuardedMain(hInstance, nShowCmd);
+	}
+	__except (WriteCrashDump(GetExceptionInformation()))
+	{
+		return static_cast<int>(GetExceptionCode());
+	}
 }

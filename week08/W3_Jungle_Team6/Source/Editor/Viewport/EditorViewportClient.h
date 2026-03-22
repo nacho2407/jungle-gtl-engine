@@ -12,6 +12,7 @@
 class UWorld;
 class UCamera;
 class UGizmoComponent;
+class FEditorSettings;
 
 using namespace common::structs;
 
@@ -22,6 +23,7 @@ public:
 	void SetWorld(UWorld* InWorld) { World = InWorld; }
 	void SetCamera(UCamera* InCamera) { Camera = InCamera; }
 	void SetGizmo(UGizmoComponent* InGizmo) { Gizmo = InGizmo; }
+	void SetSettings(const FEditorSettings* InSettings) { Settings = InSettings; }
 	UGizmoComponent* GetGizmo() { return Gizmo; }
 	void SetViewportSize(float InWidth, float InHeight);
 
@@ -43,9 +45,8 @@ private:
 	UWorld* World = nullptr;
 	UCamera* Camera = nullptr;
 	UGizmoComponent* Gizmo = nullptr;
+	const FEditorSettings* Settings = nullptr;
 
-	float CameraVelocity = 10.f;
-	float CameraAngleVelocity = 60.f;
 	float WindowWidth = 1920.f;
 	float WindowHeight = 1080.f;
 

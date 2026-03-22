@@ -161,6 +161,28 @@ USphereComponent::USphereComponent()
 {
 	MeshData = &FMeshManager::GetSphere();
 }
+
+void USphereComponent::UpdateWorldAABB()
+{
+	FVector Center = { CachedWorldMatrix.M[3][0], CachedWorldMatrix.M[3][1], CachedWorldMatrix.M[3][2] };
+
+	float ExtentX = LocalExtents.X * std::sqrt(std::pow(CachedWorldMatrix.M[0][0], 2) +
+		std::pow(CachedWorldMatrix.M[1][0], 2) +
+		std::pow(CachedWorldMatrix.M[2][0], 2));
+								  
+	float ExtentY = LocalExtents.Y * std::sqrt(std::pow(CachedWorldMatrix.M[0][1], 2) +
+		std::pow(CachedWorldMatrix.M[1][1], 2) +
+		std::pow(CachedWorldMatrix.M[2][1], 2));
+								  
+	float ExtentZ = LocalExtents.Z * std::sqrt(std::pow(CachedWorldMatrix.M[0][2], 2) +
+		std::pow(CachedWorldMatrix.M[1][2], 2) +
+		std::pow(CachedWorldMatrix.M[2][2], 2));
+
+	WorldAABBMinLocation = { Center.X - ExtentX, Center.Y - ExtentY, Center.Z - ExtentZ };
+	WorldAABBMaxLocation = { Center.X + ExtentX, Center.Y + ExtentY, Center.Z + ExtentZ };
+}
+
+
 bool USphereComponent::GetRenderCommand(FRenderCommand& OutCommand) {
 	if (!MeshData || !bIsVisible) {
 		return false;

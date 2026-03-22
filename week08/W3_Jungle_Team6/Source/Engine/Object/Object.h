@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "EngineStatics.h"
+#include "Object/FName.h"
 
 #define DECLARE_CLASS(ClassName, ParentClass)                          \
     static const FTypeInfo s_TypeInfo;                                 \
@@ -70,7 +71,9 @@ public:
 ;		}
 	}
 
-	//virtual std::string GetClass() { return "UObject"; }
+	// FName
+	FName GetFName() const { return ObjectName; }
+	void SetFName(const FName& InName) { ObjectName = InName; }
 
 	// RTTI stuffs
 	virtual const FTypeInfo* GetTypeInfo() const { return &s_TypeInfo; }
@@ -85,6 +88,9 @@ public:
 	const T* Cast() const { return IsA<T>() ? static_cast<const T*>(this) : nullptr; }
 
 	static const FTypeInfo s_TypeInfo;
+
+protected:
+	FName ObjectName;
 };
 
 extern TArray<UObject*> GUObjectArray;

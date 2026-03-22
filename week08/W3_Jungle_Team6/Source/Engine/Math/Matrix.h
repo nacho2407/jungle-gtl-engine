@@ -11,7 +11,7 @@ struct FMatrix {
 	union
 	{
 		float M[4][4];
-		
+
 		// Iteration 가능 +Cache 친화
 		float Data[16];
 
@@ -19,9 +19,8 @@ struct FMatrix {
 		//FVectors4 Rows[4];	
 	};
 
-
 	// Default constructor (Zero matrix)
-	FMatrix() { 
+	FMatrix() {
 		std::memset(Data, 0, sizeof(Data));
 	}
 
@@ -93,6 +92,7 @@ struct FMatrix {
 	FVector TransformPositionWithW(const FVector& V) const;
 
 	FVector GetEuler() const;
+	FVector GetLocation() const;
 };
 
 FVector operator* (const FVector& vector, const FMatrix& matrix);

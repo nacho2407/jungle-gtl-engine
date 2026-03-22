@@ -20,6 +20,7 @@ enum class EPrimitiveType
 	EPT_Cube,
 	EPT_Sphere,
 	EPT_Plane,
+	EPT_Quad,
 	EPT_TransGizmo,
 	EPT_RotGizmo,
 	EPT_ScaleGizmo,
@@ -30,7 +31,8 @@ enum class EPrimitiveType
 
 enum class ERenderPass : uint32
 {
-	Component,     
+	Opaque,
+	Translucent,
 	Editor,
 	Grid,
 	Outline,        
