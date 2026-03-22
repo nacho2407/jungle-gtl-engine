@@ -2,6 +2,7 @@
 
 #include "Object/Object.h"
 #include "GameFramework/World.h"
+#include "GameFramework/WorldContext.h"
 #include "Render/Renderer/Renderer.h"
 #include "Render/Scene/RenderBus.h"
 
@@ -25,13 +26,24 @@ public:
 
 	virtual void OnWindowResized(uint32 Width, uint32 Height);
 
+	// World context management
+	FWorldContext& CreateWorldContext(EWorldType Type, const FName& Handle, const FString& Name = "");
+	void DestroyWorldContext(const FName& Handle);
+
+	// World context lookup
+	FWorldContext* GetWorldContextFromHandle(const FName& Handle);
+	const FWorldContext* GetWorldContextFromHandle(const FName& Handle) const;
+	FWorldContext* GetWorldContextFromWorld(const UWorld* World);
+
+	// Active world
+	void SetActiveWorld(const FName& Handle);
+	FName GetActiveWorldHandle() const { return ActiveWorldHandle; }
+
 	// Accessors
 	FWindowsWindow* GetWindow() const { return Window; }
-	UWorld* GetWorld() const { return Scene.empty() ? nullptr : Scene[CurrentWorld]; }
-	TArray<UWorld*>& GetScene() { return Scene; }
-	uint32 GetCurrentWorld() const { return CurrentWorld; }
-	void SetCurrentWorld(uint32 NewWorldIndex) { CurrentWorld = NewWorldIndex; }
-	UCameraComponent* GetCamera() const { return Camera; }
+	UWorld* GetWorld() const;
+	const TArray<FWorldContext>& GetWorldList() const { return WorldList; }
+	TArray<FWorldContext>& GetWorldList() { return WorldList; }
 
 	void SetTimer(FTimer* InTimer) { Timer = InTimer; }
 	FTimer* GetTimer() const { return Timer; }
@@ -41,7 +53,7 @@ public:
 	template <typename T>
 	AActor* SpawnNewPrimitiveActor(FVector InitLocation)
 	{
-		AActor* NewActor = Scene[CurrentWorld]->SpawnActor<AActor>();
+		AActor* NewActor = GetWorld()->SpawnActor<AActor>();
 		NewActor->SetActorLocation(InitLocation);
 		NewActor->AddComponent<T>();
 		return NewActor;
@@ -49,14 +61,13 @@ public:
 
 protected:
 	virtual void Render(float DeltaTime);
-	void UpdateWorld(float DeltaTime);
+	void WorldTick(float DeltaTime);
 
 protected:
 	FWindowsWindow* Window = nullptr;
 
-	uint32 CurrentWorld = 0;
-	TArray<UWorld*> Scene;
-	UCameraComponent* Camera = nullptr;
+	FName ActiveWorldHandle;
+	TArray<FWorldContext> WorldList;
 
 	FTimer* Timer = nullptr;
 
