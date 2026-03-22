@@ -47,6 +47,9 @@ public:
 	void SelectComponent(USceneComponent* component);
 	USceneComponent* GetSelectedComponent() const { return SelectedComponent; }
 
+	void LoadSettings();
+	void SaveSettings();
+
 private:
 	void DrawControlPanel(ImGuiLayout&);
 	void DrawConsole(ImGuiLayout&);

@@ -20,7 +20,7 @@ public:
 
 public:
 	// === Scene Management
-	TArray<UScene*> GetLoadedScenes();
+	const TArray<UScene*>& GetLoadedScenes() const;
 	UScene* GetActiveScene();
 	void SetActiveScene(UScene*);
 	UScene* GetPermanentScene();

@@ -7,13 +7,18 @@
 //UScene* UWorld::activeScene;
 //UScene* UWorld::permanentScene;
 
-UWorld::UWorld()
+UWorld::UWorld() : SceneMgr(nullptr), Renderer(nullptr)
 {
 	SceneMgr = new SceneManager();
 	//permanentScene = Cast<UScene>(FObjectFactory::ConstructObject(UScene::GetClass()));
 }
 
 UWorld::~UWorld() {
+	if (SceneMgr == nullptr)
+	{
+		return;
+	}
+
 	while(!SceneMgr->GetLoadedScenes().empty())
 	{
 		UScene* scene = SceneMgr->GetLoadedScenes().back();
@@ -25,11 +30,20 @@ UWorld::~UWorld() {
 
 SceneManager* UWorld::GetSceneManager()
 {
+	if (SceneMgr == nullptr)
+	{
+		SceneMgr = new SceneManager();
+	}
 	return SceneMgr;
 }
 
 void UWorld::Update(float deltaTime)
 {
+	if (SceneMgr == nullptr)
+	{
+		return;
+	}
+
 	if (SceneMgr->GetPermanentScene())
 		SceneMgr->GetPermanentScene()->Update(deltaTime);
 	// 향후 확작성을 위한 TODO: 멀티 씬 구조에서 for each scene 루프 중첩 추가
@@ -39,6 +53,11 @@ void UWorld::Update(float deltaTime)
 
 void UWorld::OnBeforeRender() const
 {
+	if (SceneMgr == nullptr)
+	{
+		return;
+	}
+
 	// 향후 확작성을 위한 TODO: 멀티 씬 구조에서 for each scene 루프 중첩 추가
 	UScene* activeScene = SceneMgr->GetActiveScene();
 	UScene* permanentScene = SceneMgr->GetPermanentScene();

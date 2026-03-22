@@ -19,7 +19,7 @@ SceneManager::~SceneManager()
 }
 
 
-TArray<UScene*> SceneManager::GetLoadedScenes()
+const TArray<UScene*>& SceneManager::GetLoadedScenes() const
 {
 	return LoadedScenes;
 }
@@ -70,6 +70,7 @@ UScene* SceneManager::LoadScene(FString sceneName)
 
 	if (loadedScene != nullptr)
 	{
+		loadedScene->Name = FName(sceneName);
 		LoadedScenes.push_back(loadedScene);
 		SetActiveScene(loadedScene);
 		UEngineStatics::NextUUID = loadedScene->NextUUID;

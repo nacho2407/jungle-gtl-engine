@@ -101,6 +101,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	EditorInst->SetCamera(Camera);
 	EditorInst->SetRenderer(Renderer);
 	EditorInst->SetGrid(Grid);
+	EditorInst->LoadSettings();
 
 
 	Gizmo::GetInstance().CreateGizmoController();

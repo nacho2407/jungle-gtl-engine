@@ -1,4 +1,8 @@
 ﻿#include "Editor.h"
+#include "ThirdParty/json.h"
+#include "Component/CameraComponent.h"
+#include <fstream>
+#include <streambuf>
 
 Editor::Editor()
 {
@@ -51,6 +55,7 @@ void Editor::DrawUI()
 
 void Editor::Finalize()
 {
+	SaveSettings();
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
@@ -87,6 +92,64 @@ void Editor::SelectComponent(USceneComponent* component)
 	}
 }
 
+void Editor::LoadSettings()
+{
+	std::ifstream file("editor.ini");
+	if (file.is_open())
+	{
+		std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+		json::JSON data = json::JSON::Load(content);
+
+		if (data.hasKey("Grid"))
+		{
+			if (Grid)
+			{
+				if (data["Grid"].hasKey("HalfExtent"))
+					Grid->HalfExtent = (float)data["Grid"]["HalfExtent"].ToFloat();
+				if (data["Grid"].hasKey("CellSize"))
+					Grid->CellSize = (float)data["Grid"]["CellSize"].ToFloat();
+
+				ResourceManager::GetInstance()->UpdateGridMesh(Grid->HalfExtent, Grid->CellSize, 0.f);
+			}
+		}
+
+		if (data.hasKey("Camera"))
+		{
+			if (Camera)
+			{
+				if (data["Camera"].hasKey("MoveSpeed"))
+					Camera->MoveSpeed = (float)data["Camera"]["MoveSpeed"].ToFloat();
+				if (data["Camera"].hasKey("RotateSensitivity"))
+					Camera->RotateSensitivity = (float)data["Camera"]["RotateSensitivity"].ToFloat();
+			}
+		}
+	}
+}
+
+void Editor::SaveSettings()
+{
+	json::JSON data = json::Object();
+	if (Grid)
+	{
+		data["Grid"] = json::Object();
+		data["Grid"]["HalfExtent"] = Grid->HalfExtent;
+		data["Grid"]["CellSize"] = Grid->CellSize;
+	}
+
+	if (Camera)
+	{
+		data["Camera"] = json::Object();
+		data["Camera"]["MoveSpeed"] = Camera->MoveSpeed;
+		data["Camera"]["RotateSensitivity"] = Camera->RotateSensitivity;
+	}
+
+	std::ofstream file("editor.ini");
+	if (file.is_open())
+	{
+		file << data.dump();
+	}
+}
+
 void Editor::DrawConsole(ImGuiLayout& layout)
 {
 	bool flag = true;
@@ -110,7 +173,7 @@ void Editor::DrawStatPanel(ImGuiLayout& layout)
 
 void Editor::DrawToolbar(ImGuiLayout& layout)
 {
-	Toolbar->Draw(layout.Toolbar);
+	Toolbar->Draw(layout.Toolbar, Grid);
 }
 
 void Editor::DrawSceneManagerPanel(ImGuiLayout& layout)
