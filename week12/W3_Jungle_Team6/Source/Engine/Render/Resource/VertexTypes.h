@@ -19,6 +19,13 @@ struct FOverlayVertex
 	float X, Y;
 };
 
+
+struct FFontVertex
+{
+	FVector  Position;   
+	FVector2 TexCoord;
+};
+
 struct FMeshData
 {
 	TArray<FVertex> Vertices;
