@@ -10,11 +10,11 @@
 #include "Renderer/Types/ViewMode.h"
 #include "Renderer/Types/ShowFlags.h"
 
-#include "../../../Resources/Mesh/VertexSimple.h"
-#include "../../../Resources/Mesh/Sphere.h"
-#include "../../../Resources/Mesh/Triangle.h"
-#include "../../../Resources/Mesh/Cube.h"
-#include "../../../Resources/Mesh/Plane.h"
+#include "Resources/Mesh/VertexSimple.h"
+#include "Resources/Mesh/Sphere.h"
+#include "Resources/Mesh/Triangle.h"
+#include "Resources/Mesh/Cube.h"
+#include "Resources/Mesh/Plane.h"
 #include "Renderer/Types/VertexTypes.h"
 
 namespace

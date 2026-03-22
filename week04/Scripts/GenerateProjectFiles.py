@@ -290,7 +290,7 @@ def add_engine_project(files: dict[str, list[str]]) -> None:
         if platform == "x64":
             ET.SubElement(cl_compile, "LanguageStandard").text = "stdcpp20"
             ET.SubElement(cl_compile, "AdditionalIncludeDirectories").text = (
-                "$(ProjectDir)Source;%(AdditionalIncludeDirectories)"
+                "$(ProjectDir)Source;$(ProjectDir);%(AdditionalIncludeDirectories)"
             )
             ET.SubElement(cl_compile, "AdditionalOptions").text = "/utf-8 %(AdditionalOptions)"
             ET.SubElement(cl_compile, "PrecompiledHeader").text = "Use"
@@ -396,7 +396,7 @@ def add_editor_project(files: dict[str, list[str]]) -> None:
         if platform == "x64":
             ET.SubElement(cl_compile, "LanguageStandard").text = "stdcpp20"
             ET.SubElement(cl_compile, "AdditionalIncludeDirectories").text = (
-                "$(ProjectDir)Source;$(ProjectDir)Source\\ThirdParty\\imgui;$(ProjectDir)..\\Engine\\Source;%(AdditionalIncludeDirectories)"
+                "$(ProjectDir)Source;$(ProjectDir);$(ProjectDir)Source\\ThirdParty\\imgui;$(ProjectDir)..\\Engine\\Source;$(ProjectDir)..\\Engine;%(AdditionalIncludeDirectories)"
             )
             ET.SubElement(cl_compile, "AdditionalOptions").text = "/utf-8 %(AdditionalOptions)"
 
