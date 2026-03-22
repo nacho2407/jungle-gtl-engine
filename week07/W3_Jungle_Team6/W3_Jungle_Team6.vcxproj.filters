@@ -10,14 +10,14 @@
     <Filter Include="Source\Editor">
       <UniqueIdentifier>{956d68db-8267-b6c9-ee17-de994a7dc814}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\Selection">
+      <UniqueIdentifier>{b215b2fc-a010-f092-1965-ea1933ecf0f6}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\Settings">
       <UniqueIdentifier>{d787f5b7-1afa-e269-d3f4-b58c3fbd3301}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Editor\UI">
       <UniqueIdentifier>{08046398-110a-9b75-d53d-049fd85f18ad}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Editor\Selection">
-      <UniqueIdentifier>{b2c8a1d3-5e7f-4a92-8d6b-3f1c9e0a7b54}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Editor\Viewport">
       <UniqueIdentifier>{aa7b419e-d705-4028-e338-a7db01d95096}</UniqueIdentifier>
