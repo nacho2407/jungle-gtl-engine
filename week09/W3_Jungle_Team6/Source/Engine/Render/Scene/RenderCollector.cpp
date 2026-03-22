@@ -16,14 +16,16 @@ void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBu
 	//	Must be the active camera
 	
 	UCamera* Camera = Context.Camera;
-	RenderBus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix());
+	RenderBus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix(),
+								Camera->GetRightVector(), Camera->GetUpVector());
+	RenderBus.SetRenderSettings(Context.ViewMode, Context.ShowFlags);
+
 
 	//	Draw from Editor (Gizmo, Axis, etc.)
 	CollectFromEditor(Context,RenderBus);
 
 	//	Draw from World
-	//	Iterate through GUObjects
-	for (auto* Object : GUObjectArray) 
+	for (auto* Object : GUObjectArray)
 	{
 		if (!Object) continue;
 
@@ -55,16 +57,16 @@ void FRenderCollector::CollectFromActor(AActor* Actor, const FRenderCollectorCon
 void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveComponent, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
 	FRenderCommand Cmd = {};
-	Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
 	Cmd.TransformConstants = FTransformConstants{ primitiveComponent->GetWorldMatrix() };
 	if (primitiveComponent->GetRenderCommand(Cmd))
 	{
-		ERenderPass selectedRenderPass = ERenderPass::Component;
+		ERenderPass selectedRenderPass = ERenderPass::Opaque;
 		switch (Cmd.Type)
 		{
-
 		case ERenderCommandType::Primitive:
-			selectedRenderPass = ERenderPass::Component;
+			if (Context.ShowFlags.bPrimitives == false) return;
+			selectedRenderPass = ERenderPass::Opaque;
+			Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
 			if (Context.SelectedComponent == primitiveComponent)
 			{
 				CollectComponentOutline(primitiveComponent, Context, RenderBus);
@@ -74,9 +76,12 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 			break;
 
 		case ERenderCommandType::Billboard:
+
+			if (Context.ShowFlags.bBillboardText == false) return;
 			Cmd.BlendState = EBlendState::AlphaBlend;
 			Cmd.DepthStencilState = EDepthStencilState::Default;
-			selectedRenderPass = ERenderPass::Component;
+			Cmd.TextData = "Hello Jungle";
+			selectedRenderPass = ERenderPass::Translucent;
 			break;
 		}
 
@@ -95,6 +100,7 @@ void FRenderCollector::CollectFromEditor(const FRenderCollectorContext& Context,
 
 void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
+
 	UGizmoComponent* Gizmo = Context.Gizmo;
 	if (!Gizmo || !Gizmo->IsVisible()) return;
 
@@ -103,6 +109,7 @@ void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, FRen
 		Cmd.Type = ERenderCommandType::Gizmo;
 		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
 		Cmd.TransformConstants = FTransformConstants{ Gizmo->GetWorldMatrix()};
+
 		if (bInner)
 		{
 			Cmd.DepthStencilState = EDepthStencilState::None;
@@ -121,6 +128,7 @@ void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, FRen
 		Cmd.Constants.Gizmo.HoveredAxisOpacity = 0.3f;
 		return Cmd;
 		};
+
 
 	// Inner Gizmo
 	RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(false));
@@ -160,7 +168,6 @@ void FRenderCollector::CollectComponentOutline(UPrimitiveComponent* primitiveCom
 	OutlineCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
 	OutlineCmd.TransformConstants = FTransformConstants{ primitiveComponent->GetWorldMatrix() };
 	OutlineCmd.Type = ERenderCommandType::SelectionOutline;
-
 	OutlineCmd.Constants.Outline.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
 	OutlineCmd.Constants.Outline.OutlineInvScale = FVector(1.0f / primitiveComponent->GetRelativeScale().X,
 		1.0f / primitiveComponent->GetRelativeScale().Y, 1.0f / primitiveComponent->GetRelativeScale().Z);
@@ -194,3 +201,4 @@ void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponen
 	// 렌더러가 마지막에 몰아서 그릴 수 있게 특정 패스(예: Editor/Overlay)에 푸시합니다.
 	RenderBus.AddCommand(ERenderPass::Editor, AABBCmd);
 }
+

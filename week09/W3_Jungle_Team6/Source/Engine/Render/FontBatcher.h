@@ -5,74 +5,72 @@
 #include "Math/Vector.h"
 #include "Math/Matrix.h"
 #include "Render/Common/RenderTypes.h"
+#include "Render/Resource/Shader.h"
+#include "Render/Resource/Buffer.h"
 
-// ============================================================
-// FFontVertex — 폰트 렌더링용 버텍스 (Position + UV + Color)
-// ============================================================
-struct FFontVertex
+// Texture Atlas UV 정보
+struct FCharacterInfo
 {
-	FVector Position;
-	FVector2 TexCoord;
-	FVector4 Color;
+	float u;
+	float v;
+	float width;
+	float height;
 };
 
-// ============================================================
-// FFontBatcher — 텍스트를 빌보드 Quad로 모아서 한 번에 그리는 배처
-//
-// 사용 흐름:
-//   1) Clear()         — 매 프레임 시작 시 이전 텍스트 제거
-//   2) AddText()       — 월드 좌표 + 카메라 방향으로 빌보드 텍스트 추가
-//   3) Flush()         — Dynamic VB 업로드 + Draw Call
-//
-// 파트 C가 구현, 파트 A(Renderer)가 매 프레임 호출
-// ============================================================
+
+
+// FFontBatcher — 텍스트를 배치로 모아 1회 드로우콜로 처리
 class FFontBatcher
 {
 public:
 	FFontBatcher() = default;
 	~FFontBatcher() = default;
 
-	// ---- 초기화 / 해제 ----
-
-	// 폰트 아틀라스 텍스쳐 로드 + SRV 생성 + Dynamic VB 할당
-	void Create(ID3D11Device* Device);
+	// 공유 리소스 초기화 (셰이더, 텍스처, 샘플러, Dynamic VB/IB, CB)
+	void Create(ID3D11Device* InDevice);
 	void Release();
 
-	// ---- 텍스트 축적 API ----
-
-	// 월드 좌표(WorldPos) 위에 빌보드 텍스트 1개 추가
-	// CamRight, CamUp: 카메라의 Right/Up 벡터 (빌보드 회전에 사용)
+	// 월드 좌표 위에 빌보드 텍스트 추가 (배치에 누적)
 	void AddText(const FString& Text,
 		const FVector& WorldPos,
 		const FVector& CamRight,
 		const FVector& CamUp,
-		const FColor& Color = FColor::White(),
 		float Scale = 1.0f);
 
-	// 이번 프레임에 축적된 텍스트 모두 제거
+	// 이번 프레임 누적 텍스트 초기화
 	void Clear();
 
-	// ---- 렌더링 ----
+	// Dynamic VB 업로드 + 드로우콜 (1회)
+	void Flush(ID3D11DeviceContext* Context);
 
-	// Dynamic VB 업로드 + 아틀라스 텍스쳐 바인딩 + Draw Call
-	// ViewProj: 카메라의 View * Projection 행렬
-	void Flush(ID3D11DeviceContext* Context, const FMatrix& ViewProj);
-
-	// 현재 축적된 Quad(문자) 개수
-	uint32 GetQuadCount() const;
+	// 현재 누적된 Quad(문자) 수
+	uint32 GetQuadCount() const { return static_cast<uint32>(Vertices.size() / 4); }
 
 private:
+	// CPU 누적 배열
 	TArray<FFontVertex> Vertices;
-	TArray<uint32> Indices;
+	TArray<uint32>      Indices;
 
+	// GPU 버퍼 (Dynamic)
 	ID3D11Buffer* VertexBuffer = nullptr;
-	ID3D11Buffer* IndexBuffer = nullptr;
+	ID3D11Buffer* IndexBuffer  = nullptr;
+
+	uint32 MaxVertexCount      = 0; // 정점 버퍼에 할당 가능한 최대 정점 개수
+	uint32 MaxIndexCount       = 0; // 색인 버퍼에 할당 가능한 최대 정점 개수
+
+	// 공유 DX 리소스
+	ID3D11Device*             Device       = nullptr;  // 버퍼 재할당 시 사용
+	ID3D11Resource*           FontResource = nullptr;
 	ID3D11ShaderResourceView* FontAtlasSRV = nullptr;
-	ID3D11SamplerState* SamplerState = nullptr;
+	ID3D11SamplerState*       SamplerState = nullptr;
 
-	uint32 MaxVertexCount = 0;
-	uint32 MaxIndexCount = 0;
+	TMap<char, FCharacterInfo> CharInfoMap;
+	FShader FontShader;
 
-	// 폰트 아틀라스 내 문자별 UV 좌표 계산
+	// Dynamic VB/IB 생성 (MaxVertexCount/MaxIndexCount 기준)
+	void CreateBuffers();
+	// Texture Atlas Slicing
+	void BuildCharInfoMap();
+	// 해당 문자열을 key로 가지는 구조체의 UV값 얻는 함수
 	void GetCharUV(char Ch, FVector2& OutUVMin, FVector2& OutUVMax) const;
 };

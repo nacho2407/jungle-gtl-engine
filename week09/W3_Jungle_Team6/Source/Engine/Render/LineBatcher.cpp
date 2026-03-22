@@ -1,5 +1,6 @@
 ﻿#include "LineBatcher.h"
 #include "Core/EngineTypes.h"
+#include "Editor/Settings/EditorSettings.h"
 
 void FLineBatcher::Create(ID3D11Device* InDevice)
 {
@@ -158,7 +159,7 @@ void FLineBatcher::AddWorldHelpers(FEditorSettings& Settings)
 	const float GridSpacing = Settings.GridSpacing;
 	const int HalfGridCount = Settings.GridHalfLineCount;
 
-	if (Settings.HasShowFlag(SF_Grid))
+	if (Settings.ShowFlags.bGrid)
 	{
 		AddWorldGrid(GridSpacing, HalfGridCount);
 	}

@@ -1,6 +1,7 @@
 ﻿#include "Editor/EditorEngine.h"
 
 #include "Engine/Core/InputSystem.h"
+#include "Core/ResourceManager.h"
 
 #include "Render/Scene/RenderCollector.h"
 #include "Render/Scene/RenderCollectorContext.h"
@@ -8,6 +9,8 @@
 void FEditorEngine::Create(HWND InHWindow)
 {
 	HWindow = InHWindow;
+
+	FEditorSettings::Get().LoadFromFile(FEditorSettings::GetDefaultSettingsPath());
 
 	Renderer.Create(HWindow);
 	FRenderCollector::Initialize(Renderer.GetFD3DDevice().GetDevice());
@@ -35,6 +38,7 @@ void FEditorEngine::Create(HWND InHWindow)
 	WindowWidth = static_cast<float>(rect.right - rect.left);
 	WindowHeight = static_cast<float>(rect.bottom - rect.top);
 
+	ViewportClient.SetSettings(&FEditorSettings::Get());
 	ViewportClient.Initialize(HWindow);
 	ViewportClient.SetViewportSize(WindowWidth, WindowHeight);
 	ViewportClient.SetWorld(Scene[CurrentWorld]);
@@ -66,8 +70,8 @@ void FEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
 
 void FEditorEngine::ResetCamera(UCamera* Camera) {
 	if (!Camera) return;
-	Camera->SetWorldLocation(InitViewPos);
-	Camera->LookAt(InitLookAt);
+	Camera->SetWorldLocation(FEditorSettings::Get().InitViewPos);
+	Camera->LookAt(FEditorSettings::Get().InitLookAt);
 }
 
 void FEditorEngine::ResetViewport() {
@@ -95,12 +99,6 @@ void FEditorEngine::CloseScene() {
 
 	UObjectManager::Get().CollectGarbage();
 	FRenderCollector::Release();
-
-	//if (EditorGizmo)
-	//{
-	//	delete EditorGizmo;
-	//	EditorGizmo = nullptr;
-	//}
 }
 
 void FEditorEngine::NewScene() {
@@ -113,8 +111,10 @@ void FEditorEngine::NewScene() {
 
 void FEditorEngine::Release()
 {
+	FEditorSettings::Get().SaveToFile(FEditorSettings::GetDefaultSettingsPath());
 	CloseScene();
 	MainPanel.Release();
+	FResourceManager::Get().ReleaseGPUResources();	// Device 해제 전에 GPU 리소스 정리
 	Renderer.Release();
 }
 
@@ -156,8 +156,14 @@ void FEditorEngine::Render(float DeltaTime)
 	RenderBus.Clear();
 	BuildRenderCommands();
 
+	ERasterizerState ViewModeRasterizer = ERasterizerState::SolidBackCull;
+	if (FEditorSettings::Get().ViewMode == EViewMode::Wireframe)
+	{
+		ViewModeRasterizer = ERasterizerState::WireFrame;
+	}
+
 	Renderer.BeginFrame();
-	Renderer.Render(RenderBus);
+	Renderer.Render(RenderBus, ViewModeRasterizer);
 	MainPanel.Render(DeltaTime, ViewportClient.GetViewOutput());
 	Renderer.RenderOverlay(RenderBus);	//	UI가 그려진 후 Overlay 그리기
 	Renderer.EndFrame();
@@ -168,19 +174,19 @@ void FEditorEngine::EndFrame()
 	UObjectManager::Get().CollectGarbage();
 }
 
-void FEditorEngine::SyncCameraFromRenderHandler()
-{
-	if (EditorCamera)
-	{
-		EditorCamera->ApplyCameraState();
-	}
-}
-
 void FEditorEngine::UpdateWorld(float DeltaTime)
 {
 	if (!Scene.empty() && Scene[CurrentWorld])
 	{
 		Scene[CurrentWorld]->Tick(DeltaTime);
+	}
+}
+
+void FEditorEngine::SyncCameraFromRenderHandler()
+{
+	if (EditorCamera)
+	{
+		EditorCamera->ApplyCameraState();
 	}
 }
 
@@ -190,11 +196,12 @@ void FEditorEngine::BuildRenderCommands()
 	Context.World = Scene[CurrentWorld];
 	Context.Camera = EditorCamera;
 	Context.Gizmo = EditorGizmo;
-	Context.bGridVisible = RenderHandler.bGridVisible;
+	Context.ViewMode = FEditorSettings::Get().ViewMode;
+	Context.ShowFlags = FEditorSettings::Get().ShowFlags;
 	Context.CursorOverlayState = &ViewportClient.GetCursorOverlayState();
 	Context.ViewportHeight = WindowHeight;
 	Context.ViewportWidth = WindowWidth;
-	Context.SelectedComponent = ViewportClient.GetGizmo()->HasTarget() ? (UPrimitiveComponent *)ViewportClient.GetGizmo()->GetTarget() : nullptr;
+	Context.SelectedComponent = ViewportClient.GetGizmo()->HasTarget() ? (UPrimitiveComponent*)ViewportClient.GetGizmo()->GetTarget() : nullptr;
 
 	FRenderCollector::Collect(Context, RenderBus);
 }
