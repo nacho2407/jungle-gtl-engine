@@ -18,24 +18,23 @@ void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBu
 	UCamera* Camera = Context.Camera;
 	RenderBus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix(),
 								Camera->GetRightVector(), Camera->GetUpVector());
+	RenderBus.SetRenderSettings(Context.ViewMode, Context.ShowFlags);
+
 
 	//	Draw from Editor (Gizmo, Axis, etc.)
 	CollectFromEditor(Context,RenderBus);
 
 	//	Draw from World
-	if (Context.ShowFlags.bPrimitives)
+	for (auto* Object : GUObjectArray)
 	{
-		for (auto* Object : GUObjectArray)
-		{
-			if (!Object) continue;
+		if (!Object) continue;
 
-			if (Object->IsA<AActor>() && !Object->bPendingKill)
+		if (Object->IsA<AActor>() && !Object->bPendingKill)
+		{
+			auto* Actor = Object->Cast<AActor>();
+			if (Actor->GetWorld() == Context.World)
 			{
-				auto* Actor = Object->Cast<AActor>();
-				if (Actor->GetWorld() == Context.World)
-				{
-					CollectFromActor(Actor, Context, RenderBus);
-				}
+				CollectFromActor(Actor, Context, RenderBus);
 			}
 		}
 	}
@@ -58,7 +57,6 @@ void FRenderCollector::CollectFromActor(AActor* Actor, const FRenderCollectorCon
 void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveComponent, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
 	FRenderCommand Cmd = {};
-	Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
 	Cmd.TransformConstants = FTransformConstants{ primitiveComponent->GetWorldMatrix() };
 	if (primitiveComponent->GetRenderCommand(Cmd))
 	{
@@ -66,7 +64,9 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 		switch (Cmd.Type)
 		{
 		case ERenderCommandType::Primitive:
+			if (Context.ShowFlags.bPrimitives == false) return;
 			selectedRenderPass = ERenderPass::Opaque;
+			Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
 			if (Context.SelectedComponent == primitiveComponent)
 			{
 				CollectComponentOutline(primitiveComponent, Context, RenderBus);
@@ -76,6 +76,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 			break;
 
 		case ERenderCommandType::Billboard:
+
+			if (Context.ShowFlags.bBillboardText == false) return;
 			Cmd.BlendState = EBlendState::AlphaBlend;
 			Cmd.DepthStencilState = EDepthStencilState::Default;
 			Cmd.TextData = "Hello Jungle";

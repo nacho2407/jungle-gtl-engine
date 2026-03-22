@@ -82,6 +82,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus, ERasterizerState InViewMod
 {
 	ID3D11DeviceContext* context = Device.GetDeviceContext();
 	UpdateFrameBuffer(context, InRenderBus.GetView(), InRenderBus.GetProj());
+	SetRenderSettings(InRenderBus);
 
 	RenderPasses(InRenderBus, context);
 	RenderEditorHelpers(InRenderBus, context);
@@ -354,4 +355,20 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FMatrix& V
 	ID3D11Buffer* b0 = Resources.FrameBuffer.GetBuffer();
 	Context->VSSetConstantBuffers(0, 1, &b0);
 	Context->PSSetConstantBuffers(0, 1, &b0);
+}
+
+void FRenderer::SetRenderSettings(const FRenderBus& InRenderBus)
+{
+	EViewMode curViewMode = InRenderBus.GetViewMode();
+	switch (curViewMode)
+	{
+	case EViewMode::Lit:
+		Device.SetRasterizerState(ERasterizerState::SolidBackCull);
+		break;
+	case EViewMode::Unlit:
+		break;
+	case EViewMode::Wireframe:
+		Device.SetRasterizerState(ERasterizerState::WireFrame);
+		break;
+	}
 }
