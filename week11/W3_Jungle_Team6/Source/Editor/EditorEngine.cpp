@@ -154,5 +154,5 @@ void UEditorEngine::BuildRenderCommands()
 		Context.SelectedComponent = static_cast<UPrimitiveComponent*>(Primary->GetRootComponent());
 	}
 
-	FRenderCollector::Collect(Context, RenderBus);
+	RenderCollector.Collect(Context, RenderBus);
 }

@@ -307,6 +307,25 @@ FMatrix FMatrix::MakeRotationZ(float Angle)
 	return ret;
 }
 
+FMatrix FMatrix::GetCancelRotationMatrix(const FMatrix& InMatrix)
+{
+	FMatrix ret = FMatrix::Identity;
+
+	ret.M[0][0] = InMatrix.M[0][0];
+	ret.M[0][1] = InMatrix.M[1][0];
+	ret.M[0][2] = InMatrix.M[2][0];
+
+	ret.M[1][0] = InMatrix.M[0][1];
+	ret.M[1][1] = InMatrix.M[1][1];
+	ret.M[1][2] = InMatrix.M[2][1];
+
+	ret.M[2][0] = InMatrix.M[0][2];
+	ret.M[2][1] = InMatrix.M[1][2];
+	ret.M[2][2] = InMatrix.M[2][2];
+
+	return ret;
+}
+
 FVector operator*(const FVector& vector, const FMatrix& matrix)
 {
 	FVector ret{};
@@ -377,6 +396,12 @@ FVector FMatrix::GetEuler() const
 	}
 
 	return Euler;
+}
+
+FVector FMatrix::GetLocation() const
+{
+	// 4번째 행(인덱스 3)의 0, 1, 2번째 열이 각각 X, Y, Z 위치입니다.
+	return FVector(M[3][0], M[3][1], M[3][2]);
 }
 
 FMatrix FMatrix::MakeRotationAxis(const FVector& Axis, float Angle)
