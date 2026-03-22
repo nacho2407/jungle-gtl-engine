@@ -4,7 +4,6 @@
 #include "Render/Common/RenderTypes.h"
 #include "Render/Mesh/MeshManager.h"
 
-#include "EditorSettings.h"
 
 void FRenderer::Create(HWND hWindow)
 {
@@ -346,11 +345,11 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 	Context->VSSetConstantBuffers(1, 1, &cb);
 	Context->PSSetConstantBuffers(1, 1, &cb);
 
-	if (RenderBus.GetShowFlags().bGrid)
+	/*if (RenderBus.GetShowFlags().bGrid)
 	{
 		LineBatcher.AddWorldGrid(100.0f, 20);
-	}
-
+	}*/
+	LineBatcher.AddWorldHelpers(FEditorSettings::Get());
 	LineBatcher.Flush(Context);
 	FontBatcher.Flush(Context);
 }

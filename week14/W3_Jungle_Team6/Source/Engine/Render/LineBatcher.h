@@ -6,7 +6,7 @@
 #include "Math/Matrix.h"
 #include "Render/Common/RenderTypes.h"
 
-#include "EditorSettings.h"
+#include "Editor/Settings/EditorSettings.h"
 
 // ============================================================
 // FLineVertex — 라인 렌더링용 버텍스 (Position + Color)
