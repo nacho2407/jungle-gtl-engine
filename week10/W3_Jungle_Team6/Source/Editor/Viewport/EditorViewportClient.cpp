@@ -9,12 +9,35 @@
 #include "GameFramework/World.h"
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
+#include "Object/Object.h"
 
 void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
 {
 	Window = InWindow;
 
 	UE_LOG("Hello ZZup Engine! %d", 2026);
+}
+
+void FEditorViewportClient::CreateCamera()
+{
+	DestroyCamera();
+	Camera = UObjectManager::Get().CreateObject<UCameraComponent>();
+}
+
+void FEditorViewportClient::DestroyCamera()
+{
+	if (Camera)
+	{
+		UObjectManager::Get().DestroyObject(Camera);
+		Camera = nullptr;
+	}
+}
+
+void FEditorViewportClient::ResetCamera()
+{
+	if (!Camera || !Settings) return;
+	Camera->SetWorldLocation(Settings->InitViewPos);
+	Camera->LookAt(Settings->InitLookAt);
 }
 
 void FEditorViewportClient::SetViewportSize(float InWidth, float InHeight)
@@ -42,7 +65,8 @@ void FEditorViewportClient::Tick(float DeltaTime)
 	TickCursorOverlay(DeltaTime);
 }
 
-void FEditorViewportClient::ClearViewOutput() {
+void FEditorViewportClient::ClearViewOutput()
+{
 	ViewOutput = {};
 }
 
@@ -73,7 +97,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		Move.X -= CameraSpeed;
 	if (InputSystem::Get().GetKey('D'))
 		Move.Y += CameraSpeed;
-	if(InputSystem::Get().GetKey('Q'))
+	if (InputSystem::Get().GetKey('Q'))
 		Move.Z -= CameraSpeed;
 	if (InputSystem::Get().GetKey('E'))
 		Move.Z += CameraSpeed;
@@ -137,7 +161,6 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		return;
 	}
 
-
 	const float ZoomSpeed = Settings ? Settings->CameraZoomSpeed : 300.f;
 
 	float ScrollNotches = InputSystem::Get().GetScrollNotches();
@@ -151,7 +174,6 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 			Camera->SetFOV(Clamp(NewFOV, 1.f * DEG_TO_RAD, 90.0f * DEG_TO_RAD));
 		}
 	}
-	
 
 	POINT MousePoint = InputSystem::Get().GetMousePos();
 	MousePoint = Window->ScreenToClientPoint(MousePoint);
@@ -167,9 +189,9 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		CursorOverlayState.TargetRadius = CursorOverlayState.MaxRadius;
 		CursorOverlayState.Color = FVector4(1.0f, 1.0f, 0.0f, 1.0f);  // Yellow for left-click
 
-		if(bIsCursorVisible)
+		if (bIsCursorVisible)
 		{
-			while(ShowCursor(FALSE) >= 0);
+			while (ShowCursor(FALSE) >= 0);
 			bIsCursorVisible = false;
 		}
 
@@ -180,9 +202,9 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		CursorOverlayState.bPressed = false;
 		CursorOverlayState.TargetRadius = 0.0f;
 
-		if(!bIsCursorVisible)
+		if (!bIsCursorVisible)
 		{
-			while(ShowCursor(TRUE) < 0);
+			while (ShowCursor(TRUE) < 0);
 			bIsCursorVisible = true;
 		}
 	}
@@ -194,9 +216,9 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		CursorOverlayState.TargetRadius = CursorOverlayState.MaxRadius;
 		CursorOverlayState.Color = FVector4(0.0f, 0.0f, 1.0f, 1.0f);  // Blue for right-click
 
-		if(bIsCursorVisible)
+		if (bIsCursorVisible)
 		{
-			while(ShowCursor(FALSE) >= 0);
+			while (ShowCursor(FALSE) >= 0);
 			bIsCursorVisible = false;
 		}
 	}
@@ -206,13 +228,13 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		CursorOverlayState.bPressed = false;
 		CursorOverlayState.TargetRadius = 0.0f;
 
-		if(!bIsCursorVisible)
+		if (!bIsCursorVisible)
 		{
-			while(ShowCursor(TRUE) < 0);
+			while (ShowCursor(TRUE) < 0);
 			bIsCursorVisible = true;
 		}
 	}
-	
+
 	FRay Ray = Camera->DeprojectScreenToWorld(static_cast<float>(MousePoint.x), static_cast<float>(MousePoint.y), WindowWidth, WindowHeight);
 	FHitResult HitResult;
 
@@ -251,8 +273,6 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	//	Gizmo->DragEnd();
 	//}
 }
-
-
 
 void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 {
@@ -309,7 +329,7 @@ void FEditorViewportClient::TickCursorOverlay(float DeltaTime)
 	const float Alpha = std::min(1.0f, DeltaTime * CursorOverlayState.LerpSpeed);
 	CursorOverlayState.CurrentRadius += (CursorOverlayState.TargetRadius - CursorOverlayState.CurrentRadius) * Alpha;
 
-	if(!CursorOverlayState.bPressed && CursorOverlayState.CurrentRadius < 0.01f)
+	if (!CursorOverlayState.bPressed && CursorOverlayState.CurrentRadius < 0.01f)
 	{
 		CursorOverlayState.CurrentRadius = 0.0f;
 		CursorOverlayState.bVisible = false;
