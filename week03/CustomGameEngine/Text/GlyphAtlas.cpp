@@ -1,6 +1,7 @@
 ﻿#include "Text/GlyphAtlas.h"
 
 #include "EngineCore/Logger.h"
+#include <fstream>
 
 /**
  * @def ATLAS_PAD 텍스처 Bleeding 방지를 위한 패딩
@@ -28,7 +29,7 @@ bool FGlyphAtlas::Initialize(uint32 Width, uint32 Height)
 
 bool FGlyphAtlas::AddGlyphBitmap(const FGlyphBitmap& Bitmap, FAtlasRect& OutRect)
 {
-	if (Bitmap.Width <= 0 | Bitmap.Height <= 0)
+	if (Bitmap.Width <= 0 || Bitmap.Height <= 0)
 	{
 		return false;
 	}
@@ -65,6 +66,39 @@ bool FGlyphAtlas::AddGlyphBitmap(const FGlyphBitmap& Bitmap, FAtlasRect& OutRect
 	if (Bitmap.Height > CurrentRowHeight)
 	{
 		CurrentRowHeight = Bitmap.Height;
+	}
+
+	return true;
+}
+
+bool FGlyphAtlas::SaveDebugPGM(const FString& FilePath) const
+{
+	if (FilePath.empty())
+	{
+		UE_LOG("[Text/GlyphAtlas][Error] Invalid debug atlas path");
+		return false;
+	}
+
+	if (AtlasWidth == 0 || AtlasHeight == 0 || Pixels.empty())
+	{
+		UE_LOG("[Text/GlyphAtlas][Error] Atlas is not initialized");
+		return false;
+	}
+
+	std::ofstream Output(FilePath, std::ios::binary);
+	if (!Output.is_open())
+	{
+		UE_LOG("[Text/GlyphAtlas][Error] Cannot open debug atlas output file");
+		return false;
+	}
+
+	Output << "P5\n" << AtlasWidth << ' ' << AtlasHeight << "\n255\n";
+	Output.write(reinterpret_cast<const char*>(Pixels.data()), static_cast<std::streamsize>(Pixels.size()));
+
+	if (!Output.good())
+	{
+		UE_LOG("[Text/GlyphAtlas][Error] Failed to write debug atlas file");
+		return false;
 	}
 
 	return true;

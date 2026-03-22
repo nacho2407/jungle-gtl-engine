@@ -21,20 +21,6 @@ public:
 	bool Initialize(uint32 Width, uint32 Height);
 
 	/**
-	 * @brief AtlasWidth Getter
-	 * 
-	 * @return AtlasWidth
-	 */
-	uint32 GetWidth(void) const { return AtlasWidth; }
-
-	/**
-	 * @brief AtlasHeight Getter
-	 *
-	 * @return AtlasHeight
-	 */
-	uint32 GetHeight(void) const { return AtlasHeight; }
-
-	/**
 	 * @brief Atlas에 glyph 비트맵을 추가합니다.
 	 * 
 	 * @param Bitmap Atlas에 추가할 비트맵
@@ -44,6 +30,19 @@ public:
 	 * @return 추가 성공 여부
 	 */
 	bool AddGlyphBitmap(const FGlyphBitmap& Bitmap, FAtlasRect& OutRect);
+
+	/**
+	 * @brief 현재 atlas를 디버그용 PGM 파일로 저장합니다.
+	 *
+	 * @param FilePath 저장할 파일 경로
+	 *
+	 * @return 저장 성공 여부
+	 */
+	bool SaveDebugPGM(const FString& FilePath) const;
+
+	const uint32 GetWidth(void) const { return AtlasWidth; }
+
+	const uint32 GetHeight(void) const { return AtlasHeight; }
 
 private:
 	/**

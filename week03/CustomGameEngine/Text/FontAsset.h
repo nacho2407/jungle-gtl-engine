@@ -49,18 +49,20 @@ public:
 	 */
 	FGlyphInfo* EnsureGlyph(uint32 Codepoint);
 
+	const FGlyphAtlas& GetAtlas() const { return Atlas; }
+
+private:
 	/**
 	 * @brief Codepoint에 해당하는 glyph 비트맵을 생성합니다.
-	 * 
+	 *
 	 * @param Codepoint glyph 비트맵을 생성할 UTF-32 Codepoint
-	 * 
+	 *
 	 * @param OutBitmap 생성된 비트맵 정보를 저장할 FGlyphBitmap 구조체
-	 * 
+	 *
 	 * @return Glyph 비트맵 생성 성공 여부
 	 */
 	bool BuildGlyphBitmap(uint32 Codepoint, FGlyphBitmap& OutBitmap) const;
 
-private:
 	/**
 	 * @brief 폰트 glyph 정보 캐시 맵
 	 */

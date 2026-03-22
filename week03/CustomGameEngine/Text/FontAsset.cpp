@@ -92,10 +92,15 @@ bool FFontAsset::LoadFromFile(const FString& FontPath, float PixelHeight)
 		return false;
 	}
 
+	if (!Atlas.Initialize(DEFAULT_ATLAS_WIDTH, DEFAULT_ATLAS_HEIGHT))
+	{
+		UE_LOG("[Text/FontAsset][Error] Failed to initialize atlas");
+		FontData.clear();
+		return false;
+	}
+
 	FontPixelHeight = PixelHeight;
 	bLoaded = true;
-
-	Atlas.Initialize(DEFAULT_ATLAS_WIDTH, DEFAULT_ATLAS_HEIGHT);
 
 	return true;
 }
@@ -117,11 +122,51 @@ FGlyphInfo* FFontAsset::EnsureGlyph(uint32 Codepoint)
 		return nullptr;
 	}
 
-	const int GlyphIndex = stbtt_FindGlyphIndex(&FontInfo, static_cast<int>(Codepoint));
+	// 해당 codepoint가 폰트에서 지원되지 않아 이미 다른 문자로 대체되었는지 확인
+	uint32 ResolvedCodepoint = Codepoint;
+
+	int GlyphIndex = stbtt_FindGlyphIndex(&FontInfo, static_cast<int>(ResolvedCodepoint));
 	if (GlyphIndex == 0)
 	{
 		UE_LOG("[Text/FontAsset][Warning] Missing glyph for codepoint");
-		return nullptr;
+
+		if (ResolvedCodepoint != 0xFFFD)
+		{
+			// 유니코드 대체문자 시도
+			ResolvedCodepoint = 0xFFFD;
+			GlyphIndex = stbtt_FindGlyphIndex(&FontInfo, static_cast<int>(ResolvedCodepoint));
+		}
+
+		if (GlyphIndex == 0 && ResolvedCodepoint != 0x003F)
+		{
+			// 유니코드 대체문자도 지원하지 않으면 '?'로 대체 시도
+			ResolvedCodepoint = 0x003F; // '?'
+			GlyphIndex = stbtt_FindGlyphIndex(&FontInfo, static_cast<int>(ResolvedCodepoint));
+		}
+
+		if (GlyphIndex == 0)
+		{
+			// 유니코드 대체문자도, '?'도 지원하지 않으면 그냥 실패 처리
+			return nullptr;
+		}
+	}
+
+	// 다른 문자로 대체된 경우
+	if (ResolvedCodepoint != Codepoint)
+	{
+		// 대체된 문자 glyph 자체를 먼저 확보
+		FGlyphInfo* ResolvedGlyph = EnsureGlyph(ResolvedCodepoint);
+		if (ResolvedGlyph == nullptr)
+		{
+			return nullptr;
+		}
+
+		// 원래 요청 codepoint를 alias로 복제 캐시
+		FGlyphInfo AliasGlyph = *ResolvedGlyph;
+		AliasGlyph.Codepoint = Codepoint;
+
+		auto Result = GlyphMap.emplace(Codepoint, std::move(AliasGlyph));
+		return &Result.first->second;
 	}
 
 	const float Scale = stbtt_ScaleForPixelHeight(&FontInfo, FontPixelHeight);
@@ -140,6 +185,23 @@ FGlyphInfo* FFontAsset::EnsureGlyph(uint32 Codepoint)
 	NewGlyph.Metrics.BearingY = static_cast<float>(-Y0);
 	NewGlyph.Metrics.Width = static_cast<float>(X1 - X0);
 	NewGlyph.Metrics.Height = static_cast<float>(Y1 - Y0);
+
+	const int BitmapWidth = X1 - X0;
+	const int BitmapHeight = Y1 - Y0;
+
+	if (BitmapWidth <= 0 || BitmapHeight <= 0)
+	{
+		// 공백 문자 처리
+		// Metric만 생성하고 비트맵은 생성하지 않음
+		NewGlyph.AtlasRect = FAtlasRect{ 0, 0, 0, 0 };
+		NewGlyph.U0 = 0.0f;
+		NewGlyph.V0 = 0.0f;
+		NewGlyph.U1 = 0.0f;
+		NewGlyph.V1 = 0.0f;
+
+		auto Result = GlyphMap.emplace(Codepoint, std::move(NewGlyph));
+		return &Result.first->second;
+	}
 
 	FGlyphBitmap Bitmap;
 	if (!BuildGlyphBitmap(Codepoint, Bitmap))
