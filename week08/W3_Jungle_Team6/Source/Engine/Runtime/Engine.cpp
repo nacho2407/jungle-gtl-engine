@@ -20,14 +20,14 @@ void UEngine::Init(FWindowsWindow* InWindow)
 	FObjectFactory::Get();
 
 	Renderer.Create(Window->GetHWND());
-	FRenderCollector::Initialize(Renderer.GetFD3DDevice().GetDevice());
+	RenderCollector.Initialize(Renderer.GetFD3DDevice().GetDevice());
 	FResourceManager::Get().LoadFromFile(FPaths::ToUtf8(FPaths::ResourceFilePath()));
 }
 
 void UEngine::Shutdown()
 {
 	FResourceManager::Get().ReleaseGPUResources();
-	FRenderCollector::Release();
+	RenderCollector.Release();
 	Renderer.Release();
 }
 
