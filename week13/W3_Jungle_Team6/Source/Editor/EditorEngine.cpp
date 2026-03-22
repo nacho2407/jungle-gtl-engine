@@ -1,4 +1,4 @@
-#include "Editor/EditorEngine.h"
+﻿#include "Editor/EditorEngine.h"
 
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
@@ -23,15 +23,12 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	MainPanel.Create(Window, Renderer, this);
 
 	// World
-	if (!Scene.empty()) {
-		// already has a world
+	if (WorldList.empty())
+	{
+		CreateWorldContext(EWorldType::Editor, FName("Default"));
 	}
-	else {
-		UWorld* World = UObjectManager::Get().CreateObject<UWorld>();
-		Scene.push_back(World);
-	}
-	CurrentWorld = 0;
-	Scene[CurrentWorld]->InitWorld();
+	SetActiveWorld(WorldList[0].ContextHandle);
+	GetWorld()->InitWorld();
 
 	// Gizmo
 	EditorGizmo = UObjectManager::Get().CreateObject<UGizmoComponent>();
@@ -42,14 +39,12 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	ViewportClient.SetSettings(&FEditorSettings::Get());
 	ViewportClient.Initialize(Window);
 	ViewportClient.SetViewportSize(Window->GetWidth(), Window->GetHeight());
-	ViewportClient.SetWorld(Scene[CurrentWorld]);
+	ViewportClient.SetWorld(GetWorld());
 	ViewportClient.SetGizmo(EditorGizmo);
 
 	// Camera
-	Camera = UObjectManager::Get().CreateObject<UCameraComponent>();
-	ViewportClient.SetCamera(Camera);
-	ResetCamera(Camera);
-	Scene[CurrentWorld]->SetActiveCamera(Camera);
+	ViewportClient.CreateCamera();
+	ViewportClient.ResetCamera();
 }
 
 void UEditorEngine::Shutdown()
@@ -94,41 +89,28 @@ void UEditorEngine::Render(float DeltaTime)
 	Renderer.EndFrame();
 }
 
-void UEditorEngine::ResetCamera(UCameraComponent* InCamera)
-{
-	if (!InCamera) return;
-	InCamera->SetWorldLocation(FEditorSettings::Get().InitViewPos);
-	InCamera->LookAt(FEditorSettings::Get().InitLookAt);
-}
-
 void UEditorEngine::ResetViewport()
 {
-	UObjectManager::Get().DestroyObject(Camera);
-	Camera = UObjectManager::Get().CreateObject<UCameraComponent>();
-	ViewportClient.SetWorld(Scene[CurrentWorld]);
-	ViewportClient.SetCamera(Camera);
+	ViewportClient.CreateCamera();
+	ViewportClient.SetWorld(GetWorld());
 	ViewportClient.SetViewportSize(Window->GetWidth(), Window->GetHeight());
-	ResetCamera(Camera);
-	Scene[CurrentWorld]->SetActiveCamera(Camera);
+	ViewportClient.ResetCamera();
 }
 
 void UEditorEngine::CloseScene()
 {
-	if (!Scene.empty()) {
-		for (UWorld* World : Scene) {
-			World->EndPlay();
-			UObjectManager::Get().DestroyObject(World);
-		}
-		Scene.clear();
+	for (FWorldContext& Ctx : WorldList) {
+		Ctx.World->EndPlay();
+		UObjectManager::Get().DestroyObject(Ctx.World);
 	}
+	WorldList.clear();
+	ActiveWorldHandle = FName::None;
 
-	UObjectManager::Get().DestroyObject(Camera);
-	Camera = nullptr;
+	ViewportClient.DestroyCamera();
 
 	UObjectManager::Get().DestroyObject(EditorGizmo);
 	EditorGizmo = nullptr;
 
-	ViewportClient.SetCamera(nullptr);
 	ViewportClient.SetGizmo(nullptr);
 	ViewportClient.SetWorld(nullptr);
 }
@@ -136,9 +118,8 @@ void UEditorEngine::CloseScene()
 void UEditorEngine::NewScene()
 {
 	ClearScene();
-	UWorld* World = UObjectManager::Get().CreateObject<UWorld>();
-	Scene.push_back(World);
-	CurrentWorld = 0;
+	FWorldContext& Ctx = CreateWorldContext(EWorldType::Editor, FName("NewScene"), "New Scene");
+	SetActiveWorld(Ctx.ContextHandle);
 
 	// EditorGizmo가 CloseScene()으로 파괴된 경우 재생성
 	if (!EditorGizmo)
@@ -153,26 +134,22 @@ void UEditorEngine::NewScene()
 
 void UEditorEngine::ClearScene()
 {
-	if (!Scene.empty()) {
-		for (UWorld* World : Scene) {
-			World->EndPlay();
-			UObjectManager::Get().DestroyObject(World);
-		}
-		Scene.clear();
+	for (FWorldContext& Ctx : WorldList) {
+		Ctx.World->EndPlay();
+		UObjectManager::Get().DestroyObject(Ctx.World);
 	}
+	WorldList.clear();
+	ActiveWorldHandle = FName::None;
 
-	UObjectManager::Get().DestroyObject(Camera);
-	Camera = nullptr;
-
-	ViewportClient.SetCamera(nullptr);
+	ViewportClient.DestroyCamera();
 	ViewportClient.SetWorld(nullptr);
 }
 
 void UEditorEngine::BuildRenderCommands()
 {
 	FRenderCollectorContext Context;
-	Context.World = Scene[CurrentWorld];
-	Context.Camera = Camera;
+	Context.World = GetWorld();
+	Context.Camera = ViewportClient.GetCamera();
 	Context.Gizmo = EditorGizmo;
 	Context.ViewMode = FEditorSettings::Get().ViewMode;
 	Context.ShowFlags = FEditorSettings::Get().ShowFlags;

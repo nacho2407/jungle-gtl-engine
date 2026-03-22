@@ -21,16 +21,21 @@ class FEditorViewportClient
 public:
 	void Initialize(FWindowsWindow* InWindow);
 	void SetWorld(UWorld* InWorld) { World = InWorld; }
-	void SetCamera(UCameraComponent* InCamera) { Camera = InCamera; }
 	void SetGizmo(UGizmoComponent* InGizmo) { Gizmo = InGizmo; }
 	void SetSettings(const FEditorSettings* InSettings) { Settings = InSettings; }
 	UGizmoComponent* GetGizmo() { return Gizmo; }
 	void SetViewportSize(float InWidth, float InHeight);
 
+	// Camera lifecycle
+	void CreateCamera();
+	void DestroyCamera();
+	void ResetCamera();
+	UCameraComponent* GetCamera() const { return Camera; }
+
 	void Tick(float DeltaTime);
 
 	const FCursorOverlayState& GetCursorOverlayState() const { return CursorOverlayState; }
-	FViewOutput& GetViewOutput() { return ViewOutput;  }
+	FViewOutput& GetViewOutput() { return ViewOutput; }
 
 private:
 	void ClearViewOutput();
