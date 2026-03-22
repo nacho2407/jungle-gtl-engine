@@ -50,6 +50,7 @@ class ENGINE_API UObject
 
   public:
     uint32 UUID;
+    FName  Name;
     uint32 InternalIndex;
 };
 
