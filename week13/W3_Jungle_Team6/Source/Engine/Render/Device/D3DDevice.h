@@ -62,6 +62,8 @@ private:
 	EDepthStencilState CurrentDepthStencilState = EDepthStencilState::Default;
 	EBlendState CurrentBlendState = EBlendState::Opaque;
 
+	BOOL bTearingSupported = FALSE;
+
 public:
 
 
