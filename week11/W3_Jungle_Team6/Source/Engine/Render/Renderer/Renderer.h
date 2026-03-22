@@ -10,6 +10,7 @@
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/LineBatcher.h"
+#include "Render/FontBatcher.h"
 
 #include <cstddef>
 
@@ -19,10 +20,8 @@ private:
 	FD3DDevice Device;
 	FRenderResources Resources;
 	FLineBatcher LineBatcher;
-	
+	FFontBatcher FontBatcher;
 
-	//	File Path
-	const wchar_t * ShaderFilePath  = L"Shaders/ShaderW0.hlsl";
 
 	//	Primitive and Gizmo Input Layout
 	D3D11_INPUT_ELEMENT_DESC PrimitiveInputLayout[2] =
@@ -52,13 +51,14 @@ public:
 	void Release();
 
 	void BeginFrame();
-	void Render(const FRenderBus& InRenderBus);
+	void Render(const FRenderBus& InRenderBus, ERasterizerState InViewModeRasterizer = ERasterizerState::SolidBackCull);
 	void RenderOverlay(const FRenderBus& InRenderBus);	//	반드시 따로 호출해야 함
 	void EndFrame();
 
-	void RenderPasses(const FRenderBus& RenderBus, ID3D11DeviceContext* Context);
-	void RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceContext* Context);
+	void RenderPasses(const FRenderBus& InRenderBus, ID3D11DeviceContext* Context);
+	void RenderEditorHelpers(const FRenderBus& InRenderBus, ID3D11DeviceContext* Context);
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix);
+	void SetRenderSettings(const FRenderBus& InRenderBus);
 
 	FD3DDevice& GetFD3DDevice() { return Device; }
 	FRenderResources& GetResources() { return Resources; }

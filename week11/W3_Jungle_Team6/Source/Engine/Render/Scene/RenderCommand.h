@@ -21,8 +21,6 @@ enum class ERenderCommandType
 	Primitive,
 	Gizmo,
 	Overlay,
-	Axis,
-	Grid,
 	SelectionOutline,
 	Billboard,
 	DebugBox
@@ -78,14 +76,6 @@ struct FOutlineConstants
 	float Padding0[3];
 };
 
-struct FBillboardConstants 
-{
-	FVector4 ColorTint;
-	uint32 BillboardType; // 0: Spherical, 1: Cylindrical
-	float Opacity;
-	float Padding[2];
-};
-
 struct FAABBConstants
 {
 	FVector Min;
@@ -102,6 +92,7 @@ struct FRenderCommand
 	//	VB, IB 모두 담고 있는 MB
 	FMeshBuffer* MeshBuffer = nullptr;
 	FTransformConstants TransformConstants = {};
+	FString TextData;
 
 	union
 	{
@@ -109,7 +100,6 @@ struct FRenderCommand
 		FEditorConstants Editor;
 		FOverlayConstants Overlay;
 		FOutlineConstants Outline;
-		FBillboardConstants Billboard;
 		FAABBConstants AABB;
 	} Constants;
 
