@@ -1,6 +1,7 @@
 #include "Editor/UI/EditorSceneWidget.h"
 
 #include "Editor/EditorEngine.h"
+#include "GameFramework/WorldContext.h"
 
 #include "ImGui/imgui.h"
 #include "Component/GizmoComponent.h"
@@ -60,7 +61,7 @@ void FEditorSceneWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 
 	if (ImGui::Button("Save Scene"))
 	{
-		FSceneSaveManager::SaveSceneAsJSON(SceneName, EditorEngine->GetScene());
+		FSceneSaveManager::SaveSceneAsJSON(SceneName, EditorEngine->GetWorldList());
 		SceneSaveNotificationTimer = NotificationTimer;
 		RefreshSceneFileList();
 	}
@@ -101,7 +102,11 @@ void FEditorSceneWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 			EditorEngine->GetGizmo()->SetVisibility(false);
 			EditorEngine->ClearScene();
 			ViewOutput.Object = nullptr;
-			FSceneSaveManager::LoadSceneFromJSON(FilePath, EditorEngine->GetScene());
+			FSceneSaveManager::LoadSceneFromJSON(FilePath, EditorEngine->GetWorldList());
+			if (!EditorEngine->GetWorldList().empty())
+			{
+				EditorEngine->SetActiveWorld(EditorEngine->GetWorldList()[0].ContextHandle);
+			}
 			EditorEngine->ResetViewport();
 			SceneLoadNotificationTimer = NotificationTimer;
 		}
@@ -120,24 +125,28 @@ void FEditorSceneWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
 	SEPARATOR();
 
 	// Active Scene List
-	ImGui::Text("Active Scenes (%d)", static_cast<int32>(EditorEngine->GetScene().size()));
+	const TArray<FWorldContext>& Worlds = EditorEngine->GetWorldList();
+	ImGui::Text("Active Scenes (%d)", static_cast<int32>(Worlds.size()));
 	ImGui::Separator();
 
-	TArray<UWorld*>& Scenes = EditorEngine->GetScene();
-	uint32 CurrentWorld = EditorEngine->GetCurrentWorld();
+	FName ActiveHandle = EditorEngine->GetActiveWorldHandle();
 
-	for (uint32 i = 0; i < static_cast<uint32>(Scenes.size()); i++)
+	for (uint32 i = 0; i < static_cast<uint32>(Worlds.size()); i++)
 	{
-		FString Label = "Scene " + std::to_string(i);
-		if (i == CurrentWorld)
+		const char* TypeStr = "Editor";
+		if (Worlds[i].WorldType == EWorldType::Game) TypeStr = "Game";
+		else if (Worlds[i].WorldType == EWorldType::PIE) TypeStr = "PIE";
+
+		bool bIsActive = (Worlds[i].ContextHandle == ActiveHandle);
+		FString Label = Worlds[i].ContextName + " [" + TypeStr + "]";
+		if (bIsActive)
 		{
 			Label += " (Active)";
 		}
 
-		bool bSelected = (i == CurrentWorld);
-		if (ImGui::Selectable(Label.c_str(), bSelected))
+		if (ImGui::Selectable(Label.c_str(), bIsActive))
 		{
-			EditorEngine->SetCurrentWorld(i);
+			EditorEngine->SetActiveWorld(Worlds[i].ContextHandle);
 		}
 	}
 
