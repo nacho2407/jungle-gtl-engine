@@ -24,8 +24,8 @@ public:
 
 	// Editor-specific API
 	UGizmoComponent* GetGizmo() const { return EditorGizmo; }
+	UCameraComponent* GetCamera() const { return ViewportClient.GetCamera(); }
 
-	void ResetCamera(UCameraComponent* InCamera);
 	void ClearScene();
 	void ResetViewport();
 	void CloseScene();
