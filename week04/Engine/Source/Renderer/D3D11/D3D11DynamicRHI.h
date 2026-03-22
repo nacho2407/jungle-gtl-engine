@@ -17,6 +17,7 @@ class FD3D11DynamicRHI
     bool Resize(int32 InWidth, int32 InHeight);
 
     ID3D11Device*   GetDevice() const { return Device.Get(); }
+    ID3D11DeviceContext* GetDeviceContext() const { return DeviceContext.Get(); }
     IDXGISwapChain* GetSwapChain() const { return SwapChain.Get(); }
 
     ID3D11RenderTargetView* GetBackBufferRTV() const { return BackBufferRTV.Get(); }

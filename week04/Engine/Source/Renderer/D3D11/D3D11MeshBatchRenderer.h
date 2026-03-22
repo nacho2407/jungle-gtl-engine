@@ -9,7 +9,7 @@
 #include "Renderer/SceneRenderData.h"
 #include "Renderer/Types/BasicMeshType.h"
 #include "Renderer/Types/ViewMode.h"
-#include "../../Resources/Mesh/MeshPrimitiveTopology.h"
+#include "Resources/Mesh/MeshPrimitiveTopology.h"
 
 class FD3D11DynamicRHI;
 class FSceneView;
