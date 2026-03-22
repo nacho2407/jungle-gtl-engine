@@ -21,6 +21,20 @@ public:
 	bool Initialize(uint32 Width, uint32 Height);
 
 	/**
+	 * @brief AtlasWidth Getter
+	 * 
+	 * @return AtlasWidth
+	 */
+	uint32 GetWidth(void) const { return AtlasWidth; }
+
+	/**
+	 * @brief AtlasHeight Getter
+	 *
+	 * @return AtlasHeight
+	 */
+	uint32 GetHeight(void) const { return AtlasHeight; }
+
+	/**
 	 * @brief Atlas에 glyph 비트맵을 추가합니다.
 	 * 
 	 * @param Bitmap Atlas에 추가할 비트맵
@@ -32,10 +46,23 @@ public:
 	bool AddGlyphBitmap(const FGlyphBitmap& Bitmap, FAtlasRect& OutRect);
 
 private:
-	uint32 AltasWidth = 0, AtlasHeight = 0; // Atlas 크기
+	/**
+	 * @brief Atlas 크기
+	 */
+	uint32 AtlasWidth = 0, AtlasHeight = 0;
 
-	TArray<uint8> Pixels; // Atlas 픽셀 데이터
+	/**
+	 * @brief Atlas 픽셀 데이터
+	 */
+	TArray<uint8> Pixels;
 
-	uint32 CursorX = 0, CursorY = 0; // 다음 glyph를 넣기 시작할 위치
-	uint32 CurrentRowHeight = 0; // 현재 행에 들어간 glyph들 중 가장 큰 높이
+	/**
+	 * @brief 다음 glyph 비트맵을 넣기 시작할 위치
+	 */
+	uint32 CursorX = 0, CursorY = 0;
+	
+	/**
+	 * @brief 현재 행에 들어간 glyph들 중 가장 큰 높이
+	 */
+	uint32 CurrentRowHeight = 0;
 };

@@ -12,7 +12,7 @@ struct FAtlasRect
 };
 
 /**
- * @brief 폰트 metric 정보
+ * @brief Glyph의 atlas 내 기하학적 배치 정보
  */
 struct FGlyphMetrics
 {

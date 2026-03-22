@@ -48,7 +48,7 @@ void RunTextModuleConsoleTests()
 
 	for (char32_t codepoint : codepoints)
 	{
-		FGlyphInfo& glyph = fontAsset.EnsureGlyph(static_cast<uint32>(codepoint));
+		FGlyphInfo* glyph = fontAsset.EnsureGlyph(static_cast<uint32>(codepoint));
 		const FGlyphInfo* foundGlyph = fontAsset.FindGlyph(static_cast<uint32>(codepoint));
 
 		std::cout << "EnsureGlyph(U+"
@@ -58,9 +58,9 @@ void RunTextModuleConsoleTests()
 			<< std::dec
 			<< ") => "
 			<< (foundGlyph != nullptr ? "cached" : "missing")
-			<< ", AdvanceX=" << glyph.Metrics.AdvanceX
-			<< ", Bearing=(" << glyph.Metrics.BearingX << ", " << glyph.Metrics.BearingY << ")"
-			<< ", Size=(" << glyph.Metrics.Width << ", " << glyph.Metrics.Height << ")\n";
+			<< ", AdvanceX=" << glyph->Metrics.AdvanceX
+			<< ", Bearing=(" << glyph->Metrics.BearingX << ", " << glyph->Metrics.BearingY << ")"
+			<< ", Size=(" << glyph->Metrics.Width << ", " << glyph->Metrics.Height << ")\n";
 
 		FGlyphBitmap bitmap{};
 		const bool bBitmapBuilt = fontAsset.BuildGlyphBitmap(static_cast<uint32>(codepoint), bitmap);

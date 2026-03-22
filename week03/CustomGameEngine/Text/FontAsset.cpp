@@ -7,6 +7,16 @@
 
 #include "EngineCore/Logger.h"
 
+/**
+ * @def DEFAULT_ATLAS_WIDTH Asset이 들고 있는 Atlas의 기본 너비
+ */
+#define DEFAULT_ATLAS_WIDTH 2048
+
+ /**
+  * @def DEFAULT_ATLAS_HEIGHT Asset이 들고 있는 Atlas의 기본 높이
+  */
+#define DEFAULT_ATLAS_HEIGHT 2048
+
 const FGlyphInfo* FFontAsset::FindGlyph(uint32 Codepoint) const
 {
 	auto iter = GlyphMap.find(Codepoint);
@@ -84,6 +94,9 @@ bool FFontAsset::LoadFromFile(const FString& FontPath, float PixelHeight)
 
 	FontPixelHeight = PixelHeight;
 	bLoaded = true;
+
+	Atlas.Initialize(DEFAULT_ATLAS_WIDTH, DEFAULT_ATLAS_HEIGHT);
+
 	return true;
 }
 
@@ -128,7 +141,31 @@ FGlyphInfo* FFontAsset::EnsureGlyph(uint32 Codepoint)
 	NewGlyph.Metrics.Width = static_cast<float>(X1 - X0);
 	NewGlyph.Metrics.Height = static_cast<float>(Y1 - Y0);
 
-	auto Result = GlyphMap.emplace(Codepoint, NewGlyph);
+	FGlyphBitmap Bitmap;
+	if (!BuildGlyphBitmap(Codepoint, Bitmap))
+	{
+		UE_LOG("[Text/FontAsset][Error] Failed to build glyph bitmap");
+		return nullptr;
+	}
+
+	FAtlasRect AtlasRect;
+	if (!Atlas.AddGlyphBitmap(Bitmap, AtlasRect))
+	{
+		UE_LOG("[Text/FontAsset][Error] Faild to add glyph bitmap to atlas");
+		return nullptr;
+	}
+
+	NewGlyph.AtlasRect = AtlasRect;
+
+	const float AtlasWidthF = static_cast<float>(Atlas.GetWidth());
+	const float AtlasHeightF = static_cast<float>(Atlas.GetHeight());
+
+	NewGlyph.U0 = static_cast<float>(AtlasRect.X) / AtlasWidthF;
+	NewGlyph.V0 = static_cast<float>(AtlasRect.Y) / AtlasHeightF;
+	NewGlyph.U1 = static_cast<float>(AtlasRect.X + AtlasRect.Width) / AtlasWidthF;
+	NewGlyph.V1 = static_cast<float>(AtlasRect.Y + AtlasRect.Height) / AtlasHeightF;
+
+	auto Result = GlyphMap.emplace(Codepoint, std::move(NewGlyph));
 	return &(Result.first->second);
 }
 

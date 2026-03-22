@@ -163,7 +163,6 @@
     <ClInclude Include="Renderer\GeneralGeometry.h" />
     <ClInclude Include="Renderer\TexCoord.h" />
     <ClInclude Include="SceneManager.h" />
-    <ClInclude Include="Text\FGlyphAtlas.h" />
     <ClInclude Include="Text\FontAsset.h" />
     <ClInclude Include="Text\FontTypes.h" />
     <ClInclude Include="Text\GlyphAtlas.h" />
@@ -244,7 +243,6 @@
     <ClCompile Include="EngineCore\InputManager.cpp" />
     <ClCompile Include="Renderer\VertextFont.h" />
     <ClCompile Include="SceneManager.cpp" />
-    <ClCompile Include="Text\FGlyphAtlas.cpp" />
     <ClCompile Include="Text\FontAsset.cpp" />
     <ClCompile Include="Text\GlyphAtlas.cpp" />
     <ClCompile Include="Text\Test.cpp" />

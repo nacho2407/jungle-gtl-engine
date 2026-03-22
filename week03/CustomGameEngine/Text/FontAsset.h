@@ -3,6 +3,7 @@
 #include "EngineCore/EngineTypes.h"
 #include "ImGui/imstb_truetype.h"
 #include "Text/FontTypes.h"
+#include "Text/GlyphAtlas.h"
 
 /**
  * @brief 하나의 폰트에 대한 Asset 객체
@@ -86,4 +87,9 @@ private:
 	 * @brief 폰트 파일 로드 여부
 	 */
 	bool bLoaded = false;
+
+	/**
+	 * @brief Asset에서 들고 있는 실제 Atlas 정보
+	 */
+	FGlyphAtlas Atlas;
 };
