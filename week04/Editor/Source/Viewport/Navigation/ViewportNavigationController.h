@@ -25,7 +25,7 @@ class FViewportNavigationController
     void AddYawInput(float Value);
     void AddPitchInput(float Value);
 
-    void SetRotating(bool bInRotating) { bRotating = bInRotating; }
+    void SetRotating(bool bInRotating);
     bool IsRotating() { return bRotating; }
 
   private:
@@ -34,8 +34,8 @@ class FViewportNavigationController
   private:
     FViewportCamera* ViewportCamera = nullptr;
 
-    float MoveSpeed = 100.f;   // 이동 속도
-    float RotationSpeed = 5.f; // 회전 속도 (degrees per second)
+    float MoveSpeed = 30.f;   // 이동 속도
+    float RotationSpeed = 0.1f; // 마우스 드래그 회전 감도
 
     float Yaw = 0.f;   // Yaw 회전값
     float Pitch = 0.f; // Pitch 회전값

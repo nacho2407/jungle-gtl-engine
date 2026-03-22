@@ -5,6 +5,23 @@ void FViewportNavigationController::Tick(float DeltaTime)
     //  Tick에서 카메라 이동 처리
 }
 
+void FViewportNavigationController::SetRotating(bool bInRotating)
+{
+    if (bRotating == bInRotating)
+    {
+        return;
+    }
+
+    bRotating = bInRotating;
+
+    if (bRotating && ViewportCamera != nullptr)
+    {
+        const FRotator CurrentRotator(ViewportCamera->GetRotation());
+        Pitch = CurrentRotator.Pitch;
+        Yaw = CurrentRotator.Yaw;
+    }
+}
+
 void FViewportNavigationController::MoveForward(float Value, float DeltaTime)
 {
     if (ViewportCamera == nullptr || FMath::IsNearlyZero(Value))
@@ -14,7 +31,7 @@ void FViewportNavigationController::MoveForward(float Value, float DeltaTime)
     NewLocation += ViewportCamera->GetForwardVector() * (Value * MoveSpeed * DeltaTime);
     ViewportCamera->SetLocation(NewLocation);
 
-    MessageBox(nullptr, L"MoveForward called", L"Debug", MB_OK);
+    //MessageBox(nullptr, L"MoveForward called", L"Debug", MB_OK);
 }
 
 void FViewportNavigationController::MoveRight(float Value, float DeltaTime)

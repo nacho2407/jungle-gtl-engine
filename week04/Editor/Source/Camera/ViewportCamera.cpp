@@ -28,7 +28,8 @@ FMatrix FViewportCamera::GetViewMatrix() const
 {
     if (bIsViewDirty)
     {
-        CachedViewMatrix = FMatrix::MakeViewLookAtLH(Location, GetForwardVector());
+        const FVector Forward = GetForwardVector();
+        CachedViewMatrix = FMatrix::MakeViewLookAtLH(Location, Location + Forward);
         bIsViewDirty = false;
     }
 

@@ -1,5 +1,33 @@
 #include "Editor.h"
+#include "Editor.h"
 #include "Viewport/EditorViewportClient.h"
+#include "Panel/PanelManager.h"
+
+#include "imgui.h"
+#include <imgui_impl_dx11.h>
+#include <imgui_impl_win32.h>
+
+namespace
+{
+    class FSamplePanel : public IPanel
+    {
+      public:
+        const wchar_t* GetPanelID() const override { return L"SamplePanel"; }
+        const wchar_t* GetDisplayName() const override { return L"Sample Panel"; }
+        bool ShouldOpenByDefault() const override { return true; }
+
+        void Draw() override
+        {
+            if (ImGui::Begin("Sample Panel", nullptr))
+            {
+                ImGui::Text("PanelManager registration test panel");
+                ImGui::Separator();
+                ImGui::Text("Hello from sample panel");
+            }
+            ImGui::End();
+        }
+    };
+} // namespace
 
 void FEditor::Create()
 {
@@ -7,14 +35,27 @@ void FEditor::Create()
     ViewportClient.Create();
 
     //  TODO : Panel UI
+    PanelManager = new FPanelManager();
+    PanelManager->Initialize(&EditorContext);
+    PanelManager->RegisterPanelInstance<FSamplePanel>();
 
     //  TODO : Gizmo
+
+    //  TEMP SCENE
+    CurScene = new FScene();
 }
 
 void FEditor::Release()
 {
     //  TODO : Call Release Functions
     ViewportClient.Release();
+
+    if (PanelManager != nullptr)
+    {
+        PanelManager->Shutdown();
+        delete PanelManager;
+        PanelManager = nullptr;
+    }
 }
 
 void FEditor::Initialize()
@@ -34,7 +75,13 @@ void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* Input
 
     ViewportClient.Tick(DeltaTime, InputSystem->GetInputState());
 
+    if (PanelManager != nullptr)
+    {
+        PanelManager->Tick(DeltaTime);
+    }
+
     BuildRenderData();
+    DrawPanel();
 }
 
 void FEditor::OnWindowResized(float Width, float Height)
@@ -75,6 +122,21 @@ void FEditor::BuildSceneView()
     SceneView.SetViewRect(ViewRect);
     SceneView.SetClipPlanes(ViewportClient.GetCamera().GetNearPlane(),
                             ViewportClient.GetCamera().GetFarPlane());
+}
+
+void FEditor::DrawPanel()
+{
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+
+    ImGui::NewFrame();
+    if (PanelManager)
+    {
+        PanelManager->DrawPanels();
+    }
+
+    ImGui::Render();
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
 
 void FEditor::BuildRenderData()

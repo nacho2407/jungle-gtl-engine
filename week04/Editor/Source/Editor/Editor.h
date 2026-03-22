@@ -38,6 +38,9 @@ class FEditor
     const FEditorRenderData& GetEditorRenderData() const { return EditorRenderData; }
     const FSceneRenderData&  GetSceneRenderData() const { return SceneRenderData; }
 
+    /* For Panel */
+    void DrawPanel();
+
   private:
     void BuildRenderData();
     void BuildSceneView();

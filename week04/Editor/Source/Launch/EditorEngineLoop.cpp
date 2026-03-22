@@ -1,10 +1,12 @@
 #include "EditorEngineLoop.h"
-#include "EditorEngineLoop.h"
 
 #include <wrl/client.h>
 
 #include "imgui.h"
 #include "imgui_internal.h"
+#include <imgui_impl_win32.h>
+#include <imgui_impl_dx11.h>
+
 
 bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
 {
@@ -53,6 +55,12 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
     {
         return false;
     }
+
+    /* ImGUI Initialize */
+    ImGui::CreateContext();
+    ImGui_ImplWin32_Init((void*)WindowHandle);
+    ImGui_ImplDX11_Init(Renderer->GetRHI().GetDevice(), Renderer->GetRHI().GetDeviceContext());
+
 
     InitializeForTime();
     return true;

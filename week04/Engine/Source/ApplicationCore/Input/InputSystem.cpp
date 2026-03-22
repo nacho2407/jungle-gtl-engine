@@ -119,6 +119,8 @@ namespace Engine::ApplicationCore
         case WM_LBUTTONUP:
         case WM_RBUTTONDOWN:
         case WM_RBUTTONUP:
+        case WM_MBUTTONDOWN:
+        case WM_MBUTTONUP:
         {
             EKey Key = TranslationMouseButton(Msg);
             if (Key == EKey::Unknown)
@@ -128,18 +130,20 @@ namespace Engine::ApplicationCore
 
             UpdateModifiers();
 
-            const bool bPressed = (Msg == WM_LBUTTONDOWN || Msg == WM_RBUTTONDOWN);
+            const bool bPressed =
+                (Msg == WM_LBUTTONDOWN || Msg == WM_RBUTTONDOWN || Msg == WM_MBUTTONDOWN);
 
             State.KeysDown[static_cast<int32>(Key)] = bPressed;
 
             FInputEvent Event;
-            Event.Type = EInputEventType::MouseButtonUp;
-            Event.Key = EKey::MouseLeft;
+            Event.Type = bPressed ? EInputEventType::MouseButtonDown : EInputEventType::MouseButtonUp;
+            Event.Key = Key;
             Event.MouseX = GET_X_LPARAM(LParam);
             Event.MouseY = GET_Y_LPARAM(LParam);
             Event.Modifiers = State.Modifiers;
 
             EventQueue.push(Event);
+            break;
         }
 
         case WM_MOUSEMOVE:
@@ -151,6 +155,16 @@ namespace Engine::ApplicationCore
             State.MouseDeltaY += (NewY - State.MouseY);
             State.MouseX = NewX;
             State.MouseY = NewY;
+
+            UpdateModifiers();
+
+            FInputEvent Event;
+            Event.Type = EInputEventType::MouseMove;
+            Event.MouseX = NewX;
+            Event.MouseY = NewY;
+            Event.Modifiers = State.Modifiers;
+
+            EventQueue.push(Event);
 
             break;
         }
@@ -164,8 +178,11 @@ namespace Engine::ApplicationCore
             FInputEvent Event;
             Event.Type = EInputEventType::MouseWheel;
             Event.WheelDelta = Delta;
-            Event.WheelDelta = GET_X_LPARAM(LParam);
+            Event.MouseX = GET_X_LPARAM(LParam);
+            Event.MouseY = GET_Y_LPARAM(LParam);
             Event.Modifiers = State.Modifiers;
+            EventQueue.push(Event);
+            break;
         }
 
         default:

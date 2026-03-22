@@ -52,8 +52,8 @@ bool FViewportInputContext::HandleEvent(const FInputEvent& Event, const FInputSt
             int32 DeltaY = Event.MouseY - LastMouseY;
 
             //  마우스 이동량에 따라 카메라 회전 입력 추가
-            NavigationController->AddYawInput(static_cast<float>(DeltaX));
-            NavigationController->AddPitchInput(static_cast<float>(DeltaY));
+            NavigationController->AddYawInput(static_cast<float>(-DeltaX));
+            NavigationController->AddPitchInput(static_cast<float>(-DeltaY));
 
             LastMouseX = Event.MouseX;
             LastMouseY = Event.MouseY;
