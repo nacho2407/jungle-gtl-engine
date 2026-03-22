@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
+#include "Core/Singleton.h"
 
 // ============================================================
 // FName — 문자열 풀 기반 이름 시스템
@@ -45,11 +46,11 @@ private:
 // ============================================================
 // FNamePool — 전역 문자열 풀 (싱글턴)
 // ============================================================
-class FNamePool
+class FNamePool : public TSingleton<FNamePool>
 {
-public:
-	static FNamePool& Get();
+	friend class TSingleton<FNamePool>;
 
+public:
 	// 문자열을 풀에 등록하고 인덱스 반환 (이미 있으면 기존 인덱스)
 	uint32 Store(const FString& InString);
 

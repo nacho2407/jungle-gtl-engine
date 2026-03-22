@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "Core/CoreTypes.h"
+#include "Core/Singleton.h"
 #include "Math/Vector.h"
 #include "Render/Resource/VertexTypes.h"
 
@@ -20,8 +21,10 @@
 //};
 
 
-class FMeshManager
+class FMeshManager : public TSingleton<FMeshManager>
 {
+	friend class TSingleton<FMeshManager>;
+
 private:
 	FMeshManager() = default;
 
@@ -54,15 +57,6 @@ private:
 	static bool bIsInitialized;
 
 public:
-	static FMeshManager& Get()
-	{
-		static FMeshManager instance;
-		return instance;
-	}
-
-	FMeshManager(const FMeshManager&) = delete;
-	FMeshManager& operator=(const FMeshManager&) = delete;
-
 	static void Initialize();
 	static const FMeshData& GetCube(){return Get().CubeMeshData; }
 	static const FMeshData& GetPlane(){ return Get().PlaneMeshData; }
