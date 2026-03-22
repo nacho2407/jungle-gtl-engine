@@ -1,6 +1,7 @@
 ﻿#include "Editor.h"
 #include "ThirdParty/json.h"
 #include "Component/CameraComponent.h"
+#include "Component/PrimitiveComponent.h"
 #include "ImGui/imgui_internal.h"
 #include <fstream>
 #include <streambuf>
@@ -147,12 +148,20 @@ void Editor::SelectComponent(USceneComponent* component)
 	if (SelectedComponent)
 	{
 		SelectedComponent->bIsSelected = false;
+		if (UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(SelectedComponent))
+		{
+			primitive->MarkRenderStateDirty();
+		}
 		SelectedComponent = nullptr;
 		Gizmo::GetInstance().GetController()->AttachTo(nullptr);
 	}
 	if (component)
 	{
 		component->bIsSelected = true;
+		if (UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(component))
+		{
+			primitive->MarkRenderStateDirty();
+		}
 		SelectedComponent = component;
 		Gizmo::GetInstance().GetController()->AttachTo(component);
 	}
