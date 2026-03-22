@@ -16,7 +16,7 @@ void FEditorControlWidget::Initialize(UEditorEngine* InEditorEngine)
 	SelectedPrimitiveType = static_cast<int32>(EPrimitiveType::EPT_Cube);
 }
 
-void FEditorControlWidget::Render(float DeltaTime, FViewOutput& ViewOutput)
+void FEditorControlWidget::Render(float DeltaTime)
 {
 	(void)DeltaTime;
 	if (!EditorEngine)
