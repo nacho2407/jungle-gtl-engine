@@ -3,8 +3,6 @@
 #include "Editor/UI/EditorWidget.h"
 #include "Math/Vector.h"
 
-enum class EPrimitiveType;
-
 class FEditorControlWidget : public FEditorWidget
 {
 public:
