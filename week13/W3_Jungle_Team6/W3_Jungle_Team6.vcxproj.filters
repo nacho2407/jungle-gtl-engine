@@ -10,8 +10,8 @@
     <Filter Include="Source\Editor">
       <UniqueIdentifier>{956d68db-8267-b6c9-ee17-de994a7dc814}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Editor\Core">
-      <UniqueIdentifier>{455acf13-4357-8aae-790c-0f95672a30b1}</UniqueIdentifier>
+    <Filter Include="Source\Editor\Settings">
+      <UniqueIdentifier>{d787f5b7-1afa-e269-d3f4-b58c3fbd3301}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Editor\UI">
       <UniqueIdentifier>{08046398-110a-9b75-d53d-049fd85f18ad}</UniqueIdentifier>
@@ -67,6 +67,9 @@
     <Filter Include="ThirdParty">
       <UniqueIdentifier>{7fdab8d2-b376-c6b6-9ab6-6234fa5b26ea}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThirdParty\DirectXTK">
+      <UniqueIdentifier>{cebcdb66-2978-a2be-4fb7-75ad1c4c2501}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ThirdParty\ImGui">
       <UniqueIdentifier>{c34ce534-362b-52ae-b32b-3baa8f711324}</UniqueIdentifier>
     </Filter>
@@ -75,7 +78,25 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shaders\ShaderW0.hlsl">
+    <FxCompile Include="Shaders\Common.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Editor.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Gizmo.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Outline.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Overlay.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Primitive.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\ShaderFont.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
@@ -83,19 +104,37 @@
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
       <Filter>Source\Editor</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\EditorSettings.cpp">
-      <Filter>Source\Editor</Filter>
+    <ClCompile Include="Source\Editor\Settings\EditorSettings.cpp">
+      <Filter>Source\Editor\Settings</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Core\EditorConsole.cpp">
-      <Filter>Source\Editor\Core</Filter>
+    <ClCompile Include="Source\Editor\UI\EditorConsoleWidget.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorControlWidget.cpp">
+      <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorPropertyWidget.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorSceneWidget.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorViewportOverlayWidget.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp">
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\BillboardComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Camera.cpp">
@@ -110,10 +149,22 @@
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\TextRenderComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\CrashDump.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\InputSystem.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Paths.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\ResourceManager.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp">
@@ -209,13 +260,28 @@
     <ClInclude Include="Source\Editor\EditorEngine.h">
       <Filter>Source\Editor</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\EditorSettings.h">
-      <Filter>Source\Editor</Filter>
+    <ClInclude Include="Source\Editor\Settings\EditorSettings.h">
+      <Filter>Source\Editor\Settings</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Core\EditorConsole.h">
-      <Filter>Source\Editor\Core</Filter>
+    <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorControlWidget.h">
+      <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorPropertyWidget.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorSceneWidget.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorViewportOverlayWidget.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\CursorOverlayState.h">
@@ -225,6 +291,9 @@
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\ActorComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\BillboardComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Camera.h">
@@ -239,6 +308,9 @@
     <ClInclude Include="Source\Engine\Component\SceneComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\TextRenderComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Core\CollisionTypes.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
@@ -251,6 +323,9 @@
     <ClInclude Include="Source\Engine\Core\CoreTypes.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\CrashDump.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Core\Debug.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
@@ -260,7 +335,16 @@
     <ClInclude Include="Source\Engine\Core\InputSystem.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Paths.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Core\RayTypes.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\ResourceManager.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Singleton.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\AActor.h">
@@ -346,6 +430,72 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h">
       <Filter>Source\Engine\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\Audio.h">
+      <Filter>ThirdParty\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\BufferHelpers.h">
+      <Filter>ThirdParty\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\CommonStates.h">
+      <Filter>ThirdParty\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\DDSTextureLoader.h">
+      <Filter>ThirdParty\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\DirectXHelpers.h">
+      <Filter>ThirdParty\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\Effects.h">
+      <Filter>ThirdParty\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\GamePad.h">
+      <Filter>ThirdParty\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\GeometricPrimitive.h">
+      <Filter>ThirdParty\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\GraphicsMemory.h">
+      <Filter>ThirdParty\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\Keyboard.h">
+      <Filter>ThirdParty\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\Model.h">
+      <Filter>ThirdParty\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\Mouse.h">
+      <Filter>ThirdParty\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\PostProcess.h">
+      <Filter>ThirdParty\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\PrimitiveBatch.h">
+      <Filter>ThirdParty\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\ScreenGrab.h">
+      <Filter>ThirdParty\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\SimpleMath.h">
+      <Filter>ThirdParty\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\SimpleMath.inl">
+      <Filter>ThirdParty\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\SpriteBatch.h">
+      <Filter>ThirdParty\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\SpriteFont.h">
+      <Filter>ThirdParty\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\VertexTypes.h">
+      <Filter>ThirdParty\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\WICTextureLoader.h">
+      <Filter>ThirdParty\DirectXTK</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\XboxDDSTextureLoader.h">
+      <Filter>ThirdParty\DirectXTK</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\ImGui\imconfig.h">
       <Filter>ThirdParty\ImGui</Filter>
