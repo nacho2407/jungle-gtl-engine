@@ -6,6 +6,7 @@
 #include "ImGui/imgui.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
+#include "Component/SubUVComponent.h"
 #include "GameFramework/PrimitiveActors.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
@@ -69,9 +70,18 @@ void FEditorControlWidget::Render(float DeltaTime)
 				Actor->InitDefaultComponents();
 				break;
 			}
+			case 4: // Explosion
+			{
+				AActor* Actor = World->SpawnActor<AActor>();
+				Actor->SetActorLocation(CurSpawnPoint);
+				USubUVComponent* SubUV = Actor->AddComponent<USubUVComponent>();
+				SubUV->SetParticle(FName("Explosion"));
+				SubUV->SetSpriteSize(2.0f, 2.0f);
+				SubUV->SetFrameRate(30.f);
 			}
+			}
+			NumberOfSpawnedActors = 1;
 		}
-		NumberOfSpawnedActors = 1;
 	}
 	ImGui::InputInt("Number of Spawn", &NumberOfSpawnedActors, 1, 10);
 

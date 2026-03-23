@@ -21,7 +21,8 @@ void UEngine::Init(FWindowsWindow* InWindow)
 
 	Renderer.Create(Window->GetHWND());
 	RenderCollector.Initialize(Renderer.GetFD3DDevice().GetDevice());
-	FResourceManager::Get().LoadFromFile(FPaths::ToUtf8(FPaths::ResourceFilePath()));
+	FResourceManager::Get().LoadFromFile(
+		FPaths::ToUtf8(FPaths::ResourceFilePath()), Renderer.GetFD3DDevice().GetDevice());
 }
 
 void UEngine::Shutdown()
