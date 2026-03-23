@@ -78,7 +78,7 @@ void EditorSceneManagerPanel::Draw(Editor* editor, ImGuiWindowLayout& layout)
 			}
 		}
 	}
-	
+
 	ImGui::Separator();
 
 	if (permanentScene && ImGui::CollapsingHeader("Permanent Scene", ImGuiTreeNodeFlags_DefaultOpen))

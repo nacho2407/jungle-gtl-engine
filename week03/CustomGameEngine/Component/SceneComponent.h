@@ -36,7 +36,7 @@ public:
 	virtual void Update(float deltaTime) {};
 	virtual json::JSON Serialize();
 	virtual void Deserialize(json::JSON);
-
+	virtual void DrawDebugLines() {}
 	virtual void DrawProperties();
 
 	bool IsSelected() const;
@@ -47,5 +47,5 @@ private:
 	FVector RelativeScale3D;
 	FQuat RelativeQuaternion;
 
-	
+
 };

@@ -2,6 +2,7 @@
 
 #include "SceneComponent.h"
 #include "Renderer/RenderObject.h"
+#include "AABB.h"
 
 class URenderer;
 struct FGeometry;
@@ -30,13 +31,15 @@ public:
 	void SetRelativeScale3D(const FVector& newScale) override;
 
 	virtual void OnComponentAdded() override;
-	virtual void Update(float DeltaTime);
+	virtual void Update(float DeltaTime) override;
 	virtual RenderObject* CreateRenderObject();
 	virtual RenderObject* GetRenderObject();
+	virtual void DrawDebugLines() override;
 	void SetMaterial(int Handle) { MaterialHandle = Handle; }
 	void MarkRenderStateDirty();
 	bool GetRenderStateDirty();
 	void ResolveRenderStateDirty();
+	void CreateAABB();
 
 	virtual json::JSON Serialize() override;
 	virtual void Deserialize(json::JSON) override;
@@ -45,6 +48,7 @@ public:
 
 	bool Pickable = true;
 	bool bVisible = true;
+	bool bDebugLine = true;
 	void SetVisible(bool bNewVisible) { bVisible = bNewVisible; MarkRenderStateDirty(); }
 private:
 	virtual void UpdateRenderObject();
@@ -53,7 +57,8 @@ protected:
 	FGeometry* VResource;
 	EPrimitiveType type;
 	RenderObject* RenderObj = nullptr;
-	
+	FAABB BoundingBox;
+
 private:
 	int MaterialHandle = -1;
 };

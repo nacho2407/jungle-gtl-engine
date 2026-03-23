@@ -88,6 +88,7 @@ public:
 	void BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups);
 	void Render(const TArray<FLevel*>& Levels);
 	//void RenderGrid(ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader);
+	void BatchRenderDebugLine(const TArray<FVertexSimple>& Lines);
 	void SetRasterizerMode(int32 mode);
 
 	TMap<EEngineShowFlags, bool> ShowFlagMap;

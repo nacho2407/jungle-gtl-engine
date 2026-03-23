@@ -24,6 +24,14 @@ void UScene::Update(float DeltaTime)
 	}
 }
 
+void UScene::DrawDebugLines()
+{
+	for (USceneComponent* sc : SceneComponents)
+	{
+		sc->DrawDebugLines();
+	}
+}
+
 std::string UScene::ToJson()
 {
 	return ToJson(this);

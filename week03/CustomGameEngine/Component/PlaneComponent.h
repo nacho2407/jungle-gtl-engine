@@ -7,4 +7,5 @@ class UPlaneComp : public UPrimitiveComponent {
 public:
 	UPlaneComp();
 	virtual ~UPlaneComp() override;
+	virtual void Update(float DeltaTime) override;
 };

@@ -18,7 +18,7 @@
 #include "Component/GridComp.h"
 #include "Component/AxisComponent.h"
 #include "World.h"
-
+#include "LineBatcher.h"
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -185,11 +185,8 @@ void EngineApp::Run()
 
 		//Render
 		GetWorld().OnBeforeRender();
-
 		Renderer->Prepare();
 
-		//ResourceManager* RM = ResourceManager::GetInstance();
-		//Renderer->RenderGrid(RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").VertexShader.Get(), RM->GetMaterial(L"Shader/ShaderInfiniteGrid.hlsl").PixelShader.Get());
 
 		SceneManager* SceneMgr = GetWorld().GetSceneManager();
 		TArray<FLevel*> LevelsToRender;
@@ -201,8 +198,10 @@ void EngineApp::Run()
 		{
 			LevelsToRender.push_back(&SceneMgr->GetActiveScene()->Level);
 		}
+		GetWorld().DrawDebugLines();
 		Renderer->Render(LevelsToRender);
-		
+		Renderer->BatchRenderDebugLine(FLineBatcher::GetInstance().GetLineVertices());
+		FLineBatcher::GetInstance().ClearLines();
 		EditorInst->DrawUI();
 
 		Renderer->SwapBuffer();

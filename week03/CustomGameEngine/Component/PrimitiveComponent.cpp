@@ -2,7 +2,8 @@
 #include "Renderer/Renderer.h"
 #include "EngineCore/ResourceManager.h"
 #include "Scene.h"
-
+#include "AABB.h"
+#include "LineBatcher.h"
 UPrimitiveComponent::UPrimitiveComponent()
 {
 }
@@ -54,9 +55,10 @@ void UPrimitiveComponent::OnComponentAdded()
 		Scene->Level.RegisterRenderObject(RenderObj);
 }
 
+
+
 void UPrimitiveComponent::Update(float DeltaTime)
 {
-
 }
 
 RenderObject* UPrimitiveComponent::CreateRenderObject()
@@ -85,6 +87,16 @@ RenderObject* UPrimitiveComponent::GetRenderObject()
 	return RenderObj;
 }
 
+void UPrimitiveComponent::DrawDebugLines()
+{
+	FVector Scale = GetRelativeScale3D();
+	FMatrix ScaleMatrix = FMatrix::ScaleMatrix(Scale.x, Scale.y, Scale.z);
+	FVector Location = GetRelativeLocation();
+	FMatrix LocationMatrix = FMatrix::TranslationMatrix(Location.x, Location.y, Location.z);
+	BoundingBox.RelativeMatrix = ScaleMatrix * LocationMatrix;
+	FLineBatcher::GetInstance().AddAABB(BoundingBox, FColor(1.f, 0.f, 0.f));
+}
+
 void UPrimitiveComponent::MarkRenderStateDirty()
 {
 	if (RenderObj != nullptr)
@@ -95,6 +107,21 @@ void UPrimitiveComponent::ResolveRenderStateDirty()
 {
 	UpdateRenderObject();
 	RenderObj->bIsDirty = false;
+}
+
+void UPrimitiveComponent::CreateAABB()
+{
+	if (VResource == nullptr) return;
+
+	for (auto& vertex : VResource->Vertices)
+	{
+		BoundingBox.MinPos.x = vertex.x < BoundingBox.MinPos.x ? vertex.x : BoundingBox.MinPos.x;
+		BoundingBox.MaxPos.x = vertex.x > BoundingBox.MaxPos.x ? vertex.x : BoundingBox.MaxPos.x;
+		BoundingBox.MinPos.y = vertex.y < BoundingBox.MinPos.y ? vertex.y : BoundingBox.MinPos.y;
+		BoundingBox.MaxPos.y = vertex.y > BoundingBox.MaxPos.y ? vertex.y : BoundingBox.MaxPos.y;
+		BoundingBox.MinPos.z = vertex.z < BoundingBox.MinPos.z ? vertex.z : BoundingBox.MinPos.z;
+		BoundingBox.MaxPos.z = vertex.z > BoundingBox.MaxPos.z ? vertex.z : BoundingBox.MaxPos.z;
+	}
 }
 
 json::JSON UPrimitiveComponent::Serialize()

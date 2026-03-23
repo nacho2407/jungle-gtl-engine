@@ -19,7 +19,7 @@ UWorld::~UWorld() {
 		return;
 	}
 
-	while(!SceneMgr->GetLoadedScenes().empty())
+	while (!SceneMgr->GetLoadedScenes().empty())
 	{
 		UScene* scene = SceneMgr->GetLoadedScenes().back();
 		SceneMgr->UnloadScene(scene);
@@ -51,6 +51,12 @@ void UWorld::Update(float deltaTime)
 		SceneMgr->GetActiveScene()->Update(deltaTime);
 }
 
+void UWorld::DrawDebugLines()
+{
+	if (SceneMgr->GetActiveScene())
+		SceneMgr->GetActiveScene()->DrawDebugLines();
+}
+
 void UWorld::OnBeforeRender() const
 {
 	if (SceneMgr == nullptr)
@@ -74,7 +80,7 @@ void UWorld::OnBeforeRender() const
 					primitive->ResolveRenderStateDirty();
 			}
 		}
-	};
+		};
 
 	UpdateScene(activeScene);
 	UpdateScene(permanentScene);

@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "EngineTypes.h"
-
 class UEngineStatics
 {
 public:
@@ -9,7 +8,7 @@ public:
 	{
 		return NextUUID++;
 	}
-	
+
 	static uint32 NextUUID;
 
 	static uint32 TotalAllocatedBytes;

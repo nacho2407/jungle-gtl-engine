@@ -18,7 +18,7 @@ public:
 	int Version;
 	int NextUUID;
 	TArray<USceneComponent*> SceneComponents;
-	FName Name;
+	//FName Name;
 
 	bool IsCompSelected{ false };
 	FVector SelectedCompPos;
@@ -26,6 +26,7 @@ public:
 	FLevel Level;
 
 	void Update(float DeltaTime);
+	void DrawDebugLines();
 	std::string ToJson();
 	static std::string ToJson(UScene*);
 	static UScene* FromJson(std::string);

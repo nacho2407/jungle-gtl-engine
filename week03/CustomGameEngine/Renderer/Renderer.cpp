@@ -1,5 +1,5 @@
 ﻿#include "Renderer.h"
-
+#include "EngineCore/ResourceManager.h"
 void URenderer::Create(HWND hWindow)
 {
 	CreateDeviceAndSwapChain(hWindow);
@@ -252,9 +252,9 @@ void URenderer::Prepare()
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	DeviceContext->RSSetViewports(1, &ViewportInfo);
 	//향후 레스터라이저 관련 모드 추가를 위해 siwtch문으로 만들어 두겠습니다.
-	switch(RsSetMode)
+	switch (RsSetMode)
 	{
-	case 0: 
+	case 0:
 		DeviceContext->RSSetState(RasterizerState.Get());
 		break;
 	case 1:
@@ -322,30 +322,27 @@ void URenderer::Render(const TArray<FLevel*>& Levels)
 	TMap<BatchKey, TArray<RenderObject*>> BatchGroups;
 	DistributeRenderObjects(Levels, BatchGroups, NormalRenderObjects, NoDepthRenderObjects);
 	RenderNormalObjects(NormalRenderObjects);
-	RenderNoDepthObjects(NoDepthRenderObjects);
 	BatchRender(BatchGroups);
+	RenderNoDepthObjects(NoDepthRenderObjects);
+}
+
+
+
+void URenderer::BatchRenderDebugLine(const TArray<FVertexSimple>& Lines)
+{
+	ResourceManager::GetInstance()->GetMaterial(L"Shader/ShaderLine.hlsl").Bind(DeviceContext.Get());
+	DeviceContext->OMSetDepthStencilState(DepthStencilStateNoDepth.Get(), 0);
+	UpdateDynamicVertexBuffer(const_cast<FVertexSimple*>(Lines.data()), Lines.size());
+	UINT stride = sizeof(FVertexSimple);
+	UINT offset = 0;
+	DeviceContext->IASetVertexBuffers(0, 1, DynamicVertexBuffer.GetAddressOf(), &stride, &offset);
+	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	DeviceContext->Draw(Lines.size(), 0);
 }
 
 void URenderer::SetRasterizerMode(int32 mode)
 {
 	RsSetMode = mode;
-}
-
-void URenderer::RenderNormalObjects(TArray<RenderObject*>& NormalRenderObjects)
-{
-	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
-	FObjectConstant ObjectConst;
-
-	for (RenderObject* RenderObj : NormalRenderObjects)
-	{
-		//Camera
-		ObjectConst.World = RenderObj->World;
-		ObjectConst.Color = RenderObj->Color;
-		ObjectConst.bIsSelected = RenderObj->bIsSelected ? 1 : 0;
-		RenderObj->Material->ConstantBuffer.Update(DeviceContext.Get(), &ObjectConst, sizeof(FObjectConstant));
-		RenderObj->Material->ConstantBuffer.Bind(DeviceContext.Get());
-		RenderObj->Render(DeviceContext.Get());
-	}
 }
 
 void URenderer::DistributeRenderObjects(
@@ -383,6 +380,24 @@ void URenderer::DistributeRenderObjects(
 		}
 	}
 }
+
+void URenderer::RenderNormalObjects(TArray<RenderObject*>& NormalRenderObjects)
+{
+	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
+	FObjectConstant ObjectConst;
+
+	for (RenderObject* RenderObj : NormalRenderObjects)
+	{
+		//Camera
+		ObjectConst.World = RenderObj->World;
+		ObjectConst.Color = RenderObj->Color;
+		ObjectConst.bIsSelected = RenderObj->bIsSelected ? 1 : 0;
+		RenderObj->Material->ConstantBuffer.Update(DeviceContext.Get(), &ObjectConst, sizeof(FObjectConstant));
+		RenderObj->Material->ConstantBuffer.Bind(DeviceContext.Get());
+		RenderObj->Render(DeviceContext.Get());
+	}
+}
+
 
 void URenderer::BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups)
 {
