@@ -38,15 +38,14 @@ void EditorSceneManagerPanel::Draw(Editor* editor, ImGuiWindowLayout& layout)
 				sceneMgr->SetActiveScene(scene);
 				editor->SelectComponent(nullptr);
 			}
-
-			if (ImGui::BeginPopupContextItem())
-			{
-				if (ImGui::MenuItem("Unload Scene"))
-				{
-					sceneMgr->UnloadScene(scene);
-				}
-				ImGui::EndPopup();
-			}
+			//if (ImGui::BeginPopupContextItem())
+			//{
+			//	if (ImGui::MenuItem("Unload Scene"))
+			//	{
+			//		sceneMgr->UnloadScene(scene);
+			//	}
+			//	ImGui::EndPopup();
+			//}
 		}
 	}
 
