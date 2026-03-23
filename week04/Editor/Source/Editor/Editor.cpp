@@ -288,10 +288,10 @@ void FEditor::Create()
     
     //  TODO : Viewport Client
     EditorContext.Editor = this;
-    LoadEditorSettings();
 
     ViewportClient.Create();
     ViewportClient.SetEditorContext(&EditorContext);
+    LoadEditorSettings();
 
     // 메뉴 시스템은 command 등록과 배치 등록을 분리해서 초기화합니다.
     MenuRegistry.Clear();
@@ -371,6 +371,9 @@ void FEditor::LoadEditorSettings()
 {
     FEditorSettingsData SettingsData;
     SettingsData.GridSpacing = UEngineStatics::GridSpacing;
+    SettingsData.CameraMoveSpeed = ViewportClient.GetNavigationController().GetMoveSpeed();
+    SettingsData.CameraRotationSpeed =
+        ViewportClient.GetNavigationController().GetRotationSpeed();
 
     FString ErrorMessage;
     const EEditorSettingsLoadResult LoadResult =
@@ -396,12 +399,19 @@ void FEditor::LoadEditorSettings()
     }
 
     UEngineStatics::GridSpacing = FMath::Clamp(SettingsData.GridSpacing, 1.0f, 1000.0f);
+    ViewportClient.GetNavigationController().SetMoveSpeed(SettingsData.CameraMoveSpeed);
+    ViewportClient.GetNavigationController().SetRotationSpeed(
+        SettingsData.CameraRotationSpeed);
 }
 
 void FEditor::SaveEditorSettings() const
 {
     FEditorSettingsData SettingsData;
     SettingsData.GridSpacing = FMath::Clamp(UEngineStatics::GridSpacing, 1.0f, 1000.0f);
+    SettingsData.CameraMoveSpeed =
+        ViewportClient.GetNavigationController().GetMoveSpeed();
+    SettingsData.CameraRotationSpeed =
+        ViewportClient.GetNavigationController().GetRotationSpeed();
     PersistentSettings.Save(SettingsData);
 }
 
@@ -864,7 +874,7 @@ void FEditor::RegisterDefaultCommands()
     // 여기서는 "무엇을 실행할지"만 등록하고, 메뉴 어디에 둘지는 RegisterDefaultMenus에서 정합니다.
     MenuRegistry.RegisterCommand(FEditorCommandDefinition{
         .CommandId = "file.new_scene",
-        .Label = L"새 씬",
+        .Label = L"New Scene",
         .ShortcutLabel = "Ctrl+N",
         .Execute =
             [this]()
@@ -874,7 +884,7 @@ void FEditor::RegisterDefaultCommands()
 
     MenuRegistry.RegisterCommand(FEditorCommandDefinition{
         .CommandId = "file.open_scene",
-        .Label = L"씬 열기",
+        .Label = L"Open Scene",
         .ShortcutLabel = "Ctrl+O",
         .Execute =
             [this]()
@@ -884,7 +894,7 @@ void FEditor::RegisterDefaultCommands()
 
     MenuRegistry.RegisterCommand(FEditorCommandDefinition{
         .CommandId = "file.save_scene",
-        .Label = L"씬 저장",
+        .Label = L"Save Scene",
         .ShortcutLabel = "Ctrl+S",
         .Execute =
             [this]()
@@ -894,7 +904,7 @@ void FEditor::RegisterDefaultCommands()
 
     MenuRegistry.RegisterCommand(FEditorCommandDefinition{
         .CommandId = "file.save_scene_as",
-        .Label = L"다른 이름으로 저장",
+        .Label = L"Save Scene as..",
         .ShortcutLabel = "Ctrl+Shift+S",
         .Execute =
             [this]()
@@ -904,7 +914,7 @@ void FEditor::RegisterDefaultCommands()
 
     MenuRegistry.RegisterCommand(FEditorCommandDefinition{
         .CommandId = "file.clear_scene",
-        .Label = L"씬 비우기",
+        .Label = L"Clear Scene",
         .Execute =
             [this]()
             {
@@ -913,7 +923,7 @@ void FEditor::RegisterDefaultCommands()
 
     MenuRegistry.RegisterCommand(FEditorCommandDefinition{
         .CommandId = "file.exit",
-        .Label = L"종료",
+        .Label = L"Exit",
         .ShortcutLabel = "Alt+F4",
         .Execute =
             [this]()
@@ -926,7 +936,7 @@ void FEditor::RegisterDefaultCommands()
 
     MenuRegistry.RegisterCommand(FEditorCommandDefinition{
         .CommandId = "edit.undo",
-        .Label = L"실행 취소",
+        .Label = L"Undo",
         .ShortcutLabel = "Ctrl+Z",
         .CanExecute =
             []()
@@ -936,7 +946,7 @@ void FEditor::RegisterDefaultCommands()
 
     MenuRegistry.RegisterCommand(FEditorCommandDefinition{
         .CommandId = "edit.redo",
-        .Label = L"다시 실행",
+        .Label = L"Redo",
         .ShortcutLabel = "Ctrl+Y",
         .CanExecute =
             []()
@@ -946,7 +956,7 @@ void FEditor::RegisterDefaultCommands()
 
     MenuRegistry.RegisterCommand(FEditorCommandDefinition{
         .CommandId = "edit.delete_selection",
-        .Label = L"선택 삭제",
+        .Label = L"Delete Selection",
         .ShortcutLabel = "Delete",
         .Execute =
             [this]()
@@ -961,7 +971,7 @@ void FEditor::RegisterDefaultCommands()
 
     MenuRegistry.RegisterCommand(FEditorCommandDefinition{
         .CommandId = "edit.preferences",
-        .Label = L"설정 준비 중",
+        .Label = L"Preferences (Not Ready)",
         .CanExecute =
             []()
             {
@@ -970,7 +980,7 @@ void FEditor::RegisterDefaultCommands()
 
     MenuRegistry.RegisterCommand(FEditorCommandDefinition{
         .CommandId = "tool.content_browser",
-        .Label = L"콘텐츠 브라우저 준비 중",
+        .Label = L"Content Browser (Not Ready)",
         .CanExecute =
             []()
             {
@@ -979,7 +989,7 @@ void FEditor::RegisterDefaultCommands()
 
     MenuRegistry.RegisterCommand(FEditorCommandDefinition{
         .CommandId = "tool.build",
-        .Label = L"빌드 준비 중",
+        .Label = L"Build (Not Ready)",
         .CanExecute =
             []()
             {
@@ -988,7 +998,7 @@ void FEditor::RegisterDefaultCommands()
 
     MenuRegistry.RegisterCommand(FEditorCommandDefinition{
         .CommandId = "help.about",
-        .Label = L"정보",
+        .Label = L"About",
         .ShortcutLabel = "F1",
         .Execute =
             [this]()
