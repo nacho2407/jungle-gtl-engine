@@ -408,6 +408,12 @@
     <ClCompile Include="Component\GridComp.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClInclude Include="AABB.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="LineBatcher.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shader\ShaderInfiniteGrid.hlsl" />
@@ -415,5 +421,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram.cd" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="LineBatcher.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
