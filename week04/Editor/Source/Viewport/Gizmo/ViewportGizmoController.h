@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/CoreMinimal.h"
 #include "Engine/ViewPort/ViewportController.h"
-#include "Engine/Component/PrimitiveComponent.h"
+#include "Engine/Component/SceneComponent.h"
 #include "Gizmo/EditorGizmoTypes.h"
 
 /*
@@ -25,7 +25,10 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     void OnMouseMove(const FVector2& MousePos);
 
     void SetViewportCamera(FViewportCamera* InCamera) { ViewportCamera = InCamera; }
-
+    void SetSelectedObject(Engine::Component::USceneComponent* InObject)
+    {
+        SelectedObject = InObject;
+    }
     // 기즈모 설정 변경
     void SetGizmoMode(EGizmoMode InMode) { CurrentMode = InMode; }
     void SetSnapping(bool bInEnable, float InValue)
@@ -35,19 +38,22 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     }
 
   private:
-    // 내부 로직: 마우스 위치로부터 어떤 축을 잡았는지 판정 (Picking)
-    int32 HitTestGizmo(const FVector2& MousePos);
-
-    // 조작량 계산 (마우스 좌표 -> 3D 이동량)
+    EGizmoAxis HitTestGizmo(const FVector2& MousePos);
     void UpdateDrag(const FVector2& MousePos);
+
+    float CalculateProjectionOffset(const Geometry::FRay& Ray, const FVector& AxisOrigin,
+                                    const FVector& AxisDir);
 
   private:
     EGizmoMode CurrentMode = EGizmoMode::Translate;
-    int32      ActiveAxisIndex = -1; // 현재 잡고 있는 축 (0:X, 1:Y, 2:Z...)
+    EGizmoAxis ActiveAxisIndex = {EGizmoAxis::None};
+    FVector    CurrentDragAxis;
 
+    bool       bIsWorldMode = false;
     bool       bIsDragging = false;
     FVector2   StartMousePos;
-    FTransform StartTransform; // 드래그 시작 시점의 대상 트랜스폼
+    FTransform StartTransform;
+    float      InitialDragOffset = 0.0f;
 
     bool  bEnableSnapping = false;
     float SnapValue = 10.f;
@@ -55,5 +61,5 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     FViewportCamera*  ViewportCamera{nullptr};
     FSceneRenderData* SceneRenderData;
 
-    Engine::Component::UPrimitiveComponent* SelectedObject{nullptr};
+    Engine::Component::USceneComponent* SelectedObject{nullptr};
 };

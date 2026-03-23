@@ -42,6 +42,12 @@ namespace Engine::Component
         OnTransformChanged();
     }
 
+    void USceneComponent::SetRelativeTransform(const FVector& NewTransform)
+    {
+        WorldTransform.SetScale3D(NewTransform);
+        OnTransformChanged();
+    }
+
     void USceneComponent::Update(float DeltaTime) {}
 
     FMatrix USceneComponent::GetRelativeMatrix() const
@@ -50,5 +56,5 @@ namespace Engine::Component
     }
 
     bool USceneComponent::IsSelected() const { return bIsSelected; }
-    
+
 } // namespace Engine::Component

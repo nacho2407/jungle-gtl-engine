@@ -30,8 +30,8 @@ inline EGizmoHighlight ToGizmoHighlight(EGizmoAxis InAxis)
 inline FGizmoDrawData BGizmoDrawData(const FEditorGizmoState &InState)
 {
     FGizmoDrawData Out;
-    Out.bVisible = InState.bVisible;
-    Out.Transform = InState.Transform;
+    // Out.bVisible = InState.bVisible;
+    // Out.Transform = InState.Transform;
 
     switch (InState.Mode)
     {
