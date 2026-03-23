@@ -27,6 +27,7 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 
 	if (ImGui::CollapsingHeader("Loaded Scenes", ImGuiTreeNodeFlags_DefaultOpen))
 	{
+		bool bSceneRemoved = false;
 		for (int32 i = 0; i < (int32)loadedScenes.size(); ++i)
 		{
 			UScene* scene = loadedScenes[i];
@@ -38,14 +39,22 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 				sceneMgr->SetActiveScene(scene);
 				editor->ClearSelection();
 			}
-			//if (ImGui::BeginPopupContextItem())
-			//{
-			//	if (ImGui::MenuItem("Unload Scene"))
-			//	{
-			//		sceneMgr->UnloadScene(scene);
-			//	}
-			//	ImGui::EndPopup();
-			//}
+			if (ImGui::BeginPopupContextItem())
+			{
+				if (ImGui::MenuItem("Remove Scene"))
+				{
+					editor->ClearSelection();
+					sceneMgr->UnloadScene(scene);
+					ActiveScene = sceneMgr->GetActiveScene();
+					bSceneRemoved = true;
+				}
+				ImGui::EndPopup();
+			}
+
+			if (bSceneRemoved)
+			{
+				break;
+			}
 		}
 	}
 
