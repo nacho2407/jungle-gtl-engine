@@ -79,7 +79,6 @@ public:
 	void ApplyScreenSpaceScaling(const FVector& CameraLocation);
 	void SetWorldSpace(bool bWorldSpace);
 
-	bool GetRenderCommand(FRenderCommand& OutCommand) override;
 
 	//UActorComponent Override
 	void Deactivate() override;
