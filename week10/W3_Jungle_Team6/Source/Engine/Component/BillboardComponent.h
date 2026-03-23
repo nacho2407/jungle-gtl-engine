@@ -4,9 +4,8 @@
 class UBillboardComponent : public UPrimitiveComponent
 {
 public:
+	DECLARE_CLASS(UBillboardComponent, UPrimitiveComponent)
 	void UpdateBillboardMatrix(const FMatrix& ViewMatrix);
-
-	bool GetRenderCommand(FRenderCommand& OutCommand) override;
 
 	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_Quad;
 
