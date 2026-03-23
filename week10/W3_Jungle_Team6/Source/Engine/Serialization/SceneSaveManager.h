@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <string>
 #include <filesystem>
@@ -9,13 +9,15 @@
 // Forward declarations
 class UObject;
 class UWorld;
+class AActor;
+class UActorComponent;
 class USceneComponent;
-class UCameraComponent;
-class UPrimitiveComponent;
 
 namespace json {
 	class JSON;
 }
+
+struct FPropertyDescriptor;
 
 using std::string;
 
@@ -23,41 +25,25 @@ class FSceneSaveManager {
 public:
 	static constexpr const wchar_t* SceneExtension = L".Scene";
 
-	// FPaths 기반 Scene 디렉터리 (wstring)
 	static std::wstring GetSceneDirectory() { return FPaths::SceneDir(); }
 
-	// Creates a .json save file at the given destination
-	static void SaveSceneAsJSON(const string& SceneName, TArray<FWorldContext>& WorldList);
-	static void LoadSceneFromJSON(const string& filepath, TArray<FWorldContext>& WorldList);
+	static void SaveSceneAsJSON(const string& SceneName, FWorldContext& WorldContext);
+	static void LoadSceneFromJSON(const string& filepath, FWorldContext& OutWorldContext);
 
-	// Returns list of .Scene file names (without extension) in SceneDirectory
 	static TArray<FString> GetSceneFileList();
 
-	// If file exists at given path, delete, then save. Otherwise, simply create a new save
-	static void OverwriteSave(const string& filepath, UWorld* World);
-
 private:
+	// ---- Serialization ----
+	static json::JSON SerializeWorld(UWorld* World, const FWorldContext& Ctx);
+	static json::JSON SerializeActor(AActor* Actor);
+	static json::JSON SerializeSceneComponentTree(USceneComponent* Comp);
+	static json::JSON SerializeProperties(UActorComponent* Comp);
+	static json::JSON SerializePropertyValue(const FPropertyDescriptor& Prop);
 
-	//-----------------------------------------------------------------------------------
-	// Serialization
-	// ----------------------------------------------------------------------------------
-	// Creates a .json save file at the given destination
-	static json::JSON SerializeObject(UObject* Object);
-
-	static json::JSON SerializeVector(float X, float Y, float Z);
-
-	//-----------------------------------------------------------------------------------
-	// Desrialization
-	// ----------------------------------------------------------------------------------
-	// Resolves parent-child and owning references between components, actors, and world
-	static void LinkReferences(const TMap<uint32, UObject*>& uuidMap, json::JSON Savedata);
-	
-	// Generate spatial vectors for USceneCompoents from a json save
-	static void DeserializeSpaceVectors(USceneComponent* SceneComp, json::JSON& Savedata);
-
-	static void DecodeCamera(UCameraComponent* Camera, json::JSON& Savedata);
-
-	static void DecodePrimitiveComponents(UPrimitiveComponent* Prim, json::JSON& Savedata);
+	// ---- Deserialization ----
+	static USceneComponent* DeserializeSceneComponentTree(json::JSON& Node, AActor* Owner);
+	static void DeserializeProperties(UActorComponent* Comp, json::JSON& PropsJSON);
+	static void DeserializePropertyValue(FPropertyDescriptor& Prop, json::JSON& Value);
 
 	static string GetCurrentTimeStamp();
 };
