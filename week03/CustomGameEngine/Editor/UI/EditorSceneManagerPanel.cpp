@@ -23,8 +23,6 @@ void EditorSceneManagerPanel::Draw(Editor* editor, ImGuiWindowLayout& layout)
 	const TArray<UScene*>& loadedScenes = sceneMgr->GetLoadedScenes();
 	UScene* permanentScene = sceneMgr->GetPermanentScene();
 
-	ImGui::SetNextWindowPos(layout.PosXY, ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSize(layout.SizeWH, ImGuiCond_FirstUseEver);
 	ImGui::Begin("Scene Manager");
 
 	if (ImGui::CollapsingHeader("Loaded Scenes", ImGuiTreeNodeFlags_DefaultOpen))

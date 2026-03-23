@@ -51,6 +51,8 @@ public:
 	void SaveSettings();
 
 private:
+	void DrawDockSpace();
+	void SetupDefaultDockLayout(ImGuiID dockspaceID);
 	void DrawControlPanel(ImGuiLayout&);
 	void DrawConsole(ImGuiLayout&);
 	void DrawPropertyPanel(ImGuiLayout&);
@@ -73,4 +75,5 @@ private:
 	UCameraComponent* Camera = nullptr;
 	USceneComponent* SelectedComponent = nullptr;
 	UGridComp* Grid = nullptr;
+	bool bDockLayoutInitialized = false;
 };

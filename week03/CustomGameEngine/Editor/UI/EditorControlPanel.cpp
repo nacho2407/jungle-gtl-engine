@@ -73,9 +73,6 @@ void EditorControlPanel::Draw(UCameraComponent* camera, ImGuiWindowLayout& layou
 {
 	UpdateFPS(TimerManager::GetInstance().GetGlobalDeltaTime());
 
-	ImGui::SetNextWindowPos(layout.PosXY, ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSize(layout.SizeWH, ImGuiCond_FirstUseEver);
-
 	ImGui::Begin("Jungle Control Panel");
 	ImGui::Text("Hello Jungle World!");
 	ImGui::Text("FPS %.0f (%d ms)",

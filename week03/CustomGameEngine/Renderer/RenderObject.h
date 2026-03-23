@@ -36,7 +36,7 @@ public:
 	FGeometry* Geometry;//Mesh
 	FMaterial* Material;//Material
 	FMatrix World = FMatrix::IdentityMatrix();
-	FColor Color = FColor(1.0f, 1.0f, 1.0f, .5f);
+	FColor Color = FColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 	BatchKey GetBatchKey() const
 	{
