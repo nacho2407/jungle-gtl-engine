@@ -48,7 +48,7 @@ public:
 
 private:
 	// CPU 누적 배열
-	TArray<FFontVertex> Vertices;
+	TArray<FTextureVertex> Vertices;
 	TArray<uint32>      Indices;
 
 	// GPU 버퍼 (Dynamic)
