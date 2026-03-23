@@ -56,12 +56,7 @@ public:
 	void EndFrame();
 
 	void RenderPasses(const FRenderBus& InRenderBus, ID3D11DeviceContext* Context);
-	/**
-	 * @brief 에디터용 line/font helper를 수집해 렌더링합니다.
-	 * @details RenderBus에 쌓인 editor 명령을 LineBatcher와 FontBatcher로 모으고,
-	 * 현재 카메라 위치를 기준으로 grid helper를 생성한 뒤 editor shader 상태에서 한 번에 flush합니다.
-	 * 이 과정에서 editor line pass는 alpha blend를 사용하므로 거리 기반 grid fade가 화면에 반영됩니다.
-	 */
+	
 	void RenderEditorHelpers(const FRenderBus& InRenderBus, ID3D11DeviceContext* Context);
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix);
 
