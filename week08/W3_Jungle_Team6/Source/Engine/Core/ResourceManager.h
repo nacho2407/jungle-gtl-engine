@@ -6,11 +6,18 @@
 
 #include <d3d11.h>
 
+enum class EResourceType
+{
+	Font,
+	Particle
+};
 // Font Atlas 리소스. ResourceManager가 소유하며, 컴포넌트는 포인터로 참조.
 struct FFontResource
 {
+	EResourceType ResourceType;			// Resource의 종류가 무엇인지.
 	FName Name;
 	FString Path;						// Asset 상대 경로 (Resource.ini에서 로드)
+
 	ID3D11ShaderResourceView* SRV = nullptr;	// GPU에 로드된 Font Atlas 텍스처
 
 	bool IsLoaded() const { return SRV != nullptr; }
@@ -32,10 +39,10 @@ class FResourceManager : public TSingleton<FResourceManager>
 
 public:
 	// Resource.ini에서 경로 정보 로드
-	void LoadFromFile(const FString& Path);
+	void LoadFromFile(const FString& Path, ID3D11Device* InDevice);
 
 	// GPU 리소스 로드 (Device 필요, 초기화 후 호출)
-	void LoadGPUResources(ID3D11Device* Device);
+	bool LoadGPUResources(ID3D11Device* Device);
 
 	// 모든 GPU 리소스 해제
 	void ReleaseGPUResources();
@@ -52,5 +59,5 @@ private:
 	FResourceManager() = default;
 	~FResourceManager() { ReleaseGPUResources(); }
 
-	TMap<FString, FFontResource> FontResources;
+	TMap<FString, FFontResource> Resources;
 };
