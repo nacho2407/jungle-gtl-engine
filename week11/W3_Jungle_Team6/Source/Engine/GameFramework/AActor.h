@@ -3,6 +3,8 @@
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
 
+#include <type_traits>
+
 class UWorld;
 
 class AActor : public UObject {
@@ -15,69 +17,31 @@ public:
 	virtual void Tick(float DeltaTime) {}
 	virtual void EndPlay() {}
 
+	// 컴포넌트 생성 + Owner 설정 + 등록만 수행. Attach는 별도로 호출할 것.
 	template<typename T>
 	T* AddComponent() {
-		T* component = UObjectManager::Get().CreateObject<T>();
+		static_assert(std::is_base_of_v<UActorComponent, T>,
+			"AddComponent<T>: T must derive from UActorComponent");
 
-		// Remeber to add this later
-		component->SetOwner(this);
-
-		// First component added becomes the root
-		if (!RootComponent)
-		{
-			RootComponent = component;
-			RootComponent->SetWorldLocation(PendingActorLocation);
-		}
-		else
-		{
-			// Attach to root by default
-			component->SetParent(RootComponent);
-		}
-
-		Components.push_back(component);
-		return component;
+		T* Comp = UObjectManager::Get().CreateObject<T>();
+		Comp->SetOwner(this);
+		OwnedComponents.push_back(Comp);
+		return Comp;
 	}
 
-	USceneComponent* AddComponent(USceneComponent* ExistingComp) {
-		if (!ExistingComp) return nullptr;
+	// FTypeInfo 기반 런타임 컴포넌트 생성
+	UActorComponent* AddComponentByClass(const FTypeInfo* Class);
 
-		if (!RootComponent) {
-			RootComponent = ExistingComp;
-			RootComponent->SetWorldLocation(PendingActorLocation);
-		}
-		else {
-			ExistingComp->SetParent(RootComponent);
-		}
+	void RemoveComponent(UActorComponent* Component);
 
-		RegisterComponentRecursive(ExistingComp);
-		return ExistingComp;
-	}
+	// 외부에서 생성된 컴포넌트를 등록 (역직렬화 등)
+	void RegisterComponent(UActorComponent* Comp);
 
-	void RemoveComponent(USceneComponent* Component) {
-		if (!Component) return;
-
-		auto it = std::find(Components.begin(),
-			Components.end(), Component);
-		if (it != Components.end())
-			Components.erase(it);
-
-		if (RootComponent == Component)
-			RootComponent = Components.empty()
-			? nullptr
-			: Components[0];
-
-		UObjectManager::Get().DestroyObject(Component);
-	}
-
-	void SetRootComponent(USceneComponent* Comp) {
-		if (!Comp) return;
-		RootComponent = Comp;
-		Components.clear(); // rebuild from scratch
-		RegisterComponentRecursive(Comp);
-	}
-
+	void SetRootComponent(USceneComponent* Comp);
 	USceneComponent* GetRootComponent() const { return RootComponent; }
-	const TArray<USceneComponent*>& GetComponents() const { return Components; }
+
+	const TArray<UActorComponent*>& GetComponents() const { return OwnedComponents; }
+
 	// Transform — Location
 	FVector GetActorLocation() const;
 	void SetActorLocation(const FVector& Location);
@@ -127,8 +91,5 @@ protected:
 	FVector PendingActorLocation = FVector(0, 0, 0);
 	bool bVisible = true;
 
-	TArray<USceneComponent*> Components;
-
-private:
-	void RegisterComponentRecursive(USceneComponent* Comp);
+	TArray<UActorComponent*> OwnedComponents;
 };
