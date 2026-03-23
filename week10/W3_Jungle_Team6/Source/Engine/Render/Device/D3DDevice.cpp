@@ -120,16 +120,22 @@ void FD3DDevice::SetBlendState(EBlendState InState)
 {
 	if (CurrentBlendState == InState) return;
 	const float BlendFactor[4] = { 0, 0, 0, 0 };
-	if (InState == EBlendState::AlphaBlend)
-	{
-		DeviceContext->OMSetBlendState(BlendStateAlpha, BlendFactor, 0xffffffff);
-	}
-	else
-	{
-		DeviceContext->OMSetBlendState(nullptr, BlendFactor, 0xffffffff);
-	}
-
 	CurrentBlendState = InState;
+
+	switch (CurrentBlendState)
+	{
+	case EBlendState::Opaque:
+		DeviceContext->OMSetBlendState(nullptr, BlendFactor, 0xffffffff);
+		break;
+
+	case EBlendState::AlphaBlend:
+		DeviceContext->OMSetBlendState(BlendStateAlpha, BlendFactor, 0xffffffff);
+		break;
+
+	case EBlendState::NoColor:
+		DeviceContext->OMSetBlendState(BlendStateNoColorWrite, BlendFactor, 0xFFFFFFFF);
+		break;
+	}
 }
 
 void FD3DDevice::SetRasterizerState(ERasterizerState InState)
@@ -310,9 +316,8 @@ void FD3DDevice::CreateDepthStencilBuffer()
 	// Stencil Write
 	D3D11_DEPTH_STENCIL_DESC depthStencilStateStencilWriteDesc = {};
 	depthStencilStateStencilWriteDesc.DepthEnable = TRUE;
-	depthStencilStateStencilWriteDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	depthStencilStateStencilWriteDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
 	depthStencilStateStencilWriteDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+	depthStencilStateStencilWriteDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
 
 	depthStencilStateStencilWriteDesc.StencilEnable = TRUE;
 	depthStencilStateStencilWriteDesc.StencilReadMask = 0xFF;
@@ -421,6 +426,21 @@ void FD3DDevice::CreateBlendState()
 	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
 	Device->CreateBlendState(&blendDesc, &BlendStateAlpha);
+
+	//No Color
+	D3D11_BLEND_DESC noColorWriteDesc = {};
+	noColorWriteDesc.AlphaToCoverageEnable = FALSE;
+	noColorWriteDesc.IndependentBlendEnable = FALSE;
+	noColorWriteDesc.RenderTarget[0].BlendEnable = FALSE;
+	noColorWriteDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+	noColorWriteDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ZERO;
+	noColorWriteDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	noColorWriteDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	noColorWriteDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	noColorWriteDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	noColorWriteDesc.RenderTarget[0].RenderTargetWriteMask = 0;
+
+	Device->CreateBlendState(&noColorWriteDesc, &BlendStateNoColorWrite);
 }
 
 void FD3DDevice::ReleaseDepthStencilBuffer()
@@ -438,4 +458,5 @@ void FD3DDevice::ReleaseDepthStencilBuffer()
 void FD3DDevice::ReleaseBlendState()
 {
 	SAFE_RELEASE(BlendStateAlpha);
+	SAFE_RELEASE(BlendStateNoColorWrite);
 }
