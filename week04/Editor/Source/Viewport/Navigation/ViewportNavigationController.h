@@ -1,4 +1,5 @@
 #pragma once
+#pragma once
 
 #include "Core/CoreMinimal.h"
 #include "Camera/ViewportCamera.h"
@@ -37,8 +38,8 @@ class FViewportNavigationController : public Engine::Viewport::IViewportControll
   private:
     FViewportCamera* ViewportCamera = nullptr;
 
-    const float MoveSpeed = 30.f;   // 이동 속도
-    const float RotationSpeed = -0.1f; // 마우스 드래그 회전 감도
+    const float MoveSpeed = 80.f;   // 이동 속도
+    const float RotationSpeed = 0.5f; // 마우스 드래그 회전 감도
     //float ZoomStepDeg = 3.0f;   // FOV 조절 속도
 
     float Yaw = 0.f;   // Yaw 회전값

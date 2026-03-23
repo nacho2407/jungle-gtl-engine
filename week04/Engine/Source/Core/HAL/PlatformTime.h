@@ -11,7 +11,7 @@
 
 struct ENGINE_API FPlatformTime
 {
-    static float Seconds();
+    static double Seconds();
     static uint64 Cycles64();
     static void   Sleep(float Seconds);
 };
