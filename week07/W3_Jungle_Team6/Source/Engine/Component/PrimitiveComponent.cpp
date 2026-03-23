@@ -11,7 +11,7 @@ REGISTER_FACTORY(UCubeComponent)
 REGISTER_FACTORY(USphereComponent)
 REGISTER_FACTORY(UPlaneComponent)
 
-void UPrimitiveComponent::UpdateWorldAABB()
+void UPrimitiveComponent::UpdateWorldAABB() const
 {
 	FVector LExt = LocalExtents;
 
@@ -140,6 +140,12 @@ bool UPrimitiveComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 void UPrimitiveComponent::UpdateWorldMatrix() const
 {
 	USceneComponent::UpdateWorldMatrix();
+	UpdateWorldAABB();
+}
+
+void UPrimitiveComponent::AddWorldOffset(const FVector& WorldDelta)
+{
+	USceneComponent::AddWorldOffset(WorldDelta);
 }
 
 
@@ -161,7 +167,7 @@ USphereComponent::USphereComponent()
 	MeshData = &FMeshManager::GetSphere();
 }
 
-void USphereComponent::UpdateWorldAABB()
+void USphereComponent::UpdateWorldAABB() const
 {
 	FVector Center = { CachedWorldMatrix.M[3][0], CachedWorldMatrix.M[3][1], CachedWorldMatrix.M[3][2] };
 
@@ -195,7 +201,7 @@ UPlaneComponent::UPlaneComponent()
 	MeshData = &FMeshManager::GetPlane();
 }
 
-void UPlaneComponent::UpdateWorldAABB()
+void UPlaneComponent::UpdateWorldAABB() const
 {
 	// Plane mesh: XY 평면, Z 두께 ±0.01f
 	FVector LExt = { 0.5f, 0.5f, 0.01f };
