@@ -29,6 +29,11 @@
     <ClInclude Include="Source\ApplicationCore\Input\InputTypes.h" />
     <ClInclude Include="Source\ApplicationCore\Windows\WindowsApplication.h" />
     <ClInclude Include="Source\ApplicationCore\Windows\WindowsWindow.h" />
+    <ClInclude Include="Source\Asset\Asset.h" />
+    <ClInclude Include="Source\Asset\AssetLoader.h" />
+    <ClInclude Include="Source\Asset\AssetManager.h" />
+    <ClInclude Include="Source\Asset\Texture2DAsset.h" />
+    <ClInclude Include="Source\Asset\TextureLoader.h" />
     <ClInclude Include="Source\Core\Containers\Array.h" />
     <ClInclude Include="Source\Core\Containers\LinkedList.h" />
     <ClInclude Include="Source\Core\Containers\Map.h" />
@@ -69,18 +74,11 @@
     <ClInclude Include="Source\Core\Path.h" />
     <ClInclude Include="Source\CoreUObject\Object.h" />
     <ClInclude Include="Source\CoreUObject\ObjectFactory.h" />
-    <ClInclude Include="Source\Asset\Asset.h" />
-    <ClInclude Include="Source\Asset\AssetLoader.h" />
-    <ClInclude Include="Source\Asset\AssetManager.h" />
-    <ClInclude Include="Source\Asset\Texture2DAsset.h" />
-    <ClInclude Include="Source\Asset\TextureLoader.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\CameraComponent.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\CubeComponent.h" />
-    <ClInclude Include="Source\Engine\Component\BasicPrimitives\PlaneComponent.h" />
+    <ClInclude Include="Source\Engine\Component\BasicPrimitives\QuadComponent.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\SphereComponent.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.h" />
-    <ClInclude Include="Source\Engine\Component\CubeComponent.h" />
-    <ClInclude Include="Source\Engine\Component\PlaneComponent.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
     <ClInclude Include="Source\Engine\EngineStatics.h" />
@@ -96,9 +94,11 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11PickingPass.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h" />
-    <ClInclude Include="Source\Renderer\EditorDraw\GizmoDrawer.h" />
-    <ClInclude Include="Source\Renderer\EditorDraw\WorldAxesDrawer.h" />
-    <ClInclude Include="Source\Renderer\EditorDraw\WorldGridDrawer.h" />
+    <ClInclude Include="Source\Renderer\Draw\AABBDrawer.h" />
+    <ClInclude Include="Source\Renderer\Draw\GizmoDrawer.h" />
+    <ClInclude Include="Source\Renderer\Draw\PrimitiveDrawer.h" />
+    <ClInclude Include="Source\Renderer\Draw\WorldAxesDrawer.h" />
+    <ClInclude Include="Source\Renderer\Draw\WorldGridDrawer.h" />
     <ClInclude Include="Source\Renderer\EditorRenderData.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\FTextureResource.h" />
     <ClInclude Include="Source\Renderer\RendererModule.h" />
@@ -106,9 +106,10 @@
     <ClInclude Include="Source\Renderer\SceneView.h" />
     <ClInclude Include="Source\Renderer\Types\AxisColors.h" />
     <ClInclude Include="Source\Renderer\Types\BasicMeshType.h" />
+    <ClInclude Include="Source\Renderer\Types\EditorShowFlags.h" />
     <ClInclude Include="Source\Renderer\Types\MeshInstanceData.h" />
+    <ClInclude Include="Source\Renderer\Types\SceneShowFlags.h" />
     <ClInclude Include="Source\Renderer\Types\ShaderConstants.h" />
-    <ClInclude Include="Source\Renderer\Types\ShowFlags.h" />
     <ClInclude Include="Source\Renderer\Types\VertexTypes.h" />
     <ClInclude Include="Source\Renderer\Types\ViewMode.h" />
   </ItemGroup>
@@ -120,6 +121,11 @@
     <ClCompile Include="Source\ApplicationCore\Input\InputSystem.cpp" />
     <ClCompile Include="Source\ApplicationCore\Windows\WindowsApplication.cpp" />
     <ClCompile Include="Source\ApplicationCore\Windows\WindowsWindow.cpp" />
+    <ClCompile Include="Source\Asset\Asset.cpp" />
+    <ClCompile Include="Source\Asset\AssetLoader.cpp" />
+    <ClCompile Include="Source\Asset\AssetManager.cpp" />
+    <ClCompile Include="Source\Asset\Texture2DAsset.cpp" />
+    <ClCompile Include="Source\Asset\TextureLoader.cpp" />
     <ClCompile Include="Source\Core\CoreGlobals.cpp" />
     <ClCompile Include="Source\Core\CoreMinimal.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -140,14 +146,9 @@
     <ClCompile Include="Source\Core\Path.cpp" />
     <ClCompile Include="Source\CoreUObject\Object.cpp" />
     <ClCompile Include="Source\CoreUObject\ObjectFactory.cpp" />
-    <ClCompile Include="Source\Asset\Asset.cpp" />
-    <ClCompile Include="Source\Asset\AssetLoader.cpp" />
-    <ClCompile Include="Source\Asset\AssetManager.cpp" />
-    <ClCompile Include="Source\Asset\Texture2DAsset.cpp" />
-    <ClCompile Include="Source\Asset\TextureLoader.cpp" />
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\CameraComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\CubeComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\BasicPrimitives\PlaneComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\BasicPrimitives\QuadComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\SphereComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
@@ -159,9 +160,11 @@
     <ClCompile Include="Source\Renderer\D3D11\D3D11DynamicRHI.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.cpp" />
-    <ClCompile Include="Source\Renderer\EditorDraw\GizmoDrawer.cpp" />
-    <ClCompile Include="Source\Renderer\EditorDraw\WorldAxesDrawer.cpp" />
-    <ClCompile Include="Source\Renderer\EditorDraw\WorldGridDrawer.cpp" />
+    <ClCompile Include="Source\Renderer\Draw\AABBDrawer.cpp" />
+    <ClCompile Include="Source\Renderer\Draw\GizmoDrawer.cpp" />
+    <ClCompile Include="Source\Renderer\Draw\PrimitiveDrawer.cpp" />
+    <ClCompile Include="Source\Renderer\Draw\WorldAxesDrawer.cpp" />
+    <ClCompile Include="Source\Renderer\Draw\WorldGridDrawer.cpp" />
     <ClCompile Include="Source\Renderer\RendererModule.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
