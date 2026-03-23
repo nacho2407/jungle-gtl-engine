@@ -6,6 +6,8 @@
 #include "Component/PrimitiveComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Component/BillboardComponent.h"
+#include "Component/TextRenderComponent.h"
+#include "Component/SubUVComponent.h"
 
 void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
@@ -96,78 +98,90 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderColl
 	}
 }
 
-void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveComponent, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
+void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
+	if (!Primitive->IsVisible()) return;
+
 	FRenderCommand Cmd = {};
-	Cmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix(), FColor::White().ToVector4(), 0.f };
-	if (primitiveComponent->GetRenderCommand(Cmd))
+	Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4(), 0.f };
+	ERenderPass TargetPass = ERenderPass::Opaque;
+
+	switch (Primitive->GetPrimitiveType())
 	{
-		ERenderPass selectedRenderPass = ERenderPass::Opaque;
-		switch (Cmd.Type)
-		{
-		case ERenderCommandType::Primitive:
-			if (Context.ShowFlags.bPrimitives == false) return;
-			selectedRenderPass = ERenderPass::Opaque;
-			Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
-			Cmd.DepthStencilState = EDepthStencilState::Default;
-			break;
-
-		case ERenderCommandType::Billboard:
-
-			if (Context.ShowFlags.bBillboardText == false) return;
-			Cmd.BlendState = EBlendState::AlphaBlend;
-			Cmd.DepthStencilState = EDepthStencilState::Default;
-			Cmd.TextData = "Hello Jungle";
-			selectedRenderPass = ERenderPass::Translucent;
-			break;
-
-		case ERenderCommandType::Font:
-		{
-			if (Context.ShowFlags.bBillboardText == false) return;
-			AActor* Owner = primitiveComponent->GetOwner();
-			bool bOwnerSelected = false;
-			for (AActor* Selected : Context.SelectedActors)
-			{
-				if (Selected == Owner) { bOwnerSelected = true; break; }
-			}
-			if (!bOwnerSelected) return;
-			Cmd.BlendState = EBlendState::AlphaBlend;
-			Cmd.DepthStencilState = EDepthStencilState::Default;
-			selectedRenderPass = ERenderPass::Font;
-			break;
-		}
-
-		case ERenderCommandType::SubUV:
-			Cmd.BlendState = EBlendState::AlphaBlend;
-			Cmd.DepthStencilState = EDepthStencilState::Default;
-			selectedRenderPass = ERenderPass::SubUV;
-			break;
-		}
-
-		RenderBus.AddCommand(selectedRenderPass, Cmd);
+	case EPrimitiveType::EPT_Cube:
+	case EPrimitiveType::EPT_Sphere:
+	case EPrimitiveType::EPT_Plane:
+	{
+		if (!Context.ShowFlags.bPrimitives) return;
+		Cmd.Type = ERenderCommandType::Primitive;
+		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Primitive->GetPrimitiveType());
+		Cmd.DepthStencilState = EDepthStencilState::Default;
+		TargetPass = ERenderPass::Opaque;
+		break;
 	}
-	
-	ERenderPass selectedRenderPass = ERenderPass::Opaque;
 
-	if (primitiveComponent->IsA<UBillboardComponent>() == true)
+	case EPrimitiveType::EPT_Quad: // Billboard
 	{
-		if (Context.ShowFlags.bBillboardText == false) return;
+		if (!Context.ShowFlags.bBillboardText) return;
+		Cmd.Type = ERenderCommandType::Billboard;
 		Cmd.BlendState = EBlendState::AlphaBlend;
 		Cmd.DepthStencilState = EDepthStencilState::Default;
 		Cmd.TextData = "Hello Jungle";
-		selectedRenderPass = ERenderPass::Translucent;
+		TargetPass = ERenderPass::Translucent;
+		break;
 	}
-	
-	else
-	{
-		if (Context.ShowFlags.bPrimitives == false) return;
-		selectedRenderPass = ERenderPass::Opaque;
-		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
-		Cmd.DepthStencilState = EDepthStencilState::Default;
-	}
-	
-	RenderBus.AddCommand(selectedRenderPass, Cmd);
 
+	case EPrimitiveType::EPT_Text:
+	{
+		if (!Context.ShowFlags.bBillboardText) return;
+
+		// 선택된 액터의 컴포넌트만 UUID 텍스트 표시
+		AActor* Owner = Primitive->GetOwner();
+		bool bOwnerSelected = false;
+		for (AActor* Selected : Context.SelectedActors)
+		{
+			if (Selected == Owner) { bOwnerSelected = true; break; }
+		}
+		if (!bOwnerSelected) return;
+
+		UTextRenderComponent* TextComp = static_cast<UTextRenderComponent*>(Primitive);
+		const FFontResource* Font = TextComp->GetFont();
+		if (!Font || !Font->IsLoaded()) return;
+		const FString& Text = TextComp->GetText();
+		if (Text.empty()) return;
+
+		Cmd.Type = ERenderCommandType::Font;
+		Cmd.PerObjectConstants.Color = TextComp->GetColor();
+		Cmd.TextData     = Text;
+		Cmd.AtlasResource = Font;
+		Cmd.SpriteSize.X = TextComp->GetFontSize();
+		Cmd.BlendState = EBlendState::AlphaBlend;
+		Cmd.DepthStencilState = EDepthStencilState::Default;
+		TargetPass = ERenderPass::Font;
+		break;
+	}
+
+	case EPrimitiveType::EPT_SubUV:
+	{
+		USubUVComponent* SubUVComp = static_cast<USubUVComponent*>(Primitive);
+		const FParticleResource* Particle = SubUVComp->GetParticle();
+		if (!Particle || !Particle->IsLoaded()) return;
+
+		Cmd.Type = ERenderCommandType::SubUV;
+		Cmd.AtlasResource = Particle;
+		Cmd.FrameIndex    = SubUVComp->GetFrameIndex();
+		Cmd.SpriteSize    = { SubUVComp->GetWidth(), SubUVComp->GetHeight() };
+		Cmd.BlendState = EBlendState::AlphaBlend;
+		Cmd.DepthStencilState = EDepthStencilState::Default;
+		TargetPass = ERenderPass::SubUV;
+		break;
+	}
+
+	default:
+		return;
+	}
+
+	RenderBus.AddCommand(TargetPass, Cmd);
 }
 
 void FRenderCollector::CollectFromEditor(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
