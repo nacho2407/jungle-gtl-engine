@@ -23,11 +23,17 @@ namespace
 
     void DrawRotatorRow(const char* Label, FRotator& Value, float Speed = 0.5f)
     {
+        FVector EulerDegrees = Value.Euler();
+
         ImGui::PushID(Label);
         ImGui::TextUnformatted(Label);
         ImGui::SameLine(120.0f);
         ImGui::SetNextItemWidth(-1.0f);
-        ImGui::DragFloat3("##Value", &Value.Pitch, Speed);
+        if (ImGui::DragFloat3("##Value", EulerDegrees.XYZ, Speed))
+        {
+            // Camera panel도 내부 Rotator 순서 대신 축 기반 X/Y/Z 회전으로 편집합니다.
+            Value = FRotator::MakeFromEuler(EulerDegrees);
+        }
         ImGui::PopID();
     }
 } // namespace

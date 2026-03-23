@@ -2,6 +2,7 @@
 
 #include "Viewport/EditorViewportClient.h"
 
+#include "Engine/Game/Actor.h"
 #include "Panel/ControlPanel.h"
 #include "Panel/OutlinerPanel.h"
 #include "Panel/PanelManager.h"
@@ -141,6 +142,7 @@ void FEditor::Create()
     EditorContext.Editor = this;
 
     ViewportClient.Create();
+    ViewportClient.SetEditorContext(&EditorContext);
 
     // 메뉴 시스템은 command 등록과 배치 등록을 분리해서 초기화합니다.
     MenuRegistry.Clear();
@@ -167,6 +169,7 @@ void FEditor::Create()
 
     //  TEMP SCENE
     CurScene = new FScene();
+    ViewportClient.SetScene(CurScene);
     
     UE_LOG(FEditor, ELogVerbosity::Log, "Hello Editor");
     EditorContext.Scene = CurScene;
@@ -202,6 +205,7 @@ void FEditor::Initialize()
     if (CurScene == nullptr)
     {
         CurScene = new FScene();
+        ViewportClient.SetScene(CurScene);
         EditorContext.Scene = CurScene;
     }
 }
@@ -253,6 +257,18 @@ void FEditor::CreateNewScene()
 
 void FEditor::ClearScene()
 {
+}
+
+void FEditor::SetSelectedObject(UObject* InSelectedObject)
+{
+    EditorContext.SelectedActors.clear();
+    if (AActor* SelectedActor = Cast<AActor>(InSelectedObject))
+    {
+        EditorContext.SelectedActors.push_back(SelectedActor);
+    }
+
+    EditorContext.SelectedObject = InSelectedObject;
+    ViewportClient.SyncSelectionFromContext();
 }
 
 void FEditor::RequestAboutPopup()

@@ -28,6 +28,7 @@ namespace Engine::Component
         FMatrix GetRelativeMatrix() const;
 
         bool IsSelected() const;
+        void SetSelected(bool bInSelected);
 
       protected:
         virtual void OnTransformChanged() {}

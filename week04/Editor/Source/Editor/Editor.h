@@ -21,6 +21,7 @@
 
 class FPanelManager;
 struct FPanelDescriptor;
+class UObject;
 
 class FEditor
 {
@@ -41,6 +42,8 @@ class FEditor
 
     void CreateNewScene();
     void ClearScene();
+    void SetSelectedObject(UObject* InSelectedObject);
+    UObject* GetSelectedObject() const { return EditorContext.SelectedObject; }
 
     const FEditorRenderData& GetEditorRenderData() const { return EditorRenderData; }
     const FSceneRenderData& GetSceneRenderData() const { return SceneRenderData; }

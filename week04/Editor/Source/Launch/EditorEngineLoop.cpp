@@ -10,6 +10,8 @@
 #include <imgui_impl_win32.h>
 #include <cstring>
 
+#include "Core/Misc/NameSubsystem.h"
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND HWnd, UINT Message,
                                                              WPARAM WParam, LPARAM LParam);
 
@@ -17,6 +19,8 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
 {
     (void)HInstance;
     (void)NCmdShow;
+
+    Engine::Core::Misc::FNameSubsystem::Init();
 
     InputSystem = new Engine::ApplicationCore::FInputSystem();
 
