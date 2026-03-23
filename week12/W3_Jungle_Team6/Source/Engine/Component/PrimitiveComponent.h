@@ -81,6 +81,7 @@ public:
 	DECLARE_CLASS(UPlaneComponent, UPrimitiveComponent)
 	UPlaneComponent();
 	void UpdateWorldAABB() const override;
+	void SetRelativeScale(const FVector& NewScale);
 	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_Plane;
 
 	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
