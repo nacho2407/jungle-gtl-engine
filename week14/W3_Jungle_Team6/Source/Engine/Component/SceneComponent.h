@@ -15,12 +15,15 @@ public:
 	~USceneComponent();
 
 	// Parent Relation Manager
+	void AttachToComponent(USceneComponent* InParent);
 	void SetParent(USceneComponent* NewParent);
 	USceneComponent* GetParent() const { return ParentComponent; }
 	void AddChild(USceneComponent* NewChild);
 	void RemoveChild(USceneComponent* Child);
 	bool ContainsChild(const USceneComponent* Child) const;
 	const TArray<USceneComponent*>& GetChildren() const { return ChildComponents; }
+
+	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 	virtual void UpdateWorldMatrix() const;
 	virtual void AddWorldOffset(const FVector& WorldDelta);
