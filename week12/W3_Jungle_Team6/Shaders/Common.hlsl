@@ -5,6 +5,8 @@ cbuffer FrameBuffer : register(b0)
 {
     row_major float4x4 View;
     row_major float4x4 Projection;
+    float bIsWireframe;
+    float3 WireframeRGB;
 }
 
 cbuffer PerObjectBuffer : register(b1)

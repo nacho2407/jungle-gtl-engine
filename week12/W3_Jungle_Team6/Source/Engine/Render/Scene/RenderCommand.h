@@ -38,8 +38,8 @@ struct FFrameConstants
 {
 	FMatrix View;          
 	FMatrix Projection;    
-
-	FVector4 CameraPosition; 
+	float bIsWireframe;
+	FVector ColorRGB;
 };
 
 struct FGizmoConstants
@@ -64,9 +64,8 @@ struct FOverlayConstants
 
 struct FEditorConstants
 {
-	FVector4 CameraPosition; // xyz 사용, w padding
+	FVector CameraPosition; // xyz 사용, w padding
 	uint32 Flag;
-	float Padding0[3];
 };
 
 struct FOutlineConstants
