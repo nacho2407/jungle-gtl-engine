@@ -27,6 +27,8 @@ class FViewportNavigationController
 
     void SetRotating(bool bInRotating);
     bool IsRotating() { return bRotating; }
+    
+    void ModifyFOV(float DeltaFOV);
 
   private:
     void UpdateCameraRotation();
@@ -34,8 +36,9 @@ class FViewportNavigationController
   private:
     FViewportCamera* ViewportCamera = nullptr;
 
-    float MoveSpeed = 30.f;   // 이동 속도
-    float RotationSpeed = 0.1f; // 마우스 드래그 회전 감도
+    const float MoveSpeed = 30.f;   // 이동 속도
+    const float RotationSpeed = -0.1f; // 마우스 드래그 회전 감도
+    //float ZoomStepDeg = 3.0f;   // FOV 조절 속도
 
     float Yaw = 0.f;   // Yaw 회전값
     float Pitch = 0.f; // Pitch 회전값
