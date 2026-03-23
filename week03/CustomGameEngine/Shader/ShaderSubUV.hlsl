@@ -8,9 +8,13 @@ cbuffer ObjectConstant : register(b1)
 {
     row_major matrix Model;
     float4 Color;
-    float4 UVTransform;
     int bIsSelected;
     float3 Padding;
+};
+
+cbuffer SubUVConstant : register(b2)
+{
+    float4 UVTransform;
 };
 
 Texture2D DiffuseTexture : register(t0);
@@ -44,6 +48,11 @@ PS_INPUT mainVS(VS_INPUT input)
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
     float4 sampled = DiffuseTexture.Sample(DiffuseSampler, input.UV) * input.Color;
+
+    if (sampled.r < 0.05f && sampled.g < 0.05f && sampled.b < 0.05f)
+    {
+        discard;
+    }
     if (bIsSelected > 0)
     {
         sampled.rgb = saturate(sampled.rgb + float3(0.2f, 0.2f, 0.2f));

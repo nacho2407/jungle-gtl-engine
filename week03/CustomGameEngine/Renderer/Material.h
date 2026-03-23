@@ -11,7 +11,9 @@ struct FMaterial
 	TComPtr<ID3D11ShaderResourceView> TextureSRV = nullptr;
 	TComPtr<ID3D11SamplerState> SamplerState = nullptr;
 	FConstantBuffer ConstantBuffer;
+	FConstantBuffer SecondaryConstantBuffer;
 	bool bUsesTexture = false;
+	bool bUsesSecondaryConstantBuffer = false;
 
 	FMaterial()
 	{
@@ -23,6 +25,7 @@ struct FMaterial
 		PixelShader.Reset();
 		TextureSRV.Reset();
 		SamplerState.Reset();
+		SecondaryConstantBuffer.Release();
 	}
 
 	void Bind(ID3D11DeviceContext* deviceContext)

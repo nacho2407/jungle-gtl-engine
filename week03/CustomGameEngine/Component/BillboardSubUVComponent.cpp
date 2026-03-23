@@ -68,6 +68,7 @@ RenderObject* UBillboardSubUVComponent::CreateRenderObject()
 	renderObject->Material = &resourceManager->GetMaterial(L"Shader/ShaderSubUV.hlsl");
 	renderObject->ShowFlag = EEngineShowFlags::SF_BillboardText;
 	renderObject->bDepthEnabled = false;
+	renderObject->bDisableCulling = true;
 
 	RenderObj = renderObject;
 	UpdateRenderObject();
