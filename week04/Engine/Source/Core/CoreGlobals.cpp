@@ -1,4 +1,4 @@
-#include "./CoreGlobals.h"
-#include "./Logging/LogOutputDevice.h"
+#include "Core/CoreGlobals.h"
+#include "Core/Logging/LogOutputDevice.h"
 
-FLogOutputDevice *GLog = nullptr;
+ENGINE_API ILogOutputDevice *GLog = nullptr;

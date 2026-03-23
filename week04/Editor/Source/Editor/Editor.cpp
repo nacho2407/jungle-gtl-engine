@@ -1,11 +1,12 @@
 #include "Editor.h"
 
+#include "Viewport/EditorViewportClient.h"
+
 #include "Panel/ControlPanel.h"
 #include "Panel/OutlinerPanel.h"
 #include "Panel/PanelManager.h"
 #include "Panel/PropertiesPanel.h"
 #include "Panel/StatePanel.h"
-#include "Viewport/EditorViewportClient.h"
 
 #include "imgui.h"
 #include <imgui_impl_dx11.h>
@@ -94,8 +95,49 @@ namespace
     }
 } // namespace
 
+//class FSamplePanel : public IPanel
+//{
+//public:
+//    explicit FSamplePanel(const FEditorLogBuffer* InLogBuffer)
+//        : LogBuffer(InLogBuffer)
+//    {
+//    }
+//
+//    const wchar_t* GetPanelID() const override { return L"SamplePanel"; }
+//    const wchar_t* GetDisplayName() const override { return L"Sample Panel"; }
+//    bool ShouldOpenByDefault() const override { return true; }
+//
+//    void Draw() override
+//    {
+//        if (ImGui::Begin("Sample Panel", nullptr))
+//        {
+//            ImGui::Text("PanelManager registration test panel");
+//            ImGui::Separator();
+//
+//
+//            if (LogBuffer != nullptr)
+//            {
+//                for (const auto& Log : LogBuffer->GetLogBuffer())
+//                {
+//                    ImGui::Spacing();
+//                    ImGui::Text("%s", Log.Message.c_str());
+//                }
+//            }
+//        }
+//        ImGui::End();
+//    }
+//
+//private:
+//    const FEditorLogBuffer* LogBuffer = nullptr;
+//};
+
+
 void FEditor::Create()
 {
+    //  LOG
+    GLog = &LogBuffer;
+    
+    //  TODO : Viewport Client
     EditorContext.Editor = this;
 
     ViewportClient.Create();
@@ -118,7 +160,15 @@ void FEditor::Create()
     PanelManager->RegisterPanelInstance<FPropertiesPanel>();
     PanelManager->RegisterPanelInstance<FStatePanel>();
 
+    //PanelManager->RegisterPanelInstance<FSamplePanel>(&LogBuffer);
+
+    //  TODO : Gizmo
+    
+
+    //  TEMP SCENE
     CurScene = new FScene();
+    
+    UE_LOG(FEditor, ELogVerbosity::Log, "Hello Editor");
     EditorContext.Scene = CurScene;
 }
 
@@ -140,6 +190,11 @@ void FEditor::Release()
     MenuRegistry.Clear();
     ChromeHost = nullptr;
     EditorChrome.SetHost(nullptr);
+
+    if (GLog == &LogBuffer)
+    {
+        GLog = nullptr;
+    }
 }
 
 void FEditor::Initialize()
