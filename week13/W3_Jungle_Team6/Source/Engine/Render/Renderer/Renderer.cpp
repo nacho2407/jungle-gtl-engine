@@ -120,7 +120,7 @@ void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceCo
 	case ERenderPass::Outline:
 		if (CurViewMode == EViewMode::Wireframe)
 		{
-			Device.SetDepthStencilState(EDepthStencilState::GizmoOutside);
+			Device.SetDepthStencilState(EDepthStencilState::StencilOutline);
 			Device.SetRasterizerState(ERasterizerState::WireFrame);
 		}
 		else
