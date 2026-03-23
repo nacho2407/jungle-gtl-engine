@@ -36,7 +36,8 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 			if (ImGui::Selectable(sceneLabel.c_str(), isSelected))
 			{
 				sceneMgr->SetActiveScene(scene);
-				editor->SelectComponent(nullptr);
+				editor->SelectSingleComponent(nullptr);
+				editor->SelectMultiComponent(nullptr);
 			}
 			//if (ImGui::BeginPopupContextItem())
 			//{
@@ -70,7 +71,8 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 
 				if (ImGui::Selectable(label.c_str(), isSelected))
 				{
-					editor->SelectComponent(component);
+					editor->SelectSingleComponent(nullptr);
+					editor->SelectMultiComponent(nullptr);
 				}
 			}
 		}
@@ -89,7 +91,8 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 
 			if (ImGui::Selectable(label.c_str(), isSelected))
 			{
-				editor->SelectComponent(component);
+				editor->SelectSingleComponent(nullptr);
+				editor->SelectMultiComponent(nullptr);
 			}
 		}
 	}

@@ -46,7 +46,8 @@ public:
 	void SetGrid(UGridComp* grid);
 
 	//picking
-	void SelectComponent(USceneComponent* component);
+	void SelectSingleComponent(USceneComponent* component);
+	void SelectMultiComponent(USceneComponent* component);
 	USceneComponent* GetSelectedComponent() const { return SelectedComponent; }
 
 	void LoadSettings();

@@ -153,7 +153,41 @@ void Editor::SetGrid(UGridComp* grid)
  * 
  * \param component
  */
-void Editor::SelectComponent(USceneComponent* component)
+void Editor::SelectSingleComponent(USceneComponent* component)
+{
+	if (SelectedComponent)
+	{
+		//이미 picking된 컴포넌트가 있다면 pick 상태 해제
+		SelectedComponent->bIsSelected = false;
+		if (UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(SelectedComponent))
+		{
+			primitive->MarkRenderStateDirty();
+		}
+		SelectedComponent = nullptr;
+		Gizmo::GetInstance().GetController()->AttachTo(nullptr);
+	}
+	if (component)
+	{
+		//해당 컴포넌트가 새로 picking되었다고 표시.
+		//이미 pick된 컴포넌트였다면 사실상 변화x
+		component->bIsSelected = true;
+		if (UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(component))
+		{
+			primitive->MarkRenderStateDirty();
+		}
+		SelectedComponent = component;
+		Gizmo::GetInstance().GetController()->AttachTo(component);
+	}
+}
+
+/**
+ * picking에 걸린 오브젝트를 입력으로 받아 처리합니다.
+ * 다중 picking이며 오브젝트가 배열에 추가되는 방식이고, 허공을 클릭해도 기존 picking들은 유지됩니다.
+ * Editor의 SelectedComponents와 걸린 오브젝트의 bIsSelected를 업데이트합니다.
+ *
+ * \param component
+ */
+void Editor::SelectMultiComponent(USceneComponent* component)
 {
 	if (SelectedComponent)
 	{

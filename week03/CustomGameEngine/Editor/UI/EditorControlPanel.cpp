@@ -132,7 +132,8 @@ void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 
         if (ImGui::Button("Save"))
         {
-            editor->SelectComponent(nullptr);
+            editor->SelectSingleComponent(nullptr);
+            editor->SelectMultiComponent(nullptr);
             sceneMgr->SaveScene(sceneName);
 
             ImGui::CloseCurrentPopup();
@@ -180,7 +181,8 @@ void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 
         if (ImGui::Button("Load"))
         {
-            editor->SelectComponent(nullptr);
+            editor->SelectSingleComponent(nullptr);
+            editor->SelectMultiComponent(nullptr);
             sceneMgr->LoadScene(SceneList[SelectedSceneIndex].c_str());
             ImGui::CloseCurrentPopup();
         }

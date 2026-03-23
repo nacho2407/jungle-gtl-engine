@@ -160,7 +160,8 @@ void EngineApp::Run()
 		UScene* currentActiveScene = GetWorld().GetSceneManager()->GetActiveScene();
 		if (currentActiveScene != LastActiveScene)
 		{
-			EditorInst->SelectComponent(nullptr);
+			EditorInst->SelectSingleComponent(nullptr);
+			EditorInst->SelectMultiComponent(nullptr);
 			LastActiveScene = currentActiveScene;
 		}
 

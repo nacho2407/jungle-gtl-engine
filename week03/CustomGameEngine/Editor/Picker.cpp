@@ -60,7 +60,14 @@ void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene, bool bMultiSelect)
 				break;
 			}
 		}
-		EditorPtr->SelectComponent(RayHits[nextIndex].second);
+		USceneComponent* selectedComp = RayHits[nextIndex].second;
+		if (!bMultiSelect)
+		{
+			EditorPtr->SelectSingleComponent(selectedComp);
+		}
+		else {
+			EditorPtr->SelectMultiComponent(selectedComp);
+		}
 		Scene->IsCompSelected = true;
 	}
 	else
@@ -69,7 +76,7 @@ void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene, bool bMultiSelect)
 		if (!bMultiSelect)
 		{
 			//컨트롤 키가 눌리지 않았으니 선택 해제
-			EditorPtr->SelectComponent(nullptr);
+			EditorPtr->SelectSingleComponent(nullptr);
 		}
 		Scene->IsCompSelected = false;
 	}
