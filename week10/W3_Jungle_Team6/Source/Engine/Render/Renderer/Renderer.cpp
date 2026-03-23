@@ -142,8 +142,17 @@ void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceCo
 		Resources.GizmoShader.Bind(DeviceContext);
 		break;
 
+	case ERenderPass::Translucent:
+		Device.SetDepthStencilState(EDepthStencilState::Default);
+		Device.SetBlendState(EBlendState::AlphaBlend);
+		Device.SetRasterizerState(ERasterizerState::SolidBackCull);
+		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		Resources.PrimitiveShader.Bind(DeviceContext);
+		break;
+
 	case ERenderPass::Editor:
 		Device.SetDepthStencilState(EDepthStencilState::Default);
+		Device.SetBlendState(EBlendState::Opaque);
 		Device.SetRasterizerState(ERasterizerState::SolidBackCull);
 		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 		Resources.EditorShader.Bind(DeviceContext);
@@ -222,6 +231,7 @@ EDepthStencilState FRenderer::GetDefaultDepthForPass(ERenderPass Pass) const
 	switch (Pass)
 	{
 	case ERenderPass::Opaque:    return EDepthStencilState::Default;
+	case ERenderPass::Translucent:return EDepthStencilState::Default;
 	case ERenderPass::Outline:   return EDepthStencilState::StencilOutline;
 	case ERenderPass::DepthLess: return EDepthStencilState::Default;
 	case ERenderPass::Editor:    return EDepthStencilState::Default;
@@ -234,6 +244,7 @@ EBlendState FRenderer::GetDefaultBlendForPass(ERenderPass Pass) const
 {
 	switch (Pass)
 	{
+	case ERenderPass::Translucent: return EBlendState::AlphaBlend;
 	case ERenderPass::DepthLess: return EBlendState::AlphaBlend;
 	default:                     return EBlendState::Opaque;
 	}
@@ -297,11 +308,11 @@ void FRenderer::RenderPasses(const FRenderBus& RenderBus, ID3D11DeviceContext* C
 
 		for (const auto& Cmd : Commands)
 		{
-			EDepthStencilState TargetDepth = (Cmd.DepthStencilState != EDepthStencilState::Default)
+			EDepthStencilState TargetDepth = (Cmd.DepthStencilState != static_cast<EDepthStencilState>(-1))
 				? Cmd.DepthStencilState
 				: GetDefaultDepthForPass(CurPass);
 
-			EBlendState TargetBlend = (Cmd.BlendState != EBlendState::Opaque)
+			EBlendState TargetBlend = (Cmd.BlendState != static_cast<EBlendState>(-1))
 				? Cmd.BlendState
 				: GetDefaultBlendForPass(CurPass);
 
@@ -316,7 +327,6 @@ void FRenderer::RenderPasses(const FRenderBus& RenderBus, ID3D11DeviceContext* C
 
 void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceContext* Context)
 {
-	// --- AABB 디버그 박스 (LineBatcher) ---
 	const FVector CameraPosition = RenderBus.GetView().GetInverseFast().GetLocation();
 	FVector CameraForward = RenderBus.GetCameraRight().Cross(RenderBus.GetCameraUp());
 	CameraForward.Normalize();
@@ -325,6 +335,7 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 	EditorConstants.CameraPosition = FVector4(CameraPosition, 1.0f);
 	Resources.EditorConstantBuffer.Update(Context, &EditorConstants, sizeof(FEditorConstants));
 
+	// --- AABB 디버그 박스 (LineBatcher) ---
 	const auto& EditorCmds = RenderBus.GetCommands(ERenderPass::Editor);
 	for (const auto& Cmd : EditorCmds)
 	{
@@ -406,6 +417,10 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 
 	const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
 	FontBatcher.Flush(Context, FontRes);
+
+	// Editor helper에서 사용한 알파 블렌드가 다음 렌더 경로에 남지 않도록 기본 상태로 복원한다.
+	Device.SetDepthStencilState(EDepthStencilState::Default);
+	Device.SetBlendState(EBlendState::Opaque);
 }
 
 void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix)
