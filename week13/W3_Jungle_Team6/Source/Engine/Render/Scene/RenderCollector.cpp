@@ -1,6 +1,7 @@
 ﻿#include "RenderCollector.h"
 
 #include "GameFramework/World.h"
+#include "GameFramework/AActor.h"
 #include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/GizmoComponent.h"
@@ -55,10 +56,14 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderColl
 {
 	for (UPrimitiveComponent* primitiveComponent : Actor->GetPrimitiveComponents())
 	{
+		// MeshBuffer가 없는 Batcher 처리 타입은 아웃라인 렌더에서 제외
+		EPrimitiveType PrimType = primitiveComponent->GetPrimitiveType();
+		if (PrimType == EPrimitiveType::EPT_Text || PrimType == EPrimitiveType::EPT_SubUV) continue;
+
 		FRenderCommand BaseCmd{};
 		BaseCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
 		BaseCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
-		
+
 		// StencilBuffer Mask
 		FRenderCommand MaskCmd = BaseCmd;
 		MaskCmd.Type = ERenderCommandType::SelectionOutline;
@@ -113,6 +118,28 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 			Cmd.DepthStencilState = EDepthStencilState::Default;
 			Cmd.TextData = "Hello Jungle";
 			selectedRenderPass = ERenderPass::Translucent;
+			break;
+
+		case ERenderCommandType::Font:
+		{
+			if (Context.ShowFlags.bBillboardText == false) return;
+			AActor* Owner = primitiveComponent->GetOwner();
+			bool bOwnerSelected = false;
+			for (AActor* Selected : Context.SelectedActors)
+			{
+				if (Selected == Owner) { bOwnerSelected = true; break; }
+			}
+			if (!bOwnerSelected) return;
+			Cmd.BlendState = EBlendState::AlphaBlend;
+			Cmd.DepthStencilState = EDepthStencilState::Default;
+			selectedRenderPass = ERenderPass::Font;
+			break;
+		}
+
+		case ERenderCommandType::SubUV:
+			Cmd.BlendState = EBlendState::AlphaBlend;
+			Cmd.DepthStencilState = EDepthStencilState::Default;
+			selectedRenderPass = ERenderPass::SubUV;
 			break;
 		}
 
