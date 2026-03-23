@@ -32,8 +32,6 @@ struct FPerObjectConstants
 {
 	FMatrix Model;
 	FVector4 Color;
-	float IsSelected;
-	float Padding[3];
 };
 
 struct FFrameConstants

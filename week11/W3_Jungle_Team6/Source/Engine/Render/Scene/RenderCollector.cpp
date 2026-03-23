@@ -84,7 +84,6 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderColl
 
 		if (Context.ViewMode == EViewMode::Wireframe)
 		{
-			OutlineCmd.PerObjectConstants.IsSelected = 1.0f;
 			OutlineCmd.PerObjectConstants.Color = FColor(255, 153, 0, 255).ToVector4();
 			OutlineCmd.Constants.Outline.OutlineOffset = 0.003f;
 		}

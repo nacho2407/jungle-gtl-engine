@@ -22,5 +22,5 @@ PSInput VS(VSInput input)
 
 float4 PS(PSInput input) : SV_TARGET
 {
-    return lerp(input.color, PrimitiveColor, SelectionWeight);
+    return input.color;
 }
