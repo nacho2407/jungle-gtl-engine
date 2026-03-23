@@ -389,6 +389,9 @@
     <ClInclude Include="Source\Engine\Core\Timer.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Singleton.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\AActor.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
