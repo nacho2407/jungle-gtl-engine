@@ -37,8 +37,8 @@
     <Filter Include="Source\Editor\Logging">
       <UniqueIdentifier>{9eea2180-fcc8-2cbc-e827-723988501a5f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\ThirdParty\imgui">
-      <UniqueIdentifier>{14727bfa-61bb-1229-bb2b-782b3aace65f}</UniqueIdentifier>
+    <Filter Include="Source\ThirdParty\ImGui">
+      <UniqueIdentifier>{32e4b986-b3a8-5f87-38d0-7d76493d7618}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Viewport\Gizmo">
       <UniqueIdentifier>{a4a5fb1b-42c4-c447-1a35-66493bab83fe}</UniqueIdentifier>
@@ -75,9 +75,6 @@
     <ClCompile Include="Source\Editor\Logging\EditorLogBuffer.cpp">
       <Filter>Source\Editor\Logging</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Panel\ConsolePanel.cpp">
-      <Filter>Source\Panel</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Input\EditorGlobalContext.cpp">
       <Filter>Source\Input</Filter>
     </ClCompile>
@@ -98,6 +95,9 @@
     </ClCompile>
     <ClCompile Include="Source\main.cpp">
       <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Panel\ConsolePanel.cpp">
+      <Filter>Source\Panel</Filter>
     </ClCompile>
     <ClCompile Include="Source\Panel\ControlPanel.cpp">
       <Filter>Source\Panel</Filter>
@@ -159,9 +159,6 @@
     <ClCompile Include="Source\Viewport\Selection\ViewportSelectionController.cpp">
       <Filter>Source\Viewport\Selection</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Input\NavigationInputContext.cpp" />
-    <ClCompile Include="Source\Input\SelectionInputContext.cpp" />
-    <ClCompile Include="Source\Editor\Logging\EditorLogBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Camera\ViewportCamera.h">
@@ -184,9 +181,6 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\Logging\EditorLogEntry.h">
       <Filter>Source\Editor\Logging</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Panel\ConsolePanel.h">
-      <Filter>Source\Panel</Filter>
     </ClInclude>
     <ClInclude Include="Source\Gizmo\EditorGizmoTypes.h">
       <Filter>Source\Gizmo</Filter>
@@ -217,6 +211,9 @@
     </ClInclude>
     <ClInclude Include="Source\Menu\EditorMenuRegistry.h">
       <Filter>Source\Menu</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Panel\ConsolePanel.h">
+      <Filter>Source\Panel</Filter>
     </ClInclude>
     <ClInclude Include="Source\Panel\ControlPanel.h">
       <Filter>Source\Panel</Filter>
@@ -281,10 +278,6 @@
     <ClInclude Include="Source\Viewport\Selection\ViewportSelectionController.h">
       <Filter>Source\Viewport\Selection</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Input\NavigationInputContext.h" />
-    <ClInclude Include="Source\Input\SelectionInputContext.h" />
-    <ClInclude Include="Source\Editor\Logging\EditorLogBuffer.h" />
-    <ClInclude Include="Source\Editor\Logging\EditorLogEntry.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Source\ThirdParty\ImGui\imgui.natstepfilter">
