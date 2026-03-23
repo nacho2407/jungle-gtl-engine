@@ -42,7 +42,7 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
 
         OutRenderData.Primitives.push_back(Item);
     }
-
+    
     OutRenderData.Primitives.push_back(
         FPrimitiveRenderItem{.World = FMatrix::MakeScale({10.f, 10.f, 10.f}),
                              .Color = FColor::Blue(),

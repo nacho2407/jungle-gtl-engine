@@ -169,7 +169,7 @@ bool FD3D11MeshBatchRenderer::CreateShaders()
     };
 
     if (!RHI->CreateVertexShaderAndInputLayout(InstancedShaderPath, "VSMain", InstancedLayoutDesc,
-                                               static_cast<uint32>(std::size(InstancedLayoutDesc)),
+                                               static_cast<uint32>(ARRAYSIZE(InstancedLayoutDesc)),
                                                InstancedVertexShader.GetAddressOf(),
                                                InstancedInputLayout.GetAddressOf()))
     {
@@ -184,7 +184,7 @@ bool FD3D11MeshBatchRenderer::CreateShaders()
     }
 
     if (!RHI->CreateVertexShaderAndInputLayout(SingleShaderPath, "VSMain", SingleLayoutDesc,
-                                               static_cast<uint32>(std::size(SingleLayoutDesc)),
+                                               static_cast<uint32>(ARRAYSIZE(SingleLayoutDesc)),
                                                SingleVertexShader.GetAddressOf(),
                                                SingleInputLayout.GetAddressOf()))
     {
