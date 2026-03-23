@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Chrome/EditorChrome.h"
 #include "EditorContext.h"
 #include "Core/CoreMinimal.h"
 
@@ -20,56 +21,45 @@ class FPanelManager;
 class FEditor
 {
   public:
-    /* Default Functions */
     void Create();
     void Release();
 
     void Initialize();
     void Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* InputSystem);
+    void SetChromeHost(IEditorChromeHost* InChromeHost);
 
     void OnWindowResized(float Width, float Height);
-    void SetMainLoopFPS(float FPS) { CurFPS = FPS; }
+    void SetMainLoopFPS(float FPS)
+    {
+        CurFPS = FPS;
+        EditorContext.CurrentFPS = FPS;
+    }
 
-    /* From Panel */
     void CreateNewScene();
     void ClearScene();
 
-    /* For Render */
     const FEditorRenderData& GetEditorRenderData() const { return EditorRenderData; }
-    const FSceneRenderData&  GetSceneRenderData() const { return SceneRenderData; }
+    const FSceneRenderData& GetSceneRenderData() const { return SceneRenderData; }
 
-    /* For Panel */
     void DrawPanel();
 
   private:
     void BuildRenderData();
     void BuildSceneView();
 
-  public:
   private:
-    /* Viewports */
-    // FEditorViewport MainViewport;
     FEditorViewportClient ViewportClient;
-
-    /* Input Contexts */
     FEditorContext EditorContext;
-
-    /* Panel */
     FPanelManager* PanelManager = nullptr;
+    FEditorChrome EditorChrome;
 
-    /* Render Datas */
     FEditorRenderData EditorRenderData;
-    FSceneRenderData  SceneRenderData;
-    FSceneView        SceneView;
+    FSceneRenderData SceneRenderData;
+    FSceneView SceneView;
 
-    /* Gizmo */
-
-    /* Scene */
     FScene* CurScene = nullptr;
 
-    /* Properties */
     float WindowWidth = 0.0f;
     float WindowHeight = 0.0f;
-
-    float CurFPS = 0.0f; //  Panel에 Display
+    float CurFPS = 0.0f;
 };

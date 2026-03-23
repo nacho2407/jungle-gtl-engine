@@ -1,7 +1,7 @@
 #include "Editor.h"
-#include "Editor.h"
-#include "Viewport/EditorViewportClient.h"
+
 #include "Panel/PanelManager.h"
+#include "Viewport/EditorViewportClient.h"
 
 #include "imgui.h"
 #include <imgui_impl_dx11.h>
@@ -31,23 +31,20 @@ namespace
 
 void FEditor::Create()
 {
-    //  TODO : Viewport Client
+    EditorContext.Editor = this;
+
     ViewportClient.Create();
 
-    //  TODO : Panel UI
     PanelManager = new FPanelManager();
     PanelManager->Initialize(&EditorContext);
     PanelManager->RegisterPanelInstance<FSamplePanel>();
 
-    //  TODO : Gizmo
-
-    //  TEMP SCENE
     CurScene = new FScene();
+    EditorContext.Scene = CurScene;
 }
 
 void FEditor::Release()
 {
-    //  TODO : Call Release Functions
     ViewportClient.Release();
 
     if (PanelManager != nullptr)
@@ -56,12 +53,26 @@ void FEditor::Release()
         delete PanelManager;
         PanelManager = nullptr;
     }
+
+    delete CurScene;
+    CurScene = nullptr;
+    EditorContext.Scene = nullptr;
+
+    EditorChrome.SetHost(nullptr);
 }
 
 void FEditor::Initialize()
 {
-    CurScene = new FScene();
-    //  TODO : Scene의 Begin Play 호출
+    if (CurScene == nullptr)
+    {
+        CurScene = new FScene();
+        EditorContext.Scene = CurScene;
+    }
+}
+
+void FEditor::SetChromeHost(IEditorChromeHost* InChromeHost)
+{
+    EditorChrome.SetHost(InChromeHost);
 }
 
 void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* InputSystem)
@@ -81,7 +92,6 @@ void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* Input
     }
 
     BuildRenderData();
-    DrawPanel();
 }
 
 void FEditor::OnWindowResized(float Width, float Height)
@@ -93,18 +103,17 @@ void FEditor::OnWindowResized(float Width, float Height)
 
     WindowHeight = Height;
     WindowWidth = Width;
-    //  TODO : Setting Panel Size
+    EditorContext.WindowWidth = Width;
+    EditorContext.WindowHeight = Height;
 }
 
 void FEditor::CreateNewScene()
 {
     ClearScene();
-    //  TODO : 새로운 Scene으로 교체, Panel 초기화,
 }
 
 void FEditor::ClearScene()
 {
-    //  TODO : Scene에 대한 모든 정보 제거
 }
 
 void FEditor::BuildSceneView()
@@ -130,10 +139,12 @@ void FEditor::DrawPanel()
     ImGui_ImplWin32_NewFrame();
 
     ImGui::NewFrame();
-    if (PanelManager)
+    if (PanelManager != nullptr)
     {
         PanelManager->DrawPanels();
     }
+
+    EditorChrome.Draw();
 
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());

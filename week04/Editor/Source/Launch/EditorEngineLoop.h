@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Chrome/EditorChrome.h"
 #include "Core/CoreMinimal.h"
 #include "ApplicationCore/GenericPlatform/IApplication.h"
 #include "ApplicationCore/Input/InputSystem.h"
@@ -9,60 +10,53 @@
 #include "Renderer/RendererModule.h"
 
 #if defined(_WIN32)
-
 #include "ApplicationCore/Windows/WindowsApplication.h"
-
 #endif
 
 class FPanelManager;
 
-class FEditorEngineLoop : public IEngineLoop
+class FEditorEngineLoop : public IEngineLoop, public IEditorChromeHost
 {
-public:
+  public:
     bool PreInit(HINSTANCE HInstance, uint32 NCmdShow) override;
     int32 Run() override;
     void ShutDown() override;
-    
-private:
-    // static LRESULT CALLBACK StaticWndProc(HWND HWnd, UINT Message, WPARAM WParam, LPARAM LParam);
-    // LRESULT WndProc(HWND HWnd, uint32 Message, WPARAM WParam, LPARAM LParam);
-    
+
+    void SetTitleBarMetrics(int32 Height,
+                            const TArray<FEditorChromeRect>& InteractiveRects) override;
+    void MinimizeWindow() override;
+    void ToggleMaximizeWindow() override;
+    void CloseWindow() override;
+    bool IsWindowMaximized() const override;
+    const wchar_t* GetWindowTitle() const override;
+
+  private:
+    static bool HandleEditorMessage(HWND HWnd, UINT Message, WPARAM WParam, LPARAM LParam,
+                                    LRESULT& OutResult, void* UserData);
+    bool HandleEditorMessageInternal(HWND HWnd, UINT Message, WPARAM WParam, LPARAM LParam,
+                                     LRESULT& OutResult);
+    void HandleWindowResize();
+    Engine::ApplicationCore::FWindowsApplication* GetWindowsApplication() const;
+
     void Tick() override;
-    
     void InitializeForTime() override;
-public:
-    
-private:
-    /* Input System */
-    Engine::ApplicationCore::IApplication * Application = nullptr;
-    Engine::ApplicationCore::FInputSystem * InputSystem = nullptr;
 
-    /* Window */
-#if defined(_WIN32)
-    
-#endif  
+  private:
+    Engine::ApplicationCore::IApplication* Application = nullptr;
+    Engine::ApplicationCore::FInputSystem* InputSystem = nullptr;
 
-    /* Editor */
-    FEditor * Editor = nullptr;
-    
-    /* Engine */
-    //  FEngine * Engine = nullptr;
-    //  임시로 Renderer 직접 접근
+    FEditor* Editor = nullptr;
     FRendererModule* Renderer = nullptr;
-
-    /* Panel */
     FPanelManager* PanelManager = nullptr;
 
-    /* Time Measure */
     float DeltaTime = 0.0f;
     float MainLoopFPS = 0.0f;
+    int32 CachedWindowWidth = 0;
+    int32 CachedWindowHeight = 0;
 
     float PrevTime = 0.0f;
-    
-    /* Flags */
+
     bool bIsExit = false;
-    
-    /* Properties */
+
     HWND HWindow = nullptr;
-    
 };

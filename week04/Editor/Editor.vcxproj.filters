@@ -43,8 +43,14 @@
     <Filter Include="Source\Viewport\Selection">
       <UniqueIdentifier>{c02bdf14-d23c-3f72-e5f4-7a918dc1b5dc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Chrome">
+      <UniqueIdentifier>{f47e4d1d-6849-4aa8-8343-c9329f9bff41}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Chrome\EditorChrome.cpp">
+      <Filter>Source\Chrome</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Editor.cpp">
       <Filter>Source\Editor</Filter>
     </ClCompile>
@@ -120,6 +126,9 @@
     <ClCompile Include="Source\Camera\ViewportCamera.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Chrome\EditorChrome.h">
+      <Filter>Source\Chrome</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor.h">
       <Filter>Source</Filter>
     </ClInclude>

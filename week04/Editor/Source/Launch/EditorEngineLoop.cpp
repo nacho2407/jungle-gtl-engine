@@ -1,12 +1,14 @@
 #include "EditorEngineLoop.h"
 
-#include <wrl/client.h>
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 
 #include "imgui.h"
-#include "imgui_internal.h"
-#include <imgui_impl_win32.h>
 #include <imgui_impl_dx11.h>
+#include <imgui_impl_win32.h>
 
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND HWnd, UINT Message,
+                                                             WPARAM WParam, LPARAM LParam);
 
 bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
 {
@@ -15,7 +17,6 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
 
     InputSystem = new Engine::ApplicationCore::FInputSystem();
 
-    /* Application Setting */
 #if defined(_WIN32)
     Application = Engine::ApplicationCore::FWindowsApplication::Create();
     if (Application == nullptr)
@@ -23,22 +24,27 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
         return false;
     }
 
-    if (!Application->CreateApplicationWindow(L"JungleWindowClass", 1920, 1080))
+    Engine::ApplicationCore::FWindowsApplication* WindowsApplication = GetWindowsApplication();
+    if (WindowsApplication == nullptr)
+    {
+        return false;
+    }
+
+    if (!WindowsApplication->CreateEditorWindow(L"Jungle Editor", 1920, 1080))
     {
         return false;
     }
 
     Application->SetInputSystem(InputSystem);
 #else
-
+    return false;
 #endif
 
-    /* Editor Initialize */
     Editor = new FEditor();
+    Editor->SetChromeHost(this);
     Editor->Create();
     Editor->Initialize();
 
-    /* Renderer Initialize */
     Renderer = new FRendererModule();
     if (Renderer == nullptr)
     {
@@ -56,11 +62,19 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
         return false;
     }
 
-    /* ImGUI Initialize */
     ImGui::CreateContext();
     ImGui_ImplWin32_Init((void*)WindowHandle);
     ImGui_ImplDX11_Init(Renderer->GetRHI().GetDevice(), Renderer->GetRHI().GetDeviceContext());
 
+    if (Engine::ApplicationCore::FWindowsApplication* WindowsApplication = GetWindowsApplication())
+    {
+        WindowsApplication->SetMessageHandler(&FEditorEngineLoop::HandleEditorMessage, this);
+    }
+
+    CachedWindowWidth = Application->GetWindowWidth();
+    CachedWindowHeight = Application->GetWindowHeight();
+    Editor->OnWindowResized(static_cast<float>(CachedWindowWidth),
+                            static_cast<float>(CachedWindowHeight));
 
     InitializeForTime();
     return true;
@@ -83,6 +97,15 @@ int32 FEditorEngineLoop::Run()
 
 void FEditorEngineLoop::ShutDown()
 {
+    if (Engine::ApplicationCore::FWindowsApplication* WindowsApplication = GetWindowsApplication())
+    {
+        WindowsApplication->SetMessageHandler(nullptr, nullptr);
+    }
+
+    ImGui_ImplDX11_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
+
     if (Renderer != nullptr)
     {
         Renderer->ShutdownModule();
@@ -90,23 +113,26 @@ void FEditorEngineLoop::ShutDown()
         Renderer = nullptr;
     }
 
-    Editor->Release();
-    delete Editor;
-    Editor = nullptr;
+    if (Editor != nullptr)
+    {
+        Editor->Release();
+        delete Editor;
+        Editor = nullptr;
+    }
 
-    Application->DestroyApplicationWindow();
-    delete Application;
-    Application = nullptr;
+    if (Application != nullptr)
+    {
+        Application->DestroyApplicationWindow();
+        delete Application;
+        Application = nullptr;
+    }
 
     delete InputSystem;
     InputSystem = nullptr;
-
-    //  TODO : Garbage Sweep
 }
 
 void FEditorEngineLoop::Tick()
 {
-    /* Application Pump Message */
     Application->PumpMessages();
     if (Application->IsExitRequested())
     {
@@ -115,33 +141,201 @@ void FEditorEngineLoop::Tick()
     }
 
     InputSystem->BeginFrame();
+    HandleWindowResize();
 
-    /* Time Measuring */
     DeltaTime = FPlatformTime::Seconds() - PrevTime;
     PrevTime = FPlatformTime::Seconds();
 
-    MainLoopFPS = 1.0f / DeltaTime;
+    MainLoopFPS = (DeltaTime > 0.0f) ? (1.0f / DeltaTime) : 0.0f;
 
-    /* Engine Tick */
-    //  Engine->Tick(DeltaTime);
-    /* Editor Update */
+    Editor->SetMainLoopFPS(MainLoopFPS);
     Editor->Tick(DeltaTime, InputSystem);
 
-    /* Editor Viewport Client */
-
-    /* Render */
     if (Renderer != nullptr)
     {
         Renderer->BeginFrame();
         Renderer->Render(Editor->GetEditorRenderData(), Editor->GetSceneRenderData());
+        Editor->DrawPanel();
         Renderer->EndFrame();
     }
 
-    FPlatformTime::Sleep(0.f);
+    FPlatformTime::Sleep(0.0f);
 }
 
 void FEditorEngineLoop::InitializeForTime()
 {
     PrevTime = FPlatformTime::Seconds();
     DeltaTime = 0.0f;
+}
+
+void FEditorEngineLoop::SetTitleBarMetrics(
+    int32 Height, const TArray<FEditorChromeRect>& InteractiveRects)
+{
+    Engine::ApplicationCore::FWindowsApplication* WindowsApplication = GetWindowsApplication();
+    if (WindowsApplication == nullptr)
+    {
+        return;
+    }
+
+    Engine::ApplicationCore::FCustomTitleBarState TitleBarState;
+    TitleBarState.TitleBarHeight = Height;
+    TitleBarState.InteractiveRects.reserve(InteractiveRects.size());
+
+    for (const FEditorChromeRect& Rect : InteractiveRects)
+    {
+        Engine::ApplicationCore::FWindowHitTestRect WindowRect;
+        WindowRect.Left = Rect.Left;
+        WindowRect.Top = Rect.Top;
+        WindowRect.Right = Rect.Right;
+        WindowRect.Bottom = Rect.Bottom;
+        TitleBarState.InteractiveRects.push_back(WindowRect);
+    }
+
+    WindowsApplication->SetCustomTitleBarState(TitleBarState);
+}
+
+void FEditorEngineLoop::MinimizeWindow()
+{
+    if (Engine::ApplicationCore::FWindowsApplication* WindowsApplication = GetWindowsApplication())
+    {
+        WindowsApplication->MinimizeWindow();
+    }
+}
+
+void FEditorEngineLoop::ToggleMaximizeWindow()
+{
+    if (Engine::ApplicationCore::FWindowsApplication* WindowsApplication = GetWindowsApplication())
+    {
+        WindowsApplication->ToggleMaximizeWindow();
+    }
+}
+
+void FEditorEngineLoop::CloseWindow()
+{
+    if (Engine::ApplicationCore::FWindowsApplication* WindowsApplication = GetWindowsApplication())
+    {
+        WindowsApplication->CloseWindow();
+    }
+}
+
+bool FEditorEngineLoop::IsWindowMaximized() const
+{
+    if (Engine::ApplicationCore::FWindowsApplication* WindowsApplication = GetWindowsApplication())
+    {
+        return WindowsApplication->IsWindowMaximized();
+    }
+
+    return false;
+}
+
+const wchar_t* FEditorEngineLoop::GetWindowTitle() const
+{
+    if (Engine::ApplicationCore::FWindowsApplication* WindowsApplication = GetWindowsApplication())
+    {
+        return WindowsApplication->GetWindowTitle();
+    }
+
+    return L"";
+}
+
+bool FEditorEngineLoop::HandleEditorMessage(HWND HWnd, UINT Message, WPARAM WParam, LPARAM LParam,
+                                            LRESULT& OutResult, void* UserData)
+{
+    FEditorEngineLoop* EditorEngineLoop = static_cast<FEditorEngineLoop*>(UserData);
+    if (EditorEngineLoop == nullptr)
+    {
+        return false;
+    }
+
+    return EditorEngineLoop->HandleEditorMessageInternal(HWnd, Message, WParam, LParam,
+                                                         OutResult);
+}
+
+bool FEditorEngineLoop::HandleEditorMessageInternal(HWND HWnd, UINT Message, WPARAM WParam,
+                                                    LPARAM LParam, LRESULT& OutResult)
+{
+    const LRESULT ImGuiResult = ImGui_ImplWin32_WndProcHandler(HWnd, Message, WParam, LParam);
+    if (ImGuiResult != 0)
+    {
+        OutResult = ImGuiResult;
+        return true;
+    }
+
+    if (ImGui::GetCurrentContext() == nullptr)
+    {
+        return false;
+    }
+
+    const ImGuiIO& IO = ImGui::GetIO();
+    switch (Message)
+    {
+    case WM_LBUTTONDOWN:
+    case WM_LBUTTONUP:
+    case WM_LBUTTONDBLCLK:
+    case WM_RBUTTONDOWN:
+    case WM_RBUTTONUP:
+    case WM_RBUTTONDBLCLK:
+    case WM_MBUTTONDOWN:
+    case WM_MBUTTONUP:
+    case WM_MBUTTONDBLCLK:
+    case WM_MOUSEMOVE:
+    case WM_MOUSEWHEEL:
+    case WM_MOUSEHWHEEL:
+        if (IO.WantCaptureMouse)
+        {
+            OutResult = 0;
+            return true;
+        }
+        break;
+
+    case WM_KEYDOWN:
+    case WM_KEYUP:
+    case WM_SYSKEYDOWN:
+    case WM_SYSKEYUP:
+    case WM_CHAR:
+        if (IO.WantCaptureKeyboard || IO.WantTextInput)
+        {
+            OutResult = 0;
+            return true;
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    return false;
+}
+
+void FEditorEngineLoop::HandleWindowResize()
+{
+    const int32 CurrentWindowWidth = Application->GetWindowWidth();
+    const int32 CurrentWindowHeight = Application->GetWindowHeight();
+    if (CurrentWindowWidth == CachedWindowWidth && CurrentWindowHeight == CachedWindowHeight)
+    {
+        return;
+    }
+
+    CachedWindowWidth = CurrentWindowWidth;
+    CachedWindowHeight = CurrentWindowHeight;
+
+    if (Renderer != nullptr)
+    {
+        Renderer->OnWindowResized(CurrentWindowWidth, CurrentWindowHeight);
+    }
+
+    if (Editor != nullptr)
+    {
+        Editor->OnWindowResized(static_cast<float>(CurrentWindowWidth),
+                                static_cast<float>(CurrentWindowHeight));
+    }
+}
+
+Engine::ApplicationCore::FWindowsApplication* FEditorEngineLoop::GetWindowsApplication() const
+{
+#if defined(_WIN32)
+    return static_cast<Engine::ApplicationCore::FWindowsApplication*>(Application);
+#else
+    return nullptr;
+#endif
 }
