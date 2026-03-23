@@ -19,7 +19,7 @@ class UPicker : public UObject
 public:
 	UPicker();
 	virtual ~UPicker() override;
-	void Pick(int x, int y, UScene* Scene);
+	void Pick(int x, int y, UScene* Scene, bool bMultiSelect);
 
 	void SetEditor(Editor* pEditor) { EditorPtr = pEditor; }
 	void SetCamera(UCameraComponent* pCamera) { CameraPtr = pCamera; }
