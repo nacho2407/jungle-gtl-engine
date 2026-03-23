@@ -160,7 +160,7 @@ void EngineApp::Run()
 		UScene* currentActiveScene = GetWorld().GetSceneManager()->GetActiveScene();
 		if (currentActiveScene != LastActiveScene)
 		{
-			EditorInst->SelectComponent(nullptr);
+			EditorInst->ClearSelection();
 			LastActiveScene = currentActiveScene;
 		}
 
@@ -170,13 +170,15 @@ void EngineApp::Run()
 
 		ImGuiIO& io = ImGui::GetIO();
 
+		//마우스 입력에 따라 picking 처리. 컨트롤 키가 눌렸다면 멀티 pick을 시도합니다.
 		FVector Mouse = InputManager::GetInstance().MousePos;
 		if (!io.WantCaptureMouse && InputManager::GetInstance().IsKeyDown(VK_LBUTTON))
 		{
+			bool bIsCtrlDown = InputManager::GetInstance().IsKeyHold(VK_CONTROL);
 			UScene* activeScene = GetWorld().GetSceneManager()->GetActiveScene();
 			if (activeScene != nullptr)
 			{
-				Picker->Pick(Mouse.x, Mouse.y, activeScene);
+				Picker->Pick(Mouse.x, Mouse.y, activeScene, bIsCtrlDown);
 			}
 		}
 

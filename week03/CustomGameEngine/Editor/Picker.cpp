@@ -18,7 +18,7 @@ UPicker::~UPicker()
 {
 }
 
-void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene)
+void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene, bool bMultiSelect)
 {
 	Ray ray = CameraPtr->ScreenPointToRay(ScreenX, ScreenY);
 
@@ -54,20 +54,30 @@ void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene)
 		// RayHits 안에 이미 선택된 오브젝트가 있다면 거리순으로 정렬해 그 다음 것을 선택
 		std::sort(RayHits.begin(), RayHits.end());
 		int nextIndex = 0;
+		USceneComponent* lastSelected = EditorPtr->GetLastSelectedComponent();
 		for (int i = 0; i < RayHits.size(); ++i) {
-			if (RayHits[i].second == EditorPtr->GetSelectedComponent()) {
+			if (RayHits[i].second == lastSelected) {
 				nextIndex = (i + 1) % RayHits.size();
 				break;
 			}
 		}
-		EditorPtr->SelectComponent(RayHits[nextIndex].second);
+		USceneComponent* selectedComp = RayHits[nextIndex].second;
+		if (!bMultiSelect)
+		{
+			EditorPtr->SelectSingleComponent(selectedComp);
+		}
+		else
+		{
+			EditorPtr->SelectMultiComponent(selectedComp);
+		}
 		Scene->IsCompSelected = true;
 	}
 	else
 	{
-		//씬 오브젝트가 picking되지 않은 경우
-		EditorPtr->SelectComponent(nullptr);
-		Scene->IsCompSelected = false;
+		if (!bMultiSelect)
+		{
+			EditorPtr->ClearSelection();
+		}
 	}
 }
 
