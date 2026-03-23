@@ -209,15 +209,15 @@ class FEditorMenuRegistry
         switch (Menu)
         {
         case EEditorMainMenu::File:
-            return L"파일";
+            return L"File";
         case EEditorMainMenu::Edit:
-            return L"편집";
+            return L"Edit";
         case EEditorMainMenu::Window:
-            return L"창";
+            return L"Window";
         case EEditorMainMenu::Tool:
-            return L"툴";
+            return L"Tool";
         case EEditorMainMenu::Help:
-            return L"도움말";
+            return L"Help";
         default:
             return {};
         }

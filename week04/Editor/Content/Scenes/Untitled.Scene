@@ -1,0 +1,46 @@
+{
+  "schema": "JungleScene",
+  "version": 1,
+  "actors": [
+    {
+      "type": "fjklsadjfio",
+      "uuid": 0,
+      "name": "CubeActor 1",
+      "pickable": true,
+      "components": [
+        {
+          "data": {
+            "color": [
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          "type": "Component",
+          "is_root": true,
+          "uuid": 1,
+          "name": "None",
+          "transform": {
+            "location": [
+              37.4000015258789,
+              0,
+              0
+            ],
+            "rotation_quat": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

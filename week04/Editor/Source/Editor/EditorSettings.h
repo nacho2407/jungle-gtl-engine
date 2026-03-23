@@ -7,6 +7,8 @@
 struct FEditorSettingsData
 {
     float GridSpacing = 20.0f;
+    float CameraMoveSpeed = 100.0f;
+    float CameraRotationSpeed = 0.3f;
 };
 
 enum class EEditorSettingsLoadResult

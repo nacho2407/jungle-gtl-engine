@@ -270,6 +270,40 @@ EEditorSettingsLoadResult FEditorSettings::Load(FEditorSettingsData& OutData,
         OutData.GridSpacing = ParsedGridSpacing;
     }
 
+    if (const FString* CameraMoveSpeedValue =
+            FindIniValue(Document, "Viewport", "CameraMoveSpeed"))
+    {
+        float ParsedMoveSpeed = OutData.CameraMoveSpeed;
+        if (!TryParseFloat(*CameraMoveSpeedValue, ParsedMoveSpeed))
+        {
+            if (OutErrorMessage != nullptr)
+            {
+                *OutErrorMessage = "[Viewport] CameraMoveSpeed must be a float value.";
+            }
+
+            return ELoadResult::InvalidFormat;
+        }
+
+        OutData.CameraMoveSpeed = ParsedMoveSpeed;
+    }
+
+    if (const FString* CameraRotationSpeedValue =
+            FindIniValue(Document, "Viewport", "CameraRotationSpeed"))
+    {
+        float ParsedRotationSpeed = OutData.CameraRotationSpeed;
+        if (!TryParseFloat(*CameraRotationSpeedValue, ParsedRotationSpeed))
+        {
+            if (OutErrorMessage != nullptr)
+            {
+                *OutErrorMessage = "[Viewport] CameraRotationSpeed must be a float value.";
+            }
+
+            return ELoadResult::InvalidFormat;
+        }
+
+        OutData.CameraRotationSpeed = ParsedRotationSpeed;
+    }
+
     return ELoadResult::Success;
 }
 
@@ -281,6 +315,10 @@ bool FEditorSettings::Save(const FEditorSettingsData& InData) const
     LoadIniDocument(FilePath, Document, nullptr);
 
     SetIniValue(Document, "Viewport", "GridSpacing", FormatFloat(InData.GridSpacing));
+    SetIniValue(Document, "Viewport", "CameraMoveSpeed",
+                FormatFloat(InData.CameraMoveSpeed));
+    SetIniValue(Document, "Viewport", "CameraRotationSpeed",
+                FormatFloat(InData.CameraRotationSpeed));
     return SaveIniDocument(FilePath, Document);
 }
 

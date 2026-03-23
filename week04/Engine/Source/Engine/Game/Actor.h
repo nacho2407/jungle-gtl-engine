@@ -21,6 +21,13 @@ class ENGINE_API AActor : public UObject
     void SetPickable(bool bInPickable);
 
     Engine::Component::USceneComponent* GetRootComponent() const { return RootComponent; }
+    const TArray<Engine::Component::USceneComponent*>& GetOwnedComponents() const
+    {
+        return OwnedComponents;
+    }
+    void SetRootComponent(Engine::Component::USceneComponent* InRootComponent);
+    void AddOwnedComponent(Engine::Component::USceneComponent* InComponent,
+                           bool bMakeRootComponent = false);
 
     // Render bridge용 최소 API
     virtual bool IsRenderable() const { return false; }

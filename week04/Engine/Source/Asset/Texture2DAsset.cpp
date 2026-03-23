@@ -2,7 +2,7 @@
 #include "Texture2DAsset.h"
 
 #include "AssetManager.h"
-#include "Renderer/RenderAsset/FTextureResource.h"
+#include "Renderer/RenderAsset/TextureResource.h"
 
 REGISTER_CLASS(, UTexture2DAsset)
 

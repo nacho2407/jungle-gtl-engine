@@ -11,6 +11,7 @@ class ENGINE_API FScene
     ~FScene();
 
     void AddActor(AActor* InActor) { Actors.push_back(InActor); }
+    bool RemoveActor(AActor* InActor);
     const TArray<AActor*>& GetActors() const { return Actors; }
 
     void BuildRenderData(FSceneRenderData& OutRenderData) const;
