@@ -22,22 +22,45 @@ void FViewportNavigationController::SetRotating(bool bInRotating)
     }
 }
 
+void FViewportNavigationController::ModifyFOV(float DeltaFOV)
+{
+    if (ViewportCamera == nullptr || FMath::IsNearlyZero(DeltaFOV))
+    {
+        return;
+    }
+
+    constexpr float ZoomStepRad = FMath::DegreesToRadians(3.0f);
+
+    float Direction = (DeltaFOV > 0.f) ? 2.f : -2.f;
+
+    float NewFOV = ViewportCamera->GetFOV() + Direction * ZoomStepRad;
+    NewFOV = FMath::Clamp(NewFOV, FMath::DegreesToRadians(30.f),
+                          FMath::DegreesToRadians(120.f)); // FOV를 30도에서 120도로 제한
+    ViewportCamera->SetFOV(NewFOV);
+}
+
 void FViewportNavigationController::MoveForward(float Value, float DeltaTime)
 {
-    if (ViewportCamera == nullptr || FMath::IsNearlyZero(Value))
+    // if (ViewportCamera == nullptr || FMath::IsNearlyZero(Value))
+    if (ViewportCamera == nullptr)
+    {
         return;
+    }
 
     FVector NewLocation = ViewportCamera->GetLocation();
     NewLocation += ViewportCamera->GetForwardVector() * (Value * MoveSpeed * DeltaTime);
     ViewportCamera->SetLocation(NewLocation);
 
-    //MessageBox(nullptr, L"MoveForward called", L"Debug", MB_OK);
+    // MessageBox(nullptr, L"MoveForward called", L"Debug", MB_OK);
 }
 
 void FViewportNavigationController::MoveRight(float Value, float DeltaTime)
 {
-    if (ViewportCamera == nullptr || FMath::IsNearlyZero(Value))
+    // if (ViewportCamera == nullptr || FMath::IsNearlyZero(Value))
+    if (ViewportCamera == nullptr)
+    {
         return;
+    }
 
     FVector NewLocation = ViewportCamera->GetLocation();
     NewLocation += ViewportCamera->GetRightVector() * (Value * MoveSpeed * DeltaTime);
