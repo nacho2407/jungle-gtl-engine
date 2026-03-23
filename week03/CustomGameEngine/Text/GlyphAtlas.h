@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "EngineCore/EngineTypes.h"
+#include "Text/FontConfig.h"
 #include "Text/FontTypes.h"
 
 /**

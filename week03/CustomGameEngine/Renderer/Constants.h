@@ -15,11 +15,11 @@ struct FObjectConstant
  */
 struct FFontConstant
 {
-    FVector CameraRight;
+    FVector CameraRight{};
     float Padding0 = 0.0f;
 
-    FVector CameraUp;
+    FVector CameraUp{};
     float Padding1 = 0.0f;
 
-    FColor TextColor;
+    FColor TextColor{};
 };

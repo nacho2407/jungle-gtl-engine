@@ -3,11 +3,6 @@
 #include "EngineCore/Logger.h"
 #include <fstream>
 
-/**
- * @def ATLAS_PAD 텍스처 Bleeding 방지를 위한 패딩
- */
-#define ATLAS_PAD 1
-
 bool FGlyphAtlas::Initialize(uint32 Width, uint32 Height)
 {
 	if (Width == 0 || Height == 0)

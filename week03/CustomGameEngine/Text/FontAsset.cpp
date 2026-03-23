@@ -7,16 +7,6 @@
 
 #include "EngineCore/Logger.h"
 
-/**
- * @def DEFAULT_ATLAS_WIDTH Asset이 들고 있는 Atlas의 기본 너비
- */
-#define DEFAULT_ATLAS_WIDTH 2048
-
- /**
-  * @def DEFAULT_ATLAS_HEIGHT Asset이 들고 있는 Atlas의 기본 높이
-  */
-#define DEFAULT_ATLAS_HEIGHT 2048
-
 const FGlyphInfo* FFontAsset::FindGlyph(uint32 Codepoint) const
 {
 	auto iter = GlyphMap.find(Codepoint);

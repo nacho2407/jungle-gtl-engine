@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "EngineCore/EngineTypes.h"
+#include "Text/FontConfig.h"
 
 /**
  * @brief 가변 길이 UTF-8로 되어있는 FString(std::string) 문자열을 디코딩하여 고정 길이 UTF-32 문자열로 반환합니다.

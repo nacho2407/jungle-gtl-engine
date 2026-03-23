@@ -2,11 +2,6 @@
 
 #include "EngineCore/Logger.h"
 
-/**
- * @def REP_CHR 유니코드 대체 문자
- */
-#define REP_CHR 0xFFFD
-
 FU32String Utf8ToCodepoints(const FString& Text)
 {
     FU32String Output;
