@@ -20,6 +20,7 @@ EditorConsole::EditorConsole()
 
 EditorConsole::~EditorConsole()
 {
+	Logger::Unbind();
 	ClearLog();
 	for (int i = 0; i < History.Size; i++)
 		ImGui::MemFree(History[i]);
