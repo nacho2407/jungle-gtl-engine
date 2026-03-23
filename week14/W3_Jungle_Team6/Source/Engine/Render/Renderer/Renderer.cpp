@@ -325,22 +325,6 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 		}
 	}
 
-	// --- Font 패스 → FontBatcher ---
-	const auto& FontCmds = RenderBus.GetCommands(ERenderPass::Font);
-	for (const auto& Cmd : FontCmds)
-	{
-		if (Cmd.Type == ERenderCommandType::Font && !Cmd.TextData.empty())
-		{
-			FontBatcher.AddText(
-				Cmd.TextData,
-				Cmd.PerObjectConstants.Model.GetLocation(),
-				RenderBus.GetCameraRight(),
-				RenderBus.GetCameraUp(),
-				Cmd.SpriteSize.X // FontSize
-			);
-		}
-	}
-
 	// --- SubUV 패스 → SubUVBatcher ---
 	const auto& SubUVCmds = RenderBus.GetCommands(ERenderPass::SubUV);
 	for (const auto& Cmd : SubUVCmds)
@@ -356,6 +340,22 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 				Cmd.AtlasResource->Rows,
 				Cmd.SpriteSize.X,
 				Cmd.SpriteSize.Y
+			);
+		}
+	}
+
+	// --- Font 패스 → FontBatcher ---
+	const auto& FontCmds = RenderBus.GetCommands(ERenderPass::Font);
+	for (const auto& Cmd : FontCmds)
+	{
+		if (Cmd.Type == ERenderCommandType::Font && !Cmd.TextData.empty())
+		{
+			FontBatcher.AddText(
+				Cmd.TextData,
+				Cmd.PerObjectConstants.Model.GetLocation(),
+				RenderBus.GetCameraRight(),
+				RenderBus.GetCameraUp(),
+				Cmd.SpriteSize.X // FontSize
 			);
 		}
 	}
@@ -386,9 +386,6 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 	Device.SetDepthStencilState(EDepthStencilState::Default);
 	Device.SetBlendState(EBlendState::AlphaBlend);
 
-	const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
-	FontBatcher.Flush(Context, FontRes);
-
 	// --- SubUVBatcher Flush ---
 	// 단일 아틀라스 기준: 커맨드에서 첫 번째 유효한 SRV를 사용
 	ID3D11ShaderResourceView* SubUVSRV = nullptr;
@@ -401,6 +398,9 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 		}
 	}
 	SubUVBatcher.Flush(Context, SubUVSRV);
+
+	const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
+	FontBatcher.Flush(Context, FontRes);
 }
 
 void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix)
