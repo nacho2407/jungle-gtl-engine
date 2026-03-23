@@ -11,6 +11,12 @@ REGISTER_FACTORY(UCubeComponent)
 REGISTER_FACTORY(USphereComponent)
 REGISTER_FACTORY(UPlaneComponent)
 
+void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+	USceneComponent::GetEditableProperties(OutProps);
+	OutProps.push_back({ "Visible", EPropertyType::Bool, &bIsVisible });
+}
+
 void UPrimitiveComponent::UpdateWorldAABB() const
 {
 	FVector LExt = LocalExtents;
