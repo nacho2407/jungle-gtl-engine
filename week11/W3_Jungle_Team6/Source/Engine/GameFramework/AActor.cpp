@@ -1,4 +1,5 @@
 ﻿#include "GameFramework/AActor.h"
+#include "Component/PrimitiveComponent.h"
 
 DEFINE_CLASS(AActor, UObject)
 REGISTER_FACTORY(AActor)
@@ -40,4 +41,24 @@ void AActor::RegisterComponentRecursive(USceneComponent* Comp) {
 	for (USceneComponent* Child : Comp->GetChildren()) {
 		RegisterComponentRecursive(Child);
 	}
+}
+
+const TArray<UPrimitiveComponent*>& AActor::GetPrimitiveComponents() const
+{
+	// 컴포넌트 리스트가 바뀌었을 때만 딱 한 번 실행
+	if (bComponentsDirty)
+	{
+		PrimitiveCache.clear();
+
+		// 이미 가지고 있는 Components 배열을 활용합니다. (재귀 호출 필요 없음!)
+		for (USceneComponent* Comp : Components)
+		{
+			if (auto* Primitive = dynamic_cast<UPrimitiveComponent*>(Comp))
+			{
+				PrimitiveCache.emplace_back(Primitive);
+			}
+		}
+		bComponentsDirty = false;
+	}
+	return PrimitiveCache;
 }
