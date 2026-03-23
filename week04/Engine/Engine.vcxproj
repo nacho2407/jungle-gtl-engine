@@ -15,7 +15,7 @@
     <ClInclude Include="Resources\Mesh\Cube.h" />
     <ClInclude Include="Resources\Mesh\Cylinder.h" />
     <ClInclude Include="Resources\Mesh\MeshPrimitiveTopology.h" />
-    <ClInclude Include="Resources\Mesh\Plane.h" />
+    <ClInclude Include="Resources\Mesh\Quad.h" />
     <ClInclude Include="Resources\Mesh\Ring.h" />
     <ClInclude Include="Resources\Mesh\Sphere.h" />
     <ClInclude Include="Resources\Mesh\Triangle.h" />
