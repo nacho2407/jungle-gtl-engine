@@ -15,6 +15,7 @@ void FScene::Clear()
 
 void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
 {
+    // TODO
     OutRenderData.Primitives.clear();
 
     for (AActor* Actor : Actors)
@@ -42,15 +43,4 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
 
         OutRenderData.Primitives.push_back(Item);
     }
-    
-    OutRenderData.Primitives.push_back(
-        FPrimitiveRenderItem{.World = FMatrix::MakeScale({10.f, 10.f, 10.f}),
-                             .Color = FColor::Blue(),
-                             .MeshType = EBasicMeshType::Cube,
-                             .ObjectId = 0,
-                             .bVisible = true,
-                             .bPickable = false,
-                             .bSelected = false,
-                             .bHovered = false});
-    // OutRenderData.ShowFlags = ESceneShowFlags::None;
 }
