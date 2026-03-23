@@ -60,7 +60,8 @@ void FEditorSceneWidget::Render(float DeltaTime)
 
 	if (ImGui::Button("Save Scene"))
 	{
-		FSceneSaveManager::SaveSceneAsJSON(SceneName, EditorEngine->GetWorldList());
+		FWorldContext* Ctx = EditorEngine->GetWorldContextFromHandle(EditorEngine->GetActiveWorldHandle());
+		if (Ctx) FSceneSaveManager::SaveSceneAsJSON(SceneName, *Ctx);
 		SceneSaveNotificationTimer = NotificationTimer;
 		RefreshSceneFileList();
 	}
@@ -99,10 +100,12 @@ void FEditorSceneWidget::Render(float DeltaTime)
 			FString FilePath = FPaths::ToUtf8(ScenePath.wstring());
 
 			EditorEngine->ClearScene();
-			FSceneSaveManager::LoadSceneFromJSON(FilePath, EditorEngine->GetWorldList());
-			if (!EditorEngine->GetWorldList().empty())
+			FWorldContext LoadCtx;
+			FSceneSaveManager::LoadSceneFromJSON(FilePath, LoadCtx);
+			if (LoadCtx.World)
 			{
-				EditorEngine->SetActiveWorld(EditorEngine->GetWorldList()[0].ContextHandle);
+				EditorEngine->GetWorldList().push_back(LoadCtx);
+				EditorEngine->SetActiveWorld(LoadCtx.ContextHandle);
 			}
 			EditorEngine->ResetViewport();
 			SceneLoadNotificationTimer = NotificationTimer;

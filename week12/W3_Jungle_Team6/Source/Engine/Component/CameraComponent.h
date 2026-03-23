@@ -23,6 +23,8 @@ public:
 
 	UCameraComponent() = default;
 
+	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+
 	void LookAt(const FVector& Target);
 	void SetCameraState(const FCameraState& NewState);
 	const FCameraState& GetCameraState() const { return CameraState; }
