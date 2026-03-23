@@ -16,8 +16,8 @@ class UPrimitiveComponent : public USceneComponent
 protected:
 	const FMeshData* MeshData = nullptr;
 	FVector LocalExtents = { 0.5f, 0.5f, 0.5f };
-	FVector WorldAABBMinLocation;
-	FVector WorldAABBMaxLocation;
+	mutable FVector WorldAABBMinLocation;
+	mutable FVector WorldAABBMaxLocation;
 	bool bIsVisible = true;
 
 public:
@@ -33,7 +33,7 @@ public:
 	}
 
 	//Collision
-	virtual void UpdateWorldAABB();
+	virtual void UpdateWorldAABB() const;
 	bool CheckAABB(const FRay& Ray);
 	bool Raycast(const FRay& Ray, FHitResult& OutHitResult);
 	bool IntersectTriangle(const FVector& RayOrigin, const FVector& RayDir, const FVector& V0, const FVector& V1, const FVector& V2, float& OutT);
@@ -41,6 +41,7 @@ public:
 	inline bool IsVisible() const { return bIsVisible; }
 
 	void UpdateWorldMatrix() const override;
+	void AddWorldOffset(const FVector& WorldDelta) override;
 
 	virtual bool GetRenderCommand(FRenderCommand& OutCommand) {
 		OutCommand.Type = ERenderCommandType::Primitive;
@@ -71,7 +72,7 @@ private:
 public:
 	DECLARE_CLASS(USphereComponent, UPrimitiveComponent)
 	USphereComponent();
-	void UpdateWorldAABB()override;
+	void UpdateWorldAABB() const override;
 	bool GetRenderCommand(FRenderCommand& OutCommand) override;
 	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_Sphere;
 
@@ -85,7 +86,7 @@ private:
 public:
 	DECLARE_CLASS(UPlaneComponent, UPrimitiveComponent)
 	UPlaneComponent();
-	void UpdateWorldAABB() override;
+	void UpdateWorldAABB() const override;
 	bool GetRenderCommand(FRenderCommand& OutCommand) override;
 	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_Plane;
 
