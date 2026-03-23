@@ -65,6 +65,7 @@ void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene)
 	}
 	else
 	{
+		//씬 오브젝트가 picking되지 않은 경우
 		EditorPtr->SelectComponent(nullptr);
 		Scene->IsCompSelected = false;
 	}

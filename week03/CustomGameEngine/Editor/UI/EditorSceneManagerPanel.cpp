@@ -10,7 +10,7 @@ EditorSceneManagerPanel::~EditorSceneManagerPanel()
 
 }
 
-void EditorSceneManagerPanel::Draw(Editor* editor, ImGuiWindowLayout& layout)
+void EditorSceneManagerPanel::Draw(Editor* editor)
 {
 	//일단 매 프레임마다 씬을 가져옵니다. 씬이 바뀌는 경우 때문.
 	SceneManager* sceneMgr = GetWorld().GetSceneManager();
@@ -23,8 +23,6 @@ void EditorSceneManagerPanel::Draw(Editor* editor, ImGuiWindowLayout& layout)
 	const TArray<UScene*>& loadedScenes = sceneMgr->GetLoadedScenes();
 	UScene* permanentScene = sceneMgr->GetPermanentScene();
 
-	ImGui::SetNextWindowPos(layout.PosXY, ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSize(layout.SizeWH, ImGuiCond_FirstUseEver);
 	ImGui::Begin("Scene Manager");
 
 	if (ImGui::CollapsingHeader("Loaded Scenes", ImGuiTreeNodeFlags_DefaultOpen))
@@ -34,21 +32,20 @@ void EditorSceneManagerPanel::Draw(Editor* editor, ImGuiWindowLayout& layout)
 			UScene* scene = loadedScenes[i];
 			bool isSelected = (ActiveScene == scene);
 
-			FString sceneLabel = scene->Name.GetDisplayName() + FString("##") + std::to_string(i);
+			FString sceneLabel = scene->Name.GetDisplayName();
 			if (ImGui::Selectable(sceneLabel.c_str(), isSelected))
 			{
 				sceneMgr->SetActiveScene(scene);
 				editor->SelectComponent(nullptr);
 			}
-
-			if (ImGui::BeginPopupContextItem())
-			{
-				if (ImGui::MenuItem("Unload Scene"))
-				{
-					sceneMgr->UnloadScene(scene);
-				}
-				ImGui::EndPopup();
-			}
+			//if (ImGui::BeginPopupContextItem())
+			//{
+			//	if (ImGui::MenuItem("Unload Scene"))
+			//	{
+			//		sceneMgr->UnloadScene(scene);
+			//	}
+			//	ImGui::EndPopup();
+			//}
 		}
 	}
 

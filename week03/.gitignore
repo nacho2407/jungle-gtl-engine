@@ -29,8 +29,6 @@ x86/
 *.sln.docstates
 
 # 외부 라이브러리 설정 (ImGui 등)
-imgui.ini
-editor.ini
 
 # 기타 OS 임시 파일
 Thumbs.db

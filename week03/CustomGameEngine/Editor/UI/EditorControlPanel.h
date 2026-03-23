@@ -10,7 +10,6 @@
 #include "Math/Rotator.h"
 #include <string>
 #include "Renderer/Renderer.h"
-#include "ImGuiLayout.h"
 #include <filesystem>
 #include "Component/GridComp.h"
 #include "EngineCore/ResourceManager.h"
@@ -24,7 +23,7 @@ struct EditorControlPanel
 	EditorControlPanel(Editor* parent, URenderer* Renderer);
 	~EditorControlPanel();
 
-	void Draw(UCameraComponent* camera, ImGuiWindowLayout& layout, UGridComp* Grid);
+	void Draw(UCameraComponent* camera, UGridComp* Grid);
 
 	Editor* editor;
 	URenderer* Renderer;

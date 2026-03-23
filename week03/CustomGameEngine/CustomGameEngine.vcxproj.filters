@@ -222,10 +222,16 @@
     <ClInclude Include="Editor\UI\EditorSceneManagerPanel.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\UI\ImGuiLayout.h">
+    <ClInclude Include="Component\GridComp.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Component\GridComp.h">
+    <ClInclude Include="Renderer\Constants.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\GeneralGeometry.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\UV.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Constants.h">

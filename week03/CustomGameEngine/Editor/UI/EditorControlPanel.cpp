@@ -69,12 +69,9 @@ void UpdateFPS(float deltaTime)
 	}
 }
 
-void EditorControlPanel::Draw(UCameraComponent* camera, ImGuiWindowLayout& layout, UGridComp* Grid)
+void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 {
 	UpdateFPS(TimerManager::GetInstance().GetGlobalDeltaTime());
-
-	ImGui::SetNextWindowPos(layout.PosXY, ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSize(layout.SizeWH, ImGuiCond_FirstUseEver);
 
 	ImGui::Begin("Jungle Control Panel");
 	ImGui::Text("Hello Jungle World!");

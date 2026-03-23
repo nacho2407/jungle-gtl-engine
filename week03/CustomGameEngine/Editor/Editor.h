@@ -2,6 +2,7 @@
 
 #include <windows.h>
 #include <d3d11.h>
+#include <string>
 #include "ImGui/imgui.h"
 #include "UI/EditorConsole.h"
 #include "UI/EditorControlPanel.h"
@@ -9,7 +10,6 @@
 #include "UI/EditorStatPanel.h"
 #include "UI/EditorToolbar.h"
 #include "UI/EditorSceneManagerPanel.h"
-#include "UI/ImGuiLayout.h"
 #include "Gizmo.h"
 #include "Component/GizmoComponent.h"
 #include "Component/SceneComponent.h"
@@ -51,12 +51,14 @@ public:
 	void SaveSettings();
 
 private:
-	void DrawControlPanel(ImGuiLayout&);
-	void DrawConsole(ImGuiLayout&);
-	void DrawPropertyPanel(ImGuiLayout&);
-	void DrawStatPanel(ImGuiLayout&);
-	void DrawToolbar(ImGuiLayout&);
-	void DrawSceneManagerPanel(ImGuiLayout&);
+	void DrawDockSpace();
+	void SetupDefaultDockLayout(ImGuiID dockspaceID);
+	void DrawControlPanel();
+	void DrawConsole();
+	void DrawPropertyPanel();
+	void DrawStatPanel();
+	void DrawToolbar();
+	void DrawSceneManagerPanel();
 
 private:
 	//panel
@@ -67,10 +69,11 @@ private:
 	EditorToolbar* Toolbar = nullptr;
 	EditorSceneManagerPanel* SceneMgrPanel = nullptr;
 
-	ImGuiLayout UILayout;
-
 	URenderer* Renderer = nullptr;
 	UCameraComponent* Camera = nullptr;
 	USceneComponent* SelectedComponent = nullptr;
 	UGridComp* Grid = nullptr;
+	bool bDockLayoutInitialized = false;
+	bool bUseDefaultDockLayout = true;
+	std::string ImGuiIniPath;
 };

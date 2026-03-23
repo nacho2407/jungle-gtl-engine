@@ -4,7 +4,6 @@
 #include "EngineCore/Logger.h"
 #include <cctype>
 #include <cstdio>
-#include "ImGuiLayout.h"
 
 struct EditorConsole
 {
@@ -27,7 +26,7 @@ struct EditorConsole
 
 	void ClearLog();
 	void AddLog(const char* fmt, ...);
-	void Draw(const char* title, bool* p_open, ImGuiWindowLayout& layout);
+	void Draw(const char* title, bool* p_open);
 	void ExecCommand(const char* command_line);
 
 	static int TextEditCallbackStub(ImGuiInputTextCallbackData* data);
