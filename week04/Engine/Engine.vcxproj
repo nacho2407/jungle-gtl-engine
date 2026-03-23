@@ -76,8 +76,10 @@
     <ClInclude Include="Source\CoreUObject\ObjectFactory.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\CameraComponent.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\CubeComponent.h" />
+    <ClInclude Include="Source\Engine\Component\BasicPrimitives\FontComponent.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\QuadComponent.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\SphereComponent.h" />
+    <ClInclude Include="Source\Engine\Component\BasicPrimitives\SubUVComponent.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
@@ -107,7 +109,8 @@
     <ClInclude Include="Source\Renderer\Draw\WorldAxesDrawer.h" />
     <ClInclude Include="Source\Renderer\Draw\WorldGridDrawer.h" />
     <ClInclude Include="Source\Renderer\EditorRenderData.h" />
-    <ClInclude Include="Source\Renderer\RenderAsset\FTextureResource.h" />
+    <ClInclude Include="Source\Renderer\RenderAsset\FontResource.h" />
+    <ClInclude Include="Source\Renderer\RenderAsset\TextureResource.h" />
     <ClInclude Include="Source\Renderer\RendererModule.h" />
     <ClInclude Include="Source\Renderer\SceneRenderData.h" />
     <ClInclude Include="Source\Renderer\SceneView.h" />
@@ -157,8 +160,10 @@
     <ClCompile Include="Source\CoreUObject\ObjectFactory.cpp" />
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\CameraComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\CubeComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\BasicPrimitives\FontComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\QuadComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\SphereComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\BasicPrimitives\SubUVComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp" />

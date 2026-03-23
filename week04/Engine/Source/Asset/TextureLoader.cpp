@@ -1,7 +1,7 @@
 #include "Core/CoreMinimal.h"
 #include "TextureLoader.h"
 
-#include "Renderer/RenderAsset/FTextureResource.h"
+#include "Renderer/RenderAsset/TextureResource.h"
 #include "Texture2DAsset.h"
 
 #include <algorithm>

@@ -37,8 +37,8 @@
     <Filter Include="Source\Editor\Logging">
       <UniqueIdentifier>{9eea2180-fcc8-2cbc-e827-723988501a5f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\ThirdParty\imgui">
-      <UniqueIdentifier>{14727bfa-61bb-1229-bb2b-782b3aace65f}</UniqueIdentifier>
+    <Filter Include="Source\ThirdParty\ImGui">
+      <UniqueIdentifier>{32e4b986-b3a8-5f87-38d0-7d76493d7618}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Viewport\Gizmo">
       <UniqueIdentifier>{a4a5fb1b-42c4-c447-1a35-66493bab83fe}</UniqueIdentifier>

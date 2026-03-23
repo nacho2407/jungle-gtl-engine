@@ -7,6 +7,9 @@
     <Filter Include="Source">
       <UniqueIdentifier>{4f6c83fe-a134-3484-3756-8c697b723468}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resources\Font">
+      <UniqueIdentifier>{fad3e58f-d9ea-cb84-df1f-2e117697f486}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Resources\Mesh">
       <UniqueIdentifier>{611fd08d-c5f2-636f-d61c-0405906a469d}</UniqueIdentifier>
     </Filter>
@@ -42,6 +45,15 @@
     </Filter>
     <Filter Include="Source\ThirdParty">
       <UniqueIdentifier>{b8e8bd27-1e61-2aa5-0088-7e70dd22287c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Font\Comic_Sans_MS">
+      <UniqueIdentifier>{b1e62315-e2ce-7f75-1be2-6878ca7045f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Font\Galmuri11">
+      <UniqueIdentifier>{702c0c07-20e7-a580-8783-537854e854a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Font\Ubuntu">
+      <UniqueIdentifier>{3ff98eb9-4461-1ff0-f53b-612fd98db83c}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\ApplicationCore\GenericPlatform">
       <UniqueIdentifier>{387b5035-7247-ab88-2751-c494bed9266f}</UniqueIdentifier>
@@ -186,10 +198,16 @@
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\CubeComponent.cpp">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\BasicPrimitives\FontComponent.cpp">
+      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\QuadComponent.cpp">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\SphereComponent.cpp">
+      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\BasicPrimitives\SubUVComponent.cpp">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.cpp">
@@ -458,10 +476,16 @@
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\CubeComponent.h">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\BasicPrimitives\FontComponent.h">
+      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\QuadComponent.h">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\SphereComponent.h">
+      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\BasicPrimitives\SubUVComponent.h">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.h">
@@ -551,7 +575,10 @@
     <ClInclude Include="Source\Renderer\EditorRenderData.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\RenderAsset\FTextureResource.h">
+    <ClInclude Include="Source\Renderer\RenderAsset\FontResource.h">
+      <Filter>Source\Renderer\RenderAsset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\RenderAsset\TextureResource.h">
       <Filter>Source\Renderer\RenderAsset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\RendererModule.h">
