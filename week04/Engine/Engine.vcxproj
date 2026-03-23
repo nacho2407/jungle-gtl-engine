@@ -121,6 +121,7 @@
     <ClInclude Include="Source\Renderer\Types\MeshInstanceData.h" />
     <ClInclude Include="Source\Renderer\Types\PickId.h" />
     <ClInclude Include="Source\Renderer\Types\PickResult.h" />
+    <ClInclude Include="Source\Renderer\Types\RenderItem.h" />
     <ClInclude Include="Source\Renderer\Types\SceneShowFlags.h" />
     <ClInclude Include="Source\Renderer\Types\ShaderConstants.h" />
     <ClInclude Include="Source\Renderer\Types\VertexTypes.h" />

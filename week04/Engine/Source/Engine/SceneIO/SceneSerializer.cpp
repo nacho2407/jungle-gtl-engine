@@ -8,13 +8,14 @@
 #include "Engine/Game/Actor.h"
 #include "Engine/Game/UnknownActor.h"
 #include "Engine/Scene.h"
+#include "Core/Math/Vector4.h"
 
 #include <fstream>
 
 namespace
 {
     constexpr const char* SceneSchemaName = "JungleScene";
-    constexpr int32 SceneSchemaVersion = 1;
+    constexpr int32       SceneSchemaVersion = 1;
 
     FSceneJsonValue MakeNumberArray(std::initializer_list<double> Values)
     {
@@ -60,8 +61,7 @@ namespace
     }
 
     const FSceneJsonValue* FindRequiredField(const FSceneJsonValue::Object& ObjectValue,
-                                             const FString& FieldName,
-                                             FString* OutErrorMessage,
+                                             const FString& FieldName, FString* OutErrorMessage,
                                              const char* Context)
     {
         const auto Iterator = ObjectValue.find(FieldName);
@@ -72,15 +72,13 @@ namespace
 
         if (OutErrorMessage != nullptr)
         {
-            *OutErrorMessage =
-                FString(Context) + " is missing required field '" + FieldName + "'.";
+            *OutErrorMessage = FString(Context) + " is missing required field '" + FieldName + "'.";
         }
         return nullptr;
     }
 
     bool TryReadStringField(const FSceneJsonValue::Object& ObjectValue, const FString& FieldName,
-                            FString& OutValue, FString* OutErrorMessage,
-                            const char* Context)
+                            FString& OutValue, FString* OutErrorMessage, const char* Context)
     {
         const FSceneJsonValue* FieldValue =
             FindRequiredField(ObjectValue, FieldName, OutErrorMessage, Context);
@@ -102,8 +100,7 @@ namespace
     }
 
     bool TryReadBoolField(const FSceneJsonValue::Object& ObjectValue, const FString& FieldName,
-                          bool& OutValue, FString* OutErrorMessage,
-                          const char* Context)
+                          bool& OutValue, FString* OutErrorMessage, const char* Context)
     {
         const FSceneJsonValue* FieldValue =
             FindRequiredField(ObjectValue, FieldName, OutErrorMessage, Context);
@@ -125,8 +122,7 @@ namespace
     }
 
     bool TryReadUIntField(const FSceneJsonValue::Object& ObjectValue, const FString& FieldName,
-                          uint32& OutValue, FString* OutErrorMessage,
-                          const char* Context)
+                          uint32& OutValue, FString* OutErrorMessage, const char* Context)
     {
         const FSceneJsonValue* FieldValue =
             FindRequiredField(ObjectValue, FieldName, OutErrorMessage, Context);
@@ -151,8 +147,7 @@ namespace
     }
 
     bool TryReadIntField(const FSceneJsonValue::Object& ObjectValue, const FString& FieldName,
-                         int32& OutValue, FString* OutErrorMessage,
-                         const char* Context)
+                         int32& OutValue, FString* OutErrorMessage, const char* Context)
     {
         const FSceneJsonValue* FieldValue =
             FindRequiredField(ObjectValue, FieldName, OutErrorMessage, Context);
@@ -175,8 +170,8 @@ namespace
         return true;
     }
 
-    bool TryReadVector3(const FSceneJsonValue& Value, FVector& OutVector,
-                        FString* OutErrorMessage, const char* Context)
+    bool TryReadVector3(const FSceneJsonValue& Value, FVector& OutVector, FString* OutErrorMessage,
+                        const char* Context)
     {
         const FSceneJsonValue::Array* ArrayValue = nullptr;
         if (!TryGetArray(Value, ArrayValue, OutErrorMessage, Context))
@@ -210,8 +205,8 @@ namespace
         return true;
     }
 
-    bool TryReadQuat(const FSceneJsonValue& Value, FQuat& OutQuat,
-                     FString* OutErrorMessage, const char* Context)
+    bool TryReadQuat(const FSceneJsonValue& Value, FQuat& OutQuat, FString* OutErrorMessage,
+                     const char* Context)
     {
         const FSceneJsonValue::Array* ArrayValue = nullptr;
         if (!TryGetArray(Value, ArrayValue, OutErrorMessage, Context))
@@ -248,8 +243,8 @@ namespace
         return true;
     }
 
-    bool TryReadColor(const FSceneJsonValue& Value, FVector4& OutColor,
-                      FString* OutErrorMessage, const char* Context)
+    bool TryReadColor(const FSceneJsonValue& Value, FVector4& OutColor, FString* OutErrorMessage,
+                      const char* Context)
     {
         const FSceneJsonValue::Array* ArrayValue = nullptr;
         if (!TryGetArray(Value, ArrayValue, OutErrorMessage, Context))
@@ -285,8 +280,9 @@ namespace
         return true;
     }
 
-    FSceneJsonValue::Object BuildComponentObject(const AActor& OwnerActor,
-                                                 const Engine::Component::USceneComponent& Component)
+    FSceneJsonValue::Object
+    BuildComponentObject(const AActor&                             OwnerActor,
+                         const Engine::Component::USceneComponent& Component)
     {
         FSceneJsonValue::Object ComponentObject;
 
@@ -313,9 +309,9 @@ namespace
         ComponentObject["is_root"] = OwnerActor.GetRootComponent() == &Component;
 
         FSceneJsonValue::Object TransformObject;
-        const FVector Location = Component.GetRelativeLocation();
-        const FQuat Rotation = Component.GetRelativeQuaternion();
-        const FVector Scale = Component.GetRelativeScale3D();
+        const FVector           Location = Component.GetRelativeLocation();
+        const FQuat             Rotation = Component.GetRelativeQuaternion();
+        const FVector           Scale = Component.GetRelativeScale3D();
 
         TransformObject["location"] = MakeNumberArray({Location.X, Location.Y, Location.Z});
         TransformObject["rotation_quat"] =
@@ -324,7 +320,7 @@ namespace
         ComponentObject["transform"] = std::move(TransformObject);
 
         FSceneJsonValue::Object DataObject;
-        const auto ExistingDataIterator = ComponentObject.find("data");
+        const auto              ExistingDataIterator = ComponentObject.find("data");
         if (ExistingDataIterator != ComponentObject.end())
         {
             if (const auto* ExistingDataObject = ExistingDataIterator->second.TryGetObject())
@@ -333,19 +329,18 @@ namespace
             }
         }
 
-        if (const auto* PrimitiveComponent =
-                Cast<Engine::Component::UPrimitiveComponent>(
-                    const_cast<Engine::Component::USceneComponent*>(&Component)))
+        if (const auto* PrimitiveComponent = Cast<Engine::Component::UPrimitiveComponent>(
+                const_cast<Engine::Component::USceneComponent*>(&Component)))
         {
-            const FVector4& Color = PrimitiveComponent->GetColor();
-            DataObject["color"] = MakeNumberArray({Color.X, Color.Y, Color.Z, Color.W});
+            const FColor& Color = PrimitiveComponent->GetColor();
+            DataObject["color"] = MakeNumberArray({Color.r, Color.g, Color.b, Color.a});
         }
 
         ComponentObject["data"] = std::move(DataObject);
         return ComponentObject;
     }
 
-    FSceneJsonValue SerializeComponent(const AActor& OwnerActor,
+    FSceneJsonValue SerializeComponent(const AActor&                             OwnerActor,
                                        const Engine::Component::USceneComponent& Component)
     {
         return FSceneJsonValue(BuildComponentObject(OwnerActor, Component));
@@ -377,7 +372,7 @@ namespace
         ActorObject["pickable"] = Actor.IsPickable();
 
         FSceneJsonValue::Array ComponentsArray;
-        const auto& Components = Actor.GetOwnedComponents();
+        const auto&            Components = Actor.GetOwnedComponents();
         ComponentsArray.reserve(Components.size());
         for (Engine::Component::USceneComponent* Component : Components)
         {
@@ -391,13 +386,11 @@ namespace
         return FSceneJsonValue(std::move(ActorObject));
     }
 
-    bool ApplyComponentJson(const FSceneJsonValue::Object& ComponentObject,
-                            Engine::Component::USceneComponent& Component,
-                            FString* OutErrorMessage)
+    bool ApplyComponentJson(const FSceneJsonValue::Object&      ComponentObject,
+                            Engine::Component::USceneComponent& Component, FString* OutErrorMessage)
     {
         uint32 ComponentUuid = Component.UUID;
-        if (!TryReadUIntField(ComponentObject, "uuid", ComponentUuid, OutErrorMessage,
-                              "Component"))
+        if (!TryReadUIntField(ComponentObject, "uuid", ComponentUuid, OutErrorMessage, "Component"))
         {
             return false;
         }
@@ -419,21 +412,17 @@ namespace
         }
 
         const FSceneJsonValue::Object* TransformObject = nullptr;
-        if (!TryGetObject(*TransformValue, TransformObject, OutErrorMessage,
-                          "Component.transform"))
+        if (!TryGetObject(*TransformValue, TransformObject, OutErrorMessage, "Component.transform"))
         {
             return false;
         }
 
         const FSceneJsonValue* LocationValue =
-            FindRequiredField(*TransformObject, "location", OutErrorMessage,
-                              "Component.transform");
-        const FSceneJsonValue* RotationValue =
-            FindRequiredField(*TransformObject, "rotation_quat", OutErrorMessage,
-                              "Component.transform");
+            FindRequiredField(*TransformObject, "location", OutErrorMessage, "Component.transform");
+        const FSceneJsonValue* RotationValue = FindRequiredField(
+            *TransformObject, "rotation_quat", OutErrorMessage, "Component.transform");
         const FSceneJsonValue* ScaleValue =
-            FindRequiredField(*TransformObject, "scale", OutErrorMessage,
-                              "Component.transform");
+            FindRequiredField(*TransformObject, "scale", OutErrorMessage, "Component.transform");
         if (LocationValue == nullptr || RotationValue == nullptr || ScaleValue == nullptr)
         {
             return false;
@@ -441,13 +430,12 @@ namespace
 
         FVector Location = FVector::ZeroVector;
         FVector Scale = FVector::OneVector;
-        FQuat Rotation = FQuat::Identity;
+        FQuat   Rotation = FQuat::Identity;
         if (!TryReadVector3(*LocationValue, Location, OutErrorMessage,
                             "Component.transform.location") ||
             !TryReadQuat(*RotationValue, Rotation, OutErrorMessage,
                          "Component.transform.rotation_quat") ||
-            !TryReadVector3(*ScaleValue, Scale, OutErrorMessage,
-                            "Component.transform.scale"))
+            !TryReadVector3(*ScaleValue, Scale, OutErrorMessage, "Component.transform.scale"))
         {
             return false;
         }
@@ -459,8 +447,7 @@ namespace
         const auto DataIterator = ComponentObject.find("data");
         if (DataIterator != ComponentObject.end())
         {
-            if (auto* PrimitiveComponent =
-                    Cast<Engine::Component::UPrimitiveComponent>(&Component))
+            if (auto* PrimitiveComponent = Cast<Engine::Component::UPrimitiveComponent>(&Component))
             {
                 if (const auto* DataObject = DataIterator->second.TryGetObject())
                 {
@@ -474,7 +461,7 @@ namespace
                             return false;
                         }
 
-                        PrimitiveComponent->SetColor(Color);
+                        PrimitiveComponent->SetColor({Color.X, Color.Y, Color.Z, Color.W});
                     }
                 }
             }
@@ -483,10 +470,10 @@ namespace
         return true;
     }
 
-    Engine::Component::USceneComponent* FindReusableComponent(
-        const FString& TypeName,
-        const TArray<Engine::Component::USceneComponent*>& ExistingComponents,
-        TArray<bool>& ReusedFlags)
+    Engine::Component::USceneComponent*
+    FindReusableComponent(const FString&                                     TypeName,
+                          const TArray<Engine::Component::USceneComponent*>& ExistingComponents,
+                          TArray<bool>&                                      ReusedFlags)
     {
         for (size_t Index = 0; Index < ExistingComponents.size(); ++Index)
         {
@@ -523,9 +510,9 @@ namespace
             return false;
         }
 
-        bool bKnownActorType = false;
-        std::unique_ptr<AActor> Actor(FSceneTypeRegistry::ConstructActor(ActorTypeName,
-                                                                         &bKnownActorType));
+        bool                    bKnownActorType = false;
+        std::unique_ptr<AActor> Actor(
+            FSceneTypeRegistry::ConstructActor(ActorTypeName, &bKnownActorType));
         if (Actor == nullptr)
         {
             if (OutErrorMessage != nullptr)
@@ -582,7 +569,7 @@ namespace
             return false;
         }
 
-        const auto ExistingComponents = Actor->GetOwnedComponents();
+        const auto   ExistingComponents = Actor->GetOwnedComponents();
         TArray<bool> ReusedFlags(ExistingComponents.size(), false);
 
         for (const FSceneJsonValue& ComponentValue : *ComponentsArray)
@@ -601,8 +588,8 @@ namespace
             }
 
             bool bIsRootComponent = false;
-            if (!TryReadBoolField(*ComponentObject, "is_root", bIsRootComponent,
-                                  OutErrorMessage, "Component"))
+            if (!TryReadBoolField(*ComponentObject, "is_root", bIsRootComponent, OutErrorMessage,
+                                  "Component"))
             {
                 return false;
             }
@@ -664,8 +651,7 @@ namespace
     }
 } // namespace
 
-bool FSceneSerializer::Serialize(const FScene& Scene, FString& OutJson,
-                                 FString* OutErrorMessage)
+bool FSceneSerializer::Serialize(const FScene& Scene, FString& OutJson, FString* OutErrorMessage)
 {
     (void)OutErrorMessage;
 
@@ -725,7 +711,7 @@ bool FSceneSerializer::SaveToFile(const FScene& Scene, const std::filesystem::pa
 }
 
 std::unique_ptr<FScene> FSceneDeserializer::Deserialize(const FString& JsonSource,
-                                                        FString* OutErrorMessage)
+                                                        FString*       OutErrorMessage)
 {
     FSceneJsonValue RootValue;
     if (!FSceneJsonParser::Parse(JsonSource, RootValue, OutErrorMessage))
@@ -799,8 +785,8 @@ std::unique_ptr<FScene> FSceneDeserializer::Deserialize(const FString& JsonSourc
     return Scene;
 }
 
-std::unique_ptr<FScene> FSceneDeserializer::LoadFromFile(
-    const std::filesystem::path& FilePath, FString* OutErrorMessage)
+std::unique_ptr<FScene> FSceneDeserializer::LoadFromFile(const std::filesystem::path& FilePath,
+                                                         FString* OutErrorMessage)
 {
     std::ifstream File(FilePath, std::ios::binary);
     if (!File.is_open())

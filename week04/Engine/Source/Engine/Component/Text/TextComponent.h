@@ -39,7 +39,7 @@ namespace Engine::Component
         FString        Text;
         FFontResource* FontResource = nullptr;
 
-        FColor TextColor = FColor::Black();
+        FColor TextColor = FColor::White();
         float  TextScale = 1.0f;
         float  LetterSpacing = 0.0f;
         float  LineSpacing = 0.0f;

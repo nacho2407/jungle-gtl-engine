@@ -41,7 +41,7 @@ FColor ACubeActor::GetColor() const
 {
     if (const auto* PrimitiveComponent = GetPrimitiveComponent())
     {
-        return ToColor(PrimitiveComponent->GetColor());
+        return PrimitiveComponent->GetColor();
     }
 
     return FColor::White();

@@ -623,6 +623,9 @@
     <ClInclude Include="Source\Renderer\Types\PickResult.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Renderer\Types\RenderItem.h">
+      <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Renderer\Types\SceneShowFlags.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
