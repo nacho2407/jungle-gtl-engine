@@ -23,7 +23,8 @@ PSInput VSMain(VSInput In)
 
     float4 WorldPosition = mul(float4(In.Position, 1.0f), In.World);
     Out.Position = mul(WorldPosition, VP);
-    Out.Color = In.InstanceColor;
+    // Out.Color = In.InstanceColor;
+    Out.Color = WorldPosition;
 
     return Out;
 }
