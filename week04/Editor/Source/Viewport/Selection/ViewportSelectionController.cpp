@@ -4,6 +4,7 @@
 
 #include "Engine/Component/PrimitiveComponent.h"
 #include "Engine/Game/Actor.h"
+#include "Core/Geometry/Primitives/Ray.h"
 
 void FViewportSelectionController::ClickSelect(int32 MouseX, int32 MouseY, ESelectionMode Mode)
 {
@@ -38,8 +39,7 @@ void FViewportSelectionController::ClickSelect(int32 MouseX, int32 MouseY, ESele
     }
 }
 
-void FViewportSelectionController::BeginSelection(int32          MouseX, int32 MouseY,
-                                                  ESelectionMode Mode)
+void FViewportSelectionController::BeginSelection(int32 MouseX, int32 MouseY, ESelectionMode Mode)
 {
     bIsDraggingSelection = true;
     SelectionStartX = MouseX;
@@ -62,16 +62,13 @@ void FViewportSelectionController::EndSelection(int32 MouseX, int32 MouseY)
     {
         return;
     }
-    
+
     bIsDraggingSelection = false;
 
     //  TODO : 박스 선택 결과 반영
 }
 
-void FViewportSelectionController::ClearSelection()
-{
-    SelectedActors.clear();
-}
+void FViewportSelectionController::ClearSelection() { SelectedActors.clear(); }
 
 bool FViewportSelectionController::IsSelected(AActor* Actor) const
 {
@@ -90,29 +87,30 @@ bool FViewportSelectionController::IsSelected(AActor* Actor) const
     return false;
 }
 
-Geometry::FRay FViewportSelectionController::BuildPickRay(int32 MouseX, int32 MouseY) const
-{
-    if (ViewportCamera == nullptr || ViewportWidth <= 0 || ViewportHeight <= 0)
-    {
-        return Geometry::FRay{};
-    }
-    
-    const float NDCX = (2.0f * static_cast<float>(MouseX) / static_cast<float>(ViewportWidth) - 1.0f);
-    const float NDCY = 1.0f - (2.0f * static_cast<float>(MouseY) / static_cast<float>(ViewportHeight));
-    
-    const FVector NearPointNDC(NDCX, NDCY, 0.0f);
-    const FVector FarPointNDC(NDCX, NDCY, 1.0f);
-    
-    const FMatrix ViewProjection = ViewportCamera->GetViewProjectionMatrix();
-    const FMatrix InvViewProjection = ViewProjection.GetInverse();
-    
-    const FVector NearWorld = InvViewProjection.TransformPosition(NearPointNDC);
-    const FVector FarWorld = InvViewProjection.TransformPosition(FarPointNDC);
-    
-    const FVector Direction = (FarWorld - NearWorld).GetSafeNormal();
-    
-    return Geometry::FRay{NearWorld, Direction};
-}
+// Geometry::FRay FViewportSelectionController::BuildPickRay(int32 MouseX, int32 MouseY) const
+//{
+//     if (ViewportCamera == nullptr || ViewportWidth <= 0 || ViewportHeight <= 0)
+//     {
+//         return Geometry::FRay{};
+//     }
+//
+//     const float NDCX = (2.0f * static_cast<float>(MouseX) / static_cast<float>(ViewportWidth)
+//     - 1.0f); const float NDCY = 1.0f - (2.0f * static_cast<float>(MouseY) /
+//     static_cast<float>(ViewportHeight));
+//
+//     const FVector NearPointNDC(NDCX, NDCY, 0.0f);
+//     const FVector FarPointNDC(NDCX, NDCY, 1.0f);
+//
+//     const FMatrix ViewProjection = ViewportCamera->GetViewProjectionMatrix();
+//     const FMatrix InvViewProjection = ViewProjection.GetInverse();
+//
+//     const FVector NearWorld = InvViewProjection.TransformPosition(NearPointNDC);
+//     const FVector FarWorld = InvViewProjection.TransformPosition(FarPointNDC);
+//
+//     const FVector Direction = (FarWorld - NearWorld).GetSafeNormal();
+//
+//     return Geometry::FRay{NearWorld, Direction};
+// }
 
 AActor* FViewportSelectionController::PickActor(int32 MouseX, int32 MouseY) const
 {
@@ -121,37 +119,41 @@ AActor* FViewportSelectionController::PickActor(int32 MouseX, int32 MouseY) cons
     {
         return nullptr;
     }
-    
-    const Geometry::FRay PickRay = BuildPickRay(MouseX, MouseY);
-    
+
+    const Geometry::FRay PickRay =
+        Geometry::FRay::BuildRay(MouseX, MouseY, ViewportCamera->GetViewProjectionMatrix(),
+                                 static_cast<float>(ViewportCamera->GetWidth()),
+                                 static_cast<float>(ViewportCamera->GetHeight()));
+
     AActor* ClosestActor = nullptr;
-    float ClosestT = FLT_MAX;
-    
+    float   ClosestT = FLT_MAX;
+
     for (AActor* Actor : *Actors)
     {
-        if (Actor ==nullptr || !Actor->IsPickable())
+        if (Actor == nullptr || !Actor->IsPickable())
         {
             continue;
         }
-        
-        auto * RootComponent = Actor->GetRootComponent();
+
+        auto* RootComponent = Actor->GetRootComponent();
         if (RootComponent == nullptr)
         {
             continue;
         }
-        
+
         //  TODO : 나중에 RTTI로 수정할 수 있나?
-        auto * PrimitiveComponent = dynamic_cast<Engine::Component::UPrimitiveComponent*>(RootComponent);
+        auto* PrimitiveComponent =
+            dynamic_cast<Engine::Component::UPrimitiveComponent*>(RootComponent);
         if (PrimitiveComponent == nullptr)
         {
             //  Casting Fail
             continue;
         }
-        
+
         //  Broad Phase (AABB)
-        const Geometry::FAABB & WorldAABB = PrimitiveComponent->GetWorldAABB();
-        float AABBHitT = 0.0f;
-        if (Geometry::IntersectRayAABB(PickRay, WorldAABB,AABBHitT))
+        const Geometry::FAABB& WorldAABB = PrimitiveComponent->GetWorldAABB();
+        float                  AABBHitT = 0.0f;
+        if (Geometry::IntersectRayAABB(PickRay, WorldAABB, AABBHitT))
         {
             if (AABBHitT >= 0.0f && AABBHitT <= ClosestT)
             {
@@ -160,7 +162,7 @@ AActor* FViewportSelectionController::PickActor(int32 MouseX, int32 MouseY) cons
             }
             continue;
         }
-        
+
         //  Narrow Phase (Ray-Triangle)
         TArray<Geometry::FTriangle> LocalTriangles;
         if (!PrimitiveComponent->GetLocalTriangles(LocalTriangles))
@@ -173,21 +175,21 @@ AActor* FViewportSelectionController::PickActor(int32 MouseX, int32 MouseY) cons
             }
             continue;
         }
-        
+
         const FMatrix WorldMatrix = PrimitiveComponent->GetRelativeMatrix();
-        
-        bool bHitTriangle = false;
+
+        bool  bHitTriangle = false;
         float ClosestTriangleT = FLT_MAX;
-        
-        for (const Geometry::FTriangle & LocalTriangle : LocalTriangles)
+
+        for (const Geometry::FTriangle& LocalTriangle : LocalTriangles)
         {
             Geometry::FTriangle WorldTriangle;
             WorldTriangle.V0 = WorldMatrix.TransformPosition(LocalTriangle.V0);
             WorldTriangle.V1 = WorldMatrix.TransformPosition(LocalTriangle.V1);
             WorldTriangle.V2 = WorldMatrix.TransformPosition(LocalTriangle.V2);
-            
+
             float TriangleHitT = 0.0f;
-            
+
             if (Geometry::IntersectRayTriangle(PickRay, WorldTriangle, TriangleHitT))
             {
                 if (TriangleHitT >= 0.0f && TriangleHitT < ClosestTriangleT)
@@ -197,7 +199,7 @@ AActor* FViewportSelectionController::PickActor(int32 MouseX, int32 MouseY) cons
                 }
             }
         }
-        
+
         if (bHitTriangle && ClosestTriangleT < ClosestT)
         {
             ClosestT = ClosestTriangleT;
@@ -236,7 +238,7 @@ void FViewportSelectionController::RemoveSelection(AActor* Actor)
     {
         return;
     }
-    
+
     auto Iterator = std::remove(SelectedActors.begin(), SelectedActors.end(), Actor);
     SelectedActors.erase(Iterator, SelectedActors.end());
 }
@@ -247,7 +249,7 @@ void FViewportSelectionController::ToggleSelection(AActor* Actor)
     {
         return;
     }
-    
+
     if (IsSelected(Actor))
     {
         RemoveSelection(Actor);

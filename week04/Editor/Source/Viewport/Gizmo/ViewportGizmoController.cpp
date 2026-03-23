@@ -1,3 +1,5 @@
+
+
 #include "ViewportGizmoController.h"
 #include "Camera/ViewportCamera.h"
 
@@ -56,13 +58,12 @@ void FViewportGizmoController::OnMouseMove(const FVector2& MousePos)
 
 int32 FViewportGizmoController::HitTestGizmo(const FVector2& MousePos)
 {
-    if (ViewportCamera == nullptr)
+    if (ViewportCamera == nullptr || SceneRenderData == nullptr)
     {
         return -1;
     }
 
-    Geometry::FRay Ray{ViewportCamera->ScreenPointToRay(MousePos)};
-   switch (CurrentMode)
+    switch (CurrentMode)
     {
     case EGizmoMode::Translate:
         // TODO: Ray vs 3개의 직육면체(또는 원기둥) 교차 판정

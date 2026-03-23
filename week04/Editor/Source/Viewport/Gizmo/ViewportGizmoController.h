@@ -1,7 +1,7 @@
 #pragma once
-#include "Engine/ViewPort/ViewportController.h"
-
 #include "Core/CoreMinimal.h"
+#include "Engine/ViewPort/ViewportController.h"
+#include "Engine/Component/PrimitiveComponent.h"
 #include "Gizmo/EditorGizmoTypes.h"
 
 /*
@@ -13,6 +13,7 @@
 */
 
 class FViewportCamera;
+struct FSceneRenderData;
 
 class FViewportGizmoController : public Engine::Viewport::IViewportController
 {
@@ -51,5 +52,8 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     bool  bEnableSnapping = false;
     float SnapValue = 10.f;
 
-    FViewportCamera* ViewportCamera { nullptr; }
+    FViewportCamera*  ViewportCamera{nullptr};
+    FSceneRenderData* SceneRenderData;
+
+    Engine::Component::UPrimitiveComponent* SelectedObject{nullptr};
 };

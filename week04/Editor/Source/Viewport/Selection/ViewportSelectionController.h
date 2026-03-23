@@ -42,7 +42,7 @@ public:
     }
 
 private:
-    Geometry::FRay BuildPickRay(int32 MouseX, int32 MouseY) const;
+    // Geometry::FRay BuildPickRay(int32 MouseX, int32 MouseY) const;
     AActor* PickActor(int32 MouseX, int32 MouseY) const;
 
     void SelectSingle(AActor* Actor);

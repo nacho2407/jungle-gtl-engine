@@ -3,6 +3,36 @@
 
 #include "MathUtility.h"
 
+float FVector4::Dot(const FVector4& Other) const { return X * Other.X + Y * Other.Y + Z * Other.Z; }
+
+FVector4 FVector4::Cross(const FVector4& Other) const
+{
+    return {Y * Other.Z - Z * Other.Y, Z * Other.X - X * Other.Z, X * Other.Y - Y * Other.X};
+}
+
+FVector4 FVector4::operator+(const FVector4& Other) const
+{
+    return {X + Other.X, Y + Other.Y, Z + Other.Z};
+}
+
+FVector4 FVector4::operator-(const FVector4& Other) const
+{
+    return {X - Other.X, Y - Other.Y, Z - Other.Z};
+}
+
+FVector4 FVector4::operator*(const float S) const { return {X * S, Y * S, Z * S}; }
+
+FVector4 FVector4::operator/(const float S) const
+{
+    if (std::abs(S) < FMath::Epsilon)
+    {
+        assert(S != 0.0f && "Division by zero in FVector4::operator/");
+        return Zero();
+    }
+    float Denominator = 1.0f / S;
+    return {X * Denominator, Y * Denominator, Z * Denominator};
+}
+
 FVector4 FVector4::Normalize() const
 {
     float SquareSum = X * X + Y * Y + Z * Z;
@@ -14,22 +44,18 @@ FVector4 FVector4::Normalize() const
     }
     Denominator = 1.0f / Denominator;
 
-    return { X * Denominator, Y * Denominator, Z * Denominator };
+    return {X * Denominator, Y * Denominator, Z * Denominator};
 }
 
-float FVector4::Length() const
-{
-	return std::sqrt(X * X + Y * Y + Z * Z);
-}
+float FVector4::Length() const { return std::sqrt(X * X + Y * Y + Z * Z); }
 
-bool FVector4::IsNearlyEqual(const FVector4 &Other) const
+bool FVector4::IsNearlyEqual(const FVector4& Other) const
 {
-    return (std::abs(X - Other.X) < FMath::Epsilon) &&
-           (std::abs(Y - Other.Y) < FMath::Epsilon) &&
+    return (std::abs(X - Other.X) < FMath::Epsilon) && (std::abs(Y - Other.Y) < FMath::Epsilon) &&
            (std::abs(Z - Other.Z) < FMath::Epsilon);
 }
 
-bool FVector4::operator==(const FVector4 &Other) const { return IsNearlyEqual(Other); }
+bool FVector4::operator==(const FVector4& Other) const { return IsNearlyEqual(Other); }
 
 bool FVector4::IsPoint() const { return std::abs(W - 1) < FMath::Epsilon; }
 
