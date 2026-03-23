@@ -78,7 +78,6 @@ public:
 	ETextVAlign GetVerticalAlignment() const { return VAlign; }
 
 	// --- PrimitiveComponent 인터페이스 ---
-	bool GetRenderCommand(FRenderCommand& OutCommand) override;
 	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
 	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_Text;
 
