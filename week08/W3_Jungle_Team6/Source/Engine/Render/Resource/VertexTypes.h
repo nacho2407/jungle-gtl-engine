@@ -20,9 +20,10 @@ struct FOverlayVertex
 };
 
 
-struct FFontVertex
+// Position + TexCoord 범용 버텍스 (FontBatcher, SubUVBatcher 등 텍스처 기반 배처 공용)
+struct FTextureVertex
 {
-	FVector  Position;   
+	FVector  Position;
 	FVector2 TexCoord;
 };
 
