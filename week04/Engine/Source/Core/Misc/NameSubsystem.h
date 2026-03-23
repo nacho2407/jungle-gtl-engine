@@ -5,7 +5,7 @@
 
 namespace Engine::Core::Misc
 {
-    class FNameSubsystem
+    class ENGINE_API FNameSubsystem
     {
         friend struct FName;
 
