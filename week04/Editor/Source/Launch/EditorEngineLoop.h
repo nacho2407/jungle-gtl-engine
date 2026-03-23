@@ -61,7 +61,7 @@ class FEditorEngineLoop : public IEngineLoop, public IEditorChromeHost
     bool bIsRenderingDuringSizeMove = false;
     bool bSavedVSyncEnabled = true;
 
-    float PrevTime = 0.0f;
+    double PrevTime = 0.0;
 
     bool bIsExit = false;
 

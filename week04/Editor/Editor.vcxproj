@@ -94,6 +94,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Editor\Logging\EditorLogBuffer.cpp" />
     <ClCompile Include="Source\Camera\ViewportCamera.cpp" />
     <ClCompile Include="Source\Chrome\EditorChrome.cpp" />
     <ClCompile Include="Source\Editor\Editor.cpp" />
@@ -128,11 +129,11 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClCompile Include="Source\Viewport\Selection\ViewportSelectionController.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Editor\Logging\EditorLogBuffer.h" />
     <ClInclude Include="Source\Camera\ViewportCamera.h" />
     <ClInclude Include="Source\Chrome\EditorChrome.h" />
     <ClInclude Include="Source\Editor\Editor.h" />
     <ClInclude Include="Source\Editor\EditorContext.h" />
-    <ClInclude Include="Source\Editor\Logging\EditorLogBuffer.h" />
     <ClInclude Include="Source\Editor\Logging\EditorLogEntry.h" />
     <ClInclude Include="Source\Gizmo\EditorGizmoTypes.h" />
     <ClInclude Include="Source\Gizmo\GizmoDrawDataBuilder.h" />

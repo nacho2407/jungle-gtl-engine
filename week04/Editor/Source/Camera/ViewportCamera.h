@@ -53,6 +53,7 @@ class FViewportCamera
     void MarkProjectionDirty() { bIsProjectionDirty = true; }
 
   private:
+ 
     FVector Location = FVector::Zero();
     FQuat   Rotation = FQuat::Identity;
 
@@ -62,7 +63,7 @@ class FViewportCamera
     uint32 Height = 1080;
     float  AspectRatio = 16.0f / 9.0f;
 
-    float FOV = 90.0f;
+    float FOV = 3.141592f;
     float NearPlane = 0.1f;
     float FarPlane = 2000.0f;
 

@@ -159,8 +159,6 @@ void FEditorEngineLoop::Tick()
     }
 
     RunFrameOnce();
-
-    FPlatformTime::Sleep(0.0f);
 }
 
 void FEditorEngineLoop::InitializeForTime()
@@ -479,10 +477,21 @@ bool FEditorEngineLoop::RunFrameOnceWithoutResize()
 
 void FEditorEngineLoop::UpdateFrameTiming()
 {
-    const float CurrentTime = FPlatformTime::Seconds();
-    DeltaTime = CurrentTime - PrevTime;
+    const double CurrentTime = FPlatformTime::Seconds();
+    double RawDeltaTime = CurrentTime - PrevTime;
     PrevTime = CurrentTime;
-    MainLoopFPS = (DeltaTime > 0.0f) ? (1.0f / DeltaTime) : 0.0f;
+
+    if (RawDeltaTime < (1.0 / 1000.0))
+    {
+        RawDeltaTime = 1.0 / 1000.0;
+    }
+    else if (RawDeltaTime > (1.0 / 15.0))
+    {
+        RawDeltaTime = 1.0 / 15.0;
+    }
+
+    DeltaTime = static_cast<float>(RawDeltaTime);
+    MainLoopFPS = static_cast<float>(1.0 / RawDeltaTime);
 }
 
 Engine::ApplicationCore::FWindowsApplication* FEditorEngineLoop::GetWindowsApplication() const
