@@ -3,12 +3,13 @@
 #include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "ImGui/imgui_internal.h"
+#include <filesystem>
 #include <fstream>
 #include <streambuf>
 
 Editor::Editor()
 {
-	UILayout = ImGuiLayout();
+	//UILayout = ImGuiLayout();
 
 	ControlPanel = new EditorControlPanel(this, Renderer);
 	Console = new EditorConsole();
@@ -34,6 +35,11 @@ bool Editor::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* de
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+	const std::filesystem::path iniPath = std::filesystem::absolute("imgui.ini");
+	ImGuiIniPath = iniPath.string();
+	io.IniFilename = ImGuiIniPath.c_str();
+
 	ImFont* DefaultFont = io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/malgun.ttf", 18.0f);
 	ImGui_ImplWin32_Init(hWnd);
 	ImGui_ImplDX11_Init(device, deviceContext);
@@ -93,7 +99,7 @@ void Editor::DrawDockSpace()
 
 	if (!bDockLayoutInitialized)
 	{
-		SetupDefaultDockLayout(dockspaceID);
+		//SetupDefaultDockLayout(dockspaceID); //ini 파일을 무시하고 IMGUI 기본 옵션으로 레이아웃 설정
 		bDockLayoutInitialized = true;
 	}
 

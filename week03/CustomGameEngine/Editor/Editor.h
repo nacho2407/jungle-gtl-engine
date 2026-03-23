@@ -2,6 +2,7 @@
 
 #include <windows.h>
 #include <d3d11.h>
+#include <string>
 #include "ImGui/imgui.h"
 #include "UI/EditorConsole.h"
 #include "UI/EditorControlPanel.h"
@@ -76,4 +77,6 @@ private:
 	USceneComponent* SelectedComponent = nullptr;
 	UGridComp* Grid = nullptr;
 	bool bDockLayoutInitialized = false;
+	bool bUseDefaultDockLayout = true;
+	std::string ImGuiIniPath;
 };

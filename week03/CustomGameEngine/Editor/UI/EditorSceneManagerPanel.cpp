@@ -32,7 +32,7 @@ void EditorSceneManagerPanel::Draw(Editor* editor, ImGuiWindowLayout& layout)
 			UScene* scene = loadedScenes[i];
 			bool isSelected = (ActiveScene == scene);
 
-			FString sceneLabel = scene->Name.GetDisplayName() + FString("##") + std::to_string(i);
+			FString sceneLabel = scene->Name.GetDisplayName();
 			if (ImGui::Selectable(sceneLabel.c_str(), isSelected))
 			{
 				sceneMgr->SetActiveScene(scene);
