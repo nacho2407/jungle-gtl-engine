@@ -63,6 +63,10 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
     }
 
     ImGui::CreateContext();
+#ifdef IMGUI_HAS_DOCK
+    // 도킹 지원 ImGui를 교체한 뒤에는 여기서 기능 플래그를 켜야 DockSpace API가 실제로 동작합니다.
+    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+#endif
     ImGui_ImplWin32_Init((void*)WindowHandle);
     ImGui_ImplDX11_Init(Renderer->GetRHI().GetDevice(), Renderer->GetRHI().GetDeviceContext());
 
@@ -164,6 +168,7 @@ void FEditorEngineLoop::SetTitleBarMetrics(
     TitleBarState.TitleBarHeight = Height;
     TitleBarState.InteractiveRects.reserve(InteractiveRects.size());
 
+    // ImGui에서 계산한 버튼 위치를 Win32 client 좌표 기준으로 다시 전달합니다.
     for (const FEditorChromeRect& Rect : InteractiveRects)
     {
         Engine::ApplicationCore::FWindowHitTestRect WindowRect;
@@ -240,6 +245,7 @@ bool FEditorEngineLoop::HandleEditorMessageInternal(HWND HWnd, UINT Message, WPA
     switch (Message)
     {
     case WM_ENTERSIZEMOVE:
+        // Win32 sizing loop가 시작되면 메인 루프 대신 WndProc 안에서 즉시 프레임을 돌립니다.
         bIsInSizeMoveLoop = true;
         if (Renderer != nullptr)
         {
@@ -252,6 +258,7 @@ bool FEditorEngineLoop::HandleEditorMessageInternal(HWND HWnd, UINT Message, WPA
     case WM_EXITSIZEMOVE:
         if (bIsInSizeMoveLoop)
         {
+            // sizing loop 종료 직전에 최종 크기와 마지막 프레임을 한 번 더 맞춘 뒤 VSync를 복구합니다.
             HandleWindowResize();
             RunFrameOnceWithoutResize();
             if (Renderer != nullptr)
@@ -266,6 +273,7 @@ bool FEditorEngineLoop::HandleEditorMessageInternal(HWND HWnd, UINT Message, WPA
     case WM_SIZE:
         if (bIsInSizeMoveLoop && WParam != SIZE_MINIMIZED)
         {
+            // 드래그 중 전달되는 중간 크기마다 back buffer와 viewport를 즉시 갱신합니다.
             HandleWindowResize();
             RunFrameOnceWithoutResize();
         }
@@ -278,6 +286,7 @@ bool FEditorEngineLoop::HandleEditorMessageInternal(HWND HWnd, UINT Message, WPA
             BeginPaint(HWnd, &PaintStruct);
             EndPaint(HWnd, &PaintStruct);
 
+            // modal loop 안에서 발생하는 paint도 직접 소비해서 화면이 멈춘 것처럼 보이지 않게 합니다.
             RunFrameOnceWithoutResize();
 
             OutResult = 0;
@@ -326,6 +335,7 @@ bool FEditorEngineLoop::HandleEditorMessageInternal(HWND HWnd, UINT Message, WPA
     case WM_MOUSEHWHEEL:
         if (IO.WantCaptureMouse)
         {
+            // 타이틀바 버튼이나 패널이 마우스를 잡은 동안에는 에디터 입력 라우터로 넘기지 않습니다.
             OutResult = 0;
             return true;
         }
@@ -338,6 +348,7 @@ bool FEditorEngineLoop::HandleEditorMessageInternal(HWND HWnd, UINT Message, WPA
     case WM_CHAR:
         if (IO.WantCaptureKeyboard || IO.WantTextInput)
         {
+            // 텍스트 입력 중에는 카메라 단축키 같은 엔진 입력이 섞이지 않게 막습니다.
             OutResult = 0;
             return true;
         }
@@ -364,11 +375,13 @@ bool FEditorEngineLoop::HandleWindowResize()
 
     if (Renderer != nullptr)
     {
+        // 렌더 타깃 크기를 먼저 맞추고
         Renderer->OnWindowResized(CurrentWindowWidth, CurrentWindowHeight);
     }
 
     if (Editor != nullptr)
     {
+        // Editor 쪽에서는 SceneView와 카메라 투영행렬까지 이어서 갱신합니다.
         Editor->OnWindowResized(static_cast<float>(CurrentWindowWidth),
                                 static_cast<float>(CurrentWindowHeight));
     }
@@ -386,6 +399,7 @@ bool FEditorEngineLoop::RunFrameOnceWithoutResize()
 {
     if (bIsRenderingDuringSizeMove)
     {
+        // resize 중 WM_SIZE/WM_PAINT가 중첩으로 들어와도 프레임 실행은 한 번만 허용합니다.
         return false;
     }
 

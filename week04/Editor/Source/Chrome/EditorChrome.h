@@ -27,6 +27,9 @@ class IEditorChromeHost
 class FEditorChrome
 {
   public:
+    // 플랫폼 hit-test와 ImGui 레이아웃이 같은 기준을 쓰도록 상단 바 높이를 한 곳에서 관리합니다.
+    static constexpr float TitleBarHeight = 36.0f;
+
     void SetHost(IEditorChromeHost* InHost) { Host = InHost; }
     void Draw();
 

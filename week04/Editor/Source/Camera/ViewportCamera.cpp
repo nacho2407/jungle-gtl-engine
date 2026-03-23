@@ -40,6 +40,7 @@ FMatrix FViewportCamera::GetProjectionMatrix() const
 {
     if (bIsProjectionDirty)
     {
+        // 투영행렬은 파라미터가 바뀔 때만 다시 계산하고, 그 외에는 캐시를 재사용합니다.
         switch (ProjectionType)
         {
         case EViewportProjectionType::Perspective:
@@ -104,5 +105,6 @@ void FViewportCamera::OnResize(uint32 InWidth, uint32 InHeight)
     Width = InWidth;
     Height = (InHeight == 0) ? 1 : InHeight;
     AspectRatio = static_cast<float>(Width) / static_cast<float>(Height);
+    // 창 크기가 바뀌면 aspect ratio가 바뀌므로 다음 프레임에 projection cache를 다시 만듭니다.
     MarkProjectionDirty();
 }

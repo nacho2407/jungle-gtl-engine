@@ -56,6 +56,7 @@ class FEditorEngineLoop : public IEngineLoop, public IEditorChromeHost
     float MainLoopFPS = 0.0f;
     int32 CachedWindowWidth = 0;
     int32 CachedWindowHeight = 0;
+    // Win32의 move/size modal loop 안에서도 즉시 렌더링하기 위한 상태입니다.
     bool bIsInSizeMoveLoop = false;
     bool bIsRenderingDuringSizeMove = false;
     bool bSavedVSyncEnabled = true;

@@ -29,6 +29,7 @@ namespace Engine::ApplicationCore
     bool FWindowsWindow::CreateEditorWindow(HINSTANCE InInstance, const wchar_t* InTitle,
                                             int32 InWidth, int32 InHeight)
     {
+        // WS_CAPTION만 제거하고 나머지 프레임 스타일은 유지해서 Win32 리사이즈 동작은 계속 활용합니다.
         const DWORD EditorWindowStyle = WS_OVERLAPPEDWINDOW & ~WS_CAPTION;
         return CreateInternal(InInstance, InTitle, InWidth, InHeight, EditorWindowStyle, true);
     }
@@ -65,6 +66,7 @@ namespace Engine::ApplicationCore
         Title = (InTitle != nullptr) ? InTitle : L"";
         bIsVisible = false;
         bIsClosed = false;
+        // 이 상태를 CreateWindowExW() 전에 올려야 첫 non-client 계산부터 커스텀 chrome 경로를 탑니다.
         bUsesCustomTitleBar = bInUseCustomTitleBar;
         CustomTitleBarState = {};
         if (bUsesCustomTitleBar)
@@ -89,6 +91,7 @@ namespace Engine::ApplicationCore
         bIsVisible = true;
         if (bUsesCustomTitleBar)
         {
+            // 생성 직후 프레임을 다시 계산해서 기본 chrome이 한 프레임 보였다가 사라지는 현상을 막습니다.
             SetWindowPos(HWnd, nullptr, 0, 0, 0, 0,
                          SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE |
                              SWP_FRAMECHANGED);

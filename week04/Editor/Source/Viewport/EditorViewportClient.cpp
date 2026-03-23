@@ -3,14 +3,14 @@
 
 void FEditorViewportClient::Create()
 {
-    // InputRouter 생성 및 필요한 InputContext 등록
+    // 뷰포트 입력은 별도 라우터에 모아서 카메라/기즈모 컨텍스트로 분배합니다.
     InputRouter = new Engine::ApplicationCore::FInputRouter();
     InputRouter->AddContext(&ViewportInputContext);
 
     NavigationController.SetCamera(&ViewportCamera);
 
     ViewportCamera.SetProjectionType(EViewportProjectionType::Perspective);
-    ViewportCamera.SetFOV(3.141592f * 0.5f); // TODO: 라디안으로 고치기
+    ViewportCamera.SetFOV(3.141592f * 0.5f); // TODO: 라디안 상수 정리
     ViewportCamera.SetNearPlane(0.1f);
     ViewportCamera.SetFarPlane(2000.0f);
     ViewportCamera.SetLocation(FVector(-10.0f, 5.0f, 0.0f));
@@ -21,8 +21,6 @@ void FEditorViewportClient::Release()
 {
     if (InputRouter)
     {
-        // 필요한 경우 InputRouter에서 등록된 Context 해제
-        // 필요한 리소스 해제
         delete InputRouter;
         InputRouter = nullptr;
     }
@@ -42,7 +40,7 @@ void FEditorViewportClient::Tick(float DeltaTime, const Engine::ApplicationCore:
 
 void FEditorViewportClient::Draw()
 {
-    // 매 프레임마다 필요한 그리기 작업 수행
+    // 매 프레임 필요한 뷰포트 보조 드로우 호출 지점입니다.
     // GizmoController.Draw();
     // SelectionController.Draw();
 }
@@ -72,5 +70,6 @@ void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData) co
 
 void FEditorViewportClient::OnResize(uint32 Width, uint32 Height)
 {
+    // 창 리사이즈를 카메라에 전달해 aspect ratio와 projection matrix를 갱신합니다.
     ViewportCamera.OnResize(Width, Height);
 }

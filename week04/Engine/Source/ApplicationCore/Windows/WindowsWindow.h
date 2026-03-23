@@ -6,6 +6,7 @@
 
 namespace Engine::ApplicationCore
 {
+    // ImGui가 계산한 상호작용 영역을 Win32 hit-test에 넘기기 위한 단순 사각형입니다.
     struct FWindowHitTestRect
     {
         int32 Left = 0;
@@ -19,6 +20,7 @@ namespace Engine::ApplicationCore
         }
     };
 
+    // 커스텀 타이틀바의 높이와 버튼/메뉴처럼 드래그에서 제외할 영역을 함께 보관합니다.
     struct FCustomTitleBarState
     {
         int32 TitleBarHeight = 0;
@@ -32,6 +34,7 @@ namespace Engine::ApplicationCore
         ~FWindowsWindow() = default;
 
         bool Create(HINSTANCE InInstance, const wchar_t* InTitle, int32 InWidth, int32 InHeight);
+        // Editor는 기본 caption 대신 직접 그린 상단 바를 쓰므로 별도 생성 경로를 둡니다.
         bool CreateEditorWindow(HINSTANCE InInstance, const wchar_t* InTitle, int32 InWidth,
                                 int32 InHeight);
         void Destroy();

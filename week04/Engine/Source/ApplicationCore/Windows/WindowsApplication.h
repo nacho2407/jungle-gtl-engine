@@ -27,6 +27,7 @@ namespace Engine::ApplicationCore
 
         bool CreateApplicationWindow(const wchar_t* InTitle, int32 InWidth,
                                      int32 InHeight) override;
+        // GameClient용 기본 창 생성 경로와 분리해서 Editor만 커스텀 chrome을 사용하게 합니다.
         bool CreateEditorWindow(const wchar_t* InTitle, int32 InWidth, int32 InHeight);
         void DestroyApplicationWindow() override;
 
@@ -45,6 +46,7 @@ namespace Engine::ApplicationCore
 
         void* GetNativeWindowHandle() const override;
 
+        // Editor가 그린 타이틀바 메트릭과 버튼 영역을 플랫폼 hit-test에 반영합니다.
         void SetMessageHandler(FWindowsMessageHandler InMessageHandler, void* InUserData = nullptr);
         void SetCustomTitleBarState(const FCustomTitleBarState& InState);
         void MinimizeWindow();

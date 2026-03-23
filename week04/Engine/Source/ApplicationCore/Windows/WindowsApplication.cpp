@@ -121,6 +121,7 @@ namespace Engine::ApplicationCore
                                                  int32 InHeight)
     {
         HINSTANCE Instance = GetModuleHandleW(nullptr);
+        // Editor 전용 창은 기본 title bar를 걷어낸 상태로 생성합니다.
         if (!Window.CreateEditorWindow(Instance, InTitle, InWidth, InHeight))
         {
             return false;
@@ -180,6 +181,7 @@ namespace Engine::ApplicationCore
             return;
         }
 
+        // ImGui 프레임에서 계산한 버튼 영역을 Win32 hit-test가 바로 읽을 수 있게 저장합니다.
         Window.SetCustomTitleBarState(InState);
     }
 
@@ -218,6 +220,7 @@ namespace Engine::ApplicationCore
         switch (Message)
         {
         case WM_NCCALCSIZE:
+            // non-client 영역 전체를 제거해서 상단 프레임을 우리가 직접 그리게 만듭니다.
             OutResult = 0;
             return true;
 
@@ -226,11 +229,13 @@ namespace Engine::ApplicationCore
             return true;
 
         case WM_GETMINMAXINFO:
+            // 최대화 시 작업표시줄을 침범하지 않도록 work area 기준으로 크기를 다시 잡습니다.
             UpdateMaximizedBounds(HWnd, reinterpret_cast<MINMAXINFO*>(LParam));
             OutResult = 0;
             return true;
 
         case WM_NCHITTEST:
+            // 가장자리 리사이즈와 상단 드래그 영역을 Win32 native hit-test로 복원합니다.
             OutResult = HitTestCustomChrome(HWnd, LParam);
             return true;
 
@@ -264,6 +269,7 @@ namespace Engine::ApplicationCore
             ((GetWindowLongW(HWnd, GWL_STYLE) & WS_THICKFRAME) != 0);
         if (bCanResize)
         {
+            // 테두리 hit-test는 먼저 처리해야 커스텀 타이틀바 위에서도 가장자리 리사이즈가 자연스럽게 동작합니다.
             const int32 ResizeBorderX = GetResizeBorderThicknessX();
             const int32 ResizeBorderY = GetResizeBorderThicknessY();
 
@@ -316,10 +322,12 @@ namespace Engine::ApplicationCore
             {
                 if (InteractiveRect.Contains(ClientPosition.x, ClientPosition.y))
                 {
+                    // 버튼 위에서는 드래그를 막고 ImGui가 클릭 입력을 그대로 받게 합니다.
                     return HTCLIENT;
                 }
             }
 
+            // 나머지 상단 영역은 caption으로 취급해서 창 이동/더블클릭 최대화를 Win32에 맡깁니다.
             return HTCAPTION;
         }
 

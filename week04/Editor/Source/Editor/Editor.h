@@ -46,6 +46,8 @@ class FEditor
   private:
     void BuildRenderData();
     void BuildSceneView();
+    // 커스텀 타이틀바 아래 전체 영역을 도킹 호스트로 사용하는 루트 dockspace입니다.
+    void DrawRootDockSpace();
 
   private:
     FEditorViewportClient ViewportClient;
