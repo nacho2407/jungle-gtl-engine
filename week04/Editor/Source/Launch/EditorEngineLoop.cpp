@@ -238,6 +238,11 @@ const wchar_t* FEditorEngineLoop::GetWindowTitle() const
     return L"";
 }
 
+void* FEditorEngineLoop::GetNativeWindowHandle() const
+{
+    return Application != nullptr ? Application->GetNativeWindowHandle() : nullptr;
+}
+
 bool FEditorEngineLoop::HandleEditorMessage(HWND HWnd, UINT Message, WPARAM WParam, LPARAM LParam,
                                             LRESULT& OutResult, void* UserData)
 {
@@ -256,6 +261,19 @@ bool FEditorEngineLoop::HandleEditorMessageInternal(HWND HWnd, UINT Message, WPA
 {
     switch (Message)
     {
+    case WM_CLOSE:
+        if (Editor != nullptr && Editor->RequestCloseEditor())
+        {
+            if (Engine::ApplicationCore::FWindowsApplication* WindowsApplication =
+                    GetWindowsApplication())
+            {
+                WindowsApplication->DestroyApplicationWindow();
+            }
+        }
+
+        OutResult = 0;
+        return true;
+
     case WM_NCHITTEST:
         if (ImGui::GetCurrentContext() != nullptr)
         {

@@ -4,6 +4,28 @@
 
 FScene::~FScene() { Clear(); }
 
+bool FScene::RemoveActor(AActor* InActor)
+{
+    if (InActor == nullptr)
+    {
+        return false;
+    }
+
+    for (auto Iterator = Actors.begin(); Iterator != Actors.end(); ++Iterator)
+    {
+        if (*Iterator != InActor)
+        {
+            continue;
+        }
+
+        delete InActor;
+        Actors.erase(Iterator);
+        return true;
+    }
+
+    return false;
+}
+
 void FScene::Clear()
 {
     for (AActor* Actor : Actors)

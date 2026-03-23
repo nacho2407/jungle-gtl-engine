@@ -98,3 +98,7 @@ void FEditorViewportClient::SyncSelectionFromContext()
 {
     SelectionController.SyncSelectionFromContext();
 }
+
+void FEditorViewportClient::DrawOutline()
+{
+}

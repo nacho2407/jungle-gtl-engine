@@ -19,6 +19,39 @@ bool AActor::IsPickable() const { return bPickable; }
 
 void AActor::SetPickable(bool bInPickable) { bPickable = bInPickable; }
 
+void AActor::SetRootComponent(Engine::Component::USceneComponent* InRootComponent)
+{
+    RootComponent = InRootComponent;
+}
+
+void AActor::AddOwnedComponent(Engine::Component::USceneComponent* InComponent,
+                               bool bMakeRootComponent)
+{
+    if (InComponent == nullptr)
+    {
+        return;
+    }
+
+    for (Engine::Component::USceneComponent* ExistingComponent : OwnedComponents)
+    {
+        if (ExistingComponent == InComponent)
+        {
+            if (bMakeRootComponent)
+            {
+                RootComponent = InComponent;
+            }
+
+            return;
+        }
+    }
+
+    OwnedComponents.push_back(InComponent);
+    if (bMakeRootComponent || RootComponent == nullptr)
+    {
+        RootComponent = InComponent;
+    }
+}
+
 FMatrix AActor::GetWorldMatrix() const
 {
     //  현재 설계 상 RootComponent는 PrimitiveComponent로 간주

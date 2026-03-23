@@ -5,13 +5,16 @@
 #include "Core/Misc/Name.h"
 #include "Engine/Game/Actor.h"
 #include "Engine/Game/CubeActor.h"
+#include "Engine/Game/UnknownActor.h"
 #include "Engine/Scene.h"
 #include "Input/ContextModeTypes.h"
 #include "imgui.h"
 
 namespace
 {
-    FString GetActorDisplayName(const AActor* Actor)
+    constexpr ImVec4 UnknownItemColor = ImVec4(0.95f, 0.35f, 0.35f, 1.0f);
+
+    FString GetBaseActorDisplayName(const AActor* Actor)
     {
         if (Actor == nullptr)
         {
@@ -24,6 +27,22 @@ namespace
         }
 
         return "Actor " + std::to_string(Actor->UUID);
+    }
+
+    bool IsUnknownActor(const AActor* Actor)
+    {
+        return Actor != nullptr && Actor->IsA(AUnknownActor::GetClass());
+    }
+
+    FString GetActorDisplayName(const AActor* Actor)
+    {
+        FString DisplayName = GetBaseActorDisplayName(Actor);
+        if (IsUnknownActor(Actor))
+        {
+            DisplayName += " (UnknownActor)";
+        }
+
+        return DisplayName;
     }
 } // namespace
 
@@ -109,6 +128,11 @@ void FOutlinerPanel::DrawActorRow(AActor* Actor) const
 
     const FString Label = GetActorDisplayName(Actor);
 
+    if (IsUnknownActor(Actor))
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, UnknownItemColor);
+    }
+
     if (ImGui::Selectable(Label.c_str(), bIsSelected))
     {
         if (GetContext() != nullptr && GetContext()->Editor != nullptr)
@@ -118,6 +142,11 @@ void FOutlinerPanel::DrawActorRow(AActor* Actor) const
             GetContext()->Editor->GetViewportClient().GetSelectionController().SelectActor(
                 Actor, SelectionMode);
         }
+    }
+
+    if (IsUnknownActor(Actor))
+    {
+        ImGui::PopStyleColor();
     }
 }
 
@@ -133,10 +162,11 @@ void FOutlinerPanel::SpawnCubeActor() const
     const size_t ActorIndex = (Actors != nullptr) ? (Actors->size() + 1) : 1;
     CubeActor->Name = "CubeActor " + std::to_string(ActorIndex);
 
-    GetContext()->Scene->AddActor(CubeActor);
     if (GetContext()->Editor != nullptr)
     {
-        GetContext()->Editor->GetViewportClient().GetSelectionController().SelectActor(
-            CubeActor, ESelectionMode::Replace);
+        GetContext()->Editor->AddActorToScene(CubeActor, true);
+        return;
     }
+
+    GetContext()->Scene->AddActor(CubeActor);
 }

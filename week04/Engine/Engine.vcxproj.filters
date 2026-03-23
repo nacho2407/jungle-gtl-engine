@@ -88,6 +88,9 @@
     <Filter Include="Source\Engine\Game">
       <UniqueIdentifier>{b40c0879-15f3-b5bd-98bc-875a35ed9e05}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\SceneIO">
+      <UniqueIdentifier>{37e30a95-abfd-d9e5-9798-b5dd12b76214}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\ViewPort">
       <UniqueIdentifier>{3f58abac-aa9e-06f1-348e-4d37ab560ccd}</UniqueIdentifier>
     </Filter>
@@ -195,16 +198,10 @@
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\CubeComponent.cpp">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\BasicPrimitives\FontComponent.cpp">
-      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\QuadComponent.cpp">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\SphereComponent.cpp">
-      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\BasicPrimitives\SubUVComponent.cpp">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.cpp">
@@ -216,6 +213,9 @@
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\UnknownComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\EngineStatics.cpp">
       <Filter>Source\Engine</Filter>
     </ClCompile>
@@ -225,8 +225,20 @@
     <ClCompile Include="Source\Engine\Game\CubeActor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Game\UnknownActor.cpp">
+      <Filter>Source\Engine\Game</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Scene.cpp">
       <Filter>Source\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\SceneIO\SceneJson.cpp">
+      <Filter>Source\Engine\SceneIO</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\SceneIO\SceneSerializer.cpp">
+      <Filter>Source\Engine\SceneIO</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\SceneIO\SceneTypeRegistry.cpp">
+      <Filter>Source\Engine\SceneIO</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp">
       <Filter>Source\Engine\ViewPort</Filter>
@@ -458,16 +470,10 @@
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\CubeComponent.h">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\BasicPrimitives\FontComponent.h">
-      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\QuadComponent.h">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\SphereComponent.h">
-      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\BasicPrimitives\SubUVComponent.h">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.h">
@@ -479,6 +485,9 @@
     <ClInclude Include="Source\Engine\Component\SceneComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\UnknownComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\EngineStatics.h">
       <Filter>Source\Engine</Filter>
     </ClInclude>
@@ -488,8 +497,20 @@
     <ClInclude Include="Source\Engine\Game\CubeActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Game\UnknownActor.h">
+      <Filter>Source\Engine\Game</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Scene.h">
       <Filter>Source\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\SceneIO\SceneJson.h">
+      <Filter>Source\Engine\SceneIO</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\SceneIO\SceneSerializer.h">
+      <Filter>Source\Engine\SceneIO</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\SceneIO\SceneTypeRegistry.h">
+      <Filter>Source\Engine\SceneIO</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\ViewPort\Viewport.h">
       <Filter>Source\Engine\ViewPort</Filter>
