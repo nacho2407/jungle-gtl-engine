@@ -7,6 +7,7 @@
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
 #include "VertexSimple.h"
+#include "VertexTextured.h"
 #include "EngineCore/Name.h"
 #include <d3d11.h>
 #include <d3dcompiler.h>
@@ -115,11 +116,13 @@ public:
 	}
 
 	FMaterial& CreateMaterial(WFString VertexShaderName, WFString PixelShaderName, ID3D11Device* Device, D3D11_INPUT_ELEMENT_DESC* layout, UINT layoutCount);
+	TComPtr<ID3D11ShaderResourceView> LoadDDSTexture(WFString ResourceName, WFString FilePath);
 
 	void AddCubeMesh(ID3D11Device* Device);
 	void AddSphereMesh(ID3D11Device* Device);
 	void AddTriangleMesh(ID3D11Device* Device);
 	void AddPlaneMesh(ID3D11Device* Device);
+	void AddBillboardQuadMesh(ID3D11Device* Device);
 	void AddAxisMesh(ID3D11Device* Device);
 
 	MeshData CreateCubeMeshData();
@@ -153,5 +156,6 @@ private:
 	ResourceManager() {}
 	TUMap<FString, FGeometry> GeometryMap;
 	TUMap<WFString, FMaterial> MaterialMap;
+	TUMap<WFString, TComPtr<ID3D11ShaderResourceView>> TextureMap;
 	URenderer* Renderer = nullptr;
 };

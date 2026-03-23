@@ -1,8 +1,11 @@
 ﻿#include "ResourceManager.h"
 #include "VertexSimple.h"
+#include "ThirdParty/DDSTextureLoader.h"
+#include <iterator>
 #include "Geometry/Sphere.h"
 #include "Geometry/Triangle.h"
 #include "Renderer/Renderer.h"
+#include "EngineCore/Logger.h"
 
 void AddLine(
 	std::vector<FVertexSimple>& outVertices,
@@ -31,11 +34,35 @@ void ResourceManager::Initialize(URenderer* InRenderer)
 	FMaterial& LineShader = CreateMaterial(L"Shader/ShaderLine.hlsl", L"Shader/ShaderLine.hlsl", Renderer->Device.Get(), layout, 2);
 	LineShader.ConstantBuffer.Create(Renderer->Device.Get(), sizeof(FObjectConstant), 1);
 
+	D3D11_INPUT_ELEMENT_DESC texturedLayout[] = {
+{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
+ D3D11_INPUT_PER_VERTEX_DATA, 0},
+{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12,
+ D3D11_INPUT_PER_VERTEX_DATA, 0},
+{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 28,
+ D3D11_INPUT_PER_VERTEX_DATA, 0},
+	};
+	FMaterial& SubUVShader = CreateMaterial(L"Shader/ShaderSubUV.hlsl", L"Shader/ShaderSubUV.hlsl", Renderer->Device.Get(), texturedLayout, 3);
+	SubUVShader.ConstantBuffer.Create(Renderer->Device.Get(), sizeof(FObjectConstant), 1);
+	SubUVShader.SecondaryConstantBuffer.Create(Renderer->Device.Get(), sizeof(FSubUVConstant), 2);
+	SubUVShader.bUsesTexture = true;
+	SubUVShader.bUsesSecondaryConstantBuffer = true;
+
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	Renderer->Device->CreateSamplerState(&samplerDesc, SubUVShader.SamplerState.GetAddressOf());
+	SubUVShader.TextureSRV = LoadDDSTexture(L"SubUVTexture", L"Textures/input.dds");
+
 
 	AddCubeMesh(Renderer->Device.Get());
 	AddSphereMesh(Renderer->Device.Get());
 	AddTriangleMesh(Renderer->Device.Get());
 	AddPlaneMesh(Renderer->Device.Get());
+	AddBillboardQuadMesh(Renderer->Device.Get());
 	AddGizmoTranslationMesh(Renderer->Device.Get());
 	AddGizmoRotationMesh(Renderer->Device.Get());
 	AddGizmoScaleMesh(Renderer->Device.Get());
@@ -85,6 +112,32 @@ FMaterial& ResourceManager::CreateMaterial(WFString VertexShaderName, WFString P
 	pixelshaderCSO->Release();
 	vertexshaderCSO->Release();
 	return Mat;
+}
+
+TComPtr<ID3D11ShaderResourceView> ResourceManager::LoadDDSTexture(WFString ResourceName, WFString FilePath)
+{
+	auto iter = TextureMap.find(ResourceName);
+	if (iter != TextureMap.end())
+	{
+		return iter->second;
+	}
+
+	TComPtr<ID3D11ShaderResourceView> textureView;
+	const HRESULT hr = DirectX::CreateDDSTextureFromFile(
+		Renderer->Device.Get(),
+		FilePath.c_str(),
+		nullptr,
+		textureView.GetAddressOf());
+
+	if (FAILED(hr))
+	{
+		const std::string path(FilePath.begin(), FilePath.end());
+		UE_LOG("CreateDDSTextureFromFile failed. path=%s hr=0x%08X\n", path.c_str(), static_cast<unsigned int>(hr));
+		return nullptr;
+	}
+
+	TextureMap[ResourceName] = textureView;
+	return textureView;
 }
 
 void ResourceManager::AddCubeMesh(ID3D11Device* Device)
@@ -138,6 +191,26 @@ void ResourceManager::AddPlaneMesh(ID3D11Device* Device)
 		Vertices[i] = FVector(planeVertices[i].x, planeVertices[i].y, planeVertices[i].z);
 	}
 	CreateStaticGeometry("Plane", planeVertices, sizeof(planeVertices), Device, 0, Vertices, planeIndices, sizeof(planeIndices));
+}
+
+void ResourceManager::AddBillboardQuadMesh(ID3D11Device* Device)
+{
+	FVertexTextured quadVertices[] =
+	{
+		{ 0.0f, -0.5f, -0.5f, 1.f, 1.f, 1.f, 1.f, 0.0f, 1.0f },
+		{ 0.0f, -0.5f,  0.5f, 1.f, 1.f, 1.f, 1.f, 0.0f, 0.0f },
+		{ 0.0f,  0.5f,  0.5f, 1.f, 1.f, 1.f, 1.f, 1.0f, 0.0f },
+		{ 0.0f,  0.5f, -0.5f, 1.f, 1.f, 1.f, 1.f, 1.0f, 1.0f },
+	};
+	uint32_t quadIndices[] = { 0, 1, 2, 0, 2, 3 };
+
+	TArray<FVector> Vertices(std::size(quadVertices));
+	for (size_t i = 0; i < std::size(quadVertices); ++i)
+	{
+		Vertices[i] = FVector(quadVertices[i].x, quadVertices[i].y, quadVertices[i].z);
+	}
+
+	CreateStaticGeometry("BillboardQuad", quadVertices, sizeof(quadVertices), Device, 0, Vertices, quadIndices, sizeof(quadIndices));
 }
 
 void ResourceManager::AddAxisMesh(ID3D11Device* Device)
@@ -523,4 +596,5 @@ void ResourceManager::Release()
 {
 	GeometryMap.clear();
 	MaterialMap.clear();
+	TextureMap.clear();
 }
