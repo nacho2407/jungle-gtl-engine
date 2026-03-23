@@ -86,8 +86,9 @@ void FRenderer::BeginFrame()
 //	Render Update Main function. RenderBus에 담긴 모든 RenderCommand에 대해서 Draw Call 수행
 void FRenderer::Render(const FRenderBus& InRenderBus, ERasterizerState InViewModeRasterizer)
 {
+	bool bIsWireframe = InRenderBus.GetViewMode() == EViewMode::Wireframe;
 	ID3D11DeviceContext* context = Device.GetDeviceContext();
-	UpdateFrameBuffer(context, InRenderBus.GetView(), InRenderBus.GetProj());
+	UpdateFrameBuffer(context, InRenderBus.GetView(), InRenderBus.GetProj(), bIsWireframe);
 
 	RenderPasses(InRenderBus, context);
 	RenderEditorHelpers(InRenderBus, context);
@@ -153,7 +154,14 @@ void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceCo
 	case ERenderPass::Editor:
 		Device.SetDepthStencilState(EDepthStencilState::Default);
 		Device.SetBlendState(EBlendState::Opaque);
-		Device.SetRasterizerState(ERasterizerState::SolidBackCull);
+		if (CurViewMode == EViewMode::Wireframe)
+		{
+			Device.SetRasterizerState(ERasterizerState::WireFrame);
+		}
+		else
+		{
+			Device.SetRasterizerState(ERasterizerState::SolidBackCull);
+		}
 		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 		Resources.EditorShader.Bind(DeviceContext);
 		break;
@@ -332,9 +340,59 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 	CameraForward.Normalize();
 
 	FEditorConstants EditorConstants = {};
-	EditorConstants.CameraPosition = FVector4(CameraPosition, 1.0f);
+	EditorConstants.CameraPosition = CameraPosition;
 	Resources.EditorConstantBuffer.Update(Context, &EditorConstants, sizeof(FEditorConstants));
 
+	CollectBatchingData(RenderBus);
+
+	SetupRenderState(ERenderPass::Editor, Context, RenderBus.GetViewMode());
+
+	ID3D11Buffer* cb = Resources.EditorConstantBuffer.GetBuffer();
+	Context->VSSetConstantBuffers(4, 1, &cb);
+	Context->PSSetConstantBuffers(4, 1, &cb);
+
+
+	LineBatcher.AddWorldHelpers(FEditorSettings::Get(), CameraPosition, CameraForward);
+	LineBatcher.Flush(Context);
+
+	// --- SubUVBatcher Flush ---
+	// 단일 아틀라스 기준: 커맨드에서 첫 번째 유효한 SRV를 사용
+	const auto& SubUVCmds = RenderBus.GetCommands(ERenderPass::SubUV);
+	ID3D11ShaderResourceView* SubUVSRV = nullptr;
+	for (const auto& Cmd : SubUVCmds)
+	{
+		if (Cmd.AtlasResource && Cmd.AtlasResource->IsLoaded())
+		{
+			SubUVSRV = Cmd.AtlasResource->SRV;
+			break;
+		}
+	}
+	SubUVBatcher.Flush(Context, SubUVSRV);
+
+	const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
+	FontBatcher.Flush(Context, FontRes);
+
+	// Editor helper에서 사용한 알파 블렌드가 다음 렌더 경로에 남지 않도록 기본 상태로 복원한다.
+	Device.SetDepthStencilState(EDepthStencilState::Default);
+	Device.SetBlendState(EBlendState::Opaque);
+}
+
+void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix, bool bIsWireframe)
+{
+	FFrameConstants frameConstantData;
+	frameConstantData.View = ViewMatrix;
+	frameConstantData.Projection = ProjMatrix;
+	frameConstantData.bIsWireframe = bIsWireframe;
+	frameConstantData.ColorRGB = FVector(0.0f, 0.0f, 0.7f);
+
+	Resources.FrameBuffer.Update(Context, &frameConstantData, sizeof(FFrameConstants));
+	ID3D11Buffer* b0 = Resources.FrameBuffer.GetBuffer();
+	Context->VSSetConstantBuffers(0, 1, &b0);
+	Context->PSSetConstantBuffers(0, 1, &b0);
+}
+
+void FRenderer::CollectBatchingData(const FRenderBus& RenderBus)
+{
 	// --- AABB 디버그 박스 (LineBatcher) ---
 	const auto& EditorCmds = RenderBus.GetCommands(ERenderPass::Editor);
 	for (const auto& Cmd : EditorCmds)
@@ -379,58 +437,4 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 			);
 		}
 	}
-
-	// --- Editor 렌더 상태 설정 ---
-	Device.SetDepthStencilState(EDepthStencilState::Default);
-	Device.SetBlendState(EBlendState::AlphaBlend); // Grid Fading 효과를 위한 블렌드 상태 변경
-
-	Resources.EditorShader.Bind(Context);
-
-	ID3D11Buffer* cb = Resources.EditorConstantBuffer.GetBuffer();
-	Context->VSSetConstantBuffers(4, 1, &cb);
-	Context->PSSetConstantBuffers(4, 1, &cb);
-
-	cb = Resources.PerObjectConstantBuffer.GetBuffer();
-	Context->VSSetConstantBuffers(1, 1, &cb);
-	Context->PSSetConstantBuffers(1, 1, &cb);
-
-	LineBatcher.AddWorldHelpers(FEditorSettings::Get(), CameraPosition, CameraForward);
-	LineBatcher.Flush(Context);
-
-	// --- FontBatcher Flush ---
-	// SRV는 ResourceManager 소유 리소스에서 가져옴
-	Device.SetDepthStencilState(EDepthStencilState::Default);
-	Device.SetBlendState(EBlendState::AlphaBlend);
-
-	// --- SubUVBatcher Flush ---
-	// 단일 아틀라스 기준: 커맨드에서 첫 번째 유효한 SRV를 사용
-	ID3D11ShaderResourceView* SubUVSRV = nullptr;
-	for (const auto& Cmd : SubUVCmds)
-	{
-		if (Cmd.AtlasResource && Cmd.AtlasResource->IsLoaded())
-		{
-			SubUVSRV = Cmd.AtlasResource->SRV;
-			break;
-		}
-	}
-	SubUVBatcher.Flush(Context, SubUVSRV);
-
-	const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
-	FontBatcher.Flush(Context, FontRes);
-
-	// Editor helper에서 사용한 알파 블렌드가 다음 렌더 경로에 남지 않도록 기본 상태로 복원한다.
-	Device.SetDepthStencilState(EDepthStencilState::Default);
-	Device.SetBlendState(EBlendState::Opaque);
-}
-
-void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix)
-{
-	FFrameConstants frameConstantData;
-	frameConstantData.View = ViewMatrix;
-	frameConstantData.Projection = ProjMatrix;
-
-	Resources.FrameBuffer.Update(Context, &frameConstantData, sizeof(FFrameConstants));
-	ID3D11Buffer* b0 = Resources.FrameBuffer.GetBuffer();
-	Context->VSSetConstantBuffers(0, 1, &b0);
-	Context->PSSetConstantBuffers(0, 1, &b0);
 }

@@ -59,7 +59,9 @@ public:
 	void RenderPasses(const FRenderBus& InRenderBus, ID3D11DeviceContext* Context);
 	
 	void RenderEditorHelpers(const FRenderBus& InRenderBus, ID3D11DeviceContext* Context);
-	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix);
+	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix, bool bIsWireframe);
+
+	void CollectBatchingData(const FRenderBus& RenderBus);
 
 	FD3DDevice& GetFD3DDevice() { return Device; }
 	FRenderResources& GetResources() { return Resources; }
