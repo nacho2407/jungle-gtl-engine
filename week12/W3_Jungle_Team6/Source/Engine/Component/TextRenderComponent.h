@@ -1,9 +1,8 @@
-﻿#pragma once
+#pragma once
 
-#include "SceneComponent.h"
+#include "PrimitiveComponent.h"
+#include "Core/ResourceTypes.h"
 #include "Object/FName.h"
-
-struct FFontResource;
 
 // 텍스트 렌더링 공간 모드
 enum class ETextRenderSpace : int32
@@ -28,10 +27,13 @@ enum class ETextVAlign : int32
 	Bottom
 };
 
-class UTextRenderComponent : public USceneComponent
+// 텍스트를 월드 공간에 빌보드로 렌더링하는 컴포넌트.
+// PrimitiveComponent를 상속받아 RenderCollector에 자동으로 감지됩니다.
+// MeshBuffer를 사용하지 않으며, FontBatcher가 드로우콜을 처리합니다.
+class UTextRenderComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_CLASS(UTextRenderComponent, USceneComponent)
+	DECLARE_CLASS(UTextRenderComponent, UPrimitiveComponent)
 
 	UTextRenderComponent() = default;
 	~UTextRenderComponent() override = default;
@@ -40,7 +42,7 @@ public:
 	void SetText(const FString& InText) { Text = InText; }
 	const FString& GetText() const { return Text; }
 
-	// Owner의 UUID를 문자열로 반환 (Billboard 표시용)
+	// Owner의 UUID를 문자열로 반환
 	FString GetOwnerUUIDToString() const;
 
 	// Owner의 FName을 문자열로 반환
@@ -75,9 +77,10 @@ public:
 	void SetVerticalAlignment(ETextVAlign InAlign) { VAlign = InAlign; }
 	ETextVAlign GetVerticalAlignment() const { return VAlign; }
 
-	// --- Visibility ---
-	bool IsVisible() const { return bIsVisible; }
-	void SetVisibility(bool bVisible) { bIsVisible = bVisible; }
+	// --- PrimitiveComponent 인터페이스 ---
+	bool GetRenderCommand(FRenderCommand& OutCommand) override;
+	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
+	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_Text;
 
 private:
 	FString Text;
@@ -94,6 +97,4 @@ private:
 	// Screen 모드 전용
 	float ScreenX = 0.0f;
 	float ScreenY = 0.0f;
-
-	bool bIsVisible = true;
 };
