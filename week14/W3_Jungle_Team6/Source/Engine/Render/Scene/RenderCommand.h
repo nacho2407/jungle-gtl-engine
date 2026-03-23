@@ -20,6 +20,7 @@ enum class ERenderCommandType
 	Primitive,
 	Gizmo,
 	Overlay,
+	StencilMask,
 	SelectionOutline,
 	Billboard,
 	DebugBox,
