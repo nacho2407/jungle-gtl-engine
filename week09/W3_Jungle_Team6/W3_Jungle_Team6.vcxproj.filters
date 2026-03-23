@@ -70,9 +70,6 @@
     <Filter Include="ThirdParty">
       <UniqueIdentifier>{7fdab8d2-b376-c6b6-9ab6-6234fa5b26ea}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ThirdParty\DirectXTK">
-      <UniqueIdentifier>{cebcdb66-2978-a2be-4fb7-75ad1c4c2501}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ThirdParty\ImGui">
       <UniqueIdentifier>{c34ce534-362b-52ae-b32b-3baa8f711324}</UniqueIdentifier>
     </Filter>
@@ -475,72 +472,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h">
       <Filter>Source\Engine\Serialization</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\Audio.h">
-      <Filter>ThirdParty\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\BufferHelpers.h">
-      <Filter>ThirdParty\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\CommonStates.h">
-      <Filter>ThirdParty\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\DDSTextureLoader.h">
-      <Filter>ThirdParty\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\DirectXHelpers.h">
-      <Filter>ThirdParty\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\Effects.h">
-      <Filter>ThirdParty\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\GamePad.h">
-      <Filter>ThirdParty\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\GeometricPrimitive.h">
-      <Filter>ThirdParty\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\GraphicsMemory.h">
-      <Filter>ThirdParty\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\Keyboard.h">
-      <Filter>ThirdParty\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\Model.h">
-      <Filter>ThirdParty\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\Mouse.h">
-      <Filter>ThirdParty\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\PostProcess.h">
-      <Filter>ThirdParty\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\PrimitiveBatch.h">
-      <Filter>ThirdParty\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\ScreenGrab.h">
-      <Filter>ThirdParty\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\SimpleMath.h">
-      <Filter>ThirdParty\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\SimpleMath.inl">
-      <Filter>ThirdParty\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\SpriteBatch.h">
-      <Filter>ThirdParty\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\SpriteFont.h">
-      <Filter>ThirdParty\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\VertexTypes.h">
-      <Filter>ThirdParty\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\WICTextureLoader.h">
-      <Filter>ThirdParty\DirectXTK</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\DirectXTK\XboxDDSTextureLoader.h">
-      <Filter>ThirdParty\DirectXTK</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\ImGui\imconfig.h">
       <Filter>ThirdParty\ImGui</Filter>
