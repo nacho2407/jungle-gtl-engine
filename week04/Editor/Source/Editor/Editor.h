@@ -42,6 +42,8 @@ class FEditor
 
     const FEditorRenderData& GetEditorRenderData() const { return EditorRenderData; }
     const FSceneRenderData& GetSceneRenderData() const { return SceneRenderData; }
+    FEditorViewportClient& GetViewportClient() { return ViewportClient; }
+    const FEditorViewportClient& GetViewportClient() const { return ViewportClient; }
 
     void DrawPanel();
 

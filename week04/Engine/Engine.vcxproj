@@ -83,6 +83,7 @@
     <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
     <ClInclude Include="Source\Engine\EngineStatics.h" />
     <ClInclude Include="Source\Engine\Game\Actor.h" />
+    <ClInclude Include="Source\Engine\Game\CubeActor.h" />
     <ClInclude Include="Source\Engine\Scene.h" />
     <ClInclude Include="Source\Engine\ViewPort\Viewport.h" />
     <ClInclude Include="Source\Engine\ViewPort\ViewportClient.h" />
@@ -156,6 +157,7 @@
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp" />
     <ClCompile Include="Source\Engine\EngineStatics.cpp" />
     <ClCompile Include="Source\Engine\Game\Actor.cpp" />
+    <ClCompile Include="Source\Engine\Game\CubeActor.cpp" />
     <ClCompile Include="Source\Engine\Scene.cpp" />
     <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11DynamicRHI.cpp" />

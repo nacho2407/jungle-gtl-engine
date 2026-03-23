@@ -1,5 +1,6 @@
 #include "Editor.h"
 
+#include "Panel/ControlPanel.h"
 #include "Panel/OutlinerPanel.h"
 #include "Panel/PanelManager.h"
 #include "Panel/PropertiesPanel.h"
@@ -112,6 +113,7 @@ void FEditor::Create()
         {
             RegisterWindowPanelCommand(Descriptor);
         });
+    PanelManager->RegisterPanelInstance<FControlPanel>();
     PanelManager->RegisterPanelInstance<FOutlinerPanel>();
     PanelManager->RegisterPanelInstance<FPropertiesPanel>();
     PanelManager->RegisterPanelInstance<FStatePanel>();

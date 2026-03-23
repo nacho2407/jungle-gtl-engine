@@ -204,6 +204,9 @@
     <ClCompile Include="Source\Engine\Game\Actor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Game\CubeActor.cpp">
+      <Filter>Source\Engine\Game</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Scene.cpp">
       <Filter>Source\Engine</Filter>
     </ClCompile>
@@ -453,6 +456,9 @@
       <Filter>Source\Engine</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Game\Actor.h">
+      <Filter>Source\Engine\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Game\CubeActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Scene.h">
