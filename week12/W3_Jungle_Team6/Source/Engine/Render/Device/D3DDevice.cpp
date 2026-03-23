@@ -56,13 +56,18 @@ void FD3DDevice::OnResizeViewport(int Width, int Height)
 	ReleaseFrameBuffer();
 	ReleaseDepthStencilBuffer();
 
-	SwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, 0);
+	SwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, SwapChainFlags);
 
 	ViewportInfo.Width = static_cast<float>(Width);
 	ViewportInfo.Height = static_cast<float>(Height);
 
 	CreateFrameBuffer();
 	CreateDepthStencilBuffer();
+
+	// 상태 캐시 초기화 — 새로 생성된 state 객체가 BeginFrame에서 재적용되도록
+	CurrentRasterizerState = static_cast<ERasterizerState>(-1);
+	CurrentDepthStencilState = static_cast<EDepthStencilState>(-1);
+	CurrentBlendState = static_cast<EBlendState>(-1);
 }
 
 
@@ -181,6 +186,8 @@ void FD3DDevice::CreateDeviceAndSwapChain(HWND InHWindow)
 	{
 		swapChainDesc.Flags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 	}
+
+	SwapChainFlags = swapChainDesc.Flags;
 
 	UINT CreateDeviceFlags = 0;
 #ifdef _DEBUG
