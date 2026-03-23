@@ -1,7 +1,7 @@
 #pragma once
 
-#include "EditorGizmoTypes.h"
-#include "Renderer/Types/EditorRenderData.h"
+#include "Gizmo/EditorGizmoTypes.h"
+#include "Renderer/EditorRenderData.h"
 
 inline EGizmoHighlight ToGizmoHighlight(EGizmoAxis InAxis)
 {
@@ -36,15 +36,15 @@ inline FGizmoDrawData BGizmoDrawData(const FEditorGizmoState &InState)
     switch (InState.Mode)
     {
     case EGizmoMode::Translate:
-        Out.bDrawTranslate = true;
+        Out.GizmoType = EGizmoType::Translation;
         break;
 
     case EGizmoMode::Rotate:
-        Out.bDrawRotate = true;
+        Out.GizmoType = EGizmoType::Rotation;
         break;
 
     case EGizmoMode::Scale:
-        Out.bDrawScale = true;
+        Out.GizmoType = EGizmoType::Scaling;
         break;
 
     case EGizmoMode::None:

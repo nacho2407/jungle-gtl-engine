@@ -28,6 +28,7 @@ class FViewportCamera
     FMatrix GetViewMatrix() const;
     FMatrix GetProjectionMatrix() const;
     FMatrix GetViewProjectionMatrix() const;
+    Geometry::FRay ScreenPointToRay(const FVector2& MousePos);
 
     void                    SetProjectionType(EViewportProjectionType InType);
     EViewportProjectionType GetProjectionType() const { return ProjectionType; }

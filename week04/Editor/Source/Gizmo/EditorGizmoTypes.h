@@ -1,7 +1,7 @@
 #pragma once
 
-#include "HAL/PlatformTypes.h"
-#include "Math/Matrix.h"
+#include "Core/HAL/PlatformTypes.h"
+#include "Core/Math/Matrix.h"
 
 enum class EGizmoMode : uint8
 {

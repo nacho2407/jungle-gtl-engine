@@ -3,37 +3,6 @@
 
 #include "MathUtility.h"
 
-float FVector4::Dot(const FVector4 &Other) const { return X * Other.X + Y * Other.Y + Z * Other.Z; }
-
-FVector4 FVector4::Cross(const FVector4 &Other) const
-{
-    return { Y * Other.Z - Z * Other.Y, Z * Other.X - X * Other.Z,
-                    X * Other.Y - Y * Other.X };
-}
-
-FVector4 FVector4::operator+(const FVector4 &Other) const
-{
-    return { X + Other.X, Y + Other.Y, Z + Other.Z };
-}
-
-FVector4 FVector4::operator-(const FVector4 &Other) const
-{
-    return { X - Other.X, Y - Other.Y, Z - Other.Z };
-}
-
-FVector4 FVector4::operator*(const float S) const { return { X * S, Y * S, Z * S }; }
-
-FVector4 FVector4::operator/(const float S) const
-{
-    if (std::abs(S) < FMath::Epsilon)
-    {
-        assert(S != 0.0f && "Division by zero in FVector4::operator/");
-        return Zero();
-    }
-    float Denominator = 1.0f / S;
-    return { X * Denominator, Y * Denominator, Z * Denominator };
-}
-
 FVector4 FVector4::Normalize() const
 {
     float SquareSum = X * X + Y * Y + Z * Z;
