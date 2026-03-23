@@ -13,7 +13,7 @@ void FEditorViewportClient::Create()
     ViewportCamera.SetFOV(3.141592f * 0.5f); // TODO: 라디안으로 고치기
     ViewportCamera.SetNearPlane(0.1f);
     ViewportCamera.SetFarPlane(2000.0f);
-    ViewportCamera.SetLocation(FVector(-10.0f, 5.0f, 0.0f));
+    ViewportCamera.SetLocation(FVector(-10.0f, 5.0f, 50.0f));
     ViewportCamera.SetRotation(FRotator(0.0f, 0.0f, 0.0f));
 }
 
