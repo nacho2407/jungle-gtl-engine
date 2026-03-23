@@ -1,6 +1,7 @@
 #include "Viewport/EditorViewportClient.h"
 #include "ApplicationCore/Input/InputRouter.h"
 #include "Engine/Scene.h"
+#include "Renderer/Types/EditorShowFlags.h"
 
 void FEditorViewportClient::Create()
 {
@@ -30,9 +31,9 @@ void FEditorViewportClient::Release()
 void FEditorViewportClient::Initialize(FScene* Scene, uint32 ViewportWidth, uint32 ViewportHeight)
 {
     CurScene = Scene;
-    
+
     ViewportCamera.OnResize(ViewportWidth, ViewportHeight);
-    
+
     SelectionController.SetActors(Scene->GetActors());
     SelectionController.SetCamera(&ViewportCamera);
     SelectionController.SetViewportSize(ViewportWidth, ViewportHeight);
@@ -68,14 +69,20 @@ void FEditorViewportClient::HandleInputEvent(const Engine::ApplicationCore::FInp
 
 void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData) const
 {
-    OutRenderData.Gizmo.GizmoType = EGizmoType::Translation;
+    // OutRenderData.Gizmo.GizmoType = EGizmoType::Translation;
+     OutRenderData.Gizmo.GizmoType = EGizmoType::Rotation;
+    //OutRenderData.Gizmo.GizmoType = EGizmoType::Scaling;
     OutRenderData.Gizmo.Highlight = EGizmoHighlight::None;
-    OutRenderData.Gizmo.Transform = FMatrix::Identity;
+    OutRenderData.Gizmo.Frame = FMatrix::Identity;
+    OutRenderData.ShowFlags = EEditorShowFlags::SF_Grid | EEditorShowFlags::SF_WorldAxes |
+                              EEditorShowFlags::SF_Gizmo | EEditorShowFlags::SF_SelectionOutline |
+                              EEditorShowFlags::SF_ObjectLabels;
 }
 
 void FEditorViewportClient::OnResize(uint32 Width, uint32 Height)
 {
     // 창 리사이즈를 카메라에 전달해 aspect ratio와 projection matrix를 갱신합니다.
     ViewportCamera.OnResize(Width, Height);
-  SelectionController.SetViewportSize(Width, Height);
+
+    SelectionController.SetViewportSize(Width, Height);
 }
