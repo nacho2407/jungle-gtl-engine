@@ -258,16 +258,6 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	{
 		Gizmo->DragEnd();
 	}
-	//else if (InputSystem::Get().GetKeyUp(VK_LBUTTON) && !Gizmo->HasTarget())
-	//{
-	//	std::cout << "Gizmo Deactivated\n";
-	//	Gizmo->DragEnd();
-	//}
-
-	//if (InputSystem::GetRightDragStart())
-	//{
-	//	Gizmo->DragEnd();
-	//}
 }
 
 void FEditorViewportClient::HandleDragStart(const FRay& Ray)
