@@ -3,6 +3,12 @@
 
 DEFINE_CLASS(USceneComponent, UActorComponent)
 
+void USceneComponent::AttachToComponent(USceneComponent* InParent)
+{
+	if (!InParent || InParent == this) return;
+	SetParent(InParent);
+}
+
 USceneComponent::USceneComponent()
 {
 	CachedWorldMatrix = FMatrix::Identity;
