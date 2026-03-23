@@ -1,29 +1,12 @@
-﻿#include "FontBatcher.h"
+#include "FontBatcher.h"
 
-#include "DDSTextureLoader.h"
 #include "Core/CoreTypes.h"
 
 void FFontBatcher::Create(ID3D11Device* InDevice)
 {
 	Device = InDevice;
 
-	// 폰트 아틀라스 텍스처 로드
-	HRESULT hr = DirectX::CreateDDSTextureFromFileEx(
-		Device,
-		L"./Asset/font/FontAtlas.dds",
-		0,
-		D3D11_USAGE_IMMUTABLE,
-		D3D11_BIND_SHADER_RESOURCE,
-		0, 0,
-		DirectX::DDS_LOADER_DEFAULT,
-		&FontResource,
-		&FontAtlasSRV
-	);
-	if (FAILED(hr)) return;
-
-	BuildCharInfoMap();
-
-	// Dynamic VB/IB 초기 할당
+	// Dynamic VB/IB 초기 할당 (텍스처는 ResourceManager가 소유 — 여기서 로드하지 않음)
 	MaxVertexCount = 1024;
 	MaxIndexCount  = 1536;
 	CreateBuffers();
@@ -34,8 +17,7 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	hr = Device->CreateSamplerState(&sampDesc, &SamplerState);
-	if (FAILED(hr)) return;
+	Device->CreateSamplerState(&sampDesc, &SamplerState);
 
 	// 셰이더 + Input Layout
 	D3D11_INPUT_ELEMENT_DESC layout[] =
@@ -49,7 +31,6 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 
 void FFontBatcher::CreateBuffers()
 {
-	// 버퍼가 존재한다면 해제(재할당 목적)
 	if (VertexBuffer) { VertexBuffer->Release(); VertexBuffer = nullptr; }
 	if (IndexBuffer)  { IndexBuffer->Release();  IndexBuffer  = nullptr; }
 
@@ -68,48 +49,46 @@ void FFontBatcher::CreateBuffers()
 	Device->CreateBuffer(&ibDesc, nullptr, &IndexBuffer);
 }
 
-// Atlas 텍스처 슬라이싱
-void FFontBatcher::BuildCharInfoMap()
+void FFontBatcher::BuildCharInfoMap(uint32 Columns, uint32 Rows)
 {
-	const int32 Count = 16;
-	const float CellW = 1.0f / Count;
-	const float CellH = 1.0f / Count;
+	CharInfoMap.clear();
+	CachedColumns = Columns;
+	CachedRows    = Rows;
 
-	// ASCII 32(space) ~ 126
-	for (int32 i = 0; i < 16; ++i)
+	const float CellW = 1.0f / static_cast<float>(Columns);
+	const float CellH = 1.0f / static_cast<float>(Rows);
+
+	// ASCII 32(space) ~ 126 매핑 — 아틀라스 그리드 기준
+	for (uint32 Row = 0; Row < Rows; ++Row)
 	{
-		for (int32 j = 0; j < 16; ++j)
+		for (uint32 Col = 0; Col < Columns; ++Col)
 		{
-			int32 Idx = i * 16 + j;
+			uint32 Idx = Row * Columns + Col;
 			if (Idx < 32)  continue;
 			if (Idx > 126) return;
 
-			CharInfoMap[static_cast<char>(Idx)] = { j * CellW, i * CellH, CellW, CellH };
+			CharInfoMap[static_cast<char>(Idx)] = { Col * CellW, Row * CellH, CellW, CellH };
 		}
 	}
 }
 
 void FFontBatcher::Release()
 {
-	// Device는 소유권이 나에게 없음.
 	CharInfoMap.clear();
 	Clear();
 
 	if (VertexBuffer) { VertexBuffer->Release(); VertexBuffer = nullptr; }
 	if (IndexBuffer)  { IndexBuffer->Release();  IndexBuffer  = nullptr; }
-	if (FontResource) { FontResource->Release(); FontResource = nullptr; }
-	if (FontAtlasSRV) { FontAtlasSRV->Release(); FontAtlasSRV = nullptr; }
 	if (SamplerState) { SamplerState->Release(); SamplerState = nullptr; }
-	
-	FontShader.Release();
 
+	FontShader.Release();
 }
 
 void FFontBatcher::AddText(const FString& Text,
 	const FVector& WorldPos,
 	const FVector& CamRight,
 	const FVector& CamUp,
-	float Scale/* = 1.0f*/)
+	float Scale)
 {
 	const float CharW = 0.5f * Scale;
 	const float CharH = 0.5f * Scale;
@@ -121,14 +100,7 @@ void FFontBatcher::AddText(const FString& Text,
 		FVector2 UVMin, UVMax;
 		GetCharUV(Ch, UVMin, UVMax);
 
-		// CPU Billboard — CamRight/Up으로 월드 좌표 직접 계산
-		/*
-		* 계산식
-		* - WorldPos: 나의 월드 좌표계 상의 위치
-		* - CamRight: 내가 가로로 뻗어나갈 방향
-		* - CamUp: 내가 세로로 뻗어나갈 방향
-		*/
-		FVector Center = WorldPos + CamRight * (CharCursorX/* + CharW * 0.5f*/);
+		FVector Center = WorldPos + CamRight * CharCursorX;
 
 		FVector v0 = Center + CamRight * (-CharW * 0.5f) + CamUp * ( CharH * 0.5f); // 좌상
 		FVector v1 = Center + CamRight * ( CharW * 0.5f) + CamUp * ( CharH * 0.5f); // 우상
@@ -154,9 +126,16 @@ void FFontBatcher::Clear()
 	Indices.clear();
 }
 
-void FFontBatcher::Flush(ID3D11DeviceContext* Context)
+void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FFontResource* Resource)
 {
+	if (!Resource || !Resource->IsLoaded()) return;
 	if (Vertices.empty() || !VertexBuffer || !IndexBuffer) return;
+
+	// Atlas 그리드가 바뀌었으면 CharInfoMap 재빌드
+	if (CachedColumns != Resource->Columns || CachedRows != Resource->Rows)
+	{
+		BuildCharInfoMap(Resource->Columns, Resource->Rows);
+	}
 
 	// 버퍼 크기 초과 시 재할당
 	if (Vertices.size() > MaxVertexCount || Indices.size() > MaxIndexCount)
@@ -177,7 +156,7 @@ void FFontBatcher::Flush(ID3D11DeviceContext* Context)
 	memcpy(mapped.pData, Indices.data(), sizeof(uint32) * Indices.size());
 	Context->Unmap(IndexBuffer, 0);
 
-	// Binding Shader
+	// 셰이더 바인딩
 	FontShader.Bind(Context);
 
 	uint32 stride = sizeof(FTextureVertex), offset = 0;
@@ -185,7 +164,9 @@ void FFontBatcher::Flush(ID3D11DeviceContext* Context)
 	Context->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	Context->PSSetShaderResources(0, 1, &FontAtlasSRV);
+	// ResourceManager 소유 SRV 바인딩
+	ID3D11ShaderResourceView* SRV = Resource->SRV;
+	Context->PSSetShaderResources(0, 1, &SRV);
 	Context->PSSetSamplers(0, 1, &SamplerState);
 
 	Context->DrawIndexed(static_cast<uint32>(Indices.size()), 0, 0);
@@ -202,6 +183,6 @@ void FFontBatcher::GetCharUV(char Key, FVector2& OutUVMin, FVector2& OutUVMax) c
 	}
 
 	const FCharacterInfo& Info = it->second;
-	OutUVMin = FVector2(Info.u, Info.v);
-	OutUVMax = FVector2(Info.u + Info.width, Info.v + Info.height);
+	OutUVMin = FVector2(Info.U, Info.V);
+	OutUVMax = FVector2(Info.U + Info.Width, Info.V + Info.Height);
 }
