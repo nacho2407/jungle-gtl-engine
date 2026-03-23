@@ -29,6 +29,11 @@
     <ClInclude Include="Source\ApplicationCore\Input\InputTypes.h" />
     <ClInclude Include="Source\ApplicationCore\Windows\WindowsApplication.h" />
     <ClInclude Include="Source\ApplicationCore\Windows\WindowsWindow.h" />
+    <ClInclude Include="Source\Asset\Asset.h" />
+    <ClInclude Include="Source\Asset\AssetLoader.h" />
+    <ClInclude Include="Source\Asset\AssetManager.h" />
+    <ClInclude Include="Source\Asset\Texture2DAsset.h" />
+    <ClInclude Include="Source\Asset\TextureLoader.h" />
     <ClInclude Include="Source\Core\Containers\Array.h" />
     <ClInclude Include="Source\Core\Containers\LinkedList.h" />
     <ClInclude Include="Source\Core\Containers\Map.h" />
@@ -69,18 +74,11 @@
     <ClInclude Include="Source\Core\Path.h" />
     <ClInclude Include="Source\CoreUObject\Object.h" />
     <ClInclude Include="Source\CoreUObject\ObjectFactory.h" />
-    <ClInclude Include="Source\Asset\Asset.h" />
-    <ClInclude Include="Source\Asset\AssetLoader.h" />
-    <ClInclude Include="Source\Asset\AssetManager.h" />
-    <ClInclude Include="Source\Asset\Texture2DAsset.h" />
-    <ClInclude Include="Source\Asset\TextureLoader.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\CameraComponent.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\CubeComponent.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\PlaneComponent.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\SphereComponent.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.h" />
-    <ClInclude Include="Source\Engine\Component\CubeComponent.h" />
-    <ClInclude Include="Source\Engine\Component\PlaneComponent.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
     <ClInclude Include="Source\Engine\EngineStatics.h" />
@@ -120,6 +118,11 @@
     <ClCompile Include="Source\ApplicationCore\Input\InputSystem.cpp" />
     <ClCompile Include="Source\ApplicationCore\Windows\WindowsApplication.cpp" />
     <ClCompile Include="Source\ApplicationCore\Windows\WindowsWindow.cpp" />
+    <ClCompile Include="Source\Asset\Asset.cpp" />
+    <ClCompile Include="Source\Asset\AssetLoader.cpp" />
+    <ClCompile Include="Source\Asset\AssetManager.cpp" />
+    <ClCompile Include="Source\Asset\Texture2DAsset.cpp" />
+    <ClCompile Include="Source\Asset\TextureLoader.cpp" />
     <ClCompile Include="Source\Core\CoreGlobals.cpp" />
     <ClCompile Include="Source\Core\CoreMinimal.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -140,11 +143,6 @@
     <ClCompile Include="Source\Core\Path.cpp" />
     <ClCompile Include="Source\CoreUObject\Object.cpp" />
     <ClCompile Include="Source\CoreUObject\ObjectFactory.cpp" />
-    <ClCompile Include="Source\Asset\Asset.cpp" />
-    <ClCompile Include="Source\Asset\AssetLoader.cpp" />
-    <ClCompile Include="Source\Asset\AssetManager.cpp" />
-    <ClCompile Include="Source\Asset\Texture2DAsset.cpp" />
-    <ClCompile Include="Source\Asset\TextureLoader.cpp" />
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\CameraComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\CubeComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\PlaneComponent.cpp" />

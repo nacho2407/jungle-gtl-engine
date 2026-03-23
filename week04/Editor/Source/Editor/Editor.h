@@ -2,6 +2,7 @@
 
 #include "Chrome/EditorChrome.h"
 #include "EditorContext.h"
+#include "Menu/EditorMenuRegistry.h"
 #include "Core/CoreMinimal.h"
 
 #include "ApplicationCore/Input/InputRouter.h"
@@ -17,6 +18,7 @@
 #include "Renderer/SceneView.h"
 
 class FPanelManager;
+struct FPanelDescriptor;
 
 class FEditor
 {
@@ -46,14 +48,20 @@ class FEditor
   private:
     void BuildRenderData();
     void BuildSceneView();
-    // 커스텀 타이틀바 아래 전체 영역을 도킹 호스트로 사용하는 루트 dockspace입니다.
+    // 커스텀 타이틀바 아래 전체 영역을 도킹 가능한 루트 dockspace로 사용합니다.
     void DrawRootDockSpace();
+    void DrawAboutPopup();
+    void RequestAboutPopup();
+    void RegisterDefaultCommands();
+    void RegisterDefaultMenus();
+    void RegisterWindowPanelCommand(const FPanelDescriptor& Descriptor);
 
   private:
     FEditorViewportClient ViewportClient;
     FEditorContext EditorContext;
     FPanelManager* PanelManager = nullptr;
     FEditorChrome EditorChrome;
+    FEditorMenuRegistry MenuRegistry;
     IEditorChromeHost* ChromeHost = nullptr;
 
     FEditorRenderData EditorRenderData;
@@ -65,4 +73,6 @@ class FEditor
     float WindowWidth = 0.0f;
     float WindowHeight = 0.0f;
     float CurFPS = 0.0f;
+    bool bRequestOpenAboutPopup = false;
+    bool bAboutPopupOpen = false;
 };

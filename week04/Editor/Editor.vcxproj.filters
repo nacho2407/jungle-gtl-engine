@@ -4,6 +4,12 @@
     <Filter Include="Source">
       <UniqueIdentifier>{eda2fbce-2e37-c3c8-8f8c-35f2a4ff4e59}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Camera">
+      <UniqueIdentifier>{087cc9f2-fe91-1e32-64d2-002ce2f7881b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Chrome">
+      <UniqueIdentifier>{c8396112-0f9f-0d0f-bab3-3305c1d83c32}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor">
       <UniqueIdentifier>{68b5e2a9-3ba4-999f-3e91-8d1308eb9a6e}</UniqueIdentifier>
     </Filter>
@@ -15,6 +21,9 @@
     </Filter>
     <Filter Include="Source\Launch">
       <UniqueIdentifier>{90ac0f15-c775-3ba7-f780-7222e93b8ddd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Menu">
+      <UniqueIdentifier>{68f5eb1f-e996-8b0b-1591-ae95c1941b0a}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Panel">
       <UniqueIdentifier>{110cb42a-bc8d-dcb7-321e-1bd33a00b562}</UniqueIdentifier>
@@ -43,11 +52,11 @@
     <Filter Include="Source\Viewport\Selection">
       <UniqueIdentifier>{c02bdf14-d23c-3f72-e5f4-7a918dc1b5dc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Chrome">
-      <UniqueIdentifier>{f47e4d1d-6849-4aa8-8343-c9329f9bff41}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Camera\ViewportCamera.cpp">
+      <Filter>Source\Camera</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Chrome\EditorChrome.cpp">
       <Filter>Source\Chrome</Filter>
     </ClCompile>
@@ -63,7 +72,7 @@
     <ClCompile Include="Source\Input\GizmoInputContext.cpp">
       <Filter>Source\Input</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Input\ViewportInputContext.cpp">
+    <ClCompile Include="Source\Input\ViewPortInputContext.cpp">
       <Filter>Source\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Launch\EditorEngineLoop.cpp">
@@ -79,6 +88,15 @@
       <Filter>Source\Panel</Filter>
     </ClCompile>
     <ClCompile Include="Source\Panel\PanelManager.cpp">
+      <Filter>Source\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Panel\OutlinerPanel.cpp">
+      <Filter>Source\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Panel\PropertiesPanel.cpp">
+      <Filter>Source\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Panel\StatePanel.cpp">
       <Filter>Source\Panel</Filter>
     </ClCompile>
     <ClCompile Include="Source\ThirdParty\imgui\imgui.cpp">
@@ -123,14 +141,13 @@
     <ClCompile Include="Source\Viewport\Selection\ViewportSelectionController.cpp">
       <Filter>Source\Viewport\Selection</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Camera\ViewportCamera.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Camera\ViewportCamera.h">
+      <Filter>Source\Camera</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Chrome\EditorChrome.h">
       <Filter>Source\Chrome</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor.h">
-      <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Editor.h">
       <Filter>Source\Editor</Filter>
@@ -150,7 +167,7 @@
     <ClInclude Include="Source\Input\GizmoInputContext.h">
       <Filter>Source\Input</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Input\ViewportInputContext.h">
+    <ClInclude Include="Source\Input\ViewPortInputContext.h">
       <Filter>Source\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Launch\EditorEngineLoop.h">
@@ -159,10 +176,22 @@
     <ClInclude Include="Source\Launch\Launch.h">
       <Filter>Source\Launch</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Menu\EditorMenuRegistry.h">
+      <Filter>Source\Menu</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Panel\Panel.h">
       <Filter>Source\Panel</Filter>
     </ClInclude>
     <ClInclude Include="Source\Panel\PanelManager.h">
+      <Filter>Source\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Panel\OutlinerPanel.h">
+      <Filter>Source\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Panel\PropertiesPanel.h">
+      <Filter>Source\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Panel\StatePanel.h">
       <Filter>Source\Panel</Filter>
     </ClInclude>
     <ClInclude Include="Source\ThirdParty\imgui\imconfig.h">
@@ -210,7 +239,6 @@
     <ClInclude Include="Source\Viewport\Selection\ViewportSelectionController.h">
       <Filter>Source\Viewport\Selection</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Camera\ViewportCamera.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Source\ThirdParty\imgui\imgui.natstepfilter">

@@ -1,6 +1,9 @@
 #include "Editor.h"
 
+#include "Panel/OutlinerPanel.h"
 #include "Panel/PanelManager.h"
+#include "Panel/PropertiesPanel.h"
+#include "Panel/StatePanel.h"
 #include "Viewport/EditorViewportClient.h"
 
 #include "imgui.h"
@@ -13,6 +16,7 @@ namespace
     constexpr ImGuiDockNodeFlags RootDockSpaceFlags = ImGuiDockNodeFlags_PassthruCentralNode;
 #endif
 
+    constexpr char AboutPopupId[] = "About##EditorAbout";
     constexpr float RestoredSideGutter = 3.0f;
     constexpr float RestoredBottomGutter = 3.0f;
     constexpr ImU32 GutterColor = IM_COL32(46, 46, 48, 255);
@@ -83,24 +87,10 @@ namespace
         }
     }
 
-    class FSamplePanel : public IPanel
+    FString BuildPanelCommandId(const FPanelDescriptor& Descriptor)
     {
-      public:
-        const wchar_t* GetPanelID() const override { return L"SamplePanel"; }
-        const wchar_t* GetDisplayName() const override { return L"Sample Panel"; }
-        bool ShouldOpenByDefault() const override { return true; }
-
-        void Draw() override
-        {
-            if (ImGui::Begin("Sample Panel", nullptr))
-            {
-                ImGui::Text("PanelManager registration test panel");
-                ImGui::Separator();
-                ImGui::Text("Hello from sample panel");
-            }
-            ImGui::End();
-        }
-    };
+        return "panel.toggle." + std::to_string(Descriptor.PanelType.hash_code());
+    }
 } // namespace
 
 void FEditor::Create()
@@ -109,9 +99,22 @@ void FEditor::Create()
 
     ViewportClient.Create();
 
+    // 메뉴 시스템은 command 등록과 배치 등록을 분리해서 초기화합니다.
+    MenuRegistry.Clear();
+    RegisterDefaultCommands();
+    RegisterDefaultMenus();
+
     PanelManager = new FPanelManager();
     PanelManager->Initialize(&EditorContext);
-    PanelManager->RegisterPanelInstance<FSamplePanel>();
+    // 새 패널이 등록되면 Window 메뉴 항목도 함께 자동 등록합니다.
+    PanelManager->SetPanelDescriptorRegisteredCallback(
+        [this](const FPanelDescriptor& Descriptor)
+        {
+            RegisterWindowPanelCommand(Descriptor);
+        });
+    PanelManager->RegisterPanelInstance<FOutlinerPanel>();
+    PanelManager->RegisterPanelInstance<FPropertiesPanel>();
+    PanelManager->RegisterPanelInstance<FStatePanel>();
 
     CurScene = new FScene();
     EditorContext.Scene = CurScene;
@@ -132,6 +135,7 @@ void FEditor::Release()
     CurScene = nullptr;
     EditorContext.Scene = nullptr;
 
+    MenuRegistry.Clear();
     ChromeHost = nullptr;
     EditorChrome.SetHost(nullptr);
 }
@@ -153,6 +157,7 @@ void FEditor::SetChromeHost(IEditorChromeHost* InChromeHost)
 
 void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* InputSystem)
 {
+    EditorContext.DeltaTime = DeltaTime;
     Engine::ApplicationCore::FInputEvent Event;
 
     while (InputSystem->PollEvent(Event))
@@ -191,6 +196,233 @@ void FEditor::CreateNewScene()
 
 void FEditor::ClearScene()
 {
+}
+
+void FEditor::RequestAboutPopup()
+{
+    bRequestOpenAboutPopup = true;
+    bAboutPopupOpen = true;
+}
+
+void FEditor::RegisterDefaultCommands()
+{
+    // 여기서는 "무엇을 실행할지"만 등록하고, 메뉴 어디에 둘지는 RegisterDefaultMenus에서 정합니다.
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
+        .CommandId = "file.new_scene",
+        .Label = L"새 씬",
+        .ShortcutLabel = "Ctrl+N",
+        .Execute =
+            [this]()
+            {
+                CreateNewScene();
+            }});
+
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
+        .CommandId = "file.clear_scene",
+        .Label = L"씬 비우기",
+        .Execute =
+            [this]()
+            {
+                ClearScene();
+            }});
+
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
+        .CommandId = "file.exit",
+        .Label = L"종료",
+        .ShortcutLabel = "Alt+F4",
+        .Execute =
+            [this]()
+            {
+                if (ChromeHost != nullptr)
+                {
+                    ChromeHost->CloseWindow();
+                }
+            }});
+
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
+        .CommandId = "edit.undo",
+        .Label = L"실행 취소",
+        .ShortcutLabel = "Ctrl+Z",
+        .CanExecute =
+            []()
+            {
+                return false;
+            }});
+
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
+        .CommandId = "edit.redo",
+        .Label = L"다시 실행",
+        .ShortcutLabel = "Ctrl+Y",
+        .CanExecute =
+            []()
+            {
+                return false;
+            }});
+
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
+        .CommandId = "edit.preferences",
+        .Label = L"설정 준비 중",
+        .CanExecute =
+            []()
+            {
+                return false;
+            }});
+
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
+        .CommandId = "tool.content_browser",
+        .Label = L"콘텐츠 브라우저 준비 중",
+        .CanExecute =
+            []()
+            {
+                return false;
+            }});
+
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
+        .CommandId = "tool.build",
+        .Label = L"빌드 준비 중",
+        .CanExecute =
+            []()
+            {
+                return false;
+            }});
+
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
+        .CommandId = "help.about",
+        .Label = L"정보",
+        .ShortcutLabel = "F1",
+        .Execute =
+            [this]()
+            {
+                RequestAboutPopup();
+            }});
+}
+
+void FEditor::RegisterDefaultMenus()
+{
+    // 여기서는 이미 등록된 command를 어떤 메뉴/순서에 배치할지만 정의합니다.
+    MenuRegistry.RegisterMenuItem(
+        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::File,
+                                   .CommandId = "file.new_scene",
+                                   .Order = 0});
+    MenuRegistry.RegisterMenuItem(
+        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::File,
+                                   .CommandId = "file.clear_scene",
+                                   .Order = 10});
+    MenuRegistry.RegisterMenuSeparator(EEditorMainMenu::File, {}, 20);
+    MenuRegistry.RegisterMenuItem(
+        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::File,
+                                   .CommandId = "file.exit",
+                                   .Order = 30});
+
+    MenuRegistry.RegisterMenuItem(
+        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::Edit,
+                                   .CommandId = "edit.undo",
+                                   .Order = 0});
+    MenuRegistry.RegisterMenuItem(
+        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::Edit,
+                                   .CommandId = "edit.redo",
+                                   .Order = 10});
+    MenuRegistry.RegisterMenuSeparator(EEditorMainMenu::Edit, {}, 20);
+    MenuRegistry.RegisterMenuItem(
+        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::Edit,
+                                   .CommandId = "edit.preferences",
+                                   .Order = 30});
+
+    MenuRegistry.RegisterMenuItem(
+        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::Tool,
+                                   .CommandId = "tool.content_browser",
+                                   .Order = 0});
+    MenuRegistry.RegisterMenuItem(
+        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::Tool,
+                                   .CommandId = "tool.build",
+                                   .Order = 10});
+
+    MenuRegistry.RegisterMenuItem(
+        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::Help,
+                                   .CommandId = "help.about",
+                                   .Order = 0});
+}
+
+void FEditor::RegisterWindowPanelCommand(const FPanelDescriptor& Descriptor)
+{
+    if (!Descriptor.bShowInWindowMenu)
+    {
+        return;
+    }
+
+    // PanelDescriptor를 Window 메뉴용 체크형 command로 변환합니다.
+    const FString CommandId = BuildPanelCommandId(Descriptor);
+    const std::type_index PanelType = Descriptor.PanelType;
+
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
+        .CommandId = CommandId,
+        .Label = Descriptor.DisplayName,
+        .Execute =
+            [this, PanelType]()
+            {
+                if (PanelManager == nullptr)
+                {
+                    return;
+                }
+
+                FPanelOpenRequest Request;
+                Request.PanelType = PanelType;
+                PanelManager->TogglePanel(Request);
+            },
+        .CanExecute =
+            [this]()
+            {
+                return PanelManager != nullptr;
+            },
+        .IsChecked =
+            [this, PanelType]()
+            {
+                if (PanelManager == nullptr)
+                {
+                    return false;
+                }
+
+                FPanelOpenRequest Request;
+                Request.PanelType = PanelType;
+                if (IPanel* Panel = PanelManager->FindPanel(Request))
+                {
+                    return Panel->IsOpen();
+                }
+
+                return false;
+            },
+        .bCheckable = true});
+
+    MenuRegistry.RegisterMenuItem(FEditorMenuEntryDefinition{
+        .MainMenu = EEditorMainMenu::Window,
+        .SubmenuPath = Descriptor.WindowMenuPath,
+        .CommandId = CommandId,
+        .Order = Descriptor.WindowMenuOrder});
+}
+
+void FEditor::DrawAboutPopup()
+{
+    if (bRequestOpenAboutPopup)
+    {
+        ImGui::OpenPopup(AboutPopupId);
+        bRequestOpenAboutPopup = false;
+    }
+
+    if (ImGui::BeginPopupModal(AboutPopupId, &bAboutPopupOpen,
+                               ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::TextUnformatted("Jungle Editor");
+        ImGui::Separator();
+        ImGui::TextUnformatted("Custom title bar menu prototype");
+        ImGui::TextUnformatted("Registry driven File/Edit/Window/Tool/Help menu");
+        ImGui::Spacing();
+        if (ImGui::Button("Close"))
+        {
+            bAboutPopupOpen = false;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
 }
 
 void FEditor::BuildSceneView()
@@ -279,6 +511,8 @@ void FEditor::DrawPanel()
     ImGui_ImplWin32_NewFrame();
 
     ImGui::NewFrame();
+    // 매 프레임 현재 enabled/checked 상태를 평가해서 chrome이 소비할 메뉴 스냅샷을 만듭니다.
+    const TArray<FEditorChromeMenu> ChromeMenus = MenuRegistry.BuildChromeMenus();
     DrawRootDockSpace();
 
     if (PanelManager != nullptr)
@@ -286,7 +520,8 @@ void FEditor::DrawPanel()
         PanelManager->DrawPanels();
     }
 
-    EditorChrome.Draw();
+    EditorChrome.Draw(ChromeMenus);
+    DrawAboutPopup();
 
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());

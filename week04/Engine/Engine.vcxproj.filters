@@ -22,6 +22,9 @@
     <Filter Include="Source\ApplicationCore">
       <UniqueIdentifier>{57812f21-7fc5-e713-3694-11639c1953c0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Asset">
+      <UniqueIdentifier>{7b0f19cf-8606-575b-b6eb-d0959bf8d98c}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Core">
       <UniqueIdentifier>{238c320c-6dd1-5946-035c-35da4bd61493}</UniqueIdentifier>
     </Filter>
@@ -67,9 +70,6 @@
     <Filter Include="Source\Core\Misc">
       <UniqueIdentifier>{822fce81-821e-1b1b-adaf-11c91675259f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Asset">
-      <UniqueIdentifier>{292084ae-a847-4cb7-dedc-b9cf3c9c5e97}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Component">
       <UniqueIdentifier>{009757f7-27d2-e9f2-4fdf-fa550fbfb1ff}</UniqueIdentifier>
     </Filter>
@@ -111,6 +111,21 @@
     <ClCompile Include="Source\ApplicationCore\Windows\WindowsWindow.cpp">
       <Filter>Source\ApplicationCore\Windows</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Asset\Asset.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\AssetLoader.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\AssetManager.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\Texture2DAsset.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\TextureLoader.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Core\CoreGlobals.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
@@ -119,6 +134,9 @@
     </ClCompile>
     <ClCompile Include="Source\Core\Geometry\Transform.cpp">
       <Filter>Source\Core\Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\HAL\PlatformMisc.cpp">
+      <Filter>Source\Core\HAL</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\HAL\PlatformTime.cpp">
       <Filter>Source\Core\HAL</Filter>
@@ -158,21 +176,6 @@
     </ClCompile>
     <ClCompile Include="Source\CoreUObject\ObjectFactory.cpp">
       <Filter>Source\CoreUObject</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Asset\Asset.cpp">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Asset\AssetLoader.cpp">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Asset\AssetManager.cpp">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Asset\Texture2DAsset.cpp">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Asset\TextureLoader.cpp">
-      <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\CameraComponent.cpp">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
@@ -228,7 +231,6 @@
     <ClCompile Include="Source\Renderer\RendererModule.cpp">
       <Filter>Source\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\HAL\PlatformMisc.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Mesh\Cone.h">
@@ -284,6 +286,21 @@
     </ClInclude>
     <ClInclude Include="Source\ApplicationCore\Windows\WindowsWindow.h">
       <Filter>Source\ApplicationCore\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\Asset.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\AssetLoader.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\AssetManager.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\Texture2DAsset.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\TextureLoader.h">
+      <Filter>Source\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Containers\Array.h">
       <Filter>Source\Core\Containers</Filter>
@@ -405,21 +422,6 @@
     <ClInclude Include="Source\CoreUObject\ObjectFactory.h">
       <Filter>Source\CoreUObject</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Asset\Asset.h">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Asset\AssetLoader.h">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Asset\AssetManager.h">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Asset\Texture2DAsset.h">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Asset\TextureLoader.h">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\CameraComponent.h">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClInclude>
@@ -451,6 +453,9 @@
       <Filter>Source\Engine</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\ViewPort\Viewport.h">
+      <Filter>Source\Engine\ViewPort</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ViewPort\ViewportClient.h">
       <Filter>Source\Engine\ViewPort</Filter>
     </ClInclude>
     <ClInclude Include="Source\Launch\EngineLoop.h">

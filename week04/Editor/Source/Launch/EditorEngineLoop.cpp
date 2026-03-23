@@ -66,10 +66,17 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
     }
 
     ImGui::CreateContext();
+    ImGuiIO& IO = ImGui::GetIO();
 #ifdef IMGUI_HAS_DOCK
     // 도킹 지원 ImGui를 교체한 뒤에는 여기서 기능 플래그를 켜야 DockSpace API가 실제로 동작합니다.
-    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 #endif
+    if (ImFont* KoreanFont = IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf",
+                                                          18.0f, nullptr,
+                                                          IO.Fonts->GetGlyphRangesKorean()))
+    {
+        IO.FontDefault = KoreanFont;
+    }
     ImGui_ImplWin32_Init((void*)WindowHandle);
     ImGui_ImplDX11_Init(Renderer->GetRHI().GetDevice(), Renderer->GetRHI().GetDeviceContext());
 
@@ -454,6 +461,7 @@ bool FEditorEngineLoop::RunFrameOnceWithoutResize()
     UpdateFrameTiming();
 
     Editor->SetMainLoopFPS(MainLoopFPS);
+    
     Editor->Tick(DeltaTime, InputSystem);
 
     Renderer->BeginFrame();
