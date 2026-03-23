@@ -195,6 +195,7 @@
     <ClCompile Include="Source\Engine\Object\Object.cpp" />
     <ClCompile Include="Source\Engine\Render\FontBatcher.cpp" />
     <ClCompile Include="Source\Engine\Render\LineBatcher.cpp" />
+    <ClCompile Include="Source\Engine\Render\SubUVBatcher.cpp" />
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp" />
     <ClCompile Include="Source\Engine\Render\Mesh\MeshManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\Renderer.cpp" />
@@ -209,7 +210,6 @@
     <ClCompile Include="Source\Engine\Runtime\WindowsApplication.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp" />
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp" />
-    <ClCompile Include="Source\Engine\Render\SubUVBatcher.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_demo.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_draw.cpp" />
@@ -266,6 +266,7 @@
     <ClInclude Include="Source\Engine\Object\ObjectFactory.h" />
     <ClInclude Include="Source\Engine\Render\FontBatcher.h" />
     <ClInclude Include="Source\Engine\Render\LineBatcher.h" />
+    <ClInclude Include="Source\Engine\Render\SubUVBatcher.h" />
     <ClInclude Include="Source\Engine\Render\Common\RenderTypes.h" />
     <ClInclude Include="Source\Engine\Render\Common\ViewTypes.h" />
     <ClInclude Include="Source\Engine\Render\Device\D3DDevice.h" />
@@ -286,7 +287,6 @@
     <ClInclude Include="Source\Engine\Runtime\WindowsApplication.h" />
     <ClInclude Include="Source\Engine\Runtime\WindowsWindow.h" />
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />
-    <ClInclude Include="Source\Engine\Render\SubUVBatcher.h" />
     <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui_impl_dx11.h" />
@@ -326,10 +326,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="Asset\Font\FontAtlas.dds" />
-    <Image Include="Asset\Particle\Explosion.dds" />
+    <FxCompile Include="Shaders\ShaderSubUV.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
