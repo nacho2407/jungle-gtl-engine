@@ -1,15 +1,61 @@
-﻿#include "GameFramework/AActor.h"
+#include "GameFramework/AActor.h"
 
 DEFINE_CLASS(AActor, UObject)
 REGISTER_FACTORY(AActor)
 
 AActor::~AActor() {
-	for (auto* Comp : Components) {
+	for (auto* Comp : OwnedComponents) {
 		UObjectManager::Get().DestroyObject(Comp);
 	}
 
-	Components.clear();
+	OwnedComponents.clear();
 	RootComponent = nullptr;
+}
+
+UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class) {
+	if (!Class) return nullptr;
+
+	UObject* Obj = FObjectFactory::Get().Create(Class->name);
+	if (!Obj) return nullptr;
+
+	UActorComponent* Comp = Obj->Cast<UActorComponent>();
+	if (!Comp) {
+		UObjectManager::Get().DestroyObject(Obj);
+		return nullptr;
+	}
+
+	Comp->SetOwner(this);
+	OwnedComponents.push_back(Comp);
+	return Comp;
+}
+
+void AActor::RegisterComponent(UActorComponent* Comp) {
+	if (!Comp) return;
+
+	auto it = std::find(OwnedComponents.begin(), OwnedComponents.end(), Comp);
+	if (it == OwnedComponents.end()) {
+		Comp->SetOwner(this);
+		OwnedComponents.push_back(Comp);
+	}
+}
+
+void AActor::RemoveComponent(UActorComponent* Component) {
+	if (!Component) return;
+
+	auto it = std::find(OwnedComponents.begin(), OwnedComponents.end(), Component);
+	if (it != OwnedComponents.end())
+		OwnedComponents.erase(it);
+
+	// RootComponent가 제거되면 nullptr로
+	if (RootComponent == Component)
+		RootComponent = nullptr;
+
+	UObjectManager::Get().DestroyObject(Component);
+}
+
+void AActor::SetRootComponent(USceneComponent* Comp) {
+	if (!Comp) return;
+	RootComponent = Comp;
 }
 
 FVector AActor::GetActorLocation() const {
@@ -24,20 +70,5 @@ void AActor::SetActorLocation(const FVector& NewLocation) {
 
 	if (RootComponent) {
 		RootComponent->SetWorldLocation(NewLocation);
-	}
-}
-
-void AActor::RegisterComponentRecursive(USceneComponent* Comp) {
-	if (!Comp) return;
-
-	// Avoid duplicates
-	auto it = std::find(Components.begin(), Components.end(), Comp);
-	if (it == Components.end()) {
-		Comp->SetOwner(this);
-		Components.push_back(Comp);
-	}
-
-	for (USceneComponent* Child : Comp->GetChildren()) {
-		RegisterComponentRecursive(Child);
 	}
 }
