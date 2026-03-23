@@ -42,13 +42,6 @@ public:
 
 	void UpdateWorldMatrix() const override;
 	void AddWorldOffset(const FVector& WorldDelta) override;
-
-	virtual bool GetRenderCommand(FRenderCommand& OutCommand) {
-		OutCommand.Type = ERenderCommandType::Primitive;
-		OutCommand.PerObjectConstants.Model = GetWorldMatrix();
-		return true;
-	}
-
 	virtual EPrimitiveType GetPrimitiveType() const = 0;
 };
 
@@ -59,7 +52,6 @@ private:
 public:
 	DECLARE_CLASS(UCubeComponent, UPrimitiveComponent)
 	UCubeComponent();
-	bool GetRenderCommand(FRenderCommand& OutCommand) override;
 	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_Cube;
 
 	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
@@ -73,7 +65,6 @@ public:
 	DECLARE_CLASS(USphereComponent, UPrimitiveComponent)
 	USphereComponent();
 	void UpdateWorldAABB() const override;
-	bool GetRenderCommand(FRenderCommand& OutCommand) override;
 	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_Sphere;
 
 	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
@@ -87,7 +78,6 @@ public:
 	DECLARE_CLASS(UPlaneComponent, UPrimitiveComponent)
 	UPlaneComponent();
 	void UpdateWorldAABB() const override;
-	bool GetRenderCommand(FRenderCommand& OutCommand) override;
 	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_Plane;
 
 	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
