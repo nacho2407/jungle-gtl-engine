@@ -16,6 +16,8 @@ void URenderer::Create(HWND hWindow)
 	ShowFlagMap[EEngineShowFlags::SF_Primitives] = true;
 	ShowFlagMap[EEngineShowFlags::SF_BillboardText] = true;
 	ShowFlagMap[EEngineShowFlags::SF_EditorPrimitives] = true;
+	ShowFlagMap[EEngineShowFlags::SF_DebugLines] = true;
+
 }
 
 void URenderer::CreateDeviceAndSwapChain(HWND hWindow)
@@ -331,6 +333,8 @@ void URenderer::Render(const TArray<FLevel*>& Levels)
 
 void URenderer::BatchRenderDebugLine(const TArray<FVertexSimple>& Lines)
 {
+	if (ShowFlagMap[EEngineShowFlags::SF_DebugLines] == false)
+		return;
 	ResourceManager::GetInstance()->GetMaterial(L"Shader/ShaderLine.hlsl").Bind(DeviceContext.Get());
 	DeviceContext->OMSetDepthStencilState(DepthStencilStateNoDepth.Get(), 0);
 	UpdateDynamicVertexBuffer(const_cast<FVertexSimple*>(Lines.data()), Lines.size());

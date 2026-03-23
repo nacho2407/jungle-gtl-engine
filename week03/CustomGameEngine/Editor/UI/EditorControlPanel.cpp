@@ -235,6 +235,7 @@ void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 		ImGui::Checkbox("Show Primitives", &Renderer->ShowFlagMap[EEngineShowFlags::SF_Primitives]);
 		ImGui::Checkbox("Show Billboard Text", &Renderer->ShowFlagMap[EEngineShowFlags::SF_BillboardText]);
 		ImGui::Checkbox("Show Editor Primitives", &Renderer->ShowFlagMap[EEngineShowFlags::SF_EditorPrimitives]);
+		ImGui::Checkbox("Show DebugLines ", &Renderer->ShowFlagMap[EEngineShowFlags::SF_DebugLines]);
 	}
 	static int32 RenderingMode = 0;
 	if(ImGui::Combo("RenderingMode", &RenderingMode, "Normal\0NoCull\0Wireframe\0"))

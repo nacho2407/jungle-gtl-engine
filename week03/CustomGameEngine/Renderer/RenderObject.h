@@ -12,6 +12,7 @@ enum class EEngineShowFlags
 	SF_Primitives,
 	SF_BillboardText,
 	SF_EditorPrimitives,
+	SF_DebugLines,
 	SF_None,
 };
 
