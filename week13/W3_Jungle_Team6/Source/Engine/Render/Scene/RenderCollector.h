@@ -17,10 +17,10 @@ public:
 
 private:
 	void CollectFromActor(AActor* Actor,const FRenderCollectorContext& Context, FRenderBus& RenderBus);
+	void CollectFromSelectedActor(AActor* Actor,const FRenderCollectorContext& Context, FRenderBus& RenderBus);
 	void CollectFromComponent(UPrimitiveComponent* primitiveComponent, const FRenderCollectorContext& Context, FRenderBus& RenderBus);
 	void CollectFromEditor(const FRenderCollectorContext& Context, FRenderBus& RenderBus);
 	void CollectGizmo(const FRenderCollectorContext& Context,  FRenderBus& RenderBus);
 	void CollectMouseOverlay(const FRenderCollectorContext& Context, FRenderBus& RenderBus);
-	void CollectComponentOutline(UPrimitiveComponent* primitiveComponent, const FRenderCollectorContext& Context, FRenderBus& RenderBus);
 	void CollectAABBCommand(UPrimitiveComponent* PrimitiveComponent, FRenderBus& RenderBus);
 };

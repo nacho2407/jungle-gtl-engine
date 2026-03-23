@@ -4,6 +4,7 @@
 #include "Component/SceneComponent.h"
 
 class UWorld;
+class UPrimitiveComponent;
 
 class AActor : public UObject {
 public:
@@ -120,6 +121,8 @@ public:
 	bool IsVisible() const { return bVisible; }
 	void SetVisible(bool Visible) { bVisible = Visible; }
 
+	const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
+
 protected:
 	USceneComponent* RootComponent = nullptr;
 	UWorld* OwningWorld = nullptr;
@@ -128,6 +131,10 @@ protected:
 	bool bVisible = true;
 
 	TArray<USceneComponent*> Components;
+
+	// 렌더링용 캐시
+	mutable TArray<UPrimitiveComponent*> PrimitiveCache;
+	mutable bool bComponentsDirty = true;
 
 private:
 	void RegisterComponentRecursive(USceneComponent* Comp);
