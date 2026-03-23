@@ -49,15 +49,15 @@ void FOutlinerPanel::Draw()
         return;
     }
 
-    const TArray<AActor*>& Actors = GetContext()->Scene->GetActors();
-    if (Actors.empty())
+    const auto& Actors = GetContext()->Scene->GetActors();
+    if (Actors->empty())
     {
         DrawEmptyState();
         ImGui::End();
         return;
     }
 
-    for (AActor* Actor : Actors)
+    for (auto Actor : *Actors)
     {
         DrawActorRow(Actor);
     }

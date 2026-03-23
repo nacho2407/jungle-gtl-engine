@@ -464,6 +464,9 @@
     <ClInclude Include="Source\Engine\ViewPort\ViewportClient.h">
       <Filter>Source\Engine\ViewPort</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\ViewPort\ViewportController.h">
+      <Filter>Source\Engine\ViewPort</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Launch\EngineLoop.h">
       <Filter>Source\Launch</Filter>
     </ClInclude>
