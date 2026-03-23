@@ -30,3 +30,12 @@ public:
 
 	void InitDefaultComponents();
 };
+
+class AAttachTestActor : public AActor
+{
+public:
+	DECLARE_CLASS(AAttachTestActor, AActor)
+	AAttachTestActor() = default;
+
+	void InitDefaultComponents();
+};

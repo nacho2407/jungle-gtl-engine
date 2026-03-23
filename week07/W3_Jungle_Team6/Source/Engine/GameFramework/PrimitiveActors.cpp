@@ -13,29 +13,73 @@ REGISTER_FACTORY(ASphereActor)
 DEFINE_CLASS(APlaneActor, AActor)
 REGISTER_FACTORY(APlaneActor)
 
+DEFINE_CLASS(AAttachTestActor, AActor)
+REGISTER_FACTORY(AAttachTestActor)
+
 void ACubeActor::InitDefaultComponents()
 {
-	AddComponent<UCubeComponent>();
+	auto* Cube = AddComponent<UCubeComponent>();
+	SetRootComponent(Cube);
+
 	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
 	Text->SetFont(FName("Default"));
-	Text->SetText(std::format("UUID: {}", GetUUID()));
+	Text->AttachToComponent(Cube);
+	Text->SetText("UUID : " + std::to_string(GetUUID()));
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 }
 
 void ASphereActor::InitDefaultComponents()
 {
-	AddComponent<USphereComponent>();
+	auto* Sphere = AddComponent<USphereComponent>();
+	SetRootComponent(Sphere);
+
 	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
 	Text->SetFont(FName("Default"));
-	Text->SetText(std::format("UUID: {}", GetUUID()));
+	Text->AttachToComponent(Sphere);
+	Text->SetText("UUID : " + std::to_string(GetUUID()));
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 }
 
 void APlaneActor::InitDefaultComponents()
 {
-	AddComponent<UPlaneComponent>();
+	auto* Plane = AddComponent<UPlaneComponent>();
+	SetRootComponent(Plane);
+
 	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
 	Text->SetFont(FName("Default"));
 	Text->SetText(std::format("UUID: {}", GetUUID()));
+	Text->AttachToComponent(Plane);
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
+}
+
+void AAttachTestActor::InitDefaultComponents()
+{
+	// Root: Cube
+	auto* Cube = AddComponent<UCubeComponent>();
+	SetRootComponent(Cube);
+
+	// Grouping node for spheres
+	auto* Primitives = AddComponent<USceneComponent>();
+	Primitives->AttachToComponent(Cube);
+
+	// 4 Spheres in a square pattern
+	constexpr float Offset = 2.0f;
+	const FVector Positions[4] = {
+		{ -Offset, -Offset, 0.0f },
+		{  Offset, -Offset, 0.0f },
+		{  Offset,  Offset, 0.0f },
+		{ -Offset,  Offset, 0.0f },
+	};
+	for (int i = 0; i < 4; ++i)
+	{
+		auto* Sphere = AddComponent<USphereComponent>();
+		Sphere->AttachToComponent(Primitives);
+		Sphere->SetRelativeLocation(Positions[i]);
+	}
+
+	// Text attached directly to Root
+	auto* Text = AddComponent<UTextRenderComponent>();
+	Text->AttachToComponent(Cube);
+	Text->SetText("UUID : " + std::to_string(GetUUID()));
+	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.5f));
 }
