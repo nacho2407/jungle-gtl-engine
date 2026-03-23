@@ -11,6 +11,8 @@
 #include "Input/GizmoInputContext.h"
 #include "Input/NavigationInputContext.h"
 #include "Engine/Scene.h"
+#include "Logging/EditorLogBuffer.h"
+#include "Logging/EditorLogEntry.h"
 #include "Viewport/EditorViewport.h"
 #include "Viewport/EditorViewportClient.h"
 #include "Renderer/EditorRenderData.h"
@@ -19,6 +21,7 @@
 
 class FPanelManager;
 struct FPanelDescriptor;
+class UObject;
 
 class FEditor
 {
@@ -39,6 +42,8 @@ class FEditor
 
     void CreateNewScene();
     void ClearScene();
+    void SetSelectedObject(UObject* InSelectedObject);
+    UObject* GetSelectedObject() const { return EditorContext.SelectedObject; }
 
     const FEditorRenderData& GetEditorRenderData() const { return EditorRenderData; }
     const FSceneRenderData& GetSceneRenderData() const { return SceneRenderData; }
@@ -71,6 +76,9 @@ class FEditor
     FSceneView SceneView;
 
     FScene* CurScene = nullptr;
+    
+    /* Logging */
+    FEditorLogBuffer LogBuffer;
 
     float WindowWidth = 0.0f;
     float WindowHeight = 0.0f;

@@ -1,10 +1,13 @@
 #pragma once
 
+#include "Core/Containers/Array.h"
+
 class UAssetManager;
 class UObject;
 class FD3D11DynamicRHI;
 class FScene;
 class FEditor;
+class AActor;
 
 struct FEditorContext
 {
@@ -13,6 +16,7 @@ struct FEditorContext
 	FD3D11DynamicRHI* RHI = nullptr;
 	UAssetManager* AssetManager = nullptr;
 
+	TArray<AActor*> SelectedActors;
 	UObject* SelectedObject = nullptr;
 
     float CurrentFPS = 0.0f;

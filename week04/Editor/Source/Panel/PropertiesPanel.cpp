@@ -34,13 +34,20 @@ namespace
         ImGui::PopID();
     }
 
-    void DrawRotatorRow(const char* Label, FRotator& Value, float Speed = 0.5f)
+    void DrawRotatorRow(const char* Label, FVector& Value, float Speed = 0.5f)
     {
+        FVector EulerDegrees = Value;
+
         ImGui::PushID(Label);
         ImGui::TextUnformatted(Label);
         ImGui::SameLine(120.0f);
         ImGui::SetNextItemWidth(-1.0f);
-        ImGui::DragFloat3("##Value", &Value.Pitch, Speed);
+        if (ImGui::DragFloat3("##Value", EulerDegrees.XYZ, Speed))
+        {
+            // UI는 LH Z-Up 기준 축 회전(X,Y,Z)을 보여 주고,
+            // 엔진 내부 Rotator(Pitch,Yaw,Roll) 순서로 다시 변환해 저장합니다.
+            Value = EulerDegrees;
+        }
         ImGui::PopID();
     }
 } // namespace
@@ -68,6 +75,7 @@ void FPropertiesPanel::Draw()
 
     if (GetContext() == nullptr || GetContext()->SelectedObject == nullptr)
     {
+        CachedTargetComponent = nullptr;
         DrawNoSelectionState();
         ImGui::End();
         return;
@@ -75,16 +83,55 @@ void FPropertiesPanel::Draw()
 
     if (TargetComponent == nullptr)
     {
+        CachedTargetComponent = nullptr;
         DrawUnsupportedSelectionState();
         ImGui::End();
         return;
     }
 
+    SyncEditTransformFromTarget(TargetComponent);
     DrawSelectionSummary(SelectedActor, TargetComponent);
     ImGui::Separator();
     DrawTransformEditor(TargetComponent);
 
     ImGui::End();
+}
+
+void FPropertiesPanel::SetTarget(const FVector& Location, const FVector& Rotation, const FVector& Scale)
+{
+    EditLocation = Location;
+    EditRotation = Rotation;
+    EditScale = Scale;
+}
+
+void FPropertiesPanel::SyncEditTransformFromTarget(
+    Engine::Component::USceneComponent* TargetComponent)
+{
+    if (TargetComponent == nullptr)
+    {
+        CachedTargetComponent = nullptr;
+        return;
+    }
+
+    const FVector CurrentLocation = TargetComponent->GetRelativeLocation();
+    const FQuat CurrentRotation = TargetComponent->GetRelativeQuaternion();
+    const FVector CurrentScale = TargetComponent->GetRelativeScale3D();
+
+    const bool bTargetChanged = (CachedTargetComponent != TargetComponent);
+    const bool bLocationChangedExternally = (EditLocation != CurrentLocation);
+    const bool bScaleChangedExternally = (EditScale != CurrentScale);
+    const bool bRotationChangedExternally =
+        !CurrentRotation.Equals(FRotator::MakeFromEuler(EditRotation).Quaternion());
+
+    // 회전 편집 중에는 패널이 표시 중인 Euler 값을 유지해야 합니다.
+    // 매 프레임 quat -> euler 로 다시 변환하면 Pitch(Y축)가 +/-90 부근에서
+    // 등가 회전의 다른 표현으로 튀어 특이점처럼 보이는 현상이 발생합니다.
+    if (bTargetChanged || bLocationChangedExternally || bScaleChangedExternally
+        || bRotationChangedExternally)
+    {
+        SetTarget(CurrentLocation, CurrentRotation.Euler(), CurrentScale);
+        CachedTargetComponent = TargetComponent;
+    }
 }
 
 Engine::Component::USceneComponent* FPropertiesPanel::ResolveTargetComponent(
@@ -150,35 +197,32 @@ void FPropertiesPanel::DrawSelectionSummary(
 }
 
 void FPropertiesPanel::DrawTransformEditor(
-    Engine::Component::USceneComponent* TargetComponent) const
+    Engine::Component::USceneComponent* TargetComponent)
 {
-    FVector Location = TargetComponent->GetRelativeLocation();
-    FRotator Rotation = TargetComponent->GetRelativeRotation();
-    FVector Scale = TargetComponent->GetRelativeScale3D();
-
-    DrawVectorRow("Location", Location, 0.1f);
-    DrawRotatorRow("Rotation", Rotation, 0.5f);
-    DrawVectorRow("Scale", Scale, 0.01f);
+    DrawVectorRow("Location", EditLocation, 0.1f);
+    DrawRotatorRow("Rotation", EditRotation, 0.5f);
+    DrawVectorRow("Scale", EditScale, 0.01f);
 
     if (ImGui::Button("Reset Transform"))
     {
-        Location = FVector::ZeroVector;
-        Rotation = FRotator::ZeroRotator;
-        Scale = FVector::OneVector;
+        EditLocation = FVector::ZeroVector;
+        EditRotation = FVector::ZeroVector;
+        EditScale = FVector::OneVector;
     }
 
-    if (TargetComponent->GetRelativeLocation() != Location)
+    if (TargetComponent->GetRelativeLocation() != EditLocation)
     {
-        TargetComponent->SetRelativeLocation(Location);
+        TargetComponent->SetRelativeLocation(EditLocation);
     }
 
-    if (!TargetComponent->GetRelativeRotation().Equals(Rotation))
+    if (!TargetComponent->GetRelativeQuaternion().Equals(
+            FRotator::MakeFromEuler(EditRotation).Quaternion()))
     {
-        TargetComponent->SetRelativeRotation(Rotation);
+        TargetComponent->SetRelativeRotation(FRotator::MakeFromEuler(EditRotation));
     }
 
-    if (TargetComponent->GetRelativeScale3D() != Scale)
+    if (TargetComponent->GetRelativeScale3D() != EditScale)
     {
-        TargetComponent->SetRelativeScale3D(Scale);
+        TargetComponent->SetRelativeScale3D(EditScale);
     }
 }

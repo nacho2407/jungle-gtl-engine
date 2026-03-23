@@ -15,6 +15,8 @@ public:
     void Draw() override;
 
 private:
+    void DrawToolbar() const;
     void DrawEmptyState() const;
     void DrawActorRow(AActor* Actor) const;
+    void SpawnCubeActor() const;
 };

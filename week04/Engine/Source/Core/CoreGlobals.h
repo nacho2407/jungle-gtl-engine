@@ -1,4 +1,7 @@
 #pragma once
+#pragma once
 
-class FLogOutputDevice;
-extern FLogOutputDevice* GLog;
+#include "EngineAPI.h"
+
+class ILogOutputDevice;
+extern ENGINE_API ILogOutputDevice* GLog;
