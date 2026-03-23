@@ -90,3 +90,13 @@ FRay UCameraComponent::DeprojectScreenToWorld(float MouseX, float MouseY, float 
 
 	return Ray;
 }
+
+void UCameraComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+	USceneComponent::GetEditableProperties(OutProps);
+	OutProps.push_back({ "FOV", EPropertyType::Float, &CameraState.FOV, 0.1f, 3.14f, 0.01f });
+	OutProps.push_back({ "Near Z", EPropertyType::Float, &CameraState.NearZ, 0.01f, 100.0f, 0.01f });
+	OutProps.push_back({ "Far Z", EPropertyType::Float, &CameraState.FarZ, 1.0f, 100000.0f, 10.0f });
+	OutProps.push_back({ "Orthographic", EPropertyType::Bool, &CameraState.bIsOrthogonal });
+	OutProps.push_back({ "Ortho Width", EPropertyType::Float, &CameraState.OrthoWidth, 0.1f, 1000.0f, 0.5f });
+}

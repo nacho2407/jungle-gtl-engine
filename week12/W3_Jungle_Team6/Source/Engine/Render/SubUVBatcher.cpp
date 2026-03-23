@@ -1,33 +1,12 @@
-﻿#include "SubUVBatcher.h"
+#include "SubUVBatcher.h"
 
-#include "DDSTextureLoader.h"
 #include "Core/CoreTypes.h"
 
-// 이렇게 사용 Create(Device, L"./Asset/Particle/Explosion.dds", 6, 6)
-void FSubUVBatcher::Create(ID3D11Device* InDevice,
-                           const wchar_t* AtlasPath,
-                           uint32 InColumns,
-                           uint32 InRows)
+void FSubUVBatcher::Create(ID3D11Device* InDevice)
 {
-    Device  = InDevice;
-    Columns = (InColumns > 0) ? InColumns : 1;
-    Rows    = (InRows    > 0) ? InRows    : 1;
+    Device = InDevice;
 
-    // 스프라이트 아틀라스 텍스처 로드
-    HRESULT hr = DirectX::CreateDDSTextureFromFileEx(
-        Device,
-        AtlasPath,
-        0,
-        D3D11_USAGE_IMMUTABLE,
-        D3D11_BIND_SHADER_RESOURCE,
-        0, 0,
-        DirectX::DDS_LOADER_DEFAULT,
-        &AtlasResource,
-        &AtlasSRV
-    );
-    if (FAILED(hr)) return;
-
-    // Dynamic VB/IB 초기 할당
+    // Dynamic VB/IB 초기 할당 (텍스처는 ResourceManager가 소유 — 여기서 로드하지 않음)
     MaxVertexCount = 256;
     MaxIndexCount  = 384;
     CreateBuffers();
@@ -38,8 +17,7 @@ void FSubUVBatcher::Create(ID3D11Device* InDevice,
     sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
     sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
     sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-    hr = Device->CreateSamplerState(&sampDesc, &SamplerState);
-    if (FAILED(hr)) return;
+    Device->CreateSamplerState(&sampDesc, &SamplerState);
 
     // 셰이더 + Input Layout (FTextureVertex: POSITION float3, TEXCOORD float2)
     D3D11_INPUT_ELEMENT_DESC layout[] =
@@ -53,7 +31,6 @@ void FSubUVBatcher::Create(ID3D11Device* InDevice,
 
 void FSubUVBatcher::CreateBuffers()
 {
-    // 버퍼가 존재한다면 해제 (재할당 목적)
     if (VertexBuffer) { VertexBuffer->Release(); VertexBuffer = nullptr; }
     if (IndexBuffer)  { IndexBuffer->Release();  IndexBuffer  = nullptr; }
 
@@ -74,14 +51,11 @@ void FSubUVBatcher::CreateBuffers()
 
 void FSubUVBatcher::Release()
 {
-    // Device는 소유권이 나에게 없음.
     Clear();
 
-    if (VertexBuffer)  { VertexBuffer->Release();  VertexBuffer  = nullptr; }
-    if (IndexBuffer)   { IndexBuffer->Release();   IndexBuffer   = nullptr; }
-    if (AtlasResource) { AtlasResource->Release(); AtlasResource = nullptr; }
-    if (AtlasSRV)      { AtlasSRV->Release();      AtlasSRV      = nullptr; }
-    if (SamplerState)  { SamplerState->Release();  SamplerState  = nullptr; }
+    if (VertexBuffer) { VertexBuffer->Release(); VertexBuffer = nullptr; }
+    if (IndexBuffer)  { IndexBuffer->Release();  IndexBuffer  = nullptr; }
+    if (SamplerState) { SamplerState->Release(); SamplerState = nullptr; }
 
     SubUVShader.Release();
 }
@@ -90,15 +64,16 @@ void FSubUVBatcher::AddSprite(const FVector& WorldPos,
                               const FVector& CamRight,
                               const FVector& CamUp,
                               uint32 FrameIndex,
+                              uint32 Columns,
+                              uint32 Rows,
                               float Width,
                               float Height)
 {
-    FSubUVFrameInfo Frame = GetFrameUV(FrameIndex);
+    FSubUVFrameInfo Frame = GetFrameUV(FrameIndex, Columns, Rows);
 
     const float HalfW = Width  * 0.5f;
     const float HalfH = Height * 0.5f;
 
-    // CPU Billboard — CamRight / CamUp으로 월드 좌표 직접 계산
     FVector v0 = WorldPos + CamRight * (-HalfW) + CamUp * ( HalfH); // 좌상
     FVector v1 = WorldPos + CamRight * ( HalfW) + CamUp * ( HalfH); // 우상
     FVector v2 = WorldPos + CamRight * (-HalfW) + CamUp * (-HalfH); // 좌하
@@ -106,9 +81,9 @@ void FSubUVBatcher::AddSprite(const FVector& WorldPos,
 
     uint32 Base = static_cast<uint32>(Vertices.size());
 
-    Vertices.push_back({ v0, { Frame.U,                Frame.V                } });
+    Vertices.push_back({ v0, { Frame.U,               Frame.V                } });
     Vertices.push_back({ v1, { Frame.U + Frame.Width,  Frame.V                } });
-    Vertices.push_back({ v2, { Frame.U,                Frame.V + Frame.Height } });
+    Vertices.push_back({ v2, { Frame.U,               Frame.V + Frame.Height } });
     Vertices.push_back({ v3, { Frame.U + Frame.Width,  Frame.V + Frame.Height } });
 
     Indices.push_back(Base + 0); Indices.push_back(Base + 1); Indices.push_back(Base + 2);
@@ -121,8 +96,9 @@ void FSubUVBatcher::Clear()
     Indices.clear();
 }
 
-void FSubUVBatcher::Flush(ID3D11DeviceContext* Context)
+void FSubUVBatcher::Flush(ID3D11DeviceContext* Context, ID3D11ShaderResourceView* SRV)
 {
+    if (!SRV) return;
     if (Vertices.empty() || !VertexBuffer || !IndexBuffer) return;
 
     // 버퍼 크기 초과 시 재할당
@@ -152,18 +128,18 @@ void FSubUVBatcher::Flush(ID3D11DeviceContext* Context)
     Context->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
     Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    Context->PSSetShaderResources(0, 1, &AtlasSRV);
+    // ResourceManager 소유 SRV 바인딩
+    Context->PSSetShaderResources(0, 1, &SRV);
     Context->PSSetSamplers(0, 1, &SamplerState);
 
     Context->DrawIndexed(static_cast<uint32>(Indices.size()), 0, 0);
 }
 
-FSubUVFrameInfo FSubUVBatcher::GetFrameUV(uint32 FrameIndex) const
+FSubUVFrameInfo FSubUVBatcher::GetFrameUV(uint32 FrameIndex, uint32 Columns, uint32 Rows) const
 {
     const float FrameW = 1.0f / static_cast<float>(Columns);
     const float FrameH = 1.0f / static_cast<float>(Rows);
 
-    // FrameIndex: 좌→우, 위→아래 순
     const uint32 Col = FrameIndex % Columns;
     const uint32 Row = FrameIndex / Columns;
 

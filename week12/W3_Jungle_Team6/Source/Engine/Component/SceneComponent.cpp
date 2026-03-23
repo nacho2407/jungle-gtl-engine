@@ -1,7 +1,22 @@
 ﻿#include "SceneComponent.h"
-
+#include "Object/ObjectFactory.h"
 
 DEFINE_CLASS(USceneComponent, UActorComponent)
+REGISTER_FACTORY(USceneComponent)
+
+void USceneComponent::AttachToComponent(USceneComponent* InParent)
+{
+	if (!InParent || InParent == this) return;
+	SetParent(InParent);
+}
+
+void USceneComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+	UActorComponent::GetEditableProperties(OutProps);
+	OutProps.push_back({ "Location", EPropertyType::Vec3, &RelativeLocation, 0.0f, 0.0f, 0.1f });
+	OutProps.push_back({ "Rotation", EPropertyType::Vec3, &RelativeRotation, 0.0f, 0.0f, 0.1f });
+	OutProps.push_back({ "Scale", EPropertyType::Vec3, &RelativeScale3D, 0.0f, 0.0f, 0.1f });
+}
 
 USceneComponent::USceneComponent()
 {
