@@ -16,10 +16,10 @@ class FD3D11DynamicRHI
 
     bool Resize(int32 InWidth, int32 InHeight);
 
-    ID3D11Device*   GetDevice() const { return Device.Get(); }
+    ID3D11Device* GetDevice() const { return Device.Get(); }
     // TODO : 직접 참조 거는거 TextureResource 쪽에서 빼고, GetDeviceContext 제거해야함.
     ID3D11DeviceContext* GetDeviceContext() const { return DeviceContext.Get(); }
-    IDXGISwapChain* GetSwapChain() const { return SwapChain.Get(); }
+    IDXGISwapChain*      GetSwapChain() const { return SwapChain.Get(); }
 
     ID3D11RenderTargetView* GetBackBufferRTV() const { return BackBufferRTV.Get(); }
     ID3D11Texture2D*        GetDepthStencilBuffer() const { return DepthStencilBuffer.Get(); }
@@ -47,6 +47,11 @@ class FD3D11DynamicRHI
                                           ID3D11VertexShader**            OutVertexShader,
                                           ID3D11InputLayout**             OutInputLayout) const;
 
+    bool CreateVertexBuffer(const void* InData, uint32 InByteWidth, uint32 InStride, bool bDynamic,
+                            ID3D11Buffer** OutVertexBuffer) const;
+    bool CreateIndexBuffer(const void* InData, uint32 InByteWidth, bool bDynamic,
+                           ID3D11Buffer** OutIndexBuffer) const;
+
     bool CreatePixelShader(const wchar_t* InFilePath, const char* InEntryPoint,
                            ID3D11PixelShader** OutPixelShader) const;
 
@@ -70,7 +75,7 @@ class FD3D11DynamicRHI
 
     void SetRasterizerState(ID3D11RasterizerState* InRasterizerState) const;
     void SetDepthStencilState(ID3D11DepthStencilState* InDepthStencilState,
-                              uint32 InStencilRef = 0) const;
+                              uint32                   InStencilRef = 0) const;
 
     void Draw(uint32 InVertexCount, uint32 InStartVertexLocation = 0) const;
     void DrawIndexed(uint32 InIndexCount, uint32 InStartIndexLocation = 0,
