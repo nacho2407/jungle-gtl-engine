@@ -46,9 +46,12 @@ public:
 	void SetGrid(UGridComp* grid);
 
 	//picking
+	void ClearSelection();
 	void SelectSingleComponent(USceneComponent* component);
 	void SelectMultiComponent(USceneComponent* component);
-	USceneComponent* GetSelectedComponent() const { return SelectedComponent; }
+	const TArray<USceneComponent*>& GetSelectedComponents() const { return SelectedComponents; }
+	USceneComponent* GetLastSelectedComponent() const;
+	bool IsComponentSelected(USceneComponent* component) const;
 
 	void LoadSettings();
 	void SaveSettings();
@@ -74,7 +77,7 @@ private:
 
 	URenderer* Renderer = nullptr;
 	UCameraComponent* Camera = nullptr;
-	USceneComponent* SelectedComponent = nullptr;
+	//USceneComponent* SelectedComponent = nullptr;
 	TArray<USceneComponent*> SelectedComponents;
 	UGridComp* Grid = nullptr;
 	bool bDockLayoutInitialized = false;

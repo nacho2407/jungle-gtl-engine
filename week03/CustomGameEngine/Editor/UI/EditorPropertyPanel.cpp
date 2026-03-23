@@ -32,7 +32,6 @@ void EditorPropertyPanel::Draw(USceneComponent* selectedComponent)
 
 void EditorPropertyPanel::RemoveSelected(USceneComponent* selectedComponent)
 {
-	editor->SelectSingleComponent(nullptr);
-	editor->SelectMultiComponent(nullptr);
+	editor->ClearSelection();
 	GetWorld().GetSceneManager()->RemoveSceneComponent(selectedComponent);
 }

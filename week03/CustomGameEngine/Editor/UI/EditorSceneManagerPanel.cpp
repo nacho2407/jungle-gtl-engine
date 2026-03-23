@@ -36,8 +36,7 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 			if (ImGui::Selectable(sceneLabel.c_str(), isSelected))
 			{
 				sceneMgr->SetActiveScene(scene);
-				editor->SelectSingleComponent(nullptr);
-				editor->SelectMultiComponent(nullptr);
+				editor->ClearSelection();
 			}
 			//if (ImGui::BeginPopupContextItem())
 			//{
@@ -66,13 +65,13 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 			{
 				if (component == nullptr) continue;
 
-				bool isSelected = (editor->GetSelectedComponent() == component);
+				bool isSelected = (editor->IsComponentSelected(component));
 				FString label = component->Name.GetDisplayName() + " (UUID: " + std::to_string(component->UUID) + ")";
 
+				//isSelected에 따라 선택된 컴포넌트는 다른 색으로 표시됩니다. 클릭 시 해당 컴포넌트를 선택합니다.
 				if (ImGui::Selectable(label.c_str(), isSelected))
 				{
-					editor->SelectSingleComponent(nullptr);
-					editor->SelectMultiComponent(nullptr);
+					editor->SelectSingleComponent(component);
 				}
 			}
 		}
@@ -86,13 +85,12 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 		{
 			if (component == nullptr) continue;
 
-			bool isSelected = (editor->GetSelectedComponent() == component);
+			bool isSelected = editor->IsComponentSelected(component);
 			FString label = component->Name.GetDisplayName() + " (UUID: " + std::to_string(component->UUID) + ")";
 
 			if (ImGui::Selectable(label.c_str(), isSelected))
 			{
-				editor->SelectSingleComponent(nullptr);
-				editor->SelectMultiComponent(nullptr);
+				editor->SelectSingleComponent(component);
 			}
 		}
 	}

@@ -54,8 +54,9 @@ void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene, bool bMultiSelect)
 		// RayHits 안에 이미 선택된 오브젝트가 있다면 거리순으로 정렬해 그 다음 것을 선택
 		std::sort(RayHits.begin(), RayHits.end());
 		int nextIndex = 0;
+		USceneComponent* lastSelected = EditorPtr->GetLastSelectedComponent();
 		for (int i = 0; i < RayHits.size(); ++i) {
-			if (RayHits[i].second == EditorPtr->GetSelectedComponent()) {
+			if (RayHits[i].second == lastSelected) {
 				nextIndex = (i + 1) % RayHits.size();
 				break;
 			}
@@ -65,20 +66,18 @@ void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene, bool bMultiSelect)
 		{
 			EditorPtr->SelectSingleComponent(selectedComp);
 		}
-		else {
+		else
+		{
 			EditorPtr->SelectMultiComponent(selectedComp);
 		}
 		Scene->IsCompSelected = true;
 	}
 	else
 	{
-		//씬 오브젝트가 picking되지 않은 경우
 		if (!bMultiSelect)
 		{
-			//컨트롤 키가 눌리지 않았으니 선택 해제
-			EditorPtr->SelectSingleComponent(nullptr);
+			EditorPtr->ClearSelection();
 		}
-		Scene->IsCompSelected = false;
 	}
 }
 

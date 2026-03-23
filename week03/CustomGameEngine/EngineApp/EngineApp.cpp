@@ -160,8 +160,7 @@ void EngineApp::Run()
 		UScene* currentActiveScene = GetWorld().GetSceneManager()->GetActiveScene();
 		if (currentActiveScene != LastActiveScene)
 		{
-			EditorInst->SelectSingleComponent(nullptr);
-			EditorInst->SelectMultiComponent(nullptr);
+			EditorInst->ClearSelection();
 			LastActiveScene = currentActiveScene;
 		}
 
@@ -175,11 +174,11 @@ void EngineApp::Run()
 		FVector Mouse = InputManager::GetInstance().MousePos;
 		if (!io.WantCaptureMouse && InputManager::GetInstance().IsKeyDown(VK_LBUTTON))
 		{
-			bool bIsShiftlDown = InputManager::GetInstance().IsKeyHold(VK_CONTROL);
+			bool bIsCtrlDown = InputManager::GetInstance().IsKeyHold(VK_CONTROL);
 			UScene* activeScene = GetWorld().GetSceneManager()->GetActiveScene();
 			if (activeScene != nullptr)
 			{
-				Picker->Pick(Mouse.x, Mouse.y, activeScene, bIsShiftlDown);
+				Picker->Pick(Mouse.x, Mouse.y, activeScene, bIsCtrlDown);
 			}
 		}
 
