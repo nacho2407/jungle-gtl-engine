@@ -5,14 +5,9 @@
 #include "Engine/ViewPort/ViewportController.h"
 #include "Input/ContextModeTypes.h"
 
-/*
-	오브젝트 선택 처리 계층입니다.
-	클릭 선택, Ctrl 다중 선택, 빈 공간 클릭 시 선택 해제, ray-cast, pick 결과 등을 처리합니다.
-    -> 사실 viewportInput과 GizmoInput 사이에서 많이 겹칩니다.
-*/
-
 class FScene;
 class AActor;
+struct FEditorContext;
 
 class FViewportSelectionController : public Engine::Viewport::IViewportController
 {
@@ -25,16 +20,17 @@ public:
     void UpdateSelection(int32 MouseX, int32 MouseY);
     void EndSelection(int32 MouseX, int32 MouseY);
 
+    void SelectActor(AActor* Actor, ESelectionMode Mode);
     void ClearSelection();
+    void SyncSelectionFromContext();
 
-    bool                   IsSelected(AActor* Actor) const;
+    bool IsSelected(AActor* Actor) const;
     const TArray<AActor*>& GetSelectedActors() const { return SelectedActors; }
 
-    //  초기화 시점 호출
     void SetCamera(FViewportCamera* Camera) { ViewportCamera = Camera; }
     void SetActors(TArray<AActor*>* InActors) { Actors = InActors; }
-    
-    //  Viewport Size 바뀔 때 호출
+    void SetEditorContext(FEditorContext* InContext) { Context = InContext; }
+
     void SetViewportSize(uint32 Width, uint32 Height)
     {
         ViewportWidth = Width;
@@ -50,15 +46,21 @@ private:
     void RemoveSelection(AActor* Actor);
     void ToggleSelection(AActor* Actor);
 
+    void ResetSelection();
+    void ApplySelectionState(AActor* Actor, bool bSelected) const;
+    AActor* ResolveActorFromContextSelection() const;
+    void UpdatePrimarySelection() const;
+
 private:
+    FEditorContext* Context = nullptr;
     TArray<AActor*>* Actors = nullptr;
-    FViewportCamera * ViewportCamera = nullptr;
-    
+    FViewportCamera* ViewportCamera = nullptr;
+
     uint32 ViewportWidth = 0;
     uint32 ViewportHeight = 0;
 
-    int32          SelectionStartX = 0;
-    int32          SelectionStartY = 0;
+    int32 SelectionStartX = 0;
+    int32 SelectionStartY = 0;
     ESelectionMode CurSelectionMode = ESelectionMode::Replace;
 
     bool bIsDraggingSelection = false;

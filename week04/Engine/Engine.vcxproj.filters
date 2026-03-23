@@ -222,6 +222,9 @@
     <ClCompile Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Renderer\D3D11\D3D11ObjectIdRenderer.cpp">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Renderer\Draw\AABBDrawer.cpp">
       <Filter>Source\Renderer\Draw</Filter>
     </ClCompile>
@@ -258,6 +261,9 @@
       <Filter>Resources\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="Resources\Mesh\Ring.h">
+      <Filter>Resources\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources\Mesh\ring_highpoly.h">
       <Filter>Resources\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="Resources\Mesh\Sphere.h">
@@ -446,6 +452,9 @@
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.h">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\FontComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
@@ -491,7 +500,7 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.h">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\D3D11\D3D11PickingPass.h">
+    <ClInclude Include="Source\Renderer\D3D11\D3D11ObjectIdRenderer.h">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h">
@@ -537,6 +546,12 @@
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\Types\MeshInstanceData.h">
+      <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Types\PickId.h">
+      <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Types\PickResult.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\Types\SceneShowFlags.h">

@@ -1,9 +1,12 @@
 #include "OutlinerPanel.h"
 
+#include "Editor/Editor.h"
 #include "Editor/EditorContext.h"
 #include "Core/Misc/Name.h"
 #include "Engine/Game/Actor.h"
+#include "Engine/Game/CubeActor.h"
 #include "Engine/Scene.h"
+#include "Input/ContextModeTypes.h"
 #include "imgui.h"
 
 namespace
@@ -49,20 +52,31 @@ void FOutlinerPanel::Draw()
         return;
     }
 
-    const auto& Actors = GetContext()->Scene->GetActors();
-    if (Actors->empty())
+    DrawToolbar();
+    ImGui::Separator();
+
+    const TArray<AActor*>* Actors = GetContext()->Scene->GetActors();
+    if (Actors == nullptr || Actors->empty())
     {
         DrawEmptyState();
         ImGui::End();
         return;
     }
 
-    for (auto Actor : *Actors)
+    for (AActor* Actor : *Actors)
     {
         DrawActorRow(Actor);
     }
 
     ImGui::End();
+}
+
+void FOutlinerPanel::DrawToolbar() const
+{
+    if (ImGui::Button("Add CubeActor"))
+    {
+        SpawnCubeActor();
+    }
 }
 
 void FOutlinerPanel::DrawEmptyState() const
@@ -79,13 +93,50 @@ void FOutlinerPanel::DrawActorRow(AActor* Actor) const
         return;
     }
 
-    const bool bIsSelected =
-        GetContext() != nullptr && GetContext()->SelectedObject == Actor;
+    bool bIsSelected = false;
+    if (GetContext() != nullptr)
+    {
+        if (GetContext()->Editor != nullptr)
+        {
+            bIsSelected =
+                GetContext()->Editor->GetViewportClient().GetSelectionController().IsSelected(Actor);
+        }
+        else
+        {
+            bIsSelected = GetContext()->SelectedObject == Actor;
+        }
+    }
+
     const FString Label = GetActorDisplayName(Actor);
 
     if (ImGui::Selectable(Label.c_str(), bIsSelected))
     {
-        // Outliner에서 액터를 클릭하면 Properties 패널이 같은 선택을 바로 볼 수 있게 연결합니다.
-        GetContext()->SelectedObject = Actor;
+        if (GetContext() != nullptr && GetContext()->Editor != nullptr)
+        {
+            const ESelectionMode SelectionMode =
+                ImGui::GetIO().KeyCtrl ? ESelectionMode::Toggle : ESelectionMode::Replace;
+            GetContext()->Editor->GetViewportClient().GetSelectionController().SelectActor(
+                Actor, SelectionMode);
+        }
+    }
+}
+
+void FOutlinerPanel::SpawnCubeActor() const
+{
+    if (GetContext() == nullptr || GetContext()->Scene == nullptr)
+    {
+        return;
+    }
+
+    ACubeActor* CubeActor = new ACubeActor();
+    const TArray<AActor*>* Actors = GetContext()->Scene->GetActors();
+    const size_t ActorIndex = (Actors != nullptr) ? (Actors->size() + 1) : 1;
+    CubeActor->Name = "CubeActor " + std::to_string(ActorIndex);
+
+    GetContext()->Scene->AddActor(CubeActor);
+    if (GetContext()->Editor != nullptr)
+    {
+        GetContext()->Editor->GetViewportClient().GetSelectionController().SelectActor(
+            CubeActor, ESelectionMode::Replace);
     }
 }

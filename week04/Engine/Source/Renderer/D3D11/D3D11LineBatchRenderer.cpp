@@ -112,7 +112,7 @@ bool FD3D11LineBatchRenderer::CreateShaders()
     };
 
     if (!RHI->CreateVertexShaderAndInputLayout(DefaultShaderPath, "VSMain", InputElements,
-                                               static_cast<uint32>(std::size(InputElements)),
+                                               static_cast<uint32>(ARRAYSIZE((InputElements))),
                                                VertexShader.GetAddressOf(),
                                                InputLayout.GetAddressOf()))
     {

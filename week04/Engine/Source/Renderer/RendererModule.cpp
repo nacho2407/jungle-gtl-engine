@@ -1,4 +1,6 @@
 #include "Renderer/RendererModule.h"
+#include "Renderer/Types/PickId.h"
+#include "Renderer/Types/PickResult.h"
 
 bool FRendererModule::StartupModule(HWND hWnd)
 {
@@ -25,6 +27,12 @@ bool FRendererModule::StartupModule(HWND hWnd)
         return false;
     }
 
+    if (!ObjectIdRenderer.Initialize(&RHI))
+    {
+        ShutdownModule();
+        return false;
+    }
+
 #if defined(_DEBUG)
     if (RHI.GetDevice() != nullptr)
     {
@@ -40,19 +48,17 @@ void FRendererModule::ShutdownModule()
 {
     DebugDevice.Reset();
 
-    // PickingPass.Shutdown();
-    // SpriteRenderer.Shutdown();
-    // FontRenderer.Shutdown();
+    ObjectIdRenderer.Shutdown();
     LineRenderer.Shutdown();
     MeshRenderer.Shutdown();
 
-    #if defined(_DEBUG)
-        if (DebugDevice != nullptr)
-        {
-            DebugDevice->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
-            DebugDevice.Reset();
-        }
-    #endif
+#if defined(_DEBUG)
+    if (DebugDevice != nullptr)
+    {
+        DebugDevice->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+        DebugDevice.Reset();
+    }
+#endif
 
     RHI.Shutdown();
 }
@@ -61,9 +67,7 @@ void FRendererModule::BeginFrame()
 {
     RHI.BeginFrame();
 
-    static constexpr FLOAT ClearColor[4] = { 1.f, 1.f, 1.f, 1.0f };
-
-    //static constexpr FLOAT ClearColor[4] = {0.15f, 0.15f, 0.15f, 1.0f};
+    static const FLOAT ClearColor[4] = {0.15f, 0.15f, 0.15f, 1.0f};
 
     RHI.SetDefaultRenderTargets();
     RHI.Clear(ClearColor, 1.0f, 0);
@@ -78,36 +82,30 @@ void FRendererModule::OnWindowResized(int32 InWidth, int32 InHeight)
         return;
     }
 
-    // Editor live resize 중에는 이 함수가 자주 호출되므로, 실제 크기 변경만 RHI에 전달합니다.
     RHI.Resize(InWidth, InHeight);
-    // PickingPass.Resize(InWidth, InHeight);
-}
-
-void FRendererModule::SetVSyncEnabled(bool bInVSyncEnabled)
-{
-    // 창 외곽 드래그 중 입력 반응성을 높이기 위해 Present 정책을 런타임에 바꿀 수 있게 둡니다.
-    RHI.SetVSyncEnabled(bInVSyncEnabled);
-}
-
-bool FRendererModule::IsVSyncEnabled() const
-{
-    return RHI.IsVSyncEnabled();
+    ObjectIdRenderer.Resize(InWidth, InHeight);
 }
 
 void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
                              const FSceneRenderData&  InSceneRenderData)
 {
+    CachedEditorRenderData = InEditorRenderData;
+    CachedSceneRenderData = InSceneRenderData;
+
     // ================ Mesh =================
     MeshRenderer.BeginFrame(InSceneRenderData.SceneView, InSceneRenderData.ViewMode,
                             InSceneRenderData.bUseInstancing);
+
     if (IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_Primitives))
     {
         PrimitiveDrawer.Draw(MeshRenderer, InSceneRenderData);
     }
+
     if (IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo))
     {
         GizmoDrawer.Draw(MeshRenderer, InEditorRenderData);
     }
+
     MeshRenderer.EndFrame();
 
     // ================ Line =================
@@ -127,23 +125,70 @@ void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
 
         LineRenderer.EndFrame();
     }
-
-    // TODO:
-    // FontRenderer.BeginFrame(...);
-    // SpriteRenderer.BeginFrame(...);
-    // Draw...
-    // FontRenderer.EndFrame();
-    // SpriteRenderer.EndFrame();
 }
 
-bool FRendererModule::TryConsumePickResult(uint32& OutPickId) { return false; }
-
-void FRendererModule::RequestPick(const FEditorRenderData& InEditorRenderData, int32 MouseX,
-                                  int32 MouseY)
+bool FRendererModule::PickRaw(const FEditorRenderData& InEditorRenderData, int32 MouseX,
+                              int32 MouseY, uint32& OutPickId)
 {
-    (void)InEditorRenderData;
-    (void)MouseX;
-    (void)MouseY;
+    OutPickId = PickId::None;
 
-    // TODO: PickingPass 연결 후 구현
+    const FSceneView* SceneView = InEditorRenderData.SceneView;
+    if (SceneView == nullptr)
+    {
+        return false;
+    }
+
+    // 해당 픽셀만 ID 버퍼에 기록한다.
+    ObjectIdRenderer.BeginFrame(SceneView, MouseX, MouseY);
+
+    // Gizmo만 판별할거면 프리미티브는 그릴 필요 없음
+    // if (IsFlagSet(CachedSceneRenderData.ShowFlags, ESceneShowFlags::SF_Primitives))
+    // {
+    //     TArray<FObjectIdRenderItem> SceneItems;
+    //     SceneItems.reserve(CachedSceneRenderData.Primitives.size());
+
+    //     for (const FPrimitiveRenderItem& Primitive : CachedSceneRenderData.Primitives)
+    //     {
+    //         if (!Primitive.bVisible || !Primitive.bPickable || Primitive.ObjectId == 0)
+    //         {
+    //             continue;
+    //         }
+
+    //         FObjectIdRenderItem Item = {};
+    //         Item.World = Primitive.World;
+    //         Item.MeshType = Primitive.MeshType;
+    //         Item.ObjectId = Primitive.ObjectId;
+    //         SceneItems.push_back(Item);
+    //     }
+
+    //     ObjectIdRenderer.AddPrimitives(SceneItems);
+    // }
+
+    if (IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo))
+    {
+        TArray<FObjectIdRenderItem> GizmoItems;
+        GizmoDrawer.BuildObjectIdRenderItems(GizmoItems, InEditorRenderData);
+        ObjectIdRenderer.AddPrimitives(GizmoItems);
+    }
+
+    return ObjectIdRenderer.RenderAndReadBack(OutPickId);
 }
+
+bool FRendererModule::Pick(const FEditorRenderData& InEditorRenderData, int32 MouseX, int32 MouseY,
+                           FPickResult& OutResult)
+{
+    OutResult = {};
+
+    uint32 PickedId = PickId::None;
+    if (!PickRaw(InEditorRenderData, MouseX, MouseY, PickedId))
+    {
+        return false;
+    }
+
+    OutResult = PickResult::FromPickId(PickedId);
+    return true;
+}
+
+void FRendererModule::SetVSyncEnabled(bool bEnabled) { RHI.SetVSyncEnabled(bEnabled); }
+
+bool FRendererModule::IsVSyncEnabled() const { return RHI.IsVSyncEnabled(); }

@@ -56,5 +56,6 @@ namespace Engine::Component
     }
 
     bool USceneComponent::IsSelected() const { return bIsSelected; }
-
+    void USceneComponent::SetSelected(bool bInSelected) { bIsSelected = bInSelected; }
+    
 } // namespace Engine::Component
