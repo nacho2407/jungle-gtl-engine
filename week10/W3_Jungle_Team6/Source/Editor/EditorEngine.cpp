@@ -125,10 +125,12 @@ void UEditorEngine::ClearScene()
 {
 	SelectionManager.ClearSelection();
 
-	for (FWorldContext& Ctx : WorldList) {
+	for (FWorldContext& Ctx : WorldList)
+	{
 		Ctx.World->EndPlay();
 		UObjectManager::Get().DestroyObject(Ctx.World);
 	}
+
 	WorldList.clear();
 	ActiveWorldHandle = FName::None;
 
