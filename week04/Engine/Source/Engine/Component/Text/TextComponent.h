@@ -39,9 +39,10 @@ namespace Engine::Component
         FString        Text;
         FFontResource* FontResource = nullptr;
 
-        float TextScale = 1.0f;
-        float LetterSpacing = 0.0f;
-        float LineSpacing = 0.0f;
+        FColor TextColor = FColor::Black();
+        float  TextScale = 1.0f;
+        float  LetterSpacing = 0.0f;
+        float  LineSpacing = 0.0f;
 
         bool    bBillboard = true;
         FVector BillboardOffset = FVector(0.0f, 0.0f, 0.0f);
