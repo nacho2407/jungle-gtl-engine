@@ -1,5 +1,5 @@
 #include "Editor.h"
-#include "Editor.h"
+
 #include "Viewport/EditorViewportClient.h"
 #include "Panel/PanelManager.h"
 
@@ -12,6 +12,11 @@ namespace
     class FSamplePanel : public IPanel
     {
       public:
+        explicit FSamplePanel(const FEditorLogBuffer* InLogBuffer)
+            : LogBuffer(InLogBuffer)
+        {
+        }
+
         const wchar_t* GetPanelID() const override { return L"SamplePanel"; }
         const wchar_t* GetDisplayName() const override { return L"Sample Panel"; }
         bool ShouldOpenByDefault() const override { return true; }
@@ -22,27 +27,47 @@ namespace
             {
                 ImGui::Text("PanelManager registration test panel");
                 ImGui::Separator();
-                ImGui::Text("Hello from sample panel");
+
+
+                if (LogBuffer != nullptr)
+                {
+                    for (const auto & Log : LogBuffer->GetLogBuffer())
+                    {
+                        ImGui::Spacing();
+                        ImGui::Text("%s", Log.Message.c_str());
+                    }
+                }
             }
             ImGui::End();
         }
+
+      private:
+        const FEditorLogBuffer* LogBuffer = nullptr;
     };
 } // namespace
 
 void FEditor::Create()
 {
+    //  LOG
+    GLog = &LogBuffer;
+    
     //  TODO : Viewport Client
     ViewportClient.Create();
 
     //  TODO : Panel UI
     PanelManager = new FPanelManager();
     PanelManager->Initialize(&EditorContext);
-    PanelManager->RegisterPanelInstance<FSamplePanel>();
+    PanelManager->RegisterPanelInstance<FSamplePanel>(&LogBuffer);
 
     //  TODO : Gizmo
+    
 
     //  TEMP SCENE
     CurScene = new FScene();
+    CurScene->AddActor(new AActor())
+    
+    
+    UE_LOG(FEditor, ELogVerbosity::Log, "Hello Editor");
 }
 
 void FEditor::Release()
@@ -55,6 +80,11 @@ void FEditor::Release()
         PanelManager->Shutdown();
         delete PanelManager;
         PanelManager = nullptr;
+    }
+
+    if (GLog == &LogBuffer)
+    {
+        GLog = nullptr;
     }
 }
 
@@ -81,7 +111,7 @@ void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* Input
     }
 
     BuildRenderData();
-    DrawPanel();
+    //DrawPanel();
 }
 
 void FEditor::OnWindowResized(float Width, float Height)

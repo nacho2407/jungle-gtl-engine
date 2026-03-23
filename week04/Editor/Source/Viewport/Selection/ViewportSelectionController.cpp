@@ -215,6 +215,7 @@ void FViewportSelectionController::SelectSingle(AActor* Actor)
     if (Actor != nullptr && Actor->IsPickable())
     {
         SelectedActors.push_back(Actor);
+        MessageBox(nullptr, L"Actor->Name.GetString().c_str()", L"Selected Actor", MB_OK);
     }
 }
 

@@ -9,6 +9,8 @@
 #include "Input/GizmoInputContext.h"
 #include "Input/NavigationInputContext.h"
 #include "Engine/Scene.h"
+#include "Logging/EditorLogBuffer.h"
+#include "Logging/EditorLogEntry.h"
 #include "Viewport/EditorViewport.h"
 #include "Viewport/EditorViewportClient.h"
 #include "Renderer/EditorRenderData.h"
@@ -66,6 +68,9 @@ class FEditor
 
     /* Scene */
     FScene* CurScene = nullptr;
+    
+    /* Logging */
+    FEditorLogBuffer LogBuffer;
 
     /* Properties */
     float WindowWidth = 0.0f;

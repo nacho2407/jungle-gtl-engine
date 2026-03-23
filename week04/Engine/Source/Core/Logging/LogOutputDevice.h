@@ -1,4 +1,7 @@
 #pragma once
+#pragma once
+
+#include "Core/EngineAPI.h"
 
 enum class ELogVerbosity
 {
@@ -7,9 +10,9 @@ enum class ELogVerbosity
     Error
 };
 
-class FLogOutputDevice
+class ENGINE_API ILogOutputDevice
 {
   public:
-    virtual ~FLogOutputDevice() = default;
+    virtual ~ILogOutputDevice() = default;
     virtual void Log(ELogVerbosity Verbosity, const char *Message) = 0;
 };

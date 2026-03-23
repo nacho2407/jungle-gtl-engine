@@ -134,6 +134,7 @@ void FEditorEngineLoop::Tick()
     {
         Renderer->BeginFrame();
         Renderer->Render(Editor->GetEditorRenderData(), Editor->GetSceneRenderData());
+        Editor->DrawPanel();
         Renderer->EndFrame();
     }
 
