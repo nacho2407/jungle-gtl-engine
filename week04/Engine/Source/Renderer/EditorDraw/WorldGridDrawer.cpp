@@ -15,11 +15,13 @@ void FWorldGridDrawer::Draw(FD3D11LineBatchRenderer& InLineRenderer,
 
     for (int32 i = -GridHalfLineCount; i <= GridHalfLineCount; ++i)
     {
-        const float Offset = static_cast<float>(i) * GridSpacing;
+        const float   Offset = static_cast<float>(i) * GridSpacing;
+        const bool    bIsMajorLine = (i % MajorLineEvery) == 0;
+        const FColor& LineColor = bIsMajorLine ? MajorGridColor : MinorGridColor;
 
         InLineRenderer.AddLine(FVector(-Extent, Offset, 0.0f), FVector(Extent, Offset, 0.0f),
-                               GridColor);
+                               LineColor);
         InLineRenderer.AddLine(FVector(Offset, -Extent, 0.0f), FVector(Offset, Extent, 0.0f),
-                               GridColor);
+                               LineColor);
     }
 }
