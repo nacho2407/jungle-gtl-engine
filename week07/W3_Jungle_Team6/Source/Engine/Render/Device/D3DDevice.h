@@ -73,6 +73,7 @@ private:
 	EBlendState CurrentBlendState = EBlendState::Opaque;
 
 	BOOL bTearingSupported = FALSE;
+	UINT SwapChainFlags = 0;
 
 public:
 
