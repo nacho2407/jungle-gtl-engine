@@ -299,6 +299,7 @@ void URenderer::RenderNoDepthObjects(TArray<RenderObject*>& NoDepthRenderObjects
 		{
 			ObjectConst.World = RenderObj->World;
 			ObjectConst.Color = RenderObj->Color;
+			ObjectConst.UVTransform = RenderObj->UVTransform;
 			ObjectConst.bIsSelected = RenderObj->bIsSelected ? 1 : 0;
 			RenderObj->Material->ConstantBuffer.Update(DeviceContext.Get(), &ObjectConst, sizeof(FObjectConstant));
 			RenderObj->Material->ConstantBuffer.Bind(DeviceContext.Get());
@@ -396,6 +397,7 @@ void URenderer::RenderNormalObjects(TArray<RenderObject*>& NormalRenderObjects)
 		//Camera
 		ObjectConst.World = RenderObj->World;
 		ObjectConst.Color = RenderObj->Color;
+		ObjectConst.UVTransform = RenderObj->UVTransform;
 		ObjectConst.bIsSelected = RenderObj->bIsSelected ? 1 : 0;
 		RenderObj->Material->ConstantBuffer.Update(DeviceContext.Get(), &ObjectConst, sizeof(FObjectConstant));
 		RenderObj->Material->ConstantBuffer.Bind(DeviceContext.Get());
@@ -427,6 +429,7 @@ void URenderer::BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups)
 		}
 		ObjectConst.World = FMatrix::IdentityMatrix();
 		ObjectConst.Color = FColor(1, 1, 1, 1);
+		ObjectConst.UVTransform = FVector4(1.0f, 1.0f, 0.0f, 0.0f);
 		ObjectConst.bIsSelected = 0;
 		ConstBuffer->Bind(DeviceContext.Get());
 		ConstBuffer->Update(DeviceContext.Get(), &ObjectConst, sizeof(FObjectConstant));
