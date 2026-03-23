@@ -99,6 +99,9 @@
     <FxCompile Include="Shaders\ShaderFont.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\ShaderSubUV.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
@@ -207,6 +210,9 @@
       <Filter>Source\Engine\Render</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\LineBatcher.cpp">
+      <Filter>Source\Engine\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\SubUVBatcher.cpp">
       <Filter>Source\Engine\Render</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp">
@@ -411,6 +417,9 @@
       <Filter>Source\Engine\Render</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\LineBatcher.h">
+      <Filter>Source\Engine\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\SubUVBatcher.h">
       <Filter>Source\Engine\Render</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Common\RenderTypes.h">
