@@ -22,6 +22,9 @@ protected:
 
 public:
 	DECLARE_CLASS(UPrimitiveComponent, USceneComponent)
+
+	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+
 	inline const FMeshData* GetMeshData() const { return MeshData; };
 
 	inline void SetVisibility(bool bVisible) { bIsVisible = bVisible; }
