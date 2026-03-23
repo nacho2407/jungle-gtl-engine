@@ -7,7 +7,8 @@
 namespace Engine::Component
 {
     class USceneComponent;
-}
+    class UTextComponent;
+} // namespace Engine::Component
 
 class ENGINE_API AActor : public UObject
 {
@@ -27,7 +28,7 @@ class ENGINE_API AActor : public UObject
     }
     void SetRootComponent(Engine::Component::USceneComponent* InRootComponent);
     void AddOwnedComponent(Engine::Component::USceneComponent* InComponent,
-                           bool bMakeRootComponent = false);
+                           bool                                bMakeRootComponent = false);
 
     // Render bridge용 최소 API
     virtual bool IsRenderable() const { return false; }
@@ -40,9 +41,12 @@ class ENGINE_API AActor : public UObject
     virtual EBasicMeshType GetMeshType() const;
     virtual uint32         GetObjectId() const { return 0; }
 
+    Engine::Component::UTextComponent* GetUUIDTextComponent() const { return UUIDTextComponent; }
+
   protected:
     Engine::Component::USceneComponent*         RootComponent = nullptr;
     TArray<Engine::Component::USceneComponent*> OwnedComponents;
+    Engine::Component::UTextComponent*          UUIDTextComponent = nullptr;
 
     bool bPickable = true;
 };
