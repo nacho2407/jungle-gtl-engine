@@ -71,11 +71,32 @@ bool BuildBillboardTextVertices(const FTextLayoutBuildParams& Params, TArray<FVe
 		float V1 = Glyph->V1;
 
 		// 쿼드를 위한 정점 6개(삼각형 2개) 추가
+		// 좌상
+		OutVertices.push_back({
+			Params.Anchor.x, Params.Anchor.y, Params.Anchor.z,
+			GlyphX0, GlyphY1,
+			U0, V0
+		});
+
+		// 우상
+		OutVertices.push_back({
+			Params.Anchor.x, Params.Anchor.y, Params.Anchor.z,
+			GlyphX1, GlyphY1,
+			U1, V0
+			});
+
 		// 좌하
 		OutVertices.push_back({
 			Params.Anchor.x, Params.Anchor.y, Params.Anchor.z,
 			GlyphX0, GlyphY0,
 			U0, V1
+		});
+
+		// 우상
+		OutVertices.push_back({
+			Params.Anchor.x, Params.Anchor.y, Params.Anchor.z,
+			GlyphX1, GlyphY1,
+			U1, V0
 		});
 
 		// 우하
@@ -85,32 +106,11 @@ bool BuildBillboardTextVertices(const FTextLayoutBuildParams& Params, TArray<FVe
 			U1, V1
 		});
 
-		// 우상
-		OutVertices.push_back({
-			Params.Anchor.x, Params.Anchor.y, Params.Anchor.z,
-			GlyphX1, GlyphY1,
-			U1, V0
-		});
-
 		// 좌하
 		OutVertices.push_back({
 			Params.Anchor.x, Params.Anchor.y, Params.Anchor.z,
 			GlyphX0, GlyphY0,
 			U0, V1
-		});
-
-		// 우상
-		OutVertices.push_back({
-			Params.Anchor.x, Params.Anchor.y, Params.Anchor.z,
-			GlyphX1, GlyphY1,
-			U1, V0
-		});
-
-		// 좌상
-		OutVertices.push_back({
-			Params.Anchor.x, Params.Anchor.y, Params.Anchor.z,
-			GlyphX0, GlyphY1,
-			U0, V0
 		});
 
 		// 다음 글자 위치로 Pen 이동

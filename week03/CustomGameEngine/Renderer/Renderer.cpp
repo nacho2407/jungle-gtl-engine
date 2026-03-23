@@ -497,7 +497,7 @@ void URenderer::RenderSingleBillboardTextTest(void)
 	}
 
 	// Test text / Anchor / Color
-	const FString TestText = "12-3";
+	const FString TestText = "테스트 메시지입니당~~~ 이거에 시간을 얼마나 버린겨~~~~~";
 	const FVector TestAnchor = FVector(0.0f, 0.0f, 2.0f);
 	const FColor TestColor = FColor(1.0f, 1.0f, 1.0f, 1.0f);
 
