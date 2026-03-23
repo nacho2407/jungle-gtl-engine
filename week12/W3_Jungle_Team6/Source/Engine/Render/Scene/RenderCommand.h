@@ -111,7 +111,7 @@ struct FRenderCommand
 	uint32   FrameIndex  = 0;			// SubUV 프레임 인덱스
 	FVector2 SpriteSize  = { 1.0f, 1.0f }; // Font: X = Scale / SubUV: X = Width, Y = Height
 
-	EDepthStencilState DepthStencilState = EDepthStencilState::Default;
-	EBlendState BlendState = EBlendState::Opaque;
+	EDepthStencilState DepthStencilState = static_cast<EDepthStencilState>(-1);
+	EBlendState BlendState = static_cast<EBlendState>(-1);
 	ERenderCommandType Type = ERenderCommandType::Primitive;
 };
