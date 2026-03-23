@@ -71,7 +71,7 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderColl
 		MaskCmd.Type = ERenderCommandType::SelectionOutline;
 		MaskCmd.DepthStencilState = EDepthStencilState::StencilWrite; //스텐실 버퍼만 작성하는 타입
 		MaskCmd.BlendState = EBlendState::NoColor;
-		RenderBus.AddCommand(ERenderPass::Outline, MaskCmd);
+		RenderBus.AddCommand(ERenderPass::StencilMask, MaskCmd);
 
 		// Outline
 		FRenderCommand OutlineCmd = BaseCmd;
@@ -84,7 +84,7 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderColl
 		if (Context.ViewMode == EViewMode::Wireframe)
 		{
 			OutlineCmd.PerObjectConstants.Color = FColor(255, 153, 0, 255).ToVector4();
-			OutlineCmd.Constants.Outline.OutlineOffset = 0.003f;
+			OutlineCmd.Constants.Outline.OutlineOffset = 0.03f;
 		}
 		else
 		{
