@@ -1,234 +1,210 @@
 {
   "Actors" : [{
-      "ClassName" : "ACubeActor",
+      "ClassName" : "AAttachTestActor",
       "NonSceneComponents" : [],
       "RootComponent" : {
         "Children" : [{
+            "Children" : [{
+                "Children" : [],
+                "ClassName" : "USphereComponent",
+                "Properties" : {
+                  "Location" : [-2.000000, -2.000000, 0.000000],
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "Visible" : true
+                }
+              }, {
+                "Children" : [],
+                "ClassName" : "USphereComponent",
+                "Properties" : {
+                  "Location" : [2.000000, -2.000000, 0.000000],
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "Visible" : true
+                }
+              }, {
+                "Children" : [],
+                "ClassName" : "USphereComponent",
+                "Properties" : {
+                  "Location" : [2.000000, 2.000000, 0.000000],
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "Visible" : true
+                }
+              }, {
+                "Children" : [],
+                "ClassName" : "USphereComponent",
+                "Properties" : {
+                  "Location" : [-2.000000, 2.000000, 0.000000],
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "Visible" : true
+                }
+              }],
+            "ClassName" : "USceneComponent",
+            "Properties" : {
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }
+          }, {
             "Children" : [],
             "ClassName" : "UTextRenderComponent",
             "Properties" : {
-              "Color" : [1.000000, 0.000000, 0.000000, 1.000000],
+              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
               "Font Size" : 1.000000,
-              "Location" : [0.000000, 0.000000, 1.000000],
+              "Location" : [0.000000, 0.000000, 1.500000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "SerializationTest",
+              "Text" : "SerializeTest",
+              "Visible" : true
+            }
+          }],
+        "ClassName" : "UCubeComponent",
+        "Properties" : {
+          "Location" : [0.000000, -6.549283, 3.173141],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Visible" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AAttachTestActor",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [{
+                "Children" : [],
+                "ClassName" : "USphereComponent",
+                "Properties" : {
+                  "Location" : [-2.000000, -2.000000, 0.000000],
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "Visible" : true
+                }
+              }, {
+                "Children" : [],
+                "ClassName" : "USphereComponent",
+                "Properties" : {
+                  "Location" : [2.000000, -2.000000, 0.000000],
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "Visible" : true
+                }
+              }, {
+                "Children" : [],
+                "ClassName" : "USphereComponent",
+                "Properties" : {
+                  "Location" : [2.000000, 2.000000, 0.000000],
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "Visible" : true
+                }
+              }, {
+                "Children" : [],
+                "ClassName" : "USphereComponent",
+                "Properties" : {
+                  "Location" : [-2.000000, 2.000000, 0.000000],
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "Visible" : true
+                }
+              }],
+            "ClassName" : "USceneComponent",
+            "Properties" : {
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.500000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 42",
+              "Visible" : true
+            }
+          }],
+        "ClassName" : "UCubeComponent",
+        "Properties" : {
+          "Location" : [0.000000, 6.335805, 3.403078],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Visible" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AAttachTestActor",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [{
+                "Children" : [],
+                "ClassName" : "USphereComponent",
+                "Properties" : {
+                  "Location" : [-2.000000, -2.000000, 0.000000],
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "Visible" : true
+                }
+              }, {
+                "Children" : [],
+                "ClassName" : "USphereComponent",
+                "Properties" : {
+                  "Location" : [2.000000, -2.000000, 0.000000],
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "Visible" : true
+                }
+              }, {
+                "Children" : [],
+                "ClassName" : "USphereComponent",
+                "Properties" : {
+                  "Location" : [2.000000, 2.000000, 0.000000],
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "Visible" : true
+                }
+              }, {
+                "Children" : [],
+                "ClassName" : "USphereComponent",
+                "Properties" : {
+                  "Location" : [-2.000000, 2.000000, 0.000000],
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "Visible" : true
+                }
+              }],
+            "ClassName" : "USceneComponent",
+            "Properties" : {
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.500000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 50",
               "Visible" : true
             }
           }],
         "ClassName" : "UCubeComponent",
         "Properties" : {
           "Location" : [0.000000, 0.000000, 0.000000],
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Visible" : true
-        }
-      },
-      "bVisible" : false
-    }, {
-      "ClassName" : "ACubeActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UTextRenderComponent",
-            "Properties" : {
-              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
-              "Font Size" : 1.000000,
-              "Location" : [0.000000, 0.000000, 1.000000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 8",
-              "Visible" : true
-            }
-          }],
-        "ClassName" : "UCubeComponent",
-        "Properties" : {
-          "Location" : [2.384798, 0.000000, 0.000000],
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Visible" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "ACubeActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UTextRenderComponent",
-            "Properties" : {
-              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
-              "Font Size" : 1.000000,
-              "Location" : [0.000000, 0.000000, 1.000000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 11",
-              "Visible" : true
-            }
-          }],
-        "ClassName" : "UCubeComponent",
-        "Properties" : {
-          "Location" : [-3.311087, -2.683200, 0.000000],
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Visible" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "ACubeActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UTextRenderComponent",
-            "Properties" : {
-              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
-              "Font Size" : 1.000000,
-              "Location" : [0.000000, 0.000000, 1.000000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 14",
-              "Visible" : true
-            }
-          }],
-        "ClassName" : "UCubeComponent",
-        "Properties" : {
-          "Location" : [-0.926289, -2.683200, 2.314278],
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Visible" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "ACubeActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UTextRenderComponent",
-            "Properties" : {
-              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
-              "Font Size" : 1.000000,
-              "Location" : [0.000000, 0.000000, 1.000000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 17",
-              "Visible" : true
-            }
-          }],
-        "ClassName" : "UCubeComponent",
-        "Properties" : {
-          "Location" : [-3.311087, 3.093600, 0.000000],
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Visible" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "ASphereActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UTextRenderComponent",
-            "Properties" : {
-              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
-              "Font Size" : 1.000000,
-              "Location" : [0.000000, 0.000000, 1.000000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 20",
-              "Visible" : true
-            }
-          }],
-        "ClassName" : "USphereComponent",
-        "Properties" : {
-          "Location" : [-3.311087, 3.093600, 2.314278],
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Visible" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "ASphereActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UTextRenderComponent",
-            "Properties" : {
-              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
-              "Font Size" : 1.000000,
-              "Location" : [0.000000, 0.000000, 1.000000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 23",
-              "Visible" : true
-            }
-          }],
-        "ClassName" : "USphereComponent",
-        "Properties" : {
-          "Location" : [-0.926289, 3.093600, 3.502477],
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Visible" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "ASphereActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UTextRenderComponent",
-            "Properties" : {
-              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
-              "Font Size" : 1.000000,
-              "Location" : [0.000000, 0.000000, 1.000000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 26",
-              "Visible" : true
-            }
-          }],
-        "ClassName" : "USphereComponent",
-        "Properties" : {
-          "Location" : [0.000000, 0.000000, 5.816754],
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Visible" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "ASphereActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UTextRenderComponent",
-            "Properties" : {
-              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
-              "Font Size" : 1.000000,
-              "Location" : [0.000000, 0.000000, 1.000000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 29",
-              "Visible" : true
-            }
-          }],
-        "ClassName" : "USphereComponent",
-        "Properties" : {
-          "Location" : [2.384798, 0.000000, 3.502477],
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Rotation" : [172.288651, -38.088997, -89.971909],
+          "Scale" : [1.000000, 1.700000, 1.600000],
           "Visible" : true
         }
       },

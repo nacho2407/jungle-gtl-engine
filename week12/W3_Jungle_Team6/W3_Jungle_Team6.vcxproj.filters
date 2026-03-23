@@ -380,6 +380,9 @@
     <ClInclude Include="Source\Engine\Core\Paths.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\PropertyTypes.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Core\RayTypes.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
@@ -399,9 +402,6 @@
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Timer.h">
-      <Filter>Source\Engine\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Core\Singleton.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\AActor.h">

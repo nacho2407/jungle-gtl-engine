@@ -32,9 +32,7 @@ void FEditorControlWidget::Render(float DeltaTime)
 
 	// Stats
 	ImGui::Text("FPS : %.1f", EditorEngine->GetTimer()->GetDisplayFPS());
-	ImGui::SameLine();
 	ImGui::Text("Memory Allocated : %d", EngineStatics::GetTotalAllocationBytes());
-	ImGui::SameLine();
 	ImGui::Text("Times Allocated : %d", EngineStatics::GetTotalAllocationCount());
 
 	SEPARATOR();
