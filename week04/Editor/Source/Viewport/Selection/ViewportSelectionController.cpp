@@ -3,8 +3,8 @@
 #include <algorithm>
 
 #include "Editor/EditorContext.h"
-#include "Engine/Component/PrimitiveComponent.h"
-#include "Engine/Component/SceneComponent.h"
+#include "Engine/Component/Core/PrimitiveComponent.h"
+#include "Engine/Component/Core/SceneComponent.h"
 #include "Engine/Game/Actor.h"
 
 void FViewportSelectionController::ClickSelect(int32 MouseX, int32 MouseY, ESelectionMode Mode)

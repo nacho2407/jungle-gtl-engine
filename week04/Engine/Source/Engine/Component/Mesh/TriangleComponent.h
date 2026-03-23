@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Engine/Component/PrimitiveComponent.h"
+#include "Engine/Component/Core/PrimitiveComponent.h"
 #include "Renderer/Types/BasicMeshType.h"
 
 enum class EBasicMeshType : uint8;

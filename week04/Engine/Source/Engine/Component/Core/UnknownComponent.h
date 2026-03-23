@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Engine/Component/SceneComponent.h"
+#include "Engine/Component/Core/SceneComponent.h"
 
 namespace Engine::Component
 {

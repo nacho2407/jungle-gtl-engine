@@ -2,9 +2,9 @@
 
 #include "SceneJson.h"
 #include "SceneTypeRegistry.h"
-#include "Engine/Component/PrimitiveComponent.h"
-#include "Engine/Component/SceneComponent.h"
-#include "Engine/Component/UnknownComponent.h"
+#include "Engine/Component/Core/PrimitiveComponent.h"
+#include "Engine/Component/Core/SceneComponent.h"
+#include "Engine/Component/Core/UnknownComponent.h"
 #include "Engine/Game/Actor.h"
 #include "Engine/Game/UnknownActor.h"
 #include "Engine/Scene.h"
