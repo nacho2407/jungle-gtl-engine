@@ -25,7 +25,8 @@ enum class EDepthStencilState
 enum class EBlendState
 {
 	Opaque,
-	AlphaBlend
+	AlphaBlend,
+	NoColor
 };
 
 enum class ERasterizerState
@@ -63,6 +64,7 @@ private:
 	ID3D11DepthStencilState* DepthStencilStateGizmoOutside = nullptr; 
 
 	ID3D11BlendState* BlendStateAlpha = nullptr;
+	ID3D11BlendState* BlendStateNoColorWrite = nullptr;
 
 	D3D11_VIEWPORT ViewportInfo = {};
 
