@@ -8,9 +8,8 @@ EditorStatPanel::~EditorStatPanel()
 {
 }
 
-void EditorStatPanel::Draw(ImGuiWindowLayout& layout)
+void EditorStatPanel::Draw()
 {
-	ImGui::SetNextWindowPos(layout.PosXY, ImGuiCond_FirstUseEver);
 	ImGui::Begin("Jungle Stats Panel");
 
 	ImGui::Text("Allocation Count: %u", UEngineStatics::TotalAllocationCount);

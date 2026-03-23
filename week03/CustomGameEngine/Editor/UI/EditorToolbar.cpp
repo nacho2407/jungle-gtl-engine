@@ -10,10 +10,8 @@ EditorToolbar::~EditorToolbar()
 {
 }
 
-void EditorToolbar::Draw(ImGuiWindowLayout& layout, UGridComp* Grid)
+void EditorToolbar::Draw(UGridComp* Grid)
 {
-	ImGui::SetNextWindowPos(layout.PosXY, ImGuiCond_FirstUseEver);
-
 	UGizmoComponent* gizmoController = Gizmo::GetInstance().GetController();
 
 	ImGui::Begin("Toolbar");

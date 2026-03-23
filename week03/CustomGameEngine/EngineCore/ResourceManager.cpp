@@ -5,6 +5,7 @@
 #include "Renderer/Renderer.h"
 
 #include "EngineCore/Logger.h"
+#include "Text/TextEncoding.h"
 
 void AddLine(
 	std::vector<FVertexSimple>& outVertices,
@@ -16,97 +17,6 @@ void AddLine(
 	outVertices.push_back({ x1, y1, z1,r,g,b,a });
 }
 //------------------------------Helper Functions------------------------------
-
-static bool CreateFontAtlasTexture(
-	ID3D11Device* Device,
-	const FGlyphAtlas& Atlas,
-	ID3D11ShaderResourceView** OutSRV,
-	ID3D11SamplerState** OutSampler)
-{
-	if (Device == nullptr || OutSRV == nullptr || OutSampler == nullptr)
-	{
-		return false;
-	}
-
-	*OutSRV = nullptr;
-	*OutSampler = nullptr;
-
-	const uint32 AtlasWidth = Atlas.GetWidth();
-	const uint32 AtlasHeight = Atlas.GetHeight();
-	const TArray<uint8>& Pixels = Atlas.GetPixels();
-
-	if (AtlasWidth == 0 || AtlasHeight == 0 || Pixels.empty())
-	{
-		return false;
-	}
-
-	// Texture2D desc 작성
-	D3D11_TEXTURE2D_DESC textureDesc = {};
-	textureDesc.Width = AtlasWidth;
-	textureDesc.Height = AtlasHeight;
-	textureDesc.MipLevels = 1;
-	textureDesc.ArraySize = 1;
-	textureDesc.Format = DXGI_FORMAT_R8_UNORM;
-	textureDesc.SampleDesc.Count = 1;
-	textureDesc.SampleDesc.Quality = 0;
-	textureDesc.Usage = D3D11_USAGE_DEFAULT;
-	textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	textureDesc.CPUAccessFlags = 0;
-	textureDesc.MiscFlags = 0;
-
-	// 초기 데이터 지정
-	D3D11_SUBRESOURCE_DATA initData = {};
-	initData.pSysMem = Pixels.data();
-	initData.SysMemPitch = AtlasWidth * sizeof(uint8);
-	initData.SysMemSlicePitch = 0;
-
-	ID3D11Texture2D* atlasTexture = nullptr;
-	HRESULT hr = Device->CreateTexture2D(&textureDesc, &initData, &atlasTexture);
-	if (FAILED(hr) || atlasTexture == nullptr)
-	{
-		return false;
-	}
-
-	// SRV 생성
-	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Format = textureDesc.Format;
-	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MostDetailedMip = 0;
-	srvDesc.Texture2D.MipLevels = 1;
-
-	hr = Device->CreateShaderResourceView(atlasTexture, &srvDesc, OutSRV);
-
-	atlasTexture->Release();
-	atlasTexture = nullptr;
-
-	if (FAILED(hr) || *OutSRV == nullptr)
-	{
-		return false;
-	}
-
-	// Sampler 생성
-	D3D11_SAMPLER_DESC samplerDesc = {};
-	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-	samplerDesc.MinLOD = 0;
-	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-	hr = Device->CreateSamplerState(&samplerDesc, OutSampler);
-	if (FAILED(hr) || *OutSampler == nullptr)
-	{
-		if (*OutSRV)
-		{
-			(*OutSRV)->Release();
-			*OutSRV = nullptr;
-		}
-		return false;
-	}
-
-	return true;
-}
 
 
 void ResourceManager::Initialize(URenderer* InRenderer)
@@ -176,25 +86,280 @@ void ResourceManager::Initialize(URenderer* InRenderer)
 	}
 	BillboardFont.EnsureGlyph(static_cast<uint32>('-'));
 
-	ID3D11ShaderResourceView* createdSRV = nullptr;
-	ID3D11SamplerState* createdSampler = nullptr;
-
-	const bool bAtlasTextureCreated = CreateFontAtlasTexture(
-		Renderer->Device.Get(),
-		BillboardFont.GetAtlas(),
-		&createdSRV,
-		&createdSampler
-	);
-
+	const bool bAtlasTextureCreated = CreateBillboardFontAtlasTexture();
 	if (!bAtlasTextureCreated)
 	{
 		UE_LOG("[EngineCore/ResourceManager][Error] Failed to create font atlas texture");
 	}
-	else
+}
+
+bool ResourceManager::EnsureBillboardGlyphs(const FString& Text)
+{
+	if (Text.empty())
 	{
-		FontShader.ShaderResourceView = createdSRV;
-		FontShader.SamplerState = createdSampler;
+		return true;
 	}
+
+	if (Renderer == nullptr)
+	{
+		UE_LOG("[EngineCore/ResourceManager][Error] Renderer is null");
+		return false;
+	}
+
+	if (Renderer->Device == nullptr)
+	{
+		UE_LOG("[EngineCore/ResourceManager][Error] Direct3D 11 device is null");
+		return false;
+	}
+
+	if (BillboardFontTexture == nullptr)
+	{
+		UE_LOG("[EngineCore/ResourceManager][Error] Billboard font texture is not initialized");
+		return false;
+	}
+
+	FU32String Codepoints = Utf8ToCodepoints(Text);
+	if (Codepoints.empty())
+	{
+		return true;
+	}
+
+	for (uint32 Codepoint : Codepoints)
+	{
+		// 개행문자 처리
+		if (Codepoint == U'\n' || Codepoint == U'\r')
+		{
+			continue;
+		}
+
+		if (BillboardFont.HasGlyph(Codepoint))
+		{
+			continue;
+		}
+
+		const FGlyphInfo* Glyph = BillboardFont.EnsureGlyph(Codepoint);
+		if (Glyph == nullptr)
+		{
+			UE_LOG("[EngineCore/ResourceManager][Error] Failed to ensure billboard glyph");
+			return false;
+		}
+
+		// 공백 문자의 경우 실제 비트맵 크기를 가지지는 않으므로 아래의 UpdateBillboardFontAtlasRegion에서 실패 처리되지 않도록 skip
+		if (Glyph->AtlasRect.Width <= 0.0f || Glyph->AtlasRect.Height <= 0.0f)
+		{
+			continue;
+		}
+
+		// Atlas에 새로 복사된 영역만 GPU texture에 부분 업데이트
+		const bool bUpdated = UpdateBillboardFontAtlasRegion(Glyph->AtlasRect);
+		if (!bUpdated)
+		{
+			UE_LOG("[EngineCore/ResourceManager][Error] Failed to update billboard font atlas region");
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool ResourceManager::CreateBillboardFontAtlasTexture(void)
+{
+	if (Renderer == nullptr)
+	{
+		UE_LOG("[EngineCore/ResourceManager][Error] Renderer is null");
+		return false;
+	}
+
+	if (Renderer->Device == nullptr)
+	{
+		UE_LOG("[EngineCore/ResourceManager][Error] Direct3D 11 device is null");
+		return false;
+	}
+
+	const FGlyphAtlas& Atlas = BillboardFont.GetAtlas();
+	const uint32 AtlasWidth = Atlas.GetWidth();
+	const uint32 AtlasHeight = Atlas.GetHeight();
+	const TArray<uint8>& AtlasPixels = Atlas.GetPixels();
+
+	if (AtlasWidth == 0 || AtlasHeight == 0 || AtlasPixels.empty())
+	{
+		UE_LOG("[EngineCore/ResourceManager][Error] Invalid billboard font atlas data");
+		return false;
+	}
+
+	BillboardFontTexture.Reset();
+
+	FMaterial& FontShader = GetMaterial(L"Shader/ShaderFont.hlsl");
+	// 지금 GetMaterial은 해당하는 셰이더가 없어도 빈 FMaterial을 만들어서 반환하는데, 나중에 안정성을 위해 추가해야할 듯
+
+	FontShader.ShaderResourceView.Reset();
+	FontShader.SamplerState.Reset();
+
+	// Atlas 전체 texture 생성
+	D3D11_TEXTURE2D_DESC TextureDesc = {};
+	TextureDesc.Width = AtlasWidth;
+	TextureDesc.Height = AtlasHeight;
+	TextureDesc.MipLevels = 1;
+	TextureDesc.ArraySize = 1;
+	TextureDesc.Format = DXGI_FORMAT_R8_UNORM; // 8-bit R 채널 하나만 사용
+	TextureDesc.SampleDesc.Count = 1;
+	TextureDesc.SampleDesc.Quality = 0;
+	TextureDesc.Usage = D3D11_USAGE_DEFAULT;
+	TextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	TextureDesc.CPUAccessFlags = 0;
+	TextureDesc.MiscFlags = 0;
+
+	// 초기 데이터로 Atlas 전체 업로드
+	D3D11_SUBRESOURCE_DATA InitData = {};
+	InitData.pSysMem = AtlasPixels.data();
+	InitData.SysMemPitch = AtlasWidth * sizeof(uint8);
+	InitData.SysMemSlicePitch = 0;
+
+	HRESULT hr = Renderer->Device->CreateTexture2D(
+		&TextureDesc,
+		&InitData,
+		BillboardFontTexture.GetAddressOf()
+	);
+
+	if (FAILED(hr) || BillboardFontTexture == nullptr)
+	{
+		UE_LOG("[EngineCore/ResourceManager][Error] Failed to create billboard font texture");
+		return false;
+	}
+
+	// SRV 생성
+	D3D11_SHADER_RESOURCE_VIEW_DESC SrvDesc = {};
+	SrvDesc.Format = TextureDesc.Format;
+	SrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	SrvDesc.Texture2D.MostDetailedMip = 0;
+	SrvDesc.Texture2D.MipLevels = 1;
+
+	hr = Renderer->Device->CreateShaderResourceView(
+		BillboardFontTexture.Get(),
+		&SrvDesc,
+		FontShader.ShaderResourceView.GetAddressOf()
+	);
+
+	if (FAILED(hr) || FontShader.ShaderResourceView == nullptr)
+	{
+		UE_LOG("[EngineCore/ResourceManager][Error] Failed to create billboard font SRV");
+		return false;
+	}
+
+	// Sampler 생성
+	D3D11_SAMPLER_DESC SamplerDesc = {};
+	SamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	SamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	SamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	SamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	SamplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	SamplerDesc.MinLOD = 0;
+	SamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	hr = Renderer->Device->CreateSamplerState(
+		&SamplerDesc,
+		FontShader.SamplerState.GetAddressOf());
+
+	if (FAILED(hr) || FontShader.SamplerState == nullptr)
+	{
+		UE_LOG("[EngineCore/ResourceManager][Error] Failed to create billboard font sampler");
+		FontShader.ShaderResourceView.Reset();
+		return false;
+	}
+
+	// 셰이더에 연결
+	FontShader.bUseTexture = true;
+
+	return true;
+}
+
+bool ResourceManager::UpdateBillboardFontAtlasRegion(const FAtlasRect& DirtyRect)
+{
+	if (Renderer == nullptr)
+	{
+		UE_LOG("[EngineCore/ResourceManager][Error] Renderer is null");
+		return false;
+	}
+
+	if (Renderer->DeviceContext == nullptr)
+	{
+		UE_LOG("[EngineCore/ResourceManager][Error] Direct3D 11 device context is null");
+		return false;
+	}
+
+	if (BillboardFontTexture == nullptr)
+	{
+		UE_LOG("[EngineCore/ResourceManager][Error] Billboard font texture is null");
+		return false;
+	}
+
+	if (DirtyRect.Width <= 0.0f || DirtyRect.Height <= 0.0f)
+	{
+		UE_LOG("[EngineCore/ResourceManager][Error] DirtyRect size is invalid");
+		return false;
+	}
+
+	const FGlyphAtlas& Atlas = BillboardFont.GetAtlas();
+	const TArray<uint8>& Pixels = Atlas.GetPixels();
+	const uint32 AtlasWidth = Atlas.GetWidth();
+	const uint32 AtlasHeight = Atlas.GetHeight();
+
+	if (Pixels.empty() || AtlasWidth == 0 || AtlasHeight == 0)
+	{
+		UE_LOG("[EngineCore/ResourceManager][Error] Invalid atlas pixel data");
+		return false;
+	}
+
+	// DirtyRect를 정수 좌표로 변환
+	const uint32 DirtyRectX = static_cast<uint32>(DirtyRect.X);
+	const uint32 DirtyRectY = static_cast<uint32>(DirtyRect.Y);
+	const uint32 DirtyRectWidth = static_cast<uint32>(DirtyRect.Width);
+	const uint32 DirtyRectHeight = static_cast<uint32>(DirtyRect.Height);
+
+	if (DirtyRectX + DirtyRectWidth > AtlasWidth || DirtyRectY + DirtyRectHeight > AtlasHeight)
+	{
+		UE_LOG("[EngineCore/ResourceManager][Error] DirtyRect is out of atlas bounds");
+		return false;
+	}
+
+	// 임시 버퍼 생성
+	TArray<uint8> UploadBuffer;
+	UploadBuffer.resize(DirtyRectWidth * DirtyRectHeight);
+
+	// Atlas에서 rect 영역만 줄 단위 복사
+	for (uint32 Row = 0; Row < DirtyRectHeight; Row++)
+	{
+		const uint32 SrcOffset = (DirtyRectY + Row) * AtlasWidth + DirtyRectX;
+		const uint32 DstOffset = Row * DirtyRectWidth;
+
+		// Width 바이트만 복붙
+		std::memcpy(
+			UploadBuffer.data() + DstOffset,
+			Pixels.data() + SrcOffset,
+			DirtyRectWidth * sizeof(uint8)
+		);
+	}
+
+	// D3D11_BOX 구성
+	D3D11_BOX UpdateBox = {};
+	UpdateBox.left = DirtyRectX;
+	UpdateBox.top = DirtyRectY;
+	UpdateBox.front = 0;
+	UpdateBox.right = DirtyRectX + DirtyRectWidth;
+	UpdateBox.bottom = DirtyRectY + DirtyRectHeight;
+	UpdateBox.back = 1;
+
+	// GPU atlas 텍스처 업데이트
+	Renderer->DeviceContext->UpdateSubresource(
+		BillboardFontTexture.Get(),
+		0, // Subresource
+		&UpdateBox, // DstBox
+		UploadBuffer.data(), // SrcData
+		DirtyRectWidth * sizeof(uint8), // SrcRowPitch
+		0 // SrcDepthPitch(2D texture에서는 무의미)
+	);
+
+	return true;
 }
 
 void ResourceManager::CreateNoBufferGeometry(FString ResourceName, const TArray<FVector>& Verticies)
@@ -658,9 +823,6 @@ void ResourceManager::UpdateGridMesh(float halfExtent, float cellSize, float z)
 	}
 	UpdateStaticGeomtry("Grid", vertices.data(), (UINT)(sizeof(FVertexSimple) * vertices.size()), Renderer->Device.Get(), 0, Vertices);
 }
-
-
-
 
 FMaterial& ResourceManager::GetMaterial(WFString ResourceName)
 {

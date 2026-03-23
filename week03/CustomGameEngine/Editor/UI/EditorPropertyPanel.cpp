@@ -7,11 +7,8 @@ EditorPropertyPanel::~EditorPropertyPanel()
 {
 }
 
-void EditorPropertyPanel::Draw(USceneComponent* selectedComponent, ImGuiWindowLayout& layout)
+void EditorPropertyPanel::Draw(USceneComponent* selectedComponent)
 {
-	ImGui::SetNextWindowPos(layout.PosXY, ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSize(layout.SizeWH, ImGuiCond_FirstUseEver);
-
 	ImGui::Begin("Jungle Property Panel");
 
 	if (selectedComponent)
@@ -35,6 +32,6 @@ void EditorPropertyPanel::Draw(USceneComponent* selectedComponent, ImGuiWindowLa
 
 void EditorPropertyPanel::RemoveSelected(USceneComponent* selectedComponent)
 {
-	GetWorld().GetSceneManager()->RemoveSceneComponent(selectedComponent);
 	editor->SelectComponent(nullptr);
+	GetWorld().GetSceneManager()->RemoveSceneComponent(selectedComponent);
 }

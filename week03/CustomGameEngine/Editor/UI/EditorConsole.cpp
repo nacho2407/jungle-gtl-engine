@@ -44,10 +44,8 @@ void EditorConsole::AddLog(const char* fmt, ...)
 	Items.push_back(Strdup(buf));
 }
 
-void EditorConsole::Draw(const char* title, bool* p_open, ImGuiWindowLayout& layout)
+void EditorConsole::Draw(const char* title, bool* p_open)
 {
-	ImGui::SetNextWindowPos(layout.PosXY, ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSize(layout.SizeWH, ImGuiCond_FirstUseEver);
 	if (!ImGui::Begin(title, p_open))
 	{
 		ImGui::End();

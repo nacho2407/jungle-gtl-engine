@@ -46,6 +46,8 @@ bool BuildBillboardTextVertices(const FTextLayoutBuildParams& Params, TArray<FVe
 		const FGlyphInfo* Glyph = Params.FontAsset->EnsureGlyph(Codepoint);
 		if (Glyph == nullptr)
 		{
+			UE_LOG("[Text/TextLayout][Error] Failed to get necessary glyph");
+			OutVertices.clear();
 			return false;
 		}
 
@@ -69,10 +71,50 @@ bool BuildBillboardTextVertices(const FTextLayoutBuildParams& Params, TArray<FVe
 		float V1 = Glyph->V1;
 
 		// 쿼드를 위한 정점 6개(삼각형 2개) 추가
-		OutVertices.push_back()
+		// 좌하
+		OutVertices.push_back({
+			Params.Anchor.x, Params.Anchor.y, Params.Anchor.z,
+			GlyphX0, GlyphY0,
+			U0, V1
+		});
+
+		// 우하
+		OutVertices.push_back({
+			Params.Anchor.x, Params.Anchor.y, Params.Anchor.z,
+			GlyphX1, GlyphY0,
+			U1, V1
+		});
+
+		// 우상
+		OutVertices.push_back({
+			Params.Anchor.x, Params.Anchor.y, Params.Anchor.z,
+			GlyphX1, GlyphY1,
+			U1, V0
+		});
+
+		// 좌하
+		OutVertices.push_back({
+			Params.Anchor.x, Params.Anchor.y, Params.Anchor.z,
+			GlyphX0, GlyphY0,
+			U0, V1
+		});
+
+		// 우상
+		OutVertices.push_back({
+			Params.Anchor.x, Params.Anchor.y, Params.Anchor.z,
+			GlyphX1, GlyphY1,
+			U1, V0
+		});
+
+		// 좌상
+		OutVertices.push_back({
+			Params.Anchor.x, Params.Anchor.y, Params.Anchor.z,
+			GlyphX0, GlyphY1,
+			U0, V0
+		});
 
 		// 다음 글자 위치로 Pen 이동
-		PenX += Glyph->Metrics.AdvanceX * Params.Scale + LETTER_QUAD_SPACE;
+		PenX += Glyph->Metrics.AdvanceX * Params.Scale;
 	}
 
 	return true;

@@ -291,8 +291,8 @@ void URenderer::RenderNoDepthObjects(TArray<RenderObject*>& NoDepthRenderObjects
 	FObjectConstant ObjectConst;
 	if (!NoDepthRenderObjects.empty())
 	{
-		DeviceContext->ClearDepthStencilView(DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 0.0f, 0);
-
+		//DeviceContext->ClearDepthStencilView(DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 0.0f, 0);
+		DeviceContext->OMSetDepthStencilState(DepthStencilStateNoDepth.Get(), 0);
 		for (RenderObject* RenderObj : NoDepthRenderObjects)
 		{
 			ObjectConst.World = RenderObj->World;
@@ -302,6 +302,7 @@ void URenderer::RenderNoDepthObjects(TArray<RenderObject*>& NoDepthRenderObjects
 			RenderObj->Material->ConstantBuffer.Bind(DeviceContext.Get());
 			RenderObj->Render(DeviceContext.Get());
 		}
+		DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
 	}
 }
 

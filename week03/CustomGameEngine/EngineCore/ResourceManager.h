@@ -151,8 +151,36 @@ public:
 	void Initialize(URenderer* InRenderer);
 
 	FFontAsset& GetBillboardFont() { return BillboardFont; }
+
+	/**
+	 * @brief 문자열에 필요한 glyph를 billboard atlas에 보장합니다.
+	 * 
+	 * @param Text Glyph를 보장할 문자열
+	 * 
+	 * @return Atlas내 필요한 glyph 보장 여부
+	 */
+	bool EnsureBillboardGlyphs(const FString& Text);
+
 private:
 	ResourceManager() {}
+
+	/**
+	 * @brief GPU에 Atlas 텍스처를 최초 생성합니다.
+	 * 
+	 * @return Atlas 텍스처 생성 성공 여부
+	 */
+	bool CreateBillboardFontAtlasTexture(void);
+
+	/**
+	 * @brief 새로운 Glyph를 추가하기 위해 GPU 내 Atlas 텍스처를 업데이트합니다.
+	 * 
+	 * @param 업데이트할 Atlas 내 직사각형 부분 정보
+	 * 
+	 * @return Atlas 텍스처 업데이트 성공 여부
+	 */
+	bool UpdateBillboardFontAtlasRegion(const FAtlasRect& DirtyRect);
+
+private:
 	TUMap<FString, FGeometry> GeometryMap;
 	TUMap<WFString, FMaterial> MaterialMap;
 	URenderer* Renderer = nullptr;
@@ -161,4 +189,9 @@ private:
 	 * @brief Billboard 텍스트 용 폰트 에셋
 	 */
 	FFontAsset BillboardFont;
+
+	/**
+	 * @brief 폰트 텍스처 정보. 원래는 SRV 생성 후 삭제하지만, UpdateSubresource를 통해 Atlas 부분 업데이트를 수행하기 위해 필요
+	 */
+	TComPtr<ID3D11Texture2D> BillboardFontTexture;
 };

@@ -222,28 +222,7 @@
     <ClInclude Include="Editor\UI\EditorSceneManagerPanel.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\UI\ImGuiLayout.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Component\GridComp.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Editor\UI\EditorConsole.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Editor\UI\EditorControlPanel.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Editor\UI\EditorPropertyPanel.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Editor\UI\EditorStatPanel.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Editor\UI\EditorToolbar.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Editor\UI\EditorSceneManagerPanel.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Constants.h">
@@ -264,10 +243,19 @@
     <ClInclude Include="Text\FontAsset.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Text\Test.h">
+    <ClInclude Include="Text\FontConfig.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Text\GlyphAtlas.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Text\Test.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Text\TextLayout.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VertexFont.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -431,43 +419,22 @@
     <ClCompile Include="SceneManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\UI\EditorConsole.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Editor\UI\EditorControlPanel.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Editor\UI\EditorPropertyPanel.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Editor\UI\EditorSceneManagerPanel.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Editor\UI\EditorStatPanel.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Editor\UI\EditorToolbar.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\VertextFont.h">
-      <Filter>헤더 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="SceneManager.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Text\TextEncoding.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Text\FontAsset.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Text\Test.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Component\GridComp.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Text\GlyphAtlas.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Text\Test.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Text\TextLayout.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

@@ -14,7 +14,7 @@ public:
 	EditorSceneManagerPanel();
 	~EditorSceneManagerPanel();
 
-	void Draw(Editor* editor, ImGuiWindowLayout& layout);
+	void Draw(Editor* editor);
 
 private:
 	UScene* ActiveScene = nullptr;

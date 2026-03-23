@@ -46,8 +46,8 @@ void SceneManager::SetPermanentScene(UScene* scene)
 
 UScene* SceneManager::NewScene()
 {
-	UScene* newScene = Cast<UScene>(FObjectFactory::ConstructObject(UScene::GetClass()));
-	newScene->Name = FName("NewScene_" + std::to_string((int32)LoadedScenes.size()));
+ 	UScene* newScene = Cast<UScene>(FObjectFactory::ConstructObject(UScene::GetClass()));
+	//newScene->Name = FName("NewScene_"); //+ std::to_string((int32)LoadedScenes.size())
 	SetActiveScene(newScene);
 	LoadedScenes.push_back(newScene);
 
