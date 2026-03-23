@@ -70,13 +70,6 @@ void FEditorViewportClient::HandleInputEvent(const Engine::ApplicationCore::FInp
 
 void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData) const
 {
-    OutRenderData.bShowGrid = true;
-    OutRenderData.bShowWorldAxes = true;
-    OutRenderData.bShowGizmo = true;
-    OutRenderData.bShowSelectionOutline = true;
-    OutRenderData.bShowObjectLabels = true;
-
-    OutRenderData.Gizmo.bVisible = true;
     OutRenderData.Gizmo.GizmoType = EGizmoType::Translation;
     OutRenderData.Gizmo.Highlight = EGizmoHighlight::None;
     OutRenderData.Gizmo.Transform = FMatrix::Identity;

@@ -22,6 +22,9 @@
     <Filter Include="Source\ApplicationCore">
       <UniqueIdentifier>{57812f21-7fc5-e713-3694-11639c1953c0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Asset">
+      <UniqueIdentifier>{7b0f19cf-8606-575b-b6eb-d0959bf8d98c}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Core">
       <UniqueIdentifier>{238c320c-6dd1-5946-035c-35da4bd61493}</UniqueIdentifier>
     </Filter>
@@ -67,9 +70,6 @@
     <Filter Include="Source\Core\Misc">
       <UniqueIdentifier>{822fce81-821e-1b1b-adaf-11c91675259f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Asset">
-      <UniqueIdentifier>{292084ae-a847-4cb7-dedc-b9cf3c9c5e97}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Component">
       <UniqueIdentifier>{009757f7-27d2-e9f2-4fdf-fa550fbfb1ff}</UniqueIdentifier>
     </Filter>
@@ -82,8 +82,8 @@
     <Filter Include="Source\Renderer\D3D11">
       <UniqueIdentifier>{7d49e81e-9894-3ffe-a35e-b64d3056e0ba}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Renderer\EditorDraw">
-      <UniqueIdentifier>{eb1df9ee-26d3-0e30-f337-23e04acff4de}</UniqueIdentifier>
+    <Filter Include="Source\Renderer\Draw">
+      <UniqueIdentifier>{228f9774-306d-a843-9d42-8b6de1290e03}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Renderer\RenderAsset">
       <UniqueIdentifier>{37df3f3d-06b0-91a9-da82-c1929332f7ef}</UniqueIdentifier>
@@ -111,6 +111,21 @@
     <ClCompile Include="Source\ApplicationCore\Windows\WindowsWindow.cpp">
       <Filter>Source\ApplicationCore\Windows</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Asset\Asset.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\AssetLoader.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\AssetManager.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\Texture2DAsset.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\TextureLoader.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Core\CoreGlobals.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
@@ -119,6 +134,9 @@
     </ClCompile>
     <ClCompile Include="Source\Core\Geometry\Transform.cpp">
       <Filter>Source\Core\Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\HAL\PlatformMisc.cpp">
+      <Filter>Source\Core\HAL</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\HAL\PlatformTime.cpp">
       <Filter>Source\Core\HAL</Filter>
@@ -159,28 +177,13 @@
     <ClCompile Include="Source\CoreUObject\ObjectFactory.cpp">
       <Filter>Source\CoreUObject</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Asset\Asset.cpp">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Asset\AssetLoader.cpp">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Asset\AssetManager.cpp">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Asset\Texture2DAsset.cpp">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Asset\TextureLoader.cpp">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\CameraComponent.cpp">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\CubeComponent.cpp">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\BasicPrimitives\PlaneComponent.cpp">
+    <ClCompile Include="Source\Engine\Component\BasicPrimitives\QuadComponent.cpp">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\SphereComponent.cpp">
@@ -216,19 +219,24 @@
     <ClCompile Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Renderer\EditorDraw\GizmoDrawer.cpp">
-      <Filter>Source\Renderer\EditorDraw</Filter>
+    <ClCompile Include="Source\Renderer\Draw\AABBDrawer.cpp">
+      <Filter>Source\Renderer\Draw</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Renderer\EditorDraw\WorldAxesDrawer.cpp">
-      <Filter>Source\Renderer\EditorDraw</Filter>
+    <ClCompile Include="Source\Renderer\Draw\GizmoDrawer.cpp">
+      <Filter>Source\Renderer\Draw</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Renderer\EditorDraw\WorldGridDrawer.cpp">
-      <Filter>Source\Renderer\EditorDraw</Filter>
+    <ClCompile Include="Source\Renderer\Draw\PrimitiveDrawer.cpp">
+      <Filter>Source\Renderer\Draw</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\Draw\WorldAxesDrawer.cpp">
+      <Filter>Source\Renderer\Draw</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\Draw\WorldGridDrawer.cpp">
+      <Filter>Source\Renderer\Draw</Filter>
     </ClCompile>
     <ClCompile Include="Source\Renderer\RendererModule.cpp">
       <Filter>Source\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\HAL\PlatformMisc.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Mesh\Cone.h">
@@ -243,7 +251,7 @@
     <ClInclude Include="Resources\Mesh\MeshPrimitiveTopology.h">
       <Filter>Resources\Mesh</Filter>
     </ClInclude>
-    <ClInclude Include="Resources\Mesh\Plane.h">
+    <ClInclude Include="Resources\Mesh\Quad.h">
       <Filter>Resources\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="Resources\Mesh\Ring.h">
@@ -284,6 +292,21 @@
     </ClInclude>
     <ClInclude Include="Source\ApplicationCore\Windows\WindowsWindow.h">
       <Filter>Source\ApplicationCore\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\Asset.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\AssetLoader.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\AssetManager.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\Texture2DAsset.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\TextureLoader.h">
+      <Filter>Source\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Containers\Array.h">
       <Filter>Source\Core\Containers</Filter>
@@ -405,28 +428,13 @@
     <ClInclude Include="Source\CoreUObject\ObjectFactory.h">
       <Filter>Source\CoreUObject</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Asset\Asset.h">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Asset\AssetLoader.h">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Asset\AssetManager.h">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Asset\Texture2DAsset.h">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Asset\TextureLoader.h">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\CameraComponent.h">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\CubeComponent.h">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\BasicPrimitives\PlaneComponent.h">
+    <ClInclude Include="Source\Engine\Component\BasicPrimitives\QuadComponent.h">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\SphereComponent.h">
@@ -453,6 +461,9 @@
     <ClInclude Include="Source\Engine\ViewPort\Viewport.h">
       <Filter>Source\Engine\ViewPort</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\ViewPort\ViewportClient.h">
+      <Filter>Source\Engine\ViewPort</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Launch\EngineLoop.h">
       <Filter>Source\Launch</Filter>
     </ClInclude>
@@ -477,14 +488,20 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\EditorDraw\GizmoDrawer.h">
-      <Filter>Source\Renderer\EditorDraw</Filter>
+    <ClInclude Include="Source\Renderer\Draw\AABBDrawer.h">
+      <Filter>Source\Renderer\Draw</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\EditorDraw\WorldAxesDrawer.h">
-      <Filter>Source\Renderer\EditorDraw</Filter>
+    <ClInclude Include="Source\Renderer\Draw\GizmoDrawer.h">
+      <Filter>Source\Renderer\Draw</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\EditorDraw\WorldGridDrawer.h">
-      <Filter>Source\Renderer\EditorDraw</Filter>
+    <ClInclude Include="Source\Renderer\Draw\PrimitiveDrawer.h">
+      <Filter>Source\Renderer\Draw</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Draw\WorldAxesDrawer.h">
+      <Filter>Source\Renderer\Draw</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Draw\WorldGridDrawer.h">
+      <Filter>Source\Renderer\Draw</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\EditorRenderData.h">
       <Filter>Source\Renderer</Filter>
@@ -507,13 +524,16 @@
     <ClInclude Include="Source\Renderer\Types\BasicMeshType.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Renderer\Types\EditorShowFlags.h">
+      <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Renderer\Types\MeshInstanceData.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\Types\ShaderConstants.h">
+    <ClInclude Include="Source\Renderer\Types\SceneShowFlags.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\Types\ShowFlags.h">
+    <ClInclude Include="Source\Renderer\Types\ShaderConstants.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\Types\VertexTypes.h">
