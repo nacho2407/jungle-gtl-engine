@@ -10,6 +10,7 @@
 #include "Render/Resource/Buffer.h"
 #include "Render/Device/D3DDevice.h"
 #include "Core/EngineTypes.h"
+#include "Core/ResourceTypes.h"
 
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
@@ -21,7 +22,9 @@ enum class ERenderCommandType
 	Overlay,
 	SelectionOutline,
 	Billboard,
-	DebugBox
+	DebugBox,
+	Font,		// TextRenderComponent — FontBatcher 경유
+	SubUV,		// SubUVComponent     — SubUVBatcher 경유
 };
 
 //PerObject
@@ -104,6 +107,11 @@ struct FRenderCommand
 		FAABBConstants AABB;
 	} Constants;
 
+	// Font / SubUV 전용 데이터
+	// ResourceManager가 소유하는 리소스 포인터 (참조만)
+	const FTextureAtlasResource* AtlasResource = nullptr;
+	uint32   FrameIndex  = 0;			// SubUV 프레임 인덱스
+	FVector2 SpriteSize  = { 1.0f, 1.0f }; // Font: X = Scale / SubUV: X = Width, Y = Height
 
 	EDepthStencilState DepthStencilState = EDepthStencilState::Default;
 	EBlendState BlendState = EBlendState::Opaque;

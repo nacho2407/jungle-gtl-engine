@@ -1,5 +1,6 @@
 ﻿#include "GameFramework/AActor.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/ActorComponent.h"
 
 DEFINE_CLASS(AActor, UObject)
 REGISTER_FACTORY(AActor)
@@ -40,6 +41,17 @@ void AActor::RegisterComponentRecursive(USceneComponent* Comp) {
 
 	for (USceneComponent* Child : Comp->GetChildren()) {
 		RegisterComponentRecursive(Child);
+	}
+}
+
+void AActor::Tick(float DeltaTime)
+{
+	for (USceneComponent* Comp : Components)
+	{
+		if (UActorComponent* ActorComp = dynamic_cast<UActorComponent*>(Comp))
+		{
+			ActorComp->ExecuteTick(DeltaTime);
+		}
 	}
 }
 
