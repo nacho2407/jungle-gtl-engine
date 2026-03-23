@@ -258,8 +258,18 @@
     <ClInclude Include="Renderer\VertexFont.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
+    <ClInclude Include="Renderer\Constants.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\GeneralGeometry.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\UV.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClCompile Include="MemoryTracker.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
     <ClCompile Include="ImGui\imgui.cpp">
       <Filter>imGui</Filter>
     </ClCompile>

@@ -147,37 +147,113 @@ void Editor::SetGrid(UGridComp* grid)
 	ResourceManager::GetInstance()->UpdateGridMesh(Grid->HalfExtent, Grid->CellSize, 0.f);
 }
 
-/**
- * picking에 걸린 오브젝트를 입력으로 받아 처리합니다.
- * Editor의 SelectedComponent와 걸린 오브젝트의 bIsSelected를 업데이트합니다.
- * 
- * \param component
- */
-void Editor::SelectComponent(USceneComponent* component)
+void Editor::ClearSelection()
 {
-	if (SelectedComponent)
+	for (USceneComponent* component : SelectedComponents)
 	{
-		//이미 picking된 컴포넌트가 있다면 pick 상태 해제
-		SelectedComponent->bIsSelected = false;
-		if (UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(SelectedComponent))
+		if (component == nullptr)
+		{
+			continue;
+		}
+
+		component->bIsSelected = false;
+		if (UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(component))
 		{
 			primitive->MarkRenderStateDirty();
 		}
-		SelectedComponent = nullptr;
-		Gizmo::GetInstance().GetController()->AttachTo(nullptr);
 	}
+	SelectedComponents.clear();
+	UpdateGizmoSelection();
+}
+
+void Editor::SelectSingleComponent(USceneComponent* component)
+{
+	ClearSelection();
+
 	if (component)
 	{
-		//해당 컴포넌트가 새로 picking되었다고 표시.
-		//이미 pick된 컴포넌트였다면 사실상 변화x
 		component->bIsSelected = true;
 		if (UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(component))
 		{
 			primitive->MarkRenderStateDirty();
 		}
-		SelectedComponent = component;
-		Gizmo::GetInstance().GetController()->AttachTo(component);
+		SelectedComponents.push_back(component);
+		UpdateGizmoSelection();
 	}
+}
+
+void Editor::SelectMultiComponent(USceneComponent* component)
+{
+	if (component == nullptr)
+	{
+		return;
+	}
+
+	for (auto it = SelectedComponents.begin(); it != SelectedComponents.end(); ++it)
+	{
+		if (*it != component)
+		{
+			continue;
+		}
+
+		component->bIsSelected = false;
+		if (UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(component))
+		{
+			primitive->MarkRenderStateDirty();
+		}
+		SelectedComponents.erase(it);
+		UpdateGizmoSelection();
+		return;
+	}
+
+	component->bIsSelected = true;
+	if (UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(component))
+	{
+		primitive->MarkRenderStateDirty();
+	}
+	SelectedComponents.push_back(component);
+	UpdateGizmoSelection();
+}
+
+//마지막으로 선택된 씬 컴포넌트를 반환합니다. 그걸로 기즈모를 조작하기 위해서입니다.
+USceneComponent* Editor::GetLastSelectedComponent() const
+{
+	if (SelectedComponents.empty())
+	{
+		return nullptr;
+	}
+	return SelectedComponents.back();
+}
+
+/**
+ * SelectedComponents 배열을 돌며 현재 컴포넌트가 속해 있는지 확인합니다..
+ * 
+ * \param component
+ * \return 
+ */
+bool Editor::IsComponentSelected(USceneComponent* component) const
+{
+	for (USceneComponent* selectedComponent : SelectedComponents)
+	{
+		if (selectedComponent == component)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void Editor::UpdateGizmoSelection()
+{
+	UGizmoComponent* controller = Gizmo::GetInstance().GetController();
+	if (controller == nullptr)
+	{
+		return;
+	}
+
+	controller->SetControlledComponents(SelectedComponents);
+	controller->AttachTo(GetLastSelectedComponent());
 }
 
 void Editor::LoadSettings()
@@ -251,7 +327,7 @@ void Editor::DrawControlPanel()
 
 void Editor::DrawPropertyPanel()
 {
-	PropertyPanel->Draw(SelectedComponent);
+	PropertyPanel->Draw(GetLastSelectedComponent());
 }
 
 void Editor::DrawStatPanel()

@@ -43,7 +43,7 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
     
     if (bIsSelected > 0)
     {
-        return float4(finalColor.xyz, finalColor.w * 0.5f); // 선택 시 투명화.
+        return float4(finalColor.xyz, finalColor.w * 1.f); // 선택 시 투명화.
     }
     return finalColor;
 }

@@ -4,6 +4,7 @@
 #include "Math/Vector.h"
 
 class UGizmoComponent;
+class USceneComponent;
 struct RenderObject;
 
 class GizmoScaleControlStrategy : public IGizmoControlStrategy
@@ -27,11 +28,12 @@ public:
 
 private:
 	UGizmoComponent* Controller;
+	TArray<USceneComponent*> DragComponents;
 
 	TArray<FMatrix> RelativeMatrices;
 
 	FVector InitialWorldPos;
-	FVector InitialObjectScale;
+	TArray<FVector> InitialObjectScales;
 	float InitialDragOffset = 0.0f;
 
 	RenderObject* GizmoX;

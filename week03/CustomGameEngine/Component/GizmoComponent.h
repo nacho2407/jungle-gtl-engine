@@ -54,6 +54,9 @@ public:
 
 	GizmoControllerAxis TryPick(Ray& ray);
 
+	void SetControlledComponents(const TArray<USceneComponent*>& components) { ControlledComponents = components; }
+	const TArray<USceneComponent*>& GetControlledComponents() const { return ControlledComponents; }
+
 	void AttachTo(USceneComponent* comp) {
 		AttachedComponent = comp;
 
@@ -79,6 +82,7 @@ public:
 
 private:
 	USceneComponent* AttachedComponent = nullptr;
+	TArray<USceneComponent*> ControlledComponents;
 
 	GizmoControllerType Type = GizmoControllerType::Translation;
 	bool bLocalSpace = true;

@@ -22,6 +22,7 @@ public:
 	SceneManager* GetSceneManager();
 
 	void Update(float deltaTime);
+	void DrawDebugLines();
 	inline void InjectRenderer(URenderer* InRenderer) { Renderer = InRenderer; }
 	URenderer* GetRenderer() const { return Renderer; }
 	void OnBeforeRender() const;

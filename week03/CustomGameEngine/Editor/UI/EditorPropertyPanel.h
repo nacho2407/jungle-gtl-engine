@@ -13,7 +13,7 @@ struct EditorPropertyPanel
 	~EditorPropertyPanel();
 
 	void Draw(USceneComponent* selectedComponent);
-	void RemoveSelected(USceneComponent* selectedComponent);
+	void RemoveSelected();
 
 private:
 	Editor* editor;

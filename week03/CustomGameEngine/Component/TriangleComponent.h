@@ -7,5 +7,6 @@ class UTriangleComp : public UPrimitiveComponent
 public:
 	UTriangleComp();
 	virtual ~UTriangleComp() override;
+	virtual void Update(float DeltaTime) override;
 };
 

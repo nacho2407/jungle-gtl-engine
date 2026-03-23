@@ -19,21 +19,5 @@ UObject::~UObject()
 	FUniqueNameGenerator::ReleaseName(Name);
 }
 
-void* UObject::operator new(size_t size)
-{
-	UEngineStatics::TotalAllocatedBytes += size;
-	UEngineStatics::TotalAllocationCount++;
-
-	void* p = ::operator new(size);
-	return p;
-}
-
-void UObject::operator delete(void* p, size_t size)
-{
-	UEngineStatics::TotalAllocatedBytes -= size;
-	UEngineStatics::TotalAllocationCount--;
-
-	::operator delete(p, size);
-}
 
 REGISTER_CLASS(UObject);

@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "ThirdParty/json.h"
+
 struct FMatrix;
 
 // Structure for a 3D vector

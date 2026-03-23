@@ -36,7 +36,7 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 			if (ImGui::Selectable(sceneLabel.c_str(), isSelected))
 			{
 				sceneMgr->SetActiveScene(scene);
-				editor->SelectComponent(nullptr);
+				editor->ClearSelection();
 			}
 			//if (ImGui::BeginPopupContextItem())
 			//{
@@ -65,17 +65,28 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 			{
 				if (component == nullptr) continue;
 
-				bool isSelected = (editor->GetSelectedComponent() == component);
+				bool isSelected = (editor->IsComponentSelected(component));
 				FString label = component->Name.GetDisplayName() + " (UUID: " + std::to_string(component->UUID) + ")";
 
+				//isSelected에 따라 선택된 컴포넌트는 다른 색으로 표시됩니다. 클릭 시 해당 컴포넌트를 선택합니다.
 				if (ImGui::Selectable(label.c_str(), isSelected))
 				{
-					editor->SelectComponent(component);
+					//bool bIsCtrlDown = InputManager::GetInstance().IsKeyDown(VK_CONTROL);
+					//ImGUI에서 컨트롤 키 입력을 감지하는 방식이며 InputManager를 사용하면 작동하지 않습니다.
+					bool bIsCtrlDown = ImGui::GetIO().KeyCtrl;
+					if (!bIsCtrlDown)
+					{
+						editor->SelectSingleComponent(component);
+					}
+					else
+					{
+						editor->SelectMultiComponent(component);
+					}
 				}
 			}
 		}
 	}
-	
+
 	ImGui::Separator();
 
 	if (permanentScene && ImGui::CollapsingHeader("Permanent Scene", ImGuiTreeNodeFlags_DefaultOpen))
@@ -84,12 +95,12 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 		{
 			if (component == nullptr) continue;
 
-			bool isSelected = (editor->GetSelectedComponent() == component);
+			bool isSelected = editor->IsComponentSelected(component);
 			FString label = component->Name.GetDisplayName() + " (UUID: " + std::to_string(component->UUID) + ")";
 
 			if (ImGui::Selectable(label.c_str(), isSelected))
 			{
-				editor->SelectComponent(component);
+				editor->SelectSingleComponent(component);
 			}
 		}
 	}

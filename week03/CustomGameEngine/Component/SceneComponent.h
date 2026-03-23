@@ -6,6 +6,8 @@
 #include "Math/Rotator.h"
 #include "Object.h"
 
+#include "ThirdParty/json.h"
+
 class UScene;
 
 class USceneComponent : public UObject
@@ -35,7 +37,7 @@ public:
 	virtual void Update(float deltaTime) {};
 	virtual json::JSON Serialize();
 	virtual void Deserialize(json::JSON);
-
+	virtual void DrawDebugLines() {}
 	virtual void DrawProperties();
 
 	bool IsSelected() const;
@@ -46,5 +48,5 @@ private:
 	FVector RelativeScale3D;
 	FQuat RelativeQuaternion;
 
-	
+
 };

@@ -132,6 +132,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="AABB.h" />
     <ClInclude Include="Component\AxisComponent.h" />
     <ClInclude Include="Component\CameraComponent.h" />
     <ClInclude Include="Component\CubeComponent.h" />
@@ -158,6 +159,7 @@
     <ClInclude Include="EngineApp\EngineApp.h" />
     <ClInclude Include="EngineCore\Color.h" />
     <ClInclude Include="EngineCore\Name.h" />
+    <ClInclude Include="LineBatcher.h" />
     <ClInclude Include="Renderer\Constants.h" />
     <ClInclude Include="Renderer\GeneralGeometry.h" />
     <ClInclude Include="Renderer\TexCoord.h" />
@@ -184,7 +186,6 @@
     <ClInclude Include="Renderer\Renderer.h" />
     <ClInclude Include="Renderer\RenderObject.h" />
     <ClInclude Include="Math\Rotator.h" />
-    <ClInclude Include="Serializable.h" />
     <ClInclude Include="EngineCore\Logger.h" />
     <ClInclude Include="SerializeHelper.h" />
     <ClInclude Include="Singleton.h" />
@@ -238,11 +239,13 @@
     <ClCompile Include="EngineApp\EngineApp.cpp" />
     <ClCompile Include="EngineCore\Color.cpp" />
     <ClCompile Include="EngineCore\Name.cpp" />
+    <ClCompile Include="LineBatcher.cpp" />
     <ClCompile Include="Math\Matrix.cpp" />
     <ClCompile Include="Math\Quaternion.cpp" />
     <ClCompile Include="Math\Vector.cpp" />
     <ClCompile Include="EngineCore\ObjectFactory.cpp" />
     <ClCompile Include="EngineCore\InputManager.cpp" />
+    <ClCompile Include="MemoryTracker.cpp" />
     <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="Text\FontAsset.cpp" />
     <ClCompile Include="Text\GlyphAtlas.cpp" />
@@ -294,9 +297,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
