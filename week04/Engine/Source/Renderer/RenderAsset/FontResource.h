@@ -4,7 +4,7 @@
 #include "Renderer/D3D11/D3D11Common.h"
 #include "Renderer/RenderAsset/TextureResource.h"
 
-#include <dxgiformat.h>
+#include "FTextureResource.h"
 
 // 글리프 1개 정보
 struct FFontGlyph
