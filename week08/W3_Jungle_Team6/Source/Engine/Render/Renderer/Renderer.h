@@ -57,6 +57,7 @@ public:
 	void EndFrame();
 
 	void RenderPasses(const FRenderBus& InRenderBus, ID3D11DeviceContext* Context);
+	
 	void RenderEditorHelpers(const FRenderBus& InRenderBus, ID3D11DeviceContext* Context);
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix);
 
