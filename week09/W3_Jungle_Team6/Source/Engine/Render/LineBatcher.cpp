@@ -70,6 +70,31 @@ namespace
 
 		return FVector(CameraPosition.X, CameraPosition.Y, GridPlaneZ);
 	}
+
+	void ReleaseBuffer(ID3D11Buffer*& Buffer)
+	{
+		if (Buffer)
+		{
+			Buffer->Release();
+			Buffer = nullptr;
+		}
+	}
+
+	bool CreateDynamicBuffer(ID3D11Device* Device, uint32 ByteWidth, UINT BindFlags, ID3D11Buffer** OutBuffer)
+	{
+		if (!Device || ByteWidth == 0 || !OutBuffer)
+		{
+			return false;
+		}
+
+		D3D11_BUFFER_DESC Desc = {};
+		Desc.ByteWidth = ByteWidth;
+		Desc.Usage = D3D11_USAGE_DYNAMIC;
+		Desc.BindFlags = BindFlags;
+		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+		return SUCCEEDED(Device->CreateBuffer(&Desc, nullptr, OutBuffer));
+	}
 }
 
 void FLineBatcher::Create(ID3D11Device* InDevice)
@@ -84,30 +109,21 @@ void FLineBatcher::Create(ID3D11Device* InDevice)
 
 	Device->AddRef();
 
-	MaxVertexCount = 4096;
+	MaxIndexedVertexCount = 512;
+	MaxIndexCount = 1536;
 
-	D3D11_BUFFER_DESC VBDesc = {};
-	VBDesc.ByteWidth = sizeof(FLineVertex) * MaxVertexCount;
-	VBDesc.Usage = D3D11_USAGE_DYNAMIC;
-	VBDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	VBDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-	if (FAILED(Device->CreateBuffer(&VBDesc, nullptr, &VertexBuffer)))
+	if (!CreateDynamicBuffer(Device, sizeof(FLineVertex) * MaxIndexedVertexCount, D3D11_BIND_VERTEX_BUFFER, &IndexedVertexBuffer) ||
+		!CreateDynamicBuffer(Device, sizeof(uint32) * MaxIndexCount, D3D11_BIND_INDEX_BUFFER, &IndexBuffer))
 	{
-		Device->Release();
-		VertexBuffer = nullptr;
-		MaxVertexCount = 0;
+		Release();
 		return;
 	}
 }
 
 void FLineBatcher::Release()
 {
-	if (VertexBuffer)
-	{
-		VertexBuffer->Release();
-		VertexBuffer = nullptr;
-	}
+	ReleaseBuffer(IndexedVertexBuffer);
+	ReleaseBuffer(IndexBuffer);
 
 	if (Device)
 	{
@@ -115,8 +131,10 @@ void FLineBatcher::Release()
 		Device = nullptr;
 	}
 
-	MaxVertexCount = 0;
-	Vertices.clear();
+	MaxIndexedVertexCount = 0;
+	MaxIndexCount = 0;
+	IndexedVertices.clear();
+	Indices.clear();
 }
 
 void FLineBatcher::AddLine(const FVector& Start, const FVector& End, const FVector4& InColor)
@@ -126,34 +144,37 @@ void FLineBatcher::AddLine(const FVector& Start, const FVector& End, const FVect
 
 void FLineBatcher::AddLine(const FVector& Start, const FVector& End, const FVector4& StartColor, const FVector4& EndColor)
 {
-	Vertices.emplace_back(Start, StartColor);
-	Vertices.emplace_back(End, EndColor);
+	const uint32 BaseVertex = static_cast<uint32>(IndexedVertices.size());
+	IndexedVertices.emplace_back(Start, StartColor);
+	IndexedVertices.emplace_back(End, EndColor);
+	Indices.push_back(BaseVertex);
+	Indices.push_back(BaseVertex + 1);
 }
 void FLineBatcher::AddAABB(const FBoundingBox& Box, const FColor& InColor)
 {
 	const FVector4 BoxColor = InColor.ToVector4();
+	const uint32 BaseVertex = static_cast<uint32>(IndexedVertices.size());
 
-	const FVector v0 = FVector(Box.Min.X, Box.Min.Y, Box.Min.Z);
-	const FVector v1 = FVector(Box.Max.X, Box.Min.Y, Box.Min.Z);
-	const FVector v2 = FVector(Box.Max.X, Box.Max.Y, Box.Min.Z);
-	const FVector v3 = FVector(Box.Min.X, Box.Max.Y, Box.Min.Z);
-	const FVector v4 = FVector(Box.Min.X, Box.Min.Y, Box.Max.Z);
-	const FVector v5 = FVector(Box.Max.X, Box.Min.Y, Box.Max.Z);
-	const FVector v6 = FVector(Box.Max.X, Box.Max.Y, Box.Max.Z);
-	const FVector v7 = FVector(Box.Min.X, Box.Max.Y, Box.Max.Z);
+	IndexedVertices.emplace_back(FVector(Box.Min.X, Box.Min.Y, Box.Min.Z), BoxColor);
+	IndexedVertices.emplace_back(FVector(Box.Max.X, Box.Min.Y, Box.Min.Z), BoxColor);
+	IndexedVertices.emplace_back(FVector(Box.Max.X, Box.Max.Y, Box.Min.Z), BoxColor);
+	IndexedVertices.emplace_back(FVector(Box.Min.X, Box.Max.Y, Box.Min.Z), BoxColor);
+	IndexedVertices.emplace_back(FVector(Box.Min.X, Box.Min.Y, Box.Max.Z), BoxColor);
+	IndexedVertices.emplace_back(FVector(Box.Max.X, Box.Min.Y, Box.Max.Z), BoxColor);
+	IndexedVertices.emplace_back(FVector(Box.Max.X, Box.Max.Y, Box.Max.Z), BoxColor);
+	IndexedVertices.emplace_back(FVector(Box.Min.X, Box.Max.Y, Box.Max.Z), BoxColor);
 
-	AddLine(v0, v1, BoxColor);
-	AddLine(v1, v2, BoxColor);
-	AddLine(v2, v3, BoxColor);
-	AddLine(v3, v0, BoxColor);
-	AddLine(v4, v5, BoxColor);
-	AddLine(v5, v6, BoxColor);
-	AddLine(v6, v7, BoxColor);
-	AddLine(v7, v4, BoxColor);
-	AddLine(v0, v4, BoxColor);
-	AddLine(v1, v5, BoxColor);
-	AddLine(v2, v6, BoxColor);
-	AddLine(v3, v7, BoxColor);
+	static constexpr uint32 AABBEdgeIndices[] =
+	{
+		0, 1, 1, 2, 2, 3, 3, 0,
+		4, 5, 5, 6, 6, 7, 7, 4,
+		0, 4, 1, 5, 2, 6, 3, 7
+	};
+
+	for (uint32 EdgeIndex : AABBEdgeIndices)
+	{
+		Indices.push_back(BaseVertex + EdgeIndex);
+	}
 }
 
 //void FLineBatcher::AddWorldGrid(float InGridSpacing, int InHalfGridCount)
@@ -313,59 +334,72 @@ void FLineBatcher::AddWorldHelpers(const FEditorSettings& Settings, const FVecto
 
 void FLineBatcher::Clear()
 {
-	Vertices.clear();
+	IndexedVertices.clear();
+	Indices.clear();
 }
 
 void FLineBatcher::Flush(ID3D11DeviceContext* Context)
 {
-	if (!Context || !Device || Vertices.empty())
+	if (!Context || !Device)
 	{
 		return;
 	}
 
-	const uint32 RequiredVertexCount = static_cast<uint32>(Vertices.size());
-
-	if (!VertexBuffer || RequiredVertexCount > MaxVertexCount)
+	const uint32 RequiredIndexedVertexCount = static_cast<uint32>(IndexedVertices.size());
+	const uint32 RequiredIndexCount = static_cast<uint32>(Indices.size());
+	if (RequiredIndexedVertexCount == 0 || RequiredIndexCount == 0)
 	{
-		if (VertexBuffer)
+		return;
+	}
+
+	if (!IndexedVertexBuffer || RequiredIndexedVertexCount > MaxIndexedVertexCount)
+	{
+		ReleaseBuffer(IndexedVertexBuffer);
+		MaxIndexedVertexCount = RequiredIndexedVertexCount * 2;
+		if (!CreateDynamicBuffer(Device, sizeof(FLineVertex) * MaxIndexedVertexCount, D3D11_BIND_VERTEX_BUFFER, &IndexedVertexBuffer))
 		{
-			VertexBuffer->Release();
-			VertexBuffer = nullptr;
+			MaxIndexedVertexCount = 0;
+			return;
 		}
+	}
 
-		MaxVertexCount = RequiredVertexCount * 2;
-
-		D3D11_BUFFER_DESC VBDesc = {};
-		VBDesc.ByteWidth = sizeof(FLineVertex) * MaxVertexCount;
-		VBDesc.Usage = D3D11_USAGE_DYNAMIC;
-		VBDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-		VBDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-		if (FAILED(Device->CreateBuffer(&VBDesc, nullptr, &VertexBuffer)))
+	if (!IndexBuffer || RequiredIndexCount > MaxIndexCount)
+	{
+		ReleaseBuffer(IndexBuffer);
+		MaxIndexCount = RequiredIndexCount * 2;
+		if (!CreateDynamicBuffer(Device, sizeof(uint32) * MaxIndexCount, D3D11_BIND_INDEX_BUFFER, &IndexBuffer))
 		{
-			VertexBuffer = nullptr;
-			MaxVertexCount = 0;
+			MaxIndexCount = 0;
 			return;
 		}
 	}
 
 	D3D11_MAPPED_SUBRESOURCE MappedResource = {};
-	if (FAILED(Context->Map(VertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource)))
+	if (FAILED(Context->Map(IndexedVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource)))
 	{
 		return;
 	}
 
-	memcpy(MappedResource.pData, Vertices.data(), sizeof(FLineVertex) * RequiredVertexCount);
-	Context->Unmap(VertexBuffer, 0);
+	memcpy(MappedResource.pData, IndexedVertices.data(), sizeof(FLineVertex) * RequiredIndexedVertexCount);
+	Context->Unmap(IndexedVertexBuffer, 0);
+
+	if (FAILED(Context->Map(IndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource)))
+	{
+		return;
+	}
+
+	memcpy(MappedResource.pData, Indices.data(), sizeof(uint32) * RequiredIndexCount);
+	Context->Unmap(IndexBuffer, 0);
 
 	UINT Stride = sizeof(FLineVertex);
 	UINT Offset = 0;
-	Context->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
+	Context->IASetVertexBuffers(0, 1, &IndexedVertexBuffer, &Stride, &Offset);
+	Context->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-	Context->Draw(RequiredVertexCount, 0);
+	Context->DrawIndexed(RequiredIndexCount, 0, 0);
 }
 
 uint32 FLineBatcher::GetLineCount() const
 {
-	return static_cast<uint32>(Vertices.size() / 2);
+	return static_cast<uint32>(Indices.size() / 2);
 }
