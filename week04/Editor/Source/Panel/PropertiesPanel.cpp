@@ -1,15 +1,20 @@
 #include "PropertiesPanel.h"
 
+#include "Editor/Editor.h"
 #include "Editor/EditorContext.h"
 #include "CoreUObject/Object.h"
 #include "Core/Misc/Name.h"
 #include "Engine/Component/SceneComponent.h"
+#include "Engine/Component/UnknownComponent.h"
 #include "Engine/Game/Actor.h"
+#include "Engine/Game/UnknownActor.h"
 #include "imgui.h"
 
 namespace
 {
-    FString GetObjectDisplayName(const UObject* Object)
+    constexpr ImVec4 UnknownItemColor = ImVec4(0.95f, 0.35f, 0.35f, 1.0f);
+
+    FString GetBaseObjectDisplayName(const UObject* Object)
     {
         if (Object == nullptr)
         {
@@ -22,6 +27,66 @@ namespace
         }
 
         return "Unnamed";
+    }
+
+    bool IsUnknownObject(const UObject* Object)
+    {
+        if (Object == nullptr)
+        {
+            return false;
+        }
+
+        return Object->IsA(AUnknownActor::GetClass()) ||
+            Object->IsA(Engine::Component::UUnknownComponent::GetClass());
+    }
+
+    const char* GetUnknownSuffix(const UObject* Object)
+    {
+        if (Object == nullptr)
+        {
+            return nullptr;
+        }
+
+        if (Object->IsA(AUnknownActor::GetClass()))
+        {
+            return "(UnknownActor)";
+        }
+
+        if (Object->IsA(Engine::Component::UUnknownComponent::GetClass()))
+        {
+            return "(UnknownComponent)";
+        }
+
+        return nullptr;
+    }
+
+    FString GetObjectDisplayName(const UObject* Object)
+    {
+        FString DisplayName = GetBaseObjectDisplayName(Object);
+        if (const char* UnknownSuffix = GetUnknownSuffix(Object))
+        {
+            DisplayName += " ";
+            DisplayName += UnknownSuffix;
+        }
+
+        return DisplayName;
+    }
+
+    void DrawObjectSummaryLine(const char* Prefix, const UObject* Object)
+    {
+        if (Object == nullptr)
+        {
+            return;
+        }
+
+        ImGui::Text("%s: %s", Prefix, GetBaseObjectDisplayName(Object).c_str());
+        if (!IsUnknownObject(Object))
+        {
+            return;
+        }
+
+        ImGui::SameLine(0.0f, 6.0f);
+        ImGui::TextColored(UnknownItemColor, "%s", GetUnknownSuffix(Object));
     }
 
     void DrawVectorRow(const char* Label, FVector& Value, float Speed = 0.1f)
@@ -184,15 +249,15 @@ void FPropertiesPanel::DrawSelectionSummary(
 {
     UObject* SelectedObject = GetContext()->SelectedObject;
 
-    ImGui::Text("Selected: %s", GetObjectDisplayName(SelectedObject).c_str());
+    DrawObjectSummaryLine("Selected", SelectedObject);
     if (SelectedActor != nullptr)
     {
-        ImGui::Text("Actor: %s", GetObjectDisplayName(SelectedActor).c_str());
+        DrawObjectSummaryLine("Actor", SelectedActor);
     }
 
     if (TargetComponent != nullptr)
     {
-        ImGui::Text("Component: %s", GetObjectDisplayName(TargetComponent).c_str());
+        DrawObjectSummaryLine("Component", TargetComponent);
     }
 }
 
@@ -202,6 +267,8 @@ void FPropertiesPanel::DrawTransformEditor(
     DrawVectorRow("Location", EditLocation, 0.1f);
     DrawRotatorRow("Rotation", EditRotation, 0.5f);
     DrawVectorRow("Scale", EditScale, 0.01f);
+
+    bool bSceneModified = false;
 
     if (ImGui::Button("Reset Transform"))
     {
@@ -213,16 +280,24 @@ void FPropertiesPanel::DrawTransformEditor(
     if (TargetComponent->GetRelativeLocation() != EditLocation)
     {
         TargetComponent->SetRelativeLocation(EditLocation);
+        bSceneModified = true;
     }
 
     if (!TargetComponent->GetRelativeQuaternion().Equals(
             FRotator::MakeFromEuler(EditRotation).Quaternion()))
     {
         TargetComponent->SetRelativeRotation(FRotator::MakeFromEuler(EditRotation));
+        bSceneModified = true;
     }
 
     if (TargetComponent->GetRelativeScale3D() != EditScale)
     {
         TargetComponent->SetRelativeScale3D(EditScale);
+        bSceneModified = true;
+    }
+
+    if (bSceneModified && GetContext() != nullptr && GetContext()->Editor != nullptr)
+    {
+        GetContext()->Editor->MarkSceneDirty();
     }
 }

@@ -32,6 +32,13 @@ namespace Engine::ApplicationCore
                 return MessageResult;
             }
 
+            if (Message == WM_CLOSE &&
+                GWindowsApplication->DispatchMessageHandler(HWnd, Message, WParam, LParam,
+                                                            MessageResult))
+            {
+                return MessageResult;
+            }
+
             if (GWindowsApplication->HandleCustomChromeMessage(HWnd, Message, WParam, LParam,
                                                                MessageResult))
             {

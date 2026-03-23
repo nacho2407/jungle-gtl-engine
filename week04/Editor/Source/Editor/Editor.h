@@ -20,9 +20,42 @@
 #include "Renderer/SceneRenderData.h"
 #include "Renderer/SceneView.h"
 
+#include <filesystem>
+#include <memory>
+
 class FPanelManager;
 struct FPanelDescriptor;
+class AActor;
 class UObject;
+
+enum class EDeferredSceneActionType
+{
+    None,
+    NewScene,
+    ClearScene,
+    OpenScene,
+    CloseEditor
+};
+
+struct FDeferredSceneAction
+{
+    EDeferredSceneActionType Type = EDeferredSceneActionType::None;
+    std::filesystem::path ScenePath;
+
+    void Reset()
+    {
+        Type = EDeferredSceneActionType::None;
+        ScenePath.clear();
+    }
+};
+
+struct FSceneDocumentState
+{
+    std::filesystem::path CurrentScenePath;
+    bool bDirty = false;
+
+    FDeferredSceneAction DeferredAction;
+};
 
 class FEditor
 {
@@ -43,7 +76,10 @@ class FEditor
 
     void CreateNewScene();
     void ClearScene();
+    bool RequestCloseEditor();
     void SetSelectedObject(UObject* InSelectedObject);
+    void AddActorToScene(AActor* InActor, bool bSelectActor = true);
+    void MarkSceneDirty();
     UObject* GetSelectedObject() const { return EditorContext.SelectedObject; }
 
     const FEditorRenderData& GetEditorRenderData() const { return EditorRenderData; }
@@ -60,11 +96,25 @@ class FEditor
     void DrawRootDockSpace();
     void DrawAboutPopup();
     void RequestAboutPopup();
+    void DeleteSelectedActors();
+    bool CanDeleteSelectedActors() const;
     void RegisterDefaultCommands();
     void RegisterDefaultMenus();
     void RegisterWindowPanelCommand(const FPanelDescriptor& Descriptor);
     void LoadEditorSettings();
     void SaveEditorSettings() const;
+    bool SaveScene();
+    void SaveSceneAs();
+    void RequestOpenScene();
+    void MarkSceneClean();
+    void PerformNewScene();
+    void PerformClearScene();
+    bool SaveSceneToPath(const std::filesystem::path& FilePath, bool bUpdateCurrentPath);
+    bool LoadSceneFromPath(const std::filesystem::path& FilePath);
+    void ReplaceCurrentScene(std::unique_ptr<FScene> NewScene);
+    bool ConfirmProceedWithDirtyScene(const FDeferredSceneAction& Action);
+    void ExecuteDeferredSceneAction(FDeferredSceneAction Action);
+    std::filesystem::path GetSceneDirectory() const;
 
   private:
     FEditorViewportClient ViewportClient;
@@ -80,6 +130,7 @@ class FEditor
     FSceneView SceneView;
 
     FScene* CurScene = nullptr;
+    FSceneDocumentState SceneDocument;
     
     /* Logging */
     FEditorLogBuffer LogBuffer;

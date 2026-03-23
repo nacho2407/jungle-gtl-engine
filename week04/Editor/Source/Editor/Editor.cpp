@@ -2,8 +2,11 @@
 
 #include "Viewport/EditorViewportClient.h"
 
+#include "Core/Path.h"
+#include "Engine/Component/SceneComponent.h"
 #include "Engine/EngineStatics.h"
 #include "Engine/Game/Actor.h"
+#include "Engine/SceneIO/SceneSerializer.h"
 #include "Panel/ConsolePanel.h"
 #include "Panel/ControlPanel.h"
 #include "Panel/OutlinerPanel.h"
@@ -15,6 +18,15 @@
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_win32.h>
 
+#include <algorithm>
+#include <array>
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <commdlg.h>
+
+#pragma comment(lib, "Comdlg32.lib")
+
 namespace
 {
 #ifdef IMGUI_HAS_DOCK
@@ -25,6 +37,8 @@ namespace
     constexpr float RestoredSideGutter = 3.0f;
     constexpr float RestoredBottomGutter = 3.0f;
     constexpr ImU32 GutterColor = IM_COL32(46, 46, 48, 255);
+    constexpr wchar_t SceneFileDialogFilter[] =
+        L"Scene Files (*.Scene)\0*.Scene\0All Files (*.*)\0*.*\0";
 
     struct FEditorGutterMetrics
     {
@@ -95,6 +109,138 @@ namespace
     FString BuildPanelCommandId(const FPanelDescriptor& Descriptor)
     {
         return "panel.toggle." + std::to_string(Descriptor.PanelType.hash_code());
+    }
+
+    HWND GetEditorOwnerWindow(const IEditorChromeHost* Host)
+    {
+        return static_cast<HWND>(Host != nullptr ? Host->GetNativeWindowHandle() : nullptr);
+    }
+
+    std::filesystem::path NormalizeSceneFilePath(const std::filesystem::path& FilePath)
+    {
+        if (FilePath.empty())
+        {
+            return {};
+        }
+
+        if (FilePath.has_extension() &&
+            _wcsicmp(FilePath.extension().c_str(), L".Scene") == 0)
+        {
+            return FilePath;
+        }
+
+        std::filesystem::path NormalizedPath = FilePath;
+        NormalizedPath.replace_extension(L".Scene");
+        return NormalizedPath;
+    }
+
+    FString PathToUtf8String(const std::filesystem::path& Path)
+    {
+        const std::u8string Utf8Path = Path.u8string();
+        return FString(reinterpret_cast<const char*>(Utf8Path.data()), Utf8Path.size());
+    }
+
+    FWString Utf8ToWide(const FString& InText)
+    {
+        if (InText.empty())
+        {
+            return {};
+        }
+
+        const int RequiredSize =
+            MultiByteToWideChar(CP_UTF8, 0, InText.c_str(),
+                                static_cast<int>(InText.size()), nullptr, 0);
+        if (RequiredSize <= 0)
+        {
+            return {};
+        }
+
+        FWString OutText(static_cast<size_t>(RequiredSize), L'\0');
+        MultiByteToWideChar(CP_UTF8, 0, InText.c_str(), static_cast<int>(InText.size()),
+                            OutText.data(), RequiredSize);
+        return OutText;
+    }
+
+    bool ShowOpenSceneFileDialog(const IEditorChromeHost* Host,
+                                 const std::filesystem::path& InitialDirectory,
+                                 std::filesystem::path& OutSelectedPath)
+    {
+        std::array<wchar_t, 1024> FileBuffer{};
+        const FWString InitialDirectoryPath = InitialDirectory.empty()
+                                                  ? FWString()
+                                                  : InitialDirectory.wstring();
+
+        OPENFILENAMEW Dialog = {};
+        Dialog.lStructSize = sizeof(Dialog);
+        Dialog.hwndOwner = GetEditorOwnerWindow(Host);
+        Dialog.lpstrFilter = SceneFileDialogFilter;
+        Dialog.lpstrFile = FileBuffer.data();
+        Dialog.nMaxFile = static_cast<DWORD>(FileBuffer.size());
+        Dialog.lpstrInitialDir =
+            InitialDirectoryPath.empty() ? nullptr : InitialDirectoryPath.c_str();
+        Dialog.lpstrDefExt = L"Scene";
+        Dialog.Flags =
+            OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
+
+        if (!GetOpenFileNameW(&Dialog))
+        {
+            const DWORD ExtendedError = CommDlgExtendedError();
+            if (ExtendedError != 0)
+            {
+                UE_LOG(FEditor, ELogVerbosity::Error,
+                       "Open scene dialog failed with error code %lu.",
+                       static_cast<unsigned long>(ExtendedError));
+            }
+            return false;
+        }
+
+        OutSelectedPath = std::filesystem::path(FileBuffer.data());
+        return true;
+    }
+
+    bool ShowSaveSceneFileDialog(const IEditorChromeHost* Host,
+                                 const std::filesystem::path& InitialDirectory,
+                                 const std::filesystem::path& CurrentScenePath,
+                                 std::filesystem::path& OutSelectedPath)
+    {
+        std::array<wchar_t, 1024> FileBuffer{};
+
+        const std::filesystem::path DefaultPath = CurrentScenePath.empty()
+                                                      ? (InitialDirectory / L"Untitled.Scene")
+                                                      : CurrentScenePath;
+        const FWString DefaultPathText = DefaultPath.wstring();
+        wcsncpy_s(FileBuffer.data(), FileBuffer.size(), DefaultPathText.c_str(), _TRUNCATE);
+
+        const FWString InitialDirectoryPath = InitialDirectory.empty()
+                                                  ? FWString()
+                                                  : InitialDirectory.wstring();
+
+        OPENFILENAMEW Dialog = {};
+        Dialog.lStructSize = sizeof(Dialog);
+        Dialog.hwndOwner = GetEditorOwnerWindow(Host);
+        Dialog.lpstrFilter = SceneFileDialogFilter;
+        Dialog.lpstrFile = FileBuffer.data();
+        Dialog.nMaxFile = static_cast<DWORD>(FileBuffer.size());
+        Dialog.lpstrInitialDir =
+            InitialDirectoryPath.empty() ? nullptr : InitialDirectoryPath.c_str();
+        Dialog.lpstrDefExt = L"Scene";
+        Dialog.Flags =
+            OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR | OFN_OVERWRITEPROMPT;
+
+        if (!GetSaveFileNameW(&Dialog))
+        {
+            const DWORD ExtendedError = CommDlgExtendedError();
+            if (ExtendedError != 0)
+            {
+                UE_LOG(FEditor, ELogVerbosity::Error,
+                       "Save scene dialog failed with error code %lu.",
+                       static_cast<unsigned long>(ExtendedError));
+            }
+            return false;
+        }
+
+        OutSelectedPath = NormalizeSceneFilePath(std::filesystem::path(FileBuffer.data()));
+        return true;
     }
 } // namespace
 
@@ -259,6 +405,166 @@ void FEditor::SaveEditorSettings() const
     PersistentSettings.Save(SettingsData);
 }
 
+void FEditor::MarkSceneClean()
+{
+    SceneDocument.bDirty = false;
+}
+
+std::filesystem::path FEditor::GetSceneDirectory() const
+{
+    return FPaths::Combine(FPaths::AppContentDir(), L"Scenes");
+}
+
+bool FEditor::SaveScene()
+{
+    if (!SceneDocument.CurrentScenePath.empty())
+    {
+        return SaveSceneToPath(SceneDocument.CurrentScenePath, true);
+    }
+
+    SaveSceneAs();
+    return false;
+}
+
+void FEditor::SaveSceneAs()
+{
+    std::filesystem::path SelectedPath;
+    const std::filesystem::path InitialDirectory =
+        !SceneDocument.CurrentScenePath.empty()
+            ? SceneDocument.CurrentScenePath.parent_path()
+            : GetSceneDirectory();
+
+    if (!ShowSaveSceneFileDialog(ChromeHost, InitialDirectory,
+                                 SceneDocument.CurrentScenePath, SelectedPath))
+    {
+        SceneDocument.DeferredAction.Reset();
+        return;
+    }
+
+    if (!SaveSceneToPath(SelectedPath, true))
+    {
+        SceneDocument.DeferredAction.Reset();
+        return;
+    }
+
+    const FDeferredSceneAction DeferredAction = SceneDocument.DeferredAction;
+    SceneDocument.DeferredAction.Reset();
+    ExecuteDeferredSceneAction(DeferredAction);
+}
+
+void FEditor::RequestOpenScene()
+{
+    std::filesystem::path SelectedPath;
+    const std::filesystem::path InitialDirectory =
+        !SceneDocument.CurrentScenePath.empty()
+            ? SceneDocument.CurrentScenePath.parent_path()
+            : GetSceneDirectory();
+
+    if (!ShowOpenSceneFileDialog(ChromeHost, InitialDirectory, SelectedPath))
+    {
+        return;
+    }
+
+    const FDeferredSceneAction Action{
+        .Type = EDeferredSceneActionType::OpenScene, .ScenePath = SelectedPath};
+    if (!ConfirmProceedWithDirtyScene(Action))
+    {
+        return;
+    }
+
+    LoadSceneFromPath(SelectedPath);
+}
+
+void FEditor::PerformNewScene()
+{
+    ReplaceCurrentScene(std::make_unique<FScene>());
+    SceneDocument.CurrentScenePath.clear();
+    MarkSceneClean();
+}
+
+void FEditor::PerformClearScene()
+{
+    if (CurScene == nullptr)
+    {
+        ReplaceCurrentScene(std::make_unique<FScene>());
+        return;
+    }
+
+    const TArray<AActor*>* SceneActors = CurScene->GetActors();
+    const bool bHadActors = SceneActors != nullptr && !SceneActors->empty();
+    ViewportClient.GetSelectionController().ClearSelection();
+    CurScene->Clear();
+
+    if (bHadActors || !SceneDocument.CurrentScenePath.empty())
+    {
+        MarkSceneDirty();
+    }
+}
+
+bool FEditor::SaveSceneToPath(const std::filesystem::path& FilePath, bool bUpdateCurrentPath)
+{
+    if (CurScene == nullptr)
+    {
+        UE_LOG(FEditor, ELogVerbosity::Error, "No scene is available to save.");
+        return false;
+    }
+
+    FString ErrorMessage;
+    if (!FSceneSerializer::SaveToFile(*CurScene, FilePath, &ErrorMessage))
+    {
+        UE_LOG(FEditor, ELogVerbosity::Error, "Failed to save scene: %s",
+               ErrorMessage.c_str());
+        return false;
+    }
+
+    if (bUpdateCurrentPath)
+    {
+        SceneDocument.CurrentScenePath = FilePath;
+    }
+    MarkSceneClean();
+
+    UE_LOG(FEditor, ELogVerbosity::Log, "Saved scene: %s",
+           PathToUtf8String(FilePath).c_str());
+    return true;
+}
+
+bool FEditor::LoadSceneFromPath(const std::filesystem::path& FilePath)
+{
+    FString ErrorMessage;
+    std::unique_ptr<FScene> LoadedScene = FSceneDeserializer::LoadFromFile(FilePath, &ErrorMessage);
+    if (!LoadedScene)
+    {
+        UE_LOG(FEditor, ELogVerbosity::Error, "Failed to load scene: %s",
+               ErrorMessage.c_str());
+        return false;
+    }
+
+    ReplaceCurrentScene(std::move(LoadedScene));
+    SceneDocument.CurrentScenePath = FilePath;
+    MarkSceneClean();
+
+    UE_LOG(FEditor, ELogVerbosity::Log, "Loaded scene: %s",
+           PathToUtf8String(FilePath).c_str());
+    return true;
+}
+
+void FEditor::ReplaceCurrentScene(std::unique_ptr<FScene> NewScene)
+{
+    ViewportClient.GetSelectionController().ClearSelection();
+
+    delete CurScene;
+    CurScene = NewScene.release();
+    if (CurScene == nullptr)
+    {
+        CurScene = new FScene();
+    }
+
+    ViewportClient.SetScene(CurScene);
+    EditorContext.Scene = CurScene;
+    EditorContext.SelectedObject = nullptr;
+    EditorContext.SelectedActors.clear();
+}
+
 void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* InputSystem)
 {
     EditorContext.DeltaTime = DeltaTime;
@@ -266,6 +572,20 @@ void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* Input
 
     while (InputSystem->PollEvent(Event))
     {
+        if (Event.Type == Engine::ApplicationCore::EInputEventType::KeyDown &&
+            Event.Key == Engine::ApplicationCore::EKey::Delete && !Event.bRepeat)
+        {
+            const bool bShouldConsumeDelete =
+                (ImGui::GetCurrentContext() == nullptr) ||
+                (!ImGui::GetIO().WantCaptureKeyboard && !ImGui::GetIO().WantTextInput);
+
+            if (bShouldConsumeDelete)
+            {
+                DeleteSelectedActors();
+                continue;
+            }
+        }
+
         ViewportClient.HandleInputEvent(Event, InputSystem->GetInputState());
     }
 
@@ -295,11 +615,30 @@ void FEditor::OnWindowResized(float Width, float Height)
 
 void FEditor::CreateNewScene()
 {
-    ClearScene();
+    const FDeferredSceneAction Action{.Type = EDeferredSceneActionType::NewScene};
+    if (!ConfirmProceedWithDirtyScene(Action))
+    {
+        return;
+    }
+
+    PerformNewScene();
 }
 
 void FEditor::ClearScene()
 {
+    const FDeferredSceneAction Action{.Type = EDeferredSceneActionType::ClearScene};
+    if (!ConfirmProceedWithDirtyScene(Action))
+    {
+        return;
+    }
+
+    PerformClearScene();
+}
+
+bool FEditor::RequestCloseEditor()
+{
+    const FDeferredSceneAction Action{.Type = EDeferredSceneActionType::CloseEditor};
+    return ConfirmProceedWithDirtyScene(Action);
 }
 
 void FEditor::SetSelectedObject(UObject* InSelectedObject)
@@ -314,10 +653,210 @@ void FEditor::SetSelectedObject(UObject* InSelectedObject)
     ViewportClient.SyncSelectionFromContext();
 }
 
+void FEditor::AddActorToScene(AActor* InActor, bool bSelectActor)
+{
+    if (InActor == nullptr)
+    {
+        return;
+    }
+
+    if (CurScene == nullptr)
+    {
+        delete InActor;
+        return;
+    }
+
+    CurScene->AddActor(InActor);
+    MarkSceneDirty();
+
+    if (bSelectActor)
+    {
+        ViewportClient.GetSelectionController().SelectActor(InActor, ESelectionMode::Replace);
+    }
+}
+
+void FEditor::MarkSceneDirty()
+{
+    SceneDocument.bDirty = true;
+}
+
 void FEditor::RequestAboutPopup()
 {
     bRequestOpenAboutPopup = true;
     bAboutPopupOpen = true;
+}
+
+void FEditor::DeleteSelectedActors()
+{
+    if (CurScene == nullptr)
+    {
+        return;
+    }
+
+    TArray<AActor*> ActorsToDelete = EditorContext.SelectedActors;
+    if (ActorsToDelete.empty())
+    {
+        if (AActor* SelectedActor = Cast<AActor>(EditorContext.SelectedObject))
+        {
+            ActorsToDelete.push_back(SelectedActor);
+        }
+        else if (Engine::Component::USceneComponent* SelectedComponent =
+                     Cast<Engine::Component::USceneComponent>(EditorContext.SelectedObject))
+        {
+            const TArray<AActor*>* SceneActors = CurScene->GetActors();
+            if (SceneActors != nullptr)
+            {
+                for (AActor* Actor : *SceneActors)
+                {
+                    if (Actor != nullptr && Actor->GetRootComponent() == SelectedComponent)
+                    {
+                        ActorsToDelete.push_back(Actor);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if (ActorsToDelete.empty())
+    {
+        return;
+    }
+
+    ViewportClient.GetSelectionController().ClearSelection();
+
+    for (AActor* Actor : ActorsToDelete)
+    {
+        CurScene->RemoveActor(Actor);
+    }
+
+    MarkSceneDirty();
+}
+
+bool FEditor::CanDeleteSelectedActors() const
+{
+    if (!EditorContext.SelectedActors.empty())
+    {
+        return true;
+    }
+
+    if (Cast<AActor>(EditorContext.SelectedObject) != nullptr)
+    {
+        return true;
+    }
+
+    auto* SelectedComponent = Cast<Engine::Component::USceneComponent>(EditorContext.SelectedObject);
+    if (SelectedComponent == nullptr || CurScene == nullptr)
+    {
+        return false;
+    }
+
+    const TArray<AActor*>* SceneActors = CurScene->GetActors();
+    if (SceneActors == nullptr)
+    {
+        return false;
+    }
+
+    for (AActor* Actor : *SceneActors)
+    {
+        if (Actor != nullptr && Actor->GetRootComponent() == SelectedComponent)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool FEditor::ConfirmProceedWithDirtyScene(const FDeferredSceneAction& Action)
+{
+    if (!SceneDocument.bDirty)
+    {
+        return true;
+    }
+
+    FString ActionLabel = "continue";
+    switch (Action.Type)
+    {
+    case EDeferredSceneActionType::NewScene:
+        ActionLabel = "create a new scene";
+        break;
+    case EDeferredSceneActionType::ClearScene:
+        ActionLabel = "clear the scene";
+        break;
+    case EDeferredSceneActionType::OpenScene:
+        ActionLabel = "open another scene";
+        break;
+    case EDeferredSceneActionType::CloseEditor:
+        ActionLabel = "close the editor";
+        break;
+    default:
+        break;
+    }
+
+    const FWString Message =
+        L"The current scene has unsaved changes.\n\nDo you want to save before you "
+        + Utf8ToWide(ActionLabel) + L"?";
+    const HWND OwnerWindow =
+        static_cast<HWND>(ChromeHost != nullptr ? ChromeHost->GetNativeWindowHandle() : nullptr);
+    const int DialogResult =
+        MessageBoxW(OwnerWindow, Message.c_str(), L"Unsaved Scene",
+                    MB_ICONWARNING | MB_YESNOCANCEL | MB_SETFOREGROUND);
+
+    if (DialogResult == IDCANCEL)
+    {
+        return false;
+    }
+
+    if (DialogResult == IDNO)
+    {
+        return true;
+    }
+
+    if (!SceneDocument.CurrentScenePath.empty())
+    {
+        return SaveSceneToPath(SceneDocument.CurrentScenePath, true);
+    }
+
+    SceneDocument.DeferredAction = Action;
+    SaveSceneAs();
+    return false;
+}
+
+void FEditor::ExecuteDeferredSceneAction(FDeferredSceneAction Action)
+{
+    if (Action.Type == EDeferredSceneActionType::None)
+    {
+        return;
+    }
+
+    switch (Action.Type)
+    {
+    case EDeferredSceneActionType::NewScene:
+        PerformNewScene();
+        break;
+
+    case EDeferredSceneActionType::ClearScene:
+        PerformClearScene();
+        break;
+
+    case EDeferredSceneActionType::OpenScene:
+        if (!Action.ScenePath.empty())
+        {
+            LoadSceneFromPath(Action.ScenePath);
+        }
+        break;
+
+    case EDeferredSceneActionType::CloseEditor:
+        if (ChromeHost != nullptr)
+        {
+            ChromeHost->CloseWindow();
+        }
+        break;
+
+    default:
+        break;
+    }
 }
 
 void FEditor::RegisterDefaultCommands()
@@ -331,6 +870,36 @@ void FEditor::RegisterDefaultCommands()
             [this]()
             {
                 CreateNewScene();
+            }});
+
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
+        .CommandId = "file.open_scene",
+        .Label = L"씬 열기",
+        .ShortcutLabel = "Ctrl+O",
+        .Execute =
+            [this]()
+            {
+                RequestOpenScene();
+            }});
+
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
+        .CommandId = "file.save_scene",
+        .Label = L"씬 저장",
+        .ShortcutLabel = "Ctrl+S",
+        .Execute =
+            [this]()
+            {
+                SaveScene();
+            }});
+
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
+        .CommandId = "file.save_scene_as",
+        .Label = L"다른 이름으로 저장",
+        .ShortcutLabel = "Ctrl+Shift+S",
+        .Execute =
+            [this]()
+            {
+                SaveSceneAs();
             }});
 
     MenuRegistry.RegisterCommand(FEditorCommandDefinition{
@@ -373,6 +942,21 @@ void FEditor::RegisterDefaultCommands()
             []()
             {
                 return false;
+            }});
+
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
+        .CommandId = "edit.delete_selection",
+        .Label = L"선택 삭제",
+        .ShortcutLabel = "Delete",
+        .Execute =
+            [this]()
+            {
+                DeleteSelectedActors();
+            },
+        .CanExecute =
+            [this]()
+            {
+                return CanDeleteSelectedActors();
             }});
 
     MenuRegistry.RegisterCommand(FEditorCommandDefinition{
@@ -422,13 +1006,25 @@ void FEditor::RegisterDefaultMenus()
                                    .Order = 0});
     MenuRegistry.RegisterMenuItem(
         FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::File,
-                                   .CommandId = "file.clear_scene",
+                                   .CommandId = "file.open_scene",
                                    .Order = 10});
-    MenuRegistry.RegisterMenuSeparator(EEditorMainMenu::File, {}, 20);
+    MenuRegistry.RegisterMenuItem(
+        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::File,
+                                   .CommandId = "file.save_scene",
+                                   .Order = 20});
+    MenuRegistry.RegisterMenuItem(
+        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::File,
+                                   .CommandId = "file.save_scene_as",
+                                   .Order = 30});
+    MenuRegistry.RegisterMenuItem(
+        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::File,
+                                   .CommandId = "file.clear_scene",
+                                   .Order = 40});
+    MenuRegistry.RegisterMenuSeparator(EEditorMainMenu::File, {}, 50);
     MenuRegistry.RegisterMenuItem(
         FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::File,
                                    .CommandId = "file.exit",
-                                   .Order = 30});
+                                   .Order = 60});
 
     MenuRegistry.RegisterMenuItem(
         FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::Edit,
@@ -438,11 +1034,15 @@ void FEditor::RegisterDefaultMenus()
         FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::Edit,
                                    .CommandId = "edit.redo",
                                    .Order = 10});
-    MenuRegistry.RegisterMenuSeparator(EEditorMainMenu::Edit, {}, 20);
+    MenuRegistry.RegisterMenuItem(
+        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::Edit,
+                                   .CommandId = "edit.delete_selection",
+                                   .Order = 20});
+    MenuRegistry.RegisterMenuSeparator(EEditorMainMenu::Edit, {}, 30);
     MenuRegistry.RegisterMenuItem(
         FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::Edit,
                                    .CommandId = "edit.preferences",
-                                   .Order = 30});
+                                   .Order = 40});
 
     MenuRegistry.RegisterMenuItem(
         FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::Tool,
