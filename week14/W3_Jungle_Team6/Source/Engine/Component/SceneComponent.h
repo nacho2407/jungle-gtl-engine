@@ -23,6 +23,8 @@ public:
 	bool ContainsChild(const USceneComponent* Child) const;
 	const TArray<USceneComponent*>& GetChildren() const { return ChildComponents; }
 
+	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+
 	virtual void UpdateWorldMatrix() const;
 	virtual void AddWorldOffset(const FVector& WorldDelta);
 	virtual void SetRelativeLocation(const FVector& NewLocation);
