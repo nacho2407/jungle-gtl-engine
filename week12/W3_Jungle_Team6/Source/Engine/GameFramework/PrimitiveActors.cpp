@@ -12,6 +12,9 @@ REGISTER_FACTORY(ASphereActor)
 DEFINE_CLASS(APlaneActor, AActor)
 REGISTER_FACTORY(APlaneActor)
 
+DEFINE_CLASS(AAttachTestActor, AActor)
+REGISTER_FACTORY(AAttachTestActor)
+
 void ACubeActor::InitDefaultComponents()
 {
 	auto* Cube = AddComponent<UCubeComponent>();
@@ -19,7 +22,7 @@ void ACubeActor::InitDefaultComponents()
 
 	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
 	Text->AttachToComponent(Cube);
-	Text->SetText(GetFName().ToString());
+	Text->SetText("UUID : " + std::to_string(GetUUID()));
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 }
 
@@ -30,7 +33,7 @@ void ASphereActor::InitDefaultComponents()
 
 	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
 	Text->AttachToComponent(Sphere);
-	Text->SetText(GetFName().ToString());
+	Text->SetText("UUID : " + std::to_string(GetUUID()));
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 }
 
@@ -41,6 +44,38 @@ void APlaneActor::InitDefaultComponents()
 
 	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
 	Text->AttachToComponent(Plane);
-	Text->SetText(GetFName().ToString());
+	Text->SetText("UUID : " + std::to_string(GetUUID()));
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
+}
+
+void AAttachTestActor::InitDefaultComponents()
+{
+	// Root: Cube
+	auto* Cube = AddComponent<UCubeComponent>();
+	SetRootComponent(Cube);
+
+	// Grouping node for spheres
+	auto* Primitives = AddComponent<USceneComponent>();
+	Primitives->AttachToComponent(Cube);
+
+	// 4 Spheres in a square pattern
+	constexpr float Offset = 2.0f;
+	const FVector Positions[4] = {
+		{ -Offset, -Offset, 0.0f },
+		{  Offset, -Offset, 0.0f },
+		{  Offset,  Offset, 0.0f },
+		{ -Offset,  Offset, 0.0f },
+	};
+	for (int i = 0; i < 4; ++i)
+	{
+		auto* Sphere = AddComponent<USphereComponent>();
+		Sphere->AttachToComponent(Primitives);
+		Sphere->SetRelativeLocation(Positions[i]);
+	}
+
+	// Text attached directly to Root
+	auto* Text = AddComponent<UTextRenderComponent>();
+	Text->AttachToComponent(Cube);
+	Text->SetText("UUID : " + std::to_string(GetUUID()));
+	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.5f));
 }
