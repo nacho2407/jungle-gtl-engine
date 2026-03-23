@@ -78,10 +78,11 @@ void FEditorControlWidget::Render(float DeltaTime)
 				SubUV->SetParticle(FName("Explosion"));
 				SubUV->SetSpriteSize(2.0f, 2.0f);
 				SubUV->SetFrameRate(30.f);
+				break;
 			}
 			}
-			NumberOfSpawnedActors = 1;
 		}
+		NumberOfSpawnedActors = 1;
 	}
 	ImGui::InputInt("Number of Spawn", &NumberOfSpawnedActors, 1, 10);
 
