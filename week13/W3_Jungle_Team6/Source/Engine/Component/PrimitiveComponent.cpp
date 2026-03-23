@@ -203,3 +203,9 @@ void UPlaneComponent::UpdateWorldAABB() const
 	WorldAABBMinLocation = WorldCenter - FVector(NewEx, NewEy, NewEz);
 	WorldAABBMaxLocation = WorldCenter + FVector(NewEx, NewEy, NewEz);
 }
+
+void UPlaneComponent::SetRelativeScale(const FVector& NewScale)
+{
+	FVector planeScale = FVector(NewScale.X, NewScale.Y, 1.0f);
+	UPrimitiveComponent::SetRelativeScale(planeScale);
+}
