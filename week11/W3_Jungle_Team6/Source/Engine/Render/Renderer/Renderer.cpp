@@ -119,11 +119,19 @@ void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceCo
 		Resources.PrimitiveShader.Bind(DeviceContext);
 		break;
 
+	case ERenderPass::StencilMask:
+		Device.SetRasterizerState(ERasterizerState::SolidBackCull);
+		Device.SetDepthStencilState(EDepthStencilState::Default);
+		Device.SetBlendState(EBlendState::Opaque);
+		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		Resources.PrimitiveShader.Bind(DeviceContext);
+		break;
+
 	case ERenderPass::Outline:
 		if (CurViewMode == EViewMode::Wireframe)
 		{
 			Device.SetDepthStencilState(EDepthStencilState::StencilOutline);
-			Device.SetRasterizerState(ERasterizerState::WireFrame);
+			Device.SetRasterizerState(ERasterizerState::SolidFrontCull);
 		}
 		else
 		{
@@ -240,6 +248,7 @@ EDepthStencilState FRenderer::GetDefaultDepthForPass(ERenderPass Pass) const
 	{
 	case ERenderPass::Opaque:    return EDepthStencilState::Default;
 	case ERenderPass::Translucent:return EDepthStencilState::Default;
+	case ERenderPass::StencilMask: return EDepthStencilState::StencilWrite;
 	case ERenderPass::Outline:   return EDepthStencilState::StencilOutline;
 	case ERenderPass::DepthLess: return EDepthStencilState::Default;
 	case ERenderPass::Editor:    return EDepthStencilState::Default;
@@ -350,7 +359,6 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 	ID3D11Buffer* cb = Resources.EditorConstantBuffer.GetBuffer();
 	Context->VSSetConstantBuffers(4, 1, &cb);
 	Context->PSSetConstantBuffers(4, 1, &cb);
-
 
 	LineBatcher.AddWorldHelpers(FEditorSettings::Get(), CameraPosition, CameraForward);
 	LineBatcher.Flush(Context);
