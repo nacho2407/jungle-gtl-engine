@@ -1,4 +1,4 @@
-#include "FontBatcher.h"
+﻿#include "FontBatcher.h"
 
 #include "Core/CoreTypes.h"
 
@@ -8,12 +8,12 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 
 	// Dynamic VB/IB 초기 할당 (텍스처는 ResourceManager가 소유 — 여기서 로드하지 않음)
 	MaxVertexCount = 1024;
-	MaxIndexCount  = 1536;
+	MaxIndexCount = 1536;
 	CreateBuffers();
 
 	// Sampler — Point 필터 (폰트는 선명하게)
 	D3D11_SAMPLER_DESC sampDesc = {};
-	sampDesc.Filter   = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -32,19 +32,19 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 void FFontBatcher::CreateBuffers()
 {
 	if (VertexBuffer) { VertexBuffer->Release(); VertexBuffer = nullptr; }
-	if (IndexBuffer)  { IndexBuffer->Release();  IndexBuffer  = nullptr; }
+	if (IndexBuffer) { IndexBuffer->Release();  IndexBuffer = nullptr; }
 
 	D3D11_BUFFER_DESC vbDesc = {};
-	vbDesc.Usage          = D3D11_USAGE_DYNAMIC;
-	vbDesc.ByteWidth      = sizeof(FTextureVertex) * MaxVertexCount;
-	vbDesc.BindFlags      = D3D11_BIND_VERTEX_BUFFER;
+	vbDesc.Usage = D3D11_USAGE_DYNAMIC;
+	vbDesc.ByteWidth = sizeof(FTextureVertex) * MaxVertexCount;
+	vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	Device->CreateBuffer(&vbDesc, nullptr, &VertexBuffer);
 
 	D3D11_BUFFER_DESC ibDesc = {};
-	ibDesc.Usage          = D3D11_USAGE_DYNAMIC;
-	ibDesc.ByteWidth      = sizeof(uint32) * MaxIndexCount;
-	ibDesc.BindFlags      = D3D11_BIND_INDEX_BUFFER;
+	ibDesc.Usage = D3D11_USAGE_DYNAMIC;
+	ibDesc.ByteWidth = sizeof(uint32) * MaxIndexCount;
+	ibDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	ibDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	Device->CreateBuffer(&ibDesc, nullptr, &IndexBuffer);
 }
@@ -53,7 +53,7 @@ void FFontBatcher::BuildCharInfoMap(uint32 Columns, uint32 Rows)
 {
 	CharInfoMap.clear();
 	CachedColumns = Columns;
-	CachedRows    = Rows;
+	CachedRows = Rows;
 
 	const float CellW = 1.0f / static_cast<float>(Columns);
 	const float CellH = 1.0f / static_cast<float>(Rows);
@@ -78,7 +78,7 @@ void FFontBatcher::Release()
 	Clear();
 
 	if (VertexBuffer) { VertexBuffer->Release(); VertexBuffer = nullptr; }
-	if (IndexBuffer)  { IndexBuffer->Release();  IndexBuffer  = nullptr; }
+	if (IndexBuffer) { IndexBuffer->Release();  IndexBuffer = nullptr; }
 	if (SamplerState) { SamplerState->Release(); SamplerState = nullptr; }
 
 	FontShader.Release();
@@ -93,30 +93,39 @@ void FFontBatcher::AddText(const FString& Text,
 	const float CharW = 0.5f * Scale;
 	const float CharH = 0.5f * Scale;
 	float CharCursorX = 0.f;
-	uint32 Base = static_cast<uint32>(Vertices.size());
+	const uint32 Base = static_cast<uint32>(Vertices.size());
+	const uint32 IdxBase = static_cast<uint32>(Indices.size());
+	const size_t CharCount = Text.size();
 
-	for (const auto& Ch : Text)
+	// resize + 포인터 직접 쓰기로 push_back 오버헤드 제거
+	Vertices.resize(Base + CharCount * 4);
+	Indices.resize(IdxBase + CharCount * 6);
+	FTextureVertex* pV = Vertices.data() + Base;
+	uint32* pI = Indices.data() + IdxBase;
+
+	// 빌보드 반벡터를 루프 밖에서 미리 계산
+	const FVector HalfRight = CamRight * (CharW * 0.5f);
+	const FVector HalfUp    = CamUp    * (CharH * 0.5f);
+
+	for (size_t i = 0; i < CharCount; ++i)
 	{
 		FVector2 UVMin, UVMax;
-		GetCharUV(Ch, UVMin, UVMax);
+		GetCharUV(Text[i], UVMin, UVMax);
 
 		FVector Center = WorldPos + CamRight * CharCursorX;
 
-		FVector v0 = Center + CamRight * (-CharW * 0.5f) + CamUp * ( CharH * 0.5f); // 좌상
-		FVector v1 = Center + CamRight * ( CharW * 0.5f) + CamUp * ( CharH * 0.5f); // 우상
-		FVector v2 = Center + CamRight * (-CharW * 0.5f) + CamUp * (-CharH * 0.5f); // 좌하
-		FVector v3 = Center + CamRight * ( CharW * 0.5f) + CamUp * (-CharH * 0.5f); // 우하
+		pV[0] = { Center - HalfRight + HalfUp, { UVMin.X, UVMin.Y } };
+		pV[1] = { Center + HalfRight + HalfUp, { UVMax.X, UVMin.Y } };
+		pV[2] = { Center - HalfRight - HalfUp, { UVMin.X, UVMax.Y } };
+		pV[3] = { Center + HalfRight - HalfUp, { UVMax.X, UVMax.Y } };
 
-		Vertices.push_back({ v0, { UVMin.X, UVMin.Y } });
-		Vertices.push_back({ v1, { UVMax.X, UVMin.Y } });
-		Vertices.push_back({ v2, { UVMin.X, UVMax.Y } });
-		Vertices.push_back({ v3, { UVMax.X, UVMax.Y } });
+		const uint32 Vi = Base + static_cast<uint32>(i) * 4;
+		pI[0] = Vi;     pI[1] = Vi + 1; pI[2] = Vi + 2;
+		pI[3] = Vi + 1; pI[4] = Vi + 3; pI[5] = Vi + 2;
 
-		Indices.push_back(Base + 0); Indices.push_back(Base + 1); Indices.push_back(Base + 2);
-		Indices.push_back(Base + 1); Indices.push_back(Base + 3); Indices.push_back(Base + 2);
-
+		pV += 4;
+		pI += 6;
 		CharCursorX += CharW;
-		Base += 4;
 	}
 }
 
@@ -141,7 +150,7 @@ void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FFontResource* Reso
 	if (Vertices.size() > MaxVertexCount || Indices.size() > MaxIndexCount)
 	{
 		MaxVertexCount = static_cast<uint32>(Vertices.size()) * 2;
-		MaxIndexCount  = static_cast<uint32>(Indices.size())  * 2;
+		MaxIndexCount = static_cast<uint32>(Indices.size()) * 2;
 		CreateBuffers();
 	}
 
