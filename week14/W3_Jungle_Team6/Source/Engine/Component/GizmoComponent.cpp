@@ -401,15 +401,6 @@ void UGizmoComponent::SetWorldSpace(bool bWorldSpace)
 	UpdateGizmoTransform();
 }
 
-bool UGizmoComponent::GetRenderCommand(FRenderCommand& OutCommand)
-{
-	if (!MeshData || !bIsVisible) {
-		return false;
-	}
-
-	return UPrimitiveComponent::GetRenderCommand(OutCommand);
-
-}
 
 void UGizmoComponent::Deactivate()
 {

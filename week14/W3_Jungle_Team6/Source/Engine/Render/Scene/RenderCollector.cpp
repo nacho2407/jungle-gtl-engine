@@ -5,6 +5,7 @@
 #include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/GizmoComponent.h"
+#include "Component/BillboardComponent.h"
 
 void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
@@ -70,7 +71,7 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderColl
 		MaskCmd.DepthStencilState = EDepthStencilState::StencilWrite; //스텐실 버퍼만 작성하는 타입
 		MaskCmd.BlendState = EBlendState::NoColor;
 		RenderBus.AddCommand(ERenderPass::Outline, MaskCmd);
-		
+
 		// Outline
 		FRenderCommand OutlineCmd = BaseCmd;
 		OutlineCmd.Type = ERenderCommandType::SelectionOutline;
@@ -145,6 +146,27 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 
 		RenderBus.AddCommand(selectedRenderPass, Cmd);
 	}
+	
+	ERenderPass selectedRenderPass = ERenderPass::Opaque;
+
+	if (primitiveComponent->IsA<UBillboardComponent>() == true)
+	{
+		if (Context.ShowFlags.bBillboardText == false) return;
+		Cmd.BlendState = EBlendState::AlphaBlend;
+		Cmd.DepthStencilState = EDepthStencilState::Default;
+		Cmd.TextData = "Hello Jungle";
+		selectedRenderPass = ERenderPass::Translucent;
+	}
+	
+	else
+	{
+		if (Context.ShowFlags.bPrimitives == false) return;
+		selectedRenderPass = ERenderPass::Opaque;
+		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
+		Cmd.DepthStencilState = EDepthStencilState::Default;
+	}
+	
+	RenderBus.AddCommand(selectedRenderPass, Cmd);
 
 }
 
