@@ -29,6 +29,13 @@ void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBu
 		if (!Actor) continue;
 		CollectFromActor(Actor, Context, RenderBus);
 	}
+
+	// Picking Actors
+	for (AActor* Actor : Context.SelectedActors)
+	{
+		CollectFromSelectedActor(Actor, Context, RenderBus);
+
+	}
 }
 
 void FRenderCollector::CollectFromActor(AActor* Actor, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
@@ -40,6 +47,45 @@ void FRenderCollector::CollectFromActor(AActor* Actor, const FRenderCollectorCon
 		if (!Comp->IsA<UPrimitiveComponent>()) continue;
 		UPrimitiveComponent* Primitive = static_cast<UPrimitiveComponent*>(Comp);
 		CollectFromComponent(Primitive, Context, RenderBus);
+	}
+}
+
+void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
+{
+	for (UPrimitiveComponent* primitiveComponent : Actor->GetPrimitiveComponents())
+	{
+		FRenderCommand BaseCmd{};
+		BaseCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
+		BaseCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
+		
+		// StencilBuffer Mask
+		FRenderCommand MaskCmd = BaseCmd;
+		MaskCmd.Type = ERenderCommandType::SelectionOutline;
+		MaskCmd.DepthStencilState = EDepthStencilState::StencilWrite; //스텐실 버퍼만 작성하는 타입
+		MaskCmd.BlendState = EBlendState::NoColor;
+		RenderBus.AddCommand(ERenderPass::Outline, MaskCmd);
+		
+		// Outline
+		FRenderCommand OutlineCmd = BaseCmd;
+		OutlineCmd.Type = ERenderCommandType::SelectionOutline;
+		OutlineCmd.DepthStencilState = EDepthStencilState::StencilOutline;
+		OutlineCmd.Constants.Outline.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
+		OutlineCmd.Constants.Outline.OutlineInvScale = FVector(1.0f / primitiveComponent->GetRelativeScale().X,
+			1.0f / primitiveComponent->GetRelativeScale().Y, 1.0f / primitiveComponent->GetRelativeScale().Z);
+
+		if (Context.ViewMode == EViewMode::Wireframe)
+		{
+			OutlineCmd.PerObjectConstants.IsSelected = 1.0f;
+			OutlineCmd.PerObjectConstants.Color = FColor(255, 153, 0, 255).ToVector4();
+			OutlineCmd.Constants.Outline.OutlineOffset = 0.003f;
+		}
+		else
+		{
+			OutlineCmd.Constants.Outline.OutlineOffset = 0.03f;
+		}
+		CollectAABBCommand(primitiveComponent, RenderBus);
+		OutlineCmd.Constants.Outline.PrimitiveType = (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Plane) ? 0u : 1u;
+		RenderBus.AddCommand(ERenderPass::Outline, OutlineCmd);
 	}
 }
 
@@ -56,27 +102,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 			if (Context.ShowFlags.bPrimitives == false) return;
 			selectedRenderPass = ERenderPass::Opaque;
 			Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
-			if (Context.SelectedComponent == primitiveComponent)
-			{
-
-				if (Context.ViewMode == EViewMode::Wireframe)
-				{
-					Cmd.PerObjectConstants.IsSelected = 1.0f;
-					Cmd.PerObjectConstants.Color = FColor(255, 153, 0, 255).ToVector4();
-				}
-				else
-				{
-					CollectAABBCommand(primitiveComponent, RenderBus);
-				}
-
-				Cmd.DepthStencilState = EDepthStencilState::StencilWrite;
-				CollectComponentOutline(primitiveComponent, Context, RenderBus);
-			}
-			else
-			{
-				// 선택되지 않은 객체는 기본값(Default) 사용
-				Cmd.DepthStencilState = EDepthStencilState::Default;
-			}
+			Cmd.DepthStencilState = EDepthStencilState::Default;
 
 			break;
 
@@ -166,39 +192,6 @@ void FRenderCollector::CollectMouseOverlay(const FRenderCollectorContext& Contex
 
 	RenderBus.AddCommand(ERenderPass::Overlay, OverlayCmd);
 
-}
-
-void FRenderCollector::CollectComponentOutline(UPrimitiveComponent* primitiveComponent, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
-{
-	FRenderCommand OutlineCmd{};
-	OutlineCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
-	OutlineCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
-	OutlineCmd.Type = ERenderCommandType::SelectionOutline;
-	OutlineCmd.DepthStencilState = EDepthStencilState::StencilOutline;
-	OutlineCmd.Constants.Outline.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
-	OutlineCmd.Constants.Outline.OutlineInvScale = FVector(1.0f / primitiveComponent->GetRelativeScale().X,
-		1.0f / primitiveComponent->GetRelativeScale().Y, 1.0f / primitiveComponent->GetRelativeScale().Z);
-
-	if (Context.ViewMode == EViewMode::Wireframe)
-	{
-		OutlineCmd.Constants.Outline.OutlineOffset = 0.003f;
-	}
-	else
-	{
-		OutlineCmd.Constants.Outline.OutlineOffset = 0.03f;
-	}
-
-	if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Plane)
-	{
-		OutlineCmd.Constants.Outline.PrimitiveType = 0u;
-	}
-	else
-	{
-		//	Plane은 Outline이 제대로 안나오는 이슈가 있어서, 일단 Cube로 대체하여 그립니다.
-		OutlineCmd.Constants.Outline.PrimitiveType = 1u;
-	}
-
-	RenderBus.AddCommand(ERenderPass::Outline, OutlineCmd);
 }
 
 void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponent, FRenderBus& RenderBus)
