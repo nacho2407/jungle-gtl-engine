@@ -2,9 +2,8 @@
 
 #include "Core/Containers/Array.h"
 #include "Core/HAL/PlatformTypes.h"
-#include "Core/Math/Matrix.h"
-#include "Core/Math/Vector.h"
 #include "Core/Math/Color.h"
+#include "Core/Math/Matrix.h"
 #include "Renderer/D3D11/D3D11Common.h"
 #include "Renderer/SceneRenderData.h"
 #include "Renderer/Types/BasicMeshType.h"
@@ -43,14 +42,17 @@ class FD3D11MeshBatchRenderer
         L"../Engine/Resources/Shader/ShaderInstancedMesh.hlsl";
     static constexpr const wchar_t* SingleShaderPath =
         L"../Engine/Resources/Shader/ShaderMesh.hlsl";
-    static constexpr uint32         MaxInstanceCapacity = 4096;
+    static constexpr uint32 MaxInstanceCapacity = 4096;
 
   public:
     bool Initialize(FD3D11DynamicRHI* InRHI);
     void Shutdown();
 
-    void Render(const FSceneRenderData& InRenderData);
-    void Flush(EMeshDrawPath DrawPath, const FSceneView* InSceneView);
+    void BeginFrame(const FSceneView* InSceneView, EViewModeIndex InViewMode, bool bInUseInstancing);
+    void AddPrimitive(const FPrimitiveRenderItem& InItem);
+    void AddPrimitives(const TArray<FPrimitiveRenderItem>& InItems);
+    void EndFrame();
+    void Flush();
 
   private:
     bool CreateShaders();
@@ -58,10 +60,9 @@ class FD3D11MeshBatchRenderer
     bool CreateStates();
     bool CreateDynamicInstanceBuffer(uint32 InMaxInstanceCount);
 
-    // Basic Meshes (Sphere, Cube, Plane, Triangle, Cone, Cylinder, Ring)
     bool CreateBasicMeshes();
     bool CreateBasicCubeMesh(FBasicMeshResource& OutResource);
-    bool CreateBasicPlaneMesh(FBasicMeshResource& OutResource);
+    bool CreateBasicQuadMesh(FBasicMeshResource& OutResource);
     bool CreateBasicTriangleMesh(FBasicMeshResource& OutResource);
     bool CreateBasicSphereMesh(FBasicMeshResource& OutResource);
     bool CreateBasicConeMesh(FBasicMeshResource& OutResource);
@@ -75,7 +76,6 @@ class FD3D11MeshBatchRenderer
                                  FBasicMeshResource&    OutResource);
 
     void ResetBatches();
-    void GatherRenderItems(const FSceneRenderData& InRenderData);
 
     void UpdatePerFrameConstants(const FSceneView* InSceneView, EMeshDrawPath DrawPath);
 
@@ -84,6 +84,7 @@ class FD3D11MeshBatchRenderer
     void BindSolidRasterizer();
     void BindWireframeRasterizer();
 
+    void FlushInternal(EMeshDrawPath DrawPath, const FSceneView* InSceneView);
     void DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath DrawPath,
                        const FSceneView* InSceneView);
 
@@ -92,7 +93,9 @@ class FD3D11MeshBatchRenderer
 
   private:
     FD3D11DynamicRHI* RHI = nullptr;
+    const FSceneView* CurrentSceneView = nullptr;
     EViewModeIndex    ViewMode = EViewModeIndex::Lit;
+    bool              bUseInstancing = true;
     uint32            MaxInstanceCount = MaxInstanceCapacity;
 
     TComPtr<ID3D11VertexShader> InstancedVertexShader;
