@@ -134,6 +134,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClInclude Include="Source\Input\SelectionInputContext.h" />
     <ClInclude Include="Source\Launch\EditorEngineLoop.h" />
     <ClInclude Include="Source\Launch\Launch.h" />
+    <ClInclude Include="Source\Menu\EditorMenuRegistry.h" />
     <ClInclude Include="Source\Panel\Panel.h" />
     <ClInclude Include="Source\Panel\PanelManager.h" />
     <ClInclude Include="Source\ThirdParty\ImGui\imconfig.h" />

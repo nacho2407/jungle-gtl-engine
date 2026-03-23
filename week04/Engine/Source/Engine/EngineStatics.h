@@ -1,8 +1,9 @@
 #pragma once
 
+#include "Core/EngineAPI.h"
 #include "Core/HAL/PlatformTypes.h"
 
-class UEngineStatics
+class ENGINE_API UEngineStatics
 {
 public:
 	static uint32 GenUUID();

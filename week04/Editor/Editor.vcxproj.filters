@@ -19,6 +19,9 @@
     <Filter Include="Source\Launch">
       <UniqueIdentifier>{90ac0f15-c775-3ba7-f780-7222e93b8ddd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Menu">
+      <UniqueIdentifier>{68f5eb1f-e996-8b0b-1591-ae95c1941b0a}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Panel">
       <UniqueIdentifier>{110cb42a-bc8d-dcb7-321e-1bd33a00b562}</UniqueIdentifier>
     </Filter>
@@ -157,6 +160,9 @@
     </ClInclude>
     <ClInclude Include="Source\Launch\Launch.h">
       <Filter>Source\Launch</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Menu\EditorMenuRegistry.h">
+      <Filter>Source\Menu</Filter>
     </ClInclude>
     <ClInclude Include="Source\Panel\Panel.h">
       <Filter>Source\Panel</Filter>
