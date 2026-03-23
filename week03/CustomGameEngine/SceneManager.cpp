@@ -81,7 +81,6 @@ UScene* SceneManager::LoadScene(FString sceneName)
 
 void SceneManager::UnloadScene(UScene* targetScene)
 {
-	//UScene* curScene = GetActiveScene();
 	UScene* sceneToUnload = (targetScene != nullptr) ? targetScene : GetActiveScene();
 	if (sceneToUnload == nullptr)
 	{
@@ -92,6 +91,19 @@ void SceneManager::UnloadScene(UScene* targetScene)
 	{
 		return;
 	}
+
+	if (ActiveScene == sceneToUnload)
+	{
+		UScene* nextActiveScene = nullptr;
+		if (LoadedScenes.size() > 1)
+		{
+			const int32 sceneIndex = static_cast<int32>(sceneIt - LoadedScenes.begin());
+			const int32 fallbackIndex = (sceneIndex > 0) ? sceneIndex - 1 : 1;
+			nextActiveScene = LoadedScenes[fallbackIndex];
+		}
+		SetActiveScene(nextActiveScene);
+	}
+
 	// loop 내에서의 삽입/삭제로 인한 오류 방지
 	auto deleteList = sceneToUnload->SceneComponents;
 	for (auto* obj : deleteList)
@@ -102,9 +114,10 @@ void SceneManager::UnloadScene(UScene* targetScene)
 	delete sceneToUnload;
 	LoadedScenes.erase(sceneIt);
 
-	if (ActiveScene == sceneToUnload)
+	if (LoadedScenes.empty())
 	{
-		SetActiveScene(LoadedScenes.empty() ? nullptr : LoadedScenes.back());
+		UE_LOG("No scenes remained after deletion.\n");
+		NewScene();
 	}
 }
 
