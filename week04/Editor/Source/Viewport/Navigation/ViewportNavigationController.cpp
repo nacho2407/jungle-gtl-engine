@@ -31,7 +31,7 @@ void FViewportNavigationController::ModifyFOV(float DeltaFOV)
 
     constexpr float ZoomStepRad = FMath::DegreesToRadians(3.0f);
 
-    float Direction = (DeltaFOV > 0.f) ? 1.f : -1.f;
+    float Direction = (DeltaFOV > 0.f) ? 2.f : -2.f;
 
     float NewFOV = ViewportCamera->GetFOV() + Direction * ZoomStepRad;
     NewFOV = FMath::Clamp(NewFOV, FMath::DegreesToRadians(30.f),
