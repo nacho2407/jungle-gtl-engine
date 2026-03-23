@@ -2,7 +2,7 @@
 
 #include "Core/CoreMinimal.h"
 #include "Renderer/D3D11/D3D11Common.h"
-#include "Resource/TextureResource.h"
+#include "Renderer/RenderAsset/TextureResource.h"
 
 #include <dxgiformat.h>
 
