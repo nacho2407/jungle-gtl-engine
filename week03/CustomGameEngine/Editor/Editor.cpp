@@ -163,15 +163,9 @@ void Editor::ClearSelection()
 		}
 	}
 	SelectedComponents.clear();
-	Gizmo::GetInstance().GetController()->AttachTo(nullptr);
+	UpdateGizmoSelection();
 }
 
-/**
- * picking에 걸린 오브젝트를 입력으로 받아 처리합니다.
- * Editor의 SelectedComponent와 걸린 오브젝트의 bIsSelected를 업데이트합니다.
- * 
- * \param component
- */
 void Editor::SelectSingleComponent(USceneComponent* component)
 {
 	ClearSelection();
@@ -184,17 +178,10 @@ void Editor::SelectSingleComponent(USceneComponent* component)
 			primitive->MarkRenderStateDirty();
 		}
 		SelectedComponents.push_back(component);
-		Gizmo::GetInstance().GetController()->AttachTo(component);
+		UpdateGizmoSelection();
 	}
 }
 
-/**
- * picking에 걸린 오브젝트를 입력으로 받아 처리합니다.
- * 다중 picking이며 오브젝트가 배열에 추가되는 방식이고, 허공을 클릭해도 기존 picking들은 유지됩니다.
- * Editor의 SelectedComponents와 걸린 오브젝트의 bIsSelected를 업데이트합니다.
- *
- * \param component
- */
 void Editor::SelectMultiComponent(USceneComponent* component)
 {
 	if (component == nullptr)
@@ -215,7 +202,7 @@ void Editor::SelectMultiComponent(USceneComponent* component)
 			primitive->MarkRenderStateDirty();
 		}
 		SelectedComponents.erase(it);
-		Gizmo::GetInstance().GetController()->AttachTo(GetLastSelectedComponent());
+		UpdateGizmoSelection();
 		return;
 	}
 
@@ -225,7 +212,7 @@ void Editor::SelectMultiComponent(USceneComponent* component)
 		primitive->MarkRenderStateDirty();
 	}
 	SelectedComponents.push_back(component);
-	Gizmo::GetInstance().GetController()->AttachTo(component);
+	UpdateGizmoSelection();
 }
 
 //마지막으로 선택된 씬 컴포넌트를 반환합니다. 그걸로 기즈모를 조작하기 위해서입니다.
@@ -255,6 +242,18 @@ bool Editor::IsComponentSelected(USceneComponent* component) const
 	}
 
 	return false;
+}
+
+void Editor::UpdateGizmoSelection()
+{
+	UGizmoComponent* controller = Gizmo::GetInstance().GetController();
+	if (controller == nullptr)
+	{
+		return;
+	}
+
+	controller->SetControlledComponents(SelectedComponents);
+	controller->AttachTo(GetLastSelectedComponent());
 }
 
 void Editor::LoadSettings()

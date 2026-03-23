@@ -1,4 +1,4 @@
-#include "GizmoScaleControlStrategy.h"
+﻿#include "GizmoScaleControlStrategy.h"
 #include "Component/GizmoComponent.h"
 #include "EngineCore/ResourceManager.h"
 #include "Component/Object.h"
@@ -68,7 +68,22 @@ void GizmoScaleControlStrategy::UpdateRenderObject()
 
 void GizmoScaleControlStrategy::BeginDrag(const Ray& ray)
 {
-	InitialObjectScale = Controller->GetAttachedComponent()->GetRelativeScale3D();
+	DragComponents = Controller->GetControlledComponents();
+	if (DragComponents.empty() && Controller->GetAttachedComponent() != nullptr)
+	{
+		DragComponents.push_back(Controller->GetAttachedComponent());
+	}
+
+	InitialObjectScales.clear();
+	for (USceneComponent* component : DragComponents)
+	{
+		if (component == nullptr)
+		{
+			continue;
+		}
+
+		InitialObjectScales.push_back(component->GetRelativeScale3D());
+	}
 
 	FVector worldAxis;
 	switch (Controller->GetHoverAxis())
@@ -113,13 +128,22 @@ void GizmoScaleControlStrategy::UpdateDrag(const Ray& ray)
 	float currentT = Controller->GetClosestPointOnAxis(ray, InitialWorldPos, axisDir);
 	float deltaT = currentT - InitialDragOffset;
 
-	FVector newScale = InitialObjectScale;
+	for (int i = 0; i < DragComponents.size() && i < InitialObjectScales.size(); ++i)
+	{
+		USceneComponent* component = DragComponents[i];
+		if (component == nullptr)
+		{
+			continue;
+		}
+
+		FVector newScale = InitialObjectScales[i];
 
 	if (Controller->GetHoverAxis() == GizmoControllerAxis::X) newScale.x += deltaT;
 	else if (Controller->GetHoverAxis() == GizmoControllerAxis::Y) newScale.y += deltaT;
 	else if (Controller->GetHoverAxis() == GizmoControllerAxis::Z) newScale.z += deltaT;
 
-	Controller->GetAttachedComponent()->SetRelativeScale3D(newScale);
+		component->SetRelativeScale3D(newScale);
+	}
 }
 
 void GizmoScaleControlStrategy::EndDrag()

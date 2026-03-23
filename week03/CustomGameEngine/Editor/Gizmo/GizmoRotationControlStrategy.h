@@ -6,6 +6,7 @@
 #include "Math/Matrix.h"
 
 class UGizmoComponent;
+class USceneComponent;
 struct RenderObject;
 
 class GizmoRotationControlStrategy : public IGizmoControlStrategy
@@ -31,12 +32,13 @@ public:
 
 private:
 	UGizmoComponent* Controller;
+	TArray<USceneComponent*> DragComponents;
 
 	FMatrix BaseMatrix;
 	TArray<FMatrix> RelativeMatrices;
 
 	POINT InitialCursorPos;
-	FQuat InitialObjectQuaternion;
+	TArray<FQuat> InitialObjectQuaternions;
 
 	float AccumulatedAngle = 0.0f;
 	float SnapStep = 15.0f;

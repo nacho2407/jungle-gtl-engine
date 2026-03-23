@@ -68,7 +68,22 @@ void GizmoTranslationControlStrategy::UpdateRenderObject()
 
 void GizmoTranslationControlStrategy::BeginDrag(const Ray& ray)
 {
-	InitialObjectLocation = Controller->GetAttachedComponent()->GetRelativeLocation();
+	DragComponents = Controller->GetControlledComponents();
+	if (DragComponents.empty() && Controller->GetAttachedComponent() != nullptr)
+	{
+		DragComponents.push_back(Controller->GetAttachedComponent());
+	}
+
+	InitialObjectLocations.clear();
+	for (USceneComponent* component : DragComponents)
+	{
+		if (component == nullptr)
+		{
+			continue;
+		}
+
+		InitialObjectLocations.push_back(component->GetRelativeLocation());
+	}
 
 	FVector worldAxis;
 	switch (Controller->GetHoverAxis())
@@ -121,8 +136,17 @@ void GizmoTranslationControlStrategy::UpdateDrag(const Ray& ray)
 	float currentT = Controller->GetClosestPointOnAxis(ray, InitialWorldPos, axisDir);
 	float deltaT = currentT - InitialDragOffset;
 
-	FVector newPos = InitialObjectLocation + axisDir * deltaT;
-	Controller->GetAttachedComponent()->SetRelativeLocation(newPos);
+	for (int i = 0; i < DragComponents.size() && i < InitialObjectLocations.size(); ++i)
+	{
+		USceneComponent* component = DragComponents[i];
+		if (component == nullptr)
+		{
+			continue;
+		}
+
+		FVector newPos = InitialObjectLocations[i] + axisDir * deltaT;
+		component->SetRelativeLocation(newPos);
+	}
 }
 
 void GizmoTranslationControlStrategy::EndDrag()

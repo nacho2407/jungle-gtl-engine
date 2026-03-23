@@ -5,6 +5,7 @@
 #include "Math/Matrix.h"
 
 class UGizmoComponent;
+class USceneComponent;
 struct RenderObject;
 
 class GizmoTranslationControlStrategy : public IGizmoControlStrategy
@@ -28,10 +29,11 @@ public:
 
 private:
 	UGizmoComponent* Controller;
+	TArray<USceneComponent*> DragComponents;
 
 	TArray<FMatrix> RelativeMatrices;
 
-	FVector InitialObjectLocation;
+	TArray<FVector> InitialObjectLocations;
 	FVector InitialWorldPos;
 	float InitialDragOffset = 0.0f;
 
