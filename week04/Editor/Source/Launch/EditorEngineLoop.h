@@ -35,7 +35,10 @@ class FEditorEngineLoop : public IEngineLoop, public IEditorChromeHost
                                     LRESULT& OutResult, void* UserData);
     bool HandleEditorMessageInternal(HWND HWnd, UINT Message, WPARAM WParam, LPARAM LParam,
                                      LRESULT& OutResult);
-    void HandleWindowResize();
+    bool HandleWindowResize();
+    bool RunFrameOnce();
+    bool RunFrameOnceWithoutResize();
+    void UpdateFrameTiming();
     Engine::ApplicationCore::FWindowsApplication* GetWindowsApplication() const;
 
     void Tick() override;
@@ -53,6 +56,9 @@ class FEditorEngineLoop : public IEngineLoop, public IEditorChromeHost
     float MainLoopFPS = 0.0f;
     int32 CachedWindowWidth = 0;
     int32 CachedWindowHeight = 0;
+    bool bIsInSizeMoveLoop = false;
+    bool bIsRenderingDuringSizeMove = false;
+    bool bSavedVSyncEnabled = true;
 
     float PrevTime = 0.0f;
 

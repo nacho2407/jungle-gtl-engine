@@ -105,6 +105,7 @@ void FEditor::OnWindowResized(float Width, float Height)
     WindowWidth = Width;
     EditorContext.WindowWidth = Width;
     EditorContext.WindowHeight = Height;
+    ViewportClient.OnResize(static_cast<uint32>(Width), static_cast<uint32>(Height));
 }
 
 void FEditor::CreateNewScene()

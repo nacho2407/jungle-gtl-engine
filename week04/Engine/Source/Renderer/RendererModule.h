@@ -27,6 +27,8 @@ class ENGINE_API FRendererModule
     void EndFrame();
 
     void OnWindowResized(int32 InWidth, int32 InHeight);
+    void SetVSyncEnabled(bool bInVSyncEnabled);
+    bool IsVSyncEnabled() const;
 
     void Render(const FEditorRenderData& InEditorRenderData,
                 const FSceneRenderData&  InSceneRenderData);

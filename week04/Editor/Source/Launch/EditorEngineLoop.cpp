@@ -140,24 +140,7 @@ void FEditorEngineLoop::Tick()
         return;
     }
 
-    InputSystem->BeginFrame();
-    HandleWindowResize();
-
-    DeltaTime = FPlatformTime::Seconds() - PrevTime;
-    PrevTime = FPlatformTime::Seconds();
-
-    MainLoopFPS = (DeltaTime > 0.0f) ? (1.0f / DeltaTime) : 0.0f;
-
-    Editor->SetMainLoopFPS(MainLoopFPS);
-    Editor->Tick(DeltaTime, InputSystem);
-
-    if (Renderer != nullptr)
-    {
-        Renderer->BeginFrame();
-        Renderer->Render(Editor->GetEditorRenderData(), Editor->GetSceneRenderData());
-        Editor->DrawPanel();
-        Renderer->EndFrame();
-    }
+    RunFrameOnce();
 
     FPlatformTime::Sleep(0.0f);
 }
@@ -254,6 +237,66 @@ bool FEditorEngineLoop::HandleEditorMessage(HWND HWnd, UINT Message, WPARAM WPar
 bool FEditorEngineLoop::HandleEditorMessageInternal(HWND HWnd, UINT Message, WPARAM WParam,
                                                     LPARAM LParam, LRESULT& OutResult)
 {
+    switch (Message)
+    {
+    case WM_ENTERSIZEMOVE:
+        bIsInSizeMoveLoop = true;
+        if (Renderer != nullptr)
+        {
+            bSavedVSyncEnabled = Renderer->IsVSyncEnabled();
+            Renderer->SetVSyncEnabled(false);
+        }
+        OutResult = 0;
+        return true;
+
+    case WM_EXITSIZEMOVE:
+        if (bIsInSizeMoveLoop)
+        {
+            HandleWindowResize();
+            RunFrameOnceWithoutResize();
+            if (Renderer != nullptr)
+            {
+                Renderer->SetVSyncEnabled(bSavedVSyncEnabled);
+            }
+            bIsInSizeMoveLoop = false;
+        }
+        OutResult = 0;
+        return false;
+
+    case WM_SIZE:
+        if (bIsInSizeMoveLoop && WParam != SIZE_MINIMIZED)
+        {
+            HandleWindowResize();
+            RunFrameOnceWithoutResize();
+        }
+        break;
+
+    case WM_PAINT:
+        if (bIsInSizeMoveLoop)
+        {
+            PAINTSTRUCT PaintStruct = {};
+            BeginPaint(HWnd, &PaintStruct);
+            EndPaint(HWnd, &PaintStruct);
+
+            RunFrameOnceWithoutResize();
+
+            OutResult = 0;
+            return true;
+        }
+        break;
+
+    case WM_ERASEBKGND:
+        if (bIsInSizeMoveLoop)
+        {
+            OutResult = 1;
+            return true;
+        }
+        break;
+
+    default:
+        break;
+    }
+
     const LRESULT ImGuiResult = ImGui_ImplWin32_WndProcHandler(HWnd, Message, WParam, LParam);
     if (ImGuiResult != 0)
     {
@@ -307,13 +350,13 @@ bool FEditorEngineLoop::HandleEditorMessageInternal(HWND HWnd, UINT Message, WPA
     return false;
 }
 
-void FEditorEngineLoop::HandleWindowResize()
+bool FEditorEngineLoop::HandleWindowResize()
 {
     const int32 CurrentWindowWidth = Application->GetWindowWidth();
     const int32 CurrentWindowHeight = Application->GetWindowHeight();
     if (CurrentWindowWidth == CachedWindowWidth && CurrentWindowHeight == CachedWindowHeight)
     {
-        return;
+        return false;
     }
 
     CachedWindowWidth = CurrentWindowWidth;
@@ -329,6 +372,57 @@ void FEditorEngineLoop::HandleWindowResize()
         Editor->OnWindowResized(static_cast<float>(CurrentWindowWidth),
                                 static_cast<float>(CurrentWindowHeight));
     }
+
+    return true;
+}
+
+bool FEditorEngineLoop::RunFrameOnce()
+{
+    HandleWindowResize();
+    return RunFrameOnceWithoutResize();
+}
+
+bool FEditorEngineLoop::RunFrameOnceWithoutResize()
+{
+    if (bIsRenderingDuringSizeMove)
+    {
+        return false;
+    }
+
+    if (Application == nullptr || Editor == nullptr || Renderer == nullptr || InputSystem == nullptr)
+    {
+        return false;
+    }
+
+    if (Application->IsExitRequested())
+    {
+        bIsExit = true;
+        return false;
+    }
+
+    bIsRenderingDuringSizeMove = true;
+
+    InputSystem->BeginFrame();
+    UpdateFrameTiming();
+
+    Editor->SetMainLoopFPS(MainLoopFPS);
+    Editor->Tick(DeltaTime, InputSystem);
+
+    Renderer->BeginFrame();
+    Renderer->Render(Editor->GetEditorRenderData(), Editor->GetSceneRenderData());
+    Editor->DrawPanel();
+    Renderer->EndFrame();
+
+    bIsRenderingDuringSizeMove = false;
+    return true;
+}
+
+void FEditorEngineLoop::UpdateFrameTiming()
+{
+    const float CurrentTime = FPlatformTime::Seconds();
+    DeltaTime = CurrentTime - PrevTime;
+    PrevTime = CurrentTime;
+    MainLoopFPS = (DeltaTime > 0.0f) ? (1.0f / DeltaTime) : 0.0f;
 }
 
 Engine::ApplicationCore::FWindowsApplication* FEditorEngineLoop::GetWindowsApplication() const

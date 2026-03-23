@@ -57,7 +57,9 @@ void FRendererModule::BeginFrame()
 {
     RHI.BeginFrame();
 
-    static const FLOAT ClearColor[4] = {0.15f, 0.15f, 0.15f, 1.0f};
+    static constexpr FLOAT ClearColor[4] = { 1.f, 1.f, 1.f, 1.0f };
+
+    //static constexpr FLOAT ClearColor[4] = {0.15f, 0.15f, 0.15f, 1.0f};
 
     RHI.SetDefaultRenderTargets();
     RHI.Clear(ClearColor, 1.0f, 0);
@@ -73,6 +75,16 @@ void FRendererModule::OnWindowResized(int32 InWidth, int32 InHeight)
     }
 
     RHI.Resize(InWidth, InHeight);
+}
+
+void FRendererModule::SetVSyncEnabled(bool bInVSyncEnabled)
+{
+    RHI.SetVSyncEnabled(bInVSyncEnabled);
+}
+
+bool FRendererModule::IsVSyncEnabled() const
+{
+    return RHI.IsVSyncEnabled();
 }
 
 void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
