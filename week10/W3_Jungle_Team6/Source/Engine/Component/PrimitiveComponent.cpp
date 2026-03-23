@@ -154,14 +154,6 @@ UCubeComponent::UCubeComponent()
 	MeshData = &FMeshManager::GetCube();
 }
 
-bool UCubeComponent::GetRenderCommand(FRenderCommand& OutCommand) {
-	if (!MeshData || !bIsVisible) {
-		return false;
-	}
-
-	return UPrimitiveComponent::GetRenderCommand(OutCommand);
-}
-
 USphereComponent::USphereComponent()
 {
 	MeshData = &FMeshManager::GetSphere();
@@ -187,15 +179,6 @@ void USphereComponent::UpdateWorldAABB() const
 	WorldAABBMaxLocation = { Center.X + ExtentX, Center.Y + ExtentY, Center.Z + ExtentZ };
 }
 
-
-bool USphereComponent::GetRenderCommand(FRenderCommand& OutCommand) {
-	if (!MeshData || !bIsVisible) {
-		return false;
-	}
-
-	return UPrimitiveComponent::GetRenderCommand(OutCommand);
-}
-
 UPlaneComponent::UPlaneComponent()
 {
 	MeshData = &FMeshManager::GetPlane();
@@ -213,12 +196,4 @@ void UPlaneComponent::UpdateWorldAABB() const
 	FVector WorldCenter = GetWorldLocation();
 	WorldAABBMinLocation = WorldCenter - FVector(NewEx, NewEy, NewEz);
 	WorldAABBMaxLocation = WorldCenter + FVector(NewEx, NewEy, NewEz);
-}
-
-bool UPlaneComponent::GetRenderCommand(FRenderCommand& OutCommand) {
-	if (!MeshData || !bIsVisible) {
-		return false;
-	}
-
-	return UPrimitiveComponent::GetRenderCommand(OutCommand);
 }
