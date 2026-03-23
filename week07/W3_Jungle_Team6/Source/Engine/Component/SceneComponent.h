@@ -29,7 +29,7 @@ public:
 	virtual void AddWorldOffset(const FVector& WorldDelta);
 	virtual void SetRelativeLocation(const FVector& NewLocation);
 	virtual void SetRelativeRotation(const FVector& NewRotation);
-	void SetRelativeScale(const FVector& NewScale);
+	virtual void SetRelativeScale(const FVector& NewScale);
 	void MarkTransformDirty();
 	const FMatrix& GetWorldMatrix() const;
 	void SetWorldLocation(FVector NewWorldLocation);
