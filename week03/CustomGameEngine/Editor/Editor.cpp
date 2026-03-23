@@ -147,10 +147,17 @@ void Editor::SetGrid(UGridComp* grid)
 	ResourceManager::GetInstance()->UpdateGridMesh(Grid->HalfExtent, Grid->CellSize, 0.f);
 }
 
+/**
+ * picking에 걸린 오브젝트를 입력으로 받아 처리합니다.
+ * Editor의 SelectedComponent와 걸린 오브젝트의 bIsSelected를 업데이트합니다.
+ * 
+ * \param component
+ */
 void Editor::SelectComponent(USceneComponent* component)
 {
 	if (SelectedComponent)
 	{
+		//이미 picking된 컴포넌트가 있다면 pick 상태 해제
 		SelectedComponent->bIsSelected = false;
 		if (UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(SelectedComponent))
 		{
@@ -161,6 +168,8 @@ void Editor::SelectComponent(USceneComponent* component)
 	}
 	if (component)
 	{
+		//해당 컴포넌트가 새로 picking되었다고 표시.
+		//이미 pick된 컴포넌트였다면 사실상 변화x
 		component->bIsSelected = true;
 		if (UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(component))
 		{
