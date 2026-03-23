@@ -319,6 +319,14 @@ void FRenderer::RenderPasses(const FRenderBus& RenderBus, ID3D11DeviceContext* C
 
 void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceContext* Context)
 {
+	const FVector CameraPosition = RenderBus.GetView().GetInverseFast().GetLocation();
+	FVector CameraForward = RenderBus.GetCameraRight().Cross(RenderBus.GetCameraUp());
+	CameraForward.Normalize();
+
+	FEditorConstants EditorConstants = {};
+	EditorConstants.CameraPosition = FVector4(CameraPosition, 1.0f);
+	Resources.EditorConstantBuffer.Update(Context, &EditorConstants, sizeof(FEditorConstants));
+
 	const auto& EditorCmds = RenderBus.GetCommands(ERenderPass::Editor);
 	for (const auto& Cmd : EditorCmds)
 	{
@@ -327,7 +335,7 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 			LineBatcher.AddAABB(FBoundingBox{ Cmd.Constants.AABB.Min, Cmd.Constants.AABB.Max }, Cmd.Constants.AABB.Color);
 		}
 	}
-
+	
 	//임시 구현
 	{
 		const auto& TranslucentCmds = RenderBus.GetCommands(ERenderPass::Translucent);
@@ -342,7 +350,7 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 
 
 	Device.SetDepthStencilState(EDepthStencilState::Default);
-	Device.SetBlendState(EBlendState::Opaque);
+	Device.SetBlendState(EBlendState::AlphaBlend); // Grid Fading 효과를 위한 블렌드 상태 변경
 
 	Resources.EditorShader.Bind(Context);
 
@@ -354,11 +362,7 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 	Context->VSSetConstantBuffers(1, 1, &cb);
 	Context->PSSetConstantBuffers(1, 1, &cb);
 
-	/*if (RenderBus.GetShowFlags().bGrid)
-	{
-		LineBatcher.AddWorldGrid(100.0f, 20);
-	}*/
-	LineBatcher.AddWorldHelpers(FEditorSettings::Get());
+	LineBatcher.AddWorldHelpers(FEditorSettings::Get(), CameraPosition, CameraForward);
 	LineBatcher.Flush(Context);
 	FontBatcher.Flush(Context);
 }
