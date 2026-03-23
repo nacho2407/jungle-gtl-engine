@@ -1,8 +1,6 @@
 ﻿#include "SubUVBatcher.h"
 
-// DirectXTK 라이브러리
-#pragma comment(lib, "DirectXTK.lib")
-#include "ThirdParty/DirectXTK/DDSTextureLoader.h"
+#include "DDSTextureLoader.h"
 #include "Core/CoreTypes.h"
 
 // 이렇게 사용 Create(Device, L"./Asset/Particle/Explosion.dds", 6, 6)
