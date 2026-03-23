@@ -36,6 +36,10 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     void SyncSelectionFromContext();
 
     FViewportNavigationController& GetNavigationController() { return NavigationController; }
+    const FViewportNavigationController& GetNavigationController() const
+    {
+        return NavigationController;
+    }
     FViewportSelectionController& GetSelectionController() { return SelectionController; }
     FViewportGizmoController& GetGizmoController() { return GizmoController; }
     FViewportInteractionState& GetInteractionState() { return InteractionState; }
