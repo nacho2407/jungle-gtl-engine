@@ -22,5 +22,5 @@ PSInput VS(VSInput input)
 
 float4 PS(PSInput input) : SV_TARGET
 {
-    return input.color;
+    return lerp(input.color, float4(WireframeRGB, 1.0f), bIsWireframe);
 }
