@@ -15,6 +15,8 @@ void FWorldGridDrawer::Draw(FD3D11LineBatchRenderer& InLineRenderer,
 
     for (int32 i = -GridHalfLineCount; i <= GridHalfLineCount; ++i)
     {
+        if (InEditorRenderData.bShowWorldAxes && i == 0)
+            continue;
         const float   Offset = static_cast<float>(i) * GridSpacing;
         const bool    bIsMajorLine = (i % MajorLineEvery) == 0;
         const FColor& LineColor = bIsMajorLine ? MajorGridColor : MinorGridColor;
