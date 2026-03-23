@@ -104,6 +104,7 @@
     <ClInclude Include="Source\Renderer\Draw\WorldAxesDrawer.h" />
     <ClInclude Include="Source\Renderer\Draw\WorldGridDrawer.h" />
     <ClInclude Include="Source\Renderer\EditorRenderData.h" />
+    <ClInclude Include="Source\Renderer\RenderAsset\FFontResource.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\FTextureResource.h" />
     <ClInclude Include="Source\Renderer\RendererModule.h" />
     <ClInclude Include="Source\Renderer\SceneRenderData.h" />

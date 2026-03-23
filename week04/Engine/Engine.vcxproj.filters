@@ -566,6 +566,7 @@
     <ClInclude Include="Source\Renderer\Types\ViewMode.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Renderer\RenderAsset\FFontResource.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
