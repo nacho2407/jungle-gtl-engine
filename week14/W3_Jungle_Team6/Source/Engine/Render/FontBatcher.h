@@ -1,32 +1,40 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Core/EngineTypes.h"
+#include "Core/ResourceTypes.h"
 #include "Math/Vector.h"
 #include "Math/Matrix.h"
 #include "Render/Common/RenderTypes.h"
 #include "Render/Resource/Shader.h"
-#include "Render/Resource/Buffer.h"
+#include "Render/Resource/VertexTypes.h"
 
 // Texture Atlas UV 정보
 struct FCharacterInfo
 {
-	float u;
-	float v;
-	float width;
-	float height;
+	float U;
+	float V;
+	float Width;
+	float Height;
 };
 
-
-
 // FFontBatcher — 텍스트를 배치로 모아 1회 드로우콜로 처리
+//
+// 사용 흐름:
+//   1) Create()   — 장치 초기화 (셰이더, 샘플러, Dynamic VB/IB). 텍스처는 로드하지 않습니다.
+//   2) Clear()    — 매 프레임 시작 시 이전 텍스트 제거
+//   3) AddText()  — 문자별 쿼드 누적
+//   4) Flush()    — Dynamic VB/IB 업로드 + DrawIndexed 1회 호출
+//                   SRV는 ResourceManager가 소유하는 FFontResource에서 전달받습니다.
+//   5) Release()  — DX 리소스 해제
 class FFontBatcher
 {
 public:
 	FFontBatcher() = default;
 	~FFontBatcher() = default;
 
-	// 공유 리소스 초기화 (셰이더, 텍스처, 샘플러, Dynamic VB/IB, CB)
+	// 공유 리소스 초기화 (셰이더, 샘플러, Dynamic VB/IB).
+	// 텍스처는 로드하지 않으며 ResourceManager가 소유합니다.
 	void Create(ID3D11Device* InDevice);
 	void Release();
 
@@ -40,37 +48,35 @@ public:
 	// 이번 프레임 누적 텍스트 초기화
 	void Clear();
 
-	// Dynamic VB 업로드 + 드로우콜 (1회)
-	void Flush(ID3D11DeviceContext* Context);
+	// Dynamic VB 업로드 + 드로우콜 1회
+	// Resource — FontBatcher가 사용할 FontAtlas 리소스 (ResourceManager 소유)
+	void Flush(ID3D11DeviceContext* Context, const FFontResource* Resource);
 
-	// 현재 누적된 Quad(문자) 수
 	uint32 GetQuadCount() const { return static_cast<uint32>(Vertices.size() / 4); }
 
 private:
 	// CPU 누적 배열
 	TArray<FTextureVertex> Vertices;
-	TArray<uint32>      Indices;
+	TArray<uint32>         Indices;
 
 	// GPU 버퍼 (Dynamic)
 	ID3D11Buffer* VertexBuffer = nullptr;
 	ID3D11Buffer* IndexBuffer  = nullptr;
 
-	uint32 MaxVertexCount      = 0; // 정점 버퍼에 할당 가능한 최대 정점 개수
-	uint32 MaxIndexCount       = 0; // 색인 버퍼에 할당 가능한 최대 정점 개수
+	uint32 MaxVertexCount = 0;
+	uint32 MaxIndexCount  = 0;
 
 	// 공유 DX 리소스
-	ID3D11Device*             Device       = nullptr;  // 버퍼 재할당 시 사용
-	ID3D11Resource*           FontResource = nullptr;
-	ID3D11ShaderResourceView* FontAtlasSRV = nullptr;
-	ID3D11SamplerState*       SamplerState = nullptr;
+	ID3D11Device*       Device       = nullptr;
+	ID3D11SamplerState* SamplerState = nullptr;
+	FShader             FontShader;
 
+	// CharInfoMap 캐시 — Atlas 그리드가 바뀔 때만 재빌드
 	TMap<char, FCharacterInfo> CharInfoMap;
-	FShader FontShader;
+	uint32 CachedColumns = 0;
+	uint32 CachedRows    = 0;
 
-	// Dynamic VB/IB 생성 (MaxVertexCount/MaxIndexCount 기준)
 	void CreateBuffers();
-	// Texture Atlas Slicing
-	void BuildCharInfoMap();
-	// 해당 문자열을 key로 가지는 구조체의 UV값 얻는 함수
+	void BuildCharInfoMap(uint32 Columns, uint32 Rows);
 	void GetCharUV(char Ch, FVector2& OutUVMin, FVector2& OutUVMax) const;
 };
