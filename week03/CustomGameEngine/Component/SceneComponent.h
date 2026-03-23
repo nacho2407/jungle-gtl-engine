@@ -5,11 +5,10 @@
 #include "Math/Vector.h"
 #include "Math/Rotator.h"
 #include "Object.h"
-#include "Serializable.h"
 
 class UScene;
 
-class USceneComponent : public UObject, public ISerializable
+class USceneComponent : public UObject
 {
 	DECLARE_RTTI(USceneComponent, UObject)
 public:

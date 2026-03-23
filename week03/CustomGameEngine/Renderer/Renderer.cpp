@@ -520,7 +520,7 @@ void URenderer::RenderSingleBillboardTextTest(void)
 	Params.FontAsset = &RM->GetBillboardFont();
 	Params.Text = TestText;
 	Params.Anchor = TestAnchor;
-	Params.Scale = 1.0f;
+	Params.Scale = 0.04f;
 	Params.LineGap = 4.0f;
 
 	TArray<FVertexFont> FontVertices;

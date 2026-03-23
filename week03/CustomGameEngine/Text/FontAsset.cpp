@@ -272,5 +272,5 @@ bool FFontAsset::BuildGlyphBitmap(uint32 Codepoint, FGlyphBitmap& OutBitmap) con
 
 	stbtt_FreeBitmap(BitmapBuffer, nullptr);
 
-	return true;
+	return true; 
 }

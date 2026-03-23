@@ -34,11 +34,13 @@ SamplerState FontSampler : register(s0);
 PS_INPUT mainVS(VS_INPUT Input)
 {
     PS_INPUT Output;
-
+    
     float3 WorldPos = Input.Anchor;
-    WorldPos += float3(0.0f, 1.0f, 0.0f) * (Input.Offset.x * 0.02f);
-    WorldPos += float3(0.0f, 0.0f, 1.0f) * (Input.Offset.y * 0.02f);
-
+    
+    // billboard offset 적용
+    WorldPos += CameraRight * Input.Offset.x;
+    WorldPos += CameraUp * Input.Offset.y;
+    
     Output.Pos = mul(float4(WorldPos, 1.0f), mul(View, Projection));
     Output.UV = Input.UV;
 
@@ -48,5 +50,6 @@ PS_INPUT mainVS(VS_INPUT Input)
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
     float mask = FontAtlas.Sample(FontSampler, input.UV).r;
-    return float4(1, 1, 1, mask);
+
+    return float4(TextColor.rgb, TextColor.a * mask);
 }
