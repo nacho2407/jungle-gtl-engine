@@ -5,7 +5,7 @@
 #include "Gizmo/ViewportGizmoController.h"
 #include "Interaction/ViewportInteractionState.h"
 #include "Engine/ViewPort/ViewportClient.h"
-#include "Input/ViewportInputContext.h"
+#include "Input/NavigationInputContext.h"
 #include "Renderer/EditorRenderData.h"
 
 
@@ -20,8 +20,10 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     FEditorViewportClient() = default;
     ~FEditorViewportClient() override = default;
 
-    void Create();
-    void Release();
+    void Create() override;
+    void Release() override;
+    
+    void Initialize(FScene * Scene, uint32 ViewportWidth, uint32 ViewportHeight) override;
 
     void Tick(float DeltaTime, const Engine::ApplicationCore::FInputState & State) override;
     void Draw() override;
@@ -30,7 +32,7 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
                           const Engine::ApplicationCore::FInputState& State) override;
 
     void BuildRenderData(FEditorRenderData& OutRenderData) const;
-
+    
     void OnResize(uint32 InWidth, uint32 InHeight);
 
     FViewportNavigationController& GetNavigationController() { return NavigationController; }
@@ -41,6 +43,8 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     FViewportCamera& GetCamera() { return ViewportCamera; }
 
   private:
+    FScene * CurScene = nullptr;
+    
     FViewportCamera ViewportCamera;
 
     FViewportNavigationController NavigationController; 
@@ -48,5 +52,5 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     FViewportGizmoController      GizmoController;
     FViewportInteractionState     InteractionState;
 
-    FViewportInputContext ViewportInputContext{&NavigationController};
+    FNavigationInputContext ViewportInputContext{&NavigationController};
 };

@@ -10,11 +10,11 @@ namespace
     //enum class
 }
 
-class FViewportInputContext : public Engine::ApplicationCore::IInputContext
+class FNavigationInputContext : public Engine::ApplicationCore::IInputContext
 {
 public:
-    FViewportInputContext(FViewportNavigationController* InNavigationController);
-  ~FViewportInputContext() override = default;
+    FNavigationInputContext(FViewportNavigationController* InNavigationController);
+  ~FNavigationInputContext() override = default;
     
     //  현재는 Literal 저장
     int32 GetPriority() const override { return 50; }

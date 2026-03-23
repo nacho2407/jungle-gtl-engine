@@ -88,6 +88,7 @@
     <ClInclude Include="Source\Engine\Scene.h" />
     <ClInclude Include="Source\Engine\ViewPort\Viewport.h" />
     <ClInclude Include="Source\Engine\ViewPort\ViewportClient.h" />
+    <ClInclude Include="Source\Engine\ViewPort\ViewportController.h" />
     <ClInclude Include="Source\Launch\EngineLoop.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11Common.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11DynamicRHI.h" />
