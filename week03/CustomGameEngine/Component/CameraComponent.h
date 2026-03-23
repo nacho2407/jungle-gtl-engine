@@ -36,8 +36,6 @@ public:
 	float FocusLength{ 5.0f };
 	FVector FocusPoint;
 
-	//EProjectionType ProjectionType{ EProjectionType::Perspective };
-
 	FVector Direction{ FVector(1.0f, 0.0f, 0.0f) };
 	FVector SideDirection{ FVector(0.0f, 1.0f, 0.0f) };
 	FVector UpDirection{ FVector(0.0f, 0.0f, 1.0f) };
@@ -76,6 +74,7 @@ public:
 
 	FVector WorldToScreen(const FVector& worldPos) const;
 	Ray ScreenPointToRay(int x, int y);
+
 private:
 	ImGuiIO& io;
 	void HandleCameraMove(float deltaTime);

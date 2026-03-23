@@ -1,5 +1,16 @@
 ﻿#include "Renderer.h"
 
+#include "EngineCore/Logger.h"
+
+// for test code
+#include "EngineCore/ResourceManager.h"
+#include "Text/TextLayout.h"
+
+/**
+ * @def MAX_VERTEX_FONT_COUNT 폰트를 위한 dynamic vertex buffer의 최대 정점 정보 개수
+ */
+#define MAX_VERTEX_FONT_COUNT 6000
+
 void URenderer::Create(HWND hWindow)
 {
 	CreateDeviceAndSwapChain(hWindow);
@@ -12,6 +23,7 @@ void URenderer::Create(HWND hWindow)
 
 	CreateConstantBuffer();
 	CreateDynamicVertexBuffer();
+	CreateDynamicFontVertexBuffer();
 
 	ShowFlagMap[EEngineShowFlags::SF_Primitives] = true;
 	ShowFlagMap[EEngineShowFlags::SF_BillboardText] = true;
@@ -172,6 +184,7 @@ void URenderer::ReleaseBlendState()
 void URenderer::Release()
 {
 	ReleaseDynamicVertexBuffer();
+	ReleaseDynamicFontVertexBuffer();
 	ReleaseBlendState();
 	ReleaseDepthStencilState();
 	DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
@@ -325,6 +338,8 @@ void URenderer::Render(const TArray<FLevel*>& Levels)
 	RenderNormalObjects(NormalRenderObjects);
 	RenderNoDepthObjects(NoDepthRenderObjects);
 	BatchRender(BatchGroups);
+
+	RenderSingleBillboardTextTest();
 }
 
 void URenderer::SetRasterizerMode(int32 mode)
@@ -419,3 +434,151 @@ void URenderer::BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups)
 	}
 }
 
+void URenderer::CreateDynamicFontVertexBuffer(void)
+{
+	D3D11_BUFFER_DESC vertexbufferdesc = {};
+	vertexbufferdesc.ByteWidth = sizeof(FVertexFont) * MAX_VERTEX_FONT_COUNT;
+	vertexbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
+	vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vertexbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	HRESULT hr = Device->CreateBuffer(&vertexbufferdesc, nullptr, DynamicFontVertexBuffer.GetAddressOf());
+	if (FAILED(hr))
+	{
+		UE_LOG("[Renderer/Renderer][Error] Failed to create dynamic vertex buffer for the font");
+	}
+}
+
+void URenderer::UpdateDynamicFontVertexBuffer(FVertexFont* Vertices, UINT VertexCount)
+{
+	if (VertexCount > MAX_VERTEX_FONT_COUNT)
+	{
+		UE_LOG("[Renderer/Renderer][Error] Too much vertex information to fit into the vertex buffer for the font");
+		return;
+	}
+
+	D3D11_MAPPED_SUBRESOURCE Mapped = {};
+	HRESULT hr = DeviceContext->Map(
+		DynamicFontVertexBuffer.Get(),
+		0,
+		D3D11_MAP_WRITE_DISCARD,
+		0,
+		&Mapped
+	);
+	
+	if (FAILED(hr))
+	{
+		UE_LOG("[Renderer/Renderer][Error] Unable to map dynamic vertex buffer for the font");
+		return;
+	}
+
+	std::memcpy(Mapped.pData, Vertices, sizeof(FVertexFont) * VertexCount);
+
+	DeviceContext->Unmap(DynamicFontVertexBuffer.Get(), 0);
+}
+
+void URenderer::ReleaseDynamicFontVertexBuffer(void)
+{
+	DynamicFontVertexBuffer.Reset();
+}
+
+void URenderer::RenderSingleBillboardTextTest(void)
+{
+	if (renderCamera == nullptr)
+	{
+		UE_LOG("[Renderer/Renderer][RenderSingleBillboardTextTest][Failed] Camera component is null");
+		return;
+	}
+
+	if (DeviceContext == nullptr)
+	{
+		UE_LOG("[Renderer/Renderer][RenderSingleBillboardTextTest][Failed] Direct3D 11 device context is null");
+		return;
+	}
+
+	// Test text / Anchor / Color
+	const FString TestText = "12-3";
+	const FVector TestAnchor = FVector(0.0f, 0.0f, 2.0f);
+	const FColor TestColor = FColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+	ResourceManager* RM = ResourceManager::GetInstance();
+	if (RM == nullptr)
+	{
+		UE_LOG("[Renderer/Renderer][RenderSingleBillboardTextTest][Failed] Resource manager is null");
+		return;
+	}
+
+	const bool bGlyphReady = RM->EnsureBillboardGlyphs(TestText);
+	if (!bGlyphReady)
+	{
+		UE_LOG("[Renderer/Renderer][RenderSingleBillboardTextTest][Failed] EnsureBillboardGlyphs failed");
+		return;
+	}
+
+	// 우선 CPU에서 빌보드 텍스트 정점을 빌드
+	FTextLayoutBuildParams Params{};
+	Params.FontAsset = &RM->GetBillboardFont();
+	Params.Text = TestText;
+	Params.Anchor = TestAnchor;
+	Params.Scale = 1.0f;
+	Params.LineGap = 4.0f;
+
+	TArray<FVertexFont> FontVertices;
+	const bool bBuildOK = BuildBillboardTextVertices(Params, FontVertices);
+	if (!bBuildOK)
+	{
+		UE_LOG("[Renderer/Renderer][RenderSingleBillboardTextTest][Failed] BuildBillboardTextVertices failed");
+		return;
+	}
+
+	if (FontVertices.empty())
+	{
+		UE_LOG("[Renderer/Renderer][RenderSingleBillboardTextTest][Failed] No font vertices generated");
+		return;
+	}
+
+	// 폰트 셰이더 가져오기
+	// 현재 이 부분은 안정성 문제 있음(GetMaterial)
+	FMaterial& FontMaterial = RM->GetMaterial(L"Shader/ShaderFont.hlsl");
+
+	// 카메라 right / up 벡터 계산
+	FVector CameraRight = renderCamera->SideDirection;
+	FVector CameraUp = renderCamera->UpDirection;
+
+	// 상수 버퍼 채우기
+	FFontConstant FontConst{};
+	FontConst.CameraRight = CameraRight;
+	FontConst.CameraUp = CameraUp;
+	FontConst.TextColor = TestColor;
+
+	FontMaterial.ConstantBuffer.Update(
+		DeviceContext.Get(),
+		&FontConst,
+		sizeof(FFontConstant)
+	);
+	FontMaterial.ConstantBuffer.Bind(DeviceContext.Get());
+
+	// 폰트 셰이더 바인드
+	FontMaterial.Bind(DeviceContext.Get());
+
+	DeviceContext->OMSetDepthStencilState(DepthStencilStateNoWrite.Get(), 0);
+
+	// Dynamic vertex buffer 업데이트 후 IA 스테이지에 바인드
+	UpdateDynamicFontVertexBuffer(FontVertices.data(), static_cast<UINT>(FontVertices.size()));
+
+	UINT stride = sizeof(FVertexFont);
+	UINT offset = 0;
+	DeviceContext->IASetVertexBuffers(
+		0,
+		1,
+		DynamicFontVertexBuffer.GetAddressOf(),
+		&stride,
+		&offset
+	);
+
+	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	DeviceContext->Draw(static_cast<UINT>(FontVertices.size()), 0);
+
+	// Depth state 되돌리기
+	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
+}

@@ -164,8 +164,10 @@ FMatrix FMatrix::PerspectiveMatrix(float FovDegree, float Aspect, float Near, fl
 	FMatrix M = ZeroMatrix();
 
 	float Rad = DegToRad(FovDegree);
-	float ScaleY = 1.0f / std::tan(Rad * 0.5f);
-	float ScaleX = ScaleY / Aspect;
+	
+	// 프로젝트 전체에서 공용 수학 함수를 사용하되, 수평 FOV 기준의 장점을 살리기 위해 수평 FOV로 해석하도록 조금 수정합니다.
+	float ScaleX = 1.0f / std::tan(Rad * 0.5f);
+	float ScaleY = ScaleX * Aspect;
 
 	M.m[0][0] = ScaleX;
 	M.m[1][1] = ScaleY;

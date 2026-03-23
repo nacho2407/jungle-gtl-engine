@@ -201,7 +201,18 @@ void UCameraComponent::UpdateCameraMatrices()
 	FVector ForwardBase = FVector::Forward();
 	Direction = RotMatrix.TransformVector(ForwardBase).Normalize();
 
-	SideDirection = FVector::Up().Cross(Direction);
+	// Direction이 world up과 거의 평행해지는 경우 대비
+	const float UpDot = std::abs(Direction.Dot(FVector::Up()));
+	if (UpDot > 1.0f - Epsilon)
+	{
+		// 안전장치...
+		SideDirection = FVector::Right();
+	}
+	else
+	{
+		SideDirection = FVector::Up().Cross(Direction).Normalize();
+	}
+
 	UpDirection = Direction.Cross(SideDirection);
 
 	auto position = GetRelativeLocation();
@@ -215,14 +226,6 @@ FMatrix UCameraComponent::GetViewMatrix() const
 {
 	return View;
 }
-
-//void UCamera::CalcProjectionMatrix()
-//{
-//	if (ProjectionType == EProjectionType::Perspective)
-//		CalcPerspectiveProjectionMatrix();
-//	else
-//		CalcOrthogonalProjectionMatrix();
-//}
 
 void UCameraComponent::CalcProjectionMatrix()
 {
@@ -239,22 +242,7 @@ FMatrix UCameraComponent::GetProjectionMatrix() const
 
 void UCameraComponent::CalcPerspectiveProjectionMatrix()
 {
-	FMatrix M = FMatrix::ZeroMatrix();
-
-	float rad = FMatrix::DegToRad(FOV);
-	float w = 1.0f / std::tan(rad * 0.5f);
-	float h = w * AspectRatio;
-
-	float q = -NearPlane / (FarPlane - NearPlane);
-	float b = (NearPlane * FarPlane) / (FarPlane - NearPlane);
-
-	M[0][0] = w;
-	M[1][1] = h;
-	M[2][2] = q;
-	M[3][2] = b;
-	M[2][3] = 1.0f;
-
-	Projection = M;
+	Projection = FMatrix::PerspectiveMatrix(FOV, AspectRatio, NearPlane, FarPlane);
 }
 
 void UCameraComponent::CalcOrthogonalProjectionMatrix()

@@ -11,6 +11,8 @@
 #include "Renderer/Material.h"
 #include "Renderer/Geometry.h"
 
+#include "Renderer/VertexFont.h"
+
 class URenderer {
 public:
 	TComPtr<ID3D11Device> Device = nullptr;
@@ -92,7 +94,37 @@ public:
 
 	TMap<EEngineShowFlags, bool> ShowFlagMap;
 
+public:
+	/**
+	 * @brief 폰트를 위한 dynamic vertex buffer를 생성합니다.
+	 */
+	void CreateDynamicFontVertexBuffer(void);
+
+	/**
+	 * @brief 폰트를 위한 dynamic vertex buffer를 업데이트합니다.
+	 * 
+	 * @param Vertices 업데이트할 폰트 정점 정보
+	 * 
+	 * @param VectexCount 폰트 정점 개수
+	 */
+	void UpdateDynamicFontVertexBuffer(FVertexFont* Vertices, UINT VertexCount);
+
+	/**
+	 * @brief 폰트를 위한 dynamic vertex buffer를 해제합니다.
+	 */
+	void ReleaseDynamicFontVertexBuffer(void);
+
+	/**
+	 * @brief 일단 빌보드용 Render Path가 살아있는지 확인하기 위한 테스트 함수입니다.
+	 */
+	void RenderSingleBillboardTextTest(void);
+
 private:
 	UCameraComponent* renderCamera = nullptr;
 	int32 RsSetMode = 0;
+
+	/**
+	 * @brief 폰트를 위한 dynamic vertex buffer
+	 */
+	TComPtr<ID3D11Buffer> DynamicFontVertexBuffer;
 };
