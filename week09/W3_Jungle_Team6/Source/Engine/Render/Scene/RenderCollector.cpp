@@ -202,7 +202,8 @@ void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponen
 	// 이전에 정의한 union 구조체의 AABB 영역에 데이터를 채웁니다.
 	AABBCmd.Constants.AABB.Min = Box.Min;
 	AABBCmd.Constants.AABB.Max = Box.Max;
-	AABBCmd.Constants.AABB.Color = FColor(1.0f, 0.6f, 0.0f, 1.0f); // 선택 강조용 주황색
+	//AABBCmd.Constants.AABB.Color = FColor(1.0f, 0.6f, 0.0f, 1.0f); // 선택 강조용 주황색
+	AABBCmd.Constants.AABB.Color = FColor(255, 153, 0, 255); // 선택 강조용 주황색
 
 	// 렌더러가 마지막에 몰아서 그릴 수 있게 특정 패스(예: Editor/Overlay)에 푸시합니다.
 	RenderBus.AddCommand(ERenderPass::Editor, AABBCmd);
