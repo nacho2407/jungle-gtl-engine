@@ -112,13 +112,13 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClCompile Include="Source\Panel\PanelManager.cpp" />
     <ClCompile Include="Source\Panel\PropertiesPanel.cpp" />
     <ClCompile Include="Source\Panel\StatePanel.cpp" />
-    <ClCompile Include="Source\ThirdParty\imgui\imgui.cpp" />
-    <ClCompile Include="Source\ThirdParty\imgui\imgui_demo.cpp" />
-    <ClCompile Include="Source\ThirdParty\imgui\imgui_draw.cpp" />
-    <ClCompile Include="Source\ThirdParty\imgui\imgui_impl_dx11.cpp" />
-    <ClCompile Include="Source\ThirdParty\imgui\imgui_impl_win32.cpp" />
-    <ClCompile Include="Source\ThirdParty\imgui\imgui_tables.cpp" />
-    <ClCompile Include="Source\ThirdParty\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui.cpp" />
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_demo.cpp" />
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_draw.cpp" />
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_impl_dx11.cpp" />
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_impl_win32.cpp" />
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_tables.cpp" />
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="Source\Viewport\EditorViewport.cpp" />
     <ClCompile Include="Source\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Viewport\Gizmo\ViewportGizmoController.cpp" />
@@ -150,14 +150,14 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClInclude Include="Source\Panel\PanelManager.h" />
     <ClInclude Include="Source\Panel\PropertiesPanel.h" />
     <ClInclude Include="Source\Panel\StatePanel.h" />
-    <ClInclude Include="Source\ThirdParty\imgui\imconfig.h" />
-    <ClInclude Include="Source\ThirdParty\imgui\imgui.h" />
-    <ClInclude Include="Source\ThirdParty\imgui\imgui_impl_dx11.h" />
-    <ClInclude Include="Source\ThirdParty\imgui\imgui_impl_win32.h" />
-    <ClInclude Include="Source\ThirdParty\imgui\imgui_internal.h" />
-    <ClInclude Include="Source\ThirdParty\imgui\imstb_rectpack.h" />
-    <ClInclude Include="Source\ThirdParty\imgui\imstb_textedit.h" />
-    <ClInclude Include="Source\ThirdParty\imgui\imstb_truetype.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imconfig.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imgui.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imgui_impl_dx11.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imgui_impl_win32.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imgui_internal.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imstb_rectpack.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imstb_textedit.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imstb_truetype.h" />
     <ClInclude Include="Source\Viewport\EditorViewport.h" />
     <ClInclude Include="Source\Viewport\EditorViewportClient.h" />
     <ClInclude Include="Source\Viewport\Gizmo\ViewportGizmoController.h" />
@@ -167,10 +167,10 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClInclude Include="Source\Viewport\Selection\ViewportSelectionController.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Source\ThirdParty\imgui\imgui.natstepfilter" />
+    <None Include="Source\ThirdParty\ImGui\imgui.natstepfilter" />
   </ItemGroup>
   <ItemGroup>
-    <Natvis Include="Source\ThirdParty\imgui\imgui.natvis" />
+    <Natvis Include="Source\ThirdParty\ImGui\imgui.natvis" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Engine\Engine.vcxproj">

@@ -7,6 +7,7 @@
 #include "Renderer/Types/ViewMode.h"
 
 class FD3D11MeshBatchRenderer;
+struct FObjectIdRenderItem;
 
 struct FGizmoStyle
 {
@@ -27,6 +28,9 @@ class FGizmoDrawer
 {
   public:
     void Draw(FD3D11MeshBatchRenderer& InMeshRenderer, const FEditorRenderData& InEditorRenderData);
+
+    void BuildObjectIdRenderItems(TArray<FObjectIdRenderItem>& OutItems,
+                                  const FEditorRenderData&     InEditorRenderData) const;
 
   public:
     EViewModeIndex ViewMode = EViewModeIndex::Unlit;
