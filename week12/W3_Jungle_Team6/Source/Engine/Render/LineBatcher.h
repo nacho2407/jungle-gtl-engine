@@ -85,11 +85,14 @@ public:
 	uint32 GetLineCount() const;
 
 private:
-	TArray<FLineVertex> Vertices;
+	TArray<FLineVertex> IndexedVertices;
+	TArray<uint32> Indices;
 
-	ID3D11Buffer* VertexBuffer = nullptr;
+	ID3D11Buffer* IndexedVertexBuffer = nullptr;
+	ID3D11Buffer* IndexBuffer = nullptr;
 	ID3D11Device* Device = nullptr; // @@@ (필요 시 새 버퍼 생성용)
-	uint32 MaxVertexCount = 0;		// VB 크기 (필요 시 재할당)
+	uint32 MaxIndexedVertexCount = 0; // Indexed 라인 VB 크기 (필요 시 재할당)
+	uint32 MaxIndexCount = 0;		// Indexed 라인 IB 크기 (필요 시 재할당)
 
 	int HalfGridCount = 100; // @@@ Grid 크기
 	float GridSpacing = 1.0f; // @@@ Grid 간격 %%% GUI에서 소수점은 걸러야 하지 않나?
