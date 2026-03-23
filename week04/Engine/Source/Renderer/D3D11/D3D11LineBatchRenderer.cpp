@@ -1,10 +1,16 @@
 #include "Renderer/D3D11/D3D11LineBatchRenderer.h"
+
 #include "Renderer/D3D11/D3D11DynamicRHI.h"
 #include "Renderer/SceneView.h"
 #include "Renderer/Types/ShaderConstants.h"
 
 bool FD3D11LineBatchRenderer::Initialize(FD3D11DynamicRHI* InRHI)
 {
+    if (InRHI == nullptr)
+    {
+        return false;
+    }
+
     RHI = InRHI;
     CurrentSceneView = nullptr;
 
@@ -12,16 +18,19 @@ bool FD3D11LineBatchRenderer::Initialize(FD3D11DynamicRHI* InRHI)
 
     if (!CreateShaders())
     {
+        Shutdown();
         return false;
     }
 
     if (!CreateConstantBuffer())
     {
+        Shutdown();
         return false;
     }
 
     if (!CreateDynamicVertexBuffer(MaxVertexCount))
     {
+        Shutdown();
         return false;
     }
 
@@ -79,6 +88,11 @@ void FD3D11LineBatchRenderer::AddLine(const FVector& InStart, const FVector& InE
 
 void FD3D11LineBatchRenderer::EndFrame()
 {
+    if (RHI == nullptr)
+    {
+        return;
+    }
+
     Flush();
     CurrentSceneView = nullptr;
 }
@@ -127,7 +141,7 @@ bool FD3D11LineBatchRenderer::CreateConstantBuffer()
 
 bool FD3D11LineBatchRenderer::CreateDynamicVertexBuffer(uint32 InMaxVertexCount)
 {
-    if (RHI == nullptr)
+    if (RHI == nullptr || RHI->GetDevice() == nullptr)
     {
         return false;
     }
@@ -157,7 +171,7 @@ void FD3D11LineBatchRenderer::Flush()
     }
 
     if (!RHI->UpdateDynamicBuffer(DynamicVertexBuffer.Get(), Vertices.data(),
-                                 static_cast<uint32>(sizeof(FLineVertex) * Vertices.size())))
+                                  static_cast<uint32>(sizeof(FLineVertex) * Vertices.size())))
     {
         return;
     }
@@ -165,7 +179,10 @@ void FD3D11LineBatchRenderer::Flush()
     FLineConstants Constants = {};
     Constants.VP = CurrentSceneView->GetViewProjectionMatrix();
 
-    RHI->UpdateConstantBuffer(ConstantBuffer.Get(), &Constants, sizeof(Constants));
+    if (!RHI->UpdateConstantBuffer(ConstantBuffer.Get(), &Constants, sizeof(Constants)))
+    {
+        return;
+    }
 
     const UINT    Stride = sizeof(FLineVertex);
     const UINT    Offset = 0;

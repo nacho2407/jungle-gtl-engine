@@ -1,6 +1,7 @@
-#include "Renderer/EditorDraw/GizmoDrawer.h"
+#include "Renderer/Draw/GizmoDrawer.h"
 
 #include "Renderer/D3D11/D3D11MeshBatchRenderer.h"
+#include "Renderer/EditorRenderData.h"
 #include "Renderer/Types/AxisColors.h"
 
 // TODO: 기즈모 축 회전
@@ -34,8 +35,8 @@ namespace
 void FGizmoDrawer::Draw(FD3D11MeshBatchRenderer& InMeshRenderer,
                         const FEditorRenderData& InEditorRenderData)
 {
-    if (!InEditorRenderData.bShowGizmo || InEditorRenderData.SceneView == nullptr ||
-        !InEditorRenderData.Gizmo.bVisible)
+    if (!IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo) ||
+        InEditorRenderData.SceneView == nullptr)
     {
         return;
     }
@@ -59,8 +60,7 @@ void FGizmoDrawer::Draw(FD3D11MeshBatchRenderer& InMeshRenderer,
 
     if (!GizmoPrimitives.empty())
     {
-        InMeshRenderer.Render({InEditorRenderData.SceneView, ViewMode,
-                               ESceneShowFlags::SF_Primitives, bUseInstancing, GizmoPrimitives});
+        InMeshRenderer.AddPrimitives(GizmoPrimitives);
     }
 }
 

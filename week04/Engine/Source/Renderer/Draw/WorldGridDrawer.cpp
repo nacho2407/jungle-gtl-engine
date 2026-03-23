@@ -1,4 +1,4 @@
-#include "Renderer/EditorDraw/WorldGridDrawer.h"
+#include "Renderer/Draw/WorldGridDrawer.h"
 
 #include "Renderer/D3D11/D3D11LineBatchRenderer.h"
 #include "Renderer/EditorRenderData.h"
@@ -6,7 +6,8 @@
 void FWorldGridDrawer::Draw(FD3D11LineBatchRenderer& InLineRenderer,
                             const FEditorRenderData& InEditorRenderData)
 {
-    if (!InEditorRenderData.bShowGrid || InEditorRenderData.SceneView == nullptr)
+    if (!IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Grid) ||
+        InEditorRenderData.SceneView == nullptr)
     {
         return;
     }
@@ -15,11 +16,18 @@ void FWorldGridDrawer::Draw(FD3D11LineBatchRenderer& InLineRenderer,
 
     for (int32 i = -GridHalfLineCount; i <= GridHalfLineCount; ++i)
     {
-        const float Offset = static_cast<float>(i) * GridSpacing;
+        if (IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_WorldAxes) && i == 0)
+        {
+            continue;
+        }
+
+        const float   Offset = static_cast<float>(i) * GridSpacing;
+        const bool    bIsMajorLine = (i % MajorLineEvery) == 0;
+        const FColor& LineColor = bIsMajorLine ? MajorGridColor : MinorGridColor;
 
         InLineRenderer.AddLine(FVector(-Extent, Offset, 0.0f), FVector(Extent, Offset, 0.0f),
-                               GridColor);
+                               LineColor);
         InLineRenderer.AddLine(FVector(Offset, -Extent, 0.0f), FVector(Offset, Extent, 0.0f),
-                               GridColor);
+                               LineColor);
     }
 }

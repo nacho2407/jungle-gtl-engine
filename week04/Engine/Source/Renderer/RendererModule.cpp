@@ -2,8 +2,14 @@
 
 bool FRendererModule::StartupModule(HWND hWnd)
 {
+    if (hWnd == nullptr)
+    {
+        return false;
+    }
+
     if (!RHI.Initialize(hWnd))
     {
+        ShutdownModule();
         return false;
     }
 
@@ -32,22 +38,21 @@ bool FRendererModule::StartupModule(HWND hWnd)
 
 void FRendererModule::ShutdownModule()
 {
-    // D3D 리소스들을 먼저 해제
+    DebugDevice.Reset();
+
+    // PickingPass.Shutdown();
+    // SpriteRenderer.Shutdown();
+    // FontRenderer.Shutdown();
     LineRenderer.Shutdown();
     MeshRenderer.Shutdown();
 
-    // TODO: 나중에 사용 시작하면 활성화
-    // FontRenderer.Shutdown();
-    // SpriteRenderer.Shutdown();
-    // PickingPass.Shutdown();
-
-#if defined(_DEBUG)
-    if (DebugDevice != nullptr)
-    {
-        DebugDevice->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
-        DebugDevice.Reset();
-    }
-#endif
+    #if defined(_DEBUG)
+        if (DebugDevice != nullptr)
+        {
+            DebugDevice->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+            DebugDevice.Reset();
+        }
+    #endif
 
     RHI.Shutdown();
 }
@@ -72,39 +77,55 @@ void FRendererModule::OnWindowResized(int32 InWidth, int32 InHeight)
     }
 
     RHI.Resize(InWidth, InHeight);
+    // PickingPass.Resize(InWidth, InHeight);
 }
 
 void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
                              const FSceneRenderData&  InSceneRenderData)
 {
-    // Scene
-    MeshRenderer.Render(InSceneRenderData);
-    // GizmoDrawer.Draw(InSceneRenderData.Primitives, InEditorRenderData);
+    // ================ Mesh =================
+    MeshRenderer.BeginFrame(InSceneRenderData.SceneView, InSceneRenderData.ViewMode,
+                            InSceneRenderData.bUseInstancing);
+    if (IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_Primitives))
+    {
+        PrimitiveDrawer.Draw(MeshRenderer, InSceneRenderData);
+    }
+    if (IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo))
+    {
+        GizmoDrawer.Draw(MeshRenderer, InEditorRenderData);
+    }
+    MeshRenderer.EndFrame();
 
-    // Editor Overlay (grouped by renderer type, then flush once per renderer)
+    // ================ Line =================
     if (InEditorRenderData.SceneView != nullptr)
     {
         LineRenderer.BeginFrame(InEditorRenderData.SceneView);
-        WorldGridDrawer.Draw(LineRenderer, InEditorRenderData);
-        WorldAxesDrawer.Draw(LineRenderer, InEditorRenderData);
+
+        if (IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Grid))
+        {
+            WorldGridDrawer.Draw(LineRenderer, InEditorRenderData);
+        }
+
+        if (IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_WorldAxes))
+        {
+            WorldAxesDrawer.Draw(LineRenderer, InEditorRenderData);
+        }
+
         LineRenderer.EndFrame();
     }
+
+    // TODO:
+    // FontRenderer.BeginFrame(...);
+    // SpriteRenderer.BeginFrame(...);
+    // Draw...
+    // FontRenderer.EndFrame();
+    // SpriteRenderer.EndFrame();
 }
 
-bool FRendererModule::TryConsumePickResult(uint32& OutPickId)
-{
-    (void)OutPickId;
-
-    // TODO: PickingPass 연결 후 구현
-    return false;
-}
+bool FRendererModule::TryConsumePickResult(uint32& OutPickId) { return false; }
 
 void FRendererModule::RequestPick(const FEditorRenderData& InEditorRenderData, int32 MouseX,
                                   int32 MouseY)
 {
-    (void)InEditorRenderData;
-    (void)MouseX;
-    (void)MouseY;
-
-    // TODO: PickingPass 연결 후 구현
+    return;
 }

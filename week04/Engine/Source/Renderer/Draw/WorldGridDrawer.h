@@ -13,7 +13,14 @@ class FWorldGridDrawer
     void Draw(FD3D11LineBatchRenderer& InLineRenderer, const FEditorRenderData& InEditorRenderData);
 
   private:
-    int32  GridHalfLineCount = 500;
-    float  GridSpacing = 5.0f;
-    FColor GridColor = FColor(0.25f, 0.25f, 0.25f, 1.0f);
+    int32 GridHalfLineCount = 500;
+
+    // 기존 5.0f보다 넓게
+    float GridSpacing = 20.0f;
+
+    // 5칸마다 major line
+    int32 MajorLineEvery = 5;
+
+    FColor MinorGridColor = FColor(0.25f, 0.25f, 0.25f, 1.0f);
+    FColor MajorGridColor = FColor(0.45f, 0.45f, 0.45f, 1.0f);
 };
