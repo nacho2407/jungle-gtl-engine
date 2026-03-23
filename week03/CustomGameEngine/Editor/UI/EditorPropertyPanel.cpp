@@ -23,15 +23,25 @@ void EditorPropertyPanel::Draw(USceneComponent* selectedComponent)
 
 		if (ImGui::Button("Delete", { 100, 30 }))
 		{
-			RemoveSelected(selectedComponent);
+			RemoveSelected();
 		}
 	}
 
 	ImGui::End();
 }
 
-void EditorPropertyPanel::RemoveSelected(USceneComponent* selectedComponent)
+void EditorPropertyPanel::RemoveSelected()
 {
+	TArray<USceneComponent*> selectedComponents = editor->GetSelectedComponents();
 	editor->ClearSelection();
-	GetWorld().GetSceneManager()->RemoveSceneComponent(selectedComponent);
+
+	SceneManager* sceneManager = GetWorld().GetSceneManager();
+	for (USceneComponent* comp : selectedComponents)
+	{
+		if (comp == nullptr || comp->Scene == nullptr)
+		{
+			continue;
+		}
+		sceneManager->RemoveSceneComponent(comp, comp->Scene);
+	}
 }

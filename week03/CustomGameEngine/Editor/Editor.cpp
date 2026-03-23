@@ -228,13 +228,13 @@ void Editor::SelectMultiComponent(USceneComponent* component)
 	Gizmo::GetInstance().GetController()->AttachTo(component);
 }
 
+//마지막으로 선택된 씬 컴포넌트를 반환합니다. 그걸로 기즈모를 조작하기 위해서입니다.
 USceneComponent* Editor::GetLastSelectedComponent() const
 {
 	if (SelectedComponents.empty())
 	{
 		return nullptr;
 	}
-
 	return SelectedComponents.back();
 }
 
