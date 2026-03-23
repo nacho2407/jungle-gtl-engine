@@ -1,5 +1,9 @@
 #include "NavigationInputContext.h"
 
+#if defined(_WIN32)
+#include <Windows.h>
+#endif
+
 using Engine::ApplicationCore::EInputEventType;
 using Engine::ApplicationCore::EKey;
 using Engine::ApplicationCore::FInputEvent;
@@ -25,6 +29,11 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
             bRightMouseDown = true;
             bFirstMouseMoveAfterRotateStart = true;
             NavigationController->SetRotating(true);
+#if defined(_WIN32)
+            while (::ShowCursor(FALSE) >= 0)
+            {
+            }
+#endif
             return true;
         }
         break;
@@ -33,6 +42,11 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
         {
             bRightMouseDown = false;
             NavigationController->SetRotating(false);
+#if defined(_WIN32)
+            while (::ShowCursor(TRUE) < 0)
+            {
+            }
+#endif
             return true;
         }
         break;
@@ -63,8 +77,15 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
         break;
 
     case EInputEventType::MouseWheel:
-
-        NavigationController->ModifyFOV(static_cast<float>(-Event.WheelDelta));
+        if (bRightMouseDown)
+        {
+            const float SpeedStep = (Event.WheelDelta > 0) ? 20.0f : -20.0f;
+            NavigationController->AdjustMoveSpeed(SpeedStep);
+        }
+        else
+        {
+            NavigationController->ModifyFOV(static_cast<float>(-Event.WheelDelta));
+        }
         return true;
 
         // break;

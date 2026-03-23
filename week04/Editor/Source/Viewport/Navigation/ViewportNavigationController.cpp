@@ -2,7 +2,17 @@
 
 void FViewportNavigationController::Tick(float DeltaTime)
 {
-    //  Tick에서 카메라 이동 처리
+    if (ViewportCamera == nullptr)
+    {
+        return;
+    }
+
+    EnsureTargetLocationInitialized();
+
+    const FVector CurrentLocation = ViewportCamera->GetLocation();
+    const float   LerpAlpha = FMath::Clamp(DeltaTime * LocationLerpSpeed, 0.0f, 1.0f);
+    const FVector NewLocation = CurrentLocation + (TargetLocation - CurrentLocation) * LerpAlpha;
+    ViewportCamera->SetLocation(NewLocation);
 }
 
 void FViewportNavigationController::SetRotating(bool bInRotating)
@@ -47,9 +57,8 @@ void FViewportNavigationController::MoveForward(float Value, float DeltaTime)
         return;
     }
 
-    FVector NewLocation = ViewportCamera->GetLocation();
-    NewLocation += ViewportCamera->GetForwardVector() * (Value * MoveSpeed * DeltaTime);
-    ViewportCamera->SetLocation(NewLocation);
+    EnsureTargetLocationInitialized();
+    TargetLocation += ViewportCamera->GetForwardVector() * (Value * MoveSpeed * DeltaTime);
 
     // MessageBox(nullptr, L"MoveForward called", L"Debug", MB_OK);
 }
@@ -62,9 +71,8 @@ void FViewportNavigationController::MoveRight(float Value, float DeltaTime)
         return;
     }
 
-    FVector NewLocation = ViewportCamera->GetLocation();
-    NewLocation += ViewportCamera->GetRightVector() * (Value * MoveSpeed * DeltaTime);
-    ViewportCamera->SetLocation(NewLocation);
+    EnsureTargetLocationInitialized();
+    TargetLocation += ViewportCamera->GetRightVector() * (Value * MoveSpeed * DeltaTime);
 }
 
 void FViewportNavigationController::MoveUp(float Value, float DeltaTime)
@@ -72,9 +80,8 @@ void FViewportNavigationController::MoveUp(float Value, float DeltaTime)
     if (ViewportCamera == nullptr || FMath::IsNearlyZero(Value))
         return;
 
-    FVector NewLocation = ViewportCamera->GetLocation();
-    NewLocation += FVector(0.f, 0.f, 1.f) * (Value * MoveSpeed * DeltaTime);
-    ViewportCamera->SetLocation(NewLocation);
+    EnsureTargetLocationInitialized();
+    TargetLocation += FVector(0.f, 0.f, 1.f) * (Value * MoveSpeed * DeltaTime);
 }
 
 void FViewportNavigationController::AddYawInput(float Value)
@@ -133,4 +140,18 @@ void FViewportNavigationController::UpdateCameraRotation()
     FQuat NewRotation(RotationMatrix);
     NewRotation.Normalize();
     ViewportCamera->SetRotation(NewRotation);
+}
+
+void FViewportNavigationController::EnsureTargetLocationInitialized()
+{
+    if (ViewportCamera == nullptr)
+    {
+        return;
+    }
+
+    if (!bHasTargetLocation)
+    {
+        TargetLocation = ViewportCamera->GetLocation();
+        bHasTargetLocation = true;
+    }
 }
