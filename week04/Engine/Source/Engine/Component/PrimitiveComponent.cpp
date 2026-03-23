@@ -1,12 +1,14 @@
 #include "PrimitiveComponent.h"
 
+#include "Core/Geometry/Primitives/AABBUtility.h"
+
 namespace Engine::Component
 {
     const FVector4& UPrimitiveComponent::GetColor() const { return Color; }
 
     void UPrimitiveComponent::SetColor(const FVector4& NewColor) { Color = NewColor; }
 
-    const Geometry::FAABB& UPrimitiveComponent::GetAABB() const
+    const Geometry::FAABB& UPrimitiveComponent::GetWorldAABB() const
     {
         if (bBoundsDirty)
         {
@@ -15,6 +17,11 @@ namespace Engine::Component
         }
 
         return WorldAABB;
+    }
+
+    bool UPrimitiveComponent::GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const
+    {
+        return false;
     }
 
     void UPrimitiveComponent::Update(float DeltaTime)

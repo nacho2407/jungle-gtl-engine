@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Core/CoreMinimal.h"
+
 namespace Engine::ApplicationCore
 {
     enum class EKey
@@ -35,9 +37,9 @@ namespace Engine::ApplicationCore
 
     struct FModifierKeysState
     {
-        bool bCtrl = false;
-        bool bShift = false;
-        bool bAlt = false;
+        bool bCtrlDown = false;
+        bool bShiftDown = false;
+        bool bAltDown = false;
     };
 
     struct FInputEvent

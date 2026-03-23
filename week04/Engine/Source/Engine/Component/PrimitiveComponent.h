@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Core/Geometry/Primitives/AABB.h"
-#include "Core/Geometry/Primitives/AABBUtility.h"
 #include "Core/Math/Vector4.h"
 #include "SceneComponent.h"
 
@@ -21,7 +20,9 @@ namespace Engine::Component
         const FVector4& GetColor() const;
         void            SetColor(const FVector4& NewColor);
 
-        const Geometry::FAABB& GetAABB() const;
+        const Geometry::FAABB& GetWorldAABB() const;
+        
+        virtual bool GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const;
 
         void Update(float DeltaTime) override;
 
