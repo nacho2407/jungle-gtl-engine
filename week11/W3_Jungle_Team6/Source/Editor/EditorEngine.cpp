@@ -125,10 +125,12 @@ void UEditorEngine::ClearScene()
 {
 	SelectionManager.ClearSelection();
 
-	for (FWorldContext& Ctx : WorldList) {
+	for (FWorldContext& Ctx : WorldList)
+	{
 		Ctx.World->EndPlay();
 		UObjectManager::Get().DestroyObject(Ctx.World);
 	}
+
 	WorldList.clear();
 	ActiveWorldHandle = FName::None;
 
@@ -138,21 +140,16 @@ void UEditorEngine::ClearScene()
 
 void UEditorEngine::BuildRenderCommands()
 {
-	FRenderCollectorContext Context;
+	FRenderCollectorContext Context(SelectionManager.GetSelectedActors());
+
 	Context.World = GetWorld();
 	Context.Camera = ViewportClient.GetCamera();
 	Context.Gizmo = SelectionManager.GetGizmo();
 	Context.ViewMode = FEditorSettings::Get().ViewMode;
 	Context.ShowFlags = FEditorSettings::Get().ShowFlags;
 	Context.CursorOverlayState = &ViewportClient.GetCursorOverlayState();
-	Context.ViewportHeight = Window->GetHeight();
-	Context.ViewportWidth = Window->GetWidth();
-	Context.SelectedComponent = nullptr;
-	AActor* Primary = SelectionManager.GetPrimarySelection();
-	if (Primary && Primary->GetRootComponent() && Primary->GetRootComponent()->IsA<UPrimitiveComponent>())
-	{
-		Context.SelectedComponent = static_cast<UPrimitiveComponent*>(Primary->GetRootComponent());
-	}
+	Context.ViewportHeight = (float)Window->GetHeight();
+	Context.ViewportWidth = (float)Window->GetWidth();
 
 	RenderCollector.Collect(Context, RenderBus);
 }
