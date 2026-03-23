@@ -2,6 +2,7 @@
 
 #include "Core/HAL/PlatformTypes.h"
 #include "Core/Math/Matrix.h"
+#include "Renderer/Types/EditorShowFlags.h"
 
 class FSceneView;
 
@@ -28,8 +29,6 @@ enum class EGizmoHighlight : uint8
 
 struct FGizmoDrawData
 {
-    bool bVisible = false;
-
     EGizmoType      GizmoType = EGizmoType::None;
     EGizmoHighlight Highlight = EGizmoHighlight::None;
     FMatrix         Transform;
@@ -38,10 +37,10 @@ struct FGizmoDrawData
 struct FEditorRenderData
 {
     const FSceneView* SceneView = nullptr;
-    bool              bShowGrid = true;
-    bool              bShowWorldAxes = true;
-    bool              bShowGizmo = true;
-    bool              bShowSelectionOutline = true;
-    bool              bShowObjectLabels = true;
-    FGizmoDrawData    Gizmo;
+
+    EEditorShowFlags ShowFlags =
+        EEditorShowFlags::SF_Grid | EEditorShowFlags::SF_WorldAxes | EEditorShowFlags::SF_Gizmo |
+        EEditorShowFlags::SF_SelectionOutline | EEditorShowFlags::SF_ObjectLabels;
+
+    FGizmoDrawData Gizmo;
 };
