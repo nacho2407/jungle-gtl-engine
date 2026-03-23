@@ -34,20 +34,19 @@ void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBu
 void FRenderCollector::CollectFromActor(AActor* Actor, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
 	// Iterate through the components of the actor and retrieve their render properties
-	for (auto* Comp : Actor->GetComponents())
+	for (UActorComponent* Comp : Actor->GetComponents())
 	{
 		if (!Comp) continue;
 		if (!Comp->IsA<UPrimitiveComponent>()) continue;
 		UPrimitiveComponent* Primitive = static_cast<UPrimitiveComponent*>(Comp);
 		CollectFromComponent(Primitive, Context, RenderBus);
-
 	}
 }
 
 void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveComponent, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
 	FRenderCommand Cmd = {};
-	Cmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix(), FColor::White().ToVector4(), 0.f};
+	Cmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix(), FColor::White().ToVector4(), 0.f };
 	if (primitiveComponent->GetRenderCommand(Cmd))
 	{
 		ERenderPass selectedRenderPass = ERenderPass::Opaque;
@@ -63,7 +62,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 				if (Context.ViewMode == EViewMode::Wireframe)
 				{
 					Cmd.PerObjectConstants.IsSelected = 1.0f;
-					Cmd.PerObjectConstants.Color = FColor(255,153,0,255).ToVector4();
+					Cmd.PerObjectConstants.Color = FColor(255, 153, 0, 255).ToVector4();
 				}
 				else
 				{

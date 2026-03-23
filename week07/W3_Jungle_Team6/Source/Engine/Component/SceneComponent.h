@@ -15,6 +15,7 @@ public:
 	~USceneComponent();
 
 	// Parent Relation Manager
+	void AttachToComponent(USceneComponent* InParent);
 	void SetParent(USceneComponent* NewParent);
 	USceneComponent* GetParent() const { return ParentComponent; }
 	void AddChild(USceneComponent* NewChild);
