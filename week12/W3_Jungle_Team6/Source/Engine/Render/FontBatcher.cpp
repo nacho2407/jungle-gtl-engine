@@ -1,8 +1,6 @@
 ﻿#include "FontBatcher.h"
 
-// DirectXTK 라이브러리
-#pragma comment(lib, "DirectXTK.lib")
-#include "ThirdParty/DirectXTK/DDSTextureLoader.h"
+#include "DDSTextureLoader.h"
 #include "Core/CoreTypes.h"
 
 void FFontBatcher::Create(ID3D11Device* InDevice)
