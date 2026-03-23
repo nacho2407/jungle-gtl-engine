@@ -4,8 +4,6 @@
 #include "Renderer/EditorRenderData.h"
 #include "Renderer/Types/AxisColors.h"
 
-// TODO: 기즈모 축 회전
-
 namespace
 {
     bool IsAxisHighlighted(EAxis InAxis, EGizmoHighlight InHighlight)
@@ -28,6 +26,48 @@ namespace
             return true;
         default:
             return false;
+        }
+    }
+
+    FPrimitiveRenderItem MakePrimitiveItem(const FMatrix& InWorld, const FColor& InColor,
+                                           EBasicMeshType InMeshType)
+    {
+        FPrimitiveRenderItem Item = {};
+        Item.World = InWorld;
+        Item.Color = InColor;
+        Item.MeshType = InMeshType;
+        return Item;
+    }
+
+    static constexpr EAxis GizmoAxes[] = {EAxis::X, EAxis::Y, EAxis::Z};
+
+    // 기본 축 메쉬(Cylinder/Cone/Cube 배치)가 로컬 +Z 방향으로 놓여 있다고 가정
+    FMatrix MakeAxisBasis(EAxis InAxis)
+    {
+        switch (InAxis)
+        {
+        case EAxis::X:
+            return FMatrix::MakeFromZ(FVector::ForwardVector); // +Z -> +X
+        case EAxis::Y:
+            return FMatrix::MakeFromZ(FVector::RightVector); // +Z -> +Y
+        case EAxis::Z:
+        default:
+            return FMatrix::MakeFromZ(FVector::UpVector); // +Z -> +Z
+        }
+    }
+
+    // Ring 메쉬가 로컬 XY 평면에 있고 법선이 로컬 +Z 라고 가정
+    FMatrix MakeRingBasis(EAxis InAxis)
+    {
+        switch (InAxis)
+        {
+        case EAxis::X:
+            return FMatrix::MakeFromZ(FVector::ForwardVector); // ring normal -> +X
+        case EAxis::Y:
+            return FMatrix::MakeFromZ(FVector::RightVector); // ring normal -> +Y
+        case EAxis::Z:
+        default:
+            return FMatrix::MakeFromZ(FVector::UpVector); // ring normal -> +Z
         }
     }
 } // namespace
@@ -73,59 +113,89 @@ FColor FGizmoDrawer::ResolveAxisColor(EAxis InAxis, EGizmoHighlight InHighlight)
 void FGizmoDrawer::AddTranslationGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
                                        const FGizmoDrawData&         InGizmoDrawData) const
 {
-    for (int32 AxisIndex = 0; AxisIndex < 3; ++AxisIndex)
+    const FMatrix GizmoFrame = InGizmoDrawData.Frame.GetMatrixWithoutScale();
+
+    for (EAxis Axis : GizmoAxes)
     {
-        const EAxis  Axis = static_cast<EAxis>(AxisIndex);
-        const FColor AxisColor = ResolveAxisColor(Axis, InGizmoDrawData.Highlight);
+        const FColor  AxisColor = ResolveAxisColor(Axis, InGizmoDrawData.Highlight);
+        const FMatrix AxisBasis = MakeAxisBasis(Axis);
 
-        FPrimitiveRenderItem ShaftItem = {};
-        ShaftItem.World = InGizmoDrawData.Transform;
-        ShaftItem.Color = AxisColor;
-        ShaftItem.MeshType = EBasicMeshType::Cylinder;
-        OutPrimitives.push_back(ShaftItem);
+        {
+            const FMatrix LocalScale = FMatrix::MakeScale(FVector(Style.TranslationShaftRadius,
+                                                                  Style.TranslationShaftRadius,
+                                                                  Style.TranslationShaftLength));
 
-        FPrimitiveRenderItem HeadItem = {};
-        HeadItem.World = InGizmoDrawData.Transform;
-        HeadItem.Color = AxisColor;
-        HeadItem.MeshType = EBasicMeshType::Cone;
-        OutPrimitives.push_back(HeadItem);
+            // cylinder 메쉬가 원래 z=0~1 이므로 offset 없음
+            const FMatrix World = LocalScale * AxisBasis * GizmoFrame;
+
+            OutPrimitives.push_back(MakePrimitiveItem(World, AxisColor, EBasicMeshType::Cylinder));
+        }
+
+        {
+            const FMatrix LocalScale =
+                FMatrix::MakeScale(FVector(Style.TranslationHeadRadius, Style.TranslationHeadRadius,
+                                           Style.TranslationHeadLength));
+
+            // cone 메쉬도 원래 z=0~1 이므로 shaft 끝에만 붙이면 됨
+            const FMatrix LocalOffset =
+                FMatrix::MakeTranslation(FVector(0.0f, 0.0f, Style.TranslationShaftLength));
+
+            const FMatrix World = LocalScale * LocalOffset * AxisBasis * GizmoFrame;
+
+            OutPrimitives.push_back(MakePrimitiveItem(World, AxisColor, EBasicMeshType::Cone));
+        }
     }
 }
 
 void FGizmoDrawer::AddRotationGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
                                     const FGizmoDrawData&         InGizmoDrawData) const
 {
-    for (int32 AxisIndex = 0; AxisIndex < 3; ++AxisIndex)
-    {
-        const EAxis  Axis = static_cast<EAxis>(AxisIndex);
-        const FColor AxisColor = ResolveAxisColor(Axis, InGizmoDrawData.Highlight);
+    const FMatrix GizmoFrame = InGizmoDrawData.Frame.GetMatrixWithoutScale();
 
-        FPrimitiveRenderItem RingItem = {};
-        RingItem.World = InGizmoDrawData.Transform;
-        RingItem.Color = AxisColor;
-        RingItem.MeshType = EBasicMeshType::Ring;
-        OutPrimitives.push_back(RingItem);
+    for (EAxis Axis : GizmoAxes)
+    {
+        const FColor  AxisColor = ResolveAxisColor(Axis, InGizmoDrawData.Highlight);
+        const FMatrix RingBasis = MakeRingBasis(Axis);
+
+        const FMatrix LocalScale = FMatrix::MakeScale(
+            FVector(Style.RotationRingRadius, Style.RotationRingRadius, Style.RotationRingRadius));
+
+        const FMatrix World = LocalScale * RingBasis * GizmoFrame;
+
+        OutPrimitives.push_back(MakePrimitiveItem(World, AxisColor, EBasicMeshType::Ring));
     }
 }
 
 void FGizmoDrawer::AddScalingGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
                                    const FGizmoDrawData&         InGizmoDrawData) const
 {
-    for (int32 AxisIndex = 0; AxisIndex < 3; ++AxisIndex)
+    const FMatrix GizmoFrame = InGizmoDrawData.Frame.GetMatrixWithoutScale();
+
+    for (EAxis Axis : GizmoAxes)
     {
-        const EAxis  Axis = static_cast<EAxis>(AxisIndex);
-        const FColor AxisColor = ResolveAxisColor(Axis, InGizmoDrawData.Highlight);
+        const FColor  AxisColor = ResolveAxisColor(Axis, InGizmoDrawData.Highlight);
+        const FMatrix AxisBasis = MakeAxisBasis(Axis);
 
-        FPrimitiveRenderItem ShaftItem = {};
-        ShaftItem.World = InGizmoDrawData.Transform;
-        ShaftItem.Color = AxisColor;
-        ShaftItem.MeshType = EBasicMeshType::Cylinder;
-        OutPrimitives.push_back(ShaftItem);
+        {
+            const FMatrix LocalScale = FMatrix::MakeScale(FVector(
+                Style.ScalingShaftRadius, Style.ScalingShaftRadius, Style.ScalingShaftLength));
 
-        FPrimitiveRenderItem HandleItem = {};
-        HandleItem.World = InGizmoDrawData.Transform;
-        HandleItem.Color = AxisColor;
-        HandleItem.MeshType = EBasicMeshType::Cube;
-        OutPrimitives.push_back(HandleItem);
+            // cylinder가 원점에서 시작하므로 offset 없음
+            const FMatrix World = LocalScale * AxisBasis * GizmoFrame;
+
+            OutPrimitives.push_back(MakePrimitiveItem(World, AxisColor, EBasicMeshType::Cylinder));
+        }
+
+        {
+            const FMatrix LocalScale = FMatrix::MakeScale(
+                FVector(Style.ScalingHandleSize, Style.ScalingHandleSize, Style.ScalingHandleSize));
+
+            const FMatrix LocalOffset =
+                FMatrix::MakeTranslation(FVector(0.0f, 0.0f, Style.ScalingShaftLength));
+
+            const FMatrix World = LocalScale * LocalOffset * AxisBasis * GizmoFrame;
+
+            OutPrimitives.push_back(MakePrimitiveItem(World, AxisColor, EBasicMeshType::Cube));
+        }
     }
 }
