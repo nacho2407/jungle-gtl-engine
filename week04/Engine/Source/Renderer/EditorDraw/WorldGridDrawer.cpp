@@ -11,7 +11,15 @@ void FWorldGridDrawer::Draw(FD3D11LineBatchRenderer& InLineRenderer,
         return;
     }
 
-    InLineRenderer.BeginFrame(InEditorRenderData.SceneView);
-    InLineRenderer.AddGrid(GridHalfLineCount, GridSpacing, GridColor);
-    InLineRenderer.EndFrame();
+    const float Extent = static_cast<float>(GridHalfLineCount) * GridSpacing;
+
+    for (int32 i = -GridHalfLineCount; i <= GridHalfLineCount; ++i)
+    {
+        const float Offset = static_cast<float>(i) * GridSpacing;
+
+        InLineRenderer.AddLine(FVector(-Extent, Offset, 0.0f), FVector(Extent, Offset, 0.0f),
+                               GridColor);
+        InLineRenderer.AddLine(FVector(Offset, -Extent, 0.0f), FVector(Offset, Extent, 0.0f),
+                               GridColor);
+    }
 }
