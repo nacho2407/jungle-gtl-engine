@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include "Core/Paths.h"
+#include "Core/ResourceManager.h"
 #include "Render/Common/RenderTypes.h"
 #include "Render/Mesh/MeshManager.h"
 
@@ -45,7 +46,10 @@ void FRenderer::Create(HWND hWindow)
 	FMeshManager::Initialize();
 
 	LineBatcher.Create(Device.GetDevice());
+
+	// 텍스처는 ResourceManager가 소유 — Batcher는 셰이더/버퍼만 초기화
 	FontBatcher.Create(Device.GetDevice());
+	SubUVBatcher.Create(Device.GetDevice());
 }
 
 void FRenderer::Release()
@@ -65,10 +69,10 @@ void FRenderer::Release()
 
 	LineBatcher.Release();
 	FontBatcher.Release();
+	SubUVBatcher.Release();
 
 	Device.Release();
 }
-
 //	Prepare the rendering state for a new frame. 반드시 Render 이전에 호출되어야 함.
 void FRenderer::BeginFrame()
 {
@@ -76,8 +80,8 @@ void FRenderer::BeginFrame()
 
 	LineBatcher.Clear();
 	FontBatcher.Clear();
+	SubUVBatcher.Clear();
 }
-
 //	Render Update Main function. RenderBus에 담긴 모든 RenderCommand에 대해서 Draw Call 수행
 void FRenderer::Render(const FRenderBus& InRenderBus, ERasterizerState InViewModeRasterizer)
 {
@@ -91,9 +95,6 @@ void FRenderer::Render(const FRenderBus& InRenderBus, ERasterizerState InViewMod
 void FRenderer::RenderOverlay(const FRenderBus& InRenderBus)
 {
 	ID3D11DeviceContext* context = Device.GetDeviceContext();
-
-
-
 	//RenderOverlayPass(context, InRenderBus);
 }
 
@@ -110,7 +111,6 @@ void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceCo
 		{
 			Device.SetRasterizerState(ERasterizerState::SolidBackCull);
 		}
-
 		Device.SetDepthStencilState(EDepthStencilState::Default);
 		Device.SetBlendState(EBlendState::Opaque);
 		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -129,7 +129,6 @@ void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceCo
 			Device.SetRasterizerState(ERasterizerState::SolidFrontCull);
 		}
 		Device.SetBlendState(EBlendState::Opaque);
-
 		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		Resources.OutlineShader.Bind(DeviceContext);
 		break;
@@ -167,7 +166,6 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 		ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
 		Context->VSSetConstantBuffers(1, 1, &cb);
 		//InDeviceContext->PSSetConstantBuffers(0, 1, &cb);
-
 	}
 
 	switch (InCmd.Type)
@@ -175,11 +173,9 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 	case ERenderCommandType::Gizmo:
 		Resources.GizmoShader.Bind(Context);
 		Resources.GizmoPerObjectConstantBuffer.Update(Context, &InCmd.Constants.Gizmo, sizeof(FGizmoConstants));
-
 		{
 			ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
 			Context->VSSetConstantBuffers(1, 1, &cb);
-
 			cb = Resources.GizmoPerObjectConstantBuffer.GetBuffer();
 			Context->VSSetConstantBuffers(2, 1, &cb);
 			Context->PSSetConstantBuffers(2, 1, &cb);
@@ -188,7 +184,6 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 
 	case ERenderCommandType::Overlay:
 		Resources.OverlayConstantBuffer.Update(Context, &InCmd.Constants.Overlay, sizeof(FOverlayConstants));
-
 		{
 			ID3D11Buffer* cb = Resources.OverlayConstantBuffer.GetBuffer();
 			Context->VSSetConstantBuffers(3, 1, &cb);
@@ -198,12 +193,10 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 
 	case ERenderCommandType::DebugBox:
 		Resources.EditorConstantBuffer.Update(Context, &InCmd.Constants.Editor, sizeof(FEditorConstants));
-
 		{
 			ID3D11Buffer* cb = Resources.EditorConstantBuffer.GetBuffer();
 			Context->VSSetConstantBuffers(4, 1, &cb);
 			Context->PSSetConstantBuffers(4, 1, &cb);
-
 			cb = Resources.PerObjectConstantBuffer.GetBuffer();
 			Context->VSSetConstantBuffers(1, 1, &cb);
 			Context->PSSetConstantBuffers(1, 1, &cb);
@@ -212,13 +205,13 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 
 	case ERenderCommandType::SelectionOutline:
 		Resources.OutlineConstantBuffer.Update(Context, &InCmd.Constants.Editor, sizeof(FOutlineConstants));
-
-		ID3D11Buffer* cb = Resources.OutlineConstantBuffer.GetBuffer();
-		Context->VSSetConstantBuffers(5, 1, &cb);
-		Context->PSSetConstantBuffers(5, 1, &cb);
-
-		cb = Resources.PerObjectConstantBuffer.GetBuffer();
-		Context->VSSetConstantBuffers(1, 1, &cb);
+		{
+			ID3D11Buffer* cb = Resources.OutlineConstantBuffer.GetBuffer();
+			Context->VSSetConstantBuffers(5, 1, &cb);
+			Context->PSSetConstantBuffers(5, 1, &cb);
+			cb = Resources.PerObjectConstantBuffer.GetBuffer();
+			Context->VSSetConstantBuffers(1, 1, &cb);
+		}
 		break;
 	}
 }
@@ -227,7 +220,7 @@ EDepthStencilState FRenderer::GetDefaultDepthForPass(ERenderPass Pass) const
 {
 	switch (Pass)
 	{
-	case ERenderPass::Opaque:	 return EDepthStencilState::Default;
+	case ERenderPass::Opaque:    return EDepthStencilState::Default;
 	case ERenderPass::Outline:   return EDepthStencilState::StencilOutline;
 	case ERenderPass::DepthLess: return EDepthStencilState::Default;
 	case ERenderPass::Editor:    return EDepthStencilState::Default;
@@ -292,6 +285,10 @@ void FRenderer::RenderPasses(const FRenderBus& RenderBus, ID3D11DeviceContext* C
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
 	{
 		ERenderPass CurPass = static_cast<ERenderPass>(i);
+
+		// Font / SubUV 패스는 Batcher가 처리 — 일반 DrawCommand 루프에서 제외
+		if (CurPass == ERenderPass::Font || CurPass == ERenderPass::SubUV) continue;
+
 		const auto& Commands = RenderBus.GetCommands(CurPass);
 		if (Commands.empty()) continue;
 
@@ -318,6 +315,7 @@ void FRenderer::RenderPasses(const FRenderBus& RenderBus, ID3D11DeviceContext* C
 
 void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceContext* Context)
 {
+	// --- AABB 디버그 박스 (LineBatcher) ---
 	const auto& EditorCmds = RenderBus.GetCommands(ERenderPass::Editor);
 	for (const auto& Cmd : EditorCmds)
 	{
@@ -327,19 +325,42 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 		}
 	}
 
-	//임시 구현
+	// --- Font 패스 → FontBatcher ---
+	const auto& FontCmds = RenderBus.GetCommands(ERenderPass::Font);
+	for (const auto& Cmd : FontCmds)
 	{
-		const auto& TranslucentCmds = RenderBus.GetCommands(ERenderPass::Translucent);
-		for (auto& Cmd : TranslucentCmds)
+		if (Cmd.Type == ERenderCommandType::Font && !Cmd.TextData.empty())
 		{
-			if (Cmd.Type == ERenderCommandType::Billboard)
-			{
-				FontBatcher.AddText(Cmd.TextData, Cmd.PerObjectConstants.Model.GetLocation(), RenderBus.GetCameraRight(), RenderBus.GetCameraUp());
-			}
+			FontBatcher.AddText(
+				Cmd.TextData,
+				Cmd.PerObjectConstants.Model.GetLocation(),
+				RenderBus.GetCameraRight(),
+				RenderBus.GetCameraUp(),
+				Cmd.SpriteSize.X // FontSize
+			);
 		}
 	}
 
+	// --- SubUV 패스 → SubUVBatcher ---
+	const auto& SubUVCmds = RenderBus.GetCommands(ERenderPass::SubUV);
+	for (const auto& Cmd : SubUVCmds)
+	{
+		if (Cmd.Type == ERenderCommandType::SubUV && Cmd.AtlasResource)
+		{
+			SubUVBatcher.AddSprite(
+				Cmd.PerObjectConstants.Model.GetLocation(),
+				RenderBus.GetCameraRight(),
+				RenderBus.GetCameraUp(),
+				Cmd.FrameIndex,
+				Cmd.AtlasResource->Columns,
+				Cmd.AtlasResource->Rows,
+				Cmd.SpriteSize.X,
+				Cmd.SpriteSize.Y
+			);
+		}
+	}
 
+	// --- Editor 렌더 상태 설정 ---
 	Device.SetDepthStencilState(EDepthStencilState::Default);
 	Device.SetBlendState(EBlendState::Opaque);
 
@@ -360,8 +381,26 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 
 	LineBatcher.Flush(Context);
 
+	// --- FontBatcher Flush ---
+	// SRV는 ResourceManager 소유 리소스에서 가져옴
+	Device.SetDepthStencilState(EDepthStencilState::Default);
+	Device.SetBlendState(EBlendState::AlphaBlend);
 
-	FontBatcher.Flush(Context);
+	const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
+	FontBatcher.Flush(Context, FontRes);
+
+	// --- SubUVBatcher Flush ---
+	// 단일 아틀라스 기준: 커맨드에서 첫 번째 유효한 SRV를 사용
+	ID3D11ShaderResourceView* SubUVSRV = nullptr;
+	for (const auto& Cmd : SubUVCmds)
+	{
+		if (Cmd.AtlasResource && Cmd.AtlasResource->IsLoaded())
+		{
+			SubUVSRV = Cmd.AtlasResource->SRV;
+			break;
+		}
+	}
+	SubUVBatcher.Flush(Context, SubUVSRV);
 }
 
 void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix)

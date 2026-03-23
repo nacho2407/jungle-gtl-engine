@@ -29,7 +29,9 @@ enum class EPrimitiveType
 	EPT_ScaleGizmo,
 	EPT_Axis,
 	EPT_Grid,
-	EPT_MouseOverlay
+	EPT_MouseOverlay,
+	EPT_Text,		// TextRenderComponent — MeshBuffer 없음, FontBatcher가 처리
+	EPT_SubUV,		// SubUVComponent     — MeshBuffer 없음, SubUVBatcher가 처리
 };
 
 enum class ERenderPass : uint32
@@ -38,8 +40,10 @@ enum class ERenderPass : uint32
 	Translucent,
 	Editor,
 	Grid,
-	Outline,        
-	DepthLess,      
-	Overlay,        
-	MAX             
+	Outline,
+	DepthLess,
+	Overlay,
+	Font,			// TextRenderComponent → FontBatcher 경유
+	SubUV,			// SubUVComponent     → SubUVBatcher 경유
+	MAX
 };

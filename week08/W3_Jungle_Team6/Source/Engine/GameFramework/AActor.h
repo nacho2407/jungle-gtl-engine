@@ -13,7 +13,7 @@ public:
 	~AActor() override;
 
 	virtual void BeginPlay() {}
-	virtual void Tick(float DeltaTime) {}
+	virtual void Tick(float DeltaTime);
 	virtual void EndPlay() {}
 
 	template<typename T>

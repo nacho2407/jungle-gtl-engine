@@ -11,6 +11,7 @@
 #include "Render/Resource/RenderResources.h"
 #include "Render/LineBatcher.h"
 #include "Render/FontBatcher.h"
+#include "Render/SubUVBatcher.h"
 
 #include <cstddef>
 
@@ -19,9 +20,9 @@ class FRenderer
 private:
 	FD3DDevice Device;
 	FRenderResources Resources;
-	FLineBatcher LineBatcher;
-	FFontBatcher FontBatcher;
-
+	FLineBatcher   LineBatcher;
+	FFontBatcher   FontBatcher;
+	FSubUVBatcher  SubUVBatcher;
 
 	//	Primitive and Gizmo Input Layout
 	D3D11_INPUT_ELEMENT_DESC PrimitiveInputLayout[2] =
