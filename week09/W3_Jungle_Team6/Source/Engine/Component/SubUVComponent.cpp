@@ -1,7 +1,6 @@
 #include "SubUVComponent.h"
 
 #include "Core/ResourceManager.h"
-#include "Render/Scene/RenderCommand.h"
 
 DEFINE_CLASS(USubUVComponent, UPrimitiveComponent)
 REGISTER_FACTORY(USubUVComponent)
@@ -28,15 +27,3 @@ void USubUVComponent::TickComponent(float DeltaTime)
 	}
 }
 
-bool USubUVComponent::GetRenderCommand(FRenderCommand& OutCommand)
-{
-	if (!bIsVisible) return false;
-	if (!CachedParticle || !CachedParticle->IsLoaded()) return false;
-
-	OutCommand.Type = ERenderCommandType::SubUV;
-	OutCommand.PerObjectConstants.Model = GetWorldMatrix();
-	OutCommand.AtlasResource = CachedParticle;
-	OutCommand.FrameIndex    = FrameIndex;
-	OutCommand.SpriteSize    = { Width, Height };
-	return true;
-}
