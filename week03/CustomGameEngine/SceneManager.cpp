@@ -113,6 +113,12 @@ void SceneManager::UnloadScene(UScene* targetScene)
 
 	delete sceneToUnload;
 	LoadedScenes.erase(sceneIt);
+
+	if (LoadedScenes.empty())
+	{
+		UE_LOG("No scenes remained after deletion.\n");
+		NewScene();
+	}
 }
 
 void SceneManager::RemoveSceneComponent(USceneComponent* toDespawn, UScene* targetScene)
