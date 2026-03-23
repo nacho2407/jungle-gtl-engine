@@ -12,8 +12,23 @@ static const FVertexSimple cube_vertices[] = {
 };
 
 static const uint16_t cube_indices[] = {
-    4, 6, 5, 4, 7, 6, 0, 1, 2, 0, 2, 3, 0, 7, 4, 0, 3, 7,
-    1, 6, 2, 1, 5, 6, 3, 6, 7, 3, 2, 6, 0, 5, 1, 0, 4, 5,
+    4, 5, 6,
+    4, 6, 7,
+
+    0, 2, 1,
+    0, 3, 2,
+
+    0, 4, 7,
+    0, 7, 3,
+
+    1, 2, 6,
+    1, 6, 5,
+
+    3, 7, 6,
+    3, 6, 2,
+
+    0, 1, 5,
+    0, 5, 4,
 };
 
 static constexpr EMeshPrimitiveTopology cube_topology = EMeshPrimitiveTopology::TriangleList;
