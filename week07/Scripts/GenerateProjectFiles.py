@@ -58,8 +58,11 @@ INCLUDE_PATHS = [
 ]
 
 # Library paths (relative to project dir)
-LIBRARY_PATHS = [
-    "ThirdParty\\DirectXTK\\Library",
+LIBRARY_PATHS = []
+
+# NuGet packages (id, version) — restored via packages.config
+NUGET_PACKAGES = [
+    ("directxtk_desktop_win10", "2025.10.28.2"),
 ]
 
 NS = "http://schemas.microsoft.com/developer/msbuild/2003"
@@ -221,7 +224,7 @@ def generate_vcxproj(files: dict[str, list[str]]):
 
     # OutDir, IntDir, IncludePath, LibraryPath, WorkingDirectory for all configurations
     include_path_value = ";".join(INCLUDE_PATHS) + ";$(IncludePath)"
-    library_path_value = ";".join(LIBRARY_PATHS) + ";$(LibraryPath)"
+    library_path_value = ";".join(LIBRARY_PATHS) + ";$(LibraryPath)" if LIBRARY_PATHS else "$(LibraryPath)"
     for cfg, plat in CONFIGURATIONS:
         cond = f"'$(Configuration)|$(Platform)'=='{cfg}|{plat}'"
         pg = ET.SubElement(proj, "PropertyGroup", Condition=cond)
@@ -299,7 +302,33 @@ def generate_vcxproj(files: dict[str, list[str]]):
             ET.SubElement(ig, "None", Include=f)
 
     ET.SubElement(proj, "Import", Project="$(VCTargetsPath)\\Microsoft.Cpp.targets")
-    ET.SubElement(proj, "ImportGroup", Label="ExtensionTargets")
+
+    # NuGet package imports
+    if NUGET_PACKAGES:
+        ext_targets = ET.SubElement(proj, "ImportGroup", Label="ExtensionTargets")
+        for pkg_id, pkg_ver in NUGET_PACKAGES:
+            targets_path = f"packages\\{pkg_id}.{pkg_ver}\\build\\native\\{pkg_id}.targets"
+            ET.SubElement(ext_targets, "Import",
+                          Project=targets_path,
+                          Condition=f"Exists('{targets_path}')")
+
+        # EnsureNuGetPackageBuildImports target
+        ensure = ET.SubElement(proj, "Target",
+                               Name="EnsureNuGetPackageBuildImports",
+                               BeforeTargets="PrepareForBuild")
+        pg = ET.SubElement(ensure, "PropertyGroup")
+        ET.SubElement(pg, "ErrorText").text = (
+            "This project references NuGet package(s) that are missing on this computer. "
+            "Use NuGet Package Restore to download them.  For more information, see "
+            "http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}."
+        )
+        for pkg_id, pkg_ver in NUGET_PACKAGES:
+            targets_path = f"packages\\{pkg_id}.{pkg_ver}\\build\\native\\{pkg_id}.targets"
+            ET.SubElement(ensure, "Error",
+                          Condition=f"!Exists('{targets_path}')",
+                          Text=f"$([System.String]::Format('$(ErrorText)', '{targets_path}'))")
+    else:
+        ET.SubElement(proj, "ImportGroup", Label="ExtensionTargets")
 
     write_xml(proj, PROJECT_DIR / f"{PROJECT_NAME}.vcxproj")
 
