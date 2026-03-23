@@ -1,4 +1,5 @@
 #include "GameFramework/AActor.h"
+#include "Component/PrimitiveComponent.h"
 
 DEFINE_CLASS(AActor, UObject)
 REGISTER_FACTORY(AActor)
@@ -36,6 +37,7 @@ void AActor::RegisterComponent(UActorComponent* Comp) {
 	if (it == OwnedComponents.end()) {
 		Comp->SetOwner(this);
 		OwnedComponents.push_back(Comp);
+		bPrimitiveCacheDirty = true;
 	}
 }
 
@@ -43,8 +45,10 @@ void AActor::RemoveComponent(UActorComponent* Component) {
 	if (!Component) return;
 
 	auto it = std::find(OwnedComponents.begin(), OwnedComponents.end(), Component);
-	if (it != OwnedComponents.end())
+	if (it != OwnedComponents.end()) {
 		OwnedComponents.erase(it);
+		bPrimitiveCacheDirty = true;
+	}
 
 	// RootComponent가 제거되면 nullptr로
 	if (RootComponent == Component)
@@ -71,4 +75,21 @@ void AActor::SetActorLocation(const FVector& NewLocation) {
 	if (RootComponent) {
 		RootComponent->SetWorldLocation(NewLocation);
 	}
+}
+
+const TArray<UPrimitiveComponent*>& AActor::GetPrimitiveComponents() const
+{
+	if (bPrimitiveCacheDirty)
+	{
+		PrimitiveCache.clear();
+		for (UActorComponent* Comp : OwnedComponents)
+		{
+			if (Comp && Comp->IsA<UPrimitiveComponent>())
+			{
+				PrimitiveCache.emplace_back(static_cast<UPrimitiveComponent*>(Comp));
+			}
+		}
+		bPrimitiveCacheDirty = false;
+	}
+	return PrimitiveCache;
 }
