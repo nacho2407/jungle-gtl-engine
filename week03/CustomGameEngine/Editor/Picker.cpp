@@ -18,7 +18,7 @@ UPicker::~UPicker()
 {
 }
 
-void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene)
+void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene, bool bMultiSelect)
 {
 	Ray ray = CameraPtr->ScreenPointToRay(ScreenX, ScreenY);
 
@@ -66,7 +66,11 @@ void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene)
 	else
 	{
 		//씬 오브젝트가 picking되지 않은 경우
-		EditorPtr->SelectComponent(nullptr);
+		if (!bMultiSelect)
+		{
+			//컨트롤 키가 눌리지 않았으니 선택 해제
+			EditorPtr->SelectComponent(nullptr);
+		}
 		Scene->IsCompSelected = false;
 	}
 }

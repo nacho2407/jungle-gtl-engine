@@ -44,6 +44,8 @@ public:
 	URenderer* GetRenderer() const { return Renderer; }
 	void SetCamera(UCameraComponent* camera) { Camera = camera; }
 	void SetGrid(UGridComp* grid);
+
+	//picking
 	void SelectComponent(USceneComponent* component);
 	USceneComponent* GetSelectedComponent() const { return SelectedComponent; }
 
@@ -72,6 +74,7 @@ private:
 	URenderer* Renderer = nullptr;
 	UCameraComponent* Camera = nullptr;
 	USceneComponent* SelectedComponent = nullptr;
+	TArray<USceneComponent*> SelectedComponents;
 	UGridComp* Grid = nullptr;
 	bool bDockLayoutInitialized = false;
 	bool bUseDefaultDockLayout = true;
