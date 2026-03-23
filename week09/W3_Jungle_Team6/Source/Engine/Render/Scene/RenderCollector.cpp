@@ -45,13 +45,12 @@ void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBu
 void FRenderCollector::CollectFromActor(AActor* Actor, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
 	// Iterate through the components of the actor and retrieve their render properties
-	for (auto* Comp : Actor->GetComponents())
+	for (UActorComponent* Comp : Actor->GetComponents())
 	{
 		if (!Comp) continue;
 		if (!Comp->IsA<UPrimitiveComponent>()) continue;
 		UPrimitiveComponent* Primitive = static_cast<UPrimitiveComponent*>(Comp);
 		CollectFromComponent(Primitive, Context, RenderBus);
-
 	}
 }
 

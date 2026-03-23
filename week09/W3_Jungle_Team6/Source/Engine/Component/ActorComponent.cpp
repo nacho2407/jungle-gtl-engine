@@ -48,3 +48,10 @@ void UActorComponent::SetActive(bool bNewActive)
 		Deactivate();
 	}
 }
+
+void UActorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+	//OutProps.push_back({ "Active", EPropertyType::Bool, &bIsActive });
+	//OutProps.push_back({ "Auto Activate", EPropertyType::Bool, &bAutoActivate });
+	//OutProps.push_back({ "Can Ever Tick", EPropertyType::Bool, &bCanEverTick });
+}
