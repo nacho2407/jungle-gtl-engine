@@ -60,7 +60,27 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderColl
 	{
 		// MeshBuffer가 없는 Batcher 처리 타입은 아웃라인 렌더에서 제외
 		EPrimitiveType PrimType = primitiveComponent->GetPrimitiveType();
-		if (PrimType == EPrimitiveType::EPT_Text || PrimType == EPrimitiveType::EPT_SubUV) continue;
+		if (primitiveComponent->IsA<USubUVComponent>()) return;
+		if (Context.ShowFlags.bBillboardText && PrimType == EPrimitiveType::EPT_Text)
+		{
+			UTextRenderComponent* TextComp = static_cast<UTextRenderComponent*>(primitiveComponent);
+			const FFontResource* Font = TextComp->GetFont();
+			if (!Font || !Font->IsLoaded()) return;
+			const FString& Text = TextComp->GetText();
+			if (Text.empty()) return;
+
+			FRenderCommand TextCmd{};
+			TextCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
+			TextCmd.Type = ERenderCommandType::Font;
+			TextCmd.PerObjectConstants.Color = TextComp->GetColor();
+			TextCmd.TextData = Text;
+			TextCmd.AtlasResource = Font;
+			TextCmd.SpriteSize.X = TextComp->GetFontSize();
+			TextCmd.BlendState = EBlendState::AlphaBlend;
+			TextCmd.DepthStencilState = EDepthStencilState::Default;
+			RenderBus.AddCommand(ERenderPass::Font, TextCmd);
+			continue;
+		}
 
 		FRenderCommand BaseCmd{};
 		BaseCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
@@ -101,7 +121,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 	if (!Primitive->IsVisible()) return;
 
 	FRenderCommand Cmd = {};
-	Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4()};
+	Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
 	ERenderPass TargetPass = ERenderPass::Opaque;
 
 	switch (Primitive->GetPrimitiveType())
@@ -118,47 +138,6 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		break;
 	}
 
-	case EPrimitiveType::EPT_Quad: // Billboard
-	{
-		if (!Context.ShowFlags.bBillboardText) return;
-		Cmd.Type = ERenderCommandType::Billboard;
-		Cmd.BlendState = EBlendState::AlphaBlend;
-		Cmd.DepthStencilState = EDepthStencilState::Default;
-		Cmd.TextData = "Hello Jungle";
-		TargetPass = ERenderPass::Translucent;
-		break;
-	}
-
-	case EPrimitiveType::EPT_Text:
-	{
-		if (!Context.ShowFlags.bBillboardText) return;
-
-		// 선택된 액터의 컴포넌트만 UUID 텍스트 표시
-		AActor* Owner = Primitive->GetOwner();
-		bool bOwnerSelected = false;
-		for (AActor* Selected : Context.SelectedActors)
-		{
-			if (Selected == Owner) { bOwnerSelected = true; break; }
-		}
-		if (!bOwnerSelected) return;
-
-		UTextRenderComponent* TextComp = static_cast<UTextRenderComponent*>(Primitive);
-		const FFontResource* Font = TextComp->GetFont();
-		if (!Font || !Font->IsLoaded()) return;
-		const FString& Text = TextComp->GetText();
-		if (Text.empty()) return;
-
-		Cmd.Type = ERenderCommandType::Font;
-		Cmd.PerObjectConstants.Color = TextComp->GetColor();
-		Cmd.TextData     = Text;
-		Cmd.AtlasResource = Font;
-		Cmd.SpriteSize.X = TextComp->GetFontSize();
-		Cmd.BlendState = EBlendState::AlphaBlend;
-		Cmd.DepthStencilState = EDepthStencilState::Default;
-		TargetPass = ERenderPass::Font;
-		break;
-	}
-
 	case EPrimitiveType::EPT_SubUV:
 	{
 		USubUVComponent* SubUVComp = static_cast<USubUVComponent*>(Primitive);
@@ -167,8 +146,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 
 		Cmd.Type = ERenderCommandType::SubUV;
 		Cmd.AtlasResource = Particle;
-		Cmd.FrameIndex    = SubUVComp->GetFrameIndex();
-		Cmd.SpriteSize    = { SubUVComp->GetWidth(), SubUVComp->GetHeight() };
+		Cmd.FrameIndex = SubUVComp->GetFrameIndex();
+		Cmd.SpriteSize = { SubUVComp->GetWidth(), SubUVComp->GetHeight() };
 		Cmd.BlendState = EBlendState::AlphaBlend;
 		Cmd.DepthStencilState = EDepthStencilState::Default;
 		TargetPass = ERenderPass::SubUV;
@@ -184,7 +163,6 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 
 void FRenderCollector::CollectFromEditor(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
-
 	CollectGizmo(Context, RenderBus);
 	CollectMouseOverlay(Context, RenderBus);
 }
