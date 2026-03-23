@@ -13,7 +13,7 @@ namespace Engine::ApplicationCore
         D,
         E,
         Q,
-        //Delete,
+        Delete,
         //LeftCtrl,
         //LeftShift,
         //LeftAlt,

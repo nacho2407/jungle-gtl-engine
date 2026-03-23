@@ -79,6 +79,9 @@
     <Filter Include="Source\Engine\ViewPort">
       <UniqueIdentifier>{3f58abac-aa9e-06f1-348e-4d37ab560ccd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\SceneIO">
+      <UniqueIdentifier>{c8f6ad36-c318-4f5b-b6e5-e15ff8b4ebd2}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Renderer\D3D11">
       <UniqueIdentifier>{7d49e81e-9894-3ffe-a35e-b64d3056e0ba}</UniqueIdentifier>
     </Filter>
@@ -198,6 +201,9 @@
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\UnknownComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\EngineStatics.cpp">
       <Filter>Source\Engine</Filter>
     </ClCompile>
@@ -207,8 +213,20 @@
     <ClCompile Include="Source\Engine\Game\CubeActor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Game\UnknownActor.cpp">
+      <Filter>Source\Engine\Game</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Scene.cpp">
       <Filter>Source\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\SceneIO\SceneJson.cpp">
+      <Filter>Source\Engine\SceneIO</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\SceneIO\SceneSerializer.cpp">
+      <Filter>Source\Engine\SceneIO</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\SceneIO\SceneTypeRegistry.cpp">
+      <Filter>Source\Engine\SceneIO</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp">
       <Filter>Source\Engine\ViewPort</Filter>
@@ -261,9 +279,6 @@
       <Filter>Resources\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="Resources\Mesh\Ring.h">
-      <Filter>Resources\Mesh</Filter>
-    </ClInclude>
-    <ClInclude Include="Resources\Mesh\ring_highpoly.h">
       <Filter>Resources\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="Resources\Mesh\Sphere.h">
@@ -452,13 +467,13 @@
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.h">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\FontComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\SceneComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\UnknownComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\EngineStatics.h">
@@ -470,8 +485,20 @@
     <ClInclude Include="Source\Engine\Game\CubeActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Game\UnknownActor.h">
+      <Filter>Source\Engine\Game</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Scene.h">
       <Filter>Source\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\SceneIO\SceneJson.h">
+      <Filter>Source\Engine\SceneIO</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\SceneIO\SceneSerializer.h">
+      <Filter>Source\Engine\SceneIO</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\SceneIO\SceneTypeRegistry.h">
+      <Filter>Source\Engine\SceneIO</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\ViewPort\Viewport.h">
       <Filter>Source\Engine\ViewPort</Filter>

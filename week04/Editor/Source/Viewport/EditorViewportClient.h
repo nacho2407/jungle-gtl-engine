@@ -42,6 +42,9 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
 
     FViewportCamera& GetCamera() { return ViewportCamera; }
 
+private:
+    void DrawOutline();
+
   private:
     FScene* CurScene = nullptr;
 
