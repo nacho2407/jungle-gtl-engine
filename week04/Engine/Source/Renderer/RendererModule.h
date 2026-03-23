@@ -27,7 +27,11 @@ class ENGINE_API FRendererModule
     void BeginFrame();
     void EndFrame();
 
+    // swap chain과 back buffer를 현재 창 크기에 다시 맞춥니다.
     void OnWindowResized(int32 InWidth, int32 InHeight);
+    // live resize 중에는 VSync를 잠시 끄고, 종료 후 원래 상태로 복구할 수 있게 노출한 얇은 래퍼입니다.
+    void SetVSyncEnabled(bool bInVSyncEnabled);
+    bool IsVSyncEnabled() const;
 
     void Render(const FEditorRenderData& InEditorRenderData,
                 const FSceneRenderData&  InSceneRenderData);

@@ -1,6 +1,8 @@
 #pragma once
 
+#include "Chrome/EditorChrome.h"
 #include "EditorContext.h"
+#include "Menu/EditorMenuRegistry.h"
 #include "Core/CoreMinimal.h"
 
 #include "ApplicationCore/Input/InputRouter.h"
@@ -16,60 +18,61 @@
 #include "Renderer/SceneView.h"
 
 class FPanelManager;
+struct FPanelDescriptor;
 
 class FEditor
 {
   public:
-    /* Default Functions */
     void Create();
     void Release();
 
     void Initialize();
     void Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* InputSystem);
+    void SetChromeHost(IEditorChromeHost* InChromeHost);
 
     void OnWindowResized(float Width, float Height);
-    void SetMainLoopFPS(float FPS) { CurFPS = FPS; }
+    void SetMainLoopFPS(float FPS)
+    {
+        CurFPS = FPS;
+        EditorContext.CurrentFPS = FPS;
+    }
 
-    /* From Panel */
     void CreateNewScene();
     void ClearScene();
 
-    /* For Render */
     const FEditorRenderData& GetEditorRenderData() const { return EditorRenderData; }
-    const FSceneRenderData&  GetSceneRenderData() const { return SceneRenderData; }
+    const FSceneRenderData& GetSceneRenderData() const { return SceneRenderData; }
 
-    /* For Panel */
     void DrawPanel();
 
   private:
     void BuildRenderData();
     void BuildSceneView();
+    // 커스텀 타이틀바 아래 전체 영역을 도킹 가능한 루트 dockspace로 사용합니다.
+    void DrawRootDockSpace();
+    void DrawAboutPopup();
+    void RequestAboutPopup();
+    void RegisterDefaultCommands();
+    void RegisterDefaultMenus();
+    void RegisterWindowPanelCommand(const FPanelDescriptor& Descriptor);
 
-  public:
   private:
-    /* Viewports */
-    // FEditorViewport MainViewport;
     FEditorViewportClient ViewportClient;
-
-    /* Input Contexts */
     FEditorContext EditorContext;
-
-    /* Panel */
     FPanelManager* PanelManager = nullptr;
+    FEditorChrome EditorChrome;
+    FEditorMenuRegistry MenuRegistry;
+    IEditorChromeHost* ChromeHost = nullptr;
 
-    /* Render Datas */
     FEditorRenderData EditorRenderData;
-    FSceneRenderData  SceneRenderData;
-    FSceneView        SceneView;
+    FSceneRenderData SceneRenderData;
+    FSceneView SceneView;
 
-    /* Gizmo */
-
-    /* Scene */
     FScene* CurScene = nullptr;
 
-    /* Properties */
     float WindowWidth = 0.0f;
     float WindowHeight = 0.0f;
-
-    float CurFPS = 0.0f; //  Panel에 Display
+    float CurFPS = 0.0f;
+    bool bRequestOpenAboutPopup = false;
+    bool bAboutPopupOpen = false;
 };
