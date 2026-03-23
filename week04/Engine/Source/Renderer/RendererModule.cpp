@@ -19,7 +19,6 @@ bool FRendererModule::StartupModule(HWND hWnd)
         return false;
     }
 
-
 #if defined(_DEBUG)
     if (RHI.GetDevice() != nullptr)
     {
@@ -57,7 +56,7 @@ void FRendererModule::BeginFrame()
 {
     RHI.BeginFrame();
 
-    static const FLOAT ClearColor[4] = {1.0f, 0.0f, 0.0f, 1.0f};
+    static const FLOAT ClearColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 
     RHI.SetDefaultRenderTargets();
     RHI.Clear(ClearColor, 1.0f, 0);
@@ -76,15 +75,20 @@ void FRendererModule::OnWindowResized(int32 InWidth, int32 InHeight)
 }
 
 void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
-                                  const FSceneRenderData&  InSceneRenderData)
+                             const FSceneRenderData&  InSceneRenderData)
 {
     // Scene
     MeshRenderer.Render(InSceneRenderData);
+    // GizmoDrawer.Draw(InSceneRenderData.Primitives, InEditorRenderData);
 
-    //// Editor Overlay (Grid -> World Axes -> Gizmo)
-    // WorldGridDrawer.Draw(LineRenderer, InEditorRenderData);
-    // WorldAxesDrawer.Draw(LineRenderer, InEditorRenderData);
-    // GizmoDrawer.Draw(MeshRenderer, InEditorRenderData);
+    // Editor Overlay (grouped by renderer type, then flush once per renderer)
+    if (InEditorRenderData.SceneView != nullptr)
+    {
+        LineRenderer.BeginFrame(InEditorRenderData.SceneView);
+        WorldGridDrawer.Draw(LineRenderer, InEditorRenderData);
+        WorldAxesDrawer.Draw(LineRenderer, InEditorRenderData);
+        LineRenderer.EndFrame();
+    }
 }
 
 bool FRendererModule::TryConsumePickResult(uint32& OutPickId)
