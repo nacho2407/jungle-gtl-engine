@@ -179,13 +179,14 @@ void FMeshManager::CreateSphere(int slices, int stacks)
             uint32 first = i * (slices + 1) + j;
             uint32 second = first + slices + 1;
 
+            // 구 표면의 외곽이 front face가 되도록 winding을 맞춘다.
             indices.push_back(first);
-            indices.push_back(first + 1);
             indices.push_back(second);
+            indices.push_back(first + 1);
 
             indices.push_back(second);
-            indices.push_back(first + 1);
             indices.push_back(second + 1);
+            indices.push_back(first + 1);
         }
     }
 }
