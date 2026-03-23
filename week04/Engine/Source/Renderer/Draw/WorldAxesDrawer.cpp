@@ -1,10 +1,4 @@
-#include "Renderer/EditorDraw/WorldAxesDrawer.h"
-
-#include "Renderer/D3D11/D3D11LineBatchRenderer.h"
-#include "Renderer/EditorRenderData.h"
-#include "Renderer/Types/AxisColors.h"
-
-#include "Renderer/EditorDraw/WorldAxesDrawer.h"
+#include "Renderer/Draw/WorldAxesDrawer.h"
 
 #include "Renderer/D3D11/D3D11LineBatchRenderer.h"
 #include "Renderer/EditorRenderData.h"
@@ -13,7 +7,8 @@
 void FWorldAxesDrawer::Draw(FD3D11LineBatchRenderer& InLineRenderer,
                             const FEditorRenderData& InEditorRenderData)
 {
-    if (!InEditorRenderData.bShowWorldAxes || InEditorRenderData.SceneView == nullptr)
+    if (!IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_WorldAxes) ||
+        InEditorRenderData.SceneView == nullptr)
     {
         return;
     }

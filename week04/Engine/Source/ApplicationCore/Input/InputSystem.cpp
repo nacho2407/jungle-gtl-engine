@@ -83,9 +83,9 @@ namespace Engine::ApplicationCore
 
     void FInputSystem::UpdateModifiers()
     {
-        State.Modifiers.bCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
-        State.Modifiers.bShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-        State.Modifiers.bAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
+        State.Modifiers.bCtrlDown = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+        State.Modifiers.bShiftDown = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+        State.Modifiers.bAltDown = (GetKeyState(VK_MENU) & 0x8000) != 0;
     }
 
     LRESULT FInputSystem::ProcessWin32Message(HWND HWnd, UINT Msg, WPARAM WParam, LPARAM LParam)

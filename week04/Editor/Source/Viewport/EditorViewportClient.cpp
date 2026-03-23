@@ -1,5 +1,6 @@
 #include "Viewport/EditorViewportClient.h"
 #include "ApplicationCore/Input/InputRouter.h"
+#include "Engine/Scene.h"
 
 void FEditorViewportClient::Create()
 {
@@ -26,6 +27,17 @@ void FEditorViewportClient::Release()
         delete InputRouter;
         InputRouter = nullptr;
     }
+}
+
+void FEditorViewportClient::Initialize(FScene* Scene, uint32 ViewportWidth, uint32 ViewportHeight)
+{
+    CurScene = Scene;
+    
+    ViewportCamera.OnResize(ViewportWidth, ViewportHeight);
+    
+    SelectionController.SetActors(Scene->GetActors());
+    SelectionController.SetCamera(&ViewportCamera);
+    SelectionController.SetViewportSize(ViewportWidth, ViewportHeight);
 }
 
 void FEditorViewportClient::Tick(float DeltaTime, const Engine::ApplicationCore::FInputState& State)
@@ -58,13 +70,6 @@ void FEditorViewportClient::HandleInputEvent(const Engine::ApplicationCore::FInp
 
 void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData) const
 {
-    OutRenderData.bShowGrid = true;
-    OutRenderData.bShowWorldAxes = true;
-    OutRenderData.bShowGizmo = true;
-    OutRenderData.bShowSelectionOutline = true;
-    OutRenderData.bShowObjectLabels = true;
-
-    OutRenderData.Gizmo.bVisible = true;
     OutRenderData.Gizmo.GizmoType = EGizmoType::Translation;
     OutRenderData.Gizmo.Highlight = EGizmoHighlight::None;
     OutRenderData.Gizmo.Transform = FMatrix::Identity;
@@ -73,4 +78,6 @@ void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData) co
 void FEditorViewportClient::OnResize(uint32 Width, uint32 Height)
 {
     ViewportCamera.OnResize(Width, Height);
+    
+    SelectionController.SetViewportSize(Width, Height);
 }

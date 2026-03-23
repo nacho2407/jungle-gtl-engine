@@ -2,6 +2,7 @@
 
 #include "Core/CoreMinimal.h"
 #include "Camera/ViewportCamera.h"
+#include "Engine/ViewPort/ViewportController.h"
 
 /*
         카메라/뷰 이동 계층
@@ -11,7 +12,7 @@
 
 */
 
-class FViewportNavigationController
+class FViewportNavigationController : public Engine::Viewport::IViewportController
 {
   public:
     void SetCamera(FViewportCamera* InCamera) { ViewportCamera = InCamera; }

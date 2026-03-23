@@ -233,6 +233,86 @@ bool FD3D11DynamicRHI::CreateVertexShaderAndInputLayout(
     return true;
 }
 
+bool FD3D11DynamicRHI::CreateVertexBuffer(const void* InData, uint32 InByteWidth, uint32 InStride,
+                                          bool bDynamic, ID3D11Buffer** OutVertexBuffer) const
+{
+    if (Device == nullptr || OutVertexBuffer == nullptr || InByteWidth == 0 || InStride == 0)
+    {
+        return false;
+    }
+
+    *OutVertexBuffer = nullptr;
+
+    D3D11_BUFFER_DESC Desc = {};
+    Desc.ByteWidth = InByteWidth;
+    Desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    Desc.MiscFlags = 0;
+    Desc.StructureByteStride = InStride;
+
+    if (bDynamic)
+    {
+        Desc.Usage = D3D11_USAGE_DYNAMIC;
+        Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    }
+    else
+    {
+        Desc.Usage = D3D11_USAGE_DEFAULT;
+        Desc.CPUAccessFlags = 0;
+    }
+
+    D3D11_SUBRESOURCE_DATA  InitialData = {};
+    D3D11_SUBRESOURCE_DATA* InitialDataPtr = nullptr;
+
+    if (InData != nullptr)
+    {
+        InitialData.pSysMem = InData;
+        InitialDataPtr = &InitialData;
+    }
+
+    HRESULT Hr = Device->CreateBuffer(&Desc, InitialDataPtr, OutVertexBuffer);
+    return SUCCEEDED(Hr);
+}
+
+bool FD3D11DynamicRHI::CreateIndexBuffer(const void* InData, uint32 InByteWidth, bool bDynamic,
+                                         ID3D11Buffer** OutIndexBuffer) const
+{
+    if (Device == nullptr || OutIndexBuffer == nullptr || InByteWidth == 0)
+    {
+        return false;
+    }
+
+    *OutIndexBuffer = nullptr;
+
+    D3D11_BUFFER_DESC Desc = {};
+    Desc.ByteWidth = InByteWidth;
+    Desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+    Desc.MiscFlags = 0;
+    Desc.StructureByteStride = 0;
+
+    if (bDynamic)
+    {
+        Desc.Usage = D3D11_USAGE_DYNAMIC;
+        Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    }
+    else
+    {
+        Desc.Usage = D3D11_USAGE_DEFAULT;
+        Desc.CPUAccessFlags = 0;
+    }
+
+    D3D11_SUBRESOURCE_DATA  InitialData = {};
+    D3D11_SUBRESOURCE_DATA* InitialDataPtr = nullptr;
+
+    if (InData != nullptr)
+    {
+        InitialData.pSysMem = InData;
+        InitialDataPtr = &InitialData;
+    }
+
+    HRESULT Hr = Device->CreateBuffer(&Desc, InitialDataPtr, OutIndexBuffer);
+    return SUCCEEDED(Hr);
+}
+
 bool FD3D11DynamicRHI::CreatePixelShader(const wchar_t* InFilePath, const char* InEntryPoint,
                                          ID3D11PixelShader** OutPixelShader) const
 {
@@ -326,8 +406,8 @@ bool FD3D11DynamicRHI::CreateDeviceAndSwapChain(HWND InWindowHandle)
 
     HRESULT Hr = D3D11CreateDeviceAndSwapChain(
         nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, CreateDeviceFlags, FeatureLevels,
-        static_cast<UINT>(ARRAYSIZE(FeatureLevels)), D3D11_SDK_VERSION,
-        &SwapChainDesc, SwapChain.GetAddressOf(), Device.GetAddressOf(), &CreatedFeatureLevel,
+        static_cast<UINT>(ARRAYSIZE(FeatureLevels)), D3D11_SDK_VERSION, &SwapChainDesc,
+        SwapChain.GetAddressOf(), Device.GetAddressOf(), &CreatedFeatureLevel,
         DeviceContext.GetAddressOf());
 
 #ifdef _DEBUG
@@ -337,8 +417,8 @@ bool FD3D11DynamicRHI::CreateDeviceAndSwapChain(HWND InWindowHandle)
 
         Hr = D3D11CreateDeviceAndSwapChain(
             nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, CreateDeviceFlags, FeatureLevels,
-            static_cast<UINT>(ARRAYSIZE(FeatureLevels)), D3D11_SDK_VERSION,
-            &SwapChainDesc, SwapChain.GetAddressOf(), Device.GetAddressOf(), &CreatedFeatureLevel,
+            static_cast<UINT>(ARRAYSIZE(FeatureLevels)), D3D11_SDK_VERSION, &SwapChainDesc,
+            SwapChain.GetAddressOf(), Device.GetAddressOf(), &CreatedFeatureLevel,
             DeviceContext.GetAddressOf());
     }
 #endif
@@ -489,8 +569,9 @@ void FD3D11DynamicRHI::SetVertexBuffers(uint32 InStartSlot, uint32 InBufferCount
         Offsets[Index] = static_cast<UINT>(InOffsets[Index]);
     }
 
-    DeviceContext->IASetVertexBuffers(static_cast<UINT>(InStartSlot), static_cast<UINT>(InBufferCount),
-                                      InBuffers, Strides, Offsets);
+    DeviceContext->IASetVertexBuffers(static_cast<UINT>(InStartSlot),
+                                      static_cast<UINT>(InBufferCount), InBuffers, Strides,
+                                      Offsets);
 }
 
 void FD3D11DynamicRHI::SetIndexBuffer(ID3D11Buffer* InIndexBuffer, DXGI_FORMAT InFormat,
@@ -549,7 +630,7 @@ void FD3D11DynamicRHI::SetRasterizerState(ID3D11RasterizerState* InRasterizerSta
 }
 
 void FD3D11DynamicRHI::SetDepthStencilState(ID3D11DepthStencilState* InDepthStencilState,
-                                            uint32 InStencilRef) const
+                                            uint32                   InStencilRef) const
 {
     if (DeviceContext)
     {
@@ -561,7 +642,8 @@ void FD3D11DynamicRHI::Draw(uint32 InVertexCount, uint32 InStartVertexLocation) 
 {
     if (DeviceContext)
     {
-        DeviceContext->Draw(static_cast<UINT>(InVertexCount), static_cast<UINT>(InStartVertexLocation));
+        DeviceContext->Draw(static_cast<UINT>(InVertexCount),
+                            static_cast<UINT>(InStartVertexLocation));
     }
 }
 
@@ -570,7 +652,8 @@ void FD3D11DynamicRHI::DrawIndexed(uint32 InIndexCount, uint32 InStartIndexLocat
 {
     if (DeviceContext)
     {
-        DeviceContext->DrawIndexed(static_cast<UINT>(InIndexCount), static_cast<UINT>(InStartIndexLocation),
+        DeviceContext->DrawIndexed(static_cast<UINT>(InIndexCount),
+                                   static_cast<UINT>(InStartIndexLocation),
                                    static_cast<INT>(InBaseVertexLocation));
     }
 }
@@ -581,10 +664,9 @@ void FD3D11DynamicRHI::DrawIndexedInstanced(uint32 InIndexCountPerInstance, uint
 {
     if (DeviceContext)
     {
-        DeviceContext->DrawIndexedInstanced(static_cast<UINT>(InIndexCountPerInstance),
-                                            static_cast<UINT>(InInstanceCount),
-                                            static_cast<UINT>(InStartIndexLocation),
-                                            static_cast<INT>(InBaseVertexLocation),
-                                            static_cast<UINT>(InStartInstanceLocation));
+        DeviceContext->DrawIndexedInstanced(
+            static_cast<UINT>(InIndexCountPerInstance), static_cast<UINT>(InInstanceCount),
+            static_cast<UINT>(InStartIndexLocation), static_cast<INT>(InBaseVertexLocation),
+            static_cast<UINT>(InStartInstanceLocation));
     }
 }
