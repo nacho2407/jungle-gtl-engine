@@ -11,12 +11,22 @@ namespace
 	constexpr float GridPlaneZ = 0.0f;
 	constexpr float GridFadeStartRatio = 0.72f;
 	constexpr float AxisFadeStartRatio = 0.9f;
-	constexpr float GridMinVisibleAlpha = 0.02f;
+	constexpr float GridMinVisibleAlpha = 0.05f;
 	constexpr float AxisMinVisibleAlpha = 0.85f;
 
 	float SnapToGrid(float Value, float Spacing)
 	{
 		return std::round(Value / Spacing) * Spacing;
+	}
+
+	float SnapDownToGrid(float Value, float Spacing)
+	{
+		return std::floor(Value / Spacing) * Spacing;
+	}
+
+	float SnapUpToGrid(float Value, float Spacing)
+	{
+		return std::ceil(Value / Spacing) * Spacing;
 	}
 
 	float ComputeLineFade(float OffsetFromFocus, float FadeStart, float FadeEnd)
@@ -27,7 +37,10 @@ namespace
 		}
 
 		const float Normalized = (std::fabs(OffsetFromFocus) - FadeStart) / (FadeEnd - FadeStart);
-		return Clamp(1.0f - Normalized, 0.0f, 1.0f);
+		const float LinearFade = Clamp(1.0f - Normalized, 0.0f, 1.0f);
+		// 멀리서 여러 저알파 line이 한 픽셀에 누적되는 현상을 줄이기 위해
+		// grid fade를 선형보다 조금 더 빠르게 감쇠시킨다.
+		return LinearFade * LinearFade;
 	}
 
 	FVector4 WithAlpha(const FVector4& Color, float Alpha)
@@ -252,14 +265,34 @@ void FLineBatcher::AddWorldHelpers(const FEditorSettings& Settings, const FVecto
 	const float CenterX = SnapToGrid(FocusPoint.X, Spacing);
 	const float CenterY = SnapToGrid(FocusPoint.Y, Spacing);
 	const int32 DynamicHalfCount = ComputeDynamicHalfCount(Spacing, BaseHalfCount, CameraPosition);
-	const float GridExtent = Spacing * static_cast<float>(DynamicHalfCount);
-	const float MinX = CenterX - GridExtent;
-	const float MaxX = CenterX + GridExtent;
-	const float MinY = CenterY - GridExtent;
-	const float MaxY = CenterY + GridExtent;
+	const float BaseGridExtent = Spacing * static_cast<float>(DynamicHalfCount);
+	const float FocusMinX = CenterX - BaseGridExtent;
+	const float FocusMaxX = CenterX + BaseGridExtent;
+	const float FocusMinY = CenterY - BaseGridExtent;
+	const float FocusMaxY = CenterY + BaseGridExtent;
 
-	const float GridFadeStart = GridExtent * GridFadeStartRatio;
-	const float AxisFadeStart = GridExtent * AxisFadeStartRatio;
+	// focus point 기반 패치를 유지하되, 카메라가 포함된 셀까지는 항상 grid가 이어지도록 범위를 확장한다.
+	const float CameraMinX = SnapDownToGrid(CameraPosition.X, Spacing);
+	const float CameraMaxX = SnapUpToGrid(CameraPosition.X, Spacing);
+	const float CameraMinY = SnapDownToGrid(CameraPosition.Y, Spacing);
+	const float CameraMaxY = SnapUpToGrid(CameraPosition.Y, Spacing);
+
+	const float MinX = std::min(FocusMinX, CameraMinX);
+	const float MaxX = std::max(FocusMaxX, CameraMaxX);
+	const float MinY = std::min(FocusMinY, CameraMinY);
+	const float MaxY = std::max(FocusMaxY, CameraMaxY);
+
+	const int32 MinXIndex = static_cast<int32>(std::floor((MinX - CenterX) / Spacing));
+	const int32 MaxXIndex = static_cast<int32>(std::ceil((MaxX - CenterX) / Spacing));
+	const int32 MinYIndex = static_cast<int32>(std::floor((MinY - CenterY) / Spacing));
+	const int32 MaxYIndex = static_cast<int32>(std::ceil((MaxY - CenterY) / Spacing));
+
+	const float GridExtentX = std::max(std::fabs(MinX - FocusPoint.X), std::fabs(MaxX - FocusPoint.X));
+	const float GridExtentY = std::max(std::fabs(MinY - FocusPoint.Y), std::fabs(MaxY - FocusPoint.Y));
+	const float GridFadeStartX = GridExtentX * GridFadeStartRatio;
+	const float GridFadeStartY = GridExtentY * GridFadeStartRatio;
+	const float AxisFadeStartX = GridExtentX * AxisFadeStartRatio;
+	const float AxisFadeStartY = GridExtentY * AxisFadeStartRatio;
 	const float AxisHeightBias = std::max(Spacing * 0.001f, 0.001f);
 
 	const bool bShowXAxis = (MinY <= 0.0f) && (MaxY >= 0.0f);
@@ -269,12 +302,12 @@ void FLineBatcher::AddWorldHelpers(const FEditorSettings& Settings, const FVecto
 	{
 		const FVector4 GridColor = FColor::White().ToVector4();
 
-		for (int32 i = -DynamicHalfCount; i <= DynamicHalfCount; ++i)
+		for (int32 YIndex = MinYIndex; YIndex <= MaxYIndex; ++YIndex)
 		{
-			const float WorldY = CenterY + (static_cast<float>(i) * Spacing);
+			const float WorldY = CenterY + (static_cast<float>(YIndex) * Spacing);
 			if (!(bShowXAxis && IsAxisLine(WorldY, Spacing)))
 			{
-				const float Alpha = ComputeLineFade(WorldY - FocusPoint.Y, GridFadeStart, GridExtent);
+				const float Alpha = ComputeLineFade(WorldY - FocusPoint.Y, GridFadeStartY, GridExtentY);
 				if (Alpha > GridMinVisibleAlpha)
 				{
 					AddLine(
@@ -285,10 +318,14 @@ void FLineBatcher::AddWorldHelpers(const FEditorSettings& Settings, const FVecto
 				}
 			}
 
-			const float WorldX = CenterX + (static_cast<float>(i) * Spacing);
+		}
+
+		for (int32 XIndex = MinXIndex; XIndex <= MaxXIndex; ++XIndex)
+		{
+			const float WorldX = CenterX + (static_cast<float>(XIndex) * Spacing);
 			if (!(bShowYAxis && IsAxisLine(WorldX, Spacing)))
 			{
-				const float Alpha = ComputeLineFade(WorldX - FocusPoint.X, GridFadeStart, GridExtent);
+				const float Alpha = ComputeLineFade(WorldX - FocusPoint.X, GridFadeStartX, GridExtentX);
 				if (Alpha > GridMinVisibleAlpha)
 				{
 					AddLine(
@@ -303,7 +340,7 @@ void FLineBatcher::AddWorldHelpers(const FEditorSettings& Settings, const FVecto
 
 	if (bShowXAxis)
 	{
-		const float Alpha = std::max(AxisMinVisibleAlpha, ComputeLineFade(-FocusPoint.Y, AxisFadeStart, GridExtent));
+		const float Alpha = std::max(AxisMinVisibleAlpha, ComputeLineFade(-FocusPoint.Y, AxisFadeStartY, GridExtentY));
 		AddLine(
 			FVector(MinX, 0.0f, AxisHeightBias),
 			FVector(MaxX, 0.0f, AxisHeightBias),
@@ -313,7 +350,7 @@ void FLineBatcher::AddWorldHelpers(const FEditorSettings& Settings, const FVecto
 
 	if (bShowYAxis)
 	{
-		const float Alpha = std::max(AxisMinVisibleAlpha, ComputeLineFade(-FocusPoint.X, AxisFadeStart, GridExtent));
+		const float Alpha = std::max(AxisMinVisibleAlpha, ComputeLineFade(-FocusPoint.X, AxisFadeStartX, GridExtentX));
 		AddLine(
 			FVector(0.0f, MinY, AxisHeightBias),
 			FVector(0.0f, MaxY, AxisHeightBias),
