@@ -4,11 +4,9 @@
 #include "Renderer/D3D11/D3D11Common.h"
 #include "Renderer/Types/VertexTypes.h"
 #include "Renderer/D3D11/D3D11Common.h"
-#include "Core/Geometry/Primitives/AABB.h"
 
 class FD3D11DynamicRHI;
 class FSceneView;
-struct FAABB;
 
 class FD3D11LineBatchRenderer
 {
@@ -23,9 +21,6 @@ class FD3D11LineBatchRenderer
 
     void BeginFrame(const FSceneView* InSceneView);
     void AddLine(const FVector& InStart, const FVector& InEnd, const FColor& InColor);
-    void AddGrid(int32 InHalfLineCount, float InSpacing, const FColor& InColor);
-    void AddWorldAxes(float InAxisLength);
-    void AddAABB(const Geometry::FAABB& InBounds, const FColor& InColor);
     void EndFrame();
 
   private:

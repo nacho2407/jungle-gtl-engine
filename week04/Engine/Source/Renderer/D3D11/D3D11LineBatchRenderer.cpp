@@ -1,9 +1,7 @@
-#include "Core/Geometry/Primitives/AABB.h"
 #include "Renderer/D3D11/D3D11LineBatchRenderer.h"
 #include "Renderer/D3D11/D3D11DynamicRHI.h"
 #include "Renderer/SceneView.h"
 #include "Renderer/Types/ShaderConstants.h"
-#include "Renderer/Types/AxisColors.h"
 
 bool FD3D11LineBatchRenderer::Initialize(FD3D11DynamicRHI* InRHI)
 {
@@ -77,61 +75,6 @@ void FD3D11LineBatchRenderer::AddLine(const FVector& InStart, const FVector& InE
 
     Vertices.push_back(V0);
     Vertices.push_back(V1);
-}
-
-void FD3D11LineBatchRenderer::AddGrid(int32 InHalfLineCount, float InSpacing,
-                                      const FColor& InColor)
-{
-    const float Extent = static_cast<float>(InHalfLineCount) * InSpacing;
-
-    for (int32 i = -InHalfLineCount; i <= InHalfLineCount; ++i)
-    {
-        const float Offset = static_cast<float>(i) * InSpacing;
-
-        AddLine(FVector(-Extent, 0.0f, Offset), FVector(Extent, 0.0f, Offset), InColor);
-        AddLine(FVector(Offset, 0.0f, -Extent), FVector(Offset, 0.0f, Extent), InColor);
-    }
-}
-
-void FD3D11LineBatchRenderer::AddWorldAxes(float InAxisLength)
-{
-    AddLine(FVector(0.0f, 0.0f, 0.0f), FVector(InAxisLength, 0.0f, 0.0f),
-            GetAxisBaseColor(EAxis::X));
-    AddLine(FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, InAxisLength, 0.0f),
-            GetAxisBaseColor(EAxis::Y));
-    AddLine(FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, InAxisLength),
-            GetAxisBaseColor(EAxis::Z));
-}
-
-void FD3D11LineBatchRenderer::AddAABB(const Geometry::FAABB& InBounds, const FColor& InColor)
-{
-    const FVector Min = InBounds.Min;
-    const FVector Max = InBounds.Max;
-
-    const FVector P000(Min.X, Min.Y, Min.Z);
-    const FVector P100(Max.X, Min.Y, Min.Z);
-    const FVector P010(Min.X, Max.Y, Min.Z);
-    const FVector P110(Max.X, Max.Y, Min.Z);
-
-    const FVector P001(Min.X, Min.Y, Max.Z);
-    const FVector P101(Max.X, Min.Y, Max.Z);
-    const FVector P011(Min.X, Max.Y, Max.Z);
-    const FVector P111(Max.X, Max.Y, Max.Z);
-
-    AddLine(P000, P100, InColor);
-    AddLine(P100, P101, InColor);
-    AddLine(P101, P001, InColor);
-    AddLine(P001, P000, InColor);
-
-    AddLine(P010, P110, InColor);
-    AddLine(P110, P111, InColor);
-    AddLine(P111, P011, InColor);
-    AddLine(P011, P010, InColor);
-
-    AddLine(P000, P010, InColor);
-    AddLine(P100, P110, InColor);
-    AddLine(P101, P111, InColor);
-    AddLine(P001, P011, InColor);
 }
 
 void FD3D11LineBatchRenderer::EndFrame()
