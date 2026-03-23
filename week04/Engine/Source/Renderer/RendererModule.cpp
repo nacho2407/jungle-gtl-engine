@@ -61,7 +61,9 @@ void FRendererModule::BeginFrame()
 {
     RHI.BeginFrame();
 
-    static const FLOAT ClearColor[4] = {0.15f, 0.15f, 0.15f, 1.0f};
+    static constexpr FLOAT ClearColor[4] = { 1.f, 1.f, 1.f, 1.0f };
+
+    //static constexpr FLOAT ClearColor[4] = {0.15f, 0.15f, 0.15f, 1.0f};
 
     RHI.SetDefaultRenderTargets();
     RHI.Clear(ClearColor, 1.0f, 0);
@@ -76,8 +78,20 @@ void FRendererModule::OnWindowResized(int32 InWidth, int32 InHeight)
         return;
     }
 
+    // Editor live resize 중에는 이 함수가 자주 호출되므로, 실제 크기 변경만 RHI에 전달합니다.
     RHI.Resize(InWidth, InHeight);
     // PickingPass.Resize(InWidth, InHeight);
+}
+
+void FRendererModule::SetVSyncEnabled(bool bInVSyncEnabled)
+{
+    // 창 외곽 드래그 중 입력 반응성을 높이기 위해 Present 정책을 런타임에 바꿀 수 있게 둡니다.
+    RHI.SetVSyncEnabled(bInVSyncEnabled);
+}
+
+bool FRendererModule::IsVSyncEnabled() const
+{
+    return RHI.IsVSyncEnabled();
 }
 
 void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
@@ -127,5 +141,9 @@ bool FRendererModule::TryConsumePickResult(uint32& OutPickId) { return false; }
 void FRendererModule::RequestPick(const FEditorRenderData& InEditorRenderData, int32 MouseX,
                                   int32 MouseY)
 {
-    return;
+    (void)InEditorRenderData;
+    (void)MouseX;
+    (void)MouseY;
+
+    // TODO: PickingPass 연결 후 구현
 }
