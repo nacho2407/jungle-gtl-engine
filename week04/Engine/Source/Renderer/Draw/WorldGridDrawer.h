@@ -15,9 +15,6 @@ class FWorldGridDrawer
   private:
     int32 GridHalfLineCount = 500;
 
-    // 기존 5.0f보다 넓게
-    float GridSpacing = 20.0f;
-
     // 5칸마다 major line
     int32 MajorLineEvery = 5;
 

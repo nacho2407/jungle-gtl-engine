@@ -2,7 +2,9 @@
 
 #include "Viewport/EditorViewportClient.h"
 
+#include "Engine/EngineStatics.h"
 #include "Engine/Game/Actor.h"
+#include "Panel/ConsolePanel.h"
 #include "Panel/ControlPanel.h"
 #include "Panel/OutlinerPanel.h"
 #include "Panel/PanelManager.h"
@@ -140,6 +142,7 @@ void FEditor::Create()
     
     //  TODO : Viewport Client
     EditorContext.Editor = this;
+    LoadEditorSettings();
 
     ViewportClient.Create();
     ViewportClient.SetEditorContext(&EditorContext);
@@ -157,6 +160,7 @@ void FEditor::Create()
         {
             RegisterWindowPanelCommand(Descriptor);
         });
+    PanelManager->RegisterPanelInstance<FConsolePanel>(&LogBuffer);
     PanelManager->RegisterPanelInstance<FControlPanel>();
     PanelManager->RegisterPanelInstance<FOutlinerPanel>();
     PanelManager->RegisterPanelInstance<FPropertiesPanel>();
@@ -177,6 +181,7 @@ void FEditor::Create()
 
 void FEditor::Release()
 {
+    SaveEditorSettings();
     ViewportClient.Release();
 
     if (PanelManager != nullptr)
@@ -214,6 +219,44 @@ void FEditor::SetChromeHost(IEditorChromeHost* InChromeHost)
 {
     ChromeHost = InChromeHost;
     EditorChrome.SetHost(InChromeHost);
+}
+
+void FEditor::LoadEditorSettings()
+{
+    FEditorSettingsData SettingsData;
+    SettingsData.GridSpacing = UEngineStatics::GridSpacing;
+
+    FString ErrorMessage;
+    const EEditorSettingsLoadResult LoadResult =
+        PersistentSettings.Load(SettingsData, &ErrorMessage);
+
+    if (LoadResult == EEditorSettingsLoadResult::Missing)
+    {
+        return;
+    }
+
+    if (LoadResult == EEditorSettingsLoadResult::InvalidFormat)
+    {
+        UE_LOG(FEditor, ELogVerbosity::Error, "Invalid editor.ini format: %s",
+               ErrorMessage.c_str());
+        return;
+    }
+
+    if (LoadResult == EEditorSettingsLoadResult::IOError)
+    {
+        UE_LOG(FEditor, ELogVerbosity::Error, "Failed to read editor.ini: %s",
+               ErrorMessage.c_str());
+        return;
+    }
+
+    UEngineStatics::GridSpacing = FMath::Clamp(SettingsData.GridSpacing, 1.0f, 1000.0f);
+}
+
+void FEditor::SaveEditorSettings() const
+{
+    FEditorSettingsData SettingsData;
+    SettingsData.GridSpacing = FMath::Clamp(UEngineStatics::GridSpacing, 1.0f, 1000.0f);
+    PersistentSettings.Save(SettingsData);
 }
 
 void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* InputSystem)

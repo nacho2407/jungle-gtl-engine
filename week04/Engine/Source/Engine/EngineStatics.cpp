@@ -8,3 +8,5 @@ uint32 UEngineStatics::GenUUID()
 uint32 UEngineStatics::NextUUID = 0;
 uint32 UEngineStatics::TotalAllocatedBytes = 0;
 uint32 UEngineStatics::TotalAllocationCount = 0;
+
+float UEngineStatics::GridSpacing = 20.f;
