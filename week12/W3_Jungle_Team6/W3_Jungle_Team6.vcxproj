@@ -170,6 +170,7 @@
     <ClCompile Include="Source\Editor\UI\EditorPropertyWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorSceneWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorViewportOverlayWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorStatWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp" />
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
@@ -212,6 +213,7 @@
     <ClCompile Include="Source\Engine\Runtime\Launch.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsApplication.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp" />
+    <ClCompile Include="Source\Engine\Core\Stats.cpp" />
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_demo.cpp" />
@@ -232,6 +234,7 @@
     <ClInclude Include="Source\Editor\UI\EditorPropertyWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorSceneWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorViewportOverlayWidget.h" />
+    <ClInclude Include="Source\Editor\UI\EditorStatWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorWidget.h" />
     <ClInclude Include="Source\Editor\Viewport\CursorOverlayState.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
@@ -256,6 +259,7 @@
     <ClInclude Include="Source\Engine\Core\ResourceManager.h" />
     <ClInclude Include="Source\Engine\Core\ResourceTypes.h" />
     <ClInclude Include="Source\Engine\Core\Singleton.h" />
+    <ClInclude Include="Source\Engine\Core\Stats.h" />
     <ClInclude Include="Source\Engine\Core\Timer.h" />
     <ClInclude Include="Source\Engine\GameFramework\AActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\PrimitiveActors.h" />
