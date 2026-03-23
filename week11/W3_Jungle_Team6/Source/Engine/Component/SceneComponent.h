@@ -23,7 +23,7 @@ public:
 	const TArray<USceneComponent*>& GetChildren() const { return ChildComponents; }
 
 	virtual void UpdateWorldMatrix() const;
-	void AddWorldOffset(const FVector& WorldDelta);
+	virtual void AddWorldOffset(const FVector& WorldDelta);
 	virtual void SetRelativeLocation(const FVector& NewLocation);
 	virtual void SetRelativeRotation(const FVector& NewRotation);
 	void SetRelativeScale(const FVector& NewScale);
