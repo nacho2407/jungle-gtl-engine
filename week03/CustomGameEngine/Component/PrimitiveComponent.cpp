@@ -48,6 +48,12 @@ void UPrimitiveComponent::SetRelativeScale3D(const FVector& newScale)
 	MarkRenderStateDirty();
 }
 
+void UPrimitiveComponent::SetRelativeQuaternion(FQuat newQuat)
+{
+	USceneComponent::SetRelativeQuaternion(newQuat);
+	MarkRenderStateDirty();
+}
+
 void UPrimitiveComponent::OnComponentAdded()
 {
 	auto RenderObj = CreateRenderObject();

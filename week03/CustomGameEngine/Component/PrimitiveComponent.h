@@ -29,6 +29,7 @@ public:
 	void SetRelativeLocation(const FVector& newLocation) override;
 	void SetRelativeRotation(const FRotator& newRotation) override;
 	void SetRelativeScale3D(const FVector& newScale) override;
+	void SetRelativeQuaternion(FQuat newQuat) override;
 
 	virtual void OnComponentAdded() override;
 	virtual void Update(float DeltaTime) override;

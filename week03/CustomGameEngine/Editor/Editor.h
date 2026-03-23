@@ -45,9 +45,26 @@ public:
 	void SetCamera(UCameraComponent* camera) { Camera = camera; }
 	void SetGrid(UGridComp* grid);
 
-	//picking
+	/*-----picking 관련 함수들-----*/
+	/**
+	 * 현재 선택된 컴포넌트들을 모두 선택 해제합니다.
+	 * Editor의 SelectedComponents 배열과 각 컴포넌트의 bIsSelected를 업데이트합니다.
+	 */
 	void ClearSelection();
+	/**
+	 * picking에 걸린 오브젝트를 입력으로 받아 처리합니다.
+	 * Editor의 SelectedComponent와 걸린 오브젝트의 bIsSelected를 업데이트합니다.
+	 *
+	 * \param component
+	 */
 	void SelectSingleComponent(USceneComponent* component);
+	/**
+	 * picking에 걸린 오브젝트를 입력으로 받아 처리합니다.
+	 * 다중 picking이며 오브젝트가 배열에 추가되는 방식이고, 허공을 클릭해도 기존 picking들은 유지됩니다.
+	 * Editor의 SelectedComponents와 걸린 오브젝트의 bIsSelected를 업데이트합니다.
+	 *
+	 * \param component
+	 */
 	void SelectMultiComponent(USceneComponent* component);
 	const TArray<USceneComponent*>& GetSelectedComponents() const { return SelectedComponents; }
 	USceneComponent* GetLastSelectedComponent() const;
@@ -65,6 +82,7 @@ private:
 	void DrawStatPanel();
 	void DrawToolbar();
 	void DrawSceneManagerPanel();
+	void UpdateGizmoSelection();
 
 private:
 	//panel

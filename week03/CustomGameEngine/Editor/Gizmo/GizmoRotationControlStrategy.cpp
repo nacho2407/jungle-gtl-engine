@@ -67,7 +67,22 @@ void GizmoRotationControlStrategy::UpdateRenderObject()
 
 void GizmoRotationControlStrategy::BeginDrag(const Ray& ray)
 {
-	InitialObjectQuaternion = Controller->GetAttachedComponent()->GetRelativeQuaternion();
+	DragComponents = Controller->GetControlledComponents();
+	if (DragComponents.empty() && Controller->GetAttachedComponent() != nullptr)
+	{
+		DragComponents.push_back(Controller->GetAttachedComponent());
+	}
+
+	InitialObjectQuaternions.clear();
+	for (USceneComponent* component : DragComponents)
+	{
+		if (component == nullptr)
+		{
+			continue;
+		}
+
+		InitialObjectQuaternions.push_back(component->GetRelativeQuaternion());
+	}
 	AccumulatedAngle = 0.0f;
 	GetCursorPos(&InitialCursorPos);
 	ShowCursor(false);
@@ -110,7 +125,6 @@ void GizmoRotationControlStrategy::UpdateDrag(const Ray& ray)
 
 	if (deltaX == 0 && deltaY == 0) return;
 
-	FQuat currQuat = InitialObjectQuaternion;
 	FQuat deltaQuat;
 
 	float sensitivity = 0.01f;
@@ -130,16 +144,26 @@ void GizmoRotationControlStrategy::UpdateDrag(const Ray& ray)
 
 	deltaQuat = FQuat::FromAxisAngle(worldAxis, applyAngle);
 
-	if (Controller->IsLocalSpace())
+	for (int i = 0; i < DragComponents.size() && i < InitialObjectQuaternions.size(); ++i)
 	{
-		currQuat = currQuat * deltaQuat;
-	}
-	else
-	{
-		currQuat = deltaQuat * currQuat;
-	}
+		USceneComponent* component = DragComponents[i];
+		if (component == nullptr)
+		{
+			continue;
+		}
 
-	Controller->GetAttachedComponent()->SetRelativeQuaternion(currQuat);
+		FQuat currQuat = InitialObjectQuaternions[i];
+		if (Controller->IsLocalSpace())
+		{
+			currQuat = currQuat * deltaQuat;
+		}
+		else
+		{
+			currQuat = deltaQuat * currQuat;
+		}
+
+		component->SetRelativeQuaternion(currQuat);
+	}
 
 	SetCursorPos(InitialCursorPos.x, InitialCursorPos.y);
 }
