@@ -204,6 +204,9 @@
     <ClCompile Include="Source\Engine\Game\Actor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Game\CubeActor.cpp">
+      <Filter>Source\Engine\Game</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Scene.cpp">
       <Filter>Source\Engine</Filter>
     </ClCompile>
@@ -455,6 +458,9 @@
     <ClInclude Include="Source\Engine\Game\Actor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Game\CubeActor.h">
+      <Filter>Source\Engine\Game</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Scene.h">
       <Filter>Source\Engine</Filter>
     </ClInclude>
@@ -462,6 +468,9 @@
       <Filter>Source\Engine\ViewPort</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\ViewPort\ViewportClient.h">
+      <Filter>Source\Engine\ViewPort</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\ViewPort\ViewportController.h">
       <Filter>Source\Engine\ViewPort</Filter>
     </ClInclude>
     <ClInclude Include="Source\Launch\EngineLoop.h">

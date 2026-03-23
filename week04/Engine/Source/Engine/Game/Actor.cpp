@@ -3,6 +3,18 @@
 
 AActor::AActor() = default;
 
+AActor::~AActor()
+{
+    // Actor가 직접 생성해 들고 있던 SceneComponent들을 정리합니다.
+    for (Engine::Component::USceneComponent* Component : OwnedComponents)
+    {
+        delete Component;
+    }
+
+    OwnedComponents.clear();
+    RootComponent = nullptr;
+}
+
 bool AActor::IsPickable() const { return bPickable; }
 
 void AActor::SetPickable(bool bInPickable) { bPickable = bInPickable; }

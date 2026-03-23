@@ -15,7 +15,7 @@ class ENGINE_API AActor : public UObject
 
   public:
     AActor();
-    virtual ~AActor() = default;
+    ~AActor() override;
 
     bool IsPickable() const;
     void SetPickable(bool bInPickable);

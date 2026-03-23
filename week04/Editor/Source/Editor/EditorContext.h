@@ -16,6 +16,7 @@ struct FEditorContext
 	UObject* SelectedObject = nullptr;
 
     float CurrentFPS = 0.0f;
+	float DeltaTime = 0.0f;
     float WindowWidth = 0.0f;
     float WindowHeight = 0.0f;
 };
