@@ -1,6 +1,6 @@
 #include "Common.hlsl"
 
-Texture2D    SubUVAtlas   : register(t0);
+Texture2D SubUVAtlas : register(t0);
 SamplerState SubUVSampler : register(s0);
 
 struct VSInput
@@ -26,8 +26,15 @@ PSInput VS(VSInput input)
 float4 PS(PSInput input) : SV_TARGET
 {
     float4 col = SubUVAtlas.Sample(SubUVSampler, input.texCoord);
-    // R채널이 아닌 알파 채널 기준으로 외곽선 제거
-    // → 내부에 검은 픽셀이 있는 Explosion 등 컬러 스프라이트에서도 올바르게 동작
-    if (col.a < 0.05f) discard;
-    return col;
+    if (bIsWireframe < 0.5f)
+    {
+        if (col.a < 0.05f)
+        {
+            
+            discard;
+        }
+        return col;
+    }
+
+    return lerp(col, float4(WireframeRGB, 1.0f), bIsWireframe);
 }
