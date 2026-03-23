@@ -1,0 +1,32 @@
+Merge Resolution: feature/engine/serialize-component -> main
+Date: 2026-03-23
+================================================================================
+
+Remote main had new commits from feature/Outline-Wireframe and feature/renderer-core
+that conflicted with the serialize-component branch.
+
+Conflicted Files (3):
+--------------------------------------------------------------------------------
+
+1. W3_Jungle_Team6/Source/Engine/GameFramework/AActor.h
+   - OURS: OwnedComponents (TArray<UActorComponent*>) flat list approach
+   - THEIRS: Components (TArray<USceneComponent*>) + PrimitiveCache + RegisterComponentRecursive
+   - RESOLUTION: Kept OwnedComponents (supports both SceneComponent and non-scene ActorComponent).
+     Integrated PrimitiveCache from remote but adapted to iterate OwnedComponents instead of
+     the old SceneComponent-only Components array. Removed RegisterComponentRecursive (replaced
+     by RegisterComponent in our branch). Renamed bComponentsDirty -> bPrimitiveCacheDirty for clarity.
+
+2. W3_Jungle_Team6/Source/Engine/GameFramework/AActor.cpp
+   - OURS: No RegisterComponentRecursive, no GetPrimitiveComponents
+   - THEIRS: Added RegisterComponentRecursive + GetPrimitiveComponents (using old Components array)
+   - RESOLUTION: Dropped RegisterComponentRecursive (obsolete with OwnedComponents model).
+     Added GetPrimitiveComponents adapted to use OwnedComponents with IsA<UPrimitiveComponent>().
+     Added bPrimitiveCacheDirty = true in RegisterComponent and RemoveComponent for cache invalidation.
+     Added #include "Component/PrimitiveComponent.h" from remote.
+
+3. W3_Jungle_Team6/Source/Engine/Render/Scene/RenderCollector.cpp
+   - OURS: Had component-level selection outline logic (SelectedComponent, CollectComponentOutline)
+   - THEIRS: Simple default depth stencil state
+   - RESOLUTION: Used remote version (EDepthStencilState::Default). The component-level selection
+     outline feature (SelectedComponent, CollectComponentOutline) depends on FRenderCollectorContext
+     changes that are not yet in main. This feature should be re-added when that context is available.
