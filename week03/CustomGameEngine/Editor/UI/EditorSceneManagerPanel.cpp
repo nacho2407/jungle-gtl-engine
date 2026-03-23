@@ -71,7 +71,17 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 				//isSelected에 따라 선택된 컴포넌트는 다른 색으로 표시됩니다. 클릭 시 해당 컴포넌트를 선택합니다.
 				if (ImGui::Selectable(label.c_str(), isSelected))
 				{
-					editor->SelectSingleComponent(component);
+					//bool bIsCtrlDown = InputManager::GetInstance().IsKeyDown(VK_CONTROL);
+					//ImGUI에서 컨트롤 키 입력을 감지하는 방식이며 InputManager를 사용하면 작동하지 않습니다.
+					bool bIsCtrlDown = ImGui::GetIO().KeyCtrl;
+					if (!bIsCtrlDown)
+					{
+						editor->SelectSingleComponent(component);
+					}
+					else
+					{
+						editor->SelectMultiComponent(component);
+					}
 				}
 			}
 		}
