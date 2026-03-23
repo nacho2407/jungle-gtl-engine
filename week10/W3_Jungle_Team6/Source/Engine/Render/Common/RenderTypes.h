@@ -40,6 +40,7 @@ enum class ERenderPass : uint32
 	Translucent,
 	Editor,
 	Grid,
+	StencilMask,
 	Outline,
 	DepthLess,
 	Overlay,
