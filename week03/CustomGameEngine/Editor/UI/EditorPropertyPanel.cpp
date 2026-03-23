@@ -7,7 +7,7 @@ EditorPropertyPanel::~EditorPropertyPanel()
 {
 }
 
-void EditorPropertyPanel::Draw(USceneComponent* selectedComponent, ImGuiWindowLayout& layout)
+void EditorPropertyPanel::Draw(USceneComponent* selectedComponent)
 {
 	ImGui::Begin("Jungle Property Panel");
 

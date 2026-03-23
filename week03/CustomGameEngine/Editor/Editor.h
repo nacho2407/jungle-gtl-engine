@@ -10,7 +10,6 @@
 #include "UI/EditorStatPanel.h"
 #include "UI/EditorToolbar.h"
 #include "UI/EditorSceneManagerPanel.h"
-#include "UI/ImGuiLayout.h"
 #include "Gizmo.h"
 #include "Component/GizmoComponent.h"
 #include "Component/SceneComponent.h"
@@ -54,12 +53,12 @@ public:
 private:
 	void DrawDockSpace();
 	void SetupDefaultDockLayout(ImGuiID dockspaceID);
-	void DrawControlPanel(ImGuiLayout&);
-	void DrawConsole(ImGuiLayout&);
-	void DrawPropertyPanel(ImGuiLayout&);
-	void DrawStatPanel(ImGuiLayout&);
-	void DrawToolbar(ImGuiLayout&);
-	void DrawSceneManagerPanel(ImGuiLayout&);
+	void DrawControlPanel();
+	void DrawConsole();
+	void DrawPropertyPanel();
+	void DrawStatPanel();
+	void DrawToolbar();
+	void DrawSceneManagerPanel();
 
 private:
 	//panel
@@ -69,8 +68,6 @@ private:
 	EditorStatPanel* StatPanel = nullptr;
 	EditorToolbar* Toolbar = nullptr;
 	EditorSceneManagerPanel* SceneMgrPanel = nullptr;
-
-	ImGuiLayout UILayout;
 
 	URenderer* Renderer = nullptr;
 	UCameraComponent* Camera = nullptr;

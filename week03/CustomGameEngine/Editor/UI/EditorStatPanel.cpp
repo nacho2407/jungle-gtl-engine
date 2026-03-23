@@ -8,7 +8,7 @@ EditorStatPanel::~EditorStatPanel()
 {
 }
 
-void EditorStatPanel::Draw(ImGuiWindowLayout& layout)
+void EditorStatPanel::Draw()
 {
 	ImGui::Begin("Jungle Stats Panel");
 

@@ -10,7 +10,7 @@ EditorToolbar::~EditorToolbar()
 {
 }
 
-void EditorToolbar::Draw(ImGuiWindowLayout& layout, UGridComp* Grid)
+void EditorToolbar::Draw(UGridComp* Grid)
 {
 	UGizmoComponent* gizmoController = Gizmo::GetInstance().GetController();
 

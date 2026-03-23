@@ -69,7 +69,7 @@ void UpdateFPS(float deltaTime)
 	}
 }
 
-void EditorControlPanel::Draw(UCameraComponent* camera, ImGuiWindowLayout& layout, UGridComp* Grid)
+void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 {
 	UpdateFPS(TimerManager::GetInstance().GetGlobalDeltaTime());
 

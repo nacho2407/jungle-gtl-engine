@@ -9,8 +9,6 @@
 
 Editor::Editor()
 {
-	//UILayout = ImGuiLayout();
-
 	ControlPanel = new EditorControlPanel(this, Renderer);
 	Console = new EditorConsole();
 	PropertyPanel = new EditorPropertyPanel(this);
@@ -54,12 +52,12 @@ void Editor::DrawUI()
 	ImGui::NewFrame();
 	DrawDockSpace();
 
-	DrawControlPanel(UILayout);
-	DrawConsole(UILayout);
-	DrawPropertyPanel(UILayout);
-	DrawStatPanel(UILayout);
-	DrawToolbar(UILayout);
-	DrawSceneManagerPanel(UILayout);
+	DrawControlPanel();
+	DrawConsole();
+	DrawPropertyPanel();
+	DrawStatPanel();
+	DrawToolbar();
+	DrawSceneManagerPanel();
 
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -231,33 +229,33 @@ void Editor::SaveSettings()
 	}
 }
 
-void Editor::DrawConsole(ImGuiLayout& layout)
+void Editor::DrawConsole()
 {
 	bool flag = true;
-	Console->Draw("Example: Console", &flag, layout.Console);
+	Console->Draw("Example: Console", &flag);
 }
 
-void Editor::DrawControlPanel(ImGuiLayout& layout)
+void Editor::DrawControlPanel()
 {
-	ControlPanel->Draw(Camera, layout.ControlPanel, Grid);
+	ControlPanel->Draw(Camera, Grid);
 }
 
-void Editor::DrawPropertyPanel(ImGuiLayout& layout)
+void Editor::DrawPropertyPanel()
 {
-	PropertyPanel->Draw(SelectedComponent, layout.PropertyPanel);
+	PropertyPanel->Draw(SelectedComponent);
 }
 
-void Editor::DrawStatPanel(ImGuiLayout& layout)
+void Editor::DrawStatPanel()
 {
-	StatPanel->Draw(layout.StatPanel);
+	StatPanel->Draw();
 }
 
-void Editor::DrawToolbar(ImGuiLayout& layout)
+void Editor::DrawToolbar()
 {
-	Toolbar->Draw(layout.Toolbar, Grid);
+	Toolbar->Draw(Grid);
 }
 
-void Editor::DrawSceneManagerPanel(ImGuiLayout& layout)
+void Editor::DrawSceneManagerPanel()
 {
-	SceneMgrPanel->Draw(this, layout.SceneMgrPanel);
+	SceneMgrPanel->Draw(this);
 }

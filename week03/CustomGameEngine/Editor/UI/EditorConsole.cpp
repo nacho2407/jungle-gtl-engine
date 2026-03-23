@@ -44,7 +44,7 @@ void EditorConsole::AddLog(const char* fmt, ...)
 	Items.push_back(Strdup(buf));
 }
 
-void EditorConsole::Draw(const char* title, bool* p_open, ImGuiWindowLayout& layout)
+void EditorConsole::Draw(const char* title, bool* p_open)
 {
 	if (!ImGui::Begin(title, p_open))
 	{
