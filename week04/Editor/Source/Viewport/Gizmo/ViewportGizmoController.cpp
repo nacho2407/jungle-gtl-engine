@@ -1,108 +1,105 @@
 #include "ViewportGizmoController.h"
 #include "Camera/ViewportCamera.h"
+#include "Renderer/Types/PickId.h"
+#include "Renderer/RendererModule.h"
+#include "Renderer/Types/PickResult.h"
 
 void FViewportGizmoController::Tick(float DeltaTime)
 {
     // ...
 }
 
-void FViewportGizmoController::OnMouseButtonDown(const FVector2& MousePos)
+void FViewportGizmoController::OnMouseButtonDown(int32 MouseX, int32 MouseY)
 {
     if (bIsDragging)
     {
         return;
     }
-    ActiveAxisIndex = HitTestGizmo(MousePos);
+    HitTestGizmo(MouseX, MouseY);
 
-    if (ActiveAxisIndex != EGizmoAxis::None)
+    if (GizmoType != EGizmoType::Translation)
     {
         bIsDragging = true;
-        StartMousePos = MousePos;
-        StartTransform = SelectedObject->GetRelativeFTransform();
+        StartMousePosX = MouseX;
+        StartMousePosY = MouseY;
+    };
+    StartTransform = SelectedObject->GetRelativeFTransform();
 
-        switch (ActiveAxisIndex)
-        {
-        case EGizmoAxis::X:
-            CurrentDragAxis = FVector{1.f, 0.f, 0.f};
-            break;
-        case EGizmoAxis::Y:
-            CurrentDragAxis = FVector{0.f, 1.f, 0.f};
-            break;
-        case EGizmoAxis::Z:
-            CurrentDragAxis = FVector{0.f, 0.f, 1.f};
-            break;
-        case EGizmoAxis::XY:
-            CurrentDragAxis = FVector{1.f, 1.f, 0.f};
-            break;
-        case EGizmoAxis::YZ:
-            CurrentDragAxis = FVector{0.f, 1.f, 1.f};
-            break;
-        case EGizmoAxis::ZX:
-            CurrentDragAxis = FVector{1.f, 0.f, 1.f};
-            break;
-        case EGizmoAxis::XYZ:
-            CurrentDragAxis = FVector{1.f, 1.f, 1.f};
-            break;
-        }
-        (void)CurrentDragAxis.Normalize();
-
-        if (!bIsWorldMode)
-        {
-            CurrentDragAxis = SelectedObject->GetRelativeRotation().RotateVector(CurrentDragAxis);
-        }
-
-        const Geometry::FRay PickRay =
-            Geometry::FRay::BuildRay(static_cast<int32>(MousePos.X), static_cast<int32>(MousePos.Y),
-                                     ViewportCamera->GetViewProjectionMatrix(),
-                                     static_cast<float>(ViewportCamera->GetWidth()),
-                                     static_cast<float>(ViewportCamera->GetHeight()));
-
-        InitialDragOffset =
-            CalculateProjectionOffset(PickRay, StartTransform.GetLocation(), CurrentDragAxis);
+    switch (Axis)
+    {
+    case EAxis::X:
+        CurrentDragAxis = FVector{1.f, 0.f, 0.f};
+        break;
+    case EAxis::Y:
+        CurrentDragAxis = FVector{0.f, 1.f, 0.f};
+        break;
+    case EAxis::Z:
+        CurrentDragAxis = FVector{0.f, 0.f, 1.f};
+        break;
     }
+    if (!bIsWorldMode)
+    {
+        CurrentDragAxis = SelectedObject->GetRelativeRotation().RotateVector(CurrentDragAxis);
+    }
+
+    const Geometry::FRay PickRay = Geometry::FRay::BuildRay(
+        static_cast<int32>(MouseX), static_cast<int32>(MouseY),
+        ViewportCamera->GetViewProjectionMatrix(), static_cast<float>(ViewportCamera->GetWidth()),
+        static_cast<float>(ViewportCamera->GetHeight()));
+
+    InitialDragOffset =
+        CalculateProjectionOffset(PickRay, StartTransform.GetLocation(), CurrentDragAxis);
 }
+
 
 void FViewportGizmoController::OnMouseButtonUp()
 {
     bIsDragging = false;
-    ActiveAxisIndex = EGizmoAxis::None;
+    GizmoType = EGizmoType::None;
+    Axis = EAxis::X;
     CurrentDragAxis = FVector{0.f, 0.f, 0.f};
-    StartMousePos = FVector2{0.f, 0.f};
+    StartMousePosX = 0;
+    StartMousePosY = 0;
     StartTransform = FTransform{};
     InitialDragOffset = 0.0f;
 }
 
-void FViewportGizmoController::OnMouseMove(const FVector2& MousePos)
+void FViewportGizmoController::OnMouseMove(int32 MouseX, int32 MouseY)
 {
     if (bIsDragging)
     {
-        UpdateDrag(MousePos);
+        UpdateDrag(MouseX, MouseY);
     }
     else
     {
-        ActiveAxisIndex = HitTestGizmo(MousePos);
+        HitTestGizmo(MouseX, MouseY);
     }
 }
 
-EGizmoAxis FViewportGizmoController::HitTestGizmo(const FVector2& MousePos)
+void FViewportGizmoController::HitTestGizmo(int32 MouseX, int32 MouseY)
 {
-    if (ViewportCamera == nullptr || SceneRenderData == nullptr)
+    if (ViewportCamera == nullptr || EditorRenderData == nullptr)
     {
-        return EGizmoAxis::None;
+        return;
     }
 
-    return EGizmoAxis::None;
+    FPickResult Result;
+    if (RendererModule->Pick(*EditorRenderData, MouseX, MouseY, Result))
+    {
+        GizmoType = Result.GizmoType;
+        Axis = Result.Axis;
+    }
 }
 
-void FViewportGizmoController::UpdateDrag(const FVector2& MousePos)
+void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)
 {
-    if (ActiveAxisIndex == EGizmoAxis::None || SelectedObject == nullptr)
+    if (GizmoType == EGizmoType::None || SelectedObject == nullptr)
     {
         return;
     }
 
     const Geometry::FRay PickRay = Geometry::FRay::BuildRay(
-        static_cast<int32>(MousePos.X), static_cast<int32>(MousePos.Y),
+        static_cast<int32>(MouseX), static_cast<int32>(MouseY),
         ViewportCamera->GetViewProjectionMatrix(), static_cast<float>(ViewportCamera->GetWidth()),
         static_cast<float>(ViewportCamera->GetHeight()));
 

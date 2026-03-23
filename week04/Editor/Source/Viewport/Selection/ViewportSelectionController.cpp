@@ -130,29 +130,29 @@ bool FViewportSelectionController::IsSelected(AActor* Actor) const
     return Iterator != SelectedActors.end();
 }
 
-Geometry::FRay FViewportSelectionController::BuildPickRay(int32 MouseX, int32 MouseY) const
-{
-    if (ViewportCamera == nullptr || ViewportWidth <= 0 || ViewportHeight <= 0)
-    {
-        return Geometry::FRay{};
-    }
-
-    const float NDCX =
-        (2.0f * static_cast<float>(MouseX) / static_cast<float>(ViewportWidth) - 1.0f);
-    const float NDCY =
-        1.0f - (2.0f * static_cast<float>(MouseY) / static_cast<float>(ViewportHeight));
-
-    const FVector NearPointNDC(NDCX, NDCY, 0.0f);
-    const FVector FarPointNDC(NDCX, NDCY, 1.0f);
-
-    const FMatrix ViewProjection = ViewportCamera->GetViewProjectionMatrix();
-    const FMatrix InvViewProjection = ViewProjection.GetInverse();
-
-    const FVector NearWorld = InvViewProjection.TransformPosition(NearPointNDC);
-    const FVector FarWorld = InvViewProjection.TransformPosition(FarPointNDC);
-
-    return Geometry::FRay{NearWorld, (FarWorld - NearWorld).GetSafeNormal()};
-}
+//Geometry::FRay FViewportSelectionController::BuildPickRay(int32 MouseX, int32 MouseY) const
+//{
+//    if (ViewportCamera == nullptr || ViewportWidth <= 0 || ViewportHeight <= 0)
+//    {
+//        return Geometry::FRay{};
+//    }
+//
+//    const float NDCX =
+//        (2.0f * static_cast<float>(MouseX) / static_cast<float>(ViewportWidth) - 1.0f);
+//    const float NDCY =
+//        1.0f - (2.0f * static_cast<float>(MouseY) / static_cast<float>(ViewportHeight));
+//
+//    const FVector NearPointNDC(NDCX, NDCY, 0.0f);
+//    const FVector FarPointNDC(NDCX, NDCY, 1.0f);
+//
+//    const FMatrix ViewProjection = ViewportCamera->GetViewProjectionMatrix();
+//    const FMatrix InvViewProjection = ViewProjection.GetInverse();
+//
+//    const FVector NearWorld = InvViewProjection.TransformPosition(NearPointNDC);
+//    const FVector FarWorld = InvViewProjection.TransformPosition(FarPointNDC);
+//
+//    return Geometry::FRay{NearWorld, (FarWorld - NearWorld).GetSafeNormal()};
+//}
 
 AActor* FViewportSelectionController::PickActor(int32 MouseX, int32 MouseY) const
 {
@@ -161,7 +161,10 @@ AActor* FViewportSelectionController::PickActor(int32 MouseX, int32 MouseY) cons
         return nullptr;
     }
 
-    const Geometry::FRay PickRay = BuildPickRay(MouseX, MouseY);
+    const Geometry::FRay PickRay = Geometry::FRay::BuildRay(
+        static_cast<int32>(MouseX), static_cast<int32>(MouseY),
+        ViewportCamera->GetViewProjectionMatrix(), static_cast<float>(ViewportCamera->GetWidth()),
+        static_cast<float>(ViewportCamera->GetHeight()));
 
     AActor* ClosestActor = nullptr;
     float ClosestT = FLT_MAX;
