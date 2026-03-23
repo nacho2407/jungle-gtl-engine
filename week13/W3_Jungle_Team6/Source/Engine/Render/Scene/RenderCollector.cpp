@@ -4,6 +4,7 @@
 #include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/GizmoComponent.h"
+#include "Component/BillboardComponent.h"
 
 void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
@@ -58,14 +59,14 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderColl
 		FRenderCommand BaseCmd{};
 		BaseCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
 		BaseCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
-		
+
 		// StencilBuffer Mask
 		FRenderCommand MaskCmd = BaseCmd;
 		MaskCmd.Type = ERenderCommandType::SelectionOutline;
 		MaskCmd.DepthStencilState = EDepthStencilState::StencilWrite; //스텐실 버퍼만 작성하는 타입
 		MaskCmd.BlendState = EBlendState::NoColor;
 		RenderBus.AddCommand(ERenderPass::Outline, MaskCmd);
-		
+
 		// Outline
 		FRenderCommand OutlineCmd = BaseCmd;
 		OutlineCmd.Type = ERenderCommandType::SelectionOutline;
@@ -94,30 +95,27 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* primitiveCompon
 {
 	FRenderCommand Cmd = {};
 	Cmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix(), FColor::White().ToVector4(), 0.f };
-	if (primitiveComponent->GetRenderCommand(Cmd))
+	
+	ERenderPass selectedRenderPass = ERenderPass::Opaque;
+
+	if (primitiveComponent->IsA<UBillboardComponent>() == true)
 	{
-		ERenderPass selectedRenderPass = ERenderPass::Opaque;
-		switch (Cmd.Type)
-		{
-		case ERenderCommandType::Primitive:
-			if (Context.ShowFlags.bPrimitives == false) return;
-			selectedRenderPass = ERenderPass::Opaque;
-			Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
-			Cmd.DepthStencilState = EDepthStencilState::Default;
-			break;
-
-		case ERenderCommandType::Billboard:
-
-			if (Context.ShowFlags.bBillboardText == false) return;
-			Cmd.BlendState = EBlendState::AlphaBlend;
-			Cmd.DepthStencilState = EDepthStencilState::Default;
-			Cmd.TextData = "Hello Jungle";
-			selectedRenderPass = ERenderPass::Translucent;
-			break;
-		}
-
-		RenderBus.AddCommand(selectedRenderPass, Cmd);
+		if (Context.ShowFlags.bBillboardText == false) return;
+		Cmd.BlendState = EBlendState::AlphaBlend;
+		Cmd.DepthStencilState = EDepthStencilState::Default;
+		Cmd.TextData = "Hello Jungle";
+		selectedRenderPass = ERenderPass::Translucent;
 	}
+	
+	else
+	{
+		if (Context.ShowFlags.bPrimitives == false) return;
+		selectedRenderPass = ERenderPass::Opaque;
+		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
+		Cmd.DepthStencilState = EDepthStencilState::Default;
+	}
+	
+	RenderBus.AddCommand(selectedRenderPass, Cmd);
 
 }
 
