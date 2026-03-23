@@ -1,16 +1,16 @@
-#include "ViewportInputContext.h"
+#include "NavigationInputContext.h"
 
 using Engine::ApplicationCore::EInputEventType;
 using Engine::ApplicationCore::EKey;
 using Engine::ApplicationCore::FInputEvent;
 using Engine::ApplicationCore::FInputState;
 
-FViewportInputContext::FViewportInputContext(FViewportNavigationController* InNavigationController)
+FNavigationInputContext::FNavigationInputContext(FViewportNavigationController* InNavigationController)
     : NavigationController(InNavigationController)
 {
 }
 
-bool FViewportInputContext::HandleEvent(const FInputEvent& Event, const FInputState& State)
+bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInputState& State)
 {
     if (NavigationController == nullptr)
     {
@@ -61,12 +61,21 @@ bool FViewportInputContext::HandleEvent(const FInputEvent& Event, const FInputSt
         }
 
         break;
-    }
 
+    case EInputEventType::MouseWheel:
+
+        NavigationController->ModifyFOV(static_cast<float>(-Event.WheelDelta));
+        return true;
+
+        // break;
+    default:
+        break;
+    }
+    
     return false;
 }
 
-void FViewportInputContext::Tick(const Engine::ApplicationCore::FInputState& State)
+void FNavigationInputContext::Tick(const Engine::ApplicationCore::FInputState& State)
 {
     if (NavigationController == nullptr)
     {
@@ -102,8 +111,12 @@ void FViewportInputContext::Tick(const Engine::ApplicationCore::FInputState& Sta
         UpValue -= 1.f;
     }
 
+    FVector NormalizedInput(ForwardValue, RightValue, UpValue);
+
+    NormalizedInput = NormalizedInput.GetSafeNormal();
+
     //  입력된 값에 따라 이동 적용
-    NavigationController->MoveForward(ForwardValue, DeltaTime);
-    NavigationController->MoveRight(RightValue, DeltaTime);
-    NavigationController->MoveUp(UpValue, DeltaTime);
+    NavigationController->MoveForward(NormalizedInput.X, DeltaTime);
+    NavigationController->MoveRight(NormalizedInput.Y, DeltaTime);
+    NavigationController->MoveUp(NormalizedInput.Z, DeltaTime);
 }

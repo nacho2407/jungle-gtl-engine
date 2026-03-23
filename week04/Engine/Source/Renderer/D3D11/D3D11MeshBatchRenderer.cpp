@@ -1,26 +1,17 @@
-#include "D3D11MeshBatchRenderer.h"
+#include "Renderer/D3D11/D3D11MeshBatchRenderer.h"
 
+#include "Renderer/D3D11/D3D11DynamicRHI.h"
 #include "Renderer/SceneView.h"
 #include "Renderer/Types/ShaderConstants.h"
 #include "Renderer/Types/VertexTypes.h"
 
-#include "Renderer/D3D11/D3D11DynamicRHI.h"
-
-#include "Resources/Mesh/VertexSimple.h"
-#include "Resources/Mesh/Cube.h"
-#include "Resources/Mesh/Plane.h"
-#include "Resources/Mesh/Triangle.h"
-#include "Resources/Mesh/Sphere.h"
 #include "Resources/Mesh/Cone.h"
+#include "Resources/Mesh/Cube.h"
 #include "Resources/Mesh/Cylinder.h"
+#include "Resources/Mesh/Quad.h"
 #include "Resources/Mesh/Ring.h"
-
-#include <d3dcompiler.h>
-
-namespace
-{
-    constexpr uint32 ToMeshIndex(EBasicMeshType InType) { return static_cast<uint32>(InType); }
-} // namespace
+#include "Resources/Mesh/Sphere.h"
+#include "Resources/Mesh/Triangle.h"
 
 bool FD3D11MeshBatchRenderer::Initialize(FD3D11DynamicRHI* InRHI)
 {
@@ -30,6 +21,8 @@ bool FD3D11MeshBatchRenderer::Initialize(FD3D11DynamicRHI* InRHI)
     }
 
     RHI = InRHI;
+    CurrentSceneView = nullptr;
+    bUseInstancing = true;
 
     if (!CreateShaders())
     {
@@ -70,6 +63,9 @@ void FD3D11MeshBatchRenderer::Shutdown()
     ResetBatches();
     ReleaseBasicMeshes();
 
+    CurrentSceneView = nullptr;
+    bUseInstancing = true;
+
     DepthStencilState.Reset();
     WireframeRasterizerState.Reset();
     SolidRasterizerState.Reset();
@@ -89,144 +85,124 @@ void FD3D11MeshBatchRenderer::Shutdown()
     RHI = nullptr;
 }
 
-void FD3D11MeshBatchRenderer::Render(const FSceneRenderData& InRenderData)
+void FD3D11MeshBatchRenderer::BeginFrame(const FSceneView* InSceneView, EViewModeIndex InViewMode,
+                                         bool bInUseInstancing)
 {
-    ViewMode = InRenderData.ViewMode;
+    CurrentSceneView = InSceneView;
+    ViewMode = InViewMode;
+    bUseInstancing = bInUseInstancing;
 
     ResetBatches();
-    GatherRenderItems(InRenderData);
+}
 
-    if (InRenderData.SceneView == nullptr)
+void FD3D11MeshBatchRenderer::AddPrimitive(const FPrimitiveRenderItem& InItem)
+{
+    const int32 MeshTypeIndex = static_cast<int32>(InItem.MeshType);
+    if (MeshTypeIndex < 0 || MeshTypeIndex >= static_cast<int32>(EBasicMeshType::Count))
     {
         return;
     }
 
-    Flush(InRenderData.bUseInstancing ? EMeshDrawPath::Instanced : EMeshDrawPath::Single,
-          InRenderData.SceneView);
+    if (!InItem.bVisible)
+    {
+        return;
+    }
+
+    FMeshDrawData DrawData = {};
+    DrawData.World = InItem.World;
+    DrawData.Color = InItem.Color;
+
+    MeshDraws[MeshTypeIndex].push_back(DrawData);
+}
+
+void FD3D11MeshBatchRenderer::AddPrimitives(const TArray<FPrimitiveRenderItem>& InItems)
+{
+    for (const FPrimitiveRenderItem& Item : InItems)
+    {
+        AddPrimitive(Item);
+    }
+}
+
+void FD3D11MeshBatchRenderer::EndFrame()
+{
+    if (RHI == nullptr)
+    {
+        return;
+    }
+
+    Flush();
+    ResetBatches();
+    CurrentSceneView = nullptr;
+}
+
+void FD3D11MeshBatchRenderer::Flush()
+{
+    if (RHI == nullptr || CurrentSceneView == nullptr)
+    {
+        return;
+    }
+
+    FlushInternal(bUseInstancing ? EMeshDrawPath::Instanced : EMeshDrawPath::Single,
+                  CurrentSceneView);
 }
 
 bool FD3D11MeshBatchRenderer::CreateShaders()
 {
-    if (RHI == nullptr || RHI->GetDevice() == nullptr)
+    if (RHI == nullptr)
     {
         return false;
     }
 
-    ID3D11Device* Device = RHI->GetDevice();
+    static const D3D11_INPUT_ELEMENT_DESC InstancedLayoutDesc[] = {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
 
-    TComPtr<ID3DBlob> InstancedVSBlob;
-    TComPtr<ID3DBlob> InstancedPSBlob;
-    TComPtr<ID3DBlob> SingleVSBlob;
-    TComPtr<ID3DBlob> SinglePSBlob;
-    TComPtr<ID3DBlob> ErrorBlob;
+        {"WORLD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+        {"WORLD", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 16, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+        {"WORLD", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 32, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+        {"WORLD", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 48, D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
-    UINT CompileFlags = D3DCOMPILE_ENABLE_STRICTNESS;
-#if defined(_DEBUG)
-    CompileFlags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#endif
+        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 64, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+    };
 
-    HRESULT Hr = D3DCompileFromFile(InstancedShaderPath, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
-                                    "VSMain", "vs_5_0", CompileFlags, 0,
-                                    InstancedVSBlob.GetAddressOf(), ErrorBlob.GetAddressOf());
-    if (FAILED(Hr))
+    static const D3D11_INPUT_ELEMENT_DESC SingleLayoutDesc[] = {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+    };
+
+    if (!RHI->CreateVertexShaderAndInputLayout(InstancedShaderPath, "VSMain", InstancedLayoutDesc,
+                                               static_cast<uint32>(std::size(InstancedLayoutDesc)),
+                                               InstancedVertexShader.GetAddressOf(),
+                                               InstancedInputLayout.GetAddressOf()))
     {
         return false;
     }
 
-    ErrorBlob.Reset();
-
-    Hr = D3DCompileFromFile(InstancedShaderPath, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
-                            "PSMain", "ps_5_0", CompileFlags, 0, InstancedPSBlob.GetAddressOf(),
-                            ErrorBlob.GetAddressOf());
-    if (FAILED(Hr))
+    if (!RHI->CreatePixelShader(InstancedShaderPath, "PSMain", InstancedPixelShader.GetAddressOf()))
     {
+        InstancedInputLayout.Reset();
+        InstancedVertexShader.Reset();
         return false;
     }
 
-    ErrorBlob.Reset();
-
-    Hr = D3DCompileFromFile(SingleShaderPath, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain",
-                            "vs_5_0", CompileFlags, 0, SingleVSBlob.GetAddressOf(),
-                            ErrorBlob.GetAddressOf());
-    if (FAILED(Hr))
+    if (!RHI->CreateVertexShaderAndInputLayout(SingleShaderPath, "VSMain", SingleLayoutDesc,
+                                               static_cast<uint32>(std::size(SingleLayoutDesc)),
+                                               SingleVertexShader.GetAddressOf(),
+                                               SingleInputLayout.GetAddressOf()))
     {
+        InstancedPixelShader.Reset();
+        InstancedInputLayout.Reset();
+        InstancedVertexShader.Reset();
         return false;
     }
 
-    ErrorBlob.Reset();
-
-    Hr = D3DCompileFromFile(SingleShaderPath, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PSMain",
-                            "ps_5_0", CompileFlags, 0, SinglePSBlob.GetAddressOf(),
-                            ErrorBlob.GetAddressOf());
-    if (FAILED(Hr))
+    if (!RHI->CreatePixelShader(SingleShaderPath, "PSMain", SinglePixelShader.GetAddressOf()))
     {
+        SingleInputLayout.Reset();
+        SingleVertexShader.Reset();
+
+        InstancedPixelShader.Reset();
+        InstancedInputLayout.Reset();
+        InstancedVertexShader.Reset();
         return false;
-    }
-
-    Hr = Device->CreateVertexShader(InstancedVSBlob->GetBufferPointer(),
-                                    InstancedVSBlob->GetBufferSize(), nullptr,
-                                    InstancedVertexShader.GetAddressOf());
-    if (FAILED(Hr))
-    {
-        return false;
-    }
-
-    Hr = Device->CreatePixelShader(InstancedPSBlob->GetBufferPointer(),
-                                   InstancedPSBlob->GetBufferSize(), nullptr,
-                                   InstancedPixelShader.GetAddressOf());
-    if (FAILED(Hr))
-    {
-        return false;
-    }
-
-    Hr = Device->CreateVertexShader(SingleVSBlob->GetBufferPointer(), SingleVSBlob->GetBufferSize(),
-                                    nullptr, SingleVertexShader.GetAddressOf());
-    if (FAILED(Hr))
-    {
-        return false;
-    }
-
-    Hr = Device->CreatePixelShader(SinglePSBlob->GetBufferPointer(), SinglePSBlob->GetBufferSize(),
-                                   nullptr, SinglePixelShader.GetAddressOf());
-    if (FAILED(Hr))
-    {
-        return false;
-    }
-
-    {
-        const D3D11_INPUT_ELEMENT_DESC InstancedLayoutDesc[] = {
-            {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-
-            {"WORLD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1},
-            {"WORLD", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 16, D3D11_INPUT_PER_INSTANCE_DATA, 1},
-            {"WORLD", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 32, D3D11_INPUT_PER_INSTANCE_DATA, 1},
-            {"WORLD", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 48, D3D11_INPUT_PER_INSTANCE_DATA, 1},
-
-            {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 64, D3D11_INPUT_PER_INSTANCE_DATA, 1},
-        };
-
-        Hr = Device->CreateInputLayout(InstancedLayoutDesc, ARRAYSIZE(InstancedLayoutDesc),
-                                       InstancedVSBlob->GetBufferPointer(),
-                                       InstancedVSBlob->GetBufferSize(),
-                                       InstancedInputLayout.GetAddressOf());
-        if (FAILED(Hr))
-        {
-            return false;
-        }
-    }
-
-    {
-        const D3D11_INPUT_ELEMENT_DESC SingleLayoutDesc[] = {
-            {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        };
-
-        Hr = Device->CreateInputLayout(
-            SingleLayoutDesc, ARRAYSIZE(SingleLayoutDesc), SingleVSBlob->GetBufferPointer(),
-            SingleVSBlob->GetBufferSize(), SingleInputLayout.GetAddressOf());
-        if (FAILED(Hr))
-        {
-            return false;
-        }
     }
 
     return true;
@@ -239,24 +215,14 @@ bool FD3D11MeshBatchRenderer::CreateConstantBuffers()
         return false;
     }
 
-    static_assert((sizeof(FMeshUnlitConstants) % 16) == 0);
-    static_assert((sizeof(FMeshUnlitInstancedConstants) % 16) == 0);
+    const bool bSingleOk =
+        RHI->CreateConstantBuffer(sizeof(FMeshUnlitConstants), SingleConstantBuffer.GetAddressOf());
 
-    if (!RHI->CreateConstantBuffer(static_cast<uint32>(sizeof(FMeshUnlitConstants)),
-                                   SingleConstantBuffer.GetAddressOf()))
-    {
-        return false;
-    }
+    const bool bInstancedOk = RHI->CreateConstantBuffer(sizeof(FMeshUnlitInstancedConstants),
+                                                        InstancedConstantBuffer.GetAddressOf());
 
-    if (!RHI->CreateConstantBuffer(static_cast<uint32>(sizeof(FMeshUnlitInstancedConstants)),
-                                   InstancedConstantBuffer.GetAddressOf()))
-    {
-        return false;
-    }
-
-    return true;
+    return bSingleOk && bInstancedOk;
 }
-
 bool FD3D11MeshBatchRenderer::CreateStates()
 {
     if (RHI == nullptr || RHI->GetDevice() == nullptr)
@@ -302,31 +268,70 @@ bool FD3D11MeshBatchRenderer::CreateStates()
 
 bool FD3D11MeshBatchRenderer::CreateDynamicInstanceBuffer(uint32 InMaxInstanceCount)
 {
-    if (RHI == nullptr || RHI->GetDevice() == nullptr)
+    if (RHI == nullptr)
     {
         return false;
     }
 
-    D3D11_BUFFER_DESC Desc = {};
-    Desc.ByteWidth = sizeof(FMeshDrawData) * InMaxInstanceCount;
-    Desc.Usage = D3D11_USAGE_DYNAMIC;
-    Desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-    return SUCCEEDED(RHI->GetDevice()->CreateBuffer(&Desc, nullptr, InstanceBuffer.GetAddressOf()));
+    return RHI->CreateVertexBuffer(nullptr, sizeof(FMeshDrawData) * InMaxInstanceCount,
+                                   sizeof(FMeshDrawData), true, InstanceBuffer.GetAddressOf());
 }
 
 bool FD3D11MeshBatchRenderer::CreateBasicMeshes()
 {
-    ReleaseBasicMeshes();
+    bool bOk = true;
+    bOk &= CreateBasicCubeMesh(BasicMeshResources[static_cast<int32>(EBasicMeshType::Cube)]);
+    bOk &= CreateBasicQuadMesh(BasicMeshResources[static_cast<int32>(EBasicMeshType::Quad)]);
+    bOk &=
+        CreateBasicTriangleMesh(BasicMeshResources[static_cast<int32>(EBasicMeshType::Triangle)]);
+    bOk &= CreateBasicSphereMesh(BasicMeshResources[static_cast<int32>(EBasicMeshType::Sphere)]);
+    bOk &= CreateBasicConeMesh(BasicMeshResources[static_cast<int32>(EBasicMeshType::Cone)]);
+    bOk &=
+        CreateBasicCylinderMesh(BasicMeshResources[static_cast<int32>(EBasicMeshType::Cylinder)]);
+    bOk &= CreateBasicRingMesh(BasicMeshResources[static_cast<int32>(EBasicMeshType::Ring)]);
+    return bOk;
+}
 
-    return CreateBasicCubeMesh(BasicMeshResources[ToMeshIndex(EBasicMeshType::Cube)]) &&
-           CreateBasicPlaneMesh(BasicMeshResources[ToMeshIndex(EBasicMeshType::Plane)]) &&
-           CreateBasicTriangleMesh(BasicMeshResources[ToMeshIndex(EBasicMeshType::Triangle)]) &&
-           CreateBasicSphereMesh(BasicMeshResources[ToMeshIndex(EBasicMeshType::Sphere)]) &&
-           CreateBasicConeMesh(BasicMeshResources[ToMeshIndex(EBasicMeshType::Cone)]) &&
-           CreateBasicCylinderMesh(BasicMeshResources[ToMeshIndex(EBasicMeshType::Cylinder)]) &&
-           CreateBasicRingMesh(BasicMeshResources[ToMeshIndex(EBasicMeshType::Ring)]);
+bool FD3D11MeshBatchRenderer::CreateBasicCubeMesh(FBasicMeshResource& OutResource)
+{
+    return CreateBasicMeshResource(cube_vertices, cube_vertex_count, cube_indices, cube_index_count,
+                                   cube_topology, OutResource);
+}
+
+bool FD3D11MeshBatchRenderer::CreateBasicQuadMesh(FBasicMeshResource& OutResource)
+{
+    return CreateBasicMeshResource(quad_vertices, quad_vertex_count, quad_indices, quad_index_count,
+                                   quad_topology, OutResource);
+}
+
+bool FD3D11MeshBatchRenderer::CreateBasicTriangleMesh(FBasicMeshResource& OutResource)
+{
+    return CreateBasicMeshResource(triangle_vertices, triangle_vertex_count, triangle_indices,
+                                   triangle_index_count, triangle_topology, OutResource);
+}
+
+bool FD3D11MeshBatchRenderer::CreateBasicSphereMesh(FBasicMeshResource& OutResource)
+{
+    return CreateBasicMeshResource(sphere_vertices, sphere_vertex_count, sphere_indices,
+                                   sphere_index_count, sphere_topology, OutResource);
+}
+
+bool FD3D11MeshBatchRenderer::CreateBasicConeMesh(FBasicMeshResource& OutResource)
+{
+    return CreateBasicMeshResource(cone_vertices, cone_vertex_count, cone_indices, cone_index_count,
+                                   cone_topology, OutResource);
+}
+
+bool FD3D11MeshBatchRenderer::CreateBasicCylinderMesh(FBasicMeshResource& OutResource)
+{
+    return CreateBasicMeshResource(cylinder_vertices, cylinder_vertex_count, cylinder_indices,
+                                   cylinder_index_count, cylinder_topology, OutResource);
+}
+
+bool FD3D11MeshBatchRenderer::CreateBasicRingMesh(FBasicMeshResource& OutResource)
+{
+    return CreateBasicMeshResource(ring_vertices, ring_vertex_count, ring_indices, ring_index_count,
+                                   ring_topology, OutResource);
 }
 
 void FD3D11MeshBatchRenderer::ReleaseBasicMeshes()
@@ -340,97 +345,30 @@ void FD3D11MeshBatchRenderer::ReleaseBasicMeshes()
     }
 }
 
-bool FD3D11MeshBatchRenderer::CreateBasicCubeMesh(FBasicMeshResource& OutResource)
-{
-    return CreateBasicMeshResource(cube_vertices, static_cast<uint32>(std::size(cube_vertices)),
-                                   cube_indices, static_cast<uint32>(std::size(cube_indices)),
-                                   cube_topology, OutResource);
-}
-
-bool FD3D11MeshBatchRenderer::CreateBasicPlaneMesh(FBasicMeshResource& OutResource)
-{
-    return CreateBasicMeshResource(plane_vertices, static_cast<uint32>(std::size(plane_vertices)),
-                                   plane_indices, static_cast<uint32>(std::size(plane_indices)),
-                                   plane_topology, OutResource);
-}
-
-bool FD3D11MeshBatchRenderer::CreateBasicTriangleMesh(FBasicMeshResource& OutResource)
-{
-    return CreateBasicMeshResource(
-        triangle_vertices, static_cast<uint32>(std::size(triangle_vertices)), triangle_indices,
-        static_cast<uint32>(std::size(triangle_indices)), triangle_topology, OutResource);
-}
-
-bool FD3D11MeshBatchRenderer::CreateBasicSphereMesh(FBasicMeshResource& OutResource)
-{
-    return CreateBasicMeshResource(sphere_vertices, static_cast<uint32>(std::size(sphere_vertices)),
-                                   sphere_indices, static_cast<uint32>(std::size(sphere_indices)),
-                                   sphere_topology, OutResource);
-}
-
-bool FD3D11MeshBatchRenderer::CreateBasicConeMesh(FBasicMeshResource& OutResource)
-{
-    return CreateBasicMeshResource(cone_vertices, static_cast<uint32>(std::size(cone_vertices)),
-                                   cone_indices, static_cast<uint32>(std::size(cone_indices)),
-                                   cone_topology, OutResource);
-}
-
-bool FD3D11MeshBatchRenderer::CreateBasicCylinderMesh(FBasicMeshResource& OutResource)
-{
-    return CreateBasicMeshResource(
-        cylinder_vertices, static_cast<uint32>(std::size(cylinder_vertices)), cylinder_indices,
-        static_cast<uint32>(std::size(cylinder_indices)), cylinder_topology, OutResource);
-}
-
-bool FD3D11MeshBatchRenderer::CreateBasicRingMesh(FBasicMeshResource& OutResource)
-{
-    return CreateBasicMeshResource(ring_vertices, static_cast<uint32>(std::size(ring_vertices)),
-                                   ring_indices, static_cast<uint32>(std::size(ring_indices)),
-                                   ring_topology, OutResource);
-}
-
 bool FD3D11MeshBatchRenderer::CreateBasicMeshResource(const FVertexSimple* InVertices,
                                                       uint32 InVertexCount, const uint16* InIndices,
-                                                      uint32 InIndexCount,
+                                                      uint32                 InIndexCount,
                                                       EMeshPrimitiveTopology InTopology,
-                                                      FBasicMeshResource& OutResource)
+                                                      FBasicMeshResource&    OutResource)
 {
     if (RHI == nullptr || RHI->GetDevice() == nullptr || InVertices == nullptr ||
-        InVertexCount == 0 || InIndices == nullptr || InIndexCount == 0)
+        InIndices == nullptr || InVertexCount == 0 || InIndexCount == 0)
     {
         return false;
     }
 
-    ID3D11Device* Device = RHI->GetDevice();
-
+    if (!RHI->CreateVertexBuffer(InVertices, sizeof(FVertexSimple) * InVertexCount,
+                                 sizeof(FVertexSimple), false,
+                                 OutResource.VertexBuffer.GetAddressOf()))
     {
-        D3D11_BUFFER_DESC Desc = {};
-        Desc.ByteWidth = sizeof(FVertexSimple) * InVertexCount;
-        Desc.Usage = D3D11_USAGE_IMMUTABLE;
-        Desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-
-        D3D11_SUBRESOURCE_DATA InitData = {};
-        InitData.pSysMem = InVertices;
-
-        if (FAILED(Device->CreateBuffer(&Desc, &InitData, OutResource.VertexBuffer.GetAddressOf())))
-        {
-            return false;
-        }
+        return false;
     }
 
+    if (!RHI->CreateIndexBuffer(InIndices, sizeof(uint16) * InIndexCount, false,
+                                OutResource.IndexBuffer.GetAddressOf()))
     {
-        D3D11_BUFFER_DESC Desc = {};
-        Desc.ByteWidth = sizeof(uint16) * InIndexCount;
-        Desc.Usage = D3D11_USAGE_IMMUTABLE;
-        Desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-
-        D3D11_SUBRESOURCE_DATA InitData = {};
-        InitData.pSysMem = InIndices;
-
-        if (FAILED(Device->CreateBuffer(&Desc, &InitData, OutResource.IndexBuffer.GetAddressOf())))
-        {
-            return false;
-        }
+        OutResource.VertexBuffer.Reset();
+        return false;
     }
 
     OutResource.IndexCount = InIndexCount;
@@ -446,42 +384,93 @@ void FD3D11MeshBatchRenderer::ResetBatches()
     }
 }
 
-void FD3D11MeshBatchRenderer::GatherRenderItems(const FSceneRenderData& InRenderData)
+void FD3D11MeshBatchRenderer::UpdatePerFrameConstants(const FSceneView* InSceneView,
+                                                      EMeshDrawPath     DrawPath)
 {
-    for (const FPrimitiveRenderItem& Item : InRenderData.Primitives)
+    if (RHI == nullptr || InSceneView == nullptr)
     {
-        if (!Item.bVisible)
-        {
-            continue;
-        }
+        return;
+    }
 
-        const uint32 MeshIndex = ToMeshIndex(Item.MeshType);
-        if (MeshIndex >= static_cast<uint32>(EBasicMeshType::Count))
-        {
-            continue;
-        }
-
-        FMeshDrawData DrawData = {};
-        DrawData.World = Item.World;
-        DrawData.Color = Item.Color;
-
-        if (Item.bSelected)
-        {
-            DrawData.Color.b *= 0.6f;
-        }
-
-        if (Item.bHovered)
-        {
-            DrawData.Color.r *= 1.15f;
-            DrawData.Color.g *= 1.15f;
-            DrawData.Color.b *= 1.15f;
-        }
-
-        MeshDraws[MeshIndex].push_back(DrawData);
+    if (DrawPath == EMeshDrawPath::Instanced)
+    {
+        FMeshUnlitInstancedConstants Constants = {};
+        Constants.VP = InSceneView->GetViewProjectionMatrix();
+        RHI->UpdateConstantBuffer(InstancedConstantBuffer.Get(), &Constants, sizeof(Constants));
     }
 }
 
-void FD3D11MeshBatchRenderer::Flush(EMeshDrawPath DrawPath, const FSceneView* InSceneView)
+void FD3D11MeshBatchRenderer::BindPipeline(EMeshDrawPath DrawPath)
+{
+    if (RHI == nullptr)
+    {
+        return;
+    }
+
+    if (DrawPath == EMeshDrawPath::Instanced)
+    {
+        RHI->SetInputLayout(InstancedInputLayout.Get());
+        RHI->SetVertexShader(InstancedVertexShader.Get());
+        RHI->SetVSConstantBuffer(0, InstancedConstantBuffer.Get());
+        RHI->SetPixelShader(InstancedPixelShader.Get());
+    }
+    else
+    {
+        RHI->SetInputLayout(SingleInputLayout.Get());
+        RHI->SetVertexShader(SingleVertexShader.Get());
+        RHI->SetVSConstantBuffer(0, SingleConstantBuffer.Get());
+        RHI->SetPixelShader(SinglePixelShader.Get());
+    }
+}
+
+void FD3D11MeshBatchRenderer::BindPrimitiveTopology(EMeshPrimitiveTopology InTopology)
+{
+    if (RHI == nullptr)
+    {
+        return;
+    }
+
+    switch (InTopology)
+    {
+    case EMeshPrimitiveTopology::TriangleList:
+        RHI->SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        break;
+    case EMeshPrimitiveTopology::TriangleStrip:
+        RHI->SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+        break;
+    case EMeshPrimitiveTopology::LineList:
+        RHI->SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+        break;
+    case EMeshPrimitiveTopology::LineStrip:
+        RHI->SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
+        break;
+    default:
+        RHI->SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        break;
+    }
+}
+
+void FD3D11MeshBatchRenderer::BindSolidRasterizer()
+{
+    if (RHI == nullptr)
+    {
+        return;
+    }
+
+    RHI->SetRasterizerState(SolidRasterizerState.Get());
+}
+
+void FD3D11MeshBatchRenderer::BindWireframeRasterizer()
+{
+    if (RHI == nullptr)
+    {
+        return;
+    }
+
+    RHI->SetRasterizerState(WireframeRasterizerState.Get());
+}
+
+void FD3D11MeshBatchRenderer::FlushInternal(EMeshDrawPath DrawPath, const FSceneView* InSceneView)
 {
     if (RHI == nullptr || InSceneView == nullptr)
     {
@@ -507,102 +496,6 @@ void FD3D11MeshBatchRenderer::Flush(EMeshDrawPath DrawPath, const FSceneView* In
     }
 }
 
-void FD3D11MeshBatchRenderer::UpdatePerFrameConstants(const FSceneView* InSceneView,
-                                                      EMeshDrawPath     DrawPath)
-{
-    if (RHI == nullptr || InSceneView == nullptr)
-    {
-        return;
-    }
-
-    if (DrawPath == EMeshDrawPath::Instanced)
-    {
-        FMeshUnlitInstancedConstants Constants = {};
-        Constants.VP = InSceneView->GetViewProjectionMatrix();
-
-        RHI->UpdateConstantBuffer(InstancedConstantBuffer.Get(), &Constants, sizeof(Constants));
-    }
-}
-
-void FD3D11MeshBatchRenderer::BindPipeline(EMeshDrawPath DrawPath)
-{
-    if (RHI == nullptr)
-    {
-        return;
-    }
-
-    RHI->SetDepthStencilState(DepthStencilState.Get(), 0);
-
-    if (DrawPath == EMeshDrawPath::Instanced)
-    {
-        RHI->SetInputLayout(InstancedInputLayout.Get());
-        RHI->SetVertexShader(InstancedVertexShader.Get());
-        RHI->SetPixelShader(InstancedPixelShader.Get());
-        RHI->SetVSConstantBuffer(0, InstancedConstantBuffer.Get());
-        RHI->SetPSConstantBuffer(0, InstancedConstantBuffer.Get());
-    }
-    else
-    {
-        RHI->SetInputLayout(SingleInputLayout.Get());
-        RHI->SetVertexShader(SingleVertexShader.Get());
-        RHI->SetPixelShader(SinglePixelShader.Get());
-        RHI->SetVSConstantBuffer(0, SingleConstantBuffer.Get());
-        RHI->SetPSConstantBuffer(0, SingleConstantBuffer.Get());
-    }
-
-}
-
-void FD3D11MeshBatchRenderer::BindPrimitiveTopology(EMeshPrimitiveTopology InTopology)
-{
-    if (RHI == nullptr)
-    {
-        return;
-    }
-
-    D3D11_PRIMITIVE_TOPOLOGY PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-
-    switch (InTopology)
-    {
-    case EMeshPrimitiveTopology::TriangleList:
-        PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-        break;
-    case EMeshPrimitiveTopology::TriangleStrip:
-        PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
-        break;
-    case EMeshPrimitiveTopology::LineList:
-        PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
-        break;
-    case EMeshPrimitiveTopology::LineStrip:
-        PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
-        break;
-    default:
-        PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-        break;
-    }
-
-    RHI->SetPrimitiveTopology(PrimitiveTopology);
-}
-
-void FD3D11MeshBatchRenderer::BindSolidRasterizer()
-{
-    if (RHI == nullptr)
-    {
-        return;
-    }
-
-    RHI->SetRasterizerState(SolidRasterizerState.Get());
-}
-
-void FD3D11MeshBatchRenderer::BindWireframeRasterizer()
-{
-    if (RHI == nullptr)
-    {
-        return;
-    }
-
-    RHI->SetRasterizerState(WireframeRasterizerState.Get());
-}
-
 void FD3D11MeshBatchRenderer::DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath DrawPath,
                                             const FSceneView* InSceneView)
 {
@@ -611,14 +504,8 @@ void FD3D11MeshBatchRenderer::DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath
         return;
     }
 
-    const uint32 MeshIndex = ToMeshIndex(InType);
-    if (MeshIndex >= static_cast<uint32>(EBasicMeshType::Count))
-    {
-        return;
-    }
-
-    const TArray<FMeshDrawData>& Draws = MeshDraws[MeshIndex];
-    if (Draws.empty())
+    const int32 TypeIndex = static_cast<int32>(InType);
+    if (TypeIndex < 0 || TypeIndex >= static_cast<int32>(EBasicMeshType::Count))
     {
         return;
     }
@@ -630,36 +517,51 @@ void FD3D11MeshBatchRenderer::DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath
         return;
     }
 
+    TArray<FMeshDrawData>& Draws = MeshDraws[TypeIndex];
+    if (Draws.empty())
+    {
+        return;
+    }
+
     BindPrimitiveTopology(MeshResource->Topology);
 
     if (DrawPath == EMeshDrawPath::Instanced)
     {
         const uint32 InstanceCount = static_cast<uint32>(Draws.size());
-        if (!RHI->UpdateDynamicBuffer(InstanceBuffer.Get(), Draws.data(),
-                                      static_cast<uint32>(sizeof(FMeshDrawData) * InstanceCount)))
+        if (InstanceCount == 0 || InstanceCount > MaxInstanceCount)
         {
             return;
         }
 
-        ID3D11Buffer* Buffers[] = {MeshResource->VertexBuffer.Get(), InstanceBuffer.Get()};
-        uint32        Strides[] = {sizeof(FVertexSimple), sizeof(FMeshDrawData)};
-        uint32        Offsets[] = {0, 0};
+        if (!RHI->UpdateDynamicBuffer(InstanceBuffer.Get(), Draws.data(),
+                                      static_cast<uint32>(sizeof(FMeshDrawData) * Draws.size())))
+        {
+            return;
+        }
 
-        RHI->SetVertexBuffers(0, 2, Buffers, Strides, Offsets);
+        ID3D11Buffer* VertexBuffers[2] = {
+            MeshResource->VertexBuffer.Get(),
+            InstanceBuffer.Get(),
+        };
+
+        const UINT Strides[2] = {
+            sizeof(FVertexSimple),
+            sizeof(FMeshDrawData),
+        };
+
+        const UINT Offsets[2] = {0, 0};
+
+        RHI->SetVertexBuffers(0, 2, VertexBuffers, Strides, Offsets);
         RHI->SetIndexBuffer(MeshResource->IndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
-
         RHI->DrawIndexedInstanced(MeshResource->IndexCount, InstanceCount, 0, 0, 0);
     }
     else
     {
-        // single path는 ShaderMesh.hlsl 기준:
-        // cbuffer FMeshUnlitConstants { row_major float4x4 MVP; float4 BaseColor; }
+        const UINT    Stride = sizeof(FVertexSimple);
+        const UINT    Offset = 0;
+        ID3D11Buffer* VertexBuffer = MeshResource->VertexBuffer.Get();
 
-        const uint32 VertexStride = sizeof(FVertexSimple);
-        const uint32 VertexOffset = 0;
-
-        ID3D11Buffer* VB = MeshResource->VertexBuffer.Get();
-        RHI->SetVertexBuffer(0, VB, VertexStride, VertexOffset);
+        RHI->SetVertexBuffer(0, VertexBuffer, Stride, Offset);
         RHI->SetIndexBuffer(MeshResource->IndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
 
         for (const FMeshDrawData& Draw : Draws)
@@ -668,7 +570,12 @@ void FD3D11MeshBatchRenderer::DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath
             Constants.MVP = Draw.World * InSceneView->GetViewProjectionMatrix();
             Constants.BaseColor = Draw.Color;
 
-            RHI->UpdateConstantBuffer(SingleConstantBuffer.Get(), &Constants, sizeof(Constants));
+            if (!RHI->UpdateConstantBuffer(SingleConstantBuffer.Get(), &Constants,
+                                           sizeof(Constants)))
+            {
+                continue;
+            }
+
             RHI->DrawIndexed(MeshResource->IndexCount, 0, 0);
         }
     }
@@ -676,22 +583,22 @@ void FD3D11MeshBatchRenderer::DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath
 
 FBasicMeshResource* FD3D11MeshBatchRenderer::GetBasicMeshResource(EBasicMeshType InType)
 {
-    const uint32 MeshIndex = ToMeshIndex(InType);
-    if (MeshIndex >= static_cast<uint32>(EBasicMeshType::Count))
+    const int32 Index = static_cast<int32>(InType);
+    if (Index < 0 || Index >= static_cast<int32>(EBasicMeshType::Count))
     {
         return nullptr;
     }
 
-    return &BasicMeshResources[MeshIndex];
+    return &BasicMeshResources[Index];
 }
 
 const FBasicMeshResource* FD3D11MeshBatchRenderer::GetBasicMeshResource(EBasicMeshType InType) const
 {
-    const uint32 MeshIndex = ToMeshIndex(InType);
-    if (MeshIndex >= static_cast<uint32>(EBasicMeshType::Count))
+    const int32 Index = static_cast<int32>(InType);
+    if (Index < 0 || Index >= static_cast<int32>(EBasicMeshType::Count))
     {
         return nullptr;
     }
 
-    return &BasicMeshResources[MeshIndex];
+    return &BasicMeshResources[Index];
 }

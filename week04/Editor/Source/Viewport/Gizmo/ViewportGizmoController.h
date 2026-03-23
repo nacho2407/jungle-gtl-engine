@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/ViewPort/ViewportController.h"
 
 #include "Core/CoreMinimal.h"
 #include "Gizmo/EditorGizmoTypes.h"
@@ -13,7 +14,7 @@
 
 class FViewportCamera;
 
-class FViewportGizmoController
+class FViewportGizmoController : public Engine::Viewport::IViewportController
 {
     void Tick(float DeltaTime);
 

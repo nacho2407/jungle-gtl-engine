@@ -7,7 +7,7 @@
 #include "ApplicationCore/Input/InputSystem.h"
 #include "Input/EditorGlobalContext.h"
 #include "Input/GizmoInputContext.h"
-#include "Input/ViewPortInputContext.h"
+#include "Input/NavigationInputContext.h"
 #include "Engine/Scene.h"
 #include "Viewport/EditorViewport.h"
 #include "Viewport/EditorViewportClient.h"
