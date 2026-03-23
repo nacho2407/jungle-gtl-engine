@@ -19,4 +19,5 @@ private:
     void DrawUnavailableState() const;
     void DrawTransformSection(FViewportCamera& Camera) const;
     void DrawProjectionSection(FViewportCamera& Camera) const;
+    void DrawWorldSection() const;
 };

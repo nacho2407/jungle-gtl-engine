@@ -1,5 +1,6 @@
 #include "Renderer/Draw/WorldGridDrawer.h"
 
+#include "Engine/EngineStatics.h"
 #include "Renderer/D3D11/D3D11LineBatchRenderer.h"
 #include "Renderer/EditorRenderData.h"
 
@@ -12,7 +13,7 @@ void FWorldGridDrawer::Draw(FD3D11LineBatchRenderer& InLineRenderer,
         return;
     }
 
-    const float Extent = static_cast<float>(GridHalfLineCount) * GridSpacing;
+    const float Extent = static_cast<float>(GridHalfLineCount) * UEngineStatics::GridSpacing;
 
     for (int32 i = -GridHalfLineCount; i <= GridHalfLineCount; ++i)
     {
@@ -21,7 +22,7 @@ void FWorldGridDrawer::Draw(FD3D11LineBatchRenderer& InLineRenderer,
             continue;
         }
 
-        const float   Offset = static_cast<float>(i) * GridSpacing;
+        const float   Offset = static_cast<float>(i) * UEngineStatics::GridSpacing;
         const bool    bIsMajorLine = (i % MajorLineEvery) == 0;
         const FColor& LineColor = bIsMajorLine ? MajorGridColor : MinorGridColor;
 

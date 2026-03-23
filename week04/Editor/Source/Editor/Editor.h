@@ -2,6 +2,7 @@
 
 #include "Chrome/EditorChrome.h"
 #include "EditorContext.h"
+#include "EditorSettings.h"
 #include "Menu/EditorMenuRegistry.h"
 #include "Core/CoreMinimal.h"
 
@@ -62,10 +63,13 @@ class FEditor
     void RegisterDefaultCommands();
     void RegisterDefaultMenus();
     void RegisterWindowPanelCommand(const FPanelDescriptor& Descriptor);
+    void LoadEditorSettings();
+    void SaveEditorSettings() const;
 
   private:
     FEditorViewportClient ViewportClient;
     FEditorContext EditorContext;
+    FEditorSettings PersistentSettings;
     FPanelManager* PanelManager = nullptr;
     FEditorChrome EditorChrome;
     FEditorMenuRegistry MenuRegistry;

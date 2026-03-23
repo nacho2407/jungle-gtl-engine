@@ -69,8 +69,14 @@
     <ClCompile Include="Source\Editor\EditorContext.cpp">
       <Filter>Source\Editor</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\EditorSettings.cpp">
+      <Filter>Source\Editor</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Logging\EditorLogBuffer.cpp">
       <Filter>Source\Editor\Logging</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Panel\ConsolePanel.cpp">
+      <Filter>Source\Panel</Filter>
     </ClCompile>
     <ClCompile Include="Source\Input\EditorGlobalContext.cpp">
       <Filter>Source\Input</Filter>
@@ -170,11 +176,17 @@
     <ClInclude Include="Source\Editor\EditorContext.h">
       <Filter>Source\Editor</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\EditorSettings.h">
+      <Filter>Source\Editor</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\Logging\EditorLogBuffer.h">
       <Filter>Source\Editor\Logging</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Logging\EditorLogEntry.h">
       <Filter>Source\Editor\Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Panel\ConsolePanel.h">
+      <Filter>Source\Panel</Filter>
     </ClInclude>
     <ClInclude Include="Source\Gizmo\EditorGizmoTypes.h">
       <Filter>Source\Gizmo</Filter>
