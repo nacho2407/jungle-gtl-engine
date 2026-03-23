@@ -6,12 +6,61 @@ DEFINE_CLASS(AActor, UObject)
 REGISTER_FACTORY(AActor)
 
 AActor::~AActor() {
-	for (auto* Comp : Components) {
+	for (auto* Comp : OwnedComponents) {
 		UObjectManager::Get().DestroyObject(Comp);
 	}
 
-	Components.clear();
+	OwnedComponents.clear();
 	RootComponent = nullptr;
+}
+
+UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class) {
+	if (!Class) return nullptr;
+
+	UObject* Obj = FObjectFactory::Get().Create(Class->name);
+	if (!Obj) return nullptr;
+
+	UActorComponent* Comp = Obj->Cast<UActorComponent>();
+	if (!Comp) {
+		UObjectManager::Get().DestroyObject(Obj);
+		return nullptr;
+	}
+
+	Comp->SetOwner(this);
+	OwnedComponents.push_back(Comp);
+	return Comp;
+}
+
+void AActor::RegisterComponent(UActorComponent* Comp) {
+	if (!Comp) return;
+
+	auto it = std::find(OwnedComponents.begin(), OwnedComponents.end(), Comp);
+	if (it == OwnedComponents.end()) {
+		Comp->SetOwner(this);
+		OwnedComponents.push_back(Comp);
+		bPrimitiveCacheDirty = true;
+	}
+}
+
+void AActor::RemoveComponent(UActorComponent* Component) {
+	if (!Component) return;
+
+	auto it = std::find(OwnedComponents.begin(), OwnedComponents.end(), Component);
+	if (it != OwnedComponents.end()) {
+		OwnedComponents.erase(it);
+		bPrimitiveCacheDirty = true;
+	}
+
+	// RootComponent가 제거되면 nullptr로
+	if (RootComponent == Component)
+		RootComponent = nullptr;
+
+	UObjectManager::Get().DestroyObject(Component);
+}
+
+void AActor::SetRootComponent(USceneComponent* Comp) {
+	if (!Comp) return;
+	RootComponent = Comp;
 }
 
 FVector AActor::GetActorLocation() const {
@@ -29,48 +78,28 @@ void AActor::SetActorLocation(const FVector& NewLocation) {
 	}
 }
 
-void AActor::RegisterComponentRecursive(USceneComponent* Comp) {
-	if (!Comp) return;
-
-	// Avoid duplicates
-	auto it = std::find(Components.begin(), Components.end(), Comp);
-	if (it == Components.end()) {
-		Comp->SetOwner(this);
-		Components.push_back(Comp);
-	}
-
-	for (USceneComponent* Child : Comp->GetChildren()) {
-		RegisterComponentRecursive(Child);
-	}
-}
 
 void AActor::Tick(float DeltaTime)
 {
-	for (USceneComponent* Comp : Components)
+	for (UActorComponent* ActorComp : OwnedComponents)
 	{
-		if (UActorComponent* ActorComp = dynamic_cast<UActorComponent*>(Comp))
-		{
-			ActorComp->ExecuteTick(DeltaTime);
-		}
+		ActorComp->ExecuteTick(DeltaTime);
 	}
 }
 
 const TArray<UPrimitiveComponent*>& AActor::GetPrimitiveComponents() const
 {
-	// 컴포넌트 리스트가 바뀌었을 때만 딱 한 번 실행
-	if (bComponentsDirty)
+	if (bPrimitiveCacheDirty)
 	{
 		PrimitiveCache.clear();
-
-		// 이미 가지고 있는 Components 배열을 활용합니다. (재귀 호출 필요 없음!)
-		for (USceneComponent* Comp : Components)
+		for (UActorComponent* Comp : OwnedComponents)
 		{
-			if (auto* Primitive = dynamic_cast<UPrimitiveComponent*>(Comp))
+			if (Comp && Comp->IsA<UPrimitiveComponent>())
 			{
-				PrimitiveCache.emplace_back(Primitive);
+				PrimitiveCache.emplace_back(static_cast<UPrimitiveComponent*>(Comp));
 			}
 		}
-		bComponentsDirty = false;
+		bPrimitiveCacheDirty = false;
 	}
 	return PrimitiveCache;
 }
