@@ -290,7 +290,7 @@ void FD3DDevice::CreateDepthStencilBuffer()
 	D3D11_DEPTH_STENCIL_DESC depthStencilStateDefaultDesc = {};
 	depthStencilStateDefaultDesc.DepthEnable = TRUE;
 	depthStencilStateDefaultDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	depthStencilStateDefaultDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+	depthStencilStateDefaultDesc.DepthFunc = D3D11_COMPARISON_LESS;
 	depthStencilStateDefaultDesc.StencilEnable = FALSE;
 
 	Device->CreateDepthStencilState(&depthStencilStateDefaultDesc, &DepthStencilStateDefault);

@@ -102,7 +102,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 	if (!Primitive->IsVisible()) return;
 
 	FRenderCommand Cmd = {};
-	Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4(), 0.f };
+	Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4()};
 	ERenderPass TargetPass = ERenderPass::Opaque;
 
 	switch (Primitive->GetPrimitiveType())
