@@ -2,10 +2,13 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <windowsx.h>
 
 #include "imgui.h"
+#include "imgui_internal.h"
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_win32.h>
+#include <cstring>
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND HWnd, UINT Message,
                                                              WPARAM WParam, LPARAM LParam);
@@ -244,6 +247,37 @@ bool FEditorEngineLoop::HandleEditorMessageInternal(HWND HWnd, UINT Message, WPA
 {
     switch (Message)
     {
+    case WM_NCHITTEST:
+        if (ImGui::GetCurrentContext() != nullptr)
+        {
+            POINT ScreenPosition = { GET_X_LPARAM(LParam), GET_Y_LPARAM(LParam) };
+            POINT ClientPosition = ScreenPosition;
+            ScreenToClient(HWnd, &ClientPosition);
+
+            ImGuiWindow* HoveredWindow = nullptr;
+            ImGuiWindow* HoveredWindowUnderMovingWindow = nullptr;
+            ImGui::FindHoveredWindowEx(
+                ImVec2(static_cast<float>(ClientPosition.x), static_cast<float>(ClientPosition.y)),
+                false, &HoveredWindow, &HoveredWindowUnderMovingWindow);
+
+            if (HoveredWindow != nullptr)
+            {
+                ImGuiWindow* RootWindow = HoveredWindow->RootWindowDockTree != nullptr
+                                              ? HoveredWindow->RootWindowDockTree
+                                              : HoveredWindow;
+
+                // 커스텀 타이틀바는 native caption hit-test를 유지하고,
+                // 그 위에 겹쳐진 floating ImGui 창만 client로 돌려 ImGui 드래그를 살립니다.
+                if ((RootWindow->Flags & ImGuiWindowFlags_NoInputs) == 0 &&
+                    std::strcmp(RootWindow->Name, "##EditorChrome") != 0)
+                {
+                    OutResult = HTCLIENT;
+                    return true;
+                }
+            }
+        }
+        break;
+
     case WM_ENTERSIZEMOVE:
         // Win32 sizing loop가 시작되면 메인 루프 대신 WndProc 안에서 즉시 프레임을 돌립니다.
         bIsInSizeMoveLoop = true;

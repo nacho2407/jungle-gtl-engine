@@ -54,6 +54,7 @@ class FEditor
     FEditorContext EditorContext;
     FPanelManager* PanelManager = nullptr;
     FEditorChrome EditorChrome;
+    IEditorChromeHost* ChromeHost = nullptr;
 
     FEditorRenderData EditorRenderData;
     FSceneRenderData SceneRenderData;

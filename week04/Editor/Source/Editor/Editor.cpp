@@ -10,9 +10,78 @@
 namespace
 {
 #ifdef IMGUI_HAS_DOCK
-    // 중앙 노드를 비워 두면 Scene 배경을 그대로 보면서 패널만 도킹할 수 있습니다.
     constexpr ImGuiDockNodeFlags RootDockSpaceFlags = ImGuiDockNodeFlags_PassthruCentralNode;
 #endif
+
+    constexpr float RestoredSideGutter = 3.0f;
+    constexpr float RestoredBottomGutter = 3.0f;
+    constexpr ImU32 GutterColor = IM_COL32(46, 46, 48, 255);
+
+    struct FEditorGutterMetrics
+    {
+        float Left = 0.0f;
+        float Right = 0.0f;
+        float Bottom = 0.0f;
+    };
+
+    FEditorGutterMetrics GetDockSpaceGutterMetrics(const IEditorChromeHost* Host)
+    {
+        const bool bIsMaximized = Host != nullptr && Host->IsWindowMaximized();
+        if (bIsMaximized)
+        {
+            return {};
+        }
+
+        FEditorGutterMetrics Metrics;
+        Metrics.Left = RestoredSideGutter;
+        Metrics.Right = RestoredSideGutter;
+        Metrics.Bottom = RestoredBottomGutter;
+        return Metrics;
+    }
+
+    void DrawDockSpaceGutters(ImGuiViewport* Viewport, const FEditorGutterMetrics& Metrics)
+    {
+        if (Viewport == nullptr)
+        {
+            return;
+        }
+
+        const float Top = FEditorChrome::TitleBarHeight;
+        const float ContentTop = Viewport->Pos.y + Top;
+        const float ContentBottom = Viewport->Pos.y + Viewport->Size.y;
+        if (ContentBottom <= ContentTop)
+        {
+            return;
+        }
+
+        ImDrawList* DrawList = ImGui::GetBackgroundDrawList(Viewport);
+        if (DrawList == nullptr)
+        {
+            return;
+        }
+
+        if (Metrics.Left > 0.0f)
+        {
+            DrawList->AddRectFilled(ImVec2(Viewport->Pos.x, ContentTop),
+                                    ImVec2(Viewport->Pos.x + Metrics.Left, ContentBottom),
+                                    GutterColor);
+        }
+
+        if (Metrics.Right > 0.0f)
+        {
+            DrawList->AddRectFilled(
+                ImVec2(Viewport->Pos.x + Viewport->Size.x - Metrics.Right, ContentTop),
+                ImVec2(Viewport->Pos.x + Viewport->Size.x, ContentBottom), GutterColor);
+        }
+
+        if (Metrics.Bottom > 0.0f)
+        {
+            DrawList->AddRectFilled(
+                ImVec2(Viewport->Pos.x, Viewport->Pos.y + Viewport->Size.y - Metrics.Bottom),
+                ImVec2(Viewport->Pos.x + Viewport->Size.x, Viewport->Pos.y + Viewport->Size.y),
+                GutterColor);
+        }
+    }
 
     class FSamplePanel : public IPanel
     {
@@ -63,6 +132,7 @@ void FEditor::Release()
     CurScene = nullptr;
     EditorContext.Scene = nullptr;
 
+    ChromeHost = nullptr;
     EditorChrome.SetHost(nullptr);
 }
 
@@ -77,6 +147,7 @@ void FEditor::Initialize()
 
 void FEditor::SetChromeHost(IEditorChromeHost* InChromeHost)
 {
+    ChromeHost = InChromeHost;
     EditorChrome.SetHost(InChromeHost);
 }
 
@@ -110,7 +181,6 @@ void FEditor::OnWindowResized(float Width, float Height)
     WindowWidth = Width;
     EditorContext.WindowWidth = Width;
     EditorContext.WindowHeight = Height;
-    // 창 크기 변경을 카메라에도 전달해야 aspect ratio와 투영행렬이 함께 갱신됩니다.
     ViewportClient.OnResize(static_cast<uint32>(Width), static_cast<uint32>(Height));
 }
 
@@ -125,7 +195,6 @@ void FEditor::ClearScene()
 
 void FEditor::BuildSceneView()
 {
-    // SceneView는 매 프레임 현재 카메라 캐시와 최신 창 크기 기준으로 다시 조립합니다.
     SceneView.SetViewMatrix(ViewportClient.GetCamera().GetViewMatrix());
     SceneView.SetProjectionMatrix(ViewportClient.GetCamera().GetProjectionMatrix());
     SceneView.SetViewLocation(ViewportClient.GetCamera().GetLocation());
@@ -155,14 +224,27 @@ void FEditor::DrawRootDockSpace()
         return;
     }
 
-    // 커스텀 타이틀바와 겹치지 않도록 도킹 가능한 영역은 그 아래부터 시작합니다.
-    const float DockSpaceHeight = (Viewport->Size.y > FEditorChrome::TitleBarHeight)
-                                      ? (Viewport->Size.y - FEditorChrome::TitleBarHeight)
-                                      : 0.0f;
+    const FEditorGutterMetrics GutterMetrics = GetDockSpaceGutterMetrics(ChromeHost);
+    DrawDockSpaceGutters(Viewport, GutterMetrics);
+
+    const float DockSpaceWidth =
+        (Viewport->Size.x > (GutterMetrics.Left + GutterMetrics.Right))
+            ? (Viewport->Size.x - GutterMetrics.Left - GutterMetrics.Right)
+            : 0.0f;
+    const float DockSpaceHeight =
+        (Viewport->Size.y > (FEditorChrome::TitleBarHeight + GutterMetrics.Bottom))
+            ? (Viewport->Size.y - FEditorChrome::TitleBarHeight - GutterMetrics.Bottom)
+            : 0.0f;
+
+    if (DockSpaceWidth <= 0.0f || DockSpaceHeight <= 0.0f)
+    {
+        return;
+    }
 
     ImGui::SetNextWindowPos(
-        ImVec2(Viewport->Pos.x, Viewport->Pos.y + FEditorChrome::TitleBarHeight));
-    ImGui::SetNextWindowSize(ImVec2(Viewport->Size.x, DockSpaceHeight));
+        ImVec2(Viewport->Pos.x + GutterMetrics.Left,
+               Viewport->Pos.y + FEditorChrome::TitleBarHeight));
+    ImGui::SetNextWindowSize(ImVec2(DockSpaceWidth, DockSpaceHeight));
     ImGui::SetNextWindowViewport(Viewport->ID);
 
     ImGuiWindowFlags WindowFlags =
@@ -182,7 +264,6 @@ void FEditor::DrawRootDockSpace()
 
     if (ImGui::Begin("##EditorRootDockSpace", nullptr, WindowFlags))
     {
-        // DockSpace는 호스트가 될 창보다 먼저 제출되어야 이후 패널 창들이 여기로 붙을 수 있습니다.
         ImGui::DockSpace(ImGui::GetID("EditorRootDockSpace"), ImVec2(0.0f, 0.0f),
                          RootDockSpaceFlags);
     }
@@ -198,7 +279,6 @@ void FEditor::DrawPanel()
     ImGui_ImplWin32_NewFrame();
 
     ImGui::NewFrame();
-    // 루트 dockspace를 먼저 만들고, 패널과 커스텀 chrome을 그 위에 올립니다.
     DrawRootDockSpace();
 
     if (PanelManager != nullptr)

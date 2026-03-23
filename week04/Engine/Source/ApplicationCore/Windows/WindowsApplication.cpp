@@ -25,6 +25,13 @@ namespace Engine::ApplicationCore
         if (GWindowsApplication != nullptr)
         {
             LRESULT MessageResult = 0;
+            if (Message == WM_NCHITTEST &&
+                GWindowsApplication->DispatchMessageHandler(HWnd, Message, WParam, LParam,
+                                                            MessageResult))
+            {
+                return MessageResult;
+            }
+
             if (GWindowsApplication->HandleCustomChromeMessage(HWnd, Message, WParam, LParam,
                                                                MessageResult))
             {
