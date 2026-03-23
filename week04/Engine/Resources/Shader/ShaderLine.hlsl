@@ -1,18 +1,18 @@
 cbuffer FLineConstants : register(b0)
 {
-    float4x4 VP;
+    row_major float4x4 VP;
 };
 
 struct VSInput
 {
     float3 Position : POSITION;
-    float4 Color    : COLOR;
+    float4 Color    : COLOR0;
 };
 
 struct PSInput
 {
     float4 Position : SV_POSITION;
-    float4 Color    : COLOR;
+    float4 Color    : COLOR0;
 };
 
 PSInput VSMain(VSInput In)

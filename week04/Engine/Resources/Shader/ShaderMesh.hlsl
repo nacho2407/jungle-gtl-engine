@@ -19,7 +19,8 @@ PSInput VSMain(VSInput In)
 {
     PSInput Out;
     Out.Position = mul(float4(In.Position, 1.0f), MVP);
-    Out.Color = BaseColor;
+    // Out.Color = BaseColor;
+    Out.Color = float4(In.Position, 1.0f);
     return Out;
 }
 

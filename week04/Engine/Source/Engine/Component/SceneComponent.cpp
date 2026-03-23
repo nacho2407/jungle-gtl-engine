@@ -1,5 +1,7 @@
 #include "SceneComponent.h"
 
+#include "Core/Geometry/Primitives/AABBUtility.h"
+
 namespace Engine::Component
 {
     void USceneComponent::SetRelativeLocation(const FVector& NewLocation)
@@ -48,4 +50,5 @@ namespace Engine::Component
     }
 
     bool USceneComponent::IsSelected() const { return bIsSelected; }
+    
 } // namespace Engine::Component

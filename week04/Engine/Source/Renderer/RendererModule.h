@@ -9,9 +9,10 @@
 #include "Renderer/D3D11/D3D11MeshBatchRenderer.h"
 #include "Renderer/D3D11/D3D11PickingPass.h"
 #include "Renderer/D3D11/D3D11SpriteBatchRenderer.h"
-#include "Renderer/EditorDraw/GizmoDrawer.h"
-#include "Renderer/EditorDraw/WorldAxesDrawer.h"
-#include "Renderer/EditorDraw/WorldGridDrawer.h"
+#include "Renderer/Draw/GizmoDrawer.h"
+#include "Renderer/Draw/PrimitiveDrawer.h"
+#include "Renderer/Draw/WorldAxesDrawer.h"
+#include "Renderer/Draw/WorldGridDrawer.h"
 #include "Renderer/EditorRenderData.h"
 #include "Renderer/SceneRenderData.h"
 
@@ -49,8 +50,10 @@ class ENGINE_API FRendererModule
     FD3D11SpriteBatchRenderer SpriteRenderer;
     FD3D11PickingPass         PickingPass;
 
-    FWorldGridDrawer     WorldGridDrawer;
-    FWorldAxesDrawer     WorldAxesDrawer;
-    FGizmoDrawer         GizmoDrawer;
+    FPrimitiveDrawer PrimitiveDrawer;
+    FWorldGridDrawer WorldGridDrawer;
+    FWorldAxesDrawer WorldAxesDrawer;
+    FGizmoDrawer     GizmoDrawer;
+
     TComPtr<ID3D11Debug> DebugDevice;
 };

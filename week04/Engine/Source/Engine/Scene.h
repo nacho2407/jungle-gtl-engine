@@ -15,6 +15,8 @@ class ENGINE_API FScene
 
     void BuildRenderData(FSceneRenderData& OutRenderData) const;
     void Clear();
+    
+    TArray<AActor*> * GetActors() { return &Actors; }
 
   private:
     TArray<AActor*> Actors;

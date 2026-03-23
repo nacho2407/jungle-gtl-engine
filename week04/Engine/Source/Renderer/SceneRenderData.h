@@ -6,7 +6,7 @@
 #include "Core/Math/Color.h"
 #include "Renderer/Types/BasicMeshType.h"
 #include "Renderer/Types/ViewMode.h"
-#include "Renderer/Types/ShowFlags.h"
+#include "Renderer/Types/SceneShowFlags.h"
 
 class FSceneView;
 

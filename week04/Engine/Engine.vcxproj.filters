@@ -82,8 +82,8 @@
     <Filter Include="Source\Renderer\D3D11">
       <UniqueIdentifier>{7d49e81e-9894-3ffe-a35e-b64d3056e0ba}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Renderer\EditorDraw">
-      <UniqueIdentifier>{eb1df9ee-26d3-0e30-f337-23e04acff4de}</UniqueIdentifier>
+    <Filter Include="Source\Renderer\Draw">
+      <UniqueIdentifier>{228f9774-306d-a843-9d42-8b6de1290e03}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Renderer\RenderAsset">
       <UniqueIdentifier>{37df3f3d-06b0-91a9-da82-c1929332f7ef}</UniqueIdentifier>
@@ -183,7 +183,7 @@
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\CubeComponent.cpp">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\BasicPrimitives\PlaneComponent.cpp">
+    <ClCompile Include="Source\Engine\Component\BasicPrimitives\QuadComponent.cpp">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\BasicPrimitives\SphereComponent.cpp">
@@ -219,14 +219,20 @@
     <ClCompile Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Renderer\EditorDraw\GizmoDrawer.cpp">
-      <Filter>Source\Renderer\EditorDraw</Filter>
+    <ClCompile Include="Source\Renderer\Draw\AABBDrawer.cpp">
+      <Filter>Source\Renderer\Draw</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Renderer\EditorDraw\WorldAxesDrawer.cpp">
-      <Filter>Source\Renderer\EditorDraw</Filter>
+    <ClCompile Include="Source\Renderer\Draw\GizmoDrawer.cpp">
+      <Filter>Source\Renderer\Draw</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Renderer\EditorDraw\WorldGridDrawer.cpp">
-      <Filter>Source\Renderer\EditorDraw</Filter>
+    <ClCompile Include="Source\Renderer\Draw\PrimitiveDrawer.cpp">
+      <Filter>Source\Renderer\Draw</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\Draw\WorldAxesDrawer.cpp">
+      <Filter>Source\Renderer\Draw</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\Draw\WorldGridDrawer.cpp">
+      <Filter>Source\Renderer\Draw</Filter>
     </ClCompile>
     <ClCompile Include="Source\Renderer\RendererModule.cpp">
       <Filter>Source\Renderer</Filter>
@@ -245,7 +251,7 @@
     <ClInclude Include="Resources\Mesh\MeshPrimitiveTopology.h">
       <Filter>Resources\Mesh</Filter>
     </ClInclude>
-    <ClInclude Include="Resources\Mesh\Plane.h">
+    <ClInclude Include="Resources\Mesh\Quad.h">
       <Filter>Resources\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="Resources\Mesh\Ring.h">
@@ -428,7 +434,7 @@
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\CubeComponent.h">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\BasicPrimitives\PlaneComponent.h">
+    <ClInclude Include="Source\Engine\Component\BasicPrimitives\QuadComponent.h">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\SphereComponent.h">
@@ -482,14 +488,20 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\EditorDraw\GizmoDrawer.h">
-      <Filter>Source\Renderer\EditorDraw</Filter>
+    <ClInclude Include="Source\Renderer\Draw\AABBDrawer.h">
+      <Filter>Source\Renderer\Draw</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\EditorDraw\WorldAxesDrawer.h">
-      <Filter>Source\Renderer\EditorDraw</Filter>
+    <ClInclude Include="Source\Renderer\Draw\GizmoDrawer.h">
+      <Filter>Source\Renderer\Draw</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\EditorDraw\WorldGridDrawer.h">
-      <Filter>Source\Renderer\EditorDraw</Filter>
+    <ClInclude Include="Source\Renderer\Draw\PrimitiveDrawer.h">
+      <Filter>Source\Renderer\Draw</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Draw\WorldAxesDrawer.h">
+      <Filter>Source\Renderer\Draw</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Draw\WorldGridDrawer.h">
+      <Filter>Source\Renderer\Draw</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\EditorRenderData.h">
       <Filter>Source\Renderer</Filter>
@@ -512,13 +524,16 @@
     <ClInclude Include="Source\Renderer\Types\BasicMeshType.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Renderer\Types\EditorShowFlags.h">
+      <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Renderer\Types\MeshInstanceData.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\Types\ShaderConstants.h">
+    <ClInclude Include="Source\Renderer\Types\SceneShowFlags.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\Types\ShowFlags.h">
+    <ClInclude Include="Source\Renderer\Types\ShaderConstants.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\Types\VertexTypes.h">

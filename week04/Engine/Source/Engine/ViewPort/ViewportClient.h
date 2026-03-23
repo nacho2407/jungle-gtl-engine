@@ -3,6 +3,8 @@
 
 #include "Core/CoreMinimal.h"
 
+class FScene;
+
 namespace Engine::ApplicationCore
 {
     class FInputRouter;
@@ -20,6 +22,8 @@ namespace Engine::Viewport
 
         virtual void Create() = 0;
         virtual void Release() = 0;
+        
+        virtual void Initialize(FScene * Scene, uint32 ViewportWidth, uint32 ViewportHeight) =0;
 
         /** 매 프레임 호출되어 그리기와 로직을 수행 */
         virtual void Tick(float DeltaTime, const Engine::ApplicationCore::FInputState & State) = 0;
