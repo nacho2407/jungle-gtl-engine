@@ -32,6 +32,7 @@ private:
 	static FMeshData TranslationGizmoMeshData;
 	static FMeshData RotationGizmoMeshData;
 	static FMeshData ScaleGizmoMeshData;
+	static FMeshData QuadMeshData;
 	
 	static FMeshData MouseOverlayMeshData;
 
@@ -41,6 +42,7 @@ private:
 	static void CreateTranslationGizmo();
 	static void CreateRotationGizmo();
 	static void CreateScaleGizmo();
+	static void CreateQuad();
 
 	static void CreateMouseOverlay();
 
@@ -62,7 +64,9 @@ public:
 	static const FMeshData& GetTranslationGizmo() { return Get().TranslationGizmoMeshData; }
 	static const FMeshData& GetRotationGizmo() { return Get().RotationGizmoMeshData; }
 	static const FMeshData& GetScaleGizmo() { return Get().ScaleGizmoMeshData; }
+	static const FMeshData& GetQuad() { return Get().QuadMeshData; }
 
 	static const FMeshData& GetMouseOverlay() { return Get().MouseOverlayMeshData; }
 };
+
 
