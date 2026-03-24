@@ -2,7 +2,6 @@
 
 #include "Renderer.h"
 #include "Engine/Runtime/Engine.h"
-#include "Render/Scene/RenderCollectorContext.h"
 #include "Component/CameraComponent.h"
 #include "GameFramework/World.h"
 
@@ -25,15 +24,14 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
 	if (Camera)
 	{
-		FRenderCollectorContext Context;
-		Context.Camera = Camera;
+		FShowFlags ShowFlags;
+		EViewMode ViewMode = EViewMode::Lit;
 
-		TArray<FCollectPhase> Phases;
-		Phases.push_back([&](FRenderBus& B) {
-			Collector.CollectWorld(World, Context.ShowFlags, Context.ViewMode, B);
-		});
+		Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix(),
+			Camera->GetRightVector(), Camera->GetUpVector());
+		Bus.SetRenderSettings(ViewMode, ShowFlags);
 
-		Collector.Collect(Context, Phases, Bus);
+		Collector.CollectWorld(World, ShowFlags, ViewMode, Bus);
 	}
 
 	Renderer.PrepareBatchers(Bus);

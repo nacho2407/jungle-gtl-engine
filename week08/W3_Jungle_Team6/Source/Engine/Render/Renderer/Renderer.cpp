@@ -26,11 +26,7 @@ void FRenderer::Create(HWND hWindow)
 	Resources.GizmoShader.Create(Device.GetDevice(), L"Shaders/Gizmo.hlsl",
 		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
 
-	// 3. 오버레이 (Overlay.hlsl)
-	Resources.OverlayShader.Create(Device.GetDevice(), L"Shaders/Overlay.hlsl",
-		"VS", "PS", OverlayInputLayout, ARRAYSIZE(OverlayInputLayout));
-
-	// 4. 에디터/라인 (Editor.hlsl)
+	// 3. 에디터/라인 (Editor.hlsl)
 	Resources.EditorShader.Create(Device.GetDevice(), L"Shaders/Editor.hlsl",
 		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
 
@@ -41,7 +37,6 @@ void FRenderer::Create(HWND hWindow)
 	Resources.PerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FPerObjectConstants));
 	Resources.FrameBuffer.Create(Device.GetDevice(), sizeof(FFrameConstants));
 	Resources.GizmoPerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FGizmoConstants));
-	Resources.OverlayConstantBuffer.Create(Device.GetDevice(), sizeof(FOverlayConstants));
 	Resources.EditorConstantBuffer.Create(Device.GetDevice(), sizeof(FEditorConstants));
 	Resources.OutlineConstantBuffer.Create(Device.GetDevice(), sizeof(FOutlineConstants));
 
@@ -66,14 +61,12 @@ void FRenderer::Release()
 {
 	Resources.PrimitiveShader.Release();
 	Resources.GizmoShader.Release();
-	Resources.OverlayShader.Release();
 	Resources.EditorShader.Release();
 	Resources.OutlineShader.Release();
 
 	Resources.PerObjectConstantBuffer.Release();
 	Resources.FrameBuffer.Release();
 	Resources.GizmoPerObjectConstantBuffer.Release();
-	Resources.OverlayConstantBuffer.Release();
 	Resources.EditorConstantBuffer.Release();
 	Resources.OutlineConstantBuffer.Release();
 
@@ -150,7 +143,6 @@ void FRenderer::InitializePassRenderStates()
 	S[(uint32)E::Editor]      = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     &Resources.EditorShader,    true  };
 	S[(uint32)E::Grid]        = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     &Resources.EditorShader,    true  };
 	S[(uint32)E::DepthLess]   = { EDepthStencilState::DepthReadOnly,EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.GizmoShader,     false };
-	S[(uint32)E::Overlay]     = { EDepthStencilState::DepthGreater, EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.OverlayShader,   false };
 	S[(uint32)E::Font]        = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, nullptr,                    false };
 	S[(uint32)E::SubUV]       = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, nullptr,                    false };
 }
@@ -320,9 +312,8 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
 
 void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContext* Context)
 {
-	if (InCmd.Type != ERenderCommandType::Overlay)
+	Resources.PerObjectConstantBuffer.Update(Context, &InCmd.PerObjectConstants, sizeof(FPerObjectConstants));
 	{
-		Resources.PerObjectConstantBuffer.Update(Context, &InCmd.PerObjectConstants, sizeof(FPerObjectConstants));
 		ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
 		Context->VSSetConstantBuffers(1, 1, &cb);
 	}
@@ -338,15 +329,6 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 			cb = Resources.GizmoPerObjectConstantBuffer.GetBuffer();
 			Context->VSSetConstantBuffers(2, 1, &cb);
 			Context->PSSetConstantBuffers(2, 1, &cb);
-		}
-		break;
-
-	case ERenderCommandType::Overlay:
-		Resources.OverlayConstantBuffer.Update(Context, &InCmd.Constants.Overlay, sizeof(FOverlayConstants));
-		{
-			ID3D11Buffer* cb = Resources.OverlayConstantBuffer.GetBuffer();
-			Context->VSSetConstantBuffers(3, 1, &cb);
-			Context->PSSetConstantBuffers(3, 1, &cb);
 		}
 		break;
 
