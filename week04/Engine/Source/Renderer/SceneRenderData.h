@@ -10,12 +10,14 @@ class FSceneView;
 struct FSceneRenderData
 {
     const FSceneView* SceneView = nullptr;
-    EViewModeIndex    ViewMode = EViewModeIndex::Lit;
+    EViewModeIndex    ViewMode = EViewModeIndex::VMI_Lit;
 
-    ESceneShowFlags ShowFlags = ESceneShowFlags::SF_Primitives | ESceneShowFlags::SF_BillboardText;
+    ESceneShowFlags ShowFlags = ESceneShowFlags::SF_Primitives | ESceneShowFlags::SF_BillboardText |
+                                ESceneShowFlags::SF_Sprites;
 
     bool bUseInstancing = true;
 
     TArray<FPrimitiveRenderItem> Primitives;
+    TArray<FSpriteRenderItem>    Sprites;
     TArray<FTextRenderItem>      Texts;
 };
