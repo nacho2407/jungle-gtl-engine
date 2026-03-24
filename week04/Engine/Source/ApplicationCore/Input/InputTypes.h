@@ -1,4 +1,5 @@
 #pragma once
+#pragma once
 
 #include "Core/CoreMinimal.h"
 
@@ -7,6 +8,7 @@ namespace Engine::ApplicationCore
     enum class EKey
     {
         Unknown,
+        F,
         W,
         A,
         S,

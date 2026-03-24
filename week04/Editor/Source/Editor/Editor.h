@@ -1,24 +1,21 @@
 #pragma once
-
 #pragma once
+
+#include "Core/CoreMinimal.h"
 
 #include "Chrome/EditorChrome.h"
 #include "Content/EditorContentIndex.h"
 #include "EditorContext.h"
 #include "EditorSettings.h"
 #include "Menu/EditorMenuRegistry.h"
-#include "Core/CoreMinimal.h"
 
 #include "ApplicationCore/Input/InputRouter.h"
 #include "ApplicationCore/Input/InputSystem.h"
-#include "Input/EditorGlobalController.h"
+#include "Viewport/Global/EditorGlobalController.h"
 #include "Input/EditorGlobalContext.h"
-#include "Input/GizmoInputContext.h"
-#include "Input/NavigationInputContext.h"
+
 #include "Engine/Scene.h"
 #include "Logging/EditorLogBuffer.h"
-#include "Logging/EditorLogEntry.h"
-#include "Viewport/EditorViewport.h"
 #include "Viewport/EditorViewportClient.h"
 #include "Renderer/EditorRenderData.h"
 #include "Renderer/SceneRenderData.h"
@@ -103,8 +100,6 @@ class FEditor
     void DrawRootDockSpace();
     void DrawAboutPopup();
     void RequestAboutPopup();
-    void DeleteSelectedActors();
-    bool CanDeleteSelectedActors() const;
     void RegisterDefaultCommands();
     void RegisterDefaultMenus();
     void RegisterWindowPanelCommand(const FPanelDescriptor& Descriptor);

@@ -1,5 +1,4 @@
 #include "NavigationInputContext.h"
-#include "NavigationInputContext.h"
 
 #if defined(_WIN32)
 #include <Windows.h>
@@ -251,7 +250,15 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
 #pragma endregion
 #pragma region __MOUSE_WHEEL__
     case EInputEventType::MouseWheel:
-        NavigationController->ModifyFOVorOrthoHeight(static_cast<float>(-Event.WheelDelta));
+        if (bRightMouseDown || bLeftRotationActive)
+        {
+            const float SpeedStep = (Event.WheelDelta > 0) ? 20.0f : -20.0f;
+            NavigationController->AdjustMoveSpeed(SpeedStep);
+        }
+        else
+        {
+            NavigationController->ModifyFOVorOrthoHeight(static_cast<float>(-Event.WheelDelta));
+        }
         return true;
 
         // break;

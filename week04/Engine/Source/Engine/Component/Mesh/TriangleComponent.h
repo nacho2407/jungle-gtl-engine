@@ -16,6 +16,8 @@ namespace Engine::Component
 
         EBasicMeshType GetBasicMeshType() const override;
 
+        bool GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const override;
+
       protected:
         Geometry::FAABB GetLocalAABB() const override;
     };

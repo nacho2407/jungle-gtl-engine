@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source">
@@ -58,6 +58,9 @@
     <Filter Include="Source\Viewport\Selection">
       <UniqueIdentifier>{c02bdf14-d23c-3f72-e5f4-7a918dc1b5dc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Viewport\Global">
+      <UniqueIdentifier>{3ec641f0-a93f-47aa-bfb9-fca3e10e8c66}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Camera\ViewportCamera.cpp">
@@ -84,8 +87,8 @@
     <ClCompile Include="Source\Input\EditorGlobalContext.cpp">
       <Filter>Source\Input</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Input\EditorGlobalController.cpp">
-      <Filter>Source\Input</Filter>
+    <ClCompile Include="Source\Viewport\Global\EditorGlobalController.cpp">
+      <Filter>Source\Viewport\Global</Filter>
     </ClCompile>
     <ClCompile Include="Source\Input\GizmoInputContext.cpp">
       <Filter>Source\Input</Filter>
@@ -212,8 +215,8 @@
     <ClInclude Include="Source\Input\EditorGlobalContext.h">
       <Filter>Source\Input</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Input\EditorGlobalController.h">
-      <Filter>Source\Input</Filter>
+    <ClInclude Include="Source\Viewport\Global\EditorGlobalController.h">
+      <Filter>Source\Viewport\Global</Filter>
     </ClInclude>
     <ClInclude Include="Source\Input\GizmoInputContext.h">
       <Filter>Source\Input</Filter>

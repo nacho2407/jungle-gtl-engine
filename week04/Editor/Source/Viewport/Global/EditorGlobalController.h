@@ -1,0 +1,30 @@
+#pragma once
+#pragma once
+
+#include "Engine/ViewPort/ViewportController.h"
+
+class FScene;
+struct FEditorContext;
+class FViewportSelectionController;
+
+class FEditorGlobalController : public Engine::Viewport::IViewportController
+{
+public:
+    FEditorGlobalController() = default;
+    ~FEditorGlobalController() override = default;
+
+    void SetScene(FScene* InScene) { Scene = InScene; }
+    void SetEditorContext(FEditorContext* InContext) { Context = InContext; }
+    void SetSelectionController(FViewportSelectionController* InSelectionController)
+    {
+        SelectionController = InSelectionController;
+    }
+
+    bool CanDeleteSelectedActors() const;
+    bool DeleteSelectedActors();
+
+private:
+    FScene* Scene = nullptr;
+    FEditorContext* Context = nullptr;
+    FViewportSelectionController* SelectionController = nullptr;
+};

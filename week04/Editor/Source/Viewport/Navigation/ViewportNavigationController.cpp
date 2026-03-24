@@ -1,4 +1,6 @@
 #include "ViewportNavigationController.h"
+
+#include "Engine/Component/Core/PrimitiveComponent.h"
 #include "Engine/Game/Actor.h"
 #include "Viewport/Selection/ViewportSelectionController.h"
 
@@ -350,6 +352,196 @@ void FViewportNavigationController::AddPanInput(float DeltaX, float DeltaY)
     {
         OrbitPivot += PanDelta;
     }
+}
+
+//  코드 중복이지만 종속성 때문에 어쩔 수가 없었습니다. - 현석
+void FViewportNavigationController::FocusActors(const TArray<AActor*>& Actors)
+{
+    if (ViewportCamera == nullptr)
+    {
+        return;
+    }
+    
+    if (Actors.empty())
+    {
+        return;
+    }
+
+    FVector BoundsMin{FLT_MAX, FLT_MAX, FLT_MAX};
+    FVector BoundsMax{-FLT_MAX, -FLT_MAX, -FLT_MAX};
+
+    bool bHasValidBounds = false;
+
+    for (auto* Actor : Actors)
+    {
+        if (Actor == nullptr)
+        {
+            continue;
+        }
+
+        Engine::Component::UPrimitiveComponent* Comp = static_cast<
+            Engine::Component::UPrimitiveComponent*>(Actor->GetRootComponent());
+        if (Comp == nullptr)
+        {
+            continue;
+        }
+
+        const Geometry::FAABB Box = Comp->GetWorldAABB();
+
+        BoundsMin.X = std::min(BoundsMin.X, Box.Min.X);
+        BoundsMin.Y = std::min(BoundsMin.Y, Box.Min.Y);
+        BoundsMin.Z = std::min(BoundsMin.Z, Box.Min.Z);
+
+        BoundsMax.X = std::max(BoundsMax.X, Box.Max.X);
+        BoundsMax.Y = std::max(BoundsMax.Y, Box.Max.Y);
+        BoundsMax.Z = std::max(BoundsMax.Z, Box.Max.Z);
+        
+        bHasValidBounds = true;
+    }
+    
+    if (!bHasValidBounds)
+    {
+        return;
+    }
+    
+    const FVector Center = (BoundsMin + BoundsMax) * 0.5f;
+    const FVector Extents = (BoundsMax - BoundsMin) * 0.5f;
+    
+    float Radius = Extents.Size();
+    Radius = std::max(Radius,50.f);
+    
+    const float FovY = ViewportCamera->GetFOV();
+    const float Aspect = ViewportCamera->GetAspectRatio();
+    
+    const float HalfFovY = FovY * 0.5f;
+    const  float HalfFovX = std::atan(std::tan(HalfFovY)*Aspect);
+    
+    //  넓은 길이 찾아서 맞춰야 함
+    const float DistanceX = Radius / std::tan(HalfFovX);
+    const float DistanceY = Radius / std::tan(HalfFovY);
+    const float Distance = std::max(DistanceX,DistanceY) * 1.2f;
+    
+    const FVector Forward = ViewportCamera->GetForwardVector().GetSafeNormal();
+    const FVector NewLocation = Center - Forward * Distance;
+    
+    TargetLocation = NewLocation;
+    bHasTargetLocation = true;
+    
+    OrbitPivot = Center;
+    OrbitRadius = Radius;
+    
+    const FVector NewForward = (Center-NewLocation).GetSafeNormal();
+    
+    //  Up vector를 World Space로 간주
+    FVector Right = FVector::CrossProduct(FVector::UpVector, Forward).GetSafeNormal();
+    if (Right.IsNearlyZero())
+    {
+        return;
+    }
+    
+    FVector Up = FVector::CrossProduct(NewForward, Right).GetSafeNormal();
+    
+    FMatrix RotationMatrix = FMatrix::Identity;
+    RotationMatrix.SetAxes(NewForward,Right,Up);
+    
+    FQuat NewRotation{RotationMatrix};
+    NewRotation.Normalize();
+    ViewportCamera->SetRotation(NewRotation);
+}
+
+void FViewportNavigationController::FocusActors()
+{
+    if (ViewportCamera == nullptr)
+    {
+        return;
+    }
+
+    const TArray<AActor*> Actors = SelectionController->GetSelectedActors();
+    if (Actors.empty())
+    {
+        return;
+    }
+
+    FVector BoundsMin{FLT_MAX, FLT_MAX, FLT_MAX};
+    FVector BoundsMax{-FLT_MAX, -FLT_MAX, -FLT_MAX};
+
+    bool bHasValidBounds = false;
+
+    for (auto* Actor : Actors)
+    {
+        if (Actor == nullptr)
+        {
+            continue;
+        }
+
+        Engine::Component::UPrimitiveComponent* Comp = static_cast<
+            Engine::Component::UPrimitiveComponent*>(Actor->GetRootComponent());
+        if (Comp == nullptr)
+        {
+            continue;
+        }
+
+        const Geometry::FAABB Box = Comp->GetWorldAABB();
+
+        BoundsMin.X = std::min(BoundsMin.X, Box.Min.X);
+        BoundsMin.Y = std::min(BoundsMin.Y, Box.Min.Y);
+        BoundsMin.Z = std::min(BoundsMin.Z, Box.Min.Z);
+
+        BoundsMax.X = std::max(BoundsMax.X, Box.Max.X);
+        BoundsMax.Y = std::max(BoundsMax.Y, Box.Max.Y);
+        BoundsMax.Z = std::max(BoundsMax.Z, Box.Max.Z);
+        
+        bHasValidBounds = true;
+    }
+    
+    if (!bHasValidBounds)
+    {
+        return;
+    }
+    
+    const FVector Center = (BoundsMin + BoundsMax) * 0.5f;
+    const FVector Extents = (BoundsMax - BoundsMin) * 0.5f;
+    
+    float Radius = Extents.Size();
+    Radius = std::max(Radius,50.f);
+    
+    const float FovY = ViewportCamera->GetFOV();
+    const float Aspect = ViewportCamera->GetAspectRatio();
+    
+    const float HalfFovY = FovY * 0.5f;
+    const  float HalfFovX = std::atan(std::tan(HalfFovY)*Aspect);
+    
+    //  넓은 길이 찾아서 맞춰야 함
+    const float DistanceX = Radius / std::tan(HalfFovX);
+    const float DistanceY = Radius / std::tan(HalfFovY);
+    const float Distance = std::max(DistanceX,DistanceY) * 1.2f;
+    
+    const FVector Forward = ViewportCamera->GetForwardVector().GetSafeNormal();
+    const FVector NewLocation = Center - Forward * Distance;
+    
+    TargetLocation = NewLocation;
+    bHasTargetLocation = true;
+    
+    OrbitPivot = Center;
+    OrbitRadius = Radius;
+    
+    const FVector NewForward = (Center-NewLocation).GetSafeNormal();
+    
+    //  Up vector를 World Space로 간주
+    FVector Right = FVector::CrossProduct(FVector::UpVector, Forward).GetSafeNormal();
+    if (Right.IsNearlyZero())
+    {
+        return;
+    }
+    
+    FVector Up = FVector::CrossProduct(NewForward, Right).GetSafeNormal();
+    
+    FMatrix RotationMatrix = FMatrix::Identity;
+    RotationMatrix.SetAxes(NewForward,Right,Up);
+    
+    FQuat NewRotation{RotationMatrix};
+    NewRotation.Normalize();
+    ViewportCamera->SetRotation(NewRotation);
 }
 
 void FViewportNavigationController::UpdateCameraRotation()

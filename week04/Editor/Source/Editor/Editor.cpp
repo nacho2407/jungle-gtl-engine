@@ -286,9 +286,10 @@ void FEditor::Create()
 
     ViewportClient.Create();
     ViewportClient.SetEditorContext(&EditorContext);
+    GlobalInputContext.SetNavigationController(&ViewportClient.GetNavigationController());
 
-    GlobalInputController.BindDeleteSelection([this]() { return CanDeleteSelectedActors(); },
-                                              [this]() { DeleteSelectedActors(); });
+    GlobalInputController.SetEditorContext(&EditorContext);
+    GlobalInputController.SetSelectionController(&ViewportClient.GetSelectionController());
     GlobalInputRouter.AddContext(&GlobalInputContext);
 
     LoadEditorSettings();
@@ -317,6 +318,7 @@ void FEditor::Create()
     //  TEMP SCENE
     CurScene = new FScene();
     ViewportClient.SetScene(CurScene);
+    GlobalInputController.SetScene(CurScene);
 
     UE_LOG(FEditor, ELogVerbosity::Log, "Hello Editor");
     EditorContext.Scene = CurScene;
@@ -336,6 +338,10 @@ void FEditor::Release()
 
     delete CurScene;
     CurScene = nullptr;
+    GlobalInputContext.SetNavigationController(nullptr);
+    GlobalInputController.SetScene(nullptr);
+    GlobalInputController.SetSelectionController(nullptr);
+    GlobalInputController.SetEditorContext(nullptr);
     EditorContext.Scene = nullptr;
     EditorContext.ContentIndex = nullptr;
 
@@ -355,6 +361,7 @@ void FEditor::Initialize()
     {
         CurScene = new FScene();
         ViewportClient.SetScene(CurScene);
+        GlobalInputController.SetScene(CurScene);
         EditorContext.Scene = CurScene;
     }
 }
@@ -567,6 +574,7 @@ void FEditor::ReplaceCurrentScene(std::unique_ptr<FScene> NewScene)
     }
 
     ViewportClient.SetScene(CurScene);
+    GlobalInputController.SetScene(CurScene);
     EditorContext.Scene = CurScene;
     EditorContext.SelectedObject = nullptr;
     EditorContext.SelectedActors.clear();
@@ -726,89 +734,6 @@ void FEditor::RequestAboutPopup()
     bAboutPopupOpen = true;
 }
 
-void FEditor::DeleteSelectedActors()
-{
-    if (CurScene == nullptr)
-    {
-        return;
-    }
-
-    TArray<AActor*> ActorsToDelete = EditorContext.SelectedActors;
-    if (ActorsToDelete.empty())
-    {
-        if (AActor* SelectedActor = Cast<AActor>(EditorContext.SelectedObject))
-        {
-            ActorsToDelete.push_back(SelectedActor);
-        }
-        else if (Engine::Component::USceneComponent* SelectedComponent =
-                     Cast<Engine::Component::USceneComponent>(EditorContext.SelectedObject))
-        {
-            const TArray<AActor*>* SceneActors = CurScene->GetActors();
-            if (SceneActors != nullptr)
-            {
-                for (AActor* Actor : *SceneActors)
-                {
-                    if (Actor != nullptr && Actor->GetRootComponent() == SelectedComponent)
-                    {
-                        ActorsToDelete.push_back(Actor);
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    if (ActorsToDelete.empty())
-    {
-        return;
-    }
-
-    ViewportClient.GetSelectionController().ClearSelection();
-
-    for (AActor* Actor : ActorsToDelete)
-    {
-        CurScene->RemoveActor(Actor);
-    }
-
-    MarkSceneDirty();
-}
-
-bool FEditor::CanDeleteSelectedActors() const
-{
-    if (!EditorContext.SelectedActors.empty())
-    {
-        return true;
-    }
-
-    if (Cast<AActor>(EditorContext.SelectedObject) != nullptr)
-    {
-        return true;
-    }
-
-    auto* SelectedComponent =
-        Cast<Engine::Component::USceneComponent>(EditorContext.SelectedObject);
-    if (SelectedComponent == nullptr || CurScene == nullptr)
-    {
-        return false;
-    }
-
-    const TArray<AActor*>* SceneActors = CurScene->GetActors();
-    if (SceneActors == nullptr)
-    {
-        return false;
-    }
-
-    for (AActor* Actor : *SceneActors)
-    {
-        if (Actor != nullptr && Actor->GetRootComponent() == SelectedComponent)
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 bool FEditor::ConfirmProceedWithDirtyScene(const FDeferredSceneAction& Action)
 {
     if (!SceneDocument.bDirty)
@@ -953,8 +878,16 @@ void FEditor::RegisterDefaultCommands()
         FEditorCommandDefinition{.CommandId = "edit.delete_selection",
                                  .Label = L"Delete Selection",
                                  .ShortcutLabel = "Delete",
-                                 .Execute = [this]() { DeleteSelectedActors(); },
-                                 .CanExecute = [this]() { return CanDeleteSelectedActors(); }});
+                                 .Execute =
+                                     [this]()
+                                 {
+                                     GlobalInputController.DeleteSelectedActors();
+                                 },
+                                 .CanExecute =
+                                     [this]()
+                                 {
+                                     return GlobalInputController.CanDeleteSelectedActors();
+                                 }});
 
     MenuRegistry.RegisterCommand(FEditorCommandDefinition{.CommandId = "edit.preferences",
                                                           .Label = L"Preferences (Not Ready)",

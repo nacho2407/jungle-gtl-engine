@@ -1,9 +1,11 @@
 #pragma once
+#pragma once
 
 #include "Core/CoreMinimal.h"
 #include "ApplicationCore/Input/InputContext.h"
 
 class FEditorGlobalController;
+class FViewportNavigationController;
 
 class FEditorGlobalContext : public Engine::ApplicationCore::IInputContext
 {
@@ -23,7 +25,12 @@ public:
     void Tick(const Engine::ApplicationCore::FInputState& State) override;
 
     void SetController(FEditorGlobalController* InController) { Controller = InController; }
+    void SetNavigationController(FViewportNavigationController* InNavigationController)
+    {
+        NavigationController = InNavigationController;
+    }
 
 private:
     FEditorGlobalController* Controller = nullptr;
+    FViewportNavigationController* NavigationController = nullptr;
 };
