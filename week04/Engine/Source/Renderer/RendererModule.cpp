@@ -233,6 +233,8 @@ void FRendererModule::RenderOverlayPass(const FEditorRenderData& InEditorRenderD
 
     if (bHasEditorGizmo)
     {
+        RHI.ClearDepthStencil(RHI.GetDepthStencilView(), 1.0f, 0);
+
         OverlayMeshRenderer.BeginFrame(InEditorRenderData.SceneView, EViewModeIndex::VMI_Unlit,
                                        true);
         GizmoSubmitter.Submit(OverlayMeshRenderer, InEditorRenderData);

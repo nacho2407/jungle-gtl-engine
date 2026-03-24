@@ -20,6 +20,10 @@ namespace PickId
         ScaleX = 7,
         ScaleY = 8,
         ScaleZ = 9,
+
+        TranslateCenter = 10,
+        RotateCenter = 11,
+        ScaleCenter = 12,
     };
 
     inline uint32 MakeGizmoPartId(EGizmoType InGizmoType, EAxis InAxis)
@@ -44,6 +48,32 @@ namespace PickId
             Part = (InAxis == EAxis::X)   ? static_cast<uint32>(EGizmoPart::ScaleX)
                    : (InAxis == EAxis::Y) ? static_cast<uint32>(EGizmoPart::ScaleY)
                                           : static_cast<uint32>(EGizmoPart::ScaleZ);
+            break;
+
+        default:
+            Part = 0;
+            break;
+        }
+
+        return (Part == 0) ? None : (GizmoMask | Part);
+    }
+
+    inline uint32 MakeGizmoCenterId(EGizmoType InGizmoType)
+    {
+        uint32 Part = 0;
+
+        switch (InGizmoType)
+        {
+        case EGizmoType::Translation:
+            Part = static_cast<uint32>(EGizmoPart::TranslateCenter);
+            break;
+
+        case EGizmoType::Rotation:
+            Part = static_cast<uint32>(EGizmoPart::RotateCenter);
+            break;
+
+        case EGizmoType::Scaling:
+            Part = static_cast<uint32>(EGizmoPart::ScaleCenter);
             break;
 
         default:
@@ -112,6 +142,21 @@ namespace PickId
         case static_cast<uint32>(EGizmoPart::ScaleZ):
             OutGizmoType = EGizmoType::Scaling;
             OutAxis = EAxis::Z;
+            return true;
+
+        case static_cast<uint32>(EGizmoPart::TranslateCenter):
+            OutGizmoType = EGizmoType::Translation;
+            OutAxis = EAxis::X;
+            return true;
+
+        case static_cast<uint32>(EGizmoPart::RotateCenter):
+            OutGizmoType = EGizmoType::Rotation;
+            OutAxis = EAxis::X;
+            return true;
+
+        case static_cast<uint32>(EGizmoPart::ScaleCenter):
+            OutGizmoType = EGizmoType::Scaling;
+            OutAxis = EAxis::X;
             return true;
 
         default:

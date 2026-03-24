@@ -18,6 +18,7 @@ struct FPickResult
     uint32     ObjectId = PickId::None;
     EGizmoType GizmoType = EGizmoType::None;
     EAxis      Axis = EAxis::X;
+    bool       bIsCenterHandle = false;
 };
 
 namespace PickResult
@@ -41,6 +42,10 @@ namespace PickResult
 
         Result.Kind = EPickKind::Gizmo;
         PickId::DecodeGizmoPart(InPickId, Result.GizmoType, Result.Axis);
+        Result.bIsCenterHandle =
+            InPickId == PickId::MakeGizmoCenterId(EGizmoType::Translation) ||
+            InPickId == PickId::MakeGizmoCenterId(EGizmoType::Rotation) ||
+            InPickId == PickId::MakeGizmoCenterId(EGizmoType::Scaling);
         return Result;
     }
 } // namespace PickResult

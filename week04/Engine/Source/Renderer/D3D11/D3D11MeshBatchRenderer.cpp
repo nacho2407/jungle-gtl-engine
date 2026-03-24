@@ -544,7 +544,7 @@ void FD3D11MeshBatchRenderer::FlushEditorQueue(EMeshDrawPath     DrawPath,
     }
 
     BindPipeline(DrawPath);
-    RHI->SetDepthStencilState(DepthDisabledState.Get(), 0);
+    RHI->SetDepthStencilState(DepthStencilState.Get(), 0);
     UpdatePerFrameConstants(InSceneView, DrawPath);
 
     BindSolidRasterizer();
@@ -560,7 +560,6 @@ void FD3D11MeshBatchRenderer::FlushEditorQueue(EMeshDrawPath     DrawPath,
         DrawMeshBatch(static_cast<EBasicMeshType>(Index), DrawPath, InSceneView, Draws);
     }
 
-    RHI->SetDepthStencilState(DepthStencilState.Get(), 0);
 }
 
 void FD3D11MeshBatchRenderer::DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath DrawPath,

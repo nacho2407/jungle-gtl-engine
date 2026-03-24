@@ -41,6 +41,9 @@ class FGizmoSubmitter
   private:
     FColor ResolveAxisColor(EAxis InAxis, EGizmoHighlight InHighlight) const;
 
+    void AddCenterHandle(TArray<FPrimitiveRenderItem>& OutPrimitives,
+                         const FGizmoDrawData&         InGizmoDrawData,
+                         const FMatrix&                InGizmoMatrix) const;
     void AddTranslationGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
                              const FGizmoDrawData&         InGizmoDrawData,
                              const FMatrix&                InGizmoMatrix) const;
@@ -51,7 +54,11 @@ class FGizmoSubmitter
                          const FGizmoDrawData&         InGizmoDrawData,
                          const FMatrix&                InGizmoMatrix) const;
 
-    void AddTranslationGizmo(TArray<FObjectIdRenderItem>& OutItems, const FGizmoDrawData& InGizmoDrawData,
+    void AddCenterHandle(TArray<FObjectIdRenderItem>& OutItems,
+                         const FGizmoDrawData&         InGizmoDrawData,
+                         const FMatrix&                InGizmoMatrix) const;
+    void AddTranslationGizmo(TArray<FObjectIdRenderItem>& OutItems,
+                             const FGizmoDrawData& InGizmoDrawData,
                              const FMatrix& InGizmoMatrix) const;
     void AddRotationGizmo(TArray<FObjectIdRenderItem>& OutItems, const FGizmoDrawData& InGizmoDrawData,
                           const FMatrix& InGizmoMatrix) const;

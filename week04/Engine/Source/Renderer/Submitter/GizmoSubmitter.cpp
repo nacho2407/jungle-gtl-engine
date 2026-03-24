@@ -52,6 +52,8 @@ namespace
     }
 
     static constexpr EAxis GizmoAxes[] = {EAxis::X, EAxis::Y, EAxis::Z};
+    static constexpr float GizmoCenterHandleRadius = 0.24f;
+    static const FColor GizmoCenterHandleColor = FColor(1.0f, 1.0f, 1.0f, 1.0f);
 
     FMatrix MakeAxisBasis(EAxis InAxis)
     {
@@ -112,6 +114,7 @@ void FGizmoSubmitter::Submit(FD3D11OverlayMeshRenderer& InMeshRenderer,
     const FMatrix GizmoMatrix = BuildGizmoMatrix(InEditorRenderData.Gizmo);
 
     TArray<FPrimitiveRenderItem> GizmoPrimitives;
+    AddCenterHandle(GizmoPrimitives, InEditorRenderData.Gizmo, GizmoMatrix);
 
     switch (InEditorRenderData.Gizmo.GizmoType)
     {
@@ -146,6 +149,7 @@ void FGizmoSubmitter::Submit(FD3D11ObjectIdRenderer&  InObjectIdRenderer,
     const FMatrix GizmoMatrix = BuildGizmoMatrix(InEditorRenderData.Gizmo);
 
     TArray<FObjectIdRenderItem> GizmoItems;
+    AddCenterHandle(GizmoItems, InEditorRenderData.Gizmo, GizmoMatrix);
 
     switch (InEditorRenderData.Gizmo.GizmoType)
     {
@@ -172,6 +176,37 @@ FColor FGizmoSubmitter::ResolveAxisColor(EAxis InAxis, EGizmoHighlight InHighlig
 {
     return IsAxisHighlighted(InAxis, InHighlight) ? GetAxisHighlightColor(InAxis)
                                                   : GetAxisBaseColor(InAxis);
+}
+
+void FGizmoSubmitter::AddCenterHandle(TArray<FPrimitiveRenderItem>& OutPrimitives,
+                                      const FGizmoDrawData&         InGizmoDrawData,
+                                      const FMatrix&                InGizmoMatrix) const
+{
+    if (InGizmoDrawData.GizmoType == EGizmoType::None)
+    {
+        return;
+    }
+
+    const FMatrix LocalScale = FMatrix::MakeScale(
+        FVector(GizmoCenterHandleRadius, GizmoCenterHandleRadius, GizmoCenterHandleRadius));
+    const FMatrix World = LocalScale * InGizmoMatrix;
+    OutPrimitives.push_back(MakePrimitiveItem(World, GizmoCenterHandleColor, EBasicMeshType::Sphere));
+}
+
+void FGizmoSubmitter::AddCenterHandle(TArray<FObjectIdRenderItem>& OutItems,
+                                      const FGizmoDrawData&         InGizmoDrawData,
+                                      const FMatrix&                InGizmoMatrix) const
+{
+    const uint32 CenterId = PickId::MakeGizmoCenterId(InGizmoDrawData.GizmoType);
+    if (CenterId == PickId::None)
+    {
+        return;
+    }
+
+    const FMatrix LocalScale = FMatrix::MakeScale(
+        FVector(GizmoCenterHandleRadius, GizmoCenterHandleRadius, GizmoCenterHandleRadius));
+    const FMatrix World = LocalScale * InGizmoMatrix;
+    OutItems.push_back(MakeObjectIdItem(World, EBasicMeshType::Sphere, CenterId));
 }
 
 void FGizmoSubmitter::AddTranslationGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
