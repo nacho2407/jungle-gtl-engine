@@ -1,4 +1,4 @@
-﻿#include "RenderCollector.h"
+#include "RenderCollector.h"
 
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
@@ -8,40 +8,103 @@
 #include "Component/BillboardComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/SubUVComponent.h"
+#include "Viewport/CursorOverlayState.h"
 
-void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
+void FRenderCollector::Collect(const FRenderCollectorContext& Context, const TArray<FCollectPhase>& Phases, FRenderBus& RenderBus)
 {
-	if (!Context.Camera || !Context.World)
-	{
-		return;
-	}
-
-	//	Must be the active camera
+	if (!Context.Camera) return;
 
 	UCameraComponent* Camera = Context.Camera;
 	RenderBus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix(),
 		Camera->GetRightVector(), Camera->GetUpVector());
 	RenderBus.SetRenderSettings(Context.ViewMode, Context.ShowFlags);
 
-
-	//	Draw from Editor (Gizmo, Axis, etc.)
-	CollectFromEditor(Context, RenderBus);
-
-	//	Draw from World
-	for (AActor* Actor : Context.World->GetActors())
+	for (const auto& Phase : Phases)
 	{
-		if (!Actor) continue;
-		CollectFromActor(Actor, Context, RenderBus);
-	}
-
-	// Picking Actors
-	for (AActor* Actor : Context.SelectedActors)
-	{
-		CollectFromSelectedActor(Actor, Context, RenderBus);
+		Phase(RenderBus);
 	}
 }
 
-void FRenderCollector::CollectFromActor(AActor* Actor, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
+void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
+{
+	if (!World) return;
+
+	for (AActor* Actor : World->GetActors())
+	{
+		if (!Actor) continue;
+		CollectFromActor(Actor, ShowFlags, ViewMode, RenderBus);
+	}
+}
+
+void FRenderCollector::CollectSelection(const TArray<AActor*>& SelectedActors, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
+{
+	for (AActor* Actor : SelectedActors)
+	{
+		CollectFromSelectedActor(Actor, ShowFlags, ViewMode, RenderBus);
+	}
+}
+
+void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
+{
+	if (ShowFlags.bGizmo == false) return;
+	if (!Gizmo || !Gizmo->IsVisible()) return;
+
+	auto CreateGizmoCmd = [&](bool bInner) {
+		FRenderCommand Cmd = {};
+		Cmd.Type = ERenderCommandType::Gizmo;
+		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
+		Cmd.PerObjectConstants = FPerObjectConstants{ Gizmo->GetWorldMatrix() };
+
+		if (bInner)
+		{
+			Cmd.DepthStencilState = EDepthStencilState::GizmoInside;
+			Cmd.BlendState = EBlendState::AlphaBlend;
+			Cmd.Constants.Gizmo.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+		}
+		else
+		{
+			Cmd.DepthStencilState = EDepthStencilState::GizmoOutside;
+			Cmd.BlendState = EBlendState::Opaque;
+			Cmd.Constants.Gizmo.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+		}
+		Cmd.Constants.Gizmo.bIsInnerGizmo = bInner ? 1 : 0;
+		Cmd.Constants.Gizmo.bClicking = Gizmo->IsHolding() ? 1 : 0;
+		Cmd.Constants.Gizmo.SelectedAxis = Gizmo->GetSelectedAxis() >= 0 ? (uint32)Gizmo->GetSelectedAxis() : 0xffffffffu;
+		Cmd.Constants.Gizmo.HoveredAxisOpacity = 0.3f;
+		return Cmd;
+		};
+
+	// Inner Gizmo
+	RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(false));
+
+	if (!Gizmo->IsHolding())
+	{
+		RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(true));
+	}
+}
+
+void FRenderCollector::CollectMouseOverlay(const FCursorOverlayState* State, float ViewportW, float ViewportH, FRenderBus& RenderBus)
+{
+	if (State == nullptr || State->bVisible == false)
+	{
+		return;
+	}
+
+	FRenderCommand OverlayCmd = {};
+	OverlayCmd.Type = ERenderCommandType::Overlay;
+	OverlayCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_MouseOverlay);
+
+	OverlayCmd.Constants.Overlay.CenterScreen.X = State->ScreenX;
+	OverlayCmd.Constants.Overlay.CenterScreen.Y = State->ScreenY;
+	OverlayCmd.Constants.Overlay.ViewportSize.X = ViewportW;
+	OverlayCmd.Constants.Overlay.ViewportSize.Y = ViewportH;
+	OverlayCmd.Constants.Overlay.Radius = State->CurrentRadius;
+	OverlayCmd.Constants.Overlay.Color = State->Color;
+
+	RenderBus.AddCommand(ERenderPass::Overlay, OverlayCmd);
+}
+
+void FRenderCollector::CollectFromActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
 {
 	if (!Actor->IsVisible()) return;
 
@@ -51,11 +114,11 @@ void FRenderCollector::CollectFromActor(AActor* Actor, const FRenderCollectorCon
 		if (!Comp) continue;
 		if (!Comp->IsA<UPrimitiveComponent>()) continue;
 		UPrimitiveComponent* Primitive = static_cast<UPrimitiveComponent*>(Comp);
-		CollectFromComponent(Primitive, Context, RenderBus);
+		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus);
 	}
 }
 
-void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
+void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
 {
 	if (!Actor->IsVisible()) return;
 
@@ -68,7 +131,7 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderColl
 
 		if (PrimType == EPrimitiveType::EPT_Text)
 		{
-			if (Context.ShowFlags.bBillboardText == false) return;
+			if (ShowFlags.bBillboardText == false) return;
 			UTextRenderComponent* TextComp = static_cast<UTextRenderComponent*>(primitiveComponent);
 			const FFontResource* Font = TextComp->GetFont();
 			if (!Font || !Font->IsLoaded()) return;
@@ -107,7 +170,7 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderColl
 		OutlineCmd.Constants.Outline.OutlineInvScale = FVector(1.0f / primitiveComponent->GetRelativeScale().X,
 			1.0f / primitiveComponent->GetRelativeScale().Y, 1.0f / primitiveComponent->GetRelativeScale().Z);
 
-		if (Context.ViewMode == EViewMode::Wireframe)
+		if (ViewMode == EViewMode::Wireframe)
 		{
 			OutlineCmd.PerObjectConstants.Color = FColor(255, 153, 0, 255).ToVector4();
 			OutlineCmd.Constants.Outline.OutlineOffset = 0.03f;
@@ -122,7 +185,7 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderColl
 	}
 }
 
-void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
+void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
 {
 	if (!Primitive->IsVisible()) return;
 
@@ -136,7 +199,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 	case EPrimitiveType::EPT_Sphere:
 	case EPrimitiveType::EPT_Plane:
 	{
-		if (!Context.ShowFlags.bPrimitives) return;
+		if (!ShowFlags.bPrimitives) return;
 		Cmd.Type = ERenderCommandType::Primitive;
 		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Primitive->GetPrimitiveType());
 		Cmd.DepthStencilState = EDepthStencilState::Default;
@@ -160,103 +223,11 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		break;
 	}
 
-	// 실제 여기 패스를 안 타기 때문에 여기서 처리해봤자다. ㅠㅠ
-	//case EPrimitiveType::EPT_Text:
-	//{
-	//	if (!Context.ShowFlags.bBillboardText) return;
-	//	UTextRenderComponent* TextComp = static_cast<UTextRenderComponent*>(Primitive);
-	//	const FFontResource* Font = TextComp->GetFont();
-	//	if (!Font || !Font->IsLoaded()) return;
-	//	if (TextComp->GetText().empty()) return;
-
-	//	Cmd.Type = ERenderCommandType::Font;
-	//	Cmd.PerObjectConstants.Color = TextComp->GetColor();
-	//	Cmd.TextData = TextComp->GetText();
-	//	Cmd.AtlasResource = Font;
-	//	Cmd.SpriteSize.X = TextComp->GetFontSize();
-	//	Cmd.BlendState = EBlendState::AlphaBlend;
-	//	Cmd.DepthStencilState = EDepthStencilState::Default;
-	//	TargetPass = ERenderPass::Font;
-	//	break;
-	//}
-
 	default:
 		return;
 	}
 
 	RenderBus.AddCommand(TargetPass, Cmd);
-}
-
-void FRenderCollector::CollectFromEditor(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
-{
-	CollectGizmo(Context, RenderBus);
-	CollectMouseOverlay(Context, RenderBus);
-}
-
-
-void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
-{
-
-	UGizmoComponent* Gizmo = Context.Gizmo;
-	if (Context.ShowFlags.bGizmo == false) return;
-	if (!Gizmo || !Gizmo->IsVisible()) return;
-
-	auto CreateGizmoCmd = [&](bool bInner) {
-		FRenderCommand Cmd = {};
-		Cmd.Type = ERenderCommandType::Gizmo;
-		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
-		Cmd.PerObjectConstants = FPerObjectConstants{ Gizmo->GetWorldMatrix() };
-
-		if (bInner)
-		{
-			Cmd.DepthStencilState = EDepthStencilState::GizmoInside;
-			Cmd.BlendState = EBlendState::AlphaBlend;
-			Cmd.Constants.Gizmo.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-		}
-		else
-		{
-			Cmd.DepthStencilState = EDepthStencilState::GizmoOutside;
-			Cmd.BlendState = EBlendState::Opaque;
-			Cmd.Constants.Gizmo.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-		}
-		Cmd.Constants.Gizmo.bIsInnerGizmo = bInner ? 1 : 0;
-		Cmd.Constants.Gizmo.bClicking = Gizmo->IsHolding() ? 1 : 0;
-		Cmd.Constants.Gizmo.SelectedAxis = Gizmo->GetSelectedAxis() >= 0 ? (uint32)Gizmo->GetSelectedAxis() : 0xffffffffu;
-		Cmd.Constants.Gizmo.HoveredAxisOpacity = 0.3f;
-		return Cmd;
-		};
-
-
-	// Inner Gizmo
-	RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(false));
-
-	if (!Gizmo->IsHolding())
-	{
-		RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(true));
-	}
-}
-
-void FRenderCollector::CollectMouseOverlay(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
-{
-	//	Cursor Overlay (null checking +)
-	if (Context.CursorOverlayState == nullptr || Context.CursorOverlayState->bVisible == false)
-	{
-		return;
-	}
-
-	FRenderCommand OverlayCmd = {};
-	OverlayCmd.Type = ERenderCommandType::Overlay;
-	OverlayCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_MouseOverlay);
-
-	OverlayCmd.Constants.Overlay.CenterScreen.X = Context.CursorOverlayState->ScreenX;
-	OverlayCmd.Constants.Overlay.CenterScreen.Y = Context.CursorOverlayState->ScreenY;
-	OverlayCmd.Constants.Overlay.ViewportSize.X = static_cast<float>(Context.ViewportWidth);
-	OverlayCmd.Constants.Overlay.ViewportSize.Y = static_cast<float>(Context.ViewportHeight);
-	OverlayCmd.Constants.Overlay.Radius = Context.CursorOverlayState->CurrentRadius;
-	OverlayCmd.Constants.Overlay.Color = Context.CursorOverlayState->Color;
-
-	RenderBus.AddCommand(ERenderPass::Overlay, OverlayCmd);
-
 }
 
 void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponent, FRenderBus& RenderBus)
@@ -269,10 +240,8 @@ void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponen
 	// 이전에 정의한 union 구조체의 AABB 영역에 데이터를 채웁니다.
 	AABBCmd.Constants.AABB.Min = Box.Min;
 	AABBCmd.Constants.AABB.Max = Box.Max;
-	//AABBCmd.Constants.AABB.Color = FColor(1.0f, 0.6f, 0.0f, 1.0f); // 선택 강조용 주황색
 	AABBCmd.Constants.AABB.Color = FColor(255, 153, 0, 255); // 선택 강조용 주황색
 
 	// 렌더러가 마지막에 몰아서 그릴 수 있게 특정 패스(예: Editor/Overlay)에 푸시합니다.
 	RenderBus.AddCommand(ERenderPass::Editor, AABBCmd);
 }
-
