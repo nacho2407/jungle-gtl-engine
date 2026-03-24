@@ -76,9 +76,11 @@ void USubUVComponent::TickComponent(float DeltaTime)
 	}
 
 	FVector WorldLocation = GetWorldLocation();
-	FVector CameraPos = GetOwner()->GetWorld()->GetActiveCamera()->GetWorldLocation();
 
-	FVector Forward = (CameraPos - GetWorldLocation()).Normalized();
+	const UCameraComponent* ActiveCamera = GetOwner()->GetWorld()->GetActiveCamera();
+
+	FVector CameraForward = ActiveCamera->GetForwardVector().Normalized();
+	FVector Forward = CameraForward * -1;
 	FVector WorldUp = FVector(0.0f, 0.0f, 1.0f);
 
 	if (std::abs(Forward.Dot(WorldUp)) > 0.99f)
@@ -91,7 +93,7 @@ void USubUVComponent::TickComponent(float DeltaTime)
 
 	FMatrix RotMatrix;
 	RotMatrix.SetAxes(Forward, Right, Up);
-	
+
 	CachedWorldMatrix = FMatrix::MakeScaleMatrix(GetWorldScale()) * RotMatrix * FMatrix::MakeTranslationMatrix(WorldLocation);
 
 	UpdateWorldAABB();
