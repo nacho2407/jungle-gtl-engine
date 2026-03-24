@@ -12,6 +12,7 @@
 #include "Renderer/Geometry.h"
 
 #include "Renderer/VertexFont.h"
+#include "Text/FontAsset.h"
 
 /**
  * @brief 텍스트 Batch용 입력 구조체
@@ -127,13 +128,6 @@ public:
 	 */
 	void ReleaseDynamicFontVertexBuffer(void);
 
-	/**
-	 * @brief 여러 Billboard 아이템을 받아서 Batch로 렌더합니다.
-	 * 
-	 * @param Items Batch로 렌더할 Billboard 아이템 배열
-	 */
-	void RenderBillboardTextBatch(const TArray<FBillboardTextDrawItem>& Items);
-
 private:
 	UCameraComponent* renderCamera = nullptr;
 	int32 RsSetMode = 0;
@@ -142,4 +136,23 @@ private:
 	 * @brief 폰트를 위한 dynamic vertex buffer
 	 */
 	TComPtr<ID3D11Buffer> DynamicFontVertexBuffer;
+
+private:
+	/**
+	 * @brief GPU 상태를 텍스트 렌더링용에 맞추어 draw call을 준비합니다.
+	 * 
+	 * @param FontAsset GPU에 설정할 font asset 정보
+	 * 
+	 * @param Color GPU에 설정할 글자 색 정보
+	 * 
+	 * @return 준비 성공 여부
+	 */
+	bool PrepareBillboardFontMaterial(FFontAsset* FontAsset, const FColor& Color);
+	
+	/**
+	 * @brief 준비된 정점 배열로 실제 draw call을 보냅니다.
+	 * 
+	 * @param Vertices Draw할 정점 배열
+	 */
+	void DrawBillboardFontVertices(const TArray<FVertexFont>& Vertices);
 };

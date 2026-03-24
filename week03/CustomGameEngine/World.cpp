@@ -22,7 +22,7 @@ UWorld::~UWorld() {
 	while (!SceneMgr->GetLoadedScenes().empty())
 	{
 		UScene* scene = SceneMgr->GetLoadedScenes().back();
-		SceneMgr->UnloadScene(scene);
+		SceneMgr->UnloadScene(scene, false);
 	}
 	delete SceneMgr;
 	SceneMgr = nullptr;

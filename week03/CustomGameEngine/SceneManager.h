@@ -28,7 +28,7 @@ public:
 	UScene* NewScene();
 	void SaveScene(FString sceneName);
 	UScene* LoadScene(FString sceneName);
-	void UnloadScene(UScene* targetScene);
+	void UnloadScene(UScene* targetScene, bool bCreateReplacementScene = true);
 	// === Scene Management
 	
 	template <typename T>
