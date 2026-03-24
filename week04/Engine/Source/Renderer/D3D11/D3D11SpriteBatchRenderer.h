@@ -9,7 +9,7 @@
 
 class FD3D11DynamicRHI;
 class FSceneView;
-class FTextureResource;
+struct FTextureResource;
 
 class FD3D11SpriteBatchRenderer
 {

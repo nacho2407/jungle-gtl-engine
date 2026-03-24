@@ -7,7 +7,7 @@
 namespace Engine::Component
 {
     class USceneComponent;
-    class UTextComponent;
+    class UAtlasComponent;
 } // namespace Engine::Component
 
 class ENGINE_API AActor : public UObject
@@ -41,12 +41,12 @@ class ENGINE_API AActor : public UObject
     virtual EBasicMeshType GetMeshType() const;
     virtual uint32         GetObjectId() const { return 0; }
 
-    Engine::Component::UTextComponent* GetUUIDTextComponent() const { return UUIDTextComponent; }
+    Engine::Component::UAtlasComponent* GetUUIDTextComponent() const { return UUIDTextComponent; }
 
   protected:
     Engine::Component::USceneComponent*         RootComponent = nullptr;
     TArray<Engine::Component::USceneComponent*> OwnedComponents;
-    Engine::Component::UTextComponent*          UUIDTextComponent = nullptr;
+    Engine::Component::UAtlasComponent*          UUIDTextComponent = nullptr;
 
     bool bPickable = true;
 };

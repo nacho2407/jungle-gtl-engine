@@ -11,7 +11,7 @@
 
 class FD3D11DynamicRHI;
 class FSceneView;
-class FFontResource;
+struct FFontResource;
 struct FFontGlyph;
 struct FTextRenderItem;
 
