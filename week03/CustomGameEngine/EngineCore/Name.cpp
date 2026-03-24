@@ -100,5 +100,12 @@ void FUniqueNameGenerator::ReleaseName(const FName& Name)
 		ComparisonNumberStates.push_back({});
 	}
 
-	ComparisonNumberStates[Name.ComparisonIndex].FreeNumbers.push(Name.Number);
+	FNumberState& State = ComparisonNumberStates[Name.ComparisonIndex];
+	State.FreeNumbers.push(Name.Number);
+	if (static_cast<int32>(State.FreeNumbers.size()) == State.NextNumber)
+	{
+		State.NextNumber = 0;
+		decltype(State.FreeNumbers) EmptyQueue;
+		State.FreeNumbers.swap(EmptyQueue);
+	}
 }

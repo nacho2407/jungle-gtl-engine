@@ -361,7 +361,7 @@ void URenderer::BatchRenderDebugLine(const TArray<FVertexSimple>& Lines)
 	if (ShowFlagMap[EEngineShowFlags::SF_DebugLines] == false)
 		return;
 	ResourceManager::GetInstance()->GetMaterial(L"Shader/ShaderLine.hlsl").Bind(DeviceContext.Get());
-	DeviceContext->OMSetDepthStencilState(DepthStencilStateNoDepth.Get(), 0);
+	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
 	UpdateDynamicVertexBuffer(const_cast<FVertexSimple*>(Lines.data()), Lines.size());
 	UINT stride = sizeof(FVertexSimple);
 	UINT offset = 0;

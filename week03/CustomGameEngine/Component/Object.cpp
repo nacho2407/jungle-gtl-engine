@@ -15,6 +15,14 @@ UObject::~UObject()
 	if (InternalIndex < GUObjectArray.size() && GUObjectArray[InternalIndex] == this)
 	{
 		GUObjectArray[InternalIndex] = nullptr;
+		while (!GUObjectArray.empty() && GUObjectArray.back() == nullptr)
+		{
+			GUObjectArray.pop_back();
+		}
+		if (GUObjectArray.empty())
+		{
+			GUObjectArray.shrink_to_fit();
+		}
 	}
 	FUniqueNameGenerator::ReleaseName(Name);
 }
