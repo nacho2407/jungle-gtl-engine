@@ -310,14 +310,23 @@ void URenderer::RenderNoDepthObjects(TArray<RenderObject*>& NoDepthRenderObjects
 		DeviceContext->OMSetDepthStencilState(DepthStencilStateNoDepth.Get(), 0);
 		for (RenderObject* RenderObj : NoDepthRenderObjects)
 		{
+			DeviceContext->RSSetState(RenderObj->bDisableCulling ? RasterizerStateNoCull.Get() : RasterizerState.Get());
 			ObjectConst.World = RenderObj->World;
 			ObjectConst.Color = RenderObj->Color;
 			ObjectConst.bIsSelected = RenderObj->bIsSelected ? 1 : 0;
 			RenderObj->Material->ConstantBuffer.Update(DeviceContext.Get(), &ObjectConst, sizeof(FObjectConstant));
 			RenderObj->Material->ConstantBuffer.Bind(DeviceContext.Get());
+			if (RenderObj->Material->bUsesSecondaryConstantBuffer)
+			{
+				FSubUVConstant subUVConst;
+				subUVConst.UVTransform = RenderObj->UVTransform;
+				RenderObj->Material->SecondaryConstantBuffer.Update(DeviceContext.Get(), &subUVConst, sizeof(FSubUVConstant));
+				RenderObj->Material->SecondaryConstantBuffer.Bind(DeviceContext.Get());
+			}
 			RenderObj->Render(DeviceContext.Get());
 		}
 		DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
+		DeviceContext->RSSetState(RasterizerState.Get());
 	}
 }
 
@@ -341,7 +350,7 @@ void URenderer::Render(const TArray<FLevel*>& Levels)
 	BatchRender(BatchGroups);
 	RenderNoDepthObjects(NoDepthRenderObjects);
 
-	RenderSingleBillboardTextTest();
+	//RenderSingleBillboardTextTest();
 }
 
 
@@ -414,6 +423,13 @@ void URenderer::RenderNormalObjects(TArray<RenderObject*>& NormalRenderObjects)
 		ObjectConst.bIsSelected = RenderObj->bIsSelected ? 1 : 0;
 		RenderObj->Material->ConstantBuffer.Update(DeviceContext.Get(), &ObjectConst, sizeof(FObjectConstant));
 		RenderObj->Material->ConstantBuffer.Bind(DeviceContext.Get());
+		if (RenderObj->Material->bUsesSecondaryConstantBuffer)
+		{
+			FSubUVConstant subUVConst;
+			subUVConst.UVTransform = RenderObj->UVTransform;
+			RenderObj->Material->SecondaryConstantBuffer.Update(DeviceContext.Get(), &subUVConst, sizeof(FSubUVConstant));
+			RenderObj->Material->SecondaryConstantBuffer.Bind(DeviceContext.Get());
+		}
 		RenderObj->Render(DeviceContext.Get());
 	}
 }

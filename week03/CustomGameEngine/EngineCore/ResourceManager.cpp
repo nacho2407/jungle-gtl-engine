@@ -1,8 +1,11 @@
 ﻿#include "ResourceManager.h"
 #include "VertexSimple.h"
+#include "ThirdParty/DDSTextureLoader.h"
+#include <iterator>
 #include "Geometry/Sphere.h"
 #include "Geometry/Triangle.h"
 #include "Renderer/Renderer.h"
+#include "EngineCore/Logger.h"
 
 #include "EngineCore/Logger.h"
 #include "Text/TextEncoding.h"
@@ -35,6 +38,19 @@ void ResourceManager::Initialize(URenderer* InRenderer)
 	FMaterial& LineShader = CreateMaterial(L"Shader/ShaderLine.hlsl", L"Shader/ShaderLine.hlsl", Renderer->Device.Get(), layout, 2);
 	LineShader.ConstantBuffer.Create(Renderer->Device.Get(), sizeof(FObjectConstant), 1);
 
+	D3D11_INPUT_ELEMENT_DESC texturedLayout[] = {
+{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
+ D3D11_INPUT_PER_VERTEX_DATA, 0},
+{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12,
+ D3D11_INPUT_PER_VERTEX_DATA, 0},
+{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 28,
+ D3D11_INPUT_PER_VERTEX_DATA, 0},
+	};
+	FMaterial& SubUVShader = CreateMaterial(L"Shader/ShaderSubUV.hlsl", L"Shader/ShaderSubUV.hlsl", Renderer->Device.Get(), texturedLayout, 3);
+	SubUVShader.ConstantBuffer.Create(Renderer->Device.Get(), sizeof(FObjectConstant), 1);
+	SubUVShader.SecondaryConstantBuffer.Create(Renderer->Device.Get(), sizeof(FSubUVConstant), 2);
+	SubUVShader.bUsesTexture = true;
+	SubUVShader.bUsesSecondaryConstantBuffer = true;
 	// for ShaderFont.hlsl
 	D3D11_INPUT_ELEMENT_DESC fontLayout[] =
 	{
@@ -45,6 +61,16 @@ void ResourceManager::Initialize(URenderer* InRenderer)
 		{ "TEXCOORD",  1, DXGI_FORMAT_R32G32_FLOAT,    0, 20,
 		  D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
+
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	Renderer->Device->CreateSamplerState(&samplerDesc, SubUVShader.SamplerState.GetAddressOf());
+	SubUVShader.TextureSRV = LoadDDSTexture(L"SubUVTexture", L"Textures/input.dds");
+
 
 	FMaterial& FontShader = CreateMaterial(
 		L"Shader/ShaderFont.hlsl",
@@ -60,12 +86,13 @@ void ResourceManager::Initialize(URenderer* InRenderer)
 		1
 	);
 
-	FontShader.bUseTexture = true;
+	FontShader.bUsesTexture = true;
 
 	AddCubeMesh(Renderer->Device.Get());
 	AddSphereMesh(Renderer->Device.Get());
 	AddTriangleMesh(Renderer->Device.Get());
 	AddPlaneMesh(Renderer->Device.Get());
+	AddBillboardQuadMesh(Renderer->Device.Get());
 	AddGizmoTranslationMesh(Renderer->Device.Get());
 	AddGizmoRotationMesh(Renderer->Device.Get());
 	AddGizmoScaleMesh(Renderer->Device.Get());
@@ -195,7 +222,7 @@ bool ResourceManager::CreateBillboardFontAtlasTexture(void)
 	FMaterial& FontShader = GetMaterial(L"Shader/ShaderFont.hlsl");
 	// 지금 GetMaterial은 해당하는 셰이더가 없어도 빈 FMaterial을 만들어서 반환하는데, 나중에 안정성을 위해 추가해야할 듯
 
-	FontShader.ShaderResourceView.Reset();
+	FontShader.TextureSRV.Reset();
 	FontShader.SamplerState.Reset();
 
 	// Atlas 전체 texture 생성
@@ -240,10 +267,10 @@ bool ResourceManager::CreateBillboardFontAtlasTexture(void)
 	hr = Renderer->Device->CreateShaderResourceView(
 		BillboardFontTexture.Get(),
 		&SrvDesc,
-		FontShader.ShaderResourceView.GetAddressOf()
+		FontShader.TextureSRV.GetAddressOf()
 	);
 
-	if (FAILED(hr) || FontShader.ShaderResourceView == nullptr)
+	if (FAILED(hr) || FontShader.TextureSRV == nullptr)
 	{
 		UE_LOG("[EngineCore/ResourceManager][Error] Failed to create billboard font SRV");
 		return false;
@@ -266,12 +293,12 @@ bool ResourceManager::CreateBillboardFontAtlasTexture(void)
 	if (FAILED(hr) || FontShader.SamplerState == nullptr)
 	{
 		UE_LOG("[EngineCore/ResourceManager][Error] Failed to create billboard font sampler");
-		FontShader.ShaderResourceView.Reset();
+		FontShader.TextureSRV.Reset();
 		return false;
 	}
 
 	// 셰이더에 연결
-	FontShader.bUseTexture = true;
+	FontShader.bUsesTexture = true;
 
 	return true;
 }
@@ -408,6 +435,32 @@ FMaterial& ResourceManager::CreateMaterial(WFString VertexShaderName, WFString P
 	return Mat;
 }
 
+TComPtr<ID3D11ShaderResourceView> ResourceManager::LoadDDSTexture(WFString ResourceName, WFString FilePath)
+{
+	auto iter = TextureMap.find(ResourceName);
+	if (iter != TextureMap.end())
+	{
+		return iter->second;
+	}
+
+	TComPtr<ID3D11ShaderResourceView> textureView;
+	const HRESULT hr = DirectX::CreateDDSTextureFromFile(
+		Renderer->Device.Get(),
+		FilePath.c_str(),
+		nullptr,
+		textureView.GetAddressOf());
+
+	if (FAILED(hr))
+	{
+		const std::string path(FilePath.begin(), FilePath.end());
+		UE_LOG("CreateDDSTextureFromFile failed. path=%s hr=0x%08X\n", path.c_str(), static_cast<unsigned int>(hr));
+		return nullptr;
+	}
+
+	TextureMap[ResourceName] = textureView;
+	return textureView;
+}
+
 void ResourceManager::AddCubeMesh(ID3D11Device* Device)
 {
 	MeshData data = CreateCubeMeshData();
@@ -459,6 +512,26 @@ void ResourceManager::AddPlaneMesh(ID3D11Device* Device)
 		Vertices[i] = FVector(planeVertices[i].x, planeVertices[i].y, planeVertices[i].z);
 	}
 	CreateStaticGeometry("Plane", planeVertices, sizeof(planeVertices), Device, 0, Vertices, planeIndices, sizeof(planeIndices));
+}
+
+void ResourceManager::AddBillboardQuadMesh(ID3D11Device* Device)
+{
+	FVertexTextured quadVertices[] =
+	{
+		{ 0.0f, -0.5f, -0.5f, 1.f, 1.f, 1.f, 1.f, 0.0f, 1.0f },
+		{ 0.0f, -0.5f,  0.5f, 1.f, 1.f, 1.f, 1.f, 0.0f, 0.0f },
+		{ 0.0f,  0.5f,  0.5f, 1.f, 1.f, 1.f, 1.f, 1.0f, 0.0f },
+		{ 0.0f,  0.5f, -0.5f, 1.f, 1.f, 1.f, 1.f, 1.0f, 1.0f },
+	};
+	uint32_t quadIndices[] = { 0, 1, 2, 0, 2, 3 };
+
+	TArray<FVector> Vertices(std::size(quadVertices));
+	for (size_t i = 0; i < std::size(quadVertices); ++i)
+	{
+		Vertices[i] = FVector(quadVertices[i].x, quadVertices[i].y, quadVertices[i].z);
+	}
+
+	CreateStaticGeometry("BillboardQuad", quadVertices, sizeof(quadVertices), Device, 0, Vertices, quadIndices, sizeof(quadIndices));
 }
 
 void ResourceManager::AddAxisMesh(ID3D11Device* Device)
@@ -841,4 +914,5 @@ void ResourceManager::Release()
 {
 	GeometryMap.clear();
 	MaterialMap.clear();
+	TextureMap.clear();
 }

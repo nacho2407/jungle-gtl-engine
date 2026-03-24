@@ -2,6 +2,7 @@
 
 #include "Math/Matrix.h"
 #include "EngineCore/Color.h"
+#include "Math/Vector4.h"
 #include <d3d11.h>
 //#include "tup"
 struct FMaterial;
@@ -37,6 +38,7 @@ public:
 	FMaterial* Material;//Material
 	FMatrix World = FMatrix::IdentityMatrix();
 	FColor Color = FColor(1.0f, 1.0f, 1.0f, 1.0f);
+	FVector4 UVTransform = FVector4(1.0f, 1.0f, 0.0f, 0.0f);
 
 	BatchKey GetBatchKey() const
 	{
@@ -46,6 +48,7 @@ public:
 
 	bool bIsSelected = false;
 	bool bDepthEnabled = true;
+	bool bDisableCulling = false;
 	bool bBatch = false;
 	EEngineShowFlags ShowFlag = EEngineShowFlags::SF_None;
 

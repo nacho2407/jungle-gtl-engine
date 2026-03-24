@@ -1,6 +1,7 @@
 ﻿#include "EngineApp.h"
 #include "Component/CameraComponent.h"
 #include "Component/AxisComponent.h"
+#include "Component/BillboardSubUVComponent.h"
 #include "Component/CubeComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Renderer/Renderer.h"
@@ -128,6 +129,14 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	//Init World & Scene
 	GetWorld().InjectRenderer(Renderer);
 	LastActiveScene = GetWorld().GetSceneManager()->NewScene();
+	auto SubUVBillboard = Cast<UBillboardSubUVComponent>(GetWorld().GetSceneManager()->AddSceneComponent<UBillboardSubUVComponent>(LastActiveScene));
+	if (SubUVBillboard != nullptr)
+	{
+		SubUVBillboard->SetRelativeLocation(FVector(0.0f, 0.0f, 3.0f));
+		SubUVBillboard->SetGrid(6, 6, 36);
+		SubUVBillboard->SetPlayback(16.0f, true);
+		SubUVBillboard->SetSize(4.0f, 4.0f);
+	}
 
 	// Init Timer
 	TimerManager::GetInstance().CreateGlobalTimer();
