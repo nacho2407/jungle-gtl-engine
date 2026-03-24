@@ -49,27 +49,31 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
         {
             continue;
         }
+        
+        if (!Actor->IsRenderable())
+        {
+            return;
+        }
 
         const uint32 ObjectId = Actor->GetObjectId();
 
-        // Primitive
-        if (Actor->IsRenderable())
-        {
-            FPrimitiveRenderItem Item;
-            Item.World = Actor->GetWorldMatrix();
-            Item.Color = Actor->GetColor();
-            Item.MeshType = Actor->GetMeshType();
+#pragma region __PRIMITIVE__
+        FPrimitiveRenderItem PrimitiveItem = {};
+        PrimitiveItem.World = Actor->GetWorldMatrix();
+        PrimitiveItem.Color = Actor->GetColor();
+        PrimitiveItem.MeshType = Actor->GetMeshType();
 
-            Item.State.ObjectId = ObjectId;
-            Item.State.SetVisible(Actor->IsVisible());
-            Item.State.SetPickable(Actor->IsPickable());
-            Item.State.SetSelected(Actor->IsSelected());
-            Item.State.SetHovered(Actor->IsHovered());
+        PrimitiveItem.State.ObjectId = ObjectId;
+        PrimitiveItem.State.bShowBounds = Actor->IsShowBounds();
+        PrimitiveItem.State.SetVisible(Actor->IsVisible());
+        PrimitiveItem.State.SetPickable(Actor->IsPickable());
+        PrimitiveItem.State.SetSelected(Actor->IsSelected());
+        PrimitiveItem.State.SetHovered(Actor->IsHovered());
 
-            OutRenderData.Primitives.push_back(Item);
-        }
-
-        // Text components
+        OutRenderData.Primitives.push_back(PrimitiveItem);
+#pragma endregion
+        
+#pragma region __ATLAS_TEXT__
         const TArray<Engine::Component::USceneComponent*>& OwnedComponents =
             Actor->GetOwnedComponents();
 
@@ -81,40 +85,71 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
             }
 
             // TODO
-            //auto* TextComponent = dynamic_cast<Engine::Component::UTextComponent*>(Component);
-            //if (TextComponent == nullptr)
-            //{
-            //    continue;
-            //}
+            auto* TextComponent = dynamic_cast<Engine::Component::UAtlasTextComponent*>(Component);
+            if (TextComponent == nullptr)
+            {
+                continue;
+            }
 
-            //if (TextComponent->GetText().empty())
-            //{
-            //    continue;
-            //}
+            if (TextComponent->GetText().empty())
+            {
+                continue;
+            }
 
-            //if (TextComponent->GetFontResource() == nullptr)
-            //{
-            //    continue;
-            //}
+            if (TextComponent->GetFontResource() == nullptr)
+            {
+                continue;
+            }
 
-            //FTextRenderItem TextItem;
-            //TextItem.World = Actor->GetWorldMatrix();
-            //TextItem.Color = TextComponent->GetColor();
-            //TextItem.FontResource = TextComponent->GetFontResource();
-            //TextItem.Text = TextComponent->GetText();
-            //TextItem.TextScale = TextComponent->GetTextScale();
-            //TextItem.LetterSpacing = TextComponent->GetLetterSpacing();
-            //TextItem.LineSpacing = TextComponent->GetLineSpacing();
-            //TextItem.bBillboard = TextComponent->GetBillboard();
-            //TextItem.BillboardOffset = TextComponent->GetBillboardOffset();
+            FTextRenderItem TextItem = {};
+            TextItem.FontResource = TextComponent->GetFontResource();
+            TextItem.Text = TextComponent->GetText();
+            TextItem.Color = TextComponent->GetColor();
+            
+            TextItem.Placement.Mode = ERenderPlacementMode::WorldBillboard;         //  일단 기본적으로 WorldBillboard
+            TextItem.Placement.World = Actor->GetWorldMatrix();
+            TextItem.Placement.WorldOffset = TextComponent->GetRelativeLocation();  //  이거 맞나
+            
+            TextItem.TextScale = TextComponent->GetTextScale();
+            TextItem.LetterSpacing = TextComponent->GetLetterSpacing();
+            TextItem.LineSpacing = TextComponent->GetLineSpacing();
 
-            //TextItem.State.ObjectId = ObjectId;
-            //TextItem.State.SetVisible(Actor->IsVisible());
-            //TextItem.State.SetPickable(false);
-            //TextItem.State.SetSelected(Actor->IsSelected());
-            //TextItem.State.SetHovered(Actor->IsHovered());
+            TextItem.State.ObjectId = ObjectId;
+            TextItem.State.bShowBounds = Actor->IsShowBounds();                     //  나중에 False로 바꿔도 될 것 같긴 함
+            TextItem.State.SetVisible(Actor->IsVisible());
+            TextItem.State.SetPickable(false);
+            TextItem.State.SetSelected(Actor->IsSelected());
+            TextItem.State.SetHovered(Actor->IsHovered());
 
-            //OutRenderData.Texts.push_back(TextItem);
+            OutRenderData.Texts.push_back(TextItem);
         }
+#pragma endregion
+        
+#pragma region __SPRITE__
+        // for (Engine::
+        //        //     if (ComponComponent::USceneComponent* Component : OwnedComponents)
+        // {ent == nullptr)
+        //     {
+        //         continue;
+        //     }
+        //
+        //     // TODO
+        //     auto* SpriteComponent = dynamic_cast<Engine::Component::USpriteComponent*>(Component);
+        //     if (SpriteComponent == nullptr)
+        //     {
+        //         continue;
+        //     }
+        //     
+        //     FSpriteRenderItem SpriteItem = {};
+        //     SpriteItem.TextureResource = SpriteComponent->GetTextureResource();
+        //     SpriteItem.Color = SpriteComponent->GetColor();
+        // SpriteItem.UVMax = SpriteComponent->
+        //     
+        //     
+        //     OutRenderData.Sprites.push_back(SpriteItem);
+        // }
+        
+#pragma endregion
+        
     }
 }

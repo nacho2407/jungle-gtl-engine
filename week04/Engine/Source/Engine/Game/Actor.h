@@ -2,6 +2,7 @@
 
 #include "Core/CoreMinimal.h"
 #include "CoreUObject/Object.h"
+#include "Engine/Component/Core/SceneComponent.h"
 #include "Renderer/Types/BasicMeshType.h"
 
 namespace Engine::Component
@@ -35,6 +36,10 @@ class ENGINE_API AActor : public UObject
     virtual bool IsVisible() const { return true; }
     virtual bool IsSelected() const { return false; }
     virtual bool IsHovered() const { return false; }
+    
+    //  Bound 보여주기
+    virtual bool IsShowBounds() const { return RootComponent->IsShowBounds(); }
+    virtual void SetShowBounds(bool bInShowBounds) { RootComponent->SetShowBounds(bInShowBounds); }
 
     virtual FMatrix        GetWorldMatrix() const;
     virtual FColor         GetColor() const { return FColor::White(); }

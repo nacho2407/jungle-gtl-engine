@@ -12,7 +12,8 @@ namespace Engine::Component
     class ENGINE_API UPrimitiveComponent : public Engine::Component::USceneComponent
     {
         DECLARE_RTTI(UPrimitiveComponent, USceneComponent)
-      public:
+
+    public:
         UPrimitiveComponent() = default;
         ~UPrimitiveComponent() override = default;
 
@@ -28,12 +29,15 @@ namespace Engine::Component
         void Update(float DeltaTime) override;
         void DescribeProperties(FComponentPropertyBuilder& Builder) override;
 
-      protected:
+        bool IsShowBounds() const override { return bShowAABB; }
+        void SetShowBounds(bool bNewShowBounds) override { bShowAABB = bNewShowBounds; }
+
+    protected:
         virtual Geometry::FAABB GetLocalAABB() const = 0;
         virtual void            UpdateBounds();
         void                    OnTransformChanged() override;
 
-      protected:
+    protected:
         FColor          Color = FColor::White();
         Geometry::FAABB WorldAABB;
         bool            bShowAABB = false;
