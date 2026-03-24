@@ -8,32 +8,49 @@
 
 UBillboardSubUVComponent::UBillboardSubUVComponent()
 {
+	ResourceManager* resourceManager = ResourceManager::GetInstance();
+	//UPrimitive를 상속받도록. 수정.
+	VResource = &resourceManager->GetGeometry("BillboardQuad");
+	CreateAABB();
 }
 
-UBillboardSubUVComponent::~UBillboardSubUVComponent()
-{
-	if (RenderObj != nullptr)
-	{
-		if (Scene != nullptr)
-		{
-			Scene->Level.UnregisterRenderObject(RenderObj);
-		}
-		delete RenderObj;
-	}
-}
+UBillboardSubUVComponent::~UBillboardSubUVComponent() = default;
 
 void UBillboardSubUVComponent::OnComponentAdded()
 {
-	RenderObj = CreateRenderObject();
-	if (RenderObj != nullptr && Scene != nullptr)
-	{
-		Scene->Level.RegisterRenderObject(RenderObj);
-	}
+	UPrimitiveComponent::OnComponentAdded();
 }
 
 void UBillboardSubUVComponent::Update(float DeltaTime)
 {
 	CurrentTime += DeltaTime;
+	UpdateRenderObject();
+}
+
+json::JSON UBillboardSubUVComponent::Serialize()
+{
+	json::JSON jsonObj = UPrimitiveComponent::Serialize();
+	jsonObj["Type"] = "BillboardSubUV";
+	jsonObj["Width"] = Width;
+	jsonObj["Height"] = Height;
+	jsonObj["Rows"] = Rows;
+	jsonObj["Columns"] = Columns;
+	jsonObj["FrameCount"] = FrameCount;
+	jsonObj["FramesPerSecond"] = FramesPerSecond;
+	jsonObj["Loop"] = bLoop;
+	return jsonObj;
+}
+
+void UBillboardSubUVComponent::Deserialize(json::JSON jsonObj)
+{
+	USceneComponent::Deserialize(jsonObj);
+	Width = static_cast<float>(jsonObj["Width"].ToFloat());
+	Height = static_cast<float>(jsonObj["Height"].ToFloat());
+	Rows = jsonObj["Rows"].ToInt();
+	Columns = jsonObj["Columns"].ToInt();
+	FrameCount = jsonObj["FrameCount"].ToInt();
+	FramesPerSecond = static_cast<float>(jsonObj["FramesPerSecond"].ToFloat());
+	bLoop = jsonObj["Loop"].ToBool();
 	UpdateRenderObject();
 }
 
@@ -61,18 +78,17 @@ void UBillboardSubUVComponent::SetPlayback(float InFramesPerSecond, bool bInLoop
 
 RenderObject* UBillboardSubUVComponent::CreateRenderObject()
 {
-	ResourceManager* resourceManager = ResourceManager::GetInstance();
+	RenderObject* renderObject = UPrimitiveComponent::CreateRenderObject();
+	if (renderObject == nullptr)
+	{
+		return nullptr;
+	}
 
-	RenderObject* renderObject = new RenderObject();
-	renderObject->Geometry = &resourceManager->GetGeometry("BillboardQuad");
+	ResourceManager* resourceManager = ResourceManager::GetInstance();
 	renderObject->Material = &resourceManager->GetMaterial(L"Shader/ShaderSubUV.hlsl");
 	renderObject->ShowFlag = EEngineShowFlags::SF_BillboardText;
-
-	//SubUV는 현재 평면이므로 어디에서든 볼 수 있도록 Culling을 비활성화해뒀습니다.
 	renderObject->bDepthEnabled = true;
 	renderObject->bDisableCulling = true;
-
-	RenderObj = renderObject;
 	UpdateRenderObject();
 	return renderObject;
 }
