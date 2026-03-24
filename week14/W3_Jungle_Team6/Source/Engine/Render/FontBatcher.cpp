@@ -92,12 +92,13 @@ void FFontBatcher::AddText(const FString& Text,
 	const FVector& WorldPos,
 	const FVector& CamRight,
 	const FVector& CamUp,
+	const FVector& WorldScale,
 	float Scale)
 {
 	if (Text.empty()) return;
 
-	const float CharW = 0.5f * Scale;
-	const float CharH = 0.5f * Scale;
+	const float CharW = 0.5f * Scale * WorldScale.Y;
+	const float CharH = 0.5f * Scale * WorldScale.Z;
 	float CharCursorX = 0.f;
 	const uint32 Base = static_cast<uint32>(Vertices.size());
 	const uint32 IdxBase = static_cast<uint32>(Indices.size());
@@ -131,10 +132,15 @@ void FFontBatcher::AddText(const FString& Text,
 
 		const FVector Center = WorldPos + CamRight * CharCursorX;
 
-		pV[0] = { Center - HalfRight + HalfUp, { UVMin.X, UVMin.Y } };
+		/*pV[0] = { Center - HalfRight + HalfUp, { UVMin.X, UVMin.Y } };
 		pV[1] = { Center + HalfRight + HalfUp, { UVMax.X, UVMin.Y } };
 		pV[2] = { Center - HalfRight - HalfUp, { UVMin.X, UVMax.Y } };
-		pV[3] = { Center + HalfRight - HalfUp, { UVMax.X, UVMax.Y } };
+		pV[3] = { Center + HalfRight - HalfUp, { UVMax.X, UVMax.Y } };*/
+
+		pV[0] = { Center                 + HalfUp, { UVMin.X, UVMin.Y } };
+		pV[1] = { Center + HalfRight * 2 + HalfUp, { UVMax.X, UVMin.Y } };
+		pV[2] = { Center                 - HalfUp, { UVMin.X, UVMax.Y } };
+		pV[3] = { Center + HalfRight * 2 - HalfUp, { UVMax.X, UVMax.Y } };
 
 		const uint32 Vi = Base + CharIdx * 4;
 		pI[0] = Vi;     pI[1] = Vi + 1; pI[2] = Vi + 2;
