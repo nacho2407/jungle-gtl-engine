@@ -60,6 +60,15 @@ class FD3D11DynamicRHI
                               uint32 InDataSize) const;
     bool UpdateDynamicBuffer(ID3D11Buffer* InBuffer, const void* InData, uint32 InDataSize) const;
 
+    bool CreateSamplerState(const D3D11_SAMPLER_DESC& InDesc,
+                            ID3D11SamplerState** OutSamplerState) const;
+    bool CreateBlendState(const D3D11_BLEND_DESC& InDesc,
+                          ID3D11BlendState** OutBlendState) const;
+    bool CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC& InDesc,
+                                 ID3D11DepthStencilState** OutDepthStencilState) const;
+    bool CreateRasterizerState(const D3D11_RASTERIZER_DESC& InDesc,
+                               ID3D11RasterizerState** OutRasterizerState) const;
+
     void SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY InTopology) const;
     void SetInputLayout(ID3D11InputLayout* InInputLayout) const;
     void SetVertexBuffer(uint32 InSlot, ID3D11Buffer* InVertexBuffer, uint32 InStride,
@@ -76,6 +85,12 @@ class FD3D11DynamicRHI
     void SetRasterizerState(ID3D11RasterizerState* InRasterizerState) const;
     void SetDepthStencilState(ID3D11DepthStencilState* InDepthStencilState,
                               uint32                   InStencilRef = 0) const;
+    void SetBlendState(ID3D11BlendState* InBlendState, const float InBlendFactor[4] = nullptr,
+                       uint32 InSampleMask = 0xFFFFFFFFu) const;
+    void SetPSShaderResource(uint32 InSlot, ID3D11ShaderResourceView* InSRV) const;
+    void SetPSSampler(uint32 InSlot, ID3D11SamplerState* InSamplerState) const;
+    void ClearPSShaderResource(uint32 InSlot) const;
+    void ClearBlendState() const;
 
     void Draw(uint32 InVertexCount, uint32 InStartVertexLocation = 0) const;
     void DrawIndexed(uint32 InIndexCount, uint32 InStartIndexLocation = 0,
