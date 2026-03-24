@@ -11,6 +11,11 @@ void EditorPropertyPanel::Draw(USceneComponent* selectedComponent)
 {
 	ImGui::Begin("Jungle Property Panel");
 
+	if (!ImGui::GetIO().WantTextInput && ImGui::IsKeyPressed(ImGuiKey_Delete) && !editor->GetSelectedComponents().empty())
+	{
+		editor->RemoveSelectedComponents();
+	}
+
 	if (selectedComponent)
 	{
 		selectedComponent->DrawProperties();
@@ -23,7 +28,7 @@ void EditorPropertyPanel::Draw(USceneComponent* selectedComponent)
 
 		if (ImGui::Button("Delete", { 100, 30 }))
 		{
-			RemoveSelected();
+			editor->RemoveSelectedComponents();
 		}
 	}
 
@@ -32,16 +37,5 @@ void EditorPropertyPanel::Draw(USceneComponent* selectedComponent)
 
 void EditorPropertyPanel::RemoveSelected()
 {
-	TArray<USceneComponent*> selectedComponents = editor->GetSelectedComponents();
-	editor->ClearSelection();
-
-	SceneManager* sceneManager = GetWorld().GetSceneManager();
-	for (USceneComponent* comp : selectedComponents)
-	{
-		if (comp == nullptr || comp->Scene == nullptr)
-		{
-			continue;
-		}
-		sceneManager->RemoveSceneComponent(comp, comp->Scene);
-	}
+	editor->RemoveSelectedComponents();
 }

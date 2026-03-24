@@ -3,6 +3,8 @@
 #include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "ImGui/imgui_internal.h"
+#include "SceneManager.h"
+#include "World.h"
 #include <filesystem>
 #include <fstream>
 #include <streambuf>
@@ -213,6 +215,49 @@ void Editor::SelectMultiComponent(USceneComponent* component)
 	}
 	SelectedComponents.push_back(component);
 	UpdateGizmoSelection();
+}
+
+void Editor::SelectAllComponents(const TArray<USceneComponent*>& components)
+{
+	ClearSelection();
+
+	for (USceneComponent* component : components)
+	{
+		if (component == nullptr)
+		{
+			continue;
+		}
+
+		component->bIsSelected = true;
+		if (UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(component))
+		{
+			primitive->MarkRenderStateDirty();
+		}
+		SelectedComponents.push_back(component);
+	}
+
+	UpdateGizmoSelection();
+}
+
+void Editor::RemoveSelectedComponents()
+{
+	TArray<USceneComponent*> selectedComponents = GetSelectedComponents();
+	ClearSelection();
+
+	SceneManager* sceneManager = GetWorld().GetSceneManager();
+	if (sceneManager == nullptr)
+	{
+		return;
+	}
+
+	for (USceneComponent* comp : selectedComponents)
+	{
+		if (comp == nullptr || comp->Scene == nullptr)
+		{
+			continue;
+		}
+		sceneManager->RemoveSceneComponent(comp, comp->Scene);
+	}
 }
 
 //마지막으로 선택된 씬 컴포넌트를 반환합니다. 그걸로 기즈모를 조작하기 위해서입니다.

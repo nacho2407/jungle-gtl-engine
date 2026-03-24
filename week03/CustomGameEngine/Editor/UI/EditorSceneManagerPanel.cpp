@@ -25,6 +25,34 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 
 	ImGui::Begin("Scene Manager");
 
+	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
+		ImGui::GetIO().KeyCtrl &&
+		ImGui::IsKeyPressed(ImGuiKey_A, false))
+	{
+		TArray<USceneComponent*> componentsToSelect;
+		if (ActiveScene != nullptr)
+		{
+			for (USceneComponent* component : ActiveScene->SceneComponents)
+			{
+				if (component != nullptr)
+				{
+					componentsToSelect.push_back(component);
+				}
+			}
+		}
+		if (permanentScene != nullptr)
+		{
+			for (USceneComponent* component : permanentScene->SceneComponents)
+			{
+				if (component != nullptr)
+				{
+					componentsToSelect.push_back(component);
+				}
+			}
+		}
+		editor->SelectAllComponents(componentsToSelect);
+	}
+
 	if (ImGui::CollapsingHeader("Loaded Scenes", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		bool bSceneRemoved = false;

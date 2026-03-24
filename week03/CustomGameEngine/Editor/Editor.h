@@ -66,6 +66,8 @@ public:
 	 * \param component
 	 */
 	void SelectMultiComponent(USceneComponent* component);
+	void SelectAllComponents(const TArray<USceneComponent*>& components);
+	void RemoveSelectedComponents();
 	const TArray<USceneComponent*>& GetSelectedComponents() const { return SelectedComponents; }
 	USceneComponent* GetLastSelectedComponent() const;
 	bool IsComponentSelected(USceneComponent* component) const;
