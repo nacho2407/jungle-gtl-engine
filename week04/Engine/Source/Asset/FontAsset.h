@@ -1,5 +1,4 @@
 #pragma once
-#pragma once
 
 #include "Asset.h"
 #include "AssetManager.h"

@@ -39,13 +39,29 @@ class FViewportNavigationController : public Engine::Viewport::IViewportControll
         RotationSpeed = FMath::Clamp(InRotationSpeed, 0.01f, 10.0f);
     }
 
+    /* Orbiting */
+    void SetSelectionController(class FViewportSelectionController* InController)
+    {
+        SelectionController = InController;
+    }
+  
+    void       BeginOrbit();
+    FVector ResolveOrbitPivot() const;
+    void       UpdateOrbitCamera();
+    void       EndOrbit();
+    
+    /* Dolly */
+    void Dolly(float Value);
+
   private:
     void UpdateCameraRotation();
     void EnsureTargetLocationInitialized();
 
   private:
     FViewportCamera* ViewportCamera = nullptr;
+    class FViewportSelectionController* SelectionController = nullptr;
 
+    /* Movement */
     float MoveSpeed = 100.0f;
     float RotationSpeed = 0.3f;
     float LocationLerpSpeed = 12.0f;
@@ -57,4 +73,14 @@ class FViewportNavigationController : public Engine::Viewport::IViewportControll
     bool bHasTargetLocation = false;
 
     bool bRotating = false;
+
+    /* Orbiting */
+    bool bOrbiting = false;
+    FVector OrbitPivot = FVector::Zero();
+    float   OrbitRadius = 0.0f;
+    float   DefaultOrbitRadius = 300.0f;
+    
+    /* Dolly */
+    float DollySpeed = 1.0f;
+    float MinOrbitRadius = 30.0f;
 };
