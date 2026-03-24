@@ -142,6 +142,11 @@ namespace Engine::Component
         (void)Builder;
     }
 
+    void USceneComponent::ResolveAssetReferences(UAssetManager* InAssetManager)
+    {
+        (void)InAssetManager;
+    }
+
     FMatrix USceneComponent::GetRelativeMatrix() const
     {
         return WorldTransform.ToMatrixWithScale();

@@ -9,7 +9,7 @@
 #include "Engine/Component/Core/UnknownComponent.h"
 #include "Engine/Game/Actor.h"
 #include "Engine/Game/UnknownActor.h"
-#include "Engine/SceneIO/SceneAssetPath.h"
+#include "SceneIO/SceneAssetPath.h"
 #include "imgui.h"
 
 #include <algorithm>
@@ -223,14 +223,27 @@ namespace
 
     bool DrawStringPropertyRow(const char* LabelId, const char* DisplayLabel,
                                const Engine::Component::FComponentPropertyDescriptor& Descriptor,
-                               bool bIsAssetPath)
+                               bool bIsAssetPath, TMap<FString, FString>* AssetPathEditBuffers)
     {
         const FString Value = Descriptor.StringGetter ? Descriptor.StringGetter() : FString{};
+
+        FString InputValue = Value;
+        if (bIsAssetPath && AssetPathEditBuffers != nullptr)
+        {
+            FString& CachedInput = (*AssetPathEditBuffers)[Descriptor.Key];
+            if (CachedInput.empty() || CachedInput == Value)
+            {
+                CachedInput = Value;
+            }
+
+            InputValue = CachedInput;
+        }
+
         std::array<char, 1024> Buffer{};
-        const size_t CopyLength = std::min(Buffer.size() - 1, Value.size());
+        const size_t CopyLength = std::min(Buffer.size() - 1, InputValue.size());
         if (CopyLength > 0)
         {
-            memcpy(Buffer.data(), Value.data(), CopyLength);
+            memcpy(Buffer.data(), InputValue.data(), CopyLength);
         }
         Buffer[CopyLength] = '\0';
 
@@ -238,19 +251,34 @@ namespace
         ImGui::TextUnformatted(DisplayLabel);
         ImGui::SameLine(140.0f);
         ImGui::SetNextItemWidth(-1.0f);
-        const bool bChanged = ImGui::InputText("##Value", Buffer.data(), Buffer.size());
+        const ImGuiInputTextFlags InputFlags =
+            bIsAssetPath ? ImGuiInputTextFlags_EnterReturnsTrue : ImGuiInputTextFlags_None;
+        const bool bChanged = ImGui::InputText("##Value", Buffer.data(), Buffer.size(), InputFlags);
         const bool bHovered = bIsAssetPath && ImGui::IsItemHovered();
         ImGui::PopID();
+
+        if (bIsAssetPath && AssetPathEditBuffers != nullptr)
+        {
+            (*AssetPathEditBuffers)[Descriptor.Key] = Buffer.data();
+        }
 
         if (bChanged && Descriptor.StringSetter)
         {
             Descriptor.StringSetter(Buffer.data());
+
+            if (bIsAssetPath && AssetPathEditBuffers != nullptr)
+            {
+                (*AssetPathEditBuffers)[Descriptor.Key] = Buffer.data();
+            }
         }
 
         if (bHovered)
         {
             const std::filesystem::path ResolvedPath =
-                Engine::SceneIO::ResolveSceneAssetPathToAbsolute(Value);
+                Engine::SceneIO::ResolveSceneAssetPathToAbsolute(
+                    bIsAssetPath && AssetPathEditBuffers != nullptr
+                        ? (*AssetPathEditBuffers)[Descriptor.Key]
+                        : Value);
             if (!ResolvedPath.empty())
             {
                 const std::u8string Utf8Path = ResolvedPath.u8string();
@@ -306,7 +334,8 @@ namespace
     }
 
     bool DrawComponentPropertyRow(
-        const Engine::Component::FComponentPropertyDescriptor& Descriptor)
+        const Engine::Component::FComponentPropertyDescriptor& Descriptor,
+        TMap<FString, FString>* AssetPathEditBuffers)
     {
         const FString LabelText = BuildPropertyLabel(Descriptor);
         const char* LabelId = Descriptor.Key.c_str();
@@ -323,9 +352,11 @@ namespace
         case EComponentPropertyType::Float:
             return DrawFloatPropertyRow(LabelId, DisplayLabel, Descriptor);
         case EComponentPropertyType::String:
-            return DrawStringPropertyRow(LabelId, DisplayLabel, Descriptor, false);
+            return DrawStringPropertyRow(LabelId, DisplayLabel, Descriptor, false,
+                                         AssetPathEditBuffers);
         case EComponentPropertyType::AssetPath:
-            return DrawStringPropertyRow(LabelId, DisplayLabel, Descriptor, true);
+            return DrawStringPropertyRow(LabelId, DisplayLabel, Descriptor, true,
+                                         AssetPathEditBuffers);
         case EComponentPropertyType::Vector3:
             return DrawVectorPropertyRow(LabelId, DisplayLabel, Descriptor);
         case EComponentPropertyType::Color:
@@ -357,6 +388,7 @@ void FPropertiesPanel::Draw()
     if (GetContext() == nullptr || GetContext()->SelectedObject == nullptr)
     {
         CachedTargetComponent = nullptr;
+        ResetAssetPathEditState();
         DrawNoSelectionState();
         ImGui::End();
         return;
@@ -365,6 +397,7 @@ void FPropertiesPanel::Draw()
     if (GetContext()->SelectedActors.size() > 1)
     {
         CachedTargetComponent = nullptr;
+        ResetAssetPathEditState();
         DrawMultipleSelectionState();
         ImGui::End();
         return;
@@ -375,6 +408,7 @@ void FPropertiesPanel::Draw()
     if (TargetComponent == nullptr)
     {
         CachedTargetComponent = nullptr;
+        ResetAssetPathEditState();
         DrawUnsupportedSelectionState();
         ImGui::End();
         return;
@@ -426,6 +460,7 @@ void FPropertiesPanel::SyncEditTransformFromTarget(
     if (TargetComponent == nullptr)
     {
         CachedTargetComponent = nullptr;
+        ResetAssetPathEditState();
         return;
     }
 
@@ -445,6 +480,11 @@ void FPropertiesPanel::SyncEditTransformFromTarget(
     if (bTargetChanged || bLocationChangedExternally || bScaleChangedExternally
         || bRotationChangedExternally)
     {
+        if (bTargetChanged)
+        {
+            ResetAssetPathEditState();
+        }
+
         SetTarget(CurrentLocation, CurrentRotation.Euler(), CurrentScale);
         CachedTargetComponent = TargetComponent;
     }
@@ -690,9 +730,15 @@ void FPropertiesPanel::DrawComponentPropertyEditor(
         }
 
         bHasVisibleProperty = true;
-        if (DrawComponentPropertyRow(Descriptor))
+        if (DrawComponentPropertyRow(Descriptor, &AssetPathEditBuffers))
         {
             bSceneModified = true;
+
+            if (Descriptor.Type == Engine::Component::EComponentPropertyType::AssetPath &&
+                GetContext() != nullptr && GetContext()->AssetManager != nullptr)
+            {
+                TargetComponent->ResolveAssetReferences(GetContext()->AssetManager);
+            }
         }
     }
 
@@ -705,4 +751,9 @@ void FPropertiesPanel::DrawComponentPropertyEditor(
     {
         GetContext()->Editor->MarkSceneDirty();
     }
+}
+
+void FPropertiesPanel::ResetAssetPathEditState()
+{
+    AssetPathEditBuffers.clear();
 }

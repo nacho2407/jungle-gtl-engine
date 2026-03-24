@@ -119,6 +119,8 @@ class FEditor
     bool ConfirmProceedWithDirtyScene(const FDeferredSceneAction& Action);
     void ExecuteDeferredSceneAction(FDeferredSceneAction Action);
     std::filesystem::path GetSceneDirectory() const;
+    void ResolveActorAssetReferences(AActor* Actor);
+    void ResolveSceneAssetReferences(FScene* Scene);
 
   private:
     FEditorViewportClient ViewportClient;

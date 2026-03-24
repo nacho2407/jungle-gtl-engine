@@ -270,13 +270,13 @@
     <ClCompile Include="Source\Engine\Scene.cpp">
       <Filter>Source\Engine</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\SceneIO\SceneJson.cpp">
+    <ClCompile Include="Source\SceneIO\SceneJson.cpp">
       <Filter>Source\Engine\SceneIO</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\SceneIO\SceneSerializer.cpp">
+    <ClCompile Include="Source\SceneIO\SceneSerializer.cpp">
       <Filter>Source\Engine\SceneIO</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\SceneIO\SceneTypeRegistry.cpp">
+    <ClCompile Include="Source\SceneIO\SceneTypeRegistry.cpp">
       <Filter>Source\Engine\SceneIO</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp">
@@ -581,16 +581,16 @@
     <ClInclude Include="Source\Engine\Scene.h">
       <Filter>Source\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\SceneIO\SceneAssetPath.h">
+    <ClInclude Include="Source\SceneIO\SceneAssetPath.h">
       <Filter>Source\Engine\SceneIO</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\SceneIO\SceneJson.h">
+    <ClInclude Include="Source\SceneIO\SceneJson.h">
       <Filter>Source\Engine\SceneIO</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\SceneIO\SceneSerializer.h">
+    <ClInclude Include="Source\SceneIO\SceneSerializer.h">
       <Filter>Source\Engine\SceneIO</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\SceneIO\SceneTypeRegistry.h">
+    <ClInclude Include="Source\SceneIO\SceneTypeRegistry.h">
       <Filter>Source\Engine\SceneIO</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\ViewPort\Viewport.h">

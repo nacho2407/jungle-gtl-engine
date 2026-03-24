@@ -1,6 +1,9 @@
 #include "AtlasTextComponent.h"
 
+#include "Asset/AssetManager.h"
+#include "Asset/FontAsset.h"
 #include "Engine/Component/Core/ComponentProperty.h"
+#include "SceneIO/SceneAssetPath.h"
 
 namespace Engine::Component
 {
@@ -59,6 +62,39 @@ namespace Engine::Component
         Builder.AddAssetPath(
             "font_path", L"Font Path", [this]() { return GetFontPath(); },
             [this](const FString& InValue) { SetFontPath(InValue); });
+    }
+
+    void UAtlasTextComponent::ResolveAssetReferences(UAssetManager* InAssetManager)
+    {
+        FontResource = nullptr;
+
+        if (InAssetManager == nullptr || FontPath.empty())
+        {
+            return;
+        }
+
+        const std::filesystem::path AbsolutePath =
+            Engine::SceneIO::ResolveSceneAssetPathToAbsolute(FontPath);
+        if (AbsolutePath.empty())
+        {
+            UE_LOG(Asset, ELogVerbosity::Warning,
+                   "Failed to resolve font path for AtlasTextComponent: %s", FontPath.c_str());
+            return;
+        }
+
+        FAssetLoadParams LoadParams;
+        LoadParams.ExplicitType = EAssetType::Font;
+
+        UAsset* LoadedAsset = InAssetManager->Load(AbsolutePath.native(), LoadParams);
+        UFontAsset* FontAsset = Cast<UFontAsset>(LoadedAsset);
+        if (FontAsset == nullptr)
+        {
+            UE_LOG(Asset, ELogVerbosity::Warning,
+                   "Failed to load font asset for AtlasTextComponent: %s", FontPath.c_str());
+            return;
+        }
+
+        SetFontResource(&FontAsset->GetResource());
     }
 
     REGISTER_CLASS(Engine::Component, UAtlasTextComponent)
