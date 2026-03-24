@@ -2,7 +2,6 @@
 
 #include "Editor/EditorEngine.h"
 #include "Render/Renderer/Renderer.h"
-#include "Render/Scene/RenderCollectorContext.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 #include "GameFramework/World.h"
@@ -33,36 +32,20 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
 	if (Camera)
 	{
-		FRenderCollectorContext Context;
-		Context.Camera = Camera;
-		Context.ViewMode = Editor->GetSettings().ViewMode;
-		Context.ShowFlags = Editor->GetSettings().ShowFlags;
+		const auto& Settings = Editor->GetSettings();
+		const FShowFlags& ShowFlags = Settings.ShowFlags;
+		EViewMode ViewMode = Settings.ViewMode;
 
-		const FShowFlags& ShowFlags = Context.ShowFlags;
-		EViewMode ViewMode = Context.ViewMode;
+		Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix(),
+			Camera->GetRightVector(), Camera->GetUpVector());
+		Bus.SetRenderSettings(ViewMode, ShowFlags);
 
-		TArray<FCollectPhase> Phases;
-
-		Phases.push_back([&](FRenderBus& B) {
-			Collector.CollectWorld(World, ShowFlags, ViewMode, B);
-			});
-
-		Phases.push_back([&](FRenderBus& B) {
-			const auto& Settings = Editor->GetSettings();
-			Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, B);
-			});
-
-		Phases.push_back([&](FRenderBus& B) {
-			Collector.CollectGizmo(Editor->GetGizmo(), ShowFlags, B);
-			});
-
-		Phases.push_back([&](FRenderBus& B) {
-			Collector.CollectSelection(
-				Editor->GetSelectionManager().GetSelectedActors(),
-				ShowFlags, ViewMode, B);
-			});
-
-		Collector.Collect(Context, Phases, Bus);
+		Collector.CollectWorld(World, ShowFlags, ViewMode, Bus);
+		Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus);
+		Collector.CollectGizmo(Editor->GetGizmo(), ShowFlags, Bus);
+		Collector.CollectSelection(
+			Editor->GetSelectionManager().GetSelectedActors(),
+			ShowFlags, ViewMode, Bus);
 	}
 
 	Renderer.PrepareBatchers(Bus);

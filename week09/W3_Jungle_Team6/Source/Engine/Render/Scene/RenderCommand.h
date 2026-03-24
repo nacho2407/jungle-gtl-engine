@@ -19,7 +19,6 @@ enum class ERenderCommandType
 {
 	Primitive,
 	Gizmo,
-	Overlay,
 	StencilMask,
 	SelectionOutline,
 	Billboard,
@@ -51,17 +50,6 @@ struct FGizmoConstants
 	uint32 bClicking;
 	uint32 SelectedAxis;
 	float HoveredAxisOpacity;
-};
-
-struct FOverlayConstants
-{
-	FVector2 CenterScreen;
-	FVector2 ViewportSize;
-
-	float Radius;
-	float Padding0[3];
-
-	FVector4 Color;
 };
 
 struct FEditorConstants
@@ -108,7 +96,6 @@ struct FRenderCommand
 	{
 		FGizmoConstants Gizmo;
 		FEditorConstants Editor;
-		FOverlayConstants Overlay;
 		FOutlineConstants Outline;
 		FAABBConstants AABB;
 		FGridConstants Grid;

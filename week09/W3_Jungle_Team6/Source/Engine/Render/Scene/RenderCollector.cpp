@@ -2,28 +2,11 @@
 
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
-#include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Component/BillboardComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/SubUVComponent.h"
-#include "Viewport/CursorOverlayState.h"
-
-void FRenderCollector::Collect(const FRenderCollectorContext& Context, const TArray<FCollectPhase>& Phases, FRenderBus& RenderBus)
-{
-	if (!Context.Camera) return;
-
-	UCameraComponent* Camera = Context.Camera;
-	RenderBus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix(),
-		Camera->GetRightVector(), Camera->GetUpVector());
-	RenderBus.SetRenderSettings(Context.ViewMode, Context.ShowFlags);
-
-	for (const auto& Phase : Phases)
-	{
-		Phase(RenderBus);
-	}
-}
 
 void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
 {
@@ -58,71 +41,49 @@ void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& Sh
 	if (ShowFlags.bGizmo == false) return;
 	if (!Gizmo || !Gizmo->IsVisible()) return;
 
+	FMeshBuffer* GizmoMesh = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
+	FMatrix WorldMatrix = Gizmo->GetWorldMatrix();
+	bool bHolding = Gizmo->IsHolding();
+	int32 SelectedAxis = Gizmo->GetSelectedAxis();
+
 	auto CreateGizmoCmd = [&](bool bInner) {
 		FRenderCommand Cmd = {};
 		Cmd.Type = ERenderCommandType::Gizmo;
-		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
-		Cmd.PerObjectConstants = FPerObjectConstants{ Gizmo->GetWorldMatrix() };
+		Cmd.MeshBuffer = GizmoMesh;
+		Cmd.PerObjectConstants = FPerObjectConstants{ WorldMatrix };
 
 		if (bInner)
 		{
 			Cmd.DepthStencilState = EDepthStencilState::GizmoInside;
 			Cmd.BlendState = EBlendState::AlphaBlend;
-			Cmd.Constants.Gizmo.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 		else
 		{
 			Cmd.DepthStencilState = EDepthStencilState::GizmoOutside;
 			Cmd.BlendState = EBlendState::Opaque;
-			Cmd.Constants.Gizmo.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 		}
+		Cmd.Constants.Gizmo.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 		Cmd.Constants.Gizmo.bIsInnerGizmo = bInner ? 1 : 0;
-		Cmd.Constants.Gizmo.bClicking = Gizmo->IsHolding() ? 1 : 0;
-		Cmd.Constants.Gizmo.SelectedAxis = Gizmo->GetSelectedAxis() >= 0 ? (uint32)Gizmo->GetSelectedAxis() : 0xffffffffu;
+		Cmd.Constants.Gizmo.bClicking = bHolding ? 1 : 0;
+		Cmd.Constants.Gizmo.SelectedAxis = SelectedAxis >= 0 ? (uint32)SelectedAxis : 0xffffffffu;
 		Cmd.Constants.Gizmo.HoveredAxisOpacity = 0.3f;
 		return Cmd;
 		};
 
-	// Inner Gizmo
 	RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(false));
 
-	if (!Gizmo->IsHolding())
+	if (!bHolding)
 	{
 		RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(true));
 	}
-}
-
-void FRenderCollector::CollectMouseOverlay(const FCursorOverlayState* State, float ViewportW, float ViewportH, FRenderBus& RenderBus)
-{
-	if (State == nullptr || State->bVisible == false)
-	{
-		return;
-	}
-
-	FRenderCommand OverlayCmd = {};
-	OverlayCmd.Type = ERenderCommandType::Overlay;
-	OverlayCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_MouseOverlay);
-
-	OverlayCmd.Constants.Overlay.CenterScreen.X = State->ScreenX;
-	OverlayCmd.Constants.Overlay.CenterScreen.Y = State->ScreenY;
-	OverlayCmd.Constants.Overlay.ViewportSize.X = ViewportW;
-	OverlayCmd.Constants.Overlay.ViewportSize.Y = ViewportH;
-	OverlayCmd.Constants.Overlay.Radius = State->CurrentRadius;
-	OverlayCmd.Constants.Overlay.Color = State->Color;
-
-	RenderBus.AddCommand(ERenderPass::Overlay, OverlayCmd);
 }
 
 void FRenderCollector::CollectFromActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
 {
 	if (!Actor->IsVisible()) return;
 
-	// Iterate through the components of the actor and retrieve their render properties
-	for (UActorComponent* Comp : Actor->GetComponents())
+	for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
 	{
-		if (!Comp) continue;
-		if (!Comp->IsA<UPrimitiveComponent>()) continue;
-		UPrimitiveComponent* Primitive = static_cast<UPrimitiveComponent*>(Comp);
 		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus);
 	}
 }
@@ -156,7 +117,7 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 			TextCmd.SpriteSize.X = TextComp->GetFontSize();
 			TextCmd.BlendState = EBlendState::AlphaBlend;
 			TextCmd.DepthStencilState = EDepthStencilState::Default;
-			RenderBus.AddCommand(ERenderPass::Font, TextCmd);
+			RenderBus.AddCommand(ERenderPass::Font, std::move(TextCmd));
 			continue;
 		}
 
@@ -179,14 +140,10 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		OutlineCmd.Constants.Outline.OutlineInvScale = FVector(1.0f / primitiveComponent->GetRelativeScale().X,
 			1.0f / primitiveComponent->GetRelativeScale().Y, 1.0f / primitiveComponent->GetRelativeScale().Z);
 
+		OutlineCmd.Constants.Outline.OutlineOffset = 0.03f;
 		if (ViewMode == EViewMode::Wireframe)
 		{
 			OutlineCmd.PerObjectConstants.Color = FColor(255, 153, 0, 255).ToVector4();
-			OutlineCmd.Constants.Outline.OutlineOffset = 0.03f;
-		}
-		else
-		{
-			OutlineCmd.Constants.Outline.OutlineOffset = 0.03f;
 		}
 		CollectAABBCommand(primitiveComponent, RenderBus);
 		OutlineCmd.Constants.Outline.PrimitiveType = (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Plane) ? 0u : 1u;
