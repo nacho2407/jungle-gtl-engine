@@ -9,8 +9,6 @@
 #include "Render/Resource/Shader.h"
 #include "Render/Resource/VertexTypes.h"
 
-class FD3DDevice;
-
 // SubUV 아틀라스 내 한 프레임의 UV 정보
 struct FSubUVFrameInfo
 {
@@ -57,7 +55,7 @@ public:
 
     // Dynamic VB/IB 업로드 + DrawIndexed 1회 호출
     // SRV — ResourceManager 소유 FParticleResource의 SRV를 전달
-    void Flush(FD3DDevice& Device, ID3D11DeviceContext* Context, ID3D11ShaderResourceView* SRV);
+    void Flush(ID3D11DeviceContext* Context, ID3D11ShaderResourceView* SRV);
 
     uint32 GetSpriteCount() const { return static_cast<uint32>(Vertices.size() / 4); }
 
