@@ -50,7 +50,18 @@ bool FName::operator==(const FName& Other) const
 
 FString FName::GetDisplayName() const
 {
-	return DisplayEntries[DisplayIndex] + "_" + std::to_string(Number);
+	return GetPlainDisplayName() + "_" + std::to_string(Number);
+}
+
+const FString& FName::GetPlainDisplayName() const
+{
+	static const FString EmptyName;
+	if (DisplayIndex < 0 || DisplayIndex >= static_cast<int32>(DisplayEntries.size()))
+	{
+		return EmptyName;
+	}
+
+	return DisplayEntries[DisplayIndex];
 }
 
 const FString& FName::GetComparisonName() const

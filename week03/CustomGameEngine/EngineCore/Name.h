@@ -21,6 +21,13 @@ struct FName
 	int32 Number = 0;
 
 	FString GetDisplayName() const;
+
+	/**
+	 * @brief Number 접미사를 제외한 원본 표시 이름을 반환합니다.
+	 *
+	 * @return 저장된 원본 표시 이름
+	 */
+	const FString& GetPlainDisplayName() const;
 	const FString& GetComparisonName() const;
 
 	static TMap<FString, int32> ComparisonLookupTable; //이미 존재하는지 존재하지 않는지

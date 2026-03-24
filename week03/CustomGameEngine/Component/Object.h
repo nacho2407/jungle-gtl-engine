@@ -36,6 +36,12 @@ public:
 public:
 	static const void* GetClass() { static int id = 0; return &id; }
 	virtual bool IsA(const void* id) const { return GetClass() == id; }
+	/**
+	 * @brief UObject의 표시 이름을 안전하게 재할당합니다.
+	 *
+	 * @param InName 새로 설정할 기본 이름
+	 */
+	void SetName(const FString& InName);
 
 public:
 	uint32 UUID;
