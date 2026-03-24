@@ -101,18 +101,14 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderColl
 		OutlineCmd.Constants.Outline.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
 		OutlineCmd.Constants.Outline.OutlineInvScale = FVector(1.0f / primitiveComponent->GetRelativeScale().X,
 			1.0f / primitiveComponent->GetRelativeScale().Y, 1.0f / primitiveComponent->GetRelativeScale().Z);
+		OutlineCmd.Constants.Outline.OutlineOffset = 0.03f;
 
 		if (Context.ViewMode == EViewMode::Wireframe)
 		{
 			OutlineCmd.PerObjectConstants.Color = FColor(255, 153, 0, 255).ToVector4();
-			OutlineCmd.Constants.Outline.OutlineOffset = 0.03f;
-		}
-		else
-		{
-			OutlineCmd.Constants.Outline.OutlineOffset = 0.03f;
 		}
 		CollectAABBCommand(primitiveComponent, RenderBus);
-		OutlineCmd.Constants.Outline.PrimitiveType = (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Plane) ? 0u : 1u;
+		OutlineCmd.Constants.Outline.PrimitiveType = (PrimType == EPrimitiveType::EPT_Plane) ? 0u : 1u;
 		RenderBus.AddCommand(ERenderPass::Outline, OutlineCmd);
 	}
 }
@@ -265,7 +261,7 @@ void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponen
 	AABBCmd.Constants.AABB.Min = Box.Min;
 	AABBCmd.Constants.AABB.Max = Box.Max;
 	//AABBCmd.Constants.AABB.Color = FColor(1.0f, 0.6f, 0.0f, 1.0f); // 선택 강조용 주황색
-	AABBCmd.Constants.AABB.Color = FColor(255, 153, 0, 255); // 선택 강조용 주황색
+	AABBCmd.Constants.AABB.Color = FColor::White();
 
 	// 렌더러가 마지막에 몰아서 그릴 수 있게 특정 패스(예: Editor/Overlay)에 푸시합니다.
 	RenderBus.AddCommand(ERenderPass::Editor, AABBCmd);

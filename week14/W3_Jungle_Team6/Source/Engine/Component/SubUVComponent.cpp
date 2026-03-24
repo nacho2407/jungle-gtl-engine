@@ -3,6 +3,9 @@
 #include <cstring>
 #include "Render/Mesh/MeshManager.h"
 #include "Core/ResourceManager.h"
+#include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
+#include "Component/CameraComponent.h"
 
 DEFINE_CLASS(USubUVComponent, UPrimitiveComponent)
 REGISTER_FACTORY(USubUVComponent)
@@ -37,13 +40,24 @@ void USubUVComponent::PostEditProperty(const char* PropertyName)
 
 void USubUVComponent::UpdateWorldAABB() const
 {
-	float HalfW = Width * LocalExtents.X;
-	float HalfH = Height * LocalExtents.Y;
+	FVector LExt = { 0.01f, 0.5f, 0.5f };
 
-	float radius = std::sqrt(HalfW * HalfW + HalfH * HalfH);
+	float NewEx = std::abs(CachedWorldMatrix.M[0][0]) * LExt.X +
+		std::abs(CachedWorldMatrix.M[1][0]) * LExt.Y +
+		std::abs(CachedWorldMatrix.M[2][0]) * LExt.Z;
 
-	WorldAABBMinLocation = FVector(-0.01f,-radius, -radius);
-	WorldAABBMaxLocation = FVector(0.01f, radius, radius);
+	float NewEy = std::abs(CachedWorldMatrix.M[0][1]) * LExt.X +
+		std::abs(CachedWorldMatrix.M[1][1]) * LExt.Y +
+		std::abs(CachedWorldMatrix.M[2][1]) * LExt.Z;
+
+	float NewEz = std::abs(CachedWorldMatrix.M[0][2]) * LExt.X +
+		std::abs(CachedWorldMatrix.M[1][2]) * LExt.Y +
+		std::abs(CachedWorldMatrix.M[2][2]) * LExt.Z;
+
+	FVector WorldCenter = GetWorldLocation();
+
+	WorldAABBMinLocation = WorldCenter - FVector(NewEx, NewEy, NewEz);
+	WorldAABBMaxLocation = WorldCenter + FVector(NewEx, NewEy, NewEz);
 }
 
 void USubUVComponent::TickComponent(float DeltaTime)
@@ -60,5 +74,26 @@ void USubUVComponent::TickComponent(float DeltaTime)
 		TimeAccumulator -= FrameDuration;
 		FrameIndex = (FrameIndex + 1) % TotalFrames;
 	}
+
+	FVector WorldLocation = GetWorldLocation();
+	FVector CameraPos = GetOwner()->GetWorld()->GetActiveCamera()->GetWorldLocation();
+
+	FVector Forward = (CameraPos - GetWorldLocation()).Normalized();
+	FVector WorldUp = FVector(0.0f, 0.0f, 1.0f);
+
+	if (std::abs(Forward.Dot(WorldUp)) > 0.99f)
+	{
+		WorldUp = FVector(0.0f, 1.0f, 0.0f); // 임시 Up축 변경
+	}
+
+	FVector Right = WorldUp.Cross(Forward).Normalized();
+	FVector Up = Forward.Cross(Right).Normalized();
+
+	FMatrix RotMatrix;
+	RotMatrix.SetAxes(Forward, Right, Up);
+	
+	CachedWorldMatrix = FMatrix::MakeScaleMatrix(GetWorldScale()) * RotMatrix * FMatrix::MakeTranslationMatrix(WorldLocation);
+
+	UpdateWorldAABB();
 }
 
