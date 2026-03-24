@@ -1,17 +1,18 @@
 ﻿#pragma once
 
-#include "SceneComponent.h"
-#include "Renderer/RenderObject.h"
+#include "PrimitiveComponent.h"
 
-class UBillboardSubUVComponent : public USceneComponent
+class UBillboardSubUVComponent : public UPrimitiveComponent
 {
-	DECLARE_RTTI(UBillboardSubUVComponent, USceneComponent)
+	DECLARE_RTTI(UBillboardSubUVComponent, UPrimitiveComponent)
 public:
 	UBillboardSubUVComponent();
 	virtual ~UBillboardSubUVComponent() override;
 
 	virtual void OnComponentAdded() override;
 	virtual void Update(float DeltaTime) override;
+	virtual json::JSON Serialize() override;
+	virtual void Deserialize(json::JSON) override;
 
 	/**
 	 * 빌보드의 크기를 설정합니다. 이후 UpdateRenderObject()을 호출해 반영합니다.
@@ -46,13 +47,11 @@ private:
 	void UpdateRenderObject();
 	/**
 	 * 누적 시간과 재생 속도를 바탕으로 현재 표시할 SubUV 프레임 인덱스를 계산합니다.
-	 * 
-eturn 0 이상 FrameCount 미만의 현재 프레임 인덱스입니다.
+	 * \return 0 이상 FrameCount 미만의 현재 프레임 인덱스입니다.
 	 */
 	int32 GetCurrentFrameIndex() const;
 
 private:
-	RenderObject* RenderObj = nullptr;
 	float Width = 4.0f;
 	float Height = 4.0f;
 	int32 Rows = 4;
