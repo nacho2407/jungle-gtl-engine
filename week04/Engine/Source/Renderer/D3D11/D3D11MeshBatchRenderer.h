@@ -95,7 +95,6 @@ class FD3D11MeshBatchRenderer
     void PrepareFlush(EMeshDrawPath DrawPath, const FSceneView* InSceneView);
     void FlushSceneQueue(EMeshDrawPath DrawPath, const FSceneView* InSceneView);
     void FlushEditorQueue(EMeshDrawPath DrawPath, const FSceneView* InSceneView);
-    void FlushCombinedSolidQueue(EMeshDrawPath DrawPath, const FSceneView* InSceneView);
 
     void DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath DrawPath, const FSceneView* InSceneView,
                        TArray<FMeshDrawData>& Draws);
@@ -124,6 +123,7 @@ class FD3D11MeshBatchRenderer
     TComPtr<ID3D11RasterizerState>   SolidRasterizerState;
     TComPtr<ID3D11RasterizerState>   WireframeRasterizerState;
     TComPtr<ID3D11DepthStencilState> DepthStencilState;
+    TComPtr<ID3D11DepthStencilState> DepthDisabledState;
 
     FBasicMeshResource    BasicMeshResources[static_cast<int32>(EBasicMeshType::Count)];
     TArray<FMeshDrawData> SceneMeshDraws[static_cast<int32>(EBasicMeshType::Count)];

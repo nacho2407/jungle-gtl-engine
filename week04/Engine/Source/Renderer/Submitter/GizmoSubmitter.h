@@ -7,28 +7,29 @@
 #include "Renderer/Types/RenderItem.h"
 #include "Renderer/Types/ObjectIdRenderItem.h"
 
-class FD3D11MeshBatchRenderer;
+class FD3D11OverlayMeshRenderer;
 class FD3D11ObjectIdRenderer;
 
 struct FGizmoStyle
 {
-    float TranslationShaftLength = 20.0f;
-    float TranslationShaftRadius = 10.f;
-    float TranslationHeadLength = 5.0f;
-    float TranslationHeadRadius = 10.f;
+    float TranslationShaftLength = 1.0f;
+    float TranslationShaftRadius = 1.5f;
+    float TranslationHeadLength = 0.5f;
+    float TranslationHeadRadius = 1.5f;
 
-    float ScalingShaftLength = 30.0f;
-    float ScalingShaftRadius = 10.0f;
-    float ScalingHandleSize = 3.0f;
+    float ScalingShaftLength = 1.0f;
+    float ScalingShaftRadius = 1.5f;
+    float ScalingHandleSize = 0.3f;
 
-    float RotationRingRadius = 24.0f;
-    float RotationRingThickness = 1.5f;
+    float RotationRingRadius = 1.0f;
+    float RotationRingThickness = 0.05f;
 };
 
 class FGizmoSubmitter
 {
   public:
-    void Submit(FD3D11MeshBatchRenderer& InMeshRenderer, const FEditorRenderData& InEditorRenderData);
+    void Submit(FD3D11OverlayMeshRenderer& InMeshRenderer,
+                const FEditorRenderData&   InEditorRenderData);
     void Submit(FD3D11ObjectIdRenderer& InObjectIdRenderer,
                 const FEditorRenderData& InEditorRenderData) const;
 

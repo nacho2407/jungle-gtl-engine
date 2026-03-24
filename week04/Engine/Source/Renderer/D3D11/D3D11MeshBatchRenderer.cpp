@@ -66,6 +66,7 @@ void FD3D11MeshBatchRenderer::Shutdown()
     CurrentSceneView = nullptr;
     bUseInstancing = true;
 
+    DepthDisabledState.Reset();
     DepthStencilState.Reset();
     WireframeRasterizerState.Reset();
     SolidRasterizerState.Reset();
@@ -151,15 +152,8 @@ void FD3D11MeshBatchRenderer::Flush()
     const EMeshDrawPath DrawPath =
         bUseInstancing ? EMeshDrawPath::Instanced : EMeshDrawPath::Single;
 
-    if (ViewMode == EViewModeIndex::VMI_Unlit)
-    {
-        FlushCombinedSolidQueue(DrawPath, CurrentSceneView);
-    }
-    else
-    {
-        FlushSceneQueue(DrawPath, CurrentSceneView);
-        FlushEditorQueue(DrawPath, CurrentSceneView);
-    }
+    FlushSceneQueue(DrawPath, CurrentSceneView);
+    FlushEditorQueue(DrawPath, CurrentSceneView);
 }
 
 bool FD3D11MeshBatchRenderer::CreateShaders()
@@ -275,6 +269,17 @@ bool FD3D11MeshBatchRenderer::CreateStates()
         Desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 
         if (FAILED(Device->CreateDepthStencilState(&Desc, DepthStencilState.GetAddressOf())))
+        {
+            return false;
+        }
+
+        D3D11_DEPTH_STENCIL_DESC NoDepthDesc = {};
+        NoDepthDesc.DepthEnable = FALSE;
+        NoDepthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+        NoDepthDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+
+        if (FAILED(
+                Device->CreateDepthStencilState(&NoDepthDesc, DepthDisabledState.GetAddressOf())))
         {
             return false;
         }
@@ -538,7 +543,10 @@ void FD3D11MeshBatchRenderer::FlushEditorQueue(EMeshDrawPath     DrawPath,
         return;
     }
 
-    PrepareFlush(DrawPath, InSceneView);
+    BindPipeline(DrawPath);
+    RHI->SetDepthStencilState(DepthDisabledState.Get(), 0);
+    UpdatePerFrameConstants(InSceneView, DrawPath);
+
     BindSolidRasterizer();
 
     for (int32 Index = 0; Index < static_cast<int32>(EBasicMeshType::Count); ++Index)
@@ -551,33 +559,8 @@ void FD3D11MeshBatchRenderer::FlushEditorQueue(EMeshDrawPath     DrawPath,
 
         DrawMeshBatch(static_cast<EBasicMeshType>(Index), DrawPath, InSceneView, Draws);
     }
-}
 
-void FD3D11MeshBatchRenderer::FlushCombinedSolidQueue(EMeshDrawPath     DrawPath,
-                                                      const FSceneView* InSceneView)
-{
-    if (RHI == nullptr || InSceneView == nullptr)
-    {
-        return;
-    }
-
-    PrepareFlush(DrawPath, InSceneView);
-    BindSolidRasterizer();
-
-    for (int32 Index = 0; Index < static_cast<int32>(EBasicMeshType::Count); ++Index)
-    {
-        TArray<FMeshDrawData>& SceneDraws = SceneMeshDraws[Index];
-        if (!SceneDraws.empty())
-        {
-            DrawMeshBatch(static_cast<EBasicMeshType>(Index), DrawPath, InSceneView, SceneDraws);
-        }
-
-        TArray<FMeshDrawData>& EditorDraws = EditorMeshDraws[Index];
-        if (!EditorDraws.empty())
-        {
-            DrawMeshBatch(static_cast<EBasicMeshType>(Index), DrawPath, InSceneView, EditorDraws);
-        }
-    }
+    RHI->SetDepthStencilState(DepthStencilState.Get(), 0);
 }
 
 void FD3D11MeshBatchRenderer::DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath DrawPath,

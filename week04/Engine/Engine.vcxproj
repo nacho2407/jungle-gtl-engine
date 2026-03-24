@@ -116,7 +116,9 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11ObjectIdRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11OutlineRenderer.h" />
+    <ClInclude Include="Source\Renderer\D3D11\D3D11OverlayMeshRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11RHI.h" />
+    <ClInclude Include="Source\Renderer\D3D11\D3D11SceneMeshRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11TextBatchRenderer.h" />
     <ClInclude Include="Source\Renderer\EditorRenderData.h" />
@@ -222,7 +224,9 @@
     <ClCompile Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11ObjectIdRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11OutlineRenderer.cpp" />
+    <ClCompile Include="Source\Renderer\D3D11\D3D11OverlayMeshRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11RHI.cpp" />
+    <ClCompile Include="Source\Renderer\D3D11\D3D11SceneMeshRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11TextBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\RendererModule.cpp" />

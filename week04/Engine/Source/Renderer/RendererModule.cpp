@@ -57,7 +57,13 @@ bool FRendererModule::StartupModule(HWND hWnd)
         return false;
     }
 
-    if (!MeshRenderer.Initialize(&RHI))
+    if (!SceneMeshRenderer.Initialize(&RHI))
+    {
+        ShutdownModule();
+        return false;
+    }
+
+    if (!OverlayMeshRenderer.Initialize(&RHI))
     {
         ShutdownModule();
         return false;
@@ -113,7 +119,8 @@ void FRendererModule::ShutdownModule()
     TextRenderer.Shutdown();
     LineRenderer.Shutdown();
     OutlineRenderer.Shutdown();
-    MeshRenderer.Shutdown();
+    OverlayMeshRenderer.Shutdown();
+    SceneMeshRenderer.Shutdown();
 
 #if defined(_DEBUG)
     if (DebugDevice != nullptr)
@@ -150,7 +157,7 @@ void FRendererModule::OnWindowResized(int32 InWidth, int32 InHeight)
 }
 
 /**
- * @brief Render Order: Mesh -> Outline -> Sprite -> Gizmo -> Gird / Axes / AABB -> Text
+ * @brief Render Order: World Pass -> Overlay Pass
  */
 void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
                              const FSceneRenderData&  InSceneRenderData)
@@ -158,60 +165,32 @@ void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
     CachedEditorRenderData = InEditorRenderData;
     CachedSceneRenderData = InSceneRenderData;
 
-    // ==================== Scene / Editor Mesh ====================
-    const bool bHasSceneMesh = ShouldRenderScenePrimitives(InSceneRenderData);
-    const bool bHasEditorGizmo = InEditorRenderData.SceneView != nullptr &&
-                                 IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo);
+    RenderWorldPass(InEditorRenderData, InSceneRenderData);
+    RenderOverlayPass(InEditorRenderData, InSceneRenderData);
+}
 
-    if (bHasSceneMesh || bHasEditorGizmo)
+void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderData,
+                                      const FSceneRenderData&  InSceneRenderData)
+{
+    if (ShouldRenderScenePrimitives(InSceneRenderData))
     {
-        const FSceneView* MeshSceneView =
-            (InSceneRenderData.SceneView != nullptr) ? InSceneRenderData.SceneView
-                                                     : InEditorRenderData.SceneView;
+        SceneMeshRenderer.BeginFrame(InSceneRenderData.SceneView, InSceneRenderData.ViewMode,
+                                     InSceneRenderData.bUseInstancing);
 
-        MeshRenderer.BeginFrame(MeshSceneView, InSceneRenderData.ViewMode,
-                                InSceneRenderData.bUseInstancing);
-
-        if (bHasSceneMesh)
+        if (ShouldTintSelectedWireframe(InEditorRenderData, InSceneRenderData))
         {
-            if (ShouldTintSelectedWireframe(InEditorRenderData, InSceneRenderData))
-            {
-                const TArray<FPrimitiveRenderItem> WireframeItems =
-                    BuildWireframePrimitiveSubmission(InSceneRenderData);
-                MeshRenderer.AddPrimitives(WireframeItems, EMeshDrawClass::Scene);
-            }
-            else
-            {
-                PrimitiveSubmitter.Submit(MeshRenderer, InSceneRenderData);
-            }
+            const TArray<FPrimitiveRenderItem> WireframeItems =
+                BuildWireframePrimitiveSubmission(InSceneRenderData);
+            SceneMeshRenderer.AddPrimitives(WireframeItems);
+        }
+        else
+        {
+            PrimitiveSubmitter.Submit(SceneMeshRenderer, InSceneRenderData);
         }
 
-        if (bHasEditorGizmo)
-        {
-            GizmoSubmitter.Submit(MeshRenderer, InEditorRenderData);
-        }
-
-        MeshRenderer.EndFrame();
+        SceneMeshRenderer.EndFrame();
     }
 
-    // ==================== Selection Outline ====================
-    if (ShouldRenderSelectionOutline(InEditorRenderData, InSceneRenderData))
-    {
-        OutlineRenderer.BeginFrame(InSceneRenderData.SceneView);
-        OutlineRenderer.AddPrimitives(InSceneRenderData.Primitives);
-        OutlineRenderer.EndFrame();
-    }
-
-    // ==================== Scene Sprite ====================
-    if (InSceneRenderData.SceneView != nullptr &&
-        IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_Sprites))
-    {
-        SpriteRenderer.BeginFrame(InSceneRenderData.SceneView);
-        SpriteSubmitter.Submit(SpriteRenderer, InSceneRenderData);
-        SpriteRenderer.EndFrame(InSceneRenderData.SceneView);
-    }
-
-    // ==================== Editor Lines (Grid / Axes / AABB) ====================
     if (InEditorRenderData.SceneView != nullptr)
     {
         LineRenderer.BeginFrame(InEditorRenderData.SceneView);
@@ -227,11 +206,39 @@ void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
         }
 
         AABBSubmitter.Submit(LineRenderer, InSceneRenderData);
-
         LineRenderer.EndFrame();
     }
 
-    // ==================== Scene Billboard Text ====================
+    if (ShouldRenderSelectionOutline(InEditorRenderData, InSceneRenderData))
+    {
+        OutlineRenderer.BeginFrame(InSceneRenderData.SceneView);
+        OutlineRenderer.AddPrimitives(InSceneRenderData.Primitives);
+        OutlineRenderer.EndFrame();
+    }
+
+    if (InSceneRenderData.SceneView != nullptr &&
+        IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_Sprites))
+    {
+        SpriteRenderer.BeginFrame(InSceneRenderData.SceneView);
+        SpriteSubmitter.Submit(SpriteRenderer, InSceneRenderData);
+        SpriteRenderer.EndFrame(InSceneRenderData.SceneView);
+    }
+}
+
+void FRendererModule::RenderOverlayPass(const FEditorRenderData& InEditorRenderData,
+                                        const FSceneRenderData&  InSceneRenderData)
+{
+    const bool bHasEditorGizmo = InEditorRenderData.SceneView != nullptr &&
+                                 IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo);
+
+    if (bHasEditorGizmo)
+    {
+        OverlayMeshRenderer.BeginFrame(InEditorRenderData.SceneView, EViewModeIndex::VMI_Unlit,
+                                       true);
+        GizmoSubmitter.Submit(OverlayMeshRenderer, InEditorRenderData);
+        OverlayMeshRenderer.EndFrame();
+    }
+
     if (InSceneRenderData.SceneView != nullptr &&
         IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_BillboardText))
     {

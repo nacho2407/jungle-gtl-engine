@@ -6,7 +6,8 @@
 #include "Renderer/D3D11/D3D11RHI.h"
 #include "Renderer/D3D11/D3D11TextBatchRenderer.h"
 #include "Renderer/D3D11/D3D11LineBatchRenderer.h"
-#include "Renderer/D3D11/D3D11MeshBatchRenderer.h"
+#include "Renderer/D3D11/D3D11OverlayMeshRenderer.h"
+#include "Renderer/D3D11/D3D11SceneMeshRenderer.h"
 #include "Renderer/D3D11/D3D11OutlineRenderer.h"
 #include "Renderer/D3D11/D3D11ObjectIdRenderer.h"
 #include "Renderer/D3D11/D3D11SpriteBatchRenderer.h"
@@ -46,7 +47,8 @@ class ENGINE_API FRendererModule
   private:
     FD3D11RHI RHI;
 
-    FD3D11MeshBatchRenderer   MeshRenderer;
+    FD3D11SceneMeshRenderer   SceneMeshRenderer;
+    FD3D11OverlayMeshRenderer OverlayMeshRenderer;
     FD3D11OutlineRenderer     OutlineRenderer;
     FD3D11LineBatchRenderer   LineRenderer;
     FD3D11TextBatchRenderer   TextRenderer;
@@ -65,6 +67,11 @@ class ENGINE_API FRendererModule
     FSceneRenderData  CachedSceneRenderData;
 
     TComPtr<ID3D11Debug> DebugDevice;
+
+    void RenderWorldPass(const FEditorRenderData& InEditorRenderData,
+                         const FSceneRenderData&  InSceneRenderData);
+    void RenderOverlayPass(const FEditorRenderData& InEditorRenderData,
+                           const FSceneRenderData&  InSceneRenderData);
 
     bool PickRaw(const FEditorRenderData& InEditorRenderData, int32 MouseX, int32 MouseY,
                  uint32& OutPickId);
