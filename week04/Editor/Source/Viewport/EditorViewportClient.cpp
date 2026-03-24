@@ -72,7 +72,9 @@ void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData) co
     // TODO
     OutRenderData.Gizmo.GizmoType = EGizmoType::Translation;
     OutRenderData.Gizmo.Highlight = EGizmoHighlight::None;
+    OutRenderData.Gizmo.Scale = 1.0f;
     OutRenderData.Gizmo.Frame = FMatrix::Identity;
+    
     OutRenderData.ShowFlags = EEditorShowFlags::SF_Grid | EEditorShowFlags::SF_WorldAxes |
                               EEditorShowFlags::SF_SelectionOutline |
                               EEditorShowFlags::SF_ObjectLabels;
