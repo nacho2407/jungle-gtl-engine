@@ -71,12 +71,13 @@ private:
 	ID3D11SamplerState* SamplerState = nullptr;
 	FShader             FontShader;
 
-	// CharInfoMap 캐시 — Atlas 그리드가 바뀔 때만 재빌드
-	TMap<char, FCharacterInfo> CharInfoMap;
+	// CharInfoMap — Atlas 그리드가 바뀔 때만 재빌드
+	// key: Unicode 코드포인트 (ASCII 33~126, 한글 U+AC00~U+D7A3)
+	TMap<uint32, FCharacterInfo> CharInfoMap;
 	uint32 CachedColumns = 0;
 	uint32 CachedRows    = 0;
 
 	void CreateBuffers();
 	void BuildCharInfoMap(uint32 Columns, uint32 Rows);
-	void GetCharUV(char Ch, FVector2& OutUVMin, FVector2& OutUVMax) const;
+	void GetCharUV(uint32 Codepoint, FVector2& OutUVMin, FVector2& OutUVMax) const;
 };
