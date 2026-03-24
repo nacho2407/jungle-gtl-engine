@@ -1,7 +1,10 @@
 #include "Renderer/Submitter/GizmoSubmitter.h"
+
 #include "Renderer/D3D11/D3D11MeshBatchRenderer.h"
+#include "Renderer/D3D11/D3D11ObjectIdRenderer.h"
 #include "Renderer/EditorRenderData.h"
 #include "Renderer/Types/AxisColors.h"
+#include "Renderer/Types/PickId.h"
 
 namespace
 {
@@ -38,36 +41,50 @@ namespace
         return Item;
     }
 
+    FObjectIdRenderItem MakeObjectIdItem(const FMatrix& InWorld, EBasicMeshType InMeshType,
+                                         uint32 InObjectId)
+    {
+        FObjectIdRenderItem Item = {};
+        Item.World = InWorld;
+        Item.MeshType = InMeshType;
+        Item.ObjectId = InObjectId;
+        return Item;
+    }
+
     static constexpr EAxis GizmoAxes[] = {EAxis::X, EAxis::Y, EAxis::Z};
 
-    // 기본 축 메쉬(Cylinder/Cone/Cube 배치)가 로컬 +Z 방향으로 놓여 있다고 가정
     FMatrix MakeAxisBasis(EAxis InAxis)
     {
         switch (InAxis)
         {
         case EAxis::X:
-            return FMatrix::MakeFromZ(FVector::ForwardVector); // +Z -> +X
+            return FMatrix::MakeFromZ(FVector::ForwardVector);
         case EAxis::Y:
-            return FMatrix::MakeFromZ(FVector::RightVector); // +Z -> +Y
+            return FMatrix::MakeFromZ(FVector::RightVector);
         case EAxis::Z:
         default:
-            return FMatrix::MakeFromZ(FVector::UpVector); // +Z -> +Z
+            return FMatrix::MakeFromZ(FVector::UpVector);
         }
     }
 
-    // Ring 메쉬가 로컬 XY 평면에 있고 법선이 로컬 +Z 라고 가정
     FMatrix MakeRingBasis(EAxis InAxis)
     {
         switch (InAxis)
         {
         case EAxis::X:
-            return FMatrix::MakeFromZ(FVector::ForwardVector); // ring normal -> +X
+            return FMatrix::MakeFromZ(FVector::ForwardVector);
         case EAxis::Y:
-            return FMatrix::MakeFromZ(FVector::RightVector); // ring normal -> +Y
+            return FMatrix::MakeFromZ(FVector::RightVector);
         case EAxis::Z:
         default:
-            return FMatrix::MakeFromZ(FVector::UpVector); // ring normal -> +Z
+            return FMatrix::MakeFromZ(FVector::UpVector);
         }
+    }
+
+    FMatrix BuildGizmoMatrix(const FGizmoDrawData& InGizmoDrawData)
+    {
+        return FMatrix::MakeScale(InGizmoDrawData.Scale) *
+               InGizmoDrawData.Frame.GetMatrixWithoutScale();
     }
 } // namespace
 
@@ -80,18 +97,20 @@ void FGizmoSubmitter::Submit(FD3D11MeshBatchRenderer& InMeshRenderer,
         return;
     }
 
+    const FMatrix GizmoMatrix = BuildGizmoMatrix(InEditorRenderData.Gizmo);
+
     TArray<FPrimitiveRenderItem> GizmoPrimitives;
 
     switch (InEditorRenderData.Gizmo.GizmoType)
     {
     case EGizmoType::Translation:
-        AddTranslationGizmo(GizmoPrimitives, InEditorRenderData.Gizmo);
+        AddTranslationGizmo(GizmoPrimitives, InEditorRenderData.Gizmo, GizmoMatrix);
         break;
     case EGizmoType::Rotation:
-        AddRotationGizmo(GizmoPrimitives, InEditorRenderData.Gizmo);
+        AddRotationGizmo(GizmoPrimitives, InEditorRenderData.Gizmo, GizmoMatrix);
         break;
     case EGizmoType::Scaling:
-        AddScalingGizmo(GizmoPrimitives, InEditorRenderData.Gizmo);
+        AddScalingGizmo(GizmoPrimitives, InEditorRenderData.Gizmo, GizmoMatrix);
         break;
     default:
         break;
@@ -103,6 +122,40 @@ void FGizmoSubmitter::Submit(FD3D11MeshBatchRenderer& InMeshRenderer,
     }
 }
 
+void FGizmoSubmitter::Submit(FD3D11ObjectIdRenderer& InObjectIdRenderer,
+                             const FEditorRenderData& InEditorRenderData)
+{
+    if (!IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo) ||
+        InEditorRenderData.SceneView == nullptr)
+    {
+        return;
+    }
+
+    const FMatrix GizmoMatrix = BuildGizmoMatrix(InEditorRenderData.Gizmo);
+
+    TArray<FObjectIdRenderItem> GizmoItems;
+
+    switch (InEditorRenderData.Gizmo.GizmoType)
+    {
+    case EGizmoType::Translation:
+        AddTranslationGizmo(GizmoItems, InEditorRenderData.Gizmo, GizmoMatrix);
+        break;
+    case EGizmoType::Rotation:
+        AddRotationGizmo(GizmoItems, InEditorRenderData.Gizmo, GizmoMatrix);
+        break;
+    case EGizmoType::Scaling:
+        AddScalingGizmo(GizmoItems, InEditorRenderData.Gizmo, GizmoMatrix);
+        break;
+    default:
+        break;
+    }
+
+    if (!GizmoItems.empty())
+    {
+        InObjectIdRenderer.AddPrimitives(GizmoItems);
+    }
+}
+
 FColor FGizmoSubmitter::ResolveAxisColor(EAxis InAxis, EGizmoHighlight InHighlight) const
 {
     return IsAxisHighlighted(InAxis, InHighlight) ? GetAxisHighlightColor(InAxis)
@@ -110,11 +163,9 @@ FColor FGizmoSubmitter::ResolveAxisColor(EAxis InAxis, EGizmoHighlight InHighlig
 }
 
 void FGizmoSubmitter::AddTranslationGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
-                                          const FGizmoDrawData&         InGizmoDrawData) const
+                                          const FGizmoDrawData&         InGizmoDrawData,
+                                          const FMatrix&               InGizmoMatrix) const
 {
-    const FMatrix GizmoMatrix  =
-        FMatrix::MakeScale(InGizmoDrawData.Scale) * InGizmoDrawData.Frame.GetMatrixWithoutScale();
-
     for (EAxis Axis : GizmoAxes)
     {
         const FColor  AxisColor = ResolveAxisColor(Axis, InGizmoDrawData.Highlight);
@@ -128,7 +179,7 @@ void FGizmoSubmitter::AddTranslationGizmo(TArray<FPrimitiveRenderItem>& OutPrimi
             const FMatrix LocalOffset =
                 FMatrix::MakeTranslation(FVector(0.0f, 0.0f, Style.TranslationShaftLength * 0.5f));
 
-            const FMatrix World = LocalScale * LocalOffset * AxisBasis * GizmoMatrix;
+            const FMatrix World = LocalScale * LocalOffset * AxisBasis * InGizmoMatrix;
 
             OutPrimitives.push_back(MakePrimitiveItem(World, AxisColor, EBasicMeshType::Cylinder));
         }
@@ -143,7 +194,7 @@ void FGizmoSubmitter::AddTranslationGizmo(TArray<FPrimitiveRenderItem>& OutPrimi
                                                  Style.TranslationShaftLength +
                                                      Style.TranslationHeadLength * 0.5f));
 
-            const FMatrix World = LocalScale * LocalOffset * AxisBasis * GizmoMatrix;
+            const FMatrix World = LocalScale * LocalOffset * AxisBasis * InGizmoMatrix;
 
             OutPrimitives.push_back(MakePrimitiveItem(World, AxisColor, EBasicMeshType::Cone));
         }
@@ -151,10 +202,9 @@ void FGizmoSubmitter::AddTranslationGizmo(TArray<FPrimitiveRenderItem>& OutPrimi
 }
 
 void FGizmoSubmitter::AddRotationGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
-                                       const FGizmoDrawData&         InGizmoDrawData) const
+                                       const FGizmoDrawData&         InGizmoDrawData,
+                                       const FMatrix&               InGizmoMatrix) const
 {
-    const FMatrix GizmoFrame = InGizmoDrawData.Frame.GetMatrixWithoutScale();
-
     for (EAxis Axis : GizmoAxes)
     {
         const FColor  AxisColor = ResolveAxisColor(Axis, InGizmoDrawData.Highlight);
@@ -163,17 +213,16 @@ void FGizmoSubmitter::AddRotationGizmo(TArray<FPrimitiveRenderItem>& OutPrimitiv
         const FMatrix LocalScale = FMatrix::MakeScale(
             FVector(Style.RotationRingRadius, Style.RotationRingRadius, Style.RotationRingRadius));
 
-        const FMatrix World = LocalScale * RingBasis * GizmoFrame;
+        const FMatrix World = LocalScale * RingBasis * InGizmoMatrix;
 
         OutPrimitives.push_back(MakePrimitiveItem(World, AxisColor, EBasicMeshType::Ring));
     }
 }
 
 void FGizmoSubmitter::AddScalingGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
-                                      const FGizmoDrawData&         InGizmoDrawData) const
+                                      const FGizmoDrawData&         InGizmoDrawData,
+                                      const FMatrix&               InGizmoMatrix) const
 {
-    const FMatrix GizmoFrame = InGizmoDrawData.Frame.GetMatrixWithoutScale();
-
     for (EAxis Axis : GizmoAxes)
     {
         const FColor  AxisColor = ResolveAxisColor(Axis, InGizmoDrawData.Highlight);
@@ -186,7 +235,7 @@ void FGizmoSubmitter::AddScalingGizmo(TArray<FPrimitiveRenderItem>& OutPrimitive
             const FMatrix LocalOffset =
                 FMatrix::MakeTranslation(FVector(0.0f, 0.0f, Style.ScalingShaftLength * 0.5f));
 
-            const FMatrix World = LocalScale * LocalOffset * AxisBasis * GizmoFrame;
+            const FMatrix World = LocalScale * LocalOffset * AxisBasis * InGizmoMatrix;
 
             OutPrimitives.push_back(MakePrimitiveItem(World, AxisColor, EBasicMeshType::Cylinder));
         }
@@ -198,10 +247,91 @@ void FGizmoSubmitter::AddScalingGizmo(TArray<FPrimitiveRenderItem>& OutPrimitive
             const FMatrix LocalOffset =
                 FMatrix::MakeTranslation(FVector(0.0f, 0.0f, Style.ScalingShaftLength));
 
-            const FMatrix World = LocalScale * LocalOffset * AxisBasis * GizmoFrame;
+            const FMatrix World = LocalScale * LocalOffset * AxisBasis * InGizmoMatrix;
 
             OutPrimitives.push_back(MakePrimitiveItem(World, AxisColor, EBasicMeshType::Cube));
         }
     }
 }
 
+void FGizmoSubmitter::AddTranslationGizmo(TArray<FObjectIdRenderItem>& OutItems,
+                                          const FGizmoDrawData&       InGizmoDrawData,
+                                          const FMatrix&             InGizmoMatrix) const
+{
+    for (EAxis Axis : GizmoAxes)
+    {
+        const uint32  PickObjectId = PickId::MakeGizmoPartId(EGizmoType::Translation, Axis);
+        const FMatrix AxisBasis = MakeAxisBasis(Axis);
+
+        {
+            const FMatrix LocalScale = FMatrix::MakeScale(FVector(Style.TranslationShaftRadius,
+                                                                  Style.TranslationShaftRadius,
+                                                                  Style.TranslationShaftLength));
+            const FMatrix LocalOffset =
+                FMatrix::MakeTranslation(FVector(0.0f, 0.0f, Style.TranslationShaftLength * 0.5f));
+            const FMatrix World = LocalScale * LocalOffset * AxisBasis * InGizmoMatrix;
+
+            OutItems.push_back(MakeObjectIdItem(World, EBasicMeshType::Cylinder, PickObjectId));
+        }
+
+        {
+            const FMatrix LocalScale =
+                FMatrix::MakeScale(FVector(Style.TranslationHeadRadius, Style.TranslationHeadRadius,
+                                           Style.TranslationHeadLength));
+            const FMatrix LocalOffset =
+                FMatrix::MakeTranslation(FVector(0.0f, 0.0f,
+                                                 Style.TranslationShaftLength +
+                                                     Style.TranslationHeadLength * 0.5f));
+            const FMatrix World = LocalScale * LocalOffset * AxisBasis * InGizmoMatrix;
+
+            OutItems.push_back(MakeObjectIdItem(World, EBasicMeshType::Cone, PickObjectId));
+        }
+    }
+}
+
+void FGizmoSubmitter::AddRotationGizmo(TArray<FObjectIdRenderItem>& OutItems,
+                                       const FGizmoDrawData&       InGizmoDrawData,
+                                       const FMatrix&             InGizmoMatrix) const
+{
+    for (EAxis Axis : GizmoAxes)
+    {
+        const uint32  PickObjectId = PickId::MakeGizmoPartId(EGizmoType::Rotation, Axis);
+        const FMatrix RingBasis = MakeRingBasis(Axis);
+        const FMatrix LocalScale = FMatrix::MakeScale(
+            FVector(Style.RotationRingRadius, Style.RotationRingRadius, Style.RotationRingRadius));
+        const FMatrix World = LocalScale * RingBasis * InGizmoMatrix;
+
+        OutItems.push_back(MakeObjectIdItem(World, EBasicMeshType::Ring, PickObjectId));
+    }
+}
+
+void FGizmoSubmitter::AddScalingGizmo(TArray<FObjectIdRenderItem>& OutItems,
+                                      const FGizmoDrawData&       InGizmoDrawData,
+                                      const FMatrix&             InGizmoMatrix) const
+{
+    for (EAxis Axis : GizmoAxes)
+    {
+        const uint32  PickObjectId = PickId::MakeGizmoPartId(EGizmoType::Scaling, Axis);
+        const FMatrix AxisBasis = MakeAxisBasis(Axis);
+
+        {
+            const FMatrix LocalScale = FMatrix::MakeScale(FVector(
+                Style.ScalingShaftRadius, Style.ScalingShaftRadius, Style.ScalingShaftLength));
+            const FMatrix LocalOffset =
+                FMatrix::MakeTranslation(FVector(0.0f, 0.0f, Style.ScalingShaftLength * 0.5f));
+            const FMatrix World = LocalScale * LocalOffset * AxisBasis * InGizmoMatrix;
+
+            OutItems.push_back(MakeObjectIdItem(World, EBasicMeshType::Cylinder, PickObjectId));
+        }
+
+        {
+            const FMatrix LocalScale = FMatrix::MakeScale(
+                FVector(Style.ScalingHandleSize, Style.ScalingHandleSize, Style.ScalingHandleSize));
+            const FMatrix LocalOffset =
+                FMatrix::MakeTranslation(FVector(0.0f, 0.0f, Style.ScalingShaftLength));
+            const FMatrix World = LocalScale * LocalOffset * AxisBasis * InGizmoMatrix;
+
+            OutItems.push_back(MakeObjectIdItem(World, EBasicMeshType::Cube, PickObjectId));
+        }
+    }
+}

@@ -250,10 +250,7 @@ bool FRendererModule::PickRaw(const FEditorRenderData& InEditorRenderData, int32
 
     if (IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo))
     {
-        TArray<FObjectIdRenderItem> GizmoItems;
-        GizmoObjectIdSubmitter.Style = GizmoSubmitter.Style;
-        GizmoObjectIdSubmitter.Submit(GizmoItems, InEditorRenderData);
-        ObjectIdRenderer.AddPrimitives(GizmoItems);
+        GizmoSubmitter.Submit(ObjectIdRenderer, InEditorRenderData);
     }
 
     return ObjectIdRenderer.RenderAndReadBack(OutPickId);
