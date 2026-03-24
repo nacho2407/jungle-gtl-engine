@@ -361,7 +361,7 @@ void FViewportNavigationController::FocusActors(const TArray<AActor*>& Actors)
     {
         return;
     }
-    
+
     if (Actors.empty())
     {
         return;
@@ -379,8 +379,8 @@ void FViewportNavigationController::FocusActors(const TArray<AActor*>& Actors)
             continue;
         }
 
-        Engine::Component::UPrimitiveComponent* Comp = static_cast<
-            Engine::Component::UPrimitiveComponent*>(Actor->GetRootComponent());
+        Engine::Component::UPrimitiveComponent* Comp =
+            static_cast<Engine::Component::UPrimitiveComponent*>(Actor->GetRootComponent());
         if (Comp == nullptr)
         {
             continue;
@@ -395,59 +395,75 @@ void FViewportNavigationController::FocusActors(const TArray<AActor*>& Actors)
         BoundsMax.X = std::max(BoundsMax.X, Box.Max.X);
         BoundsMax.Y = std::max(BoundsMax.Y, Box.Max.Y);
         BoundsMax.Z = std::max(BoundsMax.Z, Box.Max.Z);
-        
+
         bHasValidBounds = true;
     }
-    
+
     if (!bHasValidBounds)
     {
         return;
     }
-    
+
     const FVector Center = (BoundsMin + BoundsMax) * 0.5f;
     const FVector Extents = (BoundsMax - BoundsMin) * 0.5f;
-    
-    float Radius = Extents.Size();
-    Radius = std::max(Radius,50.f);
-    
+
     const float FovY = ViewportCamera->GetFOV();
     const float Aspect = ViewportCamera->GetAspectRatio();
-    
+
     const float HalfFovY = FovY * 0.5f;
-    const  float HalfFovX = std::atan(std::tan(HalfFovY)*Aspect);
-    
-    //  넓은 길이 찾아서 맞춰야 함
-    const float DistanceX = Radius / std::tan(HalfFovX);
-    const float DistanceY = Radius / std::tan(HalfFovY);
-    const float Distance = std::max(DistanceX,DistanceY) * 1.2f;
-    
+    const float HalfFovX = std::atan(std::tan(HalfFovY) * Aspect);
+
     const FVector Forward = ViewportCamera->GetForwardVector().GetSafeNormal();
-    const FVector NewLocation = Center - Forward * Distance;
-    
-    TargetLocation = NewLocation;
-    bHasTargetLocation = true;
-    
-    OrbitPivot = Center;
-    OrbitRadius = Radius;
-    
-    const FVector NewForward = (Center-NewLocation).GetSafeNormal();
-    
-    //  Up vector를 World Space로 간주
-    FVector Right = FVector::CrossProduct(FVector::UpVector, Forward).GetSafeNormal();
+    FVector       Right = FVector::CrossProduct(FVector::UpVector, Forward).GetSafeNormal();
     if (Right.IsNearlyZero())
     {
         return;
     }
-    
-    FVector Up = FVector::CrossProduct(NewForward, Right).GetSafeNormal();
-    
+    FVector Up = FVector::CrossProduct(Forward, Right).GetSafeNormal();
+
+    const float FillRatio = 0.65f;
+
+    const float HalfWidth = std::abs(Right.X) * Extents.X + std::abs(Right.Y) * Extents.Y +
+                            std::abs(Right.Z) * Extents.Z;
+
+    const float HalfHeight =
+        std::abs(Up.X) * Extents.X + std::abs(Up.Y) * Extents.Y + std::abs(Up.Z) * Extents.Z;
+
+    const float MinHalfSize = 50.0f;
+    const float SafeHalfWidth = std::max(HalfWidth, MinHalfSize);
+    const float SafeHalfHeight = std::max(HalfHeight, MinHalfSize);
+
+    const float DistanceX = SafeHalfWidth / (std::tan(HalfFovX) * FillRatio);
+    const float DistanceY = SafeHalfHeight / (std::tan(HalfFovY) * FillRatio);
+    const float Distance = std::max(DistanceX, DistanceY);
+
+    const FVector NewLocation = Center - Forward * Distance;
+
+    TargetLocation = NewLocation;
+    bHasTargetLocation = true;
+
+    OrbitPivot = Center;
+    OrbitRadius = Distance;
+
+    const FVector NewForward = (Center - NewLocation).GetSafeNormal();
+
+    Right = FVector::CrossProduct(FVector::UpVector, NewForward).GetSafeNormal();
+    if (Right.IsNearlyZero())
+    {
+        return;
+    }
+
+    Up = FVector::CrossProduct(NewForward, Right).GetSafeNormal();
+
     FMatrix RotationMatrix = FMatrix::Identity;
-    RotationMatrix.SetAxes(NewForward,Right,Up);
-    
+    RotationMatrix.SetAxes(NewForward, Right, Up);
+
     FQuat NewRotation{RotationMatrix};
     NewRotation.Normalize();
     ViewportCamera->SetRotation(NewRotation);
 }
+
+
 
 void FViewportNavigationController::FocusActors()
 {
@@ -474,8 +490,8 @@ void FViewportNavigationController::FocusActors()
             continue;
         }
 
-        Engine::Component::UPrimitiveComponent* Comp = static_cast<
-            Engine::Component::UPrimitiveComponent*>(Actor->GetRootComponent());
+        Engine::Component::UPrimitiveComponent* Comp =
+            static_cast<Engine::Component::UPrimitiveComponent*>(Actor->GetRootComponent());
         if (Comp == nullptr)
         {
             continue;
@@ -490,55 +506,69 @@ void FViewportNavigationController::FocusActors()
         BoundsMax.X = std::max(BoundsMax.X, Box.Max.X);
         BoundsMax.Y = std::max(BoundsMax.Y, Box.Max.Y);
         BoundsMax.Z = std::max(BoundsMax.Z, Box.Max.Z);
-        
+
         bHasValidBounds = true;
     }
-    
+
     if (!bHasValidBounds)
     {
         return;
     }
-    
+
     const FVector Center = (BoundsMin + BoundsMax) * 0.5f;
     const FVector Extents = (BoundsMax - BoundsMin) * 0.5f;
-    
-    float Radius = Extents.Size();
-    Radius = std::max(Radius,50.f);
-    
+
     const float FovY = ViewportCamera->GetFOV();
     const float Aspect = ViewportCamera->GetAspectRatio();
-    
+
     const float HalfFovY = FovY * 0.5f;
-    const  float HalfFovX = std::atan(std::tan(HalfFovY)*Aspect);
-    
-    //  넓은 길이 찾아서 맞춰야 함
-    const float DistanceX = Radius / std::tan(HalfFovX);
-    const float DistanceY = Radius / std::tan(HalfFovY);
-    const float Distance = std::max(DistanceX,DistanceY) * 1.2f;
-    
+    const float HalfFovX = std::atan(std::tan(HalfFovY) * Aspect);
+
     const FVector Forward = ViewportCamera->GetForwardVector().GetSafeNormal();
-    const FVector NewLocation = Center - Forward * Distance;
-    
-    TargetLocation = NewLocation;
-    bHasTargetLocation = true;
-    
-    OrbitPivot = Center;
-    OrbitRadius = Radius;
-    
-    const FVector NewForward = (Center-NewLocation).GetSafeNormal();
-    
-    //  Up vector를 World Space로 간주
-    FVector Right = FVector::CrossProduct(FVector::UpVector, Forward).GetSafeNormal();
+    FVector       Right = FVector::CrossProduct(FVector::UpVector, Forward).GetSafeNormal();
     if (Right.IsNearlyZero())
     {
         return;
     }
-    
-    FVector Up = FVector::CrossProduct(NewForward, Right).GetSafeNormal();
-    
+    FVector Up = FVector::CrossProduct(Forward, Right).GetSafeNormal();
+
+    const float FillRatio = 0.4f;
+
+    const float HalfWidth = std::abs(Right.X) * Extents.X + std::abs(Right.Y) * Extents.Y +
+                            std::abs(Right.Z) * Extents.Z;
+
+    const float HalfHeight =
+        std::abs(Up.X) * Extents.X + std::abs(Up.Y) * Extents.Y + std::abs(Up.Z) * Extents.Z;
+
+    const float MinHalfSize = 1.f;
+    const float SafeHalfWidth = std::max(HalfWidth, MinHalfSize);
+    const float SafeHalfHeight = std::max(HalfHeight, MinHalfSize);
+
+    const float DistanceX = SafeHalfWidth / (std::tan(HalfFovX) * FillRatio);
+    const float DistanceY = SafeHalfHeight / (std::tan(HalfFovY) * FillRatio);
+    const float Distance = std::max(DistanceX, DistanceY);
+
+    const FVector NewLocation = Center - Forward * Distance;
+
+    TargetLocation = NewLocation;
+    bHasTargetLocation = true;
+
+    OrbitPivot = Center;
+    OrbitRadius = Distance;
+
+    const FVector NewForward = (Center - NewLocation).GetSafeNormal();
+
+    Right = FVector::CrossProduct(FVector::UpVector, NewForward).GetSafeNormal();
+    if (Right.IsNearlyZero())
+    {
+        return;
+    }
+
+    Up = FVector::CrossProduct(NewForward, Right).GetSafeNormal();
+
     FMatrix RotationMatrix = FMatrix::Identity;
-    RotationMatrix.SetAxes(NewForward,Right,Up);
-    
+    RotationMatrix.SetAxes(NewForward, Right, Up);
+
     FQuat NewRotation{RotationMatrix};
     NewRotation.Normalize();
     ViewportCamera->SetRotation(NewRotation);
