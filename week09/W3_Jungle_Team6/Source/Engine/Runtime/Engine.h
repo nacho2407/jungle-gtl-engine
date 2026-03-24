@@ -1,11 +1,12 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/Object.h"
 #include "GameFramework/World.h"
 #include "GameFramework/WorldContext.h"
 #include "Render/Renderer/Renderer.h"
-#include "Render/Scene/RenderBus.h"
-#include "Render/Scene/RenderCollector.h"
+#include "Render/Renderer/IRenderPipeline.h"
+
+#include <memory>
 
 class FWindowsWindow;
 class FTimer;
@@ -52,7 +53,8 @@ public:
 	FRenderer& GetRenderer() { return Renderer; }
 
 protected:
-	virtual void Render(float DeltaTime);
+	void Render(float DeltaTime);
+	void SetRenderPipeline(std::unique_ptr<IRenderPipeline> InPipeline);
 	void WorldTick(float DeltaTime);
 
 protected:
@@ -64,8 +66,9 @@ protected:
 	FTimer* Timer = nullptr;
 
 	FRenderer Renderer;
-	FRenderCollector RenderCollector;
-	FRenderBus RenderBus;
+
+private:
+	std::unique_ptr<IRenderPipeline> RenderPipeline;
 };
 
 extern UEngine* GEngine;
