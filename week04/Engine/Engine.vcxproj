@@ -94,6 +94,7 @@
     <ClInclude Include="Source\Engine\EngineStatics.h" />
     <ClInclude Include="Source\Engine\Game\Actor.h" />
     <ClInclude Include="Source\Engine\Game\CubeActor.h" />
+    <ClInclude Include="Source\Engine\Game\SphereActor.h" />
     <ClInclude Include="Source\Engine\Game\UnknownActor.h" />
     <ClInclude Include="Source\Engine\Scene.h" />
     <ClInclude Include="Source\Engine\ViewPort\Viewport.h" />
@@ -103,8 +104,8 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11Common.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.h" />
-    <ClInclude Include="Source\Renderer\D3D11\D3D11OutlineRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11ObjectIdRenderer.h" />
+    <ClInclude Include="Source\Renderer\D3D11\D3D11OutlineRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11RHI.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11TextBatchRenderer.h" />
@@ -138,7 +139,6 @@
     <ClInclude Include="Source\SceneIO\SceneSerializer.h" />
     <ClInclude Include="Source\SceneIO\SceneTypeRegistry.h" />
     <ClInclude Include="Source\ThirdParty\Json\json.hpp" />
-    <ClInclude Include="Source\Engine\Game\SphereActor.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -192,13 +192,14 @@
     <ClCompile Include="Source\Engine\EngineStatics.cpp" />
     <ClCompile Include="Source\Engine\Game\Actor.cpp" />
     <ClCompile Include="Source\Engine\Game\CubeActor.cpp" />
+    <ClCompile Include="Source\Engine\Game\SphereActor.cpp" />
     <ClCompile Include="Source\Engine\Game\UnknownActor.cpp" />
     <ClCompile Include="Source\Engine\Scene.cpp" />
     <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.cpp" />
-    <ClCompile Include="Source\Renderer\D3D11\D3D11OutlineRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11ObjectIdRenderer.cpp" />
+    <ClCompile Include="Source\Renderer\D3D11\D3D11OutlineRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11RHI.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11TextBatchRenderer.cpp" />
@@ -213,7 +214,6 @@
     <ClCompile Include="Source\SceneIO\SceneJson.cpp" />
     <ClCompile Include="Source\SceneIO\SceneSerializer.cpp" />
     <ClCompile Include="Source\SceneIO\SceneTypeRegistry.cpp" />
-    <ClCompile Include="Source\Engine\Game\SphereActor.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

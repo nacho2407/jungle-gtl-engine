@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source">
@@ -82,6 +82,9 @@
       <Filter>Source\Editor\Logging</Filter>
     </ClCompile>
     <ClCompile Include="Source\Input\EditorGlobalContext.cpp">
+      <Filter>Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\EditorGlobalController.cpp">
       <Filter>Source\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Input\GizmoInputContext.cpp">
@@ -168,7 +171,6 @@
     <ClCompile Include="Source\Viewport\Selection\ViewportSelectionController.cpp">
       <Filter>Source\Viewport\Selection</Filter>
     </ClCompile>
-    <ClCompile Include="Source\\Input\\EditorGlobalController.cpp">`r`n      <Filter>Source\\Input</Filter>`r`n    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Camera\ViewportCamera.h">
@@ -208,6 +210,9 @@
       <Filter>Source\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Input\EditorGlobalContext.h">
+      <Filter>Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Input\EditorGlobalController.h">
       <Filter>Source\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Input\GizmoInputContext.h">
@@ -297,7 +302,6 @@
     <ClInclude Include="Source\Viewport\Selection\ViewportSelectionController.h">
       <Filter>Source\Viewport\Selection</Filter>
     </ClInclude>
-    <ClInclude Include="Source\\Input\\EditorGlobalController.h">`r`n      <Filter>Source\\Input</Filter>`r`n    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Source\ThirdParty\imgui\imgui.natstepfilter">
