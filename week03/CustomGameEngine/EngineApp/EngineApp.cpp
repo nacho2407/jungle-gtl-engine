@@ -145,7 +145,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 		//SetGrid는 SubUV의 크기에 따라 나눕니다. 분할은 UV에 따라 다를 수 있으니 하드코딩을 피하기 위해 수정이 필요합니다.
 		SubUVBillboard->SetGrid(6, 6, 36);
 		//속도 조절인데 1초에 몇번 돌아가는지를 명시합니다. 36이면 1초마다 순회를 합니다.
-		SubUVBillboard->SetPlayback(16.0f, true);
+		SubUVBillboard->SetPlayback(8.0f, true);
 		//크기입니다.
 		SubUVBillboard->SetSize(4.0f, 4.0f);
 	}

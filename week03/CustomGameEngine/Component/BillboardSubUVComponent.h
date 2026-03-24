@@ -54,9 +54,9 @@ private:
 private:
 	float Width = 4.0f;
 	float Height = 4.0f;
-	int32 Rows = 4;
-	int32 Columns = 4;
-	int32 FrameCount = 16;
+	int32 Rows = 6;
+	int32 Columns = 6;
+	int32 FrameCount = 36;
 	float FramesPerSecond = 8.0f;
 	float CurrentTime = 0.0f;
 	bool bLoop = true;

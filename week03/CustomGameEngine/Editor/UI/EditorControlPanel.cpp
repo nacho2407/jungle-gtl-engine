@@ -1,5 +1,7 @@
 ﻿#include "EditorControlPanel.h"
 
+#include <random>
+
 static EPrimitiveType primitiveType = EPrimitiveType::Triangle;
 static int spawnCount = 0;
 static char sceneName[128] = "Default";
@@ -23,6 +25,16 @@ EditorControlPanel::~EditorControlPanel()
 
 namespace
 {
+	static FVector GetRandomSpawnLocation()
+	{
+		static std::random_device rd;
+		static std::mt19937 rng(rd());
+		static std::uniform_real_distribution<float> xyDist(-10.0f, 10.0f);
+		static std::uniform_real_distribution<float> zDist(0.0f, 10.0f);
+
+		return FVector(xyDist(rng), xyDist(rng), zDist(rng));
+	}
+
 	static TArray<FString> GetSceneFileList(const FString& sceneDir)
 	{
 		TArray<FString> SceneList;
@@ -80,7 +92,7 @@ void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 		static_cast<int>(TimerManager::GetInstance().GetGlobalDeltaTime() * 1000));
 	ImGui::Separator();
 
-	if (ImGui::Combo("Primitive", (int*)&primitiveType, "Sphere\0Cube\0Triangle\0Plane\0"))
+	if (ImGui::Combo("Primitive", (int*)&primitiveType, "Sphere\0Cube\0Triangle\0Plane\0SubUV\0"))
 	{
 		// TODO: Change primitive type to spawn.
 	}
@@ -90,6 +102,10 @@ void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 		{
 			// TODO: Apply primitive type to spawn
 			auto p = PrimitiveFactory::AddPrimitive(primitiveType);
+			if (p != nullptr)
+			{
+				p->SetRelativeLocation(GetRandomSpawnLocation());
+			}
 		}
 	}
 	ImGui::SameLine();
