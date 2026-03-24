@@ -2,9 +2,9 @@
 #include <algorithm>
 #include <cctype>
 
-TUMap<FString, int32> FName::ComparisonLookupTable; //이미 존재하는지 존재하지 않는지
+TMap<FString, int32> FName::ComparisonLookupTable; //이미 존재하는지 존재하지 않는지
 TArray<FString> FName::ComparisonEntries; //id -> 실제 비교 String
-TUMap<FString, int32> FName::DisplayLookupTable; // 이미 존재하는지 존재하지 않는지
+TMap<FString, int32> FName::DisplayLookupTable; // 이미 존재하는지 존재하지 않는지
 TArray<FString> FName::DisplayEntries; //id -> 실제 출력 String
 TArray<FNumberState> FUniqueNameGenerator::ComparisonNumberStates; //비교이름의 제일작은 Number을 관리
 
@@ -13,7 +13,7 @@ FName::FName(const char* PStr) : FName(FString(PStr))
 
 }
 
-FName::FName(const FString& Str)
+FName::FName(const FString& Str)//Cube -> cube
 {
 	FString Lower = Str;
 	std::transform(Lower.begin(), Lower.end(), Lower.begin(), [](unsigned char c) { return std::tolower(c); });
@@ -50,7 +50,18 @@ bool FName::operator==(const FName& Other) const
 
 FString FName::GetDisplayName() const
 {
-	return DisplayEntries[DisplayIndex] + "_" + std::to_string(Number);
+	return GetPlainDisplayName() + "_" + std::to_string(Number);
+}
+
+const FString& FName::GetPlainDisplayName() const
+{
+	static const FString EmptyName;
+	if (DisplayIndex < 0 || DisplayIndex >= static_cast<int32>(DisplayEntries.size()))
+	{
+		return EmptyName;
+	}
+
+	return DisplayEntries[DisplayIndex];
 }
 
 const FString& FName::GetComparisonName() const

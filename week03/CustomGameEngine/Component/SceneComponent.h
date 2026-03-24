@@ -38,7 +38,6 @@ public:
 	virtual json::JSON Serialize();
 	virtual void Deserialize(json::JSON);
 	virtual void DrawDebugLines() {}
-	virtual void DrawProperties();
 
 	bool IsSelected() const;
 

@@ -1,6 +1,7 @@
 ﻿#include "Renderer.h"
 
 #include "EngineCore/Logger.h"
+#include "Renderer/Constants.h"
 
 // for test code
 #include "EngineCore/ResourceManager.h"
@@ -9,7 +10,7 @@
 /**
  * @def MAX_VERTEX_FONT_COUNT 폰트를 위한 dynamic vertex buffer의 최대 정점 정보 개수
  */
-#define MAX_VERTEX_FONT_COUNT 12000
+#define MAX_VERTEX_FONT_COUNT 120000
 
 void URenderer::Create(HWND hWindow)
 {
@@ -227,7 +228,7 @@ void URenderer::OnResize(UINT Width, UINT Height)
 void URenderer::CreateDynamicVertexBuffer()
 {
 	D3D11_BUFFER_DESC vertexbufferdesc = {};
-	vertexbufferdesc.ByteWidth = sizeof(FVertexSimple) * 20000;
+	vertexbufferdesc.ByteWidth = sizeof(FVertexSimple) * 80000;
 	vertexbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
 	vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vertexbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -241,7 +242,7 @@ void URenderer::CreateDynamicVertexBuffer()
 
 void URenderer::UpdateDynamicVertexBuffer(FVertexSimple* Vertices, UINT VertexCount)
 {
-	const int32 MaxVertexCount = 20000;
+	const int32 MaxVertexCount = 80000;
 	if (VertexCount > MaxVertexCount)
 	{
 		//ERROR HANDLE
@@ -344,7 +345,7 @@ void URenderer::Render(const TArray<FLevel*>& Levels)
 	//Phase 1 : Distribute RenderObjects into 3 groups : Batch, Normal, NoDepth
 	TArray<RenderObject*> NormalRenderObjects;
 	TArray<RenderObject*> NoDepthRenderObjects;
-	TMap<BatchKey, TArray<RenderObject*>> BatchGroups;
+	TMap<BatchKey, TArray<RenderObject*>, FBatchKeyHash> BatchGroups;
 	DistributeRenderObjects(Levels, BatchGroups, NormalRenderObjects, NoDepthRenderObjects);
 	RenderNormalObjects(NormalRenderObjects);
 	BatchRender(BatchGroups);
@@ -376,7 +377,7 @@ void URenderer::SetRasterizerMode(int32 mode)
 
 void URenderer::DistributeRenderObjects(
 	const TArray<FLevel*>& Levels,
-	TMap<BatchKey, TArray<RenderObject*>>& BatchGroups,
+	TMap<BatchKey, TArray<RenderObject*>, FBatchKeyHash>& BatchGroups,
 	TArray<RenderObject*>& NormalRenderObjects,
 	TArray<RenderObject*>& NoDepthRenderObjects)
 {
@@ -435,7 +436,7 @@ void URenderer::RenderNormalObjects(TArray<RenderObject*>& NormalRenderObjects)
 }
 
 
-void URenderer::BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups)
+void URenderer::BatchRender(TMap<BatchKey, TArray<RenderObject*>, FBatchKeyHash>& BatchGroups)
 {
 	//DeviceContext->OMSetDepthStencilState(DepthStencilStateNoDepth.Get(), 0);
 	FObjectConstant ObjectConst;
@@ -515,4 +516,129 @@ void URenderer::UpdateDynamicFontVertexBuffer(FVertexFont* Vertices, UINT Vertex
 void URenderer::ReleaseDynamicFontVertexBuffer(void)
 {
 	DynamicFontVertexBuffer.Reset();
+}
+
+bool URenderer::PrepareBillboardFontMaterial(FFontAsset* FontAsset, const FColor& Color)
+{
+	if (renderCamera == nullptr || FontAsset == nullptr)
+	{
+		return false;
+	}
+
+	// 폰트 셰이더와 상수 버퍼를 이번 그룹 색상 기준으로 설정
+	FMaterial& FontMaterial = ResourceManager::GetInstance()->GetMaterial(L"Shader/ShaderFont.hlsl");
+	if (FontMaterial.VertexShader == nullptr || FontMaterial.PixelShader == nullptr)
+	{
+		return false;
+	}
+
+	FontMaterial.Bind(DeviceContext.Get());
+
+	FFontConstant FontConstant;
+	FontConstant.CameraRight = renderCamera->SideDirection.Normalize();
+	FontConstant.CameraUp = renderCamera->UpDirection.Normalize();
+	FontConstant.TextColor = Color;
+
+	FontMaterial.ConstantBuffer.Update(DeviceContext.Get(), &FontConstant, sizeof(FFontConstant));
+	FontMaterial.ConstantBuffer.Bind(DeviceContext.Get());
+	return true;
+}
+
+void URenderer::DrawBillboardFontVertices(const TArray<FVertexFont>& Vertices)
+{
+	if (Vertices.empty())
+	{
+		return;
+	}
+
+	// CPU에서 만든 글자 정점을 동적 버퍼에 업로드한 뒤 한 번에 Draw
+	UpdateDynamicFontVertexBuffer(const_cast<FVertexFont*>(Vertices.data()), static_cast<UINT>(Vertices.size()));
+
+	UINT Stride = sizeof(FVertexFont);
+	UINT Offset = 0;
+	DeviceContext->IASetVertexBuffers(0, 1, DynamicFontVertexBuffer.GetAddressOf(), &Stride, &Offset);
+	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	DeviceContext->Draw(static_cast<UINT>(Vertices.size()), 0);
+}
+
+void URenderer::RestoreCurrentRasterizerState() const
+{
+	// 일반 3D 렌더 단계에서 사용하던 rasterizer 모드로 되돌립니다.
+	switch (RsSetMode)
+	{
+	case 1:
+		DeviceContext->RSSetState(RasterizerStateNoCull.Get());
+		break;
+	case 2:
+		DeviceContext->RSSetState(RasterizerStateWireframe.Get());
+		break;
+	default:
+		DeviceContext->RSSetState(RasterizerState.Get());
+		break;
+	}
+}
+
+void URenderer::RenderBillboardTextBatch(const TArray<FBillboardTextDrawItem>& Items)
+{
+	if (ShowFlagMap[EEngineShowFlags::SF_BillboardText] == false || Items.empty())
+	{
+		return;
+	}
+
+	ResourceManager* ResourceMgr = ResourceManager::GetInstance();
+	FFontAsset* DefaultFont = &ResourceMgr->GetBillboardFont();
+	TMap<FBillboardTextBatchKey, TArray<const FBillboardTextDrawItem*>, FBillboardTextBatchKeyHash> BatchGroups;
+
+	// 폰트/색 조합별로 아이템을 그룹화
+	for (const FBillboardTextDrawItem& Item : Items)
+	{
+		FFontAsset* FontAsset = (Item.FontAsset != nullptr) ? Item.FontAsset : DefaultFont;
+		if (FontAsset != DefaultFont)
+		{
+			continue;
+		}
+
+		if (ResourceMgr->EnsureBillboardGlyphs(Item.Text) == false)
+		{
+			continue;
+		}
+
+		FBillboardTextBatchKey Key;
+		Key.FontAsset = FontAsset;
+		Key.Color = Item.Color;
+		BatchGroups[Key].push_back(&Item);
+	}
+
+	DeviceContext->OMSetDepthStencilState(DepthStencilStateNoWrite.Get(), 0);
+	DeviceContext->RSSetState(RasterizerState.Get());
+
+	// 각 그룹마다 정점을 합쳐 한 번의 draw call로 렌더링
+	for (auto& [Key, GroupItems]: BatchGroups)
+	{
+		if (PrepareBillboardFontMaterial(Key.FontAsset, Key.Color) == false)
+		{
+			continue;
+		}
+
+		TArray<FVertexFont> Vertices;
+		for (const FBillboardTextDrawItem* Item : GroupItems)
+		{
+			// 문자열 단위 레이아웃을 하나의 그룹 정점 배열에 이어붙임
+			FTextLayoutBuildParams Params;
+			Params.FontAsset = Key.FontAsset;
+			Params.Text = Item->Text;
+			Params.Anchor = Item->Anchor;
+			Params.Scale = Item->Scale;
+			Params.LineGap = Item->LineGap;
+			AppendBillboardTextVertices(Params, Vertices);
+		}
+
+		DrawBillboardFontVertices(Vertices);
+	}
+
+	// DepthStencilState 복원
+	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
+
+	// RasterizerState 복원
+	RestoreCurrentRasterizerState();
 }
