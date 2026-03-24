@@ -13,7 +13,6 @@
 
 #include "Renderer/VertexFont.h"
 #include "Text/FontAsset.h"
-#include <tuple>
 
 /**
  * @brief Billboard 텍스트 배치 렌더링 시 한 번에 그릴 단위인 배치 그룹을 설명
@@ -27,6 +26,38 @@ struct FBillboardTextBatchKey
 	{
 		return std::tie(FontAsset, Color.r, Color.g, Color.b, Color.a)
 			< std::tie(Other.FontAsset, Other.Color.r, Other.Color.g, Other.Color.b, Other.Color.a);
+	}
+
+	// 해시 맵 사용을 위한 동등성 검사
+	bool operator==(const FBillboardTextBatchKey& Other) const
+	{
+		return FontAsset == Other.FontAsset
+			&& Color.r == Other.Color.r
+			&& Color.g == Other.Color.g
+			&& Color.b == Other.Color.b
+			&& Color.a == Other.Color.a;
+	}
+};
+
+/**
+ * @brief 해시 지원을 위한 functor
+ */
+struct FBillboardTextBatchKeyHash
+{
+	size_t operator()(const FBillboardTextBatchKey& Key) const
+	{
+		// (참고) Boost 라이브러리에서 자주 사용하는 패턴
+		size_t Seed = std::hash<FFontAsset*>{}(Key.FontAsset);
+		const auto HashCombine = [&Seed](size_t Value)
+		{
+			Seed ^= Value + 0x9e3779b9 + (Seed << 6) + (Seed >> 2);
+		};
+
+		HashCombine(std::hash<float>{}(Key.Color.r));
+		HashCombine(std::hash<float>{}(Key.Color.g));
+		HashCombine(std::hash<float>{}(Key.Color.b));
+		HashCombine(std::hash<float>{}(Key.Color.a));
+		return Seed;
 	}
 };
 
@@ -113,11 +144,11 @@ public:
 	void RenderNormalObjects(TArray<RenderObject*>& NormalRenderObjects);
 	void DistributeRenderObjects(
 		const TArray<FLevel*>& Levels,
-		TMap<BatchKey, TArray<RenderObject*>>& BatchGroups,
+		TMap<BatchKey, TArray<RenderObject*>, FBatchKeyHash>& BatchGroups,
 		TArray<RenderObject*>& NormalRenderObjects,
 		TArray<RenderObject*>& NoDepthRenderObjects
 	);
-	void BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups);
+	void BatchRender(TMap<BatchKey, TArray<RenderObject*>, FBatchKeyHash>& BatchGroups);
 	void Render(const TArray<FLevel*>& Levels);
 	//void RenderGrid(ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader);
 	void BatchRenderDebugLine(const TArray<FVertexSimple>& Lines);

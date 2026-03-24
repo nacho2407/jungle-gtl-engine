@@ -24,29 +24,27 @@
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-namespace
+/**
+ * @brief Scene 안의 빌보드 텍스트 컴포넌트들로부터 draw item을 수집합니다.
+ *
+ * @param Scene draw item을 수집할 scene
+ * 
+ * @param OutItems 수집된 draw item이 추가될 배열
+ */
+static void AppendSceneBillboardTextItems(UScene* Scene, TArray<FBillboardTextDrawItem>& OutItems)
 {
-	/**
-	 * @brief 씬 안의 빌보드 텍스트 컴포넌트들로부터 draw item을 수집합니다.
-	 *
-	 * @param Scene draw item을 수집할 씬
-	 * @param OutItems 수집된 draw item이 추가될 배열
-	 */
-	void AppendSceneBillboardTextItems(UScene* Scene, TArray<FBillboardTextDrawItem>& OutItems)
+	if (Scene == nullptr)
 	{
-		if (Scene == nullptr)
-		{
-			return;
-		}
+		return;
+	}
 
-		// 씬 컴포넌트 중 빌보드 텍스트 컴포넌트만 찾아 렌더 입력으로 변환합니다.
-		for (USceneComponent* Component : Scene->SceneComponents)
+	// Scene 컴포넌트 중 빌보드 텍스트 컴포넌트만 찾아 렌더 입력으로 변환
+	for (USceneComponent* Component : Scene->SceneComponents)
+	{
+		UBillboardTextComponent* BillboardText = Cast<UBillboardTextComponent>(Component);
+		if (BillboardText != nullptr)
 		{
-			UBillboardTextComponent* BillboardText = Cast<UBillboardTextComponent>(Component);
-			if (BillboardText != nullptr)
-			{
-				BillboardText->AppendDrawItems(OutItems);
-			}
+			BillboardText->AppendDrawItems(OutItems);
 		}
 	}
 }

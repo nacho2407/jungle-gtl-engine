@@ -345,7 +345,7 @@ void URenderer::Render(const TArray<FLevel*>& Levels)
 	//Phase 1 : Distribute RenderObjects into 3 groups : Batch, Normal, NoDepth
 	TArray<RenderObject*> NormalRenderObjects;
 	TArray<RenderObject*> NoDepthRenderObjects;
-	TMap<BatchKey, TArray<RenderObject*>> BatchGroups;
+	TMap<BatchKey, TArray<RenderObject*>, FBatchKeyHash> BatchGroups;
 	DistributeRenderObjects(Levels, BatchGroups, NormalRenderObjects, NoDepthRenderObjects);
 	RenderNormalObjects(NormalRenderObjects);
 	BatchRender(BatchGroups);
@@ -377,7 +377,7 @@ void URenderer::SetRasterizerMode(int32 mode)
 
 void URenderer::DistributeRenderObjects(
 	const TArray<FLevel*>& Levels,
-	TMap<BatchKey, TArray<RenderObject*>>& BatchGroups,
+	TMap<BatchKey, TArray<RenderObject*>, FBatchKeyHash>& BatchGroups,
 	TArray<RenderObject*>& NormalRenderObjects,
 	TArray<RenderObject*>& NoDepthRenderObjects)
 {
@@ -436,7 +436,7 @@ void URenderer::RenderNormalObjects(TArray<RenderObject*>& NormalRenderObjects)
 }
 
 
-void URenderer::BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups)
+void URenderer::BatchRender(TMap<BatchKey, TArray<RenderObject*>, FBatchKeyHash>& BatchGroups)
 {
 	//DeviceContext->OMSetDepthStencilState(DepthStencilStateNoDepth.Get(), 0);
 	FObjectConstant ObjectConst;
@@ -587,7 +587,7 @@ void URenderer::RenderBillboardTextBatch(const TArray<FBillboardTextDrawItem>& I
 
 	ResourceManager* ResourceMgr = ResourceManager::GetInstance();
 	FFontAsset* DefaultFont = &ResourceMgr->GetBillboardFont();
-	TMap<FBillboardTextBatchKey, TArray<const FBillboardTextDrawItem*>> BatchGroups;
+	TMap<FBillboardTextBatchKey, TArray<const FBillboardTextDrawItem*>, FBillboardTextBatchKeyHash> BatchGroups;
 
 	// 폰트/색 조합별로 아이템을 그룹화
 	for (const FBillboardTextDrawItem& Item : Items)
@@ -623,7 +623,7 @@ void URenderer::RenderBillboardTextBatch(const TArray<FBillboardTextDrawItem>& I
 		TArray<FVertexFont> Vertices;
 		for (const FBillboardTextDrawItem* Item : GroupItems)
 		{
-			// 문자열 단위 레이아웃을 하나의 그룹 정점 배열에 이어붙입니다.
+			// 문자열 단위 레이아웃을 하나의 그룹 정점 배열에 이어붙임
 			FTextLayoutBuildParams Params;
 			Params.FontAsset = Key.FontAsset;
 			Params.Text = Item->Text;
@@ -636,6 +636,9 @@ void URenderer::RenderBillboardTextBatch(const TArray<FBillboardTextDrawItem>& I
 		DrawBillboardFontVertices(Vertices);
 	}
 
+	// DepthStencilState 복원
 	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
+
+	// RasterizerState 복원
 	RestoreCurrentRasterizerState();
 }

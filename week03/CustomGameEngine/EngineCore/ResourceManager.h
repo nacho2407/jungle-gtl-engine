@@ -184,9 +184,9 @@ private:
 	bool UpdateBillboardFontAtlasRegion(const FAtlasRect& DirtyRect);
 
 private:
-	TUMap<FString, FGeometry> GeometryMap;
-	TUMap<WFString, FMaterial> MaterialMap;
-	TUMap<WFString, TComPtr<ID3D11ShaderResourceView>> TextureMap;
+	TMap<FString, FGeometry> GeometryMap;
+	TMap<WFString, FMaterial> MaterialMap;
+	TMap<WFString, TComPtr<ID3D11ShaderResourceView>> TextureMap;
 	URenderer* Renderer = nullptr;
 
 	/**

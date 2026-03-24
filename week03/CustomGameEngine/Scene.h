@@ -22,7 +22,6 @@ public:
 	int Version;
 	int NextUUID;
 	TArray<USceneComponent*> SceneComponents;
-	//FName Name; //이미 UObject에 Name이 존재하므로 그쪽 생성자를 이용
 
 	bool IsCompSelected{ false };
 	FVector SelectedCompPos;
@@ -30,7 +29,7 @@ public:
 	FLevel Level;
 
 	void Update(float DeltaTime);
-	void DrawDebugLines();
+	void DrawDebugLines(); // AABB 시각화
 	std::string ToJson();
 	static std::string ToJson(UScene*);
 	static UScene* FromJson(std::string);

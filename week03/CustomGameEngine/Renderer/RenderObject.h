@@ -25,6 +25,35 @@ struct BatchKey {
 		return std::tie(Material, PrimitiveTopology) <
 			std::tie(other.Material, other.PrimitiveTopology);
 	}
+
+	// 해시 맵 지원을 위한 동등성 검사
+	bool operator==(const BatchKey& other) const
+	{
+		return Material == other.Material
+			&& PrimitiveTopology == other.PrimitiveTopology;
+	}
+};
+
+/**
+ * @brief 해시 지원을 위한 functor
+ */
+struct FBatchKeyHash
+{
+	size_t operator()(const BatchKey& Key) const
+	{
+		size_t Seed = std::hash<FMaterial*>{}(Key.Material);
+
+		const auto HashCombine = [&Seed](size_t Value)
+			{
+				Seed ^= Value + 0x9e3779b9 + (Seed << 6) + (Seed >> 2);
+			};
+
+		HashCombine(
+			std::hash<int>{}(static_cast<int>(Key.PrimitiveTopology))
+		);
+
+		return Seed;
+	}
 };
 
 struct RenderObject
