@@ -11,6 +11,9 @@
 #include <cstring>
 
 #include "Core/Misc/NameSubsystem.h"
+#include "Asset/AssetManager.h"
+#include "Asset/FontAtlasLoader.h"
+#include "Asset/TextureLoader.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND HWnd, UINT Message,
                                                              WPARAM WParam, LPARAM LParam);
@@ -69,6 +72,13 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
         return false;
     }
 
+    AssetManager = new UAssetManager();
+    TextureAssetLoader = new FTextureLoader(&Renderer->GetRHI());
+    FontAssetLoader = new FFontAtlasLoader(&Renderer->GetRHI());
+    AssetManager->RegisterLoader(TextureAssetLoader);
+    AssetManager->RegisterLoader(FontAssetLoader);
+    Editor->SetRuntimeServices(&Renderer->GetRHI(), AssetManager);
+
     ImGui::CreateContext();
     ImGuiIO& IO = ImGui::GetIO();
 #ifdef IMGUI_HAS_DOCK
@@ -123,6 +133,20 @@ void FEditorEngineLoop::ShutDown()
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
+
+    if (Editor != nullptr)
+    {
+        Editor->SetRuntimeServices(nullptr, nullptr);
+    }
+
+    delete FontAssetLoader;
+    FontAssetLoader = nullptr;
+
+    delete TextureAssetLoader;
+    TextureAssetLoader = nullptr;
+
+    delete AssetManager;
+    AssetManager = nullptr;
 
     if (Renderer != nullptr)
     {

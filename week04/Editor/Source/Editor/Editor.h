@@ -27,6 +27,8 @@ class FPanelManager;
 struct FPanelDescriptor;
 class AActor;
 class UObject;
+class FD3D11DynamicRHI;
+class UAssetManager;
 
 enum class EDeferredSceneActionType
 {
@@ -66,6 +68,7 @@ class FEditor
     void Initialize();
     void Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* InputSystem);
     void SetChromeHost(IEditorChromeHost* InChromeHost);
+    void SetRuntimeServices(FD3D11DynamicRHI* InRHI, UAssetManager* InAssetManager);
 
     void OnWindowResized(float Width, float Height);
     void SetMainLoopFPS(float FPS)

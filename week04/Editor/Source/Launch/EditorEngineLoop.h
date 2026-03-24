@@ -14,6 +14,8 @@
 #endif
 
 class FPanelManager;
+class UAssetManager;
+class IAssetLoader;
 
 class FEditorEngineLoop : public IEngineLoop, public IEditorChromeHost
 {
@@ -52,6 +54,9 @@ class FEditorEngineLoop : public IEngineLoop, public IEditorChromeHost
     FEditor* Editor = nullptr;
     FRendererModule* Renderer = nullptr;
     FPanelManager* PanelManager = nullptr;
+    UAssetManager* AssetManager = nullptr;
+    IAssetLoader* TextureAssetLoader = nullptr;
+    IAssetLoader* FontAssetLoader = nullptr;
 
     float DeltaTime = 0.0f;
     float MainLoopFPS = 0.0f;

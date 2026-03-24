@@ -32,6 +32,8 @@
     <ClInclude Include="Source\Asset\Asset.h" />
     <ClInclude Include="Source\Asset\AssetLoader.h" />
     <ClInclude Include="Source\Asset\AssetManager.h" />
+    <ClInclude Include="Source\Asset\FontAsset.h" />
+    <ClInclude Include="Source\Asset\FontAtlasLoader.h" />
     <ClInclude Include="Source\Asset\Texture2DAsset.h" />
     <ClInclude Include="Source\Asset\TextureLoader.h" />
     <ClInclude Include="Source\Core\Containers\Array.h" />
@@ -138,6 +140,8 @@
     <ClCompile Include="Source\Asset\Asset.cpp" />
     <ClCompile Include="Source\Asset\AssetLoader.cpp" />
     <ClCompile Include="Source\Asset\AssetManager.cpp" />
+    <ClCompile Include="Source\Asset\FontAsset.cpp" />
+    <ClCompile Include="Source\Asset\FontAtlasLoader.cpp" />
     <ClCompile Include="Source\Asset\Texture2DAsset.cpp" />
     <ClCompile Include="Source\Asset\TextureLoader.cpp" />
     <ClCompile Include="Source\Core\CoreGlobals.cpp" />

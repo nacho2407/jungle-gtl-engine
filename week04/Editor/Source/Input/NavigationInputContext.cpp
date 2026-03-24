@@ -98,7 +98,7 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
 
 void FNavigationInputContext::Tick(const Engine::ApplicationCore::FInputState& State)
 {
-    if (NavigationController == nullptr)
+    if (NavigationController == nullptr || !bRightMouseDown)
     {
         return;
     }

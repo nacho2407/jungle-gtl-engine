@@ -17,7 +17,7 @@ struct FDecodedImage
 };
 
 
-class FTextureLoader : public IAssetLoader
+class ENGINE_API FTextureLoader : public IAssetLoader
 {
 public:
 	explicit FTextureLoader(FD3D11DynamicRHI* InRHI);
