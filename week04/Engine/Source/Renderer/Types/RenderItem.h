@@ -59,6 +59,12 @@ struct FRenderPlacement
     bool IsBillboard() const { return Mode == ERenderPlacementMode::WorldBillboard; }
 };
 
+enum class ETextLayoutMode : uint8
+{
+    Natural = 0, // 글자 크기는 TextScale이 결정
+    FitToBox = 1 // transform scale을 박스 크기로 해석
+};
+
 struct FPrimitiveRenderItem
 {
     FMatrix          World = FMatrix::Identity;
@@ -90,6 +96,8 @@ struct FTextRenderItem
     float TextScale = 1.0f;
     float LetterSpacing = 0.0f;
     float LineSpacing = 0.0f;
+
+    ETextLayoutMode LayoutMode = ETextLayoutMode::Natural;
 
     FRenderItemState State;
 };
