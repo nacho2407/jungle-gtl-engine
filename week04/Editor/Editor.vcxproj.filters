@@ -84,6 +84,9 @@
     <ClCompile Include="Source\Input\EditorGlobalContext.cpp">
       <Filter>Source\Input</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Input\EditorGlobalController.cpp">
+      <Filter>Source\Input</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Input\GizmoInputContext.cpp">
       <Filter>Source\Input</Filter>
     </ClCompile>
@@ -176,6 +179,9 @@
     <ClInclude Include="Source\Chrome\EditorChrome.h">
       <Filter>Source\Chrome</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Content\ContentBrowserDragDrop.h">
+      <Filter>Source\Content</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Content\EditorContentIndex.h">
       <Filter>Source\Content</Filter>
     </ClInclude>
@@ -204,6 +210,9 @@
       <Filter>Source\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Input\EditorGlobalContext.h">
+      <Filter>Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Input\EditorGlobalController.h">
       <Filter>Source\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Input\GizmoInputContext.h">

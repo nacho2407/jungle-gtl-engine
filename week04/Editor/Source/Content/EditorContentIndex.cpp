@@ -54,6 +54,11 @@ namespace
             return EContentBrowserItemType::Texture;
         }
 
+        if (Extension == L".font" || Extension == L".Font")
+        {
+            return EContentBrowserItemType::Font;
+        }
+
         return EContentBrowserItemType::UnknownFile;
     }
 
@@ -111,7 +116,7 @@ namespace
         ++InOutFolderCount;
 
         std::error_code ErrorCode;
-        const auto DirectoryOptions = std::filesystem::directory_options::skip_permission_denied;
+        constexpr auto DirectoryOptions = std::filesystem::directory_options::skip_permission_denied;
         std::filesystem::directory_iterator Iterator(FolderPath, DirectoryOptions, ErrorCode);
         if (ErrorCode)
         {
@@ -147,19 +152,19 @@ namespace
             ++InOutFileCount;
         }
 
-        std::sort(
-            FolderNode.ChildFolders.begin(), FolderNode.ChildFolders.end(),
-            [](const FContentBrowserFolderNode& Left, const FContentBrowserFolderNode& Right)
-            {
-                return ToLowerAsciiCopy(Left.DisplayName) < ToLowerAsciiCopy(Right.DisplayName);
-            });
+        std::ranges::sort(FolderNode.ChildFolders
+                          ,
+                          [](const FContentBrowserFolderNode& Left, const FContentBrowserFolderNode& Right)
+                          {
+	                          return ToLowerAsciiCopy(Left.DisplayName) < ToLowerAsciiCopy(Right.DisplayName);
+                          });
 
-        std::sort(
-            FolderNode.Files.begin(), FolderNode.Files.end(),
-            [](const FContentBrowserItem& Left, const FContentBrowserItem& Right)
-            {
-                return ToLowerAsciiCopy(Left.DisplayName) < ToLowerAsciiCopy(Right.DisplayName);
-            });
+        std::ranges::sort(FolderNode.Files
+                          ,
+                          [](const FContentBrowserItem& Left, const FContentBrowserItem& Right)
+                          {
+	                          return ToLowerAsciiCopy(Left.DisplayName) < ToLowerAsciiCopy(Right.DisplayName);
+                          });
 
         return FolderNode;
     }

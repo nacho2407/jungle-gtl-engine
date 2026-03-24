@@ -170,7 +170,7 @@ bool FFontAtlasLoader::CanLoad(const FWString& Path, const FAssetLoadParams& Par
     std::transform(Extension.begin(), Extension.end(), Extension.begin(),
                    [](wchar_t Ch) { return static_cast<wchar_t>(std::towlower(Ch)); });
 
-    return Extension == L".json";
+    return Extension == L".font" || Extension == L".json";
 }
 
 EAssetType FFontAtlasLoader::GetAssetType() const { return EAssetType::Font; }

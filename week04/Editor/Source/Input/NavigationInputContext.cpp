@@ -1,4 +1,5 @@
 #include "NavigationInputContext.h"
+#include "NavigationInputContext.h"
 
 #if defined(_WIN32)
 #include <Windows.h>
@@ -9,7 +10,8 @@ using Engine::ApplicationCore::EKey;
 using Engine::ApplicationCore::FInputEvent;
 using Engine::ApplicationCore::FInputState;
 
-FNavigationInputContext::FNavigationInputContext(FViewportNavigationController* InNavigationController)
+FNavigationInputContext::FNavigationInputContext(
+    FViewportNavigationController* InNavigationController)
     : NavigationController(InNavigationController)
 {
 }
@@ -25,7 +27,20 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
     {
 #pragma region __MOUSE_BUTTON_DOWN__
     case EInputEventType::MouseButtonDown:
-        if (Event.Key == EKey::MouseRight && State.Modifiers.bAltDown)
+        if (Event.Key == EKey::MouseMiddle)
+        {
+            bMiddleMouseDown = true;
+            bFirstMouseMoveAfterPanStart = true;
+            NavigationController->BeginPanning();
+#if defined(_WIN32)
+            while (::ShowCursor(FALSE) >= 0)
+            {
+            }
+#endif
+            return true;
+        }
+        if (Event.Key == EKey::MouseRight && !State.Modifiers.bCtrlDown &&
+            State.Modifiers.bAltDown && !State.Modifiers.bShiftDown)
         {
             bDollyRightMouseDown = true;
             bFirstMouseMoveAfterDollyStart = true;
@@ -36,7 +51,9 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
 #endif
             return true;
         }
-        if (Event.Key == EKey::MouseRight)
+
+        if (Event.Key == EKey::MouseRight && !State.Modifiers.bCtrlDown &&
+            !State.Modifiers.bAltDown && !State.Modifiers.bShiftDown)
         {
             bRightMouseDown = true;
             bFirstMouseMoveAfterRotateStart = true;
@@ -49,7 +66,8 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
             return true;
         }
 
-        if (Event.Key == EKey::MouseLeft && State.Modifiers.bAltDown)
+        if (Event.Key == EKey::MouseLeft && State.Modifiers.bAltDown &&
+            !State.Modifiers.bCtrlDown && !State.Modifiers.bShiftDown)
         {
             bOrbitLeftMouseDown = true;
             bFirstMouseMoveAfterOrbitStart = true;
@@ -62,7 +80,8 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
             return true;
         }
 
-        if (Event.Key == EKey::MouseLeft)
+        if (Event.Key == EKey::MouseLeft && !State.Modifiers.bCtrlDown &&
+            !State.Modifiers.bAltDown && !State.Modifiers.bShiftDown)
         {
             bLeftMouseDown = true;
             bPendingLeftMouseRotate = true;
@@ -77,6 +96,17 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
 #pragma endregion
 #pragma region __MOUSE_BUTTON_UP__
     case EInputEventType::MouseButtonUp:
+        if (Event.Key == EKey::MouseMiddle)
+        {
+            bMiddleMouseDown = false;
+            NavigationController->EndPanning();
+#if defined(_WIN32)
+            while (::ShowCursor(TRUE) < 0)
+            {
+            }
+#endif
+            return true;
+        }
         if (Event.Key == EKey::MouseLeft && bOrbitLeftMouseDown)
         {
             bOrbitLeftMouseDown = false;
@@ -88,7 +118,7 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
 #endif
             return true;
         }
-        
+
         if (Event.Key == EKey::MouseRight && bDollyRightMouseDown)
         {
             bDollyRightMouseDown = false;
@@ -135,11 +165,32 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
 #pragma endregion
 #pragma region __MOUSE_BUTTON_MOVE__
     case EInputEventType::MouseMove:
+        if (bMiddleMouseDown)
+        {
+            if (bFirstMouseMoveAfterPanStart)
+            {
+                LastMouseX = Event.MouseX;
+                LastMouseY = Event.MouseY;
+                bFirstMouseMoveAfterPanStart = false;
+                return true;
+            }
+
+            const int32 DeltaX = Event.MouseX - LastMouseX;
+            const int32 DeltaY = Event.MouseY - LastMouseY;
+
+            NavigationController->AddPanInput(static_cast<float>(DeltaX),
+                                              static_cast<float>(-DeltaY));
+
+            LastMouseX = Event.MouseX;
+            LastMouseY = Event.MouseY;
+            return true;
+        }
+
         if (bOrbitLeftMouseDown)
         {
             return HandleMouseMove(Event, bFirstMouseMoveAfterOrbitStart);
         }
-        
+
         if (bDollyRightMouseDown)
         {
             if (bFirstMouseMoveAfterDollyStart)
@@ -151,7 +202,7 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
             }
 
             const int32 DeltaY = Event.MouseY - LastMouseY;
-            NavigationController->Dolly(static_cast<float>(-DeltaY) * DollyDragSensitivity);
+            NavigationController->Dolly(static_cast<float>(DeltaY) * DollyDragSensitivity);
 
             LastMouseX = Event.MouseX;
             LastMouseY = Event.MouseY;
@@ -169,7 +220,8 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
             {
                 const int32 DragDeltaX = Event.MouseX - LeftMouseDownStartX;
                 const int32 DragDeltaY = Event.MouseY - LeftMouseDownStartY;
-                const float DragDistanceSq = static_cast<float>(DragDeltaX * DragDeltaX + DragDeltaY * DragDeltaY);
+                const float DragDistanceSq =
+                    static_cast<float>(DragDeltaX * DragDeltaX + DragDeltaY * DragDeltaY);
                 const float ThresholdSq = LeftMouseDragThreshold * LeftMouseDragThreshold;
 
                 if (DragDistanceSq >= ThresholdSq)
@@ -199,15 +251,7 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
 #pragma endregion
 #pragma region __MOUSE_WHEEL__
     case EInputEventType::MouseWheel:
-        if (bRightMouseDown || bLeftRotationActive)
-        {
-            const float SpeedStep = (Event.WheelDelta > 0) ? 20.0f : -20.0f;
-            NavigationController->AdjustMoveSpeed(SpeedStep);
-        }
-        else
-        {
-            NavigationController->ModifyFOV(static_cast<float>(-Event.WheelDelta));
-        }
+        NavigationController->ModifyFOVorOrthoHeight(static_cast<float>(-Event.WheelDelta));
         return true;
 
         // break;
@@ -215,7 +259,7 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
         break;
     }
 #pragma endregion
-    
+
     return false;
 }
 

@@ -39,6 +39,8 @@ namespace Engine::Component
     void UAtlasTextComponent::DescribeProperties(FComponentPropertyBuilder& Builder)
     {
         UAtlasComponent::DescribeProperties(Builder);
+        FComponentPropertyOptions FontPathOptions;
+        FontPathOptions.ExpectedAssetPathKind = EComponentAssetPathKind::FontFile;
 
         Builder.AddString(
             "text", L"Text", [this]() { return GetText(); },
@@ -61,7 +63,7 @@ namespace Engine::Component
             [this](const FVector& InValue) { SetBillboardOffset(InValue); });
         Builder.AddAssetPath(
             "font_path", L"Font Path", [this]() { return GetFontPath(); },
-            [this](const FString& InValue) { SetFontPath(InValue); });
+            [this](const FString& InValue) { SetFontPath(InValue); }, FontPathOptions);
     }
 
     void UAtlasTextComponent::ResolveAssetReferences(UAssetManager* InAssetManager)

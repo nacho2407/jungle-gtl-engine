@@ -32,7 +32,8 @@ private:
 
     bool bRightMouseDown = false;
     bool bLeftMouseDown = false;
-    
+    bool bMiddleMouseDown = false;
+
     bool bOrbitLeftMouseDown = false;
     bool bDollyRightMouseDown = false;
     
@@ -42,6 +43,7 @@ private:
     bool bFirstMouseMoveAfterRotateStart = false;
     bool bFirstMouseMoveAfterOrbitStart = false;
     bool bFirstMouseMoveAfterDollyStart = false;
+    bool bFirstMouseMoveAfterPanStart = false;
 
     int32 LastMouseX = 0;
     int32 LastMouseY = 0;

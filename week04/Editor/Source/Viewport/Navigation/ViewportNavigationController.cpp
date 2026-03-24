@@ -39,6 +39,22 @@ void FViewportNavigationController::SetRotating(bool bInRotating)
     }
 }
 
+void FViewportNavigationController::ModifyFOVorOrthoHeight(float Delta)
+{
+    if (ViewportCamera == nullptr || FMath::IsNearlyZero(Delta))
+    {
+        return;
+    }
+    if (ViewportCamera->GetProjectionType() == EViewportProjectionType::Perspective)
+    {
+        ModifyFOV(Delta);
+    }
+    else
+    {
+        ModifyOrthoHeight(Delta);
+    }
+}
+
 void FViewportNavigationController::ModifyFOV(float DeltaFOV)
 {
     if (ViewportCamera == nullptr || FMath::IsNearlyZero(DeltaFOV))
@@ -56,6 +72,21 @@ void FViewportNavigationController::ModifyFOV(float DeltaFOV)
     ViewportCamera->SetFOV(NewFOV);
 }
 
+void FViewportNavigationController::ModifyOrthoHeight(float DeltaHeight)
+{
+    if (ViewportCamera == nullptr || FMath::IsNearlyZero(DeltaHeight))
+    {
+        return;
+    }
+
+    float Direction = (DeltaHeight > 0.f) ? 1.f : -1.f;
+
+    float NewHeight = ViewportCamera->GetOrthoHeight() + Direction * 5.f;
+    NewHeight = FMath::Clamp(NewHeight, 15.f, 500.f); // Ortho Height를 15 ~ 500으로 제한
+
+    ViewportCamera->SetOrthoHeight(NewHeight);
+}
+
 void FViewportNavigationController::MoveForward(float Value, float DeltaTime)
 {
     // if (ViewportCamera == nullptr || FMath::IsNearlyZero(Value))
@@ -66,6 +97,8 @@ void FViewportNavigationController::MoveForward(float Value, float DeltaTime)
     //  Orbiting 중에는 이동 입력을 무시합니다.
     if (bOrbiting)
     {
+        UE_LOG(FViewportNavigationController, ELogVerbosity::Warning,
+               "MoveForward called while orbiting. Ignoring input.");
         return;
     }
 
@@ -149,6 +182,10 @@ void FViewportNavigationController::BeginOrbit()
     {
         return;
     }
+    if (ViewportCamera->GetProjectionType() != EViewportProjectionType::Perspective)
+    {
+        return;
+    }
 
     OrbitPivot = ResolveOrbitPivot();
 
@@ -175,7 +212,11 @@ FVector FViewportNavigationController::ResolveOrbitPivot() const
     {
         return FVector::Zero();
     }
-    
+    if (ViewportCamera->GetProjectionType() != EViewportProjectionType::Perspective)
+    {
+        return FVector::Zero();
+    }
+
     if (SelectionController != nullptr)
     {
         const auto& SelectedActors = SelectionController->GetSelectedActors();
@@ -187,10 +228,10 @@ FVector FViewportNavigationController::ResolveOrbitPivot() const
             }
         }
     }
-    
+
     const FVector RayOrigin = ViewportCamera->GetLocation();
     const FVector RayDirection = ViewportCamera->GetForwardVector().GetSafeNormal();
-    
+
     if (!FMath::IsNearlyZero(RayDirection.Z))
     {
         const float T = -RayOrigin.Z / RayDirection.Z;
@@ -199,13 +240,17 @@ FVector FViewportNavigationController::ResolveOrbitPivot() const
             return RayOrigin + RayDirection * T;
         }
     }
-    
+
     return RayOrigin + RayDirection * DefaultOrbitRadius;
 }
 
 void FViewportNavigationController::UpdateOrbitCamera()
 {
     if (ViewportCamera == nullptr)
+    {
+        return;
+    }
+    if (ViewportCamera->GetProjectionType() != EViewportProjectionType::Perspective)
     {
         return;
     }
@@ -250,7 +295,11 @@ void FViewportNavigationController::Dolly(float Value)
     {
         return;
     }
-    
+    if (ViewportCamera->GetProjectionType() != EViewportProjectionType::Perspective)
+    {
+        return;
+    }
+
     if (bOrbiting)
     {
         OrbitRadius -= Value * DollySpeed;
@@ -258,9 +307,49 @@ void FViewportNavigationController::Dolly(float Value)
         UpdateOrbitCamera();
         return;
     }
-    
+
     EnsureTargetLocationInitialized();
     TargetLocation += ViewportCamera->GetForwardVector().GetSafeNormal() * (Value * DollySpeed);
+}
+
+void FViewportNavigationController::BeginPanning()
+{
+    if (ViewportCamera == nullptr)
+    {
+        return;
+    }
+
+    EnsureTargetLocationInitialized();
+    bPanning = true;
+}
+
+void FViewportNavigationController::EndPanning() { bPanning = false; }
+
+void FViewportNavigationController::AddPanInput(float DeltaX, float DeltaY)
+{
+    if (ViewportCamera == nullptr)
+    {
+        return;
+    }
+    if (FMath::IsNearlyZero(DeltaX) && FMath::IsNearlyZero(DeltaY))
+    {
+        return;
+    }
+
+    EnsureTargetLocationInitialized();
+
+    const FVector Right = ViewportCamera->GetRightVector().GetSafeNormal();
+    const FVector Up = ViewportCamera->GetUpVector().GetSafeNormal();
+
+    const FVector PanDelta = (Right * (DeltaX) + Up * DeltaY) * PanSpeed;
+
+    TargetLocation += PanDelta;
+
+    //  Orbiting 시에는 Orbit Pivot도 함께 이동시킴.
+    if (bOrbiting)
+    {
+        OrbitPivot += PanDelta;
+    }
 }
 
 void FViewportNavigationController::UpdateCameraRotation()
@@ -293,6 +382,7 @@ void FViewportNavigationController::UpdateCameraRotation()
     ViewportCamera->SetRotation(NewRotation);
 }
 
+//  ViewportCamera의 TargetLocation이 초기화되지 않은 경우, 현재 카메라 위치로 초기화.
 void FViewportNavigationController::EnsureTargetLocationInitialized()
 {
     if (ViewportCamera == nullptr)

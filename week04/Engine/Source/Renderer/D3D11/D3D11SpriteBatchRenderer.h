@@ -67,7 +67,7 @@ class FD3D11SpriteBatchRenderer
   private:
     static constexpr uint32         MaxVertexCount = 65536;
     static constexpr uint32         MaxIndexCount = 65536;
-    static constexpr const wchar_t* ShaderPath = L"../Engine/Resources/Shader/ShaderSprite.hlsl";
+    static constexpr const wchar_t* ShaderPath = L"Content\\Shader\\ShaderSprite.hlsl";
 
     FD3D11RHI* RHI = nullptr;
 

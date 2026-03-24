@@ -6,6 +6,14 @@
 
 namespace Engine::Component
 {
+    enum class EComponentAssetPathKind : uint8
+    {
+        Any,
+        FontFile,
+        TextureImage,
+        SceneFile
+    };
+
     enum class EComponentPropertyType : uint8
     {
         Bool,
@@ -22,6 +30,7 @@ namespace Engine::Component
         bool bExposeInDetails = true;
         bool bSerializeInScene = true;
         float DragSpeed = 0.1f;
+        EComponentAssetPathKind ExpectedAssetPathKind = EComponentAssetPathKind::Any;
     };
 
     struct FComponentPropertyDescriptor
@@ -32,6 +41,7 @@ namespace Engine::Component
         bool bExposeInDetails = true;
         bool bSerializeInScene = true;
         float DragSpeed = 0.1f;
+        EComponentAssetPathKind ExpectedAssetPathKind = EComponentAssetPathKind::Any;
 
         std::function<bool()> BoolGetter;
         std::function<void(bool)> BoolSetter;
@@ -171,6 +181,7 @@ namespace Engine::Component
             Descriptor.bExposeInDetails = Options.bExposeInDetails;
             Descriptor.bSerializeInScene = Options.bSerializeInScene;
             Descriptor.DragSpeed = Options.DragSpeed;
+            Descriptor.ExpectedAssetPathKind = Options.ExpectedAssetPathKind;
             Descriptor.StringGetter = std::move(Getter);
             Descriptor.StringSetter = std::move(Setter);
             Properties.push_back(std::move(Descriptor));

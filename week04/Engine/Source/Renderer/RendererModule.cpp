@@ -2,6 +2,48 @@
 #include "Renderer/Types/PickId.h"
 #include "Renderer/Types/PickResult.h"
 
+namespace
+{
+    bool ShouldRenderScenePrimitives(const FSceneRenderData& InSceneRenderData)
+    {
+        return InSceneRenderData.SceneView != nullptr &&
+            IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_Primitives);
+    }
+
+    bool ShouldRenderSelectionOutline(const FEditorRenderData& InEditorRenderData,
+                                      const FSceneRenderData&  InSceneRenderData)
+    {
+        return ShouldRenderScenePrimitives(InSceneRenderData) &&
+            IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_SelectionOutline) &&
+            InSceneRenderData.ViewMode != EViewModeIndex::VMI_Wireframe;
+    }
+
+    bool ShouldTintSelectedWireframe(const FEditorRenderData& InEditorRenderData,
+                                     const FSceneRenderData&  InSceneRenderData)
+    {
+        return ShouldRenderScenePrimitives(InSceneRenderData) &&
+            IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_SelectionOutline) &&
+            InSceneRenderData.ViewMode == EViewModeIndex::VMI_Wireframe;
+    }
+
+    TArray<FPrimitiveRenderItem> BuildWireframePrimitiveSubmission(
+        const FSceneRenderData& InSceneRenderData)
+    {
+        TArray<FPrimitiveRenderItem> SubmissionItems = InSceneRenderData.Primitives;
+        const FColor SelectionColor = FD3D11OutlineRenderer::GetVisibleOutlineColor();
+
+        for (FPrimitiveRenderItem& Item : SubmissionItems)
+        {
+            if (Item.State.IsSelected())
+            {
+                Item.Color = SelectionColor;
+            }
+        }
+
+        return SubmissionItems;
+    }
+} // namespace
+
 bool FRendererModule::StartupModule(HWND hWnd)
 {
     if (hWnd == nullptr)
@@ -16,6 +58,12 @@ bool FRendererModule::StartupModule(HWND hWnd)
     }
 
     if (!MeshRenderer.Initialize(&RHI))
+    {
+        ShutdownModule();
+        return false;
+    }
+
+    if (!OutlineRenderer.Initialize(&RHI))
     {
         ShutdownModule();
         return false;
@@ -64,6 +112,7 @@ void FRendererModule::ShutdownModule()
     SpriteRenderer.Shutdown();
     TextRenderer.Shutdown();
     LineRenderer.Shutdown();
+    OutlineRenderer.Shutdown();
     MeshRenderer.Shutdown();
 
 #if defined(_DEBUG)
@@ -106,20 +155,31 @@ void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
     CachedEditorRenderData = InEditorRenderData;
     CachedSceneRenderData = InSceneRenderData;
 
-    MeshRenderer.BeginFrame(InSceneRenderData.SceneView, InSceneRenderData.ViewMode,
-                            InSceneRenderData.bUseInstancing);
-
-    if (IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_Primitives))
+    if (ShouldRenderScenePrimitives(InSceneRenderData))
     {
-        PrimitiveSubmitter.Submit(MeshRenderer, InSceneRenderData);
+        MeshRenderer.BeginFrame(InSceneRenderData.SceneView, InSceneRenderData.ViewMode,
+                                InSceneRenderData.bUseInstancing);
+
+        if (ShouldTintSelectedWireframe(InEditorRenderData, InSceneRenderData))
+        {
+            const TArray<FPrimitiveRenderItem> WireframeItems =
+                BuildWireframePrimitiveSubmission(InSceneRenderData);
+            MeshRenderer.AddPrimitives(WireframeItems);
+        }
+        else
+        {
+            PrimitiveSubmitter.Submit(MeshRenderer, InSceneRenderData);
+        }
+
+        MeshRenderer.EndFrame();
     }
 
-    if (IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo))
+    if (ShouldRenderSelectionOutline(InEditorRenderData, InSceneRenderData))
     {
-        GizmoSubmitter.Submit(MeshRenderer, InEditorRenderData);
+        OutlineRenderer.BeginFrame(InSceneRenderData.SceneView);
+        OutlineRenderer.AddPrimitives(InSceneRenderData.Primitives);
+        OutlineRenderer.EndFrame();
     }
-
-    MeshRenderer.EndFrame();
 
     if (InSceneRenderData.SceneView != nullptr &&
         IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_Sprites))
@@ -135,6 +195,15 @@ void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
         TextRenderer.BeginFrame(InSceneRenderData.SceneView);
         TextSubmitter.Submit(TextRenderer, InSceneRenderData);
         TextRenderer.EndFrame(InSceneRenderData.SceneView);
+    }
+
+    if (InEditorRenderData.SceneView != nullptr &&
+        IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo))
+    {
+        MeshRenderer.BeginFrame(InEditorRenderData.SceneView, InSceneRenderData.ViewMode,
+                                InSceneRenderData.bUseInstancing);
+        GizmoSubmitter.Submit(MeshRenderer, InEditorRenderData);
+        MeshRenderer.EndFrame();
     }
 
     if (InEditorRenderData.SceneView != nullptr)

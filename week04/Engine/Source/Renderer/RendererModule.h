@@ -7,6 +7,7 @@
 #include "Renderer/D3D11/D3D11TextBatchRenderer.h"
 #include "Renderer/D3D11/D3D11LineBatchRenderer.h"
 #include "Renderer/D3D11/D3D11MeshBatchRenderer.h"
+#include "Renderer/D3D11/D3D11OutlineRenderer.h"
 #include "Renderer/D3D11/D3D11ObjectIdRenderer.h"
 #include "Renderer/D3D11/D3D11SpriteBatchRenderer.h"
 #include "Renderer/Submitter/AABBSubmitter.h"
@@ -46,6 +47,7 @@ class ENGINE_API FRendererModule
     FD3D11RHI RHI;
 
     FD3D11MeshBatchRenderer   MeshRenderer;
+    FD3D11OutlineRenderer     OutlineRenderer;
     FD3D11LineBatchRenderer   LineRenderer;
     FD3D11TextBatchRenderer   TextRenderer;
     FD3D11SpriteBatchRenderer SpriteRenderer;
