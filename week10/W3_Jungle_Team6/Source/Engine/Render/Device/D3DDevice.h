@@ -31,6 +31,7 @@ enum class ERasterizerState
 {
 	SolidBackCull,
 	SolidFrontCull,
+	SolidNoCull,
 	WireFrame,
 };
 
@@ -46,6 +47,7 @@ private:
 
 	ID3D11RasterizerState* RasterizerStateBackCull = nullptr;
 	ID3D11RasterizerState* RasterizerStateFrontCull = nullptr;
+	ID3D11RasterizerState* RasterizerStateNoCull = nullptr;
 	ID3D11RasterizerState* RasterizerStateWireFrame = nullptr;
 
 	ID3D11Texture2D* DepthStencilBuffer = nullptr;
