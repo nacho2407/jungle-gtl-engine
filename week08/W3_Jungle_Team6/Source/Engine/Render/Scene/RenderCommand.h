@@ -40,7 +40,7 @@ struct FFrameConstants
 	FMatrix View;          
 	FMatrix Projection;    
 	float bIsWireframe;
-	FVector ColorRGB;
+	FVector WireframeColor;
 };
 
 struct FGizmoConstants
