@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "PrimitiveComponent.h"
 #include "Core/ResourceTypes.h"
@@ -83,6 +83,9 @@ public:
 	// --- PrimitiveComponent 인터페이스 ---
 	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
 	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_Text;
+
+	//Collision
+	void UpdateWorldAABB() const override;
 
 private:
 	FString Text;

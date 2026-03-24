@@ -18,7 +18,7 @@ class USubUVComponent : public UPrimitiveComponent
 public:
 	DECLARE_CLASS(USubUVComponent, UPrimitiveComponent)
 
-	USubUVComponent() = default;
+	USubUVComponent();
 	~USubUVComponent() override = default;
 
 	// --- Particle Resource ---
@@ -47,6 +47,7 @@ public:
 	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
 	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_SubUV;
 
+	void UpdateWorldAABB() const override;
 protected:
 	void TickComponent(float DeltaTime) override;
 
