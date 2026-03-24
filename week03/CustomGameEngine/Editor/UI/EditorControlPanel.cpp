@@ -1,5 +1,10 @@
 ﻿#include "EditorControlPanel.h"
 
+#include "Component/BillboardSubUVComponent.h"
+
+#include <cstdlib>
+#include <ctime>
+
 static EPrimitiveType primitiveType = EPrimitiveType::Triangle;
 static int spawnCount = 0;
 static char sceneName[128] = "Default";
@@ -23,6 +28,19 @@ EditorControlPanel::~EditorControlPanel()
 
 namespace
 {
+	static FVector GetRandomSpawnLocation()
+	{
+		return FVector(
+			-10.0f + static_cast<float>(std::rand() % 21),
+			-10.0f + static_cast<float>(std::rand() % 21),
+			static_cast<float>(std::rand() % 11));
+	}
+
+	static float GetRandomSubUVPlaybackRate()
+	{
+		return 4.0f + static_cast<float>(std::rand() % 13);
+	}
+
 	static TArray<FString> GetSceneFileList(const FString& sceneDir)
 	{
 		TArray<FString> SceneList;
@@ -71,6 +89,13 @@ void UpdateFPS(float deltaTime)
 
 void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 {
+	static bool bSeeded = false;
+	if (!bSeeded)
+	{
+		std::srand(static_cast<unsigned int>(std::time(nullptr)));
+		bSeeded = true;
+	}
+
 	UpdateFPS(TimerManager::GetInstance().GetGlobalDeltaTime());
 
 	ImGui::Begin("Jungle Control Panel");
@@ -80,7 +105,7 @@ void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 		static_cast<int>(TimerManager::GetInstance().GetGlobalDeltaTime() * 1000));
 	ImGui::Separator();
 
-	if (ImGui::Combo("Primitive", (int*)&primitiveType, "Sphere\0Cube\0Triangle\0Plane\0"))
+	if (ImGui::Combo("Primitive", (int*)&primitiveType, "Sphere\0Cube\0Triangle\0Plane\0SubUV\0"))
 	{
 		// TODO: Change primitive type to spawn.
 	}
@@ -88,8 +113,19 @@ void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 	{
 		for (int i = 0; i < spawnCount; ++i)
 		{
-			// TODO: Apply primitive type to spawn
 			auto p = PrimitiveFactory::AddPrimitive(primitiveType);
+			if (p != nullptr)
+			{
+				p->SetRelativeLocation(GetRandomSpawnLocation());
+				if (primitiveType == EPrimitiveType::SubUV)
+				{
+					UBillboardSubUVComp* subUV = Cast<UBillboardSubUVComp>(p);
+					if (subUV != nullptr)
+					{
+						subUV->SetPlayback(GetRandomSubUVPlaybackRate(), true);
+					}
+				}
+			}
 		}
 	}
 	ImGui::SameLine();

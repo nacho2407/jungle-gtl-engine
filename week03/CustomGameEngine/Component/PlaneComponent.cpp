@@ -6,7 +6,7 @@ UPlaneComp::UPlaneComp()
 	type = EPrimitiveType::Plane;
 	ResourceManager* RM = ResourceManager::GetInstance();
 	VResource = &RM->GetGeometry("Plane");
-	CreateAABB();
+	UpdateAABB();
 }
 
 UPlaneComp::~UPlaneComp()

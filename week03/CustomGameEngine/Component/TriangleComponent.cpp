@@ -6,7 +6,7 @@ UTriangleComp::UTriangleComp()
 	type = EPrimitiveType::Triangle;
 	ResourceManager* RM = ResourceManager::GetInstance();
 	VResource = &RM->GetGeometry("Triangle");
-	CreateAABB();
+	UpdateAABB();
 }
 
 UTriangleComp::~UTriangleComp()

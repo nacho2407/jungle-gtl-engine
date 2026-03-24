@@ -15,6 +15,7 @@ enum EPrimitiveType
 	Cube,
 	Triangle,
 	Plane,
+	SubUV,
 	Axis
 };
 
@@ -42,7 +43,7 @@ public:
 	void MarkRenderStateDirty();
 	bool GetRenderStateDirty();
 	void ResolveRenderStateDirty();
-	void CreateAABB();
+	void UpdateAABB();
 	bool RayIntersects(const struct Ray& ray, float& OutDistance);
 
 	virtual json::JSON Serialize() override;

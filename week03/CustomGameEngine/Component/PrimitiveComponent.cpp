@@ -54,7 +54,7 @@ void UPrimitiveComponent::SetRelativeQuaternion(FQuat newQuat)
 
 void UPrimitiveComponent::OnComponentAdded()
 {
-	CreateAABB();
+	UpdateAABB();
 	auto RenderObj = CreateRenderObject();
 	if (RenderObj != nullptr && Scene != nullptr)
 		Scene->Level.RegisterRenderObject(RenderObj);
@@ -94,11 +94,11 @@ RenderObject* UPrimitiveComponent::GetRenderObject()
 
 void UPrimitiveComponent::DrawDebugLines()
 {
-	FVector Scale = GetRelativeScale3D();
-	FMatrix ScaleMatrix = FMatrix::ScaleMatrix(Scale.x, Scale.y, Scale.z);
-	FVector Location = GetRelativeLocation();
-	FMatrix LocationMatrix = FMatrix::TranslationMatrix(Location.x, Location.y, Location.z);
-	BoundingBox.RelativeMatrix = ScaleMatrix * LocationMatrix;
+	//FVector Scale = GetRelativeScale3D();
+	//FMatrix ScaleMatrix = FMatrix::ScaleMatrix(Scale.x, Scale.y, Scale.z);
+	//FVector Location = GetRelativeLocation();
+	//FMatrix LocationMatrix = FMatrix::TranslationMatrix(Location.x, Location.y, Location.z);
+	//BoundingBox.RelativeMatrix = ScaleMatrix * LocationMatrix;
 	FLineBatcher::GetInstance().AddAABB(BoundingBox, FColor(1.f, 0.f, 0.f));
 }
 
@@ -111,14 +111,23 @@ void UPrimitiveComponent::MarkRenderStateDirty()
 void UPrimitiveComponent::ResolveRenderStateDirty()
 {
 	UpdateRenderObject();
+	UpdateAABB();
 	RenderObj->bIsDirty = false;
 }
 
-void UPrimitiveComponent::CreateAABB()
+void UPrimitiveComponent::UpdateAABB()
 {
 	if (VResource == nullptr) return;
 
-	for (auto& vertex : VResource->Vertices)
+	BoundingBox.MinPos = FVector(FLT_MAX, FLT_MAX, FLT_MAX);
+	BoundingBox.MaxPos = FVector(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+	TArray<FVector> ChangedVertices;
+	for (const auto& vertex : VResource->Vertices)
+	{
+		ChangedVertices.push_back(GetRelativeMatrix().TransformPoint(vertex));
+	}
+	for (const auto& vertex : ChangedVertices)
 	{
 		BoundingBox.MinPos.x = (std::min)(vertex.x, BoundingBox.MinPos.x);
 		BoundingBox.MaxPos.x = (std::max)(vertex.x, BoundingBox.MaxPos.x);
@@ -131,12 +140,6 @@ void UPrimitiveComponent::CreateAABB()
 
 bool UPrimitiveComponent::RayIntersects(const Ray& ray, float& OutDistance)
 {
-	FVector Scale = GetRelativeScale3D();
-	FMatrix ScaleMatrix = FMatrix::ScaleMatrix(Scale.x, Scale.y, Scale.z);
-	FVector Location = GetRelativeLocation();
-	FMatrix LocationMatrix = FMatrix::TranslationMatrix(Location.x, Location.y, Location.z);
-	BoundingBox.RelativeMatrix = ScaleMatrix * LocationMatrix;
-
 	return BoundingBox.RayIntersects(ray, OutDistance);
 }
 

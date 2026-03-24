@@ -5,6 +5,7 @@
 #include "Component/SphereComponent.h"
 #include "Component/TriangleComponent.h"
 #include "Component/PlaneComponent.h"
+#include "Component/BillboardSubUVComponent.h"
 
 UPrimitiveComponent* PrimitiveFactory::AddPrimitive(EPrimitiveType type)
 {
@@ -28,6 +29,8 @@ UPrimitiveComponent* PrimitiveFactory::AddPrimitive(EPrimitiveType type)
 		return sceneMgr->AddSceneComponent<UTriangleComp>();
 	case EPrimitiveType::Plane:
 		return sceneMgr->AddSceneComponent<UPlaneComp>();
+	case EPrimitiveType::SubUV:
+		return sceneMgr->AddSceneComponent<UBillboardSubUVComp>();
 	}
 	return nullptr;
 }

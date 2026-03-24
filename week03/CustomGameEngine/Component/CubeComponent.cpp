@@ -6,7 +6,7 @@ UCubeComp::UCubeComp()
 	type = EPrimitiveType::Cube;
 	ResourceManager* RM = ResourceManager::GetInstance();
 	VResource = &RM->GetGeometry("Cube");
-	CreateAABB();
+	UpdateAABB();
 }
 
 UCubeComp::~UCubeComp()
