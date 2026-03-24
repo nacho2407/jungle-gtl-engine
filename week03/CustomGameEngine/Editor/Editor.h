@@ -28,6 +28,7 @@ class USceneComponent;
 class UCameraComponent;
 class URenderer;
 class UGridComp;
+class UBillboardTextComponent;
 
 class Editor
 {
@@ -74,6 +75,28 @@ public:
 	void SaveSettings();
 
 private:
+	/**
+	 * @brief 선택 대상에 연결된 billboard text component를 찾습니다.
+	 *
+	 * @param component 검색할 대상 scene component
+	 * @return 연결된 billboard text component, 없으면 nullptr
+	 */
+	UBillboardTextComponent* FindBillboardTextComponent(USceneComponent* component) const;
+
+	/**
+	 * @brief 선택된 scene component용 billboard text component를 생성하거나 재사용합니다.
+	 *
+	 * @param component 선택된 대상 scene component
+	 */
+	void EnsureBillboardTextForSelection(USceneComponent* component);
+
+	/**
+	 * @brief 선택 해제된 scene component용 billboard text component를 제거합니다.
+	 *
+	 * @param component 선택 해제된 대상 scene component
+	 */
+	void RemoveBillboardTextForSelection(USceneComponent* component);
+
 	void DrawDockSpace();
 	void SetupDefaultDockLayout(ImGuiID dockspaceID);
 	void DrawControlPanel();

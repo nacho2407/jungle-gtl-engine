@@ -2,6 +2,7 @@
 #include "Component/CameraComponent.h"
 #include "Component/AxisComponent.h"
 #include "Component/BillboardSubUVComponent.h"
+#include "Component/BillboardTextComponent.h"
 #include "Component/CubeComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Renderer/Renderer.h"
@@ -224,6 +225,18 @@ void EngineApp::Run()
 		}
 		GetWorld().DrawDebugLines();
 		Renderer->Render(LevelsToRender);
+		TArray<FBillboardTextDrawItem> BillboardTextItems;
+		if (UScene* ActiveScene = SceneMgr->GetActiveScene())
+		{
+			for (UBillboardTextComponent* BillboardText : ActiveScene->BillboardTextComponents)
+			{
+				if (BillboardText != nullptr)
+				{
+					BillboardText->AppendDrawItems(BillboardTextItems);
+				}
+			}
+		}
+		Renderer->RenderBillboardTextBatch(BillboardTextItems);
 		Renderer->BatchRenderDebugLine(FLineBatcher::GetInstance().GetLineVertices());
 		FLineBatcher::GetInstance().ClearLines();
 		EditorInst->DrawUI();

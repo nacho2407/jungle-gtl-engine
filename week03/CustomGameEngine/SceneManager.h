@@ -5,6 +5,7 @@
 #include "EngineCore/EngineTypes.h"//Fstring
 #include "EngineCore/Logger.h"
 #include "Renderer/Level.h"
+#include "Component/BillboardTextComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "EngineCore/ObjectFactory.h"
 #include "EngineCore/EngineStatics.h"
@@ -51,6 +52,10 @@ public:
 		instance->Scene = targetScene;
 
 		targetScene->SceneComponents.push_back(instance);
+		if (UBillboardTextComponent* BillboardText = Cast<UBillboardTextComponent>(instance))
+		{
+			targetScene->BillboardTextComponents.push_back(BillboardText);
+		}
 		instance->OnComponentAdded();
 		return instance;
 	}
@@ -69,8 +74,6 @@ public:
 
 	void RemoveSceneComponent(USceneComponent* toDespawn, UScene* targetScene= nullptr);
 
-
-private:
 	UWorld* OwnerWorld = nullptr;
 	UScene* ActiveScene = nullptr;
 	UScene* PermanentScene = nullptr;

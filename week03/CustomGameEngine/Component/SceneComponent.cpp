@@ -1,7 +1,4 @@
 ﻿#include "SceneComponent.h"
-#include "ImGui/imgui.h"
-#include "Editor/Editor.h"
-
 USceneComponent::USceneComponent()
 {
 	RelativeLocation = FVector(0.0f, 0.0f, 0.0f);
@@ -40,15 +37,6 @@ void USceneComponent::Deserialize(json::JSON jsonObj)
 	RelativeLocation.Deserialize(jsonObj["Location"]);
 	RelativeRotation.Deserialize(jsonObj["Rotation"]);
 	RelativeScale3D.Deserialize(jsonObj["Scale"]);
-}
-
-void USceneComponent::DrawProperties()
-{
-	FString DisplayName = Name.GetDisplayName();
-	ImGui::Text("Object Name : %s", DisplayName.c_str());
-	ImGui::InputFloat3("Location", &RelativeLocation.x);
-	ImGui::InputFloat3("Rotation", &RelativeRotation.Roll);
-	ImGui::InputFloat3("Scale", &RelativeScale3D.x);
 }
 
 bool USceneComponent::IsSelected() const

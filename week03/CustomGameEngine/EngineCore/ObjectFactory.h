@@ -13,9 +13,9 @@ public:
 	static void RegisterObjectType(const void* id, std::function<UObject* ()> func);
 
 private:
-	static TUMap<const void*, std::function<UObject* ()>>& GetRegistry()
+	static TMap<const void*, std::function<UObject* ()>>& GetRegistry()
 	{
-		static TUMap<const void*, std::function<UObject* ()>> registry;
+		static TMap<const void*, std::function<UObject* ()>> registry;
 		return registry;
 	}
 };

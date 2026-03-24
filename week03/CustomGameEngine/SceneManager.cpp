@@ -1,5 +1,7 @@
 ﻿#include "SceneManager.h"
 
+#include "Component/BillboardTextComponent.h"
+
 class UEngineStatics;
 
 SceneManager::SceneManager()
@@ -17,7 +19,6 @@ SceneManager::~SceneManager()
 	PermanentScene->SceneComponents.clear();
 	delete PermanentScene;
 }
-
 
 const TArray<UScene*>& SceneManager::GetLoadedScenes() const
 {
@@ -46,8 +47,7 @@ void SceneManager::SetPermanentScene(UScene* scene)
 
 UScene* SceneManager::NewScene()
 {
- 	UScene* newScene = Cast<UScene>(FObjectFactory::ConstructObject(UScene::GetClass()));
-	//newScene->Name = FName("NewScene_"); //+ std::to_string((int32)LoadedScenes.size())
+	UScene* newScene = Cast<UScene>(FObjectFactory::ConstructObject(UScene::GetClass()));
 	SetActiveScene(newScene);
 	LoadedScenes.push_back(newScene);
 
@@ -104,7 +104,6 @@ void SceneManager::UnloadScene(UScene* targetScene, bool bCreateReplacementScene
 		SetActiveScene(nextActiveScene);
 	}
 
-	// loop 내에서의 삽입/삭제로 인한 오류 방지
 	auto deleteList = sceneToUnload->SceneComponents;
 	for (auto* obj : deleteList)
 	{
@@ -129,11 +128,39 @@ void SceneManager::RemoveSceneComponent(USceneComponent* toDespawn, UScene* targ
 		return;
 	}
 
-	// Remove render object first
+	if (Cast<UBillboardTextComponent>(toDespawn) == nullptr)
+	{
+		TArray<USceneComponent*> LabelsToRemove;
+		for (UBillboardTextComponent* BillboardText : scene->BillboardTextComponents)
+		{
+			if (BillboardText != nullptr && BillboardText->GetAttachedComponent() == toDespawn)
+			{
+				LabelsToRemove.push_back(BillboardText);
+			}
+		}
+
+		for (USceneComponent* Label : LabelsToRemove)
+		{
+			RemoveSceneComponent(Label, scene);
+		}
+	}
+
 	auto primToDespawn = Cast<UPrimitiveComponent>(toDespawn);
 	if (primToDespawn != nullptr)
 	{
 		scene->Level.UnregisterRenderObject(primToDespawn->GetRenderObject());
+	}
+
+	if (UBillboardTextComponent* BillboardText = Cast<UBillboardTextComponent>(toDespawn))
+	{
+		for (auto it = scene->BillboardTextComponents.begin(); it != scene->BillboardTextComponents.end(); ++it)
+		{
+			if (*it == BillboardText)
+			{
+				scene->BillboardTextComponents.erase(it);
+				break;
+			}
+		}
 	}
 
 	for (auto it = scene->SceneComponents.begin(); it != scene->SceneComponents.end(); ++it)

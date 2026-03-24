@@ -15,10 +15,58 @@
 #include "Text/FontAsset.h"
 
 /**
+ * @brief Billboard 텍스트 배치 렌더링 시 한 번에 그릴 단위인 배치 그룹을 설명
+ */
+struct FBillboardTextBatchKey
+{
+	FFontAsset* FontAsset = nullptr;
+	FColor Color{};
+
+	bool operator<(const FBillboardTextBatchKey& Other) const
+	{
+		return std::tie(FontAsset, Color.r, Color.g, Color.b, Color.a)
+			< std::tie(Other.FontAsset, Other.Color.r, Other.Color.g, Other.Color.b, Other.Color.a);
+	}
+
+	// 해시 맵 사용을 위한 동등성 검사
+	bool operator==(const FBillboardTextBatchKey& Other) const
+	{
+		return FontAsset == Other.FontAsset
+			&& Color.r == Other.Color.r
+			&& Color.g == Other.Color.g
+			&& Color.b == Other.Color.b
+			&& Color.a == Other.Color.a;
+	}
+};
+
+/**
+ * @brief 해시 지원을 위한 functor
+ */
+struct FBillboardTextBatchKeyHash
+{
+	size_t operator()(const FBillboardTextBatchKey& Key) const
+	{
+		// (참고) Boost 라이브러리에서 자주 사용하는 패턴
+		size_t Seed = std::hash<FFontAsset*>{}(Key.FontAsset);
+		const auto HashCombine = [&Seed](size_t Value)
+		{
+			Seed ^= Value + 0x9e3779b9 + (Seed << 6) + (Seed >> 2);
+		};
+
+		HashCombine(std::hash<float>{}(Key.Color.r));
+		HashCombine(std::hash<float>{}(Key.Color.g));
+		HashCombine(std::hash<float>{}(Key.Color.b));
+		HashCombine(std::hash<float>{}(Key.Color.a));
+		return Seed;
+	}
+};
+
+/**
  * @brief 텍스트 Batch용 입력 구조체
  */
 struct FBillboardTextDrawItem
 {
+	FFontAsset* FontAsset = nullptr;
 	FString Text; // 실제 배치할 문자열 내용
 	FVector Anchor{}; // 텍스트 전체 배치의 시작 기준점
 	float Scale = 0.0f; // Glyph 크기 배율
@@ -96,11 +144,11 @@ public:
 	void RenderNormalObjects(TArray<RenderObject*>& NormalRenderObjects);
 	void DistributeRenderObjects(
 		const TArray<FLevel*>& Levels,
-		TMap<BatchKey, TArray<RenderObject*>>& BatchGroups,
+		TMap<BatchKey, TArray<RenderObject*>, FBatchKeyHash>& BatchGroups,
 		TArray<RenderObject*>& NormalRenderObjects,
 		TArray<RenderObject*>& NoDepthRenderObjects
 	);
-	void BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups);
+	void BatchRender(TMap<BatchKey, TArray<RenderObject*>, FBatchKeyHash>& BatchGroups);
 	void Render(const TArray<FLevel*>& Levels);
 	//void RenderGrid(ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader);
 	void BatchRenderDebugLine(const TArray<FVertexSimple>& Lines);
@@ -127,6 +175,13 @@ public:
 	 * @brief 폰트를 위한 dynamic vertex buffer를 해제합니다.
 	 */
 	void ReleaseDynamicFontVertexBuffer(void);
+
+	/**
+	 * @brief 빌보드 텍스트 draw item들을 배치 그룹별로 묶어 렌더링합니다.
+	 *
+	 * @param Items 이번 프레임에 렌더할 빌보드 텍스트 목록
+	 */
+	void RenderBillboardTextBatch(const TArray<FBillboardTextDrawItem>& Items);
 
 private:
 	UCameraComponent* renderCamera = nullptr;
@@ -155,4 +210,9 @@ private:
 	 * @param Vertices Draw할 정점 배열
 	 */
 	void DrawBillboardFontVertices(const TArray<FVertexFont>& Vertices);
+
+	/**
+	 * @brief 현재 렌더러 설정에 맞는 rasterizer state를 복원합니다.
+	 */
+	void RestoreCurrentRasterizerState() const;
 };

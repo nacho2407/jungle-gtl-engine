@@ -1,18 +1,17 @@
 ﻿#include "EditorSceneManagerPanel.h"
 
+#include "Component/BillboardTextComponent.h"
+
 EditorSceneManagerPanel::EditorSceneManagerPanel()
 {
-
 }
 
 EditorSceneManagerPanel::~EditorSceneManagerPanel()
 {
-
 }
 
 void EditorSceneManagerPanel::Draw(Editor* editor)
 {
-	//일단 매 프레임마다 씬을 가져옵니다. 씬이 바뀌는 경우 때문.
 	SceneManager* sceneMgr = GetWorld().GetSceneManager();
 	if (sceneMgr == nullptr)
 	{
@@ -72,16 +71,13 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 		{
 			for (USceneComponent* component : ActiveScene->SceneComponents)
 			{
-				if (component == nullptr) continue;
+				if (component == nullptr || Cast<UBillboardTextComponent>(component) != nullptr) continue;
 
 				bool isSelected = (editor->IsComponentSelected(component));
 				FString label = component->Name.GetDisplayName() + " (UUID: " + std::to_string(component->UUID) + ")";
 
-				//isSelected에 따라 선택된 컴포넌트는 다른 색으로 표시됩니다. 클릭 시 해당 컴포넌트를 선택합니다.
 				if (ImGui::Selectable(label.c_str(), isSelected))
 				{
-					//bool bIsCtrlDown = InputManager::GetInstance().IsKeyDown(VK_CONTROL);
-					//ImGUI에서 컨트롤 키 입력을 감지하는 방식이며 InputManager를 사용하면 작동하지 않습니다.
 					bool bIsCtrlDown = ImGui::GetIO().KeyCtrl;
 					if (!bIsCtrlDown)
 					{
@@ -102,7 +98,7 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 	{
 		for (USceneComponent* component : permanentScene->SceneComponents)
 		{
-			if (component == nullptr) continue;
+			if (component == nullptr || Cast<UBillboardTextComponent>(component) != nullptr) continue;
 
 			bool isSelected = editor->IsComponentSelected(component);
 			FString label = component->Name.GetDisplayName() + " (UUID: " + std::to_string(component->UUID) + ")";
