@@ -1,11 +1,13 @@
 #include "ContentBrowserPanel.h"
 
+#include "Content/ContentBrowserDragDrop.h"
 #include "Content/EditorContentIndex.h"
 #include "Editor/EditorContext.h"
 #include "imgui.h"
 
 #include <algorithm>
 #include <cctype>
+#include <cstring>
 
 namespace
 {
@@ -14,7 +16,7 @@ namespace
     constexpr float MinItemsPaneWidth = 220.0f;
     constexpr float SplitterWidth = 6.0f;
     constexpr float FolderTreeIndentSpacing = 4.0f;
-    constexpr const char* TypeFilterLabels[] = {"All", "Scene", "Texture", "Unknown"};
+    constexpr const char* TypeFilterLabels[] = { "All", "Scene", "Texture", "Font", "Unknown" };
 
     FString ToLowerAsciiCopy(const FString& Value)
     {
@@ -71,6 +73,8 @@ namespace
             return "Texture";
         case EContentBrowserItemType::Folder:
             return "Folder";
+        case EContentBrowserItemType::Font:
+            return "Font";
         case EContentBrowserItemType::UnknownFile:
         default:
             return "Unknown";
@@ -87,10 +91,46 @@ namespace
             return ImVec4(0.53f, 0.82f, 0.47f, 1.0f);
         case EContentBrowserItemType::Folder:
             return ImVec4(0.92f, 0.78f, 0.42f, 1.0f);
+        case EContentBrowserItemType::Font:
+            return ImVec4(1.f, 1.f, 1.f, 1.f);
         case EContentBrowserItemType::UnknownFile:
         default:
             return ImVec4(0.76f, 0.76f, 0.76f, 1.0f);
         }
+    }
+
+    template <size_t BufferSize>
+    void CopyUtf8StringToBuffer(const FString& Source, char (&Destination)[BufferSize])
+    {
+        static_assert(BufferSize > 0);
+        const size_t CopyLength = std::min(Source.size(), BufferSize - 1);
+        if (CopyLength > 0)
+        {
+            memcpy(Destination, Source.data(), CopyLength);
+        }
+        Destination[CopyLength] = '\0';
+    }
+
+    Engine::Component::EComponentAssetPathKind GetAssetPathKind(
+        const FContentBrowserItem& Item)
+    {
+        const FString Extension = ToLowerAsciiCopy(Item.Extension);
+        if (Extension == ".font")
+        {
+            return Engine::Component::EComponentAssetPathKind::FontFile;
+        }
+
+        if (Item.ItemType == EContentBrowserItemType::Texture)
+        {
+            return Engine::Component::EComponentAssetPathKind::TextureImage;
+        }
+
+        if (Item.ItemType == EContentBrowserItemType::Scene)
+        {
+            return Engine::Component::EComponentAssetPathKind::SceneFile;
+        }
+
+        return Engine::Component::EComponentAssetPathKind::Any;
     }
 } // namespace
 
@@ -426,6 +466,21 @@ void FContentBrowserPanel::DrawCurrentFolderView(FEditorContentIndex& ContentInd
             SelectedItemVirtualPath = FileItem->VirtualPath;
         }
 
+        if (ImGui::BeginDragDropSource())
+        {
+            Editor::Content::FContentBrowserAssetDragDropPayload Payload;
+            Payload.ItemType = FileItem->ItemType;
+            Payload.AssetKind = GetAssetPathKind(*FileItem);
+            CopyUtf8StringToBuffer(FileItem->VirtualPath, Payload.VirtualPath);
+            CopyUtf8StringToBuffer(PathToUtf8String(FileItem->AbsolutePath), Payload.AbsolutePath);
+
+            ImGui::SetDragDropPayload(Editor::Content::ContentBrowserAssetPayloadType, &Payload,
+                                      sizeof(Payload));
+            ImGui::TextUnformatted(FileItem->DisplayName.c_str());
+            ImGui::TextDisabled("%s", FileItem->VirtualPath.c_str());
+            ImGui::EndDragDropSource();
+        }
+
         ImGui::TableSetColumnIndex(1);
         ImGui::TextColored(GetItemTypeColor(FileItem->ItemType), "%s",
                            GetItemTypeLabel(FileItem->ItemType));
@@ -525,6 +580,8 @@ bool FContentBrowserPanel::PassesTypeFilter(EContentBrowserItemType ItemType) co
         return ItemType == EContentBrowserItemType::Scene;
     case EItemTypeFilter::Texture:
         return ItemType == EContentBrowserItemType::Texture;
+    case EItemTypeFilter::Font:
+        return ItemType == EContentBrowserItemType::Font;
     case EItemTypeFilter::UnknownFile:
         return ItemType == EContentBrowserItemType::UnknownFile;
     default:

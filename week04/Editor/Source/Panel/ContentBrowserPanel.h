@@ -27,6 +27,7 @@ class FContentBrowserPanel : public IPanel
         All = 0,
         Scene,
         Texture,
+        Font,
         UnknownFile
     };
 

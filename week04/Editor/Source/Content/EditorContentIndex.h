@@ -9,6 +9,7 @@ enum class EContentBrowserItemType : uint8
     Folder,
     Scene,
     Texture,
+    Font,
     UnknownFile
 };
 
