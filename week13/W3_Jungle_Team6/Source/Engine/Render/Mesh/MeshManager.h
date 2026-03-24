@@ -33,17 +33,12 @@ private:
 	static FMeshData RotationGizmoMeshData;
 	static FMeshData ScaleGizmoMeshData;
 	
-	static FMeshData MouseOverlayMeshData;
-
 	static void CreateCube();
 	static void CreatePlane();
 	static void CreateSphere(int slices = 20, int stacks = 20);
 	static void CreateTranslationGizmo();
 	static void CreateRotationGizmo();
 	static void CreateScaleGizmo();
-
-	static void CreateMouseOverlay();
-
 
 #if TEST
 
@@ -63,6 +58,5 @@ public:
 	static const FMeshData& GetRotationGizmo() { return Get().RotationGizmoMeshData; }
 	static const FMeshData& GetScaleGizmo() { return Get().ScaleGizmoMeshData; }
 
-	static const FMeshData& GetMouseOverlay() { return Get().MouseOverlayMeshData; }
 };
 

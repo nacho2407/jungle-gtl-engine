@@ -18,6 +18,7 @@ class FRenderBus
 public:
 	void Clear();
 	void AddCommand(ERenderPass Pass, const FRenderCommand& InCommand);
+	void AddCommand(ERenderPass Pass, FRenderCommand&& InCommand);
 	const TArray<FRenderCommand>& GetCommands(ERenderPass Pass) const;
 
 	// Getter,Setter
