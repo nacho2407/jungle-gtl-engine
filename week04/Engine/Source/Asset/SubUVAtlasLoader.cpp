@@ -8,7 +8,7 @@
 #include <objbase.h>
 #include <wincodec.h>
 
-#include "Renderer/D3D11/D3D11DynamicRHI.h"
+#include "Renderer/D3D11/D3D11RHI.h"
 #include "SubUVAtlasAsset.h"
 
 #pragma comment(lib, "ole32.lib")
@@ -160,7 +160,7 @@ namespace
     }
 }
 
-FSubUVAtlasLoader::FSubUVAtlasLoader(FD3D11DynamicRHI* InRHI)
+FSubUVAtlasLoader::FSubUVAtlasLoader(FD3D11RHI* InRHI)
     : RHI(InRHI)
 {
 }

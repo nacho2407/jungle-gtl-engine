@@ -7,12 +7,12 @@
 #include "Renderer/RenderAsset/SubUVAtlasResource.h"
 #include "ThirdParty/Json/json.hpp"
 
-class FD3D11DynamicRHI;
+class FD3D11RHI;
 
 class ENGINE_API FSubUVAtlasLoader : public IAssetLoader
 {
 public:
-    explicit FSubUVAtlasLoader(FD3D11DynamicRHI* InRHI);
+    explicit FSubUVAtlasLoader(FD3D11RHI* InRHI);
 
     bool       CanLoad(const FWString& Path, const FAssetLoadParams& Params) const override;
     EAssetType GetAssetType() const override;
@@ -46,7 +46,7 @@ private:
     FWString ResolveSiblingPath(const FWString& BaseFilePath, const FString& RelativePath) const;
 
 private:
-    FD3D11DynamicRHI* RHI = nullptr;
+    FD3D11RHI* RHI = nullptr;
 
     mutable FSourceCache AtlasSourceCache;
     mutable TMap<FString, std::shared_ptr<FDecodedAtlasImage>> DecodeCache;

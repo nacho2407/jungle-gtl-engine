@@ -96,8 +96,8 @@
     <ClInclude Include="Source\Engine\Game\CubeActor.h" />
     <ClInclude Include="Source\Engine\Game\UnknownActor.h" />
     <ClInclude Include="Source\Engine\Scene.h" />
-    <ClInclude Include="Source\Engine\SceneIO\SceneJson.h" />
     <ClInclude Include="Source\Engine\SceneIO\SceneAssetPath.h" />
+    <ClInclude Include="Source\Engine\SceneIO\SceneJson.h" />
     <ClInclude Include="Source\Engine\SceneIO\SceneSerializer.h" />
     <ClInclude Include="Source\Engine\SceneIO\SceneTypeRegistry.h" />
     <ClInclude Include="Source\Engine\ViewPort\Viewport.h" />

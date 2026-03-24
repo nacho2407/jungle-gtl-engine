@@ -156,6 +156,12 @@
     <ClCompile Include="Source\Asset\FontAtlasLoader.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Asset\SubUVAtlasAsset.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\SubUVAtlasLoader.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Asset\Texture2DAsset.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
@@ -318,10 +324,6 @@
     <ClCompile Include="Source\Renderer\Submitter\WorldGridSubmitter.cpp">
       <Filter>Source\Renderer\Submitter</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Asset\FontAsset.cpp" />
-    <ClCompile Include="Source\Asset\FontAtlasLoader.cpp" />
-    <ClCompile Include="Source\Asset\SubUVAtlasAsset.cpp" />
-    <ClCompile Include="Source\Asset\SubUVAtlasLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Mesh\Cone.h">
@@ -391,6 +393,12 @@
       <Filter>Source\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\FontAtlasLoader.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\SubUVAtlasAsset.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\SubUVAtlasLoader.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\Texture2DAsset.h">
@@ -573,10 +581,10 @@
     <ClInclude Include="Source\Engine\Scene.h">
       <Filter>Source\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\SceneIO\SceneJson.h">
+    <ClInclude Include="Source\Engine\SceneIO\SceneAssetPath.h">
       <Filter>Source\Engine\SceneIO</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\SceneIO\SceneAssetPath.h">
+    <ClInclude Include="Source\Engine\SceneIO\SceneJson.h">
       <Filter>Source\Engine\SceneIO</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\SceneIO\SceneSerializer.h">
@@ -622,6 +630,9 @@
       <Filter>Source\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\RenderAsset\FontResource.h">
+      <Filter>Source\Renderer\RenderAsset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\RenderAsset\SubUVAtlasResource.h">
       <Filter>Source\Renderer\RenderAsset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\RenderAsset\TextureResource.h">
@@ -693,11 +704,6 @@
     <ClInclude Include="Source\ThirdParty\Json\json.hpp">
       <Filter>Source\ThirdParty\Json</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Asset\FontAsset.h" />
-    <ClInclude Include="Source\Asset\FontAtlasLoader.h" />
-    <ClInclude Include="Source\Renderer\RenderAsset\SubUVAtlasResource.h" />
-    <ClInclude Include="Source\Asset\SubUVAtlasAsset.h" />
-    <ClInclude Include="Source\Asset\SubUVAtlasLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
