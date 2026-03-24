@@ -55,6 +55,9 @@ class FD3D11SpriteBatchRenderer
     bool CreateConstantBuffer();
     bool CreateStates();
     bool CreateBuffers();
+    bool CreateFallbackWhiteTexture();
+
+    ID3D11ShaderResourceView* ResolveSpriteSRV(const FTextureResource* InTextureResource) const;
 
     void            BeginBatch(const FSpriteBatchKey& InBatchKey);
     void            AppendSpriteItem(const FSpriteRenderItem& InItem);
@@ -86,6 +89,8 @@ class FD3D11SpriteBatchRenderer
     TComPtr<ID3D11Buffer>            DynamicVertexBuffer;
     TComPtr<ID3D11Buffer>            DynamicIndexBuffer;
     TComPtr<ID3D11SamplerState>      SamplerState;
+    TComPtr<ID3D11Texture2D>          FallbackWhiteTexture;
+    TComPtr<ID3D11ShaderResourceView> FallbackWhiteSRV;
     TComPtr<ID3D11BlendState>        AlphaBlendState;
     TComPtr<ID3D11DepthStencilState> DepthStencilState;
     TComPtr<ID3D11RasterizerState>   RasterizerState;

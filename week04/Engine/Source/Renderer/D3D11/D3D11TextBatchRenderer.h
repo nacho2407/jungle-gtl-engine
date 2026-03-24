@@ -89,6 +89,9 @@ class FD3D11TextBatchRenderer
     bool CreateConstantBuffer();
     bool CreateStates();
     bool CreateBuffers();
+    bool CreateFallbackWhiteTexture();
+
+    ID3D11ShaderResourceView* ResolveFontSRV(const FFontResource* InFontResource) const;
 
     FResolvedGlyph ResolveGlyph(const FFontResource& InFont, uint32 InCodePoint) const;
     float          GetMissingGlyphAdvance(const FFontResource& InFont, float InLineHeight,
@@ -105,6 +108,7 @@ class FD3D11TextBatchRenderer
 
     void          BeginBatch(const FTextBatchKey& InBatchKey);
     void          AppendTextItem(const FTextRenderItem& InItem);
+    void          AppendNullFontFallback(const FTextRenderItem& InItem);
     void          AppendTextItemNatural(const FTextRenderItem& InItem);
     void          AppendTextItemFitToBox(const FTextRenderItem& InItem);
     void          ProcessSortedItems();
@@ -133,6 +137,8 @@ class FD3D11TextBatchRenderer
     TComPtr<ID3D11Buffer>            DynamicVertexBuffer;
     TComPtr<ID3D11Buffer>            DynamicIndexBuffer;
     TComPtr<ID3D11SamplerState>      SamplerState;
+    TComPtr<ID3D11Texture2D>          FallbackWhiteTexture;
+    TComPtr<ID3D11ShaderResourceView> FallbackWhiteSRV;
     TComPtr<ID3D11BlendState>        AlphaBlendState;
     TComPtr<ID3D11DepthStencilState> DepthStencilState;
     TComPtr<ID3D11RasterizerState>   RasterizerState;

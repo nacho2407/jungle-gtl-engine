@@ -90,6 +90,12 @@ bool FD3D11TextBatchRenderer::Initialize(FD3D11RHI* InRHI)
         return false;
     }
 
+    if (!CreateFallbackWhiteTexture())
+    {
+        Shutdown();
+        return false;
+    }
+
     return true;
 }
 
@@ -99,6 +105,8 @@ void FD3D11TextBatchRenderer::Shutdown()
     DepthStencilState.Reset();
     AlphaBlendState.Reset();
     SamplerState.Reset();
+    FallbackWhiteSRV.Reset();
+    FallbackWhiteTexture.Reset();
 
     DynamicIndexBuffer.Reset();
     DynamicVertexBuffer.Reset();
@@ -138,12 +146,7 @@ void FD3D11TextBatchRenderer::AddText(const FTextRenderItem& InItem)
         return;
     }
 
-    if (!InItem.State.IsVisible() || InItem.FontResource == nullptr || InItem.Text.empty())
-    {
-        return;
-    }
-
-    if (InItem.FontResource->GetSRV() == nullptr)
+    if (!InItem.State.IsVisible() || InItem.Text.empty())
     {
         return;
     }
@@ -337,6 +340,12 @@ void FD3D11TextBatchRenderer::BeginBatch(const FTextBatchKey& InBatchKey)
 
 void FD3D11TextBatchRenderer::AppendTextItem(const FTextRenderItem& InItem)
 {
+    if (InItem.FontResource == nullptr)
+    {
+        AppendNullFontFallback(InItem);
+        return;
+    }
+
     switch (InItem.LayoutMode)
     {
     case ETextLayoutMode::FitToBox:
@@ -348,6 +357,60 @@ void FD3D11TextBatchRenderer::AppendTextItem(const FTextRenderItem& InItem)
         AppendTextItemNatural(InItem);
         break;
     }
+}
+
+void FD3D11TextBatchRenderer::AppendNullFontFallback(const FTextRenderItem& InItem)
+{
+    if (CurrentSceneView == nullptr)
+    {
+        return;
+    }
+
+    if (!CanAppendGlyphQuad())
+    {
+        Flush(CurrentSceneView);
+        BeginBatch(MakeBatchKey(InItem));
+    }
+
+    const FMatrix& PlacementWorld = InItem.Placement.World;
+    const FVector  Origin = PlacementWorld.GetOrigin() + InItem.Placement.WorldOffset;
+
+    FVector RightAxis;
+    FVector UpAxis;
+
+    if (InItem.Placement.IsBillboard())
+    {
+        const FMatrix CameraWorld = CurrentSceneView->GetViewMatrix().GetInverse();
+        RightAxis = CameraWorld.GetRightVector().GetSafeNormal();
+        UpAxis = CameraWorld.GetUpVector().GetSafeNormal();
+    }
+    else
+    {
+        RightAxis = PlacementWorld.GetRightVector().GetSafeNormal();
+        UpAxis = PlacementWorld.GetUpVector().GetSafeNormal();
+    }
+
+    float Width = 1.0f;
+    float Height = 1.0f;
+
+    if (InItem.LayoutMode == ETextLayoutMode::FitToBox)
+    {
+        const FVector WorldScale = PlacementWorld.GetScaleVector();
+        Width = std::max(WorldScale.X, 1.0f);
+        Height = std::max(WorldScale.Y, 1.0f);
+    }
+    else
+    {
+        const float FallbackExtent = std::max(InItem.TextScale, 1.0f);
+        Width = FallbackExtent;
+        Height = FallbackExtent;
+    }
+
+    const FVector QuadRight = RightAxis * Width;
+    const FVector QuadUp = UpAxis * Height;
+    const FVector BottomLeft = Origin - QuadRight * 0.5f - QuadUp * 0.5f;
+
+    AppendSolidColorQuad(BottomLeft, QuadRight, -QuadUp, RenderDebugColors::MissingGlyph);
 }
 
 void FD3D11TextBatchRenderer::AppendTextItemNatural(const FTextRenderItem& InItem)
@@ -551,8 +614,7 @@ void FD3D11TextBatchRenderer::EndFrame(const FSceneView* InSceneView)
 
 void FD3D11TextBatchRenderer::Flush(const FSceneView* InSceneView)
 {
-    if (RHI == nullptr || InSceneView == nullptr || CurrentFontResource == nullptr ||
-        Vertices.empty() || Indices.empty())
+    if (RHI == nullptr || InSceneView == nullptr || Vertices.empty() || Indices.empty())
     {
         Vertices.clear();
         Indices.clear();
@@ -595,7 +657,7 @@ void FD3D11TextBatchRenderer::Flush(const FSceneView* InSceneView)
     RHI->SetRasterizerState(RasterizerState.Get());
     RHI->SetDepthStencilState(DepthStencilState.Get(), 0);
     RHI->SetBlendState(AlphaBlendState.Get(), BlendFactor, 0xFFFFFFFFu);
-    RHI->SetPSShaderResource(0, CurrentFontResource->GetSRV());
+    RHI->SetPSShaderResource(0, ResolveFontSRV(CurrentFontResource));
     RHI->SetPSSampler(0, SamplerState.Get());
 
     RHI->DrawIndexed(static_cast<uint32>(Indices.size()), 0, 0);
@@ -695,6 +757,52 @@ void FD3D11TextBatchRenderer::AppendSolidColorQuad(const FVector& InBottomLeft,
     Indices.push_back(BaseVertex + 3);
 }
 
+
+
+ID3D11ShaderResourceView*
+FD3D11TextBatchRenderer::ResolveFontSRV(const FFontResource* InFontResource) const
+{
+    if (InFontResource != nullptr && InFontResource->GetSRV() != nullptr)
+    {
+        return InFontResource->GetSRV();
+    }
+
+    return FallbackWhiteSRV.Get();
+}
+
+bool FD3D11TextBatchRenderer::CreateFallbackWhiteTexture()
+{
+    if (RHI == nullptr || RHI->GetDevice() == nullptr)
+    {
+        return false;
+    }
+
+    ID3D11Device* Device = RHI->GetDevice();
+
+    const uint32 WhitePixel = 0xFFFFFFFFu;
+
+    D3D11_TEXTURE2D_DESC Desc = {};
+    Desc.Width = 1;
+    Desc.Height = 1;
+    Desc.MipLevels = 1;
+    Desc.ArraySize = 1;
+    Desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    Desc.SampleDesc.Count = 1;
+    Desc.Usage = D3D11_USAGE_IMMUTABLE;
+    Desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+    D3D11_SUBRESOURCE_DATA InitData = {};
+    InitData.pSysMem = &WhitePixel;
+    InitData.SysMemPitch = sizeof(uint32);
+
+    if (FAILED(Device->CreateTexture2D(&Desc, &InitData, FallbackWhiteTexture.GetAddressOf())))
+    {
+        return false;
+    }
+
+    return SUCCEEDED(Device->CreateShaderResourceView(FallbackWhiteTexture.Get(), nullptr,
+                                                      FallbackWhiteSRV.GetAddressOf()));
+}
 bool FD3D11TextBatchRenderer::CreateShaders()
 {
     if (RHI == nullptr)

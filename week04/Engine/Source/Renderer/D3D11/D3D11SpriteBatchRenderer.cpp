@@ -3,6 +3,7 @@
 #include "Renderer/D3D11/D3D11RHI.h"
 #include "Renderer/RenderAsset/TextureResource.h"
 #include "Renderer/SceneView.h"
+#include "Renderer/Types/RenderDebugColors.h"
 
 #include <algorithm>
 #include <functional>
@@ -88,6 +89,12 @@ bool FD3D11SpriteBatchRenderer::Initialize(FD3D11RHI* InRHI)
         return false;
     }
 
+    if (!CreateFallbackWhiteTexture())
+    {
+        Shutdown();
+        return false;
+    }
+
     return true;
 }
 
@@ -97,6 +104,8 @@ void FD3D11SpriteBatchRenderer::Shutdown()
     DepthStencilState.Reset();
     AlphaBlendState.Reset();
     SamplerState.Reset();
+    FallbackWhiteSRV.Reset();
+    FallbackWhiteTexture.Reset();
 
     DynamicIndexBuffer.Reset();
     DynamicVertexBuffer.Reset();
@@ -136,12 +145,7 @@ void FD3D11SpriteBatchRenderer::AddSprite(const FSpriteRenderItem& InItem)
         return;
     }
 
-    if (!InItem.State.IsVisible() || InItem.TextureResource == nullptr)
-    {
-        return;
-    }
-
-    if (InItem.TextureResource->GetSRV() == nullptr)
+    if (!InItem.State.IsVisible())
     {
         return;
     }
@@ -218,7 +222,7 @@ void FD3D11SpriteBatchRenderer::AppendQuad(const FVector& InBottomLeft, const FV
 
 void FD3D11SpriteBatchRenderer::AppendSpriteItem(const FSpriteRenderItem& InItem)
 {
-    if (CurrentSceneView == nullptr || InItem.TextureResource == nullptr)
+    if (CurrentSceneView == nullptr)
     {
         return;
     }
@@ -252,8 +256,12 @@ void FD3D11SpriteBatchRenderer::AppendSpriteItem(const FSpriteRenderItem& InItem
     }
 
     const FVector BottomLeft = SpriteOrigin - RightAxis - UpAxis;
-    AppendQuad(BottomLeft, RightAxis * 2.0f, UpAxis * 2.0f, InItem.UVMin, InItem.UVMax,
-               InItem.Color);
+    const bool bUseMissingResourceFallback = (InItem.TextureResource == nullptr);
+    const FVector2 UVMin = bUseMissingResourceFallback ? FVector2(0.0f, 0.0f) : InItem.UVMin;
+    const FVector2 UVMax = bUseMissingResourceFallback ? FVector2(1.0f, 1.0f) : InItem.UVMax;
+    const FColor QuadColor = bUseMissingResourceFallback ? RenderDebugColors::MissingGlyph
+                                                         : InItem.Color;
+    AppendQuad(BottomLeft, RightAxis * 2.0f, UpAxis * 2.0f, UVMin, UVMax, QuadColor);
 }
 
 void FD3D11SpriteBatchRenderer::ProcessSortedItems()
@@ -320,8 +328,7 @@ void FD3D11SpriteBatchRenderer::EndFrame(const FSceneView* InSceneView)
 
 void FD3D11SpriteBatchRenderer::Flush(const FSceneView* InSceneView)
 {
-    if (RHI == nullptr || InSceneView == nullptr || CurrentTextureResource == nullptr ||
-        Vertices.empty() || Indices.empty())
+    if (RHI == nullptr || InSceneView == nullptr || Vertices.empty() || Indices.empty())
     {
         Vertices.clear();
         Indices.clear();
@@ -373,7 +380,7 @@ void FD3D11SpriteBatchRenderer::Flush(const FSceneView* InSceneView)
     const float BlendFactor[4] = {0.f, 0.f, 0.f, 0.f};
     Context->OMSetBlendState(AlphaBlendState.Get(), BlendFactor, 0xFFFFFFFFu);
 
-    ID3D11ShaderResourceView* SRV = CurrentTextureResource->GetSRV();
+    ID3D11ShaderResourceView* SRV = ResolveSpriteSRV(CurrentTextureResource);
     Context->PSSetShaderResources(0, 1, &SRV);
 
     ID3D11SamplerState* Sampler = SamplerState.Get();
@@ -485,6 +492,52 @@ bool FD3D11SpriteBatchRenderer::CreateStates()
     return RHI->CreateRasterizerState(RasterizerDesc, RasterizerState.GetAddressOf());
 }
 
+
+
+ID3D11ShaderResourceView*
+FD3D11SpriteBatchRenderer::ResolveSpriteSRV(const FTextureResource* InTextureResource) const
+{
+    if (InTextureResource != nullptr && InTextureResource->GetSRV() != nullptr)
+    {
+        return InTextureResource->GetSRV();
+    }
+
+    return FallbackWhiteSRV.Get();
+}
+
+bool FD3D11SpriteBatchRenderer::CreateFallbackWhiteTexture()
+{
+    if (RHI == nullptr || RHI->GetDevice() == nullptr)
+    {
+        return false;
+    }
+
+    ID3D11Device* Device = RHI->GetDevice();
+
+    const uint32 WhitePixel = 0xFFFFFFFFu;
+
+    D3D11_TEXTURE2D_DESC Desc = {};
+    Desc.Width = 1;
+    Desc.Height = 1;
+    Desc.MipLevels = 1;
+    Desc.ArraySize = 1;
+    Desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    Desc.SampleDesc.Count = 1;
+    Desc.Usage = D3D11_USAGE_IMMUTABLE;
+    Desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+    D3D11_SUBRESOURCE_DATA InitData = {};
+    InitData.pSysMem = &WhitePixel;
+    InitData.SysMemPitch = sizeof(uint32);
+
+    if (FAILED(Device->CreateTexture2D(&Desc, &InitData, FallbackWhiteTexture.GetAddressOf())))
+    {
+        return false;
+    }
+
+    return SUCCEEDED(Device->CreateShaderResourceView(FallbackWhiteTexture.Get(), nullptr,
+                                                      FallbackWhiteSRV.GetAddressOf()));
+}
 bool FD3D11SpriteBatchRenderer::CreateBuffers()
 {
     if (RHI == nullptr || RHI->GetDevice() == nullptr)
