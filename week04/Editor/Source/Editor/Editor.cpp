@@ -8,6 +8,7 @@
 #include "Engine/Game/Actor.h"
 #include "Engine/SceneIO/SceneSerializer.h"
 #include "Panel/ConsolePanel.h"
+#include "Panel/ContentBrowserPanel.h"
 #include "Panel/ControlPanel.h"
 #include "Panel/OutlinerPanel.h"
 #include "Panel/PanelManager.h"
@@ -288,6 +289,8 @@ void FEditor::Create()
     
     //  TODO : Viewport Client
     EditorContext.Editor = this;
+    EditorContext.ContentIndex = &ContentIndex;
+    ContentIndex.Refresh();
 
     ViewportClient.Create();
     ViewportClient.SetEditorContext(&EditorContext);
@@ -307,6 +310,7 @@ void FEditor::Create()
             RegisterWindowPanelCommand(Descriptor);
         });
     PanelManager->RegisterPanelInstance<FConsolePanel>(&LogBuffer);
+    PanelManager->RegisterPanelType<FContentBrowserPanel>();
     PanelManager->RegisterPanelInstance<FControlPanel>();
     PanelManager->RegisterPanelInstance<FOutlinerPanel>();
     PanelManager->RegisterPanelInstance<FPropertiesPanel>();
@@ -340,6 +344,7 @@ void FEditor::Release()
     delete CurScene;
     CurScene = nullptr;
     EditorContext.Scene = nullptr;
+    EditorContext.ContentIndex = nullptr;
 
     MenuRegistry.Clear();
     ChromeHost = nullptr;
@@ -374,6 +379,7 @@ void FEditor::LoadEditorSettings()
     SettingsData.CameraMoveSpeed = ViewportClient.GetNavigationController().GetMoveSpeed();
     SettingsData.CameraRotationSpeed =
         ViewportClient.GetNavigationController().GetRotationSpeed();
+    SettingsData.ContentBrowserLeftPaneWidth = EditorContext.ContentBrowserLeftPaneWidth;
 
     FString ErrorMessage;
     const EEditorSettingsLoadResult LoadResult =
@@ -402,6 +408,8 @@ void FEditor::LoadEditorSettings()
     ViewportClient.GetNavigationController().SetMoveSpeed(SettingsData.CameraMoveSpeed);
     ViewportClient.GetNavigationController().SetRotationSpeed(
         SettingsData.CameraRotationSpeed);
+    EditorContext.ContentBrowserLeftPaneWidth =
+        std::max(SettingsData.ContentBrowserLeftPaneWidth, 120.0f);
 }
 
 void FEditor::SaveEditorSettings() const
@@ -412,6 +420,8 @@ void FEditor::SaveEditorSettings() const
         ViewportClient.GetNavigationController().GetMoveSpeed();
     SettingsData.CameraRotationSpeed =
         ViewportClient.GetNavigationController().GetRotationSpeed();
+    SettingsData.ContentBrowserLeftPaneWidth =
+        std::max(EditorContext.ContentBrowserLeftPaneWidth, 120.0f);
     PersistentSettings.Save(SettingsData);
 }
 
@@ -980,11 +990,24 @@ void FEditor::RegisterDefaultCommands()
 
     MenuRegistry.RegisterCommand(FEditorCommandDefinition{
         .CommandId = "tool.content_browser",
-        .Label = L"Content Browser (Not Ready)",
-        .CanExecute =
-            []()
+        .Label = L"Content Browser",
+        .Execute =
+            [this]()
             {
-                return false;
+                if (PanelManager == nullptr)
+                {
+                    return;
+                }
+
+                FPanelOpenRequest Request;
+                Request.PanelType = std::type_index(typeid(FContentBrowserPanel));
+                Request.OpenPolicy = EPanelOpenPolicy::FocusIfOpenElseCreate;
+                PanelManager->OpenPanel(Request);
+            },
+        .CanExecute =
+            [this]()
+            {
+                return PanelManager != nullptr;
             }});
 
     MenuRegistry.RegisterCommand(FEditorCommandDefinition{
@@ -1262,6 +1285,7 @@ void FEditor::BuildRenderData()
 
     EditorRenderData.SceneView = &SceneView;
     SceneRenderData.SceneView = &SceneView;
+    SceneRenderData.ViewMode = ViewportClient.GetRenderSetting().GetViewMode();
 
     ViewportClient.BuildRenderData(EditorRenderData);
 

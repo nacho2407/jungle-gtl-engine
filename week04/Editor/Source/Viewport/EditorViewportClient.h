@@ -4,6 +4,7 @@
 #include "Selection/ViewportSelectionController.h"
 #include "Gizmo/ViewportGizmoController.h"
 #include "Interaction/ViewportInteractionState.h"
+#include "RenderSetting/ViewportRenderSetting.h"
 #include "Engine/ViewPort/ViewportClient.h"
 #include "Input/NavigationInputContext.h"
 #include "Input/SelectionInputContext.h"
@@ -43,6 +44,8 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     FViewportSelectionController& GetSelectionController() { return SelectionController; }
     FViewportGizmoController& GetGizmoController() { return GizmoController; }
     FViewportInteractionState& GetInteractionState() { return InteractionState; }
+    FViewportRenderSetting& GetRenderSetting() { return RenderSetting; }
+    const FViewportRenderSetting& GetRenderSetting() const { return RenderSetting; }
 
     FViewportCamera& GetCamera() { return ViewportCamera; }
 
@@ -58,6 +61,7 @@ private:
     FViewportSelectionController SelectionController;
     FViewportGizmoController GizmoController;
     FViewportInteractionState InteractionState;
+    FViewportRenderSetting RenderSetting;
 
     FNavigationInputContext ViewportInputContext{&NavigationController};
     FSelectionInputContext SelectionInputContext{&SelectionController};
