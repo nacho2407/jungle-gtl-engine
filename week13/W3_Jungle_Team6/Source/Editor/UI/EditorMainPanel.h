@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Editor/UI/EditorConsoleWidget.h"
 #include "Editor/UI/EditorControlWidget.h"
@@ -20,6 +20,7 @@ public:
 	void Update();
 
 private:
+	FWindowsWindow* Window;
 	FEditorConsoleWidget ConsoleWidget;
 	FEditorControlWidget ControlWidget;
 	FEditorPropertyWidget PropertyWidget;

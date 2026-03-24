@@ -29,6 +29,9 @@ public:
 	// 에디터에 노출할 프로퍼티 목록 반환. 하위 클래스에서 override하여 속성 추가.
 	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps);
 
+	// 프로퍼티 값 변경 후 호출. 하위 클래스에서 override하여 부수효과(리소스 재로딩 등) 처리.
+	virtual void PostEditProperty(const char* PropertyName) {}
+
 protected:
 	virtual void TickComponent(float DeltaTime) {}
 
