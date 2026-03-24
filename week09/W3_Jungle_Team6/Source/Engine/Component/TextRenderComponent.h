@@ -35,7 +35,7 @@ class UTextRenderComponent : public UPrimitiveComponent
 public:
 	DECLARE_CLASS(UTextRenderComponent, UPrimitiveComponent)
 
-	UTextRenderComponent() = default;
+	UTextRenderComponent();
 	~UTextRenderComponent() override = default;
 
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
@@ -86,6 +86,10 @@ public:
 
 	//Collision
 	void UpdateWorldAABB() const override;
+
+	void TickComponent(float DeltaTime);
+
+	FMatrix CalculateOutlineMatrix() const;
 
 private:
 	FString Text;
