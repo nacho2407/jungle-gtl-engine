@@ -101,6 +101,26 @@ void FViewportSelectionController::SyncSelectionFromContext()
 
     if (!SelectedActors.empty())
     {
+        if (Context->SelectedObject != nullptr)
+        {
+            if (AActor* SelectedActorObject = Cast<AActor>(Context->SelectedObject))
+            {
+                if (IsSelected(SelectedActorObject))
+                {
+                    return;
+                }
+            }
+            else if (auto* SelectedComponent =
+                         Cast<Engine::Component::USceneComponent>(Context->SelectedObject))
+            {
+                if (SelectedComponent->GetOwnerActor() != nullptr &&
+                    IsSelected(SelectedComponent->GetOwnerActor()))
+                {
+                    return;
+                }
+            }
+        }
+
         Context->SelectedObject = SelectedActors.back();
         return;
     }
@@ -334,16 +354,39 @@ AActor* FViewportSelectionController::ResolveActorFromContextSelection() const
     }
 
     auto* SelectedComponent = Cast<Engine::Component::USceneComponent>(Context->SelectedObject);
-    if (SelectedComponent == nullptr || Actors == nullptr)
+    if (SelectedComponent == nullptr)
+    {
+        return nullptr;
+    }
+
+    if (SelectedComponent->GetOwnerActor() != nullptr)
+    {
+        return SelectedComponent->GetOwnerActor();
+    }
+
+    if (Actors == nullptr)
     {
         return nullptr;
     }
 
     for (AActor* Actor : *Actors)
     {
-        if (Actor != nullptr && Actor->GetRootComponent() == SelectedComponent)
+        if (Actor == nullptr)
+        {
+            continue;
+        }
+
+        if (Actor->GetRootComponent() == SelectedComponent)
         {
             return Actor;
+        }
+
+        for (Engine::Component::USceneComponent* Component : Actor->GetOwnedComponents())
+        {
+            if (Component == SelectedComponent)
+            {
+                return Actor;
+            }
         }
     }
 

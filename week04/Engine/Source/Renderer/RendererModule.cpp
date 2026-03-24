@@ -2,6 +2,25 @@
 #include "Renderer/Types/PickId.h"
 #include "Renderer/Types/PickResult.h"
 
+namespace
+{
+constexpr float SelectionOutlineScale = 1.06f;
+const FColor   SelectionOutlineColor = FColor(1.0f, 0.65f, 0.1f, 1.0f);
+
+bool HasSelectedVisiblePrimitive(const FSceneRenderData& InSceneRenderData)
+{
+    for (const FPrimitiveRenderItem& Primitive : InSceneRenderData.Primitives)
+    {
+        if (Primitive.State.IsVisible() && Primitive.State.IsSelected())
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+} // namespace
+
 bool FRendererModule::StartupModule(HWND hWnd)
 {
     if (hWnd == nullptr)
@@ -106,21 +125,34 @@ void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
     CachedEditorRenderData = InEditorRenderData;
     CachedSceneRenderData = InSceneRenderData;
 
-    // ================ Mesh =================
-    MeshRenderer.BeginFrame(InSceneRenderData.SceneView, InSceneRenderData.ViewMode,
-                            InSceneRenderData.bUseInstancing);
-
-    if (IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_Primitives))
+    // 선택 outline는 scene geometry 위에 올리고, gizmo/grid보다 먼저 그린다.
+    if (InSceneRenderData.SceneView != nullptr)
     {
-        PrimitiveDrawer.Draw(MeshRenderer, InSceneRenderData);
-    }
+        if (IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_Primitives))
+        {
+            MeshRenderer.BeginFrame(InSceneRenderData.SceneView, InSceneRenderData.ViewMode,
+                                    InSceneRenderData.bUseInstancing);
+            PrimitiveDrawer.Draw(MeshRenderer, InSceneRenderData);
+            MeshRenderer.EndFrame();
+        }
 
-    if (IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo))
-    {
-        GizmoDrawer.Draw(MeshRenderer, InEditorRenderData);
-    }
+        if (IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_SelectionOutline) &&
+            HasSelectedVisiblePrimitive(InSceneRenderData))
+        {
+            MeshRenderer.RenderOutlinePrimitives(InSceneRenderData.Primitives,
+                                                InSceneRenderData.SceneView,
+                                                InSceneRenderData.bUseInstancing,
+                                                SelectionOutlineColor, SelectionOutlineScale);
+        }
 
-    MeshRenderer.EndFrame();
+        if (IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo))
+        {
+            MeshRenderer.BeginFrame(InSceneRenderData.SceneView, InSceneRenderData.ViewMode,
+                                    InSceneRenderData.bUseInstancing);
+            GizmoDrawer.Draw(MeshRenderer, InEditorRenderData);
+            MeshRenderer.EndFrame();
+        }
+    }
 
     // ================ Sprite =================
     if (InSceneRenderData.SceneView != nullptr &&

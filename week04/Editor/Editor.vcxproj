@@ -96,6 +96,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
   <ItemGroup>
     <ClCompile Include="Source\Camera\ViewportCamera.cpp" />
     <ClCompile Include="Source\Chrome\EditorChrome.cpp" />
+    <ClCompile Include="Source\Content\EditorContentIndex.cpp" />
     <ClCompile Include="Source\Editor\Editor.cpp" />
     <ClCompile Include="Source\Editor\EditorContext.cpp" />
     <ClCompile Include="Source\Editor\EditorSettings.cpp" />
@@ -108,6 +109,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClCompile Include="Source\Launch\Launch.cpp" />
     <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\Panel\ConsolePanel.cpp" />
+    <ClCompile Include="Source\Panel\ContentBrowserPanel.cpp" />
     <ClCompile Include="Source\Panel\ControlPanel.cpp" />
     <ClCompile Include="Source\Panel\OutlinerPanel.cpp" />
     <ClCompile Include="Source\Panel\Panel.cpp" />
@@ -132,6 +134,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
   <ItemGroup>
     <ClInclude Include="Source\Camera\ViewportCamera.h" />
     <ClInclude Include="Source\Chrome\EditorChrome.h" />
+    <ClInclude Include="Source\Content\EditorContentIndex.h" />
     <ClInclude Include="Source\Editor\Editor.h" />
     <ClInclude Include="Source\Editor\EditorContext.h" />
     <ClInclude Include="Source\Editor\EditorSettings.h" />
@@ -148,6 +151,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClInclude Include="Source\Launch\Launch.h" />
     <ClInclude Include="Source\Menu\EditorMenuRegistry.h" />
     <ClInclude Include="Source\Panel\ConsolePanel.h" />
+    <ClInclude Include="Source\Panel\ContentBrowserPanel.h" />
     <ClInclude Include="Source\Panel\ControlPanel.h" />
     <ClInclude Include="Source\Panel\OutlinerPanel.h" />
     <ClInclude Include="Source\Panel\Panel.h" />

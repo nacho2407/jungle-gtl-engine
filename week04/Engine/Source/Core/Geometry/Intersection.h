@@ -111,7 +111,7 @@ namespace Geometry
     inline bool IntersectRayTriangle(const FRay&    Ray, const FVector& V0, const FVector& V1,
                                      const FVector& V2, float&          OutT)
     {
-        const float Epsilon = std::numeric_limits<float>::epsilon();
+	    constexpr float Epsilon = std::numeric_limits<float>::epsilon();
 
         const FVector Edge1 = V1 - V0;
         const FVector Edge2 = V2 - V0;

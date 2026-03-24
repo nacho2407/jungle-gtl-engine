@@ -19,6 +19,8 @@ namespace Engine::Component
         const FFontResource* GetFontResource() const { return FontResource; }
         FFontResource*       GetFontResource() { return FontResource; }
         void                 SetFontResource(FFontResource* InFontResource);
+        const FString&       GetFontPath() const { return FontPath; }
+        void                 SetFontPath(const FString& InFontPath);
 
         float GetTextScale() const { return TextScale; }
         void  SetTextScale(float InTextScale);
@@ -29,9 +31,17 @@ namespace Engine::Component
         float GetLineSpacing() const { return LineSpacing; }
         void  SetLineSpacing(float InLineSpacing);
 
+        bool GetBillboard() const { return bBillboard; }
+        void SetBillboard(bool bInBillboard);
+
+        const FVector& GetBillboardOffset() const { return BillboardOffset; }
+        void           SetBillboardOffset(const FVector& InBillboardOffset);
+        void           DescribeProperties(FComponentPropertyBuilder& Builder) override;
+
       protected:
         FString        Text;
         FFontResource* FontResource = nullptr;
+        FString        FontPath;
 
         float TextScale = 1.0f;
         float LetterSpacing = 0.0f;

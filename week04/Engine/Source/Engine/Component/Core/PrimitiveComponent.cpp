@@ -1,5 +1,6 @@
 #include "PrimitiveComponent.h"
 
+#include "ComponentProperty.h"
 #include "Core/Geometry/Primitives/AABBUtility.h"
 
 namespace Engine::Component
@@ -33,6 +34,14 @@ namespace Engine::Component
             UpdateBounds();
             bBoundsDirty = false;
         }
+    }
+
+    void UPrimitiveComponent::DescribeProperties(FComponentPropertyBuilder& Builder)
+    {
+        USceneComponent::DescribeProperties(Builder);
+        Builder.AddColor(
+            "color", L"Color", [this]() { return GetColor(); },
+            [this](const FColor& InColor) { SetColor(InColor); });
     }
 
     void UPrimitiveComponent::UpdateBounds()

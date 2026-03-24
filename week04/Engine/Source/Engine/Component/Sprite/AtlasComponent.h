@@ -17,6 +17,7 @@ namespace Engine::Component
         void SetAtlasRows(int32 InAtlasRows);
         void SetAtlasColumns(int32 InAtlasColumns);
         void SetAtlasGrid(int32 InAtlasRows, int32 InAtlasColumns);
+        void DescribeProperties(FComponentPropertyBuilder& Builder) override;
 
       protected:
         int32 AtlasRows = 1;

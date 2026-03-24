@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Chrome/EditorChrome.h"
+#include "Content/EditorContentIndex.h"
 #include "EditorContext.h"
 #include "EditorSettings.h"
 #include "Menu/EditorMenuRegistry.h"
@@ -123,6 +124,7 @@ class FEditor
     FEditorViewportClient ViewportClient;
     FEditorContext EditorContext;
     FEditorSettings PersistentSettings;
+    FEditorContentIndex ContentIndex;
     FPanelManager* PanelManager = nullptr;
     FEditorChrome EditorChrome;
     FEditorMenuRegistry MenuRegistry;

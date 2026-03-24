@@ -1,5 +1,7 @@
 #include "AnimatedSpriteComponent.h"
 
+#include "Engine/Component/Core/ComponentProperty.h"
+
 namespace Engine::Component
 {
     void UAnimatedSpriteComponent::SetLooping(bool bInLoop)
@@ -85,6 +87,27 @@ namespace Engine::Component
         }
 
         SetFrameIndex(ClampedStartFrame + RelativeFrame);
+    }
+
+    void UAnimatedSpriteComponent::DescribeProperties(FComponentPropertyBuilder& Builder)
+    {
+        USubUVComponent::DescribeProperties(Builder);
+
+        FComponentPropertyOptions IntOptions;
+        IntOptions.DragSpeed = 1.0f;
+
+        Builder.AddBool(
+            "looping", L"Looping", [this]() { return IsLooping(); },
+            [this](bool bInValue) { SetLooping(bInValue); });
+        Builder.AddFloat(
+            "play_rate", L"Play Rate", [this]() { return GetPlayRate(); },
+            [this](float InValue) { SetPlayRate(InValue); });
+        Builder.AddInt(
+            "start_frame", L"Start Frame", [this]() { return GetStartFrame(); },
+            [this](int32 InValue) { SetStartFrame(InValue); }, IntOptions);
+        Builder.AddInt(
+            "end_frame", L"End Frame", [this]() { return GetEndFrame(); },
+            [this](int32 InValue) { SetEndFrame(InValue); }, IntOptions);
     }
 
     REGISTER_CLASS(Engine::Component, UAnimatedSpriteComponent)
