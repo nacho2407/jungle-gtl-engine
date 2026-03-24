@@ -21,15 +21,16 @@ class FD3D11LineBatchRenderer
     void BeginFrame(const FSceneView* InSceneView);
     void AddLine(const FVector& InStart, const FVector& InEnd, const FColor& InColor);
     void EndFrame();
-    void Flush();
 
   private:
     bool CreateShaders();
     bool CreateConstantBuffer();
     bool CreateDynamicVertexBuffer(uint32 InMaxVertexCount);
+    bool CreateStates();
+    void Flush();
 
   private:
-    FD3D11RHI* RHI = nullptr;
+    FD3D11RHI*        RHI = nullptr;
     const FSceneView* CurrentSceneView = nullptr;
 
     TArray<FLineVertex> Vertices;
@@ -42,4 +43,7 @@ class FD3D11LineBatchRenderer
     TComPtr<ID3D11InputLayout>  InputLayout;
     TComPtr<ID3D11Buffer>       ConstantBuffer;
     TComPtr<ID3D11Buffer>       DynamicVertexBuffer;
+
+    TComPtr<ID3D11RasterizerState>   RasterizerState;
+    TComPtr<ID3D11DepthStencilState> DepthStencilState;
 };

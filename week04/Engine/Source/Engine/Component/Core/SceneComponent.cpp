@@ -60,6 +60,12 @@ namespace Engine::Component
         OnTransformChanged();
     }
 
+    void USceneComponent::SetRelativeTransform(const FVector& NewTransform)
+    {
+        WorldTransform.SetScale3D(NewTransform);
+        OnTransformChanged();
+    }
+
     void USceneComponent::SetOwnerActor(AActor* InOwnerActor)
     {
         OwnerActor = InOwnerActor;
@@ -150,6 +156,11 @@ namespace Engine::Component
     FMatrix USceneComponent::GetRelativeMatrix() const
     {
         return WorldTransform.ToMatrixWithScale();
+    }
+
+    FMatrix USceneComponent::GetRelativeMatrixNoScale() const
+    {
+        return WorldTransform.ToMatrixNoScale();
     }
 
     bool USceneComponent::IsSelected() const { return bIsSelected; }

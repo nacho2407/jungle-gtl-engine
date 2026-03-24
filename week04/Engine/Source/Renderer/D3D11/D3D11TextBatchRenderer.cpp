@@ -159,6 +159,162 @@ void FD3D11TextBatchRenderer::AddTexts(const TArray<FTextRenderItem>& InItems)
     }
 }
 
+FD3D11TextBatchRenderer::FResolvedGlyph
+FD3D11TextBatchRenderer::ResolveGlyph(const FFontResource& InFont, uint32 InCodePoint) const
+{
+    if (const FFontGlyph* Glyph = InFont.FindGlyph(InCodePoint))
+    {
+        if (Glyph->IsValid())
+        {
+            return {Glyph, EResolvedGlyphKind::Normal};
+        }
+    }
+
+    if (const FFontGlyph* QuestionGlyph = InFont.FindGlyph(static_cast<uint32>('?')))
+    {
+        if (QuestionGlyph->IsValid())
+        {
+            return {QuestionGlyph, EResolvedGlyphKind::QuestionFallback};
+        }
+    }
+
+    return {nullptr, EResolvedGlyphKind::Missing};
+}
+
+float FD3D11TextBatchRenderer::GetMissingGlyphAdvance(const FFontResource& InFont,
+                                                      float InLineHeight, float InScale) const
+{
+    if (const FFontGlyph* SpaceGlyph = InFont.FindGlyph(static_cast<uint32>(' ')))
+    {
+        if (SpaceGlyph->IsValid())
+        {
+            return static_cast<float>(SpaceGlyph->XAdvance) * InScale;
+        }
+    }
+
+    return InLineHeight * 0.5f * InScale;
+}
+
+FD3D11TextBatchRenderer::FTextLayout
+FD3D11TextBatchRenderer::BuildTextLayout(const FTextRenderItem& InItem) const
+{
+    FTextLayout Layout;
+
+    if (InItem.FontResource == nullptr || InItem.Text.empty())
+    {
+        return Layout;
+    }
+
+    const float RawLineHeight = (InItem.FontResource->Common.LineHeight > 0)
+                                    ? static_cast<float>(InItem.FontResource->Common.LineHeight)
+                                    : DefaultLineHeight;
+
+    const float UnitScale =
+        (RawLineHeight > 0.0f) ? (1.0f / RawLineHeight) : (1.0f / DefaultLineHeight);
+
+    const float Scale = (InItem.TextScale > 0.0f) ? (InItem.TextScale * UnitScale) : UnitScale;
+    const float LetterSpacing = InItem.LetterSpacing * UnitScale;
+    const float LineSpacing = InItem.LineSpacing * UnitScale;
+
+    const float MissingAdvance = GetMissingGlyphAdvance(*InItem.FontResource, RawLineHeight, Scale);
+    const float MissingWidth = MissingAdvance;
+    const float MissingHeight = RawLineHeight * Scale;
+
+    float PenX = 0.0f;
+    float PenY = 0.0f;
+    bool  bHasBounds = false;
+
+    for (char Ch : InItem.Text)
+    {
+        if (Ch == '\r')
+        {
+            continue;
+        }
+
+        if (Ch == '\n')
+        {
+            PenX = 0.0f;
+            PenY += RawLineHeight * Scale + LineSpacing;
+            continue;
+        }
+
+        if (Ch == ' ')
+        {
+            float SpaceAdvance = 0.0f;
+
+            if (const FFontGlyph* SpaceGlyph =
+                    InItem.FontResource->FindGlyph(static_cast<uint32>(' ')))
+            {
+                if (SpaceGlyph->IsValid())
+                {
+                    SpaceAdvance = static_cast<float>(SpaceGlyph->XAdvance) * Scale;
+                }
+            }
+
+            if (SpaceAdvance <= 0.0f)
+            {
+                SpaceAdvance = RawLineHeight * 0.25f * Scale; // 기존 0.5보다 더 보수적으로
+            }
+
+            PenX += SpaceAdvance; // 공백에는 LetterSpacing 미적용
+            continue;
+        }
+
+        const uint32         CodePoint = static_cast<uint8>(Ch);
+        const FResolvedGlyph Resolved = ResolveGlyph(*InItem.FontResource, CodePoint);
+
+        FLaidOutGlyph OutGlyph;
+
+        if (Resolved.Kind == EResolvedGlyphKind::Missing)
+        {
+            OutGlyph.Glyph = nullptr;
+            OutGlyph.bSolidColorQuad = true;
+            OutGlyph.SolidColor = RenderDebugColors::MissingGlyph;
+
+            OutGlyph.MinX = PenX;
+            OutGlyph.MinY = PenY;
+            OutGlyph.MaxX = PenX + MissingWidth;
+            OutGlyph.MaxY = PenY + MissingHeight;
+
+            PenX += MissingAdvance + LetterSpacing;
+        }
+        else
+        {
+            const FFontGlyph* Glyph = Resolved.Glyph;
+
+            OutGlyph.Glyph = Glyph;
+            OutGlyph.bSolidColorQuad = false;
+            OutGlyph.MinX = PenX + static_cast<float>(Glyph->XOffset) * Scale;
+            OutGlyph.MinY = PenY + static_cast<float>(Glyph->YOffset) * Scale;
+            OutGlyph.MaxX = OutGlyph.MinX + static_cast<float>(Glyph->Width) * Scale;
+            OutGlyph.MaxY = OutGlyph.MinY + static_cast<float>(Glyph->Height) * Scale;
+
+            PenX += Scale * static_cast<float>(Glyph->XAdvance);
+            PenX += LetterSpacing;
+        }
+
+        Layout.Glyphs.push_back(OutGlyph);
+
+        if (!bHasBounds)
+        {
+            Layout.MinX = OutGlyph.MinX;
+            Layout.MinY = OutGlyph.MinY;
+            Layout.MaxX = OutGlyph.MaxX;
+            Layout.MaxY = OutGlyph.MaxY;
+            bHasBounds = true;
+        }
+        else
+        {
+            Layout.MinX = std::min(Layout.MinX, OutGlyph.MinX);
+            Layout.MinY = std::min(Layout.MinY, OutGlyph.MinY);
+            Layout.MaxX = std::max(Layout.MaxX, OutGlyph.MaxX);
+            Layout.MaxY = std::max(Layout.MaxY, OutGlyph.MaxY);
+        }
+    }
+
+    return Layout;
+}
+
 FD3D11TextBatchRenderer::FTextBatchKey
 FD3D11TextBatchRenderer::MakeBatchKey(const FTextRenderItem& InItem) const
 {
@@ -181,17 +337,31 @@ void FD3D11TextBatchRenderer::BeginBatch(const FTextBatchKey& InBatchKey)
 
 void FD3D11TextBatchRenderer::AppendTextItem(const FTextRenderItem& InItem)
 {
+    switch (InItem.LayoutMode)
+    {
+    case ETextLayoutMode::FitToBox:
+        AppendTextItemFitToBox(InItem);
+        break;
+
+    case ETextLayoutMode::Natural:
+    default:
+        AppendTextItemNatural(InItem);
+        break;
+    }
+}
+
+void FD3D11TextBatchRenderer::AppendTextItemNatural(const FTextRenderItem& InItem)
+{
     if (CurrentSceneView == nullptr || InItem.FontResource == nullptr)
     {
         return;
     }
 
-    const float Scale = InItem.TextScale;
-    const float LetterSpacing = InItem.LetterSpacing;
-    const float LineSpacing = InItem.LineSpacing;
-    const float LineHeight = (InItem.FontResource->Common.LineHeight > 0)
-                                 ? static_cast<float>(InItem.FontResource->Common.LineHeight)
-                                 : DefaultLineHeight;
+    const FTextLayout Layout = BuildTextLayout(InItem);
+    if (!Layout.IsValid())
+    {
+        return;
+    }
 
     const FMatrix& PlacementWorld = InItem.Placement.World;
     const FVector  TextOrigin = PlacementWorld.GetOrigin() + InItem.Placement.WorldOffset;
@@ -202,63 +372,118 @@ void FD3D11TextBatchRenderer::AppendTextItem(const FTextRenderItem& InItem)
     if (InItem.Placement.IsBillboard())
     {
         const FMatrix CameraWorld = CurrentSceneView->GetViewMatrix().GetInverse();
-        RightAxis = CameraWorld.GetRightVector();
-        UpAxis = CameraWorld.GetUpVector();
+        RightAxis = CameraWorld.GetRightVector().GetSafeNormal();
+        UpAxis = CameraWorld.GetUpVector().GetSafeNormal();
     }
     else
     {
-        RightAxis = PlacementWorld.GetRightVector();
-        UpAxis = PlacementWorld.GetUpVector();
+        RightAxis = PlacementWorld.GetRightVector().GetSafeNormal();
+        UpAxis = PlacementWorld.GetUpVector().GetSafeNormal();
     }
 
-    float PenX = 0.0f;
-    float PenY = 0.0f;
+    const float CenterX = (Layout.MinX + Layout.MaxX) * 0.5f;
+    const float CenterY = (Layout.MinY + Layout.MaxY) * 0.5f;
 
-    for (char Ch : InItem.Text)
+    for (const FLaidOutGlyph& G : Layout.Glyphs)
     {
-        if (Ch == '\r')
-        {
-            continue;
-        }
-
-        if (Ch == '\n')
-        {
-            PenX = 0.0f;
-            PenY += (LineHeight + LineSpacing) * Scale;
-            continue;
-        }
-
-        const uint32      CodePoint = static_cast<uint8>(Ch);
-        const FFontGlyph* Glyph = InItem.FontResource->FindGlyph(CodePoint);
-        if (Glyph == nullptr)
-        {
-            PenX += Scale * (LineHeight * 0.5f + LetterSpacing);
-            continue;
-        }
-
-        if (!Glyph->IsValid())
-        {
-            PenX += Scale * (static_cast<float>(Glyph->XAdvance) + LetterSpacing);
-            continue;
-        }
-
         if (!CanAppendGlyphQuad())
         {
             Flush(CurrentSceneView);
             BeginBatch(MakeBatchKey(InItem));
         }
 
-        const float GlyphX = PenX + static_cast<float>(Glyph->XOffset) * Scale;
-        const float GlyphY = PenY + static_cast<float>(Glyph->YOffset) * Scale;
+        const float X0 = G.MinX - CenterX;
+        const float YBottom = G.MaxY - CenterY;
 
-        const FVector BottomLeft = TextOrigin + RightAxis * GlyphX - UpAxis * GlyphY;
-        const FVector GlyphRight = RightAxis * (static_cast<float>(Glyph->Width) * Scale);
-        const FVector GlyphUp = UpAxis * (static_cast<float>(Glyph->Height) * Scale);
+        const FVector BottomLeft = TextOrigin + RightAxis * X0 - UpAxis * YBottom;
+        const FVector GlyphRight = RightAxis * (G.MaxX - G.MinX);
+        const FVector GlyphUp = UpAxis * (G.MaxY - G.MinY);
 
-        AppendGlyphQuad(BottomLeft, GlyphRight, GlyphUp, *Glyph, *InItem.FontResource,
-                        InItem.Color);
+        if (G.bSolidColorQuad)
+        {
+            AppendSolidColorQuad(BottomLeft, GlyphRight, GlyphUp, G.SolidColor);
+        }
+        else if (G.Glyph != nullptr)
+        {
+            AppendGlyphQuad(BottomLeft, GlyphRight, GlyphUp, *G.Glyph, *InItem.FontResource,
+                            InItem.Color);
+        }
+    }
+}
 
-        PenX += Scale * (static_cast<float>(Glyph->XAdvance) + LetterSpacing);
+void FD3D11TextBatchRenderer::AppendTextItemFitToBox(const FTextRenderItem& InItem)
+{
+    if (CurrentSceneView == nullptr || InItem.FontResource == nullptr)
+    {
+        return;
+    }
+
+    const FTextLayout Layout = BuildTextLayout(InItem);
+    if (!Layout.IsValid())
+    {
+        return;
+    }
+
+    const FMatrix& PlacementWorld = InItem.Placement.World;
+    const FVector  TextOrigin = PlacementWorld.GetOrigin() + InItem.Placement.WorldOffset;
+    const FVector  WorldScale = PlacementWorld.GetScaleVector();
+
+    const float BoxWidth = std::max(WorldScale.X, 1.0f);
+    const float BoxHeight = std::max(WorldScale.Y, 1.0f);
+
+    const float LayoutWidth = Layout.GetWidth();
+    const float LayoutHeight = Layout.GetHeight();
+
+    const float UniformScale = std::min(BoxWidth / LayoutWidth, BoxHeight / LayoutHeight);
+
+    const float FinalWidth = LayoutWidth * UniformScale;
+    const float FinalHeight = LayoutHeight * UniformScale;
+
+    const float OffsetX = (BoxWidth - FinalWidth) * 0.5f;
+    const float OffsetY = (BoxHeight - FinalHeight) * 0.5f;
+
+    FVector RightAxis;
+    FVector UpAxis;
+
+    if (InItem.Placement.IsBillboard())
+    {
+        const FMatrix CameraWorld = CurrentSceneView->GetViewMatrix().GetInverse();
+        RightAxis = CameraWorld.GetRightVector().GetSafeNormal();
+        UpAxis = CameraWorld.GetUpVector().GetSafeNormal();
+    }
+    else
+    {
+        RightAxis = PlacementWorld.GetRightVector().GetSafeNormal();
+        UpAxis = PlacementWorld.GetUpVector().GetSafeNormal();
+    }
+
+    for (const FLaidOutGlyph& G : Layout.Glyphs)
+    {
+        if (!CanAppendGlyphQuad())
+        {
+            Flush(CurrentSceneView);
+            BeginBatch(MakeBatchKey(InItem));
+        }
+
+        const float X0 = OffsetX + (G.MinX - Layout.MinX) * UniformScale;
+        const float Y0 = OffsetY + (G.MinY - Layout.MinY) * UniformScale;
+
+        const float W = (G.MaxX - G.MinX) * UniformScale;
+        const float H = (G.MaxY - G.MinY) * UniformScale;
+
+        const FVector BottomLeft = TextOrigin + RightAxis * X0 - UpAxis * Y0;
+        const FVector GlyphRight = RightAxis * W;
+        const FVector GlyphUp = UpAxis * H;
+
+        if (G.bSolidColorQuad)
+        {
+            AppendSolidColorQuad(BottomLeft, GlyphRight, GlyphUp, G.SolidColor);
+        }
+        else if (G.Glyph != nullptr)
+        {
+            AppendGlyphQuad(BottomLeft, GlyphRight, GlyphUp, *G.Glyph, *InItem.FontResource,
+                            InItem.Color);
+        }
     }
 }
 
@@ -334,14 +559,6 @@ void FD3D11TextBatchRenderer::Flush(const FSceneView* InSceneView)
         return;
     }
 
-    ID3D11DeviceContext* Context = RHI->GetDeviceContext();
-    if (Context == nullptr)
-    {
-        Vertices.clear();
-        Indices.clear();
-        return;
-    }
-
     if (!RHI->UpdateDynamicBuffer(DynamicVertexBuffer.Get(), Vertices.data(),
                                   static_cast<uint32>(Vertices.size() * sizeof(FFontVertex))) ||
         !RHI->UpdateDynamicBuffer(DynamicIndexBuffer.Get(), Indices.data(),
@@ -363,8 +580,9 @@ void FD3D11TextBatchRenderer::Flush(const FSceneView* InSceneView)
         return;
     }
 
-    const UINT VertexStride = sizeof(FFontVertex);
-    const UINT VertexOffset = 0;
+    const uint32 VertexStride = sizeof(FFontVertex);
+    const uint32 VertexOffset = 0;
+    const float  BlendFactor[4] = {0.f, 0.f, 0.f, 0.f};
 
     RHI->SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     RHI->SetInputLayout(InputLayout.Get());
@@ -376,21 +594,14 @@ void FD3D11TextBatchRenderer::Flush(const FSceneView* InSceneView)
     RHI->SetIndexBuffer(DynamicIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
     RHI->SetRasterizerState(RasterizerState.Get());
     RHI->SetDepthStencilState(DepthStencilState.Get(), 0);
-
-    const float BlendFactor[4] = {0.f, 0.f, 0.f, 0.f};
-    Context->OMSetBlendState(AlphaBlendState.Get(), BlendFactor, 0xFFFFFFFFu);
-
-    ID3D11ShaderResourceView* SRV = CurrentFontResource->GetSRV();
-    Context->PSSetShaderResources(0, 1, &SRV);
-
-    ID3D11SamplerState* Sampler = SamplerState.Get();
-    Context->PSSetSamplers(0, 1, &Sampler);
+    RHI->SetBlendState(AlphaBlendState.Get(), BlendFactor, 0xFFFFFFFFu);
+    RHI->SetPSShaderResource(0, CurrentFontResource->GetSRV());
+    RHI->SetPSSampler(0, SamplerState.Get());
 
     RHI->DrawIndexed(static_cast<uint32>(Indices.size()), 0, 0);
 
-    ID3D11ShaderResourceView* NullSRV = nullptr;
-    Context->PSSetShaderResources(0, 1, &NullSRV);
-    Context->OMSetBlendState(nullptr, BlendFactor, 0xFFFFFFFFu);
+    RHI->ClearPSShaderResource(0);
+    RHI->ClearBlendState();
 
     Vertices.clear();
     Indices.clear();
@@ -428,6 +639,46 @@ void FD3D11TextBatchRenderer::AppendGlyphQuad(const FVector& InBottomLeft, const
     FFontVertex Vtx3;
     Vtx3.Position = InBottomLeft + InRight + InUp;
     Vtx3.UV = FVector2(U1, V0);
+    Vtx3.Color = InColor;
+
+    Vertices.push_back(Vtx0);
+    Vertices.push_back(Vtx1);
+    Vertices.push_back(Vtx2);
+    Vertices.push_back(Vtx3);
+
+    Indices.push_back(BaseVertex + 0);
+    Indices.push_back(BaseVertex + 1);
+    Indices.push_back(BaseVertex + 2);
+
+    Indices.push_back(BaseVertex + 2);
+    Indices.push_back(BaseVertex + 1);
+    Indices.push_back(BaseVertex + 3);
+}
+
+void FD3D11TextBatchRenderer::AppendSolidColorQuad(const FVector& InBottomLeft,
+                                                   const FVector& InRight, const FVector& InUp,
+                                                   const FColor& InColor)
+{
+    const uint32 BaseVertex = static_cast<uint32>(Vertices.size());
+
+    FFontVertex Vtx0;
+    Vtx0.Position = InBottomLeft;
+    Vtx0.UV = FVector2(0.0f, 0.0f);
+    Vtx0.Color = InColor;
+
+    FFontVertex Vtx1;
+    Vtx1.Position = InBottomLeft + InRight;
+    Vtx1.UV = FVector2(0.0f, 0.0f);
+    Vtx1.Color = InColor;
+
+    FFontVertex Vtx2;
+    Vtx2.Position = InBottomLeft - InUp;
+    Vtx2.UV = FVector2(0.0f, 0.0f);
+    Vtx2.Color = InColor;
+
+    FFontVertex Vtx3;
+    Vtx3.Position = InBottomLeft + InRight - InUp;
+    Vtx3.UV = FVector2(0.0f, 0.0f);
     Vtx3.Color = InColor;
 
     Vertices.push_back(Vtx0);
@@ -520,8 +771,8 @@ bool FD3D11TextBatchRenderer::CreateStates()
     }
 
     D3D11_DEPTH_STENCIL_DESC DepthDesc = {};
-    DepthDesc.DepthEnable = TRUE;
-    DepthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+    DepthDesc.DepthEnable = FALSE;
+    DepthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
     DepthDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 
     if (!RHI->CreateDepthStencilState(DepthDesc, DepthStencilState.GetAddressOf()))

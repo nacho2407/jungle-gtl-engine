@@ -36,7 +36,7 @@ class ENGINE_API AActor : public UObject
     virtual bool IsVisible() const { return true; }
     virtual bool IsSelected() const { return false; }
     virtual bool IsHovered() const { return false; }
-    
+
     //  Bound 보여주기
     virtual bool IsShowBounds() const { return RootComponent->IsShowBounds(); }
     virtual void SetShowBounds(bool bInShowBounds) { RootComponent->SetShowBounds(bInShowBounds); }
@@ -51,7 +51,7 @@ class ENGINE_API AActor : public UObject
   protected:
     Engine::Component::USceneComponent*         RootComponent = nullptr;
     TArray<Engine::Component::USceneComponent*> OwnedComponents;
-    Engine::Component::UAtlasComponent*          UUIDTextComponent = nullptr;
+    Engine::Component::UAtlasComponent*         UUIDTextComponent = nullptr;
 
     bool bPickable = true;
 };

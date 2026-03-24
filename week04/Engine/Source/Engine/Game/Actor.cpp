@@ -2,14 +2,24 @@
 #include "Engine/Component/Core/SceneComponent.h"
 
 #include <algorithm>
+#include <stdlib.h>
+#include <string>
 
 #include "Engine/Component/Text/AtlasTextComponent.h"
 
 AActor::AActor()
 {
     UUIDTextComponent = new Engine::Component::UAtlasTextComponent();
-    static_cast<Engine::Component::UAtlasTextComponent*>(UUIDTextComponent)->SetFontPath("Font\\Comic_Sans_MS\\Comic_Sans_MS.Font");
-    static_cast<Engine::Component::UAtlasTextComponent*>(UUIDTextComponent)->SetText("Test");
+    static_cast<Engine::Component::UAtlasTextComponent*>(UUIDTextComponent)
+        ->SetFontPath("Font\\Comic_Sans_MS\\Comic_Sans_MS.json");
+    static_cast<Engine::Component::UAtlasTextComponent*>(UUIDTextComponent)
+        ->SetText("UUID: " + std::to_string(UUID));
+
+    // TODO: Root의 위치값 반영
+    static_cast<Engine::Component::UAtlasTextComponent*>(UUIDTextComponent)
+        ->SetRelativeLocation(FVector(0.0f, 0.0f, 5.0f));
+    static_cast<Engine::Component::UAtlasTextComponent*>(UUIDTextComponent)
+        ->SetColor(FColor::Blue());
     AddOwnedComponent(UUIDTextComponent);
 }
 
@@ -48,7 +58,8 @@ void AActor::SetRootComponent(Engine::Component::USceneComponent* InRootComponen
     InRootComponent->DetachFromParent();
     RootComponent = InRootComponent;
 
-    const auto RootIterator = std::find(OwnedComponents.begin(), OwnedComponents.end(), RootComponent);
+    const auto RootIterator =
+        std::find(OwnedComponents.begin(), OwnedComponents.end(), RootComponent);
     if (RootIterator != OwnedComponents.end() && RootIterator != OwnedComponents.begin())
     {
         Engine::Component::USceneComponent* Root = *RootIterator;
@@ -58,7 +69,7 @@ void AActor::SetRootComponent(Engine::Component::USceneComponent* InRootComponen
 }
 
 void AActor::AddOwnedComponent(Engine::Component::USceneComponent* InComponent,
-                               bool bMakeRootComponent)
+                               bool                                bMakeRootComponent)
 {
     if (InComponent == nullptr)
     {

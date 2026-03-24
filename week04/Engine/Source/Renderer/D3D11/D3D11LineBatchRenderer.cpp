@@ -28,6 +28,12 @@ bool FD3D11LineBatchRenderer::Initialize(FD3D11RHI* InRHI)
         return false;
     }
 
+    if (!CreateStates())
+    {
+        Shutdown();
+        return false;
+    }
+
     if (!CreateDynamicVertexBuffer(MaxVertexCount))
     {
         Shutdown();
@@ -39,6 +45,9 @@ bool FD3D11LineBatchRenderer::Initialize(FD3D11RHI* InRHI)
 
 void FD3D11LineBatchRenderer::Shutdown()
 {
+    RasterizerState.Reset();
+    DepthStencilState.Reset();
+
     DynamicVertexBuffer.Reset();
     ConstantBuffer.Reset();
     InputLayout.Reset();
@@ -197,7 +206,39 @@ void FD3D11LineBatchRenderer::Flush()
 
     RHI->SetPixelShader(PixelShader.Get());
 
+    RHI->SetRasterizerState(RasterizerState.Get());
+    RHI->SetDepthStencilState(DepthStencilState.Get(), 0);
+
     RHI->Draw(static_cast<uint32>(Vertices.size()), 0);
 
     Vertices.clear();
+}
+
+bool FD3D11LineBatchRenderer::CreateStates()
+{
+    if (RHI == nullptr)
+    {
+        return false;
+    }
+
+    D3D11_DEPTH_STENCIL_DESC DepthDesc = {};
+    DepthDesc.DepthEnable = TRUE;
+    DepthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    DepthDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+    DepthDesc.StencilEnable = FALSE;
+
+    if (!RHI->CreateDepthStencilState(DepthDesc, DepthStencilState.GetAddressOf()))
+    {
+        return false;
+    }
+
+    D3D11_RASTERIZER_DESC RasterizerDesc = {};
+    RasterizerDesc.FillMode = D3D11_FILL_SOLID;
+    RasterizerDesc.CullMode = D3D11_CULL_NONE;
+    RasterizerDesc.DepthClipEnable = TRUE;
+    RasterizerDesc.ScissorEnable = FALSE;
+    RasterizerDesc.MultisampleEnable = FALSE;
+    RasterizerDesc.AntialiasedLineEnable = FALSE;
+
+    return RHI->CreateRasterizerState(RasterizerDesc, RasterizerState.GetAddressOf());
 }

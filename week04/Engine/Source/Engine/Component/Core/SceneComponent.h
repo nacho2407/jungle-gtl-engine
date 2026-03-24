@@ -21,8 +21,10 @@ namespace Engine::Component
     public:
         FVector GetRelativeLocation() const { return WorldTransform.GetLocation(); }
         FRotator GetRelativeRotation() const { return WorldTransform.Rotator(); }
-        FVector GetRelativeScale3D() const { return WorldTransform.GetScale3D(); }
-        FQuat GetRelativeQuaternion() const { return WorldTransform.GetRotation(); }
+        FVector  GetRelativeScale3D() const { return WorldTransform.GetScale3D(); }
+        FQuat    GetRelativeQuaternion() const { return WorldTransform.GetRotation(); }
+        FTransform GetRelativeTransform() const { return WorldTransform; }
+
         AActor* GetOwnerActor() const { return OwnerActor; }
         USceneComponent* GetAttachParent() const { return AttachParent; }
         const TArray<USceneComponent*>& GetAttachChildren() const { return AttachChildren; }
@@ -31,6 +33,8 @@ namespace Engine::Component
         virtual void SetRelativeRotation(const FQuat& NewRotation);
         virtual void SetRelativeRotation(const FRotator& NewRotation);
         virtual void SetRelativeScale3D(const FVector& NewScale);
+        virtual void SetRelativeTransform(const FVector& NewTransform);
+
         void         SetOwnerActor(AActor* InOwnerActor);
         void         AttachToComponent(USceneComponent* InParent);
         void         DetachFromParent();
@@ -40,6 +44,7 @@ namespace Engine::Component
         virtual void ResolveAssetReferences(UAssetManager* InAssetManager);
 
         FMatrix GetRelativeMatrix() const;
+        FMatrix GetRelativeMatrixNoScale() const;
 
         bool IsSelected() const;
         void SetSelected(bool bInSelected);

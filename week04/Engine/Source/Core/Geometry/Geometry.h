@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Geometry/Primitives/AABB.h"
-#include "Geometry/Primitives/Ray.h"
-#include "Geometry/Primitives/Segment.h"
-#include "Geometry/Primitives/Triangle.h"
-#include "Geometry/Intersection.h"
+#include "Core/Geometry/Primitives/AABB.h"
+#include "Core/Geometry/Primitives/Ray.h"
+#include "Core/Geometry/Primitives/Segment.h"
+#include "Core/Geometry/Primitives/Triangle.h"
+#include "Core/Geometry/Intersection.h"

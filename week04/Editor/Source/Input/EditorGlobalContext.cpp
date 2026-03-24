@@ -54,6 +54,8 @@ bool FEditorGlobalContext::HandleEvent(const Engine::ApplicationCore::FInputEven
         return false;
     }
 
+    
+
     if (!Controller->CanDeleteSelectedActors())
     {
         return false;

@@ -488,6 +488,8 @@ void FD3D11MeshBatchRenderer::FlushInternal(EMeshDrawPath DrawPath, const FScene
         BindSolidRasterizer();
     }
 
+    RHI->SetDepthStencilState(DepthStencilState.Get(), 0);
+
     UpdatePerFrameConstants(InSceneView, DrawPath);
 
     for (int32 Index = 0; Index < static_cast<int32>(EBasicMeshType::Count); ++Index)
