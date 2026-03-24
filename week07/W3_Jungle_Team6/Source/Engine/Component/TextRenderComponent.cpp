@@ -14,6 +14,11 @@ void UTextRenderComponent::SetFont(const FName& InFontName)
 	CachedFont = FResourceManager::Get().FindFont(FontName);
 }
 
+void UTextRenderComponent::UpdateWorldAABB() const
+{
+
+}
+
 FString UTextRenderComponent::GetOwnerUUIDToString() const
 {
 	AActor* OwnerActor = GetOwner();
