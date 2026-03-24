@@ -1,11 +1,5 @@
 ﻿#include "RenderBus.h"
 
-#if DEBUG
-
-#include <iostream>
-
-#endif
-
 void FRenderBus::Clear()
 {
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)

@@ -24,6 +24,7 @@ enum class ERenderCommandType
 	SelectionOutline,
 	Billboard,
 	DebugBox,
+	Grid,		// Grid 패스 — LineBatcher 경유
 	Font,		// TextRenderComponent — FontBatcher 경유
 	SubUV,		// SubUVComponent     — SubUVBatcher 경유
 };
@@ -89,6 +90,13 @@ struct FAABBConstants
 	FColor Color;
 };
 
+struct FGridConstants
+{
+	float GridSpacing;
+	int32 GridHalfLineCount;
+	float Padding0[2];
+};
+
 struct FRenderCommand
 {
 	//	VB, IB 모두 담고 있는 MB
@@ -103,6 +111,7 @@ struct FRenderCommand
 		FOverlayConstants Overlay;
 		FOutlineConstants Outline;
 		FAABBConstants AABB;
+		FGridConstants Grid;
 	} Constants;
 
 	// Font / SubUV 전용 데이터
