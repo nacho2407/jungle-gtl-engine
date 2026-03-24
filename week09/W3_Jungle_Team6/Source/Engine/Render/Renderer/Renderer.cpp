@@ -139,7 +139,7 @@ void FRenderer::InitializePassRenderStates()
 	S[(uint32)E::Opaque]      = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, true  };
 	S[(uint32)E::Translucent] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, false };
 	S[(uint32)E::StencilMask] = { EDepthStencilState::StencilWrite,  EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, false };
-	S[(uint32)E::Outline]     = { EDepthStencilState::StencilOutline,EBlendState::Opaque,    ERasterizerState::SolidFrontCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.OutlineShader,   false };
+	S[(uint32)E::Outline]     = { EDepthStencilState::StencilOutline,EBlendState::Opaque,    ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.OutlineShader,   false };
 	S[(uint32)E::Editor]      = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     &Resources.EditorShader,    true  };
 	S[(uint32)E::Grid]        = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     &Resources.EditorShader,    true  };
 	S[(uint32)E::DepthLess]   = { EDepthStencilState::DepthReadOnly,EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.GizmoShader,     false };
@@ -199,6 +199,7 @@ void FRenderer::InitializePassBatchers()
 					Cmd.PerObjectConstants.Model.GetLocation(),
 					Bus.GetCameraRight(),
 					Bus.GetCameraUp(),
+					Cmd.PerObjectConstants.Model.GetScale(),
 					Cmd.Constants.Font.Scale
 				);
 			}
@@ -229,6 +230,7 @@ void FRenderer::InitializePassBatchers()
 					Cmd.PerObjectConstants.Model.GetLocation(),
 					Bus.GetCameraRight(),
 					Bus.GetCameraUp(),
+					Cmd.PerObjectConstants.Model.GetScale(),
 					SubUV.FrameIndex,
 					SubUV.Particle->Columns,
 					SubUV.Particle->Rows,
