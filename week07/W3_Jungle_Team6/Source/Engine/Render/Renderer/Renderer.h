@@ -52,14 +52,13 @@ public:
 	void Release();
 
 	void BeginFrame();
-	void Render(const FRenderBus& InRenderBus, ERasterizerState InViewModeRasterizer = ERasterizerState::SolidBackCull);
-	void RenderOverlay(const FRenderBus& InRenderBus);	//	반드시 따로 호출해야 함
+	void Render(const FRenderBus& InRenderBus);
 	void EndFrame();
 
 	void RenderPasses(const FRenderBus& InRenderBus, ID3D11DeviceContext* Context);
 	
 	void RenderEditorHelpers(const FRenderBus& InRenderBus, ID3D11DeviceContext* Context);
-	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix, bool bIsWireframe);
+	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus);
 
 	void CollectBatchingData(const FRenderBus& RenderBus);
 
