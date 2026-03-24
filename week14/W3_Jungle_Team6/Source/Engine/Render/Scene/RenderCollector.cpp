@@ -59,7 +59,11 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderColl
 {
 	for (UPrimitiveComponent* primitiveComponent : Actor->GetPrimitiveComponents())
 	{
-		// MeshBuffer가 없는 Batcher 처리 타입은 아웃라인 렌더에서 제외
+		FRenderCommand BaseCmd{};
+		BaseCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
+		BaseCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
+		FVector WorldScale = primitiveComponent->GetWorldScale();
+
 		EPrimitiveType PrimType = primitiveComponent->GetPrimitiveType();
 		if (PrimType == EPrimitiveType::EPT_Text)
 		{
@@ -70,7 +74,11 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderColl
 			const FString& Text = TextComp->GetText();
 			if (Text.empty()) return;
 
-			FRenderCommand TextCmd{};
+			FMatrix outlineMatrix = TextComp->CalculateOutlineMatrix();
+			WorldScale = outlineMatrix.GetScale();
+
+			FRenderCommand TextCmd = BaseCmd;
+			BaseCmd.PerObjectConstants.Model = outlineMatrix;
 			TextCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
 			TextCmd.Type = ERenderCommandType::Font;
 			TextCmd.PerObjectConstants.Color = TextComp->GetColor();
@@ -80,12 +88,9 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderColl
 			TextCmd.BlendState = EBlendState::AlphaBlend;
 			TextCmd.DepthStencilState = EDepthStencilState::Default;
 			RenderBus.AddCommand(ERenderPass::Font, TextCmd);
-			continue;
 		}
 
-		FRenderCommand BaseCmd{};
-		BaseCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
-		BaseCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
+
 
 		// StencilBuffer Mask
 		FRenderCommand MaskCmd = BaseCmd;
@@ -99,8 +104,8 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderColl
 		OutlineCmd.Type = ERenderCommandType::SelectionOutline;
 		OutlineCmd.DepthStencilState = EDepthStencilState::StencilOutline;
 		OutlineCmd.Constants.Outline.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
-		OutlineCmd.Constants.Outline.OutlineInvScale = FVector(1.0f / primitiveComponent->GetRelativeScale().X,
-			1.0f / primitiveComponent->GetRelativeScale().Y, 1.0f / primitiveComponent->GetRelativeScale().Z);
+		OutlineCmd.Constants.Outline.OutlineInvScale = FVector(1.0f / WorldScale.X,
+				1.0f / WorldScale.Y, 1.0f / WorldScale.Z);
 		OutlineCmd.Constants.Outline.OutlineOffset = 0.03f;
 
 		if (Context.ViewMode == EViewMode::Wireframe)
@@ -108,7 +113,9 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderColl
 			OutlineCmd.PerObjectConstants.Color = FColor(255, 153, 0, 255).ToVector4();
 		}
 		CollectAABBCommand(primitiveComponent, RenderBus);
-		OutlineCmd.Constants.Outline.PrimitiveType = (PrimType == EPrimitiveType::EPT_Plane) ? 0u : 1u;
+		OutlineCmd.Constants.Outline.PrimitiveType = (PrimType == EPrimitiveType::EPT_Plane || 
+													PrimType == EPrimitiveType::EPT_SubUV || 
+													PrimType == EPrimitiveType::EPT_Text) ? 0u : 1u;
 		RenderBus.AddCommand(ERenderPass::Outline, OutlineCmd);
 	}
 }
