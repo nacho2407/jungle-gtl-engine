@@ -44,6 +44,15 @@ void FRenderCollector::CollectSelection(const TArray<AActor*>& SelectedActors, c
 	}
 }
 
+void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus)
+{
+	FRenderCommand Cmd = {};
+	Cmd.Type = ERenderCommandType::Grid;
+	Cmd.Constants.Grid.GridSpacing = GridSpacing;
+	Cmd.Constants.Grid.GridHalfLineCount = GridHalfLineCount;
+	RenderBus.AddCommand(ERenderPass::Grid, Cmd);
+}
+
 void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
 {
 	if (ShowFlags.bGizmo == false) return;
@@ -126,17 +135,17 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 	{
 		// MeshBuffer가 없는 Batcher 처리 타입은 아웃라인 렌더에서 제외
 		EPrimitiveType PrimType = primitiveComponent->GetPrimitiveType();
-		if (primitiveComponent->IsA<USubUVComponent>()) return;
+		if (primitiveComponent->IsA<USubUVComponent>()) continue;
 		if (!primitiveComponent->IsVisible()) continue;
 
 		if (PrimType == EPrimitiveType::EPT_Text)
 		{
-			if (ShowFlags.bBillboardText == false) return;
+			if (ShowFlags.bBillboardText == false) continue;
 			UTextRenderComponent* TextComp = static_cast<UTextRenderComponent*>(primitiveComponent);
 			const FFontResource* Font = TextComp->GetFont();
-			if (!Font || !Font->IsLoaded()) return;
+			if (!Font || !Font->IsLoaded()) continue;
 			const FString& Text = TextComp->GetText();
-			if (Text.empty()) return;
+			if (Text.empty()) continue;
 
 			FRenderCommand TextCmd{};
 			TextCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
