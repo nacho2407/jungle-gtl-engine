@@ -97,7 +97,7 @@ private:
 	IGizmoControlStrategy* RotationStrategy = nullptr;
 	IGizmoControlStrategy* ScaleStrategy = nullptr;
 
-	float BaseScale = 0.07f;
+	float BaseScale = 0.12f;
 
 	bool bDrawEnabled = false;
 };

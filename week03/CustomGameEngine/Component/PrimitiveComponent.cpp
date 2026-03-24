@@ -58,6 +58,7 @@ void UPrimitiveComponent::SetRelativeQuaternion(FQuat newQuat)
 
 void UPrimitiveComponent::OnComponentAdded()
 {
+	CreateAABB();
 	auto RenderObj = CreateRenderObject();
 	if (RenderObj != nullptr && Scene != nullptr)
 		Scene->Level.RegisterRenderObject(RenderObj);
@@ -123,13 +124,24 @@ void UPrimitiveComponent::CreateAABB()
 
 	for (auto& vertex : VResource->Vertices)
 	{
-		BoundingBox.MinPos.x = vertex.x < BoundingBox.MinPos.x ? vertex.x : BoundingBox.MinPos.x;
-		BoundingBox.MaxPos.x = vertex.x > BoundingBox.MaxPos.x ? vertex.x : BoundingBox.MaxPos.x;
-		BoundingBox.MinPos.y = vertex.y < BoundingBox.MinPos.y ? vertex.y : BoundingBox.MinPos.y;
-		BoundingBox.MaxPos.y = vertex.y > BoundingBox.MaxPos.y ? vertex.y : BoundingBox.MaxPos.y;
-		BoundingBox.MinPos.z = vertex.z < BoundingBox.MinPos.z ? vertex.z : BoundingBox.MinPos.z;
-		BoundingBox.MaxPos.z = vertex.z > BoundingBox.MaxPos.z ? vertex.z : BoundingBox.MaxPos.z;
+		BoundingBox.MinPos.x = (std::min)(vertex.x, BoundingBox.MinPos.x);
+		BoundingBox.MaxPos.x = (std::max)(vertex.x, BoundingBox.MaxPos.x);
+		BoundingBox.MinPos.y = (std::min)(vertex.y, BoundingBox.MinPos.y);
+		BoundingBox.MaxPos.y = (std::max)(vertex.y, BoundingBox.MaxPos.y);
+		BoundingBox.MinPos.z = (std::min)(vertex.z, BoundingBox.MinPos.z);
+		BoundingBox.MaxPos.z = (std::max)(vertex.z, BoundingBox.MaxPos.z);
 	}
+}
+
+bool UPrimitiveComponent::RayIntersects(const Ray& ray, float& OutDistance)
+{
+	FVector Scale = GetRelativeScale3D();
+	FMatrix ScaleMatrix = FMatrix::ScaleMatrix(Scale.x, Scale.y, Scale.z);
+	FVector Location = GetRelativeLocation();
+	FMatrix LocationMatrix = FMatrix::TranslationMatrix(Location.x, Location.y, Location.z);
+	BoundingBox.RelativeMatrix = ScaleMatrix * LocationMatrix;
+
+	return BoundingBox.RayIntersects(ray, OutDistance);
 }
 
 json::JSON UPrimitiveComponent::Serialize()

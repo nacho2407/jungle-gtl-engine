@@ -1,4 +1,5 @@
 ﻿#include "Ray.h"
+#include "Component/PrimitiveComponent.h"
 #include "Renderer/Geometry.h"
 #include "Math/Vector4.h"
 
