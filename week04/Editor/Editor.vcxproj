@@ -102,7 +102,6 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClCompile Include="Source\Editor\EditorSettings.cpp" />
     <ClCompile Include="Source\Editor\Logging\EditorLogBuffer.cpp" />
     <ClCompile Include="Source\Input\EditorGlobalContext.cpp" />
-    <ClCompile Include="Source\Viewport\Global\EditorGlobalController.cpp" />
     <ClCompile Include="Source\Input\GizmoInputContext.cpp" />
     <ClCompile Include="Source\Input\NavigationInputContext.cpp" />
     <ClCompile Include="Source\Input\SelectionInputContext.cpp" />
@@ -127,6 +126,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClCompile Include="Source\Viewport\EditorViewport.cpp" />
     <ClCompile Include="Source\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Viewport\Gizmo\ViewportGizmoController.cpp" />
+    <ClCompile Include="Source\Viewport\Global\EditorGlobalController.cpp" />
     <ClCompile Include="Source\Viewport\Interaction\ViewportInteractionState.cpp" />
     <ClCompile Include="Source\Viewport\Navigation\ViewportNavigationController.cpp" />
     <ClCompile Include="Source\Viewport\RenderSetting\ViewportRenderSetting.cpp" />
@@ -146,7 +146,6 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClInclude Include="Source\Gizmo\GizmoDrawDataBuilder.h" />
     <ClInclude Include="Source\Input\ContextModeTypes.h" />
     <ClInclude Include="Source\Input\EditorGlobalContext.h" />
-    <ClInclude Include="Source\Viewport\Global\EditorGlobalController.h" />
     <ClInclude Include="Source\Input\GizmoInputContext.h" />
     <ClInclude Include="Source\Input\NavigationInputContext.h" />
     <ClInclude Include="Source\Input\SelectionInputContext.h" />
@@ -172,6 +171,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClInclude Include="Source\Viewport\EditorViewport.h" />
     <ClInclude Include="Source\Viewport\EditorViewportClient.h" />
     <ClInclude Include="Source\Viewport\Gizmo\ViewportGizmoController.h" />
+    <ClInclude Include="Source\Viewport\Global\EditorGlobalController.h" />
     <ClInclude Include="Source\Viewport\Interaction\ViewportInteractionState.h" />
     <ClInclude Include="Source\Viewport\Navigation\ViewportNavigationController.h" />
     <ClInclude Include="Source\Viewport\RenderSetting\ViewportRenderSetting.h" />

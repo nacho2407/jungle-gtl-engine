@@ -2,12 +2,11 @@
 
 #include "Core/Math/Color.h"
 #include "Renderer/EditorRenderData.h"
-#include "Renderer/SceneRenderData.h"
 #include "Renderer/Types/AxisColors.h"
 #include "Renderer/Types/ViewMode.h"
+#include "Renderer/Types/RenderItem.h"
 
 class FD3D11MeshBatchRenderer;
-struct FObjectIdRenderItem;
 
 struct FGizmoStyle
 {
@@ -28,9 +27,6 @@ class FGizmoSubmitter
 {
   public:
     void Submit(FD3D11MeshBatchRenderer& InMeshRenderer, const FEditorRenderData& InEditorRenderData);
-
-    void BuildObjectIdItems(TArray<FObjectIdRenderItem>& OutItems,
-                                  const FEditorRenderData&     InEditorRenderData) const;
 
   public:
     EViewModeIndex ViewMode = EViewModeIndex::VMI_Unlit;

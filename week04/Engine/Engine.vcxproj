@@ -127,6 +127,7 @@
     <ClInclude Include="Source\Renderer\SceneRenderData.h" />
     <ClInclude Include="Source\Renderer\SceneView.h" />
     <ClInclude Include="Source\Renderer\Submitter\AABBSubmitter.h" />
+    <ClInclude Include="Source\Renderer\Submitter\GizmoObjectIdSubmitter.h" />
     <ClInclude Include="Source\Renderer\Submitter\GizmoSubmitter.h" />
     <ClInclude Include="Source\Renderer\Submitter\PrimitiveSubmitter.h" />
     <ClInclude Include="Source\Renderer\Submitter\SpriteSubmitter.h" />
@@ -137,8 +138,10 @@
     <ClInclude Include="Source\Renderer\Types\BasicMeshType.h" />
     <ClInclude Include="Source\Renderer\Types\EditorShowFlags.h" />
     <ClInclude Include="Source\Renderer\Types\MeshInstanceData.h" />
+    <ClInclude Include="Source\Renderer\Types\ObjectIdRenderItem.h" />
     <ClInclude Include="Source\Renderer\Types\PickId.h" />
     <ClInclude Include="Source\Renderer\Types\PickResult.h" />
+    <ClInclude Include="Source\Renderer\Types\RenderDebugColors.h" />
     <ClInclude Include="Source\Renderer\Types\RenderItem.h" />
     <ClInclude Include="Source\Renderer\Types\SceneShowFlags.h" />
     <ClInclude Include="Source\Renderer\Types\ShaderConstants.h" />
@@ -225,6 +228,7 @@
     <ClCompile Include="Source\Renderer\D3D11\D3D11TextBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\RendererModule.cpp" />
     <ClCompile Include="Source\Renderer\Submitter\AABBSubmitter.cpp" />
+    <ClCompile Include="Source\Renderer\Submitter\GizmoObjectIdSubmitter.cpp" />
     <ClCompile Include="Source\Renderer\Submitter\GizmoSubmitter.cpp" />
     <ClCompile Include="Source\Renderer\Submitter\PrimitiveSubmitter.cpp" />
     <ClCompile Include="Source\Renderer\Submitter\SpriteSubmitter.cpp" />

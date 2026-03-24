@@ -150,8 +150,7 @@ bool FD3D11ObjectIdRenderer::RenderAndReadBack(uint32& OutPickId)
         return false;
     }
 
-    ID3D11DeviceContext* Context = RHI->GetDeviceContext();
-    if (Context == nullptr || PickRTV == nullptr || PickDSV == nullptr)
+    if (RHI->GetDeviceContext() == nullptr || PickRTV == nullptr || PickDSV == nullptr)
     {
         RenderItems.clear();
         CurrentSceneView = nullptr;
@@ -159,14 +158,12 @@ bool FD3D11ObjectIdRenderer::RenderAndReadBack(uint32& OutPickId)
     }
 
     ID3D11RenderTargetView* RTV = PickRTV.Get();
-    Context->OMSetRenderTargets(1, &RTV, PickDSV.Get());
-
-    const D3D11_VIEWPORT Viewport = RHI->GetViewport();
-    Context->RSSetViewports(1, &Viewport);
+    RHI->SetRenderTargets(1, &RTV, PickDSV.Get());
+    RHI->SetViewport(RHI->GetViewport());
 
     static const float ClearColor[4] = {0, 0, 0, 0};
-    Context->ClearRenderTargetView(PickRTV.Get(), ClearColor);
-    Context->ClearDepthStencilView(PickDSV.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    RHI->ClearRenderTarget(PickRTV.Get(), ClearColor);
+    RHI->ClearDepthStencil(PickDSV.Get(), 1.0f, 0);
 
     BindPipeline();
 
