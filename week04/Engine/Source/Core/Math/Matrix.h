@@ -3,6 +3,8 @@
 #include "Vector.h"
 #include "Vector4.h"
 
+struct Vector4;
+
 enum class EAxis : uint8_t
 {
     X,

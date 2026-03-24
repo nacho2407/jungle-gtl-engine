@@ -10,15 +10,6 @@
     <Filter Include="Resources\Mesh">
       <UniqueIdentifier>{611fd08d-c5f2-636f-d61c-0405906a469d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Resources\Scene">
-      <UniqueIdentifier>{6f21998c-ad3f-4295-5a94-62d9702a0e9b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Resources\Shader">
-      <UniqueIdentifier>{d32ca5c8-c821-11f5-dfa1-d5050d286dcf}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Resources\Texture">
-      <UniqueIdentifier>{a2187649-a844-6073-73c0-7c7d7cb99990}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\ApplicationCore">
       <UniqueIdentifier>{57812f21-7fc5-e713-3694-11639c1953c0}</UniqueIdentifier>
     </Filter>

@@ -9,7 +9,7 @@ namespace Engine::ApplicationCore
     class ENGINE_API IInputContext
     {
       public:
-        constexpr IInputContext() = default;
+        IInputContext() = default;
         virtual ~IInputContext() = default;
 
         virtual int  GetPriority() const = 0;

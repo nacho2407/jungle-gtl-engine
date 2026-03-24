@@ -46,9 +46,9 @@ class FViewportSelectionController : public Engine::Viewport::IViewportControlle
       OutEndY = SelectionCurrentY;
   }
 
-  private:
-    Geometry::FRay BuildPickRay(int32 MouseX, int32 MouseY) const;
-    AActor*        PickActor(int32 MouseX, int32 MouseY) const;
+private:
+    // Geometry::FRay BuildPickRay(int32 MouseX, int32 MouseY) const;
+    AActor* PickActor(int32 MouseX, int32 MouseY) const;
 
     void SelectSingle(AActor* Actor);
     void AddSelection(AActor* Actor);
