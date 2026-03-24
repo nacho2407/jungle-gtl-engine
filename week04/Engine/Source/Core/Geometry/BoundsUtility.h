@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Math/Vector.h"
+#include "Core/Math/Vector.h"
 #include <algorithm>
 
 namespace Geometry

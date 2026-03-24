@@ -5,12 +5,22 @@
 bool FEditorGlobalContext::HandleEvent(const Engine::ApplicationCore::FInputEvent& Event,
                                        const Engine::ApplicationCore::FInputState& State)
 {
-    if (Controller == nullptr)
-    {
-        return false;
-    }
+    //if (Event.Type != Engine::ApplicationCore::EInputEventType::KeyDown)
+    //{
+    //    return false;
+    //}
 
-    return Controller->HandleEvent(Event, State);
+    //if (Event.bRepeat)
+    //{
+    //    return false;
+    //}
+
+    /*switch (Event.Key)
+    {
+
+    }*/
+
+    return false;
 }
 
 void FEditorGlobalContext::Tick(const Engine::ApplicationCore::FInputState& State) {}

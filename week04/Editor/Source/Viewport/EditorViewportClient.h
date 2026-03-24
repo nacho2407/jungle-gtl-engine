@@ -8,6 +8,7 @@
 #include "Engine/ViewPort/ViewportClient.h"
 #include "Input/NavigationInputContext.h"
 #include "Input/SelectionInputContext.h"
+#include "Input/GizmoInputContext.h"
 #include "Renderer/EditorRenderData.h"
 
 struct FEditorContext;
@@ -29,7 +30,7 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     void HandleInputEvent(const Engine::ApplicationCore::FInputEvent& Event,
                           const Engine::ApplicationCore::FInputState& State) override;
 
-    void BuildRenderData(FEditorRenderData& OutRenderData) const;
+    void BuildRenderData(FEditorRenderData& OutRenderData);
 
     void OnResize(uint32 InWidth, uint32 InHeight);
     void SetEditorContext(FEditorContext* InContext);
@@ -50,9 +51,21 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     void DrawViewportOverlay();
 
     FViewportCamera& GetCamera() { return ViewportCamera; }
-
+    using FPickCallback = std::function<FPickResult(int32, int32)>;
+    FPickCallback OnPickRequested;
+    
+    FPickResult PickAt(int32 MouseX, int32 MouseY) const
+    {
+        if (OnPickRequested)
+        {
+            return OnPickRequested(MouseX, MouseY);
+        }
+        return FPickResult{};
+    }
+    
 private:
     void DrawOutline();
+
 
   private:
     FScene* CurScene = nullptr;
@@ -67,4 +80,5 @@ private:
 
     FNavigationInputContext ViewportInputContext{&NavigationController};
     FSelectionInputContext SelectionInputContext{&SelectionController};
+    FGizmoInputContext      GizmoInputContext{&GizmoController};
 };
