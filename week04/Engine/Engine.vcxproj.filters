@@ -240,10 +240,13 @@
     <ClCompile Include="Source\Engine\Component\Sprite\AtlasComponent.cpp">
       <Filter>Source\Engine\Component\Sprite</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Sprite\SpriteComponent.cpp">
+      <Filter>Source\Engine\Component\Sprite</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\Sprite\SubUVComponent.cpp">
       <Filter>Source\Engine\Component\Sprite</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\Text\TextComponent.cpp">
+    <ClCompile Include="Source\Engine\Component\Text\AtlasTextComponent.cpp">
       <Filter>Source\Engine\Component\Text</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\EngineStatics.cpp">
@@ -276,6 +279,9 @@
     <ClCompile Include="Source\Renderer\D3D11\D3D11DynamicRHI.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Renderer\D3D11\D3D11FontBatchRenderer.cpp">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
@@ -283,6 +289,9 @@
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
     <ClCompile Include="Source\Renderer\D3D11\D3D11ObjectIdRenderer.cpp">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
     <ClCompile Include="Source\Renderer\Draw\AABBDrawer.cpp">
@@ -527,10 +536,13 @@
     <ClInclude Include="Source\Engine\Component\Sprite\AtlasComponent.h">
       <Filter>Source\Engine\Component\Sprite</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Sprite\SpriteComponent.h">
+      <Filter>Source\Engine\Component\Sprite</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\Sprite\SubUVComponent.h">
       <Filter>Source\Engine\Component\Sprite</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\Text\TextComponent.h">
+    <ClInclude Include="Source\Engine\Component\Text\AtlasTextComponent.h">
       <Filter>Source\Engine\Component\Text</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\EngineStatics.h">
