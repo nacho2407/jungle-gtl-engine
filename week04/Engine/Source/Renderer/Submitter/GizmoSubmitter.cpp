@@ -124,7 +124,8 @@ FColor FGizmoSubmitter::ResolveAxisColor(EAxis InAxis, EGizmoHighlight InHighlig
 void FGizmoSubmitter::AddTranslationGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
                                           const FGizmoDrawData&         InGizmoDrawData) const
 {
-    const FMatrix GizmoFrame = InGizmoDrawData.Frame.GetMatrixWithoutScale();
+    const FMatrix GizmoMatrix  =
+        FMatrix::MakeScale(InGizmoDrawData.Scale) * InGizmoDrawData.Frame.GetMatrixWithoutScale();
 
     for (EAxis Axis : GizmoAxes)
     {
@@ -136,8 +137,10 @@ void FGizmoSubmitter::AddTranslationGizmo(TArray<FPrimitiveRenderItem>& OutPrimi
                                                                   Style.TranslationShaftRadius,
                                                                   Style.TranslationShaftLength));
 
-            // cylinder 메쉬가 원래 z=0~1 이므로 offset 없음
-            const FMatrix World = LocalScale * AxisBasis * GizmoFrame;
+            const FMatrix LocalOffset =
+                FMatrix::MakeTranslation(FVector(0.0f, 0.0f, Style.TranslationShaftLength * 0.5f));
+
+            const FMatrix World = LocalScale * LocalOffset * AxisBasis * GizmoMatrix;
 
             OutPrimitives.push_back(MakePrimitiveItem(World, AxisColor, EBasicMeshType::Cylinder));
         }
@@ -147,11 +150,12 @@ void FGizmoSubmitter::AddTranslationGizmo(TArray<FPrimitiveRenderItem>& OutPrimi
                 FMatrix::MakeScale(FVector(Style.TranslationHeadRadius, Style.TranslationHeadRadius,
                                            Style.TranslationHeadLength));
 
-            // cone 메쉬도 원래 z=0~1 이므로 shaft 끝에만 붙이면 됨
             const FMatrix LocalOffset =
-                FMatrix::MakeTranslation(FVector(0.0f, 0.0f, Style.TranslationShaftLength));
+                FMatrix::MakeTranslation(FVector(0.0f, 0.0f,
+                                                 Style.TranslationShaftLength +
+                                                     Style.TranslationHeadLength * 0.5f));
 
-            const FMatrix World = LocalScale * LocalOffset * AxisBasis * GizmoFrame;
+            const FMatrix World = LocalScale * LocalOffset * AxisBasis * GizmoMatrix;
 
             OutPrimitives.push_back(MakePrimitiveItem(World, AxisColor, EBasicMeshType::Cone));
         }
@@ -191,8 +195,10 @@ void FGizmoSubmitter::AddScalingGizmo(TArray<FPrimitiveRenderItem>& OutPrimitive
             const FMatrix LocalScale = FMatrix::MakeScale(FVector(
                 Style.ScalingShaftRadius, Style.ScalingShaftRadius, Style.ScalingShaftLength));
 
-            // cylinder가 원점에서 시작하므로 offset 없음
-            const FMatrix World = LocalScale * AxisBasis * GizmoFrame;
+            const FMatrix LocalOffset =
+                FMatrix::MakeTranslation(FVector(0.0f, 0.0f, Style.ScalingShaftLength * 0.5f));
+
+            const FMatrix World = LocalScale * LocalOffset * AxisBasis * GizmoFrame;
 
             OutPrimitives.push_back(MakePrimitiveItem(World, AxisColor, EBasicMeshType::Cylinder));
         }
@@ -237,7 +243,11 @@ void FGizmoSubmitter::BuildObjectIdItems(TArray<FObjectIdRenderItem>& OutItems,
                     FVector(Style.TranslationShaftRadius, Style.TranslationShaftRadius,
                             Style.TranslationShaftLength));
 
-                const FMatrix World = LocalScale * AxisBasis * GizmoFrame;
+                const FMatrix LocalOffset =
+                    FMatrix::MakeTranslation(FVector(0.0f, 0.0f,
+                                                     Style.TranslationShaftLength * 0.5f));
+
+                const FMatrix World = LocalScale * LocalOffset * AxisBasis * GizmoFrame;
                 OutItems.push_back(MakeObjectIdItem(World, EBasicMeshType::Cylinder, PickObjectId));
             }
 
@@ -247,7 +257,9 @@ void FGizmoSubmitter::BuildObjectIdItems(TArray<FObjectIdRenderItem>& OutItems,
                                                                       Style.TranslationHeadLength));
 
                 const FMatrix LocalOffset =
-                    FMatrix::MakeTranslation(FVector(0.0f, 0.0f, Style.TranslationShaftLength));
+                    FMatrix::MakeTranslation(FVector(0.0f, 0.0f,
+                                                     Style.TranslationShaftLength +
+                                                         Style.TranslationHeadLength * 0.5f));
 
                 const FMatrix World = LocalScale * LocalOffset * AxisBasis * GizmoFrame;
                 OutItems.push_back(MakeObjectIdItem(World, EBasicMeshType::Cone, PickObjectId));
@@ -273,7 +285,11 @@ void FGizmoSubmitter::BuildObjectIdItems(TArray<FObjectIdRenderItem>& OutItems,
                 const FMatrix LocalScale = FMatrix::MakeScale(FVector(
                     Style.ScalingShaftRadius, Style.ScalingShaftRadius, Style.ScalingShaftLength));
 
-                const FMatrix World = LocalScale * AxisBasis * GizmoFrame;
+                const FMatrix LocalOffset =
+                    FMatrix::MakeTranslation(FVector(0.0f, 0.0f,
+                                                     Style.ScalingShaftLength * 0.5f));
+
+                const FMatrix World = LocalScale * LocalOffset * AxisBasis * GizmoFrame;
                 OutItems.push_back(MakeObjectIdItem(World, EBasicMeshType::Cylinder, PickObjectId));
             }
 
