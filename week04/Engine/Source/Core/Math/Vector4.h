@@ -33,6 +33,8 @@ struct ENGINE_API FVector4
     [[nodiscard]] bool IsPoint() const;
     [[nodiscard]] bool IsVector() const;
 
+    XMVector ToXMVector() const noexcept { return DirectX::XMVectorSet(X, Y, Z, W); }
+
   public:
     float X, Y, Z, W;
 };

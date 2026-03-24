@@ -47,6 +47,8 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     FViewportRenderSetting& GetRenderSetting() { return RenderSetting; }
     const FViewportRenderSetting& GetRenderSetting() const { return RenderSetting; }
 
+    void DrawViewportOverlay();
+
     FViewportCamera& GetCamera() { return ViewportCamera; }
 
 private:

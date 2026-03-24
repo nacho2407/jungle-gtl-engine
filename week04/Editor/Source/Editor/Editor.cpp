@@ -286,6 +286,11 @@ void FEditor::Create()
 
     ViewportClient.Create();
     ViewportClient.SetEditorContext(&EditorContext);
+
+    GlobalInputController.BindDeleteSelection([this]() { return CanDeleteSelectedActors(); },
+                                              [this]() { DeleteSelectedActors(); });
+    GlobalInputRouter.AddContext(&GlobalInputContext);
+
     LoadEditorSettings();
 
     // 메뉴 시스템은 command 등록과 배치 등록을 분리해서 초기화합니다.
@@ -372,8 +377,7 @@ void FEditor::LoadEditorSettings()
     FEditorSettingsData SettingsData;
     SettingsData.GridSpacing = UEngineStatics::GridSpacing;
     SettingsData.CameraMoveSpeed = ViewportClient.GetNavigationController().GetMoveSpeed();
-    SettingsData.CameraRotationSpeed =
-        ViewportClient.GetNavigationController().GetRotationSpeed();
+    SettingsData.CameraRotationSpeed = ViewportClient.GetNavigationController().GetRotationSpeed();
     SettingsData.ContentBrowserLeftPaneWidth = EditorContext.ContentBrowserLeftPaneWidth;
 
     FString                         ErrorMessage;
@@ -401,8 +405,7 @@ void FEditor::LoadEditorSettings()
 
     UEngineStatics::GridSpacing = FMath::Clamp(SettingsData.GridSpacing, 1.0f, 1000.0f);
     ViewportClient.GetNavigationController().SetMoveSpeed(SettingsData.CameraMoveSpeed);
-    ViewportClient.GetNavigationController().SetRotationSpeed(
-        SettingsData.CameraRotationSpeed);
+    ViewportClient.GetNavigationController().SetRotationSpeed(SettingsData.CameraRotationSpeed);
     EditorContext.ContentBrowserLeftPaneWidth =
         std::max(SettingsData.ContentBrowserLeftPaneWidth, 120.0f);
 }
@@ -411,10 +414,8 @@ void FEditor::SaveEditorSettings() const
 {
     FEditorSettingsData SettingsData;
     SettingsData.GridSpacing = FMath::Clamp(UEngineStatics::GridSpacing, 1.0f, 1000.0f);
-    SettingsData.CameraMoveSpeed =
-        ViewportClient.GetNavigationController().GetMoveSpeed();
-    SettingsData.CameraRotationSpeed =
-        ViewportClient.GetNavigationController().GetRotationSpeed();
+    SettingsData.CameraMoveSpeed = ViewportClient.GetNavigationController().GetMoveSpeed();
+    SettingsData.CameraRotationSpeed = ViewportClient.GetNavigationController().GetRotationSpeed();
     SettingsData.ContentBrowserLeftPaneWidth =
         std::max(EditorContext.ContentBrowserLeftPaneWidth, 120.0f);
     PersistentSettings.Save(SettingsData);
@@ -610,28 +611,20 @@ void FEditor::ResolveSceneAssetReferences(FScene* Scene)
 void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* InputSystem)
 {
     EditorContext.DeltaTime = DeltaTime;
-    Engine::ApplicationCore::FInputEvent Event;
+    Engine::ApplicationCore::FInputEvent        Event;
+    const Engine::ApplicationCore::FInputState& InputState = InputSystem->GetInputState();
 
     while (InputSystem->PollEvent(Event))
     {
-        if (Event.Type == Engine::ApplicationCore::EInputEventType::KeyDown &&
-            Event.Key == Engine::ApplicationCore::EKey::Delete && !Event.bRepeat)
+        if (GlobalInputRouter.RouteEvent(Event, InputState))
         {
-            const bool bShouldConsumeDelete =
-                (ImGui::GetCurrentContext() == nullptr) ||
-                (!ImGui::GetIO().WantCaptureKeyboard && !ImGui::GetIO().WantTextInput);
-
-            if (bShouldConsumeDelete)
-            {
-                DeleteSelectedActors();
-                continue;
-            }
+            continue;
         }
 
-        ViewportClient.HandleInputEvent(Event, InputSystem->GetInputState());
+        ViewportClient.HandleInputEvent(Event, InputState);
     }
 
-    ViewportClient.Tick(DeltaTime, InputSystem->GetInputState());
+    ViewportClient.Tick(DeltaTime, InputState);
 
     if (PanelManager != nullptr)
     {
@@ -690,8 +683,7 @@ void FEditor::SetSelectedObject(UObject* InSelectedObject)
     {
         EditorContext.SelectedActors.push_back(SelectedActor);
     }
-    else if (auto* SelectedComponent =
-                 Cast<Engine::Component::USceneComponent>(InSelectedObject))
+    else if (auto* SelectedComponent = Cast<Engine::Component::USceneComponent>(InSelectedObject))
     {
         if (AActor* OwnerActor = SelectedComponent->GetOwnerActor())
         {
@@ -973,22 +965,18 @@ void FEditor::RegisterDefaultCommands()
         .Label = L"Content Browser",
         .Execute =
             [this]()
+        {
+            if (PanelManager == nullptr)
             {
-                if (PanelManager == nullptr)
-                {
-                    return;
-                }
+                return;
+            }
 
-                FPanelOpenRequest Request;
-                Request.PanelType = std::type_index(typeid(FContentBrowserPanel));
-                Request.OpenPolicy = EPanelOpenPolicy::FocusIfOpenElseCreate;
-                PanelManager->OpenPanel(Request);
-            },
-        .CanExecute =
-            [this]()
-            {
-                return PanelManager != nullptr;
-            }});
+            FPanelOpenRequest Request;
+            Request.PanelType = std::type_index(typeid(FContentBrowserPanel));
+            Request.OpenPolicy = EPanelOpenPolicy::FocusIfOpenElseCreate;
+            PanelManager->OpenPanel(Request);
+        },
+        .CanExecute = [this]() { return PanelManager != nullptr; }});
 
     MenuRegistry.RegisterCommand(FEditorCommandDefinition{.CommandId = "tool.build",
                                                           .Label = L"Build (Not Ready)",
@@ -1206,6 +1194,8 @@ void FEditor::DrawPanel()
     {
         PanelManager->DrawPanels();
     }
+
+     ViewportClient.DrawViewportOverlay();
 
     EditorChrome.Draw(ChromeMenus);
     DrawAboutPopup();

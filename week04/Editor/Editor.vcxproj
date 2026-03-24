@@ -102,6 +102,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClCompile Include="Source\Editor\EditorSettings.cpp" />
     <ClCompile Include="Source\Editor\Logging\EditorLogBuffer.cpp" />
     <ClCompile Include="Source\Input\EditorGlobalContext.cpp" />
+    <ClCompile Include="Source\Input\EditorGlobalController.cpp" />
     <ClCompile Include="Source\Input\GizmoInputContext.cpp" />
     <ClCompile Include="Source\Input\NavigationInputContext.cpp" />
     <ClCompile Include="Source\Input\SelectionInputContext.cpp" />
@@ -145,6 +146,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClInclude Include="Source\Gizmo\GizmoDrawDataBuilder.h" />
     <ClInclude Include="Source\Input\ContextModeTypes.h" />
     <ClInclude Include="Source\Input\EditorGlobalContext.h" />
+    <ClInclude Include="Source\Input\EditorGlobalController.h" />
     <ClInclude Include="Source\Input\GizmoInputContext.h" />
     <ClInclude Include="Source\Input\NavigationInputContext.h" />
     <ClInclude Include="Source\Input\SelectionInputContext.h" />

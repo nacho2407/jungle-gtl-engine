@@ -21,20 +21,17 @@ class FViewportNavigationController : public Engine::Viewport::IViewportControll
     void SetRotating(bool bInRotating);
     bool IsRotating() { return bRotating; }
 
+    void ModifyFOVorOrthoHeight(float Delta);
+
     void ModifyFOV(float DeltaFOV);
-    void AdjustMoveSpeed(float Step)
-    {
-        MoveSpeed = FMath::Clamp(MoveSpeed + Step, 10.0f, 2000.0f);
-    }
+    void ModifyOrthoHeight(float DeltaHeight);
+    void AdjustMoveSpeed(float Step) { MoveSpeed = FMath::Clamp(MoveSpeed + Step, 10.0f, 2000.0f); }
 
     float GetMoveSpeed() const { return MoveSpeed; }
-    void SetMoveSpeed(float InMoveSpeed)
-    {
-        MoveSpeed = FMath::Clamp(InMoveSpeed, 10.0f, 2000.0f);
-    }
+    void  SetMoveSpeed(float InMoveSpeed) { MoveSpeed = FMath::Clamp(InMoveSpeed, 10.0f, 2000.0f); }
 
     float GetRotationSpeed() const { return RotationSpeed; }
-    void SetRotationSpeed(float InRotationSpeed)
+    void  SetRotationSpeed(float InRotationSpeed)
     {
         RotationSpeed = FMath::Clamp(InRotationSpeed, 0.01f, 10.0f);
     }
@@ -44,21 +41,31 @@ class FViewportNavigationController : public Engine::Viewport::IViewportControll
     {
         SelectionController = InController;
     }
-  
-    void       BeginOrbit();
+
+    void    BeginOrbit();
     FVector ResolveOrbitPivot() const;
-    void       UpdateOrbitCamera();
-    void       EndOrbit();
-    
+    void    UpdateOrbitCamera();
+    void    EndOrbit();
+
     /* Dolly */
     void Dolly(float Value);
+
+    /* Pan */
+    void BeginPanning();
+    void EndPanning();
+    void AddPanInput(float DeltaX, float DeltaY);
+
+    bool IsPanning() const { return bPanning; }
+
+    float GetPanSpeed() const { return PanSpeed; }
+    void  SetPanSpeed(float InPanSpeed) { PanSpeed = FMath::Clamp(InPanSpeed, 0.01f, 10.0f); }
 
   private:
     void UpdateCameraRotation();
     void EnsureTargetLocationInitialized();
 
   private:
-    FViewportCamera* ViewportCamera = nullptr;
+    FViewportCamera*                    ViewportCamera = nullptr;
     class FViewportSelectionController* SelectionController = nullptr;
 
     /* Movement */
@@ -70,17 +77,21 @@ class FViewportNavigationController : public Engine::Viewport::IViewportControll
     float Pitch = 0.0f;
 
     FVector TargetLocation = FVector::Zero();
-    bool bHasTargetLocation = false;
+    bool    bHasTargetLocation = false;
 
     bool bRotating = false;
 
     /* Orbiting */
-    bool bOrbiting = false;
+    bool    bOrbiting = false;
     FVector OrbitPivot = FVector::Zero();
     float   OrbitRadius = 0.0f;
     float   DefaultOrbitRadius = 300.0f;
-    
+
     /* Dolly */
     float DollySpeed = 1.0f;
-    float MinOrbitRadius = 30.0f;
+    float MinOrbitRadius = 10.0f;
+
+    /* Panning */
+    bool  bPanning = false;
+    float PanSpeed = 0.1f;
 };

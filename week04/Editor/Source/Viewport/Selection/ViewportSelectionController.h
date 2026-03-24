@@ -11,7 +11,7 @@ struct FEditorContext;
 
 class FViewportSelectionController : public Engine::Viewport::IViewportController
 {
-public:
+  public:
     FViewportSelectionController() = default;
     ~FViewportSelectionController() override = default;
 
@@ -24,7 +24,7 @@ public:
     void ClearSelection();
     void SyncSelectionFromContext();
 
-    bool IsSelected(AActor* Actor) const;
+    bool                   IsSelected(AActor* Actor) const;
     const TArray<AActor*>& GetSelectedActors() const { return SelectedActors; }
 
     void SetCamera(FViewportCamera* Camera) { ViewportCamera = Camera; }
@@ -37,30 +37,43 @@ public:
         ViewportHeight = Height;
     }
 
-private:
+    bool IsDraggingSelection() const { return bIsDraggingSelection; }
+  void   GetSelectionRect(int32 & OutStartX, int32& OutStartY, int32& OutEndX, int32& OutEndY) const
+  {
+      OutStartX = SelectionStartX;
+      OutStartY = SelectionStartY;
+      OutEndX = SelectionCurrentX;
+      OutEndY = SelectionCurrentY;
+  }
+
+  private:
     Geometry::FRay BuildPickRay(int32 MouseX, int32 MouseY) const;
-    AActor* PickActor(int32 MouseX, int32 MouseY) const;
+    AActor*        PickActor(int32 MouseX, int32 MouseY) const;
 
     void SelectSingle(AActor* Actor);
     void AddSelection(AActor* Actor);
     void RemoveSelection(AActor* Actor);
     void ToggleSelection(AActor* Actor);
 
-    void ResetSelection();
-    void ApplySelectionState(AActor* Actor, bool bSelected) const;
+    void    ResetSelection();
+    void    ApplySelectionState(AActor* Actor, bool bSelected) const;
     AActor* ResolveActorFromContextSelection() const;
-    void UpdatePrimarySelection() const;
+    void    UpdatePrimarySelection() const;
 
-private:
-    FEditorContext* Context = nullptr;
+    bool ProjectWorldToScreen(const FVector& WorldPos, FVector2& OutScreenPos) const;
+
+  private:
+    FEditorContext*  Context = nullptr;
     TArray<AActor*>* Actors = nullptr;
     FViewportCamera* ViewportCamera = nullptr;
 
     uint32 ViewportWidth = 0;
     uint32 ViewportHeight = 0;
 
-    int32 SelectionStartX = 0;
-    int32 SelectionStartY = 0;
+    int32          SelectionStartX = 0;
+    int32          SelectionStartY = 0;
+    int32          SelectionCurrentX = 0;
+    int32          SelectionCurrentY = 0;
     ESelectionMode CurSelectionMode = ESelectionMode::Replace;
 
     bool bIsDraggingSelection = false;
