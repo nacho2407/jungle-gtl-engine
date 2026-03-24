@@ -39,6 +39,10 @@ public:
 	float GetWidth()  const { return Width; }
 	float GetHeight() const { return Height; }
 
+	// --- Property / Serialization ---
+	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	void PostEditProperty(const char* PropertyName) override;
+
 	// --- PrimitiveComponent 인터페이스 ---
 	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
 	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_SubUV;

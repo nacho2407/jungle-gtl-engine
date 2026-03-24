@@ -30,10 +30,16 @@ public:
 	const FFontResource* FindFont(const FName& FontName) const;
 	void RegisterFont(const FName& FontName, const FString& InPath, uint32 Columns = 16, uint32 Rows = 16);
 
+	// --- Font names ---
+	TArray<FString> GetFontNames() const;
+
 	// --- Particle ---
 	FParticleResource* FindParticle(const FName& ParticleName);
 	const FParticleResource* FindParticle(const FName& ParticleName) const;
 	void RegisterParticle(const FName& ParticleName, const FString& InPath, uint32 Columns = 1, uint32 Rows = 1);
+
+	// --- Particle names ---
+	TArray<FString> GetParticleNames() const;
 
 private:
 	FResourceManager() = default;

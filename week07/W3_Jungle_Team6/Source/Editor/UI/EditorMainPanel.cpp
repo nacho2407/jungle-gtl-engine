@@ -18,6 +18,11 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	ImGuiIO& IO = ImGui::GetIO();
 	IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
+	Window = InWindow;
+
+	// 한글 지원 폰트 로드 (시스템 맑은 고딕)
+	IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 16.0f, nullptr, IO.Fonts->GetGlyphRangesKorean());
+
 	ImGui_ImplWin32_Init((void*)InWindow->GetHWND());
 	ImGui_ImplDX11_Init(InRenderer.GetFD3DDevice().GetDevice(), InRenderer.GetFD3DDevice().GetDeviceContext());
 
@@ -61,4 +66,22 @@ void FEditorMainPanel::Update()
 
 	InputSystem::Get().GetGuiInputState().bUsingMouse = IO.WantCaptureMouse;
 	InputSystem::Get().GetGuiInputState().bUsingKeyboard = IO.WantCaptureKeyboard;
+
+	// IME는 ImGui가 텍스트 입력을 원할 때만 활성화.
+	// 그 외에는 OS 수준에서 IME 컨텍스트를 NULL로 연결해 한글 조합이
+	// 뷰포트에 남는 현상을 원천 차단한다.
+	if (Window)
+	{
+		HWND hWnd = Window->GetHWND();
+		if (IO.WantTextInput)
+		{
+			// InputText 포커스 중 — 기본 IME 컨텍스트 복원
+			ImmAssociateContextEx(hWnd, NULL, IACE_DEFAULT);
+		}
+		else
+		{
+			// InputText 포커스 없음 — IME 컨텍스트 해제 (조합 불가)
+			ImmAssociateContext(hWnd, NULL);
+		}
+	}
 }

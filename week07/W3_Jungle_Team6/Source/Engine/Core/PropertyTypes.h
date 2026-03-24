@@ -13,6 +13,7 @@ enum class EPropertyType : uint8_t
 	Vec3,
 	Vec4,
 	String,
+	Name,		// FName — 문자열 풀 기반 이름 (리소스 키 등)
 	// 필요 시 Enum, Color 등 추가
 };
 
