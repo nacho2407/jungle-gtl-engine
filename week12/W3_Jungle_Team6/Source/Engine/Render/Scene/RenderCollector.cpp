@@ -57,11 +57,15 @@ void FRenderCollector::CollectFromActor(AActor* Actor, const FRenderCollectorCon
 
 void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
+	if (!Actor->IsVisible()) return;
+
 	for (UPrimitiveComponent* primitiveComponent : Actor->GetPrimitiveComponents())
 	{
 		// MeshBuffer가 없는 Batcher 처리 타입은 아웃라인 렌더에서 제외
 		EPrimitiveType PrimType = primitiveComponent->GetPrimitiveType();
 		if (primitiveComponent->IsA<USubUVComponent>()) return;
+		if (!primitiveComponent->IsVisible()) continue;
+
 		if (PrimType == EPrimitiveType::EPT_Text)
 		{
 			if (Context.ShowFlags.bBillboardText == false) return;
