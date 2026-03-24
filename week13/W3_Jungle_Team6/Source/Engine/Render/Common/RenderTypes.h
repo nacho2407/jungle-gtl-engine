@@ -38,10 +38,10 @@ enum class ERenderPass : uint32
 {
 	Opaque,
 	Translucent,
-	Editor,
-	Grid,
 	StencilMask,
 	Outline,
+	Editor,
+	Grid,
 	DepthLess,
 	Overlay,
 	Font,			// TextRenderComponent → FontBatcher 경유
