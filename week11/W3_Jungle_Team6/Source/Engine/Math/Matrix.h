@@ -91,6 +91,8 @@ struct FMatrix {
 
 	FVector GetEuler() const;
 	FVector GetLocation() const;
+	FVector GetScale() const;
+	void SetAxes(const FVector& Right, const FVector& Up, const FVector& Forward);
 };
 
 FVector operator* (const FVector& vector, const FMatrix& matrix);
