@@ -43,6 +43,7 @@ public:
 	bool GetRenderStateDirty();
 	void ResolveRenderStateDirty();
 	void CreateAABB();
+	bool RayIntersects(const struct Ray& ray, float& OutDistance);
 
 	virtual json::JSON Serialize() override;
 	virtual void Deserialize(json::JSON) override;

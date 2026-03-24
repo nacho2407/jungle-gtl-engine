@@ -1,9 +1,9 @@
-﻿#pragma once
+#pragma once
 
 #include "Math/Vector.h"
-#include "Component/PrimitiveComponent.h"
 
-class CameraComponent;
+// 전방 선언을 통해 순환 참조 해결
+class UPrimitiveComponent;
 
 struct Ray
 {

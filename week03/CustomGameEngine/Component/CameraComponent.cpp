@@ -169,6 +169,7 @@ void UCameraComponent::Update(float deltaTime) {
 	UpdateCameraMatrices();
 }
 
+// 마우스 휠을 이용한 발줌입니다.
 void UCameraComponent::HandleCameraMove(float deltaTime)
 {
 	if (!io.WantCaptureKeyboard && !io.WantCaptureMouse)
@@ -176,11 +177,11 @@ void UCameraComponent::HandleCameraMove(float deltaTime)
 		float wheelDelta = InputManager::GetInstance().MouseWheel;
 		if (wheelDelta != 0.0f)
 		{
-			//현재 마우스가 있는 방향을 구하고 그곳으로 움직임.
 			FVector Mouse = InputManager::GetInstance().MousePos;
-			Ray mouseRay = ScreenPointToRay(static_cast<int>(Mouse.x), static_cast<int>(Mouse.y));
+			Ray mouseRay = ScreenPointToRay(static_cast<int32>(Mouse.x), static_cast<int32>(Mouse.y));
 			
 			FVector position = GetRelativeLocation();
+			// 마우스 커서가 가리키는 월드 방향으로 이동
 			position = position + mouseRay.Direction * wheelDelta * MoveSpeed * 0.5f;
 			SetRelativeLocation(position);
 		}

@@ -34,7 +34,7 @@ public:
 	FVector MousePos;
 	FVector LastMousePos;
 	FVector MouseDelta;
-	float MouseWheel = 0.0f;
+	float MouseWheel = 0.0f; // 현재 프레임에서 확정된 마우스 휠 변화량
 
 	HWND hWnd;
 

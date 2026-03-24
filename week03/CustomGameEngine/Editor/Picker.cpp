@@ -34,8 +34,10 @@ void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene, bool bMultiSelect)
 		}
 	}
 
-	TArray<TPair<float, USceneComponent*>> RayHits;
+	USceneComponent* selectedComp = nullptr;
+	float ClosestDist = FLT_MAX;
 
+	// AABB 적용.
 	for (USceneComponent* sc : Scene->SceneComponents)
 	{
 		UPrimitiveComponent* Comp = Cast<UPrimitiveComponent>(sc);
@@ -43,25 +45,18 @@ void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene, bool bMultiSelect)
 			continue;
 
 		float Distance = 0.f;
-		if (ray.Intersects(Comp, Distance))
+		if (Comp->RayIntersects(ray, Distance))
 		{
-			RayHits.push_back({ Distance, Comp });
+			if (Distance < ClosestDist)
+			{
+				ClosestDist = Distance;
+				selectedComp = Comp;
+			}
 		}
 	}
 
-	if (!RayHits.empty())
+	if (selectedComp != nullptr)
 	{
-		// RayHits 안에 이미 선택된 오브젝트가 있다면 거리순으로 정렬해 그 다음 것을 선택
-		std::sort(RayHits.begin(), RayHits.end());
-		int nextIndex = 0;
-		USceneComponent* lastSelected = EditorPtr->GetLastSelectedComponent();
-		for (int i = 0; i < RayHits.size(); ++i) {
-			if (RayHits[i].second == lastSelected) {
-				nextIndex = (i + 1) % RayHits.size();
-				break;
-			}
-		}
-		USceneComponent* selectedComp = RayHits[nextIndex].second;
 		if (!bMultiSelect)
 		{
 			EditorPtr->SelectSingleComponent(selectedComp);
