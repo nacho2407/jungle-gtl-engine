@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Core/EngineTypes.h"
@@ -43,6 +43,7 @@ public:
 		const FVector& WorldPos,
 		const FVector& CamRight,
 		const FVector& CamUp,
+		const FVector& WorldScale,
 		float Scale = 1.0f);
 
 	// 이번 프레임 누적 텍스트 초기화
