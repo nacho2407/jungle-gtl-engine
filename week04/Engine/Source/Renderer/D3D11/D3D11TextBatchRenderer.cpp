@@ -771,7 +771,7 @@ bool FD3D11TextBatchRenderer::CreateStates()
     }
 
     D3D11_DEPTH_STENCIL_DESC DepthDesc = {};
-    DepthDesc.DepthEnable = TRUE;
+    DepthDesc.DepthEnable = FALSE;
     DepthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
     DepthDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 

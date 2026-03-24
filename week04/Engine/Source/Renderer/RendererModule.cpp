@@ -7,27 +7,27 @@ namespace
     bool ShouldRenderScenePrimitives(const FSceneRenderData& InSceneRenderData)
     {
         return InSceneRenderData.SceneView != nullptr &&
-            IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_Primitives);
+               IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_Primitives);
     }
 
     bool ShouldRenderSelectionOutline(const FEditorRenderData& InEditorRenderData,
                                       const FSceneRenderData&  InSceneRenderData)
     {
         return ShouldRenderScenePrimitives(InSceneRenderData) &&
-            IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_SelectionOutline) &&
-            InSceneRenderData.ViewMode != EViewModeIndex::VMI_Wireframe;
+               IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_SelectionOutline) &&
+               InSceneRenderData.ViewMode != EViewModeIndex::VMI_Wireframe;
     }
 
     bool ShouldTintSelectedWireframe(const FEditorRenderData& InEditorRenderData,
                                      const FSceneRenderData&  InSceneRenderData)
     {
         return ShouldRenderScenePrimitives(InSceneRenderData) &&
-            IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_SelectionOutline) &&
-            InSceneRenderData.ViewMode == EViewModeIndex::VMI_Wireframe;
+               IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_SelectionOutline) &&
+               InSceneRenderData.ViewMode == EViewModeIndex::VMI_Wireframe;
     }
 
-    TArray<FPrimitiveRenderItem> BuildWireframePrimitiveSubmission(
-        const FSceneRenderData& InSceneRenderData)
+    TArray<FPrimitiveRenderItem>
+    BuildWireframePrimitiveSubmission(const FSceneRenderData& InSceneRenderData)
     {
         TArray<FPrimitiveRenderItem> SubmissionItems = InSceneRenderData.Primitives;
         const FColor SelectionColor = FD3D11OutlineRenderer::GetVisibleOutlineColor();
@@ -149,12 +149,16 @@ void FRendererModule::OnWindowResized(int32 InWidth, int32 InHeight)
     ObjectIdRenderer.Resize(InWidth, InHeight);
 }
 
+/**
+ * @brief Render Order: Mesh -> Outline -> Sprite -> Gizmo -> Gird / Axes / AABB -> Text
+ */
 void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
                              const FSceneRenderData&  InSceneRenderData)
 {
     CachedEditorRenderData = InEditorRenderData;
     CachedSceneRenderData = InSceneRenderData;
 
+    // ==================== Scene Mesh ====================
     if (ShouldRenderScenePrimitives(InSceneRenderData))
     {
         MeshRenderer.BeginFrame(InSceneRenderData.SceneView, InSceneRenderData.ViewMode,
@@ -174,6 +178,7 @@ void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
         MeshRenderer.EndFrame();
     }
 
+    // ==================== Selection Outline ====================
     if (ShouldRenderSelectionOutline(InEditorRenderData, InSceneRenderData))
     {
         OutlineRenderer.BeginFrame(InSceneRenderData.SceneView);
@@ -181,6 +186,7 @@ void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
         OutlineRenderer.EndFrame();
     }
 
+    // ==================== Scene Sprite ====================
     if (InSceneRenderData.SceneView != nullptr &&
         IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_Sprites))
     {
@@ -189,14 +195,7 @@ void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
         SpriteRenderer.EndFrame(InSceneRenderData.SceneView);
     }
 
-    if (InSceneRenderData.SceneView != nullptr &&
-        IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_BillboardText))
-    {
-        TextRenderer.BeginFrame(InSceneRenderData.SceneView);
-        TextSubmitter.Submit(TextRenderer, InSceneRenderData);
-        TextRenderer.EndFrame(InSceneRenderData.SceneView);
-    }
-
+    // ==================== Editor Gizmo ====================
     if (InEditorRenderData.SceneView != nullptr &&
         IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo))
     {
@@ -206,6 +205,7 @@ void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
         MeshRenderer.EndFrame();
     }
 
+    // ==================== Editor Lines (Grid / Axes / AABB) ====================
     if (InEditorRenderData.SceneView != nullptr)
     {
         LineRenderer.BeginFrame(InEditorRenderData.SceneView);
@@ -223,6 +223,15 @@ void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
         AABBSubmitter.Submit(LineRenderer, InSceneRenderData);
 
         LineRenderer.EndFrame();
+    }
+
+    // ==================== Scene Billboard Text ====================
+    if (InSceneRenderData.SceneView != nullptr &&
+        IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_BillboardText))
+    {
+        TextRenderer.BeginFrame(InSceneRenderData.SceneView);
+        TextSubmitter.Submit(TextRenderer, InSceneRenderData);
+        TextRenderer.EndFrame(InSceneRenderData.SceneView);
     }
 }
 
