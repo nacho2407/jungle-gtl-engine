@@ -48,7 +48,8 @@ class FD3D11MeshBatchRenderer
     bool Initialize(FD3D11DynamicRHI* InRHI);
     void Shutdown();
 
-    void BeginFrame(const FSceneView* InSceneView, EViewModeIndex InViewMode, bool bInUseInstancing);
+    void BeginFrame(const FSceneView* InSceneView, EViewModeIndex InViewMode,
+                    bool bInUseInstancing);
     void AddPrimitive(const FPrimitiveRenderItem& InItem);
     void AddPrimitives(const TArray<FPrimitiveRenderItem>& InItems);
     void EndFrame();
@@ -94,7 +95,7 @@ class FD3D11MeshBatchRenderer
   private:
     FD3D11DynamicRHI* RHI = nullptr;
     const FSceneView* CurrentSceneView = nullptr;
-    EViewModeIndex    ViewMode = EViewModeIndex::Lit;
+    EViewModeIndex    ViewMode = EViewModeIndex::VMI_Lit;
     bool              bUseInstancing = true;
     uint32            MaxInstanceCount = MaxInstanceCapacity;
 

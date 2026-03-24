@@ -11,20 +11,20 @@ struct FMeshVertex
 
 struct FLineVertex
 {
-    FVector  Position;
-    FColor Color;
+    FVector Position;
+    FColor  Color;
 };
 
 struct FFontVertex
 {
     FVector  Position;
     FVector2 UV;
-    FColor Color;
+    FColor   Color;
 };
 
 struct FSpriteVertex
 {
     FVector  Position;
     FVector2 UV;
-    FColor Color;
+    FColor   Color;
 };

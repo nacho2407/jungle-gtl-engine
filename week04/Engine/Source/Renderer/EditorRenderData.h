@@ -31,10 +31,9 @@ struct FGizmoDrawData
 {
     EGizmoType      GizmoType = EGizmoType::None;
     EGizmoHighlight Highlight = EGizmoHighlight::None;
-
-    // 기즈모의 기준 위치/회전 좌표계.
-    // 시각적 크기는 Drawer가 담당한다.
-    FMatrix Frame = FMatrix::Identity;
+    
+    FMatrix Frame = FMatrix::Identity; // Position, Rotation
+    float   Scale = 1.f;
 };
 
 struct FEditorRenderData

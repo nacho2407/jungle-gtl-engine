@@ -52,6 +52,9 @@
     <Filter Include="Resources\Font\Galmuri11">
       <UniqueIdentifier>{702c0c07-20e7-a580-8783-537854e854a5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resources\Font\JetBrainsMono">
+      <UniqueIdentifier>{7eaade0e-bd47-722f-7804-38ec85fe8c2e}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Resources\Font\Ubuntu">
       <UniqueIdentifier>{3ff98eb9-4461-1ff0-f53b-612fd98db83c}</UniqueIdentifier>
     </Filter>
@@ -106,6 +109,9 @@
     <Filter Include="Source\Renderer\Types">
       <UniqueIdentifier>{2a470593-b470-7a69-2874-61b9dc3a78a3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\ThirdParty\Json">
+      <UniqueIdentifier>{bd24378b-953f-fea6-80b7-004117df36b6}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Core\Geometry\Primitives">
       <UniqueIdentifier>{243ace44-3495-fff3-c265-ad18f16b3c35}</UniqueIdentifier>
     </Filter>
@@ -142,6 +148,12 @@
       <Filter>Source\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Asset\AssetManager.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\FontAsset.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\FontAtlasLoader.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Asset\Texture2DAsset.cpp">
@@ -228,10 +240,13 @@
     <ClCompile Include="Source\Engine\Component\Sprite\AtlasComponent.cpp">
       <Filter>Source\Engine\Component\Sprite</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Sprite\SpriteComponent.cpp">
+      <Filter>Source\Engine\Component\Sprite</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\Sprite\SubUVComponent.cpp">
       <Filter>Source\Engine\Component\Sprite</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\Text\TextComponent.cpp">
+    <ClCompile Include="Source\Engine\Component\Text\AtlasTextComponent.cpp">
       <Filter>Source\Engine\Component\Text</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\EngineStatics.cpp">
@@ -264,6 +279,9 @@
     <ClCompile Include="Source\Renderer\D3D11\D3D11DynamicRHI.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Renderer\D3D11\D3D11FontBatchRenderer.cpp">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
@@ -271,6 +289,9 @@
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
     <ClCompile Include="Source\Renderer\D3D11\D3D11ObjectIdRenderer.cpp">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
     <ClCompile Include="Source\Renderer\Draw\AABBDrawer.cpp">
@@ -358,6 +379,12 @@
       <Filter>Source\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\AssetManager.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\FontAsset.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\FontAtlasLoader.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\Texture2DAsset.h">
@@ -513,10 +540,13 @@
     <ClInclude Include="Source\Engine\Component\Sprite\AtlasComponent.h">
       <Filter>Source\Engine\Component\Sprite</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Sprite\SpriteComponent.h">
+      <Filter>Source\Engine\Component\Sprite</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\Sprite\SubUVComponent.h">
       <Filter>Source\Engine\Component\Sprite</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\Text\TextComponent.h">
+    <ClInclude Include="Source\Engine\Component\Text\AtlasTextComponent.h">
       <Filter>Source\Engine\Component\Text</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\EngineStatics.h">
@@ -641,6 +671,9 @@
     </ClInclude>
     <ClInclude Include="Source\Renderer\Types\ViewMode.h">
       <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ThirdParty\Json\json.hpp">
+      <Filter>Source\ThirdParty\Json</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\FontAsset.h" />
     <ClInclude Include="Source\Asset\FontAtlasLoader.h" />
