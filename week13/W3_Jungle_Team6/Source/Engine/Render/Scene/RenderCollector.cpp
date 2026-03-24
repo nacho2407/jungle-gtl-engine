@@ -4,7 +4,6 @@
 #include "GameFramework/AActor.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/GizmoComponent.h"
-#include "Component/BillboardComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/SubUVComponent.h"
 
@@ -94,14 +93,11 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 
 	for (UPrimitiveComponent* primitiveComponent : Actor->GetPrimitiveComponents())
 	{
-		// MeshBuffer가 없는 Batcher 처리 타입은 아웃라인 렌더에서 제외
-		EPrimitiveType PrimType = primitiveComponent->GetPrimitiveType();
-		if (primitiveComponent->IsA<USubUVComponent>()) continue;
 		if (!primitiveComponent->IsVisible()) continue;
 
-		if (PrimType == EPrimitiveType::EPT_Text)
+		if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Text)
 		{
-			if (ShowFlags.bBillboardText == false) continue;
+			if (!ShowFlags.bBillboardText) continue;
 			UTextRenderComponent* TextComp = static_cast<UTextRenderComponent*>(primitiveComponent);
 			const FFontResource* Font = TextComp->GetFont();
 			if (!Font || !Font->IsLoaded()) continue;
@@ -112,14 +108,16 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 			TextCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
 			TextCmd.Type = ERenderCommandType::Font;
 			TextCmd.PerObjectConstants.Color = TextComp->GetColor();
-			TextCmd.TextData = Text;
-			TextCmd.AtlasResource = Font;
-			TextCmd.SpriteSize.X = TextComp->GetFontSize();
+			TextCmd.Constants.Font.Text = &Text;
+			TextCmd.Constants.Font.Font = Font;
+			TextCmd.Constants.Font.Scale = TextComp->GetFontSize();
 			TextCmd.BlendState = EBlendState::AlphaBlend;
 			TextCmd.DepthStencilState = EDepthStencilState::Default;
-			RenderBus.AddCommand(ERenderPass::Font, std::move(TextCmd));
+			RenderBus.AddCommand(ERenderPass::Font, TextCmd);
 			continue;
 		}
+
+		if (!primitiveComponent->SupportsOutline()) continue;
 
 		FRenderCommand BaseCmd{};
 		BaseCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
@@ -155,21 +153,21 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 {
 	if (!Primitive->IsVisible()) return;
 
-	FRenderCommand Cmd = {};
-	Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
-	ERenderPass TargetPass = ERenderPass::Opaque;
+	EPrimitiveType PrimType = Primitive->GetPrimitiveType();
 
-	switch (Primitive->GetPrimitiveType())
+	switch (PrimType)
 	{
 	case EPrimitiveType::EPT_Cube:
 	case EPrimitiveType::EPT_Sphere:
 	case EPrimitiveType::EPT_Plane:
 	{
 		if (!ShowFlags.bPrimitives) return;
+		FRenderCommand Cmd = {};
+		Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
 		Cmd.Type = ERenderCommandType::Primitive;
-		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Primitive->GetPrimitiveType());
+		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(PrimType);
 		Cmd.DepthStencilState = EDepthStencilState::Default;
-		TargetPass = ERenderPass::Opaque;
+		RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
 		break;
 	}
 
@@ -179,21 +177,22 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		const FParticleResource* Particle = SubUVComp->GetParticle();
 		if (!Particle || !Particle->IsLoaded()) return;
 
+		FRenderCommand Cmd = {};
+		Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
 		Cmd.Type = ERenderCommandType::SubUV;
-		Cmd.AtlasResource = Particle;
-		Cmd.FrameIndex = SubUVComp->GetFrameIndex();
-		Cmd.SpriteSize = { SubUVComp->GetWidth(), SubUVComp->GetHeight() };
+		Cmd.Constants.SubUV.Particle = Particle;
+		Cmd.Constants.SubUV.FrameIndex = SubUVComp->GetFrameIndex();
+		Cmd.Constants.SubUV.Width = SubUVComp->GetWidth();
+		Cmd.Constants.SubUV.Height = SubUVComp->GetHeight();
 		Cmd.BlendState = EBlendState::AlphaBlend;
 		Cmd.DepthStencilState = EDepthStencilState::Default;
-		TargetPass = ERenderPass::SubUV;
+		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);
 		break;
 	}
 
 	default:
 		return;
 	}
-
-	RenderBus.AddCommand(TargetPass, Cmd);
 }
 
 void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponent, FRenderBus& RenderBus)
