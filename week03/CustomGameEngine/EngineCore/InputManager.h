@@ -22,6 +22,9 @@ public:
 
 	void UpdateMouse();
 
+	// 메시지 처리용
+	void AccumulateMouseWheelDelta(float delta);
+
 public:
 	bool CurrentState[256];
 	bool PrevState[256];
@@ -31,9 +34,10 @@ public:
 	FVector MousePos;
 	FVector LastMousePos;
 	FVector MouseDelta;
+	float MouseWheel = 0.0f;
 
 	HWND hWnd;
 
 private:
-
+	float MouseWheelAccumulator = 0.0f;
 };

@@ -173,6 +173,18 @@ void UCameraComponent::HandleCameraMove(float deltaTime)
 {
 	if (!io.WantCaptureKeyboard && !io.WantCaptureMouse)
 	{
+		float wheelDelta = InputManager::GetInstance().MouseWheel;
+		if (wheelDelta != 0.0f)
+		{
+			FVector Mouse = InputManager::GetInstance().MousePos;
+			Ray mouseRay = ScreenPointToRay(static_cast<int>(Mouse.x), static_cast<int>(Mouse.y));
+			
+			FVector position = GetRelativeLocation();
+			// Move along the ray from mouse cursor
+			position = position + mouseRay.Direction * wheelDelta * MoveSpeed * 0.5f;
+			SetRelativeLocation(position);
+		}
+
 		if (InputManager::GetInstance().IsKeyHold(VK_RBUTTON))
 		{
 			Move(deltaTime);

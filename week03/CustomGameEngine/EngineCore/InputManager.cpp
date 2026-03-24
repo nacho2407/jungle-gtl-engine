@@ -5,6 +5,8 @@ InputManager::InputManager() {
 		PrevState[i] = false;
 		CurrentState[i] = false;
 	}
+	MouseWheel = 0.0f;
+	MouseWheelAccumulator = 0.0f;
 }
 
 InputManager::~InputManager() {}
@@ -71,4 +73,13 @@ void InputManager::UpdateMouse()
 	MouseDelta.x = MousePos.x - LastMousePos.x;
 	MouseDelta.y = MousePos.y - LastMousePos.y;
 	LastMousePos = MousePos;
+
+	// 프레임 시작 시 확정된 휠 값 설정 후 누적치 비움
+	MouseWheel = MouseWheelAccumulator;
+	MouseWheelAccumulator = 0.0f;
+}
+
+void InputManager::AccumulateMouseWheelDelta(float delta)
+{
+	MouseWheelAccumulator += delta;
 }

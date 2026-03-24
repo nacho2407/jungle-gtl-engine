@@ -66,6 +66,10 @@ LRESULT CALLBACK EngineApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 	case WM_KILLFOCUS:
 		InputManager::GetInstance().hWnd = NULL;
 		break;
+
+	case WM_MOUSEWHEEL:
+		InputManager::GetInstance().AccumulateMouseWheelDelta((float)GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA);
+		break;
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
