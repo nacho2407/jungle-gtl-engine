@@ -11,27 +11,22 @@ void FViewportGizmoController::Tick(float DeltaTime)
     // ...
 }
 
-void FViewportGizmoController::OnMouseButtonDown(int32 MouseX, int32 MouseY)
+bool FViewportGizmoController::OnMouseButtonDown(int32 MouseX, int32 MouseY)
 {
     if (bIsDragging)
     {
-        return;
+        return false;
     }
-    HitTestGizmo(MouseX, MouseY);
 
-    if (GizmoType == EGizmoType::None)
+    if (!HitTestGizmo(MouseX, MouseY))
     {
-        return;
+        bIsDragging = false;
+        return false;
     };
 
     bIsDragging = true;
     StartMousePosX = MouseX;
     StartMousePosY = MouseY;
-    /*if (SelectedObject == nullptr)
-    {
-        StartTransform = SelectedObject->GetRelativeFTransform();
-    }*/
-    SelectedActor = ViewportSelectionController->GetSelectedActors().back();
     
     switch (Axis)
     {
@@ -49,8 +44,6 @@ void FViewportGizmoController::OnMouseButtonDown(int32 MouseX, int32 MouseY)
     {
         CurrentDragAxis =
             SelectedActor->GetRootComponent()->GetRelativeRotation().RotateVector(CurrentDragAxis);
-
-        //CurrentDragAxis = SelectedActor->GetRelativeRotation().RotateVector(CurrentDragAxis);
     }
 
     const Geometry::FRay PickRay = Geometry::FRay::BuildRay(
@@ -60,13 +53,13 @@ void FViewportGizmoController::OnMouseButtonDown(int32 MouseX, int32 MouseY)
 
     InitialDragOffset =
         CalculateProjectionOffset(PickRay, StartTransform.GetLocation(), CurrentDragAxis);
+    return true;
 }
 
 
 void FViewportGizmoController::OnMouseButtonUp()
 {
     bIsDragging = false;
-    GizmoType = EGizmoType::None;
     Axis = EAxis::X;
     CurrentDragAxis = FVector{0.f, 0.f, 0.f};
     StartMousePosX = 0;
@@ -87,24 +80,29 @@ void FViewportGizmoController::OnMouseMove(int32 MouseX, int32 MouseY)
     }
 }
 
-void FViewportGizmoController::HitTestGizmo(int32 MouseX, int32 MouseY)
+FMatrix FViewportGizmoController::GetMatrix() const
+{
+    if (SelectedActor)
+        return SelectedActor->GetRootComponent()->GetRelativeMatrix();
+    else
+        return FMatrix::Identity;
+}
+
+bool FViewportGizmoController::HitTestGizmo(int32 MouseX, int32 MouseY)
 {
     if (ViewportCamera == nullptr || ViewportClient == nullptr)
     {
-        return;
+        return false;
     }
     FPickResult Result = ViewportClient->PickAt(MouseX, MouseY);
 
-    if (Result.GizmoType == EGizmoType::Translation)
+    if (Result.GizmoType != EGizmoType::None)
     {
         GizmoType = Result.GizmoType;
         Axis = Result.Axis;
+        return true;
     }
-    else
-    {
-        GizmoType = EGizmoType::None;
-        Axis = EAxis::X;
-    }
+    return false;
 }
 
 void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)

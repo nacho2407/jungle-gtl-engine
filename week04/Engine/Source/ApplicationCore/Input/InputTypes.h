@@ -20,7 +20,8 @@ namespace Engine::ApplicationCore
         MouseLeft,
         MouseRight,
         MouseMiddle,
-        Count
+        Count,
+        Space
     };
 
     enum class EInputEventType

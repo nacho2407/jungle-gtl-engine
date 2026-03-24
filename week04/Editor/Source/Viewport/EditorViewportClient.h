@@ -29,7 +29,7 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     void HandleInputEvent(const Engine::ApplicationCore::FInputEvent& Event,
                           const Engine::ApplicationCore::FInputState& State) override;
 
-    void BuildRenderData(FEditorRenderData& OutRenderData) const;
+    void BuildRenderData(FEditorRenderData& OutRenderData);
 
     void OnResize(uint32 InWidth, uint32 InHeight);
     void SetEditorContext(FEditorContext* InContext);

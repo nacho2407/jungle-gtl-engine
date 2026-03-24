@@ -4,15 +4,16 @@
 #include "Editor/EditorContext.h"
 #include "Engine/Scene.h"
 #include "Renderer/Types/EditorShowFlags.h"
+#include "Engine/Game/Actor.h"
 
 void FEditorViewportClient::Create()
 {
     InputRouter = new Engine::ApplicationCore::FInputRouter();
     InputRouter->AddContext(&ViewportInputContext);
     InputRouter->AddContext(&SelectionInputContext);
-   /* InputRouter->AddContext(&GizmoInputContext);
+    InputRouter->AddContext(&GizmoInputContext);
     GizmoController.SetViewportClient(this);
-    GizmoController.SetViewportSelectionController(&SelectionController);*/
+    GizmoController.SetViewportSelectionController(&SelectionController);
 
     NavigationController.SetCamera(&ViewportCamera);
     SelectionController.SetCamera(&ViewportCamera);
@@ -70,15 +71,33 @@ void FEditorViewportClient::HandleInputEvent(const Engine::ApplicationCore::FInp
     }
 }
 
-void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData) const
+void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData)
 {
-    // TODO
-    OutRenderData.Gizmo.GizmoType = EGizmoType::Translation;
-    OutRenderData.Gizmo.Highlight = EGizmoHighlight::None;
-    OutRenderData.Gizmo.Frame = FMatrix::Identity;
-    OutRenderData.ShowFlags = EEditorShowFlags::SF_Grid | EEditorShowFlags::SF_WorldAxes |
-                              EEditorShowFlags::SF_SelectionOutline |
-                              EEditorShowFlags::SF_ObjectLabels;
+    if (!SelectionController.GetSelectedActors().empty())
+    {
+        OutRenderData.Gizmo.GizmoType = GizmoController.GetGizmoType();
+        OutRenderData.Gizmo.Highlight = EGizmoHighlight::None;
+        GizmoController.SetSelectedActor(SelectionController.GetSelectedActors().back());
+        OutRenderData.Gizmo.Frame =
+            GizmoController.GetSelectedActor()->GetRootComponent()->GetRelativeMatrixNoScale();
+
+        OutRenderData.ShowFlags = EEditorShowFlags::SF_Grid | EEditorShowFlags::SF_WorldAxes |
+                                  EEditorShowFlags::SF_Gizmo |
+                                  EEditorShowFlags::SF_SelectionOutline |
+                                  EEditorShowFlags::SF_ObjectLabels;
+        GizmoController.bIsDrawed = true;
+    }
+    else
+    {
+        OutRenderData.Gizmo.GizmoType = EGizmoType::Translation;
+        OutRenderData.Gizmo.Highlight = EGizmoHighlight::None;
+        OutRenderData.Gizmo.Frame = FMatrix::Identity;
+        OutRenderData.ShowFlags = EEditorShowFlags::SF_Grid | EEditorShowFlags::SF_WorldAxes |
+                                  EEditorShowFlags::SF_SelectionOutline |
+                                  EEditorShowFlags::SF_ObjectLabels;
+        GizmoController.SetSelectedActor(nullptr);
+        GizmoController.bIsDrawed = false;
+    }
 }
 
 void FEditorViewportClient::OnResize(uint32 Width, uint32 Height)
@@ -103,6 +122,4 @@ void FEditorViewportClient::SyncSelectionFromContext()
     SelectionController.SyncSelectionFromContext();
 }
 
-void FEditorViewportClient::DrawOutline()
-{
-}
+void FEditorViewportClient::DrawOutline() {}

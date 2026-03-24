@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/CoreMinimal.h"
 #include "Engine/ViewPort/ViewportController.h"
-#include "Engine/Component/SceneComponent.h"
+#include "Engine/Component/Core/SceneComponent.h"
 #include "Gizmo/EditorGizmoTypes.h"
 #include "Renderer/Types/PickResult.h"
 
@@ -24,10 +24,22 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     void Tick(float DeltaTime);
 
     // GizmoInputContext에서 호출할 훅
-    void OnMouseButtonDown(int32 MouseX, int32 MouseY);
+    bool OnMouseButtonDown(int32 MouseX, int32 MouseY);
     void OnMouseButtonUp();
     void OnMouseMove(int32 MouseX, int32 MouseY);
     bool IsDragging() { return bIsDragging; }
+
+    EGizmoType GetGizmoType() const { return GizmoType; }
+    void       ChangeGizmoType()
+    {
+        if (GizmoType == EGizmoType::Translation)
+            GizmoType = EGizmoType::Rotation;
+        else if (GizmoType == EGizmoType::Rotation)
+            GizmoType = EGizmoType::Scaling;
+        else if (GizmoType == EGizmoType::Scaling)
+            GizmoType = EGizmoType::Translation;
+    }
+    FMatrix    GetMatrix() const;
 
     void SetCamera(FViewportCamera* InCamera) { ViewportCamera = InCamera; }
     void SetViewportClient(FEditorViewportClient* InClient) { ViewportClient = InClient; }
@@ -35,6 +47,9 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     {
         ViewportSelectionController = InControllelr;
     }
+
+    void SetSelectedActor(AActor* InActor) { SelectedActor = InActor; }
+    AActor* GetSelectedActor() const  { return SelectedActor; }
 
     // 기즈모 설정 변경
     // void SetGizmoMode(EGizmoMode InMode) { CurrentMode = InMode; }
@@ -44,20 +59,24 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
         SnapValue = InValue;
     }
 
+    bool bIsDrawed{false};
+
+
   private:
-    void HitTestGizmo(int32 MouseX, int32 MouseY);
+    bool HitTestGizmo(int32 MouseX, int32 MouseY);
     void UpdateDrag(int32 MouseX, int32 MouseY);
 
     float CalculateProjectionOffset(const Geometry::FRay& Ray, const FVector& AxisOrigin,
                                     const FVector& AxisDir);
 
   private:
-    EGizmoType GizmoType = EGizmoType::None;
+    EGizmoType GizmoType = EGizmoType::Translation;
     EAxis      Axis = EAxis::X;
     FVector    CurrentDragAxis;
 
     FPickResult PickData;
 
+    
     bool       bIsWorldMode = false;
     bool       bIsDragging = false;
     int32      StartMousePosX;

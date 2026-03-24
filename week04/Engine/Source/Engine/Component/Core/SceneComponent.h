@@ -28,6 +28,7 @@ namespace Engine::Component
         virtual void Update(float DeltaTime);
 
         FMatrix GetRelativeMatrix() const;
+        FMatrix GetRelativeMatrixNoScale() const;
 
         bool IsSelected() const;
         void SetSelected(bool bInSelected);

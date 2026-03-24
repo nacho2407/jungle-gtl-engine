@@ -55,6 +55,11 @@ namespace Engine::Component
         return WorldTransform.ToMatrixWithScale();
     }
 
+    FMatrix USceneComponent::GetRelativeMatrixNoScale() const
+    {
+        return WorldTransform.ToMatrixNoScale();
+    }
+
     bool USceneComponent::IsSelected() const { return bIsSelected; }
     void USceneComponent::SetSelected(bool bInSelected) { bIsSelected = bInSelected; }
     

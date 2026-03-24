@@ -13,10 +13,10 @@ bool FEditorGlobalContext::HandleEvent(const Engine::ApplicationCore::FInputEven
     //    return false;
     //}
 
-    switch (Event.Key)
+    /*switch (Event.Key)
     {
 
-    }
+    }*/
 
     return false;
 }

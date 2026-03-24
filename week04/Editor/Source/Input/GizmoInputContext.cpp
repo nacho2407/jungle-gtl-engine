@@ -13,40 +13,50 @@ FGizmoInputContext::FGizmoInputContext(FViewportGizmoController* InGizmoControll
 bool FGizmoInputContext::HandleEvent(const Engine::ApplicationCore::FInputEvent& Event,
                                      const Engine::ApplicationCore::FInputState& State)
 {
-    if (GizmoController == nullptr)
+    if (GizmoController == nullptr || !GizmoController->bIsDrawed)
     {
         return false;
     }
 
     switch (Event.Type)
     {
-    case EInputEventType::MouseButtonDown:
-
-        if (Event.Key == EKey::MouseLeft)
         {
-            // 좌클릭: 기즈모 선택 및 드래그 시작
-            GizmoController->OnMouseButtonDown(Event.MouseX, Event.MouseY);
-            return true;
+        case EInputEventType::MouseButtonDown:
+
+            if (Event.Key == EKey::MouseLeft)
+            {
+                // 좌클릭: 기즈모 선택 및 드래그 시작
+                return GizmoController->OnMouseButtonDown(Event.MouseX, Event.MouseY);
+            }
+            break;
         }
-        break;
 
     case EInputEventType::MouseButtonUp:
+    {
         if (Event.Key == EKey::MouseLeft)
         {
-            // 좌클릭 해제: 기즈모 드래그 종료
+            bool bWasDragging = GizmoController->IsDragging();
             GizmoController->OnMouseButtonUp();
-            return true;
+            return bWasDragging;
         }
         break;
+    }
 
     case EInputEventType::MouseMove:
     {
         GizmoController->OnMouseMove(Event.MouseX, Event.MouseY);
 
-       if (GizmoController->IsDragging())
+        if (GizmoController->IsDragging())
         {
             return true;
         }
+        break;
+    }
+    case EInputEventType::KeyDown:
+    {
+        if (Event.Key == EKey::Space)
+            GizmoController->ChangeGizmoType();
+        return true;
     }
     break;
     }

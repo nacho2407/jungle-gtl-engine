@@ -22,6 +22,8 @@ namespace Engine::ApplicationCore
                 return EKey::E;
             case 'Q':
                 return EKey::Q;
+            case VK_SPACE:
+                return EKey::Space;
             case VK_DELETE:
                 return EKey::Delete;
             default:
