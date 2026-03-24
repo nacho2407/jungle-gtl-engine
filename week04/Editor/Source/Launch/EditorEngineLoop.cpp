@@ -95,6 +95,13 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
                             static_cast<float>(CachedWindowHeight));
 
     InitializeForTime();
+    Editor->GetViewportClient().OnPickRequested = [this](int32 X, int32 Y) -> FPickResult
+    {
+        FPickResult Result;
+        // EngineLoop는 Renderer와 Editor 모두에 접근 가능하므로 픽킹을 직접 수행해서 반환
+        Renderer->Pick(Editor->GetEditorRenderData(), X, Y, Result);
+        return Result;
+    };
     return true;
 }
 

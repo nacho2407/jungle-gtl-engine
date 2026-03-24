@@ -14,25 +14,27 @@
 */
 
 class FViewportCamera;
-struct FEditorRenderData;
-class FRendererModule;
+class FEditorViewportClient;
+class FViewportSelectionController;
+class AActor;
 
 class FViewportGizmoController : public Engine::Viewport::IViewportController
 {
+  public:
     void Tick(float DeltaTime);
 
     // GizmoInputContext에서 호출할 훅
     void OnMouseButtonDown(int32 MouseX, int32 MouseY);
     void OnMouseButtonUp();
     void OnMouseMove(int32 MouseX, int32 MouseY);
+    bool IsDragging() { return bIsDragging; }
 
-    void SetViewportCamera(FViewportCamera* InCamera) { ViewportCamera = InCamera; }
-    void SetSelectedObject(Engine::Component::USceneComponent* InObject)
+    void SetCamera(FViewportCamera* InCamera) { ViewportCamera = InCamera; }
+    void SetViewportClient(FEditorViewportClient* InClient) { ViewportClient = InClient; }
+    void SetViewportSelectionController(FViewportSelectionController* InControllelr)
     {
-        SelectedObject = InObject;
+        ViewportSelectionController = InControllelr;
     }
-    void SetRendererModule(FRendererModule* InRenderer) { RendererModule = InRenderer; }
-    void SetEditorRenderData(FEditorRenderData* InRenderData) { EditorRenderData = InRenderData; }
 
     // 기즈모 설정 변경
     // void SetGizmoMode(EGizmoMode InMode) { CurrentMode = InMode; }
@@ -54,6 +56,8 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     EAxis      Axis = EAxis::X;
     FVector    CurrentDragAxis;
 
+    FPickResult PickData;
+
     bool       bIsWorldMode = false;
     bool       bIsDragging = false;
     int32      StartMousePosX;
@@ -64,9 +68,9 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     bool  bEnableSnapping = false;
     float SnapValue = 10.f;
 
-    FViewportCamera*   ViewportCamera{nullptr};
-    FEditorRenderData* EditorRenderData;
-    FRendererModule*   RendererModule;
+    FEditorViewportClient* ViewportClient{nullptr};
+    FViewportCamera*       ViewportCamera{nullptr};
+    FViewportSelectionController* ViewportSelectionController{nullptr};
 
-    Engine::Component::USceneComponent* SelectedObject{nullptr};
+    AActor* SelectedActor{nullptr};
 };

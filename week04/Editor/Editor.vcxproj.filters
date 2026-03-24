@@ -37,8 +37,8 @@
     <Filter Include="Source\Editor\Logging">
       <UniqueIdentifier>{9eea2180-fcc8-2cbc-e827-723988501a5f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\ThirdParty\imgui">
-      <UniqueIdentifier>{14727bfa-61bb-1229-bb2b-782b3aace65f}</UniqueIdentifier>
+    <Filter Include="Source\ThirdParty\ImGui">
+      <UniqueIdentifier>{32e4b986-b3a8-5f87-38d0-7d76493d7618}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Viewport\Gizmo">
       <UniqueIdentifier>{a4a5fb1b-42c4-c447-1a35-66493bab83fe}</UniqueIdentifier>
@@ -54,6 +54,9 @@
     </Filter>
     <Filter Include="Source\Viewport\Selection">
       <UniqueIdentifier>{c02bdf14-d23c-3f72-e5f4-7a918dc1b5dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Viewport\Gizmo\GizmoControlStrategy">
+      <UniqueIdentifier>{0706b8ee-f7f1-3fe8-771b-0b67e0e4e290}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -153,9 +156,6 @@
     <ClCompile Include="Source\Viewport\Selection\ViewportSelectionController.cpp">
       <Filter>Source\Viewport\Selection</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Input\NavigationInputContext.cpp" />
-    <ClCompile Include="Source\Input\SelectionInputContext.cpp" />
-    <ClCompile Include="Source\Editor\Logging\EditorLogBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Camera\ViewportCamera.h">
@@ -269,10 +269,6 @@
     <ClInclude Include="Source\Viewport\Selection\ViewportSelectionController.h">
       <Filter>Source\Viewport\Selection</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Input\NavigationInputContext.h" />
-    <ClInclude Include="Source\Input\SelectionInputContext.h" />
-    <ClInclude Include="Source\Editor\Logging\EditorLogBuffer.h" />
-    <ClInclude Include="Source\Editor\Logging\EditorLogEntry.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Source\ThirdParty\ImGui\imgui.natstepfilter">

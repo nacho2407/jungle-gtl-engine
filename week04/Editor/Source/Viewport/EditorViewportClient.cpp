@@ -10,9 +10,13 @@ void FEditorViewportClient::Create()
     InputRouter = new Engine::ApplicationCore::FInputRouter();
     InputRouter->AddContext(&ViewportInputContext);
     InputRouter->AddContext(&SelectionInputContext);
+   /* InputRouter->AddContext(&GizmoInputContext);
+    GizmoController.SetViewportClient(this);
+    GizmoController.SetViewportSelectionController(&SelectionController);*/
 
     NavigationController.SetCamera(&ViewportCamera);
     SelectionController.SetCamera(&ViewportCamera);
+    GizmoController.SetCamera(&ViewportCamera);
 
     ViewportCamera.SetProjectionType(EViewportProjectionType::Perspective);
     ViewportCamera.SetFOV(3.141592f * 0.5f);
@@ -70,8 +74,8 @@ void FEditorViewportClient::HandleInputEvent(const Engine::ApplicationCore::FInp
 
 void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData) const
 {
-    // OutRenderData.Gizmo.GizmoType = EGizmoType::Translation;
-     OutRenderData.Gizmo.GizmoType = EGizmoType::Rotation;
+    OutRenderData.Gizmo.GizmoType = EGizmoType::Translation;
+    //OutRenderData.Gizmo.GizmoType = EGizmoType::Rotation;
     //OutRenderData.Gizmo.GizmoType = EGizmoType::Scaling;
     OutRenderData.Gizmo.Highlight = EGizmoHighlight::None;
     OutRenderData.Gizmo.Frame = FMatrix::Identity;

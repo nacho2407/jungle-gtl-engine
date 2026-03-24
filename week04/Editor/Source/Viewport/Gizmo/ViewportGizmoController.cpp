@@ -1,8 +1,10 @@
 #include "ViewportGizmoController.h"
 #include "Camera/ViewportCamera.h"
 #include "Renderer/Types/PickId.h"
-#include "Renderer/RendererModule.h"
 #include "Renderer/Types/PickResult.h"
+#include "Viewport/EditorViewportClient.h"
+#include "Viewport/Selection/ViewportSelectionController.h"
+#include "Engine/Game/Actor.h"
 
 void FViewportGizmoController::Tick(float DeltaTime)
 {
@@ -17,14 +19,20 @@ void FViewportGizmoController::OnMouseButtonDown(int32 MouseX, int32 MouseY)
     }
     HitTestGizmo(MouseX, MouseY);
 
-    if (GizmoType != EGizmoType::Translation)
+    if (GizmoType == EGizmoType::None)
     {
-        bIsDragging = true;
-        StartMousePosX = MouseX;
-        StartMousePosY = MouseY;
+        return;
     };
-    StartTransform = SelectedObject->GetRelativeFTransform();
 
+    bIsDragging = true;
+    StartMousePosX = MouseX;
+    StartMousePosY = MouseY;
+    /*if (SelectedObject == nullptr)
+    {
+        StartTransform = SelectedObject->GetRelativeFTransform();
+    }*/
+    SelectedActor = ViewportSelectionController->GetSelectedActors().back();
+    
     switch (Axis)
     {
     case EAxis::X:
@@ -39,7 +47,10 @@ void FViewportGizmoController::OnMouseButtonDown(int32 MouseX, int32 MouseY)
     }
     if (!bIsWorldMode)
     {
-        CurrentDragAxis = SelectedObject->GetRelativeRotation().RotateVector(CurrentDragAxis);
+        CurrentDragAxis =
+            SelectedActor->GetRootComponent()->GetRelativeRotation().RotateVector(CurrentDragAxis);
+
+        //CurrentDragAxis = SelectedActor->GetRelativeRotation().RotateVector(CurrentDragAxis);
     }
 
     const Geometry::FRay PickRay = Geometry::FRay::BuildRay(
@@ -72,28 +83,33 @@ void FViewportGizmoController::OnMouseMove(int32 MouseX, int32 MouseY)
     }
     else
     {
-        HitTestGizmo(MouseX, MouseY);
+        // HitTestGizmo(MouseX, MouseY);
     }
 }
 
 void FViewportGizmoController::HitTestGizmo(int32 MouseX, int32 MouseY)
 {
-    if (ViewportCamera == nullptr || EditorRenderData == nullptr)
+    if (ViewportCamera == nullptr || ViewportClient == nullptr)
     {
         return;
     }
+    FPickResult Result = ViewportClient->PickAt(MouseX, MouseY);
 
-    FPickResult Result;
-    if (RendererModule->Pick(*EditorRenderData, MouseX, MouseY, Result))
+    if (Result.GizmoType == EGizmoType::Translation)
     {
         GizmoType = Result.GizmoType;
         Axis = Result.Axis;
+    }
+    else
+    {
+        GizmoType = EGizmoType::None;
+        Axis = EAxis::X;
     }
 }
 
 void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)
 {
-    if (GizmoType == EGizmoType::None || SelectedObject == nullptr)
+    if (GizmoType == EGizmoType::None || SelectedActor == nullptr)
     {
         return;
     }
@@ -116,7 +132,7 @@ void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)
     FTransform NewTransform = StartTransform;
     FVector    NewLocation = StartTransform.GetLocation() + (CurrentDragAxis * DeltaValue);
     NewTransform.SetLocation(NewLocation);
-    SelectedObject->SetRelativeLocation(NewTransform.GetLocation());
+    SelectedActor->GetRootComponent()->SetRelativeLocation(NewTransform.GetLocation());
 }
 
 float FViewportGizmoController::CalculateProjectionOffset(const Geometry::FRay& Ray,

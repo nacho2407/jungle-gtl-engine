@@ -263,9 +263,6 @@
     <ClInclude Include="Resources\Mesh\Ring.h">
       <Filter>Resources\Mesh</Filter>
     </ClInclude>
-    <ClInclude Include="Resources\Mesh\ring_highpoly.h">
-      <Filter>Resources\Mesh</Filter>
-    </ClInclude>
     <ClInclude Include="Resources\Mesh\Sphere.h">
       <Filter>Resources\Mesh</Filter>
     </ClInclude>
@@ -451,9 +448,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.h">
       <Filter>Source\Engine\Component\BasicPrimitives</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\FontComponent.h">
-      <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h">
       <Filter>Source\Engine\Component</Filter>

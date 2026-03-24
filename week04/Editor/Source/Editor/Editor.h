@@ -76,7 +76,7 @@ class FEditor
     FSceneView SceneView;
 
     FScene* CurScene = nullptr;
-    
+
     /* Logging */
     FEditorLogBuffer LogBuffer;
 

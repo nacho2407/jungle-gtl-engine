@@ -17,7 +17,6 @@
     <ClInclude Include="Resources\Mesh\MeshPrimitiveTopology.h" />
     <ClInclude Include="Resources\Mesh\Quad.h" />
     <ClInclude Include="Resources\Mesh\Ring.h" />
-    <ClInclude Include="Resources\Mesh\ring_highpoly.h" />
     <ClInclude Include="Resources\Mesh\Sphere.h" />
     <ClInclude Include="Resources\Mesh\Triangle.h" />
     <ClInclude Include="Resources\Mesh\VertexSimple.h" />
@@ -80,7 +79,6 @@
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\QuadComponent.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\SphereComponent.h" />
     <ClInclude Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.h" />
-    <ClInclude Include="Source\Engine\Component\FontComponent.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
     <ClInclude Include="Source\Engine\EngineStatics.h" />

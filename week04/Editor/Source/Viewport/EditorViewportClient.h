@@ -7,6 +7,7 @@
 #include "Engine/ViewPort/ViewportClient.h"
 #include "Input/NavigationInputContext.h"
 #include "Input/SelectionInputContext.h"
+#include "Input/GizmoInputContext.h"
 #include "Renderer/EditorRenderData.h"
 
 struct FEditorContext;
@@ -42,6 +43,18 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
 
     FViewportCamera& GetCamera() { return ViewportCamera; }
 
+    using FPickCallback = std::function<FPickResult(int32, int32)>;
+    FPickCallback OnPickRequested;
+
+    FPickResult PickAt(int32 MouseX, int32 MouseY) const
+    {
+        if (OnPickRequested)
+        {
+            return OnPickRequested(MouseX, MouseY);
+        }
+        return FPickResult{};
+    }
+
   private:
     FScene* CurScene = nullptr;
 
@@ -54,4 +67,5 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
 
     FNavigationInputContext ViewportInputContext{&NavigationController};
     FSelectionInputContext SelectionInputContext{&SelectionController};
+    FGizmoInputContext      GizmoInputContext{&GizmoController};
 };
