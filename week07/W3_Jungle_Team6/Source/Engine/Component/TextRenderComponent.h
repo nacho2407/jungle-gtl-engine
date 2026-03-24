@@ -86,6 +86,7 @@ public:
 
 	//Collision
 	void UpdateWorldAABB() const override;
+	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult);
 
 	void TickComponent(float DeltaTime);
 
