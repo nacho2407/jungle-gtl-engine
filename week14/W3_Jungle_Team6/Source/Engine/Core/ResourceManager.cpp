@@ -171,3 +171,25 @@ void FResourceManager::RegisterParticle(const FName& ParticleName, const FString
 	Resource.SRV     = nullptr;
 	ParticleResources[ParticleName.ToString()] = Resource;
 }
+
+TArray<FString> FResourceManager::GetFontNames() const
+{
+	TArray<FString> Names;
+	Names.reserve(FontResources.size());
+	for (const auto& [Key, _] : FontResources)
+	{
+		Names.push_back(Key);
+	}
+	return Names;
+}
+
+TArray<FString> FResourceManager::GetParticleNames() const
+{
+	TArray<FString> Names;
+	Names.reserve(ParticleResources.size());
+	for (const auto& [Key, _] : ParticleResources)
+	{
+		Names.push_back(Key);
+	}
+	return Names;
+}
