@@ -39,16 +39,6 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 				}
 			}
 		}
-		if (permanentScene != nullptr)
-		{
-			for (USceneComponent* component : permanentScene->SceneComponents)
-			{
-				if (component != nullptr)
-				{
-					componentsToSelect.push_back(component);
-				}
-			}
-		}
 		editor->SelectAllComponents(componentsToSelect);
 	}
 
@@ -122,20 +112,20 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 
 	ImGui::Separator();
 
-	if (permanentScene && ImGui::CollapsingHeader("Permanent Scene", ImGuiTreeNodeFlags_DefaultOpen))
-	{
-		for (USceneComponent* component : permanentScene->SceneComponents)
-		{
-			if (component == nullptr || Cast<UBillboardTextComponent>(component) != nullptr) continue;
+	//if (permanentScene && ImGui::CollapsingHeader("Permanent Scene", ImGuiTreeNodeFlags_DefaultOpen))
+	//{
+	//	for (USceneComponent* component : permanentScene->SceneComponents)
+	//	{
+	//		if (component == nullptr || Cast<UBillboardTextComponent>(component) != nullptr) continue;
 
-			bool isSelected = editor->IsComponentSelected(component);
-			FString label = component->Name.GetDisplayName() + " (UUID: " + std::to_string(component->UUID) + ")";
+	//		bool isSelected = editor->IsComponentSelected(component);
+	//		FString label = component->Name.GetDisplayName() + " (UUID: " + std::to_string(component->UUID) + ")";
 
-			if (ImGui::Selectable(label.c_str(), isSelected))
-			{
-				editor->SelectSingleComponent(component);
-			}
-		}
-	}
+	//		if (ImGui::Selectable(label.c_str(), isSelected))
+	//		{
+	//			editor->SelectSingleComponent(component);
+	//		}
+	//	}
+	//}
 	ImGui::End();
 }

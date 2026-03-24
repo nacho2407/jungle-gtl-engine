@@ -1,4 +1,4 @@
-#include "Editor.h"
+﻿#include "Editor.h"
 #include "ThirdParty/json.h"
 #include "Component/BillboardTextComponent.h"
 #include "Component/CameraComponent.h"
@@ -297,12 +297,6 @@ bool Editor::IsComponentSelected(USceneComponent* component) const
 	return false;
 }
 
-/**
- * @brief 선택 대상에 연결된 billboard text component를 찾습니다.
- *
- * @param component 검색할 대상 scene component
- * @return 연결된 billboard text component, 없으면 nullptr
- */
 UBillboardTextComponent* Editor::FindBillboardTextComponent(USceneComponent* component) const
 {
 	if (component == nullptr || component->Scene == nullptr)
@@ -310,7 +304,6 @@ UBillboardTextComponent* Editor::FindBillboardTextComponent(USceneComponent* com
 		return nullptr;
 	}
 
-	// 보조 인덱스만 순회함
 	for (UBillboardTextComponent* BillboardText : component->Scene->BillboardTextComponents)
 	{
 		if (BillboardText != nullptr && BillboardText->GetAttachedComponent() == component)

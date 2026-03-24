@@ -151,7 +151,8 @@ void SceneManager::RemoveSceneComponent(USceneComponent* toDespawn, UScene* targ
 		scene->Level.UnregisterRenderObject(primToDespawn->GetRenderObject());
 	}
 
-	if (UBillboardTextComponent* BillboardText = Cast<UBillboardTextComponent>(toDespawn))
+	UBillboardTextComponent* BillboardText = Cast<UBillboardTextComponent>(toDespawn);
+	if (BillboardText != nullptr)
 	{
 		for (auto it = scene->BillboardTextComponents.begin(); it != scene->BillboardTextComponents.end(); ++it)
 		{

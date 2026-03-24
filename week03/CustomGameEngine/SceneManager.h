@@ -52,7 +52,8 @@ public:
 		instance->Scene = targetScene;
 
 		targetScene->SceneComponents.push_back(instance);
-		if (UBillboardTextComponent* BillboardText = Cast<UBillboardTextComponent>(instance))
+		UBillboardTextComponent* BillboardText = Cast<UBillboardTextComponent>(instance);
+		if (BillboardText != nullptr)
 		{
 			targetScene->BillboardTextComponents.push_back(BillboardText);
 		}
