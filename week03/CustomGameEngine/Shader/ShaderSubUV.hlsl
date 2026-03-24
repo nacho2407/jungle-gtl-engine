@@ -49,6 +49,7 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
 {
     float4 sampled = DiffuseTexture.Sample(DiffuseSampler, input.UV) * input.Color;
 
+    //현재는 검은색 부분만 잘라내고 있습니다.
     if (sampled.r < 0.05f && sampled.g < 0.05f && sampled.b < 0.05f)
     {
         discard;
