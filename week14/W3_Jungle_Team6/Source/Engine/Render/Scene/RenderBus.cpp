@@ -13,6 +13,11 @@ void FRenderBus::AddCommand(ERenderPass Pass, const FRenderCommand& InCommand)
 	PassQueues[(uint32)Pass].push_back(InCommand);
 }
 
+void FRenderBus::AddCommand(ERenderPass Pass, FRenderCommand&& InCommand)
+{
+	PassQueues[(uint32)Pass].push_back(std::move(InCommand));
+}
+
 const TArray<FRenderCommand>& FRenderBus::GetCommands(ERenderPass Pass) const
 {
 	return PassQueues[(uint32)Pass];
