@@ -2,6 +2,8 @@
 #include "Object/Object.h"
 #include "GameFramework/AActor.h"
 
+class UCameraComponent;
+
 class UWorld : public UObject {
 public:
     DECLARE_CLASS(UWorld, UObject)
@@ -44,7 +46,12 @@ public:
 
     bool HasBegunPlay() const { return bHasBegunPlay; }
 
+    // Active Camera — EditorViewportClient 또는 PlayerController가 세팅
+    void SetActiveCamera(UCameraComponent* InCamera) { ActiveCamera = InCamera; }
+    UCameraComponent* GetActiveCamera() const { return ActiveCamera; }
+
 private:
     TArray<AActor*> Actors;
+    UCameraComponent* ActiveCamera = nullptr;
     bool bHasBegunPlay = false;
 };
