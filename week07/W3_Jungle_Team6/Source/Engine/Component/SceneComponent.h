@@ -34,6 +34,7 @@ public:
 	const FMatrix& GetWorldMatrix() const;
 	void SetWorldLocation(FVector NewWorldLocation);
 	FVector GetWorldLocation() const;
+	FVector GetWorldScale() const;
 	FVector GetRelativeLocation() const { return RelativeLocation; }
 	FVector GetRelativeRotation() const { return RelativeRotation; }
 	FVector GetRelativeScale() const { return RelativeScale3D; }

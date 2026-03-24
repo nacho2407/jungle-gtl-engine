@@ -131,7 +131,7 @@ void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceCo
 		break;
 
 	case ERenderPass::StencilMask:
-		Device.SetRasterizerState(ERasterizerState::SolidBackCull);
+		Device.SetRasterizerState(ERasterizerState::SolidFrontCull);
 		Device.SetDepthStencilState(EDepthStencilState::Default);
 		Device.SetBlendState(EBlendState::Opaque);
 		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -435,6 +435,7 @@ void FRenderer::CollectBatchingData(const FRenderBus& RenderBus)
 				Cmd.PerObjectConstants.Model.GetLocation(),
 				RenderBus.GetCameraRight(),
 				RenderBus.GetCameraUp(),
+				Cmd.PerObjectConstants.Model.GetScale(),
 				Cmd.FrameIndex,
 				Cmd.AtlasResource->Columns,
 				Cmd.AtlasResource->Rows,
