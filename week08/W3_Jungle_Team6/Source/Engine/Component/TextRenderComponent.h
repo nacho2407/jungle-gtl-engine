@@ -39,6 +39,7 @@ public:
 	~UTextRenderComponent() override = default;
 
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	void PostEditProperty(const char* PropertyName) override;
 
 	// --- Text ---
 	void SetText(const FString& InText) { Text = InText; }

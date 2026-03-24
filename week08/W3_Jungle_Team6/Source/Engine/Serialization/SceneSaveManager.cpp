@@ -12,6 +12,7 @@
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 #include "Core/PropertyTypes.h"
+#include "Object/FName.h"
 
 namespace SceneKeys
 {
@@ -186,6 +187,9 @@ json::JSON FSceneSaveManager::SerializePropertyValue(const FPropertyDescriptor& 
 	case EPropertyType::String:
 		return JSON(*static_cast<FString*>(Prop.ValuePtr));
 
+	case EPropertyType::Name:
+		return JSON(static_cast<FName*>(Prop.ValuePtr)->ToString());
+
 	default:
 		return JSON();
 	}
@@ -310,6 +314,7 @@ void FSceneSaveManager::DeserializeProperties(UActorComponent* Comp, json::JSON&
 		if (!PropsJSON.hasKey(Prop.Name)) continue;
 		auto Value = PropsJSON[Prop.Name];
 		DeserializePropertyValue(Prop, Value);
+		Comp->PostEditProperty(Prop.Name);
 	}
 }
 
@@ -348,6 +353,10 @@ void FSceneSaveManager::DeserializePropertyValue(FPropertyDescriptor& Prop, json
 	}
 	case EPropertyType::String:
 		*static_cast<FString*>(Prop.ValuePtr) = Value.ToString();
+		break;
+
+	case EPropertyType::Name:
+		*static_cast<FName*>(Prop.ValuePtr) = FName(Value.ToString());
 		break;
 
 	default:
