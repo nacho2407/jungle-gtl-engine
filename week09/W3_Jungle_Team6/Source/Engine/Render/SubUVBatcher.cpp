@@ -1,6 +1,7 @@
 #include "SubUVBatcher.h"
 
 #include "Core/CoreTypes.h"
+#include "Render/Device/D3DDevice.h"
 
 void FSubUVBatcher::Create(ID3D11Device* InDevice)
 {
@@ -96,10 +97,14 @@ void FSubUVBatcher::Clear()
     Indices.clear();
 }
 
-void FSubUVBatcher::Flush(ID3D11DeviceContext* Context, ID3D11ShaderResourceView* SRV)
+void FSubUVBatcher::Flush(FD3DDevice& D3DDevice, ID3D11DeviceContext* Context, ID3D11ShaderResourceView* SRV)
 {
     if (!SRV) return;
     if (Vertices.empty() || !VertexBuffer || !IndexBuffer) return;
+
+    D3DDevice.SetDepthStencilState(EDepthStencilState::Default);
+    D3DDevice.SetBlendState(EBlendState::AlphaBlend);
+    D3DDevice.SetRasterizerState(ERasterizerState::SolidBackCull);
 
     // 버퍼 크기 초과 시 재할당
     if (Vertices.size() > MaxVertexCount || Indices.size() > MaxIndexCount)

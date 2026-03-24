@@ -10,8 +10,7 @@
 #include "Core/CoreTypes.h"
 #include "Render/Scene/RenderCommand.h"
 
-// 헤더 분리 필요
-#include "Editor/Settings/EditorSettings.h"
+#include "Render/Common/ViewTypes.h"
 
 
 class FRenderBus
