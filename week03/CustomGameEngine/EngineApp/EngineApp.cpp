@@ -138,7 +138,7 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	LastActiveScene = GetWorld().GetSceneManager()->NewScene();
 
 	/*SubUV를 테스트를 위한 코드입니다.*/
-	auto SubUVBillboard = Cast<UBillboardSubUVComponent>(GetWorld().GetSceneManager()->AddSceneComponent<UBillboardSubUVComponent>(LastActiveScene));
+	auto SubUVBillboard = Cast<UBillboardSubUVComp>(GetWorld().GetSceneManager()->AddSceneComponent<UBillboardSubUVComp>(LastActiveScene));
 	if (SubUVBillboard != nullptr)
 	{
 		SubUVBillboard->SetRelativeLocation(FVector(0.0f, 0.0f, 3.0f));

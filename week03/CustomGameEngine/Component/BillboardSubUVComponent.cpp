@@ -6,7 +6,7 @@
 #include "EngineCore/ResourceManager.h"
 #include "Scene.h"
 
-UBillboardSubUVComponent::UBillboardSubUVComponent()
+UBillboardSubUVComp::UBillboardSubUVComp()
 {
 	ResourceManager* resourceManager = ResourceManager::GetInstance();
 	//UPrimitive를 상속받도록. 수정.
@@ -14,20 +14,20 @@ UBillboardSubUVComponent::UBillboardSubUVComponent()
 	CreateAABB();
 }
 
-UBillboardSubUVComponent::~UBillboardSubUVComponent() = default;
+UBillboardSubUVComp::~UBillboardSubUVComp() = default;
 
-void UBillboardSubUVComponent::OnComponentAdded()
+void UBillboardSubUVComp::OnComponentAdded()
 {
 	UPrimitiveComponent::OnComponentAdded();
 }
 
-void UBillboardSubUVComponent::Update(float DeltaTime)
+void UBillboardSubUVComp::Update(float DeltaTime)
 {
 	CurrentTime += DeltaTime;
 	UpdateRenderObject();
 }
 
-json::JSON UBillboardSubUVComponent::Serialize()
+json::JSON UBillboardSubUVComp::Serialize()
 {
 	json::JSON jsonObj = UPrimitiveComponent::Serialize();
 	jsonObj["Type"] = "BillboardSubUV";
@@ -41,7 +41,7 @@ json::JSON UBillboardSubUVComponent::Serialize()
 	return jsonObj;
 }
 
-void UBillboardSubUVComponent::Deserialize(json::JSON jsonObj)
+void UBillboardSubUVComp::Deserialize(json::JSON jsonObj)
 {
 	USceneComponent::Deserialize(jsonObj);
 	Width = static_cast<float>(jsonObj["Width"].ToFloat());
@@ -54,14 +54,14 @@ void UBillboardSubUVComponent::Deserialize(json::JSON jsonObj)
 	UpdateRenderObject();
 }
 
-void UBillboardSubUVComponent::SetSize(float InWidth, float InHeight)
+void UBillboardSubUVComp::SetSize(float InWidth, float InHeight)
 {
 	Width = InWidth;
 	Height = InHeight;
 	UpdateRenderObject();
 }
 
-void UBillboardSubUVComponent::SetGrid(int32 InRows, int32 InColumns, int32 InFrameCount)
+void UBillboardSubUVComp::SetGrid(int32 InRows, int32 InColumns, int32 InFrameCount)
 {
 	Rows = (std::max)(1, InRows);
 	Columns = (std::max)(1, InColumns);
@@ -69,14 +69,14 @@ void UBillboardSubUVComponent::SetGrid(int32 InRows, int32 InColumns, int32 InFr
 	UpdateRenderObject();
 }
 
-void UBillboardSubUVComponent::SetPlayback(float InFramesPerSecond, bool bInLoop)
+void UBillboardSubUVComp::SetPlayback(float InFramesPerSecond, bool bInLoop)
 {
 	FramesPerSecond = (std::max)(0.0f, InFramesPerSecond);
 	bLoop = bInLoop;
 	UpdateRenderObject();
 }
 
-RenderObject* UBillboardSubUVComponent::CreateRenderObject()
+RenderObject* UBillboardSubUVComp::CreateRenderObject()
 {
 	RenderObject* renderObject = UPrimitiveComponent::CreateRenderObject();
 	if (renderObject == nullptr)
@@ -93,7 +93,7 @@ RenderObject* UBillboardSubUVComponent::CreateRenderObject()
 	return renderObject;
 }
 
-void UBillboardSubUVComponent::UpdateRenderObject()
+void UBillboardSubUVComp::UpdateRenderObject()
 {
 	if (RenderObj == nullptr)
 	{
@@ -156,7 +156,7 @@ void UBillboardSubUVComponent::UpdateRenderObject()
 	RenderObj->bIsSelected = bIsSelected; //렌더링에 포함시킵니다
 }
 
-int32 UBillboardSubUVComponent::GetCurrentFrameIndex() const
+int32 UBillboardSubUVComp::GetCurrentFrameIndex() const
 {
 	const int32 totalFrames = (std::max)(1, (std::min)(FrameCount, Rows * Columns));
 	if (FramesPerSecond <= 0.0f)
@@ -173,4 +173,4 @@ int32 UBillboardSubUVComponent::GetCurrentFrameIndex() const
 	return (std::min)(frameIndex, totalFrames - 1);
 }
 
-REGISTER_CLASS(UBillboardSubUVComponent);
+REGISTER_CLASS(UBillboardSubUVComp);

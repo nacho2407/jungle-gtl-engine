@@ -79,7 +79,7 @@ namespace
 		else if (typeStr == "Plane")
 			object = FObjectFactory::ConstructObject(UPlaneComp::GetClass());
 		else if (typeStr == "BillboardSubUV")
-			object = FObjectFactory::ConstructObject(UBillboardSubUVComponent::GetClass());
+			object = FObjectFactory::ConstructObject(UBillboardSubUVComp::GetClass());
 
 		USceneComponent* newSc = Cast<USceneComponent>(object);
 		if (newSc == nullptr)

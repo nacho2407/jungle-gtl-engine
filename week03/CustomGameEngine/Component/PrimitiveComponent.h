@@ -15,6 +15,7 @@ enum EPrimitiveType
 	Cube,
 	Triangle,
 	Plane,
+	SubUV,
 	Axis
 };
 

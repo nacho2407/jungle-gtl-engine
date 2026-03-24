@@ -2,12 +2,12 @@
 
 #include "PrimitiveComponent.h"
 
-class UBillboardSubUVComponent : public UPrimitiveComponent
+class UBillboardSubUVComp : public UPrimitiveComponent
 {
-	DECLARE_RTTI(UBillboardSubUVComponent, UPrimitiveComponent)
+	DECLARE_RTTI(UBillboardSubUVComp, UPrimitiveComponent)
 public:
-	UBillboardSubUVComponent();
-	virtual ~UBillboardSubUVComponent() override;
+	UBillboardSubUVComp();
+	virtual ~UBillboardSubUVComp() override;
 
 	virtual void OnComponentAdded() override;
 	virtual void Update(float DeltaTime) override;

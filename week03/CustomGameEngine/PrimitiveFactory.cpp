@@ -28,6 +28,8 @@ UPrimitiveComponent* PrimitiveFactory::AddPrimitive(EPrimitiveType type)
 		return sceneMgr->AddSceneComponent<UTriangleComp>();
 	case EPrimitiveType::Plane:
 		return sceneMgr->AddSceneComponent<UPlaneComp>();
+	case EPrimitiveType::SubUV:
+		return sceneMgr->AddSceneComponent<UPlaneComp>();
 	}
 	return nullptr;
 }
