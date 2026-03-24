@@ -1,4 +1,6 @@
-﻿#include "EngineApp/EngineApp.h"
+﻿#include <Windows.h>
+
+#include "EngineApp/EngineApp.h"
 
 #pragma comment(lib, "user32")
 #pragma comment(lib, "d3d11")

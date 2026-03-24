@@ -1,10 +1,9 @@
 ﻿#pragma once
 
-#include "Serializable.h"
 #include "Matrix.h"
 #include "Vector.h"
 
-struct FRotator : public ISerializable
+struct FRotator
 {
 public:
     float Roll;  // X축 회전

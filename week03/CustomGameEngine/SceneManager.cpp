@@ -79,7 +79,7 @@ UScene* SceneManager::LoadScene(FString sceneName)
 	return loadedScene;
 }
 
-void SceneManager::UnloadScene(UScene* targetScene)
+void SceneManager::UnloadScene(UScene* targetScene, bool bCreateReplacementScene)
 {
 	UScene* sceneToUnload = (targetScene != nullptr) ? targetScene : GetActiveScene();
 	if (sceneToUnload == nullptr)
@@ -114,7 +114,7 @@ void SceneManager::UnloadScene(UScene* targetScene)
 	delete sceneToUnload;
 	LoadedScenes.erase(sceneIt);
 
-	if (LoadedScenes.empty())
+	if (bCreateReplacementScene && LoadedScenes.empty())
 	{
 		UE_LOG("No scenes remained after deletion.\n");
 		NewScene();

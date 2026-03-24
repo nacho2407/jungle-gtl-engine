@@ -3,7 +3,7 @@
 #include "EngineCore/EngineTypes.h"
 #include "Math/Vector.h"
 #include "EngineCore/Color.h"
-#include "Renderer/UV.h"
+#include "Renderer/TexCoord.h"
 #include <d3d11.h>
 #include "EngineCore/EngineTypes.h"
 
@@ -14,12 +14,12 @@ struct FGeometry
 	TArray<FVector> Vertices;
 	TArray<uint32_t> Indices;
 	TArray<FColor> Colors;
-	TArray<UV> UVs;
+	TArray<FTexCoord> TexCoords;
 
 
 	bool IsVerticisValid() { return Vertices.empty(); }
 	bool IsColorValid() { return Colors.empty(); }
-	bool IsUVValid() { return UVs.empty(); }
+	bool IsUVValid() { return TexCoords.empty(); }
 
 	FGeometry() {}
 	~FGeometry()

@@ -64,7 +64,7 @@ FVector FVector::Transform(const FMatrix& Mat)
 	
 	vec.x = x * Mat[0][0] + y * Mat[1][0] + z * Mat[2][0];
 	vec.y = x * Mat[0][1] + y * Mat[1][1] + z * Mat[2][1];
-	vec.y = x * Mat[0][2] + y * Mat[1][2] + z * Mat[2][2];
+	vec.z = x * Mat[0][2] + y * Mat[1][2] + z * Mat[2][2];
 
 	return vec;
 }

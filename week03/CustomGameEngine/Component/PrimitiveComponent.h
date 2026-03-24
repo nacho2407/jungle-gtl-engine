@@ -4,6 +4,8 @@
 #include "Renderer/RenderObject.h"
 #include "AABB.h"
 
+#include "ThirdParty/json.h"
+
 class URenderer;
 struct FGeometry;
 

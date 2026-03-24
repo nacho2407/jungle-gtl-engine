@@ -18,7 +18,6 @@ enum class EEngineShowFlags
 };
 
 struct BatchKey {
-	FGeometry* Geometry;
 	FMaterial* Material;
 	D3D11_PRIMITIVE_TOPOLOGY PrimitiveTopology;
 
@@ -43,7 +42,7 @@ public:
 
 	BatchKey GetBatchKey() const
 	{
-		return { Geometry, Material, PrimitiveTopology };
+		return { Material, PrimitiveTopology };
 	}
 	//Texture
 

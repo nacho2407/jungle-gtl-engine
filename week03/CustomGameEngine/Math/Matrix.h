@@ -47,7 +47,7 @@ public:
 
 	static FMatrix ViewMatrix(FVector Eye, FVector Target, FVector Up);
 
-	FMatrix PerspectiveMatrix(float FovDegree, float Aspect, float Near, float Far);
+	static FMatrix PerspectiveMatrix(float FovDegree, float Aspect, float Near, float Far);
 
 	FMatrix Inverse() const;
 

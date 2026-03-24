@@ -32,9 +32,12 @@ LRESULT CALLBACK EngineApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 
 	switch (message)
 	{
+	case WM_CLOSE:
+		DestroyWindow(hWnd);
+		return 0;
 	case WM_DESTROY:
 		PostQuitMessage(0);
-		break;
+		return 0;
 	case WM_NCCREATE: // 창이 처음 생성될 때 호출됨
 	{
 		// CreateWindowExW의 마지막 인자(this)를 꺼냅니다.

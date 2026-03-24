@@ -231,7 +231,31 @@
     <ClInclude Include="Renderer\GeneralGeometry.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\UV.h">
+    <ClInclude Include="Renderer\TexCoord.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Text\TextEncoding.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Text\FontTypes.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Text\FontAsset.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Text\FontConfig.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Text\GlyphAtlas.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Text\Test.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Text\TextLayout.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VertexFont.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Constants.h">
@@ -405,6 +429,12 @@
     <ClCompile Include="SceneManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Text\TextEncoding.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Text\FontAsset.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
     <ClCompile Include="Component\GridComp.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -414,10 +444,20 @@
     <ClInclude Include="LineBatcher.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClCompile Include="Text\GlyphAtlas.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Text\Test.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Text\TextLayout.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shader\ShaderInfiniteGrid.hlsl" />
     <FxCompile Include="Shader\ShaderW0.hlsl" />
+    <FxCompile Include="Shader\ShaderFont.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram.cd" />

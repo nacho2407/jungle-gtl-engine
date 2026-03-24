@@ -1,11 +1,11 @@
 ﻿#pragma once
 
-#include "Serializable.h"
+#include "ThirdParty/json.h"
 
 struct FMatrix;
 
 // Structure for a 3D vector
-struct FVector : public ISerializable
+struct FVector
 {
 public:
     FVector(float _x = 0.0f, float _y = 0.0f, float _z = 0.0f) : x(_x), y(_y), z(_z) {}

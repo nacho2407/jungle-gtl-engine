@@ -3,6 +3,7 @@
 #include <d3d11.h>
 #include "EngineCore/EngineTypes.h"
 #include "ConstantBuffer.h"
+
 struct FMaterial
 {
 	TComPtr<ID3D11VertexShader> VertexShader = nullptr;

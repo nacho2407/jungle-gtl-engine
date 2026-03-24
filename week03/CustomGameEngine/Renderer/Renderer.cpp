@@ -1,5 +1,16 @@
 ﻿#include "Renderer.h"
+
+#include "EngineCore/Logger.h"
+
+// for test code
 #include "EngineCore/ResourceManager.h"
+#include "Text/TextLayout.h"
+
+/**
+ * @def MAX_VERTEX_FONT_COUNT 폰트를 위한 dynamic vertex buffer의 최대 정점 정보 개수
+ */
+#define MAX_VERTEX_FONT_COUNT 12000
+
 void URenderer::Create(HWND hWindow)
 {
 	CreateDeviceAndSwapChain(hWindow);
@@ -12,6 +23,7 @@ void URenderer::Create(HWND hWindow)
 
 	CreateConstantBuffer();
 	CreateDynamicVertexBuffer();
+	CreateDynamicFontVertexBuffer();
 
 	ShowFlagMap[EEngineShowFlags::SF_Primitives] = true;
 	ShowFlagMap[EEngineShowFlags::SF_BillboardText] = true;
@@ -174,6 +186,7 @@ void URenderer::ReleaseBlendState()
 void URenderer::Release()
 {
 	ReleaseDynamicVertexBuffer();
+	ReleaseDynamicFontVertexBuffer();
 	ReleaseBlendState();
 	ReleaseDepthStencilState();
 	DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
@@ -336,6 +349,8 @@ void URenderer::Render(const TArray<FLevel*>& Levels)
 	RenderNormalObjects(NormalRenderObjects);
 	BatchRender(BatchGroups);
 	RenderNoDepthObjects(NoDepthRenderObjects);
+
+	//RenderSingleBillboardTextTest();
 }
 
 
@@ -454,3 +469,50 @@ void URenderer::BatchRender(TMap<BatchKey, TArray<RenderObject*>>& BatchGroups)
 	}
 }
 
+void URenderer::CreateDynamicFontVertexBuffer(void)
+{
+	D3D11_BUFFER_DESC vertexbufferdesc = {};
+	vertexbufferdesc.ByteWidth = sizeof(FVertexFont) * MAX_VERTEX_FONT_COUNT;
+	vertexbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
+	vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vertexbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	HRESULT hr = Device->CreateBuffer(&vertexbufferdesc, nullptr, DynamicFontVertexBuffer.GetAddressOf());
+	if (FAILED(hr))
+	{
+		UE_LOG("[Renderer/Renderer][Error] Failed to create dynamic vertex buffer for the font");
+	}
+}
+
+void URenderer::UpdateDynamicFontVertexBuffer(FVertexFont* Vertices, UINT VertexCount)
+{
+	if (VertexCount > MAX_VERTEX_FONT_COUNT)
+	{
+		UE_LOG("[Renderer/Renderer][Error] Too much vertex information to fit into the vertex buffer for the font");
+		return;
+	}
+
+	D3D11_MAPPED_SUBRESOURCE Mapped = {};
+	HRESULT hr = DeviceContext->Map(
+		DynamicFontVertexBuffer.Get(),
+		0,
+		D3D11_MAP_WRITE_DISCARD,
+		0,
+		&Mapped
+	);
+	
+	if (FAILED(hr))
+	{
+		UE_LOG("[Renderer/Renderer][Error] Unable to map dynamic vertex buffer for the font");
+		return;
+	}
+
+	std::memcpy(Mapped.pData, Vertices, sizeof(FVertexFont) * VertexCount);
+
+	DeviceContext->Unmap(DynamicFontVertexBuffer.Get(), 0);
+}
+
+void URenderer::ReleaseDynamicFontVertexBuffer(void)
+{
+	DynamicFontVertexBuffer.Reset();
+}

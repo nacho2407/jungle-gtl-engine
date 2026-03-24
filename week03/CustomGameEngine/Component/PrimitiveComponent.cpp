@@ -1,9 +1,11 @@
 ﻿#include "PrimitiveComponent.h"
+
 #include "Renderer/Renderer.h"
 #include "EngineCore/ResourceManager.h"
 #include "Scene.h"
 #include "AABB.h"
 #include "LineBatcher.h"
+
 UPrimitiveComponent::UPrimitiveComponent()
 {
 }

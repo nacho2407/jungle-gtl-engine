@@ -201,7 +201,18 @@ void UCameraComponent::UpdateCameraMatrices()
 	FVector ForwardBase = FVector::Forward();
 	Direction = RotMatrix.TransformVector(ForwardBase).Normalize();
 
-	SideDirection = FVector::Up().Cross(Direction);
+	// Direction이 world up과 거의 평행해지는 경우 대비
+	const float UpDot = std::abs(Direction.Dot(FVector::Up()));
+	if (UpDot > 1.0f - Epsilon)
+	{
+		// 안전장치...
+		SideDirection = FVector::Right();
+	}
+	else
+	{
+		SideDirection = FVector::Up().Cross(Direction).Normalize();
+	}
+
 	UpDirection = Direction.Cross(SideDirection);
 
 	auto position = GetRelativeLocation();
@@ -215,14 +226,6 @@ FMatrix UCameraComponent::GetViewMatrix() const
 {
 	return View;
 }
-
-//void UCamera::CalcProjectionMatrix()
-//{
-//	if (ProjectionType == EProjectionType::Perspective)
-//		CalcPerspectiveProjectionMatrix();
-//	else
-//		CalcOrthogonalProjectionMatrix();
-//}
 
 void UCameraComponent::CalcProjectionMatrix()
 {
@@ -239,22 +242,7 @@ FMatrix UCameraComponent::GetProjectionMatrix() const
 
 void UCameraComponent::CalcPerspectiveProjectionMatrix()
 {
-	FMatrix M = FMatrix::ZeroMatrix();
-
-	float rad = FMatrix::DegToRad(FOV);
-	float w = 1.0f / std::tan(rad * 0.5f);
-	float h = w * AspectRatio;
-
-	float q = -NearPlane / (FarPlane - NearPlane);
-	float b = (NearPlane * FarPlane) / (FarPlane - NearPlane);
-
-	M[0][0] = w;
-	M[1][1] = h;
-	M[2][2] = q;
-	M[3][2] = b;
-	M[2][3] = 1.0f;
-
-	Projection = M;
+	Projection = FMatrix::PerspectiveMatrix(FOV, AspectRatio, NearPlane, FarPlane);
 }
 
 void UCameraComponent::CalcOrthogonalProjectionMatrix()
@@ -282,14 +270,27 @@ FMatrix UCameraComponent::GetViewProjectionMatrix() const { return ViewProjectio
 
 FVector UCameraComponent::WorldToScreen(const FVector& worldPos) const
 {
-	FVector clipSpacePos = ViewProjection.TransformPoint(worldPos);
-	if (clipSpacePos.z == 0.0f) return FVector(-1.0f, -1.0f, -1.0f);
+	if (ScreenWidth <= 0.0f || ScreenHeight <= 0.0f)
+	{
+		return FVector(-1.0f, -1.0f, -1.0f);
+	}
 
-	FVector ndcSpacePos = clipSpacePos / clipSpacePos.z;
-	float screenX = (ndcSpacePos.x + 1.0f) * 0.5f * ScreenWidth;
-	float screenY = (1.0f - (ndcSpacePos.y + 1.0f) * 0.5f) * ScreenHeight;
+	const FVector4 clip = FVector4(worldPos.x, worldPos.y, worldPos.z, 1.0f) * ViewProjection;
 
-	return FVector(screenX, screenY, ndcSpacePos.z);
+	if (std::abs(clip.w) < Epsilon || clip.w <= 0.0f)
+	{
+		return FVector(-1.0f, -1.0f, -1.0f);
+	}
+
+	const float invW = 1.0f / clip.w;
+	const float ndcX = clip.x * invW;
+	const float ndcY = clip.y * invW;
+	const float ndcZ = clip.z * invW;
+
+	const float screenX = (ndcX + 1.0f) * 0.5f * ScreenWidth;
+	const float screenY = (1.0f - (ndcY + 1.0f) * 0.5f) * ScreenHeight;
+
+	return FVector(screenX, screenY, ndcZ);
 }
 
 Ray UCameraComponent::ScreenPointToRay(int x, int y)

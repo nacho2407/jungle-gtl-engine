@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -165,8 +165,15 @@
     <ClInclude Include="LineBatcher.h" />
     <ClInclude Include="Renderer\Constants.h" />
     <ClInclude Include="Renderer\GeneralGeometry.h" />
-    <ClInclude Include="Renderer\UV.h" />
+    <ClInclude Include="Renderer\TexCoord.h" />
+    <ClInclude Include="Renderer\VertexFont.h" />
     <ClInclude Include="SceneManager.h" />
+    <ClInclude Include="Text\FontAsset.h" />
+    <ClInclude Include="Text\FontConfig.h" />
+    <ClInclude Include="Text\FontTypes.h" />
+    <ClInclude Include="Text\GlyphAtlas.h" />
+    <ClInclude Include="Text\TextEncoding.h" />
+    <ClInclude Include="Text\TextLayout.h" />
     <ClInclude Include="ThirdParty\fifo_map.hpp" />
     <ClInclude Include="Math\Matrix.h" />
     <ClInclude Include="Math\Quaternion.h" />
@@ -181,7 +188,6 @@
     <ClInclude Include="Renderer\Renderer.h" />
     <ClInclude Include="Renderer\RenderObject.h" />
     <ClInclude Include="Math\Rotator.h" />
-    <ClInclude Include="Serializable.h" />
     <ClInclude Include="EngineCore\Logger.h" />
     <ClInclude Include="SerializeHelper.h" />
     <ClInclude Include="Singleton.h" />
@@ -211,8 +217,6 @@
     <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="LineBatcher.cpp" />
-    <ClCompile Include="MemoryTracker.cpp" />
     <ClCompile Include="Component\AxisComponent.cpp" />
     <ClCompile Include="Component\BillboardSubUVComponent.cpp" />
     <ClCompile Include="Component\CameraComponent.cpp" />
@@ -239,12 +243,18 @@
     <ClCompile Include="EngineApp\EngineApp.cpp" />
     <ClCompile Include="EngineCore\Color.cpp" />
     <ClCompile Include="EngineCore\Name.cpp" />
+    <ClCompile Include="LineBatcher.cpp" />
     <ClCompile Include="Math\Matrix.cpp" />
     <ClCompile Include="Math\Quaternion.cpp" />
     <ClCompile Include="Math\Vector.cpp" />
     <ClCompile Include="EngineCore\ObjectFactory.cpp" />
     <ClCompile Include="EngineCore\InputManager.cpp" />
+    <ClCompile Include="MemoryTracker.cpp" />
     <ClCompile Include="SceneManager.cpp" />
+    <ClCompile Include="Text\FontAsset.cpp" />
+    <ClCompile Include="Text\GlyphAtlas.cpp" />
+    <ClCompile Include="Text\TextEncoding.cpp" />
+    <ClCompile Include="Text\TextLayout.cpp" />
     <ClCompile Include="ThirdParty\json.cpp" />
     <ClCompile Include="EngineCore\Logger.cpp" />
     <ClCompile Include="PrimitiveFactory.cpp" />
@@ -270,6 +280,10 @@
     <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Shader\ShaderFont.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="Shader\ShaderInfiniteGrid.hlsl">
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mainVS</EntryPointName>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mainVS</EntryPointName>

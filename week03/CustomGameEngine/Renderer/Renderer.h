@@ -11,6 +11,21 @@
 #include "Renderer/Material.h"
 #include "Renderer/Geometry.h"
 
+#include "Renderer/VertexFont.h"
+#include "Text/FontAsset.h"
+
+/**
+ * @brief 텍스트 Batch용 입력 구조체
+ */
+struct FBillboardTextDrawItem
+{
+	FString Text; // 실제 배치할 문자열 내용
+	FVector Anchor{}; // 텍스트 전체 배치의 시작 기준점
+	float Scale = 0.0f; // Glyph 크기 배율
+	float LineGap = 0.0f; // 줄바꿈 시 줄 간격
+	FColor Color{}; // 텍스트 색
+};
+
 class URenderer {
 public:
 	TComPtr<ID3D11Device> Device = nullptr;
@@ -93,7 +108,51 @@ public:
 
 	TMap<EEngineShowFlags, bool> ShowFlagMap;
 
+public:
+	/**
+	 * @brief 폰트를 위한 dynamic vertex buffer를 생성합니다.
+	 */
+	void CreateDynamicFontVertexBuffer(void);
+
+	/**
+	 * @brief 폰트를 위한 dynamic vertex buffer를 업데이트합니다.
+	 * 
+	 * @param Vertices 업데이트할 폰트 정점 정보
+	 * 
+	 * @param VectexCount 폰트 정점 개수
+	 */
+	void UpdateDynamicFontVertexBuffer(FVertexFont* Vertices, UINT VertexCount);
+
+	/**
+	 * @brief 폰트를 위한 dynamic vertex buffer를 해제합니다.
+	 */
+	void ReleaseDynamicFontVertexBuffer(void);
+
 private:
 	UCameraComponent* renderCamera = nullptr;
 	int32 RsSetMode = 0;
+
+	/**
+	 * @brief 폰트를 위한 dynamic vertex buffer
+	 */
+	TComPtr<ID3D11Buffer> DynamicFontVertexBuffer;
+
+private:
+	/**
+	 * @brief GPU 상태를 텍스트 렌더링용에 맞추어 draw call을 준비합니다.
+	 * 
+	 * @param FontAsset GPU에 설정할 font asset 정보
+	 * 
+	 * @param Color GPU에 설정할 글자 색 정보
+	 * 
+	 * @return 준비 성공 여부
+	 */
+	bool PrepareBillboardFontMaterial(FFontAsset* FontAsset, const FColor& Color);
+	
+	/**
+	 * @brief 준비된 정점 배열로 실제 draw call을 보냅니다.
+	 * 
+	 * @param Vertices Draw할 정점 배열
+	 */
+	void DrawBillboardFontVertices(const TArray<FVertexFont>& Vertices);
 };
