@@ -1,6 +1,5 @@
 ﻿#include "LineBatcher.h"
 #include "Core/EngineTypes.h"
-#include "Editor/Settings/EditorSettings.h"
 #include "Math/Utils.h"
 
 #include <algorithm>
@@ -190,71 +189,10 @@ void FLineBatcher::AddAABB(const FBoundingBox& Box, const FColor& InColor)
 	}
 }
 
-//void FLineBatcher::AddWorldGrid(float InGridSpacing, int InHalfGridCount)
-//{
-//	if (InGridSpacing <= 0.0f)
-//	{
-//		return;
-//	}
-//
-//	const float Extent = InGridSpacing * static_cast<float>(InHalfGridCount);
-//	const FVector4 GridColor = FColor::White().ToVector4();
-//
-//	for (int32 i = -InHalfGridCount; i <= InHalfGridCount; ++i)
-//	{
-//		if (i == 0)
-//		{
-//			continue;
-//		}
-//
-//		const float Offset = static_cast<float>(i) * InGridSpacing;
-//
-//		AddLine(
-//			FVector(-Extent, Offset, GridPlaneZ),
-//			FVector(Extent, Offset, GridPlaneZ),
-//			GridColor
-//		);
-//
-//		AddLine(
-//			FVector(Offset, -Extent, GridPlaneZ),
-//			FVector(Offset, Extent, GridPlaneZ),
-//			GridColor
-//		);
-//	}
-//}
-//
-//void FLineBatcher::AddWorldAxes(float InGridSpacing, int InHalfGridCount)
-//{
-//	if (InGridSpacing <= 0.0f || InHalfGridCount <= 0)
-//	{
-//		return;
-//	}
-//
-//	const float Extent = InGridSpacing * static_cast<float>(InHalfGridCount);
-//
-//	AddLine(
-//		FVector(-Extent, 0.0f, 0.0f),
-//		FVector(Extent, 0.0f, 0.0f),
-//		FColor::Red().ToVector4()
-//	);
-//
-//	AddLine(
-//		FVector(0.0f, -Extent, 0.0f),
-//		FVector(0.0f, Extent, 0.0f),
-//		FColor::Green().ToVector4()
-//	);
-//
-//	AddLine(
-//		FVector(0.0f, 0.0f, -Extent),
-//		FVector(0.0f, 0.0f, Extent),
-//		FColor::Blue().ToVector4()
-//	);
-//}
-
-void FLineBatcher::AddWorldHelpers(const FEditorSettings& Settings, const FVector& CameraPosition, const FVector& CameraForward)
+void FLineBatcher::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacing, int32 GridHalfLineCount, const FVector& CameraPosition, const FVector& CameraForward)
 {
-	const float Spacing = Settings.GridSpacing;
-	const int32 BaseHalfCount = std::max(Settings.GridHalfLineCount, 1);
+	const float Spacing = GridSpacing;
+	const int32 BaseHalfCount = std::max(GridHalfLineCount, 1);
 
 	if (Spacing <= 0.0f)
 	{
@@ -298,7 +236,7 @@ void FLineBatcher::AddWorldHelpers(const FEditorSettings& Settings, const FVecto
 	const bool bShowXAxis = (MinY <= 0.0f) && (MaxY >= 0.0f);
 	const bool bShowYAxis = (MinX <= 0.0f) && (MaxX >= 0.0f);
 
-	if (Settings.ShowFlags.bGrid)
+	if (ShowFlags.bGrid)
 	{
 		const FVector4 GridColor = FColor::White().ToVector4();
 

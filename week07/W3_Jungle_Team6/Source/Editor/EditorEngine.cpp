@@ -1,4 +1,4 @@
-﻿#include "Editor/EditorEngine.h"
+#include "Editor/EditorEngine.h"
 
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
@@ -6,10 +6,8 @@
 #include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "GameFramework/World.h"
-#include "Render/Scene/RenderCollector.h"
-#include "Render/Scene/RenderCollectorContext.h"
+#include "Editor/EditorRenderPipeline.h"
 #include "Core/Stats.h"
-#include "Core/GPUProfiler.h"
 
 DEFINE_CLASS(UEditorEngine, UEngine)
 REGISTER_FACTORY(UEditorEngine)
@@ -47,6 +45,9 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	ViewportClient.CreateCamera();
 	ViewportClient.ResetCamera();
 	GetWorld()->SetActiveCamera(ViewportClient.GetCamera());
+
+	// Editor render pipeline
+	SetRenderPipeline(std::make_unique<FEditorRenderPipeline>(this, Renderer));
 }
 
 void UEditorEngine::Shutdown()
@@ -74,34 +75,10 @@ void UEditorEngine::Tick(float DeltaTime)
 	UEngine::Tick(DeltaTime);
 }
 
-void UEditorEngine::Render(float DeltaTime)
+void UEditorEngine::RenderUI(float DeltaTime)
 {
-#if STATS
-	FStatManager::Get().TakeSnapshot();
-	FGPUProfiler::Get().TakeSnapshot();
-#endif
-	SCOPE_STAT("EditorEngine::Render");
-
-	RenderBus.Clear();
-	{
-		SCOPE_STAT("BuildRenderCommands");
-		BuildRenderCommands();
-	}
-
-	ERasterizerState ViewModeRasterizer = ERasterizerState::SolidBackCull;
-	if (FEditorSettings::Get().ViewMode == EViewMode::Wireframe)
-	{
-		ViewModeRasterizer = ERasterizerState::WireFrame;
-	}
-
-	Renderer.BeginFrame();
-	Renderer.Render(RenderBus, ViewModeRasterizer);
-	{
-		SCOPE_STAT("MainPanel::Render");
-		MainPanel.Render(DeltaTime);
-	}
-	Renderer.RenderOverlay(RenderBus);
-	Renderer.EndFrame();
+	SCOPE_STAT("MainPanel::Render");
+	MainPanel.Render(DeltaTime);
 }
 
 void UEditorEngine::ResetViewport()
@@ -152,20 +129,4 @@ void UEditorEngine::ClearScene()
 
 	ViewportClient.DestroyCamera();
 	ViewportClient.SetWorld(nullptr);
-}
-
-void UEditorEngine::BuildRenderCommands()
-{
-	FRenderCollectorContext Context(SelectionManager.GetSelectedActors());
-
-	Context.World = GetWorld();
-	Context.Camera = GetWorld()->GetActiveCamera();
-	Context.Gizmo = SelectionManager.GetGizmo();
-	Context.ViewMode = FEditorSettings::Get().ViewMode;
-	Context.ShowFlags = FEditorSettings::Get().ShowFlags;
-	Context.CursorOverlayState = &ViewportClient.GetCursorOverlayState();
-	Context.ViewportHeight = (float)Window->GetHeight();
-	Context.ViewportWidth = (float)Window->GetWidth();
-
-	RenderCollector.Collect(Context, RenderBus);
 }
