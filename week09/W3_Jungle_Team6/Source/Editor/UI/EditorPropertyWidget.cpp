@@ -7,6 +7,8 @@
 #include "Component/PrimitiveComponent.h"
 #include "Component/SceneComponent.h"
 #include "Core/PropertyTypes.h"
+#include "Core/ResourceManager.h"
+#include "Object/FName.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -325,39 +327,41 @@ void FEditorPropertyWidget::RenderComponentProperties()
 
 void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 {
+	bool bChanged = false;
+
 	switch (Prop.Type)
 	{
 	case EPropertyType::Bool:
 	{
 		bool* Val = static_cast<bool*>(Prop.ValuePtr);
-		ImGui::Checkbox(Prop.Name, Val);
+		bChanged = ImGui::Checkbox(Prop.Name, Val);
 		break;
 	}
 	case EPropertyType::Int:
 	{
 		int32* Val = static_cast<int32*>(Prop.ValuePtr);
-		ImGui::DragInt(Prop.Name, Val);
+		bChanged = ImGui::DragInt(Prop.Name, Val);
 		break;
 	}
 	case EPropertyType::Float:
 	{
 		float* Val = static_cast<float*>(Prop.ValuePtr);
 		if (Prop.Min != 0.0f || Prop.Max != 0.0f)
-			ImGui::DragFloat(Prop.Name, Val, Prop.Speed, Prop.Min, Prop.Max);
+			bChanged = ImGui::DragFloat(Prop.Name, Val, Prop.Speed, Prop.Min, Prop.Max);
 		else
-			ImGui::DragFloat(Prop.Name, Val, Prop.Speed);
+			bChanged = ImGui::DragFloat(Prop.Name, Val, Prop.Speed);
 		break;
 	}
 	case EPropertyType::Vec3:
 	{
 		float* Val = static_cast<float*>(Prop.ValuePtr);
-		ImGui::DragFloat3(Prop.Name, Val, Prop.Speed);
+		bChanged = ImGui::DragFloat3(Prop.Name, Val, Prop.Speed);
 		break;
 	}
 	case EPropertyType::Vec4:
 	{
 		float* Val = static_cast<float*>(Prop.ValuePtr);
-		ImGui::ColorEdit4(Prop.Name, Val);
+		bChanged = ImGui::ColorEdit4(Prop.Name, Val);
 		break;
 	}
 	case EPropertyType::String:
@@ -368,8 +372,56 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 		if (ImGui::InputText(Prop.Name, Buf, sizeof(Buf)))
 		{
 			*Val = Buf;
+			bChanged = true;
 		}
 		break;
 	}
+	case EPropertyType::Name:
+	{
+		FName* Val = static_cast<FName*>(Prop.ValuePtr);
+		FString Current = Val->ToString();
+
+		// 리소스 키와 매칭되는 프로퍼티면 콤보 박스로 렌더링
+		TArray<FString> Names;
+		if (strcmp(Prop.Name, "Font") == 0)
+			Names = FResourceManager::Get().GetFontNames();
+		else if (strcmp(Prop.Name, "Particle") == 0)
+			Names = FResourceManager::Get().GetParticleNames();
+
+		if (!Names.empty())
+		{
+			if (ImGui::BeginCombo(Prop.Name, Current.c_str()))
+			{
+				for (const auto& Name : Names)
+				{
+					bool bSelected = (Current == Name);
+					if (ImGui::Selectable(Name.c_str(), bSelected))
+					{
+						*Val = FName(Name);
+						bChanged = true;
+					}
+					if (bSelected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+		}
+		else
+		{
+			char Buf[256];
+			strncpy_s(Buf, sizeof(Buf), Current.c_str(), _TRUNCATE);
+			if (ImGui::InputText(Prop.Name, Buf, sizeof(Buf)))
+			{
+				*Val = FName(Buf);
+				bChanged = true;
+			}
+		}
+		break;
+	}
+	}
+
+	if (bChanged && SelectedComponent)
+	{
+		SelectedComponent->PostEditProperty(Prop.Name);
 	}
 }

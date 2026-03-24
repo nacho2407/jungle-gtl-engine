@@ -101,14 +101,11 @@ void FGPUProfiler::CollectPreviousFrame()
 	uint32 ReadIndex = 1 - WriteIndex;
 	FFrameData& Read = Frames[ReadIndex];
 
-	if (Read.UsedCount == 0) return;
-
-	// Disjoint 결과 확인
+	// Disjoint 결과 확인 (UsedCount와 무관하게 항상 읽어서 Query 상태를 소비)
 	D3D11_QUERY_DATA_TIMESTAMP_DISJOINT disjointData;
 	HRESULT hr = Context->GetData(Read.DisjointQuery, &disjointData, sizeof(disjointData), 0);
-	if (hr != S_OK || disjointData.Disjoint)
+	if (hr != S_OK || disjointData.Disjoint || Read.UsedCount == 0)
 	{
-		// 데이터 미준비 또는 GPU 클럭 불안정 — 결과 버림
 		return;
 	}
 

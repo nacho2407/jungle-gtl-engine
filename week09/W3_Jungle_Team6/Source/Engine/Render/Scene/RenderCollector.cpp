@@ -38,12 +38,13 @@ void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBu
 	for (AActor* Actor : Context.SelectedActors)
 	{
 		CollectFromSelectedActor(Actor, Context, RenderBus);
-
 	}
 }
 
 void FRenderCollector::CollectFromActor(AActor* Actor, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
 {
+	if (!Actor->IsVisible()) return;
+
 	// Iterate through the components of the actor and retrieve their render properties
 	for (UActorComponent* Comp : Actor->GetComponents())
 	{
@@ -154,6 +155,26 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		TargetPass = ERenderPass::SubUV;
 		break;
 	}
+
+	// 실제 여기 패스를 안 타기 때문에 여기서 처리해봤자다. ㅠㅠ
+	//case EPrimitiveType::EPT_Text:
+	//{
+	//	if (!Context.ShowFlags.bBillboardText) return;
+	//	UTextRenderComponent* TextComp = static_cast<UTextRenderComponent*>(Primitive);
+	//	const FFontResource* Font = TextComp->GetFont();
+	//	if (!Font || !Font->IsLoaded()) return;
+	//	if (TextComp->GetText().empty()) return;
+
+	//	Cmd.Type = ERenderCommandType::Font;
+	//	Cmd.PerObjectConstants.Color = TextComp->GetColor();
+	//	Cmd.TextData = TextComp->GetText();
+	//	Cmd.AtlasResource = Font;
+	//	Cmd.SpriteSize.X = TextComp->GetFontSize();
+	//	Cmd.BlendState = EBlendState::AlphaBlend;
+	//	Cmd.DepthStencilState = EDepthStencilState::Default;
+	//	TargetPass = ERenderPass::Font;
+	//	break;
+	//}
 
 	default:
 		return;
