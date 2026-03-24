@@ -5,10 +5,10 @@
 class FD3D11LineBatchRenderer;
 struct FEditorRenderData;
 
-class FWorldAxesDrawer
+class FWorldAxesSubmitter
 {
   public:
-    void Draw(FD3D11LineBatchRenderer& InLineRenderer, const FEditorRenderData& InEditorRenderData);
+    void Submit(FD3D11LineBatchRenderer& InLineRenderer, const FEditorRenderData& InEditorRenderData);
 
   private:
     float AxisLength = 1000.0f;

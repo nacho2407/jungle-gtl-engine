@@ -28,7 +28,7 @@ class FPanelManager;
 struct FPanelDescriptor;
 class AActor;
 class UObject;
-class FD3D11DynamicRHI;
+class FD3D11RHI;
 class UAssetManager;
 
 enum class EDeferredSceneActionType
@@ -43,7 +43,7 @@ enum class EDeferredSceneActionType
 struct FDeferredSceneAction
 {
     EDeferredSceneActionType Type = EDeferredSceneActionType::None;
-    std::filesystem::path ScenePath;
+    std::filesystem::path    ScenePath;
 
     void Reset()
     {
@@ -55,7 +55,7 @@ struct FDeferredSceneAction
 struct FSceneDocumentState
 {
     std::filesystem::path CurrentScenePath;
-    bool bDirty = false;
+    bool                  bDirty = false;
 
     FDeferredSceneAction DeferredAction;
 };
@@ -69,7 +69,7 @@ class FEditor
     void Initialize();
     void Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* InputSystem);
     void SetChromeHost(IEditorChromeHost* InChromeHost);
-    void SetRuntimeServices(FD3D11DynamicRHI* InRHI, UAssetManager* InAssetManager);
+    void SetRuntimeServices(FD3D11RHI* InRHI, UAssetManager* InAssetManager);
 
     void OnWindowResized(float Width, float Height);
     void SetMainLoopFPS(float FPS)
@@ -78,17 +78,17 @@ class FEditor
         EditorContext.CurrentFPS = FPS;
     }
 
-    void CreateNewScene();
-    void ClearScene();
-    bool RequestCloseEditor();
-    void SetSelectedObject(UObject* InSelectedObject);
-    void AddActorToScene(AActor* InActor, bool bSelectActor = true);
-    void MarkSceneDirty();
+    void     CreateNewScene();
+    void     ClearScene();
+    bool     RequestCloseEditor();
+    void     SetSelectedObject(UObject* InSelectedObject);
+    void     AddActorToScene(AActor* InActor, bool bSelectActor = true);
+    void     MarkSceneDirty();
     UObject* GetSelectedObject() const { return EditorContext.SelectedObject; }
 
-    const FEditorRenderData& GetEditorRenderData() const { return EditorRenderData; }
-    const FSceneRenderData& GetSceneRenderData() const { return SceneRenderData; }
-    FEditorViewportClient& GetViewportClient() { return ViewportClient; }
+    const FEditorRenderData&     GetEditorRenderData() const { return EditorRenderData; }
+    const FSceneRenderData&      GetSceneRenderData() const { return SceneRenderData; }
+    FEditorViewportClient&       GetViewportClient() { return ViewportClient; }
     const FEditorViewportClient& GetViewportClient() const { return ViewportClient; }
 
     void DrawPanel();
@@ -122,27 +122,27 @@ class FEditor
 
   private:
     FEditorViewportClient ViewportClient;
-    FEditorContext EditorContext;
-    FEditorSettings PersistentSettings;
-    FEditorContentIndex ContentIndex;
-    FPanelManager* PanelManager = nullptr;
-    FEditorChrome EditorChrome;
-    FEditorMenuRegistry MenuRegistry;
-    IEditorChromeHost* ChromeHost = nullptr;
+    FEditorContext        EditorContext;
+    FEditorSettings       PersistentSettings;
+    FEditorContentIndex   ContentIndex;
+    FPanelManager*        PanelManager = nullptr;
+    FEditorChrome         EditorChrome;
+    FEditorMenuRegistry   MenuRegistry;
+    IEditorChromeHost*    ChromeHost = nullptr;
 
     FEditorRenderData EditorRenderData;
-    FSceneRenderData SceneRenderData;
-    FSceneView SceneView;
+    FSceneRenderData  SceneRenderData;
+    FSceneView        SceneView;
 
-    FScene* CurScene = nullptr;
+    FScene*             CurScene = nullptr;
     FSceneDocumentState SceneDocument;
-    
+
     /* Logging */
     FEditorLogBuffer LogBuffer;
 
     float WindowWidth = 0.0f;
     float WindowHeight = 0.0f;
     float CurFPS = 0.0f;
-    bool bRequestOpenAboutPopup = false;
-    bool bAboutPopupOpen = false;
+    bool  bRequestOpenAboutPopup = false;
+    bool  bAboutPopupOpen = false;
 };

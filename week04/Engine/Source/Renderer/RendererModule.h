@@ -3,16 +3,19 @@
 #include <Windows.h>
 
 #include "Renderer/D3D11/D3D11Common.h"
-#include "Renderer/D3D11/D3D11DynamicRHI.h"
-#include "Renderer/D3D11/D3D11FontBatchRenderer.h"
+#include "Renderer/D3D11/D3D11RHI.h"
+#include "Renderer/D3D11/D3D11TextBatchRenderer.h"
 #include "Renderer/D3D11/D3D11LineBatchRenderer.h"
 #include "Renderer/D3D11/D3D11MeshBatchRenderer.h"
 #include "Renderer/D3D11/D3D11ObjectIdRenderer.h"
 #include "Renderer/D3D11/D3D11SpriteBatchRenderer.h"
-#include "Renderer/Draw/GizmoDrawer.h"
-#include "Renderer/Draw/PrimitiveDrawer.h"
-#include "Renderer/Draw/WorldAxesDrawer.h"
-#include "Renderer/Draw/WorldGridDrawer.h"
+#include "Renderer/Submitter/AABBSubmitter.h"
+#include "Renderer/Submitter/GizmoSubmitter.h"
+#include "Renderer/Submitter/PrimitiveSubmitter.h"
+#include "Renderer/Submitter/SpriteSubmitter.h"
+#include "Renderer/Submitter/TextSubmitter.h"
+#include "Renderer/Submitter/WorldAxesSubmitter.h"
+#include "Renderer/Submitter/WorldGridSubmitter.h"
 #include "Renderer/EditorRenderData.h"
 #include "Renderer/SceneRenderData.h"
 #include "Renderer/Types/PickResult.h"
@@ -34,24 +37,27 @@ class ENGINE_API FRendererModule
     bool Pick(const FEditorRenderData& InEditorRenderData, int32 MouseX, int32 MouseY,
               FPickResult& OutResult);
 
-    FD3D11DynamicRHI& GetRHI() { return RHI; }
+    FD3D11RHI& GetRHI() { return RHI; }
 
     void SetVSyncEnabled(bool bEnabled);
     bool IsVSyncEnabled() const;
 
   private:
-    FD3D11DynamicRHI RHI;
+    FD3D11RHI RHI;
 
     FD3D11MeshBatchRenderer   MeshRenderer;
     FD3D11LineBatchRenderer   LineRenderer;
-    FD3D11FontBatchRenderer   FontRenderer;
+    FD3D11TextBatchRenderer   TextRenderer;
     FD3D11SpriteBatchRenderer SpriteRenderer;
     FD3D11ObjectIdRenderer    ObjectIdRenderer;
 
-    FPrimitiveDrawer PrimitiveDrawer;
-    FWorldGridDrawer WorldGridDrawer;
-    FWorldAxesDrawer WorldAxesDrawer;
-    FGizmoDrawer     GizmoDrawer;
+    FPrimitiveSubmitter PrimitiveSubmitter;
+    FSpriteSubmitter    SpriteSubmitter;
+    FTextSubmitter      TextSubmitter;
+    FAABBSubmitter      AABBSubmitter;
+    FWorldGridSubmitter WorldGridSubmitter;
+    FWorldAxesSubmitter WorldAxesSubmitter;
+    FGizmoSubmitter     GizmoSubmitter;
 
     FEditorRenderData CachedEditorRenderData;
     FSceneRenderData  CachedSceneRenderData;

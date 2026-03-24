@@ -1,6 +1,6 @@
 #include "Renderer/D3D11/D3D11ObjectIdRenderer.h"
 
-#include "Renderer/D3D11/D3D11DynamicRHI.h"
+#include "Renderer/D3D11/D3D11RHI.h"
 #include "Renderer/SceneView.h"
 #include "Resources/Mesh/Cone.h"
 #include "Resources/Mesh/Cube.h"
@@ -23,7 +23,7 @@ namespace
     };
 } // namespace
 
-bool FD3D11ObjectIdRenderer::Initialize(FD3D11DynamicRHI* InRHI)
+bool FD3D11ObjectIdRenderer::Initialize(FD3D11RHI* InRHI)
 {
     if (InRHI == nullptr)
     {

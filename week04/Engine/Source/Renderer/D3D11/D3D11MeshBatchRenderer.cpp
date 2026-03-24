@@ -1,6 +1,6 @@
 #include "Renderer/D3D11/D3D11MeshBatchRenderer.h"
 
-#include "Renderer/D3D11/D3D11DynamicRHI.h"
+#include "Renderer/D3D11/D3D11RHI.h"
 #include "Renderer/SceneView.h"
 #include "Renderer/Types/ShaderConstants.h"
 #include "Renderer/Types/VertexTypes.h"
@@ -13,18 +13,7 @@
 #include "Resources/Mesh/Sphere.h"
 #include "Resources/Mesh/Triangle.h"
 
-namespace
-{
-FMatrix BuildOutlineWorldMatrix(const FMatrix& InWorld, float InOutlineScale)
-{
-    const FVector Translation = InWorld.GetTranslation();
-    const FMatrix Rotation = InWorld.GetRotationMatrix();
-    const FVector OutlineScale = InWorld.GetScaleVector() * InOutlineScale;
-    return FMatrix::MakeTRS(Translation, Rotation, OutlineScale);
-}
-} // namespace
-
-bool FD3D11MeshBatchRenderer::Initialize(FD3D11DynamicRHI* InRHI)
+bool FD3D11MeshBatchRenderer::Initialize(FD3D11RHI* InRHI)
 {
     if (InRHI == nullptr)
     {
@@ -78,10 +67,8 @@ void FD3D11MeshBatchRenderer::Shutdown()
     bUseInstancing = true;
 
     DepthStencilState.Reset();
-    OutlineDepthStencilState.Reset();
     WireframeRasterizerState.Reset();
     SolidRasterizerState.Reset();
-    OutlineRasterizerState.Reset();
 
     InstanceBuffer.Reset();
     InstancedConstantBuffer.Reset();
@@ -136,38 +123,6 @@ void FD3D11MeshBatchRenderer::AddPrimitives(const TArray<FPrimitiveRenderItem>& 
     }
 }
 
-void FD3D11MeshBatchRenderer::RenderOutlinePrimitives(const TArray<FPrimitiveRenderItem>& InItems,
-                                                      const FSceneView* InSceneView,
-                                                      bool bInUseInstancing,
-                                                      const FColor& InOutlineColor,
-                                                      float InOutlineScale)
-{
-    if (InSceneView == nullptr)
-    {
-        return;
-    }
-
-    BeginFrame(InSceneView, EViewModeIndex::VMI_Lit, bInUseInstancing);
-
-    for (const FPrimitiveRenderItem& Item : InItems)
-    {
-        if (!Item.State.IsVisible() || !Item.State.IsSelected())
-        {
-            continue;
-        }
-
-        FPrimitiveRenderItem OutlineItem = Item;
-        OutlineItem.World = BuildOutlineWorldMatrix(Item.World, InOutlineScale);
-        OutlineItem.Color = InOutlineColor;
-        AddPrimitive(OutlineItem);
-    }
-
-    FlushInternal(bUseInstancing ? EMeshDrawPath::Instanced : EMeshDrawPath::Single, CurrentSceneView,
-                  true);
-    ResetBatches();
-    CurrentSceneView = nullptr;
-}
-
 void FD3D11MeshBatchRenderer::EndFrame()
 {
     if (RHI == nullptr)
@@ -188,7 +143,7 @@ void FD3D11MeshBatchRenderer::Flush()
     }
 
     FlushInternal(bUseInstancing ? EMeshDrawPath::Instanced : EMeshDrawPath::Single,
-                  CurrentSceneView, false);
+                  CurrentSceneView);
 }
 
 bool FD3D11MeshBatchRenderer::CreateShaders()
@@ -294,13 +249,6 @@ bool FD3D11MeshBatchRenderer::CreateStates()
         {
             return false;
         }
-
-        Desc.FillMode = D3D11_FILL_SOLID;
-        Desc.CullMode = D3D11_CULL_FRONT;
-        if (FAILED(Device->CreateRasterizerState(&Desc, OutlineRasterizerState.GetAddressOf())))
-        {
-            return false;
-        }
     }
 
     {
@@ -310,12 +258,6 @@ bool FD3D11MeshBatchRenderer::CreateStates()
         Desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 
         if (FAILED(Device->CreateDepthStencilState(&Desc, DepthStencilState.GetAddressOf())))
-        {
-            return false;
-        }
-
-        Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-        if (FAILED(Device->CreateDepthStencilState(&Desc, OutlineDepthStencilState.GetAddressOf())))
         {
             return false;
         }
@@ -528,38 +470,7 @@ void FD3D11MeshBatchRenderer::BindWireframeRasterizer()
     RHI->SetRasterizerState(WireframeRasterizerState.Get());
 }
 
-void FD3D11MeshBatchRenderer::BindOutlineRasterizer()
-{
-    if (RHI == nullptr)
-    {
-        return;
-    }
-
-    RHI->SetRasterizerState(OutlineRasterizerState.Get());
-}
-
-void FD3D11MeshBatchRenderer::BindDefaultDepthStencilState()
-{
-    if (RHI == nullptr)
-    {
-        return;
-    }
-
-    RHI->SetDepthStencilState(DepthStencilState.Get(), 0);
-}
-
-void FD3D11MeshBatchRenderer::BindOutlineDepthStencilState()
-{
-    if (RHI == nullptr)
-    {
-        return;
-    }
-
-    RHI->SetDepthStencilState(OutlineDepthStencilState.Get(), 0);
-}
-
-void FD3D11MeshBatchRenderer::FlushInternal(EMeshDrawPath DrawPath, const FSceneView* InSceneView,
-                                            bool bOutlinePass)
+void FD3D11MeshBatchRenderer::FlushInternal(EMeshDrawPath DrawPath, const FSceneView* InSceneView)
 {
     if (RHI == nullptr || InSceneView == nullptr)
     {
@@ -568,20 +479,13 @@ void FD3D11MeshBatchRenderer::FlushInternal(EMeshDrawPath DrawPath, const FScene
 
     BindPipeline(DrawPath);
 
-    if (bOutlinePass)
-    {
-        BindOutlineRasterizer();
-        BindOutlineDepthStencilState();
-    }
-    else if (ViewMode == EViewModeIndex::VMI_Wireframe)
+    if (ViewMode == EViewModeIndex::VMI_Wireframe)
     {
         BindWireframeRasterizer();
-        BindDefaultDepthStencilState();
     }
     else
     {
         BindSolidRasterizer();
-        BindDefaultDepthStencilState();
     }
 
     UpdatePerFrameConstants(InSceneView, DrawPath);

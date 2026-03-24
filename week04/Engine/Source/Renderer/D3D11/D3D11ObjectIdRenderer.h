@@ -7,7 +7,7 @@
 #include "Renderer/Types/BasicMeshType.h"
 #include "Resources/Mesh/MeshPrimitiveTopology.h"
 
-class FD3D11DynamicRHI;
+class FD3D11RHI;
 class FSceneView;
 
 struct FVertexSimple;
@@ -33,7 +33,7 @@ class FD3D11ObjectIdRenderer
     static constexpr const wchar_t* ShaderPath = L"../Engine/Resources/Shader/ShaderObjectId.hlsl";
 
   public:
-    bool Initialize(FD3D11DynamicRHI* InRHI);
+    bool Initialize(FD3D11RHI* InRHI);
     void Shutdown();
 
     bool Resize(int32 InWidth, int32 InHeight);
@@ -75,7 +75,7 @@ class FD3D11ObjectIdRenderer
     bool ReadBackMousePixel(uint32& OutObjectId);
 
   private:
-    FD3D11DynamicRHI* RHI = nullptr;
+    FD3D11RHI* RHI = nullptr;
     const FSceneView* CurrentSceneView = nullptr;
 
     int32 TargetWidth = 0;
