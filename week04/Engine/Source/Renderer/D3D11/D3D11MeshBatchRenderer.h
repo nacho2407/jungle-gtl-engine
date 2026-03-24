@@ -52,9 +52,6 @@ class FD3D11MeshBatchRenderer
                     bool bInUseInstancing);
     void AddPrimitive(const FPrimitiveRenderItem& InItem);
     void AddPrimitives(const TArray<FPrimitiveRenderItem>& InItems);
-    void RenderOutlinePrimitives(const TArray<FPrimitiveRenderItem>& InItems, const FSceneView* InSceneView,
-                                 bool bInUseInstancing, const FColor& InOutlineColor,
-                                 float InOutlineScale);
     void EndFrame();
     void Flush();
 
@@ -87,11 +84,8 @@ class FD3D11MeshBatchRenderer
     void BindPrimitiveTopology(EMeshPrimitiveTopology InTopology);
     void BindSolidRasterizer();
     void BindWireframeRasterizer();
-    void BindOutlineRasterizer();
-    void BindDefaultDepthStencilState();
-    void BindOutlineDepthStencilState();
 
-    void FlushInternal(EMeshDrawPath DrawPath, const FSceneView* InSceneView, bool bOutlinePass);
+    void FlushInternal(EMeshDrawPath DrawPath, const FSceneView* InSceneView);
     void DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath DrawPath,
                        const FSceneView* InSceneView);
 
@@ -99,7 +93,7 @@ class FD3D11MeshBatchRenderer
     const FBasicMeshResource* GetBasicMeshResource(EBasicMeshType InType) const;
 
   private:
-    FD3D11RHI* RHI = nullptr;
+    FD3D11RHI*        RHI = nullptr;
     const FSceneView* CurrentSceneView = nullptr;
     EViewModeIndex    ViewMode = EViewModeIndex::VMI_Lit;
     bool              bUseInstancing = true;
@@ -118,9 +112,7 @@ class FD3D11MeshBatchRenderer
 
     TComPtr<ID3D11RasterizerState>   SolidRasterizerState;
     TComPtr<ID3D11RasterizerState>   WireframeRasterizerState;
-    TComPtr<ID3D11RasterizerState>   OutlineRasterizerState;
     TComPtr<ID3D11DepthStencilState> DepthStencilState;
-    TComPtr<ID3D11DepthStencilState> OutlineDepthStencilState;
 
     FBasicMeshResource    BasicMeshResources[static_cast<int32>(EBasicMeshType::Count)];
     TArray<FMeshDrawData> MeshDraws[static_cast<int32>(EBasicMeshType::Count)];
