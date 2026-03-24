@@ -19,11 +19,11 @@ enum class ERenderCommandType
 {
 	Primitive,
 	Gizmo,
-	Overlay,
 	StencilMask,
 	SelectionOutline,
 	Billboard,
 	DebugBox,
+	Grid,		// Grid 패스 — LineBatcher 경유
 	Font,		// TextRenderComponent — FontBatcher 경유
 	SubUV,		// SubUVComponent     — SubUVBatcher 경유
 };
@@ -40,7 +40,7 @@ struct FFrameConstants
 	FMatrix View;          
 	FMatrix Projection;    
 	float bIsWireframe;
-	FVector ColorRGB;
+	FVector WireframeColor;
 };
 
 struct FGizmoConstants
@@ -50,17 +50,6 @@ struct FGizmoConstants
 	uint32 bClicking;
 	uint32 SelectedAxis;
 	float HoveredAxisOpacity;
-};
-
-struct FOverlayConstants
-{
-	FVector2 CenterScreen;
-	FVector2 ViewportSize;
-
-	float Radius;
-	float Padding0[3];
-
-	FVector4 Color;
 };
 
 struct FEditorConstants
@@ -89,27 +78,44 @@ struct FAABBConstants
 	FColor Color;
 };
 
+struct FGridConstants
+{
+	float GridSpacing;
+	int32 GridHalfLineCount;
+	float Padding0[2];
+};
+
+struct FFontConstants
+{
+	const FString* Text = nullptr;			// 컴포넌트 소유 문자열 참조 (프레임 내 유효)
+	const FFontResource* Font = nullptr;
+	float Scale = 1.0f;
+};
+
+struct FSubUVConstants
+{
+	const FParticleResource* Particle = nullptr;
+	uint32 FrameIndex = 0;
+	float Width  = 1.0f;
+	float Height = 1.0f;
+};
+
 struct FRenderCommand
 {
 	//	VB, IB 모두 담고 있는 MB
 	FMeshBuffer* MeshBuffer = nullptr;
 	FPerObjectConstants PerObjectConstants = {};
-	FString TextData;
 
 	union
 	{
 		FGizmoConstants Gizmo;
 		FEditorConstants Editor;
-		FOverlayConstants Overlay;
 		FOutlineConstants Outline;
 		FAABBConstants AABB;
+		FGridConstants Grid;
+		FFontConstants Font;
+		FSubUVConstants SubUV;
 	} Constants;
-
-	// Font / SubUV 전용 데이터
-	// ResourceManager가 소유하는 리소스 포인터 (참조만)
-	const FTextureAtlasResource* AtlasResource = nullptr;
-	uint32   FrameIndex  = 0;			// SubUV 프레임 인덱스
-	FVector2 SpriteSize  = { 1.0f, 1.0f }; // Font: X = Scale / SubUV: X = Width, Y = Height
 
 	EDepthStencilState DepthStencilState = static_cast<EDepthStencilState>(-1);
 	EBlendState BlendState = static_cast<EBlendState>(-1);

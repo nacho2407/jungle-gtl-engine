@@ -12,8 +12,6 @@ FMeshData FMeshManager::TranslationGizmoMeshData;
 FMeshData FMeshManager::RotationGizmoMeshData;
 FMeshData FMeshManager::ScaleGizmoMeshData;
 FMeshData FMeshManager::QuadMeshData;
-FMeshData FMeshManager::MouseOverlayMeshData;
-
 bool FMeshManager::bIsInitialized = false;
 
 void FMeshManager::Initialize()
@@ -55,12 +53,7 @@ void FMeshManager::Initialize()
 		CreateQuad();
 	}
 
-	if (MouseOverlayMeshData.Vertices.empty())
-	{
-		CreateMouseOverlay();
-	}
-
-	bIsInitialized = true;
+    bIsInitialized = true;
 }
 
 void FMeshManager::CreateCube()
@@ -474,26 +467,3 @@ void FMeshManager::CreatePlane()
 	};
 }
 
-void FMeshManager::CreateMouseOverlay()
-{
-	TArray<FVertex>& vertices = MouseOverlayMeshData.Vertices;
-	TArray<uint32>& indices = MouseOverlayMeshData.Indices;
-
-	vertices.clear();
-	indices.clear();
-
-	FVector4 Yellow(1.0f, 1.0f, 0.0f, 1.0f);
-
-	vertices.push_back({ FVector(-0.5f, -0.5f, 0.0f), Yellow }); // 0
-	vertices.push_back({ FVector(0.5f, -0.5f, 0.0f), Yellow }); // 1
-	vertices.push_back({ FVector(0.5f,  0.5f, 0.0f), Yellow }); // 2
-	vertices.push_back({ FVector(-0.5f,  0.5f, 0.0f), Yellow }); // 3
-
-	indices.push_back(0);
-	indices.push_back(1);
-	indices.push_back(2);
-
-	indices.push_back(0);
-	indices.push_back(2);
-	indices.push_back(3);
-}
