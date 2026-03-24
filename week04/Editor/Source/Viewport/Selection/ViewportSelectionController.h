@@ -26,6 +26,7 @@ class FViewportSelectionController : public Engine::Viewport::IViewportControlle
 
     bool                   IsSelected(AActor* Actor) const;
     const TArray<AActor*>& GetSelectedActors() const { return SelectedActors; }
+    TArray<AActor*>& GetSelectedActors()  { return SelectedActors; }
 
     void SetCamera(FViewportCamera* Camera) { ViewportCamera = Camera; }
     void SetActors(TArray<AActor*>* InActors) { Actors = InActors; }

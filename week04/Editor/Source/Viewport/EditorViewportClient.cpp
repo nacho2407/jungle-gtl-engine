@@ -88,12 +88,16 @@ void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData)
             OutRenderData.Gizmo.Frame = FMatrix::MakeTranslation(RelativeLocation);
         }
         else
-
         {
             OutRenderData.Gizmo.Frame =
                 GizmoController.GetSelectedActor()->GetRootComponent()->GetRelativeMatrixNoScale();
         }
-        OutRenderData.Gizmo.Scale = 0.1f;
+        GizmoController.GizmoScale =
+            (ViewportCamera.GetLocation() -
+             GizmoController.GetSelectedActor()->GetRootComponent()->GetRelativeLocation())
+                .Size() /
+            50.0f;
+        OutRenderData.Gizmo.Scale = GizmoController.GizmoScale;
         OutRenderData.ShowFlags = EEditorShowFlags::SF_Grid | EEditorShowFlags::SF_WorldAxes |
                                   EEditorShowFlags::SF_Gizmo |
                                   EEditorShowFlags::SF_SelectionOutline |
@@ -157,25 +161,26 @@ void FEditorViewportClient::DrawViewportOverlay()
                       1.5f);
 }
 
-//void FEditorViewportClient::DrawViewportOverlay()
+// void FEditorViewportClient::DrawViewportOverlay()
 //{
-//    if (!SelectionController.IsDraggingSelection())
-//    {
-//        return;
-//    }
+//     if (!SelectionController.IsDraggingSelection())
+//     {
+//         return;
+//     }
 //
-//    int32 StartX, StartY, EndX, EndY;
-//    SelectionController.GetSelectionRect(StartX, StartY, EndX, EndY);
+//     int32 StartX, StartY, EndX, EndY;
+//     SelectionController.GetSelectionRect(StartX, StartY, EndX, EndY);
 //
-//    const float MinX = (float)std::min(StartX, EndX);
-//    const float MinY = (float)std::min(StartY, EndY);
-//    const float MaxX = (float)std::max(StartX, EndX);
-//    const float MaxY = (float)std::max(StartY, EndY);
+//     const float MinX = (float)std::min(StartX, EndX);
+//     const float MinY = (float)std::min(StartY, EndY);
+//     const float MaxX = (float)std::max(StartX, EndX);
+//     const float MaxY = (float)std::max(StartY, EndY);
 //
-//    ImDrawList* DrawList = ImGui::GetForegroundDrawList();
-//    DrawList->AddRectFilled(ImVec2(MinX, MinY), ImVec2(MaxX, MaxY), IM_COL32(80, 140, 255, 40));
-//    DrawList->AddRect(ImVec2(MinX, MinY), ImVec2(MaxX, MaxY), IM_COL32(80, 140, 255, 255), 0.0f, 0,
-//                      1.5f);
-//}
+//     ImDrawList* DrawList = ImGui::GetForegroundDrawList();
+//     DrawList->AddRectFilled(ImVec2(MinX, MinY), ImVec2(MaxX, MaxY), IM_COL32(80, 140, 255, 40));
+//     DrawList->AddRect(ImVec2(MinX, MinY), ImVec2(MaxX, MaxY), IM_COL32(80, 140, 255, 255), 0.0f,
+//     0,
+//                       1.5f);
+// }
 
 void FEditorViewportClient::DrawOutline() {}

@@ -55,8 +55,11 @@ namespace Engine::Component
         {
             return;
         }
-
-        WorldTransform.SetScale3D(NewScale);
+        FVector AbsScale;
+        AbsScale.X = std::max(NewScale.X, 0.0001f);
+        AbsScale.Y = std::max(NewScale.Y, 0.0001f);
+        AbsScale.Z = std::max(NewScale.Z, 0.0001f);
+        WorldTransform.SetScale3D(AbsScale);
         OnTransformChanged();
     }
 

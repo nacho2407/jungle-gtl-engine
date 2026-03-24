@@ -23,6 +23,47 @@ class ENGINE_API AActor : public UObject
     void SetPickable(bool bInPickable);
 
     Engine::Component::USceneComponent* GetRootComponent() const { return RootComponent; }
+
+    FVector GetLocation() const
+    {
+        if (RootComponent)
+        {
+            return RootComponent->GetRelativeLocation();
+        }
+        return FVector();
+    }
+    void SetLocation(FVector InLocation) const
+    {
+        if (RootComponent)
+        {
+            return RootComponent->SetRelativeLocation(InLocation);
+        }
+    }
+
+    FVector GetScale() const
+    {
+        if (RootComponent)
+        {
+            return RootComponent->GetRelativeScale3D();
+        }
+        return FVector::OneVector;
+    }
+    void SetScale(FVector InScale) const
+    {
+        if (RootComponent)
+        {
+            return RootComponent->SetRelativeScale3D(InScale);
+        }
+    }
+
+    /*void SetLocation(FVector InLocation) const
+    {
+        if (RootComponent)
+        {
+            return RootComponent->SetRelativeLocation(InLocation);
+        }
+    }*/
+
     const TArray<Engine::Component::USceneComponent*>& GetOwnedComponents() const
     {
         return OwnedComponents;
