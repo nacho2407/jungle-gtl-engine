@@ -19,12 +19,12 @@ struct FTextLayoutBuildParams
 };
 
 /**
- * @brief 입력 레이아웃을 받아 GPU 정점을 생성합니다.
+ * @brief 입력으로 받은 레이아웃을 GPU 정점으로 생성하여 텍스트 Quad 정점 배열에 추가합니다.
  * 
- * @param Params 텍스트의 쿼드 레이아웃
+ * @param Params 텍스트 Quad 정점 배열에 추가할 입력 레이아웃
  * 
- * @param OutVertices 출력 정점 배열
+ * @param InOutVertices 새 텍스트 Quad 정점을 추가할 배열
  * 
- * @return 정점 생성 성공 여부
+ * @return 정점 생성 및 추가 성공 여부
  */
-bool BuildBillboardTextVertices(const FTextLayoutBuildParams& Params, TArray<FVertexFont>& OutVertices);
+bool AppendBillboardTextVertices(const FTextLayoutBuildParams& Params, TArray<FVertexFont>& InOutVertices);

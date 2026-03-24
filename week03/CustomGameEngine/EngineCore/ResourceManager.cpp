@@ -80,11 +80,14 @@ void ResourceManager::Initialize(URenderer* InRenderer)
 	}
 
 	// 숫자 등 자주 사용하는 문자는 미리 bake
+	BillboardFont.EnsureGlyph(static_cast<uint32>('U'));
+	BillboardFont.EnsureGlyph(static_cast<uint32>('I'));
+	BillboardFont.EnsureGlyph(static_cast<uint32>('D'));
+	BillboardFont.EnsureGlyph(static_cast<uint32>(':'));
 	for (char c = '0'; c <= '9'; c++)
 	{
 		BillboardFont.EnsureGlyph(static_cast<uint32>(c));
 	}
-	BillboardFont.EnsureGlyph(static_cast<uint32>('-'));
 
 	const bool bAtlasTextureCreated = CreateBillboardFontAtlasTexture();
 	if (!bAtlasTextureCreated)

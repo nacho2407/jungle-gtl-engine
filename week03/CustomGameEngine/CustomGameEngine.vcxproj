@@ -169,7 +169,6 @@
     <ClInclude Include="Text\FontConfig.h" />
     <ClInclude Include="Text\FontTypes.h" />
     <ClInclude Include="Text\GlyphAtlas.h" />
-    <ClInclude Include="Text\Test.h" />
     <ClInclude Include="Text\TextEncoding.h" />
     <ClInclude Include="Text\TextLayout.h" />
     <ClInclude Include="ThirdParty\fifo_map.hpp" />
@@ -249,7 +248,6 @@
     <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="Text\FontAsset.cpp" />
     <ClCompile Include="Text\GlyphAtlas.cpp" />
-    <ClCompile Include="Text\Test.cpp" />
     <ClCompile Include="Text\TextEncoding.cpp" />
     <ClCompile Include="Text\TextLayout.cpp" />
     <ClCompile Include="ThirdParty\json.cpp" />

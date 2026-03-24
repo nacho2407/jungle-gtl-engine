@@ -3,7 +3,7 @@
 #include "EngineCore/Logger.h"
 #include "Text/TextEncoding.h"
 
-bool BuildBillboardTextVertices(const FTextLayoutBuildParams& Params, TArray<FVertexFont>& OutVertices)
+bool AppendBillboardTextVertices(const FTextLayoutBuildParams& Params, TArray<FVertexFont>& InOutVertices)
 {
 	if (Params.FontAsset == nullptr || Params.Scale <= 0.0f)
 	{
@@ -11,8 +11,6 @@ bool BuildBillboardTextVertices(const FTextLayoutBuildParams& Params, TArray<FVe
 
 		return false;
 	}
-
-	OutVertices.clear();
 
 	if (Params.Text.empty())
 	{
@@ -26,7 +24,7 @@ bool BuildBillboardTextVertices(const FTextLayoutBuildParams& Params, TArray<FVe
 		return true;
 	}
 
-	OutVertices.reserve(Codepoints.size() * 6);
+	InOutVertices.reserve(InOutVertices.size() + Codepoints.size() * 6);
 
 	float PenX = 0.0f;
 	float PenY = 0.0f;
@@ -47,7 +45,6 @@ bool BuildBillboardTextVertices(const FTextLayoutBuildParams& Params, TArray<FVe
 		if (Glyph == nullptr)
 		{
 			UE_LOG("[Text/TextLayout][Error] Failed to get necessary glyph");
-			OutVertices.clear();
 			return false;
 		}
 
@@ -71,43 +68,44 @@ bool BuildBillboardTextVertices(const FTextLayoutBuildParams& Params, TArray<FVe
 		float V1 = Glyph->V1;
 
 		// 쿼드를 위한 정점 6개(삼각형 2개) 추가
+		// Clockwise front-face assumed
 		// 좌상
-		OutVertices.push_back({
+		InOutVertices.push_back({
 			Params.Anchor.x, Params.Anchor.y, Params.Anchor.z,
 			GlyphX0, GlyphY1,
 			U0, V0
 		});
 
 		// 우상
-		OutVertices.push_back({
+		InOutVertices.push_back({
 			Params.Anchor.x, Params.Anchor.y, Params.Anchor.z,
 			GlyphX1, GlyphY1,
 			U1, V0
 			});
 
 		// 좌하
-		OutVertices.push_back({
+		InOutVertices.push_back({
 			Params.Anchor.x, Params.Anchor.y, Params.Anchor.z,
 			GlyphX0, GlyphY0,
 			U0, V1
 		});
 
 		// 우상
-		OutVertices.push_back({
+		InOutVertices.push_back({
 			Params.Anchor.x, Params.Anchor.y, Params.Anchor.z,
 			GlyphX1, GlyphY1,
 			U1, V0
 		});
 
 		// 우하
-		OutVertices.push_back({
+		InOutVertices.push_back({
 			Params.Anchor.x, Params.Anchor.y, Params.Anchor.z,
 			GlyphX1, GlyphY0,
 			U1, V1
 		});
 
 		// 좌하
-		OutVertices.push_back({
+		InOutVertices.push_back({
 			Params.Anchor.x, Params.Anchor.y, Params.Anchor.z,
 			GlyphX0, GlyphY0,
 			U0, V1

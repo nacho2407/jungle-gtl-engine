@@ -9,7 +9,7 @@
 /**
  * @def MAX_VERTEX_FONT_COUNT 폰트를 위한 dynamic vertex buffer의 최대 정점 정보 개수
  */
-#define MAX_VERTEX_FONT_COUNT 6000
+#define MAX_VERTEX_FONT_COUNT 12000
 
 void URenderer::Create(HWND hWindow)
 {
@@ -501,74 +501,93 @@ void URenderer::ReleaseDynamicFontVertexBuffer(void)
 	DynamicFontVertexBuffer.Reset();
 }
 
-void URenderer::RenderSingleBillboardTextTest(void)
+void URenderer::RenderBillboardTextBatch(const TArray<FBillboardTextDrawItem>& Items)
 {
 	if (renderCamera == nullptr)
 	{
-		UE_LOG("[Renderer/Renderer][RenderSingleBillboardTextTest][Failed] Camera component is null");
+		UE_LOG("[Renderer/Renderer][Error] Camera component is null");
 		return;
 	}
 
 	if (DeviceContext == nullptr)
 	{
-		UE_LOG("[Renderer/Renderer][RenderSingleBillboardTextTest][Failed] Direct3D 11 device context is null");
+		UE_LOG("[Renderer/Renderer][Error] Direct3D 11 device context is null");
 		return;
 	}
-
-	// Test text / Anchor / Color
-	const FString TestText = "테스트 메시지입니당~~~ 이거에 시간을 얼마나 버린겨~~~~~";
-	const FVector TestAnchor = FVector(0.0f, 0.0f, 2.0f);
-	const FColor TestColor = FColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 	ResourceManager* RM = ResourceManager::GetInstance();
 	if (RM == nullptr)
 	{
-		UE_LOG("[Renderer/Renderer][RenderSingleBillboardTextTest][Failed] Resource manager is null");
+		UE_LOG("[Renderer/Renderer][Error] Resource manager is null");
 		return;
 	}
 
-	const bool bGlyphReady = RM->EnsureBillboardGlyphs(TestText);
-	if (!bGlyphReady)
+	if (Items.empty())
 	{
-		UE_LOG("[Renderer/Renderer][RenderSingleBillboardTextTest][Failed] EnsureBillboardGlyphs failed");
 		return;
 	}
-
-	// 우선 CPU에서 빌보드 텍스트 정점을 빌드
-	FTextLayoutBuildParams Params{};
-	Params.FontAsset = &RM->GetBillboardFont();
-	Params.Text = TestText;
-	Params.Anchor = TestAnchor;
-	Params.Scale = 0.04f;
-	Params.LineGap = 4.0f;
 
 	TArray<FVertexFont> FontVertices;
-	const bool bBuildOK = BuildBillboardTextVertices(Params, FontVertices);
-	if (!bBuildOK)
+
+	for (const FBillboardTextDrawItem& Item : Items)
 	{
-		UE_LOG("[Renderer/Renderer][RenderSingleBillboardTextTest][Failed] BuildBillboardTextVertices failed");
-		return;
+		if (Item.Text.empty())
+		{
+			continue;
+		}
+
+		const bool bGlyphReady = RM->EnsureBillboardGlyphs(Item.Text);
+		if (!bGlyphReady)
+		{
+			UE_LOG("[Renderer/Renderer][Error] EnsureBillboardGlyphs failed");
+			return;
+		}
+
+		FTextLayoutBuildParams Params{};
+		Params.FontAsset = &RM->GetBillboardFont();
+		Params.Text = Item.Text;
+		Params.Anchor = Item.Anchor;
+		Params.Scale = Item.Scale;
+		Params.LineGap = Item.LineGap;
+
+		const bool bAppendOK = AppendBillboardTextVertices(Params, FontVertices);
+		if (!bAppendOK)
+		{
+			UE_LOG("[Renderer/Renderer][Error] RenderBillboardTextBatch failed: AppendBillboardTextVertices failed");
+			return;
+		}
+
+		if (FontVertices.size() > MAX_VERTEX_FONT_COUNT)
+		{
+			UE_LOG(
+				"[Renderer/Renderer][Error] RenderBillboardTextBatch failed: vertex count exceeded max (%llu > %llu)",
+				static_cast<unsigned long long>(FontVertices.size()),
+				static_cast<unsigned long long>(MAX_VERTEX_FONT_COUNT)
+			);
+			return;
+		}
 	}
 
+	// 5. Nothing generated -> return
 	if (FontVertices.empty())
 	{
-		UE_LOG("[Renderer/Renderer][RenderSingleBillboardTextTest][Failed] No font vertices generated");
 		return;
 	}
 
-	// 폰트 셰이더 가져오기
-	// 현재 이 부분은 안정성 문제 있음(GetMaterial)
+	// 6. Get font material
 	FMaterial& FontMaterial = RM->GetMaterial(L"Shader/ShaderFont.hlsl");
 
-	// 카메라 right / up 벡터 계산
-	FVector CameraRight = renderCamera->SideDirection;
-	FVector CameraUp = renderCamera->UpDirection;
-
-	// 상수 버퍼 채우기
+	// 7. Fill font constant
 	FFontConstant FontConst{};
-	FontConst.CameraRight = CameraRight;
-	FontConst.CameraUp = CameraUp;
-	FontConst.TextColor = TestColor;
+
+	// getter를 안 쓴다면 public 멤버 직접 접근
+	FontConst.CameraRight = renderCamera->SideDirection;
+	FontConst.CameraUp = renderCamera->UpDirection;
+
+	// 현재 배치 draw는 한 번의 draw call이므로,
+	// 일단 공통 색상 하나만 사용한다고 가정
+	// (item별 색상을 지원하려면 FVertexFont에 color를 넣거나 batch를 색상별로 분리해야 함)
+	FontConst.TextColor = FColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 	FontMaterial.ConstantBuffer.Update(
 		DeviceContext.Get(),
@@ -577,13 +596,20 @@ void URenderer::RenderSingleBillboardTextTest(void)
 	);
 	FontMaterial.ConstantBuffer.Bind(DeviceContext.Get());
 
-	// 폰트 셰이더 바인드
+	// Material bind
 	FontMaterial.Bind(DeviceContext.Get());
 
-	DeviceContext->OMSetDepthStencilState(DepthStencilStateNoWrite.Get(), 0);
+	// Depth policy
+	// 최초 bring-up 단계에서는 NoDepth가 가장 확인이 쉽습니다.
+	DeviceContext->OMSetDepthStencilState(DepthStencilStateNoDepth.Get(), 0);
+	// 실제 월드 내 자연스러운 동작 확인 후엔 NoWrite로 바꿔도 됨
+	// DeviceContext->OMSetDepthStencilState(DepthStencilStateNoWrite.Get(), 0);
 
-	// Dynamic vertex buffer 업데이트 후 IA 스테이지에 바인드
-	UpdateDynamicFontVertexBuffer(FontVertices.data(), static_cast<UINT>(FontVertices.size()));
+	// 8. Update dynamic font vertex buffer
+	UpdateDynamicFontVertexBuffer(
+		FontVertices.data(),
+		static_cast<UINT>(FontVertices.size())
+	);
 
 	UINT stride = sizeof(FVertexFont);
 	UINT offset = 0;
@@ -595,9 +621,10 @@ void URenderer::RenderSingleBillboardTextTest(void)
 		&offset
 	);
 
+	// 9. Draw once
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	DeviceContext->Draw(static_cast<UINT>(FontVertices.size()), 0);
 
-	// Depth state 되돌리기
+	// Restore depth state
 	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
 }

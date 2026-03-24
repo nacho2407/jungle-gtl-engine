@@ -13,6 +13,18 @@
 
 #include "Renderer/VertexFont.h"
 
+/**
+ * @brief 텍스트 Batch용 입력 구조체
+ */
+struct FBillboardTextDrawItem
+{
+	FString Text; // 실제 배치할 문자열 내용
+	FVector Anchor{}; // 텍스트 전체 배치의 시작 기준점
+	float Scale = 0.0f; // Glyph 크기 배율
+	float LineGap = 0.0f; // 줄바꿈 시 줄 간격
+	FColor Color{}; // 텍스트 색
+};
+
 class URenderer {
 public:
 	TComPtr<ID3D11Device> Device = nullptr;
@@ -116,9 +128,11 @@ public:
 	void ReleaseDynamicFontVertexBuffer(void);
 
 	/**
-	 * @brief 일단 빌보드용 Render Path가 살아있는지 확인하기 위한 테스트 함수입니다.
+	 * @brief 여러 Billboard 아이템을 받아서 Batch로 렌더합니다.
+	 * 
+	 * @param Items Batch로 렌더할 Billboard 아이템 배열
 	 */
-	void RenderSingleBillboardTextTest(void);
+	void RenderBillboardTextBatch(const TArray<FBillboardTextDrawItem>& Items);
 
 private:
 	UCameraComponent* renderCamera = nullptr;
