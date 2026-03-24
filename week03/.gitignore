@@ -29,11 +29,13 @@ x86/
 *.sln.docstates
 
 # 외부 라이브러리 설정 (ImGui 등)
-[Rr]elease/
-!ThirdParty/
-!ThirdParty/DirectXTK/
-!ThirdParty/DirectXTK/Release/
-!ThirdParty/DirectXTK/Release/DirectXTK.lib
+!CustomGameEngine/
+!CustomGameEngine/ThirdParty/
+!CustomGameEngine/ThirdParty/DirectXTK/
+!CustomGameEngine/ThirdParty/DirectXTK/Release/
+!CustomGameEngine/ThirdParty/DirectXTK/Release/DirectXTK.lib
+!CustomGameEngine/ThirdParty/DirectXTK/Debug/
+!CustomGameEngine/ThirdParty/DirectXTK/Debug/DirectXTK.lib
 
 # 기타 OS 임시 파일
 Thumbs.db
