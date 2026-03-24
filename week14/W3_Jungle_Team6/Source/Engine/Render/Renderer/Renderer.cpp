@@ -192,14 +192,14 @@ void FRenderer::InitializePassBatchers()
 	PassBatchers[(uint32)ERenderPass::Font] = {
 		/*.Clear   =*/ [this]() { FontBatcher.Clear(); },
 		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus& Bus) {
-			if (Cmd.Type == ERenderCommandType::Font && !Cmd.TextData.empty())
+			if (Cmd.Type == ERenderCommandType::Font && Cmd.Constants.Font.Text && !Cmd.Constants.Font.Text->empty())
 			{
 				FontBatcher.AddText(
-					Cmd.TextData,
+					*Cmd.Constants.Font.Text,
 					Cmd.PerObjectConstants.Model.GetLocation(),
 					Bus.GetCameraRight(),
 					Bus.GetCameraUp(),
-					Cmd.SpriteSize.X
+					Cmd.Constants.Font.Scale
 				);
 			}
 		},
@@ -217,22 +217,23 @@ void FRenderer::InitializePassBatchers()
 			SubUVCachedSRV = nullptr;
 		},
 		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus& Bus) {
-			if (Cmd.Type == ERenderCommandType::SubUV && Cmd.AtlasResource)
+			if (Cmd.Type == ERenderCommandType::SubUV && Cmd.Constants.SubUV.Particle)
 			{
-				if (!SubUVCachedSRV && Cmd.AtlasResource->IsLoaded())
+				const auto& SubUV = Cmd.Constants.SubUV;
+				if (!SubUVCachedSRV && SubUV.Particle->IsLoaded())
 				{
-					SubUVCachedSRV = Cmd.AtlasResource->SRV;
+					SubUVCachedSRV = SubUV.Particle->SRV;
 				}
 
 				SubUVBatcher.AddSprite(
 					Cmd.PerObjectConstants.Model.GetLocation(),
 					Bus.GetCameraRight(),
 					Bus.GetCameraUp(),
-					Cmd.FrameIndex,
-					Cmd.AtlasResource->Columns,
-					Cmd.AtlasResource->Rows,
-					Cmd.SpriteSize.X,
-					Cmd.SpriteSize.Y
+					SubUV.FrameIndex,
+					SubUV.Particle->Columns,
+					SubUV.Particle->Rows,
+					SubUV.Width,
+					SubUV.Height
 				);
 			}
 		},

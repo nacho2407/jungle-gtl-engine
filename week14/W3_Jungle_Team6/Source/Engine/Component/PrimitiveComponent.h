@@ -46,6 +46,10 @@ public:
 	void UpdateWorldMatrix() const override;
 	void AddWorldOffset(const FVector& WorldDelta) override;
 	virtual EPrimitiveType GetPrimitiveType() const = 0;
+
+	// MeshBuffer 기반 아웃라인 렌더링을 지원하는지 여부.
+	// Batcher 처리 타입(SubUV, Text)은 false를 반환합니다.
+	virtual bool SupportsOutline() const { return true; }
 };
 
 class UCubeComponent : public UPrimitiveComponent
