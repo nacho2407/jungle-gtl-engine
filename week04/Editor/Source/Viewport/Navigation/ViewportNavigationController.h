@@ -49,6 +49,9 @@ class FViewportNavigationController : public Engine::Viewport::IViewportControll
     FVector ResolveOrbitPivot() const;
     void       UpdateOrbitCamera();
     void       EndOrbit();
+    
+    /* Dolly */
+    void Dolly(float Value);
 
   private:
     void UpdateCameraRotation();
@@ -76,4 +79,8 @@ class FViewportNavigationController : public Engine::Viewport::IViewportControll
     FVector OrbitPivot = FVector::Zero();
     float   OrbitRadius = 0.0f;
     float   DefaultOrbitRadius = 300.0f;
+    
+    /* Dolly */
+    float DollySpeed = 1.0f;
+    float MinOrbitRadius = 30.0f;
 };

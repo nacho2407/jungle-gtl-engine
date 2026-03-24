@@ -32,11 +32,16 @@ private:
 
     bool bRightMouseDown = false;
     bool bLeftMouseDown = false;
+    
     bool bOrbitLeftMouseDown = false;
+    bool bDollyRightMouseDown = false;
+    
     bool bLeftRotationActive = false;
     bool bPendingLeftMouseRotate = false;
+    
     bool bFirstMouseMoveAfterRotateStart = false;
     bool bFirstMouseMoveAfterOrbitStart = false;
+    bool bFirstMouseMoveAfterDollyStart = false;
 
     int32 LastMouseX = 0;
     int32 LastMouseY = 0;
@@ -45,4 +50,6 @@ private:
 
     float DeltaTime = 0.016f; // 60 FPS 기준 초기값
     float LeftMouseDragThreshold = 4.0f;
+    
+    float DollyDragSensitivity = 0.1f;
 };

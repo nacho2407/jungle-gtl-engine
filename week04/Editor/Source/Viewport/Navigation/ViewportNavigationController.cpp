@@ -244,6 +244,25 @@ void FViewportNavigationController::UpdateOrbitCamera()
 
 void FViewportNavigationController::EndOrbit() { bOrbiting = false; }
 
+void FViewportNavigationController::Dolly(float Value)
+{
+    if (ViewportCamera == nullptr || FMath::IsNearlyZero(Value))
+    {
+        return;
+    }
+    
+    if (bOrbiting)
+    {
+        OrbitRadius -= Value * DollySpeed;
+        OrbitRadius = std::max(OrbitRadius, MinOrbitRadius);
+        UpdateOrbitCamera();
+        return;
+    }
+    
+    EnsureTargetLocationInitialized();
+    TargetLocation += ViewportCamera->GetForwardVector().GetSafeNormal() * (Value * DollySpeed);
+}
+
 void FViewportNavigationController::UpdateCameraRotation()
 {
     if (ViewportCamera == nullptr)

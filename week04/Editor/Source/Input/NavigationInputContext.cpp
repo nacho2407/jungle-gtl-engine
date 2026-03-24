@@ -23,7 +23,19 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
 
     switch (Event.Type)
     {
+#pragma region __MOUSE_BUTTON_DOWN__
     case EInputEventType::MouseButtonDown:
+        if (Event.Key == EKey::MouseRight && State.Modifiers.bAltDown)
+        {
+            bDollyRightMouseDown = true;
+            bFirstMouseMoveAfterDollyStart = true;
+#if defined(_WIN32)
+            while (::ShowCursor(FALSE) >= 0)
+            {
+            }
+#endif
+            return true;
+        }
         if (Event.Key == EKey::MouseRight)
         {
             bRightMouseDown = true;
@@ -62,12 +74,24 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
             return false;
         }
         break;
-
+#pragma endregion
+#pragma region __MOUSE_BUTTON_UP__
     case EInputEventType::MouseButtonUp:
         if (Event.Key == EKey::MouseLeft && bOrbitLeftMouseDown)
         {
             bOrbitLeftMouseDown = false;
             NavigationController->EndOrbit();
+#if defined(_WIN32)
+            while (::ShowCursor(TRUE) < 0)
+            {
+            }
+#endif
+            return true;
+        }
+        
+        if (Event.Key == EKey::MouseRight && bDollyRightMouseDown)
+        {
+            bDollyRightMouseDown = false;
 #if defined(_WIN32)
             while (::ShowCursor(TRUE) < 0)
             {
@@ -108,11 +132,30 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
             return false;
         }
         break;
-
+#pragma endregion
+#pragma region __MOUSE_BUTTON_MOVE__
     case EInputEventType::MouseMove:
         if (bOrbitLeftMouseDown)
         {
             return HandleMouseMove(Event, bFirstMouseMoveAfterOrbitStart);
+        }
+        
+        if (bDollyRightMouseDown)
+        {
+            if (bFirstMouseMoveAfterDollyStart)
+            {
+                LastMouseX = Event.MouseX;
+                LastMouseY = Event.MouseY;
+                bFirstMouseMoveAfterDollyStart = false;
+                return true;
+            }
+
+            const int32 DeltaY = Event.MouseY - LastMouseY;
+            NavigationController->Dolly(static_cast<float>(-DeltaY) * DollyDragSensitivity);
+
+            LastMouseX = Event.MouseX;
+            LastMouseY = Event.MouseY;
+            return true;
         }
 
         if (bRightMouseDown)
@@ -153,7 +196,8 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
         }
 
         break;
-
+#pragma endregion
+#pragma region __MOUSE_WHEEL__
     case EInputEventType::MouseWheel:
         if (bRightMouseDown || bLeftRotationActive)
         {
@@ -170,6 +214,7 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
     default:
         break;
     }
+#pragma endregion
     
     return false;
 }
