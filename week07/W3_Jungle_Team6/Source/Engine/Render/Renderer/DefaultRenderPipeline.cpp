@@ -36,6 +36,7 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		Collector.Collect(Context, Phases, Bus);
 	}
 
+	Renderer.PrepareBatchers(Bus);
 	Renderer.BeginFrame();
 	Renderer.Render(Bus);
 	Renderer.EndFrame();

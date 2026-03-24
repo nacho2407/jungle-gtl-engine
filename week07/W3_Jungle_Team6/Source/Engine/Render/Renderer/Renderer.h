@@ -14,15 +14,70 @@
 #include "Render/SubUVBatcher.h"
 
 #include <cstddef>
+#include <functional>
+
+// 패스별 Batcher 바인딩 — Clear → Collect → Flush 패턴
+struct FPassBatcherBinding
+{
+	std::function<void()> Clear;
+	std::function<void(const FRenderCommand&, const FRenderBus&)> Collect;
+	std::function<void(ERenderPass, const FRenderBus&, ID3D11DeviceContext*)> Flush;
+
+	explicit operator bool() const { return Flush != nullptr; }
+};
+
+// 패스별 기본 렌더 상태 — Single Source of Truth
+struct FPassRenderState
+{
+	EDepthStencilState       DepthStencil   = EDepthStencilState::Default;
+	EBlendState              Blend          = EBlendState::Opaque;
+	ERasterizerState         Rasterizer     = ERasterizerState::SolidBackCull;
+	D3D11_PRIMITIVE_TOPOLOGY Topology       = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	FShader*                 Shader         = nullptr; // nullptr → batcher가 자체 셰이더 사용
+	bool                     bWireframeAware = false;  // Wireframe 모드 시 래스터라이저 전환
+};
 
 class FRenderer
 {
+public:
+	void Create(HWND hWindow);
+	void Release();
+
+	void PrepareBatchers(const FRenderBus& InRenderBus);
+	void BeginFrame();
+	void Render(const FRenderBus& InRenderBus);
+	void EndFrame();
+
+	FD3DDevice& GetFD3DDevice() { return Device; }
+	FRenderResources& GetResources() { return Resources; }
+
+private:
+	void InitializePassRenderStates();
+	void InitializePassBatchers();
+
+	void ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Context, EViewMode ViewMode);
+	void BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContext* Context);
+
+	void DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderCommand& InCommand);
+	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus);
+
+	// 기본 패스 실행기 — SetupRenderState + DrawCommand 루프
+	void ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand>& Commands, const FRenderBus& Bus, ID3D11DeviceContext* Context);
+
+	// LineBatcher Flush 공통 — EditorConstants 업데이트 + EditorShader 바인딩
+	void FlushLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Context);
+
 private:
 	FD3DDevice Device;
 	FRenderResources Resources;
-	FLineBatcher   LineBatcher;
+	FLineBatcher   EditorLineBatcher;
+	FLineBatcher   GridLineBatcher;
 	FFontBatcher   FontBatcher;
 	FSubUVBatcher  SubUVBatcher;
+
+	FPassRenderState    PassRenderStates[(uint32)ERenderPass::MAX];
+	FPassBatcherBinding PassBatchers[(uint32)ERenderPass::MAX];
+	ID3D11ShaderResourceView* SubUVCachedSRV = nullptr;
 
 	//	Primitive and Gizmo Input Layout
 	D3D11_INPUT_ELEMENT_DESC PrimitiveInputLayout[2] =
@@ -36,33 +91,5 @@ private:
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
-
-public:
-
-private:
-	void SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* OutDeviceContext, EViewMode ViewMode);
-	void BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContext* Context);
-	EDepthStencilState GetDefaultDepthForPass(ERenderPass Pass) const;
-	EBlendState GetDefaultBlendForPass(ERenderPass Pass) const;
-
-	void DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderCommand& InCommand);
-
-public:
-	void Create(HWND hWindow);
-	void Release();
-
-	void BeginFrame();
-	void Render(const FRenderBus& InRenderBus);
-	void EndFrame();
-
-	void RenderPasses(const FRenderBus& InRenderBus, ID3D11DeviceContext* Context);
-	
-	void RenderEditorHelpers(const FRenderBus& InRenderBus, ID3D11DeviceContext* Context);
-	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus);
-
-	void CollectBatchingData(const FRenderBus& RenderBus);
-
-	FD3DDevice& GetFD3DDevice() { return Device; }
-	FRenderResources& GetResources() { return Resources; }
 };
 
