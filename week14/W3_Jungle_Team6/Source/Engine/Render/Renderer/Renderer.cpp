@@ -118,6 +118,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 
 		if (PassBatchers[i])
 		{
+			ApplyPassRenderState(CurPass, Context, InRenderBus.GetViewMode());
 			PassBatchers[i].Flush(CurPass, InRenderBus, Context);
 		}
 		else
@@ -136,15 +137,15 @@ void FRenderer::InitializePassRenderStates()
 	auto& S = PassRenderStates;
 
 	//                              DepthStencil                   Blend                Rasterizer                  Topology                                Shader                   WireframeAware
-	S[(uint32)E::Opaque]      = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, true  };
+	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, true };
 	S[(uint32)E::Translucent] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, false };
-	S[(uint32)E::StencilMask] = { EDepthStencilState::StencilWrite,  EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, false };
-	S[(uint32)E::Outline]     = { EDepthStencilState::StencilOutline,EBlendState::Opaque,    ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.OutlineShader,   false };
-	S[(uint32)E::Editor]      = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     &Resources.EditorShader,    true  };
-	S[(uint32)E::Grid]        = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     &Resources.EditorShader,    true  };
-	S[(uint32)E::DepthLess]   = { EDepthStencilState::DepthReadOnly,EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.GizmoShader,     false };
-	S[(uint32)E::Font]        = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, nullptr,                    false };
-	S[(uint32)E::SubUV]       = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, nullptr,                    false };
+	S[(uint32)E::StencilMask] = { EDepthStencilState::StencilWrite,  EBlendState::Opaque,     ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, false };
+	S[(uint32)E::Outline] = { EDepthStencilState::StencilOutline,EBlendState::Opaque,    ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.OutlineShader,   true };
+	S[(uint32)E::Editor] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     &Resources.EditorShader,    true };
+	S[(uint32)E::Grid] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     &Resources.EditorShader,    false };
+	S[(uint32)E::DepthLess] = { EDepthStencilState::DepthReadOnly,EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.GizmoShader,     false };
+	S[(uint32)E::Font] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, nullptr,                    true };
+	S[(uint32)E::SubUV] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, nullptr,                    true };
 }
 
 // ============================================================
@@ -206,7 +207,7 @@ void FRenderer::InitializePassBatchers()
 		},
 		/*.Flush   =*/ [this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
 			const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
-			FontBatcher.Flush(Device, Ctx, FontRes);
+			FontBatcher.Flush(Ctx, FontRes);
 		}
 	};
 
@@ -240,7 +241,7 @@ void FRenderer::InitializePassBatchers()
 			}
 		},
 		/*.Flush   =*/ [this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
-			SubUVBatcher.Flush(Device, Ctx, SubUVCachedSRV);
+			SubUVBatcher.Flush(Ctx, SubUVCachedSRV);
 		}
 	};
 }
@@ -348,7 +349,7 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 		break;
 
 	case ERenderCommandType::SelectionOutline:
-		Resources.OutlineConstantBuffer.Update(Context, &InCmd.Constants.Editor, sizeof(FOutlineConstants));
+		Resources.OutlineConstantBuffer.Update(Context, &InCmd.Constants.Outline, sizeof(FOutlineConstants));
 		{
 			ID3D11Buffer* cb = Resources.OutlineConstantBuffer.GetBuffer();
 			Context->VSSetConstantBuffers(5, 1, &cb);
