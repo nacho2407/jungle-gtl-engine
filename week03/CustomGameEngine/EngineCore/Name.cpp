@@ -13,7 +13,7 @@ FName::FName(const char* PStr) : FName(FString(PStr))
 
 }
 
-FName::FName(const FString& Str)
+FName::FName(const FString& Str)//Cube -> cube
 {
 	FString Lower = Str;
 	std::transform(Lower.begin(), Lower.end(), Lower.begin(), [](unsigned char c) { return std::tolower(c); });

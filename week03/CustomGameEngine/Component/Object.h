@@ -40,7 +40,7 @@ public:
 public:
 	uint32 UUID;
 	uint32 InternalIndex;
-	FName Name;
+	FName Name; // = FName("SimpleCUbe")
 };
 
 template <typename To, typename From>

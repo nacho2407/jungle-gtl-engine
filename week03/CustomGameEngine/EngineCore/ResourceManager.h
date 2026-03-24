@@ -183,7 +183,7 @@ private:
 	 */
 	bool UpdateBillboardFontAtlasRegion(const FAtlasRect& DirtyRect);
 
-private:
+private://:ShaderW0.hlsl == ShaderLine.hlsl
 	TMap<FString, FGeometry> GeometryMap;
 	TMap<WFString, FMaterial> MaterialMap;
 	TMap<WFString, TComPtr<ID3D11ShaderResourceView>> TextureMap;

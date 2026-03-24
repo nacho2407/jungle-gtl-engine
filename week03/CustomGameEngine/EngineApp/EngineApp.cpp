@@ -226,16 +226,6 @@ void EngineApp::Run()
 		GetWorld().DrawDebugLines();
 		Renderer->Render(LevelsToRender);
 		TArray<FBillboardTextDrawItem> BillboardTextItems;
-		if (UScene* PermanentScene = SceneMgr->GetPermanentScene())
-		{
-			for (UBillboardTextComponent* BillboardText : PermanentScene->BillboardTextComponents)
-			{
-				if (BillboardText != nullptr)
-				{
-					BillboardText->AppendDrawItems(BillboardTextItems);
-				}
-			}
-		}
 		if (UScene* ActiveScene = SceneMgr->GetActiveScene())
 		{
 			for (UBillboardTextComponent* BillboardText : ActiveScene->BillboardTextComponents)

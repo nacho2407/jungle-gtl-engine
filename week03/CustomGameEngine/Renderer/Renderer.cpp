@@ -228,7 +228,7 @@ void URenderer::OnResize(UINT Width, UINT Height)
 void URenderer::CreateDynamicVertexBuffer()
 {
 	D3D11_BUFFER_DESC vertexbufferdesc = {};
-	vertexbufferdesc.ByteWidth = sizeof(FVertexSimple) * 20000;
+	vertexbufferdesc.ByteWidth = sizeof(FVertexSimple) * 80000;
 	vertexbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
 	vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vertexbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -242,7 +242,7 @@ void URenderer::CreateDynamicVertexBuffer()
 
 void URenderer::UpdateDynamicVertexBuffer(FVertexSimple* Vertices, UINT VertexCount)
 {
-	const int32 MaxVertexCount = 20000;
+	const int32 MaxVertexCount = 80000;
 	if (VertexCount > MaxVertexCount)
 	{
 		//ERROR HANDLE

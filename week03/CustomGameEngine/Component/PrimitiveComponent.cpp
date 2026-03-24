@@ -14,10 +14,6 @@ UPrimitiveComponent::~UPrimitiveComponent()
 {
 	if (RenderObj != nullptr)
 	{
-		if (Scene != nullptr)
-		{
-			Scene->Level.UnregisterRenderObject(RenderObj);
-		}
 		delete RenderObj;
 	}
 }
