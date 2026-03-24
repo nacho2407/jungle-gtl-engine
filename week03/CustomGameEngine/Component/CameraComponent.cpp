@@ -176,11 +176,11 @@ void UCameraComponent::HandleCameraMove(float deltaTime)
 		float wheelDelta = InputManager::GetInstance().MouseWheel;
 		if (wheelDelta != 0.0f)
 		{
+			//현재 마우스가 있는 방향을 구하고 그곳으로 움직임.
 			FVector Mouse = InputManager::GetInstance().MousePos;
 			Ray mouseRay = ScreenPointToRay(static_cast<int>(Mouse.x), static_cast<int>(Mouse.y));
 			
 			FVector position = GetRelativeLocation();
-			// Move along the ray from mouse cursor
 			position = position + mouseRay.Direction * wheelDelta * MoveSpeed * 0.5f;
 			SetRelativeLocation(position);
 		}
