@@ -210,6 +210,17 @@ FVector USceneComponent::GetWorldLocation() const
 	return FVector(WorldMatrix.M[3][0], WorldMatrix.M[3][1], WorldMatrix.M[3][2]);
 }
 
+FVector USceneComponent::GetWorldScale() const
+{
+	const FMatrix& WorldMatrix = GetWorldMatrix();
+
+	float ScaleX = FVector(WorldMatrix.M[0][0], WorldMatrix.M[0][1], WorldMatrix.M[0][2]).Length();
+	float ScaleY = FVector(WorldMatrix.M[1][0], WorldMatrix.M[1][1], WorldMatrix.M[1][2]).Length();
+	float ScaleZ = FVector(WorldMatrix.M[2][0], WorldMatrix.M[2][1], WorldMatrix.M[2][2]).Length();
+
+	return FVector(ScaleX, ScaleY, ScaleZ);
+}
+
 FVector USceneComponent::GetForwardVector() const
 {
 	const FMatrix& Matrix = GetWorldMatrix();
