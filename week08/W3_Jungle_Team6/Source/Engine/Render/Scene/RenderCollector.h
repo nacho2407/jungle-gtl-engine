@@ -26,6 +26,7 @@ public:
 	void CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus);
 	void CollectSelection(const TArray<AActor*>& SelectedActors, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus);
 	void CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& ShowFlags, FRenderBus& RenderBus);
+	void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus);
 	void CollectMouseOverlay(const FCursorOverlayState* State, float ViewportW, float ViewportH, FRenderBus& RenderBus);
 
 private:

@@ -12,7 +12,6 @@ enum class EDepthStencilState
 	Default,
 	DepthGreater,
 	DepthReadOnly,
-	DepthAlways,
 	StencilWrite,
 	StencilOutline,
 	StencilWriteOnlyEqual,
