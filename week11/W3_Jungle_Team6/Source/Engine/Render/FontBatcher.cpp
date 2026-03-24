@@ -1,7 +1,6 @@
 ﻿#include "FontBatcher.h"
 
 #include "Core/CoreTypes.h"
-#include "Render/Device/D3DDevice.h"
 
 void FFontBatcher::Create(ID3D11Device* InDevice)
 {
@@ -164,14 +163,10 @@ void FFontBatcher::Clear()
 	Indices.clear();
 }
 
-void FFontBatcher::Flush(FD3DDevice& D3DDevice, ID3D11DeviceContext* Context, const FFontResource* Resource)
+void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FFontResource* Resource)
 {
 	if (!Resource || !Resource->IsLoaded()) return;
 	if (Vertices.empty() || !VertexBuffer || !IndexBuffer) return;
-
-	D3DDevice.SetDepthStencilState(EDepthStencilState::Default);
-	D3DDevice.SetBlendState(EBlendState::AlphaBlend);
-	D3DDevice.SetRasterizerState(ERasterizerState::SolidBackCull);
 
 	// Atlas 그리드가 바뀌었으면 CharInfoMap 재빌드
 	if (CachedColumns != Resource->Columns || CachedRows != Resource->Rows)

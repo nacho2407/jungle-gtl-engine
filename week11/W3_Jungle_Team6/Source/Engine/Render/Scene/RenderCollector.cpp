@@ -141,17 +141,17 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		OutlineCmd.DepthStencilState = EDepthStencilState::StencilOutline;
 		OutlineCmd.Constants.Outline.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
 		OutlineCmd.Constants.Outline.OutlineInvScale = FVector(1.0f / WorldScale.X,
-				1.0f / WorldScale.Y, 1.0f / WorldScale.Z);
+			1.0f / WorldScale.Y, 1.0f / WorldScale.Z);
 		OutlineCmd.Constants.Outline.OutlineOffset = 0.03f;
 		if (ViewMode == EViewMode::Wireframe)
 		{
 			OutlineCmd.PerObjectConstants.Color = FColor(255, 153, 0, 255).ToVector4();
 		}
 		CollectAABBCommand(primitiveComponent, RenderBus);
-		/*EPrimitiveType PrimType = primitiveComponent->GetPrimitiveType();
-		OutlineCmd.Constants.Outline.PrimitiveType = (PrimType == EPrimitiveType::EPT_Plane || 
-													PrimType == EPrimitiveType::EPT_SubUV || 
-													PrimType == EPrimitiveType::EPT_Text) ? 0u : 1u;*/
+		EPrimitiveType PrimType = primitiveComponent->GetPrimitiveType();
+		OutlineCmd.Constants.Outline.PrimitiveType = (PrimType == EPrimitiveType::EPT_Plane ||
+			PrimType == EPrimitiveType::EPT_SubUV ||
+			PrimType == EPrimitiveType::EPT_Text) ? 0u : 1u;
 		RenderBus.AddCommand(ERenderPass::Outline, OutlineCmd);
 	}
 }
