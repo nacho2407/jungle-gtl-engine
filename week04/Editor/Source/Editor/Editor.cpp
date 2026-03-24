@@ -668,6 +668,14 @@ void FEditor::SetSelectedObject(UObject* InSelectedObject)
     {
         EditorContext.SelectedActors.push_back(SelectedActor);
     }
+    else if (auto* SelectedComponent =
+                 Cast<Engine::Component::USceneComponent>(InSelectedObject))
+    {
+        if (AActor* OwnerActor = SelectedComponent->GetOwnerActor())
+        {
+            EditorContext.SelectedActors.push_back(OwnerActor);
+        }
+    }
 
     EditorContext.SelectedObject = InSelectedObject;
     ViewportClient.SyncSelectionFromContext();

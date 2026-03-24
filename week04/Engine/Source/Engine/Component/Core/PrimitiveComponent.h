@@ -26,6 +26,7 @@ namespace Engine::Component
         virtual bool GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const;
 
         void Update(float DeltaTime) override;
+        void DescribeProperties(FComponentPropertyBuilder& Builder) override;
 
       protected:
         virtual Geometry::FAABB GetLocalAABB() const = 0;

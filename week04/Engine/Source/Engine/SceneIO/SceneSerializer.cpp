@@ -1,8 +1,9 @@
 #include "SceneSerializer.h"
 
+#include "SceneAssetPath.h"
 #include "SceneJson.h"
 #include "SceneTypeRegistry.h"
-#include "Engine/Component/Core/PrimitiveComponent.h"
+#include "Engine/Component/Core/ComponentProperty.h"
 #include "Engine/Component/Core/SceneComponent.h"
 #include "Engine/Component/Core/UnknownComponent.h"
 #include "Engine/Game/Actor.h"
@@ -15,7 +16,7 @@
 namespace
 {
     constexpr const char* SceneSchemaName = "JungleScene";
-    constexpr int32       SceneSchemaVersion = 1;
+    constexpr int32       SceneSchemaVersion = 2;
 
     FSceneJsonValue MakeNumberArray(std::initializer_list<double> Values)
     {
@@ -146,6 +147,34 @@ namespace
         return true;
     }
 
+    bool TryReadOptionalUIntField(const FSceneJsonValue::Object& ObjectValue,
+                                  const FString& FieldName, uint32& OutValue,
+                                  bool& OutHasValue, FString* OutErrorMessage,
+                                  const char* Context)
+    {
+        const auto Iterator = ObjectValue.find(FieldName);
+        if (Iterator == ObjectValue.end())
+        {
+            OutHasValue = false;
+            return true;
+        }
+
+        double NumberValue = 0.0;
+        if (!Iterator->second.TryGetNumber(NumberValue) || NumberValue < 0.0)
+        {
+            if (OutErrorMessage != nullptr)
+            {
+                *OutErrorMessage =
+                    FString(Context) + "." + FieldName + " must be a non-negative number.";
+            }
+            return false;
+        }
+
+        OutValue = static_cast<uint32>(NumberValue);
+        OutHasValue = true;
+        return true;
+    }
+
     bool TryReadIntField(const FSceneJsonValue::Object& ObjectValue, const FString& FieldName,
                          int32& OutValue, FString* OutErrorMessage, const char* Context)
     {
@@ -167,6 +196,40 @@ namespace
         }
 
         OutValue = static_cast<int32>(NumberValue);
+        return true;
+    }
+
+    bool TryReadIntValue(const FSceneJsonValue& Value, int32& OutValue, FString* OutErrorMessage,
+                         const char* Context)
+    {
+        double NumberValue = 0.0;
+        if (!Value.TryGetNumber(NumberValue))
+        {
+            if (OutErrorMessage != nullptr)
+            {
+                *OutErrorMessage = FString(Context) + " must be a number.";
+            }
+            return false;
+        }
+
+        OutValue = static_cast<int32>(NumberValue);
+        return true;
+    }
+
+    bool TryReadFloatValue(const FSceneJsonValue& Value, float& OutValue,
+                           FString* OutErrorMessage, const char* Context)
+    {
+        double NumberValue = 0.0;
+        if (!Value.TryGetNumber(NumberValue))
+        {
+            if (OutErrorMessage != nullptr)
+            {
+                *OutErrorMessage = FString(Context) + " must be a number.";
+            }
+            return false;
+        }
+
+        OutValue = static_cast<float>(NumberValue);
         return true;
     }
 
@@ -280,6 +343,219 @@ namespace
         return true;
     }
 
+    FSceneJsonValue SerializeComponentProperty(
+        const Engine::Component::FComponentPropertyDescriptor& Descriptor)
+    {
+        using namespace Engine::Component;
+
+        switch (Descriptor.Type)
+        {
+        case EComponentPropertyType::Bool:
+            return FSceneJsonValue(Descriptor.BoolGetter ? Descriptor.BoolGetter() : false);
+
+        case EComponentPropertyType::Int:
+            return FSceneJsonValue(static_cast<double>(
+                Descriptor.IntGetter ? Descriptor.IntGetter() : 0));
+
+        case EComponentPropertyType::Float:
+            return FSceneJsonValue(static_cast<double>(
+                Descriptor.FloatGetter ? Descriptor.FloatGetter() : 0.0f));
+
+        case EComponentPropertyType::String:
+            return FSceneJsonValue(Descriptor.StringGetter ? Descriptor.StringGetter() : FString{});
+
+        case EComponentPropertyType::AssetPath:
+        {
+            const FString AssetPath =
+                Descriptor.StringGetter ? Descriptor.StringGetter() : FString{};
+            return FSceneJsonValue(Engine::SceneIO::NormalizeSceneAssetPath(AssetPath));
+        }
+
+        case EComponentPropertyType::Vector3:
+        {
+            const FVector Value =
+                Descriptor.VectorGetter ? Descriptor.VectorGetter() : FVector::ZeroVector;
+            return MakeNumberArray({Value.X, Value.Y, Value.Z});
+        }
+
+        case EComponentPropertyType::Color:
+        {
+            const FColor Value =
+                Descriptor.ColorGetter ? Descriptor.ColorGetter() : FColor::White();
+            return MakeNumberArray({Value.r, Value.g, Value.b, Value.a});
+        }
+        }
+
+        return {};
+    }
+
+    void BuildKnownComponentProperties(Engine::Component::USceneComponent& Component,
+                                       FSceneJsonValue::Object& OutPropertiesObject)
+    {
+        Engine::Component::FComponentPropertyBuilder Builder;
+        Component.DescribeProperties(Builder);
+
+        for (const Engine::Component::FComponentPropertyDescriptor& Descriptor :
+             Builder.GetProperties())
+        {
+            if (!Descriptor.bSerializeInScene || Descriptor.Key.empty())
+            {
+                continue;
+            }
+
+            OutPropertiesObject[Descriptor.Key] = SerializeComponentProperty(Descriptor);
+        }
+    }
+
+    void LogComponentPropertyRestoreFailure(
+        const Engine::Component::USceneComponent& Component, const FString& PropertyKey,
+        const FString& ErrorMessage)
+    {
+        UE_LOG(SceneIO, ELogVerbosity::Error,
+               "Failed to restore property '%s' on component '%s': %s",
+               PropertyKey.c_str(), Component.GetTypeName(), ErrorMessage.c_str());
+    }
+
+    void ApplyKnownComponentProperties(const FSceneJsonValue::Object& PropertiesObject,
+                                       Engine::Component::USceneComponent& Component)
+    {
+        using namespace Engine::Component;
+
+        FComponentPropertyBuilder Builder;
+        Component.DescribeProperties(Builder);
+
+        for (const FComponentPropertyDescriptor& Descriptor : Builder.GetProperties())
+        {
+            if (!Descriptor.bSerializeInScene || Descriptor.Key.empty())
+            {
+                continue;
+            }
+
+            const auto PropertyIterator = PropertiesObject.find(Descriptor.Key);
+            if (PropertyIterator == PropertiesObject.end())
+            {
+                continue;
+            }
+
+            const FSceneJsonValue& PropertyValue = PropertyIterator->second;
+            FString PropertyError;
+            const FString Context = "Component.properties." + Descriptor.Key;
+
+            switch (Descriptor.Type)
+            {
+            case EComponentPropertyType::Bool:
+            {
+                bool Value = false;
+                if (!PropertyValue.TryGetBool(Value))
+                {
+                    PropertyError = Context + " must be a bool.";
+                    break;
+                }
+
+                if (Descriptor.BoolSetter)
+                {
+                    Descriptor.BoolSetter(Value);
+                }
+                continue;
+            }
+
+            case EComponentPropertyType::Int:
+            {
+                int32 Value = 0;
+                if (!TryReadIntValue(PropertyValue, Value, &PropertyError, Context.c_str()))
+                {
+                    break;
+                }
+
+                if (Descriptor.IntSetter)
+                {
+                    Descriptor.IntSetter(Value);
+                }
+                continue;
+            }
+
+            case EComponentPropertyType::Float:
+            {
+                float Value = 0.0f;
+                if (!TryReadFloatValue(PropertyValue, Value, &PropertyError, Context.c_str()))
+                {
+                    break;
+                }
+
+                if (Descriptor.FloatSetter)
+                {
+                    Descriptor.FloatSetter(Value);
+                }
+                continue;
+            }
+
+            case EComponentPropertyType::String:
+            {
+                FString Value;
+                if (!PropertyValue.TryGetString(Value))
+                {
+                    PropertyError = Context + " must be a string.";
+                    break;
+                }
+
+                if (Descriptor.StringSetter)
+                {
+                    Descriptor.StringSetter(Value);
+                }
+                continue;
+            }
+
+            case EComponentPropertyType::AssetPath:
+            {
+                FString Value;
+                if (!PropertyValue.TryGetString(Value))
+                {
+                    PropertyError = Context + " must be a string.";
+                    break;
+                }
+
+                if (Descriptor.StringSetter)
+                {
+                    Descriptor.StringSetter(Engine::SceneIO::NormalizeSceneAssetPath(Value));
+                }
+                continue;
+            }
+
+            case EComponentPropertyType::Vector3:
+            {
+                FVector Value = FVector::ZeroVector;
+                if (!TryReadVector3(PropertyValue, Value, &PropertyError, Context.c_str()))
+                {
+                    break;
+                }
+
+                if (Descriptor.VectorSetter)
+                {
+                    Descriptor.VectorSetter(Value);
+                }
+                continue;
+            }
+
+            case EComponentPropertyType::Color:
+            {
+                FVector4 Value = FVector4::Zero();
+                if (!TryReadColor(PropertyValue, Value, &PropertyError, Context.c_str()))
+                {
+                    break;
+                }
+
+                if (Descriptor.ColorSetter)
+                {
+                    Descriptor.ColorSetter(FColor(Value.X, Value.Y, Value.Z, Value.W));
+                }
+                continue;
+            }
+            }
+
+            LogComponentPropertyRestoreFailure(Component, Descriptor.Key, PropertyError);
+        }
+    }
+
     FSceneJsonValue::Object
     BuildComponentObject(const AActor&                             OwnerActor,
                          const Engine::Component::USceneComponent& Component)
@@ -307,6 +583,14 @@ namespace
         ComponentObject["uuid"] = static_cast<double>(Component.UUID);
         ComponentObject["name"] = Component.Name.IsValid() ? Component.Name.ToFString() : "";
         ComponentObject["is_root"] = OwnerActor.GetRootComponent() == &Component;
+        if (const Engine::Component::USceneComponent* ParentComponent = Component.GetAttachParent())
+        {
+            ComponentObject["parent_uuid"] = static_cast<double>(ParentComponent->UUID);
+        }
+        else
+        {
+            ComponentObject.erase("parent_uuid");
+        }
 
         FSceneJsonValue::Object TransformObject;
         const FVector           Location = Component.GetRelativeLocation();
@@ -319,24 +603,14 @@ namespace
         TransformObject["scale"] = MakeNumberArray({Scale.X, Scale.Y, Scale.Z});
         ComponentObject["transform"] = std::move(TransformObject);
 
-        FSceneJsonValue::Object DataObject;
-        const auto              ExistingDataIterator = ComponentObject.find("data");
-        if (ExistingDataIterator != ComponentObject.end())
+        if (!Component.IsA(Engine::Component::UUnknownComponent::GetClass()))
         {
-            if (const auto* ExistingDataObject = ExistingDataIterator->second.TryGetObject())
-            {
-                DataObject = *ExistingDataObject;
-            }
+            FSceneJsonValue::Object PropertiesObject;
+            BuildKnownComponentProperties(
+                const_cast<Engine::Component::USceneComponent&>(Component), PropertiesObject);
+            ComponentObject.erase("data");
+            ComponentObject["properties"] = std::move(PropertiesObject);
         }
-
-        if (const auto* PrimitiveComponent = Cast<Engine::Component::UPrimitiveComponent>(
-                const_cast<Engine::Component::USceneComponent*>(&Component)))
-        {
-            const FColor& Color = PrimitiveComponent->GetColor();
-            DataObject["color"] = MakeNumberArray({Color.r, Color.g, Color.b, Color.a});
-        }
-
-        ComponentObject["data"] = std::move(DataObject);
         return ComponentObject;
     }
 
@@ -444,26 +718,18 @@ namespace
         Component.SetRelativeRotation(Rotation);
         Component.SetRelativeScale3D(Scale);
 
-        const auto DataIterator = ComponentObject.find("data");
-        if (DataIterator != ComponentObject.end())
+        const auto PropertiesIterator = ComponentObject.find("properties");
+        if (PropertiesIterator != ComponentObject.end())
         {
-            if (auto* PrimitiveComponent = Cast<Engine::Component::UPrimitiveComponent>(&Component))
+            if (const auto* PropertiesObject = PropertiesIterator->second.TryGetObject())
             {
-                if (const auto* DataObject = DataIterator->second.TryGetObject())
-                {
-                    const auto ColorIterator = DataObject->find("color");
-                    if (ColorIterator != DataObject->end())
-                    {
-                        FVector4 Color;
-                        if (!TryReadColor(ColorIterator->second, Color, OutErrorMessage,
-                                          "Component.data.color"))
-                        {
-                            return false;
-                        }
-
-                        PrimitiveComponent->SetColor({Color.X, Color.Y, Color.Z, Color.W});
-                    }
-                }
+                ApplyKnownComponentProperties(*PropertiesObject, Component);
+            }
+            else
+            {
+                UE_LOG(SceneIO, ELogVerbosity::Error,
+                       "Component.properties on '%s' must be an object. Property restore was skipped.",
+                       Component.GetTypeName());
             }
         }
 
@@ -498,6 +764,14 @@ namespace
     bool DeserializeActorValue(const FSceneJsonValue& ActorValue, FScene& OutScene,
                                FString* OutErrorMessage)
     {
+        struct FPendingComponentHierarchy
+        {
+            Engine::Component::USceneComponent* Component = nullptr;
+            bool bIsRootComponent = false;
+            bool bHasParentUuid = false;
+            uint32 ParentUuid = 0;
+        };
+
         const FSceneJsonValue::Object* ActorObject = nullptr;
         if (!TryGetObject(ActorValue, ActorObject, OutErrorMessage, "Actor"))
         {
@@ -571,6 +845,9 @@ namespace
 
         const auto   ExistingComponents = Actor->GetOwnedComponents();
         TArray<bool> ReusedFlags(ExistingComponents.size(), false);
+        TMap<uint32, Engine::Component::USceneComponent*> ComponentsByUuid;
+        TArray<FPendingComponentHierarchy> PendingHierarchy;
+        PendingHierarchy.reserve(ComponentsArray->size());
 
         for (const FSceneJsonValue& ComponentValue : *ComponentsArray)
         {
@@ -590,6 +867,14 @@ namespace
             bool bIsRootComponent = false;
             if (!TryReadBoolField(*ComponentObject, "is_root", bIsRootComponent, OutErrorMessage,
                                   "Component"))
+            {
+                return false;
+            }
+
+            uint32 ParentUuid = 0;
+            bool bHasParentUuid = false;
+            if (!TryReadOptionalUIntField(*ComponentObject, "parent_uuid", ParentUuid,
+                                          bHasParentUuid, OutErrorMessage, "Component"))
             {
                 return false;
             }
@@ -635,15 +920,55 @@ namespace
                 return false;
             }
 
-            if (bIsRootComponent)
+            ComponentsByUuid[Component->UUID] = Component;
+            PendingHierarchy.push_back(FPendingComponentHierarchy{
+                .Component = Component,
+                .bIsRootComponent = bIsRootComponent,
+                .bHasParentUuid = bHasParentUuid,
+                .ParentUuid = ParentUuid});
+        }
+
+        for (const FPendingComponentHierarchy& Hierarchy : PendingHierarchy)
+        {
+            if (Hierarchy.Component != nullptr && Hierarchy.bIsRootComponent)
             {
-                Actor->SetRootComponent(Component);
+                Actor->SetRootComponent(Hierarchy.Component);
             }
         }
 
         if (Actor->GetRootComponent() == nullptr && !Actor->GetOwnedComponents().empty())
         {
             Actor->SetRootComponent(Actor->GetOwnedComponents().front());
+        }
+
+        Engine::Component::USceneComponent* RootComponent = Actor->GetRootComponent();
+        for (const FPendingComponentHierarchy& Hierarchy : PendingHierarchy)
+        {
+            Engine::Component::USceneComponent* Component = Hierarchy.Component;
+            if (Component == nullptr || Component == RootComponent)
+            {
+                continue;
+            }
+
+            if (Hierarchy.bHasParentUuid)
+            {
+                const auto ParentIterator = ComponentsByUuid.find(Hierarchy.ParentUuid);
+                if (ParentIterator != ComponentsByUuid.end() && ParentIterator->second != nullptr &&
+                    ParentIterator->second != Component)
+                {
+                    Component->AttachToComponent(ParentIterator->second);
+                    continue;
+                }
+            }
+
+            if (RootComponent != nullptr)
+            {
+                Component->AttachToComponent(RootComponent);
+            }
+            else
+            {
+                Component->DetachFromParent();
+            }
         }
 
         OutScene.AddActor(Actor.release());

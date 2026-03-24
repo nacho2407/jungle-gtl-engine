@@ -25,6 +25,7 @@ namespace Engine::Component
         void ResetAnimation();
 
         void Update(float DeltaTime) override;
+        void DescribeProperties(FComponentPropertyBuilder& Builder) override;
 
       protected:
         bool  bLoop = true;

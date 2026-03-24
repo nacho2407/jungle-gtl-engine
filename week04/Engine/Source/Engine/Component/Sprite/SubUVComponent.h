@@ -13,6 +13,7 @@ namespace Engine::Component
 
         int32 GetFrameIndex() const { return FrameIndex; }
         void  SetFrameIndex(int32 InFrameIndex);
+        void DescribeProperties(FComponentPropertyBuilder& Builder) override;
 
         int32 GetFrameCount() const;
 

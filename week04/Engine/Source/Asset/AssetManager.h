@@ -141,6 +141,8 @@ struct FTextureBuildKeyHasher
 class UAssetManager : public UObject
 {
 public:
+    DECLARE_RTTI(UAssetManager, UObject)
+
 	~UAssetManager() override;
 
 	void RegisterLoader(IAssetLoader* Loader);

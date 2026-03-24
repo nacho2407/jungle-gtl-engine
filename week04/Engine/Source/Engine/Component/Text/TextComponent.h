@@ -19,6 +19,8 @@ namespace Engine::Component
         const FFontResource* GetFontResource() const { return FontResource; }
         FFontResource*       GetFontResource() { return FontResource; }
         void                 SetFontResource(FFontResource* InFontResource);
+        const FString&       GetFontPath() const { return FontPath; }
+        void                 SetFontPath(const FString& InFontPath);
 
         float GetTextScale() const { return TextScale; }
         void  SetTextScale(float InTextScale);
@@ -34,10 +36,12 @@ namespace Engine::Component
 
         const FVector& GetBillboardOffset() const { return BillboardOffset; }
         void           SetBillboardOffset(const FVector& InBillboardOffset);
+        void           DescribeProperties(FComponentPropertyBuilder& Builder) override;
 
       protected:
         FString        Text;
         FFontResource* FontResource = nullptr;
+        FString        FontPath;
 
         FColor TextColor = FColor::White();
         float  TextScale = 1.0f;

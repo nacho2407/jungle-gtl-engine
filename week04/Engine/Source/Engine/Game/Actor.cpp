@@ -1,6 +1,8 @@
 #include "Actor.h"
 #include "Engine/Component/Core/SceneComponent.h"
 
+#include <algorithm>
+
 AActor::AActor() = default;
 
 AActor::~AActor()
@@ -21,7 +23,30 @@ void AActor::SetPickable(bool bInPickable) { bPickable = bInPickable; }
 
 void AActor::SetRootComponent(Engine::Component::USceneComponent* InRootComponent)
 {
+    if (InRootComponent == nullptr)
+    {
+        RootComponent = nullptr;
+        return;
+    }
+
+    const auto ExistingComponentIterator =
+        std::find(OwnedComponents.begin(), OwnedComponents.end(), InRootComponent);
+    if (ExistingComponentIterator == OwnedComponents.end())
+    {
+        OwnedComponents.push_back(InRootComponent);
+    }
+
+    InRootComponent->SetOwnerActor(this);
+    InRootComponent->DetachFromParent();
     RootComponent = InRootComponent;
+
+    const auto RootIterator = std::find(OwnedComponents.begin(), OwnedComponents.end(), RootComponent);
+    if (RootIterator != OwnedComponents.end() && RootIterator != OwnedComponents.begin())
+    {
+        Engine::Component::USceneComponent* Root = *RootIterator;
+        OwnedComponents.erase(RootIterator);
+        OwnedComponents.insert(OwnedComponents.begin(), Root);
+    }
 }
 
 void AActor::AddOwnedComponent(Engine::Component::USceneComponent* InComponent,
@@ -36,9 +61,16 @@ void AActor::AddOwnedComponent(Engine::Component::USceneComponent* InComponent,
     {
         if (ExistingComponent == InComponent)
         {
+            InComponent->SetOwnerActor(this);
+
             if (bMakeRootComponent)
             {
-                RootComponent = InComponent;
+                SetRootComponent(InComponent);
+            }
+            else if (RootComponent != nullptr && InComponent != RootComponent &&
+                     InComponent->GetAttachParent() == nullptr)
+            {
+                InComponent->AttachToComponent(RootComponent);
             }
 
             return;
@@ -46,9 +78,14 @@ void AActor::AddOwnedComponent(Engine::Component::USceneComponent* InComponent,
     }
 
     OwnedComponents.push_back(InComponent);
+    InComponent->SetOwnerActor(this);
     if (bMakeRootComponent || RootComponent == nullptr)
     {
-        RootComponent = InComponent;
+        SetRootComponent(InComponent);
+    }
+    else if (InComponent != RootComponent && InComponent->GetAttachParent() == nullptr)
+    {
+        InComponent->AttachToComponent(RootComponent);
     }
 }
 

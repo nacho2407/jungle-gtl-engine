@@ -482,6 +482,9 @@
     <ClInclude Include="Source\CoreUObject\ObjectFactory.h">
       <Filter>Source\CoreUObject</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Core\ComponentProperty.h">
+      <Filter>Source\Engine\Component\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\Core\PrimitiveComponent.h">
       <Filter>Source\Engine\Component\Core</Filter>
     </ClInclude>
@@ -531,6 +534,9 @@
       <Filter>Source\Engine</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\SceneIO\SceneJson.h">
+      <Filter>Source\Engine\SceneIO</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\SceneIO\SceneAssetPath.h">
       <Filter>Source\Engine\SceneIO</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\SceneIO\SceneSerializer.h">
