@@ -148,6 +148,9 @@ void FD3DDevice::SetRasterizerState(ERasterizerState InState)
 	case ERasterizerState::SolidFrontCull:
 		DeviceContext->RSSetState(RasterizerStateFrontCull);
 		break;
+	case ERasterizerState::SolidNoCull:
+		DeviceContext->RSSetState(RasterizerStateNoCull);
+		break;
 	case ERasterizerState::WireFrame:
 		DeviceContext->RSSetState(RasterizerStateWireFrame);
 		break;
@@ -253,6 +256,12 @@ void FD3DDevice::CreateRasterizerState()
 
 	Device->CreateRasterizerState(&frontCullDesc, &RasterizerStateFrontCull);
 
+	D3D11_RASTERIZER_DESC noCullDesc = {};
+	noCullDesc.FillMode = D3D11_FILL_SOLID;
+	noCullDesc.CullMode = D3D11_CULL_NONE;
+
+	Device->CreateRasterizerState(&noCullDesc, &RasterizerStateNoCull);
+
 	D3D11_RASTERIZER_DESC wireFrameDesc = {};
 	wireFrameDesc.FillMode = D3D11_FILL_WIREFRAME;
 	wireFrameDesc.CullMode = D3D11_CULL_NONE;
@@ -266,6 +275,7 @@ void FD3DDevice::ReleaseRasterizerState()
 {
 	SAFE_RELEASE(RasterizerStateBackCull);
 	SAFE_RELEASE(RasterizerStateFrontCull);
+	SAFE_RELEASE(RasterizerStateNoCull);
 	SAFE_RELEASE(RasterizerStateWireFrame);
 }
 
