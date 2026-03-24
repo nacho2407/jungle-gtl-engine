@@ -5,7 +5,6 @@
 #include <list>
 #include <unordered_set>
 #include <unordered_map>
-#include <map>
 #include <array>
 #include <queue>
 #include <wrl.h>
@@ -32,7 +31,7 @@ template <typename T>
 using TSet = std::unordered_set<T>;
 
 template <typename T0, typename T1>
-using TMap = std::map<T0, T1>;
+using TMap = std::unordered_map<T0, T1>;
 
 template <typename T0, typename T1>
 using TUMap = std::unordered_map<T0, T1>;

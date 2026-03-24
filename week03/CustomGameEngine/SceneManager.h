@@ -72,6 +72,12 @@ public:
 
 
 private:
+	/**
+	 * @brief 대상 씬 컴포넌트에 기본 이름/UUID 빌보드 컴포넌트를 자동 부착합니다.
+	 *
+	 * @param targetScene 빌보드 컴포넌트를 추가할 씬
+	 * @param targetComponent 라벨이 따라다닐 대상 컴포넌트
+	 */
 	void AttachDefaultBillboardText(UScene* targetScene, USceneComponent* targetComponent);
 
 	UWorld* OwnerWorld = nullptr;

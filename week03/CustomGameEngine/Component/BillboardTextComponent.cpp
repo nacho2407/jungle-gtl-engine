@@ -1,4 +1,4 @@
-#include "BillboardTextComponent.h"
+﻿#include "BillboardTextComponent.h"
 
 #include <cmath>
 
@@ -6,14 +6,6 @@
 #include "Component/PrimitiveComponent.h"
 #include "EngineCore/ResourceManager.h"
 #include "Renderer/Renderer.h"
-
-UBillboardTextComponent::UBillboardTextComponent()
-{
-}
-
-UBillboardTextComponent::~UBillboardTextComponent()
-{
-}
 
 void UBillboardTextComponent::AppendDrawItems(TArray<FBillboardTextDrawItem>& OutItems) const
 {
@@ -33,6 +25,7 @@ void UBillboardTextComponent::AppendDrawItems(TArray<FBillboardTextDrawItem>& Ou
 	const FVector BillboardUp = (Camera != nullptr) ? Camera->UpDirection.Normalize() : FVector::Up();
 	const FVector BaseAnchor = AttachedComponent->GetRelativeLocation() + FVector::Up() * ComputeAnchorHeightOffset();
 
+	// 이름 라인은 UUID 라인보다 위쪽에 배치
 	FBillboardTextDrawItem NameItem;
 	NameItem.FontAsset = FontAsset;
 	NameItem.Text = AttachedComponent->Name.GetDisplayName();
@@ -42,6 +35,7 @@ void UBillboardTextComponent::AppendDrawItems(TArray<FBillboardTextDrawItem>& Ou
 	NameItem.Color = NameColor;
 	OutItems.push_back(NameItem);
 
+	// UUID 라인은 기준 앵커 위치에 배치
 	FBillboardTextDrawItem UUIDItem;
 	UUIDItem.FontAsset = FontAsset;
 	UUIDItem.Text = "UUID: " + std::to_string(AttachedComponent->UUID);
@@ -60,6 +54,7 @@ float UBillboardTextComponent::ComputeAnchorHeightOffset() const
 		return 1.0f + VerticalOffset;
 	}
 
+	// 메시의 가장 높은 로컬 Z를 기준으로 텍스트 시작 높이 설정
 	float MaxLocalZ = Primitive->GetGeometry()->Vertices[0].z;
 	for (const FVector& Vertex : Primitive->GetGeometry()->Vertices)
 	{
@@ -70,7 +65,7 @@ float UBillboardTextComponent::ComputeAnchorHeightOffset() const
 	}
 
 	const float ScaleZ = std::abs(Primitive->GetRelativeScale3D().z);
-	return std::abs(MaxLocalZ) * (ScaleZ > 0.0f ? ScaleZ : 1.0f) + VerticalOffset;
+	return std::abs(MaxLocalZ) * (ScaleZ > 0.0f ? ScaleZ : 0.001f) + VerticalOffset;
 }
 
 REGISTER_CLASS(UBillboardTextComponent);

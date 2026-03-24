@@ -10,7 +10,7 @@
 /**
  * @def MAX_VERTEX_FONT_COUNT 폰트를 위한 dynamic vertex buffer의 최대 정점 정보 개수
  */
-#define MAX_VERTEX_FONT_COUNT 12000
+#define MAX_VERTEX_FONT_COUNT 120000
 
 void URenderer::Create(HWND hWindow)
 {
@@ -525,6 +525,7 @@ bool URenderer::PrepareBillboardFontMaterial(FFontAsset* FontAsset, const FColor
 		return false;
 	}
 
+	// 폰트 셰이더와 상수 버퍼를 이번 그룹 색상 기준으로 설정
 	FMaterial& FontMaterial = ResourceManager::GetInstance()->GetMaterial(L"Shader/ShaderFont.hlsl");
 	if (FontMaterial.VertexShader == nullptr || FontMaterial.PixelShader == nullptr)
 	{
@@ -550,6 +551,7 @@ void URenderer::DrawBillboardFontVertices(const TArray<FVertexFont>& Vertices)
 		return;
 	}
 
+	// CPU에서 만든 글자 정점을 동적 버퍼에 업로드한 뒤 한 번에 Draw
 	UpdateDynamicFontVertexBuffer(const_cast<FVertexFont*>(Vertices.data()), static_cast<UINT>(Vertices.size()));
 
 	UINT Stride = sizeof(FVertexFont);
@@ -559,8 +561,9 @@ void URenderer::DrawBillboardFontVertices(const TArray<FVertexFont>& Vertices)
 	DeviceContext->Draw(static_cast<UINT>(Vertices.size()), 0);
 }
 
-void URenderer::RestoreCurrentRasterizerState()
+void URenderer::RestoreCurrentRasterizerState() const
 {
+	// 일반 3D 렌더 단계에서 사용하던 rasterizer 모드로 되돌립니다.
 	switch (RsSetMode)
 	{
 	case 1:
@@ -586,6 +589,7 @@ void URenderer::RenderBillboardTextBatch(const TArray<FBillboardTextDrawItem>& I
 	FFontAsset* DefaultFont = &ResourceMgr->GetBillboardFont();
 	TMap<FBillboardTextBatchKey, TArray<const FBillboardTextDrawItem*>> BatchGroups;
 
+	// 폰트/색 조합별로 아이템을 그룹화
 	for (const FBillboardTextDrawItem& Item : Items)
 	{
 		FFontAsset* FontAsset = (Item.FontAsset != nullptr) ? Item.FontAsset : DefaultFont;
@@ -606,9 +610,10 @@ void URenderer::RenderBillboardTextBatch(const TArray<FBillboardTextDrawItem>& I
 	}
 
 	DeviceContext->OMSetDepthStencilState(DepthStencilStateNoWrite.Get(), 0);
-	DeviceContext->RSSetState(RasterizerStateNoCull.Get());
+	DeviceContext->RSSetState(RasterizerState.Get());
 
-	for (auto& [Key, GroupItems] : BatchGroups)
+	// 각 그룹마다 정점을 합쳐 한 번의 draw call로 렌더링
+	for (auto& [Key, GroupItems]: BatchGroups)
 	{
 		if (PrepareBillboardFontMaterial(Key.FontAsset, Key.Color) == false)
 		{
@@ -618,6 +623,7 @@ void URenderer::RenderBillboardTextBatch(const TArray<FBillboardTextDrawItem>& I
 		TArray<FVertexFont> Vertices;
 		for (const FBillboardTextDrawItem* Item : GroupItems)
 		{
+			// 문자열 단위 레이아웃을 하나의 그룹 정점 배열에 이어붙입니다.
 			FTextLayoutBuildParams Params;
 			Params.FontAsset = Key.FontAsset;
 			Params.Text = Item->Text;

@@ -73,6 +73,7 @@ void SceneManager::AttachDefaultBillboardText(UScene* targetScene, USceneCompone
 		return;
 	}
 
+	// 에디터에서 배치한 실제 오브젝트들만 자동 라벨 대상에 포함합니다.
 	UBillboardTextComponent* BillboardText = AddSceneComponent<UBillboardTextComponent>(targetScene);
 	if (BillboardText != nullptr)
 	{

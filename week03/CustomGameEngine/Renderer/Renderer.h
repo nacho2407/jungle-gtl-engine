@@ -15,6 +15,9 @@
 #include "Text/FontAsset.h"
 #include <tuple>
 
+/**
+ * @brief Billboard 텍스트 배치 렌더링 시 한 번에 그릴 단위인 배치 그룹을 설명
+ */
 struct FBillboardTextBatchKey
 {
 	FFontAsset* FontAsset = nullptr;
@@ -142,6 +145,11 @@ public:
 	 */
 	void ReleaseDynamicFontVertexBuffer(void);
 
+	/**
+	 * @brief 빌보드 텍스트 draw item들을 배치 그룹별로 묶어 렌더링합니다.
+	 *
+	 * @param Items 이번 프레임에 렌더할 빌보드 텍스트 목록
+	 */
 	void RenderBillboardTextBatch(const TArray<FBillboardTextDrawItem>& Items);
 
 private:
@@ -172,5 +180,8 @@ private:
 	 */
 	void DrawBillboardFontVertices(const TArray<FVertexFont>& Vertices);
 
-	void RestoreCurrentRasterizerState();
+	/**
+	 * @brief 현재 렌더러 설정에 맞는 rasterizer state를 복원합니다.
+	 */
+	void RestoreCurrentRasterizerState() const;
 };
