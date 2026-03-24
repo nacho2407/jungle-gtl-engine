@@ -26,11 +26,7 @@ void FRenderer::Create(HWND hWindow)
 	Resources.GizmoShader.Create(Device.GetDevice(), L"Shaders/Gizmo.hlsl",
 		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
 
-	// 3. 오버레이 (Overlay.hlsl)
-	Resources.OverlayShader.Create(Device.GetDevice(), L"Shaders/Overlay.hlsl",
-		"VS", "PS", OverlayInputLayout, ARRAYSIZE(OverlayInputLayout));
-
-	// 4. 에디터/라인 (Editor.hlsl)
+	// 3. 에디터/라인 (Editor.hlsl)
 	Resources.EditorShader.Create(Device.GetDevice(), L"Shaders/Editor.hlsl",
 		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
 
@@ -41,18 +37,21 @@ void FRenderer::Create(HWND hWindow)
 	Resources.PerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FPerObjectConstants));
 	Resources.FrameBuffer.Create(Device.GetDevice(), sizeof(FFrameConstants));
 	Resources.GizmoPerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FGizmoConstants));
-	Resources.OverlayConstantBuffer.Create(Device.GetDevice(), sizeof(FOverlayConstants));
 	Resources.EditorConstantBuffer.Create(Device.GetDevice(), sizeof(FEditorConstants));
 	Resources.OutlineConstantBuffer.Create(Device.GetDevice(), sizeof(FOutlineConstants));
 
 	//	MeshManager init
 	FMeshManager::Initialize();
 
-	LineBatcher.Create(Device.GetDevice());
+	EditorLineBatcher.Create(Device.GetDevice());
+	GridLineBatcher.Create(Device.GetDevice());
 
 	// 텍스처는 ResourceManager가 소유 — Batcher는 셰이더/버퍼만 초기화
 	FontBatcher.Create(Device.GetDevice());
 	SubUVBatcher.Create(Device.GetDevice());
+
+	InitializePassRenderStates();
+	InitializePassBatchers();
 
 	// GPU Profiler 초기화
 	FGPUProfiler::Get().Initialize(Device.GetDevice(), Device.GetDeviceContext());
@@ -62,26 +61,40 @@ void FRenderer::Release()
 {
 	Resources.PrimitiveShader.Release();
 	Resources.GizmoShader.Release();
-	Resources.OverlayShader.Release();
 	Resources.EditorShader.Release();
 	Resources.OutlineShader.Release();
 
 	Resources.PerObjectConstantBuffer.Release();
 	Resources.FrameBuffer.Release();
 	Resources.GizmoPerObjectConstantBuffer.Release();
-	Resources.OverlayConstantBuffer.Release();
 	Resources.EditorConstantBuffer.Release();
 	Resources.OutlineConstantBuffer.Release();
 
 	FGPUProfiler::Get().Shutdown();
 
-	LineBatcher.Release();
+	EditorLineBatcher.Release();
+	GridLineBatcher.Release();
 	FontBatcher.Release();
 	SubUVBatcher.Release();
 
 	Device.Release();
 }
-//	Prepare the rendering state for a new frame. 반드시 Render 이전에 호출되어야 함.
+
+//	Bus → Batcher 데이터 수집 (CPU). BeginFrame 이전에 호출.
+void FRenderer::PrepareBatchers(const FRenderBus& InRenderBus)
+{
+	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
+	{
+		if (!PassBatchers[i]) continue;
+
+		const auto& Commands = InRenderBus.GetCommands(static_cast<ERenderPass>(i));
+		PassBatchers[i].Clear();
+		for (const auto& Cmd : Commands)
+			PassBatchers[i].Collect(Cmd, InRenderBus);
+	}
+}
+
+//	GPU 프레임 시작. 반드시 Render 이전에 호출되어야 함.
 void FRenderer::BeginFrame()
 {
 	Device.BeginFrame();
@@ -89,120 +102,221 @@ void FRenderer::BeginFrame()
 #if STATS
 	FGPUProfiler::Get().BeginFrame();
 #endif
-
-	LineBatcher.Clear();
-	FontBatcher.Clear();
-	SubUVBatcher.Clear();
-}
-//	Render Update Main function. RenderBus에 담긴 모든 RenderCommand에 대해서 Draw Call 수행
-void FRenderer::Render(const FRenderBus& InRenderBus, ERasterizerState InViewModeRasterizer)
-{
-	bool bIsWireframe = InRenderBus.GetViewMode() == EViewMode::Wireframe;
-	ID3D11DeviceContext* context = Device.GetDeviceContext();
-	UpdateFrameBuffer(context, InRenderBus.GetView(), InRenderBus.GetProj(), bIsWireframe);
-
-	RenderPasses(InRenderBus, context);
-	RenderEditorHelpers(InRenderBus, context);
 }
 
-void FRenderer::RenderOverlay(const FRenderBus& InRenderBus)
+//	RenderBus에 담긴 모든 RenderCommand에 대해서 Draw Call 수행 (GPU)
+void FRenderer::Render(const FRenderBus& InRenderBus)
 {
-	ID3D11DeviceContext* context = Device.GetDeviceContext();
-	//RenderOverlayPass(context, InRenderBus);
-}
+	ID3D11DeviceContext* Context = Device.GetDeviceContext();
+	UpdateFrameBuffer(Context, InRenderBus);
 
-void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceContext, EViewMode CurViewMode)
-{
-	switch (Pass)
+	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
 	{
-	case ERenderPass::Opaque:
-		if (CurViewMode == EViewMode::Wireframe)
+		ERenderPass CurPass = static_cast<ERenderPass>(i);
+		const auto& Commands = InRenderBus.GetCommands(CurPass);
+		if (Commands.empty()) continue;
+
+		if (PassBatchers[i])
 		{
-			Device.SetRasterizerState(ERasterizerState::WireFrame);
+			PassBatchers[i].Flush(CurPass, InRenderBus, Context);
 		}
 		else
 		{
-			Device.SetRasterizerState(ERasterizerState::SolidBackCull);
+			ExecuteDefaultPass(CurPass, Commands, InRenderBus, Context);
 		}
-		Device.SetDepthStencilState(EDepthStencilState::Default);
-		Device.SetBlendState(EBlendState::Opaque);
-		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		Resources.PrimitiveShader.Bind(DeviceContext);
-		break;
+	}
+}
 
-	case ERenderPass::StencilMask:
-		Device.SetRasterizerState(ERasterizerState::SolidFrontCull);
-		Device.SetDepthStencilState(EDepthStencilState::Default);
-		Device.SetBlendState(EBlendState::Opaque);
-		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		Resources.PrimitiveShader.Bind(DeviceContext);
-		break;
+// ============================================================
+// 패스별 기본 렌더 상태 테이블 초기화
+// ============================================================
+void FRenderer::InitializePassRenderStates()
+{
+	using E = ERenderPass;
+	auto& S = PassRenderStates;
 
-	case ERenderPass::Outline:
-		if (CurViewMode == EViewMode::Wireframe)
-		{
-			Device.SetDepthStencilState(EDepthStencilState::StencilOutline);
-			Device.SetRasterizerState(ERasterizerState::SolidFrontCull);
+	//                              DepthStencil                   Blend                Rasterizer                  Topology                                Shader                   WireframeAware
+	S[(uint32)E::Opaque]      = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, true  };
+	S[(uint32)E::Translucent] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, false };
+	S[(uint32)E::StencilMask] = { EDepthStencilState::StencilWrite,  EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, false };
+	S[(uint32)E::Outline]     = { EDepthStencilState::StencilOutline,EBlendState::Opaque,    ERasterizerState::SolidFrontCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.OutlineShader,   false };
+	S[(uint32)E::Editor]      = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     &Resources.EditorShader,    true  };
+	S[(uint32)E::Grid]        = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     &Resources.EditorShader,    true  };
+	S[(uint32)E::DepthLess]   = { EDepthStencilState::DepthReadOnly,EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.GizmoShader,     false };
+	S[(uint32)E::Font]        = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, nullptr,                    false };
+	S[(uint32)E::SubUV]       = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, nullptr,                    false };
+}
+
+// ============================================================
+// Pass Batcher 바인딩 초기화
+// ============================================================
+void FRenderer::InitializePassBatchers()
+{
+	// --- Editor 패스: AABB 디버그 박스 → EditorLineBatcher ---
+	PassBatchers[(uint32)ERenderPass::Editor] = {
+		/*.Clear   =*/ [this]() { EditorLineBatcher.Clear(); },
+		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus&) {
+			if (Cmd.Type == ERenderCommandType::DebugBox)
+			{
+				EditorLineBatcher.AddAABB(FBoundingBox{ Cmd.Constants.AABB.Min, Cmd.Constants.AABB.Max }, Cmd.Constants.AABB.Color);
+			}
+		},
+		/*.Flush   =*/ [this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
+			FlushLineBatcher(EditorLineBatcher, Pass, Bus, Ctx);
 		}
-		else
-		{
-			Device.SetDepthStencilState(EDepthStencilState::StencilOutline);
-			Device.SetRasterizerState(ERasterizerState::SolidFrontCull);
+	};
+
+	// --- Grid 패스: 월드 그리드 + 축 → GridLineBatcher ---
+	PassBatchers[(uint32)ERenderPass::Grid] = {
+		/*.Clear   =*/ [this]() { GridLineBatcher.Clear(); },
+		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus& Bus) {
+			if (Cmd.Type == ERenderCommandType::Grid)
+			{
+				const FVector CameraPos = Bus.GetView().GetInverseFast().GetLocation();
+				FVector CameraFwd = Bus.GetCameraRight().Cross(Bus.GetCameraUp());
+				CameraFwd.Normalize();
+
+				GridLineBatcher.AddWorldHelpers(
+					Bus.GetShowFlags(),
+					Cmd.Constants.Grid.GridSpacing,
+					Cmd.Constants.Grid.GridHalfLineCount,
+					CameraPos, CameraFwd);
+			}
+		},
+		/*.Flush   =*/ [this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
+			FlushLineBatcher(GridLineBatcher, Pass, Bus, Ctx);
 		}
-		Device.SetBlendState(EBlendState::Opaque);
-		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		Resources.OutlineShader.Bind(DeviceContext);
-		break;
+	};
 
-	case ERenderPass::DepthLess:
-		Device.SetDepthStencilState(EDepthStencilState::DepthReadOnly);
-		Device.SetBlendState(EBlendState::AlphaBlend);
-		Device.SetRasterizerState(ERasterizerState::SolidBackCull);
-		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		Resources.GizmoShader.Bind(DeviceContext);
-		break;
-
-	case ERenderPass::Translucent:
-		Device.SetDepthStencilState(EDepthStencilState::Default);
-		Device.SetBlendState(EBlendState::AlphaBlend);
-		Device.SetRasterizerState(ERasterizerState::SolidBackCull);
-		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		Resources.PrimitiveShader.Bind(DeviceContext);
-		break;
-
-	case ERenderPass::Editor:
-		Device.SetDepthStencilState(EDepthStencilState::Default);
-		Device.SetBlendState(EBlendState::Opaque);
-		if (CurViewMode == EViewMode::Wireframe)
-		{
-			Device.SetRasterizerState(ERasterizerState::WireFrame);
+	// --- Font 패스: 텍스트 → FontBatcher ---
+	PassBatchers[(uint32)ERenderPass::Font] = {
+		/*.Clear   =*/ [this]() { FontBatcher.Clear(); },
+		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus& Bus) {
+			if (Cmd.Type == ERenderCommandType::Font && Cmd.Constants.Font.Text && !Cmd.Constants.Font.Text->empty())
+			{
+				FontBatcher.AddText(
+					*Cmd.Constants.Font.Text,
+					Cmd.PerObjectConstants.Model.GetLocation(),
+					Bus.GetCameraRight(),
+					Bus.GetCameraUp(),
+					Cmd.Constants.Font.Scale
+				);
+			}
+		},
+		/*.Flush   =*/ [this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
+			const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
+			FontBatcher.Flush(Device, Ctx, FontRes);
 		}
-		else
-		{
-			Device.SetRasterizerState(ERasterizerState::SolidBackCull);
-		}
-		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-		Resources.EditorShader.Bind(DeviceContext);
-		break;
+	};
 
-	case ERenderPass::Overlay:
-		Device.SetDepthStencilState(EDepthStencilState::DepthGreater);
-		Device.SetBlendState(EBlendState::Opaque);
-		Device.SetRasterizerState(ERasterizerState::SolidBackCull);
-		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		Resources.OverlayShader.Bind(DeviceContext);
-		break;
+	// --- SubUV 패스: 스프라이트 → SubUVBatcher ---
+	// Collect 시 첫 번째 유효한 SRV를 캡처하여 Flush에서 재순회 방지
+	PassBatchers[(uint32)ERenderPass::SubUV] = {
+		/*.Clear   =*/ [this]() {
+			SubUVBatcher.Clear();
+			SubUVCachedSRV = nullptr;
+		},
+		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus& Bus) {
+			if (Cmd.Type == ERenderCommandType::SubUV && Cmd.Constants.SubUV.Particle)
+			{
+				const auto& SubUV = Cmd.Constants.SubUV;
+				if (!SubUVCachedSRV && SubUV.Particle->IsLoaded())
+				{
+					SubUVCachedSRV = SubUV.Particle->SRV;
+				}
+
+				SubUVBatcher.AddSprite(
+					Cmd.PerObjectConstants.Model.GetLocation(),
+					Bus.GetCameraRight(),
+					Bus.GetCameraUp(),
+					SubUV.FrameIndex,
+					SubUV.Particle->Columns,
+					SubUV.Particle->Rows,
+					SubUV.Width,
+					SubUV.Height
+				);
+			}
+		},
+		/*.Flush   =*/ [this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
+			SubUVBatcher.Flush(Device, Ctx, SubUVCachedSRV);
+		}
+	};
+}
+
+// ============================================================
+// LineBatcher Flush 공통
+// ============================================================
+void FRenderer::FlushLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Context)
+{
+	if (Batcher.GetLineCount() == 0) return;
+
+	const FVector CameraPosition = Bus.GetView().GetInverseFast().GetLocation();
+	FEditorConstants EditorConstants = {};
+	EditorConstants.CameraPosition = CameraPosition;
+	Resources.EditorConstantBuffer.Update(Context, &EditorConstants, sizeof(FEditorConstants));
+
+	ApplyPassRenderState(Pass, Context, Bus.GetViewMode());
+
+	ID3D11Buffer* cb = Resources.EditorConstantBuffer.GetBuffer();
+	Context->VSSetConstantBuffers(4, 1, &cb);
+	Context->PSSetConstantBuffers(4, 1, &cb);
+
+	Batcher.Flush(Context);
+}
+
+// ============================================================
+// 기본 패스 실행기
+// ============================================================
+void FRenderer::ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand>& Commands, const FRenderBus& Bus, ID3D11DeviceContext* Context)
+{
+	ApplyPassRenderState(Pass, Context, Bus.GetViewMode());
+
+	const FPassRenderState& State = PassRenderStates[(uint32)Pass];
+	for (const auto& Cmd : Commands)
+	{
+		EDepthStencilState TargetDepth = (Cmd.DepthStencilState != static_cast<EDepthStencilState>(-1))
+			? Cmd.DepthStencilState
+			: State.DepthStencil;
+
+		EBlendState TargetBlend = (Cmd.BlendState != static_cast<EBlendState>(-1))
+			? Cmd.BlendState
+			: State.Blend;
+
+		Device.SetDepthStencilState(TargetDepth);
+		Device.SetBlendState(TargetBlend);
+
+		BindShaderByType(Cmd, Context);
+		DrawCommand(Context, Cmd);
+	}
+}
+
+void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Context, EViewMode CurViewMode)
+{
+	const FPassRenderState& State = PassRenderStates[(uint32)Pass];
+
+	ERasterizerState Rasterizer = State.Rasterizer;
+	if (State.bWireframeAware && CurViewMode == EViewMode::Wireframe)
+	{
+		Rasterizer = ERasterizerState::WireFrame;
+	}
+
+	Device.SetDepthStencilState(State.DepthStencil);
+	Device.SetBlendState(State.Blend);
+	Device.SetRasterizerState(Rasterizer);
+	Context->IASetPrimitiveTopology(State.Topology);
+
+	if (State.Shader)
+	{
+		State.Shader->Bind(Context);
 	}
 }
 
 void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContext* Context)
 {
-	if (InCmd.Type != ERenderCommandType::Overlay)
+	Resources.PerObjectConstantBuffer.Update(Context, &InCmd.PerObjectConstants, sizeof(FPerObjectConstants));
 	{
-		Resources.PerObjectConstantBuffer.Update(Context, &InCmd.PerObjectConstants, sizeof(FPerObjectConstants));
 		ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
 		Context->VSSetConstantBuffers(1, 1, &cb);
-		//InDeviceContext->PSSetConstantBuffers(0, 1, &cb);
 	}
 
 	switch (InCmd.Type)
@@ -216,15 +330,6 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 			cb = Resources.GizmoPerObjectConstantBuffer.GetBuffer();
 			Context->VSSetConstantBuffers(2, 1, &cb);
 			Context->PSSetConstantBuffers(2, 1, &cb);
-		}
-		break;
-
-	case ERenderCommandType::Overlay:
-		Resources.OverlayConstantBuffer.Update(Context, &InCmd.Constants.Overlay, sizeof(FOverlayConstants));
-		{
-			ID3D11Buffer* cb = Resources.OverlayConstantBuffer.GetBuffer();
-			Context->VSSetConstantBuffers(3, 1, &cb);
-			Context->PSSetConstantBuffers(3, 1, &cb);
 		}
 		break;
 
@@ -250,31 +355,6 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 			Context->VSSetConstantBuffers(1, 1, &cb);
 		}
 		break;
-	}
-}
-
-EDepthStencilState FRenderer::GetDefaultDepthForPass(ERenderPass Pass) const
-{
-	switch (Pass)
-	{
-	case ERenderPass::Opaque:    return EDepthStencilState::Default;
-	case ERenderPass::Translucent:return EDepthStencilState::Default;
-	case ERenderPass::StencilMask: return EDepthStencilState::StencilWrite;
-	case ERenderPass::Outline:   return EDepthStencilState::StencilOutline;
-	case ERenderPass::DepthLess: return EDepthStencilState::Default;
-	case ERenderPass::Editor:    return EDepthStencilState::Default;
-	case ERenderPass::Overlay:   return EDepthStencilState::DepthGreater;
-	default:                     return EDepthStencilState::Default;
-	}
-}
-
-EBlendState FRenderer::GetDefaultBlendForPass(ERenderPass Pass) const
-{
-	switch (Pass)
-	{
-	case ERenderPass::Translucent: return EBlendState::AlphaBlend;
-	case ERenderPass::DepthLess: return EBlendState::AlphaBlend;
-	default:                     return EBlendState::Opaque;
 	}
 }
 
@@ -323,142 +403,16 @@ void FRenderer::EndFrame()
 	Device.EndFrame();
 }
 
-void FRenderer::RenderPasses(const FRenderBus& RenderBus, ID3D11DeviceContext* Context)
-{
-	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
-	{
-		ERenderPass CurPass = static_cast<ERenderPass>(i);
-
-		// Font / SubUV 패스는 Batcher가 처리 — 일반 DrawCommand 루프에서 제외
-		if (CurPass == ERenderPass::Font || CurPass == ERenderPass::SubUV) continue;
-
-		const auto& Commands = RenderBus.GetCommands(CurPass);
-		if (Commands.empty()) continue;
-
-		SetupRenderState(CurPass, Context, RenderBus.GetViewMode());
-
-		for (const auto& Cmd : Commands)
-		{
-			EDepthStencilState TargetDepth = (Cmd.DepthStencilState != static_cast<EDepthStencilState>(-1))
-				? Cmd.DepthStencilState
-				: GetDefaultDepthForPass(CurPass);
-
-			EBlendState TargetBlend = (Cmd.BlendState != static_cast<EBlendState>(-1))
-				? Cmd.BlendState
-				: GetDefaultBlendForPass(CurPass);
-
-			Device.SetDepthStencilState(TargetDepth);
-			Device.SetBlendState(TargetBlend);
-
-			BindShaderByType(Cmd, Context);
-			DrawCommand(Context, Cmd);
-		}
-	}
-}
-
-void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceContext* Context)
-{
-	const FVector CameraPosition = RenderBus.GetView().GetInverseFast().GetLocation();
-	FVector CameraForward = RenderBus.GetCameraRight().Cross(RenderBus.GetCameraUp());
-	CameraForward.Normalize();
-
-	FEditorConstants EditorConstants = {};
-	EditorConstants.CameraPosition = CameraPosition;
-	Resources.EditorConstantBuffer.Update(Context, &EditorConstants, sizeof(FEditorConstants));
-
-	CollectBatchingData(RenderBus);
-
-	SetupRenderState(ERenderPass::Editor, Context, RenderBus.GetViewMode());
-
-	ID3D11Buffer* cb = Resources.EditorConstantBuffer.GetBuffer();
-	Context->VSSetConstantBuffers(4, 1, &cb);
-	Context->PSSetConstantBuffers(4, 1, &cb);
-
-	LineBatcher.AddWorldHelpers(FEditorSettings::Get(), CameraPosition, CameraForward);
-	LineBatcher.Flush(Context);
-
-	// --- SubUVBatcher Flush ---
-	// 단일 아틀라스 기준: 커맨드에서 첫 번째 유효한 SRV를 사용
-	const auto& SubUVCmds = RenderBus.GetCommands(ERenderPass::SubUV);
-	ID3D11ShaderResourceView* SubUVSRV = nullptr;
-	for (const auto& Cmd : SubUVCmds)
-	{
-		if (Cmd.AtlasResource && Cmd.AtlasResource->IsLoaded())
-		{
-			SubUVSRV = Cmd.AtlasResource->SRV;
-			break;
-		}
-	}
-	SubUVBatcher.Flush(Context, SubUVSRV);
-
-	const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
-	FontBatcher.Flush(Context, FontRes);
-
-	// Editor helper에서 사용한 알파 블렌드가 다음 렌더 경로에 남지 않도록 기본 상태로 복원한다.
-	Device.SetDepthStencilState(EDepthStencilState::Default);
-	Device.SetBlendState(EBlendState::Opaque);
-}
-
-void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix, bool bIsWireframe)
+void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus)
 {
 	FFrameConstants frameConstantData;
-	frameConstantData.View = ViewMatrix;
-	frameConstantData.Projection = ProjMatrix;
-	frameConstantData.bIsWireframe = bIsWireframe;
-	frameConstantData.ColorRGB = FVector(0.0f, 0.0f, 0.7f);
+	frameConstantData.View = InRenderBus.GetView();
+	frameConstantData.Projection = InRenderBus.GetProj();
+	frameConstantData.bIsWireframe = (InRenderBus.GetViewMode() == EViewMode::Wireframe);
+	frameConstantData.WireframeColor = InRenderBus.GetWireframeColor();
 
 	Resources.FrameBuffer.Update(Context, &frameConstantData, sizeof(FFrameConstants));
 	ID3D11Buffer* b0 = Resources.FrameBuffer.GetBuffer();
 	Context->VSSetConstantBuffers(0, 1, &b0);
 	Context->PSSetConstantBuffers(0, 1, &b0);
-}
-
-void FRenderer::CollectBatchingData(const FRenderBus& RenderBus)
-{
-	// --- AABB 디버그 박스 (LineBatcher) ---
-	const auto& EditorCmds = RenderBus.GetCommands(ERenderPass::Editor);
-	for (const auto& Cmd : EditorCmds)
-	{
-		if (Cmd.Type == ERenderCommandType::DebugBox)
-		{
-			LineBatcher.AddAABB(FBoundingBox{ Cmd.Constants.AABB.Min, Cmd.Constants.AABB.Max }, Cmd.Constants.AABB.Color);
-		}
-	}
-
-	// --- SubUV 패스 → SubUVBatcher ---
-	const auto& SubUVCmds = RenderBus.GetCommands(ERenderPass::SubUV);
-	for (const auto& Cmd : SubUVCmds)
-	{
-		if (Cmd.Type == ERenderCommandType::SubUV && Cmd.AtlasResource)
-		{
-			SubUVBatcher.AddSprite(
-				Cmd.PerObjectConstants.Model.GetLocation(),
-				RenderBus.GetCameraRight(),
-				RenderBus.GetCameraUp(),
-				Cmd.PerObjectConstants.Model.GetScale(),
-				Cmd.FrameIndex,
-				Cmd.AtlasResource->Columns,
-				Cmd.AtlasResource->Rows,
-				Cmd.SpriteSize.X,
-				Cmd.SpriteSize.Y
-			);
-		}
-	}
-
-	// --- Font 패스 → FontBatcher ---
-	const auto& FontCmds = RenderBus.GetCommands(ERenderPass::Font);
-	for (const auto& Cmd : FontCmds)
-	{
-		if (Cmd.Type == ERenderCommandType::Font && !Cmd.TextData.empty())
-		{
-			FontBatcher.AddText(
-				Cmd.TextData,
-				Cmd.PerObjectConstants.Model.GetLocation(),
-				RenderBus.GetCameraRight(),
-				RenderBus.GetCameraUp(),
-				Cmd.PerObjectConstants.Model.GetScale(),
-				Cmd.SpriteSize.X // FontSize
-			);
-		}
-	}
 }
