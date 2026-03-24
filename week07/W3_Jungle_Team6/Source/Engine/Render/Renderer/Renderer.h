@@ -86,10 +86,5 @@ private:
 		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FVertex, Color)), D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
-	//	Overlay Input Layout (Screen Quad)
-	D3D11_INPUT_ELEMENT_DESC OverlayInputLayout[1] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	};
 };
 
