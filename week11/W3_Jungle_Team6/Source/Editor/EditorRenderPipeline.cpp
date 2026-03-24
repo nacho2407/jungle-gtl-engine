@@ -48,6 +48,11 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 			});
 
 		Phases.push_back([&](FRenderBus& B) {
+			const auto& Settings = Editor->GetSettings();
+			Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, B);
+			});
+
+		Phases.push_back([&](FRenderBus& B) {
 			Collector.CollectGizmo(Editor->GetGizmo(), ShowFlags, B);
 			});
 
@@ -60,6 +65,7 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		Collector.Collect(Context, Phases, Bus);
 	}
 
+	Renderer.PrepareBatchers(Bus);
 	Renderer.BeginFrame();
 	Renderer.Render(Bus);
 	Editor->RenderUI(DeltaTime);
