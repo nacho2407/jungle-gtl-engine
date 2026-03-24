@@ -10,6 +10,10 @@
 #include "Engine/Scene.h"
 #include "Input/ContextModeTypes.h"
 #include "imgui.h"
+#include "Engine/Game/ConeActor.h"
+#include "Engine/Game/CylinderActor.h"
+#include "Engine/Game/RingActor.h"
+#include "Engine/Game/TriangleActor.h"
 
 namespace
 {
@@ -43,6 +47,14 @@ namespace
             return "CubeActor";
         case FOutlinerPanel::ESpawnActorType::Sphere:
             return "SphereActor";
+        case FOutlinerPanel::ESpawnActorType::Cone:
+            return "ConeActor";
+        case FOutlinerPanel::ESpawnActorType::Cylinder:
+            return "CylinderActor";
+        case FOutlinerPanel::ESpawnActorType::Ring:
+            return "RingActor";
+        case FOutlinerPanel::ESpawnActorType::Triangle:
+            return "TriangleActor";
         default:
             return "Unknown";
         }
@@ -51,6 +63,10 @@ namespace
     const char* const SpawnActorTypeLabels[] = {
         "CubeActor",
         "SphereActor",
+        "ConeActor",
+        "CylinderActor",
+        "RingActor",
+        "TriangleActor"
     };
 
     AActor* CreateActorByType(FOutlinerPanel::ESpawnActorType InType)
@@ -61,6 +77,14 @@ namespace
             return new ACubeActor();
         case FOutlinerPanel::ESpawnActorType::Sphere:
             return new ASphereActor();
+        case FOutlinerPanel::ESpawnActorType::Cone:
+            return new AConeActor();
+        case FOutlinerPanel::ESpawnActorType::Cylinder:
+            return new ACylinderActor();
+        case FOutlinerPanel::ESpawnActorType::Ring:
+            return new ARingActor();
+        case FOutlinerPanel::ESpawnActorType::Triangle:
+            return new ATriangleActor();
         default:
             return nullptr;
         }
@@ -167,7 +191,8 @@ void FOutlinerPanel::DrawActorRow(AActor* Actor) const
         if (GetContext()->Editor != nullptr)
         {
             bIsSelected =
-                GetContext()->Editor->GetViewportClient().GetSelectionController().IsSelected(Actor);
+                GetContext()->Editor->GetViewportClient().GetSelectionController().
+                              IsSelected(Actor);
         }
         else
         {
@@ -207,8 +232,8 @@ void FOutlinerPanel::SpawnActors() const
     }
 
     const TArray<AActor*>* Actors = GetContext()->Scene->GetActors();
-    const size_t ExistingActorCount = (Actors != nullptr) ? Actors->size() : 0;
-    AActor* LastSpawnedActor = nullptr;
+    const size_t           ExistingActorCount = (Actors != nullptr) ? Actors->size() : 0;
+    AActor*                LastSpawnedActor = nullptr;
 
     for (int32 SpawnIndex = 0; SpawnIndex < SpawnCount; ++SpawnIndex)
     {
