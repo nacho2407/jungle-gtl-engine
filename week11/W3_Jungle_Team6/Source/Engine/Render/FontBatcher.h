@@ -9,6 +9,8 @@
 #include "Render/Resource/Shader.h"
 #include "Render/Resource/VertexTypes.h"
 
+class FD3DDevice;
+
 // Texture Atlas UV 정보
 struct FCharacterInfo
 {
@@ -51,7 +53,7 @@ public:
 
 	// Dynamic VB 업로드 + 드로우콜 1회
 	// Resource — FontBatcher가 사용할 FontAtlas 리소스 (ResourceManager 소유)
-	void Flush(ID3D11DeviceContext* Context, const FFontResource* Resource);
+	void Flush(FD3DDevice& Device, ID3D11DeviceContext* Context, const FFontResource* Resource);
 
 	uint32 GetQuadCount() const { return static_cast<uint32>(Vertices.size() / 4); }
 
