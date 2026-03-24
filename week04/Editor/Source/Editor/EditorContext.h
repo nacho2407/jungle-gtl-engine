@@ -8,6 +8,7 @@ class FD3D11DynamicRHI;
 class FScene;
 class FEditor;
 class AActor;
+class FEditorContentIndex;
 
 struct FEditorContext
 {
@@ -15,6 +16,7 @@ struct FEditorContext
 	FScene* Scene = nullptr;
 	FD3D11DynamicRHI* RHI = nullptr;
 	UAssetManager* AssetManager = nullptr;
+	FEditorContentIndex* ContentIndex = nullptr;
 
 	TArray<AActor*> SelectedActors;
 	UObject* SelectedObject = nullptr;
@@ -23,5 +25,6 @@ struct FEditorContext
 	float DeltaTime = 0.0f;
     float WindowWidth = 0.0f;
     float WindowHeight = 0.0f;
+    float ContentBrowserLeftPaneWidth = 250.0f;
 };
 

@@ -14,8 +14,8 @@ namespace
 ACubeActor::ACubeActor()
 {
     auto* CubeComponent = new Engine::Component::UCubeComponent();
-    RootComponent = CubeComponent;
-    OwnedComponents.push_back(CubeComponent);
+    CubeComponent->SetColor({ 0.8f,0.8f,0.8f,1.f });
+    AddOwnedComponent(CubeComponent, true);
 
     Name = "CubeActor";
 }

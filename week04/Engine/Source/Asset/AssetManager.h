@@ -146,8 +146,9 @@ struct FTextureBuildKeyHasher
 class ENGINE_API UAssetManager : public UObject
 {
 public:
-    UAssetManager() = default;
-    ~UAssetManager() override;
+    DECLARE_RTTI(UAssetManager, UObject)
+
+	~UAssetManager() override;
 
     UAssetManager(const UAssetManager&) = delete;
     UAssetManager& operator=(const UAssetManager&) = delete;

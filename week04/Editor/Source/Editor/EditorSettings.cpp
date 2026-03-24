@@ -304,6 +304,23 @@ EEditorSettingsLoadResult FEditorSettings::Load(FEditorSettingsData& OutData,
         OutData.CameraRotationSpeed = ParsedRotationSpeed;
     }
 
+    if (const FString* LeftPaneWidthValue =
+            FindIniValue(Document, "ContentBrowser", "LeftPaneWidth"))
+    {
+        float ParsedLeftPaneWidth = OutData.ContentBrowserLeftPaneWidth;
+        if (!TryParseFloat(*LeftPaneWidthValue, ParsedLeftPaneWidth))
+        {
+            if (OutErrorMessage != nullptr)
+            {
+                *OutErrorMessage = "[ContentBrowser] LeftPaneWidth must be a float value.";
+            }
+
+            return ELoadResult::InvalidFormat;
+        }
+
+        OutData.ContentBrowserLeftPaneWidth = ParsedLeftPaneWidth;
+    }
+
     return ELoadResult::Success;
 }
 
@@ -319,6 +336,8 @@ bool FEditorSettings::Save(const FEditorSettingsData& InData) const
                 FormatFloat(InData.CameraMoveSpeed));
     SetIniValue(Document, "Viewport", "CameraRotationSpeed",
                 FormatFloat(InData.CameraRotationSpeed));
+    SetIniValue(Document, "ContentBrowser", "LeftPaneWidth",
+                FormatFloat(InData.ContentBrowserLeftPaneWidth));
     return SaveIniDocument(FilePath, Document);
 }
 

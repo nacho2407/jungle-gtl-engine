@@ -11,6 +11,7 @@
 namespace
 {
     constexpr const char* ProjectionTypeLabels[] = {"Perspective", "Orthographic"};
+    constexpr const char* ViewModeLabels[] = {"Lit", "Unlit", "Wireframe"};
 
     void DrawVectorRow(const char* Label, FVector& Value, float Speed = 0.1f)
     {
@@ -68,6 +69,8 @@ void FControlPanel::Draw()
     DrawTransformSection(*Camera);
     ImGui::Separator();
     DrawProjectionSection(*Camera);
+    ImGui::Separator();
+    DrawViewModeSection();
     ImGui::Separator();
     DrawNavigationSection();
     ImGui::Separator();
@@ -145,6 +148,25 @@ void FControlPanel::DrawProjectionSection(FViewportCamera& Camera) const
     ImGui::Spacing();
     ImGui::Text("Viewport: %u x %u", Camera.GetWidth(), Camera.GetHeight());
     ImGui::Text("Aspect Ratio: %.3f", Camera.GetAspectRatio());
+}
+
+void FControlPanel::DrawViewModeSection() const
+{
+    if (GetContext() == nullptr || GetContext()->Editor == nullptr)
+    {
+        return;
+    }
+
+    FViewportRenderSetting& RenderSetting =
+        GetContext()->Editor->GetViewportClient().GetRenderSetting();
+
+    ImGui::TextUnformatted("View Mode");
+
+    int CurrentViewMode = static_cast<int>(RenderSetting.GetViewMode());
+    if (ImGui::Combo("Shading", &CurrentViewMode, ViewModeLabels, IM_ARRAYSIZE(ViewModeLabels)))
+    {
+        RenderSetting.SetViewMode(static_cast<EViewModeIndex>(CurrentViewMode));
+    }
 }
 
 void FControlPanel::DrawNavigationSection() const

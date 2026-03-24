@@ -10,6 +10,9 @@
     <Filter Include="Source\Chrome">
       <UniqueIdentifier>{c8396112-0f9f-0d0f-bab3-3305c1d83c32}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Content">
+      <UniqueIdentifier>{c7c974e1-ecb9-4f77-a96c-8b85c87e9e77}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor">
       <UniqueIdentifier>{68b5e2a9-3ba4-999f-3e91-8d1308eb9a6e}</UniqueIdentifier>
     </Filter>
@@ -63,6 +66,9 @@
     <ClCompile Include="Source\Chrome\EditorChrome.cpp">
       <Filter>Source\Chrome</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Content\EditorContentIndex.cpp">
+      <Filter>Source\Content</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Editor.cpp">
       <Filter>Source\Editor</Filter>
     </ClCompile>
@@ -97,6 +103,9 @@
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="Source\Panel\ConsolePanel.cpp">
+      <Filter>Source\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Panel\ContentBrowserPanel.cpp">
       <Filter>Source\Panel</Filter>
     </ClCompile>
     <ClCompile Include="Source\Panel\ControlPanel.cpp">
@@ -167,6 +176,9 @@
     <ClInclude Include="Source\Chrome\EditorChrome.h">
       <Filter>Source\Chrome</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Content\EditorContentIndex.h">
+      <Filter>Source\Content</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\Editor.h">
       <Filter>Source\Editor</Filter>
     </ClInclude>
@@ -213,6 +225,9 @@
       <Filter>Source\Menu</Filter>
     </ClInclude>
     <ClInclude Include="Source\Panel\ConsolePanel.h">
+      <Filter>Source\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Panel\ContentBrowserPanel.h">
       <Filter>Source\Panel</Filter>
     </ClInclude>
     <ClInclude Include="Source\Panel\ControlPanel.h">
