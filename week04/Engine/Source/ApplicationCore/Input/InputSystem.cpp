@@ -10,6 +10,8 @@ namespace Engine::ApplicationCore
         {
             switch (WParam)
             {
+            case 'F':
+                return EKey::F;
             case 'W':
                 return EKey::W;
             case 'A':

@@ -4,6 +4,8 @@
 #include "Camera/ViewportCamera.h"
 #include "Engine/ViewPort/ViewportController.h"
 
+class AActor;
+
 class FViewportNavigationController : public Engine::Viewport::IViewportController
 {
   public:
@@ -59,7 +61,11 @@ class FViewportNavigationController : public Engine::Viewport::IViewportControll
 
     float GetPanSpeed() const { return PanSpeed; }
     void  SetPanSpeed(float InPanSpeed) { PanSpeed = FMath::Clamp(InPanSpeed, 0.01f, 10.0f); }
-
+    
+    /* Focus */
+    void FocusActors();
+    void FocusActors(const TArray<AActor*>& Actors);
+    
   private:
     void UpdateCameraRotation();
     void EnsureTargetLocationInitialized();

@@ -106,7 +106,7 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
             TextItem.Text = TextComponent->GetText();
             TextItem.Color = TextComponent->GetColor();
             
-            TextItem.Placement.Mode = ERenderPlacementMode::WorldBillboard;         //  일단 기본적으로 WorldBillboard
+            TextItem.Placement.Mode = TextComponent->GetBillboard() ? ERenderPlacementMode::WorldBillboard : ERenderPlacementMode::World;         //  일단 기본적으로 WorldBillboard
             TextItem.Placement.World = Actor->GetWorldMatrix();
             TextItem.Placement.WorldOffset = TextComponent->GetRelativeLocation();  //  이거 맞나
             
