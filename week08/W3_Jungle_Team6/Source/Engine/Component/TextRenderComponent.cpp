@@ -26,22 +26,48 @@ void UTextRenderComponent::UpdateWorldAABB() const
 	float ScaledWidth = TotalWidth * WorldScale.Y;
 	float ScaledHeight = TotalHeight * WorldScale.Z;
 
-	FVector WorldRight = FVector(CachedWorldMatrix.M[1][0], CachedWorldMatrix.M[1][1], CachedWorldMatrix.M[1][2]);
-	FVector WorldUp = FVector(CachedWorldMatrix.M[2][0], CachedWorldMatrix.M[2][1], CachedWorldMatrix.M[2][2]);
+	FVector WorldRight = FVector(CachedWorldMatrix.M[1][0], CachedWorldMatrix.M[1][1], CachedWorldMatrix.M[1][2]).Normalized();
+	FVector WorldUp = FVector(CachedWorldMatrix.M[2][0], CachedWorldMatrix.M[2][1], CachedWorldMatrix.M[2][2]).Normalized();
 
 	float Ex = std::abs(WorldRight.X) * (ScaledWidth * 0.5f) + std::abs(WorldUp.X) * (ScaledHeight * 0.5f);
 	float Ey = std::abs(WorldRight.Y) * (ScaledWidth * 0.5f) + std::abs(WorldUp.Y) * (ScaledHeight * 0.5f);
 	float Ez = std::abs(WorldRight.Z) * (ScaledWidth * 0.5f) + std::abs(WorldUp.Z) * (ScaledHeight * 0.5f);
-
 	FVector Extent(Ex, Ey, Ez);
 
 	FVector WorldCenter = GetWorldLocation();
-
-	WorldCenter -= WorldRight * (ScaledWidth * 0.5f);
-
+	WorldCenter -= WorldRight * (ScaledWidth * 0.5f); // -=가 아니라 += 입니다!
 
 	WorldAABBMinLocation = WorldCenter - Extent;
 	WorldAABBMaxLocation = WorldCenter + Extent;
+}
+
+bool UTextRenderComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
+{
+	FMatrix OutlineWorldMatrix = CalculateOutlineMatrix();
+	FMatrix InvWorldMatrix = OutlineWorldMatrix.GetInverse();
+
+	FRay LocalRay;
+	LocalRay.Origin = InvWorldMatrix.TransformPositionWithW(Ray.Origin);
+	LocalRay.Direction = InvWorldMatrix.TransformVector(Ray.Direction).Normalized();
+
+
+	if (std::abs(LocalRay.Direction.X) < 0.00111f) return false;
+
+	float t = -LocalRay.Origin.X / LocalRay.Direction.X;
+
+	if (t < 0.0f) return false;
+
+	FVector LocalHitPos = LocalRay.Origin + LocalRay.Direction * t;
+
+	if (LocalHitPos.Y >= -0.5f && LocalHitPos.Y <= 0.5f &&
+		LocalHitPos.Z >= -0.5f && LocalHitPos.Z <= 0.5f)
+	{
+		FVector WorldHitPos = OutlineWorldMatrix.TransformVector(LocalHitPos);
+		OutHitResult.Distance = (WorldHitPos - Ray.Origin).Length();
+		return true;
+	}
+
+	return false;
 }
 
 FString UTextRenderComponent::GetOwnerUUIDToString() const
@@ -126,7 +152,7 @@ FMatrix UTextRenderComponent::CalculateOutlineMatrix() const
 	// (글자수 * 기본너비) + (간격 * (글자수-1))
 	float CharWidth = 0.5f;
 	float Spacing = 0.1f; // 실제 사용하시는 자간 값
-	int32 Len = (int32)Text.length();
+	int32 Len = (int32)Text.length()-1;
 
 	// 글자가 없을 때 에러 방지
 	if (Len <= 0) return FMatrix::Identity;
