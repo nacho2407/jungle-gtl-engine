@@ -5,6 +5,8 @@
 #include "Engine/Scene.h"
 #include "Renderer/Types/EditorShowFlags.h"
 
+#include "imgui.h"
+
 void FEditorViewportClient::Create()
 {
     InputRouter = new Engine::ApplicationCore::FInputRouter();
@@ -100,6 +102,27 @@ void FEditorViewportClient::SetScene(FScene* InScene)
 void FEditorViewportClient::SyncSelectionFromContext()
 {
     SelectionController.SyncSelectionFromContext();
+}
+
+void FEditorViewportClient::DrawViewportOverlay()
+{
+    if (!SelectionController.IsDraggingSelection())
+    {
+        return;
+    }
+
+    int32 StartX, StartY, EndX, EndY;
+    SelectionController.GetSelectionRect(StartX, StartY, EndX, EndY);
+
+    const float MinX = (float)std::min(StartX, EndX);
+    const float MinY = (float)std::min(StartY, EndY);
+    const float MaxX = (float)std::max(StartX, EndX);
+    const float MaxY = (float)std::max(StartY, EndY);
+
+    ImDrawList* DrawList = ImGui::GetForegroundDrawList();
+    DrawList->AddRectFilled(ImVec2(MinX, MinY), ImVec2(MaxX, MaxY), IM_COL32(80, 140, 255, 40));
+    DrawList->AddRect(ImVec2(MinX, MinY), ImVec2(MaxX, MaxY), IM_COL32(80, 140, 255, 255), 0.0f, 0,
+                      1.5f);
 }
 
 void FEditorViewportClient::DrawOutline()

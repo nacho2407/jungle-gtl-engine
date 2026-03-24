@@ -12,12 +12,13 @@ void FViewportSelectionController::ClickSelect(int32 MouseX, int32 MouseY, ESele
     SelectActor(PickActor(MouseX, MouseY), Mode);
 }
 
-void FViewportSelectionController::BeginSelection(int32 MouseX, int32 MouseY,
-                                                  ESelectionMode Mode)
+void FViewportSelectionController::BeginSelection(int32 MouseX, int32 MouseY, ESelectionMode Mode)
 {
     bIsDraggingSelection = true;
     SelectionStartX = MouseX;
     SelectionStartY = MouseY;
+    SelectionCurrentX = MouseX;
+    SelectionCurrentY = MouseY;
     CurSelectionMode = Mode;
 }
 
@@ -28,8 +29,8 @@ void FViewportSelectionController::UpdateSelection(int32 MouseX, int32 MouseY)
         return;
     }
 
-    (void)MouseX;
-    (void)MouseY;
+    SelectionCurrentX = MouseX;
+    SelectionCurrentY = MouseY;
 }
 
 void FViewportSelectionController::EndSelection(int32 MouseX, int32 MouseY)
@@ -39,9 +40,47 @@ void FViewportSelectionController::EndSelection(int32 MouseX, int32 MouseY)
         return;
     }
 
-    (void)MouseX;
-    (void)MouseY;
+    if (CurSelectionMode == ESelectionMode::Replace)
+    {
+        ClearSelection();
+    }
+
+    SelectionCurrentX = MouseX;
+    SelectionCurrentY = MouseY;
     bIsDraggingSelection = false;
+
+    //  Rect 계산
+
+    const int32 MinX = std::min(SelectionStartX, SelectionCurrentX);
+    const int32 MaxX = std::max(SelectionStartX, SelectionCurrentX);
+    const int32 MinY = std::min(SelectionStartY, SelectionCurrentY);
+    const int32 MaxY = std::max(SelectionStartY, SelectionCurrentY);
+
+    if (std::abs(MaxX - MinX) < 5 && std::abs(MaxY - MinY) < 5)
+    {
+        bIsDraggingSelection = false;
+        return;
+    }
+
+    for (AActor* Actor : *Actors)
+    {
+        if (Actor == nullptr || !Actor->IsPickable())
+        {
+            continue;
+        }
+
+        FVector2 ScreenPos{0.f, 0.f};
+
+        if (!ProjectWorldToScreen(Actor->GetWorldMatrix().GetOrigin(), ScreenPos))
+        {
+            continue;
+        }
+
+        if (ScreenPos.X >= MinX && ScreenPos.X <= MaxX && ScreenPos.Y >= MinY && ScreenPos.Y <= MaxY)
+        {
+            AddSelection(Actor);
+        }
+    }
 }
 
 void FViewportSelectionController::SelectActor(AActor* Actor, ESelectionMode Mode)
@@ -183,7 +222,7 @@ AActor* FViewportSelectionController::PickActor(int32 MouseX, int32 MouseY) cons
     const Geometry::FRay PickRay = BuildPickRay(MouseX, MouseY);
 
     AActor* ClosestActor = nullptr;
-    float ClosestT = FLT_MAX;
+    float   ClosestT = FLT_MAX;
 
     for (AActor* Actor : *Actors)
     {
@@ -205,7 +244,7 @@ AActor* FViewportSelectionController::PickActor(int32 MouseX, int32 MouseY) cons
         }
 
         const Geometry::FAABB& WorldAABB = PrimitiveComponent->GetWorldAABB();
-        float AABBHitT = 0.0f;
+        float                  AABBHitT = 0.0f;
         if (Geometry::IntersectRayAABB(PickRay, WorldAABB, AABBHitT))
         {
             if (AABBHitT >= 0.0f && AABBHitT <= ClosestT)
@@ -229,7 +268,7 @@ AActor* FViewportSelectionController::PickActor(int32 MouseX, int32 MouseY) cons
 
         const FMatrix WorldMatrix = PrimitiveComponent->GetRelativeMatrix();
 
-        bool bHitTriangle = false;
+        bool  bHitTriangle = false;
         float ClosestTriangleT = FLT_MAX;
 
         for (const Geometry::FTriangle& LocalTriangle : LocalTriangles)
@@ -402,4 +441,36 @@ void FViewportSelectionController::UpdatePrimarySelection() const
 
     Context->SelectedActors = SelectedActors;
     Context->SelectedObject = SelectedActors.empty() ? nullptr : SelectedActors.back();
+}
+
+bool FViewportSelectionController::ProjectWorldToScreen(const FVector& WorldPos,
+                                                        FVector2&      OutScreenPos) const
+{
+    if (ViewportCamera == nullptr || ViewportWidth <= 0 || ViewportHeight <= 0)
+    {
+        return false;
+    }
+
+    const FMatrix ViewProjection = ViewportCamera->GetViewProjectionMatrix();
+
+    const FVector4 Pos = FVector4(WorldPos.X, WorldPos.Y, WorldPos.Z, 1.0f);
+
+    const FVector4 Clip = ViewProjection.TransformVector4(Pos, ViewProjection);
+
+    const float ClipX = Clip.X;
+    const float ClipY = Clip.Y;
+    const float ClipW = Clip.W;
+
+    if (ClipW <= 0.0f)
+    {
+        return false;
+    }
+
+    const float NDCX = ClipX / ClipW;
+    const float NDCY = ClipY / ClipW;
+
+    OutScreenPos.X = (NDCX * 0.5f + 0.5f) * static_cast<float>(ViewportWidth);
+    OutScreenPos.Y = (1.0f - (NDCY * 0.5f + 0.5f)) * static_cast<float>(ViewportHeight);
+
+    return true;
 }

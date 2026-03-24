@@ -1,4 +1,6 @@
 #pragma once
+#pragma once
+
 #include "ApplicationCore/Input/InputContext.h"
 #include "Viewport/Selection/ViewportSelectionController.h"
 #include "Input/ContextModeTypes.h"
@@ -10,7 +12,7 @@ public:
     ~FSelectionInputContext() override = default;
 
     //  현재는 Literal 저장
-    int32 GetPriority() const override { return 100; }
+    int32 GetPriority() const override { return 150; }
 
     bool HandleEvent(const Engine::ApplicationCore::FInputEvent& Event,
                      const Engine::ApplicationCore::FInputState& State) override;
@@ -18,12 +20,14 @@ public:
 
 private:
     ESelectionMode ResolveSelectionMode(const Engine::ApplicationCore::FInputState& State) const;
+    bool           IsRectSelectionModifier(const Engine::ApplicationCore::FInputState& State) const;
     
 private:
     FViewportSelectionController* SelectionController = nullptr;
     
     bool bLeftMouseDown = false;
     bool bDragging = false;
+    bool bRectSelection = false;
     
     int32 PressMouseX = 0;
     int32 PressMouseY = 0;

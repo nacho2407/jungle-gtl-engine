@@ -1,5 +1,7 @@
 #pragma once
 
+#pragma once
+
 #include "Chrome/EditorChrome.h"
 #include "Content/EditorContentIndex.h"
 #include "EditorContext.h"
@@ -9,6 +11,7 @@
 
 #include "ApplicationCore/Input/InputRouter.h"
 #include "ApplicationCore/Input/InputSystem.h"
+#include "Input/EditorGlobalController.h"
 #include "Input/EditorGlobalContext.h"
 #include "Input/GizmoInputContext.h"
 #include "Input/NavigationInputContext.h"
@@ -124,6 +127,10 @@ class FEditor
 
   private:
     FEditorViewportClient ViewportClient;
+    Engine::ApplicationCore::FInputRouter GlobalInputRouter;
+    FEditorGlobalController GlobalInputController;
+    FEditorGlobalContext GlobalInputContext{&GlobalInputController};
+
     FEditorContext        EditorContext;
     FEditorSettings       PersistentSettings;
     FEditorContentIndex   ContentIndex;

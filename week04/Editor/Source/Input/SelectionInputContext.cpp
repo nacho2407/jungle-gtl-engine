@@ -1,4 +1,7 @@
-﻿#include "SelectionInputContext.h"
+#include "SelectionInputContext.h"
+
+using Engine::ApplicationCore::EInputEventType;
+using Engine::ApplicationCore::EKey;
 
 FSelectionInputContext::FSelectionInputContext(FViewportSelectionController* InSelectionController)
     : SelectionController(InSelectionController)
@@ -6,68 +9,104 @@ FSelectionInputContext::FSelectionInputContext(FViewportSelectionController* InS
 }
 
 bool FSelectionInputContext::HandleEvent(const Engine::ApplicationCore::FInputEvent& Event,
-    const Engine::ApplicationCore::FInputState& State)
+                                         const Engine::ApplicationCore::FInputState& State)
 {
     if (SelectionController == nullptr)
     {
         return false;
     }
-    
+
     switch (Event.Type)
     {
-        //  Initial Click
-    case Engine::ApplicationCore::EInputEventType::MouseButtonDown :
-        if (Event.Key == Engine::ApplicationCore::EKey::MouseLeft)
+    case EInputEventType::MouseButtonDown:
+        if (Event.Key == EKey::MouseLeft)
         {
+            bRectSelection = IsRectSelectionModifier(State);
+
+            if (State.Modifiers.bAltDown && !bRectSelection)
+            {
+                return false;
+            }
+
             bLeftMouseDown = true;
             bDragging = false;
             PressMouseX = Event.MouseX;
             PressMouseY = Event.MouseY;
-            return true;
+
+            // 클릭/드래그 의도를 MouseUp/Move에서 확정하기 위해 Down은 선소비하지 않습니다.
+            return false;
         }
         break;
-    case Engine::ApplicationCore::EInputEventType::MouseMove :
+    case EInputEventType::MouseMove:
+        if (SelectionController->IsDraggingSelection())
+        {
+            SelectionController->UpdateSelection(Event.MouseX, Event.MouseY);
+            return true;
+        }
+
         if (bLeftMouseDown)
         {
             const int32 DeltaX = Event.MouseX - PressMouseX;
             const int32 DeltaY = Event.MouseY - PressMouseY;
             const int32 DistanceSq = DeltaX * DeltaX + DeltaY * DeltaY;
-            
+
             if (!bDragging && DistanceSq >= DragThreshold * DragThreshold)
             {
                 bDragging = true;
-                SelectionController->BeginSelection(PressMouseX,PressMouseY,ResolveSelectionMode(State));
+
+                if (bRectSelection)
+                {
+                    SelectionController->BeginSelection(PressMouseX, PressMouseY,
+                                                        ResolveSelectionMode(State));
+                }
             }
-            
-            if (bDragging)
+
+            if (bDragging && bRectSelection)
             {
                 SelectionController->UpdateSelection(Event.MouseX, Event.MouseY);
                 return true;
             }
         }
         break;
-        case Engine::ApplicationCore::EInputEventType::MouseButtonUp :
-        if (Event.Key == Engine::ApplicationCore::EKey::MouseLeft)
+    case EInputEventType::MouseButtonUp:
+        if (Event.Key == EKey::MouseLeft && SelectionController->IsDraggingSelection())
         {
-            if (bDragging)
-            {
-                SelectionController->EndSelection(Event.MouseX, Event.MouseY);
-            }
-            else
-            {
-                SelectionController->ClickSelect(Event.MouseX, Event.MouseY, ResolveSelectionMode(State));
-            }
-            
+            SelectionController->EndSelection(Event.MouseX, Event.MouseY);
+
             bLeftMouseDown = false;
             bDragging = false;
-            
+            bRectSelection = false;
+            return true;
+        }
+
+        if (Event.Key == EKey::MouseLeft)
+        {
+            const bool bWasDragging = bDragging;
+
+            bLeftMouseDown = false;
+            bDragging = false;
+            bRectSelection = false;
+
+            if (bWasDragging)
+            {
+                return false;
+            }
+
+            if (State.Modifiers.bAltDown)
+            {
+                return false;
+            }
+
+            SelectionController->ClickSelect(Event.MouseX, Event.MouseY,
+                                             ResolveSelectionMode(State));
+
             return true;
         }
         break;
-    default :
+    default:
         break;
     }
-    
+
     return false;
 }
 
@@ -77,21 +116,36 @@ void FSelectionInputContext::Tick(const Engine::ApplicationCore::FInputState& St
     {
         return;
     }
-    
-    
 }
 
 ESelectionMode FSelectionInputContext::ResolveSelectionMode(
     const Engine::ApplicationCore::FInputState& State) const
 {
-    if (State.Modifiers.bShiftDown)
+    if (IsRectSelectionModifier(State))
+    {
+        return State.Modifiers.bShiftDown ? ESelectionMode::Add : ESelectionMode::Replace;
+    }
+
+    if (State.Modifiers.bShiftDown && !State.Modifiers.bCtrlDown)
     {
         return ESelectionMode::Add;
     }
-    if (State.Modifiers.bCtrlDown)
+
+    if (State.Modifiers.bCtrlDown && !State.Modifiers.bShiftDown)
     {
         return ESelectionMode::Toggle;
     }
-    
+
+    if (State.Modifiers.bCtrlDown && State.Modifiers.bShiftDown)
+    {
+        return ESelectionMode::Toggle;
+    }
+
     return ESelectionMode::Replace;
+}
+
+bool FSelectionInputContext::IsRectSelectionModifier(
+    const Engine::ApplicationCore::FInputState& State) const
+{
+    return State.Modifiers.bCtrlDown && State.Modifiers.bAltDown;
 }
