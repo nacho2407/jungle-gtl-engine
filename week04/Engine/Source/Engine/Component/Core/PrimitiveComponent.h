@@ -19,7 +19,7 @@ namespace Engine::Component
         virtual EBasicMeshType GetBasicMeshType() const = 0;
 
         const FColor& GetColor() const;
-        void            SetColor(const FColor& NewColor);
+        void          SetColor(const FColor& NewColor);
 
         const Geometry::FAABB& GetWorldAABB() const;
 
@@ -36,6 +36,7 @@ namespace Engine::Component
       protected:
         FColor          Color = FColor::White();
         Geometry::FAABB WorldAABB;
+        bool            bShowAABB = false;
         bool            bBoundsDirty = true;
     };
 } // namespace Engine::Component

@@ -372,6 +372,12 @@ void FEditor::SetChromeHost(IEditorChromeHost* InChromeHost)
     EditorChrome.SetHost(InChromeHost);
 }
 
+void FEditor::SetRuntimeServices(FD3D11DynamicRHI* InRHI, UAssetManager* InAssetManager)
+{
+    EditorContext.RHI = InRHI;
+    EditorContext.AssetManager = InAssetManager;
+}
+
 void FEditor::LoadEditorSettings()
 {
     FEditorSettingsData SettingsData;

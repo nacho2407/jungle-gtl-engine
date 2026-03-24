@@ -5,13 +5,13 @@
 
 namespace Engine::Component
 {
-    class ENGINE_API UTextComponent : public UAtlasComponent
+    class ENGINE_API UAtlasTextComponent : public UAtlasComponent
     {
-        DECLARE_RTTI(UTextComponent, UAtlasComponent)
+        DECLARE_RTTI(UAtlasTextComponent, UAtlasComponent)
 
       public:
-        UTextComponent() = default;
-        ~UTextComponent() override = default;
+        UAtlasTextComponent() = default;
+        ~UAtlasTextComponent() override = default;
 
         const FString& GetText() const { return Text; }
         void           SetText(const FString& InText);
@@ -43,12 +43,8 @@ namespace Engine::Component
         FFontResource* FontResource = nullptr;
         FString        FontPath;
 
-        FColor TextColor = FColor::White();
-        float  TextScale = 1.0f;
-        float  LetterSpacing = 0.0f;
-        float  LineSpacing = 0.0f;
-
-        bool    bBillboard = true;
-        FVector BillboardOffset = FVector(0.0f, 0.0f, 0.0f);
+        float TextScale = 1.0f;
+        float LetterSpacing = 0.0f;
+        float LineSpacing = 0.0f;
     };
 } // namespace Engine::Component
