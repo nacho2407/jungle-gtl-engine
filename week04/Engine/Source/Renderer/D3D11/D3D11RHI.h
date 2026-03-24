@@ -30,6 +30,14 @@ class FD3D11RHI
     int32 GetViewportHeight() const { return ViewportHeight; }
 
     void SetViewport(int32 InWidth, int32 InHeight);
+    void SetViewport(const D3D11_VIEWPORT& InViewport) const;
+    void SetRenderTargets(uint32 InNumRTVs, ID3D11RenderTargetView* const* InRTVs,
+                          ID3D11DepthStencilView* InDepthStencilView) const;
+    void ClearRenderTarget(ID3D11RenderTargetView* InRenderTargetView,
+                           const FLOAT InClearColor[4]) const;
+    void ClearDepthStencil(ID3D11DepthStencilView* InDepthStencilView, float InDepth = 1.0f,
+                           uint8 InStencil = 0,
+                           UINT InClearFlags = D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL) const;
     void SetDefaultRenderTargets();
     void Clear(const FLOAT InClearColor[4], float InDepth = 1.0f, uint8 InStencil = 0);
 

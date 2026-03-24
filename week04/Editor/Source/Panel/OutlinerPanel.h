@@ -11,6 +11,13 @@ public:
     {
         Cube = 0,
         Sphere,
+        Cone,
+        Cylinder,
+        Ring,
+        Triangle,
+        SpriteTexture,
+        SubUVTexture,
+        SpriteAnimation,
         Count
     };
 

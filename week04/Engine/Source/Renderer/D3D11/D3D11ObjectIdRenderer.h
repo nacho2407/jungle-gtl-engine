@@ -4,7 +4,7 @@
 #include "Core/HAL/PlatformTypes.h"
 #include "Core/Math/Matrix.h"
 #include "Renderer/D3D11/D3D11Common.h"
-#include "Renderer/Types/BasicMeshType.h"
+#include "Renderer/Types/ObjectIdRenderItem.h"
 #include "Resources/Mesh/MeshPrimitiveTopology.h"
 
 class FD3D11RHI;
@@ -12,12 +12,6 @@ class FSceneView;
 
 struct FVertexSimple;
 
-struct FObjectIdRenderItem
-{
-    FMatrix        World = FMatrix::Identity;
-    EBasicMeshType MeshType = EBasicMeshType::Cube;
-    uint32         ObjectId = 0;
-};
 
 struct FObjectIdMeshResource
 {
