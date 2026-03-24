@@ -8,7 +8,7 @@
 AActor::AActor()
 {
     UUIDTextComponent = new Engine::Component::UAtlasTextComponent();
-    static_cast<Engine::Component::UAtlasTextComponent*>(UUIDTextComponent)->SetFontPath("Font\\Comic_Sans_MS\\Comic_Sans_MS.json");
+    static_cast<Engine::Component::UAtlasTextComponent*>(UUIDTextComponent)->SetFontPath("Font\\Comic_Sans_MS\\Comic_Sans_MS.Font");
     static_cast<Engine::Component::UAtlasTextComponent*>(UUIDTextComponent)->SetText("Test");
     AddOwnedComponent(UUIDTextComponent);
 }

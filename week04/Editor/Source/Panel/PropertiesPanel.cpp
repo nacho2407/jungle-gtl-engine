@@ -1,5 +1,6 @@
 #include "PropertiesPanel.h"
 
+#include "Content/ContentBrowserDragDrop.h"
 #include "Editor/Editor.h"
 #include "Editor/EditorContext.h"
 #include "CoreUObject/Object.h"
@@ -162,6 +163,59 @@ namespace
         return Descriptor.Key;
     }
 
+    bool IsCompatibleAssetKind(
+        Engine::Component::EComponentAssetPathKind ExpectedKind,
+        Engine::Component::EComponentAssetPathKind IncomingKind)
+    {
+        if (ExpectedKind == Engine::Component::EComponentAssetPathKind::Any)
+        {
+            return true;
+        }
+
+        return ExpectedKind == IncomingKind;
+    }
+
+    bool TryAcceptAssetPathDrop(
+        const Engine::Component::FComponentPropertyDescriptor& Descriptor,
+        TMap<FString, FString>* AssetPathEditBuffers)
+    {
+        if (AssetPathEditBuffers == nullptr || !ImGui::BeginDragDropTarget())
+        {
+            return false;
+        }
+
+        bool bApplied = false;
+        const ImGuiPayload* ActivePayload = ImGui::GetDragDropPayload();
+        if (ActivePayload != nullptr &&
+            ActivePayload->IsDataType(Editor::Content::ContentBrowserAssetPayloadType))
+        {
+            const auto* DragPayload =
+                static_cast<const Editor::Content::FContentBrowserAssetDragDropPayload*>(
+                    ActivePayload->Data);
+            if (DragPayload != nullptr &&
+                IsCompatibleAssetKind(Descriptor.ExpectedAssetPathKind, DragPayload->AssetKind))
+            {
+                const ImGuiPayload* AcceptedPayload = ImGui::AcceptDragDropPayload(
+                    Editor::Content::ContentBrowserAssetPayloadType,
+                    ImGuiDragDropFlags_AcceptBeforeDelivery);
+                if (AcceptedPayload != nullptr && AcceptedPayload->IsDelivery())
+                {
+                    const FString DroppedVirtualPath = DragPayload->VirtualPath;
+                    if (Descriptor.StringSetter)
+                    {
+                        Descriptor.StringSetter(DroppedVirtualPath);
+                    }
+
+                    (*AssetPathEditBuffers)[Descriptor.Key] = DroppedVirtualPath;
+                    bApplied = true;
+                }
+            }
+        }
+
+        ImGui::EndDragDropTarget();
+        return bApplied;
+    }
+
     bool DrawBoolPropertyRow(const char* LabelId, const char* DisplayLabel,
                              const Engine::Component::FComponentPropertyDescriptor& Descriptor)
     {
@@ -254,8 +308,18 @@ namespace
         const ImGuiInputTextFlags InputFlags =
             bIsAssetPath ? ImGuiInputTextFlags_EnterReturnsTrue : ImGuiInputTextFlags_None;
         const bool bChanged = ImGui::InputText("##Value", Buffer.data(), Buffer.size(), InputFlags);
+        bool bDroppedAssetPath = false;
+        if (bIsAssetPath)
+        {
+            bDroppedAssetPath = TryAcceptAssetPathDrop(Descriptor, AssetPathEditBuffers);
+        }
         const bool bHovered = bIsAssetPath && ImGui::IsItemHovered();
         ImGui::PopID();
+
+        if (bDroppedAssetPath)
+        {
+            return true;
+        }
 
         if (bIsAssetPath && AssetPathEditBuffers != nullptr)
         {
