@@ -1,4 +1,4 @@
-#include "SubUVBatcher.h"
+﻿#include "SubUVBatcher.h"
 
 #include "Core/CoreTypes.h"
 
@@ -63,6 +63,7 @@ void FSubUVBatcher::Release()
 void FSubUVBatcher::AddSprite(const FVector& WorldPos,
                               const FVector& CamRight,
                               const FVector& CamUp,
+							  const FVector& WorldScale,
                               uint32 FrameIndex,
                               uint32 Columns,
                               uint32 Rows,
@@ -71,8 +72,8 @@ void FSubUVBatcher::AddSprite(const FVector& WorldPos,
 {
     FSubUVFrameInfo Frame = GetFrameUV(FrameIndex, Columns, Rows);
 
-    const float HalfW = Width  * 0.5f;
-    const float HalfH = Height * 0.5f;
+    const float HalfW = Width  * WorldScale.Y * 0.25f;
+    const float HalfH = Height * WorldScale.Z * 0.25f;
 
     FVector v0 = WorldPos + CamRight * (-HalfW) + CamUp * ( HalfH); // 좌상
     FVector v1 = WorldPos + CamRight * ( HalfW) + CamUp * ( HalfH); // 우상
