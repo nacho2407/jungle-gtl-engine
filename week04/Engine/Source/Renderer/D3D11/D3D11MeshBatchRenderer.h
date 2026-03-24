@@ -21,6 +21,12 @@ enum class EMeshDrawPath : uint8
     Instanced
 };
 
+enum class EMeshDrawClass : uint8
+{
+    Scene = 0,
+    Editor = 1,
+};
+
 struct FMeshDrawData
 {
     FMatrix World;
@@ -40,9 +46,8 @@ class FD3D11MeshBatchRenderer
   public:
     static constexpr const wchar_t* InstancedShaderPath =
         L"Content\\Shader\\ShaderInstancedMesh.hlsl";
-    static constexpr const wchar_t* SingleShaderPath =
-        L"Content\\Shader\\ShaderMesh.hlsl";
-    static constexpr uint32 MaxInstanceCapacity = 4096;
+    static constexpr const wchar_t* SingleShaderPath = L"Content\\Shader\\ShaderMesh.hlsl";
+    static constexpr uint32         MaxInstanceCapacity = 4096;
 
   public:
     bool Initialize(FD3D11RHI* InRHI);
@@ -50,8 +55,10 @@ class FD3D11MeshBatchRenderer
 
     void BeginFrame(const FSceneView* InSceneView, EViewModeIndex InViewMode,
                     bool bInUseInstancing);
-    void AddPrimitive(const FPrimitiveRenderItem& InItem);
-    void AddPrimitives(const TArray<FPrimitiveRenderItem>& InItems);
+    void AddPrimitive(const FPrimitiveRenderItem& InItem,
+                      EMeshDrawClass              InDrawClass = EMeshDrawClass::Scene);
+    void AddPrimitives(const TArray<FPrimitiveRenderItem>& InItems,
+                       EMeshDrawClass                      InDrawClass = EMeshDrawClass::Scene);
     void EndFrame();
     void Flush();
 
@@ -85,9 +92,13 @@ class FD3D11MeshBatchRenderer
     void BindSolidRasterizer();
     void BindWireframeRasterizer();
 
-    void FlushInternal(EMeshDrawPath DrawPath, const FSceneView* InSceneView);
-    void DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath DrawPath,
-                       const FSceneView* InSceneView);
+    void PrepareFlush(EMeshDrawPath DrawPath, const FSceneView* InSceneView);
+    void FlushSceneQueue(EMeshDrawPath DrawPath, const FSceneView* InSceneView);
+    void FlushEditorQueue(EMeshDrawPath DrawPath, const FSceneView* InSceneView);
+    void FlushCombinedSolidQueue(EMeshDrawPath DrawPath, const FSceneView* InSceneView);
+
+    void DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath DrawPath, const FSceneView* InSceneView,
+                       TArray<FMeshDrawData>& Draws);
 
     FBasicMeshResource*       GetBasicMeshResource(EBasicMeshType InType);
     const FBasicMeshResource* GetBasicMeshResource(EBasicMeshType InType) const;
@@ -115,5 +126,6 @@ class FD3D11MeshBatchRenderer
     TComPtr<ID3D11DepthStencilState> DepthStencilState;
 
     FBasicMeshResource    BasicMeshResources[static_cast<int32>(EBasicMeshType::Count)];
-    TArray<FMeshDrawData> MeshDraws[static_cast<int32>(EBasicMeshType::Count)];
+    TArray<FMeshDrawData> SceneMeshDraws[static_cast<int32>(EBasicMeshType::Count)];
+    TArray<FMeshDrawData> EditorMeshDraws[static_cast<int32>(EBasicMeshType::Count)];
 };

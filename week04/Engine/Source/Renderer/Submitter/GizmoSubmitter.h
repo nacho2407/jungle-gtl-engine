@@ -30,7 +30,7 @@ class FGizmoSubmitter
   public:
     void Submit(FD3D11MeshBatchRenderer& InMeshRenderer, const FEditorRenderData& InEditorRenderData);
     void Submit(FD3D11ObjectIdRenderer& InObjectIdRenderer,
-                const FEditorRenderData& InEditorRenderData);
+                const FEditorRenderData& InEditorRenderData) const;
 
   public:
     EViewModeIndex ViewMode = EViewModeIndex::VMI_Unlit;
@@ -42,21 +42,18 @@ class FGizmoSubmitter
 
     void AddTranslationGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
                              const FGizmoDrawData&         InGizmoDrawData,
-                             const FMatrix&               InGizmoMatrix) const;
+                             const FMatrix&                InGizmoMatrix) const;
     void AddRotationGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
                           const FGizmoDrawData&         InGizmoDrawData,
-                          const FMatrix&               InGizmoMatrix) const;
+                          const FMatrix&                InGizmoMatrix) const;
     void AddScalingGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
                          const FGizmoDrawData&         InGizmoDrawData,
-                         const FMatrix&               InGizmoMatrix) const;
+                         const FMatrix&                InGizmoMatrix) const;
 
-    void AddTranslationGizmo(TArray<FObjectIdRenderItem>& OutItems,
-                             const FGizmoDrawData&       InGizmoDrawData,
-                             const FMatrix&             InGizmoMatrix) const;
-    void AddRotationGizmo(TArray<FObjectIdRenderItem>& OutItems,
-                          const FGizmoDrawData&       InGizmoDrawData,
-                          const FMatrix&             InGizmoMatrix) const;
-    void AddScalingGizmo(TArray<FObjectIdRenderItem>& OutItems,
-                         const FGizmoDrawData&       InGizmoDrawData,
-                         const FMatrix&             InGizmoMatrix) const;
+    void AddTranslationGizmo(TArray<FObjectIdRenderItem>& OutItems, const FGizmoDrawData& InGizmoDrawData,
+                             const FMatrix& InGizmoMatrix) const;
+    void AddRotationGizmo(TArray<FObjectIdRenderItem>& OutItems, const FGizmoDrawData& InGizmoDrawData,
+                          const FMatrix& InGizmoMatrix) const;
+    void AddScalingGizmo(TArray<FObjectIdRenderItem>& OutItems, const FGizmoDrawData& InGizmoDrawData,
+                         const FMatrix& InGizmoMatrix) const;
 };

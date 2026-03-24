@@ -95,7 +95,8 @@ void FD3D11MeshBatchRenderer::BeginFrame(const FSceneView* InSceneView, EViewMod
     ResetBatches();
 }
 
-void FD3D11MeshBatchRenderer::AddPrimitive(const FPrimitiveRenderItem& InItem)
+void FD3D11MeshBatchRenderer::AddPrimitive(const FPrimitiveRenderItem& InItem,
+                                           EMeshDrawClass              InDrawClass)
 {
     const int32 MeshTypeIndex = static_cast<int32>(InItem.MeshType);
     if (MeshTypeIndex < 0 || MeshTypeIndex >= static_cast<int32>(EBasicMeshType::Count))
@@ -112,14 +113,19 @@ void FD3D11MeshBatchRenderer::AddPrimitive(const FPrimitiveRenderItem& InItem)
     DrawData.World = InItem.World;
     DrawData.Color = InItem.Color;
 
-    MeshDraws[MeshTypeIndex].push_back(DrawData);
+    TArray<FMeshDrawData>* TargetDraws = (InDrawClass == EMeshDrawClass::Editor)
+                                             ? &EditorMeshDraws[MeshTypeIndex]
+                                             : &SceneMeshDraws[MeshTypeIndex];
+
+    TargetDraws->push_back(DrawData);
 }
 
-void FD3D11MeshBatchRenderer::AddPrimitives(const TArray<FPrimitiveRenderItem>& InItems)
+void FD3D11MeshBatchRenderer::AddPrimitives(const TArray<FPrimitiveRenderItem>& InItems,
+                                            EMeshDrawClass                      InDrawClass)
 {
     for (const FPrimitiveRenderItem& Item : InItems)
     {
-        AddPrimitive(Item);
+        AddPrimitive(Item, InDrawClass);
     }
 }
 
@@ -142,8 +148,18 @@ void FD3D11MeshBatchRenderer::Flush()
         return;
     }
 
-    FlushInternal(bUseInstancing ? EMeshDrawPath::Instanced : EMeshDrawPath::Single,
-                  CurrentSceneView);
+    const EMeshDrawPath DrawPath =
+        bUseInstancing ? EMeshDrawPath::Instanced : EMeshDrawPath::Single;
+
+    if (ViewMode == EViewModeIndex::VMI_Unlit)
+    {
+        FlushCombinedSolidQueue(DrawPath, CurrentSceneView);
+    }
+    else
+    {
+        FlushSceneQueue(DrawPath, CurrentSceneView);
+        FlushEditorQueue(DrawPath, CurrentSceneView);
+    }
 }
 
 bool FD3D11MeshBatchRenderer::CreateShaders()
@@ -223,6 +239,7 @@ bool FD3D11MeshBatchRenderer::CreateConstantBuffers()
 
     return bSingleOk && bInstancedOk;
 }
+
 bool FD3D11MeshBatchRenderer::CreateStates()
 {
     if (RHI == nullptr || RHI->GetDevice() == nullptr)
@@ -380,7 +397,8 @@ void FD3D11MeshBatchRenderer::ResetBatches()
 {
     for (int32 Index = 0; Index < static_cast<int32>(EBasicMeshType::Count); ++Index)
     {
-        MeshDraws[Index].clear();
+        SceneMeshDraws[Index].clear();
+        EditorMeshDraws[Index].clear();
     }
 }
 
@@ -470,7 +488,7 @@ void FD3D11MeshBatchRenderer::BindWireframeRasterizer()
     RHI->SetRasterizerState(WireframeRasterizerState.Get());
 }
 
-void FD3D11MeshBatchRenderer::FlushInternal(EMeshDrawPath DrawPath, const FSceneView* InSceneView)
+void FD3D11MeshBatchRenderer::PrepareFlush(EMeshDrawPath DrawPath, const FSceneView* InSceneView)
 {
     if (RHI == nullptr || InSceneView == nullptr)
     {
@@ -478,6 +496,18 @@ void FD3D11MeshBatchRenderer::FlushInternal(EMeshDrawPath DrawPath, const FScene
     }
 
     BindPipeline(DrawPath);
+    RHI->SetDepthStencilState(DepthStencilState.Get(), 0);
+    UpdatePerFrameConstants(InSceneView, DrawPath);
+}
+
+void FD3D11MeshBatchRenderer::FlushSceneQueue(EMeshDrawPath DrawPath, const FSceneView* InSceneView)
+{
+    if (RHI == nullptr || InSceneView == nullptr)
+    {
+        return;
+    }
+
+    PrepareFlush(DrawPath, InSceneView);
 
     if (ViewMode == EViewModeIndex::VMI_Wireframe)
     {
@@ -488,18 +518,71 @@ void FD3D11MeshBatchRenderer::FlushInternal(EMeshDrawPath DrawPath, const FScene
         BindSolidRasterizer();
     }
 
-    RHI->SetDepthStencilState(DepthStencilState.Get(), 0);
+    for (int32 Index = 0; Index < static_cast<int32>(EBasicMeshType::Count); ++Index)
+    {
+        TArray<FMeshDrawData>& Draws = SceneMeshDraws[Index];
+        if (Draws.empty())
+        {
+            continue;
+        }
 
-    UpdatePerFrameConstants(InSceneView, DrawPath);
+        DrawMeshBatch(static_cast<EBasicMeshType>(Index), DrawPath, InSceneView, Draws);
+    }
+}
+
+void FD3D11MeshBatchRenderer::FlushEditorQueue(EMeshDrawPath     DrawPath,
+                                               const FSceneView* InSceneView)
+{
+    if (RHI == nullptr || InSceneView == nullptr)
+    {
+        return;
+    }
+
+    PrepareFlush(DrawPath, InSceneView);
+    BindSolidRasterizer();
 
     for (int32 Index = 0; Index < static_cast<int32>(EBasicMeshType::Count); ++Index)
     {
-        DrawMeshBatch(static_cast<EBasicMeshType>(Index), DrawPath, InSceneView);
+        TArray<FMeshDrawData>& Draws = EditorMeshDraws[Index];
+        if (Draws.empty())
+        {
+            continue;
+        }
+
+        DrawMeshBatch(static_cast<EBasicMeshType>(Index), DrawPath, InSceneView, Draws);
+    }
+}
+
+void FD3D11MeshBatchRenderer::FlushCombinedSolidQueue(EMeshDrawPath     DrawPath,
+                                                      const FSceneView* InSceneView)
+{
+    if (RHI == nullptr || InSceneView == nullptr)
+    {
+        return;
+    }
+
+    PrepareFlush(DrawPath, InSceneView);
+    BindSolidRasterizer();
+
+    for (int32 Index = 0; Index < static_cast<int32>(EBasicMeshType::Count); ++Index)
+    {
+        TArray<FMeshDrawData>& SceneDraws = SceneMeshDraws[Index];
+        if (!SceneDraws.empty())
+        {
+            DrawMeshBatch(static_cast<EBasicMeshType>(Index), DrawPath, InSceneView, SceneDraws);
+        }
+
+        TArray<FMeshDrawData>& EditorDraws = EditorMeshDraws[Index];
+        if (!EditorDraws.empty())
+        {
+            DrawMeshBatch(static_cast<EBasicMeshType>(Index), DrawPath, InSceneView, EditorDraws);
+        }
     }
 }
 
 void FD3D11MeshBatchRenderer::DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath DrawPath,
-                                            const FSceneView* InSceneView)
+                                            const FSceneView*      InSceneView,
+                                            TArray<FMeshDrawData>& Draws)
 {
     if (RHI == nullptr || InSceneView == nullptr)
     {
@@ -519,7 +602,6 @@ void FD3D11MeshBatchRenderer::DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath
         return;
     }
 
-    TArray<FMeshDrawData>& Draws = MeshDraws[TypeIndex];
     if (Draws.empty())
     {
         return;

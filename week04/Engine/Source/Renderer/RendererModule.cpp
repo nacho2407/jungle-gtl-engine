@@ -158,21 +158,37 @@ void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
     CachedEditorRenderData = InEditorRenderData;
     CachedSceneRenderData = InSceneRenderData;
 
-    // ==================== Scene Mesh ====================
-    if (ShouldRenderScenePrimitives(InSceneRenderData))
+    // ==================== Scene / Editor Mesh ====================
+    const bool bHasSceneMesh = ShouldRenderScenePrimitives(InSceneRenderData);
+    const bool bHasEditorGizmo = InEditorRenderData.SceneView != nullptr &&
+                                 IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo);
+
+    if (bHasSceneMesh || bHasEditorGizmo)
     {
-        MeshRenderer.BeginFrame(InSceneRenderData.SceneView, InSceneRenderData.ViewMode,
+        const FSceneView* MeshSceneView =
+            (InSceneRenderData.SceneView != nullptr) ? InSceneRenderData.SceneView
+                                                     : InEditorRenderData.SceneView;
+
+        MeshRenderer.BeginFrame(MeshSceneView, InSceneRenderData.ViewMode,
                                 InSceneRenderData.bUseInstancing);
 
-        if (ShouldTintSelectedWireframe(InEditorRenderData, InSceneRenderData))
+        if (bHasSceneMesh)
         {
-            const TArray<FPrimitiveRenderItem> WireframeItems =
-                BuildWireframePrimitiveSubmission(InSceneRenderData);
-            MeshRenderer.AddPrimitives(WireframeItems);
+            if (ShouldTintSelectedWireframe(InEditorRenderData, InSceneRenderData))
+            {
+                const TArray<FPrimitiveRenderItem> WireframeItems =
+                    BuildWireframePrimitiveSubmission(InSceneRenderData);
+                MeshRenderer.AddPrimitives(WireframeItems, EMeshDrawClass::Scene);
+            }
+            else
+            {
+                PrimitiveSubmitter.Submit(MeshRenderer, InSceneRenderData);
+            }
         }
-        else
+
+        if (bHasEditorGizmo)
         {
-            PrimitiveSubmitter.Submit(MeshRenderer, InSceneRenderData);
+            GizmoSubmitter.Submit(MeshRenderer, InEditorRenderData);
         }
 
         MeshRenderer.EndFrame();
@@ -193,16 +209,6 @@ void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
         SpriteRenderer.BeginFrame(InSceneRenderData.SceneView);
         SpriteSubmitter.Submit(SpriteRenderer, InSceneRenderData);
         SpriteRenderer.EndFrame(InSceneRenderData.SceneView);
-    }
-
-    // ==================== Editor Gizmo ====================
-    if (InEditorRenderData.SceneView != nullptr &&
-        IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo))
-    {
-        MeshRenderer.BeginFrame(InEditorRenderData.SceneView, InSceneRenderData.ViewMode,
-                                InSceneRenderData.bUseInstancing);
-        GizmoSubmitter.Submit(MeshRenderer, InEditorRenderData);
-        MeshRenderer.EndFrame();
     }
 
     // ==================== Editor Lines (Grid / Axes / AABB) ====================

@@ -59,7 +59,7 @@ class ENGINE_API FRendererModule
     FAABBSubmitter      AABBSubmitter;
     FWorldGridSubmitter WorldGridSubmitter;
     FWorldAxesSubmitter WorldAxesSubmitter;
-    FGizmoSubmitter GizmoSubmitter;
+    FGizmoSubmitter    GizmoSubmitter;
 
     FEditorRenderData CachedEditorRenderData;
     FSceneRenderData  CachedSceneRenderData;
