@@ -46,6 +46,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	// Camera
 	ViewportClient.CreateCamera();
 	ViewportClient.ResetCamera();
+	GetWorld()->SetActiveCamera(ViewportClient.GetCamera());
 }
 
 void UEditorEngine::Shutdown()
@@ -109,6 +110,7 @@ void UEditorEngine::ResetViewport()
 	ViewportClient.SetWorld(GetWorld());
 	ViewportClient.SetViewportSize(Window->GetWidth(), Window->GetHeight());
 	ViewportClient.ResetCamera();
+	GetWorld()->SetActiveCamera(ViewportClient.GetCamera());
 }
 
 void UEditorEngine::CloseScene()
@@ -157,7 +159,7 @@ void UEditorEngine::BuildRenderCommands()
 	FRenderCollectorContext Context(SelectionManager.GetSelectedActors());
 
 	Context.World = GetWorld();
-	Context.Camera = ViewportClient.GetCamera();
+	Context.Camera = GetWorld()->GetActiveCamera();
 	Context.Gizmo = SelectionManager.GetGizmo();
 	Context.ViewMode = FEditorSettings::Get().ViewMode;
 	Context.ShowFlags = FEditorSettings::Get().ShowFlags;
