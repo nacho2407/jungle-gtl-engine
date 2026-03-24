@@ -24,7 +24,10 @@ PSInput VS(VSInput input)
     }
     else
     { // 2D (Plane 등)
-        scaledPos = input.position * (1.0f + OutlineOffset);
+        float3 signDir = sign(input.position);
+        float3 offset = signDir * (OutlineOffset * OutlineInvScale);
+        
+        scaledPos = input.position + offset;
     }
 
     output.position = ApplyMVP(scaledPos);

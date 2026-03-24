@@ -9,6 +9,7 @@ void FMeshBufferManager::Create(ID3D11Device* InDevice)
 	MeshBufferMap[EPrimitiveType::EPT_RotGizmo].Create(InDevice, FMeshManager::GetRotationGizmo()); 
 	MeshBufferMap[EPrimitiveType::EPT_ScaleGizmo].Create(InDevice, FMeshManager::GetScaleGizmo());
 	MeshBufferMap[EPrimitiveType::EPT_SubUV].Create(InDevice, FMeshManager::GetQuad());
+	MeshBufferMap[EPrimitiveType::EPT_Text].Create(InDevice, FMeshManager::GetQuad());
 	MeshBufferMap[EPrimitiveType::EPT_MouseOverlay].Create(InDevice, FMeshManager::GetMouseOverlay());
 }
 
