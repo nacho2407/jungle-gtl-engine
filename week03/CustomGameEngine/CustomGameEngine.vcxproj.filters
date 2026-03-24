@@ -66,9 +66,6 @@
     <ClInclude Include="EngineCore\InputManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Serializable.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Singleton.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -252,9 +249,6 @@
     <ClInclude Include="Text\GlyphAtlas.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Text\Test.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Text\TextLayout.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -265,9 +259,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\GeneralGeometry.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\UV.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClCompile Include="MemoryTracker.cpp">
@@ -453,24 +444,29 @@
     <ClCompile Include="Text\GlyphAtlas.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Text\Test.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Text\TextLayout.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClInclude Include="Component\BillboardSubUVComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="VertexTextured.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shader\ShaderInfiniteGrid.hlsl" />
     <FxCompile Include="Shader\ShaderW0.hlsl" />
     <FxCompile Include="Shader\ShaderFont.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="LineBatcher.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Component\BillboardSubUVComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Textures\input.dds" />
   </ItemGroup>
 </Project>

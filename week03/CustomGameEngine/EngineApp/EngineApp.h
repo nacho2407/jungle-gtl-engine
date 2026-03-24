@@ -3,10 +3,10 @@
 #include <windows.h>
 #include <functional>
 #include "EngineCore/EngineTypes.h"
+#include "Editor/Picker.h"
 class URenderer;
 class Editor;
 class UCameraComponent;
-class UPicker;
 class UScene;
 class EngineApp
 {
@@ -30,7 +30,7 @@ private:
 	HWND HWnd = nullptr;
 	URenderer* Renderer = nullptr;
 	Editor* EditorInst = nullptr;
-	UPicker* Picker = nullptr;
+	UPicker Picker;
 	TArray<std::function<void(int width, int height)>> OnResizeCallback;
 
 	UScene* LastActiveScene = nullptr;

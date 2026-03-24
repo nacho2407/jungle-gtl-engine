@@ -84,4 +84,3 @@ void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene, bool bMultiSelect)
 	}
 }
 
-REGISTER_CLASS(UPicker)

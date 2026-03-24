@@ -2,8 +2,6 @@
 
 #include "Math/Ray.h"
 #include "EngineCore/EngineTypes.h"
-#include "Component/Object.h"
-#include "Component/CameraComponent.h"
 #include "Math/Vector.h"
 
 class UCameraComponent;
@@ -13,12 +11,11 @@ class Editor;
 
 enum class GizmoControllerAxis : int32;
 
-class UPicker : public UObject
+class UPicker
 {
-	DECLARE_RTTI(UPicker, UObject)
 public:
 	UPicker();
-	virtual ~UPicker() override;
+	~UPicker();
 	void Pick(int x, int y, UScene* Scene, bool bMultiSelect);
 
 	void SetEditor(Editor* pEditor) { EditorPtr = pEditor; }

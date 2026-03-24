@@ -12,8 +12,6 @@
 #include "ImGui/imgui.h"
 #include "EngineCore/InputManager.h"
 #include "EngineCore/Logger.h"
-#include "Component/Object.h"
-#include "EngineCore/ObjectFactory.h"
 #include "EngineCore/ResourceManager.h"
 #include "Scene.h"
 #include "EngineCore/TimerManager.h"
@@ -85,7 +83,6 @@ EngineApp::EngineApp()
 
 EngineApp::~EngineApp()
 {
-	delete Picker;
 	delete EditorInst;
 	delete Renderer;
 }
@@ -130,9 +127,8 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	}
 
 	//Init Picker
-	Picker = Cast<UPicker>(FObjectFactory::ConstructObject(UPicker::GetClass()));
-	Picker->SetEditor(EditorInst);
-	Picker->SetCamera(Camera);
+	Picker.SetEditor(EditorInst);
+	Picker.SetCamera(Camera);
 
 	//Init World & Scene
 	GetWorld().InjectRenderer(Renderer);
@@ -201,7 +197,7 @@ void EngineApp::Run()
 			UScene* activeScene = GetWorld().GetSceneManager()->GetActiveScene();
 			if (activeScene != nullptr)
 			{
-				Picker->Pick(Mouse.x, Mouse.y, activeScene, bIsCtrlDown);
+				Picker.Pick(Mouse.x, Mouse.y, activeScene, bIsCtrlDown);
 			}
 		}
 

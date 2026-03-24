@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Editor/Editor.h"
+#include "ImGui/imgui.h"
 #include "EngineCore/Logger.h"
 #include <cctype>
 #include <cstdio>
