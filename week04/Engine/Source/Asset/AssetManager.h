@@ -14,7 +14,8 @@ enum class EAssetType : uint8
     Mesh,
     Shader,
     Material,
-    Font
+    Font,
+    SpriteAtlas
 };
 
 struct FSourceRecord

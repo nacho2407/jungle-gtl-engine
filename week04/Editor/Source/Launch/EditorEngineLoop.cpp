@@ -13,6 +13,7 @@
 #include "Core/Misc/NameSubsystem.h"
 #include "Asset/AssetManager.h"
 #include "Asset/FontAtlasLoader.h"
+#include "Asset/SubUVAtlasLoader.h"
 #include "Asset/TextureLoader.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND HWnd, UINT Message,
@@ -75,8 +76,10 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
     AssetManager = new UAssetManager();
     TextureAssetLoader = new FTextureLoader(&Renderer->GetRHI());
     FontAssetLoader = new FFontAtlasLoader(&Renderer->GetRHI());
+    SubUVAtlasAssetLoader = new FSubUVAtlasLoader(&Renderer->GetRHI());
     AssetManager->RegisterLoader(TextureAssetLoader);
     AssetManager->RegisterLoader(FontAssetLoader);
+    AssetManager->RegisterLoader(SubUVAtlasAssetLoader);
     Editor->SetRuntimeServices(&Renderer->GetRHI(), AssetManager);
 
     ImGui::CreateContext();
@@ -141,6 +144,9 @@ void FEditorEngineLoop::ShutDown()
 
     delete FontAssetLoader;
     FontAssetLoader = nullptr;
+
+    delete SubUVAtlasAssetLoader;
+    SubUVAtlasAssetLoader = nullptr;
 
     delete TextureAssetLoader;
     TextureAssetLoader = nullptr;

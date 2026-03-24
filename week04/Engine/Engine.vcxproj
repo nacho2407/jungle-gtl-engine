@@ -34,6 +34,8 @@
     <ClInclude Include="Source\Asset\AssetManager.h" />
     <ClInclude Include="Source\Asset\FontAsset.h" />
     <ClInclude Include="Source\Asset\FontAtlasLoader.h" />
+    <ClInclude Include="Source\Asset\SubUVAtlasAsset.h" />
+    <ClInclude Include="Source\Asset\SubUVAtlasLoader.h" />
     <ClInclude Include="Source\Asset\Texture2DAsset.h" />
     <ClInclude Include="Source\Asset\TextureLoader.h" />
     <ClInclude Include="Source\Core\Containers\Array.h" />
@@ -113,6 +115,7 @@
     <ClInclude Include="Source\Renderer\Draw\WorldGridDrawer.h" />
     <ClInclude Include="Source\Renderer\EditorRenderData.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\FontResource.h" />
+    <ClInclude Include="Source\Renderer\RenderAsset\SubUVAtlasResource.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\TextureResource.h" />
     <ClInclude Include="Source\Renderer\RendererModule.h" />
     <ClInclude Include="Source\Renderer\SceneRenderData.h" />
@@ -142,6 +145,8 @@
     <ClCompile Include="Source\Asset\AssetManager.cpp" />
     <ClCompile Include="Source\Asset\FontAsset.cpp" />
     <ClCompile Include="Source\Asset\FontAtlasLoader.cpp" />
+    <ClCompile Include="Source\Asset\SubUVAtlasAsset.cpp" />
+    <ClCompile Include="Source\Asset\SubUVAtlasLoader.cpp" />
     <ClCompile Include="Source\Asset\Texture2DAsset.cpp" />
     <ClCompile Include="Source\Asset\TextureLoader.cpp" />
     <ClCompile Include="Source\Core\CoreGlobals.cpp" />

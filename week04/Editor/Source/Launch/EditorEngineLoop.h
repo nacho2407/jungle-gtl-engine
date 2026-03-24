@@ -57,6 +57,7 @@ class FEditorEngineLoop : public IEngineLoop, public IEditorChromeHost
     UAssetManager* AssetManager = nullptr;
     IAssetLoader* TextureAssetLoader = nullptr;
     IAssetLoader* FontAssetLoader = nullptr;
+    IAssetLoader* SubUVAtlasAssetLoader = nullptr;
 
     float DeltaTime = 0.0f;
     float MainLoopFPS = 0.0f;
