@@ -3,6 +3,7 @@
 #include "Component/PrimitiveComponent.h"
 #include "Component/TextRenderComponent.h"
 #include <format>
+#include <Component/SubUVComponent.h>
 
 DEFINE_CLASS(ACubeActor, AActor)
 REGISTER_FACTORY(ACubeActor)
@@ -21,11 +22,19 @@ void ACubeActor::InitDefaultComponents()
 	auto* Cube = AddComponent<UCubeComponent>();
 	SetRootComponent(Cube);
 
+	// Text
 	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
 	Text->SetFont(FName("Default"));
 	Text->AttachToComponent(Cube);
 	Text->SetText("UUID : " + std::to_string(GetUUID()));
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
+
+	// SubUV
+	USubUVComponent* SubUV = AddComponent<USubUVComponent>();
+	SubUV->AttachToComponent(Cube);
+	SubUV->SetParticle(FName("Explosion"));
+	SubUV->SetSpriteSize(2.0f, 2.0f);
+	SubUV->SetFrameRate(30.f);
 }
 
 void ASphereActor::InitDefaultComponents()
@@ -38,6 +47,13 @@ void ASphereActor::InitDefaultComponents()
 	Text->AttachToComponent(Sphere);
 	Text->SetText("UUID : " + std::to_string(GetUUID()));
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
+
+	// SubUV
+	USubUVComponent* SubUV = AddComponent<USubUVComponent>();
+	SubUV->AttachToComponent(Sphere);
+	SubUV->SetParticle(FName("Explosion"));
+	SubUV->SetSpriteSize(2.0f, 2.0f);
+	SubUV->SetFrameRate(30.f);
 }
 
 void APlaneActor::InitDefaultComponents()
@@ -50,6 +66,13 @@ void APlaneActor::InitDefaultComponents()
 	Text->SetText(std::format("UUID: {}", GetUUID()));
 	Text->AttachToComponent(Plane);
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
+
+	// SubUV
+	USubUVComponent* SubUV = AddComponent<USubUVComponent>();
+	SubUV->AttachToComponent(Plane);
+	SubUV->SetParticle(FName("Explosion"));
+	SubUV->SetSpriteSize(2.0f, 2.0f);
+	SubUV->SetFrameRate(30.f);
 }
 
 void AAttachTestActor::InitDefaultComponents()
