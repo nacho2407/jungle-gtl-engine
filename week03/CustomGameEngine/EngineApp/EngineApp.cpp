@@ -58,6 +58,29 @@ LRESULT CALLBACK EngineApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 			}
 		}
 		break;
+	case WM_ENTERSIZEMOVE:
+		if (pApp)
+		{
+			pApp->bIsResizing = true;
+			SetTimer(hWnd, ResizeRenderTimerId, 16, nullptr);
+		}
+		return 0;
+	case WM_EXITSIZEMOVE:
+		if (pApp)
+		{
+			KillTimer(hWnd, ResizeRenderTimerId);
+			pApp->bIsResizing = false;
+			pApp->RenderCurrentFrame();
+		}
+		return 0;
+	case WM_TIMER:
+		if (pApp && pApp->bIsResizing && wParam == ResizeRenderTimerId)
+		{
+			// 리사이즈 중에는 타이머 기반으로 업데이트/렌더 유지함
+			pApp->RenderResizeFrame();
+			return 0;
+		}
+		break;
 	case WM_SETFOCUS:
 		InputManager::GetInstance().hWnd = (hWnd);
 		break;
@@ -154,6 +177,96 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	return true;
 }
 
+void EngineApp::TickGameFrame(float deltaTime, bool bAllowPicking)
+{
+	// 씬 전환 시 선택 상태 정리함
+	UScene* currentActiveScene = GetWorld().GetSceneManager()->GetActiveScene();
+	if (currentActiveScene != LastActiveScene)
+	{
+		EditorInst->ClearSelection();
+		LastActiveScene = currentActiveScene;
+	}
+
+	TimerManager::GetInstance().Tick();
+	InputManager::GetInstance().Update();
+
+	if (bAllowPicking)
+	{
+		ImGuiIO& io = ImGui::GetIO();
+
+		// 마우스 클릭 시 picking 수행함
+		FVector Mouse = InputManager::GetInstance().MousePos;
+		if (!io.WantCaptureMouse && InputManager::GetInstance().IsKeyDown(VK_LBUTTON))
+		{
+			bool bIsCtrlDown = InputManager::GetInstance().IsKeyHold(VK_CONTROL);
+			UScene* activeScene = GetWorld().GetSceneManager()->GetActiveScene();
+			if (activeScene != nullptr)
+			{
+				Picker.Pick(Mouse.x, Mouse.y, activeScene, bIsCtrlDown);
+			}
+		}
+	}
+
+	// 월드 업데이트 수행함
+	GetWorld().Update(deltaTime);
+}
+
+void EngineApp::RenderCurrentFrame()
+{
+	GetWorld().OnBeforeRender();
+	Renderer->Prepare();
+
+	SceneManager* SceneMgr = GetWorld().GetSceneManager();
+	TArray<FLevel*> LevelsToRender;
+	if (SceneMgr->GetPermanentScene())
+	{
+		LevelsToRender.push_back(&SceneMgr->GetPermanentScene()->Level);
+	}
+	if (SceneMgr->GetActiveScene())
+	{
+		LevelsToRender.push_back(&SceneMgr->GetActiveScene()->Level);
+	}
+
+	GetWorld().DrawDebugLines();
+	Renderer->Render(LevelsToRender);
+
+	TArray<FBillboardTextDrawItem> BillboardTextItems;
+	if (UScene* ActiveScene = SceneMgr->GetActiveScene())
+	{
+		for (UBillboardTextComponent* BillboardText : ActiveScene->BillboardTextComponents)
+		{
+			if (BillboardText != nullptr)
+			{
+				BillboardText->AppendDrawItems(BillboardTextItems);
+			}
+		}
+	}
+
+	Renderer->RenderBillboardTextBatch(BillboardTextItems);
+	Renderer->BatchRenderDebugLine(FLineBatcher::GetInstance().GetLineVertices());
+	FLineBatcher::GetInstance().ClearLines();
+	EditorInst->DrawUI();
+	Renderer->SwapBuffer();
+}
+
+void EngineApp::RenderResizeFrame()
+{
+	if (Renderer == nullptr)
+	{
+		return;
+	}
+
+	Timer* globalTimer = TimerManager::GetInstance().GetGlobalTimer();
+	if (globalTimer == nullptr)
+	{
+		return;
+	}
+
+	// 리사이즈 중에는 피킹만 막고 내부 갱신은 유지함
+	TickGameFrame(globalTimer->GetDeltaTime(), false);
+	RenderCurrentFrame();
+}
+
 void EngineApp::Run()
 {
 	Timer* globalTimer = TimerManager::GetInstance().GetGlobalTimer();
@@ -175,69 +288,14 @@ void EngineApp::Run()
 			}
 		}
 
-		// Check for scene change
-		UScene* currentActiveScene = GetWorld().GetSceneManager()->GetActiveScene();
-		if (currentActiveScene != LastActiveScene)
-		{
-			EditorInst->ClearSelection();
-			LastActiveScene = currentActiveScene;
-		}
-
-		TimerManager::GetInstance().Tick();
-		InputManager::GetInstance().Update();
 		float TempDelta = globalTimer->GetDeltaTime();
 
-		ImGuiIO& io = ImGui::GetIO();
-
-		//마우스 입력에 따라 picking 처리. 컨트롤 키가 눌렸다면 멀티 pick을 시도합니다.
-		FVector Mouse = InputManager::GetInstance().MousePos;
-		if (!io.WantCaptureMouse && InputManager::GetInstance().IsKeyDown(VK_LBUTTON))
+		if (!bIsResizing)
 		{
-			bool bIsCtrlDown = InputManager::GetInstance().IsKeyHold(VK_CONTROL);
-			UScene* activeScene = GetWorld().GetSceneManager()->GetActiveScene();
-			if (activeScene != nullptr)
-			{
-				Picker.Pick(Mouse.x, Mouse.y, activeScene, bIsCtrlDown);
-			}
+			TickGameFrame(TempDelta, true);
 		}
 
-		// Update Game World
-		GetWorld().Update(TempDelta);
-
-		//Render
-		GetWorld().OnBeforeRender();
-		Renderer->Prepare();
-
-
-		SceneManager* SceneMgr = GetWorld().GetSceneManager();
-		TArray<FLevel*> LevelsToRender;
-		if (SceneMgr->GetPermanentScene())
-		{
-			LevelsToRender.push_back(&SceneMgr->GetPermanentScene()->Level);
-		}
-		if (SceneMgr->GetActiveScene())
-		{
-			LevelsToRender.push_back(&SceneMgr->GetActiveScene()->Level);
-		}
-		GetWorld().DrawDebugLines();
-		Renderer->Render(LevelsToRender);
-		TArray<FBillboardTextDrawItem> BillboardTextItems;
-		if (UScene* ActiveScene = SceneMgr->GetActiveScene())
-		{
-			for (UBillboardTextComponent* BillboardText : ActiveScene->BillboardTextComponents)
-			{
-				if (BillboardText != nullptr)
-				{
-					BillboardText->AppendDrawItems(BillboardTextItems);
-				}
-			}
-		}
-		Renderer->RenderBillboardTextBatch(BillboardTextItems);
-		Renderer->BatchRenderDebugLine(FLineBatcher::GetInstance().GetLineVertices());
-		FLineBatcher::GetInstance().ClearLines();
-		EditorInst->DrawUI();
-
-		Renderer->SwapBuffer();
+		RenderCurrentFrame();
 	}
 }
 
