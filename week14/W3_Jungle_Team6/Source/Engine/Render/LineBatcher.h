@@ -6,7 +6,7 @@
 #include "Math/Matrix.h"
 #include "Render/Common/RenderTypes.h"
 
-#include "Editor/Settings/EditorSettings.h"
+#include "Render/Common/ViewTypes.h"
 
 // ============================================================
 // FLineVertex — 라인 렌더링용 버텍스 (Position + Color)
@@ -56,11 +56,6 @@ public:
 	// AABB 와이어프레임 (12개 Edge)
 	void AddAABB(const FBoundingBox& Box, const FColor& Color);
 
-	// 월드 그리드 생성 (GridSpacing 간격으로 라인 생성, X축=빨강, Y축=초록)
-	// @@@ AddLine <- Z축 + AddGridXY()
-	//void AddWorldGrid(float GridSpacing, int HalfGridCount);
-	//void AddWorldAxes(float GridSpacing, int HalfGridCount);
-
 	/**
 	 * @brief 카메라 기준의 grid patch와 축 보조선을 생성합니다.
 	 * @details 카메라 위치와 forward 벡터를 이용해 바닥면 위의 focus point를 계산하고,
@@ -69,7 +64,7 @@ public:
 	 * 축과 겹치는 grid 선은 생성하지 않아 z-fighting을 줄입니다.
 	 * 생성된 모든 선은 LineBatcher의 버텍스 배열에 누적되므로 draw call 수는 증가하지 않습니다.
 	 */
-	void AddWorldHelpers(const FEditorSettings& Settings, const FVector& CameraPosition, const FVector& CameraForward);
+	void AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacing, int32 GridHalfLineCount, const FVector& CameraPosition, const FVector& CameraForward);
 
 	// 이번 프레임에 축적된 라인 모두 제거
 	void Clear();
@@ -90,10 +85,7 @@ private:
 
 	ID3D11Buffer* IndexedVertexBuffer = nullptr;
 	ID3D11Buffer* IndexBuffer = nullptr;
-	ID3D11Device* Device = nullptr; // @@@ (필요 시 새 버퍼 생성용)
-	uint32 MaxIndexedVertexCount = 0; // Indexed 라인 VB 크기 (필요 시 재할당)
-	uint32 MaxIndexCount = 0;		// Indexed 라인 IB 크기 (필요 시 재할당)
-
-	int HalfGridCount = 100; // @@@ Grid 크기
-	float GridSpacing = 1.0f; // @@@ Grid 간격 %%% GUI에서 소수점은 걸러야 하지 않나?
+	ID3D11Device* Device = nullptr;
+	uint32 MaxIndexedVertexCount = 0;
+	uint32 MaxIndexCount = 0;
 };
