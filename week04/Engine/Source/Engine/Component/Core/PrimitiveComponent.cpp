@@ -4,9 +4,9 @@
 
 namespace Engine::Component
 {
-    const FVector4& UPrimitiveComponent::GetColor() const { return Color; }
+    const FColor& UPrimitiveComponent::GetColor() const { return Color; }
 
-    void UPrimitiveComponent::SetColor(const FVector4& NewColor) { Color = NewColor; }
+    void UPrimitiveComponent::SetColor(const FColor& NewColor) { Color = NewColor; }
 
     const Geometry::FAABB& UPrimitiveComponent::GetWorldAABB() const
     {

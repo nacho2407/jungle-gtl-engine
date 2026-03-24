@@ -4,7 +4,8 @@
 
 enum class EBasicMeshType : uint8
 {
-    Sphere = 0,
+    None = 0,
+    Sphere,
     Cube,
     Triangle,
     Quad,

@@ -1,12 +1,11 @@
 #include "SceneTypeRegistry.h"
 
-#include "Engine/Component/BasicPrimitives/CameraComponent.h"
-#include "Engine/Component/BasicPrimitives/CubeComponent.h"
-#include "Engine/Component/BasicPrimitives/QuadComponent.h"
-#include "Engine/Component/BasicPrimitives/SphereComponent.h"
-#include "Engine/Component/BasicPrimitives/TriangleComponent.h"
-#include "Engine/Component/SceneComponent.h"
-#include "Engine/Component/UnknownComponent.h"
+#include "Engine/Component/Mesh/CubeComponent.h"
+#include "Engine/Component/Mesh/QuadComponent.h"
+#include "Engine/Component/Mesh/SphereComponent.h"
+#include "Engine/Component/Mesh/TriangleComponent.h"
+#include "Engine/Component/Core/SceneComponent.h"
+#include "Engine/Component/Core/UnknownComponent.h"
 #include "Engine/Game/Actor.h"
 #include "Engine/Game/CubeActor.h"
 #include "Engine/Game/UnknownActor.h"
@@ -17,23 +16,23 @@ namespace
 {
     struct FActorTypeInfo
     {
-        FString TypeName;
+        FString                  TypeName;
         std::function<AActor*()> Factory;
     };
 
     struct FComponentTypeInfo
     {
-        FString TypeName;
+        FString                                              TypeName;
         std::function<Engine::Component::USceneComponent*()> Factory;
     };
 
     struct FRegistryStorage
     {
-        TMap<FString, FActorTypeInfo> ActorTypesByName;
+        TMap<FString, FActorTypeInfo>  ActorTypesByName;
         TMap<std::type_index, FString> ActorTypeNamesByIndex;
 
         TMap<FString, FComponentTypeInfo> ComponentTypesByName;
-        TMap<std::type_index, FString> ComponentTypeNamesByIndex;
+        TMap<std::type_index, FString>    ComponentTypeNamesByIndex;
     };
 
     FRegistryStorage& GetRegistryStorage()
@@ -42,31 +41,19 @@ namespace
         return Storage;
     }
 
-    template <typename TActor>
-    void RegisterActorType(const FString& TypeName)
+    template <typename TActor> void RegisterActorType(const FString& TypeName)
     {
         FRegistryStorage& Storage = GetRegistryStorage();
-        Storage.ActorTypesByName[TypeName] = FActorTypeInfo{
-            .TypeName = TypeName,
-            .Factory =
-                []()
-                {
-                    return new TActor();
-                }};
+        Storage.ActorTypesByName[TypeName] =
+            FActorTypeInfo{.TypeName = TypeName, .Factory = []() { return new TActor(); }};
         Storage.ActorTypeNamesByIndex[std::type_index(typeid(TActor))] = TypeName;
     }
 
-    template <typename TComponent>
-    void RegisterComponentType(const FString& TypeName)
+    template <typename TComponent> void RegisterComponentType(const FString& TypeName)
     {
         FRegistryStorage& Storage = GetRegistryStorage();
-        Storage.ComponentTypesByName[TypeName] = FComponentTypeInfo{
-            .TypeName = TypeName,
-            .Factory =
-                []()
-                {
-                    return new TComponent();
-                }};
+        Storage.ComponentTypesByName[TypeName] =
+            FComponentTypeInfo{.TypeName = TypeName, .Factory = []() { return new TComponent(); }};
         Storage.ComponentTypeNamesByIndex[std::type_index(typeid(TComponent))] = TypeName;
     }
 
@@ -87,7 +74,6 @@ namespace
         RegisterComponentType<Engine::Component::UQuadComponent>("UQuadComponent");
         RegisterComponentType<Engine::Component::USphereComponent>("USphereComponent");
         RegisterComponentType<Engine::Component::UTriangleComponent>("UTriangleComponent");
-        RegisterComponentType<Engine::Component::UCameraComponent>("UCameraComponent");
         RegisterComponentType<Engine::Component::UUnknownComponent>("UUnknownComponent");
     }
 } // namespace
@@ -115,8 +101,8 @@ FString FSceneTypeRegistry::ResolveActorTypeName(const AActor& Actor)
     return typeid(Actor).name();
 }
 
-FString FSceneTypeRegistry::ResolveComponentTypeName(
-    const Engine::Component::USceneComponent& Component)
+FString
+FSceneTypeRegistry::ResolveComponentTypeName(const Engine::Component::USceneComponent& Component)
 {
     EnsureSceneTypesRegistered();
 
@@ -131,7 +117,7 @@ FString FSceneTypeRegistry::ResolveComponentTypeName(
     }
 
     const FRegistryStorage& Storage = GetRegistryStorage();
-    const auto Iterator =
+    const auto              Iterator =
         Storage.ComponentTypeNamesByIndex.find(std::type_index(typeid(Component)));
     if (Iterator != Storage.ComponentTypeNamesByIndex.end())
     {
@@ -146,7 +132,7 @@ AActor* FSceneTypeRegistry::ConstructActor(const FString& TypeName, bool* OutKno
     EnsureSceneTypesRegistered();
 
     const FRegistryStorage& Storage = GetRegistryStorage();
-    const auto Iterator = Storage.ActorTypesByName.find(TypeName);
+    const auto              Iterator = Storage.ActorTypesByName.find(TypeName);
     if (Iterator != Storage.ActorTypesByName.end())
     {
         if (OutKnownType != nullptr)
@@ -166,13 +152,13 @@ AActor* FSceneTypeRegistry::ConstructActor(const FString& TypeName, bool* OutKno
     return UnknownActor;
 }
 
-Engine::Component::USceneComponent* FSceneTypeRegistry::ConstructComponent(
-    const FString& TypeName, bool* OutKnownType)
+Engine::Component::USceneComponent* FSceneTypeRegistry::ConstructComponent(const FString& TypeName,
+                                                                           bool* OutKnownType)
 {
     EnsureSceneTypesRegistered();
 
     const FRegistryStorage& Storage = GetRegistryStorage();
-    const auto Iterator = Storage.ComponentTypesByName.find(TypeName);
+    const auto              Iterator = Storage.ComponentTypesByName.find(TypeName);
     if (Iterator != Storage.ComponentTypesByName.end())
     {
         if (OutKnownType != nullptr)

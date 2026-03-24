@@ -1,5 +1,5 @@
 #include "Actor.h"
-#include "Engine/Component/SceneComponent.h"
+#include "Engine/Component/Core/SceneComponent.h"
 
 AActor::AActor() = default;
 

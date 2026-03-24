@@ -3,7 +3,7 @@
 #include "Viewport/EditorViewportClient.h"
 
 #include "Core/Path.h"
-#include "Engine/Component/SceneComponent.h"
+#include "Engine/Component/Core/SceneComponent.h"
 #include "Engine/EngineStatics.h"
 #include "Engine/Game/Actor.h"
 #include "Engine/SceneIO/SceneSerializer.h"
