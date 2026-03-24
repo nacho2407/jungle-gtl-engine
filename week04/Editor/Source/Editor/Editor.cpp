@@ -6,7 +6,7 @@
 #include "Engine/Component/Core/SceneComponent.h"
 #include "Engine/EngineStatics.h"
 #include "Engine/Game/Actor.h"
-#include "Engine/SceneIO/SceneSerializer.h"
+#include "SceneIO/SceneSerializer.h"
 #include "Panel/ConsolePanel.h"
 #include "Panel/ContentBrowserPanel.h"
 #include "Panel/ControlPanel.h"
@@ -369,6 +369,7 @@ void FEditor::SetRuntimeServices(FD3D11RHI* InRHI, UAssetManager* InAssetManager
 {
     EditorContext.RHI = InRHI;
     EditorContext.AssetManager = InAssetManager;
+    ResolveSceneAssetReferences(CurScene);
 }
 
 void FEditor::LoadEditorSettings()
@@ -569,6 +570,42 @@ void FEditor::ReplaceCurrentScene(std::unique_ptr<FScene> NewScene)
     EditorContext.Scene = CurScene;
     EditorContext.SelectedObject = nullptr;
     EditorContext.SelectedActors.clear();
+    ResolveSceneAssetReferences(CurScene);
+}
+
+void FEditor::ResolveActorAssetReferences(AActor* Actor)
+{
+    if (Actor == nullptr || EditorContext.AssetManager == nullptr)
+    {
+        return;
+    }
+
+    for (Engine::Component::USceneComponent* Component : Actor->GetOwnedComponents())
+    {
+        if (Component != nullptr)
+        {
+            Component->ResolveAssetReferences(EditorContext.AssetManager);
+        }
+    }
+}
+
+void FEditor::ResolveSceneAssetReferences(FScene* Scene)
+{
+    if (Scene == nullptr || EditorContext.AssetManager == nullptr)
+    {
+        return;
+    }
+
+    const TArray<AActor*>* SceneActors = Scene->GetActors();
+    if (SceneActors == nullptr)
+    {
+        return;
+    }
+
+    for (AActor* Actor : *SceneActors)
+    {
+        ResolveActorAssetReferences(Actor);
+    }
 }
 
 void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* InputSystem)
@@ -672,6 +709,7 @@ void FEditor::AddActorToScene(AActor* InActor, bool bSelectActor)
     }
 
     CurScene->AddActor(InActor);
+    ResolveActorAssetReferences(InActor);
     MarkSceneDirty();
 
     if (bSelectActor)

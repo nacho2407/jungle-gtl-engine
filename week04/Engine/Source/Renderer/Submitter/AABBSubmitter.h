@@ -4,7 +4,7 @@
 
 class FD3D11LineBatchRenderer;
 class FSceneView;
-class FFontResource;
+struct FFontResource;
 struct FTextRenderItem;
 struct FSpriteRenderItem;
 struct FPrimitiveRenderItem;

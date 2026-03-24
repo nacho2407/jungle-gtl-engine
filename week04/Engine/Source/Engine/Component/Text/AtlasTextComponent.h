@@ -37,6 +37,7 @@ namespace Engine::Component
         const FVector& GetBillboardOffset() const { return BillboardOffset; }
         void           SetBillboardOffset(const FVector& InBillboardOffset);
         void           DescribeProperties(FComponentPropertyBuilder& Builder) override;
+        void           ResolveAssetReferences(UAssetManager* InAssetManager) override;
 
       protected:
         FString        Text;

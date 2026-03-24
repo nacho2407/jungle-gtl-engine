@@ -36,10 +36,12 @@ class FPropertiesPanel : public IPanel
     void SyncEditTransformFromTarget(Engine::Component::USceneComponent* TargetComponent);
     void DrawTransformEditor(Engine::Component::USceneComponent* TargetComponent);
     void DrawComponentPropertyEditor(Engine::Component::USceneComponent* TargetComponent);
+    void ResetAssetPathEditState();
 
   private:
     FVector EditLocation = { 0.f, 0.f, 0.f };
     FVector EditRotation = { 0.f, 0.f, 0.f };
     FVector EditScale = { 1.f, 1.f, 1.f };
     Engine::Component::USceneComponent* CachedTargetComponent = nullptr;
+    TMap<FString, FString> AssetPathEditBuffers;
 };

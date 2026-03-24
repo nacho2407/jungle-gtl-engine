@@ -1,0 +1,91 @@
+{
+  "schema": "JungleScene",
+  "version": 2,
+  "actors": [
+    {
+      "type": "ACubeActor",
+      "uuid": 1,
+      "name": "CubeActor 1",
+      "pickable": true,
+      "components": [
+        {
+          "type": "UCubeComponent",
+          "is_root": true,
+          "uuid": 3,
+          "name": "None",
+          "transform": {
+            "location": [
+              0,
+              0,
+              0
+            ],
+            "rotation_quat": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "properties": {
+            "color": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1
+            ]
+          }
+        },
+        {
+          "type": "class Engine::Component::UAtlasTextComponent",
+          "is_root": false,
+          "uuid": 2,
+          "name": "None",
+          "transform": {
+            "location": [
+              0,
+              0,
+              0
+            ],
+            "rotation_quat": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "properties": {
+            "atlas_columns": 1,
+            "color": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "billboard": true,
+            "atlas_rows": 1,
+            "text": "asdjkfhjkasdl",
+            "letter_spacing": 0,
+            "text_scale": 1,
+            "line_spacing": 0,
+            "font_path": "/Game/asdfjasdfjkl",
+            "billboard_offset": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

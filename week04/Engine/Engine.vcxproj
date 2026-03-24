@@ -96,10 +96,10 @@
     <ClInclude Include="Source\Engine\Game\CubeActor.h" />
     <ClInclude Include="Source\Engine\Game\UnknownActor.h" />
     <ClInclude Include="Source\Engine\Scene.h" />
-    <ClInclude Include="Source\Engine\SceneIO\SceneAssetPath.h" />
-    <ClInclude Include="Source\Engine\SceneIO\SceneJson.h" />
-    <ClInclude Include="Source\Engine\SceneIO\SceneSerializer.h" />
-    <ClInclude Include="Source\Engine\SceneIO\SceneTypeRegistry.h" />
+    <ClInclude Include="Source\SceneIO\SceneAssetPath.h" />
+    <ClInclude Include="Source\SceneIO\SceneJson.h" />
+    <ClInclude Include="Source\SceneIO\SceneSerializer.h" />
+    <ClInclude Include="Source\SceneIO\SceneTypeRegistry.h" />
     <ClInclude Include="Source\Engine\ViewPort\Viewport.h" />
     <ClInclude Include="Source\Engine\ViewPort\ViewportClient.h" />
     <ClInclude Include="Source\Engine\ViewPort\ViewportController.h" />
@@ -192,9 +192,9 @@
     <ClCompile Include="Source\Engine\Game\CubeActor.cpp" />
     <ClCompile Include="Source\Engine\Game\UnknownActor.cpp" />
     <ClCompile Include="Source\Engine\Scene.cpp" />
-    <ClCompile Include="Source\Engine\SceneIO\SceneJson.cpp" />
-    <ClCompile Include="Source\Engine\SceneIO\SceneSerializer.cpp" />
-    <ClCompile Include="Source\Engine\SceneIO\SceneTypeRegistry.cpp" />
+    <ClCompile Include="Source\SceneIO\SceneJson.cpp" />
+    <ClCompile Include="Source\SceneIO\SceneSerializer.cpp" />
+    <ClCompile Include="Source\SceneIO\SceneTypeRegistry.cpp" />
     <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.cpp" />

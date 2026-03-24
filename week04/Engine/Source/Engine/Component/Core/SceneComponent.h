@@ -4,6 +4,7 @@
 #include "CoreUObject/Object.h"
 
 class AActor;
+class UAssetManager;
 
 namespace Engine::Component
 {
@@ -36,6 +37,7 @@ namespace Engine::Component
 
         virtual void Update(float DeltaTime);
         virtual void DescribeProperties(FComponentPropertyBuilder& Builder);
+        virtual void ResolveAssetReferences(UAssetManager* InAssetManager);
 
         FMatrix GetRelativeMatrix() const;
 
