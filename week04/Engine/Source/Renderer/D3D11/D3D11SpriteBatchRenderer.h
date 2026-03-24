@@ -7,14 +7,14 @@
 #include "Renderer/Types/RenderItem.h"
 #include <vector>
 
-class FD3D11DynamicRHI;
+class FD3D11RHI;
 class FSceneView;
 class FTextureResource;
 
 class FD3D11SpriteBatchRenderer
 {
   public:
-    bool Initialize(FD3D11DynamicRHI* InRHI);
+    bool Initialize(FD3D11RHI* InRHI);
     void Shutdown();
 
     void BeginFrame();
@@ -38,24 +38,38 @@ class FD3D11SpriteBatchRenderer
         FMatrix VP;
     };
 
+    struct FSpriteBatchKey
+    {
+        const FTextureResource* TextureResource = nullptr;
+        ERenderPlacementMode    PlacementMode = ERenderPlacementMode::World;
+
+        bool operator==(const FSpriteBatchKey& Other) const
+        {
+            return TextureResource == Other.TextureResource && PlacementMode == Other.PlacementMode;
+        }
+
+        bool operator!=(const FSpriteBatchKey& Other) const { return !(*this == Other); }
+    };
+
     bool CreateShaders();
     bool CreateConstantBuffer();
     bool CreateStates();
     bool CreateBuffers();
 
-    void AppendSpriteItem(const FSpriteRenderItem& InItem);
+    void            BeginBatch(const FSpriteBatchKey& InBatchKey);
+    void            AppendSpriteItem(const FSpriteRenderItem& InItem);
+    void            ProcessSortedItems();
+    FSpriteBatchKey MakeBatchKey(const FSpriteRenderItem& InItem) const;
+    bool            CanAppendQuad() const;
     void AppendQuad(const FVector& InBottomLeft, const FVector& InRight, const FVector& InUp,
                     const FVector2& InUVMin, const FVector2& InUVMax, const FColor& InColor);
-
-    FVector MakeScreenClipPosition(float InScreenX, float InScreenY, float InDepth) const;
-    bool    IsSameBatch(const FSpriteRenderItem& InItem) const;
 
   private:
     static constexpr uint32         MaxVertexCount = 65536;
     static constexpr uint32         MaxIndexCount = 65536;
     static constexpr const wchar_t* ShaderPath = L"../Engine/Resources/Shader/ShaderSprite.hlsl";
 
-    FD3D11DynamicRHI* RHI = nullptr;
+    FD3D11RHI* RHI = nullptr;
 
     const FSceneView*       CurrentSceneView = nullptr;
     const FTextureResource* CurrentTextureResource = nullptr;
@@ -64,7 +78,6 @@ class FD3D11SpriteBatchRenderer
     TArray<FSpriteVertex>     Vertices;
     TArray<uint32>            Indices;
     TArray<FSpriteRenderItem> PendingSpriteItems;
-    uint64                    NextSubmissionOrder = 0;
 
     TComPtr<ID3D11VertexShader>      VertexShader;
     TComPtr<ID3D11PixelShader>       PixelShader;
@@ -75,6 +88,5 @@ class FD3D11SpriteBatchRenderer
     TComPtr<ID3D11SamplerState>      SamplerState;
     TComPtr<ID3D11BlendState>        AlphaBlendState;
     TComPtr<ID3D11DepthStencilState> DepthStencilState;
-    TComPtr<ID3D11DepthStencilState> ScreenDepthStencilState;
     TComPtr<ID3D11RasterizerState>   RasterizerState;
 };

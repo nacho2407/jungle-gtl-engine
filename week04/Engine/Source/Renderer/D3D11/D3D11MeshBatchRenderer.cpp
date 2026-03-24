@@ -1,6 +1,6 @@
 #include "Renderer/D3D11/D3D11MeshBatchRenderer.h"
 
-#include "Renderer/D3D11/D3D11DynamicRHI.h"
+#include "Renderer/D3D11/D3D11RHI.h"
 #include "Renderer/SceneView.h"
 #include "Renderer/Types/ShaderConstants.h"
 #include "Renderer/Types/VertexTypes.h"
@@ -13,7 +13,7 @@
 #include "Resources/Mesh/Sphere.h"
 #include "Resources/Mesh/Triangle.h"
 
-bool FD3D11MeshBatchRenderer::Initialize(FD3D11DynamicRHI* InRHI)
+bool FD3D11MeshBatchRenderer::Initialize(FD3D11RHI* InRHI)
 {
     if (InRHI == nullptr)
     {

@@ -10,7 +10,7 @@
 #include "Renderer/Types/ViewMode.h"
 #include "Resources/Mesh/MeshPrimitiveTopology.h"
 
-class FD3D11DynamicRHI;
+class FD3D11RHI;
 class FSceneView;
 
 struct FVertexSimple;
@@ -45,7 +45,7 @@ class FD3D11MeshBatchRenderer
     static constexpr uint32 MaxInstanceCapacity = 4096;
 
   public:
-    bool Initialize(FD3D11DynamicRHI* InRHI);
+    bool Initialize(FD3D11RHI* InRHI);
     void Shutdown();
 
     void BeginFrame(const FSceneView* InSceneView, EViewModeIndex InViewMode,
@@ -93,7 +93,7 @@ class FD3D11MeshBatchRenderer
     const FBasicMeshResource* GetBasicMeshResource(EBasicMeshType InType) const;
 
   private:
-    FD3D11DynamicRHI* RHI = nullptr;
+    FD3D11RHI* RHI = nullptr;
     const FSceneView* CurrentSceneView = nullptr;
     EViewModeIndex    ViewMode = EViewModeIndex::VMI_Lit;
     bool              bUseInstancing = true;

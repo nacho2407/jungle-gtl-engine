@@ -1,11 +1,11 @@
-#include "Renderer/Draw/WorldGridDrawer.h"
+#include "Renderer/Submitter/WorldGridSubmitter.h"
 
 #include "Engine/EngineStatics.h"
 #include "Renderer/D3D11/D3D11LineBatchRenderer.h"
 #include "Renderer/EditorRenderData.h"
 
-void FWorldGridDrawer::Draw(FD3D11LineBatchRenderer& InLineRenderer,
-                            const FEditorRenderData& InEditorRenderData)
+void FWorldGridSubmitter::Submit(FD3D11LineBatchRenderer& InLineRenderer,
+                                 const FEditorRenderData& InEditorRenderData)
 {
     if (!IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Grid) ||
         InEditorRenderData.SceneView == nullptr)

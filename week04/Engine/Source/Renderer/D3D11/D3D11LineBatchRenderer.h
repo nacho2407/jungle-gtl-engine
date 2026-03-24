@@ -4,7 +4,7 @@
 #include "Renderer/D3D11/D3D11Common.h"
 #include "Renderer/Types/VertexTypes.h"
 
-class FD3D11DynamicRHI;
+class FD3D11RHI;
 class FSceneView;
 
 class FD3D11LineBatchRenderer
@@ -15,7 +15,7 @@ class FD3D11LineBatchRenderer
     static constexpr uint32 DefaultMaxLineCount = 8192;
 
   public:
-    bool Initialize(FD3D11DynamicRHI* InRHI);
+    bool Initialize(FD3D11RHI* InRHI);
     void Shutdown();
 
     void BeginFrame(const FSceneView* InSceneView);
@@ -29,7 +29,7 @@ class FD3D11LineBatchRenderer
     bool CreateDynamicVertexBuffer(uint32 InMaxVertexCount);
 
   private:
-    FD3D11DynamicRHI* RHI = nullptr;
+    FD3D11RHI* RHI = nullptr;
     const FSceneView* CurrentSceneView = nullptr;
 
     TArray<FLineVertex> Vertices;

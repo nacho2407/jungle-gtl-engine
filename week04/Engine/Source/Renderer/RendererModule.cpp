@@ -27,7 +27,7 @@ bool FRendererModule::StartupModule(HWND hWnd)
         return false;
     }
 
-    if (!FontRenderer.Initialize(&RHI))
+    if (!TextRenderer.Initialize(&RHI))
     {
         ShutdownModule();
         return false;
@@ -62,7 +62,7 @@ void FRendererModule::ShutdownModule()
 
     ObjectIdRenderer.Shutdown();
     SpriteRenderer.Shutdown();
-    FontRenderer.Shutdown();
+    TextRenderer.Shutdown();
     LineRenderer.Shutdown();
     MeshRenderer.Shutdown();
 
@@ -106,64 +106,52 @@ void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
     CachedEditorRenderData = InEditorRenderData;
     CachedSceneRenderData = InSceneRenderData;
 
-    // ================ Mesh =================
     MeshRenderer.BeginFrame(InSceneRenderData.SceneView, InSceneRenderData.ViewMode,
                             InSceneRenderData.bUseInstancing);
 
     if (IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_Primitives))
     {
-        PrimitiveDrawer.Draw(MeshRenderer, InSceneRenderData);
+        PrimitiveSubmitter.Submit(MeshRenderer, InSceneRenderData);
     }
 
     if (IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo))
     {
-        GizmoDrawer.Draw(MeshRenderer, InEditorRenderData);
+        GizmoSubmitter.Submit(MeshRenderer, InEditorRenderData);
     }
 
     MeshRenderer.EndFrame();
 
-    // ================ Sprite =================
     if (InSceneRenderData.SceneView != nullptr &&
         IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_Sprites))
     {
         SpriteRenderer.BeginFrame(InSceneRenderData.SceneView);
-
-        for (const FSpriteRenderItem& Item : InSceneRenderData.Sprites)
-        {
-            SpriteRenderer.AddSprite(Item);
-        }
-
+        SpriteSubmitter.Submit(SpriteRenderer, InSceneRenderData);
         SpriteRenderer.EndFrame(InSceneRenderData.SceneView);
     }
 
-    // ================ Font =================
     if (InSceneRenderData.SceneView != nullptr &&
         IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_BillboardText))
     {
-        FontRenderer.BeginFrame(InSceneRenderData.SceneView);
-
-        for (const FTextRenderItem& Item : InSceneRenderData.Texts)
-        {
-            FontRenderer.AddText(Item);
-        }
-
-        FontRenderer.EndFrame(InSceneRenderData.SceneView);
+        TextRenderer.BeginFrame(InSceneRenderData.SceneView);
+        TextSubmitter.Submit(TextRenderer, InSceneRenderData);
+        TextRenderer.EndFrame(InSceneRenderData.SceneView);
     }
 
-    // ================ Line =================
     if (InEditorRenderData.SceneView != nullptr)
     {
         LineRenderer.BeginFrame(InEditorRenderData.SceneView);
 
         if (IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Grid))
         {
-            WorldGridDrawer.Draw(LineRenderer, InEditorRenderData);
+            WorldGridSubmitter.Submit(LineRenderer, InEditorRenderData);
         }
 
         if (IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_WorldAxes))
         {
-            WorldAxesDrawer.Draw(LineRenderer, InEditorRenderData);
+            WorldAxesSubmitter.Submit(LineRenderer, InEditorRenderData);
         }
+
+        AABBSubmitter.Submit(LineRenderer, InSceneRenderData);
 
         LineRenderer.EndFrame();
     }
@@ -180,36 +168,12 @@ bool FRendererModule::PickRaw(const FEditorRenderData& InEditorRenderData, int32
         return false;
     }
 
-    // 해당 픽셀만 ID 버퍼에 기록한다.
     ObjectIdRenderer.BeginFrame(SceneView, MouseX, MouseY);
-
-    // Gizmo만 판별할거면 프리미티브는 그릴 필요 없음
-    // if (IsFlagSet(CachedSceneRenderData.ShowFlags, ESceneShowFlags::SF_Primitives))
-    // {
-    //     TArray<FObjectIdRenderItem> SceneItems;
-    //     SceneItems.reserve(CachedSceneRenderData.Primitives.size());
-
-    //     for (const FPrimitiveRenderItem& Primitive : CachedSceneRenderData.Primitives)
-    //     {
-    //         if (!Primitive.bVisible || !Primitive.bPickable || Primitive.ObjectId == 0)
-    //         {
-    //             continue;
-    //         }
-
-    //         FObjectIdRenderItem Item = {};
-    //         Item.World = Primitive.World;
-    //         Item.MeshType = Primitive.MeshType;
-    //         Item.ObjectId = Primitive.ObjectId;
-    //         SceneItems.push_back(Item);
-    //     }
-
-    //     ObjectIdRenderer.AddPrimitives(SceneItems);
-    // }
 
     if (IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo))
     {
         TArray<FObjectIdRenderItem> GizmoItems;
-        GizmoDrawer.BuildObjectIdRenderItems(GizmoItems, InEditorRenderData);
+        GizmoSubmitter.BuildObjectIdItems(GizmoItems, InEditorRenderData);
         ObjectIdRenderer.AddPrimitives(GizmoItems);
     }
 

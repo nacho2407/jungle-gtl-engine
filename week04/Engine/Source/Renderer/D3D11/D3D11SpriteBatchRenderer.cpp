@@ -1,6 +1,6 @@
 #include "Renderer/D3D11/D3D11SpriteBatchRenderer.h"
 
-#include "Renderer/D3D11/D3D11DynamicRHI.h"
+#include "Renderer/D3D11/D3D11RHI.h"
 #include "Renderer/RenderAsset/TextureResource.h"
 #include "Renderer/SceneView.h"
 
@@ -9,13 +9,33 @@
 
 namespace
 {
+    float ComputePlacementDepth(const FSceneView* InSceneView, const FRenderPlacement& InPlacement)
+    {
+        if (InSceneView == nullptr)
+        {
+            return 0.0f;
+        }
+
+        const FMatrix CameraWorld = InSceneView->GetViewMatrix().GetInverse();
+        const FVector CameraOrigin = CameraWorld.GetOrigin();
+        const FVector CameraForward = CameraWorld.GetForwardVector();
+        const FVector WorldOrigin = InPlacement.World.GetOrigin() + InPlacement.WorldOffset;
+        const FVector Delta = WorldOrigin - CameraOrigin;
+        return Delta.X * CameraForward.X + Delta.Y * CameraForward.Y + Delta.Z * CameraForward.Z;
+    }
+
     struct FSpriteRenderItemLess
     {
+        const FSceneView* SceneView = nullptr;
+
         bool operator()(const FSpriteRenderItem& A, const FSpriteRenderItem& B) const
         {
-            if (A.Priority != B.Priority)
+            const float DepthA = ComputePlacementDepth(SceneView, A.Placement);
+            const float DepthB = ComputePlacementDepth(SceneView, B.Placement);
+
+            if (DepthA != DepthB)
             {
-                return A.Priority < B.Priority;
+                return DepthA > DepthB;
             }
 
             if (A.Placement.Mode != B.Placement.Mode)
@@ -23,17 +43,12 @@ namespace
                 return static_cast<uint8>(A.Placement.Mode) < static_cast<uint8>(B.Placement.Mode);
             }
 
-            if (A.TextureResource != B.TextureResource)
-            {
-                return std::less<const FTextureResource*>{}(A.TextureResource, B.TextureResource);
-            }
-
-            return A.SubmissionOrder < B.SubmissionOrder;
+            return std::less<const FTextureResource*>{}(A.TextureResource, B.TextureResource);
         }
     };
 } // namespace
 
-bool FD3D11SpriteBatchRenderer::Initialize(FD3D11DynamicRHI* InRHI)
+bool FD3D11SpriteBatchRenderer::Initialize(FD3D11RHI* InRHI)
 {
     if (InRHI == nullptr)
     {
@@ -44,7 +59,6 @@ bool FD3D11SpriteBatchRenderer::Initialize(FD3D11DynamicRHI* InRHI)
     CurrentSceneView = nullptr;
     CurrentTextureResource = nullptr;
     CurrentPlacementMode = ERenderPlacementMode::World;
-    NextSubmissionOrder = 0;
 
     Vertices.reserve(MaxVertexCount);
     Indices.reserve(MaxIndexCount);
@@ -80,7 +94,6 @@ bool FD3D11SpriteBatchRenderer::Initialize(FD3D11DynamicRHI* InRHI)
 void FD3D11SpriteBatchRenderer::Shutdown()
 {
     RasterizerState.Reset();
-    ScreenDepthStencilState.Reset();
     DepthStencilState.Reset();
     AlphaBlendState.Reset();
     SamplerState.Reset();
@@ -100,7 +113,6 @@ void FD3D11SpriteBatchRenderer::Shutdown()
     CurrentTextureResource = nullptr;
     CurrentSceneView = nullptr;
     CurrentPlacementMode = ERenderPlacementMode::World;
-    NextSubmissionOrder = 0;
     RHI = nullptr;
 }
 
@@ -111,7 +123,6 @@ void FD3D11SpriteBatchRenderer::BeginFrame(const FSceneView* InSceneView)
     CurrentSceneView = InSceneView;
     CurrentTextureResource = nullptr;
     CurrentPlacementMode = ERenderPlacementMode::World;
-    NextSubmissionOrder = 0;
 
     Vertices.clear();
     Indices.clear();
@@ -135,9 +146,7 @@ void FD3D11SpriteBatchRenderer::AddSprite(const FSpriteRenderItem& InItem)
         return;
     }
 
-    FSpriteRenderItem Item = InItem;
-    Item.SubmissionOrder = NextSubmissionOrder++;
-    PendingSpriteItems.push_back(Item);
+    PendingSpriteItems.push_back(InItem);
 }
 
 void FD3D11SpriteBatchRenderer::AddSprites(const TArray<FSpriteRenderItem>& InItems)
@@ -148,27 +157,24 @@ void FD3D11SpriteBatchRenderer::AddSprites(const TArray<FSpriteRenderItem>& InIt
     }
 }
 
-FVector FD3D11SpriteBatchRenderer::MakeScreenClipPosition(float InScreenX, float InScreenY,
-                                                          float InDepth) const
+FD3D11SpriteBatchRenderer::FSpriteBatchKey
+FD3D11SpriteBatchRenderer::MakeBatchKey(const FSpriteRenderItem& InItem) const
 {
-    if (CurrentSceneView == nullptr)
-    {
-        return FVector::ZeroVector;
-    }
-
-    const FViewportRect& ViewRect = CurrentSceneView->GetViewRect();
-    const float          Width = static_cast<float>((ViewRect.Width > 0) ? ViewRect.Width : 1);
-    const float          Height = static_cast<float>((ViewRect.Height > 0) ? ViewRect.Height : 1);
-
-    const float ClipX = (InScreenX / Width) * 2.0f - 1.0f;
-    const float ClipY = 1.0f - (InScreenY / Height) * 2.0f;
-    return FVector(ClipX, ClipY, InDepth);
+    FSpriteBatchKey BatchKey = {};
+    BatchKey.TextureResource = InItem.TextureResource;
+    BatchKey.PlacementMode = InItem.Placement.Mode;
+    return BatchKey;
 }
 
-bool FD3D11SpriteBatchRenderer::IsSameBatch(const FSpriteRenderItem& InItem) const
+bool FD3D11SpriteBatchRenderer::CanAppendQuad() const
 {
-    return CurrentTextureResource == InItem.TextureResource &&
-           CurrentPlacementMode == InItem.Placement.Mode;
+    return Vertices.size() + 4 <= MaxVertexCount && Indices.size() + 6 <= MaxIndexCount;
+}
+
+void FD3D11SpriteBatchRenderer::BeginBatch(const FSpriteBatchKey& InBatchKey)
+{
+    CurrentTextureResource = InBatchKey.TextureResource;
+    CurrentPlacementMode = InBatchKey.PlacementMode;
 }
 
 void FD3D11SpriteBatchRenderer::AppendQuad(const FVector& InBottomLeft, const FVector& InRight,
@@ -217,69 +223,70 @@ void FD3D11SpriteBatchRenderer::AppendSpriteItem(const FSpriteRenderItem& InItem
         return;
     }
 
-    if (!IsSameBatch(InItem) && CurrentTextureResource != nullptr)
+    if (!CanAppendQuad())
     {
         Flush(CurrentSceneView);
+        BeginBatch(MakeBatchKey(InItem));
     }
 
-    CurrentTextureResource = InItem.TextureResource;
-    CurrentPlacementMode = InItem.Placement.Mode;
-
-    if (Vertices.size() + 4 > MaxVertexCount || Indices.size() + 6 > MaxIndexCount)
-    {
-        Flush(CurrentSceneView);
-        CurrentTextureResource = InItem.TextureResource;
-        CurrentPlacementMode = InItem.Placement.Mode;
-    }
+    const FMatrix& PlacementWorld = InItem.Placement.World;
+    FVector        SpriteOrigin = PlacementWorld.GetOrigin() + InItem.Placement.WorldOffset;
 
     FVector RightAxis;
     FVector UpAxis;
-    FVector BottomLeft;
 
-    if (InItem.Placement.IsScreenSpace())
+    if (InItem.Placement.IsBillboard())
     {
-        const FVector2 ScreenPos = InItem.Placement.ScreenPosition;
-        const FVector  WorldScale = InItem.Placement.World.GetScaleVector();
-        const float    HalfWidth = WorldScale.X;
-        const float    HalfHeight = WorldScale.Z;
+        const FMatrix CameraWorld = CurrentSceneView->GetViewMatrix().GetInverse();
+        RightAxis = CameraWorld.GetRightVector();
+        UpAxis = CameraWorld.GetUpVector();
 
-        BottomLeft =
-            MakeScreenClipPosition(ScreenPos.X - HalfWidth, ScreenPos.Y + HalfHeight, 0.0f);
-        const FVector BottomRight =
-            MakeScreenClipPosition(ScreenPos.X + HalfWidth, ScreenPos.Y + HalfHeight, 0.0f);
-        const FVector TopLeft =
-            MakeScreenClipPosition(ScreenPos.X - HalfWidth, ScreenPos.Y - HalfHeight, 0.0f);
-
-        RightAxis = BottomRight - BottomLeft;
-        UpAxis = TopLeft - BottomLeft;
+        const FVector WorldScale = PlacementWorld.GetScaleVector();
+        RightAxis = RightAxis * WorldScale.X;
+        UpAxis = UpAxis * WorldScale.Z;
     }
     else
     {
-        const FMatrix& PlacementWorld = InItem.Placement.World;
-        FVector        SpriteOrigin = PlacementWorld.GetOrigin() + InItem.Placement.WorldOffset;
-
-        if (InItem.Placement.IsBillboard())
-        {
-            const FMatrix CameraWorld = CurrentSceneView->GetViewMatrix().GetInverse();
-            RightAxis = CameraWorld.GetRightVector();
-            UpAxis = CameraWorld.GetUpVector();
-
-            const FVector WorldScale = PlacementWorld.GetScaleVector();
-            RightAxis = RightAxis * WorldScale.X;
-            UpAxis = UpAxis * WorldScale.Z;
-        }
-        else
-        {
-            RightAxis = PlacementWorld.GetRightVector();
-            UpAxis = PlacementWorld.GetUpVector();
-        }
-
-        BottomLeft = SpriteOrigin - RightAxis - UpAxis;
-        RightAxis = RightAxis * 2.0f;
-        UpAxis = UpAxis * 2.0f;
+        RightAxis = PlacementWorld.GetRightVector();
+        UpAxis = PlacementWorld.GetUpVector();
     }
 
-    AppendQuad(BottomLeft, RightAxis, UpAxis, InItem.UVMin, InItem.UVMax, InItem.Color);
+    const FVector BottomLeft = SpriteOrigin - RightAxis - UpAxis;
+    AppendQuad(BottomLeft, RightAxis * 2.0f, UpAxis * 2.0f, InItem.UVMin, InItem.UVMax,
+               InItem.Color);
+}
+
+void FD3D11SpriteBatchRenderer::ProcessSortedItems()
+{
+    if (PendingSpriteItems.empty())
+    {
+        return;
+    }
+
+    FSpriteBatchKey ActiveBatchKey = {};
+    bool bHasActiveBatch = false;
+
+    for (const FSpriteRenderItem& Item : PendingSpriteItems)
+    {
+        const FSpriteBatchKey ItemBatchKey = MakeBatchKey(Item);
+
+        if (!bHasActiveBatch)
+        {
+            BeginBatch(ItemBatchKey);
+            bHasActiveBatch = true;
+            ActiveBatchKey = ItemBatchKey;
+        }
+        else if (ItemBatchKey != ActiveBatchKey)
+        {
+            Flush(CurrentSceneView);
+            BeginBatch(ItemBatchKey);
+            ActiveBatchKey = ItemBatchKey;
+        }
+
+        AppendSpriteItem(Item);
+    }
+
+    Flush(CurrentSceneView);
 }
 
 void FD3D11SpriteBatchRenderer::EndFrame(const FSceneView* InSceneView)
@@ -301,14 +308,9 @@ void FD3D11SpriteBatchRenderer::EndFrame(const FSceneView* InSceneView)
     Vertices.clear();
     Indices.clear();
 
-    std::sort(PendingSpriteItems.begin(), PendingSpriteItems.end(), FSpriteRenderItemLess{});
-
-    for (const FSpriteRenderItem& Item : PendingSpriteItems)
-    {
-        AppendSpriteItem(Item);
-    }
-
-    Flush(InSceneView);
+    std::sort(PendingSpriteItems.begin(), PendingSpriteItems.end(),
+              FSpriteRenderItemLess{CurrentSceneView});
+    ProcessSortedItems();
 
     PendingSpriteItems.clear();
     CurrentSceneView = nullptr;
@@ -345,9 +347,7 @@ void FD3D11SpriteBatchRenderer::Flush(const FSceneView* InSceneView)
     }
 
     FSpriteConstants Constants = {};
-    Constants.VP = CurrentPlacementMode == ERenderPlacementMode::Screen
-                       ? FMatrix::Identity
-                       : InSceneView->GetViewProjectionMatrix();
+    Constants.VP = InSceneView->GetViewProjectionMatrix();
 
     if (!RHI->UpdateConstantBuffer(ConstantBuffer.Get(), &Constants, sizeof(Constants)))
     {
@@ -368,10 +368,7 @@ void FD3D11SpriteBatchRenderer::Flush(const FSceneView* InSceneView)
     RHI->SetVertexBuffer(0, DynamicVertexBuffer.Get(), VertexStride, VertexOffset);
     RHI->SetIndexBuffer(DynamicIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
     RHI->SetRasterizerState(RasterizerState.Get());
-    RHI->SetDepthStencilState(CurrentPlacementMode == ERenderPlacementMode::Screen
-                                  ? ScreenDepthStencilState.Get()
-                                  : DepthStencilState.Get(),
-                              0);
+    RHI->SetDepthStencilState(DepthStencilState.Get(), 0);
 
     const float BlendFactor[4] = {0.f, 0.f, 0.f, 0.f};
     Context->OMSetBlendState(AlphaBlendState.Get(), BlendFactor, 0xFFFFFFFFu);
@@ -469,20 +466,10 @@ bool FD3D11SpriteBatchRenderer::CreateStates()
 
     D3D11_DEPTH_STENCIL_DESC DepthDesc = {};
     DepthDesc.DepthEnable = TRUE;
-    DepthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    DepthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
     DepthDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 
     if (!RHI->CreateDepthStencilState(DepthDesc, DepthStencilState.GetAddressOf()))
-    {
-        return false;
-    }
-
-    D3D11_DEPTH_STENCIL_DESC ScreenDepthDesc = {};
-    ScreenDepthDesc.DepthEnable = FALSE;
-    ScreenDepthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-    ScreenDepthDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-
-    if (!RHI->CreateDepthStencilState(ScreenDepthDesc, ScreenDepthStencilState.GetAddressOf()))
     {
         return false;
     }

@@ -46,25 +46,16 @@ enum class ERenderPlacementMode : uint8
 {
     World = 0,
     WorldBillboard = 1,
-    Screen = 2,
 };
 
 struct FRenderPlacement
 {
     ERenderPlacementMode Mode = ERenderPlacementMode::World;
 
-    FMatrix  World = FMatrix::Identity;
-    FVector2 ScreenPosition = FVector2(0.0f, 0.0f);
-
+    FMatrix World = FMatrix::Identity;
     FVector WorldOffset = FVector::ZeroVector;
 
-    bool IsWorldSpace() const
-    {
-        return Mode == ERenderPlacementMode::World || Mode == ERenderPlacementMode::WorldBillboard;
-    }
-
-    bool IsScreenSpace() const { return Mode == ERenderPlacementMode::Screen; }
-
+    bool IsWorldSpace() const { return true; }
     bool IsBillboard() const { return Mode == ERenderPlacementMode::WorldBillboard; }
 };
 
@@ -84,9 +75,6 @@ struct FSpriteRenderItem
     FVector2 UVMin = FVector2(0.0f, 0.0f);
     FVector2 UVMax = FVector2(1.0f, 1.0f);
 
-    int32  Priority = 0;
-    uint64 SubmissionOrder = 0;
-
     FRenderPlacement Placement;
     FRenderItemState State;
 };
@@ -96,9 +84,6 @@ struct FTextRenderItem
     const FFontResource* FontResource = nullptr;
     FString              Text;
     FColor               Color = FColor::White();
-
-    int32  Priority = 0;
-    uint64 SubmissionOrder = 0;
 
     FRenderPlacement Placement;
 

@@ -1,11 +1,11 @@
-#include "Renderer/Draw/WorldAxesDrawer.h"
+#include "Renderer/Submitter/WorldAxesSubmitter.h"
 
 #include "Renderer/D3D11/D3D11LineBatchRenderer.h"
 #include "Renderer/EditorRenderData.h"
 #include "Renderer/Types/AxisColors.h"
 
-void FWorldAxesDrawer::Draw(FD3D11LineBatchRenderer& InLineRenderer,
-                            const FEditorRenderData& InEditorRenderData)
+void FWorldAxesSubmitter::Submit(FD3D11LineBatchRenderer& InLineRenderer,
+                                 const FEditorRenderData& InEditorRenderData)
 {
     if (!IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_WorldAxes) ||
         InEditorRenderData.SceneView == nullptr)

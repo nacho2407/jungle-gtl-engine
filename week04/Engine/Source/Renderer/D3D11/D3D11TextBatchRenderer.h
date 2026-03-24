@@ -9,26 +9,40 @@
 #include "Renderer/Types/ShaderConstants.h"
 #include <vector>
 
-class FD3D11DynamicRHI;
+class FD3D11RHI;
 class FSceneView;
 class FFontResource;
 struct FFontGlyph;
 struct FTextRenderItem;
 
-class FD3D11FontBatchRenderer
+class FD3D11TextBatchRenderer
 {
   public:
-    bool Initialize(FD3D11DynamicRHI* InRHI);
+    bool Initialize(FD3D11RHI* InRHI);
     void Shutdown();
 
     void BeginFrame();
     void BeginFrame(const FSceneView* InSceneView);
 
     void AddText(const FTextRenderItem& InItem);
+    void AddTexts(const TArray<FTextRenderItem>& InItems);
     void EndFrame(const FSceneView* InSceneView);
     void Flush(const FSceneView* InSceneView);
 
   private:
+    struct FTextBatchKey
+    {
+        const FFontResource*  FontResource = nullptr;
+        ERenderPlacementMode PlacementMode = ERenderPlacementMode::World;
+
+        bool operator==(const FTextBatchKey& Other) const
+        {
+            return FontResource == Other.FontResource && PlacementMode == Other.PlacementMode;
+        }
+
+        bool operator!=(const FTextBatchKey& Other) const { return !(*this == Other); }
+    };
+
     bool CreateShaders();
     bool CreateConstantBuffer();
     bool CreateStates();
@@ -38,16 +52,18 @@ class FD3D11FontBatchRenderer
                          const FFontGlyph& InGlyph, const FFontResource& InFont,
                          const FColor& InColor);
 
-    void    AppendTextItem(const FTextRenderItem& InItem);
-    FVector MakeScreenClipPosition(float InScreenX, float InScreenY, float InDepth) const;
-    bool    IsSameBatch(const FTextRenderItem& InItem) const;
+    void          BeginBatch(const FTextBatchKey& InBatchKey);
+    void          AppendTextItem(const FTextRenderItem& InItem);
+    void          ProcessSortedItems();
+    FTextBatchKey MakeBatchKey(const FTextRenderItem& InItem) const;
+    bool          CanAppendGlyphQuad() const;
 
   private:
     static constexpr uint32         MaxVertexCount = 65536;
     static constexpr uint32         MaxIndexCount = 65536;
     static constexpr const wchar_t* ShaderPath = L"../Engine/Resources/Shader/ShaderFont.hlsl";
 
-    FD3D11DynamicRHI* RHI = nullptr;
+    FD3D11RHI* RHI = nullptr;
 
     const FSceneView*    CurrentSceneView = nullptr;
     const FFontResource* CurrentFontResource = nullptr;
@@ -56,7 +72,6 @@ class FD3D11FontBatchRenderer
     TArray<FFontVertex>     Vertices;
     TArray<uint32>          Indices;
     TArray<FTextRenderItem> PendingTextItems;
-    uint64                  NextSubmissionOrder = 0;
 
     TComPtr<ID3D11VertexShader>      VertexShader;
     TComPtr<ID3D11PixelShader>       PixelShader;
@@ -67,6 +82,5 @@ class FD3D11FontBatchRenderer
     TComPtr<ID3D11SamplerState>      SamplerState;
     TComPtr<ID3D11BlendState>        AlphaBlendState;
     TComPtr<ID3D11DepthStencilState> DepthStencilState;
-    TComPtr<ID3D11DepthStencilState> ScreenDepthStencilState;
     TComPtr<ID3D11RasterizerState>   RasterizerState;
 };

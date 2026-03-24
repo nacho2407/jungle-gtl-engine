@@ -7,10 +7,10 @@
 class FD3D11LineBatchRenderer;
 struct FEditorRenderData;
 
-class FWorldGridDrawer
+class FWorldGridSubmitter
 {
   public:
-    void Draw(FD3D11LineBatchRenderer& InLineRenderer, const FEditorRenderData& InEditorRenderData);
+    void Submit(FD3D11LineBatchRenderer& InLineRenderer, const FEditorRenderData& InEditorRenderData);
 
   private:
     int32 GridHalfLineCount = 500;

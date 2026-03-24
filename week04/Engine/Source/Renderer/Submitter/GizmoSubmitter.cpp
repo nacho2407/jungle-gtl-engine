@@ -1,4 +1,4 @@
-#include "Renderer/Draw/GizmoDrawer.h"
+#include "Renderer/Submitter/GizmoSubmitter.h"
 #include "Renderer/D3D11/D3D11MeshBatchRenderer.h"
 #include "Renderer/EditorRenderData.h"
 #include "Renderer/Types/AxisColors.h"
@@ -83,8 +83,8 @@ namespace
     }
 } // namespace
 
-void FGizmoDrawer::Draw(FD3D11MeshBatchRenderer& InMeshRenderer,
-                        const FEditorRenderData& InEditorRenderData)
+void FGizmoSubmitter::Submit(FD3D11MeshBatchRenderer& InMeshRenderer,
+                             const FEditorRenderData& InEditorRenderData)
 {
     if (!IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo) ||
         InEditorRenderData.SceneView == nullptr)
@@ -115,14 +115,14 @@ void FGizmoDrawer::Draw(FD3D11MeshBatchRenderer& InMeshRenderer,
     }
 }
 
-FColor FGizmoDrawer::ResolveAxisColor(EAxis InAxis, EGizmoHighlight InHighlight) const
+FColor FGizmoSubmitter::ResolveAxisColor(EAxis InAxis, EGizmoHighlight InHighlight) const
 {
     return IsAxisHighlighted(InAxis, InHighlight) ? GetAxisHighlightColor(InAxis)
                                                   : GetAxisBaseColor(InAxis);
 }
 
-void FGizmoDrawer::AddTranslationGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
-                                       const FGizmoDrawData&         InGizmoDrawData) const
+void FGizmoSubmitter::AddTranslationGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
+                                          const FGizmoDrawData&         InGizmoDrawData) const
 {
     const FMatrix GizmoFrame = InGizmoDrawData.Frame.GetMatrixWithoutScale();
 
@@ -158,8 +158,8 @@ void FGizmoDrawer::AddTranslationGizmo(TArray<FPrimitiveRenderItem>& OutPrimitiv
     }
 }
 
-void FGizmoDrawer::AddRotationGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
-                                    const FGizmoDrawData&         InGizmoDrawData) const
+void FGizmoSubmitter::AddRotationGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
+                                       const FGizmoDrawData&         InGizmoDrawData) const
 {
     const FMatrix GizmoFrame = InGizmoDrawData.Frame.GetMatrixWithoutScale();
 
@@ -177,8 +177,8 @@ void FGizmoDrawer::AddRotationGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
     }
 }
 
-void FGizmoDrawer::AddScalingGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
-                                   const FGizmoDrawData&         InGizmoDrawData) const
+void FGizmoSubmitter::AddScalingGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
+                                      const FGizmoDrawData&         InGizmoDrawData) const
 {
     const FMatrix GizmoFrame = InGizmoDrawData.Frame.GetMatrixWithoutScale();
 
@@ -211,8 +211,8 @@ void FGizmoDrawer::AddScalingGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
     }
 }
 
-void FGizmoDrawer::BuildObjectIdRenderItems(TArray<FObjectIdRenderItem>& OutItems,
-                                            const FEditorRenderData&     InEditorRenderData) const
+void FGizmoSubmitter::BuildObjectIdItems(TArray<FObjectIdRenderItem>& OutItems,
+                                         const FEditorRenderData&     InEditorRenderData) const
 {
     if (!IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo) ||
         InEditorRenderData.SceneView == nullptr)
