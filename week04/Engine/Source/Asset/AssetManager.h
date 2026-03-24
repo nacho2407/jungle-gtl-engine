@@ -2,10 +2,10 @@
 #include <memory>
 #include <dxgiformat.h>
 
+#include "Asset.h"
 #include "CoreUObject/Object.h"
 
 class IAssetLoader;
-class UAsset;
 
 enum class EAssetType : uint8
 {
@@ -142,10 +142,16 @@ struct FTextureBuildKeyHasher
  * 4. Loader에게 실제 로드 위임
  */
 
-class UAssetManager : public UObject
+class ENGINE_API UAssetManager : public UObject
 {
 public:
+    UAssetManager() = default;
     ~UAssetManager() override;
+
+    UAssetManager(const UAssetManager&) = delete;
+    UAssetManager& operator=(const UAssetManager&) = delete;
+    UAssetManager(UAssetManager&&) = delete;
+    UAssetManager& operator=(UAssetManager&&) = delete;
 
     void    RegisterLoader(IAssetLoader* Loader);
     UAsset* Load(const FWString& Path, const FAssetLoadParams& Params = {});

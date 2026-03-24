@@ -1,6 +1,13 @@
-﻿#include "Core/CoreMinimal.h"
+#include "Core/CoreMinimal.h"
+#include "Core/CoreMinimal.h"
 #include "FontAsset.h"
 
-void UFontAsset::Initialize()
+#include "AssetManager.h"
+
+REGISTER_CLASS(, UFontAsset)
+
+void UFontAsset::Initialize(const FSourceRecord& InSource, const FFontResource& InResource)
 {
+	InitializeAssetMetadata(InSource);
+	FontResource = InResource;
 }
