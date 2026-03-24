@@ -35,6 +35,7 @@ void ACubeActor::InitDefaultComponents()
 	SubUV->SetParticle(FName("Explosion"));
 	SubUV->SetSpriteSize(2.0f, 2.0f);
 	SubUV->SetFrameRate(30.f);
+	SubUV->SetRelativeLocation(FVector(0.0f, 0.0f, 2.3f));
 }
 
 void ASphereActor::InitDefaultComponents()
@@ -54,6 +55,7 @@ void ASphereActor::InitDefaultComponents()
 	SubUV->SetParticle(FName("Explosion"));
 	SubUV->SetSpriteSize(2.0f, 2.0f);
 	SubUV->SetFrameRate(30.f);
+	SubUV->SetRelativeLocation(FVector(0.0f, 0.0f, 2.3f));
 }
 
 void APlaneActor::InitDefaultComponents()
@@ -73,6 +75,7 @@ void APlaneActor::InitDefaultComponents()
 	SubUV->SetParticle(FName("Explosion"));
 	SubUV->SetSpriteSize(2.0f, 2.0f);
 	SubUV->SetFrameRate(30.f);
+	SubUV->SetRelativeLocation(FVector(0.0f, 0.0f, 2.3f));
 }
 
 void AAttachTestActor::InitDefaultComponents()
