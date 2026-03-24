@@ -67,7 +67,7 @@ class FViewportCamera
     float NearPlane = 0.1f;
     float FarPlane = 2000.0f;
 
-    float OrthoHeight = 30.0f;
+    float OrthoHeight = 100.0f;
 
     mutable FMatrix CachedViewMatrix;
     mutable FMatrix CachedProjectionMatrix;
