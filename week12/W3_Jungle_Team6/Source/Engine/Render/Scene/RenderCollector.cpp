@@ -2,77 +2,108 @@
 
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
-#include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/GizmoComponent.h"
-#include "Component/BillboardComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/SubUVComponent.h"
 
-void FRenderCollector::Collect(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
+void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
 {
-	if (!Context.Camera || !Context.World)
-	{
-		return;
-	}
+	if (!World) return;
 
-	//	Must be the active camera
-
-	UCameraComponent* Camera = Context.Camera;
-	RenderBus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix(),
-		Camera->GetRightVector(), Camera->GetUpVector());
-	RenderBus.SetRenderSettings(Context.ViewMode, Context.ShowFlags);
-
-
-	//	Draw from Editor (Gizmo, Axis, etc.)
-	CollectFromEditor(Context, RenderBus);
-
-	//	Draw from World
-	for (AActor* Actor : Context.World->GetActors())
+	for (AActor* Actor : World->GetActors())
 	{
 		if (!Actor) continue;
-		CollectFromActor(Actor, Context, RenderBus);
-	}
-
-	// Picking Actors
-	for (AActor* Actor : Context.SelectedActors)
-	{
-		CollectFromSelectedActor(Actor, Context, RenderBus);
+		CollectFromActor(Actor, ShowFlags, ViewMode, RenderBus);
 	}
 }
 
-void FRenderCollector::CollectFromActor(AActor* Actor, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
+void FRenderCollector::CollectSelection(const TArray<AActor*>& SelectedActors, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
+{
+	for (AActor* Actor : SelectedActors)
+	{
+		CollectFromSelectedActor(Actor, ShowFlags, ViewMode, RenderBus);
+	}
+}
+
+void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus)
+{
+	FRenderCommand Cmd = {};
+	Cmd.Type = ERenderCommandType::Grid;
+	Cmd.Constants.Grid.GridSpacing = GridSpacing;
+	Cmd.Constants.Grid.GridHalfLineCount = GridHalfLineCount;
+	RenderBus.AddCommand(ERenderPass::Grid, Cmd);
+}
+
+void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
+{
+	if (ShowFlags.bGizmo == false) return;
+	if (!Gizmo || !Gizmo->IsVisible()) return;
+
+	FMeshBuffer* GizmoMesh = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
+	FMatrix WorldMatrix = Gizmo->GetWorldMatrix();
+	bool bHolding = Gizmo->IsHolding();
+	int32 SelectedAxis = Gizmo->GetSelectedAxis();
+
+	auto CreateGizmoCmd = [&](bool bInner) {
+		FRenderCommand Cmd = {};
+		Cmd.Type = ERenderCommandType::Gizmo;
+		Cmd.MeshBuffer = GizmoMesh;
+		Cmd.PerObjectConstants = FPerObjectConstants{ WorldMatrix };
+
+		if (bInner)
+		{
+			Cmd.DepthStencilState = EDepthStencilState::GizmoInside;
+			Cmd.BlendState = EBlendState::AlphaBlend;
+		}
+		else
+		{
+			Cmd.DepthStencilState = EDepthStencilState::GizmoOutside;
+			Cmd.BlendState = EBlendState::Opaque;
+		}
+		Cmd.Constants.Gizmo.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+		Cmd.Constants.Gizmo.bIsInnerGizmo = bInner ? 1 : 0;
+		Cmd.Constants.Gizmo.bClicking = bHolding ? 1 : 0;
+		Cmd.Constants.Gizmo.SelectedAxis = SelectedAxis >= 0 ? (uint32)SelectedAxis : 0xffffffffu;
+		Cmd.Constants.Gizmo.HoveredAxisOpacity = 0.3f;
+		return Cmd;
+		};
+
+	RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(false));
+
+	if (!bHolding)
+	{
+		RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(true));
+	}
+}
+
+void FRenderCollector::CollectFromActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
 {
 	if (!Actor->IsVisible()) return;
 
-	// Iterate through the components of the actor and retrieve their render properties
-	for (UActorComponent* Comp : Actor->GetComponents())
+	for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
 	{
-		if (!Comp) continue;
-		if (!Comp->IsA<UPrimitiveComponent>()) continue;
-		UPrimitiveComponent* Primitive = static_cast<UPrimitiveComponent*>(Comp);
-		CollectFromComponent(Primitive, Context, RenderBus);
+		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus);
 	}
 }
 
-void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
+void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
 {
+	if (!Actor->IsVisible()) return;
+
 	for (UPrimitiveComponent* primitiveComponent : Actor->GetPrimitiveComponents())
 	{
-		FRenderCommand BaseCmd{};
-		BaseCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
-		BaseCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
-		FVector WorldScale = primitiveComponent->GetWorldScale();
 
-		EPrimitiveType PrimType = primitiveComponent->GetPrimitiveType();
-		if (PrimType == EPrimitiveType::EPT_Text)
+		if (!primitiveComponent->IsVisible()) continue;
+		FVector WorldScale = primitiveComponent->GetWorldScale();
+		if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Text)
 		{
-			if (Context.ShowFlags.bBillboardText == false) return;
+			if (!ShowFlags.bBillboardText) continue;
 			UTextRenderComponent* TextComp = static_cast<UTextRenderComponent*>(primitiveComponent);
 			const FFontResource* Font = TextComp->GetFont();
-			if (!Font || !Font->IsLoaded()) return;
+			if (!Font || !Font->IsLoaded()) continue;
 			const FString& Text = TextComp->GetText();
-			if (Text.empty()) return;
+			if (Text.empty()) continue;
 
 			FMatrix outlineMatrix = TextComp->CalculateOutlineMatrix();
 			WorldScale = outlineMatrix.GetScale();
@@ -82,15 +113,19 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderColl
 			TextCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
 			TextCmd.Type = ERenderCommandType::Font;
 			TextCmd.PerObjectConstants.Color = TextComp->GetColor();
-			TextCmd.TextData = Text;
-			TextCmd.AtlasResource = Font;
-			TextCmd.SpriteSize.X = TextComp->GetFontSize();
+			TextCmd.Constants.Font.Text = &Text;
+			TextCmd.Constants.Font.Font = Font;
+			TextCmd.Constants.Font.Scale = TextComp->GetFontSize();
 			TextCmd.BlendState = EBlendState::AlphaBlend;
 			TextCmd.DepthStencilState = EDepthStencilState::Default;
 			RenderBus.AddCommand(ERenderPass::Font, TextCmd);
 		}
 
+		if (!primitiveComponent->SupportsOutline()) continue;
 
+		FRenderCommand BaseCmd{};
+		BaseCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
+		BaseCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
 
 		// StencilBuffer Mask
 		FRenderCommand MaskCmd = BaseCmd;
@@ -108,7 +143,8 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderColl
 				1.0f / WorldScale.Y, 1.0f / WorldScale.Z);
 		OutlineCmd.Constants.Outline.OutlineOffset = 0.03f;
 
-		if (Context.ViewMode == EViewMode::Wireframe)
+		OutlineCmd.Constants.Outline.OutlineOffset = 0.03f;
+		if (ViewMode == EViewMode::Wireframe)
 		{
 			OutlineCmd.PerObjectConstants.Color = FColor(255, 153, 0, 255).ToVector4();
 		}
@@ -120,25 +156,25 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderColl
 	}
 }
 
-void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, const FRenderCollectorContext& Context, FRenderBus& RenderBus)
+void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
 {
 	if (!Primitive->IsVisible()) return;
 
-	FRenderCommand Cmd = {};
-	Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
-	ERenderPass TargetPass = ERenderPass::Opaque;
+	EPrimitiveType PrimType = Primitive->GetPrimitiveType();
 
-	switch (Primitive->GetPrimitiveType())
+	switch (PrimType)
 	{
 	case EPrimitiveType::EPT_Cube:
 	case EPrimitiveType::EPT_Sphere:
 	case EPrimitiveType::EPT_Plane:
 	{
-		if (!Context.ShowFlags.bPrimitives) return;
+		if (!ShowFlags.bPrimitives) return;
+		FRenderCommand Cmd = {};
+		Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
 		Cmd.Type = ERenderCommandType::Primitive;
-		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Primitive->GetPrimitiveType());
+		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(PrimType);
 		Cmd.DepthStencilState = EDepthStencilState::Default;
-		TargetPass = ERenderPass::Opaque;
+		RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
 		break;
 	}
 
@@ -148,113 +184,22 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		const FParticleResource* Particle = SubUVComp->GetParticle();
 		if (!Particle || !Particle->IsLoaded()) return;
 
+		FRenderCommand Cmd = {};
+		Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
 		Cmd.Type = ERenderCommandType::SubUV;
-		Cmd.AtlasResource = Particle;
-		Cmd.FrameIndex = SubUVComp->GetFrameIndex();
-		Cmd.SpriteSize = { SubUVComp->GetWidth(), SubUVComp->GetHeight() };
+		Cmd.Constants.SubUV.Particle = Particle;
+		Cmd.Constants.SubUV.FrameIndex = SubUVComp->GetFrameIndex();
+		Cmd.Constants.SubUV.Width = SubUVComp->GetWidth();
+		Cmd.Constants.SubUV.Height = SubUVComp->GetHeight();
 		Cmd.BlendState = EBlendState::AlphaBlend;
 		Cmd.DepthStencilState = EDepthStencilState::Default;
-		TargetPass = ERenderPass::SubUV;
+		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);
 		break;
 	}
-
-	// 실제 여기 패스를 안 타기 때문에 여기서 처리해봤자다. ㅠㅠ
-	//case EPrimitiveType::EPT_Text:
-	//{
-	//	if (!Context.ShowFlags.bBillboardText) return;
-	//	UTextRenderComponent* TextComp = static_cast<UTextRenderComponent*>(Primitive);
-	//	const FFontResource* Font = TextComp->GetFont();
-	//	if (!Font || !Font->IsLoaded()) return;
-	//	if (TextComp->GetText().empty()) return;
-
-	//	Cmd.Type = ERenderCommandType::Font;
-	//	Cmd.PerObjectConstants.Color = TextComp->GetColor();
-	//	Cmd.TextData = TextComp->GetText();
-	//	Cmd.AtlasResource = Font;
-	//	Cmd.SpriteSize.X = TextComp->GetFontSize();
-	//	Cmd.BlendState = EBlendState::AlphaBlend;
-	//	Cmd.DepthStencilState = EDepthStencilState::Default;
-	//	TargetPass = ERenderPass::Font;
-	//	break;
-	//}
 
 	default:
 		return;
 	}
-
-	RenderBus.AddCommand(TargetPass, Cmd);
-}
-
-void FRenderCollector::CollectFromEditor(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
-{
-	CollectGizmo(Context, RenderBus);
-	CollectMouseOverlay(Context, RenderBus);
-}
-
-
-void FRenderCollector::CollectGizmo(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
-{
-
-	UGizmoComponent* Gizmo = Context.Gizmo;
-	if (Context.ShowFlags.bGizmo == false) return;
-	if (!Gizmo || !Gizmo->IsVisible()) return;
-
-	auto CreateGizmoCmd = [&](bool bInner) {
-		FRenderCommand Cmd = {};
-		Cmd.Type = ERenderCommandType::Gizmo;
-		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
-		Cmd.PerObjectConstants = FPerObjectConstants{ Gizmo->GetWorldMatrix() };
-
-		if (bInner)
-		{
-			Cmd.DepthStencilState = EDepthStencilState::GizmoInside;
-			Cmd.BlendState = EBlendState::AlphaBlend;
-			Cmd.Constants.Gizmo.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-		}
-		else
-		{
-			Cmd.DepthStencilState = EDepthStencilState::GizmoOutside;
-			Cmd.BlendState = EBlendState::Opaque;
-			Cmd.Constants.Gizmo.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-		}
-		Cmd.Constants.Gizmo.bIsInnerGizmo = bInner ? 1 : 0;
-		Cmd.Constants.Gizmo.bClicking = Gizmo->IsHolding() ? 1 : 0;
-		Cmd.Constants.Gizmo.SelectedAxis = Gizmo->GetSelectedAxis() >= 0 ? (uint32)Gizmo->GetSelectedAxis() : 0xffffffffu;
-		Cmd.Constants.Gizmo.HoveredAxisOpacity = 0.3f;
-		return Cmd;
-		};
-
-
-	// Inner Gizmo
-	RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(false));
-
-	if (!Gizmo->IsHolding())
-	{
-		RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(true));
-	}
-}
-
-void FRenderCollector::CollectMouseOverlay(const FRenderCollectorContext& Context, FRenderBus& RenderBus)
-{
-	//	Cursor Overlay (null checking +)
-	if (Context.CursorOverlayState == nullptr || Context.CursorOverlayState->bVisible == false)
-	{
-		return;
-	}
-
-	FRenderCommand OverlayCmd = {};
-	OverlayCmd.Type = ERenderCommandType::Overlay;
-	OverlayCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_MouseOverlay);
-
-	OverlayCmd.Constants.Overlay.CenterScreen.X = Context.CursorOverlayState->ScreenX;
-	OverlayCmd.Constants.Overlay.CenterScreen.Y = Context.CursorOverlayState->ScreenY;
-	OverlayCmd.Constants.Overlay.ViewportSize.X = static_cast<float>(Context.ViewportWidth);
-	OverlayCmd.Constants.Overlay.ViewportSize.Y = static_cast<float>(Context.ViewportHeight);
-	OverlayCmd.Constants.Overlay.Radius = Context.CursorOverlayState->CurrentRadius;
-	OverlayCmd.Constants.Overlay.Color = Context.CursorOverlayState->Color;
-
-	RenderBus.AddCommand(ERenderPass::Overlay, OverlayCmd);
-
 }
 
 void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponent, FRenderBus& RenderBus)
@@ -267,10 +212,8 @@ void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponen
 	// 이전에 정의한 union 구조체의 AABB 영역에 데이터를 채웁니다.
 	AABBCmd.Constants.AABB.Min = Box.Min;
 	AABBCmd.Constants.AABB.Max = Box.Max;
-	//AABBCmd.Constants.AABB.Color = FColor(1.0f, 0.6f, 0.0f, 1.0f); // 선택 강조용 주황색
 	AABBCmd.Constants.AABB.Color = FColor::White();
 
 	// 렌더러가 마지막에 몰아서 그릴 수 있게 특정 패스(예: Editor/Overlay)에 푸시합니다.
 	RenderBus.AddCommand(ERenderPass::Editor, AABBCmd);
 }
-

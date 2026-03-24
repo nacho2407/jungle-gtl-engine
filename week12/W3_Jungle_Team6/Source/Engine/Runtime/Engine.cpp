@@ -1,10 +1,10 @@
-﻿#include "Engine/Runtime/Engine.h"
+#include "Engine/Runtime/Engine.h"
 
 #include "Core/Paths.h"
 #include "Engine/Core/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Core/ResourceManager.h"
-#include "Render/Scene/RenderCollector.h"
+#include "Render/Renderer/DefaultRenderPipeline.h"
 #include "GameFramework/World.h"
 
 DEFINE_CLASS(UEngine, UObject)
@@ -20,15 +20,16 @@ void UEngine::Init(FWindowsWindow* InWindow)
 	FObjectFactory::Get();
 
 	Renderer.Create(Window->GetHWND());
-	RenderCollector.Initialize(Renderer.GetFD3DDevice().GetDevice());
 	FResourceManager::Get().LoadFromFile(
 		FPaths::ToUtf8(FPaths::ResourceFilePath()), Renderer.GetFD3DDevice().GetDevice());
+
+	SetRenderPipeline(std::make_unique<FDefaultRenderPipeline>(this, Renderer));
 }
 
 void UEngine::Shutdown()
 {
+	RenderPipeline.reset();
 	FResourceManager::Get().ReleaseGPUResources();
-	RenderCollector.Release();
 	Renderer.Release();
 }
 
@@ -53,9 +54,15 @@ void UEngine::Tick(float DeltaTime)
 
 void UEngine::Render(float DeltaTime)
 {
-	//TODO: See UEditorEngine::Render() for how to use RenderBus and render passes.
-	Renderer.BeginFrame();
-	Renderer.EndFrame();
+	if (RenderPipeline)
+	{
+		RenderPipeline->Execute(DeltaTime, Renderer);
+	}
+}
+
+void UEngine::SetRenderPipeline(std::unique_ptr<IRenderPipeline> InPipeline)
+{
+	RenderPipeline = std::move(InPipeline);
 }
 
 void UEngine::OnWindowResized(uint32 Width, uint32 Height)
@@ -148,4 +155,3 @@ void UEngine::SetActiveWorld(const FName& Handle)
 {
 	ActiveWorldHandle = Handle;
 }
-
