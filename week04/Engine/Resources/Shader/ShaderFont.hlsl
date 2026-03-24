@@ -4,6 +4,9 @@ cbuffer FFontConstants : register(b0)
     float4 TintColor;
 };
 
+Texture2D FontTexture : register(t0);
+SamplerState FontSampler : register(s0);
+
 struct VSInput
 {
     float3 Position : POSITION;
@@ -18,9 +21,6 @@ struct PSInput
     float4 Color    : COLOR0;
 };
 
-Texture2D FontTexture : register(t0);
-SamplerState FontSampler : register(s0);
-
 PSInput VSMain(VSInput In)
 {
     PSInput Out;
@@ -33,5 +33,6 @@ PSInput VSMain(VSInput In)
 float4 PSMain(PSInput In) : SV_TARGET
 {
     float4 Sampled = FontTexture.Sample(FontSampler, In.UV);
-    return Sampled * In.Color;
+    float Mask = max(max(Sampled.r, Sampled.g), max(Sampled.b, Sampled.a));
+    return float4(In.Color.rgb, In.Color.a * Mask);
 }
