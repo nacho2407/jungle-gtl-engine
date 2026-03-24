@@ -2,6 +2,7 @@
 #include "Component/CameraComponent.h"
 #include "Component/AxisComponent.h"
 #include "Component/BillboardSubUVComponent.h"
+#include "Component/BillboardTextComponent.h"
 #include "Component/CubeComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Renderer/Renderer.h"
@@ -22,6 +23,26 @@
 #include "LineBatcher.h"
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+namespace
+{
+	void AppendSceneBillboardTextItems(UScene* Scene, TArray<FBillboardTextDrawItem>& OutItems)
+	{
+		if (Scene == nullptr)
+		{
+			return;
+		}
+
+		for (USceneComponent* Component : Scene->SceneComponents)
+		{
+			UBillboardTextComponent* BillboardText = Cast<UBillboardTextComponent>(Component);
+			if (BillboardText != nullptr)
+			{
+				BillboardText->AppendDrawItems(OutItems);
+			}
+		}
+	}
+}
 
 LRESULT CALLBACK EngineApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -220,6 +241,10 @@ void EngineApp::Run()
 		}
 		GetWorld().DrawDebugLines();
 		Renderer->Render(LevelsToRender);
+		TArray<FBillboardTextDrawItem> BillboardTextItems;
+		AppendSceneBillboardTextItems(SceneMgr->GetPermanentScene(), BillboardTextItems);
+		AppendSceneBillboardTextItems(SceneMgr->GetActiveScene(), BillboardTextItems);
+		Renderer->RenderBillboardTextBatch(BillboardTextItems);
 		Renderer->BatchRenderDebugLine(FLineBatcher::GetInstance().GetLineVertices());
 		FLineBatcher::GetInstance().ClearLines();
 		EditorInst->DrawUI();

@@ -52,6 +52,7 @@ public:
 
 		targetScene->SceneComponents.push_back(instance);
 		instance->OnComponentAdded();
+		AttachDefaultBillboardText(targetScene, instance);
 		return instance;
 	}
 
@@ -71,6 +72,8 @@ public:
 
 
 private:
+	void AttachDefaultBillboardText(UScene* targetScene, USceneComponent* targetComponent);
+
 	UWorld* OwnerWorld = nullptr;
 	UScene* ActiveScene = nullptr;
 	UScene* PermanentScene = nullptr;

@@ -137,6 +137,7 @@
     <ClInclude Include="AABB.h" />
     <ClInclude Include="Component\AxisComponent.h" />
     <ClInclude Include="Component\BillboardSubUVComponent.h" />
+    <ClInclude Include="Component\BillboardTextComponent.h" />
     <ClInclude Include="Component\CameraComponent.h" />
     <ClInclude Include="Component\CubeComponent.h" />
     <ClInclude Include="Component\PlaneComponent.h" />
@@ -219,6 +220,7 @@
   <ItemGroup>
     <ClCompile Include="Component\AxisComponent.cpp" />
     <ClCompile Include="Component\BillboardSubUVComponent.cpp" />
+    <ClCompile Include="Component\BillboardTextComponent.cpp" />
     <ClCompile Include="Component\CameraComponent.cpp" />
     <ClCompile Include="Component\CubeComponent.cpp" />
     <ClCompile Include="Component\PlaneComponent.cpp" />

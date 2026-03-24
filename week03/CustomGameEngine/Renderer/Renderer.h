@@ -13,12 +13,26 @@
 
 #include "Renderer/VertexFont.h"
 #include "Text/FontAsset.h"
+#include <tuple>
+
+struct FBillboardTextBatchKey
+{
+	FFontAsset* FontAsset = nullptr;
+	FColor Color{};
+
+	bool operator<(const FBillboardTextBatchKey& Other) const
+	{
+		return std::tie(FontAsset, Color.r, Color.g, Color.b, Color.a)
+			< std::tie(Other.FontAsset, Other.Color.r, Other.Color.g, Other.Color.b, Other.Color.a);
+	}
+};
 
 /**
  * @brief 텍스트 Batch용 입력 구조체
  */
 struct FBillboardTextDrawItem
 {
+	FFontAsset* FontAsset = nullptr;
 	FString Text; // 실제 배치할 문자열 내용
 	FVector Anchor{}; // 텍스트 전체 배치의 시작 기준점
 	float Scale = 0.0f; // Glyph 크기 배율
@@ -128,6 +142,8 @@ public:
 	 */
 	void ReleaseDynamicFontVertexBuffer(void);
 
+	void RenderBillboardTextBatch(const TArray<FBillboardTextDrawItem>& Items);
+
 private:
 	UCameraComponent* renderCamera = nullptr;
 	int32 RsSetMode = 0;
@@ -155,4 +171,6 @@ private:
 	 * @param Vertices Draw할 정점 배열
 	 */
 	void DrawBillboardFontVertices(const TArray<FVertexFont>& Vertices);
+
+	void RestoreCurrentRasterizerState();
 };

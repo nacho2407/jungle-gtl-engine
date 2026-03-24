@@ -1,6 +1,7 @@
 ﻿#include "Renderer.h"
 
 #include "EngineCore/Logger.h"
+#include "Renderer/Constants.h"
 
 // for test code
 #include "EngineCore/ResourceManager.h"
@@ -515,4 +516,120 @@ void URenderer::UpdateDynamicFontVertexBuffer(FVertexFont* Vertices, UINT Vertex
 void URenderer::ReleaseDynamicFontVertexBuffer(void)
 {
 	DynamicFontVertexBuffer.Reset();
+}
+
+bool URenderer::PrepareBillboardFontMaterial(FFontAsset* FontAsset, const FColor& Color)
+{
+	if (renderCamera == nullptr || FontAsset == nullptr)
+	{
+		return false;
+	}
+
+	FMaterial& FontMaterial = ResourceManager::GetInstance()->GetMaterial(L"Shader/ShaderFont.hlsl");
+	if (FontMaterial.VertexShader == nullptr || FontMaterial.PixelShader == nullptr)
+	{
+		return false;
+	}
+
+	FontMaterial.Bind(DeviceContext.Get());
+
+	FFontConstant FontConstant;
+	FontConstant.CameraRight = renderCamera->SideDirection.Normalize();
+	FontConstant.CameraUp = renderCamera->UpDirection.Normalize();
+	FontConstant.TextColor = Color;
+
+	FontMaterial.ConstantBuffer.Update(DeviceContext.Get(), &FontConstant, sizeof(FFontConstant));
+	FontMaterial.ConstantBuffer.Bind(DeviceContext.Get());
+	return true;
+}
+
+void URenderer::DrawBillboardFontVertices(const TArray<FVertexFont>& Vertices)
+{
+	if (Vertices.empty())
+	{
+		return;
+	}
+
+	UpdateDynamicFontVertexBuffer(const_cast<FVertexFont*>(Vertices.data()), static_cast<UINT>(Vertices.size()));
+
+	UINT Stride = sizeof(FVertexFont);
+	UINT Offset = 0;
+	DeviceContext->IASetVertexBuffers(0, 1, DynamicFontVertexBuffer.GetAddressOf(), &Stride, &Offset);
+	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	DeviceContext->Draw(static_cast<UINT>(Vertices.size()), 0);
+}
+
+void URenderer::RestoreCurrentRasterizerState()
+{
+	switch (RsSetMode)
+	{
+	case 1:
+		DeviceContext->RSSetState(RasterizerStateNoCull.Get());
+		break;
+	case 2:
+		DeviceContext->RSSetState(RasterizerStateWireframe.Get());
+		break;
+	default:
+		DeviceContext->RSSetState(RasterizerState.Get());
+		break;
+	}
+}
+
+void URenderer::RenderBillboardTextBatch(const TArray<FBillboardTextDrawItem>& Items)
+{
+	if (ShowFlagMap[EEngineShowFlags::SF_BillboardText] == false || Items.empty())
+	{
+		return;
+	}
+
+	ResourceManager* ResourceMgr = ResourceManager::GetInstance();
+	FFontAsset* DefaultFont = &ResourceMgr->GetBillboardFont();
+	TMap<FBillboardTextBatchKey, TArray<const FBillboardTextDrawItem*>> BatchGroups;
+
+	for (const FBillboardTextDrawItem& Item : Items)
+	{
+		FFontAsset* FontAsset = (Item.FontAsset != nullptr) ? Item.FontAsset : DefaultFont;
+		if (FontAsset != DefaultFont)
+		{
+			continue;
+		}
+
+		if (ResourceMgr->EnsureBillboardGlyphs(Item.Text) == false)
+		{
+			continue;
+		}
+
+		FBillboardTextBatchKey Key;
+		Key.FontAsset = FontAsset;
+		Key.Color = Item.Color;
+		BatchGroups[Key].push_back(&Item);
+	}
+
+	DeviceContext->OMSetDepthStencilState(DepthStencilStateNoWrite.Get(), 0);
+	DeviceContext->RSSetState(RasterizerStateNoCull.Get());
+
+	for (auto& [Key, GroupItems] : BatchGroups)
+	{
+		if (PrepareBillboardFontMaterial(Key.FontAsset, Key.Color) == false)
+		{
+			continue;
+		}
+
+		TArray<FVertexFont> Vertices;
+		for (const FBillboardTextDrawItem* Item : GroupItems)
+		{
+			FTextLayoutBuildParams Params;
+			Params.FontAsset = Key.FontAsset;
+			Params.Text = Item->Text;
+			Params.Anchor = Item->Anchor;
+			Params.Scale = Item->Scale;
+			Params.LineGap = Item->LineGap;
+			AppendBillboardTextVertices(Params, Vertices);
+		}
+
+		DrawBillboardFontVertices(Vertices);
+	}
+
+	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
+	RestoreCurrentRasterizerState();
 }

@@ -1,4 +1,7 @@
-﻿#include "SceneManager.h"
+#include "SceneManager.h"
+
+#include "Component/BillboardTextComponent.h"
+#include "Component/CameraComponent.h"
 
 class UEngineStatics;
 
@@ -17,7 +20,6 @@ SceneManager::~SceneManager()
 	PermanentScene->SceneComponents.clear();
 	delete PermanentScene;
 }
-
 
 const TArray<UScene*>& SceneManager::GetLoadedScenes() const
 {
@@ -46,13 +48,36 @@ void SceneManager::SetPermanentScene(UScene* scene)
 
 UScene* SceneManager::NewScene()
 {
- 	UScene* newScene = Cast<UScene>(FObjectFactory::ConstructObject(UScene::GetClass()));
-	//newScene->Name = FName("NewScene_"); //+ std::to_string((int32)LoadedScenes.size())
+	UScene* newScene = Cast<UScene>(FObjectFactory::ConstructObject(UScene::GetClass()));
 	SetActiveScene(newScene);
 	LoadedScenes.push_back(newScene);
 
 	UE_LOG("Created new scene\n");
 	return GetActiveScene();
+}
+
+void SceneManager::AttachDefaultBillboardText(UScene* targetScene, USceneComponent* targetComponent)
+{
+	if (targetScene == nullptr || targetComponent == nullptr || targetScene == PermanentScene)
+	{
+		return;
+	}
+
+	if (Cast<UBillboardTextComponent>(targetComponent) != nullptr)
+	{
+		return;
+	}
+
+	if (Cast<UCameraComponent>(targetComponent) != nullptr)
+	{
+		return;
+	}
+
+	UBillboardTextComponent* BillboardText = AddSceneComponent<UBillboardTextComponent>(targetScene);
+	if (BillboardText != nullptr)
+	{
+		BillboardText->AttachTo(targetComponent);
+	}
 }
 
 void SceneManager::SaveScene(FString sceneName)
@@ -74,6 +99,12 @@ UScene* SceneManager::LoadScene(FString sceneName)
 		LoadedScenes.push_back(loadedScene);
 		SetActiveScene(loadedScene);
 		UEngineStatics::NextUUID = loadedScene->NextUUID;
+
+		TArray<USceneComponent*> Components = loadedScene->SceneComponents;
+		for (USceneComponent* Component : Components)
+		{
+			AttachDefaultBillboardText(loadedScene, Component);
+		}
 	}
 
 	return loadedScene;
@@ -104,7 +135,6 @@ void SceneManager::UnloadScene(UScene* targetScene, bool bCreateReplacementScene
 		SetActiveScene(nextActiveScene);
 	}
 
-	// loop 내에서의 삽입/삭제로 인한 오류 방지
 	auto deleteList = sceneToUnload->SceneComponents;
 	for (auto* obj : deleteList)
 	{
@@ -129,7 +159,24 @@ void SceneManager::RemoveSceneComponent(USceneComponent* toDespawn, UScene* targ
 		return;
 	}
 
-	// Remove render object first
+	if (Cast<UBillboardTextComponent>(toDespawn) == nullptr)
+	{
+		TArray<USceneComponent*> LabelsToRemove;
+		for (USceneComponent* Component : scene->SceneComponents)
+		{
+			UBillboardTextComponent* BillboardText = Cast<UBillboardTextComponent>(Component);
+			if (BillboardText != nullptr && BillboardText->GetAttachedComponent() == toDespawn)
+			{
+				LabelsToRemove.push_back(BillboardText);
+			}
+		}
+
+		for (USceneComponent* Label : LabelsToRemove)
+		{
+			RemoveSceneComponent(Label, scene);
+		}
+	}
+
 	auto primToDespawn = Cast<UPrimitiveComponent>(toDespawn);
 	if (primToDespawn != nullptr)
 	{
