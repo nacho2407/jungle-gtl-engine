@@ -58,18 +58,22 @@ void FFontBatcher::BuildCharInfoMap(uint32 Columns, uint32 Rows)
 	const float CellW = 1.0f / static_cast<float>(Columns);
 	const float CellH = 1.0f / static_cast<float>(Rows);
 
-	// ASCII 32(space) ~ 126 매핑 — 아틀라스 그리드 기준
-	for (uint32 Row = 0; Row < Rows; ++Row)
+	auto AddChar = [&](uint32 Codepoint, uint32 Slot)
 	{
-		for (uint32 Col = 0; Col < Columns; ++Col)
-		{
-			uint32 Idx = Row * Columns + Col;
-			if (Idx < 32)  continue;
-			if (Idx > 126) return;
+		const uint32 Col = Slot % Columns;
+		const uint32 Row = Slot / Columns;
+		if (Row >= Rows) return;
+		CharInfoMap[Codepoint] = { Col * CellW, Row * CellH, CellW, CellH };
+	};
 
-			CharInfoMap[static_cast<char>(Idx)] = { Col * CellW, Row * CellH, CellW, CellH };
-		}
-	}
+	// ASCII 33(!) ~ 126(~) : 슬롯 = 코드포인트 (원본 아틀라스 배치 그대로)
+	for (uint32 CP = 32; CP <= 126; ++CP)
+		AddChar(CP, CP - 32);
+
+	// 한글 완성형 가(U+AC00) ~ 힣(U+D7A3) : ASCII 다음 슬롯부터
+	uint32 Slot = 127;
+	for (uint32 CP = 0xAC00; CP <= 0xD7A3; ++CP, ++Slot)
+		AddChar(CP, Slot - 32);
 }
 
 void FFontBatcher::Release()
@@ -90,6 +94,8 @@ void FFontBatcher::AddText(const FString& Text,
 	const FVector& CamUp,
 	float Scale)
 {
+	if (Text.empty()) return;
+
 	const float CharW = 0.5f * Scale;
 	const float CharH = 0.5f * Scale;
 	float CharCursorX = 0.f;
@@ -109,10 +115,17 @@ void FFontBatcher::AddText(const FString& Text,
 
 	for (size_t i = 0; i < CharCount; ++i)
 	{
+		uint32 CP = 0;
+		if      (Ptr[0] < 0x80)                             { CP = Ptr[0];                                                                       Ptr += 1; }
+		else if ((Ptr[0] & 0xE0) == 0xC0 && Ptr + 1 < End)  { CP = ((Ptr[0] & 0x1F) << 6)  |  (Ptr[1] & 0x3F);                                   Ptr += 2; }
+		else if ((Ptr[0] & 0xF0) == 0xE0 && Ptr + 2 < End)  { CP = ((Ptr[0] & 0x0F) << 12) | ((Ptr[1] & 0x3F) << 6)  |  (Ptr[2] & 0x3F);         Ptr += 3; }
+		else if ((Ptr[0] & 0xF8) == 0xF0 && Ptr + 3 < End)  { CP = ((Ptr[0] & 0x07) << 18) | ((Ptr[1] & 0x3F) << 12) | ((Ptr[2] & 0x3F) << 6) | (Ptr[3] & 0x3F); Ptr += 4; }
+		else { ++Ptr; continue; }
+
 		FVector2 UVMin, UVMax;
 		GetCharUV(Text[i], UVMin, UVMax);
 
-		FVector Center = WorldPos + CamRight * CharCursorX;
+		const FVector Center = WorldPos + CamRight * CharCursorX;
 
 		pV[0] = { Center - HalfRight + HalfUp, { UVMin.X, UVMin.Y } };
 		pV[1] = { Center + HalfRight + HalfUp, { UVMax.X, UVMin.Y } };
@@ -181,17 +194,17 @@ void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FFontResource* Reso
 	Context->DrawIndexed(static_cast<uint32>(Indices.size()), 0, 0);
 }
 
-void FFontBatcher::GetCharUV(char Key, FVector2& OutUVMin, FVector2& OutUVMax) const
+void FFontBatcher::GetCharUV(uint32 Codepoint, FVector2& OutUVMin, FVector2& OutUVMax) const
 {
-	auto it = CharInfoMap.find(Key);
-	if (it == CharInfoMap.end())
+	const auto It = CharInfoMap.find(Codepoint);
+	if (It == CharInfoMap.end())
 	{
 		OutUVMin = FVector2(0, 0);
-		OutUVMax = FVector2(1, 1);
+		OutUVMax = FVector2(0, 0);
 		return;
 	}
 
-	const FCharacterInfo& Info = it->second;
+	const FCharacterInfo& Info = It->second;
 	OutUVMin = FVector2(Info.U, Info.V);
 	OutUVMax = FVector2(Info.U + Info.Width, Info.V + Info.Height);
 }
