@@ -135,6 +135,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
   <ItemGroup>
     <ClInclude Include="Source\Camera\ViewportCamera.h" />
     <ClInclude Include="Source\Chrome\EditorChrome.h" />
+    <ClInclude Include="Source\Content\ContentBrowserDragDrop.h" />
     <ClInclude Include="Source\Content\EditorContentIndex.h" />
     <ClInclude Include="Source\Editor\Editor.h" />
     <ClInclude Include="Source\Editor\EditorContext.h" />

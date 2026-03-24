@@ -152,19 +152,19 @@ namespace
             ++InOutFileCount;
         }
 
-        std::sort(
-            FolderNode.ChildFolders.begin(), FolderNode.ChildFolders.end(),
-            [](const FContentBrowserFolderNode& Left, const FContentBrowserFolderNode& Right)
-            {
-                return ToLowerAsciiCopy(Left.DisplayName) < ToLowerAsciiCopy(Right.DisplayName);
-            });
+        std::ranges::sort(FolderNode.ChildFolders
+                          ,
+                          [](const FContentBrowserFolderNode& Left, const FContentBrowserFolderNode& Right)
+                          {
+	                          return ToLowerAsciiCopy(Left.DisplayName) < ToLowerAsciiCopy(Right.DisplayName);
+                          });
 
-        std::sort(
-            FolderNode.Files.begin(), FolderNode.Files.end(),
-            [](const FContentBrowserItem& Left, const FContentBrowserItem& Right)
-            {
-                return ToLowerAsciiCopy(Left.DisplayName) < ToLowerAsciiCopy(Right.DisplayName);
-            });
+        std::ranges::sort(FolderNode.Files
+                          ,
+                          [](const FContentBrowserItem& Left, const FContentBrowserItem& Right)
+                          {
+	                          return ToLowerAsciiCopy(Left.DisplayName) < ToLowerAsciiCopy(Right.DisplayName);
+                          });
 
         return FolderNode;
     }

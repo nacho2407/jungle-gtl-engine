@@ -5,6 +5,7 @@
 #include "Core/Misc/Name.h"
 #include "Engine/Game/Actor.h"
 #include "Engine/Game/CubeActor.h"
+#include "Engine/Game/SphereActor.h"
 #include "Engine/Game/UnknownActor.h"
 #include "Engine/Scene.h"
 #include "Input/ContextModeTypes.h"
@@ -32,6 +33,37 @@ namespace
     bool IsUnknownActor(const AActor* Actor)
     {
         return Actor != nullptr && Actor->IsA(AUnknownActor::GetClass());
+    }
+
+    const char* GetSpawnActorTypeLabel(FOutlinerPanel::ESpawnActorType InType)
+    {
+        switch (InType)
+        {
+        case FOutlinerPanel::ESpawnActorType::Cube:
+            return "CubeActor";
+        case FOutlinerPanel::ESpawnActorType::Sphere:
+            return "SphereActor";
+        default:
+            return "Unknown";
+        }
+    }
+
+    const char* const SpawnActorTypeLabels[] = {
+        "CubeActor",
+        "SphereActor",
+    };
+
+    AActor* CreateActorByType(FOutlinerPanel::ESpawnActorType InType)
+    {
+        switch (InType)
+        {
+        case FOutlinerPanel::ESpawnActorType::Cube:
+            return new ACubeActor();
+        case FOutlinerPanel::ESpawnActorType::Sphere:
+            return new ASphereActor();
+        default:
+            return nullptr;
+        }
     }
 
     FString GetActorDisplayName(const AActor* Actor)
@@ -90,11 +122,28 @@ void FOutlinerPanel::Draw()
     ImGui::End();
 }
 
-void FOutlinerPanel::DrawToolbar() const
+void FOutlinerPanel::DrawToolbar()
 {
-    if (ImGui::Button("Add CubeActor"))
+    ImGui::SetNextItemWidth(140.0f);
+    int32 SpawnActorTypeIndex = static_cast<int32>(SpawnActorType);
+    if (ImGui::Combo("##SpawnActorType", &SpawnActorTypeIndex, SpawnActorTypeLabels,
+                     IM_ARRAYSIZE(SpawnActorTypeLabels)))
     {
-        SpawnCubeActor();
+        SpawnActorType = static_cast<ESpawnActorType>(SpawnActorTypeIndex);
+    }
+
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(72.0f);
+    ImGui::InputInt("##SpawnActorCount", &SpawnCount, 1, 10);
+    if (SpawnCount < 1)
+    {
+        SpawnCount = 1;
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("Spawn"))
+    {
+        SpawnActors();
     }
 }
 
@@ -150,23 +199,44 @@ void FOutlinerPanel::DrawActorRow(AActor* Actor) const
     }
 }
 
-void FOutlinerPanel::SpawnCubeActor() const
+void FOutlinerPanel::SpawnActors() const
 {
     if (GetContext() == nullptr || GetContext()->Scene == nullptr)
     {
         return;
     }
 
-    ACubeActor* CubeActor = new ACubeActor();
     const TArray<AActor*>* Actors = GetContext()->Scene->GetActors();
-    const size_t ActorIndex = (Actors != nullptr) ? (Actors->size() + 1) : 1;
-    CubeActor->Name = "CubeActor " + std::to_string(ActorIndex);
+    const size_t ExistingActorCount = (Actors != nullptr) ? Actors->size() : 0;
+    AActor* LastSpawnedActor = nullptr;
 
-    if (GetContext()->Editor != nullptr)
+    for (int32 SpawnIndex = 0; SpawnIndex < SpawnCount; ++SpawnIndex)
     {
-        GetContext()->Editor->AddActorToScene(CubeActor, true);
-        return;
+        AActor* NewActor = CreateActorByType(SpawnActorType);
+        if (NewActor == nullptr)
+        {
+            continue;
+        }
+
+        const size_t ActorIndex = ExistingActorCount + static_cast<size_t>(SpawnIndex) + 1;
+        NewActor->Name =
+            FString(GetSpawnActorTypeLabel(SpawnActorType)) + " " + std::to_string(ActorIndex);
+
+        if (GetContext()->Editor != nullptr)
+        {
+            GetContext()->Editor->AddActorToScene(NewActor, false);
+        }
+        else
+        {
+            GetContext()->Scene->AddActor(NewActor);
+        }
+
+        LastSpawnedActor = NewActor;
     }
 
-    GetContext()->Scene->AddActor(CubeActor);
+    if (LastSpawnedActor != nullptr && GetContext()->Editor != nullptr)
+    {
+        GetContext()->Editor->GetViewportClient().GetSelectionController().SelectActor(
+            LastSpawnedActor, ESelectionMode::Replace);
+    }
 }

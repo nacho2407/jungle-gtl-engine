@@ -177,6 +177,9 @@
     <ClInclude Include="Source\Chrome\EditorChrome.h">
       <Filter>Source\Chrome</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Content\ContentBrowserDragDrop.h">
+      <Filter>Source\Content</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Content\EditorContentIndex.h">
       <Filter>Source\Content</Filter>
     </ClInclude>

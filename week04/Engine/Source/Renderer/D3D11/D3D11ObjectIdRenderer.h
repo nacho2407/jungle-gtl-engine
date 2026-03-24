@@ -30,7 +30,7 @@ struct FObjectIdMeshResource
 class FD3D11ObjectIdRenderer
 {
   public:
-    static constexpr const wchar_t* ShaderPath = L"../Engine/Resources/Shader/ShaderObjectId.hlsl";
+    static constexpr const wchar_t* ShaderPath = L"Content\\Shader\\ShaderObjectId.hlsl";
 
   public:
     bool Initialize(FD3D11RHI* InRHI);
