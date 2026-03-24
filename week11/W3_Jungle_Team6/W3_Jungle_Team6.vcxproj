@@ -212,6 +212,7 @@
     <ClCompile Include="Source\Engine\Runtime\WindowsApplication.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp" />
     <ClCompile Include="Source\Engine\Core\Stats.cpp" />
+    <ClCompile Include="Source\Engine\Core\GPUProfiler.cpp" />
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_demo.cpp" />
@@ -259,6 +260,7 @@
     <ClInclude Include="Source\Engine\Core\ResourceTypes.h" />
     <ClInclude Include="Source\Engine\Core\Singleton.h" />
     <ClInclude Include="Source\Engine\Core\Stats.h" />
+    <ClInclude Include="Source\Engine\Core\GPUProfiler.h" />
     <ClInclude Include="Source\Engine\Core\Timer.h" />
     <ClInclude Include="Source\Engine\GameFramework\AActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\PrimitiveActors.h" />
