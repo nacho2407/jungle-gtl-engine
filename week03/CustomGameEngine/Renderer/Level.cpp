@@ -21,6 +21,10 @@ void FLevel::UnregisterRenderObject(RenderObject* RenderObj)
 		if (*it == RenderObj)
 		{
 			RenderObjects.erase(it);
+			if (RenderObjects.empty())
+			{
+				RenderObjects.shrink_to_fit();
+			}
 			return;
 		}
 		else
@@ -33,4 +37,5 @@ void FLevel::UnregisterRenderObject(RenderObject* RenderObj)
 void FLevel::Clear()
 {
 	RenderObjects.clear();
+	RenderObjects.shrink_to_fit();
 }

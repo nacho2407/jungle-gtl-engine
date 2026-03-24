@@ -167,6 +167,10 @@ void Editor::ClearSelection()
 		}
 	}
 	SelectedComponents.clear();
+	if (SelectedComponents.empty())
+	{
+		SelectedComponents.shrink_to_fit();
+	}
 	UpdateGizmoSelection();
 }
 

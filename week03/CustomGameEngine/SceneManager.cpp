@@ -4,6 +4,32 @@
 
 class UEngineStatics;
 
+namespace
+{
+	static void ShrinkSceneStorageIfEmpty(UScene* scene)
+	{
+		if (scene == nullptr)
+		{
+			return;
+		}
+
+		if (scene->SceneComponents.empty())
+		{
+			scene->SceneComponents.shrink_to_fit();
+		}
+
+		if (scene->BillboardTextComponents.empty())
+		{
+			scene->BillboardTextComponents.shrink_to_fit();
+		}
+
+		if (scene->Level.RenderObjects.empty())
+		{
+			scene->Level.RenderObjects.shrink_to_fit();
+		}
+	}
+}
+
 SceneManager::SceneManager()
 {
 	PermanentScene = Cast<UScene>(FObjectFactory::ConstructObject(UScene::GetClass()));
@@ -170,6 +196,7 @@ void SceneManager::RemoveSceneComponent(USceneComponent* toDespawn, UScene* targ
 		{
 			delete toDespawn;
 			scene->SceneComponents.erase(it);
+			ShrinkSceneStorageIfEmpty(scene);
 			break;
 		}
 	}
