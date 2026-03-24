@@ -14,6 +14,8 @@
 #endif
 
 class FPanelManager;
+class UAssetManager;
+class IAssetLoader;
 
 class FEditorEngineLoop : public IEngineLoop, public IEditorChromeHost
 {
@@ -29,6 +31,7 @@ class FEditorEngineLoop : public IEngineLoop, public IEditorChromeHost
     void CloseWindow() override;
     bool IsWindowMaximized() const override;
     const wchar_t* GetWindowTitle() const override;
+    void* GetNativeWindowHandle() const override;
 
   private:
     static bool HandleEditorMessage(HWND HWnd, UINT Message, WPARAM WParam, LPARAM LParam,
@@ -51,6 +54,9 @@ class FEditorEngineLoop : public IEngineLoop, public IEditorChromeHost
     FEditor* Editor = nullptr;
     FRendererModule* Renderer = nullptr;
     FPanelManager* PanelManager = nullptr;
+    UAssetManager* AssetManager = nullptr;
+    IAssetLoader* TextureAssetLoader = nullptr;
+    IAssetLoader* FontAssetLoader = nullptr;
 
     float DeltaTime = 0.0f;
     float MainLoopFPS = 0.0f;

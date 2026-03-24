@@ -103,7 +103,7 @@ void FD3D11MeshBatchRenderer::AddPrimitive(const FPrimitiveRenderItem& InItem)
         return;
     }
 
-    if (!InItem.bVisible)
+    if (!InItem.State.IsVisible())
     {
         return;
     }

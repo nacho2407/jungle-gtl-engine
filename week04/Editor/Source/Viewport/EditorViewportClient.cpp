@@ -59,9 +59,7 @@ void FEditorViewportClient::Tick(float DeltaTime, const Engine::ApplicationCore:
     NavigationController.Tick(DeltaTime);
 }
 
-void FEditorViewportClient::Draw()
-{
-}
+void FEditorViewportClient::Draw() {}
 
 void FEditorViewportClient::HandleInputEvent(const Engine::ApplicationCore::FInputEvent& Event,
                                              const Engine::ApplicationCore::FInputState& State)
@@ -74,13 +72,12 @@ void FEditorViewportClient::HandleInputEvent(const Engine::ApplicationCore::FInp
 
 void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData) const
 {
+    // TODO
     OutRenderData.Gizmo.GizmoType = EGizmoType::Translation;
-    //OutRenderData.Gizmo.GizmoType = EGizmoType::Rotation;
-    //OutRenderData.Gizmo.GizmoType = EGizmoType::Scaling;
     OutRenderData.Gizmo.Highlight = EGizmoHighlight::None;
     OutRenderData.Gizmo.Frame = FMatrix::Identity;
     OutRenderData.ShowFlags = EEditorShowFlags::SF_Grid | EEditorShowFlags::SF_WorldAxes |
-                              EEditorShowFlags::SF_Gizmo | EEditorShowFlags::SF_SelectionOutline |
+                              EEditorShowFlags::SF_SelectionOutline |
                               EEditorShowFlags::SF_ObjectLabels;
 }
 
@@ -104,4 +101,8 @@ void FEditorViewportClient::SetScene(FScene* InScene)
 void FEditorViewportClient::SyncSelectionFromContext()
 {
     SelectionController.SyncSelectionFromContext();
+}
+
+void FEditorViewportClient::DrawOutline()
+{
 }

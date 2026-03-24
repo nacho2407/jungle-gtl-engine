@@ -2,6 +2,7 @@
 
 #include "Core/Geometry/Primitives/AABB.h"
 #include "Core/Math/Vector4.h"
+#include "Core/Math/Color.h"
 #include "SceneComponent.h"
 
 enum class EBasicMeshType : uint8;
@@ -17,11 +18,11 @@ namespace Engine::Component
 
         virtual EBasicMeshType GetBasicMeshType() const = 0;
 
-        const FVector4& GetColor() const;
-        void            SetColor(const FVector4& NewColor);
+        const FColor& GetColor() const;
+        void            SetColor(const FColor& NewColor);
 
         const Geometry::FAABB& GetWorldAABB() const;
-        
+
         virtual bool GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const;
 
         void Update(float DeltaTime) override;
@@ -32,7 +33,7 @@ namespace Engine::Component
         void                    OnTransformChanged() override;
 
       protected:
-        FVector4        Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+        FColor          Color = FColor::White();
         Geometry::FAABB WorldAABB;
         bool            bBoundsDirty = true;
     };

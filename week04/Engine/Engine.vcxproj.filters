@@ -7,6 +7,9 @@
     <Filter Include="Source">
       <UniqueIdentifier>{4f6c83fe-a134-3484-3756-8c697b723468}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resources\Font">
+      <UniqueIdentifier>{fad3e58f-d9ea-cb84-df1f-2e117697f486}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Resources\Mesh">
       <UniqueIdentifier>{611fd08d-c5f2-636f-d61c-0405906a469d}</UniqueIdentifier>
     </Filter>
@@ -43,6 +46,18 @@
     <Filter Include="Source\ThirdParty">
       <UniqueIdentifier>{b8e8bd27-1e61-2aa5-0088-7e70dd22287c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resources\Font\Comic_Sans_MS">
+      <UniqueIdentifier>{b1e62315-e2ce-7f75-1be2-6878ca7045f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Font\Galmuri11">
+      <UniqueIdentifier>{702c0c07-20e7-a580-8783-537854e854a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Font\JetBrainsMono">
+      <UniqueIdentifier>{7eaade0e-bd47-722f-7804-38ec85fe8c2e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Font\Ubuntu">
+      <UniqueIdentifier>{3ff98eb9-4461-1ff0-f53b-612fd98db83c}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\ApplicationCore\GenericPlatform">
       <UniqueIdentifier>{387b5035-7247-ab88-2751-c494bed9266f}</UniqueIdentifier>
     </Filter>
@@ -76,6 +91,9 @@
     <Filter Include="Source\Engine\Game">
       <UniqueIdentifier>{b40c0879-15f3-b5bd-98bc-875a35ed9e05}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\SceneIO">
+      <UniqueIdentifier>{37e30a95-abfd-d9e5-9798-b5dd12b76214}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\ViewPort">
       <UniqueIdentifier>{3f58abac-aa9e-06f1-348e-4d37ab560ccd}</UniqueIdentifier>
     </Filter>
@@ -91,11 +109,23 @@
     <Filter Include="Source\Renderer\Types">
       <UniqueIdentifier>{2a470593-b470-7a69-2874-61b9dc3a78a3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\ThirdParty\Json">
+      <UniqueIdentifier>{bd24378b-953f-fea6-80b7-004117df36b6}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Core\Geometry\Primitives">
       <UniqueIdentifier>{243ace44-3495-fff3-c265-ad18f16b3c35}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Component\BasicPrimitives">
-      <UniqueIdentifier>{e0106b29-8ace-ce65-987c-01d4f18b866d}</UniqueIdentifier>
+    <Filter Include="Source\Engine\Component\Core">
+      <UniqueIdentifier>{8b557c60-f515-4559-1426-a5a4d4d0adc3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Component\Mesh">
+      <UniqueIdentifier>{5fac1ef0-ec7b-e764-c54a-afebb2c33162}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Component\Sprite">
+      <UniqueIdentifier>{207a34e2-675e-403f-f931-7b57a6a97168}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Component\Text">
+      <UniqueIdentifier>{9ecbb042-c8bc-15cb-9b15-f4ac96e2e30e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -118,6 +148,12 @@
       <Filter>Source\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Asset\AssetManager.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\FontAsset.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\FontAtlasLoader.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Asset\Texture2DAsset.cpp">
@@ -177,26 +213,38 @@
     <ClCompile Include="Source\CoreUObject\ObjectFactory.cpp">
       <Filter>Source\CoreUObject</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\BasicPrimitives\CameraComponent.cpp">
-      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    <ClCompile Include="Source\Engine\Component\Core\PrimitiveComponent.cpp">
+      <Filter>Source\Engine\Component\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\BasicPrimitives\CubeComponent.cpp">
-      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    <ClCompile Include="Source\Engine\Component\Core\SceneComponent.cpp">
+      <Filter>Source\Engine\Component\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\BasicPrimitives\QuadComponent.cpp">
-      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    <ClCompile Include="Source\Engine\Component\Core\UnknownComponent.cpp">
+      <Filter>Source\Engine\Component\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\BasicPrimitives\SphereComponent.cpp">
-      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    <ClCompile Include="Source\Engine\Component\Mesh\CubeComponent.cpp">
+      <Filter>Source\Engine\Component\Mesh</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.cpp">
-      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    <ClCompile Include="Source\Engine\Component\Mesh\QuadComponent.cpp">
+      <Filter>Source\Engine\Component\Mesh</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
+    <ClCompile Include="Source\Engine\Component\Mesh\SphereComponent.cpp">
+      <Filter>Source\Engine\Component\Mesh</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\SceneComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
+    <ClCompile Include="Source\Engine\Component\Mesh\TriangleComponent.cpp">
+      <Filter>Source\Engine\Component\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Sprite\AnimatedSpriteComponent.cpp">
+      <Filter>Source\Engine\Component\Sprite</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Sprite\AtlasComponent.cpp">
+      <Filter>Source\Engine\Component\Sprite</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Sprite\SubUVComponent.cpp">
+      <Filter>Source\Engine\Component\Sprite</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Text\TextComponent.cpp">
+      <Filter>Source\Engine\Component\Text</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\EngineStatics.cpp">
       <Filter>Source\Engine</Filter>
@@ -207,8 +255,20 @@
     <ClCompile Include="Source\Engine\Game\CubeActor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Game\UnknownActor.cpp">
+      <Filter>Source\Engine\Game</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Scene.cpp">
       <Filter>Source\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\SceneIO\SceneJson.cpp">
+      <Filter>Source\Engine\SceneIO</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\SceneIO\SceneSerializer.cpp">
+      <Filter>Source\Engine\SceneIO</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\SceneIO\SceneTypeRegistry.cpp">
+      <Filter>Source\Engine\SceneIO</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp">
       <Filter>Source\Engine\ViewPort</Filter>
@@ -306,6 +366,12 @@
       <Filter>Source\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\AssetManager.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\FontAsset.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\FontAtlasLoader.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\Texture2DAsset.h">
@@ -434,26 +500,38 @@
     <ClInclude Include="Source\CoreUObject\ObjectFactory.h">
       <Filter>Source\CoreUObject</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\BasicPrimitives\CameraComponent.h">
-      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    <ClInclude Include="Source\Engine\Component\Core\PrimitiveComponent.h">
+      <Filter>Source\Engine\Component\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\BasicPrimitives\CubeComponent.h">
-      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    <ClInclude Include="Source\Engine\Component\Core\SceneComponent.h">
+      <Filter>Source\Engine\Component\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\BasicPrimitives\QuadComponent.h">
-      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    <ClInclude Include="Source\Engine\Component\Core\UnknownComponent.h">
+      <Filter>Source\Engine\Component\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\BasicPrimitives\SphereComponent.h">
-      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    <ClInclude Include="Source\Engine\Component\Mesh\CubeComponent.h">
+      <Filter>Source\Engine\Component\Mesh</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\BasicPrimitives\TriangleComponent.h">
-      <Filter>Source\Engine\Component\BasicPrimitives</Filter>
+    <ClInclude Include="Source\Engine\Component\Mesh\QuadComponent.h">
+      <Filter>Source\Engine\Component\Mesh</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h">
-      <Filter>Source\Engine\Component</Filter>
+    <ClInclude Include="Source\Engine\Component\Mesh\SphereComponent.h">
+      <Filter>Source\Engine\Component\Mesh</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\SceneComponent.h">
-      <Filter>Source\Engine\Component</Filter>
+    <ClInclude Include="Source\Engine\Component\Mesh\TriangleComponent.h">
+      <Filter>Source\Engine\Component\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Sprite\AnimatedSpriteComponent.h">
+      <Filter>Source\Engine\Component\Sprite</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Sprite\AtlasComponent.h">
+      <Filter>Source\Engine\Component\Sprite</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Sprite\SubUVComponent.h">
+      <Filter>Source\Engine\Component\Sprite</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Text\TextComponent.h">
+      <Filter>Source\Engine\Component\Text</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\EngineStatics.h">
       <Filter>Source\Engine</Filter>
@@ -464,8 +542,20 @@
     <ClInclude Include="Source\Engine\Game\CubeActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Game\UnknownActor.h">
+      <Filter>Source\Engine\Game</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Scene.h">
       <Filter>Source\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\SceneIO\SceneJson.h">
+      <Filter>Source\Engine\SceneIO</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\SceneIO\SceneSerializer.h">
+      <Filter>Source\Engine\SceneIO</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\SceneIO\SceneTypeRegistry.h">
+      <Filter>Source\Engine\SceneIO</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\ViewPort\Viewport.h">
       <Filter>Source\Engine\ViewPort</Filter>
@@ -518,7 +608,10 @@
     <ClInclude Include="Source\Renderer\EditorRenderData.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\RenderAsset\FTextureResource.h">
+    <ClInclude Include="Source\Renderer\RenderAsset\FontResource.h">
+      <Filter>Source\Renderer\RenderAsset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\RenderAsset\TextureResource.h">
       <Filter>Source\Renderer\RenderAsset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\RendererModule.h">
@@ -548,6 +641,9 @@
     <ClInclude Include="Source\Renderer\Types\PickResult.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Renderer\Types\RenderItem.h">
+      <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Renderer\Types\SceneShowFlags.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
@@ -559,6 +655,9 @@
     </ClInclude>
     <ClInclude Include="Source\Renderer\Types\ViewMode.h">
       <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ThirdParty\Json\json.hpp">
+      <Filter>Source\ThirdParty\Json</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

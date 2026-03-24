@@ -37,15 +37,18 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     void SyncSelectionFromContext();
 
     FViewportNavigationController& GetNavigationController() { return NavigationController; }
+    const FViewportNavigationController& GetNavigationController() const
+    {
+        return NavigationController;
+    }
     FViewportSelectionController& GetSelectionController() { return SelectionController; }
     FViewportGizmoController& GetGizmoController() { return GizmoController; }
     FViewportInteractionState& GetInteractionState() { return InteractionState; }
 
     FViewportCamera& GetCamera() { return ViewportCamera; }
-
     using FPickCallback = std::function<FPickResult(int32, int32)>;
     FPickCallback OnPickRequested;
-
+    
     FPickResult PickAt(int32 MouseX, int32 MouseY) const
     {
         if (OnPickRequested)
@@ -54,6 +57,10 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
         }
         return FPickResult{};
     }
+    
+private:
+    void DrawOutline();
+
 
   private:
     FScene* CurScene = nullptr;

@@ -30,6 +30,7 @@ class IEditorChromeHost
     virtual bool IsWindowMaximized() const = 0;
     // 타이틀바에 표시할 창 제목을 반환합니다.
     virtual const wchar_t* GetWindowTitle() const = 0;
+    virtual void* GetNativeWindowHandle() const = 0;
 };
 
 enum class EEditorChromeMenuItemType

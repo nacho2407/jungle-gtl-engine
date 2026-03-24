@@ -4,6 +4,7 @@
 #include "Core/Math/MathUtility.h"
 #include "Editor/Editor.h"
 #include "Editor/EditorContext.h"
+#include "Engine/EngineStatics.h"
 #include "Viewport/EditorViewportClient.h"
 #include "imgui.h"
 
@@ -67,6 +68,10 @@ void FControlPanel::Draw()
     DrawTransformSection(*Camera);
     ImGui::Separator();
     DrawProjectionSection(*Camera);
+    ImGui::Separator();
+    DrawNavigationSection();
+    ImGui::Separator();
+    DrawWorldSection();
 
     ImGui::End();
 }
@@ -140,4 +145,40 @@ void FControlPanel::DrawProjectionSection(FViewportCamera& Camera) const
     ImGui::Spacing();
     ImGui::Text("Viewport: %u x %u", Camera.GetWidth(), Camera.GetHeight());
     ImGui::Text("Aspect Ratio: %.3f", Camera.GetAspectRatio());
+}
+
+void FControlPanel::DrawNavigationSection() const
+{
+    if (GetContext() == nullptr || GetContext()->Editor == nullptr)
+    {
+        return;
+    }
+
+    FViewportNavigationController& NavigationController =
+        GetContext()->Editor->GetViewportClient().GetNavigationController();
+
+    ImGui::TextUnformatted("Navigation");
+
+    float MoveSpeed = NavigationController.GetMoveSpeed();
+    if (ImGui::DragFloat("Move Speed", &MoveSpeed, 1.0f, 10.0f, 2000.0f, "%.1f"))
+    {
+        NavigationController.SetMoveSpeed(MoveSpeed);
+    }
+
+    float RotationSpeed = NavigationController.GetRotationSpeed();
+    if (ImGui::DragFloat("Rotation Speed", &RotationSpeed, 0.01f, 0.01f, 10.0f, "%.2f"))
+    {
+        NavigationController.SetRotationSpeed(RotationSpeed);
+    }
+}
+
+void FControlPanel::DrawWorldSection() const
+{
+    ImGui::TextUnformatted("World");
+
+    float GridSpacing = UEngineStatics::GridSpacing;
+    if (ImGui::DragFloat("Grid Spacing", &GridSpacing, 0.1f, 1.0f, 1000.0f, "%.1f"))
+    {
+        UEngineStatics::GridSpacing = FMath::Clamp(GridSpacing, 1.0f, 1000.0f);
+    }
 }
