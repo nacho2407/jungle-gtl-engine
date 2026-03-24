@@ -33,7 +33,7 @@ class FGizmoDrawer
                                   const FEditorRenderData&     InEditorRenderData) const;
 
   public:
-    EViewModeIndex ViewMode = EViewModeIndex::Unlit;
+    EViewModeIndex ViewMode = EViewModeIndex::VMI_Unlit;
     bool           bUseInstancing = true;
     FGizmoStyle    Style;
 

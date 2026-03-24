@@ -27,6 +27,18 @@ bool FRendererModule::StartupModule(HWND hWnd)
         return false;
     }
 
+    if (!FontRenderer.Initialize(&RHI))
+    {
+        ShutdownModule();
+        return false;
+    }
+
+    if (!SpriteRenderer.Initialize(&RHI))
+    {
+        ShutdownModule();
+        return false;
+    }
+
     if (!ObjectIdRenderer.Initialize(&RHI))
     {
         ShutdownModule();
@@ -49,6 +61,8 @@ void FRendererModule::ShutdownModule()
     DebugDevice.Reset();
 
     ObjectIdRenderer.Shutdown();
+    SpriteRenderer.Shutdown();
+    FontRenderer.Shutdown();
     LineRenderer.Shutdown();
     MeshRenderer.Shutdown();
 
@@ -107,6 +121,34 @@ void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
     }
 
     MeshRenderer.EndFrame();
+
+    // ================ Sprite =================
+    if (InSceneRenderData.SceneView != nullptr &&
+        IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_Sprites))
+    {
+        SpriteRenderer.BeginFrame(InSceneRenderData.SceneView);
+
+        for (const FSpriteRenderItem& Item : InSceneRenderData.Sprites)
+        {
+            SpriteRenderer.AddSprite(Item);
+        }
+
+        SpriteRenderer.EndFrame(InSceneRenderData.SceneView);
+    }
+
+    // ================ Font =================
+    if (InSceneRenderData.SceneView != nullptr &&
+        IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_BillboardText))
+    {
+        FontRenderer.BeginFrame(InSceneRenderData.SceneView);
+
+        for (const FTextRenderItem& Item : InSceneRenderData.Texts)
+        {
+            FontRenderer.AddText(Item);
+        }
+
+        FontRenderer.EndFrame(InSceneRenderData.SceneView);
+    }
 
     // ================ Line =================
     if (InEditorRenderData.SceneView != nullptr)

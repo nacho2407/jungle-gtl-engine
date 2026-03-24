@@ -479,7 +479,7 @@ void FD3D11MeshBatchRenderer::FlushInternal(EMeshDrawPath DrawPath, const FScene
 
     BindPipeline(DrawPath);
 
-    if (ViewMode == EViewModeIndex::Wireframe)
+    if (ViewMode == EViewModeIndex::VMI_Wireframe)
     {
         BindWireframeRasterizer();
     }

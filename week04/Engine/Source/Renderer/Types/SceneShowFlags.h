@@ -8,6 +8,7 @@ enum class ESceneShowFlags : uint64
     None = 0,
     SF_Primitives = 1ull << 0,
     SF_BillboardText = 1ull << 1,
+    SF_Sprites = 1ull << 2,
 };
 
 template <> struct TEnableBitMaskOperators<ESceneShowFlags>

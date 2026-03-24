@@ -1,73 +1,80 @@
 #pragma once
 
-#include "Core/Math/Vector.h"
+#include "Core/HAL/PlatformTypes.h"
 #include "Core/Math/Color.h"
-#include "Core/Containers/Array.h"
-#include "Renderer/Types/VertexTypes.h"
+#include "Core/Math/Matrix.h"
 #include "Renderer/D3D11/D3D11Common.h"
+#include "Renderer/Types/RenderItem.h"
+#include <vector>
 
 class FD3D11DynamicRHI;
 class FSceneView;
-class UParticleSubUVComp;
+class FTextureResource;
 
 class FD3D11SpriteBatchRenderer
 {
   public:
-    void Initialize(FD3D11DynamicRHI* InRHI) {}
-    void Shutdown() {}
+    bool Initialize(FD3D11DynamicRHI* InRHI);
+    void Shutdown();
 
-    void BeginFrame() {}
+    void BeginFrame();
+    void BeginFrame(const FSceneView* InSceneView);
 
-    void SubmitSpriteWorldSpace(const FVector& InCenter, float InWidth, float InHeight,
-                                ID3D11ShaderResourceView* InTextureSRV, const FColor& InColor)
-    {
-    }
-
-    void SubmitSubUVWorldSpace(const FVector& InCenter, float InWidth, float InHeight,
-                               int32 InFrameIndex, int32 InNumFramesX, int32 InNumFramesY,
-                               ID3D11ShaderResourceView* InTextureSRV, const FColor& InColor)
-    {
-    }
-
-    void SubmitParticle(const UParticleSubUVComp* InParticleComp, const FSceneView* InSceneView) {}
-
-    void EndFrame(const FSceneView* InSceneView) {}
+    void AddSprite(const FSpriteRenderItem& InItem);
+    void AddSprites(const TArray<FSpriteRenderItem>& InItems);
+    void EndFrame(const FSceneView* InSceneView);
+    void Flush(const FSceneView* InSceneView);
 
   private:
-    void CreateShaders() {}
-    void CreateInputLayout() {}
-    void CreateConstantBuffer() {}
-    void CreateStates() {}
-    void CreateBuffers() {}
-
-    void BuildBillboardQuad(const FSceneView* InSceneView, const FVector& InCenter, float InWidth,
-                            float InHeight, float InU0, float InV0, float InU1, float InV1,
-                            const FColor& InColor)
+    struct FSpriteVertex
     {
-    }
+        FVector  Position;
+        FVector2 UV;
+        FColor   Color;
+    };
 
-    void CalcSubUV(int32 InFrameIndex, int32 InNumFramesX, int32 InNumFramesY, float& OutU0,
-                   float& OutV0, float& OutU1, float& OutV1) const
+    struct FSpriteConstants
     {
-    }
+        FMatrix VP;
+    };
 
-    void Flush(const FSceneView* InSceneView) {}
+    bool CreateShaders();
+    bool CreateConstantBuffer();
+    bool CreateStates();
+    bool CreateBuffers();
+
+    void AppendSpriteItem(const FSpriteRenderItem& InItem);
+    void AppendQuad(const FVector& InBottomLeft, const FVector& InRight, const FVector& InUp,
+                    const FVector2& InUVMin, const FVector2& InUVMax, const FColor& InColor);
+
+    FVector MakeScreenClipPosition(float InScreenX, float InScreenY, float InDepth) const;
+    bool    IsSameBatch(const FSpriteRenderItem& InItem) const;
 
   private:
+    static constexpr uint32         MaxVertexCount = 65536;
+    static constexpr uint32         MaxIndexCount = 65536;
+    static constexpr const wchar_t* ShaderPath = L"../Engine/Resources/Shader/ShaderSprite.hlsl";
+
     FD3D11DynamicRHI* RHI = nullptr;
 
-    TArray<FSpriteVertex> Vertices;
-    TArray<uint32>        Indices;
+    const FSceneView*       CurrentSceneView = nullptr;
+    const FTextureResource* CurrentTextureResource = nullptr;
+    ERenderPlacementMode    CurrentPlacementMode = ERenderPlacementMode::World;
 
-    TComPtr<ID3D11VertexShader> VertexShader;
-    TComPtr<ID3D11PixelShader>  PixelShader;
-    TComPtr<ID3D11InputLayout>  InputLayout;
+    TArray<FSpriteVertex>     Vertices;
+    TArray<uint32>            Indices;
+    TArray<FSpriteRenderItem> PendingSpriteItems;
+    uint64                    NextSubmissionOrder = 0;
 
-    TComPtr<ID3D11Buffer> ConstantBuffer;
-    TComPtr<ID3D11Buffer> DynamicVertexBuffer;
-    TComPtr<ID3D11Buffer> DynamicIndexBuffer;
-
+    TComPtr<ID3D11VertexShader>      VertexShader;
+    TComPtr<ID3D11PixelShader>       PixelShader;
+    TComPtr<ID3D11InputLayout>       InputLayout;
+    TComPtr<ID3D11Buffer>            ConstantBuffer;
+    TComPtr<ID3D11Buffer>            DynamicVertexBuffer;
+    TComPtr<ID3D11Buffer>            DynamicIndexBuffer;
     TComPtr<ID3D11SamplerState>      SamplerState;
     TComPtr<ID3D11BlendState>        AlphaBlendState;
     TComPtr<ID3D11DepthStencilState> DepthStencilState;
+    TComPtr<ID3D11DepthStencilState> ScreenDepthStencilState;
+    TComPtr<ID3D11RasterizerState>   RasterizerState;
 };
