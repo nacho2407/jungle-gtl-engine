@@ -13,11 +13,14 @@ static const FVertexSimple quad_vertices[] = {
 
 static const uint16_t quad_indices[] = {
     0,
+    2,
+    1,
     1,
     2,
     3,
 };
 
-static constexpr EMeshPrimitiveTopology quad_topology = EMeshPrimitiveTopology::TriangleStrip;
+static constexpr EMeshPrimitiveTopology quad_topology = EMeshPrimitiveTopology::TriangleList;
 static const uint32_t quad_vertex_count = sizeof(quad_vertices) / sizeof(FVertexSimple);
 static const uint32_t quad_index_count = sizeof(quad_indices) / sizeof(uint16_t);
+

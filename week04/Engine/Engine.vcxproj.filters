@@ -7,9 +7,6 @@
     <Filter Include="Source">
       <UniqueIdentifier>{4f6c83fe-a134-3484-3756-8c697b723468}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Resources\Font">
-      <UniqueIdentifier>{fad3e58f-d9ea-cb84-df1f-2e117697f486}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Resources\Mesh">
       <UniqueIdentifier>{611fd08d-c5f2-636f-d61c-0405906a469d}</UniqueIdentifier>
     </Filter>
@@ -43,20 +40,11 @@
     <Filter Include="Source\Renderer">
       <UniqueIdentifier>{b4935566-c566-3c8c-ae88-5cc13eba9d31}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\SceneIO">
+      <UniqueIdentifier>{895f5acd-6298-b3f0-10a2-42ff97fb0290}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\ThirdParty">
       <UniqueIdentifier>{b8e8bd27-1e61-2aa5-0088-7e70dd22287c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Resources\Font\Comic_Sans_MS">
-      <UniqueIdentifier>{b1e62315-e2ce-7f75-1be2-6878ca7045f9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Resources\Font\Galmuri11">
-      <UniqueIdentifier>{702c0c07-20e7-a580-8783-537854e854a5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Resources\Font\JetBrainsMono">
-      <UniqueIdentifier>{7eaade0e-bd47-722f-7804-38ec85fe8c2e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Resources\Font\Ubuntu">
-      <UniqueIdentifier>{3ff98eb9-4461-1ff0-f53b-612fd98db83c}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\ApplicationCore\GenericPlatform">
       <UniqueIdentifier>{387b5035-7247-ab88-2751-c494bed9266f}</UniqueIdentifier>
@@ -90,9 +78,6 @@
     </Filter>
     <Filter Include="Source\Engine\Game">
       <UniqueIdentifier>{b40c0879-15f3-b5bd-98bc-875a35ed9e05}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\SceneIO">
-      <UniqueIdentifier>{37e30a95-abfd-d9e5-9798-b5dd12b76214}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\ViewPort">
       <UniqueIdentifier>{3f58abac-aa9e-06f1-348e-4d37ab560ccd}</UniqueIdentifier>
@@ -270,15 +255,6 @@
     <ClCompile Include="Source\Engine\Scene.cpp">
       <Filter>Source\Engine</Filter>
     </ClCompile>
-    <ClCompile Include="Source\SceneIO\SceneJson.cpp">
-      <Filter>Source\Engine\SceneIO</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SceneIO\SceneSerializer.cpp">
-      <Filter>Source\Engine\SceneIO</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SceneIO\SceneTypeRegistry.cpp">
-      <Filter>Source\Engine\SceneIO</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp">
       <Filter>Source\Engine\ViewPort</Filter>
     </ClCompile>
@@ -286,6 +262,9 @@
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
     <ClCompile Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.cpp">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\D3D11\D3D11OutlineRenderer.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
     <ClCompile Include="Source\Renderer\D3D11\D3D11ObjectIdRenderer.cpp">
@@ -324,6 +303,16 @@
     <ClCompile Include="Source\Renderer\Submitter\WorldGridSubmitter.cpp">
       <Filter>Source\Renderer\Submitter</Filter>
     </ClCompile>
+    <ClCompile Include="Source\SceneIO\SceneJson.cpp">
+      <Filter>Source\SceneIO</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SceneIO\SceneSerializer.cpp">
+      <Filter>Source\SceneIO</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SceneIO\SceneTypeRegistry.cpp">
+      <Filter>Source\SceneIO</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Game\SphereActor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Mesh\Cone.h">
@@ -581,18 +570,6 @@
     <ClInclude Include="Source\Engine\Scene.h">
       <Filter>Source\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="Source\SceneIO\SceneAssetPath.h">
-      <Filter>Source\Engine\SceneIO</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SceneIO\SceneJson.h">
-      <Filter>Source\Engine\SceneIO</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SceneIO\SceneSerializer.h">
-      <Filter>Source\Engine\SceneIO</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SceneIO\SceneTypeRegistry.h">
-      <Filter>Source\Engine\SceneIO</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\ViewPort\Viewport.h">
       <Filter>Source\Engine\ViewPort</Filter>
     </ClInclude>
@@ -612,6 +589,9 @@
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.h">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\D3D11\D3D11OutlineRenderer.h">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\D3D11\D3D11ObjectIdRenderer.h">
@@ -701,9 +681,22 @@
     <ClInclude Include="Source\Renderer\Types\ViewMode.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
+    <ClInclude Include="Source\SceneIO\SceneAssetPath.h">
+      <Filter>Source\SceneIO</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SceneIO\SceneJson.h">
+      <Filter>Source\SceneIO</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SceneIO\SceneSerializer.h">
+      <Filter>Source\SceneIO</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SceneIO\SceneTypeRegistry.h">
+      <Filter>Source\SceneIO</Filter>
+    </ClInclude>
     <ClInclude Include="Source\ThirdParty\Json\json.hpp">
       <Filter>Source\ThirdParty\Json</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Game\SphereActor.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

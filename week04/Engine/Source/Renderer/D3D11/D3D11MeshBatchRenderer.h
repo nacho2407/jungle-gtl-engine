@@ -39,9 +39,9 @@ class FD3D11MeshBatchRenderer
 {
   public:
     static constexpr const wchar_t* InstancedShaderPath =
-        L"../Engine/Resources/Shader/ShaderInstancedMesh.hlsl";
+        L"Content\\Shader\\ShaderInstancedMesh.hlsl";
     static constexpr const wchar_t* SingleShaderPath =
-        L"../Engine/Resources/Shader/ShaderMesh.hlsl";
+        L"Content\\Shader\\ShaderMesh.hlsl";
     static constexpr uint32 MaxInstanceCapacity = 4096;
 
   public:

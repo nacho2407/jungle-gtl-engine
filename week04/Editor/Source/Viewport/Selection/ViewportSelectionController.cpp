@@ -339,6 +339,17 @@ void FViewportSelectionController::ApplySelectionState(AActor* Actor, bool bSele
     {
         RootComponent->SetSelected(bSelected);
     }
+
+    for (Engine::Component::USceneComponent* Component : Actor->GetOwnedComponents())
+    {
+        auto* PrimitiveComponent = Cast<Engine::Component::UPrimitiveComponent>(Component);
+        if (PrimitiveComponent == nullptr)
+        {
+            continue;
+        }
+
+        PrimitiveComponent->SetShowBounds(bSelected);
+    }
 }
 
 AActor* FViewportSelectionController::ResolveActorFromContextSelection() const
