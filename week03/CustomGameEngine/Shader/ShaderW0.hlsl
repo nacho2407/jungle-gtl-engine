@@ -43,7 +43,8 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
     
     if (bIsSelected > 0)
     {
-        return float4(finalColor.xyz, finalColor.w * 1.f); // 선택 시 투명화.
+        float3 highlightedColor = saturate(finalColor.xyz + float3(0.2f, 0.2f, 0.2f));
+        return float4(highlightedColor, finalColor.w * 0.5f); // 선택 시 투명화 및 밝기 증가.
     }
     return finalColor;
 }
