@@ -9,8 +9,13 @@ public:
 	void Render(float DeltaTime) override;
 
 private:
-	int SortColumn = 2;			// 기본 정렬: TotalTime
-	bool bSortDescending = true;
-	bool bPaused = false;		// true면 스냅샷 고정
-	TArray<FStatEntry> FrozenEntries;	// Pause 시점의 스냅샷 복사본
+	void RenderStatTable(const char* TableID, const TArray<FStatEntry>& Source, int& OutSortColumn, bool& OutSortDescending);
+
+	int CPUSortColumn = 2;
+	bool bCPUSortDescending = true;
+	int GPUSortColumn = 2;
+	bool bGPUSortDescending = true;
+	bool bPaused = false;
+	TArray<FStatEntry> FrozenCPUEntries;
+	TArray<FStatEntry> FrozenGPUEntries;
 };

@@ -8,6 +8,8 @@
 #include "GameFramework/World.h"
 #include "Render/Scene/RenderCollector.h"
 #include "Render/Scene/RenderCollectorContext.h"
+#include "Core/Stats.h"
+#include "Core/GPUProfiler.h"
 
 DEFINE_CLASS(UEditorEngine, UEngine)
 REGISTER_FACTORY(UEditorEngine)
@@ -73,8 +75,17 @@ void UEditorEngine::Tick(float DeltaTime)
 
 void UEditorEngine::Render(float DeltaTime)
 {
+#if STATS
+	FStatManager::Get().TakeSnapshot();
+	FGPUProfiler::Get().TakeSnapshot();
+#endif
+	SCOPE_STAT("EditorEngine::Render");
+
 	RenderBus.Clear();
-	BuildRenderCommands();
+	{
+		SCOPE_STAT("BuildRenderCommands");
+		BuildRenderCommands();
+	}
 
 	ERasterizerState ViewModeRasterizer = ERasterizerState::SolidBackCull;
 	if (FEditorSettings::Get().ViewMode == EViewMode::Wireframe)
@@ -84,7 +95,10 @@ void UEditorEngine::Render(float DeltaTime)
 
 	Renderer.BeginFrame();
 	Renderer.Render(RenderBus, ViewModeRasterizer);
-	MainPanel.Render(DeltaTime);
+	{
+		SCOPE_STAT("MainPanel::Render");
+		MainPanel.Render(DeltaTime);
+	}
 	Renderer.RenderOverlay(RenderBus);
 	Renderer.EndFrame();
 }
