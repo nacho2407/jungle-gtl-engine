@@ -17,7 +17,7 @@ namespace Engine::Component
         FRotator GetRelativeRotation() const { return WorldTransform.Rotator(); }
         FVector  GetRelativeScale3D() const { return WorldTransform.GetScale3D(); }
         FQuat    GetRelativeQuaternion() const { return WorldTransform.GetRotation(); }
-        FTransform GetRelativeFTransform() const { return WorldTransform; }
+        FTransform GetRelativeTransform() const { return WorldTransform; }
 
         virtual void SetRelativeLocation(const FVector& NewLocation);
         virtual void SetRelativeRotation(const FQuat& NewRotation);

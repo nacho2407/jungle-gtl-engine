@@ -27,7 +27,8 @@ bool FViewportGizmoController::OnMouseButtonDown(int32 MouseX, int32 MouseY)
     bIsDragging = true;
     StartMousePosX = MouseX;
     StartMousePosY = MouseY;
-    
+    StartTransform = SelectedActor->GetRootComponent()->GetRelativeTransform();
+
     switch (Axis)
     {
     case EAxis::X:
@@ -56,7 +57,6 @@ bool FViewportGizmoController::OnMouseButtonDown(int32 MouseX, int32 MouseY)
     return true;
 }
 
-
 void FViewportGizmoController::OnMouseButtonUp()
 {
     bIsDragging = false;
@@ -78,6 +78,13 @@ void FViewportGizmoController::OnMouseMove(int32 MouseX, int32 MouseY)
     {
         // HitTestGizmo(MouseX, MouseY);
     }
+}
+
+void FViewportGizmoController::ChangeWorldMode()
+{
+    bIsWorldMode = !bIsWorldMode;
+    CurrentDragAxis =
+        SelectedActor->GetRootComponent()->GetRelativeRotation().RotateVector(CurrentDragAxis);
 }
 
 FMatrix FViewportGizmoController::GetMatrix() const

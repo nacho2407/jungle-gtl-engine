@@ -56,6 +56,8 @@ bool FGizmoInputContext::HandleEvent(const Engine::ApplicationCore::FInputEvent&
     {
         if (Event.Key == EKey::Space)
             GizmoController->ChangeGizmoType();
+        else if (Event.Key == EKey::X)
+            GizmoController->ChangeWorldMode();
         return true;
     }
     break;

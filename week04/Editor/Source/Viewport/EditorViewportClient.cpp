@@ -78,8 +78,18 @@ void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData)
         OutRenderData.Gizmo.GizmoType = GizmoController.GetGizmoType();
         OutRenderData.Gizmo.Highlight = EGizmoHighlight::None;
         GizmoController.SetSelectedActor(SelectionController.GetSelectedActors().back());
-        OutRenderData.Gizmo.Frame =
-            GizmoController.GetSelectedActor()->GetRootComponent()->GetRelativeMatrixNoScale();
+        if (GizmoController.bIsWorldMode)
+        {
+            FVector RelativeLocation{
+                GizmoController.GetSelectedActor()->GetRootComponent()->GetRelativeLocation()};
+            OutRenderData.Gizmo.Frame = FMatrix::MakeTranslation(RelativeLocation);
+        }
+        else
+        {
+            OutRenderData.Gizmo.Frame =
+                GizmoController.GetSelectedActor()->GetRootComponent()->GetRelativeMatrixNoScale();
+        }
+        OutRenderData.Gizmo.Scale = 0.3f;
 
         OutRenderData.ShowFlags = EEditorShowFlags::SF_Grid | EEditorShowFlags::SF_WorldAxes |
                                   EEditorShowFlags::SF_Gizmo |
@@ -92,6 +102,7 @@ void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData)
         OutRenderData.Gizmo.GizmoType = EGizmoType::Translation;
         OutRenderData.Gizmo.Highlight = EGizmoHighlight::None;
         OutRenderData.Gizmo.Frame = FMatrix::Identity;
+        OutRenderData.Gizmo.Scale = 1.0f;
         OutRenderData.ShowFlags = EEditorShowFlags::SF_Grid | EEditorShowFlags::SF_WorldAxes |
                                   EEditorShowFlags::SF_SelectionOutline |
                                   EEditorShowFlags::SF_ObjectLabels;

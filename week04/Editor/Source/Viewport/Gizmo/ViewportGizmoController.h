@@ -39,6 +39,7 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
         else if (GizmoType == EGizmoType::Scaling)
             GizmoType = EGizmoType::Translation;
     }
+    void    ChangeWorldMode();
     FMatrix    GetMatrix() const;
 
     void SetCamera(FViewportCamera* InCamera) { ViewportCamera = InCamera; }
@@ -61,6 +62,8 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
 
     bool bIsDrawed{false};
 
+    public:
+    bool bIsWorldMode = false;
 
   private:
     bool HitTestGizmo(int32 MouseX, int32 MouseY);
@@ -77,7 +80,7 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     FPickResult PickData;
 
     
-    bool       bIsWorldMode = false;
+    
     bool       bIsDragging = false;
     int32      StartMousePosX;
     int32      StartMousePosY;
