@@ -50,8 +50,11 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
         ViewportSelectionController = InControllelr;
     }
 
-    void    SetSelectedActor(AActor* InActor) { SelectedActor = InActor; }
-    AActor* GetSelectedActor() const { return SelectedActor; }
+    void    SetSelectedActor(AActor* InActor) { LastSelectedActor = InActor; }
+    AActor* GetSelectedActor() const { return LastSelectedActor; }
+
+    /*void    SetSelectedActors(TArray<AActor*>* InActors) { SelectedActors = InActors; }
+    TArray<AActor*>* GetSelectedActors() const { return SelectedActors; }*/
 
     // 기즈모 설정 변경
     // void SetGizmoMode(EGizmoMode InMode) { CurrentMode = InMode; }
@@ -62,6 +65,7 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     }
 
     bool bIsDrawed{false};
+    float GizmoScale{1.0f};
 
   public:
     bool bIsWorldMode = false;
@@ -107,5 +111,6 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     FViewportCamera*              ViewportCamera{nullptr};
     FViewportSelectionController* ViewportSelectionController{nullptr};
 
-    AActor* SelectedActor{nullptr};
+    AActor* LastSelectedActor{nullptr};
+    // TArray<AActor*>* SelectedActors{nullptr};
 };

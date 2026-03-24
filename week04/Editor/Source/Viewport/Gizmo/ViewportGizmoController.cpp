@@ -27,7 +27,8 @@ bool FViewportGizmoController::OnMouseButtonDown(int32 MouseX, int32 MouseY)
     bIsDragging = true;
     StartMousePosX = MouseX;
     StartMousePosY = MouseY;
-    StartTransform = SelectedActor->GetRootComponent()->GetRelativeTransform();
+    LastSelectedActor = ViewportSelectionController->GetSelectedActors().back();
+    StartTransform = LastSelectedActor->GetRootComponent()->GetRelativeTransform();
 
     switch (Axis)
     {
@@ -43,8 +44,8 @@ bool FViewportGizmoController::OnMouseButtonDown(int32 MouseX, int32 MouseY)
     }
     if (!bIsWorldMode)
     {
-        CurrentDragAxis =
-            SelectedActor->GetRootComponent()->GetRelativeRotation().RotateVector(CurrentDragAxis);
+        CurrentDragAxis = LastSelectedActor->GetRootComponent()->GetRelativeRotation().RotateVector(
+            CurrentDragAxis);
     }
 
     const Geometry::FRay PickRay = Geometry::FRay::BuildRay(
@@ -97,7 +98,8 @@ bool FViewportGizmoController::OnMouseButtonDown(int32 MouseX, int32 MouseY)
         }
         if (!bIsWorldMode)
         {
-            ReferenceAxis = SelectedActor->GetRootComponent()->GetRelativeRotation().RotateVector(
+            ReferenceAxis =
+                LastSelectedActor->GetRootComponent()->GetRelativeRotation().RotateVector(
                 ReferenceAxis);
         }
         FVector2 ScreenPosA = ProjectWorldToScreen(PivotOrigin);
@@ -141,13 +143,13 @@ void FViewportGizmoController::ChangeWorldMode()
 {
     bIsWorldMode = !bIsWorldMode;
     CurrentDragAxis =
-        SelectedActor->GetRootComponent()->GetRelativeRotation().RotateVector(CurrentDragAxis);
+        LastSelectedActor->GetRootComponent()->GetRelativeRotation().RotateVector(CurrentDragAxis);
 }
 
 FMatrix FViewportGizmoController::GetMatrix() const
 {
-    if (SelectedActor)
-        return SelectedActor->GetRootComponent()->GetRelativeMatrix();
+    if (LastSelectedActor)
+        return LastSelectedActor->GetRootComponent()->GetRelativeMatrix();
     else
         return FMatrix::Identity;
 }
@@ -165,6 +167,7 @@ bool FViewportGizmoController::HitTestGizmo(int32 MouseX, int32 MouseY)
         GizmoType = Result.GizmoType;
         Axis = Result.Axis;
         switch (Axis)
+
         {
         case EAxis::X:
             GizmoHighlight = EGizmoHighlight::X;
@@ -184,7 +187,7 @@ bool FViewportGizmoController::HitTestGizmo(int32 MouseX, int32 MouseY)
 
 void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)
 {
-    if (GizmoType == EGizmoType::None || SelectedActor == nullptr)
+    if (GizmoType == EGizmoType::None || LastSelectedActor == nullptr)
     {
         return;
     }
@@ -208,7 +211,7 @@ void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)
     {
         FVector NewLocation = StartTransform.GetLocation() + (CurrentDragAxis * DeltaValue);
         NewTransform.SetLocation(NewLocation);
-        SelectedActor->GetRootComponent()->SetRelativeLocation(NewTransform.GetLocation());
+        LastSelectedActor->GetRootComponent()->SetRelativeLocation(NewTransform.GetLocation());
     }
     else if (GizmoType == EGizmoType::Scaling)
     {
@@ -227,7 +230,7 @@ void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)
         }
         FVector NewScale = StartTransform.GetScale3D() + (DragAxis * DeltaValue);
         NewTransform.SetScale3D(NewScale);
-        SelectedActor->GetRootComponent()->SetRelativeScale3D(NewTransform.GetScale3D());
+        LastSelectedActor->GetRootComponent()->SetRelativeScale3D(NewTransform.GetScale3D());
     }
     else if (GizmoType == EGizmoType::Rotation)
     {
@@ -246,7 +249,7 @@ void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)
         float AngleRadians = FMath::DegreesToRadians(AngleDegrees);
         FQuat DeltaRotation = FQuat(CurrentDragAxis, AngleRadians);
         FQuat NewRotation = StartTransform.GetRotation() * DeltaRotation;
-        SelectedActor->GetRootComponent()->SetRelativeRotation(NewRotation);
+        LastSelectedActor->GetRootComponent()->SetRelativeRotation(NewRotation);
 
         /*FVector PivotOrigin = StartTransform.GetLocation();
         FVector CurrentHitPos = RayPlaneIntersection(PickRay, PivotOrigin, CurrentDragAxis);
