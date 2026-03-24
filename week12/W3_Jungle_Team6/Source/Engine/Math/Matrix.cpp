@@ -3,14 +3,14 @@
 #include <iostream>
 
 const FMatrix FMatrix::Identity(1, 0, 0, 0,
-								0, 1, 0, 0,
-								0, 0, 1, 0,
-								0, 0, 0, 1);
+	0, 1, 0, 0,
+	0, 0, 1, 0,
+	0, 0, 0, 1);
 
 FMatrix FMatrix::operator+(const FMatrix& Other) const {
 	FMatrix ret;
 
-	for(int i = 0; i < 16; i++) 
+	for (int i = 0; i < 16; i++)
 	{
 		ret.Data[i] = Data[i] + Other.Data[i];
 	}
@@ -27,7 +27,7 @@ FMatrix FMatrix::operator+(const FMatrix& Other) const {
 FMatrix FMatrix::operator-(const FMatrix& Other) const {
 	FMatrix ret;
 
-	for(int i = 0; i < 16; i++) 
+	for (int i = 0; i < 16; i++)
 	{
 		ret.Data[i] = Data[i] - Other.Data[i];
 	}
@@ -65,7 +65,7 @@ FMatrix FMatrix::operator/(float Scalar) const {
 
 	const float inv = 1.0f / Scalar;
 
-	for(int i= 0; i < 16; i++) 
+	for (int i = 0; i < 16; i++)
 	{
 		ret.Data[i] = Data[i] * inv;
 	}
@@ -76,7 +76,7 @@ FMatrix FMatrix::operator/(float Scalar) const {
 FMatrix FMatrix::operator+(float Scalar) const {
 	FMatrix ret;
 
-	for(int i = 0; i < 16; i++) 
+	for (int i = 0; i < 16; i++)
 	{
 		ret.Data[i] = Data[i] + Scalar;
 	}
@@ -87,7 +87,7 @@ FMatrix FMatrix::operator+(float Scalar) const {
 FMatrix FMatrix::operator-(float Scalar) const {
 	FMatrix ret;
 
-	for(int i = 0; i < 16; i++) 
+	for (int i = 0; i < 16; i++)
 	{
 		ret.Data[i] = Data[i] - Scalar;
 	}
@@ -98,7 +98,7 @@ FMatrix FMatrix::operator-(float Scalar) const {
 FMatrix FMatrix::operator*(float Scalar) const {
 	FMatrix ret{};
 
-	for(int i = 0; i < 16; i++) 
+	for (int i = 0; i < 16; i++)
 	{
 		ret.Data[i] = Data[i] * Scalar;
 	}
@@ -227,7 +227,7 @@ FMatrix FMatrix::GetInverseFast() const {
 
 bool FMatrix::Equals(const FMatrix& Other) const {
 
-	for(int i = 0; i < 16; i++) 
+	for (int i = 0; i < 16; i++)
 	{
 		if (std::abs(Data[i] - Other.Data[i]) > 1e-4) {
 			return false;
@@ -402,6 +402,23 @@ FVector FMatrix::GetLocation() const
 {
 	// 4번째 행(인덱스 3)의 0, 1, 2번째 열이 각각 X, Y, Z 위치입니다.
 	return FVector(M[3][0], M[3][1], M[3][2]);
+}
+
+FVector FMatrix::GetScale() const
+{
+	float ScaleX = std::sqrt(M[0][0] * M[0][0] + M[0][1] * M[0][1] + M[0][2] * M[0][2]);
+	float ScaleY = std::sqrt(M[1][0] * M[1][0] + M[1][1] * M[1][1] + M[1][2] * M[1][2]);
+	float ScaleZ = std::sqrt(M[2][0] * M[2][0] + M[2][1] * M[2][1] + M[2][2] * M[2][2]);
+
+	return FVector(ScaleX, ScaleY, ScaleZ);
+}
+
+void FMatrix::SetAxes(const FVector& Right, const FVector& Up, const FVector& Forward)
+{
+	M[0][0] = Right.X;   M[0][1] = Right.Y;   M[0][2] = Right.Z;   M[0][3] = 0.0f;
+	M[1][0] = Up.X;      M[1][1] = Up.Y;      M[1][2] = Up.Z;      M[1][3] = 0.0f;
+	M[2][0] = Forward.X; M[2][1] = Forward.Y; M[2][2] = Forward.Z; M[2][3] = 0.0f;
+	M[3][0] = 0.0f;      M[3][1] = 0.0f;      M[3][2] = 0.0f;      M[3][3] = 1.0f;
 }
 
 FMatrix FMatrix::MakeRotationAxis(const FVector& Axis, float Angle)

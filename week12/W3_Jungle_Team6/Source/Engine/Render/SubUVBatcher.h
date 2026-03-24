@@ -43,6 +43,7 @@ public:
     void AddSprite(const FVector& WorldPos,
                    const FVector& CamRight,
                    const FVector& CamUp,
+				   const FVector& WorldScale,
                    uint32 FrameIndex,
                    uint32 Columns,
                    uint32 Rows,
