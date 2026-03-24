@@ -263,6 +263,9 @@
     <ClCompile Include="Source\Engine\Core\Stats.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Core\GPUProfiler.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorStatWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
@@ -396,6 +399,9 @@
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Stats.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\GPUProfiler.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorStatWidget.h">
