@@ -10,11 +10,27 @@
         static int Id {0};\
         return &Id;\
     } \
+    static const char* GetStaticTypeName()\
+    {\
+        return #Cls;\
+    }\
     virtual bool IsA(const void* Id) const override\
     {\
         if (GetClass() == Id)\
             return true;\
         return ParentCls::IsA(Id);\
+    }\
+    virtual const char* GetTypeName() const override\
+    {\
+        return #Cls;\
+    }\
+    void *operator new(size_t Size)\
+    {\
+        return UObject::AllocateObject(Size, #Cls);\
+    }\
+    void operator delete(void* Pointer, size_t Size)\
+    {\
+        UObject::FreeObject(Pointer, Size);\
     }
 
 #define REGISTER_CLASS(Namespace, Cls)\
@@ -45,9 +61,12 @@ class ENGINE_API UObject
         return &Id;
     }
     virtual bool IsA(const void* Id) const { return GetClass() == Id; }
+    virtual const char* GetTypeName() const { return "UObject"; }
 
     void *operator new(size_t Size);
     void  operator delete(void* Pointer, size_t Size);
+    static void* AllocateObject(size_t Size, const char* InTypeName);
+    static void FreeObject(void* Pointer, size_t Size);
 
   public:
     uint32 UUID;

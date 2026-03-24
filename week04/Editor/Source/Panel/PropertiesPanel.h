@@ -22,13 +22,20 @@ class FPropertiesPanel : public IPanel
     void SetTarget(const FVector& Location, const FVector& Rotation, const FVector& Scale);
 
   private:
+    AActor* ResolveSelectedActor() const;
     Engine::Component::USceneComponent* ResolveTargetComponent(AActor*& OutSelectedActor) const;
     void DrawNoSelectionState() const;
+    void DrawMultipleSelectionState() const;
     void DrawUnsupportedSelectionState() const;
     void DrawSelectionSummary(AActor* SelectedActor,
                               Engine::Component::USceneComponent* TargetComponent) const;
+    void DrawComponentHierarchy(AActor* SelectedActor,
+                                Engine::Component::USceneComponent* TargetComponent) const;
+    void DrawComponentNode(AActor* OwnerActor, Engine::Component::USceneComponent* Component,
+                           Engine::Component::USceneComponent* TargetComponent) const;
     void SyncEditTransformFromTarget(Engine::Component::USceneComponent* TargetComponent);
     void DrawTransformEditor(Engine::Component::USceneComponent* TargetComponent);
+    void DrawComponentPropertyEditor(Engine::Component::USceneComponent* TargetComponent);
 
   private:
     FVector EditLocation = { 0.f, 0.f, 0.f };

@@ -4,8 +4,12 @@
 #include "Engine/Component/Mesh/QuadComponent.h"
 #include "Engine/Component/Mesh/SphereComponent.h"
 #include "Engine/Component/Mesh/TriangleComponent.h"
+#include "Engine/Component/Sprite/AnimatedSpriteComponent.h"
+#include "Engine/Component/Sprite/AtlasComponent.h"
+#include "Engine/Component/Sprite/SubUVComponent.h"
 #include "Engine/Component/Core/SceneComponent.h"
 #include "Engine/Component/Core/UnknownComponent.h"
+#include "Engine/Component/Text/TextComponent.h"
 #include "Engine/Game/Actor.h"
 #include "Engine/Game/CubeActor.h"
 #include "Engine/Game/UnknownActor.h"
@@ -74,6 +78,11 @@ namespace
         RegisterComponentType<Engine::Component::UQuadComponent>("UQuadComponent");
         RegisterComponentType<Engine::Component::USphereComponent>("USphereComponent");
         RegisterComponentType<Engine::Component::UTriangleComponent>("UTriangleComponent");
+        RegisterComponentType<Engine::Component::UAtlasComponent>("UAtlasComponent");
+        RegisterComponentType<Engine::Component::USubUVComponent>("USubUVComponent");
+        RegisterComponentType<Engine::Component::UAnimatedSpriteComponent>(
+            "UAnimatedSpriteComponent");
+        RegisterComponentType<Engine::Component::UTextComponent>("UTextComponent");
         RegisterComponentType<Engine::Component::UUnknownComponent>("UUnknownComponent");
     }
 } // namespace

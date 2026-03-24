@@ -1,29 +1,21 @@
 {
   "schema": "JungleScene",
-  "version": 1,
+  "version": 2,
   "actors": [
     {
-      "type": "fjklsadjfio",
+      "type": "ACubeActor",
       "uuid": 0,
       "name": "CubeActor 1",
       "pickable": true,
       "components": [
         {
-          "data": {
-            "color": [
-              1,
-              1,
-              1,
-              1
-            ]
-          },
-          "type": "Component",
+          "type": "UCubeComponent",
           "is_root": true,
           "uuid": 1,
           "name": "None",
           "transform": {
             "location": [
-              37.4000015258789,
+              0,
               0,
               0
             ],
@@ -36,6 +28,174 @@
             "scale": [
               1,
               1,
+              1
+            ]
+          },
+          "properties": {
+            "color": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "ACubeActor",
+      "uuid": 2,
+      "name": "CubeActor 2",
+      "pickable": true,
+      "components": [
+        {
+          "type": "UCubeComponent",
+          "is_root": true,
+          "uuid": 3,
+          "name": "None",
+          "transform": {
+            "location": [
+              39.2999992370605,
+              0,
+              0
+            ],
+            "rotation_quat": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "properties": {
+            "color": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "ACubeActor",
+      "uuid": 4,
+      "name": "CubeActor 3",
+      "pickable": true,
+      "components": [
+        {
+          "type": "UCubeComponent",
+          "is_root": true,
+          "uuid": 5,
+          "name": "None",
+          "transform": {
+            "location": [
+              29.7999992370605,
+              0,
+              0
+            ],
+            "rotation_quat": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "properties": {
+            "color": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "ACubeActor",
+      "uuid": 6,
+      "name": "CubeActor 4",
+      "pickable": true,
+      "components": [
+        {
+          "type": "UCubeComponent",
+          "is_root": true,
+          "uuid": 7,
+          "name": "None",
+          "transform": {
+            "location": [
+              20.3999996185303,
+              0,
+              0
+            ],
+            "rotation_quat": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "properties": {
+            "color": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "ACubeActor",
+      "uuid": 8,
+      "name": "CubeActor 5",
+      "pickable": true,
+      "components": [
+        {
+          "type": "UCubeComponent",
+          "is_root": true,
+          "uuid": 9,
+          "name": "None",
+          "transform": {
+            "location": [
+              9.89999961853027,
+              0,
+              0
+            ],
+            "rotation_quat": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "properties": {
+            "color": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
               1
             ]
           }
