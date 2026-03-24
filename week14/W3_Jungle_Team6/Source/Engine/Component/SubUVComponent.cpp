@@ -1,10 +1,16 @@
 ﻿#include "SubUVComponent.h"
 
 #include <cstring>
+#include "Render/Mesh/MeshManager.h"
 #include "Core/ResourceManager.h"
 
 DEFINE_CLASS(USubUVComponent, UPrimitiveComponent)
 REGISTER_FACTORY(USubUVComponent)
+
+USubUVComponent::USubUVComponent()
+{
+	MeshData = &FMeshManager::Get().GetQuad();
+}
 
 void USubUVComponent::SetParticle(const FName& InParticleName)
 {
@@ -27,6 +33,17 @@ void USubUVComponent::PostEditProperty(const char* PropertyName)
 	{
 		SetParticle(ParticleName);
 	}
+}
+
+void USubUVComponent::UpdateWorldAABB() const
+{
+	float HalfW = Width * LocalExtents.X;
+	float HalfH = Height * LocalExtents.Y;
+
+	float radius = std::sqrt(HalfW * HalfW + HalfH * HalfH);
+
+	WorldAABBMinLocation = FVector(-0.01f,-radius, -radius);
+	WorldAABBMaxLocation = FVector(0.01f, radius, radius);
 }
 
 void USubUVComponent::TickComponent(float DeltaTime)
