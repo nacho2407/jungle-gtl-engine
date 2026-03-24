@@ -12,7 +12,7 @@ namespace Engine::ApplicationCore
         //  TODO : sort 함수 Wrapping 하기
         //  Priority number가 낮을 수록 우선순위 높음
         std::sort(Contexts.begin(), Contexts.end(), [](IInputContext* A, IInputContext* B)
-                  { return A->GetPriority() > B->GetPriority(); });
+                  { return A->GetPriority() < B->GetPriority(); });
     }
 
     //  Event가 Context에 포함되면 true, 정의된 Context가 아니라면 false 반환

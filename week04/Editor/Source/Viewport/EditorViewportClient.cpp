@@ -12,6 +12,7 @@ void FEditorViewportClient::Create()
     InputRouter->AddContext(&SelectionInputContext);
 
     NavigationController.SetCamera(&ViewportCamera);
+    NavigationController.SetSelectionController(&SelectionController);
     SelectionController.SetCamera(&ViewportCamera);
 
     ViewportCamera.SetProjectionType(EViewportProjectionType::Perspective);

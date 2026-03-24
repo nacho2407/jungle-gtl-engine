@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "ApplicationCore/Input/InputContext.h"
 #include "Viewport/Selection/ViewportSelectionController.h"
 #include "Input/ContextModeTypes.h"
@@ -10,7 +10,7 @@ public:
     ~FSelectionInputContext() override = default;
 
     //  현재는 Literal 저장
-    int32 GetPriority() const override { return 20; }
+    int32 GetPriority() const override { return 100; }
 
     bool HandleEvent(const Engine::ApplicationCore::FInputEvent& Event,
                      const Engine::ApplicationCore::FInputState& State) override;
