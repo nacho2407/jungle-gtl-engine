@@ -33,7 +33,7 @@ namespace
             return A.SubmissionOrder < B.SubmissionOrder;
         }
     };
-}
+} // namespace
 
 bool FD3D11FontBatchRenderer::Initialize(FD3D11DynamicRHI* InRHI)
 {
@@ -151,8 +151,8 @@ FVector FD3D11FontBatchRenderer::MakeScreenClipPosition(float InScreenX, float I
     }
 
     const FViewportRect& ViewRect = CurrentSceneView->GetViewRect();
-    const float Width = static_cast<float>((ViewRect.Width > 0) ? ViewRect.Width : 1);
-    const float Height = static_cast<float>((ViewRect.Height > 0) ? ViewRect.Height : 1);
+    const float          Width = static_cast<float>((ViewRect.Width > 0) ? ViewRect.Width : 1);
+    const float          Height = static_cast<float>((ViewRect.Height > 0) ? ViewRect.Height : 1);
 
     const float ClipX = (InScreenX / Width) * 2.0f - 1.0f;
     const float ClipY = 1.0f - (InScreenY / Height) * 2.0f;
@@ -197,7 +197,7 @@ void FD3D11FontBatchRenderer::AppendTextItem(const FTextRenderItem& InItem)
         TextOrigin = MakeScreenClipPosition(ScreenPos.X, ScreenPos.Y, 0.0f);
 
         const FViewportRect& ViewRect = CurrentSceneView->GetViewRect();
-        const float Width = static_cast<float>((ViewRect.Width > 0) ? ViewRect.Width : 1);
+        const float          Width = static_cast<float>((ViewRect.Width > 0) ? ViewRect.Width : 1);
         const float Height = static_cast<float>((ViewRect.Height > 0) ? ViewRect.Height : 1);
 
         const float PixelToClipX = 2.0f / Width;
@@ -241,7 +241,7 @@ void FD3D11FontBatchRenderer::AppendTextItem(const FTextRenderItem& InItem)
             continue;
         }
 
-        const uint32 CodePoint = static_cast<uint8>(Ch);
+        const uint32      CodePoint = static_cast<uint8>(Ch);
         const FFontGlyph* Glyph = InItem.FontResource->FindGlyph(CodePoint);
         if (Glyph == nullptr)
         {
@@ -295,7 +295,7 @@ void FD3D11FontBatchRenderer::EndFrame(const FSceneView* InSceneView)
     Vertices.clear();
     Indices.clear();
 
-    std::stable_sort(PendingTextItems.begin(), PendingTextItems.end(), FTextRenderItemLess{});
+    std::sort(PendingTextItems.begin(), PendingTextItems.end(), FTextRenderItemLess{});
 
     for (const FTextRenderItem& Item : PendingTextItems)
     {
@@ -445,16 +445,15 @@ bool FD3D11FontBatchRenderer::CreateShaders()
     static const D3D11_INPUT_ELEMENT_DESC InputElements[] = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,
          static_cast<UINT>(offsetof(FFontVertex, Position)), D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
-         static_cast<UINT>(offsetof(FFontVertex, UV)), D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, static_cast<UINT>(offsetof(FFontVertex, UV)),
+         D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
          static_cast<UINT>(offsetof(FFontVertex, Color)), D3D11_INPUT_PER_VERTEX_DATA, 0},
     };
 
-    if (!RHI->CreateVertexShaderAndInputLayout(ShaderPath, "VSMain", InputElements,
-                                               static_cast<uint32>(std::size(InputElements)),
-                                               VertexShader.GetAddressOf(),
-                                               InputLayout.GetAddressOf()))
+    if (!RHI->CreateVertexShaderAndInputLayout(
+            ShaderPath, "VSMain", InputElements, static_cast<uint32>(std::size(InputElements)),
+            VertexShader.GetAddressOf(), InputLayout.GetAddressOf()))
     {
         return false;
     }
@@ -567,6 +566,6 @@ bool FD3D11FontBatchRenderer::CreateBuffers()
     IndexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
     IndexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-    return SUCCEEDED(
-        RHI->GetDevice()->CreateBuffer(&IndexBufferDesc, nullptr, DynamicIndexBuffer.GetAddressOf()));
+    return SUCCEEDED(RHI->GetDevice()->CreateBuffer(&IndexBufferDesc, nullptr,
+                                                    DynamicIndexBuffer.GetAddressOf()));
 }

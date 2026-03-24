@@ -5,6 +5,8 @@
 #include "Core/Math/Matrix.h"
 #include "Renderer/D3D11/D3D11Common.h"
 #include "Renderer/Types/RenderItem.h"
+#include "Renderer/Types/VertexTypes.h"
+#include "Renderer/Types/ShaderConstants.h"
 #include <vector>
 
 class FD3D11DynamicRHI;
@@ -12,19 +14,6 @@ class FSceneView;
 class FFontResource;
 struct FFontGlyph;
 struct FTextRenderItem;
-
-struct FFontVertex
-{
-    FVector  Position;
-    FVector2 UV;
-    FColor   Color;
-};
-
-struct FFontConstants
-{
-    FMatrix VP;
-    FColor  TintColor;
-};
 
 class FD3D11FontBatchRenderer
 {
@@ -49,14 +38,14 @@ class FD3D11FontBatchRenderer
                          const FFontGlyph& InGlyph, const FFontResource& InFont,
                          const FColor& InColor);
 
-    void AppendTextItem(const FTextRenderItem& InItem);
+    void    AppendTextItem(const FTextRenderItem& InItem);
     FVector MakeScreenClipPosition(float InScreenX, float InScreenY, float InDepth) const;
     bool    IsSameBatch(const FTextRenderItem& InItem) const;
 
   private:
     static constexpr uint32         MaxVertexCount = 65536;
     static constexpr uint32         MaxIndexCount = 65536;
-    static constexpr const wchar_t* ShaderPath = L"Engine/Resources/Shader/ShaderFont.hlsl";
+    static constexpr const wchar_t* ShaderPath = L"../Engine/Resources/Shader/ShaderFont.hlsl";
 
     FD3D11DynamicRHI* RHI = nullptr;
 

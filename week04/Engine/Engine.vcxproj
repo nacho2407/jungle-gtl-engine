@@ -85,8 +85,9 @@
     <ClInclude Include="Source\Engine\Component\Mesh\TriangleComponent.h" />
     <ClInclude Include="Source\Engine\Component\Sprite\AnimatedSpriteComponent.h" />
     <ClInclude Include="Source\Engine\Component\Sprite\AtlasComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Sprite\SpriteComponent.h" />
     <ClInclude Include="Source\Engine\Component\Sprite\SubUVComponent.h" />
-    <ClInclude Include="Source\Engine\Component\Text\TextComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Text\AtlasTextComponent.h" />
     <ClInclude Include="Source\Engine\EngineStatics.h" />
     <ClInclude Include="Source\Engine\Game\Actor.h" />
     <ClInclude Include="Source\Engine\Game\CubeActor.h" />
@@ -128,6 +129,7 @@
     <ClInclude Include="Source\Renderer\Types\ShaderConstants.h" />
     <ClInclude Include="Source\Renderer\Types\VertexTypes.h" />
     <ClInclude Include="Source\Renderer\Types\ViewMode.h" />
+    <ClInclude Include="Source\ThirdParty\Json\json.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -173,8 +175,9 @@
     <ClCompile Include="Source\Engine\Component\Mesh\TriangleComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Sprite\AnimatedSpriteComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Sprite\AtlasComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Sprite\SpriteComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Sprite\SubUVComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\Text\TextComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Text\AtlasTextComponent.cpp" />
     <ClCompile Include="Source\Engine\EngineStatics.cpp" />
     <ClCompile Include="Source\Engine\Game\Actor.cpp" />
     <ClCompile Include="Source\Engine\Game\CubeActor.cpp" />
@@ -185,9 +188,11 @@
     <ClCompile Include="Source\Engine\SceneIO\SceneTypeRegistry.cpp" />
     <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11DynamicRHI.cpp" />
+    <ClCompile Include="Source\Renderer\D3D11\D3D11FontBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11ObjectIdRenderer.cpp" />
+    <ClCompile Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\Draw\AABBDrawer.cpp" />
     <ClCompile Include="Source\Renderer\Draw\GizmoDrawer.cpp" />
     <ClCompile Include="Source\Renderer\Draw\PrimitiveDrawer.cpp" />

@@ -2,7 +2,7 @@
 
 #include "Engine/Game/Actor.h"
 #include "Engine/Component/Core/SceneComponent.h"
-#include "Engine/Component/Text/TextComponent.h"
+#include "Engine/Component/Text/AtlasTextComponent.h"
 #include "Renderer/Types/RenderItem.h"
 
 FScene::~FScene() { Clear(); }
@@ -80,40 +80,41 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
                 continue;
             }
 
-            auto* TextComponent = dynamic_cast<Engine::Component::UTextComponent*>(Component);
-            if (TextComponent == nullptr)
-            {
-                continue;
-            }
+            // TODO
+            //auto* TextComponent = dynamic_cast<Engine::Component::UTextComponent*>(Component);
+            //if (TextComponent == nullptr)
+            //{
+            //    continue;
+            //}
 
-            if (TextComponent->GetText().empty())
-            {
-                continue;
-            }
+            //if (TextComponent->GetText().empty())
+            //{
+            //    continue;
+            //}
 
-            if (TextComponent->GetFontResource() == nullptr)
-            {
-                continue;
-            }
+            //if (TextComponent->GetFontResource() == nullptr)
+            //{
+            //    continue;
+            //}
 
-            FTextRenderItem TextItem;
-            TextItem.World = Actor->GetWorldMatrix();
-            TextItem.Color = TextComponent->GetColor();
-            TextItem.FontResource = TextComponent->GetFontResource();
-            TextItem.Text = TextComponent->GetText();
-            TextItem.TextScale = TextComponent->GetTextScale();
-            TextItem.LetterSpacing = TextComponent->GetLetterSpacing();
-            TextItem.LineSpacing = TextComponent->GetLineSpacing();
-            TextItem.bBillboard = TextComponent->GetBillboard();
-            TextItem.BillboardOffset = TextComponent->GetBillboardOffset();
+            //FTextRenderItem TextItem;
+            //TextItem.World = Actor->GetWorldMatrix();
+            //TextItem.Color = TextComponent->GetColor();
+            //TextItem.FontResource = TextComponent->GetFontResource();
+            //TextItem.Text = TextComponent->GetText();
+            //TextItem.TextScale = TextComponent->GetTextScale();
+            //TextItem.LetterSpacing = TextComponent->GetLetterSpacing();
+            //TextItem.LineSpacing = TextComponent->GetLineSpacing();
+            //TextItem.bBillboard = TextComponent->GetBillboard();
+            //TextItem.BillboardOffset = TextComponent->GetBillboardOffset();
 
-            TextItem.State.ObjectId = ObjectId;
-            TextItem.State.SetVisible(Actor->IsVisible());
-            TextItem.State.SetPickable(false);
-            TextItem.State.SetSelected(Actor->IsSelected());
-            TextItem.State.SetHovered(Actor->IsHovered());
+            //TextItem.State.ObjectId = ObjectId;
+            //TextItem.State.SetVisible(Actor->IsVisible());
+            //TextItem.State.SetPickable(false);
+            //TextItem.State.SetSelected(Actor->IsSelected());
+            //TextItem.State.SetHovered(Actor->IsHovered());
 
-            OutRenderData.Texts.push_back(TextItem);
+            //OutRenderData.Texts.push_back(TextItem);
         }
     }
 }

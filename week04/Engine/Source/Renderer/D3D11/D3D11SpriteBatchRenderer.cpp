@@ -31,7 +31,7 @@ namespace
             return A.SubmissionOrder < B.SubmissionOrder;
         }
     };
-}
+} // namespace
 
 bool FD3D11SpriteBatchRenderer::Initialize(FD3D11DynamicRHI* InRHI)
 {
@@ -157,8 +157,8 @@ FVector FD3D11SpriteBatchRenderer::MakeScreenClipPosition(float InScreenX, float
     }
 
     const FViewportRect& ViewRect = CurrentSceneView->GetViewRect();
-    const float Width = static_cast<float>((ViewRect.Width > 0) ? ViewRect.Width : 1);
-    const float Height = static_cast<float>((ViewRect.Height > 0) ? ViewRect.Height : 1);
+    const float          Width = static_cast<float>((ViewRect.Width > 0) ? ViewRect.Width : 1);
+    const float          Height = static_cast<float>((ViewRect.Height > 0) ? ViewRect.Height : 1);
 
     const float ClipX = (InScreenX / Width) * 2.0f - 1.0f;
     const float ClipY = 1.0f - (InScreenY / Height) * 2.0f;
@@ -239,11 +239,12 @@ void FD3D11SpriteBatchRenderer::AppendSpriteItem(const FSpriteRenderItem& InItem
     if (InItem.Placement.IsScreenSpace())
     {
         const FVector2 ScreenPos = InItem.Placement.ScreenPosition;
-        const FVector WorldScale = InItem.Placement.World.GetScaleVector();
-        const float HalfWidth = WorldScale.X;
-        const float HalfHeight = WorldScale.Z;
+        const FVector  WorldScale = InItem.Placement.World.GetScaleVector();
+        const float    HalfWidth = WorldScale.X;
+        const float    HalfHeight = WorldScale.Z;
 
-        BottomLeft = MakeScreenClipPosition(ScreenPos.X - HalfWidth, ScreenPos.Y + HalfHeight, 0.0f);
+        BottomLeft =
+            MakeScreenClipPosition(ScreenPos.X - HalfWidth, ScreenPos.Y + HalfHeight, 0.0f);
         const FVector BottomRight =
             MakeScreenClipPosition(ScreenPos.X + HalfWidth, ScreenPos.Y + HalfHeight, 0.0f);
         const FVector TopLeft =
@@ -255,7 +256,7 @@ void FD3D11SpriteBatchRenderer::AppendSpriteItem(const FSpriteRenderItem& InItem
     else
     {
         const FMatrix& PlacementWorld = InItem.Placement.World;
-        FVector SpriteOrigin = PlacementWorld.GetOrigin() + InItem.Placement.WorldOffset;
+        FVector        SpriteOrigin = PlacementWorld.GetOrigin() + InItem.Placement.WorldOffset;
 
         if (InItem.Placement.IsBillboard())
         {
@@ -300,7 +301,7 @@ void FD3D11SpriteBatchRenderer::EndFrame(const FSceneView* InSceneView)
     Vertices.clear();
     Indices.clear();
 
-    std::stable_sort(PendingSpriteItems.begin(), PendingSpriteItems.end(), FSpriteRenderItemLess{});
+    std::sort(PendingSpriteItems.begin(), PendingSpriteItems.end(), FSpriteRenderItemLess{});
 
     for (const FSpriteRenderItem& Item : PendingSpriteItems)
     {
@@ -401,16 +402,15 @@ bool FD3D11SpriteBatchRenderer::CreateShaders()
     static const D3D11_INPUT_ELEMENT_DESC InputElements[] = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,
          static_cast<UINT>(offsetof(FSpriteVertex, Position)), D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
-         static_cast<UINT>(offsetof(FSpriteVertex, UV)), D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, static_cast<UINT>(offsetof(FSpriteVertex, UV)),
+         D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
          static_cast<UINT>(offsetof(FSpriteVertex, Color)), D3D11_INPUT_PER_VERTEX_DATA, 0},
     };
 
-    if (!RHI->CreateVertexShaderAndInputLayout(ShaderPath, "VSMain", InputElements,
-                                               static_cast<uint32>(std::size(InputElements)),
-                                               VertexShader.GetAddressOf(),
-                                               InputLayout.GetAddressOf()))
+    if (!RHI->CreateVertexShaderAndInputLayout(
+            ShaderPath, "VSMain", InputElements, static_cast<uint32>(std::size(InputElements)),
+            VertexShader.GetAddressOf(), InputLayout.GetAddressOf()))
     {
         return false;
     }
@@ -523,6 +523,6 @@ bool FD3D11SpriteBatchRenderer::CreateBuffers()
     IndexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
     IndexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-    return SUCCEEDED(
-        RHI->GetDevice()->CreateBuffer(&IndexBufferDesc, nullptr, DynamicIndexBuffer.GetAddressOf()));
+    return SUCCEEDED(RHI->GetDevice()->CreateBuffer(&IndexBufferDesc, nullptr,
+                                                    DynamicIndexBuffer.GetAddressOf()));
 }
