@@ -45,6 +45,7 @@ public:
 
 	// --- PrimitiveComponent 인터페이스 ---
 	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
+	bool SupportsOutline() const override { return false; }
 	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_SubUV;
 
 protected:
