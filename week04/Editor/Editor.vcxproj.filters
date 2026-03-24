@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source">
@@ -46,6 +46,9 @@
     <Filter Include="Source\Viewport\Gizmo">
       <UniqueIdentifier>{a4a5fb1b-42c4-c447-1a35-66493bab83fe}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Viewport\Global">
+      <UniqueIdentifier>{adcfa627-4b20-d1e6-fae1-1b2b3dcc0103}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Viewport\Interaction">
       <UniqueIdentifier>{272e7142-94bf-a8cb-262e-e0148bdeb16a}</UniqueIdentifier>
     </Filter>
@@ -57,12 +60,6 @@
     </Filter>
     <Filter Include="Source\Viewport\Selection">
       <UniqueIdentifier>{c02bdf14-d23c-3f72-e5f4-7a918dc1b5dc}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Viewport\Gizmo\GizmoControlStrategy">
-      <UniqueIdentifier>{0706b8ee-f7f1-3fe8-771b-0b67e0e4e290}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Viewport\Global">
-      <UniqueIdentifier>{3ec641f0-a93f-47aa-bfb9-fca3e10e8c66}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -89,9 +86,6 @@
     </ClCompile>
     <ClCompile Include="Source\Input\EditorGlobalContext.cpp">
       <Filter>Source\Input</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Viewport\Global\EditorGlobalController.cpp">
-      <Filter>Source\Viewport\Global</Filter>
     </ClCompile>
     <ClCompile Include="Source\Input\GizmoInputContext.cpp">
       <Filter>Source\Input</Filter>
@@ -165,6 +159,9 @@
     <ClCompile Include="Source\Viewport\Gizmo\ViewportGizmoController.cpp">
       <Filter>Source\Viewport\Gizmo</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Viewport\Global\EditorGlobalController.cpp">
+      <Filter>Source\Viewport\Global</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Viewport\Interaction\ViewportInteractionState.cpp">
       <Filter>Source\Viewport\Interaction</Filter>
     </ClCompile>
@@ -217,9 +214,6 @@
     </ClInclude>
     <ClInclude Include="Source\Input\EditorGlobalContext.h">
       <Filter>Source\Input</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Viewport\Global\EditorGlobalController.h">
-      <Filter>Source\Viewport\Global</Filter>
     </ClInclude>
     <ClInclude Include="Source\Input\GizmoInputContext.h">
       <Filter>Source\Input</Filter>
@@ -295,6 +289,9 @@
     </ClInclude>
     <ClInclude Include="Source\Viewport\Gizmo\ViewportGizmoController.h">
       <Filter>Source\Viewport\Gizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\Global\EditorGlobalController.h">
+      <Filter>Source\Viewport\Global</Filter>
     </ClInclude>
     <ClInclude Include="Source\Viewport\Interaction\ViewportInteractionState.h">
       <Filter>Source\Viewport\Interaction</Filter>

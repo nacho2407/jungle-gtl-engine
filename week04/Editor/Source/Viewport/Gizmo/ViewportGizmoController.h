@@ -112,5 +112,4 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     FViewportSelectionController* ViewportSelectionController{nullptr};
 
     AActor* LastSelectedActor{nullptr};
-    // TArray<AActor*>* SelectedActors{nullptr};
 };

@@ -101,6 +101,9 @@
     <ClInclude Include="Source\Engine\Game\CylinderActor.h" />
     <ClInclude Include="Source\Engine\Game\RingActor.h" />
     <ClInclude Include="Source\Engine\Game\SphereActor.h" />
+    <ClInclude Include="Source\Engine\Game\SpriteAnimationActor.h" />
+    <ClInclude Include="Source\Engine\Game\SpriteTextureActor.h" />
+    <ClInclude Include="Source\Engine\Game\SubUVTextureActor.h" />
     <ClInclude Include="Source\Engine\Game\TriangleActor.h" />
     <ClInclude Include="Source\Engine\Game\UnknownActor.h" />
     <ClInclude Include="Source\Engine\Scene.h" />
@@ -134,8 +137,10 @@
     <ClInclude Include="Source\Renderer\Types\BasicMeshType.h" />
     <ClInclude Include="Source\Renderer\Types\EditorShowFlags.h" />
     <ClInclude Include="Source\Renderer\Types\MeshInstanceData.h" />
+    <ClInclude Include="Source\Renderer\Types\ObjectIdRenderItem.h" />
     <ClInclude Include="Source\Renderer\Types\PickId.h" />
     <ClInclude Include="Source\Renderer\Types\PickResult.h" />
+    <ClInclude Include="Source\Renderer\Types\RenderDebugColors.h" />
     <ClInclude Include="Source\Renderer\Types\RenderItem.h" />
     <ClInclude Include="Source\Renderer\Types\SceneShowFlags.h" />
     <ClInclude Include="Source\Renderer\Types\ShaderConstants.h" />
@@ -206,6 +211,9 @@
     <ClCompile Include="Source\Engine\Game\CylinderActor.cpp" />
     <ClCompile Include="Source\Engine\Game\RingActor.cpp" />
     <ClCompile Include="Source\Engine\Game\SphereActor.cpp" />
+    <ClCompile Include="Source\Engine\Game\SpriteAnimationActor.cpp" />
+    <ClCompile Include="Source\Engine\Game\SpriteTextureActor.cpp" />
+    <ClCompile Include="Source\Engine\Game\SubUVTextureActor.cpp" />
     <ClCompile Include="Source\Engine\Game\TriangleActor.cpp" />
     <ClCompile Include="Source\Engine\Game\UnknownActor.cpp" />
     <ClCompile Include="Source\Engine\Scene.cpp" />

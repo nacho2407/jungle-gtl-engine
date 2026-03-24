@@ -15,6 +15,9 @@ public:
         Cylinder,
         Ring,
         Triangle,
+        SpriteTexture,
+        SubUVTexture,
+        SpriteAnimation,
         Count
     };
 

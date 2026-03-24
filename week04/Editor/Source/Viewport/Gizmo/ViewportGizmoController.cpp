@@ -201,6 +201,7 @@ void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)
         CalculateProjectionOffset(PickRay, StartTransform.GetLocation(), CurrentDragAxis);
 
     float DeltaValue = CurrentT - InitialDragOffset;
+    InitialDragOffset = CurrentT;
     if (bEnableSnapping && SnapValue > 0.0f)
     {
         DeltaValue = std::round(DeltaValue / SnapValue) * SnapValue;
@@ -209,28 +210,40 @@ void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)
     FTransform NewTransform = StartTransform;
     if (GizmoType == EGizmoType::Translation)
     {
-        FVector NewLocation = StartTransform.GetLocation() + (CurrentDragAxis * DeltaValue);
-        NewTransform.SetLocation(NewLocation);
-        LastSelectedActor->GetRootComponent()->SetRelativeLocation(NewTransform.GetLocation());
+        InitialDragOffset = CurrentT;
+
+        FVector D{CurrentDragAxis * DeltaValue};
+        LastSelectedActor->SetLocation(LastSelectedActor->GetLocation() + D);
+
+        TArray<AActor*>& SelectedActors{ViewportSelectionController->GetSelectedActors()};
+        for (int32 idx{0}; idx < SelectedActors.size() - 1; idx++)
+        {
+            SelectedActors[idx]->SetLocation(SelectedActors[idx]->GetLocation() + D);
+        }
     }
     else if (GizmoType == EGizmoType::Scaling)
     {
-        FVector DragAxis;
+        FVector ScalAxis;
         switch (Axis)
         {
         case EAxis::X:
-            DragAxis = FVector{1.f, 0.f, 0.f};
+            ScalAxis = FVector{1.f, 0.f, 0.f};
             break;
         case EAxis::Y:
-            DragAxis = FVector{0.f, 1.f, 0.f};
+            ScalAxis = FVector{0.f, 1.f, 0.f};
             break;
         case EAxis::Z:
-            DragAxis = FVector{0.f, 0.f, 1.f};
+            ScalAxis = FVector{0.f, 0.f, 1.f};
             break;
         }
-        FVector NewScale = StartTransform.GetScale3D() + (DragAxis * DeltaValue);
-        NewTransform.SetScale3D(NewScale);
-        LastSelectedActor->GetRootComponent()->SetRelativeScale3D(NewTransform.GetScale3D());
+        FVector S{ScalAxis * DeltaValue};
+        LastSelectedActor->SetScale(LastSelectedActor->GetScale() + S);
+
+        TArray<AActor*>& SelectedActors{ViewportSelectionController->GetSelectedActors()};
+        for (int32 idx{0}; idx < SelectedActors.size() - 1; idx++)
+        {
+            SelectedActors[idx]->SetScale(SelectedActors[idx]->GetScale() + S);
+        }
     }
     else if (GizmoType == EGizmoType::Rotation)
     {

@@ -13,6 +13,9 @@
 #include "Engine/Game/ConeActor.h"
 #include "Engine/Game/CylinderActor.h"
 #include "Engine/Game/RingActor.h"
+#include "Engine/Game/SpriteAnimationActor.h"
+#include "Engine/Game/SpriteTextureActor.h"
+#include "Engine/Game/SubUVTextureActor.h"
 #include "Engine/Game/TriangleActor.h"
 
 namespace
@@ -55,6 +58,12 @@ namespace
             return "RingActor";
         case FOutlinerPanel::ESpawnActorType::Triangle:
             return "TriangleActor";
+        case FOutlinerPanel::ESpawnActorType::SpriteTexture:
+            return "SpriteTexture";
+        case FOutlinerPanel::ESpawnActorType::SubUVTexture:
+            return "SubUVTexture";
+        case FOutlinerPanel::ESpawnActorType::SpriteAnimation:
+            return "SpriteAnimation";
         default:
             return "Unknown";
         }
@@ -66,7 +75,10 @@ namespace
         "ConeActor",
         "CylinderActor",
         "RingActor",
-        "TriangleActor"
+        "TriangleActor",
+        "SpriteTexture",
+        "SubUVTexture",
+        "SpriteAnimation",
     };
 
     AActor* CreateActorByType(FOutlinerPanel::ESpawnActorType InType)
@@ -85,6 +97,12 @@ namespace
             return new ARingActor();
         case FOutlinerPanel::ESpawnActorType::Triangle:
             return new ATriangleActor();
+        case FOutlinerPanel::ESpawnActorType::SpriteTexture:
+            return new ASpriteTextureActor();
+        case FOutlinerPanel::ESpawnActorType::SubUVTexture:
+            return new ASubUVTextureActor();
+        case FOutlinerPanel::ESpawnActorType::SpriteAnimation:
+            return new ASpriteAnimationActor();
         default:
             return nullptr;
         }
