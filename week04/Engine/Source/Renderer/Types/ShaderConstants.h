@@ -30,7 +30,7 @@ struct alignas(16) FLineConstants
 
 struct alignas(16) FFontConstants
 {
-    FMatrix P;
+    FMatrix VP;
     FColor  TintColor;
 };
 
