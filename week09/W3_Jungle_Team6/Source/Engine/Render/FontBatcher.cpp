@@ -113,17 +113,21 @@ void FFontBatcher::AddText(const FString& Text,
 	const FVector HalfRight = CamRight * (CharW * 0.5f);
 	const FVector HalfUp    = CamUp    * (CharH * 0.5f);
 
-	for (size_t i = 0; i < CharCount; ++i)
+	const uint8* Ptr = reinterpret_cast<const uint8*>(Text.c_str());
+	const uint8* const End = Ptr + Text.size();
+	uint32 CharIdx = 0;
+
+	for (size_t i = 0; i < CharCount && Ptr < End; ++i)
 	{
 		uint32 CP = 0;
 		if      (Ptr[0] < 0x80)                             { CP = Ptr[0];                                                                       Ptr += 1; }
 		else if ((Ptr[0] & 0xE0) == 0xC0 && Ptr + 1 < End)  { CP = ((Ptr[0] & 0x1F) << 6)  |  (Ptr[1] & 0x3F);                                   Ptr += 2; }
 		else if ((Ptr[0] & 0xF0) == 0xE0 && Ptr + 2 < End)  { CP = ((Ptr[0] & 0x0F) << 12) | ((Ptr[1] & 0x3F) << 6)  |  (Ptr[2] & 0x3F);         Ptr += 3; }
 		else if ((Ptr[0] & 0xF8) == 0xF0 && Ptr + 3 < End)  { CP = ((Ptr[0] & 0x07) << 18) | ((Ptr[1] & 0x3F) << 12) | ((Ptr[2] & 0x3F) << 6) | (Ptr[3] & 0x3F); Ptr += 4; }
-		else { ++Ptr; continue; }
+		else												{ ++Ptr; continue; }
 
 		FVector2 UVMin, UVMax;
-		GetCharUV(Text[i], UVMin, UVMax);
+		GetCharUV(CP, UVMin, UVMax);
 
 		const FVector Center = WorldPos + CamRight * CharCursorX;
 
@@ -132,14 +136,19 @@ void FFontBatcher::AddText(const FString& Text,
 		pV[2] = { Center - HalfRight - HalfUp, { UVMin.X, UVMax.Y } };
 		pV[3] = { Center + HalfRight - HalfUp, { UVMax.X, UVMax.Y } };
 
-		const uint32 Vi = Base + static_cast<uint32>(i) * 4;
+		const uint32 Vi = Base + CharIdx * 4;
 		pI[0] = Vi;     pI[1] = Vi + 1; pI[2] = Vi + 2;
 		pI[3] = Vi + 1; pI[4] = Vi + 3; pI[5] = Vi + 2;
 
 		pV += 4;
 		pI += 6;
+		++CharIdx;
 		CharCursorX += CharW;
 	}
+
+	// 실제 출력된 문자 수에 맞게 배열 크기 조정 (멀티바이트 문자 처리 후 잉여 슬롯 제거)
+	Vertices.resize(Base + CharIdx * 4);
+	Indices.resize(IdxBase + CharIdx * 6);
 }
 
 void FFontBatcher::Clear()
