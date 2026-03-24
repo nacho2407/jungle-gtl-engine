@@ -5,6 +5,8 @@
 #include "Core/ResourceManager.h"
 #include "Render/Common/RenderTypes.h"
 #include "Render/Mesh/MeshManager.h"
+#include "Core/Stats.h"
+#include "Core/GPUProfiler.h"
 
 
 void FRenderer::Create(HWND hWindow)
@@ -51,6 +53,9 @@ void FRenderer::Create(HWND hWindow)
 	// 텍스처는 ResourceManager가 소유 — Batcher는 셰이더/버퍼만 초기화
 	FontBatcher.Create(Device.GetDevice());
 	SubUVBatcher.Create(Device.GetDevice());
+
+	// GPU Profiler 초기화
+	FGPUProfiler::Get().Initialize(Device.GetDevice(), Device.GetDeviceContext());
 }
 
 void FRenderer::Release()
@@ -68,6 +73,8 @@ void FRenderer::Release()
 	Resources.EditorConstantBuffer.Release();
 	Resources.OutlineConstantBuffer.Release();
 
+	FGPUProfiler::Get().Shutdown();
+
 	LineBatcher.Release();
 	FontBatcher.Release();
 	SubUVBatcher.Release();
@@ -78,6 +85,10 @@ void FRenderer::Release()
 void FRenderer::BeginFrame()
 {
 	Device.BeginFrame();
+
+#if STATS
+	FGPUProfiler::Get().BeginFrame();
+#endif
 
 	LineBatcher.Clear();
 	FontBatcher.Clear();
@@ -306,6 +317,9 @@ void FRenderer::DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderC
 //	Present the rendered frame to the screen. 반드시 Render 이후에 호출되어야 함.
 void FRenderer::EndFrame()
 {
+#if STATS
+	FGPUProfiler::Get().EndFrame();
+#endif
 	Device.EndFrame();
 }
 
