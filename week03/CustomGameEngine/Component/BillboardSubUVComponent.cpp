@@ -11,7 +11,7 @@ UBillboardSubUVComp::UBillboardSubUVComp()
 	ResourceManager* resourceManager = ResourceManager::GetInstance();
 	//UPrimitive를 상속받도록. 수정.
 	VResource = &resourceManager->GetGeometry("BillboardQuad");
-	CreateAABB();
+	UpdateAABB();
 }
 
 UBillboardSubUVComp::~UBillboardSubUVComp() = default;

@@ -7,7 +7,7 @@ USphereComp::USphereComp()
 	type = EPrimitiveType::Sphere;
 	ResourceManager* RM = ResourceManager::GetInstance();
 	VResource = &RM->GetGeometry("Sphere");
-	CreateAABB();
+	UpdateAABB();
 }
 
 void USphereComp::Update(float DeltaTime)
