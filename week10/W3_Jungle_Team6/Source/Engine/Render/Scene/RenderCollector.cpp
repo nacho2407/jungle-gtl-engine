@@ -61,7 +61,6 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FRenderColl
 	{
 		// MeshBuffer가 없는 Batcher 처리 타입은 아웃라인 렌더에서 제외
 		EPrimitiveType PrimType = primitiveComponent->GetPrimitiveType();
-		if (primitiveComponent->IsA<USubUVComponent>()) return;
 		if (PrimType == EPrimitiveType::EPT_Text)
 		{
 			if (Context.ShowFlags.bBillboardText == false) return;
