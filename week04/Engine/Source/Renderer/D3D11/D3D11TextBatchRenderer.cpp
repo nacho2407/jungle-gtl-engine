@@ -1,6 +1,6 @@
-#include "Renderer/D3D11/D3D11FontBatchRenderer.h"
+#include "Renderer/D3D11/D3D11TextBatchRenderer.h"
 
-#include "Renderer/D3D11/D3D11DynamicRHI.h"
+#include "Renderer/D3D11/D3D11RHI.h"
 #include "Renderer/RenderAsset/FontResource.h"
 #include "Renderer/SceneView.h"
 
@@ -11,13 +11,33 @@ namespace
 {
     constexpr float DefaultLineHeight = 16.0f;
 
+    float ComputePlacementDepth(const FSceneView* InSceneView, const FRenderPlacement& InPlacement)
+    {
+        if (InSceneView == nullptr)
+        {
+            return 0.0f;
+        }
+
+        const FMatrix CameraWorld = InSceneView->GetViewMatrix().GetInverse();
+        const FVector CameraOrigin = CameraWorld.GetOrigin();
+        const FVector CameraForward = CameraWorld.GetForwardVector();
+        const FVector WorldOrigin = InPlacement.World.GetOrigin() + InPlacement.WorldOffset;
+        const FVector Delta = WorldOrigin - CameraOrigin;
+        return Delta.X * CameraForward.X + Delta.Y * CameraForward.Y + Delta.Z * CameraForward.Z;
+    }
+
     struct FTextRenderItemLess
     {
+        const FSceneView* SceneView = nullptr;
+
         bool operator()(const FTextRenderItem& A, const FTextRenderItem& B) const
         {
-            if (A.Priority != B.Priority)
+            const float DepthA = ComputePlacementDepth(SceneView, A.Placement);
+            const float DepthB = ComputePlacementDepth(SceneView, B.Placement);
+
+            if (DepthA != DepthB)
             {
-                return A.Priority < B.Priority;
+                return DepthA > DepthB;
             }
 
             if (A.Placement.Mode != B.Placement.Mode)
@@ -25,17 +45,12 @@ namespace
                 return static_cast<uint8>(A.Placement.Mode) < static_cast<uint8>(B.Placement.Mode);
             }
 
-            if (A.FontResource != B.FontResource)
-            {
-                return std::less<const FFontResource*>{}(A.FontResource, B.FontResource);
-            }
-
-            return A.SubmissionOrder < B.SubmissionOrder;
+            return std::less<const FFontResource*>{}(A.FontResource, B.FontResource);
         }
     };
 } // namespace
 
-bool FD3D11FontBatchRenderer::Initialize(FD3D11DynamicRHI* InRHI)
+bool FD3D11TextBatchRenderer::Initialize(FD3D11RHI* InRHI)
 {
     if (InRHI == nullptr)
     {
@@ -46,7 +61,6 @@ bool FD3D11FontBatchRenderer::Initialize(FD3D11DynamicRHI* InRHI)
     CurrentSceneView = nullptr;
     CurrentFontResource = nullptr;
     CurrentPlacementMode = ERenderPlacementMode::World;
-    NextSubmissionOrder = 0;
 
     Vertices.reserve(MaxVertexCount);
     Indices.reserve(MaxIndexCount);
@@ -79,10 +93,9 @@ bool FD3D11FontBatchRenderer::Initialize(FD3D11DynamicRHI* InRHI)
     return true;
 }
 
-void FD3D11FontBatchRenderer::Shutdown()
+void FD3D11TextBatchRenderer::Shutdown()
 {
     RasterizerState.Reset();
-    ScreenDepthStencilState.Reset();
     DepthStencilState.Reset();
     AlphaBlendState.Reset();
     SamplerState.Reset();
@@ -102,25 +115,23 @@ void FD3D11FontBatchRenderer::Shutdown()
     CurrentFontResource = nullptr;
     CurrentSceneView = nullptr;
     CurrentPlacementMode = ERenderPlacementMode::World;
-    NextSubmissionOrder = 0;
     RHI = nullptr;
 }
 
-void FD3D11FontBatchRenderer::BeginFrame() { BeginFrame(CurrentSceneView); }
+void FD3D11TextBatchRenderer::BeginFrame() { BeginFrame(CurrentSceneView); }
 
-void FD3D11FontBatchRenderer::BeginFrame(const FSceneView* InSceneView)
+void FD3D11TextBatchRenderer::BeginFrame(const FSceneView* InSceneView)
 {
     CurrentSceneView = InSceneView;
     CurrentFontResource = nullptr;
     CurrentPlacementMode = ERenderPlacementMode::World;
-    NextSubmissionOrder = 0;
 
     Vertices.clear();
     Indices.clear();
     PendingTextItems.clear();
 }
 
-void FD3D11FontBatchRenderer::AddText(const FTextRenderItem& InItem)
+void FD3D11TextBatchRenderer::AddText(const FTextRenderItem& InItem)
 {
     if (RHI == nullptr || CurrentSceneView == nullptr)
     {
@@ -137,48 +148,43 @@ void FD3D11FontBatchRenderer::AddText(const FTextRenderItem& InItem)
         return;
     }
 
-    FTextRenderItem Item = InItem;
-    Item.SubmissionOrder = NextSubmissionOrder++;
-    PendingTextItems.push_back(Item);
+    PendingTextItems.push_back(InItem);
 }
 
-FVector FD3D11FontBatchRenderer::MakeScreenClipPosition(float InScreenX, float InScreenY,
-                                                        float InDepth) const
+void FD3D11TextBatchRenderer::AddTexts(const TArray<FTextRenderItem>& InItems)
 {
-    if (CurrentSceneView == nullptr)
+    for (const FTextRenderItem& Item : InItems)
     {
-        return FVector::ZeroVector;
+        AddText(Item);
     }
-
-    const FViewportRect& ViewRect = CurrentSceneView->GetViewRect();
-    const float          Width = static_cast<float>((ViewRect.Width > 0) ? ViewRect.Width : 1);
-    const float          Height = static_cast<float>((ViewRect.Height > 0) ? ViewRect.Height : 1);
-
-    const float ClipX = (InScreenX / Width) * 2.0f - 1.0f;
-    const float ClipY = 1.0f - (InScreenY / Height) * 2.0f;
-    return FVector(ClipX, ClipY, InDepth);
 }
 
-bool FD3D11FontBatchRenderer::IsSameBatch(const FTextRenderItem& InItem) const
+FD3D11TextBatchRenderer::FTextBatchKey
+FD3D11TextBatchRenderer::MakeBatchKey(const FTextRenderItem& InItem) const
 {
-    return CurrentFontResource == InItem.FontResource &&
-           CurrentPlacementMode == InItem.Placement.Mode;
+    FTextBatchKey BatchKey = {};
+    BatchKey.FontResource = InItem.FontResource;
+    BatchKey.PlacementMode = InItem.Placement.Mode;
+    return BatchKey;
 }
 
-void FD3D11FontBatchRenderer::AppendTextItem(const FTextRenderItem& InItem)
+bool FD3D11TextBatchRenderer::CanAppendGlyphQuad() const
+{
+    return Vertices.size() + 4 <= MaxVertexCount && Indices.size() + 6 <= MaxIndexCount;
+}
+
+void FD3D11TextBatchRenderer::BeginBatch(const FTextBatchKey& InBatchKey)
+{
+    CurrentFontResource = InBatchKey.FontResource;
+    CurrentPlacementMode = InBatchKey.PlacementMode;
+}
+
+void FD3D11TextBatchRenderer::AppendTextItem(const FTextRenderItem& InItem)
 {
     if (CurrentSceneView == nullptr || InItem.FontResource == nullptr)
     {
         return;
     }
-
-    if (!IsSameBatch(InItem) && CurrentFontResource != nullptr)
-    {
-        Flush(CurrentSceneView);
-    }
-
-    CurrentFontResource = InItem.FontResource;
-    CurrentPlacementMode = InItem.Placement.Mode;
 
     const float Scale = InItem.TextScale;
     const float LetterSpacing = InItem.LetterSpacing;
@@ -187,41 +193,22 @@ void FD3D11FontBatchRenderer::AppendTextItem(const FTextRenderItem& InItem)
                                  ? static_cast<float>(InItem.FontResource->Common.LineHeight)
                                  : DefaultLineHeight;
 
-    FVector TextOrigin;
+    const FMatrix& PlacementWorld = InItem.Placement.World;
+    const FVector  TextOrigin = PlacementWorld.GetOrigin() + InItem.Placement.WorldOffset;
+
     FVector RightAxis;
     FVector UpAxis;
 
-    if (InItem.Placement.IsScreenSpace())
+    if (InItem.Placement.IsBillboard())
     {
-        const FVector2 ScreenPos = InItem.Placement.ScreenPosition;
-        TextOrigin = MakeScreenClipPosition(ScreenPos.X, ScreenPos.Y, 0.0f);
-
-        const FViewportRect& ViewRect = CurrentSceneView->GetViewRect();
-        const float          Width = static_cast<float>((ViewRect.Width > 0) ? ViewRect.Width : 1);
-        const float Height = static_cast<float>((ViewRect.Height > 0) ? ViewRect.Height : 1);
-
-        const float PixelToClipX = 2.0f / Width;
-        const float PixelToClipY = 2.0f / Height;
-
-        RightAxis = FVector(PixelToClipX, 0.0f, 0.0f);
-        UpAxis = FVector(0.0f, PixelToClipY, 0.0f);
+        const FMatrix CameraWorld = CurrentSceneView->GetViewMatrix().GetInverse();
+        RightAxis = CameraWorld.GetRightVector();
+        UpAxis = CameraWorld.GetUpVector();
     }
     else
     {
-        const FMatrix& PlacementWorld = InItem.Placement.World;
-        TextOrigin = PlacementWorld.GetOrigin() + InItem.Placement.WorldOffset;
-
-        if (InItem.Placement.IsBillboard())
-        {
-            const FMatrix CameraWorld = CurrentSceneView->GetViewMatrix().GetInverse();
-            RightAxis = CameraWorld.GetRightVector();
-            UpAxis = CameraWorld.GetUpVector();
-        }
-        else
-        {
-            RightAxis = PlacementWorld.GetRightVector();
-            UpAxis = PlacementWorld.GetUpVector();
-        }
+        RightAxis = PlacementWorld.GetRightVector();
+        UpAxis = PlacementWorld.GetUpVector();
     }
 
     float PenX = 0.0f;
@@ -255,11 +242,10 @@ void FD3D11FontBatchRenderer::AppendTextItem(const FTextRenderItem& InItem)
             continue;
         }
 
-        if (Vertices.size() + 4 > MaxVertexCount || Indices.size() + 6 > MaxIndexCount)
+        if (!CanAppendGlyphQuad())
         {
             Flush(CurrentSceneView);
-            CurrentFontResource = InItem.FontResource;
-            CurrentPlacementMode = InItem.Placement.Mode;
+            BeginBatch(MakeBatchKey(InItem));
         }
 
         const float GlyphX = PenX + static_cast<float>(Glyph->XOffset) * Scale;
@@ -276,7 +262,40 @@ void FD3D11FontBatchRenderer::AppendTextItem(const FTextRenderItem& InItem)
     }
 }
 
-void FD3D11FontBatchRenderer::EndFrame(const FSceneView* InSceneView)
+void FD3D11TextBatchRenderer::ProcessSortedItems()
+{
+    if (PendingTextItems.empty())
+    {
+        return;
+    }
+
+    FTextBatchKey ActiveBatchKey = {};
+    bool          bHasActiveBatch = false;
+
+    for (const FTextRenderItem& Item : PendingTextItems)
+    {
+        const FTextBatchKey ItemBatchKey = MakeBatchKey(Item);
+
+        if (!bHasActiveBatch)
+        {
+            BeginBatch(ItemBatchKey);
+            bHasActiveBatch = true;
+            ActiveBatchKey = ItemBatchKey;
+        }
+        else if (ItemBatchKey != ActiveBatchKey)
+        {
+            Flush(CurrentSceneView);
+            BeginBatch(ItemBatchKey);
+            ActiveBatchKey = ItemBatchKey;
+        }
+
+        AppendTextItem(Item);
+    }
+
+    Flush(CurrentSceneView);
+}
+
+void FD3D11TextBatchRenderer::EndFrame(const FSceneView* InSceneView)
 {
     if (InSceneView == nullptr)
     {
@@ -295,14 +314,9 @@ void FD3D11FontBatchRenderer::EndFrame(const FSceneView* InSceneView)
     Vertices.clear();
     Indices.clear();
 
-    std::sort(PendingTextItems.begin(), PendingTextItems.end(), FTextRenderItemLess{});
-
-    for (const FTextRenderItem& Item : PendingTextItems)
-    {
-        AppendTextItem(Item);
-    }
-
-    Flush(InSceneView);
+    std::sort(PendingTextItems.begin(), PendingTextItems.end(),
+              FTextRenderItemLess{CurrentSceneView});
+    ProcessSortedItems();
 
     PendingTextItems.clear();
     CurrentSceneView = nullptr;
@@ -310,7 +324,7 @@ void FD3D11FontBatchRenderer::EndFrame(const FSceneView* InSceneView)
     CurrentPlacementMode = ERenderPlacementMode::World;
 }
 
-void FD3D11FontBatchRenderer::Flush(const FSceneView* InSceneView)
+void FD3D11TextBatchRenderer::Flush(const FSceneView* InSceneView)
 {
     if (RHI == nullptr || InSceneView == nullptr || CurrentFontResource == nullptr ||
         Vertices.empty() || Indices.empty())
@@ -339,9 +353,7 @@ void FD3D11FontBatchRenderer::Flush(const FSceneView* InSceneView)
     }
 
     FFontConstants Constants = {};
-    Constants.VP = CurrentPlacementMode == ERenderPlacementMode::Screen
-                       ? FMatrix::Identity
-                       : InSceneView->GetViewProjectionMatrix();
+    Constants.VP = InSceneView->GetViewProjectionMatrix();
     Constants.TintColor = FColor::White();
 
     if (!RHI->UpdateConstantBuffer(ConstantBuffer.Get(), &Constants, sizeof(Constants)))
@@ -363,10 +375,7 @@ void FD3D11FontBatchRenderer::Flush(const FSceneView* InSceneView)
     RHI->SetVertexBuffer(0, DynamicVertexBuffer.Get(), VertexStride, VertexOffset);
     RHI->SetIndexBuffer(DynamicIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
     RHI->SetRasterizerState(RasterizerState.Get());
-    RHI->SetDepthStencilState(CurrentPlacementMode == ERenderPlacementMode::Screen
-                                  ? ScreenDepthStencilState.Get()
-                                  : DepthStencilState.Get(),
-                              0);
+    RHI->SetDepthStencilState(DepthStencilState.Get(), 0);
 
     const float BlendFactor[4] = {0.f, 0.f, 0.f, 0.f};
     Context->OMSetBlendState(AlphaBlendState.Get(), BlendFactor, 0xFFFFFFFFu);
@@ -387,7 +396,7 @@ void FD3D11FontBatchRenderer::Flush(const FSceneView* InSceneView)
     Indices.clear();
 }
 
-void FD3D11FontBatchRenderer::AppendGlyphQuad(const FVector& InBottomLeft, const FVector& InRight,
+void FD3D11TextBatchRenderer::AppendGlyphQuad(const FVector& InBottomLeft, const FVector& InRight,
                                               const FVector& InUp, const FFontGlyph& InGlyph,
                                               const FFontResource& InFont, const FColor& InColor)
 {
@@ -435,7 +444,7 @@ void FD3D11FontBatchRenderer::AppendGlyphQuad(const FVector& InBottomLeft, const
     Indices.push_back(BaseVertex + 3);
 }
 
-bool FD3D11FontBatchRenderer::CreateShaders()
+bool FD3D11TextBatchRenderer::CreateShaders()
 {
     if (RHI == nullptr)
     {
@@ -468,13 +477,13 @@ bool FD3D11FontBatchRenderer::CreateShaders()
     return true;
 }
 
-bool FD3D11FontBatchRenderer::CreateConstantBuffer()
+bool FD3D11TextBatchRenderer::CreateConstantBuffer()
 {
     return (RHI != nullptr) &&
            RHI->CreateConstantBuffer(sizeof(FFontConstants), ConstantBuffer.GetAddressOf());
 }
 
-bool FD3D11FontBatchRenderer::CreateStates()
+bool FD3D11TextBatchRenderer::CreateStates()
 {
     if (RHI == nullptr)
     {
@@ -512,20 +521,10 @@ bool FD3D11FontBatchRenderer::CreateStates()
 
     D3D11_DEPTH_STENCIL_DESC DepthDesc = {};
     DepthDesc.DepthEnable = TRUE;
-    DepthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    DepthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
     DepthDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 
     if (!RHI->CreateDepthStencilState(DepthDesc, DepthStencilState.GetAddressOf()))
-    {
-        return false;
-    }
-
-    D3D11_DEPTH_STENCIL_DESC ScreenDepthDesc = {};
-    ScreenDepthDesc.DepthEnable = FALSE;
-    ScreenDepthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-    ScreenDepthDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-
-    if (!RHI->CreateDepthStencilState(ScreenDepthDesc, ScreenDepthStencilState.GetAddressOf()))
     {
         return false;
     }
@@ -541,7 +540,7 @@ bool FD3D11FontBatchRenderer::CreateStates()
     return RHI->CreateRasterizerState(RasterizerDesc, RasterizerState.GetAddressOf());
 }
 
-bool FD3D11FontBatchRenderer::CreateBuffers()
+bool FD3D11TextBatchRenderer::CreateBuffers()
 {
     if (RHI == nullptr || RHI->GetDevice() == nullptr)
     {

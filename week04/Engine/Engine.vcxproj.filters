@@ -100,11 +100,11 @@
     <Filter Include="Source\Renderer\D3D11">
       <UniqueIdentifier>{7d49e81e-9894-3ffe-a35e-b64d3056e0ba}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Renderer\Draw">
-      <UniqueIdentifier>{228f9774-306d-a843-9d42-8b6de1290e03}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Renderer\RenderAsset">
       <UniqueIdentifier>{37df3f3d-06b0-91a9-da82-c1929332f7ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Renderer\Submitter">
+      <UniqueIdentifier>{0939a988-f0bd-8c2c-d846-bfe7b531489e}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Renderer\Types">
       <UniqueIdentifier>{2a470593-b470-7a69-2874-61b9dc3a78a3}</UniqueIdentifier>
@@ -276,12 +276,6 @@
     <ClCompile Include="Source\Engine\ViewPort\Viewport.cpp">
       <Filter>Source\Engine\ViewPort</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Renderer\D3D11\D3D11DynamicRHI.cpp">
-      <Filter>Source\Renderer\D3D11</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Renderer\D3D11\D3D11FontBatchRenderer.cpp">
-      <Filter>Source\Renderer\D3D11</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
@@ -291,26 +285,38 @@
     <ClCompile Include="Source\Renderer\D3D11\D3D11ObjectIdRenderer.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Renderer\D3D11\D3D11RHI.cpp">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Renderer\Draw\AABBDrawer.cpp">
-      <Filter>Source\Renderer\Draw</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Renderer\Draw\GizmoDrawer.cpp">
-      <Filter>Source\Renderer\Draw</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Renderer\Draw\PrimitiveDrawer.cpp">
-      <Filter>Source\Renderer\Draw</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Renderer\Draw\WorldAxesDrawer.cpp">
-      <Filter>Source\Renderer\Draw</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Renderer\Draw\WorldGridDrawer.cpp">
-      <Filter>Source\Renderer\Draw</Filter>
+    <ClCompile Include="Source\Renderer\D3D11\D3D11TextBatchRenderer.cpp">
+      <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
     <ClCompile Include="Source\Renderer\RendererModule.cpp">
       <Filter>Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\Submitter\AABBSubmitter.cpp">
+      <Filter>Source\Renderer\Submitter</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\Submitter\GizmoSubmitter.cpp">
+      <Filter>Source\Renderer\Submitter</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\Submitter\PrimitiveSubmitter.cpp">
+      <Filter>Source\Renderer\Submitter</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\Submitter\SpriteSubmitter.cpp">
+      <Filter>Source\Renderer\Submitter</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\Submitter\TextSubmitter.cpp">
+      <Filter>Source\Renderer\Submitter</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\Submitter\WorldAxesSubmitter.cpp">
+      <Filter>Source\Renderer\Submitter</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\Submitter\WorldGridSubmitter.cpp">
+      <Filter>Source\Renderer\Submitter</Filter>
     </ClCompile>
     <ClCompile Include="Source\Asset\FontAsset.cpp" />
     <ClCompile Include="Source\Asset\FontAtlasLoader.cpp" />
@@ -594,12 +600,6 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11Common.h">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\D3D11\D3D11DynamicRHI.h">
-      <Filter>Source\Renderer\D3D11</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Renderer\D3D11\D3D11FontBatchRenderer.h">
-      <Filter>Source\Renderer\D3D11</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.h">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
@@ -609,23 +609,14 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11ObjectIdRenderer.h">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Renderer\D3D11\D3D11RHI.h">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\Draw\AABBDrawer.h">
-      <Filter>Source\Renderer\Draw</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Renderer\Draw\GizmoDrawer.h">
-      <Filter>Source\Renderer\Draw</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Renderer\Draw\PrimitiveDrawer.h">
-      <Filter>Source\Renderer\Draw</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Renderer\Draw\WorldAxesDrawer.h">
-      <Filter>Source\Renderer\Draw</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Renderer\Draw\WorldGridDrawer.h">
-      <Filter>Source\Renderer\Draw</Filter>
+    <ClInclude Include="Source\Renderer\D3D11\D3D11TextBatchRenderer.h">
+      <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\EditorRenderData.h">
       <Filter>Source\Renderer</Filter>
@@ -644,6 +635,27 @@
     </ClInclude>
     <ClInclude Include="Source\Renderer\SceneView.h">
       <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Submitter\AABBSubmitter.h">
+      <Filter>Source\Renderer\Submitter</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Submitter\GizmoSubmitter.h">
+      <Filter>Source\Renderer\Submitter</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Submitter\PrimitiveSubmitter.h">
+      <Filter>Source\Renderer\Submitter</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Submitter\SpriteSubmitter.h">
+      <Filter>Source\Renderer\Submitter</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Submitter\TextSubmitter.h">
+      <Filter>Source\Renderer\Submitter</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Submitter\WorldAxesSubmitter.h">
+      <Filter>Source\Renderer\Submitter</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Submitter\WorldGridSubmitter.h">
+      <Filter>Source\Renderer\Submitter</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\Types\AxisColors.h">
       <Filter>Source\Renderer\Types</Filter>

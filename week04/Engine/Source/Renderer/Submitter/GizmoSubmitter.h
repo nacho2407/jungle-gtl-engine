@@ -24,12 +24,12 @@ struct FGizmoStyle
     float RotationRingThickness = 1.5f;
 };
 
-class FGizmoDrawer
+class FGizmoSubmitter
 {
   public:
-    void Draw(FD3D11MeshBatchRenderer& InMeshRenderer, const FEditorRenderData& InEditorRenderData);
+    void Submit(FD3D11MeshBatchRenderer& InMeshRenderer, const FEditorRenderData& InEditorRenderData);
 
-    void BuildObjectIdRenderItems(TArray<FObjectIdRenderItem>& OutItems,
+    void BuildObjectIdItems(TArray<FObjectIdRenderItem>& OutItems,
                                   const FEditorRenderData&     InEditorRenderData) const;
 
   public:

@@ -34,10 +34,10 @@ namespace
     constexpr ImGuiDockNodeFlags RootDockSpaceFlags = ImGuiDockNodeFlags_PassthruCentralNode;
 #endif
 
-    constexpr char AboutPopupId[] = "About##EditorAbout";
-    constexpr float RestoredSideGutter = 3.0f;
-    constexpr float RestoredBottomGutter = 3.0f;
-    constexpr ImU32 GutterColor = IM_COL32(46, 46, 48, 255);
+    constexpr char    AboutPopupId[] = "About##EditorAbout";
+    constexpr float   RestoredSideGutter = 3.0f;
+    constexpr float   RestoredBottomGutter = 3.0f;
+    constexpr ImU32   GutterColor = IM_COL32(46, 46, 48, 255);
     constexpr wchar_t SceneFileDialogFilter[] =
         L"Scene Files (*.Scene)\0*.Scene\0All Files (*.*)\0*.*\0";
 
@@ -124,8 +124,7 @@ namespace
             return {};
         }
 
-        if (FilePath.has_extension() &&
-            _wcsicmp(FilePath.extension().c_str(), L".Scene") == 0)
+        if (FilePath.has_extension() && _wcsicmp(FilePath.extension().c_str(), L".Scene") == 0)
         {
             return FilePath;
         }
@@ -148,9 +147,8 @@ namespace
             return {};
         }
 
-        const int RequiredSize =
-            MultiByteToWideChar(CP_UTF8, 0, InText.c_str(),
-                                static_cast<int>(InText.size()), nullptr, 0);
+        const int RequiredSize = MultiByteToWideChar(CP_UTF8, 0, InText.c_str(),
+                                                     static_cast<int>(InText.size()), nullptr, 0);
         if (RequiredSize <= 0)
         {
             return {};
@@ -162,14 +160,13 @@ namespace
         return OutText;
     }
 
-    bool ShowOpenSceneFileDialog(const IEditorChromeHost* Host,
+    bool ShowOpenSceneFileDialog(const IEditorChromeHost*     Host,
                                  const std::filesystem::path& InitialDirectory,
-                                 std::filesystem::path& OutSelectedPath)
+                                 std::filesystem::path&       OutSelectedPath)
     {
         std::array<wchar_t, 1024> FileBuffer{};
-        const FWString InitialDirectoryPath = InitialDirectory.empty()
-                                                  ? FWString()
-                                                  : InitialDirectory.wstring();
+        const FWString            InitialDirectoryPath =
+            InitialDirectory.empty() ? FWString() : InitialDirectory.wstring();
 
         OPENFILENAMEW Dialog = {};
         Dialog.lStructSize = sizeof(Dialog);
@@ -180,8 +177,7 @@ namespace
         Dialog.lpstrInitialDir =
             InitialDirectoryPath.empty() ? nullptr : InitialDirectoryPath.c_str();
         Dialog.lpstrDefExt = L"Scene";
-        Dialog.Flags =
-            OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
+        Dialog.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
 
         if (!GetOpenFileNameW(&Dialog))
         {
@@ -199,22 +195,20 @@ namespace
         return true;
     }
 
-    bool ShowSaveSceneFileDialog(const IEditorChromeHost* Host,
+    bool ShowSaveSceneFileDialog(const IEditorChromeHost*     Host,
                                  const std::filesystem::path& InitialDirectory,
                                  const std::filesystem::path& CurrentScenePath,
-                                 std::filesystem::path& OutSelectedPath)
+                                 std::filesystem::path&       OutSelectedPath)
     {
         std::array<wchar_t, 1024> FileBuffer{};
 
-        const std::filesystem::path DefaultPath = CurrentScenePath.empty()
-                                                      ? (InitialDirectory / L"Untitled.Scene")
-                                                      : CurrentScenePath;
+        const std::filesystem::path DefaultPath =
+            CurrentScenePath.empty() ? (InitialDirectory / L"Untitled.Scene") : CurrentScenePath;
         const FWString DefaultPathText = DefaultPath.wstring();
         wcsncpy_s(FileBuffer.data(), FileBuffer.size(), DefaultPathText.c_str(), _TRUNCATE);
 
-        const FWString InitialDirectoryPath = InitialDirectory.empty()
-                                                  ? FWString()
-                                                  : InitialDirectory.wstring();
+        const FWString InitialDirectoryPath =
+            InitialDirectory.empty() ? FWString() : InitialDirectory.wstring();
 
         OPENFILENAMEW Dialog = {};
         Dialog.lStructSize = sizeof(Dialog);
@@ -225,8 +219,7 @@ namespace
         Dialog.lpstrInitialDir =
             InitialDirectoryPath.empty() ? nullptr : InitialDirectoryPath.c_str();
         Dialog.lpstrDefExt = L"Scene";
-        Dialog.Flags =
-            OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR | OFN_OVERWRITEPROMPT;
+        Dialog.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR | OFN_OVERWRITEPROMPT;
 
         if (!GetSaveFileNameW(&Dialog))
         {
@@ -245,48 +238,47 @@ namespace
     }
 } // namespace
 
-//class FSamplePanel : public IPanel
+// class FSamplePanel : public IPanel
 //{
-//public:
-//    explicit FSamplePanel(const FEditorLogBuffer* InLogBuffer)
-//        : LogBuffer(InLogBuffer)
-//    {
-//    }
+// public:
+//     explicit FSamplePanel(const FEditorLogBuffer* InLogBuffer)
+//         : LogBuffer(InLogBuffer)
+//     {
+//     }
 //
-//    const wchar_t* GetPanelID() const override { return L"SamplePanel"; }
-//    const wchar_t* GetDisplayName() const override { return L"Sample Panel"; }
-//    bool ShouldOpenByDefault() const override { return true; }
+//     const wchar_t* GetPanelID() const override { return L"SamplePanel"; }
+//     const wchar_t* GetDisplayName() const override { return L"Sample Panel"; }
+//     bool ShouldOpenByDefault() const override { return true; }
 //
-//    void Draw() override
-//    {
-//        if (ImGui::Begin("Sample Panel", nullptr))
-//        {
-//            ImGui::Text("PanelManager registration test panel");
-//            ImGui::Separator();
+//     void Draw() override
+//     {
+//         if (ImGui::Begin("Sample Panel", nullptr))
+//         {
+//             ImGui::Text("PanelManager registration test panel");
+//             ImGui::Separator();
 //
 //
-//            if (LogBuffer != nullptr)
-//            {
-//                for (const auto& Log : LogBuffer->GetLogBuffer())
-//                {
-//                    ImGui::Spacing();
-//                    ImGui::Text("%s", Log.Message.c_str());
-//                }
-//            }
-//        }
-//        ImGui::End();
-//    }
+//             if (LogBuffer != nullptr)
+//             {
+//                 for (const auto& Log : LogBuffer->GetLogBuffer())
+//                 {
+//                     ImGui::Spacing();
+//                     ImGui::Text("%s", Log.Message.c_str());
+//                 }
+//             }
+//         }
+//         ImGui::End();
+//     }
 //
-//private:
-//    const FEditorLogBuffer* LogBuffer = nullptr;
-//};
-
+// private:
+//     const FEditorLogBuffer* LogBuffer = nullptr;
+// };
 
 void FEditor::Create()
 {
     //  LOG
     GLog = &LogBuffer;
-    
+
     //  TODO : Viewport Client
     EditorContext.Editor = this;
     EditorContext.ContentIndex = &ContentIndex;
@@ -304,11 +296,8 @@ void FEditor::Create()
     PanelManager = new FPanelManager();
     PanelManager->Initialize(&EditorContext);
     // 새 패널이 등록되면 Window 메뉴 항목도 함께 자동 등록합니다.
-    PanelManager->SetPanelDescriptorRegisteredCallback(
-        [this](const FPanelDescriptor& Descriptor)
-        {
-            RegisterWindowPanelCommand(Descriptor);
-        });
+    PanelManager->SetPanelDescriptorRegisteredCallback([this](const FPanelDescriptor& Descriptor)
+                                                       { RegisterWindowPanelCommand(Descriptor); });
     PanelManager->RegisterPanelInstance<FConsolePanel>(&LogBuffer);
     PanelManager->RegisterPanelType<FContentBrowserPanel>();
     PanelManager->RegisterPanelInstance<FControlPanel>();
@@ -316,15 +305,14 @@ void FEditor::Create()
     PanelManager->RegisterPanelInstance<FPropertiesPanel>();
     PanelManager->RegisterPanelInstance<FStatePanel>();
 
-    //PanelManager->RegisterPanelInstance<FSamplePanel>(&LogBuffer);
+    // PanelManager->RegisterPanelInstance<FSamplePanel>(&LogBuffer);
 
     //  TODO : Gizmo
-    
 
     //  TEMP SCENE
     CurScene = new FScene();
     ViewportClient.SetScene(CurScene);
-    
+
     UE_LOG(FEditor, ELogVerbosity::Log, "Hello Editor");
     EditorContext.Scene = CurScene;
 }
@@ -372,7 +360,7 @@ void FEditor::SetChromeHost(IEditorChromeHost* InChromeHost)
     EditorChrome.SetHost(InChromeHost);
 }
 
-void FEditor::SetRuntimeServices(FD3D11DynamicRHI* InRHI, UAssetManager* InAssetManager)
+void FEditor::SetRuntimeServices(FD3D11RHI* InRHI, UAssetManager* InAssetManager)
 {
     EditorContext.RHI = InRHI;
     EditorContext.AssetManager = InAssetManager;
@@ -387,7 +375,7 @@ void FEditor::LoadEditorSettings()
         ViewportClient.GetNavigationController().GetRotationSpeed();
     SettingsData.ContentBrowserLeftPaneWidth = EditorContext.ContentBrowserLeftPaneWidth;
 
-    FString ErrorMessage;
+    FString                         ErrorMessage;
     const EEditorSettingsLoadResult LoadResult =
         PersistentSettings.Load(SettingsData, &ErrorMessage);
 
@@ -431,10 +419,7 @@ void FEditor::SaveEditorSettings() const
     PersistentSettings.Save(SettingsData);
 }
 
-void FEditor::MarkSceneClean()
-{
-    SceneDocument.bDirty = false;
-}
+void FEditor::MarkSceneClean() { SceneDocument.bDirty = false; }
 
 std::filesystem::path FEditor::GetSceneDirectory() const
 {
@@ -454,14 +439,13 @@ bool FEditor::SaveScene()
 
 void FEditor::SaveSceneAs()
 {
-    std::filesystem::path SelectedPath;
+    std::filesystem::path       SelectedPath;
     const std::filesystem::path InitialDirectory =
-        !SceneDocument.CurrentScenePath.empty()
-            ? SceneDocument.CurrentScenePath.parent_path()
-            : GetSceneDirectory();
+        !SceneDocument.CurrentScenePath.empty() ? SceneDocument.CurrentScenePath.parent_path()
+                                                : GetSceneDirectory();
 
-    if (!ShowSaveSceneFileDialog(ChromeHost, InitialDirectory,
-                                 SceneDocument.CurrentScenePath, SelectedPath))
+    if (!ShowSaveSceneFileDialog(ChromeHost, InitialDirectory, SceneDocument.CurrentScenePath,
+                                 SelectedPath))
     {
         SceneDocument.DeferredAction.Reset();
         return;
@@ -480,19 +464,18 @@ void FEditor::SaveSceneAs()
 
 void FEditor::RequestOpenScene()
 {
-    std::filesystem::path SelectedPath;
+    std::filesystem::path       SelectedPath;
     const std::filesystem::path InitialDirectory =
-        !SceneDocument.CurrentScenePath.empty()
-            ? SceneDocument.CurrentScenePath.parent_path()
-            : GetSceneDirectory();
+        !SceneDocument.CurrentScenePath.empty() ? SceneDocument.CurrentScenePath.parent_path()
+                                                : GetSceneDirectory();
 
     if (!ShowOpenSceneFileDialog(ChromeHost, InitialDirectory, SelectedPath))
     {
         return;
     }
 
-    const FDeferredSceneAction Action{
-        .Type = EDeferredSceneActionType::OpenScene, .ScenePath = SelectedPath};
+    const FDeferredSceneAction Action{.Type = EDeferredSceneActionType::OpenScene,
+                                      .ScenePath = SelectedPath};
     if (!ConfirmProceedWithDirtyScene(Action))
     {
         return;
@@ -517,7 +500,7 @@ void FEditor::PerformClearScene()
     }
 
     const TArray<AActor*>* SceneActors = CurScene->GetActors();
-    const bool bHadActors = SceneActors != nullptr && !SceneActors->empty();
+    const bool             bHadActors = SceneActors != nullptr && !SceneActors->empty();
     ViewportClient.GetSelectionController().ClearSelection();
     CurScene->Clear();
 
@@ -538,8 +521,7 @@ bool FEditor::SaveSceneToPath(const std::filesystem::path& FilePath, bool bUpdat
     FString ErrorMessage;
     if (!FSceneSerializer::SaveToFile(*CurScene, FilePath, &ErrorMessage))
     {
-        UE_LOG(FEditor, ELogVerbosity::Error, "Failed to save scene: %s",
-               ErrorMessage.c_str());
+        UE_LOG(FEditor, ELogVerbosity::Error, "Failed to save scene: %s", ErrorMessage.c_str());
         return false;
     }
 
@@ -549,19 +531,17 @@ bool FEditor::SaveSceneToPath(const std::filesystem::path& FilePath, bool bUpdat
     }
     MarkSceneClean();
 
-    UE_LOG(FEditor, ELogVerbosity::Log, "Saved scene: %s",
-           PathToUtf8String(FilePath).c_str());
+    UE_LOG(FEditor, ELogVerbosity::Log, "Saved scene: %s", PathToUtf8String(FilePath).c_str());
     return true;
 }
 
 bool FEditor::LoadSceneFromPath(const std::filesystem::path& FilePath)
 {
-    FString ErrorMessage;
+    FString                 ErrorMessage;
     std::unique_ptr<FScene> LoadedScene = FSceneDeserializer::LoadFromFile(FilePath, &ErrorMessage);
     if (!LoadedScene)
     {
-        UE_LOG(FEditor, ELogVerbosity::Error, "Failed to load scene: %s",
-               ErrorMessage.c_str());
+        UE_LOG(FEditor, ELogVerbosity::Error, "Failed to load scene: %s", ErrorMessage.c_str());
         return false;
     }
 
@@ -569,8 +549,7 @@ bool FEditor::LoadSceneFromPath(const std::filesystem::path& FilePath)
     SceneDocument.CurrentScenePath = FilePath;
     MarkSceneClean();
 
-    UE_LOG(FEditor, ELogVerbosity::Log, "Loaded scene: %s",
-           PathToUtf8String(FilePath).c_str());
+    UE_LOG(FEditor, ELogVerbosity::Log, "Loaded scene: %s", PathToUtf8String(FilePath).c_str());
     return true;
 }
 
@@ -709,10 +688,7 @@ void FEditor::AddActorToScene(AActor* InActor, bool bSelectActor)
     }
 }
 
-void FEditor::MarkSceneDirty()
-{
-    SceneDocument.bDirty = true;
-}
+void FEditor::MarkSceneDirty() { SceneDocument.bDirty = true; }
 
 void FEditor::RequestAboutPopup()
 {
@@ -779,7 +755,8 @@ bool FEditor::CanDeleteSelectedActors() const
         return true;
     }
 
-    auto* SelectedComponent = Cast<Engine::Component::USceneComponent>(EditorContext.SelectedObject);
+    auto* SelectedComponent =
+        Cast<Engine::Component::USceneComponent>(EditorContext.SelectedObject);
     if (SelectedComponent == nullptr || CurScene == nullptr)
     {
         return false;
@@ -829,13 +806,12 @@ bool FEditor::ConfirmProceedWithDirtyScene(const FDeferredSceneAction& Action)
     }
 
     const FWString Message =
-        L"The current scene has unsaved changes.\n\nDo you want to save before you "
-        + Utf8ToWide(ActionLabel) + L"?";
+        L"The current scene has unsaved changes.\n\nDo you want to save before you " +
+        Utf8ToWide(ActionLabel) + L"?";
     const HWND OwnerWindow =
         static_cast<HWND>(ChromeHost != nullptr ? ChromeHost->GetNativeWindowHandle() : nullptr);
-    const int DialogResult =
-        MessageBoxW(OwnerWindow, Message.c_str(), L"Unsaved Scene",
-                    MB_ICONWARNING | MB_YESNOCANCEL | MB_SETFOREGROUND);
+    const int DialogResult = MessageBoxW(OwnerWindow, Message.c_str(), L"Unsaved Scene",
+                                         MB_ICONWARNING | MB_YESNOCANCEL | MB_SETFOREGROUND);
 
     if (DialogResult == IDCANCEL)
     {
@@ -896,111 +872,63 @@ void FEditor::ExecuteDeferredSceneAction(FDeferredSceneAction Action)
 void FEditor::RegisterDefaultCommands()
 {
     // 여기서는 "무엇을 실행할지"만 등록하고, 메뉴 어디에 둘지는 RegisterDefaultMenus에서 정합니다.
-    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
-        .CommandId = "file.new_scene",
-        .Label = L"New Scene",
-        .ShortcutLabel = "Ctrl+N",
-        .Execute =
-            [this]()
-            {
-                CreateNewScene();
-            }});
+    MenuRegistry.RegisterCommand(
+        FEditorCommandDefinition{.CommandId = "file.new_scene",
+                                 .Label = L"New Scene",
+                                 .ShortcutLabel = "Ctrl+N",
+                                 .Execute = [this]() { CreateNewScene(); }});
 
-    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
-        .CommandId = "file.open_scene",
-        .Label = L"Open Scene",
-        .ShortcutLabel = "Ctrl+O",
-        .Execute =
-            [this]()
-            {
-                RequestOpenScene();
-            }});
+    MenuRegistry.RegisterCommand(
+        FEditorCommandDefinition{.CommandId = "file.open_scene",
+                                 .Label = L"Open Scene",
+                                 .ShortcutLabel = "Ctrl+O",
+                                 .Execute = [this]() { RequestOpenScene(); }});
 
-    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
-        .CommandId = "file.save_scene",
-        .Label = L"Save Scene",
-        .ShortcutLabel = "Ctrl+S",
-        .Execute =
-            [this]()
-            {
-                SaveScene();
-            }});
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{.CommandId = "file.save_scene",
+                                                          .Label = L"Save Scene",
+                                                          .ShortcutLabel = "Ctrl+S",
+                                                          .Execute = [this]() { SaveScene(); }});
 
-    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
-        .CommandId = "file.save_scene_as",
-        .Label = L"Save Scene as..",
-        .ShortcutLabel = "Ctrl+Shift+S",
-        .Execute =
-            [this]()
-            {
-                SaveSceneAs();
-            }});
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{.CommandId = "file.save_scene_as",
+                                                          .Label = L"Save Scene as..",
+                                                          .ShortcutLabel = "Ctrl+Shift+S",
+                                                          .Execute = [this]() { SaveSceneAs(); }});
 
-    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
-        .CommandId = "file.clear_scene",
-        .Label = L"Clear Scene",
-        .Execute =
-            [this]()
-            {
-                ClearScene();
-            }});
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{.CommandId = "file.clear_scene",
+                                                          .Label = L"Clear Scene",
+                                                          .Execute = [this]() { ClearScene(); }});
 
-    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
-        .CommandId = "file.exit",
-        .Label = L"Exit",
-        .ShortcutLabel = "Alt+F4",
-        .Execute =
-            [this]()
-            {
-                if (ChromeHost != nullptr)
-                {
-                    ChromeHost->CloseWindow();
-                }
-            }});
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{.CommandId = "file.exit",
+                                                          .Label = L"Exit",
+                                                          .ShortcutLabel = "Alt+F4",
+                                                          .Execute = [this]()
+                                                          {
+                                                              if (ChromeHost != nullptr)
+                                                              {
+                                                                  ChromeHost->CloseWindow();
+                                                              }
+                                                          }});
 
-    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
-        .CommandId = "edit.undo",
-        .Label = L"Undo",
-        .ShortcutLabel = "Ctrl+Z",
-        .CanExecute =
-            []()
-            {
-                return false;
-            }});
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{.CommandId = "edit.undo",
+                                                          .Label = L"Undo",
+                                                          .ShortcutLabel = "Ctrl+Z",
+                                                          .CanExecute = []() { return false; }});
 
-    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
-        .CommandId = "edit.redo",
-        .Label = L"Redo",
-        .ShortcutLabel = "Ctrl+Y",
-        .CanExecute =
-            []()
-            {
-                return false;
-            }});
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{.CommandId = "edit.redo",
+                                                          .Label = L"Redo",
+                                                          .ShortcutLabel = "Ctrl+Y",
+                                                          .CanExecute = []() { return false; }});
 
-    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
-        .CommandId = "edit.delete_selection",
-        .Label = L"Delete Selection",
-        .ShortcutLabel = "Delete",
-        .Execute =
-            [this]()
-            {
-                DeleteSelectedActors();
-            },
-        .CanExecute =
-            [this]()
-            {
-                return CanDeleteSelectedActors();
-            }});
+    MenuRegistry.RegisterCommand(
+        FEditorCommandDefinition{.CommandId = "edit.delete_selection",
+                                 .Label = L"Delete Selection",
+                                 .ShortcutLabel = "Delete",
+                                 .Execute = [this]() { DeleteSelectedActors(); },
+                                 .CanExecute = [this]() { return CanDeleteSelectedActors(); }});
 
-    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
-        .CommandId = "edit.preferences",
-        .Label = L"Preferences (Not Ready)",
-        .CanExecute =
-            []()
-            {
-                return false;
-            }});
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{.CommandId = "edit.preferences",
+                                                          .Label = L"Preferences (Not Ready)",
+                                                          .CanExecute = []() { return false; }});
 
     MenuRegistry.RegisterCommand(FEditorCommandDefinition{
         .CommandId = "tool.content_browser",
@@ -1024,86 +952,51 @@ void FEditor::RegisterDefaultCommands()
                 return PanelManager != nullptr;
             }});
 
-    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
-        .CommandId = "tool.build",
-        .Label = L"Build (Not Ready)",
-        .CanExecute =
-            []()
-            {
-                return false;
-            }});
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{.CommandId = "tool.build",
+                                                          .Label = L"Build (Not Ready)",
+                                                          .CanExecute = []() { return false; }});
 
-    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
-        .CommandId = "help.about",
-        .Label = L"About",
-        .ShortcutLabel = "F1",
-        .Execute =
-            [this]()
-            {
-                RequestAboutPopup();
-            }});
+    MenuRegistry.RegisterCommand(
+        FEditorCommandDefinition{.CommandId = "help.about",
+                                 .Label = L"About",
+                                 .ShortcutLabel = "F1",
+                                 .Execute = [this]() { RequestAboutPopup(); }});
 }
 
 void FEditor::RegisterDefaultMenus()
 {
     // 여기서는 이미 등록된 command를 어떤 메뉴/순서에 배치할지만 정의합니다.
-    MenuRegistry.RegisterMenuItem(
-        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::File,
-                                   .CommandId = "file.new_scene",
-                                   .Order = 0});
-    MenuRegistry.RegisterMenuItem(
-        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::File,
-                                   .CommandId = "file.open_scene",
-                                   .Order = 10});
-    MenuRegistry.RegisterMenuItem(
-        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::File,
-                                   .CommandId = "file.save_scene",
-                                   .Order = 20});
-    MenuRegistry.RegisterMenuItem(
-        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::File,
-                                   .CommandId = "file.save_scene_as",
-                                   .Order = 30});
-    MenuRegistry.RegisterMenuItem(
-        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::File,
-                                   .CommandId = "file.clear_scene",
-                                   .Order = 40});
+    MenuRegistry.RegisterMenuItem(FEditorMenuEntryDefinition{
+        .MainMenu = EEditorMainMenu::File, .CommandId = "file.new_scene", .Order = 0});
+    MenuRegistry.RegisterMenuItem(FEditorMenuEntryDefinition{
+        .MainMenu = EEditorMainMenu::File, .CommandId = "file.open_scene", .Order = 10});
+    MenuRegistry.RegisterMenuItem(FEditorMenuEntryDefinition{
+        .MainMenu = EEditorMainMenu::File, .CommandId = "file.save_scene", .Order = 20});
+    MenuRegistry.RegisterMenuItem(FEditorMenuEntryDefinition{
+        .MainMenu = EEditorMainMenu::File, .CommandId = "file.save_scene_as", .Order = 30});
+    MenuRegistry.RegisterMenuItem(FEditorMenuEntryDefinition{
+        .MainMenu = EEditorMainMenu::File, .CommandId = "file.clear_scene", .Order = 40});
     MenuRegistry.RegisterMenuSeparator(EEditorMainMenu::File, {}, 50);
-    MenuRegistry.RegisterMenuItem(
-        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::File,
-                                   .CommandId = "file.exit",
-                                   .Order = 60});
+    MenuRegistry.RegisterMenuItem(FEditorMenuEntryDefinition{
+        .MainMenu = EEditorMainMenu::File, .CommandId = "file.exit", .Order = 60});
 
-    MenuRegistry.RegisterMenuItem(
-        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::Edit,
-                                   .CommandId = "edit.undo",
-                                   .Order = 0});
-    MenuRegistry.RegisterMenuItem(
-        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::Edit,
-                                   .CommandId = "edit.redo",
-                                   .Order = 10});
-    MenuRegistry.RegisterMenuItem(
-        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::Edit,
-                                   .CommandId = "edit.delete_selection",
-                                   .Order = 20});
+    MenuRegistry.RegisterMenuItem(FEditorMenuEntryDefinition{
+        .MainMenu = EEditorMainMenu::Edit, .CommandId = "edit.undo", .Order = 0});
+    MenuRegistry.RegisterMenuItem(FEditorMenuEntryDefinition{
+        .MainMenu = EEditorMainMenu::Edit, .CommandId = "edit.redo", .Order = 10});
+    MenuRegistry.RegisterMenuItem(FEditorMenuEntryDefinition{
+        .MainMenu = EEditorMainMenu::Edit, .CommandId = "edit.delete_selection", .Order = 20});
     MenuRegistry.RegisterMenuSeparator(EEditorMainMenu::Edit, {}, 30);
-    MenuRegistry.RegisterMenuItem(
-        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::Edit,
-                                   .CommandId = "edit.preferences",
-                                   .Order = 40});
+    MenuRegistry.RegisterMenuItem(FEditorMenuEntryDefinition{
+        .MainMenu = EEditorMainMenu::Edit, .CommandId = "edit.preferences", .Order = 40});
 
-    MenuRegistry.RegisterMenuItem(
-        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::Tool,
-                                   .CommandId = "tool.content_browser",
-                                   .Order = 0});
-    MenuRegistry.RegisterMenuItem(
-        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::Tool,
-                                   .CommandId = "tool.build",
-                                   .Order = 10});
+    MenuRegistry.RegisterMenuItem(FEditorMenuEntryDefinition{
+        .MainMenu = EEditorMainMenu::Tool, .CommandId = "tool.content_browser", .Order = 0});
+    MenuRegistry.RegisterMenuItem(FEditorMenuEntryDefinition{
+        .MainMenu = EEditorMainMenu::Tool, .CommandId = "tool.build", .Order = 10});
 
-    MenuRegistry.RegisterMenuItem(
-        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::Help,
-                                   .CommandId = "help.about",
-                                   .Order = 0});
+    MenuRegistry.RegisterMenuItem(FEditorMenuEntryDefinition{
+        .MainMenu = EEditorMainMenu::Help, .CommandId = "help.about", .Order = 0});
 }
 
 void FEditor::RegisterWindowPanelCommand(const FPanelDescriptor& Descriptor)
@@ -1114,53 +1007,49 @@ void FEditor::RegisterWindowPanelCommand(const FPanelDescriptor& Descriptor)
     }
 
     // PanelDescriptor를 Window 메뉴용 체크형 command로 변환합니다.
-    const FString CommandId = BuildPanelCommandId(Descriptor);
+    const FString         CommandId = BuildPanelCommandId(Descriptor);
     const std::type_index PanelType = Descriptor.PanelType;
 
-    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
-        .CommandId = CommandId,
-        .Label = Descriptor.DisplayName,
-        .Execute =
-            [this, PanelType]()
-            {
-                if (PanelManager == nullptr)
-                {
-                    return;
-                }
+    MenuRegistry.RegisterCommand(
+        FEditorCommandDefinition{.CommandId = CommandId,
+                                 .Label = Descriptor.DisplayName,
+                                 .Execute =
+                                     [this, PanelType]()
+                                 {
+                                     if (PanelManager == nullptr)
+                                     {
+                                         return;
+                                     }
 
-                FPanelOpenRequest Request;
-                Request.PanelType = PanelType;
-                PanelManager->TogglePanel(Request);
-            },
-        .CanExecute =
-            [this]()
-            {
-                return PanelManager != nullptr;
-            },
-        .IsChecked =
-            [this, PanelType]()
-            {
-                if (PanelManager == nullptr)
-                {
-                    return false;
-                }
+                                     FPanelOpenRequest Request;
+                                     Request.PanelType = PanelType;
+                                     PanelManager->TogglePanel(Request);
+                                 },
+                                 .CanExecute = [this]() { return PanelManager != nullptr; },
+                                 .IsChecked =
+                                     [this, PanelType]()
+                                 {
+                                     if (PanelManager == nullptr)
+                                     {
+                                         return false;
+                                     }
 
-                FPanelOpenRequest Request;
-                Request.PanelType = PanelType;
-                if (IPanel* Panel = PanelManager->FindPanel(Request))
-                {
-                    return Panel->IsOpen();
-                }
+                                     FPanelOpenRequest Request;
+                                     Request.PanelType = PanelType;
+                                     if (IPanel* Panel = PanelManager->FindPanel(Request))
+                                     {
+                                         return Panel->IsOpen();
+                                     }
 
-                return false;
-            },
-        .bCheckable = true});
+                                     return false;
+                                 },
+                                 .bCheckable = true});
 
-    MenuRegistry.RegisterMenuItem(FEditorMenuEntryDefinition{
-        .MainMenu = EEditorMainMenu::Window,
-        .SubmenuPath = Descriptor.WindowMenuPath,
-        .CommandId = CommandId,
-        .Order = Descriptor.WindowMenuOrder});
+    MenuRegistry.RegisterMenuItem(
+        FEditorMenuEntryDefinition{.MainMenu = EEditorMainMenu::Window,
+                                   .SubmenuPath = Descriptor.WindowMenuPath,
+                                   .CommandId = CommandId,
+                                   .Order = Descriptor.WindowMenuOrder});
 }
 
 void FEditor::DrawAboutPopup()
@@ -1171,8 +1060,7 @@ void FEditor::DrawAboutPopup()
         bRequestOpenAboutPopup = false;
     }
 
-    if (ImGui::BeginPopupModal(AboutPopupId, &bAboutPopupOpen,
-                               ImGuiWindowFlags_AlwaysAutoResize))
+    if (ImGui::BeginPopupModal(AboutPopupId, &bAboutPopupOpen, ImGuiWindowFlags_AlwaysAutoResize))
     {
         ImGui::TextUnformatted("Jungle Editor");
         ImGui::Separator();
@@ -1222,10 +1110,9 @@ void FEditor::DrawRootDockSpace()
     const FEditorGutterMetrics GutterMetrics = GetDockSpaceGutterMetrics(ChromeHost);
     DrawDockSpaceGutters(Viewport, GutterMetrics);
 
-    const float DockSpaceWidth =
-        (Viewport->Size.x > (GutterMetrics.Left + GutterMetrics.Right))
-            ? (Viewport->Size.x - GutterMetrics.Left - GutterMetrics.Right)
-            : 0.0f;
+    const float DockSpaceWidth = (Viewport->Size.x > (GutterMetrics.Left + GutterMetrics.Right))
+                                     ? (Viewport->Size.x - GutterMetrics.Left - GutterMetrics.Right)
+                                     : 0.0f;
     const float DockSpaceHeight =
         (Viewport->Size.y > (FEditorChrome::TitleBarHeight + GutterMetrics.Bottom))
             ? (Viewport->Size.y - FEditorChrome::TitleBarHeight - GutterMetrics.Bottom)
@@ -1236,17 +1123,16 @@ void FEditor::DrawRootDockSpace()
         return;
     }
 
-    ImGui::SetNextWindowPos(
-        ImVec2(Viewport->Pos.x + GutterMetrics.Left,
-               Viewport->Pos.y + FEditorChrome::TitleBarHeight));
+    ImGui::SetNextWindowPos(ImVec2(Viewport->Pos.x + GutterMetrics.Left,
+                                   Viewport->Pos.y + FEditorChrome::TitleBarHeight));
     ImGui::SetNextWindowSize(ImVec2(DockSpaceWidth, DockSpaceHeight));
     ImGui::SetNextWindowViewport(Viewport->ID);
 
-    ImGuiWindowFlags WindowFlags =
-        ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
-        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
-        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus |
-        ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoSavedSettings;
+    ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
+                                   ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+                                   ImGuiWindowFlags_NoMove |
+                                   ImGuiWindowFlags_NoBringToFrontOnFocus |
+                                   ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoSavedSettings;
 
     if ((RootDockSpaceFlags & ImGuiDockNodeFlags_PassthruCentralNode) != 0)
     {

@@ -5,7 +5,7 @@
 #include <Windows.h>
 #include <d3dcompiler.h>
 
-class FD3D11DynamicRHI
+class FD3D11RHI
 {
   public:
     bool Initialize(HWND InWindowHandle);
