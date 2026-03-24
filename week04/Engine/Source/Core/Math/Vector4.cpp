@@ -2,6 +2,7 @@
 #include <cassert>
 
 #include "MathUtility.h"
+#include "Matrix.h"
 
 float FVector4::Dot(const FVector4& Other) const { return X * Other.X + Y * Other.Y + Z * Other.Z; }
 
@@ -60,3 +61,17 @@ bool FVector4::operator==(const FVector4& Other) const { return IsNearlyEqual(Ot
 bool FVector4::IsPoint() const { return std::abs(W - 1) < FMath::Epsilon; }
 
 bool FVector4::IsVector() const { return std::abs(W) < FMath::Epsilon; }
+
+FVector4 FVector4::operator*(const FMatrix& Mat) const
+{
+    FVector4 NewVec4;
+
+    for (int32 Col = 0; Col < 4; Col++)
+    {
+        
+        NewVec4.XYZW[Col] =
+            X * Mat.M[0][Col] + Y * Mat.M[1][Col] +
+                            Z * Mat.M[2][Col] * W * Mat.M[3][Col];
+    }
+    return NewVec4;
+}

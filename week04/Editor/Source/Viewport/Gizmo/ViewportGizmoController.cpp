@@ -51,9 +51,63 @@ bool FViewportGizmoController::OnMouseButtonDown(int32 MouseX, int32 MouseY)
         static_cast<int32>(MouseX), static_cast<int32>(MouseY),
         ViewportCamera->GetViewProjectionMatrix(), static_cast<float>(ViewportCamera->GetWidth()),
         static_cast<float>(ViewportCamera->GetHeight()));
+    FVector PivotOrigin = StartTransform.GetLocation();
+    if (GizmoType != EGizmoType::Rotation)
+    {
+        InitialDragOffset = CalculateProjectionOffset(PickRay, PivotOrigin, CurrentDragAxis);
+    }
+    else
+    {
+        // FVector HitPos = RayPlaneIntersection(PickRay, PivotOrigin, CurrentDragAxis);
+        // FVector RawHitVector = HitPos - PivotOrigin;
+        // RotationStartVector = RawHitVector;
+        // RotationStartVector.Normalize();
 
-    InitialDragOffset =
-        CalculateProjectionOffset(PickRay, StartTransform.GetLocation(), CurrentDragAxis);
+        // switch (Axis)
+        //{
+        // case EAxis::X: // 빨간색 원 (YZ 평면) -> 평면 위의 로컬 Y축을 기준으로 삼음
+        //     ReferenceAxis = FVector(0.f, -1.f, 0.f);
+        //     break;
+        // case EAxis::Y: // 초록색 원 (ZX 평면) -> 평면 위의 로컬 Z축을 기준으로 삼음
+        //     ReferenceAxis = FVector(0.f, 0.f, -1.f);
+        //     break;
+        // case EAxis::Z: // 파란색 원 (XY 평면) -> 평면 위의 로컬 X축을 기준으로 삼음
+        //     ReferenceAxis = FVector(-1.f, 0.f, 0.f);
+        //     break;
+        // }
+        // if (!bIsWorldMode)
+        //{
+        //     ReferenceAxis =
+        //     SelectedActor->GetRootComponent()->GetRelativeRotation().RotateVector(
+        //         ReferenceAxis);
+        // }
+        // InitialProjectionT = FVector::DotProduct(RawHitVector, ReferenceAxis);
+
+        switch (Axis)
+        {
+        case EAxis::X: // 빨간색 원 (YZ 평면) -> 평면 위의 로컬 Y축을 기준으로 삼음
+            ReferenceAxis = FVector(0.f, -1.f, 0.f);
+            break;
+        case EAxis::Y: // 초록색 원 (ZX 평면) -> 평면 위의 로컬 Z축을 기준으로 삼음
+            ReferenceAxis = FVector(0.f, 0.f, -1.f);
+            break;
+        case EAxis::Z: // 파란색 원 (XY 평면) -> 평면 위의 로컬 X축을 기준으로 삼음
+            ReferenceAxis = FVector(-1.f, 0.f, 0.f);
+            break;
+        }
+        if (!bIsWorldMode)
+        {
+            ReferenceAxis = SelectedActor->GetRootComponent()->GetRelativeRotation().RotateVector(
+                ReferenceAxis);
+        }
+        FVector2 ScreenPosA = ProjectWorldToScreen(PivotOrigin);
+        FVector2 ScreenPosB = ProjectWorldToScreen(PivotOrigin + ReferenceAxis * 100);
+        ReferenceAxis2D = ScreenPosB - ScreenPosA;
+        ReferenceAxis2D.Normalize();
+        InitialProjectionT =
+            FVector2::DotProduct(FVector2(static_cast<float>(MouseX), static_cast<float>(MouseY)) - ScreenPosA, ReferenceAxis2D);
+    }
+
     return true;
 }
 
@@ -61,6 +115,7 @@ void FViewportGizmoController::OnMouseButtonUp()
 {
     bIsDragging = false;
     Axis = EAxis::X;
+    GizmoHighlight = EGizmoHighlight::None;
     CurrentDragAxis = FVector{0.f, 0.f, 0.f};
     StartMousePosX = 0;
     StartMousePosY = 0;
@@ -76,7 +131,9 @@ void FViewportGizmoController::OnMouseMove(int32 MouseX, int32 MouseY)
     }
     else
     {
-        // HitTestGizmo(MouseX, MouseY);
+        if (HitTestGizmo(MouseX, MouseY))
+        {
+        }
     }
 }
 
@@ -107,8 +164,21 @@ bool FViewportGizmoController::HitTestGizmo(int32 MouseX, int32 MouseY)
     {
         GizmoType = Result.GizmoType;
         Axis = Result.Axis;
+        switch (Axis)
+        {
+        case EAxis::X:
+            GizmoHighlight = EGizmoHighlight::X;
+            break;
+        case EAxis::Y:
+            GizmoHighlight = EGizmoHighlight::Y;
+            break;
+        case EAxis::Z:
+            GizmoHighlight = EGizmoHighlight::Z;
+            break;
+        }
         return true;
     }
+    GizmoHighlight = EGizmoHighlight::None;
     return false;
 }
 
@@ -128,16 +198,62 @@ void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)
         CalculateProjectionOffset(PickRay, StartTransform.GetLocation(), CurrentDragAxis);
 
     float DeltaValue = CurrentT - InitialDragOffset;
-
     if (bEnableSnapping && SnapValue > 0.0f)
     {
         DeltaValue = std::round(DeltaValue / SnapValue) * SnapValue;
     }
 
     FTransform NewTransform = StartTransform;
-    FVector    NewLocation = StartTransform.GetLocation() + (CurrentDragAxis * DeltaValue);
-    NewTransform.SetLocation(NewLocation);
-    SelectedActor->GetRootComponent()->SetRelativeLocation(NewTransform.GetLocation());
+    if (GizmoType == EGizmoType::Translation)
+    {
+        FVector NewLocation = StartTransform.GetLocation() + (CurrentDragAxis * DeltaValue);
+        NewTransform.SetLocation(NewLocation);
+        SelectedActor->GetRootComponent()->SetRelativeLocation(NewTransform.GetLocation());
+    }
+    else if (GizmoType == EGizmoType::Scaling)
+    {
+        FVector DragAxis;
+        switch (Axis)
+        {
+        case EAxis::X:
+            DragAxis = FVector{1.f, 0.f, 0.f};
+            break;
+        case EAxis::Y:
+            DragAxis = FVector{0.f, 1.f, 0.f};
+            break;
+        case EAxis::Z:
+            DragAxis = FVector{0.f, 0.f, 1.f};
+            break;
+        }
+        FVector NewScale = StartTransform.GetScale3D() + (DragAxis * DeltaValue);
+        NewTransform.SetScale3D(NewScale);
+        SelectedActor->GetRootComponent()->SetRelativeScale3D(NewTransform.GetScale3D());
+    }
+    else if (GizmoType == EGizmoType::Rotation)
+    {
+        FVector2 ScreenPosA = ProjectWorldToScreen(StartTransform.GetLocation());
+        float    CurrentProjectionT = FVector2::DotProduct(
+            FVector2(static_cast<float>(MouseX), static_cast<float>(MouseY)) - ScreenPosA,
+            ReferenceAxis2D);
+        float DeltaT = CurrentProjectionT - InitialProjectionT;
+
+        UE_LOG(Log, ELogVerbosity::Log, "InitialProjectionT : %f", InitialProjectionT);
+        UE_LOG(Log, ELogVerbosity::Log, "CurrentProjectionT : %f", CurrentProjectionT);
+        UE_LOG(Log, ELogVerbosity::Log, "DeltaT : %f", DeltaT);
+
+        float RotationSensitivity = 1.0f;
+        float AngleDegrees = DeltaT * RotationSensitivity;
+        float AngleRadians = FMath::DegreesToRadians(AngleDegrees);
+        FQuat DeltaRotation = FQuat(CurrentDragAxis, AngleRadians);
+        FQuat NewRotation = StartTransform.GetRotation() * DeltaRotation;
+        SelectedActor->GetRootComponent()->SetRelativeRotation(NewRotation);
+
+        /*FVector PivotOrigin = StartTransform.GetLocation();
+        FVector CurrentHitPos = RayPlaneIntersection(PickRay, PivotOrigin, CurrentDragAxis);
+        FVector CurrentVector = CurrentHitPos - PivotOrigin;
+
+        float CurrentProjectionT = FVector::DotProduct(CurrentVector, ReferenceAxis);*/
+    }
 }
 
 float FViewportGizmoController::CalculateProjectionOffset(const Geometry::FRay& Ray,
@@ -159,4 +275,41 @@ float FViewportGizmoController::CalculateProjectionOffset(const Geometry::FRay& 
         return 0.0f;
     }
     return (a * e - b * d) / Denominator;
+}
+
+FVector FViewportGizmoController::RayPlaneIntersection(const Geometry::FRay& Ray,
+                                                       const FVector&        PlaneOrigin,
+                                                       const FVector&        PlaneNormal)
+{
+    // Ray의 방향과 평면 법선이 수직(내적 0)이면 평행하므로 교차하지 않음
+    float Denominator = FVector::DotProduct(Ray.Direction, PlaneNormal);
+    if (std::abs(Denominator) < 0.0001f)
+    {
+        return FVector::Zero();
+    }
+
+    // t = ((PlaneOrigin - RayOrigin) dot PlaneNormal) / (RayDir dot PlaneNormal)
+    float t = FVector::DotProduct(PlaneOrigin - Ray.Origin, PlaneNormal) / Denominator;
+
+    return Ray.Origin + (Ray.Direction * t);
+}
+
+FVector2 FViewportGizmoController::ProjectWorldToScreen(const FVector& WorldPos)
+{
+    // 1. World -> Clip Space 변환 (4D 동차 좌표계)
+    FVector4 ClipSpacePos = FVector4(WorldPos, 1.0f) * ViewportCamera->GetViewProjectionMatrix();
+
+    // 2. Perspective Divide (W로 나누어 NDC 공간 -1 ~ 1 로 변환)
+    if (std::abs(ClipSpacePos.W) > 0.00001f)
+    {
+        ClipSpacePos.X /= ClipSpacePos.W;
+        ClipSpacePos.Y /= ClipSpacePos.W;
+    }
+
+    // 3. NDC -> Screen 픽셀 좌표계로 변환
+    float ScreenX = (ClipSpacePos.X + 1.0f) * 0.5f * ViewportCamera->GetWidth();
+    // Y축은 NDC에서 위가 +, 화면 픽셀은 아래가 +이므로 뒤집어줍니다.
+    float ScreenY = (1.0f - ClipSpacePos.Y) * 0.5f * ViewportCamera->GetHeight();
+
+    return FVector2(ScreenX, ScreenY);
 }

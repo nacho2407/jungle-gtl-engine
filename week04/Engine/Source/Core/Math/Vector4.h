@@ -2,12 +2,18 @@
 
 #include "Core/EngineAPI.h"
 
+struct FMatrix;
+
 struct ENGINE_API FVector4
 {
   public:
     constexpr FVector4(const float InX = 0.0f, const float InY = 0.0f, const float InZ = 0.0f,
                        const float InW = 0.0f)
         : X(InX), Y(InY), Z(InZ), W(InW)
+    {
+    }
+    constexpr FVector4(const FVector& InVec, const float InW = 0.0f)
+        : X(InVec.X), Y(InVec.Y), Z(InVec.Z), W(InW)
     {
     }
     ~FVector4() = default;
@@ -34,6 +40,19 @@ struct ENGINE_API FVector4
     [[nodiscard]] bool IsPoint() const;
     [[nodiscard]] bool IsVector() const;
 
+    FVector4 operator*(const FMatrix& Mat) const;
+
   public:
-    float X, Y, Z, W;
+    union
+    {
+        struct
+        {
+            float X;
+            float Y;
+            float Z;
+            float W;
+        };
+
+        float XYZW[4];
+    };
 };

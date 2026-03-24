@@ -76,21 +76,21 @@ void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData)
     if (!SelectionController.GetSelectedActors().empty())
     {
         OutRenderData.Gizmo.GizmoType = GizmoController.GetGizmoType();
-        OutRenderData.Gizmo.Highlight = EGizmoHighlight::None;
+        OutRenderData.Gizmo.Highlight = GizmoController.GetGizmoHighlight();
         GizmoController.SetSelectedActor(SelectionController.GetSelectedActors().back());
-        if (GizmoController.bIsWorldMode)
+        if (GizmoController.bIsWorldMode && GizmoController.GetGizmoType() != EGizmoType::Scaling)
         {
             FVector RelativeLocation{
                 GizmoController.GetSelectedActor()->GetRootComponent()->GetRelativeLocation()};
             OutRenderData.Gizmo.Frame = FMatrix::MakeTranslation(RelativeLocation);
         }
         else
+
         {
             OutRenderData.Gizmo.Frame =
                 GizmoController.GetSelectedActor()->GetRootComponent()->GetRelativeMatrixNoScale();
         }
-        OutRenderData.Gizmo.Scale = 0.3f;
-
+        OutRenderData.Gizmo.Scale = 0.1f;
         OutRenderData.ShowFlags = EEditorShowFlags::SF_Grid | EEditorShowFlags::SF_WorldAxes |
                                   EEditorShowFlags::SF_Gizmo |
                                   EEditorShowFlags::SF_SelectionOutline |

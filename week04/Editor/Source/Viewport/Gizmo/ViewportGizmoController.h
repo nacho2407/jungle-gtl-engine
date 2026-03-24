@@ -30,6 +30,7 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     bool IsDragging() { return bIsDragging; }
 
     EGizmoType GetGizmoType() const { return GizmoType; }
+    EGizmoHighlight GetGizmoHighlight() const { return GizmoHighlight; }
     void       ChangeGizmoType()
     {
         if (GizmoType == EGizmoType::Translation)
@@ -40,7 +41,7 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
             GizmoType = EGizmoType::Translation;
     }
     void    ChangeWorldMode();
-    FMatrix    GetMatrix() const;
+    FMatrix GetMatrix() const;
 
     void SetCamera(FViewportCamera* InCamera) { ViewportCamera = InCamera; }
     void SetViewportClient(FEditorViewportClient* InClient) { ViewportClient = InClient; }
@@ -49,8 +50,8 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
         ViewportSelectionController = InControllelr;
     }
 
-    void SetSelectedActor(AActor* InActor) { SelectedActor = InActor; }
-    AActor* GetSelectedActor() const  { return SelectedActor; }
+    void    SetSelectedActor(AActor* InActor) { SelectedActor = InActor; }
+    AActor* GetSelectedActor() const { return SelectedActor; }
 
     // 기즈모 설정 변경
     // void SetGizmoMode(EGizmoMode InMode) { CurrentMode = InMode; }
@@ -62,36 +63,48 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
 
     bool bIsDrawed{false};
 
-    public:
+  public:
     bool bIsWorldMode = false;
 
   private:
     bool HitTestGizmo(int32 MouseX, int32 MouseY);
     void UpdateDrag(int32 MouseX, int32 MouseY);
 
-    float CalculateProjectionOffset(const Geometry::FRay& Ray, const FVector& AxisOrigin,
-                                    const FVector& AxisDir);
+    float   CalculateProjectionOffset(const Geometry::FRay& Ray, const FVector& AxisOrigin,
+                                      const FVector& AxisDir);
+    FVector RayPlaneIntersection(const Geometry::FRay& Ray, const FVector& PlaneOrigin,
+                                 const FVector& PlaneNormal);
+    FVector2 ProjectWorldToScreen(const FVector& WorldPos);
 
   private:
-    EGizmoType GizmoType = EGizmoType::Translation;
-    EAxis      Axis = EAxis::X;
+    EGizmoType GizmoType{EGizmoType::Translation};
+    EAxis      Axis{EAxis::X};
+    EGizmoHighlight GizmoHighlight{EGizmoHighlight::None};
     FVector    CurrentDragAxis;
+    FVector        ReferenceAxis;
+
+    FVector2        ReferenceAxis2D;
+    FVector         PivotOrigin;
+    FVector2        PivotOrigin2D;
+    float           ChangeSensitivity = 0.1f;
 
     FPickResult PickData;
 
-    
-    
     bool       bIsDragging = false;
     int32      StartMousePosX;
     int32      StartMousePosY;
     FTransform StartTransform;
-    float      InitialDragOffset = 0.0f;
+    float      InitialDragOffset{0.0f};
+    float      InitialProjectionT{0.f};
+
+    
+    FVector    RotationStartVector;
 
     bool  bEnableSnapping = false;
     float SnapValue = 10.f;
 
-    FEditorViewportClient* ViewportClient{nullptr};
-    FViewportCamera*       ViewportCamera{nullptr};
+    FEditorViewportClient*        ViewportClient{nullptr};
+    FViewportCamera*              ViewportCamera{nullptr};
     FViewportSelectionController* ViewportSelectionController{nullptr};
 
     AActor* SelectedActor{nullptr};
