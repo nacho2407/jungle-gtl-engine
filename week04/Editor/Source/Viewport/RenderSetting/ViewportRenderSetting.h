@@ -10,5 +10,5 @@ public:
     void SetViewMode(EViewModeIndex InViewMode) { ViewMode = InViewMode; }
 
 private:
-    EViewModeIndex ViewMode = EViewModeIndex::Lit;
+    EViewModeIndex ViewMode = EViewModeIndex::VMI_Lit;
 };

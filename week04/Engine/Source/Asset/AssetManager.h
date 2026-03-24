@@ -147,7 +147,7 @@ class ENGINE_API UAssetManager : public UObject
 {
 public:
     DECLARE_RTTI(UAssetManager, UObject)
-
+    UAssetManager() = default;
 	~UAssetManager() override;
 
     UAssetManager(const UAssetManager&) = delete;

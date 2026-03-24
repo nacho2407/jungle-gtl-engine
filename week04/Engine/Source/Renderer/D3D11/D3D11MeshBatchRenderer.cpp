@@ -147,7 +147,7 @@ void FD3D11MeshBatchRenderer::RenderOutlinePrimitives(const TArray<FPrimitiveRen
         return;
     }
 
-    BeginFrame(InSceneView, EViewModeIndex::Lit, bInUseInstancing);
+    BeginFrame(InSceneView, EViewModeIndex::VMI_Lit, bInUseInstancing);
 
     for (const FPrimitiveRenderItem& Item : InItems)
     {
@@ -573,7 +573,7 @@ void FD3D11MeshBatchRenderer::FlushInternal(EMeshDrawPath DrawPath, const FScene
         BindOutlineRasterizer();
         BindOutlineDepthStencilState();
     }
-    else if (ViewMode == EViewModeIndex::Wireframe)
+    else if (ViewMode == EViewModeIndex::VMI_Wireframe)
     {
         BindWireframeRasterizer();
         BindDefaultDepthStencilState();
