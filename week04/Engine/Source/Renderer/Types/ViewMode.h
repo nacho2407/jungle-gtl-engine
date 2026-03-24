@@ -2,9 +2,9 @@
 
 #include "Core/HAL/PlatformTypes.h"
 
-enum class EViewModeIndex : uint8
+enum class EViewModeIndex : uint32
 {
-    Lit,
-    Unlit,
-    Wireframe,
+    VMI_Lit,
+    VMI_Unlit,
+    VMI_Wireframe,
 };
