@@ -278,19 +278,24 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 			if (!Actor || !Actor->GetRootComponent()) {
 				continue;
 			}
-			USceneComponent* RootComp = Actor->GetRootComponent();
-			if (!RootComp->IsA<UPrimitiveComponent>()) continue;
-			UPrimitiveComponent* PrimitiveComp = static_cast<UPrimitiveComponent*>(RootComp);
+			//USceneComponent* RootComp = Actor->GetRootComponent();
+			//if (!RootComp->IsA<UPrimitiveComponent>()) continue;
 
-			HitResult = {};
-			if (PrimitiveComp->Raycast(Ray, HitResult))
+			for (auto* primitive : Actor->GetPrimitiveComponents())
 			{
-				if (HitResult.Distance < ClosestDistance)
+				UPrimitiveComponent* PrimitiveComp = static_cast<UPrimitiveComponent*>(primitive);
+
+				HitResult = {};
+				if (PrimitiveComp->Raycast(Ray, HitResult))
 				{
-					ClosestDistance = HitResult.Distance;
-					BestActor = Actor;
+					if (HitResult.Distance < ClosestDistance)
+					{
+						ClosestDistance = HitResult.Distance;
+						BestActor = Actor;
+					}
 				}
 			}
+			
 		}
 
 		bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);
