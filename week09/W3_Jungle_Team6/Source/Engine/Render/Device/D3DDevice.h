@@ -10,9 +10,7 @@
 enum class EDepthStencilState
 {
 	Default,
-	DepthGreater,
 	DepthReadOnly,
-	DepthAlways,
 	StencilWrite,
 	StencilOutline,
 	StencilWriteOnlyEqual,
@@ -54,7 +52,6 @@ private:
 	ID3D11DepthStencilView* DepthStencilView = nullptr;
 
 	ID3D11DepthStencilState* DepthStencilStateDefault = nullptr;
-	ID3D11DepthStencilState* DepthStencilStateDepthGreater = nullptr;
 	ID3D11DepthStencilState* DepthStencilStateDepthReadOnly = nullptr;
 	ID3D11DepthStencilState* DepthStencilStateStencilWrite = nullptr;
 	ID3D11DepthStencilState* DepthStencilStateStencilOutline = nullptr;

@@ -34,8 +34,6 @@ private:
 	static FMeshData ScaleGizmoMeshData;
 	static FMeshData QuadMeshData;
 	
-	static FMeshData MouseOverlayMeshData;
-
 	static void CreateCube();
 	static void CreatePlane();
 	static void CreateSphere(int slices = 20, int stacks = 20);
@@ -43,9 +41,6 @@ private:
 	static void CreateRotationGizmo();
 	static void CreateScaleGizmo();
 	static void CreateQuad();
-
-	static void CreateMouseOverlay();
-
 
 #if TEST
 
@@ -66,7 +61,6 @@ public:
 	static const FMeshData& GetScaleGizmo() { return Get().ScaleGizmoMeshData; }
 	static const FMeshData& GetQuad() { return Get().QuadMeshData; }
 
-	static const FMeshData& GetMouseOverlay() { return Get().MouseOverlayMeshData; }
 };
 
 

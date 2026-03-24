@@ -37,11 +37,7 @@ public:
 
 	FSelectionManager& GetSelectionManager() { return SelectionManager; }
 
-protected:
-	void Render(float DeltaTime) override;
-
-private:
-	void BuildRenderCommands();
+	void RenderUI(float DeltaTime);
 
 private:
 	FSelectionManager SelectionManager;
