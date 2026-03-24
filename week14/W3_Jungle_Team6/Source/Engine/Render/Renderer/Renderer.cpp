@@ -95,20 +95,15 @@ void FRenderer::BeginFrame()
 	SubUVBatcher.Clear();
 }
 //	Render Update Main function. RenderBus에 담긴 모든 RenderCommand에 대해서 Draw Call 수행
-void FRenderer::Render(const FRenderBus& InRenderBus, ERasterizerState InViewModeRasterizer)
+void FRenderer::Render(const FRenderBus& InRenderBus)
 {
-	bool bIsWireframe = InRenderBus.GetViewMode() == EViewMode::Wireframe;
 	ID3D11DeviceContext* context = Device.GetDeviceContext();
-	UpdateFrameBuffer(context, InRenderBus.GetView(), InRenderBus.GetProj(), bIsWireframe);
+	UpdateFrameBuffer(context, InRenderBus);
 
 	RenderPasses(InRenderBus, context);
 	RenderEditorHelpers(InRenderBus, context);
-}
 
-void FRenderer::RenderOverlay(const FRenderBus& InRenderBus)
-{
-	ID3D11DeviceContext* context = Device.GetDeviceContext();
-	//RenderOverlayPass(context, InRenderBus);
+	// Overlay (post-scene)
 }
 
 void FRenderer::SetupRenderState(ERenderPass Pass, ID3D11DeviceContext* DeviceContext, EViewMode CurViewMode)
@@ -399,13 +394,13 @@ void FRenderer::RenderEditorHelpers(const FRenderBus& RenderBus, ID3D11DeviceCon
 	Device.SetBlendState(EBlendState::Opaque);
 }
 
-void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix, bool bIsWireframe)
+void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus)
 {
 	FFrameConstants frameConstantData;
-	frameConstantData.View = ViewMatrix;
-	frameConstantData.Projection = ProjMatrix;
-	frameConstantData.bIsWireframe = bIsWireframe;
-	frameConstantData.ColorRGB = FVector(0.0f, 0.0f, 0.7f);
+	frameConstantData.View = InRenderBus.GetView();
+	frameConstantData.Projection = InRenderBus.GetProj();
+	frameConstantData.bIsWireframe = (InRenderBus.GetViewMode() == EViewMode::Wireframe);
+	frameConstantData.WireframeColor = InRenderBus.GetWireframeColor();
 
 	Resources.FrameBuffer.Update(Context, &frameConstantData, sizeof(FFrameConstants));
 	ID3D11Buffer* b0 = Resources.FrameBuffer.GetBuffer();

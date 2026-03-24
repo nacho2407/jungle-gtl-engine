@@ -110,6 +110,9 @@
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
       <Filter>Source\Editor</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp">
+      <Filter>Source\Editor</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp">
       <Filter>Source\Editor\Selection</Filter>
     </ClCompile>
@@ -230,6 +233,9 @@
     <ClCompile Include="Source\Engine\Render\Renderer\Renderer.cpp">
       <Filter>Source\Engine\Render\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Renderer\DefaultRenderPipeline.cpp">
+      <Filter>Source\Engine\Render\Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
@@ -297,6 +303,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
+      <Filter>Source\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\EditorRenderPipeline.h">
       <Filter>Source\Editor</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Selection\SelectionManager.h">
@@ -468,6 +477,12 @@
       <Filter>Source\Engine\Render\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\Renderer.h">
+      <Filter>Source\Engine\Render\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\IRenderPipeline.h">
+      <Filter>Source\Engine\Render\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\DefaultRenderPipeline.h">
       <Filter>Source\Engine\Render\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h">
