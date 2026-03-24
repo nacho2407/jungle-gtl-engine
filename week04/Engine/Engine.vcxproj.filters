@@ -279,6 +279,9 @@
     <ClCompile Include="Source\Renderer\Submitter\AABBSubmitter.cpp">
       <Filter>Source\Renderer\Submitter</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Renderer\Submitter\GizmoObjectIdSubmitter.cpp">
+      <Filter>Source\Renderer\Submitter</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Renderer\Submitter\GizmoSubmitter.cpp">
       <Filter>Source\Renderer\Submitter</Filter>
     </ClCompile>
@@ -626,6 +629,9 @@
     <ClInclude Include="Source\Renderer\Submitter\AABBSubmitter.h">
       <Filter>Source\Renderer\Submitter</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Renderer\Submitter\GizmoObjectIdSubmitter.h">
+      <Filter>Source\Renderer\Submitter</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Renderer\Submitter\GizmoSubmitter.h">
       <Filter>Source\Renderer\Submitter</Filter>
     </ClInclude>
@@ -656,10 +662,16 @@
     <ClInclude Include="Source\Renderer\Types\MeshInstanceData.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Renderer\Types\ObjectIdRenderItem.h">
+      <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Renderer\Types\PickId.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\Types\PickResult.h">
+      <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Types\RenderDebugColors.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\Types\RenderItem.h">

@@ -12,6 +12,7 @@
 #include "Renderer/D3D11/D3D11SpriteBatchRenderer.h"
 #include "Renderer/Submitter/AABBSubmitter.h"
 #include "Renderer/Submitter/GizmoSubmitter.h"
+#include "Renderer/Submitter/GizmoObjectIdSubmitter.h"
 #include "Renderer/Submitter/PrimitiveSubmitter.h"
 #include "Renderer/Submitter/SpriteSubmitter.h"
 #include "Renderer/Submitter/TextSubmitter.h"
@@ -59,7 +60,8 @@ class ENGINE_API FRendererModule
     FAABBSubmitter      AABBSubmitter;
     FWorldGridSubmitter WorldGridSubmitter;
     FWorldAxesSubmitter WorldAxesSubmitter;
-    FGizmoSubmitter     GizmoSubmitter;
+    FGizmoSubmitter         GizmoSubmitter;
+    FGizmoObjectIdSubmitter GizmoObjectIdSubmitter;
 
     FEditorRenderData CachedEditorRenderData;
     FSceneRenderData  CachedSceneRenderData;

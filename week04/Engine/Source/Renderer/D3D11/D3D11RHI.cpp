@@ -145,6 +145,42 @@ void FD3D11RHI::SetViewport(int32 InWidth, int32 InHeight)
     }
 }
 
+void FD3D11RHI::SetViewport(const D3D11_VIEWPORT& InViewport) const
+{
+    if (DeviceContext)
+    {
+        DeviceContext->RSSetViewports(1, &InViewport);
+    }
+}
+
+void FD3D11RHI::SetRenderTargets(uint32 InNumRTVs, ID3D11RenderTargetView* const* InRTVs,
+                                 ID3D11DepthStencilView* InDepthStencilView) const
+{
+    if (DeviceContext)
+    {
+        DeviceContext->OMSetRenderTargets(InNumRTVs, InRTVs, InDepthStencilView);
+    }
+}
+
+void FD3D11RHI::ClearRenderTarget(ID3D11RenderTargetView* InRenderTargetView,
+                                  const FLOAT InClearColor[4]) const
+{
+    if (DeviceContext && InRenderTargetView)
+    {
+        DeviceContext->ClearRenderTargetView(InRenderTargetView, InClearColor);
+    }
+}
+
+void FD3D11RHI::ClearDepthStencil(ID3D11DepthStencilView* InDepthStencilView, float InDepth,
+                                  uint8 InStencil, UINT InClearFlags) const
+{
+    if (DeviceContext && InDepthStencilView)
+    {
+        DeviceContext->ClearDepthStencilView(InDepthStencilView, InClearFlags, InDepth,
+                                             static_cast<UINT8>(InStencil));
+    }
+}
+
 void FD3D11RHI::SetDefaultRenderTargets()
 {
     if (!DeviceContext || !BackBufferRTV || !DepthStencilView)
@@ -153,8 +189,8 @@ void FD3D11RHI::SetDefaultRenderTargets()
     }
 
     ID3D11RenderTargetView* RTV = BackBufferRTV.Get();
-    DeviceContext->OMSetRenderTargets(1, &RTV, DepthStencilView.Get());
-    DeviceContext->RSSetViewports(1, &Viewport);
+    SetRenderTargets(1, &RTV, DepthStencilView.Get());
+    SetViewport(Viewport);
 }
 
 bool FD3D11RHI::CompileShaderFromFile(const wchar_t* InFilePath, const char* InEntryPoint,
@@ -361,14 +397,12 @@ void FD3D11RHI::Clear(const FLOAT InClearColor[4], float InDepth, uint8 InStenci
 {
     if (DeviceContext && BackBufferRTV)
     {
-        DeviceContext->ClearRenderTargetView(BackBufferRTV.Get(), InClearColor);
+        ClearRenderTarget(BackBufferRTV.Get(), InClearColor);
     }
 
     if (DeviceContext && DepthStencilView)
     {
-        DeviceContext->ClearDepthStencilView(DepthStencilView.Get(),
-                                             D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, InDepth,
-                                             static_cast<UINT8>(InStencil));
+        ClearDepthStencil(DepthStencilView.Get(), InDepth, InStencil);
     }
 }
 
