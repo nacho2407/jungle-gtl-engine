@@ -11,6 +11,10 @@ public:
     {
         Cube = 0,
         Sphere,
+        Cone,
+        Cylinder,
+        Ring,
+        Triangle,
         Count
     };
 
