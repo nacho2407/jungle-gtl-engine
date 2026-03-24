@@ -456,6 +456,7 @@ void FRenderer::CollectBatchingData(const FRenderBus& RenderBus)
 				Cmd.PerObjectConstants.Model.GetLocation(),
 				RenderBus.GetCameraRight(),
 				RenderBus.GetCameraUp(),
+				Cmd.PerObjectConstants.Model.GetScale(),
 				Cmd.SpriteSize.X // FontSize
 			);
 		}
