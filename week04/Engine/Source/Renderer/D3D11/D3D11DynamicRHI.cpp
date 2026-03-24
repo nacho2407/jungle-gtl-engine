@@ -671,6 +671,54 @@ void FD3D11DynamicRHI::DrawIndexedInstanced(uint32 InIndexCountPerInstance, uint
     }
 }
 
+bool FD3D11DynamicRHI::CreateSamplerState(const D3D11_SAMPLER_DESC& InDesc,
+                                          ID3D11SamplerState**      OutSamplerState) const
+{
+    if (Device == nullptr || OutSamplerState == nullptr)
+    {
+        return false;
+    }
+
+    *OutSamplerState = nullptr;
+    return SUCCEEDED(Device->CreateSamplerState(&InDesc, OutSamplerState));
+}
+
+bool FD3D11DynamicRHI::CreateBlendState(const D3D11_BLEND_DESC& InDesc,
+                                        ID3D11BlendState**      OutBlendState) const
+{
+    if (Device == nullptr || OutBlendState == nullptr)
+    {
+        return false;
+    }
+
+    *OutBlendState = nullptr;
+    return SUCCEEDED(Device->CreateBlendState(&InDesc, OutBlendState));
+}
+
+bool FD3D11DynamicRHI::CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC& InDesc,
+                                               ID3D11DepthStencilState** OutDepthStencilState) const
+{
+    if (Device == nullptr || OutDepthStencilState == nullptr)
+    {
+        return false;
+    }
+
+    *OutDepthStencilState = nullptr;
+    return SUCCEEDED(Device->CreateDepthStencilState(&InDesc, OutDepthStencilState));
+}
+
+bool FD3D11DynamicRHI::CreateRasterizerState(const D3D11_RASTERIZER_DESC& InDesc,
+                                             ID3D11RasterizerState**      OutRasterizerState) const
+{
+    if (Device == nullptr || OutRasterizerState == nullptr)
+    {
+        return false;
+    }
+
+    *OutRasterizerState = nullptr;
+    return SUCCEEDED(Device->CreateRasterizerState(&InDesc, OutRasterizerState));
+}
+
 void FD3D11DynamicRHI::SetBlendState(ID3D11BlendState* InBlendState, const float InBlendFactor[4],
                                      uint32 InSampleMask) const
 {

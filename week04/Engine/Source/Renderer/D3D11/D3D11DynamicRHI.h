@@ -16,8 +16,7 @@ class FD3D11DynamicRHI
 
     bool Resize(int32 InWidth, int32 InHeight);
 
-    ID3D11Device* GetDevice() const { return Device.Get(); }
-    // TODO : 직접 참조 거는거 TextureResource 쪽에서 빼고, GetDeviceContext 제거해야함.
+    ID3D11Device*        GetDevice() const { return Device.Get(); }
     ID3D11DeviceContext* GetDeviceContext() const { return DeviceContext.Get(); }
     IDXGISwapChain*      GetSwapChain() const { return SwapChain.Get(); }
 
@@ -61,13 +60,12 @@ class FD3D11DynamicRHI
     bool UpdateDynamicBuffer(ID3D11Buffer* InBuffer, const void* InData, uint32 InDataSize) const;
 
     bool CreateSamplerState(const D3D11_SAMPLER_DESC& InDesc,
-                            ID3D11SamplerState** OutSamplerState) const;
-    bool CreateBlendState(const D3D11_BLEND_DESC& InDesc,
-                          ID3D11BlendState** OutBlendState) const;
+                            ID3D11SamplerState**      OutSamplerState) const;
+    bool CreateBlendState(const D3D11_BLEND_DESC& InDesc, ID3D11BlendState** OutBlendState) const;
     bool CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC& InDesc,
-                                 ID3D11DepthStencilState** OutDepthStencilState) const;
+                                 ID3D11DepthStencilState**       OutDepthStencilState) const;
     bool CreateRasterizerState(const D3D11_RASTERIZER_DESC& InDesc,
-                               ID3D11RasterizerState** OutRasterizerState) const;
+                               ID3D11RasterizerState**      OutRasterizerState) const;
 
     void SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY InTopology) const;
     void SetInputLayout(ID3D11InputLayout* InInputLayout) const;
@@ -85,10 +83,12 @@ class FD3D11DynamicRHI
     void SetRasterizerState(ID3D11RasterizerState* InRasterizerState) const;
     void SetDepthStencilState(ID3D11DepthStencilState* InDepthStencilState,
                               uint32                   InStencilRef = 0) const;
-    void SetBlendState(ID3D11BlendState* InBlendState, const float InBlendFactor[4] = nullptr,
+
+    void SetBlendState(ID3D11BlendState* InBlendState, const float InBlendFactor[4],
                        uint32 InSampleMask = 0xFFFFFFFFu) const;
     void SetPSShaderResource(uint32 InSlot, ID3D11ShaderResourceView* InSRV) const;
     void SetPSSampler(uint32 InSlot, ID3D11SamplerState* InSamplerState) const;
+
     void ClearPSShaderResource(uint32 InSlot) const;
     void ClearBlendState() const;
 
