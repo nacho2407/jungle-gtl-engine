@@ -5,6 +5,7 @@
 #include "EngineCore/EngineTypes.h"//Fstring
 #include "EngineCore/Logger.h"
 #include "Renderer/Level.h"
+#include "Component/BillboardTextComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "EngineCore/ObjectFactory.h"
 #include "EngineCore/EngineStatics.h"
@@ -51,8 +52,11 @@ public:
 		instance->Scene = targetScene;
 
 		targetScene->SceneComponents.push_back(instance);
+		if (UBillboardTextComponent* BillboardText = Cast<UBillboardTextComponent>(instance))
+		{
+			targetScene->BillboardTextComponents.push_back(BillboardText);
+		}
 		instance->OnComponentAdded();
-		AttachDefaultBillboardText(targetScene, instance);
 		return instance;
 	}
 
@@ -69,17 +73,6 @@ public:
 	}
 
 	void RemoveSceneComponent(USceneComponent* toDespawn, UScene* targetScene= nullptr);
-
-
-private:
-	/**
-	 * @brief 대상 scene component에 기본 이름 / UUID 빌보드 컴포넌트를 자동 부착합니다.
-	 *
-	 * @param targetScene Billboard component를 추가할 씬
-	 * 
-	 * @param targetComponent 라벨이 따라다닐 대상 컴포넌트
-	 */
-	void AttachDefaultBillboardText(UScene* targetScene, USceneComponent* targetComponent);
 
 	UWorld* OwnerWorld = nullptr;
 	UScene* ActiveScene = nullptr;

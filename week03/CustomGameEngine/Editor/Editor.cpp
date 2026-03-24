@@ -1,8 +1,10 @@
-﻿#include "Editor.h"
+#include "Editor.h"
 #include "ThirdParty/json.h"
+#include "Component/BillboardTextComponent.h"
 #include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "ImGui/imgui_internal.h"
+#include "World.h"
 #include <filesystem>
 #include <fstream>
 #include <streambuf>
@@ -156,6 +158,8 @@ void Editor::ClearSelection()
 			continue;
 		}
 
+		// 선택 해제 시 라벨 같이 제거함
+		RemoveBillboardTextForSelection(component);
 		component->bIsSelected = false;
 		if (UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(component))
 		{
@@ -172,6 +176,8 @@ void Editor::SelectSingleComponent(USceneComponent* component)
 
 	if (component)
 	{
+		// 선택 시 라벨 보장함
+		EnsureBillboardTextForSelection(component);
 		component->bIsSelected = true;
 		if (UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(component))
 		{
@@ -196,6 +202,8 @@ void Editor::SelectMultiComponent(USceneComponent* component)
 			continue;
 		}
 
+		// 토글 해제 시 라벨 제거함
+		RemoveBillboardTextForSelection(component);
 		component->bIsSelected = false;
 		if (UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(component))
 		{
@@ -206,6 +214,8 @@ void Editor::SelectMultiComponent(USceneComponent* component)
 		return;
 	}
 
+	// 새로 선택된 대상 라벨 보장함
+	EnsureBillboardTextForSelection(component);
 	component->bIsSelected = true;
 	if (UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(component))
 	{
@@ -242,6 +252,95 @@ bool Editor::IsComponentSelected(USceneComponent* component) const
 	}
 
 	return false;
+}
+
+/**
+ * @brief 선택 대상에 연결된 billboard text component를 찾습니다.
+ *
+ * @param component 검색할 대상 scene component
+ * @return 연결된 billboard text component, 없으면 nullptr
+ */
+UBillboardTextComponent* Editor::FindBillboardTextComponent(USceneComponent* component) const
+{
+	if (component == nullptr || component->Scene == nullptr)
+	{
+		return nullptr;
+	}
+
+	// 보조 인덱스만 순회함
+	for (UBillboardTextComponent* BillboardText : component->Scene->BillboardTextComponents)
+	{
+		if (BillboardText != nullptr && BillboardText->GetAttachedComponent() == component)
+		{
+			return BillboardText;
+		}
+	}
+
+	return nullptr;
+}
+
+/**
+ * @brief 선택된 scene component용 billboard text component를 생성하거나 재사용합니다.
+ *
+ * @param component 선택된 대상 scene component
+ */
+void Editor::EnsureBillboardTextForSelection(USceneComponent* component)
+{
+	if (component == nullptr || component->Scene == nullptr)
+	{
+		return;
+	}
+
+	if (Cast<UBillboardTextComponent>(component) != nullptr)
+	{
+		return;
+	}
+
+	if (FindBillboardTextComponent(component) != nullptr)
+	{
+		return;
+	}
+
+	SceneManager* SceneMgr = GetWorld().GetSceneManager();
+	if (SceneMgr == nullptr)
+	{
+		return;
+	}
+
+	// 선택된 대상에만 라벨 생성함
+	UBillboardTextComponent* BillboardText = SceneMgr->AddSceneComponent<UBillboardTextComponent>(component->Scene);
+	if (BillboardText != nullptr)
+	{
+		BillboardText->AttachTo(component);
+	}
+}
+
+/**
+ * @brief 선택 해제된 scene component용 billboard text component를 제거합니다.
+ *
+ * @param component 선택 해제된 대상 scene component
+ */
+void Editor::RemoveBillboardTextForSelection(USceneComponent* component)
+{
+	if (component == nullptr || component->Scene == nullptr)
+	{
+		return;
+	}
+
+	SceneManager* SceneMgr = GetWorld().GetSceneManager();
+	if (SceneMgr == nullptr)
+	{
+		return;
+	}
+
+	UBillboardTextComponent* BillboardText = FindBillboardTextComponent(component);
+	if (BillboardText == nullptr)
+	{
+		return;
+	}
+
+	// SceneManager 경유해서 소유권 정리함
+	SceneMgr->RemoveSceneComponent(BillboardText, component->Scene);
 }
 
 void Editor::UpdateGizmoSelection()

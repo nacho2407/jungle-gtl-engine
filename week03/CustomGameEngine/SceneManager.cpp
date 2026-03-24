@@ -1,7 +1,6 @@
-#include "SceneManager.h"
+﻿#include "SceneManager.h"
 
 #include "Component/BillboardTextComponent.h"
-#include "Component/CameraComponent.h"
 
 class UEngineStatics;
 
@@ -56,31 +55,6 @@ UScene* SceneManager::NewScene()
 	return GetActiveScene();
 }
 
-void SceneManager::AttachDefaultBillboardText(UScene* targetScene, USceneComponent* targetComponent)
-{
-	if (targetScene == nullptr || targetComponent == nullptr || targetScene == PermanentScene)
-	{
-		return;
-	}
-
-	if (Cast<UBillboardTextComponent>(targetComponent) != nullptr)
-	{
-		return;
-	}
-
-	if (Cast<UCameraComponent>(targetComponent) != nullptr)
-	{
-		return;
-	}
-
-	// 에디터에서 배치한 실제 오브젝트들만 자동 라벨 대상에 포함합니다.
-	UBillboardTextComponent* BillboardText = AddSceneComponent<UBillboardTextComponent>(targetScene);
-	if (BillboardText != nullptr)
-	{
-		BillboardText->AttachTo(targetComponent);
-	}
-}
-
 void SceneManager::SaveScene(FString sceneName)
 {
 	UScene* activeScene = GetActiveScene();
@@ -100,12 +74,6 @@ UScene* SceneManager::LoadScene(FString sceneName)
 		LoadedScenes.push_back(loadedScene);
 		SetActiveScene(loadedScene);
 		UEngineStatics::NextUUID = loadedScene->NextUUID;
-
-		TArray<USceneComponent*> Components = loadedScene->SceneComponents;
-		for (USceneComponent* Component : Components)
-		{
-			AttachDefaultBillboardText(loadedScene, Component);
-		}
 	}
 
 	return loadedScene;
@@ -163,9 +131,8 @@ void SceneManager::RemoveSceneComponent(USceneComponent* toDespawn, UScene* targ
 	if (Cast<UBillboardTextComponent>(toDespawn) == nullptr)
 	{
 		TArray<USceneComponent*> LabelsToRemove;
-		for (USceneComponent* Component : scene->SceneComponents)
+		for (UBillboardTextComponent* BillboardText : scene->BillboardTextComponents)
 		{
-			UBillboardTextComponent* BillboardText = Cast<UBillboardTextComponent>(Component);
 			if (BillboardText != nullptr && BillboardText->GetAttachedComponent() == toDespawn)
 			{
 				LabelsToRemove.push_back(BillboardText);
@@ -182,6 +149,18 @@ void SceneManager::RemoveSceneComponent(USceneComponent* toDespawn, UScene* targ
 	if (primToDespawn != nullptr)
 	{
 		scene->Level.UnregisterRenderObject(primToDespawn->GetRenderObject());
+	}
+
+	if (UBillboardTextComponent* BillboardText = Cast<UBillboardTextComponent>(toDespawn))
+	{
+		for (auto it = scene->BillboardTextComponents.begin(); it != scene->BillboardTextComponents.end(); ++it)
+		{
+			if (*it == BillboardText)
+			{
+				scene->BillboardTextComponents.erase(it);
+				break;
+			}
+		}
 	}
 
 	for (auto it = scene->SceneComponents.begin(); it != scene->SceneComponents.end(); ++it)

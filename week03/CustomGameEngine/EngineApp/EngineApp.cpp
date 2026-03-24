@@ -24,31 +24,6 @@
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-/**
- * @brief Scene 안의 빌보드 텍스트 컴포넌트들로부터 draw item을 수집합니다.
- *
- * @param Scene draw item을 수집할 scene
- * 
- * @param OutItems 수집된 draw item이 추가될 배열
- */
-static void AppendSceneBillboardTextItems(UScene* Scene, TArray<FBillboardTextDrawItem>& OutItems)
-{
-	if (Scene == nullptr)
-	{
-		return;
-	}
-
-	// Scene 컴포넌트 중 빌보드 텍스트 컴포넌트만 찾아 렌더 입력으로 변환
-	for (USceneComponent* Component : Scene->SceneComponents)
-	{
-		UBillboardTextComponent* BillboardText = Cast<UBillboardTextComponent>(Component);
-		if (BillboardText != nullptr)
-		{
-			BillboardText->AppendDrawItems(OutItems);
-		}
-	}
-}
-
 LRESULT CALLBACK EngineApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
@@ -247,8 +222,26 @@ void EngineApp::Run()
 		GetWorld().DrawDebugLines();
 		Renderer->Render(LevelsToRender);
 		TArray<FBillboardTextDrawItem> BillboardTextItems;
-		AppendSceneBillboardTextItems(SceneMgr->GetPermanentScene(), BillboardTextItems);
-		AppendSceneBillboardTextItems(SceneMgr->GetActiveScene(), BillboardTextItems);
+		if (UScene* PermanentScene = SceneMgr->GetPermanentScene())
+		{
+			for (UBillboardTextComponent* BillboardText : PermanentScene->BillboardTextComponents)
+			{
+				if (BillboardText != nullptr)
+				{
+					BillboardText->AppendDrawItems(BillboardTextItems);
+				}
+			}
+		}
+		if (UScene* ActiveScene = SceneMgr->GetActiveScene())
+		{
+			for (UBillboardTextComponent* BillboardText : ActiveScene->BillboardTextComponents)
+			{
+				if (BillboardText != nullptr)
+				{
+					BillboardText->AppendDrawItems(BillboardTextItems);
+				}
+			}
+		}
 		Renderer->RenderBillboardTextBatch(BillboardTextItems);
 		Renderer->BatchRenderDebugLine(FLineBatcher::GetInstance().GetLineVertices());
 		FLineBatcher::GetInstance().ClearLines();
