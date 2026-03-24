@@ -48,6 +48,11 @@ bool Ray::IntersectsTriangle(const FVector& V0, const FVector& V1, const FVector
 
 bool Ray::Intersects(UPrimitiveComponent* Comp, float& OutDistance)
 {
+	if (Comp == nullptr || Comp->GetGeometry() == nullptr)
+	{
+		return false;
+	}
+
 	bool bHit = false;
 	float ClosestT = FLT_MAX;
 
@@ -58,6 +63,7 @@ bool Ray::Intersects(UPrimitiveComponent* Comp, float& OutDistance)
 	Ray LocalRay;
 	LocalRay.Direction = Comp->GetRelativeMatrix().Inverse().TransformVector(Direction);
 	LocalRay.Origin = Comp->GetRelativeMatrix().Inverse().TransformPoint(Origin);
+	LocalRay.Direction = LocalRay.Direction.Normalize();
 
 	if (!Indices.empty())
 	{
@@ -100,7 +106,9 @@ bool Ray::Intersects(UPrimitiveComponent* Comp, float& OutDistance)
 
 	if (bHit)
 	{
-		OutDistance = ClosestT;
+		const FVector localHitPoint = LocalRay.Origin + LocalRay.Direction * ClosestT;
+		const FVector worldHitPoint = Comp->GetRelativeMatrix().TransformPoint(localHitPoint);
+		OutDistance = (worldHitPoint - Origin).Length();
 	}
 	return bHit;
 }

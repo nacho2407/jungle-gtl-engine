@@ -236,6 +236,11 @@ void Editor::SelectAllComponents(const TArray<USceneComponent*>& components)
 			continue;
 		}
 
+		if (Cast<UBillboardTextComponent>(component) != nullptr)
+		{
+			continue;
+		}
+
 		component->bIsSelected = true;
 		if (UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(component))
 		{

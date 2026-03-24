@@ -59,7 +59,15 @@ void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene, bool bMultiSelect)
 	{
 		if (!bMultiSelect)
 		{
-			EditorPtr->SelectSingleComponent(selectedComp);
+			if (EditorPtr->IsComponentSelected(selectedComp) &&
+				EditorPtr->GetSelectedComponents().size() == 1)
+			{
+				EditorPtr->ClearSelection();
+			}
+			else
+			{
+				EditorPtr->SelectSingleComponent(selectedComp);
+			}
 		}
 		else
 		{

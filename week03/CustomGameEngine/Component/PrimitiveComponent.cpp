@@ -5,6 +5,7 @@
 #include "Scene.h"
 #include "AABB.h"
 #include "LineBatcher.h"
+#include "Math/Ray.h"
 
 UPrimitiveComponent::UPrimitiveComponent()
 {
@@ -138,9 +139,15 @@ void UPrimitiveComponent::UpdateAABB()
 	}
 }
 
-bool UPrimitiveComponent::RayIntersects(const Ray& ray, float& OutDistance)
+bool UPrimitiveComponent::RayIntersects(Ray& ray, float& OutDistance)
 {
-	return BoundingBox.RayIntersects(ray, OutDistance);
+	float AABBDistance = 0.0f;
+	if (!BoundingBox.RayIntersects(ray, AABBDistance))
+	{
+		return false;
+	}
+
+	return ray.Intersects(this, OutDistance);
 }
 
 json::JSON UPrimitiveComponent::Serialize()

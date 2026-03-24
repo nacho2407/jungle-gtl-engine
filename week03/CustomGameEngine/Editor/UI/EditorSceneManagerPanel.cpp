@@ -33,7 +33,7 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 		{
 			for (USceneComponent* component : ActiveScene->SceneComponents)
 			{
-				if (component != nullptr)
+				if (component != nullptr && Cast<UBillboardTextComponent>(component) == nullptr)
 				{
 					componentsToSelect.push_back(component);
 				}
