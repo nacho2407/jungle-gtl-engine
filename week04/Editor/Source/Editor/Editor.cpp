@@ -709,6 +709,21 @@ bool FEditor::SaveCurrentSceneToDisk()
     return SaveScene();
 }
 
+void FEditor::RequestSaveSceneAs()
+{
+    SaveSceneAs();
+}
+
+void FEditor::RequestOpenSceneDialog()
+{
+    RequestOpenScene();
+}
+
+void FEditor::RequestAboutPopUp()
+{
+    RequestAboutPopup();
+}
+
 bool FEditor::SaveSceneAsPath(const std::filesystem::path& FilePath)
 {
     return SaveSceneToPath(FilePath, true);

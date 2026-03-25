@@ -9,12 +9,14 @@ namespace Engine::ApplicationCore
     {
         Unknown,
         F,
+        F1,
         W,
         A,
         S,
         D,
         E,
         Q,
+        O,
         X,
         Delete,
         //LeftCtrl,
@@ -28,6 +30,7 @@ namespace Engine::ApplicationCore
         N1,
         N2,
         N3,
+        N,
     };
 
     enum class EInputEventType

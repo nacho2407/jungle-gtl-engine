@@ -85,6 +85,9 @@ class FEditor
     bool     SaveCurrentSceneToDisk();
     bool     SaveSceneAsPath(const std::filesystem::path& FilePath);
     bool     OpenSceneFromPath(const std::filesystem::path& FilePath);
+    void     RequestSaveSceneAs();
+    void     RequestOpenSceneDialog();
+    void     RequestAboutPopUp();
     bool     CanDeleteSelectedActors() const;
     bool     DeleteSelectedActors();
     void     RefreshContentIndex();
