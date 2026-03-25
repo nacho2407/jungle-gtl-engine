@@ -149,6 +149,13 @@ namespace
 
         return true;
     }
+
+    FString WidePathToUtf8(const FWString& Path)
+    {
+        const std::filesystem::path FilePath(Path);
+        const std::u8string Utf8Path = FilePath.u8string();
+        return FString(reinterpret_cast<const char*>(Utf8Path.data()), Utf8Path.size());
+    }
 } // namespace
 
 FFontAtlasLoader::FFontAtlasLoader(FD3D11RHI* InRHI) : RHI(InRHI) {}
@@ -192,6 +199,9 @@ UAsset* FFontAtlasLoader::LoadAsset(const FSourceRecord& Source, const FAssetLoa
     FFontResource FontResource;
     if (!ParseFontAtlasJson(Source, FontResource))
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[FontAtlasLoader] Failed at font atlas parse. Path=%s",
+               WidePathToUtf8(Source.NormalizedPath).c_str());
         return nullptr;
     }
 
@@ -206,6 +216,9 @@ bool FFontAtlasLoader::ParseFontAtlasJson(const FSourceRecord& Source, FFontReso
 
     if (!Source.bFileBytesLoaded || Source.FileBytes.empty())
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[FontAtlasLoader] ParseFontAtlasJson failed at source bytes validation. Path=%s",
+               WidePathToUtf8(Source.NormalizedPath).c_str());
         return false;
     }
 
@@ -213,22 +226,34 @@ bool FFontAtlasLoader::ParseFontAtlasJson(const FSourceRecord& Source, FFontReso
         nlohmann::json::parse(Source.FileBytes.begin(), Source.FileBytes.end(), nullptr, false);
     if (Root.is_discarded())
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[FontAtlasLoader] ParseFontAtlasJson failed at JSON parse. Path=%s",
+               WidePathToUtf8(Source.NormalizedPath).c_str());
         return false;
     }
 
     if (!ParseInfo(Root, OutFont.Info) || !ParseCommon(Root, OutFont.Common) ||
         !ParsePages(Root, OutFont.PageFiles) || !ParseChars(Root, OutFont.Glyphs))
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[FontAtlasLoader] ParseFontAtlasJson failed at JSON section parse. Path=%s",
+               WidePathToUtf8(Source.NormalizedPath).c_str());
         return false;
     }
 
     if (OutFont.PageFiles.empty())
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[FontAtlasLoader] ParseFontAtlasJson failed at atlas page discovery. Path=%s",
+               WidePathToUtf8(Source.NormalizedPath).c_str());
         return false;
     }
 
     if (!LoadAtlasTexture(Source, OutFont.PageFiles[0], OutFont.Atlas))
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[FontAtlasLoader] ParseFontAtlasJson failed at atlas texture load. Path=%s AtlasPage=%s",
+               WidePathToUtf8(Source.NormalizedPath).c_str(), OutFont.PageFiles[0].c_str());
         OutFont.Reset();
         return false;
     }
@@ -468,11 +493,15 @@ bool FFontAtlasLoader::CreateTextureResource(const FDecodedAtlasImage& DecodedIm
 {
     if (!RHI || !RHI->GetDevice())
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[FontAtlasLoader] CreateTextureResource failed at D3D device validation.");
         return false;
     }
 
     if (DecodedImage.Width == 0 || DecodedImage.Height == 0 || DecodedImage.Pixels.empty())
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[FontAtlasLoader] CreateTextureResource failed at decoded atlas validation.");
         return false;
     }
 
@@ -501,6 +530,9 @@ bool FFontAtlasLoader::CreateTextureResource(const FDecodedAtlasImage& DecodedIm
     HRESULT Hr = RHI->GetDevice()->CreateTexture2D(&TextureDesc, &InitialData, &Texture);
     if (FAILED(Hr))
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[FontAtlasLoader] CreateTextureResource failed at CreateTexture2D. HRESULT=0x%08x",
+               static_cast<uint32>(Hr));
         return false;
     }
 
@@ -514,6 +546,9 @@ bool FFontAtlasLoader::CreateTextureResource(const FDecodedAtlasImage& DecodedIm
     Hr = RHI->GetDevice()->CreateShaderResourceView(Texture.Get(), &SRVDesc, &SRV);
     if (FAILED(Hr))
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[FontAtlasLoader] CreateTextureResource failed at CreateShaderResourceView. HRESULT=0x%08x",
+               static_cast<uint32>(Hr));
         return false;
     }
 

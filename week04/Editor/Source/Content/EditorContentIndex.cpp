@@ -59,6 +59,11 @@ namespace
             return EContentBrowserItemType::Font;
         }
 
+        if (Extension == L".json")
+        {
+            return EContentBrowserItemType::SpriteAtlas;
+        }
+
         return EContentBrowserItemType::UnknownFile;
     }
 

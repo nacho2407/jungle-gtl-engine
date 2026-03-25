@@ -1,4 +1,4 @@
-#include "Core/CoreMinimal.h"
+﻿#include "Core/CoreMinimal.h"
 #include "AssetManager.h"
 
 #include <cwctype>
@@ -14,6 +14,35 @@
 namespace
 {
 	namespace fs = std::filesystem;
+
+	const char* AssetTypeToString(EAssetType Type)
+	{
+		switch (Type)
+		{
+		case EAssetType::Texture:
+			return "Texture";
+		case EAssetType::Mesh:
+			return "Mesh";
+		case EAssetType::Shader:
+			return "Shader";
+		case EAssetType::Material:
+			return "Material";
+		case EAssetType::Font:
+			return "Font";
+		case EAssetType::SpriteAtlas:
+			return "SpriteAtlas";
+		case EAssetType::Unknown:
+		default:
+			return "Unknown";
+		}
+	}
+
+	FString WidePathToUtf8(const FWString& Path)
+	{
+		const fs::path FilePath(Path);
+		const std::u8string Utf8Path = FilePath.u8string();
+		return FString(reinterpret_cast<const char*>(Utf8Path.data()), Utf8Path.size());
+	}
 
 	uint64 ToTicks(const fs::file_time_type& Time)
 	{
@@ -75,56 +104,70 @@ namespace
 const FSourceRecord* FSourceCache::GetOrLoad(const FWString& Path)
 {
 	namespace fs = std::filesystem;
-	// 1. 입력 경로 정규화
+	// 1. ??낆젾 野껋럥以??類?뇣??
 	FWString NormalizedPath = NormalizePath(Path);
 	if (NormalizedPath.empty())
 	{
+		UE_LOG(Asset, ELogVerbosity::Warning,
+		       "[AssetSource] Failed at path normalization. Input path is empty or invalid.");
 		return nullptr;
 	}
 
-	// 2. 파일 존재 확인
+	// 2. ???뵬 鈺곕똻???類ㅼ뵥
 	fs::path FilePath(NormalizedPath);
 	std::error_code ErrorCode;
 
 	if (!fs::exists(FilePath, ErrorCode) || !fs::is_regular_file(FilePath, ErrorCode))
 	{
+		UE_LOG(Asset, ELogVerbosity::Warning,
+		       "[AssetSource] Failed at source existence check. Path=%s",
+		       WidePathToUtf8(NormalizedPath).c_str());
 		return nullptr;
 	}
 
-	// 3. 현재 file size / last write time 조회
+	// 3. ?袁⑹삺 file size / last write time 鈺곌퀬??
 	const uint64 CurrentFileSize = fs::file_size(FilePath, ErrorCode);
 	if (ErrorCode)
 	{
+		UE_LOG(Asset, ELogVerbosity::Warning,
+		       "[AssetSource] Failed at file_size query. Path=%s",
+		       WidePathToUtf8(NormalizedPath).c_str());
 		return nullptr;
 	}
 
 	const auto CurrentWriteTime = fs::last_write_time(FilePath, ErrorCode);
 	if (ErrorCode)
 	{
+		UE_LOG(Asset, ELogVerbosity::Warning,
+		       "[AssetSource] Failed at last_write_time query. Path=%s",
+		       WidePathToUtf8(NormalizedPath).c_str());
 		return nullptr;
 	}
 
-	// 4. 캐시에 기존 record가 있으면 변경 여부 확인
+	// 4. 筌?Ŋ???疫꿸퀣??record揶쎛 ??됱몵筌?癰궰野???? ?類ㅼ뵥
 	const uint64 CurrentWriteTimeTicks = ToTicks(CurrentWriteTime);
 
 	auto It = Records.find(NormalizedPath);
 	if (It != Records.end() && !HasFileChanged(It->second, CurrentFileSize, CurrentWriteTimeTicks))
 	{
-		// 5. 안 바뀌었으면 그대로 반환
+		// 5. ??獄쏅뗀??????겹늺 域밸챶?嚥?獄쏆꼹??
 		return &It->second;
 	}
 
-	// 6. 바뀌었거나 없으면 파일 다시 읽기
+	// 6. 獄쏅뗀????椰꾧퀡援???곸몵筌????뵬 ??쇰뻻 ??꾨┛
 	FSourceRecord NewRecord;
 	if (!BuildSourceRecord(NormalizedPath, NewRecord))
 	{
+		UE_LOG(Asset, ELogVerbosity::Warning,
+		       "[AssetSource] Failed at source record build. Path=%s",
+		       WidePathToUtf8(NormalizedPath).c_str());
 		return nullptr;
 	}
 
-	// 7. hash 계산 후 record 갱신
+	// 7. hash ?④쑴沅???record 揶쏄퉮??
 	auto [InsertedIt, _] = Records.insert_or_assign(NormalizedPath, std::move(NewRecord));
 
-	// 8. record 반환
+	// 8. record 獄쏆꼹??
 	return &InsertedIt->second;
 }
 
@@ -151,24 +194,36 @@ bool FSourceCache::BuildSourceRecord(const FWString& NormalizedPath, FSourceReco
 
 	if (!fs::exists(FilePath, ErrorCode) || !fs::is_regular_file(FilePath, ErrorCode))
 	{
+		UE_LOG(Asset, ELogVerbosity::Warning,
+		       "[AssetSource] BuildSourceRecord failed at source existence check. Path=%s",
+		       WidePathToUtf8(NormalizedPath).c_str());
 		return false;
 	}
 
 	const uint64 FileSize = fs::file_size(FilePath, ErrorCode);
 	if (ErrorCode)
 	{
+		UE_LOG(Asset, ELogVerbosity::Warning,
+		       "[AssetSource] BuildSourceRecord failed at file_size query. Path=%s",
+		       WidePathToUtf8(NormalizedPath).c_str());
 		return false;
 	}
 
 	const auto LastWriteTime = fs::last_write_time(FilePath, ErrorCode);
 	if (ErrorCode)
 	{
+		UE_LOG(Asset, ELogVerbosity::Warning,
+		       "[AssetSource] BuildSourceRecord failed at last_write_time query. Path=%s",
+		       WidePathToUtf8(NormalizedPath).c_str());
 		return false;
 	}
 
 	std::ifstream File(FilePath, std::ios::binary);
 	if (!File.is_open())
 	{
+		UE_LOG(Asset, ELogVerbosity::Warning,
+		       "[AssetSource] BuildSourceRecord failed at file open. Path=%s",
+		       WidePathToUtf8(NormalizedPath).c_str());
 		return false;
 	}
 
@@ -183,6 +238,9 @@ bool FSourceCache::BuildSourceRecord(const FWString& NormalizedPath, FSourceReco
 		File.read(reinterpret_cast<char*>(OutRecord.FileBytes.data()), static_cast<std::streamsize>(FileSize));
 		if (!File)
 		{
+			UE_LOG(Asset, ELogVerbosity::Warning,
+			       "[AssetSource] BuildSourceRecord failed at file read. Path=%s",
+			       WidePathToUtf8(NormalizedPath).c_str());
 			return false;
 		}
 	}
@@ -228,52 +286,53 @@ UAssetManager::~UAssetManager()
 
 UAsset* UAssetManager::Load(const FWString& Path, const FAssetLoadParams& Params)
 {
-	// 1. FindLoader(Path, Params)
 	IAssetLoader* Loader = FindLoader(Path, Params);
 	if (!Loader)
 	{
-		// 2. loader 없으면 nullptr
+		UE_LOG(Asset, ELogVerbosity::Warning,
+		       "[AssetLoad] Failed at loader selection. Path=%s ExplicitType=%s",
+		       WidePathToUtf8(Path).c_str(),
+		       AssetTypeToString(Params.ExplicitType));
 		return nullptr;
 	}
 
-	// 3. SourceCache.GetOrLoad(Path)
 	const FSourceRecord* Source = SourceCache.GetOrLoad(Path);
 	if (!Source)
 	{
-		// 4. source 없으면 nullptr
+		UE_LOG(Asset, ELogVerbosity::Warning,
+		       "[AssetLoad] Failed at source load. Path=%s LoaderType=%s",
+		       WidePathToUtf8(Path).c_str(),
+		       AssetTypeToString(Loader->GetAssetType()));
 		return nullptr;
 	}
 
-	//	5. MakeAssetKey(Source, *Loader, Params)
 	const FAssetKey Key = MakeAssetKey(*Source, *Loader, Params);
 
-	//	6. Params.bForceReload == false면 LoadedAssets 조회
 	if (!Params.bForceReload)
 	{
 		auto It = LoadedAssets.find(Key);
 		if (It != LoadedAssets.end())
 		{
 			UAsset* ExistingAsset = It->second.get();
-			//	7. 캐시 hit면 UAsset::GetHash()와 Source.SourceHash 비교
 			if (ExistingAsset && ExistingAsset->GetHash() == Source->SourceHash)
 			{
-				//	8. 같으면 기존 asset 반환
 				return ExistingAsset;
 			}
 		}
 	}
 
-	//	9. 다르면 stale asset로 보고 새로 로드
-	//	10. Loader->LoadAsset(Source, Params)
 	UAsset* NewAsset = Loader->LoadAsset(*Source, Params);
 	if (!NewAsset)
 	{
+		UE_LOG(Asset, ELogVerbosity::Warning,
+		       "[AssetLoad] Failed at loader execution. Path=%s LoaderType=%s SourceHash=%s",
+		       WidePathToUtf8(Source->NormalizedPath).c_str(),
+		       AssetTypeToString(Loader->GetAssetType()),
+		       Source->SourceHash.c_str());
 		return nullptr;
 	}
 
-	//	11. 성공하면 LoadedAssets[Key] = NewAsset
 	LoadedAssets.insert_or_assign(Key, std::unique_ptr<UAsset>(NewAsset));
-	//	12. 반환
 	return NewAsset;
 }
 
@@ -338,3 +397,4 @@ FAssetKey UAssetManager::MakeAssetKey(const FSourceRecord& Source, const IAssetL
 	Key.BuildSignature = Loader.MakeBuildSignature(Params);
 	return Key;
 }
+
