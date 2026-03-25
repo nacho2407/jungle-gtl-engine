@@ -191,7 +191,7 @@ void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
 }
 
 /**
- * World: Primitives -> Grid -> Axes 
+ * World: Primitives -> Grid -> Axes
  */
 void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderData,
                                       const FSceneRenderData&  InSceneRenderData)
@@ -242,12 +242,24 @@ void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderDat
         OutlineRenderer.EndFrame();
     }
 
-    if (InSceneRenderData.SceneView != nullptr &&
-        IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_Sprites))
+    const bool bShowAnyText =
+        IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_BillboardText) ||
+        IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_UUIDText);
+
+    if (InSceneRenderData.SceneView != nullptr && bShowAnyText)
     {
-        SpriteRenderer.BeginFrame(InSceneRenderData.SceneView);
-        SpriteSubmitter.Submit(SpriteRenderer, InSceneRenderData);
-        SpriteRenderer.EndFrame(InSceneRenderData.SceneView);
+        if (InSceneRenderData.ViewMode == EViewModeIndex::VMI_Wireframe)
+        {
+            LineRenderer.BeginFrame(InSceneRenderData.SceneView);
+            TextSubmitter.Submit(LineRenderer, InSceneRenderData);
+            LineRenderer.EndFrame();
+        }
+        else
+        {
+            TextRenderer.BeginFrame(InSceneRenderData.SceneView);
+            TextSubmitter.Submit(TextRenderer, InSceneRenderData);
+            TextRenderer.EndFrame(InSceneRenderData.SceneView);
+        }
     }
 }
 
@@ -274,9 +286,18 @@ void FRendererModule::RenderOverlayPass(const FEditorRenderData& InEditorRenderD
     if (InSceneRenderData.SceneView != nullptr &&
         IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_BillboardText))
     {
-        TextRenderer.BeginFrame(InSceneRenderData.SceneView);
-        TextSubmitter.Submit(TextRenderer, InSceneRenderData);
-        TextRenderer.EndFrame(InSceneRenderData.SceneView);
+        if (InSceneRenderData.ViewMode == EViewModeIndex::VMI_Wireframe)
+        {
+            LineRenderer.BeginFrame(InSceneRenderData.SceneView);
+            TextSubmitter.Submit(LineRenderer, InSceneRenderData);
+            LineRenderer.EndFrame();
+        }
+        else
+        {
+            TextRenderer.BeginFrame(InSceneRenderData.SceneView);
+            TextSubmitter.Submit(TextRenderer, InSceneRenderData);
+            TextRenderer.EndFrame(InSceneRenderData.SceneView);
+        }
     }
 }
 
