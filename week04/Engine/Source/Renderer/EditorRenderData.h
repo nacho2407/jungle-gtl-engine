@@ -25,6 +25,7 @@ enum class EGizmoHighlight : uint8
     YZ = 5,
     ZX = 6,
     XYZ = 7,
+    Center = 8,
 };
 
 struct FGizmoDrawData

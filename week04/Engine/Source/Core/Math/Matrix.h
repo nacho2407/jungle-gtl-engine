@@ -9,7 +9,8 @@ enum class EAxis : uint8_t
 {
     X,
     Y,
-    Z
+    Z,
+    Center
 };
 
 struct ENGINE_API FMatrix
