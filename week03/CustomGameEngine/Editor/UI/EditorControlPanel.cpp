@@ -181,6 +181,7 @@ void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 	ImGui::Text("FPS %.0f (%d ms)",
 		displayFPS,
 		static_cast<int>(TimerManager::GetInstance().GetGlobalDeltaTime() * 1000));
+	ImGui::Text("DrawCall Count: %d", Renderer->DrawCallCount);
 	ImGui::Separator();
 
 	if (ImGui::Combo("Primitive", (int*)&primitiveType, "Sphere\0Cube\0Triangle\0Plane\0SubUV\0"))
