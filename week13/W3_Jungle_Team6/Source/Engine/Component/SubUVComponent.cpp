@@ -7,7 +7,7 @@
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
 
-DEFINE_CLASS(USubUVComponent, UPrimitiveComponent)
+DEFINE_CLASS(USubUVComponent, UBillboardComponent)
 REGISTER_FACTORY(USubUVComponent)
 
 USubUVComponent::USubUVComponent()
@@ -64,6 +64,8 @@ void USubUVComponent::TickComponent(float DeltaTime)
 {
 	if (!CachedParticle) return;
 
+	UBillboardComponent::TickComponent(DeltaTime);
+
 	const uint32 TotalFrames = CachedParticle->Columns * CachedParticle->Rows;
 	if (TotalFrames == 0) return;
 
@@ -75,27 +77,5 @@ void USubUVComponent::TickComponent(float DeltaTime)
 		FrameIndex = (FrameIndex + 1) % TotalFrames;
 	}
 
-	FVector WorldLocation = GetWorldLocation();
-
-	const UCameraComponent* ActiveCamera = GetOwner()->GetWorld()->GetActiveCamera();
-
-	FVector CameraForward = ActiveCamera->GetForwardVector().Normalized();
-	FVector Forward = CameraForward * -1;
-	FVector WorldUp = FVector(0.0f, 0.0f, 1.0f);
-
-	if (std::abs(Forward.Dot(WorldUp)) > 0.99f)
-	{
-		WorldUp = FVector(0.0f, 1.0f, 0.0f); // 임시 Up축 변경
-	}
-
-	FVector Right = WorldUp.Cross(Forward).Normalized();
-	FVector Up = Forward.Cross(Right).Normalized();
-
-	FMatrix RotMatrix;
-	RotMatrix.SetAxes(Forward, Right, Up);
-
-	CachedWorldMatrix = FMatrix::MakeScaleMatrix(GetWorldScale()) * RotMatrix * FMatrix::MakeTranslationMatrix(WorldLocation);
-
-	UpdateWorldAABB();
 }
 
