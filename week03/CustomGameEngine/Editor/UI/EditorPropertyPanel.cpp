@@ -15,6 +15,7 @@ EditorPropertyPanel::~EditorPropertyPanel()
 
 void EditorPropertyPanel::Draw(USceneComponent* selectedComponent)
 {
+	//마지막으로 픽킹한 애만 적용됨.
 	ImGui::Begin("Jungle Property Panel");
 
 	if (!ImGui::GetIO().WantTextInput && ImGui::IsKeyPressed(ImGuiKey_Delete) && !editor->GetSelectedComponents().empty())
@@ -40,6 +41,11 @@ void EditorPropertyPanel::Draw(USceneComponent* selectedComponent)
 		if (ImGui::Button("Delete", { 100, 30 }))
 		{
 			editor->RemoveSelectedComponents();
+		}
+
+		if (UBillboardSubUVComp* subUVComponent = Cast<UBillboardSubUVComp>(selectedComponent))
+		{
+			DrawSubUVProperties(subUVComponent);
 		}
 	}
 	else
@@ -146,4 +152,31 @@ bool EditorPropertyPanel::DrawTransformProperties(USceneComponent* selectedCompo
 	}
 
 	return bTransformChanged;
+}
+
+void EditorPropertyPanel::DrawSubUVProperties(UBillboardSubUVComp* subUVComponent)
+{
+	if (subUVComponent == nullptr)
+	{
+		return;
+	}
+	ImGui::Separator();
+	if (!ImGui::CollapsingHeader("SubUV", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		return;
+	}
+	float size = subUVComponent->GetWidth();
+	if (ImGui::InputFloat("Size", &size))
+	{
+		subUVComponent->SetSize(size, size);
+	}
+	float framesPerSecond = subUVComponent->GetFramesPerSecond();
+	bool bLoop = subUVComponent->IsLooping();
+	bool bPlaybackChanged = false;
+	bPlaybackChanged |= ImGui::DragFloat("FPS", &framesPerSecond, 1.0f, 0.0f, 100.0f);
+	bPlaybackChanged |= ImGui::Checkbox("Loop", &bLoop);
+	if (bPlaybackChanged)
+	{
+		subUVComponent->SetPlayback(framesPerSecond, bLoop);
+	}
 }

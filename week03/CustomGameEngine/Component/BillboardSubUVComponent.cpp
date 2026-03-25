@@ -11,6 +11,7 @@ UBillboardSubUVComp::UBillboardSubUVComp()
 	ResourceManager* resourceManager = ResourceManager::GetInstance();
 	//UPrimitive를 상속받도록. 수정.
 	VResource = &resourceManager->GetGeometry("BillboardQuad");
+	SetType(EPrimitiveType::SubUV);
 	UpdateAABB();
 }
 
@@ -59,6 +60,7 @@ void UBillboardSubUVComp::SetSize(float InWidth, float InHeight)
 	Width = InWidth;
 	Height = InHeight;
 	UpdateRenderObject();
+	UpdateAABB();
 }
 
 void UBillboardSubUVComp::SetGrid(int32 InRows, int32 InColumns, int32 InFrameCount)
