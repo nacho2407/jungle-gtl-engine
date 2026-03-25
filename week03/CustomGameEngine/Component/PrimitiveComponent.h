@@ -16,6 +16,7 @@ enum EPrimitiveType
 	Triangle,
 	Plane,
 	SubUV,
+	TextMesh,
 	Axis
 };
 

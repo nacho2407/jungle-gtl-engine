@@ -153,6 +153,7 @@ public:
 	);
 	void BatchRender(TMap<BatchKey, TArray<RenderObject*>, FBatchKeyHash>& BatchGroups);
 	void Render(const TArray<FLevel*>& Levels);
+	void RenderTextMeshes(const TArray<FLevel*>& Levels);
 	//void RenderGrid(ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader);
 	void BatchRenderDebugLine(const TArray<FVertexSimple>& Lines);
 	void SetRasterizerMode(int32 mode);

@@ -2,6 +2,7 @@
 
 #include "EngineCore/Logger.h"
 #include "Renderer/Constants.h"
+#include "Component/TextMeshComponent.h"
 
 // for test code
 #include "EngineCore/ResourceManager.h"
@@ -345,6 +346,7 @@ void URenderer::Render(const TArray<FLevel*>& Levels)
 	DistributeRenderObjects(Levels, BatchGroups, NormalRenderObjects, NoDepthRenderObjects);
 	RenderNormalObjects(NormalRenderObjects);
 	BatchRender(BatchGroups);
+	RenderTextMeshes(Levels);
 	RenderNoDepthObjects(NoDepthRenderObjects);
 
 	//RenderSingleBillboardTextTest();
@@ -407,6 +409,19 @@ void URenderer::DistributeRenderObjects(
 		}
 		for (RenderObject* RenderObj : Level->RenderObjects)
 		{
+			if (RenderObj != nullptr)
+			{
+				UTextMeshComponent* TextMesh = nullptr;
+				if (RenderObj->OwnerComponent != nullptr)
+				{
+					TextMesh = Cast<UTextMeshComponent>(RenderObj->OwnerComponent);
+				}
+				if (TextMesh != nullptr)
+				{
+					continue;
+				}
+			}
+
 			if (!ShowFlagMap[RenderObj->ShowFlag])
 				continue;
 			if (RenderObj->bBatch)
@@ -662,5 +677,87 @@ void URenderer::RenderBillboardTextBatch(const TArray<FBillboardTextDrawItem>& I
 	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
 
 	// RasterizerState 복원
+	RestoreCurrentRasterizerState();
+}
+
+void URenderer::RenderTextMeshes(const TArray<FLevel*>& Levels)
+{
+	if (ShowFlagMap[EEngineShowFlags::SF_Primitives] == false)
+	{
+		return;
+	}
+
+	FMaterial& TextMeshMaterial = ResourceManager::GetInstance()->GetMaterial(L"Shader/ShaderTextMesh.hlsl");
+	if (TextMeshMaterial.VertexShader == nullptr || TextMeshMaterial.PixelShader == nullptr)
+	{
+		return;
+	}
+
+	TextMeshMaterial.Bind(DeviceContext.Get());
+	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
+	RestoreCurrentRasterizerState();
+	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	FObjectConstant ObjectConst;
+	ObjectConst.Color = FColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+	for (FLevel* Level : Levels)
+	{
+		if (Level == nullptr)
+		{
+			continue;
+		}
+
+		for (RenderObject* RenderObj : Level->RenderObjects)
+		{
+			if (RenderObj == nullptr || RenderObj->OwnerComponent == nullptr)
+			{
+				continue;
+			}
+
+			UTextMeshComponent* TextMesh = Cast<UTextMeshComponent>(RenderObj->OwnerComponent);
+			if (TextMesh == nullptr)
+			{
+				continue;
+			}
+
+			const TArray<FVertexSimple>& SourceVertices = TextMesh->GetTextVertices();
+			if (SourceVertices.empty())
+			{
+				continue;
+			}
+
+			if (ResourceManager::GetInstance()->EnsureBillboardGlyphs(TextMesh->GetText()) == false)
+			{
+				continue;
+			}
+
+			TArray<FVertexSimple> WorldVertices;
+			WorldVertices.reserve(SourceVertices.size());
+
+			for (const FVertexSimple& Vertex : SourceVertices)
+			{
+				const FVector WorldPos = RenderObj->World.TransformPoint(FVector(Vertex.x, Vertex.y, Vertex.z));
+				WorldVertices.push_back({
+					WorldPos.x, WorldPos.y, WorldPos.z,
+					Vertex.r, Vertex.g, Vertex.b, Vertex.a,
+					Vertex.u, Vertex.v
+				});
+			}
+
+			ObjectConst.World = FMatrix::IdentityMatrix();
+			ObjectConst.bIsSelected = RenderObj->bIsSelected ? 1 : 0;
+			TextMeshMaterial.ConstantBuffer.Update(DeviceContext.Get(), &ObjectConst, sizeof(FObjectConstant));
+			TextMeshMaterial.ConstantBuffer.Bind(DeviceContext.Get());
+
+			UpdateDynamicVertexBuffer(WorldVertices.data(), static_cast<UINT>(WorldVertices.size()));
+			UINT Stride = sizeof(FVertexSimple);
+			UINT Offset = 0;
+			DeviceContext->IASetVertexBuffers(0, 1, DynamicVertexBuffer.GetAddressOf(), &Stride, &Offset);
+			DeviceContext->Draw(static_cast<UINT>(WorldVertices.size()), 0);
+			DrawCallCount++;
+		}
+	}
+
 	RestoreCurrentRasterizerState();
 }

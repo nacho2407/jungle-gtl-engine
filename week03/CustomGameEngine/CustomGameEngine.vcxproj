@@ -140,6 +140,7 @@
     <ClInclude Include="Component\BillboardSubUVComponent.h" />
     <ClInclude Include="Component\CameraComponent.h" />
     <ClInclude Include="Component\CubeComponent.h" />
+    <ClInclude Include="Component\TextMeshComponent.h" />
     <ClInclude Include="Component\PlaneComponent.h" />
     <ClInclude Include="Component\PrimitiveComponent.h" />
     <ClInclude Include="Component\SceneComponent.h" />
@@ -221,6 +222,7 @@
     <ClCompile Include="Component\BillboardSubUVComponent.cpp" />
     <ClCompile Include="Component\CameraComponent.cpp" />
     <ClCompile Include="Component\CubeComponent.cpp" />
+    <ClCompile Include="Component\TextMeshComponent.cpp" />
     <ClCompile Include="Component\PlaneComponent.cpp" />
     <ClCompile Include="Component\PrimitiveComponent.cpp" />
     <ClCompile Include="Component\SceneComponent.cpp" />
@@ -281,6 +283,10 @@
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shader\ShaderFont.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shader\ShaderTextMesh.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>

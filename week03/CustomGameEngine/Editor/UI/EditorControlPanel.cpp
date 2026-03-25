@@ -1,6 +1,7 @@
 ﻿#include "EditorControlPanel.h"
 
 #include "Component/BillboardSubUVComponent.h"
+#include "Component/TextMeshComponent.h"
 #include "EngineCore/Logger.h"
 #include "EngineCore/ResourceManager.h"
 
@@ -184,7 +185,7 @@ void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 	ImGui::Text("DrawCall Count: %d", Renderer->DrawCallCount);
 	ImGui::Separator();
 
-	if (ImGui::Combo("Primitive", (int*)&primitiveType, "Sphere\0Cube\0Triangle\0Plane\0SubUV\0"))
+	if (ImGui::Combo("Primitive", (int*)&primitiveType, "Sphere\0Cube\0Triangle\0Plane\0SubUV\0TextMesh\0"))
 	{
 		// TODO: Change primitive type to spawn.
 	}
@@ -202,6 +203,14 @@ void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 					if (subUV != nullptr)
 					{
 						subUV->SetPlayback(GetRandomSubUVPlaybackRate(), true);
+					}
+				}
+				else if (primitiveType == EPrimitiveType::TextMesh)
+				{
+					UTextMeshComponent* TextMesh = Cast<UTextMeshComponent>(p);
+					if (TextMesh != nullptr)
+					{
+						TextMesh->SetText("Hello, world!");
 					}
 				}
 			}
@@ -323,7 +332,7 @@ void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 	if (camera)
 	{
 		ImGui::Text("CAMERA");
-		ImGui::Checkbox("Orthogonal", &camera->IsOrthogonal);
+		ImGui::Checkbox("Orthographic", &camera->IsOrthogonal);
 		ImGui::DragFloat("FOV", &camera->FOV, 1.0f, 40.f, 160.f);
 
 		FVector camPosition = camera->GetRelativeLocation();
