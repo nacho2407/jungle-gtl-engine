@@ -7,7 +7,7 @@
 #include "Renderer/Types/RenderItem.h"
 #include "Renderer/Types/ObjectIdRenderItem.h"
 
-class FD3D11OverlayMeshRenderer;
+class FD3D11MeshBatchRenderer;
 class FD3D11ObjectIdRenderer;
 
 struct FGizmoStyle
@@ -27,18 +27,18 @@ struct FGizmoStyle
     float CenterHandleRadius = 0.24f;
 };
 
-class FGizmoSubmitter
+class FOverlayMeshSubmitter
 {
   public:
-    void Submit(FD3D11OverlayMeshRenderer& InMeshRenderer,
-                const FEditorRenderData&   InEditorRenderData);
+    void Submit(FD3D11MeshBatchRenderer& InMeshRenderer,
+                const FEditorRenderData&   InEditorRenderData) const;
+    void SubmitCenterHandle(FD3D11MeshBatchRenderer& InMeshRenderer,
+                            const FEditorRenderData&   InEditorRenderData) const;
     void Submit(FD3D11ObjectIdRenderer&  InObjectIdRenderer,
                 const FEditorRenderData& InEditorRenderData) const;
 
   public:
-    EViewModeIndex ViewMode = EViewModeIndex::VMI_Unlit;
-    bool           bUseInstancing = true;
-    FGizmoStyle    Style;
+    FGizmoStyle Style;
 
   private:
     static constexpr EAxis GizmoAxisOrder[] = {EAxis::X, EAxis::Y, EAxis::Z};

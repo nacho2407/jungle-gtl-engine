@@ -7,12 +7,12 @@ namespace Engine::Component
     class USubUVComponent;
 }
 
-class ENGINE_API ASubUVTextureActor : public AActor
+class ENGINE_API AAtlasSpriteActor : public AActor
 {
-    DECLARE_RTTI(ASubUVTextureActor, AActor)
+    DECLARE_RTTI(AAtlasSpriteActor, AActor)
 public:
-    ASubUVTextureActor();
-    ~ASubUVTextureActor() override = default;
+    AAtlasSpriteActor();
+    ~AAtlasSpriteActor() override = default;
     
     Engine::Component::USubUVComponent * GetSubUVTextureComponent() const;
     

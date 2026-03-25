@@ -5,7 +5,6 @@
 #include "Core/Math/Color.h"
 #include "Core/Math/Matrix.h"
 #include "Renderer/D3D11/D3D11Common.h"
-#include "Renderer/SceneRenderData.h"
 #include "Renderer/Types/BasicMeshType.h"
 #include "Renderer/Types/ViewMode.h"
 #include "Resources/Mesh/MeshPrimitiveTopology.h"
@@ -13,18 +12,21 @@
 class FD3D11RHI;
 class FSceneView;
 
+struct FPrimitiveRenderItem;
 struct FVertexSimple;
+
+struct FMeshBatchPassParams
+{
+    const FSceneView* SceneView = nullptr;
+    EViewModeIndex    ViewMode = EViewModeIndex::VMI_Lit;
+    bool              bUseInstancing = true;
+    bool              bDisableDepth = false;
+};
 
 enum class EMeshDrawPath : uint8
 {
     Single,
     Instanced
-};
-
-enum class EMeshDrawClass : uint8
-{
-    Scene = 0,
-    Editor = 1,
 };
 
 struct FMeshDrawData
@@ -53,12 +55,9 @@ class FD3D11MeshBatchRenderer
     bool Initialize(FD3D11RHI* InRHI);
     void Shutdown();
 
-    void BeginFrame(const FSceneView* InSceneView, EViewModeIndex InViewMode,
-                    bool bInUseInstancing);
-    void AddPrimitive(const FPrimitiveRenderItem& InItem,
-                      EMeshDrawClass              InDrawClass = EMeshDrawClass::Scene);
-    void AddPrimitives(const TArray<FPrimitiveRenderItem>& InItems,
-                       EMeshDrawClass                      InDrawClass = EMeshDrawClass::Scene);
+    void BeginFrame(const FMeshBatchPassParams& InPassParams);
+    void AddPrimitive(const FPrimitiveRenderItem& InItem);
+    void AddPrimitives(const TArray<FPrimitiveRenderItem>& InItems);
     void EndFrame();
     void Flush();
 
@@ -93,9 +92,6 @@ class FD3D11MeshBatchRenderer
     void BindWireframeRasterizer();
 
     void PrepareFlush(EMeshDrawPath DrawPath, const FSceneView* InSceneView);
-    void FlushSceneQueue(EMeshDrawPath DrawPath, const FSceneView* InSceneView);
-    void FlushEditorQueue(EMeshDrawPath DrawPath, const FSceneView* InSceneView);
-
     void DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath DrawPath, const FSceneView* InSceneView,
                        TArray<FMeshDrawData>& Draws);
 
@@ -103,11 +99,9 @@ class FD3D11MeshBatchRenderer
     const FBasicMeshResource* GetBasicMeshResource(EBasicMeshType InType) const;
 
   private:
-    FD3D11RHI*        RHI = nullptr;
-    const FSceneView* CurrentSceneView = nullptr;
-    EViewModeIndex    ViewMode = EViewModeIndex::VMI_Lit;
-    bool              bUseInstancing = true;
-    uint32            MaxInstanceCount = MaxInstanceCapacity;
+    FD3D11RHI*         RHI = nullptr;
+    FMeshBatchPassParams CurrentPassParams = {};
+    uint32             MaxInstanceCount = MaxInstanceCapacity;
 
     TComPtr<ID3D11VertexShader> InstancedVertexShader;
     TComPtr<ID3D11PixelShader>  InstancedPixelShader;
@@ -126,6 +120,5 @@ class FD3D11MeshBatchRenderer
     TComPtr<ID3D11DepthStencilState> DepthDisabledState;
 
     FBasicMeshResource    BasicMeshResources[static_cast<int32>(EBasicMeshType::Count)];
-    TArray<FMeshDrawData> SceneMeshDraws[static_cast<int32>(EBasicMeshType::Count)];
-    TArray<FMeshDrawData> EditorMeshDraws[static_cast<int32>(EBasicMeshType::Count)];
+    TArray<FMeshDrawData> MeshDraws[static_cast<int32>(EBasicMeshType::Count)];
 };

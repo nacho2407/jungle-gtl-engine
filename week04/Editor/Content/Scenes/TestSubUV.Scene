@@ -3,7 +3,7 @@
   "version": 2,
   "actors": [
     {
-      "type": "ASubUVTextureActor",
+      "type": "AAtlasSpriteActor",
       "uuid": 1,
       "name": "SubUVTexture 1",
       "pickable": true,

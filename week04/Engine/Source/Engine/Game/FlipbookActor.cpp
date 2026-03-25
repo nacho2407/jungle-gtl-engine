@@ -1,5 +1,5 @@
 #include "Core/CoreMinimal.h"
-#include "SubUVAnimatedActor.h"
+#include "FlipbookActor.h"
 #include "Engine/Component/Sprite/SubUVAnimatedComponent.h"
 #include "Engine/Component/Core/PrimitiveComponent.h" 
 
@@ -11,23 +11,26 @@ namespace
     }
 } // namespace
 
-ASubUVAnimatedActor::ASubUVAnimatedActor()
+AFlipbookActor::AFlipbookActor()
 {
     auto* AnimatedComponent = new Engine::Component::USubUVAnimatedComponent();
     AnimatedComponent->SetColor({0.8f, 0.8f, 0.8f, 1.f});
     AddOwnedComponent(AnimatedComponent, true);
 
-    Name = "SubUVAnimatedActor";
+    Name = "FlipbookActor";
+
+    UE_LOG(FEditor, ELogVerbosity::Log, "FlipbookActor Component RTTI: %s",
+           AnimatedComponent->GetTypeName());
 }
 
-Engine::Component::USubUVAnimatedComponent* ASubUVAnimatedActor::GetSubUVAnimatedComponent() const
+Engine::Component::USubUVAnimatedComponent* AFlipbookActor::GetSubUVAnimatedComponent() const
 {
     return Cast<Engine::Component::USubUVAnimatedComponent>(RootComponent);
 }
 
-bool ASubUVAnimatedActor::IsRenderable() const { return GetPrimitiveComponent() != nullptr; }
+bool AFlipbookActor::IsRenderable() const { return GetPrimitiveComponent() != nullptr; }
 
-bool ASubUVAnimatedActor::IsSelected() const
+bool AFlipbookActor::IsSelected() const
 {
     if (RootComponent == nullptr)
     {
@@ -37,7 +40,7 @@ bool ASubUVAnimatedActor::IsSelected() const
     return RootComponent->IsSelected();
 }
 
-FColor ASubUVAnimatedActor::GetColor() const
+FColor AFlipbookActor::GetColor() const
 {
     if (const auto* PrimitiveComponent = GetPrimitiveComponent())
     {
@@ -47,7 +50,7 @@ FColor ASubUVAnimatedActor::GetColor() const
     return FColor::White();
 }
 
-EBasicMeshType ASubUVAnimatedActor::GetMeshType() const
+EBasicMeshType AFlipbookActor::GetMeshType() const
 {
     // 변수명 CubeComponent -> PrimitiveComp 로 가독성 수정
     if (const auto* PrimitiveComp = GetPrimitiveComponent())
@@ -58,11 +61,11 @@ EBasicMeshType ASubUVAnimatedActor::GetMeshType() const
     return AActor::GetMeshType();
 }
 
-uint32 ASubUVAnimatedActor::GetObjectId() const { return UUID; }
+uint32 AFlipbookActor::GetObjectId() const { return UUID; }
 
-Engine::Component::UPrimitiveComponent* ASubUVAnimatedActor::GetPrimitiveComponent() const
+Engine::Component::UPrimitiveComponent* AFlipbookActor::GetPrimitiveComponent() const
 {
     return Cast<Engine::Component::UPrimitiveComponent>(RootComponent);
 }
 
-REGISTER_CLASS(, ASubUVAnimatedActor)
+REGISTER_CLASS(, AFlipbookActor)

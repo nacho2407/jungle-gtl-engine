@@ -7,12 +7,12 @@ namespace Engine::Component
     class USubUVAnimatedComponent;
 } // namespace Engine::Component
 
-class ENGINE_API ASubUVAnimatedActor : public AActor
+class ENGINE_API AFlipbookActor : public AActor
 {
-    DECLARE_RTTI(ASubUVAnimatedActor, AActor)
+    DECLARE_RTTI(AFlipbookActor, AActor)
   public:
-    ASubUVAnimatedActor();
-    ~ASubUVAnimatedActor() override = default;
+    AFlipbookActor();
+    ~AFlipbookActor() override = default;
 
     Engine::Component::USubUVAnimatedComponent* GetSubUVAnimatedComponent() const;
 
