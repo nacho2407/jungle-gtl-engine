@@ -60,6 +60,7 @@ namespace Engine::Component
         AbsScale.Y = std::max(NewScale.Y, 0.0001f);
         AbsScale.Z = std::max(NewScale.Z, 0.0001f);
         WorldTransform.SetScale3D(AbsScale);
+        
         OnTransformChanged();
     }
 
@@ -158,7 +159,7 @@ namespace Engine::Component
 
     FMatrix USceneComponent::GetRelativeMatrix() const
     {
-        return WorldTransform.ToMatrixWithScale();
+        return WorldTransform.ToMatrix();
     }
 
     FMatrix USceneComponent::GetRelativeMatrixNoScale() const

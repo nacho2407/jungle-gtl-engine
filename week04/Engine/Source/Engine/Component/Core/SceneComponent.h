@@ -3,6 +3,8 @@
 #include "Core/CoreMinimal.h"
 #include "CoreUObject/Object.h"
 
+#include "Core/Logging/LogMacros.h"
+
 class AActor;
 class UAssetManager;
 
@@ -59,6 +61,7 @@ namespace Engine::Component
     protected:
         virtual void OnTransformChanged()
         {
+            UE_LOG(USceneComponent, ELogVerbosity::Warning, "OMG This it not true");
         }
 
     protected:
