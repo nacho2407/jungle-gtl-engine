@@ -21,8 +21,12 @@ namespace Engine::Component
         FSubUVAtlasResource*       GetSubUVAtlasResource() { return SubUVResource; }
         void                       SetSubUVAtlasResource(FSubUVAtlasResource* InResource);
 
+        void Update(float DeltaTime) override;
+
         int32 GetFrameIndex() const { return FrameIndex; }
         void  SetFrameIndex(int32 InFrameIndex);
+        float GetAnimationFPS() const { return AnimationFPS; }
+        void  SetAnimationFPS(float InAnimationFPS);
         void DescribeProperties(FComponentPropertyBuilder& Builder) override;
         void ResolveAssetReferences(UAssetManager* InAssetManager) override;
 
@@ -32,5 +36,7 @@ namespace Engine::Component
         FSubUVAtlasResource* SubUVResource = nullptr;
         FString SubUVAtlasPath = {};
         int32 FrameIndex = 0;
+        float AnimationFPS = 30.0f;
+        float AnimationTimeAccumulator = 0.0f;
     };
 } // namespace Engine::Component

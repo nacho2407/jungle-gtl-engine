@@ -49,7 +49,7 @@ namespace Engine::Component
 
     void UAnimatedSpriteComponent::Update(float DeltaTime)
     {
-        USubUVComponent::Update(DeltaTime);
+        UAtlasComponent::Update(DeltaTime);
 
         const int32 TotalFrameCount = GetFrameCount();
         if (TotalFrameCount <= 0 || PlayRate <= 0.0f)

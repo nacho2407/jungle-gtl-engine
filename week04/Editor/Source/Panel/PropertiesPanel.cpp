@@ -704,20 +704,19 @@ void FPropertiesPanel::DrawComponentNode(
         TreeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
     }
 
-    const FString DisplayName = GetBaseObjectDisplayName(Component);
+    const char* DisplayName = Component->GetTypeName();
 
     ImGui::PushID(Component);
-    const bool bNodeOpen = ImGui::TreeNodeEx("##ComponentNode", TreeFlags, "%s", DisplayName.c_str());
-    const bool bNodeClicked = ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen();
-
-    ImGui::SameLine(0.0f, 6.0f);
-    ImGui::TextDisabled("[%s]", Component->GetTypeName());
-
     if (IsUnknownObject(Component))
     {
-        ImGui::SameLine(0.0f, 6.0f);
-        ImGui::TextColored(UnknownItemColor, "%s", GetUnknownSuffix(Component));
+        ImGui::PushStyleColor(ImGuiCol_Text, UnknownItemColor);
     }
+    const bool bNodeOpen = ImGui::TreeNodeEx("##ComponentNode", TreeFlags, "%s", DisplayName);
+    if (IsUnknownObject(Component))
+    {
+        ImGui::PopStyleColor();
+    }
+    const bool bNodeClicked = ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen();
 
     if (bNodeClicked && GetContext() != nullptr && GetContext()->Editor != nullptr)
     {

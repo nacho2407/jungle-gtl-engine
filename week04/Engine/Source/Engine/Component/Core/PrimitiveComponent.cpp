@@ -40,7 +40,7 @@ namespace Engine::Component
 
         if (bBoundsDirty)
         {
-            UE_LOG(UPrimitiveComponent, ELogVerbosity::Log, "Bounds Update!");
+            //UE_LOG(UPrimitiveComponent, ELogVerbosity::Log, "Bounds Update!");
             UpdateBounds();
             bBoundsDirty = false;
         }

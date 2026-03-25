@@ -19,6 +19,8 @@ class ENGINE_API AActor : public UObject
     AActor();
     ~AActor() override;
 
+    void Tick(float DeltaTime);
+
     bool IsPickable() const;
     void SetPickable(bool bInPickable);
 

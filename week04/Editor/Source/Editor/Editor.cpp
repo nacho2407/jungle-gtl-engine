@@ -641,6 +641,11 @@ void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* Input
         PanelManager->Tick(DeltaTime);
     }
 
+    if (CurScene)
+    {
+        CurScene->Tick(DeltaTime);
+    }
+
     BuildRenderData();
 }
 
