@@ -851,22 +851,32 @@ TArray<FVertexSimple> ResourceManager::MakeGridMesh(ID3D11Device* Device, float 
 	{
 		const float p = i * cellSize;
 
-		float r = 0.35f;
-		float g = 0.35f;
-		float b = 0.35f;
+		float r = 0.15f;
+		float g = 0.15f;
+		float b = 0.15f;
 		float a = 1.0f;
 
 		if (i == 0)
 		{
-			r = 0.8f;
-			g = 0.8f;
-			b = 0.8f;
+			r = 1.0f;
+			g = 1.0f;
+			b = 1.0f;
+			a = 1.0f;
 		}
 		else if ((std::abs(i) % 10) == 0)
 		{
 			r = 0.55f;
 			g = 0.55f;
 			b = 0.55f;
+		}
+
+		if (i == 0)
+		{
+			// Keep the positive X/Y directions for the world axes so the grid center lines
+			// stop at the origin instead of overlapping the axes.
+			AddLine(vertices, 0.0f, -halfExtent, z, 0.0f, 0.0f, z, r, g, b, a);
+			AddLine(vertices, -halfExtent, 0.0f, z, 0.0f, 0.0f, z, r, g, b, a);
+			continue;
 		}
 
 		AddLine(vertices, p, -halfExtent, z, p, halfExtent, z, r, g, b, a);
@@ -881,11 +891,14 @@ void ResourceManager::AddGridMesh(ID3D11Device* Device, float halfExtent, float 
 	TArray<FVertexSimple> vertices = MakeGridMesh(Device, halfExtent, cellSize, z);
 	size_t cnt = vertices.size();
 	TArray<FVector> Vertices(cnt);
+	TArray<FColor> Colors(cnt);
 	for (size_t i = 0; i < cnt; ++i)
 	{
 		Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
+		Colors[i] = FColor(vertices[i].r, vertices[i].g, vertices[i].b, vertices[i].a);
 	}
 	CreateNoBufferGeometry("Grid", Vertices);
+	GetGeometry("Grid").Colors = Colors;
 }
 
 void ResourceManager::UpdateGridMesh(float halfExtent, float cellSize, float z)
@@ -893,11 +906,14 @@ void ResourceManager::UpdateGridMesh(float halfExtent, float cellSize, float z)
 	TArray<FVertexSimple> vertices = MakeGridMesh(Renderer->Device.Get(), halfExtent, cellSize, z);
 	size_t cnt = vertices.size();
 	TArray<FVector> Vertices(cnt);
+	TArray<FColor> Colors(cnt);
 	for (size_t i = 0; i < cnt; ++i)
 	{
 		Vertices[i] = FVector(vertices[i].x, vertices[i].y, vertices[i].z);
+		Colors[i] = FColor(vertices[i].r, vertices[i].g, vertices[i].b, vertices[i].a);
 	}
 	UpdateStaticGeomtry("Grid", vertices.data(), (UINT)(sizeof(FVertexSimple) * vertices.size()), Renderer->Device.Get(), 0, Vertices);
+	GetGeometry("Grid").Colors = Colors;
 }
 
 FMaterial& ResourceManager::GetMaterial(WFString ResourceName)
