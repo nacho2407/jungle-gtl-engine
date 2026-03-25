@@ -21,6 +21,8 @@ void EditorPropertyPanel::Draw(USceneComponent* selectedComponent)
 	if (!ImGui::GetIO().WantTextInput && ImGui::IsKeyPressed(ImGuiKey_Delete) && !editor->GetSelectedComponents().empty())
 	{
 		editor->RemoveSelectedComponents();
+		ImGui::End();
+		return;
 	}
 
 	if (selectedComponent)
@@ -41,6 +43,8 @@ void EditorPropertyPanel::Draw(USceneComponent* selectedComponent)
 		if (ImGui::Button("Delete", { 100, 30 }))
 		{
 			editor->RemoveSelectedComponents();
+			ImGui::End();
+			return;
 		}
 
 		if (UBillboardSubUVComp* subUVComponent = Cast<UBillboardSubUVComp>(selectedComponent))

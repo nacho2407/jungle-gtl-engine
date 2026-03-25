@@ -5,6 +5,7 @@
 #include "Editor.h"
 #include "Gizmo.h"
 #include "Renderer/Geometry.h"
+#include "Renderer/Renderer.h"
 #include "Scene.h"
 #include "Math/Vector4.h"
 #include "EngineCore/Logger.h"
@@ -42,6 +43,10 @@ void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene, bool bMultiSelect)
 	{
 		UPrimitiveComponent* Comp = Cast<UPrimitiveComponent>(sc);
 		if (Comp == nullptr || !(Comp->Pickable))
+			continue;
+
+		RenderObject* RO = Comp->GetRenderObject();
+		if (RO && !EditorPtr->GetRenderer()->ShowFlagMap[RO->ShowFlag])
 			continue;
 
 		float Distance = 0.f;
