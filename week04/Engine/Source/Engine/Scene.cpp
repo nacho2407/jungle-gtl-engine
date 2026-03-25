@@ -4,6 +4,7 @@
 
 #include "Engine/Component/Core/PrimitiveComponent.h"
 #include "Engine/Component/Core/SceneComponent.h"
+#include "Engine/Component/Text/UUIDComponent.h"
 #include "Engine/Component/Sprite/SpriteComponent.h"
 #include "Engine/Component/Sprite/SubUVComponent.h"
 #include "Engine/Component/Text/AtlasTextComponent.h"
@@ -167,6 +168,12 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
                 TextItem.State.SetPickable(false);
                 TextItem.State.SetSelected(Actor->IsSelected());
                 TextItem.State.SetHovered(Actor->IsHovered());
+
+                if (auto* UUIDTextComponent =
+                        Cast<Engine::Component::UUUIDComponent>(TextComponent))
+                    TextItem.bIsUUIDText = true;
+                else
+                    TextItem.bIsUUIDText = false;
 
                 OutRenderData.Texts.push_back(TextItem);
             }
