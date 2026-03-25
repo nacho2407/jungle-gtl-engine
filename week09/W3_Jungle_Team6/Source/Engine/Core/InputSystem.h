@@ -49,6 +49,9 @@ public:
     bool ScrolledDown() const { return PrevScrollDelta < 0; }
     float GetScrollNotches() const { return PrevScrollDelta / (float)WHEEL_DELTA; }
 
+    // Window focus
+    void SetOwnerWindow(HWND InHWnd) { OwnerHWnd = InHWnd; }
+
     // GUI state
     FGuiInputState& GetGuiInputState() { return GuiState; }
     const FGuiInputState& GetGuiInputState() const { return GuiState; }
@@ -80,6 +83,9 @@ private:
     // Scrolling
     int ScrollDelta = 0;
     int PrevScrollDelta = 0;
+
+    // Window handle for focus check
+    HWND OwnerHWnd = nullptr;
 
     // GUI InputState
     FGuiInputState GuiState{};
