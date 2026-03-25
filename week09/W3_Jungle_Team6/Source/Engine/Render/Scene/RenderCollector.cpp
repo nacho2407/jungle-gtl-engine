@@ -102,7 +102,6 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 
 		if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Text)
 		{
-			if (!ShowFlags.bBillboardText) continue;
 			UTextRenderComponent* TextComp = static_cast<UTextRenderComponent*>(primitiveComponent);
 			const FFontResource* Font = TextComp->GetFont();
 			if (!Font || !Font->IsLoaded()) continue;
@@ -114,15 +113,19 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 
 			FRenderCommand TextCmd = BaseCmd;
 			BaseCmd.PerObjectConstants.Model = outlineMatrix;
-			TextCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
-			TextCmd.Type = ERenderCommandType::Font;
-			TextCmd.PerObjectConstants.Color = TextComp->GetColor();
-			TextCmd.Constants.Font.Text = &Text;
-			TextCmd.Constants.Font.Font = Font;
-			TextCmd.Constants.Font.Scale = TextComp->GetFontSize();
-			TextCmd.BlendState = EBlendState::AlphaBlend;
-			TextCmd.DepthStencilState = EDepthStencilState::Default;
-			RenderBus.AddCommand(ERenderPass::Font, TextCmd);
+
+			if (ShowFlags.bBillboardText)
+			{
+				TextCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
+				TextCmd.Type = ERenderCommandType::Font;
+				TextCmd.PerObjectConstants.Color = TextComp->GetColor();
+				TextCmd.Constants.Font.Text = &Text;
+				TextCmd.Constants.Font.Font = Font;
+				TextCmd.Constants.Font.Scale = TextComp->GetFontSize();
+				TextCmd.BlendState = EBlendState::AlphaBlend;
+				TextCmd.DepthStencilState = EDepthStencilState::Default;
+				RenderBus.AddCommand(ERenderPass::Font, TextCmd);
+			}
 		}
 
 		if (!primitiveComponent->SupportsOutline()) continue;
