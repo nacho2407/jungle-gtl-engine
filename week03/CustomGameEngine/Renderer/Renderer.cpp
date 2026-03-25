@@ -594,7 +594,7 @@ void URenderer::RestoreCurrentRasterizerState() const
 
 void URenderer::RenderBillboardTextBatch(const TArray<FBillboardTextDrawItem>& Items)
 {
-	if (ShowFlagMap[EEngineShowFlags::SF_BillboardText] == false || Items.empty())
+	if (ShowFlagMap[EEngineShowFlags::SF_BillboardText] == false || Items.empty() || Items.size() * 6 > 1000)
 	{
 		return;
 	}
