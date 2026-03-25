@@ -88,6 +88,14 @@ namespace
         return Actor != nullptr && Component != nullptr && Component->GetOwnerActor() == Actor;
     }
 
+    bool ShouldShowComponentInDetailsTree(const AActor* Actor,
+                                          const Engine::Component::USceneComponent* Component)
+    {
+        return IsComponentOwnedByActor(Actor, Component) &&
+               Component != nullptr &&
+               Component->ShouldShowInDetailsTree();
+    }
+
     void DrawObjectSummaryLine(const char* Prefix, const UObject* Object)
     {
         if (Object == nullptr)
@@ -641,7 +649,7 @@ void FPropertiesPanel::DrawComponentHierarchy(
     }
 
     Engine::Component::USceneComponent* RootComponent = SelectedActor->GetRootComponent();
-    if (IsComponentOwnedByActor(SelectedActor, RootComponent))
+    if (ShouldShowComponentInDetailsTree(SelectedActor, RootComponent))
     {
         DrawComponentNode(SelectedActor, RootComponent, TargetComponent);
     }
@@ -653,7 +661,7 @@ void FPropertiesPanel::DrawComponentHierarchy(
             continue;
         }
 
-        if (!IsComponentOwnedByActor(SelectedActor, Component) ||
+        if (!ShouldShowComponentInDetailsTree(SelectedActor, Component) ||
             Component->GetAttachParent() != nullptr)
         {
             continue;
@@ -667,7 +675,7 @@ void FPropertiesPanel::DrawComponentNode(
     AActor* OwnerActor, Engine::Component::USceneComponent* Component,
     Engine::Component::USceneComponent* TargetComponent) const
 {
-    if (!IsComponentOwnedByActor(OwnerActor, Component))
+    if (!ShouldShowComponentInDetailsTree(OwnerActor, Component))
     {
         return;
     }
@@ -675,7 +683,7 @@ void FPropertiesPanel::DrawComponentNode(
     bool bHasVisibleChildren = false;
     for (Engine::Component::USceneComponent* ChildComponent : Component->GetAttachChildren())
     {
-        if (IsComponentOwnedByActor(OwnerActor, ChildComponent))
+        if (ShouldShowComponentInDetailsTree(OwnerActor, ChildComponent))
         {
             bHasVisibleChildren = true;
             break;
@@ -720,7 +728,10 @@ void FPropertiesPanel::DrawComponentNode(
     {
         for (Engine::Component::USceneComponent* ChildComponent : Component->GetAttachChildren())
         {
-            DrawComponentNode(OwnerActor, ChildComponent, TargetComponent);
+            if (ShouldShowComponentInDetailsTree(OwnerActor, ChildComponent))
+            {
+                DrawComponentNode(OwnerActor, ChildComponent, TargetComponent);
+            }
         }
 
         ImGui::TreePop();

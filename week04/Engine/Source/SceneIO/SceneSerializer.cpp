@@ -650,7 +650,7 @@ namespace
         ComponentsArray.reserve(Components.size());
         for (Engine::Component::USceneComponent* Component : Components)
         {
-            if (Component != nullptr)
+            if (Component != nullptr && Component->ShouldSerializeInScene())
             {
                 ComponentsArray.push_back(SerializeComponent(Actor, *Component));
             }
@@ -815,6 +815,7 @@ namespace
             return false;
         }
         Actor->UUID = ActorUuid;
+        Actor->RefreshUUIDDebugComponent();
 
         FString ActorName;
         if (!TryReadStringField(*ActorObject, "name", ActorName, OutErrorMessage, "Actor"))

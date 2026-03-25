@@ -94,6 +94,7 @@
     <ClInclude Include="Source\Engine\Component\Sprite\SpriteComponent.h" />
     <ClInclude Include="Source\Engine\Component\Sprite\SubUVComponent.h" />
     <ClInclude Include="Source\Engine\Component\Text\AtlasTextComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Text\UUIDComponent.h" />
     <ClInclude Include="Source\Engine\EngineStatics.h" />
     <ClInclude Include="Source\Engine\Game\Actor.h" />
     <ClInclude Include="Source\Engine\Game\ConeActor.h" />
@@ -206,6 +207,7 @@
     <ClCompile Include="Source\Engine\Component\Sprite\SpriteComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Sprite\SubUVComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Text\AtlasTextComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Text\UUIDComponent.cpp" />
     <ClCompile Include="Source\Engine\EngineStatics.cpp" />
     <ClCompile Include="Source\Engine\Game\Actor.cpp" />
     <ClCompile Include="Source\Engine\Game\ConeActor.cpp" />
