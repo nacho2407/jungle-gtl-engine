@@ -46,4 +46,6 @@ class FD3D11LineBatchRenderer
 
     TComPtr<ID3D11RasterizerState>   RasterizerState;
     TComPtr<ID3D11DepthStencilState> DepthStencilState;
+
+    TComPtr<ID3D11BlendState> BlendState;
 };

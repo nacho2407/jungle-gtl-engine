@@ -45,6 +45,8 @@ bool FD3D11LineBatchRenderer::Initialize(FD3D11RHI* InRHI)
 
 void FD3D11LineBatchRenderer::Shutdown()
 {
+    BlendState.Reset();
+
     RasterizerState.Reset();
     DepthStencilState.Reset();
 
@@ -187,6 +189,11 @@ void FD3D11LineBatchRenderer::Flush()
 
     FLineConstants Constants = {};
     Constants.VP = CurrentSceneView->GetViewProjectionMatrix();
+    FVector CameraPos = CurrentSceneView->GetViewLocation();
+    Constants.CameraPos[0] = CameraPos.X;
+    Constants.CameraPos[1] = CameraPos.Y;
+    Constants.CameraPos[2] = CameraPos.Z;
+    Constants.MaxDistance = 2000.0f;
 
     if (!RHI->UpdateConstantBuffer(ConstantBuffer.Get(), &Constants, sizeof(Constants)))
     {
@@ -209,8 +216,13 @@ void FD3D11LineBatchRenderer::Flush()
     RHI->SetRasterizerState(RasterizerState.Get());
     RHI->SetDepthStencilState(DepthStencilState.Get(), 0);
 
+    float BlendFactor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+    UINT  SampleMask = 0xffffffff;
+    RHI->SetBlendState(BlendState.Get(), BlendFactor, 0xffffffff);
+
     RHI->Draw(static_cast<uint32>(Vertices.size()), 0);
 
+    RHI->GetDeviceContext()->OMSetBlendState(nullptr, BlendFactor, SampleMask);
     Vertices.clear();
 }
 
@@ -240,5 +252,22 @@ bool FD3D11LineBatchRenderer::CreateStates()
     RasterizerDesc.MultisampleEnable = FALSE;
     RasterizerDesc.AntialiasedLineEnable = FALSE;
 
-    return RHI->CreateRasterizerState(RasterizerDesc, RasterizerState.GetAddressOf());
+    if (!RHI->CreateRasterizerState(RasterizerDesc, RasterizerState.GetAddressOf()))
+    {
+        return false;
+    }
+
+    D3D11_BLEND_DESC BlendDesc = {};
+    BlendDesc.AlphaToCoverageEnable = FALSE;
+    BlendDesc.IndependentBlendEnable = FALSE;
+    BlendDesc.RenderTarget[0].BlendEnable = TRUE;
+    BlendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+    BlendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+    BlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+    BlendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+    BlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+    BlendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+    BlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+    return RHI->CreateBlendState(BlendDesc, BlendState.GetAddressOf());
 }
