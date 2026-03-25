@@ -19,6 +19,89 @@
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND HWnd, UINT Message,
                                                              WPARAM WParam, LPARAM LParam);
 
+namespace
+{
+    ImVec4 MakeColor(uint8 R, uint8 G, uint8 B, uint8 A = 255)
+    {
+        return ImVec4(static_cast<float>(R) / 255.0f, static_cast<float>(G) / 255.0f,
+                      static_cast<float>(B) / 255.0f, static_cast<float>(A) / 255.0f);
+    }
+
+    ImVec4 WithAlpha(const ImVec4& Color, float Alpha)
+    {
+        return ImVec4(Color.x, Color.y, Color.z, Alpha);
+    }
+
+    ImVec4 LerpColor(const ImVec4& A, const ImVec4& B, float T)
+    {
+        return ImVec4(A.x + (B.x - A.x) * T, A.y + (B.y - A.y) * T, A.z + (B.z - A.z) * T,
+                      A.w + (B.w - A.w) * T);
+    }
+
+    void ApplyCoPassImGuiStyle()
+    {
+        ImGui::StyleColorsDark();
+
+        ImGuiStyle& Style = ImGui::GetStyle();
+        ImVec4*     Colors = Style.Colors;
+
+        const ImVec4 PanelBg = MakeColor(37, 37, 38);
+        const ImVec4 RaisedBg = MakeColor(45, 45, 48);
+        const ImVec4 RaisedBgSoft = MakeColor(52, 52, 56);
+        const ImVec4 BrandBlue = MakeColor(41, 103, 255);
+        const ImVec4 BrandBlueSoft = LerpColor(BrandBlue, MakeColor(255, 255, 255), 0.18f);
+        const ImVec4 BrandBlueDeep = LerpColor(BrandBlue, MakeColor(0, 0, 0), 0.18f);
+        const ImVec4 BrandBlueDark = LerpColor(BrandBlue, MakeColor(0, 0, 0), 0.38f);
+
+        Colors[ImGuiCol_WindowBg] = PanelBg;
+        Colors[ImGuiCol_ChildBg] = PanelBg;
+        Colors[ImGuiCol_PopupBg] = RaisedBg;
+        Colors[ImGuiCol_MenuBarBg] = RaisedBg;
+        Colors[ImGuiCol_TitleBg] = PanelBg;
+        Colors[ImGuiCol_TitleBgActive] = PanelBg;
+        Colors[ImGuiCol_TitleBgCollapsed] = WithAlpha(PanelBg, 0.92f);
+        Colors[ImGuiCol_DockingEmptyBg] = PanelBg;
+        Colors[ImGuiCol_TableHeaderBg] = RaisedBgSoft;
+
+        Colors[ImGuiCol_FrameBg] = WithAlpha(BrandBlueDeep, 0.22f);
+        Colors[ImGuiCol_FrameBgHovered] = WithAlpha(BrandBlue, 0.32f);
+        Colors[ImGuiCol_FrameBgActive] = WithAlpha(BrandBlueSoft, 0.40f);
+
+        Colors[ImGuiCol_CheckMark] = BrandBlue;
+        Colors[ImGuiCol_SliderGrab] = BrandBlueDeep;
+        Colors[ImGuiCol_SliderGrabActive] = BrandBlue;
+
+        Colors[ImGuiCol_Button] = WithAlpha(BrandBlue, 0.38f);
+        Colors[ImGuiCol_ButtonHovered] = WithAlpha(BrandBlueSoft, 0.88f);
+        Colors[ImGuiCol_ButtonActive] = BrandBlue;
+
+        Colors[ImGuiCol_Header] = WithAlpha(BrandBlue, 0.28f);
+        Colors[ImGuiCol_HeaderHovered] = WithAlpha(BrandBlueSoft, 0.72f);
+        Colors[ImGuiCol_HeaderActive] = WithAlpha(BrandBlue, 0.92f);
+
+        Colors[ImGuiCol_SeparatorHovered] = WithAlpha(BrandBlue, 0.78f);
+        Colors[ImGuiCol_SeparatorActive] = BrandBlue;
+
+        Colors[ImGuiCol_ResizeGrip] = WithAlpha(BrandBlue, 0.18f);
+        Colors[ImGuiCol_ResizeGripHovered] = WithAlpha(BrandBlueSoft, 0.62f);
+        Colors[ImGuiCol_ResizeGripActive] = WithAlpha(BrandBlue, 0.92f);
+
+        Colors[ImGuiCol_TabHovered] = WithAlpha(BrandBlueSoft, 0.80f);
+        Colors[ImGuiCol_Tab] = LerpColor(RaisedBg, BrandBlueDark, 0.30f);
+        Colors[ImGuiCol_TabSelected] = LerpColor(RaisedBg, BrandBlue, 0.20f);
+        Colors[ImGuiCol_TabSelectedOverline] = BrandBlue;
+        Colors[ImGuiCol_TabDimmedSelected] =
+            LerpColor(PanelBg, BrandBlueDark, 0.22f);
+        Colors[ImGuiCol_TabDimmedSelectedOverline] = WithAlpha(BrandBlue, 0.55f);
+
+        Colors[ImGuiCol_DockingPreview] = WithAlpha(BrandBlue, 0.65f);
+        Colors[ImGuiCol_PlotLinesHovered] = BrandBlueSoft;
+        Colors[ImGuiCol_TextSelectedBg] = WithAlpha(BrandBlue, 0.30f);
+        Colors[ImGuiCol_DragDropTarget] = BrandBlue;
+        Colors[ImGuiCol_NavCursor] = BrandBlue;
+    }
+} // namespace
+
 bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
 {
     (void)HInstance;
@@ -83,6 +166,7 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
     Editor->SetRuntimeServices(&Renderer->GetRHI(), AssetManager);
 
     ImGui::CreateContext();
+    ApplyCoPassImGuiStyle();
     ImGuiIO& IO = ImGui::GetIO();
 #ifdef IMGUI_HAS_DOCK
     // 도킹 지원 ImGui를 교체한 뒤에는 여기서 기능 플래그를 켜야 DockSpace API가 실제로 동작합니다.
