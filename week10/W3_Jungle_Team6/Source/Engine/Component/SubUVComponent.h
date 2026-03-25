@@ -32,7 +32,11 @@ public:
 	uint32 GetFrameIndex() const { return FrameIndex; }
 
 	// --- Playback ---
-	void SetFrameRate(float InFPS) { FrameRate = InFPS; }
+	void SetFrameRate(float InFPS) { PlayRate = InFPS; }
+	void SetLoop(bool bInLoop)     { bLoop = bInLoop; }
+	bool IsLoop()     const { return bLoop; }
+	bool IsFinished() const { return !bLoop && bIsExecute; }
+	void Play() { FrameIndex = 0; TimeAccumulator = 0.0f; bIsExecute = false; } // 처음부터 다시 재생
 
 	// --- Sprite Size (월드 공간 크기) ---
 	void SetSpriteSize(float InWidth, float InHeight) { Width = InWidth; Height = InHeight; }
@@ -59,6 +63,9 @@ private:
 	uint32 FrameIndex       = 0;
 	float  Width            = 1.0f;
 	float  Height           = 1.0f;
-	float  FrameRate        = 30.0f; // 초당 프레임 수
+	float  PlayRate         = 30.0f; // 초당 프레임 수
 	float  TimeAccumulator  = 0.0f;
+
+	bool bLoop = false;
+	bool bIsExecute = false;
 };
