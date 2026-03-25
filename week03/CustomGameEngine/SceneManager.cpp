@@ -37,13 +37,16 @@ SceneManager::SceneManager()
 
 SceneManager::~SceneManager()
 {
-	// permanentScene 정리
-	for (auto it = PermanentScene->SceneComponents.begin(); it != PermanentScene->SceneComponents.end(); it++)
+	if (PermanentScene != nullptr)
 	{
-		delete* it;
+		while (!PermanentScene->SceneComponents.empty())
+		{
+			RemoveSceneComponent(PermanentScene->SceneComponents.back(), PermanentScene);
+		}
+
+		delete PermanentScene;
+		PermanentScene = nullptr;
 	}
-	PermanentScene->SceneComponents.clear();
-	delete PermanentScene;
 }
 
 const TArray<UScene*>& SceneManager::GetLoadedScenes() const
@@ -130,10 +133,9 @@ void SceneManager::UnloadScene(UScene* targetScene, bool bCreateReplacementScene
 		SetActiveScene(nextActiveScene);
 	}
 
-	auto deleteList = sceneToUnload->SceneComponents;
-	for (auto* obj : deleteList)
+	while (!sceneToUnload->SceneComponents.empty())
 	{
-		RemoveSceneComponent(obj, sceneToUnload);
+		RemoveSceneComponent(sceneToUnload->SceneComponents.back(), sceneToUnload);
 	}
 
 	delete sceneToUnload;
