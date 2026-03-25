@@ -252,7 +252,7 @@ bool FNavigationInputContext::HandleEvent(const FInputEvent& Event, const FInput
     case EInputEventType::MouseWheel:
         if (bRightMouseDown || bLeftRotationActive)
         {
-            const float SpeedStep = (Event.WheelDelta > 0) ? 20.0f : -20.0f;
+            const float SpeedStep = (Event.WheelDelta > 0) ? 5.0f : -5.0f;
             NavigationController->AdjustMoveSpeed(SpeedStep);
         }
         else

@@ -3,6 +3,8 @@
 #include "Core/CoreMinimal.h"
 #include "CoreUObject/Object.h"
 
+#include "Core/Logging/LogMacros.h"
+
 class AActor;
 class UAssetManager;
 
@@ -55,8 +57,11 @@ namespace Engine::Component
             // Do nothing
         };
 
-      protected:
-        virtual void OnTransformChanged() {  }
+    protected:
+        virtual void OnTransformChanged()
+        {
+            UE_LOG(USceneComponent, ELogVerbosity::Warning, "OMG This it not true");
+        }
 
       protected:
         bool bIsSelected = false;
