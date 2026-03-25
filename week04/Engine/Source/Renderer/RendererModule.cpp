@@ -242,6 +242,14 @@ void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderDat
         OutlineRenderer.EndFrame();
     }
 
+    if (InSceneRenderData.SceneView != nullptr &&
+        IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_Sprites))
+    {
+        SpriteRenderer.BeginFrame(InSceneRenderData.SceneView);
+        SpriteSubmitter.Submit(SpriteRenderer, InSceneRenderData);
+        SpriteRenderer.EndFrame(InSceneRenderData.SceneView);
+    }
+
     const bool bShowAnyText =
         IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_BillboardText) ||
         IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_UUIDText);
