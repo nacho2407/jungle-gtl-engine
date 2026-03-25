@@ -117,6 +117,8 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     float      InitialDragOffset{0.0f};
     float      InitialProjectionT{0.f};
 
+    FVector PlaneNormal;
+    FVector InitialPlaneHit;
     
     FVector    RotationStartVector;
 
@@ -129,10 +131,7 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     FViewportSelectionController* ViewportSelectionController{nullptr};
 
     AActor* LastSelectedActor{nullptr};
-
-    /* For Duplication */
-    bool bPendingAltDuplicate = false;
-    bool bDuplicateSpawned = false;
+    
 
     static constexpr int32 DragThreshold = 5; // 픽셀 단위 드래그 시작 임계값
 };

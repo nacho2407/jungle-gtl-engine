@@ -52,8 +52,15 @@ bool FViewportGizmoController::OnMouseButtonDown(int32 MouseX, int32 MouseY)
         static_cast<int32>(MouseX), static_cast<int32>(MouseY),
         ViewportCamera->GetViewProjectionMatrix(), static_cast<float>(ViewportCamera->GetWidth()),
         static_cast<float>(ViewportCamera->GetHeight()));
+    
     FVector PivotOrigin = StartTransform.GetLocation();
-    if (GizmoType != EGizmoType::Rotation)
+
+    if (GizmoType == EGizmoType::Translation && Axis == EAxis::Center)
+    {
+        PlaneNormal = ViewportCamera->GetForwardVector();
+        InitialPlaneHit = RayPlaneIntersection(PickRay, PivotOrigin, PlaneNormal);
+    }
+    else if (GizmoType != EGizmoType::Rotation)
     {
         InitialDragOffset = CalculateProjectionOffset(PickRay, PivotOrigin, CurrentDragAxis);
     }
@@ -95,6 +102,8 @@ bool FViewportGizmoController::OnMouseButtonDown(int32 MouseX, int32 MouseY)
         case EAxis::Z: // 파란색 원 (XY 평면) -> 평면 위의 로컬 X축을 기준으로 삼음
             ReferenceAxis = FVector(-1.f, 0.f, 0.f);
             break;
+        case EAxis::Center:
+            ReferenceAxis = FVector(-1.f, -1.f, -1.f).GetSafeNormal();
         }
         if (!bIsWorldMode)
         {
@@ -123,6 +132,9 @@ void FViewportGizmoController::OnMouseButtonUp()
     StartMousePosY = 0;
     StartTransform = FTransform{};
     InitialDragOffset = 0.0f;
+    
+    PlaneNormal = FVector::ZeroVector;
+    InitialPlaneHit = FVector::ZeroVector;
 }
 
 void FViewportGizmoController::OnMouseMove(int32 MouseX, int32 MouseY)
@@ -172,7 +184,7 @@ bool FViewportGizmoController::HitTestGizmo(int32 MouseX, int32 MouseY)
         case EAxis::X:
             GizmoHighlight = EGizmoHighlight::X;
             break;
-        case EAxis::Y:
+        case EAxis::Y:  
             GizmoHighlight = EGizmoHighlight::Y;
             break;
         case EAxis::Z:
@@ -209,14 +221,39 @@ void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)
     {
         DeltaValue = std::round(DeltaValue / SnapValue) * SnapValue;
     }
-
-    FTransform NewTransform = StartTransform;
+    
     if (GizmoType == EGizmoType::Translation)
     {
+        if (Axis == EAxis::Center)
+        {
+            FVector Pivot = StartTransform.GetLocation();
+
+            FVector CurrentHit = RayPlaneIntersection(PickRay, Pivot, PlaneNormal);
+
+            FVector Delta = (CurrentHit - InitialPlaneHit) * TranslationDragScale;
+            InitialPlaneHit = CurrentHit;
+
+            LastFrameDelta = Delta;
+
+            LastSelectedActor->SetLocation(
+                LastSelectedActor->GetLocation() + Delta);
+
+            TArray<AActor*>& SelectedActors{ViewportSelectionController->GetSelectedActors()};
+            for (int32 idx{0}; idx < SelectedActors.size() - 1; idx++)
+            {
+                SelectedActors[idx]->SetLocation(
+                    SelectedActors[idx]->GetLocation() + Delta);
+            }
+
+            return; 
+        }
+
+        // 기존 axis 이동
         InitialDragOffset = CurrentT;
 
         FVector D{CurrentDragAxis * (DeltaValue * TranslationDragScale)};
         LastFrameDelta = D;
+
         LastSelectedActor->SetLocation(LastSelectedActor->GetLocation() + D);
 
         TArray<AActor*>& SelectedActors{ViewportSelectionController->GetSelectedActors()};

@@ -27,7 +27,7 @@ void FEditorViewportClient::Create()
     ViewportCamera.SetFOV(3.141592f * 0.5f);
     ViewportCamera.SetNearPlane(0.1f);
     ViewportCamera.SetFarPlane(2000.0f);
-    ViewportCamera.SetLocation(FVector(-10.0f, 5.0f, 50.0f));
+    ViewportCamera.SetLocation(FVector(-20.0f, 1.0f, 10.0f));
     ViewportCamera.SetRotation(FRotator(0.0f, 0.0f, 0.0f));
 }
 
@@ -98,8 +98,8 @@ void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData)
         GizmoController.GizmoScale =
             (ViewportCamera.GetLocation() -
              GizmoController.GetSelectedActor()->GetRootComponent()->GetRelativeLocation())
-                .Size() /
-            50.0f;
+                .Size() / 10.f;
+        //  Size 여기서 조정
         OutRenderData.Gizmo.Scale = GizmoController.GizmoScale;
         OutRenderData.ShowFlags = RenderSetting.BuildEditorShowFlags(true);
         GizmoController.bIsDrawed = true;

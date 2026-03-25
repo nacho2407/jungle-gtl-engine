@@ -26,6 +26,8 @@ namespace
             return InAxis == EAxis::Z || InAxis == EAxis::X;
         case EGizmoHighlight::XYZ:
             return true;
+        case EGizmoHighlight::Center:
+            return InAxis == EAxis::Center;
         default:
             return false;
         }
@@ -42,7 +44,7 @@ namespace
     }
 
     FObjectIdRenderItem MakeObjectIdItem(const FMatrix& InWorld, EBasicMeshType InMeshType,
-                                         uint32 InObjectId)
+                                         uint32         InObjectId)
     {
         FObjectIdRenderItem Item = {};
         Item.World = InWorld;
@@ -81,8 +83,8 @@ namespace
 
     FMatrix BuildGizmoMatrix(const FGizmoDrawData& InGizmoDrawData)
     {
-        constexpr float MinGizmoScale = 2.0f;
-        constexpr float MaxGizmoScale = 5.0f;
+        constexpr float MinGizmoScale = 1.0f;
+        constexpr float MaxGizmoScale = 1000.0f;
 
         float SafeScale = InGizmoDrawData.Scale;
         if (SafeScale < MinGizmoScale)
@@ -172,8 +174,9 @@ void FGizmoSubmitter::Submit(FD3D11ObjectIdRenderer&  InObjectIdRenderer,
 
 FColor FGizmoSubmitter::ResolveAxisColor(EAxis InAxis, EGizmoHighlight InHighlight) const
 {
-    return IsAxisHighlighted(InAxis, InHighlight) ? GetAxisHighlightColor(InAxis)
-                                                  : GetAxisBaseColor(InAxis);
+    return IsAxisHighlighted(InAxis, InHighlight)
+               ? GetAxisHighlightColor(InAxis)
+               : GetAxisBaseColor(InAxis);
 }
 
 void FGizmoSubmitter::AddCenterHandle(TArray<FPrimitiveRenderItem>& OutPrimitives,
@@ -219,8 +222,8 @@ void FGizmoSubmitter::AddTranslationGizmo(TArray<FPrimitiveRenderItem>& OutPrimi
 
         {
             const FMatrix LocalScale = FMatrix::MakeScale(FVector(Style.TranslationShaftRadius,
-                                                                  Style.TranslationShaftRadius,
-                                                                  Style.TranslationShaftLength));
+                Style.TranslationShaftRadius,
+                Style.TranslationShaftLength));
 
             const FMatrix LocalOffset =
                 FMatrix::MakeTranslation(FVector(0.0f, 0.0f, Style.TranslationShaftLength * 0.5f));
@@ -303,8 +306,8 @@ void FGizmoSubmitter::AddTranslationGizmo(TArray<FObjectIdRenderItem>& OutItems,
 
         {
             const FMatrix LocalScale = FMatrix::MakeScale(FVector(Style.TranslationShaftRadius,
-                                                                  Style.TranslationShaftRadius,
-                                                                  Style.TranslationShaftLength));
+                Style.TranslationShaftRadius,
+                Style.TranslationShaftLength));
             const FMatrix LocalOffset =
                 FMatrix::MakeTranslation(FVector(0.0f, 0.0f, Style.TranslationShaftLength * 0.5f));
             const FMatrix World = LocalScale * LocalOffset * AxisBasis * InGizmoMatrix;
