@@ -63,9 +63,6 @@ class ENGINE_API FRendererModule
     FWorldAxesSubmitter WorldAxesSubmitter;
     FGizmoSubmitter    GizmoSubmitter;
 
-    FEditorRenderData CachedEditorRenderData;
-    FSceneRenderData  CachedSceneRenderData;
-
     TComPtr<ID3D11Debug> DebugDevice;
 
     void RenderWorldPass(const FEditorRenderData& InEditorRenderData,

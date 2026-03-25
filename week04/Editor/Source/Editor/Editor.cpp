@@ -1206,11 +1206,6 @@ void FEditor::DrawAboutPopup()
         }
 
         ImGui::Spacing();
-        if (ImGui::Button("Close"))
-        {
-            bAboutPopupOpen = false;
-            ImGui::CloseCurrentPopup();
-        }
 
         if (AboutImageResource != nullptr && AboutImageResource->GetSRV() != nullptr
             && AboutImageResource->Width > 0 && AboutImageResource->Height > 0)

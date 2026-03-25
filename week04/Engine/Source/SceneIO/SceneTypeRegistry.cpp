@@ -7,10 +7,10 @@
 #include "Engine/Component/Mesh/RingComponent.h"
 #include "Engine/Component/Mesh/SphereComponent.h"
 #include "Engine/Component/Mesh/TriangleComponent.h"
-#include "Engine/Component/Sprite/AnimatedSpriteComponent.h"
 #include "Engine/Component/Sprite/AtlasComponent.h"
 #include "Engine/Component/Sprite/SpriteComponent.h"
 #include "Engine/Component/Sprite/SubUVComponent.h"
+#include "Engine/Component/Sprite/SubUVAnimatedComponent.h"
 #include "Engine/Component/Core/SceneComponent.h"
 #include "Engine/Component/Core/UnknownComponent.h"
 #include "Engine/Component/Text/AtlasTextComponent.h"
@@ -24,6 +24,8 @@
 #include "Engine/Game/SpriteActor.h"
 #include "Engine/Game/TextActor.h"
 #include "Engine/Game/TriangleActor.h"
+#include "Engine/Game/SubUVTextureActor.h"
+#include "Engine/Game/SubUVAnimatedActor.h"
 #include "Engine/Game/UnknownActor.h"
 
 #include <typeindex>
@@ -92,6 +94,8 @@ namespace
         RegisterActorType<ASpriteActor>("ASpriteActor");
         RegisterActorType<ATextActor>("ATextActor");
         RegisterActorType<ATriangleActor>("ATriangleActor");
+        RegisterActorType<ASubUVAnimatedActor>("ASubUVAnimatedActor");
+        RegisterActorType<ASubUVTextureActor>("ASubUVTextureActor");
         RegisterActorType<AUnknownActor>("AUnknownActor");
 
         RegisterComponentType<Engine::Component::UConeComponent>("UConeComponent");
@@ -104,8 +108,7 @@ namespace
         RegisterComponentType<Engine::Component::USpriteComponent>("USpriteComponent");
         RegisterComponentType<Engine::Component::UAtlasComponent>("UAtlasComponent");
         RegisterComponentType<Engine::Component::USubUVComponent>("USubUVComponent");
-        RegisterComponentType<Engine::Component::UAnimatedSpriteComponent>(
-            "UAnimatedSpriteComponent");
+        RegisterComponentType<Engine::Component::USubUVComponent>("USubUVAnimatedComponent");
         RegisterComponentType<Engine::Component::UAtlasTextComponent>("UTextComponent");
         RegisterComponentType<Engine::Component::UAtlasTextComponent>("UAtlasTextComponent");
         RegisterComponentType<Engine::Component::UUnknownComponent>("UUnknownComponent");
