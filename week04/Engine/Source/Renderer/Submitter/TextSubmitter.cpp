@@ -61,10 +61,27 @@ namespace
         InLineRenderer.AddLine(P3, P0, InColor);
     }
 
-    bool ShouldSubmitTexts(const FSceneRenderData& InSceneRenderData)
+    bool ShouldSubmitAnyText(const FSceneRenderData& InSceneRenderData)
     {
         return InSceneRenderData.SceneView != nullptr &&
-               IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_BillboardText);
+               (IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_BillboardText) ||
+                IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_UUIDText));
+    }
+
+    bool ShouldRenderTextItem(const FSceneRenderData& InSceneRenderData,
+                              const FTextRenderItem&  InItem)
+    {
+        if (!InItem.State.IsVisible() || InItem.Text.empty())
+        {
+            return false;
+        }
+
+        if (InItem.bIsUUIDText)
+        {
+            return IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_UUIDText);
+        }
+
+        return IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_BillboardText);
     }
 
     FResolvedGlyph ResolveGlyph(const FFontResource& InFont, uint32 InCodePoint)
@@ -244,18 +261,30 @@ namespace
 void FTextSubmitter::Submit(FD3D11TextBatchRenderer& InTextRenderer,
                             const FSceneRenderData&  InSceneRenderData) const
 {
-    if (!ShouldSubmitTexts(InSceneRenderData))
+    if (!ShouldSubmitAnyText(InSceneRenderData))
     {
         return;
     }
 
-    InTextRenderer.AddTexts(InSceneRenderData.Texts);
+    TArray<FTextRenderItem> FilteredTexts;
+    for (const FTextRenderItem& Item : InSceneRenderData.Texts)
+    {
+        if (ShouldRenderTextItem(InSceneRenderData, Item))
+        {
+            FilteredTexts.push_back(Item);
+        }
+    }
+
+    if (!FilteredTexts.empty())
+    {
+        InTextRenderer.AddTexts(FilteredTexts);
+    }
 }
 
 void FTextSubmitter::Submit(FD3D11LineBatchRenderer& InLineRenderer,
                             const FSceneRenderData&  InSceneRenderData) const
 {
-    if (!ShouldSubmitTexts(InSceneRenderData))
+    if (!ShouldSubmitAnyText(InSceneRenderData))
     {
         return;
     }
@@ -268,12 +297,7 @@ void FTextSubmitter::Submit(FD3D11LineBatchRenderer& InLineRenderer,
 
     for (const FTextRenderItem& Item : InSceneRenderData.Texts)
     {
-        if (!Item.State.IsVisible() || Item.Text.empty())
-        {
-            continue;
-        }
-        if (!IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_UUIDText) &&
-            Item.bIsUUIDText)
+        if (!ShouldRenderTextItem(InSceneRenderData, Item))
         {
             continue;
         }
