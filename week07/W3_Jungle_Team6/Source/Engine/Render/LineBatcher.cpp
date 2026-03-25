@@ -71,9 +71,9 @@ namespace
 				return CameraPosition + (CameraForward * T);
 			}
 		}
-		
+
 		FVector PlanarForward(CameraForward.X, CameraForward.Y, 0.0f); // 평행한 경우 -> Z 성분 제거 -> XY 평면 방향만 사용
-		if (PlanarForward.Length() > EPSILON) 
+		if (PlanarForward.Length() > EPSILON)
 		{
 			PlanarForward.Normalize();
 			// 카메라 아래 지점 + 앞으로 조금 이동
@@ -238,7 +238,7 @@ void FLineBatcher::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacin
 
 	if (ShowFlags.bGrid)
 	{
-		const FVector4 GridColor = FColor::White().ToVector4();
+		const FVector4 GridColor = FColor::Gray().ToVector4();
 
 		for (int32 YIndex = MinYIndex; YIndex <= MaxYIndex; ++YIndex)
 		{
