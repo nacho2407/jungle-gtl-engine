@@ -29,11 +29,9 @@ private:
 
     bool ParseSubUVJson(const FSourceRecord& Source, FSubUVAtlasResource& OutAtlas) const;
 
-    bool ParseInfo(const nlohmann::json& Root, FSubUVAtlasInfo& OutInfo) const;
-    bool ParseCommon(const nlohmann::json& Root, FSubUVAtlasCommon& OutCommon) const;
-    bool ParsePages(const nlohmann::json& Root, TArray<FString>& OutPages) const;
+    bool ParseMeta(const nlohmann::json& Root, FSubUVAtlasResource& OutAtlas) const;
     bool ParseFrames(const nlohmann::json& Root, TArray<FSubUVFrame>& OutFrames) const;
-    bool ParseSequences(const nlohmann::json& Root, TMap<FString, FSubUVSequence>& OutSequences) const;
+    bool ParseSequences(const TArray<FSubUVFrame>& Frames, TMap<FString, FSubUVSequence>& OutSequences) const;
 
     std::shared_ptr<FDecodedAtlasImage> GetOrDecodeAtlas(const FWString& AtlasPath) const;
     std::shared_ptr<FTextureResource>   GetOrCreateAtlasResource(const FSourceRecord& AtlasSource,
