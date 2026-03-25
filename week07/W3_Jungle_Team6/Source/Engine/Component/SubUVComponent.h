@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "PrimitiveComponent.h"
+#include "BillboardComponent.h"
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
 
@@ -13,10 +13,10 @@
 //   Comp->SetParticle(FName("Explosion"));
 //   Comp->SetFrameIndex(CurrentFrame);
 //   Comp->SetSpriteSize(2.0f, 2.0f);
-class USubUVComponent : public UPrimitiveComponent
+class USubUVComponent : public UBillboardComponent
 {
 public:
-	DECLARE_CLASS(USubUVComponent, UPrimitiveComponent)
+	DECLARE_CLASS(USubUVComponent, UBillboardComponent)
 
 	USubUVComponent();
 	~USubUVComponent() override = default;
