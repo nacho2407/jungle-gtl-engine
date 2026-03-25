@@ -27,6 +27,7 @@ struct FColor
 	static FColor White() { return FColor(255, 255, 255); }
 	static FColor Black() { return FColor(0, 0, 0); }
 	static FColor Yellow() { return FColor(255, 255, 0); }
+	static FColor Gray() { return FColor(139, 139, 139); }
 };
 
 // ============================================================
