@@ -1,6 +1,7 @@
 ﻿#include "Renderer.h"
 
 #include <iostream>
+#include <algorithm>
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"
 #include "Render/Common/RenderTypes.h"
@@ -88,10 +89,30 @@ void FRenderer::PrepareBatchers(const FRenderBus& InRenderBus)
 		if (!PassBatchers[i]) continue;
 
 		const auto& Commands = InRenderBus.GetCommands(static_cast<ERenderPass>(i));
+		const auto& AlignedCommands = GetAlignedCommands(static_cast<ERenderPass>(i), Commands);
+
 		PassBatchers[i].Clear();
-		for (const auto& Cmd : Commands)
+		for (const auto& Cmd : AlignedCommands)
 			PassBatchers[i].Collect(Cmd, InRenderBus);
 	}
+}
+
+const TArray<FRenderCommand>& FRenderer::GetAlignedCommands(ERenderPass Pass, const TArray<FRenderCommand>& Commands)
+{
+	// SubUV 패스: Particle(SRV) 포인터 기준 정렬 → 같은 텍스쳐끼리 연속 배치
+	if (Pass == ERenderPass::SubUV && Commands.size() > 1)
+	{
+		SortedCommandBuffer.assign(Commands.begin(), Commands.end());
+
+		std::sort(SortedCommandBuffer.begin(), SortedCommandBuffer.end(),
+			[](const FRenderCommand& A, const FRenderCommand& B) {
+				return A.Constants.SubUV.Particle < B.Constants.SubUV.Particle;
+			});
+
+		return SortedCommandBuffer;
+	}
+
+	return Commands;
 }
 
 //	GPU 프레임 시작. 반드시 Render 이전에 호출되어야 함.
