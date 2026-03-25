@@ -316,10 +316,19 @@
     <None Include="Source\ThirdParty\ImGui\imgui.natstepfilter">
       <Filter>Source\ThirdParty\ImGui</Filter>
     </None>
+    <None Include="Resources\Editor.aps" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Source\ThirdParty\ImGui\imgui.natvis">
       <Filter>Source\ThirdParty\ImGui</Filter>
     </Natvis>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Resources\Tool\copass.png" />
+    <Image Include="Resources\Tool\copass-logo.ico" />
+    <Image Include="Resources\Tool\copass-logo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resources\Editor.rc" />
   </ItemGroup>
 </Project>

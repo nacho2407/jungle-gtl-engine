@@ -22,11 +22,14 @@ namespace Engine::Component
 
     void UAtlasComponent::DescribeProperties(FComponentPropertyBuilder& Builder)
     {
-        USpriteComponent::DescribeProperties(Builder);
+        UQuadComponent::DescribeProperties(Builder);
 
         FComponentPropertyOptions IntOptions;
         IntOptions.DragSpeed = 1.0f;
 
+        Builder.AddBool(
+            "billboard", L"Billboard", [this]() { return GetBillboard(); },
+            [this](bool bInValue) { SetBillboard(bInValue); });
         Builder.AddInt(
             "atlas_rows", L"Atlas Rows", [this]() { return GetAtlasRows(); },
             [this](int32 InValue) { SetAtlasRows(InValue); }, IntOptions);

@@ -180,6 +180,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClInclude Include="Source\Viewport\Selection\ViewportSelectionController.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\Editor.aps" />
     <None Include="Source\ThirdParty\ImGui\imgui.natstepfilter" />
   </ItemGroup>
   <ItemGroup>
@@ -191,6 +192,14 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Resources\Tool\copass-logo.ico" />
+    <Image Include="Resources\Tool\copass-logo.png" />
+    <Image Include="Resources\Tool\copass.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resources\Editor.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

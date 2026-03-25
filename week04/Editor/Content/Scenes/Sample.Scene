@@ -4,19 +4,19 @@
   "actors": [
     {
       "type": "ACubeActor",
-      "uuid": 1,
+      "uuid": 2,
       "name": "CubeActor 1",
       "pickable": true,
       "components": [
         {
           "type": "UCubeComponent",
           "is_root": true,
-          "uuid": 2,
+          "uuid": 3,
           "name": "None",
           "transform": {
             "location": [
-              0,
-              -3.6683669090271,
+              -1,
+              -3,
               0
             ],
             "rotation_quat": [
@@ -33,9 +33,9 @@
           },
           "properties": {
             "color": [
-              0.800000011920929,
-              0.800000011920929,
-              0.800000011920929,
+              0.726201415061951,
+              0.953667938709259,
+              0.482357174158096,
               1
             ]
           }
@@ -43,27 +43,27 @@
       ]
     },
     {
-      "type": "ACubeActor",
-      "uuid": 5,
-      "name": "CubeActor 2",
+      "type": "ASphereActor",
+      "uuid": 6,
+      "name": "SphereActor 2",
       "pickable": true,
       "components": [
         {
-          "type": "UCubeComponent",
+          "type": "USphereComponent",
           "is_root": true,
-          "uuid": 6,
+          "uuid": 7,
           "name": "None",
           "transform": {
             "location": [
-              0,
-              -4.64376354217529,
+              -2,
+              1,
               0
             ],
             "rotation_quat": [
-              -0,
-              -0.477158725261688,
-              -0,
-              0.878817141056061
+              0,
+              0,
+              0,
+              1
             ],
             "scale": [
               1,
@@ -73,9 +73,9 @@
           },
           "properties": {
             "color": [
-              0.800000011920929,
-              0.800000011920929,
-              0.800000011920929,
+              1,
+              0.474903464317322,
+              0.474903464317322,
               1
             ]
           }
@@ -83,20 +83,100 @@
       ]
     },
     {
-      "type": "ACubeActor",
-      "uuid": 8,
-      "name": "CubeActor 3",
+      "type": "AConeActor",
+      "uuid": 9,
+      "name": "ConeActor 3",
       "pickable": true,
       "components": [
         {
-          "type": "UCubeComponent",
+          "type": "UConeComponent",
           "is_root": true,
-          "uuid": 9,
+          "uuid": 10,
           "name": "None",
           "transform": {
             "location": [
+              -3,
+              -5,
+              0
+            ],
+            "rotation_quat": [
               0,
-              6.53012895584106,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "properties": {
+            "color": [
+              0.501930475234985,
+              1,
+              0.95961594581604,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "ARingActor",
+      "uuid": 15,
+      "name": "RingActor 4",
+      "pickable": true,
+      "components": [
+        {
+          "type": "URingComponent",
+          "is_root": true,
+          "uuid": 16,
+          "name": "None",
+          "transform": {
+            "location": [
+              -5,
+              -2,
+              0
+            ],
+            "rotation_quat": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "properties": {
+            "color": [
+              0.727669537067413,
+              0.607683300971985,
+              0.996138989925385,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "ATriangleActor",
+      "uuid": 18,
+      "name": "TriangleActor 5",
+      "pickable": true,
+      "components": [
+        {
+          "type": "UTriangleComponent",
+          "is_root": true,
+          "uuid": 19,
+          "name": "None",
+          "transform": {
+            "location": [
+              -3,
+              5,
               0
             ],
             "rotation_quat": [
@@ -114,8 +194,8 @@
           "properties": {
             "color": [
               1,
-              0.378378391265869,
-              0.378378391265869,
+              0.471042454242706,
+              0.765134632587433,
               1
             ]
           }
@@ -124,19 +204,61 @@
     },
     {
       "type": "ASpriteActor",
-      "uuid": 11,
-      "name": "SpriteActor 4",
+      "uuid": 21,
+      "name": "SpriteActor 6",
       "pickable": true,
       "components": [
         {
           "type": "USpriteComponent",
           "is_root": true,
-          "uuid": 12,
+          "uuid": 22,
           "name": "None",
           "transform": {
             "location": [
-              0.2750403881073,
-              2.93697881698608,
+              0,
+              3,
+              0
+            ],
+            "rotation_quat": [
+              0,
+              0,
+              0.710185468196869,
+              0.704014718532562
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "properties": {
+            "color": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "texture_path": "/Game/Texture/Panel/sample_panel.png",
+            "billboard": false
+          }
+        }
+      ]
+    },
+    {
+      "type": "ASpriteActor",
+      "uuid": 25,
+      "name": "SpriteActor 7",
+      "pickable": true,
+      "components": [
+        {
+          "type": "USpriteComponent",
+          "is_root": true,
+          "uuid": 26,
+          "name": "None",
+          "transform": {
+            "location": [
+              0,
+              6,
               0
             ],
             "rotation_quat": [
@@ -166,20 +288,20 @@
     },
     {
       "type": "AEffectActor",
-      "uuid": 15,
-      "name": "EffectActor 5",
+      "uuid": 28,
+      "name": "EffectActor 8",
       "pickable": true,
       "components": [
         {
-          "type": "USubUVComponent",
+          "type": "class Engine::Component::USubUVAnimatedComponent",
           "is_root": true,
-          "uuid": 16,
+          "uuid": 29,
           "name": "None",
           "transform": {
             "location": [
-              2.78137922286987,
-              1.12213790416718,
-              0
+              1,
+              0,
+              1
             ],
             "rotation_quat": [
               0,
@@ -201,30 +323,32 @@
               0.800000011920929,
               1
             ],
-            "subuv_atlas_path": "/Game/Texture/Character/sample_character.json",
+            "subuv_atlas_path": "/Game/Texture/Effect/sample_effect.json",
             "atlas_rows": 1,
-            "animation_fps": 0,
-            "frame_index": 0
+            "billboard": true,
+            "animation_fps": 30,
+            "frame_index": 1,
+            "looping": true
           }
         }
       ]
     },
     {
-      "type": "ASphereActor",
-      "uuid": 34,
-      "name": "SphereActor 6",
+      "type": "ATextActor",
+      "uuid": 32,
+      "name": "TextActor 9",
       "pickable": true,
       "components": [
         {
-          "type": "USphereComponent",
+          "type": "UAtlasTextComponent",
           "is_root": true,
-          "uuid": 35,
+          "uuid": 33,
           "name": "None",
           "transform": {
             "location": [
-              -3.33413219451904,
-              0,
-              0
+              2.79999995231628,
+              9.5,
+              4.30000019073486
             ],
             "rotation_quat": [
               0,
@@ -239,32 +363,45 @@
             ]
           },
           "properties": {
+            "atlas_columns": 1,
             "color": [
-              0.800000011920929,
-              0.800000011920929,
-              0.800000011920929,
+              1,
+              1,
+              1,
               1
+            ],
+            "atlas_rows": 1,
+            "billboard": false,
+            "text": "NEXON_LV1",
+            "letter_spacing": 0,
+            "text_scale": 1,
+            "line_spacing": 0,
+            "font_path": "/Game/Font/NEXON_Lv1/NEXON_Lv1.Font",
+            "billboard_offset": [
+              0,
+              0,
+              0
             ]
           }
         }
       ]
     },
     {
-      "type": "AConeActor",
-      "uuid": 37,
-      "name": "ConeActor 7",
+      "type": "ATextActor",
+      "uuid": 36,
+      "name": "TextActor 10",
       "pickable": true,
       "components": [
         {
-          "type": "UConeComponent",
+          "type": "UAtlasTextComponent",
           "is_root": true,
-          "uuid": 38,
+          "uuid": 37,
           "name": "None",
           "transform": {
             "location": [
-              -2.22155070304871,
-              2.34885239601135,
-              0
+              0,
+              3.80000019073486,
+              6
             ],
             "rotation_quat": [
               0,
@@ -279,32 +416,45 @@
             ]
           },
           "properties": {
+            "atlas_columns": 1,
             "color": [
-              0.602316617965698,
-              0,
-              0,
+              1,
+              1,
+              1,
               1
+            ],
+            "atlas_rows": 1,
+            "billboard": false,
+            "text": "PUBG HeadLiner",
+            "letter_spacing": 0,
+            "text_scale": 1,
+            "line_spacing": 0,
+            "font_path": "/Game/Font/PUBG_HeadLiner/PUBG_HeadLiner.Font",
+            "billboard_offset": [
+              0,
+              0,
+              0
             ]
           }
         }
       ]
     },
     {
-      "type": "ACylinderActor",
+      "type": "ATextActor",
       "uuid": 40,
-      "name": "CylinderActor 8",
+      "name": "TextActor 11",
       "pickable": true,
       "components": [
         {
-          "type": "UCylinderComponent",
+          "type": "UAtlasTextComponent",
           "is_root": true,
           "uuid": 41,
           "name": "None",
           "transform": {
             "location": [
-              -3.87310600280762,
-              4.58957529067993,
-              0
+              1,
+              -1,
+              5
             ],
             "rotation_quat": [
               0,
@@ -319,38 +469,51 @@
             ]
           },
           "properties": {
+            "atlas_columns": 1,
             "color": [
               0.800000011920929,
               0.800000011920929,
               0.800000011920929,
               1
+            ],
+            "atlas_rows": 1,
+            "billboard": false,
+            "text": "국민체조",
+            "letter_spacing": 0,
+            "text_scale": 1,
+            "line_spacing": 0,
+            "font_path": "/Game/Font/KookMinChejo/KookMinChejo.Font",
+            "billboard_offset": [
+              0,
+              0,
+              0
             ]
           }
         }
       ]
     },
     {
-      "type": "ARingActor",
-      "uuid": 43,
-      "name": "RingActor 9",
+      "type": "AAtlasSpriteActor",
+      "uuid": 41,
+      "name": "AtlasSpriteActor 12",
       "pickable": true,
       "components": [
         {
-          "type": "URingComponent",
+          "type": "USubUVAnimatedComponent",
           "is_root": true,
-          "uuid": 44,
+          "uuid": 42,
           "name": "None",
           "transform": {
             "location": [
-              -4.11293411254883,
-              5.543137550354,
-              0
+              -2,
+              10,
+              1
             ],
             "rotation_quat": [
+              -0,
               0,
-              0,
-              0,
-              1
+              -0.649448037147522,
+              0.760405957698822
             ],
             "scale": [
               1,
@@ -359,52 +522,17 @@
             ]
           },
           "properties": {
+            "atlas_columns": 1,
             "color": [
-              0.664092659950256,
               1,
-              0.700406908988953,
-              1
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "type": "ATriangleActor",
-      "uuid": 46,
-      "name": "TriangleActor 10",
-      "pickable": true,
-      "components": [
-        {
-          "type": "UTriangleComponent",
-          "is_root": true,
-          "uuid": 47,
-          "name": "None",
-          "transform": {
-            "location": [
-              0,
-              4.64155721664429,
-              0
-            ],
-            "rotation_quat": [
-              0,
-              0,
-              0,
+              1,
+              1,
               1
             ],
-            "scale": [
-              1,
-              1,
-              1
-            ]
-          },
-          "properties": {
-            "color": [
-              0.285714268684387,
-              1,
-              0.892443418502808,
-              1
-            ]
+            "subuv_atlas_path": "/Game/Texture/Character/sample_character.json",
+            "atlas_rows": 1,
+            "billboard": true,
+            "frame_index": 0
           }
         }
       ]
