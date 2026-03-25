@@ -142,6 +142,7 @@ void FAABBSubmitter::SubmitPrimitiveBounds(FD3D11LineBatchRenderer&    InLineRen
         return;
     }
 
+    // fallback: WorldAABB 없음
     const FVector Origin = InItem.World.GetOrigin();
     const FVector Right = InItem.World.GetScaledAxis(EAxis::Y) * MakeHalfExtent(InItem.MeshType).X;
     const FVector Up = InItem.World.GetScaledAxis(EAxis::Z) * MakeHalfExtent(InItem.MeshType).Z;

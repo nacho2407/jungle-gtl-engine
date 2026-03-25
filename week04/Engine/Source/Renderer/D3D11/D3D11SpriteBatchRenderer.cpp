@@ -242,7 +242,7 @@ void FD3D11SpriteBatchRenderer::AppendSpriteItem(const FSpriteRenderItem& InItem
     if (InItem.Placement.IsBillboard())
     {
         const FMatrix CameraWorld = CurrentSceneView->GetViewMatrix().GetInverse();
-        RightAxis = CameraWorld.GetRightVector();
+        RightAxis = CameraWorld.GetForwardVector();
         UpAxis = CameraWorld.GetUpVector();
 
         const FVector WorldScale = PlacementWorld.GetScaleVector();
@@ -251,16 +251,16 @@ void FD3D11SpriteBatchRenderer::AppendSpriteItem(const FSpriteRenderItem& InItem
     }
     else
     {
-        RightAxis = PlacementWorld.GetRightVector();
+        RightAxis = PlacementWorld.GetForwardVector();
         UpAxis = PlacementWorld.GetUpVector();
     }
 
-    const FVector BottomLeft = SpriteOrigin - RightAxis - UpAxis;
-    const bool bUseMissingResourceFallback = (InItem.TextureResource == nullptr);
+    const FVector  BottomLeft = SpriteOrigin - RightAxis - UpAxis;
+    const bool     bUseMissingResourceFallback = (InItem.TextureResource == nullptr);
     const FVector2 UVMin = bUseMissingResourceFallback ? FVector2(0.0f, 0.0f) : InItem.UVMin;
     const FVector2 UVMax = bUseMissingResourceFallback ? FVector2(1.0f, 1.0f) : InItem.UVMax;
-    const FColor QuadColor = bUseMissingResourceFallback ? RenderDebugColors::MissingGlyph
-                                                         : InItem.Color;
+    const FColor   QuadColor =
+        bUseMissingResourceFallback ? RenderDebugColors::MissingGlyph : InItem.Color;
     AppendQuad(BottomLeft, RightAxis * 2.0f, UpAxis * 2.0f, UVMin, UVMax, QuadColor);
 }
 
@@ -272,7 +272,7 @@ void FD3D11SpriteBatchRenderer::ProcessSortedItems()
     }
 
     FSpriteBatchKey ActiveBatchKey = {};
-    bool bHasActiveBatch = false;
+    bool            bHasActiveBatch = false;
 
     for (const FSpriteRenderItem& Item : PendingSpriteItems)
     {
@@ -491,8 +491,6 @@ bool FD3D11SpriteBatchRenderer::CreateStates()
 
     return RHI->CreateRasterizerState(RasterizerDesc, RasterizerState.GetAddressOf());
 }
-
-
 
 ID3D11ShaderResourceView*
 FD3D11SpriteBatchRenderer::ResolveSpriteSRV(const FTextureResource* InTextureResource) const

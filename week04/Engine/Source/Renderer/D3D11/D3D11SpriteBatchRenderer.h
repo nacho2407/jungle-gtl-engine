@@ -82,16 +82,16 @@ class FD3D11SpriteBatchRenderer
     TArray<uint32>            Indices;
     TArray<FSpriteRenderItem> PendingSpriteItems;
 
-    TComPtr<ID3D11VertexShader>      VertexShader;
-    TComPtr<ID3D11PixelShader>       PixelShader;
-    TComPtr<ID3D11InputLayout>       InputLayout;
-    TComPtr<ID3D11Buffer>            ConstantBuffer;
-    TComPtr<ID3D11Buffer>            DynamicVertexBuffer;
-    TComPtr<ID3D11Buffer>            DynamicIndexBuffer;
-    TComPtr<ID3D11SamplerState>      SamplerState;
+    TComPtr<ID3D11VertexShader>       VertexShader;
+    TComPtr<ID3D11PixelShader>        PixelShader;
+    TComPtr<ID3D11InputLayout>        InputLayout;
+    TComPtr<ID3D11Buffer>             ConstantBuffer;
+    TComPtr<ID3D11Buffer>             DynamicVertexBuffer;
+    TComPtr<ID3D11Buffer>             DynamicIndexBuffer;
+    TComPtr<ID3D11SamplerState>       SamplerState;
     TComPtr<ID3D11Texture2D>          FallbackWhiteTexture;
     TComPtr<ID3D11ShaderResourceView> FallbackWhiteSRV;
-    TComPtr<ID3D11BlendState>        AlphaBlendState;
-    TComPtr<ID3D11DepthStencilState> DepthStencilState;
-    TComPtr<ID3D11RasterizerState>   RasterizerState;
+    TComPtr<ID3D11BlendState>         AlphaBlendState;
+    TComPtr<ID3D11DepthStencilState>  DepthStencilState;
+    TComPtr<ID3D11RasterizerState>    RasterizerState;
 };
