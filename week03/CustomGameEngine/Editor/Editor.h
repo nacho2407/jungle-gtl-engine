@@ -76,7 +76,7 @@ public:
 
 	/**
 	 * @brief 선택된 객체들에 대해 Billboard 텍스트 드로우 아이템을 생성합니다.
-	 * 
+	 *
 	 * @param OutItems 생성된 드로우 아이템이 저장될 배열
 	 */
 	void BuildSelectedBillboardTextItems(TArray<FBillboardTextDrawItem>& OutItems) const;
