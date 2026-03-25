@@ -5,7 +5,7 @@
 namespace Engine::Component
 {
     class UPrimitiveComponent;
-    class USubUVComponent;
+    class USubUVAnimatedComponent;
 }
 
 class ENGINE_API AEffectActor : public AActor
@@ -16,7 +16,7 @@ class ENGINE_API AEffectActor : public AActor
     AEffectActor();
     ~AEffectActor() override = default;
 
-    Engine::Component::USubUVComponent* GetEffectComponent() const;
+    Engine::Component::USubUVAnimatedComponent* GetEffectComponent() const;
 
     bool           IsRenderable() const override;
     bool           IsSelected() const override;

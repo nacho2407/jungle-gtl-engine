@@ -225,7 +225,7 @@
     <ClCompile Include="Source\Engine\Component\Mesh\TriangleComponent.cpp">
       <Filter>Source\Engine\Component\Mesh</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\Sprite\AnimatedSpriteComponent.cpp">
+    <ClCompile Include="Source\Engine\Component\Sprite\SubUVAnimatedComponent.cpp">
       <Filter>Source\Engine\Component\Sprite</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Sprite\AtlasComponent.cpp">
@@ -268,6 +268,12 @@
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Game\SpriteActor.cpp">
+      <Filter>Source\Engine\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Game\SubUVAnimatedActor.cpp">
+      <Filter>Source\Engine\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Game\SubUVTextureActor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Game\TextActor.cpp">
@@ -581,7 +587,7 @@
     <ClInclude Include="Source\Engine\Component\Mesh\TriangleComponent.h">
       <Filter>Source\Engine\Component\Mesh</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\Sprite\AnimatedSpriteComponent.h">
+    <ClInclude Include="Source\Engine\Component\Sprite\SubUVAnimatedComponent.h">
       <Filter>Source\Engine\Component\Sprite</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Sprite\AtlasComponent.h">
@@ -624,6 +630,12 @@
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Game\SpriteActor.h">
+      <Filter>Source\Engine\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Game\SubUVAnimatedActor.h">
+      <Filter>Source\Engine\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Game\SubUVTextureActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Game\TextActor.h">

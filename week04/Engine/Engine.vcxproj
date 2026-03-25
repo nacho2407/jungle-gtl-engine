@@ -89,7 +89,7 @@
     <ClInclude Include="Source\Engine\Component\Mesh\RingComponent.h" />
     <ClInclude Include="Source\Engine\Component\Mesh\SphereComponent.h" />
     <ClInclude Include="Source\Engine\Component\Mesh\TriangleComponent.h" />
-    <ClInclude Include="Source\Engine\Component\Sprite\AnimatedSpriteComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Sprite\SubUVAnimatedComponent.h" />
     <ClInclude Include="Source\Engine\Component\Sprite\AtlasComponent.h" />
     <ClInclude Include="Source\Engine\Component\Sprite\SpriteComponent.h" />
     <ClInclude Include="Source\Engine\Component\Sprite\SubUVComponent.h" />
@@ -104,6 +104,8 @@
     <ClInclude Include="Source\Engine\Game\RingActor.h" />
     <ClInclude Include="Source\Engine\Game\SphereActor.h" />
     <ClInclude Include="Source\Engine\Game\SpriteActor.h" />
+    <ClInclude Include="Source\Engine\Game\SubUVAnimatedActor.h" />
+    <ClInclude Include="Source\Engine\Game\SubUVTextureActor.h" />
     <ClInclude Include="Source\Engine\Game\TextActor.h" />
     <ClInclude Include="Source\Engine\Game\TriangleActor.h" />
     <ClInclude Include="Source\Engine\Game\UnknownActor.h" />
@@ -202,7 +204,7 @@
     <ClCompile Include="Source\Engine\Component\Mesh\RingComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Mesh\SphereComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Mesh\TriangleComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\Sprite\AnimatedSpriteComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Sprite\SubUVAnimatedComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Sprite\AtlasComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Sprite\SpriteComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Sprite\SubUVComponent.cpp" />
@@ -217,6 +219,8 @@
     <ClCompile Include="Source\Engine\Game\RingActor.cpp" />
     <ClCompile Include="Source\Engine\Game\SphereActor.cpp" />
     <ClCompile Include="Source\Engine\Game\SpriteActor.cpp" />
+    <ClCompile Include="Source\Engine\Game\SubUVAnimatedActor.cpp" />
+    <ClCompile Include="Source\Engine\Game\SubUVTextureActor.cpp" />
     <ClCompile Include="Source\Engine\Game\TextActor.cpp" />
     <ClCompile Include="Source\Engine\Game\TriangleActor.cpp" />
     <ClCompile Include="Source\Engine\Game\UnknownActor.cpp" />
