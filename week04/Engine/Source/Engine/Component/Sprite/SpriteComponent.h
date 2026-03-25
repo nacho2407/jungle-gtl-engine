@@ -16,15 +16,21 @@ namespace Engine::Component
         FTextureResource*       GetTextureResource() { return TextureResource; }
         void                    SetTextureResource(FTextureResource* InTextureResource);
 
+        FString GetTexturePath() const { return TexturePath; }
+        void SetTexturePath(const FString& InPath);
+
         bool GetBillboard() const { return bBillboard; }
         void SetBillboard(bool bInBillboard);
 
         const FVector& GetBillboardOffset() const { return BillboardOffset; }
         void           SetBillboardOffset(const FVector& InBillboardOffset);
 
+        void DescribeProperties(FComponentPropertyBuilder& Builder) override;
+        void ResolveAssetReferences(UAssetManager* InAssetManager) override;
+
       protected:
         FTextureResource* TextureResource = nullptr;
-
+        FString TexturePath = {};
         bool    bBillboard = false;
         FVector BillboardOffset = FVector(0.0f, 0.0f, 0.0f);
     };

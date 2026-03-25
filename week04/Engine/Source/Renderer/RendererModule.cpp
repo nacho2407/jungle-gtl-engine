@@ -4,6 +4,33 @@
 
 namespace
 {
+    bool ShouldRenderPrimitiveMeshItem(const FPrimitiveRenderItem& InItem,
+                                       const FSceneRenderData&    InSceneRenderData)
+    {
+        if (InItem.bIsSpriteProxy && InSceneRenderData.ViewMode != EViewModeIndex::VMI_Wireframe)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    TArray<FPrimitiveRenderItem> BuildScenePrimitiveSubmission(const FSceneRenderData& InSceneRenderData)
+    {
+        TArray<FPrimitiveRenderItem> SubmissionItems;
+        SubmissionItems.reserve(InSceneRenderData.Primitives.size());
+
+        for (const FPrimitiveRenderItem& Item : InSceneRenderData.Primitives)
+        {
+            if (ShouldRenderPrimitiveMeshItem(Item, InSceneRenderData))
+            {
+                SubmissionItems.push_back(Item);
+            }
+        }
+
+        return SubmissionItems;
+    }
+
     bool ShouldRenderScenePrimitives(const FSceneRenderData& InSceneRenderData)
     {
         return InSceneRenderData.SceneView != nullptr &&
@@ -29,7 +56,17 @@ namespace
     TArray<FPrimitiveRenderItem>
     BuildWireframePrimitiveSubmission(const FSceneRenderData& InSceneRenderData)
     {
-        TArray<FPrimitiveRenderItem> SubmissionItems = InSceneRenderData.Primitives;
+        TArray<FPrimitiveRenderItem> SubmissionItems;
+        SubmissionItems.reserve(InSceneRenderData.Primitives.size());
+
+        for (const FPrimitiveRenderItem& Item : InSceneRenderData.Primitives)
+        {
+            if (ShouldRenderPrimitiveMeshItem(Item, InSceneRenderData))
+            {
+                SubmissionItems.push_back(Item);
+            }
+        }
+
         const FColor SelectionColor = FD3D11OutlineRenderer::GetVisibleOutlineColor();
 
         for (FPrimitiveRenderItem& Item : SubmissionItems)
@@ -185,7 +222,9 @@ void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderDat
         }
         else
         {
-            PrimitiveSubmitter.Submit(SceneMeshRenderer, InSceneRenderData);
+            const TArray<FPrimitiveRenderItem> SceneItems =
+                BuildScenePrimitiveSubmission(InSceneRenderData);
+            SceneMeshRenderer.AddPrimitives(SceneItems);
         }
 
         SceneMeshRenderer.EndFrame();

@@ -1,4 +1,4 @@
-﻿#include "Core/CoreMinimal.h"
+#include "Core/CoreMinimal.h"
 #include "SpriteTextureActor.h"
 
 #include "Engine/Component/Core/PrimitiveComponent.h"
@@ -18,7 +18,7 @@ ASpriteTextureActor::ASpriteTextureActor()
     SpriteComponent->SetColor({ 0.8f,0.8f,0.8f,1.f });
     AddOwnedComponent(SpriteComponent, true);
 
-    Name = "ConeActor";
+    Name = "SpriteTextureActor";
 }
 
 Engine::Component::USpriteComponent* ASpriteTextureActor::GetSpriteTextureComponent() const
