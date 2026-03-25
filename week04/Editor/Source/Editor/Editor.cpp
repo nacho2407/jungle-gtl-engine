@@ -1209,6 +1209,7 @@ void FEditor::BuildRenderData()
     EditorRenderData.SceneView = &SceneView;
     SceneRenderData.SceneView = &SceneView;
     SceneRenderData.ViewMode = ViewportClient.GetRenderSetting().GetViewMode();
+    SceneRenderData.ShowFlags = ViewportClient.GetRenderSetting().BuildSceneShowFlags();
 
     ViewportClient.BuildRenderData(EditorRenderData);
 
