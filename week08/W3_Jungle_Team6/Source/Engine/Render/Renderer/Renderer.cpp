@@ -228,6 +228,7 @@ void FRenderer::InitializePassBatchers()
 				}
 
 				SubUVBatcher.AddSprite(
+					SubUV.Particle->SRV,
 					Cmd.PerObjectConstants.Model.GetLocation(),
 					Bus.GetCameraRight(),
 					Bus.GetCameraUp(),
@@ -241,7 +242,7 @@ void FRenderer::InitializePassBatchers()
 			}
 		},
 		/*.Flush   =*/ [this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
-			SubUVBatcher.Flush(Ctx, SubUVCachedSRV);
+			SubUVBatcher.Flush(Ctx);
 		}
 	};
 }
