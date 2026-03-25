@@ -122,26 +122,17 @@ void UTextRenderComponent::PostEditProperty(const char* PropertyName)
 
 FMatrix UTextRenderComponent::CalculateOutlineMatrix() const
 {
-	// 1. 실제 글자들이 배치된 총 로컬 너비 계산
-	// (글자수 * 기본너비) + (간격 * (글자수-1))
-	int32 Len = (int32)Text.length()-1;
+	int32 Len = (int32)Text.length();
 
-	// 글자가 없을 때 에러 방지
 	if (Len <= 0) return FMatrix::Identity;
 
-	float TotalLocalWidth = (Len * CharWidth) + ((Len - 1) * Spacing);
+	float TotalLocalWidth = (Len * CharWidth);
 
-	// 2. 정렬(Alignment)에 따른 중심점 오프셋 (YZ 평면 기준)
-	// 텍스트가 시작점(0,0,0)에서 오른쪽(+Y)으로 그려진다고 가정할 때
 	float CenterY = TotalLocalWidth * -0.5f;
 	float CenterZ = 0.0f; // 상하 정렬이 중앙이라면 0
 
-	// 3. 로컬 피벗 행렬 구성
-	// 순서: 1x1 표준 쿼드를 (너비, 높이)만큼 키우고 -> 정렬된 중심점으로 이동
-	FMatrix ScaleM = FMatrix::MakeScaleMatrix(FVector(1.0f, TotalLocalWidth, CharHeight));
-	FMatrix TransM = FMatrix::MakeTranslationMatrix(FVector(0.0f, CenterY, CenterZ));
+	FMatrix ScaleMatrix = FMatrix::MakeScaleMatrix(FVector(1.0f, TotalLocalWidth, CharHeight));
+	FMatrix TransMatrix = FMatrix::MakeTranslationMatrix(FVector(0.0f, CenterY, CenterZ));
 
-	// 4. 최종 아웃라인 월드 행렬
-	// (표준쿼드 -> 텍스트전체크기) * (컴포넌트 월드 변환)
-	return (ScaleM * TransM) * CachedWorldMatrix;
+	return (ScaleMatrix * TransMatrix) * CachedWorldMatrix;
 }
