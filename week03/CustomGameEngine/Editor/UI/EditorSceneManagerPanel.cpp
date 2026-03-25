@@ -1,7 +1,5 @@
 ﻿#include "EditorSceneManagerPanel.h"
 
-#include "Component/BillboardTextComponent.h"
-
 EditorSceneManagerPanel::EditorSceneManagerPanel()
 {
 }
@@ -33,7 +31,7 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 		{
 			for (USceneComponent* component : ActiveScene->SceneComponents)
 			{
-				if (component != nullptr && Cast<UBillboardTextComponent>(component) == nullptr)
+				if (component != nullptr)
 				{
 					componentsToSelect.push_back(component);
 				}
@@ -89,7 +87,7 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 		{
 			for (USceneComponent* component : ActiveScene->SceneComponents)
 			{
-				if (component == nullptr || Cast<UBillboardTextComponent>(component) != nullptr) continue;
+				if (component == nullptr) continue;
 
 				bool isSelected = (editor->IsComponentSelected(component));
 				FString label = component->Name.GetDisplayName() + " (UUID: " + std::to_string(component->UUID) + ")";
@@ -116,7 +114,7 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 	//{
 	//	for (USceneComponent* component : permanentScene->SceneComponents)
 	//	{
-	//		if (component == nullptr || Cast<UBillboardTextComponent>(component) != nullptr) continue;
+	//		if (component == nullptr) continue;
 
 	//		bool isSelected = editor->IsComponentSelected(component);
 	//		FString label = component->Name.GetDisplayName() + " (UUID: " + std::to_string(component->UUID) + ")";

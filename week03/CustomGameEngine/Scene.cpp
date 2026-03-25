@@ -1,8 +1,7 @@
-#include "Scene.h"
+﻿#include "Scene.h"
 
 #include "World.h"
 #include "ThirdParty/json.h"
-#include "Component/BillboardTextComponent.h"
 #include "Component/SceneComponent.h"
 #include "Component/CubeComponent.h"
 #include "Component/SphereComponent.h"
@@ -55,11 +54,6 @@ std::string UScene::ToJson(UScene* scene)
 	json::JSON arr;
 	for (USceneComponent* s : scene->SceneComponents)
 	{
-		if (Cast<UBillboardTextComponent>(s) != nullptr)
-		{
-			continue;
-		}
-
 		arr[std::to_string(s->UUID)] = s->Serialize();
 	}
 	json["Primitives"] = arr;

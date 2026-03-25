@@ -2,7 +2,6 @@
 #include "Component/CameraComponent.h"
 #include "Component/AxisComponent.h"
 #include "Component/BillboardSubUVComponent.h"
-#include "Component/BillboardTextComponent.h"
 #include "Component/CubeComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Renderer/Renderer.h"
@@ -216,17 +215,9 @@ void EngineApp::RenderCurrentFrame()
 	GetWorld().DrawDebugLines();
 	Renderer->Render(LevelsToRender);
 
+	// 이제 여기서 바로 Billboard 텍스트 생성해서 그립니다!
 	TArray<FBillboardTextDrawItem> BillboardTextItems;
-	if (UScene* ActiveScene = SceneMgr->GetActiveScene())
-	{
-		for (UBillboardTextComponent* BillboardText : ActiveScene->BillboardTextComponents)
-		{
-			if (BillboardText != nullptr)
-			{
-				BillboardText->AppendDrawItems(BillboardTextItems);
-			}
-		}
-	}
+	EditorInst->BuildSelectedBillboardTextItems(BillboardTextItems);
 
 	Renderer->RenderBillboardTextBatch(BillboardTextItems);
 	Renderer->BatchRenderDebugLine(FLineBatcher::GetInstance().GetLineVertices());

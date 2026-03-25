@@ -1,7 +1,5 @@
 ﻿#include "SceneManager.h"
 
-#include "Component/BillboardTextComponent.h"
-
 class UEngineStatics;
 
 namespace
@@ -16,11 +14,6 @@ namespace
 		if (scene->SceneComponents.empty())
 		{
 			scene->SceneComponents.shrink_to_fit();
-		}
-
-		if (scene->BillboardTextComponents.empty())
-		{
-			scene->BillboardTextComponents.shrink_to_fit();
 		}
 
 		if (scene->Level.RenderObjects.empty())
@@ -156,40 +149,10 @@ void SceneManager::RemoveSceneComponent(USceneComponent* toDespawn, UScene* targ
 		return;
 	}
 
-	if (Cast<UBillboardTextComponent>(toDespawn) == nullptr)
-	{
-		TArray<USceneComponent*> LabelsToRemove;
-		for (UBillboardTextComponent* BillboardText : scene->BillboardTextComponents)
-		{
-			if (BillboardText != nullptr && BillboardText->GetAttachedComponent() == toDespawn)
-			{
-				LabelsToRemove.push_back(BillboardText);
-			}
-		}
-
-		for (USceneComponent* Label : LabelsToRemove)
-		{
-			RemoveSceneComponent(Label, scene);
-		}
-	}
-
 	auto primToDespawn = Cast<UPrimitiveComponent>(toDespawn);
 	if (primToDespawn != nullptr)
 	{
 		scene->Level.UnregisterRenderObject(primToDespawn->GetRenderObject());
-	}
-
-	UBillboardTextComponent* BillboardText = Cast<UBillboardTextComponent>(toDespawn);
-	if (BillboardText != nullptr)
-	{
-		for (auto it = scene->BillboardTextComponents.begin(); it != scene->BillboardTextComponents.end(); ++it)
-		{
-			if (*it == BillboardText)
-			{
-				scene->BillboardTextComponents.erase(it);
-				break;
-			}
-		}
 	}
 
 	for (auto it = scene->SceneComponents.begin(); it != scene->SceneComponents.end(); ++it)
