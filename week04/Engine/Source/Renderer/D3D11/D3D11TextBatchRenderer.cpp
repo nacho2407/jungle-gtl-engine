@@ -10,6 +10,93 @@
 namespace
 {
     constexpr float DefaultLineHeight = 16.0f;
+    constexpr uint32 Utf8ReplacementCodePoint = static_cast<uint32>('?');
+
+    TArray<uint32> DecodeUtf8CodePoints(const FString& InText)
+    {
+        TArray<uint32> CodePoints;
+        CodePoints.reserve(InText.size());
+
+        const uint8* Bytes = reinterpret_cast<const uint8*>(InText.data());
+        const size_t ByteCount = InText.size();
+
+        size_t Index = 0;
+        while (Index < ByteCount)
+        {
+            const uint8 Lead = Bytes[Index];
+
+            if (Lead <= 0x7F)
+            {
+                CodePoints.push_back(static_cast<uint32>(Lead));
+                ++Index;
+                continue;
+            }
+
+            uint32 CodePoint = Utf8ReplacementCodePoint;
+            size_t SequenceLength = 1;
+
+            auto IsContinuationByte =
+                [Bytes, ByteCount](size_t InIndex)
+            {
+                return InIndex < ByteCount && (Bytes[InIndex] & 0xC0) == 0x80;
+            };
+
+            if ((Lead & 0xE0) == 0xC0)
+            {
+                SequenceLength = 2;
+                if (IsContinuationByte(Index + 1))
+                {
+                    const uint32 Candidate =
+                        ((static_cast<uint32>(Lead & 0x1F)) << 6) |
+                        static_cast<uint32>(Bytes[Index + 1] & 0x3F);
+
+                    if (Candidate >= 0x80)
+                    {
+                        CodePoint = Candidate;
+                    }
+                }
+            }
+            else if ((Lead & 0xF0) == 0xE0)
+            {
+                SequenceLength = 3;
+                if (IsContinuationByte(Index + 1) && IsContinuationByte(Index + 2))
+                {
+                    const uint32 Candidate =
+                        ((static_cast<uint32>(Lead & 0x0F)) << 12) |
+                        ((static_cast<uint32>(Bytes[Index + 1] & 0x3F)) << 6) |
+                        static_cast<uint32>(Bytes[Index + 2] & 0x3F);
+
+                    if (Candidate >= 0x800 && !(Candidate >= 0xD800 && Candidate <= 0xDFFF))
+                    {
+                        CodePoint = Candidate;
+                    }
+                }
+            }
+            else if ((Lead & 0xF8) == 0xF0)
+            {
+                SequenceLength = 4;
+                if (IsContinuationByte(Index + 1) && IsContinuationByte(Index + 2) &&
+                    IsContinuationByte(Index + 3))
+                {
+                    const uint32 Candidate =
+                        ((static_cast<uint32>(Lead & 0x07)) << 18) |
+                        ((static_cast<uint32>(Bytes[Index + 1] & 0x3F)) << 12) |
+                        ((static_cast<uint32>(Bytes[Index + 2] & 0x3F)) << 6) |
+                        static_cast<uint32>(Bytes[Index + 3] & 0x3F);
+
+                    if (Candidate >= 0x10000 && Candidate <= 0x10FFFF)
+                    {
+                        CodePoint = Candidate;
+                    }
+                }
+            }
+
+            CodePoints.push_back(CodePoint);
+            Index += SequenceLength;
+        }
+
+        return CodePoints;
+    }
 
     float ComputePlacementDepth(const FSceneView* InSceneView, const FRenderPlacement& InPlacement)
     {
@@ -227,21 +314,23 @@ FD3D11TextBatchRenderer::BuildTextLayout(const FTextRenderItem& InItem) const
     float PenY = 0.0f;
     bool  bHasBounds = false;
 
-    for (char Ch : InItem.Text)
+    const TArray<uint32> CodePoints = DecodeUtf8CodePoints(InItem.Text);
+
+    for (uint32 CodePoint : CodePoints)
     {
-        if (Ch == '\r')
+        if (CodePoint == static_cast<uint32>('\r'))
         {
             continue;
         }
 
-        if (Ch == '\n')
+        if (CodePoint == static_cast<uint32>('\n'))
         {
             PenX = 0.0f;
             PenY += RawLineHeight * Scale + LineSpacing;
             continue;
         }
 
-        if (Ch == ' ')
+        if (CodePoint == static_cast<uint32>(' '))
         {
             float SpaceAdvance = 0.0f;
 
@@ -263,7 +352,6 @@ FD3D11TextBatchRenderer::BuildTextLayout(const FTextRenderItem& InItem) const
             continue;
         }
 
-        const uint32         CodePoint = static_cast<uint8>(Ch);
         const FResolvedGlyph Resolved = ResolveGlyph(*InItem.FontResource, CodePoint);
 
         FLaidOutGlyph OutGlyph;
