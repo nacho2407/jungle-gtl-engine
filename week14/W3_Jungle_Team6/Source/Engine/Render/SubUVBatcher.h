@@ -18,6 +18,14 @@ struct FSubUVFrameInfo
     float Height; // 프레임 UV 높이
 };
 
+struct FSRVBatch
+{
+	ID3D11ShaderResourceView* SRV;
+	uint32 IndexStart;   // Indices 배열 내 시작 위치
+	uint32 IndexCount;   // 이 SRV에 해당하는 인덱스 수
+	int32  BaseVertex;   // DrawIndexed의 BaseVertexLocation
+};
+
 // FSubUVBatcher — SubUV 스프라이트를 배치로 모아 1회 드로우콜로 처리
 //
 // 사용 흐름:
@@ -40,7 +48,8 @@ public:
 
     // 월드 좌표 위에 빌보드 스프라이트 쿼드 추가 (배치에 누적).
     // Columns / Rows — 호출 시 FParticleResource에서 전달받은 아틀라스 그리드 크기
-    void AddSprite(const FVector& WorldPos,
+    void AddSprite(ID3D11ShaderResourceView* SRV, 
+		           const FVector& WorldPos,
                    const FVector& CamRight,
                    const FVector& CamUp,
 				   const FVector& WorldScale,
@@ -55,13 +64,14 @@ public:
 
     // Dynamic VB/IB 업로드 + DrawIndexed 1회 호출
     // SRV — ResourceManager 소유 FParticleResource의 SRV를 전달
-    void Flush(ID3D11DeviceContext* Context, ID3D11ShaderResourceView* SRV);
+    void Flush(ID3D11DeviceContext* Context);
 
     uint32 GetSpriteCount() const { return static_cast<uint32>(Vertices.size() / 4); }
 
 private:
     TArray<FTextureVertex> Vertices;
     TArray<uint32>         Indices;
+	TArray<FSRVBatch>      Batches;
 
     ID3D11Buffer* VertexBuffer = nullptr;
     ID3D11Buffer* IndexBuffer  = nullptr;
