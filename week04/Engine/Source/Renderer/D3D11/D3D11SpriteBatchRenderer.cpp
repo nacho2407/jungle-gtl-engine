@@ -251,8 +251,9 @@ void FD3D11SpriteBatchRenderer::AppendSpriteItem(const FSpriteRenderItem& InItem
     }
     else
     {
-        RightAxis = PlacementWorld.GetForwardVector();
-        UpAxis = PlacementWorld.GetUpVector();
+        const FVector WorldScale = PlacementWorld.GetScaleVector();
+        RightAxis = PlacementWorld.GetForwardVector().GetSafeNormal() * WorldScale.X;
+        UpAxis = PlacementWorld.GetUpVector().GetSafeNormal() * WorldScale.Z;
     }
 
     const FVector  BottomLeft = SpriteOrigin - RightAxis - UpAxis;
