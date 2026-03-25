@@ -158,6 +158,12 @@ namespace
 
         return true;
     }
+
+    FString GetStemName(const FString& FileName)
+    {
+        namespace fs = std::filesystem;
+        return fs::path(FileName).stem().string();
+    }
 }
 
 FSubUVAtlasLoader::FSubUVAtlasLoader(FD3D11RHI* InRHI)
@@ -233,12 +239,20 @@ bool FSubUVAtlasLoader::ParseSubUVJson(const FSourceRecord& Source, FSubUVAtlasR
         return false;
     }
 
-    if (!ParseInfo(Root, OutAtlas.Info)
-        || !ParseCommon(Root, OutAtlas.Common)
-        || !ParsePages(Root, OutAtlas.PageFiles)
-        || !ParseFrames(Root, OutAtlas.Frames)
-        || !ParseSequences(Root, OutAtlas.Sequences))
+    if (!ParseMeta(Root, OutAtlas))
     {
+        return false;
+    }
+
+    if (!ParseFrames(Root, OutAtlas.Frames))
+    {
+        OutAtlas.Reset();
+        return false;
+    }
+
+    if (!ParseSequences(OutAtlas.Frames, OutAtlas.Sequences))
+    {
+        OutAtlas.Reset();
         return false;
     }
 
@@ -275,7 +289,7 @@ bool FSubUVAtlasLoader::ParseSubUVJson(const FSourceRecord& Source, FSubUVAtlasR
 
     if (OutAtlas.Info.Columns == 0)
     {
-        OutAtlas.Info.Columns = 1;
+        OutAtlas.Info.Columns = static_cast<uint32>(OutAtlas.Frames.size());
     }
 
     if (OutAtlas.Info.Rows == 0)
@@ -283,156 +297,120 @@ bool FSubUVAtlasLoader::ParseSubUVJson(const FSourceRecord& Source, FSubUVAtlasR
         OutAtlas.Info.Rows = 1;
     }
 
-    return true;
-}
-
-bool FSubUVAtlasLoader::ParseInfo(const nlohmann::json& Root, FSubUVAtlasInfo& OutInfo) const
-{
-    if (!Root.contains("info") || !Root["info"].is_object())
+    if (OutAtlas.Info.Name.empty())
     {
-        return false;
+        OutAtlas.Info.Name = "Default";
     }
-
-    const auto& Info = Root["info"];
-
-    OutInfo.Name = Info.value("name", "");
-    OutInfo.Texture = Info.value("texture", "");
-
-    OutInfo.FrameWidth = Info.value("frameWidth", 0u);
-    OutInfo.FrameHeight = Info.value("frameHeight", 0u);
-    OutInfo.Columns = Info.value("columns", 1u);
-    OutInfo.Rows = Info.value("rows", 1u);
-    OutInfo.FrameCount = Info.value("frameCount", 0u);
-
-    OutInfo.FPS = Info.value("fps", 0.0f);
-    OutInfo.bLoop = Info.value("loop", 1) != 0;
 
     return true;
 }
 
-bool FSubUVAtlasLoader::ParseCommon(const nlohmann::json& Root, FSubUVAtlasCommon& OutCommon) const
+bool FSubUVAtlasLoader::ParseMeta(const nlohmann::json& Root, FSubUVAtlasResource& OutAtlas) const
 {
-    if (!Root.contains("common") || !Root["common"].is_object())
+    if (!Root.contains("meta") || !Root["meta"].is_object())
     {
         return false;
     }
 
-    const auto& Common = Root["common"];
+    const auto& Meta = Root["meta"];
 
-    OutCommon.ScaleW = Common.value("scaleW", 0u);
-    OutCommon.ScaleH = Common.value("scaleH", 0u);
-    OutCommon.Pages = Common.value("pages", 0u);
-    OutCommon.bPacked = Common.value("packed", 0) != 0;
+    const FString ImageFile = Meta.value("image", "");
+    if (ImageFile.empty())
+    {
+        return false;
+    }
+
+    OutAtlas.PageFiles.clear();
+    OutAtlas.PageFiles.push_back(ImageFile);
+
+    OutAtlas.Info.Name = GetStemName(ImageFile);
+    OutAtlas.Info.Texture = ImageFile;
+    OutAtlas.Info.FPS = 0.0f;
+    OutAtlas.Info.bLoop = true;
+
+    OutAtlas.Common.Pages = 1;
+    OutAtlas.Common.bPacked = true;
+
+    if (Meta.contains("size") && Meta["size"].is_object())
+    {
+        const auto& Size = Meta["size"];
+        OutAtlas.Common.ScaleW = Size.value("w", 0u);
+        OutAtlas.Common.ScaleH = Size.value("h", 0u);
+    }
 
     return true;
-}
-
-bool FSubUVAtlasLoader::ParsePages(const nlohmann::json& Root, TArray<FString>& OutPages) const
-{
-    if (!Root.contains("pages") || !Root["pages"].is_array())
-    {
-        return false;
-    }
-
-    OutPages.clear();
-    for (const auto& Page : Root["pages"])
-    {
-        if (Page.is_string())
-        {
-            OutPages.push_back(Page.get<FString>());
-            continue;
-        }
-
-        if (Page.is_object() && Page.contains("file") && Page["file"].is_string())
-        {
-            OutPages.push_back(Page["file"].get<FString>());
-        }
-    }
-
-    return !OutPages.empty();
 }
 
 bool FSubUVAtlasLoader::ParseFrames(const nlohmann::json& Root, TArray<FSubUVFrame>& OutFrames) const
 {
-    if (!Root.contains("frames") || !Root["frames"].is_array())
+    if (!Root.contains("frames") || !Root["frames"].is_object())
     {
         return false;
     }
 
     OutFrames.clear();
-    for (const auto& FrameJson : Root["frames"])
+
+    uint32 FrameId = 0;
+
+    for (auto It = Root["frames"].begin(); It != Root["frames"].end(); ++It)
     {
-        if (!FrameJson.is_object())
+        const FString FrameName = It.key();
+        const nlohmann::json& Entry = It.value();
+
+        if (!Entry.is_object())
         {
             continue;
         }
 
+        if (!Entry.contains("frame") || !Entry["frame"].is_object())
+        {
+            continue;
+        }
+
+        const auto& FrameRect = Entry["frame"];
+
         FSubUVFrame Frame;
-        Frame.Id = FrameJson.value("id", 0u);
-        Frame.X = FrameJson.value("x", 0u);
-        Frame.Y = FrameJson.value("y", 0u);
-        Frame.Width = FrameJson.value("width", 0u);
-        Frame.Height = FrameJson.value("height", 0u);
-        Frame.PivotX = FrameJson.value("pivotX", 0.5f);
-        Frame.PivotY = FrameJson.value("pivotY", 0.5f);
-        Frame.Duration = FrameJson.value("duration", 0.0f);
+        Frame.Id = FrameId++;
+        Frame.X = FrameRect.value("x", 0u);
+        Frame.Y = FrameRect.value("y", 0u);
+        Frame.Width = FrameRect.value("w", 0u);
+        Frame.Height = FrameRect.value("h", 0u);
+        Frame.Duration = 0.0f;
+
+        if (Entry.contains("pivot") && Entry["pivot"].is_object())
+        {
+            const auto& Pivot = Entry["pivot"];
+            Frame.PivotX = Pivot.value("x", 0.5f);
+            Frame.PivotY = Pivot.value("y", 0.5f);
+        }
+        else
+        {
+            Frame.PivotX = 0.5f;
+            Frame.PivotY = 0.5f;
+        }
 
         OutFrames.push_back(Frame);
     }
 
-    std::sort(OutFrames.begin(), OutFrames.end(),
-        [](const FSubUVFrame& Lhs, const FSubUVFrame& Rhs)
-        {
-            return Lhs.Id < Rhs.Id;
-        });
-
     return !OutFrames.empty();
 }
 
-bool FSubUVAtlasLoader::ParseSequences(const nlohmann::json& Root, TMap<FString, FSubUVSequence>& OutSequences) const
+bool FSubUVAtlasLoader::ParseSequences(const TArray<FSubUVFrame>& Frames, TMap<FString, FSubUVSequence>& OutSequences) const
 {
     OutSequences.clear();
 
-    if (!Root.contains("sequences") || !Root["sequences"].is_array())
+    if (Frames.empty())
     {
-        FSubUVSequence DefaultSequence;
-        DefaultSequence.Name = "Default";
-        OutSequences.insert_or_assign(DefaultSequence.Name, DefaultSequence);
-        return true;
+        return false;
     }
 
-    for (const auto& SequenceJson : Root["sequences"])
-    {
-        if (!SequenceJson.is_object())
-        {
-            continue;
-        }
+    FSubUVSequence DefaultSequence;
+    DefaultSequence.Name = "Default";
+    DefaultSequence.StartFrame = 0;
+    DefaultSequence.EndFrame = static_cast<uint32>(Frames.size() - 1);
+    DefaultSequence.bLoop = true;
 
-        FSubUVSequence Sequence;
-        Sequence.Name = SequenceJson.value("name", "");
-        if (Sequence.Name.empty())
-        {
-            continue;
-        }
-
-        Sequence.StartFrame = SequenceJson.value("startFrame", 0u);
-        Sequence.EndFrame = SequenceJson.value("endFrame", Sequence.StartFrame);
-        if (Sequence.EndFrame < Sequence.StartFrame)
-        {
-            Sequence.EndFrame = Sequence.StartFrame;
-        }
-        Sequence.bLoop = SequenceJson.value("loop", 1) != 0;
-
-        OutSequences.insert_or_assign(Sequence.Name, Sequence);
-    }
-
-    if (OutSequences.empty())
-    {
-        FSubUVSequence DefaultSequence;
-        DefaultSequence.Name = "Default";
-        OutSequences.insert_or_assign(DefaultSequence.Name, DefaultSequence);
-    }
-
+    OutSequences.insert_or_assign(DefaultSequence.Name, DefaultSequence);
     return true;
 }
 
