@@ -10,6 +10,8 @@
 #include "Renderer/RenderObject.h"
 #include "EngineCore/ResourceManager.h"
 
+#include "ImGui/imgui.h"
+
 UGizmoComponent::UGizmoComponent()
 {
 	TranslationStrategy = new GizmoTranslationControlStrategy(this);
@@ -56,7 +58,10 @@ void UGizmoComponent::Update(float deltaTime)
 		SetHoverAxis(hoveredAxis);
 	}
 
-	if (InputManager::GetInstance().IsKeyDown(VK_SPACE))
+	// Object 이름 변경 등 텍스트 입력 중에는 스페이스바를 눌러도 기즈모 모드가 바뀌지 않도록 합니다.
+	bool bIsEditingText = ImGui::GetIO().WantTextInput;
+
+	if (!bIsEditingText && InputManager::GetInstance().IsKeyDown(VK_SPACE))
 	{
 		Type = static_cast<GizmoControllerType>((static_cast<int32>(Type) + 1) % static_cast<int32>(GizmoControllerType::End));
 		SetControlStrategy(Type);

@@ -601,7 +601,7 @@ void URenderer::RestoreCurrentRasterizerState() const
 
 void URenderer::RenderBillboardTextBatch(const TArray<FBillboardTextDrawItem>& Items)
 {
-	if (ShowFlagMap[EEngineShowFlags::SF_BillboardText] == false || Items.empty())
+	if (ShowFlagMap[EEngineShowFlags::SF_BillboardText] == false || Items.empty() || Items.size() * 6 > 1000)
 	{
 		return;
 	}
@@ -630,7 +630,7 @@ void URenderer::RenderBillboardTextBatch(const TArray<FBillboardTextDrawItem>& I
 		BatchGroups[Key].push_back(&Item);
 	}
 
-	DeviceContext->OMSetDepthStencilState(DepthStencilStateNoWrite.Get(), 0);
+	DeviceContext->OMSetDepthStencilState(DepthStencilStateNoDepth.Get(), 0);
 	DeviceContext->RSSetState(RasterizerState.Get());
 
 	// 각 그룹마다 정점을 합쳐 한 번의 draw call로 렌더링
