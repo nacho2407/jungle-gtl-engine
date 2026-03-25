@@ -82,6 +82,14 @@ void SceneManager::SaveScene(FString sceneName)
 	UScene* activeScene = GetActiveScene();
 	activeScene->NextUUID = UEngineStatics::NextUUID;
 
+	const FString filePath = "Scenes/";
+	const std::filesystem::path SceneDirectory(filePath.c_str());
+
+	if (!std::filesystem::exists(SceneDirectory))
+	{
+		std::filesystem::create_directories(SceneDirectory);
+	}
+
 	SerializeHelper::SaveAsJson(activeScene, "Scenes/" + sceneName + ".Scene");
 }
 
