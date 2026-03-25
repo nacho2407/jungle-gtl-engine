@@ -7,7 +7,6 @@
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
 #include "VertexSimple.h"
-#include "VertexTextured.h"
 #include "EngineCore/Name.h"
 #include <d3d11.h>
 #include <d3dcompiler.h>
