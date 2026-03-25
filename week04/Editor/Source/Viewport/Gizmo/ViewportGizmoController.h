@@ -161,6 +161,10 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     bool  bEnableScaleSnap = true;
     float ScaleSnapValue = 0.25f;
     
+    // 수정: 누적 snapping용 상태
+    float DragStartOffset = 0.0f;
+    float PrevSnappedOffset = 0.0f;
+    
     float TranslationDragScale = 1.0f;
 
     FEditorViewportClient*        ViewportClient{nullptr};

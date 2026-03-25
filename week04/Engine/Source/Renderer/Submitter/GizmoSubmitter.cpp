@@ -83,7 +83,7 @@ namespace
 
     FMatrix BuildGizmoMatrix(const FGizmoDrawData& InGizmoDrawData)
     {
-        constexpr float MinGizmoScale = 1.0f;
+        constexpr float MinGizmoScale = 0.1f;
         constexpr float MaxGizmoScale = 1000.0f;
 
         float SafeScale = InGizmoDrawData.Scale;
