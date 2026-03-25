@@ -27,7 +27,7 @@ namespace Engine::Component
 
     void USpriteComponent::DescribeProperties(FComponentPropertyBuilder& Builder)
     {
-	    UQuadComponent::DescribeProperties(Builder);
+        UQuadComponent::DescribeProperties(Builder);
 
         FComponentPropertyOptions TexturePathOptions;
         TexturePathOptions.ExpectedAssetPathKind = EComponentAssetPathKind::TextureImage;
@@ -62,7 +62,7 @@ namespace Engine::Component
         FAssetLoadParams LoadParams;
         LoadParams.ExplicitType = EAssetType::Texture;
 
-        UAsset* LoadedAsset = InAssetManager->Load(AbsolutePath.native(), LoadParams);
+        UAsset*          LoadedAsset = InAssetManager->Load(AbsolutePath.native(), LoadParams);
         UTexture2DAsset* TextureAsset = Cast<UTexture2DAsset>(LoadedAsset);
         if (TextureAsset == nullptr)
         {
