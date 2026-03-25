@@ -141,12 +141,13 @@ void UPrimitiveComponent::UpdateAABB()
 
 bool UPrimitiveComponent::RayIntersects(Ray& ray, float& OutDistance)
 {
+	//먼저 AABB 검사를 통과해야 메시와의 교차 검사를 수행합니다
 	float AABBDistance = 0.0f;
 	if (!BoundingBox.RayIntersects(ray, AABBDistance))
 	{
 		return false;
 	}
-
+	//정확한 교차 검사
 	return ray.Intersects(this, OutDistance);
 }
 

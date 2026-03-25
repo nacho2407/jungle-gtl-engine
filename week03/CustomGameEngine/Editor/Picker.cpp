@@ -37,7 +37,7 @@ void UPicker::Pick(int ScreenX, int ScreenY, UScene* Scene, bool bMultiSelect)
 	USceneComponent* selectedComp = nullptr;
 	float ClosestDist = FLT_MAX;
 
-	// AABB 적용.
+	// 레이캐스팅
 	for (USceneComponent* sc : Scene->SceneComponents)
 	{
 		UPrimitiveComponent* Comp = Cast<UPrimitiveComponent>(sc);

@@ -46,6 +46,15 @@ bool Ray::IntersectsTriangle(const FVector& V0, const FVector& V1, const FVector
 	return false;
 }
 
+/**
+ * 입력된 컴포넌트의 Geometry를 가져온 뒤, Ray를 컴포넌트의 로컬 공간으로 변환하여
+ * 모든 삼각형과 교차 테스트를 수행합니다. 인덱스 버퍼가 있으면 Indices 기준으로,
+ * 없으면 Vertices를 3개씩 묶어 삼각형으로 간주합니다.
+ * 
+ * \param Comp
+ * \param OutDistance 교차했을 때, 그 월드 공간 거리를 참조로 반환
+ * \return 
+ */
 bool Ray::Intersects(UPrimitiveComponent* Comp, float& OutDistance)
 {
 	if (Comp == nullptr || Comp->GetGeometry() == nullptr)
@@ -106,6 +115,7 @@ bool Ray::Intersects(UPrimitiveComponent* Comp, float& OutDistance)
 
 	if (bHit)
 	{
+		//교차했다면 로컬 공간의 교차 지점을 월드 공간으로 변환하여 원점과의 거리를 계산
 		const FVector localHitPoint = LocalRay.Origin + LocalRay.Direction * ClosestT;
 		const FVector worldHitPoint = Comp->GetRelativeMatrix().TransformPoint(localHitPoint);
 		OutDistance = (worldHitPoint - Origin).Length();
