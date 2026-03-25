@@ -152,14 +152,12 @@ void FSubUVBatcher::Flush(ID3D11DeviceContext* Context)
 
     // ResourceManager 소유 SRV 바인딩
     // Context->PSSetShaderResources(0, 1, &SRV);
-	uint32 CountChangeResource = 0;
 	for (const FSRVBatch& Batch : Batches)
 	{
 		if (!Batch.SRV || Batch.IndexCount == 0) continue;
 
 		// SRV만 교체 (나머지 상태는 유지)
 		Context->PSSetShaderResources(0, 1, &Batch.SRV);
-		CountChangeResource++;
 
 		// DrawIndexed(IndexCount, StartIndexLocation, BaseVertexLocation)
 		//   - StartIndexLocation: IB 내 이 배치의 index 시작 오프셋
@@ -171,7 +169,6 @@ void FSubUVBatcher::Flush(ID3D11DeviceContext* Context)
 			Batch.BaseVertex       // VB 내 시작 위치 (index에 더해짐)
 		);
 	}
-	UE_LOG("Count: %d", CountChangeResource);
 
     /*Context->DrawIndexed(static_cast<uint32>(Indices.size()), 0, 0);*/
 }
