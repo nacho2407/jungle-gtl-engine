@@ -27,16 +27,19 @@ namespace Engine::Component
         void  SetFrameIndex(int32 InFrameIndex);
         float GetAnimationFPS() const { return AnimationFPS; }
         void  SetAnimationFPS(float InAnimationFPS);
-        void DescribeProperties(FComponentPropertyBuilder& Builder) override;
-        void ResolveAssetReferences(UAssetManager* InAssetManager) override;
+        void  DescribeProperties(FComponentPropertyBuilder& Builder) override;
+        void  ResolveAssetReferences(UAssetManager* InAssetManager) override;
 
         int32 GetFrameCount() const;
+        bool  IsLooping() const { return bLoopFlag; }
+        void  SetLooping(bool bInLoop) { bLoopFlag = bInLoop; }
 
       protected:
         FSubUVAtlasResource* SubUVResource = nullptr;
-        FString SubUVAtlasPath = {};
-        int32 FrameIndex = 0;
-        float AnimationFPS = 30.0f;
-        float AnimationTimeAccumulator = 0.0f;
+        FString              SubUVAtlasPath = {};
+        int32                FrameIndex = 0;
+        float                AnimationFPS = 30.0f;
+        float                AnimationTimeAccumulator = 0.0f;
+        bool                 bLoopFlag = true;
     };
 } // namespace Engine::Component

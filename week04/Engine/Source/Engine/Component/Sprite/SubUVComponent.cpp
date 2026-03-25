@@ -23,7 +23,7 @@ namespace Engine::Component
 
     void USubUVComponent::Update(float DeltaTime)
     {
-	    UAtlasComponent::Update(DeltaTime);
+        UAtlasComponent::Update(DeltaTime);
 
         const int32 FrameCount = GetFrameCount();
         if (FrameCount <= 1 || AnimationFPS <= 0.0f || DeltaTime <= 0.0f)
@@ -42,7 +42,26 @@ namespace Engine::Component
             static_cast<int32>(AnimationTimeAccumulator / SecondsPerFrame);
         AnimationTimeAccumulator -= SecondsPerFrame * static_cast<float>(FramesToAdvance);
 
-        const int32 NextFrameIndex = (GetFrameIndex() + FramesToAdvance) % FrameCount;
+        /*const int32 NextFrameIndex = (GetFrameIndex() + FramesToAdvance) % FrameCount;
+        SetFrameIndex(NextFrameIndex);*/
+        const int32 CurrentFrame = GetFrameIndex();
+        int32       NextFrameIndex = CurrentFrame + FramesToAdvance;
+
+        if (bLoopFlag)
+        {
+            NextFrameIndex = NextFrameIndex % FrameCount;
+        }
+        else
+        {
+            if (NextFrameIndex > FrameCount)
+            {
+                NextFrameIndex = FrameCount - 1;
+                AnimationTimeAccumulator = 0.0f;
+            }
+        }
+
+
+
         SetFrameIndex(NextFrameIndex);
     }
 
@@ -93,8 +112,7 @@ namespace Engine::Component
         AtlasPathOptions.ExpectedAssetPathKind = EComponentAssetPathKind::SpriteAtlasFile;
 
         Builder.AddAssetPath(
-            "subuv_atlas_path", L"SubUV Atlas Path",
-            [this]() { return GetSubUVAtlasPath(); },
+            "subuv_atlas_path", L"SubUV Atlas Path", [this]() { return GetSubUVAtlasPath(); },
             [this](const FString& InValue) { SetSubUVAtlasPath(InValue); }, AtlasPathOptions);
 
         Builder.AddInt(
@@ -103,6 +121,9 @@ namespace Engine::Component
         Builder.AddFloat(
             "animation_fps", L"Animation FPS", [this]() { return GetAnimationFPS(); },
             [this](float InValue) { SetAnimationFPS(InValue); }, FloatOptions);
+        Builder.AddBool(
+            "looping", L"Looping", [this]() { return IsLooping(); },
+            [this](bool bInValue) { SetLooping(bInValue); });
     }
 
     void USubUVComponent::ResolveAssetReferences(UAssetManager* InAssetManager)
@@ -128,7 +149,7 @@ namespace Engine::Component
         FAssetLoadParams LoadParams;
         LoadParams.ExplicitType = EAssetType::SpriteAtlas;
 
-        UAsset* LoadedAsset = InAssetManager->Load(AbsolutePath.native(), LoadParams);
+        UAsset*           LoadedAsset = InAssetManager->Load(AbsolutePath.native(), LoadParams);
         USubUVAtlasAsset* AtlasAsset = Cast<USubUVAtlasAsset>(LoadedAsset);
         if (AtlasAsset == nullptr)
         {
