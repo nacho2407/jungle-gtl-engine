@@ -7,8 +7,8 @@ namespace Engine::Component
 {
     UUUIDComponent::UUUIDComponent()
     {
-        SetFontPath("Font\\Comic_Sans_MS\\Comic_Sans_MS.Font");
-        SetColor(FColor::Blue());
+        SetFontPath("Font\\JetBrainsMono\\JetBrainsMono_Medium.Font");
+        SetColor(FColor::White());
         SetBillboard(true);
     }
 
