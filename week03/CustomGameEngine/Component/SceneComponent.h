@@ -20,10 +20,10 @@ public:
 public:
 	UScene* Scene = nullptr;
 
-	inline const FVector GetRelativeLocation() { return RelativeLocation; }
-	inline const FRotator GetRelativeRotation() { return RelativeRotation; }
-	inline const FVector GetRelativeScale3D() { return RelativeScale3D; }
-	inline const FQuat GetRelativeQuaternion() { return RelativeQuaternion; }
+	inline const FVector GetRelativeLocation() const { return RelativeLocation; }
+	inline const FRotator GetRelativeRotation() const { return RelativeRotation; }
+	inline const FVector GetRelativeScale3D() const { return RelativeScale3D; }
+	inline const FQuat GetRelativeQuaternion() const { return RelativeQuaternion; }
 	inline virtual void SetRelativeLocation(const FVector& newLocation) { RelativeLocation = newLocation; }
 	inline virtual void SetRelativeRotation(const FRotator& newRotation) { RelativeRotation = newRotation; }
 	inline virtual void SetRelativeScale3D(const FVector& newScale) { RelativeScale3D = newScale; }

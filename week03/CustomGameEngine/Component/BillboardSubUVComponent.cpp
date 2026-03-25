@@ -12,6 +12,7 @@ UBillboardSubUVComp::UBillboardSubUVComp()
 	//UPrimitive를 상속받도록. 수정.
 	VResource = &resourceManager->GetGeometry("BillboardQuad");
 	SetType(EPrimitiveType::SubUV);
+	SetRelativeScale3D(FVector(1.0f, 4.0f, 4.0f));
 	UpdateAABB();
 }
 
@@ -32,8 +33,6 @@ json::JSON UBillboardSubUVComp::Serialize()
 {
 	json::JSON jsonObj = UPrimitiveComponent::Serialize();
 	jsonObj["Type"] = "BillboardSubUV";
-	jsonObj["Width"] = Width;
-	jsonObj["Height"] = Height;
 	jsonObj["Rows"] = Rows;
 	jsonObj["Columns"] = Columns;
 	jsonObj["FrameCount"] = FrameCount;
@@ -45,20 +44,32 @@ json::JSON UBillboardSubUVComp::Serialize()
 void UBillboardSubUVComp::Deserialize(json::JSON jsonObj)
 {
 	USceneComponent::Deserialize(jsonObj);
-	Width = static_cast<float>(jsonObj["Width"].ToFloat());
-	Height = static_cast<float>(jsonObj["Height"].ToFloat());
 	Rows = jsonObj["Rows"].ToInt();
 	Columns = jsonObj["Columns"].ToInt();
 	FrameCount = jsonObj["FrameCount"].ToInt();
 	FramesPerSecond = static_cast<float>(jsonObj["FramesPerSecond"].ToFloat());
 	bLoop = jsonObj["Loop"].ToBool();
+
+	if (jsonObj.hasKey("Width") || jsonObj.hasKey("Height"))
+	{
+		const FVector currentScale = GetRelativeScale3D();
+		const float width = jsonObj.hasKey("Width")
+			? static_cast<float>(jsonObj["Width"].ToFloat())
+			: currentScale.y;
+		const float height = jsonObj.hasKey("Height")
+			? static_cast<float>(jsonObj["Height"].ToFloat())
+			: currentScale.z;
+		SetRelativeScale3D(FVector(currentScale.x, width, height));
+	}
+
 	UpdateRenderObject();
+	UpdateAABB();
 }
 
 void UBillboardSubUVComp::SetSize(float InWidth, float InHeight)
 {
-	Width = InWidth;
-	Height = InHeight;
+	const FVector currentScale = GetRelativeScale3D();
+	SetRelativeScale3D(FVector(currentScale.x, InWidth, InHeight));
 	UpdateRenderObject();
 	UpdateAABB();
 }
@@ -130,6 +141,7 @@ void UBillboardSubUVComp::UpdateRenderObject()
 	}
 
 	const FVector location = GetRelativeLocation();
+	const FVector scale = GetRelativeScale3D();
 	FMatrix world = FMatrix::IdentityMatrix();
 
 	// 빌보드용 월드 행렬 구성, 항상 카메라를 바라보도록 축을 설정합니다.
@@ -140,14 +152,13 @@ void UBillboardSubUVComp::UpdateRenderObject()
 	world[0][1] = forward.y;
 	world[0][2] = forward.z;
 
-	// 빌보드의 로컬 X축 방향과 빌보드의 로컬 Y축 방향으로의 회전입니다.
-	// Width를 곱해 빌보드의 가로 크기, Height를 곱해 빌보드의 세로 크기를 함께 반영합니다.
-	world[1][0] = right.x * Width;
-	world[1][1] = right.y * Width;
-	world[1][2] = right.z * Width;
-	world[2][0] = up.x * Height;
-	world[2][1] = up.y * Height;
-	world[2][2] = up.z * Height;
+	// BillboardQuad의 로컬 UV/정점은 유지하고, 실제 크기는 transform scale로만 결정합니다.
+	world[1][0] = right.x * scale.y;
+	world[1][1] = right.y * scale.y;
+	world[1][2] = right.z * scale.y;
+	world[2][0] = up.x * scale.z;
+	world[2][1] = up.y * scale.z;
+	world[2][2] = up.z * scale.z;
 
 	// 위에서 카메라를 향하는 방향을 가져왔으니 여기서는 자기 자신의 위치를 그대로 사용합니다.
 	world[3][0] = location.x;

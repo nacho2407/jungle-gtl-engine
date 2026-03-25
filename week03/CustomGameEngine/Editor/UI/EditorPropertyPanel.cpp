@@ -165,11 +165,7 @@ void EditorPropertyPanel::DrawSubUVProperties(UBillboardSubUVComp* subUVComponen
 	{
 		return;
 	}
-	float size = subUVComponent->GetWidth();
-	if (ImGui::DragFloat("Size", &size))
-	{
-		subUVComponent->SetSize(size, size);
-	}
+	ImGui::TextUnformatted("Size follows Transform Scale.");
 	float framesPerSecond = subUVComponent->GetFramesPerSecond();
 	bool bLoop = subUVComponent->IsLooping();
 	bool bPlaybackChanged = false;

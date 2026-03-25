@@ -15,7 +15,7 @@ public:
 	virtual void Deserialize(json::JSON) override;
 
 	/**
-	 * 빌보드의 크기를 설정합니다. 이후 UpdateRenderObject()을 호출해 반영합니다.
+	 * 레거시 호환용 크기 설정 함수입니다. 내부적으로는 transform scale을 갱신합니다.
 	 * \param InWidth 
 	 * \param InHeight
 	 */
@@ -33,8 +33,8 @@ public:
 	 * \param bInLoop : 루프 여부
 	 */
 	void SetPlayback(float InFramesPerSecond, bool bInLoop);
-	float GetWidth() const { return Width; }
-	float GetHeight() const { return Height; }
+	float GetWidth() const { return GetRelativeScale3D().y; }
+	float GetHeight() const { return GetRelativeScale3D().z; }
 	float GetFramesPerSecond() const { return FramesPerSecond; }
 	bool IsLooping() const { return bLoop; }
 
@@ -56,8 +56,6 @@ private:
 	int32 GetCurrentFrameIndex() const;
 
 private:
-	float Width = 4.0f;
-	float Height = 4.0f;
 	int32 Rows = 6;
 	int32 Columns = 6;
 	int32 FrameCount = 36;
