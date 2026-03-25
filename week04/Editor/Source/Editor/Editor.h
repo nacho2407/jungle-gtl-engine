@@ -30,6 +30,7 @@ class AActor;
 class UObject;
 class FD3D11RHI;
 class UAssetManager;
+struct FTextureResource;
 
 enum class EDeferredSceneActionType
 {
@@ -107,6 +108,7 @@ class FEditor
     // 커스텀 타이틀바 아래 전체 영역을 도킹 가능한 루트 dockspace로 사용합니다.
     void DrawRootDockSpace();
     void DrawAboutPopup();
+    void EnsureAboutImageLoaded();
     void RequestAboutPopup();
     void RegisterDefaultCommands();
     void RegisterDefaultMenus();
@@ -158,4 +160,6 @@ class FEditor
     float CurFPS = 0.0f;
     bool  bRequestOpenAboutPopup = false;
     bool  bAboutPopupOpen = false;
+    bool  bAttemptedAboutImageLoad = false;
+    FTextureResource* AboutImageResource = nullptr;
 };

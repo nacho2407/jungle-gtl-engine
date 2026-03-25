@@ -61,9 +61,6 @@
     <Filter Include="Source\Viewport\Selection">
       <UniqueIdentifier>{c02bdf14-d23c-3f72-e5f4-7a918dc1b5dc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Resources">
-      <UniqueIdentifier>{5ca7039f-b903-4f9c-9772-5c38f44b1b13}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Camera\ViewportCamera.cpp">
@@ -314,11 +311,6 @@
     <ClInclude Include="Source\Viewport\Selection\ViewportSelectionController.h">
       <Filter>Source\Viewport\Selection</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="Resources\Editor.rc">
-      <Filter>Resources</Filter>
-    </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Source\ThirdParty\imgui\imgui.natstepfilter">
