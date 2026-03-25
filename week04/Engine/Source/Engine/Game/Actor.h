@@ -101,6 +101,8 @@ class ENGINE_API AActor : public UObject
     void                               EnsureUUIDDebugComponent();
     void                               RefreshUUIDDebugComponent();
 
+    AActor* Clone() const;
+
   protected:
     Engine::Component::USceneComponent*         RootComponent = nullptr;
     TArray<Engine::Component::USceneComponent*> OwnedComponents;

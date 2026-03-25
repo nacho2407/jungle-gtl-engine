@@ -12,8 +12,8 @@ static const FVertexSimple triangle_vertices[] = {
 
 static const uint16_t triangle_indices[] = {
     0,
-    2,
     1,
+    2,
 };
 
 static constexpr EMeshPrimitiveTopology triangle_topology = EMeshPrimitiveTopology::TriangleList;

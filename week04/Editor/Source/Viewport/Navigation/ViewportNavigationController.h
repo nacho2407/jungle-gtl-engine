@@ -66,6 +66,14 @@ class FViewportNavigationController : public Engine::Viewport::IViewportControll
     void FocusActors();
     void FocusActors(const TArray<AActor*>& Actors);
     
+    /* With Gizmo */
+    void TranslateWithGizmoDelta(const FVector& Delta);
+    float GetGizmoFollowSpeedScale() const { return GizmoFollowSpeedScale; }
+    void  SetGizmoFollowSpeedScale(float InScale)
+    {
+        GizmoFollowSpeedScale = FMath::Clamp(InScale, 0.01f, 5.0f);
+    }
+    
   private:
     void UpdateCameraRotation();
     void EnsureTargetLocationInitialized();
@@ -100,4 +108,6 @@ class FViewportNavigationController : public Engine::Viewport::IViewportControll
     /* Panning */
     bool  bPanning = false;
     float PanSpeed = 0.1f;
+
+    float GizmoFollowSpeedScale = 0.5f;
 };
