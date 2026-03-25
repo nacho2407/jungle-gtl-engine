@@ -3,6 +3,8 @@
 #include "Engine/Component/Sprite/AtlasComponent.h"
 #include "Renderer/RenderAsset/FontResource.h"
 
+class AActor;
+
 namespace Engine::Component
 {
     class ENGINE_API UAtlasTextComponent : public UAtlasComponent
@@ -38,6 +40,8 @@ namespace Engine::Component
         void           SetBillboardOffset(const FVector& InBillboardOffset);
         void           DescribeProperties(FComponentPropertyBuilder& Builder) override;
         void           ResolveAssetReferences(UAssetManager* InAssetManager) override;
+        virtual FMatrix GetRenderPlacementWorld(const AActor& InOwnerActor) const;
+        virtual FVector GetRenderPlacementOffset(const AActor& InOwnerActor) const;
 
       protected:
         FString        Text;

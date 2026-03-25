@@ -240,6 +240,9 @@
     <ClCompile Include="Source\Engine\Component\Text\AtlasTextComponent.cpp">
       <Filter>Source\Engine\Component\Text</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Text\UUIDComponent.cpp">
+      <Filter>Source\Engine\Component\Text</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\EngineStatics.cpp">
       <Filter>Source\Engine</Filter>
     </ClCompile>
@@ -591,6 +594,9 @@
       <Filter>Source\Engine\Component\Sprite</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Text\AtlasTextComponent.h">
+      <Filter>Source\Engine\Component\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Text\UUIDComponent.h">
       <Filter>Source\Engine\Component\Text</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\EngineStatics.h">

@@ -44,6 +44,8 @@ namespace Engine::Component
         virtual void Update(float DeltaTime);
         virtual void DescribeProperties(FComponentPropertyBuilder& Builder);
         virtual void ResolveAssetReferences(UAssetManager* InAssetManager);
+        virtual bool ShouldSerializeInScene() const { return true; }
+        virtual bool ShouldShowInDetailsTree() const { return true; }
 
         FMatrix GetRelativeMatrix() const;
         FMatrix GetRelativeMatrixNoScale() const;

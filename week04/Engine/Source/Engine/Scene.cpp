@@ -1,9 +1,9 @@
 #include "Scene.h"
 
-#include "Engine/Game/Actor.h"
-#include "Engine/Component/Core/SceneComponent.h"
 #include "Engine/Component/Core/PrimitiveComponent.h"
+#include "Engine/Component/Core/SceneComponent.h"
 #include "Engine/Component/Text/AtlasTextComponent.h"
+#include "Engine/Game/Actor.h"
 #include "Renderer/Types/RenderItem.h"
 
 FScene::~FScene() { Clear(); }
@@ -50,7 +50,7 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
         {
             continue;
         }
-        
+
         if (!Actor->IsRenderable())
         {
             return;
@@ -80,7 +80,7 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
 
         OutRenderData.Primitives.push_back(PrimitiveItem);
 #pragma endregion
-        
+
 #pragma region __ATLAS_TEXT__
         const TArray<Engine::Component::USceneComponent*>& OwnedComponents =
             Actor->GetOwnedComponents();
@@ -92,7 +92,6 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
                 continue;
             }
 
-            // TODO
             auto* TextComponent = dynamic_cast<Engine::Component::UAtlasTextComponent*>(Component);
             if (TextComponent == nullptr)
             {
@@ -113,17 +112,17 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
             TextItem.FontResource = TextComponent->GetFontResource();
             TextItem.Text = TextComponent->GetText();
             TextItem.Color = TextComponent->GetColor();
-            
-            TextItem.Placement.Mode = TextComponent->GetBillboard() ? ERenderPlacementMode::WorldBillboard : ERenderPlacementMode::World;         //  일단 기본적으로 WorldBillboard
-            TextItem.Placement.World = Actor->GetWorldMatrix();
-            TextItem.Placement.WorldOffset = TextComponent->GetRelativeLocation();  //  이거 맞나
-            
+            TextItem.Placement.Mode =
+                TextComponent->GetBillboard() ? ERenderPlacementMode::WorldBillboard
+                                              : ERenderPlacementMode::World;
+            TextItem.Placement.World = TextComponent->GetRenderPlacementWorld(*Actor);
+            TextItem.Placement.WorldOffset = TextComponent->GetRenderPlacementOffset(*Actor);
             TextItem.TextScale = TextComponent->GetTextScale();
             TextItem.LetterSpacing = TextComponent->GetLetterSpacing();
             TextItem.LineSpacing = TextComponent->GetLineSpacing();
 
             TextItem.State.ObjectId = ObjectId;
-            TextItem.State.bShowBounds = Actor->IsShowBounds();                     //  나중에 False로 바꿔도 될 것 같긴 함
+            TextItem.State.bShowBounds = Actor->IsShowBounds();
             TextItem.State.SetVisible(Actor->IsVisible());
             TextItem.State.SetPickable(false);
             TextItem.State.SetSelected(Actor->IsSelected());
@@ -132,32 +131,5 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
             OutRenderData.Texts.push_back(TextItem);
         }
 #pragma endregion
-        
-#pragma region __SPRITE__
-        // for (Engine::
-        //        //     if (ComponComponent::USceneComponent* Component : OwnedComponents)
-        // {ent == nullptr)
-        //     {
-        //         continue;
-        //     }
-        //
-        //     // TODO
-        //     auto* SpriteComponent = dynamic_cast<Engine::Component::USpriteComponent*>(Component);
-        //     if (SpriteComponent == nullptr)
-        //     {
-        //         continue;
-        //     }
-        //     
-        //     FSpriteRenderItem SpriteItem = {};
-        //     SpriteItem.TextureResource = SpriteComponent->GetTextureResource();
-        //     SpriteItem.Color = SpriteComponent->GetColor();
-        // SpriteItem.UVMax = SpriteComponent->
-        //     
-        //     
-        //     OutRenderData.Sprites.push_back(SpriteItem);
-        // }
-        
-#pragma endregion
-        
     }
 }

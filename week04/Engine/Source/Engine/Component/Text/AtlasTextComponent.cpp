@@ -3,6 +3,7 @@
 #include "Asset/AssetManager.h"
 #include "Asset/FontAsset.h"
 #include "Engine/Component/Core/ComponentProperty.h"
+#include "Engine/Game/Actor.h"
 #include "SceneIO/SceneAssetPath.h"
 
 namespace Engine::Component
@@ -97,6 +98,17 @@ namespace Engine::Component
         }
 
         SetFontResource(&FontAsset->GetResource());
+    }
+
+    FMatrix UAtlasTextComponent::GetRenderPlacementWorld(const AActor& InOwnerActor) const
+    {
+        return InOwnerActor.GetWorldMatrix();
+    }
+
+    FVector UAtlasTextComponent::GetRenderPlacementOffset(const AActor& InOwnerActor) const
+    {
+        (void)InOwnerActor;
+        return GetRelativeLocation();
     }
 
     REGISTER_CLASS(Engine::Component, UAtlasTextComponent)
