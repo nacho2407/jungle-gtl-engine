@@ -166,7 +166,7 @@ void EditorPropertyPanel::DrawSubUVProperties(UBillboardSubUVComp* subUVComponen
 		return;
 	}
 	float size = subUVComponent->GetWidth();
-	if (ImGui::InputFloat("Size", &size))
+	if (ImGui::DragFloat("Size", &size))
 	{
 		subUVComponent->SetSize(size, size);
 	}
