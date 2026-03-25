@@ -99,7 +99,7 @@ void FFontBatcher::AddText(const FString& Text,
 
 	const float CharW = 0.5f * Scale * WorldScale.Y;
 	const float CharH = 0.5f * Scale * WorldScale.Z;
-	float CharCursorX = 0.f;
+	float CharCursorX = 0.0f;
 	const uint32 Base = static_cast<uint32>(Vertices.size());
 	const uint32 IdxBase = static_cast<uint32>(Indices.size());
 	const size_t CharCount = Text.size();
