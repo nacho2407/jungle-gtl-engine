@@ -8,6 +8,7 @@
 #include "Component/TriangleComponent.h"
 #include "Component/PlaneComponent.h"
 #include "Component/BillboardSubUVComponent.h"
+#include "Component/TextMeshComponent.h"
 #include "EngineCore/Logger.h"
 
 UScene::UScene()
@@ -81,6 +82,8 @@ namespace
 			object = FObjectFactory::ConstructObject(UPlaneComp::GetClass());
 		else if (typeStr == "BillboardSubUV")
 			object = FObjectFactory::ConstructObject(UBillboardSubUVComp::GetClass());
+		else if (typeStr == "TextMesh")
+			object = FObjectFactory::ConstructObject(UTextMeshComponent::GetClass());
 
 		USceneComponent* newSc = Cast<USceneComponent>(object);
 		if (newSc == nullptr)

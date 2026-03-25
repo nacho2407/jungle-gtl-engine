@@ -77,6 +77,7 @@ RenderObject* UPrimitiveComponent::CreateRenderObject()
 	RenderObj->Geometry = this->VResource;
 	RenderObj->Material = &RM->GetMaterial(L"Shader/ShaderW0.hlsl");
 	RenderObj->ShowFlag = EEngineShowFlags::SF_Primitives;
+	RenderObj->OwnerComponent = this;
 	UpdateRenderObject();
 	return RenderObj;
 }
@@ -168,6 +169,9 @@ json::JSON UPrimitiveComponent::Serialize()
 	case EPrimitiveType::Plane:
 		jsonObj["Type"] = "Plane";
 		break;
+	case EPrimitiveType::TextMesh:
+		jsonObj["Type"] = "TextMesh";
+		break;
 	}
 	return jsonObj;
 }
@@ -184,6 +188,8 @@ void UPrimitiveComponent::Deserialize(json::JSON jsonObj)
 		type = EPrimitiveType::Triangle;
 	else if (jsonObj["Type"].ToString() == "Plane")
 		type = EPrimitiveType::Plane;
+	else if (jsonObj["Type"].ToString() == "TextMesh")
+		type = EPrimitiveType::TextMesh;
 }
 
 

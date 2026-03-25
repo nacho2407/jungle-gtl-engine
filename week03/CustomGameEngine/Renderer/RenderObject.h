@@ -7,6 +7,7 @@
 //#include "tup"
 struct FMaterial;
 struct FGeometry;
+class UPrimitiveComponent;
 
 enum class EEngineShowFlags
 {
@@ -80,6 +81,7 @@ public:
 	bool bDisableCulling = false;
 	bool bBatch = false;
 	EEngineShowFlags ShowFlag = EEngineShowFlags::SF_None;
+	UPrimitiveComponent* OwnerComponent = nullptr;
 
 	D3D11_PRIMITIVE_TOPOLOGY PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 };

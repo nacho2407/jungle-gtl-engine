@@ -88,6 +88,21 @@ void ResourceManager::Initialize(URenderer* InRenderer)
 
 	FontShader.bUsesTexture = true;
 
+	FMaterial& TextMeshShader = CreateMaterial(
+		L"Shader/ShaderTextMesh.hlsl",
+		L"Shader/ShaderTextMesh.hlsl",
+		Renderer->Device.Get(),
+		texturedLayout,
+		3
+	);
+
+	TextMeshShader.ConstantBuffer.Create(
+		Renderer->Device.Get(),
+		sizeof(FObjectConstant),
+		1
+	);
+	TextMeshShader.bUsesTexture = true;
+
 	AddCubeMesh(Renderer->Device.Get());
 	AddSphereMesh(Renderer->Device.Get());
 	AddTriangleMesh(Renderer->Device.Get());
@@ -299,6 +314,10 @@ bool ResourceManager::CreateBillboardFontAtlasTexture(void)
 
 	// 셰이더에 연결
 	FontShader.bUsesTexture = true;
+	FMaterial& TextMeshShader = GetMaterial(L"Shader/ShaderTextMesh.hlsl");
+	TextMeshShader.TextureSRV = FontShader.TextureSRV;
+	TextMeshShader.SamplerState = FontShader.SamplerState;
+	TextMeshShader.bUsesTexture = true;
 
 	return true;
 }

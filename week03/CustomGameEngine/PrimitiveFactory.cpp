@@ -6,6 +6,7 @@
 #include "Component/TriangleComponent.h"
 #include "Component/PlaneComponent.h"
 #include "Component/BillboardSubUVComponent.h"
+#include "Component/TextMeshComponent.h"
 
 UPrimitiveComponent* PrimitiveFactory::AddPrimitive(EPrimitiveType type)
 {
@@ -31,6 +32,8 @@ UPrimitiveComponent* PrimitiveFactory::AddPrimitive(EPrimitiveType type)
 		return sceneMgr->AddSceneComponent<UPlaneComp>();
 	case EPrimitiveType::SubUV:
 		return sceneMgr->AddSceneComponent<UBillboardSubUVComp>();
+	case EPrimitiveType::TextMesh:
+		return sceneMgr->AddSceneComponent<UTextMeshComponent>();
 	}
 	return nullptr;
 }

@@ -51,11 +51,18 @@ void EditorPropertyPanel::Draw(USceneComponent* selectedComponent)
 		{
 			DrawSubUVProperties(subUVComponent);
 		}
+		else if (UTextMeshComponent* textMeshComponent = Cast<UTextMeshComponent>(selectedComponent))
+		{
+			SyncTextBuffer(textMeshComponent);
+			DrawTextMeshProperties(textMeshComponent);
+		}
 	}
 	else
 	{
 		LastSelectedUUID = 0;
 		NameBuffer.fill('\0');
+		LastTextUUID = 0;
+		TextBuffer.fill('\0');
 	}
 
 	ImGui::End();
@@ -178,5 +185,46 @@ void EditorPropertyPanel::DrawSubUVProperties(UBillboardSubUVComp* subUVComponen
 	if (bPlaybackChanged)
 	{
 		subUVComponent->SetPlayback(framesPerSecond, bLoop);
+	}
+}
+
+void EditorPropertyPanel::SyncTextBuffer(UTextMeshComponent* textMeshComponent)
+{
+	if (textMeshComponent == nullptr)
+	{
+		LastTextUUID = 0;
+		TextBuffer.fill('\0');
+		return;
+	}
+
+	const FString& CurrentText = textMeshComponent->GetText();
+	if (LastTextUUID == textMeshComponent->UUID && CurrentText == FString(TextBuffer.data()))
+	{
+		return;
+	}
+
+	LastTextUUID = textMeshComponent->UUID;
+	TextBuffer.fill('\0');
+	const size_t CopyLength = (std::min)(CurrentText.size(), TextBuffer.size() - 1);
+	std::memcpy(TextBuffer.data(), CurrentText.c_str(), CopyLength);
+	TextBuffer[CopyLength] = '\0';
+}
+
+void EditorPropertyPanel::DrawTextMeshProperties(UTextMeshComponent* textMeshComponent)
+{
+	if (textMeshComponent == nullptr)
+	{
+		return;
+	}
+
+	ImGui::Separator();
+	if (!ImGui::CollapsingHeader("TextMesh", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		return;
+	}
+
+	if (ImGui::InputText("Text", TextBuffer.data(), TextBuffer.size()))
+	{
+		textMeshComponent->SetText(FString(TextBuffer.data()));
 	}
 }
