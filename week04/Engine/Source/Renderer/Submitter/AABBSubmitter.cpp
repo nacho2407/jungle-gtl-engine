@@ -145,10 +145,17 @@ void FAABBSubmitter::SubmitPrimitiveBounds(FD3D11LineBatchRenderer&    InLineRen
         return;
     }
 
+    if (InItem.bHasWorldAABB)
+    {
+        SubmitBox(InLineRenderer, InItem.WorldAABB.Min, InItem.WorldAABB.Max,
+                  ResolveBoundsColor(InItem.State));
+        return;
+    }
+
     const FVector Origin = InItem.World.GetOrigin();
-    const FVector Right = InItem.World.GetRightVector() * MakeHalfExtent(InItem.MeshType).X;
-    const FVector Up = InItem.World.GetUpVector() * MakeHalfExtent(InItem.MeshType).Z;
-    const FVector Forward = InItem.World.GetForwardVector() * MakeHalfExtent(InItem.MeshType).Y;
+    const FVector Right = InItem.World.GetScaledAxis(EAxis::Y) * MakeHalfExtent(InItem.MeshType).X;
+    const FVector Up = InItem.World.GetScaledAxis(EAxis::Z) * MakeHalfExtent(InItem.MeshType).Z;
+    const FVector Forward = InItem.World.GetScaledAxis(EAxis::X) * MakeHalfExtent(InItem.MeshType).Y;
 
     FVector Min(FLT_MAX, FLT_MAX, FLT_MAX);
     FVector Max(-FLT_MAX, -FLT_MAX, -FLT_MAX);

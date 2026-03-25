@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Math/Color.h"
+#include "Core/Geometry/Primitives/AABB.h"
 #include "Core/Math/Matrix.h"
 #include "Core/Math/Vector2.h"
 #include "Core/Math/Vector.h"
@@ -70,6 +71,8 @@ struct FPrimitiveRenderItem
     FMatrix          World = FMatrix::Identity;
     FColor           Color = FColor::White();
     EBasicMeshType   MeshType = EBasicMeshType::None;
+    Geometry::FAABB  WorldAABB;
+    bool             bHasWorldAABB = false;
     FRenderItemState State;
 };
 

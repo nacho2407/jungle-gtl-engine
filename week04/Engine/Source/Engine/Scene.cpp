@@ -2,6 +2,7 @@
 
 #include "Engine/Game/Actor.h"
 #include "Engine/Component/Core/SceneComponent.h"
+#include "Engine/Component/Core/PrimitiveComponent.h"
 #include "Engine/Component/Text/AtlasTextComponent.h"
 #include "Renderer/Types/RenderItem.h"
 
@@ -62,6 +63,13 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
         PrimitiveItem.World = Actor->GetWorldMatrix();
         PrimitiveItem.Color = Actor->GetColor();
         PrimitiveItem.MeshType = Actor->GetMeshType();
+
+        if (auto* PrimitiveComponent =
+                Cast<Engine::Component::UPrimitiveComponent>(Actor->GetRootComponent()))
+        {
+            PrimitiveItem.WorldAABB = PrimitiveComponent->GetWorldAABB();
+            PrimitiveItem.bHasWorldAABB = true;
+        }
 
         PrimitiveItem.State.ObjectId = ObjectId;
         PrimitiveItem.State.bShowBounds = Actor->IsShowBounds();

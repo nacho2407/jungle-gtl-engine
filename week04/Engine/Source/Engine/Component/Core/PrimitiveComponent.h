@@ -23,6 +23,7 @@ namespace Engine::Component
         void          SetColor(const FColor& NewColor);
 
         const Geometry::FAABB& GetWorldAABB() const;
+        bool                   GetWorldAABB(Geometry::FAABB& OutWorldAABB) const;
 
         virtual bool GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const;
 
