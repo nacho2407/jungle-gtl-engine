@@ -27,7 +27,8 @@ void USubUVComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 	OutProps.push_back({ "Particle", EPropertyType::Name, &ParticleName });
 	OutProps.push_back({ "Width", EPropertyType::Float, &Width, 0.1f, 100.0f, 0.1f });
 	OutProps.push_back({ "Height", EPropertyType::Float, &Height, 0.1f, 100.0f, 0.1f });
-	OutProps.push_back({ "Frame Rate", EPropertyType::Float, &FrameRate, 1.0f, 120.0f, 1.0f });
+	OutProps.push_back({ "Play Rate", EPropertyType::Float, &PlayRate, 1.0f, 120.0f, 1.0f });
+	OutProps.push_back({ "bLoop", EPropertyType::Bool, &bLoop});
 }
 
 void USubUVComponent::PostEditProperty(const char* PropertyName)
@@ -62,20 +63,38 @@ void USubUVComponent::UpdateWorldAABB() const
 
 void USubUVComponent::TickComponent(float DeltaTime)
 {
-	if (!CachedParticle) return;
-
 	UBillboardComponent::TickComponent(DeltaTime);
+
+	if (!CachedParticle) return;
+	if (!bLoop && bIsExecute) return; // 단발 재생 완료 후 정지
 
 	const uint32 TotalFrames = CachedParticle->Columns * CachedParticle->Rows;
 	if (TotalFrames == 0) return;
 
 	TimeAccumulator += DeltaTime;
-	const float FrameDuration = 1.0f / FrameRate;
+	const float FrameDuration = 1.0f / PlayRate;
 	while (TimeAccumulator >= FrameDuration)
 	{
 		TimeAccumulator -= FrameDuration;
-		FrameIndex = (FrameIndex + 1) % TotalFrames;
-	}
 
+		if (bLoop)
+		{
+			bIsExecute = false;
+			FrameIndex = (FrameIndex + 1) % TotalFrames; // 무한 반복
+		}
+		else
+		{
+			if (FrameIndex < TotalFrames - 1)
+			{
+				FrameIndex++;
+			}
+			else
+			{
+				bIsExecute = true;    // 마지막 프레임 도달 → 완료
+				TimeAccumulator = 0.0f;
+				break;
+			}
+		}
+	}
 }
 
