@@ -19,7 +19,7 @@ void EditorToolbar::Draw(UGridComp* Grid)
 
 	USceneComponent* pickedObjecdts = editor->GetLastSelectedComponent();
 	//픽킹된 오브젝트가 없으면 Toolbar에 아무것도 띄우지 않습니다
-	if (pickedObjecdts)
+	if (!pickedObjecdts)
 	{
 		ImGui::End();
 		return;

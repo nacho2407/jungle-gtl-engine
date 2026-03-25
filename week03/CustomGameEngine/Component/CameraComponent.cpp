@@ -102,13 +102,24 @@ void UCameraComponent::SetDirection(const float InputPitch, const float InputYaw
 void UCameraComponent::HandleRotate(float DeltaTime)
 {
 	FRotator eulerAngle = GetRelativeRotation();
-	float rotateFactor = RotateSensitivity * 0.1f;
-	float newPitch = eulerAngle.Pitch + (InputManager::GetInstance().MouseDelta.y * rotateFactor);
+	FVector MouseDelta = InputManager::GetInstance().MouseDelta;
+	float rotateFactor = RotateSensitivity * 1.0f * DeltaTime;
+	float newPitch = eulerAngle.Pitch + (MouseDelta.y * rotateFactor);
 	newPitch = MathHelper::Clamp(newPitch, -89.9f, 89.9f);
 	eulerAngle.Pitch = newPitch;
-	eulerAngle.Yaw = eulerAngle.Yaw + (InputManager::GetInstance().MouseDelta.x * rotateFactor);
+	eulerAngle.Yaw = eulerAngle.Yaw + (MouseDelta.x * rotateFactor);
 
 	SetRelativeRotation(eulerAngle);
+}
+
+void UCameraComponent::HandlePanning(float DeltaTime)
+{
+	float panFactor = MoveSpeed * 1.0f * DeltaTime;
+	FVector MouseDelta = InputManager::GetInstance().MouseDelta;
+	FVector prevLocation = GetRelativeLocation();
+	prevLocation = prevLocation - SideDirection * MouseDelta.x * panFactor;
+	prevLocation = prevLocation + UpDirection * MouseDelta.y * panFactor;
+	SetRelativeLocation(prevLocation);
 }
 
 void UCameraComponent::HandleOrbitRotate(float DeltaTime)
@@ -165,12 +176,12 @@ void UCameraComponent::SetOrthogonal(bool input)
 //}
 
 void UCameraComponent::Update(float deltaTime) {
-	HandleCameraMove(deltaTime);
+	HandleCameraMouseInput(deltaTime);
 	UpdateCameraMatrices();
 }
 
 // 마우스 휠을 이용한 발줌입니다.
-void UCameraComponent::HandleCameraMove(float deltaTime)
+void UCameraComponent::HandleCameraMouseInput(float deltaTime)
 {
 	if (!io.WantCaptureKeyboard && !io.WantCaptureMouse)
 	{
@@ -179,11 +190,16 @@ void UCameraComponent::HandleCameraMove(float deltaTime)
 		{
 			FVector Mouse = InputManager::GetInstance().MousePos;
 			Ray mouseRay = ScreenPointToRay(static_cast<int32>(Mouse.x), static_cast<int32>(Mouse.y));
-			
+
 			FVector position = GetRelativeLocation();
 			// 마우스 커서가 가리키는 월드 방향으로 이동
 			position = position + mouseRay.Direction * wheelDelta * MoveSpeed * 0.5f;
 			SetRelativeLocation(position);
+		}
+
+		if(InputManager::GetInstance().IsKeyHold(VK_MBUTTON))
+		{
+			HandlePanning(deltaTime);
 		}
 
 		if (InputManager::GetInstance().IsKeyHold(VK_RBUTTON))
@@ -196,11 +212,11 @@ void UCameraComponent::HandleCameraMove(float deltaTime)
 		{
 			HandleOrbitRotate(deltaTime);
 		}
-			UScene* activeScene = GetWorld().GetSceneManager()->GetActiveScene();
-			if (InputManager::GetInstance().IsKeyHold('F')
-				&& activeScene != nullptr
-				&& activeScene->IsCompSelected)
-			{
+		UScene* activeScene = GetWorld().GetSceneManager()->GetActiveScene();
+		if (InputManager::GetInstance().IsKeyHold('F')
+			&& activeScene != nullptr
+			&& activeScene->IsCompSelected)
+		{
 			// TODO: 오브젝트 포커싱 재구현
 			// SetPosition(EditorInst->GetSelectedComponent()->GetRelativeLocation() - Direction * FocusLength);
 		}
@@ -279,7 +295,9 @@ void UCameraComponent::CalcOrthogonalProjectionMatrix()
 	Projection = M;
 }
 
-FMatrix UCameraComponent::GetViewProjectionMatrix() const { return ViewProjection; }
+FMatrix UCameraComponent::GetViewProjectionMatrix() const {
+	return ViewProjection;
+}
 
 FVector UCameraComponent::WorldToScreen(const FVector& worldPos) const
 {

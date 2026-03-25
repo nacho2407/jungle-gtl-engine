@@ -56,6 +56,8 @@ public:
 	void SetDirection(const float InputPitch, const float InputYaw,
 		const float InputRoll);
 	void HandleRotate(float DeltaTime);
+	//카메라의 방향을 유지하고 평행 이동시킵니다.
+	void HandlePanning(float DeltaTime);
 	void HandleOrbitRotate(float DeltaTime);
 	void SetFOV(const float NewFOV);
 	float GetFOV() const;
@@ -77,7 +79,7 @@ public:
 
 private:
 	ImGuiIO& io;
-	void HandleCameraMove(float deltaTime);
+	void HandleCameraMouseInput(float deltaTime);
 	void UpdateCameraMatrices();
 	static UCameraComponent* mainCamera;
 };

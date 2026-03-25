@@ -130,6 +130,10 @@ void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 	}
 	ImGui::SameLine();
 	ImGui::InputInt("#", &spawnCount);
+	if (spawnCount < 0)
+	{
+		spawnCount = 0;
+	}
 	ImGui::SameLine();
 	ImGui::Separator();
 

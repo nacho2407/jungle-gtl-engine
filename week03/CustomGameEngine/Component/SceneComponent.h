@@ -46,6 +46,4 @@ private:
 	FRotator RelativeRotation;
 	FVector RelativeScale3D;
 	FQuat RelativeQuaternion;
-
-
 };
