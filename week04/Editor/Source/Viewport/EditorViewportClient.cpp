@@ -21,6 +21,7 @@ void FEditorViewportClient::Create()
     NavigationController.SetSelectionController(&SelectionController);
     SelectionController.SetCamera(&ViewportCamera);
     GizmoController.SetCamera(&ViewportCamera);
+    GizmoInputContext.SetNavigationController(&NavigationController);
 
     ViewportCamera.SetProjectionType(EViewportProjectionType::Perspective);
     ViewportCamera.SetFOV(3.141592f * 0.5f);

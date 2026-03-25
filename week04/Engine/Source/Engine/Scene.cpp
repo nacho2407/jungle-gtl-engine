@@ -99,10 +99,10 @@ void FScene::Tick(float DeltaTime)
 {
     for (auto& actor : Actors)
     {
-	    if (actor)
-	    {
+        if (actor)
+        {
             actor->Tick(DeltaTime);
-	    }
+        }
     }
 }
 
@@ -135,37 +135,8 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
                 continue;
             }
 
-#pragma region __SPRITE__
-            if (auto* SpriteComponent = Cast<Engine::Component::USpriteComponent>(Component))
-            {
-                if (Cast<Engine::Component::UAtlasTextComponent>(SpriteComponent) != nullptr)
-                {
-                    continue;
-                }
-
-                FSpriteRenderItem SpriteItem = {};
-                SpriteItem.TextureResource = SpriteComponent->GetTextureResource();
-                SpriteItem.Color = SpriteComponent->GetColor();
-                ResolveSpriteUVs(*SpriteComponent, SpriteItem.UVMin, SpriteItem.UVMax);
-                SpriteItem.Placement.Mode = SpriteComponent->GetBillboard()
-                                                ? ERenderPlacementMode::WorldBillboard
-                                                : ERenderPlacementMode::World;
-                SpriteItem.Placement.World = Actor->GetWorldMatrix();
-                SpriteItem.Placement.WorldOffset = SpriteComponent->GetBillboardOffset();
-
-                SpriteItem.State.ObjectId = ObjectId;
-                SpriteItem.State.bShowBounds = Actor->IsShowBounds();
-                SpriteItem.State.SetVisible(Actor->IsVisible());
-                SpriteItem.State.SetPickable(Actor->IsPickable());
-                SpriteItem.State.SetSelected(Actor->IsSelected());
-                SpriteItem.State.SetHovered(Actor->IsHovered());
-
-                OutRenderData.Sprites.push_back(SpriteItem);
-            }
-#pragma endregion
-
 #pragma region __ATLAS_TEXT__
-            else if (auto* TextComponent = Cast<Engine::Component::UAtlasTextComponent>(Component))
+            if (auto* TextComponent = Cast<Engine::Component::UAtlasTextComponent>(Component))
             {
                 if (TextComponent->GetText().empty())
                 {
@@ -198,6 +169,35 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
                 TextItem.State.SetHovered(Actor->IsHovered());
 
                 OutRenderData.Texts.push_back(TextItem);
+            }
+#pragma endregion
+
+#pragma region __SPRITE__
+            else if (auto* SpriteComponent = Cast<Engine::Component::USpriteComponent>(Component))
+            {
+                if (Cast<Engine::Component::UAtlasTextComponent>(SpriteComponent) != nullptr)
+                {
+                    continue;
+                }
+
+                FSpriteRenderItem SpriteItem = {};
+                SpriteItem.TextureResource = SpriteComponent->GetTextureResource();
+                SpriteItem.Color = SpriteComponent->GetColor();
+                ResolveSpriteUVs(*SpriteComponent, SpriteItem.UVMin, SpriteItem.UVMax);
+                SpriteItem.Placement.Mode = SpriteComponent->GetBillboard()
+                                                ? ERenderPlacementMode::WorldBillboard
+                                                : ERenderPlacementMode::World;
+                SpriteItem.Placement.World = Actor->GetWorldMatrix();
+                SpriteItem.Placement.WorldOffset = SpriteComponent->GetBillboardOffset();
+
+                SpriteItem.State.ObjectId = ObjectId;
+                SpriteItem.State.bShowBounds = Actor->IsShowBounds();
+                SpriteItem.State.SetVisible(Actor->IsVisible());
+                SpriteItem.State.SetPickable(Actor->IsPickable());
+                SpriteItem.State.SetSelected(Actor->IsSelected());
+                SpriteItem.State.SetHovered(Actor->IsHovered());
+
+                OutRenderData.Sprites.push_back(SpriteItem);
             }
 #pragma endregion
 

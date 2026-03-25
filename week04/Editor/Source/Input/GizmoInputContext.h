@@ -4,6 +4,8 @@
 #include "ApplicationCore/Input/InputContext.h"
 #include "Viewport/Gizmo/ViewportGizmoController.h"
 
+class FViewportNavigationController;
+
 class FGizmoInputContext : public Engine::ApplicationCore::IInputContext
 {
   public:
@@ -21,8 +23,17 @@ class FGizmoInputContext : public Engine::ApplicationCore::IInputContext
     {
         GizmoController = InController;
     }
+    void SetNavigationController(FViewportNavigationController* InNavigationController)
+    {
+        NavigationController = InNavigationController;
+    }
 
   private:
     FViewportGizmoController* GizmoController = nullptr;
+    FViewportNavigationController * NavigationController = nullptr;
+    
+    bool bFollowViewportCamera = false;
+    float ShiftDragTranslationScale = 0.35f;    //  Shift + 이동 시 속도 조절
+    
     float DeltaTime = 0.016f; 
 };

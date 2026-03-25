@@ -2,6 +2,7 @@
 
 #include "Engine/Component/Core/PrimitiveComponent.h"
 #include "Engine/Game/Actor.h"
+#include "Renderer/EditorRenderData.h"
 #include "Viewport/Selection/ViewportSelectionController.h"
 
 void FViewportNavigationController::Tick(float DeltaTime)
@@ -463,6 +464,32 @@ void FViewportNavigationController::FocusActors(const TArray<AActor*>& Actors)
     ViewportCamera->SetRotation(NewRotation);
 }
 
+void FViewportNavigationController::TranslateWithGizmoDelta(const FVector& Delta)
+{
+    if (ViewportCamera == nullptr)
+    {
+        return;
+    }
+
+    if (Delta.IsNearlyZero())
+    {
+        return;
+    }
+    
+    EnsureTargetLocationInitialized();
+
+    const FVector ScaledDelta = Delta * GizmoFollowSpeedScale;
+
+    const FVector NewLocation = ViewportCamera->GetLocation() + ScaledDelta;
+    ViewportCamera->SetLocation(NewLocation);
+    TargetLocation = TargetLocation + ScaledDelta;
+    bHasTargetLocation = true;
+    
+    if (bOrbiting)
+    {
+        OrbitPivot += ScaledDelta;
+    }
+}
 
 
 void FViewportNavigationController::FocusActors()
