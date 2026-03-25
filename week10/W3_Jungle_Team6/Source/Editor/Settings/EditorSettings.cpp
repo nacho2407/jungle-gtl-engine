@@ -26,6 +26,7 @@ namespace Key
 	constexpr const char* bGrid = "bGrid";
 	constexpr const char* bGizmo = "bGizmo";
 	constexpr const char* bBillboardText = "bBillboardText";
+	constexpr const char* bBoundingVolume = "bBoundingVolume";
 
 	// Grid
 	constexpr const char* Grid = "Grid";
@@ -65,6 +66,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	ViewObj[Key::bGrid] = ShowFlags.bGrid;
 	ViewObj[Key::bGizmo] = ShowFlags.bGizmo;
 	ViewObj[Key::bBillboardText] = ShowFlags.bBillboardText;
+	ViewObj[Key::bBoundingVolume] = ShowFlags.bBoundingVolume;
 	Root[Key::View] = ViewObj;
 
 	// Grid
@@ -161,6 +163,8 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 			ShowFlags.bGizmo = ViewObj[Key::bGizmo].ToBool();
 		if (ViewObj.hasKey(Key::bBillboardText))
 			ShowFlags.bBillboardText = ViewObj[Key::bBillboardText].ToBool();
+		if (ViewObj.hasKey(Key::bBoundingVolume))
+			ShowFlags.bBoundingVolume = ViewObj[Key::bBoundingVolume].ToBool();
 	}
 
 	// Grid
