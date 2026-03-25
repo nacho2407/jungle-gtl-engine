@@ -57,6 +57,7 @@ void FEditorViewportOverlayWidget::Render(float DeltaTime)
 		ImGui::Checkbox("BillboardText", &Settings.ShowFlags.bBillboardText);
 		ImGui::Checkbox("Grid", &Settings.ShowFlags.bGrid);
 		ImGui::Checkbox("Gizmo", &Settings.ShowFlags.bGizmo);
+		ImGui::Checkbox("Bounding Volume", &Settings.ShowFlags.bBoundingVolume);
 
 		ImGui::Separator();
 
