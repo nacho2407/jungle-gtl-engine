@@ -257,6 +257,7 @@ void URenderer::ReleaseDynamicVertexBuffer()
 
 void URenderer::Prepare()
 {
+	DrawCallCount = 0;
 	DeviceContext->ClearRenderTargetView(FrameBufferRTV.Get(), ClearColor);
 	DeviceContext->ClearDepthStencilView(DepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -319,6 +320,7 @@ void URenderer::RenderNoDepthObjects(TArray<RenderObject*>& NoDepthRenderObjects
 				RenderObj->Material->SecondaryConstantBuffer.Bind(DeviceContext.Get());
 			}
 			RenderObj->Render(DeviceContext.Get());
+			DrawCallCount++;
 		}
 		DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
 		DeviceContext->RSSetState(RasterizerState.Get());
@@ -371,6 +373,7 @@ void URenderer::BatchRenderDebugLine(const TArray<FVertexSimple>& Lines)
 			DeviceContext->IASetVertexBuffers(0, 1, DynamicVertexBuffer.GetAddressOf(), &stride, &vbOffset);
 			DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 			DeviceContext->Draw(count, 0);
+			DrawCallCount++;
 		}
 	}
 	else
@@ -381,6 +384,7 @@ void URenderer::BatchRenderDebugLine(const TArray<FVertexSimple>& Lines)
 		DeviceContext->IASetVertexBuffers(0, 1, DynamicVertexBuffer.GetAddressOf(), &stride, &offset);
 		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 		DeviceContext->Draw(Lines.size(), 0);
+		DrawCallCount++;
 	}
 }
 
@@ -446,6 +450,7 @@ void URenderer::RenderNormalObjects(TArray<RenderObject*>& NormalRenderObjects)
 			RenderObj->Material->SecondaryConstantBuffer.Bind(DeviceContext.Get());
 		}
 		RenderObj->Render(DeviceContext.Get());
+		DrawCallCount++;
 	}
 }
 
@@ -481,6 +486,7 @@ void URenderer::BatchRender(TMap<BatchKey, TArray<RenderObject*>, FBatchKeyHash>
 		UINT offset = 0;
 		DeviceContext->IASetVertexBuffers(0, 1, DynamicVertexBuffer.GetAddressOf(), &stride, &offset);
 		DeviceContext->Draw(Vertices.size(), 0);
+		DrawCallCount++;
 	}
 }
 
@@ -573,6 +579,7 @@ void URenderer::DrawBillboardFontVertices(const TArray<FVertexFont>& Vertices)
 	DeviceContext->IASetVertexBuffers(0, 1, DynamicFontVertexBuffer.GetAddressOf(), &Stride, &Offset);
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	DeviceContext->Draw(static_cast<UINT>(Vertices.size()), 0);
+	DrawCallCount++;
 }
 
 void URenderer::RestoreCurrentRasterizerState() const
@@ -648,6 +655,7 @@ void URenderer::RenderBillboardTextBatch(const TArray<FBillboardTextDrawItem>& I
 		}
 
 		DrawBillboardFontVertices(Vertices);
+		DrawCallCount++;
 	}
 
 	// DepthStencilState 복원

@@ -98,6 +98,7 @@ public:
 	D3D11_VIEWPORT ViewportInfo;
 
 	int DynamicBufferMaxVertexCount = 80000;
+	int DrawCallCount = 0;
 
 public:
 	void Create(HWND hWindow);
