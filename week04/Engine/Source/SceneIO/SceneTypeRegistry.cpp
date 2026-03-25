@@ -24,8 +24,8 @@
 #include "Engine/Game/SpriteActor.h"
 #include "Engine/Game/TextActor.h"
 #include "Engine/Game/TriangleActor.h"
-#include "Engine/Game/SubUVTextureActor.h"
-#include "Engine/Game/SubUVAnimatedActor.h"
+#include "Engine/Game/AtlasSpriteActor.h"
+#include "Engine/Game/FlipbookActor.h"
 #include "Engine/Game/UnknownActor.h"
 
 #include <typeindex>
@@ -94,8 +94,8 @@ namespace
         RegisterActorType<ASpriteActor>("ASpriteActor");
         RegisterActorType<ATextActor>("ATextActor");
         RegisterActorType<ATriangleActor>("ATriangleActor");
-        RegisterActorType<ASubUVAnimatedActor>("ASubUVAnimatedActor");
-        RegisterActorType<ASubUVTextureActor>("ASubUVTextureActor");
+        RegisterActorType<AFlipbookActor>("AFlipbookActor");
+        RegisterActorType<AAtlasSpriteActor>("AAtlasSpriteActor");
         RegisterActorType<AUnknownActor>("AUnknownActor");
 
         RegisterComponentType<Engine::Component::UConeComponent>("UConeComponent");

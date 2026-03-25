@@ -225,13 +225,13 @@
     <ClCompile Include="Source\Engine\Component\Mesh\TriangleComponent.cpp">
       <Filter>Source\Engine\Component\Mesh</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\Sprite\SubUVAnimatedComponent.cpp">
-      <Filter>Source\Engine\Component\Sprite</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Component\Sprite\AtlasComponent.cpp">
       <Filter>Source\Engine\Component\Sprite</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Sprite\SpriteComponent.cpp">
+      <Filter>Source\Engine\Component\Sprite</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Sprite\SubUVAnimatedComponent.cpp">
       <Filter>Source\Engine\Component\Sprite</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Sprite\SubUVComponent.cpp">
@@ -249,6 +249,9 @@
     <ClCompile Include="Source\Engine\Game\Actor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Game\AtlasSpriteActor.cpp">
+      <Filter>Source\Engine\Game</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Game\ConeActor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
@@ -261,6 +264,9 @@
     <ClCompile Include="Source\Engine\Game\EffectActor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Game\FlipbookActor.cpp">
+      <Filter>Source\Engine\Game</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Game\RingActor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
@@ -268,12 +274,6 @@
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Game\SpriteActor.cpp">
-      <Filter>Source\Engine\Game</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Game\SubUVAnimatedActor.cpp">
-      <Filter>Source\Engine\Game</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Game\SubUVTextureActor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Game\TextActor.cpp">
@@ -587,13 +587,13 @@
     <ClInclude Include="Source\Engine\Component\Mesh\TriangleComponent.h">
       <Filter>Source\Engine\Component\Mesh</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\Sprite\SubUVAnimatedComponent.h">
-      <Filter>Source\Engine\Component\Sprite</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Component\Sprite\AtlasComponent.h">
       <Filter>Source\Engine\Component\Sprite</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Sprite\SpriteComponent.h">
+      <Filter>Source\Engine\Component\Sprite</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Sprite\SubUVAnimatedComponent.h">
       <Filter>Source\Engine\Component\Sprite</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Sprite\SubUVComponent.h">
@@ -611,6 +611,9 @@
     <ClInclude Include="Source\Engine\Game\Actor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Game\AtlasSpriteActor.h">
+      <Filter>Source\Engine\Game</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Game\ConeActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
@@ -623,6 +626,9 @@
     <ClInclude Include="Source\Engine\Game\EffectActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Game\FlipbookActor.h">
+      <Filter>Source\Engine\Game</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Game\RingActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
@@ -630,12 +636,6 @@
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Game\SpriteActor.h">
-      <Filter>Source\Engine\Game</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Game\SubUVAnimatedActor.h">
-      <Filter>Source\Engine\Game</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Game\SubUVTextureActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Game\TextActor.h">

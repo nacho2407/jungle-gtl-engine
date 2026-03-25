@@ -17,7 +17,8 @@
 #include "Engine/Game/SpriteActor.h"
 #include "Engine/Game/EffectActor.h"
 #include "Engine/Game/TextActor.h"
-#include "Engine/Game/SubUVTextureActor.h"
+#include "Engine/Game/AtlasSpriteActor.h"
+#include "Engine/Game/FlipbookActor.h"
 
 
 namespace
@@ -66,8 +67,10 @@ namespace
             return "EffectActor";
         case FOutlinerPanel::ESpawnActorType::Text:
             return "TextActor";
-        case FOutlinerPanel::ESpawnActorType::SubUVTexture:
-            return "SubUVActor";
+        case FOutlinerPanel::ESpawnActorType::AtlasSprite:
+            return "AtlasSpriteActor";
+        case FOutlinerPanel::ESpawnActorType::Flipbook:
+            return "FlipbookActor";
         default:
             return "Unknown";
         }
@@ -75,7 +78,7 @@ namespace
 
     const char* const SpawnActorTypeLabels[] = {
         "CubeActor",     "SphereActor", "ConeActor",   "CylinderActor", "RingActor",
-        "TriangleActor", "SpriteActor", "EffectActor", "TextActor",     "SubUVActor"
+        "TriangleActor", "SpriteActor", "EffectActor", "TextActor",     "AtlasSpriteActor", "FlipbookActor"
     };
 
     AActor* CreateActorByType(FOutlinerPanel::ESpawnActorType InType)
@@ -100,8 +103,10 @@ namespace
             return new AEffectActor();
         case FOutlinerPanel::ESpawnActorType::Text:
             return new ATextActor();
-        case FOutlinerPanel::ESpawnActorType::SubUVTexture:
-            return new ASubUVTextureActor();
+        case FOutlinerPanel::ESpawnActorType::AtlasSprite:
+            return new AAtlasSpriteActor();
+            case FOutlinerPanel::ESpawnActorType::Flipbook:
+            return new AFlipbookActor();
         default:
             return nullptr;
         }

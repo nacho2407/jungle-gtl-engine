@@ -18,7 +18,8 @@ class FOutlinerPanel : public IPanel
         Sprite,
         Effect,
         Text,
-        SubUVTexture
+        AtlasSprite,
+        Flipbook
     };
 
   public:
