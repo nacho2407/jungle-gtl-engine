@@ -21,8 +21,10 @@ namespace
         OutUVMin = FVector2(0.0f, 0.0f);
         OutUVMax = FVector2(1.0f, 1.0f);
 
-        const auto* SubUVComponent =
-            dynamic_cast<const Engine::Component::USubUVComponent*>(&SpriteComponent);
+        /*const auto* SubUVComponent =
+            Cast<Engine::Component::USubUVComponent>(SpriteComponent.GetClass());*/
+         const auto* SubUVComponent =
+             dynamic_cast<const Engine::Component::USubUVComponent*>(&SpriteComponent);
         if (SubUVComponent == nullptr)
         {
             return;

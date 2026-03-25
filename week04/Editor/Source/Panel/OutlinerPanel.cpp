@@ -17,6 +17,8 @@
 #include "Engine/Game/SpriteActor.h"
 #include "Engine/Game/EffectActor.h"
 #include "Engine/Game/TextActor.h"
+#include "Engine/Game/SubUVTextureActor.h"
+
 
 namespace
 {
@@ -64,6 +66,8 @@ namespace
             return "EffectActor";
         case FOutlinerPanel::ESpawnActorType::Text:
             return "TextActor";
+        case FOutlinerPanel::ESpawnActorType::SubUVTexture:
+            return "SubUVTexture";
         default:
             return "Unknown";
         }
@@ -71,7 +75,7 @@ namespace
 
     const char* const SpawnActorTypeLabels[] = {
         "CubeActor",     "SphereActor", "ConeActor",   "CylinderActor", "RingActor",
-        "TriangleActor", "SpriteActor", "EffectActor", "TextActor",
+        "TriangleActor", "SpriteActor", "EffectActor", "TextActor",     "SubUVTexture"
     };
 
     AActor* CreateActorByType(FOutlinerPanel::ESpawnActorType InType)
@@ -96,6 +100,8 @@ namespace
             return new AEffectActor();
         case FOutlinerPanel::ESpawnActorType::Text:
             return new ATextActor();
+        case FOutlinerPanel::ESpawnActorType::SubUVTexture:
+            return new ASubUVTextureActor();
         default:
             return nullptr;
         }

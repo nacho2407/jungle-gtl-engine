@@ -17,7 +17,8 @@ class FOutlinerPanel : public IPanel
         Triangle,
         Sprite,
         Effect,
-        Text
+        Text,
+        SubUVTexture
     };
 
   public:
