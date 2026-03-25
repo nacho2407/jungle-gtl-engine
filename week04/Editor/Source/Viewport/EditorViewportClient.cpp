@@ -3,7 +3,6 @@
 #include "ApplicationCore/Input/InputRouter.h"
 #include "Editor/EditorContext.h"
 #include "Engine/Scene.h"
-#include "Renderer/Types/EditorShowFlags.h"
 #include "Engine/Game/Actor.h"
 
 #include "imgui.h"
@@ -75,9 +74,13 @@ void FEditorViewportClient::HandleInputEvent(const Engine::ApplicationCore::FInp
     }
 }
 
-void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData)
+void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData, EEditorShowFlags InShowFlags)
 {
-    EEditorShowFlags BaseShowFlags = RenderSetting.BuildEditorShowFlags(false);
+    OutRenderData.bShowGrid = IsFlagSet(InShowFlags, EEditorShowFlags::SF_Grid);
+    OutRenderData.bShowWorldAxes = IsFlagSet(InShowFlags, EEditorShowFlags::SF_WorldAxes);
+    OutRenderData.bShowSelectionOutline =
+        IsFlagSet(InShowFlags, EEditorShowFlags::SF_SelectionOutline);
+
 
     if (!SelectionController.GetSelectedActors().empty())
     {
@@ -101,16 +104,16 @@ void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData)
                 .Size() / 10.f;
         //  Size 여기서 조정
         OutRenderData.Gizmo.Scale = GizmoController.GizmoScale;
-        OutRenderData.ShowFlags = RenderSetting.BuildEditorShowFlags(true);
-        GizmoController.bIsDrawed = true;
+        OutRenderData.bShowGizmo = IsFlagSet(InShowFlags, EEditorShowFlags::SF_Gizmo);
+        GizmoController.bIsDrawed = OutRenderData.bShowGizmo;
     }
     else
     {
-        OutRenderData.Gizmo.GizmoType = EGizmoType::Translation;
+        OutRenderData.Gizmo.GizmoType = EGizmoType::None;
         OutRenderData.Gizmo.Highlight = EGizmoHighlight::None;
         OutRenderData.Gizmo.Frame = FMatrix::Identity;
         OutRenderData.Gizmo.Scale = 1.0f;
-        OutRenderData.ShowFlags = BaseShowFlags;
+        OutRenderData.bShowGizmo = false;
         GizmoController.SetSelectedActor(nullptr);
         GizmoController.bIsDrawed = false;
     }

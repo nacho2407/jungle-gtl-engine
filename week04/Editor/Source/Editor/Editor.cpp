@@ -1362,12 +1362,16 @@ void FEditor::BuildRenderData()
     EditorRenderData.SceneView = &SceneView;
     SceneRenderData.SceneView = &SceneView;
     SceneRenderData.ViewMode = ViewportClient.GetRenderSetting().GetViewMode();
-    SceneRenderData.ShowFlags = ViewportClient.GetRenderSetting().BuildSceneShowFlags();
 
-    ViewportClient.BuildRenderData(EditorRenderData);
+    const EEditorShowFlags EditorShowFlags =
+        ViewportClient.GetRenderSetting().BuildEditorShowFlags(true);
+    const ESceneShowFlags SceneShowFlags =
+        ViewportClient.GetRenderSetting().BuildSceneShowFlags();
+
+    ViewportClient.BuildRenderData(EditorRenderData, EditorShowFlags);
 
     if (CurScene != nullptr)
     {
-        CurScene->BuildRenderData(SceneRenderData);
+        CurScene->BuildRenderData(SceneRenderData, SceneShowFlags);
     }
 }

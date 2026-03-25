@@ -18,25 +18,22 @@ namespace
         return SubmissionItems;
     }
 
-    bool ShouldRenderScenePrimitives(const FSceneRenderData& InSceneRenderData)
+    bool HasScenePrimitives(const FSceneRenderData& InSceneRenderData)
     {
-        return InSceneRenderData.SceneView != nullptr &&
-               IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_Primitives);
+        return InSceneRenderData.SceneView != nullptr && !InSceneRenderData.Primitives.empty();
     }
 
     bool ShouldRenderSelectionOutline(const FEditorRenderData& InEditorRenderData,
                                       const FSceneRenderData&  InSceneRenderData)
     {
-        return ShouldRenderScenePrimitives(InSceneRenderData) &&
-               IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_SelectionOutline) &&
+        return HasScenePrimitives(InSceneRenderData) && InEditorRenderData.bShowSelectionOutline &&
                InSceneRenderData.ViewMode != EViewModeIndex::VMI_Wireframe;
     }
 
     bool ShouldTintSelectedWireframe(const FEditorRenderData& InEditorRenderData,
                                      const FSceneRenderData&  InSceneRenderData)
     {
-        return ShouldRenderScenePrimitives(InSceneRenderData) &&
-               IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_SelectionOutline) &&
+        return HasScenePrimitives(InSceneRenderData) && InEditorRenderData.bShowSelectionOutline &&
                InSceneRenderData.ViewMode == EViewModeIndex::VMI_Wireframe;
     }
 
@@ -193,7 +190,7 @@ void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
 void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderData,
                                       const FSceneRenderData&  InSceneRenderData)
 {
-    if (ShouldRenderScenePrimitives(InSceneRenderData))
+    if (HasScenePrimitives(InSceneRenderData))
     {
         SceneMeshRenderer.BeginFrame(InSceneRenderData.SceneView, InSceneRenderData.ViewMode,
                                      InSceneRenderData.bUseInstancing);
@@ -218,12 +215,12 @@ void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderDat
     {
         LineRenderer.BeginFrame(InEditorRenderData.SceneView);
 
-        if (IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Grid))
+        if (InEditorRenderData.bShowGrid)
         {
             WorldGridSubmitter.Submit(LineRenderer, InEditorRenderData);
         }
 
-        if (IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_WorldAxes))
+        if (InEditorRenderData.bShowWorldAxes)
         {
             WorldAxesSubmitter.Submit(LineRenderer, InEditorRenderData);
         }
@@ -239,19 +236,14 @@ void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderDat
         OutlineRenderer.EndFrame();
     }
 
-    if (InSceneRenderData.SceneView != nullptr &&
-        IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_Sprites))
+    if (InSceneRenderData.SceneView != nullptr && !InSceneRenderData.Sprites.empty())
     {
         SpriteRenderer.BeginFrame(InSceneRenderData.SceneView);
         SpriteSubmitter.Submit(SpriteRenderer, InSceneRenderData);
         SpriteRenderer.EndFrame(InSceneRenderData.SceneView);
     }
 
-    const bool bShowAnyText =
-        IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_BillboardText) ||
-        IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_UUIDText);
-
-    if (InSceneRenderData.SceneView != nullptr && bShowAnyText)
+    if (InSceneRenderData.SceneView != nullptr && !InSceneRenderData.Texts.empty())
     {
         if (InSceneRenderData.ViewMode == EViewModeIndex::VMI_Wireframe)
         {
@@ -275,8 +267,8 @@ void FRendererModule::RenderOverlayPass(const FEditorRenderData& InEditorRenderD
                                         const FSceneRenderData&  InSceneRenderData)
 {
     const bool bHasEditorGizmo =
-        InEditorRenderData.SceneView != nullptr &&
-        IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo);
+        InEditorRenderData.SceneView != nullptr && InEditorRenderData.bShowGizmo &&
+        InEditorRenderData.Gizmo.GizmoType != EGizmoType::None;
 
     if (bHasEditorGizmo)
     {
@@ -288,22 +280,6 @@ void FRendererModule::RenderOverlayPass(const FEditorRenderData& InEditorRenderD
         OverlayMeshRenderer.EndFrame();
     }
 
-    if (InSceneRenderData.SceneView != nullptr &&
-        IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_BillboardText))
-    {
-        if (InSceneRenderData.ViewMode == EViewModeIndex::VMI_Wireframe)
-        {
-            LineRenderer.BeginFrame(InSceneRenderData.SceneView);
-            TextSubmitter.Submit(LineRenderer, InSceneRenderData);
-            LineRenderer.EndFrame();
-        }
-        else
-        {
-            TextRenderer.BeginFrame(InSceneRenderData.SceneView);
-            TextSubmitter.Submit(TextRenderer, InSceneRenderData);
-            TextRenderer.EndFrame(InSceneRenderData.SceneView);
-        }
-    }
 }
 
 bool FRendererModule::PickRaw(const FEditorRenderData& InEditorRenderData, int32 MouseX,
@@ -319,7 +295,7 @@ bool FRendererModule::PickRaw(const FEditorRenderData& InEditorRenderData, int32
 
     ObjectIdRenderer.BeginFrame(SceneView, MouseX, MouseY);
 
-    if (IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo))
+    if (InEditorRenderData.bShowGizmo && InEditorRenderData.Gizmo.GizmoType != EGizmoType::None)
     {
         GizmoSubmitter.Submit(ObjectIdRenderer, InEditorRenderData);
     }

@@ -103,8 +103,8 @@ namespace
 void FGizmoSubmitter::Submit(FD3D11OverlayMeshRenderer& InMeshRenderer,
                              const FEditorRenderData&   InEditorRenderData)
 {
-    if (!IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo) ||
-        InEditorRenderData.SceneView == nullptr)
+    if (!InEditorRenderData.bShowGizmo || InEditorRenderData.SceneView == nullptr ||
+        InEditorRenderData.Gizmo.GizmoType == EGizmoType::None)
     {
         return;
     }
@@ -139,8 +139,8 @@ void FGizmoSubmitter::Submit(FD3D11OverlayMeshRenderer& InMeshRenderer,
 void FGizmoSubmitter::Submit(FD3D11ObjectIdRenderer&  InObjectIdRenderer,
                              const FEditorRenderData& InEditorRenderData) const
 {
-    if (!IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo) ||
-        InEditorRenderData.SceneView == nullptr)
+    if (!InEditorRenderData.bShowGizmo || InEditorRenderData.SceneView == nullptr ||
+        InEditorRenderData.Gizmo.GizmoType == EGizmoType::None)
     {
         return;
     }

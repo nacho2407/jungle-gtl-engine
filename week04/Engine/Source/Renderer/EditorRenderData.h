@@ -2,7 +2,6 @@
 
 #include "Core/HAL/PlatformTypes.h"
 #include "Core/Math/Matrix.h"
-#include "Renderer/Types/EditorShowFlags.h"
 
 class FSceneView;
 
@@ -32,7 +31,7 @@ struct FGizmoDrawData
 {
     EGizmoType      GizmoType = EGizmoType::None;
     EGizmoHighlight Highlight = EGizmoHighlight::None;
-    
+
     FMatrix Frame = FMatrix::Identity; // Position, Rotation
     float   Scale = 1.f;
 };
@@ -41,9 +40,10 @@ struct FEditorRenderData
 {
     const FSceneView* SceneView = nullptr;
 
-    EEditorShowFlags ShowFlags =
-        EEditorShowFlags::SF_Grid | EEditorShowFlags::SF_WorldAxes | EEditorShowFlags::SF_Gizmo |
-        EEditorShowFlags::SF_SelectionOutline | EEditorShowFlags::SF_ObjectLabels;
+    bool bShowGrid = false;
+    bool bShowWorldAxes = false;
+    bool bShowSelectionOutline = false;
+    bool bShowGizmo = false;
 
     FGizmoDrawData Gizmo;
 };

@@ -5,8 +5,7 @@
 void FPrimitiveSubmitter::Submit(FD3D11SceneMeshRenderer& InMeshRenderer,
                                  const FSceneRenderData&  InSceneRenderData)
 {
-    if (InSceneRenderData.SceneView == nullptr ||
-        !IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_Primitives))
+    if (InSceneRenderData.SceneView == nullptr || InSceneRenderData.Primitives.empty())
     {
         return;
     }

@@ -7,8 +7,7 @@
 void FWorldGridSubmitter::Submit(FD3D11LineBatchRenderer& InLineRenderer,
                                  const FEditorRenderData& InEditorRenderData)
 {
-    if (!IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Grid) ||
-        InEditorRenderData.SceneView == nullptr)
+    if (InEditorRenderData.SceneView == nullptr)
     {
         return;
     }
@@ -17,7 +16,7 @@ void FWorldGridSubmitter::Submit(FD3D11LineBatchRenderer& InLineRenderer,
 
     for (int32 i = -GridHalfLineCount; i <= GridHalfLineCount; ++i)
     {
-        if (IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_WorldAxes) && i == 0)
+        if (InEditorRenderData.bShowWorldAxes && i == 0)
         {
             continue;
         }

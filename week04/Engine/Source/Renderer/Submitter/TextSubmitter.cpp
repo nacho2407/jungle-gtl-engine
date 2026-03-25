@@ -63,25 +63,12 @@ namespace
 
     bool ShouldSubmitAnyText(const FSceneRenderData& InSceneRenderData)
     {
-        return InSceneRenderData.SceneView != nullptr &&
-               (IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_BillboardText) ||
-                IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_UUIDText));
+        return InSceneRenderData.SceneView != nullptr && !InSceneRenderData.Texts.empty();
     }
 
-    bool ShouldRenderTextItem(const FSceneRenderData& InSceneRenderData,
-                              const FTextRenderItem&  InItem)
+    bool ShouldRenderTextItem(const FTextRenderItem& InItem)
     {
-        if (!InItem.State.IsVisible() || InItem.Text.empty())
-        {
-            return false;
-        }
-
-        if (InItem.bIsUUIDText)
-        {
-            return IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_UUIDText);
-        }
-
-        return IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_BillboardText);
+        return InItem.State.IsVisible() && !InItem.Text.empty();
     }
 
     FResolvedGlyph ResolveGlyph(const FFontResource& InFont, uint32 InCodePoint)
@@ -269,7 +256,7 @@ void FTextSubmitter::Submit(FD3D11TextBatchRenderer& InTextRenderer,
     TArray<FTextRenderItem> FilteredTexts;
     for (const FTextRenderItem& Item : InSceneRenderData.Texts)
     {
-        if (ShouldRenderTextItem(InSceneRenderData, Item))
+        if (ShouldRenderTextItem(Item))
         {
             FilteredTexts.push_back(Item);
         }
@@ -297,7 +284,7 @@ void FTextSubmitter::Submit(FD3D11LineBatchRenderer& InLineRenderer,
 
     for (const FTextRenderItem& Item : InSceneRenderData.Texts)
     {
-        if (!ShouldRenderTextItem(InSceneRenderData, Item))
+        if (!ShouldRenderTextItem(Item))
         {
             continue;
         }

@@ -7,8 +7,7 @@
 void FWorldAxesSubmitter::Submit(FD3D11LineBatchRenderer& InLineRenderer,
                                  const FEditorRenderData& InEditorRenderData)
 {
-    if (!IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_WorldAxes) ||
-        InEditorRenderData.SceneView == nullptr)
+    if (InEditorRenderData.SceneView == nullptr)
     {
         return;
     }

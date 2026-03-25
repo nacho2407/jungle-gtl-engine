@@ -59,8 +59,7 @@ namespace Engine::Component
             "billboard", L"Billboard", [this]() { return GetBillboard(); },
             [this](bool bInValue) { SetBillboard(bInValue); });
         Builder.AddVector3(
-            "billboard_offset", L"Billboard Offset",
-            [this]() { return GetBillboardOffset(); },
+            "billboard_offset", L"Billboard Offset", [this]() { return GetBillboardOffset(); },
             [this](const FVector& InValue) { SetBillboardOffset(InValue); });
         Builder.AddAssetPath(
             "font_path", L"Font Path", [this]() { return GetFontPath(); },
@@ -88,7 +87,7 @@ namespace Engine::Component
         FAssetLoadParams LoadParams;
         LoadParams.ExplicitType = EAssetType::Font;
 
-        UAsset* LoadedAsset = InAssetManager->Load(AbsolutePath.native(), LoadParams);
+        UAsset*     LoadedAsset = InAssetManager->Load(AbsolutePath.native(), LoadParams);
         UFontAsset* FontAsset = Cast<UFontAsset>(LoadedAsset);
         if (FontAsset == nullptr)
         {
@@ -108,7 +107,7 @@ namespace Engine::Component
     FVector UAtlasTextComponent::GetRenderPlacementOffset(const AActor& InOwnerActor) const
     {
         (void)InOwnerActor;
-        return GetRelativeLocation();
+        return FVector::ZeroVector;
     }
 
     REGISTER_CLASS(Engine::Component, UAtlasTextComponent)

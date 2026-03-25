@@ -11,6 +11,7 @@
 #include "Engine/Game/Actor.h"
 #include "Renderer/RenderAsset/SubUVAtlasResource.h"
 #include "Renderer/Types/RenderItem.h"
+#include "Core/Misc/BitMaskEnum.h"
 
 namespace
 {
@@ -107,7 +108,7 @@ void FScene::Tick(float DeltaTime)
     }
 }
 
-void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
+void FScene::BuildRenderData(FSceneRenderData& OutRenderData, ESceneShowFlags InShowFlags) const
 {
     OutRenderData.Primitives.clear();
     OutRenderData.Sprites.clear();
@@ -144,7 +145,14 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
                     continue;
                 }
 
-                if (TextComponent->GetFontResource() == nullptr)
+                if (!IsFlagSet(InShowFlags, ESceneShowFlags::SF_BillboardText) &&
+                    TextComponent->GetBillboard())
+                {
+                    continue;
+                }
+
+                auto* UUIDTextComponent = Cast<Engine::Component::UUUIDComponent>(TextComponent);
+                if (!IsFlagSet(InShowFlags, ESceneShowFlags::SF_UUIDText) && UUIDTextComponent)
                 {
                     continue;
                 }
@@ -169,12 +177,6 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
                 TextItem.State.SetSelected(Actor->IsSelected());
                 TextItem.State.SetHovered(Actor->IsHovered());
 
-                if (auto* UUIDTextComponent =
-                        Cast<Engine::Component::UUUIDComponent>(TextComponent))
-                    TextItem.bIsUUIDText = true;
-                else
-                    TextItem.bIsUUIDText = false;
-
                 OutRenderData.Texts.push_back(TextItem);
             }
 #pragma endregion
@@ -182,7 +184,8 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
 #pragma region __SPRITE__
             else if (auto* SpriteComponent = Cast<Engine::Component::USpriteComponent>(Component))
             {
-                if (Cast<Engine::Component::UAtlasTextComponent>(SpriteComponent) != nullptr)
+                if (!IsFlagSet(InShowFlags, ESceneShowFlags::SF_Sprites) ||
+                    Cast<Engine::Component::UAtlasTextComponent>(SpriteComponent) != nullptr)
                 {
                     continue;
                 }
@@ -212,6 +215,11 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
             else if (auto* PrimitiveComponent =
                          Cast<Engine::Component::UPrimitiveComponent>(Component))
             {
+                if (!IsFlagSet(InShowFlags, ESceneShowFlags::SF_Primitives))
+                {
+                    continue;
+                }
+
                 FPrimitiveRenderItem PrimitiveItem = {};
                 PrimitiveItem.World = Actor->GetWorldMatrix();
                 PrimitiveItem.Color = Actor->GetColor();

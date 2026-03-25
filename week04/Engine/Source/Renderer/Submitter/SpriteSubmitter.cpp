@@ -24,8 +24,7 @@ namespace
 
     bool ShouldSubmitSprites(const FSceneRenderData& InSceneRenderData)
     {
-        return InSceneRenderData.SceneView != nullptr &&
-               IsFlagSet(InSceneRenderData.ShowFlags, ESceneShowFlags::SF_Sprites);
+        return InSceneRenderData.SceneView != nullptr && !InSceneRenderData.Sprites.empty();
     }
 }
 

@@ -10,6 +10,7 @@
 #include "Input/SelectionInputContext.h"
 #include "Input/GizmoInputContext.h"
 #include "Renderer/EditorRenderData.h"
+#include "Renderer/Types/EditorShowFlags.h"
 
 struct FEditorContext;
 
@@ -30,7 +31,7 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     void HandleInputEvent(const Engine::ApplicationCore::FInputEvent& Event,
                           const Engine::ApplicationCore::FInputState& State) override;
 
-    void BuildRenderData(FEditorRenderData& OutRenderData);
+    void BuildRenderData(FEditorRenderData& OutRenderData, EEditorShowFlags InShowFlags);
 
     void OnResize(uint32 InWidth, uint32 InHeight);
     void SetEditorContext(FEditorContext* InContext);
