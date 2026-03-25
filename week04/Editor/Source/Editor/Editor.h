@@ -81,10 +81,18 @@ class FEditor
     void     CreateNewScene();
     void     ClearScene();
     bool     RequestCloseEditor();
+    bool     SaveCurrentSceneToDisk();
+    bool     SaveSceneAsPath(const std::filesystem::path& FilePath);
+    bool     OpenSceneFromPath(const std::filesystem::path& FilePath);
+    bool     CanDeleteSelectedActors() const;
+    bool     DeleteSelectedActors();
+    void     RefreshContentIndex();
     void     SetSelectedObject(UObject* InSelectedObject);
     void     AddActorToScene(AActor* InActor, bool bSelectActor = true);
     void     MarkSceneDirty();
     UObject* GetSelectedObject() const { return EditorContext.SelectedObject; }
+    std::filesystem::path GetCurrentScenePath() const { return SceneDocument.CurrentScenePath; }
+    std::filesystem::path GetDefaultSceneDirectory() const;
 
     const FEditorRenderData&     GetEditorRenderData() const { return EditorRenderData; }
     const FSceneRenderData&      GetSceneRenderData() const { return SceneRenderData; }

@@ -16,7 +16,9 @@ namespace
     constexpr float MinItemsPaneWidth = 220.0f;
     constexpr float SplitterWidth = 6.0f;
     constexpr float FolderTreeIndentSpacing = 4.0f;
-    constexpr const char* TypeFilterLabels[] = { "All", "Scene", "Texture", "Font", "Unknown" };
+    constexpr const char* TypeFilterLabels[] = {
+        "All", "Scene", "Texture", "Font", "Sprite Atlas", "Unknown"
+    };
 
     FString ToLowerAsciiCopy(const FString& Value)
     {
@@ -75,6 +77,8 @@ namespace
             return "Folder";
         case EContentBrowserItemType::Font:
             return "Font";
+        case EContentBrowserItemType::SpriteAtlas:
+            return "Sprite Atlas";
         case EContentBrowserItemType::UnknownFile:
         default:
             return "Unknown";
@@ -93,6 +97,8 @@ namespace
             return ImVec4(0.92f, 0.78f, 0.42f, 1.0f);
         case EContentBrowserItemType::Font:
             return ImVec4(1.f, 1.f, 1.f, 1.f);
+        case EContentBrowserItemType::SpriteAtlas:
+            return ImVec4(0.98f, 0.58f, 0.29f, 1.0f);
         case EContentBrowserItemType::UnknownFile:
         default:
             return ImVec4(0.76f, 0.76f, 0.76f, 1.0f);
@@ -118,6 +124,11 @@ namespace
         if (Extension == ".font")
         {
             return Engine::Component::EComponentAssetPathKind::FontFile;
+        }
+
+        if (Item.ItemType == EContentBrowserItemType::SpriteAtlas)
+        {
+            return Engine::Component::EComponentAssetPathKind::SpriteAtlasFile;
         }
 
         if (Item.ItemType == EContentBrowserItemType::Texture)
@@ -582,6 +593,8 @@ bool FContentBrowserPanel::PassesTypeFilter(EContentBrowserItemType ItemType) co
         return ItemType == EContentBrowserItemType::Texture;
     case EItemTypeFilter::Font:
         return ItemType == EContentBrowserItemType::Font;
+    case EItemTypeFilter::SpriteAtlas:
+        return ItemType == EContentBrowserItemType::SpriteAtlas;
     case EItemTypeFilter::UnknownFile:
         return ItemType == EContentBrowserItemType::UnknownFile;
     default:
