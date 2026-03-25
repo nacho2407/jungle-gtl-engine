@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "PrimitiveComponent.h"
+#include "BillboardComponent.h"
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
 
@@ -30,7 +30,7 @@ enum class ETextVAlign : int32
 // 텍스트를 월드 공간에 빌보드로 렌더링하는 컴포넌트.
 // PrimitiveComponent를 상속받아 RenderCollector에 자동으로 감지됩니다.
 // MeshBuffer를 사용하지 않으며, FontBatcher가 드로우콜을 처리합니다.
-class UTextRenderComponent : public UPrimitiveComponent
+class UTextRenderComponent : public UBillboardComponent
 {
 public:
 	DECLARE_CLASS(UTextRenderComponent, UPrimitiveComponent)
@@ -89,8 +89,6 @@ public:
 	void UpdateWorldAABB() const override;
 	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult);
 
-	void TickComponent(float DeltaTime);
-
 	FMatrix CalculateOutlineMatrix() const;
 
 private:
@@ -100,6 +98,9 @@ private:
 
 	FVector4 Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 	float FontSize = 1.0f;
+	float Spacing = 0.1f;
+	float CharWidth = 0.5f;
+	float CharHeight = 0.5f;
 
 	ETextRenderSpace RenderSpace = ETextRenderSpace::World;
 	ETextHAlign HAlign = ETextHAlign::Center;
