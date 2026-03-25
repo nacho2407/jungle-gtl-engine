@@ -49,9 +49,9 @@ struct FBillboardTextBatchKeyHash
 		// (참고) Boost 라이브러리에서 자주 사용하는 패턴
 		size_t Seed = std::hash<FFontAsset*>{}(Key.FontAsset);
 		const auto HashCombine = [&Seed](size_t Value)
-		{
-			Seed ^= Value + 0x9e3779b9 + (Seed << 6) + (Seed >> 2);
-		};
+			{
+				Seed ^= Value + 0x9e3779b9 + (Seed << 6) + (Seed >> 2);
+			};
 
 		HashCombine(std::hash<float>{}(Key.Color.r));
 		HashCombine(std::hash<float>{}(Key.Color.g));
@@ -96,6 +96,8 @@ public:
 
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 	D3D11_VIEWPORT ViewportInfo;
+
+	int DynamicBufferMaxVertexCount = 80000;
 
 public:
 	void Create(HWND hWindow);
@@ -164,9 +166,9 @@ public:
 
 	/**
 	 * @brief 폰트를 위한 dynamic vertex buffer를 업데이트합니다.
-	 * 
+	 *
 	 * @param Vertices 업데이트할 폰트 정점 정보
-	 * 
+	 *
 	 * @param VectexCount 폰트 정점 개수
 	 */
 	void UpdateDynamicFontVertexBuffer(FVertexFont* Vertices, UINT VertexCount);
@@ -195,18 +197,18 @@ private:
 private:
 	/**
 	 * @brief GPU 상태를 텍스트 렌더링용에 맞추어 draw call을 준비합니다.
-	 * 
+	 *
 	 * @param FontAsset GPU에 설정할 font asset 정보
-	 * 
+	 *
 	 * @param Color GPU에 설정할 글자 색 정보
-	 * 
+	 *
 	 * @return 준비 성공 여부
 	 */
 	bool PrepareBillboardFontMaterial(FFontAsset* FontAsset, const FColor& Color);
-	
+
 	/**
 	 * @brief 준비된 정점 배열로 실제 draw call을 보냅니다.
-	 * 
+	 *
 	 * @param Vertices Draw할 정점 배열
 	 */
 	void DrawBillboardFontVertices(const TArray<FVertexFont>& Vertices);
