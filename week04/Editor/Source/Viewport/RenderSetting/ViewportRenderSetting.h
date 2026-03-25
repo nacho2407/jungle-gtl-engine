@@ -32,6 +32,12 @@ public:
         bShowObjectLabels = bInShowObjectLabels;
     }
 
+    bool IsUUIDVisible() const { return bShowUUIDLabels; }
+    void SetUUIDVisible(bool bInShowUUID)
+    {
+        bShowUUIDLabels = bInShowUUID;
+    }
+
     bool AreScenePrimitivesVisible() const { return bShowScenePrimitives; }
     void SetScenePrimitivesVisible(bool bInShowScenePrimitives)
     {
@@ -91,6 +97,10 @@ public:
         {
             Flags |= ESceneShowFlags::SF_Sprites;
         }
+        if (bShowUUIDLabels)
+        {
+            Flags |= ESceneShowFlags::SF_UUIDText;
+        }
         return Flags;
     }
 
@@ -101,6 +111,7 @@ private:
     bool           bShowGizmo = true;
     bool           bShowSelectionOutline = true;
     bool           bShowObjectLabels = true;
+    bool           bShowUUIDLabels = true;
     bool           bShowScenePrimitives = true;
     bool           bShowSceneSprites = true;
     bool           bShowBillboardText = true;
