@@ -7,7 +7,6 @@
 
 class UPrimitiveComponent;
 class URenderer;
-class UBillboardTextComponent;
 
 /**
  * 씬 클래스. Level을 가지며 씬에 존재하는
@@ -23,7 +22,6 @@ public:
 	int Version;
 	int NextUUID;
 	TArray<USceneComponent*> SceneComponents;
-	TArray<UBillboardTextComponent*> BillboardTextComponents;
 
 	bool IsCompSelected{ false };
 	FVector SelectedCompPos;

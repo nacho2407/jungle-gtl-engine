@@ -1,10 +1,11 @@
 ﻿#include "Editor.h"
 #include "ThirdParty/json.h"
-#include "Component/BillboardTextComponent.h"
 #include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "ImGui/imgui_internal.h"
+#include "Renderer/Renderer.h"
 #include "World.h"
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <streambuf>
@@ -158,8 +159,6 @@ void Editor::ClearSelection()
 			continue;
 		}
 
-		// 선택 해제 시 라벨 같이 제거함
-		RemoveBillboardTextForSelection(component);
 		component->bIsSelected = false;
 		if (UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(component))
 		{
@@ -180,8 +179,6 @@ void Editor::SelectSingleComponent(USceneComponent* component)
 
 	if (component)
 	{
-		// 선택 시 라벨 보장함
-		EnsureBillboardTextForSelection(component);
 		component->bIsSelected = true;
 		if (UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(component))
 		{
@@ -206,8 +203,6 @@ void Editor::SelectMultiComponent(USceneComponent* component)
 			continue;
 		}
 
-		// 토글 해제 시 라벨 제거함
-		RemoveBillboardTextForSelection(component);
 		component->bIsSelected = false;
 		if (UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(component))
 		{
@@ -218,8 +213,6 @@ void Editor::SelectMultiComponent(USceneComponent* component)
 		return;
 	}
 
-	// 새로 선택된 대상 라벨 보장함
-	EnsureBillboardTextForSelection(component);
 	component->bIsSelected = true;
 	if (UPrimitiveComponent* primitive = Cast<UPrimitiveComponent>(component))
 	{
@@ -236,11 +229,6 @@ void Editor::SelectAllComponents(const TArray<USceneComponent*>& components)
 	for (USceneComponent* component : components)
 	{
 		if (component == nullptr)
-		{
-			continue;
-		}
-
-		if (Cast<UBillboardTextComponent>(component) != nullptr)
 		{
 			continue;
 		}
@@ -306,86 +294,64 @@ bool Editor::IsComponentSelected(USceneComponent* component) const
 	return false;
 }
 
-UBillboardTextComponent* Editor::FindBillboardTextComponent(USceneComponent* component) const
+void Editor::BuildSelectedBillboardTextItems(TArray<FBillboardTextDrawItem>& OutItems) const
 {
-	if (component == nullptr || component->Scene == nullptr)
-	{
-		return nullptr;
-	}
+	FFontAsset* FontAsset = &ResourceManager::GetInstance()->GetBillboardFont();
+	const UCameraComponent* MainCamera = UCameraComponent::GetMainCamera();
+	const FVector BillboardUp = (MainCamera != nullptr) ? MainCamera->UpDirection.Normalize() : FVector::Up();
 
-	for (UBillboardTextComponent* BillboardText : component->Scene->BillboardTextComponents)
+	// 글자 위치 등 조정 시 여기를 조절!!
+	const float VerticalOffset = 0.35f;
+	const float NameLineOffset = 0.75f;
+	const float TextScale = 0.02f;
+	const float LineGap = 0.0f;
+	const FColor NameColor = FColor(1.0f, 1.0f, 1.0f, 1.0f);
+	const FColor UUIDColor = FColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+	for (USceneComponent* Component : SelectedComponents)
 	{
-		if (BillboardText != nullptr && BillboardText->GetAttachedComponent() == component)
+		UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(Component);
+		if (Primitive == nullptr || Primitive->bVisible == false)
 		{
-			return BillboardText;
+			continue;
 		}
+
+		float AnchorHeightOffset = 1.0f + VerticalOffset;
+		if (Primitive->GetGeometry() != nullptr && !Primitive->GetGeometry()->Vertices.empty())
+		{
+			float MaxLocalZ = Primitive->GetGeometry()->Vertices[0].z;
+			for (const FVector& Vertex : Primitive->GetGeometry()->Vertices)
+			{
+				if (Vertex.z > MaxLocalZ)
+				{
+					MaxLocalZ = Vertex.z;
+				}
+			}
+
+			const float ScaleZ = std::abs(Primitive->GetRelativeScale3D().z);
+			AnchorHeightOffset = std::abs(MaxLocalZ) * (ScaleZ > 0.0f ? ScaleZ : 0.001f) + VerticalOffset;
+		}
+
+		const FVector BaseAnchor = Primitive->GetRelativeLocation() + FVector::Up() * AnchorHeightOffset;
+
+		FBillboardTextDrawItem NameItem;
+		NameItem.FontAsset = FontAsset;
+		NameItem.Text = Primitive->Name.GetDisplayName();
+		NameItem.Anchor = BaseAnchor + BillboardUp * NameLineOffset;
+		NameItem.Scale = TextScale;
+		NameItem.LineGap = LineGap;
+		NameItem.Color = NameColor;
+		OutItems.push_back(NameItem);
+
+		FBillboardTextDrawItem UUIDItem;
+		UUIDItem.FontAsset = FontAsset;
+		UUIDItem.Text = "UUID: " + std::to_string(Primitive->UUID);
+		UUIDItem.Anchor = BaseAnchor;
+		UUIDItem.Scale = TextScale;
+		UUIDItem.LineGap = LineGap;
+		UUIDItem.Color = UUIDColor;
+		OutItems.push_back(UUIDItem);
 	}
-
-	return nullptr;
-}
-
-/**
- * @brief 선택된 scene component용 billboard text component를 생성하거나 재사용합니다.
- *
- * @param component 선택된 대상 scene component
- */
-void Editor::EnsureBillboardTextForSelection(USceneComponent* component)
-{
-	if (component == nullptr || component->Scene == nullptr)
-	{
-		return;
-	}
-
-	if (Cast<UBillboardTextComponent>(component) != nullptr)
-	{
-		return;
-	}
-
-	if (FindBillboardTextComponent(component) != nullptr)
-	{
-		return;
-	}
-
-	SceneManager* SceneMgr = GetWorld().GetSceneManager();
-	if (SceneMgr == nullptr)
-	{
-		return;
-	}
-
-	// 선택된 대상에만 라벨 생성함
-	UBillboardTextComponent* BillboardText = SceneMgr->AddSceneComponent<UBillboardTextComponent>(component->Scene);
-	if (BillboardText != nullptr)
-	{
-		BillboardText->AttachTo(component);
-	}
-}
-
-/**
- * @brief 선택 해제된 scene component용 billboard text component를 제거합니다.
- *
- * @param component 선택 해제된 대상 scene component
- */
-void Editor::RemoveBillboardTextForSelection(USceneComponent* component)
-{
-	if (component == nullptr || component->Scene == nullptr)
-	{
-		return;
-	}
-
-	SceneManager* SceneMgr = GetWorld().GetSceneManager();
-	if (SceneMgr == nullptr)
-	{
-		return;
-	}
-
-	UBillboardTextComponent* BillboardText = FindBillboardTextComponent(component);
-	if (BillboardText == nullptr)
-	{
-		return;
-	}
-
-	// SceneManager 경유해서 소유권 정리함
-	SceneMgr->RemoveSceneComponent(BillboardText, component->Scene);
 }
 
 void Editor::UpdateGizmoSelection()

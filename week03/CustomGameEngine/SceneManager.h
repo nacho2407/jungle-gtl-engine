@@ -5,7 +5,6 @@
 #include "EngineCore/EngineTypes.h"//Fstring
 #include "EngineCore/Logger.h"
 #include "Renderer/Level.h"
-#include "Component/BillboardTextComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "EngineCore/ObjectFactory.h"
 #include "EngineCore/EngineStatics.h"
@@ -52,11 +51,6 @@ public:
 		instance->Scene = targetScene;
 
 		targetScene->SceneComponents.push_back(instance);
-		UBillboardTextComponent* BillboardText = Cast<UBillboardTextComponent>(instance);
-		if (BillboardText != nullptr)
-		{
-			targetScene->BillboardTextComponents.push_back(BillboardText);
-		}
 		instance->OnComponentAdded();
 		return instance;
 	}
