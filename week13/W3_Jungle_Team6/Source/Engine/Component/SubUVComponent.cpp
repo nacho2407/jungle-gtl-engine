@@ -13,6 +13,7 @@ REGISTER_FACTORY(USubUVComponent)
 USubUVComponent::USubUVComponent()
 {
 	MeshData = &FMeshManager::Get().GetQuad();
+	SetVisibility(false);
 }
 
 void USubUVComponent::SetParticle(const FName& InParticleName)
@@ -28,7 +29,7 @@ void USubUVComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 	OutProps.push_back({ "Width", EPropertyType::Float, &Width, 0.1f, 100.0f, 0.1f });
 	OutProps.push_back({ "Height", EPropertyType::Float, &Height, 0.1f, 100.0f, 0.1f });
 	OutProps.push_back({ "Play Rate", EPropertyType::Float, &PlayRate, 1.0f, 120.0f, 1.0f });
-	OutProps.push_back({ "bLoop", EPropertyType::Bool, &bLoop});
+	OutProps.push_back({ "bLoop", EPropertyType::Bool, &bLoop });
 }
 
 void USubUVComponent::PostEditProperty(const char* PropertyName)
