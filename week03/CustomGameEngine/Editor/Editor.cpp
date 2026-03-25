@@ -15,7 +15,7 @@ Editor::Editor()
 	Console = new EditorConsole();
 	PropertyPanel = new EditorPropertyPanel(this);
 	StatPanel = new EditorStatPanel();
-	Toolbar = new EditorToolbar();
+	Toolbar = new EditorToolbar(this);
 	SceneMgrPanel = new EditorSceneManagerPanel();
 }
 

@@ -3,7 +3,7 @@
 #include "EngineCore/ResourceManager.h"
 #include "ImGui/imgui.h"
 
-EditorToolbar::EditorToolbar()
+EditorToolbar::EditorToolbar(Editor* parent) : editor(parent)
 {
 }
 
@@ -17,6 +17,13 @@ void EditorToolbar::Draw(UGridComp* Grid)
 
 	ImGui::Begin("Toolbar");
 
+	USceneComponent* pickedObjecdts = editor->GetLastSelectedComponent();
+	//픽킹된 오브젝트가 없으면 Toolbar에 아무것도 띄우지 않습니다
+	if (pickedObjecdts)
+	{
+		ImGui::End();
+		return;
+	}
 	bool bLocalSpace = gizmoController->IsLocalSpace();
 	bool bScaleMode = gizmoController->GetControlStrategyType() == GizmoControllerType::Scale;
 	if (!bLocalSpace && !bScaleMode ? ImGui::Button("World") : ImGui::Button("Local"))

@@ -129,7 +129,7 @@ void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 		}
 	}
 	ImGui::SameLine();
-	ImGui::InputInt("Number of spawn", &spawnCount);
+	ImGui::InputInt("#", &spawnCount);
 	ImGui::SameLine();
 	ImGui::Separator();
 
@@ -239,19 +239,20 @@ void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 
 	if (camera)
 	{
+		ImGui::Text("CAMERA");
 		ImGui::Checkbox("Orthogonal", &camera->IsOrthogonal);
-		ImGui::InputFloat("FOV", &camera->FOV);
+		ImGui::DragFloat("FOV", &camera->FOV, 1.0f, 40.f, 160.f);
 
 		FVector camPosition = camera->GetRelativeLocation();
 		FRotator camRotation = camera->GetRelativeRotation();
-		ImGui::InputFloat3("Camera Location", &camPosition.x);
-		ImGui::InputFloat3("Camera Rotation", &camRotation.Roll);
+		ImGui::DragFloat3("Location", &camPosition.x);
+		ImGui::DragFloat3("Rotation", &camRotation.Roll);
 		camera->SetRelativeLocation(camPosition);
 		camera->SetRelativeRotation(camRotation);
 
-		ImGui::InputFloat3("Camera Direction", &camera->Direction.x);
-		ImGui::SliderFloat("Camera Move Speed", &camera->MoveSpeed, 0.0f, 20.0f, "%.0f");
-		ImGui::SliderFloat("Camera Rotation Speed", &camera->RotateSensitivity, 0.0f, 20.0f, "%.0f");
+		ImGui::DragFloat3("Direction", &camera->Direction.x);
+		ImGui::SliderFloat("Move Speed", &camera->MoveSpeed, 0.0f, 20.0f, "%.0f");
+		ImGui::SliderFloat("Rotation Speed", &camera->RotateSensitivity, 0.0f, 20.0f, "%.0f");
 	}
 
 	ImGui::Separator();
