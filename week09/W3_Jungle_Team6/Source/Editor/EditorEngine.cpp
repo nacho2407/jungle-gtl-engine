@@ -1,4 +1,4 @@
-#include "Editor/EditorEngine.h"
+﻿#include "Editor/EditorEngine.h"
 
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
@@ -77,7 +77,6 @@ void UEditorEngine::Tick(float DeltaTime)
 
 void UEditorEngine::RenderUI(float DeltaTime)
 {
-	SCOPE_STAT("MainPanel::Render");
 	MainPanel.Render(DeltaTime);
 }
 
