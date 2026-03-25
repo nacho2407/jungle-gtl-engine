@@ -33,6 +33,10 @@ public:
 	 * \param bInLoop : 루프 여부
 	 */
 	void SetPlayback(float InFramesPerSecond, bool bInLoop);
+	float GetWidth() const { return Width; }
+	float GetHeight() const { return Height; }
+	float GetFramesPerSecond() const { return FramesPerSecond; }
+	bool IsLooping() const { return bLoop; }
 
 private:
 	/**
