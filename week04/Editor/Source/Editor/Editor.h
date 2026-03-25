@@ -128,6 +128,7 @@ class FEditor
     void ResolveActorAssetReferences(AActor* Actor);
     void ResolveSceneAssetReferences(FScene* Scene);
 
+
   private:
     FEditorViewportClient ViewportClient;
     Engine::ApplicationCore::FInputRouter GlobalInputRouter;

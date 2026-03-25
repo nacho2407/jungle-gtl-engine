@@ -4,6 +4,7 @@
 #include "Engine/Component/Core/SceneComponent.h"
 #include "Gizmo/EditorGizmoTypes.h"
 #include "Renderer/Types/PickResult.h"
+#include <ApplicationCore/Input/InputState.h>
 
 /*
         Gizmo에 대한 Input Context와 Viewport에서의 Gizmo의 상태를 관리하는 Controller
@@ -58,14 +59,54 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
 
     // 기즈모 설정 변경
     // void SetGizmoMode(EGizmoMode InMode) { CurrentMode = InMode; }
-    void SetSnapping(bool bInEnable, float InValue)
+    void SetTranslateSnapping(bool bInEnable, float InValue)
     {
-        bEnableSnapping = bInEnable;
-        SnapValue = InValue;
+        bEnableTranslationSnap = bInEnable;
+        TranslationSnapValue = InValue;
+    }
+    void GetTranslateSnapping(bool &bInEnable, float &InValue) const
+    {
+        bInEnable = bEnableTranslationSnap;
+        InValue = TranslationSnapValue;
+    }
+    
+    void SetRotateSnapping(bool bInEnable, float InValue)
+    {
+        bEnableRotationSnap = bInEnable;
+        RotationSnapValue = InValue;
+    }
+    void GetRotateSnapping(bool &bInEnable, float &InValue) const
+    {
+        bInEnable = bEnableRotationSnap;
+        InValue = RotationSnapValue;
+    }
+    
+    void SetScaleSnapping(bool bInEnable, float InValue)
+    {
+        bEnableScaleSnap = bInEnable;
+        ScaleSnapValue = InValue;
+    }
+    void GetScaleSnapping(bool &bInEnable, float &InValue) const
+    {
+        bInEnable = bEnableScaleSnap;
+        InValue = ScaleSnapValue;
+    }
+    
+    void SetTranslationDragScale(float InScale)
+    {
+        TranslationDragScale = FMath::Clamp(InScale, 0.01f, 1.0f);
     }
 
     bool bIsDrawed{false};
     float GizmoScale{1.0f};
+    
+    /* For Navigation */
+    FVector ConsumeDelta()
+    {
+        FVector Temp = LastFrameDelta;
+        LastFrameDelta = FVector::ZeroVector;
+        return Temp;
+    }
 
   public:
     bool bIsWorldMode = false;
@@ -86,6 +127,8 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     EGizmoHighlight GizmoHighlight{EGizmoHighlight::None};
     FVector    CurrentDragAxis;
     FVector        ReferenceAxis;
+    
+    FVector LastFrameDelta = FVector::ZeroVector;
 
     FVector2        ReferenceAxis2D;
     FVector         PivotOrigin;
@@ -95,21 +138,41 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     FPickResult PickData;
 
     bool       bIsDragging = false;
-    int32      StartMousePosX;
-    int32      StartMousePosY;
+    int32      StartMousePosX = 0;
+    int32      StartMousePosY = 0;
     FTransform StartTransform;
     float      InitialDragOffset{0.0f};
     float      InitialProjectionT{0.f};
 
+    FVector PlaneNormal;
+    FVector InitialPlaneHit;
     
     FVector    RotationStartVector;
 
-    bool  bEnableSnapping = false;
-    float SnapValue = 10.f;
+    // Translation
+    bool  bEnableTranslationSnap = true;
+    float TranslationSnapValue = 1.f;
+
+    // Rotation
+    bool  bEnableRotationSnap = true;
+    float RotationSnapValue = 5.f; // degree
+    
+    // Scaling
+    bool  bEnableScaleSnap = true;
+    float ScaleSnapValue = 0.25f;
+    
+    // 수정: 누적 snapping용 상태
+    float DragStartOffset = 0.0f;
+    float PrevSnappedOffset = 0.0f;
+    
+    float TranslationDragScale = 1.0f;
 
     FEditorViewportClient*        ViewportClient{nullptr};
     FViewportCamera*              ViewportCamera{nullptr};
     FViewportSelectionController* ViewportSelectionController{nullptr};
 
     AActor* LastSelectedActor{nullptr};
+    
+
+    static constexpr int32 DragThreshold = 5; // 픽셀 단위 드래그 시작 임계값
 };

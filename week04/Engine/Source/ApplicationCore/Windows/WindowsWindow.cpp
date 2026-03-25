@@ -7,6 +7,14 @@ namespace Engine::ApplicationCore
     {
         constexpr const wchar_t* WindowClassName = L"FWindowsApplicationWindowClass";
         constexpr int32 DefaultCustomTitleBarHeight = 36;
+        constexpr int32 EditorAppIconResourceId = 101;
+
+        HICON LoadApplicationIcon(HINSTANCE InInstance, int32 InSize)
+        {
+            return static_cast<HICON>(
+                LoadImageW(InInstance, MAKEINTRESOURCEW(EditorAppIconResourceId), IMAGE_ICON,
+                           InSize, InSize, LR_DEFAULTCOLOR));
+        }
     }
 
     LRESULT CALLBACK AppWndProc(HWND Hwnd, UINT Message, WPARAM WParam, LPARAM LParam);
@@ -43,14 +51,26 @@ namespace Engine::ApplicationCore
             return false;
         }
 
-        WNDCLASSW WindowClass = {};
+        WNDCLASSEXW WindowClass = {};
+        WindowClass.cbSize = sizeof(WNDCLASSEXW);
         WindowClass.lpfnWndProc = AppWndProc;
         WindowClass.hInstance = InInstance;
         WindowClass.lpszClassName = WindowClassName;
         WindowClass.hCursor = LoadCursorW(nullptr, IDC_ARROW);
         WindowClass.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
+        WindowClass.hIcon = LoadApplicationIcon(InInstance, 32);
+        WindowClass.hIconSm = LoadApplicationIcon(InInstance, 16);
 
-        if (!RegisterClassW(&WindowClass) && GetLastError() != ERROR_CLASS_ALREADY_EXISTS)
+        if (WindowClass.hIcon == nullptr)
+        {
+            WindowClass.hIcon = LoadIconW(nullptr, IDI_APPLICATION);
+        }
+        if (WindowClass.hIconSm == nullptr)
+        {
+            WindowClass.hIconSm = LoadIconW(nullptr, IDI_APPLICATION);
+        }
+
+        if (!RegisterClassExW(&WindowClass) && GetLastError() != ERROR_CLASS_ALREADY_EXISTS)
         {
             return false;
         }
@@ -86,6 +106,17 @@ namespace Engine::ApplicationCore
             bUsesCustomTitleBar = false;
             CustomTitleBarState = {};
             return false;
+        }
+
+        HICON LargeIcon = LoadApplicationIcon(InInstance, 32);
+        HICON SmallIcon = LoadApplicationIcon(InInstance, 16);
+        if (LargeIcon != nullptr)
+        {
+            SendMessageW(HWnd, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(LargeIcon));
+        }
+        if (SmallIcon != nullptr)
+        {
+            SendMessageW(HWnd, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(SmallIcon));
         }
 
         bIsVisible = true;

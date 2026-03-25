@@ -1,4 +1,5 @@
 #include "GizmoInputContext.h"
+#include "Viewport/Navigation/ViewportNavigationController.h"
 
 using Engine::ApplicationCore::EInputEventType;
 using Engine::ApplicationCore::EKey;
@@ -25,8 +26,28 @@ bool FGizmoInputContext::HandleEvent(const Engine::ApplicationCore::FInputEvent&
 
             if (Event.Key == EKey::MouseLeft)
             {
-                // 좌클릭: 기즈모 선택 및 드래그 시작
-                return GizmoController->OnMouseButtonDown(Event.MouseX, Event.MouseY);
+
+                const bool bStartedDrag =
+                    GizmoController->OnMouseButtonDown(Event.MouseX, Event.MouseY);
+
+                //  Shift Drag인지 판단
+                bFollowViewportCamera = bStartedDrag && State.Modifiers.bShiftDown &&
+                                        NavigationController != nullptr &&
+                                        GizmoController->GetGizmoType() == EGizmoType::Translation;
+
+                GizmoController->SetTranslationDragScale(
+                    bFollowViewportCamera ? ShiftDragTranslationScale : 1.0f);
+
+                if (bFollowViewportCamera)
+                {
+                    NavigationController->SetGizmoFollowSpeedScale(1.0f);
+                }
+#if defined(_WIN32)
+                while (::ShowCursor(FALSE) >= 0)
+                {
+                }
+#endif
+                return bStartedDrag;
             }
             break;
         }
@@ -35,8 +56,16 @@ bool FGizmoInputContext::HandleEvent(const Engine::ApplicationCore::FInputEvent&
     {
         if (Event.Key == EKey::MouseLeft)
         {
+            bFollowViewportCamera = false;
+            GizmoController->SetTranslationDragScale(1.0f);
+
             bool bWasDragging = GizmoController->IsDragging();
             GizmoController->OnMouseButtonUp();
+#if defined(_WIN32)
+            while (::ShowCursor(TRUE) < 0)
+            {
+            }
+#endif
             return bWasDragging;
         }
         break;
@@ -44,10 +73,29 @@ bool FGizmoInputContext::HandleEvent(const Engine::ApplicationCore::FInputEvent&
 
     case EInputEventType::MouseMove:
     {
+
         GizmoController->OnMouseMove(Event.MouseX, Event.MouseY);
+
+        bFollowViewportCamera = GizmoController->IsDragging() && State.IsKeyDown(EKey::MouseLeft) &&
+                                State.Modifiers.bShiftDown && NavigationController != nullptr &&
+                                GizmoController->GetGizmoType() == EGizmoType::Translation;
+
+        GizmoController->SetTranslationDragScale(bFollowViewportCamera ? ShiftDragTranslationScale
+                                                                       : 1.0f);
+
+        if (bFollowViewportCamera)
+        {
+            FVector Delta = GizmoController->ConsumeDelta();
+            NavigationController->TranslateWithGizmoDelta(Delta);
+        }
 
         if (GizmoController->IsDragging())
         {
+#if defined(_WIN32)
+            while (::ShowCursor(FALSE) >= 0)
+            {
+            }
+#endif
             return true;
         }
         break;

@@ -72,6 +72,8 @@ void FControlPanel::Draw()
     ImGui::Separator();
     DrawViewModeSection();
     ImGui::Separator();
+    DrawShowFlagsSection();
+    ImGui::Separator();
     DrawNavigationSection();
     ImGui::Separator();
     DrawWorldSection();
@@ -166,6 +168,77 @@ void FControlPanel::DrawViewModeSection() const
     if (ImGui::Combo("Shading", &CurrentViewMode, ViewModeLabels, IM_ARRAYSIZE(ViewModeLabels)))
     {
         RenderSetting.SetViewMode(static_cast<EViewModeIndex>(CurrentViewMode));
+    }
+}
+
+void FControlPanel::DrawShowFlagsSection() const
+{
+    if (GetContext() == nullptr || GetContext()->Editor == nullptr)
+    {
+        return;
+    }
+
+    FViewportRenderSetting& RenderSetting =
+        GetContext()->Editor->GetViewportClient().GetRenderSetting();
+
+    ImGui::TextUnformatted("Show Flags");
+
+    bool bShowGrid = RenderSetting.IsGridVisible();
+    if (ImGui::Checkbox("Editor Grid", &bShowGrid))
+    {
+        RenderSetting.SetGridVisible(bShowGrid);
+    }
+
+    bool bShowWorldAxes = RenderSetting.IsWorldAxesVisible();
+    if (ImGui::Checkbox("Editor World Axes", &bShowWorldAxes))
+    {
+        RenderSetting.SetWorldAxesVisible(bShowWorldAxes);
+    }
+
+    bool bShowGizmo = RenderSetting.IsGizmoVisible();
+    if (ImGui::Checkbox("Editor Gizmo", &bShowGizmo))
+    {
+        RenderSetting.SetGizmoVisible(bShowGizmo);
+    }
+
+    bool bShowSelectionOutline = RenderSetting.IsSelectionOutlineVisible();
+    if (ImGui::Checkbox("Editor Selection Outline", &bShowSelectionOutline))
+    {
+        RenderSetting.SetSelectionOutlineVisible(bShowSelectionOutline);
+    }
+
+    bool bShowObjectLabels = RenderSetting.IsObjectLabelsVisible();
+    if (ImGui::Checkbox("Editor Object Labels", &bShowObjectLabels))
+    {
+        RenderSetting.SetObjectLabelsVisible(bShowObjectLabels);
+    }
+
+    bool bShowUUID = RenderSetting.IsUUIDVisible();
+    if (ImGui::Checkbox("Editor UUID Labels", &bShowUUID))
+    {
+        RenderSetting.SetUUIDVisible(bShowUUID);
+    }
+
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    bool bShowScenePrimitives = RenderSetting.AreScenePrimitivesVisible();
+    if (ImGui::Checkbox("Scene Primitives", &bShowScenePrimitives))
+    {
+        RenderSetting.SetScenePrimitivesVisible(bShowScenePrimitives);
+    }
+
+    bool bShowSceneSprites = RenderSetting.AreSceneSpritesVisible();
+    if (ImGui::Checkbox("Scene Sprites", &bShowSceneSprites))
+    {
+        RenderSetting.SetSceneSpritesVisible(bShowSceneSprites);
+    }
+
+    bool bShowBillboardText = RenderSetting.AreBillboardTextVisible();
+    if (ImGui::Checkbox("Scene Billboard Text", &bShowBillboardText))
+    {
+        RenderSetting.SetBillboardTextVisible(bShowBillboardText);
     }
 }
 

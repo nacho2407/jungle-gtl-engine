@@ -13,7 +13,7 @@ struct FSceneRenderData
     EViewModeIndex    ViewMode = EViewModeIndex::VMI_Lit;
 
     ESceneShowFlags ShowFlags = ESceneShowFlags::SF_Primitives | ESceneShowFlags::SF_BillboardText |
-                                ESceneShowFlags::SF_Sprites;
+                                ESceneShowFlags::SF_Sprites | ESceneShowFlags::SF_UUIDText;
 
     bool bUseInstancing = true;
 
