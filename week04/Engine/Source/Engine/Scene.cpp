@@ -106,6 +106,17 @@ void FScene::Clear()
     Actors.clear();
 }
 
+void FScene::Tick(float DeltaTime)
+{
+    for (auto& actor : Actors)
+    {
+	    if (actor)
+	    {
+            actor->Tick(DeltaTime);
+	    }
+    }
+}
+
 void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
 {
     OutRenderData.Primitives.clear();

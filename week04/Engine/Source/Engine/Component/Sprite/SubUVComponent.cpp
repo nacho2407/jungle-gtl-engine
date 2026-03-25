@@ -21,6 +21,31 @@ namespace Engine::Component
         SetFrameIndex(FrameIndex);
     }
 
+    void USubUVComponent::Update(float DeltaTime)
+    {
+	    UAtlasComponent::Update(DeltaTime);
+
+        const int32 FrameCount = GetFrameCount();
+        if (FrameCount <= 1 || AnimationFPS <= 0.0f || DeltaTime <= 0.0f)
+        {
+            return;
+        }
+
+        const float SecondsPerFrame = 1.0f / AnimationFPS;
+        AnimationTimeAccumulator += DeltaTime;
+        if (AnimationTimeAccumulator < SecondsPerFrame)
+        {
+            return;
+        }
+
+        const int32 FramesToAdvance =
+            static_cast<int32>(AnimationTimeAccumulator / SecondsPerFrame);
+        AnimationTimeAccumulator -= SecondsPerFrame * static_cast<float>(FramesToAdvance);
+
+        const int32 NextFrameIndex = (GetFrameIndex() + FramesToAdvance) % FrameCount;
+        SetFrameIndex(NextFrameIndex);
+    }
+
     void USubUVComponent::SetFrameIndex(int32 InFrameIndex)
     {
         FrameIndex = (InFrameIndex >= 0) ? InFrameIndex : 0;
@@ -30,6 +55,11 @@ namespace Engine::Component
         {
             FrameIndex = FrameCount - 1;
         }
+    }
+
+    void USubUVComponent::SetAnimationFPS(float InAnimationFPS)
+    {
+        AnimationFPS = (InAnimationFPS >= 0.0f) ? InAnimationFPS : 0.0f;
     }
 
     int32 USubUVComponent::GetFrameCount() const
@@ -56,6 +86,8 @@ namespace Engine::Component
 
         FComponentPropertyOptions IntOptions;
         IntOptions.DragSpeed = 1.0f;
+        FComponentPropertyOptions FloatOptions;
+        FloatOptions.DragSpeed = 0.1f;
 
         FComponentPropertyOptions AtlasPathOptions;
         AtlasPathOptions.ExpectedAssetPathKind = EComponentAssetPathKind::SpriteAtlasFile;
@@ -68,6 +100,9 @@ namespace Engine::Component
         Builder.AddInt(
             "frame_index", L"Frame Index", [this]() { return GetFrameIndex(); },
             [this](int32 InValue) { SetFrameIndex(InValue); }, IntOptions);
+        Builder.AddFloat(
+            "animation_fps", L"Animation FPS", [this]() { return GetAnimationFPS(); },
+            [this](float InValue) { SetAnimationFPS(InValue); }, FloatOptions);
     }
 
     void USubUVComponent::ResolveAssetReferences(UAssetManager* InAssetManager)

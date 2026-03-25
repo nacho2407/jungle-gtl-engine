@@ -20,6 +20,17 @@ AActor::~AActor()
     RootComponent = nullptr;
 }
 
+void AActor::Tick(float DeltaTime)
+{
+    for (auto& Component : OwnedComponents)
+    {
+	    if (Component)
+	    {
+            Component->Update(DeltaTime);
+	    }
+    }
+}
+
 bool AActor::IsPickable() const { return bPickable; }
 
 void AActor::SetPickable(bool bInPickable) { bPickable = bInPickable; }
