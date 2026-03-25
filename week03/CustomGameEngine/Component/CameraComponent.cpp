@@ -99,11 +99,11 @@ void UCameraComponent::SetDirection(const float InputPitch, const float InputYaw
 	SetRelativeRotation(eulerAngle);
 }
 
-void UCameraComponent::HandleRotate(float DeltaTime)
+void UCameraComponent::HandleRotate()
 {
 	FRotator eulerAngle = GetRelativeRotation();
 	FVector MouseDelta = InputManager::GetInstance().MouseDelta;
-	float rotateFactor = RotateSensitivity * 1.0f * DeltaTime;
+	float rotateFactor = RotateSensitivity* 0.1f;
 	float newPitch = eulerAngle.Pitch + (MouseDelta.y * rotateFactor);
 	newPitch = MathHelper::Clamp(newPitch, -89.9f, 89.9f);
 	eulerAngle.Pitch = newPitch;
@@ -205,7 +205,7 @@ void UCameraComponent::HandleCameraMouseInput(float deltaTime)
 		if (InputManager::GetInstance().IsKeyHold(VK_RBUTTON))
 		{
 			Move(deltaTime);
-			HandleRotate(deltaTime);
+			HandleRotate();
 		}
 		else if (InputManager::GetInstance().IsKeyHold(VK_LBUTTON)
 			&& InputManager::GetInstance().IsKeyHold(VK_MENU))

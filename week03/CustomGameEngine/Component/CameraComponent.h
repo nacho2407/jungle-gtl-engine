@@ -55,7 +55,7 @@ public:
 	FMatrix GetRotationMatrix();
 	void SetDirection(const float InputPitch, const float InputYaw,
 		const float InputRoll);
-	void HandleRotate(float DeltaTime);
+	void HandleRotate();
 	//카메라의 방향을 유지하고 평행 이동시킵니다.
 	void HandlePanning(float DeltaTime);
 	void HandleOrbitRotate(float DeltaTime);
