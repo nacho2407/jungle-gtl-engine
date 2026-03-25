@@ -9,6 +9,7 @@
 #include "EngineCore/ObjectFactory.h"
 #include "EngineCore/EngineStatics.h"
 #include "SerializeHelper.h"
+#include <filesystem>
 
 class UWorld;
 

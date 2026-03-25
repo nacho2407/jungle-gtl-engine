@@ -11,6 +11,7 @@ UBillboardSubUVComp::UBillboardSubUVComp()
 	ResourceManager* resourceManager = ResourceManager::GetInstance();
 	//UPrimitive를 상속받도록. 수정.
 	VResource = &resourceManager->GetGeometry("BillboardQuad");
+	SetType(EPrimitiveType::SubUV);
 	UpdateAABB();
 }
 
@@ -59,6 +60,7 @@ void UBillboardSubUVComp::SetSize(float InWidth, float InHeight)
 	Width = InWidth;
 	Height = InHeight;
 	UpdateRenderObject();
+	UpdateAABB();
 }
 
 void UBillboardSubUVComp::SetGrid(int32 InRows, int32 InColumns, int32 InFrameCount)
@@ -86,7 +88,7 @@ RenderObject* UBillboardSubUVComp::CreateRenderObject()
 
 	ResourceManager* resourceManager = ResourceManager::GetInstance();
 	renderObject->Material = &resourceManager->GetMaterial(L"Shader/ShaderSubUV.hlsl");
-	renderObject->ShowFlag = EEngineShowFlags::SF_BillboardText;
+	renderObject->ShowFlag = EEngineShowFlags::SF_Primitives;
 	renderObject->bDepthEnabled = true;
 	renderObject->bDisableCulling = true;
 	UpdateRenderObject();

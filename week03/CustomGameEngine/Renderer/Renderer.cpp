@@ -204,7 +204,6 @@ void URenderer::OnResize(UINT Width, UINT Height)
 {
 	if (!Device || !SwapChain) return;
 
-
 	DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 	ReleaseFrameBuffer();
 
@@ -228,7 +227,7 @@ void URenderer::OnResize(UINT Width, UINT Height)
 void URenderer::CreateDynamicVertexBuffer()
 {
 	D3D11_BUFFER_DESC vertexbufferdesc = {};
-	vertexbufferdesc.ByteWidth = sizeof(FVertexSimple) * 80000;
+	vertexbufferdesc.ByteWidth = sizeof(FVertexSimple) * DynamicBufferMaxVertexCount;
 	vertexbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
 	vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vertexbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -242,12 +241,7 @@ void URenderer::CreateDynamicVertexBuffer()
 
 void URenderer::UpdateDynamicVertexBuffer(FVertexSimple* Vertices, UINT VertexCount)
 {
-	const int32 MaxVertexCount = 80000;
-	if (VertexCount > MaxVertexCount)
-	{
-		//ERROR HANDLE
-		return;
-	}
+	const int32 MaxVertexCount = DynamicBufferMaxVertexCount;
 
 	D3D11_MAPPED_SUBRESOURCE Mapped = {};
 	HRESULT hr = DeviceContext->Map(
@@ -307,8 +301,8 @@ void URenderer::RenderNoDepthObjects(TArray<RenderObject*>& NoDepthRenderObjects
 	FObjectConstant ObjectConst;
 	if (!NoDepthRenderObjects.empty())
 	{
-		//DeviceContext->ClearDepthStencilView(DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 0.0f, 0);
-		DeviceContext->OMSetDepthStencilState(DepthStencilStateNoDepth.Get(), 0);
+		DeviceContext->ClearDepthStencilView(DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 0.0f, 0);//Depth를 Clear하고
+		DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);//빈곳에 Depth를 켜서 그리기
 		for (RenderObject* RenderObj : NoDepthRenderObjects)
 		{
 			DeviceContext->RSSetState(RenderObj->bDisableCulling ? RasterizerStateNoCull.Get() : RasterizerState.Get());
@@ -362,12 +356,32 @@ void URenderer::BatchRenderDebugLine(const TArray<FVertexSimple>& Lines)
 		return;
 	ResourceManager::GetInstance()->GetMaterial(L"Shader/ShaderLine.hlsl").Bind(DeviceContext.Get());
 	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
-	UpdateDynamicVertexBuffer(const_cast<FVertexSimple*>(Lines.data()), Lines.size());
-	UINT stride = sizeof(FVertexSimple);
-	UINT offset = 0;
-	DeviceContext->IASetVertexBuffers(0, 1, DynamicVertexBuffer.GetAddressOf(), &stride, &offset);
-	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-	DeviceContext->Draw(Lines.size(), 0);
+	//TArray<FVertexSimple> ClippedLines;
+	if (Lines.size() > DynamicBufferMaxVertexCount)
+	{
+		int totalVertices = Lines.size();
+		int chunkSize = DynamicBufferMaxVertexCount;
+
+		for (int offset = 0; offset < totalVertices; offset += chunkSize)
+		{
+			int count = min(chunkSize, totalVertices - offset);
+			UpdateDynamicVertexBuffer(const_cast<FVertexSimple*>(Lines.data()) + offset, count);
+			UINT stride = sizeof(FVertexSimple);
+			UINT vbOffset = 0;
+			DeviceContext->IASetVertexBuffers(0, 1, DynamicVertexBuffer.GetAddressOf(), &stride, &vbOffset);
+			DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+			DeviceContext->Draw(count, 0);
+		}
+	}
+	else
+	{
+		UpdateDynamicVertexBuffer(const_cast<FVertexSimple*>(Lines.data()), Lines.size());
+		UINT stride = sizeof(FVertexSimple);
+		UINT offset = 0;
+		DeviceContext->IASetVertexBuffers(0, 1, DynamicVertexBuffer.GetAddressOf(), &stride, &offset);
+		DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+		DeviceContext->Draw(Lines.size(), 0);
+	}
 }
 
 void URenderer::SetRasterizerMode(int32 mode)
@@ -501,7 +515,7 @@ void URenderer::UpdateDynamicFontVertexBuffer(FVertexFont* Vertices, UINT Vertex
 		0,
 		&Mapped
 	);
-	
+
 	if (FAILED(hr))
 	{
 		UE_LOG("[Renderer/Renderer][Error] Unable to map dynamic vertex buffer for the font");
@@ -613,7 +627,7 @@ void URenderer::RenderBillboardTextBatch(const TArray<FBillboardTextDrawItem>& I
 	DeviceContext->RSSetState(RasterizerState.Get());
 
 	// 각 그룹마다 정점을 합쳐 한 번의 draw call로 렌더링
-	for (auto& [Key, GroupItems]: BatchGroups)
+	for (auto& [Key, GroupItems] : BatchGroups)
 	{
 		if (PrepareBillboardFontMaterial(Key.FontAsset, Key.Color) == false)
 		{

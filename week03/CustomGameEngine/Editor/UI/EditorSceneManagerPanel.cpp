@@ -82,7 +82,6 @@ void EditorSceneManagerPanel::Draw(Editor* editor)
 	else
 	{
 		const FString activeSceneName = ActiveScene->Name.GetDisplayName();
-		ImGui::Text("Active Scene: %s", activeSceneName.c_str());
 		if (ImGui::CollapsingHeader("Components", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			for (USceneComponent* component : ActiveScene->SceneComponents)

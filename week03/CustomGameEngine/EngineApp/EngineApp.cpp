@@ -213,6 +213,8 @@ void EngineApp::RenderCurrentFrame()
 	}
 
 	GetWorld().DrawDebugLines();
+	Renderer->BatchRenderDebugLine(FLineBatcher::GetInstance().GetLineVertices());
+	FLineBatcher::GetInstance().ClearLines();
 	Renderer->Render(LevelsToRender);
 
 	// 이제 여기서 바로 Billboard 텍스트 생성해서 그립니다!
@@ -220,8 +222,6 @@ void EngineApp::RenderCurrentFrame()
 	EditorInst->BuildSelectedBillboardTextItems(BillboardTextItems);
 
 	Renderer->RenderBillboardTextBatch(BillboardTextItems);
-	Renderer->BatchRenderDebugLine(FLineBatcher::GetInstance().GetLineVertices());
-	FLineBatcher::GetInstance().ClearLines();
 	EditorInst->DrawUI();
 	Renderer->SwapBuffer();
 }

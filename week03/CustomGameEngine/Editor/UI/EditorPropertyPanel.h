@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 #include <array>
 
 #include "Editor/Editor.h"
+#include "Component/BillboardSubUVComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/SceneComponent.h"
 #include "World.h"
@@ -39,6 +40,7 @@ private:
 	 * @return transform 값이 변경되었는지 여부
 	 */
 	bool DrawTransformProperties(USceneComponent* selectedComponent);
+	void DrawSubUVProperties(UBillboardSubUVComp* subUVComponent);
 
 private:
 	Editor* editor;
