@@ -157,20 +157,6 @@ bool EngineApp::Initialize(HINSTANCE hInstance)
 	GetWorld().InjectRenderer(Renderer);
 	LastActiveScene = GetWorld().GetSceneManager()->NewScene();
 
-	/*SubUV를 테스트를 위한 코드입니다.*/
-	auto SubUVBillboard = Cast<UBillboardSubUVComp>(GetWorld().GetSceneManager()->AddSceneComponent<UBillboardSubUVComp>(LastActiveScene));
-	if (SubUVBillboard != nullptr)
-	{
-		SubUVBillboard->SetRelativeLocation(FVector(0.0f, 0.0f, 3.0f));
-		//SetGrid는 SubUV의 크기에 따라 나눕니다. 분할은 UV에 따라 다를 수 있으니 하드코딩을 피하기 위해 수정이 필요합니다.
-		SubUVBillboard->SetGrid(6, 6, 36);
-		//속도 조절인데 1초에 몇번 돌아가는지를 명시합니다. 36이면 1초마다 순회를 합니다.
-		SubUVBillboard->SetPlayback(8.0f, true);
-		//크기입니다.
-		SubUVBillboard->SetSize(4.0f, 4.0f);
-	}
-	/*여기까지가 테스트 코드입니다.*/
-
 	// Init Timer
 	TimerManager::GetInstance().CreateGlobalTimer();
 

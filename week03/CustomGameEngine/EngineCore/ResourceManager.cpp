@@ -449,10 +449,10 @@ TComPtr<ID3D11ShaderResourceView> ResourceManager::LoadDDSTexture(WFString Resou
 		FilePath.c_str(),
 		nullptr,
 		textureView.GetAddressOf());
-
+	
 	if (FAILED(hr))
 	{
-		const std::string path(FilePath.begin(), FilePath.end());
+		const FString path(FilePath.begin(), FilePath.end());
 		UE_LOG("CreateDDSTextureFromFile failed. path=%s hr=0x%08X\n", path.c_str(), static_cast<unsigned int>(hr));
 		return nullptr;
 	}

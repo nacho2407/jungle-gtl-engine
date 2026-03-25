@@ -125,5 +125,5 @@ private:
 	UGridComp* Grid = nullptr;
 	bool bDockLayoutInitialized = false;
 	bool bUseDefaultDockLayout = true;
-	std::string ImGuiIniPath;
+	FString ImGuiIniPath;
 };

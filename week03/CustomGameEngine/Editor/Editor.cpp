@@ -405,7 +405,7 @@ void Editor::LoadSettings()
 	std::ifstream file("editor.ini");
 	if (file.is_open())
 	{
-		std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+		FString content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 		json::JSON data = json::JSON::Load(content);
 
 		if (data.hasKey("Grid"))
