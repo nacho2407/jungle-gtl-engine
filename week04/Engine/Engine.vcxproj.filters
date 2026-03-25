@@ -258,19 +258,19 @@
     <ClCompile Include="Source\Engine\Game\CylinderActor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Game\EffectActor.cpp">
+      <Filter>Source\Engine\Game</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Game\RingActor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Game\SphereActor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Game\SpriteAnimationActor.cpp">
+    <ClCompile Include="Source\Engine\Game\SpriteActor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Game\SpriteTextureActor.cpp">
-      <Filter>Source\Engine\Game</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Game\SubUVTextureActor.cpp">
+    <ClCompile Include="Source\Engine\Game\TextActor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Game\TriangleActor.cpp">
@@ -614,19 +614,19 @@
     <ClInclude Include="Source\Engine\Game\CylinderActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Game\EffectActor.h">
+      <Filter>Source\Engine\Game</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Game\RingActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Game\SphereActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Game\SpriteAnimationActor.h">
+    <ClInclude Include="Source\Engine\Game\SpriteActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Game\SpriteTextureActor.h">
-      <Filter>Source\Engine\Game</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Game\SubUVTextureActor.h">
+    <ClInclude Include="Source\Engine\Game\TextActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Game\TriangleActor.h">

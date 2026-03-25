@@ -13,10 +13,10 @@
 #include "Engine/Game/ConeActor.h"
 #include "Engine/Game/CylinderActor.h"
 #include "Engine/Game/RingActor.h"
-#include "Engine/Game/SpriteAnimationActor.h"
-#include "Engine/Game/SpriteTextureActor.h"
-#include "Engine/Game/SubUVTextureActor.h"
 #include "Engine/Game/TriangleActor.h"
+#include "Engine/Game/SpriteActor.h"
+#include "Engine/Game/EffectActor.h"
+#include "Engine/Game/TextActor.h"
 
 namespace
 {
@@ -58,27 +58,20 @@ namespace
             return "RingActor";
         case FOutlinerPanel::ESpawnActorType::Triangle:
             return "TriangleActor";
-        case FOutlinerPanel::ESpawnActorType::SpriteTexture:
-            return "SpriteTexture";
-        case FOutlinerPanel::ESpawnActorType::SubUVTexture:
-            return "SubUVTexture";
-        case FOutlinerPanel::ESpawnActorType::SpriteAnimation:
-            return "SpriteAnimation";
+        case FOutlinerPanel::ESpawnActorType::Sprite:
+            return "SpriteActor";
+        case FOutlinerPanel::ESpawnActorType::Effect:
+            return "EffectActor";
+        case FOutlinerPanel::ESpawnActorType::Text:
+            return "TextActor";
         default:
             return "Unknown";
         }
     }
 
     const char* const SpawnActorTypeLabels[] = {
-        "CubeActor",
-        "SphereActor",
-        "ConeActor",
-        "CylinderActor",
-        "RingActor",
-        "TriangleActor",
-        "SpriteTexture",
-        "SubUVTexture",
-        "SpriteAnimation",
+        "CubeActor",     "SphereActor", "ConeActor",   "CylinderActor", "RingActor",
+        "TriangleActor", "SpriteActor", "EffectActor", "TextActor",
     };
 
     AActor* CreateActorByType(FOutlinerPanel::ESpawnActorType InType)
@@ -97,12 +90,12 @@ namespace
             return new ARingActor();
         case FOutlinerPanel::ESpawnActorType::Triangle:
             return new ATriangleActor();
-        case FOutlinerPanel::ESpawnActorType::SpriteTexture:
-            return new ASpriteTextureActor();
-        case FOutlinerPanel::ESpawnActorType::SubUVTexture:
-            return new ASubUVTextureActor();
-        case FOutlinerPanel::ESpawnActorType::SpriteAnimation:
-            return new ASpriteAnimationActor();
+        case FOutlinerPanel::ESpawnActorType::Sprite:
+            return new ASpriteActor();
+        case FOutlinerPanel::ESpawnActorType::Effect:
+            return new AEffectActor();
+        case FOutlinerPanel::ESpawnActorType::Text:
+            return new ATextActor();
         default:
             return nullptr;
         }
@@ -120,15 +113,9 @@ namespace
     }
 } // namespace
 
-const wchar_t* FOutlinerPanel::GetPanelID() const
-{
-    return L"OutlinerPanel";
-}
+const wchar_t* FOutlinerPanel::GetPanelID() const { return L"OutlinerPanel"; }
 
-const wchar_t* FOutlinerPanel::GetDisplayName() const
-{
-    return L"Outliner";
-}
+const wchar_t* FOutlinerPanel::GetDisplayName() const { return L"Outliner"; }
 
 void FOutlinerPanel::Draw()
 {
@@ -209,8 +196,8 @@ void FOutlinerPanel::DrawActorRow(AActor* Actor) const
         if (GetContext()->Editor != nullptr)
         {
             bIsSelected =
-                GetContext()->Editor->GetViewportClient().GetSelectionController().
-                              IsSelected(Actor);
+                GetContext()->Editor->GetViewportClient().GetSelectionController().IsSelected(
+                    Actor);
         }
         else
         {
