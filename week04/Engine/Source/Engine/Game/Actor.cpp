@@ -5,27 +5,12 @@
 #include <stdlib.h>
 #include <string>
 
-#include "Engine/Component/Text/AtlasTextComponent.h"
+#include "Engine/Component/Text/UUIDComponent.h"
 
-AActor::AActor()
-{
-    UUIDTextComponent = new Engine::Component::UAtlasTextComponent();
-    static_cast<Engine::Component::UAtlasTextComponent*>(UUIDTextComponent)
-        ->SetFontPath("Font\\Comic_Sans_MS\\Comic_Sans_MS.json");
-    static_cast<Engine::Component::UAtlasTextComponent*>(UUIDTextComponent)
-        ->SetText("UUID: " + std::to_string(UUID));
-
-    // TODO: Root의 위치값 반영
-    static_cast<Engine::Component::UAtlasTextComponent*>(UUIDTextComponent)
-        ->SetRelativeLocation(FVector(0.0f, 0.0f, 5.0f));
-    static_cast<Engine::Component::UAtlasTextComponent*>(UUIDTextComponent)
-        ->SetColor(FColor::Blue());
-    AddOwnedComponent(UUIDTextComponent);
-}
+AActor::AActor() = default;
 
 AActor::~AActor()
 {
-    // Actor가 직접 생성해 들고 있던 SceneComponent들을 정리합니다.
     for (Engine::Component::USceneComponent* Component : OwnedComponents)
     {
         delete Component;
@@ -66,6 +51,9 @@ void AActor::SetRootComponent(Engine::Component::USceneComponent* InRootComponen
         OwnedComponents.erase(RootIterator);
         OwnedComponents.insert(OwnedComponents.begin(), Root);
     }
+
+    EnsureUUIDDebugComponent();
+    RefreshUUIDDebugComponent();
 }
 
 void AActor::AddOwnedComponent(Engine::Component::USceneComponent* InComponent,
@@ -108,9 +96,37 @@ void AActor::AddOwnedComponent(Engine::Component::USceneComponent* InComponent,
     }
 }
 
+void AActor::EnsureUUIDDebugComponent()
+{
+    if (RootComponent == nullptr)
+    {
+        return;
+    }
+
+    if (UUIDTextComponent == nullptr)
+    {
+        UUIDTextComponent = new Engine::Component::UUUIDComponent();
+        AddOwnedComponent(UUIDTextComponent, false);
+    }
+    else if (UUIDTextComponent != RootComponent &&
+             UUIDTextComponent->GetAttachParent() != RootComponent)
+    {
+        UUIDTextComponent->AttachToComponent(RootComponent);
+    }
+}
+
+void AActor::RefreshUUIDDebugComponent()
+{
+    if (UUIDTextComponent == nullptr)
+    {
+        return;
+    }
+
+    UUIDTextComponent->RefreshFromOwner();
+}
+
 FMatrix AActor::GetWorldMatrix() const
 {
-    //  현재 설계 상 RootComponent는 PrimitiveComponent로 간주
     if (RootComponent != nullptr)
     {
         return RootComponent->GetRelativeMatrix();
@@ -121,7 +137,5 @@ FMatrix AActor::GetWorldMatrix() const
 
 EBasicMeshType AActor::GetMeshType() const
 {
-    // 기본 Actor는 렌더 대상이 아니므로 의미 없는 기본값
-    // 실제 렌더 Actor가 override 하도록 둠
     return EBasicMeshType::Cube;
 }
