@@ -1,10 +1,53 @@
 #include "Scene.h"
 
+#include <algorithm>
+
 #include "Engine/Component/Core/PrimitiveComponent.h"
 #include "Engine/Component/Core/SceneComponent.h"
+#include "Engine/Component/Sprite/SpriteComponent.h"
+#include "Engine/Component/Sprite/SubUVComponent.h"
 #include "Engine/Component/Text/AtlasTextComponent.h"
 #include "Engine/Game/Actor.h"
 #include "Renderer/Types/RenderItem.h"
+
+namespace
+{
+    bool ShouldRenderAsSprite(const Engine::Component::USceneComponent* Component)
+    {
+        return Component != nullptr &&
+               dynamic_cast<const Engine::Component::USpriteComponent*>(Component) != nullptr &&
+               dynamic_cast<const Engine::Component::UAtlasTextComponent*>(Component) == nullptr;
+    }
+
+    void ResolveSpriteUVs(const Engine::Component::USpriteComponent& SpriteComponent,
+                          FVector2& OutUVMin, FVector2& OutUVMax)
+    {
+        OutUVMin = FVector2(0.0f, 0.0f);
+        OutUVMax = FVector2(1.0f, 1.0f);
+
+        const auto* SubUVComponent =
+            dynamic_cast<const Engine::Component::USubUVComponent*>(&SpriteComponent);
+        if (SubUVComponent == nullptr)
+        {
+            return;
+        }
+
+        const int32 Columns = std::max(SubUVComponent->GetAtlasColumns(), 1);
+        const int32 Rows = std::max(SubUVComponent->GetAtlasRows(), 1);
+        const int32 FrameCount = std::max(Columns * Rows, 1);
+        const int32 FrameIndex =
+            std::clamp(SubUVComponent->GetFrameIndex(), 0, FrameCount - 1);
+
+        const int32 ColumnIndex = FrameIndex % Columns;
+        const int32 RowIndex = FrameIndex / Columns;
+
+        const float InvColumns = 1.0f / static_cast<float>(Columns);
+        const float InvRows = 1.0f / static_cast<float>(Rows);
+
+        OutUVMin = FVector2(ColumnIndex * InvColumns, RowIndex * InvRows);
+        OutUVMax = FVector2((ColumnIndex + 1) * InvColumns, (RowIndex + 1) * InvRows);
+    }
+} // namespace
 
 FScene::~FScene() { Clear(); }
 
@@ -42,6 +85,7 @@ void FScene::Clear()
 void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
 {
     OutRenderData.Primitives.clear();
+    OutRenderData.Sprites.clear();
     OutRenderData.Texts.clear();
 
     for (AActor* Actor : Actors)
@@ -63,6 +107,7 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
         PrimitiveItem.World = Actor->GetWorldMatrix();
         PrimitiveItem.Color = Actor->GetColor();
         PrimitiveItem.MeshType = Actor->GetMeshType();
+        PrimitiveItem.bIsSpriteProxy = ShouldRenderAsSprite(Actor->GetRootComponent());
 
         if (auto* PrimitiveComponent =
                 Cast<Engine::Component::UPrimitiveComponent>(Actor->GetRootComponent()))
@@ -79,6 +124,34 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData) const
         PrimitiveItem.State.SetHovered(Actor->IsHovered());
 
         OutRenderData.Primitives.push_back(PrimitiveItem);
+#pragma endregion
+
+#pragma region __SPRITE__
+        if (auto* SpriteComponent =
+                Cast<Engine::Component::USpriteComponent>(Actor->GetRootComponent()))
+        {
+            if (Cast<Engine::Component::UAtlasTextComponent>(SpriteComponent) == nullptr)
+            {
+                FSpriteRenderItem SpriteItem = {};
+                SpriteItem.TextureResource = SpriteComponent->GetTextureResource();
+                SpriteItem.Color = SpriteComponent->GetColor();
+                ResolveSpriteUVs(*SpriteComponent, SpriteItem.UVMin, SpriteItem.UVMax);
+                SpriteItem.Placement.Mode =
+                    SpriteComponent->GetBillboard() ? ERenderPlacementMode::WorldBillboard
+                                                    : ERenderPlacementMode::World;
+                SpriteItem.Placement.World = Actor->GetWorldMatrix();
+                SpriteItem.Placement.WorldOffset = SpriteComponent->GetBillboardOffset();
+
+                SpriteItem.State.ObjectId = ObjectId;
+                SpriteItem.State.bShowBounds = Actor->IsShowBounds();
+                SpriteItem.State.SetVisible(Actor->IsVisible());
+                SpriteItem.State.SetPickable(Actor->IsPickable());
+                SpriteItem.State.SetSelected(Actor->IsSelected());
+                SpriteItem.State.SetHovered(Actor->IsHovered());
+
+                OutRenderData.Sprites.push_back(SpriteItem);
+            }
+        }
 #pragma endregion
 
 #pragma region __ATLAS_TEXT__
