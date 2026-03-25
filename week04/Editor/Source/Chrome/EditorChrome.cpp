@@ -3,16 +3,19 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+#include <cmath>
+
 #include "imgui.h"
 
 namespace
 {
     constexpr float ButtonWidth = 46.0f;
-    constexpr float MenuStartX = 8.0f;
+    constexpr float Pi = 3.14159265358979323846f;
+    constexpr float BrandIconLeftPadding = 8.0f;
+    constexpr float BrandIconSize = 22.0f;
+    constexpr float BrandIconMenuSpacing = 10.0f;
+    constexpr float MenuStartX = BrandIconLeftPadding + BrandIconSize + BrandIconMenuSpacing;
     constexpr float MenuSpacingX = 2.0f;
-    constexpr float TitlePaddingX = 12.0f;
-    constexpr float TitleSpacingX = 10.0f;
-    constexpr float TitleRightPaddingX = 12.0f;
 
     FEditorChromeRect MakeClientRect(const ImVec2& Min, const ImVec2& Max,
                                      const ImVec2& ViewportPosition)
@@ -54,7 +57,6 @@ namespace
 
     void DrawMenuItems(const TArray<FEditorChromeMenuItem>& Items)
     {
-        // chrome renderer는 이미 해석된 메뉴 트리를 그대로 순회하며 ImGui popup 메뉴를 그립니다.
         for (const FEditorChromeMenuItem& Item : Items)
         {
             const std::string ItemLabel = WideToUtf8(Item.Label.c_str());
@@ -99,30 +101,56 @@ namespace
         return "##EditorChromeMenuPopup" + std::to_string(Index);
     }
 
-    void DrawTitleText(const ImVec2& ViewportPosition, float TitleLeft, float TitleRight,
-                       const std::string& TitleText)
+    void DrawBrandIcon(const ImVec2& ViewportPosition)
     {
-        if (TitleText.empty() || TitleRight <= TitleLeft)
-        {
-            return;
-        }
-
         ImDrawList* DrawList = ImGui::GetWindowDrawList();
         if (DrawList == nullptr)
         {
             return;
         }
 
-        const ImVec2 TextSize = ImGui::CalcTextSize(TitleText.c_str());
-        const ImVec2 TextPosition(TitleLeft,
-                                  ViewportPosition.y +
-                                      (FEditorChrome::TitleBarHeight - TextSize.y) * 0.5f);
+        constexpr ImU32 BrandColor = IM_COL32(41, 103, 255, 255);
+        const ImU32 BackgroundColor = ImGui::GetColorU32(ImGuiCol_WindowBg);
 
-        DrawList->PushClipRect(ImVec2(TitleLeft, ViewportPosition.y),
-                               ImVec2(TitleRight, ViewportPosition.y + FEditorChrome::TitleBarHeight),
-                               true);
-        DrawList->AddText(TextPosition, ImGui::GetColorU32(ImGuiCol_Text), TitleText.c_str());
-        DrawList->PopClipRect();
+        const ImVec2 Center(ViewportPosition.x + BrandIconLeftPadding + BrandIconSize * 0.5f,
+                            ViewportPosition.y + FEditorChrome::TitleBarHeight * 0.5f);
+        const float OuterRadius = BrandIconSize * 0.5f;
+        const float InnerRadius = OuterRadius * 0.62f;
+
+        ImVec2 Octagon[8];
+        for (int32 Index = 0; Index < 8; ++Index)
+        {
+            const float Angle =
+                Pi * 0.125f + (Pi * 0.25f * static_cast<float>(Index));
+            Octagon[Index] = ImVec2(Center.x + std::cos(Angle) * OuterRadius,
+                                    Center.y + std::sin(Angle) * OuterRadius);
+        }
+        DrawList->AddConvexPolyFilled(Octagon, 8, BrandColor);
+        DrawList->AddCircleFilled(Center, InnerRadius, BackgroundColor, 32);
+
+        const ImVec2 Direction(0.60f, -0.80f);
+        const ImVec2 Perpendicular(0.80f, 0.60f);
+        const ImVec2 Tip(Center.x + Direction.x * OuterRadius * 0.92f,
+                         Center.y + Direction.y * OuterRadius * 0.92f);
+        const ImVec2 Tail(Center.x - Direction.x * OuterRadius * 1.08f,
+                          Center.y - Direction.y * OuterRadius * 1.08f);
+        const ImVec2 Left(Center.x - Perpendicular.x * OuterRadius * 0.22f,
+                          Center.y - Perpendicular.y * OuterRadius * 0.22f);
+        const ImVec2 Right(Center.x + Perpendicular.x * OuterRadius * 0.22f,
+                           Center.y + Perpendicular.y * OuterRadius * 0.22f);
+        const ImVec2 Needle[4] = {Tip, Right, Tail, Left};
+        DrawList->AddConvexPolyFilled(Needle, 4, BrandColor);
+
+        const ImVec2 CutoutBase(Center.x - Direction.x * OuterRadius * 0.12f,
+                                Center.y - Direction.y * OuterRadius * 0.12f);
+        const ImVec2 CutoutTip(CutoutBase.x - Direction.x * OuterRadius * 0.26f,
+                               CutoutBase.y - Direction.y * OuterRadius * 0.26f);
+        const ImVec2 CutoutLeft(CutoutBase.x - Perpendicular.x * OuterRadius * 0.10f,
+                                CutoutBase.y - Perpendicular.y * OuterRadius * 0.10f);
+        const ImVec2 CutoutRight(CutoutBase.x + Perpendicular.x * OuterRadius * 0.10f,
+                                 CutoutBase.y + Perpendicular.y * OuterRadius * 0.10f);
+        const ImVec2 Cutout[3] = {CutoutTip, CutoutRight, CutoutLeft};
+        DrawList->AddConvexPolyFilled(Cutout, 3, BackgroundColor);
     }
 } // namespace
 
@@ -165,12 +193,12 @@ void FEditorChrome::Draw(const TArray<FEditorChromeMenu>& Menus)
 
     if (ImGui::Begin("##EditorChrome", nullptr, WindowFlags))
     {
-        // 한 줄 안에 메뉴, 제목, 시스템 버튼을 모두 배치하기 위한 기준 좌표입니다.
+        DrawBrandIcon(Viewport->Pos);
+
         const float ButtonStartX = Viewport->Size.x - (ButtonWidth * 3.0f);
         const ImVec2 ButtonSize(ButtonWidth, FEditorChrome::TitleBarHeight);
         const float MenuCursorY =
             (FEditorChrome::TitleBarHeight - ImGui::GetFrameHeight()) * 0.5f;
-        float MenuEndX = Viewport->Pos.x + TitlePaddingX;
 
         bool bAnyMenuPopupOpen = false;
         for (size_t MenuIndex = 0; MenuIndex < Menus.size(); ++MenuIndex)
@@ -206,7 +234,6 @@ void FEditorChrome::Draw(const TArray<FEditorChromeMenu>& Menus)
                 ImGui::PopStyleColor();
             }
 
-            // 메뉴 루트 버튼은 창 드래그가 시작되면 안 되므로 interactive rect로 따로 수집합니다.
             AddInteractiveRect(InteractiveRects, Viewport->Pos);
 
             const ImVec2 RootItemMin = ImGui::GetItemRectMin();
@@ -217,8 +244,9 @@ void FEditorChrome::Draw(const TArray<FEditorChromeMenu>& Menus)
                 ImGui::OpenPopup(PopupId.c_str());
             }
 
-            ImGui::SetNextWindowPos(ImVec2(RootItemMin.x, Viewport->Pos.y + FEditorChrome::TitleBarHeight),
-                                    ImGuiCond_Appearing);
+            ImGui::SetNextWindowPos(
+                ImVec2(RootItemMin.x, Viewport->Pos.y + FEditorChrome::TitleBarHeight),
+                ImGuiCond_Appearing);
             if (ImGui::BeginPopup(PopupId.c_str()))
             {
                 DrawMenuItems(Menu.Items);
@@ -226,17 +254,7 @@ void FEditorChrome::Draw(const TArray<FEditorChromeMenu>& Menus)
             }
 
             MenuCursorX = RootItemMax.x - Viewport->Pos.x + MenuSpacingX;
-            MenuEndX = RootItemMax.x;
         }
-
-        const std::string TitleText = WideToUtf8(Host->GetWindowTitle());
-        const float TitleLeft =
-            (MenuEndX + TitleSpacingX > Viewport->Pos.x + TitlePaddingX)
-                ? (MenuEndX + TitleSpacingX)
-                : (Viewport->Pos.x + TitlePaddingX);
-        const float TitleRight = Viewport->Pos.x + ButtonStartX - TitleRightPaddingX;
-        // 제목은 메뉴와 창 버튼 사이 남는 공간에만 클리핑해서 그립니다.
-        DrawTitleText(Viewport->Pos, TitleLeft, TitleRight, TitleText);
 
         ImGui::SetCursorPos(ImVec2(ButtonStartX, 0.0f));
         if (ImGui::Button("-##EditorChromeMinimize", ButtonSize))
@@ -269,7 +287,6 @@ void FEditorChrome::Draw(const TArray<FEditorChromeMenu>& Menus)
     ImGui::PopStyleColor(7);
     ImGui::PopStyleVar(5);
 
-    // 이번 프레임에 실제로 클릭 가능한 영역을 Win32 쪽으로 넘겨 caption drag와 충돌하지 않게 합니다.
     Host->SetTitleBarMetrics(static_cast<int32>(FEditorChrome::TitleBarHeight),
                              InteractiveRects);
 }
