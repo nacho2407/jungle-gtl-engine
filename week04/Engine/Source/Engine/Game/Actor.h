@@ -56,13 +56,21 @@ class ENGINE_API AActor : public UObject
         }
     }
 
-    /*void SetLocation(FVector InLocation) const
+    FQuat GetRotation() const
     {
         if (RootComponent)
         {
-            return RootComponent->SetRelativeLocation(InLocation);
+            return RootComponent->GetRelativeQuaternion();
         }
-    }*/
+        return FQuat::Identity;
+    }
+    void SetRotion(FQuat InRotation) const
+    {
+        if (RootComponent)
+        {
+            return RootComponent->SetRelativeRotation(InRotation);
+        }
+    }
 
     const TArray<Engine::Component::USceneComponent*>& GetOwnedComponents() const
     {

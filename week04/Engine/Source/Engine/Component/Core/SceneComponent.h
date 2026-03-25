@@ -14,19 +14,19 @@ namespace Engine::Component
     {
         DECLARE_RTTI(USceneComponent, UObject)
 
-    public:
+      public:
         USceneComponent() = default;
         virtual ~USceneComponent() override;
 
-    public:
-        FVector GetRelativeLocation() const { return WorldTransform.GetLocation(); }
-        FRotator GetRelativeRotation() const { return WorldTransform.Rotator(); }
-        FVector  GetRelativeScale3D() const { return WorldTransform.GetScale3D(); }
-        FQuat    GetRelativeQuaternion() const { return WorldTransform.GetRotation(); }
+      public:
+        FVector    GetRelativeLocation() const { return WorldTransform.GetLocation(); }
+        FRotator   GetRelativeRotation() const { return WorldTransform.Rotator(); }
+        FVector    GetRelativeScale3D() const { return WorldTransform.GetScale3D(); }
+        FQuat      GetRelativeQuaternion() const { return WorldTransform.GetRotation(); }
         FTransform GetRelativeTransform() const { return WorldTransform; }
 
-        AActor* GetOwnerActor() const { return OwnerActor; }
-        USceneComponent* GetAttachParent() const { return AttachParent; }
+        AActor*                         GetOwnerActor() const { return OwnerActor; }
+        USceneComponent*                GetAttachParent() const { return AttachParent; }
         const TArray<USceneComponent*>& GetAttachChildren() const { return AttachChildren; }
 
         virtual void SetRelativeLocation(const FVector& NewLocation);
@@ -35,9 +35,9 @@ namespace Engine::Component
         virtual void SetRelativeScale3D(const FVector& NewScale);
         virtual void SetRelativeTransform(const FVector& NewTransform);
 
-        void         SetOwnerActor(AActor* InOwnerActor);
-        void         AttachToComponent(USceneComponent* InParent);
-        void         DetachFromParent();
+        void SetOwnerActor(AActor* InOwnerActor);
+        void AttachToComponent(USceneComponent* InParent);
+        void DetachFromParent();
 
         virtual void Update(float DeltaTime);
         virtual void DescribeProperties(FComponentPropertyBuilder& Builder);
@@ -51,20 +51,17 @@ namespace Engine::Component
 
         virtual bool IsShowBounds() const { return false; };
 
-        virtual void SetShowBounds(bool bInShowBounds)
-        {
+        virtual void SetShowBounds(bool bInShowBounds) {
             // Do nothing
         };
 
-    protected:
-        virtual void OnTransformChanged()
-        {
-        }
+      protected:
+        virtual void OnTransformChanged() {  }
 
-    protected:
+      protected:
         bool bIsSelected = false;
 
-    protected:
+      protected:
         FTransform               WorldTransform;
         AActor*                  OwnerActor = nullptr;
         USceneComponent*         AttachParent = nullptr;

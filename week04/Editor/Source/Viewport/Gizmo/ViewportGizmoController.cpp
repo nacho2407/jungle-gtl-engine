@@ -252,23 +252,28 @@ void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)
             FVector2(static_cast<float>(MouseX), static_cast<float>(MouseY)) - ScreenPosA,
             ReferenceAxis2D);
         float DeltaT = CurrentProjectionT - InitialProjectionT;
-
-        //UE_LOG(Log, ELogVerbosity::Log, "InitialProjectionT : %f", InitialProjectionT);
-        //UE_LOG(Log, ELogVerbosity::Log, "CurrentProjectionT : %f", CurrentProjectionT);
-        //UE_LOG(Log, ELogVerbosity::Log, "DeltaT : %f", DeltaT);
+        InitialProjectionT = CurrentProjectionT;
 
         float RotationSensitivity = 1.0f;
         float AngleDegrees = DeltaT * RotationSensitivity;
         float AngleRadians = FMath::DegreesToRadians(AngleDegrees);
         FQuat DeltaRotation = FQuat(CurrentDragAxis, AngleRadians);
-        FQuat NewRotation = StartTransform.GetRotation() * DeltaRotation;
-        LastSelectedActor->GetRootComponent()->SetRelativeRotation(NewRotation);
+        FQuat NewRotation = LastSelectedActor->GetRotation() * DeltaRotation;
+        LastSelectedActor->SetRotion(NewRotation);
 
-        /*FVector PivotOrigin = StartTransform.GetLocation();
-        FVector CurrentHitPos = RayPlaneIntersection(PickRay, PivotOrigin, CurrentDragAxis);
-        FVector CurrentVector = CurrentHitPos - PivotOrigin;
+        FVector          LastActorLocation{LastSelectedActor->GetLocation()};
+         TArray<AActor*>& SelectedActors{ViewportSelectionController->GetSelectedActors()};
+        for (int32 idx{0}; idx < SelectedActors.size() - 1; idx++)
+        {
+            AActor* CurrentActor = SelectedActors[idx];
+            FVector RelativeVec{CurrentActor->GetLocation()  - LastActorLocation};
+            float   LengthFromLastActor{RelativeVec.Size()};
+            RelativeVec.Normalize();
 
-        float CurrentProjectionT = FVector::DotProduct(CurrentVector, ReferenceAxis);*/
+            CurrentActor->SetRotion(CurrentActor->GetRotation() * DeltaRotation);
+            RelativeVec = DeltaRotation.RotateVector(RelativeVec);
+            CurrentActor->SetLocation(LastActorLocation + RelativeVec * LengthFromLastActor);
+        }
     }
 }
 
