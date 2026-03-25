@@ -17,7 +17,7 @@ void UTextRenderComponent::SetFont(const FName& InFontName)
 
 void UTextRenderComponent::UpdateWorldAABB() const
 {
-	float TotalWidth = Text.length() * 0.5f;
+	float TotalWidth = GetUTF8Length(Text) * 0.5f;
 	float TotalHeight = 0.5f;
 
 	FVector WorldScale = GetWorldScale();
@@ -33,7 +33,7 @@ void UTextRenderComponent::UpdateWorldAABB() const
 	FVector Extent(Ex, Ey, Ez);
 
 	FVector WorldCenter = GetWorldLocation();
-	WorldCenter -= WorldRight * (ScaledWidth * 0.5f); // -=가 아니라 += 입니다!
+	WorldCenter -= WorldRight * (ScaledWidth * 0.5f); 
 
 	WorldAABBMinLocation = WorldCenter - Extent;
 	WorldAABBMaxLocation = WorldCenter + Extent;
@@ -118,11 +118,9 @@ void UTextRenderComponent::PostEditProperty(const char* PropertyName)
 }
 
 
-
-
 FMatrix UTextRenderComponent::CalculateOutlineMatrix() const
 {
-	int32 Len = (int32)Text.length();
+	int32 Len = GetUTF8Length(Text);
 
 	if (Len <= 0) return FMatrix::Identity;
 
@@ -135,4 +133,13 @@ FMatrix UTextRenderComponent::CalculateOutlineMatrix() const
 	FMatrix TransMatrix = FMatrix::MakeTranslationMatrix(FVector(0.0f, CenterY, CenterZ));
 
 	return (ScaleMatrix * TransMatrix) * CachedWorldMatrix;
+}
+
+int32 UTextRenderComponent::GetUTF8Length(const FString& str) const{
+	int32 count = 0;
+	for (size_t i = 0; i < str.length(); ++i) {
+		// UTF-8의 첫 바이트가 10xxxxxx 이 아니면 새로운 글자의 시작임
+		if ((str[i] & 0xC0) != 0x80) count++;
+	}
+	return count;
 }
