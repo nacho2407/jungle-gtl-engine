@@ -178,6 +178,9 @@ bool FViewportGizmoController::HitTestGizmo(int32 MouseX, int32 MouseY)
         case EAxis::Z:
             GizmoHighlight = EGizmoHighlight::Z;
             break;
+        case EAxis::Center:
+            GizmoHighlight = EGizmoHighlight::Center;
+            break;
         }
         return true;
     }
