@@ -1,23 +1,10 @@
 #include "Renderer/RendererModule.h"
+
 #include "Renderer/Types/PickId.h"
 #include "Renderer/Types/PickResult.h"
 
 namespace
 {
-    TArray<FPrimitiveRenderItem>
-    BuildScenePrimitiveSubmission(const FSceneRenderData& InSceneRenderData)
-    {
-        TArray<FPrimitiveRenderItem> SubmissionItems;
-        SubmissionItems.reserve(InSceneRenderData.Primitives.size());
-
-        for (const FPrimitiveRenderItem& Item : InSceneRenderData.Primitives)
-        {
-            SubmissionItems.push_back(Item);
-        }
-
-        return SubmissionItems;
-    }
-
     bool HasScenePrimitives(const FSceneRenderData& InSceneRenderData)
     {
         return InSceneRenderData.SceneView != nullptr && !InSceneRenderData.Primitives.empty();
@@ -75,13 +62,7 @@ bool FRendererModule::StartupModule(HWND hWnd)
         return false;
     }
 
-    if (!SceneMeshRenderer.Initialize(&RHI))
-    {
-        ShutdownModule();
-        return false;
-    }
-
-    if (!OverlayMeshRenderer.Initialize(&RHI))
+    if (!MeshBatchRenderer.Initialize(&RHI))
     {
         ShutdownModule();
         return false;
@@ -137,8 +118,7 @@ void FRendererModule::ShutdownModule()
     TextRenderer.Shutdown();
     LineRenderer.Shutdown();
     OutlineRenderer.Shutdown();
-    OverlayMeshRenderer.Shutdown();
-    SceneMeshRenderer.Shutdown();
+    MeshBatchRenderer.Shutdown();
 
 #if defined(_DEBUG)
     if (DebugDevice != nullptr)
@@ -192,23 +172,26 @@ void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderDat
 {
     if (HasScenePrimitives(InSceneRenderData))
     {
-        SceneMeshRenderer.BeginFrame(InSceneRenderData.SceneView, InSceneRenderData.ViewMode,
-                                     InSceneRenderData.bUseInstancing);
+        FMeshBatchPassParams ScenePassParams = {};
+        ScenePassParams.SceneView = InSceneRenderData.SceneView;
+        ScenePassParams.ViewMode = InSceneRenderData.ViewMode;
+        ScenePassParams.bUseInstancing = InSceneRenderData.bUseInstancing;
+        ScenePassParams.bDisableDepth = false;
+
+        MeshBatchRenderer.BeginFrame(ScenePassParams);
 
         if (ShouldTintSelectedWireframe(InEditorRenderData, InSceneRenderData))
         {
             const TArray<FPrimitiveRenderItem> WireframeItems =
                 BuildWireframePrimitiveSubmission(InSceneRenderData);
-            SceneMeshRenderer.AddPrimitives(WireframeItems);
+            MeshBatchRenderer.AddPrimitives(WireframeItems);
         }
         else
         {
-            const TArray<FPrimitiveRenderItem> SceneItems =
-                BuildScenePrimitiveSubmission(InSceneRenderData);
-            SceneMeshRenderer.AddPrimitives(SceneItems);
+            SceneMeshSubmitter.Submit(MeshBatchRenderer, InSceneRenderData);
         }
 
-        SceneMeshRenderer.EndFrame();
+        MeshBatchRenderer.EndFrame();
     }
 
     if (InEditorRenderData.SceneView != nullptr)
@@ -274,12 +257,25 @@ void FRendererModule::RenderOverlayPass(const FEditorRenderData& InEditorRenderD
     {
         RHI.ClearDepthStencil(RHI.GetDepthStencilView(), 1.0f, 0);
 
-        OverlayMeshRenderer.BeginFrame(InEditorRenderData.SceneView, EViewModeIndex::VMI_Unlit,
-                                       true);
-        GizmoSubmitter.Submit(OverlayMeshRenderer, InEditorRenderData);
-        OverlayMeshRenderer.EndFrame();
-    }
+        // ================= Gizmo =================
+        FMeshBatchPassParams GizmoPassParams = {};
+        GizmoPassParams.SceneView = InEditorRenderData.SceneView;
+        GizmoPassParams.ViewMode = EViewModeIndex::VMI_Unlit;
+        GizmoPassParams.bUseInstancing = true;
+        GizmoPassParams.bDisableDepth = false;
 
+        MeshBatchRenderer.BeginFrame(GizmoPassParams);
+        OverlayMeshSubmitter.Submit(MeshBatchRenderer, InEditorRenderData);
+        MeshBatchRenderer.EndFrame();
+
+        // ================= Gizmo Center =================
+        FMeshBatchPassParams GizmoCenterPassParams = GizmoPassParams;
+        GizmoCenterPassParams.bDisableDepth = true;
+
+        MeshBatchRenderer.BeginFrame(GizmoCenterPassParams);
+        OverlayMeshSubmitter.SubmitCenterHandle(MeshBatchRenderer, InEditorRenderData);
+        MeshBatchRenderer.EndFrame();
+    }
 }
 
 bool FRendererModule::PickRaw(const FEditorRenderData& InEditorRenderData, int32 MouseX,
@@ -297,7 +293,7 @@ bool FRendererModule::PickRaw(const FEditorRenderData& InEditorRenderData, int32
 
     if (InEditorRenderData.bShowGizmo && InEditorRenderData.Gizmo.GizmoType != EGizmoType::None)
     {
-        GizmoSubmitter.Submit(ObjectIdRenderer, InEditorRenderData);
+        OverlayMeshSubmitter.Submit(ObjectIdRenderer, InEditorRenderData);
     }
 
     return ObjectIdRenderer.RenderAndReadBack(OutPickId);

@@ -1,6 +1,6 @@
-#include "Renderer/Submitter/GizmoSubmitter.h"
+#include "Renderer/Submitter/OverlayMeshSubmitter.h"
 
-#include "Renderer/D3D11/D3D11OverlayMeshRenderer.h"
+#include "Renderer/D3D11/D3D11MeshBatchRenderer.h"
 #include "Renderer/D3D11/D3D11ObjectIdRenderer.h"
 #include "Renderer/EditorRenderData.h"
 #include "Renderer/Types/AxisColors.h"
@@ -100,8 +100,8 @@ namespace
     }
 } // namespace
 
-void FGizmoSubmitter::Submit(FD3D11OverlayMeshRenderer& InMeshRenderer,
-                             const FEditorRenderData&   InEditorRenderData)
+void FOverlayMeshSubmitter::Submit(FD3D11MeshBatchRenderer& InMeshRenderer,
+                                  const FEditorRenderData&   InEditorRenderData) const
 {
     if (!InEditorRenderData.bShowGizmo || InEditorRenderData.SceneView == nullptr ||
         InEditorRenderData.Gizmo.GizmoType == EGizmoType::None)
@@ -117,14 +117,12 @@ void FGizmoSubmitter::Submit(FD3D11OverlayMeshRenderer& InMeshRenderer,
     {
     case EGizmoType::Translation:
         AddTranslationGizmo(GizmoPrimitives, InEditorRenderData.Gizmo, GizmoMatrix);
-        AddCenterHandle(GizmoPrimitives, InEditorRenderData.Gizmo, GizmoMatrix);
         break;
     case EGizmoType::Rotation:
         AddRotationGizmo(GizmoPrimitives, InEditorRenderData.Gizmo, GizmoMatrix);
         break;
     case EGizmoType::Scaling:
         AddScalingGizmo(GizmoPrimitives, InEditorRenderData.Gizmo, GizmoMatrix);
-        AddCenterHandle(GizmoPrimitives, InEditorRenderData.Gizmo, GizmoMatrix);
         break;
     default:
         break;
@@ -136,8 +134,34 @@ void FGizmoSubmitter::Submit(FD3D11OverlayMeshRenderer& InMeshRenderer,
     }
 }
 
-void FGizmoSubmitter::Submit(FD3D11ObjectIdRenderer&  InObjectIdRenderer,
-                             const FEditorRenderData& InEditorRenderData) const
+void FOverlayMeshSubmitter::SubmitCenterHandle(FD3D11MeshBatchRenderer& InMeshRenderer,
+                                               const FEditorRenderData&   InEditorRenderData) const
+{
+    if (!InEditorRenderData.bShowGizmo || InEditorRenderData.SceneView == nullptr ||
+        InEditorRenderData.Gizmo.GizmoType == EGizmoType::None)
+    {
+        return;
+    }
+
+    if (InEditorRenderData.Gizmo.GizmoType != EGizmoType::Translation &&
+        InEditorRenderData.Gizmo.GizmoType != EGizmoType::Scaling)
+    {
+        return;
+    }
+
+    const FMatrix GizmoMatrix = BuildGizmoMatrix(InEditorRenderData.Gizmo);
+
+    TArray<FPrimitiveRenderItem> CenterPrimitives;
+    AddCenterHandle(CenterPrimitives, InEditorRenderData.Gizmo, GizmoMatrix);
+
+    if (!CenterPrimitives.empty())
+    {
+        InMeshRenderer.AddPrimitives(CenterPrimitives);
+    }
+}
+
+void FOverlayMeshSubmitter::Submit(FD3D11ObjectIdRenderer&  InObjectIdRenderer,
+                                  const FEditorRenderData& InEditorRenderData) const
 {
     if (!InEditorRenderData.bShowGizmo || InEditorRenderData.SceneView == nullptr ||
         InEditorRenderData.Gizmo.GizmoType == EGizmoType::None)
@@ -172,14 +196,14 @@ void FGizmoSubmitter::Submit(FD3D11ObjectIdRenderer&  InObjectIdRenderer,
     }
 }
 
-FColor FGizmoSubmitter::ResolveAxisColor(EAxis InAxis, EGizmoHighlight InHighlight) const
+FColor FOverlayMeshSubmitter::ResolveAxisColor(EAxis InAxis, EGizmoHighlight InHighlight) const
 {
     return IsAxisHighlighted(InAxis, InHighlight)
                ? GetAxisHighlightColor(InAxis)
                : GetAxisBaseColor(InAxis);
 }
 
-void FGizmoSubmitter::AddCenterHandle(TArray<FPrimitiveRenderItem>& OutPrimitives,
+void FOverlayMeshSubmitter::AddCenterHandle(TArray<FPrimitiveRenderItem>& OutPrimitives,
                                       const FGizmoDrawData&         InGizmoDrawData,
                                       const FMatrix&                InGizmoMatrix) const
 {
@@ -195,7 +219,7 @@ void FGizmoSubmitter::AddCenterHandle(TArray<FPrimitiveRenderItem>& OutPrimitive
         World, ResolveAxisColor(EAxis::Center, InGizmoDrawData.Highlight), EBasicMeshType::Sphere));
 }
 
-void FGizmoSubmitter::AddCenterHandle(TArray<FObjectIdRenderItem>& OutItems,
+void FOverlayMeshSubmitter::AddCenterHandle(TArray<FObjectIdRenderItem>& OutItems,
                                       const FGizmoDrawData&        InGizmoDrawData,
                                       const FMatrix&               InGizmoMatrix) const
 {
@@ -211,7 +235,7 @@ void FGizmoSubmitter::AddCenterHandle(TArray<FObjectIdRenderItem>& OutItems,
     OutItems.push_back(MakeObjectIdItem(World, EBasicMeshType::Sphere, CenterId));
 }
 
-void FGizmoSubmitter::AddTranslationGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
+void FOverlayMeshSubmitter::AddTranslationGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
                                           const FGizmoDrawData&         InGizmoDrawData,
                                           const FMatrix&                InGizmoMatrix) const
 {
@@ -246,7 +270,7 @@ void FGizmoSubmitter::AddTranslationGizmo(TArray<FPrimitiveRenderItem>& OutPrimi
     }
 }
 
-void FGizmoSubmitter::AddRotationGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
+void FOverlayMeshSubmitter::AddRotationGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
                                        const FGizmoDrawData&         InGizmoDrawData,
                                        const FMatrix&                InGizmoMatrix) const
 {
@@ -262,7 +286,7 @@ void FGizmoSubmitter::AddRotationGizmo(TArray<FPrimitiveRenderItem>& OutPrimitiv
     }
 }
 
-void FGizmoSubmitter::AddScalingGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
+void FOverlayMeshSubmitter::AddScalingGizmo(TArray<FPrimitiveRenderItem>& OutPrimitives,
                                       const FGizmoDrawData&         InGizmoDrawData,
                                       const FMatrix&                InGizmoMatrix) const
 {
@@ -295,7 +319,7 @@ void FGizmoSubmitter::AddScalingGizmo(TArray<FPrimitiveRenderItem>& OutPrimitive
     }
 }
 
-void FGizmoSubmitter::AddTranslationGizmo(TArray<FObjectIdRenderItem>& OutItems,
+void FOverlayMeshSubmitter::AddTranslationGizmo(TArray<FObjectIdRenderItem>& OutItems,
                                           const FGizmoDrawData&        InGizmoDrawData,
                                           const FMatrix&               InGizmoMatrix) const
 {
@@ -326,7 +350,7 @@ void FGizmoSubmitter::AddTranslationGizmo(TArray<FObjectIdRenderItem>& OutItems,
     }
 }
 
-void FGizmoSubmitter::AddRotationGizmo(TArray<FObjectIdRenderItem>& OutItems,
+void FOverlayMeshSubmitter::AddRotationGizmo(TArray<FObjectIdRenderItem>& OutItems,
                                        const FGizmoDrawData&        InGizmoDrawData,
                                        const FMatrix&               InGizmoMatrix) const
 {
@@ -341,7 +365,7 @@ void FGizmoSubmitter::AddRotationGizmo(TArray<FObjectIdRenderItem>& OutItems,
     }
 }
 
-void FGizmoSubmitter::AddScalingGizmo(TArray<FObjectIdRenderItem>& OutItems,
+void FOverlayMeshSubmitter::AddScalingGizmo(TArray<FObjectIdRenderItem>& OutItems,
                                       const FGizmoDrawData&        InGizmoDrawData,
                                       const FMatrix&               InGizmoMatrix) const
 {

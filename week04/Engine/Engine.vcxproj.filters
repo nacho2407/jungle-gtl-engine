@@ -303,13 +303,7 @@
     <ClCompile Include="Source\Renderer\D3D11\D3D11OutlineRenderer.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Renderer\D3D11\D3D11OverlayMeshRenderer.cpp">
-      <Filter>Source\Renderer\D3D11</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Renderer\D3D11\D3D11RHI.cpp">
-      <Filter>Source\Renderer\D3D11</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Renderer\D3D11\D3D11SceneMeshRenderer.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
     <ClCompile Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.cpp">
@@ -324,10 +318,10 @@
     <ClCompile Include="Source\Renderer\Submitter\AABBSubmitter.cpp">
       <Filter>Source\Renderer\Submitter</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Renderer\Submitter\GizmoSubmitter.cpp">
+    <ClCompile Include="Source\Renderer\Submitter\OverlayMeshSubmitter.cpp">
       <Filter>Source\Renderer\Submitter</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Renderer\Submitter\PrimitiveSubmitter.cpp">
+    <ClCompile Include="Source\Renderer\Submitter\SceneMeshSubmitter.cpp">
       <Filter>Source\Renderer\Submitter</Filter>
     </ClCompile>
     <ClCompile Include="Source\Renderer\Submitter\SpriteSubmitter.cpp">
@@ -677,13 +671,7 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11OutlineRenderer.h">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\D3D11\D3D11OverlayMeshRenderer.h">
-      <Filter>Source\Renderer\D3D11</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Renderer\D3D11\D3D11RHI.h">
-      <Filter>Source\Renderer\D3D11</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Renderer\D3D11\D3D11SceneMeshRenderer.h">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h">
@@ -716,10 +704,10 @@
     <ClInclude Include="Source\Renderer\Submitter\AABBSubmitter.h">
       <Filter>Source\Renderer\Submitter</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\Submitter\GizmoSubmitter.h">
+    <ClInclude Include="Source\Renderer\Submitter\OverlayMeshSubmitter.h">
       <Filter>Source\Renderer\Submitter</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\Submitter\PrimitiveSubmitter.h">
+    <ClInclude Include="Source\Renderer\Submitter\SceneMeshSubmitter.h">
       <Filter>Source\Renderer\Submitter</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\Submitter\SpriteSubmitter.h">

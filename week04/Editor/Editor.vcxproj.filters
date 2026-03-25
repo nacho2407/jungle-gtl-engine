@@ -61,9 +61,6 @@
     <Filter Include="Source\Viewport\Selection">
       <UniqueIdentifier>{c02bdf14-d23c-3f72-e5f4-7a918dc1b5dc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Viewport\Gizmo\GizmoControlStrategy">
-      <UniqueIdentifier>{0706b8ee-f7f1-3fe8-771b-0b67e0e4e290}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Camera\ViewportCamera.cpp">

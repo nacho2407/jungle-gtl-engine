@@ -2,6 +2,7 @@
 
 #include "Renderer/D3D11/D3D11RHI.h"
 #include "Renderer/SceneView.h"
+#include "Renderer/Types/RenderItem.h"
 #include "Renderer/Types/ShaderConstants.h"
 #include "Renderer/Types/VertexTypes.h"
 
@@ -21,8 +22,7 @@ bool FD3D11MeshBatchRenderer::Initialize(FD3D11RHI* InRHI)
     }
 
     RHI = InRHI;
-    CurrentSceneView = nullptr;
-    bUseInstancing = true;
+    CurrentPassParams = {};
 
     if (!CreateShaders())
     {
@@ -63,8 +63,7 @@ void FD3D11MeshBatchRenderer::Shutdown()
     ResetBatches();
     ReleaseBasicMeshes();
 
-    CurrentSceneView = nullptr;
-    bUseInstancing = true;
+    CurrentPassParams = {};
 
     DepthDisabledState.Reset();
     DepthStencilState.Reset();
@@ -86,18 +85,13 @@ void FD3D11MeshBatchRenderer::Shutdown()
     RHI = nullptr;
 }
 
-void FD3D11MeshBatchRenderer::BeginFrame(const FSceneView* InSceneView, EViewModeIndex InViewMode,
-                                         bool bInUseInstancing)
+void FD3D11MeshBatchRenderer::BeginFrame(const FMeshBatchPassParams& InPassParams)
 {
-    CurrentSceneView = InSceneView;
-    ViewMode = InViewMode;
-    bUseInstancing = bInUseInstancing;
-
+    CurrentPassParams = InPassParams;
     ResetBatches();
 }
 
-void FD3D11MeshBatchRenderer::AddPrimitive(const FPrimitiveRenderItem& InItem,
-                                           EMeshDrawClass              InDrawClass)
+void FD3D11MeshBatchRenderer::AddPrimitive(const FPrimitiveRenderItem& InItem)
 {
     const int32 MeshTypeIndex = static_cast<int32>(InItem.MeshType);
     if (MeshTypeIndex < 0 || MeshTypeIndex >= static_cast<int32>(EBasicMeshType::Count))
@@ -113,20 +107,14 @@ void FD3D11MeshBatchRenderer::AddPrimitive(const FPrimitiveRenderItem& InItem,
     FMeshDrawData DrawData = {};
     DrawData.World = InItem.World;
     DrawData.Color = InItem.Color;
-
-    TArray<FMeshDrawData>* TargetDraws = (InDrawClass == EMeshDrawClass::Editor)
-                                             ? &EditorMeshDraws[MeshTypeIndex]
-                                             : &SceneMeshDraws[MeshTypeIndex];
-
-    TargetDraws->push_back(DrawData);
+    MeshDraws[MeshTypeIndex].push_back(DrawData);
 }
 
-void FD3D11MeshBatchRenderer::AddPrimitives(const TArray<FPrimitiveRenderItem>& InItems,
-                                            EMeshDrawClass                      InDrawClass)
+void FD3D11MeshBatchRenderer::AddPrimitives(const TArray<FPrimitiveRenderItem>& InItems)
 {
     for (const FPrimitiveRenderItem& Item : InItems)
     {
-        AddPrimitive(Item, InDrawClass);
+        AddPrimitive(Item);
     }
 }
 
@@ -139,21 +127,41 @@ void FD3D11MeshBatchRenderer::EndFrame()
 
     Flush();
     ResetBatches();
-    CurrentSceneView = nullptr;
+    CurrentPassParams = {};
 }
 
 void FD3D11MeshBatchRenderer::Flush()
 {
-    if (RHI == nullptr || CurrentSceneView == nullptr)
+    if (RHI == nullptr || CurrentPassParams.SceneView == nullptr)
     {
         return;
     }
 
     const EMeshDrawPath DrawPath =
-        bUseInstancing ? EMeshDrawPath::Instanced : EMeshDrawPath::Single;
+        CurrentPassParams.bUseInstancing ? EMeshDrawPath::Instanced : EMeshDrawPath::Single;
 
-    FlushSceneQueue(DrawPath, CurrentSceneView);
-    FlushEditorQueue(DrawPath, CurrentSceneView);
+    PrepareFlush(DrawPath, CurrentPassParams.SceneView);
+
+    if (CurrentPassParams.ViewMode == EViewModeIndex::VMI_Wireframe)
+    {
+        BindWireframeRasterizer();
+    }
+    else
+    {
+        BindSolidRasterizer();
+    }
+
+    for (int32 Index = 0; Index < static_cast<int32>(EBasicMeshType::Count); ++Index)
+    {
+        TArray<FMeshDrawData>& Draws = MeshDraws[Index];
+        if (Draws.empty())
+        {
+            continue;
+        }
+
+        DrawMeshBatch(static_cast<EBasicMeshType>(Index), DrawPath, CurrentPassParams.SceneView,
+                      Draws);
+    }
 }
 
 bool FD3D11MeshBatchRenderer::CreateShaders()
@@ -402,8 +410,7 @@ void FD3D11MeshBatchRenderer::ResetBatches()
 {
     for (int32 Index = 0; Index < static_cast<int32>(EBasicMeshType::Count); ++Index)
     {
-        SceneMeshDraws[Index].clear();
-        EditorMeshDraws[Index].clear();
+        MeshDraws[Index].clear();
     }
 }
 
@@ -501,65 +508,10 @@ void FD3D11MeshBatchRenderer::PrepareFlush(EMeshDrawPath DrawPath, const FSceneV
     }
 
     BindPipeline(DrawPath);
-    RHI->SetDepthStencilState(DepthStencilState.Get(), 0);
+    RHI->SetDepthStencilState(CurrentPassParams.bDisableDepth ? DepthDisabledState.Get()
+                                                              : DepthStencilState.Get(),
+                              0);
     UpdatePerFrameConstants(InSceneView, DrawPath);
-}
-
-void FD3D11MeshBatchRenderer::FlushSceneQueue(EMeshDrawPath DrawPath, const FSceneView* InSceneView)
-{
-    if (RHI == nullptr || InSceneView == nullptr)
-    {
-        return;
-    }
-
-    PrepareFlush(DrawPath, InSceneView);
-
-    if (ViewMode == EViewModeIndex::VMI_Wireframe)
-    {
-        BindWireframeRasterizer();
-    }
-    else
-    {
-        BindSolidRasterizer();
-    }
-
-    for (int32 Index = 0; Index < static_cast<int32>(EBasicMeshType::Count); ++Index)
-    {
-        TArray<FMeshDrawData>& Draws = SceneMeshDraws[Index];
-        if (Draws.empty())
-        {
-            continue;
-        }
-
-        DrawMeshBatch(static_cast<EBasicMeshType>(Index), DrawPath, InSceneView, Draws);
-    }
-}
-
-void FD3D11MeshBatchRenderer::FlushEditorQueue(EMeshDrawPath     DrawPath,
-                                               const FSceneView* InSceneView)
-{
-    if (RHI == nullptr || InSceneView == nullptr)
-    {
-        return;
-    }
-
-    BindPipeline(DrawPath);
-    RHI->SetDepthStencilState(DepthStencilState.Get(), 0);
-    UpdatePerFrameConstants(InSceneView, DrawPath);
-
-    BindSolidRasterizer();
-
-    for (int32 Index = 0; Index < static_cast<int32>(EBasicMeshType::Count); ++Index)
-    {
-        TArray<FMeshDrawData>& Draws = EditorMeshDraws[Index];
-        if (Draws.empty())
-        {
-            continue;
-        }
-
-        DrawMeshBatch(static_cast<EBasicMeshType>(Index), DrawPath, InSceneView, Draws);
-    }
-
 }
 
 void FD3D11MeshBatchRenderer::DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath DrawPath,
