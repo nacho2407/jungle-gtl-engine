@@ -10,6 +10,7 @@ enum class EContentBrowserItemType : uint8
     Scene,
     Texture,
     Font,
+    SpriteAtlas,
     UnknownFile
 };
 

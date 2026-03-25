@@ -115,6 +115,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClCompile Include="Source\Panel\Panel.cpp" />
     <ClCompile Include="Source\Panel\PanelManager.cpp" />
     <ClCompile Include="Source\Panel\PropertiesPanel.cpp" />
+    <ClCompile Include="Source\Panel\ShortcutsPanel.cpp" />
     <ClCompile Include="Source\Panel\StatePanel.cpp" />
     <ClCompile Include="Source\ThirdParty\imgui\imgui.cpp" />
     <ClCompile Include="Source\ThirdParty\imgui\imgui_demo.cpp" />
@@ -159,6 +160,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClInclude Include="Source\Panel\Panel.h" />
     <ClInclude Include="Source\Panel\PanelManager.h" />
     <ClInclude Include="Source\Panel\PropertiesPanel.h" />
+    <ClInclude Include="Source\Panel\ShortcutsPanel.h" />
     <ClInclude Include="Source\Panel\StatePanel.h" />
     <ClInclude Include="Source\ThirdParty\imgui\imconfig.h" />
     <ClInclude Include="Source\ThirdParty\imgui\imgui.h" />

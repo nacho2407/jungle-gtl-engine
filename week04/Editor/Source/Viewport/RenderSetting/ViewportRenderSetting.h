@@ -9,6 +9,17 @@ public:
     EViewModeIndex GetViewMode() const { return ViewMode; }
     void SetViewMode(EViewModeIndex InViewMode) { ViewMode = InViewMode; }
 
+    bool IsGridVisible() const { return bShowGrid; }
+    void SetGridVisible(bool bInShowGrid) { bShowGrid = bInShowGrid; }
+
+    bool IsSelectionOutlineVisible() const { return bShowSelectionOutline; }
+    void SetSelectionOutlineVisible(bool bInShowSelectionOutline)
+    {
+        bShowSelectionOutline = bInShowSelectionOutline;
+    }
+
 private:
     EViewModeIndex ViewMode = EViewModeIndex::VMI_Lit;
+    bool           bShowGrid = true;
+    bool           bShowSelectionOutline = true;
 };

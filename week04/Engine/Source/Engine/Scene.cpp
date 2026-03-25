@@ -8,6 +8,7 @@
 #include "Engine/Component/Sprite/SubUVComponent.h"
 #include "Engine/Component/Text/AtlasTextComponent.h"
 #include "Engine/Game/Actor.h"
+#include "Renderer/RenderAsset/SubUVAtlasResource.h"
 #include "Renderer/Types/RenderItem.h"
 
 namespace
@@ -30,6 +31,29 @@ namespace
         if (SubUVComponent == nullptr)
         {
             return;
+        }
+
+        if (const FSubUVAtlasResource* AtlasResource = SubUVComponent->GetSubUVAtlasResource())
+        {
+            const int32 FrameCount = std::max(SubUVComponent->GetFrameCount(), 1);
+            const int32 FrameIndex =
+                std::clamp(SubUVComponent->GetFrameIndex(), 0, FrameCount - 1);
+            const FSubUVFrame* Frame = AtlasResource->FindFrame(static_cast<uint32>(FrameIndex));
+
+            const float AtlasWidth = static_cast<float>(
+                std::max(AtlasResource->Common.ScaleW, AtlasResource->Atlas.Width));
+            const float AtlasHeight = static_cast<float>(
+                std::max(AtlasResource->Common.ScaleH, AtlasResource->Atlas.Height));
+            if (Frame != nullptr && AtlasWidth > 0.0f && AtlasHeight > 0.0f)
+            {
+                OutUVMin =
+                    FVector2(static_cast<float>(Frame->X) / AtlasWidth,
+                             static_cast<float>(Frame->Y) / AtlasHeight);
+                OutUVMax =
+                    FVector2(static_cast<float>(Frame->X + Frame->Width) / AtlasWidth,
+                             static_cast<float>(Frame->Y + Frame->Height) / AtlasHeight);
+                return;
+            }
         }
 
         const int32 Columns = std::max(SubUVComponent->GetAtlasColumns(), 1);

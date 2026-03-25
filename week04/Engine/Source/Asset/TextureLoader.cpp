@@ -76,6 +76,13 @@ namespace
             return Settings.Format;
         }
     }
+
+    FString SourcePathToUtf8(const FSourceRecord& Source)
+    {
+        const std::filesystem::path FilePath(Source.NormalizedPath);
+        const std::u8string Utf8Path = FilePath.u8string();
+        return FString(reinterpret_cast<const char*>(Utf8Path.data()), Utf8Path.size());
+    }
 } // namespace
 
 FTextureLoader::FTextureLoader(FD3D11RHI* InRHI) : RHI(InRHI) {}
@@ -115,6 +122,9 @@ UAsset* FTextureLoader::LoadAsset(const FSourceRecord& Source, const FAssetLoadP
     const std::shared_ptr<FDecodedImage> DecodedImage = GetOrDecode(Source);
     if (!DecodedImage)
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[TextureLoader] Failed at image decode. Path=%s",
+               SourcePathToUtf8(Source).c_str());
         return nullptr;
     }
 
@@ -123,6 +133,9 @@ UAsset* FTextureLoader::LoadAsset(const FSourceRecord& Source, const FAssetLoadP
         GetOrCreateResource(Source.SourceHash, *DecodedImage, Settings);
     if (!Resource)
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[TextureLoader] Failed at texture resource creation. Path=%s",
+               SourcePathToUtf8(Source).c_str());
         return nullptr;
     }
 
@@ -186,17 +199,26 @@ bool FTextureLoader::DecodeWithWIC(const FSourceRecord& Source, FDecodedImage& O
 {
     if (!Source.bFileBytesLoaded || Source.FileBytes.empty())
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[TextureLoader] DecodeWithWIC failed at source bytes validation. Path=%s",
+               SourcePathToUtf8(Source).c_str());
         return false;
     }
 
     if (Source.FileBytes.size() > static_cast<size_t>(std::numeric_limits<DWORD>::max()))
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[TextureLoader] DecodeWithWIC failed at DWORD size validation. Path=%s",
+               SourcePathToUtf8(Source).c_str());
         return false;
     }
 
     FScopedComInitializer ComInitializer;
     if (!ComInitializer.IsUsable())
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[TextureLoader] DecodeWithWIC failed at COM initialization. Path=%s",
+               SourcePathToUtf8(Source).c_str());
         return false;
     }
 
@@ -295,11 +317,15 @@ bool FTextureLoader::CreateTextureResource(const FDecodedImage&         Image,
 {
     if (!RHI || !RHI->GetDevice())
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[TextureLoader] CreateTextureResource failed at D3D device validation.");
         return false;
     }
 
     if (Image.Width == 0 || Image.Height == 0 || Image.Pixels.empty())
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[TextureLoader] CreateTextureResource failed at decoded image validation.");
         return false;
     }
 
@@ -307,6 +333,9 @@ bool FTextureLoader::CreateTextureResource(const FDecodedImage&         Image,
     if (TextureFormat != DXGI_FORMAT_R8G8B8A8_UNORM &&
         TextureFormat != DXGI_FORMAT_R8G8B8A8_UNORM_SRGB)
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[TextureLoader] CreateTextureResource failed at format validation. Format=%d",
+               static_cast<int>(TextureFormat));
         return false;
     }
 
@@ -320,6 +349,8 @@ bool FTextureLoader::CreateTextureResource(const FDecodedImage&         Image,
     {
         if (!RHI->GetDeviceContext())
         {
+            UE_LOG(Asset, ELogVerbosity::Warning,
+                   "[TextureLoader] CreateTextureResource failed at D3D device context validation.");
             return false;
         }
 
@@ -337,6 +368,9 @@ bool FTextureLoader::CreateTextureResource(const FDecodedImage&         Image,
         Hr = RHI->GetDevice()->CreateTexture2D(&TextureDesc, nullptr, &Texture);
         if (FAILED(Hr))
         {
+            UE_LOG(Asset, ELogVerbosity::Warning,
+                   "[TextureLoader] CreateTextureResource failed at CreateTexture2D with mips. HRESULT=0x%08x",
+                   static_cast<uint32>(Hr));
             return false;
         }
 
@@ -349,6 +383,9 @@ bool FTextureLoader::CreateTextureResource(const FDecodedImage&         Image,
         Hr = RHI->GetDevice()->CreateShaderResourceView(Texture.Get(), &SRVDesc, &SRV);
         if (FAILED(Hr))
         {
+            UE_LOG(Asset, ELogVerbosity::Warning,
+                   "[TextureLoader] CreateTextureResource failed at CreateShaderResourceView with mips. HRESULT=0x%08x",
+                   static_cast<uint32>(Hr));
             return false;
         }
 
@@ -375,6 +412,9 @@ bool FTextureLoader::CreateTextureResource(const FDecodedImage&         Image,
         Hr = RHI->GetDevice()->CreateTexture2D(&TextureDesc, &InitialData, &Texture);
         if (FAILED(Hr))
         {
+            UE_LOG(Asset, ELogVerbosity::Warning,
+                   "[TextureLoader] CreateTextureResource failed at CreateTexture2D. HRESULT=0x%08x",
+                   static_cast<uint32>(Hr));
             return false;
         }
 
@@ -387,6 +427,9 @@ bool FTextureLoader::CreateTextureResource(const FDecodedImage&         Image,
         Hr = RHI->GetDevice()->CreateShaderResourceView(Texture.Get(), &SRVDesc, &SRV);
         if (FAILED(Hr))
         {
+            UE_LOG(Asset, ELogVerbosity::Warning,
+                   "[TextureLoader] CreateTextureResource failed at CreateShaderResourceView. HRESULT=0x%08x",
+                   static_cast<uint32>(Hr));
             return false;
         }
     }

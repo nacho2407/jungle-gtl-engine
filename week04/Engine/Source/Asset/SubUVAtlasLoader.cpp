@@ -164,6 +164,13 @@ namespace
         namespace fs = std::filesystem;
         return fs::path(FileName).stem().string();
     }
+
+    FString WidePathToUtf8(const FWString& Path)
+    {
+        const std::filesystem::path FilePath(Path);
+        const std::u8string Utf8Path = FilePath.u8string();
+        return FString(reinterpret_cast<const char*>(Utf8Path.data()), Utf8Path.size());
+    }
 }
 
 FSubUVAtlasLoader::FSubUVAtlasLoader(FD3D11RHI* InRHI)
@@ -216,6 +223,9 @@ UAsset* FSubUVAtlasLoader::LoadAsset(const FSourceRecord& Source, const FAssetLo
     FSubUVAtlasResource AtlasResource;
     if (!ParseSubUVJson(Source, AtlasResource))
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[SubUVAtlasLoader] Failed at sprite atlas parse. Path=%s",
+               WidePathToUtf8(Source.NormalizedPath).c_str());
         return nullptr;
     }
 
@@ -230,39 +240,60 @@ bool FSubUVAtlasLoader::ParseSubUVJson(const FSourceRecord& Source, FSubUVAtlasR
 
     if (!Source.bFileBytesLoaded || Source.FileBytes.empty())
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[SubUVAtlasLoader] ParseSubUVJson failed at source bytes validation. Path=%s",
+               WidePathToUtf8(Source.NormalizedPath).c_str());
         return false;
     }
 
     const nlohmann::json Root = nlohmann::json::parse(Source.FileBytes.begin(), Source.FileBytes.end(), nullptr, false);
     if (Root.is_discarded())
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[SubUVAtlasLoader] ParseSubUVJson failed at JSON parse. Path=%s",
+               WidePathToUtf8(Source.NormalizedPath).c_str());
         return false;
     }
 
     if (!ParseMeta(Root, OutAtlas))
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[SubUVAtlasLoader] ParseSubUVJson failed at meta parse. Path=%s",
+               WidePathToUtf8(Source.NormalizedPath).c_str());
         return false;
     }
 
     if (!ParseFrames(Root, OutAtlas.Frames))
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[SubUVAtlasLoader] ParseSubUVJson failed at frame parse. Path=%s",
+               WidePathToUtf8(Source.NormalizedPath).c_str());
         OutAtlas.Reset();
         return false;
     }
 
     if (!ParseSequences(OutAtlas.Frames, OutAtlas.Sequences))
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[SubUVAtlasLoader] ParseSubUVJson failed at sequence parse. Path=%s",
+               WidePathToUtf8(Source.NormalizedPath).c_str());
         OutAtlas.Reset();
         return false;
     }
 
     if (OutAtlas.PageFiles.empty())
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[SubUVAtlasLoader] ParseSubUVJson failed at atlas page discovery. Path=%s",
+               WidePathToUtf8(Source.NormalizedPath).c_str());
         return false;
     }
 
     if (!LoadAtlasTexture(Source, OutAtlas.PageFiles[0], OutAtlas.Atlas))
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[SubUVAtlasLoader] ParseSubUVJson failed at atlas texture load. Path=%s AtlasPage=%s",
+               WidePathToUtf8(Source.NormalizedPath).c_str(), OutAtlas.PageFiles[0].c_str());
         OutAtlas.Reset();
         return false;
     }
@@ -507,11 +538,15 @@ bool FSubUVAtlasLoader::CreateTextureResource(const FDecodedAtlasImage& DecodedI
 {
     if (!RHI || !RHI->GetDevice())
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[SubUVAtlasLoader] CreateTextureResource failed at D3D device validation.");
         return false;
     }
 
     if (DecodedImage.Width == 0 || DecodedImage.Height == 0 || DecodedImage.Pixels.empty())
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[SubUVAtlasLoader] CreateTextureResource failed at decoded atlas validation.");
         return false;
     }
 
@@ -540,6 +575,9 @@ bool FSubUVAtlasLoader::CreateTextureResource(const FDecodedAtlasImage& DecodedI
     HRESULT Hr = RHI->GetDevice()->CreateTexture2D(&TextureDesc, &InitialData, &Texture);
     if (FAILED(Hr))
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[SubUVAtlasLoader] CreateTextureResource failed at CreateTexture2D. HRESULT=0x%08x",
+               static_cast<uint32>(Hr));
         return false;
     }
 
@@ -553,6 +591,9 @@ bool FSubUVAtlasLoader::CreateTextureResource(const FDecodedAtlasImage& DecodedI
     Hr = RHI->GetDevice()->CreateShaderResourceView(Texture.Get(), &SRVDesc, &SRV);
     if (FAILED(Hr))
     {
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[SubUVAtlasLoader] CreateTextureResource failed at CreateShaderResourceView. HRESULT=0x%08x",
+               static_cast<uint32>(Hr));
         return false;
     }
 

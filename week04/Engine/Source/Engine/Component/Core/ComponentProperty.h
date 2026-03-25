@@ -11,6 +11,7 @@ namespace Engine::Component
         Any,
         FontFile,
         TextureImage,
+        SpriteAtlasFile,
         SceneFile
     };
 

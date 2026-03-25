@@ -126,6 +126,9 @@
     <ClCompile Include="Source\Panel\PropertiesPanel.cpp">
       <Filter>Source\Panel</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Panel\ShortcutsPanel.cpp">
+      <Filter>Source\Panel</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Panel\StatePanel.cpp">
       <Filter>Source\Panel</Filter>
     </ClCompile>
@@ -252,6 +255,9 @@
       <Filter>Source\Panel</Filter>
     </ClInclude>
     <ClInclude Include="Source\Panel\PropertiesPanel.h">
+      <Filter>Source\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Panel\ShortcutsPanel.h">
       <Filter>Source\Panel</Filter>
     </ClInclude>
     <ClInclude Include="Source\Panel\StatePanel.h">
