@@ -1,0 +1,413 @@
+{
+  "schema": "JungleScene",
+  "version": 2,
+  "actors": [
+    {
+      "type": "ACubeActor",
+      "uuid": 1,
+      "name": "CubeActor 1",
+      "pickable": true,
+      "components": [
+        {
+          "type": "UCubeComponent",
+          "is_root": true,
+          "uuid": 2,
+          "name": "None",
+          "transform": {
+            "location": [
+              0,
+              -3.6683669090271,
+              0
+            ],
+            "rotation_quat": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "properties": {
+            "color": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "ACubeActor",
+      "uuid": 5,
+      "name": "CubeActor 2",
+      "pickable": true,
+      "components": [
+        {
+          "type": "UCubeComponent",
+          "is_root": true,
+          "uuid": 6,
+          "name": "None",
+          "transform": {
+            "location": [
+              0,
+              -4.64376354217529,
+              0
+            ],
+            "rotation_quat": [
+              -0,
+              -0.477158725261688,
+              -0,
+              0.878817141056061
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "properties": {
+            "color": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "ACubeActor",
+      "uuid": 8,
+      "name": "CubeActor 3",
+      "pickable": true,
+      "components": [
+        {
+          "type": "UCubeComponent",
+          "is_root": true,
+          "uuid": 9,
+          "name": "None",
+          "transform": {
+            "location": [
+              0,
+              6.53012895584106,
+              0
+            ],
+            "rotation_quat": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "properties": {
+            "color": [
+              1,
+              0.378378391265869,
+              0.378378391265869,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "ASpriteActor",
+      "uuid": 11,
+      "name": "SpriteActor 4",
+      "pickable": true,
+      "components": [
+        {
+          "type": "USpriteComponent",
+          "is_root": true,
+          "uuid": 12,
+          "name": "None",
+          "transform": {
+            "location": [
+              0.2750403881073,
+              2.93697881698608,
+              0
+            ],
+            "rotation_quat": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "properties": {
+            "color": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "texture_path": "/Game/Texture/Panel/sample_panel.png",
+            "billboard": true
+          }
+        }
+      ]
+    },
+    {
+      "type": "AEffectActor",
+      "uuid": 15,
+      "name": "EffectActor 5",
+      "pickable": true,
+      "components": [
+        {
+          "type": "USubUVComponent",
+          "is_root": true,
+          "uuid": 16,
+          "name": "None",
+          "transform": {
+            "location": [
+              2.78137922286987,
+              1.12213790416718,
+              0
+            ],
+            "rotation_quat": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "properties": {
+            "atlas_columns": 1,
+            "color": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1
+            ],
+            "subuv_atlas_path": "/Game/Texture/Character/sample_character.json",
+            "atlas_rows": 1,
+            "animation_fps": 0,
+            "frame_index": 0
+          }
+        }
+      ]
+    },
+    {
+      "type": "ASphereActor",
+      "uuid": 34,
+      "name": "SphereActor 6",
+      "pickable": true,
+      "components": [
+        {
+          "type": "USphereComponent",
+          "is_root": true,
+          "uuid": 35,
+          "name": "None",
+          "transform": {
+            "location": [
+              -3.33413219451904,
+              0,
+              0
+            ],
+            "rotation_quat": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "properties": {
+            "color": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "AConeActor",
+      "uuid": 37,
+      "name": "ConeActor 7",
+      "pickable": true,
+      "components": [
+        {
+          "type": "UConeComponent",
+          "is_root": true,
+          "uuid": 38,
+          "name": "None",
+          "transform": {
+            "location": [
+              -2.22155070304871,
+              2.34885239601135,
+              0
+            ],
+            "rotation_quat": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "properties": {
+            "color": [
+              0.602316617965698,
+              0,
+              0,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "ACylinderActor",
+      "uuid": 40,
+      "name": "CylinderActor 8",
+      "pickable": true,
+      "components": [
+        {
+          "type": "UCylinderComponent",
+          "is_root": true,
+          "uuid": 41,
+          "name": "None",
+          "transform": {
+            "location": [
+              -3.87310600280762,
+              4.58957529067993,
+              0
+            ],
+            "rotation_quat": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "properties": {
+            "color": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "ARingActor",
+      "uuid": 43,
+      "name": "RingActor 9",
+      "pickable": true,
+      "components": [
+        {
+          "type": "URingComponent",
+          "is_root": true,
+          "uuid": 44,
+          "name": "None",
+          "transform": {
+            "location": [
+              -4.11293411254883,
+              5.543137550354,
+              0
+            ],
+            "rotation_quat": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "properties": {
+            "color": [
+              0.664092659950256,
+              1,
+              0.700406908988953,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "ATriangleActor",
+      "uuid": 46,
+      "name": "TriangleActor 10",
+      "pickable": true,
+      "components": [
+        {
+          "type": "UTriangleComponent",
+          "is_root": true,
+          "uuid": 47,
+          "name": "None",
+          "transform": {
+            "location": [
+              0,
+              4.64155721664429,
+              0
+            ],
+            "rotation_quat": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "properties": {
+            "color": [
+              0.285714268684387,
+              1,
+              0.892443418502808,
+              1
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

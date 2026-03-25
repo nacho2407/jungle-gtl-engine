@@ -20,6 +20,7 @@ private:
     void DrawTransformSection(FViewportCamera& Camera) const;
     void DrawProjectionSection(FViewportCamera& Camera) const;
     void DrawViewModeSection() const;
+    void DrawShowFlagsSection() const;
     void DrawNavigationSection() const;
     void DrawWorldSection() const;
 };
