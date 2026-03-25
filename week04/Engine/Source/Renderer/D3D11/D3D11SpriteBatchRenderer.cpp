@@ -236,32 +236,32 @@ void FD3D11SpriteBatchRenderer::AppendSpriteItem(const FSpriteRenderItem& InItem
     const FMatrix& PlacementWorld = InItem.Placement.World;
     FVector        SpriteOrigin = PlacementWorld.GetOrigin() + InItem.Placement.WorldOffset;
 
-    FVector RightAxis;
+    FVector ForwardAxis;
     FVector UpAxis;
 
     if (InItem.Placement.IsBillboard())
     {
         const FMatrix CameraWorld = CurrentSceneView->GetViewMatrix().GetInverse();
-        RightAxis = CameraWorld.GetForwardVector();
+        ForwardAxis = CameraWorld.GetForwardVector();
         UpAxis = CameraWorld.GetUpVector();
 
         const FVector WorldScale = PlacementWorld.GetScaleVector();
-        RightAxis = RightAxis * WorldScale.X;
+        ForwardAxis = ForwardAxis * WorldScale.X;
         UpAxis = UpAxis * WorldScale.Z;
     }
     else
     {
-        RightAxis = PlacementWorld.GetForwardVector();
+        ForwardAxis = PlacementWorld.GetForwardVector();
         UpAxis = PlacementWorld.GetUpVector();
     }
 
-    const FVector  BottomLeft = SpriteOrigin - RightAxis - UpAxis;
+    const FVector  BottomLeft = SpriteOrigin - ForwardAxis - UpAxis;
     const bool     bUseMissingResourceFallback = (InItem.TextureResource == nullptr);
     const FVector2 UVMin = bUseMissingResourceFallback ? FVector2(0.0f, 0.0f) : InItem.UVMin;
     const FVector2 UVMax = bUseMissingResourceFallback ? FVector2(1.0f, 1.0f) : InItem.UVMax;
     const FColor   QuadColor =
         bUseMissingResourceFallback ? RenderDebugColors::MissingGlyph : InItem.Color;
-    AppendQuad(BottomLeft, RightAxis * 2.0f, UpAxis * 2.0f, UVMin, UVMax, QuadColor);
+    AppendQuad(BottomLeft, ForwardAxis * 2.0f, UpAxis * 2.0f, UVMin, UVMax, QuadColor);
 }
 
 void FD3D11SpriteBatchRenderer::ProcessSortedItems()
