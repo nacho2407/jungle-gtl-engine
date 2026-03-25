@@ -4,28 +4,15 @@
 
 namespace
 {
-    bool ShouldRenderPrimitiveMeshItem(const FPrimitiveRenderItem& InItem,
-                                       const FSceneRenderData&    InSceneRenderData)
-    {
-        if (InItem.bIsSpriteProxy && InSceneRenderData.ViewMode != EViewModeIndex::VMI_Wireframe)
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    TArray<FPrimitiveRenderItem> BuildScenePrimitiveSubmission(const FSceneRenderData& InSceneRenderData)
+    TArray<FPrimitiveRenderItem>
+    BuildScenePrimitiveSubmission(const FSceneRenderData& InSceneRenderData)
     {
         TArray<FPrimitiveRenderItem> SubmissionItems;
         SubmissionItems.reserve(InSceneRenderData.Primitives.size());
 
         for (const FPrimitiveRenderItem& Item : InSceneRenderData.Primitives)
         {
-            if (ShouldRenderPrimitiveMeshItem(Item, InSceneRenderData))
-            {
-                SubmissionItems.push_back(Item);
-            }
+            SubmissionItems.push_back(Item);
         }
 
         return SubmissionItems;
@@ -61,10 +48,7 @@ namespace
 
         for (const FPrimitiveRenderItem& Item : InSceneRenderData.Primitives)
         {
-            if (ShouldRenderPrimitiveMeshItem(Item, InSceneRenderData))
-            {
-                SubmissionItems.push_back(Item);
-            }
+            SubmissionItems.push_back(Item);
         }
 
         const FColor SelectionColor = FD3D11OutlineRenderer::GetVisibleOutlineColor();
@@ -206,6 +190,9 @@ void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
     RenderOverlayPass(InEditorRenderData, InSceneRenderData);
 }
 
+/**
+ * World: Primitives -> Grid -> Axes 
+ */
 void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderData,
                                       const FSceneRenderData&  InSceneRenderData)
 {
@@ -264,11 +251,15 @@ void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderDat
     }
 }
 
+/**
+ * Overlay: Gizmo -> Text
+ */
 void FRendererModule::RenderOverlayPass(const FEditorRenderData& InEditorRenderData,
                                         const FSceneRenderData&  InSceneRenderData)
 {
-    const bool bHasEditorGizmo = InEditorRenderData.SceneView != nullptr &&
-                                 IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo);
+    const bool bHasEditorGizmo =
+        InEditorRenderData.SceneView != nullptr &&
+        IsFlagSet(InEditorRenderData.ShowFlags, EEditorShowFlags::SF_Gizmo);
 
     if (bHasEditorGizmo)
     {
