@@ -61,9 +61,6 @@
     <Filter Include="Source\Viewport\Selection">
       <UniqueIdentifier>{c02bdf14-d23c-3f72-e5f4-7a918dc1b5dc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Resources">
-      <UniqueIdentifier>{5ca7039f-b903-4f9c-9772-5c38f44b1b13}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Camera\ViewportCamera.cpp">
@@ -316,18 +313,22 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="Resources\Editor.rc">
-      <Filter>Resources</Filter>
-    </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Source\ThirdParty\imgui\imgui.natstepfilter">
       <Filter>Source\ThirdParty\imgui</Filter>
     </None>
+    <None Include="Resources\Editor.aps" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Source\ThirdParty\imgui\imgui.natvis">
       <Filter>Source\ThirdParty\imgui</Filter>
     </Natvis>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Resources\Tool\copass.png" />
+    <Image Include="Resources\Tool\copass-logo.ico" />
+    <Image Include="Resources\Tool\copass-logo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resources\Editor.rc" />
   </ItemGroup>
 </Project>

@@ -2,10 +2,13 @@
 
 #include "Viewport/EditorViewportClient.h"
 
+#include "Asset/AssetManager.h"
+#include "Asset/Texture2DAsset.h"
 #include "Core/Path.h"
 #include "Engine/Component/Core/SceneComponent.h"
 #include "Engine/EngineStatics.h"
 #include "Engine/Game/Actor.h"
+#include "Renderer/RenderAsset/TextureResource.h"
 #include "SceneIO/SceneSerializer.h"
 #include "Panel/ConsolePanel.h"
 #include "Panel/ContentBrowserPanel.h"
@@ -22,6 +25,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -158,6 +162,27 @@ namespace
         FWString OutText(static_cast<size_t>(RequiredSize), L'\0');
         MultiByteToWideChar(CP_UTF8, 0, InText.c_str(), static_cast<int>(InText.size()),
                             OutText.data(), RequiredSize);
+        return OutText;
+    }
+
+    FString WideToUtf8(const FWString& InText)
+    {
+        if (InText.empty())
+        {
+            return {};
+        }
+
+        const int RequiredSize = WideCharToMultiByte(CP_UTF8, 0, InText.c_str(),
+                                                     static_cast<int>(InText.size()), nullptr, 0,
+                                                     nullptr, nullptr);
+        if (RequiredSize <= 0)
+        {
+            return {};
+        }
+
+        FString OutText(static_cast<size_t>(RequiredSize), '\0');
+        WideCharToMultiByte(CP_UTF8, 0, InText.c_str(), static_cast<int>(InText.size()),
+                            OutText.data(), RequiredSize, nullptr, nullptr);
         return OutText;
     }
 
@@ -330,6 +355,8 @@ void FEditor::Release()
 {
     SaveEditorSettings();
     ViewportClient.Release();
+    AboutImageResource = nullptr;
+    bAttemptedAboutImageLoad = false;
 
     if (PanelManager != nullptr)
     {
@@ -378,6 +405,9 @@ void FEditor::SetRuntimeServices(FD3D11RHI* InRHI, UAssetManager* InAssetManager
 {
     EditorContext.RHI = InRHI;
     EditorContext.AssetManager = InAssetManager;
+    AboutImageResource = nullptr;
+    bAttemptedAboutImageLoad = false;
+    EnsureAboutImageLoaded();
     ResolveSceneAssetReferences(CurScene);
 }
 
@@ -770,6 +800,34 @@ void FEditor::AddActorToScene(AActor* InActor, bool bSelectActor)
 
 void FEditor::MarkSceneDirty() { SceneDocument.bDirty = true; }
 
+void FEditor::EnsureAboutImageLoaded()
+{
+    if (AboutImageResource != nullptr || bAttemptedAboutImageLoad || EditorContext.AssetManager == nullptr)
+    {
+        return;
+    }
+
+    bAttemptedAboutImageLoad = true;
+
+    const std::filesystem::path ImagePath =
+        FPaths::Combine(FPaths::AppRoot(), L"Content\\Texture\\Logo\\copass.png");
+
+    FAssetLoadParams LoadParams;
+    LoadParams.ExplicitType = EAssetType::Texture;
+
+    UAsset* LoadedAsset = EditorContext.AssetManager->Load(ImagePath.wstring(), LoadParams);
+    UTexture2DAsset* TextureAsset = Cast<UTexture2DAsset>(LoadedAsset);
+    if (TextureAsset == nullptr || TextureAsset->GetResource() == nullptr
+        || TextureAsset->GetSRV() == nullptr)
+    {
+        UE_LOG(FEditor, ELogVerbosity::Warning, "Failed to load About image: %s",
+               PathToUtf8String(ImagePath).c_str());
+        return;
+    }
+
+    AboutImageResource = TextureAsset->GetResource();
+}
+
 void FEditor::RequestAboutPopup()
 {
     bRequestOpenAboutPopup = true;
@@ -1081,18 +1139,113 @@ void FEditor::DrawAboutPopup()
         bRequestOpenAboutPopup = false;
     }
 
+    EnsureAboutImageLoaded();
+    ImGui::SetNextWindowSize(ImVec2(520.0f, 0.0f), ImGuiCond_Appearing);
+
     if (ImGui::BeginPopupModal(AboutPopupId, &bAboutPopupOpen, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        ImGui::TextUnformatted("Jungle Editor");
+        static const std::array<FWString, 4> Contributors = {
+            L"강명호",
+            L"김연하",
+            L"김형도",
+            L"양현석",
+        };
+
+        static const std::array<FWString, 4> ContributorSummaries = {
+            L"에디터 UI, 패널, 도구 기능, 에셋 연결",
+            L"렌더러, 스프라이트·텍스트 렌더링, ShowFlags",
+            L"기즈모 조작, 중심 하이라이트, 다중 회전",
+            L"엔진 루프, 뷰포트 입력, 카메라, 스냅핑",
+        };
+
+        static const std::array<FWString, 4> ContributorDisplayNames = {
+            L"\uAC15\uBA85\uD638",
+            L"\uAE40\uC5F0\uD558",
+            L"\uAE40\uD615\uB3C4",
+            L"\uC591\uD604\uC11D",
+        };
+
+        static const std::array<FWString, 4> ContributorDisplaySummaries = {
+            L"Editor UI, panels, tools, and asset integration",
+            L"Renderer, sprite/text rendering, and show flags",
+            L"Gizmo interaction, center highlight, and multi-rotation",
+            L"Engine loop, viewport input, camera, and snapping",
+        };
+
+        ImGui::TextUnformatted("CO-PASS Engine");
+        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(185, 185, 190, 255));
+        ImGui::TextWrapped("Level editor and rendering sandbox for the CO-PASS project.");
+        ImGui::PopStyleColor();
         ImGui::Separator();
-        ImGui::TextUnformatted("Custom title bar menu prototype");
-        ImGui::TextUnformatted("Registry driven File/Edit/Window/Tool/Help menu");
+        ImGui::TextUnformatted("Version: Internal Prototype");
+#ifdef _DEBUG
+        ImGui::Text("Build: Debug | %s | commit %s", __DATE__, "1ddf265");
+#else
+        ImGui::Text("Build: Release | %s | commit %s", __DATE__, "1ddf265");
+#endif
+        ImGui::TextUnformatted("Tech Stack: C++, Win32, Direct3D 11, ImGui");
+        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(185, 185, 190, 255));
+        ImGui::TextWrapped("Includes third-party software such as Dear ImGui and nlohmann/json.");
+        ImGui::PopStyleColor();
         ImGui::Spacing();
-        if (ImGui::Button("Close"))
+        ImGui::SeparatorText("First Contributors");
+        ImGui::Spacing();
+
+        for (size_t ContributorIndex = 0; ContributorIndex < ContributorDisplayNames.size();
+             ++ContributorIndex)
         {
-            bAboutPopupOpen = false;
-            ImGui::CloseCurrentPopup();
+            const FString ContributorUtf8 = WideToUtf8(ContributorDisplayNames[ContributorIndex]);
+            const FString SummaryUtf8 = WideToUtf8(ContributorDisplaySummaries[ContributorIndex]);
+            ImGui::BulletText("%s", ContributorUtf8.c_str());
+            ImGui::Indent();
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(185, 185, 190, 255));
+            ImGui::TextWrapped("%s", SummaryUtf8.c_str());
+            ImGui::PopStyleColor();
+            ImGui::Unindent();
+            ImGui::Spacing();
         }
+
+        ImGui::Spacing();
+
+        if (AboutImageResource != nullptr && AboutImageResource->GetSRV() != nullptr
+            && AboutImageResource->Width > 0 && AboutImageResource->Height > 0)
+        {
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            const float AvailableWidth = ImGui::GetContentRegionAvail().x;
+            const float TargetWidth = std::min(AvailableWidth, 460.0f);
+            const float AspectRatio =
+                static_cast<float>(AboutImageResource->Height)
+                / static_cast<float>(AboutImageResource->Width);
+            const ImVec2 ImageSize(TargetWidth, TargetWidth * AspectRatio);
+            if (AvailableWidth > ImageSize.x)
+            {
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (AvailableWidth - ImageSize.x) * 0.5f);
+            }
+
+            ImGui::Image(ImTextureRef(
+                             static_cast<ImTextureID>(reinterpret_cast<uintptr_t>(
+                                 AboutImageResource->GetSRV()))),
+                         ImageSize);
+        }
+
+        ImGui::Spacing();
+        {
+            const char* CopyrightText = "Copyright (c) 2026 CO-PASS Engine Contributors";
+            const float AvailableWidth = ImGui::GetContentRegionAvail().x;
+            const float TextWidth = ImGui::CalcTextSize(CopyrightText).x;
+            if (AvailableWidth > TextWidth)
+            {
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (AvailableWidth - TextWidth) * 0.5f);
+            }
+
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(150, 150, 155, 255));
+            ImGui::TextUnformatted(CopyrightText);
+            ImGui::PopStyleColor();
+        }
+
         ImGui::EndPopup();
     }
 }
