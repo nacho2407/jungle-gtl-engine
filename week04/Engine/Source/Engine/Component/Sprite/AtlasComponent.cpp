@@ -22,7 +22,7 @@ namespace Engine::Component
 
     void UAtlasComponent::DescribeProperties(FComponentPropertyBuilder& Builder)
     {
-        UQuadComponent::DescribeProperties(Builder);
+        USpriteComponent::DescribeProperties(Builder);
 
         FComponentPropertyOptions IntOptions;
         IntOptions.DragSpeed = 1.0f;
