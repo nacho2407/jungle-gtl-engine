@@ -3,6 +3,30 @@
 
 void InputSystem::Tick()
 {
+    // 윈도우 포커스가 없으면 모든 입력 상태 해제
+    if (OwnerHWnd && GetForegroundWindow() != OwnerHWnd)
+    {
+        for (int i = 0; i < 256; ++i)
+        {
+            PrevStates[i] = CurrentStates[i];
+            CurrentStates[i] = false;
+        }
+        bLeftDragJustStarted = false;
+        bRightDragJustStarted = false;
+        bLeftDragJustEnded = bLeftDragging;
+        bRightDragJustEnded = bRightDragging;
+        bLeftDragging = false;
+        bRightDragging = false;
+        bLeftDragCandidate = false;
+        bRightDragCandidate = false;
+        PrevScrollDelta = ScrollDelta;
+        ScrollDelta = 0;
+        // 마우스 위치 동기화 (복귀 시 델타 점프 방지)
+        GetCursorPos(&MousePos);
+        PrevMousePos = MousePos;
+        return;
+    }
+
     for (int i = 0; i < 256; ++i)
     {
         PrevStates[i] = CurrentStates[i];
