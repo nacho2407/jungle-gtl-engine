@@ -1,6 +1,7 @@
-#include "Engine/Runtime/Engine.h"
+﻿#include "Engine/Runtime/Engine.h"
 
 #include "Core/Paths.h"
+#include "Core/Stats.h"
 #include "Engine/Core/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Core/ResourceManager.h"
@@ -57,6 +58,7 @@ void UEngine::Render(float DeltaTime)
 {
 	if (RenderPipeline)
 	{
+		SCOPE_STAT("UEngine::Render");
 		RenderPipeline->Execute(DeltaTime, Renderer);
 	}
 }
