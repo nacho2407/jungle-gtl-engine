@@ -166,6 +166,7 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     // 수정: 누적 snapping용 상태
     float DragStartOffset = 0.0f;
     float PrevSnappedOffset = 0.0f;
+    FVector PrevSnappedCenterDelta = FVector::ZeroVector;
 
     // 수정: multi transform 저장
     TArray<FVector> InitialActorLocations;
