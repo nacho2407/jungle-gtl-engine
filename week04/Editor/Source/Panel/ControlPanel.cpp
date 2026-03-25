@@ -213,6 +213,12 @@ void FControlPanel::DrawShowFlagsSection() const
         RenderSetting.SetObjectLabelsVisible(bShowObjectLabels);
     }
 
+    bool bShowUUID = RenderSetting.IsUUIDVisible();
+    if (ImGui::Checkbox("Editor UUID Labels", &bShowUUID))
+    {
+        RenderSetting.SetUUIDVisible(bShowUUID);
+    }
+
     ImGui::Spacing();
     ImGui::Separator();
     ImGui::Spacing();
