@@ -67,7 +67,7 @@ namespace
         case FOutlinerPanel::ESpawnActorType::Text:
             return "TextActor";
         case FOutlinerPanel::ESpawnActorType::SubUVTexture:
-            return "SubUVTexture";
+            return "SubUVActor";
         default:
             return "Unknown";
         }
@@ -75,7 +75,7 @@ namespace
 
     const char* const SpawnActorTypeLabels[] = {
         "CubeActor",     "SphereActor", "ConeActor",   "CylinderActor", "RingActor",
-        "TriangleActor", "SpriteActor", "EffectActor", "TextActor",     "SubUVTexture"
+        "TriangleActor", "SpriteActor", "EffectActor", "TextActor",     "SubUVActor"
     };
 
     AActor* CreateActorByType(FOutlinerPanel::ESpawnActorType InType)
