@@ -30,6 +30,12 @@ namespace Engine::ApplicationCore
                 return EKey::Space;
             case VK_DELETE:
                 return EKey::Delete;
+            case '1':
+                return EKey::N1;
+            case '2':
+                return EKey::N2;
+            case '3':
+                return EKey::N3;
             default:
                 return EKey::Unknown;
             }
@@ -142,7 +148,9 @@ namespace Engine::ApplicationCore
             State.KeysDown[static_cast<int32>(Key)] = bPressed;
 
             FInputEvent Event;
-            Event.Type = bPressed ? EInputEventType::MouseButtonDown : EInputEventType::MouseButtonUp;
+            Event.Type = bPressed
+                             ? EInputEventType::MouseButtonDown
+                             : EInputEventType::MouseButtonUp;
             Event.Key = Key;
             Event.MouseX = GET_X_LPARAM(LParam);
             Event.MouseY = GET_Y_LPARAM(LParam);

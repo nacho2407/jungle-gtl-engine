@@ -106,6 +106,28 @@ bool FGizmoInputContext::HandleEvent(const Engine::ApplicationCore::FInputEvent&
             GizmoController->ChangeGizmoType();
         else if (Event.Key == EKey::X)
             GizmoController->ChangeWorldMode();
+            else if (Event.Key == EKey::N1)
+            {
+                bool bSnapping;
+                float Dummy;
+                GizmoController->GetTranslateSnapping(bSnapping, Dummy);
+                GizmoController->SetTranslateSnapping(!bSnapping, Dummy);
+            }
+            else if (Event.Key == EKey::N2)
+            {
+                bool bSnapping;
+                float Dummy;
+                GizmoController->GetRotateSnapping(bSnapping, Dummy);
+                GizmoController->SetRotateSnapping(!bSnapping, Dummy);
+            }
+            else if (Event.Key == EKey::N3)
+            {
+                bool bSnapping;
+                float Dummy;
+                GizmoController->GetScaleSnapping(bSnapping, Dummy);
+                GizmoController->SetScaleSnapping(!bSnapping, Dummy);
+            }
+            
         return true;
     }
     break;
