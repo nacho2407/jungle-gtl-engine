@@ -183,9 +183,6 @@ void FRendererModule::OnWindowResized(int32 InWidth, int32 InHeight)
 void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
                              const FSceneRenderData&  InSceneRenderData)
 {
-    CachedEditorRenderData = InEditorRenderData;
-    CachedSceneRenderData = InSceneRenderData;
-
     RenderWorldPass(InEditorRenderData, InSceneRenderData);
     RenderOverlayPass(InEditorRenderData, InSceneRenderData);
 }
