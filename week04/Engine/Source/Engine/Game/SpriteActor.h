@@ -1,27 +1,29 @@
-﻿#pragma once
-#include "Actor.h"
+#pragma once
+
+#include "Engine/Game/Actor.h"
 
 namespace Engine::Component
 {
     class UPrimitiveComponent;
-    class UAnimatedSpriteComponent;
+    class USpriteComponent;
 }
 
-class ENGINE_API ASpriteAnimationActor : public AActor
+class ENGINE_API ASpriteActor : public AActor
 {
-    DECLARE_RTTI(AConeActor, AActor)
-public:
-    ASpriteAnimationActor();
-    ~ASpriteAnimationActor() override = default;
-    
-    Engine::Component::UAnimatedSpriteComponent * GetAnimatedSpriteComponent() const;
-    
+    DECLARE_RTTI(ASpriteActor, AActor)
+
+  public:
+    ASpriteActor();
+    ~ASpriteActor() override = default;
+
+    Engine::Component::USpriteComponent* GetSpriteComponent() const;
+
     bool           IsRenderable() const override;
     bool           IsSelected() const override;
     FColor         GetColor() const override;
     EBasicMeshType GetMeshType() const override;
     uint32         GetObjectId() const override;
-    
-private:
+
+  private:
     Engine::Component::UPrimitiveComponent* GetPrimitiveComponent() const;
 };
