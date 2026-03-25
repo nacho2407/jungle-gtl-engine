@@ -90,6 +90,7 @@ public:
 	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult);
 
 	FMatrix CalculateOutlineMatrix() const;
+	int32 GetUTF8Length(const FString& str) const;
 
 private:
 	FString Text;
