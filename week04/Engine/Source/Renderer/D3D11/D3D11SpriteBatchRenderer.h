@@ -5,6 +5,8 @@
 #include "Core/Math/Matrix.h"
 #include "Renderer/D3D11/D3D11Common.h"
 #include "Renderer/Types/RenderItem.h"
+#include "Renderer/Types/ShaderConstants.h"
+#include "Renderer/Types/VertexTypes.h"
 #include <vector>
 
 class FD3D11RHI;
@@ -26,18 +28,6 @@ class FD3D11SpriteBatchRenderer
     void Flush(const FSceneView* InSceneView);
 
   private:
-    struct FSpriteVertex
-    {
-        FVector  Position;
-        FVector2 UV;
-        FColor   Color;
-    };
-
-    struct FSpriteConstants
-    {
-        FMatrix VP;
-    };
-
     struct FSpriteBatchKey
     {
         const FTextureResource* TextureResource = nullptr;
