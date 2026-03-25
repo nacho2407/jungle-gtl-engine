@@ -40,3 +40,5 @@ x86/
 # 기타 OS 임시 파일
 Thumbs.db
 .DS_Store
+
+CustomGameEngine/*.bmp

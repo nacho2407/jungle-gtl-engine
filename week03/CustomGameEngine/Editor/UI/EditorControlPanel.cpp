@@ -1,9 +1,13 @@
 ﻿#include "EditorControlPanel.h"
 
 #include "Component/BillboardSubUVComponent.h"
+#include "EngineCore/Logger.h"
+#include "EngineCore/ResourceManager.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <ctime>
+#include <fstream>
 
 static EPrimitiveType primitiveType = EPrimitiveType::Triangle;
 static int spawnCount = 0;
@@ -70,6 +74,80 @@ namespace
 
 		std::sort(SceneList.begin(), SceneList.end());
 		return SceneList;
+	}
+
+	static bool DumpGlyphAtlasToBMP(const FString& FilePath)
+	{
+		const FGlyphAtlas& Atlas = ResourceManager::GetInstance()->GetBillboardFont().GetAtlas();
+		const uint32 Width = Atlas.GetWidth();
+		const uint32 Height = Atlas.GetHeight();
+		const TArray<uint8>& Pixels = Atlas.GetPixels();
+
+		if (Width == 0 || Height == 0 || Pixels.size() < static_cast<size_t>(Width) * Height)
+		{
+			return false;
+		}
+
+		std::ofstream File(FilePath, std::ios::binary);
+		if (File.is_open() == false)
+		{
+			return false;
+		}
+
+		const uint32 BytesPerPixel = 3;
+		const uint32 RowStride = Width * BytesPerPixel;
+		const uint32 RowPadding = (4 - (RowStride % 4)) % 4;
+		const uint32 PaddedRowStride = RowStride + RowPadding;
+		const uint32 PixelDataSize = PaddedRowStride * Height;
+		const uint32 FileSize = 14 + 40 + PixelDataSize;
+
+		uint8 FileHeader[14] =
+		{
+			'B', 'M',
+			static_cast<uint8>(FileSize & 0xFF),
+			static_cast<uint8>((FileSize >> 8) & 0xFF),
+			static_cast<uint8>((FileSize >> 16) & 0xFF),
+			static_cast<uint8>((FileSize >> 24) & 0xFF),
+			0, 0, 0, 0,
+			54, 0, 0, 0
+		};
+
+		uint8 InfoHeader[40] = {};
+		InfoHeader[0] = 40;
+		InfoHeader[4] = static_cast<uint8>(Width & 0xFF);
+		InfoHeader[5] = static_cast<uint8>((Width >> 8) & 0xFF);
+		InfoHeader[6] = static_cast<uint8>((Width >> 16) & 0xFF);
+		InfoHeader[7] = static_cast<uint8>((Width >> 24) & 0xFF);
+		InfoHeader[8] = static_cast<uint8>(Height & 0xFF);
+		InfoHeader[9] = static_cast<uint8>((Height >> 8) & 0xFF);
+		InfoHeader[10] = static_cast<uint8>((Height >> 16) & 0xFF);
+		InfoHeader[11] = static_cast<uint8>((Height >> 24) & 0xFF);
+		InfoHeader[12] = 1;
+		InfoHeader[14] = 24;
+		InfoHeader[20] = static_cast<uint8>(PixelDataSize & 0xFF);
+		InfoHeader[21] = static_cast<uint8>((PixelDataSize >> 8) & 0xFF);
+		InfoHeader[22] = static_cast<uint8>((PixelDataSize >> 16) & 0xFF);
+		InfoHeader[23] = static_cast<uint8>((PixelDataSize >> 24) & 0xFF);
+
+		File.write(reinterpret_cast<const char*>(FileHeader), sizeof(FileHeader));
+		File.write(reinterpret_cast<const char*>(InfoHeader), sizeof(InfoHeader));
+
+		TArray<uint8> RowBuffer(PaddedRowStride, 0);
+		for (int32 Y = static_cast<int32>(Height) - 1; Y >= 0; --Y)
+		{
+			for (uint32 X = 0; X < Width; ++X)
+			{
+				const uint8 Gray = Pixels[static_cast<size_t>(Y) * Width + X];
+				const uint32 RowIndex = X * BytesPerPixel;
+				RowBuffer[RowIndex + 0] = Gray;
+				RowBuffer[RowIndex + 1] = Gray;
+				RowBuffer[RowIndex + 2] = Gray;
+			}
+
+			File.write(reinterpret_cast<const char*>(RowBuffer.data()), static_cast<std::streamsize>(RowBuffer.size()));
+		}
+
+		return File.good();
 	}
 } // namespace
 
@@ -288,6 +366,21 @@ void EditorControlPanel::Draw(UCameraComponent* camera, UGridComp* Grid)
 	//{
 	//	ImGui::Checkbox(elem.first.c_str(), &elem.second);
 	//}
+
+	ImGui::Separator();
+	ImGui::Text("DEBUG");
+	if (ImGui::Button("Dump Glyph Atlas BMP"))
+	{
+		const FString DumpPath = "GlyphAtlasDump.bmp";
+		if (DumpGlyphAtlasToBMP(DumpPath))
+		{
+			UE_LOG("[EditorControlPanel] Saved glyph atlas dump: %s", DumpPath.c_str());
+		}
+		else
+		{
+			UE_LOG("[EditorControlPanel][Error] Failed to dump glyph atlas");
+		}
+	}
 
 	ImGui::End();
 }

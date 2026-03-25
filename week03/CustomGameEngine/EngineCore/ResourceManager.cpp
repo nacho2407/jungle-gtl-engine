@@ -516,7 +516,7 @@ void ResourceManager::AddPlaneMesh(ID3D11Device* Device)
 
 void ResourceManager::AddBillboardQuadMesh(ID3D11Device* Device)
 {
-	FVertexTextured quadVertices[] =
+	FVertexSimple quadVertices[] =
 	{
 		{ 0.0f, -0.5f, -0.5f, 1.f, 1.f, 1.f, 1.f, 0.0f, 1.0f },
 		{ 0.0f, -0.5f,  0.5f, 1.f, 1.f, 1.f, 1.f, 0.0f, 0.0f },

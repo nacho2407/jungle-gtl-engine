@@ -197,7 +197,6 @@
     <ClInclude Include="EngineCore\ResourceManager.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="VertexSimple.h" />
-    <ClInclude Include="VertexTextured.h" />
     <ClInclude Include="ImGui\imconfig.h" />
     <ClInclude Include="ImGui\imgui.h" />
     <ClInclude Include="ImGui\imgui_impl_dx11.h" />
