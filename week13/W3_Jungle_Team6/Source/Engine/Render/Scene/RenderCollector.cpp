@@ -147,7 +147,7 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		{
 			OutlineCmd.PerObjectConstants.Color = FColor(255, 153, 0, 255).ToVector4();
 		}
-		CollectAABBCommand(primitiveComponent, RenderBus);
+		CollectAABBCommand(primitiveComponent, ShowFlags, RenderBus);
 		EPrimitiveType PrimType = primitiveComponent->GetPrimitiveType();
 		OutlineCmd.Constants.Outline.PrimitiveType = (PrimType == EPrimitiveType::EPT_Plane ||
 			PrimType == EPrimitiveType::EPT_SubUV ||
@@ -202,8 +202,10 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 	}
 }
 
-void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponent, FRenderBus& RenderBus)
+void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
 {
+	if (!ShowFlags.bBoundingVolume) return;
+
 	FRenderCommand AABBCmd = {};
 	AABBCmd.Type = ERenderCommandType::DebugBox;
 
