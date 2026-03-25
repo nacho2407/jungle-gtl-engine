@@ -66,31 +66,21 @@ void FAABBSubmitter::Submit(FD3D11LineBatchRenderer& InLineRenderer,
     {
         SubmitPrimitiveBounds(InLineRenderer, Item);
     }
-
-    for (const FSpriteRenderItem& Item : InSceneRenderData.Sprites)
-    {
-        SubmitSpriteBounds(InLineRenderer, *InSceneRenderData.SceneView, Item);
-    }
-
-    for (const FTextRenderItem& Item : InSceneRenderData.Texts)
-    {
-        SubmitTextBounds(InLineRenderer, *InSceneRenderData.SceneView, Item);
-    }
 }
 
 FColor FAABBSubmitter::ResolveBoundsColor(const FRenderItemState& InState)
 {
     if (InState.IsSelected())
     {
-        return FColor(0.1f, 0.4f, 1.0f, 1.0f);
+        return SelectedBoundsColor;
     }
 
     if (InState.IsHovered())
     {
-        return FColor(1.0f, 0.9f, 0.1f, 1.0f);
+        return HoveredBoundsColor;
     }
 
-    return FColor::White();
+    return DefaultBoundsColor;
 }
 
 void FAABBSubmitter::ExpandBounds(FVector& InOutMin, FVector& InOutMax, const FVector& InPoint)
@@ -155,7 +145,8 @@ void FAABBSubmitter::SubmitPrimitiveBounds(FD3D11LineBatchRenderer&    InLineRen
     const FVector Origin = InItem.World.GetOrigin();
     const FVector Right = InItem.World.GetScaledAxis(EAxis::Y) * MakeHalfExtent(InItem.MeshType).X;
     const FVector Up = InItem.World.GetScaledAxis(EAxis::Z) * MakeHalfExtent(InItem.MeshType).Z;
-    const FVector Forward = InItem.World.GetScaledAxis(EAxis::X) * MakeHalfExtent(InItem.MeshType).Y;
+    const FVector Forward =
+        InItem.World.GetScaledAxis(EAxis::X) * MakeHalfExtent(InItem.MeshType).Y;
 
     FVector Min(FLT_MAX, FLT_MAX, FLT_MAX);
     FVector Max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
@@ -170,123 +161,5 @@ void FAABBSubmitter::SubmitPrimitiveBounds(FD3D11LineBatchRenderer&    InLineRen
         ExpandBounds(Min, Max, Origin + CornerOffset);
     }
 
-    SubmitBox(InLineRenderer, Min, Max, ResolveBoundsColor(InItem.State));
-}
-
-void FAABBSubmitter::SubmitSpriteBounds(FD3D11LineBatchRenderer& InLineRenderer,
-                                        const FSceneView&        InSceneView,
-                                        const FSpriteRenderItem& InItem)
-{
-    if (!InItem.State.IsVisible() || !InItem.State.bShowBounds || InItem.TextureResource == nullptr)
-    {
-        return;
-    }
-
-    const FMatrix& PlacementWorld = InItem.Placement.World;
-    const FVector  Origin = PlacementWorld.GetOrigin() + InItem.Placement.WorldOffset;
-
-    FVector RightAxis;
-    FVector UpAxis;
-
-    if (InItem.Placement.IsBillboard())
-    {
-        const FMatrix CameraWorld = InSceneView.GetViewMatrix().GetInverse();
-        RightAxis = CameraWorld.GetRightVector() * PlacementWorld.GetScaleVector().X;
-        UpAxis = CameraWorld.GetUpVector() * PlacementWorld.GetScaleVector().Z;
-    }
-    else
-    {
-        RightAxis = PlacementWorld.GetRightVector();
-        UpAxis = PlacementWorld.GetUpVector();
-    }
-
-    FVector Min(FLT_MAX, FLT_MAX, FLT_MAX);
-    FVector Max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-    AddQuadBounds(Min, Max, Origin, RightAxis, UpAxis);
-    SubmitBox(InLineRenderer, Min, Max, ResolveBoundsColor(InItem.State));
-}
-
-void FAABBSubmitter::SubmitTextBounds(FD3D11LineBatchRenderer& InLineRenderer,
-                                      const FSceneView& InSceneView, const FTextRenderItem& InItem)
-{
-    if (!InItem.State.IsVisible() || !InItem.State.bShowBounds || InItem.FontResource == nullptr ||
-        InItem.Text.empty())
-    {
-        return;
-    }
-
-    const FFontResource& Font = *InItem.FontResource;
-    const float          Scale = InItem.TextScale;
-    const float          LetterSpacing = InItem.LetterSpacing;
-    const float          LineSpacing = InItem.LineSpacing;
-    const float          LineHeight =
-        (Font.Common.LineHeight > 0) ? static_cast<float>(Font.Common.LineHeight) : 16.0f;
-
-    float MaxWidth = 0.0f;
-    float CurrentWidth = 0.0f;
-    int32 LineCount = 1;
-
-    for (char Ch : InItem.Text)
-    {
-        if (Ch == '\r')
-        {
-            continue;
-        }
-
-        if (Ch == '\n')
-        {
-            if (CurrentWidth > MaxWidth)
-            {
-                MaxWidth = CurrentWidth;
-            }
-            CurrentWidth = 0.0f;
-            ++LineCount;
-            continue;
-        }
-
-        const uint32 CodePoint = static_cast<uint8>(Ch);
-        const FFontGlyph* Glyph = Font.FindGlyph(CodePoint);
-        if (Glyph == nullptr)
-        {
-            CurrentWidth += Scale * (LineHeight * 0.5f + LetterSpacing);
-            continue;
-        }
-
-        CurrentWidth += Scale * (static_cast<float>(Glyph->XAdvance) + LetterSpacing);
-    }
-
-    if (CurrentWidth > MaxWidth)
-    {
-        MaxWidth = CurrentWidth;
-    }
-
-    const float TotalHeight = static_cast<float>(LineCount) * LineHeight * Scale +
-                              static_cast<float>(LineCount - 1) * LineSpacing * Scale;
-
-    const FMatrix& PlacementWorld = InItem.Placement.World;
-    const FVector  Origin = PlacementWorld.GetOrigin() + InItem.Placement.WorldOffset;
-
-    FVector RightAxis;
-    FVector UpAxis;
-
-    if (InItem.Placement.IsBillboard())
-    {
-        const FMatrix CameraWorld = InSceneView.GetViewMatrix().GetInverse();
-        RightAxis = CameraWorld.GetRightVector();
-        UpAxis = CameraWorld.GetUpVector();
-    }
-    else
-    {
-        RightAxis = PlacementWorld.GetRightVector();
-        UpAxis = PlacementWorld.GetUpVector();
-    }
-
-    const FVector Center = Origin + RightAxis * (MaxWidth * 0.5f) - UpAxis * (TotalHeight * 0.5f);
-    const FVector HalfRight = RightAxis * (MaxWidth * 0.5f);
-    const FVector HalfUp = UpAxis * (TotalHeight * 0.5f);
-
-    FVector Min(FLT_MAX, FLT_MAX, FLT_MAX);
-    FVector Max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-    AddQuadBounds(Min, Max, Center, HalfRight, HalfUp);
     SubmitBox(InLineRenderer, Min, Max, ResolveBoundsColor(InItem.State));
 }

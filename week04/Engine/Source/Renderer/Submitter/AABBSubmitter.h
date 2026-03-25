@@ -4,29 +4,24 @@
 
 class FD3D11LineBatchRenderer;
 class FSceneView;
-struct FFontResource;
-struct FTextRenderItem;
-struct FSpriteRenderItem;
 struct FPrimitiveRenderItem;
 
 class FAABBSubmitter
 {
   public:
     void Submit(FD3D11LineBatchRenderer& InLineRenderer,
-                const FSceneRenderData&   InSceneRenderData) const;
+                const FSceneRenderData&  InSceneRenderData) const;
 
   private:
+    inline static const FColor SelectedBoundsColor = FColor(0.1f, 0.4f, 1.0f, 1.0f); // Blue
+    inline static const FColor HoveredBoundsColor = FColor(1.0f, 0.9f, 0.1f, 1.0f);  // Yellow
+    inline static const FColor DefaultBoundsColor = FColor(1.0f, 1.0f, 1.0f, 1.0f);  // White
+
     static FColor ResolveBoundsColor(const FRenderItemState& InState);
     static void   ExpandBounds(FVector& InOutMin, FVector& InOutMax, const FVector& InPoint);
     static void   SubmitBox(FD3D11LineBatchRenderer& InLineRenderer, const FVector& InMin,
                             const FVector& InMax, const FColor& InColor);
 
-    static void SubmitPrimitiveBounds(FD3D11LineBatchRenderer& InLineRenderer,
+    static void SubmitPrimitiveBounds(FD3D11LineBatchRenderer&    InLineRenderer,
                                       const FPrimitiveRenderItem& InItem);
-    static void SubmitSpriteBounds(FD3D11LineBatchRenderer& InLineRenderer,
-                                   const FSceneView& InSceneView,
-                                   const FSpriteRenderItem& InItem);
-    static void SubmitTextBounds(FD3D11LineBatchRenderer& InLineRenderer,
-                                 const FSceneView& InSceneView,
-                                 const FTextRenderItem& InItem);
 };
