@@ -19,6 +19,8 @@ class ENGINE_API AActor : public UObject
     AActor();
     ~AActor() override;
 
+    void Tick(float DeltaTime);
+
     bool IsPickable() const;
     void SetPickable(bool bInPickable);
 
@@ -98,6 +100,8 @@ class ENGINE_API AActor : public UObject
     Engine::Component::UUUIDComponent* GetUUIDTextComponent() const { return UUIDTextComponent; }
     void                               EnsureUUIDDebugComponent();
     void                               RefreshUUIDDebugComponent();
+
+    AActor* Clone() const;
 
   protected:
     Engine::Component::USceneComponent*         RootComponent = nullptr;

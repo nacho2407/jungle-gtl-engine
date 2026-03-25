@@ -28,6 +28,7 @@ class FContentBrowserPanel : public IPanel
         Scene,
         Texture,
         Font,
+        SpriteAtlas,
         UnknownFile
     };
 

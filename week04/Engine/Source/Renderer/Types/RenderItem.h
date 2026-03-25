@@ -73,7 +73,6 @@ struct FPrimitiveRenderItem
     EBasicMeshType   MeshType = EBasicMeshType::None;
     Geometry::FAABB  WorldAABB;
     bool             bHasWorldAABB = false;
-    bool             bIsSpriteProxy = false;
     FRenderItemState State;
 };
 

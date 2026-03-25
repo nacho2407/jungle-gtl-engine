@@ -4,6 +4,7 @@
 #include "Engine/Component/Core/SceneComponent.h"
 #include "Gizmo/EditorGizmoTypes.h"
 #include "Renderer/Types/PickResult.h"
+#include <ApplicationCore/Input/InputState.h>
 
 /*
         Gizmo에 대한 Input Context와 Viewport에서의 Gizmo의 상태를 관리하는 Controller
@@ -64,8 +65,21 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
         SnapValue = InValue;
     }
 
+    void SetTranslationDragScale(float InScale)
+    {
+        TranslationDragScale = FMath::Clamp(InScale, 0.01f, 1.0f);
+    }
+
     bool bIsDrawed{false};
     float GizmoScale{1.0f};
+    
+    /* For Navigation */
+    FVector ConsumeDelta()
+    {
+        FVector Temp = LastFrameDelta;
+        LastFrameDelta = FVector::ZeroVector;
+        return Temp;
+    }
 
   public:
     bool bIsWorldMode = false;
@@ -86,6 +100,8 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     EGizmoHighlight GizmoHighlight{EGizmoHighlight::None};
     FVector    CurrentDragAxis;
     FVector        ReferenceAxis;
+    
+    FVector LastFrameDelta = FVector::ZeroVector;
 
     FVector2        ReferenceAxis2D;
     FVector         PivotOrigin;
@@ -106,10 +122,17 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
 
     bool  bEnableSnapping = false;
     float SnapValue = 10.f;
+    float TranslationDragScale = 1.0f;
 
     FEditorViewportClient*        ViewportClient{nullptr};
     FViewportCamera*              ViewportCamera{nullptr};
     FViewportSelectionController* ViewportSelectionController{nullptr};
 
     AActor* LastSelectedActor{nullptr};
+
+    /* For Duplication */
+    bool bPendingAltDuplicate = false;
+    bool bDuplicateSpawned = false;
+
+    static constexpr int32 DragThreshold = 5; // 픽셀 단위 드래그 시작 임계값
 };

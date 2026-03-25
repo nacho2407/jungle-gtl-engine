@@ -21,6 +21,7 @@ void FEditorViewportClient::Create()
     NavigationController.SetSelectionController(&SelectionController);
     SelectionController.SetCamera(&ViewportCamera);
     GizmoController.SetCamera(&ViewportCamera);
+    GizmoInputContext.SetNavigationController(&NavigationController);
 
     ViewportCamera.SetProjectionType(EViewportProjectionType::Perspective);
     ViewportCamera.SetFOV(3.141592f * 0.5f);
@@ -76,6 +77,16 @@ void FEditorViewportClient::HandleInputEvent(const Engine::ApplicationCore::FInp
 
 void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData)
 {
+    EEditorShowFlags BaseShowFlags = EEditorShowFlags::SF_WorldAxes | EEditorShowFlags::SF_ObjectLabels;
+    if (RenderSetting.IsGridVisible())
+    {
+        BaseShowFlags |= EEditorShowFlags::SF_Grid;
+    }
+    if (RenderSetting.IsSelectionOutlineVisible())
+    {
+        BaseShowFlags |= EEditorShowFlags::SF_SelectionOutline;
+    }
+
     if (!SelectionController.GetSelectedActors().empty())
     {
         OutRenderData.Gizmo.GizmoType = GizmoController.GetGizmoType();
@@ -98,10 +109,7 @@ void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData)
                 .Size() /
             50.0f;
         OutRenderData.Gizmo.Scale = GizmoController.GizmoScale;
-        OutRenderData.ShowFlags = EEditorShowFlags::SF_Grid | EEditorShowFlags::SF_WorldAxes |
-                                  EEditorShowFlags::SF_Gizmo |
-                                  EEditorShowFlags::SF_SelectionOutline |
-                                  EEditorShowFlags::SF_ObjectLabels;
+        OutRenderData.ShowFlags = BaseShowFlags | EEditorShowFlags::SF_Gizmo;
         GizmoController.bIsDrawed = true;
     }
     else
@@ -110,9 +118,7 @@ void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData)
         OutRenderData.Gizmo.Highlight = EGizmoHighlight::None;
         OutRenderData.Gizmo.Frame = FMatrix::Identity;
         OutRenderData.Gizmo.Scale = 1.0f;
-        OutRenderData.ShowFlags = EEditorShowFlags::SF_Grid | EEditorShowFlags::SF_WorldAxes |
-                                  EEditorShowFlags::SF_SelectionOutline |
-                                  EEditorShowFlags::SF_ObjectLabels;
+        OutRenderData.ShowFlags = BaseShowFlags;
         GizmoController.SetSelectedActor(nullptr);
         GizmoController.bIsDrawed = false;
     }

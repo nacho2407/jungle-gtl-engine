@@ -215,7 +215,8 @@ void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)
     {
         InitialDragOffset = CurrentT;
 
-        FVector D{CurrentDragAxis * DeltaValue};
+        FVector D{CurrentDragAxis * (DeltaValue * TranslationDragScale)};
+        LastFrameDelta = D;
         LastSelectedActor->SetLocation(LastSelectedActor->GetLocation() + D);
 
         TArray<AActor*>& SelectedActors{ViewportSelectionController->GetSelectedActors()};

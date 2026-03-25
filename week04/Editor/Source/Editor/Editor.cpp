@@ -13,6 +13,7 @@
 #include "Panel/OutlinerPanel.h"
 #include "Panel/PanelManager.h"
 #include "Panel/PropertiesPanel.h"
+#include "Panel/ShortcutsPanel.h"
 #include "Panel/StatePanel.h"
 
 #include "imgui.h"
@@ -309,6 +310,7 @@ void FEditor::Create()
     PanelManager->RegisterPanelInstance<FControlPanel>();
     PanelManager->RegisterPanelInstance<FOutlinerPanel>();
     PanelManager->RegisterPanelInstance<FPropertiesPanel>();
+    PanelManager->RegisterPanelInstance<FShortcutsPanel>();
     PanelManager->RegisterPanelInstance<FStatePanel>();
 
     // PanelManager->RegisterPanelInstance<FSamplePanel>(&LogBuffer);
@@ -639,6 +641,11 @@ void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* Input
         PanelManager->Tick(DeltaTime);
     }
 
+    if (CurScene)
+    {
+        CurScene->Tick(DeltaTime);
+    }
+
     BuildRenderData();
 }
 
@@ -665,6 +672,41 @@ void FEditor::CreateNewScene()
     }
 
     PerformNewScene();
+}
+
+bool FEditor::SaveCurrentSceneToDisk()
+{
+    return SaveScene();
+}
+
+bool FEditor::SaveSceneAsPath(const std::filesystem::path& FilePath)
+{
+    return SaveSceneToPath(FilePath, true);
+}
+
+bool FEditor::OpenSceneFromPath(const std::filesystem::path& FilePath)
+{
+    return LoadSceneFromPath(FilePath);
+}
+
+bool FEditor::CanDeleteSelectedActors() const
+{
+    return GlobalInputController.CanDeleteSelectedActors();
+}
+
+bool FEditor::DeleteSelectedActors()
+{
+    return GlobalInputController.DeleteSelectedActors();
+}
+
+void FEditor::RefreshContentIndex()
+{
+    ContentIndex.Refresh();
+}
+
+std::filesystem::path FEditor::GetDefaultSceneDirectory() const
+{
+    return GetSceneDirectory();
 }
 
 void FEditor::ClearScene()
@@ -915,6 +957,24 @@ void FEditor::RegisterDefaultCommands()
                                                           .Label = L"Build (Not Ready)",
                                                           .CanExecute = []() { return false; }});
 
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
+        .CommandId = "help.shortcuts",
+        .Label = L"Shortcuts",
+        .Execute =
+            [this]()
+        {
+            if (PanelManager == nullptr)
+            {
+                return;
+            }
+
+            FPanelOpenRequest Request;
+            Request.PanelType = std::type_index(typeid(FShortcutsPanel));
+            Request.OpenPolicy = EPanelOpenPolicy::FocusIfOpenElseCreate;
+            PanelManager->OpenPanel(Request);
+        },
+        .CanExecute = [this]() { return PanelManager != nullptr; }});
+
     MenuRegistry.RegisterCommand(
         FEditorCommandDefinition{.CommandId = "help.about",
                                  .Label = L"About",
@@ -955,7 +1015,9 @@ void FEditor::RegisterDefaultMenus()
         .MainMenu = EEditorMainMenu::Tool, .CommandId = "tool.build", .Order = 10});
 
     MenuRegistry.RegisterMenuItem(FEditorMenuEntryDefinition{
-        .MainMenu = EEditorMainMenu::Help, .CommandId = "help.about", .Order = 0});
+        .MainMenu = EEditorMainMenu::Help, .CommandId = "help.shortcuts", .Order = 0});
+    MenuRegistry.RegisterMenuItem(FEditorMenuEntryDefinition{
+        .MainMenu = EEditorMainMenu::Help, .CommandId = "help.about", .Order = 10});
 }
 
 void FEditor::RegisterWindowPanelCommand(const FPanelDescriptor& Descriptor)

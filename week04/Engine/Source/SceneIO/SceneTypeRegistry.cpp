@@ -1,16 +1,29 @@
 #include "SceneTypeRegistry.h"
 
+#include "Engine/Component/Mesh/ConeComponent.h"
 #include "Engine/Component/Mesh/CubeComponent.h"
+#include "Engine/Component/Mesh/CylinderComponent.h"
 #include "Engine/Component/Mesh/QuadComponent.h"
+#include "Engine/Component/Mesh/RingComponent.h"
 #include "Engine/Component/Mesh/SphereComponent.h"
 #include "Engine/Component/Mesh/TriangleComponent.h"
 #include "Engine/Component/Sprite/AnimatedSpriteComponent.h"
 #include "Engine/Component/Sprite/AtlasComponent.h"
+#include "Engine/Component/Sprite/SpriteComponent.h"
 #include "Engine/Component/Sprite/SubUVComponent.h"
 #include "Engine/Component/Core/SceneComponent.h"
 #include "Engine/Component/Core/UnknownComponent.h"
+#include "Engine/Component/Text/AtlasTextComponent.h"
 #include "Engine/Game/Actor.h"
+#include "Engine/Game/ConeActor.h"
 #include "Engine/Game/CubeActor.h"
+#include "Engine/Game/CylinderActor.h"
+#include "Engine/Game/EffectActor.h"
+#include "Engine/Game/RingActor.h"
+#include "Engine/Game/SphereActor.h"
+#include "Engine/Game/SpriteActor.h"
+#include "Engine/Game/TextActor.h"
+#include "Engine/Game/TriangleActor.h"
 #include "Engine/Game/UnknownActor.h"
 
 #include <typeindex>
@@ -70,18 +83,31 @@ namespace
 
         bRegistered = true;
 
+        RegisterActorType<AConeActor>("AConeActor");
         RegisterActorType<ACubeActor>("ACubeActor");
+        RegisterActorType<ACylinderActor>("ACylinderActor");
+        RegisterActorType<AEffectActor>("AEffectActor");
+        RegisterActorType<ARingActor>("ARingActor");
+        RegisterActorType<ASphereActor>("ASphereActor");
+        RegisterActorType<ASpriteActor>("ASpriteActor");
+        RegisterActorType<ATextActor>("ATextActor");
+        RegisterActorType<ATriangleActor>("ATriangleActor");
         RegisterActorType<AUnknownActor>("AUnknownActor");
 
+        RegisterComponentType<Engine::Component::UConeComponent>("UConeComponent");
         RegisterComponentType<Engine::Component::UCubeComponent>("UCubeComponent");
+        RegisterComponentType<Engine::Component::UCylinderComponent>("UCylinderComponent");
         RegisterComponentType<Engine::Component::UQuadComponent>("UQuadComponent");
+        RegisterComponentType<Engine::Component::URingComponent>("URingComponent");
         RegisterComponentType<Engine::Component::USphereComponent>("USphereComponent");
         RegisterComponentType<Engine::Component::UTriangleComponent>("UTriangleComponent");
+        RegisterComponentType<Engine::Component::USpriteComponent>("USpriteComponent");
         RegisterComponentType<Engine::Component::UAtlasComponent>("UAtlasComponent");
         RegisterComponentType<Engine::Component::USubUVComponent>("USubUVComponent");
         RegisterComponentType<Engine::Component::UAnimatedSpriteComponent>(
             "UAnimatedSpriteComponent");
-        RegisterComponentType<Engine::Component::UAtlasComponent>("UTextComponent");
+        RegisterComponentType<Engine::Component::UAtlasTextComponent>("UTextComponent");
+        RegisterComponentType<Engine::Component::UAtlasTextComponent>("UAtlasTextComponent");
         RegisterComponentType<Engine::Component::UUnknownComponent>("UUnknownComponent");
     }
 } // namespace

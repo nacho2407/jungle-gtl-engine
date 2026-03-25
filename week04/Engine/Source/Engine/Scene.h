@@ -14,6 +14,8 @@ class ENGINE_API FScene
     bool RemoveActor(AActor* InActor);
     const TArray<AActor*>& GetActors() const { return Actors; }
 
+    void Tick(float DeltaTime);
+
     void BuildRenderData(FSceneRenderData& OutRenderData) const;
     void Clear();
     
