@@ -59,12 +59,39 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
 
     // 기즈모 설정 변경
     // void SetGizmoMode(EGizmoMode InMode) { CurrentMode = InMode; }
-    void SetSnapping(bool bInEnable, float InValue)
+    void SetTranslateSnapping(bool bInEnable, float InValue)
     {
-        bEnableSnapping = bInEnable;
-        SnapValue = InValue;
+        bEnableTranslationSnap = bInEnable;
+        TranslationSnapValue = InValue;
     }
-
+    void GetTranslateSnapping(bool &bInEnable, float &InValue) const
+    {
+        bInEnable = bEnableTranslationSnap;
+        InValue = TranslationSnapValue;
+    }
+    
+    void SetRotateSnapping(bool bInEnable, float InValue)
+    {
+        bEnableRotationSnap = bInEnable;
+        RotationSnapValue = InValue;
+    }
+    void GetRotateSnapping(bool &bInEnable, float &InValue) const
+    {
+        bInEnable = bEnableRotationSnap;
+        InValue = RotationSnapValue;
+    }
+    
+    void SetScaleSnapping(bool bInEnable, float InValue)
+    {
+        bEnableScaleSnap = bInEnable;
+        ScaleSnapValue = InValue;
+    }
+    void GetScaleSnapping(bool &bInEnable, float &InValue) const
+    {
+        bInEnable = bEnableScaleSnap;
+        InValue = ScaleSnapValue;
+    }
+    
     void SetTranslationDragScale(float InScale)
     {
         TranslationDragScale = FMath::Clamp(InScale, 0.01f, 1.0f);
@@ -111,17 +138,29 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     FPickResult PickData;
 
     bool       bIsDragging = false;
-    int32      StartMousePosX;
-    int32      StartMousePosY;
+    int32      StartMousePosX = 0;
+    int32      StartMousePosY = 0;
     FTransform StartTransform;
     float      InitialDragOffset{0.0f};
     float      InitialProjectionT{0.f};
 
+    FVector PlaneNormal;
+    FVector InitialPlaneHit;
     
     FVector    RotationStartVector;
 
-    bool  bEnableSnapping = false;
-    float SnapValue = 10.f;
+    // Translation
+    bool  bEnableTranslationSnap = true;
+    float TranslationSnapValue = 1.f;
+
+    // Rotation
+    bool  bEnableRotationSnap = true;
+    float RotationSnapValue = 5.f; // degree
+    
+    // Scaling
+    bool  bEnableScaleSnap = true;
+    float ScaleSnapValue = 0.25f;
+    
     float TranslationDragScale = 1.0f;
 
     FEditorViewportClient*        ViewportClient{nullptr};
@@ -129,10 +168,7 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
     FViewportSelectionController* ViewportSelectionController{nullptr};
 
     AActor* LastSelectedActor{nullptr};
-
-    /* For Duplication */
-    bool bPendingAltDuplicate = false;
-    bool bDuplicateSpawned = false;
+    
 
     static constexpr int32 DragThreshold = 5; // 픽셀 단위 드래그 시작 임계값
 };

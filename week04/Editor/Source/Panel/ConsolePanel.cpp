@@ -944,7 +944,7 @@ void FConsolePanel::ExecuteCommand(const FString& CommandLine)
             Camera.SetFOV(3.141592f * 0.5f);
             Camera.SetNearPlane(0.1f);
             Camera.SetFarPlane(2000.0f);
-            Camera.SetLocation(FVector(-10.0f, 5.0f, 50.0f));
+            Camera.SetLocation(FVector(-20.0f, 1.0f, 10.0f));
             Camera.SetRotation(FRotator(0.0f, 0.0f, 0.0f));
             UE_LOG(Console, ELogVerbosity::Log, "Camera reset to default editor transform.");
         }

@@ -41,8 +41,11 @@ bool FViewportGizmoController::OnMouseButtonDown(int32 MouseX, int32 MouseY)
     case EAxis::Z:
         CurrentDragAxis = FVector{0.f, 0.f, 1.f};
         break;
+    case EAxis::Center:
+        CurrentDragAxis = FVector::ZeroVector; // 수정: Center는 축 이동이 아니라 별도 분기 처리
+        break;
     }
-    if (!bIsWorldMode)
+    if (!bIsWorldMode && Axis != EAxis::Center) // 수정: Center에는 축 회전 적용하지 않음
     {
         CurrentDragAxis = LastSelectedActor->GetRootComponent()->GetRelativeRotation().RotateVector(
             CurrentDragAxis);
@@ -53,37 +56,25 @@ bool FViewportGizmoController::OnMouseButtonDown(int32 MouseX, int32 MouseY)
         ViewportCamera->GetViewProjectionMatrix(), static_cast<float>(ViewportCamera->GetWidth()),
         static_cast<float>(ViewportCamera->GetHeight()));
     FVector PivotOrigin = StartTransform.GetLocation();
-    if (GizmoType != EGizmoType::Rotation)
+
+    // 수정: Center Translation / Center Scaling / Rotation / 일반 Axis 를 명확히 분리
+    if (GizmoType == EGizmoType::Translation && Axis == EAxis::Center)
     {
-        InitialDragOffset = CalculateProjectionOffset(PickRay, PivotOrigin, CurrentDragAxis);
+        PlaneNormal = ViewportCamera->GetForwardVector();
+        InitialPlaneHit = RayPlaneIntersection(PickRay, PivotOrigin, PlaneNormal);
     }
-    else
+    else if (GizmoType == EGizmoType::Scaling && Axis == EAxis::Center)
     {
-        // FVector HitPos = RayPlaneIntersection(PickRay, PivotOrigin, CurrentDragAxis);
-        // FVector RawHitVector = HitPos - PivotOrigin;
-        // RotationStartVector = RawHitVector;
-        // RotationStartVector.Normalize();
+        FVector2 ScreenPosA = ProjectWorldToScreen(PivotOrigin);
+        FVector2 Dir(1.f, -1.f);
+        Dir.Normalize();
 
-        // switch (Axis)
-        //{
-        // case EAxis::X: // 빨간색 원 (YZ 평면) -> 평면 위의 로컬 Y축을 기준으로 삼음
-        //     ReferenceAxis = FVector(0.f, -1.f, 0.f);
-        //     break;
-        // case EAxis::Y: // 초록색 원 (ZX 평면) -> 평면 위의 로컬 Z축을 기준으로 삼음
-        //     ReferenceAxis = FVector(0.f, 0.f, -1.f);
-        //     break;
-        // case EAxis::Z: // 파란색 원 (XY 평면) -> 평면 위의 로컬 X축을 기준으로 삼음
-        //     ReferenceAxis = FVector(-1.f, 0.f, 0.f);
-        //     break;
-        // }
-        // if (!bIsWorldMode)
-        //{
-        //     ReferenceAxis =
-        //     SelectedActor->GetRootComponent()->GetRelativeRotation().RotateVector(
-        //         ReferenceAxis);
-        // }
-        // InitialProjectionT = FVector::DotProduct(RawHitVector, ReferenceAxis);
-
+        InitialProjectionT = FVector2::DotProduct(
+            FVector2(static_cast<float>(MouseX), static_cast<float>(MouseY)) - ScreenPosA,
+            Dir);
+    }
+    else if (GizmoType == EGizmoType::Rotation)
+    {
         switch (Axis)
         {
         case EAxis::X: // 빨간색 원 (YZ 평면) -> 평면 위의 로컬 Y축을 기준으로 삼음
@@ -94,6 +85,9 @@ bool FViewportGizmoController::OnMouseButtonDown(int32 MouseX, int32 MouseY)
             break;
         case EAxis::Z: // 파란색 원 (XY 평면) -> 평면 위의 로컬 X축을 기준으로 삼음
             ReferenceAxis = FVector(-1.f, 0.f, 0.f);
+            break;
+        case EAxis::Center:
+            ReferenceAxis = FVector(-1.f, -1.f, -1.f).GetSafeNormal();
             break;
         }
         if (!bIsWorldMode)
@@ -109,6 +103,10 @@ bool FViewportGizmoController::OnMouseButtonDown(int32 MouseX, int32 MouseY)
         InitialProjectionT =
             FVector2::DotProduct(FVector2(static_cast<float>(MouseX), static_cast<float>(MouseY)) - ScreenPosA, ReferenceAxis2D);
     }
+    else
+    {
+        InitialDragOffset = CalculateProjectionOffset(PickRay, PivotOrigin, CurrentDragAxis);
+    }
 
     return true;
 }
@@ -123,6 +121,9 @@ void FViewportGizmoController::OnMouseButtonUp()
     StartMousePosY = 0;
     StartTransform = FTransform{};
     InitialDragOffset = 0.0f;
+
+    PlaneNormal = FVector::ZeroVector;      // 수정: Center Translation 상태 초기화
+    InitialPlaneHit = FVector::ZeroVector;  // 수정: Center Translation 상태 초기화
 }
 
 void FViewportGizmoController::OnMouseMove(int32 MouseX, int32 MouseY)
@@ -142,8 +143,19 @@ void FViewportGizmoController::OnMouseMove(int32 MouseX, int32 MouseY)
 void FViewportGizmoController::ChangeWorldMode()
 {
     bIsWorldMode = !bIsWorldMode;
-    CurrentDragAxis =
-        LastSelectedActor->GetRootComponent()->GetRelativeRotation().RotateVector(CurrentDragAxis);
+
+    // 수정: null 안전성 추가
+    if (LastSelectedActor == nullptr || LastSelectedActor->GetRootComponent() == nullptr)
+    {
+        return;
+    }
+
+    // 수정: Center는 별도 로직이라 축 회전하지 않음
+    if (Axis != EAxis::Center)
+    {
+        CurrentDragAxis =
+            LastSelectedActor->GetRootComponent()->GetRelativeRotation().RotateVector(CurrentDragAxis);
+    }
 }
 
 FMatrix FViewportGizmoController::GetMatrix() const
@@ -200,33 +212,127 @@ void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)
         ViewportCamera->GetViewProjectionMatrix(), static_cast<float>(ViewportCamera->GetWidth()),
         static_cast<float>(ViewportCamera->GetHeight()));
 
-    float CurrentT =
-        CalculateProjectionOffset(PickRay, StartTransform.GetLocation(), CurrentDragAxis);
-
-    float DeltaValue = CurrentT - InitialDragOffset;
-    InitialDragOffset = CurrentT;
-    if (bEnableSnapping && SnapValue > 0.0f)
-    {
-        DeltaValue = std::round(DeltaValue / SnapValue) * SnapValue;
-    }
-
     FTransform NewTransform = StartTransform;
+
     if (GizmoType == EGizmoType::Translation)
     {
+        if (Axis == EAxis::Center)
+        {
+            // 수정: Center Translation은 axis projection이 아니라 camera-facing plane 사용
+            FVector Pivot = StartTransform.GetLocation();
+            FVector CurrentHit = RayPlaneIntersection(PickRay, Pivot, PlaneNormal);
+
+            FVector Delta = (CurrentHit - InitialPlaneHit) * TranslationDragScale;
+            InitialPlaneHit = CurrentHit;
+
+            // 수정: Center Translation에도 snapping 적용
+            if (bEnableTranslationSnap && TranslationSnapValue > 0.0f)
+            {
+                Delta.X = std::round(Delta.X / TranslationSnapValue) * TranslationSnapValue;
+                Delta.Y = std::round(Delta.Y / TranslationSnapValue) * TranslationSnapValue;
+                Delta.Z = std::round(Delta.Z / TranslationSnapValue) * TranslationSnapValue;
+            }
+
+            LastFrameDelta = Delta;
+            LastSelectedActor->SetLocation(LastSelectedActor->GetLocation() + Delta);
+
+            TArray<AActor*>& SelectedActors{ViewportSelectionController->GetSelectedActors()};
+            const int32 SelectedCount = static_cast<int32>(SelectedActors.size()); // 수정: 안전한 반복
+            for (int32 idx{0}; idx < SelectedCount - 1; idx++)
+            {
+                SelectedActors[idx]->SetLocation(SelectedActors[idx]->GetLocation() + Delta);
+            }
+            return;
+        }
+
+        // 수정: axis translation에서만 projection 계산
+        float CurrentT =
+            CalculateProjectionOffset(PickRay, StartTransform.GetLocation(), CurrentDragAxis);
+
+        float DeltaValue = CurrentT - InitialDragOffset;
         InitialDragOffset = CurrentT;
+        if (bEnableTranslationSnap && TranslationSnapValue > 0.0f)
+        {
+            DeltaValue = std::round(DeltaValue / TranslationSnapValue) * TranslationSnapValue;
+        }
 
         FVector D{CurrentDragAxis * (DeltaValue * TranslationDragScale)};
         LastFrameDelta = D;
         LastSelectedActor->SetLocation(LastSelectedActor->GetLocation() + D);
 
         TArray<AActor*>& SelectedActors{ViewportSelectionController->GetSelectedActors()};
-        for (int32 idx{0}; idx < SelectedActors.size() - 1; idx++)
+        const int32 SelectedCount = static_cast<int32>(SelectedActors.size()); // 수정: 안전한 반복
+        for (int32 idx{0}; idx < SelectedCount - 1; idx++)
         {
             SelectedActors[idx]->SetLocation(SelectedActors[idx]->GetLocation() + D);
         }
+        return;
     }
     else if (GizmoType == EGizmoType::Scaling)
     {
+        if (Axis == EAxis::Center)
+        {
+            FVector2 ScreenPosA = ProjectWorldToScreen(StartTransform.GetLocation());
+
+            FVector2 MouseDelta = FVector2(
+                static_cast<float>(MouseX) - ScreenPosA.X,
+                static_cast<float>(MouseY) - ScreenPosA.Y);
+
+            FVector2 Dir = FVector2(1.f, -1.f);
+            Dir.Normalize();
+
+            float CurrentProjectionT = FVector2::DotProduct(MouseDelta, Dir);
+            float DeltaT = CurrentProjectionT - InitialProjectionT;
+            InitialProjectionT = CurrentProjectionT;
+
+            float ScaleSensitivity = 0.01f;
+            float ScaleDelta = DeltaT * ScaleSensitivity;
+
+            if (bEnableScaleSnap && ScaleSnapValue > 0.0f)
+            {
+                ScaleDelta = std::round(ScaleDelta / ScaleSnapValue) * ScaleSnapValue;
+            }
+
+            FVector NewScale = LastSelectedActor->GetScale() +
+                               FVector(ScaleDelta, ScaleDelta, ScaleDelta);
+
+            NewScale = FVector(
+                std::max(0.01f, NewScale.X),
+                std::max(0.01f, NewScale.Y),
+                std::max(0.01f, NewScale.Z)); // 수정: 음수/0 scale 방지
+
+            LastSelectedActor->SetScale(NewScale);
+
+            TArray<AActor*>& SelectedActors{ViewportSelectionController->GetSelectedActors()};
+            const int32 SelectedCount = static_cast<int32>(SelectedActors.size()); // 수정: 안전한 반복
+            for (int32 idx{0}; idx < SelectedCount - 1; idx++)
+            {
+                FVector OtherScale = SelectedActors[idx]->GetScale() +
+                                     FVector(ScaleDelta, ScaleDelta, ScaleDelta);
+
+                OtherScale = FVector(
+                    std::max(0.01f, OtherScale.X),
+                    std::max(0.01f, OtherScale.Y),
+                    std::max(0.01f, OtherScale.Z)); // 수정: 음수/0 scale 방지
+
+                SelectedActors[idx]->SetScale(OtherScale);
+            }
+            return;
+        }
+
+        // 수정: axis scaling에서만 projection 계산
+        float CurrentT =
+            CalculateProjectionOffset(PickRay, StartTransform.GetLocation(), CurrentDragAxis);
+
+        float DeltaValue = CurrentT - InitialDragOffset;
+        InitialDragOffset = CurrentT;
+
+        float ScaleDelta = DeltaValue; // 수정: axis scaling에도 별도 scale snap 적용
+        if (bEnableScaleSnap && ScaleSnapValue > 0.0f)
+        {
+            ScaleDelta = std::round(ScaleDelta / ScaleSnapValue) * ScaleSnapValue;
+        }
+
         FVector ScalAxis;
         switch (Axis)
         {
@@ -239,15 +345,32 @@ void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)
         case EAxis::Z:
             ScalAxis = FVector{0.f, 0.f, 1.f};
             break;
+        case EAxis::Center:
+            ScalAxis = FVector::ZeroVector;
+            break;
         }
-        FVector S{ScalAxis * DeltaValue};
-        LastSelectedActor->SetScale(LastSelectedActor->GetScale() + S);
+
+        FVector S{ScalAxis * ScaleDelta};
+
+        FVector NewScale = LastSelectedActor->GetScale() + S;
+        NewScale = FVector(
+            std::max(0.01f, NewScale.X),
+            std::max(0.01f, NewScale.Y),
+            std::max(0.01f, NewScale.Z)); // 수정: axis scaling에도 clamp 적용
+        LastSelectedActor->SetScale(NewScale);
 
         TArray<AActor*>& SelectedActors{ViewportSelectionController->GetSelectedActors()};
-        for (int32 idx{0}; idx < SelectedActors.size() - 1; idx++)
+        const int32 SelectedCount = static_cast<int32>(SelectedActors.size()); // 수정: 안전한 반복
+        for (int32 idx{0}; idx < SelectedCount - 1; idx++)
         {
-            SelectedActors[idx]->SetScale(SelectedActors[idx]->GetScale() + S);
+            FVector OtherScale = SelectedActors[idx]->GetScale() + S;
+            OtherScale = FVector(
+                std::max(0.01f, OtherScale.X),
+                std::max(0.01f, OtherScale.Y),
+                std::max(0.01f, OtherScale.Z)); // 수정: axis scaling에도 clamp 적용
+            SelectedActors[idx]->SetScale(OtherScale);
         }
+        return;
     }
     else if (GizmoType == EGizmoType::Rotation)
     {
@@ -260,17 +383,22 @@ void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)
 
         float RotationSensitivity = 1.0f;
         float AngleDegrees = DeltaT * RotationSensitivity;
+        if (bEnableRotationSnap && RotationSnapValue > 0.f) // 수정: 잘못된 조건 변수 수정
+        {
+            AngleDegrees = std::round(AngleDegrees / RotationSnapValue) * RotationSnapValue;
+        }
         float AngleRadians = FMath::DegreesToRadians(AngleDegrees);
         FQuat DeltaRotation = FQuat(CurrentDragAxis, AngleRadians);
         FQuat NewRotation = LastSelectedActor->GetRotation() * DeltaRotation;
         LastSelectedActor->SetRotion(NewRotation);
 
         FVector          LastActorLocation{LastSelectedActor->GetLocation()};
-         TArray<AActor*>& SelectedActors{ViewportSelectionController->GetSelectedActors()};
-        for (int32 idx{0}; idx < SelectedActors.size() - 1; idx++)
+        TArray<AActor*>& SelectedActors{ViewportSelectionController->GetSelectedActors()};
+        const int32 SelectedCount = static_cast<int32>(SelectedActors.size()); // 수정: 안전한 반복
+        for (int32 idx{0}; idx < SelectedCount - 1; idx++)
         {
             AActor* CurrentActor = SelectedActors[idx];
-            FVector RelativeVec{CurrentActor->GetLocation()  - LastActorLocation};
+            FVector RelativeVec{CurrentActor->GetLocation() - LastActorLocation};
             float   LengthFromLastActor{RelativeVec.Size()};
             RelativeVec.Normalize();
 
@@ -278,6 +406,7 @@ void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)
             RelativeVec = DeltaRotation.RotateVector(RelativeVec);
             CurrentActor->SetLocation(LastActorLocation + RelativeVec * LengthFromLastActor);
         }
+        return;
     }
 }
 

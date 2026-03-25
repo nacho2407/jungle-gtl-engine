@@ -158,7 +158,7 @@ void FRendererModule::BeginFrame()
 {
     RHI.BeginFrame();
 
-    static const FLOAT ClearColor[4] = {0.15f, 0.15f, 0.15f, 1.0f};
+    static const FLOAT ClearColor[4] = {0.25f, 0.25f, 0.25f, 1.0f};
 
     RHI.SetDefaultRenderTargets();
     RHI.Clear(ClearColor, 1.0f, 0);

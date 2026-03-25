@@ -146,17 +146,17 @@ namespace PickId
 
         case static_cast<uint32>(EGizmoPart::TranslateCenter):
             OutGizmoType = EGizmoType::Translation;
-            OutAxis = EAxis::X;
+            OutAxis = EAxis::Center;
             return true;
 
-        case static_cast<uint32>(EGizmoPart::RotateCenter):
-            OutGizmoType = EGizmoType::Rotation;
-            OutAxis = EAxis::X;
-            return true;
+        // case static_cast<uint32>(EGizmoPart::RotateCenter):
+        //     OutGizmoType = EGizmoType::Rotation;
+        //     OutAxis = EAxis::Center;
+        //     return true;
 
         case static_cast<uint32>(EGizmoPart::ScaleCenter):
             OutGizmoType = EGizmoType::Scaling;
-            OutAxis = EAxis::X;
+            OutAxis = EAxis::Center;
             return true;
 
         default:
