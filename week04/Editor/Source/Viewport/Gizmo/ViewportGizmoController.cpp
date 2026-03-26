@@ -77,6 +77,7 @@ bool FViewportGizmoController::OnMouseButtonDown(int32 MouseX, int32 MouseY)
     {
         PlaneNormal = ViewportCamera->GetForwardVector();
         InitialPlaneHit = RayPlaneIntersection(PickRay, PivotOrigin, PlaneNormal);
+        PrevSnappedCenterDelta = FVector::ZeroVector;
     }
     else if (GizmoType == EGizmoType::Scaling && Axis == EAxis::Center)
     {
@@ -135,6 +136,8 @@ void FViewportGizmoController::OnMouseButtonUp()
     StartMousePosY = 0;
     StartTransform = FTransform{};
     InitialDragOffset = 0.0f;
+    LastFrameDelta = FVector::ZeroVector;
+    PrevSnappedCenterDelta = FVector::ZeroVector;
 
     PlaneNormal = FVector::ZeroVector;      // 수정: Center Translation 상태 초기화
     InitialPlaneHit = FVector::ZeroVector;  // 수정: Center Translation 상태 초기화
@@ -249,11 +252,15 @@ void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)
                     std::round(RawTotalDelta.Z / TranslationSnapValue) * TranslationSnapValue;
             }
 
-            // 수정: 프레임 delta
-            FVector FrameDelta = SnappedTotalDelta - LastFrameDelta;
-            LastFrameDelta = SnappedTotalDelta;
+            // 카메라 동기화를 위해 프레임 delta를 저장
+            const FVector FrameDelta =
+                (SnappedTotalDelta - PrevSnappedCenterDelta) * TranslationDragScale;
+            PrevSnappedCenterDelta = SnappedTotalDelta;
+            LastFrameDelta = FrameDelta;
 
-            LastSelectedActor->SetLocation(StartTransform.GetLocation() + SnappedTotalDelta);
+            const FVector AppliedTotalDelta = SnappedTotalDelta * TranslationDragScale;
+
+            LastSelectedActor->SetLocation(StartTransform.GetLocation() + AppliedTotalDelta);
 
             TArray<AActor*>& SelectedActors{ViewportSelectionController->GetSelectedActors()};
             const int32 SelectedCount = static_cast<int32>(SelectedActors.size());
@@ -261,7 +268,7 @@ void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)
             for (int32 i = 0; i < SelectedCount; i++)
             {
                 SelectedActors[i]->SetLocation(
-                    InitialActorLocations[i] + SnappedTotalDelta // 🔥 핵심
+                    InitialActorLocations[i] + AppliedTotalDelta
                 );
             }
             
@@ -289,6 +296,7 @@ void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)
 
         // 이동 적용
         FVector D = CurrentDragAxis * (FrameDelta * TranslationDragScale);
+        LastFrameDelta = D;
 
         LastSelectedActor->SetLocation(LastSelectedActor->GetLocation() + D);
 
