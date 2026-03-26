@@ -193,7 +193,7 @@ void FD3D11LineBatchRenderer::Flush()
     Constants.CameraPos[0] = CameraPos.X;
     Constants.CameraPos[1] = CameraPos.Y;
     Constants.CameraPos[2] = CameraPos.Z;
-    Constants.MaxDistance = 2000.0f;
+    Constants.MaxDistance = 1000.0f;
 
     if (!RHI->UpdateConstantBuffer(ConstantBuffer.Get(), &Constants, sizeof(Constants)))
     {

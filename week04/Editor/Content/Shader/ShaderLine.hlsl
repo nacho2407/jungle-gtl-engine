@@ -26,7 +26,7 @@ PSInput VSMain(VSInput In)
     float fadeFactor = saturate((MaxDistance - dist) / (MaxDistance));
     float alpha = fadeFactor * fadeFactor;
     Out.Color = In.Color;
-    Out.Color.a *= (alpha * 0.8f);
+    Out.Color.a *= (alpha * 0.8f) + 0.1f;
     
     return Out;
 }
