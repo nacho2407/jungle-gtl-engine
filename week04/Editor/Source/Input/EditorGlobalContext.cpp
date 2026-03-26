@@ -12,14 +12,7 @@ using Engine::ApplicationCore::EKey;
 bool FEditorGlobalContext::HandleEvent(const Engine::ApplicationCore::FInputEvent& Event,
                                        const Engine::ApplicationCore::FInputState& State)
 {
-    (void)State;
-
     if (Event.Type != EInputEventType::KeyDown || Event.bRepeat)
-    {
-        return false;
-    }
-
-    if (Event.Modifiers.bAltDown || Event.Modifiers.bCtrlDown || Event.Modifiers.bShiftDown)
     {
         return false;
     }
@@ -33,7 +26,51 @@ bool FEditorGlobalContext::HandleEvent(const Engine::ApplicationCore::FInputEven
         }
     }
 
-    if (Event.Key == EKey::F)
+    if (Controller == nullptr)
+    {
+        return false;
+    }
+
+    const bool bCtrlDown = State.Modifiers.bCtrlDown;
+    const bool bShiftDown = State.Modifiers.bShiftDown;
+    const bool bAltDown = State.Modifiers.bAltDown;
+
+    if (bCtrlDown && !bAltDown)
+    {
+        if (Event.Key == EKey::S)
+        {
+            if (bShiftDown)
+            {
+                Controller->SaveSceneAs();
+            }
+            else
+            {
+                Controller->SaveScene();
+            }
+
+            return true;
+        }
+
+        if (!bShiftDown && Event.Key == EKey::O)
+        {
+            Controller->OpenScene();
+            return true;
+        }
+
+        if (!bShiftDown && Event.Key == EKey::N)
+        {
+            Controller->NewScene();
+            return true;
+        }
+    }
+
+    if (!bCtrlDown && !bShiftDown && !bAltDown && Event.Key == EKey::F1)
+    {
+        Controller->RequestAboutPopup();
+        return true;
+    }
+
+    if (!bCtrlDown && !bShiftDown && !bAltDown && Event.Key == EKey::F)
     {
         if (NavigationController == nullptr)
         {
@@ -44,17 +81,10 @@ bool FEditorGlobalContext::HandleEvent(const Engine::ApplicationCore::FInputEven
         return true;
     }
 
-    if (Event.Key != EKey::Delete)
+    if (bCtrlDown || bShiftDown || bAltDown || Event.Key != EKey::Delete)
     {
         return false;
     }
-
-    if (Controller == nullptr)
-    {
-        return false;
-    }
-
-    
 
     if (!Controller->CanDeleteSelectedActors())
     {

@@ -62,7 +62,6 @@ namespace Engine::Component
     protected:
         virtual void OnTransformChanged()
         {
-            UE_LOG(USceneComponent, ELogVerbosity::Warning, "OMG This it not true");
         }
 
       protected:

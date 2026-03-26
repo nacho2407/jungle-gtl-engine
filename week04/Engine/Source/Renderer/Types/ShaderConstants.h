@@ -26,6 +26,8 @@ struct alignas(16) FMeshLitConstants
 struct alignas(16) FLineConstants
 {
     FMatrix VP;
+    float   CameraPos[3];
+    float   MaxDistance;
 };
 
 struct alignas(16) FFontConstants

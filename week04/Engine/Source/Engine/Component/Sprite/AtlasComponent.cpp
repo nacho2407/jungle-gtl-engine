@@ -27,6 +27,9 @@ namespace Engine::Component
         FComponentPropertyOptions IntOptions;
         IntOptions.DragSpeed = 1.0f;
 
+        Builder.AddBool(
+            "billboard", L"Billboard", [this]() { return GetBillboard(); },
+            [this](bool bInValue) { SetBillboard(bInValue); });
         Builder.AddInt(
             "atlas_rows", L"Atlas Rows", [this]() { return GetAtlasRows(); },
             [this](int32 InValue) { SetAtlasRows(InValue); }, IntOptions);

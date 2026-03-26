@@ -23,6 +23,12 @@ public:
     bool CanDeleteSelectedActors() const;
     bool DeleteSelectedActors();
 
+    void NewScene();
+    void OpenScene();
+    void SaveScene();
+    void SaveSceneAs();
+    void RequestAboutPopup();
+
 private:
     FScene* Scene = nullptr;
     FEditorContext* Context = nullptr;

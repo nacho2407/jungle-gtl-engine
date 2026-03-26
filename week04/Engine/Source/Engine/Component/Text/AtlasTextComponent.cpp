@@ -55,9 +55,6 @@ namespace Engine::Component
         Builder.AddFloat(
             "line_spacing", L"Line Spacing", [this]() { return GetLineSpacing(); },
             [this](float InValue) { SetLineSpacing(InValue); });
-        Builder.AddBool(
-            "billboard", L"Billboard", [this]() { return GetBillboard(); },
-            [this](bool bInValue) { SetBillboard(bInValue); });
         Builder.AddVector3(
             "billboard_offset", L"Billboard Offset", [this]() { return GetBillboardOffset(); },
             [this](const FVector& InValue) { SetBillboardOffset(InValue); });

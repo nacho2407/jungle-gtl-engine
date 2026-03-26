@@ -1,5 +1,4 @@
 #include "EditorGlobalController.h"
-#include "Viewport/Global/EditorGlobalController.h"
 
 #include "Editor/Editor.h"
 #include "Editor/EditorContext.h"
@@ -101,4 +100,54 @@ bool FEditorGlobalController::DeleteSelectedActors()
     }
 
     return true;
+}
+
+void FEditorGlobalController::NewScene()
+{
+    if (Context == nullptr || Context->Editor == nullptr)
+    {
+        return;
+    }
+
+    Context->Editor->CreateNewScene();
+}
+
+void FEditorGlobalController::OpenScene()
+{
+    if (Context == nullptr || Context->Editor == nullptr)
+    {
+        return;
+    }
+
+    Context->Editor->RequestOpenSceneDialog();
+}
+
+void FEditorGlobalController::SaveScene()
+{
+    if (Context == nullptr || Context->Editor == nullptr)
+    {
+        return;
+    }
+
+    Context->Editor->SaveCurrentSceneToDisk();
+}
+
+void FEditorGlobalController::SaveSceneAs()
+{
+    if (Context == nullptr || Context->Editor == nullptr)
+    {
+        return;
+    }
+
+    Context->Editor->RequestSaveSceneAs();
+}
+
+void FEditorGlobalController::RequestAboutPopup()
+{
+    if (Context == nullptr || Context->Editor == nullptr)
+    {
+        return;
+    }
+
+    Context->Editor->RequestAboutPopUp();
 }
