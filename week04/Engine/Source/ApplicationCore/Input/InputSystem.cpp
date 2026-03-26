@@ -26,6 +26,8 @@ namespace Engine::ApplicationCore
                 return EKey::E;
             case 'Q':
                 return EKey::Q;
+            case 'N':
+                return EKey::N;
             case 'O':
                 return EKey::O;
             case 'X':
