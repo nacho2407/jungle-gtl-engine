@@ -124,7 +124,7 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
         return false;
     }
 
-    if (!WindowsApplication->CreateEditorWindow(L"Jungle Editor", 1920, 1080))
+    if (!WindowsApplication->CreateEditorWindow(L"CO-PASS", 1920, 1080))
     {
         return false;
     }

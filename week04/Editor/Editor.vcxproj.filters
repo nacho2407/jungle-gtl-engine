@@ -40,8 +40,8 @@
     <Filter Include="Source\Editor\Logging">
       <UniqueIdentifier>{9eea2180-fcc8-2cbc-e827-723988501a5f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\ThirdParty\ImGui">
-      <UniqueIdentifier>{32e4b986-b3a8-5f87-38d0-7d76493d7618}</UniqueIdentifier>
+    <Filter Include="Source\ThirdParty\imgui">
+      <UniqueIdentifier>{14727bfa-61bb-1229-bb2b-782b3aace65f}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Viewport\Gizmo">
       <UniqueIdentifier>{a4a5fb1b-42c4-c447-1a35-66493bab83fe}</UniqueIdentifier>
@@ -132,26 +132,26 @@
     <ClCompile Include="Source\Panel\StatePanel.cpp">
       <Filter>Source\Panel</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ThirdParty\ImGui\imgui.cpp">
-      <Filter>Source\ThirdParty\ImGui</Filter>
+    <ClCompile Include="Source\ThirdParty\imgui\imgui.cpp">
+      <Filter>Source\ThirdParty\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ThirdParty\ImGui\imgui_demo.cpp">
-      <Filter>Source\ThirdParty\ImGui</Filter>
+    <ClCompile Include="Source\ThirdParty\imgui\imgui_demo.cpp">
+      <Filter>Source\ThirdParty\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ThirdParty\ImGui\imgui_draw.cpp">
-      <Filter>Source\ThirdParty\ImGui</Filter>
+    <ClCompile Include="Source\ThirdParty\imgui\imgui_draw.cpp">
+      <Filter>Source\ThirdParty\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ThirdParty\ImGui\imgui_impl_dx11.cpp">
-      <Filter>Source\ThirdParty\ImGui</Filter>
+    <ClCompile Include="Source\ThirdParty\imgui\imgui_impl_dx11.cpp">
+      <Filter>Source\ThirdParty\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ThirdParty\ImGui\imgui_impl_win32.cpp">
-      <Filter>Source\ThirdParty\ImGui</Filter>
+    <ClCompile Include="Source\ThirdParty\imgui\imgui_impl_win32.cpp">
+      <Filter>Source\ThirdParty\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ThirdParty\ImGui\imgui_tables.cpp">
-      <Filter>Source\ThirdParty\ImGui</Filter>
+    <ClCompile Include="Source\ThirdParty\imgui\imgui_tables.cpp">
+      <Filter>Source\ThirdParty\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ThirdParty\ImGui\imgui_widgets.cpp">
-      <Filter>Source\ThirdParty\ImGui</Filter>
+    <ClCompile Include="Source\ThirdParty\imgui\imgui_widgets.cpp">
+      <Filter>Source\ThirdParty\imgui</Filter>
     </ClCompile>
     <ClCompile Include="Source\Viewport\EditorViewport.cpp">
       <Filter>Source\Viewport</Filter>
@@ -263,29 +263,29 @@
     <ClInclude Include="Source\Panel\StatePanel.h">
       <Filter>Source\Panel</Filter>
     </ClInclude>
-    <ClInclude Include="Source\ThirdParty\ImGui\imconfig.h">
-      <Filter>Source\ThirdParty\ImGui</Filter>
+    <ClInclude Include="Source\ThirdParty\imgui\imconfig.h">
+      <Filter>Source\ThirdParty\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="Source\ThirdParty\ImGui\imgui.h">
-      <Filter>Source\ThirdParty\ImGui</Filter>
+    <ClInclude Include="Source\ThirdParty\imgui\imgui.h">
+      <Filter>Source\ThirdParty\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="Source\ThirdParty\ImGui\imgui_impl_dx11.h">
-      <Filter>Source\ThirdParty\ImGui</Filter>
+    <ClInclude Include="Source\ThirdParty\imgui\imgui_impl_dx11.h">
+      <Filter>Source\ThirdParty\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="Source\ThirdParty\ImGui\imgui_impl_win32.h">
-      <Filter>Source\ThirdParty\ImGui</Filter>
+    <ClInclude Include="Source\ThirdParty\imgui\imgui_impl_win32.h">
+      <Filter>Source\ThirdParty\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="Source\ThirdParty\ImGui\imgui_internal.h">
-      <Filter>Source\ThirdParty\ImGui</Filter>
+    <ClInclude Include="Source\ThirdParty\imgui\imgui_internal.h">
+      <Filter>Source\ThirdParty\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="Source\ThirdParty\ImGui\imstb_rectpack.h">
-      <Filter>Source\ThirdParty\ImGui</Filter>
+    <ClInclude Include="Source\ThirdParty\imgui\imstb_rectpack.h">
+      <Filter>Source\ThirdParty\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="Source\ThirdParty\ImGui\imstb_textedit.h">
-      <Filter>Source\ThirdParty\ImGui</Filter>
+    <ClInclude Include="Source\ThirdParty\imgui\imstb_textedit.h">
+      <Filter>Source\ThirdParty\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="Source\ThirdParty\ImGui\imstb_truetype.h">
-      <Filter>Source\ThirdParty\ImGui</Filter>
+    <ClInclude Include="Source\ThirdParty\imgui\imstb_truetype.h">
+      <Filter>Source\ThirdParty\imgui</Filter>
     </ClInclude>
     <ClInclude Include="Source\Viewport\EditorViewport.h">
       <Filter>Source\Viewport</Filter>
@@ -313,14 +313,14 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Source\ThirdParty\ImGui\imgui.natstepfilter">
-      <Filter>Source\ThirdParty\ImGui</Filter>
+    <None Include="Source\ThirdParty\imgui\imgui.natstepfilter">
+      <Filter>Source\ThirdParty\imgui</Filter>
     </None>
     <None Include="Resources\Editor.aps" />
   </ItemGroup>
   <ItemGroup>
-    <Natvis Include="Source\ThirdParty\ImGui\imgui.natvis">
-      <Filter>Source\ThirdParty\ImGui</Filter>
+    <Natvis Include="Source\ThirdParty\imgui\imgui.natvis">
+      <Filter>Source\ThirdParty\imgui</Filter>
     </Natvis>
   </ItemGroup>
   <ItemGroup>
