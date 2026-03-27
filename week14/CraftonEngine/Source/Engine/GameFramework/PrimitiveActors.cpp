@@ -83,7 +83,7 @@ void AStaticMeshActor::InitDefaultComponents()
 	SetRootComponent(SM);
 
 	// 큐브 에셋을 매니저에게 요청 (없으면 파싱해서 만들고, 있으면 캐시된 걸 줌)
-	UStaticMesh* CubeAsset = FObjManager::LoadObjStaticMesh("Data/Cube.obj");
+	UStaticMesh* CubeAsset = FObjManager::LoadObjStaticMesh("Data/cube-tex.obj");
 
 	// 컴포넌트에 에셋 할당 (Assign)
 	SM->SetStaticMesh(CubeAsset);
