@@ -23,6 +23,7 @@ struct FStaticMeshMaterialSlot
 //	CookedData
 struct FStaticMesh
 {
+	FString PathFileName;
 	TArray<FNormalVertex> Vertices;
 	TArray<uint32> Indices;
 	TArray<FStaticMeshSection> Sections;
