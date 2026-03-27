@@ -5,6 +5,7 @@
 #include <fstream>
 #include <filesystem>
 #include "DDSTextureLoader.h"
+#include "WICTextureLoader.h"
 #include "UI/EditorConsoleWidget.h"
 
 namespace ResourceKey
@@ -118,10 +119,53 @@ void FResourceManager::ReleaseGPUResources()
 	{
 		if (Resource.SRV) { Resource.SRV->Release(); Resource.SRV = nullptr; }
 	}
+	FontResources.clear();
+
 	for (auto& [Key, Resource] : ParticleResources)
 	{
 		if (Resource.SRV) { Resource.SRV->Release(); Resource.SRV = nullptr; }
 	}
+	ParticleResources.clear();
+	
+	for (auto& [Key, Resource] : MaterialTextureResources)
+	{
+		if (Resource.SRV) { Resource.SRV->Release(); Resource.SRV = nullptr; }
+	}
+	MaterialTextureResources.clear();
+}
+
+FMaterialResource* FResourceManager::GetOrLoadTexture(const FString& Path, ID3D11Device* Device)
+{
+	auto Iter = MaterialTextureResources.find(Path);
+	if (Iter != MaterialTextureResources.end())
+	{
+		return &Iter->second;
+	}
+
+	FMaterialResource Resource;
+	Resource.Path = Path;
+
+	std::wstring FullPath = FPaths::Combine(FPaths::RootDir(), FPaths::ToWide(Path));
+
+	HRESULT hr;
+
+	if (FullPath.size() >= 4 && FullPath.substr(FullPath.size() - 4) == L".dds")
+	{
+		hr = DirectX::CreateDDSTextureFromFile(Device, FullPath.c_str(), nullptr, &Resource.SRV);
+	}
+	else
+	{
+		hr = DirectX::CreateWICTextureFromFile(Device, FullPath.c_str(), nullptr, &Resource.SRV);
+	}
+
+	if (FAILED(hr))
+	{
+		UE_LOG("Failed to load texture: %s", Path.c_str());
+		return nullptr;
+	}
+
+	MaterialTextureResources[Path] = Resource;
+	return &MaterialTextureResources[Path];
 }
 
 // --- Font ---
