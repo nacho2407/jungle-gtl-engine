@@ -1,7 +1,7 @@
 ﻿#include "GameFramework/World.h"
+#include "Object/ObjectFactory.h"
 
-DEFINE_CLASS(UWorld, UObject)
-REGISTER_FACTORY(UWorld)
+IMPLEMENT_CLASS(UWorld, UObject)
 
 UWorld::~UWorld()
 {
