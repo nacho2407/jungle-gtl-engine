@@ -125,7 +125,55 @@ FObjInfo FObjImporter::ParseObj(const std::string& FilePath)
 
 TArray<FObjMaterialInfo> FObjImporter::ParseMtl(const std::string& MtlPath)
 {
-	return {};
+	TArray<FObjMaterialInfo> MaterialInfos;
+	std::ifstream File(MtlPath);
+
+	if (!File.is_open())
+	{
+		UE_LOG("Failed to open MTL file: %s", MtlPath.c_str());
+		return MaterialInfos;
+	}
+
+	std::string Line;
+	while (std::getline(File, Line))
+	{
+		std::stringstream LineStream(Line);
+		std::string Prefix;
+		LineStream >> Prefix;
+
+		if (Prefix.empty() || Prefix[0] == '#')
+		{
+			continue;
+		}
+		else if (Prefix == "newmtl")
+		{
+			FObjMaterialInfo MaterialInfo;
+			LineStream >> MaterialInfo.Name;
+			MaterialInfos.emplace_back(MaterialInfo);
+		}
+		else if (Prefix == "Kd")
+		{
+			if (MaterialInfos.empty())
+			{
+				continue;
+			}
+			FVector DiffuseColor;
+			LineStream >> DiffuseColor.X >> DiffuseColor.Y >> DiffuseColor.Z;
+			MaterialInfos.back().DiffuseColor = DiffuseColor;
+		}
+		else if (Prefix == "map_Kd")
+		{
+			if (MaterialInfos.empty())
+			{
+				continue;
+			}
+			std::string TexturePath;
+			LineStream >> TexturePath;
+			MaterialInfos.back().DiffuseTexture = TexturePath;
+		}
+	}
+
+	return MaterialInfos;
 }
 
 // assume that all faces are triangles and that (v, vt, vn) are all present.
