@@ -28,7 +28,7 @@ void FMeshBuffer::Release()
 
 #pragma region __FVERTEXBUFFER__
 
-void FVertexBuffer::Create(ID3D11Device* InDevice, const TArray<FVertex> & InData, uint32 InByteWidth, uint32 InStride)
+void FVertexBuffer::Create(ID3D11Device* InDevice, const TArray<FVertex>& InData, uint32 InByteWidth, uint32 InStride)
 {
 	if (InData.empty() || InByteWidth == 0)
 	{
@@ -44,7 +44,7 @@ void FVertexBuffer::Create(ID3D11Device* InDevice, const TArray<FVertex> & InDat
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 
 	D3D11_SUBRESOURCE_DATA vertexBufferSRD = { InData.data() };
-	
+
 	HRESULT hr = InDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferSRD, &Buffer);
 	if (FAILED(hr))
 	{
@@ -89,7 +89,7 @@ void FConstantBuffer::Create(ID3D11Device* InDevice, uint32 InByteWidth)
 
 	constantBufferDesc.ByteWidth = (InByteWidth + 0xf) & 0xfffffff0;
 	constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;	
+	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
 	InDevice->CreateBuffer(&constantBufferDesc, nullptr, &Buffer);
@@ -97,7 +97,7 @@ void FConstantBuffer::Create(ID3D11Device* InDevice, uint32 InByteWidth)
 
 void FConstantBuffer::Release()
 {
-	if(Buffer)
+	if (Buffer)
 	{
 		Buffer->Release();
 		Buffer = nullptr;
@@ -107,7 +107,7 @@ void FConstantBuffer::Release()
 //	Constant buffer는 Dynamic으로 생성했으므로 업데이트가 가능. 업데이트가 필요하다면 Map/Unmap을 이용하여 업데이트
 //	InData는 Constant buffer에 업데이트할 데이터의 포인터입니다. InByteWidth는 업데이트할 데이터의 총 byte 크기입니다.
 //	즉, InData는 FPerObjectConstants 구조체의 포인터입니다.
-void FConstantBuffer::Update(ID3D11DeviceContext* InDeviceContext, const void * InData, uint32 InByteWidth)
+void FConstantBuffer::Update(ID3D11DeviceContext* InDeviceContext, const void* InData, uint32 InByteWidth)
 {
 	if (Buffer)
 	{
@@ -120,7 +120,7 @@ void FConstantBuffer::Update(ID3D11DeviceContext* InDeviceContext, const void * 
 	}
 }
 
-ID3D11Buffer* FConstantBuffer::GetBuffer() 
+ID3D11Buffer* FConstantBuffer::GetBuffer()
 {
 	return Buffer;
 }
@@ -171,7 +171,7 @@ void FIndexBuffer::Update(ID3D11DeviceContext* InDeviceContext, const TArray<uin
 	//	 Do nothing
 }
 
-ID3D11Buffer * FIndexBuffer::GetBuffer() const
+ID3D11Buffer* FIndexBuffer::GetBuffer() const
 {
 	return Buffer;
 }
