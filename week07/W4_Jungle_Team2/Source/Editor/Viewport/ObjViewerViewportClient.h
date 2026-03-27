@@ -27,12 +27,15 @@ public:
 	void CreateCamera();
 	void DestroyCamera();
 	void ResetCamera();
+
+	void ClampCameraPosition();
+	void ClampCameraRotation();
 	UCameraComponent* GetCamera() const { return Camera; }
 
 	void Tick(float DeltaTime);
 
 	const FCursorOverlayState& GetCursorOverlayState() const { return CursorOverlayState; }
-
+	
 private:
 	void TickInput(float DeltaTime);
 	void TickInteraction(float DeltaTime);
@@ -51,6 +54,11 @@ private:
 	float WindowHeight = 1080.f;
 	
 	bool bIsCursorVisible = true;
+	
+	// Viewer 전용 중심점 기준 회전 조작에 사용
+	bool bIsOrbiting = false;
+	FVector OrbitPivot = FVector(0.0f, 0.0f, 0.0f);
+	float OrbitDistance = 50.0f;
 
 	FCursorOverlayState CursorOverlayState;
 };
