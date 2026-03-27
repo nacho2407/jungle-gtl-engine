@@ -12,18 +12,31 @@ struct FSubMesh
 
 struct FStaticMeshResource
 {
-    // 1. 렌더러가 사용할 GPU 버퍼 (VRAM)
+    // --- GPU 렌더링용 데이터 (VRAM) ---
     TComPtr<ID3D11Buffer> VertexBuffer;
     TComPtr<ID3D11Buffer> IndexBuffer;
-    uint32                VertexCount = 0;
-    uint32                IndexCount = 0;
+
+    uint32 VertexCount = 0;
+    uint32 IndexCount = 0;
+    uint32 VertexStride = 0;
 
     TArray<FSubMesh> SubMeshes;
 
-    // 2. 컴포넌트가 Picking에 사용할 CPU 복사본 (RAM)
+    // --- CPU 충돌/Picking용 데이터 (RAM) ---
     TArray<FVector> CPU_Positions;
     TArray<uint32>  CPU_Indices;
-    Geometry::FAABB BoundingBox;
+    // FAABB           BoundingBox;
 
-    // ... Reset() 등 생략 ...
+    void Reset()
+    {
+        VertexBuffer.Reset();
+        IndexBuffer.Reset();
+        VertexCount = 0;
+        IndexCount = 0;
+        VertexStride = 0;
+        SubMeshes.clear();
+        CPU_Positions.clear();
+        CPU_Indices.clear();
+        // BoundingBox = FAABB();
+    }
 };

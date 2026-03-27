@@ -153,7 +153,7 @@ namespace
     FString WidePathToUtf8(const FWString& Path)
     {
         const std::filesystem::path FilePath(Path);
-        const std::u8string Utf8Path = FilePath.u8string();
+        const std::u8string         Utf8Path = FilePath.u8string();
         return FString(reinterpret_cast<const char*>(Utf8Path.data()), Utf8Path.size());
     }
 } // namespace
@@ -252,7 +252,8 @@ bool FFontAtlasLoader::ParseFontAtlasJson(const FSourceRecord& Source, FFontReso
     if (!LoadAtlasTexture(Source, OutFont.PageFiles[0], OutFont.Atlas))
     {
         UE_LOG(Asset, ELogVerbosity::Warning,
-               "[FontAtlasLoader] ParseFontAtlasJson failed at atlas texture load. Path=%s AtlasPage=%s",
+               "[FontAtlasLoader] ParseFontAtlasJson failed at atlas texture load. Path=%s "
+               "AtlasPage=%s",
                WidePathToUtf8(Source.NormalizedPath).c_str(), OutFont.PageFiles[0].c_str());
         OutFont.Reset();
         return false;
@@ -547,7 +548,8 @@ bool FFontAtlasLoader::CreateTextureResource(const FDecodedAtlasImage& DecodedIm
     if (FAILED(Hr))
     {
         UE_LOG(Asset, ELogVerbosity::Warning,
-               "[FontAtlasLoader] CreateTextureResource failed at CreateShaderResourceView. HRESULT=0x%08x",
+               "[FontAtlasLoader] CreateTextureResource failed at CreateShaderResourceView. "
+               "HRESULT=0x%08x",
                static_cast<uint32>(Hr));
         return false;
     }

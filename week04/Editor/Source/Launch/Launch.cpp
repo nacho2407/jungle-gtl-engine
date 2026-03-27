@@ -115,5 +115,5 @@ int Launch(HINSTANCE HInstance, int NCmdShow)
 
         ExitCode = -1;
     }
-    return GuardedMain(HInstance, NCmdShow);
+    return ExitCode;
 }

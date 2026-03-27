@@ -18,7 +18,7 @@ namespace
 {
     class FScopedComInitializer
     {
-    public:
+      public:
         FScopedComInitializer()
         {
             Result = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
@@ -34,18 +34,16 @@ namespace
             }
         }
 
-        bool IsUsable() const
-        {
-            return bUsable;
-        }
+        bool IsUsable() const { return bUsable; }
 
-    private:
+      private:
         HRESULT Result = E_FAIL;
-        bool bInitialized = false;
-        bool bUsable = false;
+        bool    bInitialized = false;
+        bool    bUsable = false;
     };
 
-    bool DecodeWithWICBytes(const TArray<uint8>& Bytes, uint32& OutWidth, uint32& OutHeight, TArray<uint8>& OutPixels)
+    bool DecodeWithWICBytes(const TArray<uint8>& Bytes, uint32& OutWidth, uint32& OutHeight,
+                            TArray<uint8>& OutPixels)
     {
         if (Bytes.empty())
         {
@@ -64,11 +62,8 @@ namespace
         }
 
         TComPtr<IWICImagingFactory> ImagingFactory;
-        HRESULT Hr = CoCreateInstance(
-            CLSID_WICImagingFactory,
-            nullptr,
-            CLSCTX_INPROC_SERVER,
-            IID_PPV_ARGS(&ImagingFactory));
+        HRESULT Hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER,
+                                      IID_PPV_ARGS(&ImagingFactory));
         if (FAILED(Hr))
         {
             return false;
@@ -90,7 +85,8 @@ namespace
         }
 
         TComPtr<IWICBitmapDecoder> Decoder;
-        Hr = ImagingFactory->CreateDecoderFromStream(Stream.Get(), nullptr, WICDecodeMetadataCacheOnLoad, &Decoder);
+        Hr = ImagingFactory->CreateDecoderFromStream(Stream.Get(), nullptr,
+                                                     WICDecodeMetadataCacheOnLoad, &Decoder);
         if (FAILED(Hr))
         {
             return false;
@@ -113,9 +109,9 @@ namespace
 
         const uint64 Stride = static_cast<uint64>(Width) * 4ull;
         const uint64 BufferSize = Stride * static_cast<uint64>(Height);
-        if (Stride > static_cast<uint64>(std::numeric_limits<UINT>::max())
-            || BufferSize > static_cast<uint64>(std::numeric_limits<UINT>::max())
-            || BufferSize > static_cast<uint64>(std::numeric_limits<size_t>::max()))
+        if (Stride > static_cast<uint64>(std::numeric_limits<UINT>::max()) ||
+            BufferSize > static_cast<uint64>(std::numeric_limits<UINT>::max()) ||
+            BufferSize > static_cast<uint64>(std::numeric_limits<size_t>::max()))
         {
             return false;
         }
@@ -127,13 +123,9 @@ namespace
             return false;
         }
 
-        Hr = FormatConverter->Initialize(
-            Frame.Get(),
-            GUID_WICPixelFormat32bppRGBA,
-            WICBitmapDitherTypeNone,
-            nullptr,
-            0.0f,
-            WICBitmapPaletteTypeCustom);
+        Hr = FormatConverter->Initialize(Frame.Get(), GUID_WICPixelFormat32bppRGBA,
+                                         WICBitmapDitherTypeNone, nullptr, 0.0f,
+                                         WICBitmapPaletteTypeCustom);
         if (FAILED(Hr))
         {
             return false;
@@ -143,11 +135,9 @@ namespace
         OutHeight = static_cast<uint32>(Height);
         OutPixels.resize(static_cast<size_t>(BufferSize));
 
-        Hr = FormatConverter->CopyPixels(
-            nullptr,
-            static_cast<UINT>(Stride),
-            static_cast<UINT>(BufferSize),
-            reinterpret_cast<BYTE*>(OutPixels.data()));
+        Hr = FormatConverter->CopyPixels(nullptr, static_cast<UINT>(Stride),
+                                         static_cast<UINT>(BufferSize),
+                                         reinterpret_cast<BYTE*>(OutPixels.data()));
         if (FAILED(Hr))
         {
             OutWidth = 0;
@@ -168,15 +158,12 @@ namespace
     FString WidePathToUtf8(const FWString& Path)
     {
         const std::filesystem::path FilePath(Path);
-        const std::u8string Utf8Path = FilePath.u8string();
+        const std::u8string         Utf8Path = FilePath.u8string();
         return FString(reinterpret_cast<const char*>(Utf8Path.data()), Utf8Path.size());
     }
-}
+} // namespace
 
-FSubUVAtlasLoader::FSubUVAtlasLoader(FD3D11RHI* InRHI)
-    : RHI(InRHI)
-{
-}
+FSubUVAtlasLoader::FSubUVAtlasLoader(FD3D11RHI* InRHI) : RHI(InRHI) {}
 
 bool FSubUVAtlasLoader::CanLoad(const FWString& Path, const FAssetLoadParams& Params) const
 {
@@ -185,26 +172,21 @@ bool FSubUVAtlasLoader::CanLoad(const FWString& Path, const FAssetLoadParams& Pa
         return false;
     }
 
-    if (Params.ExplicitType != EAssetType::Unknown && Params.ExplicitType != EAssetType::SpriteAtlas)
+    if (Params.ExplicitType != EAssetType::Unknown &&
+        Params.ExplicitType != EAssetType::SpriteAtlas)
     {
         return false;
     }
 
     const std::filesystem::path FilePath(Path);
-    FWString Extension = FilePath.extension().native();
+    FWString                    Extension = FilePath.extension().native();
     std::transform(Extension.begin(), Extension.end(), Extension.begin(),
-        [](wchar_t Ch)
-        {
-            return static_cast<wchar_t>(std::towlower(Ch));
-        });
+                   [](wchar_t Ch) { return static_cast<wchar_t>(std::towlower(Ch)); });
 
     return Extension == L".json";
 }
 
-EAssetType FSubUVAtlasLoader::GetAssetType() const
-{
-    return EAssetType::SpriteAtlas;
-}
+EAssetType FSubUVAtlasLoader::GetAssetType() const { return EAssetType::SpriteAtlas; }
 
 uint64 FSubUVAtlasLoader::MakeBuildSignature(const FAssetLoadParams& Params) const
 {
@@ -234,7 +216,8 @@ UAsset* FSubUVAtlasLoader::LoadAsset(const FSourceRecord& Source, const FAssetLo
     return NewAsset;
 }
 
-bool FSubUVAtlasLoader::ParseSubUVJson(const FSourceRecord& Source, FSubUVAtlasResource& OutAtlas) const
+bool FSubUVAtlasLoader::ParseSubUVJson(const FSourceRecord& Source,
+                                       FSubUVAtlasResource& OutAtlas) const
 {
     OutAtlas.Reset();
 
@@ -246,7 +229,8 @@ bool FSubUVAtlasLoader::ParseSubUVJson(const FSourceRecord& Source, FSubUVAtlasR
         return false;
     }
 
-    const nlohmann::json Root = nlohmann::json::parse(Source.FileBytes.begin(), Source.FileBytes.end(), nullptr, false);
+    const nlohmann::json Root =
+        nlohmann::json::parse(Source.FileBytes.begin(), Source.FileBytes.end(), nullptr, false);
     if (Root.is_discarded())
     {
         UE_LOG(Asset, ELogVerbosity::Warning,
@@ -291,9 +275,10 @@ bool FSubUVAtlasLoader::ParseSubUVJson(const FSourceRecord& Source, FSubUVAtlasR
 
     if (!LoadAtlasTexture(Source, OutAtlas.PageFiles[0], OutAtlas.Atlas))
     {
-        UE_LOG(Asset, ELogVerbosity::Warning,
-               "[SubUVAtlasLoader] ParseSubUVJson failed at atlas texture load. Path=%s AtlasPage=%s",
-               WidePathToUtf8(Source.NormalizedPath).c_str(), OutAtlas.PageFiles[0].c_str());
+        UE_LOG(
+            Asset, ELogVerbosity::Warning,
+            "[SubUVAtlasLoader] ParseSubUVJson failed at atlas texture load. Path=%s AtlasPage=%s",
+            WidePathToUtf8(Source.NormalizedPath).c_str(), OutAtlas.PageFiles[0].c_str());
         OutAtlas.Reset();
         return false;
     }
@@ -372,7 +357,8 @@ bool FSubUVAtlasLoader::ParseMeta(const nlohmann::json& Root, FSubUVAtlasResourc
     return true;
 }
 
-bool FSubUVAtlasLoader::ParseFrames(const nlohmann::json& Root, TArray<FSubUVFrame>& OutFrames) const
+bool FSubUVAtlasLoader::ParseFrames(const nlohmann::json& Root,
+                                    TArray<FSubUVFrame>&  OutFrames) const
 {
     if (!Root.contains("frames") || !Root["frames"].is_object())
     {
@@ -385,7 +371,7 @@ bool FSubUVAtlasLoader::ParseFrames(const nlohmann::json& Root, TArray<FSubUVFra
 
     for (auto It = Root["frames"].begin(); It != Root["frames"].end(); ++It)
     {
-        const FString FrameName = It.key();
+        const FString         FrameName = It.key();
         const nlohmann::json& Entry = It.value();
 
         if (!Entry.is_object())
@@ -426,7 +412,8 @@ bool FSubUVAtlasLoader::ParseFrames(const nlohmann::json& Root, TArray<FSubUVFra
     return !OutFrames.empty();
 }
 
-bool FSubUVAtlasLoader::ParseSequences(const TArray<FSubUVFrame>& Frames, TMap<FString, FSubUVSequence>& OutSequences) const
+bool FSubUVAtlasLoader::ParseSequences(const TArray<FSubUVFrame>&     Frames,
+                                       TMap<FString, FSubUVSequence>& OutSequences) const
 {
     OutSequences.clear();
 
@@ -445,7 +432,8 @@ bool FSubUVAtlasLoader::ParseSequences(const TArray<FSubUVFrame>& Frames, TMap<F
     return true;
 }
 
-bool FSubUVAtlasLoader::LoadAtlasTexture(const FSourceRecord& JsonSource, const FString& PageFile, FTextureResource& OutAtlas) const
+bool FSubUVAtlasLoader::LoadAtlasTexture(const FSourceRecord& JsonSource, const FString& PageFile,
+                                         FTextureResource& OutAtlas) const
 {
     const FWString AtlasPath = ResolveSiblingPath(JsonSource.NormalizedPath, PageFile);
     if (AtlasPath.empty())
@@ -465,7 +453,8 @@ bool FSubUVAtlasLoader::LoadAtlasTexture(const FSourceRecord& JsonSource, const 
         return false;
     }
 
-    const std::shared_ptr<FTextureResource> AtlasResource = GetOrCreateAtlasResource(*AtlasSource, *DecodedImage);
+    const std::shared_ptr<FTextureResource> AtlasResource =
+        GetOrCreateAtlasResource(*AtlasSource, *DecodedImage);
     if (!AtlasResource)
     {
         return false;
@@ -475,7 +464,8 @@ bool FSubUVAtlasLoader::LoadAtlasTexture(const FSourceRecord& JsonSource, const 
     return true;
 }
 
-std::shared_ptr<FSubUVAtlasLoader::FDecodedAtlasImage> FSubUVAtlasLoader::GetOrDecodeAtlas(const FWString& AtlasPath) const
+std::shared_ptr<FSubUVAtlasLoader::FDecodedAtlasImage>
+FSubUVAtlasLoader::GetOrDecodeAtlas(const FWString& AtlasPath) const
 {
     const FSourceRecord* AtlasSource = AtlasSourceCache.GetOrLoad(AtlasPath);
     if (!AtlasSource || AtlasSource->SourceHash.empty())
@@ -495,12 +485,14 @@ std::shared_ptr<FSubUVAtlasLoader::FDecodedAtlasImage> FSubUVAtlasLoader::GetOrD
         return nullptr;
     }
 
-    auto [InsertedIt, _] = DecodeCache.insert_or_assign(AtlasSource->SourceHash, std::move(DecodedImage));
+    auto [InsertedIt, _] =
+        DecodeCache.insert_or_assign(AtlasSource->SourceHash, std::move(DecodedImage));
     return InsertedIt->second;
 }
 
-std::shared_ptr<FTextureResource> FSubUVAtlasLoader::GetOrCreateAtlasResource(const FSourceRecord& AtlasSource,
-                                                                               const FDecodedAtlasImage& DecodedImage) const
+std::shared_ptr<FTextureResource>
+FSubUVAtlasLoader::GetOrCreateAtlasResource(const FSourceRecord&      AtlasSource,
+                                            const FDecodedAtlasImage& DecodedImage) const
 {
     if (AtlasSource.SourceHash.empty())
     {
@@ -519,11 +511,13 @@ std::shared_ptr<FTextureResource> FSubUVAtlasLoader::GetOrCreateAtlasResource(co
         return nullptr;
     }
 
-    auto [InsertedIt, _] = ResourceCache.insert_or_assign(AtlasSource.SourceHash, std::move(Resource));
+    auto [InsertedIt, _] =
+        ResourceCache.insert_or_assign(AtlasSource.SourceHash, std::move(Resource));
     return InsertedIt->second;
 }
 
-bool FSubUVAtlasLoader::DecodeWithWIC(const FSourceRecord& AtlasSource, FDecodedAtlasImage& OutImage) const
+bool FSubUVAtlasLoader::DecodeWithWIC(const FSourceRecord& AtlasSource,
+                                      FDecodedAtlasImage&  OutImage) const
 {
     if (!AtlasSource.bFileBytesLoaded)
     {
@@ -531,10 +525,12 @@ bool FSubUVAtlasLoader::DecodeWithWIC(const FSourceRecord& AtlasSource, FDecoded
     }
 
     OutImage = {};
-    return DecodeWithWICBytes(AtlasSource.FileBytes, OutImage.Width, OutImage.Height, OutImage.Pixels);
+    return DecodeWithWICBytes(AtlasSource.FileBytes, OutImage.Width, OutImage.Height,
+                              OutImage.Pixels);
 }
 
-bool FSubUVAtlasLoader::CreateTextureResource(const FDecodedAtlasImage& DecodedImage, FTextureResource& OutAtlas) const
+bool FSubUVAtlasLoader::CreateTextureResource(const FDecodedAtlasImage& DecodedImage,
+                                              FTextureResource&         OutAtlas) const
 {
     if (!RHI || !RHI->GetDevice())
     {
@@ -592,7 +588,8 @@ bool FSubUVAtlasLoader::CreateTextureResource(const FDecodedAtlasImage& DecodedI
     if (FAILED(Hr))
     {
         UE_LOG(Asset, ELogVerbosity::Warning,
-               "[SubUVAtlasLoader] CreateTextureResource failed at CreateShaderResourceView. HRESULT=0x%08x",
+               "[SubUVAtlasLoader] CreateTextureResource failed at CreateShaderResourceView. "
+               "HRESULT=0x%08x",
                static_cast<uint32>(Hr));
         return false;
     }
@@ -606,7 +603,8 @@ bool FSubUVAtlasLoader::CreateTextureResource(const FDecodedAtlasImage& DecodedI
     return true;
 }
 
-FWString FSubUVAtlasLoader::ResolveSiblingPath(const FWString& BaseFilePath, const FString& RelativePath) const
+FWString FSubUVAtlasLoader::ResolveSiblingPath(const FWString& BaseFilePath,
+                                               const FString&  RelativePath) const
 {
     if (BaseFilePath.empty() || RelativePath.empty())
     {
@@ -617,10 +615,11 @@ FWString FSubUVAtlasLoader::ResolveSiblingPath(const FWString& BaseFilePath, con
 
     const fs::path BasePath(BaseFilePath);
     const fs::path Relative(RelativePath);
-    const fs::path CombinedPath = Relative.is_absolute() ? Relative : (BasePath.parent_path() / Relative);
+    const fs::path CombinedPath =
+        Relative.is_absolute() ? Relative : (BasePath.parent_path() / Relative);
 
     std::error_code ErrorCode;
-    fs::path Normalized = fs::weakly_canonical(CombinedPath, ErrorCode);
+    fs::path        Normalized = fs::weakly_canonical(CombinedPath, ErrorCode);
     if (ErrorCode)
     {
         Normalized = CombinedPath.lexically_normal();
