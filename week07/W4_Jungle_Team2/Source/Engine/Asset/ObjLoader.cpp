@@ -1,6 +1,7 @@
 ﻿#include "ObjLoader.h"
 
 #include "FileUtils.h"
+#include "StaticMesh.h"
 
 //	v, vt, vn, mtllib, usemtl, f
 UStaticMesh* FObjLoader::Load(const FString& Path)
@@ -9,25 +10,30 @@ UStaticMesh* FObjLoader::Load(const FString& Path)
 	
 	SourcePath = Path;
 
+	/* Obj Parse - Build Raw Data */
 	if (!ParseObj(Path))
 	{
 		return nullptr;
 	}
 
+	/* Build Cooked Data from Raw Data */
 	if (!BuildStaticMesh())
 	{
 		return nullptr;
 	}
-
-	if (!BindMaterials())
+	
+	/* Local Bounds(AABB) */
+	StaticMeshAsset.LocalBounds.Reset();
+	for (const FNormalVertex & Vertex : StaticMeshAsset.Vertices)
 	{
-		return nullptr;
+		StaticMeshAsset.LocalBounds.Expand(Vertex.Position);
 	}
 
+	/* Build Asset from Cooked Data */
 	return CreateAsset();
 }
 
-//	TODO : 대소문자 정규화 해야하나
+//	TODO : 나중에 다시 확인해보기
 bool FObjLoader::SupportsExtension(const FString& Extension) const
 {
 	return Extension == FString("obj") || Extension == FString(".obj") || Extension == FString("OBJ") || Extension == FString(".OBJ");
@@ -176,14 +182,12 @@ bool FObjLoader::BuildStaticMesh()
 	return !StaticMeshAsset.Vertices.empty() && !StaticMeshAsset.Indices.empty();
 }
 
-bool FObjLoader::BindMaterials()
-{
-	return false;
-}
 
 UStaticMesh* FObjLoader::CreateAsset()
 {
-	return nullptr;
+	UStaticMesh * NewStaticMeshAsset = new UStaticMesh();
+	NewStaticMeshAsset->SetMeshData(new FStaticMesh(StaticMeshAsset));
+	return NewStaticMeshAsset;
 }
 
 void FObjLoader::Reset()
