@@ -8,6 +8,7 @@
 #include "Editor/Selection/SelectionManager.h"
 
 class UGizmoComponent;
+class FLevelEditorViewportClient;
 
 class UEditorEngine : public UEngine
 {
@@ -25,7 +26,7 @@ public:
 
 	// Editor-specific API
 	UGizmoComponent* GetGizmo() const { return SelectionManager.GetGizmo(); }
-	UCameraComponent* GetCamera() const { return ViewportClient.GetCamera(); }
+	UCameraComponent* GetCamera() const;
 
 	void ClearScene();
 	void ResetViewport();
@@ -37,10 +38,17 @@ public:
 
 	FSelectionManager& GetSelectionManager() { return SelectionManager; }
 
+	// Viewport Client 관리 (UE: AllViewportClients / LevelViewportClients)
+	const TArray<FEditorViewportClient*>& GetAllViewportClients() const { return AllViewportClients; }
+	const TArray<FLevelEditorViewportClient*>& GetLevelViewportClients() const { return LevelViewportClients; }
+
 	void RenderUI(float DeltaTime);
 
 private:
 	FSelectionManager SelectionManager;
 	FEditorMainPanel MainPanel;
-	FEditorViewportClient ViewportClient;
+
+	// UE 구조: AllViewportClients 는 모든 에디터 뷰포트, LevelViewportClients 는 레벨 편집 전용
+	TArray<FEditorViewportClient*> AllViewportClients;
+	TArray<FLevelEditorViewportClient*> LevelViewportClients;
 };

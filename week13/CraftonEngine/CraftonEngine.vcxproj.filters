@@ -308,6 +308,9 @@
     <ClCompile Include="Source\Engine\UI\SWindow.cpp">
       <Filter>Source\Engine\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Viewport\GameViewportClient.cpp">
+      <Filter>Source\Engine\Viewport</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Viewport\Viewport.cpp">
       <Filter>Source\Engine\Viewport</Filter>
     </ClCompile>
@@ -378,6 +381,9 @@
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h">
+      <Filter>Source\Editor\Viewport</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Viewport\LevelEditorViewportClient.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\ActorComponent.h">
@@ -592,6 +598,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\UI\SWindow.h">
       <Filter>Source\Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Viewport\GameViewportClient.h">
+      <Filter>Source\Engine\Viewport</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Viewport\Viewport.h">
       <Filter>Source\Engine\Viewport</Filter>
