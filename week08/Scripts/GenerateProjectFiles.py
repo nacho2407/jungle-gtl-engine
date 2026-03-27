@@ -29,7 +29,19 @@ CONFIGURATIONS = [
     ("Release", "Win32"),
     ("Debug", "x64"),
     ("Release", "x64"),
+    ("ObjViewDebug", "x64"),
 ]
+
+# Per-configuration overrides (base is derived from the name)
+#   "release_like"  : True = Release optimizations, False = Debug
+#   "extra_defines" : additional preprocessor definitions
+#   "subsystem"     : override link subsystem (default: per-platform)
+CONFIG_PROPS = {
+    "ObjViewDebug": {
+        "release_like": True,
+        "extra_defines": ["IS_OBJ_VIEWER=1"],
+    },
+}
 
 # Directories to recursively scan for source files
 SCAN_DIRS = ["Source", "ThirdParty"]
@@ -197,9 +209,10 @@ def generate_vcxproj(files: dict[str, list[str]]):
 
     # Configuration properties
     for cfg, plat in CONFIGURATIONS:
+        props = CONFIG_PROPS.get(cfg, {})
         cond = f"'$(Configuration)|$(Platform)'=='{cfg}|{plat}'"
         pg = ET.SubElement(proj, "PropertyGroup", Condition=cond, Label="Configuration")
-        is_release = cfg == "Release"
+        is_release = props.get("release_like", cfg == "Release")
         ET.SubElement(pg, "ConfigurationType").text = "Application"
         ET.SubElement(pg, "UseDebugLibraries").text = "false" if is_release else "true"
         ET.SubElement(pg, "PlatformToolset").text = "v143"
@@ -236,12 +249,13 @@ def generate_vcxproj(files: dict[str, list[str]]):
 
     # ItemDefinitionGroups
     for cfg, plat in CONFIGURATIONS:
+        props = CONFIG_PROPS.get(cfg, {})
         cond = f"'$(Configuration)|$(Platform)'=='{cfg}|{plat}'"
         idg = ET.SubElement(proj, "ItemDefinitionGroup", Condition=cond)
         cl = ET.SubElement(idg, "ClCompile")
         ET.SubElement(cl, "WarningLevel").text = "Level3"
 
-        is_release = cfg == "Release"
+        is_release = props.get("release_like", cfg == "Release")
         is_win32 = plat == "Win32"
         is_x64 = plat == "x64"
 
@@ -251,11 +265,14 @@ def generate_vcxproj(files: dict[str, list[str]]):
 
         ET.SubElement(cl, "SDLCheck").text = "true"
 
+        base_defs = []
         if is_win32:
-            defs = f"WIN32;{'NDEBUG' if is_release else '_DEBUG'};_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)"
-        else:
-            defs = f"{'NDEBUG' if is_release else '_DEBUG'};_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)"
-        ET.SubElement(cl, "PreprocessorDefinitions").text = defs
+            base_defs.append("WIN32")
+        base_defs.append("NDEBUG" if is_release else "_DEBUG")
+        base_defs.extend(["_CONSOLE", "WITH_EDITOR=1"])
+        base_defs.extend(props.get("extra_defines", []))
+        base_defs.append("%(PreprocessorDefinitions)")
+        ET.SubElement(cl, "PreprocessorDefinitions").text = ";".join(base_defs)
 
         ET.SubElement(cl, "ConformanceMode").text = "true"
         ET.SubElement(cl, "AdditionalOptions").text = "/utf-8 %(AdditionalOptions)"
@@ -265,7 +282,8 @@ def generate_vcxproj(files: dict[str, list[str]]):
             ET.SubElement(cl, "LanguageStandard").text = "stdcpp20"
 
         link = ET.SubElement(idg, "Link")
-        ET.SubElement(link, "SubSystem").text = "Windows" if is_x64 else "Console"
+        subsystem = props.get("subsystem", "Windows" if is_x64 else "Console")
+        ET.SubElement(link, "SubSystem").text = subsystem
         ET.SubElement(link, "GenerateDebugInformation").text = "true"
 
     # ClCompile items
