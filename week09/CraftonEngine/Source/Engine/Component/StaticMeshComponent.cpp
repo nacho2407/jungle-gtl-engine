@@ -1,8 +1,7 @@
 ﻿#include "Component/StaticMeshComponent.h"
 #include "Object/ObjectFactory.h"
 
-DEFINE_CLASS(UStaticMeshComp, UMeshComponent)
-REGISTER_FACTORY(UStaticMeshComp)
+IMPLEMENT_CLASS(UStaticMeshComp, UMeshComponent)
 
 
 void UStaticMeshComp::SetStaticMesh(UStaticMesh* InMesh)
