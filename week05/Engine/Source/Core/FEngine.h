@@ -2,12 +2,21 @@
 #include "CoreMinimal.h"
 #include "Scene/SceneTypes.h"
 #include "Windows.h"
-#include "Core/Core.h"
+#include "Core/EngineRuntime.h"
 #include "ViewportClient.h"
 #include <memory>
 
-class CWindowApplication;
-class CWindow;
+class FWindowsApplication;
+class FWindowsWindow;
+
+struct FEngineInitArgs
+{
+	FWindowsApplication* App = nullptr;
+	FWindowsWindow* MainWindow = nullptr;
+	HWND Hwnd = nullptr;
+	int32 Width = 0;
+	int32 Height = 0;
+};
 
 class ENGINE_API FEngine
 {
@@ -18,12 +27,13 @@ public:
 	FEngine(const FEngine&) = delete;
 	FEngine& operator=(const FEngine&) = delete;
 
-	bool Initialize(HINSTANCE hInstance, const wchar_t* Title, int32 Width, int32 Height);
-	void Run();
+	bool Initialize(const FEngineInitArgs& Args);
+	void TickFrame();
 	virtual void Shutdown();
 
-	CCore* GetCore() const { return Core.get(); }
-	CWindowApplication* GetApp() const { return App; }
+	FEngineRuntime* GetRuntime() const { return Runtime.get(); }
+	FWindowsApplication* GetApp() const { return App; }
+	FWindowsWindow* GetMainWindow() const { return MainWindow; }
 
 protected:
 	virtual void PreInitialize() {}
@@ -32,9 +42,9 @@ protected:
 	virtual ESceneType GetStartupSceneType() const { return ESceneType::Game; }
 	virtual std::unique_ptr<IViewportClient> CreateViewportClient();
 
-	CWindowApplication* App = nullptr;
-	CWindow* MainWindow = nullptr;
-	std::unique_ptr<CCore> Core;
+	FWindowsApplication* App = nullptr;
+	FWindowsWindow* MainWindow = nullptr;
+	std::unique_ptr<FEngineRuntime> Runtime;
 	std::unique_ptr<IViewportClient> ViewportClient;
 
 private:

@@ -1,6 +1,6 @@
 #include "ViewportClient.h"
 #include "World/World.h"
-#include "Core/Core.h"
+#include "Core/EngineRuntime.h"
 #include "Input/InputManager.h"
 #include "Camera/Camera.h"
 #include "Renderer/Renderer.h"
@@ -14,15 +14,15 @@
 #include "Component/TextComponent.h"
 
 
-void IViewportClient::Attach(CCore* Core, CRenderer* Renderer)
+void IViewportClient::Attach(FEngineRuntime* Runtime, CRenderer* Renderer)
 {
 }
 
-void IViewportClient::Detach(CCore* Core, CRenderer* Renderer)
+void IViewportClient::Detach(FEngineRuntime* Runtime, CRenderer* Renderer)
 {
 }
 
-void IViewportClient::Tick(CCore* Core, float DeltaTime)
+void IViewportClient::Tick(FEngineRuntime* Runtime, float DeltaTime)
 {
 	// instead Enhance input system controller
 	//if (!Core)
@@ -58,23 +58,23 @@ void IViewportClient::Tick(CCore* Core, float DeltaTime)
 	//}
 }
 
-void IViewportClient::HandleMessage(CCore* Core, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
+void IViewportClient::HandleMessage(FEngineRuntime* Runtime, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
 {
 }
 
-UScene* IViewportClient::ResolveScene(CCore* Core) const
+UScene* IViewportClient::ResolveScene(FEngineRuntime* Runtime) const
 {
-	return Core ? Core->GetActiveScene() : nullptr;
+	return Runtime ? Runtime->GetActiveScene() : nullptr;
 }
 
-UWorld* IViewportClient::ResolveWorld(CCore* Core) const
+UWorld* IViewportClient::ResolveWorld(FEngineRuntime* Runtime) const
 {
-	return Core ? Core->GetActiveWorld() : nullptr;
+	return Runtime ? Runtime->GetActiveWorld() : nullptr;
 }
 
-void IViewportClient::BuildRenderCommands(CCore* Core, UScene* Scene, const FFrustum& Frustum, FRenderCommandQueue& OutQueue)
+void IViewportClient::BuildRenderCommands(FEngineRuntime* Runtime, UScene* Scene, const FFrustum& Frustum, FRenderCommandQueue& OutQueue)
 {
-	UWorld* World = ResolveWorld(Core);
+	UWorld* World = ResolveWorld(Runtime);
 	if (!World) return;
 
 	// Persistent + Streaming 전체 액터를 렌더
@@ -92,7 +92,7 @@ void IViewportClient::HandleFileDropOnViewport(const FString& FilePath)
 
 }
 
-void CGameViewportClient::Attach(CCore* Core, CRenderer* Renderer)
+void CGameViewportClient::Attach(FEngineRuntime* Runtime, CRenderer* Renderer)
 {
 	if (Renderer)
 	{
@@ -100,7 +100,7 @@ void CGameViewportClient::Attach(CCore* Core, CRenderer* Renderer)
 	}
 }
 
-void CGameViewportClient::Detach(CCore* Core, CRenderer* Renderer)
+void CGameViewportClient::Detach(FEngineRuntime* Runtime, CRenderer* Renderer)
 {
 	if (Renderer)
 	{

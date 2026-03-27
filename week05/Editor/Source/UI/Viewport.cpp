@@ -1,7 +1,7 @@
 #include "Viewport.h"
 
 #include "EditorViewportClient.h"
-#include "Core/Core.h"
+#include "Core/EngineRuntime.h"
 #include "Renderer/Renderer.h"
 #include "Scene/Scene.h"
 #include "Camera/Camera.h"
@@ -52,7 +52,7 @@ CViewport::~CViewport()
 	ReleaseSceneView();
 }
 
-void CViewport::Render(CCore* Core, CRenderer* Renderer, HWND Hwnd)
+void CViewport::Render(FEngineRuntime* Core, CRenderer* Renderer, HWND Hwnd)
 {
 	//ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 	const bool bOpen = ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_MenuBar);

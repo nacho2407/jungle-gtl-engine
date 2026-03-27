@@ -5,7 +5,7 @@
 
 IMPLEMENT_RTTI(ULineBatchComponent, UPrimitiveComponent)
 
-void ULineBatchComponent::Initialize()
+void ULineBatchComponent::PostConstruct()
 {
 	Primitive = std::make_shared<CPrimitiveLineBatch>();
 }

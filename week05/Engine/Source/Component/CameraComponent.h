@@ -9,7 +9,7 @@ public:
 	DECLARE_RTTI(UCameraComponent, USceneComponent)
 	virtual ~UCameraComponent();
 
-	void Initialize();
+	void PostConstruct() override;
 	virtual void Tick(float DeltaTime) override;
 	//Movement method
 	void MoveForward(float Value);

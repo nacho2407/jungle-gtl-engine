@@ -1,7 +1,7 @@
 #include "ControlPanelWindow.h"
 #include "World/WorldContext.h"
 #include "imgui.h"
-#include "Core/Core.h"
+#include "Core/EngineRuntime.h"
 #include "Renderer/Renderer.h"
 #include "Scene/Scene.h"
 #include "Actor/Actor.h"
@@ -46,7 +46,7 @@ namespace
 	}
 }
 
-void CControlPanelWindow::Render(CCore* Core)
+void CControlPanelWindow::Render(FEngineRuntime* Core)
 {
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
 	const bool bOpen = ImGui::Begin("Control Panel");

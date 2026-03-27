@@ -1,7 +1,7 @@
 #include "FEngine.h"
-#include "Platform/Windows/Window.h"
+#include "Platform/Windows/WindowsWindow.h"
 #include "Core/ViewportClient.h"
-#include "Platform/Windows/WindowApplication.h"
+#include "Platform/Windows/WindowsApplication.h"
 #include "Object/ObjectGlobals.h"
 
 FEngine* GEngine = nullptr;
@@ -11,73 +11,60 @@ FEngine::~FEngine()
 	Shutdown();
 }
 
-bool FEngine::Initialize(HINSTANCE hInstance, const wchar_t* Title, int32 Width, int32 Height)
+bool FEngine::Initialize(const FEngineInitArgs& Args)
 {
-	App = &CWindowApplication::Get();
-	if (!App->Create(hInstance))
-	{
-		return false;
-	}
+	App = Args.App;
+	MainWindow = Args.MainWindow;
 
-	if (!App->CreateMainWindow(Title, Width, Height))
+	if (!App || !MainWindow || !Args.Hwnd)
 	{
 		return false;
 	}
 
 	GEngine = this;
 
-	MainWindow = App->GetMainWindow();
-	if (!MainWindow)
-	{
-		return false;
-	}
-
 	PreInitialize();
 
-	Core = std::make_unique<CCore>();
-	if (!Core->Initialize(MainWindow->GetHwnd(), MainWindow->GetWidth(), MainWindow->GetHeight(), GetStartupSceneType()))
+	Runtime = std::make_unique<FEngineRuntime>();
+	if (!Runtime->Initialize(Args.Hwnd, Args.Width, Args.Height, GetStartupSceneType()))
 	{
 		return false;
 	}
 
 	ViewportClient = CreateViewportClient();
-	Core->SetViewportClient(ViewportClient.get());
+	Runtime->SetViewportClient(ViewportClient.get());
 
 	PostInitialize();
 
 	App->AddMessageFilter(std::bind(&FEngine::OnInput, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	App->SetOnResizeCallback(std::bind(&FEngine::OnResize, this, std::placeholders::_1, std::placeholders::_2));
-	App->ShowWindow();
 
 	return true;
 }
 
-void FEngine::Run()
+void FEngine::TickFrame()
 {
-	while (App->PumpMessages())
+	if (Runtime)
 	{
-		if (Core)
-		{
-			Tick(Core->GetTimer().GetDeltaTime());
-			Core->Tick();
-		}
+		Tick(Runtime->GetTimer().GetDeltaTime());
+		Runtime->Tick();
 	}
 }
 
 bool FEngine::OnInput(HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
 {
-	if (Core)
+	if (Runtime)
 	{
-		Core->ProcessInput(Hwnd, Msg, WParam, LParam);
+		Runtime->ProcessInput(Hwnd, Msg, WParam, LParam);
 	}
 	return false;
 }
 
 void FEngine::OnResize(int32 Width, int32 Height)
 {
-	if (Core)
+	if (Runtime)
 	{
-		Core->OnResize(Width, Height);
+		Runtime->OnResize(Width, Height);
 	}
 }
 
@@ -88,22 +75,20 @@ std::unique_ptr<IViewportClient> FEngine::CreateViewportClient()
 
 void FEngine::Shutdown()
 {
-	GEngine = nullptr;
-
-	if (Core)
+	if (GEngine == this)
 	{
-		Core->SetViewportClient(nullptr);
-		Core->Release();
-		Core.reset();
+		GEngine = nullptr;
+	}
+
+	if (Runtime)
+	{
+		Runtime->SetViewportClient(nullptr);
+		Runtime->Release();
+		Runtime.reset();
 	}
 
 	ViewportClient.reset();
 
-	if (App)
-	{
-		App->Destroy();
-		App = nullptr;
-	}
-
+	App = nullptr;
 	MainWindow = nullptr;
 }

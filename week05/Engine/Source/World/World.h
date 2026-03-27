@@ -16,7 +16,7 @@ class ENGINE_API UWorld : public UObject
 {
 public:
 	DECLARE_RTTI(UWorld, UObject)
-	~UWorld();
+	~UWorld() override;
 
 	template <typename T>
 	T* SpawnActor(const FString& InName);
@@ -40,14 +40,11 @@ public:
 	UCameraComponent* GetActiveCameraComponent() const;
 	CCamera* GetCamera() const;
 
-
 	// 라이프사이클
 	void InitializeWorld(float AspectRatio, ID3D11Device* Device = nullptr);
 	void BeginPlay();
 	void Tick(float InDeltaTime);
 	void CleanupWorld();
-	
-
 
 	ESceneType GetWorldType() const { return WorldType; }
 	void SetWorldType(ESceneType InType) { WorldType = InType; }
@@ -65,6 +62,7 @@ private:
 	UCameraComponent* SceneCameraComponent = nullptr;    
 	TObjectPtr<UCameraComponent> ActiveCameraComponent;
 };
+
 #include "Scene/Scene.h"
 
 template <typename T>

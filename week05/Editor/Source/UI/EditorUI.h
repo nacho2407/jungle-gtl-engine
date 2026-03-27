@@ -8,16 +8,16 @@
 #include "Types/ObjectPtr.h"
 #include "ContentBrowserWindow.h"
 
-class CCore;
-class CWindow;
+class FEngineRuntime;
+class FWindowsWindow;
 class CRenderer;
 class AActor;
 class CEditorViewportClient;
 class CEditorUI
 {
 public:
-	void Initialize(CCore* InCore);
-	void SetupWindow(CWindow* InWindow);
+	void Initialize(FEngineRuntime* InRuntime);
+	void SetupWindow(FWindowsWindow* InWindow);
 	void AttachToRenderer(CRenderer* InRenderer);
 	void DetachFromRenderer(CRenderer* InRenderer);
 	void Render();
@@ -26,17 +26,17 @@ public:
 	bool IsViewportInteractive() const;
 
 	CConsoleWindow& GetConsole() { return Console; }
-	CCore* GetCore() { return Core; }
+	FEngineRuntime* GetRuntime() { return Runtime; }
 
 private:
 	void BuildDefaultLayout(uint32 DockID);
 	void LoadEditorSettings();
 	void SaveEditorSettings();
 	std::wstring GetEditorIniPathW() const;
-	CCore* Core = nullptr;
+	FEngineRuntime* Runtime = nullptr;
 	TObjectPtr<AActor> CachedSelectedActor;
 
-	CWindow* MainWindow = nullptr;
+	FWindowsWindow* MainWindow = nullptr;
 
 	CControlPanelWindow ControlPanel;
 	CPropertyWindow Property;

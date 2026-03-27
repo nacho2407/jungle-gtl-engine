@@ -16,7 +16,7 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 	TArray<UPrimitiveComponent*> VisiblePrimitives;
 	FrustrumCull(Actors, Frustum, ShowFlags, VisiblePrimitives);
 
-	CRenderer* Renderer = GEngine->GetCore()->GetRenderer();
+	CRenderer* Renderer = GEngine->GetRuntime()->GetRenderer();
 	if (!Renderer) return;
 
 	CTextMeshBuilder& TextRenderer = Renderer->GetTextRenderer();
@@ -84,7 +84,7 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 			FMeshData* SubUVMesh = SubUVComponent->GetSubUVMesh();
 			if (SubUVMesh && SubUVRenderer.BuildSubUVMesh(SubUVComponent->GetSize(), *SubUVMesh))
 			{
-				float TotalTime = static_cast<float>(GEngine->GetCore()->GetTimer().GetTotalTime());
+				float TotalTime = static_cast<float>(GEngine->GetRuntime()->GetTimer().GetTotalTime());
 				SubUVRenderer.UpdateAnimationParams(
 					SubUVComponent->GetColumns(), SubUVComponent->GetRows(), SubUVComponent->GetTotalFrames(),
 					SubUVComponent->GetFirstFrame(), SubUVComponent->GetLastFrame(),

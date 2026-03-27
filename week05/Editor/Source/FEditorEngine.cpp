@@ -3,7 +3,7 @@
 #include "imgui_impl_dx11.h"
 #include "UI/EditorViewportClient.h"
 #include "UI/PreviewViewportClient.h"
-#include "Core/Core.h"
+#include "Core/EngineRuntime.h"
 #include "Core/ConsoleVariableManager.h"
 #include "Scene/Scene.h"
 #include "Actor/Actor.h"
@@ -22,7 +22,7 @@ namespace
 {
 	constexpr const char* PreviewSceneContextName = "PreviewScene";
 
-	void InitializeDefaultPreviewScene(CCore* Core)
+	void InitializeDefaultPreviewScene(FEngineRuntime* Core)
 	{
 		if (Core == nullptr)
 		{
@@ -54,18 +54,6 @@ namespace
 	}
 }
 
-bool FEditorEngine::Initialize(HINSTANCE hInstance)
-{
-	ImGui_ImplWin32_EnableDpiAwareness();
-
-	if (!FEngine::Initialize(hInstance, L"Jungle Editor", 1280, 720))
-	{
-		return false;
-	}
-
-	return true;
-}
-
 FEditorEngine::~FEditorEngine()
 {
 	//Shutdown();
@@ -73,9 +61,9 @@ FEditorEngine::~FEditorEngine()
 
 void FEditorEngine::Shutdown()
 {
-	if (Core && Core->GetViewportClient() == PreviewViewportClient.get())
+	if (Runtime && Runtime->GetViewportClient() == PreviewViewportClient.get())
 	{
-		Core->SetViewportClient(nullptr);
+		Runtime->SetViewportClient(nullptr);
 	}
 
 	// EditorPawn은 Scene 소속이 아니므로 직접 정리
@@ -95,6 +83,8 @@ void FEditorEngine::Shutdown()
 
 void FEditorEngine::PreInitialize()
 {
+	ImGui_ImplWin32_EnableDpiAwareness();
+
 	FEngineLog::Get().SetCallback([this](const char* Msg)
 		{
 			EditorUI.GetConsole().AddLog("%s", Msg);
@@ -103,7 +93,7 @@ void FEditorEngine::PreInitialize()
 
 void FEditorEngine::PostInitialize()
 {
-	InitializeDefaultPreviewScene(Core.get());
+	InitializeDefaultPreviewScene(Runtime.get());
 	PreviewViewportClient = std::make_unique<CPreviewViewportClient>(EditorUI, MainWindow, PreviewSceneContextName);
 
 	FConsoleVariableManager& CVM = FConsoleVariableManager::Get();
@@ -132,12 +122,11 @@ void FEditorEngine::PostInitialize()
 	// EditorPawn은 Scene에 등록하지 않음 — FEditorEngine이 직접 소유
 	
 	EditorPawn = FObjectFactory::ConstructObject<AEditorCameraPawn>(nullptr, "EditorCameraPawn");
-	EditorPawn->Initialize();
-	Core->GetActiveWorld()->SetActiveCameraComponent(EditorPawn->GetCameraComponent());
+	Runtime->GetActiveWorld()->SetActiveCameraComponent(EditorPawn->GetCameraComponent());
 	ViewportController.Initialize(
 		EditorPawn->GetCameraComponent(),
-		Core->GetInputManager(),
-		Core->GetEnhancedInputManager());
+		Runtime->GetInputManager(),
+		Runtime->GetEnhancedInputManager());
 
 
 	SyncViewportClient();
@@ -148,12 +137,12 @@ void FEditorEngine::Tick(float DeltaTime)
 {
 	// Editor Scene에서는 EditorPawn 카메라가 항상 활성화되도록 보장
 	// (ClearActors 후 SceneCameraComponent로 폴백된 경우 복원)
-	if (EditorPawn && Core && Core->GetScene() && Core->GetScene()->IsEditorScene())
+	if (EditorPawn && Runtime && Runtime->GetScene() && Runtime->GetScene()->IsEditorScene())
 	{
 		UCameraComponent* EditorCamera = EditorPawn->GetCameraComponent();
-		if (Core->GetActiveWorld()->GetActiveCameraComponent() != EditorCamera)
+		if (Runtime->GetActiveWorld()->GetActiveCameraComponent() != EditorCamera)
 		{
-			Core->GetActiveWorld()->SetActiveCameraComponent(EditorCamera);
+			Runtime->GetActiveWorld()->SetActiveCameraComponent(EditorCamera);
 		}
 	}
 
@@ -173,20 +162,20 @@ CEditorViewportController* FEditorEngine::GetViewportController()
 
 void FEditorEngine::SyncViewportClient()
 {
-	if (!Core)
+	if (!Runtime)
 	{
 		return;
 	}
 
 	IViewportClient* TargetViewportClient = ViewportClient.get();
-	const FWorldContext* ActiveSceneContext = Core->GetActiveWorldContext();
+	const FWorldContext* ActiveSceneContext = Runtime->GetActiveWorldContext();
 	if (ActiveSceneContext && ActiveSceneContext->WorldType == ESceneType::Preview && PreviewViewportClient)
 	{
 		TargetViewportClient = PreviewViewportClient.get();
 	}
 
-	if (Core->GetViewportClient() != TargetViewportClient)
+	if (Runtime->GetViewportClient() != TargetViewportClient)
 	{
-		Core->SetViewportClient(TargetViewportClient);
+		Runtime->SetViewportClient(TargetViewportClient);
 	}
 }

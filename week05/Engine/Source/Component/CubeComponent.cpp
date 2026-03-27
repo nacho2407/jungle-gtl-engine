@@ -4,7 +4,7 @@
 
 IMPLEMENT_RTTI(UCubeComponent, UPrimitiveComponent)
 
-void UCubeComponent::Initialize()
+void UCubeComponent::PostConstruct()
 {
 	Primitive = std::make_unique<CPrimitiveCube>();
 }

@@ -4,7 +4,7 @@
 
 IMPLEMENT_RTTI(UCameraComponent, USceneComponent)
 
-void UCameraComponent::Initialize()
+void UCameraComponent::PostConstruct()
 {
 	bCanEverTick = true;
 	Camera = new CCamera();

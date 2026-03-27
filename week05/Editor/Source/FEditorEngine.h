@@ -13,7 +13,6 @@ public:
 	FEditorEngine() = default;
 	~FEditorEngine() override;
 
-	bool Initialize(HINSTANCE hInstance);
 	void Shutdown() override;
 
 protected:

@@ -1,20 +1,20 @@
 #include "PreviewViewportClient.h"
 
 #include "EditorUI.h"
-#include "Core/Core.h"
-#include "Platform/Windows/Window.h"
+#include "Core/EngineRuntime.h"
+#include "Platform/Windows/WindowsWindow.h"
 #include "Renderer/Renderer.h"
 
 #include "imgui.h"
 
-CPreviewViewportClient::CPreviewViewportClient(CEditorUI& InEditorUI, CWindow* InMainWindow, FString InPreviewContextName)
+CPreviewViewportClient::CPreviewViewportClient(CEditorUI& InEditorUI, FWindowsWindow* InMainWindow, FString InPreviewContextName)
 	: EditorUI(InEditorUI)
 	, MainWindow(InMainWindow)
 	, PreviewContextName(std::move(InPreviewContextName))
 {
 }
 
-void CPreviewViewportClient::Attach(CCore* Core, CRenderer* Renderer)
+void CPreviewViewportClient::Attach(FEngineRuntime* Core, CRenderer* Renderer)
 {
 	if (!Core || !Renderer || !MainWindow)
 	{
@@ -26,12 +26,12 @@ void CPreviewViewportClient::Attach(CCore* Core, CRenderer* Renderer)
 	EditorUI.AttachToRenderer(Renderer);
 }
 
-void CPreviewViewportClient::Detach(CCore* Core, CRenderer* Renderer)
+void CPreviewViewportClient::Detach(FEngineRuntime* Core, CRenderer* Renderer)
 {
 	EditorUI.DetachFromRenderer(Renderer);
 }
 
-void CPreviewViewportClient::Tick(CCore* Core, float DeltaTime)
+void CPreviewViewportClient::Tick(FEngineRuntime* Core, float DeltaTime)
 {
 	if (!Core)
 	{
@@ -55,7 +55,7 @@ void CPreviewViewportClient::Tick(CCore* Core, float DeltaTime)
 	IViewportClient::Tick(Core, DeltaTime);
 }
 
-UScene* CPreviewViewportClient::ResolveScene(CCore* Core) const
+UScene* CPreviewViewportClient::ResolveScene(FEngineRuntime* Core) const
 {
 	if (!Core)
 	{

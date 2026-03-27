@@ -11,7 +11,7 @@ class ENGINE_API URandomColorComponent : public UActorComponent
 {
 public:
 	DECLARE_RTTI(URandomColorComponent, UActorComponent)
-	void Initialize();
+	void PostConstruct() override;
 	~URandomColorComponent() override;
 
 	void SetUpdateInterval(float InInterval) { UpdateInterval = InInterval; }

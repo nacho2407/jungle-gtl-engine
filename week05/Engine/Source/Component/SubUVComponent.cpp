@@ -4,7 +4,7 @@
 
 IMPLEMENT_RTTI(USubUVComponent, UPrimitiveComponent)
 
-void USubUVComponent::Initialize()
+void USubUVComponent::PostConstruct()
 {
 	// SubUV 렌더링용 메시 객체 생성
 	bDrawDebugBounds = true;

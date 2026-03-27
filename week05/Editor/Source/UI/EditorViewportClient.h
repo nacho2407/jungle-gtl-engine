@@ -6,7 +6,7 @@
 #include "Types/CoreTypes.h"
 
 class CEditorUI;
-class CWindow;
+class FWindowsWindow;
 class FFrustum;
 struct FRenderCommandQueue;
 
@@ -20,12 +20,12 @@ enum class ERenderMode
 class CEditorViewportClient : public IViewportClient
 {
 public:
-	CEditorViewportClient(CEditorUI& InEditorUI, CWindow* InMainWindow);
+	CEditorViewportClient(CEditorUI& InEditorUI, FWindowsWindow* InMainWindow);
 
-	void Attach(CCore* Core, CRenderer* Renderer) override;
-	void Detach(CCore* Core, CRenderer* Renderer) override;
-	void Tick(CCore* Core, float DeltaTime) override;
-	void HandleMessage(CCore* Core, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam) override;
+	void Attach(FEngineRuntime* Runtime, CRenderer* Renderer) override;
+	void Detach(FEngineRuntime* Runtime, CRenderer* Renderer) override;
+	void Tick(FEngineRuntime* Runtime, float DeltaTime) override;
+	void HandleMessage(FEngineRuntime* Runtime, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam) override;
 	EGizmoMode GetGizmoMode() const { return Gizmo.GetMode(); }
 	void SetGizmoMode(EGizmoMode InMode) { Gizmo.SetMode(InMode); }
 	ERenderMode GetRenderMode() { return RenderMode; }
@@ -33,7 +33,7 @@ public:
 
 	void HandleFileDoubleClick(const FString& FilePath) override;
 	void HandleFileDropOnViewport(const FString& FilePath) override;
-	void BuildRenderCommands(CCore* Core, UScene* Scene,
+	void BuildRenderCommands(FEngineRuntime* Runtime, UScene* Scene,
 		const FFrustum& Frustum, FRenderCommandQueue& OutQueue) override;
 	float GetGridSize() const { return GridSize; }
 	void SetGridSize(float InSize);
@@ -43,7 +43,7 @@ public:
 	void SetGridVisible(bool bVisible) { bShowGrid = bVisible; }
 private:
 	CEditorUI& EditorUI;
-	CWindow* MainWindow = nullptr;
+	FWindowsWindow* MainWindow = nullptr;
 	CPicker Picker;
 	mutable CGizmo Gizmo;
 

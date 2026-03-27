@@ -2,10 +2,10 @@
 
 #include "EditorUI.h"
 #include "Actor/Actor.h"
-#include "Core/Core.h"
+#include "Core/EngineRuntime.h"
 #include "Input/InputManager.h"
 #include "Debug/EngineLog.h"
-#include "Platform/Windows/Window.h"
+#include "Platform/Windows/WindowsWindow.h"
 #include "Renderer/RenderCommand.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderStateManager.h"
@@ -19,13 +19,13 @@
 #include "imgui.h"
 #include "Actor/ObjActor.h"
 #include "Actor/SkySphereActor.h"
-CEditorViewportClient::CEditorViewportClient(CEditorUI& InEditorUI, CWindow* InMainWindow)
+CEditorViewportClient::CEditorViewportClient(CEditorUI& InEditorUI, FWindowsWindow* InMainWindow)
 	: EditorUI(InEditorUI)
 	, MainWindow(InMainWindow)
 {
 }
 
-void CEditorViewportClient::Attach(CCore* Core, CRenderer* Renderer)
+void CEditorViewportClient::Attach(FEngineRuntime* Core, CRenderer* Renderer)
 {
 	if (!Core || !Renderer || !MainWindow)
 	{
@@ -99,7 +99,7 @@ void CEditorViewportClient::CreateGridResource(CRenderer* Renderer)
 	}
 }
 
-void CEditorViewportClient::Detach(CCore* Core, CRenderer* Renderer)
+void CEditorViewportClient::Detach(FEngineRuntime* Core, CRenderer* Renderer)
 {
 	Gizmo.EndDrag();
 	EditorUI.DetachFromRenderer(Renderer);
@@ -108,7 +108,7 @@ void CEditorViewportClient::Detach(CCore* Core, CRenderer* Renderer)
 	GridMaterial.reset();
 }
 
-void CEditorViewportClient::Tick(CCore* Core, float DeltaTime)
+void CEditorViewportClient::Tick(FEngineRuntime* Core, float DeltaTime)
 {
 	if (!Core)
 	{
@@ -132,7 +132,7 @@ void CEditorViewportClient::Tick(CCore* Core, float DeltaTime)
 	IViewportClient::Tick(Core, DeltaTime);
 }
 
-void CEditorViewportClient::HandleMessage(CCore* Core, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
+void CEditorViewportClient::HandleMessage(FEngineRuntime* Core, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
 {
 	if (!Core || !EditorUI.IsViewportInteractive())
 	{
@@ -253,7 +253,7 @@ void CEditorViewportClient::HandleMessage(CCore* Core, HWND Hwnd, UINT Msg, WPAR
 
 void CEditorViewportClient::HandleFileDoubleClick(const FString& FilePath)
 {
-	CCore* Core = EditorUI.GetCore();
+	FEngineRuntime* Core = EditorUI.GetRuntime();
 
 	if (Core)
 	{
@@ -282,7 +282,7 @@ void CEditorViewportClient::HandleFileDoubleClick(const FString& FilePath)
 
 void CEditorViewportClient::HandleFileDropOnViewport(const FString& FilePath)
 {
-	CCore* Core = EditorUI.GetCore();
+	FEngineRuntime* Core = EditorUI.GetRuntime();
 
 	if (Core && Core->GetRenderer())
 	{
@@ -299,7 +299,7 @@ void CEditorViewportClient::HandleFileDropOnViewport(const FString& FilePath)
 	}
 }
 
-void CEditorViewportClient::BuildRenderCommands(CCore* Core, UScene* Scene,
+void CEditorViewportClient::BuildRenderCommands(FEngineRuntime* Core, UScene* Scene,
 	const FFrustum& Frustum, FRenderCommandQueue& OutQueue)
 {
 	IViewportClient::BuildRenderCommands(Core, Scene, Frustum, OutQueue);  // non-const 부모 호출

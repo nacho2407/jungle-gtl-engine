@@ -18,16 +18,16 @@ class UScene;
 class ObjectManager;
 class IViewportClient;
 
-class ENGINE_API CCore
+class ENGINE_API FEngineRuntime
 {
 public:
-	CCore() = default;
-	~CCore();
+	FEngineRuntime() = default;
+	~FEngineRuntime();
 
-	CCore(const CCore&) = delete;
-	CCore(CCore&&) = delete;
-	CCore& operator=(const CCore&) = delete;
-	CCore& operator=(CCore&&) = delete;
+	FEngineRuntime(const FEngineRuntime&) = delete;
+	FEngineRuntime(FEngineRuntime&&) = delete;
+	FEngineRuntime& operator=(const FEngineRuntime&) = delete;
+	FEngineRuntime& operator=(FEngineRuntime&&) = delete;
 
 	bool Initialize(HWND Hwnd, int32 Width, int32 Height, ESceneType StartupSceneType = ESceneType::Game);
 	void Release();
@@ -56,11 +56,11 @@ public:
 	UScene* GetEditorScene() const { return SceneManager->GetEditorScene(); }
 	UScene* GetGameScene() const { return SceneManager->GetGameScene(); }
 
-	void SetSelectedActor(AActor* A) { SceneManager->SetSelectedActor(A); }
+	void SetSelectedActor(AActor* A) const { SceneManager->SetSelectedActor(A); }
 	AActor* GetSelectedActor() const { return SceneManager->GetSelectedActor(); }
-	void ActivateEditorScene() { SceneManager->ActivateEditorScene(); }
-	void ActivateGameScene() { SceneManager->ActivateGameScene(); }
-	bool ActivatePreviewScene(const FString& ContextName) { return SceneManager->ActivatePreviewScene(ContextName); }
+	void ActivateEditorScene() const { SceneManager->ActivateEditorScene(); }
+	void ActivateGameScene() const { SceneManager->ActivateGameScene(); }
+	bool ActivatePreviewScene(const FString& ContextName) const { return SceneManager->ActivatePreviewScene(ContextName); }
 
 	// ===== World 접근자 =====
 	UWorld* GetActiveWorld() const { return SceneManager->GetActiveWorld(); }

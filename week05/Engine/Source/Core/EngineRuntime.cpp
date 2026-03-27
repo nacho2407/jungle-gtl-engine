@@ -1,4 +1,4 @@
-#include "Core.h"
+#include "EngineRuntime.h"
 
 #include "Core/Paths.h"
 #include "Core/ConsoleVariableManager.h"
@@ -20,12 +20,12 @@
 #include "Component/UUIDBillboardComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Actor/SkySphereActor.h"
-CCore::~CCore()
+FEngineRuntime::~FEngineRuntime()
 {
 	Release();
 }
 
-bool CCore::Initialize(HWND Hwnd, int32 Width, int32 Height, ESceneType StartupSceneType)
+bool FEngineRuntime::Initialize(HWND Hwnd, int32 Width, int32 Height, ESceneType StartupSceneType)
 {
 	FPaths::Initialize();
 	WindowWidth = Width;
@@ -63,7 +63,7 @@ bool CCore::Initialize(HWND Hwnd, int32 Width, int32 Height, ESceneType StartupS
 
 
 
-void CCore::SetViewportClient(IViewportClient* InViewportClient)
+void FEngineRuntime::SetViewportClient(IViewportClient* InViewportClient)
 {
 	if (ViewportClient == InViewportClient)
 	{
@@ -83,7 +83,7 @@ void CCore::SetViewportClient(IViewportClient* InViewportClient)
 	}
 }
 
-void CCore::ProcessInput(HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
+void FEngineRuntime::ProcessInput(HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
 {
 	if (InputManager)
 	{
@@ -96,7 +96,7 @@ void CCore::ProcessInput(HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
 	}
 }
 
-void CCore::Release()
+void FEngineRuntime::Release()
 {
 	if (ViewportClient && Renderer)
 	{
@@ -130,13 +130,13 @@ void CCore::Release()
 	}
 }
 
-void CCore::Tick()
+void FEngineRuntime::Tick()
 {
 	Timer.Tick();
 	Tick(Timer.GetDeltaTime());
 }
 
-void CCore::Tick(const float DeltaTime)
+void FEngineRuntime::Tick(const float DeltaTime)
 {
 	Input(DeltaTime);
 	Physics(DeltaTime);
@@ -145,7 +145,7 @@ void CCore::Tick(const float DeltaTime)
 	LateUpdate(DeltaTime);
 }
 
-void CCore::Input(float DeltaTime)
+void FEngineRuntime::Input(float DeltaTime)
 {
 	if (InputManager)
 	{
@@ -163,7 +163,7 @@ void CCore::Input(float DeltaTime)
 	}
 }
 
-void CCore::Physics(float DeltaTime)
+void FEngineRuntime::Physics(float DeltaTime)
 {
 	UScene* Scene = ViewportClient ? ViewportClient->ResolveScene(this) : GetActiveScene();
 	
@@ -210,7 +210,7 @@ void CCore::Physics(float DeltaTime)
 	}
 }
 
-void CCore::GameLogic(float DeltaTime)
+void FEngineRuntime::GameLogic(float DeltaTime)
 {
 	UWorld* World = GetActiveWorld();
 	if (World)
@@ -219,7 +219,7 @@ void CCore::GameLogic(float DeltaTime)
 	}
 }
 
-void CCore::LateUpdate(float DeltaTime)
+void FEngineRuntime::LateUpdate(float DeltaTime)
 {
 	if (GCInterval <= 0.0)
 	{
@@ -234,7 +234,7 @@ void CCore::LateUpdate(float DeltaTime)
 	}
 }
 
-void CCore::Render()
+void FEngineRuntime::Render()
 {
 	UScene* Scene = ViewportClient ? ViewportClient->ResolveScene(this) : GetActiveScene();
 	if (!Renderer || !Scene || Renderer->IsOccluded())
@@ -282,7 +282,7 @@ void CCore::Render()
 	Renderer->EndFrame();
 }
 
-void CCore::OnResize(int32 Width, int32 Height)
+void FEngineRuntime::OnResize(int32 Width, int32 Height)
 {
 	if (Width == 0 || Height == 0) return;
 	WindowWidth = Width;
@@ -291,7 +291,7 @@ void CCore::OnResize(int32 Width, int32 Height)
 	if (SceneManager) SceneManager->OnResize(Width, Height);
 }
 
-void CCore::RegisterConsoleVariables()
+void FEngineRuntime::RegisterConsoleVariables()
 {
 	FConsoleVariableManager& CVM = FConsoleVariableManager::Get();
 
@@ -348,4 +348,3 @@ void CCore::RegisterConsoleVariables()
 			}
 		}, "Force immediate garbage collection");
 }
-

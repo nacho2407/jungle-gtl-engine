@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Core\EngineLoop.h" />
     <ClInclude Include="PrimitiveLineBatch.h" />
     <ClInclude Include="Source\Actor\TextActor.h" />
     <ClInclude Include="Source\Component\TextComponent.h" />
@@ -47,7 +48,7 @@
     <ClInclude Include="Source\Component\SubUVComponent.h" />
     <ClInclude Include="Source\Component\UUIDBillboardComponent.h" />
     <ClInclude Include="Source\Core\ConsoleVariableManager.h" />
-    <ClInclude Include="Source\Core\Core.h" />
+    <ClInclude Include="Source\Core\EngineRuntime.h" />
     <ClInclude Include="Source\Core\FEngine.h" />
     <ClInclude Include="Source\Core\FTimer.h" />
     <ClInclude Include="Source\Core\Paths.h" />
@@ -79,8 +80,9 @@
     <ClInclude Include="Source\Object\ObjectTypes.h" />
     <ClInclude Include="Source\Physics\PhysicsManager.h" />
     <ClInclude Include="Source\Platform\Windows\PlatformGlobals.h" />
-    <ClInclude Include="Source\Platform\Windows\Window.h" />
-    <ClInclude Include="Source\Platform\Windows\WindowApplication.h" />
+    <ClInclude Include="Source\Platform\Windows\WindowsEngineLaunch.h" />
+    <ClInclude Include="Source\Platform\Windows\WindowsWindow.h" />
+    <ClInclude Include="Source\Platform\Windows\WindowsApplication.h" />
     <ClInclude Include="Source\Platform\Windows\WindowTypes.h" />
     <ClInclude Include="Source\Primitive\PrimitiveBase.h" />
     <ClInclude Include="Source\Primitive\PrimitiveCube.h" />
@@ -130,6 +132,7 @@
     <ClInclude Include="ThirdParty\nlohmann\json.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Core\EngineLoop.cpp" />
     <ClCompile Include="PrimitiveLineBatch.cpp" />
     <ClCompile Include="Source\Actor\Actor.cpp" />
     <ClCompile Include="Source\Actor\AttachTestActor.cpp" />
@@ -156,7 +159,7 @@
     <ClCompile Include="Source\Component\TextComponent.cpp" />
     <ClCompile Include="Source\Component\UUIDBillboardComponent.cpp" />
     <ClCompile Include="Source\Core\ConsoleVariableManager.cpp" />
-    <ClCompile Include="Source\Core\Core.cpp" />
+    <ClCompile Include="Source\Core\EngineRuntime.cpp" />
     <ClCompile Include="Source\Core\FEngine.cpp" />
     <ClCompile Include="Source\Core\FTimer.cpp" />
     <ClCompile Include="Source\Core\Paths.cpp" />
@@ -181,8 +184,9 @@
     <ClCompile Include="Source\Object\ObjectManager.cpp" />
     <ClCompile Include="Source\Physics\PhysicsManager.cpp" />
     <ClCompile Include="Source\Platform\Windows\PlatformGlobals.cpp" />
-    <ClCompile Include="Source\Platform\Windows\Window.cpp" />
-    <ClCompile Include="Source\Platform\Windows\WindowApplication.cpp" />
+    <ClCompile Include="Source\Platform\Windows\WindowsEngineLaunch.cpp" />
+    <ClCompile Include="Source\Platform\Windows\WindowsWindow.cpp" />
+    <ClCompile Include="Source\Platform\Windows\WindowsApplication.cpp" />
     <ClCompile Include="Source\Primitive\PrimitiveBase.cpp" />
     <ClCompile Include="Source\Primitive\PrimitiveCube.cpp" />
     <ClCompile Include="Source\Primitive\PrimitiveGizmo.cpp" />

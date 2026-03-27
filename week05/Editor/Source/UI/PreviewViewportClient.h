@@ -4,20 +4,20 @@
 #include "Core/ViewportClient.h"
 
 class CEditorUI;
-class CWindow;
+class FWindowsWindow;
 
 class CPreviewViewportClient : public IViewportClient
 {
 public:
-	CPreviewViewportClient(CEditorUI& InEditorUI, CWindow* InMainWindow, FString InPreviewContextName);
+	CPreviewViewportClient(CEditorUI& InEditorUI, FWindowsWindow* InMainWindow, FString InPreviewContextName);
 
-	void Attach(CCore* Core, CRenderer* Renderer) override;
-	void Detach(CCore* Core, CRenderer* Renderer) override;
-	void Tick(CCore* Core, float DeltaTime) override;
-	UScene* ResolveScene(CCore* Core) const override;
+	void Attach(FEngineRuntime* Runtime, CRenderer* Renderer) override;
+	void Detach(FEngineRuntime* Runtime, CRenderer* Renderer) override;
+	void Tick(FEngineRuntime* Runtime, float DeltaTime) override;
+	UScene* ResolveScene(FEngineRuntime* Runtime) const override;
 
 private:
 	CEditorUI& EditorUI;
-	CWindow* MainWindow = nullptr;
+	FWindowsWindow* MainWindow = nullptr;
 	FString PreviewContextName;
 };

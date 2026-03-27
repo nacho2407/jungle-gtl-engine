@@ -1,5 +1,5 @@
 #include "PropertyWindow.h"
-#include "Core/Core.h"
+#include "Core/EngineRuntime.h"
 #include "Actor/Actor.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextComponent.h"
@@ -98,7 +98,7 @@ void CPropertyWindow::DrawTransformSection()
 		OnChanged(EditLocation, EditRotation, EditScale);
 }
 
-void CPropertyWindow::Render(CCore* Core)
+void CPropertyWindow::Render(FEngineRuntime* Core)
 {
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
 	bool bOpen = ImGui::Begin("Properties");
