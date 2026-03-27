@@ -14,11 +14,18 @@ struct FVertex
 	int SubID;
 };
 
+struct FNormalVertex
+{
+	FVector Position;
+	FVector4 Color;
+	FVector Normal;
+	FVector2 UVs;	//	TexCoord
+};
+
 struct FOverlayVertex
 {
 	float X, Y;
 };
-
 
 // Position + TexCoord 범용 버텍스 (FontBatcher, SubUVBatcher 등 텍스처 기반 배처 공용)
 struct FTextureVertex
