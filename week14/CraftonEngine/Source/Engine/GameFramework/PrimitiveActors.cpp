@@ -5,6 +5,9 @@
 #include <format>
 #include <Component/SubUVComponent.h>
 
+// 나중에 PrimtiveComponent.h에 있는 Cube, Sphere, Plane 지우기
+#include "Component/StaticMeshComponent.h"
+
 DEFINE_CLASS(ACubeActor, AActor)
 REGISTER_FACTORY(ACubeActor)
 
@@ -13,6 +16,9 @@ REGISTER_FACTORY(ASphereActor)
 
 DEFINE_CLASS(APlaneActor, AActor)
 REGISTER_FACTORY(APlaneActor)
+
+DEFINE_CLASS(AStaticMeshActor, AActor)
+REGISTER_FACTORY(AStaticMeshActor)
 
 DEFINE_CLASS(AAttachTestActor, AActor)
 REGISTER_FACTORY(AAttachTestActor)
@@ -76,6 +82,18 @@ void APlaneActor::InitDefaultComponents()
 	SubUV->SetSpriteSize(2.0f, 2.0f);
 	SubUV->SetFrameRate(30.f);
 	SubUV->SetRelativeLocation(FVector(0.0f, 0.0f, 2.3f));
+}
+
+void AStaticMeshActor::InitDefaultComponents()
+{
+	auto* SM = AddComponent<UStaticMeshComp>();
+	SetRootComponent(SM);
+
+	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
+	Text->SetFont(FName("Default"));
+	Text->AttachToComponent(SM);
+	Text->SetText("UUID : " + std::to_string(GetUUID()));
+	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 }
 
 void AAttachTestActor::InitDefaultComponents()
