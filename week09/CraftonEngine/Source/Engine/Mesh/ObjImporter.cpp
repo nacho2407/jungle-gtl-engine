@@ -29,9 +29,6 @@ FObjInfo FObjImporter::ParseObj(const std::string& FilePath)
 		return ObjInfo;
 	}
 
-	FObjInfo::FObjMaterialSection CurrentSection = {};
-	bool bInSection = false;
-
 	std::string Line;
 	while (std::getline(File, Line))
 	{
@@ -63,34 +60,38 @@ FObjInfo FObjImporter::ParseObj(const std::string& FilePath)
 		}
 		else if (Prefix == "f")
 		{
+			// default material section 추가 (usemtl이 없는 경우)
+			if (ObjInfo.MaterialSections.empty())
+			{
+				FObjInfo::FObjMaterialSection DefaultSection;
+				DefaultSection.MaterialName = "Default";
+				DefaultSection.StartIndex = 0;
+				DefaultSection.IndexCount = 0;
+				ObjInfo.MaterialSections.emplace_back(DefaultSection);
+			}
+
 			// TODO: (v, vt, vn) 모두 존재하고 Face가 삼각형이며 양수 인덱스라고 가정
 			std::string FaceVertex;
 			for (int i = 0; i < 3; ++i)
 			{
 				LineStream >> FaceVertex;
-				const char* Data = FaceVertex.data();
-				const char* End = Data + FaceVertex.size();
-				uint32_t v, vt, vn;
+				std::string FaceVertex;
+				for (int i = 0; i < 3; ++i)
+				{
+					LineStream >> FaceVertex;
+					uint32 v, vt, vn;
 
-				auto Res1 = std::from_chars(Data, End, v);
-				if (Res1.ec == std::errc() && Res1.ptr < End && *Res1.ptr == '/') {
-					auto Res2 = std::from_chars(Res1.ptr + 1, End, vt);
-					if (Res2.ec == std::errc() && Res2.ptr < End && *Res2.ptr == '/') {
-						auto Res3 = std::from_chars(Res2.ptr + 1, End, vn);
-						if (Res3.ec != std::errc()) {
-						}
+					if (sscanf_s(FaceVertex.c_str(), "%u/%u/%u", &v, &vt, &vn) == 3)
+					{
 						ObjInfo.PosIndices.emplace_back(v - 1);
 						ObjInfo.UVIndices.emplace_back(vt - 1);
 						ObjInfo.NormalIndices.emplace_back(vn - 1);
 					}
-					else {
+					else
+					{
 						UE_LOG("Failed to parse face vertex: %s", FaceVertex.c_str());
 						return ObjInfo;
 					}
-				}
-				else {
-					UE_LOG("Failed to parse face vertex: %s", FaceVertex.c_str());
-					return ObjInfo;
 				}
 			}
 		}
@@ -100,17 +101,14 @@ FObjInfo FObjImporter::ParseObj(const std::string& FilePath)
 		}
 		else if (Prefix == "usemtl")
 		{
-			if (bInSection)
+			if (!ObjInfo.MaterialSections.empty())
 			{
-				CurrentSection.IndexCount = static_cast<uint32>(ObjInfo.PosIndices.size()) - CurrentSection.StartIndex;
-				ObjInfo.MaterialSections.emplace_back(CurrentSection);
-				CurrentSection = {};
-				bInSection = false;
+				ObjInfo.MaterialSections.back().IndexCount = static_cast<uint32>(ObjInfo.PosIndices.size()) - ObjInfo.MaterialSections.back().StartIndex;
 			}
-			LineStream >> CurrentSection.MaterialName;
-			CurrentSection.StartIndex = static_cast<uint32>(ObjInfo.PosIndices.size());
-			CurrentSection.IndexCount = 0;
-			bInSection = true;
+			FObjInfo::FObjMaterialSection Section;
+			LineStream >> Section.MaterialName;
+			Section.StartIndex = static_cast<uint32>(ObjInfo.PosIndices.size());
+			ObjInfo.MaterialSections.emplace_back(Section);
 		}
 		else if (Prefix == "o")
 		{
@@ -118,12 +116,10 @@ FObjInfo FObjImporter::ParseObj(const std::string& FilePath)
 		}
 	}
 
-	if (bInSection)
+	if (!ObjInfo.MaterialSections.empty())
 	{
-		CurrentSection.IndexCount = static_cast<uint32>(ObjInfo.PosIndices.size()) - CurrentSection.StartIndex;
-		ObjInfo.MaterialSections.emplace_back(CurrentSection);
+		ObjInfo.MaterialSections.back().IndexCount = static_cast<uint32>(ObjInfo.PosIndices.size()) - ObjInfo.MaterialSections.back().StartIndex;
 	}
-
 	return ObjInfo;
 }
 
