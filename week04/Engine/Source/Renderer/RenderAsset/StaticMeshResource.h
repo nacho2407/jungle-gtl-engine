@@ -25,7 +25,7 @@ struct FStaticMeshResource
     // --- CPU 충돌/Picking용 데이터 (RAM) ---
     TArray<FVector> CPU_Positions;
     TArray<uint32>  CPU_Indices;
-    // FAABB           BoundingBox;
+    Geometry::FAABB BoundingBox;
 
     void Reset()
     {
@@ -37,6 +37,6 @@ struct FStaticMeshResource
         SubMeshes.clear();
         CPU_Positions.clear();
         CPU_Indices.clear();
-        // BoundingBox = FAABB();
+        BoundingBox = Geometry::FAABB();
     }
 };

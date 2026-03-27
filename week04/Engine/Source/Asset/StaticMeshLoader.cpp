@@ -77,7 +77,7 @@ UAsset* FStaticMeshLoader::LoadAsset(const FSourceRecord& Source, const FAssetLo
 
     // 3. 에셋 생성 및 리소스 복사 (FontAsset 방식과 동일)
     UStaticMeshAsset* NewMeshAsset = new UStaticMeshAsset();
-    NewMeshAsset->Initialize(Source, *MeshResource);
+    NewMeshAsset->Initialize(Source, MeshResource);
 
     return NewMeshAsset;
 }
@@ -118,13 +118,13 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMeshRes
             LineStream >> Pos.X >> Pos.Y >> Pos.Z;
             TempPositions.push_back(Pos);
 
-            //// AABB 계산 (Bounding Box 갱신)
-            //OutMesh.BoundingBox.Min.X = std::min(OutMesh.BoundingBox.Min.X, Pos.X);
-            //OutMesh.BoundingBox.Min.Y = std::min(OutMesh.BoundingBox.Min.Y, Pos.Y);
-            //OutMesh.BoundingBox.Min.Z = std::min(OutMesh.BoundingBox.Min.Z, Pos.Z);
-            //OutMesh.BoundingBox.Max.X = std::max(OutMesh.BoundingBox.Max.X, Pos.X);
-            //OutMesh.BoundingBox.Max.Y = std::max(OutMesh.BoundingBox.Max.Y, Pos.Y);
-            //OutMesh.BoundingBox.Max.Z = std::max(OutMesh.BoundingBox.Max.Z, Pos.Z);
+            // AABB 계산 (Bounding Box 갱신)
+            OutMesh.BoundingBox.Min.X = std::min(OutMesh.BoundingBox.Min.X, Pos.X);
+            OutMesh.BoundingBox.Min.Y = std::min(OutMesh.BoundingBox.Min.Y, Pos.Y);
+            OutMesh.BoundingBox.Min.Z = std::min(OutMesh.BoundingBox.Min.Z, Pos.Z);
+            OutMesh.BoundingBox.Max.X = std::max(OutMesh.BoundingBox.Max.X, Pos.X);
+            OutMesh.BoundingBox.Max.Y = std::max(OutMesh.BoundingBox.Max.Y, Pos.Y);
+            OutMesh.BoundingBox.Max.Z = std::max(OutMesh.BoundingBox.Max.Z, Pos.Z);
         }
         else if (Header == "vt")
         {
