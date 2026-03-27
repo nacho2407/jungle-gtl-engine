@@ -20,4 +20,5 @@ struct FRenderResources
     FShader GizmoShader;
     FShader EditorShader;
 	FShader OutlineShader;
+	FShader StaticMesh;
 };

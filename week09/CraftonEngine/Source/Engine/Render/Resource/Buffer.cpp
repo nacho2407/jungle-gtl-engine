@@ -11,10 +11,17 @@ void FMeshBuffer::Create(ID3D11Device* InDevice, const FMeshData& InMeshData)
 		return;
 	}
 
-	VertexBuffer.Create(InDevice, InMeshData.Vertices, static_cast<uint32>(sizeof(FVertex) * InMeshData.Vertices.size()), sizeof(FVertex));
+	uint32 VertexCount = static_cast<uint32>(InMeshData.Vertices.size());
+	uint32 VertexByteWidth = VertexCount * sizeof(FVertex);
+
+	VertexBuffer.Create(InDevice, InMeshData.Vertices.data(), VertexCount, VertexByteWidth, sizeof(FVertex));
+	
 	if (!InMeshData.Indices.empty())
 	{
-		IndexBuffer.Create(InDevice, InMeshData.Indices, static_cast<uint32>(sizeof(uint32) * InMeshData.Indices.size()));
+		uint32 IndexCount = static_cast<uint32>(InMeshData.Indices.size());
+		uint32 IndexByteWidth = IndexCount * sizeof(uint32);
+
+		IndexBuffer.Create(InDevice, InMeshData.Indices.data(), IndexCount, IndexByteWidth);
 	}
 }
 
@@ -28,9 +35,9 @@ void FMeshBuffer::Release()
 
 #pragma region __FVERTEXBUFFER__
 
-void FVertexBuffer::Create(ID3D11Device* InDevice, const TArray<FVertex>& InData, uint32 InByteWidth, uint32 InStride)
+void FVertexBuffer::Create(ID3D11Device* InDevice, const void* InData, uint32 InVertexCount, uint32 InByteWidth, uint32 InStride)
 {
-	if (InData.empty() || InByteWidth == 0)
+	if (!InData || InByteWidth == 0)
 	{
 		Release();
 		VertexCount = 0;
@@ -43,7 +50,7 @@ void FVertexBuffer::Create(ID3D11Device* InDevice, const TArray<FVertex>& InData
 	vertexBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 
-	D3D11_SUBRESOURCE_DATA vertexBufferSRD = { InData.data() };
+	D3D11_SUBRESOURCE_DATA vertexBufferSRD = { InData };
 
 	HRESULT hr = InDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferSRD, &Buffer);
 	if (FAILED(hr))
@@ -54,7 +61,7 @@ void FVertexBuffer::Create(ID3D11Device* InDevice, const TArray<FVertex>& InData
 		return;
 	}
 
-	VertexCount = static_cast<uint32>(InData.size());
+	VertexCount = InVertexCount;
 	Stride = InStride;
 }
 
@@ -129,9 +136,9 @@ ID3D11Buffer* FConstantBuffer::GetBuffer()
 
 #pragma region __FINDEXBUFFER__
 
-void FIndexBuffer::Create(ID3D11Device* InDevice, const TArray<uint32>& InData, uint32 InByteWidth)
+void FIndexBuffer::Create(ID3D11Device* InDevice, const void* InData, uint32 InIndexCount, uint32 InByteWidth)
 {
-	if (InData.empty() || InByteWidth == 0)
+	if (!InData || InByteWidth == 0 || InIndexCount == 0)
 	{
 		Release();
 		IndexCount = 0;
@@ -144,7 +151,7 @@ void FIndexBuffer::Create(ID3D11Device* InDevice, const TArray<uint32>& InData, 
 	indexBufferDesc.ByteWidth = InByteWidth;	//	NOTE : Total byte width of the buffer, not the count of indices
 	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 
-	D3D11_SUBRESOURCE_DATA indexBufferSRD = { InData.data() };
+	D3D11_SUBRESOURCE_DATA indexBufferSRD = { InData };
 
 	HRESULT hr = InDevice->CreateBuffer(&indexBufferDesc, &indexBufferSRD, &Buffer);
 	if (FAILED(hr))
@@ -154,7 +161,7 @@ void FIndexBuffer::Create(ID3D11Device* InDevice, const TArray<uint32>& InData, 
 		return;
 	}
 
-	IndexCount = static_cast<uint32>(InData.size());
+	IndexCount = InIndexCount;
 }
 
 void FIndexBuffer::Release()
