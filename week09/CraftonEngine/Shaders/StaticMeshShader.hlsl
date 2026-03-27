@@ -22,8 +22,8 @@ SamplerState g_Sample  : register(s0);
 PS_INPUT VS(VS_INPUT input)
 {
     PS_INPUT output;
-    output.p = mul(float4(input.p, 1.0f), WVP);
-    output.n = normalize(mul(input.n, (float3x3)World));
+    //output.p = mul(float4(input.p, 1.0f), WVP);
+    //output.n = normalize(mul(input.n, (float3x3)World));
     output.c = input.c;
     output.t = input.t;
     return output;
