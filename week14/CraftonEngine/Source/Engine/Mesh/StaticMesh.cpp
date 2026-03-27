@@ -1,13 +1,13 @@
-#include "Mesh/StaticMesh.h"
+﻿#include "Mesh/StaticMesh.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Object/ObjectFactory.h"
 
 DEFINE_CLASS(UStaticMesh, UObject)
 REGISTER_FACTORY(UStaticMesh)
 
-static const std::string EmptyPath;
+static const FString EmptyPath;
 
-const std::string& UStaticMesh::GetAssetPathFileName() const
+const FString& UStaticMesh::GetAssetPathFileName() const
 {
 	if (StaticMeshAsset)
 	{
