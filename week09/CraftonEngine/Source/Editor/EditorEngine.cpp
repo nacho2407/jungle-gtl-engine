@@ -1,4 +1,4 @@
-﻿#include "Editor/EditorEngine.h"
+#include "Editor/EditorEngine.h"
 
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
@@ -7,6 +7,7 @@
 #include "Component/PrimitiveComponent.h"
 #include "GameFramework/World.h"
 #include "Editor/EditorRenderPipeline.h"
+#include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Core/Stats.h"
 
 DEFINE_CLASS(UEditorEngine, UEngine)
@@ -33,18 +34,22 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	// Selection & Gizmo
 	SelectionManager.Init();
 
-	// ViewportClient
-	ViewportClient.SetSettings(&FEditorSettings::Get());
-	ViewportClient.Initialize(Window);
-	ViewportClient.SetViewportSize(Window->GetWidth(), Window->GetHeight());
-	ViewportClient.SetWorld(GetWorld());
-	ViewportClient.SetGizmo(SelectionManager.GetGizmo());
-	ViewportClient.SetSelectionManager(&SelectionManager);
+	// LevelViewportClient 생성 (현재는 1개, 추후 4분할 시 확장)
+	auto* LevelVC = new FLevelEditorViewportClient();
+	LevelVC->SetSettings(&FEditorSettings::Get());
+	LevelVC->Initialize(Window);
+	LevelVC->SetViewportSize(Window->GetWidth(), Window->GetHeight());
+	LevelVC->SetWorld(GetWorld());
+	LevelVC->SetGizmo(SelectionManager.GetGizmo());
+	LevelVC->SetSelectionManager(&SelectionManager);
 
-	// Camera
-	ViewportClient.CreateCamera();
-	ViewportClient.ResetCamera();
-	GetWorld()->SetActiveCamera(ViewportClient.GetCamera());
+	LevelVC->CreateCamera();
+	LevelVC->ResetCamera();
+	GetWorld()->SetActiveCamera(LevelVC->GetCamera());
+
+	// 배열에 등록
+	AllViewportClients.push_back(LevelVC);
+	LevelViewportClients.push_back(LevelVC);
 
 	// Editor render pipeline
 	SetRenderPipeline(std::make_unique<FEditorRenderPipeline>(this, Renderer));
@@ -58,6 +63,14 @@ void UEditorEngine::Shutdown()
 	SelectionManager.Shutdown();
 	MainPanel.Release();
 
+	// ViewportClient 해제
+	for (FEditorViewportClient* VC : AllViewportClients)
+	{
+		delete VC;
+	}
+	AllViewportClients.clear();
+	LevelViewportClients.clear();
+
 	// 엔진 공통 해제 (Renderer, D3D 등)
 	UEngine::Shutdown();
 }
@@ -65,14 +78,29 @@ void UEditorEngine::Shutdown()
 void UEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
 {
 	UEngine::OnWindowResized(Width, Height);
-	ViewportClient.SetViewportSize(Window->GetWidth(), Window->GetHeight());
+	for (FEditorViewportClient* VC : AllViewportClients)
+	{
+		VC->SetViewportSize(Window->GetWidth(), Window->GetHeight());
+	}
 }
 
 void UEditorEngine::Tick(float DeltaTime)
 {
-	ViewportClient.Tick(DeltaTime);
+	for (FEditorViewportClient* VC : AllViewportClients)
+	{
+		VC->Tick(DeltaTime);
+	}
 	MainPanel.Update();
 	UEngine::Tick(DeltaTime);
+}
+
+UCameraComponent* UEditorEngine::GetCamera() const
+{
+	if (!LevelViewportClients.empty())
+	{
+		return LevelViewportClients[0]->GetCamera();
+	}
+	return nullptr;
 }
 
 void UEditorEngine::RenderUI(float DeltaTime)
@@ -82,11 +110,14 @@ void UEditorEngine::RenderUI(float DeltaTime)
 
 void UEditorEngine::ResetViewport()
 {
-	ViewportClient.CreateCamera();
-	ViewportClient.SetWorld(GetWorld());
-	ViewportClient.SetViewportSize(Window->GetWidth(), Window->GetHeight());
-	ViewportClient.ResetCamera();
-	GetWorld()->SetActiveCamera(ViewportClient.GetCamera());
+	if (LevelViewportClients.empty()) return;
+
+	FLevelEditorViewportClient* LevelVC = LevelViewportClients[0];
+	LevelVC->CreateCamera();
+	LevelVC->SetWorld(GetWorld());
+	LevelVC->SetViewportSize(Window->GetWidth(), Window->GetHeight());
+	LevelVC->ResetCamera();
+	GetWorld()->SetActiveCamera(LevelVC->GetCamera());
 }
 
 void UEditorEngine::CloseScene()
@@ -100,8 +131,11 @@ void UEditorEngine::CloseScene()
 	WorldList.clear();
 	ActiveWorldHandle = FName::None;
 
-	ViewportClient.DestroyCamera();
-	ViewportClient.SetWorld(nullptr);
+	for (FEditorViewportClient* VC : AllViewportClients)
+	{
+		VC->DestroyCamera();
+		VC->SetWorld(nullptr);
+	}
 }
 
 void UEditorEngine::NewScene()
@@ -126,6 +160,9 @@ void UEditorEngine::ClearScene()
 	WorldList.clear();
 	ActiveWorldHandle = FName::None;
 
-	ViewportClient.DestroyCamera();
-	ViewportClient.SetWorld(nullptr);
+	for (FEditorViewportClient* VC : AllViewportClients)
+	{
+		VC->DestroyCamera();
+		VC->SetWorld(nullptr);
+	}
 }
