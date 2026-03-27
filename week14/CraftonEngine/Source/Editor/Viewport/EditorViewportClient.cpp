@@ -61,6 +61,8 @@ void FEditorViewportClient::SetViewportSize(float InWidth, float InHeight)
 
 void FEditorViewportClient::Tick(float DeltaTime)
 {
+	if (!bIsActive) return;
+
 	TickInput(DeltaTime);
 	TickInteraction(DeltaTime);
 	TickCursorOverlay(DeltaTime);
