@@ -5,7 +5,7 @@
 
 /**
  * @brief MTL 파일의 머테리얼 데이터를 표현하는 구조체.
- * Wavefront .mtl 포맷 기준으로 정의됩니다. 제발 다른 거 말구요..
+ * Obj .mtl 포맷 기준으로 정의했습니다.
  */
 
 struct FMaterial
@@ -22,7 +22,7 @@ struct FMaterial
     float Opacity    = 1.0f; 
     int   IllumModel = 2;    
 
-
+	// 경로는 상대 경로로 저장
     FString DiffuseTexPath;   // map_Kd
     FString AmbientTexPath;   // map_Ka
     FString SpecularTexPath;  // map_Ks
@@ -30,10 +30,10 @@ struct FMaterial
 };
 
 /**
- * @brief Wavefront .mtl 파일 파서
+ * @brief Obj전용 .mtl 파일 파서
  * ResourceManager에서 TMap<FString, FMaterial>을 참조로 받아와 채워 놓을 예정
  */
-class FMtlLoader
+class FObjMtlLoader
 {
 public:
     /**
