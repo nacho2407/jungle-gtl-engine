@@ -19,6 +19,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
 	Window = InWindow;
+	EditorEngine = InEditorEngine;
 
 	// 한글 지원 폰트 로드 (시스템 맑은 고딕)
 	IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 16.0f, nullptr, IO.Fonts->GetGlyphRangesKorean());
@@ -32,12 +33,6 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	SceneWidget.Initialize(InEditorEngine);
 	ViewportOverlayWidget.Initialize(InEditorEngine);
 	StatWidget.Initialize(InEditorEngine);
-
-	for (int32 i = 0; i < MaxViewports; ++i)
-	{
-		ViewportWidgets[i].Initialize(InEditorEngine);
-		ViewportWidgets[i].SetIndex(i);
-	}
 }
 
 void FEditorMainPanel::Release()
@@ -55,10 +50,12 @@ void FEditorMainPanel::Render(float DeltaTime)
 
 	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
 
-	for (int32 i = 0; i < ActiveViewportCount; ++i)
+	// 뷰포트 렌더링은 EditorEngine이 담당 (SSplitter 레이아웃 + ImGui::Image)
+	if (EditorEngine)
 	{
-		ViewportWidgets[i].Render(DeltaTime);
+		EditorEngine->RenderViewportUI(DeltaTime);
 	}
+
 	ConsoleWidget.Render(DeltaTime);
 	ControlWidget.Render(DeltaTime);
 	PropertyWidget.Render(DeltaTime);
@@ -74,23 +71,25 @@ void FEditorMainPanel::Update()
 {
 	ImGuiIO& IO = ImGui::GetIO();
 
-	InputSystem::Get().GetGuiInputState().bUsingMouse = IO.WantCaptureMouse;
+	// 뷰포트 슬롯 위에서는 bUsingMouse를 해제해야 TickInteraction이 동작
+	bool bWantMouse = IO.WantCaptureMouse;
+	if (EditorEngine && EditorEngine->IsMouseOverViewport())
+	{
+		bWantMouse = false;
+	}
+	InputSystem::Get().GetGuiInputState().bUsingMouse = bWantMouse;
 	InputSystem::Get().GetGuiInputState().bUsingKeyboard = IO.WantCaptureKeyboard;
 
 	// IME는 ImGui가 텍스트 입력을 원할 때만 활성화.
-	// 그 외에는 OS 수준에서 IME 컨텍스트를 NULL로 연결해 한글 조합이
-	// 뷰포트에 남는 현상을 원천 차단한다.
 	if (Window)
 	{
 		HWND hWnd = Window->GetHWND();
 		if (IO.WantTextInput)
 		{
-			// InputText 포커스 중 — 기본 IME 컨텍스트 복원
 			ImmAssociateContextEx(hWnd, NULL, IACE_DEFAULT);
 		}
 		else
 		{
-			// InputText 포커스 없음 — IME 컨텍스트 해제 (조합 불가)
 			ImmAssociateContext(hWnd, NULL);
 		}
 	}
