@@ -304,8 +304,6 @@
     <ClCompile Include="Source\Editor\ObjViewerRenderPipeline.cpp">
       <Filter>Source\Editor</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Settings\ObjViewerSettings.cpp" />
-    <ClCompile Include="Source\Editor\Viewport\ObjViewerViewportClient.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Material.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
@@ -313,6 +311,14 @@
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
+    <ClCompile Include="Source\Engine\Asset\AssetBinder.cpp" />
+    <ClCompile Include="Source\Engine\Asset\FileUtils.cpp" />
+    <ClCompile Include="Source\Editor\Settings\ObjViewerSettings.cpp">
+      <Filter>Source\Editor\Settings</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Viewport\ObjViewerViewportClient.cpp">
+      <Filter>Source\Editor\Viewport</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -578,8 +584,6 @@
     <ClInclude Include="Source\Editor\ObjViewerRenderPipeline.h">
       <Filter>Source\Editor</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Settings\ObjViewerSettings.h" />
-    <ClInclude Include="Source\Editor\Viewport\ObjViewerViewportClient.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Material.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
@@ -587,5 +591,15 @@
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
+    <ClInclude Include="Source\Engine\Asset\AssetBinder.h" />
+    <ClInclude Include="Source\Engine\Asset\FileUtils.h" />
+    <ClInclude Include="Source\Engine\Asset\ObjRawTypes.h" />
+    <ClInclude Include="Source\Engine\Asset\StaticMeshTypes.h" />
+    <ClInclude Include="Source\Editor\Settings\ObjViewerSettings.h">
+      <Filter>Source\Editor\Settings</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Viewport\ObjViewerViewportClient.h">
+      <Filter>Source\Editor\Viewport</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
