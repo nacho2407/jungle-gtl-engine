@@ -2,6 +2,7 @@
 
 #include "Viewport/ViewportClient.h"
 #include "Render/Common/RenderTypes.h"
+#include "Render/Common/ViewTypes.h"
 
 #include "Viewport/CursorOverlayState.h"
 #include "UI/SWindow.h"
@@ -25,6 +26,13 @@ public:
 	void SetSettings(const FEditorSettings* InSettings) { Settings = InSettings; }
 	void SetSelectionManager(FSelectionManager* InSelectionManager) { SelectionManager = InSelectionManager; }
 	UGizmoComponent* GetGizmo() { return Gizmo; }
+
+	// 뷰포트별 렌더 옵션
+	FViewportRenderOptions& GetRenderOptions() { return RenderOptions; }
+	const FViewportRenderOptions& GetRenderOptions() const { return RenderOptions; }
+
+	// 뷰포트 타입 전환 (Perspective / Ortho 방향)
+	void SetViewportType(ELevelViewportType NewType);
 	void SetViewportSize(float InWidth, float InHeight);
 
 	// Camera lifecycle
@@ -71,6 +79,7 @@ private:
 	UGizmoComponent* Gizmo = nullptr;
 	const FEditorSettings* Settings = nullptr;
 	FSelectionManager* SelectionManager = nullptr;
+	FViewportRenderOptions RenderOptions;
 
 	float WindowWidth = 1920.f;
 	float WindowHeight = 1080.f;
