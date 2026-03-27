@@ -337,6 +337,12 @@ void FMeshManager::CreateQuad()
 	indices.assign({ 0, 1, 2, 0, 2, 3 });
 }
 
+void FMeshManager::CreateStaticMesh()
+{
+	//TArray<FStaticMesh>& vertices = QuadMeshData.Vertices;
+	TArray<uint32>& indices = QuadMeshData.Indices;
+}
+
 void FMeshManager::CreateTranslationGizmo()
 {
 	TArray<FVertex>& vertices = TranslationGizmoMeshData.Vertices;
