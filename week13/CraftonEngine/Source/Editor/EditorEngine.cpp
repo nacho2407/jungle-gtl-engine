@@ -2,14 +2,10 @@
 
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
-#include "Component/GizmoComponent.h"
 #include "Component/CameraComponent.h"
-#include "Component/PrimitiveComponent.h"
 #include "GameFramework/World.h"
 #include "Editor/EditorRenderPipeline.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
-#include "Viewport/Viewport.h"
-#include "Core/Stats.h"
 
 DEFINE_CLASS(UEditorEngine, UEngine)
 REGISTER_FACTORY(UEditorEngine)
@@ -35,36 +31,8 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	// Selection & Gizmo
 	SelectionManager.Init();
 
-	// LevelViewportClient 생성 (현재는 1개, 추후 4분할 시 확장)
-	auto* LevelVC = new FLevelEditorViewportClient();
-	LevelVC->SetSettings(&FEditorSettings::Get());
-	LevelVC->Initialize(Window);
-	LevelVC->SetViewportSize(Window->GetWidth(), Window->GetHeight());
-	LevelVC->SetWorld(GetWorld());
-	LevelVC->SetGizmo(SelectionManager.GetGizmo());
-	LevelVC->SetSelectionManager(&SelectionManager);
-
-	// FViewport 생성 — 오프스크린 RT
-	auto* VP = new FViewport();
-	VP->Initialize(Renderer.GetFD3DDevice().GetDevice(),
-		static_cast<uint32>(Window->GetWidth()),
-		static_cast<uint32>(Window->GetHeight()));
-	VP->SetClient(LevelVC);
-	LevelVC->SetViewport(VP);
-
-	// 카메라 생성 — 각 VC가 자체 카메라 소유
-	LevelVC->CreateCamera();
-	LevelVC->ResetCamera();
-
-	// 배열에 등록
-	AllViewportClients.push_back(LevelVC);
-	LevelViewportClients.push_back(LevelVC);
-
-	// 첫 번째 뷰포트를 활성으로 설정
-	SetActiveViewport(LevelVC);
-
-	// ViewportWidget에 ViewportClient 연결
-	MainPanel.GetViewportWidget(0).SetViewportClient(LevelVC);
+	// 뷰포트 레이아웃 초기화
+	ViewportLayout.Initialize(this, Window, Renderer, &SelectionManager);
 
 	// Editor render pipeline
 	SetRenderPipeline(std::make_unique<FEditorRenderPipeline>(this, Renderer));
@@ -78,19 +46,8 @@ void UEditorEngine::Shutdown()
 	SelectionManager.Shutdown();
 	MainPanel.Release();
 
-	// ViewportClient + FViewport 해제
-	ActiveViewportClient = nullptr;
-	for (FEditorViewportClient* VC : AllViewportClients)
-	{
-		if (FViewport* VP = VC->GetViewport())
-		{
-			VP->Release();
-			delete VP;
-		}
-		delete VC;
-	}
-	AllViewportClients.clear();
-	LevelViewportClients.clear();
+	// 뷰포트 레이아웃 해제
+	ViewportLayout.Release();
 
 	// 엔진 공통 해제 (Renderer, D3D 등)
 	UEngine::Shutdown();
@@ -100,12 +57,12 @@ void UEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
 {
 	UEngine::OnWindowResized(Width, Height);
 	// 윈도우 리사이즈 시에는 ImGui 패널이 실제 크기를 결정하므로
-	// FViewport RT는 ViewportWidget에서 지연 리사이즈로 처리됨
+	// FViewport RT는 SSplitter 레이아웃에서 지연 리사이즈로 처리됨
 }
 
 void UEditorEngine::Tick(float DeltaTime)
 {
-	for (FEditorViewportClient* VC : AllViewportClients)
+	for (FEditorViewportClient* VC : ViewportLayout.GetAllViewportClients())
 	{
 		VC->Tick(DeltaTime);
 	}
@@ -115,34 +72,11 @@ void UEditorEngine::Tick(float DeltaTime)
 
 UCameraComponent* UEditorEngine::GetCamera() const
 {
-	if (ActiveViewportClient)
+	if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
 	{
-		return ActiveViewportClient->GetCamera();
+		return ActiveVC->GetCamera();
 	}
 	return nullptr;
-}
-
-void UEditorEngine::SetActiveViewport(FLevelEditorViewportClient* InClient)
-{
-	// 이전 활성 뷰포트 비활성화
-	if (ActiveViewportClient)
-	{
-		ActiveViewportClient->SetActive(false);
-	}
-
-	ActiveViewportClient = InClient;
-
-	// 새 활성 뷰포트 활성화 + World의 ActiveCamera 갱신
-	if (ActiveViewportClient)
-	{
-		ActiveViewportClient->SetActive(true);
-
-		UWorld* World = GetWorld();
-		if (World && ActiveViewportClient->GetCamera())
-		{
-			World->SetActiveCamera(ActiveViewportClient->GetCamera());
-		}
-	}
 }
 
 void UEditorEngine::RenderUI(float DeltaTime)
@@ -150,99 +84,11 @@ void UEditorEngine::RenderUI(float DeltaTime)
 	MainPanel.Render(DeltaTime);
 }
 
-void UEditorEngine::ToggleViewportSplit()
-{
-	bIsSplitViewport = !bIsSplitViewport;
-
-	if (bIsSplitViewport)
-	{
-		// 4분할: 추가 3개 LevelViewportClient + FViewport + Camera 생성
-		for (int32 i = 1; i < FEditorMainPanel::MaxViewports; ++i)
-		{
-			auto* LevelVC = new FLevelEditorViewportClient();
-			LevelVC->SetSettings(&FEditorSettings::Get());
-			LevelVC->Initialize(Window);
-			LevelVC->SetViewportSize(Window->GetWidth(), Window->GetHeight());
-			LevelVC->SetWorld(GetWorld());
-			LevelVC->SetGizmo(SelectionManager.GetGizmo());
-			LevelVC->SetSelectionManager(&SelectionManager);
-
-			auto* VP = new FViewport();
-			VP->Initialize(Renderer.GetFD3DDevice().GetDevice(),
-				static_cast<uint32>(Window->GetWidth()),
-				static_cast<uint32>(Window->GetHeight()));
-			VP->SetClient(LevelVC);
-			LevelVC->SetViewport(VP);
-
-			LevelVC->CreateCamera();
-			LevelVC->ResetCamera();
-
-			AllViewportClients.push_back(LevelVC);
-			LevelViewportClients.push_back(LevelVC);
-
-			MainPanel.GetViewportWidget(i).SetViewportClient(LevelVC);
-		}
-
-		MainPanel.SetActiveViewportCount(FEditorMainPanel::MaxViewports);
-	}
-	else
-	{
-		// 1뷰포트: 추가 3개 제거 (index 1~3)
-		while (LevelViewportClients.size() > 1)
-		{
-			FLevelEditorViewportClient* VC = LevelViewportClients.back();
-			LevelViewportClients.pop_back();
-
-			// AllViewportClients에서도 제거
-			for (auto It = AllViewportClients.begin(); It != AllViewportClients.end(); ++It)
-			{
-				if (*It == VC)
-				{
-					AllViewportClients.erase(It);
-					break;
-				}
-			}
-
-			// 활성 뷰포트가 제거 대상이면 0번으로 전환
-			if (ActiveViewportClient == VC)
-			{
-				SetActiveViewport(LevelViewportClients[0]);
-			}
-
-			if (FViewport* VP = VC->GetViewport())
-			{
-				VP->Release();
-				delete VP;
-			}
-			VC->DestroyCamera();
-			delete VC;
-		}
-
-		// Widget 연결 해제
-		for (int32 i = 1; i < FEditorMainPanel::MaxViewports; ++i)
-		{
-			MainPanel.GetViewportWidget(i).SetViewportClient(nullptr);
-		}
-
-		MainPanel.SetActiveViewportCount(1);
-	}
-}
+// ─── 기존 메서드 ──────────────────────────────────────────
 
 void UEditorEngine::ResetViewport()
 {
-	// 모든 뷰포트 카메라 재생성
-	for (FLevelEditorViewportClient* VC : LevelViewportClients)
-	{
-		VC->CreateCamera();
-		VC->SetWorld(GetWorld());
-		VC->ResetCamera();
-	}
-
-	// 활성 뷰포트의 카메라를 World에 설정
-	if (ActiveViewportClient && GetWorld())
-	{
-		GetWorld()->SetActiveCamera(ActiveViewportClient->GetCamera());
-	}
+	ViewportLayout.ResetViewport(GetWorld());
 }
 
 void UEditorEngine::CloseScene()
@@ -256,11 +102,7 @@ void UEditorEngine::CloseScene()
 	WorldList.clear();
 	ActiveWorldHandle = FName::None;
 
-	for (FEditorViewportClient* VC : AllViewportClients)
-	{
-		VC->DestroyCamera();
-		VC->SetWorld(nullptr);
-	}
+	ViewportLayout.DestroyAllCameras();
 }
 
 void UEditorEngine::NewScene()
@@ -285,9 +127,5 @@ void UEditorEngine::ClearScene()
 	WorldList.clear();
 	ActiveWorldHandle = FName::None;
 
-	for (FEditorViewportClient* VC : AllViewportClients)
-	{
-		VC->DestroyCamera();
-		VC->SetWorld(nullptr);
-	}
+	ViewportLayout.DestroyAllCameras();
 }

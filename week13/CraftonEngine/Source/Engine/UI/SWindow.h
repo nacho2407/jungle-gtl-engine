@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/CoreTypes.h"
+#include "UI/SWidget.h"
 
 struct FPoint
 {
@@ -16,8 +16,8 @@ struct FRect
 	float Height = 0.0f;
 };
 
-// 기본 창 클래스 — 모든 UI 위젯의 베이스
-class SWindow
+// 기본 창 클래스 — Rect 기반 레이아웃 노드
+class SWindow : public SWidget
 {
 public:
 	SWindow() = default;
@@ -27,6 +27,8 @@ public:
 
 	void SetRect(const FRect& InRect) { Rect = InRect; }
 	const FRect& GetRect() const { return Rect; }
+
+	virtual bool IsSplitter() const { return false; }
 
 protected:
 	FRect Rect;
