@@ -2,6 +2,7 @@
 
 #include "Renderer/Types/PickId.h"
 #include "Renderer/Types/PickResult.h"
+#include "SceneView.h"
 
 namespace
 {
@@ -170,6 +171,16 @@ void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
 void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderData,
                                       const FSceneRenderData&  InSceneRenderData)
 {
+    const FViewportRect& ViewRect = InSceneRenderData.SceneView->GetViewRect();
+    D3D11_VIEWPORT       VP = {(float)ViewRect.X,
+                               (float)ViewRect.Y,
+                               (float)ViewRect.Width,
+                               (float)ViewRect.Height,
+                               0.f,
+                               1.f
+    };
+    RHI.SetViewport(VP);
+
     if (HasScenePrimitives(InSceneRenderData))
     {
         FMeshBatchPassParams ScenePassParams = {};
