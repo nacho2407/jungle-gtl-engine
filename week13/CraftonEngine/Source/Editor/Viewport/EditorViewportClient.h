@@ -34,6 +34,10 @@ public:
 
 	void Tick(float DeltaTime);
 
+	// 활성 상태 — 활성 뷰포트만 입력 처리
+	void SetActive(bool bInActive) { bIsActive = bInActive; }
+	bool IsActive() const { return bIsActive; }
+
 	const FCursorOverlayState& GetCursorOverlayState() const { return CursorOverlayState; }
 
 	// FViewport 소유
@@ -59,6 +63,7 @@ private:
 	float WindowWidth = 1920.f;
 	float WindowHeight = 1080.f;
 
+	bool bIsActive = false;
 	bool bIsCursorVisible = true;
 
 	FCursorOverlayState CursorOverlayState;
