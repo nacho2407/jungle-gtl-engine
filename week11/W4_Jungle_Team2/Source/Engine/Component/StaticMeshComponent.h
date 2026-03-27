@@ -9,6 +9,6 @@ private:
 	FStaticMesh* StaticMeshAsset;
 
 public:
-	DECLARE_CLASS(UStaticMeshComponent, UMeshComponent);
+	DECLARE_CLASS(UStaticMeshComponent, UMeshComponent)
 
 };
