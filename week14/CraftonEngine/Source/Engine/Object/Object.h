@@ -17,7 +17,6 @@
         sizeof(ClassName)                                              \
     };
 
-
 enum EClassFlags : uint32_t
 {
 	CF_None = 0,
