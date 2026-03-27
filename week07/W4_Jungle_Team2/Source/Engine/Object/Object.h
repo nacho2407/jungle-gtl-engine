@@ -4,11 +4,6 @@
 #include "Object/FName.h"
 #include "Core/Singleton.h"
 
-#if IS_OBJ_VIEWER
-#include <iostream>
-#include <cstdio>
-#endif
-
 #define DECLARE_CLASS(ClassName, ParentClass)                          \
     static const FTypeInfo s_TypeInfo;                                 \
     const FTypeInfo* GetTypeInfo() const override {                    \
