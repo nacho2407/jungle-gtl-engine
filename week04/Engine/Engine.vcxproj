@@ -11,6 +11,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Asset\MaterialLoader.h" />
+    <ClInclude Include="Source\Asset\MaterialAsset.h" />
+    <ClInclude Include="Source\Asset\StaticMeshLoader.h" />
+    <ClInclude Include="Source\Asset\StaticMeshAsset.h" />
     <ClInclude Include="Resources\Mesh\Cone.h" />
     <ClInclude Include="Resources\Mesh\Cube.h" />
     <ClInclude Include="Resources\Mesh\Cylinder.h" />
@@ -124,6 +128,8 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11TextBatchRenderer.h" />
     <ClInclude Include="Source\Renderer\EditorRenderData.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\FontResource.h" />
+    <ClInclude Include="Source\Renderer\RenderAsset\MaterialResource.h" />
+    <ClInclude Include="Source\Renderer\RenderAsset\StaticMeshResource.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\SubUVAtlasResource.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\TextureResource.h" />
     <ClInclude Include="Source\Renderer\RendererModule.h" />
@@ -160,6 +166,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Asset\MaterialLoader.cpp" />
+    <ClCompile Include="Source\Asset\MaterialAsset.cpp" />
+    <ClCompile Include="Source\Asset\StaticMeshLoader.cpp" />
+    <ClCompile Include="Source\Asset\StaticMeshAsset.cpp" />
     <ClCompile Include="Source\ApplicationCore\Input\InputRouter.cpp" />
     <ClCompile Include="Source\ApplicationCore\Input\InputSystem.cpp" />
     <ClCompile Include="Source\ApplicationCore\Windows\WindowsApplication.cpp" />

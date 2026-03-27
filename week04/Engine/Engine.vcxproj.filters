@@ -345,6 +345,10 @@
     <ClCompile Include="Source\SceneIO\SceneTypeRegistry.cpp">
       <Filter>Source\SceneIO</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Asset\StaticMeshAsset.cpp" />
+    <ClCompile Include="Source\Asset\StaticMeshLoader.cpp" />
+    <ClCompile Include="Source\Asset\MaterialAsset.cpp" />
+    <ClCompile Include="Source\Asset\MaterialLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Mesh\Cone.h">
@@ -776,6 +780,12 @@
     <ClInclude Include="Source\ThirdParty\Json\json.hpp">
       <Filter>Source\ThirdParty\Json</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Asset\StaticMeshAsset.h" />
+    <ClInclude Include="Source\Asset\StaticMeshLoader.h" />
+    <ClInclude Include="Source\Renderer\RenderAsset\StaticMeshResource.h" />
+    <ClInclude Include="Source\Asset\MaterialAsset.h" />
+    <ClInclude Include="Source\Asset\MaterialLoader.h" />
+    <ClInclude Include="Source\Renderer\RenderAsset\MaterialResource.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
