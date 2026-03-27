@@ -1,8 +1,8 @@
 ﻿#include "Component/CameraComponent.h"
+#include "Object/ObjectFactory.h"
 #include <cmath>
 
-DEFINE_CLASS(UCameraComponent, USceneComponent)
-REGISTER_FACTORY(UCameraComponent)
+IMPLEMENT_CLASS(UCameraComponent, USceneComponent)
 
 FMatrix UCameraComponent::GetViewMatrix() const {
 	UpdateWorldMatrix();
