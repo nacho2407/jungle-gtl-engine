@@ -9,9 +9,6 @@
     const FTypeInfo* GetTypeInfo() const override {                    \
         return &s_TypeInfo;                                            \
     }                                                                  \
-    static ClassName* Cast(UObject* Obj) {                             \
-        return Obj ? Obj->Cast<ClassName>() : nullptr;                 \
-    }
 
 #define DEFINE_CLASS(ClassName, ParentClass)                           \
     const FTypeInfo ClassName::s_TypeInfo = {                          \
@@ -19,6 +16,7 @@
         &ParentClass::s_TypeInfo,                                      \
         sizeof(ClassName)                                              \
     };
+
 
 enum EClassFlags : uint32_t
 {
@@ -150,3 +148,9 @@ public:
 		return GUObjectArray[Index];
 	}
 };
+
+template<typename T>
+T* Cast(UObject* Obj)
+{
+	return Obj ? Obj->Cast<T>() : nullptr;
+}
