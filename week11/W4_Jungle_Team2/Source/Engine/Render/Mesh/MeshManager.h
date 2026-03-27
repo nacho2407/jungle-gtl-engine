@@ -5,19 +5,6 @@
 #include "Math/Vector.h"
 #include "Render/Resource/VertexTypes.h"
 
-//	Render/Resource/VertexTypes.h로 이동했습니다.
-//struct FVertex
-//{
-//	FVector Postion;
-//	FVector4 Color;
-//};
-
-//struct FMeshData
-//{
-//	TArray<FVertex> Vertices;
-//	TArray<uint32> Indices;
-//};
-
 
 class FMeshManager : public TSingleton<FMeshManager>
 {
@@ -41,13 +28,6 @@ private:
 	static void CreateRotationGizmo();
 	static void CreateScaleGizmo();
 	static void CreateQuad();
-
-#if TEST
-
-	//static void CreateStandfordBunny();
-	//static void LoadObj(const char* path, FMeshData& outMeshData);
-
-#endif
 
 	static bool bIsInitialized;
 

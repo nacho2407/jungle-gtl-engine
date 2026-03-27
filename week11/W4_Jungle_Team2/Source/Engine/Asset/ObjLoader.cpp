@@ -1,6 +1,8 @@
 ﻿#include "ObjLoader.h"
-
 #include "FileUtils.h"
+#include "Render/Resource/Material.h"
+#include "Render/Mesh/StaticMesh.h"
+
 
 //	v, vt, vn, mtllib, usemtl, f
 UStaticMesh* FObjLoader::Load(const FString& Path)
@@ -178,12 +180,41 @@ bool FObjLoader::BuildStaticMesh()
 
 bool FObjLoader::BindMaterials()
 {
-	return false;
+	// MTL 경로가 없으면 머테리얼 없이 성공으로 처리
+	if (RawData.ReferencedMtlPath.empty())
+	{
+		return true;
+	}
+
+	// OBJ 파일 경로 기준으로 MTL 상대 경로 해석
+	std::filesystem::path ObjPath(SourcePath);
+	std::filesystem::path MtlPath = ObjPath.parent_path() / RawData.ReferencedMtlPath;
+
+	TMap<FString, FMaterial> Materials;
+	if (!FObjMtlLoader::Load(MtlPath.string(), Materials))
+	{
+		// MTL 로드 실패해도 메시는 사용 가능하므로 성공 처리
+		return true;
+	}
+
+	// 각 MaterialSlot에 파싱된 FMaterial 바인딩
+	for (FStaticMeshMaterialSlot& Slot : StaticMeshAsset.MaterialSlots)
+	{
+		auto Iter = Materials.find(Slot.SlotName);
+		if (Iter != Materials.end())
+		{
+			Slot.MaterialData = Iter->second;
+		}
+	}
+
+	return true;
 }
 
 UStaticMesh* FObjLoader::CreateAsset()
 {
-	return nullptr;
+	UStaticMesh* Asset = new UStaticMesh();
+	Asset->MeshData = std::move(StaticMeshAsset);
+	return Asset;
 }
 
 void FObjLoader::Reset()
