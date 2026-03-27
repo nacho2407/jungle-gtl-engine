@@ -199,6 +199,47 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 	{
 		PrimaryActor->SetVisible(bVisible);
 	}
+
+	ImGui::Separator();
+	if (ImGui::CollapsingHeader("Static Mesh", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		// 1. 드롭다운을 여는 버튼
+		if (ImGui::Button("SM_Cube ▼")) {
+			ImGui::OpenPopup("AssetDropdown");
+		}
+
+		ImVec2 buttonBottomLeft = ImGui::GetItemRectMin();
+		ImGui::SetNextWindowPos(buttonBottomLeft, ImGuiCond_Always, ImVec2(0.0f, 1.0f));
+
+		// 2. 팝업 내용 구성
+		if (ImGui::BeginPopup("AssetDropdown")) {
+			// --- 검색창 ---
+			ImGui::TextDisabled("탐색");
+			static char searchBuffer[128] = "";
+			ImGui::InputText("##Search", searchBuffer, IM_ARRAYSIZE(searchBuffer));
+
+			// --- 에셋 리스트 (스크롤 영역) ---
+			// 높이를 지정하여 스크롤바가 생기도록 함
+			if (ImGui::BeginChild("AssetList", ImVec2(0, 200), true)) {
+
+				//for (const auto& AssetName : AllStaticMeshes) {
+				//	// 검색 필터링 로직
+				//	if (strstr(AssetName.c_str(), searchBuffer) == nullptr) continue;
+
+				//	// 아이콘과 텍스트 배치
+				//	// ImGui::Image((void*)TextureID, ImVec2(16, 16)); // 아이콘이 있다면 추가
+				//	// ImGui::SameLine();
+				//	if (ImGui::Selectable(AssetName.c_str())) {
+				//		// 에셋 선택 시 처리 로직
+				//		SelectedAsset = AssetName;
+				//		ImGui::CloseCurrentPopup(); // 선택 후 팝업 닫기
+				//	}
+				//}
+				ImGui::EndChild();
+			}
+			ImGui::EndPopup();
+		}
+	}
 }
 
 void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
