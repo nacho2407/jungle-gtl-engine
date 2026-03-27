@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-
 #include "Core/CoreTypes.h"
 
 class IAssetLoader
