@@ -1,8 +1,7 @@
 ﻿#include "SceneComponent.h"
 #include "Object/ObjectFactory.h"
 
-DEFINE_CLASS(USceneComponent, UActorComponent)
-REGISTER_FACTORY(USceneComponent)
+IMPLEMENT_CLASS(USceneComponent, UActorComponent)
 
 void USceneComponent::AttachToComponent(USceneComponent* InParent)
 {
