@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Engine/Runtime/Engine.h"
 
@@ -42,6 +42,14 @@ public:
 	const TArray<FEditorViewportClient*>& GetAllViewportClients() const { return AllViewportClients; }
 	const TArray<FLevelEditorViewportClient*>& GetLevelViewportClients() const { return LevelViewportClients; }
 
+	// 활성 뷰포트 관리 — 입력은 활성 뷰포트에만 전달
+	void SetActiveViewport(FLevelEditorViewportClient* InClient);
+	FLevelEditorViewportClient* GetActiveViewport() const { return ActiveViewportClient; }
+
+	// 뷰포트 분할 토글 (1 ↔ 4)
+	void ToggleViewportSplit();
+	bool IsSplitViewport() const { return bIsSplitViewport; }
+
 	void RenderUI(float DeltaTime);
 
 private:
@@ -51,4 +59,6 @@ private:
 	// UE 구조: AllViewportClients 는 모든 에디터 뷰포트, LevelViewportClients 는 레벨 편집 전용
 	TArray<FEditorViewportClient*> AllViewportClients;
 	TArray<FLevelEditorViewportClient*> LevelViewportClients;
+	FLevelEditorViewportClient* ActiveViewportClient = nullptr;
+	bool bIsSplitViewport = false;
 };
