@@ -10,6 +10,7 @@
 #include "Core/PropertyTypes.h"
 #include "Core/ResourceManager.h"
 #include "Object/FName.h"
+#include "Object/ObjectIterator.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -207,18 +208,18 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 	TargetComp = Cast<UStaticMeshComp>(PrimaryActor->GetRootComponent());
 	if (TargetComp)
 	{
+		// 나중에 바뀜
+		FString currentStaticMeshName = "None";
+		if (TargetComp->GetStaticMesh())
+		{
+			currentStaticMeshName = TargetComp->GetStaticMesh()->GetAssetPathFileName();
+		}
+
 		ImGui::Separator();
 		if (ImGui::CollapsingHeader("Static Mesh", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			// 나중에 바뀜
-			FString currentStaticMeshName = "None";
-			if (TargetComp->StaticMesh)
-			{
-				currentStaticMeshName = TargetComp->StaticMesh->GetAssetPathFileName();
-			}
-
 			// 1. 드롭다운을 여는 버튼
-			if (ImGui::Button("SM_Cube ▼")) {
+			if (ImGui::Button(currentStaticMeshName.c_str())) {
 				ImGui::OpenPopup("StaticMeshDropdown");
 			}
 
@@ -228,35 +229,41 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 			// 2. 팝업 내용 구성
 			if (ImGui::BeginPopup("StaticMeshDropdown")) {
 				// --- 검색창 ---
-				ImGui::TextDisabled("탐색");
-				static char searchBuffer[128] = "";
-				ImGui::InputText("##Search", searchBuffer, IM_ARRAYSIZE(searchBuffer));
+				//ImGui::TextDisabled("탐색");
+				//static char searchBuffer[128] = "";
+				//ImGui::InputText("##Search", searchBuffer, IM_ARRAYSIZE(searchBuffer));
 
 				// --- 에셋 리스트 (스크롤 영역) ---
 				// 높이를 지정하여 스크롤바가 생기도록 함
-				if (ImGui::BeginChild("StaticMeshList", ImVec2(0, 200), true)) {
+				if (ImGui::BeginChild("StaticMeshList", ImVec2(0, 200), true))
+				{
+					for (TObjectIterator<UStaticMesh> It; It; ++It)
+					{
+						UStaticMesh* MeshAsset = *It;
+						if (!MeshAsset) continue;
 
-					//for (const auto& AssetName : AllStaticMeshes) {
-					//	// 검색 필터링 로직
-					//	if (strstr(AssetName.c_str(), searchBuffer) == nullptr) continue;
+						FString AssetName = MeshAsset->GetAssetPathFileName().c_str();
 
-					//	// 아이콘과 텍스트 배치
-					//	// ImGui::Image((void*)TextureID, ImVec2(16, 16)); // 아이콘이 있다면 추가
-					//	// ImGui::SameLine();
-					//	if (ImGui::Selectable(AssetName.c_str())) {
-					//		// 에셋 선택 시 처리 로직
-					//		SelectedAsset = AssetName;
-					//		ImGui::CloseCurrentPopup(); // 선택 후 팝업 닫기
-					//	}
-					//}
+						bool bIsSelected = (currentStaticMeshName == MeshAsset->GetAssetPathFileName());
+
+						if (ImGui::Selectable(AssetName.c_str(), bIsSelected))
+						{
+							TargetComp->SetStaticMesh(MeshAsset);
+
+							ImGui::CloseCurrentPopup();
+						}
+
+						if (bIsSelected)
+						{
+							ImGui::SetItemDefaultFocus();
+						}
+					}
 					ImGui::EndChild();
 				}
 				ImGui::EndPopup();
 			}
 		}
 	}
-
-
 
 	ImGui::Separator();
 	if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen))

@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Component/MeshComponent.h"
+#include "Mesh/StaticMesh.h"
 
 namespace json { class JSON; }
 class UStaticMesh;
