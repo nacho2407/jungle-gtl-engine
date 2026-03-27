@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Asset/StaticMesh.h"
 #include "Core/CoreTypes.h"
 #include "Core/Singleton.h"
 #include "Core/ResourceTypes.h"
@@ -52,4 +53,6 @@ private:
 	TMap<FString, FFontResource>     FontResources;
 	TMap<FString, FParticleResource> ParticleResources;
 	TMap<FString, FMaterialResource> MaterialTextureResources;
+	
+	TMap<FString, UStaticMesh*> StaticMeshes;
 };

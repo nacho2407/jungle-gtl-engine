@@ -433,3 +433,18 @@ FMatrix FMatrix::MakeRotationAxis(const FVector& Axis, float Angle)
 
 	return ret;
 }
+
+FVector FMatrix::TransformPosition(const FVector& Vector) const
+{
+	return TransformPositionWithW(Vector);
+}
+
+FVector FMatrix::InverseTransformPosition(const FVector& Vector) const
+{
+	return GetInverse().TransformPositionWithW(Vector);
+}
+
+FVector FMatrix::InverseTransformVector(const FVector& Vector) const
+{
+	return GetInverse().TransformVector(Vector);
+}
