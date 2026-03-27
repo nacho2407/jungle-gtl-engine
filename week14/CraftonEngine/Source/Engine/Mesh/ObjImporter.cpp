@@ -132,7 +132,67 @@ TArray<FObjMaterialInfo> FObjImporter::ParseMtl(const std::string& MtlPath)
 	return {};
 }
 
+// assume that all faces are triangles and that (v, vt, vn) are all present.
+// and, size of PosIndices, UVIndices, NormalIndices are all the same.
+// Not yet handling "usemtl" and material assignment.
 FStaticMesh FObjImporter::Convert(const FObjInfo& ObjInfo)
 {
-	return nullptr;
+	FStaticMesh OutMesh = FStaticMesh();
+
+	// TODO: unordered_map은 FVertexKey의 해시 함수를 정의해야 해서 map으로 대체
+	std::map<FVertexKey, uint32> VertexMap;
+
+	// for each Triangle (3 indices)
+	const size_t IndexCount = ObjInfo.PosIndices.size();
+	for (size_t i = 0; i < IndexCount; i += 3)
+	{
+		// indices to be added to index buffer for this triangle
+		uint32 TriangleIndices[3];
+
+		for (int j = 0; j < 3; ++j)
+		{
+			size_t CurrentIndex = i + j;
+			FVertexKey Key = {
+				ObjInfo.PosIndices[CurrentIndex],
+				ObjInfo.UVIndices[CurrentIndex],
+				ObjInfo.NormalIndices[CurrentIndex]
+			};
+
+			auto It = VertexMap.find(Key);
+			if (It != VertexMap.end())
+			{
+				// already exists, reuse vertex buffer index
+				TriangleIndices[j] = It->second;
+			}
+			else
+			{
+				// new vertex, add to vertex buffer
+				FNormalVertex NewVertex;
+
+				NewVertex.pos = ObjInfo.Positions[Key.p];
+				NewVertex.normal = ObjInfo.Normals[Key.n];
+
+				// RHS -> LHS
+				NewVertex.pos.Z = -NewVertex.pos.Z;
+				NewVertex.normal.Z = -NewVertex.normal.Z;
+
+				// UV left-bottom -> left-top
+				NewVertex.tex = ObjInfo.UVs[Key.t];
+
+				NewVertex.color = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+				uint32 NewIndex = static_cast<uint32>(OutMesh.Vertices.size());
+				OutMesh.Vertices.emplace_back(NewVertex);
+
+				VertexMap[Key] = NewIndex;
+				TriangleIndices[j] = NewIndex;
+			}
+		}
+
+		// CCW -> CW
+		OutMesh.Indices.emplace_back(TriangleIndices[0]);
+		OutMesh.Indices.emplace_back(TriangleIndices[2]);
+		OutMesh.Indices.emplace_back(TriangleIndices[1]);
+	}
+	return OutMesh;
 }
