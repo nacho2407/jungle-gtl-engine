@@ -168,8 +168,8 @@
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorPropertyWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorSceneWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorViewportOverlayWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorStatWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorViewportOverlayWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp" />
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
@@ -182,9 +182,11 @@
     <ClCompile Include="Source\Engine\Component\TextRenderComponent.cpp" />
     <ClCompile Include="Source\Engine\Core\CrashDump.cpp" />
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
+    <ClCompile Include="Source\Engine\Core\GPUProfiler.cpp" />
     <ClCompile Include="Source\Engine\Core\InputSystem.cpp" />
     <ClCompile Include="Source\Engine\Core\Paths.cpp" />
     <ClCompile Include="Source\Engine\Core\ResourceManager.cpp" />
+    <ClCompile Include="Source\Engine\Core\Stats.cpp" />
     <ClCompile Include="Source\Engine\Core\Timer.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\PrimitiveActors.cpp" />
@@ -201,8 +203,8 @@
     <ClCompile Include="Source\Engine\Render\SubUVBatcher.cpp" />
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp" />
     <ClCompile Include="Source\Engine\Render\Mesh\MeshManager.cpp" />
-    <ClCompile Include="Source\Engine\Render\Renderer\Renderer.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\DefaultRenderPipeline.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\Renderer.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\MeshBufferManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Shader.cpp" />
@@ -213,8 +215,6 @@
     <ClCompile Include="Source\Engine\Runtime\Launch.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsApplication.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp" />
-    <ClCompile Include="Source\Engine\Core\Stats.cpp" />
-    <ClCompile Include="Source\Engine\Core\GPUProfiler.cpp" />
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_demo.cpp" />
@@ -235,8 +235,8 @@
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h" />
     <ClInclude Include="Source\Editor\UI\EditorPropertyWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorSceneWidget.h" />
-    <ClInclude Include="Source\Editor\UI\EditorViewportOverlayWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorStatWidget.h" />
+    <ClInclude Include="Source\Editor\UI\EditorViewportOverlayWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorWidget.h" />
     <ClInclude Include="Source\Editor\Viewport\CursorOverlayState.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
@@ -255,6 +255,7 @@
     <ClInclude Include="Source\Engine\Core\CrashDump.h" />
     <ClInclude Include="Source\Engine\Core\Debug.h" />
     <ClInclude Include="Source\Engine\Core\EngineTypes.h" />
+    <ClInclude Include="Source\Engine\Core\GPUProfiler.h" />
     <ClInclude Include="Source\Engine\Core\InputSystem.h" />
     <ClInclude Include="Source\Engine\Core\Paths.h" />
     <ClInclude Include="Source\Engine\Core\PropertyTypes.h" />
@@ -263,7 +264,6 @@
     <ClInclude Include="Source\Engine\Core\ResourceTypes.h" />
     <ClInclude Include="Source\Engine\Core\Singleton.h" />
     <ClInclude Include="Source\Engine\Core\Stats.h" />
-    <ClInclude Include="Source\Engine\Core\GPUProfiler.h" />
     <ClInclude Include="Source\Engine\Core\Timer.h" />
     <ClInclude Include="Source\Engine\GameFramework\AActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\PrimitiveActors.h" />
@@ -284,9 +284,9 @@
     <ClInclude Include="Source\Engine\Render\Common\ViewTypes.h" />
     <ClInclude Include="Source\Engine\Render\Device\D3DDevice.h" />
     <ClInclude Include="Source\Engine\Render\Mesh\MeshManager.h" />
-    <ClInclude Include="Source\Engine\Render\Renderer\Renderer.h" />
-    <ClInclude Include="Source\Engine\Render\Renderer\IRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\DefaultRenderPipeline.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\IRenderPipeline.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\Renderer.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h" />
     <ClInclude Include="Source\Engine\Render\Resource\MeshBufferManager.h" />
     <ClInclude Include="Source\Engine\Render\Resource\RenderResources.h" />
