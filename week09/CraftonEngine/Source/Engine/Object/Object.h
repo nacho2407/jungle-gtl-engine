@@ -150,3 +150,9 @@ public:
 		return GUObjectArray[Index];
 	}
 };
+
+template<typename T>
+T* Cast(UObject* Obj)
+{
+	return Obj ? Obj->Cast<T>() : nullptr;
+}
