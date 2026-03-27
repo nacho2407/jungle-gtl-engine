@@ -132,6 +132,12 @@
     <ClCompile Include="Source\Asset\FontAtlasLoader.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Asset\StaticMesh.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\StreamableRenderAsset.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Asset\SubUVAtlasAsset.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
@@ -195,10 +201,16 @@
     <ClCompile Include="Source\CoreUObject\ObjectFactory.cpp">
       <Filter>Source\CoreUObject</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Core\MeshComponent.cpp">
+      <Filter>Source\Engine\Component\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\Core\PrimitiveComponent.cpp">
       <Filter>Source\Engine\Component\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Core\SceneComponent.cpp">
+      <Filter>Source\Engine\Component\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Core\StaticMeshComponent.cpp">
       <Filter>Source\Engine\Component\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Core\UnknownComponent.cpp">
@@ -416,6 +428,12 @@
     <ClInclude Include="Source\Asset\FontAtlasLoader.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Asset\StaticMesh.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\StreamableRenderAsset.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Asset\SubUVAtlasAsset.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
@@ -551,10 +569,16 @@
     <ClInclude Include="Source\Engine\Component\Core\ComponentProperty.h">
       <Filter>Source\Engine\Component\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Core\MeshComponent.h">
+      <Filter>Source\Engine\Component\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\Core\PrimitiveComponent.h">
       <Filter>Source\Engine\Component\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Core\SceneComponent.h">
+      <Filter>Source\Engine\Component\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Core\StaticMeshComponent.h">
       <Filter>Source\Engine\Component\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Core\UnknownComponent.h">
@@ -779,6 +803,5 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="EngineClassDiagram.cd" />
   </ItemGroup>
 </Project>
