@@ -1,10 +1,21 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Object/FName.h"
 
 // COM 인터페이스 전방 선언 (d3d11.h 없이 포인터 사용 가능)
 struct ID3D11ShaderResourceView;
+
+struct FTextureResource
+{
+	FName	Name;
+	FString Path;
+
+	ID3D11ShaderResourceView* SRV = nullptr;
+
+	bool IsLoaded() const { return SRV != nullptr;  }
+};
+
 
 // Font/Particle 공통 텍스처 아틀라스 리소스.
 // ResourceManager가 소유하며, 컴포넌트는 포인터로 참조만 합니다.
@@ -25,3 +36,5 @@ struct FTextureAtlasResource
 // 의미론적 별칭 — 타입은 동일하지만 용도를 명시합니다.
 using FFontResource     = FTextureAtlasResource;
 using FParticleResource = FTextureAtlasResource;
+using FMaterialResource = FTextureResource;
+

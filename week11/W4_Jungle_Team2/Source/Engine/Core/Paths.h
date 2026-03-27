@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include <Windows.h>
@@ -21,6 +21,7 @@ public:
 	static std::wstring ShaderFilePath(); // Shaders/ShaderW0.hlsl
 	static std::wstring SettingsFilePath();  // Settings/Editor.ini
 	static std::wstring ResourceFilePath();  // Settings/Resource.ini
+	static std::wstring MaterialTextureDir(); //Model/Texture/
 
 	// 경로 결합: FPaths::Combine(L"Asset/Scene", L"Default.Scene")
 	static std::wstring Combine(const std::wstring& Base, const std::wstring& Child);
