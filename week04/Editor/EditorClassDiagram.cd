@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="FEditor" Collapsed="true">
+    <Position X="2.25" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AKkBiyeQgAHGFUNQEgCGAiFOOhEjAUlhgAAAMTgD2aE=</HashCode>
+      <FileName>Source\Editor\Editor.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FEditorEngineLoop" Collapsed="true">
+    <Position X="2.25" Y="7" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>EIhYGAAQABQAQkABQAAACABAAEQAAIEAcSCQQSAAQQI=</HashCode>
+      <FileName>Source\Launch\EditorEngineLoop.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FEditorViewportClient" Collapsed="true">
+    <Position X="4.75" Y="8.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAIAIIAgBAQA0QAQgAjYAICAAABAEgACBCAAJIAQBA=</HashCode>
+      <FileName>Source\Viewport\EditorViewportClient.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Struct Name="FDeferredSceneAction" Collapsed="true">
+    <Position X="2.25" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAABAAAAAAAAAAAEAAAAAAAAQAAAAAAAAA=</HashCode>
+      <FileName>Source\Editor\Editor.h</FileName>
+    </TypeIdentifier>
+  </Struct>
+  <Struct Name="FSceneDocumentState" Collapsed="true">
+    <Position X="4" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>BAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAACAAAAAAAA=</HashCode>
+      <FileName>Source\Editor\Editor.h</FileName>
+    </TypeIdentifier>
+  </Struct>
+  <Enum Name="EDeferredSceneActionType" Collapsed="true">
+    <Position X="2.25" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAEAAAAACAAAAAAAAAgIAAAAAAAAEAAAA=</HashCode>
+      <FileName>Source\Editor\Editor.h</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Font Name="맑은 고딕" Size="9" />
+</ClassDiagram>

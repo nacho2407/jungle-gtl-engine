@@ -1,0 +1,95 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="Engine::Component::FComponentPropertyBuilder" Collapsed="true">
+    <Position X="6" Y="3" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQCAEAAAAAAAAAIAABAAAAAAEAAAAAAAAQCABCAAA=</HashCode>
+      <FileName>Source\Engine\Component\Core\ComponentProperty.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Engine::Component::USceneComponent" Collapsed="true">
+    <Position X="2.5" Y="3" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>gAQAAAAhgoQOEADQQAEBAAKgAgAiAAAAAIAEQAKAAgI=</HashCode>
+      <FileName>Source\Engine\Component\Core\SceneComponent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Engine::Component::UPrimitiveComponent" Collapsed="true">
+    <Position X="3" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAARgAAEAAAAAAAAAACAAAgAAACAAAgIgSQgAwg=</HashCode>
+      <FileName>Source\Engine\Component\Core\PrimitiveComponent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Engine::Component::UUnknownComponent" Collapsed="true">
+    <Position X="5.25" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAACAAAAAAAQgACAAiAAAAAAAAAAAAAACIAA=</HashCode>
+      <FileName>Source\Engine\Component\Core\UnknownComponent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Engine::Component::UCubeComponent" Collapsed="true">
+    <Position X="3" Y="6" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AQAAAAAQAAAAAAAAAAAAAAAAABAAAAAAAAAIACAAAAA=</HashCode>
+      <FileName>Source\Engine\Component\Mesh\CubeComponent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Engine::Component::UQuadComponent" Collapsed="true">
+    <Position X="1" Y="6" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAQAAAAAAAAAAAIAAAAAEAAAAAAAAAIACAAAAA=</HashCode>
+      <FileName>Source\Engine\Component\Mesh\QuadComponent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Engine::Component::URingComponent" Collapsed="true">
+    <Position X="4.75" Y="6" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAQAAAAAAAAAAAAAAAAEAAAIAAAAAAIACAAAAA=</HashCode>
+      <FileName>Source\Engine\Component\Mesh\RingComponent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Engine::Component::UUUIDComponent" Collapsed="true">
+    <Position X="3" Y="11.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAIAAIAAAAgBAAgABAAAAgAAAAAAAAAAAAAAQ=</HashCode>
+      <FileName>Source\Engine\Component\Text\UUIDComponent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Engine::Component::UAtlasTextComponent" Collapsed="true">
+    <Position X="3" Y="10.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAk4AIoAAAMAIQBhEBAAARABMACAAQAKgIAAAA=</HashCode>
+      <FileName>Source\Engine\Component\Text\AtlasTextComponent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Engine::Component::USpriteComponent" Collapsed="true">
+    <Position X="1" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAgwAAAAQABCgAFAAAAAAAABAACAJAACAAAIgA=</HashCode>
+      <FileName>Source\Engine\Component\Sprite\SpriteComponent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Engine::Component::UAtlasComponent" Collapsed="true">
+    <Position X="1" Y="8.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>gAAAAAAAwAAAAIAAgAAAAAIAAAAAAAAAACAAAAgACAA=</HashCode>
+      <FileName>Source\Engine\Component\Sprite\AtlasComponent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Engine::Component::USubUVComponent" Collapsed="true">
+    <Position X="1" Y="10.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAgAAQBMBAAAABIMAAIAAAAAAAAAAAACAAAAA=</HashCode>
+      <FileName>Source\Engine\Component\Sprite\SubUVComponent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Engine::Component::USubUVAnimatedComponent" Collapsed="true">
+    <Position X="1" Y="11.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAgQAAAAAAAAAAEAAAAAAACAIAIAAAEEAAAiA=</HashCode>
+      <FileName>Source\Engine\Component\Sprite\SubUVAnimatedComponent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="맑은 고딕" Size="9" />
+</ClassDiagram>

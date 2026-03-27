@@ -156,6 +156,7 @@
     <ClInclude Include="Source\ThirdParty\Json\json.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="EngineClassDiagram.cd" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
