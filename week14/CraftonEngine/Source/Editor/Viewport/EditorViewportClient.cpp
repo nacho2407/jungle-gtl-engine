@@ -6,11 +6,13 @@
 #include "Engine/Runtime/WindowsWindow.h"
 
 #include "Component/CameraComponent.h"
+#include "Viewport/Viewport.h"
 #include "GameFramework/World.h"
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Object/Object.h"
 #include "Editor/Selection/SelectionManager.h"
+#include "ImGui/imgui.h"
 
 void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
 {
@@ -61,6 +63,8 @@ void FEditorViewportClient::SetViewportSize(float InWidth, float InHeight)
 
 void FEditorViewportClient::Tick(float DeltaTime)
 {
+	if (!bIsActive) return;
+
 	TickInput(DeltaTime);
 	TickInteraction(DeltaTime);
 	TickCursorOverlay(DeltaTime);
@@ -171,10 +175,15 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		}
 	}
 
+	// 마우스 좌표를 뷰포트 슬롯 로컬 좌표로 변환
+	// (ImGui screen space = 윈도우 클라이언트 좌표)
 	POINT MousePoint = InputSystem::Get().GetMousePos();
 	MousePoint = Window->ScreenToClientPoint(MousePoint);
 
-	//	Cursor
+	float LocalMouseX = static_cast<float>(MousePoint.x) - ViewportScreenRect.X;
+	float LocalMouseY = static_cast<float>(MousePoint.y) - ViewportScreenRect.Y;
+
+	//	Cursor (윈도우 클라이언트 좌표 유지)
 	CursorOverlayState.ScreenX = static_cast<float>(MousePoint.x);
 	CursorOverlayState.ScreenY = static_cast<float>(MousePoint.y);
 
@@ -231,7 +240,10 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		}
 	}
 
-	FRay Ray = Camera->DeprojectScreenToWorld(static_cast<float>(MousePoint.x), static_cast<float>(MousePoint.y), WindowWidth, WindowHeight);
+	// FViewport 크기 기준으로 디프로젝션 (슬롯 크기와 동기화됨)
+	float VPWidth  = Viewport ? static_cast<float>(Viewport->GetWidth())  : WindowWidth;
+	float VPHeight = Viewport ? static_cast<float>(Viewport->GetHeight()) : WindowHeight;
+	FRay Ray = Camera->DeprojectScreenToWorld(LocalMouseX, LocalMouseY, VPWidth, VPHeight);
 	FHitResult HitResult;
 
 	//Gizmo Hover
@@ -330,5 +342,44 @@ void FEditorViewportClient::TickCursorOverlay(float DeltaTime)
 	{
 		CursorOverlayState.CurrentRadius = 0.0f;
 		CursorOverlayState.bVisible = false;
+	}
+}
+
+void FEditorViewportClient::UpdateLayoutRect()
+{
+	if (!LayoutWindow) return;
+
+	const FRect& R = LayoutWindow->GetRect();
+	ViewportScreenRect = R;
+
+	// FViewport 리사이즈 요청 (슬롯 크기와 RT 크기 동기화)
+	if (Viewport)
+	{
+		uint32 SlotW = static_cast<uint32>(R.Width);
+		uint32 SlotH = static_cast<uint32>(R.Height);
+		if (SlotW > 0 && SlotH > 0 && (SlotW != Viewport->GetWidth() || SlotH != Viewport->GetHeight()))
+		{
+			Viewport->RequestResize(SlotW, SlotH);
+		}
+	}
+}
+
+void FEditorViewportClient::RenderViewportImage(bool bIsActiveViewport)
+{
+	if (!Viewport || !Viewport->GetSRV()) return;
+
+	const FRect& R = ViewportScreenRect;
+	if (R.Width <= 0 || R.Height <= 0) return;
+
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	ImVec2 Min(R.X, R.Y);
+	ImVec2 Max(R.X + R.Width, R.Y + R.Height);
+
+	DrawList->AddImage((ImTextureID)Viewport->GetSRV(), Min, Max);
+
+	// 활성 뷰포트 테두리 강조
+	if (bIsActiveViewport)
+	{
+		DrawList->AddRect(Min, Max, IM_COL32(255, 200, 0, 200), 0.0f, 0, 2.0f);
 	}
 }

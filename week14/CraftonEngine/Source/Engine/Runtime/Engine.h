@@ -11,6 +11,7 @@
 class FWindowsWindow;
 class FTimer;
 class UCameraComponent;
+class UGameViewportClient;
 
 class UEngine : public UObject
 {
@@ -52,6 +53,10 @@ public:
 
 	FRenderer& GetRenderer() { return Renderer; }
 
+	// Game Viewport Client — PIE/Standalone 용
+	void SetGameViewportClient(UGameViewportClient* InClient) { GameViewportClient = InClient; }
+	UGameViewportClient* GetGameViewportClient() const { return GameViewportClient; }
+
 protected:
 	void Render(float DeltaTime);
 	void SetRenderPipeline(std::unique_ptr<IRenderPipeline> InPipeline);
@@ -64,6 +69,8 @@ protected:
 	TArray<FWorldContext> WorldList;
 
 	FTimer* Timer = nullptr;
+
+	UGameViewportClient* GameViewportClient = nullptr;
 
 	FRenderer Renderer;
 

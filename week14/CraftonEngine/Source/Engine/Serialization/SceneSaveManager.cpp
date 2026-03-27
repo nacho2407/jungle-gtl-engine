@@ -1,4 +1,4 @@
-#include "SceneSaveManager.h"
+﻿#include "SceneSaveManager.h"
 
 #include <iostream>
 #include <fstream>
@@ -16,18 +16,18 @@
 
 namespace SceneKeys
 {
-	static constexpr const char* Version           = "Version";
-	static constexpr const char* Name              = "Name";
-	static constexpr const char* ClassName          = "ClassName";
-	static constexpr const char* WorldType         = "WorldType";
-	static constexpr const char* ContextName       = "ContextName";
-	static constexpr const char* ContextHandle     = "ContextHandle";
-	static constexpr const char* Actors            = "Actors";
-	static constexpr const char* Visible           = "bVisible";
-	static constexpr const char* RootComponent     = "RootComponent";
+	static constexpr const char* Version = "Version";
+	static constexpr const char* Name = "Name";
+	static constexpr const char* ClassName = "ClassName";
+	static constexpr const char* WorldType = "WorldType";
+	static constexpr const char* ContextName = "ContextName";
+	static constexpr const char* ContextHandle = "ContextHandle";
+	static constexpr const char* Actors = "Actors";
+	static constexpr const char* Visible = "bVisible";
+	static constexpr const char* RootComponent = "RootComponent";
 	static constexpr const char* NonSceneComponents = "NonSceneComponents";
-	static constexpr const char* Properties        = "Properties";
-	static constexpr const char* Children          = "Children";
+	static constexpr const char* Properties = "Properties";
+	static constexpr const char* Children = "Children";
 }
 
 static const char* WorldTypeToString(EWorldType Type)
