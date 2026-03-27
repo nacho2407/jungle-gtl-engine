@@ -29,7 +29,7 @@ public:
 	void ResetCamera();
 
 	void ClampCameraPosition();
-	void ClampCameraRotation();
+	void ClampCameraPanToObject(); // 화면 이탈 방지 함수 추가
 	UCameraComponent* GetCamera() const { return Camera; }
 
 	void Tick(float DeltaTime);

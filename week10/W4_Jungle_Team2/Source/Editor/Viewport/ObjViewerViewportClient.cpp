@@ -127,6 +127,7 @@ void FObjViewerViewportClient::Tick(float DeltaTime)
     TickCursorOverlay(DeltaTime);
 
 	// Camera Position 및 Lookat 좌표를 제한
+	ClampCameraPanToObject(); // 화면 이탈 방지 함수 추가
 	ClampCameraPosition();
 }
 
@@ -154,17 +155,16 @@ void FObjViewerViewportClient::TickInput(float DeltaTime)
 
     // Mouse sensitivity is degrees per pixel (do not multiply by DeltaTime)
     float MouseRotationSpeed = 0.5f * RotateSensitivity;
-	
     if (bIsOrbiting && InputSystem::Get().GetRightDragging())
     {
         float DeltaX = static_cast<float>(InputSystem::Get().MouseDeltaX());
         float DeltaY = static_cast<float>(InputSystem::Get().MouseDeltaY());
 
-        // 카메라를 타겟(회전의 중심점) 위치로 이동시킨 뒤, 마우스 이동량만큼 회전시킵니다.
+        // 카메라를 타겟(회전의 중심점) 위치로 이동시킨 뒤, 마우스 이동량만큼 회전
         Camera->SetWorldLocation(OrbitPivot);
         Camera->Rotate(DeltaX * MouseRotationSpeed, DeltaY * MouseRotationSpeed);
         
-        // 회전된 카메라의 '로컬 X축(앞)'의 반대 방향으로 Distance만큼 이동합니다.
+        // 회전된 카메라의 '로컬 X축(앞)'의 반대 방향으로 Distance만큼 이동
         Camera->MoveLocal(FVector(-OrbitDistance, 0.0f, 0.0f));
     }
 
@@ -303,16 +303,73 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
         const float MoveSensitivity = Settings ? Settings->CameraMoveSensitivity : 1.f;
         float PanSpeed = MoveSensitivity * 0.01f;
 
+		FVector Center = FVector(0.0f, 0.0f, 0.0f);
+        FVector OldPos = Camera->GetWorldLocation();
+		float OldDist = (OldPos - Center).Length();
+
         // MoveLocal은 로컬 좌표계를 사용한다. (X: 전진, Y: 우측, Z: 상단)
         // 마우스를 우측(+)으로 끌면 화면은 좌측(-)으로, 마우스를 아래(+)로 끌면 화면은 위(+)로 이동합니다.
         FVector Move(0.0f, -DeltaX * PanSpeed, DeltaY * PanSpeed);
         Camera->MoveLocal(Move);
+
+		// 파고들기 방지: 이동 후 거리가 줄어들었다면 원래 거리로 밀어냄
+        FVector NewPos = Camera->GetWorldLocation();
+        float NewDist = (NewPos - Center).Length();
+
+        if (NewDist < OldDist)
+        {
+            FVector Dir = NewPos - Center;
+            Dir.Normalize();
+            
+            // 거리를 OldDist로 강제 복구
+            Camera->SetWorldLocation(Center + Dir * OldDist);
+        }
     }
     else if (InputSystem::Get().GetLeftDragEnd())
     {
     }
 
 	ClampCameraPosition();
+}
+
+void FObjViewerViewportClient::ClampCameraPanToObject()
+{
+    if (!Camera || !World) return;
+
+	 // 최신 카메라 행렬 확보
+    Camera->UpdateWorldMatrix();
+    FVector SceneCenter = FVector(0.0f, 0.0f, 0.0f);
+    FVector CamPos = Camera->GetWorldLocation();
+    FVector CamFwd = Camera->GetForwardVector();
+    FVector CamRight = Camera->GetRightVector();
+    FVector CamUp = Camera->GetUpVector();
+
+    FVector ToObject = SceneCenter - CamPos;
+    float DistZ = ToObject.Dot(CamFwd);
+    float DistX = ToObject.Dot(CamRight);
+    float DistY = ToObject.Dot(CamUp);
+
+    // 피타고라스의 정리를 이용해 '화면 중앙에서의 2D 직선 거리' 계산
+    float CurrentPanDist = std::sqrt(DistX * DistX + DistY * DistY);
+
+    // 직교 투영, 원근 투영에 따라 화면을 벗어나지 않도록 허용할 최대 이탈 거리 계산
+    float MaxAllowedPan = 0.0f;
+    if (Camera->IsOrthogonal())
+	{
+        MaxAllowedPan = Camera->GetOrthoWidth() * 0.5f * 0.8f;
+	}
+    else
+	{
+        MaxAllowedPan = DistZ * std::tan(Camera->GetFOV() * 0.5f) * 0.8f;
+	}
+
+    // 물체가 화면 허용 범위를 넘어갈 때 제한한다.
+    if (CurrentPanDist > MaxAllowedPan)
+    {
+        float CorrectionScale = 1.0f - (MaxAllowedPan / CurrentPanDist);
+        FVector Correction = CamRight * (DistX * CorrectionScale) + CamUp * (DistY * CorrectionScale);
+        Camera->SetWorldLocation(CamPos + Correction);
+    }
 }
 
 void FObjViewerViewportClient::HandleDragStart(const FRay& Ray)
