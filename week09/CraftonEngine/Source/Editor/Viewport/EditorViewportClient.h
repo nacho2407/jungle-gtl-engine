@@ -4,6 +4,7 @@
 #include "Render/Common/RenderTypes.h"
 
 #include "Viewport/CursorOverlayState.h"
+#include "UI/SWindow.h"
 #include <string>
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
@@ -44,6 +45,16 @@ public:
 	void SetViewport(FViewport* InViewport) { Viewport = InViewport; }
 	FViewport* GetViewport() const { return Viewport; }
 
+	// SWindow 레이아웃 연결 — SSplitter 리프 노드
+	void SetLayoutWindow(SWindow* InWindow) { LayoutWindow = InWindow; }
+	SWindow* GetLayoutWindow() const { return LayoutWindow; }
+
+	// SWindow Rect → ViewportScreenRect 갱신 + FViewport 리사이즈 요청
+	void UpdateLayoutRect();
+
+	// ImDrawList에 자신의 SRV를 SWindow Rect 위치에 렌더 (활성 테두리 포함)
+	void RenderViewportImage(bool bIsActiveViewport);
+
 private:
 	void TickInput(float DeltaTime);
 	void TickInteraction(float DeltaTime);
@@ -53,6 +64,7 @@ private:
 
 private:
 	FViewport* Viewport = nullptr;
+	SWindow* LayoutWindow = nullptr;
 	FWindowsWindow* Window = nullptr;
 	UWorld* World = nullptr;
 	UCameraComponent* Camera = nullptr;
@@ -65,6 +77,9 @@ private:
 
 	bool bIsActive = false;
 	bool bIsCursorVisible = true;
+
+	// 뷰포트 슬롯의 스크린 좌표 (ImGui screen space = 윈도우 클라이언트 좌표)
+	FRect ViewportScreenRect;
 
 	FCursorOverlayState CursorOverlayState;
 };

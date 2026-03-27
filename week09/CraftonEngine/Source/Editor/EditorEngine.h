@@ -2,13 +2,14 @@
 
 #include "Engine/Runtime/Engine.h"
 
-#include "Editor/Viewport/EditorViewportClient.h"
+#include "Editor/Viewport/FLevelViewportLayout.h"
 #include "Editor/UI/EditorMainPanel.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 
 class UGizmoComponent;
 class FLevelEditorViewportClient;
+class FEditorViewportClient;
 
 class UEditorEngine : public UEngine
 {
@@ -38,27 +39,24 @@ public:
 
 	FSelectionManager& GetSelectionManager() { return SelectionManager; }
 
-	// Viewport Client 관리 (UE: AllViewportClients / LevelViewportClients)
-	const TArray<FEditorViewportClient*>& GetAllViewportClients() const { return AllViewportClients; }
-	const TArray<FLevelEditorViewportClient*>& GetLevelViewportClients() const { return LevelViewportClients; }
+	// 레이아웃에 위임
+	const TArray<FEditorViewportClient*>& GetAllViewportClients() const { return ViewportLayout.GetAllViewportClients(); }
+	const TArray<FLevelEditorViewportClient*>& GetLevelViewportClients() const { return ViewportLayout.GetLevelViewportClients(); }
 
-	// 활성 뷰포트 관리 — 입력은 활성 뷰포트에만 전달
-	void SetActiveViewport(FLevelEditorViewportClient* InClient);
-	FLevelEditorViewportClient* GetActiveViewport() const { return ActiveViewportClient; }
+	void SetActiveViewport(FLevelEditorViewportClient* InClient) { ViewportLayout.SetActiveViewport(InClient); }
+	FLevelEditorViewportClient* GetActiveViewport() const { return ViewportLayout.GetActiveViewport(); }
 
-	// 뷰포트 분할 토글 (1 ↔ 4)
-	void ToggleViewportSplit();
-	bool IsSplitViewport() const { return bIsSplitViewport; }
+	void ToggleViewportSplit() { ViewportLayout.ToggleViewportSplit(); }
+	bool IsSplitViewport() const { return ViewportLayout.IsSplitViewport(); }
+
+	void RenderViewportUI(float DeltaTime) { ViewportLayout.RenderViewportUI(DeltaTime); }
+
+	bool IsMouseOverViewport() const { return ViewportLayout.IsMouseOverViewport(); }
 
 	void RenderUI(float DeltaTime);
 
 private:
 	FSelectionManager SelectionManager;
 	FEditorMainPanel MainPanel;
-
-	// UE 구조: AllViewportClients 는 모든 에디터 뷰포트, LevelViewportClients 는 레벨 편집 전용
-	TArray<FEditorViewportClient*> AllViewportClients;
-	TArray<FLevelEditorViewportClient*> LevelViewportClients;
-	FLevelEditorViewportClient* ActiveViewportClient = nullptr;
-	bool bIsSplitViewport = false;
+	FLevelViewportLayout ViewportLayout;
 };
