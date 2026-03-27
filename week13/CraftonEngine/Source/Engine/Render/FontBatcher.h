@@ -46,12 +46,20 @@ public:
 		const FVector& WorldScale,
 		float Scale = 1.0f);
 
+	// 오버레이 스탯 렌더링용
+	void AddScreenText(const FString& Text,
+		float ScreenX, float ScreenY,
+		float ViewportWidth, float ViewportHeight,
+		float Scale = 1.0f
+	);
+
 	// 이번 프레임 누적 텍스트 초기화
 	void Clear();
 
 	// Dynamic VB 업로드 + 드로우콜 1회
 	// Resource — FontBatcher가 사용할 FontAtlas 리소스 (ResourceManager 소유)
 	void Flush(ID3D11DeviceContext* Context, const FFontResource* Resource);
+	void FlushScreen(ID3D11DeviceContext* Context, const FFontResource* Resource);
 
 	uint32 GetQuadCount() const { return static_cast<uint32>(Vertices.size() / 4); }
 
@@ -71,6 +79,7 @@ private:
 	ID3D11Device*       Device       = nullptr;
 	ID3D11SamplerState* SamplerState = nullptr;
 	FShader             FontShader;
+	FShader				OverlayFontShader;
 
 	// CharInfoMap — Atlas 그리드가 바뀔 때만 재빌드
 	// key: Unicode 코드포인트 (ASCII 33~126, 한글 U+AC00~U+D7A3)

@@ -27,6 +27,9 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 	};
 	FontShader.Create(Device, L"Shaders/ShaderFont.hlsl",
 		"VS", "PS", layout, ARRAYSIZE(layout));
+
+	OverlayFontShader.Create(Device, L"Shaders/ShaderOverlayFont.hlsl",
+		"VS", "PS", layout, ARRAYSIZE(layout));
 }
 
 void FFontBatcher::CreateBuffers()
@@ -86,6 +89,7 @@ void FFontBatcher::Release()
 	if (SamplerState) { SamplerState->Release(); SamplerState = nullptr; }
 
 	FontShader.Release();
+	OverlayFontShader.Release();
 }
 
 void FFontBatcher::AddText(const FString& Text,
@@ -157,6 +161,19 @@ void FFontBatcher::AddText(const FString& Text,
 	Indices.resize(IdxBase + CharIdx * 6);
 }
 
+
+// 오버레이 텍스트
+void FFontBatcher::AddScreenText(const FString& Text,
+	float ScreenX, float ScreenY,
+	float ViewportWidth, float ViewportHeight,
+	float Scale)
+{
+	if (Text.empty()) return;
+	if (ViewportHeight <= 0 || ViewportWidth <= 0) return;
+
+	// ...
+}
+
 void FFontBatcher::Clear()
 {
 	Vertices.clear();
@@ -206,6 +223,45 @@ void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FFontResource* Reso
 	Context->PSSetShaderResources(0, 1, &SRV);
 	Context->PSSetSamplers(0, 1, &SamplerState);
 
+	Context->DrawIndexed(static_cast<uint32>(Indices.size()), 0, 0);
+}
+
+void FFontBatcher::FlushScreen(ID3D11DeviceContext* Context, const FFontResource* Resource)
+{
+	// 오버레이 텍스트는 별도 셰이더 사용
+	if (!Resource || !Resource->IsLoaded()) return;
+	if (Vertices.empty() || !VertexBuffer || !IndexBuffer) return;
+	// Atlas 그리드가 바뀌었으면 CharInfoMap 재빌드
+	if (CachedColumns != Resource->Columns || CachedRows != Resource->Rows)
+	{
+		BuildCharInfoMap(Resource->Columns, Resource->Rows);
+	}
+	// 버퍼 크기 초과 시 재할당
+	if (Vertices.size() > MaxVertexCount || Indices.size() > MaxIndexCount)
+	{
+		MaxVertexCount = static_cast<uint32>(Vertices.size()) * 2;
+		MaxIndexCount = static_cast<uint32>(Indices.size()) * 2;
+		CreateBuffers();
+	}
+	// VB 업로드
+	D3D11_MAPPED_SUBRESOURCE mapped = {};
+	if (FAILED(Context->Map(VertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return;
+	memcpy(mapped.pData, Vertices.data(), sizeof(FTextureVertex) * Vertices.size());
+	Context->Unmap(VertexBuffer, 0);
+	// IB 업로드
+	if (FAILED(Context->Map(IndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return;
+	memcpy(mapped.pData, Indices.data(), sizeof(uint32) * Indices.size());
+	Context->Unmap(IndexBuffer, 0);
+	// 셰이더 바인딩
+	OverlayFontShader.Bind(Context);
+	uint32 stride = sizeof(FTextureVertex), offset = 0;
+	Context->IASetVertexBuffers(0, 1, &VertexBuffer, &stride, &offset);
+	Context->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	// ResourceManager 소유 SRV 바인딩
+	ID3D11ShaderResourceView* SRV = Resource->SRV;
+	Context->PSSetShaderResources(0, 1, &SRV);
+	Context->PSSetSamplers(0, 1, &SamplerState);
 	Context->DrawIndexed(static_cast<uint32>(Indices.size()), 0, 0);
 }
 
