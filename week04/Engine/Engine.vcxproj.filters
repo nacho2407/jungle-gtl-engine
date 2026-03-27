@@ -135,6 +135,9 @@
     <ClCompile Include="Source\Asset\StaticMesh.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Asset\StreamableRenderAsset.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Asset\SubUVAtlasAsset.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
@@ -426,6 +429,9 @@
       <Filter>Source\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\StaticMesh.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\StreamableRenderAsset.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\SubUVAtlasAsset.h">

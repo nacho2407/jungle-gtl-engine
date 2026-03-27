@@ -35,6 +35,7 @@
     <ClInclude Include="Source\Asset\FontAsset.h" />
     <ClInclude Include="Source\Asset\FontAtlasLoader.h" />
     <ClInclude Include="Source\Asset\StaticMesh.h" />
+    <ClInclude Include="Source\Asset\StreamableRenderAsset.h" />
     <ClInclude Include="Source\Asset\SubUVAtlasAsset.h" />
     <ClInclude Include="Source\Asset\SubUVAtlasLoader.h" />
     <ClInclude Include="Source\Asset\Texture2DAsset.h" />
@@ -172,6 +173,7 @@
     <ClCompile Include="Source\Asset\FontAsset.cpp" />
     <ClCompile Include="Source\Asset\FontAtlasLoader.cpp" />
     <ClCompile Include="Source\Asset\StaticMesh.cpp" />
+    <ClCompile Include="Source\Asset\StreamableRenderAsset.cpp" />
     <ClCompile Include="Source\Asset\SubUVAtlasAsset.cpp" />
     <ClCompile Include="Source\Asset\SubUVAtlasLoader.cpp" />
     <ClCompile Include="Source\Asset\Texture2DAsset.cpp" />

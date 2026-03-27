@@ -33,7 +33,7 @@ namespace Engine::Component
         StaticMesh = InStaticMesh;
         if (StaticMesh)
         {
-            // Update material slots if needed
+            // 에셋이 변경되면 머티리얼 슬롯 수를 동기화합니다.
         }
     }
 
@@ -44,7 +44,7 @@ namespace Engine::Component
 
     void UStaticMeshComponent::SetMeshPath(const FString& InPath)
     {
-        // FObjManager linkage needed here
+        // FObjManager 연동 예정
     }
 
     bool UStaticMeshComponent::GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const

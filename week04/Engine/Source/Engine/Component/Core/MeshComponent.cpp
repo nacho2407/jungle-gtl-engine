@@ -2,8 +2,7 @@
 #include "Engine/Component/Core/MeshComponent.h"
 /*
  * #include "Asset/Material.h"
- *
- * 구현 예정 클래스
+ * 추가 예정 클래스
  */
 
 namespace Engine::Component
@@ -14,7 +13,7 @@ namespace Engine::Component
 
     void UMeshComponent::Serialize(bool bIsLoading, void* JsonHandle)
     {
-        // Base mesh serialization logic
+        // 공통 메시 직렬화 로직
     }
 
     void UMeshComponent::InitializeMaterialSlots(uint32 NumSections)
