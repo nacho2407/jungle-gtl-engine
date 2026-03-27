@@ -5,6 +5,7 @@
 #include "Component/TextRenderComponent.h"
 #include <format>
 #include <Component/SubUVComponent.h>
+#include "Mesh/ObjManager.h"
 
 // 나중에 PrimtiveComponent.h에 있는 Cube, Sphere, Plane 지우기
 #include "Component/StaticMeshComponent.h"
@@ -17,15 +18,6 @@ IMPLEMENT_CLASS(AAttachTestActor, AActor)
 
 void ACubeActor::InitDefaultComponents()
 {
-	//auto* SM = AddComponent<UStaticMeshComp>();
-	//SetRootComponent(SM);
-
-	// 큐브 에셋을 매니저에게 요청 (없으면 파싱해서 만들고, 있으면 캐시된 걸 줌)
-	//UStaticMesh* CubeAsset = FObjManager::LoadObjStaticMesh("Data/Cube.obj");
-
-	// 컴포넌트에 에셋 할당 (Assign)
-	//MyStaticMeshComp->StaticMesh = CubeAsset;
-
 	auto* Cube = AddComponent<UCubeComponent>();
 	SetRootComponent(Cube);
 
@@ -91,10 +83,10 @@ void AStaticMeshActor::InitDefaultComponents()
 	SetRootComponent(SM);
 
 	// 큐브 에셋을 매니저에게 요청 (없으면 파싱해서 만들고, 있으면 캐시된 걸 줌)
-	//UStaticMesh* CubeAsset = FObjManager::LoadObjStaticMesh("Data/Cube.obj");
+	UStaticMesh* CubeAsset = FObjManager::LoadObjStaticMesh("Data/Cube.obj");
 
 	// 컴포넌트에 에셋 할당 (Assign)
-	//MyStaticMeshComp->StaticMesh = CubeAsset;
+	SM->SetStaticMesh(CubeAsset);
 
 	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
 	Text->SetFont(FName("Default"));
