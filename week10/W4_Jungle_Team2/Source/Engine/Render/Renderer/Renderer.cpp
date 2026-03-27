@@ -136,7 +136,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 		ERenderPass CurPass = static_cast<ERenderPass>(i);
 		const auto& Commands = InRenderBus.GetCommands(CurPass);
 		if (Commands.empty()) continue;
-
+	
 		if (PassBatchers[i])
 		{
 			ApplyPassRenderState(CurPass, Context, InRenderBus.GetViewMode());
