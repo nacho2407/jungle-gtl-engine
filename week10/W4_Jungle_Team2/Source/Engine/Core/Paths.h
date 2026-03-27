@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include <Windows.h>
@@ -20,6 +20,7 @@ public:
 	// 주요 파일 경로
 	static std::wstring ShaderFilePath(); // Shaders/ShaderW0.hlsl
 	static std::wstring SettingsFilePath();  // Settings/Editor.ini
+	static std::wstring ViewerSettingsFilePath(); // Settings/ObjViewer.ini
 	static std::wstring ResourceFilePath();  // Settings/Resource.ini
 
 	// 경로 결합: FPaths::Combine(L"Asset/Scene", L"Default.Scene")

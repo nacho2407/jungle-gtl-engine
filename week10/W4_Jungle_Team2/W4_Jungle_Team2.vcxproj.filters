@@ -301,6 +301,11 @@
     <ClCompile Include="Source\Editor\ObjViewerEngine.cpp">
       <Filter>Source\Editor</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\ObjViewerRenderPipeline.cpp">
+      <Filter>Source\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Settings\ObjViewerSettings.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\ObjViewerViewportClient.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -563,5 +568,10 @@
     <ClInclude Include="Source\Editor\ObjViewerEngine.h">
       <Filter>Source\Editor</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\ObjViewerRenderPipeline.h">
+      <Filter>Source\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Settings\ObjViewerSettings.h" />
+    <ClInclude Include="Source\Editor\Viewport\ObjViewerViewportClient.h" />
   </ItemGroup>
 </Project>
