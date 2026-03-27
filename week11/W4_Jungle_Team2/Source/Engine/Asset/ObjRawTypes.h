@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Math/Vector.h"
@@ -48,6 +48,7 @@ struct FObjRawData
  * 이렇게 하지 않으면 Index Buffer의 의미가 없습니다.
  */
 
+
 struct FObjVertexKey
 {
 	FObjRawIndex ObjRawIndex;
@@ -63,3 +64,29 @@ struct FObjVertexKey
 		return ObjRawIndex < Other.ObjRawIndex;
 	}
 };
+
+
+namespace std
+{
+	template<>
+	struct hash<FObjRawIndex>
+	{
+		size_t operator()(const FObjRawIndex& Key) const noexcept
+		{
+			size_t h1 = std::hash<int32>()(Key.PositionIndex);
+			size_t h2 = std::hash<int32>()(Key.UVIndex);
+			size_t h3 = std::hash<int32>()(Key.NormalIndex);
+
+			return h1 ^ (h2 << 1) ^ (h3 << 2);
+		}
+	};
+
+	template<>
+	struct hash<FObjVertexKey>
+	{
+		size_t operator()(const FObjVertexKey& Key) const noexcept
+		{
+			return std::hash<FObjRawIndex>()(Key.ObjRawIndex);
+		}
+	};
+}
