@@ -1,15 +1,13 @@
 ﻿#include "PrimitiveComponent.h"
+#include "Object/ObjectFactory.h"
 #include "Core/RayTypes.h"
 #include "Render/Mesh/MeshManager.h"
 #include "Core/CollisionTypes.h"
 
 DEFINE_CLASS(UPrimitiveComponent, USceneComponent)
-DEFINE_CLASS(UCubeComponent, UPrimitiveComponent)
-DEFINE_CLASS(USphereComponent, UPrimitiveComponent)
-DEFINE_CLASS(UPlaneComponent, UPrimitiveComponent)
-REGISTER_FACTORY(UCubeComponent)
-REGISTER_FACTORY(USphereComponent)
-REGISTER_FACTORY(UPlaneComponent)
+IMPLEMENT_CLASS(UCubeComponent, UPrimitiveComponent)
+IMPLEMENT_CLASS(USphereComponent, UPrimitiveComponent)
+IMPLEMENT_CLASS(UPlaneComponent, UPrimitiveComponent)
 
 void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
