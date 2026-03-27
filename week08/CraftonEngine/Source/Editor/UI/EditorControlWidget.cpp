@@ -7,7 +7,9 @@
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Component/SubUVComponent.h"
+#include "Component/StaticMeshComponent.h"
 #include "GameFramework/PrimitiveActors.h"
+
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -77,6 +79,13 @@ void FEditorControlWidget::Render(float DeltaTime)
 				SubUV->SetParticle(FName("Explosion"));
 				SubUV->SetSpriteSize(2.0f, 2.0f);
 				SubUV->SetFrameRate(30.f);
+				break;
+			}
+			case 4: // Static Mesh
+			{
+				AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
+				Actor->SetActorLocation(CurSpawnPoint);
+				Actor->InitDefaultComponents();
 				break;
 			}
 			}
