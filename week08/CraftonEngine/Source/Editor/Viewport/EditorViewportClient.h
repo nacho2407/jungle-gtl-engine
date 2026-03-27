@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Viewport/ViewportClient.h"
 #include "Render/Common/RenderTypes.h"
 
 #include "Viewport/CursorOverlayState.h"
@@ -12,8 +13,9 @@ class UGizmoComponent;
 class FEditorSettings;
 class FWindowsWindow;
 class FSelectionManager;
+class FViewport;
 
-class FEditorViewportClient
+class FEditorViewportClient : public FViewportClient
 {
 public:
 	void Initialize(FWindowsWindow* InWindow);
@@ -34,6 +36,10 @@ public:
 
 	const FCursorOverlayState& GetCursorOverlayState() const { return CursorOverlayState; }
 
+	// FViewport 소유
+	void SetViewport(FViewport* InViewport) { Viewport = InViewport; }
+	FViewport* GetViewport() const { return Viewport; }
+
 private:
 	void TickInput(float DeltaTime);
 	void TickInteraction(float DeltaTime);
@@ -42,6 +48,7 @@ private:
 	void HandleDragStart(const FRay& Ray);
 
 private:
+	FViewport* Viewport = nullptr;
 	FWindowsWindow* Window = nullptr;
 	UWorld* World = nullptr;
 	UCameraComponent* Camera = nullptr;
