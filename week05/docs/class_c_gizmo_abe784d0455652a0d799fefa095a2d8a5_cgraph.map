@@ -1,0 +1,27 @@
+<map id="CGizmo::BuildRotationDesc" name="CGizmo::BuildRotationDesc">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,132,192,159"/>
+<area shape="rect" id="Node000002" href="$struct_f_vector.html#a0986e5b79f59415337eb0a8d577cb1b8" title=" " alt="" coords="441,5,595,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="113,130,166,88,201,66,239,48,285,34,334,25,428,17,423,20,334,30,287,39,241,53,203,71,169,92,117,133"/>
+<area shape="rect" id="Node000004" href="$class_c_camera.html#a29aa0be51274110b209a386f9207db02" title=" " alt="" coords="442,157,595,184"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="192,148,427,163,424,167,192,154"/>
+<area shape="rect" id="Node000006" href="$struct_f_vector.html#a8609d9dafd1faea86bc2209e6a43673e" title=" " alt="" coords="650,107,814,133"/>
+<area shape="poly" id="edge13_Node000001_Node000006" title=" " alt="" coords="128,129,179,108,239,92,347,81,456,81,558,90,645,103,640,104,557,95,456,87,348,86,240,97,181,113,130,134"/>
+<area shape="rect" id="Node000008" href="$class_c_camera.html#a21e8e6f3f6a49d0c6322aa4e9aac1522" title=" " alt="" coords="240,259,393,285"/>
+<area shape="poly" id="edge8_Node000001_Node000008" title=" " alt="" coords="118,156,173,195,241,238,267,252,262,252,238,242,170,200,117,162"/>
+<area shape="rect" id="Node000009" href="$class_c_camera.html#a6feca28f6195915390f67e83ebe8d38d" title=" " alt="" coords="248,107,385,133"/>
+<area shape="poly" id="edge9_Node000001_Node000009" title=" " alt="" coords="191,132,235,129,230,131,193,137"/>
+<area shape="rect" id="Node000010" href="$struct_f_vector.html#aaf3498f1738c72016a0af3cfe058c8f8" title=" " alt="" coords="444,208,593,235"/>
+<area shape="poly" id="edge14_Node000001_Node000010" title=" " alt="" coords="176,157,430,203,426,207,176,162"/>
+<area shape="rect" id="Node000003" href="$struct_f_vector.html#ae7dbfb5fe72606197ce4fb94b9655fd2" title=" " alt="" coords="882,81,1001,108"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="596,30,869,81,864,82,596,35"/>
+<area shape="rect" id="Node000005" href="$struct_f_math.html#a4031a15930971d3d38e731bfb1ccf552" title=" " alt="" coords="643,157,821,184"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="595,168,631,170,625,171,595,173"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="577,154,655,138,661,137,578,159"/>
+<area shape="poly" id="edge6_Node000006_Node000003" title=" " alt="" coords="814,107,869,103,864,104,815,113"/>
+<area shape="rect" id="Node000007" href="$struct_f_vector.html#a0af64e033781f3b7b5c1b07dbaa2f569" title=" " alt="" coords="869,157,1014,184"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="791,131,871,153,866,153,790,137"/>
+<area shape="poly" id="edge10_Node000009_Node000002" title=" " alt="" coords="344,104,479,38,474,40,346,108"/>
+<area shape="poly" id="edge11_Node000009_Node000004" title=" " alt="" coords="373,131,450,153,445,153,373,137"/>
+<area shape="poly" id="edge12_Node000009_Node000006" title=" " alt="" coords="385,117,637,119,632,121,386,123"/>
+<area shape="poly" id="edge15_Node000010_Node000007" title=" " alt="" coords="593,215,701,207,820,193,864,188,869,187,821,199,701,212,594,220"/>
+</map>

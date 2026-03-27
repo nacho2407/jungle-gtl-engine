@@ -1,0 +1,290 @@
+\doxysection{FEditor\+Engine Class Reference}
+\hypertarget{class_f_editor_engine}{}\label{class_f_editor_engine}\index{FEditorEngine@{FEditorEngine}}
+
+
+{\ttfamily \+\#include $<$FEditor\+Engine.\+h$>$}
+
+
+
+Inheritance diagram for FEditor\+Engine:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{class_f_editor_engine__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for FEditor\+Engine:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{class_f_editor_engine__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_f_editor_engine_a898821f2f3b470bdfdf47e98bb45e0a3}{FEditor\+Engine}} ()=default
+\item 
+\doxymbox{\hyperlink{class_f_editor_engine_a875d9bd8883284f05d9811117eb0a3ed}{\texorpdfstring{$\sim$}{\string~}\+FEditor\+Engine}} () override
+\item 
+bool \doxymbox{\hyperlink{class_f_editor_engine_ae17a53971d667370a2882c87621a71f2}{Initialize}} (HINSTANCE h\+Instance)
+\item 
+void \doxymbox{\hyperlink{class_f_editor_engine_a8d4c2d2d419b4f2fe9311c081c69e88b}{Shutdown}} () override
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Member Functions inherited from \doxymbox{\hyperlink{class_f_engine}{FEngine}}}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_f_engine_acadb97058feb748fa8cddc5a9ab734cf}{FEngine}} ()=default
+\item 
+virtual \doxymbox{\hyperlink{class_f_engine_a6eaa0a036e5c61ad63124745a239f142}{\texorpdfstring{$\sim$}{\string~}\+FEngine}} ()
+\item 
+\doxymbox{\hyperlink{class_f_engine_afca34af2a88b041817dc53920b83be33}{FEngine}} (const \doxymbox{\hyperlink{class_f_engine}{FEngine}} \&)=delete
+\item 
+\doxymbox{\hyperlink{class_f_engine}{FEngine}} \& \doxymbox{\hyperlink{class_f_engine_a38c7d0875158a09d1e4e389be7ea8f83}{operator=}} (const \doxymbox{\hyperlink{class_f_engine}{FEngine}} \&)=delete
+\item 
+bool \doxymbox{\hyperlink{class_f_engine_a086ff502be635d86a6868225dcdc95a7}{Initialize}} (HINSTANCE h\+Instance, const wchar\+\_\+t \texorpdfstring{$\ast$}{*}Title, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Width, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Height)
+\item 
+void \doxymbox{\hyperlink{class_f_engine_a96f88477aa7f9f40366a60e8951151aa}{Run}} ()
+\item 
+\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_f_engine_a9b5296878b319d15116405f03ad760b3}{Get\+Core}} () const
+\item 
+\doxymbox{\hyperlink{class_c_window_application}{CWindow\+Application}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_f_engine_ab2f0768406a684c26feeceb0c6364de4}{Get\+App}} () const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \doxymbox{\hyperlink{class_f_editor_engine_aee6e507e495c380ef9330e2f1f63d887}{Pre\+Initialize}} () override
+\item 
+void \doxymbox{\hyperlink{class_f_editor_engine_a8d516c2efb40885308801d8e563401e6}{Post\+Initialize}} () override
+\item 
+void \doxymbox{\hyperlink{class_f_editor_engine_a99a5fc6d1c602f03279ea431e324c8c8}{Tick}} (float Delta\+Time) override
+\item 
+\doxymbox{\hyperlink{_scene_types_8h_a4fa75d8646a7d0cecf8aa5958b9077c5}{EScene\+Type}} \doxymbox{\hyperlink{class_f_editor_engine_afe8df8a10d6b02bd2f03db4102801737}{Get\+Startup\+Scene\+Type}} () const override
+\item 
+std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{class_i_viewport_client}{IViewport\+Client}} $>$ \doxymbox{\hyperlink{class_f_editor_engine_a5c80f7f52298679bbdc117d01455f553}{Create\+Viewport\+Client}} () override
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \doxymbox{\hyperlink{class_f_editor_engine_a5fddf706b986818be97de52912986e87}{Sync\+Viewport\+Client}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_c_editor_u_i}{CEditor\+UI}} \doxymbox{\hyperlink{class_f_editor_engine_a02ca3812b3893c3f1bfb4b1c564e39fd}{Editor\+UI}}
+\item 
+std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{class_c_preview_viewport_client}{CPreview\+Viewport\+Client}} $>$ \doxymbox{\hyperlink{class_f_editor_engine_ac773a7d2d883a5fc17f4b042d39f92e2}{Preview\+Viewport\+Client}}
+\item 
+\doxymbox{\hyperlink{class_a_editor_camera_pawn}{AEditor\+Camera\+Pawn}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_f_editor_engine_a3d2e6b6f635ba48dcdea60456cf2eff9}{Editor\+Pawn}} = nullptr
+\item 
+\doxymbox{\hyperlink{class_c_editor_viewport_controller}{CEditor\+Viewport\+Controller}} \doxymbox{\hyperlink{class_f_editor_engine_a371d2e366762979098cddf6b97c05d1e}{Viewport\+Controller}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Additional Inherited Members}
+\doxysubsection*{Protected Attributes inherited from \doxymbox{\hyperlink{class_f_engine}{FEngine}}}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_c_window_application}{CWindow\+Application}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_f_engine_a36fc82954ad33855c75d74423ad6e4b8}{App}} = nullptr
+\item 
+\doxymbox{\hyperlink{class_c_window}{CWindow}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_f_engine_a6af841f090f159e0ff3c3db8a33cb2b6}{Main\+Window}} = nullptr
+\item 
+std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{class_c_core}{CCore}} $>$ \doxymbox{\hyperlink{class_f_engine_aa47cbf38ac65ec13d1b0b6caf2c93a74}{Core}}
+\item 
+std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{class_i_viewport_client}{IViewport\+Client}} $>$ \doxymbox{\hyperlink{class_f_engine_a032b7a7686235860913c55cceb3eb54b}{Viewport\+Client}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{class_f_editor_engine_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_f_editor_engine_a898821f2f3b470bdfdf47e98bb45e0a3}\index{FEditorEngine@{FEditorEngine}!FEditorEngine@{FEditorEngine}}
+\index{FEditorEngine@{FEditorEngine}!FEditorEngine@{FEditorEngine}}
+\doxysubsubsection{\texorpdfstring{FEditorEngine()}{FEditorEngine()}}
+{\footnotesize\ttfamily \label{class_f_editor_engine_a898821f2f3b470bdfdf47e98bb45e0a3} 
+FEditor\+Engine::\+\+FEditor\+Engine (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+\Hypertarget{class_f_editor_engine_a875d9bd8883284f05d9811117eb0a3ed}\index{FEditorEngine@{FEditorEngine}!````~FEditorEngine@{\texorpdfstring{$\sim$}{\string~}FEditorEngine}}
+\index{````~FEditorEngine@{\texorpdfstring{$\sim$}{\string~}FEditorEngine}!FEditorEngine@{FEditorEngine}}
+\doxysubsubsection{\texorpdfstring{\texorpdfstring{$\sim$}{\string~}FEditorEngine()}{\string~FEditorEngine()}}
+{\footnotesize\ttfamily \label{class_f_editor_engine_a875d9bd8883284f05d9811117eb0a3ed} 
+FEditor\+Engine::\+\texorpdfstring{$\sim$}{\string~}\+FEditor\+Engine (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}}
+
+
+
+\label{doc-func-members}
+\Hypertarget{class_f_editor_engine_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_f_editor_engine_a5c80f7f52298679bbdc117d01455f553}\index{FEditorEngine@{FEditorEngine}!CreateViewportClient@{CreateViewportClient}}
+\index{CreateViewportClient@{CreateViewportClient}!FEditorEngine@{FEditorEngine}}
+\doxysubsubsection{\texorpdfstring{CreateViewportClient()}{CreateViewportClient()}}
+{\footnotesize\ttfamily \label{class_f_editor_engine_a5c80f7f52298679bbdc117d01455f553} 
+std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{class_i_viewport_client}{IViewport\+Client}} $>$ FEditor\+Engine::\+\+Create\+Viewport\+Client (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \doxymbox{\hyperlink{class_f_engine_a0a71189cafc0cdca317028468e3a3e9d}{FEngine}}.
+
+\Hypertarget{class_f_editor_engine_afe8df8a10d6b02bd2f03db4102801737}\index{FEditorEngine@{FEditorEngine}!GetStartupSceneType@{GetStartupSceneType}}
+\index{GetStartupSceneType@{GetStartupSceneType}!FEditorEngine@{FEditorEngine}}
+\doxysubsubsection{\texorpdfstring{GetStartupSceneType()}{GetStartupSceneType()}}
+{\footnotesize\ttfamily \label{class_f_editor_engine_afe8df8a10d6b02bd2f03db4102801737} 
+\doxymbox{\hyperlink{_scene_types_8h_a4fa75d8646a7d0cecf8aa5958b9077c5}{EScene\+Type}} FEditor\+Engine::\+\+Get\+Startup\+Scene\+Type (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \doxymbox{\hyperlink{class_f_engine_ac90e749c88df4f0f40320946aac8bab8}{FEngine}}.
+
+\Hypertarget{class_f_editor_engine_ae17a53971d667370a2882c87621a71f2}\index{FEditorEngine@{FEditorEngine}!Initialize@{Initialize}}
+\index{Initialize@{Initialize}!FEditorEngine@{FEditorEngine}}
+\doxysubsubsection{\texorpdfstring{Initialize()}{Initialize()}}
+{\footnotesize\ttfamily \label{class_f_editor_engine_ae17a53971d667370a2882c87621a71f2} 
+bool FEditor\+Engine::\+\+Initialize (\begin{DoxyParamCaption}\item[{HINSTANCE}]{h\+Instance}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_editor_engine_ae17a53971d667370a2882c87621a71f2_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=290pt]{class_f_editor_engine_ae17a53971d667370a2882c87621a71f2_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_editor_engine_a8d516c2efb40885308801d8e563401e6}\index{FEditorEngine@{FEditorEngine}!PostInitialize@{PostInitialize}}
+\index{PostInitialize@{PostInitialize}!FEditorEngine@{FEditorEngine}}
+\doxysubsubsection{\texorpdfstring{PostInitialize()}{PostInitialize()}}
+{\footnotesize\ttfamily \label{class_f_editor_engine_a8d516c2efb40885308801d8e563401e6} 
+void FEditor\+Engine::\+\+Post\+Initialize (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \doxymbox{\hyperlink{class_f_engine_accb6209dd9c4f72ecb0ced68494c6b05}{FEngine}}.
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_editor_engine_a8d516c2efb40885308801d8e563401e6_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_editor_engine_aee6e507e495c380ef9330e2f1f63d887}\index{FEditorEngine@{FEditorEngine}!PreInitialize@{PreInitialize}}
+\index{PreInitialize@{PreInitialize}!FEditorEngine@{FEditorEngine}}
+\doxysubsubsection{\texorpdfstring{PreInitialize()}{PreInitialize()}}
+{\footnotesize\ttfamily \label{class_f_editor_engine_aee6e507e495c380ef9330e2f1f63d887} 
+void FEditor\+Engine::\+\+Pre\+Initialize (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \doxymbox{\hyperlink{class_f_engine_a595de9738fc2c0898e4fe10d63fc41f2}{FEngine}}.
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_editor_engine_aee6e507e495c380ef9330e2f1f63d887_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_editor_engine_a8d4c2d2d419b4f2fe9311c081c69e88b}\index{FEditorEngine@{FEditorEngine}!Shutdown@{Shutdown}}
+\index{Shutdown@{Shutdown}!FEditorEngine@{FEditorEngine}}
+\doxysubsubsection{\texorpdfstring{Shutdown()}{Shutdown()}}
+{\footnotesize\ttfamily \label{class_f_editor_engine_a8d4c2d2d419b4f2fe9311c081c69e88b} 
+void FEditor\+Engine::\+\+Shutdown (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \doxymbox{\hyperlink{class_f_engine_a4366f39c93b0d067586cd7f88f60bfb8}{FEngine}}.
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=345pt]{class_f_editor_engine_a8d4c2d2d419b4f2fe9311c081c69e88b_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=297pt]{class_f_editor_engine_a8d4c2d2d419b4f2fe9311c081c69e88b_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_editor_engine_a5fddf706b986818be97de52912986e87}\index{FEditorEngine@{FEditorEngine}!SyncViewportClient@{SyncViewportClient}}
+\index{SyncViewportClient@{SyncViewportClient}!FEditorEngine@{FEditorEngine}}
+\doxysubsubsection{\texorpdfstring{SyncViewportClient()}{SyncViewportClient()}}
+{\footnotesize\ttfamily \label{class_f_editor_engine_a5fddf706b986818be97de52912986e87} 
+void FEditor\+Engine::\+\+Sync\+Viewport\+Client (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_editor_engine_a5fddf706b986818be97de52912986e87_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_editor_engine_a99a5fc6d1c602f03279ea431e324c8c8}\index{FEditorEngine@{FEditorEngine}!Tick@{Tick}}
+\index{Tick@{Tick}!FEditorEngine@{FEditorEngine}}
+\doxysubsubsection{\texorpdfstring{Tick()}{Tick()}}
+{\footnotesize\ttfamily \label{class_f_editor_engine_a99a5fc6d1c602f03279ea431e324c8c8} 
+void FEditor\+Engine::\+\+Tick (\begin{DoxyParamCaption}\item[{float}]{Delta\+Time}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \doxymbox{\hyperlink{class_f_engine_a2b7c411423b14ccf9ca9d9295d410de0}{FEngine}}.
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_editor_engine_a99a5fc6d1c602f03279ea431e324c8c8_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_f_editor_engine_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_f_editor_engine_a3d2e6b6f635ba48dcdea60456cf2eff9}\index{FEditorEngine@{FEditorEngine}!EditorPawn@{EditorPawn}}
+\index{EditorPawn@{EditorPawn}!FEditorEngine@{FEditorEngine}}
+\doxysubsubsection{\texorpdfstring{EditorPawn}{EditorPawn}}
+{\footnotesize\ttfamily \label{class_f_editor_engine_a3d2e6b6f635ba48dcdea60456cf2eff9} 
+\doxymbox{\hyperlink{class_a_editor_camera_pawn}{AEditor\+Camera\+Pawn}}\texorpdfstring{$\ast$}{*} FEditor\+Engine::\+\+Editor\+Pawn = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_f_editor_engine_a02ca3812b3893c3f1bfb4b1c564e39fd}\index{FEditorEngine@{FEditorEngine}!EditorUI@{EditorUI}}
+\index{EditorUI@{EditorUI}!FEditorEngine@{FEditorEngine}}
+\doxysubsubsection{\texorpdfstring{EditorUI}{EditorUI}}
+{\footnotesize\ttfamily \label{class_f_editor_engine_a02ca3812b3893c3f1bfb4b1c564e39fd} 
+\doxymbox{\hyperlink{class_c_editor_u_i}{CEditor\+UI}} FEditor\+Engine::\+\+Editor\+UI\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_f_editor_engine_ac773a7d2d883a5fc17f4b042d39f92e2}\index{FEditorEngine@{FEditorEngine}!PreviewViewportClient@{PreviewViewportClient}}
+\index{PreviewViewportClient@{PreviewViewportClient}!FEditorEngine@{FEditorEngine}}
+\doxysubsubsection{\texorpdfstring{PreviewViewportClient}{PreviewViewportClient}}
+{\footnotesize\ttfamily \label{class_f_editor_engine_ac773a7d2d883a5fc17f4b042d39f92e2} 
+std::\+unique\+\_\+ptr$<$\doxymbox{\hyperlink{class_c_preview_viewport_client}{CPreview\+Viewport\+Client}}$>$ FEditor\+Engine::\+\+Preview\+Viewport\+Client\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_f_editor_engine_a371d2e366762979098cddf6b97c05d1e}\index{FEditorEngine@{FEditorEngine}!ViewportController@{ViewportController}}
+\index{ViewportController@{ViewportController}!FEditorEngine@{FEditorEngine}}
+\doxysubsubsection{\texorpdfstring{ViewportController}{ViewportController}}
+{\footnotesize\ttfamily \label{class_f_editor_engine_a371d2e366762979098cddf6b97c05d1e} 
+\doxymbox{\hyperlink{class_c_editor_viewport_controller}{CEditor\+Viewport\+Controller}} FEditor\+Engine::\+\+Viewport\+Controller\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Editor/\+\+Source/\+\doxymbox{\hyperlink{_f_editor_engine_8h}{FEditor\+Engine.\+h}}\item 
+Editor/\+\+Source/\+\doxymbox{\hyperlink{_f_editor_engine_8cpp}{FEditor\+Engine.\+cpp}}\end{DoxyCompactItemize}

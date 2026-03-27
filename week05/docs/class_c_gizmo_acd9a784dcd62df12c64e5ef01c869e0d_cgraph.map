@@ -1,0 +1,15 @@
+<map id="CGizmo::ApplyActorRelativeScale" name="CGizmo::ApplyActorRelativeScale">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,129,195,172"/>
+<area shape="rect" id="Node000002" href="$class_u_scene_component.html#ad1b8751af65b8f2abd408b7fe849fcdf" title=" " alt="" coords="243,29,455,72"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="143,126,242,82,263,76,258,79,244,86,145,131"/>
+<area shape="rect" id="Node000003" href="$class_a_actor.html#a255f914e22cb9227096d30fb365d08ff" title=" " alt="" coords="256,96,442,123"/>
+<area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="194,132,252,125,247,127,196,137"/>
+<area shape="rect" id="Node000004" href="$class_u_scene_component.html#ac1d85c6cb6b74933e0afd85f52d3f9e3" title=" " alt="" coords="243,171,454,213"/>
+<area shape="poly" id="edge4_Node000001_Node000004" title=" " alt="" coords="195,164,231,171,225,172,195,169"/>
+<area shape="rect" id="Node000006" href="$struct_f_transform.html#a66994a38181d62ddc06562590bdd8fb3" title=" " alt="" coords="266,237,432,264"/>
+<area shape="poly" id="edge7_Node000001_Node000006" title=" " alt="" coords="137,170,187,197,244,223,267,233,262,233,242,228,185,202,136,175"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="302,28,300,19,308,10,324,5,349,3,375,5,393,13,388,14,374,10,349,8,325,10,311,15,305,21,307,30"/>
+<area shape="poly" id="edge6_Node000004_Node000004" title=" " alt="" coords="302,169,300,161,308,152,324,146,349,144,375,146,393,155,388,155,374,152,349,149,325,151,311,156,305,162,307,171"/>
+<area shape="rect" id="Node000005" href="$class_u_scene_component.html#ac19b278c5da8f2a09e3b231648603d00" title=" " alt="" coords="503,171,734,213"/>
+<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="455,189,490,192,485,192,455,195"/>
+</map>

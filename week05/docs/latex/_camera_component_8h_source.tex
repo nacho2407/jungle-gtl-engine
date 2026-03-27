@@ -1,0 +1,36 @@
+\doxysection{Camera\+Component.\+h}
+\hypertarget{_camera_component_8h_source}{}\label{_camera_component_8h_source}\index{Engine/Source/Component/CameraComponent.h@{Engine/Source/Component/CameraComponent.h}}
+\doxymbox{\hyperlink{_camera_component_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_scene_component_8h}{SceneComponent.h}}"{}}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_camera}{CCamera}};}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_u_camera_component}{UCameraComponent}}\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{class_u_scene_component}{USceneComponent}}}
+\DoxyCodeLine{00007\ \{}
+\DoxyCodeLine{00008\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00009\ \ \ \ \ \doxymbox{\hyperlink{_object_8h_a357d06a2d2ae2eccd8dc94b17f17a710}{DECLARE\_RTTI}}(\doxymbox{\hyperlink{class_u_camera_component}{UCameraComponent}},\ \doxymbox{\hyperlink{class_u_scene_component}{USceneComponent}})}
+\DoxyCodeLine{00010\ \ \ \ \ \textcolor{keyword}{virtual}\ \doxymbox{\hyperlink{class_u_camera_component}{\string~UCameraComponent}}();}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_u_camera_component_a0acf0ca3230a5e9451b98ef5794f34cd}{Initialize}}();}
+\DoxyCodeLine{00013\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_u_actor_component_a5625885838c86016c5309f7e3f11605e}{Tick}}(\textcolor{keywordtype}{float}\ DeltaTime)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00014\ \ \ \ \ \textcolor{comment}{//Movement\ method}}
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_u_camera_component_a598cd3d195bb1bd38edd99da84e916ab}{MoveForward}}(\textcolor{keywordtype}{float}\ Value);}
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_u_camera_component_a0b7231757fcf84fd790f42a5f6d3919c}{MoveRight}}(\textcolor{keywordtype}{float}\ Value);}
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_u_camera_component_adee18bed7dabaadb786faf54be77a20c}{MoveUp}}(\textcolor{keywordtype}{float}\ Value);}
+\DoxyCodeLine{00018\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_u_camera_component_aafa2371ccd603878d72086c4105200d0}{Rotate}}(\textcolor{keywordtype}{float}\ DeltaYaw,\ \textcolor{keywordtype}{float}\ DeltaPitch);}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{comment}{//Camera\ property\ getter}}
+\DoxyCodeLine{00021\ \ \ \ \ \doxymbox{\hyperlink{class_c_camera}{CCamera}}*\ \doxymbox{\hyperlink{class_u_camera_component_a2d781be06097070687e75282ef223b43}{GetCamera}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00022\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}}\ \doxymbox{\hyperlink{class_u_camera_component_a79faea28be40b935c835b7dc6644e0b4}{GetViewMatrix}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00023\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}}\ \doxymbox{\hyperlink{class_u_camera_component_aa800ffc45b0cd2e3b599d52dc157848e}{GetProjectionMatrix}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \ \ \ \ \textcolor{comment}{//Setting}}
+\DoxyCodeLine{00026\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_u_camera_component_a773ac1c6464338149a6e5ada204b1d28}{SetFov}}(\textcolor{keywordtype}{float}\ inFov);}
+\DoxyCodeLine{00027\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_u_camera_component_aeeadeb0e8e6e3b182aed94bdddc0db5f}{SetSpeed}}(\textcolor{keywordtype}{float}\ Inspeed);}
+\DoxyCodeLine{00028\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00029\ \ \ \ \ \doxymbox{\hyperlink{class_c_camera}{CCamera}}*\ \doxymbox{\hyperlink{class_u_camera_component_a28db5653ba83c7c69859bdd67e4fcbe7}{Camera}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00030\ \};}
+
+\end{DoxyCode}

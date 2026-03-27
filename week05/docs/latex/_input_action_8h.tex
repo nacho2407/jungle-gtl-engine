@@ -1,0 +1,97 @@
+\doxysection{Engine/\+\+Source/\+\+Input/\+\+Input\+Action.h File Reference}
+\hypertarget{_input_action_8h}{}\label{_input_action_8h}\index{Engine/Source/Input/InputAction.h@{Engine/Source/Input/InputAction.h}}
+{\ttfamily \+\#include "{}Core\+Minimal.\+h"{}}\newline
+{\ttfamily \+\#include $<$cmath$>$}\newline
+Include dependency graph for Input\+Action.\+h:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_input_action_8h__incl}
+\end{center}
+\end{figure}
+This graph shows which files directly or indirectly include this file:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_input_action_8h__dep__incl}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \doxymbox{\hyperlink{struct_f_input_action_value}{FInput\+Action\+Value}}
+\item 
+struct \doxymbox{\hyperlink{struct_f_input_action}{FInput\+Action}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Enumerations}
+\begin{DoxyCompactItemize}
+\item 
+enum class \doxymbox{\hyperlink{_input_action_8h_a0393479318cbe888e61ac4627f3195b8}{EInput\+Key}} :\+ int32 \{ \doxymbox{\hyperlink{_input_action_8h_a0393479318cbe888e61ac4627f3195b8abf27c48f8a38ed19eeeba089dd8d3ba1}{MouseX}} = 256
+, \doxymbox{\hyperlink{_input_action_8h_a0393479318cbe888e61ac4627f3195b8a73843207a289db41b16a5bb8254ca425}{MouseY}} = 257
+ \}
+\item 
+enum class \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7}{EInput\+Action\+Value\+Type}} :\+ uint32 \{ \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7ac26f15e86e3de4c398a8273272aba034}{Bool}}
+, \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7a22ae0e2b89e5e3d477f988cc36d3272b}{Float}}
+, \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7ae3a3a361e207af96859d55115dbdd9a3}{Axis2D}}
+, \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7aba43fcbd4fd49e68498c4d7db67da94c}{Axis3D}}
+ \}
+\end{DoxyCompactItemize}
+
+
+\label{doc-enum-members}
+\Hypertarget{_input_action_8h_doc-enum-members}
+\doxysubsection{Enumeration Type Documentation}
+\Hypertarget{_input_action_8h_ac42355544994b2c4f077811da63a13f7}\index{InputAction.h@{InputAction.h}!EInputActionValueType@{EInputActionValueType}}
+\index{EInputActionValueType@{EInputActionValueType}!InputAction.h@{InputAction.h}}
+\doxysubsubsection{\texorpdfstring{EInputActionValueType}{EInputActionValueType}}
+{\footnotesize\ttfamily \label{_input_action_8h_ac42355544994b2c4f077811da63a13f7} 
+enum class \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7}{EInput\+Action\+Value\+Type}} :\+ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\hspace{0.3cm}{\ttfamily [strong]}}
+
+\begin{DoxyEnumFields}[2]{Enumerator}
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Bool@{Bool}!InputAction.h@{InputAction.h}}
+\index{InputAction.h@{InputAction.h}!Bool@{Bool}}
+}\Hypertarget{_input_action_8h_ac42355544994b2c4f077811da63a13f7ac26f15e86e3de4c398a8273272aba034}\label{_input_action_8h_ac42355544994b2c4f077811da63a13f7ac26f15e86e3de4c398a8273272aba034} 
+Bool&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Float@{Float}!InputAction.h@{InputAction.h}}
+\index{InputAction.h@{InputAction.h}!Float@{Float}}
+}\Hypertarget{_input_action_8h_ac42355544994b2c4f077811da63a13f7a22ae0e2b89e5e3d477f988cc36d3272b}\label{_input_action_8h_ac42355544994b2c4f077811da63a13f7a22ae0e2b89e5e3d477f988cc36d3272b} 
+Float&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Axis2D@{Axis2D}!InputAction.h@{InputAction.h}}
+\index{InputAction.h@{InputAction.h}!Axis2D@{Axis2D}}
+}\Hypertarget{_input_action_8h_ac42355544994b2c4f077811da63a13f7ae3a3a361e207af96859d55115dbdd9a3}\label{_input_action_8h_ac42355544994b2c4f077811da63a13f7ae3a3a361e207af96859d55115dbdd9a3} 
+Axis2D&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Axis3D@{Axis3D}!InputAction.h@{InputAction.h}}
+\index{InputAction.h@{InputAction.h}!Axis3D@{Axis3D}}
+}\Hypertarget{_input_action_8h_ac42355544994b2c4f077811da63a13f7aba43fcbd4fd49e68498c4d7db67da94c}\label{_input_action_8h_ac42355544994b2c4f077811da63a13f7aba43fcbd4fd49e68498c4d7db67da94c} 
+Axis3D&\\
+\hline
+
+\end{DoxyEnumFields}
+\Hypertarget{_input_action_8h_a0393479318cbe888e61ac4627f3195b8}\index{InputAction.h@{InputAction.h}!EInputKey@{EInputKey}}
+\index{EInputKey@{EInputKey}!InputAction.h@{InputAction.h}}
+\doxysubsubsection{\texorpdfstring{EInputKey}{EInputKey}}
+{\footnotesize\ttfamily \label{_input_action_8h_a0393479318cbe888e61ac4627f3195b8} 
+enum class \doxymbox{\hyperlink{_input_action_8h_a0393479318cbe888e61ac4627f3195b8}{EInput\+Key}} :\+ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\hspace{0.3cm}{\ttfamily [strong]}}
+
+\begin{DoxyEnumFields}[2]{Enumerator}
+\raisebox{\heightof{T}}[0pt][0pt]{\index{MouseX@{MouseX}!InputAction.h@{InputAction.h}}
+\index{InputAction.h@{InputAction.h}!MouseX@{MouseX}}
+}\Hypertarget{_input_action_8h_a0393479318cbe888e61ac4627f3195b8abf27c48f8a38ed19eeeba089dd8d3ba1}\label{_input_action_8h_a0393479318cbe888e61ac4627f3195b8abf27c48f8a38ed19eeeba089dd8d3ba1} 
+MouseX&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{MouseY@{MouseY}!InputAction.h@{InputAction.h}}
+\index{InputAction.h@{InputAction.h}!MouseY@{MouseY}}
+}\Hypertarget{_input_action_8h_a0393479318cbe888e61ac4627f3195b8a73843207a289db41b16a5bb8254ca425}\label{_input_action_8h_a0393479318cbe888e61ac4627f3195b8a73843207a289db41b16a5bb8254ca425} 
+MouseY&\\
+\hline
+
+\end{DoxyEnumFields}

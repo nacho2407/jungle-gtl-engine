@@ -1,0 +1,48 @@
+\doxysection{Math\+Utility.\+h}
+\hypertarget{_math_utility_8h_source}{}\label{_math_utility_8h_source}\index{Engine/Source/Math/MathUtility.h@{Engine/Source/Math/MathUtility.h}}
+\doxymbox{\hyperlink{_math_utility_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_engine_a_p_i_8h}{EngineAPI.h}}"{}}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{struct_f_math}{FMath}}}
+\DoxyCodeLine{00006\ \{}
+\DoxyCodeLine{00007\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_math_a0e31f8455cdcf4748cdd4cea66ff9917}{PI}}\ \ \ \ \ \ \ \ \ \ \ =\ 3.14159265358979323846f;}
+\DoxyCodeLine{00008\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_math_a6365a1c81ddf8914f7a3a2146541a22f}{InvPI}}\ \ \ \ \ \ \ \ =\ 0.31830988618379067154f;}
+\DoxyCodeLine{00009\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_math_ab17d986563a0fb0ffc59f0477dc780f2}{HalfPI}}\ \ \ \ \ \ \ =\ 1.57079632679489661923f;}
+\DoxyCodeLine{00010\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_math_adbd37004417e26015799d03f4f5bc872}{TwoPi}}\ \ \ \ \ \ \ \ =\ 6.28318530717958647692f;}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_math_a94f434202aed7479fa30773ed2fec6d9}{SmallNumber}}\ \ \ \ \ \ =\ 1.e-\/8f;}
+\DoxyCodeLine{00013\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_math_ad89ee3d969d4fde81871ae0105fda153}{KindaSmallNumber}}\ =\ 1.e-\/4f;}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_math_a4031a15930971d3d38e731bfb1ccf552}{DegreesToRadians}}(\textcolor{keywordtype}{float}\ Degrees)}
+\DoxyCodeLine{00016\ \ \ \ \ \{}
+\DoxyCodeLine{00017\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ Degrees\ *\ (\doxymbox{\hyperlink{struct_f_math_a0e31f8455cdcf4748cdd4cea66ff9917}{PI}}\ /\ 180.0f);}
+\DoxyCodeLine{00018\ \ \ \ \ \}}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_math_a1cc4ccc68adb0dfca7b16b013edda0b3}{RadiansToDegrees}}(\textcolor{keywordtype}{float}\ Radians)}
+\DoxyCodeLine{00021\ \ \ \ \ \{}
+\DoxyCodeLine{00022\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ Radians\ *\ (180.0f\ /\ \doxymbox{\hyperlink{struct_f_math_a0e31f8455cdcf4748cdd4cea66ff9917}{PI}});}
+\DoxyCodeLine{00023\ \ \ \ \ \}}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_math_a4292eb31f08e0f1c4042fcc9229adb7b}{Max}}(\textcolor{keywordtype}{float}\ A,\ \textcolor{keywordtype}{float}\ B)}
+\DoxyCodeLine{00026\ \ \ \ \ \{}
+\DoxyCodeLine{00027\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ A\ <\ B\ ?\ B\ :\ A;}
+\DoxyCodeLine{00028\ \ \ \ \ \}}
+\DoxyCodeLine{00029\ }
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_math_a3f3d129ff98443cdb70bc1eb8b3d1748}{Min}}(\textcolor{keywordtype}{float}\ A,\ \textcolor{keywordtype}{float}\ B)}
+\DoxyCodeLine{00031\ \ \ \ \ \{}
+\DoxyCodeLine{00032\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ A\ <\ B\ ?\ A\ :\ B;}
+\DoxyCodeLine{00033\ \ \ \ \ \}}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ T>}
+\DoxyCodeLine{00036\ \ \ \ \ \textcolor{keyword}{static}\ T\ \doxymbox{\hyperlink{struct_f_math_a0d1ea8174043daca09b77874618df223}{Clamp}}(\textcolor{keyword}{const}\ T\&\ Value,\ \textcolor{keyword}{const}\ T\&\ \doxymbox{\hyperlink{struct_f_math_a3f3d129ff98443cdb70bc1eb8b3d1748}{Min}},\ \textcolor{keyword}{const}\ T\&\ \doxymbox{\hyperlink{struct_f_math_a4292eb31f08e0f1c4042fcc9229adb7b}{Max}})}
+\DoxyCodeLine{00037\ \ \ \ \ \{}
+\DoxyCodeLine{00038\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (Value\ <\ \doxymbox{\hyperlink{struct_f_math_a3f3d129ff98443cdb70bc1eb8b3d1748}{Min}})\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_math_a3f3d129ff98443cdb70bc1eb8b3d1748}{Min}};}
+\DoxyCodeLine{00039\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (Value\ >\ \doxymbox{\hyperlink{struct_f_math_a4292eb31f08e0f1c4042fcc9229adb7b}{Max}})\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_math_a4292eb31f08e0f1c4042fcc9229adb7b}{Max}};}
+\DoxyCodeLine{00040\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ Value;}
+\DoxyCodeLine{00041\ \ \ \ \ \}}
+\DoxyCodeLine{00042\ \};}
+
+\end{DoxyCode}

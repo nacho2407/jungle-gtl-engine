@@ -1,0 +1,396 @@
+\doxysection{TObject\+Ptr\texorpdfstring{$<$}{<} T \texorpdfstring{$>$}{>} Class Template Reference}
+\hypertarget{class_t_object_ptr}{}\label{class_t_object_ptr}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+
+
+{\ttfamily \+\#include $<$Object\+Ptr.\+h$>$}
+
+
+
+Collaboration diagram for TObject\+Ptr\texorpdfstring{$<$}{<} T \texorpdfstring{$>$}{>}:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=161pt]{class_t_object_ptr__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_t_object_ptr_a01020a5c90b640348677eb44b4a1629f}{TObject\+Ptr}} ()=default
+\item 
+\doxymbox{\hyperlink{class_t_object_ptr_a834d25724445933697467fa5eb645c0f}{TObject\+Ptr}} (std::\+nullptr\+\_\+t)
+\item 
+\doxymbox{\hyperlink{class_t_object_ptr_ae3c2c7dcc1976a444cd730eddcfb614e}{TObject\+Ptr}} (T \texorpdfstring{$\ast$}{*}In\+Ptr)
+\item 
+\doxymbox{\hyperlink{class_t_object_ptr_a76b21fb95b7bb4bcc77c44555e56a5c3}{TObject\+Ptr}} (const \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}} \&Other)=default
+\item 
+\doxymbox{\hyperlink{class_t_object_ptr_ae40686d40839d1ff97d57e22a92791ac}{TObject\+Ptr}} (\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}} \&\&Other) noexcept
+\item 
+{\footnotesize template$<$typename U, typename = std::\+enable\+\_\+if\+\_\+t$<$std::\+is\+\_\+convertible\+\_\+v$<$\+U\texorpdfstring{$\ast$}{*}, T\texorpdfstring{$\ast$}{*}$>$$>$$>$ }\\\doxymbox{\hyperlink{class_t_object_ptr_a3879c9fdb81c71d9b2e8731f0bd4453e}{TObject\+Ptr}} (const \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ U $>$ \&Other)
+\item 
+\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}} \& \doxymbox{\hyperlink{class_t_object_ptr_a748bdc641f7765be6298d5b84259608a}{operator=}} (std::\+nullptr\+\_\+t)
+\item 
+\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}} \& \doxymbox{\hyperlink{class_t_object_ptr_ab583c4094e3c6e3010c0d0316530473a}{operator=}} (T \texorpdfstring{$\ast$}{*}In\+Ptr)
+\item 
+\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}} \& \doxymbox{\hyperlink{class_t_object_ptr_a36f8b4c65c112cb988a3f8df77c9edd8}{operator=}} (const \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}} \&Other)=default
+\item 
+\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}} \& \doxymbox{\hyperlink{class_t_object_ptr_afd318157991b42d2ce15172a431a2b67}{operator=}} (\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}} \&\&Other) noexcept
+\item 
+{\footnotesize template$<$typename U, typename = std::\+enable\+\_\+if\+\_\+t$<$std::\+is\+\_\+convertible\+\_\+v$<$\+U\texorpdfstring{$\ast$}{*}, T\texorpdfstring{$\ast$}{*}$>$$>$$>$ }\\\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}} \& \doxymbox{\hyperlink{class_t_object_ptr_a2bacd1c1d731cfa5afe32afed2233450}{operator=}} (const \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ U $>$ \&Other)
+\item 
+T \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_t_object_ptr_ad4192b73fc07500cd142ef0f239cbab4}{Get}} () const
+\item 
+T \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_t_object_ptr_aa2b1a35605ac147a9c6f6e554ba25610}{operator-\/$>$}} () const
+\item 
+T \& \doxymbox{\hyperlink{class_t_object_ptr_a6f4f8cfd6a10fefd50b60e99d4fb2d49}{operator\texorpdfstring{$\ast$}{*}}} () const
+\item 
+\doxymbox{\hyperlink{class_t_object_ptr_af9a0808c369c21be0e13fb60acbe2f26}{operator T\texorpdfstring{$\ast$}{*}}} () const
+\item 
+\doxymbox{\hyperlink{class_t_object_ptr_af4dd0cc6c1ba7f8c0d944c3d8cc6055d}{operator bool}} () const
+\item 
+uint32\+\_\+t \doxymbox{\hyperlink{class_t_object_ptr_ae6456aca45febe84ad527f201feb8f33}{Get\+UUID}} () const
+\item 
+T \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_t_object_ptr_aef0b02b2484127344dae73255a41dcd8}{Get\+Cached\+Ptr}} () const
+\item 
+bool \doxymbox{\hyperlink{class_t_object_ptr_a1ccc4442c2ad5ca65456918ac25f00b2}{Is\+Valid}} () const
+\item 
+bool \doxymbox{\hyperlink{class_t_object_ptr_a56a8d094c0c06106991f3704792a3806}{Is\+Null}} () const
+\item 
+bool \doxymbox{\hyperlink{class_t_object_ptr_ac72b3f5906413cfb80ef10c75af7509c}{Is\+Pending}} () const
+\item 
+void \doxymbox{\hyperlink{class_t_object_ptr_addaa0484050993250f0098ba3586324c}{Reset}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+uint32\+\_\+t \doxymbox{\hyperlink{class_t_object_ptr_a19e0295439e0ef17e6743399c259db23}{Object\+UUID}} = 0
+\item 
+T \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_t_object_ptr_aee1bbe8ef3dd0fe9fd612cf54e2384bc}{Cached\+Ptr}} = nullptr
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{class_t_object_ptr_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_t_object_ptr_a01020a5c90b640348677eb44b4a1629f}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!TObjectPtr@{TObjectPtr}}
+\index{TObjectPtr@{TObjectPtr}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{TObjectPtr()}{TObjectPtr()}\hspace{0.1cm}{\footnotesize\ttfamily [1/6]}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_a01020a5c90b640348677eb44b4a1629f} 
+template$<$typename T$>$ \\
+\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+\+TObject\+Ptr (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=349pt]{class_t_object_ptr_a01020a5c90b640348677eb44b4a1629f_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_t_object_ptr_a834d25724445933697467fa5eb645c0f}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!TObjectPtr@{TObjectPtr}}
+\index{TObjectPtr@{TObjectPtr}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{TObjectPtr()}{TObjectPtr()}\hspace{0.1cm}{\footnotesize\ttfamily [2/6]}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_a834d25724445933697467fa5eb645c0f} 
+template$<$typename T$>$ \\
+\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+\+TObject\+Ptr (\begin{DoxyParamCaption}\item[{std::\+nullptr\+\_\+t}]{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_t_object_ptr_ae3c2c7dcc1976a444cd730eddcfb614e}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!TObjectPtr@{TObjectPtr}}
+\index{TObjectPtr@{TObjectPtr}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{TObjectPtr()}{TObjectPtr()}\hspace{0.1cm}{\footnotesize\ttfamily [3/6]}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_ae3c2c7dcc1976a444cd730eddcfb614e} 
+template$<$typename T$>$ \\
+\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+\+TObject\+Ptr (\begin{DoxyParamCaption}\item[{T \texorpdfstring{$\ast$}{*}}]{In\+Ptr}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=342pt]{class_t_object_ptr_ae3c2c7dcc1976a444cd730eddcfb614e_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_t_object_ptr_a76b21fb95b7bb4bcc77c44555e56a5c3}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!TObjectPtr@{TObjectPtr}}
+\index{TObjectPtr@{TObjectPtr}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{TObjectPtr()}{TObjectPtr()}\hspace{0.1cm}{\footnotesize\ttfamily [4/6]}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_a76b21fb95b7bb4bcc77c44555e56a5c3} 
+template$<$typename T$>$ \\
+\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+\+TObject\+Ptr (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$ \&}]{Other}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=349pt]{class_t_object_ptr_a76b21fb95b7bb4bcc77c44555e56a5c3_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_t_object_ptr_ae40686d40839d1ff97d57e22a92791ac}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!TObjectPtr@{TObjectPtr}}
+\index{TObjectPtr@{TObjectPtr}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{TObjectPtr()}{TObjectPtr()}\hspace{0.1cm}{\footnotesize\ttfamily [5/6]}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_ae40686d40839d1ff97d57e22a92791ac} 
+template$<$typename T$>$ \\
+\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+\+TObject\+Ptr (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$ \&\&}]{Other}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=349pt]{class_t_object_ptr_ae40686d40839d1ff97d57e22a92791ac_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_t_object_ptr_a3879c9fdb81c71d9b2e8731f0bd4453e}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!TObjectPtr@{TObjectPtr}}
+\index{TObjectPtr@{TObjectPtr}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{TObjectPtr()}{TObjectPtr()}\hspace{0.1cm}{\footnotesize\ttfamily [6/6]}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_a3879c9fdb81c71d9b2e8731f0bd4453e} 
+template$<$typename T$>$ \\
+template$<$typename U, typename = std::\+enable\+\_\+if\+\_\+t$<$std::\+is\+\_\+convertible\+\_\+v$<$\+U\texorpdfstring{$\ast$}{*}, T\texorpdfstring{$\ast$}{*}$>$$>$$>$ \\
+\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+\+TObject\+Ptr (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ U $>$ \&}]{Other}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_t_object_ptr_a3879c9fdb81c71d9b2e8731f0bd4453e_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-func-members}
+\Hypertarget{class_t_object_ptr_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_t_object_ptr_ad4192b73fc07500cd142ef0f239cbab4}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!Get@{Get}}
+\index{Get@{Get}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{Get()}{Get()}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_ad4192b73fc07500cd142ef0f239cbab4} 
+template$<$typename T$>$ \\
+T \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+\+Get (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=327pt]{class_t_object_ptr_ad4192b73fc07500cd142ef0f239cbab4_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_t_object_ptr_aef0b02b2484127344dae73255a41dcd8}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!GetCachedPtr@{GetCachedPtr}}
+\index{GetCachedPtr@{GetCachedPtr}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{GetCachedPtr()}{GetCachedPtr()}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_aef0b02b2484127344dae73255a41dcd8} 
+template$<$typename T$>$ \\
+T \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+\+Get\+Cached\+Ptr (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_t_object_ptr_aef0b02b2484127344dae73255a41dcd8_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_t_object_ptr_ae6456aca45febe84ad527f201feb8f33}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!GetUUID@{GetUUID}}
+\index{GetUUID@{GetUUID}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{GetUUID()}{GetUUID()}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_ae6456aca45febe84ad527f201feb8f33} 
+template$<$typename T$>$ \\
+uint32\+\_\+t \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+\+Get\+UUID (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=343pt]{class_t_object_ptr_ae6456aca45febe84ad527f201feb8f33_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_t_object_ptr_a56a8d094c0c06106991f3704792a3806}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!IsNull@{IsNull}}
+\index{IsNull@{IsNull}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{IsNull()}{IsNull()}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_a56a8d094c0c06106991f3704792a3806} 
+template$<$typename T$>$ \\
+bool \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+\+Is\+Null (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_t_object_ptr_ac72b3f5906413cfb80ef10c75af7509c}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!IsPending@{IsPending}}
+\index{IsPending@{IsPending}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{IsPending()}{IsPending()}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_ac72b3f5906413cfb80ef10c75af7509c} 
+template$<$typename T$>$ \\
+bool \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+\+Is\+Pending (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_t_object_ptr_a1ccc4442c2ad5ca65456918ac25f00b2}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!IsValid@{IsValid}}
+\index{IsValid@{IsValid}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{IsValid()}{IsValid()}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_a1ccc4442c2ad5ca65456918ac25f00b2} 
+template$<$typename T$>$ \\
+bool \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+\+Is\+Valid (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=300pt]{class_t_object_ptr_a1ccc4442c2ad5ca65456918ac25f00b2_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_t_object_ptr_af4dd0cc6c1ba7f8c0d944c3d8cc6055d}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!operator bool@{operator bool}}
+\index{operator bool@{operator bool}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{operator bool()}{operator bool()}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_af4dd0cc6c1ba7f8c0d944c3d8cc6055d} 
+template$<$typename T$>$ \\
+\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+operator bool (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [explicit]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=327pt]{class_t_object_ptr_af4dd0cc6c1ba7f8c0d944c3d8cc6055d_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_t_object_ptr_af9a0808c369c21be0e13fb60acbe2f26}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!operator T\texorpdfstring{$\ast$}{*}@{operator T\texorpdfstring{$\ast$}{*}}}
+\index{operator T\texorpdfstring{$\ast$}{*}@{operator T\texorpdfstring{$\ast$}{*}}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{operator T\texorpdfstring{$\ast$}{*}()}{operator T*()}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_af9a0808c369c21be0e13fb60acbe2f26} 
+template$<$typename T$>$ \\
+\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+operator T\texorpdfstring{$\ast$}{*} (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_t_object_ptr_a6f4f8cfd6a10fefd50b60e99d4fb2d49}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!operator\texorpdfstring{$\ast$}{*}@{operator\texorpdfstring{$\ast$}{*}}}
+\index{operator\texorpdfstring{$\ast$}{*}@{operator\texorpdfstring{$\ast$}{*}}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{operator\texorpdfstring{$\ast$}{*}()}{operator*()}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_a6f4f8cfd6a10fefd50b60e99d4fb2d49} 
+template$<$typename T$>$ \\
+T \& \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+operator\texorpdfstring{$\ast$}{*} (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=309pt]{class_t_object_ptr_a6f4f8cfd6a10fefd50b60e99d4fb2d49_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_t_object_ptr_aa2b1a35605ac147a9c6f6e554ba25610}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!operator-\/$>$@{operator-\/$>$}}
+\index{operator-\/$>$@{operator-\/$>$}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{operator-\/$>$()}{operator->()}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_aa2b1a35605ac147a9c6f6e554ba25610} 
+template$<$typename T$>$ \\
+T \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+operator-\/$>$ (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=315pt]{class_t_object_ptr_aa2b1a35605ac147a9c6f6e554ba25610_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_t_object_ptr_a36f8b4c65c112cb988a3f8df77c9edd8}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!operator=@{operator=}}
+\index{operator=@{operator=}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{operator=()}{operator=()}\hspace{0.1cm}{\footnotesize\ttfamily [1/5]}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_a36f8b4c65c112cb988a3f8df77c9edd8} 
+template$<$typename T$>$ \\
+\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}} \& \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+operator= (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$ \&}]{Other}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=343pt]{class_t_object_ptr_a36f8b4c65c112cb988a3f8df77c9edd8_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_t_object_ptr_a2bacd1c1d731cfa5afe32afed2233450}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!operator=@{operator=}}
+\index{operator=@{operator=}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{operator=()}{operator=()}\hspace{0.1cm}{\footnotesize\ttfamily [2/5]}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_a2bacd1c1d731cfa5afe32afed2233450} 
+template$<$typename T$>$ \\
+template$<$typename U, typename = std::\+enable\+\_\+if\+\_\+t$<$std::\+is\+\_\+convertible\+\_\+v$<$\+U\texorpdfstring{$\ast$}{*}, T\texorpdfstring{$\ast$}{*}$>$$>$$>$ \\
+\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}} \& \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+operator= (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ U $>$ \&}]{Other}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_t_object_ptr_a2bacd1c1d731cfa5afe32afed2233450_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_t_object_ptr_a748bdc641f7765be6298d5b84259608a}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!operator=@{operator=}}
+\index{operator=@{operator=}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{operator=()}{operator=()}\hspace{0.1cm}{\footnotesize\ttfamily [3/5]}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_a748bdc641f7765be6298d5b84259608a} 
+template$<$typename T$>$ \\
+\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}} \& \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+operator= (\begin{DoxyParamCaption}\item[{std::\+nullptr\+\_\+t}]{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=343pt]{class_t_object_ptr_a748bdc641f7765be6298d5b84259608a_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_t_object_ptr_ab583c4094e3c6e3010c0d0316530473a}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!operator=@{operator=}}
+\index{operator=@{operator=}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{operator=()}{operator=()}\hspace{0.1cm}{\footnotesize\ttfamily [4/5]}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_ab583c4094e3c6e3010c0d0316530473a} 
+template$<$typename T$>$ \\
+\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}} \& \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+operator= (\begin{DoxyParamCaption}\item[{T \texorpdfstring{$\ast$}{*}}]{In\+Ptr}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=343pt]{class_t_object_ptr_ab583c4094e3c6e3010c0d0316530473a_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_t_object_ptr_afd318157991b42d2ce15172a431a2b67}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!operator=@{operator=}}
+\index{operator=@{operator=}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{operator=()}{operator=()}\hspace{0.1cm}{\footnotesize\ttfamily [5/5]}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_afd318157991b42d2ce15172a431a2b67} 
+template$<$typename T$>$ \\
+\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}} \& \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+operator= (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$ \&\&}]{Other}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=343pt]{class_t_object_ptr_afd318157991b42d2ce15172a431a2b67_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_t_object_ptr_addaa0484050993250f0098ba3586324c}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!Reset@{Reset}}
+\index{Reset@{Reset}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{Reset()}{Reset()}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_addaa0484050993250f0098ba3586324c} 
+template$<$typename T$>$ \\
+void \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+\+Reset (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+\label{doc-variable-members}
+\Hypertarget{class_t_object_ptr_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_t_object_ptr_aee1bbe8ef3dd0fe9fd612cf54e2384bc}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!CachedPtr@{CachedPtr}}
+\index{CachedPtr@{CachedPtr}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{CachedPtr}{CachedPtr}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_aee1bbe8ef3dd0fe9fd612cf54e2384bc} 
+template$<$typename T$>$ \\
+T\texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+\+Cached\+Ptr = nullptr\hspace{0.3cm}{\ttfamily [mutable]}, {\ttfamily [private]}}
+
+\Hypertarget{class_t_object_ptr_a19e0295439e0ef17e6743399c259db23}\index{TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}!ObjectUUID@{ObjectUUID}}
+\index{ObjectUUID@{ObjectUUID}!TObjectPtr$<$ T $>$@{TObjectPtr$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{ObjectUUID}{ObjectUUID}}
+{\footnotesize\ttfamily \label{class_t_object_ptr_a19e0295439e0ef17e6743399c259db23} 
+template$<$typename T$>$ \\
+uint32\+\_\+t \doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ T $>$::\+\+Object\+UUID = 0\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Types/\+\doxymbox{\hyperlink{_object_ptr_8h}{Object\+Ptr.\+h}}\end{DoxyCompactItemize}

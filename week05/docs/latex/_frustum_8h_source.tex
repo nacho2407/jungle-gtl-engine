@@ -1,0 +1,49 @@
+\doxysection{Frustum.\+h}
+\hypertarget{_frustum_8h_source}{}\label{_frustum_8h_source}\index{Engine/Source/Math/Frustum.h@{Engine/Source/Math/Frustum.h}}
+\doxymbox{\hyperlink{_frustum_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}"{}}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <cmath>}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_plane4}{FPlane4}}}
+\DoxyCodeLine{00006\ \{}
+\DoxyCodeLine{00007\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_plane4_a6159f5414cf7d31f4ebbdfe9cbfaa86c}{A}},\ \doxymbox{\hyperlink{struct_f_plane4_a531fbb63c8e8a8227d177ce3719ab7ba}{B}},\ \doxymbox{\hyperlink{struct_f_plane4_a46689ca51177b06338d3f9fed00f5be6}{C}},\ \doxymbox{\hyperlink{struct_f_plane4_a9f178a9c12719cfa4d7eedeaccd071e5}{D}};}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{struct_f_plane4_aa289c3ef6ef75ec9affcecf1e9501e3d}{Normalize}}()}
+\DoxyCodeLine{00010\ \ \ \ \ \{}
+\DoxyCodeLine{00011\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ Len\ =\ std::sqrt(\doxymbox{\hyperlink{struct_f_plane4_a6159f5414cf7d31f4ebbdfe9cbfaa86c}{A}}\ *\ \doxymbox{\hyperlink{struct_f_plane4_a6159f5414cf7d31f4ebbdfe9cbfaa86c}{A}}\ +\ \doxymbox{\hyperlink{struct_f_plane4_a531fbb63c8e8a8227d177ce3719ab7ba}{B}}\ *\ \doxymbox{\hyperlink{struct_f_plane4_a531fbb63c8e8a8227d177ce3719ab7ba}{B}}\ +\ \doxymbox{\hyperlink{struct_f_plane4_a46689ca51177b06338d3f9fed00f5be6}{C}}\ *\ \doxymbox{\hyperlink{struct_f_plane4_a46689ca51177b06338d3f9fed00f5be6}{C}});}
+\DoxyCodeLine{00012\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (Len\ >\ 0.0f)}
+\DoxyCodeLine{00013\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00014\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_plane4_a6159f5414cf7d31f4ebbdfe9cbfaa86c}{A}}\ /=\ Len;}
+\DoxyCodeLine{00015\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_plane4_a531fbb63c8e8a8227d177ce3719ab7ba}{B}}\ /=\ Len;}
+\DoxyCodeLine{00016\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_plane4_a46689ca51177b06338d3f9fed00f5be6}{C}}\ /=\ Len;}
+\DoxyCodeLine{00017\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_plane4_a9f178a9c12719cfa4d7eedeaccd071e5}{D}}\ /=\ Len;}
+\DoxyCodeLine{00018\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00019\ \ \ \ \ \}}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_plane4_aff98662d17c09ee0d596421f7330c519}{DistanceTo}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ Point)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00022\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00023\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_plane4_a6159f5414cf7d31f4ebbdfe9cbfaa86c}{A}}\ *\ Point.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ +\ \doxymbox{\hyperlink{struct_f_plane4_a531fbb63c8e8a8227d177ce3719ab7ba}{B}}\ *\ Point.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ +\ \doxymbox{\hyperlink{struct_f_plane4_a46689ca51177b06338d3f9fed00f5be6}{C}}\ *\ Point.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ +\ \doxymbox{\hyperlink{struct_f_plane4_a9f178a9c12719cfa4d7eedeaccd071e5}{D}};}
+\DoxyCodeLine{00024\ \ \ \ \ \}}
+\DoxyCodeLine{00025\ \};}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00027\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_bounding_sphere}{FBoundingSphere}}}
+\DoxyCodeLine{00028\ \{}
+\DoxyCodeLine{00029\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_f_bounding_sphere_aec16e60efb643138c4e4586820ad081d}{Center}};}
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_bounding_sphere_abf4bfb0d52baaa411e4d5e7b7cd88e83}{Radius}};}
+\DoxyCodeLine{00031\ \};}
+\DoxyCodeLine{00032\ }
+\DoxyCodeLine{00033\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_frustum}{FFrustum}}}
+\DoxyCodeLine{00034\ \{}
+\DoxyCodeLine{00035\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00036\ \ \ \ \ \textcolor{keyword}{enum}\ \{\ \doxymbox{\hyperlink{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3a562313764ca6bb75ab60a46e98d3a171}{Left}}\ =\ 0,\ \doxymbox{\hyperlink{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3a598d988ef2b87137d8452964c11b0211}{Right}},\ \doxymbox{\hyperlink{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3a5cdd6c8b82ed32205e7ec0924d978ee9}{Bottom}},\ \doxymbox{\hyperlink{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3aa1c2941b8ee77471770c571e76b8fdd6}{Top}},\ \doxymbox{\hyperlink{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3a736bbfba12341b9991963852ce3c169b}{Near}},\ \doxymbox{\hyperlink{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3a010f6af91915e57e55a856435d3d9e9b}{Far}},\ \doxymbox{\hyperlink{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3ad524f672588ae5b13d171354a67bfa72}{PlaneCount}}\ \};}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00038\ \ \ \ \ \textcolor{keywordtype}{void}\ ExtractFromVP(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}}\&\ VP);}
+\DoxyCodeLine{00039\ \ \ \ \ \textcolor{keywordtype}{bool}\ IsVisible(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_bounding_sphere}{FBoundingSphere}}\&\ Sphere)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00042\ \ \ \ \ \doxymbox{\hyperlink{struct_f_plane4}{FPlane4}}\ \doxymbox{\hyperlink{class_f_frustum_a5ed83d22fc67870eee53aca181009103}{Planes}}[\doxymbox{\hyperlink{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3ad524f672588ae5b13d171354a67bfa72}{PlaneCount}}];}
+\DoxyCodeLine{00043\ \};}
+
+\end{DoxyCode}

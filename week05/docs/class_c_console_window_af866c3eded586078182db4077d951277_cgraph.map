@@ -1,0 +1,9 @@
+<map id="CConsoleWindow::TextEditCallback" name="CConsoleWindow::TextEditCallback">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,23,188,65"/>
+<area shape="rect" id="Node000002" href="$class_c_console_window.html#a3011f47dc145ea9dc0167ec66fc9b652" title=" " alt="" coords="240,5,418,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="188,31,227,30,221,31,188,37"/>
+<area shape="rect" id="Node000004" href="$class_c_console_window.html#afb1ec6ff26a782df7bf606cb4aeae441" title=" " alt="" coords="236,56,422,83"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="188,51,223,57,217,58,188,57"/>
+<area shape="rect" id="Node000003" href="$class_c_console_window.html#aa4a509fe5eb727cf7fa5b3dcb8dec4d4" title=" " alt="" coords="470,5,642,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="418,16,457,18,452,19,418,21"/>
+</map>

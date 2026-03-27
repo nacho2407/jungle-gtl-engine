@@ -1,0 +1,39 @@
+\doxysection{Scene\+Context.\+h}
+\hypertarget{_scene_context_8h_source}{}\label{_scene_context_8h_source}\index{Engine/Source/Scene/SceneContext.h@{Engine/Source/Scene/SceneContext.h}}
+\doxymbox{\hyperlink{_scene_context_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_scene_types_8h}{Scene/SceneTypes.h}}"{}}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_a_actor}{AActor}};}
+\DoxyCodeLine{00007\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_u_scene}{UScene}};}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{struct_f_scene_context}{FSceneContext}}}
+\DoxyCodeLine{00010\ \{}
+\DoxyCodeLine{00011\ \ \ \ \ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \doxymbox{\hyperlink{struct_f_scene_context_a218a5c7a7ae68e5ff1aa162ee48d22f0}{ContextName}};}
+\DoxyCodeLine{00012\ \ \ \ \ \doxymbox{\hyperlink{_scene_types_8h_a4fa75d8646a7d0cecf8aa5958b9077c5}{ESceneType}}\ \doxymbox{\hyperlink{struct_f_scene_context_acdf8acc521a47a632f32de2fd5ba132d}{SceneType}}\ =\ \doxymbox{\hyperlink{_scene_types_8h_a4fa75d8646a7d0cecf8aa5958b9077c5a63d72051e901c069f8aa1b32aa0c43bb}{ESceneType::Game}};}
+\DoxyCodeLine{00013\ \ \ \ \ \doxymbox{\hyperlink{class_u_scene}{UScene}}*\ \doxymbox{\hyperlink{struct_f_scene_context_ae7ec2f3beee3e3dedb57e333aca69d98}{Scene}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_scene_context_a1a4dcb8123cf6b4e18a64d69cc4b80ed}{IsValid}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_scene_context_ae7ec2f3beee3e3dedb57e333aca69d98}{Scene}}\ !=\ \textcolor{keyword}{nullptr};\ \}}
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{struct_f_scene_context_adebf2a1eebea382fc25ad3c6c796fe6c}{Reset}}()}
+\DoxyCodeLine{00017\ \ \ \ \ \{}
+\DoxyCodeLine{00018\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_scene_context_a218a5c7a7ae68e5ff1aa162ee48d22f0}{ContextName}}.clear();}
+\DoxyCodeLine{00019\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_scene_context_acdf8acc521a47a632f32de2fd5ba132d}{SceneType}}\ =\ \doxymbox{\hyperlink{_scene_types_8h_a4fa75d8646a7d0cecf8aa5958b9077c5a63d72051e901c069f8aa1b32aa0c43bb}{ESceneType::Game}};}
+\DoxyCodeLine{00020\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_scene_context_ae7ec2f3beee3e3dedb57e333aca69d98}{Scene}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00021\ \ \ \ \ \}}
+\DoxyCodeLine{00022\ \};}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{struct_f_editor_scene_context}{FEditorSceneContext}}\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{struct_f_scene_context}{FSceneContext}}}
+\DoxyCodeLine{00025\ \{}
+\DoxyCodeLine{00026\ \ \ \ \ \doxymbox{\hyperlink{class_t_object_ptr}{TObjectPtr<AActor>}}\ \doxymbox{\hyperlink{struct_f_editor_scene_context_a7910367d06abdfe1319ee9dc9ba037be}{SelectedActor}};}
+\DoxyCodeLine{00027\ }
+\DoxyCodeLine{00028\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{struct_f_editor_scene_context_ab8dc2684c0d7569261bdf728af21ec3e}{Reset}}()}
+\DoxyCodeLine{00029\ \ \ \ \ \{}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_scene_context_adebf2a1eebea382fc25ad3c6c796fe6c}{FSceneContext::Reset}}();}
+\DoxyCodeLine{00031\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_editor_scene_context_a7910367d06abdfe1319ee9dc9ba037be}{SelectedActor}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00032\ \ \ \ \ \}}
+\DoxyCodeLine{00033\ \};}
+
+\end{DoxyCode}

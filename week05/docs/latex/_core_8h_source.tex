@@ -1,0 +1,100 @@
+\doxysection{Core.\+h}
+\hypertarget{_core_8h_source}{}\label{_core_8h_source}\index{Engine/Source/Core/Core.h@{Engine/Source/Core/Core.h}}
+\doxymbox{\hyperlink{_core_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}Windows.h"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_f_timer_8h}{Core/FTimer.h}}"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_scene_context_8h}{Scene/SceneContext.h}}"{}}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_scene_types_8h}{Scene/SceneTypes.h}}"{}}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_renderer_8h}{Renderer/Renderer.h}}"{}}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_physics_manager_8h}{Physics/PhysicsManager.h}}"{}}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_scene_manager_8h}{Scene/SceneManager.h}}"{}}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_enhanced_input_manager}{CEnhancedInputManager}};}
+\DoxyCodeLine{00014\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_input_manager}{CInputManager}};}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_a_actor}{AActor}};}
+\DoxyCodeLine{00017\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_u_scene}{UScene}};}
+\DoxyCodeLine{00018\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_object_manager}{ObjectManager}};}
+\DoxyCodeLine{00019\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_i_viewport_client}{IViewportClient}};}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_c_core_a4239739c60a7315a6dd5db9675615b27}{CCore}}}
+\DoxyCodeLine{00022\ \{}
+\DoxyCodeLine{00023\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00024\ \ \ \ \ \doxymbox{\hyperlink{class_c_core_a4239739c60a7315a6dd5db9675615b27}{CCore}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00025\ \ \ \ \ \doxymbox{\hyperlink{class_c_core_a4239739c60a7315a6dd5db9675615b27}{\string~CCore}}();}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00027\ \ \ \ \ \doxymbox{\hyperlink{class_c_core_ae972c602d9173b64617cae7510780274}{CCore}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_c_core_a4239739c60a7315a6dd5db9675615b27}{CCore}}\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00028\ \ \ \ \ \doxymbox{\hyperlink{class_c_core_a246843578ba2847551a733b160349939}{CCore}}(\doxymbox{\hyperlink{class_c_core_a4239739c60a7315a6dd5db9675615b27}{CCore}}\&\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00029\ \ \ \ \ \doxymbox{\hyperlink{class_c_core_a4239739c60a7315a6dd5db9675615b27}{CCore}}\&\ \doxymbox{\hyperlink{class_c_core_ac82c5e5f6d66d2cc70dac0ed977a0e3a}{operator=}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_c_core_a4239739c60a7315a6dd5db9675615b27}{CCore}}\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00030\ \ \ \ \ \doxymbox{\hyperlink{class_c_core_a4239739c60a7315a6dd5db9675615b27}{CCore}}\&\ \doxymbox{\hyperlink{class_c_core_a491b0fcabba228632cbd2632cc0ee11a}{operator=}}(\doxymbox{\hyperlink{class_c_core_a4239739c60a7315a6dd5db9675615b27}{CCore}}\&\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_core_a18446b1f89024b031e098361a5fa3525}{Initialize}}(HWND\ Hwnd,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Width,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Height,\ \doxymbox{\hyperlink{_scene_types_8h_a4fa75d8646a7d0cecf8aa5958b9077c5}{ESceneType}}\ StartupSceneType\ =\ \doxymbox{\hyperlink{_scene_types_8h_a4fa75d8646a7d0cecf8aa5958b9077c5a63d72051e901c069f8aa1b32aa0c43bb}{ESceneType::Game}});}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_core_a5e03e45cfbb11e83d5d544d46e2951fa}{Release}}();}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_core_a1f5b67cbedeb32d4b3fb99f26b20741f}{Tick}}();}
+\DoxyCodeLine{00036\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_core_a1f5b67cbedeb32d4b3fb99f26b20741f}{Tick}}(\textcolor{keywordtype}{float}\ DeltaTime);}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00038\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_core_a3d9d0b06ee592e38197b74fcaa2b62bb}{ProcessInput}}(HWND\ Hwnd,\ UINT\ Msg,\ WPARAM\ WParam,\ LPARAM\ LParam);}
+\DoxyCodeLine{00039\ \ \ \ \ \doxymbox{\hyperlink{class_c_renderer}{CRenderer}}*\ \doxymbox{\hyperlink{class_c_core_a05750f17655c1869e0dd94d78af0c0c3}{GetRenderer}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_core_af833c829d2b75d61521463c518fd6ea5}{Renderer}}.get();\ \}}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \ \ \ \ \doxymbox{\hyperlink{class_i_viewport_client}{IViewportClient}}*\ \doxymbox{\hyperlink{class_c_core_a71286c1a68198edfcc822fa8f846b0c1}{GetViewportClient}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_core_ab040e269f7d6886bfd4a75dba8d3f633}{ViewportClient}};\ \}}
+\DoxyCodeLine{00042\ \ \ \ \ \doxymbox{\hyperlink{class_c_input_manager}{CInputManager}}*\ \doxymbox{\hyperlink{class_c_core_a70b292d4d75860f1c5503209af044ee8}{GetInputManager}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_core_a0dd52a50884d48efdc75ed19fac35e86}{InputManager}};\ \}}
+\DoxyCodeLine{00043\ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_f_timer}{FTimer}}\&\ \doxymbox{\hyperlink{class_c_core_ab7f604d2cbcf37b69abf344aadf0261e}{GetTimer}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_core_af56c2dc11686a663f85c52201fe8a9a4}{Timer}};\ \}}
+\DoxyCodeLine{00044\ }
+\DoxyCodeLine{00045\ \ \ \ \ \textcolor{keywordtype}{void}\ SetViewportClient(\doxymbox{\hyperlink{class_i_viewport_client}{IViewportClient}}*\ InViewportClient);}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00047\ \ \ \ \ \textcolor{keywordtype}{void}\ OnResize(\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Width,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Height);}
+\DoxyCodeLine{00048\ \ \ \ \ \doxymbox{\hyperlink{class_c_enhanced_input_manager}{CEnhancedInputManager}}*\ \doxymbox{\hyperlink{class_c_core_a025c6bb3d4f06808ac9abf0fb489557a}{GetEnhancedInputManager}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_core_a51f102ebfbe4e5dab91b4b75c3049083}{EnhancedInput}};\ \}}
+\DoxyCodeLine{00049\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_c_core_a0505a4e50481e2677f85c18e4916a1dc}{GetDeltaTime}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_core_af56c2dc11686a663f85c52201fe8a9a4}{Timer}}.GetDeltaTime();\ \}}
+\DoxyCodeLine{00050\ }
+\DoxyCodeLine{00051\ \ \ \ \ \doxymbox{\hyperlink{class_f_scene_manager}{FSceneManager}}*\ \doxymbox{\hyperlink{class_c_core_a86d2b315c582c999fedb37e64b6e55a9}{GetSceneManager}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_core_adad9f83c9f96031ed2e822ae94d136f9}{SceneManager}}.get();\ \}}
+\DoxyCodeLine{00052\ }
+\DoxyCodeLine{00053\ \ \ \ \ \textcolor{comment}{//\ {\ucr}{\ucr}{\ucr}{\ucr}\ ȣȯ\ {\ucr}{\ucr}{\ucr}{\ucr}}}
+\DoxyCodeLine{00054\ \ \ \ \ \doxymbox{\hyperlink{class_u_scene}{UScene}}*\ \doxymbox{\hyperlink{class_c_core_a16bd79c2fb1fd3253e6d8d6e7310f618}{GetScene}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_core_adad9f83c9f96031ed2e822ae94d136f9}{SceneManager}}-\/>GetActiveScene();\ \}}
+\DoxyCodeLine{00055\ \ \ \ \ \doxymbox{\hyperlink{class_u_scene}{UScene}}*\ \doxymbox{\hyperlink{class_c_core_a11f8b437b4cc0cc7afa489d8425cf9da}{GetActiveScene}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_core_adad9f83c9f96031ed2e822ae94d136f9}{SceneManager}}-\/>GetActiveScene();\ \}}
+\DoxyCodeLine{00056\ \ \ \ \ \doxymbox{\hyperlink{class_u_scene}{UScene}}*\ \doxymbox{\hyperlink{class_c_core_add5f074b5c228f85f2122b4c771aed0c}{GetEditorScene}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_core_adad9f83c9f96031ed2e822ae94d136f9}{SceneManager}}-\/>GetEditorScene();\ \}}
+\DoxyCodeLine{00057\ \ \ \ \ \doxymbox{\hyperlink{class_u_scene}{UScene}}*\ \doxymbox{\hyperlink{class_c_core_ac5e544a3b0937fafab98fe203012e63b}{GetGameScene}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_core_adad9f83c9f96031ed2e822ae94d136f9}{SceneManager}}-\/>GetGameScene();\ \}}
+\DoxyCodeLine{00058\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_core_a906d7c61ae9c97c36ed8892b0edcedd1}{SetSelectedActor}}(\doxymbox{\hyperlink{class_a_actor}{AActor}}*\ A)\ \{\ \doxymbox{\hyperlink{class_c_core_adad9f83c9f96031ed2e822ae94d136f9}{SceneManager}}-\/>SetSelectedActor(A);\ \}}
+\DoxyCodeLine{00059\ \ \ \ \ \doxymbox{\hyperlink{class_a_actor}{AActor}}*\ \doxymbox{\hyperlink{class_c_core_a45170ab1a52ba335f55841705eb6011f}{GetSelectedActor}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_core_adad9f83c9f96031ed2e822ae94d136f9}{SceneManager}}-\/>GetSelectedActor();\ \}}
+\DoxyCodeLine{00060\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_core_aaf9a6a65e37cbcc44f654288b5800c8a}{ActivateEditorScene}}()\ \{\ \doxymbox{\hyperlink{class_c_core_adad9f83c9f96031ed2e822ae94d136f9}{SceneManager}}-\/>ActivateEditorScene();\ \}}
+\DoxyCodeLine{00061\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_core_ab90cb5b7134aef3f2c6d824ae1702ce9}{ActivateGameScene}}()\ \{\ \doxymbox{\hyperlink{class_c_core_adad9f83c9f96031ed2e822ae94d136f9}{SceneManager}}-\/>ActivateGameScene();\ \}}
+\DoxyCodeLine{00062\ }
+\DoxyCodeLine{00063\ \ \ \ \ \textcolor{comment}{//rapper}}
+\DoxyCodeLine{00064\ \ \ \ \ \doxymbox{\hyperlink{struct_f_editor_scene_context}{FEditorSceneContext}}*\ \doxymbox{\hyperlink{class_c_core_a8d9669a44d9bf8d469c618e786dd06a7}{CreatePreviewSceneContext}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ ContextName)\ \ \{\textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_core_adad9f83c9f96031ed2e822ae94d136f9}{SceneManager}}-\/>CreatePreviewSceneContext(ContextName,\ \doxymbox{\hyperlink{class_c_core_acdbf77881d3e7f343b1273d1b52f482d}{WindowWidth}},\ \doxymbox{\hyperlink{class_c_core_a26c3f2ef6cf8a9d25a1f75a2aea3e37b}{WindowHeight}});\}}
+\DoxyCodeLine{00065\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_core_a8f7aca2a015009c834c065fbe8c597bc}{DestroyPreviewSceneContext}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ ContextName)\ \{\textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_core_adad9f83c9f96031ed2e822ae94d136f9}{SceneManager}}-\/>DestroyPreviewScene(ContextName);\}}
+\DoxyCodeLine{00066\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_core_afc477e31634d859d058e1f45255131cf}{ActivatePreviewScene}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ ContextName)\{\textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_core_adad9f83c9f96031ed2e822ae94d136f9}{SceneManager}}-\/>ActivatePreviewScene(ContextName);\}}
+\DoxyCodeLine{00067\ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_scene_context}{FSceneContext}}*\ \doxymbox{\hyperlink{class_c_core_afc66dd7c55556dadf61fdf54a8dc5402}{GetActiveSceneContext}}()\textcolor{keyword}{\ const}\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_core_adad9f83c9f96031ed2e822ae94d136f9}{SceneManager}}-\/>GetActiveSceneContext();\}}
+\DoxyCodeLine{00068\ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray<std::unique\_ptr<FEditorSceneContext>}}>\&\ \doxymbox{\hyperlink{class_c_core_a4fb643f97cd78a093397e3a7d3c0879f}{GetPreviewSceneContexts}}()\textcolor{keyword}{\ const}\{\textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_core_adad9f83c9f96031ed2e822ae94d136f9}{SceneManager}}-\/>GetPreviewSceneContexts();\}}
+\DoxyCodeLine{00069\ }
+\DoxyCodeLine{00070\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00071\ \ \ \ \ \textcolor{keywordtype}{void}\ Input(\textcolor{keywordtype}{float}\ DeltaTime);}
+\DoxyCodeLine{00072\ \ \ \ \ \textcolor{keywordtype}{void}\ Physics(\textcolor{keywordtype}{float}\ DeltaTime);}
+\DoxyCodeLine{00073\ \ \ \ \ \textcolor{keywordtype}{void}\ GameLogic(\textcolor{keywordtype}{float}\ DeltaTime);}
+\DoxyCodeLine{00074\ \ \ \ \ \textcolor{keywordtype}{void}\ Render();}
+\DoxyCodeLine{00075\ \ \ \ \ \textcolor{keywordtype}{void}\ LateUpdate(\textcolor{keywordtype}{float}\ DeltaTime);}
+\DoxyCodeLine{00076\ \ \ \ \ \textcolor{keywordtype}{void}\ RegisterConsoleVariables();}
+\DoxyCodeLine{00077\ }
+\DoxyCodeLine{00078\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00079\ \ \ \ \ std::unique\_ptr<CRenderer>\ \doxymbox{\hyperlink{class_c_core_af833c829d2b75d61521463c518fd6ea5}{Renderer}};}
+\DoxyCodeLine{00080\ \ \ \ \ \doxymbox{\hyperlink{class_c_input_manager}{CInputManager}}*\ \doxymbox{\hyperlink{class_c_core_a0dd52a50884d48efdc75ed19fac35e86}{InputManager}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00081\ \ \ \ \ \doxymbox{\hyperlink{class_c_enhanced_input_manager}{CEnhancedInputManager}}*\ \doxymbox{\hyperlink{class_c_core_a51f102ebfbe4e5dab91b4b75c3049083}{EnhancedInput}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00082\ }
+\DoxyCodeLine{00083\ \ \ \ \ \doxymbox{\hyperlink{class_object_manager}{ObjectManager}}*\ \doxymbox{\hyperlink{class_c_core_a5a3458f5d949ae8199d71fbd5c5fc732}{ObjManager}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00084\ \ \ \ \ \doxymbox{\hyperlink{class_i_viewport_client}{IViewportClient}}*\ \doxymbox{\hyperlink{class_c_core_ab040e269f7d6886bfd4a75dba8d3f633}{ViewportClient}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00085\ \ \ \ \ std::unique\_ptr<FSceneManager>\ \doxymbox{\hyperlink{class_c_core_adad9f83c9f96031ed2e822ae94d136f9}{SceneManager}};}
+\DoxyCodeLine{00086\ }
+\DoxyCodeLine{00087\ \ \ \ \ std::unique\_ptr<CPhysicsManager>\ \doxymbox{\hyperlink{class_c_core_ace80b2fa2240daff38f610ff9923786a}{PhysicsManager}};}
+\DoxyCodeLine{00088\ }
+\DoxyCodeLine{00089\ \ \ \ \ \doxymbox{\hyperlink{class_f_timer}{FTimer}}\ \doxymbox{\hyperlink{class_c_core_af56c2dc11686a663f85c52201fe8a9a4}{Timer}};}
+\DoxyCodeLine{00090\ \ \ \ \ \textcolor{keywordtype}{double}\ \doxymbox{\hyperlink{class_c_core_ab1187830a8e7164af441f8f97a2213dc}{LastGCTime}}\ =\ 0.0;}
+\DoxyCodeLine{00091\ \ \ \ \ \textcolor{keywordtype}{double}\ \doxymbox{\hyperlink{class_c_core_a8eed058bf74b249efbc868e6d0588f37}{GCInterval}}\ =\ 30.0;}
+\DoxyCodeLine{00092\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ \doxymbox{\hyperlink{class_c_core_acdbf77881d3e7f343b1273d1b52f482d}{WindowWidth}}\ =\ 0;}
+\DoxyCodeLine{00093\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ \doxymbox{\hyperlink{class_c_core_a26c3f2ef6cf8a9d25a1f75a2aea3e37b}{WindowHeight}}\ =\ 0;}
+\DoxyCodeLine{00094\ \};}
+
+\end{DoxyCode}

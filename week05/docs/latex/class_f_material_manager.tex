@@ -1,0 +1,193 @@
+\doxysection{FMaterial\+Manager Class Reference}
+\hypertarget{class_f_material_manager}{}\label{class_f_material_manager}\index{FMaterialManager@{FMaterialManager}}
+
+
+{\ttfamily \+\#include $<$Material\+Manager.\+h$>$}
+
+
+
+Collaboration diagram for FMaterial\+Manager:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=182pt]{class_f_material_manager__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_material}{FMaterial}} $>$ \doxymbox{\hyperlink{class_f_material_manager_aee0a288ceb47f3303444923c6f6fcd66}{Get\+Or\+Load}} (ID3\+D11\+Device \texorpdfstring{$\ast$}{*}Device, const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&File\+Path)
+\item 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_material}{FMaterial}} $>$ \doxymbox{\hyperlink{class_f_material_manager_a0d0fec61437b31784200f52354d139dd}{Find\+By\+Name}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Name) const
+\item 
+void \doxymbox{\hyperlink{class_f_material_manager_a81c78cca86355a59c50c7ef7157032f1}{Register}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Name, const std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_material}{FMaterial}} $>$ \&In\+Material)
+\item 
+\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} $>$ \doxymbox{\hyperlink{class_f_material_manager_a424e3a993745ded30f9f9c71cb6e916e}{Get\+Loaded\+Paths}} () const
+\item 
+void \doxymbox{\hyperlink{class_f_material_manager_ae83d4b35b03e5171903c901528930228}{Clear}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static \doxymbox{\hyperlink{class_f_material_manager}{FMaterial\+Manager}} \& \doxymbox{\hyperlink{class_f_material_manager_a74c30d0789216a3ed5be4a314b41a182}{Get}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_f_material_manager_a9293bf95dec94fabd8a476f5ae2ef78b}{FMaterial\+Manager}} ()=default
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap}}$<$ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}, std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_material}{FMaterial}} $>$ $>$ \doxymbox{\hyperlink{class_f_material_manager_a6cd05c2c4fa35a8f9a0c580f7cbc8387}{Path\+Cache}}
+\item 
+\doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap}}$<$ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}, std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_material}{FMaterial}} $>$ $>$ \doxymbox{\hyperlink{class_f_material_manager_a10024742a17883edea51a1f781fdbee1}{Name\+Cache}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{class_f_material_manager_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_f_material_manager_a9293bf95dec94fabd8a476f5ae2ef78b}\index{FMaterialManager@{FMaterialManager}!FMaterialManager@{FMaterialManager}}
+\index{FMaterialManager@{FMaterialManager}!FMaterialManager@{FMaterialManager}}
+\doxysubsubsection{\texorpdfstring{FMaterialManager()}{FMaterialManager()}}
+{\footnotesize\ttfamily \label{class_f_material_manager_a9293bf95dec94fabd8a476f5ae2ef78b} 
+FMaterial\+Manager::\+\+FMaterial\+Manager (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [default]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_material_manager_a9293bf95dec94fabd8a476f5ae2ef78b_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-func-members}
+\Hypertarget{class_f_material_manager_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_f_material_manager_ae83d4b35b03e5171903c901528930228}\index{FMaterialManager@{FMaterialManager}!Clear@{Clear}}
+\index{Clear@{Clear}!FMaterialManager@{FMaterialManager}}
+\doxysubsubsection{\texorpdfstring{Clear()}{Clear()}}
+{\footnotesize\ttfamily \label{class_f_material_manager_ae83d4b35b03e5171903c901528930228} 
+void FMaterial\+Manager::\+\+Clear (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_material_manager_ae83d4b35b03e5171903c901528930228_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_material_manager_a0d0fec61437b31784200f52354d139dd}\index{FMaterialManager@{FMaterialManager}!FindByName@{FindByName}}
+\index{FindByName@{FindByName}!FMaterialManager@{FMaterialManager}}
+\doxysubsubsection{\texorpdfstring{FindByName()}{FindByName()}}
+{\footnotesize\ttfamily \label{class_f_material_manager_a0d0fec61437b31784200f52354d139dd} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_material}{FMaterial}} $>$ FMaterial\+Manager::\+\+Find\+By\+Name (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Name}{}\end{DoxyParamCaption}) const}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_material_manager_a0d0fec61437b31784200f52354d139dd_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_material_manager_a74c30d0789216a3ed5be4a314b41a182}\index{FMaterialManager@{FMaterialManager}!Get@{Get}}
+\index{Get@{Get}!FMaterialManager@{FMaterialManager}}
+\doxysubsubsection{\texorpdfstring{Get()}{Get()}}
+{\footnotesize\ttfamily \label{class_f_material_manager_a74c30d0789216a3ed5be4a314b41a182} 
+\doxymbox{\hyperlink{class_f_material_manager}{FMaterial\+Manager}} \& FMaterial\+Manager::\+\+Get (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_material_manager_a74c30d0789216a3ed5be4a314b41a182_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_material_manager_a74c30d0789216a3ed5be4a314b41a182_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_material_manager_a424e3a993745ded30f9f9c71cb6e916e}\index{FMaterialManager@{FMaterialManager}!GetLoadedPaths@{GetLoadedPaths}}
+\index{GetLoadedPaths@{GetLoadedPaths}!FMaterialManager@{FMaterialManager}}
+\doxysubsubsection{\texorpdfstring{GetLoadedPaths()}{GetLoadedPaths()}}
+{\footnotesize\ttfamily \label{class_f_material_manager_a424e3a993745ded30f9f9c71cb6e916e} 
+\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} $>$ FMaterial\+Manager::\+\+Get\+Loaded\+Paths (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_material_manager_a424e3a993745ded30f9f9c71cb6e916e_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_material_manager_aee0a288ceb47f3303444923c6f6fcd66}\index{FMaterialManager@{FMaterialManager}!GetOrLoad@{GetOrLoad}}
+\index{GetOrLoad@{GetOrLoad}!FMaterialManager@{FMaterialManager}}
+\doxysubsubsection{\texorpdfstring{GetOrLoad()}{GetOrLoad()}}
+{\footnotesize\ttfamily \label{class_f_material_manager_aee0a288ceb47f3303444923c6f6fcd66} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_material}{FMaterial}} $>$ FMaterial\+Manager::\+\+Get\+Or\+Load (\begin{DoxyParamCaption}\item[{ID3\+D11\+Device \texorpdfstring{$\ast$}{*}}]{Device}{, }\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{File\+Path}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_material_manager_aee0a288ceb47f3303444923c6f6fcd66_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_material_manager_aee0a288ceb47f3303444923c6f6fcd66_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_material_manager_a81c78cca86355a59c50c7ef7157032f1}\index{FMaterialManager@{FMaterialManager}!Register@{Register}}
+\index{Register@{Register}!FMaterialManager@{FMaterialManager}}
+\doxysubsubsection{\texorpdfstring{Register()}{Register()}}
+{\footnotesize\ttfamily \label{class_f_material_manager_a81c78cca86355a59c50c7ef7157032f1} 
+void FMaterial\+Manager::\+\+Register (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Name}{, }\item[{const std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_material}{FMaterial}} $>$ \&}]{In\+Material}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_material_manager_a81c78cca86355a59c50c7ef7157032f1_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_f_material_manager_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_f_material_manager_a10024742a17883edea51a1f781fdbee1}\index{FMaterialManager@{FMaterialManager}!NameCache@{NameCache}}
+\index{NameCache@{NameCache}!FMaterialManager@{FMaterialManager}}
+\doxysubsubsection{\texorpdfstring{NameCache}{NameCache}}
+{\footnotesize\ttfamily \label{class_f_material_manager_a10024742a17883edea51a1f781fdbee1} 
+\doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap}}$<$\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}, std::\+shared\+\_\+ptr$<$\doxymbox{\hyperlink{class_f_material}{FMaterial}}$>$ $>$ FMaterial\+Manager::\+\+Name\+Cache\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_f_material_manager_a6cd05c2c4fa35a8f9a0c580f7cbc8387}\index{FMaterialManager@{FMaterialManager}!PathCache@{PathCache}}
+\index{PathCache@{PathCache}!FMaterialManager@{FMaterialManager}}
+\doxysubsubsection{\texorpdfstring{PathCache}{PathCache}}
+{\footnotesize\ttfamily \label{class_f_material_manager_a6cd05c2c4fa35a8f9a0c580f7cbc8387} 
+\doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap}}$<$\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}, std::\+shared\+\_\+ptr$<$\doxymbox{\hyperlink{class_f_material}{FMaterial}}$>$ $>$ FMaterial\+Manager::\+\+Path\+Cache\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Renderer/\+\doxymbox{\hyperlink{_material_manager_8h}{Material\+Manager.\+h}}\item 
+Engine/\+\+Source/\+\+Renderer/\+\doxymbox{\hyperlink{_material_manager_8cpp}{Material\+Manager.\+cpp}}\end{DoxyCompactItemize}

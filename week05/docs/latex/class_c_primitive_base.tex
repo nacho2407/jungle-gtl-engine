@@ -1,0 +1,190 @@
+\doxysection{CPrimitive\+Base Class Reference}
+\hypertarget{class_c_primitive_base}{}\label{class_c_primitive_base}\index{CPrimitiveBase@{CPrimitiveBase}}
+
+
+{\ttfamily \+\#include $<$Primitive\+Base.\+h$>$}
+
+
+
+Inheritance diagram for CPrimitive\+Base:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_base__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for CPrimitive\+Base:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=186pt]{class_c_primitive_base__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_c_primitive_base_a6b624ba8ebdba1c66ac033aac231e517}{CPrimitive\+Base}} ()=default
+\item 
+virtual \doxymbox{\hyperlink{class_c_primitive_base_a784e90a769d85e5eed1f10a1b77e8dfa}{\texorpdfstring{$\sim$}{\string~}\+CPrimitive\+Base}} ()=default
+\item 
+\doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_primitive_base_a05f5ffc51d97e507777a57104873ad14}{Get\+Mesh\+Data}} () const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_base_a207f69df0e4bd055b37b14c9cb9d93d9}{Get\+Or\+Load}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Key, const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&File\+Path)
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_base_ab733faa2005488f36649f777237a00aa}{Get\+Cached}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Key)
+\item 
+static void \doxymbox{\hyperlink{class_c_primitive_base_ac7bd2198368527836380fc804d57bfb2}{Register\+Mesh\+Data}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Key, std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ Data)
+\item 
+static void \doxymbox{\hyperlink{class_c_primitive_base_af59f6b67897e6892d3c1ec93e0312a1f}{Clear\+Cache}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_base_a8a1a33ea96365c0ad57b6dcf5513b66b}{Mesh\+Data}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_base_a248837fa3cf212f22bf4f8c2e5e592b6}{Load\+From\+File}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&File\+Path)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static \doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap}}$<$ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}, std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ $>$ \doxymbox{\hyperlink{class_c_primitive_base_a7a52e6b08b5de285e07f4c90f296b876}{Mesh\+Cache}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{class_c_primitive_base_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_c_primitive_base_a6b624ba8ebdba1c66ac033aac231e517}\index{CPrimitiveBase@{CPrimitiveBase}!CPrimitiveBase@{CPrimitiveBase}}
+\index{CPrimitiveBase@{CPrimitiveBase}!CPrimitiveBase@{CPrimitiveBase}}
+\doxysubsubsection{\texorpdfstring{CPrimitiveBase()}{CPrimitiveBase()}}
+{\footnotesize\ttfamily \label{class_c_primitive_base_a6b624ba8ebdba1c66ac033aac231e517} 
+CPrimitive\+Base::\+\+CPrimitive\+Base (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+\Hypertarget{class_c_primitive_base_a784e90a769d85e5eed1f10a1b77e8dfa}\index{CPrimitiveBase@{CPrimitiveBase}!````~CPrimitiveBase@{\texorpdfstring{$\sim$}{\string~}CPrimitiveBase}}
+\index{````~CPrimitiveBase@{\texorpdfstring{$\sim$}{\string~}CPrimitiveBase}!CPrimitiveBase@{CPrimitiveBase}}
+\doxysubsubsection{\texorpdfstring{\texorpdfstring{$\sim$}{\string~}CPrimitiveBase()}{\string~CPrimitiveBase()}}
+{\footnotesize\ttfamily \label{class_c_primitive_base_a784e90a769d85e5eed1f10a1b77e8dfa} 
+virtual CPrimitive\+Base::\+\texorpdfstring{$\sim$}{\string~}\+CPrimitive\+Base (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [virtual]}, {\ttfamily [default]}}
+
+
+
+\label{doc-func-members}
+\Hypertarget{class_c_primitive_base_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_c_primitive_base_af59f6b67897e6892d3c1ec93e0312a1f}\index{CPrimitiveBase@{CPrimitiveBase}!ClearCache@{ClearCache}}
+\index{ClearCache@{ClearCache}!CPrimitiveBase@{CPrimitiveBase}}
+\doxysubsubsection{\texorpdfstring{ClearCache()}{ClearCache()}}
+{\footnotesize\ttfamily \label{class_c_primitive_base_af59f6b67897e6892d3c1ec93e0312a1f} 
+void CPrimitive\+Base::\+\+Clear\+Cache (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_base_af59f6b67897e6892d3c1ec93e0312a1f_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_base_ab733faa2005488f36649f777237a00aa}\index{CPrimitiveBase@{CPrimitiveBase}!GetCached@{GetCached}}
+\index{GetCached@{GetCached}!CPrimitiveBase@{CPrimitiveBase}}
+\doxysubsubsection{\texorpdfstring{GetCached()}{GetCached()}}
+{\footnotesize\ttfamily \label{class_c_primitive_base_ab733faa2005488f36649f777237a00aa} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ CPrimitive\+Base::\+\+Get\+Cached (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Key}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_base_ab733faa2005488f36649f777237a00aa_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_base_a05f5ffc51d97e507777a57104873ad14}\index{CPrimitiveBase@{CPrimitiveBase}!GetMeshData@{GetMeshData}}
+\index{GetMeshData@{GetMeshData}!CPrimitiveBase@{CPrimitiveBase}}
+\doxysubsubsection{\texorpdfstring{GetMeshData()}{GetMeshData()}}
+{\footnotesize\ttfamily \label{class_c_primitive_base_a05f5ffc51d97e507777a57104873ad14} 
+\doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} \texorpdfstring{$\ast$}{*} CPrimitive\+Base::\+\+Get\+Mesh\+Data (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_base_a05f5ffc51d97e507777a57104873ad14_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_base_a207f69df0e4bd055b37b14c9cb9d93d9}\index{CPrimitiveBase@{CPrimitiveBase}!GetOrLoad@{GetOrLoad}}
+\index{GetOrLoad@{GetOrLoad}!CPrimitiveBase@{CPrimitiveBase}}
+\doxysubsubsection{\texorpdfstring{GetOrLoad()}{GetOrLoad()}}
+{\footnotesize\ttfamily \label{class_c_primitive_base_a207f69df0e4bd055b37b14c9cb9d93d9} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ CPrimitive\+Base::\+\+Get\+Or\+Load (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Key}{, }\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{File\+Path}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_base_a207f69df0e4bd055b37b14c9cb9d93d9_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_base_a248837fa3cf212f22bf4f8c2e5e592b6}\index{CPrimitiveBase@{CPrimitiveBase}!LoadFromFile@{LoadFromFile}}
+\index{LoadFromFile@{LoadFromFile}!CPrimitiveBase@{CPrimitiveBase}}
+\doxysubsubsection{\texorpdfstring{LoadFromFile()}{LoadFromFile()}}
+{\footnotesize\ttfamily \label{class_c_primitive_base_a248837fa3cf212f22bf4f8c2e5e592b6} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ CPrimitive\+Base::\+\+Load\+From\+File (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{File\+Path}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_base_a248837fa3cf212f22bf4f8c2e5e592b6_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_base_ac7bd2198368527836380fc804d57bfb2}\index{CPrimitiveBase@{CPrimitiveBase}!RegisterMeshData@{RegisterMeshData}}
+\index{RegisterMeshData@{RegisterMeshData}!CPrimitiveBase@{CPrimitiveBase}}
+\doxysubsubsection{\texorpdfstring{RegisterMeshData()}{RegisterMeshData()}}
+{\footnotesize\ttfamily \label{class_c_primitive_base_ac7bd2198368527836380fc804d57bfb2} 
+void CPrimitive\+Base::\+\+Register\+Mesh\+Data (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Key}{, }\item[{std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$}]{Data}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_base_ac7bd2198368527836380fc804d57bfb2_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_c_primitive_base_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_c_primitive_base_a7a52e6b08b5de285e07f4c90f296b876}\index{CPrimitiveBase@{CPrimitiveBase}!MeshCache@{MeshCache}}
+\index{MeshCache@{MeshCache}!CPrimitiveBase@{CPrimitiveBase}}
+\doxysubsubsection{\texorpdfstring{MeshCache}{MeshCache}}
+{\footnotesize\ttfamily \label{class_c_primitive_base_a7a52e6b08b5de285e07f4c90f296b876} 
+std::\+unordered\+\_\+map$<$ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}, std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ $>$ CPrimitive\+Base::\+\+Mesh\+Cache\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\Hypertarget{class_c_primitive_base_a8a1a33ea96365c0ad57b6dcf5513b66b}\index{CPrimitiveBase@{CPrimitiveBase}!MeshData@{MeshData}}
+\index{MeshData@{MeshData}!CPrimitiveBase@{CPrimitiveBase}}
+\doxysubsubsection{\texorpdfstring{MeshData}{MeshData}}
+{\footnotesize\ttfamily \label{class_c_primitive_base_a8a1a33ea96365c0ad57b6dcf5513b66b} 
+std::\+shared\+\_\+ptr$<$\doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}}$>$ CPrimitive\+Base::\+\+Mesh\+Data\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Primitive/\+\doxymbox{\hyperlink{_primitive_base_8h}{Primitive\+Base.\+h}}\item 
+Engine/\+\+Source/\+\+Primitive/\+\doxymbox{\hyperlink{_primitive_base_8cpp}{Primitive\+Base.\+cpp}}\end{DoxyCompactItemize}

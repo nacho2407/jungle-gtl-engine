@@ -1,0 +1,17 @@
+<map id="CPrimitiveGizmo::CreateRotationAxisMesh" name="CPrimitiveGizmo::CreateRotationAxisMesh">
+<area shape="rect" id="Node000001" title=" " alt="" coords="735,29,952,72"/>
+<area shape="poly" id="edge2_Node000001_Node000001" title=" " alt="" coords="885,13,870,10,843,8,818,10,803,15,797,21,799,30,794,27,792,19,800,10,817,5,844,3,872,5,890,14"/>
+<area shape="rect" id="Node000002" href="$class_c_gizmo.html#a1d004c0c9325bb8af752472a9c03732b" title=" " alt="" coords="208,12,423,39"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="738,26,687,20,619,15,550,14,424,18,423,13,550,9,619,10,688,15,744,26"/>
+<area shape="rect" id="Node000003" href="$class_c_primitive_gizmo.html#ad43215c03798a9be9a9245231a73f8e2" title=" " alt="" coords="471,29,687,72"/>
+<area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="717,51,688,53,688,48,723,50"/>
+<area shape="rect" id="Node000004" href="$class_c_gizmo.html#a6167e126bc109b5fd455347d4aa5b621" title=" " alt="" coords="472,96,686,123"/>
+<area shape="poly" id="edge4_Node000001_Node000004" title=" " alt="" coords="732,76,643,98,642,93,727,76"/>
+<area shape="poly" id="edge5_Node000004_Node000002" title=" " alt="" coords="496,92,470,87,349,42,350,37,472,81,501,92"/>
+<area shape="rect" id="Node000005" href="$class_c_gizmo.html#ab66015f827d7a86e37c29ca4f25f5d84" title=" " alt="" coords="243,96,388,123"/>
+<area shape="poly" id="edge6_Node000004_Node000005" title=" " alt="" coords="454,109,388,112,388,107,459,109"/>
+<area shape="rect" id="Node000006" href="$class_c_gizmo.html#ab6f44415de5b8dc89e8f6f0da8309f43" title=" " alt="" coords="13,71,152,97"/>
+<area shape="poly" id="edge7_Node000005_Node000006" title=" " alt="" coords="225,101,152,94,152,89,230,99"/>
+<area shape="rect" id="Node000007" href="$class_c_gizmo.html#a8de57f031240f6412bd94f1d4df2ecd8" title=" " alt="" coords="5,121,160,148"/>
+<area shape="poly" id="edge8_Node000005_Node000007" title=" " alt="" coords="225,119,160,129,160,124,230,119"/>
+</map>

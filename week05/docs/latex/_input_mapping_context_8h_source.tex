@@ -1,0 +1,28 @@
+\doxysection{Input\+Mapping\+Context.\+h}
+\hypertarget{_input_mapping_context_8h_source}{}\label{_input_mapping_context_8h_source}\index{Engine/Source/Input/InputMappingContext.h@{Engine/Source/Input/InputMappingContext.h}}
+\doxymbox{\hyperlink{_input_mapping_context_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}"{}}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_f_input_modifier}{FInputModifier}};}
+\DoxyCodeLine{00005\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_f_input_trigger}{FInputTrigger}};}
+\DoxyCodeLine{00006\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_input_action}{FInputAction}};}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{struct_f_action_key_mapping}{FActionKeyMapping}}}
+\DoxyCodeLine{00009\ \{}
+\DoxyCodeLine{00010\ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action}{FInputAction}}*\ \doxymbox{\hyperlink{struct_f_action_key_mapping_ab731ca04894887586154886ef643d2b5}{Action}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00011\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ \doxymbox{\hyperlink{struct_f_action_key_mapping_ae0f8befad560106c746b1389464d1c14}{Key}}\ =\ 0;}
+\DoxyCodeLine{00012\ \ \ \ \ \doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray<FInputTrigger*>}}\ \doxymbox{\hyperlink{struct_f_action_key_mapping_a200445bb2308cd6dc54414e354452c41}{Triggers}};\ \ }
+\DoxyCodeLine{00013\ \ \ \ \ \doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray<FInputModifier*>}}\ \doxymbox{\hyperlink{struct_f_action_key_mapping_ab1feefc607db924bdf611cc5d993a90e}{Modifiers}};}
+\DoxyCodeLine{00014\ \};}
+\DoxyCodeLine{00015\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{struct_f_input_mapping_context}{FInputMappingContext}}}
+\DoxyCodeLine{00016\ \{}
+\DoxyCodeLine{00017\ \ \ \ \ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \doxymbox{\hyperlink{struct_f_input_mapping_context_a89490c16dc716e3b75492cb9d2e73258}{ContextName}};}
+\DoxyCodeLine{00018\ \ \ \ \ \doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray<FActionKeyMapping>}}\ \doxymbox{\hyperlink{struct_f_input_mapping_context_a5255db62432e4e540b0a657111ec3f77}{Mappings}};}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \ \ \ \ \doxymbox{\hyperlink{struct_f_action_key_mapping}{FActionKeyMapping}}\&\ \doxymbox{\hyperlink{struct_f_input_mapping_context_a092fb46d526970041c3ddf55f7c0d038}{AddMapping}}(\doxymbox{\hyperlink{struct_f_input_action}{FInputAction}}*\ Action,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Key);}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ \};}
+
+\end{DoxyCode}

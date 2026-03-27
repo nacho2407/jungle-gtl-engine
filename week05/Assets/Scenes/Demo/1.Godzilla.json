@@ -1,0 +1,159 @@
+{
+  "Camera": {
+    "Position": [
+      -1.418974757194519,
+      1.8258016109466553,
+      -0.12884879112243652
+    ],
+    "Rotation": [
+      -415.0067138671875,
+      38.600074768066406
+    ]
+  },
+  "Materials": [
+    "Assets/Materials/M_BlueColor.json",
+    "Assets/Materials/M_Gizmos.json",
+    "Assets/Materials/M_GreenColor.json",
+    "Assets/Materials/M_Wireframe.json",
+    "Assets/Materials/M_RedColor.json",
+    "Assets/Materials/M_Sky.json",
+    "Assets/Materials/M_TintYellow.json"
+  ],
+  "NextUUID": 8353,
+  "Primitives": {
+    "0": {
+      "Billboard": true,
+      "Class": "ASkySphereActor",
+      "ComponentUUIDs": [
+        36,
+        37
+      ],
+      "Location": [
+        -1.418974757194519,
+        1.8258016109466553,
+        -0.12884879112243652
+      ],
+      "Material": "M_Sky",
+      "PrimitiveFileName": "",
+      "Rotation": [
+        -0.0,
+        0.0,
+        -0.0
+      ],
+      "Scale": [
+        2000.0,
+        2000.0,
+        2000.0
+      ],
+      "Text": "Text",
+      "TextColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "UUID": 35
+    },
+    "1": {
+      "Billboard": true,
+      "Class": "APlaneActor",
+      "ComponentUUIDs": [
+        39,
+        40,
+        41
+      ],
+      "Location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "PrimitiveFileName": "",
+      "Rotation": [
+        -0.0,
+        0.0,
+        -0.0
+      ],
+      "Scale": [
+        10.0,
+        10.0,
+        1.0
+      ],
+      "Text": "Text",
+      "TextColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "UUID": 38
+    },
+    "2": {
+      "Billboard": true,
+      "Class": "AObjActor",
+      "ComponentUUIDs": [
+        62,
+        63,
+        64
+      ],
+      "Location": [
+        -0.45620131492614746,
+        0.0,
+        -0.11800099164247513
+      ],
+      "Material": "M_Default",
+      "PrimitiveFileName": "\\Assets\\Meshes\\lowpoly city.obj",
+      "Rotation": [
+        90.00011444091797,
+        64.71513366699219,
+        -0.0001220703125
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Text": "Text",
+      "TextColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "UUID": 61
+    },
+    "3": {
+      "Billboard": true,
+      "Class": "AObjActor",
+      "ComponentUUIDs": [
+        8176,
+        8177,
+        8178
+      ],
+      "Location": [
+        0.19945001602172852,
+        -0.23158180713653564,
+        -0.4463387727737427
+      ],
+      "Material": "M_Default",
+      "PrimitiveFileName": "\\Assets\\Meshes\\Godzilla.obj",
+      "Rotation": [
+        -90.00006103515625,
+        -64.68023681640625,
+        179.99990844726563
+      ],
+      "Scale": [
+        0.10000000149011612,
+        0.10000000149011612,
+        0.10000000149011612
+      ],
+      "Text": "Text",
+      "TextColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "UUID": 8175
+    }
+  }
+}

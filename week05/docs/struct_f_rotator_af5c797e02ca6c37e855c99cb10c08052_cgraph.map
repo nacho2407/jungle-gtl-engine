@@ -1,0 +1,9 @@
+<map id="FRotator::GetManhattanDistance" name="FRotator::GetManhattanDistance">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,31,220,57"/>
+<area shape="rect" id="Node000002" href="$struct_f_rotator.html#acdae927f1edaea843961be8ffcf5ceb0" title=" " alt="" coords="285,5,416,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="220,30,272,27,267,28,220,35"/>
+<area shape="rect" id="Node000003" href="$struct_f_rotator.html#add462c186e8dc2c76947732bc479440d" title=" " alt="" coords="268,56,433,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="220,53,255,59,249,59,220,58"/>
+<area shape="rect" id="Node000004" href="$struct_f_rotator.html#ab24830195473ee8799c97558deff5b0a" title=" " alt="" coords="481,56,625,83"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="434,67,468,69,463,69,434,72"/>
+</map>

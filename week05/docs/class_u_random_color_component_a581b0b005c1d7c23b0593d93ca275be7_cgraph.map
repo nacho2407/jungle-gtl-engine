@@ -1,0 +1,7 @@
+<map id="URandomColorComponent::BeginPlay" name="URandomColorComponent::BeginPlay">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,35,184,77"/>
+<area shape="rect" id="Node000002" href="$class_u_random_color_component.html#ad4900f0cf66053b0dbdac59e35b9da5a" title=" " alt="" coords="241,5,419,48"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="183,42,228,39,223,40,184,48"/>
+<area shape="rect" id="Node000003" href="$class_u_actor_component.html#aeccc0a96cfa9a5b20f81db38a0e5f785" title=" " alt="" coords="232,72,428,99"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="184,64,219,71,213,71,184,70"/>
+</map>

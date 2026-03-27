@@ -1,0 +1,55 @@
+\doxysection{Shader\+Resource.\+h}
+\hypertarget{_shader_resource_8h_source}{}\label{_shader_resource_8h_source}\index{Engine/Source/Renderer/ShaderResource.h@{Engine/Source/Renderer/ShaderResource.h}}
+\doxymbox{\hyperlink{_shader_resource_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_engine_a_p_i_8h}{EngineAPI.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <d3d11.h>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <string>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <unordered\_map>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_shader_resource_ae03288c75e02aad2ab9fb43b5ed8613e}{FShaderResource}}}
+\DoxyCodeLine{00010\ \{}
+\DoxyCodeLine{00011\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00012\ \ \ \ \ \doxymbox{\hyperlink{class_f_shader_resource_ae03288c75e02aad2ab9fb43b5ed8613e}{\string~FShaderResource}}();}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{void}*\ \doxymbox{\hyperlink{class_f_shader_resource_ac5fa35f66ce21f9580fc3d0fac20fb46}{GetBufferPointer}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00015\ \ \ \ \ SIZE\_T\ \doxymbox{\hyperlink{class_f_shader_resource_a160291e3863eb0a1f6efa17a479dd29c}{GetBufferSize}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{keyword}{static}\ std::shared\_ptr<FShaderResource>\ \doxymbox{\hyperlink{class_f_shader_resource_a4d4d927ac5220989193ae1048233c972}{GetOrCompile}}(}
+\DoxyCodeLine{00018\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{wchar\_t}*\ FilePath,}
+\DoxyCodeLine{00019\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ EntryPoint,}
+\DoxyCodeLine{00020\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ Target}
+\DoxyCodeLine{00021\ \ \ \ \ );}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_shader_resource_a64eb0503f12ee2e5bdf4d57b676dcd58}{ClearCache}}();}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \ \ \ \ \textcolor{comment}{//\ Content/Shaders\ 기본\ 경로\ 설정}}
+\DoxyCodeLine{00026\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_shader_resource_af0306db51c2c0759da0c40dbe7150593}{SetContentDir}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{wchar\_t}*\ Dir);}
+\DoxyCodeLine{00027\ }
+\DoxyCodeLine{00028\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00029\ \ \ \ \ \doxymbox{\hyperlink{class_f_shader_resource_ae03288c75e02aad2ab9fb43b5ed8613e}{FShaderResource}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{comment}{//\ .cso\ 파일\ 경로\ 생성\ (Content/Shaders/VertexShader\_main.cso)}}
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keyword}{static}\ std::wstring\ \doxymbox{\hyperlink{class_f_shader_resource_a12e23c585490a3b38ffed336d357d716}{MakeCsoPath}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{wchar\_t}*\ HlslPath,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ EntryPoint);}
+\DoxyCodeLine{00033\ }
+\DoxyCodeLine{00034\ \ \ \ \ \textcolor{comment}{//\ hlsl이\ cso보다\ 최신인지\ 확인}}
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_shader_resource_a1b36f6b5fd77bdbef3eca08da3c7b5c7}{IsHlslNewer}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{wchar\_t}*\ HlslPath,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{wchar\_t}*\ CsoPath);}
+\DoxyCodeLine{00036\ }
+\DoxyCodeLine{00037\ \ \ \ \ \textcolor{comment}{//\ .cso\ 저장/로드}}
+\DoxyCodeLine{00038\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_shader_resource_a079141073088b1819af034a8d87c2e1e}{SaveCso}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{wchar\_t}*\ CsoPath,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{void}*\ Data,\ SIZE\_T\ Size);}
+\DoxyCodeLine{00039\ \ \ \ \ \textcolor{keyword}{static}\ std::shared\_ptr<FShaderResource>\ \doxymbox{\hyperlink{class_f_shader_resource_ad1aaf2441fa7038e7b31dcbba722bd1d}{LoadCso}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{wchar\_t}*\ CsoPath);}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \ \ \ \ ID3DBlob*\ \doxymbox{\hyperlink{class_f_shader_resource_a079d89f9f3591a85c04ecf1ae029d01c}{ShaderBlob}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00042\ }
+\DoxyCodeLine{00043\ \ \ \ \ \textcolor{comment}{//\ Blob\ 없이\ raw\ 바이트로\ 로드한\ 경우}}
+\DoxyCodeLine{00044\ \ \ \ \ std::vector<uint8\_t>\ \doxymbox{\hyperlink{class_f_shader_resource_a26a0819e5e8899acf0960bc27cd20ea3}{RawData}};}
+\DoxyCodeLine{00045\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_shader_resource_a1b54b71d7ac719fcdafb7ff846a7cbe0}{bFromCso}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00047\ \ \ \ \ \textcolor{keyword}{static}\ std::unordered\_map<std::wstring,\ std::shared\_ptr<FShaderResource>>\ \doxymbox{\hyperlink{class_f_shader_resource_a9d1490b379328b02aa9ff175b9e27fe4}{Cache}};}
+\DoxyCodeLine{00048\ \ \ \ \ \textcolor{keyword}{static}\ std::wstring\ \doxymbox{\hyperlink{class_f_shader_resource_aaf7348aaa83096f98bd27340b75ef511}{ContentDir}};}
+\DoxyCodeLine{00049\ \};}
+
+\end{DoxyCode}

@@ -1,0 +1,26 @@
+\doxysection{Engine\+Log.\+h}
+\hypertarget{_engine_log_8h_source}{}\label{_engine_log_8h_source}\index{Engine/Source/Debug/EngineLog.h@{Engine/Source/Debug/EngineLog.h}}
+\doxymbox{\hyperlink{_engine_log_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}"{}}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <functional>}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{keyword}{using\ }\doxymbox{\hyperlink{_engine_log_8h_a0d298953a961a0d7499d1eb8ab3c085e}{FLogCallback}}\ =\ std::function<void(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*)>;}
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_engine_log_ae42262e8ab0a99736bee33b5670899d1}{FEngineLog}}}
+\DoxyCodeLine{00008\ \{}
+\DoxyCodeLine{00009\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00010\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{class_f_engine_log_ae42262e8ab0a99736bee33b5670899d1}{FEngineLog}}\&\ \doxymbox{\hyperlink{class_f_engine_log_a67675b493e2ad62e3486cfaf3027f4a9}{Get}}();}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_engine_log_a765d595fc942a506497baa440e75dc0f}{Log}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ Format,\ ...);}
+\DoxyCodeLine{00013\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_engine_log_a4956417664c691a961d9d83d3a952d25}{SetCallback}}(\doxymbox{\hyperlink{_engine_log_8h_a0d298953a961a0d7499d1eb8ab3c085e}{FLogCallback}}\ InCallback);}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00016\ \ \ \ \ \doxymbox{\hyperlink{class_f_engine_log_ae42262e8ab0a99736bee33b5670899d1}{FEngineLog}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00017\ \ \ \ \ \doxymbox{\hyperlink{_engine_log_8h_a0d298953a961a0d7499d1eb8ab3c085e}{FLogCallback}}\ \doxymbox{\hyperlink{class_f_engine_log_a3ab393d66b77e9adce842817774e550d}{Callback}};}
+\DoxyCodeLine{00018\ \};}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#define\ UE\_LOG(Format,\ ...)\ FEngineLog::Get().Log(Format,\ \#\#\_\_VA\_ARGS\_\_)}}
+
+\end{DoxyCode}

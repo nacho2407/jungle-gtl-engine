@@ -1,0 +1,23 @@
+<map id="AppendMesh" name="AppendMesh">
+<area shape="rect" id="Node000001" title=" " alt="" coords="974,56,1071,83"/>
+<area shape="rect" id="Node000002" href="$_unreal_editor_styled_gizmo_8cpp.html#a7b860b9504dd57b24795da0b4ac96070" title=" " alt="" coords="823,56,926,83"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="956,70,927,72,926,67,961,69"/>
+<area shape="rect" id="Node000003" href="$_unreal_editor_styled_gizmo_8cpp.html#aa96a23b3070b426144a534d4e61ae07e" title=" " alt="" coords="701,5,775,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="820,50,775,35,775,30,825,50"/>
+<area shape="rect" id="Node000004" href="$_unreal_editor_styled_gizmo_8cpp.html#a2a02aefcc4047374a066404fcf7fee52" title=" " alt="" coords="701,56,775,83"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="804,70,775,72,775,67,809,69"/>
+<area shape="rect" id="Node000005" href="$_unreal_editor_styled_gizmo_8cpp.html#ad62ae5b5bfb54ff17a4f4ed9443c28d8" title=" " alt="" coords="701,107,775,133"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="825,88,776,109,774,104,820,89"/>
+<area shape="rect" id="Node000006" href="$class_c_primitive_gizmo.html#a695146e999f79d0f4cb9eca1b97800b9" title=" " alt="" coords="472,32,653,75"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="686,100,652,89,623,78,623,73,654,84,691,101"/>
+<area shape="rect" id="Node000009" href="$class_c_primitive_gizmo.html#ae6e66ee72c45837d85101b2b56bc4952" title=" " alt="" coords="472,99,653,141"/>
+<area shape="poly" id="edge8_Node000005_Node000009" title=" " alt="" coords="683,120,654,123,654,117,688,120"/>
+<area shape="rect" id="Node000010" href="$class_c_primitive_gizmo.html#adbdcd0e107b503f37eda8362e2ba25f4" title=" " alt="" coords="472,165,653,208"/>
+<area shape="poly" id="edge10_Node000005_Node000010" title=" " alt="" coords="691,139,654,156,624,167,623,162,652,151,686,140"/>
+<area shape="rect" id="Node000007" href="$class_c_primitive_gizmo.html#af8b2b895ecf8b70831efbcb95e497874" title=" " alt="" coords="243,107,424,133"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="475,79,383,109,381,104,470,80"/>
+<area shape="rect" id="Node000008" href="$class_c_primitive_gizmo.html#a689cc5eabc647396f4b758f07c35636a" title=" " alt="" coords="5,99,195,141"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="225,121,196,123,195,117,230,119"/>
+<area shape="poly" id="edge9_Node000009_Node000007" title=" " alt="" coords="454,120,425,123,424,117,459,120"/>
+<area shape="poly" id="edge11_Node000010_Node000007" title=" " alt="" coords="470,161,382,137,382,131,475,161"/>
+</map>

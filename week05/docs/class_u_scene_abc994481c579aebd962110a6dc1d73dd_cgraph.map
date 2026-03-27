@@ -1,0 +1,11 @@
+<map id="UScene::DestroyActor" name="UScene::DestroyActor">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,31,159,57"/>
+<area shape="rect" id="Node000002" href="$class_a_actor.html#acf21b02df0bf53ad12fd01a143700a7b" title=" " alt="" coords="231,5,346,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="158,32,218,27,213,28,159,37"/>
+<area shape="rect" id="Node000005" href="$class_a_actor.html#a1b280198361c9863297f9b4cad0c68dc" title=" " alt="" coords="207,56,371,83"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="159,51,194,57,188,58,159,56"/>
+<area shape="rect" id="Node000003" href="$class_u_object.html#ad4c2d324e1f8f24a783184db1be0bd7d" title=" " alt="" coords="419,5,590,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="347,16,406,18,401,19,347,21"/>
+<area shape="rect" id="Node000004" href="$class_u_object.html#a959b2aa84e7a60b233e2d2df6fa0a4d0" title=" " alt="" coords="638,5,771,32"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="591,16,626,19,620,19,591,21"/>
+</map>

@@ -1,0 +1,21 @@
+<map id="UActorComponent" name="UActorComponent">
+<area shape="rect" id="Node000001" title=" " alt="" coords="111,571,302,939"/>
+<area shape="rect" id="Node000003" href="$class_u_random_color_component.html" title=" " alt="" coords="5,1051,202,1312"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="158,956,138,1052,132,1050,159,950"/>
+<area shape="rect" id="Node000004" href="$class_u_scene_component.html" title=" " alt="" coords="226,987,392,1376"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="254,950,265,987,260,987,254,956"/>
+<area shape="rect" id="Node000002" href="$class_u_object.html" title=" " alt="" coords="131,5,282,523"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="207,535,209,571,204,571,206,540"/>
+<area shape="rect" id="Node000005" href="$class_u_camera_component.html" title=" " alt="" coords="128,1424,291,1728"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="257,1388,250,1425,245,1423,255,1393"/>
+<area shape="rect" id="Node000006" href="$class_u_primitive_component.html" title=" " alt="" coords="315,1456,500,1696"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="362,1388,381,1457,375,1456,361,1393"/>
+<area shape="rect" id="Node000007" href="$class_u_cube_component.html" title=" " alt="" coords="131,1776,250,1845"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="323,1706,304,1730,276,1756,245,1779,242,1774,272,1752,301,1726,319,1709"/>
+<area shape="rect" id="Node000008" href="$class_u_gizmo_component.html" title=" " alt="" coords="274,1776,400,1845"/>
+<area shape="poly" id="edge7_Node000006_Node000008" title=" " alt="" coords="369,1709,349,1778,345,1775,365,1712"/>
+<area shape="rect" id="Node000009" href="$class_u_sky_component.html" title=" " alt="" coords="424,1776,535,1845"/>
+<area shape="poly" id="edge8_Node000006_Node000009" title=" " alt="" coords="451,1708,472,1777,467,1775,448,1712"/>
+<area shape="rect" id="Node000010" href="$class_u_sphere_component.html" title=" " alt="" coords="560,1776,688,1845"/>
+<area shape="poly" id="edge9_Node000006_Node000010" title=" " alt="" coords="511,1685,596,1777,590,1776,509,1690"/>
+</map>

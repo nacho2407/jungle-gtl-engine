@@ -1,0 +1,54 @@
+\doxysection{Engine/\+\+Source/\+\+Renderer/\+\+Renderer.h File Reference}
+\hypertarget{_renderer_8h}{}\label{_renderer_8h}\index{Engine/Source/Renderer/Renderer.h@{Engine/Source/Renderer/Renderer.h}}
+{\ttfamily \+\#include "{}Core\+Minimal.\+h"{}}\newline
+{\ttfamily \+\#include "{}Renderer/\+\+Render\+Command.\+h"{}}\newline
+{\ttfamily \+\#include $<$d3d11.\+h$>$}\newline
+{\ttfamily \+\#include $<$functional$>$}\newline
+{\ttfamily \+\#include $<$memory$>$}\newline
+{\ttfamily \+\#include "{}Shader\+Manager.\+h"{}}\newline
+{\ttfamily \+\#include "{}Primitive\+Vertex.\+h"{}}\newline
+Include dependency graph for Renderer.\+h:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_renderer_8h__incl}
+\end{center}
+\end{figure}
+This graph shows which files directly or indirectly include this file:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_renderer_8h__dep__incl}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+class \doxymbox{\hyperlink{class_c_renderer}{CRenderer}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+using \doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}} = std::\+function$<$void()$>$
+\item 
+using \doxymbox{\hyperlink{_renderer_8h_ad02d5af5fdc0e6fca0d053f779d9d9f4}{FPost\+Render\+Callback}} = std::\+function$<$void(\doxymbox{\hyperlink{class_c_renderer}{CRenderer}}\texorpdfstring{$\ast$}{*})$>$
+\end{DoxyCompactItemize}
+
+
+\label{doc-typedef-members}
+\Hypertarget{_renderer_8h_doc-typedef-members}
+\doxysubsection{Typedef Documentation}
+\Hypertarget{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}\index{Renderer.h@{Renderer.h}!FGUICallback@{FGUICallback}}
+\index{FGUICallback@{FGUICallback}!Renderer.h@{Renderer.h}}
+\doxysubsubsection{\texorpdfstring{FGUICallback}{FGUICallback}}
+{\footnotesize\ttfamily \label{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3} 
+using \doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}} = std::\+function$<$void()$>$}
+
+\Hypertarget{_renderer_8h_ad02d5af5fdc0e6fca0d053f779d9d9f4}\index{Renderer.h@{Renderer.h}!FPostRenderCallback@{FPostRenderCallback}}
+\index{FPostRenderCallback@{FPostRenderCallback}!Renderer.h@{Renderer.h}}
+\doxysubsubsection{\texorpdfstring{FPostRenderCallback}{FPostRenderCallback}}
+{\footnotesize\ttfamily \label{_renderer_8h_ad02d5af5fdc0e6fca0d053f779d9d9f4} 
+using \doxymbox{\hyperlink{_renderer_8h_ad02d5af5fdc0e6fca0d053f779d9d9f4}{FPost\+Render\+Callback}} = std::\+function$<$void(\doxymbox{\hyperlink{class_c_renderer}{CRenderer}}\texorpdfstring{$\ast$}{*})$>$}
+

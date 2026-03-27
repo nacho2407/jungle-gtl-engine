@@ -1,0 +1,7 @@
+<map id="CInputManager::GetMouseDeltaY" name="CInputManager::GetMouseDeltaY">
+<area shape="rect" id="Node000001" title=" " alt="" coords="438,13,656,40"/>
+<area shape="rect" id="Node000002" href="$class_c_enhanced_input_manager.html#a1e9fe3fdcd36121f2544c25378cb764b" title=" " alt="" coords="222,5,390,48"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="420,27,391,29,391,24,425,27"/>
+<area shape="rect" id="Node000003" href="$class_c_enhanced_input_manager.html#a88793a4576dada8fdc7538b1b632d242" title=" " alt="" coords="5,5,174,48"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="204,27,174,29,174,24,209,26"/>
+</map>

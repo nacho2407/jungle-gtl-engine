@@ -1,0 +1,9 @@
+<map id="FRotator::Quaternion" name="FRotator::Quaternion">
+<area shape="rect" id="Node000001" title=" " alt="" coords="221,56,364,83"/>
+<area shape="rect" id="Node000002" href="$struct_f_rotator.html#a5f8e4578fc2d17399c32027bf18692d5" title=" " alt="" coords="17,5,161,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="219,53,145,35,146,30,223,51"/>
+<area shape="rect" id="Node000003" href="$struct_f_rotator.html#ab82fa9b8f27bbd076426f719fdfbd49b" title=" " alt="" coords="11,56,167,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="203,70,168,72,167,67,208,69"/>
+<area shape="rect" id="Node000004" href="$struct_f_rotator.html#abfaf13209bf5ec7c4cd8cff65539e6e8" title=" " alt="" coords="5,107,173,133"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="224,87,146,109,145,103,218,87"/>
+</map>

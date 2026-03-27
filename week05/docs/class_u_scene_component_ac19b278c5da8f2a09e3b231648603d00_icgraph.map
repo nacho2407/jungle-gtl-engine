@@ -1,0 +1,23 @@
+<map id="USceneComponent::MarkTransformDirty" name="USceneComponent::MarkTransformDirty">
+<area shape="rect" id="Node000001" title=" " alt="" coords="735,64,967,107"/>
+<area shape="rect" id="Node000002" href="$class_u_scene_component.html#a9daba792d2e1be87e31da7aff9013f92" title=" " alt="" coords="215,10,410,36"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="793,57,743,38,687,22,615,12,543,9,411,14,410,9,543,3,616,7,688,16,745,33,798,57"/>
+<area shape="rect" id="Node000003" href="$class_u_scene_component.html#a701860bfa733c645c823f4c6cbf2f13a" title=" " alt="" coords="472,31,687,74"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="717,70,688,68,688,63,722,69"/>
+<area shape="rect" id="Node000004" href="$class_u_scene_component.html#afc0881495003c9911f6fcc8d3a5bedbf" title=" " alt="" coords="474,98,685,140"/>
+<area shape="poly" id="edge4_Node000001_Node000004" title=" " alt="" coords="717,102,686,109,686,103,723,101"/>
+<area shape="rect" id="Node000007" href="$class_u_scene_component.html#ac1d85c6cb6b74933e0afd85f52d3f9e3" title=" " alt="" coords="474,188,685,231"/>
+<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="791,113,629,190,628,185,786,115"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="454,40,411,36,410,31,459,38"/>
+<area shape="rect" id="Node000005" href="$class_c_gizmo.html#af2d5538d095491b0449bb3600a4f0a4c" title=" " alt="" coords="201,106,424,132"/>
+<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="456,120,425,122,424,116,461,119"/>
+<area shape="rect" id="Node000006" href="$class_c_gizmo.html#a61eb5c2ff40fc0385476dbef4f6fd684" title=" " alt="" coords="5,164,153,191"/>
+<area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="231,138,201,147,130,166,128,161,200,142,236,136"/>
+<area shape="poly" id="edge12_Node000007_Node000007" title=" " alt="" coords="622,173,607,169,580,167,554,169,539,174,532,180,534,189,530,186,527,178,536,169,553,164,580,162,608,164,627,173"/>
+<area shape="rect" id="Node000008" href="$class_c_gizmo.html#acd9a784dcd62df12c64e5ef01c869e0d" title=" " alt="" coords="218,156,407,199"/>
+<area shape="poly" id="edge8_Node000007_Node000008" title=" " alt="" coords="456,195,407,192,407,186,461,195"/>
+<area shape="rect" id="Node000009" href="$class_c_gizmo.html#ad74f1a6f71e783144c61c14f67f38d05" title=" " alt="" coords="201,223,424,250"/>
+<area shape="poly" id="edge10_Node000007_Node000009" title=" " alt="" coords="461,222,425,228,424,223,456,222"/>
+<area shape="poly" id="edge9_Node000008_Node000006" title=" " alt="" coords="200,179,154,180,153,175,205,177"/>
+<area shape="poly" id="edge11_Node000009_Node000006" title=" " alt="" coords="230,219,200,214,129,194,129,189,201,209,236,219"/>
+</map>

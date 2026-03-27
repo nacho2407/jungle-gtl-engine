@@ -1,0 +1,15 @@
+<map id="CEditorUI::SyncSelectedActorProperty" name="CEditorUI::SyncSelectedActorProperty">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,124,205,167"/>
+<area shape="rect" id="Node000002" href="$struct_f_rotator.html#a64d1e3cdfdfacd359888b9d6474d6fb8" title=" " alt="" coords="290,5,400,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="130,121,184,81,251,42,278,33,273,36,254,46,187,85,134,125"/>
+<area shape="rect" id="Node000003" href="$struct_f_transform.html#afd6018501c5d76eb9da91e44580ea911" title=" " alt="" coords="262,56,428,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="166,121,252,92,279,86,275,89,253,97,168,126"/>
+<area shape="rect" id="Node000004" href="$class_u_object.html#a57009010aca3bc218c5034b821987dd4" title=" " alt="" coords="279,107,412,133"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="204,132,265,127,260,130,206,137"/>
+<area shape="rect" id="Node000005" href="$class_a_actor.html#a255f914e22cb9227096d30fb365d08ff" title=" " alt="" coords="253,157,438,184"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="205,153,240,159,235,160,205,158"/>
+<area shape="rect" id="Node000006" href="$struct_f_transform.html#ab0ea0fe880fd7d0392e5c8f092d830db" title=" " alt="" coords="262,208,429,235"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="167,165,253,193,280,203,274,203,252,199,167,170"/>
+<area shape="rect" id="Node000007" href="$struct_f_transform.html#ae3d3033ef1aff269f41f5c5b78761d28" title=" " alt="" coords="276,259,415,285"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="133,165,187,205,254,244,271,253,266,253,251,249,184,210,132,170"/>
+</map>

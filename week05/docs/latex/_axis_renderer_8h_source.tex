@@ -1,0 +1,22 @@
+\doxysection{Axis\+Renderer.\+h}
+\hypertarget{_axis_renderer_8h_source}{}\label{_axis_renderer_8h_source}\index{Editor/Source/Axis/AxisRenderer.h@{Editor/Source/Axis/AxisRenderer.h}}
+\doxymbox{\hyperlink{_axis_renderer_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_vector_8h}{Math/Vector.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_matrix_8h}{Math/Matrix.h}}"{}}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_axis_renderer}{CAxisRenderer}}}
+\DoxyCodeLine{00007\ \{}
+\DoxyCodeLine{00008\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00009\ \ \ \ \ \textcolor{comment}{//\ World\ 좌표계\ 축\ (항상\ 표시)}}
+\DoxyCodeLine{00010\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_axis_renderer_aec784de10631ebcc824c3b3ff1dc1945}{RenderWorldAxis}}(\textcolor{comment}{/*\ TODO:\ 렌더러\ 파라미터\ */});}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \ \ \ \ \textcolor{comment}{//\ Local\ 좌표계\ 축\ (선택된\ 오브젝트\ 기준)}}
+\DoxyCodeLine{00013\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_axis_renderer_a395d35e071f91d103492e9ad23a31f68}{RenderLocalAxis}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ Position,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}}\&\ RotationMatrix);}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{comment}{//\ 축\ 색상:\ X=빨강(1,0,0),\ Y=초록(0,1,0),\ Z=파랑(0,0,1)\ —\ UE5\ 기준}}
+\DoxyCodeLine{00016\ \};}
+
+\end{DoxyCode}

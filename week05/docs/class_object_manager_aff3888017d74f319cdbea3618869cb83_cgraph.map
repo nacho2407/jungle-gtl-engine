@@ -1,0 +1,9 @@
+<map id="ObjectManager::SpawnObject" name="ObjectManager::SpawnObject">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,31,201,57"/>
+<area shape="rect" id="Node000002" href="$class_f_object_factory.html#a9b472d5b328bcbb915a6afb7a74e8a0b" title=" " alt="" coords="249,23,425,65"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="201,41,235,44,230,44,201,47"/>
+<area shape="rect" id="Node000003" href="$class_u_class.html#a360e8f49f378d2f89f93ef2bd42d16fe" title=" " alt="" coords="495,5,657,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="425,32,482,29,477,29,426,37"/>
+<area shape="rect" id="Node000004" href="$class_f_object_factory.html#a5449cfd0c1e06e718eca454b18eaff1d" title=" " alt="" coords="473,56,679,83"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="426,51,460,57,455,57,426,56"/>
+</map>

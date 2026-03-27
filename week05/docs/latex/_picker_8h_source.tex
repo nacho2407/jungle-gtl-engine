@@ -1,0 +1,36 @@
+\doxysection{Picker.\+h}
+\hypertarget{_picker_8h_source}{}\label{_picker_8h_source}\index{Editor/Source/Picking/Picker.h@{Editor/Source/Picking/Picker.h}}
+\doxymbox{\hyperlink{_picker_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_vector_8h}{Math/Vector.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_matrix_8h}{Math/Matrix.h}}"{}}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_a_actor}{AActor}};}
+\DoxyCodeLine{00007\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_u_scene}{UScene}};}
+\DoxyCodeLine{00008\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_camera}{CCamera}};}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_ray}{FRay}}}
+\DoxyCodeLine{00011\ \{}
+\DoxyCodeLine{00012\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_f_ray_a0a70223c8fd6aee9bb95e0ed2bfedcd4}{Origin}};}
+\DoxyCodeLine{00013\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_f_ray_a0de68e428ba025607795065a57c96144}{Direction}};}
+\DoxyCodeLine{00014\ \};}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_picker}{CPicker}}}
+\DoxyCodeLine{00017\ \{}
+\DoxyCodeLine{00018\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00019\ \ \ \ \ \textcolor{comment}{//\ 스크린\ 좌표\ →\ 월드\ 레이\ 변환\ (Deprojection)}}
+\DoxyCodeLine{00020\ \ \ \ \ \doxymbox{\hyperlink{struct_f_ray}{FRay}}\ \doxymbox{\hyperlink{class_c_picker_a0be89fd19e6511b836743f19ab5c83e6}{ScreenToRay}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_c_camera}{CCamera}}*\ Camera,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ ScreenX,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ ScreenY,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ ScreenWidth,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ ScreenHeight)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{comment}{//\ Möller–Trumbore\ 알고리즘:\ 레이-\/삼각형\ 교차\ 검사}}
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_picker_abcd3486e3b72f5e4446f7459a4a3608f}{RayTriangleIntersect}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_ray}{FRay}}\&\ Ray,}
+\DoxyCodeLine{00024\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ V0,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ V1,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ V2,}
+\DoxyCodeLine{00025\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\&\ OutDistance)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00027\ \ \ \ \ \textcolor{comment}{//\ 씬의\ 모든\ Actor를\ 대상으로\ 피킹\ (가장\ 가까운\ Actor\ 반환)}}
+\DoxyCodeLine{00028\ \ \ \ \ \doxymbox{\hyperlink{class_a_actor}{AActor}}*\ \doxymbox{\hyperlink{class_c_picker_a658aa6d3497d703f453fff824423805d}{PickActor}}(\doxymbox{\hyperlink{class_u_scene}{UScene}}*\ Scene,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ ScreenX,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ ScreenY,}
+\DoxyCodeLine{00029\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ ScreenWidth,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ ScreenHeight)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00030\ \};}
+
+\end{DoxyCode}

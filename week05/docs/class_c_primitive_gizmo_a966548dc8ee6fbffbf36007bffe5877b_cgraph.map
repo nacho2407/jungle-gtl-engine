@@ -1,0 +1,19 @@
+<map id="CPrimitiveGizmo::CreateRotationAxisMesh" name="CPrimitiveGizmo::CreateRotationAxisMesh">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,124,222,167"/>
+<area shape="rect" id="Node000002" href="$_unreal_editor_styled_gizmo_8cpp.html#ac9606ae01309220f4ff837c2e2bc8900" title=" " alt="" coords="270,132,431,159"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="222,143,257,144,252,146,223,148"/>
+<area shape="rect" id="Node000003" href="$_unreal_editor_styled_gizmo_8cpp.html#acd7d7e79eb3b664db795380429c52f7d" title=" " alt="" coords="503,5,595,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="364,129,412,87,478,42,487,40,492,37,480,46,416,91,367,134"/>
+<area shape="rect" id="Node000004" href="$_unreal_editor_styled_gizmo_8cpp.html#a784a2bab983964e8fd36b27518165847" title=" " alt="" coords="506,56,593,83"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="385,129,478,92,498,88,493,90,480,97,387,134"/>
+<area shape="rect" id="Node000005" href="$_unreal_editor_styled_gizmo_8cpp.html#ac022f8a6d8e88ac8a486e96643d19289" title=" " alt="" coords="506,107,593,133"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="431,132,493,127,488,128,432,138"/>
+<area shape="rect" id="Node000006" href="$_unreal_editor_styled_gizmo_8cpp.html#a5b708f556d032d8559dadacc4ed045a1" title=" " alt="" coords="506,157,592,184"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="431,153,493,163,488,164,432,158"/>
+<area shape="rect" id="Node000007" href="$struct_f_vector.html#a16c17492999fcbf8bae9b97f3eace0ad" title=" " alt="" coords="479,208,619,235"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="386,156,480,194,498,202,493,202,478,198,385,162"/>
+<area shape="rect" id="Node000009" href="$_unreal_editor_styled_gizmo_8cpp.html#a7969457298670904a16ad436a68a39eb" title=" " alt="" coords="490,259,609,285"/>
+<area shape="poly" id="edge8_Node000002_Node000009" title=" " alt="" coords="367,157,416,199,480,244,492,253,487,252,478,249,412,203,365,162"/>
+<area shape="rect" id="Node000008" href="$struct_f_vector.html#ae7dbfb5fe72606197ce4fb94b9655fd2" title=" " alt="" coords="667,208,787,235"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="620,219,654,221,649,221,620,224"/>
+</map>

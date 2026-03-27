@@ -1,0 +1,977 @@
+\doxysection{FQuat Struct Reference}
+\hypertarget{struct_f_quat}{}\label{struct_f_quat}\index{FQuat@{FQuat}}
+
+
+{\ttfamily \+\#include $<$Quat.\+h$>$}
+
+
+
+Collaboration diagram for FQuat:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=235pt]{struct_f_quat__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+constexpr \doxymbox{\hyperlink{struct_f_quat_a898470770e4f1314a90cccb3ec8e9515}{FQuat}} () noexcept=default
+\item 
+constexpr \doxymbox{\hyperlink{struct_f_quat_a0fa7a7da795a6b9d929d9d49351feb87}{FQuat}} (float InX, float InY, float InZ, float InW) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_quat_ab23aef4f6382ff5768d099ae72300a38}{FQuat}} (\doxymbox{\hyperlink{_core_types_8h_abd7c2c39285e92e50224f58070e4266e}{FXMVector}} In\+Vector) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_quat_ac5b8fc9a971f0c31a659a5c79b586b1a}{FQuat}} (const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&In\+Rotator) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_quat_a63d537cd6637ba1075fb0aaa2b1944ac}{FQuat}} (const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&In\+Matrix) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_quat_ac3de54cc887cf47f34187a7dd9bdda9f}{FQuat}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Axis, float Angle\+Rad) noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_quat_a3a3f2d64bf44124dfd61cfae7ebc9b64}{operator==}} (const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&Other) const noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_quat_af38a3e131a721da0b66171c9a86988a8}{operator!=}} (const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&Other) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} \doxymbox{\hyperlink{struct_f_quat_a8fc442fe207e6ab72349488f01a22bcd}{operator-\/}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} \doxymbox{\hyperlink{struct_f_quat_aa83794a8a5f05c1f216b2e6ce3c8d4b9}{operator+}} (const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&Other) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} \doxymbox{\hyperlink{struct_f_quat_aba6055cf243b2ec47c4be05139c7093a}{operator-\/}} (const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&Other) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} \doxymbox{\hyperlink{struct_f_quat_ad35bfd5e68be26d9ccd6271ffd1d6548}{operator\texorpdfstring{$\ast$}{*}}} (float Scale) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} \doxymbox{\hyperlink{struct_f_quat_a0fa303772399a1c34554117913fa402c}{operator/\+}} (float Scale) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} \doxymbox{\hyperlink{struct_f_quat_a03a8bfafdd77280eeace7fe0c4aa450f}{operator\texorpdfstring{$\ast$}{*}}} (const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&Other) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_quat_a8cff7f8c88144549d079f04a3b2b077d}{operator\texorpdfstring{$\ast$}{*}}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Vector) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} \& \doxymbox{\hyperlink{struct_f_quat_a9894726800bd9c153de8bc56e7e8b67c}{operator+=}} (const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&Other) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} \& \doxymbox{\hyperlink{struct_f_quat_ada81f6f9e5e9695346ebb057a6ca7060}{operator-\/=}} (const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&Other) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} \& \doxymbox{\hyperlink{struct_f_quat_a1fdffcda85a982d84fb265d516ac426d}{operator\texorpdfstring{$\ast$}{*}=}} (float Scale) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} \& \doxymbox{\hyperlink{struct_f_quat_aaf42ce617be850d47faddcb9bc7d12d6}{operator/\+=}} (float Scale) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} \& \doxymbox{\hyperlink{struct_f_quat_a4c4c5457823874270c819832b0bb0d59}{operator\texorpdfstring{$\ast$}{*}=}} (const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&Other) noexcept
+\item 
+float \doxymbox{\hyperlink{struct_f_quat_a4b40b06362a11d68b67425a78c1a6f32}{operator\texorpdfstring{$\vert$}{|}}} (const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&Other) const noexcept
+\item 
+\doxymbox{\hyperlink{_core_types_8h_ad7069eae7b85d4ed27d826f17a716155}{XMVector}} \doxymbox{\hyperlink{struct_f_quat_ae500b97cbb82792796e1e7eb4806c256}{To\+XMVector}} () const noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_quat_a4f1f3466e55678a3d8b8c2914a7f83fc}{Equals}} (const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&Other, float Tolerance=1.e-\/6f) const noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_quat_a967fbac2d9bd287f22d2bc8490b7608c}{Is\+Identity}} (float Tolerance=1.e-\/6f) const noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_quat_a6e03dfc38272fecc372557be15ce6dda}{Contains\+NaN}} () const noexcept
+\item 
+float \doxymbox{\hyperlink{struct_f_quat_ae9594a4aa0eca5475ee4021ac8272d83}{Size\+Squared}} () const noexcept
+\item 
+float \doxymbox{\hyperlink{struct_f_quat_a3c9561ee83b2d819cb9af9e3f2e692e3}{Size}} () const noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_quat_a71d4684b98a91dd533e9b688e51d670d}{Is\+Normalized}} (float Tolerance=1.e-\/4f) const noexcept
+\item 
+void \doxymbox{\hyperlink{struct_f_quat_a20b1175ee99c038924047a6cdc322144}{Normalize}} (float Tolerance=1.e-\/8f) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} \doxymbox{\hyperlink{struct_f_quat_a12195ceb868985b0fdd9dd4fdad54e1f}{Get\+Normalized}} (float Tolerance=1.e-\/8f) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} \doxymbox{\hyperlink{struct_f_quat_a77674ae2708b0ccfc966715daeade61e}{Conjugate}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} \doxymbox{\hyperlink{struct_f_quat_ae8116db12afc8ef3432889fdfd2cfee8}{Inverse}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_quat_a7aa2737e4c1cebdf13b87a3b84ac5d6b}{Rotate\+Vector}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Vector) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_quat_aac80fdb13eb20e9ca1998379f0abdd40}{Unrotate\+Vector}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Vector) const noexcept
+\item 
+float \doxymbox{\hyperlink{struct_f_quat_a0d2142bd0a8c03e91d918acf08f2bacc}{Get\+Angle}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_quat_acdcdd1a501d52c435473bf214d7de33f}{Get\+Rotation\+Axis}} (float Tolerance=1.e-\/8f) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_quat_abffd1fdd4641b659ddc94edf46f1a1e8}{Euler}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_quat_a4640df05da0abd94f0595965dfd81908}{Get\+AxisX}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_quat_ac8553f3c5da67de6b9cc1c19a064fa6b}{Get\+AxisY}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_quat_a1fc8f692ab83b6c81acd48c4f74508c6}{Get\+AxisZ}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_quat_a7906ef57a9fbde45d7086738d54bbcd9}{Get\+Forward\+Vector}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_quat_a9cc8382ea73d65667ab8720848d1cdb0}{Get\+Right\+Vector}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_quat_ac001a9d2ae68381c520aa63fe2ecff00}{Get\+Up\+Vector}} () const noexcept
+\item 
+float \doxymbox{\hyperlink{struct_f_quat_a812797cc1d74794ee5a69466bed762ac}{Angular\+Distance}} (const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&Other) const noexcept
+\item 
+void \doxymbox{\hyperlink{struct_f_quat_a8a78e5300b556e88a9dd9be9e8f841a0}{Enforce\+Shortest\+Arc\+With}} (const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&Other) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_quat_a25b7c213ff296149edc2ab385116b87f}{To\+Matrix}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \doxymbox{\hyperlink{struct_f_quat_a1989ae227ff0623532a249b271a44355}{Rotator}} () const noexcept
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \doxymbox{\hyperlink{struct_f_quat_a282f46d5d93d9f92d7f73de8b0710ad2}{Make\+From\+Euler}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Euler\+Degrees) noexcept
+\item 
+static float \doxymbox{\hyperlink{struct_f_quat_a060f61bc0b167ae7211bed74e3ec2484}{Dot\+Product}} (const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&A, const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&B) noexcept
+\item 
+static \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \doxymbox{\hyperlink{struct_f_quat_ad8e290dbcac5475b5fab42919d67e13a}{Slerp}} (const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&A, const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&B, float Alpha) noexcept
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+float \doxymbox{\hyperlink{struct_f_quat_a733fdde924603c6e14eb1f9b699839d4}{X}} = 0.\+0f
+\item 
+float \doxymbox{\hyperlink{struct_f_quat_a888af248d67cf4f4da9cbfc64b39fa44}{Y}} = 0.\+0f
+\item 
+float \doxymbox{\hyperlink{struct_f_quat_a332f0b8466cd2484620b168be89e1c18}{Z}} = 0.\+0f
+\item 
+float \doxymbox{\hyperlink{struct_f_quat_a7366c17441ff1ec7399fa06fabcc6794}{W}} = 1.\+0f
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \doxymbox{\hyperlink{struct_f_quat_a17b14cd1893310138b67748aba3f8f02}{Identity}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{struct_f_quat_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{struct_f_quat_a898470770e4f1314a90cccb3ec8e9515}\index{FQuat@{FQuat}!FQuat@{FQuat}}
+\index{FQuat@{FQuat}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{FQuat()}{FQuat()}\hspace{0.1cm}{\footnotesize\ttfamily [1/6]}}
+{\footnotesize\ttfamily \label{struct_f_quat_a898470770e4f1314a90cccb3ec8e9515} 
+FQuat::\+\+FQuat (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [constexpr]}, {\ttfamily [default]}, {\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a898470770e4f1314a90cccb3ec8e9515_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a0fa7a7da795a6b9d929d9d49351feb87}\index{FQuat@{FQuat}!FQuat@{FQuat}}
+\index{FQuat@{FQuat}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{FQuat()}{FQuat()}\hspace{0.1cm}{\footnotesize\ttfamily [2/6]}}
+{\footnotesize\ttfamily \label{struct_f_quat_a0fa7a7da795a6b9d929d9d49351feb87} 
+FQuat::\+\+FQuat (\begin{DoxyParamCaption}\item[{float}]{InX}{, }\item[{float}]{InY}{, }\item[{float}]{InZ}{, }\item[{float}]{InW}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [constexpr]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=268pt]{struct_f_quat_a0fa7a7da795a6b9d929d9d49351feb87_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_ab23aef4f6382ff5768d099ae72300a38}\index{FQuat@{FQuat}!FQuat@{FQuat}}
+\index{FQuat@{FQuat}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{FQuat()}{FQuat()}\hspace{0.1cm}{\footnotesize\ttfamily [3/6]}}
+{\footnotesize\ttfamily \label{struct_f_quat_ab23aef4f6382ff5768d099ae72300a38} 
+FQuat::\+\+FQuat (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_core_types_8h_abd7c2c39285e92e50224f58070e4266e}{FXMVector}}}]{In\+Vector}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [explicit]}, {\ttfamily [noexcept]}}
+
+\Hypertarget{struct_f_quat_ac5b8fc9a971f0c31a659a5c79b586b1a}\index{FQuat@{FQuat}!FQuat@{FQuat}}
+\index{FQuat@{FQuat}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{FQuat()}{FQuat()}\hspace{0.1cm}{\footnotesize\ttfamily [4/6]}}
+{\footnotesize\ttfamily \label{struct_f_quat_ac5b8fc9a971f0c31a659a5c79b586b1a} 
+FQuat::\+\+FQuat (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&}]{In\+Rotator}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [explicit]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=268pt]{struct_f_quat_ac5b8fc9a971f0c31a659a5c79b586b1a_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a63d537cd6637ba1075fb0aaa2b1944ac}\index{FQuat@{FQuat}!FQuat@{FQuat}}
+\index{FQuat@{FQuat}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{FQuat()}{FQuat()}\hspace{0.1cm}{\footnotesize\ttfamily [5/6]}}
+{\footnotesize\ttfamily \label{struct_f_quat_a63d537cd6637ba1075fb0aaa2b1944ac} 
+FQuat::\+\+FQuat (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&}]{In\+Matrix}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [explicit]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a63d537cd6637ba1075fb0aaa2b1944ac_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_ac3de54cc887cf47f34187a7dd9bdda9f}\index{FQuat@{FQuat}!FQuat@{FQuat}}
+\index{FQuat@{FQuat}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{FQuat()}{FQuat()}\hspace{0.1cm}{\footnotesize\ttfamily [6/6]}}
+{\footnotesize\ttfamily \label{struct_f_quat_ac3de54cc887cf47f34187a7dd9bdda9f} 
+FQuat::\+\+FQuat (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Axis}{, }\item[{float}]{Angle\+Rad}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_ac3de54cc887cf47f34187a7dd9bdda9f_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-func-members}
+\Hypertarget{struct_f_quat_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{struct_f_quat_a812797cc1d74794ee5a69466bed762ac}\index{FQuat@{FQuat}!AngularDistance@{AngularDistance}}
+\index{AngularDistance@{AngularDistance}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{AngularDistance()}{AngularDistance()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a812797cc1d74794ee5a69466bed762ac} 
+float FQuat::\+\+Angular\+Distance (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&}]{Other}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a812797cc1d74794ee5a69466bed762ac_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a77674ae2708b0ccfc966715daeade61e}\index{FQuat@{FQuat}!Conjugate@{Conjugate}}
+\index{Conjugate@{Conjugate}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{Conjugate()}{Conjugate()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a77674ae2708b0ccfc966715daeade61e} 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} FQuat::\+\+Conjugate (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=312pt]{struct_f_quat_a77674ae2708b0ccfc966715daeade61e_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a77674ae2708b0ccfc966715daeade61e_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a6e03dfc38272fecc372557be15ce6dda}\index{FQuat@{FQuat}!ContainsNaN@{ContainsNaN}}
+\index{ContainsNaN@{ContainsNaN}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{ContainsNaN()}{ContainsNaN()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a6e03dfc38272fecc372557be15ce6dda} 
+bool FQuat::\+\+Contains\+NaN (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+\Hypertarget{struct_f_quat_a060f61bc0b167ae7211bed74e3ec2484}\index{FQuat@{FQuat}!DotProduct@{DotProduct}}
+\index{DotProduct@{DotProduct}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{DotProduct()}{DotProduct()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a060f61bc0b167ae7211bed74e3ec2484} 
+float FQuat::\+\+Dot\+Product (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&}]{A}{, }\item[{const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&}]{B}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=291pt]{struct_f_quat_a060f61bc0b167ae7211bed74e3ec2484_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a060f61bc0b167ae7211bed74e3ec2484_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a8a78e5300b556e88a9dd9be9e8f841a0}\index{FQuat@{FQuat}!EnforceShortestArcWith@{EnforceShortestArcWith}}
+\index{EnforceShortestArcWith@{EnforceShortestArcWith}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{EnforceShortestArcWith()}{EnforceShortestArcWith()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a8a78e5300b556e88a9dd9be9e8f841a0} 
+void FQuat::\+\+Enforce\+Shortest\+Arc\+With (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&}]{Other}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a8a78e5300b556e88a9dd9be9e8f841a0_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a4f1f3466e55678a3d8b8c2914a7f83fc}\index{FQuat@{FQuat}!Equals@{Equals}}
+\index{Equals@{Equals}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{Equals()}{Equals()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a4f1f3466e55678a3d8b8c2914a7f83fc} 
+bool FQuat::\+\+Equals (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&}]{Other}{, }\item[{float}]{Tolerance}{ = {\ttfamily 1.e-\/6f}}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=271pt]{struct_f_quat_a4f1f3466e55678a3d8b8c2914a7f83fc_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=285pt]{struct_f_quat_a4f1f3466e55678a3d8b8c2914a7f83fc_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_abffd1fdd4641b659ddc94edf46f1a1e8}\index{FQuat@{FQuat}!Euler@{Euler}}
+\index{Euler@{Euler}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{Euler()}{Euler()}}
+{\footnotesize\ttfamily \label{struct_f_quat_abffd1fdd4641b659ddc94edf46f1a1e8} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FQuat::\+\+Euler (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_abffd1fdd4641b659ddc94edf46f1a1e8_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a0d2142bd0a8c03e91d918acf08f2bacc}\index{FQuat@{FQuat}!GetAngle@{GetAngle}}
+\index{GetAngle@{GetAngle}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{GetAngle()}{GetAngle()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a0d2142bd0a8c03e91d918acf08f2bacc} 
+float FQuat::\+\+Get\+Angle (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a0d2142bd0a8c03e91d918acf08f2bacc_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a4640df05da0abd94f0595965dfd81908}\index{FQuat@{FQuat}!GetAxisX@{GetAxisX}}
+\index{GetAxisX@{GetAxisX}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{GetAxisX()}{GetAxisX()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a4640df05da0abd94f0595965dfd81908} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FQuat::\+\+Get\+AxisX (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a4640df05da0abd94f0595965dfd81908_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=335pt]{struct_f_quat_a4640df05da0abd94f0595965dfd81908_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_ac8553f3c5da67de6b9cc1c19a064fa6b}\index{FQuat@{FQuat}!GetAxisY@{GetAxisY}}
+\index{GetAxisY@{GetAxisY}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{GetAxisY()}{GetAxisY()}}
+{\footnotesize\ttfamily \label{struct_f_quat_ac8553f3c5da67de6b9cc1c19a064fa6b} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FQuat::\+\+Get\+AxisY (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_ac8553f3c5da67de6b9cc1c19a064fa6b_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=323pt]{struct_f_quat_ac8553f3c5da67de6b9cc1c19a064fa6b_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a1fc8f692ab83b6c81acd48c4f74508c6}\index{FQuat@{FQuat}!GetAxisZ@{GetAxisZ}}
+\index{GetAxisZ@{GetAxisZ}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{GetAxisZ()}{GetAxisZ()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a1fc8f692ab83b6c81acd48c4f74508c6} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FQuat::\+\+Get\+AxisZ (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a1fc8f692ab83b6c81acd48c4f74508c6_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=312pt]{struct_f_quat_a1fc8f692ab83b6c81acd48c4f74508c6_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a7906ef57a9fbde45d7086738d54bbcd9}\index{FQuat@{FQuat}!GetForwardVector@{GetForwardVector}}
+\index{GetForwardVector@{GetForwardVector}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{GetForwardVector()}{GetForwardVector()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a7906ef57a9fbde45d7086738d54bbcd9} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FQuat::\+\+Get\+Forward\+Vector (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a7906ef57a9fbde45d7086738d54bbcd9_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a12195ceb868985b0fdd9dd4fdad54e1f}\index{FQuat@{FQuat}!GetNormalized@{GetNormalized}}
+\index{GetNormalized@{GetNormalized}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{GetNormalized()}{GetNormalized()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a12195ceb868985b0fdd9dd4fdad54e1f} 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} FQuat::\+\+Get\+Normalized (\begin{DoxyParamCaption}\item[{float}]{Tolerance}{ = {\ttfamily 1.e-\/8f}}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a12195ceb868985b0fdd9dd4fdad54e1f_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a12195ceb868985b0fdd9dd4fdad54e1f_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a9cc8382ea73d65667ab8720848d1cdb0}\index{FQuat@{FQuat}!GetRightVector@{GetRightVector}}
+\index{GetRightVector@{GetRightVector}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{GetRightVector()}{GetRightVector()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a9cc8382ea73d65667ab8720848d1cdb0} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FQuat::\+\+Get\+Right\+Vector (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a9cc8382ea73d65667ab8720848d1cdb0_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_acdcdd1a501d52c435473bf214d7de33f}\index{FQuat@{FQuat}!GetRotationAxis@{GetRotationAxis}}
+\index{GetRotationAxis@{GetRotationAxis}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{GetRotationAxis()}{GetRotationAxis()}}
+{\footnotesize\ttfamily \label{struct_f_quat_acdcdd1a501d52c435473bf214d7de33f} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FQuat::\+\+Get\+Rotation\+Axis (\begin{DoxyParamCaption}\item[{float}]{Tolerance}{ = {\ttfamily 1.e-\/8f}}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_acdcdd1a501d52c435473bf214d7de33f_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_ac001a9d2ae68381c520aa63fe2ecff00}\index{FQuat@{FQuat}!GetUpVector@{GetUpVector}}
+\index{GetUpVector@{GetUpVector}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{GetUpVector()}{GetUpVector()}}
+{\footnotesize\ttfamily \label{struct_f_quat_ac001a9d2ae68381c520aa63fe2ecff00} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FQuat::\+\+Get\+Up\+Vector (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_ac001a9d2ae68381c520aa63fe2ecff00_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_ae8116db12afc8ef3432889fdfd2cfee8}\index{FQuat@{FQuat}!Inverse@{Inverse}}
+\index{Inverse@{Inverse}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{Inverse()}{Inverse()}}
+{\footnotesize\ttfamily \label{struct_f_quat_ae8116db12afc8ef3432889fdfd2cfee8} 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} FQuat::\+\+Inverse (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_ae8116db12afc8ef3432889fdfd2cfee8_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_ae8116db12afc8ef3432889fdfd2cfee8_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a967fbac2d9bd287f22d2bc8490b7608c}\index{FQuat@{FQuat}!IsIdentity@{IsIdentity}}
+\index{IsIdentity@{IsIdentity}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{IsIdentity()}{IsIdentity()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a967fbac2d9bd287f22d2bc8490b7608c} 
+bool FQuat::\+\+Is\+Identity (\begin{DoxyParamCaption}\item[{float}]{Tolerance}{ = {\ttfamily 1.e-\/6f}}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a967fbac2d9bd287f22d2bc8490b7608c_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a71d4684b98a91dd533e9b688e51d670d}\index{FQuat@{FQuat}!IsNormalized@{IsNormalized}}
+\index{IsNormalized@{IsNormalized}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{IsNormalized()}{IsNormalized()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a71d4684b98a91dd533e9b688e51d670d} 
+bool FQuat::\+\+Is\+Normalized (\begin{DoxyParamCaption}\item[{float}]{Tolerance}{ = {\ttfamily 1.e-\/4f}}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a71d4684b98a91dd533e9b688e51d670d_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a282f46d5d93d9f92d7f73de8b0710ad2}\index{FQuat@{FQuat}!MakeFromEuler@{MakeFromEuler}}
+\index{MakeFromEuler@{MakeFromEuler}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{MakeFromEuler()}{MakeFromEuler()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a282f46d5d93d9f92d7f73de8b0710ad2} 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} FQuat::\+\+Make\+From\+Euler (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Euler\+Degrees}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a282f46d5d93d9f92d7f73de8b0710ad2_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a20b1175ee99c038924047a6cdc322144}\index{FQuat@{FQuat}!Normalize@{Normalize}}
+\index{Normalize@{Normalize}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{Normalize()}{Normalize()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a20b1175ee99c038924047a6cdc322144} 
+void FQuat::\+\+Normalize (\begin{DoxyParamCaption}\item[{float}]{Tolerance}{ = {\ttfamily 1.e-\/8f}}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=312pt]{struct_f_quat_a20b1175ee99c038924047a6cdc322144_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a20b1175ee99c038924047a6cdc322144_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_af38a3e131a721da0b66171c9a86988a8}\index{FQuat@{FQuat}!operator"!=@{operator"!=}}
+\index{operator"!=@{operator"!=}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{operator"!=()}{operator!=()}}
+{\footnotesize\ttfamily \label{struct_f_quat_af38a3e131a721da0b66171c9a86988a8} 
+bool FQuat::\+operator!= (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&}]{Other}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=285pt]{struct_f_quat_af38a3e131a721da0b66171c9a86988a8_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a03a8bfafdd77280eeace7fe0c4aa450f}\index{FQuat@{FQuat}!operator\texorpdfstring{$\ast$}{*}@{operator\texorpdfstring{$\ast$}{*}}}
+\index{operator\texorpdfstring{$\ast$}{*}@{operator\texorpdfstring{$\ast$}{*}}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{operator\texorpdfstring{$\ast$}{*}()}{operator*()}\hspace{0.1cm}{\footnotesize\ttfamily [1/3]}}
+{\footnotesize\ttfamily \label{struct_f_quat_a03a8bfafdd77280eeace7fe0c4aa450f} 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} FQuat::\+operator\texorpdfstring{$\ast$}{*} (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&}]{Other}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=306pt]{struct_f_quat_a03a8bfafdd77280eeace7fe0c4aa450f_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a8cff7f8c88144549d079f04a3b2b077d}\index{FQuat@{FQuat}!operator\texorpdfstring{$\ast$}{*}@{operator\texorpdfstring{$\ast$}{*}}}
+\index{operator\texorpdfstring{$\ast$}{*}@{operator\texorpdfstring{$\ast$}{*}}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{operator\texorpdfstring{$\ast$}{*}()}{operator*()}\hspace{0.1cm}{\footnotesize\ttfamily [2/3]}}
+{\footnotesize\ttfamily \label{struct_f_quat_a8cff7f8c88144549d079f04a3b2b077d} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FQuat::\+operator\texorpdfstring{$\ast$}{*} (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Vector}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a8cff7f8c88144549d079f04a3b2b077d_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_ad35bfd5e68be26d9ccd6271ffd1d6548}\index{FQuat@{FQuat}!operator\texorpdfstring{$\ast$}{*}@{operator\texorpdfstring{$\ast$}{*}}}
+\index{operator\texorpdfstring{$\ast$}{*}@{operator\texorpdfstring{$\ast$}{*}}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{operator\texorpdfstring{$\ast$}{*}()}{operator*()}\hspace{0.1cm}{\footnotesize\ttfamily [3/3]}}
+{\footnotesize\ttfamily \label{struct_f_quat_ad35bfd5e68be26d9ccd6271ffd1d6548} 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} FQuat::\+operator\texorpdfstring{$\ast$}{*} (\begin{DoxyParamCaption}\item[{float}]{Scale}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=280pt]{struct_f_quat_ad35bfd5e68be26d9ccd6271ffd1d6548_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a4c4c5457823874270c819832b0bb0d59}\index{FQuat@{FQuat}!operator\texorpdfstring{$\ast$}{*}=@{operator\texorpdfstring{$\ast$}{*}=}}
+\index{operator\texorpdfstring{$\ast$}{*}=@{operator\texorpdfstring{$\ast$}{*}=}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{operator\texorpdfstring{$\ast$}{*}=()}{operator*=()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{struct_f_quat_a4c4c5457823874270c819832b0bb0d59} 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} \& FQuat::\+operator\texorpdfstring{$\ast$}{*}= (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&}]{Other}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=286pt]{struct_f_quat_a4c4c5457823874270c819832b0bb0d59_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a1fdffcda85a982d84fb265d516ac426d}\index{FQuat@{FQuat}!operator\texorpdfstring{$\ast$}{*}=@{operator\texorpdfstring{$\ast$}{*}=}}
+\index{operator\texorpdfstring{$\ast$}{*}=@{operator\texorpdfstring{$\ast$}{*}=}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{operator\texorpdfstring{$\ast$}{*}=()}{operator*=()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{struct_f_quat_a1fdffcda85a982d84fb265d516ac426d} 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} \& FQuat::\+operator\texorpdfstring{$\ast$}{*}= (\begin{DoxyParamCaption}\item[{float}]{Scale}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=286pt]{struct_f_quat_a1fdffcda85a982d84fb265d516ac426d_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_aa83794a8a5f05c1f216b2e6ce3c8d4b9}\index{FQuat@{FQuat}!operator+@{operator+}}
+\index{operator+@{operator+}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{operator+()}{operator+()}}
+{\footnotesize\ttfamily \label{struct_f_quat_aa83794a8a5f05c1f216b2e6ce3c8d4b9} 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} FQuat::\+operator+ (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&}]{Other}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=282pt]{struct_f_quat_aa83794a8a5f05c1f216b2e6ce3c8d4b9_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a9894726800bd9c153de8bc56e7e8b67c}\index{FQuat@{FQuat}!operator+=@{operator+=}}
+\index{operator+=@{operator+=}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{operator+=()}{operator+=()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a9894726800bd9c153de8bc56e7e8b67c} 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} \& FQuat::\+operator+= (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&}]{Other}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=288pt]{struct_f_quat_a9894726800bd9c153de8bc56e7e8b67c_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a8fc442fe207e6ab72349488f01a22bcd}\index{FQuat@{FQuat}!operator-\/@{operator-\/}}
+\index{operator-\/@{operator-\/}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{operator-\/()}{operator-()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{struct_f_quat_a8fc442fe207e6ab72349488f01a22bcd} 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} FQuat::\+operator-\/ (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=279pt]{struct_f_quat_a8fc442fe207e6ab72349488f01a22bcd_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_aba6055cf243b2ec47c4be05139c7093a}\index{FQuat@{FQuat}!operator-\/@{operator-\/}}
+\index{operator-\/@{operator-\/}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{operator-\/()}{operator-()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{struct_f_quat_aba6055cf243b2ec47c4be05139c7093a} 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} FQuat::\+operator-\/ (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&}]{Other}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=279pt]{struct_f_quat_aba6055cf243b2ec47c4be05139c7093a_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_ada81f6f9e5e9695346ebb057a6ca7060}\index{FQuat@{FQuat}!operator-\/=@{operator-\/=}}
+\index{operator-\/=@{operator-\/=}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{operator-\/=()}{operator-=()}}
+{\footnotesize\ttfamily \label{struct_f_quat_ada81f6f9e5e9695346ebb057a6ca7060} 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} \& FQuat::\+operator-\/= (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&}]{Other}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=285pt]{struct_f_quat_ada81f6f9e5e9695346ebb057a6ca7060_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a0fa303772399a1c34554117913fa402c}\index{FQuat@{FQuat}!operator/@{operator/}}
+\index{operator/@{operator/}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{operator/()}{operator/()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a0fa303772399a1c34554117913fa402c} 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} FQuat::\+operator/\+ (\begin{DoxyParamCaption}\item[{float}]{Scale}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=279pt]{struct_f_quat_a0fa303772399a1c34554117913fa402c_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_aaf42ce617be850d47faddcb9bc7d12d6}\index{FQuat@{FQuat}!operator/=@{operator/=}}
+\index{operator/=@{operator/=}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{operator/=()}{operator/=()}}
+{\footnotesize\ttfamily \label{struct_f_quat_aaf42ce617be850d47faddcb9bc7d12d6} 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} \& FQuat::\+operator/\+= (\begin{DoxyParamCaption}\item[{float}]{Scale}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=285pt]{struct_f_quat_aaf42ce617be850d47faddcb9bc7d12d6_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a3a3f2d64bf44124dfd61cfae7ebc9b64}\index{FQuat@{FQuat}!operator==@{operator==}}
+\index{operator==@{operator==}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{operator==()}{operator==()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a3a3f2d64bf44124dfd61cfae7ebc9b64} 
+bool FQuat::\+operator== (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&}]{Other}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=288pt]{struct_f_quat_a3a3f2d64bf44124dfd61cfae7ebc9b64_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a4b40b06362a11d68b67425a78c1a6f32}\index{FQuat@{FQuat}!operator\texttt{"|}@{operator\texttt{"|}}}
+\index{operator\texttt{"|}@{operator\texttt{"|}}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{operator\texttt{"|}()}{operator|()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a4b40b06362a11d68b67425a78c1a6f32} 
+float FQuat::\+operator\texorpdfstring{$\vert$}{|} (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&}]{Other}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a4b40b06362a11d68b67425a78c1a6f32_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a7aa2737e4c1cebdf13b87a3b84ac5d6b}\index{FQuat@{FQuat}!RotateVector@{RotateVector}}
+\index{RotateVector@{RotateVector}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{RotateVector()}{RotateVector()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a7aa2737e4c1cebdf13b87a3b84ac5d6b} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FQuat::\+\+Rotate\+Vector (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Vector}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a7aa2737e4c1cebdf13b87a3b84ac5d6b_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a7aa2737e4c1cebdf13b87a3b84ac5d6b_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a1989ae227ff0623532a249b271a44355}\index{FQuat@{FQuat}!Rotator@{Rotator}}
+\index{Rotator@{Rotator}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{Rotator()}{Rotator()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a1989ae227ff0623532a249b271a44355} 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} FQuat::\+\+Rotator (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a1989ae227ff0623532a249b271a44355_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=306pt]{struct_f_quat_a1989ae227ff0623532a249b271a44355_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a3c9561ee83b2d819cb9af9e3f2e692e3}\index{FQuat@{FQuat}!Size@{Size}}
+\index{Size@{Size}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{Size()}{Size()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a3c9561ee83b2d819cb9af9e3f2e692e3} 
+float FQuat::\+\+Size (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=287pt]{struct_f_quat_a3c9561ee83b2d819cb9af9e3f2e692e3_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_ae9594a4aa0eca5475ee4021ac8272d83}\index{FQuat@{FQuat}!SizeSquared@{SizeSquared}}
+\index{SizeSquared@{SizeSquared}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{SizeSquared()}{SizeSquared()}}
+{\footnotesize\ttfamily \label{struct_f_quat_ae9594a4aa0eca5475ee4021ac8272d83} 
+float FQuat::\+\+Size\+Squared (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=323pt]{struct_f_quat_ae9594a4aa0eca5475ee4021ac8272d83_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_ae9594a4aa0eca5475ee4021ac8272d83_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_ad8e290dbcac5475b5fab42919d67e13a}\index{FQuat@{FQuat}!Slerp@{Slerp}}
+\index{Slerp@{Slerp}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{Slerp()}{Slerp()}}
+{\footnotesize\ttfamily \label{struct_f_quat_ad8e290dbcac5475b5fab42919d67e13a} 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} FQuat::\+\+Slerp (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&}]{A}{, }\item[{const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&}]{B}{, }\item[{float}]{Alpha}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_ad8e290dbcac5475b5fab42919d67e13a_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_a25b7c213ff296149edc2ab385116b87f}\index{FQuat@{FQuat}!ToMatrix@{ToMatrix}}
+\index{ToMatrix@{ToMatrix}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{ToMatrix()}{ToMatrix()}}
+{\footnotesize\ttfamily \label{struct_f_quat_a25b7c213ff296149edc2ab385116b87f} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FQuat::\+\+To\+Matrix (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a25b7c213ff296149edc2ab385116b87f_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_a25b7c213ff296149edc2ab385116b87f_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_ae500b97cbb82792796e1e7eb4806c256}\index{FQuat@{FQuat}!ToXMVector@{ToXMVector}}
+\index{ToXMVector@{ToXMVector}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{ToXMVector()}{ToXMVector()}}
+{\footnotesize\ttfamily \label{struct_f_quat_ae500b97cbb82792796e1e7eb4806c256} 
+\doxymbox{\hyperlink{_core_types_8h_ad7069eae7b85d4ed27d826f17a716155}{XMVector}} FQuat::\+\+To\+XMVector (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_ae500b97cbb82792796e1e7eb4806c256_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_quat_aac80fdb13eb20e9ca1998379f0abdd40}\index{FQuat@{FQuat}!UnrotateVector@{UnrotateVector}}
+\index{UnrotateVector@{UnrotateVector}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{UnrotateVector()}{UnrotateVector()}}
+{\footnotesize\ttfamily \label{struct_f_quat_aac80fdb13eb20e9ca1998379f0abdd40} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FQuat::\+\+Unrotate\+Vector (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Vector}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_quat_aac80fdb13eb20e9ca1998379f0abdd40_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{struct_f_quat_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{struct_f_quat_a17b14cd1893310138b67748aba3f8f02}\index{FQuat@{FQuat}!Identity@{Identity}}
+\index{Identity@{Identity}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{Identity}{Identity}}
+{\footnotesize\ttfamily \label{struct_f_quat_a17b14cd1893310138b67748aba3f8f02} 
+const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} FQuat::\+\+Identity\hspace{0.3cm}{\ttfamily [static]}}
+
+\Hypertarget{struct_f_quat_a7366c17441ff1ec7399fa06fabcc6794}\index{FQuat@{FQuat}!W@{W}}
+\index{W@{W}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{W}{W}}
+{\footnotesize\ttfamily \label{struct_f_quat_a7366c17441ff1ec7399fa06fabcc6794} 
+float FQuat::\+W = 1.\+0f}
+
+\Hypertarget{struct_f_quat_a733fdde924603c6e14eb1f9b699839d4}\index{FQuat@{FQuat}!X@{X}}
+\index{X@{X}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{X}{X}}
+{\footnotesize\ttfamily \label{struct_f_quat_a733fdde924603c6e14eb1f9b699839d4} 
+float FQuat::\+X = 0.\+0f}
+
+\Hypertarget{struct_f_quat_a888af248d67cf4f4da9cbfc64b39fa44}\index{FQuat@{FQuat}!Y@{Y}}
+\index{Y@{Y}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{Y}{Y}}
+{\footnotesize\ttfamily \label{struct_f_quat_a888af248d67cf4f4da9cbfc64b39fa44} 
+float FQuat::\+Y = 0.\+0f}
+
+\Hypertarget{struct_f_quat_a332f0b8466cd2484620b168be89e1c18}\index{FQuat@{FQuat}!Z@{Z}}
+\index{Z@{Z}!FQuat@{FQuat}}
+\doxysubsubsection{\texorpdfstring{Z}{Z}}
+{\footnotesize\ttfamily \label{struct_f_quat_a332f0b8466cd2484620b168be89e1c18} 
+float FQuat::\+Z = 0.\+0f}
+
+
+
+The documentation for this struct was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Math/\+\doxymbox{\hyperlink{_quat_8h}{Quat.\+h}}\item 
+Engine/\+\+Source/\+\+Math/\+\doxymbox{\hyperlink{_quat_8cpp}{Quat.\+cpp}}\end{DoxyCompactItemize}

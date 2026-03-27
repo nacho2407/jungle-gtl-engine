@@ -1,0 +1,49 @@
+<map id="CGizmo::EnsureRotationMeshes" name="CGizmo::EnsureRotationMeshes">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,265,219,292"/>
+<area shape="rect" id="Node000002" href="$class_c_gizmo.html#abe784d0455652a0d799fefa095a2d8a5" title=" " alt="" coords="282,157,468,184"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="145,263,328,188,325,193,148,267"/>
+<area shape="rect" id="Node000012" href="$class_c_primitive_gizmo.html#a2b83ff40879ff015c789116de0ead3d3" title=" " alt="" coords="267,257,483,300"/>
+<area shape="poly" id="edge17_Node000001_Node000012" title=" " alt="" coords="218,276,253,277,249,280,220,281"/>
+<area shape="rect" id="Node000013" href="$class_c_primitive_gizmo.html#a8a041a8a3eec0e01cd3e62e99b06e96b" title=" " alt="" coords="267,376,483,419"/>
+<area shape="poly" id="edge19_Node000001_Node000013" title=" " alt="" coords="144,290,314,368,310,371,144,295"/>
+<area shape="rect" id="Node000003" href="$struct_f_vector.html#a0986e5b79f59415337eb0a8d577cb1b8" title=" " alt="" coords="740,259,895,285"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="418,182,532,215,728,256,723,258,530,220,418,187"/>
+<area shape="rect" id="Node000005" href="$class_c_camera.html#a29aa0be51274110b209a386f9207db02" title=" " alt="" coords="741,208,894,235"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="454,182,531,193,728,214,723,216,531,199,455,187"/>
+<area shape="rect" id="Node000007" href="$struct_f_vector.html#a8609d9dafd1faea86bc2209e6a43673e" title=" " alt="" coords="949,157,1114,184"/>
+<area shape="poly" id="edge14_Node000002_Node000007" title=" " alt="" coords="445,154,531,143,633,136,713,136,895,149,936,156,931,157,894,155,713,141,633,142,531,148,447,159"/>
+<area shape="rect" id="Node000009" href="$class_c_camera.html#a21e8e6f3f6a49d0c6322aa4e9aac1522" title=" " alt="" coords="535,5,688,32"/>
+<area shape="poly" id="edge9_Node000002_Node000009" title=" " alt="" coords="389,155,448,105,488,75,530,48,558,37,554,40,532,53,491,80,452,109,393,159"/>
+<area shape="rect" id="Node000010" href="$class_c_camera.html#a6feca28f6195915390f67e83ebe8d38d" title=" " alt="" coords="543,157,680,184"/>
+<area shape="poly" id="edge10_Node000002_Node000010" title=" " alt="" coords="468,168,530,170,525,172,469,173"/>
+<area shape="rect" id="Node000011" href="$struct_f_vector.html#aaf3498f1738c72016a0af3cfe058c8f8" title=" " alt="" coords="957,81,1106,108"/>
+<area shape="poly" id="edge15_Node000002_Node000011" title=" " alt="" coords="410,155,467,136,530,120,641,105,752,96,944,92,939,94,752,101,641,110,532,125,468,141,413,159"/>
+<area shape="rect" id="Node000004" href="$struct_f_vector.html#ae7dbfb5fe72606197ce4fb94b9655fd2" title=" " alt="" coords="1181,259,1300,285"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="895,269,1168,271,1163,273,895,275"/>
+<area shape="rect" id="Node000006" href="$struct_f_math.html#a4031a15930971d3d38e731bfb1ccf552" title=" " alt="" coords="943,208,1120,235"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="894,219,930,221,925,222,895,224"/>
+<area shape="poly" id="edge6_Node000005_Node000007" title=" " alt="" coords="876,205,960,187,955,189,878,210"/>
+<area shape="poly" id="edge7_Node000007_Node000004" title=" " alt="" coords="1089,182,1121,194,1169,220,1212,250,1207,249,1167,224,1119,198,1089,187"/>
+<area shape="rect" id="Node000008" href="$struct_f_vector.html#a0af64e033781f3b7b5c1b07dbaa2f569" title=" " alt="" coords="1168,132,1313,159"/>
+<area shape="poly" id="edge8_Node000007_Node000008" title=" " alt="" coords="1113,158,1155,155,1150,157,1114,163"/>
+<area shape="poly" id="edge11_Node000010_Node000003" title=" " alt="" coords="633,182,682,213,741,244,758,253,752,253,739,249,680,217,633,187"/>
+<area shape="poly" id="edge12_Node000010_Node000005" title=" " alt="" coords="669,182,748,203,743,204,669,187"/>
+<area shape="poly" id="edge13_Node000010_Node000007" title=" " alt="" coords="680,168,936,170,931,172,681,173"/>
+<area shape="poly" id="edge16_Node000011_Node000008" title=" " alt="" coords="1090,106,1170,128,1165,128,1090,111"/>
+<area shape="poly" id="edge18_Node000012_Node000012" title=" " alt="" coords="330,256,328,247,336,238,351,233,375,231,400,233,417,241,412,242,399,238,375,236,352,238,339,243,333,249,335,257"/>
+<area shape="rect" id="Node000014" href="$_unreal_editor_styled_gizmo_8cpp.html#ac9606ae01309220f4ff837c2e2bc8900" title=" " alt="" coords="531,411,692,437"/>
+<area shape="poly" id="edge20_Node000013_Node000014" title=" " alt="" coords="483,407,518,413,513,414,484,412"/>
+<area shape="rect" id="Node000015" href="$_unreal_editor_styled_gizmo_8cpp.html#acd7d7e79eb3b664db795380429c52f7d" title=" " alt="" coords="771,461,864,488"/>
+<area shape="poly" id="edge21_Node000014_Node000015" title=" " alt="" coords="669,435,759,460,754,460,669,441"/>
+<area shape="rect" id="Node000016" href="$_unreal_editor_styled_gizmo_8cpp.html#a784a2bab983964e8fd36b27518165847" title=" " alt="" coords="774,512,861,539"/>
+<area shape="poly" id="edge22_Node000014_Node000016" title=" " alt="" coords="634,435,682,466,741,498,762,508,757,507,739,502,680,471,632,440"/>
+<area shape="rect" id="Node000017" href="$_unreal_editor_styled_gizmo_8cpp.html#ac022f8a6d8e88ac8a486e96643d19289" title=" " alt="" coords="774,563,861,589"/>
+<area shape="poly" id="edge23_Node000014_Node000017" title=" " alt="" coords="624,435,672,490,705,521,742,548,762,561,756,560,739,553,702,525,668,494,622,440"/>
+<area shape="rect" id="Node000018" href="$_unreal_editor_styled_gizmo_8cpp.html#a5b708f556d032d8559dadacc4ed045a1" title=" " alt="" coords="774,360,861,387"/>
+<area shape="poly" id="edge24_Node000014_Node000018" title=" " alt="" coords="668,407,762,387,757,388,670,413"/>
+<area shape="rect" id="Node000019" href="$struct_f_vector.html#a16c17492999fcbf8bae9b97f3eace0ad" title=" " alt="" coords="961,309,1102,336"/>
+<area shape="poly" id="edge25_Node000014_Node000019" title=" " alt="" coords="629,408,677,375,707,359,739,345,792,332,846,324,948,320,943,321,846,329,793,337,741,351,709,363,679,380,631,413"/>
+<area shape="rect" id="Node000020" href="$_unreal_editor_styled_gizmo_8cpp.html#a7969457298670904a16ad436a68a39eb" title=" " alt="" coords="758,411,877,437"/>
+<area shape="poly" id="edge27_Node000014_Node000020" title=" " alt="" coords="692,421,745,424,740,424,693,427"/>
+<area shape="poly" id="edge26_Node000019_Node000004" title=" " alt="" coords="1089,306,1170,289,1165,290,1090,311"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="Engine/Source/Primitive/PrimitiveSky.h" name="Engine/Source/Primitive/PrimitiveSky.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="109,5,271,48"/>
+<area shape="rect" id="Node000002" href="$_sky_component_8cpp.html" title=" " alt="" coords="5,96,183,139"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="159,58,118,98,115,94,154,60"/>
+<area shape="rect" id="Node000003" href="$_primitive_sky_8cpp.html" title=" " alt="" coords="207,96,368,139"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="225,56,267,96,262,95,223,61"/>
+</map>

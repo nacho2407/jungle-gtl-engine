@@ -1,0 +1,11 @@
+<map id="USceneComponent::SetRelativeTransform" name="USceneComponent::SetRelativeTransform">
+<area shape="rect" id="Node000001" title=" " alt="" coords="472,35,683,77"/>
+<area shape="poly" id="edge5_Node000001_Node000001" title=" " alt="" coords="619,19,605,16,578,13,552,15,537,20,531,26,533,36,528,33,526,25,534,16,551,10,578,8,606,10,625,19"/>
+<area shape="rect" id="Node000002" href="$class_c_gizmo.html#acd9a784dcd62df12c64e5ef01c869e0d" title=" " alt="" coords="218,5,407,48"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="454,43,407,40,407,34,459,43"/>
+<area shape="rect" id="Node000004" href="$class_c_gizmo.html#ad74f1a6f71e783144c61c14f67f38d05" title=" " alt="" coords="201,72,424,99"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="459,69,425,76,424,70,454,70"/>
+<area shape="rect" id="Node000003" href="$class_c_gizmo.html#a61eb5c2ff40fc0385476dbef4f6fd684" title=" " alt="" coords="5,43,153,69"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="199,41,154,49,153,44,205,40"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="184,70,153,68,153,63,189,69"/>
+</map>

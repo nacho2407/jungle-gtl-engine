@@ -1,0 +1,20 @@
+{
+  "Name": "M_Sky",
+  "VertexShader": "Engine/Shaders/SkyVertexShader.hlsl",
+  "PixelShader": "Engine/Shaders/SkyPixelShader.hlsl",
+  "RenderState": {
+    "CullMode": 1,
+    "DepthTest": true,
+    "DepthWrite": 0,
+    "DepthFunc": "LessEqual"
+},
+  "ConstantBuffers": [
+    {
+      "Parameters": [
+        { "Name": "SkyColor",     "Type": "float4", "Value": [0.1, 0.4, 0.9, 1.0] },
+        { "Name": "HorizonColor", "Type": "float4", "Value": [0.7, 0.85, 1.0, 1.0] },
+        { "Name": "GroundColor",  "Type": "float4", "Value": [0.3, 0.25, 0.2, 1.0] }
+      ]
+    }
+  ]
+}

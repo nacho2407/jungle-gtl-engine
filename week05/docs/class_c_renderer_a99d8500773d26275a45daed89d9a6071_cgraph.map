@@ -1,0 +1,21 @@
+<map id="CRenderer::Release" name="CRenderer::Release">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,148,146,175"/>
+<area shape="rect" id="Node000002" href="$class_f_material_manager.html#ae83d4b35b03e5171903c901528930228" title=" " alt="" coords="213,5,377,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="84,146,127,95,158,66,192,42,207,36,204,40,195,46,161,70,131,98,89,149"/>
+<area shape="rect" id="Node000003" href="$class_f_shader_map.html#afd9003621609f3eeaf48847e8a18cdba" title=" " alt="" coords="228,56,362,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="95,146,139,119,193,92,216,86,212,89,195,97,142,123,99,150"/>
+<area shape="rect" id="Node000005" href="$class_c_renderer.html#ac6cfa38df0fbffc7942e19e6527a4e19" title=" " alt="" coords="194,107,396,149"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="145,148,180,144,176,147,147,153"/>
+<area shape="rect" id="Node000006" href="$class_c_renderer.html#a64c19a865130361f3e182831475208a8" title=" " alt="" coords="208,173,382,216"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="145,169,195,178,190,180,146,175"/>
+<area shape="rect" id="Node000007" href="$class_f_material_manager.html#a74c30d0789216a3ed5be4a314b41a182" title=" " alt="" coords="218,240,372,267"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="97,172,142,199,195,226,217,235,211,236,193,230,139,204,97,178"/>
+<area shape="rect" id="Node000009" href="$class_f_shader_map.html#a1189375f6d36ffd78c81b1cfd928d68d" title=" " alt="" coords="233,292,357,319"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="87,173,131,224,161,252,195,276,221,290,215,290,192,281,158,257,127,228,86,178"/>
+<area shape="rect" id="Node000004" href="$class_f_shader_resource.html#a64eb0503f12ee2e5bdf4d57b676dcd58" title=" " alt="" coords="444,56,647,83"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="361,67,431,68,426,70,363,72"/>
+<area shape="rect" id="Node000008" href="$class_f_material_manager.html#a9293bf95dec94fabd8a476f5ae2ef78b" title=" " alt="" coords="452,229,639,272"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="372,250,439,252,434,252,373,255"/>
+<area shape="rect" id="Node000010" href="$class_f_shader_map.html#a698c3a1e2f0f688d036612b4f9c0ce1b" title=" " alt="" coords="457,296,634,323"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="357,304,444,308,439,308,358,309"/>
+</map>

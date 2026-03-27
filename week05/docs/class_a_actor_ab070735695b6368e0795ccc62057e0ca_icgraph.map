@@ -1,0 +1,12 @@
+<map id="AActor::PostSpawnInitialize" name="AActor::PostSpawnInitialize">
+<area shape="rect" id="Node000001" title=" " alt="" coords="279,120,463,147"/>
+<area shape="rect" id="Node000002" href="$class_a_attach_test_actor.html#a9275cd7af24edd912ad94093771f4b2b" title=" " alt="" coords="18,29,218,72"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="315,115,230,87,195,75,194,70,232,81,320,114"/>
+<area shape="rect" id="Node000003" href="$class_a_cube_actor.html#aea6d17d68f181ad35cb39817e6d8c9da" title=" " alt="" coords="10,120,226,147"/>
+<area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="260,134,227,136,226,131,265,133"/>
+<area shape="rect" id="Node000004" href="$class_a_sphere_actor.html#a1b6ecbc35632adacd101d21c0e094f4c" title=" " alt="" coords="5,195,231,221"/>
+<area shape="poly" id="edge5_Node000001_Node000004" title=" " alt="" coords="311,152,167,197,165,192,306,151"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="158,15,144,10,118,8,94,10,79,15,74,21,76,29,70,29,68,19,76,10,93,5,118,3,145,5,163,13"/>
+<area shape="poly" id="edge4_Node000003_Node000003" title=" " alt="" coords="161,106,147,101,118,99,91,101,77,106,73,111,80,119,75,120,68,111,73,101,90,95,118,93,148,96,166,105"/>
+<area shape="poly" id="edge6_Node000004_Node000004" title=" " alt="" coords="160,180,147,176,118,173,91,175,77,180,73,185,80,195,75,194,68,186,73,176,90,170,118,168,148,171,166,180"/>
+</map>

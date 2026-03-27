@@ -1,0 +1,11 @@
+<map id="FInputTrigger" name="FInputTrigger">
+<area shape="rect" id="Node000001" title=" " alt="" coords="219,5,336,117"/>
+<area shape="rect" id="Node000002" href="$class_f_input_hold.html" title=" " alt="" coords="5,165,138,299"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="205,120,151,167,140,177,136,173,147,163,209,116"/>
+<area shape="rect" id="Node000003" href="$class_f_input_released.html" title=" " alt="" coords="162,197,264,267"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="253,129,228,199,224,196,249,133"/>
+<area shape="rect" id="Node000004" href="$class_f_trigger_down.html" title=" " alt="" coords="289,197,394,267"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="305,129,331,198,326,197,302,133"/>
+<area shape="rect" id="Node000005" href="$class_f_trigger_pressed.html" title=" " alt="" coords="417,197,524,267"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="348,114,407,163,441,198,436,197,403,167,347,119"/>
+</map>

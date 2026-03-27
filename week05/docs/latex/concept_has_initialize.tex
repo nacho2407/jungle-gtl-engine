@@ -1,0 +1,15 @@
+\doxysection{Has\+Initialize Concept Reference}
+\hypertarget{concept_has_initialize}{}\label{concept_has_initialize}\index{HasInitialize@{HasInitialize}}
+
+
+{\ttfamily \+\#include $<$Object.\+h$>$}
+
+\doxysubsection{Concept definition}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{keyword}{template}<\textcolor{keyword}{typename}\ T>}
+\DoxyCodeLine{\textcolor{keyword}{concept\ }\doxymbox{\hyperlink{concept_has_initialize}{HasInitialize}}\ =\ \textcolor{keyword}{requires}(T\ t)\ \{}
+\DoxyCodeLine{\ \ \ \ \{\ t.Initialize()\ \}\ -\/>\ std::same\_as<void>;}
+\DoxyCodeLine{\}}
+
+\end{DoxyCode}

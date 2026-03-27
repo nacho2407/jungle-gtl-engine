@@ -1,0 +1,156 @@
+\doxysection{Material.\+h}
+\hypertarget{_material_8h_source}{}\label{_material_8h_source}\index{Engine/Source/Renderer/Material.h@{Engine/Source/Renderer/Material.h}}
+\doxymbox{\hyperlink{_material_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <d3d11.h>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_f_vertex_shader}{FVertexShader}};}
+\DoxyCodeLine{00008\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_f_pixel_shader}{FPixelShader}};}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ \textcolor{comment}{//\ 파라미터\ 이름\ →\ 상수\ 버퍼\ 내\ 위치\ 매핑}}
+\DoxyCodeLine{00011\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_material_parameter_info}{FMaterialParameterInfo}}}
+\DoxyCodeLine{00012\ \{}
+\DoxyCodeLine{00013\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ \doxymbox{\hyperlink{struct_f_material_parameter_info_a90e07f359f2705e0713ab39e17f4aeb8}{BufferIndex}};\ \ \textcolor{comment}{//\ ConstantBuffers\ 배열\ 인덱스}}
+\DoxyCodeLine{00014\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ \doxymbox{\hyperlink{struct_f_material_parameter_info_a8e4236a22f16f375ec2925ef51b6d523}{Offset}};\ \ \ \ \ \ \textcolor{comment}{//\ 버퍼\ 내\ 바이트\ 오프셋}}
+\DoxyCodeLine{00015\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ \doxymbox{\hyperlink{struct_f_material_parameter_info_a2f1b6da6b5b1475bb8d8388d625652af}{Size}};\ \ \ \ \ \ \ \ \textcolor{comment}{//\ 바이트\ 크기}}
+\DoxyCodeLine{00016\ \};}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \textcolor{comment}{//\ Material이\ 소유하는\ 상수\ 버퍼\ 슬롯\ 하나}}
+\DoxyCodeLine{00019\ \textcolor{comment}{//\ GPU\ 버퍼\ 생성,\ CPU\ 데이터\ 관리,\ Dirty\ 플래그\ 기반\ 업로드를\ 모두\ 담당}}
+\DoxyCodeLine{00020\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{struct_f_material_constant_buffer_a45d535b46c6c05455f828961c33f1b9b}{FMaterialConstantBuffer}}}
+\DoxyCodeLine{00021\ \{}
+\DoxyCodeLine{00022\ \ \ \ \ ID3D11Buffer*\ \doxymbox{\hyperlink{struct_f_material_constant_buffer_aeb57dbebe5b61a3bda3c91c5af3665e5}{GPUBuffer}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00023\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_a34ecedcf03a70dc91e4616212d79267d}{uint8}}*\ \doxymbox{\hyperlink{struct_f_material_constant_buffer_a5abb230a4dda5d937bf9e9608c9fc9c2}{CPUData}}\ =\ \textcolor{keyword}{nullptr};\ \textcolor{comment}{//\ CPU\ 쪽\ shadow\ copy}}
+\DoxyCodeLine{00024\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ \doxymbox{\hyperlink{struct_f_material_constant_buffer_a79436485b2302aa21fe3dc889139cffc}{Size}}\ =\ 0;}
+\DoxyCodeLine{00025\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_material_constant_buffer_ac0c0f9485f4ae99573680bbf1047d6db}{bDirty}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00027\ \ \ \ \ \doxymbox{\hyperlink{struct_f_material_constant_buffer_a45d535b46c6c05455f828961c33f1b9b}{FMaterialConstantBuffer}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00028\ \ \ \ \ \doxymbox{\hyperlink{struct_f_material_constant_buffer_a45d535b46c6c05455f828961c33f1b9b}{\string~FMaterialConstantBuffer}}();}
+\DoxyCodeLine{00029\ }
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{comment}{//\ 복사\ 금지}}
+\DoxyCodeLine{00031\ \ \ \ \ \doxymbox{\hyperlink{struct_f_material_constant_buffer_ae1b24de95f54dac589f1455a5bca8fd9}{FMaterialConstantBuffer}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_material_constant_buffer_a45d535b46c6c05455f828961c33f1b9b}{FMaterialConstantBuffer}}\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00032\ \ \ \ \ \doxymbox{\hyperlink{struct_f_material_constant_buffer_a45d535b46c6c05455f828961c33f1b9b}{FMaterialConstantBuffer}}\&\ \doxymbox{\hyperlink{struct_f_material_constant_buffer_af2ad36bf28a1b70f493cc6be37f0905f}{operator=}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_material_constant_buffer_a45d535b46c6c05455f828961c33f1b9b}{FMaterialConstantBuffer}}\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00033\ }
+\DoxyCodeLine{00034\ \ \ \ \ \textcolor{comment}{//\ Move\ 지원\ (소유권\ 이전)}}
+\DoxyCodeLine{00035\ \ \ \ \ \doxymbox{\hyperlink{struct_f_material_constant_buffer_a0c8a1a8be8b8773a5cf5eedf4bacaf40}{FMaterialConstantBuffer}}(\doxymbox{\hyperlink{struct_f_material_constant_buffer_a45d535b46c6c05455f828961c33f1b9b}{FMaterialConstantBuffer}}\&\&\ Other)\ noexcept}
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ :\ \doxymbox{\hyperlink{struct_f_material_constant_buffer_aeb57dbebe5b61a3bda3c91c5af3665e5}{GPUBuffer}}(Other.GPUBuffer),\ \doxymbox{\hyperlink{struct_f_material_constant_buffer_a5abb230a4dda5d937bf9e9608c9fc9c2}{CPUData}}(Other.CPUData),\ \doxymbox{\hyperlink{struct_f_material_constant_buffer_a79436485b2302aa21fe3dc889139cffc}{Size}}(Other.Size),\ \doxymbox{\hyperlink{struct_f_material_constant_buffer_ac0c0f9485f4ae99573680bbf1047d6db}{bDirty}}(Other.bDirty)}
+\DoxyCodeLine{00037\ \ \ \ \ \{}
+\DoxyCodeLine{00038\ \ \ \ \ \ \ \ \ Other.GPUBuffer\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00039\ \ \ \ \ \ \ \ \ Other.CPUData\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00040\ \ \ \ \ \ \ \ \ Other.Size\ =\ 0;}
+\DoxyCodeLine{00041\ \ \ \ \ \ \ \ \ Other.bDirty\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00042\ \ \ \ \ \}}
+\DoxyCodeLine{00043\ \ \ \ \ \doxymbox{\hyperlink{struct_f_material_constant_buffer_a45d535b46c6c05455f828961c33f1b9b}{FMaterialConstantBuffer}}\&\ \doxymbox{\hyperlink{struct_f_material_constant_buffer_acb4d0f3ec7ce546e05be3cee3b03aae5}{operator=}}(\doxymbox{\hyperlink{struct_f_material_constant_buffer_a45d535b46c6c05455f828961c33f1b9b}{FMaterialConstantBuffer}}\&\&\ Other)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00044\ \ \ \ \ \{}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\textcolor{keyword}{this}\ !=\ \&Other)}
+\DoxyCodeLine{00046\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00047\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_material_constant_buffer_ad4b185cc95f382daffac63eb6f72f136}{Release}}();}
+\DoxyCodeLine{00048\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_material_constant_buffer_aeb57dbebe5b61a3bda3c91c5af3665e5}{GPUBuffer}}\ =\ Other.GPUBuffer;}
+\DoxyCodeLine{00049\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_material_constant_buffer_a5abb230a4dda5d937bf9e9608c9fc9c2}{CPUData}}\ =\ Other.CPUData;}
+\DoxyCodeLine{00050\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_material_constant_buffer_a79436485b2302aa21fe3dc889139cffc}{Size}}\ =\ Other.Size;}
+\DoxyCodeLine{00051\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_material_constant_buffer_ac0c0f9485f4ae99573680bbf1047d6db}{bDirty}}\ =\ Other.bDirty;}
+\DoxyCodeLine{00052\ \ \ \ \ \ \ \ \ \ \ \ \ Other.GPUBuffer\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00053\ \ \ \ \ \ \ \ \ \ \ \ \ Other.CPUData\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00054\ \ \ \ \ \ \ \ \ \ \ \ \ Other.Size\ =\ 0;}
+\DoxyCodeLine{00055\ \ \ \ \ \ \ \ \ \ \ \ \ Other.bDirty\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00056\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00057\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00058\ \ \ \ \ \}}
+\DoxyCodeLine{00059\ }
+\DoxyCodeLine{00060\ \ \ \ \ \textcolor{comment}{//\ Device로\ GPU\ 버퍼\ 생성\ +\ CPU\ 메모리\ 할당}}
+\DoxyCodeLine{00061\ \ \ \ \ \textcolor{keywordtype}{bool}\ Create(ID3D11Device*\ Device,\ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ InSize);}
+\DoxyCodeLine{00062\ }
+\DoxyCodeLine{00063\ \ \ \ \ \textcolor{comment}{//\ CPU\ 데이터의\ 특정\ 오프셋에\ 값\ 쓰기\ (Dirty\ 마킹)}}
+\DoxyCodeLine{00064\ \ \ \ \ \textcolor{keywordtype}{void}\ SetData(\textcolor{keyword}{const}\ \textcolor{keywordtype}{void}*\ Data,\ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ InSize,\ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ Offset\ =\ 0);}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00066\ \ \ \ \ \textcolor{comment}{//\ Dirty면\ Map/Unmap으로\ GPU에\ 업로드}}
+\DoxyCodeLine{00067\ \ \ \ \ \textcolor{keywordtype}{void}\ Upload(ID3D11DeviceContext*\ DeviceContext);}
+\DoxyCodeLine{00068\ }
+\DoxyCodeLine{00069\ \ \ \ \ \textcolor{keywordtype}{void}\ Release();}
+\DoxyCodeLine{00070\ \};}
+\DoxyCodeLine{00071\ }
+\DoxyCodeLine{00072\ \textcolor{comment}{//\ Material:\ VS/PS\ 셰이더\ 조합\ +\ 추가\ 상수\ 버퍼\ (b2+)}}
+\DoxyCodeLine{00073\ \textcolor{comment}{//\ 생성\ 후\ 파라미터\ 값\ 변경\ 불가\ (읽기\ 전용).\ 런타임\ 변경이\ 필요하면\ FDynamicMaterial\ 사용.}}
+\DoxyCodeLine{00074\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_material_af1c9f1bca8138961c9fc2f794ce160cc}{FMaterial}}}
+\DoxyCodeLine{00075\ \{}
+\DoxyCodeLine{00076\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00077\ \ \ \ \ \doxymbox{\hyperlink{class_f_material_af1c9f1bca8138961c9fc2f794ce160cc}{FMaterial}}()\ :\ \doxymbox{\hyperlink{class_f_material_a3631f4b05eda35a7409967bfddd3cf09}{SortId}}(\doxymbox{\hyperlink{class_f_material_aa3754e96f06cd4cab28370cf8733f39f}{NextSortId}}++)\ \{\}}
+\DoxyCodeLine{00078\ \ \ \ \ \textcolor{keyword}{virtual}\ \doxymbox{\hyperlink{class_f_material}{\string~FMaterial}}();}
+\DoxyCodeLine{00079\ }
+\DoxyCodeLine{00080\ \ \ \ \ \doxymbox{\hyperlink{class_f_material_aca9bcb61ec545f1c2c203d85866e9117}{FMaterial}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_f_material_af1c9f1bca8138961c9fc2f794ce160cc}{FMaterial}}\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00081\ \ \ \ \ \doxymbox{\hyperlink{class_f_material_af1c9f1bca8138961c9fc2f794ce160cc}{FMaterial}}\&\ \doxymbox{\hyperlink{class_f_material_a78ec9812ddb03cbf47aa7615419b727a}{operator=}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_f_material_af1c9f1bca8138961c9fc2f794ce160cc}{FMaterial}}\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00082\ \ \ \ \ \doxymbox{\hyperlink{class_f_material_a96737e51eb2806bdf1408c1eba01eba6}{FMaterial}}(\doxymbox{\hyperlink{class_f_material_af1c9f1bca8138961c9fc2f794ce160cc}{FMaterial}}\&\&)\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00083\ \ \ \ \ \doxymbox{\hyperlink{class_f_material_af1c9f1bca8138961c9fc2f794ce160cc}{FMaterial}}\&\ \doxymbox{\hyperlink{class_f_material_ac204313055f3afc54b08b6e4bc56117f}{operator=}}(\doxymbox{\hyperlink{class_f_material_af1c9f1bca8138961c9fc2f794ce160cc}{FMaterial}}\&\&)\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00084\ }
+\DoxyCodeLine{00085\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ \doxymbox{\hyperlink{class_f_material_a7369894be1757d9ac9e5e787ce0f03dc}{GetSortId}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_f_material_a3631f4b05eda35a7409967bfddd3cf09}{SortId}};\ \}}
+\DoxyCodeLine{00086\ }
+\DoxyCodeLine{00087\ \ \ \ \ \textcolor{comment}{//\ 에셋\ 원본\ 이름\ (JSON에서\ 로드된\ 이름,\ 직렬화\ 시\ 사용)}}
+\DoxyCodeLine{00088\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_material_ab748ae1f764c67ced62e3e28fc10cb92}{SetOriginName}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ InName)\ \{\ \doxymbox{\hyperlink{class_f_material_af2d8c774bf0f5520f120ee36bd63539e}{OriginName}}\ =\ InName;\ \}}
+\DoxyCodeLine{00089\ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ \doxymbox{\hyperlink{class_f_material_a57edb4f0c674c61bfb8553e6debcba43}{GetOriginName}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_f_material_af2d8c774bf0f5520f120ee36bd63539e}{OriginName}};\ \}}
+\DoxyCodeLine{00090\ }
+\DoxyCodeLine{00091\ \ \ \ \ \textcolor{comment}{//\ 인스턴스\ 이름\ (런타임에서\ 구분용,\ DynamicMaterial\ 등)}}
+\DoxyCodeLine{00092\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_material_aefa58304b9ec4420a12793584db3b82a}{SetInstanceName}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ InName)\ \{\ \doxymbox{\hyperlink{class_f_material_ae7d6cd96252254110ba8ac144abd11c9}{InstanceName}}\ =\ InName;\ \}}
+\DoxyCodeLine{00093\ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ \doxymbox{\hyperlink{class_f_material_a89d9b944f02e3474e5292f8432541406}{GetInstanceName}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_f_material_ae7d6cd96252254110ba8ac144abd11c9}{InstanceName}};\ \}}
+\DoxyCodeLine{00094\ }
+\DoxyCodeLine{00095\ \ \ \ \ \textcolor{comment}{//\ 인스턴스\ 이름이\ 있으면\ 인스턴스\ 이름,\ 없으면\ 원본\ 이름\ 반환}}
+\DoxyCodeLine{00096\ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ \doxymbox{\hyperlink{class_f_material_a5861b387cd58f1b58fecd4632407ef2a}{GetName}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_f_material_ae7d6cd96252254110ba8ac144abd11c9}{InstanceName}}.empty()\ ?\ \doxymbox{\hyperlink{class_f_material_af2d8c774bf0f5520f120ee36bd63539e}{OriginName}}\ :\ \doxymbox{\hyperlink{class_f_material_ae7d6cd96252254110ba8ac144abd11c9}{InstanceName}};\ \}}
+\DoxyCodeLine{00097\ }
+\DoxyCodeLine{00098\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_material_ac78ac0fe80f1e046d8191ebee296925f}{SetVertexShader}}(\textcolor{keyword}{const}\ std::shared\_ptr<FVertexShader>\&\ InVS)\ \{\ \doxymbox{\hyperlink{class_f_material_a73c3bd3bcb59024db386aeedf408193b}{VertexShader}}\ =\ InVS;\ \}}
+\DoxyCodeLine{00099\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_material_ab55af6fe9f11622bc6a21d6b73c121da}{SetPixelShader}}(\textcolor{keyword}{const}\ std::shared\_ptr<FPixelShader>\&\ InPS)\ \{\ \doxymbox{\hyperlink{class_f_material_a4754471ae1a644b905aa7143fffda3a5}{PixelShader}}\ =\ InPS;\ \}}
+\DoxyCodeLine{00100\ }
+\DoxyCodeLine{00101\ \ \ \ \ \doxymbox{\hyperlink{class_f_vertex_shader}{FVertexShader}}*\ \doxymbox{\hyperlink{class_f_material_a23dd44e9558097788aaeae5de2e6b1a2}{GetVertexShader}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_f_material_a73c3bd3bcb59024db386aeedf408193b}{VertexShader}}.get();\ \}}
+\DoxyCodeLine{00102\ \ \ \ \ \doxymbox{\hyperlink{class_f_pixel_shader}{FPixelShader}}*\ \doxymbox{\hyperlink{class_f_material_ae35911e514f7413c866ae536dc835b61}{GetPixelShader}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_f_material_a4754471ae1a644b905aa7143fffda3a5}{PixelShader}}.get();\ \}}
+\DoxyCodeLine{00103\ }
+\DoxyCodeLine{00104\ \ \ \ \ \textcolor{comment}{//\ 상수\ 버퍼\ 슬롯\ 추가\ (b2,\ b3,\ ...\ 순서대로)}}
+\DoxyCodeLine{00105\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ CreateConstantBuffer(ID3D11Device*\ Device,\ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ InSize);}
+\DoxyCodeLine{00106\ }
+\DoxyCodeLine{00107\ \ \ \ \ \textcolor{comment}{//\ 슬롯\ 인덱스로\ 상수\ 버퍼\ 접근}}
+\DoxyCodeLine{00108\ \ \ \ \ \doxymbox{\hyperlink{struct_f_material_constant_buffer}{FMaterialConstantBuffer}}*\ GetConstantBuffer(\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Index);}
+\DoxyCodeLine{00109\ }
+\DoxyCodeLine{00110\ \ \ \ \ \textcolor{comment}{//\ 파라미터\ 이름\ 등록\ (MaterialManager에서\ JSON\ 로드\ 시\ 호출)}}
+\DoxyCodeLine{00111\ \ \ \ \ \textcolor{keywordtype}{void}\ RegisterParameter(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ ParamName,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ BufferIndex,\ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ Offset,\ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ Size);}
+\DoxyCodeLine{00112\ }
+\DoxyCodeLine{00113\ \ \ \ \ \textcolor{comment}{//\ 독립적인\ 상수\ 버퍼를\ 가진\ DynamicMaterial\ 복제본\ 생성}}
+\DoxyCodeLine{00114\ \ \ \ \ std::unique\_ptr<class\ FDynamicMaterial>\ CreateDynamicMaterial()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00115\ }
+\DoxyCodeLine{00116\ \ \ \ \ \textcolor{comment}{//\ 셰이더\ 바인딩\ +\ Dirty\ 상수\ 버퍼\ 업로드\ +\ 바인딩}}
+\DoxyCodeLine{00117\ \ \ \ \ \textcolor{keywordtype}{void}\ Bind(ID3D11DeviceContext*\ DeviceContext);}
+\DoxyCodeLine{00118\ }
+\DoxyCodeLine{00119\ \ \ \ \ \textcolor{keywordtype}{void}\ Release();}
+\DoxyCodeLine{00120\ }
+\DoxyCodeLine{00121\ \textcolor{keyword}{protected}:}
+\DoxyCodeLine{00122\ \ \ \ \ \textcolor{comment}{//\ FDynamicMaterial에서\ 파라미터\ 설정\ 시\ 사용}}
+\DoxyCodeLine{00123\ \ \ \ \ \textcolor{keywordtype}{bool}\ SetParameterData(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ ParamName,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{void}*\ Data,\ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ DataSize);}
+\DoxyCodeLine{00124\ }
+\DoxyCodeLine{00125\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ \doxymbox{\hyperlink{class_f_material_a3631f4b05eda35a7409967bfddd3cf09}{SortId}}\ =\ 0;}
+\DoxyCodeLine{00126\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{inline}\ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ \doxymbox{\hyperlink{class_f_material_aa3754e96f06cd4cab28370cf8733f39f}{NextSortId}}\ =\ 0;}
+\DoxyCodeLine{00127\ }
+\DoxyCodeLine{00128\ \ \ \ \ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \doxymbox{\hyperlink{class_f_material_af2d8c774bf0f5520f120ee36bd63539e}{OriginName}};}
+\DoxyCodeLine{00129\ \ \ \ \ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \doxymbox{\hyperlink{class_f_material_ae7d6cd96252254110ba8ac144abd11c9}{InstanceName}};}
+\DoxyCodeLine{00130\ \ \ \ \ std::shared\_ptr<FVertexShader>\ \doxymbox{\hyperlink{class_f_material_a73c3bd3bcb59024db386aeedf408193b}{VertexShader}};}
+\DoxyCodeLine{00131\ \ \ \ \ std::shared\_ptr<FPixelShader>\ \doxymbox{\hyperlink{class_f_material_a4754471ae1a644b905aa7143fffda3a5}{PixelShader}};}
+\DoxyCodeLine{00132\ }
+\DoxyCodeLine{00133\ \ \ \ \ \doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray<FMaterialConstantBuffer>}}\ \doxymbox{\hyperlink{class_f_material_a186db262cabe2c56d5d312b551a41077}{ConstantBuffers}};}
+\DoxyCodeLine{00134\ \ \ \ \ \doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap<FString,\ FMaterialParameterInfo>}}\ \doxymbox{\hyperlink{class_f_material_a54a997beec25b5f7bcd384192c9a6943}{ParameterMap}};}
+\DoxyCodeLine{00135\ }
+\DoxyCodeLine{00136\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ UINT\ \doxymbox{\hyperlink{class_f_material_a55bd53dd986c50c2df275c4bef957b15}{MaterialCBStartSlot}}\ =\ 2;\ \textcolor{comment}{//\ b0=Frame,\ b1=Object,\ b2+=Material}}
+\DoxyCodeLine{00137\ \};}
+\DoxyCodeLine{00138\ }
+\DoxyCodeLine{00139\ \textcolor{comment}{//\ DynamicMaterial:\ 런타임에\ 파라미터\ 값을\ 변경할\ 수\ 있는\ Material\ 인스턴스}}
+\DoxyCodeLine{00140\ \textcolor{comment}{//\ FMaterial::CreateDynamicMaterial()로\ 생성}}
+\DoxyCodeLine{00141\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_dynamic_material_a6833967536059764ecd03d3d437e7c2e}{FDynamicMaterial}}\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{class_f_material_af1c9f1bca8138961c9fc2f794ce160cc}{FMaterial}}}
+\DoxyCodeLine{00142\ \{}
+\DoxyCodeLine{00143\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00144\ \ \ \ \ \doxymbox{\hyperlink{class_f_dynamic_material_a6833967536059764ecd03d3d437e7c2e}{FDynamicMaterial}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00145\ }
+\DoxyCodeLine{00146\ \ \ \ \ \textcolor{comment}{//\ 이름\ 기반\ 파라미터\ 설정\ (타입별\ 편의\ 함수)}}
+\DoxyCodeLine{00147\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_dynamic_material_a23bfb0360719abe2d95294edd528c869}{SetScalarParameter}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ ParamName,\ \textcolor{keywordtype}{float}\ Value);}
+\DoxyCodeLine{00148\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_dynamic_material_a7df27e39b1298a0ea3e7f56ab587df3b}{SetVectorParameter}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ ParamName,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector4}{FVector4}}\&\ Value);}
+\DoxyCodeLine{00149\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_dynamic_material_a3aa03086c308f3a1ab257e9c25d83466}{SetVector3Parameter}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ ParamName,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ Value);}
+\DoxyCodeLine{00150\ \};}
+
+\end{DoxyCode}

@@ -1,0 +1,28 @@
+<map id="FRotator::UnrotateVector" name="FRotator::UnrotateVector">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,132,173,159"/>
+<area shape="rect" id="Node000002" href="$struct_f_rotator.html#ad4e62083bf0136a4dfef8d464b7413b5" title=" " alt="" coords="221,132,364,159"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="172,143,208,144,203,146,174,148"/>
+<area shape="rect" id="Node000003" href="$struct_f_math.html#a4031a15930971d3d38e731bfb1ccf552" title=" " alt="" coords="412,5,589,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="304,129,348,86,378,62,411,42,427,37,422,39,413,46,381,67,352,90,308,134"/>
+<area shape="rect" id="Node000004" href="$struct_f_quat.html#a12195ceb868985b0fdd9dd4fdad54e1f" title=" " alt="" coords="424,56,577,83"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="322,129,411,92,435,87,430,89,413,97,324,134"/>
+<area shape="rect" id="Node000008" href="$struct_f_matrix.html#aeb34117fb4ed1261c2ab22a763a6ae1b" title=" " alt="" coords="419,107,582,133"/>
+<area shape="poly" id="edge8_Node000002_Node000008" title=" " alt="" coords="364,134,406,131,401,132,365,139"/>
+<area shape="rect" id="Node000010" href="$struct_f_matrix.html#a2b21339e005e9b234f32eb4e98684e60" title=" " alt="" coords="419,157,582,184"/>
+<area shape="poly" id="edge10_Node000002_Node000010" title=" " alt="" coords="364,151,406,159,401,159,365,157"/>
+<area shape="rect" id="Node000011" href="$struct_f_matrix.html#a00b12c167efdccda00af99fed747a473" title=" " alt="" coords="420,208,582,235"/>
+<area shape="poly" id="edge12_Node000002_Node000011" title=" " alt="" coords="324,157,413,194,436,203,430,203,411,198,323,162"/>
+<area shape="rect" id="Node000012" href="$struct_f_matrix.html#a03595ac7cbb4cefe1e79c5242ccac4c6" title=" " alt="" coords="429,259,572,285"/>
+<area shape="poly" id="edge14_Node000002_Node000012" title=" " alt="" coords="307,157,352,200,381,224,413,244,427,253,422,252,411,249,378,228,348,204,305,162"/>
+<area shape="rect" id="Node000005" href="$struct_f_quat.html#a898470770e4f1314a90cccb3ec8e9515" title=" " alt="" coords="827,31,928,57"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="577,62,815,48,809,49,578,67"/>
+<area shape="rect" id="Node000006" href="$struct_f_quat.html#a20b1175ee99c038924047a6cdc322144" title=" " alt="" coords="637,81,762,108"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="577,76,624,84,619,85,577,82"/>
+<area shape="poly" id="edge6_Node000006_Node000005" title=" " alt="" coords="749,78,811,63,816,61,750,83"/>
+<area shape="rect" id="Node000007" href="$struct_f_quat.html#ae500b97cbb82792796e1e7eb4806c256" title=" " alt="" coords="810,81,946,108"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="762,92,797,94,792,95,763,97"/>
+<area shape="rect" id="Node000009" href="$struct_f_matrix.html#a0e9cc0a76cf2ca8ac986d9b6d27da852" title=" " alt="" coords="641,157,758,184"/>
+<area shape="poly" id="edge9_Node000008_Node000009" title=" " alt="" coords="556,131,632,153,627,153,556,137"/>
+<area shape="poly" id="edge11_Node000010_Node000009" title=" " alt="" coords="583,168,628,170,622,171,583,173"/>
+<area shape="poly" id="edge13_Node000011_Node000009" title=" " alt="" coords="556,205,627,189,632,188,557,210"/>
+</map>

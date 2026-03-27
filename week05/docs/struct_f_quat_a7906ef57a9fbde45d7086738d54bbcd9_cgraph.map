@@ -1,0 +1,17 @@
+<map id="FQuat::GetForwardVector" name="FQuat::GetForwardVector">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,56,176,83"/>
+<area shape="rect" id="Node000002" href="$struct_f_quat.html#a4640df05da0abd94f0595965dfd81908" title=" " alt="" coords="224,56,345,83"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="176,67,211,69,205,69,176,72"/>
+<area shape="rect" id="Node000003" href="$struct_f_quat.html#a7aa2737e4c1cebdf13b87a3b84ac5d6b" title=" " alt="" coords="393,56,534,83"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="345,67,380,69,375,69,346,72"/>
+<area shape="rect" id="Node000004" href="$struct_f_quat.html#a12195ceb868985b0fdd9dd4fdad54e1f" title=" " alt="" coords="582,31,735,57"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="535,57,564,56,569,56,535,63"/>
+<area shape="rect" id="Node000007" href="$struct_f_quat.html#ae500b97cbb82792796e1e7eb4806c256" title=" " alt="" coords="955,56,1091,83"/>
+<area shape="poly" id="edge8_Node000003_Node000007" title=" " alt="" coords="535,67,942,69,936,69,535,72"/>
+<area shape="rect" id="Node000005" href="$struct_f_quat.html#a898470770e4f1314a90cccb3ec8e9515" title=" " alt="" coords="972,5,1074,32"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="715,27,782,16,874,11,960,15,955,15,874,17,783,21,715,33"/>
+<area shape="rect" id="Node000006" href="$struct_f_quat.html#a20b1175ee99c038924047a6cdc322144" title=" " alt="" coords="783,31,907,57"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="735,41,770,44,764,44,735,47"/>
+<area shape="poly" id="edge6_Node000006_Node000005" title=" " alt="" coords="907,32,955,28,960,28,908,38"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="908,50,942,58,937,57,907,56"/>
+</map>

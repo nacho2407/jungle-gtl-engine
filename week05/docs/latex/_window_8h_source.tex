@@ -1,0 +1,44 @@
+\doxysection{Window.\+h}
+\hypertarget{_window_8h_source}{}\label{_window_8h_source}\index{Engine/Source/Platform/Windows/Window.h@{Engine/Source/Platform/Windows/Window.h}}
+\doxymbox{\hyperlink{_window_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}"{}}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <Windows.h>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <functional>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_window_types_8h}{WindowTypes.h}}"{}}}
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_c_window_a6c9caa0943683d97aa79c584358df736}{CWindow}}}
+\DoxyCodeLine{00008\ \{}
+\DoxyCodeLine{00009\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00010\ \ \ \ \ \doxymbox{\hyperlink{class_c_window_a6c9caa0943683d97aa79c584358df736}{CWindow}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00011\ \ \ \ \ \doxymbox{\hyperlink{class_c_window_a6c9caa0943683d97aa79c584358df736}{\string~CWindow}}();}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_window_a66260709d4dfc6a58519d9e46bcea3e9}{Create}}(HINSTANCE\ Instance,\ \textcolor{keyword}{const}\ WCHAR*\ ClassName,}
+\DoxyCodeLine{00014\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ WCHAR*\ Title,\ \textcolor{keywordtype}{int}\ InWidth,\ \textcolor{keywordtype}{int}\ InHeight,\ \textcolor{keywordtype}{int}\ InX,\ \textcolor{keywordtype}{int}\ InY);}
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_window_ae41a212c25bfaaddfa76beb6efdba7bf}{Destroy}}();}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_window_a5b94bfb17508590cdda1462eb436df7e}{Show}}();}
+\DoxyCodeLine{00018\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_window_a7e76333fcfb754679393efd2f5bbcca9}{Hide}}();}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \ \ \ \ HWND\ \doxymbox{\hyperlink{class_c_window_acad43810576c2e2b20b3206e91992dcf}{GetHwnd}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_window_ab6c161fb3901e3016bb22f7b0ff95232}{Hwnd}};\ \}}
+\DoxyCodeLine{00021\ \ \ \ \ \textcolor{keywordtype}{int}\ \doxymbox{\hyperlink{class_c_window_a2edc7b40871e1e393072751ff11519ef}{GetWidth}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_window_ae61edcf755aefffae33122f9a705f687}{Width}};\ \}}
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{keywordtype}{int}\ \doxymbox{\hyperlink{class_c_window_a6bfdd0cac20261f23716f1e3f92c9d25}{GetHeight}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_window_a11941fd3886c3ef4e355fdc114d22bfc}{Height}};\ \}}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ \ \ \ \ \textcolor{keywordtype}{void}\ AddMessageFilter(\doxymbox{\hyperlink{_window_types_8h_ae5eaca48f6972a425d537e52f0389bce}{FWndProcFilter}}\ Filter);}
+\DoxyCodeLine{00025\ \ \ \ \ \textcolor{keywordtype}{void}\ SetOnResizeCallback(\doxymbox{\hyperlink{_window_types_8h_a8359cc47b0b501f85cb5f6341b96ba04}{FOnResizeCallback}}\ Callback);}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00027\ \ \ \ \ LRESULT\ HandleMessage(UINT\ Msg,\ WPARAM\ wParam,\ LPARAM\ lParam);}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00030\ \ \ \ \ HWND\ \doxymbox{\hyperlink{class_c_window_ab6c161fb3901e3016bb22f7b0ff95232}{Hwnd}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{keywordtype}{int}\ \doxymbox{\hyperlink{class_c_window_ae61edcf755aefffae33122f9a705f687}{Width}}\ =\ 0;}
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keywordtype}{int}\ \doxymbox{\hyperlink{class_c_window_a11941fd3886c3ef4e355fdc114d22bfc}{Height}}\ =\ 0;}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keywordtype}{int}\ \doxymbox{\hyperlink{class_c_window_a31a93619531d9212527996b3e926825f}{PosX}}\ =\ 0;}
+\DoxyCodeLine{00034\ \ \ \ \ \textcolor{keywordtype}{int}\ \doxymbox{\hyperlink{class_c_window_ad741ba2c53a8712a70c904bd6a5683f4}{PosY}}\ =\ 0;}
+\DoxyCodeLine{00035\ }
+\DoxyCodeLine{00036\ \ \ \ \ \doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray<FWndProcFilter>}}\ \doxymbox{\hyperlink{class_c_window_a22c85961e859f629aa66473fe138711c}{MessageFilters}};}
+\DoxyCodeLine{00037\ \ \ \ \ \doxymbox{\hyperlink{_window_types_8h_a8359cc47b0b501f85cb5f6341b96ba04}{FOnResizeCallback}}\ \doxymbox{\hyperlink{class_c_window_ac7d092b929e85c3ce61a79944f2fb1c6}{OnResizeCallback}};}
+\DoxyCodeLine{00038\ \};}
+
+\end{DoxyCode}

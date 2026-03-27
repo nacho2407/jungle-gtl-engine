@@ -1,0 +1,41 @@
+\doxysection{Scene\+Component.\+h}
+\hypertarget{_scene_component_8h_source}{}\label{_scene_component_8h_source}\index{Engine/Source/Component/SceneComponent.h@{Engine/Source/Component/SceneComponent.h}}
+\doxymbox{\hyperlink{_scene_component_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}"{}}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_actor_component_8h}{ActorComponent.h}}"{}}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_u_scene_component}{USceneComponent}}\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{class_u_actor_component}{UActorComponent}}}
+\DoxyCodeLine{00006\ \{}
+\DoxyCodeLine{00007\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00008\ \ \ \ \ \doxymbox{\hyperlink{_object_8h_a357d06a2d2ae2eccd8dc94b17f17a710}{DECLARE\_RTTI}}(\doxymbox{\hyperlink{class_u_scene_component}{USceneComponent}},\ \doxymbox{\hyperlink{class_u_actor_component}{UActorComponent}})}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ \ \ \ \ const\ \doxymbox{\hyperlink{struct_f_transform}{FTransform}}\&\ \doxymbox{\hyperlink{class_u_scene_component_ad1b8751af65b8f2abd408b7fe849fcdf}{GetRelativeTransform}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_u_scene_component_afb8a9ba53da41b1fe7539ed338da5355}{RelativeTransform}};\ \}}
+\DoxyCodeLine{00011\ \ \ \ \ \textcolor{keywordtype}{void}\ SetRelativeTransform(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_transform}{FTransform}}\&\ InTransform);}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ \doxymbox{\hyperlink{class_u_scene_component_a1d17f50fd1a759d4d8ecaf8dc19e3af9}{GetRelativeLocation}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_u_scene_component_afb8a9ba53da41b1fe7539ed338da5355}{RelativeTransform}}.GetTranslation();\ \}}
+\DoxyCodeLine{00014\ \ \ \ \ \textcolor{keywordtype}{void}\ SetRelativeLocation(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ InLocation);}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \ \ \ \ \doxymbox{\hyperlink{class_u_scene_component}{USceneComponent}}*\ \doxymbox{\hyperlink{class_u_scene_component_a25cc9b04c7027c3a18b621c4373b1baf}{GetAttachParent}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_u_scene_component_a2256287d6df530cd11d7196115d1ee92}{AttachParent}};\ \}}
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray<USceneComponent*>}}\&\ \doxymbox{\hyperlink{class_u_scene_component_af87dfe650dbf3ffa5072ee32bd67d078}{GetAttachChildren}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_u_scene_component_abc1619963391913fa09ec1b55e119df2}{AttachChildren}};\ \}}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \ \ \ \ \textcolor{keywordtype}{void}\ AttachTo(\doxymbox{\hyperlink{class_u_scene_component}{USceneComponent}}*\ InParent);}
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{keywordtype}{void}\ DetachFromParent();}
+\DoxyCodeLine{00021\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ GetWorldLocation()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}}\&\ GetWorldTransform()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00025\ \ \ \ \ \textcolor{keywordtype}{void}\ MarkTransformDirty();}
+\DoxyCodeLine{00026\ \ \ \ \ \textcolor{keywordtype}{void}\ UpdateWorldTransform()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00027\ }
+\DoxyCodeLine{00028\ \ \ \ \ \doxymbox{\hyperlink{struct_f_transform}{FTransform}}\ \doxymbox{\hyperlink{class_u_scene_component_afb8a9ba53da41b1fe7539ed338da5355}{RelativeTransform}}\{\};}
+\DoxyCodeLine{00029\ \ \ \ \ \doxymbox{\hyperlink{class_t_object_ptr}{TObjectPtr<USceneComponent>}}\ \doxymbox{\hyperlink{class_u_scene_component_a2256287d6df530cd11d7196115d1ee92}{AttachParent}};}
+\DoxyCodeLine{00030\ \ \ \ \ \doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray<USceneComponent*>}}\ \doxymbox{\hyperlink{class_u_scene_component_abc1619963391913fa09ec1b55e119df2}{AttachChildren}};}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keyword}{mutable}\ \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}}\ \doxymbox{\hyperlink{class_u_scene_component_a35973c743538e62dc423695648f684ac}{CachedWorldTransform}};}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keyword}{mutable}\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_u_scene_component_a6f8d3c8d67bccdeddd773c3caa7afba1}{bWorldTransformDirty}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00034\ \};}
+\DoxyCodeLine{00035\ }
+
+\end{DoxyCode}

@@ -1,0 +1,13 @@
+<map id="CPrimitiveGizmo::CreateScaleAxisMesh" name="CPrimitiveGizmo::CreateScaleAxisMesh">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,73,206,116"/>
+<area shape="rect" id="Node000002" href="$_unreal_editor_styled_gizmo_8cpp.html#a9a1a86d2d3e6852f80816d95cecc3107" title=" " alt="" coords="254,81,399,108"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="205,92,241,94,235,95,206,97"/>
+<area shape="rect" id="Node000003" href="$_unreal_editor_styled_gizmo_8cpp.html#a784a2bab983964e8fd36b27518165847" title=" " alt="" coords="468,5,556,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="359,78,446,42,459,39,464,37,448,46,361,83"/>
+<area shape="rect" id="Node000004" href="$_unreal_editor_styled_gizmo_8cpp.html#ac022f8a6d8e88ac8a486e96643d19289" title=" " alt="" coords="468,56,556,83"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="399,82,456,77,451,78,400,87"/>
+<area shape="rect" id="Node000005" href="$_unreal_editor_styled_gizmo_8cpp.html#a5b708f556d032d8559dadacc4ed045a1" title=" " alt="" coords="469,107,555,133"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="400,102,456,112,451,112,400,107"/>
+<area shape="rect" id="Node000006" href="$_unreal_editor_styled_gizmo_8cpp.html#a64a904362500c429c13abe21fca44c74" title=" " alt="" coords="447,157,577,184"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="361,106,448,143,464,151,458,151,446,148,359,111"/>
+</map>

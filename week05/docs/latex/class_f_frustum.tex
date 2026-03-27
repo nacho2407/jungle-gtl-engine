@@ -1,0 +1,145 @@
+\doxysection{FFrustum Class Reference}
+\hypertarget{class_f_frustum}{}\label{class_f_frustum}\index{FFrustum@{FFrustum}}
+
+
+{\ttfamily \+\#include $<$Frustum.\+h$>$}
+
+
+
+Collaboration diagram for FFrustum:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=172pt]{class_f_frustum__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Types}
+\begin{DoxyCompactItemize}
+\item 
+enum \{ \newline
+\doxymbox{\hyperlink{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3a562313764ca6bb75ab60a46e98d3a171}{Left}} = 0
+, \doxymbox{\hyperlink{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3a598d988ef2b87137d8452964c11b0211}{Right}}
+, \doxymbox{\hyperlink{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3a5cdd6c8b82ed32205e7ec0924d978ee9}{Bottom}}
+, \doxymbox{\hyperlink{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3aa1c2941b8ee77471770c571e76b8fdd6}{Top}}
+, \newline
+\doxymbox{\hyperlink{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3a736bbfba12341b9991963852ce3c169b}{Near}}
+, \doxymbox{\hyperlink{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3a010f6af91915e57e55a856435d3d9e9b}{Far}}
+, \doxymbox{\hyperlink{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3ad524f672588ae5b13d171354a67bfa72}{Plane\+Count}}
+ \}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \doxymbox{\hyperlink{class_f_frustum_a544a8c44535be756be3e33fe7de49a03}{Extract\+From\+VP}} (const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&VP)
+\item 
+bool \doxymbox{\hyperlink{class_f_frustum_adc00a920924d821f44ee8a4e751c273a}{Is\+Visible}} (const \doxymbox{\hyperlink{struct_f_bounding_sphere}{FBounding\+Sphere}} \&Sphere) const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{struct_f_plane4}{FPlane4}} \doxymbox{\hyperlink{class_f_frustum_a5ed83d22fc67870eee53aca181009103}{Planes}} \+[\doxymbox{\hyperlink{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3ad524f672588ae5b13d171354a67bfa72}{Plane\+Count}}]\+
+\end{DoxyCompactItemize}
+
+
+\label{doc-enum-members}
+\Hypertarget{class_f_frustum_doc-enum-members}
+\doxysubsection{Member Enumeration Documentation}
+\Hypertarget{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3}\doxysubsubsection{\texorpdfstring{anonymous enum}{anonymous enum}}
+{\footnotesize\ttfamily \label{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3} 
+anonymous enum}
+
+\begin{DoxyEnumFields}[2]{Enumerator}
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Left@{Left}!FFrustum@{FFrustum}}
+\index{FFrustum@{FFrustum}!Left@{Left}}
+}\Hypertarget{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3a562313764ca6bb75ab60a46e98d3a171}\label{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3a562313764ca6bb75ab60a46e98d3a171} 
+Left&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Right@{Right}!FFrustum@{FFrustum}}
+\index{FFrustum@{FFrustum}!Right@{Right}}
+}\Hypertarget{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3a598d988ef2b87137d8452964c11b0211}\label{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3a598d988ef2b87137d8452964c11b0211} 
+Right&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Bottom@{Bottom}!FFrustum@{FFrustum}}
+\index{FFrustum@{FFrustum}!Bottom@{Bottom}}
+}\Hypertarget{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3a5cdd6c8b82ed32205e7ec0924d978ee9}\label{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3a5cdd6c8b82ed32205e7ec0924d978ee9} 
+Bottom&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Top@{Top}!FFrustum@{FFrustum}}
+\index{FFrustum@{FFrustum}!Top@{Top}}
+}\Hypertarget{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3aa1c2941b8ee77471770c571e76b8fdd6}\label{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3aa1c2941b8ee77471770c571e76b8fdd6} 
+Top&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Near@{Near}!FFrustum@{FFrustum}}
+\index{FFrustum@{FFrustum}!Near@{Near}}
+}\Hypertarget{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3a736bbfba12341b9991963852ce3c169b}\label{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3a736bbfba12341b9991963852ce3c169b} 
+Near&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Far@{Far}!FFrustum@{FFrustum}}
+\index{FFrustum@{FFrustum}!Far@{Far}}
+}\Hypertarget{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3a010f6af91915e57e55a856435d3d9e9b}\label{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3a010f6af91915e57e55a856435d3d9e9b} 
+Far&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{PlaneCount@{PlaneCount}!FFrustum@{FFrustum}}
+\index{FFrustum@{FFrustum}!PlaneCount@{PlaneCount}}
+}\Hypertarget{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3ad524f672588ae5b13d171354a67bfa72}\label{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3ad524f672588ae5b13d171354a67bfa72} 
+Plane\+Count&\\
+\hline
+
+\end{DoxyEnumFields}
+
+
+\label{doc-func-members}
+\Hypertarget{class_f_frustum_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_f_frustum_a544a8c44535be756be3e33fe7de49a03}\index{FFrustum@{FFrustum}!ExtractFromVP@{ExtractFromVP}}
+\index{ExtractFromVP@{ExtractFromVP}!FFrustum@{FFrustum}}
+\doxysubsubsection{\texorpdfstring{ExtractFromVP()}{ExtractFromVP()}}
+{\footnotesize\ttfamily \label{class_f_frustum_a544a8c44535be756be3e33fe7de49a03} 
+void FFrustum::\+\+Extract\+From\+VP (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&}]{VP}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_frustum_a544a8c44535be756be3e33fe7de49a03_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_frustum_adc00a920924d821f44ee8a4e751c273a}\index{FFrustum@{FFrustum}!IsVisible@{IsVisible}}
+\index{IsVisible@{IsVisible}!FFrustum@{FFrustum}}
+\doxysubsubsection{\texorpdfstring{IsVisible()}{IsVisible()}}
+{\footnotesize\ttfamily \label{class_f_frustum_adc00a920924d821f44ee8a4e751c273a} 
+bool FFrustum::\+\+Is\+Visible (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_bounding_sphere}{FBounding\+Sphere}} \&}]{Sphere}{}\end{DoxyParamCaption}) const}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_frustum_adc00a920924d821f44ee8a4e751c273a_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_f_frustum_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_f_frustum_a5ed83d22fc67870eee53aca181009103}\index{FFrustum@{FFrustum}!Planes@{Planes}}
+\index{Planes@{Planes}!FFrustum@{FFrustum}}
+\doxysubsubsection{\texorpdfstring{Planes}{Planes}}
+{\footnotesize\ttfamily \label{class_f_frustum_a5ed83d22fc67870eee53aca181009103} 
+\doxymbox{\hyperlink{struct_f_plane4}{FPlane4}} FFrustum::\+\+Planes\+[\doxymbox{\hyperlink{class_f_frustum_a9d6aecd023734edf3187674d849cf6c3ad524f672588ae5b13d171354a67bfa72}{Plane\+Count}}]\+\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Math/\+\doxymbox{\hyperlink{_frustum_8h}{Frustum.\+h}}\item 
+Engine/\+\+Source/\+\+Math/\+\doxymbox{\hyperlink{_frustum_8cpp}{Frustum.\+cpp}}\end{DoxyCompactItemize}

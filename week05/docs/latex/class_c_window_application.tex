@@ -1,0 +1,383 @@
+\doxysection{CWindow\+Application Class Reference}
+\hypertarget{class_c_window_application}{}\label{class_c_window_application}\index{CWindowApplication@{CWindowApplication}}
+
+
+{\ttfamily \+\#include $<$Window\+Application.\+h$>$}
+
+
+
+Collaboration diagram for CWindow\+Application:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{class_c_window_application__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+bool \doxymbox{\hyperlink{class_c_window_application_aa72420df42b692e90d59e50dd61a2bd0}{Create}} (HINSTANCE In\+Instance, const WCHAR \texorpdfstring{$\ast$}{*}Class\+Name=L"{}\+Jungle\+Engine\+Window"{})
+\item 
+void \doxymbox{\hyperlink{class_c_window_application_a5ea2cdf2837452088e1e35fb4fd8e978}{Destroy}} ()
+\item 
+\doxymbox{\hyperlink{class_c_window}{CWindow}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_window_application_a0fe120bce5043b1d509ec5559b7fec81}{Make\+Window}} (const WCHAR \texorpdfstring{$\ast$}{*}Title, int Width, int Height, int X=100, int Y=100)
+\item 
+bool \doxymbox{\hyperlink{class_c_window_application_a90d67b4bd95f335760289688c5e46dee}{Create\+Main\+Window}} (const WCHAR \texorpdfstring{$\ast$}{*}Title, int Width, int Height, int X=100, int Y=100)
+\item 
+bool \doxymbox{\hyperlink{class_c_window_application_a1ee470ab2ca68a68b706df7016cec1fb}{Pump\+Messages}} ()
+\item 
+HINSTANCE \doxymbox{\hyperlink{class_c_window_application_adda704305c20569c33afa0de6a50de46}{Get\+Instance}} () const
+\item 
+const WCHAR \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_window_application_a92d49e9192313d79266cb4afcc03d25b}{Get\+Class\+Name}} () const
+\item 
+\doxymbox{\hyperlink{class_c_window}{CWindow}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_window_application_ac1ec8f68ea580e24faaf0e279405a15f}{Get\+Main\+Window}} () const
+\item 
+HWND \doxymbox{\hyperlink{class_c_window_application_ab424bed1e315176940172443c403981d}{Get\+Hwnd}} () const
+\item 
+\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \doxymbox{\hyperlink{class_c_window_application_a9c2387d3a72be91f707ef307167b338e}{Get\+Window\+Width}} () const
+\item 
+\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \doxymbox{\hyperlink{class_c_window_application_aaeb5eaeaac44baa1245e5a7b8dc37fa7}{Get\+Window\+Height}} () const
+\item 
+void \doxymbox{\hyperlink{class_c_window_application_a3e542345fba87fdae20e91208fe952b5}{Add\+Message\+Filter}} (\doxymbox{\hyperlink{_window_types_8h_ae5eaca48f6972a425d537e52f0389bce}{FWnd\+Proc\+Filter}} Filter)
+\item 
+void \doxymbox{\hyperlink{class_c_window_application_aede7bcd53d1beafbb9bbbbeaf9cd4f8d}{Set\+On\+Resize\+Callback}} (\doxymbox{\hyperlink{_window_types_8h_a8359cc47b0b501f85cb5f6341b96ba04}{FOn\+Resize\+Callback}} Callback)
+\item 
+void \doxymbox{\hyperlink{class_c_window_application_ae91566ef079634aecf8f80b6904add49}{Show\+Window}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static \doxymbox{\hyperlink{class_c_window_application}{CWindow\+Application}} \& \doxymbox{\hyperlink{class_c_window_application_a01873eecba83540c8869f64e15100a50}{Get}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_c_window_application_a7f63d612a2effe0b8825b2306e91cc1c}{CWindow\+Application}} ()=default
+\item 
+\doxymbox{\hyperlink{class_c_window_application_a054f498da58ba028ff85120e10e2eb26}{\texorpdfstring{$\sim$}{\string~}\+CWindow\+Application}} ()=default
+\item 
+void \doxymbox{\hyperlink{class_c_window_application_a4bef89a8796bc509327fc53b057e554a}{Register\+Window}} (HWND Hwnd, \doxymbox{\hyperlink{class_c_window}{CWindow}} \texorpdfstring{$\ast$}{*}Window)
+\item 
+void \doxymbox{\hyperlink{class_c_window_application_ae32a4cccacdeceabee95d795f32e1d02}{Unregister\+Window}} (HWND Hwnd)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static LRESULT CALLBACK \doxymbox{\hyperlink{class_c_window_application_a865401b5e1590ce796886ddb6b6fbe2b}{Static\+Wnd\+Proc}} (HWND h\+Wnd, UINT Msg, WPARAM w\+Param, LPARAM l\+Param)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+HINSTANCE \doxymbox{\hyperlink{class_c_window_application_aa016dfc657dab014656efdf6b70ea16a}{Instance}} = nullptr
+\item 
+WNDCLASSEX \doxymbox{\hyperlink{class_c_window_application_a12184f7a8d0f756940bea7f28a42ece4}{Window\+Class}} = \{\}
+\item 
+WCHAR \doxymbox{\hyperlink{class_c_window_application_a9b1cdcd8b3eb35b02816ae22f15a45cc}{Window\+Class\+Name}} \+[128]\+ = \{\}
+\item 
+bool \doxymbox{\hyperlink{class_c_window_application_a12ddb427a51fc7cc2ba1cad7e28630e8}{b\+Class\+Registered}} = false
+\item 
+\doxymbox{\hyperlink{class_c_window}{CWindow}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_window_application_a1876da1a143216a63bbe61bd6c4df7f2}{Main\+Window}} = nullptr
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static \doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap}}$<$ HWND, \doxymbox{\hyperlink{class_c_window}{CWindow}} \texorpdfstring{$\ast$}{*} $>$ \doxymbox{\hyperlink{class_c_window_application_adc05ee4eae91d482adf4ec7d49a9af4e}{Window\+Map}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+class \doxymbox{\hyperlink{class_c_window_application_a850c6c7bf26c00ee0d9c341f809d5d9a}{CWindow}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{class_c_window_application_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_c_window_application_a7f63d612a2effe0b8825b2306e91cc1c}\index{CWindowApplication@{CWindowApplication}!CWindowApplication@{CWindowApplication}}
+\index{CWindowApplication@{CWindowApplication}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{CWindowApplication()}{CWindowApplication()}}
+{\footnotesize\ttfamily \label{class_c_window_application_a7f63d612a2effe0b8825b2306e91cc1c} 
+CWindow\+Application::\+\+CWindow\+Application (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [default]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_window_application_a7f63d612a2effe0b8825b2306e91cc1c_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_window_application_a054f498da58ba028ff85120e10e2eb26}\index{CWindowApplication@{CWindowApplication}!````~CWindowApplication@{\texorpdfstring{$\sim$}{\string~}CWindowApplication}}
+\index{````~CWindowApplication@{\texorpdfstring{$\sim$}{\string~}CWindowApplication}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{\texorpdfstring{$\sim$}{\string~}CWindowApplication()}{\string~CWindowApplication()}}
+{\footnotesize\ttfamily \label{class_c_window_application_a054f498da58ba028ff85120e10e2eb26} 
+CWindow\+Application::\+\texorpdfstring{$\sim$}{\string~}\+CWindow\+Application (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [default]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=342pt]{class_c_window_application_a054f498da58ba028ff85120e10e2eb26_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-func-members}
+\Hypertarget{class_c_window_application_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_c_window_application_a3e542345fba87fdae20e91208fe952b5}\index{CWindowApplication@{CWindowApplication}!AddMessageFilter@{AddMessageFilter}}
+\index{AddMessageFilter@{AddMessageFilter}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{AddMessageFilter()}{AddMessageFilter()}}
+{\footnotesize\ttfamily \label{class_c_window_application_a3e542345fba87fdae20e91208fe952b5} 
+void CWindow\+Application::\+\+Add\+Message\+Filter (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_window_types_8h_ae5eaca48f6972a425d537e52f0389bce}{FWnd\+Proc\+Filter}}}]{Filter}{}\end{DoxyParamCaption})}
+
+\Hypertarget{class_c_window_application_aa72420df42b692e90d59e50dd61a2bd0}\index{CWindowApplication@{CWindowApplication}!Create@{Create}}
+\index{Create@{Create}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{Create()}{Create()}}
+{\footnotesize\ttfamily \label{class_c_window_application_aa72420df42b692e90d59e50dd61a2bd0} 
+bool CWindow\+Application::\+\+Create (\begin{DoxyParamCaption}\item[{HINSTANCE}]{In\+Instance}{, }\item[{const WCHAR \texorpdfstring{$\ast$}{*}}]{Class\+Name}{ = {\ttfamily L"{}JungleEngineWindow"{}}}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=330pt]{class_c_window_application_aa72420df42b692e90d59e50dd61a2bd0_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_window_application_a90d67b4bd95f335760289688c5e46dee}\index{CWindowApplication@{CWindowApplication}!CreateMainWindow@{CreateMainWindow}}
+\index{CreateMainWindow@{CreateMainWindow}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{CreateMainWindow()}{CreateMainWindow()}}
+{\footnotesize\ttfamily \label{class_c_window_application_a90d67b4bd95f335760289688c5e46dee} 
+bool CWindow\+Application::\+\+Create\+Main\+Window (\begin{DoxyParamCaption}\item[{const WCHAR \texorpdfstring{$\ast$}{*}}]{Title}{, }\item[{int}]{Width}{, }\item[{int}]{Height}{, }\item[{int}]{X}{ = {\ttfamily 100}, }\item[{int}]{Y}{ = {\ttfamily 100}}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_window_application_a90d67b4bd95f335760289688c5e46dee_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_window_application_a5ea2cdf2837452088e1e35fb4fd8e978}\index{CWindowApplication@{CWindowApplication}!Destroy@{Destroy}}
+\index{Destroy@{Destroy}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{Destroy()}{Destroy()}}
+{\footnotesize\ttfamily \label{class_c_window_application_a5ea2cdf2837452088e1e35fb4fd8e978} 
+void CWindow\+Application::\+\+Destroy (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{class_c_window_application_a01873eecba83540c8869f64e15100a50}\index{CWindowApplication@{CWindowApplication}!Get@{Get}}
+\index{Get@{Get}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{Get()}{Get()}}
+{\footnotesize\ttfamily \label{class_c_window_application_a01873eecba83540c8869f64e15100a50} 
+\doxymbox{\hyperlink{class_c_window_application}{CWindow\+Application}} \& CWindow\+Application::\+\+Get (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_window_application_a01873eecba83540c8869f64e15100a50_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_window_application_a01873eecba83540c8869f64e15100a50_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_window_application_a92d49e9192313d79266cb4afcc03d25b}\index{CWindowApplication@{CWindowApplication}!GetClassName@{GetClassName}}
+\index{GetClassName@{GetClassName}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{GetClassName()}{GetClassName()}}
+{\footnotesize\ttfamily \label{class_c_window_application_a92d49e9192313d79266cb4afcc03d25b} 
+const WCHAR \texorpdfstring{$\ast$}{*} CWindow\+Application::\+\+Get\+Class\+Name (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_c_window_application_ab424bed1e315176940172443c403981d}\index{CWindowApplication@{CWindowApplication}!GetHwnd@{GetHwnd}}
+\index{GetHwnd@{GetHwnd}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{GetHwnd()}{GetHwnd()}}
+{\footnotesize\ttfamily \label{class_c_window_application_ab424bed1e315176940172443c403981d} 
+HWND CWindow\+Application::\+\+Get\+Hwnd (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+\Hypertarget{class_c_window_application_adda704305c20569c33afa0de6a50de46}\index{CWindowApplication@{CWindowApplication}!GetInstance@{GetInstance}}
+\index{GetInstance@{GetInstance}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{GetInstance()}{GetInstance()}}
+{\footnotesize\ttfamily \label{class_c_window_application_adda704305c20569c33afa0de6a50de46} 
+HINSTANCE CWindow\+Application::\+\+Get\+Instance (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_c_window_application_ac1ec8f68ea580e24faaf0e279405a15f}\index{CWindowApplication@{CWindowApplication}!GetMainWindow@{GetMainWindow}}
+\index{GetMainWindow@{GetMainWindow}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{GetMainWindow()}{GetMainWindow()}}
+{\footnotesize\ttfamily \label{class_c_window_application_ac1ec8f68ea580e24faaf0e279405a15f} 
+\doxymbox{\hyperlink{class_c_window}{CWindow}} \texorpdfstring{$\ast$}{*} CWindow\+Application::\+\+Get\+Main\+Window (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=330pt]{class_c_window_application_ac1ec8f68ea580e24faaf0e279405a15f_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_window_application_aaeb5eaeaac44baa1245e5a7b8dc37fa7}\index{CWindowApplication@{CWindowApplication}!GetWindowHeight@{GetWindowHeight}}
+\index{GetWindowHeight@{GetWindowHeight}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{GetWindowHeight()}{GetWindowHeight()}}
+{\footnotesize\ttfamily \label{class_c_window_application_aaeb5eaeaac44baa1245e5a7b8dc37fa7} 
+\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} CWindow\+Application::\+\+Get\+Window\+Height (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+\Hypertarget{class_c_window_application_a9c2387d3a72be91f707ef307167b338e}\index{CWindowApplication@{CWindowApplication}!GetWindowWidth@{GetWindowWidth}}
+\index{GetWindowWidth@{GetWindowWidth}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{GetWindowWidth()}{GetWindowWidth()}}
+{\footnotesize\ttfamily \label{class_c_window_application_a9c2387d3a72be91f707ef307167b338e} 
+\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} CWindow\+Application::\+\+Get\+Window\+Width (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+\Hypertarget{class_c_window_application_a0fe120bce5043b1d509ec5559b7fec81}\index{CWindowApplication@{CWindowApplication}!MakeWindow@{MakeWindow}}
+\index{MakeWindow@{MakeWindow}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{MakeWindow()}{MakeWindow()}}
+{\footnotesize\ttfamily \label{class_c_window_application_a0fe120bce5043b1d509ec5559b7fec81} 
+\doxymbox{\hyperlink{class_c_window}{CWindow}} \texorpdfstring{$\ast$}{*} CWindow\+Application::\+\+Make\+Window (\begin{DoxyParamCaption}\item[{const WCHAR \texorpdfstring{$\ast$}{*}}]{Title}{, }\item[{int}]{Width}{, }\item[{int}]{Height}{, }\item[{int}]{X}{ = {\ttfamily 100}, }\item[{int}]{Y}{ = {\ttfamily 100}}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_window_application_a0fe120bce5043b1d509ec5559b7fec81_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=330pt]{class_c_window_application_a0fe120bce5043b1d509ec5559b7fec81_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_window_application_a1ee470ab2ca68a68b706df7016cec1fb}\index{CWindowApplication@{CWindowApplication}!PumpMessages@{PumpMessages}}
+\index{PumpMessages@{PumpMessages}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{PumpMessages()}{PumpMessages()}}
+{\footnotesize\ttfamily \label{class_c_window_application_a1ee470ab2ca68a68b706df7016cec1fb} 
+bool CWindow\+Application::\+\+Pump\+Messages (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{class_c_window_application_a4bef89a8796bc509327fc53b057e554a}\index{CWindowApplication@{CWindowApplication}!RegisterWindow@{RegisterWindow}}
+\index{RegisterWindow@{RegisterWindow}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{RegisterWindow()}{RegisterWindow()}}
+{\footnotesize\ttfamily \label{class_c_window_application_a4bef89a8796bc509327fc53b057e554a} 
+void CWindow\+Application::\+\+Register\+Window (\begin{DoxyParamCaption}\item[{HWND}]{Hwnd}{, }\item[{\doxymbox{\hyperlink{class_c_window}{CWindow}} \texorpdfstring{$\ast$}{*}}]{Window}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=330pt]{class_c_window_application_a4bef89a8796bc509327fc53b057e554a_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_window_application_a4bef89a8796bc509327fc53b057e554a_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_window_application_aede7bcd53d1beafbb9bbbbeaf9cd4f8d}\index{CWindowApplication@{CWindowApplication}!SetOnResizeCallback@{SetOnResizeCallback}}
+\index{SetOnResizeCallback@{SetOnResizeCallback}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{SetOnResizeCallback()}{SetOnResizeCallback()}}
+{\footnotesize\ttfamily \label{class_c_window_application_aede7bcd53d1beafbb9bbbbeaf9cd4f8d} 
+void CWindow\+Application::\+\+Set\+On\+Resize\+Callback (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_window_types_8h_a8359cc47b0b501f85cb5f6341b96ba04}{FOn\+Resize\+Callback}}}]{Callback}{}\end{DoxyParamCaption})}
+
+\Hypertarget{class_c_window_application_ae91566ef079634aecf8f80b6904add49}\index{CWindowApplication@{CWindowApplication}!ShowWindow@{ShowWindow}}
+\index{ShowWindow@{ShowWindow}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{ShowWindow()}{ShowWindow()}}
+{\footnotesize\ttfamily \label{class_c_window_application_ae91566ef079634aecf8f80b6904add49} 
+void CWindow\+Application::\+\+Show\+Window (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{class_c_window_application_a865401b5e1590ce796886ddb6b6fbe2b}\index{CWindowApplication@{CWindowApplication}!StaticWndProc@{StaticWndProc}}
+\index{StaticWndProc@{StaticWndProc}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{StaticWndProc()}{StaticWndProc()}}
+{\footnotesize\ttfamily \label{class_c_window_application_a865401b5e1590ce796886ddb6b6fbe2b} 
+LRESULT CALLBACK CWindow\+Application::\+\+Static\+Wnd\+Proc (\begin{DoxyParamCaption}\item[{HWND}]{h\+Wnd}{, }\item[{UINT}]{Msg}{, }\item[{WPARAM}]{w\+Param}{, }\item[{LPARAM}]{l\+Param}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=342pt]{class_c_window_application_a865401b5e1590ce796886ddb6b6fbe2b_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_window_application_ae32a4cccacdeceabee95d795f32e1d02}\index{CWindowApplication@{CWindowApplication}!UnregisterWindow@{UnregisterWindow}}
+\index{UnregisterWindow@{UnregisterWindow}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{UnregisterWindow()}{UnregisterWindow()}}
+{\footnotesize\ttfamily \label{class_c_window_application_ae32a4cccacdeceabee95d795f32e1d02} 
+void CWindow\+Application::\+\+Unregister\+Window (\begin{DoxyParamCaption}\item[{HWND}]{Hwnd}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_window_application_ae32a4cccacdeceabee95d795f32e1d02_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-related-members}
+\Hypertarget{class_c_window_application_doc-related-members}
+\doxysubsection{Friends And Related Symbol Documentation}
+\Hypertarget{class_c_window_application_a850c6c7bf26c00ee0d9c341f809d5d9a}\index{CWindowApplication@{CWindowApplication}!CWindow@{CWindow}}
+\index{CWindow@{CWindow}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{CWindow}{CWindow}}
+{\footnotesize\ttfamily \label{class_c_window_application_a850c6c7bf26c00ee0d9c341f809d5d9a} 
+friend class \doxymbox{\hyperlink{class_c_window}{CWindow}}\hspace{0.3cm}{\ttfamily [friend]}}
+
+
+
+\label{doc-variable-members}
+\Hypertarget{class_c_window_application_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_c_window_application_a12ddb427a51fc7cc2ba1cad7e28630e8}\index{CWindowApplication@{CWindowApplication}!bClassRegistered@{bClassRegistered}}
+\index{bClassRegistered@{bClassRegistered}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{bClassRegistered}{bClassRegistered}}
+{\footnotesize\ttfamily \label{class_c_window_application_a12ddb427a51fc7cc2ba1cad7e28630e8} 
+bool CWindow\+Application::\+b\+Class\+Registered = false\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_window_application_aa016dfc657dab014656efdf6b70ea16a}\index{CWindowApplication@{CWindowApplication}!Instance@{Instance}}
+\index{Instance@{Instance}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{Instance}{Instance}}
+{\footnotesize\ttfamily \label{class_c_window_application_aa016dfc657dab014656efdf6b70ea16a} 
+HINSTANCE CWindow\+Application::\+\+Instance = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_window_application_a1876da1a143216a63bbe61bd6c4df7f2}\index{CWindowApplication@{CWindowApplication}!MainWindow@{MainWindow}}
+\index{MainWindow@{MainWindow}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{MainWindow}{MainWindow}}
+{\footnotesize\ttfamily \label{class_c_window_application_a1876da1a143216a63bbe61bd6c4df7f2} 
+\doxymbox{\hyperlink{class_c_window}{CWindow}}\texorpdfstring{$\ast$}{*} CWindow\+Application::\+\+Main\+Window = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_window_application_a12184f7a8d0f756940bea7f28a42ece4}\index{CWindowApplication@{CWindowApplication}!WindowClass@{WindowClass}}
+\index{WindowClass@{WindowClass}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{WindowClass}{WindowClass}}
+{\footnotesize\ttfamily \label{class_c_window_application_a12184f7a8d0f756940bea7f28a42ece4} 
+WNDCLASSEX CWindow\+Application::\+\+Window\+Class = \{\}\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_window_application_a9b1cdcd8b3eb35b02816ae22f15a45cc}\index{CWindowApplication@{CWindowApplication}!WindowClassName@{WindowClassName}}
+\index{WindowClassName@{WindowClassName}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{WindowClassName}{WindowClassName}}
+{\footnotesize\ttfamily \label{class_c_window_application_a9b1cdcd8b3eb35b02816ae22f15a45cc} 
+WCHAR CWindow\+Application::\+\+Window\+Class\+Name\+[128]\+ = \{\}\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_window_application_adc05ee4eae91d482adf4ec7d49a9af4e}\index{CWindowApplication@{CWindowApplication}!WindowMap@{WindowMap}}
+\index{WindowMap@{WindowMap}!CWindowApplication@{CWindowApplication}}
+\doxysubsubsection{\texorpdfstring{WindowMap}{WindowMap}}
+{\footnotesize\ttfamily \label{class_c_window_application_adc05ee4eae91d482adf4ec7d49a9af4e} 
+\doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap}}$<$ HWND, \doxymbox{\hyperlink{class_c_window}{CWindow}} \texorpdfstring{$\ast$}{*} $>$ CWindow\+Application::\+\+Window\+Map\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Platform/\+\+Windows/\+\doxymbox{\hyperlink{_window_application_8h}{Window\+Application.\+h}}\item 
+Engine/\+\+Source/\+\+Platform/\+\+Windows/\+\doxymbox{\hyperlink{_window_application_8cpp}{Window\+Application.\+cpp}}\end{DoxyCompactItemize}

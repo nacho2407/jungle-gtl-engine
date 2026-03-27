@@ -1,0 +1,13 @@
+<map id="CGizmo::ComputeGizmoScale" name="CGizmo::ComputeGizmoScale">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,107,207,133"/>
+<area shape="rect" id="Node000002" href="$struct_f_math.html#a4031a15930971d3d38e731bfb1ccf552" title=" " alt="" coords="255,5,432,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="129,104,185,73,254,42,276,36,271,38,256,46,188,78,132,108"/>
+<area shape="rect" id="Node000003" href="$class_c_camera.html#a2cee4365487aa284b62baf0cf9185306" title=" " alt="" coords="277,56,410,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="171,103,265,85,261,88,173,109"/>
+<area shape="rect" id="Node000004" href="$class_c_camera.html#aa57fd1f8f34c4ce26a169508c70f4db9" title=" " alt="" coords="255,107,432,133"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="207,117,242,119,237,121,208,123"/>
+<area shape="rect" id="Node000005" href="$class_c_camera.html#a21e8e6f3f6a49d0c6322aa4e9aac1522" title=" " alt="" coords="267,157,420,184"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="172,131,265,153,260,155,172,137"/>
+<area shape="rect" id="Node000006" href="$class_c_camera.html#a1ed5bcf6327a1892b3175ec40eda6734" title=" " alt="" coords="258,208,428,235"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="131,131,188,162,256,194,276,203,271,203,254,198,185,167,130,136"/>
+</map>

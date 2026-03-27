@@ -1,0 +1,43 @@
+\doxysection{Material\+Manager.\+h}
+\hypertarget{_material_manager_8h_source}{}\label{_material_manager_8h_source}\index{Engine/Source/Renderer/MaterialManager.h@{Engine/Source/Renderer/MaterialManager.h}}
+\doxymbox{\hyperlink{_material_manager_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <d3d11.h>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_f_material}{FMaterial}};}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{comment}{//\ Material\ 에셋\ 로더\ +\ 캐시\ (싱글톤)}}
+\DoxyCodeLine{00010\ \textcolor{comment}{//\ JSON\ 파일에서\ Material을\ 로드하고\ 이름\ 기반으로\ 캐싱}}
+\DoxyCodeLine{00011\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_material_manager_a9293bf95dec94fabd8a476f5ae2ef78b}{FMaterialManager}}}
+\DoxyCodeLine{00012\ \{}
+\DoxyCodeLine{00013\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00014\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{class_f_material_manager_a9293bf95dec94fabd8a476f5ae2ef78b}{FMaterialManager}}\&\ \doxymbox{\hyperlink{class_f_material_manager_a74c30d0789216a3ed5be4a314b41a182}{Get}}();}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{comment}{//\ JSON\ 파일에서\ Material\ 로드\ (캐시\ 히트\ 시\ 기존\ 반환)}}
+\DoxyCodeLine{00017\ \ \ \ \ std::shared\_ptr<FMaterial>\ \doxymbox{\hyperlink{class_f_material_manager_aee0a288ceb47f3303444923c6f6fcd66}{GetOrLoad}}(ID3D11Device*\ Device,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ FilePath);}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \ \ \ \ \textcolor{comment}{//\ 이름으로\ 이미\ 로드된\ Material\ 조회}}
+\DoxyCodeLine{00020\ \ \ \ \ std::shared\_ptr<FMaterial>\ \doxymbox{\hyperlink{class_f_material_manager_a0d0fec61437b31784200f52354d139dd}{FindByName}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ Name)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{comment}{//\ 프로그래밍\ 방식으로\ 생성한\ Material\ 등록}}
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_material_manager_a81c78cca86355a59c50c7ef7157032f1}{Register}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ Name,\ \textcolor{keyword}{const}\ std::shared\_ptr<FMaterial>\&\ InMaterial);}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \ \ \ \ \textcolor{comment}{//\ 로드된\ Material\ 파일\ 경로\ 목록\ 반환}}
+\DoxyCodeLine{00026\ \ \ \ \ \doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray<FString>}}\ \doxymbox{\hyperlink{class_f_material_manager_a424e3a993745ded30f9f9c71cb6e916e}{GetLoadedPaths}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00027\ }
+\DoxyCodeLine{00028\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_material_manager_ae83d4b35b03e5171903c901528930228}{Clear}}();}
+\DoxyCodeLine{00029\ }
+\DoxyCodeLine{00030\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00031\ \ \ \ \ \doxymbox{\hyperlink{class_f_material_manager_a9293bf95dec94fabd8a476f5ae2ef78b}{FMaterialManager}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00032\ }
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{comment}{//\ 파일\ 경로\ 기반\ 캐시}}
+\DoxyCodeLine{00034\ \ \ \ \ \doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap<FString,\ std::shared\_ptr<FMaterial>}}>\ \doxymbox{\hyperlink{class_f_material_manager_a6cd05c2c4fa35a8f9a0c580f7cbc8387}{PathCache}};}
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{comment}{//\ 이름\ 기반\ 캐시\ (JSON의\ "{}Name"{}\ 필드)}}
+\DoxyCodeLine{00036\ \ \ \ \ \doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap<FString,\ std::shared\_ptr<FMaterial>}}>\ \doxymbox{\hyperlink{class_f_material_manager_a10024742a17883edea51a1f781fdbee1}{NameCache}};}
+\DoxyCodeLine{00037\ \};}
+
+\end{DoxyCode}

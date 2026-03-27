@@ -1,0 +1,16 @@
+<map id="CRenderer::ClearViewportCallbacks" name="CRenderer::ClearViewportCallbacks">
+<area shape="rect" id="Node000001" title=" " alt="" coords="477,101,651,144"/>
+<area shape="rect" id="Node000002" href="$class_c_game_viewport_client.html#a05d99df5c48af134e03183bbc4b5e4de" title=" " alt="" coords="247,5,398,48"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="504,95,428,62,397,51,397,46,430,58,509,94"/>
+<area shape="rect" id="Node000003" href="$class_c_game_viewport_client.html#abcc0d061c69307df4f5c34a19aa6a301" title=" " alt="" coords="247,72,398,115"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="459,111,399,105,399,100,464,110"/>
+<area shape="rect" id="Node000004" href="$class_c_editor_u_i.html#a5a2b00a9ac0f9f96040a4d4136164fc6" title=" " alt="" coords="217,139,429,165"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="459,136,430,142,429,136,464,135"/>
+<area shape="rect" id="Node000005" href="$class_c_renderer.html#a99d8500773d26275a45daed89d9a6071" title=" " alt="" coords="253,189,393,216"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="503,150,430,180,389,191,388,186,428,175,498,151"/>
+<area shape="rect" id="Node000006" href="$class_c_renderer.html#aa90aba692202fafdef765a964cd2a4ca" title=" " alt="" coords="9,164,165,191"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="234,194,165,188,165,183,240,193"/>
+<area shape="rect" id="Node000007" href="$class_c_renderer.html#acb0a66a0d9205fe5f24cec41f0e0b249" title=" " alt="" coords="5,215,169,241"/>
+<area shape="poly" id="edge7_Node000005_Node000007" title=" " alt="" coords="235,212,170,222,169,217,240,211"/>
+<area shape="poly" id="edge6_Node000006_Node000006" title=" " alt="" coords="127,150,114,145,87,143,62,145,49,149,46,155,52,163,47,164,40,155,45,145,61,139,87,137,116,140,132,149"/>
+</map>

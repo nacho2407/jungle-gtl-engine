@@ -1,0 +1,20 @@
+<map id="CGizmo::GetComponentWorldRotationIgnoringScale" name="CGizmo::GetComponentWorldRotationIgnoringScale">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,105,204,148"/>
+<area shape="poly" id="edge2_Node000001_Node000001" title=" " alt="" coords="57,105,55,95,63,86,79,81,105,79,131,81,149,89,144,91,130,86,104,84,80,86,66,91,60,97,62,105"/>
+<area shape="rect" id="Node000002" href="$class_u_scene_component.html#a25cc9b04c7027c3a18b621c4373b1baf" title=" " alt="" coords="257,5,459,48"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="149,102,251,58,272,52,267,55,253,62,151,107"/>
+<area shape="rect" id="Node000003" href="$struct_f_quat.html#a12195ceb868985b0fdd9dd4fdad54e1f" title=" " alt="" coords="282,72,434,99"/>
+<area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="203,108,269,99,264,101,205,113"/>
+<area shape="rect" id="Node000007" href="$class_u_scene_component.html#ad1b8751af65b8f2abd408b7fe849fcdf" title=" " alt="" coords="252,147,464,189"/>
+<area shape="poly" id="edge8_Node000001_Node000007" title=" " alt="" coords="204,140,239,148,234,149,204,146"/>
+<area shape="rect" id="Node000008" href="$struct_f_transform.html#acd1616d9c7fdf7599ca99781de81a38d" title=" " alt="" coords="275,213,441,240"/>
+<area shape="poly" id="edge10_Node000001_Node000008" title=" " alt="" coords="143,146,195,173,253,199,277,209,271,209,251,204,192,178,142,151"/>
+<area shape="rect" id="Node000004" href="$struct_f_quat.html#a898470770e4f1314a90cccb3ec8e9515" title=" " alt="" coords="702,47,803,73"/>
+<area shape="poly" id="edge4_Node000003_Node000004" title=" " alt="" coords="434,78,689,63,684,65,435,83"/>
+<area shape="rect" id="Node000005" href="$struct_f_quat.html#a20b1175ee99c038924047a6cdc322144" title=" " alt="" coords="512,97,636,124"/>
+<area shape="poly" id="edge5_Node000003_Node000005" title=" " alt="" coords="434,92,499,101,494,102,435,97"/>
+<area shape="poly" id="edge6_Node000005_Node000004" title=" " alt="" coords="623,94,686,79,691,77,625,99"/>
+<area shape="rect" id="Node000006" href="$struct_f_quat.html#ae500b97cbb82792796e1e7eb4806c256" title=" " alt="" coords="684,97,821,124"/>
+<area shape="poly" id="edge7_Node000005_Node000006" title=" " alt="" coords="637,108,672,110,666,111,637,113"/>
+<area shape="poly" id="edge9_Node000007_Node000007" title=" " alt="" coords="317,145,315,137,322,128,336,122,358,120,381,122,397,131,391,131,380,128,358,125,337,127,325,132,320,138,322,147"/>
+</map>

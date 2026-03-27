@@ -1,0 +1,158 @@
+\doxysection{CPreview\+Viewport\+Client Class Reference}
+\hypertarget{class_c_preview_viewport_client}{}\label{class_c_preview_viewport_client}\index{CPreviewViewportClient@{CPreviewViewportClient}}
+
+
+{\ttfamily \+\#include $<$Preview\+Viewport\+Client.\+h$>$}
+
+
+
+Inheritance diagram for CPreview\+Viewport\+Client:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=211pt]{class_c_preview_viewport_client__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for CPreview\+Viewport\+Client:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_preview_viewport_client__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_c_preview_viewport_client_aecb6cd0a45a8bcb5019aa468eb7da9f9}{CPreview\+Viewport\+Client}} (\doxymbox{\hyperlink{class_c_editor_u_i}{CEditor\+UI}} \&In\+Editor\+UI, \doxymbox{\hyperlink{class_c_window}{CWindow}} \texorpdfstring{$\ast$}{*}In\+Main\+Window, \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} In\+Preview\+Context\+Name)
+\item 
+void \doxymbox{\hyperlink{class_c_preview_viewport_client_a5d96158c1f13764afd793b997aa96a58}{Attach}} (\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}Core, \doxymbox{\hyperlink{class_c_renderer}{CRenderer}} \texorpdfstring{$\ast$}{*}Renderer) override
+\item 
+void \doxymbox{\hyperlink{class_c_preview_viewport_client_a99c2a2b25638c98c81380250502edad7}{Detach}} (\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}Core, \doxymbox{\hyperlink{class_c_renderer}{CRenderer}} \texorpdfstring{$\ast$}{*}Renderer) override
+\item 
+void \doxymbox{\hyperlink{class_c_preview_viewport_client_ad73751442a23cd53882346fd38a09e21}{Tick}} (\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}Core, float Delta\+Time) override
+\item 
+\doxymbox{\hyperlink{class_u_scene}{UScene}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_preview_viewport_client_aaac50bfb6785c3b02b5b785de714b293}{Resolve\+Scene}} (\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}Core) const override
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Member Functions inherited from \doxymbox{\hyperlink{class_i_viewport_client}{IViewport\+Client}}}
+\begin{DoxyCompactItemize}
+\item 
+virtual \doxymbox{\hyperlink{class_i_viewport_client_a1d892f2e86ca1bf5be648b767562c090}{\texorpdfstring{$\sim$}{\string~}\+IViewport\+Client}} ()=default
+\item 
+virtual void \doxymbox{\hyperlink{class_i_viewport_client_a6b4a125be7712977e84b3db31ea4b623}{Handle\+Message}} (\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}Core, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
+\item 
+virtual void \doxymbox{\hyperlink{class_i_viewport_client_a640dfcaad7c04bc6b78f67a7ed42a8c2}{Build\+Render\+Commands}} (\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}Core, \doxymbox{\hyperlink{class_u_scene}{UScene}} \texorpdfstring{$\ast$}{*}Scene, const \doxymbox{\hyperlink{class_f_frustum}{FFrustum}} \&Frustum, \doxymbox{\hyperlink{struct_f_render_command_queue}{FRender\+Command\+Queue}} \&Out\+Queue) const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_c_editor_u_i}{CEditor\+UI}} \& \doxymbox{\hyperlink{class_c_preview_viewport_client_a423542d454ad6938b8f9363efc23b5f1}{Editor\+UI}}
+\item 
+\doxymbox{\hyperlink{class_c_window}{CWindow}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_preview_viewport_client_a2a5b1b4d344f84c09d84410196926ad4}{Main\+Window}} = nullptr
+\item 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_c_preview_viewport_client_a5fd1462634074a3a1ac4a1266ebca4eb}{Preview\+Context\+Name}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{class_c_preview_viewport_client_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_c_preview_viewport_client_aecb6cd0a45a8bcb5019aa468eb7da9f9}\index{CPreviewViewportClient@{CPreviewViewportClient}!CPreviewViewportClient@{CPreviewViewportClient}}
+\index{CPreviewViewportClient@{CPreviewViewportClient}!CPreviewViewportClient@{CPreviewViewportClient}}
+\doxysubsubsection{\texorpdfstring{CPreviewViewportClient()}{CPreviewViewportClient()}}
+{\footnotesize\ttfamily \label{class_c_preview_viewport_client_aecb6cd0a45a8bcb5019aa468eb7da9f9} 
+CPreview\+Viewport\+Client::\+\+CPreview\+Viewport\+Client (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_editor_u_i}{CEditor\+UI}} \&}]{In\+Editor\+UI}{, }\item[{\doxymbox{\hyperlink{class_c_window}{CWindow}} \texorpdfstring{$\ast$}{*}}]{In\+Main\+Window}{, }\item[{\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}}]{In\+Preview\+Context\+Name}{}\end{DoxyParamCaption})}
+
+
+
+\label{doc-func-members}
+\Hypertarget{class_c_preview_viewport_client_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_c_preview_viewport_client_a5d96158c1f13764afd793b997aa96a58}\index{CPreviewViewportClient@{CPreviewViewportClient}!Attach@{Attach}}
+\index{Attach@{Attach}!CPreviewViewportClient@{CPreviewViewportClient}}
+\doxysubsubsection{\texorpdfstring{Attach()}{Attach()}}
+{\footnotesize\ttfamily \label{class_c_preview_viewport_client_a5d96158c1f13764afd793b997aa96a58} 
+void CPreview\+Viewport\+Client::\+\+Attach (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}}]{Core}{, }\item[{\doxymbox{\hyperlink{class_c_renderer}{CRenderer}} \texorpdfstring{$\ast$}{*}}]{Renderer}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \doxymbox{\hyperlink{class_i_viewport_client_a3e3e3e9db859c6105cf1448014059cb1}{IViewport\+Client}}.
+
+\Hypertarget{class_c_preview_viewport_client_a99c2a2b25638c98c81380250502edad7}\index{CPreviewViewportClient@{CPreviewViewportClient}!Detach@{Detach}}
+\index{Detach@{Detach}!CPreviewViewportClient@{CPreviewViewportClient}}
+\doxysubsubsection{\texorpdfstring{Detach()}{Detach()}}
+{\footnotesize\ttfamily \label{class_c_preview_viewport_client_a99c2a2b25638c98c81380250502edad7} 
+void CPreview\+Viewport\+Client::\+\+Detach (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}}]{Core}{, }\item[{\doxymbox{\hyperlink{class_c_renderer}{CRenderer}} \texorpdfstring{$\ast$}{*}}]{Renderer}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \doxymbox{\hyperlink{class_i_viewport_client_a57111b7f5196800be7422d1c9aed65c1}{IViewport\+Client}}.
+
+\Hypertarget{class_c_preview_viewport_client_aaac50bfb6785c3b02b5b785de714b293}\index{CPreviewViewportClient@{CPreviewViewportClient}!ResolveScene@{ResolveScene}}
+\index{ResolveScene@{ResolveScene}!CPreviewViewportClient@{CPreviewViewportClient}}
+\doxysubsubsection{\texorpdfstring{ResolveScene()}{ResolveScene()}}
+{\footnotesize\ttfamily \label{class_c_preview_viewport_client_aaac50bfb6785c3b02b5b785de714b293} 
+\doxymbox{\hyperlink{class_u_scene}{UScene}} \texorpdfstring{$\ast$}{*} CPreview\+Viewport\+Client::\+\+Resolve\+Scene (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}}]{Core}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \doxymbox{\hyperlink{class_i_viewport_client_ad0fe46751dad741e3dbff8ac640a8105}{IViewport\+Client}}.
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_preview_viewport_client_aaac50bfb6785c3b02b5b785de714b293_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_preview_viewport_client_ad73751442a23cd53882346fd38a09e21}\index{CPreviewViewportClient@{CPreviewViewportClient}!Tick@{Tick}}
+\index{Tick@{Tick}!CPreviewViewportClient@{CPreviewViewportClient}}
+\doxysubsubsection{\texorpdfstring{Tick()}{Tick()}}
+{\footnotesize\ttfamily \label{class_c_preview_viewport_client_ad73751442a23cd53882346fd38a09e21} 
+void CPreview\+Viewport\+Client::\+\+Tick (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}}]{Core}{, }\item[{float}]{Delta\+Time}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \doxymbox{\hyperlink{class_i_viewport_client_ad7c05e3a2cf91d0f282cde068ea15cca}{IViewport\+Client}}.
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=346pt]{class_c_preview_viewport_client_ad73751442a23cd53882346fd38a09e21_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_c_preview_viewport_client_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_c_preview_viewport_client_a423542d454ad6938b8f9363efc23b5f1}\index{CPreviewViewportClient@{CPreviewViewportClient}!EditorUI@{EditorUI}}
+\index{EditorUI@{EditorUI}!CPreviewViewportClient@{CPreviewViewportClient}}
+\doxysubsubsection{\texorpdfstring{EditorUI}{EditorUI}}
+{\footnotesize\ttfamily \label{class_c_preview_viewport_client_a423542d454ad6938b8f9363efc23b5f1} 
+\doxymbox{\hyperlink{class_c_editor_u_i}{CEditor\+UI}}\& CPreview\+Viewport\+Client::\+\+Editor\+UI\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_preview_viewport_client_a2a5b1b4d344f84c09d84410196926ad4}\index{CPreviewViewportClient@{CPreviewViewportClient}!MainWindow@{MainWindow}}
+\index{MainWindow@{MainWindow}!CPreviewViewportClient@{CPreviewViewportClient}}
+\doxysubsubsection{\texorpdfstring{MainWindow}{MainWindow}}
+{\footnotesize\ttfamily \label{class_c_preview_viewport_client_a2a5b1b4d344f84c09d84410196926ad4} 
+\doxymbox{\hyperlink{class_c_window}{CWindow}}\texorpdfstring{$\ast$}{*} CPreview\+Viewport\+Client::\+\+Main\+Window = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_preview_viewport_client_a5fd1462634074a3a1ac4a1266ebca4eb}\index{CPreviewViewportClient@{CPreviewViewportClient}!PreviewContextName@{PreviewContextName}}
+\index{PreviewContextName@{PreviewContextName}!CPreviewViewportClient@{CPreviewViewportClient}}
+\doxysubsubsection{\texorpdfstring{PreviewContextName}{PreviewContextName}}
+{\footnotesize\ttfamily \label{class_c_preview_viewport_client_a5fd1462634074a3a1ac4a1266ebca4eb} 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} CPreview\+Viewport\+Client::\+\+Preview\+Context\+Name\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Editor/\+\+Source/\+\+UI/\+\doxymbox{\hyperlink{_preview_viewport_client_8h}{Preview\+Viewport\+Client.\+h}}\item 
+Editor/\+\+Source/\+\+UI/\+\doxymbox{\hyperlink{_preview_viewport_client_8cpp}{Preview\+Viewport\+Client.\+cpp}}\end{DoxyCompactItemize}

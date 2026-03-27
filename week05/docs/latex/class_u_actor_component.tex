@@ -1,0 +1,279 @@
+\doxysection{UActor\+Component Class Reference}
+\hypertarget{class_u_actor_component}{}\label{class_u_actor_component}\index{UActorComponent@{UActorComponent}}
+
+
+{\ttfamily \+\#include $<$Actor\+Component.\+h$>$}
+
+
+
+Inheritance diagram for UActor\+Component:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{class_u_actor_component__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for UActor\+Component:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{class_u_actor_component__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_u_actor_component_adbce24e0be09ef38e8bcdd59bb34dbd5}{\texorpdfstring{$\sim$}{\string~}\+UActor\+Component}} () override=default
+\item 
+\doxymbox{\hyperlink{class_a_actor}{AActor}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_actor_component_a4d99f75d0cbac7fa868993323cea6d1c}{Get\+Owner}} () const
+\item 
+void \doxymbox{\hyperlink{class_u_actor_component_ae577f38520016342c92c79b9dc865b41}{Set\+Owner}} (\doxymbox{\hyperlink{class_a_actor}{AActor}} \texorpdfstring{$\ast$}{*}In\+Owner)
+\item 
+bool \doxymbox{\hyperlink{class_u_actor_component_a9cca50134837077981e5c1c33ada2e41}{Is\+Registered}} () const
+\item 
+virtual void \doxymbox{\hyperlink{class_u_actor_component_ae08b1b647bb841c318e28c55f0c83747}{On\+Register}} ()
+\item 
+virtual void \doxymbox{\hyperlink{class_u_actor_component_a5006fc51b7783e68aa0b47f6d3806de2}{On\+Unregister}} ()
+\item 
+virtual void \doxymbox{\hyperlink{class_u_actor_component_aeccc0a96cfa9a5b20f81db38a0e5f785}{Begin\+Play}} ()
+\item 
+virtual void \doxymbox{\hyperlink{class_u_actor_component_a5625885838c86016c5309f7e3f11605e}{Tick}} (float Delta\+Time)
+\item 
+bool \doxymbox{\hyperlink{class_u_actor_component_aaafd8a0ce602640eaa0890f60d6a0a17}{Has\+Begun\+Play}} () const
+\item 
+bool \doxymbox{\hyperlink{class_u_actor_component_a2365f448c768964c70a326a6fdd16cc0}{Can\+Tick}} () const
+\item 
+void \doxymbox{\hyperlink{class_u_actor_component_a9b213e18dea702ccd555863ceda29f53}{Set\+Component\+Tick\+Enabled}} (bool b\+Enabled)
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Member Functions inherited from \doxymbox{\hyperlink{class_u_object}{UObject}}}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_u_object_a134240a541ca3ecfd86d8899ca641aca}{UObject}} (const \doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*}In\+Class, const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&In\+Name, \doxymbox{\hyperlink{class_u_object}{UObject}} \texorpdfstring{$\ast$}{*}In\+Outer=nullptr)
+\item 
+\doxymbox{\hyperlink{class_u_object_a7b8d236f605a29bf56a096f3c76f6038}{UObject}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&In\+Name, \doxymbox{\hyperlink{class_u_object}{UObject}} \texorpdfstring{$\ast$}{*}In\+Outer=nullptr)
+\item 
+virtual \doxymbox{\hyperlink{class_u_object_a1863523a3e28e4379fc28b3cc1cd582c}{\texorpdfstring{$\sim$}{\string~}\+UObject}} ()
+\item 
+void \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_object_a92a443aa7a402ae48d5d62551dc7aeb7}{operator new}} (size\+\_\+t In\+Size)
+\item 
+void \doxymbox{\hyperlink{class_u_object_a740eaea337950e754b3d32727e8a75cf}{operator delete}} (void \texorpdfstring{$\ast$}{*}In\+Address, std::\+size\+\_\+t size)
+\item 
+virtual \doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_object_aaeaaa034e92644ebfb3a0e4fe40c8c02}{Get\+Class}} () const
+\item 
+const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \& \doxymbox{\hyperlink{class_u_object_a57009010aca3bc218c5034b821987dd4}{Get\+Name}} () const
+\item 
+\doxymbox{\hyperlink{class_u_object}{UObject}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_object_a92e09357ca4405dcd2413f44d4dbbd39}{Get\+Outer}} () const
+\item 
+bool \doxymbox{\hyperlink{class_u_object_ad6d2f697e6b491570c9687c7041d7ac0}{IsA}} (const \doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*}In\+Class) const
+\item 
+{\footnotesize template$<$typename T$>$ }\\bool \doxymbox{\hyperlink{class_u_object_a9e0b9278fee4678e354227e8e7dd4e9d}{IsA}} () const
+\item 
+{\footnotesize template$<$typename T$>$ }\\T \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_object_ac84999033b0d2df776772aabad8d432d}{Get\+Typed\+Outer}} () const
+\item 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_u_object_a50ce37b2638e2fdfa3bd44d00cc65501}{Get\+Path\+Name}} () const
+\item 
+bool \doxymbox{\hyperlink{class_u_object_aa8a430f6c63d74c333ae314897ba3f9c}{Has\+Any\+Flags}} (\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} In\+Flags) const
+\item 
+bool \doxymbox{\hyperlink{class_u_object_ad3aae76cbd7549fbcb58026dad3888f6}{Has\+All\+Flags}} (\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} In\+Flags) const
+\item 
+void \doxymbox{\hyperlink{class_u_object_a959b2aa84e7a60b233e2d2df6fa0a4d0}{Add\+Flags}} (\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} In\+Flags)
+\item 
+void \doxymbox{\hyperlink{class_u_object_a22921529da2089e8dd8a182f7e4d8afc}{Clear\+Flags}} (\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} In\+Flags)
+\item 
+void \doxymbox{\hyperlink{class_u_object_ad4c2d324e1f8f24a783184db1be0bd7d}{Mark\+Pending\+Kill}} ()
+\item 
+bool \doxymbox{\hyperlink{class_u_object_af9c13f5d0c00dc78b87c1ee889bbef8f}{Is\+Pending\+Kill}} () const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ \doxymbox{\hyperlink{class_a_actor}{AActor}} $>$ \doxymbox{\hyperlink{class_u_actor_component_a809450661c8ba40ed964b73a7d60e3cf}{Owner}}
+\item 
+bool \doxymbox{\hyperlink{class_u_actor_component_a53f13b9006971fbe3ca4dcec7f99b751}{b\+Registered}} = false
+\item 
+bool \doxymbox{\hyperlink{class_u_actor_component_a24027969457d123ed55a8b80c33fede0}{b\+Begun\+Play}} = false
+\item 
+bool \doxymbox{\hyperlink{class_u_actor_component_a2de89ee6b4bf85ff67dea3ac1a452a61}{b\+Can\+Ever\+Tick}} = false
+\item 
+bool \doxymbox{\hyperlink{class_u_actor_component_a1120597c50b7acd05aa48505f414eacd}{b\+Tick\+Enabled}} = true
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Additional Inherited Members}
+\doxysubsection*{Static Public Member Functions inherited from \doxymbox{\hyperlink{class_u_object}{UObject}}}
+\begin{DoxyCompactItemize}
+\item 
+static \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \doxymbox{\hyperlink{class_u_object_a606405bfd5c6823ecef443fd4ce0d144}{Get\+Total\+Bytes}} ()
+\item 
+static \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \doxymbox{\hyperlink{class_u_object_a490d918899d6e2ce5e78d9df247473bf}{Get\+Total\+Counts}} ()
+\item 
+static \doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_object_a1cf4d64988214efdf372c32f89d2da2a}{Static\+Class}} ()
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes inherited from \doxymbox{\hyperlink{class_u_object}{UObject}}}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_u_object_a83fbd1a57afad4978054df6534620e60}{UUID}} = 0
+\item 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_u_object_a275e85c6f0b7459412570e9495fb824b}{Internal\+Index}} = 0
+\item 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_u_object_ac2f7877b317ccb3c6b6d7405bdce7ec6}{Object\+Size}} = 0
+\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Attributes inherited from \doxymbox{\hyperlink{class_u_object}{UObject}}}
+\begin{DoxyCompactItemize}
+\item 
+static \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_u_object_a962a7dd7fb0492055cd032056b71645c}{Total\+Allocation\+Bytes}} = 0
+\item 
+static \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_u_object_a257070771b84835483df7278e7a4c947}{Total\+Allocation\+Counts}} = 0
+\item 
+static \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_u_object_a99dc1eede26795e19a7c8722b1dbf465}{Last\+New\+Size}} = 0
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{class_u_actor_component_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_u_actor_component_adbce24e0be09ef38e8bcdd59bb34dbd5}\index{UActorComponent@{UActorComponent}!````~UActorComponent@{\texorpdfstring{$\sim$}{\string~}UActorComponent}}
+\index{````~UActorComponent@{\texorpdfstring{$\sim$}{\string~}UActorComponent}!UActorComponent@{UActorComponent}}
+\doxysubsubsection{\texorpdfstring{\texorpdfstring{$\sim$}{\string~}UActorComponent()}{\string~UActorComponent()}}
+{\footnotesize\ttfamily \label{class_u_actor_component_adbce24e0be09ef38e8bcdd59bb34dbd5} 
+UActor\+Component::\+\texorpdfstring{$\sim$}{\string~}\+UActor\+Component (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [default]}}
+
+
+
+\label{doc-func-members}
+\Hypertarget{class_u_actor_component_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_u_actor_component_aeccc0a96cfa9a5b20f81db38a0e5f785}\index{UActorComponent@{UActorComponent}!BeginPlay@{BeginPlay}}
+\index{BeginPlay@{BeginPlay}!UActorComponent@{UActorComponent}}
+\doxysubsubsection{\texorpdfstring{BeginPlay()}{BeginPlay()}}
+{\footnotesize\ttfamily \label{class_u_actor_component_aeccc0a96cfa9a5b20f81db38a0e5f785} 
+virtual void UActor\+Component::\+\+Begin\+Play (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented in \doxymbox{\hyperlink{class_u_random_color_component_a581b0b005c1d7c23b0593d93ca275be7}{URandom\+Color\+Component}}.
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_actor_component_aeccc0a96cfa9a5b20f81db38a0e5f785_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_actor_component_a2365f448c768964c70a326a6fdd16cc0}\index{UActorComponent@{UActorComponent}!CanTick@{CanTick}}
+\index{CanTick@{CanTick}!UActorComponent@{UActorComponent}}
+\doxysubsubsection{\texorpdfstring{CanTick()}{CanTick()}}
+{\footnotesize\ttfamily \label{class_u_actor_component_a2365f448c768964c70a326a6fdd16cc0} 
+bool UActor\+Component::\+\+Can\+Tick (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_u_actor_component_a4d99f75d0cbac7fa868993323cea6d1c}\index{UActorComponent@{UActorComponent}!GetOwner@{GetOwner}}
+\index{GetOwner@{GetOwner}!UActorComponent@{UActorComponent}}
+\doxysubsubsection{\texorpdfstring{GetOwner()}{GetOwner()}}
+{\footnotesize\ttfamily \label{class_u_actor_component_a4d99f75d0cbac7fa868993323cea6d1c} 
+\doxymbox{\hyperlink{class_a_actor}{AActor}} \texorpdfstring{$\ast$}{*} UActor\+Component::\+\+Get\+Owner (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_u_actor_component_aaafd8a0ce602640eaa0890f60d6a0a17}\index{UActorComponent@{UActorComponent}!HasBegunPlay@{HasBegunPlay}}
+\index{HasBegunPlay@{HasBegunPlay}!UActorComponent@{UActorComponent}}
+\doxysubsubsection{\texorpdfstring{HasBegunPlay()}{HasBegunPlay()}}
+{\footnotesize\ttfamily \label{class_u_actor_component_aaafd8a0ce602640eaa0890f60d6a0a17} 
+bool UActor\+Component::\+\+Has\+Begun\+Play (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_u_actor_component_a9cca50134837077981e5c1c33ada2e41}\index{UActorComponent@{UActorComponent}!IsRegistered@{IsRegistered}}
+\index{IsRegistered@{IsRegistered}!UActorComponent@{UActorComponent}}
+\doxysubsubsection{\texorpdfstring{IsRegistered()}{IsRegistered()}}
+{\footnotesize\ttfamily \label{class_u_actor_component_a9cca50134837077981e5c1c33ada2e41} 
+bool UActor\+Component::\+\+Is\+Registered (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_u_actor_component_ae08b1b647bb841c318e28c55f0c83747}\index{UActorComponent@{UActorComponent}!OnRegister@{OnRegister}}
+\index{OnRegister@{OnRegister}!UActorComponent@{UActorComponent}}
+\doxysubsubsection{\texorpdfstring{OnRegister()}{OnRegister()}}
+{\footnotesize\ttfamily \label{class_u_actor_component_ae08b1b647bb841c318e28c55f0c83747} 
+virtual void UActor\+Component::\+\+On\+Register (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+\Hypertarget{class_u_actor_component_a5006fc51b7783e68aa0b47f6d3806de2}\index{UActorComponent@{UActorComponent}!OnUnregister@{OnUnregister}}
+\index{OnUnregister@{OnUnregister}!UActorComponent@{UActorComponent}}
+\doxysubsubsection{\texorpdfstring{OnUnregister()}{OnUnregister()}}
+{\footnotesize\ttfamily \label{class_u_actor_component_a5006fc51b7783e68aa0b47f6d3806de2} 
+virtual void UActor\+Component::\+\+On\+Unregister (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+\Hypertarget{class_u_actor_component_a9b213e18dea702ccd555863ceda29f53}\index{UActorComponent@{UActorComponent}!SetComponentTickEnabled@{SetComponentTickEnabled}}
+\index{SetComponentTickEnabled@{SetComponentTickEnabled}!UActorComponent@{UActorComponent}}
+\doxysubsubsection{\texorpdfstring{SetComponentTickEnabled()}{SetComponentTickEnabled()}}
+{\footnotesize\ttfamily \label{class_u_actor_component_a9b213e18dea702ccd555863ceda29f53} 
+void UActor\+Component::\+\+Set\+Component\+Tick\+Enabled (\begin{DoxyParamCaption}\item[{bool}]{b\+Enabled}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_u_actor_component_ae577f38520016342c92c79b9dc865b41}\index{UActorComponent@{UActorComponent}!SetOwner@{SetOwner}}
+\index{SetOwner@{SetOwner}!UActorComponent@{UActorComponent}}
+\doxysubsubsection{\texorpdfstring{SetOwner()}{SetOwner()}}
+{\footnotesize\ttfamily \label{class_u_actor_component_ae577f38520016342c92c79b9dc865b41} 
+void UActor\+Component::\+\+Set\+Owner (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_a_actor}{AActor}} \texorpdfstring{$\ast$}{*}}]{In\+Owner}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_actor_component_ae577f38520016342c92c79b9dc865b41_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_actor_component_a5625885838c86016c5309f7e3f11605e}\index{UActorComponent@{UActorComponent}!Tick@{Tick}}
+\index{Tick@{Tick}!UActorComponent@{UActorComponent}}
+\doxysubsubsection{\texorpdfstring{Tick()}{Tick()}}
+{\footnotesize\ttfamily \label{class_u_actor_component_a5625885838c86016c5309f7e3f11605e} 
+virtual void UActor\+Component::\+\+Tick (\begin{DoxyParamCaption}\item[{float}]{Delta\+Time}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented in \doxymbox{\hyperlink{class_u_camera_component_a86e830591e30d821d11f5eae637133d0}{UCamera\+Component}}, and \doxymbox{\hyperlink{class_u_random_color_component_a4b27422d12b35e52a171b941236d5d6e}{URandom\+Color\+Component}}.
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_actor_component_a5625885838c86016c5309f7e3f11605e_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_u_actor_component_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_u_actor_component_a24027969457d123ed55a8b80c33fede0}\index{UActorComponent@{UActorComponent}!bBegunPlay@{bBegunPlay}}
+\index{bBegunPlay@{bBegunPlay}!UActorComponent@{UActorComponent}}
+\doxysubsubsection{\texorpdfstring{bBegunPlay}{bBegunPlay}}
+{\footnotesize\ttfamily \label{class_u_actor_component_a24027969457d123ed55a8b80c33fede0} 
+bool UActor\+Component::\+b\+Begun\+Play = false\hspace{0.3cm}{\ttfamily [protected]}}
+
+\Hypertarget{class_u_actor_component_a2de89ee6b4bf85ff67dea3ac1a452a61}\index{UActorComponent@{UActorComponent}!bCanEverTick@{bCanEverTick}}
+\index{bCanEverTick@{bCanEverTick}!UActorComponent@{UActorComponent}}
+\doxysubsubsection{\texorpdfstring{bCanEverTick}{bCanEverTick}}
+{\footnotesize\ttfamily \label{class_u_actor_component_a2de89ee6b4bf85ff67dea3ac1a452a61} 
+bool UActor\+Component::\+b\+Can\+Ever\+Tick = false\hspace{0.3cm}{\ttfamily [protected]}}
+
+\Hypertarget{class_u_actor_component_a53f13b9006971fbe3ca4dcec7f99b751}\index{UActorComponent@{UActorComponent}!bRegistered@{bRegistered}}
+\index{bRegistered@{bRegistered}!UActorComponent@{UActorComponent}}
+\doxysubsubsection{\texorpdfstring{bRegistered}{bRegistered}}
+{\footnotesize\ttfamily \label{class_u_actor_component_a53f13b9006971fbe3ca4dcec7f99b751} 
+bool UActor\+Component::\+b\+Registered = false\hspace{0.3cm}{\ttfamily [protected]}}
+
+\Hypertarget{class_u_actor_component_a1120597c50b7acd05aa48505f414eacd}\index{UActorComponent@{UActorComponent}!bTickEnabled@{bTickEnabled}}
+\index{bTickEnabled@{bTickEnabled}!UActorComponent@{UActorComponent}}
+\doxysubsubsection{\texorpdfstring{bTickEnabled}{bTickEnabled}}
+{\footnotesize\ttfamily \label{class_u_actor_component_a1120597c50b7acd05aa48505f414eacd} 
+bool UActor\+Component::\+b\+Tick\+Enabled = true\hspace{0.3cm}{\ttfamily [protected]}}
+
+\Hypertarget{class_u_actor_component_a809450661c8ba40ed964b73a7d60e3cf}\index{UActorComponent@{UActorComponent}!Owner@{Owner}}
+\index{Owner@{Owner}!UActorComponent@{UActorComponent}}
+\doxysubsubsection{\texorpdfstring{Owner}{Owner}}
+{\footnotesize\ttfamily \label{class_u_actor_component_a809450661c8ba40ed964b73a7d60e3cf} 
+\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$\doxymbox{\hyperlink{class_a_actor}{AActor}}$>$ UActor\+Component::\+\+Owner\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+The documentation for this class was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Component/\+\doxymbox{\hyperlink{_actor_component_8h}{Actor\+Component.\+h}}\end{DoxyCompactItemize}

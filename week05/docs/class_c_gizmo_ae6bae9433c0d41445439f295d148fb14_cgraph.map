@@ -1,0 +1,21 @@
+<map id="CGizmo::EnsureScaleMeshes" name="CGizmo::EnsureScaleMeshes">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,81,203,108"/>
+<area shape="rect" id="Node000002" href="$class_c_primitive_gizmo.html#a2a69e2da7f9aa4c98f677e24f5bf55ce" title=" " alt="" coords="251,7,451,49"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="156,78,257,52,252,55,157,83"/>
+<area shape="rect" id="Node000008" href="$class_c_primitive_gizmo.html#a77336b47433ba4d3f97e7eee97e5c31b" title=" " alt="" coords="251,73,451,116"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="203,92,238,94,233,95,204,97"/>
+<area shape="rect" id="Node000009" href="$class_c_primitive_gizmo.html#aa1f60f2db30f8461060547fe1bc5055c" title=" " alt="" coords="251,140,451,183"/>
+<area shape="poly" id="edge9_Node000001_Node000009" title=" " alt="" coords="157,106,257,134,252,136,156,111"/>
+<area shape="rect" id="Node000003" href="$_unreal_editor_styled_gizmo_8cpp.html#a9a1a86d2d3e6852f80816d95cecc3107" title=" " alt="" coords="499,81,644,108"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="424,47,513,76,508,77,423,52"/>
+<area shape="rect" id="Node000004" href="$_unreal_editor_styled_gizmo_8cpp.html#a784a2bab983964e8fd36b27518165847" title=" " alt="" coords="714,5,801,32"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="605,78,691,42,704,39,709,37,693,46,606,83"/>
+<area shape="rect" id="Node000005" href="$_unreal_editor_styled_gizmo_8cpp.html#ac022f8a6d8e88ac8a486e96643d19289" title=" " alt="" coords="714,56,801,83"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="644,82,701,77,696,78,645,87"/>
+<area shape="rect" id="Node000006" href="$_unreal_editor_styled_gizmo_8cpp.html#a5b708f556d032d8559dadacc4ed045a1" title=" " alt="" coords="714,107,801,133"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="645,102,702,112,696,112,645,107"/>
+<area shape="rect" id="Node000007" href="$_unreal_editor_styled_gizmo_8cpp.html#a64a904362500c429c13abe21fca44c74" title=" " alt="" coords="692,157,823,184"/>
+<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="606,106,693,143,709,151,704,151,691,148,605,111"/>
+<area shape="poly" id="edge8_Node000008_Node000003" title=" " alt="" coords="451,92,486,94,481,95,451,97"/>
+<area shape="poly" id="edge10_Node000009_Node000003" title=" " alt="" coords="423,137,508,113,513,112,424,142"/>
+</map>

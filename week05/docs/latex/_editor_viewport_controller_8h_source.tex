@@ -1,0 +1,45 @@
+\doxysection{Editor\+Viewport\+Controller.\+h}
+\hypertarget{_editor_viewport_controller_8h_source}{}\label{_editor_viewport_controller_8h_source}\index{Editor/Source/Controller/EditorViewportController.h@{Editor/Source/Controller/EditorViewportController.h}}
+\doxymbox{\hyperlink{_editor_viewport_controller_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_input_action_8h}{Input/InputAction.h}}"{}}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_u_camera_component}{UCameraComponent}};}
+\DoxyCodeLine{00006\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_input_manager}{CInputManager}};}
+\DoxyCodeLine{00007\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_enhanced_input_manager}{CEnhancedInputManager}};}
+\DoxyCodeLine{00008\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_input_mapping_context}{FInputMappingContext}};}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00011\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_editor_viewport_controller}{CEditorViewportController}}}
+\DoxyCodeLine{00012\ \{}
+\DoxyCodeLine{00013\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00014\ \ \ \ \ \doxymbox{\hyperlink{class_c_editor_viewport_controller_abf5c128c594f92b5edd2d1bf6d0b8085}{\string~CEditorViewportController}}();}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{comment}{//\ ←\ EnhancedInput\ 포인터\ 추가}}
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_editor_viewport_controller_a81926fb8b2a6359154d351827e77a6a2}{Initialize}}(\doxymbox{\hyperlink{class_u_camera_component}{UCameraComponent}}*\ InCameraComp,\ \doxymbox{\hyperlink{class_c_input_manager}{CInputManager}}*\ InInput,\ \doxymbox{\hyperlink{class_c_enhanced_input_manager}{CEnhancedInputManager}}*\ InEnhancedInput);}
+\DoxyCodeLine{00018\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_editor_viewport_controller_a62ad6bd4fd9c85fc50d0964a2126f35c}{Cleanup}}();}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_editor_viewport_controller_a72da5d4f566380e2f7208626cdb8e3a0}{Tick}}(\textcolor{keywordtype}{float}\ DeltaTime);}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_editor_viewport_controller_ad9d38babf4b4efcfa58211db41e46b10}{SetupInputBindings}}();\ \textcolor{comment}{//\ 기존\ ProcessCameraInput\ 대체}}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \ \ \ \ \doxymbox{\hyperlink{class_u_camera_component}{UCameraComponent}}*\ \doxymbox{\hyperlink{class_c_editor_viewport_controller_a7a1c81fbcc90357c8ef7f87a335bbc19}{CameraComponent}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00026\ \ \ \ \ \doxymbox{\hyperlink{class_c_input_manager}{CInputManager}}*\ \doxymbox{\hyperlink{class_c_editor_viewport_controller_a62a8edf36abdd2d9ecbc765a097706dc}{InputManager}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00027\ \ \ \ \ \doxymbox{\hyperlink{class_c_enhanced_input_manager}{CEnhancedInputManager}}*\ \doxymbox{\hyperlink{class_c_editor_viewport_controller_af91a9d7d4862092148e7038da5e23925}{EnhancedInput}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_mapping_context}{FInputMappingContext}}*\ \doxymbox{\hyperlink{class_c_editor_viewport_controller_a9fa800e62d6908720ea63f5a78962889}{CameraContext}}\ =\ \textcolor{keyword}{nullptr};\ \textcolor{comment}{//\ 소멸자에서\ 정리}}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{comment}{//\ Action\ 정의\ (포인터\ 아닌\ 값으로\ 소유)}}
+\DoxyCodeLine{00032\ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action}{FInputAction}}\ \doxymbox{\hyperlink{class_c_editor_viewport_controller_a73206a7ea4f0f6d06bca600a2fb6a5e3}{MoveForwardAction}}\{\ \textcolor{stringliteral}{"{}MoveForward"{}},\ \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7a22ae0e2b89e5e3d477f988cc36d3272b}{EInputActionValueType::Float}}\ \};}
+\DoxyCodeLine{00033\ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action}{FInputAction}}\ \doxymbox{\hyperlink{class_c_editor_viewport_controller_a675ab31e5d42564ddd6a49aeda71dab4}{MoveRightAction}}\{\ \textcolor{stringliteral}{"{}MoveRight"{}},\ \ \ \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7a22ae0e2b89e5e3d477f988cc36d3272b}{EInputActionValueType::Float}}\ \};}
+\DoxyCodeLine{00034\ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action}{FInputAction}}\ \doxymbox{\hyperlink{class_c_editor_viewport_controller_a38123b3cd90dbd96ca4d58fe7c8d2dd8}{MoveUpAction}}\{\ \textcolor{stringliteral}{"{}MoveUp"{}},\ \ \ \ \ \ \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7a22ae0e2b89e5e3d477f988cc36d3272b}{EInputActionValueType::Float}}\ \};}
+\DoxyCodeLine{00035\ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action}{FInputAction}}\ \doxymbox{\hyperlink{class_c_editor_viewport_controller_af8a9d497acfbf22ff4dec3049075b0de}{LookXAction}}\{\ \textcolor{stringliteral}{"{}LookX"{}},\ \ \ \ \ \ \ \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7a22ae0e2b89e5e3d477f988cc36d3272b}{EInputActionValueType::Float}}\ \};}
+\DoxyCodeLine{00036\ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action}{FInputAction}}\ \doxymbox{\hyperlink{class_c_editor_viewport_controller_ac36f6a934381993618ff28142abafcc8}{LookYAction}}\{\ \textcolor{stringliteral}{"{}LookY"{}},\ \ \ \ \ \ \ \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7a22ae0e2b89e5e3d477f988cc36d3272b}{EInputActionValueType::Float}}\ \};}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00038\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_c_editor_viewport_controller_a585996b851948e1edeaca522f28dbe6f}{CurrentDeltaTime}}\ =\ 0.0f;\ \textcolor{comment}{//\ 콜백에서\ DeltaTime\ 쓰기\ 위해\ 보관}}
+\DoxyCodeLine{00039\ \};}
+
+\end{DoxyCode}

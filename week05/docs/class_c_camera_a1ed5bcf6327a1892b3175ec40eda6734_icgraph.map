@@ -1,0 +1,32 @@
+<map id="CCamera::IsOrthographic" name="CCamera::IsOrthographic">
+<area shape="rect" id="Node000001" title=" " alt="" coords="917,132,1087,159"/>
+<area shape="rect" id="Node000002" href="$class_c_gizmo.html#a392a2acde2ebb8dde5fc4968ea3f7752" title=" " alt="" coords="667,81,869,108"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="919,128,833,111,833,106,925,128"/>
+<area shape="rect" id="Node000008" href="$class_c_picker.html#a0be89fd19e6511b836743f19ab5c83e6" title=" " alt="" coords="690,157,846,184"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="899,157,846,165,846,160,904,156"/>
+<area shape="rect" id="Node000003" href="$class_c_gizmo.html#a1d004c0c9325bb8af752472a9c03732b" title=" " alt="" coords="404,5,619,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="712,76,619,47,576,35,576,30,620,41,718,75"/>
+<area shape="rect" id="Node000004" href="$class_c_gizmo.html#ab66015f827d7a86e37c29ca4f25f5d84" title=" " alt="" coords="439,107,584,133"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="649,107,586,115,584,110,654,105"/>
+<area shape="rect" id="Node000007" href="$class_c_gizmo.html#a61eb5c2ff40fc0385476dbef4f6fd684" title=" " alt="" coords="438,56,585,83"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="649,84,586,79,585,74,655,83"/>
+<area shape="rect" id="Node000005" href="$class_c_gizmo.html#ab6f44415de5b8dc89e8f6f0da8309f43" title=" " alt="" coords="5,183,144,209"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="423,138,145,187,143,181,424,133"/>
+<area shape="rect" id="Node000006" href="$class_c_gizmo.html#a8de57f031240f6412bd94f1d4df2ecd8" title=" " alt="" coords="197,107,351,133"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="421,121,352,123,351,117,426,119"/>
+<area shape="poly" id="edge15_Node000008_Node000004" title=" " alt="" coords="679,154,583,137,583,131,684,153"/>
+<area shape="poly" id="edge17_Node000008_Node000007" title=" " alt="" coords="723,150,666,122,643,109,618,97,582,86,582,81,620,92,645,104,669,118,728,150"/>
+<area shape="rect" id="Node000009" href="$class_c_gizmo.html#a5cb39098a93095f625928d7b94400972" title=" " alt="" coords="418,259,605,285"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="733,191,680,223,620,249,583,261,582,255,618,244,678,218,728,193"/>
+<area shape="rect" id="Node000011" href="$class_c_gizmo.html#a18e55e713af47264ac8bbd52a8b5ab9d" title=" " alt="" coords="426,157,597,184"/>
+<area shape="poly" id="edge11_Node000008_Node000011" title=" " alt="" coords="672,171,598,173,598,168,677,170"/>
+<area shape="rect" id="Node000012" href="$class_c_gizmo.html#a593cd9fb36701ff0da3fccec215b282d" title=" " alt="" coords="410,208,613,235"/>
+<area shape="poly" id="edge13_Node000008_Node000012" title=" " alt="" coords="679,188,583,210,582,205,684,187"/>
+<area shape="rect" id="Node000013" href="$class_c_picker.html#a658aa6d3497d703f453fff824423805d" title=" " alt="" coords="445,309,578,336"/>
+<area shape="poly" id="edge16_Node000008_Node000013" title=" " alt="" coords="747,195,693,250,658,277,620,300,579,315,578,310,618,295,655,272,689,246,742,197"/>
+<area shape="rect" id="Node000010" href="$class_c_gizmo.html#a41dcced6933dd37893809b0c35dbce32" title=" " alt="" coords="192,208,356,235"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="428,255,340,238,340,233,433,255"/>
+<area shape="poly" id="edge10_Node000010_Node000005" title=" " alt="" coords="174,210,145,207,144,202,179,208"/>
+<area shape="poly" id="edge12_Node000011_Node000010" title=" " alt="" coords="428,189,341,210,339,205,433,187"/>
+<area shape="poly" id="edge14_Node000012_Node000010" title=" " alt="" coords="392,222,357,224,356,219,397,221"/>
+</map>

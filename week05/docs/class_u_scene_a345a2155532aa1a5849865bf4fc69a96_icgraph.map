@@ -1,0 +1,13 @@
+<map id="UScene::CollectRenderCommands" name="UScene::CollectRenderCommands">
+<area shape="rect" id="Node000001" title=" " alt="" coords="472,109,698,136"/>
+<area shape="rect" id="Node000002" href="$class_i_viewport_client.html#a640dfcaad7c04bc6b78f67a7ed42a8c2" title=" " alt="" coords="235,72,424,115"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="454,108,425,107,425,102,459,108"/>
+<area shape="rect" id="Node000005" href="$class_c_core.html#a655c73dcdb7c58733d5e1e8c6c34cf1c" title=" " alt="" coords="275,139,384,165"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="459,137,385,148,384,143,454,138"/>
+<area shape="rect" id="Node000003" href="$class_c_editor_viewport_client.html#ae84a059778dd35e237d6aad4c3a94df3" title=" " alt="" coords="12,5,180,48"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="235,68,173,51,173,46,240,66"/>
+<area shape="rect" id="Node000004" href="$class_i_viewport_client.html#a1d892f2e86ca1bf5be648b767562c090" title=" " alt="" coords="5,72,187,115"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="216,94,187,96,187,91,222,93"/>
+<area shape="rect" id="Node000006" href="$class_c_core.html#a8b4950627b31ac880598f18652875711" title=" " alt="" coords="50,139,142,165"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="257,153,143,155,143,149,262,151"/>
+</map>

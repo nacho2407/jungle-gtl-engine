@@ -1,0 +1,208 @@
+\doxysection{CEditor\+Viewport\+Client Class Reference}
+\hypertarget{class_c_editor_viewport_client}{}\label{class_c_editor_viewport_client}\index{CEditorViewportClient@{CEditorViewportClient}}
+
+
+{\ttfamily \+\#include $<$Editor\+Viewport\+Client.\+h$>$}
+
+
+
+Inheritance diagram for CEditor\+Viewport\+Client:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=208pt]{class_c_editor_viewport_client__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for CEditor\+Viewport\+Client:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_editor_viewport_client__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_c_editor_viewport_client_af4bc2b30bf4d3568c2b8fa87d12815c9}{CEditor\+Viewport\+Client}} (\doxymbox{\hyperlink{class_c_editor_u_i}{CEditor\+UI}} \&In\+Editor\+UI, \doxymbox{\hyperlink{class_c_window}{CWindow}} \texorpdfstring{$\ast$}{*}In\+Main\+Window)
+\item 
+void \doxymbox{\hyperlink{class_c_editor_viewport_client_acff7c5b752f62f2d257fbf529f3182ed}{Attach}} (\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}Core, \doxymbox{\hyperlink{class_c_renderer}{CRenderer}} \texorpdfstring{$\ast$}{*}Renderer) override
+\item 
+void \doxymbox{\hyperlink{class_c_editor_viewport_client_a918237183862a7faf1e2e0955cedcac3}{Detach}} (\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}Core, \doxymbox{\hyperlink{class_c_renderer}{CRenderer}} \texorpdfstring{$\ast$}{*}Renderer) override
+\item 
+void \doxymbox{\hyperlink{class_c_editor_viewport_client_ac49235e667e55be297e95103373d57b3}{Tick}} (\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}Core, float Delta\+Time) override
+\item 
+void \doxymbox{\hyperlink{class_c_editor_viewport_client_a4fcfd4098f5902f4e8cf437cacdf06a1}{Handle\+Message}} (\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}Core, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam) override
+\item 
+void \doxymbox{\hyperlink{class_c_editor_viewport_client_ae84a059778dd35e237d6aad4c3a94df3}{Build\+Render\+Commands}} (\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}Core, \doxymbox{\hyperlink{class_u_scene}{UScene}} \texorpdfstring{$\ast$}{*}Scene, const \doxymbox{\hyperlink{class_f_frustum}{FFrustum}} \&Frustum, \doxymbox{\hyperlink{struct_f_render_command_queue}{FRender\+Command\+Queue}} \&Out\+Queue) const override
+\item 
+\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028e}{EGizmo\+Mode}} \doxymbox{\hyperlink{class_c_editor_viewport_client_ad796c9b507c46f7e20e12cac6a7cb389}{Get\+Gizmo\+Mode}} () const
+\item 
+void \doxymbox{\hyperlink{class_c_editor_viewport_client_a165c7c2bededb41e26709c3dd29a5ddf}{Set\+Gizmo\+Mode}} (\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028e}{EGizmo\+Mode}} In\+Mode)
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Member Functions inherited from \doxymbox{\hyperlink{class_i_viewport_client}{IViewport\+Client}}}
+\begin{DoxyCompactItemize}
+\item 
+virtual \doxymbox{\hyperlink{class_i_viewport_client_a1d892f2e86ca1bf5be648b767562c090}{\texorpdfstring{$\sim$}{\string~}\+IViewport\+Client}} ()=default
+\item 
+virtual \doxymbox{\hyperlink{class_u_scene}{UScene}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_i_viewport_client_ad0fe46751dad741e3dbff8ac640a8105}{Resolve\+Scene}} (\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}Core) const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_c_editor_u_i}{CEditor\+UI}} \& \doxymbox{\hyperlink{class_c_editor_viewport_client_ac60d27021e151d4bdca43528db82478c}{Editor\+UI}}
+\item 
+\doxymbox{\hyperlink{class_c_window}{CWindow}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_editor_viewport_client_a4aee1e36cf746fe6c1a298878329c6ef}{Main\+Window}} = nullptr
+\item 
+\doxymbox{\hyperlink{class_c_picker}{CPicker}} \doxymbox{\hyperlink{class_c_editor_viewport_client_addd375ec84293ad9b1cb6e078cc09f79}{Picker}}
+\item 
+\doxymbox{\hyperlink{class_c_gizmo}{CGizmo}} \doxymbox{\hyperlink{class_c_editor_viewport_client_ae3dc0c520bcd2a03c1239d0fa7b413a5}{Gizmo}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{class_c_editor_viewport_client_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_c_editor_viewport_client_af4bc2b30bf4d3568c2b8fa87d12815c9}\index{CEditorViewportClient@{CEditorViewportClient}!CEditorViewportClient@{CEditorViewportClient}}
+\index{CEditorViewportClient@{CEditorViewportClient}!CEditorViewportClient@{CEditorViewportClient}}
+\doxysubsubsection{\texorpdfstring{CEditorViewportClient()}{CEditorViewportClient()}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_client_af4bc2b30bf4d3568c2b8fa87d12815c9} 
+CEditor\+Viewport\+Client::\+\+CEditor\+Viewport\+Client (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_editor_u_i}{CEditor\+UI}} \&}]{In\+Editor\+UI}{, }\item[{\doxymbox{\hyperlink{class_c_window}{CWindow}} \texorpdfstring{$\ast$}{*}}]{In\+Main\+Window}{}\end{DoxyParamCaption})}
+
+
+
+\label{doc-func-members}
+\Hypertarget{class_c_editor_viewport_client_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_c_editor_viewport_client_acff7c5b752f62f2d257fbf529f3182ed}\index{CEditorViewportClient@{CEditorViewportClient}!Attach@{Attach}}
+\index{Attach@{Attach}!CEditorViewportClient@{CEditorViewportClient}}
+\doxysubsubsection{\texorpdfstring{Attach()}{Attach()}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_client_acff7c5b752f62f2d257fbf529f3182ed} 
+void CEditor\+Viewport\+Client::\+\+Attach (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}}]{Core}{, }\item[{\doxymbox{\hyperlink{class_c_renderer}{CRenderer}} \texorpdfstring{$\ast$}{*}}]{Renderer}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \doxymbox{\hyperlink{class_i_viewport_client_a3e3e3e9db859c6105cf1448014059cb1}{IViewport\+Client}}.
+
+\Hypertarget{class_c_editor_viewport_client_ae84a059778dd35e237d6aad4c3a94df3}\index{CEditorViewportClient@{CEditorViewportClient}!BuildRenderCommands@{BuildRenderCommands}}
+\index{BuildRenderCommands@{BuildRenderCommands}!CEditorViewportClient@{CEditorViewportClient}}
+\doxysubsubsection{\texorpdfstring{BuildRenderCommands()}{BuildRenderCommands()}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_client_ae84a059778dd35e237d6aad4c3a94df3} 
+void CEditor\+Viewport\+Client::\+\+Build\+Render\+Commands (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}}]{Core}{, }\item[{\doxymbox{\hyperlink{class_u_scene}{UScene}} \texorpdfstring{$\ast$}{*}}]{Scene}{, }\item[{const \doxymbox{\hyperlink{class_f_frustum}{FFrustum}} \&}]{Frustum}{, }\item[{\doxymbox{\hyperlink{struct_f_render_command_queue}{FRender\+Command\+Queue}} \&}]{Out\+Queue}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \doxymbox{\hyperlink{class_i_viewport_client_a640dfcaad7c04bc6b78f67a7ed42a8c2}{IViewport\+Client}}.
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_editor_viewport_client_ae84a059778dd35e237d6aad4c3a94df3_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_editor_viewport_client_a918237183862a7faf1e2e0955cedcac3}\index{CEditorViewportClient@{CEditorViewportClient}!Detach@{Detach}}
+\index{Detach@{Detach}!CEditorViewportClient@{CEditorViewportClient}}
+\doxysubsubsection{\texorpdfstring{Detach()}{Detach()}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_client_a918237183862a7faf1e2e0955cedcac3} 
+void CEditor\+Viewport\+Client::\+\+Detach (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}}]{Core}{, }\item[{\doxymbox{\hyperlink{class_c_renderer}{CRenderer}} \texorpdfstring{$\ast$}{*}}]{Renderer}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \doxymbox{\hyperlink{class_i_viewport_client_a57111b7f5196800be7422d1c9aed65c1}{IViewport\+Client}}.
+
+\Hypertarget{class_c_editor_viewport_client_ad796c9b507c46f7e20e12cac6a7cb389}\index{CEditorViewportClient@{CEditorViewportClient}!GetGizmoMode@{GetGizmoMode}}
+\index{GetGizmoMode@{GetGizmoMode}!CEditorViewportClient@{CEditorViewportClient}}
+\doxysubsubsection{\texorpdfstring{GetGizmoMode()}{GetGizmoMode()}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_client_ad796c9b507c46f7e20e12cac6a7cb389} 
+\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028e}{EGizmo\+Mode}} CEditor\+Viewport\+Client::\+\+Get\+Gizmo\+Mode (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_c_editor_viewport_client_a4fcfd4098f5902f4e8cf437cacdf06a1}\index{CEditorViewportClient@{CEditorViewportClient}!HandleMessage@{HandleMessage}}
+\index{HandleMessage@{HandleMessage}!CEditorViewportClient@{CEditorViewportClient}}
+\doxysubsubsection{\texorpdfstring{HandleMessage()}{HandleMessage()}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_client_a4fcfd4098f5902f4e8cf437cacdf06a1} 
+void CEditor\+Viewport\+Client::\+\+Handle\+Message (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}}]{Core}{, }\item[{HWND}]{Hwnd}{, }\item[{UINT}]{Msg}{, }\item[{WPARAM}]{WParam}{, }\item[{LPARAM}]{LParam}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \doxymbox{\hyperlink{class_i_viewport_client_a6b4a125be7712977e84b3db31ea4b623}{IViewport\+Client}}.
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_editor_viewport_client_a4fcfd4098f5902f4e8cf437cacdf06a1_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_editor_viewport_client_a165c7c2bededb41e26709c3dd29a5ddf}\index{CEditorViewportClient@{CEditorViewportClient}!SetGizmoMode@{SetGizmoMode}}
+\index{SetGizmoMode@{SetGizmoMode}!CEditorViewportClient@{CEditorViewportClient}}
+\doxysubsubsection{\texorpdfstring{SetGizmoMode()}{SetGizmoMode()}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_client_a165c7c2bededb41e26709c3dd29a5ddf} 
+void CEditor\+Viewport\+Client::\+\+Set\+Gizmo\+Mode (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028e}{EGizmo\+Mode}}}]{In\+Mode}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=328pt]{class_c_editor_viewport_client_a165c7c2bededb41e26709c3dd29a5ddf_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_editor_viewport_client_ac49235e667e55be297e95103373d57b3}\index{CEditorViewportClient@{CEditorViewportClient}!Tick@{Tick}}
+\index{Tick@{Tick}!CEditorViewportClient@{CEditorViewportClient}}
+\doxysubsubsection{\texorpdfstring{Tick()}{Tick()}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_client_ac49235e667e55be297e95103373d57b3} 
+void CEditor\+Viewport\+Client::\+\+Tick (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}}]{Core}{, }\item[{float}]{Delta\+Time}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \doxymbox{\hyperlink{class_i_viewport_client_ad7c05e3a2cf91d0f282cde068ea15cca}{IViewport\+Client}}.
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=336pt]{class_c_editor_viewport_client_ac49235e667e55be297e95103373d57b3_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_c_editor_viewport_client_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_c_editor_viewport_client_ac60d27021e151d4bdca43528db82478c}\index{CEditorViewportClient@{CEditorViewportClient}!EditorUI@{EditorUI}}
+\index{EditorUI@{EditorUI}!CEditorViewportClient@{CEditorViewportClient}}
+\doxysubsubsection{\texorpdfstring{EditorUI}{EditorUI}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_client_ac60d27021e151d4bdca43528db82478c} 
+\doxymbox{\hyperlink{class_c_editor_u_i}{CEditor\+UI}}\& CEditor\+Viewport\+Client::\+\+Editor\+UI\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_editor_viewport_client_ae3dc0c520bcd2a03c1239d0fa7b413a5}\index{CEditorViewportClient@{CEditorViewportClient}!Gizmo@{Gizmo}}
+\index{Gizmo@{Gizmo}!CEditorViewportClient@{CEditorViewportClient}}
+\doxysubsubsection{\texorpdfstring{Gizmo}{Gizmo}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_client_ae3dc0c520bcd2a03c1239d0fa7b413a5} 
+\doxymbox{\hyperlink{class_c_gizmo}{CGizmo}} CEditor\+Viewport\+Client::\+\+Gizmo\hspace{0.3cm}{\ttfamily [mutable]}, {\ttfamily [private]}}
+
+\Hypertarget{class_c_editor_viewport_client_a4aee1e36cf746fe6c1a298878329c6ef}\index{CEditorViewportClient@{CEditorViewportClient}!MainWindow@{MainWindow}}
+\index{MainWindow@{MainWindow}!CEditorViewportClient@{CEditorViewportClient}}
+\doxysubsubsection{\texorpdfstring{MainWindow}{MainWindow}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_client_a4aee1e36cf746fe6c1a298878329c6ef} 
+\doxymbox{\hyperlink{class_c_window}{CWindow}}\texorpdfstring{$\ast$}{*} CEditor\+Viewport\+Client::\+\+Main\+Window = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_editor_viewport_client_addd375ec84293ad9b1cb6e078cc09f79}\index{CEditorViewportClient@{CEditorViewportClient}!Picker@{Picker}}
+\index{Picker@{Picker}!CEditorViewportClient@{CEditorViewportClient}}
+\doxysubsubsection{\texorpdfstring{Picker}{Picker}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_client_addd375ec84293ad9b1cb6e078cc09f79} 
+\doxymbox{\hyperlink{class_c_picker}{CPicker}} CEditor\+Viewport\+Client::\+\+Picker\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Editor/\+\+Source/\+\+UI/\+\doxymbox{\hyperlink{_editor_viewport_client_8h}{Editor\+Viewport\+Client.\+h}}\item 
+Editor/\+\+Source/\+\+UI/\+\doxymbox{\hyperlink{_editor_viewport_client_8cpp}{Editor\+Viewport\+Client.\+cpp}}\end{DoxyCompactItemize}

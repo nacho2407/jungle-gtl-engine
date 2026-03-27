@@ -1,0 +1,25 @@
+<map id="UActorComponent::SetOwner" name="UActorComponent::SetOwner">
+<area shape="rect" id="Node000001" title=" " alt="" coords="553,348,748,375"/>
+<area shape="rect" id="Node000002" href="$class_a_actor.html#a53a6234894ae6398bc0f18c0c72b8826" title=" " alt="" coords="292,285,492,312"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="575,344,450,315,451,310,581,344"/>
+<area shape="rect" id="Node000009" href="$class_a_actor.html#a7f0d39bffe5c0d618021be02b620460b" title=" " alt="" coords="279,373,505,400"/>
+<area shape="poly" id="edge13_Node000001_Node000009" title=" " alt="" coords="535,373,506,378,505,373,540,372"/>
+<area shape="rect" id="Node000003" href="$class_a_editor_camera_pawn.html#a0ed7d64c909a6abfdce146488041174a" title=" " alt="" coords="42,29,194,72"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="375,271,352,231,320,181,278,130,229,86,195,68,194,63,232,82,282,126,324,177,357,228,380,272"/>
+<area shape="rect" id="Node000004" href="$class_a_attach_test_actor.html#a9275cd7af24edd912ad94093771f4b2b" title=" " alt="" coords="18,120,218,163"/>
+<area shape="poly" id="edge4_Node000002_Node000004" title=" " alt="" coords="363,274,305,226,268,200,229,177,205,166,204,161,232,172,271,195,308,222,368,274"/>
+<area shape="rect" id="Node000005" href="$class_a_cube_actor.html#aea6d17d68f181ad35cb39817e6d8c9da" title=" " alt="" coords="10,211,226,237"/>
+<area shape="poly" id="edge6_Node000002_Node000005" title=" " alt="" coords="332,281,230,252,185,241,184,235,231,247,337,279"/>
+<area shape="rect" id="Node000006" href="$class_a_gizmo.html#afe5e242a2a3f30ae21699ab5e922ec1c" title=" " alt="" coords="22,285,214,312"/>
+<area shape="poly" id="edge8_Node000002_Node000006" title=" " alt="" coords="274,300,215,301,214,296,279,298"/>
+<area shape="rect" id="Node000007" href="$class_a_sphere_actor.html#a1b6ecbc35632adacd101d21c0e094f4c" title=" " alt="" coords="5,360,231,387"/>
+<area shape="poly" id="edge10_Node000002_Node000007" title=" " alt="" coords="324,318,171,362,169,357,328,315"/>
+<area shape="rect" id="Node000008" href="$class_a_actor.html#a39af8fb0102b3fb08ec9e066735416f9" title=" " alt="" coords="59,411,177,437"/>
+<area shape="poly" id="edge12_Node000002_Node000008" title=" " alt="" coords="352,319,280,364,257,383,232,401,178,418,176,413,229,396,254,379,277,359,347,320"/>
+<area shape="poly" id="edge3_Node000003_Node000003" title=" " alt="" coords="162,15,146,10,118,8,92,10,76,15,70,21,72,29,66,29,64,19,73,10,91,5,118,3,147,5,166,13"/>
+<area shape="poly" id="edge5_Node000004_Node000004" title=" " alt="" coords="162,106,146,101,118,99,92,101,76,105,70,111,72,119,66,119,64,110,73,101,91,95,118,93,147,96,166,103"/>
+<area shape="poly" id="edge7_Node000005_Node000005" title=" " alt="" coords="164,197,150,192,118,189,89,191,73,196,69,201,77,210,72,211,64,202,70,192,88,186,118,184,151,187,169,195"/>
+<area shape="poly" id="edge9_Node000006_Node000006" title=" " alt="" coords="164,271,150,267,118,264,89,266,73,271,69,276,77,284,72,285,64,277,70,267,88,261,118,259,151,261,169,270"/>
+<area shape="poly" id="edge11_Node000007_Node000007" title=" " alt="" coords="164,346,150,341,118,339,89,341,73,346,69,351,77,359,72,360,64,351,70,341,88,335,118,333,151,336,170,345"/>
+<area shape="poly" id="edge14_Node000009_Node000008" title=" " alt="" coords="277,402,178,419,177,413,272,403"/>
+</map>

@@ -1,0 +1,16 @@
+<map id="Engine/Source/Math/Rotator.h" name="Engine/Source/Math/Rotator.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="35,5,174,48"/>
+<area shape="rect" id="Node000002" href="$_engine_a_p_i_8h.html" title=" " alt="" coords="5,171,100,197"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="99,46,64,156,59,155,96,50"/>
+<area shape="rect" id="Node000003" href="$_vector_8h.html" title=" " alt="" coords="105,96,208,123"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="118,46,143,82,137,83,118,51"/>
+<area shape="poly" id="edge5_Node000003_Node000002" title=" " alt="" coords="137,125,85,164,81,160,140,121"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="124,171,189,197"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="158,121,159,156,154,154,155,126"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="213,171,270,197"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="172,121,218,160,213,161,171,126"/>
+<area shape="rect" id="Node000006" href="$_core_types_8h.html" title=" " alt="" coords="295,171,429,197"/>
+<area shape="poly" id="edge6_Node000003_Node000006" title=" " alt="" coords="193,121,314,164,309,166,192,126"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="309,245,414,272"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="364,196,364,231,360,228,360,200"/>
+</map>

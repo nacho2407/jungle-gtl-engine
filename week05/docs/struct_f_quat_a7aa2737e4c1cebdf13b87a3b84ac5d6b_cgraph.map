@@ -1,0 +1,13 @@
+<map id="FQuat::RotateVector" name="FQuat::RotateVector">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,56,147,83"/>
+<area shape="rect" id="Node000002" href="$struct_f_quat.html#a12195ceb868985b0fdd9dd4fdad54e1f" title=" " alt="" coords="195,31,347,57"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="147,57,182,56,176,56,148,63"/>
+<area shape="rect" id="Node000005" href="$struct_f_quat.html#ae500b97cbb82792796e1e7eb4806c256" title=" " alt="" coords="567,56,704,83"/>
+<area shape="poly" id="edge6_Node000001_Node000005" title=" " alt="" coords="147,67,551,67,551,72,147,72"/>
+<area shape="rect" id="Node000003" href="$struct_f_quat.html#a898470770e4f1314a90cccb3ec8e9515" title=" " alt="" coords="585,5,686,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="327,27,395,16,486,11,572,15,567,15,486,17,395,21,328,33"/>
+<area shape="rect" id="Node000004" href="$struct_f_quat.html#a20b1175ee99c038924047a6cdc322144" title=" " alt="" coords="395,31,519,57"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="347,41,382,44,377,44,348,47"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="520,32,567,28,572,28,520,38"/>
+<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="520,50,555,58,549,57,520,56"/>
+</map>

@@ -1,0 +1,6 @@
+<map id="CCore::Tick" name="CCore::Tick">
+<area shape="rect" id="Node000001" title=" " alt="" coords="176,29,268,56"/>
+<area shape="poly" id="edge2_Node000001_Node000001" title=" " alt="" coords="247,14,239,10,222,8,206,10,197,15,195,20,200,30,195,28,190,21,193,11,204,5,222,3,241,5,252,15"/>
+<area shape="rect" id="Node000002" href="$class_c_core.html#a491b0fcabba228632cbd2632cc0ee11a" title=" " alt="" coords="5,29,128,56"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="157,43,128,45,128,40,163,42"/>
+</map>

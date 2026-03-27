@@ -1,0 +1,409 @@
+\doxysection{CInput\+Manager Class Reference}
+\hypertarget{class_c_input_manager}{}\label{class_c_input_manager}\index{CInputManager@{CInputManager}}
+
+
+{\ttfamily \+\#include $<$Input\+Manager.\+h$>$}
+
+
+
+Collaboration diagram for CInput\+Manager:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=215pt]{class_c_input_manager__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_c_input_manager_a31912085cda63d266616d469e61cd755}{CInput\+Manager}} ()=default
+\item 
+\doxymbox{\hyperlink{class_c_input_manager_a0bbe0a7c22c946c57cf0a5e68735f056}{\texorpdfstring{$\sim$}{\string~}\+CInput\+Manager}} ()=default
+\item 
+\doxymbox{\hyperlink{class_c_input_manager_ae81acd00872fce81381401f5d5884f80}{CInput\+Manager}} (const \doxymbox{\hyperlink{class_c_input_manager}{CInput\+Manager}} \&)=delete
+\item 
+\doxymbox{\hyperlink{class_c_input_manager_a7238a0dfbfd1090fcd3ced95c9bcd8e6}{CInput\+Manager}} (\doxymbox{\hyperlink{class_c_input_manager}{CInput\+Manager}} \&\&)=delete
+\item 
+\doxymbox{\hyperlink{class_c_input_manager}{CInput\+Manager}} \& \doxymbox{\hyperlink{class_c_input_manager_aff8abf4fd79a252a7326aee68187653e}{operator=}} (const \doxymbox{\hyperlink{class_c_input_manager}{CInput\+Manager}} \&)=delete
+\item 
+\doxymbox{\hyperlink{class_c_input_manager}{CInput\+Manager}} \& \doxymbox{\hyperlink{class_c_input_manager_a42d8aca707c1713b00af78109ecaadeb}{operator=}} (\doxymbox{\hyperlink{class_c_input_manager}{CInput\+Manager}} \&\&)=delete
+\item 
+void \doxymbox{\hyperlink{class_c_input_manager_a9f5e640735099147bd163fb3c69ef122}{Process\+Message}} (HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
+\item 
+void \doxymbox{\hyperlink{class_c_input_manager_aecebf908a1cdb654427963ca44aa1fb8}{Tick}} ()
+\item 
+bool \doxymbox{\hyperlink{class_c_input_manager_ad6fddbdce6bb07988cf1b792be2f5cec}{Is\+Key\+Down}} (\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Key) const
+\item 
+bool \doxymbox{\hyperlink{class_c_input_manager_a4549481f0d6c017fc82e3844d8deb35f}{Is\+Key\+Pressed}} (\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Key) const
+\item 
+bool \doxymbox{\hyperlink{class_c_input_manager_a3bea1bba6f2efe1cc55f110a4d5341b8}{Is\+Key\+Released}} (\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Key) const
+\item 
+bool \doxymbox{\hyperlink{class_c_input_manager_ad417919b54d61c7752cf81a293ab5be6}{Is\+Mouse\+Button\+Down}} (\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Button) const
+\item 
+bool \doxymbox{\hyperlink{class_c_input_manager_ae763c58ce0ef70c8c3f1c00f5557204b}{Is\+Mouse\+Button\+Pressed}} (\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Button) const
+\item 
+bool \doxymbox{\hyperlink{class_c_input_manager_a2c900558f43ae3bfc52dd208b086b82f}{Is\+Mouse\+Button\+Released}} (\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Button) const
+\item 
+float \doxymbox{\hyperlink{class_c_input_manager_af50ac328973a3dbb9e3fe5cf4c76768b}{Get\+Mouse\+DeltaX}} () const
+\item 
+float \doxymbox{\hyperlink{class_c_input_manager_a6c4ea4a35bd0f615fbac2c8ddaf5d506}{Get\+Mouse\+DeltaY}} () const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static constexpr \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \doxymbox{\hyperlink{class_c_input_manager_aeab53e594d0cde345f005fdfbdfdcdb9}{MOUSE\+\_\+\+LEFT}} = 0
+\item 
+static constexpr \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \doxymbox{\hyperlink{class_c_input_manager_abb8d1846bcbe0787752cb01029dfc9fe}{MOUSE\+\_\+\+RIGHT}} = 1
+\item 
+static constexpr \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \doxymbox{\hyperlink{class_c_input_manager_a963db7ce946338ac01bf6c382096ee9a}{MOUSE\+\_\+\+MIDDLE}} = 2
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+std::\+vector$<$ \doxymbox{\hyperlink{struct_f_input_event}{FInput\+Event}} $>$ \doxymbox{\hyperlink{class_c_input_manager_aed4be2c95c32a2dc20ddc0b13df640ad}{Event\+Queue}}
+\item 
+bool \doxymbox{\hyperlink{class_c_input_manager_a4b031ed7b8cd30cf19f1540aa3e5ea14}{Key\+State}} \+[\doxymbox{\hyperlink{class_c_input_manager_a5b53796d7f0ea765f8c73f4198f61f58}{MAX\+\_\+\+KEYS}}]\+ = \{\}
+\item 
+bool \doxymbox{\hyperlink{class_c_input_manager_a26af3dc95348ffd8c8900afaa6bfa2a3}{Prev\+Key\+State}} \+[\doxymbox{\hyperlink{class_c_input_manager_a5b53796d7f0ea765f8c73f4198f61f58}{MAX\+\_\+\+KEYS}}]\+ = \{\}
+\item 
+bool \doxymbox{\hyperlink{class_c_input_manager_a5a23f4f1e89a3901929c8ccda506d50b}{Mouse\+Button\+State}} \+[\doxymbox{\hyperlink{class_c_input_manager_a9b27379284e061d839d44adda61955b0}{MAX\+\_\+\+MOUSE\+\_\+\+BUTTONS}}]\+ = \{\}
+\item 
+bool \doxymbox{\hyperlink{class_c_input_manager_ac8c08901cb9af6c05f22bed815ebde19}{Prev\+Mouse\+Button\+State}} \+[\doxymbox{\hyperlink{class_c_input_manager_a9b27379284e061d839d44adda61955b0}{MAX\+\_\+\+MOUSE\+\_\+\+BUTTONS}}]\+ = \{\}
+\item 
+float \doxymbox{\hyperlink{class_c_input_manager_ac82cd549ec004d1dbef75488c6a8d2dd}{Mouse\+DeltaX}} = 0.\+0f
+\item 
+float \doxymbox{\hyperlink{class_c_input_manager_a524280c733faf5daaf261653dfe46c1e}{Mouse\+DeltaY}} = 0.\+0f
+\item 
+POINT \doxymbox{\hyperlink{class_c_input_manager_a5a9a0fe669681f9be9985ead40f9f586}{Last\+Mouse\+Pos}} = \{\}
+\item 
+bool \doxymbox{\hyperlink{class_c_input_manager_a93fdcf590e218c61ae55926fedb1409b}{b\+Tracking\+Mouse}} = false
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static constexpr \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \doxymbox{\hyperlink{class_c_input_manager_a5b53796d7f0ea765f8c73f4198f61f58}{MAX\+\_\+\+KEYS}} = 256
+\item 
+static constexpr \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \doxymbox{\hyperlink{class_c_input_manager_a9b27379284e061d839d44adda61955b0}{MAX\+\_\+\+MOUSE\+\_\+\+BUTTONS}} = 3
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{class_c_input_manager_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_c_input_manager_a31912085cda63d266616d469e61cd755}\index{CInputManager@{CInputManager}!CInputManager@{CInputManager}}
+\index{CInputManager@{CInputManager}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{CInputManager()}{CInputManager()}\hspace{0.1cm}{\footnotesize\ttfamily [1/3]}}
+{\footnotesize\ttfamily \label{class_c_input_manager_a31912085cda63d266616d469e61cd755} 
+CInput\+Manager::\+\+CInput\+Manager (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_input_manager_a31912085cda63d266616d469e61cd755_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_input_manager_a0bbe0a7c22c946c57cf0a5e68735f056}\index{CInputManager@{CInputManager}!````~CInputManager@{\texorpdfstring{$\sim$}{\string~}CInputManager}}
+\index{````~CInputManager@{\texorpdfstring{$\sim$}{\string~}CInputManager}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{\texorpdfstring{$\sim$}{\string~}CInputManager()}{\string~CInputManager()}}
+{\footnotesize\ttfamily \label{class_c_input_manager_a0bbe0a7c22c946c57cf0a5e68735f056} 
+CInput\+Manager::\+\texorpdfstring{$\sim$}{\string~}\+CInput\+Manager (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+\Hypertarget{class_c_input_manager_ae81acd00872fce81381401f5d5884f80}\index{CInputManager@{CInputManager}!CInputManager@{CInputManager}}
+\index{CInputManager@{CInputManager}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{CInputManager()}{CInputManager()}\hspace{0.1cm}{\footnotesize\ttfamily [2/3]}}
+{\footnotesize\ttfamily \label{class_c_input_manager_ae81acd00872fce81381401f5d5884f80} 
+CInput\+Manager::\+\+CInput\+Manager (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{class_c_input_manager}{CInput\+Manager}} \&}]{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [delete]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_input_manager_ae81acd00872fce81381401f5d5884f80_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_input_manager_a7238a0dfbfd1090fcd3ced95c9bcd8e6}\index{CInputManager@{CInputManager}!CInputManager@{CInputManager}}
+\index{CInputManager@{CInputManager}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{CInputManager()}{CInputManager()}\hspace{0.1cm}{\footnotesize\ttfamily [3/3]}}
+{\footnotesize\ttfamily \label{class_c_input_manager_a7238a0dfbfd1090fcd3ced95c9bcd8e6} 
+CInput\+Manager::\+\+CInput\+Manager (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_input_manager}{CInput\+Manager}} \&\&}]{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [delete]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_input_manager_a7238a0dfbfd1090fcd3ced95c9bcd8e6_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-func-members}
+\Hypertarget{class_c_input_manager_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_c_input_manager_af50ac328973a3dbb9e3fe5cf4c76768b}\index{CInputManager@{CInputManager}!GetMouseDeltaX@{GetMouseDeltaX}}
+\index{GetMouseDeltaX@{GetMouseDeltaX}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{GetMouseDeltaX()}{GetMouseDeltaX()}}
+{\footnotesize\ttfamily \label{class_c_input_manager_af50ac328973a3dbb9e3fe5cf4c76768b} 
+float CInput\+Manager::\+\+Get\+Mouse\+DeltaX (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_input_manager_af50ac328973a3dbb9e3fe5cf4c76768b_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_input_manager_a6c4ea4a35bd0f615fbac2c8ddaf5d506}\index{CInputManager@{CInputManager}!GetMouseDeltaY@{GetMouseDeltaY}}
+\index{GetMouseDeltaY@{GetMouseDeltaY}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{GetMouseDeltaY()}{GetMouseDeltaY()}}
+{\footnotesize\ttfamily \label{class_c_input_manager_a6c4ea4a35bd0f615fbac2c8ddaf5d506} 
+float CInput\+Manager::\+\+Get\+Mouse\+DeltaY (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_input_manager_a6c4ea4a35bd0f615fbac2c8ddaf5d506_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_input_manager_ad6fddbdce6bb07988cf1b792be2f5cec}\index{CInputManager@{CInputManager}!IsKeyDown@{IsKeyDown}}
+\index{IsKeyDown@{IsKeyDown}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{IsKeyDown()}{IsKeyDown()}}
+{\footnotesize\ttfamily \label{class_c_input_manager_ad6fddbdce6bb07988cf1b792be2f5cec} 
+bool CInput\+Manager::\+\+Is\+Key\+Down (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Key}{}\end{DoxyParamCaption}) const}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_input_manager_ad6fddbdce6bb07988cf1b792be2f5cec_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_input_manager_a4549481f0d6c017fc82e3844d8deb35f}\index{CInputManager@{CInputManager}!IsKeyPressed@{IsKeyPressed}}
+\index{IsKeyPressed@{IsKeyPressed}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{IsKeyPressed()}{IsKeyPressed()}}
+{\footnotesize\ttfamily \label{class_c_input_manager_a4549481f0d6c017fc82e3844d8deb35f} 
+bool CInput\+Manager::\+\+Is\+Key\+Pressed (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Key}{}\end{DoxyParamCaption}) const}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_input_manager_a4549481f0d6c017fc82e3844d8deb35f_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_input_manager_a3bea1bba6f2efe1cc55f110a4d5341b8}\index{CInputManager@{CInputManager}!IsKeyReleased@{IsKeyReleased}}
+\index{IsKeyReleased@{IsKeyReleased}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{IsKeyReleased()}{IsKeyReleased()}}
+{\footnotesize\ttfamily \label{class_c_input_manager_a3bea1bba6f2efe1cc55f110a4d5341b8} 
+bool CInput\+Manager::\+\+Is\+Key\+Released (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Key}{}\end{DoxyParamCaption}) const}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_input_manager_a3bea1bba6f2efe1cc55f110a4d5341b8_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_input_manager_ad417919b54d61c7752cf81a293ab5be6}\index{CInputManager@{CInputManager}!IsMouseButtonDown@{IsMouseButtonDown}}
+\index{IsMouseButtonDown@{IsMouseButtonDown}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{IsMouseButtonDown()}{IsMouseButtonDown()}}
+{\footnotesize\ttfamily \label{class_c_input_manager_ad417919b54d61c7752cf81a293ab5be6} 
+bool CInput\+Manager::\+\+Is\+Mouse\+Button\+Down (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Button}{}\end{DoxyParamCaption}) const}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_input_manager_ad417919b54d61c7752cf81a293ab5be6_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_input_manager_ae763c58ce0ef70c8c3f1c00f5557204b}\index{CInputManager@{CInputManager}!IsMouseButtonPressed@{IsMouseButtonPressed}}
+\index{IsMouseButtonPressed@{IsMouseButtonPressed}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{IsMouseButtonPressed()}{IsMouseButtonPressed()}}
+{\footnotesize\ttfamily \label{class_c_input_manager_ae763c58ce0ef70c8c3f1c00f5557204b} 
+bool CInput\+Manager::\+\+Is\+Mouse\+Button\+Pressed (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Button}{}\end{DoxyParamCaption}) const}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_input_manager_ae763c58ce0ef70c8c3f1c00f5557204b_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_input_manager_a2c900558f43ae3bfc52dd208b086b82f}\index{CInputManager@{CInputManager}!IsMouseButtonReleased@{IsMouseButtonReleased}}
+\index{IsMouseButtonReleased@{IsMouseButtonReleased}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{IsMouseButtonReleased()}{IsMouseButtonReleased()}}
+{\footnotesize\ttfamily \label{class_c_input_manager_a2c900558f43ae3bfc52dd208b086b82f} 
+bool CInput\+Manager::\+\+Is\+Mouse\+Button\+Released (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Button}{}\end{DoxyParamCaption}) const}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_input_manager_a2c900558f43ae3bfc52dd208b086b82f_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_input_manager_a42d8aca707c1713b00af78109ecaadeb}\index{CInputManager@{CInputManager}!operator=@{operator=}}
+\index{operator=@{operator=}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{operator=()}{operator=()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{class_c_input_manager_a42d8aca707c1713b00af78109ecaadeb} 
+\doxymbox{\hyperlink{class_c_input_manager}{CInput\+Manager}} \& CInput\+Manager::\+operator= (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_input_manager}{CInput\+Manager}} \&\&}]{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [delete]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_input_manager_a42d8aca707c1713b00af78109ecaadeb_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_input_manager_aff8abf4fd79a252a7326aee68187653e}\index{CInputManager@{CInputManager}!operator=@{operator=}}
+\index{operator=@{operator=}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{operator=()}{operator=()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{class_c_input_manager_aff8abf4fd79a252a7326aee68187653e} 
+\doxymbox{\hyperlink{class_c_input_manager}{CInput\+Manager}} \& CInput\+Manager::\+operator= (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{class_c_input_manager}{CInput\+Manager}} \&}]{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [delete]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_input_manager_aff8abf4fd79a252a7326aee68187653e_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_input_manager_a9f5e640735099147bd163fb3c69ef122}\index{CInputManager@{CInputManager}!ProcessMessage@{ProcessMessage}}
+\index{ProcessMessage@{ProcessMessage}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{ProcessMessage()}{ProcessMessage()}}
+{\footnotesize\ttfamily \label{class_c_input_manager_a9f5e640735099147bd163fb3c69ef122} 
+void CInput\+Manager::\+\+Process\+Message (\begin{DoxyParamCaption}\item[{HWND}]{Hwnd}{, }\item[{UINT}]{Msg}{, }\item[{WPARAM}]{WParam}{, }\item[{LPARAM}]{LParam}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_input_manager_a9f5e640735099147bd163fb3c69ef122_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_input_manager_aecebf908a1cdb654427963ca44aa1fb8}\index{CInputManager@{CInputManager}!Tick@{Tick}}
+\index{Tick@{Tick}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{Tick()}{Tick()}}
+{\footnotesize\ttfamily \label{class_c_input_manager_aecebf908a1cdb654427963ca44aa1fb8} 
+void CInput\+Manager::\+\+Tick (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_input_manager_aecebf908a1cdb654427963ca44aa1fb8_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_c_input_manager_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_c_input_manager_a93fdcf590e218c61ae55926fedb1409b}\index{CInputManager@{CInputManager}!bTrackingMouse@{bTrackingMouse}}
+\index{bTrackingMouse@{bTrackingMouse}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{bTrackingMouse}{bTrackingMouse}}
+{\footnotesize\ttfamily \label{class_c_input_manager_a93fdcf590e218c61ae55926fedb1409b} 
+bool CInput\+Manager::\+b\+Tracking\+Mouse = false\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_input_manager_aed4be2c95c32a2dc20ddc0b13df640ad}\index{CInputManager@{CInputManager}!EventQueue@{EventQueue}}
+\index{EventQueue@{EventQueue}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{EventQueue}{EventQueue}}
+{\footnotesize\ttfamily \label{class_c_input_manager_aed4be2c95c32a2dc20ddc0b13df640ad} 
+std::\+vector$<$\doxymbox{\hyperlink{struct_f_input_event}{FInput\+Event}}$>$ CInput\+Manager::\+\+Event\+Queue\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_input_manager_a4b031ed7b8cd30cf19f1540aa3e5ea14}\index{CInputManager@{CInputManager}!KeyState@{KeyState}}
+\index{KeyState@{KeyState}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{KeyState}{KeyState}}
+{\footnotesize\ttfamily \label{class_c_input_manager_a4b031ed7b8cd30cf19f1540aa3e5ea14} 
+bool CInput\+Manager::\+\+Key\+State\+[\doxymbox{\hyperlink{class_c_input_manager_a5b53796d7f0ea765f8c73f4198f61f58}{MAX\+\_\+\+KEYS}}]\+ = \{\}\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_input_manager_a5a9a0fe669681f9be9985ead40f9f586}\index{CInputManager@{CInputManager}!LastMousePos@{LastMousePos}}
+\index{LastMousePos@{LastMousePos}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{LastMousePos}{LastMousePos}}
+{\footnotesize\ttfamily \label{class_c_input_manager_a5a9a0fe669681f9be9985ead40f9f586} 
+POINT CInput\+Manager::\+\+Last\+Mouse\+Pos = \{\}\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_input_manager_a5b53796d7f0ea765f8c73f4198f61f58}\index{CInputManager@{CInputManager}!MAX\_KEYS@{MAX\_KEYS}}
+\index{MAX\_KEYS@{MAX\_KEYS}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{MAX\_KEYS}{MAX\_KEYS}}
+{\footnotesize\ttfamily \label{class_c_input_manager_a5b53796d7f0ea765f8c73f4198f61f58} 
+\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} CInput\+Manager::\+\+MAX\+\_\+\+KEYS = 256\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [constexpr]}, {\ttfamily [private]}}
+
+\Hypertarget{class_c_input_manager_a9b27379284e061d839d44adda61955b0}\index{CInputManager@{CInputManager}!MAX\_MOUSE\_BUTTONS@{MAX\_MOUSE\_BUTTONS}}
+\index{MAX\_MOUSE\_BUTTONS@{MAX\_MOUSE\_BUTTONS}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{MAX\_MOUSE\_BUTTONS}{MAX\_MOUSE\_BUTTONS}}
+{\footnotesize\ttfamily \label{class_c_input_manager_a9b27379284e061d839d44adda61955b0} 
+\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} CInput\+Manager::\+\+MAX\+\_\+\+MOUSE\+\_\+\+BUTTONS = 3\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [constexpr]}, {\ttfamily [private]}}
+
+\Hypertarget{class_c_input_manager_aeab53e594d0cde345f005fdfbdfdcdb9}\index{CInputManager@{CInputManager}!MOUSE\_LEFT@{MOUSE\_LEFT}}
+\index{MOUSE\_LEFT@{MOUSE\_LEFT}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{MOUSE\_LEFT}{MOUSE\_LEFT}}
+{\footnotesize\ttfamily \label{class_c_input_manager_aeab53e594d0cde345f005fdfbdfdcdb9} 
+\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} CInput\+Manager::\+\+MOUSE\+\_\+\+LEFT = 0\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [constexpr]}}
+
+\Hypertarget{class_c_input_manager_a963db7ce946338ac01bf6c382096ee9a}\index{CInputManager@{CInputManager}!MOUSE\_MIDDLE@{MOUSE\_MIDDLE}}
+\index{MOUSE\_MIDDLE@{MOUSE\_MIDDLE}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{MOUSE\_MIDDLE}{MOUSE\_MIDDLE}}
+{\footnotesize\ttfamily \label{class_c_input_manager_a963db7ce946338ac01bf6c382096ee9a} 
+\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} CInput\+Manager::\+\+MOUSE\+\_\+\+MIDDLE = 2\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [constexpr]}}
+
+\Hypertarget{class_c_input_manager_abb8d1846bcbe0787752cb01029dfc9fe}\index{CInputManager@{CInputManager}!MOUSE\_RIGHT@{MOUSE\_RIGHT}}
+\index{MOUSE\_RIGHT@{MOUSE\_RIGHT}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{MOUSE\_RIGHT}{MOUSE\_RIGHT}}
+{\footnotesize\ttfamily \label{class_c_input_manager_abb8d1846bcbe0787752cb01029dfc9fe} 
+\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} CInput\+Manager::\+\+MOUSE\+\_\+\+RIGHT = 1\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [constexpr]}}
+
+\Hypertarget{class_c_input_manager_a5a23f4f1e89a3901929c8ccda506d50b}\index{CInputManager@{CInputManager}!MouseButtonState@{MouseButtonState}}
+\index{MouseButtonState@{MouseButtonState}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{MouseButtonState}{MouseButtonState}}
+{\footnotesize\ttfamily \label{class_c_input_manager_a5a23f4f1e89a3901929c8ccda506d50b} 
+bool CInput\+Manager::\+\+Mouse\+Button\+State\+[\doxymbox{\hyperlink{class_c_input_manager_a9b27379284e061d839d44adda61955b0}{MAX\+\_\+\+MOUSE\+\_\+\+BUTTONS}}]\+ = \{\}\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_input_manager_ac82cd549ec004d1dbef75488c6a8d2dd}\index{CInputManager@{CInputManager}!MouseDeltaX@{MouseDeltaX}}
+\index{MouseDeltaX@{MouseDeltaX}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{MouseDeltaX}{MouseDeltaX}}
+{\footnotesize\ttfamily \label{class_c_input_manager_ac82cd549ec004d1dbef75488c6a8d2dd} 
+float CInput\+Manager::\+\+Mouse\+DeltaX = 0.\+0f\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_input_manager_a524280c733faf5daaf261653dfe46c1e}\index{CInputManager@{CInputManager}!MouseDeltaY@{MouseDeltaY}}
+\index{MouseDeltaY@{MouseDeltaY}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{MouseDeltaY}{MouseDeltaY}}
+{\footnotesize\ttfamily \label{class_c_input_manager_a524280c733faf5daaf261653dfe46c1e} 
+float CInput\+Manager::\+\+Mouse\+DeltaY = 0.\+0f\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_input_manager_a26af3dc95348ffd8c8900afaa6bfa2a3}\index{CInputManager@{CInputManager}!PrevKeyState@{PrevKeyState}}
+\index{PrevKeyState@{PrevKeyState}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{PrevKeyState}{PrevKeyState}}
+{\footnotesize\ttfamily \label{class_c_input_manager_a26af3dc95348ffd8c8900afaa6bfa2a3} 
+bool CInput\+Manager::\+\+Prev\+Key\+State\+[\doxymbox{\hyperlink{class_c_input_manager_a5b53796d7f0ea765f8c73f4198f61f58}{MAX\+\_\+\+KEYS}}]\+ = \{\}\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_input_manager_ac8c08901cb9af6c05f22bed815ebde19}\index{CInputManager@{CInputManager}!PrevMouseButtonState@{PrevMouseButtonState}}
+\index{PrevMouseButtonState@{PrevMouseButtonState}!CInputManager@{CInputManager}}
+\doxysubsubsection{\texorpdfstring{PrevMouseButtonState}{PrevMouseButtonState}}
+{\footnotesize\ttfamily \label{class_c_input_manager_ac8c08901cb9af6c05f22bed815ebde19} 
+bool CInput\+Manager::\+\+Prev\+Mouse\+Button\+State\+[\doxymbox{\hyperlink{class_c_input_manager_a9b27379284e061d839d44adda61955b0}{MAX\+\_\+\+MOUSE\+\_\+\+BUTTONS}}]\+ = \{\}\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Input/\+\doxymbox{\hyperlink{_input_manager_8h}{Input\+Manager.\+h}}\item 
+Engine/\+\+Source/\+\+Input/\+\doxymbox{\hyperlink{_input_manager_8cpp}{Input\+Manager.\+cpp}}\end{DoxyCompactItemize}

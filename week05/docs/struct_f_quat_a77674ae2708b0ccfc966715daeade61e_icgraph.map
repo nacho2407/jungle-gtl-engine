@@ -1,0 +1,11 @@
+<map id="FQuat::Conjugate" name="FQuat::Conjugate">
+<area shape="rect" id="Node000001" title=" " alt="" coords="628,31,753,57"/>
+<area shape="rect" id="Node000002" href="$struct_f_quat.html#ae8116db12afc8ef3432889fdfd2cfee8" title=" " alt="" coords="472,31,580,57"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="610,44,581,47,581,41,616,44"/>
+<area shape="rect" id="Node000003" href="$class_c_gizmo.html#ad74f1a6f71e783144c61c14f67f38d05" title=" " alt="" coords="201,5,424,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="454,36,425,35,425,29,459,36"/>
+<area shape="rect" id="Node000005" href="$struct_f_rotator.html#a5f8e4578fc2d17399c32027bf18692d5" title=" " alt="" coords="240,56,384,83"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="460,52,385,63,385,58,454,52"/>
+<area shape="rect" id="Node000004" href="$class_c_gizmo.html#a61eb5c2ff40fc0385476dbef4f6fd684" title=" " alt="" coords="5,5,153,32"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="182,19,154,21,153,16,187,18"/>
+</map>

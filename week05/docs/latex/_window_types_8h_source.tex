@@ -1,0 +1,12 @@
+\doxysection{Window\+Types.\+h}
+\hypertarget{_window_types_8h_source}{}\label{_window_types_8h_source}\index{Engine/Source/Platform/Windows/WindowTypes.h@{Engine/Source/Platform/Windows/WindowTypes.h}}
+\doxymbox{\hyperlink{_window_types_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ <functional>}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <Windows.h>}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{keyword}{using\ }\doxymbox{\hyperlink{_window_types_8h_ae5eaca48f6972a425d537e52f0389bce}{FWndProcFilter}}\ =\ std::function<bool(HWND,\ UINT,\ WPARAM,\ LPARAM)>;}
+\DoxyCodeLine{00006\ \textcolor{keyword}{using\ }\doxymbox{\hyperlink{_window_types_8h_a8359cc47b0b501f85cb5f6341b96ba04}{FOnResizeCallback}}\ =\ std::function<void(\textcolor{keywordtype}{int}\ Width,\ \textcolor{keywordtype}{int}\ Height)>;}
+
+\end{DoxyCode}

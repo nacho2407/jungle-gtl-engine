@@ -1,0 +1,243 @@
+\doxysection{CViewport Class Reference}
+\hypertarget{class_c_viewport}{}\label{class_c_viewport}\index{CViewport@{CViewport}}
+
+
+{\ttfamily \+\#include $<$Viewport.\+h$>$}
+
+
+
+Collaboration diagram for CViewport:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=231pt]{class_c_viewport__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_c_viewport_a6308e6995cf8a837146061d3a37bd547}{\texorpdfstring{$\sim$}{\string~}\+CViewport}} ()
+\item 
+void \doxymbox{\hyperlink{class_c_viewport_a2a7ed1cc3e31c0196444dbac0dc55a23}{Render}} (\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}Core, \doxymbox{\hyperlink{class_c_renderer}{CRenderer}} \texorpdfstring{$\ast$}{*}Renderer, HWND Hwnd)
+\item 
+void \doxymbox{\hyperlink{class_c_viewport_a3ce477f6558f321727a40f68718c6ffa}{Release\+Scene\+View}} ()
+\item 
+bool \doxymbox{\hyperlink{class_c_viewport_afcf1cf2c0e28157dc82d52da3f19f6a9}{Get\+Mouse\+Position\+In\+Viewport}} (\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Window\+MouseX, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Window\+MouseY, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \&Out\+ViewportX, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \&Out\+ViewportY, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \&Out\+Width, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \&Out\+Height) const
+\item 
+bool \doxymbox{\hyperlink{class_c_viewport_af40ef79e1278703b20acb2bcd9122204}{Is\+Hovered}} () const
+\item 
+bool \doxymbox{\hyperlink{class_c_viewport_adac0d9379374a2a4cc31efcffcfddc74}{Is\+Focused}} () const
+\item 
+bool \doxymbox{\hyperlink{class_c_viewport_a892cbbcd3ecff51c87ae3253cbcc51f7}{Is\+Visible}} () const
+\item 
+void \doxymbox{\hyperlink{class_c_viewport_a94cbf51194c399b735f4e2a91baa68a0}{Ready\+Scene\+View}} (ID3\+D11\+Device \texorpdfstring{$\ast$}{*}Device, \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} Width, \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} Height)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+ID3\+D11\+Texture2D \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_viewport_aa7ffd55d17c0fea9756eeb3b87328c53}{Render\+Target\+Texture}} = nullptr
+\item 
+ID3\+D11\+Render\+Target\+View \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_viewport_a87b1f98b31b301c194eff0ebaeb4ffc3}{Render\+Target\+View}} = nullptr
+\item 
+ID3\+D11\+Shader\+Resource\+View \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_viewport_af3ef4c9642b40f3f83fa49b8318033b5}{Shader\+Resource\+View}} = nullptr
+\item 
+ID3\+D11\+Texture2D \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_viewport_a1d44f5c57e516a067d68c94feec01ef0}{Depth\+Stencil\+Texture}} = nullptr
+\item 
+ID3\+D11\+Depth\+Stencil\+View \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_viewport_a8a60f904c2b8146d54f45d0f9c62d1cc}{Depth\+Stencil\+View}} = nullptr
+\item 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_c_viewport_a617243f8c789dc7d6eb9faa2b9d49896}{Offscreen\+Width}} = 0
+\item 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_c_viewport_a022e3301abfdb93e992a82933721c954}{Offscreen\+Height}} = 0
+\item 
+\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \doxymbox{\hyperlink{class_c_viewport_a51cab6f238c529d9876bdfa1ccc4b87e}{Client\+PosX}} = 0
+\item 
+\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \doxymbox{\hyperlink{class_c_viewport_a6ab53bca34adb3cbeca921b0acdad663}{Client\+PosY}} = 0
+\item 
+bool \doxymbox{\hyperlink{class_c_viewport_a203bb6f92118693183a100100a30a874}{b\+Hovered}} = false
+\item 
+bool \doxymbox{\hyperlink{class_c_viewport_a6cb3483c7acb13848c0af6c5df76664e}{b\+Focused}} = false
+\item 
+bool \doxymbox{\hyperlink{class_c_viewport_a21722bee866e7bb400280341c04e38ae}{b\+Visible}} = false
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{class_c_viewport_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_c_viewport_a6308e6995cf8a837146061d3a37bd547}\index{CViewport@{CViewport}!````~CViewport@{\texorpdfstring{$\sim$}{\string~}CViewport}}
+\index{````~CViewport@{\texorpdfstring{$\sim$}{\string~}CViewport}!CViewport@{CViewport}}
+\doxysubsubsection{\texorpdfstring{\texorpdfstring{$\sim$}{\string~}CViewport()}{\string~CViewport()}}
+{\footnotesize\ttfamily \label{class_c_viewport_a6308e6995cf8a837146061d3a37bd547} 
+CViewport::\+\texorpdfstring{$\sim$}{\string~}\+CViewport (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_viewport_a6308e6995cf8a837146061d3a37bd547_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-func-members}
+\Hypertarget{class_c_viewport_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_c_viewport_afcf1cf2c0e28157dc82d52da3f19f6a9}\index{CViewport@{CViewport}!GetMousePositionInViewport@{GetMousePositionInViewport}}
+\index{GetMousePositionInViewport@{GetMousePositionInViewport}!CViewport@{CViewport}}
+\doxysubsubsection{\texorpdfstring{GetMousePositionInViewport()}{GetMousePositionInViewport()}}
+{\footnotesize\ttfamily \label{class_c_viewport_afcf1cf2c0e28157dc82d52da3f19f6a9} 
+bool CViewport::\+\+Get\+Mouse\+Position\+In\+Viewport (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Window\+MouseX}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Window\+MouseY}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \&}]{Out\+ViewportX}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \&}]{Out\+ViewportY}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \&}]{Out\+Width}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \&}]{Out\+Height}{}\end{DoxyParamCaption}) const}
+
+\Hypertarget{class_c_viewport_adac0d9379374a2a4cc31efcffcfddc74}\index{CViewport@{CViewport}!IsFocused@{IsFocused}}
+\index{IsFocused@{IsFocused}!CViewport@{CViewport}}
+\doxysubsubsection{\texorpdfstring{IsFocused()}{IsFocused()}}
+{\footnotesize\ttfamily \label{class_c_viewport_adac0d9379374a2a4cc31efcffcfddc74} 
+bool CViewport::\+\+Is\+Focused (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_c_viewport_af40ef79e1278703b20acb2bcd9122204}\index{CViewport@{CViewport}!IsHovered@{IsHovered}}
+\index{IsHovered@{IsHovered}!CViewport@{CViewport}}
+\doxysubsubsection{\texorpdfstring{IsHovered()}{IsHovered()}}
+{\footnotesize\ttfamily \label{class_c_viewport_af40ef79e1278703b20acb2bcd9122204} 
+bool CViewport::\+\+Is\+Hovered (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_c_viewport_a892cbbcd3ecff51c87ae3253cbcc51f7}\index{CViewport@{CViewport}!IsVisible@{IsVisible}}
+\index{IsVisible@{IsVisible}!CViewport@{CViewport}}
+\doxysubsubsection{\texorpdfstring{IsVisible()}{IsVisible()}}
+{\footnotesize\ttfamily \label{class_c_viewport_a892cbbcd3ecff51c87ae3253cbcc51f7} 
+bool CViewport::\+\+Is\+Visible (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_c_viewport_a94cbf51194c399b735f4e2a91baa68a0}\index{CViewport@{CViewport}!ReadySceneView@{ReadySceneView}}
+\index{ReadySceneView@{ReadySceneView}!CViewport@{CViewport}}
+\doxysubsubsection{\texorpdfstring{ReadySceneView()}{ReadySceneView()}}
+{\footnotesize\ttfamily \label{class_c_viewport_a94cbf51194c399b735f4e2a91baa68a0} 
+void CViewport::\+\+Ready\+Scene\+View (\begin{DoxyParamCaption}\item[{ID3\+D11\+Device \texorpdfstring{$\ast$}{*}}]{Device}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}}]{Width}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}}]{Height}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_viewport_a94cbf51194c399b735f4e2a91baa68a0_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_viewport_a94cbf51194c399b735f4e2a91baa68a0_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_viewport_a3ce477f6558f321727a40f68718c6ffa}\index{CViewport@{CViewport}!ReleaseSceneView@{ReleaseSceneView}}
+\index{ReleaseSceneView@{ReleaseSceneView}!CViewport@{CViewport}}
+\doxysubsubsection{\texorpdfstring{ReleaseSceneView()}{ReleaseSceneView()}}
+{\footnotesize\ttfamily \label{class_c_viewport_a3ce477f6558f321727a40f68718c6ffa} 
+void CViewport::\+\+Release\+Scene\+View (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_viewport_a3ce477f6558f321727a40f68718c6ffa_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_viewport_a2a7ed1cc3e31c0196444dbac0dc55a23}\index{CViewport@{CViewport}!Render@{Render}}
+\index{Render@{Render}!CViewport@{CViewport}}
+\doxysubsubsection{\texorpdfstring{Render()}{Render()}}
+{\footnotesize\ttfamily \label{class_c_viewport_a2a7ed1cc3e31c0196444dbac0dc55a23} 
+void CViewport::\+\+Render (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}}]{Core}{, }\item[{\doxymbox{\hyperlink{class_c_renderer}{CRenderer}} \texorpdfstring{$\ast$}{*}}]{Renderer}{, }\item[{HWND}]{Hwnd}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_viewport_a2a7ed1cc3e31c0196444dbac0dc55a23_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_c_viewport_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_c_viewport_a6cb3483c7acb13848c0af6c5df76664e}\index{CViewport@{CViewport}!bFocused@{bFocused}}
+\index{bFocused@{bFocused}!CViewport@{CViewport}}
+\doxysubsubsection{\texorpdfstring{bFocused}{bFocused}}
+{\footnotesize\ttfamily \label{class_c_viewport_a6cb3483c7acb13848c0af6c5df76664e} 
+bool CViewport::\+b\+Focused = false\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_viewport_a203bb6f92118693183a100100a30a874}\index{CViewport@{CViewport}!bHovered@{bHovered}}
+\index{bHovered@{bHovered}!CViewport@{CViewport}}
+\doxysubsubsection{\texorpdfstring{bHovered}{bHovered}}
+{\footnotesize\ttfamily \label{class_c_viewport_a203bb6f92118693183a100100a30a874} 
+bool CViewport::\+b\+Hovered = false\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_viewport_a21722bee866e7bb400280341c04e38ae}\index{CViewport@{CViewport}!bVisible@{bVisible}}
+\index{bVisible@{bVisible}!CViewport@{CViewport}}
+\doxysubsubsection{\texorpdfstring{bVisible}{bVisible}}
+{\footnotesize\ttfamily \label{class_c_viewport_a21722bee866e7bb400280341c04e38ae} 
+bool CViewport::\+b\+Visible = false\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_viewport_a51cab6f238c529d9876bdfa1ccc4b87e}\index{CViewport@{CViewport}!ClientPosX@{ClientPosX}}
+\index{ClientPosX@{ClientPosX}!CViewport@{CViewport}}
+\doxysubsubsection{\texorpdfstring{ClientPosX}{ClientPosX}}
+{\footnotesize\ttfamily \label{class_c_viewport_a51cab6f238c529d9876bdfa1ccc4b87e} 
+\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} CViewport::\+\+Client\+PosX = 0\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_viewport_a6ab53bca34adb3cbeca921b0acdad663}\index{CViewport@{CViewport}!ClientPosY@{ClientPosY}}
+\index{ClientPosY@{ClientPosY}!CViewport@{CViewport}}
+\doxysubsubsection{\texorpdfstring{ClientPosY}{ClientPosY}}
+{\footnotesize\ttfamily \label{class_c_viewport_a6ab53bca34adb3cbeca921b0acdad663} 
+\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} CViewport::\+\+Client\+PosY = 0\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_viewport_a1d44f5c57e516a067d68c94feec01ef0}\index{CViewport@{CViewport}!DepthStencilTexture@{DepthStencilTexture}}
+\index{DepthStencilTexture@{DepthStencilTexture}!CViewport@{CViewport}}
+\doxysubsubsection{\texorpdfstring{DepthStencilTexture}{DepthStencilTexture}}
+{\footnotesize\ttfamily \label{class_c_viewport_a1d44f5c57e516a067d68c94feec01ef0} 
+ID3\+D11\+Texture2D\texorpdfstring{$\ast$}{*} CViewport::\+\+Depth\+Stencil\+Texture = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_viewport_a8a60f904c2b8146d54f45d0f9c62d1cc}\index{CViewport@{CViewport}!DepthStencilView@{DepthStencilView}}
+\index{DepthStencilView@{DepthStencilView}!CViewport@{CViewport}}
+\doxysubsubsection{\texorpdfstring{DepthStencilView}{DepthStencilView}}
+{\footnotesize\ttfamily \label{class_c_viewport_a8a60f904c2b8146d54f45d0f9c62d1cc} 
+ID3\+D11\+Depth\+Stencil\+View\texorpdfstring{$\ast$}{*} CViewport::\+\+Depth\+Stencil\+View = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_viewport_a022e3301abfdb93e992a82933721c954}\index{CViewport@{CViewport}!OffscreenHeight@{OffscreenHeight}}
+\index{OffscreenHeight@{OffscreenHeight}!CViewport@{CViewport}}
+\doxysubsubsection{\texorpdfstring{OffscreenHeight}{OffscreenHeight}}
+{\footnotesize\ttfamily \label{class_c_viewport_a022e3301abfdb93e992a82933721c954} 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} CViewport::\+\+Offscreen\+Height = 0\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_viewport_a617243f8c789dc7d6eb9faa2b9d49896}\index{CViewport@{CViewport}!OffscreenWidth@{OffscreenWidth}}
+\index{OffscreenWidth@{OffscreenWidth}!CViewport@{CViewport}}
+\doxysubsubsection{\texorpdfstring{OffscreenWidth}{OffscreenWidth}}
+{\footnotesize\ttfamily \label{class_c_viewport_a617243f8c789dc7d6eb9faa2b9d49896} 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} CViewport::\+\+Offscreen\+Width = 0\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_viewport_aa7ffd55d17c0fea9756eeb3b87328c53}\index{CViewport@{CViewport}!RenderTargetTexture@{RenderTargetTexture}}
+\index{RenderTargetTexture@{RenderTargetTexture}!CViewport@{CViewport}}
+\doxysubsubsection{\texorpdfstring{RenderTargetTexture}{RenderTargetTexture}}
+{\footnotesize\ttfamily \label{class_c_viewport_aa7ffd55d17c0fea9756eeb3b87328c53} 
+ID3\+D11\+Texture2D\texorpdfstring{$\ast$}{*} CViewport::\+\+Render\+Target\+Texture = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_viewport_a87b1f98b31b301c194eff0ebaeb4ffc3}\index{CViewport@{CViewport}!RenderTargetView@{RenderTargetView}}
+\index{RenderTargetView@{RenderTargetView}!CViewport@{CViewport}}
+\doxysubsubsection{\texorpdfstring{RenderTargetView}{RenderTargetView}}
+{\footnotesize\ttfamily \label{class_c_viewport_a87b1f98b31b301c194eff0ebaeb4ffc3} 
+ID3\+D11\+Render\+Target\+View\texorpdfstring{$\ast$}{*} CViewport::\+\+Render\+Target\+View = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_viewport_af3ef4c9642b40f3f83fa49b8318033b5}\index{CViewport@{CViewport}!ShaderResourceView@{ShaderResourceView}}
+\index{ShaderResourceView@{ShaderResourceView}!CViewport@{CViewport}}
+\doxysubsubsection{\texorpdfstring{ShaderResourceView}{ShaderResourceView}}
+{\footnotesize\ttfamily \label{class_c_viewport_af3ef4c9642b40f3f83fa49b8318033b5} 
+ID3\+D11\+Shader\+Resource\+View\texorpdfstring{$\ast$}{*} CViewport::\+\+Shader\+Resource\+View = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Editor/\+\+Source/\+\+UI/\+\doxymbox{\hyperlink{_viewport_8h}{Viewport.\+h}}\item 
+Editor/\+\+Source/\+\+UI/\+\doxymbox{\hyperlink{_viewport_8cpp}{Viewport.\+cpp}}\end{DoxyCompactItemize}

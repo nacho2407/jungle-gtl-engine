@@ -1,0 +1,427 @@
+\doxysection{FMaterial Class Reference}
+\hypertarget{class_f_material}{}\label{class_f_material}\index{FMaterial@{FMaterial}}
+
+
+{\ttfamily \+\#include $<$Material.\+h$>$}
+
+
+
+Inheritance diagram for FMaterial:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{class_f_material__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for FMaterial:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=185pt]{class_f_material__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_f_material_af1c9f1bca8138961c9fc2f794ce160cc}{FMaterial}} ()
+\item 
+virtual \doxymbox{\hyperlink{class_f_material_a7756f35f8f389d3613576233afbe35c6}{\texorpdfstring{$\sim$}{\string~}\+FMaterial}} ()
+\item 
+\doxymbox{\hyperlink{class_f_material_aca9bcb61ec545f1c2c203d85866e9117}{FMaterial}} (const \doxymbox{\hyperlink{class_f_material}{FMaterial}} \&)=delete
+\item 
+\doxymbox{\hyperlink{class_f_material}{FMaterial}} \& \doxymbox{\hyperlink{class_f_material_a78ec9812ddb03cbf47aa7615419b727a}{operator=}} (const \doxymbox{\hyperlink{class_f_material}{FMaterial}} \&)=delete
+\item 
+\doxymbox{\hyperlink{class_f_material_a96737e51eb2806bdf1408c1eba01eba6}{FMaterial}} (\doxymbox{\hyperlink{class_f_material}{FMaterial}} \&\&)=default
+\item 
+\doxymbox{\hyperlink{class_f_material}{FMaterial}} \& \doxymbox{\hyperlink{class_f_material_ac204313055f3afc54b08b6e4bc56117f}{operator=}} (\doxymbox{\hyperlink{class_f_material}{FMaterial}} \&\&)=default
+\item 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_f_material_a7369894be1757d9ac9e5e787ce0f03dc}{Get\+Sort\+Id}} () const
+\item 
+void \doxymbox{\hyperlink{class_f_material_ab748ae1f764c67ced62e3e28fc10cb92}{Set\+Origin\+Name}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&In\+Name)
+\item 
+const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \& \doxymbox{\hyperlink{class_f_material_a57edb4f0c674c61bfb8553e6debcba43}{Get\+Origin\+Name}} () const
+\item 
+void \doxymbox{\hyperlink{class_f_material_aefa58304b9ec4420a12793584db3b82a}{Set\+Instance\+Name}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&In\+Name)
+\item 
+const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \& \doxymbox{\hyperlink{class_f_material_a89d9b944f02e3474e5292f8432541406}{Get\+Instance\+Name}} () const
+\item 
+const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \& \doxymbox{\hyperlink{class_f_material_a5861b387cd58f1b58fecd4632407ef2a}{Get\+Name}} () const
+\item 
+void \doxymbox{\hyperlink{class_f_material_ac78ac0fe80f1e046d8191ebee296925f}{Set\+Vertex\+Shader}} (const std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_vertex_shader}{FVertex\+Shader}} $>$ \&In\+VS)
+\item 
+void \doxymbox{\hyperlink{class_f_material_ab55af6fe9f11622bc6a21d6b73c121da}{Set\+Pixel\+Shader}} (const std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_pixel_shader}{FPixel\+Shader}} $>$ \&In\+PS)
+\item 
+\doxymbox{\hyperlink{class_f_vertex_shader}{FVertex\+Shader}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_f_material_a23dd44e9558097788aaeae5de2e6b1a2}{Get\+Vertex\+Shader}} () const
+\item 
+\doxymbox{\hyperlink{class_f_pixel_shader}{FPixel\+Shader}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_f_material_ae35911e514f7413c866ae536dc835b61}{Get\+Pixel\+Shader}} () const
+\item 
+\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \doxymbox{\hyperlink{class_f_material_a51e1a80bd56011469d47be4184c8476f}{Create\+Constant\+Buffer}} (ID3\+D11\+Device \texorpdfstring{$\ast$}{*}Device, \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} In\+Size)
+\item 
+\doxymbox{\hyperlink{struct_f_material_constant_buffer}{FMaterial\+Constant\+Buffer}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_f_material_ab60c409c85fe661571fbd14a3afae060}{Get\+Constant\+Buffer}} (\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Index)
+\item 
+void \doxymbox{\hyperlink{class_f_material_ac4835fe8c9b059c0d0e94ae55e4fc48e}{Register\+Parameter}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Param\+Name, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Buffer\+Index, \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} Offset, \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} Size)
+\item 
+std::\+unique\+\_\+ptr$<$ class \doxymbox{\hyperlink{class_f_dynamic_material}{FDynamic\+Material}} $>$ \doxymbox{\hyperlink{class_f_material_a5b4746f99b21bcf2ceef024683e1ee8a}{Create\+Dynamic\+Material}} () const
+\item 
+void \doxymbox{\hyperlink{class_f_material_a17b478054fcfceb88a96b816e6e941ec}{Bind}} (ID3\+D11\+Device\+Context \texorpdfstring{$\ast$}{*}Device\+Context)
+\item 
+void \doxymbox{\hyperlink{class_f_material_a00563e4d256210e3b57b98cd2c5822f9}{Release}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+bool \doxymbox{\hyperlink{class_f_material_a0a606dd0f917050a912c1ecc23a60087}{Set\+Parameter\+Data}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Param\+Name, const void \texorpdfstring{$\ast$}{*}Data, \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} Data\+Size)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_f_material_a3631f4b05eda35a7409967bfddd3cf09}{Sort\+Id}} = 0
+\item 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_f_material_af2d8c774bf0f5520f120ee36bd63539e}{Origin\+Name}}
+\item 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_f_material_ae7d6cd96252254110ba8ac144abd11c9}{Instance\+Name}}
+\item 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_vertex_shader}{FVertex\+Shader}} $>$ \doxymbox{\hyperlink{class_f_material_a73c3bd3bcb59024db386aeedf408193b}{Vertex\+Shader}}
+\item 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_pixel_shader}{FPixel\+Shader}} $>$ \doxymbox{\hyperlink{class_f_material_a4754471ae1a644b905aa7143fffda3a5}{Pixel\+Shader}}
+\item 
+\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$ \doxymbox{\hyperlink{struct_f_material_constant_buffer}{FMaterial\+Constant\+Buffer}} $>$ \doxymbox{\hyperlink{class_f_material_a186db262cabe2c56d5d312b551a41077}{Constant\+Buffers}}
+\item 
+\doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap}}$<$ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}, \doxymbox{\hyperlink{struct_f_material_parameter_info}{FMaterial\+Parameter\+Info}} $>$ \doxymbox{\hyperlink{class_f_material_a54a997beec25b5f7bcd384192c9a6943}{Parameter\+Map}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_f_material_aa3754e96f06cd4cab28370cf8733f39f}{Next\+Sort\+Id}} = 0
+\item 
+static constexpr UINT \doxymbox{\hyperlink{class_f_material_a55bd53dd986c50c2df275c4bef957b15}{Material\+CBStart\+Slot}} = 2
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{class_f_material_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_f_material_af1c9f1bca8138961c9fc2f794ce160cc}\index{FMaterial@{FMaterial}!FMaterial@{FMaterial}}
+\index{FMaterial@{FMaterial}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{FMaterial()}{FMaterial()}\hspace{0.1cm}{\footnotesize\ttfamily [1/3]}}
+{\footnotesize\ttfamily \label{class_f_material_af1c9f1bca8138961c9fc2f794ce160cc} 
+FMaterial::\+\+FMaterial (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=323pt]{class_f_material_af1c9f1bca8138961c9fc2f794ce160cc_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_material_a7756f35f8f389d3613576233afbe35c6}\index{FMaterial@{FMaterial}!````~FMaterial@{\texorpdfstring{$\sim$}{\string~}FMaterial}}
+\index{````~FMaterial@{\texorpdfstring{$\sim$}{\string~}FMaterial}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{\texorpdfstring{$\sim$}{\string~}FMaterial()}{\string~FMaterial()}}
+{\footnotesize\ttfamily \label{class_f_material_a7756f35f8f389d3613576233afbe35c6} 
+FMaterial::\+\texorpdfstring{$\sim$}{\string~}\+FMaterial (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [virtual]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=324pt]{class_f_material_a7756f35f8f389d3613576233afbe35c6_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_material_aca9bcb61ec545f1c2c203d85866e9117}\index{FMaterial@{FMaterial}!FMaterial@{FMaterial}}
+\index{FMaterial@{FMaterial}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{FMaterial()}{FMaterial()}\hspace{0.1cm}{\footnotesize\ttfamily [2/3]}}
+{\footnotesize\ttfamily \label{class_f_material_aca9bcb61ec545f1c2c203d85866e9117} 
+FMaterial::\+\+FMaterial (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{class_f_material}{FMaterial}} \&}]{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [delete]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=322pt]{class_f_material_aca9bcb61ec545f1c2c203d85866e9117_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_material_a96737e51eb2806bdf1408c1eba01eba6}\index{FMaterial@{FMaterial}!FMaterial@{FMaterial}}
+\index{FMaterial@{FMaterial}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{FMaterial()}{FMaterial()}\hspace{0.1cm}{\footnotesize\ttfamily [3/3]}}
+{\footnotesize\ttfamily \label{class_f_material_a96737e51eb2806bdf1408c1eba01eba6} 
+FMaterial::\+\+FMaterial (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_f_material}{FMaterial}} \&\&}]{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=322pt]{class_f_material_a96737e51eb2806bdf1408c1eba01eba6_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-func-members}
+\Hypertarget{class_f_material_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_f_material_a17b478054fcfceb88a96b816e6e941ec}\index{FMaterial@{FMaterial}!Bind@{Bind}}
+\index{Bind@{Bind}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{Bind()}{Bind()}}
+{\footnotesize\ttfamily \label{class_f_material_a17b478054fcfceb88a96b816e6e941ec} 
+void FMaterial::\+\+Bind (\begin{DoxyParamCaption}\item[{ID3\+D11\+Device\+Context \texorpdfstring{$\ast$}{*}}]{Device\+Context}{}\end{DoxyParamCaption})}
+
+\Hypertarget{class_f_material_a51e1a80bd56011469d47be4184c8476f}\index{FMaterial@{FMaterial}!CreateConstantBuffer@{CreateConstantBuffer}}
+\index{CreateConstantBuffer@{CreateConstantBuffer}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{CreateConstantBuffer()}{CreateConstantBuffer()}}
+{\footnotesize\ttfamily \label{class_f_material_a51e1a80bd56011469d47be4184c8476f} 
+\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} FMaterial::\+\+Create\+Constant\+Buffer (\begin{DoxyParamCaption}\item[{ID3\+D11\+Device \texorpdfstring{$\ast$}{*}}]{Device}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}}]{In\+Size}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_material_a51e1a80bd56011469d47be4184c8476f_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_material_a5b4746f99b21bcf2ceef024683e1ee8a}\index{FMaterial@{FMaterial}!CreateDynamicMaterial@{CreateDynamicMaterial}}
+\index{CreateDynamicMaterial@{CreateDynamicMaterial}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{CreateDynamicMaterial()}{CreateDynamicMaterial()}}
+{\footnotesize\ttfamily \label{class_f_material_a5b4746f99b21bcf2ceef024683e1ee8a} 
+std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_dynamic_material}{FDynamic\+Material}} $>$ FMaterial::\+\+Create\+Dynamic\+Material (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_material_a5b4746f99b21bcf2ceef024683e1ee8a_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_material_ab60c409c85fe661571fbd14a3afae060}\index{FMaterial@{FMaterial}!GetConstantBuffer@{GetConstantBuffer}}
+\index{GetConstantBuffer@{GetConstantBuffer}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{GetConstantBuffer()}{GetConstantBuffer()}}
+{\footnotesize\ttfamily \label{class_f_material_ab60c409c85fe661571fbd14a3afae060} 
+\doxymbox{\hyperlink{struct_f_material_constant_buffer}{FMaterial\+Constant\+Buffer}} \texorpdfstring{$\ast$}{*} FMaterial::\+\+Get\+Constant\+Buffer (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Index}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_material_ab60c409c85fe661571fbd14a3afae060_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_material_a89d9b944f02e3474e5292f8432541406}\index{FMaterial@{FMaterial}!GetInstanceName@{GetInstanceName}}
+\index{GetInstanceName@{GetInstanceName}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{GetInstanceName()}{GetInstanceName()}}
+{\footnotesize\ttfamily \label{class_f_material_a89d9b944f02e3474e5292f8432541406} 
+const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \& FMaterial::\+\+Get\+Instance\+Name (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_f_material_a5861b387cd58f1b58fecd4632407ef2a}\index{FMaterial@{FMaterial}!GetName@{GetName}}
+\index{GetName@{GetName}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{GetName()}{GetName()}}
+{\footnotesize\ttfamily \label{class_f_material_a5861b387cd58f1b58fecd4632407ef2a} 
+const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \& FMaterial::\+\+Get\+Name (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_f_material_a57edb4f0c674c61bfb8553e6debcba43}\index{FMaterial@{FMaterial}!GetOriginName@{GetOriginName}}
+\index{GetOriginName@{GetOriginName}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{GetOriginName()}{GetOriginName()}}
+{\footnotesize\ttfamily \label{class_f_material_a57edb4f0c674c61bfb8553e6debcba43} 
+const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \& FMaterial::\+\+Get\+Origin\+Name (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_material_a57edb4f0c674c61bfb8553e6debcba43_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_material_ae35911e514f7413c866ae536dc835b61}\index{FMaterial@{FMaterial}!GetPixelShader@{GetPixelShader}}
+\index{GetPixelShader@{GetPixelShader}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{GetPixelShader()}{GetPixelShader()}}
+{\footnotesize\ttfamily \label{class_f_material_ae35911e514f7413c866ae536dc835b61} 
+\doxymbox{\hyperlink{class_f_pixel_shader}{FPixel\+Shader}} \texorpdfstring{$\ast$}{*} FMaterial::\+\+Get\+Pixel\+Shader (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_f_material_a7369894be1757d9ac9e5e787ce0f03dc}\index{FMaterial@{FMaterial}!GetSortId@{GetSortId}}
+\index{GetSortId@{GetSortId}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{GetSortId()}{GetSortId()}}
+{\footnotesize\ttfamily \label{class_f_material_a7369894be1757d9ac9e5e787ce0f03dc} 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} FMaterial::\+\+Get\+Sort\+Id (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_material_a7369894be1757d9ac9e5e787ce0f03dc_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_material_a23dd44e9558097788aaeae5de2e6b1a2}\index{FMaterial@{FMaterial}!GetVertexShader@{GetVertexShader}}
+\index{GetVertexShader@{GetVertexShader}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{GetVertexShader()}{GetVertexShader()}}
+{\footnotesize\ttfamily \label{class_f_material_a23dd44e9558097788aaeae5de2e6b1a2} 
+\doxymbox{\hyperlink{class_f_vertex_shader}{FVertex\+Shader}} \texorpdfstring{$\ast$}{*} FMaterial::\+\+Get\+Vertex\+Shader (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_f_material_a78ec9812ddb03cbf47aa7615419b727a}\index{FMaterial@{FMaterial}!operator=@{operator=}}
+\index{operator=@{operator=}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{operator=()}{operator=()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{class_f_material_a78ec9812ddb03cbf47aa7615419b727a} 
+\doxymbox{\hyperlink{class_f_material}{FMaterial}} \& FMaterial::\+operator= (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{class_f_material}{FMaterial}} \&}]{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [delete]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=323pt]{class_f_material_a78ec9812ddb03cbf47aa7615419b727a_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_material_ac204313055f3afc54b08b6e4bc56117f}\index{FMaterial@{FMaterial}!operator=@{operator=}}
+\index{operator=@{operator=}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{operator=()}{operator=()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{class_f_material_ac204313055f3afc54b08b6e4bc56117f} 
+\doxymbox{\hyperlink{class_f_material}{FMaterial}} \& FMaterial::\+operator= (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_f_material}{FMaterial}} \&\&}]{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=323pt]{class_f_material_ac204313055f3afc54b08b6e4bc56117f_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_material_ac4835fe8c9b059c0d0e94ae55e4fc48e}\index{FMaterial@{FMaterial}!RegisterParameter@{RegisterParameter}}
+\index{RegisterParameter@{RegisterParameter}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{RegisterParameter()}{RegisterParameter()}}
+{\footnotesize\ttfamily \label{class_f_material_ac4835fe8c9b059c0d0e94ae55e4fc48e} 
+void FMaterial::\+\+Register\+Parameter (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Param\+Name}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Buffer\+Index}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}}]{Offset}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}}]{Size}{}\end{DoxyParamCaption})}
+
+\Hypertarget{class_f_material_a00563e4d256210e3b57b98cd2c5822f9}\index{FMaterial@{FMaterial}!Release@{Release}}
+\index{Release@{Release}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{Release()}{Release()}}
+{\footnotesize\ttfamily \label{class_f_material_a00563e4d256210e3b57b98cd2c5822f9} 
+void FMaterial::\+\+Release (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=324pt]{class_f_material_a00563e4d256210e3b57b98cd2c5822f9_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_material_aefa58304b9ec4420a12793584db3b82a}\index{FMaterial@{FMaterial}!SetInstanceName@{SetInstanceName}}
+\index{SetInstanceName@{SetInstanceName}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{SetInstanceName()}{SetInstanceName()}}
+{\footnotesize\ttfamily \label{class_f_material_aefa58304b9ec4420a12793584db3b82a} 
+void FMaterial::\+\+Set\+Instance\+Name (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{In\+Name}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_f_material_ab748ae1f764c67ced62e3e28fc10cb92}\index{FMaterial@{FMaterial}!SetOriginName@{SetOriginName}}
+\index{SetOriginName@{SetOriginName}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{SetOriginName()}{SetOriginName()}}
+{\footnotesize\ttfamily \label{class_f_material_ab748ae1f764c67ced62e3e28fc10cb92} 
+void FMaterial::\+\+Set\+Origin\+Name (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{In\+Name}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_f_material_a0a606dd0f917050a912c1ecc23a60087}\index{FMaterial@{FMaterial}!SetParameterData@{SetParameterData}}
+\index{SetParameterData@{SetParameterData}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{SetParameterData()}{SetParameterData()}}
+{\footnotesize\ttfamily \label{class_f_material_a0a606dd0f917050a912c1ecc23a60087} 
+bool FMaterial::\+\+Set\+Parameter\+Data (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Param\+Name}{, }\item[{const void \texorpdfstring{$\ast$}{*}}]{Data}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}}]{Data\+Size}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_material_a0a606dd0f917050a912c1ecc23a60087_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_material_a0a606dd0f917050a912c1ecc23a60087_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_material_ab55af6fe9f11622bc6a21d6b73c121da}\index{FMaterial@{FMaterial}!SetPixelShader@{SetPixelShader}}
+\index{SetPixelShader@{SetPixelShader}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{SetPixelShader()}{SetPixelShader()}}
+{\footnotesize\ttfamily \label{class_f_material_ab55af6fe9f11622bc6a21d6b73c121da} 
+void FMaterial::\+\+Set\+Pixel\+Shader (\begin{DoxyParamCaption}\item[{const std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_pixel_shader}{FPixel\+Shader}} $>$ \&}]{In\+PS}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_f_material_ac78ac0fe80f1e046d8191ebee296925f}\index{FMaterial@{FMaterial}!SetVertexShader@{SetVertexShader}}
+\index{SetVertexShader@{SetVertexShader}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{SetVertexShader()}{SetVertexShader()}}
+{\footnotesize\ttfamily \label{class_f_material_ac78ac0fe80f1e046d8191ebee296925f} 
+void FMaterial::\+\+Set\+Vertex\+Shader (\begin{DoxyParamCaption}\item[{const std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_vertex_shader}{FVertex\+Shader}} $>$ \&}]{In\+VS}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+\label{doc-variable-members}
+\Hypertarget{class_f_material_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_f_material_a186db262cabe2c56d5d312b551a41077}\index{FMaterial@{FMaterial}!ConstantBuffers@{ConstantBuffers}}
+\index{ConstantBuffers@{ConstantBuffers}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{ConstantBuffers}{ConstantBuffers}}
+{\footnotesize\ttfamily \label{class_f_material_a186db262cabe2c56d5d312b551a41077} 
+\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$\doxymbox{\hyperlink{struct_f_material_constant_buffer}{FMaterial\+Constant\+Buffer}}$>$ FMaterial::\+\+Constant\+Buffers\hspace{0.3cm}{\ttfamily [protected]}}
+
+\Hypertarget{class_f_material_ae7d6cd96252254110ba8ac144abd11c9}\index{FMaterial@{FMaterial}!InstanceName@{InstanceName}}
+\index{InstanceName@{InstanceName}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{InstanceName}{InstanceName}}
+{\footnotesize\ttfamily \label{class_f_material_ae7d6cd96252254110ba8ac144abd11c9} 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} FMaterial::\+\+Instance\+Name\hspace{0.3cm}{\ttfamily [protected]}}
+
+\Hypertarget{class_f_material_a55bd53dd986c50c2df275c4bef957b15}\index{FMaterial@{FMaterial}!MaterialCBStartSlot@{MaterialCBStartSlot}}
+\index{MaterialCBStartSlot@{MaterialCBStartSlot}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{MaterialCBStartSlot}{MaterialCBStartSlot}}
+{\footnotesize\ttfamily \label{class_f_material_a55bd53dd986c50c2df275c4bef957b15} 
+UINT FMaterial::\+\+Material\+CBStart\+Slot = 2\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [constexpr]}, {\ttfamily [protected]}}
+
+\Hypertarget{class_f_material_aa3754e96f06cd4cab28370cf8733f39f}\index{FMaterial@{FMaterial}!NextSortId@{NextSortId}}
+\index{NextSortId@{NextSortId}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{NextSortId}{NextSortId}}
+{\footnotesize\ttfamily \label{class_f_material_aa3754e96f06cd4cab28370cf8733f39f} 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} FMaterial::\+\+Next\+Sort\+Id = 0\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}, {\ttfamily [protected]}}
+
+\Hypertarget{class_f_material_af2d8c774bf0f5520f120ee36bd63539e}\index{FMaterial@{FMaterial}!OriginName@{OriginName}}
+\index{OriginName@{OriginName}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{OriginName}{OriginName}}
+{\footnotesize\ttfamily \label{class_f_material_af2d8c774bf0f5520f120ee36bd63539e} 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} FMaterial::\+\+Origin\+Name\hspace{0.3cm}{\ttfamily [protected]}}
+
+\Hypertarget{class_f_material_a54a997beec25b5f7bcd384192c9a6943}\index{FMaterial@{FMaterial}!ParameterMap@{ParameterMap}}
+\index{ParameterMap@{ParameterMap}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{ParameterMap}{ParameterMap}}
+{\footnotesize\ttfamily \label{class_f_material_a54a997beec25b5f7bcd384192c9a6943} 
+\doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap}}$<$\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}, \doxymbox{\hyperlink{struct_f_material_parameter_info}{FMaterial\+Parameter\+Info}}$>$ FMaterial::\+\+Parameter\+Map\hspace{0.3cm}{\ttfamily [protected]}}
+
+\Hypertarget{class_f_material_a4754471ae1a644b905aa7143fffda3a5}\index{FMaterial@{FMaterial}!PixelShader@{PixelShader}}
+\index{PixelShader@{PixelShader}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{PixelShader}{PixelShader}}
+{\footnotesize\ttfamily \label{class_f_material_a4754471ae1a644b905aa7143fffda3a5} 
+std::\+shared\+\_\+ptr$<$\doxymbox{\hyperlink{class_f_pixel_shader}{FPixel\+Shader}}$>$ FMaterial::\+\+Pixel\+Shader\hspace{0.3cm}{\ttfamily [protected]}}
+
+\Hypertarget{class_f_material_a3631f4b05eda35a7409967bfddd3cf09}\index{FMaterial@{FMaterial}!SortId@{SortId}}
+\index{SortId@{SortId}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{SortId}{SortId}}
+{\footnotesize\ttfamily \label{class_f_material_a3631f4b05eda35a7409967bfddd3cf09} 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} FMaterial::\+\+Sort\+Id = 0\hspace{0.3cm}{\ttfamily [protected]}}
+
+\Hypertarget{class_f_material_a73c3bd3bcb59024db386aeedf408193b}\index{FMaterial@{FMaterial}!VertexShader@{VertexShader}}
+\index{VertexShader@{VertexShader}!FMaterial@{FMaterial}}
+\doxysubsubsection{\texorpdfstring{VertexShader}{VertexShader}}
+{\footnotesize\ttfamily \label{class_f_material_a73c3bd3bcb59024db386aeedf408193b} 
+std::\+shared\+\_\+ptr$<$\doxymbox{\hyperlink{class_f_vertex_shader}{FVertex\+Shader}}$>$ FMaterial::\+\+Vertex\+Shader\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Renderer/\+\doxymbox{\hyperlink{_material_8h}{Material.\+h}}\item 
+Engine/\+\+Source/\+\+Renderer/\+\doxymbox{\hyperlink{_material_8cpp}{Material.\+cpp}}\end{DoxyCompactItemize}

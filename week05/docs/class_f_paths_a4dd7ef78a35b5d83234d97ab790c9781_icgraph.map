@@ -1,0 +1,11 @@
+<map id="FPaths::MeshDir" name="FPaths::MeshDir">
+<area shape="rect" id="Node000001" title=" " alt="" coords="254,81,374,108"/>
+<area shape="rect" id="Node000002" href="$class_c_primitive_cube.html#a79f242ea0b23954d0fcd7c2c1bad77d8" title=" " alt="" coords="10,5,201,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="271,74,205,46,169,35,168,30,207,42,276,73"/>
+<area shape="rect" id="Node000003" href="$class_c_primitive_plane.html#a6d8786cc3a5b016a1acf650b5fb9bdd4" title=" " alt="" coords="9,56,202,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="235,86,203,84,202,78,241,85"/>
+<area shape="rect" id="Node000004" href="$class_c_primitive_sky.html#a6529df5fdb9e4d115f36d47721a3571d" title=" " alt="" coords="14,107,197,133"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="235,105,198,111,197,106,240,103"/>
+<area shape="rect" id="Node000005" href="$class_c_primitive_sphere.html#a88c1c7aa1ec04297a59aad81533e0b75" title=" " alt="" coords="5,157,206,184"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="276,115,207,148,169,159,168,154,205,143,271,116"/>
+</map>

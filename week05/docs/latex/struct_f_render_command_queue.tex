@@ -1,0 +1,101 @@
+\doxysection{FRender\+Command\+Queue Struct Reference}
+\hypertarget{struct_f_render_command_queue}{}\label{struct_f_render_command_queue}\index{FRenderCommandQueue@{FRenderCommandQueue}}
+
+
+{\ttfamily \+\#include $<$Render\+Command.\+h$>$}
+
+
+
+Collaboration diagram for FRender\+Command\+Queue:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{struct_f_render_command_queue__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \doxymbox{\hyperlink{struct_f_render_command_queue_a126b7050b8004c6f0c8311b77717592f}{Reserve}} (size\+\_\+t Count)
+\item 
+void \doxymbox{\hyperlink{struct_f_render_command_queue_a5ff266b0bfb72001ec1ca07e46e6ebf6}{Add\+Command}} (const \doxymbox{\hyperlink{struct_f_render_command}{FRender\+Command}} \&Cmd)
+\item 
+void \doxymbox{\hyperlink{struct_f_render_command_queue_a37e3d5bc8279718777aa57380aa4186f}{Clear}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$ \doxymbox{\hyperlink{struct_f_render_command}{FRender\+Command}} $>$ \doxymbox{\hyperlink{struct_f_render_command_queue_af5288446ec4e739ebbfb2a26e063eecd}{Commands}}
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_render_command_queue_af57bb098260195607af4b01d0b8e7a26}{View\+Matrix}}
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_render_command_queue_a838b8f2b1260f02752382120b6c345a0}{Projection\+Matrix}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-func-members}
+\Hypertarget{struct_f_render_command_queue_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{struct_f_render_command_queue_a5ff266b0bfb72001ec1ca07e46e6ebf6}\index{FRenderCommandQueue@{FRenderCommandQueue}!AddCommand@{AddCommand}}
+\index{AddCommand@{AddCommand}!FRenderCommandQueue@{FRenderCommandQueue}}
+\doxysubsubsection{\texorpdfstring{AddCommand()}{AddCommand()}}
+{\footnotesize\ttfamily \label{struct_f_render_command_queue_a5ff266b0bfb72001ec1ca07e46e6ebf6} 
+void FRender\+Command\+Queue::\+\+Add\+Command (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_render_command}{FRender\+Command}} \&}]{Cmd}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_render_command_queue_a5ff266b0bfb72001ec1ca07e46e6ebf6_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_render_command_queue_a37e3d5bc8279718777aa57380aa4186f}\index{FRenderCommandQueue@{FRenderCommandQueue}!Clear@{Clear}}
+\index{Clear@{Clear}!FRenderCommandQueue@{FRenderCommandQueue}}
+\doxysubsubsection{\texorpdfstring{Clear()}{Clear()}}
+{\footnotesize\ttfamily \label{struct_f_render_command_queue_a37e3d5bc8279718777aa57380aa4186f} 
+void FRender\+Command\+Queue::\+\+Clear (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{struct_f_render_command_queue_a126b7050b8004c6f0c8311b77717592f}\index{FRenderCommandQueue@{FRenderCommandQueue}!Reserve@{Reserve}}
+\index{Reserve@{Reserve}!FRenderCommandQueue@{FRenderCommandQueue}}
+\doxysubsubsection{\texorpdfstring{Reserve()}{Reserve()}}
+{\footnotesize\ttfamily \label{struct_f_render_command_queue_a126b7050b8004c6f0c8311b77717592f} 
+void FRender\+Command\+Queue::\+\+Reserve (\begin{DoxyParamCaption}\item[{size\+\_\+t}]{Count}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_render_command_queue_a126b7050b8004c6f0c8311b77717592f_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{struct_f_render_command_queue_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{struct_f_render_command_queue_af5288446ec4e739ebbfb2a26e063eecd}\index{FRenderCommandQueue@{FRenderCommandQueue}!Commands@{Commands}}
+\index{Commands@{Commands}!FRenderCommandQueue@{FRenderCommandQueue}}
+\doxysubsubsection{\texorpdfstring{Commands}{Commands}}
+{\footnotesize\ttfamily \label{struct_f_render_command_queue_af5288446ec4e739ebbfb2a26e063eecd} 
+\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$\doxymbox{\hyperlink{struct_f_render_command}{FRender\+Command}}$>$ FRender\+Command\+Queue::\+\+Commands}
+
+\Hypertarget{struct_f_render_command_queue_a838b8f2b1260f02752382120b6c345a0}\index{FRenderCommandQueue@{FRenderCommandQueue}!ProjectionMatrix@{ProjectionMatrix}}
+\index{ProjectionMatrix@{ProjectionMatrix}!FRenderCommandQueue@{FRenderCommandQueue}}
+\doxysubsubsection{\texorpdfstring{ProjectionMatrix}{ProjectionMatrix}}
+{\footnotesize\ttfamily \label{struct_f_render_command_queue_a838b8f2b1260f02752382120b6c345a0} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FRender\+Command\+Queue::\+\+Projection\+Matrix}
+
+\Hypertarget{struct_f_render_command_queue_af57bb098260195607af4b01d0b8e7a26}\index{FRenderCommandQueue@{FRenderCommandQueue}!ViewMatrix@{ViewMatrix}}
+\index{ViewMatrix@{ViewMatrix}!FRenderCommandQueue@{FRenderCommandQueue}}
+\doxysubsubsection{\texorpdfstring{ViewMatrix}{ViewMatrix}}
+{\footnotesize\ttfamily \label{struct_f_render_command_queue_af57bb098260195607af4b01d0b8e7a26} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FRender\+Command\+Queue::\+\+View\+Matrix}
+
+
+
+The documentation for this struct was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Renderer/\+\doxymbox{\hyperlink{_render_command_8h}{Render\+Command.\+h}}\end{DoxyCompactItemize}

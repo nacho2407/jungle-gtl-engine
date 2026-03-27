@@ -1,0 +1,30 @@
+\doxysection{Shader\+Manager.\+h}
+\hypertarget{_shader_manager_8h_source}{}\label{_shader_manager_8h_source}\index{Engine/Source/Renderer/ShaderManager.h@{Engine/Source/Renderer/ShaderManager.h}}
+\doxymbox{\hyperlink{_shader_manager_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <d3d11.h>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_f_vertex_shader}{FVertexShader}};}
+\DoxyCodeLine{00008\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_f_pixel_shader}{FPixelShader}};}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_c_shader_manager_a51cc660a9c8c4e0b3589385072c2d31d}{CShaderManager}}}
+\DoxyCodeLine{00011\ \{}
+\DoxyCodeLine{00012\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00013\ \ \ \ \ \doxymbox{\hyperlink{class_c_shader_manager_a51cc660a9c8c4e0b3589385072c2d31d}{CShaderManager}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00014\ \ \ \ \ \doxymbox{\hyperlink{class_c_shader_manager_a51cc660a9c8c4e0b3589385072c2d31d}{\string~CShaderManager}}();}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_shader_manager_a4097ad5cdaafb09967116814bcdf5532}{LoadVertexShader}}(ID3D11Device*\ Device,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{wchar\_t}*\ FilePath);}
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_shader_manager_ad61f1447da0e34ef0824b7121fe2459a}{LoadPixelShader}}(ID3D11Device*\ Device,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{wchar\_t}*\ FilePath);}
+\DoxyCodeLine{00018\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_shader_manager_a62d7483cf5a5bab1376f30c2a39f79da}{Bind}}(ID3D11DeviceContext*\ DeviceContext);}
+\DoxyCodeLine{00019\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_shader_manager_a5f5a58d9a6c52df5f8147e6a1297bf12}{Release}}();}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00022\ \ \ \ \ std::shared\_ptr<FVertexShader>\ \doxymbox{\hyperlink{class_c_shader_manager_acc8d8dd1859913c8321c91f95bdff192}{VS}};}
+\DoxyCodeLine{00023\ \ \ \ \ std::shared\_ptr<FPixelShader>\ \doxymbox{\hyperlink{class_c_shader_manager_ab897278f8e61253cb7cf9e3811330949}{PS}};}
+\DoxyCodeLine{00024\ \};}
+
+\end{DoxyCode}

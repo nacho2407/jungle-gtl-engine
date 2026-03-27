@@ -1,0 +1,27 @@
+var class_t_object_ptr =
+[
+    [ "TObjectPtr", "class_t_object_ptr.html#a01020a5c90b640348677eb44b4a1629f", null ],
+    [ "TObjectPtr", "class_t_object_ptr.html#a834d25724445933697467fa5eb645c0f", null ],
+    [ "TObjectPtr", "class_t_object_ptr.html#ae3c2c7dcc1976a444cd730eddcfb614e", null ],
+    [ "TObjectPtr", "class_t_object_ptr.html#a76b21fb95b7bb4bcc77c44555e56a5c3", null ],
+    [ "TObjectPtr", "class_t_object_ptr.html#ae40686d40839d1ff97d57e22a92791ac", null ],
+    [ "TObjectPtr", "class_t_object_ptr.html#a3879c9fdb81c71d9b2e8731f0bd4453e", null ],
+    [ "Get", "class_t_object_ptr.html#ad4192b73fc07500cd142ef0f239cbab4", null ],
+    [ "GetCachedPtr", "class_t_object_ptr.html#aef0b02b2484127344dae73255a41dcd8", null ],
+    [ "GetUUID", "class_t_object_ptr.html#ae6456aca45febe84ad527f201feb8f33", null ],
+    [ "IsNull", "class_t_object_ptr.html#a56a8d094c0c06106991f3704792a3806", null ],
+    [ "IsPending", "class_t_object_ptr.html#ac72b3f5906413cfb80ef10c75af7509c", null ],
+    [ "IsValid", "class_t_object_ptr.html#a1ccc4442c2ad5ca65456918ac25f00b2", null ],
+    [ "operator bool", "class_t_object_ptr.html#af4dd0cc6c1ba7f8c0d944c3d8cc6055d", null ],
+    [ "operator T*", "class_t_object_ptr.html#af9a0808c369c21be0e13fb60acbe2f26", null ],
+    [ "operator*", "class_t_object_ptr.html#a6f4f8cfd6a10fefd50b60e99d4fb2d49", null ],
+    [ "operator->", "class_t_object_ptr.html#aa2b1a35605ac147a9c6f6e554ba25610", null ],
+    [ "operator=", "class_t_object_ptr.html#a36f8b4c65c112cb988a3f8df77c9edd8", null ],
+    [ "operator=", "class_t_object_ptr.html#a2bacd1c1d731cfa5afe32afed2233450", null ],
+    [ "operator=", "class_t_object_ptr.html#a748bdc641f7765be6298d5b84259608a", null ],
+    [ "operator=", "class_t_object_ptr.html#ab583c4094e3c6e3010c0d0316530473a", null ],
+    [ "operator=", "class_t_object_ptr.html#afd318157991b42d2ce15172a431a2b67", null ],
+    [ "Reset", "class_t_object_ptr.html#addaa0484050993250f0098ba3586324c", null ],
+    [ "CachedPtr", "class_t_object_ptr.html#aee1bbe8ef3dd0fe9fd612cf54e2384bc", null ],
+    [ "ObjectUUID", "class_t_object_ptr.html#a19e0295439e0ef17e6743399c259db23", null ]
+];

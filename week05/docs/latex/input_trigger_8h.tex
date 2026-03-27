@@ -1,0 +1,149 @@
+\doxysection{Engine/\+\+Source/\+\+Input/\+input\+Trigger.h File Reference}
+\hypertarget{input_trigger_8h}{}\label{input_trigger_8h}\index{Engine/Source/Input/inputTrigger.h@{Engine/Source/Input/inputTrigger.h}}
+{\ttfamily \+\#include "{}Input\+Action.\+h"{}}\newline
+Include dependency graph for input\+Trigger.\+h:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{input_trigger_8h__incl}
+\end{center}
+\end{figure}
+This graph shows which files directly or indirectly include this file:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{input_trigger_8h__dep__incl}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+class \doxymbox{\hyperlink{class_f_input_trigger}{FInput\+Trigger}}
+\item 
+class \doxymbox{\hyperlink{class_f_trigger_down}{FTrigger\+Down}}
+\item 
+class \doxymbox{\hyperlink{class_f_trigger_pressed}{FTrigger\+Pressed}}
+\item 
+class \doxymbox{\hyperlink{class_f_input_released}{FInput\+Released}}
+\item 
+class \doxymbox{\hyperlink{class_f_input_hold}{FInput\+Hold}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Enumerations}
+\begin{DoxyCompactItemize}
+\item 
+enum class \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50ec}{ETrigger\+State}} :\+ uint32 \{ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca6adf97f83acf6453d4a6a4b1070f3754}{None}}
+, \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca7ee7defde6dc3a1d4a4a891b3894e790}{Ongoing}}
+, \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca073b1bbd5b71098e61f7c3b8240a29bf}{Triggered}}
+ \}
+\item 
+enum class \doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETrigger\+Event}} :\+ uint32 \{ \newline
+\doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797ca6adf97f83acf6453d4a6a4b1070f3754}{None}} = 0
+, \doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797ca8428552d86c0d262a542a528af490afa}{Started}} = 1 \texorpdfstring{$<$}{<}\texorpdfstring{$<$}{<} 0
+, \doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797ca7ee7defde6dc3a1d4a4a891b3894e790}{Ongoing}} = 1 \texorpdfstring{$<$}{<}\texorpdfstring{$<$}{<} 1
+, \doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797ca073b1bbd5b71098e61f7c3b8240a29bf}{Triggered}} = 1 \texorpdfstring{$<$}{<}\texorpdfstring{$<$}{<} 2
+, \newline
+\doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797ca07ca5050e697392c9ed47e6453f1453f}{Completed}} = 1 \texorpdfstring{$<$}{<}\texorpdfstring{$<$}{<} 3
+, \doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797ca0e22fe7d45f8e5632a4abf369b24e29c}{Canceled}} = 1 \texorpdfstring{$<$}{<}\texorpdfstring{$<$}{<} 4
+ \}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETrigger\+Event}} \doxymbox{\hyperlink{input_trigger_8h_a5cb5eac29439f7cc07beba44694dc96e}{operator\texorpdfstring{$\vert$}{|}}} (\doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETrigger\+Event}} A, \doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETrigger\+Event}} B)
+\item 
+bool \doxymbox{\hyperlink{input_trigger_8h_aa91ca55b41b3076a0e831d335bc34bb9}{operator\&}} (\doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETrigger\+Event}} A, \doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETrigger\+Event}} B)
+\end{DoxyCompactItemize}
+
+
+\label{doc-enum-members}
+\Hypertarget{input_trigger_8h_doc-enum-members}
+\doxysubsection{Enumeration Type Documentation}
+\Hypertarget{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}\index{inputTrigger.h@{inputTrigger.h}!ETriggerEvent@{ETriggerEvent}}
+\index{ETriggerEvent@{ETriggerEvent}!inputTrigger.h@{inputTrigger.h}}
+\doxysubsubsection{\texorpdfstring{ETriggerEvent}{ETriggerEvent}}
+{\footnotesize\ttfamily \label{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c} 
+enum class \doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETrigger\+Event}} :\+ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\hspace{0.3cm}{\ttfamily [strong]}}
+
+\begin{DoxyEnumFields}[2]{Enumerator}
+\raisebox{\heightof{T}}[0pt][0pt]{\index{None@{None}!inputTrigger.h@{inputTrigger.h}}
+\index{inputTrigger.h@{inputTrigger.h}!None@{None}}
+}\Hypertarget{input_trigger_8h_a942d0291b297b97655aad0c8bb91797ca6adf97f83acf6453d4a6a4b1070f3754}\label{input_trigger_8h_a942d0291b297b97655aad0c8bb91797ca6adf97f83acf6453d4a6a4b1070f3754} 
+None&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Started@{Started}!inputTrigger.h@{inputTrigger.h}}
+\index{inputTrigger.h@{inputTrigger.h}!Started@{Started}}
+}\Hypertarget{input_trigger_8h_a942d0291b297b97655aad0c8bb91797ca8428552d86c0d262a542a528af490afa}\label{input_trigger_8h_a942d0291b297b97655aad0c8bb91797ca8428552d86c0d262a542a528af490afa} 
+Started&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Ongoing@{Ongoing}!inputTrigger.h@{inputTrigger.h}}
+\index{inputTrigger.h@{inputTrigger.h}!Ongoing@{Ongoing}}
+}\Hypertarget{input_trigger_8h_a942d0291b297b97655aad0c8bb91797ca7ee7defde6dc3a1d4a4a891b3894e790}\label{input_trigger_8h_a942d0291b297b97655aad0c8bb91797ca7ee7defde6dc3a1d4a4a891b3894e790} 
+Ongoing&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Triggered@{Triggered}!inputTrigger.h@{inputTrigger.h}}
+\index{inputTrigger.h@{inputTrigger.h}!Triggered@{Triggered}}
+}\Hypertarget{input_trigger_8h_a942d0291b297b97655aad0c8bb91797ca073b1bbd5b71098e61f7c3b8240a29bf}\label{input_trigger_8h_a942d0291b297b97655aad0c8bb91797ca073b1bbd5b71098e61f7c3b8240a29bf} 
+Triggered&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Completed@{Completed}!inputTrigger.h@{inputTrigger.h}}
+\index{inputTrigger.h@{inputTrigger.h}!Completed@{Completed}}
+}\Hypertarget{input_trigger_8h_a942d0291b297b97655aad0c8bb91797ca07ca5050e697392c9ed47e6453f1453f}\label{input_trigger_8h_a942d0291b297b97655aad0c8bb91797ca07ca5050e697392c9ed47e6453f1453f} 
+Completed&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Canceled@{Canceled}!inputTrigger.h@{inputTrigger.h}}
+\index{inputTrigger.h@{inputTrigger.h}!Canceled@{Canceled}}
+}\Hypertarget{input_trigger_8h_a942d0291b297b97655aad0c8bb91797ca0e22fe7d45f8e5632a4abf369b24e29c}\label{input_trigger_8h_a942d0291b297b97655aad0c8bb91797ca0e22fe7d45f8e5632a4abf369b24e29c} 
+Canceled&\\
+\hline
+
+\end{DoxyEnumFields}
+\Hypertarget{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50ec}\index{inputTrigger.h@{inputTrigger.h}!ETriggerState@{ETriggerState}}
+\index{ETriggerState@{ETriggerState}!inputTrigger.h@{inputTrigger.h}}
+\doxysubsubsection{\texorpdfstring{ETriggerState}{ETriggerState}}
+{\footnotesize\ttfamily \label{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50ec} 
+enum class \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50ec}{ETrigger\+State}} :\+ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\hspace{0.3cm}{\ttfamily [strong]}}
+
+\begin{DoxyEnumFields}[2]{Enumerator}
+\raisebox{\heightof{T}}[0pt][0pt]{\index{None@{None}!inputTrigger.h@{inputTrigger.h}}
+\index{inputTrigger.h@{inputTrigger.h}!None@{None}}
+}\Hypertarget{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca6adf97f83acf6453d4a6a4b1070f3754}\label{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca6adf97f83acf6453d4a6a4b1070f3754} 
+None&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Ongoing@{Ongoing}!inputTrigger.h@{inputTrigger.h}}
+\index{inputTrigger.h@{inputTrigger.h}!Ongoing@{Ongoing}}
+}\Hypertarget{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca7ee7defde6dc3a1d4a4a891b3894e790}\label{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca7ee7defde6dc3a1d4a4a891b3894e790} 
+Ongoing&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Triggered@{Triggered}!inputTrigger.h@{inputTrigger.h}}
+\index{inputTrigger.h@{inputTrigger.h}!Triggered@{Triggered}}
+}\Hypertarget{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca073b1bbd5b71098e61f7c3b8240a29bf}\label{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca073b1bbd5b71098e61f7c3b8240a29bf} 
+Triggered&\\
+\hline
+
+\end{DoxyEnumFields}
+
+
+\label{doc-func-members}
+\Hypertarget{input_trigger_8h_doc-func-members}
+\doxysubsection{Function Documentation}
+\Hypertarget{input_trigger_8h_aa91ca55b41b3076a0e831d335bc34bb9}\index{inputTrigger.h@{inputTrigger.h}!operator\&@{operator\&}}
+\index{operator\&@{operator\&}!inputTrigger.h@{inputTrigger.h}}
+\doxysubsubsection{\texorpdfstring{operator\&()}{operator\&()}}
+{\footnotesize\ttfamily \label{input_trigger_8h_aa91ca55b41b3076a0e831d335bc34bb9} 
+bool operator\& (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETrigger\+Event}}}]{A}{, }\item[{\doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETrigger\+Event}}}]{B}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{input_trigger_8h_a5cb5eac29439f7cc07beba44694dc96e}\index{inputTrigger.h@{inputTrigger.h}!operator\texttt{"|}@{operator\texttt{"|}}}
+\index{operator\texttt{"|}@{operator\texttt{"|}}!inputTrigger.h@{inputTrigger.h}}
+\doxysubsubsection{\texorpdfstring{operator\texttt{"|}()}{operator|()}}
+{\footnotesize\ttfamily \label{input_trigger_8h_a5cb5eac29439f7cc07beba44694dc96e} 
+\doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETrigger\+Event}} operator\texorpdfstring{$\vert$}{|} (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETrigger\+Event}}}]{A}{, }\item[{\doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETrigger\+Event}}}]{B}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+

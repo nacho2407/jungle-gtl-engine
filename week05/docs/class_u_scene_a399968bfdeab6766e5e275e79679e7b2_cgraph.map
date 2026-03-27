@@ -1,0 +1,9 @@
+<map id="UScene::Tick" name="UScene::Tick">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,35,107,61"/>
+<area shape="rect" id="Node000002" href="$class_u_scene.html#a499745d50d89cee0d9408e76d33073b0" title=" " alt="" coords="179,5,314,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="107,38,166,30,161,33,108,43"/>
+<area shape="rect" id="Node000003" href="$class_u_scene.html#a6ae59eca200daf53ecb7905f4f61a6dd" title=" " alt="" coords="155,56,339,99"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="107,53,142,60,136,61,107,58"/>
+<area shape="rect" id="Node000004" href="$class_a_actor.html#a40908efd0d6c79a91d15c8888a3a1537" title=" " alt="" coords="387,64,560,91"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="339,75,374,77,369,77,339,80"/>
+</map>

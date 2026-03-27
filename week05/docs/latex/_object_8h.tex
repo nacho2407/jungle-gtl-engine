@@ -1,0 +1,124 @@
+\doxysection{Engine/\+\+Source/\+\+Object/\+\+Object.h File Reference}
+\hypertarget{_object_8h}{}\label{_object_8h}\index{Engine/Source/Object/Object.h@{Engine/Source/Object/Object.h}}
+{\ttfamily \+\#include "{}Core\+Minimal.\+h"{}}\newline
+{\ttfamily \+\#include "{}Object\+Types.\+h"{}}\newline
+{\ttfamily \+\#include "{}Types/\+\+Object\+Ptr.\+h"{}}\newline
+Include dependency graph for Object.\+h:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_object_8h__incl}
+\end{center}
+\end{figure}
+This graph shows which files directly or indirectly include this file:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_object_8h__dep__incl}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+class \doxymbox{\hyperlink{class_u_object}{UObject}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Concepts}
+\begin{DoxyCompactItemize}
+\item 
+concept \doxymbox{\hyperlink{concept_has_initialize}{Has\+Initialize}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\+\#define \doxymbox{\hyperlink{_object_8h_a357d06a2d2ae2eccd8dc94b17f17a710}{DECLARE\+\_\+\+RTTI}}(Class\+Name,  Parent\+Class\+Name)
+\item 
+\+\#define \doxymbox{\hyperlink{_object_8h_aea45a81c1adafd4dca6f2fb50cb47b02}{IMPLEMENT\+\_\+\+RTTI}}(Class\+Name,  Parent\+Class\+Name)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+{\footnotesize template$<$typename T$>$ }\\void \doxymbox{\hyperlink{_object_8h_a165da62e96e415f8639dcc539470c63f}{Initialize\+If\+Able}} (T \texorpdfstring{$\ast$}{*}obj)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\+\_\+\+API}} \doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$ \doxymbox{\hyperlink{class_u_object}{UObject}} \texorpdfstring{$\ast$}{*} $>$ \doxymbox{\hyperlink{_object_8h_a7a44810d013512ef47e01fbc7bf04821}{GUObject\+Array}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-define-members}
+\Hypertarget{_object_8h_doc-define-members}
+\doxysubsection{Macro Definition Documentation}
+\Hypertarget{_object_8h_a357d06a2d2ae2eccd8dc94b17f17a710}\index{Object.h@{Object.h}!DECLARE\_RTTI@{DECLARE\_RTTI}}
+\index{DECLARE\_RTTI@{DECLARE\_RTTI}!Object.h@{Object.h}}
+\doxysubsubsection{\texorpdfstring{DECLARE\_RTTI}{DECLARE\_RTTI}}
+{\footnotesize\ttfamily \label{_object_8h_a357d06a2d2ae2eccd8dc94b17f17a710} 
+\+\#define DECLARE\+\_\+\+RTTI(\begin{DoxyParamCaption}\item[{}]{Class\+Name}{, }\item[{}]{Parent\+Class\+Name}{}\end{DoxyParamCaption})}
+
+{\bfseries Value:\+}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{keyword}{public}:\ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{class_u_class}{UClass}}*\ StaticClass();\ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \textcolor{keyword}{virtual}\ \doxymbox{\hyperlink{class_u_class}{UClass}}*\ GetClass()\ const\ override\ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \{\ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ ClassName::StaticClass();\ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \}\ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ ClassName()\ :\ ParentClassName(\textcolor{stringliteral}{"{}"{}})\ \{\ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ InitializeIfAble(\textcolor{keyword}{this});\ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \}\ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ ClassName(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ InName,\ UObject*\ InOuter\ =\ \textcolor{keyword}{nullptr})\ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ :\ ParentClassName(InName,\ InOuter)\ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \{\ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ InitializeIfAble(\textcolor{keyword}{this});\ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \}}
+
+\end{DoxyCode}
+\Hypertarget{_object_8h_aea45a81c1adafd4dca6f2fb50cb47b02}\index{Object.h@{Object.h}!IMPLEMENT\_RTTI@{IMPLEMENT\_RTTI}}
+\index{IMPLEMENT\_RTTI@{IMPLEMENT\_RTTI}!Object.h@{Object.h}}
+\doxysubsubsection{\texorpdfstring{IMPLEMENT\_RTTI}{IMPLEMENT\_RTTI}}
+{\footnotesize\ttfamily \label{_object_8h_aea45a81c1adafd4dca6f2fb50cb47b02} 
+\+\#define IMPLEMENT\+\_\+\+RTTI(\begin{DoxyParamCaption}\item[{}]{Class\+Name}{, }\item[{}]{Parent\+Class\+Name}{}\end{DoxyParamCaption})}
+
+{\bfseries Value:\+}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{keyword}{namespace\ }\{\ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \doxymbox{\hyperlink{class_u_object}{UObject}}*\ Create\#\#ClassName\#\#Instance(\doxymbox{\hyperlink{class_u_object}{UObject}}*\ InOuter,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ InName)\ \{\ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{new}\ ClassName(InName,\ InOuter);\ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \}\ \(\backslash\)}
+\DoxyCodeLine{\}\ \(\backslash\)}
+\DoxyCodeLine{UClass*\ ClassName::StaticClass()\ \{\ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \textcolor{keyword}{static}\ UClass\ ClassInfo\ =\ \{\ \(\backslash\)}
+\DoxyCodeLine{\textcolor{preprocessor}{\ \ \ \ \ \ \ \ \#ClassName,\ \(\backslash\)}}
+\DoxyCodeLine{\textcolor{preprocessor}{\ \ \ \ \ \ \ \ ParentClassName::StaticClass(),\ \ \(\backslash\)}}
+\DoxyCodeLine{\textcolor{preprocessor}{\ \ \ \ \ \ \ \ Create\#\#ClassName\#\#Instance\ \(\backslash\)}}
+\DoxyCodeLine{\textcolor{preprocessor}{\ \ \ \ \};\ \(\backslash\)}}
+\DoxyCodeLine{\textcolor{preprocessor}{\ \ \ \ return\ \&ClassInfo;\ \(\backslash\)}}
+\DoxyCodeLine{\textcolor{preprocessor}{\}}}
+
+\end{DoxyCode}
+
+
+\label{doc-func-members}
+\Hypertarget{_object_8h_doc-func-members}
+\doxysubsection{Function Documentation}
+\Hypertarget{_object_8h_a165da62e96e415f8639dcc539470c63f}\index{Object.h@{Object.h}!InitializeIfAble@{InitializeIfAble}}
+\index{InitializeIfAble@{InitializeIfAble}!Object.h@{Object.h}}
+\doxysubsubsection{\texorpdfstring{InitializeIfAble()}{InitializeIfAble()}}
+{\footnotesize\ttfamily \label{_object_8h_a165da62e96e415f8639dcc539470c63f} 
+template$<$typename T$>$ \\
+void Initialize\+If\+Able (\begin{DoxyParamCaption}\item[{T \texorpdfstring{$\ast$}{*}}]{obj}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+\label{doc-var-members}
+\Hypertarget{_object_8h_doc-var-members}
+\doxysubsection{Variable Documentation}
+\Hypertarget{_object_8h_a7a44810d013512ef47e01fbc7bf04821}\index{Object.h@{Object.h}!GUObjectArray@{GUObjectArray}}
+\index{GUObjectArray@{GUObjectArray}!Object.h@{Object.h}}
+\doxysubsubsection{\texorpdfstring{GUObjectArray}{GUObjectArray}}
+{\footnotesize\ttfamily \label{_object_8h_a7a44810d013512ef47e01fbc7bf04821} 
+\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\+\_\+\+API}} \doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$\doxymbox{\hyperlink{class_u_object}{UObject}}\texorpdfstring{$\ast$}{*}$>$ GUObject\+Array\hspace{0.3cm}{\ttfamily [extern]}}
+

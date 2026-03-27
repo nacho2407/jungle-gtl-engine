@@ -1,0 +1,114 @@
+\doxysection{input\+Trigger.\+h}
+\hypertarget{input_trigger_8h_source}{}\label{input_trigger_8h_source}\index{Engine/Source/Input/inputTrigger.h@{Engine/Source/Input/inputTrigger.h}}
+\doxymbox{\hyperlink{input_trigger_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_input_action_8h}{InputAction.h}}"{}}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{keyword}{enum\ class}\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50ec}{ETriggerState}}\ :\ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}}
+\DoxyCodeLine{00005\ \{}
+\DoxyCodeLine{00006\ \ \ \ \ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca6adf97f83acf6453d4a6a4b1070f3754}{None}},}
+\DoxyCodeLine{00007\ \ \ \ \ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca7ee7defde6dc3a1d4a4a891b3894e790}{Ongoing}},}
+\DoxyCodeLine{00008\ \ \ \ \ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca073b1bbd5b71098e61f7c3b8240a29bf}{Triggered}},}
+\DoxyCodeLine{00009\ \};}
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00011\ \textcolor{keyword}{enum\ class}\ \doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETriggerEvent}}\ :\ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}}
+\DoxyCodeLine{00012\ \{}
+\DoxyCodeLine{00013\ \ \ \ \ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca6adf97f83acf6453d4a6a4b1070f3754}{None}}\ =\ 0,}
+\DoxyCodeLine{00014\ \ \ \ \ \doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797ca8428552d86c0d262a542a528af490afa}{Started}}\ =\ 1\ <<\ 0,}
+\DoxyCodeLine{00015\ \ \ \ \ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca7ee7defde6dc3a1d4a4a891b3894e790}{Ongoing}}\ =\ 1\ <<\ 1,}
+\DoxyCodeLine{00016\ \ \ \ \ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca073b1bbd5b71098e61f7c3b8240a29bf}{Triggered}}\ =\ 1\ <<\ 2,}
+\DoxyCodeLine{00017\ \ \ \ \ \doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797ca07ca5050e697392c9ed47e6453f1453f}{Completed}}\ =\ 1\ <<\ 3,}
+\DoxyCodeLine{00018\ \ \ \ \ \doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797ca0e22fe7d45f8e5632a4abf369b24e29c}{Canceled}}\ =\ 1\ <<\ 4,}
+\DoxyCodeLine{00019\ \};}
+\DoxyCodeLine{00020\ \textcolor{keyword}{inline}\ \doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETriggerEvent}}\ \doxymbox{\hyperlink{input_trigger_8h_a5cb5eac29439f7cc07beba44694dc96e}{operator|}}(\doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETriggerEvent}}\ A,\ \doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETriggerEvent}}\ B)}
+\DoxyCodeLine{00021\ \{}
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{static\_cast<}\doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETriggerEvent}}\textcolor{keyword}{>}(\textcolor{keyword}{static\_cast<}\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\textcolor{keyword}{>}(A)\ |\ \textcolor{keyword}{static\_cast<}\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\textcolor{keyword}{>}(B));}
+\DoxyCodeLine{00023\ \}}
+\DoxyCodeLine{00024\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{input_trigger_8h_aa91ca55b41b3076a0e831d335bc34bb9}{operator\&}}(\doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETriggerEvent}}\ A,\ \doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETriggerEvent}}\ B)}
+\DoxyCodeLine{00025\ \{}
+\DoxyCodeLine{00026\ \ \ \ \ \textcolor{keywordflow}{return}\ (\textcolor{keyword}{static\_cast<}\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\textcolor{keyword}{>}(A)\ \&\ \textcolor{keyword}{static\_cast<}\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\textcolor{keyword}{>}(B))\ !=\ 0;}
+\DoxyCodeLine{00027\ \}}
+\DoxyCodeLine{00028\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_input_trigger}{FInputTrigger}}}
+\DoxyCodeLine{00029\ \{}
+\DoxyCodeLine{00030\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{keyword}{virtual}\ \doxymbox{\hyperlink{class_f_input_trigger_a9cae88f48fb9589283c4fd0585393001}{\string~FInputTrigger}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keyword}{virtual}\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50ec}{ETriggerState}}\ \doxymbox{\hyperlink{class_f_input_trigger_a65d9f63b8860b1282ab4f9d4842f63e4}{UpdateState}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_input_action_value}{FInputActionValue}}\&\ Value,\ \textcolor{keywordtype}{float}\ DeltaTime)\ =\ 0;}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_input_trigger_a92ba50a57724ec8e429d1132615c29e8}{Reset}}()\ \{\ \doxymbox{\hyperlink{class_f_input_trigger_a02e173a61782da7b3d406dad6ea58e66}{LastState}}\ =\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca6adf97f83acf6453d4a6a4b1070f3754}{ETriggerState::None}};\ \}}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \ \ \ \ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50ec}{ETriggerState}}\ \doxymbox{\hyperlink{class_f_input_trigger_a02e173a61782da7b3d406dad6ea58e66}{LastState}}\ =\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca6adf97f83acf6453d4a6a4b1070f3754}{ETriggerState::None}};}
+\DoxyCodeLine{00036\ \};}
+\DoxyCodeLine{00037\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_trigger_down}{FTriggerDown}}\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{class_f_input_trigger}{FInputTrigger}}\textcolor{comment}{//눌린동안}}
+\DoxyCodeLine{00038\ \{}
+\DoxyCodeLine{00039\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00040\ \ \ \ \ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50ec}{ETriggerState}}\ \doxymbox{\hyperlink{class_f_trigger_down_a60ac84a928a6752c63de17fd0f62d365}{UpdateState}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_input_action_value}{FInputActionValue}}\&\ Value,\ \textcolor{keywordtype}{float}\ DeltaTime)\textcolor{keyword}{\ override}}
+\DoxyCodeLine{00041\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00042\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50ec}{ETriggerState}}\ State\ =\ Value.\doxymbox{\hyperlink{struct_f_input_action_value_a39ad235c9deda81341bf47b4c03a3a34}{IsNonZero}}()\ ?\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca073b1bbd5b71098e61f7c3b8240a29bf}{ETriggerState::Triggered}}\ :\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca6adf97f83acf6453d4a6a4b1070f3754}{ETriggerState::None}};}
+\DoxyCodeLine{00043\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{class_f_input_trigger_a02e173a61782da7b3d406dad6ea58e66}{LastState}}\ =\ State;}
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ State;}
+\DoxyCodeLine{00045\ \ \ \ \ \}}
+\DoxyCodeLine{00046\ \};}
+\DoxyCodeLine{00047\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_trigger_pressed}{FTriggerPressed}}\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{class_f_input_trigger}{FInputTrigger}}\textcolor{comment}{//\ 눌린\ 1회}}
+\DoxyCodeLine{00048\ \{}
+\DoxyCodeLine{00049\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00050\ \ \ \ \ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50ec}{ETriggerState}}\ \doxymbox{\hyperlink{class_f_trigger_pressed_a3cad05d3240f4e4c9ff10fbbbd237576}{UpdateState}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_input_action_value}{FInputActionValue}}\&\ Value,\ \textcolor{keywordtype}{float}\ DeltaTime)\textcolor{keyword}{\ override}}
+\DoxyCodeLine{00051\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00052\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50ec}{ETriggerState}}\ State\ =\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca6adf97f83acf6453d4a6a4b1070f3754}{ETriggerState::None}};}
+\DoxyCodeLine{00053\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (Value.\doxymbox{\hyperlink{struct_f_input_action_value_a39ad235c9deda81341bf47b4c03a3a34}{IsNonZero}}()\ \&\&\ \doxymbox{\hyperlink{class_f_input_trigger_a02e173a61782da7b3d406dad6ea58e66}{LastState}}\ ==\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca6adf97f83acf6453d4a6a4b1070f3754}{ETriggerState::None}})}
+\DoxyCodeLine{00054\ \ \ \ \ \ \ \ \ \ \ \ \ State\ =\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca073b1bbd5b71098e61f7c3b8240a29bf}{ETriggerState::Triggered}};}
+\DoxyCodeLine{00055\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (Value.\doxymbox{\hyperlink{struct_f_input_action_value_a39ad235c9deda81341bf47b4c03a3a34}{IsNonZero}}())}
+\DoxyCodeLine{00056\ \ \ \ \ \ \ \ \ \ \ \ \ State\ =\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca7ee7defde6dc3a1d4a4a891b3894e790}{ETriggerState::Ongoing}};}
+\DoxyCodeLine{00057\ }
+\DoxyCodeLine{00058\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{class_f_input_trigger_a02e173a61782da7b3d406dad6ea58e66}{LastState}}\ =\ Value.\doxymbox{\hyperlink{struct_f_input_action_value_a39ad235c9deda81341bf47b4c03a3a34}{IsNonZero}}()\ ?\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca7ee7defde6dc3a1d4a4a891b3894e790}{ETriggerState::Ongoing}}\ :\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca6adf97f83acf6453d4a6a4b1070f3754}{ETriggerState::None}};}
+\DoxyCodeLine{00059\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ State;}
+\DoxyCodeLine{00060\ \ \ \ \ \}}
+\DoxyCodeLine{00061\ \};}
+\DoxyCodeLine{00062\ }
+\DoxyCodeLine{00063\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_input_released}{FInputReleased}}\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{class_f_input_trigger}{FInputTrigger}}\ \textcolor{comment}{//뗀\ 1회}}
+\DoxyCodeLine{00064\ \{}
+\DoxyCodeLine{00065\ \ \ \ \ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50ec}{ETriggerState}}\ \doxymbox{\hyperlink{class_f_input_released_ac418bfa807b4a03f43bebc76290bd08a}{UpdateState}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_input_action_value}{FInputActionValue}}\&\ Value,\ \textcolor{keywordtype}{float}\ DeltaTime)\textcolor{keyword}{\ override}}
+\DoxyCodeLine{00066\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50ec}{ETriggerState}}\ State\ =\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca6adf97f83acf6453d4a6a4b1070f3754}{ETriggerState::None}};}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!Value.\doxymbox{\hyperlink{struct_f_input_action_value_a39ad235c9deda81341bf47b4c03a3a34}{IsNonZero}}()\ \&\&\ \doxymbox{\hyperlink{class_f_input_trigger_a02e173a61782da7b3d406dad6ea58e66}{LastState}}\ !=\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca6adf97f83acf6453d4a6a4b1070f3754}{ETriggerState::None}})}
+\DoxyCodeLine{00069\ \ \ \ \ \ \ \ \ \ \ \ \ State\ =\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca073b1bbd5b71098e61f7c3b8240a29bf}{ETriggerState::Triggered}};}
+\DoxyCodeLine{00070\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (Value.\doxymbox{\hyperlink{struct_f_input_action_value_a39ad235c9deda81341bf47b4c03a3a34}{IsNonZero}}())}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ \ \ \ \ State\ =\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca7ee7defde6dc3a1d4a4a891b3894e790}{ETriggerState::Ongoing}};}
+\DoxyCodeLine{00072\ }
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{class_f_input_trigger_a02e173a61782da7b3d406dad6ea58e66}{LastState}}\ =\ Value.\doxymbox{\hyperlink{struct_f_input_action_value_a39ad235c9deda81341bf47b4c03a3a34}{IsNonZero}}()\ ?\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca7ee7defde6dc3a1d4a4a891b3894e790}{ETriggerState::Ongoing}}\ :\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca6adf97f83acf6453d4a6a4b1070f3754}{ETriggerState::None}};}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ State;}
+\DoxyCodeLine{00075\ \ \ \ \ \}}
+\DoxyCodeLine{00076\ \};}
+\DoxyCodeLine{00077\ }
+\DoxyCodeLine{00078\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_input_hold}{FInputHold}}\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{class_f_input_trigger}{FInputTrigger}}}
+\DoxyCodeLine{00079\ \{}
+\DoxyCodeLine{00080\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_f_input_hold_a23d7df4764eb64eb7f2d4ddb5a77360e}{HoldTimeThreshold}}\ =\ 0.5f;}
+\DoxyCodeLine{00081\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_f_input_hold_a74b53ae8c4e01c3283335169682e4422}{HeldDuration}}\ =\ 0.0f;}
+\DoxyCodeLine{00082\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_input_hold_acd8ff3b40d4ca1b13f4be714fb89f212}{bTriggered}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00083\ \ \ \ \ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50ec}{ETriggerState}}\ \doxymbox{\hyperlink{class_f_input_hold_a88d663e9931d9931cca6bca891653c5e}{UpdateState}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_input_action_value}{FInputActionValue}}\&\ Value,\ \textcolor{keywordtype}{float}\ DeltaTime)\textcolor{keyword}{\ override}}
+\DoxyCodeLine{00084\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00085\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!Value.\doxymbox{\hyperlink{struct_f_input_action_value_a39ad235c9deda81341bf47b4c03a3a34}{IsNonZero}}())}
+\DoxyCodeLine{00086\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00087\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{class_f_input_hold_ac9d8e00441c3a3a51f0579b544b95961}{Reset}}();}
+\DoxyCodeLine{00088\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca6adf97f83acf6453d4a6a4b1070f3754}{ETriggerState::None}};}
+\DoxyCodeLine{00089\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00090\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{class_f_input_hold_a74b53ae8c4e01c3283335169682e4422}{HeldDuration}}\ +=\ DeltaTime;}
+\DoxyCodeLine{00091\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\doxymbox{\hyperlink{class_f_input_hold_a74b53ae8c4e01c3283335169682e4422}{HeldDuration}}\ >=\ \doxymbox{\hyperlink{class_f_input_hold_a23d7df4764eb64eb7f2d4ddb5a77360e}{HoldTimeThreshold}})}
+\DoxyCodeLine{00092\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00093\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{class_f_input_hold_acd8ff3b40d4ca1b13f4be714fb89f212}{bTriggered}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00094\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{class_f_input_trigger_a02e173a61782da7b3d406dad6ea58e66}{LastState}}\ =\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca073b1bbd5b71098e61f7c3b8240a29bf}{ETriggerState::Triggered}};}
+\DoxyCodeLine{00095\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca073b1bbd5b71098e61f7c3b8240a29bf}{ETriggerState::Triggered}};}
+\DoxyCodeLine{00096\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00097\ }
+\DoxyCodeLine{00098\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{class_f_input_trigger_a02e173a61782da7b3d406dad6ea58e66}{LastState}}\ =\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca7ee7defde6dc3a1d4a4a891b3894e790}{ETriggerState::Ongoing}};}
+\DoxyCodeLine{00099\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca7ee7defde6dc3a1d4a4a891b3894e790}{ETriggerState::Ongoing}};}
+\DoxyCodeLine{00100\ \ \ \ \ \}}
+\DoxyCodeLine{00101\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_input_hold_ac9d8e00441c3a3a51f0579b544b95961}{Reset}}()\textcolor{keyword}{\ override}}
+\DoxyCodeLine{00102\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00103\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{class_f_input_trigger_a92ba50a57724ec8e429d1132615c29e8}{FInputTrigger::Reset}}();}
+\DoxyCodeLine{00104\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{class_f_input_hold_a74b53ae8c4e01c3283335169682e4422}{HeldDuration}}\ =\ 0.0f;}
+\DoxyCodeLine{00105\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{class_f_input_hold_acd8ff3b40d4ca1b13f4be714fb89f212}{bTriggered}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00106\ \ \ \ \ \}}
+\DoxyCodeLine{00107\ \};}
+\DoxyCodeLine{00108\ }
+
+\end{DoxyCode}

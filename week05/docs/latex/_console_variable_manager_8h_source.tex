@@ -1,0 +1,81 @@
+\doxysection{Console\+Variable\+Manager.\+h}
+\hypertarget{_console_variable_manager_8h_source}{}\label{_console_variable_manager_8h_source}\index{Engine/Source/Core/ConsoleVariableManager.h@{Engine/Source/Core/ConsoleVariableManager.h}}
+\doxymbox{\hyperlink{_console_variable_manager_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}"{}}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <functional>}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{keyword}{enum\ class}\ \doxymbox{\hyperlink{_console_variable_manager_8h_a9445ef98b077370cef1d8befe8028ab6}{EConsoleVariableType}}\ :\ \doxymbox{\hyperlink{_core_types_8h_a34ecedcf03a70dc91e4616212d79267d}{uint8}}}
+\DoxyCodeLine{00006\ \{}
+\DoxyCodeLine{00007\ \ \ \ \ \doxymbox{\hyperlink{_console_variable_manager_8h_a9445ef98b077370cef1d8befe8028ab6a1686a6c336b71b36d77354cea19a8b52}{Int}},}
+\DoxyCodeLine{00008\ \ \ \ \ \doxymbox{\hyperlink{_console_variable_manager_8h_a9445ef98b077370cef1d8befe8028ab6a22ae0e2b89e5e3d477f988cc36d3272b}{Float}},}
+\DoxyCodeLine{00009\ \ \ \ \ \doxymbox{\hyperlink{_console_variable_manager_8h_a9445ef98b077370cef1d8befe8028ab6a27118326006d3829667a400ad23d5d98}{String}},}
+\DoxyCodeLine{00010\ \};}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_console_variable_a91f7e1469ee657c37d667d750fbc39df}{FConsoleVariable}}}
+\DoxyCodeLine{00013\ \{}
+\DoxyCodeLine{00014\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{keyword}{using\ }\doxymbox{\hyperlink{class_f_console_variable_a7ee84e6fe14e5105e68c6fb77a233757}{FOnChanged}}\ =\ std::function<void(\doxymbox{\hyperlink{class_f_console_variable_a91f7e1469ee657c37d667d750fbc39df}{FConsoleVariable}}*)>;}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \ \ \ \ \doxymbox{\hyperlink{class_f_console_variable_a91f7e1469ee657c37d667d750fbc39df}{FConsoleVariable}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ InName,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ InDefault,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ InHelp\ =\ \textcolor{stringliteral}{"{}"{}});}
+\DoxyCodeLine{00018\ \ \ \ \ \doxymbox{\hyperlink{class_f_console_variable_a91f7e1469ee657c37d667d750fbc39df}{FConsoleVariable}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ InName,\ \textcolor{keywordtype}{float}\ InDefault,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ InHelp\ =\ \textcolor{stringliteral}{"{}"{}});}
+\DoxyCodeLine{00019\ \ \ \ \ \doxymbox{\hyperlink{class_f_console_variable_a91f7e1469ee657c37d667d750fbc39df}{FConsoleVariable}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ InName,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ InDefault,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ InHelp\ =\ \textcolor{stringliteral}{"{}"{}});}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ \doxymbox{\hyperlink{class_f_console_variable_aa025f94a94ced9ba52c53da334998ec6}{GetName}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_f_console_variable_abc7bf990c7f4d667aae4c907919e8554}{Name}};\ \}}
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ \doxymbox{\hyperlink{class_f_console_variable_a2ddc98474193ac4f6d3359dd3b012086}{GetHelp}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_f_console_variable_a0d09748faf79c413906ff8c85f171633}{Help}};\ \}}
+\DoxyCodeLine{00023\ \ \ \ \ \doxymbox{\hyperlink{_console_variable_manager_8h_a9445ef98b077370cef1d8befe8028ab6}{EConsoleVariableType}}\ \doxymbox{\hyperlink{class_f_console_variable_a091e00ed89188688b062cdd0ace4604e}{GetType}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_f_console_variable_a5c808ac795ec52aab186d729706d3581}{Type}};\ \}}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ \doxymbox{\hyperlink{class_f_console_variable_a40f2ce3df772254ad42e2149f251011a}{GetInt}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_f_console_variable_a9fa834dfecfdf40eeb58817509cb37c5}{IntValue}};\ \}}
+\DoxyCodeLine{00026\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_f_console_variable_ab75ae2b9eed27649d85501fc1ea3d6a9}{GetFloat}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_f_console_variable_a9b372e9f5b4f4f214b97248f6013c61c}{FloatValue}};\ \}}
+\DoxyCodeLine{00027\ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ \doxymbox{\hyperlink{class_f_console_variable_abfea9400c1b01c1293a4ee01a4fc0ab5}{GetString}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_f_console_variable_ae52a4b7f6687e7bc395abf195594ff6f}{StringValue}};\ \}}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \ \ \ \ \textcolor{keywordtype}{void}\ Set(\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ InValue);}
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{keywordtype}{void}\ Set(\textcolor{keywordtype}{float}\ InValue);}
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{keywordtype}{void}\ Set(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ InValue);}
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keywordtype}{void}\ SetFromString(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ InValue);}
+\DoxyCodeLine{00033\ }
+\DoxyCodeLine{00034\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_console_variable_ab9e2f51f92572315c2b1fe009a22469f}{SetOnChanged}}(\doxymbox{\hyperlink{class_f_console_variable_a7ee84e6fe14e5105e68c6fb77a233757}{FOnChanged}}\ InCallback)\ \{\ \doxymbox{\hyperlink{class_f_console_variable_a3f2d439bd6ed61825eba1c52e308cc52}{OnChanged}}\ =\ std::move(InCallback);\ \}}
+\DoxyCodeLine{00035\ }
+\DoxyCodeLine{00036\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00037\ \ \ \ \ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \doxymbox{\hyperlink{class_f_console_variable_abc7bf990c7f4d667aae4c907919e8554}{Name}};}
+\DoxyCodeLine{00038\ \ \ \ \ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \doxymbox{\hyperlink{class_f_console_variable_a0d09748faf79c413906ff8c85f171633}{Help}};}
+\DoxyCodeLine{00039\ \ \ \ \ \doxymbox{\hyperlink{_console_variable_manager_8h_a9445ef98b077370cef1d8befe8028ab6}{EConsoleVariableType}}\ \doxymbox{\hyperlink{class_f_console_variable_a5c808ac795ec52aab186d729706d3581}{Type}};}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ \doxymbox{\hyperlink{class_f_console_variable_a9fa834dfecfdf40eeb58817509cb37c5}{IntValue}}\ =\ 0;}
+\DoxyCodeLine{00042\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_f_console_variable_a9b372e9f5b4f4f214b97248f6013c61c}{FloatValue}}\ =\ 0.0f;}
+\DoxyCodeLine{00043\ \ \ \ \ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \doxymbox{\hyperlink{class_f_console_variable_ae52a4b7f6687e7bc395abf195594ff6f}{StringValue}};}
+\DoxyCodeLine{00044\ }
+\DoxyCodeLine{00045\ \ \ \ \ \doxymbox{\hyperlink{class_f_console_variable_a7ee84e6fe14e5105e68c6fb77a233757}{FOnChanged}}\ \doxymbox{\hyperlink{class_f_console_variable_a3f2d439bd6ed61825eba1c52e308cc52}{OnChanged}};}
+\DoxyCodeLine{00046\ \};}
+\DoxyCodeLine{00047\ }
+\DoxyCodeLine{00048\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_console_variable_manager_a3aa11f0eb90d8ee801434cbcc1d1d7e7}{FConsoleVariableManager}}}
+\DoxyCodeLine{00049\ \{}
+\DoxyCodeLine{00050\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00051\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{class_f_console_variable_manager_a3aa11f0eb90d8ee801434cbcc1d1d7e7}{FConsoleVariableManager}}\&\ \doxymbox{\hyperlink{class_f_console_variable_manager_a55a01958532b3b1900f49738a8f428d1}{Get}}();}
+\DoxyCodeLine{00052\ }
+\DoxyCodeLine{00053\ \ \ \ \ \doxymbox{\hyperlink{class_f_console_variable}{FConsoleVariable}}*\ \doxymbox{\hyperlink{class_f_console_variable_manager_a9a71d914407ea66e357c534b6497a9cf}{Register}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ Name,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Default,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ Help\ =\ \textcolor{stringliteral}{"{}"{}});}
+\DoxyCodeLine{00054\ \ \ \ \ \doxymbox{\hyperlink{class_f_console_variable}{FConsoleVariable}}*\ \doxymbox{\hyperlink{class_f_console_variable_manager_a9a71d914407ea66e357c534b6497a9cf}{Register}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ Name,\ \textcolor{keywordtype}{float}\ Default,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ Help\ =\ \textcolor{stringliteral}{"{}"{}});}
+\DoxyCodeLine{00055\ \ \ \ \ \doxymbox{\hyperlink{class_f_console_variable}{FConsoleVariable}}*\ \doxymbox{\hyperlink{class_f_console_variable_manager_a9a71d914407ea66e357c534b6497a9cf}{Register}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ Name,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ Default,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ Help\ =\ \textcolor{stringliteral}{"{}"{}});}
+\DoxyCodeLine{00056\ }
+\DoxyCodeLine{00057\ \ \ \ \ \doxymbox{\hyperlink{class_f_console_variable}{FConsoleVariable}}*\ \doxymbox{\hyperlink{class_f_console_variable_manager_ab0f29674f5ee9ff78cdd9569c947be78}{Find}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ Name);}
+\DoxyCodeLine{00058\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_console_variable_manager_ae44be6a184ce6b72da01c9ae5f8d4ef3}{Execute}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ CommandLine,\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ OutResult);}
+\DoxyCodeLine{00059\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_console_variable_manager_ac2a05bfc5b606ff6ce9e9616686dfdb2}{GetAllNames}}(\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray<FString>}}\&\ OutNames)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00060\ }
+\DoxyCodeLine{00061\ \ \ \ \ \textcolor{keyword}{using\ }\doxymbox{\hyperlink{class_f_console_variable_manager_a2a790462875c1c442fe58b15fe59d0d2}{FConsoleCommand}}\ =\ std::function<void(\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&)>;}
+\DoxyCodeLine{00062\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_console_variable_manager_a3f5adb3bf34dfb6857ddb275a8cf24db}{RegisterCommand}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ Name,\ \doxymbox{\hyperlink{class_f_console_variable_manager_a2a790462875c1c442fe58b15fe59d0d2}{FConsoleCommand}}\ InCommand,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ Help\ =\ \textcolor{stringliteral}{"{}"{}});}
+\DoxyCodeLine{00063\ }
+\DoxyCodeLine{00064\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00065\ \ \ \ \ \doxymbox{\hyperlink{class_f_console_variable_manager_a3aa11f0eb90d8ee801434cbcc1d1d7e7}{FConsoleVariableManager}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00066\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \doxymbox{\hyperlink{_name_8cpp_a43ca0fd568a36829e14adf491b1732e0}{ToLower}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ Str);}
+\DoxyCodeLine{00067\ \ \ \ \ \doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap<FString,\ FConsoleVariable*>}}\ \doxymbox{\hyperlink{class_f_console_variable_manager_a15036a96e1948a8cca75d08c9ec60b57}{Variables}};}
+\DoxyCodeLine{00068\ }
+\DoxyCodeLine{00069\ \ \ \ \ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_console_variable_manager_1_1_f_command_entry}{FCommandEntry}}}
+\DoxyCodeLine{00070\ \ \ \ \ \{}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{class_f_console_variable_manager_a2a790462875c1c442fe58b15fe59d0d2}{FConsoleCommand}}\ \doxymbox{\hyperlink{struct_f_console_variable_manager_1_1_f_command_entry_a0dde335cb1856b531fc43fbba680798a}{Command}};}
+\DoxyCodeLine{00072\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \doxymbox{\hyperlink{struct_f_console_variable_manager_1_1_f_command_entry_a3f87a8b149249bd34f1a9cf8c9cf5014}{Help}};}
+\DoxyCodeLine{00073\ \ \ \ \ \};}
+\DoxyCodeLine{00074\ \ \ \ \ \doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap<FString,\ FCommandEntry>}}\ \doxymbox{\hyperlink{class_f_console_variable_manager_a7482286bb0ad59a7b046bee760595488}{Commands}};}
+\DoxyCodeLine{00075\ \};}
+
+\end{DoxyCode}

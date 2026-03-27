@@ -1,0 +1,177 @@
+\doxysection{FShader\+Map Class Reference}
+\hypertarget{class_f_shader_map}{}\label{class_f_shader_map}\index{FShaderMap@{FShaderMap}}
+
+
+{\ttfamily \+\#include $<$Shader\+Map.\+h$>$}
+
+
+
+Collaboration diagram for FShader\+Map:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=218pt]{class_f_shader_map__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_vertex_shader}{FVertex\+Shader}} $>$ \doxymbox{\hyperlink{class_f_shader_map_a488101757d7cd21e62801483b7392504}{Get\+Or\+Create\+Vertex\+Shader}} (ID3\+D11\+Device \texorpdfstring{$\ast$}{*}Device, const wchar\+\_\+t \texorpdfstring{$\ast$}{*}File\+Path)
+\item 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_pixel_shader}{FPixel\+Shader}} $>$ \doxymbox{\hyperlink{class_f_shader_map_a0dea803b5f687668edf5c93ce1b7140c}{Get\+Or\+Create\+Pixel\+Shader}} (ID3\+D11\+Device \texorpdfstring{$\ast$}{*}Device, const wchar\+\_\+t \texorpdfstring{$\ast$}{*}File\+Path)
+\item 
+void \doxymbox{\hyperlink{class_f_shader_map_afd9003621609f3eeaf48847e8a18cdba}{Clear}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static \doxymbox{\hyperlink{class_f_shader_map}{FShader\+Map}} \& \doxymbox{\hyperlink{class_f_shader_map_a1189375f6d36ffd78c81b1cfd928d68d}{Get}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_f_shader_map_a698c3a1e2f0f688d036612b4f9c0ce1b}{FShader\+Map}} ()=default
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+std::\+unordered\+\_\+map$<$ std::\+wstring, std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_vertex_shader}{FVertex\+Shader}} $>$ $>$ \doxymbox{\hyperlink{class_f_shader_map_a1ee208cd7f11e1d57c4a87e365de06e0}{Vertex\+Shaders}}
+\item 
+std::\+unordered\+\_\+map$<$ std::\+wstring, std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_pixel_shader}{FPixel\+Shader}} $>$ $>$ \doxymbox{\hyperlink{class_f_shader_map_ab4878b6a3cd56e5be5d8363e9b116f84}{Pixel\+Shaders}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{class_f_shader_map_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_f_shader_map_a698c3a1e2f0f688d036612b4f9c0ce1b}\index{FShaderMap@{FShaderMap}!FShaderMap@{FShaderMap}}
+\index{FShaderMap@{FShaderMap}!FShaderMap@{FShaderMap}}
+\doxysubsubsection{\texorpdfstring{FShaderMap()}{FShaderMap()}}
+{\footnotesize\ttfamily \label{class_f_shader_map_a698c3a1e2f0f688d036612b4f9c0ce1b} 
+FShader\+Map::\+\+FShader\+Map (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [default]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_shader_map_a698c3a1e2f0f688d036612b4f9c0ce1b_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-func-members}
+\Hypertarget{class_f_shader_map_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_f_shader_map_afd9003621609f3eeaf48847e8a18cdba}\index{FShaderMap@{FShaderMap}!Clear@{Clear}}
+\index{Clear@{Clear}!FShaderMap@{FShaderMap}}
+\doxysubsubsection{\texorpdfstring{Clear()}{Clear()}}
+{\footnotesize\ttfamily \label{class_f_shader_map_afd9003621609f3eeaf48847e8a18cdba} 
+void FShader\+Map::\+\+Clear (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_shader_map_afd9003621609f3eeaf48847e8a18cdba_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_shader_map_afd9003621609f3eeaf48847e8a18cdba_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_shader_map_a1189375f6d36ffd78c81b1cfd928d68d}\index{FShaderMap@{FShaderMap}!Get@{Get}}
+\index{Get@{Get}!FShaderMap@{FShaderMap}}
+\doxysubsubsection{\texorpdfstring{Get()}{Get()}}
+{\footnotesize\ttfamily \label{class_f_shader_map_a1189375f6d36ffd78c81b1cfd928d68d} 
+\doxymbox{\hyperlink{class_f_shader_map}{FShader\+Map}} \& FShader\+Map::\+\+Get (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=342pt]{class_f_shader_map_a1189375f6d36ffd78c81b1cfd928d68d_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_shader_map_a1189375f6d36ffd78c81b1cfd928d68d_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_shader_map_a0dea803b5f687668edf5c93ce1b7140c}\index{FShaderMap@{FShaderMap}!GetOrCreatePixelShader@{GetOrCreatePixelShader}}
+\index{GetOrCreatePixelShader@{GetOrCreatePixelShader}!FShaderMap@{FShaderMap}}
+\doxysubsubsection{\texorpdfstring{GetOrCreatePixelShader()}{GetOrCreatePixelShader()}}
+{\footnotesize\ttfamily \label{class_f_shader_map_a0dea803b5f687668edf5c93ce1b7140c} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_pixel_shader}{FPixel\+Shader}} $>$ FShader\+Map::\+\+Get\+Or\+Create\+Pixel\+Shader (\begin{DoxyParamCaption}\item[{ID3\+D11\+Device \texorpdfstring{$\ast$}{*}}]{Device}{, }\item[{const wchar\+\_\+t \texorpdfstring{$\ast$}{*}}]{File\+Path}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_shader_map_a0dea803b5f687668edf5c93ce1b7140c_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_shader_map_a0dea803b5f687668edf5c93ce1b7140c_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_shader_map_a488101757d7cd21e62801483b7392504}\index{FShaderMap@{FShaderMap}!GetOrCreateVertexShader@{GetOrCreateVertexShader}}
+\index{GetOrCreateVertexShader@{GetOrCreateVertexShader}!FShaderMap@{FShaderMap}}
+\doxysubsubsection{\texorpdfstring{GetOrCreateVertexShader()}{GetOrCreateVertexShader()}}
+{\footnotesize\ttfamily \label{class_f_shader_map_a488101757d7cd21e62801483b7392504} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_vertex_shader}{FVertex\+Shader}} $>$ FShader\+Map::\+\+Get\+Or\+Create\+Vertex\+Shader (\begin{DoxyParamCaption}\item[{ID3\+D11\+Device \texorpdfstring{$\ast$}{*}}]{Device}{, }\item[{const wchar\+\_\+t \texorpdfstring{$\ast$}{*}}]{File\+Path}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_shader_map_a488101757d7cd21e62801483b7392504_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_shader_map_a488101757d7cd21e62801483b7392504_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_f_shader_map_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_f_shader_map_ab4878b6a3cd56e5be5d8363e9b116f84}\index{FShaderMap@{FShaderMap}!PixelShaders@{PixelShaders}}
+\index{PixelShaders@{PixelShaders}!FShaderMap@{FShaderMap}}
+\doxysubsubsection{\texorpdfstring{PixelShaders}{PixelShaders}}
+{\footnotesize\ttfamily \label{class_f_shader_map_ab4878b6a3cd56e5be5d8363e9b116f84} 
+std::\+unordered\+\_\+map$<$std::\+wstring, std::\+shared\+\_\+ptr$<$\doxymbox{\hyperlink{class_f_pixel_shader}{FPixel\+Shader}}$>$ $>$ FShader\+Map::\+\+Pixel\+Shaders\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_f_shader_map_a1ee208cd7f11e1d57c4a87e365de06e0}\index{FShaderMap@{FShaderMap}!VertexShaders@{VertexShaders}}
+\index{VertexShaders@{VertexShaders}!FShaderMap@{FShaderMap}}
+\doxysubsubsection{\texorpdfstring{VertexShaders}{VertexShaders}}
+{\footnotesize\ttfamily \label{class_f_shader_map_a1ee208cd7f11e1d57c4a87e365de06e0} 
+std::\+unordered\+\_\+map$<$std::\+wstring, std::\+shared\+\_\+ptr$<$\doxymbox{\hyperlink{class_f_vertex_shader}{FVertex\+Shader}}$>$ $>$ FShader\+Map::\+\+Vertex\+Shaders\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Renderer/\+\doxymbox{\hyperlink{_shader_map_8h}{Shader\+Map.\+h}}\item 
+Engine/\+\+Source/\+\+Renderer/\+\doxymbox{\hyperlink{_shader_map_8cpp}{Shader\+Map.\+cpp}}\end{DoxyCompactItemize}

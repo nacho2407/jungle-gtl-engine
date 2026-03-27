@@ -1,0 +1,953 @@
+\doxysection{CRenderer Class Reference}
+\hypertarget{class_c_renderer}{}\label{class_c_renderer}\index{CRenderer@{CRenderer}}
+
+
+{\ttfamily \+\#include $<$Renderer.\+h$>$}
+
+
+
+Collaboration diagram for CRenderer:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{class_c_renderer__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_c_renderer_aa90aba692202fafdef765a964cd2a4ca}{CRenderer}} ()=default
+\item 
+\doxymbox{\hyperlink{class_c_renderer_acb0a66a0d9205fe5f24cec41f0e0b249}{\texorpdfstring{$\sim$}{\string~}\+CRenderer}} ()
+\item 
+bool \doxymbox{\hyperlink{class_c_renderer_a170b4d4c44ad5b957a45f92c44685e89}{Initialize}} (HWND \doxymbox{\hyperlink{class_c_renderer_ad793ea972a1c22d94f67e8dbd35ce9ef}{Hwnd}}, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Width, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Height)
+\item 
+void \doxymbox{\hyperlink{class_c_renderer_a4053138d44033afd1cf9f28852d484c2}{Begin\+Frame}} ()
+\item 
+void \doxymbox{\hyperlink{class_c_renderer_a5eb509d947050b18dc74607be9523c5e}{End\+Frame}} ()
+\item 
+void \doxymbox{\hyperlink{class_c_renderer_a99d8500773d26275a45daed89d9a6071}{Release}} ()
+\item 
+bool \doxymbox{\hyperlink{class_c_renderer_a8ff80451571869da016eb7543a162e41}{Is\+Occluded}} ()
+\item 
+void \doxymbox{\hyperlink{class_c_renderer_ae3c40424539974a762bbabf4e028cb9a}{On\+Resize}} (\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} New\+Width, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} New\+Height)
+\item 
+void \doxymbox{\hyperlink{class_c_renderer_a00fab11b9808f59d74c01fbb65fbf080}{Set\+Scene\+Render\+Target}} (ID3\+D11\+Render\+Target\+View \texorpdfstring{$\ast$}{*}In\+Render\+Target\+View, ID3\+D11\+Depth\+Stencil\+View \texorpdfstring{$\ast$}{*}In\+Depth\+Stencil\+View, const D3\+D11\+\_\+\+VIEWPORT \&In\+Viewport)
+\item 
+void \doxymbox{\hyperlink{class_c_renderer_ac6cfa38df0fbffc7942e19e6527a4e19}{Clear\+Scene\+Render\+Target}} ()
+\item 
+void \doxymbox{\hyperlink{class_c_renderer_ae029f7cf5609ca436489d238e19b62cd}{Set\+VSync}} (bool b\+Enable)
+\item 
+bool \doxymbox{\hyperlink{class_c_renderer_aaf51c0c087b1e65fb4a5e08a39b0ac24}{Is\+VSync\+Enabled}} () const
+\item 
+void \doxymbox{\hyperlink{class_c_renderer_a009c03594c88cd9ba836eacb60b3e53c}{Set\+GUICallbacks}} (\doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}} In\+Init, \doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}} In\+Shutdown, \doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}} In\+New\+Frame, \doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}} In\+Render, \doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}} In\+Post\+Present=nullptr)
+\item 
+void \doxymbox{\hyperlink{class_c_renderer_a64c19a865130361f3e182831475208a8}{Clear\+Viewport\+Callbacks}} ()
+\item 
+void \doxymbox{\hyperlink{class_c_renderer_a04fa8afddd3877984088fdd44ad8aca7}{Set\+GUIUpdate\+Callback}} (\doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}} In\+Update)
+\item 
+void \doxymbox{\hyperlink{class_c_renderer_a8526f6e49d02f9dade7a9041eab8e44f}{Set\+Post\+Render\+Callback}} (\doxymbox{\hyperlink{_renderer_8h_ad02d5af5fdc0e6fca0d053f779d9d9f4}{FPost\+Render\+Callback}} In\+Callback)
+\item 
+void \doxymbox{\hyperlink{class_c_renderer_a693bcb79e13afefe033036fe9ea0e859}{Submit\+Commands}} (const \doxymbox{\hyperlink{struct_f_render_command_queue}{FRender\+Command\+Queue}} \&Queue)
+\item 
+void \doxymbox{\hyperlink{class_c_renderer_a5284d9279650f0667487db50bf410210}{Execute\+Commands}} ()
+\item 
+void \doxymbox{\hyperlink{class_c_renderer_ac583192433693e032a4b0396f05c5cc0}{Draw\+Line}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Start, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&End, const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&\doxymbox{\hyperlink{struct_color}{Color}})
+\item 
+void \doxymbox{\hyperlink{class_c_renderer_a6a1dbe7329017a8e5846cf1ab4f03acd}{Draw\+Cube}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Center, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Box\+Extent, const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&\doxymbox{\hyperlink{struct_color}{Color}})
+\item 
+void \doxymbox{\hyperlink{class_c_renderer_ad5d2eb08a723e50472873e3056ed1547}{Execute\+Line\+Commands}} ()
+\item 
+bool \doxymbox{\hyperlink{class_c_renderer_a5ad61ddf360170adfa778ab3855f24d4}{Init\+Outline\+Resources}} ()
+\item 
+void \doxymbox{\hyperlink{class_c_renderer_a0dffc19dcb93a4d2ca8f52fe51089f1b}{Render\+Outline}} (\doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} \texorpdfstring{$\ast$}{*}\doxymbox{\hyperlink{struct_mesh}{Mesh}}, const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&World\+Matrix, float Outline\+Scale=1.\+05f)
+\item 
+\doxymbox{\hyperlink{class_f_material}{FMaterial}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_renderer_acb9daa1c6bed28ce68af645a713ce624}{Get\+Default\+Material}} () const
+\item 
+size\+\_\+t \doxymbox{\hyperlink{class_c_renderer_a85f0d3ae04fa9428e7d320e658d48f2b}{Get\+Prev\+Command\+Count}} () const
+\item 
+ID3\+D11\+Device \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_renderer_a8e7e81b21c823a9d9bea29e7461f49a7}{Get\+Device}} () const
+\item 
+ID3\+D11\+Device\+Context \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_renderer_a8ea51190b7b6e47b6c0e5c23acb65c7e}{Get\+Device\+Context}} () const
+\item 
+ID3\+D11\+Render\+Target\+View \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_renderer_a9d4032d7430b09a52ae4dbf167994987}{Get\+Render\+Target\+View}} () const
+\item 
+IDXGISwap\+Chain \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_renderer_a569a78c680b7d2e9407c278c1d37f1b1}{Get\+Swap\+Chain}} () const
+\item 
+HWND \doxymbox{\hyperlink{class_c_renderer_ac7c0c9d66fb6e5fcded879c8d553d617}{Get\+Hwnd}} () const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+bool \doxymbox{\hyperlink{class_c_renderer_a30fbf79a4ad540af205706485df373fd}{b\+Swap\+Chain\+Occluded}} = false
+\item 
+\doxymbox{\hyperlink{class_c_shader_manager}{CShader\+Manager}} \doxymbox{\hyperlink{class_c_renderer_a62dcea5dbecc9421e09927c6dfc6b9a1}{Shader\+Manager}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \doxymbox{\hyperlink{class_c_renderer_abf1762b8ed5ffb7fa193d68dbb9084eb}{Add\+Command}} (const \doxymbox{\hyperlink{struct_f_render_command}{FRender\+Command}} \&Command)
+\item 
+bool \doxymbox{\hyperlink{class_c_renderer_a9f18e12bf5e8bd25925af33e7849084f}{Create\+Device\+And\+Swap\+Chain}} (HWND In\+Hwnd, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Width, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Height)
+\item 
+bool \doxymbox{\hyperlink{class_c_renderer_aa4d034afc3ab508016e27eaa1eef4fcc}{Create\+Render\+Target\+And\+Depth\+Stencil}} (\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Width, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Height)
+\item 
+bool \doxymbox{\hyperlink{class_c_renderer_ad7ced96a131a7c1e0655fb7e8d57b20f}{Create\+Constant\+Buffers}} ()
+\item 
+void \doxymbox{\hyperlink{class_c_renderer_a85ed669a6df0cedeff7dfd69d076dc6f}{Update\+Frame\+Constant\+Buffer}} ()
+\item 
+void \doxymbox{\hyperlink{class_c_renderer_a3dcb850ec42ef5dcaed079803a374578}{Update\+Object\+Constant\+Buffer}} (const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&World\+Matrix)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+HWND \doxymbox{\hyperlink{class_c_renderer_ad793ea972a1c22d94f67e8dbd35ce9ef}{Hwnd}} = nullptr
+\item 
+ID3\+D11\+Device \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_renderer_ac222a8f4143cfc820b785695903a5a31}{Device}} = nullptr
+\item 
+ID3\+D11\+Device\+Context \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_renderer_acc843a4195f4e5a94ae7ebf3f08ac869}{Device\+Context}} = nullptr
+\item 
+IDXGISwap\+Chain \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_renderer_a29d5905b1c8a2241a0a5693ae3425a44}{Swap\+Chain}} = nullptr
+\item 
+ID3\+D11\+Render\+Target\+View \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_renderer_a0ace2ef2cfd83c89e917b1360477a0a1}{Render\+Target\+View}} = nullptr
+\item 
+ID3\+D11\+Depth\+Stencil\+View \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_renderer_a652d5614dbfe669d37900f5752210855}{Depth\+Stencil\+View}} = nullptr
+\item 
+ID3\+D11\+Buffer \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_renderer_acfe4a3976aa5030aa12b28321d06501a}{Frame\+Constant\+Buffer}} = nullptr
+\item 
+ID3\+D11\+Buffer \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_renderer_a98c5ed0b7c9ef80490ccd9946ab61f88}{Object\+Constant\+Buffer}} = nullptr
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{class_c_renderer_a82d2c48c7589cdab4a5b818d74938102}{View\+Matrix}}
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{class_c_renderer_a7abd2530f4f0885ee5911fe76ba4cda1}{Projection\+Matrix}}
+\item 
+ID3\+D11\+Rasterizer\+State \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_renderer_a25b9c7b5efd950bd85cc88d108d4ee67}{Rasterizer\+State}} = nullptr
+\item 
+ID3\+D11\+Rasterizer\+State \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_renderer_a1d7cdeb48bbb62f5036efb80d4e93e1a}{No\+Cull\+Rasterizer\+State}} = nullptr
+\item 
+D3\+D11\+\_\+\+VIEWPORT \doxymbox{\hyperlink{class_c_renderer_a5db572d0089dafa5b7e77d7a08d6ef6a}{Viewport}} = \{\}
+\item 
+ID3\+D11\+Render\+Target\+View \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_renderer_a16135f595e2849042320fb78d556a02e}{Scene\+Render\+Target\+View}} = nullptr
+\item 
+ID3\+D11\+Depth\+Stencil\+View \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_renderer_a08fcf984aa321f83c2ff26f6fba19013}{Scene\+Depth\+Stencil\+View}} = nullptr
+\item 
+D3\+D11\+\_\+\+VIEWPORT \doxymbox{\hyperlink{class_c_renderer_a55447cf08a1cce75335f6bed46400e59}{Scene\+Viewport}} = \{\}
+\item 
+bool \doxymbox{\hyperlink{class_c_renderer_a8187521c53e257cbc3ac2d0469d72b7e}{b\+Use\+Scene\+Render\+Target\+Override}} = false
+\item 
+bool \doxymbox{\hyperlink{class_c_renderer_aa23c17f1488c96bbbaf8103e27e3182a}{b\+VSync\+Enabled}} = false
+\item 
+\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$ \doxymbox{\hyperlink{struct_f_render_command}{FRender\+Command}} $>$ \doxymbox{\hyperlink{class_c_renderer_a10d79d7607d2a76b7b639dd1068e4594}{Command\+List}}
+\item 
+size\+\_\+t \doxymbox{\hyperlink{class_c_renderer_a4d3368c898f9dca7fb7b3e1ae208ed4b}{Prev\+Command\+Count}} = 0
+\item 
+\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$ \doxymbox{\hyperlink{struct_f_primitive_vertex}{FPrimitive\+Vertex}} $>$ \doxymbox{\hyperlink{class_c_renderer_ad9132581eeff45d711f21e353cbf674b}{Line\+Vertices}}
+\item 
+ID3\+D11\+Buffer \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_renderer_a37cc749559e8b55c5cb474a53eaabc71}{Line\+Vertex\+Buffer}} = nullptr
+\item 
+UINT \doxymbox{\hyperlink{class_c_renderer_a1cd5bf88685f817225e7cce7dd695ca8}{Line\+Vertex\+Buffer\+Size}} = 0
+\item 
+ID3\+D11\+Depth\+Stencil\+State \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_renderer_aabac473319e66ee6c6103d47213f8be2}{Line\+Depth\+State}} = nullptr
+\item 
+ID3\+D11\+Depth\+Stencil\+State \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_renderer_a1eda38764c019d7593695d9dd3507377}{Overlay\+Depth\+State}} = nullptr
+\item 
+ID3\+D11\+Depth\+Stencil\+State \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_renderer_a68222cdd8b23f8541f4734c68e43dbb8}{Stencil\+Write\+State}} = nullptr
+\item 
+ID3\+D11\+Depth\+Stencil\+State \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_renderer_aa45fe305e0da0de77e0deedca92e6be9}{Stencil\+Test\+State}} = nullptr
+\item 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_pixel_shader}{FPixel\+Shader}} $>$ \doxymbox{\hyperlink{class_c_renderer_a32c1cabd63bd63d1d70e90b524e341ac}{Outline\+PS}}
+\item 
+\doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}} \doxymbox{\hyperlink{class_c_renderer_ae594303f83ec421522fc85b531171961}{GUIInit}}
+\item 
+\doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}} \doxymbox{\hyperlink{class_c_renderer_a4a459e2d94cc22aff690377170654ab3}{GUIShutdown}}
+\item 
+\doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}} \doxymbox{\hyperlink{class_c_renderer_a090f523ed17c0b56e3d2f9310703ab0a}{GUINew\+Frame}}
+\item 
+\doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}} \doxymbox{\hyperlink{class_c_renderer_a78f70d77cc6724c465f95b1bd36dc0bb}{GUIUpdate}}
+\item 
+\doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}} \doxymbox{\hyperlink{class_c_renderer_a701cf0c327864dce00200881544a7752}{GUIRender}}
+\item 
+\doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}} \doxymbox{\hyperlink{class_c_renderer_a3a295691b6657165d921d508216691d3}{GUIPost\+Present}}
+\item 
+\doxymbox{\hyperlink{_renderer_8h_ad02d5af5fdc0e6fca0d053f779d9d9f4}{FPost\+Render\+Callback}} \doxymbox{\hyperlink{class_c_renderer_a88d1749497592b9c561deacd316d5f02}{Post\+Render\+Callback}}
+\item 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_material}{FMaterial}} $>$ \doxymbox{\hyperlink{class_c_renderer_a6350df28e4c3b931f0a80f9a2e9aed98}{Default\+Material}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{class_c_renderer_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_c_renderer_aa90aba692202fafdef765a964cd2a4ca}\index{CRenderer@{CRenderer}!CRenderer@{CRenderer}}
+\index{CRenderer@{CRenderer}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{CRenderer()}{CRenderer()}}
+{\footnotesize\ttfamily \label{class_c_renderer_aa90aba692202fafdef765a964cd2a4ca} 
+CRenderer::\+\+CRenderer (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_aa90aba692202fafdef765a964cd2a4ca_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=197pt]{class_c_renderer_aa90aba692202fafdef765a964cd2a4ca_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_acb0a66a0d9205fe5f24cec41f0e0b249}\index{CRenderer@{CRenderer}!````~CRenderer@{\texorpdfstring{$\sim$}{\string~}CRenderer}}
+\index{````~CRenderer@{\texorpdfstring{$\sim$}{\string~}CRenderer}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{\texorpdfstring{$\sim$}{\string~}CRenderer()}{\string~CRenderer()}}
+{\footnotesize\ttfamily \label{class_c_renderer_acb0a66a0d9205fe5f24cec41f0e0b249} 
+CRenderer::\+\texorpdfstring{$\sim$}{\string~}\+CRenderer (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_acb0a66a0d9205fe5f24cec41f0e0b249_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-func-members}
+\Hypertarget{class_c_renderer_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_c_renderer_abf1762b8ed5ffb7fa193d68dbb9084eb}\index{CRenderer@{CRenderer}!AddCommand@{AddCommand}}
+\index{AddCommand@{AddCommand}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{AddCommand()}{AddCommand()}}
+{\footnotesize\ttfamily \label{class_c_renderer_abf1762b8ed5ffb7fa193d68dbb9084eb} 
+void CRenderer::\+\+Add\+Command (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_render_command}{FRender\+Command}} \&}]{Command}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_abf1762b8ed5ffb7fa193d68dbb9084eb_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_abf1762b8ed5ffb7fa193d68dbb9084eb_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_a4053138d44033afd1cf9f28852d484c2}\index{CRenderer@{CRenderer}!BeginFrame@{BeginFrame}}
+\index{BeginFrame@{BeginFrame}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{BeginFrame()}{BeginFrame()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a4053138d44033afd1cf9f28852d484c2} 
+void CRenderer::\+\+Begin\+Frame (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_a4053138d44033afd1cf9f28852d484c2_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_ac6cfa38df0fbffc7942e19e6527a4e19}\index{CRenderer@{CRenderer}!ClearSceneRenderTarget@{ClearSceneRenderTarget}}
+\index{ClearSceneRenderTarget@{ClearSceneRenderTarget}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{ClearSceneRenderTarget()}{ClearSceneRenderTarget()}}
+{\footnotesize\ttfamily \label{class_c_renderer_ac6cfa38df0fbffc7942e19e6527a4e19} 
+void CRenderer::\+\+Clear\+Scene\+Render\+Target (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_ac6cfa38df0fbffc7942e19e6527a4e19_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_a64c19a865130361f3e182831475208a8}\index{CRenderer@{CRenderer}!ClearViewportCallbacks@{ClearViewportCallbacks}}
+\index{ClearViewportCallbacks@{ClearViewportCallbacks}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{ClearViewportCallbacks()}{ClearViewportCallbacks()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a64c19a865130361f3e182831475208a8} 
+void CRenderer::\+\+Clear\+Viewport\+Callbacks (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_a64c19a865130361f3e182831475208a8_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_ad7ced96a131a7c1e0655fb7e8d57b20f}\index{CRenderer@{CRenderer}!CreateConstantBuffers@{CreateConstantBuffers}}
+\index{CreateConstantBuffers@{CreateConstantBuffers}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{CreateConstantBuffers()}{CreateConstantBuffers()}}
+{\footnotesize\ttfamily \label{class_c_renderer_ad7ced96a131a7c1e0655fb7e8d57b20f} 
+bool CRenderer::\+\+Create\+Constant\+Buffers (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_ad7ced96a131a7c1e0655fb7e8d57b20f_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_a9f18e12bf5e8bd25925af33e7849084f}\index{CRenderer@{CRenderer}!CreateDeviceAndSwapChain@{CreateDeviceAndSwapChain}}
+\index{CreateDeviceAndSwapChain@{CreateDeviceAndSwapChain}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{CreateDeviceAndSwapChain()}{CreateDeviceAndSwapChain()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a9f18e12bf5e8bd25925af33e7849084f} 
+bool CRenderer::\+\+Create\+Device\+And\+Swap\+Chain (\begin{DoxyParamCaption}\item[{HWND}]{In\+Hwnd}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Width}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Height}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_a9f18e12bf5e8bd25925af33e7849084f_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_aa4d034afc3ab508016e27eaa1eef4fcc}\index{CRenderer@{CRenderer}!CreateRenderTargetAndDepthStencil@{CreateRenderTargetAndDepthStencil}}
+\index{CreateRenderTargetAndDepthStencil@{CreateRenderTargetAndDepthStencil}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{CreateRenderTargetAndDepthStencil()}{CreateRenderTargetAndDepthStencil()}}
+{\footnotesize\ttfamily \label{class_c_renderer_aa4d034afc3ab508016e27eaa1eef4fcc} 
+bool CRenderer::\+\+Create\+Render\+Target\+And\+Depth\+Stencil (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Width}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Height}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_aa4d034afc3ab508016e27eaa1eef4fcc_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_a6a1dbe7329017a8e5846cf1ab4f03acd}\index{CRenderer@{CRenderer}!DrawCube@{DrawCube}}
+\index{DrawCube@{DrawCube}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{DrawCube()}{DrawCube()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a6a1dbe7329017a8e5846cf1ab4f03acd} 
+void CRenderer::\+\+Draw\+Cube (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Center}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Box\+Extent}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&}]{Color}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=342pt]{class_c_renderer_a6a1dbe7329017a8e5846cf1ab4f03acd_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_ac583192433693e032a4b0396f05c5cc0}\index{CRenderer@{CRenderer}!DrawLine@{DrawLine}}
+\index{DrawLine@{DrawLine}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{DrawLine()}{DrawLine()}}
+{\footnotesize\ttfamily \label{class_c_renderer_ac583192433693e032a4b0396f05c5cc0} 
+void CRenderer::\+\+Draw\+Line (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Start}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{End}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&}]{Color}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_ac583192433693e032a4b0396f05c5cc0_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_a5eb509d947050b18dc74607be9523c5e}\index{CRenderer@{CRenderer}!EndFrame@{EndFrame}}
+\index{EndFrame@{EndFrame}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{EndFrame()}{EndFrame()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a5eb509d947050b18dc74607be9523c5e} 
+void CRenderer::\+\+End\+Frame (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=347pt]{class_c_renderer_a5eb509d947050b18dc74607be9523c5e_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_a5284d9279650f0667487db50bf410210}\index{CRenderer@{CRenderer}!ExecuteCommands@{ExecuteCommands}}
+\index{ExecuteCommands@{ExecuteCommands}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{ExecuteCommands()}{ExecuteCommands()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a5284d9279650f0667487db50bf410210} 
+void CRenderer::\+\+Execute\+Commands (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_a5284d9279650f0667487db50bf410210_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_ad5d2eb08a723e50472873e3056ed1547}\index{CRenderer@{CRenderer}!ExecuteLineCommands@{ExecuteLineCommands}}
+\index{ExecuteLineCommands@{ExecuteLineCommands}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{ExecuteLineCommands()}{ExecuteLineCommands()}}
+{\footnotesize\ttfamily \label{class_c_renderer_ad5d2eb08a723e50472873e3056ed1547} 
+void CRenderer::\+\+Execute\+Line\+Commands (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_ad5d2eb08a723e50472873e3056ed1547_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_ad5d2eb08a723e50472873e3056ed1547_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_acb9daa1c6bed28ce68af645a713ce624}\index{CRenderer@{CRenderer}!GetDefaultMaterial@{GetDefaultMaterial}}
+\index{GetDefaultMaterial@{GetDefaultMaterial}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{GetDefaultMaterial()}{GetDefaultMaterial()}}
+{\footnotesize\ttfamily \label{class_c_renderer_acb9daa1c6bed28ce68af645a713ce624} 
+\doxymbox{\hyperlink{class_f_material}{FMaterial}} \texorpdfstring{$\ast$}{*} CRenderer::\+\+Get\+Default\+Material (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_c_renderer_a8e7e81b21c823a9d9bea29e7461f49a7}\index{CRenderer@{CRenderer}!GetDevice@{GetDevice}}
+\index{GetDevice@{GetDevice}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{GetDevice()}{GetDevice()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a8e7e81b21c823a9d9bea29e7461f49a7} 
+ID3\+D11\+Device \texorpdfstring{$\ast$}{*} CRenderer::\+\+Get\+Device (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_a8e7e81b21c823a9d9bea29e7461f49a7_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_a8ea51190b7b6e47b6c0e5c23acb65c7e}\index{CRenderer@{CRenderer}!GetDeviceContext@{GetDeviceContext}}
+\index{GetDeviceContext@{GetDeviceContext}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{GetDeviceContext()}{GetDeviceContext()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a8ea51190b7b6e47b6c0e5c23acb65c7e} 
+ID3\+D11\+Device\+Context \texorpdfstring{$\ast$}{*} CRenderer::\+\+Get\+Device\+Context (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_a8ea51190b7b6e47b6c0e5c23acb65c7e_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_ac7c0c9d66fb6e5fcded879c8d553d617}\index{CRenderer@{CRenderer}!GetHwnd@{GetHwnd}}
+\index{GetHwnd@{GetHwnd}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{GetHwnd()}{GetHwnd()}}
+{\footnotesize\ttfamily \label{class_c_renderer_ac7c0c9d66fb6e5fcded879c8d553d617} 
+HWND CRenderer::\+\+Get\+Hwnd (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_ac7c0c9d66fb6e5fcded879c8d553d617_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_a85f0d3ae04fa9428e7d320e658d48f2b}\index{CRenderer@{CRenderer}!GetPrevCommandCount@{GetPrevCommandCount}}
+\index{GetPrevCommandCount@{GetPrevCommandCount}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{GetPrevCommandCount()}{GetPrevCommandCount()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a85f0d3ae04fa9428e7d320e658d48f2b} 
+size\+\_\+t CRenderer::\+\+Get\+Prev\+Command\+Count (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_c_renderer_a9d4032d7430b09a52ae4dbf167994987}\index{CRenderer@{CRenderer}!GetRenderTargetView@{GetRenderTargetView}}
+\index{GetRenderTargetView@{GetRenderTargetView}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{GetRenderTargetView()}{GetRenderTargetView()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a9d4032d7430b09a52ae4dbf167994987} 
+ID3\+D11\+Render\+Target\+View \texorpdfstring{$\ast$}{*} CRenderer::\+\+Get\+Render\+Target\+View (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_c_renderer_a569a78c680b7d2e9407c278c1d37f1b1}\index{CRenderer@{CRenderer}!GetSwapChain@{GetSwapChain}}
+\index{GetSwapChain@{GetSwapChain}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{GetSwapChain()}{GetSwapChain()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a569a78c680b7d2e9407c278c1d37f1b1} 
+IDXGISwap\+Chain \texorpdfstring{$\ast$}{*} CRenderer::\+\+Get\+Swap\+Chain (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_c_renderer_a170b4d4c44ad5b957a45f92c44685e89}\index{CRenderer@{CRenderer}!Initialize@{Initialize}}
+\index{Initialize@{Initialize}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{Initialize()}{Initialize()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a170b4d4c44ad5b957a45f92c44685e89} 
+bool CRenderer::\+\+Initialize (\begin{DoxyParamCaption}\item[{HWND}]{Hwnd}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Width}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Height}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_a170b4d4c44ad5b957a45f92c44685e89_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=338pt]{class_c_renderer_a170b4d4c44ad5b957a45f92c44685e89_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_a5ad61ddf360170adfa778ab3855f24d4}\index{CRenderer@{CRenderer}!InitOutlineResources@{InitOutlineResources}}
+\index{InitOutlineResources@{InitOutlineResources}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{InitOutlineResources()}{InitOutlineResources()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a5ad61ddf360170adfa778ab3855f24d4} 
+bool CRenderer::\+\+Init\+Outline\+Resources (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_a5ad61ddf360170adfa778ab3855f24d4_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_a5ad61ddf360170adfa778ab3855f24d4_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_a8ff80451571869da016eb7543a162e41}\index{CRenderer@{CRenderer}!IsOccluded@{IsOccluded}}
+\index{IsOccluded@{IsOccluded}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{IsOccluded()}{IsOccluded()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a8ff80451571869da016eb7543a162e41} 
+bool CRenderer::\+\+Is\+Occluded (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_a8ff80451571869da016eb7543a162e41_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_aaf51c0c087b1e65fb4a5e08a39b0ac24}\index{CRenderer@{CRenderer}!IsVSyncEnabled@{IsVSyncEnabled}}
+\index{IsVSyncEnabled@{IsVSyncEnabled}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{IsVSyncEnabled()}{IsVSyncEnabled()}}
+{\footnotesize\ttfamily \label{class_c_renderer_aaf51c0c087b1e65fb4a5e08a39b0ac24} 
+bool CRenderer::\+\+Is\+VSync\+Enabled (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_c_renderer_ae3c40424539974a762bbabf4e028cb9a}\index{CRenderer@{CRenderer}!OnResize@{OnResize}}
+\index{OnResize@{OnResize}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{OnResize()}{OnResize()}}
+{\footnotesize\ttfamily \label{class_c_renderer_ae3c40424539974a762bbabf4e028cb9a} 
+void CRenderer::\+\+On\+Resize (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{New\+Width}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{New\+Height}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_ae3c40424539974a762bbabf4e028cb9a_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=345pt]{class_c_renderer_ae3c40424539974a762bbabf4e028cb9a_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_a99d8500773d26275a45daed89d9a6071}\index{CRenderer@{CRenderer}!Release@{Release}}
+\index{Release@{Release}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{Release()}{Release()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a99d8500773d26275a45daed89d9a6071} 
+void CRenderer::\+\+Release (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_a99d8500773d26275a45daed89d9a6071_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=344pt]{class_c_renderer_a99d8500773d26275a45daed89d9a6071_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_a0dffc19dcb93a4d2ca8f52fe51089f1b}\index{CRenderer@{CRenderer}!RenderOutline@{RenderOutline}}
+\index{RenderOutline@{RenderOutline}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{RenderOutline()}{RenderOutline()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a0dffc19dcb93a4d2ca8f52fe51089f1b} 
+void CRenderer::\+\+Render\+Outline (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} \texorpdfstring{$\ast$}{*}}]{Mesh}{, }\item[{const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&}]{World\+Matrix}{, }\item[{float}]{Outline\+Scale}{ = {\ttfamily 1.05f}}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_a0dffc19dcb93a4d2ca8f52fe51089f1b_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_a0dffc19dcb93a4d2ca8f52fe51089f1b_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_a009c03594c88cd9ba836eacb60b3e53c}\index{CRenderer@{CRenderer}!SetGUICallbacks@{SetGUICallbacks}}
+\index{SetGUICallbacks@{SetGUICallbacks}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{SetGUICallbacks()}{SetGUICallbacks()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a009c03594c88cd9ba836eacb60b3e53c} 
+void CRenderer::\+\+Set\+GUICallbacks (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}}}]{In\+Init}{, }\item[{\doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}}}]{In\+Shutdown}{, }\item[{\doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}}}]{In\+New\+Frame}{, }\item[{\doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}}}]{In\+Render}{, }\item[{\doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}}}]{In\+Post\+Present}{ = {\ttfamily nullptr}}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_a009c03594c88cd9ba836eacb60b3e53c_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_a04fa8afddd3877984088fdd44ad8aca7}\index{CRenderer@{CRenderer}!SetGUIUpdateCallback@{SetGUIUpdateCallback}}
+\index{SetGUIUpdateCallback@{SetGUIUpdateCallback}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{SetGUIUpdateCallback()}{SetGUIUpdateCallback()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a04fa8afddd3877984088fdd44ad8aca7} 
+void CRenderer::\+\+Set\+GUIUpdate\+Callback (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}}}]{In\+Update}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_a04fa8afddd3877984088fdd44ad8aca7_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_a8526f6e49d02f9dade7a9041eab8e44f}\index{CRenderer@{CRenderer}!SetPostRenderCallback@{SetPostRenderCallback}}
+\index{SetPostRenderCallback@{SetPostRenderCallback}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{SetPostRenderCallback()}{SetPostRenderCallback()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a8526f6e49d02f9dade7a9041eab8e44f} 
+void CRenderer::\+\+Set\+Post\+Render\+Callback (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_renderer_8h_ad02d5af5fdc0e6fca0d053f779d9d9f4}{FPost\+Render\+Callback}}}]{In\+Callback}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_a8526f6e49d02f9dade7a9041eab8e44f_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_a00fab11b9808f59d74c01fbb65fbf080}\index{CRenderer@{CRenderer}!SetSceneRenderTarget@{SetSceneRenderTarget}}
+\index{SetSceneRenderTarget@{SetSceneRenderTarget}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{SetSceneRenderTarget()}{SetSceneRenderTarget()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a00fab11b9808f59d74c01fbb65fbf080} 
+void CRenderer::\+\+Set\+Scene\+Render\+Target (\begin{DoxyParamCaption}\item[{ID3\+D11\+Render\+Target\+View \texorpdfstring{$\ast$}{*}}]{In\+Render\+Target\+View}{, }\item[{ID3\+D11\+Depth\+Stencil\+View \texorpdfstring{$\ast$}{*}}]{In\+Depth\+Stencil\+View}{, }\item[{const D3\+D11\+\_\+\+VIEWPORT \&}]{In\+Viewport}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_a00fab11b9808f59d74c01fbb65fbf080_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_ae029f7cf5609ca436489d238e19b62cd}\index{CRenderer@{CRenderer}!SetVSync@{SetVSync}}
+\index{SetVSync@{SetVSync}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{SetVSync()}{SetVSync()}}
+{\footnotesize\ttfamily \label{class_c_renderer_ae029f7cf5609ca436489d238e19b62cd} 
+void CRenderer::\+\+Set\+VSync (\begin{DoxyParamCaption}\item[{bool}]{b\+Enable}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_c_renderer_a693bcb79e13afefe033036fe9ea0e859}\index{CRenderer@{CRenderer}!SubmitCommands@{SubmitCommands}}
+\index{SubmitCommands@{SubmitCommands}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{SubmitCommands()}{SubmitCommands()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a693bcb79e13afefe033036fe9ea0e859} 
+void CRenderer::\+\+Submit\+Commands (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_render_command_queue}{FRender\+Command\+Queue}} \&}]{Queue}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_a693bcb79e13afefe033036fe9ea0e859_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_a85ed669a6df0cedeff7dfd69d076dc6f}\index{CRenderer@{CRenderer}!UpdateFrameConstantBuffer@{UpdateFrameConstantBuffer}}
+\index{UpdateFrameConstantBuffer@{UpdateFrameConstantBuffer}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{UpdateFrameConstantBuffer()}{UpdateFrameConstantBuffer()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a85ed669a6df0cedeff7dfd69d076dc6f} 
+void CRenderer::\+\+Update\+Frame\+Constant\+Buffer (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_a85ed669a6df0cedeff7dfd69d076dc6f_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_renderer_a3dcb850ec42ef5dcaed079803a374578}\index{CRenderer@{CRenderer}!UpdateObjectConstantBuffer@{UpdateObjectConstantBuffer}}
+\index{UpdateObjectConstantBuffer@{UpdateObjectConstantBuffer}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{UpdateObjectConstantBuffer()}{UpdateObjectConstantBuffer()}}
+{\footnotesize\ttfamily \label{class_c_renderer_a3dcb850ec42ef5dcaed079803a374578} 
+void CRenderer::\+\+Update\+Object\+Constant\+Buffer (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&}]{World\+Matrix}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_a3dcb850ec42ef5dcaed079803a374578_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_renderer_a3dcb850ec42ef5dcaed079803a374578_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_c_renderer_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_c_renderer_a30fbf79a4ad540af205706485df373fd}\index{CRenderer@{CRenderer}!bSwapChainOccluded@{bSwapChainOccluded}}
+\index{bSwapChainOccluded@{bSwapChainOccluded}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{bSwapChainOccluded}{bSwapChainOccluded}}
+{\footnotesize\ttfamily \label{class_c_renderer_a30fbf79a4ad540af205706485df373fd} 
+bool CRenderer::\+b\+Swap\+Chain\+Occluded = false}
+
+\Hypertarget{class_c_renderer_a8187521c53e257cbc3ac2d0469d72b7e}\index{CRenderer@{CRenderer}!bUseSceneRenderTargetOverride@{bUseSceneRenderTargetOverride}}
+\index{bUseSceneRenderTargetOverride@{bUseSceneRenderTargetOverride}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{bUseSceneRenderTargetOverride}{bUseSceneRenderTargetOverride}}
+{\footnotesize\ttfamily \label{class_c_renderer_a8187521c53e257cbc3ac2d0469d72b7e} 
+bool CRenderer::\+b\+Use\+Scene\+Render\+Target\+Override = false\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_aa23c17f1488c96bbbaf8103e27e3182a}\index{CRenderer@{CRenderer}!bVSyncEnabled@{bVSyncEnabled}}
+\index{bVSyncEnabled@{bVSyncEnabled}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{bVSyncEnabled}{bVSyncEnabled}}
+{\footnotesize\ttfamily \label{class_c_renderer_aa23c17f1488c96bbbaf8103e27e3182a} 
+bool CRenderer::\+b\+VSync\+Enabled = false\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a10d79d7607d2a76b7b639dd1068e4594}\index{CRenderer@{CRenderer}!CommandList@{CommandList}}
+\index{CommandList@{CommandList}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{CommandList}{CommandList}}
+{\footnotesize\ttfamily \label{class_c_renderer_a10d79d7607d2a76b7b639dd1068e4594} 
+\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$\doxymbox{\hyperlink{struct_f_render_command}{FRender\+Command}}$>$ CRenderer::\+\+Command\+List\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a6350df28e4c3b931f0a80f9a2e9aed98}\index{CRenderer@{CRenderer}!DefaultMaterial@{DefaultMaterial}}
+\index{DefaultMaterial@{DefaultMaterial}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{DefaultMaterial}{DefaultMaterial}}
+{\footnotesize\ttfamily \label{class_c_renderer_a6350df28e4c3b931f0a80f9a2e9aed98} 
+std::\+shared\+\_\+ptr$<$\doxymbox{\hyperlink{class_f_material}{FMaterial}}$>$ CRenderer::\+\+Default\+Material\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a652d5614dbfe669d37900f5752210855}\index{CRenderer@{CRenderer}!DepthStencilView@{DepthStencilView}}
+\index{DepthStencilView@{DepthStencilView}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{DepthStencilView}{DepthStencilView}}
+{\footnotesize\ttfamily \label{class_c_renderer_a652d5614dbfe669d37900f5752210855} 
+ID3\+D11\+Depth\+Stencil\+View\texorpdfstring{$\ast$}{*} CRenderer::\+\+Depth\+Stencil\+View = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_ac222a8f4143cfc820b785695903a5a31}\index{CRenderer@{CRenderer}!Device@{Device}}
+\index{Device@{Device}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{Device}{Device}}
+{\footnotesize\ttfamily \label{class_c_renderer_ac222a8f4143cfc820b785695903a5a31} 
+ID3\+D11\+Device\texorpdfstring{$\ast$}{*} CRenderer::\+\+Device = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_acc843a4195f4e5a94ae7ebf3f08ac869}\index{CRenderer@{CRenderer}!DeviceContext@{DeviceContext}}
+\index{DeviceContext@{DeviceContext}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{DeviceContext}{DeviceContext}}
+{\footnotesize\ttfamily \label{class_c_renderer_acc843a4195f4e5a94ae7ebf3f08ac869} 
+ID3\+D11\+Device\+Context\texorpdfstring{$\ast$}{*} CRenderer::\+\+Device\+Context = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_acfe4a3976aa5030aa12b28321d06501a}\index{CRenderer@{CRenderer}!FrameConstantBuffer@{FrameConstantBuffer}}
+\index{FrameConstantBuffer@{FrameConstantBuffer}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{FrameConstantBuffer}{FrameConstantBuffer}}
+{\footnotesize\ttfamily \label{class_c_renderer_acfe4a3976aa5030aa12b28321d06501a} 
+ID3\+D11\+Buffer\texorpdfstring{$\ast$}{*} CRenderer::\+\+Frame\+Constant\+Buffer = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_ae594303f83ec421522fc85b531171961}\index{CRenderer@{CRenderer}!GUIInit@{GUIInit}}
+\index{GUIInit@{GUIInit}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{GUIInit}{GUIInit}}
+{\footnotesize\ttfamily \label{class_c_renderer_ae594303f83ec421522fc85b531171961} 
+\doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}} CRenderer::\+\+GUIInit\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a090f523ed17c0b56e3d2f9310703ab0a}\index{CRenderer@{CRenderer}!GUINewFrame@{GUINewFrame}}
+\index{GUINewFrame@{GUINewFrame}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{GUINewFrame}{GUINewFrame}}
+{\footnotesize\ttfamily \label{class_c_renderer_a090f523ed17c0b56e3d2f9310703ab0a} 
+\doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}} CRenderer::\+\+GUINew\+Frame\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a3a295691b6657165d921d508216691d3}\index{CRenderer@{CRenderer}!GUIPostPresent@{GUIPostPresent}}
+\index{GUIPostPresent@{GUIPostPresent}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{GUIPostPresent}{GUIPostPresent}}
+{\footnotesize\ttfamily \label{class_c_renderer_a3a295691b6657165d921d508216691d3} 
+\doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}} CRenderer::\+\+GUIPost\+Present\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a701cf0c327864dce00200881544a7752}\index{CRenderer@{CRenderer}!GUIRender@{GUIRender}}
+\index{GUIRender@{GUIRender}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{GUIRender}{GUIRender}}
+{\footnotesize\ttfamily \label{class_c_renderer_a701cf0c327864dce00200881544a7752} 
+\doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}} CRenderer::\+\+GUIRender\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a4a459e2d94cc22aff690377170654ab3}\index{CRenderer@{CRenderer}!GUIShutdown@{GUIShutdown}}
+\index{GUIShutdown@{GUIShutdown}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{GUIShutdown}{GUIShutdown}}
+{\footnotesize\ttfamily \label{class_c_renderer_a4a459e2d94cc22aff690377170654ab3} 
+\doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}} CRenderer::\+\+GUIShutdown\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a78f70d77cc6724c465f95b1bd36dc0bb}\index{CRenderer@{CRenderer}!GUIUpdate@{GUIUpdate}}
+\index{GUIUpdate@{GUIUpdate}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{GUIUpdate}{GUIUpdate}}
+{\footnotesize\ttfamily \label{class_c_renderer_a78f70d77cc6724c465f95b1bd36dc0bb} 
+\doxymbox{\hyperlink{_renderer_8h_a56d2a4c2b644d6edf52ffe9754e5cae3}{FGUICallback}} CRenderer::\+\+GUIUpdate\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_ad793ea972a1c22d94f67e8dbd35ce9ef}\index{CRenderer@{CRenderer}!Hwnd@{Hwnd}}
+\index{Hwnd@{Hwnd}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{Hwnd}{Hwnd}}
+{\footnotesize\ttfamily \label{class_c_renderer_ad793ea972a1c22d94f67e8dbd35ce9ef} 
+HWND CRenderer::\+\+Hwnd = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_aabac473319e66ee6c6103d47213f8be2}\index{CRenderer@{CRenderer}!LineDepthState@{LineDepthState}}
+\index{LineDepthState@{LineDepthState}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{LineDepthState}{LineDepthState}}
+{\footnotesize\ttfamily \label{class_c_renderer_aabac473319e66ee6c6103d47213f8be2} 
+ID3\+D11\+Depth\+Stencil\+State\texorpdfstring{$\ast$}{*} CRenderer::\+\+Line\+Depth\+State = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a37cc749559e8b55c5cb474a53eaabc71}\index{CRenderer@{CRenderer}!LineVertexBuffer@{LineVertexBuffer}}
+\index{LineVertexBuffer@{LineVertexBuffer}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{LineVertexBuffer}{LineVertexBuffer}}
+{\footnotesize\ttfamily \label{class_c_renderer_a37cc749559e8b55c5cb474a53eaabc71} 
+ID3\+D11\+Buffer\texorpdfstring{$\ast$}{*} CRenderer::\+\+Line\+Vertex\+Buffer = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a1cd5bf88685f817225e7cce7dd695ca8}\index{CRenderer@{CRenderer}!LineVertexBufferSize@{LineVertexBufferSize}}
+\index{LineVertexBufferSize@{LineVertexBufferSize}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{LineVertexBufferSize}{LineVertexBufferSize}}
+{\footnotesize\ttfamily \label{class_c_renderer_a1cd5bf88685f817225e7cce7dd695ca8} 
+UINT CRenderer::\+\+Line\+Vertex\+Buffer\+Size = 0\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_ad9132581eeff45d711f21e353cbf674b}\index{CRenderer@{CRenderer}!LineVertices@{LineVertices}}
+\index{LineVertices@{LineVertices}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{LineVertices}{LineVertices}}
+{\footnotesize\ttfamily \label{class_c_renderer_ad9132581eeff45d711f21e353cbf674b} 
+\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$\doxymbox{\hyperlink{struct_f_primitive_vertex}{FPrimitive\+Vertex}}$>$ CRenderer::\+\+Line\+Vertices\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a1d7cdeb48bbb62f5036efb80d4e93e1a}\index{CRenderer@{CRenderer}!NoCullRasterizerState@{NoCullRasterizerState}}
+\index{NoCullRasterizerState@{NoCullRasterizerState}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{NoCullRasterizerState}{NoCullRasterizerState}}
+{\footnotesize\ttfamily \label{class_c_renderer_a1d7cdeb48bbb62f5036efb80d4e93e1a} 
+ID3\+D11\+Rasterizer\+State\texorpdfstring{$\ast$}{*} CRenderer::\+\+No\+Cull\+Rasterizer\+State = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a98c5ed0b7c9ef80490ccd9946ab61f88}\index{CRenderer@{CRenderer}!ObjectConstantBuffer@{ObjectConstantBuffer}}
+\index{ObjectConstantBuffer@{ObjectConstantBuffer}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{ObjectConstantBuffer}{ObjectConstantBuffer}}
+{\footnotesize\ttfamily \label{class_c_renderer_a98c5ed0b7c9ef80490ccd9946ab61f88} 
+ID3\+D11\+Buffer\texorpdfstring{$\ast$}{*} CRenderer::\+\+Object\+Constant\+Buffer = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a32c1cabd63bd63d1d70e90b524e341ac}\index{CRenderer@{CRenderer}!OutlinePS@{OutlinePS}}
+\index{OutlinePS@{OutlinePS}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{OutlinePS}{OutlinePS}}
+{\footnotesize\ttfamily \label{class_c_renderer_a32c1cabd63bd63d1d70e90b524e341ac} 
+std::\+shared\+\_\+ptr$<$\doxymbox{\hyperlink{class_f_pixel_shader}{FPixel\+Shader}}$>$ CRenderer::\+\+Outline\+PS\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a1eda38764c019d7593695d9dd3507377}\index{CRenderer@{CRenderer}!OverlayDepthState@{OverlayDepthState}}
+\index{OverlayDepthState@{OverlayDepthState}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{OverlayDepthState}{OverlayDepthState}}
+{\footnotesize\ttfamily \label{class_c_renderer_a1eda38764c019d7593695d9dd3507377} 
+ID3\+D11\+Depth\+Stencil\+State\texorpdfstring{$\ast$}{*} CRenderer::\+\+Overlay\+Depth\+State = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a88d1749497592b9c561deacd316d5f02}\index{CRenderer@{CRenderer}!PostRenderCallback@{PostRenderCallback}}
+\index{PostRenderCallback@{PostRenderCallback}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{PostRenderCallback}{PostRenderCallback}}
+{\footnotesize\ttfamily \label{class_c_renderer_a88d1749497592b9c561deacd316d5f02} 
+\doxymbox{\hyperlink{_renderer_8h_ad02d5af5fdc0e6fca0d053f779d9d9f4}{FPost\+Render\+Callback}} CRenderer::\+\+Post\+Render\+Callback\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a4d3368c898f9dca7fb7b3e1ae208ed4b}\index{CRenderer@{CRenderer}!PrevCommandCount@{PrevCommandCount}}
+\index{PrevCommandCount@{PrevCommandCount}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{PrevCommandCount}{PrevCommandCount}}
+{\footnotesize\ttfamily \label{class_c_renderer_a4d3368c898f9dca7fb7b3e1ae208ed4b} 
+size\+\_\+t CRenderer::\+\+Prev\+Command\+Count = 0\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a7abd2530f4f0885ee5911fe76ba4cda1}\index{CRenderer@{CRenderer}!ProjectionMatrix@{ProjectionMatrix}}
+\index{ProjectionMatrix@{ProjectionMatrix}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{ProjectionMatrix}{ProjectionMatrix}}
+{\footnotesize\ttfamily \label{class_c_renderer_a7abd2530f4f0885ee5911fe76ba4cda1} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} CRenderer::\+\+Projection\+Matrix\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a25b9c7b5efd950bd85cc88d108d4ee67}\index{CRenderer@{CRenderer}!RasterizerState@{RasterizerState}}
+\index{RasterizerState@{RasterizerState}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{RasterizerState}{RasterizerState}}
+{\footnotesize\ttfamily \label{class_c_renderer_a25b9c7b5efd950bd85cc88d108d4ee67} 
+ID3\+D11\+Rasterizer\+State\texorpdfstring{$\ast$}{*} CRenderer::\+\+Rasterizer\+State = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a0ace2ef2cfd83c89e917b1360477a0a1}\index{CRenderer@{CRenderer}!RenderTargetView@{RenderTargetView}}
+\index{RenderTargetView@{RenderTargetView}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{RenderTargetView}{RenderTargetView}}
+{\footnotesize\ttfamily \label{class_c_renderer_a0ace2ef2cfd83c89e917b1360477a0a1} 
+ID3\+D11\+Render\+Target\+View\texorpdfstring{$\ast$}{*} CRenderer::\+\+Render\+Target\+View = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a08fcf984aa321f83c2ff26f6fba19013}\index{CRenderer@{CRenderer}!SceneDepthStencilView@{SceneDepthStencilView}}
+\index{SceneDepthStencilView@{SceneDepthStencilView}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{SceneDepthStencilView}{SceneDepthStencilView}}
+{\footnotesize\ttfamily \label{class_c_renderer_a08fcf984aa321f83c2ff26f6fba19013} 
+ID3\+D11\+Depth\+Stencil\+View\texorpdfstring{$\ast$}{*} CRenderer::\+\+Scene\+Depth\+Stencil\+View = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a16135f595e2849042320fb78d556a02e}\index{CRenderer@{CRenderer}!SceneRenderTargetView@{SceneRenderTargetView}}
+\index{SceneRenderTargetView@{SceneRenderTargetView}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{SceneRenderTargetView}{SceneRenderTargetView}}
+{\footnotesize\ttfamily \label{class_c_renderer_a16135f595e2849042320fb78d556a02e} 
+ID3\+D11\+Render\+Target\+View\texorpdfstring{$\ast$}{*} CRenderer::\+\+Scene\+Render\+Target\+View = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a55447cf08a1cce75335f6bed46400e59}\index{CRenderer@{CRenderer}!SceneViewport@{SceneViewport}}
+\index{SceneViewport@{SceneViewport}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{SceneViewport}{SceneViewport}}
+{\footnotesize\ttfamily \label{class_c_renderer_a55447cf08a1cce75335f6bed46400e59} 
+D3\+D11\+\_\+\+VIEWPORT CRenderer::\+\+Scene\+Viewport = \{\}\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a62dcea5dbecc9421e09927c6dfc6b9a1}\index{CRenderer@{CRenderer}!ShaderManager@{ShaderManager}}
+\index{ShaderManager@{ShaderManager}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{ShaderManager}{ShaderManager}}
+{\footnotesize\ttfamily \label{class_c_renderer_a62dcea5dbecc9421e09927c6dfc6b9a1} 
+\doxymbox{\hyperlink{class_c_shader_manager}{CShader\+Manager}} CRenderer::\+\+Shader\+Manager}
+
+\Hypertarget{class_c_renderer_aa45fe305e0da0de77e0deedca92e6be9}\index{CRenderer@{CRenderer}!StencilTestState@{StencilTestState}}
+\index{StencilTestState@{StencilTestState}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{StencilTestState}{StencilTestState}}
+{\footnotesize\ttfamily \label{class_c_renderer_aa45fe305e0da0de77e0deedca92e6be9} 
+ID3\+D11\+Depth\+Stencil\+State\texorpdfstring{$\ast$}{*} CRenderer::\+\+Stencil\+Test\+State = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a68222cdd8b23f8541f4734c68e43dbb8}\index{CRenderer@{CRenderer}!StencilWriteState@{StencilWriteState}}
+\index{StencilWriteState@{StencilWriteState}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{StencilWriteState}{StencilWriteState}}
+{\footnotesize\ttfamily \label{class_c_renderer_a68222cdd8b23f8541f4734c68e43dbb8} 
+ID3\+D11\+Depth\+Stencil\+State\texorpdfstring{$\ast$}{*} CRenderer::\+\+Stencil\+Write\+State = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a29d5905b1c8a2241a0a5693ae3425a44}\index{CRenderer@{CRenderer}!SwapChain@{SwapChain}}
+\index{SwapChain@{SwapChain}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{SwapChain}{SwapChain}}
+{\footnotesize\ttfamily \label{class_c_renderer_a29d5905b1c8a2241a0a5693ae3425a44} 
+IDXGISwap\+Chain\texorpdfstring{$\ast$}{*} CRenderer::\+\+Swap\+Chain = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a82d2c48c7589cdab4a5b818d74938102}\index{CRenderer@{CRenderer}!ViewMatrix@{ViewMatrix}}
+\index{ViewMatrix@{ViewMatrix}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{ViewMatrix}{ViewMatrix}}
+{\footnotesize\ttfamily \label{class_c_renderer_a82d2c48c7589cdab4a5b818d74938102} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} CRenderer::\+\+View\+Matrix\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_renderer_a5db572d0089dafa5b7e77d7a08d6ef6a}\index{CRenderer@{CRenderer}!Viewport@{Viewport}}
+\index{Viewport@{Viewport}!CRenderer@{CRenderer}}
+\doxysubsubsection{\texorpdfstring{Viewport}{Viewport}}
+{\footnotesize\ttfamily \label{class_c_renderer_a5db572d0089dafa5b7e77d7a08d6ef6a} 
+D3\+D11\+\_\+\+VIEWPORT CRenderer::\+\+Viewport = \{\}\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Renderer/\+\doxymbox{\hyperlink{_renderer_8h}{Renderer.\+h}}\item 
+Engine/\+\+Source/\+\+Renderer/\+\doxymbox{\hyperlink{_renderer_8cpp}{Renderer.\+cpp}}\end{DoxyCompactItemize}

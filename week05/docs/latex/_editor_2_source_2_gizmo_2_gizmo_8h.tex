@@ -1,0 +1,165 @@
+\doxysection{Editor/\+\+Source/\+\+Gizmo/\+\+Gizmo.h File Reference}
+\hypertarget{_editor_2_source_2_gizmo_2_gizmo_8h}{}\label{_editor_2_source_2_gizmo_2_gizmo_8h}\index{Editor/Source/Gizmo/Gizmo.h@{Editor/Source/Gizmo/Gizmo.h}}
+{\ttfamily \+\#include "{}Core\+Minimal.\+h"{}}\newline
+{\ttfamily \+\#include "{}Primitive/\+\+Primitive\+Gizmo.\+h"{}}\newline
+{\ttfamily \+\#include $<$memory$>$}\newline
+Include dependency graph for Gizmo.\+h:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_editor_2_source_2_gizmo_2_gizmo_8h__incl}
+\end{center}
+\end{figure}
+This graph shows which files directly or indirectly include this file:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_editor_2_source_2_gizmo_2_gizmo_8h__dep__incl}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+class \doxymbox{\hyperlink{class_c_gizmo}{CGizmo}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Enumerations}
+\begin{DoxyCompactItemize}
+\item 
+enum class \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028e}{EGizmo\+Mode}} :\+ uint8 \{ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028eace5bf551379459c1c61d2a204061c455}{Location}}
+, \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028eaf1a42bd417390fc63b030a519624607a}{Rotation}}
+, \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}}
+ \}
+\item 
+enum class \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a80cd89dd62f160db4e77ade88fb951e1}{EGizmo\+Coordinate\+Space}} :\+ uint8 \{ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a80cd89dd62f160db4e77ade88fb951e1af5a7924e621e84c9280a9a27e1bcb7f6}{World}}
+, \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a80cd89dd62f160db4e77ade88fb951e1a509820290d57f333403f490dde7316f4}{Local}}
+ \}
+\item 
+enum class \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2}{EGizmo\+Axis}} :\+ uint8 \{ \newline
+\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a6adf97f83acf6453d4a6a4b1070f3754}{None}} = 0
+, \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}{X}}
+, \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}}
+, \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5}{Z}}
+, \newline
+\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a74c53bcd3dcb2bb79993b2fec37d362a}{XY}}
+, \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a27db3b98d01e664c17a6620b222c6469}{XZ}}
+, \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2affa4ba973372c3650fd0881abeca6512}{YZ}}
+, \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2ae65075d550f9b5bf9992fa1d71a131be}{XYZ}}
+, \newline
+\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a2fc3359e12b2a9104121dcf04246f6a0}{Screen}}
+ \}
+\end{DoxyCompactItemize}
+
+
+\label{doc-enum-members}
+\Hypertarget{_editor_2_source_2_gizmo_2_gizmo_8h_doc-enum-members}
+\doxysubsection{Enumeration Type Documentation}
+\Hypertarget{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2}\index{Gizmo.h@{Gizmo.h}!EGizmoAxis@{EGizmoAxis}}
+\index{EGizmoAxis@{EGizmoAxis}!Gizmo.h@{Gizmo.h}}
+\doxysubsubsection{\texorpdfstring{EGizmoAxis}{EGizmoAxis}}
+{\footnotesize\ttfamily \label{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2} 
+enum class \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2}{EGizmo\+Axis}} :\+ \doxymbox{\hyperlink{_core_types_8h_a34ecedcf03a70dc91e4616212d79267d}{uint8}}\hspace{0.3cm}{\ttfamily [strong]}}
+
+\begin{DoxyEnumFields}[2]{Enumerator}
+\raisebox{\heightof{T}}[0pt][0pt]{\index{None@{None}!Gizmo.h@{Gizmo.h}}
+\index{Gizmo.h@{Gizmo.h}!None@{None}}
+}\Hypertarget{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a6adf97f83acf6453d4a6a4b1070f3754}\label{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a6adf97f83acf6453d4a6a4b1070f3754} 
+None&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{X@{X}!Gizmo.h@{Gizmo.h}}
+\index{Gizmo.h@{Gizmo.h}!X@{X}}
+}\Hypertarget{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}\label{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383} 
+X&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Y@{Y}!Gizmo.h@{Gizmo.h}}
+\index{Gizmo.h@{Gizmo.h}!Y@{Y}}
+}\Hypertarget{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}\label{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0} 
+Y&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Z@{Z}!Gizmo.h@{Gizmo.h}}
+\index{Gizmo.h@{Gizmo.h}!Z@{Z}}
+}\Hypertarget{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5}\label{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5} 
+Z&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{XY@{XY}!Gizmo.h@{Gizmo.h}}
+\index{Gizmo.h@{Gizmo.h}!XY@{XY}}
+}\Hypertarget{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a74c53bcd3dcb2bb79993b2fec37d362a}\label{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a74c53bcd3dcb2bb79993b2fec37d362a} 
+XY&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{XZ@{XZ}!Gizmo.h@{Gizmo.h}}
+\index{Gizmo.h@{Gizmo.h}!XZ@{XZ}}
+}\Hypertarget{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a27db3b98d01e664c17a6620b222c6469}\label{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a27db3b98d01e664c17a6620b222c6469} 
+XZ&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{YZ@{YZ}!Gizmo.h@{Gizmo.h}}
+\index{Gizmo.h@{Gizmo.h}!YZ@{YZ}}
+}\Hypertarget{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2affa4ba973372c3650fd0881abeca6512}\label{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2affa4ba973372c3650fd0881abeca6512} 
+YZ&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{XYZ@{XYZ}!Gizmo.h@{Gizmo.h}}
+\index{Gizmo.h@{Gizmo.h}!XYZ@{XYZ}}
+}\Hypertarget{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2ae65075d550f9b5bf9992fa1d71a131be}\label{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2ae65075d550f9b5bf9992fa1d71a131be} 
+XYZ&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Screen@{Screen}!Gizmo.h@{Gizmo.h}}
+\index{Gizmo.h@{Gizmo.h}!Screen@{Screen}}
+}\Hypertarget{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a2fc3359e12b2a9104121dcf04246f6a0}\label{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a2fc3359e12b2a9104121dcf04246f6a0} 
+Screen&\\
+\hline
+
+\end{DoxyEnumFields}
+\Hypertarget{_editor_2_source_2_gizmo_2_gizmo_8h_a80cd89dd62f160db4e77ade88fb951e1}\index{Gizmo.h@{Gizmo.h}!EGizmoCoordinateSpace@{EGizmoCoordinateSpace}}
+\index{EGizmoCoordinateSpace@{EGizmoCoordinateSpace}!Gizmo.h@{Gizmo.h}}
+\doxysubsubsection{\texorpdfstring{EGizmoCoordinateSpace}{EGizmoCoordinateSpace}}
+{\footnotesize\ttfamily \label{_editor_2_source_2_gizmo_2_gizmo_8h_a80cd89dd62f160db4e77ade88fb951e1} 
+enum class \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a80cd89dd62f160db4e77ade88fb951e1}{EGizmo\+Coordinate\+Space}} :\+ \doxymbox{\hyperlink{_core_types_8h_a34ecedcf03a70dc91e4616212d79267d}{uint8}}\hspace{0.3cm}{\ttfamily [strong]}}
+
+\begin{DoxyEnumFields}[2]{Enumerator}
+\raisebox{\heightof{T}}[0pt][0pt]{\index{World@{World}!Gizmo.h@{Gizmo.h}}
+\index{Gizmo.h@{Gizmo.h}!World@{World}}
+}\Hypertarget{_editor_2_source_2_gizmo_2_gizmo_8h_a80cd89dd62f160db4e77ade88fb951e1af5a7924e621e84c9280a9a27e1bcb7f6}\label{_editor_2_source_2_gizmo_2_gizmo_8h_a80cd89dd62f160db4e77ade88fb951e1af5a7924e621e84c9280a9a27e1bcb7f6} 
+World&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Local@{Local}!Gizmo.h@{Gizmo.h}}
+\index{Gizmo.h@{Gizmo.h}!Local@{Local}}
+}\Hypertarget{_editor_2_source_2_gizmo_2_gizmo_8h_a80cd89dd62f160db4e77ade88fb951e1a509820290d57f333403f490dde7316f4}\label{_editor_2_source_2_gizmo_2_gizmo_8h_a80cd89dd62f160db4e77ade88fb951e1a509820290d57f333403f490dde7316f4} 
+Local&\\
+\hline
+
+\end{DoxyEnumFields}
+\Hypertarget{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028e}\index{Gizmo.h@{Gizmo.h}!EGizmoMode@{EGizmoMode}}
+\index{EGizmoMode@{EGizmoMode}!Gizmo.h@{Gizmo.h}}
+\doxysubsubsection{\texorpdfstring{EGizmoMode}{EGizmoMode}}
+{\footnotesize\ttfamily \label{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028e} 
+enum class \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028e}{EGizmo\+Mode}} :\+ \doxymbox{\hyperlink{_core_types_8h_a34ecedcf03a70dc91e4616212d79267d}{uint8}}\hspace{0.3cm}{\ttfamily [strong]}}
+
+\begin{DoxyEnumFields}[2]{Enumerator}
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Location@{Location}!Gizmo.h@{Gizmo.h}}
+\index{Gizmo.h@{Gizmo.h}!Location@{Location}}
+}\Hypertarget{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028eace5bf551379459c1c61d2a204061c455}\label{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028eace5bf551379459c1c61d2a204061c455} 
+Location&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Rotation@{Rotation}!Gizmo.h@{Gizmo.h}}
+\index{Gizmo.h@{Gizmo.h}!Rotation@{Rotation}}
+}\Hypertarget{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028eaf1a42bd417390fc63b030a519624607a}\label{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028eaf1a42bd417390fc63b030a519624607a} 
+Rotation&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Scale@{Scale}!Gizmo.h@{Gizmo.h}}
+\index{Gizmo.h@{Gizmo.h}!Scale@{Scale}}
+}\Hypertarget{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}\label{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d} 
+Scale&\\
+\hline
+
+\end{DoxyEnumFields}

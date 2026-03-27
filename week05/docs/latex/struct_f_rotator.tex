@@ -1,0 +1,657 @@
+\doxysection{FRotator Struct Reference}
+\hypertarget{struct_f_rotator}{}\label{struct_f_rotator}\index{FRotator@{FRotator}}
+
+
+{\ttfamily \+\#include $<$Rotator.\+h$>$}
+
+
+
+Collaboration diagram for FRotator:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=255pt]{struct_f_rotator__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+constexpr \doxymbox{\hyperlink{struct_f_rotator_acdae927f1edaea843961be8ffcf5ceb0}{FRotator}} () noexcept=default
+\item 
+constexpr \doxymbox{\hyperlink{struct_f_rotator_abd0aa834fbf8016010fdfb0935a757ee}{FRotator}} (float In\+Pitch, float In\+Yaw, float In\+Roll) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_rotator_abc74784e638be89c01f79ae1d1fcfff8}{FRotator}} (const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&In\+Quat) noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_rotator_ad1b5809f9f46defee539cf86db4ddc5a}{operator==}} (const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&Other) const noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_rotator_afc3152d593441de3ecd0d9668df8e2cb}{operator!=}} (const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&Other) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \doxymbox{\hyperlink{struct_f_rotator_ac1f177df34d245877bcad5dbeadfd570}{operator-\/}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \doxymbox{\hyperlink{struct_f_rotator_aba35483291de8641a6fe29a5b4ba6dac}{operator+}} (const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&Other) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \doxymbox{\hyperlink{struct_f_rotator_a9d2390b09496c1cdcbe19e3cc0e1d752}{operator-\/}} (const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&Other) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \doxymbox{\hyperlink{struct_f_rotator_a3eed056ea85619fa7d05694f29bec3fd}{operator\texorpdfstring{$\ast$}{*}}} (float Scale) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \doxymbox{\hyperlink{struct_f_rotator_a73b8f62a1272e2970e30f1d5a904186a}{operator/\+}} (float Scale) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \& \doxymbox{\hyperlink{struct_f_rotator_a49e084e2f65734a6b5ad07bca84e4aab}{operator+=}} (const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&Other) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \& \doxymbox{\hyperlink{struct_f_rotator_aafc65675d93db3931360a3da45b7af3b}{operator-\/=}} (const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&Other) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \& \doxymbox{\hyperlink{struct_f_rotator_ae5d58595b7d8577ee62f9095298fb438}{operator\texorpdfstring{$\ast$}{*}=}} (float Scale) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \& \doxymbox{\hyperlink{struct_f_rotator_a8bbb6879103cf02f37f4b8165a7e1de0}{operator/\+=}} (float Scale) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_rotator_a64d1e3cdfdfacd359888b9d6474d6fb8}{Euler}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_rotator_a7f18a2097fa0376319ad8c72e5d57d2d}{Vector}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_rotator_ab82fa9b8f27bbd076426f719fdfbd49b}{Rotate\+Vector}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Vector) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_rotator_abfaf13209bf5ec7c4cd8cff65539e6e8}{Unrotate\+Vector}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Vector) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \doxymbox{\hyperlink{struct_f_rotator_aed0827acaeff72e6ffd33e0844383eb4}{Add}} (float Delta\+Pitch, float Delta\+Yaw, float Delta\+Roll) noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_rotator_a331661f492903319c675e0a1a0a6870f}{Contains\+NaN}} () const noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_rotator_a8f3878e58d056b2522ec3dd7f6aeb96e}{Is\+Zero}} () const noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_rotator_af6c4fc8e42fb0127aff1a78a6ee4633f}{Equals}} (const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&Other, float Tolerance=1.e-\/6f) const noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_rotator_ad2450db1f708bb62a566ff8035fbe60e}{Is\+Nearly\+Zero}} (float Tolerance=1.e-\/6f) const noexcept
+\item 
+float \doxymbox{\hyperlink{struct_f_rotator_af5c797e02ca6c37e855c99cb10c08052}{Get\+Manhattan\+Distance}} (const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&Other) const noexcept
+\item 
+void \doxymbox{\hyperlink{struct_f_rotator_a69f4699f5f61db511a1a57ef3f8dc931}{Set\+Closest\+To\+Me}} (\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&Make\+Closest) const noexcept
+\item 
+void \doxymbox{\hyperlink{struct_f_rotator_a07734b6fbcca2f8adf01d1851fc8494b}{Clamp}} () noexcept
+\item 
+void \doxymbox{\hyperlink{struct_f_rotator_a696e8c8d1d0cef7168ad7ba3bdcda0e5}{Normalize}} () noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \doxymbox{\hyperlink{struct_f_rotator_ad67e52870a2fdfeb59e0eaf2aa211a25}{Get\+Denormalized}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \doxymbox{\hyperlink{struct_f_rotator_add09e0ea1a3b72e1b37546b7009773a0}{Get\+Normalized}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \doxymbox{\hyperlink{struct_f_rotator_a5f8e4578fc2d17399c32027bf18692d5}{Get\+Inverse}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} \doxymbox{\hyperlink{struct_f_rotator_ad4e62083bf0136a4dfef8d464b7413b5}{Quaternion}} () const noexcept
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static float \doxymbox{\hyperlink{struct_f_rotator_ab24830195473ee8799c97558deff5b0a}{Clamp\+Axis}} (float Angle\+Degrees) noexcept
+\item 
+static float \doxymbox{\hyperlink{struct_f_rotator_add462c186e8dc2c76947732bc479440d}{Normalize\+Axis}} (float Angle\+Degrees) noexcept
+\item 
+static \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \doxymbox{\hyperlink{struct_f_rotator_abefa00857033100d3bfa33aa8b760280}{Make\+From\+Euler}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Euler\+Degrees) noexcept
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+float \doxymbox{\hyperlink{struct_f_rotator_a1f03e2f7482b096ef225610df9ba37aa}{Pitch}} = 0.\+0f
+\item 
+float \doxymbox{\hyperlink{struct_f_rotator_a202f324cba2b7733ed8a020e259c8864}{Yaw}} = 0.\+0f
+\item 
+float \doxymbox{\hyperlink{struct_f_rotator_aae501271aa428d5c586b889a27fb46e3}{Roll}} = 0.\+0f
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \doxymbox{\hyperlink{struct_f_rotator_a01f41d398ea3053dd0b7b7beb1d8f1bc}{Zero\+Rotator}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{struct_f_rotator_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{struct_f_rotator_acdae927f1edaea843961be8ffcf5ceb0}\index{FRotator@{FRotator}!FRotator@{FRotator}}
+\index{FRotator@{FRotator}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{FRotator()}{FRotator()}\hspace{0.1cm}{\footnotesize\ttfamily [1/3]}}
+{\footnotesize\ttfamily \label{struct_f_rotator_acdae927f1edaea843961be8ffcf5ceb0} 
+FRotator::\+\+FRotator (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [constexpr]}, {\ttfamily [default]}, {\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_rotator_acdae927f1edaea843961be8ffcf5ceb0_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_abd0aa834fbf8016010fdfb0935a757ee}\index{FRotator@{FRotator}!FRotator@{FRotator}}
+\index{FRotator@{FRotator}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{FRotator()}{FRotator()}\hspace{0.1cm}{\footnotesize\ttfamily [2/3]}}
+{\footnotesize\ttfamily \label{struct_f_rotator_abd0aa834fbf8016010fdfb0935a757ee} 
+FRotator::\+\+FRotator (\begin{DoxyParamCaption}\item[{float}]{In\+Pitch}{, }\item[{float}]{In\+Yaw}{, }\item[{float}]{In\+Roll}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [constexpr]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=313pt]{struct_f_rotator_abd0aa834fbf8016010fdfb0935a757ee_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_abc74784e638be89c01f79ae1d1fcfff8}\index{FRotator@{FRotator}!FRotator@{FRotator}}
+\index{FRotator@{FRotator}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{FRotator()}{FRotator()}\hspace{0.1cm}{\footnotesize\ttfamily [3/3]}}
+{\footnotesize\ttfamily \label{struct_f_rotator_abc74784e638be89c01f79ae1d1fcfff8} 
+FRotator::\+\+FRotator (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&}]{In\+Quat}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [explicit]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=313pt]{struct_f_rotator_abc74784e638be89c01f79ae1d1fcfff8_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-func-members}
+\Hypertarget{struct_f_rotator_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{struct_f_rotator_aed0827acaeff72e6ffd33e0844383eb4}\index{FRotator@{FRotator}!Add@{Add}}
+\index{Add@{Add}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{Add()}{Add()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_aed0827acaeff72e6ffd33e0844383eb4} 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} FRotator::\+\+Add (\begin{DoxyParamCaption}\item[{float}]{Delta\+Pitch}{, }\item[{float}]{Delta\+Yaw}{, }\item[{float}]{Delta\+Roll}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=292pt]{struct_f_rotator_aed0827acaeff72e6ffd33e0844383eb4_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_a07734b6fbcca2f8adf01d1851fc8494b}\index{FRotator@{FRotator}!Clamp@{Clamp}}
+\index{Clamp@{Clamp}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{Clamp()}{Clamp()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_a07734b6fbcca2f8adf01d1851fc8494b} 
+void FRotator::\+\+Clamp (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=313pt]{struct_f_rotator_a07734b6fbcca2f8adf01d1851fc8494b_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=341pt]{struct_f_rotator_a07734b6fbcca2f8adf01d1851fc8494b_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_ab24830195473ee8799c97558deff5b0a}\index{FRotator@{FRotator}!ClampAxis@{ClampAxis}}
+\index{ClampAxis@{ClampAxis}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{ClampAxis()}{ClampAxis()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_ab24830195473ee8799c97558deff5b0a} 
+float FRotator::\+\+Clamp\+Axis (\begin{DoxyParamCaption}\item[{float}]{Angle\+Degrees}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_rotator_ab24830195473ee8799c97558deff5b0a_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_a331661f492903319c675e0a1a0a6870f}\index{FRotator@{FRotator}!ContainsNaN@{ContainsNaN}}
+\index{ContainsNaN@{ContainsNaN}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{ContainsNaN()}{ContainsNaN()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_a331661f492903319c675e0a1a0a6870f} 
+bool FRotator::\+\+Contains\+NaN (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+\Hypertarget{struct_f_rotator_af6c4fc8e42fb0127aff1a78a6ee4633f}\index{FRotator@{FRotator}!Equals@{Equals}}
+\index{Equals@{Equals}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{Equals()}{Equals()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_af6c4fc8e42fb0127aff1a78a6ee4633f} 
+bool FRotator::\+\+Equals (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&}]{Other}{, }\item[{float}]{Tolerance}{ = {\ttfamily 1.e-\/6f}}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_rotator_af6c4fc8e42fb0127aff1a78a6ee4633f_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_a64d1e3cdfdfacd359888b9d6474d6fb8}\index{FRotator@{FRotator}!Euler@{Euler}}
+\index{Euler@{Euler}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{Euler()}{Euler()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_a64d1e3cdfdfacd359888b9d6474d6fb8} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FRotator::\+\+Euler (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_rotator_a64d1e3cdfdfacd359888b9d6474d6fb8_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_ad67e52870a2fdfeb59e0eaf2aa211a25}\index{FRotator@{FRotator}!GetDenormalized@{GetDenormalized}}
+\index{GetDenormalized@{GetDenormalized}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{GetDenormalized()}{GetDenormalized()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_ad67e52870a2fdfeb59e0eaf2aa211a25} 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} FRotator::\+\+Get\+Denormalized (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_rotator_ad67e52870a2fdfeb59e0eaf2aa211a25_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_a5f8e4578fc2d17399c32027bf18692d5}\index{FRotator@{FRotator}!GetInverse@{GetInverse}}
+\index{GetInverse@{GetInverse}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{GetInverse()}{GetInverse()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_a5f8e4578fc2d17399c32027bf18692d5} 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} FRotator::\+\+Get\+Inverse (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_rotator_a5f8e4578fc2d17399c32027bf18692d5_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_af5c797e02ca6c37e855c99cb10c08052}\index{FRotator@{FRotator}!GetManhattanDistance@{GetManhattanDistance}}
+\index{GetManhattanDistance@{GetManhattanDistance}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{GetManhattanDistance()}{GetManhattanDistance()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_af5c797e02ca6c37e855c99cb10c08052} 
+float FRotator::\+\+Get\+Manhattan\+Distance (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&}]{Other}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_rotator_af5c797e02ca6c37e855c99cb10c08052_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_add09e0ea1a3b72e1b37546b7009773a0}\index{FRotator@{FRotator}!GetNormalized@{GetNormalized}}
+\index{GetNormalized@{GetNormalized}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{GetNormalized()}{GetNormalized()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_add09e0ea1a3b72e1b37546b7009773a0} 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} FRotator::\+\+Get\+Normalized (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_rotator_add09e0ea1a3b72e1b37546b7009773a0_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_ad2450db1f708bb62a566ff8035fbe60e}\index{FRotator@{FRotator}!IsNearlyZero@{IsNearlyZero}}
+\index{IsNearlyZero@{IsNearlyZero}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{IsNearlyZero()}{IsNearlyZero()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_ad2450db1f708bb62a566ff8035fbe60e} 
+bool FRotator::\+\+Is\+Nearly\+Zero (\begin{DoxyParamCaption}\item[{float}]{Tolerance}{ = {\ttfamily 1.e-\/6f}}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_rotator_ad2450db1f708bb62a566ff8035fbe60e_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_a8f3878e58d056b2522ec3dd7f6aeb96e}\index{FRotator@{FRotator}!IsZero@{IsZero}}
+\index{IsZero@{IsZero}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{IsZero()}{IsZero()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_a8f3878e58d056b2522ec3dd7f6aeb96e} 
+bool FRotator::\+\+Is\+Zero (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_rotator_a8f3878e58d056b2522ec3dd7f6aeb96e_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_abefa00857033100d3bfa33aa8b760280}\index{FRotator@{FRotator}!MakeFromEuler@{MakeFromEuler}}
+\index{MakeFromEuler@{MakeFromEuler}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{MakeFromEuler()}{MakeFromEuler()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_abefa00857033100d3bfa33aa8b760280} 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} FRotator::\+\+Make\+From\+Euler (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Euler\+Degrees}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=344pt]{struct_f_rotator_abefa00857033100d3bfa33aa8b760280_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_rotator_abefa00857033100d3bfa33aa8b760280_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_a696e8c8d1d0cef7168ad7ba3bdcda0e5}\index{FRotator@{FRotator}!Normalize@{Normalize}}
+\index{Normalize@{Normalize}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{Normalize()}{Normalize()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_a696e8c8d1d0cef7168ad7ba3bdcda0e5} 
+void FRotator::\+\+Normalize (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_rotator_a696e8c8d1d0cef7168ad7ba3bdcda0e5_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_rotator_a696e8c8d1d0cef7168ad7ba3bdcda0e5_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_add462c186e8dc2c76947732bc479440d}\index{FRotator@{FRotator}!NormalizeAxis@{NormalizeAxis}}
+\index{NormalizeAxis@{NormalizeAxis}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{NormalizeAxis()}{NormalizeAxis()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_add462c186e8dc2c76947732bc479440d} 
+float FRotator::\+\+Normalize\+Axis (\begin{DoxyParamCaption}\item[{float}]{Angle\+Degrees}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=348pt]{struct_f_rotator_add462c186e8dc2c76947732bc479440d_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_rotator_add462c186e8dc2c76947732bc479440d_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_afc3152d593441de3ecd0d9668df8e2cb}\index{FRotator@{FRotator}!operator"!=@{operator"!=}}
+\index{operator"!=@{operator"!=}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{operator"!=()}{operator!=()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_afc3152d593441de3ecd0d9668df8e2cb} 
+bool FRotator::\+operator!= (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&}]{Other}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=319pt]{struct_f_rotator_afc3152d593441de3ecd0d9668df8e2cb_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_a3eed056ea85619fa7d05694f29bec3fd}\index{FRotator@{FRotator}!operator\texorpdfstring{$\ast$}{*}@{operator\texorpdfstring{$\ast$}{*}}}
+\index{operator\texorpdfstring{$\ast$}{*}@{operator\texorpdfstring{$\ast$}{*}}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{operator\texorpdfstring{$\ast$}{*}()}{operator*()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_a3eed056ea85619fa7d05694f29bec3fd} 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} FRotator::\+operator\texorpdfstring{$\ast$}{*} (\begin{DoxyParamCaption}\item[{float}]{Scale}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=314pt]{struct_f_rotator_a3eed056ea85619fa7d05694f29bec3fd_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_ae5d58595b7d8577ee62f9095298fb438}\index{FRotator@{FRotator}!operator\texorpdfstring{$\ast$}{*}=@{operator\texorpdfstring{$\ast$}{*}=}}
+\index{operator\texorpdfstring{$\ast$}{*}=@{operator\texorpdfstring{$\ast$}{*}=}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{operator\texorpdfstring{$\ast$}{*}=()}{operator*=()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_ae5d58595b7d8577ee62f9095298fb438} 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \& FRotator::\+operator\texorpdfstring{$\ast$}{*}= (\begin{DoxyParamCaption}\item[{float}]{Scale}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=320pt]{struct_f_rotator_ae5d58595b7d8577ee62f9095298fb438_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_aba35483291de8641a6fe29a5b4ba6dac}\index{FRotator@{FRotator}!operator+@{operator+}}
+\index{operator+@{operator+}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{operator+()}{operator+()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_aba35483291de8641a6fe29a5b4ba6dac} 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} FRotator::\+operator+ (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&}]{Other}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=316pt]{struct_f_rotator_aba35483291de8641a6fe29a5b4ba6dac_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_a49e084e2f65734a6b5ad07bca84e4aab}\index{FRotator@{FRotator}!operator+=@{operator+=}}
+\index{operator+=@{operator+=}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{operator+=()}{operator+=()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_a49e084e2f65734a6b5ad07bca84e4aab} 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \& FRotator::\+operator+= (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&}]{Other}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=322pt]{struct_f_rotator_a49e084e2f65734a6b5ad07bca84e4aab_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_ac1f177df34d245877bcad5dbeadfd570}\index{FRotator@{FRotator}!operator-\/@{operator-\/}}
+\index{operator-\/@{operator-\/}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{operator-\/()}{operator-()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{struct_f_rotator_ac1f177df34d245877bcad5dbeadfd570} 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} FRotator::\+operator-\/ (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=313pt]{struct_f_rotator_ac1f177df34d245877bcad5dbeadfd570_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_a9d2390b09496c1cdcbe19e3cc0e1d752}\index{FRotator@{FRotator}!operator-\/@{operator-\/}}
+\index{operator-\/@{operator-\/}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{operator-\/()}{operator-()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{struct_f_rotator_a9d2390b09496c1cdcbe19e3cc0e1d752} 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} FRotator::\+operator-\/ (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&}]{Other}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=313pt]{struct_f_rotator_a9d2390b09496c1cdcbe19e3cc0e1d752_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_aafc65675d93db3931360a3da45b7af3b}\index{FRotator@{FRotator}!operator-\/=@{operator-\/=}}
+\index{operator-\/=@{operator-\/=}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{operator-\/=()}{operator-=()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_aafc65675d93db3931360a3da45b7af3b} 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \& FRotator::\+operator-\/= (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&}]{Other}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=319pt]{struct_f_rotator_aafc65675d93db3931360a3da45b7af3b_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_a73b8f62a1272e2970e30f1d5a904186a}\index{FRotator@{FRotator}!operator/@{operator/}}
+\index{operator/@{operator/}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{operator/()}{operator/()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_a73b8f62a1272e2970e30f1d5a904186a} 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} FRotator::\+operator/\+ (\begin{DoxyParamCaption}\item[{float}]{Scale}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=313pt]{struct_f_rotator_a73b8f62a1272e2970e30f1d5a904186a_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_a8bbb6879103cf02f37f4b8165a7e1de0}\index{FRotator@{FRotator}!operator/=@{operator/=}}
+\index{operator/=@{operator/=}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{operator/=()}{operator/=()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_a8bbb6879103cf02f37f4b8165a7e1de0} 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \& FRotator::\+operator/\+= (\begin{DoxyParamCaption}\item[{float}]{Scale}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=319pt]{struct_f_rotator_a8bbb6879103cf02f37f4b8165a7e1de0_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_ad1b5809f9f46defee539cf86db4ddc5a}\index{FRotator@{FRotator}!operator==@{operator==}}
+\index{operator==@{operator==}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{operator==()}{operator==()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_ad1b5809f9f46defee539cf86db4ddc5a} 
+bool FRotator::\+operator== (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&}]{Other}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=322pt]{struct_f_rotator_ad1b5809f9f46defee539cf86db4ddc5a_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_ad4e62083bf0136a4dfef8d464b7413b5}\index{FRotator@{FRotator}!Quaternion@{Quaternion}}
+\index{Quaternion@{Quaternion}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{Quaternion()}{Quaternion()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_ad4e62083bf0136a4dfef8d464b7413b5} 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} FRotator::\+\+Quaternion (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_rotator_ad4e62083bf0136a4dfef8d464b7413b5_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=349pt]{struct_f_rotator_ad4e62083bf0136a4dfef8d464b7413b5_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_ab82fa9b8f27bbd076426f719fdfbd49b}\index{FRotator@{FRotator}!RotateVector@{RotateVector}}
+\index{RotateVector@{RotateVector}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{RotateVector()}{RotateVector()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_ab82fa9b8f27bbd076426f719fdfbd49b} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FRotator::\+\+Rotate\+Vector (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Vector}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_rotator_ab82fa9b8f27bbd076426f719fdfbd49b_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_a69f4699f5f61db511a1a57ef3f8dc931}\index{FRotator@{FRotator}!SetClosestToMe@{SetClosestToMe}}
+\index{SetClosestToMe@{SetClosestToMe}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{SetClosestToMe()}{SetClosestToMe()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_a69f4699f5f61db511a1a57ef3f8dc931} 
+void FRotator::\+\+Set\+Closest\+To\+Me (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&}]{Make\+Closest}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_rotator_a69f4699f5f61db511a1a57ef3f8dc931_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_abfaf13209bf5ec7c4cd8cff65539e6e8}\index{FRotator@{FRotator}!UnrotateVector@{UnrotateVector}}
+\index{UnrotateVector@{UnrotateVector}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{UnrotateVector()}{UnrotateVector()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_abfaf13209bf5ec7c4cd8cff65539e6e8} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FRotator::\+\+Unrotate\+Vector (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Vector}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_rotator_abfaf13209bf5ec7c4cd8cff65539e6e8_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_rotator_a7f18a2097fa0376319ad8c72e5d57d2d}\index{FRotator@{FRotator}!Vector@{Vector}}
+\index{Vector@{Vector}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{Vector()}{Vector()}}
+{\footnotesize\ttfamily \label{struct_f_rotator_a7f18a2097fa0376319ad8c72e5d57d2d} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FRotator::\+\+Vector (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_rotator_a7f18a2097fa0376319ad8c72e5d57d2d_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{struct_f_rotator_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{struct_f_rotator_a1f03e2f7482b096ef225610df9ba37aa}\index{FRotator@{FRotator}!Pitch@{Pitch}}
+\index{Pitch@{Pitch}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{Pitch}{Pitch}}
+{\footnotesize\ttfamily \label{struct_f_rotator_a1f03e2f7482b096ef225610df9ba37aa} 
+float FRotator::\+\+Pitch = 0.\+0f}
+
+\Hypertarget{struct_f_rotator_aae501271aa428d5c586b889a27fb46e3}\index{FRotator@{FRotator}!Roll@{Roll}}
+\index{Roll@{Roll}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{Roll}{Roll}}
+{\footnotesize\ttfamily \label{struct_f_rotator_aae501271aa428d5c586b889a27fb46e3} 
+float FRotator::\+\+Roll = 0.\+0f}
+
+\Hypertarget{struct_f_rotator_a202f324cba2b7733ed8a020e259c8864}\index{FRotator@{FRotator}!Yaw@{Yaw}}
+\index{Yaw@{Yaw}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{Yaw}{Yaw}}
+{\footnotesize\ttfamily \label{struct_f_rotator_a202f324cba2b7733ed8a020e259c8864} 
+float FRotator::\+\+Yaw = 0.\+0f}
+
+\Hypertarget{struct_f_rotator_a01f41d398ea3053dd0b7b7beb1d8f1bc}\index{FRotator@{FRotator}!ZeroRotator@{ZeroRotator}}
+\index{ZeroRotator@{ZeroRotator}!FRotator@{FRotator}}
+\doxysubsubsection{\texorpdfstring{ZeroRotator}{ZeroRotator}}
+{\footnotesize\ttfamily \label{struct_f_rotator_a01f41d398ea3053dd0b7b7beb1d8f1bc} 
+const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} FRotator::\+\+Zero\+Rotator\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+The documentation for this struct was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Math/\+\doxymbox{\hyperlink{_rotator_8h}{Rotator.\+h}}\item 
+Engine/\+\+Source/\+\+Math/\+\doxymbox{\hyperlink{_rotator_8cpp}{Rotator.\+cpp}}\end{DoxyCompactItemize}

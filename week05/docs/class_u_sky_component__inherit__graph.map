@@ -1,0 +1,11 @@
+<map id="USkyComponent" name="USkyComponent">
+<area shape="rect" id="Node000001" title=" " alt="" coords="46,1712,156,1781"/>
+<area shape="rect" id="Node000002" href="$class_u_primitive_component.html" title=" " alt="" coords="8,1424,193,1664"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="102,1677,103,1713,98,1711,99,1681"/>
+<area shape="rect" id="Node000003" href="$class_u_scene_component.html" title=" " alt="" coords="18,987,184,1376"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="101,1388,103,1425,98,1424,100,1394"/>
+<area shape="rect" id="Node000004" href="$class_u_actor_component.html" title=" " alt="" coords="5,571,196,939"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="101,951,103,987,98,987,101,956"/>
+<area shape="rect" id="Node000005" href="$class_u_object.html" title=" " alt="" coords="25,5,176,523"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="101,535,103,571,98,571,101,540"/>
+</map>

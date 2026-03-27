@@ -1,0 +1,36 @@
+\doxysection{Viewport\+Client.\+h}
+\hypertarget{_viewport_client_8h_source}{}\label{_viewport_client_8h_source}\index{Engine/Source/Core/ViewportClient.h@{Engine/Source/Core/ViewportClient.h}}
+\doxymbox{\hyperlink{_viewport_client_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_engine_a_p_i_8h}{EngineAPI.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}Windows.h"{}}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_core}{CCore}};}
+\DoxyCodeLine{00007\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_renderer}{CRenderer}};}
+\DoxyCodeLine{00008\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_u_scene}{UScene}};}
+\DoxyCodeLine{00009\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_f_frustum}{FFrustum}};}
+\DoxyCodeLine{00010\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_render_command_queue}{FRenderCommandQueue}};}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_i_viewport_client}{IViewportClient}}}
+\DoxyCodeLine{00013\ \{}
+\DoxyCodeLine{00014\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{keyword}{virtual}\ \doxymbox{\hyperlink{class_i_viewport_client_a1d892f2e86ca1bf5be648b767562c090}{\string~IViewportClient}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_i_viewport_client_a3e3e3e9db859c6105cf1448014059cb1}{Attach}}(\doxymbox{\hyperlink{class_c_core}{CCore}}*\ Core,\ \doxymbox{\hyperlink{class_c_renderer}{CRenderer}}*\ Renderer);}
+\DoxyCodeLine{00018\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_i_viewport_client_a57111b7f5196800be7422d1c9aed65c1}{Detach}}(\doxymbox{\hyperlink{class_c_core}{CCore}}*\ Core,\ \doxymbox{\hyperlink{class_c_renderer}{CRenderer}}*\ Renderer);}
+\DoxyCodeLine{00019\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_i_viewport_client_ad7c05e3a2cf91d0f282cde068ea15cca}{Tick}}(\doxymbox{\hyperlink{class_c_core}{CCore}}*\ Core,\ \textcolor{keywordtype}{float}\ DeltaTime);}
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_i_viewport_client_a6b4a125be7712977e84b3db31ea4b623}{HandleMessage}}(\doxymbox{\hyperlink{class_c_core}{CCore}}*\ Core,\ HWND\ Hwnd,\ UINT\ Msg,\ WPARAM\ WParam,\ LPARAM\ LParam);}
+\DoxyCodeLine{00021\ \ \ \ \ \textcolor{keyword}{virtual}\ \doxymbox{\hyperlink{class_u_scene}{UScene}}*\ \doxymbox{\hyperlink{class_i_viewport_client_ad0fe46751dad741e3dbff8ac640a8105}{ResolveScene}}(\doxymbox{\hyperlink{class_c_core}{CCore}}*\ Core)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_i_viewport_client_a640dfcaad7c04bc6b78f67a7ed42a8c2}{BuildRenderCommands}}(\doxymbox{\hyperlink{class_c_core}{CCore}}*\ Core,\ \doxymbox{\hyperlink{class_u_scene}{UScene}}*\ Scene,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_f_frustum}{FFrustum}}\&\ Frustum,\ \doxymbox{\hyperlink{struct_f_render_command_queue}{FRenderCommandQueue}}\&\ OutQueue)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00023\ \};}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_c_game_viewport_client}{CGameViewportClient}}\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{class_i_viewport_client}{IViewportClient}}}
+\DoxyCodeLine{00026\ \{}
+\DoxyCodeLine{00027\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00028\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_game_viewport_client_a05d99df5c48af134e03183bbc4b5e4de}{Attach}}(\doxymbox{\hyperlink{class_c_core}{CCore}}*\ Core,\ \doxymbox{\hyperlink{class_c_renderer}{CRenderer}}*\ Renderer)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00029\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_game_viewport_client_abcc0d061c69307df4f5c34a19aa6a301}{Detach}}(\doxymbox{\hyperlink{class_c_core}{CCore}}*\ Core,\ \doxymbox{\hyperlink{class_c_renderer}{CRenderer}}*\ Renderer)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00030\ \};}
+
+\end{DoxyCode}

@@ -1,0 +1,21 @@
+<map id="CCore::GetActiveScene" name="CCore::GetActiveScene">
+<area shape="rect" id="Node000001" title=" " alt="" coords="449,107,611,133"/>
+<area shape="rect" id="Node000002" href="$class_c_core.html#a14e232ef892b855d550ec1577e988187" title=" " alt="" coords="251,5,384,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="493,98,450,73,400,46,371,35,371,30,402,42,453,68,499,98"/>
+<area shape="rect" id="Node000004" href="$class_c_core.html#a6777485bd38329e69f10133497dfbfde" title=" " alt="" coords="261,56,375,83"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="454,103,375,86,375,80,459,102"/>
+<area shape="rect" id="Node000005" href="$class_c_core.html#a655c73dcdb7c58733d5e1e8c6c34cf1c" title=" " alt="" coords="263,107,372,133"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="431,121,374,123,373,117,436,119"/>
+<area shape="rect" id="Node000006" href="$class_c_preview_viewport_client.html#aaac50bfb6785c3b02b5b785de714b293" title=" " alt="" coords="236,157,400,200"/>
+<area shape="poly" id="edge7_Node000001_Node000006" title=" " alt="" coords="462,139,398,159,397,154,467,137"/>
+<area shape="rect" id="Node000007" href="$class_i_viewport_client.html#ad0fe46751dad741e3dbff8ac640a8105" title=" " alt="" coords="235,224,401,267"/>
+<area shape="poly" id="edge8_Node000001_Node000007" title=" " alt="" coords="503,142,456,180,402,214,379,226,377,221,400,210,453,175,498,145"/>
+<area shape="rect" id="Node000003" href="$class_c_core.html#a8b4950627b31ac880598f18652875711" title=" " alt="" coords="50,56,142,83"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="239,38,144,61,141,56,243,34"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="243,71,143,72,142,67,247,68"/>
+<area shape="poly" id="edge6_Node000005_Node000003" title=" " alt="" coords="246,106,143,82,142,77,250,103"/>
+<area shape="rect" id="Node000008" href="$class_c_editor_viewport_client.html#a4fcfd4098f5902f4e8cf437cacdf06a1" title=" " alt="" coords="21,191,171,233"/>
+<area shape="poly" id="edge9_Node000007_Node000008" title=" " alt="" coords="217,231,172,226,172,221,222,230"/>
+<area shape="rect" id="Node000009" href="$class_i_viewport_client.html#a1d892f2e86ca1bf5be648b767562c090" title=" " alt="" coords="5,257,187,300"/>
+<area shape="poly" id="edge10_Node000007_Node000009" title=" " alt="" coords="217,261,187,268,187,262,222,260"/>
+</map>

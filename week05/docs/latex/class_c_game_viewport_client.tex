@@ -1,0 +1,93 @@
+\doxysection{CGame\+Viewport\+Client Class Reference}
+\hypertarget{class_c_game_viewport_client}{}\label{class_c_game_viewport_client}\index{CGameViewportClient@{CGameViewportClient}}
+
+
+{\ttfamily \+\#include $<$Viewport\+Client.\+h$>$}
+
+
+
+Inheritance diagram for CGame\+Viewport\+Client:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=208pt]{class_c_game_viewport_client__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for CGame\+Viewport\+Client:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=208pt]{class_c_game_viewport_client__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \doxymbox{\hyperlink{class_c_game_viewport_client_a05d99df5c48af134e03183bbc4b5e4de}{Attach}} (\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}Core, \doxymbox{\hyperlink{class_c_renderer}{CRenderer}} \texorpdfstring{$\ast$}{*}Renderer) override
+\item 
+void \doxymbox{\hyperlink{class_c_game_viewport_client_abcc0d061c69307df4f5c34a19aa6a301}{Detach}} (\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}Core, \doxymbox{\hyperlink{class_c_renderer}{CRenderer}} \texorpdfstring{$\ast$}{*}Renderer) override
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Member Functions inherited from \doxymbox{\hyperlink{class_i_viewport_client}{IViewport\+Client}}}
+\begin{DoxyCompactItemize}
+\item 
+virtual \doxymbox{\hyperlink{class_i_viewport_client_a1d892f2e86ca1bf5be648b767562c090}{\texorpdfstring{$\sim$}{\string~}\+IViewport\+Client}} ()=default
+\item 
+virtual void \doxymbox{\hyperlink{class_i_viewport_client_ad7c05e3a2cf91d0f282cde068ea15cca}{Tick}} (\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}Core, float Delta\+Time)
+\item 
+virtual void \doxymbox{\hyperlink{class_i_viewport_client_a6b4a125be7712977e84b3db31ea4b623}{Handle\+Message}} (\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}Core, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
+\item 
+virtual \doxymbox{\hyperlink{class_u_scene}{UScene}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_i_viewport_client_ad0fe46751dad741e3dbff8ac640a8105}{Resolve\+Scene}} (\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}Core) const
+\item 
+virtual void \doxymbox{\hyperlink{class_i_viewport_client_a640dfcaad7c04bc6b78f67a7ed42a8c2}{Build\+Render\+Commands}} (\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}Core, \doxymbox{\hyperlink{class_u_scene}{UScene}} \texorpdfstring{$\ast$}{*}Scene, const \doxymbox{\hyperlink{class_f_frustum}{FFrustum}} \&Frustum, \doxymbox{\hyperlink{struct_f_render_command_queue}{FRender\+Command\+Queue}} \&Out\+Queue) const
+\end{DoxyCompactItemize}
+
+
+\label{doc-func-members}
+\Hypertarget{class_c_game_viewport_client_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_c_game_viewport_client_a05d99df5c48af134e03183bbc4b5e4de}\index{CGameViewportClient@{CGameViewportClient}!Attach@{Attach}}
+\index{Attach@{Attach}!CGameViewportClient@{CGameViewportClient}}
+\doxysubsubsection{\texorpdfstring{Attach()}{Attach()}}
+{\footnotesize\ttfamily \label{class_c_game_viewport_client_a05d99df5c48af134e03183bbc4b5e4de} 
+void CGame\+Viewport\+Client::\+\+Attach (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}}]{Core}{, }\item[{\doxymbox{\hyperlink{class_c_renderer}{CRenderer}} \texorpdfstring{$\ast$}{*}}]{Renderer}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \doxymbox{\hyperlink{class_i_viewport_client_a3e3e3e9db859c6105cf1448014059cb1}{IViewport\+Client}}.
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_game_viewport_client_a05d99df5c48af134e03183bbc4b5e4de_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_game_viewport_client_abcc0d061c69307df4f5c34a19aa6a301}\index{CGameViewportClient@{CGameViewportClient}!Detach@{Detach}}
+\index{Detach@{Detach}!CGameViewportClient@{CGameViewportClient}}
+\doxysubsubsection{\texorpdfstring{Detach()}{Detach()}}
+{\footnotesize\ttfamily \label{class_c_game_viewport_client_abcc0d061c69307df4f5c34a19aa6a301} 
+void CGame\+Viewport\+Client::\+\+Detach (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_core}{CCore}} \texorpdfstring{$\ast$}{*}}]{Core}{, }\item[{\doxymbox{\hyperlink{class_c_renderer}{CRenderer}} \texorpdfstring{$\ast$}{*}}]{Renderer}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \doxymbox{\hyperlink{class_i_viewport_client_a57111b7f5196800be7422d1c9aed65c1}{IViewport\+Client}}.
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_game_viewport_client_abcc0d061c69307df4f5c34a19aa6a301_cgraph}
+\end{center}
+\end{figure}
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Core/\+\doxymbox{\hyperlink{_viewport_client_8h}{Viewport\+Client.\+h}}\item 
+Engine/\+\+Source/\+\+Core/\+\doxymbox{\hyperlink{_viewport_client_8cpp}{Viewport\+Client.\+cpp}}\end{DoxyCompactItemize}

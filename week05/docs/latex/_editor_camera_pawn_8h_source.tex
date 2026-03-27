@@ -1,0 +1,23 @@
+\doxysection{Editor\+Camera\+Pawn.\+h}
+\hypertarget{_editor_camera_pawn_8h_source}{}\label{_editor_camera_pawn_8h_source}\index{Editor/Source/Pawn/EditorCameraPawn.h@{Editor/Source/Pawn/EditorCameraPawn.h}}
+\doxymbox{\hyperlink{_editor_camera_pawn_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ }
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_actor_8h}{Actor/Actor.h}}"{}}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_u_camera_component}{UCameraComponent}};}
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_a_editor_camera_pawn}{AEditorCameraPawn}}\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{class_a_actor}{AActor}}}
+\DoxyCodeLine{00008\ \{}
+\DoxyCodeLine{00009\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00010\ \ \ \ \ \doxymbox{\hyperlink{_object_8h_a357d06a2d2ae2eccd8dc94b17f17a710}{DECLARE\_RTTI}}(\doxymbox{\hyperlink{class_a_editor_camera_pawn}{AEditorCameraPawn}},\ \doxymbox{\hyperlink{class_a_actor}{AActor}})}
+\DoxyCodeLine{00011\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_a_editor_camera_pawn_a0ed7d64c909a6abfdce146488041174a}{Initialize}}();}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \ \ \ \ \doxymbox{\hyperlink{class_u_camera_component}{UCameraComponent}}*\ \doxymbox{\hyperlink{class_a_editor_camera_pawn_a25b62f783a8b699ce7714773af34e59f}{GetCameraComponent}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_a_editor_camera_pawn_ae101639cd493231fe3d594e39ccf5b76}{CameraCompenent}};\ \}}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00016\ \ \ \ \ \doxymbox{\hyperlink{class_u_camera_component}{UCameraComponent}}*\ \doxymbox{\hyperlink{class_a_editor_camera_pawn_ae101639cd493231fe3d594e39ccf5b76}{CameraCompenent}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00017\ \};}
+
+\end{DoxyCode}

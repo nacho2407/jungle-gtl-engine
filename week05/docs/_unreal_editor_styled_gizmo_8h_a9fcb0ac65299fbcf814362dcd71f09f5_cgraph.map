@@ -1,0 +1,17 @@
+<map id="GenerateRotationGizmo" name="GenerateRotationGizmo">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,132,167,159"/>
+<area shape="rect" id="Node000002" href="$_unreal_editor_styled_gizmo_8cpp.html#acd7d7e79eb3b664db795380429c52f7d" title=" " alt="" coords="239,5,331,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="100,130,148,87,213,42,227,37,223,40,216,46,151,91,103,133"/>
+<area shape="rect" id="Node000003" href="$_unreal_editor_styled_gizmo_8cpp.html#a784a2bab983964e8fd36b27518165847" title=" " alt="" coords="241,56,328,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="120,129,214,92,233,87,229,90,216,97,123,134"/>
+<area shape="rect" id="Node000004" href="$_unreal_editor_styled_gizmo_8cpp.html#ac022f8a6d8e88ac8a486e96643d19289" title=" " alt="" coords="241,107,328,133"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="166,133,228,126,224,129,168,138"/>
+<area shape="rect" id="Node000005" href="$_unreal_editor_styled_gizmo_8cpp.html#a5b708f556d032d8559dadacc4ed045a1" title=" " alt="" coords="242,157,328,184"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="167,153,229,162,224,164,167,158"/>
+<area shape="rect" id="Node000006" href="$struct_f_vector.html#a16c17492999fcbf8bae9b97f3eace0ad" title=" " alt="" coords="215,208,355,235"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="122,156,216,194,234,202,228,202,214,198,121,162"/>
+<area shape="rect" id="Node000008" href="$_unreal_editor_styled_gizmo_8cpp.html#a7969457298670904a16ad436a68a39eb" title=" " alt="" coords="225,259,344,285"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="102,157,151,199,216,244,228,252,222,252,213,249,148,203,101,162"/>
+<area shape="rect" id="Node000007" href="$struct_f_vector.html#ae7dbfb5fe72606197ce4fb94b9655fd2" title=" " alt="" coords="403,208,522,235"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="355,219,390,221,385,222,356,224"/>
+</map>

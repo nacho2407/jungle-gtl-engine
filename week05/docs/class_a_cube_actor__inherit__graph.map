@@ -1,0 +1,7 @@
+<map id="ACubeActor" name="ACubeActor">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,1029,205,1227"/>
+<area shape="rect" id="Node000002" href="$class_a_actor.html" title=" " alt="" coords="11,571,200,981"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="106,994,108,1030,103,1029,105,999"/>
+<area shape="rect" id="Node000003" href="$class_u_object.html" title=" " alt="" coords="30,5,181,523"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="106,535,108,571,103,571,105,540"/>
+</map>

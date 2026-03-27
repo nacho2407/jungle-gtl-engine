@@ -1,0 +1,19 @@
+<map id="USceneComponent" name="USceneComponent">
+<area shape="rect" id="Node000001" title=" " alt="" coords="102,987,268,1376"/>
+<area shape="rect" id="Node000004" href="$class_u_camera_component.html" title=" " alt="" coords="5,1424,168,1728"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="134,1388,127,1425,122,1423,132,1393"/>
+<area shape="rect" id="Node000005" href="$class_u_primitive_component.html" title=" " alt="" coords="193,1456,378,1696"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="239,1388,258,1456,253,1456,238,1393"/>
+<area shape="rect" id="Node000002" href="$class_u_actor_component.html" title=" " alt="" coords="90,571,281,939"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="186,951,188,987,183,986,185,956"/>
+<area shape="rect" id="Node000003" href="$class_u_object.html" title=" " alt="" coords="110,5,261,523"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="186,535,188,571,183,571,185,540"/>
+<area shape="rect" id="Node000006" href="$class_u_cube_component.html" title=" " alt="" coords="9,1776,128,1845"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="201,1706,182,1730,153,1756,123,1778,120,1774,150,1752,178,1726,197,1709"/>
+<area shape="rect" id="Node000007" href="$class_u_gizmo_component.html" title=" " alt="" coords="152,1776,278,1845"/>
+<area shape="poly" id="edge6_Node000005_Node000007" title=" " alt="" coords="247,1709,227,1778,223,1775,243,1712"/>
+<area shape="rect" id="Node000008" href="$class_u_sky_component.html" title=" " alt="" coords="302,1776,413,1845"/>
+<area shape="poly" id="edge7_Node000005_Node000008" title=" " alt="" coords="328,1708,350,1777,345,1776,325,1712"/>
+<area shape="rect" id="Node000009" href="$class_u_sphere_component.html" title=" " alt="" coords="437,1776,566,1845"/>
+<area shape="poly" id="edge8_Node000005_Node000009" title=" " alt="" coords="389,1685,473,1776,468,1776,387,1690"/>
+</map>

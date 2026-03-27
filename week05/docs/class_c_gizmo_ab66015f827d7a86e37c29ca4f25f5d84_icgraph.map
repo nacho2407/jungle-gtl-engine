@@ -1,0 +1,7 @@
+<map id="CGizmo::HitTestAxis" name="CGizmo::HitTestAxis">
+<area shape="rect" id="Node000001" title=" " alt="" coords="208,31,353,57"/>
+<area shape="rect" id="Node000002" href="$class_c_gizmo.html#ab6f44415de5b8dc89e8f6f0da8309f43" title=" " alt="" coords="13,5,152,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="190,33,152,30,152,25,195,32"/>
+<area shape="rect" id="Node000003" href="$class_c_gizmo.html#a8de57f031240f6412bd94f1d4df2ecd8" title=" " alt="" coords="5,56,160,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="190,56,160,62,160,57,195,55"/>
+</map>

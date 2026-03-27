@@ -1,0 +1,36 @@
+\doxysection{Editor\+Viewport\+Client.\+h}
+\hypertarget{_editor_viewport_client_8h_source}{}\label{_editor_viewport_client_8h_source}\index{Editor/Source/UI/EditorViewportClient.h@{Editor/Source/UI/EditorViewportClient.h}}
+\doxymbox{\hyperlink{_editor_viewport_client_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_viewport_client_8h}{Core/ViewportClient.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h}{Gizmo/Gizmo.h}}"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_picker_8h}{Picking/Picker.h}}"{}}}
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_editor_u_i}{CEditorUI}};}
+\DoxyCodeLine{00008\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_window}{CWindow}};}
+\DoxyCodeLine{00009\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_f_frustum}{FFrustum}};}
+\DoxyCodeLine{00010\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_render_command_queue}{FRenderCommandQueue}};}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_editor_viewport_client_af4bc2b30bf4d3568c2b8fa87d12815c9}{CEditorViewportClient}}\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{class_i_viewport_client}{IViewportClient}}}
+\DoxyCodeLine{00013\ \{}
+\DoxyCodeLine{00014\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00015\ \ \ \ \ \doxymbox{\hyperlink{class_c_editor_viewport_client_af4bc2b30bf4d3568c2b8fa87d12815c9}{CEditorViewportClient}}(\doxymbox{\hyperlink{class_c_editor_u_i}{CEditorUI}}\&\ InEditorUI,\ \doxymbox{\hyperlink{class_c_window}{CWindow}}*\ InMainWindow);}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_editor_viewport_client_acff7c5b752f62f2d257fbf529f3182ed}{Attach}}(\doxymbox{\hyperlink{class_c_core}{CCore}}*\ Core,\ \doxymbox{\hyperlink{class_c_renderer}{CRenderer}}*\ Renderer)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00018\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_editor_viewport_client_a918237183862a7faf1e2e0955cedcac3}{Detach}}(\doxymbox{\hyperlink{class_c_core}{CCore}}*\ Core,\ \doxymbox{\hyperlink{class_c_renderer}{CRenderer}}*\ Renderer)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00019\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_editor_viewport_client_ac49235e667e55be297e95103373d57b3}{Tick}}(\doxymbox{\hyperlink{class_c_core}{CCore}}*\ Core,\ \textcolor{keywordtype}{float}\ DeltaTime)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_editor_viewport_client_a4fcfd4098f5902f4e8cf437cacdf06a1}{HandleMessage}}(\doxymbox{\hyperlink{class_c_core}{CCore}}*\ Core,\ HWND\ Hwnd,\ UINT\ Msg,\ WPARAM\ WParam,\ LPARAM\ LParam)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00021\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_editor_viewport_client_ae84a059778dd35e237d6aad4c3a94df3}{BuildRenderCommands}}(\doxymbox{\hyperlink{class_c_core}{CCore}}*\ Core,\ \doxymbox{\hyperlink{class_u_scene}{UScene}}*\ Scene,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_f_frustum}{FFrustum}}\&\ Frustum,\ \doxymbox{\hyperlink{struct_f_render_command_queue}{FRenderCommandQueue}}\&\ OutQueue)\ \textcolor{keyword}{const\ override};}
+\DoxyCodeLine{00022\ \ \ \ \ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028e}{EGizmoMode}}\ \doxymbox{\hyperlink{class_c_editor_viewport_client_ad796c9b507c46f7e20e12cac6a7cb389}{GetGizmoMode}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_editor_viewport_client_ae3dc0c520bcd2a03c1239d0fa7b413a5}{Gizmo}}.GetMode();\ \}}
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_editor_viewport_client_a165c7c2bededb41e26709c3dd29a5ddf}{SetGizmoMode}}(\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028e}{EGizmoMode}}\ InMode)\ \{\ \doxymbox{\hyperlink{class_c_editor_viewport_client_ae3dc0c520bcd2a03c1239d0fa7b413a5}{Gizmo}}.SetMode(InMode);\ \}}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00026\ \ \ \ \ \doxymbox{\hyperlink{class_c_editor_u_i}{CEditorUI}}\&\ \doxymbox{\hyperlink{class_c_editor_viewport_client_ac60d27021e151d4bdca43528db82478c}{EditorUI}};}
+\DoxyCodeLine{00027\ \ \ \ \ \doxymbox{\hyperlink{class_c_window}{CWindow}}*\ \doxymbox{\hyperlink{class_c_editor_viewport_client_a4aee1e36cf746fe6c1a298878329c6ef}{MainWindow}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00028\ \ \ \ \ \doxymbox{\hyperlink{class_c_picker}{CPicker}}\ \doxymbox{\hyperlink{class_c_editor_viewport_client_addd375ec84293ad9b1cb6e078cc09f79}{Picker}};}
+\DoxyCodeLine{00029\ \ \ \ \ \textcolor{keyword}{mutable}\ \doxymbox{\hyperlink{class_c_gizmo}{CGizmo}}\ \doxymbox{\hyperlink{class_c_editor_viewport_client_ae3dc0c520bcd2a03c1239d0fa7b413a5}{Gizmo}};}
+\DoxyCodeLine{00030\ \};}
+
+\end{DoxyCode}

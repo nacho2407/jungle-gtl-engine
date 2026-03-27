@@ -1,0 +1,7 @@
+<map id="ObjectManager::FlushKilledObjects" name="ObjectManager::FlushKilledObjects">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,187,48"/>
+<area shape="rect" id="Node000002" href="$class_u_object.html#af9c13f5d0c00dc78b87c1ee889bbef8f" title=" " alt="" coords="235,13,388,40"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="187,24,222,26,217,27,187,29"/>
+<area shape="rect" id="Node000003" href="$class_u_object.html#aa8a430f6c63d74c333ae314897ba3f9c" title=" " alt="" coords="436,13,592,40"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="388,24,423,27,418,27,388,29"/>
+</map>

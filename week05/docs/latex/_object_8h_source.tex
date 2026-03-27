@@ -1,0 +1,134 @@
+\doxysection{Object.\+h}
+\hypertarget{_object_8h_source}{}\label{_object_8h_source}\index{Engine/Source/Object/Object.h@{Engine/Source/Object/Object.h}}
+\doxymbox{\hyperlink{_object_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}"{}}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_object_types_8h}{ObjectTypes.h}}"{}}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ T>}
+\DoxyCodeLine{00006\ \textcolor{keyword}{concept\ }\doxymbox{\hyperlink{concept_has_initialize}{HasInitialize}}\ =\ \textcolor{keyword}{requires}(T\ t)\ \{}
+\DoxyCodeLine{00007\ \ \ \ \ \{\ t.Initialize()\ \}\ -\/>\ std::same\_as<void>;}
+\DoxyCodeLine{00008\ \};}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ T>}
+\DoxyCodeLine{00011\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{_object_8h_a165da62e96e415f8639dcc539470c63f}{InitializeIfAble}}(T*\ obj)\ \{}
+\DoxyCodeLine{00012\ \ \ \ \ \textcolor{keywordflow}{if}\ \textcolor{keyword}{constexpr}\ (\doxymbox{\hyperlink{concept_has_initialize}{HasInitialize<T>}})\ \{}
+\DoxyCodeLine{00013\ \ \ \ \ \ \ \ \ obj-\/>Initialize();}
+\DoxyCodeLine{00014\ \ \ \ \ \}}
+\DoxyCodeLine{00015\ \}}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#define\ DECLARE\_RTTI(ClassName,\ ParentClassName)\ \(\backslash\)}}
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\ \ \ \ public:\ \(\backslash\)}}
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ static\ UClass*\ StaticClass();\ \(\backslash\)}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ \(\backslash\)}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ virtual\ UClass*\ GetClass()\ const\ override\ \(\backslash\)}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ \{\ \(\backslash\)}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ \ \ \ \ return\ ClassName::StaticClass();\ \(\backslash\)}}
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ \}\ \(\backslash\)}}
+\DoxyCodeLine{00025\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ ClassName()\ :\ ParentClassName("{}"{})\ \{\ \(\backslash\)}}
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ \ \ \ \ InitializeIfAble(this);\ \(\backslash\)}}
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ \}\ \(\backslash\)}}
+\DoxyCodeLine{00028\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ ClassName(const\ FString\&\ InName,\ UObject*\ InOuter\ =\ nullptr)\ \(\backslash\)}}
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ \ \ \ \ :\ ParentClassName(InName,\ InOuter)\ \(\backslash\)}}
+\DoxyCodeLine{00030\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ \{\ \(\backslash\)}}
+\DoxyCodeLine{00031\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ \ \ \ \ InitializeIfAble(this);\ \(\backslash\)}}
+\DoxyCodeLine{00032\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ \}}}
+\DoxyCodeLine{00033\ }
+\DoxyCodeLine{00034\ \textcolor{preprocessor}{\#define\ IMPLEMENT\_RTTI(ClassName,\ ParentClassName)\ \(\backslash\)}}
+\DoxyCodeLine{00035\ \textcolor{preprocessor}{\ \ \ \ namespace\ \{\ \(\backslash\)}}
+\DoxyCodeLine{00036\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ UObject*\ Create\#\#ClassName\#\#Instance(UObject*\ InOuter,\ const\ FString\&\ InName)\ \{\ \(\backslash\)}}
+\DoxyCodeLine{00037\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ \ \ \ \ \ return\ new\ ClassName(InName,\ InOuter);\ \(\backslash\)}}
+\DoxyCodeLine{00038\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ \}\ \(\backslash\)}}
+\DoxyCodeLine{00039\ \textcolor{preprocessor}{\ \ \ \ \}\ \(\backslash\)}}
+\DoxyCodeLine{00040\ \textcolor{preprocessor}{\ \ \ \ UClass*\ ClassName::StaticClass()\ \{\ \(\backslash\)}}
+\DoxyCodeLine{00041\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ static\ UClass\ ClassInfo\ =\ \{\ \(\backslash\)}}
+\DoxyCodeLine{00042\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ \ \ \ \ \#ClassName,\ \(\backslash\)}}
+\DoxyCodeLine{00043\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ \ \ \ \ ParentClassName::StaticClass(),\ \ \(\backslash\)}}
+\DoxyCodeLine{00044\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ \ \ \ \ Create\#\#ClassName\#\#Instance\ \(\backslash\)}}
+\DoxyCodeLine{00045\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ \};\ \(\backslash\)}}
+\DoxyCodeLine{00046\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ return\ \&ClassInfo;\ \(\backslash\)}}
+\DoxyCodeLine{00047\ \textcolor{preprocessor}{\ \ \ \ \}}}
+\DoxyCodeLine{00048\ }
+\DoxyCodeLine{00049\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_u_class}{UClass}};}
+\DoxyCodeLine{00050\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_u_object}{UObject}};}
+\DoxyCodeLine{00051\ \textcolor{comment}{//\ 조건\ 1:\ 엔진에서\ 생성되는\ 모든\ UObject를\ 관리하는\ 전역\ 배열}}
+\DoxyCodeLine{00052\ \textcolor{comment}{//\ InternalIndex가\ 이\ 배열의\ 인덱스와\ 대응됨}}
+\DoxyCodeLine{00053\ }
+\DoxyCodeLine{00054\ \textcolor{keyword}{extern}\ \doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \ \ \doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray<UObject*>}}\ \doxymbox{\hyperlink{_object_8cpp_a0d0be0720dc1b1d0aca629ef4672b61a}{GUObjectArray}};}
+\DoxyCodeLine{00055\ }
+\DoxyCodeLine{00056\ }
+\DoxyCodeLine{00057\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_u_object_a134240a541ca3ecfd86d8899ca641aca}{UObject}}}
+\DoxyCodeLine{00058\ \{}
+\DoxyCodeLine{00059\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00060\ \ \ \ \ \doxymbox{\hyperlink{class_u_object_a134240a541ca3ecfd86d8899ca641aca}{UObject}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_u_class}{UClass}}*\ InClass,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ InName,\ \doxymbox{\hyperlink{class_u_object_a134240a541ca3ecfd86d8899ca641aca}{UObject}}*\ InOuter\ =\ \textcolor{keyword}{nullptr});}
+\DoxyCodeLine{00061\ \ \ \ \ \doxymbox{\hyperlink{class_u_object_a134240a541ca3ecfd86d8899ca641aca}{UObject}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ InName,\ \doxymbox{\hyperlink{class_u_object_a134240a541ca3ecfd86d8899ca641aca}{UObject}}*\ InOuter\ =\ \textcolor{keyword}{nullptr});}
+\DoxyCodeLine{00062\ \ \ \ \ \textcolor{keyword}{virtual}\ \doxymbox{\hyperlink{class_u_object_a134240a541ca3ecfd86d8899ca641aca}{\string~UObject}}();\ \ \textcolor{comment}{//\ GUObjectArray\ 슬롯\ nullptr\ 마킹}}
+\DoxyCodeLine{00063\ }
+\DoxyCodeLine{00064\ \ \ \ \ \textcolor{comment}{//\ 조건\ 2:\ new/delete\ 오버로딩으로\ 메모리\ 통계\ 추적}}
+\DoxyCodeLine{00065\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ \doxymbox{\hyperlink{class_u_object_a606405bfd5c6823ecef443fd4ce0d144}{GetTotalBytes}}();}
+\DoxyCodeLine{00066\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ \doxymbox{\hyperlink{class_u_object_a490d918899d6e2ce5e78d9df247473bf}{GetTotalCounts}}();}
+\DoxyCodeLine{00067\ }
+\DoxyCodeLine{00068\ \ \ \ \ \textcolor{keywordtype}{void}*\ \textcolor{keyword}{operator}\ \textcolor{keyword}{new}(\textcolor{keywordtype}{size\_t}\ InSize);}
+\DoxyCodeLine{00069\ \ \ \ \ \textcolor{keywordtype}{void}\ \textcolor{keyword}{operator}\ \textcolor{keyword}{delete}(\textcolor{keywordtype}{void}*\ InAddress,\ std::size\_t\ size);}
+\DoxyCodeLine{00070\ }
+\DoxyCodeLine{00071\ \ \ \ \ \textcolor{keyword}{inline}\ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ \doxymbox{\hyperlink{class_u_object_a962a7dd7fb0492055cd032056b71645c}{TotalAllocationBytes}}\ =\ 0;}
+\DoxyCodeLine{00072\ \ \ \ \ \textcolor{keyword}{inline}\ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ \doxymbox{\hyperlink{class_u_object_a257070771b84835483df7278e7a4c947}{TotalAllocationCounts}}\ =\ 0;}
+\DoxyCodeLine{00073\ \ \ \ \ \textcolor{keyword}{inline}\ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ \doxymbox{\hyperlink{class_u_object_a99dc1eede26795e19a7c8722b1dbf465}{LastNewSize}}\ =\ 0;\ \textcolor{comment}{//\ operator\ new에서\ 생성자로\ 크기\ 전달용}}
+\DoxyCodeLine{00074\ }
+\DoxyCodeLine{00075\ \ \ \ \ \textcolor{comment}{//\ 조건\ 1:\ 모든\ UObject가\ 갖는\ 고유\ 식별자\ (FObjectFactory가\ 주입)}}
+\DoxyCodeLine{00076\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ \doxymbox{\hyperlink{class_u_object_a83fbd1a57afad4978054df6534620e60}{UUID}}\ =\ 0;\ \textcolor{comment}{//\ 엔진\ 전체\ 고유\ ID\ (1-\/based,\ 단조\ 증가)}}
+\DoxyCodeLine{00077\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ \doxymbox{\hyperlink{class_u_object_a275e85c6f0b7459412570e9495fb824b}{InternalIndex}}\ =\ 0;\ \textcolor{comment}{//\ GUObjectArray\ 내\ 인덱스}}
+\DoxyCodeLine{00078\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ \doxymbox{\hyperlink{class_u_object_ac2f7877b317ccb3c6b6d7405bdce7ec6}{ObjectSize}}\ =\ 0;\ \textcolor{comment}{//\ 이\ 오브젝트의\ 할당\ 크기\ (bytes)}}
+\DoxyCodeLine{00079\ }
+\DoxyCodeLine{00080\ \ \ \ \ \textcolor{comment}{//\ 조건\ 4:\ RTTI}}
+\DoxyCodeLine{00081\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{class_u_class}{UClass}}*\ \doxymbox{\hyperlink{class_u_object_a1cf4d64988214efdf372c32f89d2da2a}{StaticClass}}();}
+\DoxyCodeLine{00082\ \ \ \ \ \textcolor{keyword}{virtual}\ \doxymbox{\hyperlink{class_u_class}{UClass}}*\ \doxymbox{\hyperlink{class_u_object_aaeaaa034e92644ebfb3a0e4fe40c8c02}{GetClass}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00083\ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ \doxymbox{\hyperlink{class_u_object_a57009010aca3bc218c5034b821987dd4}{GetName}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00084\ \ \ \ \ \doxymbox{\hyperlink{class_u_object_a134240a541ca3ecfd86d8899ca641aca}{UObject}}*\ \doxymbox{\hyperlink{class_u_object_a92e09357ca4405dcd2413f44d4dbbd39}{GetOuter}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00085\ }
+\DoxyCodeLine{00086\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_u_object_ad6d2f697e6b491570c9687c7041d7ac0}{IsA}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_u_class}{UClass}}*\ InClass)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00087\ }
+\DoxyCodeLine{00088\ \ \ \ \ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ T>}
+\DoxyCodeLine{00089\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_u_object_a9e0b9278fee4678e354227e8e7dd4e9d}{IsA}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00090\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00091\ \ \ \ \ \ \ \ \ \textcolor{keyword}{static\_assert}(std::is\_base\_of\_v<UObject,\ T>,\ \textcolor{stringliteral}{"{}T\ must\ derive\ from\ UObject"{}});}
+\DoxyCodeLine{00092\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_u_object_ad6d2f697e6b491570c9687c7041d7ac0}{IsA}}(T::StaticClass());}
+\DoxyCodeLine{00093\ \ \ \ \ \}}
+\DoxyCodeLine{00094\ }
+\DoxyCodeLine{00095\ \ \ \ \ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ T>}
+\DoxyCodeLine{00096\ \ \ \ \ T*\ \doxymbox{\hyperlink{class_u_object_ac84999033b0d2df776772aabad8d432d}{GetTypedOuter}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00097\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00098\ \ \ \ \ \ \ \ \ \textcolor{keyword}{static\_assert}(std::is\_base\_of\_v<UObject,\ T>,\ \textcolor{stringliteral}{"{}T\ must\ derive\ from\ UObject"{}});}
+\DoxyCodeLine{00099\ }
+\DoxyCodeLine{00100\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{class_u_object_a134240a541ca3ecfd86d8899ca641aca}{UObject}}*\ Current\ =\ \doxymbox{\hyperlink{class_u_object_a186ad4ef60e1e2177c909abe777e7e06}{Outer}};}
+\DoxyCodeLine{00101\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (Current)}
+\DoxyCodeLine{00102\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00103\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (Current-\/>\doxymbox{\hyperlink{class_u_object_ad6d2f697e6b491570c9687c7041d7ac0}{IsA}}(T::StaticClass()))}
+\DoxyCodeLine{00104\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00105\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{static\_cast<}T*\textcolor{keyword}{>}(Current);}
+\DoxyCodeLine{00106\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00107\ \ \ \ \ \ \ \ \ \ \ \ \ Current\ =\ Current-\/>\doxymbox{\hyperlink{class_u_object_a92e09357ca4405dcd2413f44d4dbbd39}{GetOuter}}();}
+\DoxyCodeLine{00108\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00109\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00110\ \ \ \ \ \}}
+\DoxyCodeLine{00111\ }
+\DoxyCodeLine{00112\ \ \ \ \ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ GetPathName()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00113\ }
+\DoxyCodeLine{00114\ \ \ \ \ \textcolor{keywordtype}{bool}\ HasAnyFlags(\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObjectFlags}}\ InFlags)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00115\ \ \ \ \ \textcolor{keywordtype}{bool}\ HasAllFlags(\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObjectFlags}}\ InFlags)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00116\ \ \ \ \ \textcolor{keywordtype}{void}\ AddFlags(\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObjectFlags}}\ InFlags);}
+\DoxyCodeLine{00117\ \ \ \ \ \textcolor{keywordtype}{void}\ ClearFlags(\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObjectFlags}}\ InFlags);}
+\DoxyCodeLine{00118\ }
+\DoxyCodeLine{00119\ \ \ \ \ \textcolor{keywordtype}{void}\ MarkPendingKill();}
+\DoxyCodeLine{00120\ \ \ \ \ \textcolor{keywordtype}{bool}\ IsPendingKill()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00121\ }
+\DoxyCodeLine{00122\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00123\ \ \ \ \ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \ \ \ \ \ \doxymbox{\hyperlink{class_u_object_a1af6f73f5bbb687f152f9a33c0d3a1a6}{Name}};}
+\DoxyCodeLine{00124\ \ \ \ \ \doxymbox{\hyperlink{class_u_object_a134240a541ca3ecfd86d8899ca641aca}{UObject}}*\ \doxymbox{\hyperlink{class_u_object_a186ad4ef60e1e2177c909abe777e7e06}{Outer}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00125\ \ \ \ \ \doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObjectFlags}}\ \doxymbox{\hyperlink{class_u_object_a26193b79f3c99868835aa1e66682cf52}{Flags}}\ =\ \doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79a6adf97f83acf6453d4a6a4b1070f3754}{EObjectFlags::None}};}
+\DoxyCodeLine{00126\ \};}
+\DoxyCodeLine{00127\ }
+\DoxyCodeLine{00128\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_object_ptr_8h}{Types/ObjectPtr.h}}"{}}}
+
+\end{DoxyCode}

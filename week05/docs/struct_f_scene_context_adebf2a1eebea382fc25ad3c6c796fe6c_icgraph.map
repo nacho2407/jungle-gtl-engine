@@ -1,0 +1,17 @@
+<map id="FSceneContext::Reset" name="FSceneContext::Reset">
+<area shape="rect" id="Node000001" title=" " alt="" coords="801,101,957,128"/>
+<area shape="rect" id="Node000002" href="$class_f_scene_manager.html#aee43c8f64cf757944e292217ba5726e7" title=" " alt="" coords="546,60,753,103"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="783,101,754,99,754,94,789,101"/>
+<area shape="rect" id="Node000007" href="$struct_f_editor_scene_context.html#ab8dc2684c0d7569261bdf728af21ec3e" title=" " alt="" coords="576,127,723,169"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="789,128,724,140,723,135,783,128"/>
+<area shape="rect" id="Node000003" href="$class_f_scene_manager.html#a5b71ed77953189f707b744596a993e4d" title=" " alt="" coords="281,5,498,48"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="528,56,494,51,494,46,533,56"/>
+<area shape="rect" id="Node000004" href="$class_f_scene_manager.html#a90a79a2bcdcb55348785f1c299ff63f2" title=" " alt="" coords="303,72,476,99"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="528,83,476,87,476,81,533,83"/>
+<area shape="rect" id="Node000005" href="$class_f_scene_manager.html#a9a5c1024497c76d5a6651f90d53dc891" title=" " alt="" coords="29,47,209,73"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="285,77,209,71,209,66,290,75"/>
+<area shape="rect" id="Node000006" href="$class_f_scene_manager.html#a9c722c9d4bcc00c7f937918e923575f8" title=" " alt="" coords="5,97,233,124"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="285,95,234,103,233,97,290,94"/>
+<area shape="rect" id="Node000008" href="$class_f_scene_manager.html#a23598d427c6c97d6477edd0b8a550772" title=" " alt="" coords="286,127,493,169"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="558,148,493,151,493,145,564,148"/>
+</map>

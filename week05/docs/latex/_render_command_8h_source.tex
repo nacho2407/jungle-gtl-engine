@@ -1,0 +1,51 @@
+\doxysection{Render\+Command.\+h}
+\hypertarget{_render_command_8h_source}{}\label{_render_command_8h_source}\index{Engine/Source/Renderer/RenderCommand.h@{Engine/Source/Renderer/RenderCommand.h}}
+\doxymbox{\hyperlink{_render_command_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}"{}}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_mesh_data}{FMeshData}};}
+\DoxyCodeLine{00006\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_f_material}{FMaterial}};}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{struct_f_render_command}{FRenderCommand}}}
+\DoxyCodeLine{00009\ \{}
+\DoxyCodeLine{00010\ \ \ \ \ \doxymbox{\hyperlink{struct_f_mesh_data}{FMeshData}}*\ \doxymbox{\hyperlink{struct_f_render_command_adf2f609a68e937045b1aa6b9b5108e37}{MeshData}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00011\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_render_command_ae62439166453060c7577e5b35e32e6fb}{WorldMatrix}};}
+\DoxyCodeLine{00012\ \ \ \ \ \doxymbox{\hyperlink{class_f_material}{FMaterial}}*\ \doxymbox{\hyperlink{struct_f_render_command_acf066128f890b6bfb0bede9e7b6fec03}{Material}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00013\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_aba41bf2b6f6da5945ee08fb99931aede}{uint64}}\ \doxymbox{\hyperlink{struct_f_render_command_a2abc5c51c56ab9ab41eb5a957a2925a0}{SortKey}}\ =\ 0;}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_render_command_a1e9f444fa2c6f0bd98087a1d1d97c83b}{bOverlay}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_render_command_ab250f9716898f471d469bf091708db19}{bDisableDepthTest}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_render_command_a6516ba6dda68fd370b4a1bc7c04d2839}{bDisableDepthWrite}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00018\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_render_command_a3ecc3d471bc62d12c0daf056f51c85f3}{bDisableCulling}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{_core_types_8h_aba41bf2b6f6da5945ee08fb99931aede}{uint64}}\ \doxymbox{\hyperlink{struct_f_render_command_aca693e7fb90b067945cbe9cefb4af31d}{MakeSortKey}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_f_material}{FMaterial}}*\ InMaterial,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_mesh_data}{FMeshData}}*\ InMeshData);}
+\DoxyCodeLine{00021\ \};}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \textcolor{comment}{//\ Scene\ →\ Renderer\ 간\ 전달되는\ 프레임\ 단위\ 커맨드\ 큐}}
+\DoxyCodeLine{00024\ \textcolor{comment}{//\ Scene은\ Renderer를\ 몰라도\ 이\ 큐에\ 데이터를\ 쌓을\ 수\ 있음}}
+\DoxyCodeLine{00025\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{struct_f_render_command_queue}{FRenderCommandQueue}}}
+\DoxyCodeLine{00026\ \{}
+\DoxyCodeLine{00027\ \ \ \ \ \doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray<FRenderCommand>}}\ \doxymbox{\hyperlink{struct_f_render_command_queue_af5288446ec4e739ebbfb2a26e063eecd}{Commands}};}
+\DoxyCodeLine{00028\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_render_command_queue_af57bb098260195607af4b01d0b8e7a26}{ViewMatrix}};}
+\DoxyCodeLine{00029\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_render_command_queue_a838b8f2b1260f02752382120b6c345a0}{ProjectionMatrix}};}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{struct_f_render_command_queue_a126b7050b8004c6f0c8311b77717592f}{Reserve}}(\textcolor{keywordtype}{size\_t}\ Count)}
+\DoxyCodeLine{00032\ \ \ \ \ \{}
+\DoxyCodeLine{00033\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_render_command_queue_af5288446ec4e739ebbfb2a26e063eecd}{Commands}}.reserve(Count);}
+\DoxyCodeLine{00034\ \ \ \ \ \}}
+\DoxyCodeLine{00035\ }
+\DoxyCodeLine{00036\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{struct_f_render_command_queue_a5ff266b0bfb72001ec1ca07e46e6ebf6}{AddCommand}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_render_command}{FRenderCommand}}\&\ Cmd)}
+\DoxyCodeLine{00037\ \ \ \ \ \{}
+\DoxyCodeLine{00038\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_render_command_queue_af5288446ec4e739ebbfb2a26e063eecd}{Commands}}.push\_back(Cmd);}
+\DoxyCodeLine{00039\ \ \ \ \ \}}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{struct_f_render_command_queue_a37e3d5bc8279718777aa57380aa4186f}{Clear}}()}
+\DoxyCodeLine{00042\ \ \ \ \ \{}
+\DoxyCodeLine{00043\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_render_command_queue_af5288446ec4e739ebbfb2a26e063eecd}{Commands}}.clear();}
+\DoxyCodeLine{00044\ \ \ \ \ \}}
+\DoxyCodeLine{00045\ \};}
+
+\end{DoxyCode}

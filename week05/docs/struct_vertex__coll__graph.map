@@ -1,0 +1,10 @@
+<map id="Vertex" name="Vertex">
+<area shape="rect" id="Node000001" title=" " alt="" coords="530,744,578,813"/>
+<area shape="rect" id="Node000002" href="$struct_f_vector.html" title=" " alt="" coords="5,5,375,651"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="376,585,433,654,490,718,520,749,515,747,486,722,429,657,374,590"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="375,272,395,296,402,328,399,351,389,370,385,367,394,350,397,328,390,298,375,278"/>
+<area shape="rect" id="Node000003" href="$struct_vec2.html" title=" " alt="" coords="534,283,574,373"/>
+<area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="557,372,557,728,552,726,552,375"/>
+<area shape="rect" id="Node000004" href="$struct_color.html" title=" " alt="" coords="599,261,640,395"/>
+<area shape="poly" id="edge4_Node000001_Node000004" title=" " alt="" coords="626,392,628,463,625,546,614,634,593,721,588,733,584,729,588,719,609,633,619,545,623,463,623,397"/>
+</map>

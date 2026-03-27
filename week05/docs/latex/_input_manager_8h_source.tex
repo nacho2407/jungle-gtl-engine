@@ -1,0 +1,72 @@
+\doxysection{Input\+Manager.\+h}
+\hypertarget{_input_manager_8h_source}{}\label{_input_manager_8h_source}\index{Engine/Source/Input/InputManager.h@{Engine/Source/Input/InputManager.h}}
+\doxymbox{\hyperlink{_input_manager_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}"{}}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}Windows.h"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <vector>}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{keyword}{enum\ class}\ \doxymbox{\hyperlink{_input_manager_8h_a321a7f9d01d5b064474f51f03016e0a5}{EInputEventType}}\ :\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}}
+\DoxyCodeLine{00007\ \{}
+\DoxyCodeLine{00008\ \ \ \ \ \doxymbox{\hyperlink{_input_manager_8h_a321a7f9d01d5b064474f51f03016e0a5acfd07bf1effd88bca04a12a087777354}{KeyDown}},}
+\DoxyCodeLine{00009\ \ \ \ \ \doxymbox{\hyperlink{_input_manager_8h_a321a7f9d01d5b064474f51f03016e0a5a0f8baa14654b1f6ef00fed708c7f198a}{KeyUp}},}
+\DoxyCodeLine{00010\ \ \ \ \ \doxymbox{\hyperlink{_input_manager_8h_a321a7f9d01d5b064474f51f03016e0a5a8cdc59370ca82c9591c1f0f212a2971c}{MouseButtonDown}},}
+\DoxyCodeLine{00011\ \ \ \ \ \doxymbox{\hyperlink{_input_manager_8h_a321a7f9d01d5b064474f51f03016e0a5a2a3ccd10f3eb3ee5e6009dde78de0d1f}{MouseButtonUp}},}
+\DoxyCodeLine{00012\ \};}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_input_event}{FInputEvent}}}
+\DoxyCodeLine{00015\ \{}
+\DoxyCodeLine{00016\ \ \ \ \ \doxymbox{\hyperlink{_input_manager_8h_a321a7f9d01d5b064474f51f03016e0a5}{EInputEventType}}\ \doxymbox{\hyperlink{struct_f_input_event_af716e37e9d057ee2e878f01f689f10b8}{Type}};}
+\DoxyCodeLine{00017\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ \doxymbox{\hyperlink{struct_f_input_event_a0d259f96594e40b4d6430a7e3576983a}{KeyOrButton}};}
+\DoxyCodeLine{00018\ \};}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_c_input_manager_a31912085cda63d266616d469e61cd755}{CInputManager}}}
+\DoxyCodeLine{00021\ \{}
+\DoxyCodeLine{00022\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00023\ \ \ \ \ \doxymbox{\hyperlink{class_c_input_manager_a31912085cda63d266616d469e61cd755}{CInputManager}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00024\ \ \ \ \ \doxymbox{\hyperlink{class_c_input_manager_a0bbe0a7c22c946c57cf0a5e68735f056}{\string~CInputManager}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \ \ \ \ \doxymbox{\hyperlink{class_c_input_manager_ae81acd00872fce81381401f5d5884f80}{CInputManager}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_c_input_manager_a31912085cda63d266616d469e61cd755}{CInputManager}}\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00027\ \ \ \ \ \doxymbox{\hyperlink{class_c_input_manager_a7238a0dfbfd1090fcd3ced95c9bcd8e6}{CInputManager}}(\doxymbox{\hyperlink{class_c_input_manager_a31912085cda63d266616d469e61cd755}{CInputManager}}\&\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00028\ \ \ \ \ \doxymbox{\hyperlink{class_c_input_manager_a31912085cda63d266616d469e61cd755}{CInputManager}}\&\ \doxymbox{\hyperlink{class_c_input_manager_aff8abf4fd79a252a7326aee68187653e}{operator=}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_c_input_manager_a31912085cda63d266616d469e61cd755}{CInputManager}}\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00029\ \ \ \ \ \doxymbox{\hyperlink{class_c_input_manager_a31912085cda63d266616d469e61cd755}{CInputManager}}\&\ \doxymbox{\hyperlink{class_c_input_manager_a42d8aca707c1713b00af78109ecaadeb}{operator=}}(\doxymbox{\hyperlink{class_c_input_manager_a31912085cda63d266616d469e61cd755}{CInputManager}}\&\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_input_manager_a9f5e640735099147bd163fb3c69ef122}{ProcessMessage}}(HWND\ Hwnd,\ UINT\ Msg,\ WPARAM\ WParam,\ LPARAM\ LParam);}
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_input_manager_aecebf908a1cdb654427963ca44aa1fb8}{Tick}}();}
+\DoxyCodeLine{00033\ }
+\DoxyCodeLine{00034\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_input_manager_ad6fddbdce6bb07988cf1b792be2f5cec}{IsKeyDown}}(\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Key)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_input_manager_a4549481f0d6c017fc82e3844d8deb35f}{IsKeyPressed}}(\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Key)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00036\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_input_manager_a3bea1bba6f2efe1cc55f110a4d5341b8}{IsKeyReleased}}(\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Key)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00038\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_input_manager_ad417919b54d61c7752cf81a293ab5be6}{IsMouseButtonDown}}(\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Button)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00039\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_input_manager_ae763c58ce0ef70c8c3f1c00f5557204b}{IsMouseButtonPressed}}(\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Button)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00040\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_input_manager_a2c900558f43ae3bfc52dd208b086b82f}{IsMouseButtonReleased}}(\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Button)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00041\ }
+\DoxyCodeLine{00042\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_c_input_manager_af50ac328973a3dbb9e3fe5cf4c76768b}{GetMouseDeltaX}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_input_manager_ac82cd549ec004d1dbef75488c6a8d2dd}{MouseDeltaX}};\ \}}
+\DoxyCodeLine{00043\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_c_input_manager_a6c4ea4a35bd0f615fbac2c8ddaf5d506}{GetMouseDeltaY}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_input_manager_a524280c733faf5daaf261653dfe46c1e}{MouseDeltaY}};\ \}}
+\DoxyCodeLine{00044\ }
+\DoxyCodeLine{00045\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ \doxymbox{\hyperlink{class_c_input_manager_aeab53e594d0cde345f005fdfbdfdcdb9}{MOUSE\_LEFT}}\ =\ 0;}
+\DoxyCodeLine{00046\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ \doxymbox{\hyperlink{class_c_input_manager_abb8d1846bcbe0787752cb01029dfc9fe}{MOUSE\_RIGHT}}\ =\ 1;}
+\DoxyCodeLine{00047\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ \doxymbox{\hyperlink{class_c_input_manager_a963db7ce946338ac01bf6c382096ee9a}{MOUSE\_MIDDLE}}\ =\ 2;}
+\DoxyCodeLine{00048\ }
+\DoxyCodeLine{00049\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00050\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ \doxymbox{\hyperlink{class_c_input_manager_a5b53796d7f0ea765f8c73f4198f61f58}{MAX\_KEYS}}\ =\ 256;}
+\DoxyCodeLine{00051\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ \doxymbox{\hyperlink{class_c_input_manager_a9b27379284e061d839d44adda61955b0}{MAX\_MOUSE\_BUTTONS}}\ =\ 3;}
+\DoxyCodeLine{00052\ }
+\DoxyCodeLine{00053\ \ \ \ \ \textcolor{comment}{//\ Event\ queue\ (filled\ by\ WndProc,\ flushed\ in\ Tick)}}
+\DoxyCodeLine{00054\ \ \ \ \ std::vector<FInputEvent>\ \doxymbox{\hyperlink{class_c_input_manager_aed4be2c95c32a2dc20ddc0b13df640ad}{EventQueue}};}
+\DoxyCodeLine{00055\ }
+\DoxyCodeLine{00056\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_input_manager_a4b031ed7b8cd30cf19f1540aa3e5ea14}{KeyState}}[\doxymbox{\hyperlink{class_c_input_manager_a5b53796d7f0ea765f8c73f4198f61f58}{MAX\_KEYS}}]\ =\ \{\};}
+\DoxyCodeLine{00057\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_input_manager_a26af3dc95348ffd8c8900afaa6bfa2a3}{PrevKeyState}}[\doxymbox{\hyperlink{class_c_input_manager_a5b53796d7f0ea765f8c73f4198f61f58}{MAX\_KEYS}}]\ =\ \{\};}
+\DoxyCodeLine{00058\ }
+\DoxyCodeLine{00059\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_input_manager_a5a23f4f1e89a3901929c8ccda506d50b}{MouseButtonState}}[\doxymbox{\hyperlink{class_c_input_manager_a9b27379284e061d839d44adda61955b0}{MAX\_MOUSE\_BUTTONS}}]\ =\ \{\};}
+\DoxyCodeLine{00060\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_input_manager_ac8c08901cb9af6c05f22bed815ebde19}{PrevMouseButtonState}}[\doxymbox{\hyperlink{class_c_input_manager_a9b27379284e061d839d44adda61955b0}{MAX\_MOUSE\_BUTTONS}}]\ =\ \{\};}
+\DoxyCodeLine{00061\ }
+\DoxyCodeLine{00062\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_c_input_manager_ac82cd549ec004d1dbef75488c6a8d2dd}{MouseDeltaX}}\ =\ 0.0f;}
+\DoxyCodeLine{00063\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_c_input_manager_a524280c733faf5daaf261653dfe46c1e}{MouseDeltaY}}\ =\ 0.0f;}
+\DoxyCodeLine{00064\ \ \ \ \ POINT\ \doxymbox{\hyperlink{class_c_input_manager_a5a9a0fe669681f9be9985ead40f9f586}{LastMousePos}}\ =\ \{\};}
+\DoxyCodeLine{00065\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_input_manager_a93fdcf590e218c61ae55926fedb1409b}{bTrackingMouse}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00066\ \};}
+
+\end{DoxyCode}

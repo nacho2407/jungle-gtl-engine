@@ -1,0 +1,137 @@
+\doxysection{Unreal\+Editor\+Styled\+Gizmo.\+h}
+\hypertarget{_unreal_editor_styled_gizmo_8h_source}{}\label{_unreal_editor_styled_gizmo_8h_source}\index{Engine/Source/Primitive/UnrealEditorStyledGizmo.h@{Engine/Source/Primitive/UnrealEditorStyledGizmo.h}}
+\doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <cstdint>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <initializer\_list>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <vector>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_vector_8h}{Math/Vector.h}}"{}}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_vec2}{Vec2}}}
+\DoxyCodeLine{00010\ \{}
+\DoxyCodeLine{00011\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_vec2_adf8ee322d4b4bcc04146762c018d731f}{x}}\ =\ 0.0f;}
+\DoxyCodeLine{00012\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_vec2_a30543787e62f6d915543cf1dfb04c094}{y}}\ =\ 0.0f;}
+\DoxyCodeLine{00013\ \};}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_color}{Color}}}
+\DoxyCodeLine{00016\ \{}
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_color_a3958a556b47d2de3dd45c75aac833c20}{r}}\ =\ 1.0f;}
+\DoxyCodeLine{00018\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_color_a5defbb21620e480e556181772d665f34}{g}}\ =\ 1.0f;}
+\DoxyCodeLine{00019\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_color_a33e482be18d6ea31d2b403bee13683b7}{b}}\ =\ 1.0f;}
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_color_a98047aee65fc3d825f88a76da728fd27}{a}}\ =\ 1.0f;}
+\DoxyCodeLine{00021\ \};}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_vertex}{Vertex}}}
+\DoxyCodeLine{00024\ \{}
+\DoxyCodeLine{00025\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_vertex_a775c2dee7e1aa3ac995091eb9aa5285d}{position}};}
+\DoxyCodeLine{00026\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_vertex_ad65f5c95eed23f7fc94c6c3811301010}{normal}};}
+\DoxyCodeLine{00027\ \ \ \ \ \doxymbox{\hyperlink{struct_vec2}{Vec2}}\ \doxymbox{\hyperlink{struct_vertex_a2a3830895358c4775d801bca6cfd1c72}{uv}};}
+\DoxyCodeLine{00028\ \ \ \ \ \doxymbox{\hyperlink{struct_color}{Color}}\ \doxymbox{\hyperlink{struct_vertex_a3a3ff3f6cf46b1848795991e8159b922}{color}};}
+\DoxyCodeLine{00029\ \};}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_mesh}{Mesh}}}
+\DoxyCodeLine{00032\ \{}
+\DoxyCodeLine{00033\ \ \ \ \ std::vector<Vertex>\ \doxymbox{\hyperlink{struct_mesh_a6465a888c97232a39e12aad008c969c3}{vertices}};}
+\DoxyCodeLine{00034\ \ \ \ \ std::vector<std::uint32\_t>\ \doxymbox{\hyperlink{struct_mesh_a082c31fdbb334188dbf45685fd75dabd}{indices}};}
+\DoxyCodeLine{00035\ }
+\DoxyCodeLine{00036\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{struct_mesh_a85427cf326e76c4a9ba5f808f8827000}{Clear}}();}
+\DoxyCodeLine{00037\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_mesh_a1819fdc3a545d6e24cdccae2d0f41779}{Empty}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00038\ \};}
+\DoxyCodeLine{00039\ }
+\DoxyCodeLine{00040\ \textcolor{keyword}{enum\ class}\ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_a2f6c93fd2b97704eb6bd72d496143c2e}{AxisId}}\ :\ std::uint32\_t}
+\DoxyCodeLine{00041\ \{}
+\DoxyCodeLine{00042\ \ \ \ \ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_a2f6c93fd2b97704eb6bd72d496143c2ea6adf97f83acf6453d4a6a4b1070f3754}{None}}\ =\ 0,}
+\DoxyCodeLine{00043\ \ \ \ \ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_a2f6c93fd2b97704eb6bd72d496143c2ea02129bb861061d1a052c592e2dc6b383}{X}},}
+\DoxyCodeLine{00044\ \ \ \ \ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_a2f6c93fd2b97704eb6bd72d496143c2ea57cec4137b614c87cb4e24a3d003a3e0}{Y}},}
+\DoxyCodeLine{00045\ \ \ \ \ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_a2f6c93fd2b97704eb6bd72d496143c2ea21c2e59531c8710156d34a3c30ac81d5}{Z}},}
+\DoxyCodeLine{00046\ \ \ \ \ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_a2f6c93fd2b97704eb6bd72d496143c2eae65075d550f9b5bf9992fa1d71a131be}{XYZ}},}
+\DoxyCodeLine{00047\ \ \ \ \ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_a2f6c93fd2b97704eb6bd72d496143c2ea2fc3359e12b2a9104121dcf04246f6a0}{Screen}},}
+\DoxyCodeLine{00048\ \};}
+\DoxyCodeLine{00049\ }
+\DoxyCodeLine{00050\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_translation_desc}{TranslationDesc}}}
+\DoxyCodeLine{00051\ \{}
+\DoxyCodeLine{00052\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_translation_desc_ae76703b90572d6a1b1955e4a0d512813}{uniformScale}}\ =\ 1.0f;}
+\DoxyCodeLine{00053\ \ \ \ \ \textcolor{keywordtype}{int}\ \doxymbox{\hyperlink{struct_translation_desc_aec9fd2ffa9faed838474d82644e78a95}{transformGizmoSize}}\ =\ 0;}
+\DoxyCodeLine{00054\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_translation_desc_ae815ae794e630ceb52ae369beb407cfb}{includeScreenHandle}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00055\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_translation_desc_a8a465620f69b8e0184fbaff450ab6763}{leftUpForward}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00056\ \};}
+\DoxyCodeLine{00057\ }
+\DoxyCodeLine{00058\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_rotation_desc}{RotationDesc}}}
+\DoxyCodeLine{00059\ \{}
+\DoxyCodeLine{00060\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_rotation_desc_a78d451d8d61a6351394c97e2dbe5cc0c}{uniformScale}}\ =\ 1.0f;}
+\DoxyCodeLine{00061\ \ \ \ \ \textcolor{keywordtype}{int}\ \doxymbox{\hyperlink{struct_rotation_desc_ac9fd5781b448f036181be98085d2bcbf}{transformGizmoSize}}\ =\ 0;}
+\DoxyCodeLine{00062\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_rotation_desc_a07de0ec8e564dc32f3a830e9eb0c71da}{cameraDirection}}\ =\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}(-\/1.0f,\ -\/1.0f,\ -\/1.0f);}
+\DoxyCodeLine{00063\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_rotation_desc_af4518cccc9d6739360003f2d005b3ed0}{viewUp}}\ =\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}(0.0f,\ 1.0f,\ 0.0f);}
+\DoxyCodeLine{00064\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_rotation_desc_a7fe9ec101f4ae7df78599c7fdb8fe45d}{viewRight}}\ =\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}(1.0f,\ 0.0f,\ 0.0f);}
+\DoxyCodeLine{00065\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_rotation_desc_a492765d5695779f601cad30f8a56d158}{orthographic}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00066\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_rotation_desc_aa7281c3acd3399fe3e95957690956ffd}{fullAxisRings}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00067\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_rotation_desc_ad59a0859fa0cfcf0105aa8b2b661c039}{includeInnerDisk}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00068\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_rotation_desc_a1e6fa237b5a0c9abe0be9398eefeae24}{includeScreenRing}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00069\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_rotation_desc_aefd01b3c53ee5c8112543207e5f0e9d5}{includeArcball}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00070\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_rotation_desc_a0a85cfc66933bf252c5d4beb5ac258f7}{dragging}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00071\ \ \ \ \ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_a2f6c93fd2b97704eb6bd72d496143c2e}{AxisId}}\ \doxymbox{\hyperlink{struct_rotation_desc_ac783f83918ac60e5a2cfac0d73913d83}{activeAxis}}\ =\ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_a2f6c93fd2b97704eb6bd72d496143c2ea6adf97f83acf6453d4a6a4b1070f3754}{AxisId::None}};}
+\DoxyCodeLine{00072\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_rotation_desc_a0d4a337c1f821b13c4663d4adc986927}{deltaRotationDegrees}}\ =\ 0.0f;}
+\DoxyCodeLine{00073\ \};}
+\DoxyCodeLine{00074\ }
+\DoxyCodeLine{00075\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_scale_desc}{ScaleDesc}}}
+\DoxyCodeLine{00076\ \{}
+\DoxyCodeLine{00077\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_scale_desc_a000bb9583133ff8354e80ff7bb48867a}{uniformScale}}\ =\ 1.0f;}
+\DoxyCodeLine{00078\ \ \ \ \ \textcolor{keywordtype}{int}\ \doxymbox{\hyperlink{struct_scale_desc_ab56ff897fe2c30e843f0517b8cf53e23}{transformGizmoSize}}\ =\ 0;}
+\DoxyCodeLine{00079\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_scale_desc_ac908c4e6ace4bccf53a25e0d44b8fab1}{includeCenterCube}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00080\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_scale_desc_a9ac3eb5e0b547b11019ff17826f318d3}{leftUpForward}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00081\ \};}
+\DoxyCodeLine{00082\ }
+\DoxyCodeLine{00083\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_translation_gizmo}{TranslationGizmo}}}
+\DoxyCodeLine{00084\ \{}
+\DoxyCodeLine{00085\ \ \ \ \ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{struct_translation_gizmo_a4dc6d65ad4b98b8814e6f14059869951}{axisX}};}
+\DoxyCodeLine{00086\ \ \ \ \ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{struct_translation_gizmo_a9a6b7fea6737b756e3abda3dd37a5cdb}{axisY}};}
+\DoxyCodeLine{00087\ \ \ \ \ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{struct_translation_gizmo_a165a4e98c882fc313b26097530bbff8d}{axisZ}};}
+\DoxyCodeLine{00088\ \ \ \ \ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{struct_translation_gizmo_ae6900f9dbf77747b30bb320b8ca3f745}{planeXY}};}
+\DoxyCodeLine{00089\ \ \ \ \ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{struct_translation_gizmo_a8645b4ca584ff9d5077c1fb0e7fd65ee}{planeXZ}};}
+\DoxyCodeLine{00090\ \ \ \ \ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{struct_translation_gizmo_a341cca8106d4eba5d3029693df62123a}{planeYZ}};}
+\DoxyCodeLine{00091\ \ \ \ \ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{struct_translation_gizmo_a9bd79d7c391dcd44d08aa7e375bbda62}{screenSphere}};}
+\DoxyCodeLine{00092\ \};}
+\DoxyCodeLine{00093\ }
+\DoxyCodeLine{00094\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_rotation_gizmo}{RotationGizmo}}}
+\DoxyCodeLine{00095\ \{}
+\DoxyCodeLine{00096\ \ \ \ \ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{struct_rotation_gizmo_a49ceee34a389fd65d76e1f81692eb00d}{ringX}};}
+\DoxyCodeLine{00097\ \ \ \ \ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{struct_rotation_gizmo_a56f34bff8720fd2f7f3ddf39df0a9648}{ringY}};}
+\DoxyCodeLine{00098\ \ \ \ \ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{struct_rotation_gizmo_a6bf6b3880ae7788abf779d2031688eaa}{ringZ}};}
+\DoxyCodeLine{00099\ \ \ \ \ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{struct_rotation_gizmo_a50cf70aa742b4fa9db41785b5eb54bcc}{screenRing}};}
+\DoxyCodeLine{00100\ \ \ \ \ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{struct_rotation_gizmo_a15bf99bbdb03e5a45ffeffca2dacd451}{arcball}};}
+\DoxyCodeLine{00101\ \};}
+\DoxyCodeLine{00102\ }
+\DoxyCodeLine{00103\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_scale_gizmo}{ScaleGizmo}}}
+\DoxyCodeLine{00104\ \{}
+\DoxyCodeLine{00105\ \ \ \ \ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{struct_scale_gizmo_ac7d27d8890a34e33720107b2cec67129}{axisX}};}
+\DoxyCodeLine{00106\ \ \ \ \ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{struct_scale_gizmo_a096e0e6350d9943f9fdd4d2978d1c095}{axisY}};}
+\DoxyCodeLine{00107\ \ \ \ \ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{struct_scale_gizmo_a840f749ebe7e78727a4a94b4f0e516d7}{axisZ}};}
+\DoxyCodeLine{00108\ \ \ \ \ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{struct_scale_gizmo_a6010eb4620d943f86f76255d336af07d}{planeXY}};}
+\DoxyCodeLine{00109\ \ \ \ \ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{struct_scale_gizmo_a8e8f778e326e12a96f458dab514c641e}{planeXZ}};}
+\DoxyCodeLine{00110\ \ \ \ \ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{struct_scale_gizmo_a4a878289ea18b009903796b5ed994c3c}{planeYZ}};}
+\DoxyCodeLine{00111\ \ \ \ \ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{struct_scale_gizmo_ab3c4b81e7ed3d6f69ee11c4aef14230d}{centerCube}};}
+\DoxyCodeLine{00112\ \};}
+\DoxyCodeLine{00113\ }
+\DoxyCodeLine{00114\ \doxymbox{\hyperlink{struct_translation_gizmo}{TranslationGizmo}}\ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_a1a5be82a8a5cd24f9d5073b7aa582df8}{GenerateTranslationGizmo}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_translation_desc}{TranslationDesc}}\&\ desc\ =\ \{\});}
+\DoxyCodeLine{00115\ \doxymbox{\hyperlink{struct_rotation_gizmo}{RotationGizmo}}\ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_a9fcb0ac65299fbcf814362dcd71f09f5}{GenerateRotationGizmo}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_rotation_desc}{RotationDesc}}\&\ desc\ =\ \{\});}
+\DoxyCodeLine{00116\ \doxymbox{\hyperlink{struct_scale_gizmo}{ScaleGizmo}}\ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_ab1b0b1c08ed2d71a5698d257f9b58c04}{GenerateScaleGizmo}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_scale_desc}{ScaleDesc}}\&\ desc\ =\ \{\});}
+\DoxyCodeLine{00117\ }
+\DoxyCodeLine{00118\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_a9f805dcfc1e96db49698c18973e22567}{AppendMesh}}(\doxymbox{\hyperlink{struct_mesh}{Mesh}}\&\ destination,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\&\ source);}
+\DoxyCodeLine{00119\ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_a7b860b9504dd57b24795da0b4ac96070}{MergeMeshes}}(std::initializer\_list<const\ Mesh*>\ meshes);}
+\DoxyCodeLine{00120\ }
+\DoxyCodeLine{00121\ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_ad62ae5b5bfb54ff17a4f4ed9443c28d8}{Combine}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_translation_gizmo}{TranslationGizmo}}\&\ gizmo);}
+\DoxyCodeLine{00122\ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_ad62ae5b5bfb54ff17a4f4ed9443c28d8}{Combine}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_rotation_gizmo}{RotationGizmo}}\&\ gizmo);}
+\DoxyCodeLine{00123\ \doxymbox{\hyperlink{struct_mesh}{Mesh}}\ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_ad62ae5b5bfb54ff17a4f4ed9443c28d8}{Combine}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_scale_gizmo}{ScaleGizmo}}\&\ gizmo);}
+\DoxyCodeLine{00124\ }
+\DoxyCodeLine{00125\ \doxymbox{\hyperlink{struct_color}{Color}}\ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_a784a2bab983964e8fd36b27518165847}{AxisColorX}}();}
+\DoxyCodeLine{00126\ \doxymbox{\hyperlink{struct_color}{Color}}\ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_ac022f8a6d8e88ac8a486e96643d19289}{AxisColorY}}();}
+\DoxyCodeLine{00127\ \doxymbox{\hyperlink{struct_color}{Color}}\ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_a5b708f556d032d8559dadacc4ed045a1}{AxisColorZ}}();}
+\DoxyCodeLine{00128\ \doxymbox{\hyperlink{struct_color}{Color}}\ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_a7969457298670904a16ad436a68a39eb}{ScreenAxisColor}}();}
+\DoxyCodeLine{00129\ \doxymbox{\hyperlink{struct_color}{Color}}\ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_a64a904362500c429c13abe21fca44c74}{ScreenSpaceColor}}();}
+\DoxyCodeLine{00130\ \doxymbox{\hyperlink{struct_color}{Color}}\ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_acd7d7e79eb3b664db795380429c52f7d}{ArcballColor}}();}
+\DoxyCodeLine{00131\ \doxymbox{\hyperlink{struct_color}{Color}}\ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8h_a5691ce1eaea6cf8945fe1ea0063ac701}{HighlightColor}}();}
+
+\end{DoxyCode}

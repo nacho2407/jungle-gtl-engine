@@ -1,0 +1,62 @@
+\doxysection{Engine/\+\+Source/\+\+Debug/\+\+Engine\+Log.h File Reference}
+\hypertarget{_engine_log_8h}{}\label{_engine_log_8h}\index{Engine/Source/Debug/EngineLog.h@{Engine/Source/Debug/EngineLog.h}}
+{\ttfamily \+\#include "{}Core\+Minimal.\+h"{}}\newline
+{\ttfamily \+\#include $<$functional$>$}\newline
+Include dependency graph for Engine\+Log.\+h:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_engine_log_8h__incl}
+\end{center}
+\end{figure}
+This graph shows which files directly or indirectly include this file:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_engine_log_8h__dep__incl}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+class \doxymbox{\hyperlink{class_f_engine_log}{FEngine\+Log}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\+\#define \doxymbox{\hyperlink{_engine_log_8h_a5056cd91361b124955d516eabeda6817}{UE\+\_\+\+LOG}}(Format, ...)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+using \doxymbox{\hyperlink{_engine_log_8h_a0d298953a961a0d7499d1eb8ab3c085e}{FLog\+Callback}} = std::\+function$<$void(const char\texorpdfstring{$\ast$}{*})$>$
+\end{DoxyCompactItemize}
+
+
+\label{doc-define-members}
+\Hypertarget{_engine_log_8h_doc-define-members}
+\doxysubsection{Macro Definition Documentation}
+\Hypertarget{_engine_log_8h_a5056cd91361b124955d516eabeda6817}\index{EngineLog.h@{EngineLog.h}!UE\_LOG@{UE\_LOG}}
+\index{UE\_LOG@{UE\_LOG}!EngineLog.h@{EngineLog.h}}
+\doxysubsubsection{\texorpdfstring{UE\_LOG}{UE\_LOG}}
+{\footnotesize\ttfamily \label{_engine_log_8h_a5056cd91361b124955d516eabeda6817} 
+\+\#define UE\+\_\+\+LOG(\begin{DoxyParamCaption}\item[{}]{Format}{, }\item[{}]{}...{}\end{DoxyParamCaption})}
+
+{\bfseries Value:\+}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\doxymbox{\hyperlink{class_f_engine_log_a67675b493e2ad62e3486cfaf3027f4a9}{FEngineLog::Get}}().\doxymbox{\hyperlink{class_f_engine_log_a765d595fc942a506497baa440e75dc0f}{Log}}(Format,\ \#\#\_\_VA\_ARGS\_\_)}
+
+\end{DoxyCode}
+
+
+\label{doc-typedef-members}
+\Hypertarget{_engine_log_8h_doc-typedef-members}
+\doxysubsection{Typedef Documentation}
+\Hypertarget{_engine_log_8h_a0d298953a961a0d7499d1eb8ab3c085e}\index{EngineLog.h@{EngineLog.h}!FLogCallback@{FLogCallback}}
+\index{FLogCallback@{FLogCallback}!EngineLog.h@{EngineLog.h}}
+\doxysubsubsection{\texorpdfstring{FLogCallback}{FLogCallback}}
+{\footnotesize\ttfamily \label{_engine_log_8h_a0d298953a961a0d7499d1eb8ab3c085e} 
+using \doxymbox{\hyperlink{_engine_log_8h_a0d298953a961a0d7499d1eb8ab3c085e}{FLog\+Callback}} = std::\+function$<$void(const char\texorpdfstring{$\ast$}{*})$>$}
+

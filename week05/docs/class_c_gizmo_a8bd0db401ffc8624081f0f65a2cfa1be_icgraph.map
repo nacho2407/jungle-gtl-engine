@@ -1,0 +1,19 @@
+<map id="CGizmo::GetAxisVector" name="CGizmo::GetAxisVector">
+<area shape="rect" id="Node000001" title=" " alt="" coords="902,81,1063,108"/>
+<area shape="rect" id="Node000002" href="$class_c_gizmo.html#a69e086c3ebf6944c654d4efd997f908f" title=" " alt="" coords="654,81,854,108"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="884,95,854,97,854,92,889,95"/>
+<area shape="rect" id="Node000003" href="$class_c_gizmo.html#a5cb39098a93095f625928d7b94400972" title=" " alt="" coords="412,5,599,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="699,76,606,47,565,35,565,30,607,41,704,76"/>
+<area shape="rect" id="Node000006" href="$class_c_gizmo.html#a18e55e713af47264ac8bbd52a8b5ab9d" title=" " alt="" coords="420,56,591,83"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="636,83,591,81,591,75,641,83"/>
+<area shape="rect" id="Node000007" href="$class_c_gizmo.html#a593cd9fb36701ff0da3fccec215b282d" title=" " alt="" coords="404,107,606,133"/>
+<area shape="poly" id="edge7_Node000002_Node000007" title=" " alt="" coords="636,107,607,112,607,107,642,106"/>
+<area shape="rect" id="Node000008" href="$class_c_gizmo.html#a61eb5c2ff40fc0385476dbef4f6fd684" title=" " alt="" coords="432,157,579,184"/>
+<area shape="poly" id="edge9_Node000002_Node000008" title=" " alt="" coords="704,113,607,148,565,159,564,154,606,143,699,114"/>
+<area shape="rect" id="Node000004" href="$class_c_gizmo.html#a41dcced6933dd37893809b0c35dbce32" title=" " alt="" coords="192,56,356,83"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="424,37,339,58,337,53,429,35"/>
+<area shape="rect" id="Node000005" href="$class_c_gizmo.html#ab6f44415de5b8dc89e8f6f0da8309f43" title=" " alt="" coords="5,56,144,83"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="174,70,145,72,144,67,179,68"/>
+<area shape="poly" id="edge6_Node000006_Node000004" title=" " alt="" coords="402,70,357,72,356,67,407,69"/>
+<area shape="poly" id="edge8_Node000007_Node000004" title=" " alt="" coords="423,103,338,86,338,81,429,102"/>
+</map>

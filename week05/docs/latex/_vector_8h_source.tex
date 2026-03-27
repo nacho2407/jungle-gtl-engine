@@ -1,0 +1,339 @@
+\doxysection{Vector.\+h}
+\hypertarget{_vector_8h_source}{}\label{_vector_8h_source}\index{Engine/Source/Math/Vector.h@{Engine/Source/Math/Vector.h}}
+\doxymbox{\hyperlink{_vector_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <cassert>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <cmath>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_engine_a_p_i_8h}{EngineAPI.h}}"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_types_8h}{Types/CoreTypes.h}}"{}}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}}
+\DoxyCodeLine{00009\ \{}
+\DoxyCodeLine{00010\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00011\ \ \ \ \ \textcolor{keyword}{union}}
+\DoxyCodeLine{00012\ \ \ \ \ \{}
+\DoxyCodeLine{00013\ \ \ \ \ \ \ \ \ \textcolor{keyword}{struct}}
+\DoxyCodeLine{00014\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00015\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}};}
+\DoxyCodeLine{00016\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}};}
+\DoxyCodeLine{00017\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}};}
+\DoxyCodeLine{00018\ \ \ \ \ \ \ \ \ \};}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_vector_a5e1e864684fa2a648bda1fdf1e574b11}{XYZ}}[3];}
+\DoxyCodeLine{00021\ \ \ \ \ \};}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00024\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_a5718e5b26f15f0d7057d05236fcae359}{ZeroVector}};}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00027\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_afbe6a3418478f7060f4b8fb1bf6f1959}{OneVector}};}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_a5d712be3687e28c494fb7801926878f8}{UpVector}};}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_a2d2585e46aaed01126d4c63bf48fb11e}{DownVector}};}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00036\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_a169f3ae880dd478a6bcfdbae88691501}{ForwardVector}};}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00039\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_a3d147395d0980c7ef8444f4878f72c76}{BackwardVector}};}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00042\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_a5ce15aee9c7f6b6ac2dee0b8fa0e899c}{RightVector}};}
+\DoxyCodeLine{00043\ }
+\DoxyCodeLine{00045\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_a6816773b2eb79f3a6a8aa22d4e2615c5}{LeftVector}};}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00048\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_afb1fe3c231951422a2fd384cccdfef03}{XAxisVector}};}
+\DoxyCodeLine{00049\ }
+\DoxyCodeLine{00051\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_a7d96d67e3de0eedd451f1b6d402d37bc}{YAxisVector}};}
+\DoxyCodeLine{00052\ }
+\DoxyCodeLine{00054\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_a120a9485ed139aedac5cce7421221454}{ZAxisVector}};}
+\DoxyCodeLine{00055\ }
+\DoxyCodeLine{00056\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{inline}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_abb6697259957bfd67f040496861e90fa}{Zero}}()\ \{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_a5718e5b26f15f0d7057d05236fcae359}{ZeroVector}};\ \}}
+\DoxyCodeLine{00057\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{inline}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_a0661b2dc7e64db7db2be664f6349e9c3}{One}}()\ \{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_afbe6a3418478f7060f4b8fb1bf6f1959}{OneVector}};\ \}}
+\DoxyCodeLine{00058\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{inline}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_ad367df8e05c6ce063a297e208b54d25e}{UnitX}}()\ \{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_afb1fe3c231951422a2fd384cccdfef03}{XAxisVector}};\ \}}
+\DoxyCodeLine{00059\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{inline}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_a7d96155a57fb080d6be83f7d50be4373}{UnitY}}()\ \{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_a7d96d67e3de0eedd451f1b6d402d37bc}{YAxisVector}};\ \}}
+\DoxyCodeLine{00060\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{inline}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_ac5164c80ff2f62bbba9aef5514eb60cb}{UnitZ}}()\ \{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_a120a9485ed139aedac5cce7421221454}{ZAxisVector}};\ \}}
+\DoxyCodeLine{00061\ }
+\DoxyCodeLine{00062\ \ \ \ \ \textcolor{comment}{//======================================//}}
+\DoxyCodeLine{00063\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ \ \ constructor\ \ \ \ \ \ \ \ \ \ \ \ \ //}}
+\DoxyCodeLine{00064\ \ \ \ \ \textcolor{comment}{//======================================//}}
+\DoxyCodeLine{00065\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00066\ \ \ \ \ \textcolor{keyword}{constexpr}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}()\ noexcept}
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \ \ :\ \doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}(0.f),\ \doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}(0.f),\ \doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}(0.f)}
+\DoxyCodeLine{00068\ \ \ \ \ \{}
+\DoxyCodeLine{00069\ \ \ \ \ \}}
+\DoxyCodeLine{00070\ }
+\DoxyCodeLine{00071\ \ \ \ \ \textcolor{keyword}{constexpr}\ \doxymbox{\hyperlink{struct_f_vector_a4b578f92700ca4c5d71e5f502955a0cb}{FVector}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ InX,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ InY,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ InZ)\ noexcept}
+\DoxyCodeLine{00072\ \ \ \ \ \ \ \ \ :\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}{X}}(InX),\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}}(InY),\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5}{Z}}(InZ)}
+\DoxyCodeLine{00073\ \ \ \ \ \{}
+\DoxyCodeLine{00074\ \ \ \ \ \}}
+\DoxyCodeLine{00075\ }
+\DoxyCodeLine{00076\ \ \ \ \ \textcolor{keyword}{explicit}\ \doxymbox{\hyperlink{struct_f_vector_ad6263048876bffb7e391abbc24eabd58}{FVector}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_core_types_8h_aa675d103841c4c5b4208e691647db4aa}{Float3}}\&\ InFloat3)\ noexcept}
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ :\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}{X}}(InFloat3.x),\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}}(InFloat3.y),\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5}{Z}}(InFloat3.z)}
+\DoxyCodeLine{00078\ \ \ \ \ \{}
+\DoxyCodeLine{00079\ \ \ \ \ \}}
+\DoxyCodeLine{00080\ }
+\DoxyCodeLine{00081\ \ \ \ \ \textcolor{keyword}{explicit}\ \doxymbox{\hyperlink{struct_f_vector_a61d1b99e705f92317907cfe6d1e21367}{FVector}}(DirectX::FXMVECTOR\ InVector)\ noexcept}
+\DoxyCodeLine{00082\ \ \ \ \ \ \ \ \ :\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}{X}}(0.f),\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}}(0.f),\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5}{Z}}(0.f)}
+\DoxyCodeLine{00083\ \ \ \ \ \{}
+\DoxyCodeLine{00084\ \ \ \ \ \ \ \ \ DirectX::XMFLOAT3\ Temp;}
+\DoxyCodeLine{00085\ \ \ \ \ \ \ \ \ DirectX::XMStoreFloat3(\&Temp,\ InVector);}
+\DoxyCodeLine{00086\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ =\ Temp.x;}
+\DoxyCodeLine{00087\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ =\ Temp.y;}
+\DoxyCodeLine{00088\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ =\ Temp.z;}
+\DoxyCodeLine{00089\ \ \ \ \ \}}
+\DoxyCodeLine{00090\ }
+\DoxyCodeLine{00091\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_ac72fe081bb328b9ded945eaedd42e3ce}{FVector}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&)\ \textcolor{keyword}{noexcept}\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00092\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_ab63a82c07969c8d385e0a58fb87f0c58}{FVector}}(\doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\&)\ noexcept\ =\ default;}
+\DoxyCodeLine{00093\ }
+\DoxyCodeLine{00094\ \ \ \ \ \textcolor{comment}{//======================================//}}
+\DoxyCodeLine{00095\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ \ \ operators\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ //}}
+\DoxyCodeLine{00096\ \ \ \ \ \textcolor{comment}{//======================================//}}
+\DoxyCodeLine{00097\ public:}
+\DoxyCodeLine{00098\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ operator=(const\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&)\ noexcept\ =\ default;}
+\DoxyCodeLine{00099\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ operator=(\doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\&)\ noexcept\ =\ default;}
+\DoxyCodeLine{00100\ }
+\DoxyCodeLine{00101\ \ \ \ \ \textcolor{keywordtype}{float}\&\ operator[](int32\_t\ Index)\ noexcept}
+\DoxyCodeLine{00102\ \ \ \ \ \{}
+\DoxyCodeLine{00103\ \ \ \ \ \ \ \ \ assert(Index\ >=\ 0\ \&\&\ Index\ <\ 3);}
+\DoxyCodeLine{00104\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_a5e1e864684fa2a648bda1fdf1e574b11}{XYZ}}[Index];}
+\DoxyCodeLine{00105\ \ \ \ \ \}}
+\DoxyCodeLine{00106\ }
+\DoxyCodeLine{00107\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\&\ \doxymbox{\hyperlink{struct_f_vector_ac6773a5b81ce010860bb63ae7ed0d125}{operator[]}}(int32\_t\ Index)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00108\ \ \ \ \ \{}
+\DoxyCodeLine{00109\ \ \ \ \ \ \ \ \ assert(Index\ >=\ 0\ \&\&\ Index\ <\ 3);}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_a5e1e864684fa2a648bda1fdf1e574b11}{XYZ}}[Index];}
+\DoxyCodeLine{00111\ \ \ \ \ \}}
+\DoxyCodeLine{00112\ }
+\DoxyCodeLine{00113\ \ \ \ \ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_vector_a57372a78ed28af45f9100fb0f2ec8a86}{operator==}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ Other)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00114\ \ \ \ \ \{}
+\DoxyCodeLine{00115\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ ==\ Other.X\ \&\&\ \doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ ==\ Other.Y\ \&\&\ \doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ ==\ Other.Z;}
+\DoxyCodeLine{00116\ \ \ \ \ \}}
+\DoxyCodeLine{00117\ }
+\DoxyCodeLine{00118\ \ \ \ \ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_vector_af5a49e11b3d508c714057c7a708a181d}{operator!=}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ Other)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00119\ \ \ \ \ \{}
+\DoxyCodeLine{00120\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ !(*\textcolor{keyword}{this}\ ==\ Other);}
+\DoxyCodeLine{00121\ \ \ \ \ \}}
+\DoxyCodeLine{00122\ }
+\DoxyCodeLine{00123\ \ \ \ \ \textcolor{keyword}{constexpr}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_a671a49176707513c6371cbe540b1841e}{operator-\/}}()\ const\ noexcept}
+\DoxyCodeLine{00124\ \ \ \ \ \{}
+\DoxyCodeLine{00125\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}(-\/\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}},\ -\/\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}},\ -\/\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}});}
+\DoxyCodeLine{00126\ \ \ \ \ \}}
+\DoxyCodeLine{00127\ }
+\DoxyCodeLine{00128\ \ \ \ \ \textcolor{keyword}{constexpr}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_aa1da00974613ef9c4165ed3969f900fb}{operator+}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ Other)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00129\ \ \ \ \ \{}
+\DoxyCodeLine{00130\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}(\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ +\ Other.X,\ \doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ +\ Other.Y,\ \doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ +\ Other.Z);}
+\DoxyCodeLine{00131\ \ \ \ \ \}}
+\DoxyCodeLine{00132\ }
+\DoxyCodeLine{00133\ \ \ \ \ \textcolor{keyword}{constexpr}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_a5066a81c1bdd4504fa9a8ad90709599b}{operator-\/}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ Other)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00134\ \ \ \ \ \{}
+\DoxyCodeLine{00135\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}(\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ -\/\ Other.X,\ \doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ -\/\ Other.Y,\ \doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ -\/\ Other.Z);}
+\DoxyCodeLine{00136\ \ \ \ \ \}}
+\DoxyCodeLine{00137\ }
+\DoxyCodeLine{00138\ \ \ \ \ \textcolor{keyword}{constexpr}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_a42e617a3e86e2096c77195ca85b0205e}{operator*}}(\textcolor{keywordtype}{float}\ Scalar)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00139\ \ \ \ \ \{}
+\DoxyCodeLine{00140\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}(\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ *\ Scalar,\ \doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ *\ Scalar,\ \doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ *\ Scalar);}
+\DoxyCodeLine{00141\ \ \ \ \ \}}
+\DoxyCodeLine{00142\ }
+\DoxyCodeLine{00143\ \ \ \ \ \textcolor{keyword}{constexpr}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_a2439f239cb468f5a8a0fae11e2ea9846}{operator/}}(\textcolor{keywordtype}{float}\ Scalar)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00144\ \ \ \ \ \{}
+\DoxyCodeLine{00145\ \ \ \ \ \ \ \ \ assert(Scalar\ !=\ 0.f);}
+\DoxyCodeLine{00146\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}(\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ /\ Scalar,\ \doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ /\ Scalar,\ \doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ /\ Scalar);}
+\DoxyCodeLine{00147\ \ \ \ \ \}}
+\DoxyCodeLine{00148\ }
+\DoxyCodeLine{00149\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ \doxymbox{\hyperlink{struct_f_vector_a7ed667881dc0562e2c0d5f73ed664954}{operator+=}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ Other)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00150\ \ \ \ \ \{}
+\DoxyCodeLine{00151\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ +=\ Other.X;}
+\DoxyCodeLine{00152\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ +=\ Other.Y;}
+\DoxyCodeLine{00153\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ +=\ Other.Z;}
+\DoxyCodeLine{00154\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00155\ \ \ \ \ \}}
+\DoxyCodeLine{00156\ }
+\DoxyCodeLine{00157\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ \doxymbox{\hyperlink{struct_f_vector_a94d338468b6d960cb78207024077e95e}{operator-\/=}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ Other)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00158\ \ \ \ \ \{}
+\DoxyCodeLine{00159\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ -\/=\ Other.X;}
+\DoxyCodeLine{00160\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ -\/=\ Other.Y;}
+\DoxyCodeLine{00161\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ -\/=\ Other.Z;}
+\DoxyCodeLine{00162\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00163\ \ \ \ \ \}}
+\DoxyCodeLine{00164\ }
+\DoxyCodeLine{00165\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ \doxymbox{\hyperlink{struct_f_vector_a9ce4d5c5dfa75a96b812022e7f3d538a}{operator*=}}(\textcolor{keywordtype}{float}\ Scalar)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00166\ \ \ \ \ \{}
+\DoxyCodeLine{00167\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ *=\ Scalar;}
+\DoxyCodeLine{00168\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ *=\ Scalar;}
+\DoxyCodeLine{00169\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ *=\ Scalar;}
+\DoxyCodeLine{00170\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00171\ \ \ \ \ \}}
+\DoxyCodeLine{00172\ }
+\DoxyCodeLine{00173\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ \doxymbox{\hyperlink{struct_f_vector_af9b5cd593591ea5ad1bc8d23dc7a77d7}{operator/=}}(\textcolor{keywordtype}{float}\ Scalar)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00174\ \ \ \ \ \{}
+\DoxyCodeLine{00175\ \ \ \ \ \ \ \ \ assert(Scalar\ !=\ 0.f);}
+\DoxyCodeLine{00176\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ /=\ Scalar;}
+\DoxyCodeLine{00177\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ /=\ Scalar;}
+\DoxyCodeLine{00178\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ /=\ Scalar;}
+\DoxyCodeLine{00179\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00180\ \ \ \ \ \}}
+\DoxyCodeLine{00181\ }
+\DoxyCodeLine{00182\ \ \ \ \ \textcolor{comment}{//======================================//}}
+\DoxyCodeLine{00183\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ method\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ //}}
+\DoxyCodeLine{00184\ \ \ \ \ \textcolor{comment}{//======================================//}}
+\DoxyCodeLine{00185\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00186\ \ \ \ \ \textcolor{comment}{//\ 현재\ 벡터를\ DirectX::XMFLOAT3\ 형식으로\ 변환함}}
+\DoxyCodeLine{00187\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_aa675d103841c4c5b4208e691647db4aa}{Float3}}\ \doxymbox{\hyperlink{struct_f_vector_a53a705027503f6b1ae943359ac556e65}{ToXMFLOAT3}}()\ const\ noexcept}
+\DoxyCodeLine{00188\ \ \ \ \ \{}
+\DoxyCodeLine{00189\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ DirectX::XMFLOAT3(\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}},\ \doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}},\ \doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}});}
+\DoxyCodeLine{00190\ \ \ \ \ \}}
+\DoxyCodeLine{00191\ }
+\DoxyCodeLine{00192\ \ \ \ \ \textcolor{comment}{//\ 현재\ 벡터를\ DirectX::XMVECTOR\ 형식으로\ 변환함}}
+\DoxyCodeLine{00193\ \ \ \ \ \textcolor{comment}{//\ W\ 성분은\ 기본값\ 0.f를\ 사용하며\ 필요\ 시\ 지정할\ 수\ 있음}}
+\DoxyCodeLine{00194\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_ad7069eae7b85d4ed27d826f17a716155}{XMVector}}\ \doxymbox{\hyperlink{struct_f_vector_a0af64e033781f3b7b5c1b07dbaa2f569}{ToXMVector}}(\textcolor{keywordtype}{float}\ W\ =\ 0.f)\ const\ noexcept}
+\DoxyCodeLine{00195\ \ \ \ \ \{}
+\DoxyCodeLine{00196\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ DirectX::XMVectorSet(\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}},\ \doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}},\ \doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}},\ W);}
+\DoxyCodeLine{00197\ \ \ \ \ \}}
+\DoxyCodeLine{00198\ }
+\DoxyCodeLine{00199\ \ \ \ \ \textcolor{comment}{//\ 허용\ 오차(Tolerance)\ 범위\ 내에서\ 두\ 벡터가\ 같은지\ 비교함}}
+\DoxyCodeLine{00200\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_vector_af568cc9d970e8b05c3bea93773a3e6cc}{Equals}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ V,\ \textcolor{keywordtype}{float}\ Tolerance\ =\ 1.e-\/6f)\ const\ noexcept}
+\DoxyCodeLine{00201\ \ \ \ \ \{}
+\DoxyCodeLine{00202\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ DirectX::XMVector3NearEqual(}
+\DoxyCodeLine{00203\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_a0af64e033781f3b7b5c1b07dbaa2f569}{ToXMVector}}(),}
+\DoxyCodeLine{00204\ \ \ \ \ \ \ \ \ \ \ \ \ V.\doxymbox{\hyperlink{struct_f_vector_a0af64e033781f3b7b5c1b07dbaa2f569}{ToXMVector}}(),}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ \ \ \ \ \ \ DirectX::XMVectorReplicate(Tolerance));}
+\DoxyCodeLine{00206\ \ \ \ \ \}}
+\DoxyCodeLine{00207\ }
+\DoxyCodeLine{00208\ \ \ \ \ \textcolor{comment}{//\ 모든\ 성분이\ 정확히\ 0인지\ 확인함}}
+\DoxyCodeLine{00209\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_vector_a22105f625a327c8deb64e18e7f208087}{IsZero}}()\ const\ noexcept}
+\DoxyCodeLine{00210\ \ \ \ \ \{}
+\DoxyCodeLine{00211\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ ==\ 0.f\ \&\&\ \doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ ==\ 0.f\ \&\&\ \doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ ==\ 0.f;}
+\DoxyCodeLine{00212\ \ \ \ \ \}}
+\DoxyCodeLine{00213\ }
+\DoxyCodeLine{00214\ \ \ \ \ \textcolor{comment}{//\ 모든\ 성분이\ 허용\ 오차(Tolerance)\ 이하인지\ 확인함}}
+\DoxyCodeLine{00215\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_vector_aaf3498f1738c72016a0af3cfe058c8f8}{IsNearlyZero}}(\textcolor{keywordtype}{float}\ Tolerance\ =\ 1.e-\/6f)\ const\ noexcept}
+\DoxyCodeLine{00216\ \ \ \ \ \{}
+\DoxyCodeLine{00217\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ DirectX::XMVector3NearEqual(}
+\DoxyCodeLine{00218\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_a0af64e033781f3b7b5c1b07dbaa2f569}{ToXMVector}}(),}
+\DoxyCodeLine{00219\ \ \ \ \ \ \ \ \ \ \ \ \ DirectX::XMVectorZero(),}
+\DoxyCodeLine{00220\ \ \ \ \ \ \ \ \ \ \ \ \ DirectX::XMVectorReplicate(Tolerance));}
+\DoxyCodeLine{00221\ \ \ \ \ \}}
+\DoxyCodeLine{00222\ }
+\DoxyCodeLine{00223\ \ \ \ \ \textcolor{comment}{//\ 벡터\ 길이의\ 제곱\ 값을\ 구함}}
+\DoxyCodeLine{00224\ \ \ \ \ \textcolor{comment}{//\ 제곱근\ 연산이\ 없어서\ Size()보다\ 빠름}}
+\DoxyCodeLine{00225\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_vector_aefbfd226172a88a9eb8cdcee7db08d23}{SizeSquared}}()\ const\ noexcept}
+\DoxyCodeLine{00226\ \ \ \ \ \{}
+\DoxyCodeLine{00227\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(\doxymbox{\hyperlink{struct_f_vector_a0af64e033781f3b7b5c1b07dbaa2f569}{ToXMVector}}()));}
+\DoxyCodeLine{00228\ \ \ \ \ \}}
+\DoxyCodeLine{00229\ }
+\DoxyCodeLine{00230\ \ \ \ \ \textcolor{comment}{//\ 벡터의\ 길이(크기)를\ 구함}}
+\DoxyCodeLine{00231\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_vector_a60e82a073f5cae0a0558e9af50539464}{Size}}()\ const\ noexcept}
+\DoxyCodeLine{00232\ \ \ \ \ \{}
+\DoxyCodeLine{00233\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ DirectX::XMVectorGetX(DirectX::XMVector3Length(\doxymbox{\hyperlink{struct_f_vector_a0af64e033781f3b7b5c1b07dbaa2f569}{ToXMVector}}()));}
+\DoxyCodeLine{00234\ \ \ \ \ \}}
+\DoxyCodeLine{00235\ }
+\DoxyCodeLine{00236\ \ \ \ \ \textcolor{comment}{//\ XY\ 평면에서의\ 벡터\ 길이\ 제곱\ 값을\ 구함}}
+\DoxyCodeLine{00237\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_vector_a28d812b3ef4741269b3e0dc66935ef6f}{SizeSquared2D}}()\ const\ noexcept}
+\DoxyCodeLine{00238\ \ \ \ \ \{}
+\DoxyCodeLine{00239\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ DirectX::XMVectorGetX(DirectX::XMVector2LengthSq(\doxymbox{\hyperlink{struct_f_vector_a0af64e033781f3b7b5c1b07dbaa2f569}{ToXMVector}}()));}
+\DoxyCodeLine{00240\ \ \ \ \ \}}
+\DoxyCodeLine{00241\ }
+\DoxyCodeLine{00242\ \ \ \ \ \textcolor{comment}{//\ XY\ 평면에서의\ 벡터\ 길이(크기)를\ 구함}}
+\DoxyCodeLine{00243\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_vector_a9fdbfe4bc587b88af4964cdf9f514e74}{Size2D}}()\ const\ noexcept}
+\DoxyCodeLine{00244\ \ \ \ \ \{}
+\DoxyCodeLine{00245\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ DirectX::XMVectorGetX(DirectX::XMVector2Length(\doxymbox{\hyperlink{struct_f_vector_a0af64e033781f3b7b5c1b07dbaa2f569}{ToXMVector}}()));}
+\DoxyCodeLine{00246\ \ \ \ \ \}}
+\DoxyCodeLine{00247\ }
+\DoxyCodeLine{00248\ \ \ \ \ \textcolor{comment}{//\ 현재\ 벡터를\ 정규화함}}
+\DoxyCodeLine{00249\ \ \ \ \ \textcolor{comment}{//\ 길이가\ 너무\ 작으면\ 영벡터로\ 만들고\ false를\ 반환함}}
+\DoxyCodeLine{00250\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_vector_a6d71d77f493839c66e1294d744cf8846}{Normalize}}(\textcolor{keywordtype}{float}\ Tolerance\ =\ 1.e-\/8f)\ noexcept}
+\DoxyCodeLine{00251\ \ \ \ \ \{}
+\DoxyCodeLine{00252\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_core_types_8h_ad7069eae7b85d4ed27d826f17a716155}{XMVector}}\ Vector\ =\ \doxymbox{\hyperlink{struct_f_vector_a0af64e033781f3b7b5c1b07dbaa2f569}{ToXMVector}}();}
+\DoxyCodeLine{00253\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ SquareSum\ =\ DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(Vector));}
+\DoxyCodeLine{00254\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (SquareSum\ >\ Tolerance)}
+\DoxyCodeLine{00255\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00256\ \ \ \ \ \ \ \ \ \ \ \ \ *\textcolor{keyword}{this}\ =\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}(DirectX::XMVector3Normalize(Vector));}
+\DoxyCodeLine{00257\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00258\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00259\ }
+\DoxyCodeLine{00260\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ =\ 0.f;}
+\DoxyCodeLine{00261\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ =\ 0.f;}
+\DoxyCodeLine{00262\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ =\ 0.f;}
+\DoxyCodeLine{00263\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00264\ \ \ \ \ \}}
+\DoxyCodeLine{00265\ }
+\DoxyCodeLine{00266\ \ \ \ \ \textcolor{comment}{//\ 정규화된\ 벡터를\ 반환함}}
+\DoxyCodeLine{00267\ \ \ \ \ \textcolor{comment}{//\ 길이가\ 너무\ 작으면\ ZeroVector를\ 반환함}}
+\DoxyCodeLine{00268\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_a8609d9dafd1faea86bc2209e6a43673e}{GetSafeNormal}}(\textcolor{keywordtype}{float}\ Tolerance\ =\ 1.e-\/8f)\ const\ noexcept}
+\DoxyCodeLine{00269\ \ \ \ \ \{}
+\DoxyCodeLine{00270\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_core_types_8h_ad7069eae7b85d4ed27d826f17a716155}{XMVector}}\ Vector\ =\ \doxymbox{\hyperlink{struct_f_vector_a0af64e033781f3b7b5c1b07dbaa2f569}{ToXMVector}}();}
+\DoxyCodeLine{00271\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ SquareSum\ =\ DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(Vector));}
+\DoxyCodeLine{00272\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (SquareSum\ >\ Tolerance)}
+\DoxyCodeLine{00273\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00274\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}(DirectX::XMVector3Normalize(Vector));}
+\DoxyCodeLine{00275\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00276\ }
+\DoxyCodeLine{00277\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_a5718e5b26f15f0d7057d05236fcae359}{ZeroVector}};}
+\DoxyCodeLine{00278\ \ \ \ \ \}}
+\DoxyCodeLine{00279\ }
+\DoxyCodeLine{00280\ \ \ \ \ \textcolor{comment}{//\ XY\ 평면\ 기준으로\ 정규화된\ 벡터를\ 반환함}}
+\DoxyCodeLine{00281\ \ \ \ \ \textcolor{comment}{//\ Z는\ 0으로\ 설정되며\ 길이가\ 너무\ 작으면\ ZeroVector를\ 반환함}}
+\DoxyCodeLine{00282\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_a4554f19310dd8c4ad6aa9b7854ab201b}{GetSafeNormal2D}}(\textcolor{keywordtype}{float}\ Tolerance\ =\ 1.e-\/8f)\ const\ noexcept}
+\DoxyCodeLine{00283\ \ \ \ \ \{}
+\DoxyCodeLine{00284\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_core_types_8h_ad7069eae7b85d4ed27d826f17a716155}{XMVector}}\ Vector\ =\ \doxymbox{\hyperlink{struct_f_vector_a0af64e033781f3b7b5c1b07dbaa2f569}{ToXMVector}}();}
+\DoxyCodeLine{00285\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ SquareSum\ =\ DirectX::XMVectorGetX(DirectX::XMVector2LengthSq(Vector));}
+\DoxyCodeLine{00286\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (SquareSum\ >\ Tolerance)}
+\DoxyCodeLine{00287\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00288\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_core_types_8h_ad7069eae7b85d4ed27d826f17a716155}{XMVector}}\ Normalized\ =\ DirectX::XMVector2Normalize(Vector);}
+\DoxyCodeLine{00289\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}(}
+\DoxyCodeLine{00290\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ DirectX::XMVectorGetX(Normalized),}
+\DoxyCodeLine{00291\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ DirectX::XMVectorGetY(Normalized),}
+\DoxyCodeLine{00292\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 0.0f);}
+\DoxyCodeLine{00293\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00294\ }
+\DoxyCodeLine{00295\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_a5718e5b26f15f0d7057d05236fcae359}{ZeroVector}};}
+\DoxyCodeLine{00296\ \ \ \ \ \}}
+\DoxyCodeLine{00297\ }
+\DoxyCodeLine{00298\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00299\ \ \ \ \ \textcolor{comment}{//\ 두\ 벡터의\ 내적(Dot\ Product)을\ 구함}}
+\DoxyCodeLine{00300\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_vector_a16c17492999fcbf8bae9b97f3eace0ad}{DotProduct}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ A,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ B)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00301\ \ \ \ \ \{}
+\DoxyCodeLine{00302\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ DirectX::XMVectorGetX(DirectX::XMVector3Dot(A.ToXMVector(),\ B.ToXMVector()));}
+\DoxyCodeLine{00303\ \ \ \ \ \}}
+\DoxyCodeLine{00304\ }
+\DoxyCodeLine{00305\ \ \ \ \ \textcolor{comment}{//\ 두\ 벡터의\ 외적(Cross\ Product)을\ 구함}}
+\DoxyCodeLine{00306\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_a0986e5b79f59415337eb0a8d577cb1b8}{CrossProduct}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ A,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ B)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00307\ \ \ \ \ \{}
+\DoxyCodeLine{00308\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}(DirectX::XMVector3Cross(A.ToXMVector(),\ B.ToXMVector()));}
+\DoxyCodeLine{00309\ \ \ \ \ \}}
+\DoxyCodeLine{00310\ }
+\DoxyCodeLine{00311\ \ \ \ \ \textcolor{comment}{//\ 두\ 벡터\ 사이\ 거리의\ 제곱\ 값을\ 구함}}
+\DoxyCodeLine{00312\ \ \ \ \ \textcolor{comment}{//\ 거리\ 비교만\ 필요할\ 때\ Dist()보다\ 효율적임}}
+\DoxyCodeLine{00313\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_vector_a6b4c65cc25f165faad8e1144b2314691}{DistSquared}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ A,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ B)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00314\ \ \ \ \ \{}
+\DoxyCodeLine{00315\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_core_types_8h_ad7069eae7b85d4ed27d826f17a716155}{XMVector}}\ Delta\ =\ DirectX::XMVectorSubtract(A.ToXMVector(),\ B.ToXMVector());}
+\DoxyCodeLine{00316\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(Delta));}
+\DoxyCodeLine{00317\ \ \ \ \ \}}
+\DoxyCodeLine{00318\ }
+\DoxyCodeLine{00319\ \ \ \ \ \textcolor{comment}{//\ 두\ 벡터의\ 거리를\ 구함}}
+\DoxyCodeLine{00320\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_vector_abea0e06d3c45fde9c5fc0578a08db490}{Dist}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ A,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ B)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00321\ \ \ \ \ \{}
+\DoxyCodeLine{00322\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_core_types_8h_ad7069eae7b85d4ed27d826f17a716155}{XMVector}}\ Delta\ =\ DirectX::XMVectorSubtract(A.ToXMVector(),\ B.ToXMVector());}
+\DoxyCodeLine{00323\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ DirectX::XMVectorGetX(DirectX::XMVector3Length(Delta));}
+\DoxyCodeLine{00324\ \ \ \ \ \}}
+\DoxyCodeLine{00325\ }
+\DoxyCodeLine{00326\ \ \ \ \ \textcolor{comment}{//\ 두\ 벡터의\ element-\/wise\ 곱}}
+\DoxyCodeLine{00327\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_aa155b94be4b3e18a95c0780371f2e485}{Multiply}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ A,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ B)}
+\DoxyCodeLine{00328\ \ \ \ \ \{}
+\DoxyCodeLine{00329\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}(A.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ *\ B.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}},\ A.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ *\ B.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}},\ A.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ *\ B.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}});}
+\DoxyCodeLine{00330\ \ \ \ \ \}}
+\DoxyCodeLine{00331\ }
+\DoxyCodeLine{00332\ \ \ \ \ \textcolor{comment}{//\ A,\ B\ 의\ 각\ 원소\ 중\ 작은\ 값만으로\ 새로운\ 벡터\ 구성}}
+\DoxyCodeLine{00333\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_a5760ec7523935ec77be13182a105152e}{Min}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ A,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ B)}
+\DoxyCodeLine{00334\ \ \ \ \ \{}
+\DoxyCodeLine{00335\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}(A.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ <\ B.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ ?\ A.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ :\ B.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}},\ A.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ <\ B.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ ?\ A.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ :\ B.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}},\ A.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ <\ B.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ ?\ A.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ :\ B.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}});}
+\DoxyCodeLine{00336\ \ \ \ \ \}}
+\DoxyCodeLine{00337\ }
+\DoxyCodeLine{00338\ \ \ \ \ \textcolor{comment}{//\ A,\ B\ 의\ 각\ 원소\ 중\ 큰\ 값만으로\ 새로운\ 벡터\ 구성}}
+\DoxyCodeLine{00339\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\ \doxymbox{\hyperlink{struct_f_vector_add885c67816b4d7d968335d2f49c8667}{Max}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ A,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}\&\ B)}
+\DoxyCodeLine{00340\ \ \ \ \ \{}
+\DoxyCodeLine{00341\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_ae7dbfb5fe72606197ce4fb94b9655fd2}{FVector}}(A.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ >\ B.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ ?\ A.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ :\ B.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}},\ A.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ >\ B.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ ?\ A.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ :\ B.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}},\ A.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ >\ B.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ ?\ A.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ :\ B.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}});}
+\DoxyCodeLine{00342\ \ \ \ \ \}}
+\DoxyCodeLine{00343\ \};}
+\DoxyCodeLine{00344\ }
+
+\end{DoxyCode}

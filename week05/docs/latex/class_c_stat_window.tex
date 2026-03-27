@@ -1,0 +1,153 @@
+\doxysection{CStat\+Window Class Reference}
+\hypertarget{class_c_stat_window}{}\label{class_c_stat_window}\index{CStatWindow@{CStatWindow}}
+
+
+{\ttfamily \+\#include $<$Stat\+Window.\+h$>$}
+
+
+
+Collaboration diagram for CStat\+Window:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=183pt]{class_c_stat_window__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \doxymbox{\hyperlink{class_c_stat_window_a37282a941116f7fbc2b79ee07e2848ca}{Render}} ()
+\item 
+void \doxymbox{\hyperlink{class_c_stat_window_adc4ce993c3b17b798671e826c71e00de}{Set\+FPS}} (float In\+FPS)
+\item 
+void \doxymbox{\hyperlink{class_c_stat_window_a4c294dcbc550ad828f5e1dc7b602dd47}{Set\+Frame\+Time\+Ms}} (float In\+Ms)
+\item 
+void \doxymbox{\hyperlink{class_c_stat_window_af107ab75bd08ac89c12fda61f795c950}{Set\+Object\+Count}} (\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} In\+Count)
+\item 
+void \doxymbox{\hyperlink{class_c_stat_window_a0814286a5ed54538e1367ca7a8122a9a}{Set\+Heap\+Usage}} (\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} In\+Bytes)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \doxymbox{\hyperlink{class_c_stat_window_ae7ef059e226d539e1930edca9ab3e5a8}{Refresh\+Object\+List}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+float \doxymbox{\hyperlink{class_c_stat_window_adad72635b6f09c167b25e27361cbd330}{FPS}} = 0.\+0f
+\item 
+float \doxymbox{\hyperlink{class_c_stat_window_a39bbbe5e325639554d68f80afcaed2df}{Frame\+Time\+Ms}} = 0.\+0f
+\item 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_c_stat_window_aab0c2760c4dd5350ed6d6fa36a3fe689}{Object\+Count}} = 0
+\item 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_c_stat_window_a25b3ce06150b446814ad71f38e189371}{Heap\+Usage\+Bytes}} = 0
+\item 
+\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$ \doxymbox{\hyperlink{struct_f_object_entry}{FObject\+Entry}} $>$ \doxymbox{\hyperlink{class_c_stat_window_afcbe3c3805f9a4240e21a086a2e7fcd8}{Object\+Entries}}
+\item 
+bool \doxymbox{\hyperlink{class_c_stat_window_a6d3f6dc1b0b1818d605087b4423c3aaa}{b\+Show\+Object\+List}} = false
+\end{DoxyCompactItemize}
+
+
+\label{doc-func-members}
+\Hypertarget{class_c_stat_window_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_c_stat_window_ae7ef059e226d539e1930edca9ab3e5a8}\index{CStatWindow@{CStatWindow}!RefreshObjectList@{RefreshObjectList}}
+\index{RefreshObjectList@{RefreshObjectList}!CStatWindow@{CStatWindow}}
+\doxysubsubsection{\texorpdfstring{RefreshObjectList()}{RefreshObjectList()}}
+{\footnotesize\ttfamily \label{class_c_stat_window_ae7ef059e226d539e1930edca9ab3e5a8} 
+void CStat\+Window::\+\+Refresh\+Object\+List (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_stat_window_ae7ef059e226d539e1930edca9ab3e5a8_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_stat_window_a37282a941116f7fbc2b79ee07e2848ca}\index{CStatWindow@{CStatWindow}!Render@{Render}}
+\index{Render@{Render}!CStatWindow@{CStatWindow}}
+\doxysubsubsection{\texorpdfstring{Render()}{Render()}}
+{\footnotesize\ttfamily \label{class_c_stat_window_a37282a941116f7fbc2b79ee07e2848ca} 
+void CStat\+Window::\+\+Render (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_stat_window_a37282a941116f7fbc2b79ee07e2848ca_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_stat_window_adc4ce993c3b17b798671e826c71e00de}\index{CStatWindow@{CStatWindow}!SetFPS@{SetFPS}}
+\index{SetFPS@{SetFPS}!CStatWindow@{CStatWindow}}
+\doxysubsubsection{\texorpdfstring{SetFPS()}{SetFPS()}}
+{\footnotesize\ttfamily \label{class_c_stat_window_adc4ce993c3b17b798671e826c71e00de} 
+void CStat\+Window::\+\+Set\+FPS (\begin{DoxyParamCaption}\item[{float}]{In\+FPS}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_c_stat_window_a4c294dcbc550ad828f5e1dc7b602dd47}\index{CStatWindow@{CStatWindow}!SetFrameTimeMs@{SetFrameTimeMs}}
+\index{SetFrameTimeMs@{SetFrameTimeMs}!CStatWindow@{CStatWindow}}
+\doxysubsubsection{\texorpdfstring{SetFrameTimeMs()}{SetFrameTimeMs()}}
+{\footnotesize\ttfamily \label{class_c_stat_window_a4c294dcbc550ad828f5e1dc7b602dd47} 
+void CStat\+Window::\+\+Set\+Frame\+Time\+Ms (\begin{DoxyParamCaption}\item[{float}]{In\+Ms}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_c_stat_window_a0814286a5ed54538e1367ca7a8122a9a}\index{CStatWindow@{CStatWindow}!SetHeapUsage@{SetHeapUsage}}
+\index{SetHeapUsage@{SetHeapUsage}!CStatWindow@{CStatWindow}}
+\doxysubsubsection{\texorpdfstring{SetHeapUsage()}{SetHeapUsage()}}
+{\footnotesize\ttfamily \label{class_c_stat_window_a0814286a5ed54538e1367ca7a8122a9a} 
+void CStat\+Window::\+\+Set\+Heap\+Usage (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}}]{In\+Bytes}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_c_stat_window_af107ab75bd08ac89c12fda61f795c950}\index{CStatWindow@{CStatWindow}!SetObjectCount@{SetObjectCount}}
+\index{SetObjectCount@{SetObjectCount}!CStatWindow@{CStatWindow}}
+\doxysubsubsection{\texorpdfstring{SetObjectCount()}{SetObjectCount()}}
+{\footnotesize\ttfamily \label{class_c_stat_window_af107ab75bd08ac89c12fda61f795c950} 
+void CStat\+Window::\+\+Set\+Object\+Count (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}}]{In\+Count}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+\label{doc-variable-members}
+\Hypertarget{class_c_stat_window_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_c_stat_window_a6d3f6dc1b0b1818d605087b4423c3aaa}\index{CStatWindow@{CStatWindow}!bShowObjectList@{bShowObjectList}}
+\index{bShowObjectList@{bShowObjectList}!CStatWindow@{CStatWindow}}
+\doxysubsubsection{\texorpdfstring{bShowObjectList}{bShowObjectList}}
+{\footnotesize\ttfamily \label{class_c_stat_window_a6d3f6dc1b0b1818d605087b4423c3aaa} 
+bool CStat\+Window::\+b\+Show\+Object\+List = false\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_stat_window_adad72635b6f09c167b25e27361cbd330}\index{CStatWindow@{CStatWindow}!FPS@{FPS}}
+\index{FPS@{FPS}!CStatWindow@{CStatWindow}}
+\doxysubsubsection{\texorpdfstring{FPS}{FPS}}
+{\footnotesize\ttfamily \label{class_c_stat_window_adad72635b6f09c167b25e27361cbd330} 
+float CStat\+Window::\+\+FPS = 0.\+0f\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_stat_window_a39bbbe5e325639554d68f80afcaed2df}\index{CStatWindow@{CStatWindow}!FrameTimeMs@{FrameTimeMs}}
+\index{FrameTimeMs@{FrameTimeMs}!CStatWindow@{CStatWindow}}
+\doxysubsubsection{\texorpdfstring{FrameTimeMs}{FrameTimeMs}}
+{\footnotesize\ttfamily \label{class_c_stat_window_a39bbbe5e325639554d68f80afcaed2df} 
+float CStat\+Window::\+\+Frame\+Time\+Ms = 0.\+0f\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_stat_window_a25b3ce06150b446814ad71f38e189371}\index{CStatWindow@{CStatWindow}!HeapUsageBytes@{HeapUsageBytes}}
+\index{HeapUsageBytes@{HeapUsageBytes}!CStatWindow@{CStatWindow}}
+\doxysubsubsection{\texorpdfstring{HeapUsageBytes}{HeapUsageBytes}}
+{\footnotesize\ttfamily \label{class_c_stat_window_a25b3ce06150b446814ad71f38e189371} 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} CStat\+Window::\+\+Heap\+Usage\+Bytes = 0\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_stat_window_aab0c2760c4dd5350ed6d6fa36a3fe689}\index{CStatWindow@{CStatWindow}!ObjectCount@{ObjectCount}}
+\index{ObjectCount@{ObjectCount}!CStatWindow@{CStatWindow}}
+\doxysubsubsection{\texorpdfstring{ObjectCount}{ObjectCount}}
+{\footnotesize\ttfamily \label{class_c_stat_window_aab0c2760c4dd5350ed6d6fa36a3fe689} 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} CStat\+Window::\+\+Object\+Count = 0\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_stat_window_afcbe3c3805f9a4240e21a086a2e7fcd8}\index{CStatWindow@{CStatWindow}!ObjectEntries@{ObjectEntries}}
+\index{ObjectEntries@{ObjectEntries}!CStatWindow@{CStatWindow}}
+\doxysubsubsection{\texorpdfstring{ObjectEntries}{ObjectEntries}}
+{\footnotesize\ttfamily \label{class_c_stat_window_afcbe3c3805f9a4240e21a086a2e7fcd8} 
+\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$\doxymbox{\hyperlink{struct_f_object_entry}{FObject\+Entry}}$>$ CStat\+Window::\+\+Object\+Entries\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Editor/\+\+Source/\+\+UI/\+\doxymbox{\hyperlink{_stat_window_8h}{Stat\+Window.\+h}}\item 
+Editor/\+\+Source/\+\+UI/\+\doxymbox{\hyperlink{_stat_window_8cpp}{Stat\+Window.\+cpp}}\end{DoxyCompactItemize}

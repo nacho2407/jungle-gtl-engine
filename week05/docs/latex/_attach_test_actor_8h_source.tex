@@ -1,0 +1,26 @@
+\doxysection{Attach\+Test\+Actor.\+h}
+\hypertarget{_attach_test_actor_8h_source}{}\label{_attach_test_actor_8h_source}\index{Engine/Source/Actor/AttachTestActor.h@{Engine/Source/Actor/AttachTestActor.h}}
+\doxymbox{\hyperlink{_attach_test_actor_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_actor_8h}{Actor.h}}"{}}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_u_primitive_component}{UPrimitiveComponent}};}
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_a_attach_test_actor}{AAttachTestActor}}\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{class_a_actor}{AActor}}}
+\DoxyCodeLine{00008\ \{}
+\DoxyCodeLine{00009\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00010\ \ \ \ \ \doxymbox{\hyperlink{_object_8h_a357d06a2d2ae2eccd8dc94b17f17a710}{DECLARE\_RTTI}}(\doxymbox{\hyperlink{class_a_attach_test_actor}{AAttachTestActor}},\ \doxymbox{\hyperlink{class_a_actor}{AActor}})}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_a_actor_ab070735695b6368e0795ccc62057e0ca}{PostSpawnInitialize}}()\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \ \ \ \ \doxymbox{\hyperlink{class_u_primitive_component}{UPrimitiveComponent}}*\ \doxymbox{\hyperlink{class_a_attach_test_actor_a021b5c5d490daf9585445c0e3433c7c0}{GetSphereComponent}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_a_attach_test_actor_a176639120cc25b1e665125a66ca4965b}{SphereComponent}};\ \}}
+\DoxyCodeLine{00015\ \ \ \ \ \doxymbox{\hyperlink{class_u_primitive_component}{UPrimitiveComponent}}*\ \doxymbox{\hyperlink{class_a_attach_test_actor_a5407fb87f6e8b6169d5a1ce950b72a81}{GetCubeComponent}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_a_attach_test_actor_af11e6792a9f3ce316a2882e9894e1620}{CubeComponent}};\ \}}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00018\ \ \ \ \ \doxymbox{\hyperlink{class_u_primitive_component}{UPrimitiveComponent}}*\ \doxymbox{\hyperlink{class_a_attach_test_actor_a176639120cc25b1e665125a66ca4965b}{SphereComponent}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00019\ \ \ \ \ \doxymbox{\hyperlink{class_u_primitive_component}{UPrimitiveComponent}}*\ \doxymbox{\hyperlink{class_a_attach_test_actor_af11e6792a9f3ce316a2882e9894e1620}{CubeComponent}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00020\ \};}
+
+\end{DoxyCode}

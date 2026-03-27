@@ -1,0 +1,28 @@
+<map id="CViewport::Render" name="CViewport::Render">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,249,138,276"/>
+<area shape="rect" id="Node000002" href="$class_c_renderer.html#ac6cfa38df0fbffc7942e19e6527a4e19" title=" " alt="" coords="186,5,388,48"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="74,248,87,211,109,160,141,105,161,80,184,58,192,54,189,59,187,62,165,84,145,108,113,162,92,213,79,250"/>
+<area shape="rect" id="Node000003" href="$class_u_scene.html#aad3982500eae67151aa7ae86eb897e15" title=" " alt="" coords="215,72,358,99"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="77,248,115,181,146,142,184,108,202,100,199,104,187,113,150,145,120,184,81,250"/>
+<area shape="rect" id="Node000006" href="$class_c_renderer.html#a8e7e81b21c823a9d9bea29e7461f49a7" title=" " alt="" coords="210,123,364,149"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="82,247,124,204,153,179,184,159,201,153,197,157,187,164,156,184,128,207,86,250"/>
+<area shape="rect" id="Node000007" href="$class_c_core.html#a16bd79c2fb1fd3253e6d8d6e7310f618" title=" " alt="" coords="224,173,350,200"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="98,247,185,210,211,203,207,206,187,214,102,251"/>
+<area shape="rect" id="Node000008" href="$class_c_core.html#a71286c1a68198edfcc822fa8f846b0c1" title=" " alt="" coords="200,224,374,251"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="136,253,187,248,183,251,139,257"/>
+<area shape="rect" id="Node000009" href="$class_c_viewport.html#a94cbf51194c399b735f4e2a91baa68a0" title=" " alt="" coords="190,275,384,301"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="137,268,176,273,172,276,139,273"/>
+<area shape="rect" id="Node000010" href="$class_c_viewport.html#a3ce477f6558f321727a40f68718c6ffa" title=" " alt="" coords="458,300,662,327"/>
+<area shape="poly" id="edge10_Node000001_Node000010" title=" " alt="" coords="95,274,138,295,186,311,251,321,318,326,445,325,440,327,318,331,251,326,185,316,136,299,97,279"/>
+<area shape="rect" id="Node000011" href="$class_c_camera.html#ab14db38bc5a84f174b98346dcf967d35" title=" " alt="" coords="198,376,376,403"/>
+<area shape="poly" id="edge11_Node000001_Node000011" title=" " alt="" coords="86,274,130,314,187,355,217,370,212,371,184,360,126,318,86,279"/>
+<area shape="rect" id="Node000012" href="$class_c_editor_viewport_client.html#a165c7c2bededb41e26709c3dd29a5ddf" title=" " alt="" coords="212,427,362,469"/>
+<area shape="poly" id="edge12_Node000001_Node000012" title=" " alt="" coords="80,274,121,341,151,379,187,413,200,422,195,422,184,417,147,383,116,344,79,279"/>
+<area shape="rect" id="Node000013" href="$class_c_renderer.html#a00fab11b9808f59d74c01fbb65fbf080" title=" " alt="" coords="191,493,382,536"/>
+<area shape="poly" id="edge13_Node000001_Node000013" title=" " alt="" coords="76,274,90,315,111,370,144,429,164,456,187,479,193,485,188,484,184,483,160,459,139,432,107,372,85,317,76,279"/>
+<area shape="rect" id="Node000004" href="$class_u_scene.html#a4bfb8efc0d11706d2170d7245f776df8" title=" " alt="" coords="436,47,683,73"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="358,76,423,72,419,74,360,81"/>
+<area shape="rect" id="Node000005" href="$class_u_camera_component.html#a2d781be06097070687e75282ef223b43" title=" " alt="" coords="450,97,669,124"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="358,89,437,98,432,100,360,95"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="384,294,444,302,439,303,385,300"/>
+</map>

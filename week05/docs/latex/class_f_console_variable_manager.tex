@@ -1,0 +1,281 @@
+\doxysection{FConsole\+Variable\+Manager Class Reference}
+\hypertarget{class_f_console_variable_manager}{}\label{class_f_console_variable_manager}\index{FConsoleVariableManager@{FConsoleVariableManager}}
+
+
+{\ttfamily \+\#include $<$Console\+Variable\+Manager.\+h$>$}
+
+
+
+Collaboration diagram for FConsole\+Variable\+Manager:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=218pt]{class_f_console_variable_manager__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \doxymbox{\hyperlink{struct_f_console_variable_manager_1_1_f_command_entry}{FCommand\+Entry}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Types}
+\begin{DoxyCompactItemize}
+\item 
+using \doxymbox{\hyperlink{class_f_console_variable_manager_a2a790462875c1c442fe58b15fe59d0d2}{FConsole\+Command}} = std::\+function$<$void(\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&)$>$
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_f_console_variable}{FConsole\+Variable}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_f_console_variable_manager_a9a71d914407ea66e357c534b6497a9cf}{Register}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Name, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Default, const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Help="{}"{})
+\item 
+\doxymbox{\hyperlink{class_f_console_variable}{FConsole\+Variable}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_f_console_variable_manager_a9351aed732d3971d0c1dcaeb7b58be2f}{Register}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Name, float Default, const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Help="{}"{})
+\item 
+\doxymbox{\hyperlink{class_f_console_variable}{FConsole\+Variable}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_f_console_variable_manager_ae9c7d49a352fa57de369c4e071b03568}{Register}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Name, const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Default, const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Help="{}"{})
+\item 
+\doxymbox{\hyperlink{class_f_console_variable}{FConsole\+Variable}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_f_console_variable_manager_ab0f29674f5ee9ff78cdd9569c947be78}{Find}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Name)
+\item 
+bool \doxymbox{\hyperlink{class_f_console_variable_manager_ae44be6a184ce6b72da01c9ae5f8d4ef3}{Execute}} (const char \texorpdfstring{$\ast$}{*}Command\+Line, \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Out\+Result)
+\item 
+void \doxymbox{\hyperlink{class_f_console_variable_manager_ac2a05bfc5b606ff6ce9e9616686dfdb2}{Get\+All\+Names}} (\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} $>$ \&Out\+Names) const
+\item 
+void \doxymbox{\hyperlink{class_f_console_variable_manager_a3f5adb3bf34dfb6857ddb275a8cf24db}{Register\+Command}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Name, \doxymbox{\hyperlink{class_f_console_variable_manager_a2a790462875c1c442fe58b15fe59d0d2}{FConsole\+Command}} In\+Command, const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Help="{}"{})
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static \doxymbox{\hyperlink{class_f_console_variable_manager}{FConsole\+Variable\+Manager}} \& \doxymbox{\hyperlink{class_f_console_variable_manager_a55a01958532b3b1900f49738a8f428d1}{Get}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_f_console_variable_manager_a3aa11f0eb90d8ee801434cbcc1d1d7e7}{FConsole\+Variable\+Manager}} ()=default
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_f_console_variable_manager_ac6a2fc938de6d5582bf94377dd36cdd0}{To\+Lower}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Str)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap}}$<$ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}, \doxymbox{\hyperlink{class_f_console_variable}{FConsole\+Variable}} \texorpdfstring{$\ast$}{*} $>$ \doxymbox{\hyperlink{class_f_console_variable_manager_a15036a96e1948a8cca75d08c9ec60b57}{Variables}}
+\item 
+\doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap}}$<$ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}, \doxymbox{\hyperlink{struct_f_console_variable_manager_1_1_f_command_entry}{FCommand\+Entry}} $>$ \doxymbox{\hyperlink{class_f_console_variable_manager_a7482286bb0ad59a7b046bee760595488}{Commands}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-typedef-members}
+\Hypertarget{class_f_console_variable_manager_doc-typedef-members}
+\doxysubsection{Member Typedef Documentation}
+\Hypertarget{class_f_console_variable_manager_a2a790462875c1c442fe58b15fe59d0d2}\index{FConsoleVariableManager@{FConsoleVariableManager}!FConsoleCommand@{FConsoleCommand}}
+\index{FConsoleCommand@{FConsoleCommand}!FConsoleVariableManager@{FConsoleVariableManager}}
+\doxysubsubsection{\texorpdfstring{FConsoleCommand}{FConsoleCommand}}
+{\footnotesize\ttfamily \label{class_f_console_variable_manager_a2a790462875c1c442fe58b15fe59d0d2} 
+using \doxymbox{\hyperlink{class_f_console_variable_manager_a2a790462875c1c442fe58b15fe59d0d2}{FConsole\+Variable\+Manager::\+\+FConsole\+Command}} = std::\+function$<$void(\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&)$>$}
+
+
+
+\label{doc-constructors}
+\Hypertarget{class_f_console_variable_manager_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_f_console_variable_manager_a3aa11f0eb90d8ee801434cbcc1d1d7e7}\index{FConsoleVariableManager@{FConsoleVariableManager}!FConsoleVariableManager@{FConsoleVariableManager}}
+\index{FConsoleVariableManager@{FConsoleVariableManager}!FConsoleVariableManager@{FConsoleVariableManager}}
+\doxysubsubsection{\texorpdfstring{FConsoleVariableManager()}{FConsoleVariableManager()}}
+{\footnotesize\ttfamily \label{class_f_console_variable_manager_a3aa11f0eb90d8ee801434cbcc1d1d7e7} 
+FConsole\+Variable\+Manager::\+\+FConsole\+Variable\+Manager (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [default]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_console_variable_manager_a3aa11f0eb90d8ee801434cbcc1d1d7e7_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-func-members}
+\Hypertarget{class_f_console_variable_manager_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_f_console_variable_manager_ae44be6a184ce6b72da01c9ae5f8d4ef3}\index{FConsoleVariableManager@{FConsoleVariableManager}!Execute@{Execute}}
+\index{Execute@{Execute}!FConsoleVariableManager@{FConsoleVariableManager}}
+\doxysubsubsection{\texorpdfstring{Execute()}{Execute()}}
+{\footnotesize\ttfamily \label{class_f_console_variable_manager_ae44be6a184ce6b72da01c9ae5f8d4ef3} 
+bool FConsole\+Variable\+Manager::\+\+Execute (\begin{DoxyParamCaption}\item[{const char \texorpdfstring{$\ast$}{*}}]{Command\+Line}{, }\item[{\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Out\+Result}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_console_variable_manager_ae44be6a184ce6b72da01c9ae5f8d4ef3_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_console_variable_manager_ab0f29674f5ee9ff78cdd9569c947be78}\index{FConsoleVariableManager@{FConsoleVariableManager}!Find@{Find}}
+\index{Find@{Find}!FConsoleVariableManager@{FConsoleVariableManager}}
+\doxysubsubsection{\texorpdfstring{Find()}{Find()}}
+{\footnotesize\ttfamily \label{class_f_console_variable_manager_ab0f29674f5ee9ff78cdd9569c947be78} 
+\doxymbox{\hyperlink{class_f_console_variable}{FConsole\+Variable}} \texorpdfstring{$\ast$}{*} FConsole\+Variable\+Manager::\+\+Find (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Name}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_console_variable_manager_ab0f29674f5ee9ff78cdd9569c947be78_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_console_variable_manager_ab0f29674f5ee9ff78cdd9569c947be78_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_console_variable_manager_a55a01958532b3b1900f49738a8f428d1}\index{FConsoleVariableManager@{FConsoleVariableManager}!Get@{Get}}
+\index{Get@{Get}!FConsoleVariableManager@{FConsoleVariableManager}}
+\doxysubsubsection{\texorpdfstring{Get()}{Get()}}
+{\footnotesize\ttfamily \label{class_f_console_variable_manager_a55a01958532b3b1900f49738a8f428d1} 
+\doxymbox{\hyperlink{class_f_console_variable_manager}{FConsole\+Variable\+Manager}} \& FConsole\+Variable\+Manager::\+\+Get (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_console_variable_manager_a55a01958532b3b1900f49738a8f428d1_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_console_variable_manager_a55a01958532b3b1900f49738a8f428d1_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_console_variable_manager_ac2a05bfc5b606ff6ce9e9616686dfdb2}\index{FConsoleVariableManager@{FConsoleVariableManager}!GetAllNames@{GetAllNames}}
+\index{GetAllNames@{GetAllNames}!FConsoleVariableManager@{FConsoleVariableManager}}
+\doxysubsubsection{\texorpdfstring{GetAllNames()}{GetAllNames()}}
+{\footnotesize\ttfamily \label{class_f_console_variable_manager_ac2a05bfc5b606ff6ce9e9616686dfdb2} 
+void FConsole\+Variable\+Manager::\+\+Get\+All\+Names (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} $>$ \&}]{Out\+Names}{}\end{DoxyParamCaption}) const}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_console_variable_manager_ac2a05bfc5b606ff6ce9e9616686dfdb2_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_console_variable_manager_ae9c7d49a352fa57de369c4e071b03568}\index{FConsoleVariableManager@{FConsoleVariableManager}!Register@{Register}}
+\index{Register@{Register}!FConsoleVariableManager@{FConsoleVariableManager}}
+\doxysubsubsection{\texorpdfstring{Register()}{Register()}\hspace{0.1cm}{\footnotesize\ttfamily [1/3]}}
+{\footnotesize\ttfamily \label{class_f_console_variable_manager_ae9c7d49a352fa57de369c4e071b03568} 
+\doxymbox{\hyperlink{class_f_console_variable}{FConsole\+Variable}} \texorpdfstring{$\ast$}{*} FConsole\+Variable\+Manager::\+\+Register (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Name}{, }\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Default}{, }\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Help}{ = {\ttfamily "{}"{}}}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_console_variable_manager_ae9c7d49a352fa57de369c4e071b03568_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_console_variable_manager_a9351aed732d3971d0c1dcaeb7b58be2f}\index{FConsoleVariableManager@{FConsoleVariableManager}!Register@{Register}}
+\index{Register@{Register}!FConsoleVariableManager@{FConsoleVariableManager}}
+\doxysubsubsection{\texorpdfstring{Register()}{Register()}\hspace{0.1cm}{\footnotesize\ttfamily [2/3]}}
+{\footnotesize\ttfamily \label{class_f_console_variable_manager_a9351aed732d3971d0c1dcaeb7b58be2f} 
+\doxymbox{\hyperlink{class_f_console_variable}{FConsole\+Variable}} \texorpdfstring{$\ast$}{*} FConsole\+Variable\+Manager::\+\+Register (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Name}{, }\item[{float}]{Default}{, }\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Help}{ = {\ttfamily "{}"{}}}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_console_variable_manager_a9351aed732d3971d0c1dcaeb7b58be2f_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_console_variable_manager_a9a71d914407ea66e357c534b6497a9cf}\index{FConsoleVariableManager@{FConsoleVariableManager}!Register@{Register}}
+\index{Register@{Register}!FConsoleVariableManager@{FConsoleVariableManager}}
+\doxysubsubsection{\texorpdfstring{Register()}{Register()}\hspace{0.1cm}{\footnotesize\ttfamily [3/3]}}
+{\footnotesize\ttfamily \label{class_f_console_variable_manager_a9a71d914407ea66e357c534b6497a9cf} 
+\doxymbox{\hyperlink{class_f_console_variable}{FConsole\+Variable}} \texorpdfstring{$\ast$}{*} FConsole\+Variable\+Manager::\+\+Register (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Name}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Default}{, }\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Help}{ = {\ttfamily "{}"{}}}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_console_variable_manager_a9a71d914407ea66e357c534b6497a9cf_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_console_variable_manager_a9a71d914407ea66e357c534b6497a9cf_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_console_variable_manager_a3f5adb3bf34dfb6857ddb275a8cf24db}\index{FConsoleVariableManager@{FConsoleVariableManager}!RegisterCommand@{RegisterCommand}}
+\index{RegisterCommand@{RegisterCommand}!FConsoleVariableManager@{FConsoleVariableManager}}
+\doxysubsubsection{\texorpdfstring{RegisterCommand()}{RegisterCommand()}}
+{\footnotesize\ttfamily \label{class_f_console_variable_manager_a3f5adb3bf34dfb6857ddb275a8cf24db} 
+void FConsole\+Variable\+Manager::\+\+Register\+Command (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Name}{, }\item[{\doxymbox{\hyperlink{class_f_console_variable_manager_a2a790462875c1c442fe58b15fe59d0d2}{FConsole\+Command}}}]{In\+Command}{, }\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Help}{ = {\ttfamily "{}"{}}}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_console_variable_manager_a3f5adb3bf34dfb6857ddb275a8cf24db_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_console_variable_manager_a3f5adb3bf34dfb6857ddb275a8cf24db_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_console_variable_manager_ac6a2fc938de6d5582bf94377dd36cdd0}\index{FConsoleVariableManager@{FConsoleVariableManager}!ToLower@{ToLower}}
+\index{ToLower@{ToLower}!FConsoleVariableManager@{FConsoleVariableManager}}
+\doxysubsubsection{\texorpdfstring{ToLower()}{ToLower()}}
+{\footnotesize\ttfamily \label{class_f_console_variable_manager_ac6a2fc938de6d5582bf94377dd36cdd0} 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} FConsole\+Variable\+Manager::\+\+To\+Lower (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Str}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_console_variable_manager_ac6a2fc938de6d5582bf94377dd36cdd0_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_f_console_variable_manager_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_f_console_variable_manager_a7482286bb0ad59a7b046bee760595488}\index{FConsoleVariableManager@{FConsoleVariableManager}!Commands@{Commands}}
+\index{Commands@{Commands}!FConsoleVariableManager@{FConsoleVariableManager}}
+\doxysubsubsection{\texorpdfstring{Commands}{Commands}}
+{\footnotesize\ttfamily \label{class_f_console_variable_manager_a7482286bb0ad59a7b046bee760595488} 
+\doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap}}$<$\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}, \doxymbox{\hyperlink{struct_f_console_variable_manager_1_1_f_command_entry}{FCommand\+Entry}}$>$ FConsole\+Variable\+Manager::\+\+Commands\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_f_console_variable_manager_a15036a96e1948a8cca75d08c9ec60b57}\index{FConsoleVariableManager@{FConsoleVariableManager}!Variables@{Variables}}
+\index{Variables@{Variables}!FConsoleVariableManager@{FConsoleVariableManager}}
+\doxysubsubsection{\texorpdfstring{Variables}{Variables}}
+{\footnotesize\ttfamily \label{class_f_console_variable_manager_a15036a96e1948a8cca75d08c9ec60b57} 
+\doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap}}$<$\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}, \doxymbox{\hyperlink{class_f_console_variable}{FConsole\+Variable}}\texorpdfstring{$\ast$}{*}$>$ FConsole\+Variable\+Manager::\+\+Variables\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Core/\+\doxymbox{\hyperlink{_console_variable_manager_8h}{Console\+Variable\+Manager.\+h}}\item 
+Engine/\+\+Source/\+\+Core/\+\doxymbox{\hyperlink{_console_variable_manager_8cpp}{Console\+Variable\+Manager.\+cpp}}\end{DoxyCompactItemize}

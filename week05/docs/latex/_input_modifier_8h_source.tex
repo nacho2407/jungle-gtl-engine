@@ -1,0 +1,81 @@
+\doxysection{Input\+Modifier.\+h}
+\hypertarget{_input_modifier_8h_source}{}\label{_input_modifier_8h_source}\index{Engine/Source/Input/InputModifier.h@{Engine/Source/Input/InputModifier.h}}
+\doxymbox{\hyperlink{_input_modifier_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_input_action_8h}{InputAction.h}}"{}}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <cmath>}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_input_modifier}{FInputModifier}}}
+\DoxyCodeLine{00006\ \{}
+\DoxyCodeLine{00007\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00008\ \ \ \ \ \textcolor{keyword}{virtual}\ \doxymbox{\hyperlink{class_f_input_modifier_a5096f24cee3740534f68d825522a19a2}{\string~FInputModifier}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00009\ \ \ \ \ \textcolor{keyword}{virtual}\ \doxymbox{\hyperlink{struct_f_input_action_value}{FInputActionValue}}\ \doxymbox{\hyperlink{class_f_input_modifier_a1c0f86a31d57383fd3b2c755b1e2d6e3}{ModifyRaw}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_input_action_value}{FInputActionValue}}\&\ Value)\ =\ 0;}
+\DoxyCodeLine{00010\ \};}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_modifier_negative}{FModifierNegative}}\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{class_f_input_modifier}{FInputModifier}}}
+\DoxyCodeLine{00013\ \{}
+\DoxyCodeLine{00014\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_modifier_negative_a457ac4dd8b7c1be7fbcaa600dab1e4e6}{bX}}\ =\ \textcolor{keyword}{true},\ \doxymbox{\hyperlink{class_f_modifier_negative_affaffc993e1d230aa33626d27433e884}{bY}}\ =\ \textcolor{keyword}{true},\ \doxymbox{\hyperlink{class_f_modifier_negative_a74a69e33877732bd04f313ba784ba17b}{bZ}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action_value}{FInputActionValue}}\ \doxymbox{\hyperlink{class_f_modifier_negative_a488d48db24a6c574265dcea048c089a9}{ModifyRaw}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_input_action_value}{FInputActionValue}}\&\ V)\textcolor{keyword}{\ override}}
+\DoxyCodeLine{00018\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00019\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ V\ *\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\{\ \doxymbox{\hyperlink{class_f_modifier_negative_a457ac4dd8b7c1be7fbcaa600dab1e4e6}{bX}}\ ?\ -\/1.0f\ :\ 1.0f,\ \doxymbox{\hyperlink{class_f_modifier_negative_affaffc993e1d230aa33626d27433e884}{bY}}\ ?\ -\/1.0f\ :\ 1.0f,\ \doxymbox{\hyperlink{class_f_modifier_negative_a74a69e33877732bd04f313ba784ba17b}{bZ}}\ ?\ -\/1.0f\ :\ 1.0f\ \};}
+\DoxyCodeLine{00020\ \ \ \ \ \}}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ \};}
+\DoxyCodeLine{00023\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_modifier_scale_a7f0414cde2a1645e3fdd79ae8fe51f67}{FModifierScale}}\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{class_f_input_modifier}{FInputModifier}}}
+\DoxyCodeLine{00024\ \{}
+\DoxyCodeLine{00025\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00026\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{class_f_modifier_scale_a5c6b7a0fee4aa989e62ba652423373a7}{Scale}}\ =\ \{\ 1.0f,\ 1.0f,\ 1.0f\ \};}
+\DoxyCodeLine{00027\ \ \ \ \ \doxymbox{\hyperlink{class_f_modifier_scale_a7f0414cde2a1645e3fdd79ae8fe51f67}{FModifierScale}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00028\ \ \ \ \ \textcolor{keyword}{explicit}\ \doxymbox{\hyperlink{class_f_modifier_scale_a36cd679653b27413f096912adccdafa5}{FModifierScale}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ InScale)\ :\ \doxymbox{\hyperlink{class_f_modifier_scale_a5c6b7a0fee4aa989e62ba652423373a7}{Scale}}(InScale)\ \{\}}
+\DoxyCodeLine{00029\ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action_value}{FInputActionValue}}\ \doxymbox{\hyperlink{class_f_modifier_scale_a1c3fb063d6f506df15861424720dcdc4}{ModifyRaw}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_input_action_value}{FInputActionValue}}\&\ V)\textcolor{keyword}{\ override}}
+\DoxyCodeLine{00030\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00031\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ V\ *\ \doxymbox{\hyperlink{class_f_modifier_scale_a5c6b7a0fee4aa989e62ba652423373a7}{Scale}};}
+\DoxyCodeLine{00032\ \ \ \ \ \}}
+\DoxyCodeLine{00033\ \};}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_modifier_deadzone}{FModifierDeadzone}}\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{class_f_input_modifier}{FInputModifier}}}
+\DoxyCodeLine{00036\ \{}
+\DoxyCodeLine{00037\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_f_modifier_deadzone_aa80eb45c5ce40a30ee7d83f375690c03}{LowerThreshold}}\ =\ 0.2f;}
+\DoxyCodeLine{00038\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_f_modifier_deadzone_a1196d4d1b311397ad241e900177f8579}{UpperThreshold}}\ =\ 1.0f;}
+\DoxyCodeLine{00039\ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action_value}{FInputActionValue}}\ \doxymbox{\hyperlink{class_f_modifier_deadzone_a7eacf826cbfdb6092ce381fac329fa9b}{ModifyRaw}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_input_action_value}{FInputActionValue}}\&\ V)\textcolor{keyword}{\ override}}
+\DoxyCodeLine{00040\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00041\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ Magnitude\ =\ std::fabsf(V.\doxymbox{\hyperlink{struct_f_input_action_value_abb69b2f4872b3e433ec47f01a043f49e}{Get}}());}
+\DoxyCodeLine{00042\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (Magnitude\ <\ \doxymbox{\hyperlink{class_f_modifier_deadzone_aa80eb45c5ce40a30ee7d83f375690c03}{LowerThreshold}})}
+\DoxyCodeLine{00043\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_input_action_value}{FInputActionValue}}(0.0f);\textcolor{comment}{//\ DeadZone\ input\ ignore}}
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ Range\ =\ \doxymbox{\hyperlink{class_f_modifier_deadzone_a1196d4d1b311397ad241e900177f8579}{UpperThreshold}}\ -\/\ \doxymbox{\hyperlink{class_f_modifier_deadzone_aa80eb45c5ce40a30ee7d83f375690c03}{LowerThreshold}};}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (Range\ <=\ 0.0f)\textcolor{comment}{//\ Setting\ value\ error\ }}
+\DoxyCodeLine{00046\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ V;\ \textcolor{comment}{//prevent\ devide\ 0}}
+\DoxyCodeLine{00047\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ Normalized\ =\ (Magnitude\ -\/\ \doxymbox{\hyperlink{class_f_modifier_deadzone_aa80eb45c5ce40a30ee7d83f375690c03}{LowerThreshold}})\ /\ Range;}
+\DoxyCodeLine{00048\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (Normalized\ >\ 1.0f)\ \textcolor{comment}{//limit\ value}}
+\DoxyCodeLine{00049\ \ \ \ \ \ \ \ \ Normalized\ =\ 1.0f;}
+\DoxyCodeLine{00050\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ Sign\ =\ V.\doxymbox{\hyperlink{struct_f_input_action_value_abb69b2f4872b3e433ec47f01a043f49e}{Get}}()\ >=\ 0.0f\ ?\ 1.0f\ :\ -\/1.0f;\ \textcolor{comment}{//\ Dirction\ recovery}}
+\DoxyCodeLine{00051\ }
+\DoxyCodeLine{00052\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_input_action_value}{FInputActionValue}}(Sign\ *\ Normalized);}
+\DoxyCodeLine{00053\ \ \ \ \ \}}
+\DoxyCodeLine{00054\ \};}
+\DoxyCodeLine{00055\ \textcolor{comment}{//\ will\ be\ test}}
+\DoxyCodeLine{00056\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_modifier_swizzle_axis}{FModifierSwizzleAxis}}\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{class_f_input_modifier}{FInputModifier}}}
+\DoxyCodeLine{00057\ \{}
+\DoxyCodeLine{00058\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00059\ \ \ \ \ \textcolor{keyword}{enum\ class}\ \doxymbox{\hyperlink{class_f_modifier_swizzle_axis_ad59dba24c6e9be0f8fb99e1eb50849d4}{ESwizzleOrder}}\ \{\ YXZ,\ ZYX,\ XZY,\ YZX,\ ZXY\ \};}
+\DoxyCodeLine{00060\ \ \ \ \ \doxymbox{\hyperlink{class_f_modifier_swizzle_axis_ad59dba24c6e9be0f8fb99e1eb50849d4}{ESwizzleOrder}}\ \doxymbox{\hyperlink{class_f_modifier_swizzle_axis_ac94ce8a3a9735288dd7cc9e759263841}{Order}}\ =\ \doxymbox{\hyperlink{class_f_modifier_swizzle_axis_ad59dba24c6e9be0f8fb99e1eb50849d4a4c15872a8be8098b60ba0892bc42ee6d}{ESwizzleOrder::YXZ}};}
+\DoxyCodeLine{00061\ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action_value}{FInputActionValue}}\ \doxymbox{\hyperlink{class_f_modifier_swizzle_axis_a1c43952b51d2b3f06b12fd5f44b22238}{ModifyRaw}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_input_action_value}{FInputActionValue}}\&\ V)\textcolor{keyword}{\ override}}
+\DoxyCodeLine{00062\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ In\ =\ V.\doxymbox{\hyperlink{struct_f_input_action_value_a48c238e56fcc79b3ea33c77a5c4e9e24}{GetVector}}();}
+\DoxyCodeLine{00064\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ Out;}
+\DoxyCodeLine{00065\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{switch}\ (\doxymbox{\hyperlink{class_f_modifier_swizzle_axis_ac94ce8a3a9735288dd7cc9e759263841}{Order}})}
+\DoxyCodeLine{00066\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \doxymbox{\hyperlink{class_f_modifier_swizzle_axis_ad59dba24c6e9be0f8fb99e1eb50849d4a4c15872a8be8098b60ba0892bc42ee6d}{ESwizzleOrder::YXZ}}:\ Out\ =\ \{\ In.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}},\ In.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}},\ In.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ \};\ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \doxymbox{\hyperlink{class_f_modifier_swizzle_axis_ad59dba24c6e9be0f8fb99e1eb50849d4a6811254e01b3550bdb2dc46f204730dc}{ESwizzleOrder::ZYX}}:\ Out\ =\ \{\ In.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}},\ In.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}},\ In.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ \};\ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00069\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \doxymbox{\hyperlink{class_f_modifier_swizzle_axis_ad59dba24c6e9be0f8fb99e1eb50849d4a76e608e99423bcdeb143368913e78f1c}{ESwizzleOrder::XZY}}:\ Out\ =\ \{\ In.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}},\ In.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}},\ In.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ \};\ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00070\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \doxymbox{\hyperlink{class_f_modifier_swizzle_axis_ad59dba24c6e9be0f8fb99e1eb50849d4ac7c57bc52d896f142cae9c01bc84b6fe}{ESwizzleOrder::YZX}}:\ Out\ =\ \{\ In.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}},\ In.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}},\ In.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ \};\ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \doxymbox{\hyperlink{class_f_modifier_swizzle_axis_ad59dba24c6e9be0f8fb99e1eb50849d4a07bb28478030fc8b86da84000c9860d3}{ESwizzleOrder::ZXY}}:\ Out\ =\ \{\ In.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}},\ In.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}},\ In.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ \};\ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00072\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_input_action_value}{FInputActionValue}}(Out);}
+\DoxyCodeLine{00074\ \ \ \ \ \}}
+\DoxyCodeLine{00075\ \};}
+
+\end{DoxyCode}

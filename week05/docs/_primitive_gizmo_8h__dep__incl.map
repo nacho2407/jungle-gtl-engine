@@ -1,0 +1,20 @@
+<map id="Engine/Source/Primitive/PrimitiveGizmo.h" name="Engine/Source/Primitive/PrimitiveGizmo.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="265,5,426,48"/>
+<area shape="rect" id="Node000002" href="$_editor_2_source_2_gizmo_2_gizmo_8cpp.html" title=" " alt="" coords="74,187,217,229"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="248,48,209,69,190,82,173,98,160,118,152,142,147,187,142,185,147,141,155,116,169,94,186,78,206,64,252,45"/>
+<area shape="rect" id="Node000003" href="$_editor_2_source_2_gizmo_2_gizmo_8h.html" title=" " alt="" coords="182,96,325,139"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="316,57,277,98,273,94,312,60"/>
+<area shape="rect" id="Node000008" href="$_gizmo_component_8cpp.html" title=" " alt="" coords="349,96,526,139"/>
+<area shape="poly" id="edge8_Node000001_Node000008" title=" " alt="" coords="378,56,419,96,414,96,377,61"/>
+<area shape="rect" id="Node000009" href="$_primitive_gizmo_8cpp.html" title=" " alt="" coords="550,96,712,139"/>
+<area shape="poly" id="edge9_Node000001_Node000009" title=" " alt="" coords="427,50,567,95,561,96,427,56"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="219,147,173,188,169,184,215,150"/>
+<area shape="rect" id="Node000004" href="$_editor_viewport_client_8h.html" title=" " alt="" coords="241,187,448,229"/>
+<area shape="poly" id="edge4_Node000003_Node000004" title=" " alt="" coords="286,147,326,186,321,186,285,152"/>
+<area shape="rect" id="Node000005" href="$_f_editor_engine_8cpp.html" title=" " alt="" coords="5,285,217,312"/>
+<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="278,236,145,287,144,282,273,234"/>
+<area shape="rect" id="Node000006" href="$_editor_viewport_client_8cpp.html" title=" " alt="" coords="241,277,448,320"/>
+<area shape="poly" id="edge6_Node000004_Node000006" title=" " alt="" coords="346,243,346,279,342,275,342,247"/>
+<area shape="rect" id="Node000007" href="$_viewport_8cpp.html" title=" " alt="" coords="472,285,670,312"/>
+<area shape="poly" id="edge7_Node000004_Node000007" title=" " alt="" coords="412,233,541,285,536,285,411,238"/>
+</map>

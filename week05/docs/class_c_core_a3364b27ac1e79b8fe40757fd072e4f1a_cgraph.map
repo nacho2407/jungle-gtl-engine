@@ -1,0 +1,23 @@
+<map id="CCore::RegisterConsoleVariables" name="CCore::RegisterConsoleVariables">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,181,223,208"/>
+<area shape="rect" id="Node000002" href="$class_f_console_variable_manager.html#ab0f29674f5ee9ff78cdd9569c947be78" title=" " alt="" coords="294,64,468,107"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="139,179,198,148,270,116,290,111,286,114,272,121,200,153,142,183"/>
+<area shape="rect" id="Node000004" href="$class_f_console_variable_manager.html#a55a01958532b3b1900f49738a8f428d1" title=" " alt="" coords="280,13,482,40"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="124,179,181,116,223,80,269,50,286,44,282,47,272,54,226,84,185,120,128,182"/>
+<area shape="rect" id="Node000006" href="$class_f_console_variable.html#ab75ae2b9eed27649d85501fc1ea3d6a9" title=" " alt="" coords="290,131,472,157"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="187,178,294,159,290,162,189,183"/>
+<area shape="rect" id="Node000007" href="$class_f_console_variable.html#a40f2ce3df772254ad42e2149f251011a" title=" " alt="" coords="297,181,464,208"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="222,192,284,194,279,196,224,197"/>
+<area shape="rect" id="Node000008" href="$class_f_console_variable_manager.html#a9a71d914407ea66e357c534b6497a9cf" title=" " alt="" coords="294,232,468,275"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="178,206,281,230,276,232,178,211"/>
+<area shape="rect" id="Node000009" href="$class_f_console_variable_manager.html#a3f5adb3bf34dfb6857ddb275a8cf24db" title=" " alt="" coords="294,299,468,341"/>
+<area shape="poly" id="edge9_Node000001_Node000009" title=" " alt="" coords="135,206,196,244,272,284,289,293,283,293,270,289,193,249,135,211"/>
+<area shape="rect" id="Node000010" href="$class_f_console_variable.html#ab9e2f51f92572315c2b1fe009a22469f" title=" " alt="" coords="271,365,491,392"/>
+<area shape="poly" id="edge11_Node000001_Node000010" title=" " alt="" coords="125,206,182,276,224,317,272,351,285,360,280,359,269,356,221,321,178,280,123,211"/>
+<area shape="rect" id="Node000003" href="$class_f_console_variable_manager.html#ac6a2fc938de6d5582bf94377dd36cdd0" title=" " alt="" coords="543,232,716,275"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="468,104,492,116,525,139,556,166,605,220,599,219,552,170,522,143,490,121,468,110"/>
+<area shape="rect" id="Node000005" href="$class_f_console_variable_manager.html#a3aa11f0eb90d8ee801434cbcc1d1d7e7" title=" " alt="" coords="539,5,720,48"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="482,24,526,26,521,28,483,29"/>
+<area shape="poly" id="edge8_Node000008_Node000003" title=" " alt="" coords="468,251,530,253,525,254,468,256"/>
+<area shape="poly" id="edge10_Node000009_Node000003" title=" " alt="" coords="462,295,531,280,536,279,464,301"/>
+</map>

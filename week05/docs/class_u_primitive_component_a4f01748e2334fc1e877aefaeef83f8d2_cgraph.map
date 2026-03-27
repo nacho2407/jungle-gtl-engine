@@ -1,0 +1,18 @@
+<map id="UPrimitiveComponent::GetWorldBounds" name="UPrimitiveComponent::GetWorldBounds">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,88,155,131"/>
+<area shape="rect" id="Node000002" href="$class_u_scene_component.html#ad1b8751af65b8f2abd408b7fe849fcdf" title=" " alt="" coords="203,29,415,72"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="154,88,211,75,206,78,156,93"/>
+<area shape="rect" id="Node000003" href="$struct_f_transform.html#ab0ea0fe880fd7d0392e5c8f092d830db" title=" " alt="" coords="225,96,392,123"/>
+<area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="154,107,212,108,207,110,155,112"/>
+<area shape="rect" id="Node000004" href="$class_u_scene_component.html#a854ba442e7e5fe710d17543ef3b60fff" title=" " alt="" coords="210,147,408,189"/>
+<area shape="poly" id="edge4_Node000001_Node000004" title=" " alt="" coords="155,126,211,142,206,143,155,131"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="265,28,264,19,271,10,286,5,309,3,333,5,350,13,344,14,332,10,309,8,287,10,274,15,269,21,270,30"/>
+<area shape="rect" id="Node000005" href="$struct_f_matrix.html#a779da1fe141bf3b562ed542bfa3a3dae" title=" " alt="" coords="482,125,641,152"/>
+<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="408,154,469,149,464,150,408,159"/>
+<area shape="rect" id="Node000007" href="$class_u_scene_component.html#aaefa149e7e11d1f9fdc5a4706c8b9cb6" title=" " alt="" coords="463,176,660,219"/>
+<area shape="poly" id="edge7_Node000004_Node000007" title=" " alt="" coords="408,177,450,184,445,184,408,182"/>
+<area shape="rect" id="Node000006" href="$struct_f_matrix.html#aca939c75174173f35b183c1ef42fc37f" title=" " alt="" coords="753,125,882,152"/>
+<area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="641,136,741,138,735,139,641,141"/>
+<area shape="rect" id="Node000008" href="$class_u_scene_component.html#a86bbe3a4c9b5daf88293d2a5d55a718c" title=" " alt="" coords="708,176,927,219"/>
+<area shape="poly" id="edge8_Node000007_Node000008" title=" " alt="" coords="661,195,696,197,690,197,661,200"/>
+</map>

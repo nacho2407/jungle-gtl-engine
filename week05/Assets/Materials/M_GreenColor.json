@@ -1,0 +1,12 @@
+{
+  "Name": "M_GreenColor",
+  "VertexShader": "Engine/Shaders/VertexShader.hlsl",
+  "PixelShader": "Engine/Shaders/ColorPixelShader.hlsl",
+  "ConstantBuffers": [
+    {
+      "Parameters": [
+        { "Name": "BaseColor", "Type": "float4", "Value": [0.2, 0.8, 0.2, 1.0] }
+      ]
+    }
+  ]
+}

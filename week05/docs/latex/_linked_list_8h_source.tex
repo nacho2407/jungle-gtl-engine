@@ -1,0 +1,16 @@
+\doxysection{Linked\+List.\+h}
+\hypertarget{_linked_list_8h_source}{}\label{_linked_list_8h_source}\index{Engine/Source/Types/LinkedList.h@{Engine/Source/Types/LinkedList.h}}
+\doxymbox{\hyperlink{_linked_list_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ <forward\_list>}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <list>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ T,\ \textcolor{keyword}{typename}\ Allocator\ =\ std::allocator<T>>}
+\DoxyCodeLine{00007\ \textcolor{keyword}{using\ }\doxymbox{\hyperlink{_linked_list_8h_a71db088dce1670fb07349bff69fb07e8}{TLinkedList}}\ =\ std::forward\_list<T,\ Allocator>;}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ T,\ \textcolor{keyword}{typename}\ Allocator\ =\ std::allocator<T>>}
+\DoxyCodeLine{00010\ \textcolor{keyword}{using\ }\doxymbox{\hyperlink{_linked_list_8h_a1cffb2bc282e77c1644847a88e160f9a}{TDoubleLinkedList}}\ =\ std::list<T,\ Allocator>;}
+
+\end{DoxyCode}

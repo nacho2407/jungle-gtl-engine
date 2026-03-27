@@ -1,0 +1,9 @@
+<map id="CGizmo" name="CGizmo">
+<area shape="rect" id="Node000001" title=" " alt="" coords="288,893,498,2003"/>
+<area shape="rect" id="Node000002" href="$struct_f_vector.html" title=" " alt="" coords="5,5,375,651"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="249,648,292,877,287,877,248,653"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="375,262,395,290,402,328,398,357,389,380,384,378,393,356,397,328,390,292,376,267"/>
+<area shape="rect" id="Node000003" href="$struct_f_quat.html" title=" " alt="" coords="535,123,659,533"/>
+<area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="561,530,500,877,494,876,559,535"/>
+<area shape="poly" id="edge4_Node000003_Node000003" title=" " alt="" coords="658,244,671,254,679,272,684,296,686,328,682,370,673,397,668,396,677,369,680,328,679,297,674,273,666,258,659,249"/>
+</map>

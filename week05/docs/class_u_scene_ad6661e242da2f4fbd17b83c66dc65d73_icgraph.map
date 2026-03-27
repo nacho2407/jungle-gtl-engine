@@ -1,0 +1,14 @@
+<map id="UScene::InitializeEmptyScene" name="UScene::InitializeEmptyScene">
+<area shape="rect" id="Node000001" title=" " alt="" coords="954,43,1153,69"/>
+<area shape="rect" id="Node000002" href="$class_f_scene_manager.html#a1534b5cba520ae55db348434f49c7e45" title=" " alt="" coords="491,35,691,77"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="936,53,906,55,739,55,692,56,691,50,739,49,906,49,941,53"/>
+<area shape="rect" id="Node000006" href="$class_u_scene.html#acf3650e60f2e2a7b82cc234a27beb349" title=" " alt="" coords="739,64,906,107"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="941,70,907,77,906,72,935,71"/>
+<area shape="rect" id="Node000003" href="$class_f_scene_manager.html#ab1b1fb926af4544aafd90a70afe1df9c" title=" " alt="" coords="233,5,443,48"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="473,43,443,42,443,36,478,43"/>
+<area shape="rect" id="Node000004" href="$class_f_scene_manager.html#a8db6d6f81779071f9f965331e7fd3ca3" title=" " alt="" coords="252,72,424,99"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="478,69,425,78,424,73,473,70"/>
+<area shape="rect" id="Node000005" href="$class_f_scene_manager.html#a9a5c1024497c76d5a6651f90d53dc891" title=" " alt="" coords="5,72,185,99"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="233,86,185,88,185,83,239,85"/>
+<area shape="poly" id="edge6_Node000006_Node000002" title=" " alt="" coords="722,73,692,71,692,66,727,73"/>
+</map>

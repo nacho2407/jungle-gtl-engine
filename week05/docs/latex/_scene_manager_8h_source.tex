@@ -1,0 +1,72 @@
+\doxysection{Scene\+Manager.\+h}
+\hypertarget{_scene_manager_8h_source}{}\label{_scene_manager_8h_source}\index{Engine/Source/Scene/SceneManager.h@{Engine/Source/Scene/SceneManager.h}}
+\doxymbox{\hyperlink{_scene_manager_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}"{}}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_scene_context_8h}{Scene/SceneContext.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_scene_types_8h}{Scene/SceneTypes.h}}"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_u_scene}{UScene}};}
+\DoxyCodeLine{00008\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_a_actor}{AActor}};}
+\DoxyCodeLine{00009\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_renderer}{CRenderer}};}
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00011\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_scene_manager_a1b404071211fe34c3d61cfbecdcd1cb7}{FSceneManager}}}
+\DoxyCodeLine{00012\ \{}
+\DoxyCodeLine{00013\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00014\ \ \ \ \ \doxymbox{\hyperlink{class_f_scene_manager_a1b404071211fe34c3d61cfbecdcd1cb7}{FSceneManager}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00015\ \ \ \ \ \doxymbox{\hyperlink{class_f_scene_manager_a1b404071211fe34c3d61cfbecdcd1cb7}{\string~FSceneManager}}();}
+\DoxyCodeLine{00016\ \ \ \ \ \doxymbox{\hyperlink{class_f_scene_manager_a7f32dbabb441cec2c6b93d01701a7188}{FSceneManager}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_f_scene_manager_a1b404071211fe34c3d61cfbecdcd1cb7}{FSceneManager}}\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00017\ \ \ \ \ \doxymbox{\hyperlink{class_f_scene_manager_a1b404071211fe34c3d61cfbecdcd1cb7}{FSceneManager}}\&\ \doxymbox{\hyperlink{class_f_scene_manager_aad30ac6df415d48475f34b4bcb2e7b41}{operator=}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_f_scene_manager_a1b404071211fe34c3d61cfbecdcd1cb7}{FSceneManager}}\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00018\ \ \ \ \ \doxymbox{\hyperlink{class_f_scene_manager_a86c4aae37b7fcb7277606c9df83c1b5b}{FSceneManager}}(\doxymbox{\hyperlink{class_f_scene_manager_a1b404071211fe34c3d61cfbecdcd1cb7}{FSceneManager}}\&\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00019\ \ \ \ \ \doxymbox{\hyperlink{class_f_scene_manager_a1b404071211fe34c3d61cfbecdcd1cb7}{FSceneManager}}\&\ \doxymbox{\hyperlink{class_f_scene_manager_a9a5c1024497c76d5a6651f90d53dc891}{operator=}}(\doxymbox{\hyperlink{class_f_scene_manager_a1b404071211fe34c3d61cfbecdcd1cb7}{FSceneManager}}\&\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{comment}{//\ 초기화}}
+\DoxyCodeLine{00021\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_scene_manager_a8db6d6f81779071f9f965331e7fd3ca3}{Initialize}}(\textcolor{keywordtype}{float}\ AspectRatio,\ \doxymbox{\hyperlink{_scene_types_8h_a4fa75d8646a7d0cecf8aa5958b9077c5}{ESceneType}}\ StartupSceneType,\ \doxymbox{\hyperlink{class_c_renderer}{CRenderer}}*\ InRenderer);}
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_scene_manager_a90a79a2bcdcb55348785f1c299ff63f2}{Release}}();}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ \ \ \ \ \textcolor{comment}{//\ Scene\ 전환}}
+\DoxyCodeLine{00025\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_scene_manager_a49956f97d0d5a11b668dedefb8664672}{ActivateEditorScene}}()\ \{\ \doxymbox{\hyperlink{class_f_scene_manager_a6b9bb5fe640a08888a886aa23f06533e}{ActiveSceneContext}}\ =\ \doxymbox{\hyperlink{class_f_scene_manager_abc61df2d038dceba083f98553e2b9213}{EditorSceneContext}}.Scene\ ?\ \&\doxymbox{\hyperlink{class_f_scene_manager_abc61df2d038dceba083f98553e2b9213}{EditorSceneContext}}\ :\ \textcolor{keyword}{nullptr};\ \}}
+\DoxyCodeLine{00026\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_scene_manager_a2550fa64e4bad8538d42e2acd065f436}{ActivateGameScene}}()\ \{\ \doxymbox{\hyperlink{class_f_scene_manager_a6b9bb5fe640a08888a886aa23f06533e}{ActiveSceneContext}}\ =\ \doxymbox{\hyperlink{class_f_scene_manager_a685547d5cbe2ac60d392c5bf937cfc58}{GameSceneContext}}.Scene\ ?\ \&\doxymbox{\hyperlink{class_f_scene_manager_a685547d5cbe2ac60d392c5bf937cfc58}{GameSceneContext}}\ :\ \textcolor{keyword}{nullptr};\ \}}
+\DoxyCodeLine{00027\ \ \ \ \ \textcolor{keywordtype}{bool}\ ActivatePreviewScene(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ ContextName);}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \ \ \ \ \textcolor{comment}{//\ Preview\ Scene\ 관리}}
+\DoxyCodeLine{00030\ \ \ \ \ \doxymbox{\hyperlink{struct_f_editor_scene_context}{FEditorSceneContext}}*\ CreatePreviewSceneContext(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ ContextName,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ WindowWidth,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ WindowHeight);}
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{keywordtype}{bool}\ DestroyPreviewScene(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ ContextName);}
+\DoxyCodeLine{00032\ }
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{comment}{//\ 접근자}}
+\DoxyCodeLine{00034\ \ \ \ \ \doxymbox{\hyperlink{class_u_scene}{UScene}}*\ \doxymbox{\hyperlink{class_f_scene_manager_ac8e7eed2b01f003b0ee81af4a42ba113}{GetActiveScene}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_f_scene_manager_a6b9bb5fe640a08888a886aa23f06533e}{ActiveSceneContext}}\ ?\ \doxymbox{\hyperlink{class_f_scene_manager_a6b9bb5fe640a08888a886aa23f06533e}{ActiveSceneContext}}-\/>Scene\ :\ \textcolor{keyword}{nullptr};\ \}}
+\DoxyCodeLine{00035\ \ \ \ \ \doxymbox{\hyperlink{class_u_scene}{UScene}}*\ \doxymbox{\hyperlink{class_f_scene_manager_a5a9aa46ee521e31c3a5515cedd05468f}{GetEditorScene}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_f_scene_manager_abc61df2d038dceba083f98553e2b9213}{EditorSceneContext}}.Scene;\ \}}
+\DoxyCodeLine{00036\ \ \ \ \ \doxymbox{\hyperlink{class_u_scene}{UScene}}*\ \doxymbox{\hyperlink{class_f_scene_manager_aef0066cade0313d7e2801edbd95e6feb}{GetGameScene}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_f_scene_manager_a685547d5cbe2ac60d392c5bf937cfc58}{GameSceneContext}}.Scene;\ \}}
+\DoxyCodeLine{00037\ \ \ \ \ \doxymbox{\hyperlink{class_u_scene}{UScene}}*\ GetPreviewScene(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ ContextName)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00038\ }
+\DoxyCodeLine{00039\ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_scene_context}{FSceneContext}}*\ \doxymbox{\hyperlink{class_f_scene_manager_a769d1dcbbff1a8d3cee4e79ac2de0c2c}{GetActiveSceneContext}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_f_scene_manager_a6b9bb5fe640a08888a886aa23f06533e}{ActiveSceneContext}};\ \}}
+\DoxyCodeLine{00040\ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray<std::unique\_ptr<FEditorSceneContext>}}>\&\ \doxymbox{\hyperlink{class_f_scene_manager_adacbefe149a69c2df35aee691daeee80}{GetPreviewSceneContexts}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_f_scene_manager_aceb02ef7464e9f9017b5a7e017253639}{PreviewSceneContexts}};\ \}}
+\DoxyCodeLine{00041\ }
+\DoxyCodeLine{00042\ \ \ \ \ \textcolor{comment}{//\ 선택\ Actor}}
+\DoxyCodeLine{00043\ \ \ \ \ \textcolor{keywordtype}{void}\ SetSelectedActor(\doxymbox{\hyperlink{class_a_actor}{AActor}}*\ InActor);}
+\DoxyCodeLine{00044\ \ \ \ \ \doxymbox{\hyperlink{class_a_actor}{AActor}}*\ GetSelectedActor()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00045\ }
+\DoxyCodeLine{00046\ \ \ \ \ \textcolor{comment}{//\ Resize\ 시\ AspectRatio\ 갱신}}
+\DoxyCodeLine{00047\ \ \ \ \ \textcolor{keywordtype}{void}\ OnResize(\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Width,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Height);}
+\DoxyCodeLine{00048\ }
+\DoxyCodeLine{00049\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00050\ \ \ \ \ \textcolor{keywordtype}{bool}\ CreateSceneContext(\doxymbox{\hyperlink{struct_f_scene_context}{FSceneContext}}\&\ OutContext,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ ContextName,}
+\DoxyCodeLine{00051\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{_scene_types_8h_a4fa75d8646a7d0cecf8aa5958b9077c5}{ESceneType}}\ SceneType,\ \textcolor{keywordtype}{float}\ AspectRatio,\ \textcolor{keywordtype}{bool}\ bDefaultScene\ =\ \textcolor{keyword}{true});}
+\DoxyCodeLine{00052\ \ \ \ \ \textcolor{keywordtype}{void}\ DestroySceneContext(\doxymbox{\hyperlink{struct_f_scene_context}{FSceneContext}}\&\ Context);}
+\DoxyCodeLine{00053\ \ \ \ \ \textcolor{keywordtype}{void}\ DestroySceneContext(\doxymbox{\hyperlink{struct_f_editor_scene_context}{FEditorSceneContext}}\&\ Context);}
+\DoxyCodeLine{00054\ }
+\DoxyCodeLine{00055\ \ \ \ \ \doxymbox{\hyperlink{struct_f_editor_scene_context}{FEditorSceneContext}}*\ GetActiveEditorContext();}
+\DoxyCodeLine{00056\ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_editor_scene_context}{FEditorSceneContext}}*\ GetActiveEditorContext()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00057\ \ \ \ \ \doxymbox{\hyperlink{struct_f_editor_scene_context}{FEditorSceneContext}}*\ FindPreviewScene(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ ContextName);}
+\DoxyCodeLine{00058\ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_editor_scene_context}{FEditorSceneContext}}*\ FindPreviewScene(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ ContextName)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00059\ }
+\DoxyCodeLine{00060\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00061\ \ \ \ \ \doxymbox{\hyperlink{struct_f_scene_context}{FSceneContext}}\ \doxymbox{\hyperlink{class_f_scene_manager_a685547d5cbe2ac60d392c5bf937cfc58}{GameSceneContext}};}
+\DoxyCodeLine{00062\ \ \ \ \ \doxymbox{\hyperlink{struct_f_editor_scene_context}{FEditorSceneContext}}\ \doxymbox{\hyperlink{class_f_scene_manager_abc61df2d038dceba083f98553e2b9213}{EditorSceneContext}};}
+\DoxyCodeLine{00063\ \ \ \ \ \doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray<std::unique\_ptr<FEditorSceneContext>}}>\ \doxymbox{\hyperlink{class_f_scene_manager_aceb02ef7464e9f9017b5a7e017253639}{PreviewSceneContexts}};}
+\DoxyCodeLine{00064\ \ \ \ \ \doxymbox{\hyperlink{struct_f_scene_context}{FSceneContext}}*\ \doxymbox{\hyperlink{class_f_scene_manager_a6b9bb5fe640a08888a886aa23f06533e}{ActiveSceneContext}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00065\ \ \ \ \ \doxymbox{\hyperlink{class_c_renderer}{CRenderer}}*\ \doxymbox{\hyperlink{class_f_scene_manager_a509490e1cc180c6b766b37777e933414}{Renderer}}\ =\ \textcolor{keyword}{nullptr};\ \ \textcolor{comment}{//\ 비소유\ 포인터\ (Scene\ 생성\ 시\ Device\ 필요)}}
+\DoxyCodeLine{00066\ \};}
+
+\end{DoxyCode}

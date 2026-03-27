@@ -1,0 +1,9 @@
+<map id="UPrimitiveComponent::GetWorldBoundsForAABB" name="UPrimitiveComponent::GetWorldBoundsForAABB">
+<area shape="rect" id="Node000001" title=" " alt="" coords="383,23,565,65"/>
+<area shape="rect" id="Node000002" href="$class_c_physics_manager.html#ac53e06c260ed6866b574e117fe8a4f84" title=" " alt="" coords="146,5,335,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="365,33,336,32,336,26,370,32"/>
+<area shape="rect" id="Node000003" href="$class_c_core.html#a6777485bd38329e69f10133497dfbfde" title=" " alt="" coords="183,56,298,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="370,55,298,66,298,60,365,56"/>
+<area shape="rect" id="Node000004" href="$class_c_core.html#a8b4950627b31ac880598f18652875711" title=" " alt="" coords="5,56,98,83"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="165,70,98,72,98,67,170,69"/>
+</map>

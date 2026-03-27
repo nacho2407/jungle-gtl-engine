@@ -1,0 +1,9 @@
+<map id="CGizmo::ToggleCoordinateSpace" name="CGizmo::ToggleCoordinateSpace">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,23,184,65"/>
+<area shape="rect" id="Node000002" href="$class_c_gizmo.html#a7b3aa16e0abb7b88f10924c55d177825" title=" " alt="" coords="232,31,429,57"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="184,41,219,44,214,44,184,47"/>
+<area shape="rect" id="Node000003" href="$class_c_gizmo.html#a6212d182689a296595ad07685b75d625" title=" " alt="" coords="477,5,620,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="429,30,464,28,459,29,430,35"/>
+<area shape="rect" id="Node000004" href="$class_c_gizmo.html#ab41535ee6d1bc2f2cf97d9a6beee6ed9" title=" " alt="" coords="484,56,613,83"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="430,53,471,60,466,60,429,58"/>
+</map>

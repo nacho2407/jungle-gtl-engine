@@ -1,0 +1,171 @@
+\doxysection{UClass Class Reference}
+\hypertarget{class_u_class}{}\label{class_u_class}\index{UClass@{UClass}}
+
+
+{\ttfamily \+\#include $<$Class.\+h$>$}
+
+
+
+Collaboration diagram for UClass:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{class_u_class__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Types}
+\begin{DoxyCompactItemize}
+\item 
+using \doxymbox{\hyperlink{class_u_class_a17b1238aac2b5e804ad454c6fd431b8e}{Create\+Func}} = \doxymbox{\hyperlink{class_u_object}{UObject}} \texorpdfstring{$\ast$}{*} (\texorpdfstring{$\ast$}{*})(\doxymbox{\hyperlink{class_u_object}{UObject}}\texorpdfstring{$\ast$}{*} In\+Outer, const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\& In\+Name)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_u_class_a75cd9e8b1b2e8ec08b443dd19211ed4c}{UClass}} (\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} In\+Name, \doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*}In\+Super\+Class, \doxymbox{\hyperlink{class_u_class_a17b1238aac2b5e804ad454c6fd431b8e}{Create\+Func}} In\+Create\+Func)
+\item 
+const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \& \doxymbox{\hyperlink{class_u_class_a8a6167f6b7bf8659edd5a2314829f73f}{Get\+Name}} () const
+\item 
+\doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_class_aafb82e374c37f130107959822cc94d5a}{Get\+Super\+Class}} () const
+\item 
+bool \doxymbox{\hyperlink{class_u_class_acf6d8179c3ff445608b8d58d44e8984e}{Is\+Child\+Of}} (const \doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*}Other) const
+\item 
+\doxymbox{\hyperlink{class_u_object}{UObject}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_class_a360e8f49f378d2f89f93ef2bd42d16fe}{Create\+Instance}} (\doxymbox{\hyperlink{class_u_object}{UObject}} \texorpdfstring{$\ast$}{*}In\+Outer, const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&In\+Name) const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_u_class_ada3eb966e89bdf7ff6e01354d45d53a1}{Name}}
+\item 
+\doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_class_af42e87eb6e1dff9204ac8025b1a7cf7d}{Super\+Class}} = nullptr
+\item 
+\doxymbox{\hyperlink{class_u_class_a17b1238aac2b5e804ad454c6fd431b8e}{Create\+Func}} \doxymbox{\hyperlink{class_u_class_a839fd4f1e5be890c1a94c24133abd53a}{Factory}} = nullptr
+\end{DoxyCompactItemize}
+
+
+\label{doc-typedef-members}
+\Hypertarget{class_u_class_doc-typedef-members}
+\doxysubsection{Member Typedef Documentation}
+\Hypertarget{class_u_class_a17b1238aac2b5e804ad454c6fd431b8e}\index{UClass@{UClass}!CreateFunc@{CreateFunc}}
+\index{CreateFunc@{CreateFunc}!UClass@{UClass}}
+\doxysubsubsection{\texorpdfstring{CreateFunc}{CreateFunc}}
+{\footnotesize\ttfamily \label{class_u_class_a17b1238aac2b5e804ad454c6fd431b8e} 
+using \doxymbox{\hyperlink{class_u_class_a17b1238aac2b5e804ad454c6fd431b8e}{UClass::\+\+Create\+Func}} = \doxymbox{\hyperlink{class_u_object}{UObject}} \texorpdfstring{$\ast$}{*} (\texorpdfstring{$\ast$}{*})(\doxymbox{\hyperlink{class_u_object}{UObject}}\texorpdfstring{$\ast$}{*} In\+Outer, const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\& In\+Name)}
+
+
+
+\label{doc-constructors}
+\Hypertarget{class_u_class_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_u_class_a75cd9e8b1b2e8ec08b443dd19211ed4c}\index{UClass@{UClass}!UClass@{UClass}}
+\index{UClass@{UClass}!UClass@{UClass}}
+\doxysubsubsection{\texorpdfstring{UClass()}{UClass()}}
+{\footnotesize\ttfamily \label{class_u_class_a75cd9e8b1b2e8ec08b443dd19211ed4c} 
+UClass::\+\+UClass (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}}]{In\+Name}{, }\item[{\doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*}}]{In\+Super\+Class}{, }\item[{\doxymbox{\hyperlink{class_u_class_a17b1238aac2b5e804ad454c6fd431b8e}{Create\+Func}}}]{In\+Create\+Func}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=168pt]{class_u_class_a75cd9e8b1b2e8ec08b443dd19211ed4c_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_class_a75cd9e8b1b2e8ec08b443dd19211ed4c_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-func-members}
+\Hypertarget{class_u_class_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_u_class_a360e8f49f378d2f89f93ef2bd42d16fe}\index{UClass@{UClass}!CreateInstance@{CreateInstance}}
+\index{CreateInstance@{CreateInstance}!UClass@{UClass}}
+\doxysubsubsection{\texorpdfstring{CreateInstance()}{CreateInstance()}}
+{\footnotesize\ttfamily \label{class_u_class_a360e8f49f378d2f89f93ef2bd42d16fe} 
+\doxymbox{\hyperlink{class_u_object}{UObject}} \texorpdfstring{$\ast$}{*} UClass::\+\+Create\+Instance (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_u_object}{UObject}} \texorpdfstring{$\ast$}{*}}]{In\+Outer}{, }\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{In\+Name}{}\end{DoxyParamCaption}) const}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_class_a360e8f49f378d2f89f93ef2bd42d16fe_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_class_a8a6167f6b7bf8659edd5a2314829f73f}\index{UClass@{UClass}!GetName@{GetName}}
+\index{GetName@{GetName}!UClass@{UClass}}
+\doxysubsubsection{\texorpdfstring{GetName()}{GetName()}}
+{\footnotesize\ttfamily \label{class_u_class_a8a6167f6b7bf8659edd5a2314829f73f} 
+const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \& UClass::\+\+Get\+Name (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+\Hypertarget{class_u_class_aafb82e374c37f130107959822cc94d5a}\index{UClass@{UClass}!GetSuperClass@{GetSuperClass}}
+\index{GetSuperClass@{GetSuperClass}!UClass@{UClass}}
+\doxysubsubsection{\texorpdfstring{GetSuperClass()}{GetSuperClass()}}
+{\footnotesize\ttfamily \label{class_u_class_aafb82e374c37f130107959822cc94d5a} 
+\doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*} UClass::\+\+Get\+Super\+Class (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=326pt]{class_u_class_aafb82e374c37f130107959822cc94d5a_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_class_acf6d8179c3ff445608b8d58d44e8984e}\index{UClass@{UClass}!IsChildOf@{IsChildOf}}
+\index{IsChildOf@{IsChildOf}!UClass@{UClass}}
+\doxysubsubsection{\texorpdfstring{IsChildOf()}{IsChildOf()}}
+{\footnotesize\ttfamily \label{class_u_class_acf6d8179c3ff445608b8d58d44e8984e} 
+bool UClass::\+\+Is\+Child\+Of (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*}}]{Other}{}\end{DoxyParamCaption}) const}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=300pt]{class_u_class_acf6d8179c3ff445608b8d58d44e8984e_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_class_acf6d8179c3ff445608b8d58d44e8984e_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_u_class_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_u_class_a839fd4f1e5be890c1a94c24133abd53a}\index{UClass@{UClass}!Factory@{Factory}}
+\index{Factory@{Factory}!UClass@{UClass}}
+\doxysubsubsection{\texorpdfstring{Factory}{Factory}}
+{\footnotesize\ttfamily \label{class_u_class_a839fd4f1e5be890c1a94c24133abd53a} 
+\doxymbox{\hyperlink{class_u_class_a17b1238aac2b5e804ad454c6fd431b8e}{Create\+Func}} UClass::\+\+Factory = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_u_class_ada3eb966e89bdf7ff6e01354d45d53a1}\index{UClass@{UClass}!Name@{Name}}
+\index{Name@{Name}!UClass@{UClass}}
+\doxysubsubsection{\texorpdfstring{Name}{Name}}
+{\footnotesize\ttfamily \label{class_u_class_ada3eb966e89bdf7ff6e01354d45d53a1} 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} UClass::\+\+Name\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_u_class_af42e87eb6e1dff9204ac8025b1a7cf7d}\index{UClass@{UClass}!SuperClass@{SuperClass}}
+\index{SuperClass@{SuperClass}!UClass@{UClass}}
+\doxysubsubsection{\texorpdfstring{SuperClass}{SuperClass}}
+{\footnotesize\ttfamily \label{class_u_class_af42e87eb6e1dff9204ac8025b1a7cf7d} 
+\doxymbox{\hyperlink{class_u_class}{UClass}}\texorpdfstring{$\ast$}{*} UClass::\+\+Super\+Class = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Object/\+\doxymbox{\hyperlink{_class_8h}{Class.\+h}}\item 
+Engine/\+\+Source/\+\+Object/\+\doxymbox{\hyperlink{_class_8cpp}{Class.\+cpp}}\end{DoxyCompactItemize}

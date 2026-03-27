@@ -1,0 +1,52 @@
+\doxysection{Shader.\+h}
+\hypertarget{_shader_8h_source}{}\label{_shader_8h_source}\index{Engine/Source/Renderer/Shader.h@{Engine/Source/Renderer/Shader.h}}
+\doxymbox{\hyperlink{_shader_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_engine_a_p_i_8h}{EngineAPI.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <d3d11.h>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_f_shader_resource}{FShaderResource}};}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_vertex_shader_af746e4400e100009fc6ec6558a76894c}{FVertexShader}}}
+\DoxyCodeLine{00010\ \{}
+\DoxyCodeLine{00011\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00012\ \ \ \ \ \doxymbox{\hyperlink{class_f_vertex_shader_af746e4400e100009fc6ec6558a76894c}{\string~FVertexShader}}();}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \ \ \ \ \textcolor{keyword}{static}\ std::shared\_ptr<FVertexShader>\ \doxymbox{\hyperlink{class_f_vertex_shader_aab9ff9216d278f25c661c73f03264a6f}{Create}}(}
+\DoxyCodeLine{00015\ \ \ \ \ \ \ \ \ ID3D11Device*\ Device,}
+\DoxyCodeLine{00016\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ std::shared\_ptr<FShaderResource>\&\ Resource}
+\DoxyCodeLine{00017\ \ \ \ \ );}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_vertex_shader_adc22c2f9fb858242bc57df199bbef8c1}{Bind}}(ID3D11DeviceContext*\ DeviceContext)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_vertex_shader_a383e345c0afdeb6bc7e049a114a4c7d0}{Release}}();}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00023\ \ \ \ \ \doxymbox{\hyperlink{class_f_vertex_shader_af746e4400e100009fc6ec6558a76894c}{FVertexShader}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \ \ \ \ ID3D11VertexShader*\ \doxymbox{\hyperlink{class_f_vertex_shader_aa42de5a2fd64df74f1953347247c5653}{Shader}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00026\ \ \ \ \ ID3D11InputLayout*\ \doxymbox{\hyperlink{class_f_vertex_shader_a4334545f37062b45c8426d9ff46eb2ac}{InputLayout}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00027\ \};}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_pixel_shader_a40a607f1676b08d515414d02f5df9ff3}{FPixelShader}}}
+\DoxyCodeLine{00030\ \{}
+\DoxyCodeLine{00031\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00032\ \ \ \ \ \doxymbox{\hyperlink{class_f_pixel_shader_a40a607f1676b08d515414d02f5df9ff3}{\string~FPixelShader}}();}
+\DoxyCodeLine{00033\ }
+\DoxyCodeLine{00034\ \ \ \ \ \textcolor{keyword}{static}\ std::shared\_ptr<FPixelShader>\ \doxymbox{\hyperlink{class_f_pixel_shader_a8f1407d86a7c640ecd8cebfe23a40ec0}{Create}}(}
+\DoxyCodeLine{00035\ \ \ \ \ \ \ \ \ ID3D11Device*\ Device,}
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ std::shared\_ptr<FShaderResource>\&\ Resource}
+\DoxyCodeLine{00037\ \ \ \ \ );}
+\DoxyCodeLine{00038\ }
+\DoxyCodeLine{00039\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_pixel_shader_a9816869d0da8a514e8f5f424669caee0}{Bind}}(ID3D11DeviceContext*\ DeviceContext)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00040\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_pixel_shader_a54da683eea957be3c20cdd106eebec53}{Release}}();}
+\DoxyCodeLine{00041\ }
+\DoxyCodeLine{00042\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00043\ \ \ \ \ \doxymbox{\hyperlink{class_f_pixel_shader_a40a607f1676b08d515414d02f5df9ff3}{FPixelShader}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00044\ }
+\DoxyCodeLine{00045\ \ \ \ \ ID3D11PixelShader*\ \doxymbox{\hyperlink{class_f_pixel_shader_a3691ffb1abc29b5cc012863a673500c1}{Shader}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00046\ \};}
+
+\end{DoxyCode}

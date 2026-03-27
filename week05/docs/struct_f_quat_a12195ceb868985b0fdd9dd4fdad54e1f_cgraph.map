@@ -1,0 +1,10 @@
+<map id="FQuat::GetNormalized" name="FQuat::GetNormalized">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,31,158,57"/>
+<area shape="rect" id="Node000002" href="$struct_f_quat.html#a898470770e4f1314a90cccb3ec8e9515" title=" " alt="" coords="396,5,497,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="158,36,380,21,379,26,159,41"/>
+<area shape="rect" id="Node000003" href="$struct_f_quat.html#a20b1175ee99c038924047a6cdc322144" title=" " alt="" coords="206,56,330,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="158,52,193,59,187,59,158,57"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="317,53,380,37,385,36,318,58"/>
+<area shape="rect" id="Node000004" href="$struct_f_quat.html#ae500b97cbb82792796e1e7eb4806c256" title=" " alt="" coords="378,56,514,83"/>
+<area shape="poly" id="edge4_Node000003_Node000004" title=" " alt="" coords="331,67,365,69,360,69,331,72"/>
+</map>

@@ -1,0 +1,129 @@
+\doxysection{Engine/\+\+Source/\+\+Object/\+\+Object\+Types.h File Reference}
+\hypertarget{_object_types_8h}{}\label{_object_types_8h}\index{Engine/Source/Object/ObjectTypes.h@{Engine/Source/Object/ObjectTypes.h}}
+{\ttfamily \+\#include "{}Types/\+\+Core\+Types.\+h"{}}\newline
+Include dependency graph for Object\+Types.\+h:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=191pt]{_object_types_8h__incl}
+\end{center}
+\end{figure}
+This graph shows which files directly or indirectly include this file:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_object_types_8h__dep__incl}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Enumerations}
+\begin{DoxyCompactItemize}
+\item 
+enum class \doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} :\+ uint32 \{ \newline
+\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79a6adf97f83acf6453d4a6a4b1070f3754}{None}} = 0
+, \doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79a3d067bedfe2f4677470dd6ccf64d05ed}{Public}} = 1 \texorpdfstring{$<$}{<}\texorpdfstring{$<$}{<} 0
+, \doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79ab1f023eff9a6b5308d6024e4c6b3d475}{Transient}} = 1 \texorpdfstring{$<$}{<}\texorpdfstring{$<$}{<} 1
+, \doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79a5c80f101108a356211fcb26b3f83eabb}{Standalone}} = 1 \texorpdfstring{$<$}{<}\texorpdfstring{$<$}{<} 2
+, \newline
+\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79a938560a4aa1fe4cb114cbd06dae811d4}{Root\+Set}} = 1 \texorpdfstring{$<$}{<}\texorpdfstring{$<$}{<} 3
+, \doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79a5d70defc71a5fada1396ad989b5c7971}{Pending\+Kill}} = 1 \texorpdfstring{$<$}{<}\texorpdfstring{$<$}{<} 4
+ \}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} \doxymbox{\hyperlink{_object_types_8h_aa9fb04a8d63b57fd2b0d96d09d6f188b}{operator\texorpdfstring{$\vert$}{|}}} (\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} A, \doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} B)
+\item 
+\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} \doxymbox{\hyperlink{_object_types_8h_af8e5f5a0d03e3cdf63b49527fdb76870}{operator\&}} (\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} A, \doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} B)
+\item 
+\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} \& \doxymbox{\hyperlink{_object_types_8h_a8d38b1866b290c627cd6bec3ede5ea58}{operator\texorpdfstring{$\vert$}{|}=}} (\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} \&A, \doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} B)
+\item 
+\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} \& \doxymbox{\hyperlink{_object_types_8h_a7e80c9064a979d392940020dad8cbe69}{operator\&=}} (\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} \&A, \doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} B)
+\item 
+\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} \doxymbox{\hyperlink{_object_types_8h_a8461a3f6b68d6218813306ff2e0bade6}{operator\texorpdfstring{$\sim$}{\string~}}} (\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} A)
+\end{DoxyCompactItemize}
+
+
+\label{doc-enum-members}
+\Hypertarget{_object_types_8h_doc-enum-members}
+\doxysubsection{Enumeration Type Documentation}
+\Hypertarget{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}\index{ObjectTypes.h@{ObjectTypes.h}!EObjectFlags@{EObjectFlags}}
+\index{EObjectFlags@{EObjectFlags}!ObjectTypes.h@{ObjectTypes.h}}
+\doxysubsubsection{\texorpdfstring{EObjectFlags}{EObjectFlags}}
+{\footnotesize\ttfamily \label{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79} 
+enum class \doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} :\+ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\hspace{0.3cm}{\ttfamily [strong]}}
+
+\begin{DoxyEnumFields}[2]{Enumerator}
+\raisebox{\heightof{T}}[0pt][0pt]{\index{None@{None}!ObjectTypes.h@{ObjectTypes.h}}
+\index{ObjectTypes.h@{ObjectTypes.h}!None@{None}}
+}\Hypertarget{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79a6adf97f83acf6453d4a6a4b1070f3754}\label{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79a6adf97f83acf6453d4a6a4b1070f3754} 
+None&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Public@{Public}!ObjectTypes.h@{ObjectTypes.h}}
+\index{ObjectTypes.h@{ObjectTypes.h}!Public@{Public}}
+}\Hypertarget{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79a3d067bedfe2f4677470dd6ccf64d05ed}\label{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79a3d067bedfe2f4677470dd6ccf64d05ed} 
+Public&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Transient@{Transient}!ObjectTypes.h@{ObjectTypes.h}}
+\index{ObjectTypes.h@{ObjectTypes.h}!Transient@{Transient}}
+}\Hypertarget{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79ab1f023eff9a6b5308d6024e4c6b3d475}\label{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79ab1f023eff9a6b5308d6024e4c6b3d475} 
+Transient&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Standalone@{Standalone}!ObjectTypes.h@{ObjectTypes.h}}
+\index{ObjectTypes.h@{ObjectTypes.h}!Standalone@{Standalone}}
+}\Hypertarget{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79a5c80f101108a356211fcb26b3f83eabb}\label{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79a5c80f101108a356211fcb26b3f83eabb} 
+Standalone&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{RootSet@{RootSet}!ObjectTypes.h@{ObjectTypes.h}}
+\index{ObjectTypes.h@{ObjectTypes.h}!RootSet@{RootSet}}
+}\Hypertarget{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79a938560a4aa1fe4cb114cbd06dae811d4}\label{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79a938560a4aa1fe4cb114cbd06dae811d4} 
+Root\+Set&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{PendingKill@{PendingKill}!ObjectTypes.h@{ObjectTypes.h}}
+\index{ObjectTypes.h@{ObjectTypes.h}!PendingKill@{PendingKill}}
+}\Hypertarget{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79a5d70defc71a5fada1396ad989b5c7971}\label{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79a5d70defc71a5fada1396ad989b5c7971} 
+Pending\+Kill&\\
+\hline
+
+\end{DoxyEnumFields}
+
+
+\label{doc-func-members}
+\Hypertarget{_object_types_8h_doc-func-members}
+\doxysubsection{Function Documentation}
+\Hypertarget{_object_types_8h_af8e5f5a0d03e3cdf63b49527fdb76870}\index{ObjectTypes.h@{ObjectTypes.h}!operator\&@{operator\&}}
+\index{operator\&@{operator\&}!ObjectTypes.h@{ObjectTypes.h}}
+\doxysubsubsection{\texorpdfstring{operator\&()}{operator\&()}}
+{\footnotesize\ttfamily \label{_object_types_8h_af8e5f5a0d03e3cdf63b49527fdb76870} 
+\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} operator\& (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}}}]{A}{, }\item[{\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}}}]{B}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{_object_types_8h_a7e80c9064a979d392940020dad8cbe69}\index{ObjectTypes.h@{ObjectTypes.h}!operator\&=@{operator\&=}}
+\index{operator\&=@{operator\&=}!ObjectTypes.h@{ObjectTypes.h}}
+\doxysubsubsection{\texorpdfstring{operator\&=()}{operator\&=()}}
+{\footnotesize\ttfamily \label{_object_types_8h_a7e80c9064a979d392940020dad8cbe69} 
+\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} \& operator\&= (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} \&}]{A}{, }\item[{\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}}}]{B}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{_object_types_8h_aa9fb04a8d63b57fd2b0d96d09d6f188b}\index{ObjectTypes.h@{ObjectTypes.h}!operator\texttt{"|}@{operator\texttt{"|}}}
+\index{operator\texttt{"|}@{operator\texttt{"|}}!ObjectTypes.h@{ObjectTypes.h}}
+\doxysubsubsection{\texorpdfstring{operator\texttt{"|}()}{operator|()}}
+{\footnotesize\ttfamily \label{_object_types_8h_aa9fb04a8d63b57fd2b0d96d09d6f188b} 
+\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} operator\texorpdfstring{$\vert$}{|} (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}}}]{A}{, }\item[{\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}}}]{B}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{_object_types_8h_a8d38b1866b290c627cd6bec3ede5ea58}\index{ObjectTypes.h@{ObjectTypes.h}!operator\texttt{"|}=@{operator\texttt{"|}=}}
+\index{operator\texttt{"|}=@{operator\texttt{"|}=}!ObjectTypes.h@{ObjectTypes.h}}
+\doxysubsubsection{\texorpdfstring{operator\texttt{"|}=()}{operator|=()}}
+{\footnotesize\ttfamily \label{_object_types_8h_a8d38b1866b290c627cd6bec3ede5ea58} 
+\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} \& operator\texorpdfstring{$\vert$}{|}= (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} \&}]{A}{, }\item[{\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}}}]{B}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{_object_types_8h_a8461a3f6b68d6218813306ff2e0bade6}\index{ObjectTypes.h@{ObjectTypes.h}!operator\texorpdfstring{$\sim$}{\string~}@{operator\texorpdfstring{$\sim$}{\string~}}}
+\index{operator\texorpdfstring{$\sim$}{\string~}@{operator\texorpdfstring{$\sim$}{\string~}}!ObjectTypes.h@{ObjectTypes.h}}
+\doxysubsubsection{\texorpdfstring{operator\texorpdfstring{$\sim$}{\string~}()}{operator\string~()}}
+{\footnotesize\ttfamily \label{_object_types_8h_a8461a3f6b68d6218813306ff2e0bade6} 
+\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} operator\texorpdfstring{$\sim$}{\string~} (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}}}]{A}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+

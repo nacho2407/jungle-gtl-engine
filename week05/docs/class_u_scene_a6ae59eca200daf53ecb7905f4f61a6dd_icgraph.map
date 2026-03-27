@@ -1,0 +1,9 @@
+<map id="UScene::CleanupDestroyedActors" name="UScene::CleanupDestroyedActors">
+<area shape="rect" id="Node000001" title=" " alt="" coords="476,5,661,48"/>
+<area shape="rect" id="Node000002" href="$class_u_scene.html#a399968bfdeab6766e5e275e79679e7b2" title=" " alt="" coords="327,13,428,40"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="458,27,429,29,429,24,463,27"/>
+<area shape="rect" id="Node000003" href="$class_c_core.html#a14e232ef892b855d550ec1577e988187" title=" " alt="" coords="146,13,279,40"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="309,27,279,29,279,24,314,27"/>
+<area shape="rect" id="Node000004" href="$class_c_core.html#a8b4950627b31ac880598f18652875711" title=" " alt="" coords="5,13,98,40"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="128,27,98,29,98,24,133,26"/>
+</map>

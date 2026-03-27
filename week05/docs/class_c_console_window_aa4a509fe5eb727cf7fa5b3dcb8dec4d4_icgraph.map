@@ -1,0 +1,17 @@
+<map id="CConsoleWindow::Strdup" name="CConsoleWindow::Strdup">
+<area shape="rect" id="Node000001" title=" " alt="" coords="959,109,1131,136"/>
+<area shape="rect" id="Node000002" href="$class_c_console_window.html#a3011f47dc145ea9dc0167ec66fc9b652" title=" " alt="" coords="732,83,911,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="941,110,911,109,911,104,946,111"/>
+<area shape="rect" id="Node000006" href="$class_c_console_window.html#a53e1bd7965e39a2d5804c0e74b100e6a" title=" " alt="" coords="460,139,684,165"/>
+<area shape="poly" id="edge8_Node000001_Node000006" title=" " alt="" coords="946,129,685,148,685,142,940,129"/>
+<area shape="rect" id="Node000003" href="$class_c_console_window.html#a4d1b75ce08b542fb14f9f7f26e60ad53" title=" " alt="" coords="476,5,668,48"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="754,78,651,51,652,46,759,78"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="747,113,635,141,634,135,741,114"/>
+<area shape="rect" id="Node000007" href="$class_c_console_window.html#af866c3eded586078182db4077d951277" title=" " alt="" coords="481,72,663,115"/>
+<area shape="poly" id="edge7_Node000002_Node000007" title=" " alt="" coords="714,95,664,97,664,92,719,95"/>
+<area shape="rect" id="Node000004" href="$class_c_console_window.html#adbdfe70b627e75497867f4d60b63f27c" title=" " alt="" coords="230,23,412,65"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="458,35,413,40,412,35,463,34"/>
+<area shape="rect" id="Node000005" href="$class_c_console_window.html#acc01e27adaf6c6a71af3e43a36b9b7a6" title=" " alt="" coords="5,76,182,103"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="212,66,165,78,163,73,217,64"/>
+<area shape="poly" id="edge6_Node000006_Node000005" title=" " alt="" coords="449,138,182,103,182,98,451,134"/>
+</map>

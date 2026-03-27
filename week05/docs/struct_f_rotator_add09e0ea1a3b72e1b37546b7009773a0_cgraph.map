@@ -1,0 +1,11 @@
+<map id="FRotator::GetNormalized" name="FRotator::GetNormalized">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,31,173,57"/>
+<area shape="rect" id="Node000002" href="$struct_f_rotator.html#acdae927f1edaea843961be8ffcf5ceb0" title=" " alt="" coords="225,5,356,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="172,31,212,28,207,29,173,36"/>
+<area shape="rect" id="Node000003" href="$struct_f_rotator.html#a696e8c8d1d0cef7168ad7ba3bdcda0e5" title=" " alt="" coords="221,56,360,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="173,52,208,59,203,59,173,57"/>
+<area shape="rect" id="Node000004" href="$struct_f_rotator.html#add462c186e8dc2c76947732bc479440d" title=" " alt="" coords="408,56,573,83"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="360,67,395,69,390,69,360,72"/>
+<area shape="rect" id="Node000005" href="$struct_f_rotator.html#ab24830195473ee8799c97558deff5b0a" title=" " alt="" coords="621,56,766,83"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="574,67,608,69,603,69,574,72"/>
+</map>

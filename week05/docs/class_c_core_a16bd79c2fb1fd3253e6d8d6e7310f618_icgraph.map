@@ -1,0 +1,7 @@
+<map id="CCore::GetScene" name="CCore::GetScene">
+<area shape="rect" id="Node000001" title=" " alt="" coords="207,43,332,69"/>
+<area shape="rect" id="Node000002" href="$class_c_control_panel_window.html#a77f0bb41d37c2fedec4855a31130b6e5" title=" " alt="" coords="5,5,159,48"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="189,44,159,41,159,36,194,43"/>
+<area shape="rect" id="Node000003" href="$class_c_viewport.html#a2a7ed1cc3e31c0196444dbac0dc55a23" title=" " alt="" coords="16,72,148,99"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="189,69,149,78,148,72,194,68"/>
+</map>

@@ -1,0 +1,43 @@
+\doxysection{Paths.\+h}
+\hypertarget{_paths_8h_source}{}\label{_paths_8h_source}\index{Engine/Source/Core/Paths.h@{Engine/Source/Core/Paths.h}}
+\doxymbox{\hyperlink{_paths_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <string>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <filesystem>}}
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_paths}{FPaths}}}
+\DoxyCodeLine{00008\ \{}
+\DoxyCodeLine{00009\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00010\ \ \ \ \ \textcolor{comment}{//\ 실행\ 파일\ 위치\ 기준으로\ 프로젝트\ 루트를\ 자동\ 탐색\ (KraftonJungleEngine.sln\ 기준)}}
+\DoxyCodeLine{00011\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_paths_aeb75591f1cb81d58d1afc48760c48c33}{Initialize}}();}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \ \ \ \ \textcolor{comment}{//\ 프로젝트\ 루트\ (슬래시\ 끝)}}
+\DoxyCodeLine{00014\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ \doxymbox{\hyperlink{class_f_paths_a77ca548189fe576289cb6141cccfc276}{ProjectRoot}}();}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{comment}{//\ 주요\ 디렉토리\ (모두\ 절대\ 경로,\ 슬래시\ 끝)}}
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \doxymbox{\hyperlink{class_f_paths_a9d0c2b458d067339c3075a03d54e2e30}{EngineDir}}();}
+\DoxyCodeLine{00018\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \doxymbox{\hyperlink{class_f_paths_a3bfd48df83819555c031fc9ecb7e7bf9}{ShaderDir}}();}
+\DoxyCodeLine{00019\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \doxymbox{\hyperlink{class_f_paths_ad534fcf71651d5c5b930a523c7dba576}{AssetDir}}();}
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \doxymbox{\hyperlink{class_f_paths_a7af62ddd2feedc0b1e0430a19c0a4ab6}{SceneDir}}();}
+\DoxyCodeLine{00021\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \doxymbox{\hyperlink{class_f_paths_a4a1b1dc0f6746cac2c100dd001ea568e}{MaterialDir}}();}
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \doxymbox{\hyperlink{class_f_paths_a4dd7ef78a35b5d83234d97ab790c9781}{MeshDir}}();}
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \doxymbox{\hyperlink{class_f_paths_a4f78806a02196e79b67b049edca19f77}{ContentDir}}();}
+\DoxyCodeLine{00024\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \doxymbox{\hyperlink{class_f_paths_a02ac45235b69191b992e541b0d972335}{ShaderCacheDir}}();}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \ \ \ \ \textcolor{comment}{//\ 경로\ 결합}}
+\DoxyCodeLine{00027\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8cpp_ad62ae5b5bfb54ff17a4f4ed9443c28d8}{Combine}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ Base,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ Relative);}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \ \ \ \ \textcolor{comment}{//\ FString\ →\ std::wstring\ 변환\ (셰이더\ 로드\ 등\ Win32\ API용)}}
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{keyword}{static}\ std::wstring\ \doxymbox{\hyperlink{class_f_paths_ab2f5468b5368ab205c151d0eab721c8b}{ToWide}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ Path);}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00032\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_paths_ada06590dc5a025d3ea24af87a587b7b0}{SetRoot}}(\textcolor{keyword}{const}\ std::filesystem::path\&\ InPath);}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \doxymbox{\hyperlink{class_f_paths_ad6a3aba59c821d0219a8946513e7ae44}{Root}};}
+\DoxyCodeLine{00036\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_paths_a87bb6fbf6b9fb33b868231f13426d345}{bInitialized}};}
+\DoxyCodeLine{00037\ \};}
+
+\end{DoxyCode}

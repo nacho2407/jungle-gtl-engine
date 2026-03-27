@@ -1,0 +1,8 @@
+<map id="CWindow::Destroy" name="CWindow::Destroy">
+<area shape="rect" id="Node000001" title=" " alt="" coords="205,55,337,81"/>
+<area shape="rect" id="Node000002" href="$class_c_window.html#a6c9caa0943683d97aa79c584358df736" title=" " alt="" coords="9,29,153,56"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="186,58,153,55,153,50,192,57"/>
+<area shape="rect" id="Node000003" href="$class_c_window.html#a952e8bd3d29abbac67c252c192077c87" title=" " alt="" coords="5,80,157,107"/>
+<area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="187,79,157,86,157,81,192,78"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="112,15,102,10,81,8,61,10,51,15,48,20,53,29,48,29,43,21,47,11,60,5,81,3,104,5,117,14"/>
+</map>

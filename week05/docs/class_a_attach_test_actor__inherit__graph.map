@@ -1,0 +1,7 @@
+<map id="AAttachTestActor" name="AAttachTestActor">
+<area shape="rect" id="Node000001" title=" " alt="" coords="19,1029,180,1163"/>
+<area shape="rect" id="Node000002" href="$class_a_actor.html" title=" " alt="" coords="5,571,194,981"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="101,994,102,1030,97,1029,99,999"/>
+<area shape="rect" id="Node000003" href="$class_u_object.html" title=" " alt="" coords="24,5,175,523"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="100,535,102,571,97,571,100,540"/>
+</map>

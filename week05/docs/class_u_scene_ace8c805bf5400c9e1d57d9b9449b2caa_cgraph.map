@@ -1,0 +1,13 @@
+<map id="UScene::SpawnActor" name="UScene::SpawnActor">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,81,153,108"/>
+<area shape="rect" id="Node000002" href="$class_f_object_factory.html#a9b472d5b328bcbb915a6afb7a74e8a0b" title=" " alt="" coords="201,44,377,87"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="152,82,188,79,183,81,153,87"/>
+<area shape="rect" id="Node000005" href="$class_u_scene.html#adda5dc527c257a1267218ae48b43c556" title=" " alt="" coords="211,111,367,137"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="153,102,198,111,192,111,153,108"/>
+<area shape="rect" id="Node000003" href="$class_u_class.html#a360e8f49f378d2f89f93ef2bd42d16fe" title=" " alt="" coords="447,5,609,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="377,45,444,35,439,36,378,51"/>
+<area shape="rect" id="Node000004" href="$class_f_object_factory.html#a5449cfd0c1e06e718eca454b18eaff1d" title=" " alt="" coords="425,56,631,83"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="377,64,412,67,407,68,378,69"/>
+<area shape="rect" id="Node000006" href="$class_a_actor.html#a821f13e0205f5532522f6255ed9dcdfb" title=" " alt="" coords="465,111,591,137"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="368,121,452,124,447,124,368,127"/>
+</map>

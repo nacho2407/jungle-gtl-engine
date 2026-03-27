@@ -1,0 +1,49 @@
+\doxysection{FEngine.\+h}
+\hypertarget{_f_engine_8h_source}{}\label{_f_engine_8h_source}\index{Engine/Source/Core/FEngine.h@{Engine/Source/Core/FEngine.h}}
+\doxymbox{\hyperlink{_f_engine_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}"{}}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_scene_types_8h}{Scene/SceneTypes.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}Windows.h"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_8h}{Core/Core.h}}"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_viewport_client_8h}{ViewportClient.h}}"{}}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_window_application}{CWindowApplication}};}
+\DoxyCodeLine{00010\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_window}{CWindow}};}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_f_engine_acadb97058feb748fa8cddc5a9ab734cf}{FEngine}}}
+\DoxyCodeLine{00013\ \{}
+\DoxyCodeLine{00014\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00015\ \ \ \ \ \doxymbox{\hyperlink{class_f_engine_acadb97058feb748fa8cddc5a9ab734cf}{FEngine}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{keyword}{virtual}\ \doxymbox{\hyperlink{class_f_engine_acadb97058feb748fa8cddc5a9ab734cf}{\string~FEngine}}();}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \ \ \ \ \doxymbox{\hyperlink{class_f_engine_afca34af2a88b041817dc53920b83be33}{FEngine}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_f_engine_acadb97058feb748fa8cddc5a9ab734cf}{FEngine}}\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00019\ \ \ \ \ \doxymbox{\hyperlink{class_f_engine_acadb97058feb748fa8cddc5a9ab734cf}{FEngine}}\&\ \doxymbox{\hyperlink{class_f_engine_a38c7d0875158a09d1e4e389be7ea8f83}{operator=}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_f_engine_acadb97058feb748fa8cddc5a9ab734cf}{FEngine}}\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_engine_a086ff502be635d86a6868225dcdc95a7}{Initialize}}(HINSTANCE\ hInstance,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{wchar\_t}*\ Title,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Width,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Height);}
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_engine_a96f88477aa7f9f40366a60e8951151aa}{Run}}();}
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_engine_a4366f39c93b0d067586cd7f88f60bfb8}{Shutdown}}();}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \ \ \ \ \doxymbox{\hyperlink{class_c_core}{CCore}}*\ \doxymbox{\hyperlink{class_f_engine_a9b5296878b319d15116405f03ad760b3}{GetCore}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_f_engine_aa47cbf38ac65ec13d1b0b6caf2c93a74}{Core}}.get();\ \}}
+\DoxyCodeLine{00026\ \ \ \ \ \doxymbox{\hyperlink{class_c_window_application}{CWindowApplication}}*\ \doxymbox{\hyperlink{class_f_engine_ab2f0768406a684c26feeceb0c6364de4}{GetApp}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_f_engine_a36fc82954ad33855c75d74423ad6e4b8}{App}};\ \}}
+\DoxyCodeLine{00027\ }
+\DoxyCodeLine{00028\ \textcolor{keyword}{protected}:}
+\DoxyCodeLine{00029\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_engine_a595de9738fc2c0898e4fe10d63fc41f2}{PreInitialize}}()\ \{\}}
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_engine_accb6209dd9c4f72ecb0ced68494c6b05}{PostInitialize}}()\ \{\}}
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_engine_a2b7c411423b14ccf9ca9d9295d410de0}{Tick}}(\textcolor{keywordtype}{float}\ DeltaTime)\ \{\}}
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keyword}{virtual}\ \doxymbox{\hyperlink{_scene_types_8h_a4fa75d8646a7d0cecf8aa5958b9077c5}{ESceneType}}\ \doxymbox{\hyperlink{class_f_engine_ac90e749c88df4f0f40320946aac8bab8}{GetStartupSceneType}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{_scene_types_8h_a4fa75d8646a7d0cecf8aa5958b9077c5a63d72051e901c069f8aa1b32aa0c43bb}{ESceneType::Game}};\ \}}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keyword}{virtual}\ std::unique\_ptr<IViewportClient>\ CreateViewportClient();}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \ \ \ \ \doxymbox{\hyperlink{class_c_window_application}{CWindowApplication}}*\ \doxymbox{\hyperlink{class_f_engine_a36fc82954ad33855c75d74423ad6e4b8}{App}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00036\ \ \ \ \ \doxymbox{\hyperlink{class_c_window}{CWindow}}*\ \doxymbox{\hyperlink{class_f_engine_a6af841f090f159e0ff3c3db8a33cb2b6}{MainWindow}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00037\ \ \ \ \ std::unique\_ptr<CCore>\ \doxymbox{\hyperlink{class_f_engine_aa47cbf38ac65ec13d1b0b6caf2c93a74}{Core}};}
+\DoxyCodeLine{00038\ \ \ \ \ std::unique\_ptr<IViewportClient>\ \doxymbox{\hyperlink{class_f_engine_a032b7a7686235860913c55cceb3eb54b}{ViewportClient}};}
+\DoxyCodeLine{00039\ }
+\DoxyCodeLine{00040\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00041\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_engine_afc149e8c5a01fefa1b25509579ead7e4}{OnInput}}(HWND\ Hwnd,\ UINT\ Msg,\ WPARAM\ WParam,\ LPARAM\ LParam);}
+\DoxyCodeLine{00042\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_engine_a1836bfcb6c76c4900ae2ea74cedaf496}{OnResize}}(\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Width,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Height);}
+\DoxyCodeLine{00043\ \};}
+
+\end{DoxyCode}

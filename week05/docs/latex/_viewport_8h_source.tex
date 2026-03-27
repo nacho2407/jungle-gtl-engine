@@ -1,0 +1,43 @@
+\doxysection{Viewport.\+h}
+\hypertarget{_viewport_8h_source}{}\label{_viewport_8h_source}\index{Editor/Source/UI/Viewport.h@{Editor/Source/UI/Viewport.h}}
+\doxymbox{\hyperlink{_viewport_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ <d3d11.h>}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}>}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_core}{CCore}};}
+\DoxyCodeLine{00006\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_renderer}{CRenderer}};}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_viewport}{CViewport}}}
+\DoxyCodeLine{00009\ \{}
+\DoxyCodeLine{00010\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00011\ \ \ \ \ \doxymbox{\hyperlink{class_c_viewport_a6308e6995cf8a837146061d3a37bd547}{\string~CViewport}}();}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_viewport_a2a7ed1cc3e31c0196444dbac0dc55a23}{Render}}(\doxymbox{\hyperlink{class_c_core}{CCore}}*\ Core,\ \doxymbox{\hyperlink{class_c_renderer}{CRenderer}}*\ Renderer,\ HWND\ Hwnd);}
+\DoxyCodeLine{00014\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_viewport_a3ce477f6558f321727a40f68718c6ffa}{ReleaseSceneView}}();}
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_viewport_afcf1cf2c0e28157dc82d52da3f19f6a9}{GetMousePositionInViewport}}(\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ WindowMouseX,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ WindowMouseY,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\&\ OutViewportX,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\&\ OutViewportY,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\&\ OutWidth,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\&\ OutHeight)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_viewport_af40ef79e1278703b20acb2bcd9122204}{IsHovered}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_viewport_a203bb6f92118693183a100100a30a874}{bHovered}};\ \}}
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_viewport_adac0d9379374a2a4cc31efcffcfddc74}{IsFocused}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_viewport_a6cb3483c7acb13848c0af6c5df76664e}{bFocused}};\ \}}
+\DoxyCodeLine{00018\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_viewport_a892cbbcd3ecff51c87ae3253cbcc51f7}{IsVisible}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_viewport_a21722bee866e7bb400280341c04e38ae}{bVisible}};\ \}}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_viewport_a94cbf51194c399b735f4e2a91baa68a0}{ReadySceneView}}(ID3D11Device*\ Device,\ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ Width,\ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ Height);}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00023\ \ \ \ \ ID3D11Texture2D*\ \doxymbox{\hyperlink{class_c_viewport_aa7ffd55d17c0fea9756eeb3b87328c53}{RenderTargetTexture}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00024\ \ \ \ \ ID3D11RenderTargetView*\ \doxymbox{\hyperlink{class_c_viewport_a87b1f98b31b301c194eff0ebaeb4ffc3}{RenderTargetView}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00025\ \ \ \ \ ID3D11ShaderResourceView*\ \doxymbox{\hyperlink{class_c_viewport_af3ef4c9642b40f3f83fa49b8318033b5}{ShaderResourceView}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00026\ \ \ \ \ ID3D11Texture2D*\ \doxymbox{\hyperlink{class_c_viewport_a1d44f5c57e516a067d68c94feec01ef0}{DepthStencilTexture}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00027\ \ \ \ \ ID3D11DepthStencilView*\ \doxymbox{\hyperlink{class_c_viewport_a8a60f904c2b8146d54f45d0f9c62d1cc}{DepthStencilView}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ \doxymbox{\hyperlink{class_c_viewport_a617243f8c789dc7d6eb9faa2b9d49896}{OffscreenWidth}}\ =\ 0;}
+\DoxyCodeLine{00030\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}\ \doxymbox{\hyperlink{class_c_viewport_a022e3301abfdb93e992a82933721c954}{OffscreenHeight}}\ =\ 0;}
+\DoxyCodeLine{00031\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ \doxymbox{\hyperlink{class_c_viewport_a51cab6f238c529d9876bdfa1ccc4b87e}{ClientPosX}}\ =\ 0;}
+\DoxyCodeLine{00032\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ \doxymbox{\hyperlink{class_c_viewport_a6ab53bca34adb3cbeca921b0acdad663}{ClientPosY}}\ =\ 0;}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_viewport_a203bb6f92118693183a100100a30a874}{bHovered}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00034\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_viewport_a6cb3483c7acb13848c0af6c5df76664e}{bFocused}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_c_viewport_a21722bee866e7bb400280341c04e38ae}{bVisible}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00036\ \};}
+\DoxyCodeLine{00037\ }
+
+\end{DoxyCode}

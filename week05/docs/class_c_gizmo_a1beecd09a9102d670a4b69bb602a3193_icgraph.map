@@ -1,0 +1,12 @@
+<map id="CGizmo::GetGizmoPlaneNormal" name="CGizmo::GetGizmoPlaneNormal">
+<area shape="rect" id="Node000001" title=" " alt="" coords="654,31,866,57"/>
+<area shape="rect" id="Node000002" href="$class_c_gizmo.html#a18e55e713af47264ac8bbd52a8b5ab9d" title=" " alt="" coords="420,5,591,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="636,32,591,30,591,25,641,32"/>
+<area shape="rect" id="Node000005" href="$class_c_gizmo.html#a593cd9fb36701ff0da3fccec215b282d" title=" " alt="" coords="404,56,606,83"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="642,56,607,62,607,57,636,56"/>
+<area shape="rect" id="Node000003" href="$class_c_gizmo.html#a41dcced6933dd37893809b0c35dbce32" title=" " alt="" coords="192,31,356,57"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="402,30,357,38,356,32,407,29"/>
+<area shape="rect" id="Node000004" href="$class_c_gizmo.html#ab6f44415de5b8dc89e8f6f0da8309f43" title=" " alt="" coords="5,31,144,57"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="174,44,144,47,144,41,179,44"/>
+<area shape="poly" id="edge5_Node000005_Node000003" title=" " alt="" coords="386,57,356,56,357,50,391,57"/>
+</map>

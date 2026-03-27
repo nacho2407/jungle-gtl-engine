@@ -1,0 +1,29 @@
+<map id="CCamera::GetRight" name="CCamera::GetRight">
+<area shape="rect" id="Node000001" title=" " alt="" coords="983,107,1120,133"/>
+<area shape="rect" id="Node000002" href="$class_c_gizmo.html#a18e55e713af47264ac8bbd52a8b5ab9d" title=" " alt="" coords="748,5,919,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1019,96,980,72,934,46,902,35,903,30,936,42,983,67,1024,98"/>
+<area shape="rect" id="Node000005" href="$class_c_gizmo.html#a593cd9fb36701ff0da3fccec215b282d" title=" " alt="" coords="732,56,935,83"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="973,102,894,86,894,81,978,103"/>
+<area shape="rect" id="Node000006" href="$class_c_gizmo.html#abe784d0455652a0d799fefa095a2d8a5" title=" " alt="" coords="740,107,927,133"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="965,120,927,123,927,117,970,120"/>
+<area shape="rect" id="Node000011" href="$class_c_camera.html#a514fd8a50554e599fbcf25ca603e7363" title=" " alt="" coords="507,195,648,221"/>
+<area shape="poly" id="edge13_Node000001_Node000011" title=" " alt="" coords="977,137,935,148,649,199,648,194,934,143,972,137"/>
+<area shape="rect" id="Node000012" href="$class_c_camera.html#a19ea4d933d54ed60819406189f04eada" title=" " alt="" coords="759,208,908,235"/>
+<area shape="poly" id="edge14_Node000001_Node000012" title=" " alt="" coords="1021,141,980,168,936,192,887,210,885,205,934,187,978,164,1016,143"/>
+<area shape="rect" id="Node000003" href="$class_c_gizmo.html#a41dcced6933dd37893809b0c35dbce32" title=" " alt="" coords="496,31,660,57"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="730,29,661,39,660,33,735,28"/>
+<area shape="rect" id="Node000004" href="$class_c_gizmo.html#ab6f44415de5b8dc89e8f6f0da8309f43" title=" " alt="" coords="13,56,152,83"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="479,51,153,68,152,63,481,46"/>
+<area shape="poly" id="edge5_Node000005_Node000003" title=" " alt="" coords="714,58,660,55,660,49,719,57"/>
+<area shape="rect" id="Node000007" href="$class_c_gizmo.html#a1d004c0c9325bb8af752472a9c03732b" title=" " alt="" coords="208,81,423,108"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="723,116,424,103,424,97,727,114"/>
+<area shape="rect" id="Node000008" href="$class_c_gizmo.html#a6167e126bc109b5fd455347d4aa5b621" title=" " alt="" coords="471,132,684,159"/>
+<area shape="poly" id="edge8_Node000006_Node000008" title=" " alt="" coords="722,131,685,137,685,132,727,130"/>
+<area shape="poly" id="edge9_Node000008_Node000007" title=" " alt="" coords="487,129,388,111,388,106,492,128"/>
+<area shape="rect" id="Node000009" href="$class_c_gizmo.html#ab66015f827d7a86e37c29ca4f25f5d84" title=" " alt="" coords="243,132,388,159"/>
+<area shape="poly" id="edge10_Node000008_Node000009" title=" " alt="" coords="453,146,389,148,388,143,458,145"/>
+<area shape="poly" id="edge11_Node000009_Node000004" title=" " alt="" coords="231,128,207,123,114,86,114,80,209,117,236,127"/>
+<area shape="rect" id="Node000010" href="$class_c_gizmo.html#a8de57f031240f6412bd94f1d4df2ecd8" title=" " alt="" coords="5,132,160,159"/>
+<area shape="poly" id="edge12_Node000009_Node000010" title=" " alt="" coords="225,146,161,148,160,143,230,144"/>
+<area shape="poly" id="edge15_Node000012_Node000011" title=" " alt="" coords="741,217,649,214,649,209,747,217"/>
+</map>

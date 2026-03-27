@@ -1,0 +1,94 @@
+\doxysection{CPicker Class Reference}
+\hypertarget{class_c_picker}{}\label{class_c_picker}\index{CPicker@{CPicker}}
+
+
+{\ttfamily \+\#include $<$Picker.\+h$>$}
+
+
+
+Collaboration diagram for CPicker:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=195pt]{class_c_picker__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{struct_f_ray}{FRay}} \doxymbox{\hyperlink{class_c_picker_a0be89fd19e6511b836743f19ab5c83e6}{Screen\+To\+Ray}} (const \doxymbox{\hyperlink{class_c_camera}{CCamera}} \texorpdfstring{$\ast$}{*}Camera, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} ScreenX, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} ScreenY, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Screen\+Width, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Screen\+Height) const
+\item 
+bool \doxymbox{\hyperlink{class_c_picker_abcd3486e3b72f5e4446f7459a4a3608f}{Ray\+Triangle\+Intersect}} (const \doxymbox{\hyperlink{struct_f_ray}{FRay}} \&Ray, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&V0, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&V1, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&V2, float \&Out\+Distance) const
+\item 
+\doxymbox{\hyperlink{class_a_actor}{AActor}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_picker_a658aa6d3497d703f453fff824423805d}{Pick\+Actor}} (\doxymbox{\hyperlink{class_u_scene}{UScene}} \texorpdfstring{$\ast$}{*}Scene, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} ScreenX, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} ScreenY, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Screen\+Width, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Screen\+Height) const
+\end{DoxyCompactItemize}
+
+
+\label{doc-func-members}
+\Hypertarget{class_c_picker_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_c_picker_a658aa6d3497d703f453fff824423805d}\index{CPicker@{CPicker}!PickActor@{PickActor}}
+\index{PickActor@{PickActor}!CPicker@{CPicker}}
+\doxysubsubsection{\texorpdfstring{PickActor()}{PickActor()}}
+{\footnotesize\ttfamily \label{class_c_picker_a658aa6d3497d703f453fff824423805d} 
+\doxymbox{\hyperlink{class_a_actor}{AActor}} \texorpdfstring{$\ast$}{*} CPicker::\+\+Pick\+Actor (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_u_scene}{UScene}} \texorpdfstring{$\ast$}{*}}]{Scene}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{ScreenX}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{ScreenY}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Screen\+Width}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Screen\+Height}{}\end{DoxyParamCaption}) const}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_picker_a658aa6d3497d703f453fff824423805d_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_picker_abcd3486e3b72f5e4446f7459a4a3608f}\index{CPicker@{CPicker}!RayTriangleIntersect@{RayTriangleIntersect}}
+\index{RayTriangleIntersect@{RayTriangleIntersect}!CPicker@{CPicker}}
+\doxysubsubsection{\texorpdfstring{RayTriangleIntersect()}{RayTriangleIntersect()}}
+{\footnotesize\ttfamily \label{class_c_picker_abcd3486e3b72f5e4446f7459a4a3608f} 
+bool CPicker::\+\+Ray\+Triangle\+Intersect (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_ray}{FRay}} \&}]{Ray}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{V0}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{V1}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{V2}{, }\item[{float \&}]{Out\+Distance}{}\end{DoxyParamCaption}) const}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_picker_abcd3486e3b72f5e4446f7459a4a3608f_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_picker_abcd3486e3b72f5e4446f7459a4a3608f_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_picker_a0be89fd19e6511b836743f19ab5c83e6}\index{CPicker@{CPicker}!ScreenToRay@{ScreenToRay}}
+\index{ScreenToRay@{ScreenToRay}!CPicker@{CPicker}}
+\doxysubsubsection{\texorpdfstring{ScreenToRay()}{ScreenToRay()}}
+{\footnotesize\ttfamily \label{class_c_picker_a0be89fd19e6511b836743f19ab5c83e6} 
+\doxymbox{\hyperlink{struct_f_ray}{FRay}} CPicker::\+\+Screen\+To\+Ray (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{class_c_camera}{CCamera}} \texorpdfstring{$\ast$}{*}}]{Camera}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{ScreenX}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{ScreenY}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Screen\+Width}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Screen\+Height}{}\end{DoxyParamCaption}) const}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_picker_a0be89fd19e6511b836743f19ab5c83e6_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_picker_a0be89fd19e6511b836743f19ab5c83e6_icgraph}
+\end{center}
+\end{figure}
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Editor/\+\+Source/\+\+Picking/\+\doxymbox{\hyperlink{_picker_8h}{Picker.\+h}}\item 
+Editor/\+\+Source/\+\+Picking/\+\doxymbox{\hyperlink{_picker_8cpp}{Picker.\+cpp}}\end{DoxyCompactItemize}

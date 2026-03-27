@@ -1,0 +1,18 @@
+\doxysection{Map.\+h}
+\hypertarget{_map_8h_source}{}\label{_map_8h_source}\index{Engine/Source/Types/Map.h@{Engine/Source/Types/Map.h}}
+\doxymbox{\hyperlink{_map_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <unordered\_map>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <utility>}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{keyword}{template}\ <}
+\DoxyCodeLine{00007\ \ \ \ \ \textcolor{keyword}{typename}\ KeyType,}
+\DoxyCodeLine{00008\ \ \ \ \ \textcolor{keyword}{typename}\ ValueType,}
+\DoxyCodeLine{00009\ \ \ \ \ \textcolor{keyword}{typename}\ Hasher\ =\ std::hash<KeyType>,}
+\DoxyCodeLine{00010\ \ \ \ \ \textcolor{keyword}{typename}\ KeyEqual\ =\ std::equal\_to<KeyType>,}
+\DoxyCodeLine{00011\ \ \ \ \ \textcolor{keyword}{typename}\ Allocator\ =\ std::allocator<std::pair<const\ KeyType,\ ValueType>>>}
+\DoxyCodeLine{00012\ \textcolor{keyword}{using\ }\doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap}}\ =\ std::unordered\_map<KeyType,\ ValueType,\ Hasher,\ KeyEqual,\ Allocator>;}
+
+\end{DoxyCode}

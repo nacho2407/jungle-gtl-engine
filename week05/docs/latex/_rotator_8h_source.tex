@@ -1,0 +1,91 @@
+\doxysection{Rotator.\+h}
+\hypertarget{_rotator_8h_source}{}\label{_rotator_8h_source}\index{Engine/Source/Math/Rotator.h@{Engine/Source/Math/Rotator.h}}
+\doxymbox{\hyperlink{_rotator_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_engine_a_p_i_8h}{EngineAPI.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_vector_8h}{Math/Vector.h}}"{}}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_quat}{FQuat}};}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{struct_f_rotator_acdae927f1edaea843961be8ffcf5ceb0}{FRotator}}}
+\DoxyCodeLine{00009\ \{}
+\DoxyCodeLine{00010\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_rotator_a1f03e2f7482b096ef225610df9ba37aa}{Pitch}}\ =\ 0.0f;}
+\DoxyCodeLine{00011\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_rotator_a202f324cba2b7733ed8a020e259c8864}{Yaw}}\ =\ 0.0f;}
+\DoxyCodeLine{00012\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_rotator_aae501271aa428d5c586b889a27fb46e3}{Roll}}\ =\ 0.0f;}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_rotator_acdae927f1edaea843961be8ffcf5ceb0}{FRotator}}\ \doxymbox{\hyperlink{struct_f_rotator_a01f41d398ea3053dd0b7b7beb1d8f1bc}{ZeroRotator}};}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{keyword}{constexpr}\ \doxymbox{\hyperlink{struct_f_rotator_acdae927f1edaea843961be8ffcf5ceb0}{FRotator}}()\ noexcept\ =\ default;}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \ \ \ \ constexpr\ \doxymbox{\hyperlink{struct_f_rotator_acdae927f1edaea843961be8ffcf5ceb0}{FRotator}}(\textcolor{keywordtype}{float}\ InPitch,\ \textcolor{keywordtype}{float}\ InYaw,\ \textcolor{keywordtype}{float}\ InRoll)\ noexcept}
+\DoxyCodeLine{00019\ \ \ \ \ \ \ \ \ :\ \doxymbox{\hyperlink{struct_f_rotator_a1f03e2f7482b096ef225610df9ba37aa}{Pitch}}(InPitch),\ \doxymbox{\hyperlink{struct_f_rotator_a202f324cba2b7733ed8a020e259c8864}{Yaw}}(InYaw),\ \doxymbox{\hyperlink{struct_f_rotator_aae501271aa428d5c586b889a27fb46e3}{Roll}}(InRoll)}
+\DoxyCodeLine{00020\ \ \ \ \ \{}
+\DoxyCodeLine{00021\ \ \ \ \ \}}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{keyword}{explicit}\ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ InQuat)\ \textcolor{keyword}{noexcept};}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \ \ \ \ \textcolor{comment}{//\ 각도를\ [0,\ 360)\ 범위로\ 감쌉니다.}}
+\DoxyCodeLine{00026\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{float}\ ClampAxis(\textcolor{keywordtype}{float}\ AngleDegrees)\ \textcolor{keyword}{noexcept};}
+\DoxyCodeLine{00027\ \ \ \ \ \textcolor{comment}{//\ 각도를\ (-\/180,\ 180]\ 범위로\ 정규화합니다.}}
+\DoxyCodeLine{00028\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{float}\ NormalizeAxis(\textcolor{keywordtype}{float}\ AngleDegrees)\ \textcolor{keyword}{noexcept};}
+\DoxyCodeLine{00029\ \ \ \ \ \textcolor{comment}{//\ 엔진\ 오일러\ 각도\ \{Roll,\ Pitch,\ Yaw\}로부터\ 로테이터를\ 생성합니다.}}
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\ MakeFromEuler(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ InEulerDegrees)\ \textcolor{keyword}{noexcept};}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keywordtype}{bool}\ operator==(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\&\ Other)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept};}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keywordtype}{bool}\ operator!=(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\&\ Other)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept};}
+\DoxyCodeLine{00034\ \ \ \ \ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\ operator-\/()\ const\ noexcept;}
+\DoxyCodeLine{00035\ \ \ \ \ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\ operator+(const\ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\&\ Other)\ const\ noexcept;}
+\DoxyCodeLine{00036\ \ \ \ \ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\ operator-\/(const\ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\&\ Other)\ const\ noexcept;}
+\DoxyCodeLine{00037\ \ \ \ \ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\ operator*(\textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}})\ const\ noexcept;}
+\DoxyCodeLine{00038\ \ \ \ \ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\ operator/(\textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}})\ const\ noexcept;}
+\DoxyCodeLine{00039\ }
+\DoxyCodeLine{00040\ \ \ \ \ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\&\ operator+=(const\ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\&\ Other)\ noexcept;}
+\DoxyCodeLine{00041\ \ \ \ \ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\&\ operator-\/=(const\ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\&\ Other)\ noexcept;}
+\DoxyCodeLine{00042\ \ \ \ \ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\&\ operator*=(\textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}})\ noexcept;}
+\DoxyCodeLine{00043\ \ \ \ \ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\&\ operator/=(\textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}})\ noexcept;}
+\DoxyCodeLine{00044\ }
+\DoxyCodeLine{00045\ \ \ \ \ \textcolor{comment}{//\ 이\ 로테이터를\ 엔진\ 오일러\ 각도\ \{Roll,\ Pitch,\ Yaw\}로\ 반환합니다.}}
+\DoxyCodeLine{00046\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ Euler()\ const\ noexcept;}
+\DoxyCodeLine{00047\ \ \ \ \ \textcolor{comment}{//\ 이\ 로테이터가\ 바라보는\ 전방\ 벡터(+X)를\ 반환합니다.}}
+\DoxyCodeLine{00048\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ Vector()\ const\ noexcept;}
+\DoxyCodeLine{00049\ \ \ \ \ \textcolor{comment}{//\ 이\ 로테이터\ 회전을\ 벡터에\ 적용합니다.}}
+\DoxyCodeLine{00050\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ RotateVector(const\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ InVector)\ const\ noexcept;}
+\DoxyCodeLine{00051\ \ \ \ \ \textcolor{comment}{//\ 이\ 로테이터의\ 역회전을\ 벡터에\ 적용합니다.}}
+\DoxyCodeLine{00052\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ UnrotateVector(const\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ InVector)\ const\ noexcept;}
+\DoxyCodeLine{00053\ \ \ \ \ \textcolor{comment}{//\ Pitch,\ Yaw,\ Roll에\ 델타\ 값을\ 더하고\ 결과를\ 반환합니다.}}
+\DoxyCodeLine{00054\ \ \ \ \ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\ Add(\textcolor{keywordtype}{float}\ DeltaPitch,\ \textcolor{keywordtype}{float}\ DeltaYaw,\ \textcolor{keywordtype}{float}\ DeltaRoll)\ noexcept;}
+\DoxyCodeLine{00055\ \ \ \ \ \textcolor{comment}{//\ 성분\ 중\ 하나라도\ NaN\ 또는\ 무한대이면\ true를\ 반환합니다.}}
+\DoxyCodeLine{00056\ \ \ \ \ \textcolor{keywordtype}{bool}\ ContainsNaN()\ const\ noexcept;}
+\DoxyCodeLine{00057\ \ \ \ \ \textcolor{comment}{//\ 정규화\ 기준으로\ 모든\ 각도가\ 정확히\ 0이면\ true를\ 반환합니다.}}
+\DoxyCodeLine{00058\ \ \ \ \ \textcolor{keywordtype}{bool}\ IsZero()\ const\ noexcept;}
+\DoxyCodeLine{00059\ \ \ \ \ \textcolor{comment}{//\ 허용\ 오차\ 내에서\ 다른\ 로테이터와\ 같은\ 회전인지\ 비교합니다.}}
+\DoxyCodeLine{00060\ \ \ \ \ \textcolor{keywordtype}{bool}\ Equals(const\ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\&\ Other,\ \textcolor{keywordtype}{float}\ Tolerance\ =\ 1.e-\/6f)\ const\ noexcept;}
+\DoxyCodeLine{00061\ \ \ \ \ \textcolor{comment}{//\ 허용\ 오차\ 내에서\ 항등\ 회전에\ 가까운지\ 반환합니다.}}
+\DoxyCodeLine{00062\ \ \ \ \ \textcolor{keywordtype}{bool}\ IsNearlyZero(\textcolor{keywordtype}{float}\ Tolerance\ =\ 1.e-\/6f)\ const\ noexcept;}
+\DoxyCodeLine{00063\ \ \ \ \ \textcolor{comment}{//\ 다른\ 로테이터와의\ 축별\ 각도\ 차이\ 절댓값\ 합을\ 반환합니다.}}
+\DoxyCodeLine{00064\ \ \ \ \ \textcolor{keywordtype}{float}\ GetManhattanDistance(const\ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\&\ Other)\ const\ noexcept;}
+\DoxyCodeLine{00065\ \ \ \ \ \textcolor{comment}{//\ 전달된\ 로테이터를\ 현재\ 로테이터에\ 가장\ 가까운\ 각도\ 표현으로\ 맞춥니다.}}
+\DoxyCodeLine{00066\ \ \ \ \ \textcolor{keywordtype}{void}\ SetClosestToMe(\doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\&\ MakeClosest)\ const\ noexcept;}
+\DoxyCodeLine{00067\ \ \ \ \ \textcolor{comment}{//\ 각\ 성분을\ [0,\ 360)\ 범위로\ 보정합니다.}}
+\DoxyCodeLine{00068\ \ \ \ \ \textcolor{keywordtype}{void}\ Clamp()\ noexcept;}
+\DoxyCodeLine{00069\ \ \ \ \ \textcolor{comment}{//\ 각\ 성분을\ (-\/180,\ 180]\ 범위로\ 정규화합니다.}}
+\DoxyCodeLine{00070\ \ \ \ \ \textcolor{keywordtype}{void}\ Normalize()\ noexcept;}
+\DoxyCodeLine{00071\ \ \ \ \ \textcolor{comment}{//\ 각\ 성분을\ [0,\ 360)\ 범위로\ 보정한\ 복사본을\ 반환합니다.}}
+\DoxyCodeLine{00072\ \ \ \ \ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\ GetDenormalized()\ const\ noexcept;}
+\DoxyCodeLine{00073\ \ \ \ \ \textcolor{comment}{//\ 각\ 성분을\ (-\/180,\ 180]\ 범위로\ 정규화한\ 복사본을\ 반환합니다.}}
+\DoxyCodeLine{00074\ \ \ \ \ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\ GetNormalized()\ const\ noexcept;}
+\DoxyCodeLine{00075\ \ \ \ \ \textcolor{comment}{//\ 이\ 로테이터의\ 역회전을\ 나타내는\ 로테이터를\ 반환합니다.}}
+\DoxyCodeLine{00076\ \ \ \ \ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\ GetInverse()\ const\ noexcept;}
+\DoxyCodeLine{00077\ }
+\DoxyCodeLine{00078\ \ \ \ \ \textcolor{comment}{//\ 이\ 로테이터를\ 대응하는\ 쿼터니언으로\ 변환합니다.}}
+\DoxyCodeLine{00079\ \ \ \ \ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\ Quaternion()\ const\ noexcept;}
+\DoxyCodeLine{00080\ \};}
+\DoxyCodeLine{00081\ }
+\DoxyCodeLine{00082\ inline\ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\ operator*(\textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}},\ const\ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\&\ Rotator)\ noexcept}
+\DoxyCodeLine{00083\ \{}
+\DoxyCodeLine{00084\ \ \ \ \ \textcolor{keywordflow}{return}\ Rotator\ *\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}};}
+\DoxyCodeLine{00085\ \}}
+
+\end{DoxyCode}

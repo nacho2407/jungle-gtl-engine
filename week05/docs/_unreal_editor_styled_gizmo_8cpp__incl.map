@@ -1,0 +1,26 @@
+<map id="Engine/Source/Primitive/UnrealEditorStyledGizmo.cpp" name="Engine/Source/Primitive/UnrealEditorStyledGizmo.cpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="349,5,546,48"/>
+<area shape="rect" id="Node000002" href="$_unreal_editor_styled_gizmo_8h.html" title=" " alt="" coords="150,96,329,123"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="392,50,288,92,285,88,396,47"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="435,245,492,272"/>
+<area shape="poly" id="edge12_Node000001_Node000008" title=" " alt="" coords="451,47,464,231,459,229,447,50"/>
+<area shape="rect" id="Node000012" title=" " alt="" coords="485,96,559,123"/>
+<area shape="poly" id="edge11_Node000001_Node000012" title=" " alt="" coords="467,46,503,85,498,84,466,51"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,171,66,197"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="203,126,82,169,79,165,205,121"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="90,171,186,197"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="220,125,170,163,167,159,224,121"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="211,171,268,197"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="241,121,242,156,237,154,238,126"/>
+<area shape="rect" id="Node000006" href="$_vector_8h.html" title=" " alt="" coords="292,171,395,197"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="258,121,316,161,310,162,257,126"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="69,245,133,272"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="300,200,148,246,147,241,303,196"/>
+<area shape="poly" id="edge7_Node000006_Node000008" title=" " alt="" coords="365,195,432,237,427,237,364,200"/>
+<area shape="rect" id="Node000009" href="$_engine_a_p_i_8h.html" title=" " alt="" coords="158,245,252,272"/>
+<area shape="poly" id="edge8_Node000006_Node000009" title=" " alt="" coords="322,197,244,240,241,235,317,199"/>
+<area shape="rect" id="Node000010" href="$_core_types_8h.html" title=" " alt="" coords="276,245,411,272"/>
+<area shape="poly" id="edge9_Node000006_Node000010" title=" " alt="" coords="345,196,346,231,341,228,342,200"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="291,320,396,347"/>
+<area shape="poly" id="edge10_Node000010_Node000011" title=" " alt="" coords="345,271,346,306,341,303,342,274"/>
+</map>

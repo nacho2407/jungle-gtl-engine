@@ -1,0 +1,17 @@
+<map id="Engine/Source/Types/ObjectPtr.h" name="Engine/Source/Types/ObjectPtr.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="150,5,296,48"/>
+<area shape="rect" id="Node000002" href="$_engine_a_p_i_8h.html" title=" " alt="" coords="5,96,100,123"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="178,51,95,91,92,87,181,46"/>
+<area shape="rect" id="Node000003" href="$_map_8h.html" title=" " alt="" coords="124,96,221,123"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="212,47,190,85,186,81,208,50"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="245,96,305,123"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="237,46,261,83,256,82,236,51"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="330,96,412,123"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="262,46,338,88,332,89,261,51"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="25,171,93,197"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="155,123,93,164,90,160,150,124"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="117,171,228,197"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="174,121,175,156,170,154,171,125"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="252,171,304,197"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="192,121,250,161,244,162,190,126"/>
+</map>

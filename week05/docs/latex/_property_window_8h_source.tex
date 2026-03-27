@@ -1,0 +1,37 @@
+\doxysection{Property\+Window.\+h}
+\hypertarget{_property_window_8h_source}{}\label{_property_window_8h_source}\index{Editor/Source/UI/PropertyWindow.h@{Editor/Source/UI/PropertyWindow.h}}
+\doxymbox{\hyperlink{_property_window_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_vector_8h}{Math/Vector.h}}"{}}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}imgui.h"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <functional>}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{keyword}{using\ }\doxymbox{\hyperlink{_property_window_8h_a4c0403ff8980bc00708d42c92a51b70a}{FPropertyChangedCallback}}\ =\ std::function<void(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&)>;}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_property_window}{CPropertyWindow}}}
+\DoxyCodeLine{00009\ \{}
+\DoxyCodeLine{00010\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00011\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_property_window_a20909f84561fef461e504b13a201288b}{Render}}();}
+\DoxyCodeLine{00012\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_property_window_a65aae9560b161439f4806252e6a75635}{SetTarget}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028eace5bf551379459c1c61d2a204061c455}{Location}},\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028eaf1a42bd417390fc63b030a519624607a}{Rotation}},\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}},}
+\DoxyCodeLine{00013\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ ActorName\ =\ \textcolor{keyword}{nullptr});}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{keywordtype}{bool}\ \ \ \ \doxymbox{\hyperlink{class_c_property_window_a3d2b747ee4eb236acc0171d09d0bafd8}{IsModified}}()\textcolor{keyword}{\ \ \ \ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_property_window_a38623a8fc939c96880de6794d5e92c11}{bModified}};\ \}}
+\DoxyCodeLine{00016\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{class_c_property_window_af0e12f6a98b99f6c643f61a8e6f64afe}{GetLocation}}()\textcolor{keyword}{\ \ \ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_property_window_aae7a44d318da12388f272c638bd9eb79}{EditLocation}};\ \}}
+\DoxyCodeLine{00017\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{class_c_property_window_a0105496cc6824942152ba42ec1e1a188}{GetRotation}}()\textcolor{keyword}{\ \ \ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_property_window_a1d0ecdc4be76910fcebcff62cc02d436}{EditRotation}};\ \}}
+\DoxyCodeLine{00018\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{class_c_property_window_a21acdb0ef6bfd3d7db51686050837720}{GetScale}}()\textcolor{keyword}{\ \ \ \ \ \ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_c_property_window_a04c4c7abe53ce12d4f1f046b8e31883b}{EditScale}};\ \}}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_property_window_a5efd13a367aca62387ff69b18d4e377d}{SetOnChanged}}(\doxymbox{\hyperlink{_property_window_8h_a4c0403ff8980bc00708d42c92a51b70a}{FPropertyChangedCallback}}\ Callback)\ \{\ \doxymbox{\hyperlink{class_c_property_window_a775d2ef26e91af0500b3cccf7ebac4f0}{OnChanged}}\ =\ Callback;\ \}}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ \ \ \ \ \doxymbox{\hyperlink{_property_window_8h_a4c0403ff8980bc00708d42c92a51b70a}{FPropertyChangedCallback}}\ \doxymbox{\hyperlink{class_c_property_window_a775d2ef26e91af0500b3cccf7ebac4f0}{OnChanged}};}
+\DoxyCodeLine{00023\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00024\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_property_window_a002362695662c4593843a56b871e09ae}{DrawTransformSection}}();}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{class_c_property_window_aae7a44d318da12388f272c638bd9eb79}{EditLocation}}\ =\ \{\ 0.0f,\ 0.0f,\ 0.0f\ \};}
+\DoxyCodeLine{00027\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{class_c_property_window_a1d0ecdc4be76910fcebcff62cc02d436}{EditRotation}}\ =\ \{\ 0.0f,\ 0.0f,\ 0.0f\ \};}
+\DoxyCodeLine{00028\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{class_c_property_window_a04c4c7abe53ce12d4f1f046b8e31883b}{EditScale}}\ =\ \{\ 1.0f,\ 1.0f,\ 1.0f\ \};}
+\DoxyCodeLine{00029\ \ \ \ \ \textcolor{keywordtype}{char}\ \ \ \ \doxymbox{\hyperlink{class_c_property_window_ae65b650fb1c7917a8ca54da7b169e443}{ActorNameBuf}}[128]\ =\ \textcolor{stringliteral}{"{}None"{}};}
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{keywordtype}{bool}\ \ \ \ \doxymbox{\hyperlink{class_c_property_window_a38623a8fc939c96880de6794d5e92c11}{bModified}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00031\ \};}
+
+\end{DoxyCode}

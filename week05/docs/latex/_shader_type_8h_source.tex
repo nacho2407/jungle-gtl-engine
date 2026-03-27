@@ -1,0 +1,21 @@
+\doxysection{Shader\+Type.\+h}
+\hypertarget{_shader_type_8h_source}{}\label{_shader_type_8h_source}\index{Engine/Source/Renderer/ShaderType.h@{Engine/Source/Renderer/ShaderType.h}}
+\doxymbox{\hyperlink{_shader_type_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_matrix_8h}{Math/Matrix.h}}"{}}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{comment}{//\ b0:\ 프레임당\ 1회\ 업데이트\ (카메라)}}
+\DoxyCodeLine{00005\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_frame_constant_buffer}{FFrameConstantBuffer}}}
+\DoxyCodeLine{00006\ \{}
+\DoxyCodeLine{00007\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_frame_constant_buffer_a20158418c4307cc282fdb33894890d54}{View}};}
+\DoxyCodeLine{00008\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_frame_constant_buffer_a25f537b4ce2e6eb01d5f9bbd8ec49417}{Projection}};}
+\DoxyCodeLine{00009\ \};}
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00011\ \textcolor{comment}{//\ b1:\ 오브젝트당\ 업데이트}}
+\DoxyCodeLine{00012\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_object_constant_buffer}{FObjectConstantBuffer}}}
+\DoxyCodeLine{00013\ \{}
+\DoxyCodeLine{00014\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_object_constant_buffer_a7e6328fa0a17413f479861fd3bf04f0e}{World}};}
+\DoxyCodeLine{00015\ \};}
+
+\end{DoxyCode}

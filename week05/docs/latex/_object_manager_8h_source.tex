@@ -1,0 +1,34 @@
+\doxysection{Object\+Manager.\+h}
+\hypertarget{_object_manager_8h_source}{}\label{_object_manager_8h_source}\index{Engine/Source/Object/ObjectManager.h@{Engine/Source/Object/ObjectManager.h}}
+\doxymbox{\hyperlink{_object_manager_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}"{}}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <algorithm>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_u_object}{UObject}};}
+\DoxyCodeLine{00007\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_u_class}{UClass}};}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_object_manager_a6fa9372c7c3a8da88412f4158ca3dfd9}{ObjectManager}}}
+\DoxyCodeLine{00010\ \{}
+\DoxyCodeLine{00011\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00012\ \ \ \ \ \doxymbox{\hyperlink{class_object_manager_a6fa9372c7c3a8da88412f4158ca3dfd9}{ObjectManager}}();}
+\DoxyCodeLine{00013\ \ \ \ \ \doxymbox{\hyperlink{class_object_manager_a6fa9372c7c3a8da88412f4158ca3dfd9}{\string~ObjectManager}}();}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{comment}{//\ UClass*를\ 직접\ 넘기는\ 버전}}
+\DoxyCodeLine{00016\ \ \ \ \ \doxymbox{\hyperlink{class_u_object}{UObject}}*\ \doxymbox{\hyperlink{class_object_manager_aff3888017d74f319cdbea3618869cb83}{SpawnObject}}(}
+\DoxyCodeLine{00017\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{class_u_class}{UClass}}*\ InClass,}
+\DoxyCodeLine{00018\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{class_u_object}{UObject}}*\ InOuter\ =\ \textcolor{keyword}{nullptr},}
+\DoxyCodeLine{00019\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ InName\ =\ \textcolor{stringliteral}{"{}None"{}});}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \ \ \ \ \textcolor{comment}{//\ PendingKill\ 마킹\ 후\ delete}}
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{comment}{//\ 소멸자에서\ GUObjectArray\ 슬롯이\ 자동으로\ nullptr\ 처리됨}}
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_object_manager_ace616f661c42bbf182b35f2f8d4cf0d5}{ReleaseObject}}(\doxymbox{\hyperlink{class_u_object}{UObject}}*\ obj);}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \ \ \ \ \textcolor{comment}{//\ GUObjectArray의\ nullptr\ 슬롯을\ 제거하고\ InternalIndex\ 재조정}}
+\DoxyCodeLine{00026\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_object_manager_a0d350c3bc182b680bae2d76ff1a49291}{FlushKilledObjects}}();}
+\DoxyCodeLine{00027\ }
+\DoxyCodeLine{00028\ \};}
+
+\end{DoxyCode}

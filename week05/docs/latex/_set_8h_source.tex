@@ -1,0 +1,16 @@
+\doxysection{Set.\+h}
+\hypertarget{_set_8h_source}{}\label{_set_8h_source}\index{Engine/Source/Types/Set.h@{Engine/Source/Types/Set.h}}
+\doxymbox{\hyperlink{_set_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <unordered\_set>}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{keyword}{template}\ <}
+\DoxyCodeLine{00006\ \ \ \ \ \textcolor{keyword}{typename}\ T,}
+\DoxyCodeLine{00007\ \ \ \ \ \textcolor{keyword}{typename}\ Hasher\ =\ std::hash<T>,}
+\DoxyCodeLine{00008\ \ \ \ \ \textcolor{keyword}{typename}\ KeyEqual\ =\ std::equal\_to<T>,}
+\DoxyCodeLine{00009\ \ \ \ \ \textcolor{keyword}{typename}\ Allocator\ =\ std::allocator<T>>}
+\DoxyCodeLine{00010\ \textcolor{keyword}{using\ }\doxymbox{\hyperlink{_set_8h_a9572784dcb98e268a0db8419427b4d33}{TSet}}\ =\ std::unordered\_set<T,\ Hasher,\ KeyEqual,\ Allocator>;}
+
+\end{DoxyCode}

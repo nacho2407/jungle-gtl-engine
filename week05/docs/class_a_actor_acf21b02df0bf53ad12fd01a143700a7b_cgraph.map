@@ -1,0 +1,7 @@
+<map id="AActor::Destroy" name="AActor::Destroy">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,121,32"/>
+<area shape="rect" id="Node000002" href="$class_u_object.html#ad4c2d324e1f8f24a783184db1be0bd7d" title=" " alt="" coords="169,5,340,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="121,16,156,18,150,19,121,21"/>
+<area shape="rect" id="Node000003" href="$class_u_object.html#a959b2aa84e7a60b233e2d2df6fa0a4d0" title=" " alt="" coords="388,5,520,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="340,16,375,19,370,19,340,21"/>
+</map>

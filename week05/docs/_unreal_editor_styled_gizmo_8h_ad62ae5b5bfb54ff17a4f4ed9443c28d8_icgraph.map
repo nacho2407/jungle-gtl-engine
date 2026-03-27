@@ -1,0 +1,15 @@
+<map id="Combine" name="Combine">
+<area shape="rect" id="Node000001" title=" " alt="" coords="701,80,775,107"/>
+<area shape="rect" id="Node000002" href="$class_c_primitive_gizmo.html#a695146e999f79d0f4cb9eca1b97800b9" title=" " alt="" coords="472,5,653,48"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="686,74,652,62,623,51,623,46,654,58,691,74"/>
+<area shape="rect" id="Node000005" href="$class_c_primitive_gizmo.html#ae6e66ee72c45837d85101b2b56bc4952" title=" " alt="" coords="472,72,653,115"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="683,94,654,96,654,91,688,93"/>
+<area shape="rect" id="Node000006" href="$class_c_primitive_gizmo.html#adbdcd0e107b503f37eda8362e2ba25f4" title=" " alt="" coords="472,139,653,181"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="691,112,654,129,624,141,623,136,652,124,686,113"/>
+<area shape="rect" id="Node000003" href="$class_c_primitive_gizmo.html#af8b2b895ecf8b70831efbcb95e497874" title=" " alt="" coords="243,80,424,107"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="475,52,383,82,381,77,470,53"/>
+<area shape="rect" id="Node000004" href="$class_c_primitive_gizmo.html#a689cc5eabc647396f4b758f07c35636a" title=" " alt="" coords="5,72,195,115"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="225,94,196,96,195,91,230,93"/>
+<area shape="poly" id="edge5_Node000005_Node000003" title=" " alt="" coords="454,94,425,96,424,91,459,93"/>
+<area shape="poly" id="edge7_Node000006_Node000003" title=" " alt="" coords="470,134,382,110,382,105,475,134"/>
+</map>

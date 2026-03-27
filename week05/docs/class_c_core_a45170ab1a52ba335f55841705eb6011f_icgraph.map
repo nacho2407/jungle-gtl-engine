@@ -1,0 +1,9 @@
+<map id="CCore::GetSelectedActor" name="CCore::GetSelectedActor">
+<area shape="rect" id="Node000001" title=" " alt="" coords="221,80,391,107"/>
+<area shape="rect" id="Node000002" href="$class_c_editor_viewport_client.html#ae84a059778dd35e237d6aad4c3a94df3" title=" " alt="" coords="5,5,173,48"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="243,76,161,51,161,46,248,74"/>
+<area shape="rect" id="Node000003" href="$class_c_editor_viewport_client.html#a4fcfd4098f5902f4e8cf437cacdf06a1" title=" " alt="" coords="14,72,164,115"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="203,94,165,96,164,91,208,92"/>
+<area shape="rect" id="Node000004" href="$class_c_control_panel_window.html#a77f0bb41d37c2fedec4855a31130b6e5" title=" " alt="" coords="12,139,166,181"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="248,111,162,141,160,135,243,112"/>
+</map>

@@ -1,0 +1,15 @@
+\doxysection{Engine\+API.\+h}
+\hypertarget{_engine_a_p_i_8h_source}{}\label{_engine_a_p_i_8h_source}\index{Engine/Source/EngineAPI.h@{Engine/Source/EngineAPI.h}}
+\doxymbox{\hyperlink{_engine_a_p_i_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#pragma\ warning(disable\ :\ 4251)}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#ifdef\ ENGINECORE\_EXPORTS}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\ \ \ \ \#define\ ENGINE\_API\ \_\_declspec(dllexport)}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\ \ \ \ \#define\ ENGINE\_API\ \_\_declspec(dllimport)}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

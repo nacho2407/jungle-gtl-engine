@@ -1,0 +1,11 @@
+<map id="CGizmo::ClearHover" name="CGizmo::ClearHover">
+<area shape="rect" id="Node000001" title=" " alt="" coords="477,56,620,83"/>
+<area shape="rect" id="Node000002" href="$class_c_gizmo.html#a7aed33124a35b361f3df675bf9f91c07" title=" " alt="" coords="259,5,402,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="470,52,391,35,391,30,476,52"/>
+<area shape="rect" id="Node000003" href="$class_c_gizmo.html#a7b3aa16e0abb7b88f10924c55d177825" title=" " alt="" coords="232,56,429,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="459,70,430,72,429,67,464,69"/>
+<area shape="rect" id="Node000005" href="$class_c_gizmo.html#abd4797c9d4ca8eecdfb0e8b9b37649d7" title=" " alt="" coords="266,107,395,133"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="476,86,391,109,391,103,470,87"/>
+<area shape="rect" id="Node000004" href="$class_c_gizmo.html#ab483f340f6df32d5d2dd80549dc94d28" title=" " alt="" coords="5,48,184,91"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="213,70,185,72,184,67,219,69"/>
+</map>

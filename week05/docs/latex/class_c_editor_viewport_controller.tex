@@ -1,0 +1,206 @@
+\doxysection{CEditor\+Viewport\+Controller Class Reference}
+\hypertarget{class_c_editor_viewport_controller}{}\label{class_c_editor_viewport_controller}\index{CEditorViewportController@{CEditorViewportController}}
+
+
+{\ttfamily \+\#include $<$Editor\+Viewport\+Controller.\+h$>$}
+
+
+
+Collaboration diagram for CEditor\+Viewport\+Controller:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{class_c_editor_viewport_controller__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_c_editor_viewport_controller_abf5c128c594f92b5edd2d1bf6d0b8085}{\texorpdfstring{$\sim$}{\string~}\+CEditor\+Viewport\+Controller}} ()
+\item 
+void \doxymbox{\hyperlink{class_c_editor_viewport_controller_a81926fb8b2a6359154d351827e77a6a2}{Initialize}} (\doxymbox{\hyperlink{class_u_camera_component}{UCamera\+Component}} \texorpdfstring{$\ast$}{*}In\+Camera\+Comp, \doxymbox{\hyperlink{class_c_input_manager}{CInput\+Manager}} \texorpdfstring{$\ast$}{*}In\+Input, \doxymbox{\hyperlink{class_c_enhanced_input_manager}{CEnhanced\+Input\+Manager}} \texorpdfstring{$\ast$}{*}In\+Enhanced\+Input)
+\item 
+void \doxymbox{\hyperlink{class_c_editor_viewport_controller_a62ad6bd4fd9c85fc50d0964a2126f35c}{Cleanup}} ()
+\item 
+void \doxymbox{\hyperlink{class_c_editor_viewport_controller_a72da5d4f566380e2f7208626cdb8e3a0}{Tick}} (float Delta\+Time)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \doxymbox{\hyperlink{class_c_editor_viewport_controller_ad9d38babf4b4efcfa58211db41e46b10}{Setup\+Input\+Bindings}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_u_camera_component}{UCamera\+Component}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_editor_viewport_controller_a7a1c81fbcc90357c8ef7f87a335bbc19}{Camera\+Component}} = nullptr
+\item 
+\doxymbox{\hyperlink{class_c_input_manager}{CInput\+Manager}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_editor_viewport_controller_a62a8edf36abdd2d9ecbc765a097706dc}{Input\+Manager}} = nullptr
+\item 
+\doxymbox{\hyperlink{class_c_enhanced_input_manager}{CEnhanced\+Input\+Manager}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_editor_viewport_controller_af91a9d7d4862092148e7038da5e23925}{Enhanced\+Input}} = nullptr
+\item 
+\doxymbox{\hyperlink{struct_f_input_mapping_context}{FInput\+Mapping\+Context}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_editor_viewport_controller_a9fa800e62d6908720ea63f5a78962889}{Camera\+Context}} = nullptr
+\item 
+\doxymbox{\hyperlink{struct_f_input_action}{FInput\+Action}} \doxymbox{\hyperlink{class_c_editor_viewport_controller_a73206a7ea4f0f6d06bca600a2fb6a5e3}{Move\+Forward\+Action}} \{ "{}Move\+Forward"{}, \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7a22ae0e2b89e5e3d477f988cc36d3272b}{EInput\+Action\+Value\+Type::\+\+Float}} \}
+\item 
+\doxymbox{\hyperlink{struct_f_input_action}{FInput\+Action}} \doxymbox{\hyperlink{class_c_editor_viewport_controller_a675ab31e5d42564ddd6a49aeda71dab4}{Move\+Right\+Action}} \{ "{}Move\+Right"{}, \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7a22ae0e2b89e5e3d477f988cc36d3272b}{EInput\+Action\+Value\+Type::\+\+Float}} \}
+\item 
+\doxymbox{\hyperlink{struct_f_input_action}{FInput\+Action}} \doxymbox{\hyperlink{class_c_editor_viewport_controller_a38123b3cd90dbd96ca4d58fe7c8d2dd8}{Move\+Up\+Action}} \{ "{}Move\+Up"{}, \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7a22ae0e2b89e5e3d477f988cc36d3272b}{EInput\+Action\+Value\+Type::\+\+Float}} \}
+\item 
+\doxymbox{\hyperlink{struct_f_input_action}{FInput\+Action}} \doxymbox{\hyperlink{class_c_editor_viewport_controller_af8a9d497acfbf22ff4dec3049075b0de}{Look\+XAction}} \{ "{}Look\+X"{}, \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7a22ae0e2b89e5e3d477f988cc36d3272b}{EInput\+Action\+Value\+Type::\+\+Float}} \}
+\item 
+\doxymbox{\hyperlink{struct_f_input_action}{FInput\+Action}} \doxymbox{\hyperlink{class_c_editor_viewport_controller_ac36f6a934381993618ff28142abafcc8}{Look\+YAction}} \{ "{}Look\+Y"{}, \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7a22ae0e2b89e5e3d477f988cc36d3272b}{EInput\+Action\+Value\+Type::\+\+Float}} \}
+\item 
+float \doxymbox{\hyperlink{class_c_editor_viewport_controller_a585996b851948e1edeaca522f28dbe6f}{Current\+Delta\+Time}} = 0.\+0f
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{class_c_editor_viewport_controller_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_c_editor_viewport_controller_abf5c128c594f92b5edd2d1bf6d0b8085}\index{CEditorViewportController@{CEditorViewportController}!````~CEditorViewportController@{\texorpdfstring{$\sim$}{\string~}CEditorViewportController}}
+\index{````~CEditorViewportController@{\texorpdfstring{$\sim$}{\string~}CEditorViewportController}!CEditorViewportController@{CEditorViewportController}}
+\doxysubsubsection{\texorpdfstring{\texorpdfstring{$\sim$}{\string~}CEditorViewportController()}{\string~CEditorViewportController()}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_controller_abf5c128c594f92b5edd2d1bf6d0b8085} 
+CEditor\+Viewport\+Controller::\+\texorpdfstring{$\sim$}{\string~}\+CEditor\+Viewport\+Controller (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_editor_viewport_controller_abf5c128c594f92b5edd2d1bf6d0b8085_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-func-members}
+\Hypertarget{class_c_editor_viewport_controller_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_c_editor_viewport_controller_a62ad6bd4fd9c85fc50d0964a2126f35c}\index{CEditorViewportController@{CEditorViewportController}!Cleanup@{Cleanup}}
+\index{Cleanup@{Cleanup}!CEditorViewportController@{CEditorViewportController}}
+\doxysubsubsection{\texorpdfstring{Cleanup()}{Cleanup()}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_controller_a62ad6bd4fd9c85fc50d0964a2126f35c} 
+void CEditor\+Viewport\+Controller::\+\+Cleanup (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_editor_viewport_controller_a62ad6bd4fd9c85fc50d0964a2126f35c_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_editor_viewport_controller_a81926fb8b2a6359154d351827e77a6a2}\index{CEditorViewportController@{CEditorViewportController}!Initialize@{Initialize}}
+\index{Initialize@{Initialize}!CEditorViewportController@{CEditorViewportController}}
+\doxysubsubsection{\texorpdfstring{Initialize()}{Initialize()}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_controller_a81926fb8b2a6359154d351827e77a6a2} 
+void CEditor\+Viewport\+Controller::\+\+Initialize (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_u_camera_component}{UCamera\+Component}} \texorpdfstring{$\ast$}{*}}]{In\+Camera\+Comp}{, }\item[{\doxymbox{\hyperlink{class_c_input_manager}{CInput\+Manager}} \texorpdfstring{$\ast$}{*}}]{In\+Input}{, }\item[{\doxymbox{\hyperlink{class_c_enhanced_input_manager}{CEnhanced\+Input\+Manager}} \texorpdfstring{$\ast$}{*}}]{In\+Enhanced\+Input}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_editor_viewport_controller_a81926fb8b2a6359154d351827e77a6a2_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_editor_viewport_controller_ad9d38babf4b4efcfa58211db41e46b10}\index{CEditorViewportController@{CEditorViewportController}!SetupInputBindings@{SetupInputBindings}}
+\index{SetupInputBindings@{SetupInputBindings}!CEditorViewportController@{CEditorViewportController}}
+\doxysubsubsection{\texorpdfstring{SetupInputBindings()}{SetupInputBindings()}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_controller_ad9d38babf4b4efcfa58211db41e46b10} 
+void CEditor\+Viewport\+Controller::\+\+Setup\+Input\+Bindings (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_editor_viewport_controller_ad9d38babf4b4efcfa58211db41e46b10_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_editor_viewport_controller_ad9d38babf4b4efcfa58211db41e46b10_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_editor_viewport_controller_a72da5d4f566380e2f7208626cdb8e3a0}\index{CEditorViewportController@{CEditorViewportController}!Tick@{Tick}}
+\index{Tick@{Tick}!CEditorViewportController@{CEditorViewportController}}
+\doxysubsubsection{\texorpdfstring{Tick()}{Tick()}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_controller_a72da5d4f566380e2f7208626cdb8e3a0} 
+void CEditor\+Viewport\+Controller::\+\+Tick (\begin{DoxyParamCaption}\item[{float}]{Delta\+Time}{}\end{DoxyParamCaption})}
+
+
+
+\label{doc-variable-members}
+\Hypertarget{class_c_editor_viewport_controller_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_c_editor_viewport_controller_a7a1c81fbcc90357c8ef7f87a335bbc19}\index{CEditorViewportController@{CEditorViewportController}!CameraComponent@{CameraComponent}}
+\index{CameraComponent@{CameraComponent}!CEditorViewportController@{CEditorViewportController}}
+\doxysubsubsection{\texorpdfstring{CameraComponent}{CameraComponent}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_controller_a7a1c81fbcc90357c8ef7f87a335bbc19} 
+\doxymbox{\hyperlink{class_u_camera_component}{UCamera\+Component}}\texorpdfstring{$\ast$}{*} CEditor\+Viewport\+Controller::\+\+Camera\+Component = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_editor_viewport_controller_a9fa800e62d6908720ea63f5a78962889}\index{CEditorViewportController@{CEditorViewportController}!CameraContext@{CameraContext}}
+\index{CameraContext@{CameraContext}!CEditorViewportController@{CEditorViewportController}}
+\doxysubsubsection{\texorpdfstring{CameraContext}{CameraContext}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_controller_a9fa800e62d6908720ea63f5a78962889} 
+\doxymbox{\hyperlink{struct_f_input_mapping_context}{FInput\+Mapping\+Context}}\texorpdfstring{$\ast$}{*} CEditor\+Viewport\+Controller::\+\+Camera\+Context = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_editor_viewport_controller_a585996b851948e1edeaca522f28dbe6f}\index{CEditorViewportController@{CEditorViewportController}!CurrentDeltaTime@{CurrentDeltaTime}}
+\index{CurrentDeltaTime@{CurrentDeltaTime}!CEditorViewportController@{CEditorViewportController}}
+\doxysubsubsection{\texorpdfstring{CurrentDeltaTime}{CurrentDeltaTime}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_controller_a585996b851948e1edeaca522f28dbe6f} 
+float CEditor\+Viewport\+Controller::\+\+Current\+Delta\+Time = 0.\+0f\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_editor_viewport_controller_af91a9d7d4862092148e7038da5e23925}\index{CEditorViewportController@{CEditorViewportController}!EnhancedInput@{EnhancedInput}}
+\index{EnhancedInput@{EnhancedInput}!CEditorViewportController@{CEditorViewportController}}
+\doxysubsubsection{\texorpdfstring{EnhancedInput}{EnhancedInput}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_controller_af91a9d7d4862092148e7038da5e23925} 
+\doxymbox{\hyperlink{class_c_enhanced_input_manager}{CEnhanced\+Input\+Manager}}\texorpdfstring{$\ast$}{*} CEditor\+Viewport\+Controller::\+\+Enhanced\+Input = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_editor_viewport_controller_a62a8edf36abdd2d9ecbc765a097706dc}\index{CEditorViewportController@{CEditorViewportController}!InputManager@{InputManager}}
+\index{InputManager@{InputManager}!CEditorViewportController@{CEditorViewportController}}
+\doxysubsubsection{\texorpdfstring{InputManager}{InputManager}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_controller_a62a8edf36abdd2d9ecbc765a097706dc} 
+\doxymbox{\hyperlink{class_c_input_manager}{CInput\+Manager}}\texorpdfstring{$\ast$}{*} CEditor\+Viewport\+Controller::\+\+Input\+Manager = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_editor_viewport_controller_af8a9d497acfbf22ff4dec3049075b0de}\index{CEditorViewportController@{CEditorViewportController}!LookXAction@{LookXAction}}
+\index{LookXAction@{LookXAction}!CEditorViewportController@{CEditorViewportController}}
+\doxysubsubsection{\texorpdfstring{LookXAction}{LookXAction}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_controller_af8a9d497acfbf22ff4dec3049075b0de} 
+\doxymbox{\hyperlink{struct_f_input_action}{FInput\+Action}} CEditor\+Viewport\+Controller::\+\+Look\+XAction \{ "{}Look\+X"{}, \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7a22ae0e2b89e5e3d477f988cc36d3272b}{EInput\+Action\+Value\+Type::\+\+Float}} \}\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_editor_viewport_controller_ac36f6a934381993618ff28142abafcc8}\index{CEditorViewportController@{CEditorViewportController}!LookYAction@{LookYAction}}
+\index{LookYAction@{LookYAction}!CEditorViewportController@{CEditorViewportController}}
+\doxysubsubsection{\texorpdfstring{LookYAction}{LookYAction}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_controller_ac36f6a934381993618ff28142abafcc8} 
+\doxymbox{\hyperlink{struct_f_input_action}{FInput\+Action}} CEditor\+Viewport\+Controller::\+\+Look\+YAction \{ "{}Look\+Y"{}, \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7a22ae0e2b89e5e3d477f988cc36d3272b}{EInput\+Action\+Value\+Type::\+\+Float}} \}\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_editor_viewport_controller_a73206a7ea4f0f6d06bca600a2fb6a5e3}\index{CEditorViewportController@{CEditorViewportController}!MoveForwardAction@{MoveForwardAction}}
+\index{MoveForwardAction@{MoveForwardAction}!CEditorViewportController@{CEditorViewportController}}
+\doxysubsubsection{\texorpdfstring{MoveForwardAction}{MoveForwardAction}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_controller_a73206a7ea4f0f6d06bca600a2fb6a5e3} 
+\doxymbox{\hyperlink{struct_f_input_action}{FInput\+Action}} CEditor\+Viewport\+Controller::\+\+Move\+Forward\+Action \{ "{}Move\+Forward"{}, \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7a22ae0e2b89e5e3d477f988cc36d3272b}{EInput\+Action\+Value\+Type::\+\+Float}} \}\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_editor_viewport_controller_a675ab31e5d42564ddd6a49aeda71dab4}\index{CEditorViewportController@{CEditorViewportController}!MoveRightAction@{MoveRightAction}}
+\index{MoveRightAction@{MoveRightAction}!CEditorViewportController@{CEditorViewportController}}
+\doxysubsubsection{\texorpdfstring{MoveRightAction}{MoveRightAction}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_controller_a675ab31e5d42564ddd6a49aeda71dab4} 
+\doxymbox{\hyperlink{struct_f_input_action}{FInput\+Action}} CEditor\+Viewport\+Controller::\+\+Move\+Right\+Action \{ "{}Move\+Right"{}, \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7a22ae0e2b89e5e3d477f988cc36d3272b}{EInput\+Action\+Value\+Type::\+\+Float}} \}\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_editor_viewport_controller_a38123b3cd90dbd96ca4d58fe7c8d2dd8}\index{CEditorViewportController@{CEditorViewportController}!MoveUpAction@{MoveUpAction}}
+\index{MoveUpAction@{MoveUpAction}!CEditorViewportController@{CEditorViewportController}}
+\doxysubsubsection{\texorpdfstring{MoveUpAction}{MoveUpAction}}
+{\footnotesize\ttfamily \label{class_c_editor_viewport_controller_a38123b3cd90dbd96ca4d58fe7c8d2dd8} 
+\doxymbox{\hyperlink{struct_f_input_action}{FInput\+Action}} CEditor\+Viewport\+Controller::\+\+Move\+Up\+Action \{ "{}Move\+Up"{}, \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7a22ae0e2b89e5e3d477f988cc36d3272b}{EInput\+Action\+Value\+Type::\+\+Float}} \}\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Editor/\+\+Source/\+\+Controller/\+\doxymbox{\hyperlink{_editor_viewport_controller_8h}{Editor\+Viewport\+Controller.\+h}}\item 
+Editor/\+\+Source/\+\+Controller/\+\doxymbox{\hyperlink{_editor_viewport_controller_8cpp}{Editor\+Viewport\+Controller.\+cpp}}\end{DoxyCompactItemize}

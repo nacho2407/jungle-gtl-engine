@@ -1,0 +1,93 @@
+\doxysection{Input\+Action.\+h}
+\hypertarget{_input_action_8h_source}{}\label{_input_action_8h_source}\index{Engine/Source/Input/InputAction.h@{Engine/Source/Input/InputAction.h}}
+\doxymbox{\hyperlink{_input_action_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <cmath>}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{keyword}{enum\ class}\ \doxymbox{\hyperlink{_input_action_8h_a0393479318cbe888e61ac4627f3195b8}{EInputKey}}\ :\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}
+\DoxyCodeLine{00007\ \{}
+\DoxyCodeLine{00008\ \ \ \ \ \doxymbox{\hyperlink{_input_action_8h_a0393479318cbe888e61ac4627f3195b8abf27c48f8a38ed19eeeba089dd8d3ba1}{MouseX}}\ =\ 256,}
+\DoxyCodeLine{00009\ \ \ \ \ \doxymbox{\hyperlink{_input_action_8h_a0393479318cbe888e61ac4627f3195b8a73843207a289db41b16a5bb8254ca425}{MouseY}}\ =\ 257,}
+\DoxyCodeLine{00010\ \};}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{keyword}{enum\ class}\ \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7}{EInputActionValueType}}\ :\ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}}
+\DoxyCodeLine{00013\ \{}
+\DoxyCodeLine{00014\ \ \ \ \ \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7ac26f15e86e3de4c398a8273272aba034}{Bool}},}
+\DoxyCodeLine{00015\ \ \ \ \ \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7a22ae0e2b89e5e3d477f988cc36d3272b}{Float}},}
+\DoxyCodeLine{00016\ \ \ \ \ \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7ae3a3a361e207af96859d55115dbdd9a3}{Axis2D}},}
+\DoxyCodeLine{00017\ \ \ \ \ \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7aba43fcbd4fd49e68498c4d7db67da94c}{Axis3D}},}
+\DoxyCodeLine{00018\ \};}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{struct_f_input_action_value_a27be8cbc5278347b6236724481642ab4}{FInputActionValue}}}
+\DoxyCodeLine{00021\ \{}
+\DoxyCodeLine{00022\ \ \ \ \ \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7}{EInputActionValueType}}\ \doxymbox{\hyperlink{struct_f_input_action_value_adbaf2b97470796d0839096660e257d25}{ValueType}}\ =\ \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7ac26f15e86e3de4c398a8273272aba034}{EInputActionValueType::Bool}};\ \textcolor{comment}{//\ Input\ type}}
+\DoxyCodeLine{00023\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}\ =\ \{\ 0.0f,\ 0.0f,\ 0.0f\ \};\ \textcolor{comment}{//Input\ Value\ Container\ float,\ bool\ :\ x,\ 2D\ :x,y\ \ 3D\ x,y,z}}
+\DoxyCodeLine{00024\ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action_value_a27be8cbc5278347b6236724481642ab4}{FInputActionValue}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \ \ \ \ \textcolor{keyword}{explicit}\ \doxymbox{\hyperlink{struct_f_input_action_value_a34c111b9cbc71c7457a700455b0f42b2}{FInputActionValue}}(\textcolor{keywordtype}{bool}\ bValue)}
+\DoxyCodeLine{00027\ \ \ \ \ \ \ \ \ :\ \doxymbox{\hyperlink{struct_f_input_action_value_adbaf2b97470796d0839096660e257d25}{ValueType}}(\doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7}{EInputActionValueType}}::\doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7ac26f15e86e3de4c398a8273272aba034}{Bool}})}
+\DoxyCodeLine{00028\ \ \ \ \ \{}
+\DoxyCodeLine{00029\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (bValue)}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}\ =\ \{\ 1.0f,\ 1.0f,\ 1.0f\ \};}
+\DoxyCodeLine{00031\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00032\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}\ =\ \{\ 0.0f,\ 0.0f,\ 0.0f\ \};}
+\DoxyCodeLine{00033\ \ \ \ \ \}}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keyword}{explicit}\ \doxymbox{\hyperlink{struct_f_input_action_value_ad98d3b417272bb8693d7b0472ce6d2f6}{FInputActionValue}}(\textcolor{keywordtype}{float}\ fValue)}
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ :\ \doxymbox{\hyperlink{struct_f_input_action_value_adbaf2b97470796d0839096660e257d25}{ValueType}}(\doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7}{EInputActionValueType}}::\doxymbox{\hyperlink{_console_variable_manager_8h_a9445ef98b077370cef1d8befe8028ab6a22ae0e2b89e5e3d477f988cc36d3272b}{Float}})}
+\DoxyCodeLine{00037\ \ \ \ \ \{}
+\DoxyCodeLine{00038\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}\ =\ \{\ fValue,\ 0.0f,\ 0.0f\ \};}
+\DoxyCodeLine{00039\ \ \ \ \ \}}
+\DoxyCodeLine{00040\ \ \ \ \ \textcolor{keyword}{explicit}\ \doxymbox{\hyperlink{struct_f_input_action_value_a7c494f27173c5f70ed738e59722f6a0f}{FInputActionValue}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ vValue)}
+\DoxyCodeLine{00041\ \ \ \ \ \ \ \ \ :\ \doxymbox{\hyperlink{struct_f_input_action_value_adbaf2b97470796d0839096660e257d25}{ValueType}}(\doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7}{EInputActionValueType}}::\doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7aba43fcbd4fd49e68498c4d7db67da94c}{Axis3D}})}
+\DoxyCodeLine{00042\ \ \ \ \ \ \ \ \ ,\ \doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}(vValue)\ \{\}}
+\DoxyCodeLine{00043\ }
+\DoxyCodeLine{00044\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_input_action_value_a39ad235c9deda81341bf47b4c03a3a34}{IsNonZero}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00045\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00046\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ std::fabsf(\doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}.X)\ >\ 1e-\/6f}
+\DoxyCodeLine{00047\ \ \ \ \ \ \ \ \ \ \ \ \ ||\ std::fabsf(\doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}.Y)\ >\ 1e-\/6f}
+\DoxyCodeLine{00048\ \ \ \ \ \ \ \ \ \ \ \ \ ||\ std::fabsf(\doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}.Z)\ >\ 1e-\/6f;}
+\DoxyCodeLine{00049\ \ \ \ \ \}}
+\DoxyCodeLine{00050\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_input_action_value_abb69b2f4872b3e433ec47f01a043f49e}{Get}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}.X;\ \}}
+\DoxyCodeLine{00051\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_f_input_action_value_a48c238e56fcc79b3ea33c77a5c4e9e24}{GetVector}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}};\ \}}
+\DoxyCodeLine{00052\ }
+\DoxyCodeLine{00053\ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action_value_a27be8cbc5278347b6236724481642ab4}{FInputActionValue}}\ operator\ -\/\ ()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00054\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00055\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action_value_a27be8cbc5278347b6236724481642ab4}{FInputActionValue}}\ result;}
+\DoxyCodeLine{00056\ \ \ \ \ \ \ \ \ result.\doxymbox{\hyperlink{struct_f_input_action_value_adbaf2b97470796d0839096660e257d25}{ValueType}}\ =\ \doxymbox{\hyperlink{struct_f_input_action_value_adbaf2b97470796d0839096660e257d25}{ValueType}};}
+\DoxyCodeLine{00057\ \ \ \ \ \ \ \ \ result.\doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}\ =\ \{\ -\/\doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}.X,\ -\/\doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}.Y,\ -\/\doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}.Z\ \};}
+\DoxyCodeLine{00058\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ result;}
+\DoxyCodeLine{00059\ \ \ \ \ \};}
+\DoxyCodeLine{00060\ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action_value_a27be8cbc5278347b6236724481642ab4}{FInputActionValue}}\ \doxymbox{\hyperlink{struct_f_input_action_value_aedd160fef83e901772c6b199bc3935b6}{operator*}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}})\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00061\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00062\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action_value_a27be8cbc5278347b6236724481642ab4}{FInputActionValue}}\ result;}
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \ \ result.\doxymbox{\hyperlink{struct_f_input_action_value_adbaf2b97470796d0839096660e257d25}{ValueType}}\ =\ \doxymbox{\hyperlink{struct_f_input_action_value_adbaf2b97470796d0839096660e257d25}{ValueType}};}
+\DoxyCodeLine{00064\ \ \ \ \ \ \ \ \ result.\doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}\ =\ \{\ \doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}.X\ *\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}}.X,\ \doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}.Y\ *\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}}.Y,\ \doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}.Z\ *\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}}.Z\ \};}
+\DoxyCodeLine{00065\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ result;}
+\DoxyCodeLine{00066\ }
+\DoxyCodeLine{00067\ }
+\DoxyCodeLine{00068\ \ \ \ \ \}}
+\DoxyCodeLine{00069\ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action_value_a27be8cbc5278347b6236724481642ab4}{FInputActionValue}}\ \doxymbox{\hyperlink{struct_f_input_action_value_a6f48653654d5a40d9f3401a7ac5c71f2}{operator+}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_input_action_value_a27be8cbc5278347b6236724481642ab4}{FInputActionValue}}\&\ Other)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00070\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action_value_a27be8cbc5278347b6236724481642ab4}{FInputActionValue}}\ result;}
+\DoxyCodeLine{00072\ \ \ \ \ \ \ \ \ result.\doxymbox{\hyperlink{struct_f_input_action_value_adbaf2b97470796d0839096660e257d25}{ValueType}}\ =\ \doxymbox{\hyperlink{struct_f_input_action_value_adbaf2b97470796d0839096660e257d25}{ValueType}};}
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ result.\doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}\ =\ \{\ \doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}.X\ +\ Other.\doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}},\ \doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}.Y\ +\ Other.\doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}},\ \doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}.Z\ +\ Other.\doxymbox{\hyperlink{struct_f_input_action_value_a562b699abda974f324ab2540e98b36e7}{Value}}.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ \};}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ result;}
+\DoxyCodeLine{00075\ }
+\DoxyCodeLine{00076\ \ \ \ \ \}}
+\DoxyCodeLine{00077\ \};}
+\DoxyCodeLine{00078\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{struct_f_input_action_af9e7517eca5a32cf2f60d098075e555a}{FInputAction}}}
+\DoxyCodeLine{00079\ \{}
+\DoxyCodeLine{00080\ \ \ \ \ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \doxymbox{\hyperlink{struct_f_input_action_a761ad0b994695c306b74e2cef9a2c59f}{ActionName}};}
+\DoxyCodeLine{00081\ \ \ \ \ \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7}{EInputActionValueType}}\ \doxymbox{\hyperlink{struct_f_input_action_ad149a1e67fa60102cf48858ab05de6d4}{ValueType}}\ =\ \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7a22ae0e2b89e5e3d477f988cc36d3272b}{EInputActionValueType::Float}};}
+\DoxyCodeLine{00082\ }
+\DoxyCodeLine{00083\ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action_af9e7517eca5a32cf2f60d098075e555a}{FInputAction}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00084\ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action_a5f78bc5c91739e12c133ece8a0ccb2e5}{FInputAction}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ InName,\ \doxymbox{\hyperlink{_input_action_8h_ac42355544994b2c4f077811da63a13f7}{EInputActionValueType}}\ InType)}
+\DoxyCodeLine{00085\ \ \ \ \ \ \ \ \ :\ \doxymbox{\hyperlink{struct_f_input_action_a761ad0b994695c306b74e2cef9a2c59f}{ActionName}}(InName),\ \doxymbox{\hyperlink{struct_f_input_action_ad149a1e67fa60102cf48858ab05de6d4}{ValueType}}(InType)\ \{}
+\DoxyCodeLine{00086\ \ \ \ \ \}}
+\DoxyCodeLine{00087\ \};}
+
+\end{DoxyCode}

@@ -1,0 +1,456 @@
+\doxysection{UObject Class Reference}
+\hypertarget{class_u_object}{}\label{class_u_object}\index{UObject@{UObject}}
+
+
+{\ttfamily \+\#include $<$Object.\+h$>$}
+
+
+
+Inheritance diagram for UObject:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_object__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for UObject:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=244pt]{class_u_object__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_u_object_a134240a541ca3ecfd86d8899ca641aca}{UObject}} (const \doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*}In\+Class, const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&In\+Name, \doxymbox{\hyperlink{class_u_object}{UObject}} \texorpdfstring{$\ast$}{*}In\+Outer=nullptr)
+\item 
+\doxymbox{\hyperlink{class_u_object_a7b8d236f605a29bf56a096f3c76f6038}{UObject}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&In\+Name, \doxymbox{\hyperlink{class_u_object}{UObject}} \texorpdfstring{$\ast$}{*}In\+Outer=nullptr)
+\item 
+virtual \doxymbox{\hyperlink{class_u_object_a1863523a3e28e4379fc28b3cc1cd582c}{\texorpdfstring{$\sim$}{\string~}\+UObject}} ()
+\item 
+void \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_object_a92a443aa7a402ae48d5d62551dc7aeb7}{operator new}} (size\+\_\+t In\+Size)
+\item 
+void \doxymbox{\hyperlink{class_u_object_a740eaea337950e754b3d32727e8a75cf}{operator delete}} (void \texorpdfstring{$\ast$}{*}In\+Address, std::\+size\+\_\+t size)
+\item 
+virtual \doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_object_aaeaaa034e92644ebfb3a0e4fe40c8c02}{Get\+Class}} () const
+\item 
+const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \& \doxymbox{\hyperlink{class_u_object_a57009010aca3bc218c5034b821987dd4}{Get\+Name}} () const
+\item 
+\doxymbox{\hyperlink{class_u_object}{UObject}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_object_a92e09357ca4405dcd2413f44d4dbbd39}{Get\+Outer}} () const
+\item 
+bool \doxymbox{\hyperlink{class_u_object_ad6d2f697e6b491570c9687c7041d7ac0}{IsA}} (const \doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*}In\+Class) const
+\item 
+{\footnotesize template$<$typename T$>$ }\\bool \doxymbox{\hyperlink{class_u_object_a9e0b9278fee4678e354227e8e7dd4e9d}{IsA}} () const
+\item 
+{\footnotesize template$<$typename T$>$ }\\T \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_object_ac84999033b0d2df776772aabad8d432d}{Get\+Typed\+Outer}} () const
+\item 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_u_object_a50ce37b2638e2fdfa3bd44d00cc65501}{Get\+Path\+Name}} () const
+\item 
+bool \doxymbox{\hyperlink{class_u_object_aa8a430f6c63d74c333ae314897ba3f9c}{Has\+Any\+Flags}} (\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} In\+Flags) const
+\item 
+bool \doxymbox{\hyperlink{class_u_object_ad3aae76cbd7549fbcb58026dad3888f6}{Has\+All\+Flags}} (\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} In\+Flags) const
+\item 
+void \doxymbox{\hyperlink{class_u_object_a959b2aa84e7a60b233e2d2df6fa0a4d0}{Add\+Flags}} (\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} In\+Flags)
+\item 
+void \doxymbox{\hyperlink{class_u_object_a22921529da2089e8dd8a182f7e4d8afc}{Clear\+Flags}} (\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} In\+Flags)
+\item 
+void \doxymbox{\hyperlink{class_u_object_ad4c2d324e1f8f24a783184db1be0bd7d}{Mark\+Pending\+Kill}} ()
+\item 
+bool \doxymbox{\hyperlink{class_u_object_af9c13f5d0c00dc78b87c1ee889bbef8f}{Is\+Pending\+Kill}} () const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \doxymbox{\hyperlink{class_u_object_a606405bfd5c6823ecef443fd4ce0d144}{Get\+Total\+Bytes}} ()
+\item 
+static \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \doxymbox{\hyperlink{class_u_object_a490d918899d6e2ce5e78d9df247473bf}{Get\+Total\+Counts}} ()
+\item 
+static \doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_object_a1cf4d64988214efdf372c32f89d2da2a}{Static\+Class}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_u_object_a83fbd1a57afad4978054df6534620e60}{UUID}} = 0
+\item 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_u_object_a275e85c6f0b7459412570e9495fb824b}{Internal\+Index}} = 0
+\item 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_u_object_ac2f7877b317ccb3c6b6d7405bdce7ec6}{Object\+Size}} = 0
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_u_object_a962a7dd7fb0492055cd032056b71645c}{Total\+Allocation\+Bytes}} = 0
+\item 
+static \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_u_object_a257070771b84835483df7278e7a4c947}{Total\+Allocation\+Counts}} = 0
+\item 
+static \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_u_object_a99dc1eede26795e19a7c8722b1dbf465}{Last\+New\+Size}} = 0
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_u_object_a1af6f73f5bbb687f152f9a33c0d3a1a6}{Name}}
+\item 
+\doxymbox{\hyperlink{class_u_object}{UObject}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_object_a186ad4ef60e1e2177c909abe777e7e06}{Outer}} = nullptr
+\item 
+\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} \doxymbox{\hyperlink{class_u_object_a26193b79f3c99868835aa1e66682cf52}{Flags}} = \doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79a6adf97f83acf6453d4a6a4b1070f3754}{EObject\+Flags::\+\+None}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{class_u_object_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_u_object_a134240a541ca3ecfd86d8899ca641aca}\index{UObject@{UObject}!UObject@{UObject}}
+\index{UObject@{UObject}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{UObject()}{UObject()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{class_u_object_a134240a541ca3ecfd86d8899ca641aca} 
+UObject::\+\+UObject (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*}}]{In\+Class}{, }\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{In\+Name}{, }\item[{\doxymbox{\hyperlink{class_u_object}{UObject}} \texorpdfstring{$\ast$}{*}}]{In\+Outer}{ = {\ttfamily nullptr}}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=174pt]{class_u_object_a134240a541ca3ecfd86d8899ca641aca_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_object_a134240a541ca3ecfd86d8899ca641aca_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_object_a7b8d236f605a29bf56a096f3c76f6038}\index{UObject@{UObject}!UObject@{UObject}}
+\index{UObject@{UObject}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{UObject()}{UObject()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{class_u_object_a7b8d236f605a29bf56a096f3c76f6038} 
+UObject::\+\+UObject (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{In\+Name}{, }\item[{\doxymbox{\hyperlink{class_u_object}{UObject}} \texorpdfstring{$\ast$}{*}}]{In\+Outer}{ = {\ttfamily nullptr}}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=304pt]{class_u_object_a7b8d236f605a29bf56a096f3c76f6038_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_object_a1863523a3e28e4379fc28b3cc1cd582c}\index{UObject@{UObject}!````~UObject@{\texorpdfstring{$\sim$}{\string~}UObject}}
+\index{````~UObject@{\texorpdfstring{$\sim$}{\string~}UObject}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{\texorpdfstring{$\sim$}{\string~}UObject()}{\string~UObject()}}
+{\footnotesize\ttfamily \label{class_u_object_a1863523a3e28e4379fc28b3cc1cd582c} 
+UObject::\+\texorpdfstring{$\sim$}{\string~}\+UObject (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [virtual]}}
+
+
+
+\label{doc-func-members}
+\Hypertarget{class_u_object_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_u_object_a959b2aa84e7a60b233e2d2df6fa0a4d0}\index{UObject@{UObject}!AddFlags@{AddFlags}}
+\index{AddFlags@{AddFlags}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{AddFlags()}{AddFlags()}}
+{\footnotesize\ttfamily \label{class_u_object_a959b2aa84e7a60b233e2d2df6fa0a4d0} 
+void UObject::\+\+Add\+Flags (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}}}]{In\+Flags}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_object_a959b2aa84e7a60b233e2d2df6fa0a4d0_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_object_a22921529da2089e8dd8a182f7e4d8afc}\index{UObject@{UObject}!ClearFlags@{ClearFlags}}
+\index{ClearFlags@{ClearFlags}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{ClearFlags()}{ClearFlags()}}
+{\footnotesize\ttfamily \label{class_u_object_a22921529da2089e8dd8a182f7e4d8afc} 
+void UObject::\+\+Clear\+Flags (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}}}]{In\+Flags}{}\end{DoxyParamCaption})}
+
+\Hypertarget{class_u_object_aaeaaa034e92644ebfb3a0e4fe40c8c02}\index{UObject@{UObject}!GetClass@{GetClass}}
+\index{GetClass@{GetClass}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{GetClass()}{GetClass()}}
+{\footnotesize\ttfamily \label{class_u_object_aaeaaa034e92644ebfb3a0e4fe40c8c02} 
+\doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*} UObject::\+\+Get\+Class (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [virtual]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=324pt]{class_u_object_aaeaaa034e92644ebfb3a0e4fe40c8c02_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_object_aaeaaa034e92644ebfb3a0e4fe40c8c02_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_object_a57009010aca3bc218c5034b821987dd4}\index{UObject@{UObject}!GetName@{GetName}}
+\index{GetName@{GetName}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{GetName()}{GetName()}}
+{\footnotesize\ttfamily \label{class_u_object_a57009010aca3bc218c5034b821987dd4} 
+const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \& UObject::\+\+Get\+Name (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_object_a57009010aca3bc218c5034b821987dd4_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_object_a92e09357ca4405dcd2413f44d4dbbd39}\index{UObject@{UObject}!GetOuter@{GetOuter}}
+\index{GetOuter@{GetOuter}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{GetOuter()}{GetOuter()}}
+{\footnotesize\ttfamily \label{class_u_object_a92e09357ca4405dcd2413f44d4dbbd39} 
+\doxymbox{\hyperlink{class_u_object}{UObject}} \texorpdfstring{$\ast$}{*} UObject::\+\+Get\+Outer (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=308pt]{class_u_object_a92e09357ca4405dcd2413f44d4dbbd39_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=338pt]{class_u_object_a92e09357ca4405dcd2413f44d4dbbd39_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_object_a50ce37b2638e2fdfa3bd44d00cc65501}\index{UObject@{UObject}!GetPathName@{GetPathName}}
+\index{GetPathName@{GetPathName}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{GetPathName()}{GetPathName()}}
+{\footnotesize\ttfamily \label{class_u_object_a50ce37b2638e2fdfa3bd44d00cc65501} 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} UObject::\+\+Get\+Path\+Name (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+\Hypertarget{class_u_object_a606405bfd5c6823ecef443fd4ce0d144}\index{UObject@{UObject}!GetTotalBytes@{GetTotalBytes}}
+\index{GetTotalBytes@{GetTotalBytes}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{GetTotalBytes()}{GetTotalBytes()}}
+{\footnotesize\ttfamily \label{class_u_object_a606405bfd5c6823ecef443fd4ce0d144} 
+\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} UObject::\+\+Get\+Total\+Bytes (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+\Hypertarget{class_u_object_a490d918899d6e2ce5e78d9df247473bf}\index{UObject@{UObject}!GetTotalCounts@{GetTotalCounts}}
+\index{GetTotalCounts@{GetTotalCounts}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{GetTotalCounts()}{GetTotalCounts()}}
+{\footnotesize\ttfamily \label{class_u_object_a490d918899d6e2ce5e78d9df247473bf} 
+\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} UObject::\+\+Get\+Total\+Counts (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+\Hypertarget{class_u_object_ac84999033b0d2df776772aabad8d432d}\index{UObject@{UObject}!GetTypedOuter@{GetTypedOuter}}
+\index{GetTypedOuter@{GetTypedOuter}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{GetTypedOuter()}{GetTypedOuter()}}
+{\footnotesize\ttfamily \label{class_u_object_ac84999033b0d2df776772aabad8d432d} 
+template$<$typename T$>$ \\
+T \texorpdfstring{$\ast$}{*} UObject::\+\+Get\+Typed\+Outer (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_object_ac84999033b0d2df776772aabad8d432d_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_object_ad3aae76cbd7549fbcb58026dad3888f6}\index{UObject@{UObject}!HasAllFlags@{HasAllFlags}}
+\index{HasAllFlags@{HasAllFlags}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{HasAllFlags()}{HasAllFlags()}}
+{\footnotesize\ttfamily \label{class_u_object_ad3aae76cbd7549fbcb58026dad3888f6} 
+bool UObject::\+\+Has\+All\+Flags (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}}}]{In\+Flags}{}\end{DoxyParamCaption}) const}
+
+\Hypertarget{class_u_object_aa8a430f6c63d74c333ae314897ba3f9c}\index{UObject@{UObject}!HasAnyFlags@{HasAnyFlags}}
+\index{HasAnyFlags@{HasAnyFlags}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{HasAnyFlags()}{HasAnyFlags()}}
+{\footnotesize\ttfamily \label{class_u_object_aa8a430f6c63d74c333ae314897ba3f9c} 
+bool UObject::\+\+Has\+Any\+Flags (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}}}]{In\+Flags}{}\end{DoxyParamCaption}) const}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_object_aa8a430f6c63d74c333ae314897ba3f9c_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_object_a9e0b9278fee4678e354227e8e7dd4e9d}\index{UObject@{UObject}!IsA@{IsA}}
+\index{IsA@{IsA}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{IsA()}{IsA()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{class_u_object_a9e0b9278fee4678e354227e8e7dd4e9d} 
+template$<$typename T$>$ \\
+bool UObject::\+\+IsA (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_object_a9e0b9278fee4678e354227e8e7dd4e9d_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_object_ad6d2f697e6b491570c9687c7041d7ac0}\index{UObject@{UObject}!IsA@{IsA}}
+\index{IsA@{IsA}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{IsA()}{IsA()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{class_u_object_ad6d2f697e6b491570c9687c7041d7ac0} 
+bool UObject::\+\+IsA (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*}}]{In\+Class}{}\end{DoxyParamCaption}) const}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_object_ad6d2f697e6b491570c9687c7041d7ac0_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_object_ad6d2f697e6b491570c9687c7041d7ac0_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_object_af9c13f5d0c00dc78b87c1ee889bbef8f}\index{UObject@{UObject}!IsPendingKill@{IsPendingKill}}
+\index{IsPendingKill@{IsPendingKill}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{IsPendingKill()}{IsPendingKill()}}
+{\footnotesize\ttfamily \label{class_u_object_af9c13f5d0c00dc78b87c1ee889bbef8f} 
+bool UObject::\+\+Is\+Pending\+Kill (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=348pt]{class_u_object_af9c13f5d0c00dc78b87c1ee889bbef8f_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_object_af9c13f5d0c00dc78b87c1ee889bbef8f_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_object_ad4c2d324e1f8f24a783184db1be0bd7d}\index{UObject@{UObject}!MarkPendingKill@{MarkPendingKill}}
+\index{MarkPendingKill@{MarkPendingKill}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{MarkPendingKill()}{MarkPendingKill()}}
+{\footnotesize\ttfamily \label{class_u_object_ad4c2d324e1f8f24a783184db1be0bd7d} 
+void UObject::\+\+Mark\+Pending\+Kill (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=344pt]{class_u_object_ad4c2d324e1f8f24a783184db1be0bd7d_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_object_ad4c2d324e1f8f24a783184db1be0bd7d_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_object_a740eaea337950e754b3d32727e8a75cf}\index{UObject@{UObject}!operator delete@{operator delete}}
+\index{operator delete@{operator delete}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{operator delete()}{operator delete()}}
+{\footnotesize\ttfamily \label{class_u_object_a740eaea337950e754b3d32727e8a75cf} 
+void UObject::\+operator delete (\begin{DoxyParamCaption}\item[{void \texorpdfstring{$\ast$}{*}}]{In\+Address}{, }\item[{std::\+size\+\_\+t}]{size}{}\end{DoxyParamCaption})}
+
+\Hypertarget{class_u_object_a92a443aa7a402ae48d5d62551dc7aeb7}\index{UObject@{UObject}!operator new@{operator new}}
+\index{operator new@{operator new}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{operator new()}{operator new()}}
+{\footnotesize\ttfamily \label{class_u_object_a92a443aa7a402ae48d5d62551dc7aeb7} 
+void \texorpdfstring{$\ast$}{*} UObject::\+operator new (\begin{DoxyParamCaption}\item[{size\+\_\+t}]{In\+Size}{}\end{DoxyParamCaption})}
+
+\Hypertarget{class_u_object_a1cf4d64988214efdf372c32f89d2da2a}\index{UObject@{UObject}!StaticClass@{StaticClass}}
+\index{StaticClass@{StaticClass}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{StaticClass()}{StaticClass()}}
+{\footnotesize\ttfamily \label{class_u_object_a1cf4d64988214efdf372c32f89d2da2a} 
+\doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*} UObject::\+\+Static\+Class (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_object_a1cf4d64988214efdf372c32f89d2da2a_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_u_object_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_u_object_a26193b79f3c99868835aa1e66682cf52}\index{UObject@{UObject}!Flags@{Flags}}
+\index{Flags@{Flags}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{Flags}{Flags}}
+{\footnotesize\ttfamily \label{class_u_object_a26193b79f3c99868835aa1e66682cf52} 
+\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} UObject::\+\+Flags = \doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79a6adf97f83acf6453d4a6a4b1070f3754}{EObject\+Flags::\+\+None}}\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_u_object_a275e85c6f0b7459412570e9495fb824b}\index{UObject@{UObject}!InternalIndex@{InternalIndex}}
+\index{InternalIndex@{InternalIndex}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{InternalIndex}{InternalIndex}}
+{\footnotesize\ttfamily \label{class_u_object_a275e85c6f0b7459412570e9495fb824b} 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} UObject::\+\+Internal\+Index = 0}
+
+\Hypertarget{class_u_object_a99dc1eede26795e19a7c8722b1dbf465}\index{UObject@{UObject}!LastNewSize@{LastNewSize}}
+\index{LastNewSize@{LastNewSize}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{LastNewSize}{LastNewSize}}
+{\footnotesize\ttfamily \label{class_u_object_a99dc1eede26795e19a7c8722b1dbf465} 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} UObject::\+\+Last\+New\+Size = 0\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+\Hypertarget{class_u_object_a1af6f73f5bbb687f152f9a33c0d3a1a6}\index{UObject@{UObject}!Name@{Name}}
+\index{Name@{Name}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{Name}{Name}}
+{\footnotesize\ttfamily \label{class_u_object_a1af6f73f5bbb687f152f9a33c0d3a1a6} 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} UObject::\+\+Name\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_u_object_ac2f7877b317ccb3c6b6d7405bdce7ec6}\index{UObject@{UObject}!ObjectSize@{ObjectSize}}
+\index{ObjectSize@{ObjectSize}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{ObjectSize}{ObjectSize}}
+{\footnotesize\ttfamily \label{class_u_object_ac2f7877b317ccb3c6b6d7405bdce7ec6} 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} UObject::\+\+Object\+Size = 0}
+
+\Hypertarget{class_u_object_a186ad4ef60e1e2177c909abe777e7e06}\index{UObject@{UObject}!Outer@{Outer}}
+\index{Outer@{Outer}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{Outer}{Outer}}
+{\footnotesize\ttfamily \label{class_u_object_a186ad4ef60e1e2177c909abe777e7e06} 
+\doxymbox{\hyperlink{class_u_object}{UObject}}\texorpdfstring{$\ast$}{*} UObject::\+\+Outer = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_u_object_a962a7dd7fb0492055cd032056b71645c}\index{UObject@{UObject}!TotalAllocationBytes@{TotalAllocationBytes}}
+\index{TotalAllocationBytes@{TotalAllocationBytes}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{TotalAllocationBytes}{TotalAllocationBytes}}
+{\footnotesize\ttfamily \label{class_u_object_a962a7dd7fb0492055cd032056b71645c} 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} UObject::\+\+Total\+Allocation\+Bytes = 0\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+\Hypertarget{class_u_object_a257070771b84835483df7278e7a4c947}\index{UObject@{UObject}!TotalAllocationCounts@{TotalAllocationCounts}}
+\index{TotalAllocationCounts@{TotalAllocationCounts}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{TotalAllocationCounts}{TotalAllocationCounts}}
+{\footnotesize\ttfamily \label{class_u_object_a257070771b84835483df7278e7a4c947} 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} UObject::\+\+Total\+Allocation\+Counts = 0\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+\Hypertarget{class_u_object_a83fbd1a57afad4978054df6534620e60}\index{UObject@{UObject}!UUID@{UUID}}
+\index{UUID@{UUID}!UObject@{UObject}}
+\doxysubsubsection{\texorpdfstring{UUID}{UUID}}
+{\footnotesize\ttfamily \label{class_u_object_a83fbd1a57afad4978054df6534620e60} 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} UObject::\+\+UUID = 0}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Object/\+\doxymbox{\hyperlink{_object_8h}{Object.\+h}}\item 
+Engine/\+\+Source/\+\+Object/\+\doxymbox{\hyperlink{_object_8cpp}{Object.\+cpp}}\end{DoxyCompactItemize}

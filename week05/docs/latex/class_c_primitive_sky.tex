@@ -1,0 +1,138 @@
+\doxysection{CPrimitive\+Sky Class Reference}
+\hypertarget{class_c_primitive_sky}{}\label{class_c_primitive_sky}\index{CPrimitiveSky@{CPrimitiveSky}}
+
+
+{\ttfamily \+\#include $<$Primitive\+Sky.\+h$>$}
+
+
+
+Inheritance diagram for CPrimitive\+Sky:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=186pt]{class_c_primitive_sky__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for CPrimitive\+Sky:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=186pt]{class_c_primitive_sky__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_c_primitive_sky_a735b7d38f1ef935464c610040481c8d8}{CPrimitive\+Sky}} (\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Segments=32, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Rings=32)
+\item 
+void \doxymbox{\hyperlink{class_c_primitive_sky_ae9ad11557ef2602bcd830db93d2dc36e}{Generate}} (\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Segments, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Rings)
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Member Functions inherited from \doxymbox{\hyperlink{class_c_primitive_base}{CPrimitive\+Base}}}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_c_primitive_base_a6b624ba8ebdba1c66ac033aac231e517}{CPrimitive\+Base}} ()=default
+\item 
+virtual \doxymbox{\hyperlink{class_c_primitive_base_a784e90a769d85e5eed1f10a1b77e8dfa}{\texorpdfstring{$\sim$}{\string~}\+CPrimitive\+Base}} ()=default
+\item 
+\doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_primitive_base_a05f5ffc51d97e507777a57104873ad14}{Get\+Mesh\+Data}} () const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_c_primitive_sky_a6529df5fdb9e4d115f36d47721a3571d}{Get\+File\+Path}} ()
+\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Member Functions inherited from \doxymbox{\hyperlink{class_c_primitive_base}{CPrimitive\+Base}}}
+\begin{DoxyCompactItemize}
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_base_a207f69df0e4bd055b37b14c9cb9d93d9}{Get\+Or\+Load}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Key, const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&File\+Path)
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_base_ab733faa2005488f36649f777237a00aa}{Get\+Cached}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Key)
+\item 
+static void \doxymbox{\hyperlink{class_c_primitive_base_ac7bd2198368527836380fc804d57bfb2}{Register\+Mesh\+Data}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Key, std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ Data)
+\item 
+static void \doxymbox{\hyperlink{class_c_primitive_base_af59f6b67897e6892d3c1ec93e0312a1f}{Clear\+Cache}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_c_primitive_sky_ae3ac4f7f2f490534e66c09bbabc78552}{Key}} = "{}Sky\+Sphere"{}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Additional Inherited Members}
+\doxysubsection*{Protected Attributes inherited from \doxymbox{\hyperlink{class_c_primitive_base}{CPrimitive\+Base}}}
+\begin{DoxyCompactItemize}
+\item 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_base_a8a1a33ea96365c0ad57b6dcf5513b66b}{Mesh\+Data}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{class_c_primitive_sky_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_c_primitive_sky_a735b7d38f1ef935464c610040481c8d8}\index{CPrimitiveSky@{CPrimitiveSky}!CPrimitiveSky@{CPrimitiveSky}}
+\index{CPrimitiveSky@{CPrimitiveSky}!CPrimitiveSky@{CPrimitiveSky}}
+\doxysubsubsection{\texorpdfstring{CPrimitiveSky()}{CPrimitiveSky()}}
+{\footnotesize\ttfamily \label{class_c_primitive_sky_a735b7d38f1ef935464c610040481c8d8} 
+CPrimitive\+Sky::\+\+CPrimitive\+Sky (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Segments}{ = {\ttfamily 32}, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Rings}{ = {\ttfamily 32}}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_sky_a735b7d38f1ef935464c610040481c8d8_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-func-members}
+\Hypertarget{class_c_primitive_sky_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_c_primitive_sky_ae9ad11557ef2602bcd830db93d2dc36e}\index{CPrimitiveSky@{CPrimitiveSky}!Generate@{Generate}}
+\index{Generate@{Generate}!CPrimitiveSky@{CPrimitiveSky}}
+\doxysubsubsection{\texorpdfstring{Generate()}{Generate()}}
+{\footnotesize\ttfamily \label{class_c_primitive_sky_ae9ad11557ef2602bcd830db93d2dc36e} 
+void CPrimitive\+Sky::\+\+Generate (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Segments}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Rings}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_sky_ae9ad11557ef2602bcd830db93d2dc36e_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_sky_a6529df5fdb9e4d115f36d47721a3571d}\index{CPrimitiveSky@{CPrimitiveSky}!GetFilePath@{GetFilePath}}
+\index{GetFilePath@{GetFilePath}!CPrimitiveSky@{CPrimitiveSky}}
+\doxysubsubsection{\texorpdfstring{GetFilePath()}{GetFilePath()}}
+{\footnotesize\ttfamily \label{class_c_primitive_sky_a6529df5fdb9e4d115f36d47721a3571d} 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} CPrimitive\+Sky::\+\+Get\+File\+Path (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=343pt]{class_c_primitive_sky_a6529df5fdb9e4d115f36d47721a3571d_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_c_primitive_sky_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_c_primitive_sky_ae3ac4f7f2f490534e66c09bbabc78552}\index{CPrimitiveSky@{CPrimitiveSky}!Key@{Key}}
+\index{Key@{Key}!CPrimitiveSky@{CPrimitiveSky}}
+\doxysubsubsection{\texorpdfstring{Key}{Key}}
+{\footnotesize\ttfamily \label{class_c_primitive_sky_ae3ac4f7f2f490534e66c09bbabc78552} 
+const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} CPrimitive\+Sky::\+\+Key = "{}Sky\+Sphere"{}\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Primitive/\+\doxymbox{\hyperlink{_primitive_sky_8h}{Primitive\+Sky.\+h}}\item 
+Engine/\+\+Source/\+\+Primitive/\+\doxymbox{\hyperlink{_primitive_sky_8cpp}{Primitive\+Sky.\+cpp}}\end{DoxyCompactItemize}

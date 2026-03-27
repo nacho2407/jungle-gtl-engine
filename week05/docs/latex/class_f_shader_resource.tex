@@ -1,0 +1,271 @@
+\doxysection{FShader\+Resource Class Reference}
+\hypertarget{class_f_shader_resource}{}\label{class_f_shader_resource}\index{FShaderResource@{FShaderResource}}
+
+
+{\ttfamily \+\#include $<$Shader\+Resource.\+h$>$}
+
+
+
+Collaboration diagram for FShader\+Resource:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=189pt]{class_f_shader_resource__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_f_shader_resource_a3222f4dd1d8149432f5a797c3e67e319}{\texorpdfstring{$\sim$}{\string~}\+FShader\+Resource}} ()
+\item 
+const void \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_f_shader_resource_ac5fa35f66ce21f9580fc3d0fac20fb46}{Get\+Buffer\+Pointer}} () const
+\item 
+SIZE\+\_\+T \doxymbox{\hyperlink{class_f_shader_resource_a160291e3863eb0a1f6efa17a479dd29c}{Get\+Buffer\+Size}} () const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_shader_resource}{FShader\+Resource}} $>$ \doxymbox{\hyperlink{class_f_shader_resource_a4d4d927ac5220989193ae1048233c972}{Get\+Or\+Compile}} (const wchar\+\_\+t \texorpdfstring{$\ast$}{*}File\+Path, const char \texorpdfstring{$\ast$}{*}Entry\+Point, const char \texorpdfstring{$\ast$}{*}Target)
+\item 
+static void \doxymbox{\hyperlink{class_f_shader_resource_a64eb0503f12ee2e5bdf4d57b676dcd58}{Clear\+Cache}} ()
+\item 
+static void \doxymbox{\hyperlink{class_f_shader_resource_af0306db51c2c0759da0c40dbe7150593}{Set\+Content\+Dir}} (const wchar\+\_\+t \texorpdfstring{$\ast$}{*}Dir)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_f_shader_resource_ae03288c75e02aad2ab9fb43b5ed8613e}{FShader\+Resource}} ()=default
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static std::\+wstring \doxymbox{\hyperlink{class_f_shader_resource_a12e23c585490a3b38ffed336d357d716}{Make\+Cso\+Path}} (const wchar\+\_\+t \texorpdfstring{$\ast$}{*}Hlsl\+Path, const char \texorpdfstring{$\ast$}{*}Entry\+Point)
+\item 
+static bool \doxymbox{\hyperlink{class_f_shader_resource_a1b36f6b5fd77bdbef3eca08da3c7b5c7}{Is\+Hlsl\+Newer}} (const wchar\+\_\+t \texorpdfstring{$\ast$}{*}Hlsl\+Path, const wchar\+\_\+t \texorpdfstring{$\ast$}{*}Cso\+Path)
+\item 
+static bool \doxymbox{\hyperlink{class_f_shader_resource_a079141073088b1819af034a8d87c2e1e}{Save\+Cso}} (const wchar\+\_\+t \texorpdfstring{$\ast$}{*}Cso\+Path, const void \texorpdfstring{$\ast$}{*}Data, SIZE\+\_\+T Size)
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_shader_resource}{FShader\+Resource}} $>$ \doxymbox{\hyperlink{class_f_shader_resource_ad1aaf2441fa7038e7b31dcbba722bd1d}{Load\+Cso}} (const wchar\+\_\+t \texorpdfstring{$\ast$}{*}Cso\+Path)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+ID3\+DBlob \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_f_shader_resource_a079d89f9f3591a85c04ecf1ae029d01c}{Shader\+Blob}} = nullptr
+\item 
+std::\+vector$<$ uint8\+\_\+t $>$ \doxymbox{\hyperlink{class_f_shader_resource_a26a0819e5e8899acf0960bc27cd20ea3}{Raw\+Data}}
+\item 
+bool \doxymbox{\hyperlink{class_f_shader_resource_a1b54b71d7ac719fcdafb7ff846a7cbe0}{b\+From\+Cso}} = false
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static std::\+unordered\+\_\+map$<$ std::\+wstring, std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_shader_resource}{FShader\+Resource}} $>$ $>$ \doxymbox{\hyperlink{class_f_shader_resource_a9d1490b379328b02aa9ff175b9e27fe4}{Cache}}
+\item 
+static std::\+wstring \doxymbox{\hyperlink{class_f_shader_resource_aaf7348aaa83096f98bd27340b75ef511}{Content\+Dir}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{class_f_shader_resource_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_f_shader_resource_a3222f4dd1d8149432f5a797c3e67e319}\index{FShaderResource@{FShaderResource}!````~FShaderResource@{\texorpdfstring{$\sim$}{\string~}FShaderResource}}
+\index{````~FShaderResource@{\texorpdfstring{$\sim$}{\string~}FShaderResource}!FShaderResource@{FShaderResource}}
+\doxysubsubsection{\texorpdfstring{\texorpdfstring{$\sim$}{\string~}FShaderResource()}{\string~FShaderResource()}}
+{\footnotesize\ttfamily \label{class_f_shader_resource_a3222f4dd1d8149432f5a797c3e67e319} 
+FShader\+Resource::\+\texorpdfstring{$\sim$}{\string~}\+FShader\+Resource (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{class_f_shader_resource_ae03288c75e02aad2ab9fb43b5ed8613e}\index{FShaderResource@{FShaderResource}!FShaderResource@{FShaderResource}}
+\index{FShaderResource@{FShaderResource}!FShaderResource@{FShaderResource}}
+\doxysubsubsection{\texorpdfstring{FShaderResource()}{FShaderResource()}}
+{\footnotesize\ttfamily \label{class_f_shader_resource_ae03288c75e02aad2ab9fb43b5ed8613e} 
+FShader\+Resource::\+\+FShader\+Resource (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [default]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_shader_resource_ae03288c75e02aad2ab9fb43b5ed8613e_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_shader_resource_ae03288c75e02aad2ab9fb43b5ed8613e_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-func-members}
+\Hypertarget{class_f_shader_resource_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_f_shader_resource_a64eb0503f12ee2e5bdf4d57b676dcd58}\index{FShaderResource@{FShaderResource}!ClearCache@{ClearCache}}
+\index{ClearCache@{ClearCache}!FShaderResource@{FShaderResource}}
+\doxysubsubsection{\texorpdfstring{ClearCache()}{ClearCache()}}
+{\footnotesize\ttfamily \label{class_f_shader_resource_a64eb0503f12ee2e5bdf4d57b676dcd58} 
+void FShader\+Resource::\+\+Clear\+Cache (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_shader_resource_a64eb0503f12ee2e5bdf4d57b676dcd58_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_shader_resource_ac5fa35f66ce21f9580fc3d0fac20fb46}\index{FShaderResource@{FShaderResource}!GetBufferPointer@{GetBufferPointer}}
+\index{GetBufferPointer@{GetBufferPointer}!FShaderResource@{FShaderResource}}
+\doxysubsubsection{\texorpdfstring{GetBufferPointer()}{GetBufferPointer()}}
+{\footnotesize\ttfamily \label{class_f_shader_resource_ac5fa35f66ce21f9580fc3d0fac20fb46} 
+const void \texorpdfstring{$\ast$}{*} FShader\+Resource::\+\+Get\+Buffer\+Pointer (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+\Hypertarget{class_f_shader_resource_a160291e3863eb0a1f6efa17a479dd29c}\index{FShaderResource@{FShaderResource}!GetBufferSize@{GetBufferSize}}
+\index{GetBufferSize@{GetBufferSize}!FShaderResource@{FShaderResource}}
+\doxysubsubsection{\texorpdfstring{GetBufferSize()}{GetBufferSize()}}
+{\footnotesize\ttfamily \label{class_f_shader_resource_a160291e3863eb0a1f6efa17a479dd29c} 
+SIZE\+\_\+T FShader\+Resource::\+\+Get\+Buffer\+Size (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+\Hypertarget{class_f_shader_resource_a4d4d927ac5220989193ae1048233c972}\index{FShaderResource@{FShaderResource}!GetOrCompile@{GetOrCompile}}
+\index{GetOrCompile@{GetOrCompile}!FShaderResource@{FShaderResource}}
+\doxysubsubsection{\texorpdfstring{GetOrCompile()}{GetOrCompile()}}
+{\footnotesize\ttfamily \label{class_f_shader_resource_a4d4d927ac5220989193ae1048233c972} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_shader_resource}{FShader\+Resource}} $>$ FShader\+Resource::\+\+Get\+Or\+Compile (\begin{DoxyParamCaption}\item[{const wchar\+\_\+t \texorpdfstring{$\ast$}{*}}]{File\+Path}{, }\item[{const char \texorpdfstring{$\ast$}{*}}]{Entry\+Point}{, }\item[{const char \texorpdfstring{$\ast$}{*}}]{Target}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_shader_resource_a4d4d927ac5220989193ae1048233c972_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_shader_resource_a4d4d927ac5220989193ae1048233c972_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_shader_resource_a1b36f6b5fd77bdbef3eca08da3c7b5c7}\index{FShaderResource@{FShaderResource}!IsHlslNewer@{IsHlslNewer}}
+\index{IsHlslNewer@{IsHlslNewer}!FShaderResource@{FShaderResource}}
+\doxysubsubsection{\texorpdfstring{IsHlslNewer()}{IsHlslNewer()}}
+{\footnotesize\ttfamily \label{class_f_shader_resource_a1b36f6b5fd77bdbef3eca08da3c7b5c7} 
+bool FShader\+Resource::\+\+Is\+Hlsl\+Newer (\begin{DoxyParamCaption}\item[{const wchar\+\_\+t \texorpdfstring{$\ast$}{*}}]{Hlsl\+Path}{, }\item[{const wchar\+\_\+t \texorpdfstring{$\ast$}{*}}]{Cso\+Path}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_shader_resource_a1b36f6b5fd77bdbef3eca08da3c7b5c7_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_shader_resource_ad1aaf2441fa7038e7b31dcbba722bd1d}\index{FShaderResource@{FShaderResource}!LoadCso@{LoadCso}}
+\index{LoadCso@{LoadCso}!FShaderResource@{FShaderResource}}
+\doxysubsubsection{\texorpdfstring{LoadCso()}{LoadCso()}}
+{\footnotesize\ttfamily \label{class_f_shader_resource_ad1aaf2441fa7038e7b31dcbba722bd1d} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_shader_resource}{FShader\+Resource}} $>$ FShader\+Resource::\+\+Load\+Cso (\begin{DoxyParamCaption}\item[{const wchar\+\_\+t \texorpdfstring{$\ast$}{*}}]{Cso\+Path}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_shader_resource_ad1aaf2441fa7038e7b31dcbba722bd1d_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_shader_resource_ad1aaf2441fa7038e7b31dcbba722bd1d_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_shader_resource_a12e23c585490a3b38ffed336d357d716}\index{FShaderResource@{FShaderResource}!MakeCsoPath@{MakeCsoPath}}
+\index{MakeCsoPath@{MakeCsoPath}!FShaderResource@{FShaderResource}}
+\doxysubsubsection{\texorpdfstring{MakeCsoPath()}{MakeCsoPath()}}
+{\footnotesize\ttfamily \label{class_f_shader_resource_a12e23c585490a3b38ffed336d357d716} 
+std::\+wstring FShader\+Resource::\+\+Make\+Cso\+Path (\begin{DoxyParamCaption}\item[{const wchar\+\_\+t \texorpdfstring{$\ast$}{*}}]{Hlsl\+Path}{, }\item[{const char \texorpdfstring{$\ast$}{*}}]{Entry\+Point}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_shader_resource_a12e23c585490a3b38ffed336d357d716_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_shader_resource_a079141073088b1819af034a8d87c2e1e}\index{FShaderResource@{FShaderResource}!SaveCso@{SaveCso}}
+\index{SaveCso@{SaveCso}!FShaderResource@{FShaderResource}}
+\doxysubsubsection{\texorpdfstring{SaveCso()}{SaveCso()}}
+{\footnotesize\ttfamily \label{class_f_shader_resource_a079141073088b1819af034a8d87c2e1e} 
+bool FShader\+Resource::\+\+Save\+Cso (\begin{DoxyParamCaption}\item[{const wchar\+\_\+t \texorpdfstring{$\ast$}{*}}]{Cso\+Path}{, }\item[{const void \texorpdfstring{$\ast$}{*}}]{Data}{, }\item[{SIZE\+\_\+T}]{Size}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_shader_resource_a079141073088b1819af034a8d87c2e1e_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_shader_resource_af0306db51c2c0759da0c40dbe7150593}\index{FShaderResource@{FShaderResource}!SetContentDir@{SetContentDir}}
+\index{SetContentDir@{SetContentDir}!FShaderResource@{FShaderResource}}
+\doxysubsubsection{\texorpdfstring{SetContentDir()}{SetContentDir()}}
+{\footnotesize\ttfamily \label{class_f_shader_resource_af0306db51c2c0759da0c40dbe7150593} 
+void FShader\+Resource::\+\+Set\+Content\+Dir (\begin{DoxyParamCaption}\item[{const wchar\+\_\+t \texorpdfstring{$\ast$}{*}}]{Dir}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_shader_resource_af0306db51c2c0759da0c40dbe7150593_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_f_shader_resource_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_f_shader_resource_a1b54b71d7ac719fcdafb7ff846a7cbe0}\index{FShaderResource@{FShaderResource}!bFromCso@{bFromCso}}
+\index{bFromCso@{bFromCso}!FShaderResource@{FShaderResource}}
+\doxysubsubsection{\texorpdfstring{bFromCso}{bFromCso}}
+{\footnotesize\ttfamily \label{class_f_shader_resource_a1b54b71d7ac719fcdafb7ff846a7cbe0} 
+bool FShader\+Resource::\+b\+From\+Cso = false\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_f_shader_resource_a9d1490b379328b02aa9ff175b9e27fe4}\index{FShaderResource@{FShaderResource}!Cache@{Cache}}
+\index{Cache@{Cache}!FShaderResource@{FShaderResource}}
+\doxysubsubsection{\texorpdfstring{Cache}{Cache}}
+{\footnotesize\ttfamily \label{class_f_shader_resource_a9d1490b379328b02aa9ff175b9e27fe4} 
+std::\+unordered\+\_\+map$<$ std::\+wstring, std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{class_f_shader_resource}{FShader\+Resource}} $>$ $>$ FShader\+Resource::\+\+Cache\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\Hypertarget{class_f_shader_resource_aaf7348aaa83096f98bd27340b75ef511}\index{FShaderResource@{FShaderResource}!ContentDir@{ContentDir}}
+\index{ContentDir@{ContentDir}!FShaderResource@{FShaderResource}}
+\doxysubsubsection{\texorpdfstring{ContentDir}{ContentDir}}
+{\footnotesize\ttfamily \label{class_f_shader_resource_aaf7348aaa83096f98bd27340b75ef511} 
+std::\+wstring FShader\+Resource::\+\+Content\+Dir\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\Hypertarget{class_f_shader_resource_a26a0819e5e8899acf0960bc27cd20ea3}\index{FShaderResource@{FShaderResource}!RawData@{RawData}}
+\index{RawData@{RawData}!FShaderResource@{FShaderResource}}
+\doxysubsubsection{\texorpdfstring{RawData}{RawData}}
+{\footnotesize\ttfamily \label{class_f_shader_resource_a26a0819e5e8899acf0960bc27cd20ea3} 
+std::\+vector$<$uint8\+\_\+t$>$ FShader\+Resource::\+\+Raw\+Data\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_f_shader_resource_a079d89f9f3591a85c04ecf1ae029d01c}\index{FShaderResource@{FShaderResource}!ShaderBlob@{ShaderBlob}}
+\index{ShaderBlob@{ShaderBlob}!FShaderResource@{FShaderResource}}
+\doxysubsubsection{\texorpdfstring{ShaderBlob}{ShaderBlob}}
+{\footnotesize\ttfamily \label{class_f_shader_resource_a079d89f9f3591a85c04ecf1ae029d01c} 
+ID3\+DBlob\texorpdfstring{$\ast$}{*} FShader\+Resource::\+\+Shader\+Blob = nullptr\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Renderer/\+\doxymbox{\hyperlink{_shader_resource_8h}{Shader\+Resource.\+h}}\item 
+Engine/\+\+Source/\+\+Renderer/\+\doxymbox{\hyperlink{_shader_resource_8cpp}{Shader\+Resource.\+cpp}}\end{DoxyCompactItemize}

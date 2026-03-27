@@ -1,0 +1,9 @@
+<map id="AGizmo::Destroy" name="AGizmo::Destroy">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,128,32"/>
+<area shape="rect" id="Node000002" href="$class_a_actor.html#acf21b02df0bf53ad12fd01a143700a7b" title=" " alt="" coords="176,5,291,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="128,16,162,18,157,19,128,21"/>
+<area shape="rect" id="Node000003" href="$class_u_object.html#ad4c2d324e1f8f24a783184db1be0bd7d" title=" " alt="" coords="339,5,510,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="291,16,326,19,321,19,291,21"/>
+<area shape="rect" id="Node000004" href="$class_u_object.html#a959b2aa84e7a60b233e2d2df6fa0a4d0" title=" " alt="" coords="558,5,691,32"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="511,16,546,19,540,19,511,21"/>
+</map>

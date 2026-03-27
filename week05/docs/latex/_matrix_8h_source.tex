@@ -1,0 +1,838 @@
+\doxysection{Matrix.\+h}
+\hypertarget{_matrix_8h_source}{}\label{_matrix_8h_source}\index{Engine/Source/Math/Matrix.h@{Engine/Source/Math/Matrix.h}}
+\doxymbox{\hyperlink{_matrix_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_engine_a_p_i_8h}{EngineAPI.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_vector_8h}{Math/Vector.h}}"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_vector4_8h}{Math/Vector4.h}}"{}}}
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{keyword}{enum\ class}\ \doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}}\ :\ uint8\_t}
+\DoxyCodeLine{00008\ \{}
+\DoxyCodeLine{00009\ \ \ \ \ \doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bca02129bb861061d1a052c592e2dc6b383}{X}},\ \doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bca57cec4137b614c87cb4e24a3d003a3e0}{Y}},\ \doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bca21c2e59531c8710156d34a3c30ac81d5}{Z}}}
+\DoxyCodeLine{00010\ \};}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}}
+\DoxyCodeLine{00013\ \{}
+\DoxyCodeLine{00014\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{keyword}{alignas}(16)\ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[4][4];}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_a25d402a18105886bdbc0427f21fc97d4}{Identity}};}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \ \ \ \ \textcolor{comment}{//======================================//}}
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ \ \ constructor\ \ \ \ \ \ \ \ \ \ \ \ \ //}}
+\DoxyCodeLine{00021\ \ \ \ \ \textcolor{comment}{//======================================//}}
+\DoxyCodeLine{00022\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{keyword}{constexpr}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}()\ noexcept}
+\DoxyCodeLine{00024\ \ \ \ \ \ \ \ \ :\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}\{\ \{\ 1.f,\ 0.f,\ 0.f,\ 0.f\ \},}
+\DoxyCodeLine{00025\ \ \ \ \ \ \ \ \ \ \ \ \ \{\ 0.f,\ 1.f,\ 0.f,\ 0.f\ \},}
+\DoxyCodeLine{00026\ \ \ \ \ \ \ \ \ \ \ \ \ \{\ 0.f,\ 0.f,\ 1.f,\ 0.f\ \},}
+\DoxyCodeLine{00027\ \ \ \ \ \ \ \ \ \ \ \ \ \{\ 0.f,\ 0.f,\ 0.f,\ 1.f\ \}\ \}}
+\DoxyCodeLine{00028\ \ \ \ \ \{}
+\DoxyCodeLine{00029\ \ \ \ \ \}}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{keyword}{constexpr}\ \doxymbox{\hyperlink{struct_f_matrix_af3f652baff979d6c0018061d36dce9f2}{FMatrix}}(}
+\DoxyCodeLine{00032\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ M00,\ \textcolor{keywordtype}{float}\ M01,\ \textcolor{keywordtype}{float}\ M02,\ \textcolor{keywordtype}{float}\ M03,}
+\DoxyCodeLine{00033\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ M10,\ \textcolor{keywordtype}{float}\ M11,\ \textcolor{keywordtype}{float}\ M12,\ \textcolor{keywordtype}{float}\ M13,}
+\DoxyCodeLine{00034\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ M20,\ \textcolor{keywordtype}{float}\ M21,\ \textcolor{keywordtype}{float}\ M22,\ \textcolor{keywordtype}{float}\ M23,}
+\DoxyCodeLine{00035\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ M30,\ \textcolor{keywordtype}{float}\ M31,\ \textcolor{keywordtype}{float}\ M32,\ \textcolor{keywordtype}{float}\ M33)\ noexcept}
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ :\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}\{\ \{\ M00,\ M01,\ M02,\ M03\ \},}
+\DoxyCodeLine{00037\ \ \ \ \ \ \ \ \ \ \ \ \ \{\ M10,\ M11,\ M12,\ M13\ \},}
+\DoxyCodeLine{00038\ \ \ \ \ \ \ \ \ \ \ \ \ \{\ M20,\ M21,\ M22,\ M23\ \},}
+\DoxyCodeLine{00039\ \ \ \ \ \ \ \ \ \ \ \ \ \{\ M30,\ M31,\ M32,\ M33\ \}\ \}}
+\DoxyCodeLine{00040\ \ \ \ \ \{}
+\DoxyCodeLine{00041\ \ \ \ \ \}}
+\DoxyCodeLine{00042\ }
+\DoxyCodeLine{00043\ \ \ \ \ \textcolor{keyword}{constexpr}\ \doxymbox{\hyperlink{struct_f_matrix_a0528fa4a6ef5743d968a7dd26fad170b}{FMatrix}}(}
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector4}{FVector4}}\&\ Row0,}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector4}{FVector4}}\&\ Row1,}
+\DoxyCodeLine{00046\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector4}{FVector4}}\&\ Row2,}
+\DoxyCodeLine{00047\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector4}{FVector4}}\&\ Row3)\ noexcept}
+\DoxyCodeLine{00048\ \ \ \ \ \ \ \ \ :\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}\{\ \{\ Row0.X,\ Row0.Y,\ Row0.Z,\ Row0.W\ \},}
+\DoxyCodeLine{00049\ \ \ \ \ \ \ \ \ \ \ \ \ \{\ Row1.X,\ Row1.Y,\ Row1.Z,\ Row1.W\ \},}
+\DoxyCodeLine{00050\ \ \ \ \ \ \ \ \ \ \ \ \ \{\ Row2.X,\ Row2.Y,\ Row2.Z,\ Row2.W\ \},}
+\DoxyCodeLine{00051\ \ \ \ \ \ \ \ \ \ \ \ \ \{\ Row3.X,\ Row3.Y,\ Row3.Z,\ Row3.W\ \}\ \}}
+\DoxyCodeLine{00052\ \ \ \ \ \{}
+\DoxyCodeLine{00053\ \ \ \ \ \}}
+\DoxyCodeLine{00054\ }
+\DoxyCodeLine{00055\ \ \ \ \ \textcolor{keyword}{explicit}\ \doxymbox{\hyperlink{struct_f_matrix_a599fb81491e5f0a901c48259b771c4db}{FMatrix}}(\doxymbox{\hyperlink{_core_types_8h_a7e3371c0f101d480dc6b09de802b75ce}{CXMMatrix}}\ InMatrix)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00056\ \ \ \ \ \{}
+\DoxyCodeLine{00057\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_a37e3ac851d6d4e93d0864a6b720f14ee}{Float4X4}}\ Temp;}
+\DoxyCodeLine{00058\ \ \ \ \ \ \ \ \ DirectX::XMStoreFloat4x4(\&Temp,\ InMatrix);}
+\DoxyCodeLine{00059\ }
+\DoxyCodeLine{00060\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][0]\ =\ Temp.\_11;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][1]\ =\ Temp.\_12;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][2]\ =\ Temp.\_13;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][3]\ =\ Temp.\_14;}
+\DoxyCodeLine{00061\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][0]\ =\ Temp.\_21;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][1]\ =\ Temp.\_22;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][2]\ =\ Temp.\_23;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][3]\ =\ Temp.\_24;}
+\DoxyCodeLine{00062\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][0]\ =\ Temp.\_31;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][1]\ =\ Temp.\_32;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][2]\ =\ Temp.\_33;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][3]\ =\ Temp.\_34;}
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][0]\ =\ Temp.\_41;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][1]\ =\ Temp.\_42;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][2]\ =\ Temp.\_43;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][3]\ =\ Temp.\_44;}
+\DoxyCodeLine{00064\ \ \ \ \ \}}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00066\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_af912f19aeed51c65c42f90997f84a840}{FMatrix}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&)\ \textcolor{keyword}{noexcept}\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00067\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0c6e1ef83f6a29af1d96d76248872c7f}{FMatrix}}(\doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\&)\ noexcept\ =\ default;}
+\DoxyCodeLine{00068\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\ operator=(const\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&)\ noexcept\ =\ default;}
+\DoxyCodeLine{00069\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\ operator=(\doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\&)\ noexcept\ =\ default;}
+\DoxyCodeLine{00070\ }
+\DoxyCodeLine{00071\ public:}
+\DoxyCodeLine{00072\ \ \ \ \ \textcolor{keywordtype}{float}*\ operator[](\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Row)\ noexcept}
+\DoxyCodeLine{00073\ \ \ \ \ \{}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ assert(Row\ >=\ 0\ \&\&\ Row\ <\ 4);}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row];}
+\DoxyCodeLine{00076\ \ \ \ \ \}}
+\DoxyCodeLine{00077\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}*\ \doxymbox{\hyperlink{struct_f_matrix_a7cba7c24eea5b413cdaf89e6463a3b0b}{operator[]}}(\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Row)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00078\ \ \ \ \ \{}
+\DoxyCodeLine{00079\ \ \ \ \ \ \ \ \ assert(Row\ >=\ 0\ \&\&\ Row\ <\ 4);}
+\DoxyCodeLine{00080\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row];}
+\DoxyCodeLine{00081\ \ \ \ \ \}}
+\DoxyCodeLine{00082\ }
+\DoxyCodeLine{00083\ \ \ \ \ \textcolor{comment}{//\ operator==는\ 부동소수점\ 정확\ 비교입니다.}}
+\DoxyCodeLine{00084\ \ \ \ \ \textcolor{comment}{//\ 계산\ 결과\ 비교에는\ Equals(Tolerance)를\ 사용하는\ 것을\ 권장합니다.}}
+\DoxyCodeLine{00085\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_matrix_ad1586b7ca3c36ed2d23468876103fe70}{operator==}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\ Other)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00086\ \ \ \ \ \{}
+\DoxyCodeLine{00087\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Row\ =\ 0;\ Row\ <\ 4;\ ++Row)}
+\DoxyCodeLine{00088\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00089\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_core_types_8h_ad7069eae7b85d4ed27d826f17a716155}{XMVector}}\ ThisRow\ =\ DirectX::XMVectorSet(\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][0],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][1],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][2],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][3]);}
+\DoxyCodeLine{00090\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_core_types_8h_ad7069eae7b85d4ed27d826f17a716155}{XMVector}}\ OtherRow\ =\ DirectX::XMVectorSet(Other.M[Row][0],\ Other.M[Row][1],\ Other.M[Row][2],\ Other.M[Row][3]);}
+\DoxyCodeLine{00091\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!DirectX::XMVector4Equal(ThisRow,\ OtherRow))}
+\DoxyCodeLine{00092\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00093\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00094\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00095\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00096\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00097\ \ \ \ \ \}}
+\DoxyCodeLine{00098\ }
+\DoxyCodeLine{00099\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_matrix_a25ee513ce60a10a4647e593518c6cbdd}{operator!=}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\ Other)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00100\ \ \ \ \ \{}
+\DoxyCodeLine{00101\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ !(*\textcolor{keyword}{this}\ ==\ Other);}
+\DoxyCodeLine{00102\ \ \ \ \ \}}
+\DoxyCodeLine{00103\ }
+\DoxyCodeLine{00104\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_a827d9516f66a5c8cf42ec67ee4457d5b}{operator-\/}}()\ const\ noexcept}
+\DoxyCodeLine{00105\ \ \ \ \ \{}
+\DoxyCodeLine{00106\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}(}
+\DoxyCodeLine{00107\ \ \ \ \ \ \ \ \ \ \ \ \ -\/\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][0],\ -\/\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][1],\ -\/\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][2],\ -\/\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][3],}
+\DoxyCodeLine{00108\ \ \ \ \ \ \ \ \ \ \ \ \ -\/\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][0],\ -\/\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][1],\ -\/\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][2],\ -\/\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][3],}
+\DoxyCodeLine{00109\ \ \ \ \ \ \ \ \ \ \ \ \ -\/\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][0],\ -\/\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][1],\ -\/\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][2],\ -\/\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][3],}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \ \ \ \ \ \ -\/\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][0],\ -\/\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][1],\ -\/\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][2],\ -\/\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][3]}
+\DoxyCodeLine{00111\ \ \ \ \ \ \ \ \ );}
+\DoxyCodeLine{00112\ \ \ \ \ \}}
+\DoxyCodeLine{00113\ }
+\DoxyCodeLine{00114\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_a2768715db244a41827797ee661588a10}{operator+}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\ Other)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00115\ \ \ \ \ \{}
+\DoxyCodeLine{00116\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ Result;}
+\DoxyCodeLine{00117\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (int32\_t\ Row\ =\ 0;\ Row\ <\ 4;\ ++Row)}
+\DoxyCodeLine{00118\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00119\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (int32\_t\ Col\ =\ 0;\ Col\ <\ 4;\ ++Col)}
+\DoxyCodeLine{00120\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00121\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][Col]\ =\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][Col]\ +\ Other.M[Row][Col];}
+\DoxyCodeLine{00122\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00123\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00124\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ Result;}
+\DoxyCodeLine{00125\ \ \ \ \ \}}
+\DoxyCodeLine{00126\ }
+\DoxyCodeLine{00127\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_ad8416bb256ce3ff97e22b90f0453314c}{operator-\/}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\ Other)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00128\ \ \ \ \ \{}
+\DoxyCodeLine{00129\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ Result;}
+\DoxyCodeLine{00130\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (int32\_t\ Row\ =\ 0;\ Row\ <\ 4;\ ++Row)}
+\DoxyCodeLine{00131\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00132\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (int32\_t\ Col\ =\ 0;\ Col\ <\ 4;\ ++Col)}
+\DoxyCodeLine{00133\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00134\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][Col]\ =\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][Col]\ -\/\ Other.M[Row][Col];}
+\DoxyCodeLine{00135\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00136\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00137\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ Result;}
+\DoxyCodeLine{00138\ \ \ \ \ \}}
+\DoxyCodeLine{00139\ }
+\DoxyCodeLine{00140\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_a2357c96eed5ccb7d1fa28ed320069f93}{operator*}}(\textcolor{keywordtype}{float}\ Scalar)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00141\ \ \ \ \ \{}
+\DoxyCodeLine{00142\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ Result;}
+\DoxyCodeLine{00143\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (int32\_t\ Row\ =\ 0;\ Row\ <\ 4;\ ++Row)}
+\DoxyCodeLine{00144\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00145\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (int32\_t\ Col\ =\ 0;\ Col\ <\ 4;\ ++Col)}
+\DoxyCodeLine{00146\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00147\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][Col]\ =\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][Col]\ *\ Scalar;}
+\DoxyCodeLine{00148\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00149\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00150\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ Result;}
+\DoxyCodeLine{00151\ \ \ \ \ \}}
+\DoxyCodeLine{00152\ }
+\DoxyCodeLine{00153\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_a2c4aedecb7a01bd42b3ab5c1277584aa}{operator/}}(\textcolor{keywordtype}{float}\ Scalar)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00154\ \ \ \ \ \{}
+\DoxyCodeLine{00155\ \ \ \ \ \ \ \ \ assert(Scalar\ !=\ 0.f);}
+\DoxyCodeLine{00156\ }
+\DoxyCodeLine{00157\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ Result;}
+\DoxyCodeLine{00158\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (int32\_t\ Row\ =\ 0;\ Row\ <\ 4;\ ++Row)}
+\DoxyCodeLine{00159\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00160\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (int32\_t\ Col\ =\ 0;\ Col\ <\ 4;\ ++Col)}
+\DoxyCodeLine{00161\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00162\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][Col]\ =\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][Col]\ /\ Scalar;}
+\DoxyCodeLine{00163\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00164\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00165\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ Result;}
+\DoxyCodeLine{00166\ \ \ \ \ \}}
+\DoxyCodeLine{00167\ }
+\DoxyCodeLine{00168\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\ \doxymbox{\hyperlink{struct_f_matrix_a4da27c9a4c9473c5925e2359a1e2b7de}{operator+=}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\ Other)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00169\ \ \ \ \ \{}
+\DoxyCodeLine{00170\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (int32\_t\ Row\ =\ 0;\ Row\ <\ 4;\ ++Row)}
+\DoxyCodeLine{00171\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00172\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (int32\_t\ Col\ =\ 0;\ Col\ <\ 4;\ ++Col)}
+\DoxyCodeLine{00173\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00174\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][Col]\ +=\ Other.M[Row][Col];}
+\DoxyCodeLine{00175\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00176\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00177\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00178\ \ \ \ \ \}}
+\DoxyCodeLine{00179\ }
+\DoxyCodeLine{00180\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\ \doxymbox{\hyperlink{struct_f_matrix_a437f4722b9b890a8c1bd08e633dfb9fe}{operator-\/=}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\ Other)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00181\ \ \ \ \ \{}
+\DoxyCodeLine{00182\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (int32\_t\ Row\ =\ 0;\ Row\ <\ 4;\ ++Row)}
+\DoxyCodeLine{00183\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00184\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (int32\_t\ Col\ =\ 0;\ Col\ <\ 4;\ ++Col)}
+\DoxyCodeLine{00185\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00186\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][Col]\ -\/=\ Other.M[Row][Col];}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00188\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00189\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00190\ \ \ \ \ \}}
+\DoxyCodeLine{00191\ }
+\DoxyCodeLine{00192\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\ \doxymbox{\hyperlink{struct_f_matrix_a525e2c2b10fc602ef2d117b5aeac6daf}{operator*=}}(\textcolor{keywordtype}{float}\ Scalar)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00193\ \ \ \ \ \{}
+\DoxyCodeLine{00194\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (int32\_t\ Row\ =\ 0;\ Row\ <\ 4;\ ++Row)}
+\DoxyCodeLine{00195\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00196\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (int32\_t\ Col\ =\ 0;\ Col\ <\ 4;\ ++Col)}
+\DoxyCodeLine{00197\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00198\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][Col]\ *=\ Scalar;}
+\DoxyCodeLine{00199\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00200\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00201\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00202\ \ \ \ \ \}}
+\DoxyCodeLine{00203\ }
+\DoxyCodeLine{00204\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\ \doxymbox{\hyperlink{struct_f_matrix_aa0652488a703c23e86279be432fa7bb2}{operator/=}}(\textcolor{keywordtype}{float}\ Scalar)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00205\ \ \ \ \ \{}
+\DoxyCodeLine{00206\ \ \ \ \ \ \ \ \ assert(Scalar\ !=\ 0.f);}
+\DoxyCodeLine{00207\ }
+\DoxyCodeLine{00208\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (int32\_t\ Row\ =\ 0;\ Row\ <\ 4;\ ++Row)}
+\DoxyCodeLine{00209\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00210\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (int32\_t\ Col\ =\ 0;\ Col\ <\ 4;\ ++Col)}
+\DoxyCodeLine{00211\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00212\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][Col]\ /=\ Scalar;}
+\DoxyCodeLine{00213\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00214\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00215\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00216\ \ \ \ \ \}}
+\DoxyCodeLine{00217\ }
+\DoxyCodeLine{00218\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_ac3ebb59c2ecf32d9142c149be93dde98}{operator*}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\ Other)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00219\ \ \ \ \ \{}
+\DoxyCodeLine{00220\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}(DirectX::XMMatrixMultiply(\doxymbox{\hyperlink{struct_f_matrix_a03595ac7cbb4cefe1e79c5242ccac4c6}{ToXMMatrix}}(),\ Other.ToXMMatrix()));}
+\DoxyCodeLine{00221\ \ \ \ \ \}}
+\DoxyCodeLine{00222\ }
+\DoxyCodeLine{00223\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\ \doxymbox{\hyperlink{struct_f_matrix_a83bd6236025e1f00b9a24177d30fca52}{operator*=}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\ Other)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00224\ \ \ \ \ \{}
+\DoxyCodeLine{00225\ \ \ \ \ \ \ \ \ *\textcolor{keyword}{this}\ =\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}(DirectX::XMMatrixMultiply(\doxymbox{\hyperlink{struct_f_matrix_a03595ac7cbb4cefe1e79c5242ccac4c6}{ToXMMatrix}}(),\ Other.ToXMMatrix()));}
+\DoxyCodeLine{00226\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00227\ \ \ \ \ \}}
+\DoxyCodeLine{00228\ }
+\DoxyCodeLine{00229\ \ \ \ \ \textcolor{comment}{//======================================//}}
+\DoxyCodeLine{00230\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ method\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ //}}
+\DoxyCodeLine{00231\ \ \ \ \ \textcolor{comment}{//======================================//}}
+\DoxyCodeLine{00232\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00233\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_a4e4c1a26b3ef7ff7bdfa69e3d2a28ca3}{XMMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_a03595ac7cbb4cefe1e79c5242ccac4c6}{ToXMMatrix}}()\ const\ noexcept}
+\DoxyCodeLine{00234\ \ \ \ \ \{}
+\DoxyCodeLine{00235\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ DirectX::XMMATRIX(}
+\DoxyCodeLine{00236\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][0],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][1],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][2],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][3],}
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][0],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][1],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][2],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][3],}
+\DoxyCodeLine{00238\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][0],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][1],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][2],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][3],}
+\DoxyCodeLine{00239\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][0],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][1],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][2],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][3]}
+\DoxyCodeLine{00240\ \ \ \ \ \ \ \ \ );}
+\DoxyCodeLine{00241\ \ \ \ \ \}}
+\DoxyCodeLine{00242\ }
+\DoxyCodeLine{00243\ \ \ \ \ \textcolor{comment}{//\ 두\ 행렬이\ 허용\ 오차(Tolerance)\ 범위\ 내에서\ 같은지\ 비교함}}
+\DoxyCodeLine{00244\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_matrix_a2fb5ba5fd7470742f4c8d8289482878a}{Equals}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\ Other,\ \textcolor{keywordtype}{float}\ Tolerance\ =\ 1.e-\/6f)\ const\ noexcept}
+\DoxyCodeLine{00245\ \ \ \ \ \{}
+\DoxyCodeLine{00246\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_core_types_8h_ad7069eae7b85d4ed27d826f17a716155}{XMVector}}\ ToleranceVector\ =\ DirectX::XMVectorReplicate(Tolerance);}
+\DoxyCodeLine{00247\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (int32\_t\ Row\ =\ 0;\ Row\ <\ 4;\ ++Row)}
+\DoxyCodeLine{00248\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00249\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_core_types_8h_ad7069eae7b85d4ed27d826f17a716155}{XMVector}}\ ThisRow\ =\ DirectX::XMVectorSet(\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][0],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][1],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][2],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][3]);}
+\DoxyCodeLine{00250\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_core_types_8h_ad7069eae7b85d4ed27d826f17a716155}{XMVector}}\ OtherRow\ =\ DirectX::XMVectorSet(Other.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][0],\ Other.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][1],\ Other.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][2],\ Other.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[Row][3]);}
+\DoxyCodeLine{00251\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!DirectX::XMVector4NearEqual(ThisRow,\ OtherRow,\ ToleranceVector))}
+\DoxyCodeLine{00252\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00253\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00254\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00255\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00256\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00257\ \ \ \ \ \}}
+\DoxyCodeLine{00258\ }
+\DoxyCodeLine{00259\ \ \ \ \ \textcolor{comment}{//\ 전치\ 행렬(Transpose\ Matrix)을\ 반환함}}
+\DoxyCodeLine{00260\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_ad2f92d64d2fa054160d24e8f92c0c427}{GetTransposed}}()\ const\ noexcept}
+\DoxyCodeLine{00261\ \ \ \ \ \{}
+\DoxyCodeLine{00262\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}(DirectX::XMMatrixTranspose(\doxymbox{\hyperlink{struct_f_matrix_a03595ac7cbb4cefe1e79c5242ccac4c6}{ToXMMatrix}}()));}
+\DoxyCodeLine{00263\ \ \ \ \ \}}
+\DoxyCodeLine{00264\ }
+\DoxyCodeLine{00265\ \ \ \ \ \textcolor{comment}{//\ 방향\ 벡터를\ 현재\ 행렬로\ 변환함}}
+\DoxyCodeLine{00266\ \ \ \ \ \textcolor{comment}{//\ 이동(Translation)은\ 적용하지\ 않음}}
+\DoxyCodeLine{00267\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_f_matrix_a789eafa9373a9a8d583e7900af7c6fac}{TransformVector}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ V)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00268\ \ \ \ \ \{}
+\DoxyCodeLine{00269\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}(DirectX::XMVector3TransformNormal(V.ToXMVector(),\ \doxymbox{\hyperlink{struct_f_matrix_a03595ac7cbb4cefe1e79c5242ccac4c6}{ToXMMatrix}}()));}
+\DoxyCodeLine{00270\ \ \ \ \ \}}
+\DoxyCodeLine{00271\ }
+\DoxyCodeLine{00272\ \ \ \ \ \textcolor{comment}{//\ 위치\ 벡터를\ 현재\ 행렬로\ 변환함}}
+\DoxyCodeLine{00273\ \ \ \ \ \textcolor{comment}{//\ 이동(Translation)을\ 포함하여\ 적용함}}
+\DoxyCodeLine{00274\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_f_matrix_a975cdd163e5a835115bf753c61def97e}{TransformPosition}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ V)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00275\ \ \ \ \ \{}
+\DoxyCodeLine{00276\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}(DirectX::XMVector3TransformCoord(V.ToXMVector(),\ \doxymbox{\hyperlink{struct_f_matrix_a03595ac7cbb4cefe1e79c5242ccac4c6}{ToXMMatrix}}()));}
+\DoxyCodeLine{00277\ \ \ \ \ \}}
+\DoxyCodeLine{00278\ }
+\DoxyCodeLine{00279\ \ \ \ \ \textcolor{comment}{//\ 현재\ 행렬의\ 이동(Translation)\ 성분을\ 반환함}}
+\DoxyCodeLine{00280\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_f_matrix_aca939c75174173f35b183c1ef42fc37f}{GetOrigin}}()\ const\ noexcept}
+\DoxyCodeLine{00281\ \ \ \ \ \{}
+\DoxyCodeLine{00282\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}(\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][0],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][1],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][2]);}
+\DoxyCodeLine{00283\ \ \ \ \ \}}
+\DoxyCodeLine{00284\ }
+\DoxyCodeLine{00285\ \ \ \ \ \textcolor{comment}{//\ 현재\ 행렬의\ 이동(Translation)\ 성분을\ 설정함}}
+\DoxyCodeLine{00286\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{struct_f_matrix_a6fc164edbbc7c415bf94b3a7b4f32295}{SetOrigin}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ Origin)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00287\ \ \ \ \ \{}
+\DoxyCodeLine{00288\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][0]\ =\ Origin.X;}
+\DoxyCodeLine{00289\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][1]\ =\ Origin.Y;}
+\DoxyCodeLine{00290\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][2]\ =\ Origin.Z;}
+\DoxyCodeLine{00291\ \ \ \ \ \}}
+\DoxyCodeLine{00292\ }
+\DoxyCodeLine{00293\ \ \ \ \ \textcolor{comment}{//\ 현재\ 행렬에서\ 스케일이\ 포함된\ 축\ 벡터를\ 반환함}}
+\DoxyCodeLine{00294\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_f_matrix_a93ab7a16fc74318a0c82ab22c854f370}{GetScaledAxis}}(\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}}\ Axis)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00295\ \ \ \ \ \{}
+\DoxyCodeLine{00296\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{switch}\ (Axis)}
+\DoxyCodeLine{00297\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00298\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bca02129bb861061d1a052c592e2dc6b383}{EAxis::X}}:}
+\DoxyCodeLine{00299\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}(\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][0],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][1],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][2]);}
+\DoxyCodeLine{00300\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bca57cec4137b614c87cb4e24a3d003a3e0}{EAxis::Y}}:}
+\DoxyCodeLine{00301\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}(\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][0],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][1],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][2]);}
+\DoxyCodeLine{00302\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bca21c2e59531c8710156d34a3c30ac81d5}{EAxis::Z}}:}
+\DoxyCodeLine{00303\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}(\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][0],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][1],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][2]);}
+\DoxyCodeLine{00304\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{00305\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector_a5718e5b26f15f0d7057d05236fcae359}{FVector::ZeroVector}};}
+\DoxyCodeLine{00306\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00307\ \ \ \ \ \}}
+\DoxyCodeLine{00308\ }
+\DoxyCodeLine{00309\ \ \ \ \ \textcolor{comment}{//\ 현재\ 행렬에서\ 정규화된\ 축\ 벡터를\ 반환함}}
+\DoxyCodeLine{00310\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_f_matrix_a0308ed41f18eb62e5d007186b5307b01}{GetUnitAxis}}(\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}}\ Axis)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00311\ \ \ \ \ \{}
+\DoxyCodeLine{00312\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a93ab7a16fc74318a0c82ab22c854f370}{GetScaledAxis}}(Axis).GetSafeNormal();}
+\DoxyCodeLine{00313\ \ \ \ \ \}}
+\DoxyCodeLine{00314\ }
+\DoxyCodeLine{00315\ \ \ \ \ \textcolor{comment}{//\ 현재\ 행렬에서\ 이동(Translation)\ 성분을\ 제거함}}
+\DoxyCodeLine{00316\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{struct_f_matrix_ae40a5fbaedee294ee13c4193c878f3d0}{RemoveTranslation}}()\ noexcept}
+\DoxyCodeLine{00317\ \ \ \ \ \{}
+\DoxyCodeLine{00318\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][0]\ =\ 0.f;}
+\DoxyCodeLine{00319\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][1]\ =\ 0.f;}
+\DoxyCodeLine{00320\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][2]\ =\ 0.f;}
+\DoxyCodeLine{00321\ \ \ \ \ \}}
+\DoxyCodeLine{00322\ }
+\DoxyCodeLine{00323\ \ \ \ \ \textcolor{comment}{//\ 이동(Translation)\ 성분이\ 제거된\ 새\ 행렬을\ 반환함}}
+\DoxyCodeLine{00324\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_ae7a08cbdbde973871025549674f003a4}{GetMatrixWithoutTranslation}}()\ const\ noexcept}
+\DoxyCodeLine{00325\ \ \ \ \ \{}
+\DoxyCodeLine{00326\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ Result\ =\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00327\ \ \ \ \ \ \ \ \ Result.\doxymbox{\hyperlink{struct_f_matrix_ae40a5fbaedee294ee13c4193c878f3d0}{RemoveTranslation}}();}
+\DoxyCodeLine{00328\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ Result;}
+\DoxyCodeLine{00329\ \ \ \ \ \}}
+\DoxyCodeLine{00330\ }
+\DoxyCodeLine{00331\ \ \ \ \ \textcolor{comment}{//\ 현재\ 행렬에서\ 스케일을\ 제거한\ 새\ 행렬을\ 반환함}}
+\DoxyCodeLine{00332\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_aa8783d13da9f3c28975c093bf934520d}{GetMatrixWithoutScale}}(\textcolor{keywordtype}{float}\ Tolerance\ =\ 1.e-\/8f)\ const\ noexcept}
+\DoxyCodeLine{00333\ \ \ \ \ \{}
+\DoxyCodeLine{00334\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ XAxis\ =\ \doxymbox{\hyperlink{struct_f_matrix_a93ab7a16fc74318a0c82ab22c854f370}{GetScaledAxis}}(\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bca02129bb861061d1a052c592e2dc6b383}{EAxis::X}}).GetSafeNormal(Tolerance);}
+\DoxyCodeLine{00335\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ YAxis\ =\ \doxymbox{\hyperlink{struct_f_matrix_a93ab7a16fc74318a0c82ab22c854f370}{GetScaledAxis}}(\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bca57cec4137b614c87cb4e24a3d003a3e0}{EAxis::Y}}).GetSafeNormal(Tolerance);}
+\DoxyCodeLine{00336\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ ZAxis\ =\ \doxymbox{\hyperlink{struct_f_matrix_a93ab7a16fc74318a0c82ab22c854f370}{GetScaledAxis}}(\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bca21c2e59531c8710156d34a3c30ac81d5}{EAxis::Z}}).GetSafeNormal(Tolerance);}
+\DoxyCodeLine{00337\ }
+\DoxyCodeLine{00338\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ Result\ =\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00339\ \ \ \ \ \ \ \ \ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][0]\ =\ XAxis.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}};\ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][1]\ =\ XAxis.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}};\ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][2]\ =\ XAxis.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}};}
+\DoxyCodeLine{00340\ \ \ \ \ \ \ \ \ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][0]\ =\ YAxis.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}};\ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][1]\ =\ YAxis.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}};\ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][2]\ =\ YAxis.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}};}
+\DoxyCodeLine{00341\ \ \ \ \ \ \ \ \ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][0]\ =\ ZAxis.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}};\ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][1]\ =\ ZAxis.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}};\ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][2]\ =\ ZAxis.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}};}
+\DoxyCodeLine{00342\ }
+\DoxyCodeLine{00343\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ Result;}
+\DoxyCodeLine{00344\ \ \ \ \ \}}
+\DoxyCodeLine{00345\ }
+\DoxyCodeLine{00346\ \ \ \ \ \textcolor{comment}{//\ 현재\ 행렬에\ 포함된\ 스케일\ 값을\ 반환함}}
+\DoxyCodeLine{00347\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_f_matrix_a0c71c6c3978b676c69694fdb1cbb78e1}{GetScaleVector}}()\ const\ noexcept}
+\DoxyCodeLine{00348\ \ \ \ \ \{}
+\DoxyCodeLine{00349\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_core_types_8h_ad7069eae7b85d4ed27d826f17a716155}{XMVector}}\ XAxis\ =\ DirectX::XMVectorSet(\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][0],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][1],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][2],\ 0.0f);}
+\DoxyCodeLine{00350\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_core_types_8h_ad7069eae7b85d4ed27d826f17a716155}{XMVector}}\ YAxis\ =\ DirectX::XMVectorSet(\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][0],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][1],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][2],\ 0.0f);}
+\DoxyCodeLine{00351\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_core_types_8h_ad7069eae7b85d4ed27d826f17a716155}{XMVector}}\ ZAxis\ =\ DirectX::XMVectorSet(\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][0],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][1],\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][2],\ 0.0f);}
+\DoxyCodeLine{00352\ }
+\DoxyCodeLine{00353\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}(}
+\DoxyCodeLine{00354\ \ \ \ \ \ \ \ \ \ \ \ \ DirectX::XMVectorGetX(DirectX::XMVector3Length(XAxis)),}
+\DoxyCodeLine{00355\ \ \ \ \ \ \ \ \ \ \ \ \ DirectX::XMVectorGetX(DirectX::XMVector3Length(YAxis)),}
+\DoxyCodeLine{00356\ \ \ \ \ \ \ \ \ \ \ \ \ DirectX::XMVectorGetX(DirectX::XMVector3Length(ZAxis))}
+\DoxyCodeLine{00357\ \ \ \ \ \ \ \ \ );}
+\DoxyCodeLine{00358\ \ \ \ \ \}}
+\DoxyCodeLine{00359\ }
+\DoxyCodeLine{00360\ \ \ \ \ \textcolor{comment}{//\ 현재\ 행렬이\ Identity\ Matrix와\ 같은지\ 확인함}}
+\DoxyCodeLine{00361\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_matrix_a841a32498610b832ff48652b5639f5e9}{IsIdentity}}(\textcolor{keywordtype}{float}\ Tolerance\ =\ 1.e-\/6f)\ const\ noexcept}
+\DoxyCodeLine{00362\ \ \ \ \ \{}
+\DoxyCodeLine{00363\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a2fb5ba5fd7470742f4c8d8289482878a}{Equals}}(\doxymbox{\hyperlink{struct_f_matrix_a25d402a18105886bdbc0427f21fc97d4}{Identity}},\ Tolerance);}
+\DoxyCodeLine{00364\ \ \ \ \ \}}
+\DoxyCodeLine{00365\ }
+\DoxyCodeLine{00366\ \ \ \ \ \textcolor{comment}{//\ 현재\ 행렬의\ 행렬식(Determinant)을\ 구함}}
+\DoxyCodeLine{00367\ \ \ \ \ \textcolor{comment}{//\ Determinant가\ 0이면\ 역행렬\ \ 없음}}
+\DoxyCodeLine{00368\ \ \ \ \ \textcolor{comment}{//\ 0에\ 매우\ 가까우면\ 수치적으로\ 불안정}}
+\DoxyCodeLine{00369\ \ \ \ \ \textcolor{comment}{//\ Inverse\ 전에\ 판단할\ 때\ 중요한\ 함수}}
+\DoxyCodeLine{00370\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_matrix_ad791b12bfd66ac2a1b507231b3e123e5}{Determinant}}()\ const\ noexcept}
+\DoxyCodeLine{00371\ \ \ \ \ \{}
+\DoxyCodeLine{00372\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ DirectX::XMMATRIX\ XM\ =\ \doxymbox{\hyperlink{struct_f_matrix_a03595ac7cbb4cefe1e79c5242ccac4c6}{ToXMMatrix}}();}
+\DoxyCodeLine{00373\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ DirectX::XMVECTOR\ Det\ =\ DirectX::XMMatrixDeterminant(XM);}
+\DoxyCodeLine{00374\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ DirectX::XMVectorGetX(Det);}
+\DoxyCodeLine{00375\ \ \ \ \ \}}
+\DoxyCodeLine{00376\ }
+\DoxyCodeLine{00377\ \ \ \ \ \textcolor{comment}{//\ 현재\ 행렬의\ 역행렬(Inverse\ Matrix)을\ 반환함}}
+\DoxyCodeLine{00378\ \ \ \ \ \textcolor{comment}{//\ 역행렬이\ 존재하지\ 않으면\ Identity를\ 반환함}}
+\DoxyCodeLine{00379\ \ \ \ \ \textcolor{comment}{//\ 현재는\ 역행렬이\ 없을\ 때\ Identity를\ 반환/대입하는\ 정책입니다.}}
+\DoxyCodeLine{00380\ \ \ \ \ \textcolor{comment}{//\ 디버깅\ 투명성을\ 높이려면\ 원본\ 유지\ +\ false\ 반환\ 정책도\ 고려할\ 수\ 있습니다.}}
+\DoxyCodeLine{00381\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_ab4b28604ae16586e79c62a558ae0b7ad}{GetInverse}}(\textcolor{keywordtype}{float}\ Tolerance\ =\ 1.e-\/8f)\ const\ noexcept}
+\DoxyCodeLine{00382\ \ \ \ \ \{}
+\DoxyCodeLine{00383\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ DirectX::XMMATRIX\ XM\ =\ \doxymbox{\hyperlink{struct_f_matrix_a03595ac7cbb4cefe1e79c5242ccac4c6}{ToXMMatrix}}();}
+\DoxyCodeLine{00384\ }
+\DoxyCodeLine{00385\ \ \ \ \ \ \ \ \ DirectX::XMVECTOR\ Det;}
+\DoxyCodeLine{00386\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ DirectX::XMMATRIX\ Inv\ =\ DirectX::XMMatrixInverse(\&Det,\ XM);}
+\DoxyCodeLine{00387\ }
+\DoxyCodeLine{00388\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ DeterminantValue\ =\ DirectX::XMVectorGetX(Det);}
+\DoxyCodeLine{00389\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (std::fabs(DeterminantValue)\ <=\ Tolerance)}
+\DoxyCodeLine{00390\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00391\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 역행렬이\ 없을\ 때\ 원본으로\ 반환하는\ 정책으로\ 변경\ 가능}}
+\DoxyCodeLine{00392\ \textcolor{preprocessor}{\#ifndef\ NDEBUG}}
+\DoxyCodeLine{00393\ \ \ \ \ \ \ \ \ \ \ \ \ assert(\textcolor{stringliteral}{"{}FMatrix::GetInverse()\ failed:\ matrix\ is\ singular\ or\ invalid."{}});}
+\DoxyCodeLine{00394\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00395\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a25d402a18105886bdbc0427f21fc97d4}{Identity}};}
+\DoxyCodeLine{00396\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00397\ }
+\DoxyCodeLine{00398\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}(Inv);}
+\DoxyCodeLine{00399\ \ \ \ \ \}}
+\DoxyCodeLine{00400\ }
+\DoxyCodeLine{00401\ \ \ \ \ \textcolor{comment}{//\ 현재\ 행렬을\ 역행렬로\ 변환함}}
+\DoxyCodeLine{00402\ \ \ \ \ \textcolor{comment}{//\ 역행렬이\ 존재하지\ 않으면\ Identity로\ 설정함}}
+\DoxyCodeLine{00403\ \ \ \ \ \textcolor{comment}{//\ 현재는\ 역행렬이\ 없을\ 때\ Identity를\ 반환/대입하는\ 정책입니다.}}
+\DoxyCodeLine{00404\ \ \ \ \ \textcolor{comment}{//\ 디버깅\ 투명성을\ 높이려면\ 원본\ 유지\ +\ false\ 반환\ 정책도\ 고려할\ 수\ 있습니다.}}
+\DoxyCodeLine{00405\ \ \ \ \ [[nodiscard]]\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_matrix_a4f9528269444bc8427cedbfa1cc7707e}{Inverse}}(\textcolor{keywordtype}{float}\ Tolerance\ =\ 1.e-\/8f)\ noexcept}
+\DoxyCodeLine{00406\ \ \ \ \ \{}
+\DoxyCodeLine{00407\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ DirectX::XMMATRIX\ XM\ =\ \doxymbox{\hyperlink{struct_f_matrix_a03595ac7cbb4cefe1e79c5242ccac4c6}{ToXMMatrix}}();}
+\DoxyCodeLine{00408\ }
+\DoxyCodeLine{00409\ \ \ \ \ \ \ \ \ DirectX::XMVECTOR\ Det;}
+\DoxyCodeLine{00410\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ DirectX::XMMATRIX\ Inv\ =\ DirectX::XMMatrixInverse(\&Det,\ XM);}
+\DoxyCodeLine{00411\ }
+\DoxyCodeLine{00412\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ DeterminantValue\ =\ DirectX::XMVectorGetX(Det);}
+\DoxyCodeLine{00413\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (std::fabs(DeterminantValue)\ <=\ Tolerance)}
+\DoxyCodeLine{00414\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00415\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 역행렬이\ 없을\ 때\ 원본으로\ 반환하는\ 정책으로\ 변경\ 가능}}
+\DoxyCodeLine{00416\ \ \ \ \ \ \ \ \ \ \ \ \ *\textcolor{keyword}{this}\ =\ \doxymbox{\hyperlink{struct_f_matrix_a25d402a18105886bdbc0427f21fc97d4}{Identity}};}
+\DoxyCodeLine{00417\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00418\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00419\ }
+\DoxyCodeLine{00420\ \ \ \ \ \ \ \ \ *\textcolor{keyword}{this}\ =\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}(Inv);}
+\DoxyCodeLine{00421\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00422\ \ \ \ \ \}}
+\DoxyCodeLine{00423\ }
+\DoxyCodeLine{00424\ \ \ \ \ \textcolor{comment}{//\ 현재\ 행렬이\ 역행렬을\ 가질\ 수\ 있는지\ 확인함}}
+\DoxyCodeLine{00425\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_matrix_a419aceb8c6e8bca074739ee845ae278f}{IsInvertible}}(\textcolor{keywordtype}{float}\ Tolerance\ =\ 1.e-\/8f)\ const\ noexcept}
+\DoxyCodeLine{00426\ \ \ \ \ \{}
+\DoxyCodeLine{00427\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ std::fabs(\doxymbox{\hyperlink{struct_f_matrix_ad791b12bfd66ac2a1b507231b3e123e5}{Determinant}}())\ >\ Tolerance;}
+\DoxyCodeLine{00428\ \ \ \ \ \}}
+\DoxyCodeLine{00429\ }
+\DoxyCodeLine{00430\ \ \ \ \ \textcolor{comment}{//\ 현재\ 행렬에\ 스케일을\ 적용한\ 새\ 행렬을\ 반환함}}
+\DoxyCodeLine{00431\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_a893933b507e9701cfcc5880b664cb0d7}{ApplyScale}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}})\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00432\ \ \ \ \ \{}
+\DoxyCodeLine{00433\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a251054777f82c5d7c761eb317101d63c}{MakeScale}}(\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}})\ *\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00434\ \ \ \ \ \}}
+\DoxyCodeLine{00435\ }
+\DoxyCodeLine{00436\ \ \ \ \ \textcolor{comment}{//\ 현재\ 행렬에\ 균일\ 스케일을\ 적용한\ 새\ 행렬을\ 반환함}}
+\DoxyCodeLine{00437\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_a773b71ef20c23f4514a943001706b094}{ApplyScale}}(\textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}})\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00438\ \ \ \ \ \{}
+\DoxyCodeLine{00439\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a893933b507e9701cfcc5880b664cb0d7}{ApplyScale}}(\doxymbox{\hyperlink{struct_f_vector}{FVector}}(\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}},\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}},\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}}));}
+\DoxyCodeLine{00440\ \ \ \ \ \}}
+\DoxyCodeLine{00441\ }
+\DoxyCodeLine{00442\ \ \ \ \ \textcolor{comment}{//\ 현재\ 행렬에서\ 순수\ 회전\ 행렬을\ 반환함}}
+\DoxyCodeLine{00443\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_a0f8ada22db65b9c48f9be2731459c92e}{GetRotationMatrix}}(\textcolor{keywordtype}{float}\ Tolerance\ =\ 1.e-\/8f)\ const\ noexcept}
+\DoxyCodeLine{00444\ \ \ \ \ \{}
+\DoxyCodeLine{00445\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_ae7a08cbdbde973871025549674f003a4}{GetMatrixWithoutTranslation}}().GetMatrixWithoutScale(Tolerance);}
+\DoxyCodeLine{00446\ \ \ \ \ \}}
+\DoxyCodeLine{00447\ }
+\DoxyCodeLine{00448\ \ \ \ \ \textcolor{comment}{//\ 현재\ 행렬의\ Forward\ 방향\ 벡터를\ 반환함}}
+\DoxyCodeLine{00449\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_f_matrix_a5c2961239c52a85b09fe0e4ae2e44ae6}{GetForwardVector}}()\ const\ noexcept}
+\DoxyCodeLine{00450\ \ \ \ \ \{}
+\DoxyCodeLine{00451\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a0308ed41f18eb62e5d007186b5307b01}{GetUnitAxis}}(\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bca02129bb861061d1a052c592e2dc6b383}{EAxis::X}});}
+\DoxyCodeLine{00452\ \ \ \ \ \}}
+\DoxyCodeLine{00453\ }
+\DoxyCodeLine{00454\ \ \ \ \ \textcolor{comment}{//\ 현재\ 행렬의\ Right\ 방향\ 벡터를\ 반환함}}
+\DoxyCodeLine{00455\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_f_matrix_afe3d6a181066c58badae8b392f9edf30}{GetRightVector}}()\ const\ noexcept}
+\DoxyCodeLine{00456\ \ \ \ \ \{}
+\DoxyCodeLine{00457\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a0308ed41f18eb62e5d007186b5307b01}{GetUnitAxis}}(\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bca57cec4137b614c87cb4e24a3d003a3e0}{EAxis::Y}});}
+\DoxyCodeLine{00458\ \ \ \ \ \}}
+\DoxyCodeLine{00459\ }
+\DoxyCodeLine{00460\ \ \ \ \ \textcolor{comment}{//\ 현재\ 행렬의\ Up\ 방향\ 벡터를\ 반환함}}
+\DoxyCodeLine{00461\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_f_matrix_a8076f650f86bbebf3ae2e62a7a4a9812}{GetUpVector}}()\ const\ noexcept}
+\DoxyCodeLine{00462\ \ \ \ \ \{}
+\DoxyCodeLine{00463\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a0308ed41f18eb62e5d007186b5307b01}{GetUnitAxis}}(\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bca21c2e59531c8710156d34a3c30ac81d5}{EAxis::Z}});}
+\DoxyCodeLine{00464\ \ \ \ \ \}}
+\DoxyCodeLine{00465\ }
+\DoxyCodeLine{00466\ \ \ \ \ \textcolor{comment}{//\ 축\ 벡터와\ 위치를\ 이용하여\ 현재\ 행렬을\ 설정함}}
+\DoxyCodeLine{00467\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{struct_f_matrix_a76ecc2559bc3aa0a302845a422225476}{SetAxes}}(}
+\DoxyCodeLine{00468\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ XAxis,}
+\DoxyCodeLine{00469\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ YAxis,}
+\DoxyCodeLine{00470\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ ZAxis,}
+\DoxyCodeLine{00471\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ Origin\ =\ \doxymbox{\hyperlink{struct_f_vector_a5718e5b26f15f0d7057d05236fcae359}{FVector::ZeroVector}})\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00472\ \ \ \ \ \{}
+\DoxyCodeLine{00473\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][0]\ =\ XAxis.X;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][1]\ =\ XAxis.Y;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][2]\ =\ XAxis.Z;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][3]\ =\ 0.f;}
+\DoxyCodeLine{00474\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][0]\ =\ YAxis.X;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][1]\ =\ YAxis.Y;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][2]\ =\ YAxis.Z;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][3]\ =\ 0.f;}
+\DoxyCodeLine{00475\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][0]\ =\ ZAxis.X;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][1]\ =\ ZAxis.Y;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][2]\ =\ ZAxis.Z;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][3]\ =\ 0.f;}
+\DoxyCodeLine{00476\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][0]\ =\ Origin.X;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][1]\ =\ Origin.Y;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][2]\ =\ Origin.Z;\ \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][3]\ =\ 1.f;}
+\DoxyCodeLine{00477\ \ \ \ \ \}}
+\DoxyCodeLine{00478\ }
+\DoxyCodeLine{00479\ \ \ \ \ \textcolor{comment}{//\ 현재\ 행렬을\ 위치,\ 회전\ 행렬,\ 스케일로\ 분해함}}
+\DoxyCodeLine{00480\ \ \ \ \ \textcolor{comment}{//\ 분해에\ 실패하면\ false를\ 반환함}}
+\DoxyCodeLine{00481\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_matrix_aa4a9d2890969714204234643e8fe626f}{Decompose}}(\doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ OutTranslation,\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\ OutRotation,\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ OutScale,\ \textcolor{keywordtype}{float}\ Tolerance\ =\ 1.e-\/8f)\ const\ noexcept}
+\DoxyCodeLine{00482\ \ \ \ \ \{}
+\DoxyCodeLine{00483\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 1차\ 버전의\ 함수}}
+\DoxyCodeLine{00484\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 다음\ 경우까지\ 완벽하게\ 다루지\ 않음}}
+\DoxyCodeLine{00485\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ -\/\ negative\ scale}}
+\DoxyCodeLine{00486\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ -\/\ reflection}}
+\DoxyCodeLine{00487\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ -\/\ shear}}
+\DoxyCodeLine{00488\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ -\/\ 축이\ 서로\ 완전히\ 직교하지\ 않은\ 행렬}}
+\DoxyCodeLine{00489\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 수학적으로\ 보든\ 4x4\ 행렬을\ 완벽하게\ 분해하는\ 구현은\ 아님.}}
+\DoxyCodeLine{00490\ \ \ \ \ \ \ \ \ OutTranslation\ =\ \doxymbox{\hyperlink{struct_f_matrix_aca939c75174173f35b183c1ef42fc37f}{GetOrigin}}();}
+\DoxyCodeLine{00491\ }
+\DoxyCodeLine{00492\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ XAxis\ =\ \doxymbox{\hyperlink{struct_f_matrix_a93ab7a16fc74318a0c82ab22c854f370}{GetScaledAxis}}(\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bca02129bb861061d1a052c592e2dc6b383}{EAxis::X}});}
+\DoxyCodeLine{00493\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ YAxis\ =\ \doxymbox{\hyperlink{struct_f_matrix_a93ab7a16fc74318a0c82ab22c854f370}{GetScaledAxis}}(\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bca57cec4137b614c87cb4e24a3d003a3e0}{EAxis::Y}});}
+\DoxyCodeLine{00494\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ ZAxis\ =\ \doxymbox{\hyperlink{struct_f_matrix_a93ab7a16fc74318a0c82ab22c854f370}{GetScaledAxis}}(\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bca21c2e59531c8710156d34a3c30ac81d5}{EAxis::Z}});}
+\DoxyCodeLine{00495\ }
+\DoxyCodeLine{00496\ \ \ \ \ \ \ \ \ OutScale\ =\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}(XAxis.\doxymbox{\hyperlink{struct_f_vector_a60e82a073f5cae0a0558e9af50539464}{Size}}(),\ YAxis.\doxymbox{\hyperlink{struct_f_vector_a60e82a073f5cae0a0558e9af50539464}{Size}}(),\ ZAxis.\doxymbox{\hyperlink{struct_f_vector_a60e82a073f5cae0a0558e9af50539464}{Size}}());}
+\DoxyCodeLine{00497\ }
+\DoxyCodeLine{00498\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (OutScale.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ <=\ Tolerance\ ||\ OutScale.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ <=\ Tolerance\ ||\ OutScale.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ <=\ Tolerance)}
+\DoxyCodeLine{00499\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00500\ \ \ \ \ \ \ \ \ \ \ \ \ OutRotation\ =\ \doxymbox{\hyperlink{struct_f_matrix_a25d402a18105886bdbc0427f21fc97d4}{Identity}};}
+\DoxyCodeLine{00501\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00502\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00503\ }
+\DoxyCodeLine{00504\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ UnitX\ =\ XAxis\ /\ OutScale.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}};}
+\DoxyCodeLine{00505\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ UnitY\ =\ YAxis\ /\ OutScale.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}};}
+\DoxyCodeLine{00506\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ UnitZ\ =\ ZAxis\ /\ OutScale.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}};}
+\DoxyCodeLine{00507\ }
+\DoxyCodeLine{00508\ \ \ \ \ \ \ \ \ OutRotation\ =\ \doxymbox{\hyperlink{struct_f_matrix_a25d402a18105886bdbc0427f21fc97d4}{Identity}};}
+\DoxyCodeLine{00509\ \ \ \ \ \ \ \ \ OutRotation.\doxymbox{\hyperlink{struct_f_matrix_a76ecc2559bc3aa0a302845a422225476}{SetAxes}}(UnitX,\ UnitY,\ UnitZ,\ \doxymbox{\hyperlink{struct_f_vector_a5718e5b26f15f0d7057d05236fcae359}{FVector::ZeroVector}});}
+\DoxyCodeLine{00510\ }
+\DoxyCodeLine{00511\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00512\ \ \ \ \ \}}
+\DoxyCodeLine{00513\ }
+\DoxyCodeLine{00514\ \ \ \ \ \textcolor{comment}{//\ 현재\ 행렬의\ 위치(Translation)\ 성분을\ 반환함}}
+\DoxyCodeLine{00515\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_f_matrix_a779da1fe141bf3b562ed542bfa3a3dae}{GetTranslation}}()\ const\ noexcept}
+\DoxyCodeLine{00516\ \ \ \ \ \{}
+\DoxyCodeLine{00517\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_aca939c75174173f35b183c1ef42fc37f}{GetOrigin}}();}
+\DoxyCodeLine{00518\ \ \ \ \ \}}
+\DoxyCodeLine{00519\ }
+\DoxyCodeLine{00520\ \ \ \ \ \textcolor{comment}{//\ 현재\ 행렬의\ 위치(Translation)\ 성분을\ 설정함}}
+\DoxyCodeLine{00521\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{struct_f_matrix_af8f5811e4ea33e211c432df9bff406ef}{SetTranslation}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ Translation)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00522\ \ \ \ \ \{}
+\DoxyCodeLine{00523\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a6fc164edbbc7c415bf94b3a7b4f32295}{SetOrigin}}(Translation);}
+\DoxyCodeLine{00524\ \ \ \ \ \}}
+\DoxyCodeLine{00525\ }
+\DoxyCodeLine{00526\ \ \ \ \ \textcolor{comment}{//\ 이동(Translation)\ 행렬을\ 생성함}}
+\DoxyCodeLine{00527\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_a8bebc2582bae52878f4fe2ac3a65f3aa}{MakeTranslation}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ Translation)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00528\ \ \ \ \ \{}
+\DoxyCodeLine{00529\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}(}
+\DoxyCodeLine{00530\ \ \ \ \ \ \ \ \ \ \ \ \ 1.f,\ 0.f,\ 0.f,\ 0.f,}
+\DoxyCodeLine{00531\ \ \ \ \ \ \ \ \ \ \ \ \ 0.f,\ 1.f,\ 0.f,\ 0.f,}
+\DoxyCodeLine{00532\ \ \ \ \ \ \ \ \ \ \ \ \ 0.f,\ 0.f,\ 1.f,\ 0.f,}
+\DoxyCodeLine{00533\ \ \ \ \ \ \ \ \ \ \ \ \ Translation.X,\ Translation.Y,\ Translation.Z,\ 1.f}
+\DoxyCodeLine{00534\ \ \ \ \ \ \ \ \ );}
+\DoxyCodeLine{00535\ \ \ \ \ \}}
+\DoxyCodeLine{00536\ }
+\DoxyCodeLine{00537\ \ \ \ \ \textcolor{comment}{//\ 스케일(Scale)\ 행렬을\ 생성함}}
+\DoxyCodeLine{00538\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_a251054777f82c5d7c761eb317101d63c}{MakeScale}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}})\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00539\ \ \ \ \ \{}
+\DoxyCodeLine{00540\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}(}
+\DoxyCodeLine{00541\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}}.X,\ 0.f,\ 0.f,\ 0.f,}
+\DoxyCodeLine{00542\ \ \ \ \ \ \ \ \ \ \ \ \ 0.f,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}}.Y,\ 0.f,\ 0.f,}
+\DoxyCodeLine{00543\ \ \ \ \ \ \ \ \ \ \ \ \ 0.f,\ 0.f,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}}.Z,\ 0.f,}
+\DoxyCodeLine{00544\ \ \ \ \ \ \ \ \ \ \ \ \ 0.f,\ 0.f,\ 0.f,\ 1.f}
+\DoxyCodeLine{00545\ \ \ \ \ \ \ \ \ );}
+\DoxyCodeLine{00546\ \ \ \ \ \}}
+\DoxyCodeLine{00547\ }
+\DoxyCodeLine{00548\ \ \ \ \ \textcolor{comment}{//\ X축\ 기준\ 회전\ 행렬을\ 생성함}}
+\DoxyCodeLine{00549\ \ \ \ \ \textcolor{comment}{//\ AngleRad는\ 라디안\ 단위\ 각도임}}
+\DoxyCodeLine{00550\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_aeb34117fb4ed1261c2ab22a763a6ae1b}{MakeRotationX}}(\textcolor{keywordtype}{float}\ AngleRad)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00551\ \ \ \ \ \{}
+\DoxyCodeLine{00552\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ CosAngle\ =\ std::cos(AngleRad);}
+\DoxyCodeLine{00553\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ SinAngle\ =\ std::sin(AngleRad);}
+\DoxyCodeLine{00554\ }
+\DoxyCodeLine{00555\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}(}
+\DoxyCodeLine{00556\ \ \ \ \ \ \ \ \ \ \ \ \ 1.f,\ 0.f,\ 0.f,\ 0.f,}
+\DoxyCodeLine{00557\ \ \ \ \ \ \ \ \ \ \ \ \ 0.f,\ CosAngle,\ SinAngle,\ 0.f,}
+\DoxyCodeLine{00558\ \ \ \ \ \ \ \ \ \ \ \ \ 0.f,\ -\/SinAngle,\ CosAngle,\ 0.f,}
+\DoxyCodeLine{00559\ \ \ \ \ \ \ \ \ \ \ \ \ 0.f,\ 0.f,\ 0.f,\ 1.f}
+\DoxyCodeLine{00560\ \ \ \ \ \ \ \ \ );}
+\DoxyCodeLine{00561\ \ \ \ \ \}}
+\DoxyCodeLine{00562\ }
+\DoxyCodeLine{00563\ \ \ \ \ \textcolor{comment}{//\ Y축\ 기준\ 회전\ 행렬을\ 생성함}}
+\DoxyCodeLine{00564\ \ \ \ \ \textcolor{comment}{//\ AngleRad는\ 라디안\ 단위\ 각도임}}
+\DoxyCodeLine{00565\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_a2b21339e005e9b234f32eb4e98684e60}{MakeRotationY}}(\textcolor{keywordtype}{float}\ AngleRad)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00566\ \ \ \ \ \{}
+\DoxyCodeLine{00567\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ CosAngle\ =\ std::cos(AngleRad);}
+\DoxyCodeLine{00568\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ SinAngle\ =\ std::sin(AngleRad);}
+\DoxyCodeLine{00569\ }
+\DoxyCodeLine{00570\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}(}
+\DoxyCodeLine{00571\ \ \ \ \ \ \ \ \ \ \ \ \ CosAngle,\ 0.f,\ -\/SinAngle,\ 0.f,}
+\DoxyCodeLine{00572\ \ \ \ \ \ \ \ \ \ \ \ \ 0.f,\ 1.f,\ 0.f,\ 0.f,}
+\DoxyCodeLine{00573\ \ \ \ \ \ \ \ \ \ \ \ \ SinAngle,\ 0.f,\ CosAngle,\ 0.f,}
+\DoxyCodeLine{00574\ \ \ \ \ \ \ \ \ \ \ \ \ 0.f,\ 0.f,\ 0.f,\ 1.f}
+\DoxyCodeLine{00575\ \ \ \ \ \ \ \ \ );}
+\DoxyCodeLine{00576\ \ \ \ \ \}}
+\DoxyCodeLine{00577\ }
+\DoxyCodeLine{00578\ \ \ \ \ \textcolor{comment}{//\ Z축\ 방향\ 벡터를\ 기준으로\ 직교\ 기저\ 행렬을\ 생성함}}
+\DoxyCodeLine{00579\ \ \ \ \ \textcolor{comment}{//\ 이\ 방향을\ Z축(Up/Normal)으로\ 사용하는\ 함수임}}
+\DoxyCodeLine{00580\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_a00b12c167efdccda00af99fed747a473}{MakeRotationZ}}(\textcolor{keywordtype}{float}\ AngleRad)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00581\ \ \ \ \ \{}
+\DoxyCodeLine{00582\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ CosAngle\ =\ std::cos(AngleRad);}
+\DoxyCodeLine{00583\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ SinAngle\ =\ std::sin(AngleRad);}
+\DoxyCodeLine{00584\ }
+\DoxyCodeLine{00585\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}(}
+\DoxyCodeLine{00586\ \ \ \ \ \ \ \ \ \ \ \ \ CosAngle,\ SinAngle,\ 0.f,\ 0.f,}
+\DoxyCodeLine{00587\ \ \ \ \ \ \ \ \ \ \ \ \ -\/SinAngle,\ CosAngle,\ 0.f,\ 0.f,}
+\DoxyCodeLine{00588\ \ \ \ \ \ \ \ \ \ \ \ \ 0.f,\ 0.f,\ 1.f,\ 0.f,}
+\DoxyCodeLine{00589\ \ \ \ \ \ \ \ \ \ \ \ \ 0.f,\ 0.f,\ 0.f,\ 1.f}
+\DoxyCodeLine{00590\ \ \ \ \ \ \ \ \ );}
+\DoxyCodeLine{00591\ \ \ \ \ \}}
+\DoxyCodeLine{00592\ }
+\DoxyCodeLine{00593\ \ \ \ \ \textcolor{comment}{//\ 단일\ 스칼라\ 값으로\ 균일\ 스케일\ 행렬을\ 생성함}}
+\DoxyCodeLine{00594\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_a95ab177bdfb4f313afe5a19866756b27}{MakeScale}}(\textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}})\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00595\ \ \ \ \ \{}
+\DoxyCodeLine{00596\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a251054777f82c5d7c761eb317101d63c}{MakeScale}}(\doxymbox{\hyperlink{struct_f_vector}{FVector}}(\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}},\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}},\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}}));}
+\DoxyCodeLine{00597\ \ \ \ \ \}}
+\DoxyCodeLine{00598\ }
+\DoxyCodeLine{00599\ \ \ \ \ \textcolor{comment}{//\ X축\ 방향\ 벡터를\ 기준으로\ 직교\ 기저\ 행렬을\ 생성함}}
+\DoxyCodeLine{00600\ \ \ \ \ \textcolor{comment}{//\ 이\ 방향이\ 앞으로\ 향하는\ X축이다.\ 라고\ 정하는\ 함수임}}
+\DoxyCodeLine{00601\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_afe196c72376bf76c51537b1c2ec8c2ef}{MakeFromX}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ XAxis)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00602\ \ \ \ \ \{}
+\DoxyCodeLine{00603\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}{X}}\ =\ XAxis.\doxymbox{\hyperlink{struct_f_vector_a8609d9dafd1faea86bc2209e6a43673e}{GetSafeNormal}}();}
+\DoxyCodeLine{00604\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}{X}}.IsNearlyZero())}
+\DoxyCodeLine{00605\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00606\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a25d402a18105886bdbc0427f21fc97d4}{Identity}};}
+\DoxyCodeLine{00607\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00608\ }
+\DoxyCodeLine{00609\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ UpCandidate\ =}
+\DoxyCodeLine{00610\ \ \ \ \ \ \ \ \ \ \ \ \ (std::fabs(\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}{X}}.Z)\ <\ 0.999f)\ ?\ \doxymbox{\hyperlink{struct_f_vector_a5d712be3687e28c494fb7801926878f8}{FVector::UpVector}}\ :\ \doxymbox{\hyperlink{struct_f_vector_a5ce15aee9c7f6b6ac2dee0b8fa0e899c}{FVector::RightVector}};}
+\DoxyCodeLine{00611\ }
+\DoxyCodeLine{00612\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}}\ =\ \doxymbox{\hyperlink{struct_f_vector_a0986e5b79f59415337eb0a8d577cb1b8}{FVector::CrossProduct}}(UpCandidate,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}{X}}).\doxymbox{\hyperlink{struct_f_vector_a8609d9dafd1faea86bc2209e6a43673e}{GetSafeNormal}}();}
+\DoxyCodeLine{00613\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5}{Z}}\ =\ \doxymbox{\hyperlink{struct_f_vector_a0986e5b79f59415337eb0a8d577cb1b8}{FVector::CrossProduct}}(\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}{X}},\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}}).\doxymbox{\hyperlink{struct_f_vector_a8609d9dafd1faea86bc2209e6a43673e}{GetSafeNormal}}();}
+\DoxyCodeLine{00614\ }
+\DoxyCodeLine{00615\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}(}
+\DoxyCodeLine{00616\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}{X}}.X,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}{X}}.Y,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}{X}}.Z,\ 0.f,}
+\DoxyCodeLine{00617\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}}.X,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}}.Y,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}}.Z,\ 0.f,}
+\DoxyCodeLine{00618\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5}{Z}}.X,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5}{Z}}.Y,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5}{Z}}.Z,\ 0.f,}
+\DoxyCodeLine{00619\ \ \ \ \ \ \ \ \ \ \ \ \ 0.f,\ 0.f,\ 0.f,\ 1.f}
+\DoxyCodeLine{00620\ \ \ \ \ \ \ \ \ );}
+\DoxyCodeLine{00621\ \ \ \ \ \}}
+\DoxyCodeLine{00622\ }
+\DoxyCodeLine{00623\ \ \ \ \ \textcolor{comment}{//\ Y축\ 방향\ 벡터를\ 기준으로\ 직교\ 기저\ 행렬을\ 생성함}}
+\DoxyCodeLine{00624\ \ \ \ \ \textcolor{comment}{//\ 이\ 방향이\ 앞으로\ 향하는\ Y축이다.\ 라고\ 정하는\ 함수임}}
+\DoxyCodeLine{00625\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_a8dfdc9e6e0a4ea5ab61421d69e400a61}{MakeFromY}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ YAxis)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00626\ \ \ \ \ \{}
+\DoxyCodeLine{00627\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}}\ =\ YAxis.\doxymbox{\hyperlink{struct_f_vector_a8609d9dafd1faea86bc2209e6a43673e}{GetSafeNormal}}();}
+\DoxyCodeLine{00628\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}}.IsNearlyZero())}
+\DoxyCodeLine{00629\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00630\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a25d402a18105886bdbc0427f21fc97d4}{Identity}};}
+\DoxyCodeLine{00631\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00632\ }
+\DoxyCodeLine{00633\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ UpCandidate\ =}
+\DoxyCodeLine{00634\ \ \ \ \ \ \ \ \ \ \ \ \ (std::fabs(\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}}.Z)\ <\ 0.999f)\ ?\ \doxymbox{\hyperlink{struct_f_vector_a5d712be3687e28c494fb7801926878f8}{FVector::UpVector}}\ :\ \doxymbox{\hyperlink{struct_f_vector_a169f3ae880dd478a6bcfdbae88691501}{FVector::ForwardVector}};}
+\DoxyCodeLine{00635\ }
+\DoxyCodeLine{00636\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}{X}}\ =\ \doxymbox{\hyperlink{struct_f_vector_a0986e5b79f59415337eb0a8d577cb1b8}{FVector::CrossProduct}}(\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}},\ UpCandidate).\doxymbox{\hyperlink{struct_f_vector_a8609d9dafd1faea86bc2209e6a43673e}{GetSafeNormal}}();}
+\DoxyCodeLine{00637\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5}{Z}}\ =\ \doxymbox{\hyperlink{struct_f_vector_a0986e5b79f59415337eb0a8d577cb1b8}{FVector::CrossProduct}}(\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}{X}},\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}}).\doxymbox{\hyperlink{struct_f_vector_a8609d9dafd1faea86bc2209e6a43673e}{GetSafeNormal}}();}
+\DoxyCodeLine{00638\ }
+\DoxyCodeLine{00639\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}(}
+\DoxyCodeLine{00640\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}{X}}.X,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}{X}}.Y,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}{X}}.Z,\ 0.f,}
+\DoxyCodeLine{00641\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}}.X,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}}.Y,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}}.Z,\ 0.f,}
+\DoxyCodeLine{00642\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5}{Z}}.X,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5}{Z}}.Y,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5}{Z}}.Z,\ 0.f,}
+\DoxyCodeLine{00643\ \ \ \ \ \ \ \ \ \ \ \ \ 0.f,\ 0.f,\ 0.f,\ 1.f}
+\DoxyCodeLine{00644\ \ \ \ \ \ \ \ \ );}
+\DoxyCodeLine{00645\ \ \ \ \ \}}
+\DoxyCodeLine{00646\ }
+\DoxyCodeLine{00647\ \ \ \ \ \textcolor{comment}{//\ Z축\ 방향\ 벡터를\ 기준으로\ 직교\ 기저\ 행렬을\ 생성함}}
+\DoxyCodeLine{00648\ \ \ \ \ \textcolor{comment}{//\ 이\ 방향이\ 앞으로\ 향하는\ Z축이다.\ 라고\ 정하는\ 함수임}}
+\DoxyCodeLine{00649\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_a84f9c0230634bd5800d17d4aae92bf45}{MakeFromZ}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ ZAxis)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00650\ \ \ \ \ \{}
+\DoxyCodeLine{00651\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5}{Z}}\ =\ ZAxis.\doxymbox{\hyperlink{struct_f_vector_a8609d9dafd1faea86bc2209e6a43673e}{GetSafeNormal}}();}
+\DoxyCodeLine{00652\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5}{Z}}.IsNearlyZero())}
+\DoxyCodeLine{00653\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00654\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a25d402a18105886bdbc0427f21fc97d4}{Identity}};}
+\DoxyCodeLine{00655\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00656\ }
+\DoxyCodeLine{00657\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ ForwardCandidate\ =}
+\DoxyCodeLine{00658\ \ \ \ \ \ \ \ \ \ \ \ \ (std::fabs(\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5}{Z}}.X)\ <\ 0.999f)\ ?\ \doxymbox{\hyperlink{struct_f_vector_a169f3ae880dd478a6bcfdbae88691501}{FVector::ForwardVector}}\ :\ \doxymbox{\hyperlink{struct_f_vector_a5ce15aee9c7f6b6ac2dee0b8fa0e899c}{FVector::RightVector}};}
+\DoxyCodeLine{00659\ }
+\DoxyCodeLine{00660\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}}\ =\ \doxymbox{\hyperlink{struct_f_vector_a0986e5b79f59415337eb0a8d577cb1b8}{FVector::CrossProduct}}(\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5}{Z}},\ ForwardCandidate).\doxymbox{\hyperlink{struct_f_vector_a8609d9dafd1faea86bc2209e6a43673e}{GetSafeNormal}}();}
+\DoxyCodeLine{00661\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}{X}}\ =\ \doxymbox{\hyperlink{struct_f_vector_a0986e5b79f59415337eb0a8d577cb1b8}{FVector::CrossProduct}}(\doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}},\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5}{Z}}).\doxymbox{\hyperlink{struct_f_vector_a8609d9dafd1faea86bc2209e6a43673e}{GetSafeNormal}}();}
+\DoxyCodeLine{00662\ }
+\DoxyCodeLine{00663\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}(}
+\DoxyCodeLine{00664\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}{X}}.X,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}{X}}.Y,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a02129bb861061d1a052c592e2dc6b383}{X}}.Z,\ 0.f,}
+\DoxyCodeLine{00665\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}}.X,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}}.Y,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a57cec4137b614c87cb4e24a3d003a3e0}{Y}}.Z,\ 0.f,}
+\DoxyCodeLine{00666\ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5}{Z}}.X,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5}{Z}}.Y,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_a8752420f63c0d0397709831713553aa2a21c2e59531c8710156d34a3c30ac81d5}{Z}}.Z,\ 0.f,}
+\DoxyCodeLine{00667\ \ \ \ \ \ \ \ \ \ \ \ \ 0.f,\ 0.f,\ 0.f,\ 1.f}
+\DoxyCodeLine{00668\ \ \ \ \ \ \ \ \ );}
+\DoxyCodeLine{00669\ \ \ \ \ \}}
+\DoxyCodeLine{00670\ }
+\DoxyCodeLine{00671\ \ \ \ \ \textcolor{comment}{//\ Eye\ 위치에서\ Target\ 위치를\ 바라보는\ LookAt\ 행렬을\ 생성함}}
+\DoxyCodeLine{00672\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_a97db9bb8b115e774186a06b0a0b63a99}{MakeLookAt}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ Eye,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ Target,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ Up\ =\ \doxymbox{\hyperlink{struct_f_vector_a5d712be3687e28c494fb7801926878f8}{FVector::UpVector}})\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00673\ \ \ \ \ \{}
+\DoxyCodeLine{00674\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ Forward\ =\ (Target\ -\/\ Eye).GetSafeNormal();}
+\DoxyCodeLine{00675\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (Forward.\doxymbox{\hyperlink{struct_f_vector_aaf3498f1738c72016a0af3cfe058c8f8}{IsNearlyZero}}())}
+\DoxyCodeLine{00676\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00677\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a25d402a18105886bdbc0427f21fc97d4}{Identity}};}
+\DoxyCodeLine{00678\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00679\ }
+\DoxyCodeLine{00680\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ Right\ =\ \doxymbox{\hyperlink{struct_f_vector_a0986e5b79f59415337eb0a8d577cb1b8}{FVector::CrossProduct}}(Up,\ Forward).\doxymbox{\hyperlink{struct_f_vector_a8609d9dafd1faea86bc2209e6a43673e}{GetSafeNormal}}();}
+\DoxyCodeLine{00681\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (Right.\doxymbox{\hyperlink{struct_f_vector_aaf3498f1738c72016a0af3cfe058c8f8}{IsNearlyZero}}())}
+\DoxyCodeLine{00682\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00683\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a25d402a18105886bdbc0427f21fc97d4}{Identity}};}
+\DoxyCodeLine{00684\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00685\ }
+\DoxyCodeLine{00686\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ NewUp\ =\ \doxymbox{\hyperlink{struct_f_vector_a0986e5b79f59415337eb0a8d577cb1b8}{FVector::CrossProduct}}(Forward,\ Right).\doxymbox{\hyperlink{struct_f_vector_a8609d9dafd1faea86bc2209e6a43673e}{GetSafeNormal}}();}
+\DoxyCodeLine{00687\ }
+\DoxyCodeLine{00688\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}(}
+\DoxyCodeLine{00689\ \ \ \ \ \ \ \ \ \ \ \ \ Forward.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}},\ Forward.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}},\ Forward.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}},\ 0.f,}
+\DoxyCodeLine{00690\ \ \ \ \ \ \ \ \ \ \ \ \ Right.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}},\ Right.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}},\ Right.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}},\ 0.f,}
+\DoxyCodeLine{00691\ \ \ \ \ \ \ \ \ \ \ \ \ NewUp.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}},\ NewUp.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}},\ NewUp.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}},\ 0.f,}
+\DoxyCodeLine{00692\ \ \ \ \ \ \ \ \ \ \ \ \ Eye.X,\ Eye.Y,\ Eye.Z,\ 1.f}
+\DoxyCodeLine{00693\ \ \ \ \ \ \ \ \ );}
+\DoxyCodeLine{00694\ \ \ \ \ \}}
+\DoxyCodeLine{00695\ }
+\DoxyCodeLine{00696\ \ \ \ \ \textcolor{comment}{//\ Left-\/Handed\ 기준\ 원근\ 투영\ 행렬을\ 생성함}}
+\DoxyCodeLine{00697\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_a4869801dc043b3d011ebf9110db737c5}{MakePerspectiveFovLH}}(\textcolor{keywordtype}{float}\ FovYRad,\ \textcolor{keywordtype}{float}\ AspectRatio,\ \textcolor{keywordtype}{float}\ NearZ,\ \textcolor{keywordtype}{float}\ FarZ)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00698\ \ \ \ \ \{}
+\DoxyCodeLine{00699\ \ \ \ \ \ \ \ \ assert(AspectRatio\ !=\ 0.f);}
+\DoxyCodeLine{00700\ \ \ \ \ \ \ \ \ assert(FarZ\ !=\ NearZ);}
+\DoxyCodeLine{00701\ }
+\DoxyCodeLine{00702\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ YScale\ =\ 1.0f\ /\ std::tan(FovYRad\ *\ 0.5f);}
+\DoxyCodeLine{00703\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ XScale\ =\ YScale\ /\ AspectRatio;}
+\DoxyCodeLine{00704\ }
+\DoxyCodeLine{00705\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}(}
+\DoxyCodeLine{00706\ \ \ \ \ \ \ \ \ \ \ \ \ 0.f,\ 0.f,\ FarZ\ /\ (FarZ\ -\/\ NearZ),\ 1.f,}
+\DoxyCodeLine{00707\ \ \ \ \ \ \ \ \ \ \ \ \ XScale,\ 0.f,\ 0.f,\ 0.f,}
+\DoxyCodeLine{00708\ \ \ \ \ \ \ \ \ \ \ \ \ 0.f,\ YScale,\ 0.f,\ 0.f,}
+\DoxyCodeLine{00709\ \ \ \ \ \ \ \ \ \ \ \ \ 0.f,\ 0.f,\ -\/NearZ\ *\ FarZ\ /\ (FarZ\ -\/\ NearZ),\ 0.f}
+\DoxyCodeLine{00710\ \ \ \ \ \ \ \ \ );}
+\DoxyCodeLine{00711\ \ \ \ \ \}}
+\DoxyCodeLine{00712\ }
+\DoxyCodeLine{00713\ \ \ \ \ \textcolor{comment}{//\ Left-\/Handed\ 기준\ 직교\ 투영\ 행렬을\ 생성함}}
+\DoxyCodeLine{00714\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_aa45465873d02e5f1c286577089357c95}{MakeOrthographicLH}}(\textcolor{keywordtype}{float}\ ViewWidth,\ \textcolor{keywordtype}{float}\ ViewHeight,\ \textcolor{keywordtype}{float}\ NearZ,\ \textcolor{keywordtype}{float}\ FarZ)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00715\ \ \ \ \ \{}
+\DoxyCodeLine{00716\ \ \ \ \ \ \ \ \ assert(ViewWidth\ !=\ 0.f);}
+\DoxyCodeLine{00717\ \ \ \ \ \ \ \ \ assert(ViewHeight\ !=\ 0.f);}
+\DoxyCodeLine{00718\ \ \ \ \ \ \ \ \ assert(FarZ\ !=\ NearZ);}
+\DoxyCodeLine{00719\ }
+\DoxyCodeLine{00720\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}(}
+\DoxyCodeLine{00721\ \ \ \ \ \ \ \ \ \ \ \ \ 0.f,\ 0.f,\ 1.f\ /\ (FarZ\ -\/\ NearZ),\ 0.f,}
+\DoxyCodeLine{00722\ \ \ \ \ \ \ \ \ \ \ \ \ 2.f\ /\ ViewWidth,\ 0.f,\ 0.f,\ 0.f,}
+\DoxyCodeLine{00723\ \ \ \ \ \ \ \ \ \ \ \ \ 0.f,\ 2.f\ /\ ViewHeight,\ 0.f,\ 0.f,}
+\DoxyCodeLine{00724\ \ \ \ \ \ \ \ \ \ \ \ \ 0.f,\ 0.f,\ -\/NearZ\ /\ (FarZ\ -\/\ NearZ),\ 1.f}
+\DoxyCodeLine{00725\ \ \ \ \ \ \ \ \ );}
+\DoxyCodeLine{00726\ \ \ \ \ \}}
+\DoxyCodeLine{00727\ }
+\DoxyCodeLine{00728\ \ \ \ \ \textcolor{comment}{//\ Left-\/Handed\ 기준\ View\ LookAt\ 행렬을\ 생성함}}
+\DoxyCodeLine{00729\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_a026877b14488fb48d3c7910f7ca55e11}{MakeViewLookAtLH}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ Eye,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ Target,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ Up\ =\ \doxymbox{\hyperlink{struct_f_vector_a5d712be3687e28c494fb7801926878f8}{FVector::UpVector}})\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00730\ \ \ \ \ \{}
+\DoxyCodeLine{00731\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ Forward\ =\ (Target\ -\/\ Eye).GetSafeNormal();}
+\DoxyCodeLine{00732\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (Forward.\doxymbox{\hyperlink{struct_f_vector_aaf3498f1738c72016a0af3cfe058c8f8}{IsNearlyZero}}())}
+\DoxyCodeLine{00733\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00734\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a25d402a18105886bdbc0427f21fc97d4}{Identity}};}
+\DoxyCodeLine{00735\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00736\ }
+\DoxyCodeLine{00737\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ Right\ =\ \doxymbox{\hyperlink{struct_f_vector_a0986e5b79f59415337eb0a8d577cb1b8}{FVector::CrossProduct}}(Up,\ Forward).\doxymbox{\hyperlink{struct_f_vector_a8609d9dafd1faea86bc2209e6a43673e}{GetSafeNormal}}();}
+\DoxyCodeLine{00738\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (Right.\doxymbox{\hyperlink{struct_f_vector_aaf3498f1738c72016a0af3cfe058c8f8}{IsNearlyZero}}())}
+\DoxyCodeLine{00739\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00740\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a25d402a18105886bdbc0427f21fc97d4}{Identity}};}
+\DoxyCodeLine{00741\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00742\ }
+\DoxyCodeLine{00743\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ NewUp\ =\ \doxymbox{\hyperlink{struct_f_vector_a0986e5b79f59415337eb0a8d577cb1b8}{FVector::CrossProduct}}(Forward,\ Right).\doxymbox{\hyperlink{struct_f_vector_a8609d9dafd1faea86bc2209e6a43673e}{GetSafeNormal}}();}
+\DoxyCodeLine{00744\ }
+\DoxyCodeLine{00745\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}(}
+\DoxyCodeLine{00746\ \ \ \ \ \ \ \ \ \ \ \ \ Forward.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}},\ Right.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}},\ NewUp.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}},\ 0.f,}
+\DoxyCodeLine{00747\ \ \ \ \ \ \ \ \ \ \ \ \ Forward.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}},\ Right.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}},\ NewUp.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}},\ 0.f,}
+\DoxyCodeLine{00748\ \ \ \ \ \ \ \ \ \ \ \ \ Forward.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}},\ Right.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}},\ NewUp.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}},\ 0.f,}
+\DoxyCodeLine{00749\ \ \ \ \ \ \ \ \ \ \ \ \ -\/\doxymbox{\hyperlink{struct_f_vector_a16c17492999fcbf8bae9b97f3eace0ad}{FVector::DotProduct}}(Eye,\ Forward),}
+\DoxyCodeLine{00750\ \ \ \ \ \ \ \ \ \ \ \ \ -\/\doxymbox{\hyperlink{struct_f_vector_a16c17492999fcbf8bae9b97f3eace0ad}{FVector::DotProduct}}(Eye,\ Right),}
+\DoxyCodeLine{00751\ \ \ \ \ \ \ \ \ \ \ \ \ -\/\doxymbox{\hyperlink{struct_f_vector_a16c17492999fcbf8bae9b97f3eace0ad}{FVector::DotProduct}}(Eye,\ NewUp),}
+\DoxyCodeLine{00752\ \ \ \ \ \ \ \ \ \ \ \ \ 1.f}
+\DoxyCodeLine{00753\ \ \ \ \ \ \ \ \ );}
+\DoxyCodeLine{00754\ \ \ \ \ \}}
+\DoxyCodeLine{00755\ }
+\DoxyCodeLine{00756\ \ \ \ \ \textcolor{comment}{//\ 지정한\ 위치에서\ 카메라를\ 바라보는\ Billboard\ 행렬을\ 생성함}}
+\DoxyCodeLine{00757\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_ad23a9e58ff86764fe0f5e46e939eb63a}{MakeBillboard}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ Position,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ CameraPosition,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ Up\ =\ \doxymbox{\hyperlink{struct_f_vector_a5d712be3687e28c494fb7801926878f8}{FVector::UpVector}})\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00758\ \ \ \ \ \{}
+\DoxyCodeLine{00759\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ Forward\ =\ (CameraPosition\ -\/\ Position).GetSafeNormal();}
+\DoxyCodeLine{00760\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (Forward.\doxymbox{\hyperlink{struct_f_vector_aaf3498f1738c72016a0af3cfe058c8f8}{IsNearlyZero}}())}
+\DoxyCodeLine{00761\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00762\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a8bebc2582bae52878f4fe2ac3a65f3aa}{MakeTranslation}}(Position);}
+\DoxyCodeLine{00763\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00764\ }
+\DoxyCodeLine{00765\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ Right\ =\ \doxymbox{\hyperlink{struct_f_vector_a0986e5b79f59415337eb0a8d577cb1b8}{FVector::CrossProduct}}(Up,\ Forward).\doxymbox{\hyperlink{struct_f_vector_a8609d9dafd1faea86bc2209e6a43673e}{GetSafeNormal}}();}
+\DoxyCodeLine{00766\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (Right.\doxymbox{\hyperlink{struct_f_vector_aaf3498f1738c72016a0af3cfe058c8f8}{IsNearlyZero}}())}
+\DoxyCodeLine{00767\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00768\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a8bebc2582bae52878f4fe2ac3a65f3aa}{MakeTranslation}}(Position);}
+\DoxyCodeLine{00769\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00770\ }
+\DoxyCodeLine{00771\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ NewUp\ =\ \doxymbox{\hyperlink{struct_f_vector_a0986e5b79f59415337eb0a8d577cb1b8}{FVector::CrossProduct}}(Forward,\ Right).\doxymbox{\hyperlink{struct_f_vector_a8609d9dafd1faea86bc2209e6a43673e}{GetSafeNormal}}();}
+\DoxyCodeLine{00772\ }
+\DoxyCodeLine{00773\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}(}
+\DoxyCodeLine{00774\ \ \ \ \ \ \ \ \ \ \ \ \ Forward.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}},\ Forward.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}},\ Forward.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}},\ 0.f,}
+\DoxyCodeLine{00775\ \ \ \ \ \ \ \ \ \ \ \ \ Right.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}},\ Right.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}},\ Right.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}},\ 0.f,}
+\DoxyCodeLine{00776\ \ \ \ \ \ \ \ \ \ \ \ \ NewUp.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}},\ NewUp.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}},\ NewUp.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}},\ 0.f,}
+\DoxyCodeLine{00777\ \ \ \ \ \ \ \ \ \ \ \ \ Position.X,\ Position.Y,\ Position.Z,\ 1.f}
+\DoxyCodeLine{00778\ \ \ \ \ \ \ \ \ );}
+\DoxyCodeLine{00779\ \ \ \ \ \}}
+\DoxyCodeLine{00780\ }
+\DoxyCodeLine{00781\ \ \ \ \ \textcolor{comment}{//\ 위치,\ 회전\ 행렬,\ 스케일을\ 이용하여\ 월드\ 행렬을\ 생성함}}
+\DoxyCodeLine{00782\ \ \ \ \ \textcolor{comment}{//\ TODO\ :\ FRotator,\ FQuat를\ 만들면\ 수정해야함.}}
+\DoxyCodeLine{00783\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_afd7adfd9498e5e1d1c02980ae2b835a9}{MakeWorld}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ Translation,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\ RotationMatrix,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}})\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00784\ \ \ \ \ \{}
+\DoxyCodeLine{00785\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ Result\ =\ RotationMatrix;}
+\DoxyCodeLine{00786\ }
+\DoxyCodeLine{00787\ \ \ \ \ \ \ \ \ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][0]\ *=\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}}.X;}
+\DoxyCodeLine{00788\ \ \ \ \ \ \ \ \ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][1]\ *=\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}}.X;}
+\DoxyCodeLine{00789\ \ \ \ \ \ \ \ \ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][2]\ *=\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}}.X;}
+\DoxyCodeLine{00790\ }
+\DoxyCodeLine{00791\ \ \ \ \ \ \ \ \ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][0]\ *=\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}}.Y;}
+\DoxyCodeLine{00792\ \ \ \ \ \ \ \ \ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][1]\ *=\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}}.Y;}
+\DoxyCodeLine{00793\ \ \ \ \ \ \ \ \ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][2]\ *=\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}}.Y;}
+\DoxyCodeLine{00794\ }
+\DoxyCodeLine{00795\ \ \ \ \ \ \ \ \ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][0]\ *=\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}}.Z;}
+\DoxyCodeLine{00796\ \ \ \ \ \ \ \ \ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][1]\ *=\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}}.Z;}
+\DoxyCodeLine{00797\ \ \ \ \ \ \ \ \ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][2]\ *=\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}}.Z;}
+\DoxyCodeLine{00798\ }
+\DoxyCodeLine{00799\ \ \ \ \ \ \ \ \ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][0]\ =\ Translation.X;}
+\DoxyCodeLine{00800\ \ \ \ \ \ \ \ \ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][1]\ =\ Translation.Y;}
+\DoxyCodeLine{00801\ \ \ \ \ \ \ \ \ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][2]\ =\ Translation.Z;}
+\DoxyCodeLine{00802\ \ \ \ \ \ \ \ \ Result.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[3][3]\ =\ 1.f;}
+\DoxyCodeLine{00803\ }
+\DoxyCodeLine{00804\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ Result;}
+\DoxyCodeLine{00805\ \ \ \ \ \}}
+\DoxyCodeLine{00806\ }
+\DoxyCodeLine{00807\ \ \ \ \ \textcolor{comment}{//\ 위치(Translation),\ 회전(Rotation),\ 스케일(Scale)로\ 행렬을\ 생성함}}
+\DoxyCodeLine{00808\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_a6090aeabcf2e72cc6d3467e82f7e171d}{MakeTRS}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ Translation,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\ RotationMatrix,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}})\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00809\ \ \ \ \ \{}
+\DoxyCodeLine{00810\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_matrix_afd7adfd9498e5e1d1c02980ae2b835a9}{MakeWorld}}(Translation,\ RotationMatrix,\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}});}
+\DoxyCodeLine{00811\ \ \ \ \ \}}
+\DoxyCodeLine{00812\ }
+\DoxyCodeLine{00813\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ \doxymbox{\hyperlink{struct_f_matrix_a206ab03507612118adbd28dffb0b7c85}{Abs}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\&\ InMatrix)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00814\ \ \ \ \ \{}
+\DoxyCodeLine{00815\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}}\ Result\ =\ InMatrix;}
+\DoxyCodeLine{00816\ }
+\DoxyCodeLine{00817\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ 4;\ i++)}
+\DoxyCodeLine{00818\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00819\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ j\ =\ 0;\ j\ <\ 4;\ j++)}
+\DoxyCodeLine{00820\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00821\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Result[i][j]\ =\ abs(Result[i][j]);}
+\DoxyCodeLine{00822\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00823\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00824\ }
+\DoxyCodeLine{00825\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ Result;}
+\DoxyCodeLine{00826\ \ \ \ \ \}}
+\DoxyCodeLine{00827\ \};}
+\DoxyCodeLine{00828\ }
+\DoxyCodeLine{00829\ \textcolor{keyword}{inline}\ \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}}\ \doxymbox{\hyperlink{_matrix_8h_a5487a5c9609f65a7f6e3d5ef3474ee68}{operator*}}(\textcolor{keywordtype}{float}\ Scalar,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}}\&\ Matrix)\ \textcolor{keyword}{noexcept}}
+\DoxyCodeLine{00830\ \{}
+\DoxyCodeLine{00831\ \ \ \ \ \textcolor{keywordflow}{return}\ Matrix\ *\ Scalar;}
+\DoxyCodeLine{00832\ \}}
+
+\end{DoxyCode}

@@ -1,0 +1,11 @@
+<map id="CGizmo::GetActorWorldRotation" name="CGizmo::GetActorWorldRotation">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,56,217,83"/>
+<area shape="rect" id="Node000002" href="$class_a_actor.html#a255f914e22cb9227096d30fb365d08ff" title=" " alt="" coords="271,5,456,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="180,53,281,34,276,37,182,58"/>
+<area shape="rect" id="Node000003" href="$struct_f_transform.html#acd1616d9c7fdf7599ca99781de81a38d" title=" " alt="" coords="280,56,446,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="217,67,267,69,262,70,217,72"/>
+<area shape="rect" id="Node000004" href="$class_u_scene_component.html#aaefa149e7e11d1f9fdc5a4706c8b9cb6" title=" " alt="" coords="265,107,462,149"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="172,81,257,102,251,103,171,86"/>
+<area shape="rect" id="Node000005" href="$class_u_scene_component.html#a86bbe3a4c9b5daf88293d2a5d55a718c" title=" " alt="" coords="510,107,728,149"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="462,125,497,128,492,128,463,131"/>
+</map>

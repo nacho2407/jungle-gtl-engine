@@ -1,0 +1,12 @@
+{
+  "Name": "M_TintYellow",
+  "VertexShader": "Engine/Shaders/ColorVertexShader.hlsl",
+  "PixelShader": "Engine/Shaders/PixelShader.hlsl",
+  "ConstantBuffers": [
+    {
+      "Parameters": [
+        { "Name": "ColorTint", "Type": "float4", "Value": [1.0, 1.0, 0.3, 1.0] }
+      ]
+    }
+  ]
+}

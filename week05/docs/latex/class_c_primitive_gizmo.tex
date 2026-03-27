@@ -1,0 +1,693 @@
+\doxysection{CPrimitive\+Gizmo Class Reference}
+\hypertarget{class_c_primitive_gizmo}{}\label{class_c_primitive_gizmo}\index{CPrimitiveGizmo@{CPrimitiveGizmo}}
+
+
+{\ttfamily \+\#include $<$Primitive\+Gizmo.\+h$>$}
+
+
+
+Inheritance diagram for CPrimitive\+Gizmo:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{class_c_primitive_gizmo__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for CPrimitive\+Gizmo:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{class_c_primitive_gizmo__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Types}
+\begin{DoxyCompactItemize}
+\item 
+enum class \doxymbox{\hyperlink{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0}{EGizmo\+Type}} :\+ std::\+uint8\+\_\+t \{ \doxymbox{\hyperlink{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0a6dd08874f83507e9c7b23f1a46b7fa7c}{Translation}}
+, \doxymbox{\hyperlink{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0af1a42bd417390fc63b030a519624607a}{Rotation}}
+, \doxymbox{\hyperlink{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0a85a7cd587d6142dbfc1a4de05af7b75d}{Scale}}
+ \}
+\item 
+enum class \doxymbox{\hyperlink{class_c_primitive_gizmo_a850f4b0d19d6afb8ad28b0ff20cb5738}{ETranslation\+Plane}} :\+ std::\+uint8\+\_\+t \{ \doxymbox{\hyperlink{class_c_primitive_gizmo_a850f4b0d19d6afb8ad28b0ff20cb5738a74c53bcd3dcb2bb79993b2fec37d362a}{XY}}
+, \doxymbox{\hyperlink{class_c_primitive_gizmo_a850f4b0d19d6afb8ad28b0ff20cb5738a27db3b98d01e664c17a6620b222c6469}{XZ}}
+, \doxymbox{\hyperlink{class_c_primitive_gizmo_a850f4b0d19d6afb8ad28b0ff20cb5738affa4ba973372c3650fd0881abeca6512}{YZ}}
+ \}
+\item 
+enum class \doxymbox{\hyperlink{class_c_primitive_gizmo_a1d18ddad653772095bc2ed8ef49f7577}{EScale\+Plane}} :\+ std::\+uint8\+\_\+t \{ \doxymbox{\hyperlink{class_c_primitive_gizmo_a1d18ddad653772095bc2ed8ef49f7577a74c53bcd3dcb2bb79993b2fec37d362a}{XY}}
+, \doxymbox{\hyperlink{class_c_primitive_gizmo_a1d18ddad653772095bc2ed8ef49f7577a27db3b98d01e664c17a6620b222c6469}{XZ}}
+, \doxymbox{\hyperlink{class_c_primitive_gizmo_a1d18ddad653772095bc2ed8ef49f7577affa4ba973372c3650fd0881abeca6512}{YZ}}
+ \}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_c_primitive_gizmo_a689cc5eabc647396f4b758f07c35636a}{CPrimitive\+Gizmo}} (\doxymbox{\hyperlink{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0}{EGizmo\+Type}} Type=\doxymbox{\hyperlink{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0a85a7cd587d6142dbfc1a4de05af7b75d}{EGizmo\+Type::\+\+Scale}})
+\item 
+void \doxymbox{\hyperlink{class_c_primitive_gizmo_af8b2b895ecf8b70831efbcb95e497874}{Generate}} (\doxymbox{\hyperlink{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0}{EGizmo\+Type}} Type)
+\item 
+void \doxymbox{\hyperlink{class_c_primitive_gizmo_adbdcd0e107b503f37eda8362e2ba25f4}{Generate\+Translation\+Gizmo\+Mesh}} ()
+\item 
+void \doxymbox{\hyperlink{class_c_primitive_gizmo_a695146e999f79d0f4cb9eca1b97800b9}{Generate\+Rotation\+Gizmo\+Mesh}} ()
+\item 
+void \doxymbox{\hyperlink{class_c_primitive_gizmo_ae6e66ee72c45837d85101b2b56bc4952}{Generate\+Scale\+Gizmo\+Mesh}} ()
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Member Functions inherited from \doxymbox{\hyperlink{class_c_primitive_base}{CPrimitive\+Base}}}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_c_primitive_base_a6b624ba8ebdba1c66ac033aac231e517}{CPrimitive\+Base}} ()=default
+\item 
+virtual \doxymbox{\hyperlink{class_c_primitive_base_a784e90a769d85e5eed1f10a1b77e8dfa}{\texorpdfstring{$\sim$}{\string~}\+CPrimitive\+Base}} ()=default
+\item 
+\doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_c_primitive_base_a05f5ffc51d97e507777a57104873ad14}{Get\+Mesh\+Data}} () const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_gizmo_ac5520e3daa0e8ab528a318b17d0fd8d0}{Create\+Translation\+Axis\+Mesh}} (\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}} Axis)
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_gizmo_a3801e6e1e0b8ee69164601a72dab62b6}{Create\+Translation\+Axis\+Mesh}} (\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}} Axis, const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&Override\+Color)
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_gizmo_aa5a3c38fdca9bece6c2e3e311321cb7a}{Create\+Translation\+Plane\+Mesh}} (\doxymbox{\hyperlink{class_c_primitive_gizmo_a850f4b0d19d6afb8ad28b0ff20cb5738}{ETranslation\+Plane}} Plane)
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_gizmo_a10126dabc0a05a55d23adaa2c479ac08}{Create\+Translation\+Plane\+Mesh}} (\doxymbox{\hyperlink{class_c_primitive_gizmo_a850f4b0d19d6afb8ad28b0ff20cb5738}{ETranslation\+Plane}} Plane, const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&Override\+Color)
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_gizmo_a99010f7ade11b9edfa4762949e5861ac}{Create\+Translation\+Screen\+Mesh}} ()
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_gizmo_a9816eb615ff66875c518b898721cfb65}{Create\+Translation\+Screen\+Mesh}} (const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&Override\+Color)
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_gizmo_a2b83ff40879ff015c789116de0ead3d3}{Create\+Rotation\+Axis\+Mesh}} (\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}} Axis)
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_gizmo_ad43215c03798a9be9a9245231a73f8e2}{Create\+Rotation\+Axis\+Mesh}} (\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}} Axis, const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&Override\+Color)
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_gizmo_aad86fdb01885148db9c19cf2a1a85bea}{Create\+Rotation\+Axis\+Mesh}} (\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}} Axis, const \doxymbox{\hyperlink{struct_rotation_desc}{Rotation\+Desc}} \&Desc)
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_gizmo_a966548dc8ee6fbffbf36007bffe5877b}{Create\+Rotation\+Axis\+Mesh}} (\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}} Axis, const \doxymbox{\hyperlink{struct_rotation_desc}{Rotation\+Desc}} \&Desc, const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&Override\+Color)
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_gizmo_a8a041a8a3eec0e01cd3e62e99b06e96b}{Create\+Rotation\+Screen\+Mesh}} (const \doxymbox{\hyperlink{struct_rotation_desc}{Rotation\+Desc}} \&Desc)
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_gizmo_ab23422394adeb4f321078ea88206e5b8}{Create\+Rotation\+Screen\+Mesh}} (const \doxymbox{\hyperlink{struct_rotation_desc}{Rotation\+Desc}} \&Desc, const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&Override\+Color)
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_gizmo_a2a69e2da7f9aa4c98f677e24f5bf55ce}{Create\+Scale\+Axis\+Mesh}} (\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}} Axis)
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_gizmo_ac239366d94f2738124ac82a317c4e2bb}{Create\+Scale\+Axis\+Mesh}} (\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}} Axis, const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&Override\+Color)
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_gizmo_aa1f60f2db30f8461060547fe1bc5055c}{Create\+Scale\+Plane\+Mesh}} (\doxymbox{\hyperlink{class_c_primitive_gizmo_a1d18ddad653772095bc2ed8ef49f7577}{EScale\+Plane}} Plane)
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_gizmo_a37dd53cd4913600c0cfa95a0a4d6dc5b}{Create\+Scale\+Plane\+Mesh}} (\doxymbox{\hyperlink{class_c_primitive_gizmo_a1d18ddad653772095bc2ed8ef49f7577}{EScale\+Plane}} Plane, const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&Override\+Color)
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_gizmo_a77336b47433ba4d3f97e7eee97e5c31b}{Create\+Scale\+Center\+Mesh}} ()
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_gizmo_a19f2307fbe83f199326093ac1ce45871}{Create\+Scale\+Center\+Mesh}} (const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&Override\+Color)
+\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Member Functions inherited from \doxymbox{\hyperlink{class_c_primitive_base}{CPrimitive\+Base}}}
+\begin{DoxyCompactItemize}
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_base_a207f69df0e4bd055b37b14c9cb9d93d9}{Get\+Or\+Load}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Key, const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&File\+Path)
+\item 
+static std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_base_ab733faa2005488f36649f777237a00aa}{Get\+Cached}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Key)
+\item 
+static void \doxymbox{\hyperlink{class_c_primitive_base_ac7bd2198368527836380fc804d57bfb2}{Register\+Mesh\+Data}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Key, std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ Data)
+\item 
+static void \doxymbox{\hyperlink{class_c_primitive_base_af59f6b67897e6892d3c1ec93e0312a1f}{Clear\+Cache}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_c_primitive_gizmo_a10a55e4e52b00351f7c3ab6026c7429a}{Key}} = "{}Gizmo"{}
+\item 
+static const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_c_primitive_gizmo_a49672c96d9132260698d03115001271f}{File\+Path}} = "{}Assets/\+Meshed/\+Gizmo.\+mesh"{}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_c_primitive_gizmo_a91a66472d1b631cac4c01ad6e43f1680}{Get\+Key}} (\doxymbox{\hyperlink{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0}{EGizmo\+Type}} Type)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0}{EGizmo\+Type}} \doxymbox{\hyperlink{class_c_primitive_gizmo_a2544328701dbee130d482cb948866c6d}{Gizmo\+Type}} = \doxymbox{\hyperlink{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0a85a7cd587d6142dbfc1a4de05af7b75d}{EGizmo\+Type::\+\+Scale}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Additional Inherited Members}
+\doxysubsection*{Protected Attributes inherited from \doxymbox{\hyperlink{class_c_primitive_base}{CPrimitive\+Base}}}
+\begin{DoxyCompactItemize}
+\item 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ \doxymbox{\hyperlink{class_c_primitive_base_a8a1a33ea96365c0ad57b6dcf5513b66b}{Mesh\+Data}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-enum-members}
+\Hypertarget{class_c_primitive_gizmo_doc-enum-members}
+\doxysubsection{Member Enumeration Documentation}
+\Hypertarget{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!EGizmoType@{EGizmoType}}
+\index{EGizmoType@{EGizmoType}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{EGizmoType}{EGizmoType}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0} 
+enum class \doxymbox{\hyperlink{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0}{CPrimitive\+Gizmo::\+\+EGizmo\+Type}} :\+ std::\+uint8\+\_\+t\hspace{0.3cm}{\ttfamily [strong]}}
+
+\begin{DoxyEnumFields}[2]{Enumerator}
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Translation@{Translation}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\index{CPrimitiveGizmo@{CPrimitiveGizmo}!Translation@{Translation}}
+}\Hypertarget{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0a6dd08874f83507e9c7b23f1a46b7fa7c}\label{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0a6dd08874f83507e9c7b23f1a46b7fa7c} 
+Translation&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Rotation@{Rotation}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\index{CPrimitiveGizmo@{CPrimitiveGizmo}!Rotation@{Rotation}}
+}\Hypertarget{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0af1a42bd417390fc63b030a519624607a}\label{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0af1a42bd417390fc63b030a519624607a} 
+Rotation&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{Scale@{Scale}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\index{CPrimitiveGizmo@{CPrimitiveGizmo}!Scale@{Scale}}
+}\Hypertarget{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0a85a7cd587d6142dbfc1a4de05af7b75d}\label{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0a85a7cd587d6142dbfc1a4de05af7b75d} 
+Scale&\\
+\hline
+
+\end{DoxyEnumFields}
+\Hypertarget{class_c_primitive_gizmo_a1d18ddad653772095bc2ed8ef49f7577}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!EScalePlane@{EScalePlane}}
+\index{EScalePlane@{EScalePlane}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{EScalePlane}{EScalePlane}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_a1d18ddad653772095bc2ed8ef49f7577} 
+enum class \doxymbox{\hyperlink{class_c_primitive_gizmo_a1d18ddad653772095bc2ed8ef49f7577}{CPrimitive\+Gizmo::\+\+EScale\+Plane}} :\+ std::\+uint8\+\_\+t\hspace{0.3cm}{\ttfamily [strong]}}
+
+\begin{DoxyEnumFields}[2]{Enumerator}
+\raisebox{\heightof{T}}[0pt][0pt]{\index{XY@{XY}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\index{CPrimitiveGizmo@{CPrimitiveGizmo}!XY@{XY}}
+}\Hypertarget{class_c_primitive_gizmo_a1d18ddad653772095bc2ed8ef49f7577a74c53bcd3dcb2bb79993b2fec37d362a}\label{class_c_primitive_gizmo_a1d18ddad653772095bc2ed8ef49f7577a74c53bcd3dcb2bb79993b2fec37d362a} 
+XY&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{XZ@{XZ}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\index{CPrimitiveGizmo@{CPrimitiveGizmo}!XZ@{XZ}}
+}\Hypertarget{class_c_primitive_gizmo_a1d18ddad653772095bc2ed8ef49f7577a27db3b98d01e664c17a6620b222c6469}\label{class_c_primitive_gizmo_a1d18ddad653772095bc2ed8ef49f7577a27db3b98d01e664c17a6620b222c6469} 
+XZ&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{YZ@{YZ}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\index{CPrimitiveGizmo@{CPrimitiveGizmo}!YZ@{YZ}}
+}\Hypertarget{class_c_primitive_gizmo_a1d18ddad653772095bc2ed8ef49f7577affa4ba973372c3650fd0881abeca6512}\label{class_c_primitive_gizmo_a1d18ddad653772095bc2ed8ef49f7577affa4ba973372c3650fd0881abeca6512} 
+YZ&\\
+\hline
+
+\end{DoxyEnumFields}
+\Hypertarget{class_c_primitive_gizmo_a850f4b0d19d6afb8ad28b0ff20cb5738}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!ETranslationPlane@{ETranslationPlane}}
+\index{ETranslationPlane@{ETranslationPlane}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{ETranslationPlane}{ETranslationPlane}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_a850f4b0d19d6afb8ad28b0ff20cb5738} 
+enum class \doxymbox{\hyperlink{class_c_primitive_gizmo_a850f4b0d19d6afb8ad28b0ff20cb5738}{CPrimitive\+Gizmo::\+\+ETranslation\+Plane}} :\+ std::\+uint8\+\_\+t\hspace{0.3cm}{\ttfamily [strong]}}
+
+\begin{DoxyEnumFields}[2]{Enumerator}
+\raisebox{\heightof{T}}[0pt][0pt]{\index{XY@{XY}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\index{CPrimitiveGizmo@{CPrimitiveGizmo}!XY@{XY}}
+}\Hypertarget{class_c_primitive_gizmo_a850f4b0d19d6afb8ad28b0ff20cb5738a74c53bcd3dcb2bb79993b2fec37d362a}\label{class_c_primitive_gizmo_a850f4b0d19d6afb8ad28b0ff20cb5738a74c53bcd3dcb2bb79993b2fec37d362a} 
+XY&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{XZ@{XZ}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\index{CPrimitiveGizmo@{CPrimitiveGizmo}!XZ@{XZ}}
+}\Hypertarget{class_c_primitive_gizmo_a850f4b0d19d6afb8ad28b0ff20cb5738a27db3b98d01e664c17a6620b222c6469}\label{class_c_primitive_gizmo_a850f4b0d19d6afb8ad28b0ff20cb5738a27db3b98d01e664c17a6620b222c6469} 
+XZ&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{YZ@{YZ}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\index{CPrimitiveGizmo@{CPrimitiveGizmo}!YZ@{YZ}}
+}\Hypertarget{class_c_primitive_gizmo_a850f4b0d19d6afb8ad28b0ff20cb5738affa4ba973372c3650fd0881abeca6512}\label{class_c_primitive_gizmo_a850f4b0d19d6afb8ad28b0ff20cb5738affa4ba973372c3650fd0881abeca6512} 
+YZ&\\
+\hline
+
+\end{DoxyEnumFields}
+
+
+\label{doc-constructors}
+\Hypertarget{class_c_primitive_gizmo_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_c_primitive_gizmo_a689cc5eabc647396f4b758f07c35636a}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\index{CPrimitiveGizmo@{CPrimitiveGizmo}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{CPrimitiveGizmo()}{CPrimitiveGizmo()}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_a689cc5eabc647396f4b758f07c35636a} 
+CPrimitive\+Gizmo::\+\+CPrimitive\+Gizmo (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0}{EGizmo\+Type}}}]{Type}{ = {\ttfamily \doxymbox{\hyperlink{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0a85a7cd587d6142dbfc1a4de05af7b75d}{EGizmo\+Type::\+\+Scale}}}}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [explicit]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_a689cc5eabc647396f4b758f07c35636a_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-func-members}
+\Hypertarget{class_c_primitive_gizmo_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_c_primitive_gizmo_a2b83ff40879ff015c789116de0ead3d3}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!CreateRotationAxisMesh@{CreateRotationAxisMesh}}
+\index{CreateRotationAxisMesh@{CreateRotationAxisMesh}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{CreateRotationAxisMesh()}{CreateRotationAxisMesh()}\hspace{0.1cm}{\footnotesize\ttfamily [1/4]}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_a2b83ff40879ff015c789116de0ead3d3} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ CPrimitive\+Gizmo::\+\+Create\+Rotation\+Axis\+Mesh (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}}}]{Axis}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=242pt]{class_c_primitive_gizmo_a2b83ff40879ff015c789116de0ead3d3_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_a2b83ff40879ff015c789116de0ead3d3_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_ad43215c03798a9be9a9245231a73f8e2}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!CreateRotationAxisMesh@{CreateRotationAxisMesh}}
+\index{CreateRotationAxisMesh@{CreateRotationAxisMesh}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{CreateRotationAxisMesh()}{CreateRotationAxisMesh()}\hspace{0.1cm}{\footnotesize\ttfamily [2/4]}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_ad43215c03798a9be9a9245231a73f8e2} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ CPrimitive\+Gizmo::\+\+Create\+Rotation\+Axis\+Mesh (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}}}]{Axis}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&}]{Override\+Color}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_ad43215c03798a9be9a9245231a73f8e2_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_aad86fdb01885148db9c19cf2a1a85bea}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!CreateRotationAxisMesh@{CreateRotationAxisMesh}}
+\index{CreateRotationAxisMesh@{CreateRotationAxisMesh}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{CreateRotationAxisMesh()}{CreateRotationAxisMesh()}\hspace{0.1cm}{\footnotesize\ttfamily [3/4]}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_aad86fdb01885148db9c19cf2a1a85bea} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ CPrimitive\+Gizmo::\+\+Create\+Rotation\+Axis\+Mesh (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}}}]{Axis}{, }\item[{const \doxymbox{\hyperlink{struct_rotation_desc}{Rotation\+Desc}} \&}]{Desc}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_aad86fdb01885148db9c19cf2a1a85bea_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_a966548dc8ee6fbffbf36007bffe5877b}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!CreateRotationAxisMesh@{CreateRotationAxisMesh}}
+\index{CreateRotationAxisMesh@{CreateRotationAxisMesh}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{CreateRotationAxisMesh()}{CreateRotationAxisMesh()}\hspace{0.1cm}{\footnotesize\ttfamily [4/4]}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_a966548dc8ee6fbffbf36007bffe5877b} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ CPrimitive\+Gizmo::\+\+Create\+Rotation\+Axis\+Mesh (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}}}]{Axis}{, }\item[{const \doxymbox{\hyperlink{struct_rotation_desc}{Rotation\+Desc}} \&}]{Desc}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&}]{Override\+Color}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_a966548dc8ee6fbffbf36007bffe5877b_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_a8a041a8a3eec0e01cd3e62e99b06e96b}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!CreateRotationScreenMesh@{CreateRotationScreenMesh}}
+\index{CreateRotationScreenMesh@{CreateRotationScreenMesh}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{CreateRotationScreenMesh()}{CreateRotationScreenMesh()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_a8a041a8a3eec0e01cd3e62e99b06e96b} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ CPrimitive\+Gizmo::\+\+Create\+Rotation\+Screen\+Mesh (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_rotation_desc}{Rotation\+Desc}} \&}]{Desc}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_a8a041a8a3eec0e01cd3e62e99b06e96b_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_a8a041a8a3eec0e01cd3e62e99b06e96b_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_ab23422394adeb4f321078ea88206e5b8}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!CreateRotationScreenMesh@{CreateRotationScreenMesh}}
+\index{CreateRotationScreenMesh@{CreateRotationScreenMesh}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{CreateRotationScreenMesh()}{CreateRotationScreenMesh()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_ab23422394adeb4f321078ea88206e5b8} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ CPrimitive\+Gizmo::\+\+Create\+Rotation\+Screen\+Mesh (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_rotation_desc}{Rotation\+Desc}} \&}]{Desc}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&}]{Override\+Color}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_ab23422394adeb4f321078ea88206e5b8_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_a2a69e2da7f9aa4c98f677e24f5bf55ce}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!CreateScaleAxisMesh@{CreateScaleAxisMesh}}
+\index{CreateScaleAxisMesh@{CreateScaleAxisMesh}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{CreateScaleAxisMesh()}{CreateScaleAxisMesh()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_a2a69e2da7f9aa4c98f677e24f5bf55ce} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ CPrimitive\+Gizmo::\+\+Create\+Scale\+Axis\+Mesh (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}}}]{Axis}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_a2a69e2da7f9aa4c98f677e24f5bf55ce_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_a2a69e2da7f9aa4c98f677e24f5bf55ce_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_ac239366d94f2738124ac82a317c4e2bb}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!CreateScaleAxisMesh@{CreateScaleAxisMesh}}
+\index{CreateScaleAxisMesh@{CreateScaleAxisMesh}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{CreateScaleAxisMesh()}{CreateScaleAxisMesh()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_ac239366d94f2738124ac82a317c4e2bb} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ CPrimitive\+Gizmo::\+\+Create\+Scale\+Axis\+Mesh (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}}}]{Axis}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&}]{Override\+Color}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_ac239366d94f2738124ac82a317c4e2bb_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_a77336b47433ba4d3f97e7eee97e5c31b}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!CreateScaleCenterMesh@{CreateScaleCenterMesh}}
+\index{CreateScaleCenterMesh@{CreateScaleCenterMesh}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{CreateScaleCenterMesh()}{CreateScaleCenterMesh()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_a77336b47433ba4d3f97e7eee97e5c31b} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ CPrimitive\+Gizmo::\+\+Create\+Scale\+Center\+Mesh (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_a77336b47433ba4d3f97e7eee97e5c31b_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_a77336b47433ba4d3f97e7eee97e5c31b_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_a19f2307fbe83f199326093ac1ce45871}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!CreateScaleCenterMesh@{CreateScaleCenterMesh}}
+\index{CreateScaleCenterMesh@{CreateScaleCenterMesh}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{CreateScaleCenterMesh()}{CreateScaleCenterMesh()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_a19f2307fbe83f199326093ac1ce45871} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ CPrimitive\+Gizmo::\+\+Create\+Scale\+Center\+Mesh (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&}]{Override\+Color}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_a19f2307fbe83f199326093ac1ce45871_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_aa1f60f2db30f8461060547fe1bc5055c}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!CreateScalePlaneMesh@{CreateScalePlaneMesh}}
+\index{CreateScalePlaneMesh@{CreateScalePlaneMesh}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{CreateScalePlaneMesh()}{CreateScalePlaneMesh()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_aa1f60f2db30f8461060547fe1bc5055c} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ CPrimitive\+Gizmo::\+\+Create\+Scale\+Plane\+Mesh (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_primitive_gizmo_a1d18ddad653772095bc2ed8ef49f7577}{EScale\+Plane}}}]{Plane}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_aa1f60f2db30f8461060547fe1bc5055c_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_aa1f60f2db30f8461060547fe1bc5055c_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_a37dd53cd4913600c0cfa95a0a4d6dc5b}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!CreateScalePlaneMesh@{CreateScalePlaneMesh}}
+\index{CreateScalePlaneMesh@{CreateScalePlaneMesh}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{CreateScalePlaneMesh()}{CreateScalePlaneMesh()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_a37dd53cd4913600c0cfa95a0a4d6dc5b} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ CPrimitive\+Gizmo::\+\+Create\+Scale\+Plane\+Mesh (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_primitive_gizmo_a1d18ddad653772095bc2ed8ef49f7577}{EScale\+Plane}}}]{Plane}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&}]{Override\+Color}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_a37dd53cd4913600c0cfa95a0a4d6dc5b_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_ac5520e3daa0e8ab528a318b17d0fd8d0}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!CreateTranslationAxisMesh@{CreateTranslationAxisMesh}}
+\index{CreateTranslationAxisMesh@{CreateTranslationAxisMesh}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{CreateTranslationAxisMesh()}{CreateTranslationAxisMesh()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_ac5520e3daa0e8ab528a318b17d0fd8d0} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ CPrimitive\+Gizmo::\+\+Create\+Translation\+Axis\+Mesh (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}}}]{Axis}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_ac5520e3daa0e8ab528a318b17d0fd8d0_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_ac5520e3daa0e8ab528a318b17d0fd8d0_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_a3801e6e1e0b8ee69164601a72dab62b6}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!CreateTranslationAxisMesh@{CreateTranslationAxisMesh}}
+\index{CreateTranslationAxisMesh@{CreateTranslationAxisMesh}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{CreateTranslationAxisMesh()}{CreateTranslationAxisMesh()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_a3801e6e1e0b8ee69164601a72dab62b6} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ CPrimitive\+Gizmo::\+\+Create\+Translation\+Axis\+Mesh (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}}}]{Axis}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&}]{Override\+Color}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_a3801e6e1e0b8ee69164601a72dab62b6_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_aa5a3c38fdca9bece6c2e3e311321cb7a}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!CreateTranslationPlaneMesh@{CreateTranslationPlaneMesh}}
+\index{CreateTranslationPlaneMesh@{CreateTranslationPlaneMesh}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{CreateTranslationPlaneMesh()}{CreateTranslationPlaneMesh()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_aa5a3c38fdca9bece6c2e3e311321cb7a} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ CPrimitive\+Gizmo::\+\+Create\+Translation\+Plane\+Mesh (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_primitive_gizmo_a850f4b0d19d6afb8ad28b0ff20cb5738}{ETranslation\+Plane}}}]{Plane}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_aa5a3c38fdca9bece6c2e3e311321cb7a_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_aa5a3c38fdca9bece6c2e3e311321cb7a_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_a10126dabc0a05a55d23adaa2c479ac08}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!CreateTranslationPlaneMesh@{CreateTranslationPlaneMesh}}
+\index{CreateTranslationPlaneMesh@{CreateTranslationPlaneMesh}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{CreateTranslationPlaneMesh()}{CreateTranslationPlaneMesh()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_a10126dabc0a05a55d23adaa2c479ac08} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ CPrimitive\+Gizmo::\+\+Create\+Translation\+Plane\+Mesh (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_primitive_gizmo_a850f4b0d19d6afb8ad28b0ff20cb5738}{ETranslation\+Plane}}}]{Plane}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&}]{Override\+Color}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_a10126dabc0a05a55d23adaa2c479ac08_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_a99010f7ade11b9edfa4762949e5861ac}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!CreateTranslationScreenMesh@{CreateTranslationScreenMesh}}
+\index{CreateTranslationScreenMesh@{CreateTranslationScreenMesh}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{CreateTranslationScreenMesh()}{CreateTranslationScreenMesh()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_a99010f7ade11b9edfa4762949e5861ac} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ CPrimitive\+Gizmo::\+\+Create\+Translation\+Screen\+Mesh (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_a99010f7ade11b9edfa4762949e5861ac_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_a99010f7ade11b9edfa4762949e5861ac_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_a9816eb615ff66875c518b898721cfb65}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!CreateTranslationScreenMesh@{CreateTranslationScreenMesh}}
+\index{CreateTranslationScreenMesh@{CreateTranslationScreenMesh}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{CreateTranslationScreenMesh()}{CreateTranslationScreenMesh()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_a9816eb615ff66875c518b898721cfb65} 
+std::\+shared\+\_\+ptr$<$ \doxymbox{\hyperlink{struct_f_mesh_data}{FMesh\+Data}} $>$ CPrimitive\+Gizmo::\+\+Create\+Translation\+Screen\+Mesh (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&}]{Override\+Color}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_a9816eb615ff66875c518b898721cfb65_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_af8b2b895ecf8b70831efbcb95e497874}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!Generate@{Generate}}
+\index{Generate@{Generate}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{Generate()}{Generate()}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_af8b2b895ecf8b70831efbcb95e497874} 
+void CPrimitive\+Gizmo::\+\+Generate (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0}{EGizmo\+Type}}}]{Type}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_af8b2b895ecf8b70831efbcb95e497874_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_af8b2b895ecf8b70831efbcb95e497874_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_a695146e999f79d0f4cb9eca1b97800b9}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!GenerateRotationGizmoMesh@{GenerateRotationGizmoMesh}}
+\index{GenerateRotationGizmoMesh@{GenerateRotationGizmoMesh}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{GenerateRotationGizmoMesh()}{GenerateRotationGizmoMesh()}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_a695146e999f79d0f4cb9eca1b97800b9} 
+void CPrimitive\+Gizmo::\+\+Generate\+Rotation\+Gizmo\+Mesh (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_a695146e999f79d0f4cb9eca1b97800b9_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_a695146e999f79d0f4cb9eca1b97800b9_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_ae6e66ee72c45837d85101b2b56bc4952}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!GenerateScaleGizmoMesh@{GenerateScaleGizmoMesh}}
+\index{GenerateScaleGizmoMesh@{GenerateScaleGizmoMesh}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{GenerateScaleGizmoMesh()}{GenerateScaleGizmoMesh()}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_ae6e66ee72c45837d85101b2b56bc4952} 
+void CPrimitive\+Gizmo::\+\+Generate\+Scale\+Gizmo\+Mesh (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_ae6e66ee72c45837d85101b2b56bc4952_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_ae6e66ee72c45837d85101b2b56bc4952_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_adbdcd0e107b503f37eda8362e2ba25f4}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!GenerateTranslationGizmoMesh@{GenerateTranslationGizmoMesh}}
+\index{GenerateTranslationGizmoMesh@{GenerateTranslationGizmoMesh}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{GenerateTranslationGizmoMesh()}{GenerateTranslationGizmoMesh()}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_adbdcd0e107b503f37eda8362e2ba25f4} 
+void CPrimitive\+Gizmo::\+\+Generate\+Translation\+Gizmo\+Mesh (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_adbdcd0e107b503f37eda8362e2ba25f4_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_adbdcd0e107b503f37eda8362e2ba25f4_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_primitive_gizmo_a91a66472d1b631cac4c01ad6e43f1680}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!GetKey@{GetKey}}
+\index{GetKey@{GetKey}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{GetKey()}{GetKey()}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_a91a66472d1b631cac4c01ad6e43f1680} 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} CPrimitive\+Gizmo::\+\+Get\+Key (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0}{EGizmo\+Type}}}]{Type}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_primitive_gizmo_a91a66472d1b631cac4c01ad6e43f1680_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_c_primitive_gizmo_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_c_primitive_gizmo_a49672c96d9132260698d03115001271f}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!FilePath@{FilePath}}
+\index{FilePath@{FilePath}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{FilePath}{FilePath}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_a49672c96d9132260698d03115001271f} 
+const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} CPrimitive\+Gizmo::\+\+File\+Path = "{}Assets/\+Meshed/\+Gizmo.\+mesh"{}\hspace{0.3cm}{\ttfamily [static]}}
+
+\Hypertarget{class_c_primitive_gizmo_a2544328701dbee130d482cb948866c6d}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!GizmoType@{GizmoType}}
+\index{GizmoType@{GizmoType}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{GizmoType}{GizmoType}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_a2544328701dbee130d482cb948866c6d} 
+\doxymbox{\hyperlink{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0}{EGizmo\+Type}} CPrimitive\+Gizmo::\+\+Gizmo\+Type = \doxymbox{\hyperlink{class_c_primitive_gizmo_a4497abe1880fa95cd5a6ba700132dca0a85a7cd587d6142dbfc1a4de05af7b75d}{EGizmo\+Type::\+\+Scale}}\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_primitive_gizmo_a10a55e4e52b00351f7c3ab6026c7429a}\index{CPrimitiveGizmo@{CPrimitiveGizmo}!Key@{Key}}
+\index{Key@{Key}!CPrimitiveGizmo@{CPrimitiveGizmo}}
+\doxysubsubsection{\texorpdfstring{Key}{Key}}
+{\footnotesize\ttfamily \label{class_c_primitive_gizmo_a10a55e4e52b00351f7c3ab6026c7429a} 
+const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} CPrimitive\+Gizmo::\+\+Key = "{}Gizmo"{}\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Primitive/\+\doxymbox{\hyperlink{_primitive_gizmo_8h}{Primitive\+Gizmo.\+h}}\item 
+Engine/\+\+Source/\+\+Primitive/\+\doxymbox{\hyperlink{_primitive_gizmo_8cpp}{Primitive\+Gizmo.\+cpp}}\end{DoxyCompactItemize}

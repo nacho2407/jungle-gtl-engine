@@ -1,0 +1,15 @@
+<map id="AActor::GetComponents" name="AActor::GetComponents">
+<area shape="rect" id="Node000001" title=" " alt="" coords="447,81,611,108"/>
+<area shape="rect" id="Node000002" href="$class_c_editor_u_i.html#af6abbe943fe631a76da4bd0229c5c355" title=" " alt="" coords="207,5,399,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="479,75,398,47,361,35,361,30,400,41,484,75"/>
+<area shape="rect" id="Node000003" href="$class_u_scene.html#abc994481c579aebd962110a6dc1d73dd" title=" " alt="" coords="226,56,380,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="429,84,380,81,380,75,434,83"/>
+<area shape="rect" id="Node000005" href="$class_c_core.html#a6777485bd38329e69f10133497dfbfde" title=" " alt="" coords="246,107,360,133"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="429,106,361,116,360,111,434,105"/>
+<area shape="rect" id="Node000007" href="$class_a_actor.html#a39af8fb0102b3fb08ec9e066735416f9" title=" " alt="" coords="244,157,362,184"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="484,114,400,148,361,159,360,154,398,143,479,115"/>
+<area shape="rect" id="Node000004" href="$class_c_control_panel_window.html#a77f0bb41d37c2fedec4855a31130b6e5" title=" " alt="" coords="5,44,159,87"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="208,69,160,69,159,64,213,67"/>
+<area shape="rect" id="Node000006" href="$class_c_core.html#a8b4950627b31ac880598f18652875711" title=" " alt="" coords="36,111,128,137"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="228,123,129,126,128,121,233,120"/>
+</map>

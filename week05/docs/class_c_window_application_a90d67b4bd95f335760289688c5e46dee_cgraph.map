@@ -1,0 +1,17 @@
+<map id="CWindowApplication::CreateMainWindow" name="CWindowApplication::CreateMainWindow">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,93,149,136"/>
+<area shape="rect" id="Node000002" href="$class_c_window_application.html#a0fe120bce5043b1d509ec5559b7fec81" title=" " alt="" coords="197,93,339,136"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="149,112,184,114,178,115,149,117"/>
+<area shape="rect" id="Node000003" href="$class_c_window.html#a66260709d4dfc6a58519d9e46bcea3e9" title=" " alt="" coords="387,72,512,99"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="339,101,369,98,374,97,340,106"/>
+<area shape="rect" id="Node000007" href="$class_c_window_application.html#a850c6c7bf26c00ee0d9c341f809d5d9a" title=" " alt="" coords="784,109,926,152"/>
+<area shape="poly" id="edge8_Node000002_Node000007" title=" " alt="" coords="340,114,769,126,768,131,340,119"/>
+<area shape="rect" id="Node000004" href="$class_c_window_application.html#a01873eecba83540c8869f64e15100a50" title=" " alt="" coords="560,13,732,40"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="496,69,560,49,581,45,587,44,561,55,497,74"/>
+<area shape="rect" id="Node000006" href="$class_c_window_application.html#a4bef89a8796bc509327fc53b057e554a" title=" " alt="" coords="575,64,717,107"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="513,83,562,85,557,86,513,88"/>
+<area shape="rect" id="Node000005" href="$class_c_window_application.html#a7f63d612a2effe0b8825b2306e91cc1c" title=" " alt="" coords="780,5,930,48"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="732,24,767,26,762,27,732,29"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="718,98,771,112,766,112,717,103"/>
+<area shape="poly" id="edge7_Node000007_Node000007" title=" " alt="" coords="815,107,813,99,820,90,834,85,855,83,877,85,892,94,887,93,876,90,855,88,835,90,823,95,819,101,820,110"/>
+</map>

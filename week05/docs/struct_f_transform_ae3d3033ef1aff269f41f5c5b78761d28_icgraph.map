@@ -1,0 +1,13 @@
+<map id="FTransform::Rotator" name="FTransform::Rotator">
+<area shape="rect" id="Node000001" title=" " alt="" coords="694,43,834,69"/>
+<area shape="rect" id="Node000002" href="$class_u_scene.html#a155163fd1607ab44155c04d964d397a2" title=" " alt="" coords="458,13,636,40"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="676,45,636,41,636,36,682,45"/>
+<area shape="rect" id="Node000004" href="$class_c_editor_u_i.html#a0ba0cc3fe5ec6990a8ecc1b8e59e89a5" title=" " alt="" coords="447,64,646,107"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="682,67,647,74,647,69,676,68"/>
+<area shape="rect" id="Node000003" href="$class_c_control_panel_window.html#a77f0bb41d37c2fedec4855a31130b6e5" title=" " alt="" coords="246,5,399,48"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="440,27,400,29,399,24,445,26"/>
+<area shape="rect" id="Node000005" href="$class_c_editor_u_i.html#aeaff289996cd22e04aa51e1bbed5289d" title=" " alt="" coords="258,72,387,99"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="429,85,388,88,387,83,434,85"/>
+<area shape="rect" id="Node000006" href="$class_c_editor_u_i.html#af6abbe943fe631a76da4bd0229c5c355" title=" " alt="" coords="5,72,198,99"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="240,86,198,88,198,83,245,85"/>
+</map>

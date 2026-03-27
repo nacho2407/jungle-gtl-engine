@@ -1,0 +1,241 @@
+\doxysection{FPaths Class Reference}
+\hypertarget{class_f_paths}{}\label{class_f_paths}\index{FPaths@{FPaths}}
+
+
+{\ttfamily \+\#include $<$Paths.\+h$>$}
+
+
+
+Collaboration diagram for FPaths:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=176pt]{class_f_paths__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static void \doxymbox{\hyperlink{class_f_paths_aeb75591f1cb81d58d1afc48760c48c33}{Initialize}} ()
+\item 
+static const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \& \doxymbox{\hyperlink{class_f_paths_a77ca548189fe576289cb6141cccfc276}{Project\+Root}} ()
+\item 
+static \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_f_paths_a9d0c2b458d067339c3075a03d54e2e30}{Engine\+Dir}} ()
+\item 
+static \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_f_paths_a3bfd48df83819555c031fc9ecb7e7bf9}{Shader\+Dir}} ()
+\item 
+static \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_f_paths_ad534fcf71651d5c5b930a523c7dba576}{Asset\+Dir}} ()
+\item 
+static \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_f_paths_a7af62ddd2feedc0b1e0430a19c0a4ab6}{Scene\+Dir}} ()
+\item 
+static \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_f_paths_a4a1b1dc0f6746cac2c100dd001ea568e}{Material\+Dir}} ()
+\item 
+static \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_f_paths_a4dd7ef78a35b5d83234d97ab790c9781}{Mesh\+Dir}} ()
+\item 
+static \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_f_paths_a4f78806a02196e79b67b049edca19f77}{Content\+Dir}} ()
+\item 
+static \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_f_paths_a02ac45235b69191b992e541b0d972335}{Shader\+Cache\+Dir}} ()
+\item 
+static \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_f_paths_a47bc8eb64f35c31e29ee7db92cfe2164}{Combine}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Base, const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Relative)
+\item 
+static std::\+wstring \doxymbox{\hyperlink{class_f_paths_ab2f5468b5368ab205c151d0eab721c8b}{To\+Wide}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&Path)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static void \doxymbox{\hyperlink{class_f_paths_ada06590dc5a025d3ea24af87a587b7b0}{Set\+Root}} (const std::\+filesystem::\+path \&In\+Path)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_f_paths_ad6a3aba59c821d0219a8946513e7ae44}{Root}}
+\item 
+static bool \doxymbox{\hyperlink{class_f_paths_a87bb6fbf6b9fb33b868231f13426d345}{b\+Initialized}} = false
+\end{DoxyCompactItemize}
+
+
+\label{doc-func-members}
+\Hypertarget{class_f_paths_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_f_paths_ad534fcf71651d5c5b930a523c7dba576}\index{FPaths@{FPaths}!AssetDir@{AssetDir}}
+\index{AssetDir@{AssetDir}!FPaths@{FPaths}}
+\doxysubsubsection{\texorpdfstring{AssetDir()}{AssetDir()}}
+{\footnotesize\ttfamily \label{class_f_paths_ad534fcf71651d5c5b930a523c7dba576} 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} FPaths::\+\+Asset\+Dir (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+\Hypertarget{class_f_paths_a47bc8eb64f35c31e29ee7db92cfe2164}\index{FPaths@{FPaths}!Combine@{Combine}}
+\index{Combine@{Combine}!FPaths@{FPaths}}
+\doxysubsubsection{\texorpdfstring{Combine()}{Combine()}}
+{\footnotesize\ttfamily \label{class_f_paths_a47bc8eb64f35c31e29ee7db92cfe2164} 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} FPaths::\+\+Combine (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Base}{, }\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Relative}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_paths_a47bc8eb64f35c31e29ee7db92cfe2164_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_paths_a4f78806a02196e79b67b049edca19f77}\index{FPaths@{FPaths}!ContentDir@{ContentDir}}
+\index{ContentDir@{ContentDir}!FPaths@{FPaths}}
+\doxysubsubsection{\texorpdfstring{ContentDir()}{ContentDir()}}
+{\footnotesize\ttfamily \label{class_f_paths_a4f78806a02196e79b67b049edca19f77} 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} FPaths::\+\+Content\+Dir (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+\Hypertarget{class_f_paths_a9d0c2b458d067339c3075a03d54e2e30}\index{FPaths@{FPaths}!EngineDir@{EngineDir}}
+\index{EngineDir@{EngineDir}!FPaths@{FPaths}}
+\doxysubsubsection{\texorpdfstring{EngineDir()}{EngineDir()}}
+{\footnotesize\ttfamily \label{class_f_paths_a9d0c2b458d067339c3075a03d54e2e30} 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} FPaths::\+\+Engine\+Dir (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+\Hypertarget{class_f_paths_aeb75591f1cb81d58d1afc48760c48c33}\index{FPaths@{FPaths}!Initialize@{Initialize}}
+\index{Initialize@{Initialize}!FPaths@{FPaths}}
+\doxysubsubsection{\texorpdfstring{Initialize()}{Initialize()}}
+{\footnotesize\ttfamily \label{class_f_paths_aeb75591f1cb81d58d1afc48760c48c33} 
+void FPaths::\+\+Initialize (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=295pt]{class_f_paths_aeb75591f1cb81d58d1afc48760c48c33_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_paths_aeb75591f1cb81d58d1afc48760c48c33_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_paths_a4a1b1dc0f6746cac2c100dd001ea568e}\index{FPaths@{FPaths}!MaterialDir@{MaterialDir}}
+\index{MaterialDir@{MaterialDir}!FPaths@{FPaths}}
+\doxysubsubsection{\texorpdfstring{MaterialDir()}{MaterialDir()}}
+{\footnotesize\ttfamily \label{class_f_paths_a4a1b1dc0f6746cac2c100dd001ea568e} 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} FPaths::\+\+Material\+Dir (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+\Hypertarget{class_f_paths_a4dd7ef78a35b5d83234d97ab790c9781}\index{FPaths@{FPaths}!MeshDir@{MeshDir}}
+\index{MeshDir@{MeshDir}!FPaths@{FPaths}}
+\doxysubsubsection{\texorpdfstring{MeshDir()}{MeshDir()}}
+{\footnotesize\ttfamily \label{class_f_paths_a4dd7ef78a35b5d83234d97ab790c9781} 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} FPaths::\+\+Mesh\+Dir (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_paths_a4dd7ef78a35b5d83234d97ab790c9781_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_paths_a77ca548189fe576289cb6141cccfc276}\index{FPaths@{FPaths}!ProjectRoot@{ProjectRoot}}
+\index{ProjectRoot@{ProjectRoot}!FPaths@{FPaths}}
+\doxysubsubsection{\texorpdfstring{ProjectRoot()}{ProjectRoot()}}
+{\footnotesize\ttfamily \label{class_f_paths_a77ca548189fe576289cb6141cccfc276} 
+const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \& FPaths::\+\+Project\+Root (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_paths_a77ca548189fe576289cb6141cccfc276_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_paths_a7af62ddd2feedc0b1e0430a19c0a4ab6}\index{FPaths@{FPaths}!SceneDir@{SceneDir}}
+\index{SceneDir@{SceneDir}!FPaths@{FPaths}}
+\doxysubsubsection{\texorpdfstring{SceneDir()}{SceneDir()}}
+{\footnotesize\ttfamily \label{class_f_paths_a7af62ddd2feedc0b1e0430a19c0a4ab6} 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} FPaths::\+\+Scene\+Dir (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_paths_a7af62ddd2feedc0b1e0430a19c0a4ab6_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_paths_ada06590dc5a025d3ea24af87a587b7b0}\index{FPaths@{FPaths}!SetRoot@{SetRoot}}
+\index{SetRoot@{SetRoot}!FPaths@{FPaths}}
+\doxysubsubsection{\texorpdfstring{SetRoot()}{SetRoot()}}
+{\footnotesize\ttfamily \label{class_f_paths_ada06590dc5a025d3ea24af87a587b7b0} 
+void FPaths::\+\+Set\+Root (\begin{DoxyParamCaption}\item[{const std::\+filesystem::\+path \&}]{In\+Path}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_paths_ada06590dc5a025d3ea24af87a587b7b0_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_paths_a02ac45235b69191b992e541b0d972335}\index{FPaths@{FPaths}!ShaderCacheDir@{ShaderCacheDir}}
+\index{ShaderCacheDir@{ShaderCacheDir}!FPaths@{FPaths}}
+\doxysubsubsection{\texorpdfstring{ShaderCacheDir()}{ShaderCacheDir()}}
+{\footnotesize\ttfamily \label{class_f_paths_a02ac45235b69191b992e541b0d972335} 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} FPaths::\+\+Shader\+Cache\+Dir (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_paths_a02ac45235b69191b992e541b0d972335_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_paths_a3bfd48df83819555c031fc9ecb7e7bf9}\index{FPaths@{FPaths}!ShaderDir@{ShaderDir}}
+\index{ShaderDir@{ShaderDir}!FPaths@{FPaths}}
+\doxysubsubsection{\texorpdfstring{ShaderDir()}{ShaderDir()}}
+{\footnotesize\ttfamily \label{class_f_paths_a3bfd48df83819555c031fc9ecb7e7bf9} 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} FPaths::\+\+Shader\+Dir (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_paths_a3bfd48df83819555c031fc9ecb7e7bf9_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_paths_ab2f5468b5368ab205c151d0eab721c8b}\index{FPaths@{FPaths}!ToWide@{ToWide}}
+\index{ToWide@{ToWide}!FPaths@{FPaths}}
+\doxysubsubsection{\texorpdfstring{ToWide()}{ToWide()}}
+{\footnotesize\ttfamily \label{class_f_paths_ab2f5468b5368ab205c151d0eab721c8b} 
+std::\+wstring FPaths::\+\+To\+Wide (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&}]{Path}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_paths_ab2f5468b5368ab205c151d0eab721c8b_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_f_paths_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_f_paths_a87bb6fbf6b9fb33b868231f13426d345}\index{FPaths@{FPaths}!bInitialized@{bInitialized}}
+\index{bInitialized@{bInitialized}!FPaths@{FPaths}}
+\doxysubsubsection{\texorpdfstring{bInitialized}{bInitialized}}
+{\footnotesize\ttfamily \label{class_f_paths_a87bb6fbf6b9fb33b868231f13426d345} 
+bool FPaths::\+b\+Initialized = false\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\Hypertarget{class_f_paths_ad6a3aba59c821d0219a8946513e7ae44}\index{FPaths@{FPaths}!Root@{Root}}
+\index{Root@{Root}!FPaths@{FPaths}}
+\doxysubsubsection{\texorpdfstring{Root}{Root}}
+{\footnotesize\ttfamily \label{class_f_paths_ad6a3aba59c821d0219a8946513e7ae44} 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} FPaths::\+\+Root\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Core/\+\doxymbox{\hyperlink{_paths_8h}{Paths.\+h}}\item 
+Engine/\+\+Source/\+\+Core/\+\doxymbox{\hyperlink{_paths_8cpp}{Paths.\+cpp}}\end{DoxyCompactItemize}

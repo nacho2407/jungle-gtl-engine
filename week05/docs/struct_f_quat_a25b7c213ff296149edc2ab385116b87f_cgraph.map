@@ -1,0 +1,13 @@
+<map id="FQuat::ToMatrix" name="FQuat::ToMatrix">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,56,121,83"/>
+<area shape="rect" id="Node000002" href="$struct_f_quat.html#a12195ceb868985b0fdd9dd4fdad54e1f" title=" " alt="" coords="169,31,321,57"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="121,59,156,56,151,57,121,64"/>
+<area shape="rect" id="Node000005" href="$struct_f_quat.html#ae500b97cbb82792796e1e7eb4806c256" title=" " alt="" coords="541,56,678,83"/>
+<area shape="poly" id="edge6_Node000001_Node000005" title=" " alt="" coords="121,67,526,67,526,72,121,72"/>
+<area shape="rect" id="Node000003" href="$struct_f_quat.html#a898470770e4f1314a90cccb3ec8e9515" title=" " alt="" coords="559,5,660,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="301,27,369,16,460,11,546,15,541,15,460,17,369,21,302,33"/>
+<area shape="rect" id="Node000004" href="$struct_f_quat.html#a20b1175ee99c038924047a6cdc322144" title=" " alt="" coords="369,31,493,57"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="321,41,356,44,351,44,322,47"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="494,32,541,28,546,28,494,38"/>
+<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="494,50,529,58,523,57,494,56"/>
+</map>

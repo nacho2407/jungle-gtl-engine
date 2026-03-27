@@ -1,0 +1,152 @@
+\doxysection{CEnhanced\+Input\+Manager Class Reference}
+\hypertarget{class_c_enhanced_input_manager}{}\label{class_c_enhanced_input_manager}\index{CEnhancedInputManager@{CEnhancedInputManager}}
+
+
+{\ttfamily \+\#include $<$Enhanced\+Input\+Manager.\+h$>$}
+
+
+
+Collaboration diagram for CEnhanced\+Input\+Manager:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=215pt]{class_c_enhanced_input_manager__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \doxymbox{\hyperlink{struct_c_enhanced_input_manager_1_1_f_mapping_context_entry}{FMapping\+Context\+Entry}}
+\item 
+struct \doxymbox{\hyperlink{struct_c_enhanced_input_manager_1_1_f_binding_entry}{FBinding\+Entry}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \doxymbox{\hyperlink{class_c_enhanced_input_manager_a5e875f5480ed966a0e07e5f4e3633d9c}{Add\+Mapping\+Context}} (\doxymbox{\hyperlink{struct_f_input_mapping_context}{FInput\+Mapping\+Context}} \texorpdfstring{$\ast$}{*}Context, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Priority=0)
+\item 
+void \doxymbox{\hyperlink{class_c_enhanced_input_manager_a526c5d7330fdd91cae4d8da333f361b4}{Remove\+Mapping\+Context}} (\doxymbox{\hyperlink{struct_f_input_mapping_context}{FInput\+Mapping\+Context}} \texorpdfstring{$\ast$}{*}Context)
+\item 
+void \doxymbox{\hyperlink{class_c_enhanced_input_manager_afe94e4dd7565b10daa2c28072c523e9a}{Clear\+All\+Mapping\+Contexts}} ()
+\item 
+void \doxymbox{\hyperlink{class_c_enhanced_input_manager_af86df78a46cc215b421aee2a8d00d576}{Bind\+Action}} (\doxymbox{\hyperlink{struct_f_input_action}{FInput\+Action}} \texorpdfstring{$\ast$}{*}Action, \doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETrigger\+Event}} Trigger\+Event, \doxymbox{\hyperlink{_enhanced_input_manager_8h_aff197fbb0dcb3ec4b03822ba0958cdc3}{FInput\+Action\+Callback}} Callback)
+\item 
+void \doxymbox{\hyperlink{class_c_enhanced_input_manager_a592767a194b56c97feb85e97b1b5d04d}{Clear\+Bindings}} ()
+\item 
+void \doxymbox{\hyperlink{class_c_enhanced_input_manager_a88793a4576dada8fdc7538b1b632d242}{Process\+Input}} (\doxymbox{\hyperlink{class_c_input_manager}{CInput\+Manager}} \texorpdfstring{$\ast$}{*}Raw\+Input, float Delta\+Time)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{struct_f_input_action_value}{FInput\+Action\+Value}} \doxymbox{\hyperlink{class_c_enhanced_input_manager_a1e9fe3fdcd36121f2544c25378cb764b}{Get\+Raw\+Action\+Value}} (\doxymbox{\hyperlink{class_c_input_manager}{CInput\+Manager}} \texorpdfstring{$\ast$}{*}Input, \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Key)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$ \doxymbox{\hyperlink{struct_c_enhanced_input_manager_1_1_f_mapping_context_entry}{FMapping\+Context\+Entry}} $>$ \doxymbox{\hyperlink{class_c_enhanced_input_manager_a7e6ea02f69422a1b5437869421862602}{Mapping\+Contexts}}
+\item 
+\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$ \doxymbox{\hyperlink{struct_c_enhanced_input_manager_1_1_f_binding_entry}{FBinding\+Entry}} $>$ \doxymbox{\hyperlink{class_c_enhanced_input_manager_a24251906ea37b8ef42c21a353550e053}{Bindings}}
+\item 
+\doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap}}$<$ \doxymbox{\hyperlink{struct_f_input_action}{FInput\+Action}} \texorpdfstring{$\ast$}{*}, \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50ec}{ETrigger\+State}} $>$ \doxymbox{\hyperlink{class_c_enhanced_input_manager_ab41a37f89ab05842d02af1a6316ff2dc}{Action\+States}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-func-members}
+\Hypertarget{class_c_enhanced_input_manager_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_c_enhanced_input_manager_a5e875f5480ed966a0e07e5f4e3633d9c}\index{CEnhancedInputManager@{CEnhancedInputManager}!AddMappingContext@{AddMappingContext}}
+\index{AddMappingContext@{AddMappingContext}!CEnhancedInputManager@{CEnhancedInputManager}}
+\doxysubsubsection{\texorpdfstring{AddMappingContext()}{AddMappingContext()}}
+{\footnotesize\ttfamily \label{class_c_enhanced_input_manager_a5e875f5480ed966a0e07e5f4e3633d9c} 
+void CEnhanced\+Input\+Manager::\+\+Add\+Mapping\+Context (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{struct_f_input_mapping_context}{FInput\+Mapping\+Context}} \texorpdfstring{$\ast$}{*}}]{Context}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Priority}{ = {\ttfamily 0}}\end{DoxyParamCaption})}
+
+\Hypertarget{class_c_enhanced_input_manager_af86df78a46cc215b421aee2a8d00d576}\index{CEnhancedInputManager@{CEnhancedInputManager}!BindAction@{BindAction}}
+\index{BindAction@{BindAction}!CEnhancedInputManager@{CEnhancedInputManager}}
+\doxysubsubsection{\texorpdfstring{BindAction()}{BindAction()}}
+{\footnotesize\ttfamily \label{class_c_enhanced_input_manager_af86df78a46cc215b421aee2a8d00d576} 
+void CEnhanced\+Input\+Manager::\+\+Bind\+Action (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{struct_f_input_action}{FInput\+Action}} \texorpdfstring{$\ast$}{*}}]{Action}{, }\item[{\doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETrigger\+Event}}}]{Trigger\+Event}{, }\item[{\doxymbox{\hyperlink{_enhanced_input_manager_8h_aff197fbb0dcb3ec4b03822ba0958cdc3}{FInput\+Action\+Callback}}}]{Callback}{}\end{DoxyParamCaption})}
+
+\Hypertarget{class_c_enhanced_input_manager_afe94e4dd7565b10daa2c28072c523e9a}\index{CEnhancedInputManager@{CEnhancedInputManager}!ClearAllMappingContexts@{ClearAllMappingContexts}}
+\index{ClearAllMappingContexts@{ClearAllMappingContexts}!CEnhancedInputManager@{CEnhancedInputManager}}
+\doxysubsubsection{\texorpdfstring{ClearAllMappingContexts()}{ClearAllMappingContexts()}}
+{\footnotesize\ttfamily \label{class_c_enhanced_input_manager_afe94e4dd7565b10daa2c28072c523e9a} 
+void CEnhanced\+Input\+Manager::\+\+Clear\+All\+Mapping\+Contexts (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{class_c_enhanced_input_manager_a592767a194b56c97feb85e97b1b5d04d}\index{CEnhancedInputManager@{CEnhancedInputManager}!ClearBindings@{ClearBindings}}
+\index{ClearBindings@{ClearBindings}!CEnhancedInputManager@{CEnhancedInputManager}}
+\doxysubsubsection{\texorpdfstring{ClearBindings()}{ClearBindings()}}
+{\footnotesize\ttfamily \label{class_c_enhanced_input_manager_a592767a194b56c97feb85e97b1b5d04d} 
+void CEnhanced\+Input\+Manager::\+\+Clear\+Bindings (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{class_c_enhanced_input_manager_a1e9fe3fdcd36121f2544c25378cb764b}\index{CEnhancedInputManager@{CEnhancedInputManager}!GetRawActionValue@{GetRawActionValue}}
+\index{GetRawActionValue@{GetRawActionValue}!CEnhancedInputManager@{CEnhancedInputManager}}
+\doxysubsubsection{\texorpdfstring{GetRawActionValue()}{GetRawActionValue()}}
+{\footnotesize\ttfamily \label{class_c_enhanced_input_manager_a1e9fe3fdcd36121f2544c25378cb764b} 
+\doxymbox{\hyperlink{struct_f_input_action_value}{FInput\+Action\+Value}} CEnhanced\+Input\+Manager::\+\+Get\+Raw\+Action\+Value (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_input_manager}{CInput\+Manager}} \texorpdfstring{$\ast$}{*}}]{Input}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Key}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_enhanced_input_manager_a1e9fe3fdcd36121f2544c25378cb764b_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_enhanced_input_manager_a1e9fe3fdcd36121f2544c25378cb764b_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_enhanced_input_manager_a88793a4576dada8fdc7538b1b632d242}\index{CEnhancedInputManager@{CEnhancedInputManager}!ProcessInput@{ProcessInput}}
+\index{ProcessInput@{ProcessInput}!CEnhancedInputManager@{CEnhancedInputManager}}
+\doxysubsubsection{\texorpdfstring{ProcessInput()}{ProcessInput()}}
+{\footnotesize\ttfamily \label{class_c_enhanced_input_manager_a88793a4576dada8fdc7538b1b632d242} 
+void CEnhanced\+Input\+Manager::\+\+Process\+Input (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_c_input_manager}{CInput\+Manager}} \texorpdfstring{$\ast$}{*}}]{Raw\+Input}{, }\item[{float}]{Delta\+Time}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_c_enhanced_input_manager_a88793a4576dada8fdc7538b1b632d242_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_c_enhanced_input_manager_a526c5d7330fdd91cae4d8da333f361b4}\index{CEnhancedInputManager@{CEnhancedInputManager}!RemoveMappingContext@{RemoveMappingContext}}
+\index{RemoveMappingContext@{RemoveMappingContext}!CEnhancedInputManager@{CEnhancedInputManager}}
+\doxysubsubsection{\texorpdfstring{RemoveMappingContext()}{RemoveMappingContext()}}
+{\footnotesize\ttfamily \label{class_c_enhanced_input_manager_a526c5d7330fdd91cae4d8da333f361b4} 
+void CEnhanced\+Input\+Manager::\+\+Remove\+Mapping\+Context (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{struct_f_input_mapping_context}{FInput\+Mapping\+Context}} \texorpdfstring{$\ast$}{*}}]{Context}{}\end{DoxyParamCaption})}
+
+
+
+\label{doc-variable-members}
+\Hypertarget{class_c_enhanced_input_manager_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_c_enhanced_input_manager_ab41a37f89ab05842d02af1a6316ff2dc}\index{CEnhancedInputManager@{CEnhancedInputManager}!ActionStates@{ActionStates}}
+\index{ActionStates@{ActionStates}!CEnhancedInputManager@{CEnhancedInputManager}}
+\doxysubsubsection{\texorpdfstring{ActionStates}{ActionStates}}
+{\footnotesize\ttfamily \label{class_c_enhanced_input_manager_ab41a37f89ab05842d02af1a6316ff2dc} 
+\doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap}}$<$\doxymbox{\hyperlink{struct_f_input_action}{FInput\+Action}}\texorpdfstring{$\ast$}{*}, \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50ec}{ETrigger\+State}}$>$ CEnhanced\+Input\+Manager::\+\+Action\+States\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_enhanced_input_manager_a24251906ea37b8ef42c21a353550e053}\index{CEnhancedInputManager@{CEnhancedInputManager}!Bindings@{Bindings}}
+\index{Bindings@{Bindings}!CEnhancedInputManager@{CEnhancedInputManager}}
+\doxysubsubsection{\texorpdfstring{Bindings}{Bindings}}
+{\footnotesize\ttfamily \label{class_c_enhanced_input_manager_a24251906ea37b8ef42c21a353550e053} 
+\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$\doxymbox{\hyperlink{struct_c_enhanced_input_manager_1_1_f_binding_entry}{FBinding\+Entry}}$>$ CEnhanced\+Input\+Manager::\+\+Bindings\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_c_enhanced_input_manager_a7e6ea02f69422a1b5437869421862602}\index{CEnhancedInputManager@{CEnhancedInputManager}!MappingContexts@{MappingContexts}}
+\index{MappingContexts@{MappingContexts}!CEnhancedInputManager@{CEnhancedInputManager}}
+\doxysubsubsection{\texorpdfstring{MappingContexts}{MappingContexts}}
+{\footnotesize\ttfamily \label{class_c_enhanced_input_manager_a7e6ea02f69422a1b5437869421862602} 
+\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$\doxymbox{\hyperlink{struct_c_enhanced_input_manager_1_1_f_mapping_context_entry}{FMapping\+Context\+Entry}}$>$ CEnhanced\+Input\+Manager::\+\+Mapping\+Contexts\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Input/\+\doxymbox{\hyperlink{_enhanced_input_manager_8h}{Enhanced\+Input\+Manager.\+h}}\item 
+Engine/\+\+Source/\+\+Input/\+\doxymbox{\hyperlink{_enhanced_input_manager_8cpp}{Enhanced\+Input\+Manager.\+cpp}}\end{DoxyCompactItemize}

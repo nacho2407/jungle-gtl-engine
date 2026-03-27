@@ -1,0 +1,7 @@
+<map id="CPrimitiveSky::CPrimitiveSky" name="CPrimitiveSky::CPrimitiveSky">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,31,203,57"/>
+<area shape="rect" id="Node000002" href="$class_c_primitive_sky.html#ae9ad11557ef2602bcd830db93d2dc36e" title=" " alt="" coords="261,5,427,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="203,31,248,29,243,30,204,36"/>
+<area shape="rect" id="Node000003" href="$class_c_primitive_base.html#ab733faa2005488f36649f777237a00aa" title=" " alt="" coords="251,56,437,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="203,52,238,58,233,58,203,57"/>
+</map>

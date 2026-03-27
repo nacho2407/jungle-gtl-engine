@@ -1,0 +1,7 @@
+<map id="CInputManager::IsMouseButtonDown" name="CInputManager::IsMouseButtonDown">
+<area shape="rect" id="Node000001" title=" " alt="" coords="227,43,467,69"/>
+<area shape="rect" id="Node000002" href="$class_c_editor_viewport_client.html#a4fcfd4098f5902f4e8cf437cacdf06a1" title=" " alt="" coords="17,5,167,48"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="209,41,168,38,168,33,214,40"/>
+<area shape="rect" id="Node000003" href="$class_c_input_manager.html#a42d8aca707c1713b00af78109ecaadeb" title=" " alt="" coords="5,72,179,99"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="208,72,180,78,179,73,214,71"/>
+</map>

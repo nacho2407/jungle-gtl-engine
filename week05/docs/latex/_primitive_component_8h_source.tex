@@ -1,0 +1,84 @@
+\doxysection{Primitive\+Component.\+h}
+\hypertarget{_primitive_component_8h_source}{}\label{_primitive_component_8h_source}\index{Engine/Source/Component/PrimitiveComponent.h@{Engine/Source/Component/PrimitiveComponent.h}}
+\doxymbox{\hyperlink{_primitive_component_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_scene_component_8h}{SceneComponent.h}}"{}}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_primitive_base_8h}{Primitive/PrimitiveBase.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_frustum_8h}{Math/Frustum.h}}"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <algorithm>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <cmath>}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_f_material}{FMaterial}};}
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00011\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_box_sphere_bounds}{FBoxSphereBounds}}}
+\DoxyCodeLine{00012\ \{}
+\DoxyCodeLine{00013\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_f_box_sphere_bounds_aa2044fa2eb49b078d040476a22d19db5}{Center}};}
+\DoxyCodeLine{00014\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_box_sphere_bounds_a427679307e8c81c2b194df07e4ca98d3}{RadiusSquared}};}
+\DoxyCodeLine{00015\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{struct_f_box_sphere_bounds_a83cd7f92a542300b0366e83fd11ea08d}{BoxExtent}};}
+\DoxyCodeLine{00016\ \};}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_u_primitive_component}{UPrimitiveComponent}}\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{class_u_scene_component}{USceneComponent}}}
+\DoxyCodeLine{00019\ \{}
+\DoxyCodeLine{00020\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00021\ \ \ \ \ \doxymbox{\hyperlink{_object_8h_a357d06a2d2ae2eccd8dc94b17f17a710}{DECLARE\_RTTI}}(\doxymbox{\hyperlink{class_u_primitive_component}{UPrimitiveComponent}},\ \doxymbox{\hyperlink{class_u_scene_component}{USceneComponent}})}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \ \ \ \ \doxymbox{\hyperlink{class_c_primitive_base}{CPrimitiveBase}}*\ \doxymbox{\hyperlink{class_u_primitive_component_a03d35315c723380090956b2e4d0909d1}{GetPrimitive}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_u_primitive_component_a5ca6e03cafad0bdc2a116349a601c201}{Primitive}}.get();\ \}}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_u_primitive_component_a043b7a26dd81de5b75629d031bc7c117}{SetMaterial}}(\doxymbox{\hyperlink{class_f_material}{FMaterial}}*\ InMaterial)\ \{\ \doxymbox{\hyperlink{class_u_primitive_component_a2edd4b61399d7854bbbf2a414766a668}{Material}}\ =\ InMaterial;\ \}}
+\DoxyCodeLine{00026\ \ \ \ \ \doxymbox{\hyperlink{class_f_material}{FMaterial}}*\ \doxymbox{\hyperlink{class_u_primitive_component_ae5a6e9c7a2e997d733dd5f8e7d7b087b}{GetMaterial}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_u_primitive_component_a2edd4b61399d7854bbbf2a414766a668}{Material}};\ \}}
+\DoxyCodeLine{00027\ }
+\DoxyCodeLine{00028\ \ \ \ \ \doxymbox{\hyperlink{struct_f_bounding_sphere}{FBoundingSphere}}\ \doxymbox{\hyperlink{class_u_primitive_component_a4f01748e2334fc1e877aefaeef83f8d2}{GetWorldBounds}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00029\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ Center\ =\ \doxymbox{\hyperlink{class_u_scene_component_a854ba442e7e5fe710d17543ef3b60fff}{GetWorldLocation}}();}
+\DoxyCodeLine{00031\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_transform}{FTransform}}\ T\ =\ \doxymbox{\hyperlink{class_u_scene_component_ad1b8751af65b8f2abd408b7fe849fcdf}{GetRelativeTransform}}();}
+\DoxyCodeLine{00032\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ S\ =\ T.\doxymbox{\hyperlink{struct_f_transform_ab0ea0fe880fd7d0392e5c8f092d830db}{GetScale3D}}();}
+\DoxyCodeLine{00033\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ MaxScale\ =\ (std::max)(\{\ std::abs(S.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}),\ std::abs(S.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}),\ std::abs(S.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}})\ \});}
+\DoxyCodeLine{00034\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \{\ Center,\ \doxymbox{\hyperlink{class_u_primitive_component_af2b1ea532e911d49f8cc494d4ba1d9da}{LocalBoundRadius}}\ *\ MaxScale\ \};}
+\DoxyCodeLine{00035\ \ \ \ \ \}}
+\DoxyCodeLine{00036\ }
+\DoxyCodeLine{00037\ \ \ \ \ \textcolor{keyword}{virtual}\ \doxymbox{\hyperlink{struct_f_box_sphere_bounds}{FBoxSphereBounds}}\ \doxymbox{\hyperlink{class_u_primitive_component_af8bf30a905892d49a4b244276bd3b03b}{GetWorldBoundsForAABB}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00038\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00039\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ Center\ =\ \doxymbox{\hyperlink{class_u_scene_component_a854ba442e7e5fe710d17543ef3b60fff}{GetWorldLocation}}();}
+\DoxyCodeLine{00040\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_transform}{FTransform}}\ T\ =\ \doxymbox{\hyperlink{class_u_scene_component_ad1b8751af65b8f2abd408b7fe849fcdf}{GetRelativeTransform}}();}
+\DoxyCodeLine{00041\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ S\ =\ T.\doxymbox{\hyperlink{struct_f_transform_ab0ea0fe880fd7d0392e5c8f092d830db}{GetScale3D}}();}
+\DoxyCodeLine{00042\ }
+\DoxyCodeLine{00043\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ ScaledExtent\ =\ \doxymbox{\hyperlink{struct_f_vector_aa155b94be4b3e18a95c0780371f2e485}{FVector::Multiply}}(\doxymbox{\hyperlink{class_u_primitive_component_abd9ef985d95c145db0a6e5dff0a93f3a}{LocalBoxExtent}},\ S);}
+\DoxyCodeLine{00044\ }
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}}\ AbsR\ =\ \doxymbox{\hyperlink{struct_f_matrix_a206ab03507612118adbd28dffb0b7c85}{FMatrix::Abs}}(T.\doxymbox{\hyperlink{struct_f_transform_acd1616d9c7fdf7599ca99781de81a38d}{GetRotation}}().\doxymbox{\hyperlink{struct_f_quat_a25b7c213ff296149edc2ab385116b87f}{ToMatrix}}());}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00047\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ WorldBoxExtent;}
+\DoxyCodeLine{00048\ \ \ \ \ \ \ \ \ WorldBoxExtent.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ =}
+\DoxyCodeLine{00049\ \ \ \ \ \ \ \ \ \ \ \ \ AbsR.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][0]\ *\ ScaledExtent.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ +}
+\DoxyCodeLine{00050\ \ \ \ \ \ \ \ \ \ \ \ \ AbsR.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][1]\ *\ ScaledExtent.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ +}
+\DoxyCodeLine{00051\ \ \ \ \ \ \ \ \ \ \ \ \ AbsR.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[0][2]\ *\ ScaledExtent.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}};}
+\DoxyCodeLine{00052\ }
+\DoxyCodeLine{00053\ \ \ \ \ \ \ \ \ WorldBoxExtent.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ =}
+\DoxyCodeLine{00054\ \ \ \ \ \ \ \ \ \ \ \ \ AbsR.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][0]\ *\ ScaledExtent.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ +}
+\DoxyCodeLine{00055\ \ \ \ \ \ \ \ \ \ \ \ \ AbsR.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][1]\ *\ ScaledExtent.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ +}
+\DoxyCodeLine{00056\ \ \ \ \ \ \ \ \ \ \ \ \ AbsR.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[1][2]\ *\ ScaledExtent.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}};}
+\DoxyCodeLine{00057\ }
+\DoxyCodeLine{00058\ \ \ \ \ \ \ \ \ WorldBoxExtent.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}}\ =}
+\DoxyCodeLine{00059\ \ \ \ \ \ \ \ \ \ \ \ \ AbsR.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][0]\ *\ ScaledExtent.\doxymbox{\hyperlink{struct_f_vector_a398a79b30440560a5e8bc9c1dba0c8e9}{X}}\ +}
+\DoxyCodeLine{00060\ \ \ \ \ \ \ \ \ \ \ \ \ AbsR.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][1]\ *\ ScaledExtent.\doxymbox{\hyperlink{struct_f_vector_a459449d61a832d42e3f53c0a7a053530}{Y}}\ +}
+\DoxyCodeLine{00061\ \ \ \ \ \ \ \ \ \ \ \ \ AbsR.\doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}}[2][2]\ *\ ScaledExtent.\doxymbox{\hyperlink{struct_f_vector_a8bec8086d5d055f23b46f0d41e5893cf}{Z}};}
+\DoxyCodeLine{00062\ }
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \{\ Center,\ WorldBoxExtent.\doxymbox{\hyperlink{struct_f_vector_aefbfd226172a88a9eb8cdcee7db08d23}{SizeSquared}}(),\ WorldBoxExtent\};}
+\DoxyCodeLine{00064\ \ \ \ \ \}}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00066\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{class_u_primitive_component_a1d6e051f4a253925d473f1eb47ff8468}{GetLocalBoxExtent}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00067\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_u_primitive_component_abd9ef985d95c145db0a6e5dff0a93f3a}{LocalBoxExtent}};}
+\DoxyCodeLine{00069\ \ \ \ \ \}}
+\DoxyCodeLine{00070\ }
+\DoxyCodeLine{00071\ \textcolor{keyword}{protected}:}
+\DoxyCodeLine{00072\ \ \ \ \ std::unique\_ptr<CPrimitiveBase>\ \doxymbox{\hyperlink{class_u_primitive_component_a5ca6e03cafad0bdc2a116349a601c201}{Primitive}};}
+\DoxyCodeLine{00073\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_primitive_component_af2b1ea532e911d49f8cc494d4ba1d9da}{LocalBoundRadius}}\ =\ 1.0f;}
+\DoxyCodeLine{00074\ \ \ \ \ \doxymbox{\hyperlink{class_f_material}{FMaterial}}*\ \doxymbox{\hyperlink{class_u_primitive_component_a2edd4b61399d7854bbbf2a414766a668}{Material}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00075\ }
+\DoxyCodeLine{00076\ \ \ \ \ }
+\DoxyCodeLine{00077\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ \doxymbox{\hyperlink{class_u_primitive_component_abd9ef985d95c145db0a6e5dff0a93f3a}{LocalBoxExtent}}\ =\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}(0.75,\ 0.75,\ 0.75);}
+\DoxyCodeLine{00078\ \};}
+
+\end{DoxyCode}

@@ -1,0 +1,9 @@
+<map id="FQuat::MakeFromEuler" name="FQuat::MakeFromEuler">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,31,163,57"/>
+<area shape="rect" id="Node000002" href="$struct_f_quat.html#a898470770e4f1314a90cccb3ec8e9515" title=" " alt="" coords="246,5,348,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="163,32,233,26,228,27,163,37"/>
+<area shape="rect" id="Node000003" href="$struct_f_rotator.html#abefa00857033100d3bfa33aa8b760280" title=" " alt="" coords="211,56,383,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="163,51,198,57,192,57,163,56"/>
+<area shape="rect" id="Node000004" href="$struct_f_rotator.html#acdae927f1edaea843961be8ffcf5ceb0" title=" " alt="" coords="431,56,562,83"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="383,67,418,69,413,69,384,72"/>
+</map>

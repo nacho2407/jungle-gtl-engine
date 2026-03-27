@@ -1,0 +1,47 @@
+\doxysection{Enhanced\+Input\+Manager.\+h}
+\hypertarget{_enhanced_input_manager_8h_source}{}\label{_enhanced_input_manager_8h_source}\index{Engine/Source/Input/EnhancedInputManager.h@{Engine/Source/Input/EnhancedInputManager.h}}
+\doxymbox{\hyperlink{_enhanced_input_manager_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}"{}}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{input_trigger_8h}{InputTrigger.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <functional>}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_input_manager}{CInputManager}};}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_input_mapping_context}{FInputMappingContext}};}
+\DoxyCodeLine{00009\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_input_action}{FInputAction}};}
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00011\ \textcolor{keyword}{using\ }\doxymbox{\hyperlink{_enhanced_input_manager_8h_aff197fbb0dcb3ec4b03822ba0958cdc3}{FInputActionCallback}}\ =\ std::function<void(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_input_action_value}{FInputActionValue}}\&)>;}
+\DoxyCodeLine{00012\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \ \doxymbox{\hyperlink{class_c_enhanced_input_manager}{CEnhancedInputManager}}}
+\DoxyCodeLine{00013\ \{}
+\DoxyCodeLine{00014\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_enhanced_input_manager_a5e875f5480ed966a0e07e5f4e3633d9c}{AddMappingContext}}(\doxymbox{\hyperlink{struct_f_input_mapping_context}{FInputMappingContext}}*\ Context,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Priority\ =\ 0);}
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_enhanced_input_manager_a526c5d7330fdd91cae4d8da333f361b4}{RemoveMappingContext}}(\doxymbox{\hyperlink{struct_f_input_mapping_context}{FInputMappingContext}}*\ Context);}
+\DoxyCodeLine{00018\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_enhanced_input_manager_afe94e4dd7565b10daa2c28072c523e9a}{ClearAllMappingContexts}}();}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_enhanced_input_manager_af86df78a46cc215b421aee2a8d00d576}{BindAction}}(\doxymbox{\hyperlink{struct_f_input_action}{FInputAction}}*\ Action,\ \doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETriggerEvent}}\ TriggerEvent,\ \doxymbox{\hyperlink{_enhanced_input_manager_8h_aff197fbb0dcb3ec4b03822ba0958cdc3}{FInputActionCallback}}\ Callback);}
+\DoxyCodeLine{00021\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_enhanced_input_manager_a592767a194b56c97feb85e97b1b5d04d}{ClearBindings}}();}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_enhanced_input_manager_a88793a4576dada8fdc7538b1b632d242}{ProcessInput}}(\doxymbox{\hyperlink{class_c_input_manager}{CInputManager}}*\ RawInput,\ \textcolor{keywordtype}{float}\ DeltaTime);}
+\DoxyCodeLine{00024\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00025\ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action_value}{FInputActionValue}}\ \doxymbox{\hyperlink{class_c_enhanced_input_manager_a1e9fe3fdcd36121f2544c25378cb764b}{GetRawActionValue}}(\doxymbox{\hyperlink{class_c_input_manager}{CInputManager}}*\ Input,\ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ Key);}
+\DoxyCodeLine{00026\ \ \ \ \ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_c_enhanced_input_manager_1_1_f_mapping_context_entry}{FMappingContextEntry}}}
+\DoxyCodeLine{00027\ \ \ \ \ \{}
+\DoxyCodeLine{00028\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_mapping_context}{FInputMappingContext}}*\ \doxymbox{\hyperlink{struct_c_enhanced_input_manager_1_1_f_mapping_context_entry_a77c06e353e7b8b1d26423fe9aee2b9c1}{Context}};}
+\DoxyCodeLine{00029\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}\ \doxymbox{\hyperlink{struct_c_enhanced_input_manager_1_1_f_mapping_context_entry_a26d53e4223b79535f8963d4c07d951b5}{Priority}};}
+\DoxyCodeLine{00030\ \ \ \ \ \};}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_c_enhanced_input_manager_1_1_f_binding_entry}{FBindingEntry}}}
+\DoxyCodeLine{00033\ \ \ \ \ \{}
+\DoxyCodeLine{00034\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_input_action}{FInputAction}}*\ \doxymbox{\hyperlink{struct_c_enhanced_input_manager_1_1_f_binding_entry_af740dea2c7d66ac6ae627365979c3a97}{Action}};}
+\DoxyCodeLine{00035\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{input_trigger_8h_a942d0291b297b97655aad0c8bb91797c}{ETriggerEvent}}\ \doxymbox{\hyperlink{struct_c_enhanced_input_manager_1_1_f_binding_entry_a118e3c81845e65e43eb73d01a64a52c7}{TriggerEvent}};}
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{_enhanced_input_manager_8h_aff197fbb0dcb3ec4b03822ba0958cdc3}{FInputActionCallback}}\ \doxymbox{\hyperlink{struct_c_enhanced_input_manager_1_1_f_binding_entry_a55253922c2582817c5b8baf91696eb68}{Callback}};}
+\DoxyCodeLine{00037\ \ \ \ \ \};}
+\DoxyCodeLine{00038\ \ \ \ \ \doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray<FMappingContextEntry>}}\ \doxymbox{\hyperlink{class_c_enhanced_input_manager_a7e6ea02f69422a1b5437869421862602}{MappingContexts}};}
+\DoxyCodeLine{00039\ \ \ \ \ \doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray<FBindingEntry>}}\ \doxymbox{\hyperlink{class_c_enhanced_input_manager_a24251906ea37b8ef42c21a353550e053}{Bindings}};}
+\DoxyCodeLine{00040\ \ \ \ \ \doxymbox{\hyperlink{_map_8h_a2c2e6b88770f2aa07e5e27f6a58b6f90}{TMap<FInputAction*,\ ETriggerState>}}\ \doxymbox{\hyperlink{class_c_enhanced_input_manager_ab41a37f89ab05842d02af1a6316ff2dc}{ActionStates}};}
+\DoxyCodeLine{00041\ \};}
+
+\end{DoxyCode}

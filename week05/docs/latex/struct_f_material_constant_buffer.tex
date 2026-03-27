@@ -1,0 +1,243 @@
+\doxysection{FMaterial\+Constant\+Buffer Struct Reference}
+\hypertarget{struct_f_material_constant_buffer}{}\label{struct_f_material_constant_buffer}\index{FMaterialConstantBuffer@{FMaterialConstantBuffer}}
+
+
+{\ttfamily \+\#include $<$Material.\+h$>$}
+
+
+
+Collaboration diagram for FMaterial\+Constant\+Buffer:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=216pt]{struct_f_material_constant_buffer__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{struct_f_material_constant_buffer_a45d535b46c6c05455f828961c33f1b9b}{FMaterial\+Constant\+Buffer}} ()=default
+\item 
+\doxymbox{\hyperlink{struct_f_material_constant_buffer_a2a935c1b436002dde0ae1cd3f32b5702}{\texorpdfstring{$\sim$}{\string~}\+FMaterial\+Constant\+Buffer}} ()
+\item 
+\doxymbox{\hyperlink{struct_f_material_constant_buffer_ae1b24de95f54dac589f1455a5bca8fd9}{FMaterial\+Constant\+Buffer}} (const \doxymbox{\hyperlink{struct_f_material_constant_buffer}{FMaterial\+Constant\+Buffer}} \&)=delete
+\item 
+\doxymbox{\hyperlink{struct_f_material_constant_buffer}{FMaterial\+Constant\+Buffer}} \& \doxymbox{\hyperlink{struct_f_material_constant_buffer_af2ad36bf28a1b70f493cc6be37f0905f}{operator=}} (const \doxymbox{\hyperlink{struct_f_material_constant_buffer}{FMaterial\+Constant\+Buffer}} \&)=delete
+\item 
+\doxymbox{\hyperlink{struct_f_material_constant_buffer_a0c8a1a8be8b8773a5cf5eedf4bacaf40}{FMaterial\+Constant\+Buffer}} (\doxymbox{\hyperlink{struct_f_material_constant_buffer}{FMaterial\+Constant\+Buffer}} \&\&Other) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_material_constant_buffer}{FMaterial\+Constant\+Buffer}} \& \doxymbox{\hyperlink{struct_f_material_constant_buffer_acb4d0f3ec7ce546e05be3cee3b03aae5}{operator=}} (\doxymbox{\hyperlink{struct_f_material_constant_buffer}{FMaterial\+Constant\+Buffer}} \&\&Other) noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_material_constant_buffer_af78e87c3639fca9c4343bd00644b6848}{Create}} (ID3\+D11\+Device \texorpdfstring{$\ast$}{*}Device, \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} In\+Size)
+\item 
+void \doxymbox{\hyperlink{struct_f_material_constant_buffer_a4a58d5bc12f4c7305c09280b51159292}{Set\+Data}} (const void \texorpdfstring{$\ast$}{*}Data, \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} In\+Size, \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} Offset=0)
+\item 
+void \doxymbox{\hyperlink{struct_f_material_constant_buffer_a9fd5820c24153d0b795614537f5edcaa}{Upload}} (ID3\+D11\+Device\+Context \texorpdfstring{$\ast$}{*}Device\+Context)
+\item 
+void \doxymbox{\hyperlink{struct_f_material_constant_buffer_ad4b185cc95f382daffac63eb6f72f136}{Release}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+ID3\+D11\+Buffer \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{struct_f_material_constant_buffer_aeb57dbebe5b61a3bda3c91c5af3665e5}{GPUBuffer}} = nullptr
+\item 
+\doxymbox{\hyperlink{_core_types_8h_a34ecedcf03a70dc91e4616212d79267d}{uint8}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{struct_f_material_constant_buffer_a5abb230a4dda5d937bf9e9608c9fc9c2}{CPUData}} = nullptr
+\item 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{struct_f_material_constant_buffer_a79436485b2302aa21fe3dc889139cffc}{Size}} = 0
+\item 
+bool \doxymbox{\hyperlink{struct_f_material_constant_buffer_ac0c0f9485f4ae99573680bbf1047d6db}{b\+Dirty}} = false
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{struct_f_material_constant_buffer_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{struct_f_material_constant_buffer_a45d535b46c6c05455f828961c33f1b9b}\index{FMaterialConstantBuffer@{FMaterialConstantBuffer}!FMaterialConstantBuffer@{FMaterialConstantBuffer}}
+\index{FMaterialConstantBuffer@{FMaterialConstantBuffer}!FMaterialConstantBuffer@{FMaterialConstantBuffer}}
+\doxysubsubsection{\texorpdfstring{FMaterialConstantBuffer()}{FMaterialConstantBuffer()}\hspace{0.1cm}{\footnotesize\ttfamily [1/3]}}
+{\footnotesize\ttfamily \label{struct_f_material_constant_buffer_a45d535b46c6c05455f828961c33f1b9b} 
+FMaterial\+Constant\+Buffer::\+\+FMaterial\+Constant\+Buffer (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=208pt]{struct_f_material_constant_buffer_a45d535b46c6c05455f828961c33f1b9b_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_material_constant_buffer_a45d535b46c6c05455f828961c33f1b9b_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_material_constant_buffer_a2a935c1b436002dde0ae1cd3f32b5702}\index{FMaterialConstantBuffer@{FMaterialConstantBuffer}!````~FMaterialConstantBuffer@{\texorpdfstring{$\sim$}{\string~}FMaterialConstantBuffer}}
+\index{````~FMaterialConstantBuffer@{\texorpdfstring{$\sim$}{\string~}FMaterialConstantBuffer}!FMaterialConstantBuffer@{FMaterialConstantBuffer}}
+\doxysubsubsection{\texorpdfstring{\texorpdfstring{$\sim$}{\string~}FMaterialConstantBuffer()}{\string~FMaterialConstantBuffer()}}
+{\footnotesize\ttfamily \label{struct_f_material_constant_buffer_a2a935c1b436002dde0ae1cd3f32b5702} 
+FMaterial\+Constant\+Buffer::\+\texorpdfstring{$\sim$}{\string~}\+FMaterial\+Constant\+Buffer (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_material_constant_buffer_a2a935c1b436002dde0ae1cd3f32b5702_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_material_constant_buffer_ae1b24de95f54dac589f1455a5bca8fd9}\index{FMaterialConstantBuffer@{FMaterialConstantBuffer}!FMaterialConstantBuffer@{FMaterialConstantBuffer}}
+\index{FMaterialConstantBuffer@{FMaterialConstantBuffer}!FMaterialConstantBuffer@{FMaterialConstantBuffer}}
+\doxysubsubsection{\texorpdfstring{FMaterialConstantBuffer()}{FMaterialConstantBuffer()}\hspace{0.1cm}{\footnotesize\ttfamily [2/3]}}
+{\footnotesize\ttfamily \label{struct_f_material_constant_buffer_ae1b24de95f54dac589f1455a5bca8fd9} 
+FMaterial\+Constant\+Buffer::\+\+FMaterial\+Constant\+Buffer (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_material_constant_buffer}{FMaterial\+Constant\+Buffer}} \&}]{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [delete]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_material_constant_buffer_ae1b24de95f54dac589f1455a5bca8fd9_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_material_constant_buffer_a0c8a1a8be8b8773a5cf5eedf4bacaf40}\index{FMaterialConstantBuffer@{FMaterialConstantBuffer}!FMaterialConstantBuffer@{FMaterialConstantBuffer}}
+\index{FMaterialConstantBuffer@{FMaterialConstantBuffer}!FMaterialConstantBuffer@{FMaterialConstantBuffer}}
+\doxysubsubsection{\texorpdfstring{FMaterialConstantBuffer()}{FMaterialConstantBuffer()}\hspace{0.1cm}{\footnotesize\ttfamily [3/3]}}
+{\footnotesize\ttfamily \label{struct_f_material_constant_buffer_a0c8a1a8be8b8773a5cf5eedf4bacaf40} 
+FMaterial\+Constant\+Buffer::\+\+FMaterial\+Constant\+Buffer (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{struct_f_material_constant_buffer}{FMaterial\+Constant\+Buffer}} \&\&}]{Other}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_material_constant_buffer_a0c8a1a8be8b8773a5cf5eedf4bacaf40_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-func-members}
+\Hypertarget{struct_f_material_constant_buffer_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{struct_f_material_constant_buffer_af78e87c3639fca9c4343bd00644b6848}\index{FMaterialConstantBuffer@{FMaterialConstantBuffer}!Create@{Create}}
+\index{Create@{Create}!FMaterialConstantBuffer@{FMaterialConstantBuffer}}
+\doxysubsubsection{\texorpdfstring{Create()}{Create()}}
+{\footnotesize\ttfamily \label{struct_f_material_constant_buffer_af78e87c3639fca9c4343bd00644b6848} 
+bool FMaterial\+Constant\+Buffer::\+\+Create (\begin{DoxyParamCaption}\item[{ID3\+D11\+Device \texorpdfstring{$\ast$}{*}}]{Device}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}}]{In\+Size}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_material_constant_buffer_af78e87c3639fca9c4343bd00644b6848_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_material_constant_buffer_af78e87c3639fca9c4343bd00644b6848_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_material_constant_buffer_af2ad36bf28a1b70f493cc6be37f0905f}\index{FMaterialConstantBuffer@{FMaterialConstantBuffer}!operator=@{operator=}}
+\index{operator=@{operator=}!FMaterialConstantBuffer@{FMaterialConstantBuffer}}
+\doxysubsubsection{\texorpdfstring{operator=()}{operator=()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{struct_f_material_constant_buffer_af2ad36bf28a1b70f493cc6be37f0905f} 
+\doxymbox{\hyperlink{struct_f_material_constant_buffer}{FMaterial\+Constant\+Buffer}} \& FMaterial\+Constant\+Buffer::\+operator= (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_material_constant_buffer}{FMaterial\+Constant\+Buffer}} \&}]{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [delete]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_material_constant_buffer_af2ad36bf28a1b70f493cc6be37f0905f_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_material_constant_buffer_acb4d0f3ec7ce546e05be3cee3b03aae5}\index{FMaterialConstantBuffer@{FMaterialConstantBuffer}!operator=@{operator=}}
+\index{operator=@{operator=}!FMaterialConstantBuffer@{FMaterialConstantBuffer}}
+\doxysubsubsection{\texorpdfstring{operator=()}{operator=()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{struct_f_material_constant_buffer_acb4d0f3ec7ce546e05be3cee3b03aae5} 
+\doxymbox{\hyperlink{struct_f_material_constant_buffer}{FMaterial\+Constant\+Buffer}} \& FMaterial\+Constant\+Buffer::\+operator= (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{struct_f_material_constant_buffer}{FMaterial\+Constant\+Buffer}} \&\&}]{Other}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_material_constant_buffer_acb4d0f3ec7ce546e05be3cee3b03aae5_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_material_constant_buffer_ad4b185cc95f382daffac63eb6f72f136}\index{FMaterialConstantBuffer@{FMaterialConstantBuffer}!Release@{Release}}
+\index{Release@{Release}!FMaterialConstantBuffer@{FMaterialConstantBuffer}}
+\doxysubsubsection{\texorpdfstring{Release()}{Release()}}
+{\footnotesize\ttfamily \label{struct_f_material_constant_buffer_ad4b185cc95f382daffac63eb6f72f136} 
+void FMaterial\+Constant\+Buffer::\+\+Release (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_material_constant_buffer_ad4b185cc95f382daffac63eb6f72f136_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_material_constant_buffer_a4a58d5bc12f4c7305c09280b51159292}\index{FMaterialConstantBuffer@{FMaterialConstantBuffer}!SetData@{SetData}}
+\index{SetData@{SetData}!FMaterialConstantBuffer@{FMaterialConstantBuffer}}
+\doxysubsubsection{\texorpdfstring{SetData()}{SetData()}}
+{\footnotesize\ttfamily \label{struct_f_material_constant_buffer_a4a58d5bc12f4c7305c09280b51159292} 
+void FMaterial\+Constant\+Buffer::\+\+Set\+Data (\begin{DoxyParamCaption}\item[{const void \texorpdfstring{$\ast$}{*}}]{Data}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}}]{In\+Size}{, }\item[{\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}}]{Offset}{ = {\ttfamily 0}}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_material_constant_buffer_a4a58d5bc12f4c7305c09280b51159292_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_material_constant_buffer_a9fd5820c24153d0b795614537f5edcaa}\index{FMaterialConstantBuffer@{FMaterialConstantBuffer}!Upload@{Upload}}
+\index{Upload@{Upload}!FMaterialConstantBuffer@{FMaterialConstantBuffer}}
+\doxysubsubsection{\texorpdfstring{Upload()}{Upload()}}
+{\footnotesize\ttfamily \label{struct_f_material_constant_buffer_a9fd5820c24153d0b795614537f5edcaa} 
+void FMaterial\+Constant\+Buffer::\+\+Upload (\begin{DoxyParamCaption}\item[{ID3\+D11\+Device\+Context \texorpdfstring{$\ast$}{*}}]{Device\+Context}{}\end{DoxyParamCaption})}
+
+
+
+\label{doc-variable-members}
+\Hypertarget{struct_f_material_constant_buffer_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{struct_f_material_constant_buffer_ac0c0f9485f4ae99573680bbf1047d6db}\index{FMaterialConstantBuffer@{FMaterialConstantBuffer}!bDirty@{bDirty}}
+\index{bDirty@{bDirty}!FMaterialConstantBuffer@{FMaterialConstantBuffer}}
+\doxysubsubsection{\texorpdfstring{bDirty}{bDirty}}
+{\footnotesize\ttfamily \label{struct_f_material_constant_buffer_ac0c0f9485f4ae99573680bbf1047d6db} 
+bool FMaterial\+Constant\+Buffer::\+b\+Dirty = false}
+
+\Hypertarget{struct_f_material_constant_buffer_a5abb230a4dda5d937bf9e9608c9fc9c2}\index{FMaterialConstantBuffer@{FMaterialConstantBuffer}!CPUData@{CPUData}}
+\index{CPUData@{CPUData}!FMaterialConstantBuffer@{FMaterialConstantBuffer}}
+\doxysubsubsection{\texorpdfstring{CPUData}{CPUData}}
+{\footnotesize\ttfamily \label{struct_f_material_constant_buffer_a5abb230a4dda5d937bf9e9608c9fc9c2} 
+\doxymbox{\hyperlink{_core_types_8h_a34ecedcf03a70dc91e4616212d79267d}{uint8}}\texorpdfstring{$\ast$}{*} FMaterial\+Constant\+Buffer::\+\+CPUData = nullptr}
+
+\Hypertarget{struct_f_material_constant_buffer_aeb57dbebe5b61a3bda3c91c5af3665e5}\index{FMaterialConstantBuffer@{FMaterialConstantBuffer}!GPUBuffer@{GPUBuffer}}
+\index{GPUBuffer@{GPUBuffer}!FMaterialConstantBuffer@{FMaterialConstantBuffer}}
+\doxysubsubsection{\texorpdfstring{GPUBuffer}{GPUBuffer}}
+{\footnotesize\ttfamily \label{struct_f_material_constant_buffer_aeb57dbebe5b61a3bda3c91c5af3665e5} 
+ID3\+D11\+Buffer\texorpdfstring{$\ast$}{*} FMaterial\+Constant\+Buffer::\+\+GPUBuffer = nullptr}
+
+\Hypertarget{struct_f_material_constant_buffer_a79436485b2302aa21fe3dc889139cffc}\index{FMaterialConstantBuffer@{FMaterialConstantBuffer}!Size@{Size}}
+\index{Size@{Size}!FMaterialConstantBuffer@{FMaterialConstantBuffer}}
+\doxysubsubsection{\texorpdfstring{Size}{Size}}
+{\footnotesize\ttfamily \label{struct_f_material_constant_buffer_a79436485b2302aa21fe3dc889139cffc} 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} FMaterial\+Constant\+Buffer::\+\+Size = 0}
+
+
+
+The documentation for this struct was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Renderer/\+\doxymbox{\hyperlink{_material_8h}{Material.\+h}}\item 
+Engine/\+\+Source/\+\+Renderer/\+\doxymbox{\hyperlink{_material_8cpp}{Material.\+cpp}}\end{DoxyCompactItemize}

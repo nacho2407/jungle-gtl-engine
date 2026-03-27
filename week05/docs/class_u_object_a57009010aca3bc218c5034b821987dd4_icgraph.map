@@ -1,0 +1,11 @@
+<map id="UObject::GetName" name="UObject::GetName">
+<area shape="rect" id="Node000001" title=" " alt="" coords="670,47,804,73"/>
+<area shape="rect" id="Node000002" href="$class_c_control_panel_window.html#a77f0bb41d37c2fedec4855a31130b6e5" title=" " alt="" coords="446,5,599,48"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="652,47,600,41,600,36,658,47"/>
+<area shape="rect" id="Node000003" href="$class_c_editor_u_i.html#a0ba0cc3fe5ec6990a8ecc1b8e59e89a5" title=" " alt="" coords="423,72,622,115"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="657,72,623,80,622,75,652,73"/>
+<area shape="rect" id="Node000004" href="$class_c_editor_u_i.html#aeaff289996cd22e04aa51e1bbed5289d" title=" " alt="" coords="246,80,375,107"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="405,93,375,96,375,91,410,93"/>
+<area shape="rect" id="Node000005" href="$class_c_editor_u_i.html#af6abbe943fe631a76da4bd0229c5c355" title=" " alt="" coords="5,80,198,107"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="228,94,198,96,198,91,233,93"/>
+</map>

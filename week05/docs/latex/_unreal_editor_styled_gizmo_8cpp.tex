@@ -1,0 +1,293 @@
+\doxysection{Engine/\+\+Source/\+\+Primitive/\+\+Unreal\+Editor\+Styled\+Gizmo.cpp File Reference}
+\hypertarget{_unreal_editor_styled_gizmo_8cpp}{}\label{_unreal_editor_styled_gizmo_8cpp}\index{Engine/Source/Primitive/UnrealEditorStyledGizmo.cpp@{Engine/Source/Primitive/UnrealEditorStyledGizmo.cpp}}
+{\ttfamily \+\#include "{}Unreal\+Editor\+Styled\+Gizmo.\+h"{}}\newline
+{\ttfamily \+\#include $<$algorithm$>$}\newline
+{\ttfamily \+\#include $<$cmath$>$}\newline
+Include dependency graph for Unreal\+Editor\+Styled\+Gizmo.\+cpp:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_unreal_editor_styled_gizmo_8cpp__incl}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{struct_color}{Color}} \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8cpp_a784a2bab983964e8fd36b27518165847}{Axis\+ColorX}} ()
+\item 
+\doxymbox{\hyperlink{struct_color}{Color}} \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8cpp_ac022f8a6d8e88ac8a486e96643d19289}{Axis\+ColorY}} ()
+\item 
+\doxymbox{\hyperlink{struct_color}{Color}} \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8cpp_a5b708f556d032d8559dadacc4ed045a1}{Axis\+ColorZ}} ()
+\item 
+\doxymbox{\hyperlink{struct_color}{Color}} \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8cpp_a7969457298670904a16ad436a68a39eb}{Screen\+Axis\+Color}} ()
+\item 
+\doxymbox{\hyperlink{struct_color}{Color}} \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8cpp_a64a904362500c429c13abe21fca44c74}{Screen\+Space\+Color}} ()
+\item 
+\doxymbox{\hyperlink{struct_color}{Color}} \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8cpp_acd7d7e79eb3b664db795380429c52f7d}{Arcball\+Color}} ()
+\item 
+\doxymbox{\hyperlink{struct_color}{Color}} \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8cpp_a5691ce1eaea6cf8945fe1ea0063ac701}{Highlight\+Color}} ()
+\item 
+void \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8cpp_a9f805dcfc1e96db49698c18973e22567}{Append\+Mesh}} (\doxymbox{\hyperlink{struct_mesh}{Mesh}} \&destination, const \doxymbox{\hyperlink{struct_mesh}{Mesh}} \&source)
+\item 
+\doxymbox{\hyperlink{struct_mesh}{Mesh}} \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8cpp_a7b860b9504dd57b24795da0b4ac96070}{Merge\+Meshes}} (std::\+initializer\+\_\+list$<$ const \doxymbox{\hyperlink{struct_mesh}{Mesh}} \texorpdfstring{$\ast$}{*} $>$ meshes)
+\item 
+\doxymbox{\hyperlink{struct_translation_gizmo}{Translation\+Gizmo}} \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8cpp_ae9f446233dcd2240d253cd13881e46e2}{Generate\+Translation\+Gizmo}} (const \doxymbox{\hyperlink{struct_translation_desc}{Translation\+Desc}} \&desc)
+\item 
+\doxymbox{\hyperlink{struct_rotation_gizmo}{Rotation\+Gizmo}} \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8cpp_ac9606ae01309220f4ff837c2e2bc8900}{Generate\+Rotation\+Gizmo}} (const \doxymbox{\hyperlink{struct_rotation_desc}{Rotation\+Desc}} \&desc)
+\item 
+\doxymbox{\hyperlink{struct_scale_gizmo}{Scale\+Gizmo}} \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8cpp_a9a1a86d2d3e6852f80816d95cecc3107}{Generate\+Scale\+Gizmo}} (const \doxymbox{\hyperlink{struct_scale_desc}{Scale\+Desc}} \&desc)
+\item 
+\doxymbox{\hyperlink{struct_mesh}{Mesh}} \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8cpp_ad62ae5b5bfb54ff17a4f4ed9443c28d8}{Combine}} (const \doxymbox{\hyperlink{struct_translation_gizmo}{Translation\+Gizmo}} \&gizmo)
+\item 
+\doxymbox{\hyperlink{struct_mesh}{Mesh}} \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8cpp_aa96a23b3070b426144a534d4e61ae07e}{Combine}} (const \doxymbox{\hyperlink{struct_rotation_gizmo}{Rotation\+Gizmo}} \&gizmo)
+\item 
+\doxymbox{\hyperlink{struct_mesh}{Mesh}} \doxymbox{\hyperlink{_unreal_editor_styled_gizmo_8cpp_a2a02aefcc4047374a066404fcf7fee52}{Combine}} (const \doxymbox{\hyperlink{struct_scale_gizmo}{Scale\+Gizmo}} \&gizmo)
+\end{DoxyCompactItemize}
+
+
+\label{doc-func-members}
+\Hypertarget{_unreal_editor_styled_gizmo_8cpp_doc-func-members}
+\doxysubsection{Function Documentation}
+\Hypertarget{_unreal_editor_styled_gizmo_8cpp_a9f805dcfc1e96db49698c18973e22567}\index{UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}!AppendMesh@{AppendMesh}}
+\index{AppendMesh@{AppendMesh}!UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}}
+\doxysubsubsection{\texorpdfstring{AppendMesh()}{AppendMesh()}}
+{\footnotesize\ttfamily \label{_unreal_editor_styled_gizmo_8cpp_a9f805dcfc1e96db49698c18973e22567} 
+void Append\+Mesh (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{struct_mesh}{Mesh}} \&}]{destination}{, }\item[{const \doxymbox{\hyperlink{struct_mesh}{Mesh}} \&}]{source}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_unreal_editor_styled_gizmo_8cpp_a9f805dcfc1e96db49698c18973e22567_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{_unreal_editor_styled_gizmo_8cpp_acd7d7e79eb3b664db795380429c52f7d}\index{UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}!ArcballColor@{ArcballColor}}
+\index{ArcballColor@{ArcballColor}!UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}}
+\doxysubsubsection{\texorpdfstring{ArcballColor()}{ArcballColor()}}
+{\footnotesize\ttfamily \label{_unreal_editor_styled_gizmo_8cpp_acd7d7e79eb3b664db795380429c52f7d} 
+\doxymbox{\hyperlink{struct_color}{Color}} Arcball\+Color (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_unreal_editor_styled_gizmo_8cpp_acd7d7e79eb3b664db795380429c52f7d_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{_unreal_editor_styled_gizmo_8cpp_a784a2bab983964e8fd36b27518165847}\index{UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}!AxisColorX@{AxisColorX}}
+\index{AxisColorX@{AxisColorX}!UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}}
+\doxysubsubsection{\texorpdfstring{AxisColorX()}{AxisColorX()}}
+{\footnotesize\ttfamily \label{_unreal_editor_styled_gizmo_8cpp_a784a2bab983964e8fd36b27518165847} 
+\doxymbox{\hyperlink{struct_color}{Color}} Axis\+ColorX (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_unreal_editor_styled_gizmo_8cpp_a784a2bab983964e8fd36b27518165847_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{_unreal_editor_styled_gizmo_8cpp_ac022f8a6d8e88ac8a486e96643d19289}\index{UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}!AxisColorY@{AxisColorY}}
+\index{AxisColorY@{AxisColorY}!UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}}
+\doxysubsubsection{\texorpdfstring{AxisColorY()}{AxisColorY()}}
+{\footnotesize\ttfamily \label{_unreal_editor_styled_gizmo_8cpp_ac022f8a6d8e88ac8a486e96643d19289} 
+\doxymbox{\hyperlink{struct_color}{Color}} Axis\+ColorY (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_unreal_editor_styled_gizmo_8cpp_ac022f8a6d8e88ac8a486e96643d19289_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{_unreal_editor_styled_gizmo_8cpp_a5b708f556d032d8559dadacc4ed045a1}\index{UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}!AxisColorZ@{AxisColorZ}}
+\index{AxisColorZ@{AxisColorZ}!UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}}
+\doxysubsubsection{\texorpdfstring{AxisColorZ()}{AxisColorZ()}}
+{\footnotesize\ttfamily \label{_unreal_editor_styled_gizmo_8cpp_a5b708f556d032d8559dadacc4ed045a1} 
+\doxymbox{\hyperlink{struct_color}{Color}} Axis\+ColorZ (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_unreal_editor_styled_gizmo_8cpp_a5b708f556d032d8559dadacc4ed045a1_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{_unreal_editor_styled_gizmo_8cpp_aa96a23b3070b426144a534d4e61ae07e}\index{UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}!Combine@{Combine}}
+\index{Combine@{Combine}!UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}}
+\doxysubsubsection{\texorpdfstring{Combine()}{Combine()}\hspace{0.1cm}{\footnotesize\ttfamily [1/3]}}
+{\footnotesize\ttfamily \label{_unreal_editor_styled_gizmo_8cpp_aa96a23b3070b426144a534d4e61ae07e} 
+\doxymbox{\hyperlink{struct_mesh}{Mesh}} Combine (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_rotation_gizmo}{Rotation\+Gizmo}} \&}]{gizmo}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_unreal_editor_styled_gizmo_8cpp_aa96a23b3070b426144a534d4e61ae07e_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{_unreal_editor_styled_gizmo_8cpp_a2a02aefcc4047374a066404fcf7fee52}\index{UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}!Combine@{Combine}}
+\index{Combine@{Combine}!UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}}
+\doxysubsubsection{\texorpdfstring{Combine()}{Combine()}\hspace{0.1cm}{\footnotesize\ttfamily [2/3]}}
+{\footnotesize\ttfamily \label{_unreal_editor_styled_gizmo_8cpp_a2a02aefcc4047374a066404fcf7fee52} 
+\doxymbox{\hyperlink{struct_mesh}{Mesh}} Combine (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_scale_gizmo}{Scale\+Gizmo}} \&}]{gizmo}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_unreal_editor_styled_gizmo_8cpp_a2a02aefcc4047374a066404fcf7fee52_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{_unreal_editor_styled_gizmo_8cpp_ad62ae5b5bfb54ff17a4f4ed9443c28d8}\index{UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}!Combine@{Combine}}
+\index{Combine@{Combine}!UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}}
+\doxysubsubsection{\texorpdfstring{Combine()}{Combine()}\hspace{0.1cm}{\footnotesize\ttfamily [3/3]}}
+{\footnotesize\ttfamily \label{_unreal_editor_styled_gizmo_8cpp_ad62ae5b5bfb54ff17a4f4ed9443c28d8} 
+\doxymbox{\hyperlink{struct_mesh}{Mesh}} Combine (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_translation_gizmo}{Translation\+Gizmo}} \&}]{gizmo}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_unreal_editor_styled_gizmo_8cpp_ad62ae5b5bfb54ff17a4f4ed9443c28d8_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_unreal_editor_styled_gizmo_8cpp_ad62ae5b5bfb54ff17a4f4ed9443c28d8_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{_unreal_editor_styled_gizmo_8cpp_ac9606ae01309220f4ff837c2e2bc8900}\index{UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}!GenerateRotationGizmo@{GenerateRotationGizmo}}
+\index{GenerateRotationGizmo@{GenerateRotationGizmo}!UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}}
+\doxysubsubsection{\texorpdfstring{GenerateRotationGizmo()}{GenerateRotationGizmo()}}
+{\footnotesize\ttfamily \label{_unreal_editor_styled_gizmo_8cpp_ac9606ae01309220f4ff837c2e2bc8900} 
+\doxymbox{\hyperlink{struct_rotation_gizmo}{Rotation\+Gizmo}} Generate\+Rotation\+Gizmo (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_rotation_desc}{Rotation\+Desc}} \&}]{desc}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_unreal_editor_styled_gizmo_8cpp_ac9606ae01309220f4ff837c2e2bc8900_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_unreal_editor_styled_gizmo_8cpp_ac9606ae01309220f4ff837c2e2bc8900_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{_unreal_editor_styled_gizmo_8cpp_a9a1a86d2d3e6852f80816d95cecc3107}\index{UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}!GenerateScaleGizmo@{GenerateScaleGizmo}}
+\index{GenerateScaleGizmo@{GenerateScaleGizmo}!UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}}
+\doxysubsubsection{\texorpdfstring{GenerateScaleGizmo()}{GenerateScaleGizmo()}}
+{\footnotesize\ttfamily \label{_unreal_editor_styled_gizmo_8cpp_a9a1a86d2d3e6852f80816d95cecc3107} 
+\doxymbox{\hyperlink{struct_scale_gizmo}{Scale\+Gizmo}} Generate\+Scale\+Gizmo (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_scale_desc}{Scale\+Desc}} \&}]{desc}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=323pt]{_unreal_editor_styled_gizmo_8cpp_a9a1a86d2d3e6852f80816d95cecc3107_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_unreal_editor_styled_gizmo_8cpp_a9a1a86d2d3e6852f80816d95cecc3107_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{_unreal_editor_styled_gizmo_8cpp_ae9f446233dcd2240d253cd13881e46e2}\index{UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}!GenerateTranslationGizmo@{GenerateTranslationGizmo}}
+\index{GenerateTranslationGizmo@{GenerateTranslationGizmo}!UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}}
+\doxysubsubsection{\texorpdfstring{GenerateTranslationGizmo()}{GenerateTranslationGizmo()}}
+{\footnotesize\ttfamily \label{_unreal_editor_styled_gizmo_8cpp_ae9f446233dcd2240d253cd13881e46e2} 
+\doxymbox{\hyperlink{struct_translation_gizmo}{Translation\+Gizmo}} Generate\+Translation\+Gizmo (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_translation_desc}{Translation\+Desc}} \&}]{desc}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=346pt]{_unreal_editor_styled_gizmo_8cpp_ae9f446233dcd2240d253cd13881e46e2_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_unreal_editor_styled_gizmo_8cpp_ae9f446233dcd2240d253cd13881e46e2_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{_unreal_editor_styled_gizmo_8cpp_a5691ce1eaea6cf8945fe1ea0063ac701}\index{UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}!HighlightColor@{HighlightColor}}
+\index{HighlightColor@{HighlightColor}!UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}}
+\doxysubsubsection{\texorpdfstring{HighlightColor()}{HighlightColor()}}
+{\footnotesize\ttfamily \label{_unreal_editor_styled_gizmo_8cpp_a5691ce1eaea6cf8945fe1ea0063ac701} 
+\doxymbox{\hyperlink{struct_color}{Color}} Highlight\+Color (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{_unreal_editor_styled_gizmo_8cpp_a7b860b9504dd57b24795da0b4ac96070}\index{UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}!MergeMeshes@{MergeMeshes}}
+\index{MergeMeshes@{MergeMeshes}!UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}}
+\doxysubsubsection{\texorpdfstring{MergeMeshes()}{MergeMeshes()}}
+{\footnotesize\ttfamily \label{_unreal_editor_styled_gizmo_8cpp_a7b860b9504dd57b24795da0b4ac96070} 
+\doxymbox{\hyperlink{struct_mesh}{Mesh}} Merge\+Meshes (\begin{DoxyParamCaption}\item[{std::\+initializer\+\_\+list$<$ const \doxymbox{\hyperlink{struct_mesh}{Mesh}} \texorpdfstring{$\ast$}{*} $>$}]{meshes}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=267pt]{_unreal_editor_styled_gizmo_8cpp_a7b860b9504dd57b24795da0b4ac96070_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_unreal_editor_styled_gizmo_8cpp_a7b860b9504dd57b24795da0b4ac96070_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{_unreal_editor_styled_gizmo_8cpp_a7969457298670904a16ad436a68a39eb}\index{UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}!ScreenAxisColor@{ScreenAxisColor}}
+\index{ScreenAxisColor@{ScreenAxisColor}!UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}}
+\doxysubsubsection{\texorpdfstring{ScreenAxisColor()}{ScreenAxisColor()}}
+{\footnotesize\ttfamily \label{_unreal_editor_styled_gizmo_8cpp_a7969457298670904a16ad436a68a39eb} 
+\doxymbox{\hyperlink{struct_color}{Color}} Screen\+Axis\+Color (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_unreal_editor_styled_gizmo_8cpp_a7969457298670904a16ad436a68a39eb_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{_unreal_editor_styled_gizmo_8cpp_a64a904362500c429c13abe21fca44c74}\index{UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}!ScreenSpaceColor@{ScreenSpaceColor}}
+\index{ScreenSpaceColor@{ScreenSpaceColor}!UnrealEditorStyledGizmo.cpp@{UnrealEditorStyledGizmo.cpp}}
+\doxysubsubsection{\texorpdfstring{ScreenSpaceColor()}{ScreenSpaceColor()}}
+{\footnotesize\ttfamily \label{_unreal_editor_styled_gizmo_8cpp_a64a904362500c429c13abe21fca44c74} 
+\doxymbox{\hyperlink{struct_color}{Color}} Screen\+Space\+Color (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{_unreal_editor_styled_gizmo_8cpp_a64a904362500c429c13abe21fca44c74_icgraph}
+\end{center}
+\end{figure}

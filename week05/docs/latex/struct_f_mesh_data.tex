@@ -1,0 +1,177 @@
+\doxysection{FMesh\+Data Struct Reference}
+\hypertarget{struct_f_mesh_data}{}\label{struct_f_mesh_data}\index{FMeshData@{FMeshData}}
+
+
+{\ttfamily \+\#include $<$Primitive\+Base.\+h$>$}
+
+
+
+Collaboration diagram for FMesh\+Data:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=164pt]{struct_f_mesh_data__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{struct_f_mesh_data_affff3db31d7f5bba25d5a51e892ae366}{FMesh\+Data}} ()
+\item 
+\doxymbox{\hyperlink{struct_f_mesh_data_a37e2f6c79dac4bfeeb5435ccfa301c53}{\texorpdfstring{$\sim$}{\string~}\+FMesh\+Data}} ()
+\item 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{struct_f_mesh_data_aa3d1ab2eeb41234d66b9176d4b31f426}{Get\+Sort\+Id}} () const
+\item 
+bool \doxymbox{\hyperlink{struct_f_mesh_data_a8744dcfc8bbb1f4dc2af2ce76b40f934}{Create\+Buffers}} (ID3\+D11\+Device \texorpdfstring{$\ast$}{*}Device)
+\item 
+void \doxymbox{\hyperlink{struct_f_mesh_data_a7b8d1c7d8d13db9619cdff6846706003}{Bind}} (ID3\+D11\+Device\+Context \texorpdfstring{$\ast$}{*}Context)
+\item 
+void \doxymbox{\hyperlink{struct_f_mesh_data_aae365c4c056b059e6925db133152d4f8}{Release}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$ \doxymbox{\hyperlink{struct_f_primitive_vertex}{FPrimitive\+Vertex}} $>$ \doxymbox{\hyperlink{struct_f_mesh_data_ae64c26fd7bad7657c7e2ca5cbfa37c6d}{Vertices}}
+\item 
+\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$ \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} $>$ \doxymbox{\hyperlink{struct_f_mesh_data_afe12c864c3c2c13792a3434023065c8e}{Indices}}
+\item 
+ID3\+D11\+Buffer \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{struct_f_mesh_data_adb4c199ccd031fa8b8ae7a96fb4a210e}{Vertex\+Buffer}} = nullptr
+\item 
+ID3\+D11\+Buffer \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{struct_f_mesh_data_adf92d33be954f11b247482b1c6d44572}{Index\+Buffer}} = nullptr
+\item 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{struct_f_mesh_data_a59bb72e9350991b9f52c07d0da9fc054}{Index\+Count}} = 0
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{struct_f_mesh_data_a5ec8f9260881bb71f9b18d8d5a9c1394}{Sort\+Id}} = 0
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{struct_f_mesh_data_ac10ffe89310a73bd1504ef6811882b59}{Next\+Sort\+Id}} = 0
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{struct_f_mesh_data_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{struct_f_mesh_data_affff3db31d7f5bba25d5a51e892ae366}\index{FMeshData@{FMeshData}!FMeshData@{FMeshData}}
+\index{FMeshData@{FMeshData}!FMeshData@{FMeshData}}
+\doxysubsubsection{\texorpdfstring{FMeshData()}{FMeshData()}}
+{\footnotesize\ttfamily \label{struct_f_mesh_data_affff3db31d7f5bba25d5a51e892ae366} 
+FMesh\+Data::\+\+FMesh\+Data (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{struct_f_mesh_data_a37e2f6c79dac4bfeeb5435ccfa301c53}\index{FMeshData@{FMeshData}!````~FMeshData@{\texorpdfstring{$\sim$}{\string~}FMeshData}}
+\index{````~FMeshData@{\texorpdfstring{$\sim$}{\string~}FMeshData}!FMeshData@{FMeshData}}
+\doxysubsubsection{\texorpdfstring{\texorpdfstring{$\sim$}{\string~}FMeshData()}{\string~FMeshData()}}
+{\footnotesize\ttfamily \label{struct_f_mesh_data_a37e2f6c79dac4bfeeb5435ccfa301c53} 
+FMesh\+Data::\+\texorpdfstring{$\sim$}{\string~}\+FMesh\+Data (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_mesh_data_a37e2f6c79dac4bfeeb5435ccfa301c53_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-func-members}
+\Hypertarget{struct_f_mesh_data_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{struct_f_mesh_data_a7b8d1c7d8d13db9619cdff6846706003}\index{FMeshData@{FMeshData}!Bind@{Bind}}
+\index{Bind@{Bind}!FMeshData@{FMeshData}}
+\doxysubsubsection{\texorpdfstring{Bind()}{Bind()}}
+{\footnotesize\ttfamily \label{struct_f_mesh_data_a7b8d1c7d8d13db9619cdff6846706003} 
+void FMesh\+Data::\+\+Bind (\begin{DoxyParamCaption}\item[{ID3\+D11\+Device\+Context \texorpdfstring{$\ast$}{*}}]{Context}{}\end{DoxyParamCaption})}
+
+\Hypertarget{struct_f_mesh_data_a8744dcfc8bbb1f4dc2af2ce76b40f934}\index{FMeshData@{FMeshData}!CreateBuffers@{CreateBuffers}}
+\index{CreateBuffers@{CreateBuffers}!FMeshData@{FMeshData}}
+\doxysubsubsection{\texorpdfstring{CreateBuffers()}{CreateBuffers()}}
+{\footnotesize\ttfamily \label{struct_f_mesh_data_a8744dcfc8bbb1f4dc2af2ce76b40f934} 
+bool FMesh\+Data::\+\+Create\+Buffers (\begin{DoxyParamCaption}\item[{ID3\+D11\+Device \texorpdfstring{$\ast$}{*}}]{Device}{}\end{DoxyParamCaption})}
+
+\Hypertarget{struct_f_mesh_data_aa3d1ab2eeb41234d66b9176d4b31f426}\index{FMeshData@{FMeshData}!GetSortId@{GetSortId}}
+\index{GetSortId@{GetSortId}!FMeshData@{FMeshData}}
+\doxysubsubsection{\texorpdfstring{GetSortId()}{GetSortId()}}
+{\footnotesize\ttfamily \label{struct_f_mesh_data_aa3d1ab2eeb41234d66b9176d4b31f426} 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} FMesh\+Data::\+\+Get\+Sort\+Id (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_mesh_data_aa3d1ab2eeb41234d66b9176d4b31f426_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_mesh_data_aae365c4c056b059e6925db133152d4f8}\index{FMeshData@{FMeshData}!Release@{Release}}
+\index{Release@{Release}!FMeshData@{FMeshData}}
+\doxysubsubsection{\texorpdfstring{Release()}{Release()}}
+{\footnotesize\ttfamily \label{struct_f_mesh_data_aae365c4c056b059e6925db133152d4f8} 
+void FMesh\+Data::\+\+Release (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_mesh_data_aae365c4c056b059e6925db133152d4f8_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{struct_f_mesh_data_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{struct_f_mesh_data_adf92d33be954f11b247482b1c6d44572}\index{FMeshData@{FMeshData}!IndexBuffer@{IndexBuffer}}
+\index{IndexBuffer@{IndexBuffer}!FMeshData@{FMeshData}}
+\doxysubsubsection{\texorpdfstring{IndexBuffer}{IndexBuffer}}
+{\footnotesize\ttfamily \label{struct_f_mesh_data_adf92d33be954f11b247482b1c6d44572} 
+ID3\+D11\+Buffer\texorpdfstring{$\ast$}{*} FMesh\+Data::\+\+Index\+Buffer = nullptr}
+
+\Hypertarget{struct_f_mesh_data_a59bb72e9350991b9f52c07d0da9fc054}\index{FMeshData@{FMeshData}!IndexCount@{IndexCount}}
+\index{IndexCount@{IndexCount}!FMeshData@{FMeshData}}
+\doxysubsubsection{\texorpdfstring{IndexCount}{IndexCount}}
+{\footnotesize\ttfamily \label{struct_f_mesh_data_a59bb72e9350991b9f52c07d0da9fc054} 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} FMesh\+Data::\+\+Index\+Count = 0}
+
+\Hypertarget{struct_f_mesh_data_afe12c864c3c2c13792a3434023065c8e}\index{FMeshData@{FMeshData}!Indices@{Indices}}
+\index{Indices@{Indices}!FMeshData@{FMeshData}}
+\doxysubsubsection{\texorpdfstring{Indices}{Indices}}
+{\footnotesize\ttfamily \label{struct_f_mesh_data_afe12c864c3c2c13792a3434023065c8e} 
+\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}}$>$ FMesh\+Data::\+\+Indices}
+
+\Hypertarget{struct_f_mesh_data_ac10ffe89310a73bd1504ef6811882b59}\index{FMeshData@{FMeshData}!NextSortId@{NextSortId}}
+\index{NextSortId@{NextSortId}!FMeshData@{FMeshData}}
+\doxysubsubsection{\texorpdfstring{NextSortId}{NextSortId}}
+{\footnotesize\ttfamily \label{struct_f_mesh_data_ac10ffe89310a73bd1504ef6811882b59} 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} FMesh\+Data::\+\+Next\+Sort\+Id = 0\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}, {\ttfamily [private]}}
+
+\Hypertarget{struct_f_mesh_data_a5ec8f9260881bb71f9b18d8d5a9c1394}\index{FMeshData@{FMeshData}!SortId@{SortId}}
+\index{SortId@{SortId}!FMeshData@{FMeshData}}
+\doxysubsubsection{\texorpdfstring{SortId}{SortId}}
+{\footnotesize\ttfamily \label{struct_f_mesh_data_a5ec8f9260881bb71f9b18d8d5a9c1394} 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} FMesh\+Data::\+\+Sort\+Id = 0\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{struct_f_mesh_data_adb4c199ccd031fa8b8ae7a96fb4a210e}\index{FMeshData@{FMeshData}!VertexBuffer@{VertexBuffer}}
+\index{VertexBuffer@{VertexBuffer}!FMeshData@{FMeshData}}
+\doxysubsubsection{\texorpdfstring{VertexBuffer}{VertexBuffer}}
+{\footnotesize\ttfamily \label{struct_f_mesh_data_adb4c199ccd031fa8b8ae7a96fb4a210e} 
+ID3\+D11\+Buffer\texorpdfstring{$\ast$}{*} FMesh\+Data::\+\+Vertex\+Buffer = nullptr}
+
+\Hypertarget{struct_f_mesh_data_ae64c26fd7bad7657c7e2ca5cbfa37c6d}\index{FMeshData@{FMeshData}!Vertices@{Vertices}}
+\index{Vertices@{Vertices}!FMeshData@{FMeshData}}
+\doxysubsubsection{\texorpdfstring{Vertices}{Vertices}}
+{\footnotesize\ttfamily \label{struct_f_mesh_data_ae64c26fd7bad7657c7e2ca5cbfa37c6d} 
+\doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$\doxymbox{\hyperlink{struct_f_primitive_vertex}{FPrimitive\+Vertex}}$>$ FMesh\+Data::\+\+Vertices}
+
+
+
+The documentation for this struct was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Primitive/\+\doxymbox{\hyperlink{_primitive_base_8h}{Primitive\+Base.\+h}}\item 
+Engine/\+\+Source/\+\+Primitive/\+\doxymbox{\hyperlink{_primitive_base_8cpp}{Primitive\+Base.\+cpp}}\end{DoxyCompactItemize}

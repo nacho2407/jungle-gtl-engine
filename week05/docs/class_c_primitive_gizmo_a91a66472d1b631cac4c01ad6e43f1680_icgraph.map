@@ -1,0 +1,16 @@
+<map id="CPrimitiveGizmo::GetKey" name="CPrimitiveGizmo::GetKey">
+<area shape="rect" id="Node000001" title=" " alt="" coords="701,77,874,104"/>
+<area shape="rect" id="Node000002" href="$class_c_primitive_gizmo.html#a689cc5eabc647396f4b758f07c35636a" title=" " alt="" coords="5,40,195,82"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="751,68,706,46,653,26,592,15,529,9,465,8,403,11,286,24,191,42,189,37,286,19,402,6,465,3,529,4,592,10,654,21,708,41,756,69"/>
+<area shape="rect" id="Node000003" href="$class_c_primitive_gizmo.html#a695146e999f79d0f4cb9eca1b97800b9" title=" " alt="" coords="472,36,653,78"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="683,75,654,73,654,68,689,75"/>
+<area shape="rect" id="Node000005" href="$class_c_primitive_gizmo.html#ae6e66ee72c45837d85101b2b56bc4952" title=" " alt="" coords="472,102,653,145"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="683,106,654,113,653,108,689,105"/>
+<area shape="rect" id="Node000006" href="$class_c_primitive_gizmo.html#adbdcd0e107b503f37eda8362e2ba25f4" title=" " alt="" coords="472,169,653,212"/>
+<area shape="poly" id="edge7_Node000001_Node000006" title=" " alt="" coords="750,111,654,159,626,171,625,166,652,155,744,112"/>
+<area shape="rect" id="Node000004" href="$class_c_primitive_gizmo.html#af8b2b895ecf8b70831efbcb95e497874" title=" " alt="" coords="243,77,424,104"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="454,73,425,80,424,75,459,72"/>
+<area shape="poly" id="edge4_Node000004_Node000002" title=" " alt="" coords="225,78,196,76,195,70,230,76"/>
+<area shape="poly" id="edge6_Node000005_Node000004" title=" " alt="" coords="454,108,424,106,424,101,459,108"/>
+<area shape="poly" id="edge8_Node000006_Node000004" title=" " alt="" coords="484,163,471,159,361,107,362,102,473,155,489,163"/>
+</map>

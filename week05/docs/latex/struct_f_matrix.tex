@@ -1,0 +1,1257 @@
+\doxysection{FMatrix Struct Reference}
+\hypertarget{struct_f_matrix}{}\label{struct_f_matrix}\index{FMatrix@{FMatrix}}
+
+
+{\ttfamily \+\#include $<$Matrix.\+h$>$}
+
+
+
+Collaboration diagram for FMatrix:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=238pt]{struct_f_matrix__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+constexpr \doxymbox{\hyperlink{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}{FMatrix}} () noexcept
+\item 
+constexpr \doxymbox{\hyperlink{struct_f_matrix_af3f652baff979d6c0018061d36dce9f2}{FMatrix}} (float M00, float M01, float M02, float M03, float M10, float M11, float M12, float M13, float M20, float M21, float M22, float M23, float M30, float M31, float M32, float M33) noexcept
+\item 
+constexpr \doxymbox{\hyperlink{struct_f_matrix_a0528fa4a6ef5743d968a7dd26fad170b}{FMatrix}} (const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&Row0, const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&Row1, const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&Row2, const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&Row3) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix_a599fb81491e5f0a901c48259b771c4db}{FMatrix}} (\doxymbox{\hyperlink{_core_types_8h_a7e3371c0f101d480dc6b09de802b75ce}{CXMMatrix}} In\+Matrix) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix_af912f19aeed51c65c42f90997f84a840}{FMatrix}} (const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&) noexcept=default
+\item 
+\doxymbox{\hyperlink{struct_f_matrix_a0c6e1ef83f6a29af1d96d76248872c7f}{FMatrix}} (\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&\&) noexcept=default
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \& \doxymbox{\hyperlink{struct_f_matrix_a49bec33e90115b63459a01244c2bde14}{operator=}} (const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&) noexcept=default
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \& \doxymbox{\hyperlink{struct_f_matrix_aecf60cc5381bc7ba7cd4a260199e0017}{operator=}} (\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&\&) noexcept=default
+\item 
+float \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{struct_f_matrix_ac95a3d0f8108068b2a46a6b0ab54f084}{operator\+[$\,$]\+}} (\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Row) noexcept
+\item 
+const float \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{struct_f_matrix_a7cba7c24eea5b413cdaf89e6463a3b0b}{operator\+[$\,$]\+}} (\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} Row) const noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_matrix_ad1586b7ca3c36ed2d23468876103fe70}{operator==}} (const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&Other) const noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_matrix_a25ee513ce60a10a4647e593518c6cbdd}{operator!=}} (const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&Other) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_a827d9516f66a5c8cf42ec67ee4457d5b}{operator-\/}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_a2768715db244a41827797ee661588a10}{operator+}} (const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&Other) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_ad8416bb256ce3ff97e22b90f0453314c}{operator-\/}} (const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&Other) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_a2357c96eed5ccb7d1fa28ed320069f93}{operator\texorpdfstring{$\ast$}{*}}} (float Scalar) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_a2c4aedecb7a01bd42b3ab5c1277584aa}{operator/\+}} (float Scalar) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \& \doxymbox{\hyperlink{struct_f_matrix_a4da27c9a4c9473c5925e2359a1e2b7de}{operator+=}} (const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&Other) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \& \doxymbox{\hyperlink{struct_f_matrix_a437f4722b9b890a8c1bd08e633dfb9fe}{operator-\/=}} (const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&Other) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \& \doxymbox{\hyperlink{struct_f_matrix_a525e2c2b10fc602ef2d117b5aeac6daf}{operator\texorpdfstring{$\ast$}{*}=}} (float Scalar) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \& \doxymbox{\hyperlink{struct_f_matrix_aa0652488a703c23e86279be432fa7bb2}{operator/\+=}} (float Scalar) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_ac3ebb59c2ecf32d9142c149be93dde98}{operator\texorpdfstring{$\ast$}{*}}} (const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&Other) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \& \doxymbox{\hyperlink{struct_f_matrix_a83bd6236025e1f00b9a24177d30fca52}{operator\texorpdfstring{$\ast$}{*}=}} (const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&Other) noexcept
+\item 
+\doxymbox{\hyperlink{_core_types_8h_a4e4c1a26b3ef7ff7bdfa69e3d2a28ca3}{XMMatrix}} \doxymbox{\hyperlink{struct_f_matrix_a03595ac7cbb4cefe1e79c5242ccac4c6}{To\+XMMatrix}} () const noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_matrix_a2fb5ba5fd7470742f4c8d8289482878a}{Equals}} (const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&Other, float Tolerance=1.e-\/6f) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_ad2f92d64d2fa054160d24e8f92c0c427}{Get\+Transposed}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_matrix_a789eafa9373a9a8d583e7900af7c6fac}{Transform\+Vector}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&V) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_matrix_a975cdd163e5a835115bf753c61def97e}{Transform\+Position}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&V) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_matrix_aca939c75174173f35b183c1ef42fc37f}{Get\+Origin}} () const noexcept
+\item 
+void \doxymbox{\hyperlink{struct_f_matrix_a6fc164edbbc7c415bf94b3a7b4f32295}{Set\+Origin}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Origin) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_matrix_a93ab7a16fc74318a0c82ab22c854f370}{Get\+Scaled\+Axis}} (\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}} Axis) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_matrix_a0308ed41f18eb62e5d007186b5307b01}{Get\+Unit\+Axis}} (\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}} Axis) const noexcept
+\item 
+void \doxymbox{\hyperlink{struct_f_matrix_ae40a5fbaedee294ee13c4193c878f3d0}{Remove\+Translation}} () noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_ae7a08cbdbde973871025549674f003a4}{Get\+Matrix\+Without\+Translation}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_aa8783d13da9f3c28975c093bf934520d}{Get\+Matrix\+Without\+Scale}} (float Tolerance=1.e-\/8f) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_matrix_a0c71c6c3978b676c69694fdb1cbb78e1}{Get\+Scale\+Vector}} () const noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_matrix_a841a32498610b832ff48652b5639f5e9}{Is\+Identity}} (float Tolerance=1.e-\/6f) const noexcept
+\item 
+float \doxymbox{\hyperlink{struct_f_matrix_ad791b12bfd66ac2a1b507231b3e123e5}{Determinant}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_ab4b28604ae16586e79c62a558ae0b7ad}{Get\+Inverse}} (float Tolerance=1.e-\/8f) const noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_matrix_a4f9528269444bc8427cedbfa1cc7707e}{Inverse}} (float Tolerance=1.e-\/8f) noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_matrix_a419aceb8c6e8bca074739ee845ae278f}{Is\+Invertible}} (float Tolerance=1.e-\/8f) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_a893933b507e9701cfcc5880b664cb0d7}{Apply\+Scale}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Scale) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_a773b71ef20c23f4514a943001706b094}{Apply\+Scale}} (float Scale) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_a0f8ada22db65b9c48f9be2731459c92e}{Get\+Rotation\+Matrix}} (float Tolerance=1.e-\/8f) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_matrix_a5c2961239c52a85b09fe0e4ae2e44ae6}{Get\+Forward\+Vector}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_matrix_afe3d6a181066c58badae8b392f9edf30}{Get\+Right\+Vector}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_matrix_a8076f650f86bbebf3ae2e62a7a4a9812}{Get\+Up\+Vector}} () const noexcept
+\item 
+void \doxymbox{\hyperlink{struct_f_matrix_a76ecc2559bc3aa0a302845a422225476}{Set\+Axes}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&XAxis, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&YAxis, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&ZAxis, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Origin=\doxymbox{\hyperlink{struct_f_vector_a5718e5b26f15f0d7057d05236fcae359}{FVector::\+\+Zero\+Vector}}) noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_matrix_aa4a9d2890969714204234643e8fe626f}{Decompose}} (\doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Out\+Translation, \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&Out\+Rotation, \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Out\+Scale, float Tolerance=1.e-\/8f) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_matrix_a779da1fe141bf3b562ed542bfa3a3dae}{Get\+Translation}} () const noexcept
+\item 
+void \doxymbox{\hyperlink{struct_f_matrix_af8f5811e4ea33e211c432df9bff406ef}{Set\+Translation}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Translation) noexcept
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_a8bebc2582bae52878f4fe2ac3a65f3aa}{Make\+Translation}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Translation) noexcept
+\item 
+static \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_a251054777f82c5d7c761eb317101d63c}{Make\+Scale}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Scale) noexcept
+\item 
+static \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_aeb34117fb4ed1261c2ab22a763a6ae1b}{Make\+RotationX}} (float Angle\+Rad) noexcept
+\item 
+static \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_a2b21339e005e9b234f32eb4e98684e60}{Make\+RotationY}} (float Angle\+Rad) noexcept
+\item 
+static \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_a00b12c167efdccda00af99fed747a473}{Make\+RotationZ}} (float Angle\+Rad) noexcept
+\item 
+static \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_a95ab177bdfb4f313afe5a19866756b27}{Make\+Scale}} (float Scale) noexcept
+\item 
+static \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_afe196c72376bf76c51537b1c2ec8c2ef}{Make\+FromX}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&XAxis) noexcept
+\item 
+static \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_a8dfdc9e6e0a4ea5ab61421d69e400a61}{Make\+FromY}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&YAxis) noexcept
+\item 
+static \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_a84f9c0230634bd5800d17d4aae92bf45}{Make\+FromZ}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&ZAxis) noexcept
+\item 
+static \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_a97db9bb8b115e774186a06b0a0b63a99}{Make\+Look\+At}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Eye, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Target, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Up=\doxymbox{\hyperlink{struct_f_vector_a5d712be3687e28c494fb7801926878f8}{FVector::\+\+Up\+Vector}}) noexcept
+\item 
+static \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_a4869801dc043b3d011ebf9110db737c5}{Make\+Perspective\+Fov\+LH}} (float Fov\+YRad, float Aspect\+Ratio, float NearZ, float FarZ) noexcept
+\item 
+static \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_aa45465873d02e5f1c286577089357c95}{Make\+Orthographic\+LH}} (float View\+Width, float View\+Height, float NearZ, float FarZ) noexcept
+\item 
+static \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_a026877b14488fb48d3c7910f7ca55e11}{Make\+View\+Look\+At\+LH}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Eye, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Target, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Up=\doxymbox{\hyperlink{struct_f_vector_a5d712be3687e28c494fb7801926878f8}{FVector::\+\+Up\+Vector}}) noexcept
+\item 
+static \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_ad23a9e58ff86764fe0f5e46e939eb63a}{Make\+Billboard}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Position, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Camera\+Position, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Up=\doxymbox{\hyperlink{struct_f_vector_a5d712be3687e28c494fb7801926878f8}{FVector::\+\+Up\+Vector}}) noexcept
+\item 
+static \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_afd7adfd9498e5e1d1c02980ae2b835a9}{Make\+World}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Translation, const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&Rotation\+Matrix, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Scale) noexcept
+\item 
+static \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_a6090aeabcf2e72cc6d3467e82f7e171d}{Make\+TRS}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Translation, const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&Rotation\+Matrix, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Scale) noexcept
+\item 
+static \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_a206ab03507612118adbd28dffb0b7c85}{Abs}} (const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&In\+Matrix) noexcept
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+float \doxymbox{\hyperlink{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}{M}} \+[4]\+\+[4]\+
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_matrix_a25d402a18105886bdbc0427f21fc97d4}{Identity}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{struct_f_matrix_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852}\index{FMatrix@{FMatrix}!FMatrix@{FMatrix}}
+\index{FMatrix@{FMatrix}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{FMatrix()}{FMatrix()}\hspace{0.1cm}{\footnotesize\ttfamily [1/6]}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852} 
+FMatrix::\+\+FMatrix (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [constexpr]}, {\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{struct_f_matrix_a0e9cc0a76cf2ca8ac986d9b6d27da852_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_af3f652baff979d6c0018061d36dce9f2}\index{FMatrix@{FMatrix}!FMatrix@{FMatrix}}
+\index{FMatrix@{FMatrix}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{FMatrix()}{FMatrix()}\hspace{0.1cm}{\footnotesize\ttfamily [2/6]}}
+{\footnotesize\ttfamily \label{struct_f_matrix_af3f652baff979d6c0018061d36dce9f2} 
+FMatrix::\+\+FMatrix (\begin{DoxyParamCaption}\item[{float}]{M00}{, }\item[{float}]{M01}{, }\item[{float}]{M02}{, }\item[{float}]{M03}{, }\item[{float}]{M10}{, }\item[{float}]{M11}{, }\item[{float}]{M12}{, }\item[{float}]{M13}{, }\item[{float}]{M20}{, }\item[{float}]{M21}{, }\item[{float}]{M22}{, }\item[{float}]{M23}{, }\item[{float}]{M30}{, }\item[{float}]{M31}{, }\item[{float}]{M32}{, }\item[{float}]{M33}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [constexpr]}, {\ttfamily [noexcept]}}
+
+\Hypertarget{struct_f_matrix_a0528fa4a6ef5743d968a7dd26fad170b}\index{FMatrix@{FMatrix}!FMatrix@{FMatrix}}
+\index{FMatrix@{FMatrix}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{FMatrix()}{FMatrix()}\hspace{0.1cm}{\footnotesize\ttfamily [3/6]}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a0528fa4a6ef5743d968a7dd26fad170b} 
+FMatrix::\+\+FMatrix (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&}]{Row0}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&}]{Row1}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&}]{Row2}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector4}{FVector4}} \&}]{Row3}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [constexpr]}, {\ttfamily [noexcept]}}
+
+\Hypertarget{struct_f_matrix_a599fb81491e5f0a901c48259b771c4db}\index{FMatrix@{FMatrix}!FMatrix@{FMatrix}}
+\index{FMatrix@{FMatrix}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{FMatrix()}{FMatrix()}\hspace{0.1cm}{\footnotesize\ttfamily [4/6]}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a599fb81491e5f0a901c48259b771c4db} 
+FMatrix::\+\+FMatrix (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_core_types_8h_a7e3371c0f101d480dc6b09de802b75ce}{CXMMatrix}}}]{In\+Matrix}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [explicit]}, {\ttfamily [noexcept]}}
+
+\Hypertarget{struct_f_matrix_af912f19aeed51c65c42f90997f84a840}\index{FMatrix@{FMatrix}!FMatrix@{FMatrix}}
+\index{FMatrix@{FMatrix}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{FMatrix()}{FMatrix()}\hspace{0.1cm}{\footnotesize\ttfamily [5/6]}}
+{\footnotesize\ttfamily \label{struct_f_matrix_af912f19aeed51c65c42f90997f84a840} 
+FMatrix::\+\+FMatrix (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&}]{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=292pt]{struct_f_matrix_af912f19aeed51c65c42f90997f84a840_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a0c6e1ef83f6a29af1d96d76248872c7f}\index{FMatrix@{FMatrix}!FMatrix@{FMatrix}}
+\index{FMatrix@{FMatrix}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{FMatrix()}{FMatrix()}\hspace{0.1cm}{\footnotesize\ttfamily [6/6]}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a0c6e1ef83f6a29af1d96d76248872c7f} 
+FMatrix::\+\+FMatrix (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&\&}]{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=292pt]{struct_f_matrix_a0c6e1ef83f6a29af1d96d76248872c7f_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-func-members}
+\Hypertarget{struct_f_matrix_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{struct_f_matrix_a206ab03507612118adbd28dffb0b7c85}\index{FMatrix@{FMatrix}!Abs@{Abs}}
+\index{Abs@{Abs}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{Abs()}{Abs()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a206ab03507612118adbd28dffb0b7c85} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Abs (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&}]{In\+Matrix}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=276pt]{struct_f_matrix_a206ab03507612118adbd28dffb0b7c85_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a206ab03507612118adbd28dffb0b7c85_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a893933b507e9701cfcc5880b664cb0d7}\index{FMatrix@{FMatrix}!ApplyScale@{ApplyScale}}
+\index{ApplyScale@{ApplyScale}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{ApplyScale()}{ApplyScale()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a893933b507e9701cfcc5880b664cb0d7} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Apply\+Scale (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Scale}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a893933b507e9701cfcc5880b664cb0d7_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=325pt]{struct_f_matrix_a893933b507e9701cfcc5880b664cb0d7_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a773b71ef20c23f4514a943001706b094}\index{FMatrix@{FMatrix}!ApplyScale@{ApplyScale}}
+\index{ApplyScale@{ApplyScale}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{ApplyScale()}{ApplyScale()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a773b71ef20c23f4514a943001706b094} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Apply\+Scale (\begin{DoxyParamCaption}\item[{float}]{Scale}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a773b71ef20c23f4514a943001706b094_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_aa4a9d2890969714204234643e8fe626f}\index{FMatrix@{FMatrix}!Decompose@{Decompose}}
+\index{Decompose@{Decompose}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{Decompose()}{Decompose()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_aa4a9d2890969714204234643e8fe626f} 
+bool FMatrix::\+\+Decompose (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Out\+Translation}{, }\item[{\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&}]{Out\+Rotation}{, }\item[{\doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Out\+Scale}{, }\item[{float}]{Tolerance}{ = {\ttfamily 1.e-\/8f}}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_aa4a9d2890969714204234643e8fe626f_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_ad791b12bfd66ac2a1b507231b3e123e5}\index{FMatrix@{FMatrix}!Determinant@{Determinant}}
+\index{Determinant@{Determinant}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{Determinant()}{Determinant()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_ad791b12bfd66ac2a1b507231b3e123e5} 
+float FMatrix::\+\+Determinant (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=332pt]{struct_f_matrix_ad791b12bfd66ac2a1b507231b3e123e5_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=327pt]{struct_f_matrix_ad791b12bfd66ac2a1b507231b3e123e5_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a2fb5ba5fd7470742f4c8d8289482878a}\index{FMatrix@{FMatrix}!Equals@{Equals}}
+\index{Equals@{Equals}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{Equals()}{Equals()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a2fb5ba5fd7470742f4c8d8289482878a} 
+bool FMatrix::\+\+Equals (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&}]{Other}{, }\item[{float}]{Tolerance}{ = {\ttfamily 1.e-\/6f}}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=289pt]{struct_f_matrix_a2fb5ba5fd7470742f4c8d8289482878a_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=297pt]{struct_f_matrix_a2fb5ba5fd7470742f4c8d8289482878a_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a5c2961239c52a85b09fe0e4ae2e44ae6}\index{FMatrix@{FMatrix}!GetForwardVector@{GetForwardVector}}
+\index{GetForwardVector@{GetForwardVector}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{GetForwardVector()}{GetForwardVector()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a5c2961239c52a85b09fe0e4ae2e44ae6} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FMatrix::\+\+Get\+Forward\+Vector (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a5c2961239c52a85b09fe0e4ae2e44ae6_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_ab4b28604ae16586e79c62a558ae0b7ad}\index{FMatrix@{FMatrix}!GetInverse@{GetInverse}}
+\index{GetInverse@{GetInverse}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{GetInverse()}{GetInverse()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_ab4b28604ae16586e79c62a558ae0b7ad} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Get\+Inverse (\begin{DoxyParamCaption}\item[{float}]{Tolerance}{ = {\ttfamily 1.e-\/8f}}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=327pt]{struct_f_matrix_ab4b28604ae16586e79c62a558ae0b7ad_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_ab4b28604ae16586e79c62a558ae0b7ad_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_aa8783d13da9f3c28975c093bf934520d}\index{FMatrix@{FMatrix}!GetMatrixWithoutScale@{GetMatrixWithoutScale}}
+\index{GetMatrixWithoutScale@{GetMatrixWithoutScale}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{GetMatrixWithoutScale()}{GetMatrixWithoutScale()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_aa8783d13da9f3c28975c093bf934520d} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Get\+Matrix\+Without\+Scale (\begin{DoxyParamCaption}\item[{float}]{Tolerance}{ = {\ttfamily 1.e-\/8f}}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_aa8783d13da9f3c28975c093bf934520d_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_ae7a08cbdbde973871025549674f003a4}\index{FMatrix@{FMatrix}!GetMatrixWithoutTranslation@{GetMatrixWithoutTranslation}}
+\index{GetMatrixWithoutTranslation@{GetMatrixWithoutTranslation}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{GetMatrixWithoutTranslation()}{GetMatrixWithoutTranslation()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_ae7a08cbdbde973871025549674f003a4} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Get\+Matrix\+Without\+Translation (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_ae7a08cbdbde973871025549674f003a4_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_ae7a08cbdbde973871025549674f003a4_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_aca939c75174173f35b183c1ef42fc37f}\index{FMatrix@{FMatrix}!GetOrigin@{GetOrigin}}
+\index{GetOrigin@{GetOrigin}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{GetOrigin()}{GetOrigin()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_aca939c75174173f35b183c1ef42fc37f} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FMatrix::\+\+Get\+Origin (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_aca939c75174173f35b183c1ef42fc37f_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_afe3d6a181066c58badae8b392f9edf30}\index{FMatrix@{FMatrix}!GetRightVector@{GetRightVector}}
+\index{GetRightVector@{GetRightVector}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{GetRightVector()}{GetRightVector()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_afe3d6a181066c58badae8b392f9edf30} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FMatrix::\+\+Get\+Right\+Vector (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_afe3d6a181066c58badae8b392f9edf30_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a0f8ada22db65b9c48f9be2731459c92e}\index{FMatrix@{FMatrix}!GetRotationMatrix@{GetRotationMatrix}}
+\index{GetRotationMatrix@{GetRotationMatrix}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{GetRotationMatrix()}{GetRotationMatrix()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a0f8ada22db65b9c48f9be2731459c92e} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Get\+Rotation\+Matrix (\begin{DoxyParamCaption}\item[{float}]{Tolerance}{ = {\ttfamily 1.e-\/8f}}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a0f8ada22db65b9c48f9be2731459c92e_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a93ab7a16fc74318a0c82ab22c854f370}\index{FMatrix@{FMatrix}!GetScaledAxis@{GetScaledAxis}}
+\index{GetScaledAxis@{GetScaledAxis}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{GetScaledAxis()}{GetScaledAxis()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a93ab7a16fc74318a0c82ab22c854f370} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FMatrix::\+\+Get\+Scaled\+Axis (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}}}]{Axis}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a93ab7a16fc74318a0c82ab22c854f370_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a0c71c6c3978b676c69694fdb1cbb78e1}\index{FMatrix@{FMatrix}!GetScaleVector@{GetScaleVector}}
+\index{GetScaleVector@{GetScaleVector}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{GetScaleVector()}{GetScaleVector()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a0c71c6c3978b676c69694fdb1cbb78e1} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FMatrix::\+\+Get\+Scale\+Vector (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+\Hypertarget{struct_f_matrix_a779da1fe141bf3b562ed542bfa3a3dae}\index{FMatrix@{FMatrix}!GetTranslation@{GetTranslation}}
+\index{GetTranslation@{GetTranslation}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{GetTranslation()}{GetTranslation()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a779da1fe141bf3b562ed542bfa3a3dae} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FMatrix::\+\+Get\+Translation (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=331pt]{struct_f_matrix_a779da1fe141bf3b562ed542bfa3a3dae_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a779da1fe141bf3b562ed542bfa3a3dae_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_ad2f92d64d2fa054160d24e8f92c0c427}\index{FMatrix@{FMatrix}!GetTransposed@{GetTransposed}}
+\index{GetTransposed@{GetTransposed}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{GetTransposed()}{GetTransposed()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_ad2f92d64d2fa054160d24e8f92c0c427} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Get\+Transposed (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=345pt]{struct_f_matrix_ad2f92d64d2fa054160d24e8f92c0c427_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_ad2f92d64d2fa054160d24e8f92c0c427_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a0308ed41f18eb62e5d007186b5307b01}\index{FMatrix@{FMatrix}!GetUnitAxis@{GetUnitAxis}}
+\index{GetUnitAxis@{GetUnitAxis}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{GetUnitAxis()}{GetUnitAxis()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a0308ed41f18eb62e5d007186b5307b01} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FMatrix::\+\+Get\+Unit\+Axis (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}}}]{Axis}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=345pt]{struct_f_matrix_a0308ed41f18eb62e5d007186b5307b01_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a0308ed41f18eb62e5d007186b5307b01_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a8076f650f86bbebf3ae2e62a7a4a9812}\index{FMatrix@{FMatrix}!GetUpVector@{GetUpVector}}
+\index{GetUpVector@{GetUpVector}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{GetUpVector()}{GetUpVector()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a8076f650f86bbebf3ae2e62a7a4a9812} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FMatrix::\+\+Get\+Up\+Vector (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a8076f650f86bbebf3ae2e62a7a4a9812_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a4f9528269444bc8427cedbfa1cc7707e}\index{FMatrix@{FMatrix}!Inverse@{Inverse}}
+\index{Inverse@{Inverse}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{Inverse()}{Inverse()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a4f9528269444bc8427cedbfa1cc7707e} 
+bool FMatrix::\+\+Inverse (\begin{DoxyParamCaption}\item[{float}]{Tolerance}{ = {\ttfamily 1.e-\/8f}}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [nodiscard]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=311pt]{struct_f_matrix_a4f9528269444bc8427cedbfa1cc7707e_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a841a32498610b832ff48652b5639f5e9}\index{FMatrix@{FMatrix}!IsIdentity@{IsIdentity}}
+\index{IsIdentity@{IsIdentity}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{IsIdentity()}{IsIdentity()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a841a32498610b832ff48652b5639f5e9} 
+bool FMatrix::\+\+Is\+Identity (\begin{DoxyParamCaption}\item[{float}]{Tolerance}{ = {\ttfamily 1.e-\/6f}}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a841a32498610b832ff48652b5639f5e9_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a419aceb8c6e8bca074739ee845ae278f}\index{FMatrix@{FMatrix}!IsInvertible@{IsInvertible}}
+\index{IsInvertible@{IsInvertible}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{IsInvertible()}{IsInvertible()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a419aceb8c6e8bca074739ee845ae278f} 
+bool FMatrix::\+\+Is\+Invertible (\begin{DoxyParamCaption}\item[{float}]{Tolerance}{ = {\ttfamily 1.e-\/8f}}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a419aceb8c6e8bca074739ee845ae278f_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_ad23a9e58ff86764fe0f5e46e939eb63a}\index{FMatrix@{FMatrix}!MakeBillboard@{MakeBillboard}}
+\index{MakeBillboard@{MakeBillboard}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{MakeBillboard()}{MakeBillboard()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_ad23a9e58ff86764fe0f5e46e939eb63a} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Make\+Billboard (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Position}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Camera\+Position}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Up}{ = {\ttfamily \doxymbox{\hyperlink{struct_f_vector_a5d712be3687e28c494fb7801926878f8}{FVector::\+\+Up\+Vector}}}}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_ad23a9e58ff86764fe0f5e46e939eb63a_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_afe196c72376bf76c51537b1c2ec8c2ef}\index{FMatrix@{FMatrix}!MakeFromX@{MakeFromX}}
+\index{MakeFromX@{MakeFromX}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{MakeFromX()}{MakeFromX()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_afe196c72376bf76c51537b1c2ec8c2ef} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Make\+FromX (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{XAxis}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_afe196c72376bf76c51537b1c2ec8c2ef_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a8dfdc9e6e0a4ea5ab61421d69e400a61}\index{FMatrix@{FMatrix}!MakeFromY@{MakeFromY}}
+\index{MakeFromY@{MakeFromY}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{MakeFromY()}{MakeFromY()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a8dfdc9e6e0a4ea5ab61421d69e400a61} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Make\+FromY (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{YAxis}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a8dfdc9e6e0a4ea5ab61421d69e400a61_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a84f9c0230634bd5800d17d4aae92bf45}\index{FMatrix@{FMatrix}!MakeFromZ@{MakeFromZ}}
+\index{MakeFromZ@{MakeFromZ}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{MakeFromZ()}{MakeFromZ()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a84f9c0230634bd5800d17d4aae92bf45} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Make\+FromZ (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{ZAxis}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a84f9c0230634bd5800d17d4aae92bf45_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a97db9bb8b115e774186a06b0a0b63a99}\index{FMatrix@{FMatrix}!MakeLookAt@{MakeLookAt}}
+\index{MakeLookAt@{MakeLookAt}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{MakeLookAt()}{MakeLookAt()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a97db9bb8b115e774186a06b0a0b63a99} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Make\+Look\+At (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Eye}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Target}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Up}{ = {\ttfamily \doxymbox{\hyperlink{struct_f_vector_a5d712be3687e28c494fb7801926878f8}{FVector::\+\+Up\+Vector}}}}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a97db9bb8b115e774186a06b0a0b63a99_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_aa45465873d02e5f1c286577089357c95}\index{FMatrix@{FMatrix}!MakeOrthographicLH@{MakeOrthographicLH}}
+\index{MakeOrthographicLH@{MakeOrthographicLH}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{MakeOrthographicLH()}{MakeOrthographicLH()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_aa45465873d02e5f1c286577089357c95} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Make\+Orthographic\+LH (\begin{DoxyParamCaption}\item[{float}]{View\+Width}{, }\item[{float}]{View\+Height}{, }\item[{float}]{NearZ}{, }\item[{float}]{FarZ}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_aa45465873d02e5f1c286577089357c95_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_aa45465873d02e5f1c286577089357c95_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a4869801dc043b3d011ebf9110db737c5}\index{FMatrix@{FMatrix}!MakePerspectiveFovLH@{MakePerspectiveFovLH}}
+\index{MakePerspectiveFovLH@{MakePerspectiveFovLH}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{MakePerspectiveFovLH()}{MakePerspectiveFovLH()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a4869801dc043b3d011ebf9110db737c5} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Make\+Perspective\+Fov\+LH (\begin{DoxyParamCaption}\item[{float}]{Fov\+YRad}{, }\item[{float}]{Aspect\+Ratio}{, }\item[{float}]{NearZ}{, }\item[{float}]{FarZ}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=335pt]{struct_f_matrix_a4869801dc043b3d011ebf9110db737c5_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a4869801dc043b3d011ebf9110db737c5_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_aeb34117fb4ed1261c2ab22a763a6ae1b}\index{FMatrix@{FMatrix}!MakeRotationX@{MakeRotationX}}
+\index{MakeRotationX@{MakeRotationX}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{MakeRotationX()}{MakeRotationX()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_aeb34117fb4ed1261c2ab22a763a6ae1b} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Make\+RotationX (\begin{DoxyParamCaption}\item[{float}]{Angle\+Rad}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=327pt]{struct_f_matrix_aeb34117fb4ed1261c2ab22a763a6ae1b_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_aeb34117fb4ed1261c2ab22a763a6ae1b_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a2b21339e005e9b234f32eb4e98684e60}\index{FMatrix@{FMatrix}!MakeRotationY@{MakeRotationY}}
+\index{MakeRotationY@{MakeRotationY}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{MakeRotationY()}{MakeRotationY()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a2b21339e005e9b234f32eb4e98684e60} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Make\+RotationY (\begin{DoxyParamCaption}\item[{float}]{Angle\+Rad}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=327pt]{struct_f_matrix_a2b21339e005e9b234f32eb4e98684e60_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a2b21339e005e9b234f32eb4e98684e60_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a00b12c167efdccda00af99fed747a473}\index{FMatrix@{FMatrix}!MakeRotationZ@{MakeRotationZ}}
+\index{MakeRotationZ@{MakeRotationZ}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{MakeRotationZ()}{MakeRotationZ()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a00b12c167efdccda00af99fed747a473} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Make\+RotationZ (\begin{DoxyParamCaption}\item[{float}]{Angle\+Rad}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=326pt]{struct_f_matrix_a00b12c167efdccda00af99fed747a473_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a00b12c167efdccda00af99fed747a473_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a251054777f82c5d7c761eb317101d63c}\index{FMatrix@{FMatrix}!MakeScale@{MakeScale}}
+\index{MakeScale@{MakeScale}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{MakeScale()}{MakeScale()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a251054777f82c5d7c761eb317101d63c} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Make\+Scale (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Scale}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=308pt]{struct_f_matrix_a251054777f82c5d7c761eb317101d63c_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a251054777f82c5d7c761eb317101d63c_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a95ab177bdfb4f313afe5a19866756b27}\index{FMatrix@{FMatrix}!MakeScale@{MakeScale}}
+\index{MakeScale@{MakeScale}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{MakeScale()}{MakeScale()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a95ab177bdfb4f313afe5a19866756b27} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Make\+Scale (\begin{DoxyParamCaption}\item[{float}]{Scale}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a95ab177bdfb4f313afe5a19866756b27_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a8bebc2582bae52878f4fe2ac3a65f3aa}\index{FMatrix@{FMatrix}!MakeTranslation@{MakeTranslation}}
+\index{MakeTranslation@{MakeTranslation}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{MakeTranslation()}{MakeTranslation()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a8bebc2582bae52878f4fe2ac3a65f3aa} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Make\+Translation (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Translation}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=331pt]{struct_f_matrix_a8bebc2582bae52878f4fe2ac3a65f3aa_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a8bebc2582bae52878f4fe2ac3a65f3aa_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a6090aeabcf2e72cc6d3467e82f7e171d}\index{FMatrix@{FMatrix}!MakeTRS@{MakeTRS}}
+\index{MakeTRS@{MakeTRS}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{MakeTRS()}{MakeTRS()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a6090aeabcf2e72cc6d3467e82f7e171d} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Make\+TRS (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Translation}{, }\item[{const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&}]{Rotation\+Matrix}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Scale}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a6090aeabcf2e72cc6d3467e82f7e171d_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a026877b14488fb48d3c7910f7ca55e11}\index{FMatrix@{FMatrix}!MakeViewLookAtLH@{MakeViewLookAtLH}}
+\index{MakeViewLookAtLH@{MakeViewLookAtLH}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{MakeViewLookAtLH()}{MakeViewLookAtLH()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a026877b14488fb48d3c7910f7ca55e11} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Make\+View\+Look\+At\+LH (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Eye}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Target}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Up}{ = {\ttfamily \doxymbox{\hyperlink{struct_f_vector_a5d712be3687e28c494fb7801926878f8}{FVector::\+\+Up\+Vector}}}}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a026877b14488fb48d3c7910f7ca55e11_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a026877b14488fb48d3c7910f7ca55e11_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_afd7adfd9498e5e1d1c02980ae2b835a9}\index{FMatrix@{FMatrix}!MakeWorld@{MakeWorld}}
+\index{MakeWorld@{MakeWorld}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{MakeWorld()}{MakeWorld()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_afd7adfd9498e5e1d1c02980ae2b835a9} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Make\+World (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Translation}{, }\item[{const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&}]{Rotation\+Matrix}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Scale}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=308pt]{struct_f_matrix_afd7adfd9498e5e1d1c02980ae2b835a9_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_afd7adfd9498e5e1d1c02980ae2b835a9_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a25ee513ce60a10a4647e593518c6cbdd}\index{FMatrix@{FMatrix}!operator"!=@{operator"!=}}
+\index{operator"!=@{operator"!=}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{operator"!=()}{operator!=()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a25ee513ce60a10a4647e593518c6cbdd} 
+bool FMatrix::\+operator!= (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&}]{Other}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=303pt]{struct_f_matrix_a25ee513ce60a10a4647e593518c6cbdd_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_ac3ebb59c2ecf32d9142c149be93dde98}\index{FMatrix@{FMatrix}!operator\texorpdfstring{$\ast$}{*}@{operator\texorpdfstring{$\ast$}{*}}}
+\index{operator\texorpdfstring{$\ast$}{*}@{operator\texorpdfstring{$\ast$}{*}}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{operator\texorpdfstring{$\ast$}{*}()}{operator*()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{struct_f_matrix_ac3ebb59c2ecf32d9142c149be93dde98} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+operator\texorpdfstring{$\ast$}{*} (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&}]{Other}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=318pt]{struct_f_matrix_ac3ebb59c2ecf32d9142c149be93dde98_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a2357c96eed5ccb7d1fa28ed320069f93}\index{FMatrix@{FMatrix}!operator\texorpdfstring{$\ast$}{*}@{operator\texorpdfstring{$\ast$}{*}}}
+\index{operator\texorpdfstring{$\ast$}{*}@{operator\texorpdfstring{$\ast$}{*}}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{operator\texorpdfstring{$\ast$}{*}()}{operator*()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a2357c96eed5ccb7d1fa28ed320069f93} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+operator\texorpdfstring{$\ast$}{*} (\begin{DoxyParamCaption}\item[{float}]{Scalar}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=298pt]{struct_f_matrix_a2357c96eed5ccb7d1fa28ed320069f93_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a83bd6236025e1f00b9a24177d30fca52}\index{FMatrix@{FMatrix}!operator\texorpdfstring{$\ast$}{*}=@{operator\texorpdfstring{$\ast$}{*}=}}
+\index{operator\texorpdfstring{$\ast$}{*}=@{operator\texorpdfstring{$\ast$}{*}=}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{operator\texorpdfstring{$\ast$}{*}=()}{operator*=()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a83bd6236025e1f00b9a24177d30fca52} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \& FMatrix::\+operator\texorpdfstring{$\ast$}{*}= (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&}]{Other}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=324pt]{struct_f_matrix_a83bd6236025e1f00b9a24177d30fca52_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a525e2c2b10fc602ef2d117b5aeac6daf}\index{FMatrix@{FMatrix}!operator\texorpdfstring{$\ast$}{*}=@{operator\texorpdfstring{$\ast$}{*}=}}
+\index{operator\texorpdfstring{$\ast$}{*}=@{operator\texorpdfstring{$\ast$}{*}=}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{operator\texorpdfstring{$\ast$}{*}=()}{operator*=()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a525e2c2b10fc602ef2d117b5aeac6daf} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \& FMatrix::\+operator\texorpdfstring{$\ast$}{*}= (\begin{DoxyParamCaption}\item[{float}]{Scalar}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=304pt]{struct_f_matrix_a525e2c2b10fc602ef2d117b5aeac6daf_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a2768715db244a41827797ee661588a10}\index{FMatrix@{FMatrix}!operator+@{operator+}}
+\index{operator+@{operator+}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{operator+()}{operator+()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a2768715db244a41827797ee661588a10} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+operator+ (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&}]{Other}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=300pt]{struct_f_matrix_a2768715db244a41827797ee661588a10_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a4da27c9a4c9473c5925e2359a1e2b7de}\index{FMatrix@{FMatrix}!operator+=@{operator+=}}
+\index{operator+=@{operator+=}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{operator+=()}{operator+=()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a4da27c9a4c9473c5925e2359a1e2b7de} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \& FMatrix::\+operator+= (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&}]{Other}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=306pt]{struct_f_matrix_a4da27c9a4c9473c5925e2359a1e2b7de_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a827d9516f66a5c8cf42ec67ee4457d5b}\index{FMatrix@{FMatrix}!operator-\/@{operator-\/}}
+\index{operator-\/@{operator-\/}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{operator-\/()}{operator-()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a827d9516f66a5c8cf42ec67ee4457d5b} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+operator-\/ (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=297pt]{struct_f_matrix_a827d9516f66a5c8cf42ec67ee4457d5b_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_ad8416bb256ce3ff97e22b90f0453314c}\index{FMatrix@{FMatrix}!operator-\/@{operator-\/}}
+\index{operator-\/@{operator-\/}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{operator-\/()}{operator-()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{struct_f_matrix_ad8416bb256ce3ff97e22b90f0453314c} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+operator-\/ (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&}]{Other}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=297pt]{struct_f_matrix_ad8416bb256ce3ff97e22b90f0453314c_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a437f4722b9b890a8c1bd08e633dfb9fe}\index{FMatrix@{FMatrix}!operator-\/=@{operator-\/=}}
+\index{operator-\/=@{operator-\/=}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{operator-\/=()}{operator-=()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a437f4722b9b890a8c1bd08e633dfb9fe} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \& FMatrix::\+operator-\/= (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&}]{Other}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=303pt]{struct_f_matrix_a437f4722b9b890a8c1bd08e633dfb9fe_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a2c4aedecb7a01bd42b3ab5c1277584aa}\index{FMatrix@{FMatrix}!operator/@{operator/}}
+\index{operator/@{operator/}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{operator/()}{operator/()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a2c4aedecb7a01bd42b3ab5c1277584aa} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+operator/\+ (\begin{DoxyParamCaption}\item[{float}]{Scalar}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=297pt]{struct_f_matrix_a2c4aedecb7a01bd42b3ab5c1277584aa_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_aa0652488a703c23e86279be432fa7bb2}\index{FMatrix@{FMatrix}!operator/=@{operator/=}}
+\index{operator/=@{operator/=}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{operator/=()}{operator/=()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_aa0652488a703c23e86279be432fa7bb2} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \& FMatrix::\+operator/\+= (\begin{DoxyParamCaption}\item[{float}]{Scalar}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=303pt]{struct_f_matrix_aa0652488a703c23e86279be432fa7bb2_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a49bec33e90115b63459a01244c2bde14}\index{FMatrix@{FMatrix}!operator=@{operator=}}
+\index{operator=@{operator=}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{operator=()}{operator=()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a49bec33e90115b63459a01244c2bde14} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \& FMatrix::\+operator= (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&}]{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=300pt]{struct_f_matrix_a49bec33e90115b63459a01244c2bde14_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_aecf60cc5381bc7ba7cd4a260199e0017}\index{FMatrix@{FMatrix}!operator=@{operator=}}
+\index{operator=@{operator=}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{operator=()}{operator=()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{struct_f_matrix_aecf60cc5381bc7ba7cd4a260199e0017} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \& FMatrix::\+operator= (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&\&}]{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=300pt]{struct_f_matrix_aecf60cc5381bc7ba7cd4a260199e0017_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_ad1586b7ca3c36ed2d23468876103fe70}\index{FMatrix@{FMatrix}!operator==@{operator==}}
+\index{operator==@{operator==}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{operator==()}{operator==()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_ad1586b7ca3c36ed2d23468876103fe70} 
+bool FMatrix::\+operator== (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&}]{Other}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=306pt]{struct_f_matrix_ad1586b7ca3c36ed2d23468876103fe70_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a7cba7c24eea5b413cdaf89e6463a3b0b}\index{FMatrix@{FMatrix}!operator\+[]\+@{operator[]}}
+\index{operator\+[]\+@{operator[]}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{operator[]()}{operator[]()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a7cba7c24eea5b413cdaf89e6463a3b0b} 
+const float \texorpdfstring{$\ast$}{*} FMatrix::\+operator\+[$\,$]\+ (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Row}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+\Hypertarget{struct_f_matrix_ac95a3d0f8108068b2a46a6b0ab54f084}\index{FMatrix@{FMatrix}!operator\+[]\+@{operator[]}}
+\index{operator\+[]\+@{operator[]}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{operator[]()}{operator[]()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{struct_f_matrix_ac95a3d0f8108068b2a46a6b0ab54f084} 
+float \texorpdfstring{$\ast$}{*} FMatrix::\+operator\+[$\,$]\+ (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}}}]{Row}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+\Hypertarget{struct_f_matrix_ae40a5fbaedee294ee13c4193c878f3d0}\index{FMatrix@{FMatrix}!RemoveTranslation@{RemoveTranslation}}
+\index{RemoveTranslation@{RemoveTranslation}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{RemoveTranslation()}{RemoveTranslation()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_ae40a5fbaedee294ee13c4193c878f3d0} 
+void FMatrix::\+\+Remove\+Translation (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_ae40a5fbaedee294ee13c4193c878f3d0_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a76ecc2559bc3aa0a302845a422225476}\index{FMatrix@{FMatrix}!SetAxes@{SetAxes}}
+\index{SetAxes@{SetAxes}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{SetAxes()}{SetAxes()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a76ecc2559bc3aa0a302845a422225476} 
+void FMatrix::\+\+Set\+Axes (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{XAxis}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{YAxis}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{ZAxis}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Origin}{ = {\ttfamily \doxymbox{\hyperlink{struct_f_vector_a5718e5b26f15f0d7057d05236fcae359}{FVector::\+\+Zero\+Vector}}}}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=316pt]{struct_f_matrix_a76ecc2559bc3aa0a302845a422225476_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a6fc164edbbc7c415bf94b3a7b4f32295}\index{FMatrix@{FMatrix}!SetOrigin@{SetOrigin}}
+\index{SetOrigin@{SetOrigin}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{SetOrigin()}{SetOrigin()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a6fc164edbbc7c415bf94b3a7b4f32295} 
+void FMatrix::\+\+Set\+Origin (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Origin}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=330pt]{struct_f_matrix_a6fc164edbbc7c415bf94b3a7b4f32295_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_af8f5811e4ea33e211c432df9bff406ef}\index{FMatrix@{FMatrix}!SetTranslation@{SetTranslation}}
+\index{SetTranslation@{SetTranslation}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{SetTranslation()}{SetTranslation()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_af8f5811e4ea33e211c432df9bff406ef} 
+void FMatrix::\+\+Set\+Translation (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Translation}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=330pt]{struct_f_matrix_af8f5811e4ea33e211c432df9bff406ef_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a03595ac7cbb4cefe1e79c5242ccac4c6}\index{FMatrix@{FMatrix}!ToXMMatrix@{ToXMMatrix}}
+\index{ToXMMatrix@{ToXMMatrix}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{ToXMMatrix()}{ToXMMatrix()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a03595ac7cbb4cefe1e79c5242ccac4c6} 
+\doxymbox{\hyperlink{_core_types_8h_a4e4c1a26b3ef7ff7bdfa69e3d2a28ca3}{XMMatrix}} FMatrix::\+\+To\+XMMatrix (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a03595ac7cbb4cefe1e79c5242ccac4c6_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a975cdd163e5a835115bf753c61def97e}\index{FMatrix@{FMatrix}!TransformPosition@{TransformPosition}}
+\index{TransformPosition@{TransformPosition}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{TransformPosition()}{TransformPosition()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a975cdd163e5a835115bf753c61def97e} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FMatrix::\+\+Transform\+Position (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{V}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a975cdd163e5a835115bf753c61def97e_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a975cdd163e5a835115bf753c61def97e_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_matrix_a789eafa9373a9a8d583e7900af7c6fac}\index{FMatrix@{FMatrix}!TransformVector@{TransformVector}}
+\index{TransformVector@{TransformVector}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{TransformVector()}{TransformVector()}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a789eafa9373a9a8d583e7900af7c6fac} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FMatrix::\+\+Transform\+Vector (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{V}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_matrix_a789eafa9373a9a8d583e7900af7c6fac_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{struct_f_matrix_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{struct_f_matrix_a25d402a18105886bdbc0427f21fc97d4}\index{FMatrix@{FMatrix}!Identity@{Identity}}
+\index{Identity@{Identity}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{Identity}{Identity}}
+{\footnotesize\ttfamily \label{struct_f_matrix_a25d402a18105886bdbc0427f21fc97d4} 
+const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FMatrix::\+\+Identity\hspace{0.3cm}{\ttfamily [static]}}
+
+\Hypertarget{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3}\index{FMatrix@{FMatrix}!M@{M}}
+\index{M@{M}!FMatrix@{FMatrix}}
+\doxysubsubsection{\texorpdfstring{M}{M}}
+{\footnotesize\ttfamily \label{struct_f_matrix_ade6cbb252cd2225e696c230862402ee3} 
+float FMatrix::\+M\+[4]\+\+[4]\+}
+
+
+
+The documentation for this struct was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Math/\+\doxymbox{\hyperlink{_matrix_8h}{Matrix.\+h}}\item 
+Engine/\+\+Source/\+\+Math/\+\doxymbox{\hyperlink{_matrix_8cpp}{Matrix.\+cpp}}\end{DoxyCompactItemize}

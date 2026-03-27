@@ -1,0 +1,75 @@
+\doxysection{Scene.\+h}
+\hypertarget{_scene_8h_source}{}\label{_scene_8h_source}\index{Engine/Source/Scene/Scene.h@{Engine/Source/Scene/Scene.h}}
+\doxymbox{\hyperlink{_scene_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_object_8h}{Object/Object.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_object_factory_8h}{Object/ObjectFactory.h}}"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <d3d11.h>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_scene_types_8h}{Scene/SceneTypes.h}}"{}}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_a_actor}{AActor}};}
+\DoxyCodeLine{00009\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_camera}{CCamera}};}
+\DoxyCodeLine{00010\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_f_frustum}{FFrustum}};}
+\DoxyCodeLine{00011\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_u_camera_component}{UCameraComponent}};}
+\DoxyCodeLine{00012\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_u_primitive_component}{UPrimitiveComponent}};}
+\DoxyCodeLine{00013\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_render_command_queue}{FRenderCommandQueue}};}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{class_u_scene}{UScene}}\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{class_u_object_a134240a541ca3ecfd86d8899ca641aca}{UObject}}}
+\DoxyCodeLine{00016\ \{}
+\DoxyCodeLine{00017\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00018\ \ \ \ \ \doxymbox{\hyperlink{_object_8h_a357d06a2d2ae2eccd8dc94b17f17a710}{DECLARE\_RTTI}}(\doxymbox{\hyperlink{class_u_scene}{UScene}},\ \doxymbox{\hyperlink{class_u_object_a134240a541ca3ecfd86d8899ca641aca}{UObject}})}
+\DoxyCodeLine{00019\ \ \ \ \ \doxymbox{\hyperlink{class_u_scene}{\string~UScene}}();}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \ \ \ \ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ T>}
+\DoxyCodeLine{00022\ \ \ \ \ T*\ \doxymbox{\hyperlink{class_u_scene_ace8c805bf5400c9e1d57d9b9449b2caa}{SpawnActor}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ InName)}
+\DoxyCodeLine{00023\ \ \ \ \ \{}
+\DoxyCodeLine{00024\ \ \ \ \ \ \ \ \ \textcolor{keyword}{static\_assert}(std::is\_base\_of\_v<AActor,\ T>,\ \textcolor{stringliteral}{"{}T\ must\ derive\ from\ AActor"{}});}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \ \ \ \ \ \ \ \ T*\ NewActor\ =\ \doxymbox{\hyperlink{class_f_object_factory_a9b472d5b328bcbb915a6afb7a74e8a0b}{FObjectFactory::ConstructObject<T>}}(\textcolor{keyword}{this},\ InName);}
+\DoxyCodeLine{00027\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!NewActor)}
+\DoxyCodeLine{00028\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00029\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00031\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{class_u_scene_adda5dc527c257a1267218ae48b43c556}{RegisterActor}}(NewActor);}
+\DoxyCodeLine{00032\ \ \ \ \ \ \ \ \ NewActor-\/>PostSpawnInitialize();}
+\DoxyCodeLine{00033\ }
+\DoxyCodeLine{00034\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ NewActor;}
+\DoxyCodeLine{00035\ \ \ \ \ \}}
+\DoxyCodeLine{00036\ }
+\DoxyCodeLine{00037\ \ \ \ \ \textcolor{keywordtype}{void}\ RegisterActor(\doxymbox{\hyperlink{class_a_actor}{AActor}}*\ InActor);}
+\DoxyCodeLine{00038\ \ \ \ \ \textcolor{keywordtype}{void}\ DestroyActor(\doxymbox{\hyperlink{class_a_actor}{AActor}}*\ InActor);}
+\DoxyCodeLine{00039\ \ \ \ \ \textcolor{keywordtype}{void}\ CleanupDestroyedActors();}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray<AActor*>}}\&\ \doxymbox{\hyperlink{class_u_scene_a8b7bf7f108adcf6dcce12963eacfa864}{GetActors}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_u_scene_ad59b1e5e23c908fc93898f4de6569aa3}{Actors}};\ \}}
+\DoxyCodeLine{00042\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_u_scene_a846d6be73276271924c68fcd4052863e}{SetSceneType}}(\doxymbox{\hyperlink{_scene_types_8h_a4fa75d8646a7d0cecf8aa5958b9077c5}{ESceneType}}\ InSceneType)\ \{\ \doxymbox{\hyperlink{class_u_scene_a3fdbb441f4d2c0371f8074c2f5df6b4f}{SceneType}}\ =\ InSceneType;\ \}}
+\DoxyCodeLine{00043\ \ \ \ \ \doxymbox{\hyperlink{_scene_types_8h_a4fa75d8646a7d0cecf8aa5958b9077c5}{ESceneType}}\ \doxymbox{\hyperlink{class_u_scene_a580ab1f284c71507d94fd6ef12f76493}{GetSceneType}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_u_scene_a3fdbb441f4d2c0371f8074c2f5df6b4f}{SceneType}};\ \}}
+\DoxyCodeLine{00044\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_u_scene_ab5c5d73fb7cc7e6baa93603a56f6bd51}{IsEditorScene}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_u_scene_a3fdbb441f4d2c0371f8074c2f5df6b4f}{SceneType}}\ ==\ \doxymbox{\hyperlink{_scene_types_8h_a4fa75d8646a7d0cecf8aa5958b9077c5a344a7f427fb765610ef96eb7bce95257}{ESceneType::Editor}};\ \}}
+\DoxyCodeLine{00045\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_u_scene_a82de92e1f66046808df350c822023b76}{IsGameScene}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_u_scene_a3fdbb441f4d2c0371f8074c2f5df6b4f}{SceneType}}\ ==\ \doxymbox{\hyperlink{_scene_types_8h_a4fa75d8646a7d0cecf8aa5958b9077c5a63d72051e901c069f8aa1b32aa0c43bb}{ESceneType::Game}}\ ||\ \doxymbox{\hyperlink{class_u_scene_a3fdbb441f4d2c0371f8074c2f5df6b4f}{SceneType}}\ ==\ \doxymbox{\hyperlink{_scene_types_8h_a4fa75d8646a7d0cecf8aa5958b9077c5a6ab0bacebf5eb649e1d23b7fafbadf42}{ESceneType::PIE}};\ \}}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00047\ \ \ \ \ \textcolor{keywordtype}{void}\ SetActiveCameraComponent(\doxymbox{\hyperlink{class_u_camera_component}{UCameraComponent}}*\ InCameraComponent);}
+\DoxyCodeLine{00048\ \ \ \ \ \doxymbox{\hyperlink{class_u_camera_component}{UCameraComponent}}*\ GetActiveCameraComponent()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00049\ \ \ \ \ \doxymbox{\hyperlink{class_c_camera}{CCamera}}*\ GetCamera()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00050\ }
+\DoxyCodeLine{00051\ \ \ \ \ \textcolor{keywordtype}{void}\ InitializeEmptyScene(\textcolor{keywordtype}{float}\ AspectRatio);}
+\DoxyCodeLine{00052\ \ \ \ \ \textcolor{keywordtype}{void}\ InitializeDefaultScene(\textcolor{keywordtype}{float}\ AspectRatio,\ ID3D11Device*\ Device\ =\ \textcolor{keyword}{nullptr});}
+\DoxyCodeLine{00053\ \ \ \ \ \textcolor{keywordtype}{void}\ LoadSceneFromFile(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ FilePath,\ ID3D11Device*\ Device\ =\ \textcolor{keyword}{nullptr});}
+\DoxyCodeLine{00054\ \ \ \ \ \textcolor{keywordtype}{void}\ SaveSceneToFile(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\&\ FilePath);}
+\DoxyCodeLine{00055\ \ \ \ \ \textcolor{keywordtype}{void}\ ClearActors();}
+\DoxyCodeLine{00056\ \ \ \ \ \textcolor{keywordtype}{void}\ BeginPlay();}
+\DoxyCodeLine{00057\ \ \ \ \ \textcolor{keywordtype}{void}\ Tick(\textcolor{keywordtype}{float}\ DeltaTime);}
+\DoxyCodeLine{00058\ \ \ \ \ \textcolor{keywordtype}{void}\ CollectRenderCommands(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_f_frustum}{FFrustum}}\&\ Frustum,\ \doxymbox{\hyperlink{struct_f_render_command_queue}{FRenderCommandQueue}}\&\ OutQueue);}
+\DoxyCodeLine{00059\ }
+\DoxyCodeLine{00060\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00061\ \ \ \ \ \textcolor{keywordtype}{void}\ CullVisiblePrimitives(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_f_frustum}{FFrustum}}\&\ Frustum,\ \doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray<UPrimitiveComponent*>}}\&\ OutVisible);}
+\DoxyCodeLine{00062\ }
+\DoxyCodeLine{00063\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00064\ \ \ \ \ \doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray<AActor*>}}\ \doxymbox{\hyperlink{class_u_scene_ad59b1e5e23c908fc93898f4de6569aa3}{Actors}};}
+\DoxyCodeLine{00065\ \ \ \ \ \doxymbox{\hyperlink{class_u_camera_component}{UCameraComponent}}*\ \doxymbox{\hyperlink{class_u_scene_a838fd2a64c386463de9d6c2f176ff7de}{SceneCameraComponent}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00066\ \ \ \ \ \doxymbox{\hyperlink{class_t_object_ptr}{TObjectPtr<UCameraComponent>}}\ \doxymbox{\hyperlink{class_u_scene_a112c41ab41d372101d56e005b5dc4d6c}{ActiveCameraComponent}};}
+\DoxyCodeLine{00067\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_u_scene_aa4c7dd35ff8c8f7c5e959e532738ce81}{bBegunPlay}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00068\ \ \ \ \ \doxymbox{\hyperlink{_scene_types_8h_a4fa75d8646a7d0cecf8aa5958b9077c5}{ESceneType}}\ \doxymbox{\hyperlink{class_u_scene_a3fdbb441f4d2c0371f8074c2f5df6b4f}{SceneType}}\ =\ \doxymbox{\hyperlink{_scene_types_8h_a4fa75d8646a7d0cecf8aa5958b9077c5a63d72051e901c069f8aa1b32aa0c43bb}{ESceneType::Game}};}
+\DoxyCodeLine{00069\ \};}
+
+\end{DoxyCode}

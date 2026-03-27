@@ -1,0 +1,227 @@
+\doxysection{FTimer Class Reference}
+\hypertarget{class_f_timer}{}\label{class_f_timer}\index{FTimer@{FTimer}}
+
+
+{\ttfamily \+\#include $<$FTimer.\+h$>$}
+
+
+
+Collaboration diagram for FTimer:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=183pt]{class_f_timer__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_f_timer_af6c61eec96cdab5b4ea017e9c6d71007}{FTimer}} ()=default
+\item 
+void \doxymbox{\hyperlink{class_f_timer_ad0e1ee45c42d8c6da6ba66cfd1283340}{Initialize}} ()
+\item 
+void \doxymbox{\hyperlink{class_f_timer_ab267fde8fb426ac94b9b11215aee4322}{Tick}} ()
+\item 
+float \doxymbox{\hyperlink{class_f_timer_a57513b40819e653e3bf3280af72f0bdb}{Get\+Delta\+Time}} () const
+\item 
+double \doxymbox{\hyperlink{class_f_timer_a3fa5364b808f634dfb0250f02632c440}{Get\+Total\+Time}} () const
+\item 
+float \doxymbox{\hyperlink{class_f_timer_a0f364cdce3129725239ac477946d4cca}{Get\+FPS}} () const
+\item 
+float \doxymbox{\hyperlink{class_f_timer_aca45b3509f1d7f1072643296e6258dbb}{Get\+Display\+FPS}} () const
+\item 
+float \doxymbox{\hyperlink{class_f_timer_a9cb335f5a13b37d4024b066b8d815f7d}{Get\+Frame\+Time\+Ms}} () const
+\item 
+void \doxymbox{\hyperlink{class_f_timer_a4a331b177e9c853a8bc0b3407284eff3}{Set\+Max\+FPS}} (float In\+Max\+FPS)
+\item 
+float \doxymbox{\hyperlink{class_f_timer_afc593e3e0f5cd7aa7411e5e3fdf5c357}{Get\+Max\+FPS}} () const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Types}
+\begin{DoxyCompactItemize}
+\item 
+using \doxymbox{\hyperlink{class_f_timer_a14f951e6378b42e2309dc82c956afe49}{Clock}} = std::\+chrono::\+high\+\_\+resolution\+\_\+clock
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+Clock::\+time\+\_\+point \doxymbox{\hyperlink{class_f_timer_a52a2bf2b21ab435915ab2d37694718ba}{Last\+Time}} = \{\}
+\item 
+float \doxymbox{\hyperlink{class_f_timer_a8a864e261c87c42116357e09a140eca3}{Delta\+Time}} = 0.\+0f
+\item 
+double \doxymbox{\hyperlink{class_f_timer_a32c2910714c7744e8b54dc02dfba17cd}{Total\+Time}} = 0.\+0
+\item 
+float \doxymbox{\hyperlink{class_f_timer_ad7dd527505411d319f04616ef4383de0}{Max\+FPS}} = 0.\+0f
+\item 
+float \doxymbox{\hyperlink{class_f_timer_a199708635974c909506345d5090fb2bb}{Target\+Frame\+Time}} = 0.\+0f
+\item 
+float \doxymbox{\hyperlink{class_f_timer_a060c8c923fc5a5e5a057cf162836c075}{Smoothed\+FPS}} = 0.\+0f
+\end{DoxyCompactItemize}
+
+
+\label{doc-typedef-members}
+\Hypertarget{class_f_timer_doc-typedef-members}
+\doxysubsection{Member Typedef Documentation}
+\Hypertarget{class_f_timer_a14f951e6378b42e2309dc82c956afe49}\index{FTimer@{FTimer}!Clock@{Clock}}
+\index{Clock@{Clock}!FTimer@{FTimer}}
+\doxysubsubsection{\texorpdfstring{Clock}{Clock}}
+{\footnotesize\ttfamily \label{class_f_timer_a14f951e6378b42e2309dc82c956afe49} 
+using \doxymbox{\hyperlink{class_f_timer_a14f951e6378b42e2309dc82c956afe49}{FTimer::\+\+Clock}} = std::\+chrono::\+high\+\_\+resolution\+\_\+clock\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+\label{doc-constructors}
+\Hypertarget{class_f_timer_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_f_timer_af6c61eec96cdab5b4ea017e9c6d71007}\index{FTimer@{FTimer}!FTimer@{FTimer}}
+\index{FTimer@{FTimer}!FTimer@{FTimer}}
+\doxysubsubsection{\texorpdfstring{FTimer()}{FTimer()}}
+{\footnotesize\ttfamily \label{class_f_timer_af6c61eec96cdab5b4ea017e9c6d71007} 
+FTimer::\+\+FTimer (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=288pt]{class_f_timer_af6c61eec96cdab5b4ea017e9c6d71007_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-func-members}
+\Hypertarget{class_f_timer_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_f_timer_a57513b40819e653e3bf3280af72f0bdb}\index{FTimer@{FTimer}!GetDeltaTime@{GetDeltaTime}}
+\index{GetDeltaTime@{GetDeltaTime}!FTimer@{FTimer}}
+\doxysubsubsection{\texorpdfstring{GetDeltaTime()}{GetDeltaTime()}}
+{\footnotesize\ttfamily \label{class_f_timer_a57513b40819e653e3bf3280af72f0bdb} 
+float FTimer::\+\+Get\+Delta\+Time (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_f_timer_aca45b3509f1d7f1072643296e6258dbb}\index{FTimer@{FTimer}!GetDisplayFPS@{GetDisplayFPS}}
+\index{GetDisplayFPS@{GetDisplayFPS}!FTimer@{FTimer}}
+\doxysubsubsection{\texorpdfstring{GetDisplayFPS()}{GetDisplayFPS()}}
+{\footnotesize\ttfamily \label{class_f_timer_aca45b3509f1d7f1072643296e6258dbb} 
+float FTimer::\+\+Get\+Display\+FPS (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_timer_aca45b3509f1d7f1072643296e6258dbb_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_timer_a0f364cdce3129725239ac477946d4cca}\index{FTimer@{FTimer}!GetFPS@{GetFPS}}
+\index{GetFPS@{GetFPS}!FTimer@{FTimer}}
+\doxysubsubsection{\texorpdfstring{GetFPS()}{GetFPS()}}
+{\footnotesize\ttfamily \label{class_f_timer_a0f364cdce3129725239ac477946d4cca} 
+float FTimer::\+\+Get\+FPS (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_f_timer_a9cb335f5a13b37d4024b066b8d815f7d}\index{FTimer@{FTimer}!GetFrameTimeMs@{GetFrameTimeMs}}
+\index{GetFrameTimeMs@{GetFrameTimeMs}!FTimer@{FTimer}}
+\doxysubsubsection{\texorpdfstring{GetFrameTimeMs()}{GetFrameTimeMs()}}
+{\footnotesize\ttfamily \label{class_f_timer_a9cb335f5a13b37d4024b066b8d815f7d} 
+float FTimer::\+\+Get\+Frame\+Time\+Ms (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_timer_a9cb335f5a13b37d4024b066b8d815f7d_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_timer_afc593e3e0f5cd7aa7411e5e3fdf5c357}\index{FTimer@{FTimer}!GetMaxFPS@{GetMaxFPS}}
+\index{GetMaxFPS@{GetMaxFPS}!FTimer@{FTimer}}
+\doxysubsubsection{\texorpdfstring{GetMaxFPS()}{GetMaxFPS()}}
+{\footnotesize\ttfamily \label{class_f_timer_afc593e3e0f5cd7aa7411e5e3fdf5c357} 
+float FTimer::\+\+Get\+Max\+FPS (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_f_timer_a3fa5364b808f634dfb0250f02632c440}\index{FTimer@{FTimer}!GetTotalTime@{GetTotalTime}}
+\index{GetTotalTime@{GetTotalTime}!FTimer@{FTimer}}
+\doxysubsubsection{\texorpdfstring{GetTotalTime()}{GetTotalTime()}}
+{\footnotesize\ttfamily \label{class_f_timer_a3fa5364b808f634dfb0250f02632c440} 
+double FTimer::\+\+Get\+Total\+Time (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{class_f_timer_ad0e1ee45c42d8c6da6ba66cfd1283340}\index{FTimer@{FTimer}!Initialize@{Initialize}}
+\index{Initialize@{Initialize}!FTimer@{FTimer}}
+\doxysubsubsection{\texorpdfstring{Initialize()}{Initialize()}}
+{\footnotesize\ttfamily \label{class_f_timer_ad0e1ee45c42d8c6da6ba66cfd1283340} 
+void FTimer::\+\+Initialize (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=288pt]{class_f_timer_ad0e1ee45c42d8c6da6ba66cfd1283340_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_timer_a4a331b177e9c853a8bc0b3407284eff3}\index{FTimer@{FTimer}!SetMaxFPS@{SetMaxFPS}}
+\index{SetMaxFPS@{SetMaxFPS}!FTimer@{FTimer}}
+\doxysubsubsection{\texorpdfstring{SetMaxFPS()}{SetMaxFPS()}}
+{\footnotesize\ttfamily \label{class_f_timer_a4a331b177e9c853a8bc0b3407284eff3} 
+void FTimer::\+\+Set\+Max\+FPS (\begin{DoxyParamCaption}\item[{float}]{In\+Max\+FPS}{}\end{DoxyParamCaption})}
+
+\Hypertarget{class_f_timer_ab267fde8fb426ac94b9b11215aee4322}\index{FTimer@{FTimer}!Tick@{Tick}}
+\index{Tick@{Tick}!FTimer@{FTimer}}
+\doxysubsubsection{\texorpdfstring{Tick()}{Tick()}}
+{\footnotesize\ttfamily \label{class_f_timer_ab267fde8fb426ac94b9b11215aee4322} 
+void FTimer::\+\+Tick (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=271pt]{class_f_timer_ab267fde8fb426ac94b9b11215aee4322_icgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_f_timer_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_f_timer_a8a864e261c87c42116357e09a140eca3}\index{FTimer@{FTimer}!DeltaTime@{DeltaTime}}
+\index{DeltaTime@{DeltaTime}!FTimer@{FTimer}}
+\doxysubsubsection{\texorpdfstring{DeltaTime}{DeltaTime}}
+{\footnotesize\ttfamily \label{class_f_timer_a8a864e261c87c42116357e09a140eca3} 
+float FTimer::\+\+Delta\+Time = 0.\+0f\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_f_timer_a52a2bf2b21ab435915ab2d37694718ba}\index{FTimer@{FTimer}!LastTime@{LastTime}}
+\index{LastTime@{LastTime}!FTimer@{FTimer}}
+\doxysubsubsection{\texorpdfstring{LastTime}{LastTime}}
+{\footnotesize\ttfamily \label{class_f_timer_a52a2bf2b21ab435915ab2d37694718ba} 
+Clock::\+time\+\_\+point FTimer::\+\+Last\+Time = \{\}\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_f_timer_ad7dd527505411d319f04616ef4383de0}\index{FTimer@{FTimer}!MaxFPS@{MaxFPS}}
+\index{MaxFPS@{MaxFPS}!FTimer@{FTimer}}
+\doxysubsubsection{\texorpdfstring{MaxFPS}{MaxFPS}}
+{\footnotesize\ttfamily \label{class_f_timer_ad7dd527505411d319f04616ef4383de0} 
+float FTimer::\+\+Max\+FPS = 0.\+0f\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_f_timer_a060c8c923fc5a5e5a057cf162836c075}\index{FTimer@{FTimer}!SmoothedFPS@{SmoothedFPS}}
+\index{SmoothedFPS@{SmoothedFPS}!FTimer@{FTimer}}
+\doxysubsubsection{\texorpdfstring{SmoothedFPS}{SmoothedFPS}}
+{\footnotesize\ttfamily \label{class_f_timer_a060c8c923fc5a5e5a057cf162836c075} 
+float FTimer::\+\+Smoothed\+FPS = 0.\+0f\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_f_timer_a199708635974c909506345d5090fb2bb}\index{FTimer@{FTimer}!TargetFrameTime@{TargetFrameTime}}
+\index{TargetFrameTime@{TargetFrameTime}!FTimer@{FTimer}}
+\doxysubsubsection{\texorpdfstring{TargetFrameTime}{TargetFrameTime}}
+{\footnotesize\ttfamily \label{class_f_timer_a199708635974c909506345d5090fb2bb} 
+float FTimer::\+\+Target\+Frame\+Time = 0.\+0f\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_f_timer_a32c2910714c7744e8b54dc02dfba17cd}\index{FTimer@{FTimer}!TotalTime@{TotalTime}}
+\index{TotalTime@{TotalTime}!FTimer@{FTimer}}
+\doxysubsubsection{\texorpdfstring{TotalTime}{TotalTime}}
+{\footnotesize\ttfamily \label{class_f_timer_a32c2910714c7744e8b54dc02dfba17cd} 
+double FTimer::\+\+Total\+Time = 0.\+0\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Core/\+\doxymbox{\hyperlink{_f_timer_8h}{FTimer.\+h}}\item 
+Engine/\+\+Source/\+\+Core/\+\doxymbox{\hyperlink{_f_timer_8cpp}{FTimer.\+cpp}}\end{DoxyCompactItemize}

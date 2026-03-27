@@ -1,0 +1,218 @@
+\doxysection{UGizmo\+Component Class Reference}
+\hypertarget{class_u_gizmo_component}{}\label{class_u_gizmo_component}\index{UGizmoComponent@{UGizmoComponent}}
+
+
+{\ttfamily \+\#include $<$Gizmo\+Component.\+h$>$}
+
+
+
+Inheritance diagram for UGizmo\+Component:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{class_u_gizmo_component__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for UGizmo\+Component:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{class_u_gizmo_component__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \doxymbox{\hyperlink{class_u_gizmo_component_a6092be468b4db4edb721873688e7cfed}{Initialize}} ()
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Member Functions inherited from \doxymbox{\hyperlink{class_u_primitive_component}{UPrimitive\+Component}}}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_c_primitive_base}{CPrimitive\+Base}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_primitive_component_a03d35315c723380090956b2e4d0909d1}{Get\+Primitive}} () const
+\item 
+void \doxymbox{\hyperlink{class_u_primitive_component_a043b7a26dd81de5b75629d031bc7c117}{Set\+Material}} (\doxymbox{\hyperlink{class_f_material}{FMaterial}} \texorpdfstring{$\ast$}{*}In\+Material)
+\item 
+\doxymbox{\hyperlink{class_f_material}{FMaterial}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_primitive_component_ae5a6e9c7a2e997d733dd5f8e7d7b087b}{Get\+Material}} () const
+\item 
+\doxymbox{\hyperlink{struct_f_bounding_sphere}{FBounding\+Sphere}} \doxymbox{\hyperlink{class_u_primitive_component_a4f01748e2334fc1e877aefaeef83f8d2}{Get\+World\+Bounds}} () const
+\item 
+virtual \doxymbox{\hyperlink{struct_f_box_sphere_bounds}{FBox\+Sphere\+Bounds}} \doxymbox{\hyperlink{class_u_primitive_component_af8bf30a905892d49a4b244276bd3b03b}{Get\+World\+Bounds\+For\+AABB}} () const
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{class_u_primitive_component_a1d6e051f4a253925d473f1eb47ff8468}{Get\+Local\+Box\+Extent}} () const
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Member Functions inherited from \doxymbox{\hyperlink{class_u_scene_component}{UScene\+Component}}}
+\begin{DoxyCompactItemize}
+\item 
+const \doxymbox{\hyperlink{struct_f_transform}{FTransform}} \& \doxymbox{\hyperlink{class_u_scene_component_ad1b8751af65b8f2abd408b7fe849fcdf}{Get\+Relative\+Transform}} () const
+\item 
+void \doxymbox{\hyperlink{class_u_scene_component_ac1d85c6cb6b74933e0afd85f52d3f9e3}{Set\+Relative\+Transform}} (const \doxymbox{\hyperlink{struct_f_transform}{FTransform}} \&In\+Transform)
+\item 
+const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \& \doxymbox{\hyperlink{class_u_scene_component_a1d17f50fd1a759d4d8ecaf8dc19e3af9}{Get\+Relative\+Location}} () const
+\item 
+void \doxymbox{\hyperlink{class_u_scene_component_afc0881495003c9911f6fcc8d3a5bedbf}{Set\+Relative\+Location}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Location)
+\item 
+\doxymbox{\hyperlink{class_u_scene_component}{UScene\+Component}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_scene_component_a25cc9b04c7027c3a18b621c4373b1baf}{Get\+Attach\+Parent}} () const
+\item 
+const \doxymbox{\hyperlink{_array_8h_a5a42cebdcc8427a3c8b52ef4276de507}{TArray}}$<$ \doxymbox{\hyperlink{class_u_scene_component}{UScene\+Component}} \texorpdfstring{$\ast$}{*} $>$ \& \doxymbox{\hyperlink{class_u_scene_component_af87dfe650dbf3ffa5072ee32bd67d078}{Get\+Attach\+Children}} () const
+\item 
+void \doxymbox{\hyperlink{class_u_scene_component_a9daba792d2e1be87e31da7aff9013f92}{Attach\+To}} (\doxymbox{\hyperlink{class_u_scene_component}{UScene\+Component}} \texorpdfstring{$\ast$}{*}In\+Parent)
+\item 
+void \doxymbox{\hyperlink{class_u_scene_component_a701860bfa733c645c823f4c6cbf2f13a}{Detach\+From\+Parent}} ()
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{class_u_scene_component_a854ba442e7e5fe710d17543ef3b60fff}{Get\+World\+Location}} () const
+\item 
+const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \& \doxymbox{\hyperlink{class_u_scene_component_aaefa149e7e11d1f9fdc5a4706c8b9cb6}{Get\+World\+Transform}} () const
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Member Functions inherited from \doxymbox{\hyperlink{class_u_actor_component}{UActor\+Component}}}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_u_actor_component_adbce24e0be09ef38e8bcdd59bb34dbd5}{\texorpdfstring{$\sim$}{\string~}\+UActor\+Component}} () override=default
+\item 
+\doxymbox{\hyperlink{class_a_actor}{AActor}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_actor_component_a4d99f75d0cbac7fa868993323cea6d1c}{Get\+Owner}} () const
+\item 
+void \doxymbox{\hyperlink{class_u_actor_component_ae577f38520016342c92c79b9dc865b41}{Set\+Owner}} (\doxymbox{\hyperlink{class_a_actor}{AActor}} \texorpdfstring{$\ast$}{*}In\+Owner)
+\item 
+bool \doxymbox{\hyperlink{class_u_actor_component_a9cca50134837077981e5c1c33ada2e41}{Is\+Registered}} () const
+\item 
+virtual void \doxymbox{\hyperlink{class_u_actor_component_ae08b1b647bb841c318e28c55f0c83747}{On\+Register}} ()
+\item 
+virtual void \doxymbox{\hyperlink{class_u_actor_component_a5006fc51b7783e68aa0b47f6d3806de2}{On\+Unregister}} ()
+\item 
+virtual void \doxymbox{\hyperlink{class_u_actor_component_aeccc0a96cfa9a5b20f81db38a0e5f785}{Begin\+Play}} ()
+\item 
+virtual void \doxymbox{\hyperlink{class_u_actor_component_a5625885838c86016c5309f7e3f11605e}{Tick}} (float Delta\+Time)
+\item 
+bool \doxymbox{\hyperlink{class_u_actor_component_aaafd8a0ce602640eaa0890f60d6a0a17}{Has\+Begun\+Play}} () const
+\item 
+bool \doxymbox{\hyperlink{class_u_actor_component_a2365f448c768964c70a326a6fdd16cc0}{Can\+Tick}} () const
+\item 
+void \doxymbox{\hyperlink{class_u_actor_component_a9b213e18dea702ccd555863ceda29f53}{Set\+Component\+Tick\+Enabled}} (bool b\+Enabled)
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Member Functions inherited from \doxymbox{\hyperlink{class_u_object}{UObject}}}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_u_object_a134240a541ca3ecfd86d8899ca641aca}{UObject}} (const \doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*}In\+Class, const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&In\+Name, \doxymbox{\hyperlink{class_u_object}{UObject}} \texorpdfstring{$\ast$}{*}In\+Outer=nullptr)
+\item 
+\doxymbox{\hyperlink{class_u_object_a7b8d236f605a29bf56a096f3c76f6038}{UObject}} (const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \&In\+Name, \doxymbox{\hyperlink{class_u_object}{UObject}} \texorpdfstring{$\ast$}{*}In\+Outer=nullptr)
+\item 
+virtual \doxymbox{\hyperlink{class_u_object_a1863523a3e28e4379fc28b3cc1cd582c}{\texorpdfstring{$\sim$}{\string~}\+UObject}} ()
+\item 
+void \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_object_a92a443aa7a402ae48d5d62551dc7aeb7}{operator new}} (size\+\_\+t In\+Size)
+\item 
+void \doxymbox{\hyperlink{class_u_object_a740eaea337950e754b3d32727e8a75cf}{operator delete}} (void \texorpdfstring{$\ast$}{*}In\+Address, std::\+size\+\_\+t size)
+\item 
+virtual \doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_object_aaeaaa034e92644ebfb3a0e4fe40c8c02}{Get\+Class}} () const
+\item 
+const \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \& \doxymbox{\hyperlink{class_u_object_a57009010aca3bc218c5034b821987dd4}{Get\+Name}} () const
+\item 
+\doxymbox{\hyperlink{class_u_object}{UObject}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_object_a92e09357ca4405dcd2413f44d4dbbd39}{Get\+Outer}} () const
+\item 
+bool \doxymbox{\hyperlink{class_u_object_ad6d2f697e6b491570c9687c7041d7ac0}{IsA}} (const \doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*}In\+Class) const
+\item 
+{\footnotesize template$<$typename T$>$ }\\bool \doxymbox{\hyperlink{class_u_object_a9e0b9278fee4678e354227e8e7dd4e9d}{IsA}} () const
+\item 
+{\footnotesize template$<$typename T$>$ }\\T \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_object_ac84999033b0d2df776772aabad8d432d}{Get\+Typed\+Outer}} () const
+\item 
+\doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}} \doxymbox{\hyperlink{class_u_object_a50ce37b2638e2fdfa3bd44d00cc65501}{Get\+Path\+Name}} () const
+\item 
+bool \doxymbox{\hyperlink{class_u_object_aa8a430f6c63d74c333ae314897ba3f9c}{Has\+Any\+Flags}} (\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} In\+Flags) const
+\item 
+bool \doxymbox{\hyperlink{class_u_object_ad3aae76cbd7549fbcb58026dad3888f6}{Has\+All\+Flags}} (\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} In\+Flags) const
+\item 
+void \doxymbox{\hyperlink{class_u_object_a959b2aa84e7a60b233e2d2df6fa0a4d0}{Add\+Flags}} (\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} In\+Flags)
+\item 
+void \doxymbox{\hyperlink{class_u_object_a22921529da2089e8dd8a182f7e4d8afc}{Clear\+Flags}} (\doxymbox{\hyperlink{_object_types_8h_a1508ac1247bcd79c4921cf8497e72c79}{EObject\+Flags}} In\+Flags)
+\item 
+void \doxymbox{\hyperlink{class_u_object_ad4c2d324e1f8f24a783184db1be0bd7d}{Mark\+Pending\+Kill}} ()
+\item 
+bool \doxymbox{\hyperlink{class_u_object_af9c13f5d0c00dc78b87c1ee889bbef8f}{Is\+Pending\+Kill}} () const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Additional Inherited Members}
+\doxysubsection*{Static Public Member Functions inherited from \doxymbox{\hyperlink{class_u_object}{UObject}}}
+\begin{DoxyCompactItemize}
+\item 
+static \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \doxymbox{\hyperlink{class_u_object_a606405bfd5c6823ecef443fd4ce0d144}{Get\+Total\+Bytes}} ()
+\item 
+static \doxymbox{\hyperlink{_core_types_8h_aae6ad039f09c0676db11bd114136a3fa}{int32}} \doxymbox{\hyperlink{class_u_object_a490d918899d6e2ce5e78d9df247473bf}{Get\+Total\+Counts}} ()
+\item 
+static \doxymbox{\hyperlink{class_u_class}{UClass}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_object_a1cf4d64988214efdf372c32f89d2da2a}{Static\+Class}} ()
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes inherited from \doxymbox{\hyperlink{class_u_object}{UObject}}}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_u_object_a83fbd1a57afad4978054df6534620e60}{UUID}} = 0
+\item 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_u_object_a275e85c6f0b7459412570e9495fb824b}{Internal\+Index}} = 0
+\item 
+\doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_u_object_ac2f7877b317ccb3c6b6d7405bdce7ec6}{Object\+Size}} = 0
+\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Attributes inherited from \doxymbox{\hyperlink{class_u_object}{UObject}}}
+\begin{DoxyCompactItemize}
+\item 
+static \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_u_object_a962a7dd7fb0492055cd032056b71645c}{Total\+Allocation\+Bytes}} = 0
+\item 
+static \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_u_object_a257070771b84835483df7278e7a4c947}{Total\+Allocation\+Counts}} = 0
+\item 
+static \doxymbox{\hyperlink{_core_types_8h_abd01e8e67e3d94cab04ecaaf4f85ac1b}{uint32}} \doxymbox{\hyperlink{class_u_object_a99dc1eede26795e19a7c8722b1dbf465}{Last\+New\+Size}} = 0
+\end{DoxyCompactItemize}
+\doxysubsection*{Protected Attributes inherited from \doxymbox{\hyperlink{class_u_primitive_component}{UPrimitive\+Component}}}
+\begin{DoxyCompactItemize}
+\item 
+std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{class_c_primitive_base}{CPrimitive\+Base}} $>$ \doxymbox{\hyperlink{class_u_primitive_component_a5ca6e03cafad0bdc2a116349a601c201}{Primitive}}
+\item 
+float \doxymbox{\hyperlink{class_u_primitive_component_af2b1ea532e911d49f8cc494d4ba1d9da}{Local\+Bound\+Radius}} = 1.\+0f
+\item 
+\doxymbox{\hyperlink{class_f_material}{FMaterial}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_primitive_component_a2edd4b61399d7854bbbf2a414766a668}{Material}} = nullptr
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{class_u_primitive_component_abd9ef985d95c145db0a6e5dff0a93f3a}{Local\+Box\+Extent}} = \doxymbox{\hyperlink{struct_f_vector}{FVector}}(0.\+75, 0.\+75, 0.\+75)
+\end{DoxyCompactItemize}
+\doxysubsection*{Protected Attributes inherited from \doxymbox{\hyperlink{class_u_actor_component}{UActor\+Component}}}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{class_t_object_ptr}{TObject\+Ptr}}$<$ \doxymbox{\hyperlink{class_a_actor}{AActor}} $>$ \doxymbox{\hyperlink{class_u_actor_component_a809450661c8ba40ed964b73a7d60e3cf}{Owner}}
+\item 
+bool \doxymbox{\hyperlink{class_u_actor_component_a53f13b9006971fbe3ca4dcec7f99b751}{b\+Registered}} = false
+\item 
+bool \doxymbox{\hyperlink{class_u_actor_component_a24027969457d123ed55a8b80c33fede0}{b\+Begun\+Play}} = false
+\item 
+bool \doxymbox{\hyperlink{class_u_actor_component_a2de89ee6b4bf85ff67dea3ac1a452a61}{b\+Can\+Ever\+Tick}} = false
+\item 
+bool \doxymbox{\hyperlink{class_u_actor_component_a1120597c50b7acd05aa48505f414eacd}{b\+Tick\+Enabled}} = true
+\end{DoxyCompactItemize}
+
+
+\label{doc-func-members}
+\Hypertarget{class_u_gizmo_component_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_u_gizmo_component_a6092be468b4db4edb721873688e7cfed}\index{UGizmoComponent@{UGizmoComponent}!Initialize@{Initialize}}
+\index{Initialize@{Initialize}!UGizmoComponent@{UGizmoComponent}}
+\doxysubsubsection{\texorpdfstring{Initialize()}{Initialize()}}
+{\footnotesize\ttfamily \label{class_u_gizmo_component_a6092be468b4db4edb721873688e7cfed} 
+void UGizmo\+Component::\+\+Initialize (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=224pt]{class_u_gizmo_component_a6092be468b4db4edb721873688e7cfed_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=224pt]{class_u_gizmo_component_a6092be468b4db4edb721873688e7cfed_icgraph}
+\end{center}
+\end{figure}
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Component/\+\doxymbox{\hyperlink{_gizmo_component_8h}{Gizmo\+Component.\+h}}\item 
+Engine/\+\+Source/\+\+Component/\+\doxymbox{\hyperlink{_gizmo_component_8cpp}{Gizmo\+Component.\+cpp}}\end{DoxyCompactItemize}

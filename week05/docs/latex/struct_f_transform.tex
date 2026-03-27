@@ -1,0 +1,673 @@
+\doxysection{FTransform Struct Reference}
+\hypertarget{struct_f_transform}{}\label{struct_f_transform}\index{FTransform@{FTransform}}
+
+
+{\ttfamily \+\#include $<$Transform.\+h$>$}
+
+
+
+Collaboration diagram for FTransform:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{struct_f_transform_a823b824aef55dbe9564aee90e6d48893}{FTransform}} () noexcept=default
+\item 
+\doxymbox{\hyperlink{struct_f_transform_a5391421453cd8254f5aa904d19054afd}{FTransform}} (const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&In\+Rotation) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_transform_a2419aad206e1947fca2f69250ad6ec10}{FTransform}} (const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&In\+Rotation) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_transform_a0e8b8442d0b51694912e99ccdd43796f}{FTransform}} (const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&In\+Rotation, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Translation, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Scale3D=\doxymbox{\hyperlink{struct_f_vector_afbe6a3418478f7060f4b8fb1bf6f1959}{FVector::\+\+One\+Vector}}) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_transform_a8eb279a0b745ba5b2440711cc42e67b1}{FTransform}} (const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&In\+Rotation, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Translation, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Scale3D=\doxymbox{\hyperlink{struct_f_vector_afbe6a3418478f7060f4b8fb1bf6f1959}{FVector::\+\+One\+Vector}}) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_transform_a7039fdf9a605d50cacf7b8bc3acdeb95}{FTransform}} (const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&In\+Matrix) noexcept
+\item 
+const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \& \doxymbox{\hyperlink{struct_f_transform_afd6018501c5d76eb9da91e44580ea911}{Get\+Location}} () const noexcept
+\item 
+const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \& \doxymbox{\hyperlink{struct_f_transform_adfb62649b99f635c19b7254b74076237}{Get\+Translation}} () const noexcept
+\item 
+const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \& \doxymbox{\hyperlink{struct_f_transform_acd1616d9c7fdf7599ca99781de81a38d}{Get\+Rotation}} () const noexcept
+\item 
+const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \& \doxymbox{\hyperlink{struct_f_transform_ab0ea0fe880fd7d0392e5c8f092d830db}{Get\+Scale3D}} () const noexcept
+\item 
+void \doxymbox{\hyperlink{struct_f_transform_a50f08c19947929e6aba21f0a8318adfe}{Set\+Location}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Translation) noexcept
+\item 
+void \doxymbox{\hyperlink{struct_f_transform_aba555b7fa933f5f07be01412f634d64e}{Set\+Translation}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Translation) noexcept
+\item 
+void \doxymbox{\hyperlink{struct_f_transform_afa23f61ea4f26af5d94ddc0747cfcc1a}{Set\+Rotation}} (const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&In\+Rotation) noexcept
+\item 
+void \doxymbox{\hyperlink{struct_f_transform_ac3656528808c49b891f43775efab9109}{Set\+Rotation}} (const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&In\+Rotation) noexcept
+\item 
+void \doxymbox{\hyperlink{struct_f_transform_a66994a38181d62ddc06562590bdd8fb3}{Set\+Scale3D}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Scale3D) noexcept
+\item 
+void \doxymbox{\hyperlink{struct_f_transform_a696429c47d99e481474042a3855ad29c}{Set\+Identity}} () noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \doxymbox{\hyperlink{struct_f_transform_ae3d3033ef1aff269f41f5c5b78761d28}{Rotator}} () const noexcept
+\item 
+void \doxymbox{\hyperlink{struct_f_transform_a2d6cf80bac27ef403f4fde948b5359c7}{Normalize\+Rotation}} () noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_transform_a4ed98d45b85aa5e738b8e4d2a050a823}{Equals}} (const \doxymbox{\hyperlink{struct_f_transform}{FTransform}} \&Other, float Tolerance=1.e-\/6f) const noexcept
+\item 
+bool \doxymbox{\hyperlink{struct_f_transform_ab1892e533e4500db3bb417a81fc33d87}{Is\+Identity}} (float Tolerance=1.e-\/6f) const noexcept
+\item 
+void \doxymbox{\hyperlink{struct_f_transform_a09a9406b2afb4ec5e3590f8be4211e15}{Add\+To\+Translation}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&Delta\+Translation) noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_transform_af970552c4fb30c622e7be63d3af44842}{Transform\+Position}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Position) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_transform_acf11d80b6c5df9b43cee94fb2f0d738a}{Transform\+Position\+No\+Scale}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Position) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_transform_a5d90c5717303cc79c7337cf87c183d07}{Transform\+Vector}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Vector) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_transform_a682db807d83f6be63eec6a7e6bec38e4}{Transform\+Vector\+No\+Scale}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Vector) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_transform_ac634d36cba6a51155a0a3b3cf5133502}{Inverse\+Transform\+Position}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Position) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_transform_a1efb19abf656fd12418d277a24a678c5}{Inverse\+Transform\+Position\+No\+Scale}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Position) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_transform_a38b539ec59f9f80338c958957255c05e}{Inverse\+Transform\+Vector}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Vector) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_transform_a0ac2dadf727d60679c332f6cf38b8b82}{Inverse\+Transform\+Vector\+No\+Scale}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Vector) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_transform_a84dcb969cbbfea32a8f607a17da25169}{Get\+Unit\+Axis}} (\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}} Axis) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_transform_abb3522e5d726ff8226051624ce50a5ce}{Get\+Scaled\+Axis}} (\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}} Axis) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_transform_a33344a2b144dcd9670ef9960cd7f7c0c}{To\+Matrix\+No\+Scale}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_transform_a560f4897d1cf6f086ca1a8e889e90c0c}{To\+Matrix\+With\+Scale}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_transform_a04b3b169b670b44c5c394a522dc294e9}{To\+Inverse\+Matrix\+With\+Scale}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \doxymbox{\hyperlink{struct_f_transform_a8f6c61f3d24465ea69ae9eb93f6b57b2}{To\+Matrix}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_transform}{FTransform}} \doxymbox{\hyperlink{struct_f_transform_ab1c2ad002222064ad9f32ad5a4248586}{Inverse}} () const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_transform}{FTransform}} \doxymbox{\hyperlink{struct_f_transform_adcfb12ccc85291605599716831407cbc}{operator\texorpdfstring{$\ast$}{*}}} (const \doxymbox{\hyperlink{struct_f_transform}{FTransform}} \&Other) const noexcept
+\item 
+\doxymbox{\hyperlink{struct_f_transform}{FTransform}} \& \doxymbox{\hyperlink{struct_f_transform_ad91c7e83c8cb7afae12608e4bd463b39}{operator\texorpdfstring{$\ast$}{*}=}} (const \doxymbox{\hyperlink{struct_f_transform}{FTransform}} \&Other) noexcept
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static const \doxymbox{\hyperlink{struct_f_transform}{FTransform}} \doxymbox{\hyperlink{struct_f_transform_a594dc5a642fcdef4a64192ca57ca4138}{Identity}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static \doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_transform_afd310ac77bb3f5c81f84520dc981690c}{Component\+Multiply}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&A, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&B) noexcept
+\item 
+static \doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_transform_a8cc7b856689256582b30d0037b6065fb}{Component\+Divide\+Safe}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&A, const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&B, float Tolerance=1.e-\/8f) noexcept
+\item 
+static \doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_transform_ace4aaa62dbeac228c7e1c34b07404f5c}{Get\+Safe\+Scale\+Reciprocal}} (const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&In\+Scale, float Tolerance=1.e-\/8f) noexcept
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} \doxymbox{\hyperlink{struct_f_transform_ad96f056e0b57583eb4cac57789573ad0}{Rotation}} = \doxymbox{\hyperlink{struct_f_quat_a17b14cd1893310138b67748aba3f8f02}{FQuat::\+\+Identity}}
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_transform_afbb97b64538b8fff13e7448d8128c849}{Translation}} = \doxymbox{\hyperlink{struct_f_vector_a5718e5b26f15f0d7057d05236fcae359}{FVector::\+\+Zero\+Vector}}
+\item 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} \doxymbox{\hyperlink{struct_f_transform_adde5946e28218ba334457fe8f0a554a7}{Scale3D}} = \doxymbox{\hyperlink{struct_f_vector_afbe6a3418478f7060f4b8fb1bf6f1959}{FVector::\+\+One\+Vector}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-constructors}
+\Hypertarget{struct_f_transform_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{struct_f_transform_a823b824aef55dbe9564aee90e6d48893}\index{FTransform@{FTransform}!FTransform@{FTransform}}
+\index{FTransform@{FTransform}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{FTransform()}{FTransform()}\hspace{0.1cm}{\footnotesize\ttfamily [1/6]}}
+{\footnotesize\ttfamily \label{struct_f_transform_a823b824aef55dbe9564aee90e6d48893} 
+FTransform::\+\+FTransform (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}, {\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_a823b824aef55dbe9564aee90e6d48893_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_a5391421453cd8254f5aa904d19054afd}\index{FTransform@{FTransform}!FTransform@{FTransform}}
+\index{FTransform@{FTransform}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{FTransform()}{FTransform()}\hspace{0.1cm}{\footnotesize\ttfamily [2/6]}}
+{\footnotesize\ttfamily \label{struct_f_transform_a5391421453cd8254f5aa904d19054afd} 
+FTransform::\+\+FTransform (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&}]{In\+Rotation}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [explicit]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_a5391421453cd8254f5aa904d19054afd_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_a2419aad206e1947fca2f69250ad6ec10}\index{FTransform@{FTransform}!FTransform@{FTransform}}
+\index{FTransform@{FTransform}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{FTransform()}{FTransform()}\hspace{0.1cm}{\footnotesize\ttfamily [3/6]}}
+{\footnotesize\ttfamily \label{struct_f_transform_a2419aad206e1947fca2f69250ad6ec10} 
+FTransform::\+\+FTransform (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&}]{In\+Rotation}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [explicit]}, {\ttfamily [noexcept]}}
+
+\Hypertarget{struct_f_transform_a0e8b8442d0b51694912e99ccdd43796f}\index{FTransform@{FTransform}!FTransform@{FTransform}}
+\index{FTransform@{FTransform}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{FTransform()}{FTransform()}\hspace{0.1cm}{\footnotesize\ttfamily [4/6]}}
+{\footnotesize\ttfamily \label{struct_f_transform_a0e8b8442d0b51694912e99ccdd43796f} 
+FTransform::\+\+FTransform (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&}]{In\+Rotation}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Translation}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Scale3D}{ = {\ttfamily \doxymbox{\hyperlink{struct_f_vector_afbe6a3418478f7060f4b8fb1bf6f1959}{FVector::\+\+One\+Vector}}}}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+\Hypertarget{struct_f_transform_a8eb279a0b745ba5b2440711cc42e67b1}\index{FTransform@{FTransform}!FTransform@{FTransform}}
+\index{FTransform@{FTransform}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{FTransform()}{FTransform()}\hspace{0.1cm}{\footnotesize\ttfamily [5/6]}}
+{\footnotesize\ttfamily \label{struct_f_transform_a8eb279a0b745ba5b2440711cc42e67b1} 
+FTransform::\+\+FTransform (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&}]{In\+Rotation}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Translation}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Scale3D}{ = {\ttfamily \doxymbox{\hyperlink{struct_f_vector_afbe6a3418478f7060f4b8fb1bf6f1959}{FVector::\+\+One\+Vector}}}}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [noexcept]}}
+
+\Hypertarget{struct_f_transform_a7039fdf9a605d50cacf7b8bc3acdeb95}\index{FTransform@{FTransform}!FTransform@{FTransform}}
+\index{FTransform@{FTransform}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{FTransform()}{FTransform()}\hspace{0.1cm}{\footnotesize\ttfamily [6/6]}}
+{\footnotesize\ttfamily \label{struct_f_transform_a7039fdf9a605d50cacf7b8bc3acdeb95} 
+FTransform::\+\+FTransform (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} \&}]{In\+Matrix}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [explicit]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_a7039fdf9a605d50cacf7b8bc3acdeb95_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-func-members}
+\Hypertarget{struct_f_transform_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{struct_f_transform_a09a9406b2afb4ec5e3590f8be4211e15}\index{FTransform@{FTransform}!AddToTranslation@{AddToTranslation}}
+\index{AddToTranslation@{AddToTranslation}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{AddToTranslation()}{AddToTranslation()}}
+{\footnotesize\ttfamily \label{struct_f_transform_a09a9406b2afb4ec5e3590f8be4211e15} 
+void FTransform::\+\+Add\+To\+Translation (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{Delta\+Translation}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+\Hypertarget{struct_f_transform_a8cc7b856689256582b30d0037b6065fb}\index{FTransform@{FTransform}!ComponentDivideSafe@{ComponentDivideSafe}}
+\index{ComponentDivideSafe@{ComponentDivideSafe}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{ComponentDivideSafe()}{ComponentDivideSafe()}}
+{\footnotesize\ttfamily \label{struct_f_transform_a8cc7b856689256582b30d0037b6065fb} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FTransform::\+\+Component\+Divide\+Safe (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{A}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{B}{, }\item[{float}]{Tolerance}{ = {\ttfamily 1.e-\/8f}}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}, {\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_a8cc7b856689256582b30d0037b6065fb_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_afd310ac77bb3f5c81f84520dc981690c}\index{FTransform@{FTransform}!ComponentMultiply@{ComponentMultiply}}
+\index{ComponentMultiply@{ComponentMultiply}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{ComponentMultiply()}{ComponentMultiply()}}
+{\footnotesize\ttfamily \label{struct_f_transform_afd310ac77bb3f5c81f84520dc981690c} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FTransform::\+\+Component\+Multiply (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{A}{, }\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{B}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}, {\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_afd310ac77bb3f5c81f84520dc981690c_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_a4ed98d45b85aa5e738b8e4d2a050a823}\index{FTransform@{FTransform}!Equals@{Equals}}
+\index{Equals@{Equals}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{Equals()}{Equals()}}
+{\footnotesize\ttfamily \label{struct_f_transform_a4ed98d45b85aa5e738b8e4d2a050a823} 
+bool FTransform::\+\+Equals (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_transform}{FTransform}} \&}]{Other}{, }\item[{float}]{Tolerance}{ = {\ttfamily 1.e-\/6f}}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=341pt]{struct_f_transform_a4ed98d45b85aa5e738b8e4d2a050a823_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=331pt]{struct_f_transform_a4ed98d45b85aa5e738b8e4d2a050a823_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_afd6018501c5d76eb9da91e44580ea911}\index{FTransform@{FTransform}!GetLocation@{GetLocation}}
+\index{GetLocation@{GetLocation}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{GetLocation()}{GetLocation()}}
+{\footnotesize\ttfamily \label{struct_f_transform_afd6018501c5d76eb9da91e44580ea911} 
+const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \& FTransform::\+\+Get\+Location (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_afd6018501c5d76eb9da91e44580ea911_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_acd1616d9c7fdf7599ca99781de81a38d}\index{FTransform@{FTransform}!GetRotation@{GetRotation}}
+\index{GetRotation@{GetRotation}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{GetRotation()}{GetRotation()}}
+{\footnotesize\ttfamily \label{struct_f_transform_acd1616d9c7fdf7599ca99781de81a38d} 
+const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \& FTransform::\+\+Get\+Rotation (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_acd1616d9c7fdf7599ca99781de81a38d_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_ace4aaa62dbeac228c7e1c34b07404f5c}\index{FTransform@{FTransform}!GetSafeScaleReciprocal@{GetSafeScaleReciprocal}}
+\index{GetSafeScaleReciprocal@{GetSafeScaleReciprocal}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{GetSafeScaleReciprocal()}{GetSafeScaleReciprocal()}}
+{\footnotesize\ttfamily \label{struct_f_transform_ace4aaa62dbeac228c7e1c34b07404f5c} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FTransform::\+\+Get\+Safe\+Scale\+Reciprocal (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Scale}{, }\item[{float}]{Tolerance}{ = {\ttfamily 1.e-\/8f}}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}, {\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_ace4aaa62dbeac228c7e1c34b07404f5c_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_ace4aaa62dbeac228c7e1c34b07404f5c_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_ab0ea0fe880fd7d0392e5c8f092d830db}\index{FTransform@{FTransform}!GetScale3D@{GetScale3D}}
+\index{GetScale3D@{GetScale3D}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{GetScale3D()}{GetScale3D()}}
+{\footnotesize\ttfamily \label{struct_f_transform_ab0ea0fe880fd7d0392e5c8f092d830db} 
+const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \& FTransform::\+\+Get\+Scale3D (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_ab0ea0fe880fd7d0392e5c8f092d830db_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_abb3522e5d726ff8226051624ce50a5ce}\index{FTransform@{FTransform}!GetScaledAxis@{GetScaledAxis}}
+\index{GetScaledAxis@{GetScaledAxis}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{GetScaledAxis()}{GetScaledAxis()}}
+{\footnotesize\ttfamily \label{struct_f_transform_abb3522e5d726ff8226051624ce50a5ce} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FTransform::\+\+Get\+Scaled\+Axis (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}}}]{Axis}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_abb3522e5d726ff8226051624ce50a5ce_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_adfb62649b99f635c19b7254b74076237}\index{FTransform@{FTransform}!GetTranslation@{GetTranslation}}
+\index{GetTranslation@{GetTranslation}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{GetTranslation()}{GetTranslation()}}
+{\footnotesize\ttfamily \label{struct_f_transform_adfb62649b99f635c19b7254b74076237} 
+const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \& FTransform::\+\+Get\+Translation (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_adfb62649b99f635c19b7254b74076237_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_a84dcb969cbbfea32a8f607a17da25169}\index{FTransform@{FTransform}!GetUnitAxis@{GetUnitAxis}}
+\index{GetUnitAxis@{GetUnitAxis}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{GetUnitAxis()}{GetUnitAxis()}}
+{\footnotesize\ttfamily \label{struct_f_transform_a84dcb969cbbfea32a8f607a17da25169} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FTransform::\+\+Get\+Unit\+Axis (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{_matrix_8h_a8f7f06af3f81ae67cd5c9a9db06779bc}{EAxis}}}]{Axis}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_a84dcb969cbbfea32a8f607a17da25169_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_ab1c2ad002222064ad9f32ad5a4248586}\index{FTransform@{FTransform}!Inverse@{Inverse}}
+\index{Inverse@{Inverse}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{Inverse()}{Inverse()}}
+{\footnotesize\ttfamily \label{struct_f_transform_ab1c2ad002222064ad9f32ad5a4248586} 
+\doxymbox{\hyperlink{struct_f_transform}{FTransform}} FTransform::\+\+Inverse (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_ab1c2ad002222064ad9f32ad5a4248586_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_ac634d36cba6a51155a0a3b3cf5133502}\index{FTransform@{FTransform}!InverseTransformPosition@{InverseTransformPosition}}
+\index{InverseTransformPosition@{InverseTransformPosition}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{InverseTransformPosition()}{InverseTransformPosition()}}
+{\footnotesize\ttfamily \label{struct_f_transform_ac634d36cba6a51155a0a3b3cf5133502} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FTransform::\+\+Inverse\+Transform\+Position (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Position}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_ac634d36cba6a51155a0a3b3cf5133502_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_a1efb19abf656fd12418d277a24a678c5}\index{FTransform@{FTransform}!InverseTransformPositionNoScale@{InverseTransformPositionNoScale}}
+\index{InverseTransformPositionNoScale@{InverseTransformPositionNoScale}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{InverseTransformPositionNoScale()}{InverseTransformPositionNoScale()}}
+{\footnotesize\ttfamily \label{struct_f_transform_a1efb19abf656fd12418d277a24a678c5} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FTransform::\+\+Inverse\+Transform\+Position\+No\+Scale (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Position}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+\Hypertarget{struct_f_transform_a38b539ec59f9f80338c958957255c05e}\index{FTransform@{FTransform}!InverseTransformVector@{InverseTransformVector}}
+\index{InverseTransformVector@{InverseTransformVector}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{InverseTransformVector()}{InverseTransformVector()}}
+{\footnotesize\ttfamily \label{struct_f_transform_a38b539ec59f9f80338c958957255c05e} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FTransform::\+\+Inverse\+Transform\+Vector (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Vector}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_a38b539ec59f9f80338c958957255c05e_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_a0ac2dadf727d60679c332f6cf38b8b82}\index{FTransform@{FTransform}!InverseTransformVectorNoScale@{InverseTransformVectorNoScale}}
+\index{InverseTransformVectorNoScale@{InverseTransformVectorNoScale}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{InverseTransformVectorNoScale()}{InverseTransformVectorNoScale()}}
+{\footnotesize\ttfamily \label{struct_f_transform_a0ac2dadf727d60679c332f6cf38b8b82} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FTransform::\+\+Inverse\+Transform\+Vector\+No\+Scale (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Vector}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+\Hypertarget{struct_f_transform_ab1892e533e4500db3bb417a81fc33d87}\index{FTransform@{FTransform}!IsIdentity@{IsIdentity}}
+\index{IsIdentity@{IsIdentity}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{IsIdentity()}{IsIdentity()}}
+{\footnotesize\ttfamily \label{struct_f_transform_ab1892e533e4500db3bb417a81fc33d87} 
+bool FTransform::\+\+Is\+Identity (\begin{DoxyParamCaption}\item[{float}]{Tolerance}{ = {\ttfamily 1.e-\/6f}}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_ab1892e533e4500db3bb417a81fc33d87_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_a2d6cf80bac27ef403f4fde948b5359c7}\index{FTransform@{FTransform}!NormalizeRotation@{NormalizeRotation}}
+\index{NormalizeRotation@{NormalizeRotation}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{NormalizeRotation()}{NormalizeRotation()}}
+{\footnotesize\ttfamily \label{struct_f_transform_a2d6cf80bac27ef403f4fde948b5359c7} 
+void FTransform::\+\+Normalize\+Rotation (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+\Hypertarget{struct_f_transform_adcfb12ccc85291605599716831407cbc}\index{FTransform@{FTransform}!operator\texorpdfstring{$\ast$}{*}@{operator\texorpdfstring{$\ast$}{*}}}
+\index{operator\texorpdfstring{$\ast$}{*}@{operator\texorpdfstring{$\ast$}{*}}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{operator\texorpdfstring{$\ast$}{*}()}{operator*()}}
+{\footnotesize\ttfamily \label{struct_f_transform_adcfb12ccc85291605599716831407cbc} 
+\doxymbox{\hyperlink{struct_f_transform}{FTransform}} FTransform::\+operator\texorpdfstring{$\ast$}{*} (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_transform}{FTransform}} \&}]{Other}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_adcfb12ccc85291605599716831407cbc_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_ad91c7e83c8cb7afae12608e4bd463b39}\index{FTransform@{FTransform}!operator\texorpdfstring{$\ast$}{*}=@{operator\texorpdfstring{$\ast$}{*}=}}
+\index{operator\texorpdfstring{$\ast$}{*}=@{operator\texorpdfstring{$\ast$}{*}=}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{operator\texorpdfstring{$\ast$}{*}=()}{operator*=()}}
+{\footnotesize\ttfamily \label{struct_f_transform_ad91c7e83c8cb7afae12608e4bd463b39} 
+\doxymbox{\hyperlink{struct_f_transform}{FTransform}} \& FTransform::\+operator\texorpdfstring{$\ast$}{*}= (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_transform}{FTransform}} \&}]{Other}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_ad91c7e83c8cb7afae12608e4bd463b39_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_ae3d3033ef1aff269f41f5c5b78761d28}\index{FTransform@{FTransform}!Rotator@{Rotator}}
+\index{Rotator@{Rotator}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{Rotator()}{Rotator()}}
+{\footnotesize\ttfamily \label{struct_f_transform_ae3d3033ef1aff269f41f5c5b78761d28} 
+\doxymbox{\hyperlink{struct_f_rotator}{FRotator}} FTransform::\+\+Rotator (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_ae3d3033ef1aff269f41f5c5b78761d28_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_a696429c47d99e481474042a3855ad29c}\index{FTransform@{FTransform}!SetIdentity@{SetIdentity}}
+\index{SetIdentity@{SetIdentity}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{SetIdentity()}{SetIdentity()}}
+{\footnotesize\ttfamily \label{struct_f_transform_a696429c47d99e481474042a3855ad29c} 
+void FTransform::\+\+Set\+Identity (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+\Hypertarget{struct_f_transform_a50f08c19947929e6aba21f0a8318adfe}\index{FTransform@{FTransform}!SetLocation@{SetLocation}}
+\index{SetLocation@{SetLocation}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{SetLocation()}{SetLocation()}}
+{\footnotesize\ttfamily \label{struct_f_transform_a50f08c19947929e6aba21f0a8318adfe} 
+void FTransform::\+\+Set\+Location (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Translation}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=342pt]{struct_f_transform_a50f08c19947929e6aba21f0a8318adfe_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_afa23f61ea4f26af5d94ddc0747cfcc1a}\index{FTransform@{FTransform}!SetRotation@{SetRotation}}
+\index{SetRotation@{SetRotation}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{SetRotation()}{SetRotation()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{struct_f_transform_afa23f61ea4f26af5d94ddc0747cfcc1a} 
+void FTransform::\+\+Set\+Rotation (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_quat}{FQuat}} \&}]{In\+Rotation}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_afa23f61ea4f26af5d94ddc0747cfcc1a_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_ac3656528808c49b891f43775efab9109}\index{FTransform@{FTransform}!SetRotation@{SetRotation}}
+\index{SetRotation@{SetRotation}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{SetRotation()}{SetRotation()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{struct_f_transform_ac3656528808c49b891f43775efab9109} 
+void FTransform::\+\+Set\+Rotation (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_rotator}{FRotator}} \&}]{In\+Rotation}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+\Hypertarget{struct_f_transform_a66994a38181d62ddc06562590bdd8fb3}\index{FTransform@{FTransform}!SetScale3D@{SetScale3D}}
+\index{SetScale3D@{SetScale3D}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{SetScale3D()}{SetScale3D()}}
+{\footnotesize\ttfamily \label{struct_f_transform_a66994a38181d62ddc06562590bdd8fb3} 
+void FTransform::\+\+Set\+Scale3D (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Scale3D}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_a66994a38181d62ddc06562590bdd8fb3_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_aba555b7fa933f5f07be01412f634d64e}\index{FTransform@{FTransform}!SetTranslation@{SetTranslation}}
+\index{SetTranslation@{SetTranslation}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{SetTranslation()}{SetTranslation()}}
+{\footnotesize\ttfamily \label{struct_f_transform_aba555b7fa933f5f07be01412f634d64e} 
+void FTransform::\+\+Set\+Translation (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Translation}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_aba555b7fa933f5f07be01412f634d64e_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_a04b3b169b670b44c5c394a522dc294e9}\index{FTransform@{FTransform}!ToInverseMatrixWithScale@{ToInverseMatrixWithScale}}
+\index{ToInverseMatrixWithScale@{ToInverseMatrixWithScale}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{ToInverseMatrixWithScale()}{ToInverseMatrixWithScale()}}
+{\footnotesize\ttfamily \label{struct_f_transform_a04b3b169b670b44c5c394a522dc294e9} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FTransform::\+\+To\+Inverse\+Matrix\+With\+Scale (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_a04b3b169b670b44c5c394a522dc294e9_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_a8f6c61f3d24465ea69ae9eb93f6b57b2}\index{FTransform@{FTransform}!ToMatrix@{ToMatrix}}
+\index{ToMatrix@{ToMatrix}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{ToMatrix()}{ToMatrix()}}
+{\footnotesize\ttfamily \label{struct_f_transform_a8f6c61f3d24465ea69ae9eb93f6b57b2} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FTransform::\+\+To\+Matrix (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_a8f6c61f3d24465ea69ae9eb93f6b57b2_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_a33344a2b144dcd9670ef9960cd7f7c0c}\index{FTransform@{FTransform}!ToMatrixNoScale@{ToMatrixNoScale}}
+\index{ToMatrixNoScale@{ToMatrixNoScale}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{ToMatrixNoScale()}{ToMatrixNoScale()}}
+{\footnotesize\ttfamily \label{struct_f_transform_a33344a2b144dcd9670ef9960cd7f7c0c} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FTransform::\+\+To\+Matrix\+No\+Scale (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_a33344a2b144dcd9670ef9960cd7f7c0c_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_a560f4897d1cf6f086ca1a8e889e90c0c}\index{FTransform@{FTransform}!ToMatrixWithScale@{ToMatrixWithScale}}
+\index{ToMatrixWithScale@{ToMatrixWithScale}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{ToMatrixWithScale()}{ToMatrixWithScale()}}
+{\footnotesize\ttfamily \label{struct_f_transform_a560f4897d1cf6f086ca1a8e889e90c0c} 
+\doxymbox{\hyperlink{struct_f_matrix}{FMatrix}} FTransform::\+\+To\+Matrix\+With\+Scale (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_a560f4897d1cf6f086ca1a8e889e90c0c_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_a560f4897d1cf6f086ca1a8e889e90c0c_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_af970552c4fb30c622e7be63d3af44842}\index{FTransform@{FTransform}!TransformPosition@{TransformPosition}}
+\index{TransformPosition@{TransformPosition}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{TransformPosition()}{TransformPosition()}}
+{\footnotesize\ttfamily \label{struct_f_transform_af970552c4fb30c622e7be63d3af44842} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FTransform::\+\+Transform\+Position (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Position}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_af970552c4fb30c622e7be63d3af44842_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_acf11d80b6c5df9b43cee94fb2f0d738a}\index{FTransform@{FTransform}!TransformPositionNoScale@{TransformPositionNoScale}}
+\index{TransformPositionNoScale@{TransformPositionNoScale}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{TransformPositionNoScale()}{TransformPositionNoScale()}}
+{\footnotesize\ttfamily \label{struct_f_transform_acf11d80b6c5df9b43cee94fb2f0d738a} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FTransform::\+\+Transform\+Position\+No\+Scale (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Position}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+\Hypertarget{struct_f_transform_a5d90c5717303cc79c7337cf87c183d07}\index{FTransform@{FTransform}!TransformVector@{TransformVector}}
+\index{TransformVector@{TransformVector}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{TransformVector()}{TransformVector()}}
+{\footnotesize\ttfamily \label{struct_f_transform_a5d90c5717303cc79c7337cf87c183d07} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FTransform::\+\+Transform\+Vector (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Vector}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_transform_a5d90c5717303cc79c7337cf87c183d07_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_transform_a682db807d83f6be63eec6a7e6bec38e4}\index{FTransform@{FTransform}!TransformVectorNoScale@{TransformVectorNoScale}}
+\index{TransformVectorNoScale@{TransformVectorNoScale}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{TransformVectorNoScale()}{TransformVectorNoScale()}}
+{\footnotesize\ttfamily \label{struct_f_transform_a682db807d83f6be63eec6a7e6bec38e4} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FTransform::\+\+Transform\+Vector\+No\+Scale (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_vector}{FVector}} \&}]{In\+Vector}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [noexcept]}}
+
+
+
+\label{doc-variable-members}
+\Hypertarget{struct_f_transform_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{struct_f_transform_a594dc5a642fcdef4a64192ca57ca4138}\index{FTransform@{FTransform}!Identity@{Identity}}
+\index{Identity@{Identity}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{Identity}{Identity}}
+{\footnotesize\ttfamily \label{struct_f_transform_a594dc5a642fcdef4a64192ca57ca4138} 
+const \doxymbox{\hyperlink{struct_f_transform}{FTransform}} FTransform::\+\+Identity\hspace{0.3cm}{\ttfamily [static]}}
+
+\Hypertarget{struct_f_transform_ad96f056e0b57583eb4cac57789573ad0}\index{FTransform@{FTransform}!Rotation@{Rotation}}
+\index{Rotation@{Rotation}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{Rotation}{Rotation}}
+{\footnotesize\ttfamily \label{struct_f_transform_ad96f056e0b57583eb4cac57789573ad0} 
+\doxymbox{\hyperlink{struct_f_quat}{FQuat}} FTransform::\+\+Rotation = \doxymbox{\hyperlink{struct_f_quat_a17b14cd1893310138b67748aba3f8f02}{FQuat::\+\+Identity}}\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{struct_f_transform_adde5946e28218ba334457fe8f0a554a7}\index{FTransform@{FTransform}!Scale3D@{Scale3D}}
+\index{Scale3D@{Scale3D}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{Scale3D}{Scale3D}}
+{\footnotesize\ttfamily \label{struct_f_transform_adde5946e28218ba334457fe8f0a554a7} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FTransform::\+\+Scale3D = \doxymbox{\hyperlink{struct_f_vector_afbe6a3418478f7060f4b8fb1bf6f1959}{FVector::\+\+One\+Vector}}\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{struct_f_transform_afbb97b64538b8fff13e7448d8128c849}\index{FTransform@{FTransform}!Translation@{Translation}}
+\index{Translation@{Translation}!FTransform@{FTransform}}
+\doxysubsubsection{\texorpdfstring{Translation}{Translation}}
+{\footnotesize\ttfamily \label{struct_f_transform_afbb97b64538b8fff13e7448d8128c849} 
+\doxymbox{\hyperlink{struct_f_vector}{FVector}} FTransform::\+\+Translation = \doxymbox{\hyperlink{struct_f_vector_a5718e5b26f15f0d7057d05236fcae359}{FVector::\+\+Zero\+Vector}}\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+The documentation for this struct was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Math/\+\doxymbox{\hyperlink{_transform_8h}{Transform.\+h}}\item 
+Engine/\+\+Source/\+\+Math/\+\doxymbox{\hyperlink{_transform_8cpp}{Transform.\+cpp}}\end{DoxyCompactItemize}

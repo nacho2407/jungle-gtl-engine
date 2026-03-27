@@ -1,0 +1,13 @@
+<map id="FQuat::GetRotationAxis" name="FQuat::GetRotationAxis">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,167,32"/>
+<area shape="rect" id="Node000002" href="$struct_f_quat.html#a898470770e4f1314a90cccb3ec8e9515" title=" " alt="" coords="605,31,706,57"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="167,13,339,12,439,15,540,23,593,32,587,32,539,28,439,21,338,17,167,18"/>
+<area shape="rect" id="Node000003" href="$struct_f_quat.html#a12195ceb868985b0fdd9dd4fdad54e1f" title=" " alt="" coords="215,31,367,57"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="167,26,202,32,197,33,167,31"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="368,41,592,43,587,45,368,47"/>
+<area shape="rect" id="Node000004" href="$struct_f_quat.html#a20b1175ee99c038924047a6cdc322144" title=" " alt="" coords="415,81,539,108"/>
+<area shape="poly" id="edge4_Node000003_Node000004" title=" " alt="" coords="343,55,414,77,408,77,343,61"/>
+<area shape="poly" id="edge5_Node000004_Node000002" title=" " alt="" coords="526,78,589,62,594,62,527,83"/>
+<area shape="rect" id="Node000005" href="$struct_f_quat.html#ae500b97cbb82792796e1e7eb4806c256" title=" " alt="" coords="587,81,724,108"/>
+<area shape="poly" id="edge6_Node000004_Node000005" title=" " alt="" coords="540,92,575,95,569,95,540,97"/>
+</map>

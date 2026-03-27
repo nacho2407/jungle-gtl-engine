@@ -1,0 +1,9 @@
+<map id="CRenderer::GetDevice" name="CRenderer::GetDevice">
+<area shape="rect" id="Node000001" title=" " alt="" coords="246,64,400,91"/>
+<area shape="rect" id="Node000002" href="$class_c_editor_u_i.html#af6abbe943fe631a76da4bd0229c5c355" title=" " alt="" coords="5,5,198,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="253,60,197,47,155,35,155,30,198,41,258,59"/>
+<area shape="rect" id="Node000003" href="$class_c_control_panel_window.html#a77f0bb41d37c2fedec4855a31130b6e5" title=" " alt="" coords="25,56,178,99"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="228,78,179,80,178,75,233,77"/>
+<area shape="rect" id="Node000004" href="$class_c_viewport.html#a2a7ed1cc3e31c0196444dbac0dc55a23" title=" " alt="" coords="35,123,168,149"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="258,95,198,113,156,125,154,119,197,108,253,96"/>
+</map>

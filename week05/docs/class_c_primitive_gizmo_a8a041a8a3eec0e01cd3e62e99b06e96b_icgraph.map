@@ -1,0 +1,14 @@
+<map id="CPrimitiveGizmo::CreateRotationScreenMesh" name="CPrimitiveGizmo::CreateRotationScreenMesh">
+<area shape="rect" id="Node000001" title=" " alt="" coords="732,23,949,65"/>
+<area shape="rect" id="Node000002" href="$class_c_gizmo.html#a1d004c0c9325bb8af752472a9c03732b" title=" " alt="" coords="208,5,423,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="715,39,424,27,424,21,720,37"/>
+<area shape="rect" id="Node000003" href="$class_c_gizmo.html#a6167e126bc109b5fd455347d4aa5b621" title=" " alt="" coords="471,56,684,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="719,56,685,62,685,56,714,56"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="487,53,388,35,388,30,493,52"/>
+<area shape="rect" id="Node000004" href="$class_c_gizmo.html#ab66015f827d7a86e37c29ca4f25f5d84" title=" " alt="" coords="243,56,388,83"/>
+<area shape="poly" id="edge4_Node000003_Node000004" title=" " alt="" coords="453,69,389,72,389,67,458,69"/>
+<area shape="rect" id="Node000005" href="$class_c_gizmo.html#ab6f44415de5b8dc89e8f6f0da8309f43" title=" " alt="" coords="13,31,152,57"/>
+<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="225,61,152,54,152,49,230,59"/>
+<area shape="rect" id="Node000006" href="$class_c_gizmo.html#a8de57f031240f6412bd94f1d4df2ecd8" title=" " alt="" coords="5,81,160,108"/>
+<area shape="poly" id="edge6_Node000004_Node000006" title=" " alt="" coords="225,79,160,89,160,84,230,79"/>
+</map>

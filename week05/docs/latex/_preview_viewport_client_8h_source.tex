@@ -1,0 +1,29 @@
+\doxysection{Preview\+Viewport\+Client.\+h}
+\hypertarget{_preview_viewport_client_8h_source}{}\label{_preview_viewport_client_8h_source}\index{Editor/Source/UI/PreviewViewportClient.h@{Editor/Source/UI/PreviewViewportClient.h}}
+\doxymbox{\hyperlink{_preview_viewport_client_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_core_minimal_8h}{CoreMinimal.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_viewport_client_8h}{Core/ViewportClient.h}}"{}}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_editor_u_i}{CEditorUI}};}
+\DoxyCodeLine{00007\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_window}{CWindow}};}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_c_preview_viewport_client_aecb6cd0a45a8bcb5019aa468eb7da9f9}{CPreviewViewportClient}}\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{class_i_viewport_client}{IViewportClient}}}
+\DoxyCodeLine{00010\ \{}
+\DoxyCodeLine{00011\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00012\ \ \ \ \ \doxymbox{\hyperlink{class_c_preview_viewport_client_aecb6cd0a45a8bcb5019aa468eb7da9f9}{CPreviewViewportClient}}(\doxymbox{\hyperlink{class_c_editor_u_i}{CEditorUI}}\&\ InEditorUI,\ \doxymbox{\hyperlink{class_c_window}{CWindow}}*\ InMainWindow,\ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ InPreviewContextName);}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_preview_viewport_client_a5d96158c1f13764afd793b997aa96a58}{Attach}}(\doxymbox{\hyperlink{class_c_core}{CCore}}*\ Core,\ \doxymbox{\hyperlink{class_c_renderer}{CRenderer}}*\ Renderer)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_preview_viewport_client_a99c2a2b25638c98c81380250502edad7}{Detach}}(\doxymbox{\hyperlink{class_c_core}{CCore}}*\ Core,\ \doxymbox{\hyperlink{class_c_renderer}{CRenderer}}*\ Renderer)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_c_preview_viewport_client_ad73751442a23cd53882346fd38a09e21}{Tick}}(\doxymbox{\hyperlink{class_c_core}{CCore}}*\ Core,\ \textcolor{keywordtype}{float}\ DeltaTime)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00017\ \ \ \ \ \doxymbox{\hyperlink{class_u_scene}{UScene}}*\ \doxymbox{\hyperlink{class_c_preview_viewport_client_aaac50bfb6785c3b02b5b785de714b293}{ResolveScene}}(\doxymbox{\hyperlink{class_c_core}{CCore}}*\ Core)\ \textcolor{keyword}{const\ override};}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00020\ \ \ \ \ \doxymbox{\hyperlink{class_c_editor_u_i}{CEditorUI}}\&\ \doxymbox{\hyperlink{class_c_preview_viewport_client_a423542d454ad6938b8f9363efc23b5f1}{EditorUI}};}
+\DoxyCodeLine{00021\ \ \ \ \ \doxymbox{\hyperlink{class_c_window}{CWindow}}*\ \doxymbox{\hyperlink{class_c_preview_viewport_client_a2a5b1b4d344f84c09d84410196926ad4}{MainWindow}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00022\ \ \ \ \ \doxymbox{\hyperlink{_string_8h_a071f1298c27d6858a9cb71def52f1eb6}{FString}}\ \doxymbox{\hyperlink{class_c_preview_viewport_client_a5fd1462634074a3a1ac4a1266ebca4eb}{PreviewContextName}};}
+\DoxyCodeLine{00023\ \};}
+
+\end{DoxyCode}

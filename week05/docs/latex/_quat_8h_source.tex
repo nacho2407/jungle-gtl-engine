@@ -1,0 +1,145 @@
+\doxysection{Quat.\+h}
+\hypertarget{_quat_8h_source}{}\label{_quat_8h_source}\index{Engine/Source/Math/Quat.h@{Engine/Source/Math/Quat.h}}
+\doxymbox{\hyperlink{_quat_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_engine_a_p_i_8h}{EngineAPI.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_matrix_8h}{Math/Matrix.h}}"{}}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_rotator}{FRotator}};}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{struct_f_quat_a898470770e4f1314a90cccb3ec8e9515}{FQuat}}}
+\DoxyCodeLine{00009\ \{}
+\DoxyCodeLine{00010\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_quat_a733fdde924603c6e14eb1f9b699839d4}{X}}\ =\ 0.0f;}
+\DoxyCodeLine{00011\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_quat_a888af248d67cf4f4da9cbfc64b39fa44}{Y}}\ =\ 0.0f;}
+\DoxyCodeLine{00012\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_quat_a332f0b8466cd2484620b168be89e1c18}{Z}}\ =\ 0.0f;}
+\DoxyCodeLine{00013\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_quat_a7366c17441ff1ec7399fa06fabcc6794}{W}}\ =\ 1.0f;}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{comment}{//\ 항등\ 쿼터니언입니다.\ 회전이\ 없는\ 상태를\ 나타냅니다.}}
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_quat_a898470770e4f1314a90cccb3ec8e9515}{FQuat}}\ \doxymbox{\hyperlink{struct_f_quat_a17b14cd1893310138b67748aba3f8f02}{Identity}};}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \ \ \ \ \textcolor{comment}{//======================================//}}
+\DoxyCodeLine{00019\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ \ \ constructor\ \ \ \ \ \ \ \ \ \ \ \ \ //}}
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{comment}{//======================================//}}
+\DoxyCodeLine{00021\ \ \ \ \ \textcolor{keyword}{constexpr}\ \doxymbox{\hyperlink{struct_f_quat_a898470770e4f1314a90cccb3ec8e9515}{FQuat}}()\ noexcept\ =\ default;}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{comment}{//\ 원시\ XYZW\ 성분으로부터\ 쿼터니언을\ 생성합니다.}}
+\DoxyCodeLine{00024\ \ \ \ \ constexpr\ \doxymbox{\hyperlink{struct_f_quat_a898470770e4f1314a90cccb3ec8e9515}{FQuat}}(\textcolor{keywordtype}{float}\ InX,\ \textcolor{keywordtype}{float}\ InY,\ \textcolor{keywordtype}{float}\ InZ,\ \textcolor{keywordtype}{float}\ InW)\ noexcept}
+\DoxyCodeLine{00025\ \ \ \ \ \ \ \ \ :\ \doxymbox{\hyperlink{struct_f_quat_a733fdde924603c6e14eb1f9b699839d4}{X}}(InX),\ \doxymbox{\hyperlink{struct_f_quat_a888af248d67cf4f4da9cbfc64b39fa44}{Y}}(InY),\ \doxymbox{\hyperlink{struct_f_quat_a332f0b8466cd2484620b168be89e1c18}{Z}}(InZ),\ \doxymbox{\hyperlink{struct_f_quat_a7366c17441ff1ec7399fa06fabcc6794}{W}}(InW)}
+\DoxyCodeLine{00026\ \ \ \ \ \{}
+\DoxyCodeLine{00027\ \ \ \ \ \}}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \ \ \ \ \textcolor{comment}{//\ \{X,\ Y,\ Z,\ W\}를\ 담고\ 있는\ DirectX\ 벡터로부터\ 쿼터니언을\ 생성합니다.}}
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{keyword}{explicit}\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}(\doxymbox{\hyperlink{_core_types_8h_abd7c2c39285e92e50224f58070e4266e}{FXMVector}}\ InVector)\ \textcolor{keyword}{noexcept};}
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{comment}{//\ 도\ 단위의\ 엔진\ 로테이터로부터\ 쿼터니언을\ 생성합니다.}}
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keyword}{explicit}\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\&\ InRotator)\ \textcolor{keyword}{noexcept};}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{comment}{//\ 회전\ 행렬로부터\ 쿼터니언을\ 생성합니다.\ 입력\ 행렬은\ 순수\ 회전\ 행렬이라고\ 가정합니다.}}
+\DoxyCodeLine{00034\ \ \ \ \ \textcolor{keyword}{explicit}\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}}\&\ InMatrix)\ \textcolor{keyword}{noexcept};}
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{comment}{//\ 단위\ 축과\ 라디안\ 각도로부터\ 쿼터니언을\ 생성합니다.}}
+\DoxyCodeLine{00036\ \ \ \ \ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ Axis,\ \textcolor{keywordtype}{float}\ AngleRad)\ \textcolor{keyword}{noexcept};}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00038\ \ \ \ \ \textcolor{comment}{//\ 엔진\ 오일러\ 각도\ \{Roll,\ Pitch,\ Yaw\}\ 도\ 단위\ 값으로부터\ 쿼터니언을\ 생성합니다.}}
+\DoxyCodeLine{00039\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\ MakeFromEuler(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ InEulerDegrees)\ \textcolor{keyword}{noexcept};}
+\DoxyCodeLine{00040\ \ \ \ \ \textcolor{comment}{//\ 두\ 쿼터니언\ 사이의\ 4차원\ 내적을\ 반환합니다.}}
+\DoxyCodeLine{00041\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{float}\ DotProduct(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ A,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ B)\ \textcolor{keyword}{noexcept};}
+\DoxyCodeLine{00042\ \ \ \ \ \textcolor{comment}{//\ 최단\ 호\ 기준의\ 구면\ 선형\ 보간으로\ 두\ 쿼터니언\ 사이를\ 보간합니다.}}
+\DoxyCodeLine{00043\ \ \ \ \ \textcolor{keyword}{static}\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\ Slerp(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ A,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ B,\ \textcolor{keywordtype}{float}\ Alpha)\ \textcolor{keyword}{noexcept};}
+\DoxyCodeLine{00044\ }
+\DoxyCodeLine{00045\ \ \ \ \ \textcolor{comment}{//\ 각\ 성분이\ 완전히\ 같은지\ 반환합니다.}}
+\DoxyCodeLine{00046\ \ \ \ \ \textcolor{keywordtype}{bool}\ operator==(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ Other)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept};}
+\DoxyCodeLine{00047\ \ \ \ \ \textcolor{comment}{//\ 각\ 성분\ 중\ 하나라도\ 다르면\ true를\ 반환합니다.}}
+\DoxyCodeLine{00048\ \ \ \ \ \textcolor{keywordtype}{bool}\ operator!=(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ Other)\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept};}
+\DoxyCodeLine{00049\ \ \ \ \ \textcolor{comment}{//\ 부호가\ 반전된\ 쿼터니언을\ 반환합니다.\ -\/Q는\ Q와\ 같은\ 회전을\ 나타냅니다.}}
+\DoxyCodeLine{00050\ \ \ \ \ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\ operator-\/()\ const\ noexcept;}
+\DoxyCodeLine{00051\ \ \ \ \ \textcolor{comment}{//\ 두\ 쿼터니언을\ 성분별로\ 더합니다.}}
+\DoxyCodeLine{00052\ \ \ \ \ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\ operator+(const\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ Other)\ const\ noexcept;}
+\DoxyCodeLine{00053\ \ \ \ \ \textcolor{comment}{//\ 두\ 쿼터니언을\ 성분별로\ 뺍니다.}}
+\DoxyCodeLine{00054\ \ \ \ \ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\ operator-\/(const\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ Other)\ const\ noexcept;}
+\DoxyCodeLine{00055\ \ \ \ \ \textcolor{comment}{//\ 모든\ 성분에\ 스칼라를\ 곱합니다.}}
+\DoxyCodeLine{00056\ \ \ \ \ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\ operator*(\textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}})\ const\ noexcept;}
+\DoxyCodeLine{00057\ \ \ \ \ \textcolor{comment}{//\ 모든\ 성분을\ 스칼라로\ 나눕니다.}}
+\DoxyCodeLine{00058\ \ \ \ \ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\ operator/(\textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}})\ const\ noexcept;}
+\DoxyCodeLine{00059\ \ \ \ \ \textcolor{comment}{//\ 엔진의\ row-\/vector\ 규약\ 기준으로\ 두\ 회전을\ 합성합니다.}}
+\DoxyCodeLine{00060\ \ \ \ \ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\ operator*(const\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ Other)\ const\ noexcept;}
+\DoxyCodeLine{00061\ \ \ \ \ \textcolor{comment}{//\ 이\ 쿼터니언으로\ 벡터를\ 회전시킵니다.}}
+\DoxyCodeLine{00062\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ operator*(const\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ InVector)\ const\ noexcept;}
+\DoxyCodeLine{00063\ }
+\DoxyCodeLine{00064\ \ \ \ \ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ operator+=(const\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ Other)\ noexcept;}
+\DoxyCodeLine{00065\ \ \ \ \ \textcolor{comment}{//\ 다른\ 쿼터니언을\ 성분별로\ 현재\ 값에서\ 뺍니다.}}
+\DoxyCodeLine{00066\ \ \ \ \ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ operator-\/=(const\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ Other)\ noexcept;}
+\DoxyCodeLine{00067\ \ \ \ \ \textcolor{comment}{//\ 모든\ 성분에\ 스칼라를\ 제자리에서\ 곱합니다.}}
+\DoxyCodeLine{00068\ \ \ \ \ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ operator*=(\textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}})\ noexcept;}
+\DoxyCodeLine{00069\ \ \ \ \ \textcolor{comment}{//\ 모든\ 성분을\ 스칼라로\ 제자리에서\ 나눕니다.}}
+\DoxyCodeLine{00070\ \ \ \ \ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ operator/=(\textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}})\ noexcept;}
+\DoxyCodeLine{00071\ \ \ \ \ \textcolor{comment}{//\ 다른\ 회전을\ 현재\ 쿼터니언에\ 제자리에서\ 합성합니다.}}
+\DoxyCodeLine{00072\ \ \ \ \ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ operator*=(const\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ Other)\ noexcept;}
+\DoxyCodeLine{00073\ }
+\DoxyCodeLine{00074\ \ \ \ \ \textcolor{comment}{//\ 다른\ 쿼터니언과의\ 4차원\ 내적을\ 반환합니다.}}
+\DoxyCodeLine{00075\ \ \ \ \ \textcolor{keywordtype}{float}\ operator|(const\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ Other)\ const\ noexcept;}
+\DoxyCodeLine{00076\ }
+\DoxyCodeLine{00077\ \ \ \ \ \textcolor{comment}{//======================================//}}
+\DoxyCodeLine{00078\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ method\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ //}}
+\DoxyCodeLine{00079\ \ \ \ \ \textcolor{comment}{//======================================//}}
+\DoxyCodeLine{00080\ \ \ \ \ \textcolor{comment}{//\ 이\ 쿼터니언을\ \{X,\ Y,\ Z,\ W\}\ 형태의\ DirectX\ 벡터로\ 변환합니다.}}
+\DoxyCodeLine{00081\ \ \ \ \ \doxymbox{\hyperlink{_core_types_8h_ad7069eae7b85d4ed27d826f17a716155}{XMVector}}\ ToXMVector()\ const\ noexcept;}
+\DoxyCodeLine{00082\ \ \ \ \ \textcolor{comment}{//\ 허용\ 오차\ 내에서\ 회전적으로\ 같은지\ 반환합니다.\ Q와\ -\/Q는\ 같은\ 회전으로\ 취급합니다.}}
+\DoxyCodeLine{00083\ \ \ \ \ \textcolor{keywordtype}{bool}\ Equals(const\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ Other,\ \textcolor{keywordtype}{float}\ Tolerance\ =\ 1.e-\/6f)\ const\ noexcept;}
+\DoxyCodeLine{00084\ \ \ \ \ \textcolor{comment}{//\ 이\ 쿼터니언이\ 항등\ 회전에\ 가깝다면\ true를\ 반환합니다.}}
+\DoxyCodeLine{00085\ \ \ \ \ \textcolor{keywordtype}{bool}\ IsIdentity(\textcolor{keywordtype}{float}\ Tolerance\ =\ 1.e-\/6f)\ const\ noexcept;}
+\DoxyCodeLine{00086\ \ \ \ \ \textcolor{comment}{//\ 성분\ 중\ 하나라도\ NaN\ 또는\ 무한대이면\ true를\ 반환합니다.}}
+\DoxyCodeLine{00087\ \ \ \ \ \textcolor{keywordtype}{bool}\ ContainsNaN()\ const\ noexcept;}
+\DoxyCodeLine{00088\ \ \ \ \ \textcolor{comment}{//\ 쿼터니언\ 크기의\ 제곱을\ 반환합니다.}}
+\DoxyCodeLine{00089\ \ \ \ \ \textcolor{keywordtype}{float}\ SizeSquared()\ const\ noexcept;}
+\DoxyCodeLine{00090\ \ \ \ \ \textcolor{comment}{//\ 쿼터니언의\ 크기를\ 반환합니다.}}
+\DoxyCodeLine{00091\ \ \ \ \ \textcolor{keywordtype}{float}\ Size()\ const\ noexcept;}
+\DoxyCodeLine{00092\ \ \ \ \ \textcolor{comment}{//\ 쿼터니언\ 크기가\ 1에\ 가깝다면\ true를\ 반환합니다.}}
+\DoxyCodeLine{00093\ \ \ \ \ \textcolor{keywordtype}{bool}\ IsNormalized(\textcolor{keywordtype}{float}\ Tolerance\ =\ 1.e-\/4f)\ const\ noexcept;}
+\DoxyCodeLine{00094\ \ \ \ \ \textcolor{comment}{//\ 이\ 쿼터니언을\ 정규화합니다.\ 길이가\ 너무\ 작으면\ 항등\ 쿼터니언이\ 됩니다.}}
+\DoxyCodeLine{00095\ \ \ \ \ \textcolor{keywordtype}{void}\ Normalize(\textcolor{keywordtype}{float}\ Tolerance\ =\ 1.e-\/8f)\ noexcept;}
+\DoxyCodeLine{00096\ \ \ \ \ \textcolor{comment}{//\ 정규화된\ 복사본을\ 반환합니다.\ 길이가\ 너무\ 작으면\ 항등\ 쿼터니언을\ 반환합니다.}}
+\DoxyCodeLine{00097\ \ \ \ \ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\ GetNormalized(\textcolor{keywordtype}{float}\ Tolerance\ =\ 1.e-\/8f)\ const\ noexcept;}
+\DoxyCodeLine{00098\ \ \ \ \ \textcolor{comment}{//\ 켤레\ 쿼터니언\ \{-\/X,\ -\/Y,\ -\/Z,\ W\}를\ 반환합니다.}}
+\DoxyCodeLine{00099\ \ \ \ \ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\ Conjugate()\ const\ noexcept;}
+\DoxyCodeLine{00100\ \ \ \ \ \textcolor{comment}{//\ 역\ 쿼터니언을\ 반환합니다.\ 길이가\ 너무\ 작으면\ 항등\ 쿼터니언을\ 반환합니다.}}
+\DoxyCodeLine{00101\ \ \ \ \ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\ Inverse()\ const\ noexcept;}
+\DoxyCodeLine{00102\ \ \ \ \ \textcolor{comment}{//\ 이\ 쿼터니언으로\ 벡터를\ 회전시킵니다.}}
+\DoxyCodeLine{00103\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ RotateVector(const\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ InVector)\ const\ noexcept;}
+\DoxyCodeLine{00104\ \ \ \ \ \textcolor{comment}{//\ 이\ 쿼터니언의\ 역회전으로\ 벡터를\ 회전시킵니다.}}
+\DoxyCodeLine{00105\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ UnrotateVector(const\ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\&\ InVector)\ const\ noexcept;}
+\DoxyCodeLine{00106\ \ \ \ \ \textcolor{comment}{//\ 회전\ 각도를\ 라디안\ 단위로\ 반환합니다.}}
+\DoxyCodeLine{00107\ \ \ \ \ \textcolor{keywordtype}{float}\ GetAngle()\ const\ noexcept;}
+\DoxyCodeLine{00108\ \ \ \ \ \textcolor{comment}{//\ 단위\ 회전축을\ 반환합니다.\ 축이\ 퇴화한\ 경우\ 전방\ 축으로\ 대체합니다.}}
+\DoxyCodeLine{00109\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ GetRotationAxis(\textcolor{keywordtype}{float}\ Tolerance\ =\ 1.e-\/8f)\ const\ noexcept;}
+\DoxyCodeLine{00110\ \ \ \ \ \textcolor{comment}{//\ 엔진\ 오일러\ 각도\ \{Roll,\ Pitch,\ Yaw\}를\ 도\ 단위로\ 반환합니다.}}
+\DoxyCodeLine{00111\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ Euler()\ const\ noexcept;}
+\DoxyCodeLine{00112\ \ \ \ \ \textcolor{comment}{//\ 회전된\ 로컬\ X축을\ 반환합니다.}}
+\DoxyCodeLine{00113\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ GetAxisX()\ const\ noexcept;}
+\DoxyCodeLine{00114\ \ \ \ \ \textcolor{comment}{//\ 회전된\ 로컬\ Y축을\ 반환합니다.}}
+\DoxyCodeLine{00115\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ GetAxisY()\ const\ noexcept;}
+\DoxyCodeLine{00116\ \ \ \ \ \textcolor{comment}{//\ 회전된\ 로컬\ Z축을\ 반환합니다.}}
+\DoxyCodeLine{00117\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ GetAxisZ()\ const\ noexcept;}
+\DoxyCodeLine{00118\ \ \ \ \ \textcolor{comment}{//\ 회전된\ 전방\ 벡터(+X)를\ 반환합니다.}}
+\DoxyCodeLine{00119\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ GetForwardVector()\ const\ noexcept;}
+\DoxyCodeLine{00120\ \ \ \ \ \textcolor{comment}{//\ 회전된\ 오른쪽\ 벡터(+Y)를\ 반환합니다.}}
+\DoxyCodeLine{00121\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ GetRightVector()\ const\ noexcept;}
+\DoxyCodeLine{00122\ \ \ \ \ \textcolor{comment}{//\ 회전된\ 위쪽\ 벡터(+Z)를\ 반환합니다.}}
+\DoxyCodeLine{00123\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector}{FVector}}\ GetUpVector()\ const\ noexcept;}
+\DoxyCodeLine{00124\ \ \ \ \ \textcolor{comment}{//\ 다른\ 쿼터니언까지의\ 최소\ 각거리(rad)를\ 반환합니다.}}
+\DoxyCodeLine{00125\ \ \ \ \ \textcolor{keywordtype}{float}\ AngularDistance(const\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ Other)\ const\ noexcept;}
+\DoxyCodeLine{00126\ \ \ \ \ \textcolor{comment}{//\ Other와의\ 관계에서\ 최단\ 호를\ 유지하도록\ 필요하면\ 부호를\ 뒤집습니다.}}
+\DoxyCodeLine{00127\ \ \ \ \ \textcolor{keywordtype}{void}\ EnforceShortestArcWith(const\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ Other)\ noexcept;}
+\DoxyCodeLine{00128\ \ \ \ \ \textcolor{comment}{//\ 이\ 쿼터니언을\ 4x4\ 회전\ 행렬로\ 변환합니다.}}
+\DoxyCodeLine{00129\ \ \ \ \ \doxymbox{\hyperlink{struct_f_matrix}{FMatrix}}\ ToMatrix()\ const\ noexcept;}
+\DoxyCodeLine{00130\ }
+\DoxyCodeLine{00131\ \ \ \ \ \textcolor{comment}{//\ 이\ 쿼터니언을\ 도\ 단위의\ 엔진\ 로테이터로\ 변환합니다.}}
+\DoxyCodeLine{00132\ \ \ \ \ \doxymbox{\hyperlink{struct_f_rotator}{FRotator}}\ Rotator()\ const\ noexcept;}
+\DoxyCodeLine{00133\ \};}
+\DoxyCodeLine{00134\ }
+\DoxyCodeLine{00135\ \textcolor{comment}{//\ 스칼라가\ 왼쪽에\ 오는\ 형태로\ 모든\ 성분에\ 스칼라를\ 곱합니다.}}
+\DoxyCodeLine{00136\ inline\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\ operator*(\textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}},\ const\ \doxymbox{\hyperlink{struct_f_quat}{FQuat}}\&\ Quat)\ noexcept}
+\DoxyCodeLine{00137\ \{}
+\DoxyCodeLine{00138\ \ \ \ \ \textcolor{keywordflow}{return}\ Quat\ *\ \doxymbox{\hyperlink{_editor_2_source_2_gizmo_2_gizmo_8h_ae5f2c0eb1c83eb54e0e6b04d891c028ea85a7cd587d6142dbfc1a4de05af7b75d}{Scale}};}
+\DoxyCodeLine{00139\ \}}
+
+\end{DoxyCode}

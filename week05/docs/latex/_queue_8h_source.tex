@@ -1,0 +1,13 @@
+\doxysection{Queue.\+h}
+\hypertarget{_queue_8h_source}{}\label{_queue_8h_source}\index{Engine/Source/Types/Queue.h@{Engine/Source/Types/Queue.h}}
+\doxymbox{\hyperlink{_queue_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ <deque>}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <queue>}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{comment}{//\ Synchronization,\ if\ needed,\ should\ be\ handled\ by\ the\ caller.}}
+\DoxyCodeLine{00006\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ T,\ \textcolor{keyword}{typename}\ Container\ =\ std::deque<T>>}
+\DoxyCodeLine{00007\ \textcolor{keyword}{using\ }\doxymbox{\hyperlink{_queue_8h_a466e1d94838d7e2572f5d6cd009e14c0}{TQueue}}\ =\ std::queue<T,\ Container>;}
+
+\end{DoxyCode}

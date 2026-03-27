@@ -1,0 +1,11 @@
+<map id="FSceneManager::DestroyPreviewScene" name="FSceneManager::DestroyPreviewScene">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,72,223,115"/>
+<area shape="rect" id="Node000002" href="$class_f_scene_manager.html#a49956f97d0d5a11b668dedefb8664672" title=" " alt="" coords="271,5,478,48"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="199,69,276,51,271,54,201,74"/>
+<area shape="rect" id="Node000003" href="$class_f_scene_manager.html#a2550fa64e4bad8538d42e2acd065f436" title=" " alt="" coords="271,72,478,115"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="223,91,258,93,253,94,224,96"/>
+<area shape="rect" id="Node000004" href="$class_f_scene_manager.html#aee43c8f64cf757944e292217ba5726e7" title=" " alt="" coords="271,139,478,181"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="200,113,276,134,271,135,200,118"/>
+<area shape="rect" id="Node000005" href="$struct_f_scene_context.html#adebf2a1eebea382fc25ad3c6c796fe6c" title=" " alt="" coords="526,147,681,173"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="478,157,513,160,508,160,478,163"/>
+</map>

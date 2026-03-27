@@ -1,0 +1,15 @@
+<map id="AActor" name="AActor">
+<area shape="rect" id="Node000001" title=" " alt="" coords="402,571,591,981"/>
+<area shape="rect" id="Node000003" href="$class_a_attach_test_actor.html" title=" " alt="" coords="5,1061,166,1195"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="388,857,287,939,180,1031,147,1063,143,1060,176,1027,284,935,392,853"/>
+<area shape="rect" id="Node000004" href="$class_a_cube_actor.html" title=" " alt="" coords="190,1029,390,1227"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="397,948,349,1031,345,1028,393,951"/>
+<area shape="rect" id="Node000005" href="$class_a_editor_camera_pawn.html" title=" " alt="" coords="414,1083,580,1173"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="498,994,499,1085,494,1082,495,998"/>
+<area shape="rect" id="Node000006" href="$class_a_gizmo.html" title=" " alt="" coords="603,1051,750,1205"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="599,972,640,1051,635,1050,597,976"/>
+<area shape="rect" id="Node000007" href="$class_a_sphere_actor.html" title=" " alt="" coords="774,1029,974,1227"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="603,872,777,1034,771,1034,601,877"/>
+<area shape="rect" id="Node000002" href="$class_u_object.html" title=" " alt="" coords="421,5,572,523"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="497,535,499,572,494,570,496,540"/>
+</map>

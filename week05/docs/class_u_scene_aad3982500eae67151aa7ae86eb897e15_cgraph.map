@@ -1,0 +1,7 @@
+<map id="UScene::GetCamera" name="UScene::GetCamera">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,31,149,57"/>
+<area shape="rect" id="Node000002" href="$class_u_scene.html#a4bfb8efc0d11706d2170d7245f776df8" title=" " alt="" coords="197,5,444,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="149,34,184,33,179,34,150,39"/>
+<area shape="rect" id="Node000003" href="$class_u_camera_component.html#a2d781be06097070687e75282ef223b43" title=" " alt="" coords="211,56,430,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="149,49,198,56,192,57,149,54"/>
+</map>

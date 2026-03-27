@@ -1,0 +1,33 @@
+\doxysection{Vector4.\+h}
+\hypertarget{_vector4_8h_source}{}\label{_vector4_8h_source}\index{Engine/Source/Math/Vector4.h@{Engine/Source/Math/Vector4.h}}
+\doxymbox{\hyperlink{_vector4_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\doxymbox{\hyperlink{_engine_a_p_i_8h}{EngineAPI.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <cmath>}}
+\DoxyCodeLine{00005\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{_engine_a_p_i_8h_a0697ee40f69dc5dab56d13131f4c4835}{ENGINE\_API}}\ \doxymbox{\hyperlink{struct_f_vector4_aafddf31573dc3b1ba03ccf68197440f3}{FVector4}}}
+\DoxyCodeLine{00006\ \{}
+\DoxyCodeLine{00007\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_vector4_adde7d6c779d671097d93be10971ab469}{X}}\ =\ 0.0f;}
+\DoxyCodeLine{00008\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_vector4_a8860ab20cf7c21dd9d814600ed7a65cd}{Y}}\ =\ 0.0f;}
+\DoxyCodeLine{00009\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_vector4_ade0ea8e42af4f492968e7209b7c12bca}{Z}}\ =\ 0.0f;}
+\DoxyCodeLine{00010\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_vector4_a001090eab2a652cb0397ffc677f1553f}{W}}\ =\ 1.0f;}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector4_aafddf31573dc3b1ba03ccf68197440f3}{FVector4}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00013\ \ \ \ \ \doxymbox{\hyperlink{struct_f_vector4_a74da135426475ff49bf57241b33cc019}{FVector4}}(\textcolor{keywordtype}{float}\ InX,\ \textcolor{keywordtype}{float}\ InY,\ \textcolor{keywordtype}{float}\ InZ,\ \textcolor{keywordtype}{float}\ InW)}
+\DoxyCodeLine{00014\ \ \ \ \ \ \ \ \ :\ \doxymbox{\hyperlink{struct_f_vector4_adde7d6c779d671097d93be10971ab469}{X}}(InX),\ \doxymbox{\hyperlink{struct_f_vector4_a8860ab20cf7c21dd9d814600ed7a65cd}{Y}}(InY),\ \doxymbox{\hyperlink{struct_f_vector4_ade0ea8e42af4f492968e7209b7c12bca}{Z}}(InZ),\ \doxymbox{\hyperlink{struct_f_vector4_a001090eab2a652cb0397ffc677f1553f}{W}}(InW)\ \{\}}
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_vector4_a647adf9ccffacdac4dcaa5acfc787b50}{Dot}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_vector4_aafddf31573dc3b1ba03ccf68197440f3}{FVector4}}\&\ other)}
+\DoxyCodeLine{00016\ \ \ \ \ \{}
+\DoxyCodeLine{00017\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \{\doxymbox{\hyperlink{struct_f_vector4_adde7d6c779d671097d93be10971ab469}{X}}*other.\doxymbox{\hyperlink{struct_f_vector4_adde7d6c779d671097d93be10971ab469}{X}}+\doxymbox{\hyperlink{struct_f_vector4_a8860ab20cf7c21dd9d814600ed7a65cd}{Y}}*other.\doxymbox{\hyperlink{struct_f_vector4_a8860ab20cf7c21dd9d814600ed7a65cd}{Y}}+\ \doxymbox{\hyperlink{struct_f_vector4_ade0ea8e42af4f492968e7209b7c12bca}{Z}}\ *\ other.\doxymbox{\hyperlink{struct_f_vector4_ade0ea8e42af4f492968e7209b7c12bca}{Z}}\ +\ \doxymbox{\hyperlink{struct_f_vector4_a001090eab2a652cb0397ffc677f1553f}{W}}\ *\ other.\doxymbox{\hyperlink{struct_f_vector4_a001090eab2a652cb0397ffc677f1553f}{W}}\ \};}
+\DoxyCodeLine{00018\ \ \ \ \ \}}
+\DoxyCodeLine{00019\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_vector4_ad6155ec988cbdcea39fe247b168573a7}{Length}}()\ }
+\DoxyCodeLine{00020\ \ \ \ \ \{}
+\DoxyCodeLine{00021\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ std::sqrt(\doxymbox{\hyperlink{struct_f_vector4_adde7d6c779d671097d93be10971ab469}{X}}\ *\ \doxymbox{\hyperlink{struct_f_vector4_adde7d6c779d671097d93be10971ab469}{X}}\ +\ \doxymbox{\hyperlink{struct_f_vector4_a8860ab20cf7c21dd9d814600ed7a65cd}{Y}}\ *\ \doxymbox{\hyperlink{struct_f_vector4_a8860ab20cf7c21dd9d814600ed7a65cd}{Y}}\ +\ \doxymbox{\hyperlink{struct_f_vector4_ade0ea8e42af4f492968e7209b7c12bca}{Z}}\ *\ \doxymbox{\hyperlink{struct_f_vector4_ade0ea8e42af4f492968e7209b7c12bca}{Z}});}
+\DoxyCodeLine{00022\ \ \ \ \ \}}
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_vector4_ae3192480fce4b0b2319b510118cf56b8}{Length3}}()\ }
+\DoxyCodeLine{00024\ \ \ \ \ \{}
+\DoxyCodeLine{00025\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ std::sqrt(\doxymbox{\hyperlink{struct_f_vector4_adde7d6c779d671097d93be10971ab469}{X}}\ *\ \doxymbox{\hyperlink{struct_f_vector4_adde7d6c779d671097d93be10971ab469}{X}}\ +\ \doxymbox{\hyperlink{struct_f_vector4_a8860ab20cf7c21dd9d814600ed7a65cd}{Y}}\ *\ \doxymbox{\hyperlink{struct_f_vector4_a8860ab20cf7c21dd9d814600ed7a65cd}{Y}}\ +\ \doxymbox{\hyperlink{struct_f_vector4_ade0ea8e42af4f492968e7209b7c12bca}{Z}}\ *\ \doxymbox{\hyperlink{struct_f_vector4_ade0ea8e42af4f492968e7209b7c12bca}{Z}}+\doxymbox{\hyperlink{struct_f_vector4_a001090eab2a652cb0397ffc677f1553f}{W}}*\doxymbox{\hyperlink{struct_f_vector4_a001090eab2a652cb0397ffc677f1553f}{W}});}
+\DoxyCodeLine{00026\ \ \ \ \ \}}
+\DoxyCodeLine{00027\ \};}
+
+\end{DoxyCode}

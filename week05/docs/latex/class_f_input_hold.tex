@@ -1,0 +1,130 @@
+\doxysection{FInput\+Hold Class Reference}
+\hypertarget{class_f_input_hold}{}\label{class_f_input_hold}\index{FInputHold@{FInputHold}}
+
+
+{\ttfamily \+\#include $<$input\+Trigger.\+h$>$}
+
+
+
+Inheritance diagram for FInput\+Hold:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=180pt]{class_f_input_hold__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for FInput\+Hold:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=180pt]{class_f_input_hold__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50ec}{ETrigger\+State}} \doxymbox{\hyperlink{class_f_input_hold_a88d663e9931d9931cca6bca891653c5e}{Update\+State}} (const \doxymbox{\hyperlink{struct_f_input_action_value}{FInput\+Action\+Value}} \&Value, float Delta\+Time) override
+\item 
+void \doxymbox{\hyperlink{class_f_input_hold_ac9d8e00441c3a3a51f0579b544b95961}{Reset}} () override
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+float \doxymbox{\hyperlink{class_f_input_hold_a23d7df4764eb64eb7f2d4ddb5a77360e}{Hold\+Time\+Threshold}} = 0.\+5f
+\item 
+float \doxymbox{\hyperlink{class_f_input_hold_a74b53ae8c4e01c3283335169682e4422}{Held\+Duration}} = 0.\+0f
+\item 
+bool \doxymbox{\hyperlink{class_f_input_hold_acd8ff3b40d4ca1b13f4be714fb89f212}{b\+Triggered}} = false
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Additional Inherited Members}
+\doxysubsection*{Public Member Functions inherited from \doxymbox{\hyperlink{class_f_input_trigger}{FInput\+Trigger}}}
+\begin{DoxyCompactItemize}
+\item 
+virtual \doxymbox{\hyperlink{class_f_input_trigger_a9cae88f48fb9589283c4fd0585393001}{\texorpdfstring{$\sim$}{\string~}\+FInput\+Trigger}} ()=default
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes inherited from \doxymbox{\hyperlink{class_f_input_trigger}{FInput\+Trigger}}}
+\begin{DoxyCompactItemize}
+\item 
+\doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50ec}{ETrigger\+State}} \doxymbox{\hyperlink{class_f_input_trigger_a02e173a61782da7b3d406dad6ea58e66}{Last\+State}} = \doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50eca6adf97f83acf6453d4a6a4b1070f3754}{ETrigger\+State::\+\+None}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-func-members}
+\Hypertarget{class_f_input_hold_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_f_input_hold_ac9d8e00441c3a3a51f0579b544b95961}\index{FInputHold@{FInputHold}!Reset@{Reset}}
+\index{Reset@{Reset}!FInputHold@{FInputHold}}
+\doxysubsubsection{\texorpdfstring{Reset()}{Reset()}}
+{\footnotesize\ttfamily \label{class_f_input_hold_ac9d8e00441c3a3a51f0579b544b95961} 
+void FInput\+Hold::\+\+Reset (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [private]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \doxymbox{\hyperlink{class_f_input_trigger_a92ba50a57724ec8e429d1132615c29e8}{FInput\+Trigger}}.
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=318pt]{class_f_input_hold_ac9d8e00441c3a3a51f0579b544b95961_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=337pt]{class_f_input_hold_ac9d8e00441c3a3a51f0579b544b95961_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_input_hold_a88d663e9931d9931cca6bca891653c5e}\index{FInputHold@{FInputHold}!UpdateState@{UpdateState}}
+\index{UpdateState@{UpdateState}!FInputHold@{FInputHold}}
+\doxysubsubsection{\texorpdfstring{UpdateState()}{UpdateState()}}
+{\footnotesize\ttfamily \label{class_f_input_hold_a88d663e9931d9931cca6bca891653c5e} 
+\doxymbox{\hyperlink{input_trigger_8h_aa087d8cf52ef9b835fcf5512f07d50ec}{ETrigger\+State}} FInput\+Hold::\+\+Update\+State (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_input_action_value}{FInput\+Action\+Value}} \&}]{Value}{, }\item[{float}]{Delta\+Time}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [private]}, {\ttfamily [virtual]}}
+
+
+
+Implements \doxymbox{\hyperlink{class_f_input_trigger_a65d9f63b8860b1282ab4f9d4842f63e4}{FInput\+Trigger}}.
+
+Here is the call graph for this function:\+
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_input_hold_a88d663e9931d9931cca6bca891653c5e_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_f_input_hold_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_f_input_hold_acd8ff3b40d4ca1b13f4be714fb89f212}\index{FInputHold@{FInputHold}!bTriggered@{bTriggered}}
+\index{bTriggered@{bTriggered}!FInputHold@{FInputHold}}
+\doxysubsubsection{\texorpdfstring{bTriggered}{bTriggered}}
+{\footnotesize\ttfamily \label{class_f_input_hold_acd8ff3b40d4ca1b13f4be714fb89f212} 
+bool FInput\+Hold::\+b\+Triggered = false\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_f_input_hold_a74b53ae8c4e01c3283335169682e4422}\index{FInputHold@{FInputHold}!HeldDuration@{HeldDuration}}
+\index{HeldDuration@{HeldDuration}!FInputHold@{FInputHold}}
+\doxysubsubsection{\texorpdfstring{HeldDuration}{HeldDuration}}
+{\footnotesize\ttfamily \label{class_f_input_hold_a74b53ae8c4e01c3283335169682e4422} 
+float FInput\+Hold::\+\+Held\+Duration = 0.\+0f\hspace{0.3cm}{\ttfamily [private]}}
+
+\Hypertarget{class_f_input_hold_a23d7df4764eb64eb7f2d4ddb5a77360e}\index{FInputHold@{FInputHold}!HoldTimeThreshold@{HoldTimeThreshold}}
+\index{HoldTimeThreshold@{HoldTimeThreshold}!FInputHold@{FInputHold}}
+\doxysubsubsection{\texorpdfstring{HoldTimeThreshold}{HoldTimeThreshold}}
+{\footnotesize\ttfamily \label{class_f_input_hold_a23d7df4764eb64eb7f2d4ddb5a77360e} 
+float FInput\+Hold::\+\+Hold\+Time\+Threshold = 0.\+5f\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+Engine/\+\+Source/\+\+Input/\+\doxymbox{\hyperlink{input_trigger_8h}{input\+Trigger.\+h}}\end{DoxyCompactItemize}

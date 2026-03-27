@@ -1,0 +1,27 @@
+<map id="CPrimitiveBase::RegisterMeshData" name="CPrimitiveBase::RegisterMeshData">
+<area shape="rect" id="Node000001" title=" " alt="" coords="736,136,906,179"/>
+<area shape="rect" id="Node000002" href="$class_c_primitive_cube.html#a21226d5a2dcf87057d3986a345666639" title=" " alt="" coords="509,9,683,36"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="784,125,740,89,687,54,652,39,652,34,690,50,743,85,789,126"/>
+<area shape="rect" id="Node000004" href="$class_c_primitive_plane.html#a43324a1606f34d25060c6f90f74285a3" title=" " alt="" coords="508,64,684,91"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="755,130,687,105,652,94,652,89,689,100,760,129"/>
+<area shape="rect" id="Node000006" href="$class_c_primitive_sphere.html#a398c9844bc975acb06c52478e65910b3" title=" " alt="" coords="504,115,688,141"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="718,145,689,143,689,137,723,144"/>
+<area shape="rect" id="Node000008" href="$class_c_primitive_gizmo.html#a695146e999f79d0f4cb9eca1b97800b9" title=" " alt="" coords="506,165,687,208"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="718,171,688,177,687,172,723,170"/>
+<area shape="rect" id="Node000011" href="$class_c_primitive_gizmo.html#ae6e66ee72c45837d85101b2b56bc4952" title=" " alt="" coords="506,232,687,275"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="765,185,689,222,660,234,659,229,687,218,760,187"/>
+<area shape="rect" id="Node000012" href="$class_c_primitive_gizmo.html#adbdcd0e107b503f37eda8362e2ba25f4" title=" " alt="" coords="506,299,687,341"/>
+<area shape="poly" id="edge12_Node000001_Node000012" title=" " alt="" coords="796,189,749,241,720,267,690,289,668,301,666,296,687,284,717,263,745,238,791,192"/>
+<area shape="rect" id="Node000003" href="$class_c_primitive_cube.html#a83c8abf9a7eba85214064919dcf1673d" title=" " alt="" coords="243,5,456,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="491,22,457,23,456,18,496,20"/>
+<area shape="rect" id="Node000005" href="$class_c_primitive_plane.html#a052c028f1b2a87c061d9759fdc98461e" title=" " alt="" coords="257,56,442,99"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="490,78,443,80,441,75,495,77"/>
+<area shape="rect" id="Node000007" href="$class_c_primitive_sphere.html#a1703f9af36f1441dbdb5351df052957e" title=" " alt="" coords="253,123,446,165"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="486,136,446,140,445,135,491,134"/>
+<area shape="rect" id="Node000009" href="$class_c_primitive_gizmo.html#af8b2b895ecf8b70831efbcb95e497874" title=" " alt="" coords="259,240,440,267"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="503,212,403,242,401,237,497,213"/>
+<area shape="rect" id="Node000010" href="$class_c_primitive_gizmo.html#a689cc5eabc647396f4b758f07c35636a" title=" " alt="" coords="5,232,195,275"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="241,254,196,256,195,251,246,253"/>
+<area shape="poly" id="edge11_Node000011_Node000009" title=" " alt="" coords="487,254,441,256,440,251,493,253"/>
+<area shape="poly" id="edge13_Node000012_Node000009" title=" " alt="" coords="497,294,402,270,402,265,503,294"/>
+</map>
