@@ -304,6 +304,10 @@
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
+    <ClCompile Include="Source\Engine\Asset\AssetBinder.cpp" />
+    <ClCompile Include="Source\Engine\Asset\FileUtils.cpp" />
+    <ClCompile Include="Source\Engine\Asset\ObjLoader.cpp" />
+    <ClCompile Include="Source\Engine\Render\Mesh\StaticMesh.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -568,5 +572,12 @@
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
+    <ClInclude Include="Source\Engine\Asset\AssetBinder.h" />
+    <ClInclude Include="Source\Engine\Asset\FileUtils.h" />
+    <ClInclude Include="Source\Engine\Asset\ObjLoader.h" />
+    <ClInclude Include="Source\Engine\Asset\IAssetLoader.h" />
+    <ClInclude Include="Source\Engine\Asset\ObjRawTypes.h" />
+    <ClInclude Include="Source\Engine\Asset\StaticMeshTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Mesh\StaticMesh.h" />
   </ItemGroup>
 </Project>

@@ -2,8 +2,9 @@
 
 #include "Core/CoreTypes.h"
 #include "Render/Resource/VertexTypes.h"
+#include "Render/Resource/Material.h"
 
-//	Raw Data -> Cooked Static Mesh 
+//	Raw Data -> Cooked Static Mesh
 
 class UMaterial;
 
@@ -17,7 +18,8 @@ struct FStaticMeshSection
 struct FStaticMeshMaterialSlot
 {
 	FString SlotName;
-	UMaterial * DefaultMaterial = nullptr;
+	FMaterial MaterialData;
+	UMaterial* DefaultMaterial = nullptr;
 };
 
 //	CookedData
