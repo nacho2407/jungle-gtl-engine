@@ -22,6 +22,10 @@ public:
 	// GPU 리소스 로드 (Device 필요)
 	bool LoadGPUResources(ID3D11Device* Device);
 
+	// --- Material Texture ---
+	// DDS / PNG 자동 분기
+	FMaterialResource* GetOrLoadTexture(const FString& Path, ID3D11Device* Device);
+
 	// 모든 GPU 리소스 해제
 	void ReleaseGPUResources();
 
@@ -47,4 +51,5 @@ private:
 
 	TMap<FString, FFontResource>     FontResources;
 	TMap<FString, FParticleResource> ParticleResources;
+	TMap<FString, FMaterialResource> MaterialTextureResources;
 };
