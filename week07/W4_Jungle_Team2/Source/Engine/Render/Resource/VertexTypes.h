@@ -19,7 +19,7 @@ struct FNormalVertex
 	FVector Position;
 	FVector4 Color;
 	FVector Normal;
-	FVector2 TexCoord;
+	FVector2 UVs;	//	TexCoord
 };
 
 struct FOverlayVertex
