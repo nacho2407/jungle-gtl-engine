@@ -1,9 +1,9 @@
 ﻿#include "GameFramework/AActor.h"
+#include "Object/ObjectFactory.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/ActorComponent.h"
 
-DEFINE_CLASS(AActor, UObject)
-REGISTER_FACTORY(AActor)
+IMPLEMENT_CLASS(AActor, UObject)
 
 AActor::~AActor() {
 	for (auto* Comp : OwnedComponents) {

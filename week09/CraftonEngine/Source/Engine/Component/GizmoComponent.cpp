@@ -1,9 +1,9 @@
 ﻿#include "GizmoComponent.h"
+#include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
 #include "Render/Mesh/MeshManager.h"
 
-DEFINE_CLASS(UGizmoComponent, UPrimitiveComponent)
-REGISTER_FACTORY(UGizmoComponent)
+IMPLEMENT_CLASS(UGizmoComponent, UPrimitiveComponent)
 
 #include <cmath>
 UGizmoComponent::UGizmoComponent()

@@ -14,7 +14,11 @@ namespace {																					\
 				);																			\
 		}																					\
 	};																						\
-TypeName##_RegisterFactory G##TypeName##_RegisterFactory;} 																												
+TypeName##_RegisterFactory G##TypeName##_RegisterFactory;}
+
+#define IMPLEMENT_CLASS(ClassName, ParentClass)                        \
+    DEFINE_CLASS(ClassName, ParentClass)                               \
+    REGISTER_FACTORY(ClassName)
 
 // Different from UFactory class
 class FObjectFactory : public TSingleton<FObjectFactory>
