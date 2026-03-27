@@ -1,9 +1,8 @@
 ﻿#pragma once
 #include "Engine/Runtime/Engine.h"
 
-#include "Editor/Viewport/EditorViewportClient.h"
-#include "Editor/UI/EditorMainPanel.h"
-#include "Editor/Settings/EditorSettings.h"
+#include "Editor/Viewport/ObjViewerViewportClient.h"
+#include "Editor/Settings/ObjViewerSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 
 class UObjViewerEngine : public UEngine
@@ -17,7 +16,10 @@ public:
 	void Tick(float DeltaTime) override;
 	void OnWindowResized(uint32 Width, uint32 Height) override;
 
+	FObjViewerSettings& GetSettings() { return FObjViewerSettings::Get(); }
+	const FObjViewerSettings& GetSettings() const { return FObjViewerSettings::Get(); }
+
 private:
 	FSelectionManager SelectionManager;
-	FEditorViewportClient ViewportClient;
+	FObjViewerViewportClient ViewportClient;
 };
