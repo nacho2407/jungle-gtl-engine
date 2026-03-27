@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
+#include "Object/ObjectIterator.h"
 #include <map>
 #include <string>
 
@@ -10,7 +11,7 @@ class UStaticMesh;
 // 에셋 로드/캐싱 관리자
 class FObjManager
 {
-	static std::map<std::string, FStaticMesh*> ObjStaticMeshMap;
+	static std::map<std::string, FStaticMesh> ObjStaticMeshMap;
 
 public:
 	static FStaticMesh* LoadObjStaticMeshAsset(const std::string& PathFileName);

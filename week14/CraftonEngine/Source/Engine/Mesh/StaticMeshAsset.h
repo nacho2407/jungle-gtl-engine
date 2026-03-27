@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Math/Vector.h"
+#include "Render/Resource/Buffer.h"
 
 // Cooked Data 내부용 정점
 struct FNormalVertex
@@ -18,4 +19,6 @@ struct FStaticMesh
 	std::string PathFileName;
 	TArray<FNormalVertex> Vertices;
 	TArray<uint32> Indices;
+
+	FMeshBuffer* RenderBuffer = nullptr;
 };

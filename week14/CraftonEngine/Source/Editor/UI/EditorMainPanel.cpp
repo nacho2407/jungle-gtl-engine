@@ -49,6 +49,7 @@ void FEditorMainPanel::Render(float DeltaTime)
 
 	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
 
+	// 뷰포트 렌더링은 EditorEngine이 담당 (SSplitter 레이아웃 + ImGui::Image)
 	if (EditorEngine)
 	{
 		EditorEngine->RenderViewportUI(DeltaTime);
