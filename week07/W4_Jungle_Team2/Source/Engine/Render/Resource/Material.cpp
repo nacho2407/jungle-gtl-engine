@@ -2,36 +2,41 @@
 
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 
-bool FMtlLoader::Load(const FString& FilePath, TMap<FString, FMaterial>& OutMaterials)
+bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, FMaterial>& OutMaterials)
 {
     std::ifstream File(FilePath);
 	if (!File.is_open())
 	{
 		return false;
 	}
+	std::filesystem::path CurrentFilePath   = FilePath;
+	std::filesystem::path CurrentDirectory  = CurrentFilePath.parent_path();
+
+	std::filesystem::path TextureFileName = {};
+	FString				  TextureFileFullPath = {};
 
     FMaterial* Current = nullptr;
     FString    Line;
-
-	auto ParseFVector = [](std::istringstream& ISS) -> FVector
+	auto ParseFVector = [](std::istringstream& InISS) -> FVector
 		{
 			FVector Vector;
-			ISS >> Vector.X >> Vector.Y >> Vector.Z;
+			InISS >> Vector.X >> Vector.Y >> Vector.Z;
 			return Vector;
 		};
 
-	auto TrimLine = [](const FString& Line) -> FString
+	auto TrimLine = [](const FString& inLine) -> FString
 		{
 			FString OutString = "";
 
-			uint64 Start = Line.find_first_not_of(" \n\t\r");
+			uint64 Start = inLine.find_first_not_of(" \n\t\r");
 			if (Start == FString::npos)
 			{
 				return OutString;
 			}
-			uint64 End = Line.find_last_not_of(" \n\t\r");
-			OutString = Line.substr(Start, End - Start + 1);
+			uint64 End = inLine.find_last_not_of(" \n\t\r");
+			OutString = inLine.substr(Start, End - Start + 1);
 			return OutString;
 		};
 
@@ -103,7 +108,9 @@ bool FMtlLoader::Load(const FString& FilePath, TMap<FString, FMaterial>& OutMate
 		// TextureMap
 		else if (Token == "map_Kd")
 		{
-			ISS >> Current->DiffuseTexPath;
+			ISS >> TextureFileName;
+			TextureFileName.filename();
+			//Current->DiffuseTexPath = ;
 		}
         else if (Token == "map_Ka")
         {
