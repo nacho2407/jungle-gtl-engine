@@ -4,10 +4,10 @@
 class SSplitter : public SWindow
 {
 private:
-    SWindow* SideLT;
-    SWindow* SideRB;
+  //SWindow* TopLeftWindow;    // Persistent
+  //SWindow* TopRightWindow;
+  //SWindow* BottomRightWindow;
+  //SWindow* BottomLeftWindow;
 
 public:
-
-
 };

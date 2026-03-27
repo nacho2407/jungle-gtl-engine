@@ -606,6 +606,15 @@ bool FEditorEngineLoop::RunFrameOnceWithoutResize()
     Editor->Tick(DeltaTime, InputSystem);
 
     Renderer->BeginFrame();
+    //if (WindowOverlayManager)
+    //{
+    //    for (FEditorViewportPanel* Panel : WindowOverlayManager->GetViewportPanels())
+    //    {
+    //        FSceneRenderData  SceneData;
+    //        FEditorRenderData EditorData;
+    //        // Renderer->Render...
+    //    }
+    //}
     Renderer->Render(Editor->GetEditorRenderData(), Editor->GetSceneRenderData());
     Editor->DrawPanel();
     Renderer->EndFrame();

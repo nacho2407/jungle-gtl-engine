@@ -1,9 +1,9 @@
-#include "ViewportLayoutManager.h"
+#include "WindowOverlayManager.h"
 
-TArray<FRect> FViewportLayoutManager::FindViewportDimension(EViewportLayout ViewportLayout, int32 W,
-                                                            int32 H)
+TArray<FRect> FWindowOverlayManager::FindViewportDimension(EViewportLayout ViewportLayout, int32 W,
+                                                           int32 H)
 {
-    FRect PlaceHolder(0, 0, 0, 0);
+    FRect         PlaceHolder(0, 0, 0, 0);
     TArray<FRect> ViewportDim(4, PlaceHolder);
     if (ViewportLayout == EViewportLayout::Single)
     {
@@ -40,4 +40,17 @@ TArray<FRect> FViewportLayoutManager::FindViewportDimension(EViewportLayout View
     }
 
     return ViewportDim;
+}
+
+TArray<FEditorViewportPanel*>& FWindowOverlayManager::GetViewportPanels() { return ViewportPanels; }
+
+void FWindowOverlayManager::Release()
+{
+    for (FEditorViewportPanel* Panel : ViewportPanels)
+    {
+        if (Panel)
+        {
+            delete Panel;
+        }
+    }
 }

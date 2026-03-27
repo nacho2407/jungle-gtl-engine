@@ -52,6 +52,7 @@ class FEditorEngineLoop : public IEngineLoop, public IEditorChromeHost
     Engine::ApplicationCore::FInputSystem* InputSystem = nullptr;
 
     FEditor* Editor = nullptr;
+    //FWindowOverlayManager* WindowOverlayManager = nullptr;
     FRendererModule* Renderer = nullptr;
     FPanelManager* PanelManager = nullptr;
     UAssetManager* AssetManager = nullptr;

@@ -16,7 +16,7 @@
 
 #include "Engine/Scene.h"
 #include "Logging/EditorLogBuffer.h"
-#include "Viewport/EditorViewportClient.h"
+#include "Viewport/Window/WindowOverlayManager.h"
 #include "Renderer/EditorRenderData.h"
 #include "Renderer/SceneRenderData.h"
 #include "Renderer/SceneView.h"
@@ -100,8 +100,9 @@ class FEditor
 
     const FEditorRenderData&     GetEditorRenderData() const { return EditorRenderData; }
     const FSceneRenderData&      GetSceneRenderData() const { return SceneRenderData; }
-    FEditorViewportClient&       GetViewportClient() { return ViewportClient; }
-    const FEditorViewportClient& GetViewportClient() const { return ViewportClient; }
+    FEditorViewportClient       GetViewportClient() { return ViewportClient; }
+    const FEditorViewportClient GetViewportClient() const { return ViewportClient; }
+    FWindowOverlayManager*       GetWindowOverlayManager() { return WindowOverlayManager; }
 
     void DrawPanel();
 
@@ -136,6 +137,7 @@ class FEditor
 
   private:
     FEditorViewportClient ViewportClient;
+    FWindowOverlayManager* WindowOverlayManager = nullptr;
     Engine::ApplicationCore::FInputRouter GlobalInputRouter;
     FEditorGlobalController GlobalInputController;
     FEditorGlobalContext GlobalInputContext{&GlobalInputController};

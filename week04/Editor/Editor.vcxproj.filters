@@ -159,7 +159,7 @@
     <ClCompile Include="Source\Viewport\EditorViewportClient.cpp">
       <Filter>Source\Viewport</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Viewport\EditorViewprotPanel.cpp">
+    <ClCompile Include="Source\Viewport\Window\EditorViewportPanel.cpp">
       <Filter>Source\Viewport</Filter>
     </ClCompile>
     <ClCompile Include="Source\Viewport\Gizmo\ViewportGizmoController.cpp">
@@ -180,7 +180,11 @@
     <ClCompile Include="Source\Viewport\Selection\ViewportSelectionController.cpp">
       <Filter>Source\Viewport\Selection</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Viewport\Window\ViewportLayoutManager.cpp" />
+    <ClCompile Include="Source\Viewport\Window\SWindow.cpp" />
+    <ClCompile Include="Source\Viewport\Window\SSplitter.cpp" />
+    <ClCompile Include="Source\Viewport\Window\SSplitterH.cpp" />
+    <ClCompile Include="Source\Viewport\Window\SSplitterV.cpp" />
+    <ClCompile Include="Source\Viewport\Window\WindowOverlayManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Camera\ViewportCamera.h">
@@ -297,7 +301,7 @@
     <ClInclude Include="Source\Viewport\EditorViewportClient.h">
       <Filter>Source\Viewport</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Viewport\EditorViewprotPanel.h">
+    <ClInclude Include="Source\Viewport\Window\EditorViewportPanel.h">
       <Filter>Source\Viewport</Filter>
     </ClInclude>
     <ClInclude Include="Source\Viewport\Gizmo\ViewportGizmoController.h">
@@ -322,7 +326,7 @@
     <ClInclude Include="Source\Viewport\Window\SSplitter.h" />
     <ClInclude Include="Source\Viewport\Window\SSplitterH.h" />
     <ClInclude Include="Source\Viewport\Window\SSplitterV.h" />
-    <ClInclude Include="Source\Viewport\Window\ViewportLayoutManager.h" />
+    <ClInclude Include="Source\Viewport\Window\WindowOverlayManager.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Source\ThirdParty\ImGui\imgui.natstepfilter">

@@ -264,42 +264,6 @@ namespace
     }
 } // namespace
 
-// class FSamplePanel : public IPanel
-//{
-// public:
-//     explicit FSamplePanel(const FEditorLogBuffer* InLogBuffer)
-//         : LogBuffer(InLogBuffer)
-//     {
-//     }
-//
-//     const wchar_t* GetPanelID() const override { return L"SamplePanel"; }
-//     const wchar_t* GetDisplayName() const override { return L"Sample Panel"; }
-//     bool ShouldOpenByDefault() const override { return true; }
-//
-//     void Draw() override
-//     {
-//         if (ImGui::Begin("Sample Panel", nullptr))
-//         {
-//             ImGui::Text("PanelManager registration test panel");
-//             ImGui::Separator();
-//
-//
-//             if (LogBuffer != nullptr)
-//             {
-//                 for (const auto& Log : LogBuffer->GetLogBuffer())
-//                 {
-//                     ImGui::Spacing();
-//                     ImGui::Text("%s", Log.Message.c_str());
-//                 }
-//             }
-//         }
-//         ImGui::End();
-//     }
-//
-// private:
-//     const FEditorLogBuffer* LogBuffer = nullptr;
-// };
-
 void FEditor::Create()
 {
     //  LOG
@@ -349,6 +313,11 @@ void FEditor::Create()
 
     UE_LOG(FEditor, ELogVerbosity::Log, "Hello Editor");
     EditorContext.Scene = CurScene;
+
+    WindowOverlayManager = new FWindowOverlayManager();
+    FEditorViewportPanel* EditorPanel = new FEditorViewportPanel();
+    EditorPanel->ViewportClient = &ViewportClient;
+    WindowOverlayManager->GetViewportPanels().push_back(EditorPanel);
 }
 
 void FEditor::Release()
@@ -381,6 +350,13 @@ void FEditor::Release()
     if (GLog == &LogBuffer)
     {
         GLog = nullptr;
+    }
+
+    if (WindowOverlayManager)
+    {
+        WindowOverlayManager->Release();
+        delete WindowOverlayManager;
+        WindowOverlayManager = nullptr;
     }
 }
 
