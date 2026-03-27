@@ -198,6 +198,9 @@
     <ClCompile Include="Source\CoreUObject\ObjectFactory.cpp">
       <Filter>Source\CoreUObject</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Core\MeshComponent.cpp">
+      <Filter>Source\Engine\Component\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\Core\PrimitiveComponent.cpp">
       <Filter>Source\Engine\Component\Core</Filter>
     </ClCompile>
@@ -558,6 +561,9 @@
       <Filter>Source\CoreUObject</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Core\ComponentProperty.h">
+      <Filter>Source\Engine\Component\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Core\MeshComponent.h">
       <Filter>Source\Engine\Component\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Core\PrimitiveComponent.h">

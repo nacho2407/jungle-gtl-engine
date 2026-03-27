@@ -1,5 +1,5 @@
 #include "Core/CoreMinimal.h"
-#include "StaticMesh.h"
+#include "Asset/StaticMesh.h"
 
 UStaticMesh::UStaticMesh() {}
 

@@ -5,7 +5,7 @@
 
 namespace Engine::Component
 {
-    UStaticMeshComponent::UStaticMeshComponent() {}
+    UStaticMeshComponent::UStaticMeshComponent() : StaticMesh(nullptr) {}
 
     UStaticMeshComponent::~UStaticMeshComponent() {}
 
@@ -13,13 +13,11 @@ namespace Engine::Component
 
     void UStaticMeshComponent::DescribeProperties(FComponentPropertyBuilder& Builder)
     {
-        // 부모 클래스 기능(Transform 등) 추가
-        UPrimitiveComponent::DescribeProperties(Builder);
+        UMeshComponent::DescribeProperties(Builder);
 
         FComponentPropertyOptions Options;
         Options.ExpectedAssetPathKind = EComponentAssetPathKind::StaticMeshFile;
 
-        // Key값
         Builder.AddAssetPath(
             "ObjStaticMeshAsset", L"Static Mesh", [this]() { return GetMeshPath(); },
             [this](const FString& InPath) { SetMeshPath(InPath); }, Options);
@@ -27,10 +25,15 @@ namespace Engine::Component
 
     void UStaticMeshComponent::Serialize(bool bIsLoading, void* JsonHandle)
     {
-        if (bIsLoading)
+        UMeshComponent::Serialize(bIsLoading, JsonHandle);
+    }
+
+    void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
+    {
+        StaticMesh = InStaticMesh;
+        if (StaticMesh)
         {
-            // TODO: FObjManager를 통한 에셋 로드 연동
-            // StaticMesh = FObjManager::LoadObjStaticMesh(AssetPath);
+            // Update material slots if needed
         }
     }
 
@@ -41,15 +44,19 @@ namespace Engine::Component
 
     void UStaticMeshComponent::SetMeshPath(const FString& InPath)
     {
-        // TODO: FObjManager 연동
+        // FObjManager linkage needed here
     }
 
     bool UStaticMeshComponent::GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const
     {
+        OutTriangles.clear();
         return false;
     }
 
-    Geometry::FAABB UStaticMeshComponent::GetLocalAABB() const { return Geometry::FAABB(); }
+    Geometry::FAABB UStaticMeshComponent::GetLocalAABB() const
+    {
+        return Geometry::FAABB(FVector::ZeroVector, FVector::ZeroVector);
+    }
 
     REGISTER_CLASS(Engine::Component, UStaticMeshComponent)
 } // namespace Engine::Component
