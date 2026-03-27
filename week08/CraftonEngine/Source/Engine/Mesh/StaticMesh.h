@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/Object.h"
 
@@ -13,7 +13,7 @@ public:
 	UStaticMesh() = default;
 	~UStaticMesh() override = default;
 
-	const std::string& GetAssetPathFileName() const;
+	const FString& GetAssetPathFileName() const;
 	void SetStaticMeshAsset(FStaticMesh* InMesh);
 	FStaticMesh* GetStaticMeshAsset() const;
 
