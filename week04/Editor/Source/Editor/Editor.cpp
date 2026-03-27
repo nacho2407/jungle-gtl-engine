@@ -315,9 +315,12 @@ void FEditor::Create()
     EditorContext.Scene = CurScene;
 
     WindowOverlayManager = new FWindowOverlayManager();
+    WindowOverlayManager->SetEditorContext(&EditorContext);
+    WindowOverlayManager->SetScene(CurScene);
     FEditorViewportPanel* EditorPanel = new FEditorViewportPanel();
     EditorPanel->ViewportClient = &ViewportClient;
     WindowOverlayManager->GetViewportPanels().push_back(EditorPanel);
+    WindowOverlayManager->SetViewportLayout(EViewportLayout::TwoColumn);
 }
 
 void FEditor::Release()
@@ -667,6 +670,12 @@ void FEditor::OnWindowResized(float Width, float Height)
     EditorContext.WindowWidth = Width;
     EditorContext.WindowHeight = Height;
     ViewportClient.OnResize(static_cast<uint32>(Width), static_cast<uint32>(Height));
+
+    if (WindowOverlayManager != nullptr)
+    {
+        WindowOverlayManager->SetWindowDimension(static_cast<uint32>(Width),
+                                                 static_cast<uint32>(Height));
+    }
 }
 
 void FEditor::CreateNewScene()

@@ -606,16 +606,49 @@ bool FEditorEngineLoop::RunFrameOnceWithoutResize()
     Editor->Tick(DeltaTime, InputSystem);
 
     Renderer->BeginFrame();
-    //if (WindowOverlayManager)
-    //{
-    //    for (FEditorViewportPanel* Panel : WindowOverlayManager->GetViewportPanels())
-    //    {
-    //        FSceneRenderData  SceneData;
-    //        FEditorRenderData EditorData;
-    //        // Renderer->Render...
-    //    }
-    //}
-    Renderer->Render(Editor->GetEditorRenderData(), Editor->GetSceneRenderData());
+    auto* WindowOverlayManager = Editor->GetWindowOverlayManager();
+    if (WindowOverlayManager)
+    {
+        for (FEditorViewportPanel* Panel : WindowOverlayManager->GetViewportPanels())
+        {
+            if (!Panel || !Panel->ViewportClient) continue;
+            if (Panel->Width <= 0.f || Panel->Height <= 0.f) continue;
+
+            FViewportCamera& Cam = Panel->ViewportClient->GetCamera();
+
+            Panel->SceneView.SetViewMatrix(Cam.GetViewMatrix());
+            Panel->SceneView.SetProjectionMatrix(Cam.GetProjectionMatrix());
+            Panel->SceneView.SetViewLocation(Cam.GetLocation());
+            Panel->SceneView.SetClipPlanes(Cam.GetNearPlane(), Cam.GetFarPlane());
+
+            FViewportRect VR;
+            VR.X      = static_cast<int32>(Panel->PosX);
+            VR.Y      = static_cast<int32>(Panel->PosY);
+            VR.Width  = static_cast<int32>(Panel->Width);
+            VR.Height = static_cast<int32>(Panel->Height);
+            Panel->SceneView.SetViewRect(VR);
+
+            FEditorRenderData EditorData;
+            FSceneRenderData  SceneData;
+            EditorData.SceneView = &Panel->SceneView;
+            SceneData.SceneView  = &Panel->SceneView;
+            SceneData.ViewMode   = Panel->ViewportClient->GetRenderSetting().GetViewMode();
+
+            const EEditorShowFlags EditorShowFlags =
+                Panel->ViewportClient->GetRenderSetting().BuildEditorShowFlags(true);
+            const ESceneShowFlags SceneShowFlags =
+                Panel->ViewportClient->GetRenderSetting().BuildSceneShowFlags();
+
+            Panel->ViewportClient->BuildRenderData(EditorData, EditorShowFlags);
+
+            if (FScene* Scene = Editor->GetScene())
+            {
+                Scene->BuildRenderData(SceneData, SceneShowFlags);
+            }
+
+            Renderer->Render(EditorData, SceneData);
+        }
+    }
     Editor->DrawPanel();
     Renderer->EndFrame();
 
