@@ -1,6 +1,6 @@
 """
 GenerateProjectFiles.py — Auto-generate .vcxproj, .vcxproj.filters
-for W3_Jungle_Team6 from the on-disk folder structure.
+for CraftonEngine from the on-disk folder structure.
 
 Usage:
     python Scripts/GenerateProjectFiles.py
@@ -16,7 +16,7 @@ from pathlib import Path
 # ──────────────────────────────────────────────
 ROOT = Path(__file__).resolve().parent.parent
 
-PROJECT_NAME = "W3_Jungle_Team6"
+PROJECT_NAME = "CraftonEngine"
 PROJECT_DIR = ROOT / PROJECT_NAME
 PROJECT_GUID = "{55068e81-c0a0-49f9-ab7b-54aea968722b}"
 ROOT_NAMESPACE = "Week2"
