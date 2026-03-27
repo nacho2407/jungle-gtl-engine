@@ -297,6 +297,10 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Engine\Asset\ObjLoader.cpp" />
+    <ClCompile Include="Source\Editor\ObjViewerEngine.cpp">
+      <Filter>Source\Editor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -553,6 +557,11 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\ObjLoader.h" />
+    <ClInclude Include="Source\Engine\Asset\IAssetLoader.h" />
+    <ClInclude Include="Source\Editor\ObjViewerEngine.h">
+      <Filter>Source\Editor</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
