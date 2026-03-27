@@ -20,7 +20,8 @@ public:
 	void Update();
 
 private:
-	FWindowsWindow* Window;
+	FWindowsWindow* Window = nullptr;
+	UEditorEngine* EditorEngine = nullptr;
 	FEditorConsoleWidget ConsoleWidget;
 	FEditorControlWidget ControlWidget;
 	FEditorPropertyWidget PropertyWidget;
