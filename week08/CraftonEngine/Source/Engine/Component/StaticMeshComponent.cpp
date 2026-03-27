@@ -14,6 +14,12 @@ UStaticMesh* UStaticMeshComp::GetStaticMesh() const
 	return StaticMesh;
 }
 
+
 void UStaticMeshComp::Serialize(bool bIsLoading, json::JSON& Handle)
 {
+	/*if (bIsLoading)
+	{
+		FString AssetName; 
+		
+	}*/
 }
