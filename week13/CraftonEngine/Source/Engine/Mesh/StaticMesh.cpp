@@ -2,8 +2,7 @@
 #include "Mesh/StaticMeshAsset.h"
 #include "Object/ObjectFactory.h"
 
-DEFINE_CLASS(UStaticMesh, UObject)
-REGISTER_FACTORY(UStaticMesh)
+IMPLEMENT_CLASS(UStaticMesh, UObject)
 
 static const std::string EmptyPath;
 

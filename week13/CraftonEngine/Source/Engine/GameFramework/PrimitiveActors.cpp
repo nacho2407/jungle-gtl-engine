@@ -1,4 +1,5 @@
 ﻿#include "GameFramework/PrimitiveActors.h"
+#include "Object/ObjectFactory.h"
 
 #include "Component/PrimitiveComponent.h"
 #include "Component/TextRenderComponent.h"
@@ -8,20 +9,11 @@
 // 나중에 PrimtiveComponent.h에 있는 Cube, Sphere, Plane 지우기
 #include "Component/StaticMeshComponent.h"
 
-DEFINE_CLASS(ACubeActor, AActor)
-REGISTER_FACTORY(ACubeActor)
-
-DEFINE_CLASS(ASphereActor, AActor)
-REGISTER_FACTORY(ASphereActor)
-
-DEFINE_CLASS(APlaneActor, AActor)
-REGISTER_FACTORY(APlaneActor)
-
-DEFINE_CLASS(AStaticMeshActor, AActor)
-REGISTER_FACTORY(AStaticMeshActor)
-
-DEFINE_CLASS(AAttachTestActor, AActor)
-REGISTER_FACTORY(AAttachTestActor)
+IMPLEMENT_CLASS(ACubeActor, AActor)
+IMPLEMENT_CLASS(ASphereActor, AActor)
+IMPLEMENT_CLASS(APlaneActor, AActor)
+IMPLEMENT_CLASS(AStaticMeshActor, AActor)
+IMPLEMENT_CLASS(AAttachTestActor, AActor)
 
 void ACubeActor::InitDefaultComponents()
 {
