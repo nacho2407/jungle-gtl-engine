@@ -42,6 +42,66 @@ void FObjViewerViewportClient::ResetCamera()
     Camera->LookAt(Settings->InitLookAt);
 }
 
+// 모델의 크기와 비례하게 카메라의 이동 범위를 제한한다.
+void FObjViewerViewportClient::ClampCameraPosition()
+{
+	if (!Camera || !World) return;
+
+    FVector MinAABB(FLT_MAX, FLT_MAX, FLT_MAX);
+    FVector MaxAABB(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+    bool bHasValidMesh = false;
+
+    // 스폰된 액터를 순회하며 AABB 박스를 계산한다. (Viewer에서는 보통 하나)
+    for (AActor* Actor : World->GetActors())
+    {
+        if (!Actor || !Actor->GetRootComponent()) continue;
+
+        for (auto* primitive : Actor->GetPrimitiveComponents())
+        {
+            UPrimitiveComponent* PrimComp = static_cast<UPrimitiveComponent*>(primitive);
+            if (!PrimComp || !PrimComp->IsVisible()) continue;
+
+            PrimComp->UpdateWorldAABB();
+            FBoundingBox Box = PrimComp->GetWorldBoundingBox();
+
+            MinAABB.X = std::min(MinAABB.X, Box.Min.X);
+            MinAABB.Y = std::min(MinAABB.Y, Box.Min.Y);
+            MinAABB.Z = std::min(MinAABB.Z, Box.Min.Z);
+
+            MaxAABB.X = std::max(MaxAABB.X, Box.Max.X);
+            MaxAABB.Y = std::max(MaxAABB.Y, Box.Max.Y);
+            MaxAABB.Z = std::max(MaxAABB.Z, Box.Max.Z);
+
+            bHasValidMesh = true;
+        }
+	}
+	
+	// 씬 중심점과 모델의 최대 크기(반지름)를 계산
+    FVector SceneCenter(0.0f, 0.0f, 0.0f);
+    float ModelRadius = 1000.0f;
+
+    if (bHasValidMesh)
+    {
+        SceneCenter = (MinAABB + MaxAABB) * 0.5f;
+        ModelRadius = (MaxAABB - MinAABB).Length() * 0.5f; 
+    }
+
+    // 허용되는 최대 거리를 설정
+    float MaxAllowedDistance = ModelRadius * 2.0f; 
+
+    // 카메라 위치를 확인하고 이동 범위 제한(Clamp)을 적용
+    FVector CamPos = Camera->GetWorldLocation();
+    float CurrentDistance = (CamPos - SceneCenter).Length();
+    if (CurrentDistance > MaxAllowedDistance)
+    {
+        FVector Direction = CamPos - SceneCenter;
+        Direction.Normalize();
+
+        FVector ClampedPosition = SceneCenter + Direction * MaxAllowedDistance;
+        Camera->SetWorldLocation(ClampedPosition);
+    }
+}
+
 void FObjViewerViewportClient::SetViewportSize(float InWidth, float InHeight)
 {
     if (InWidth > 0.0f)
@@ -65,6 +125,9 @@ void FObjViewerViewportClient::Tick(float DeltaTime)
     TickInput(DeltaTime);
     TickInteraction(DeltaTime);
     TickCursorOverlay(DeltaTime);
+
+	// Camera Position 및 Lookat 좌표를 제한
+	ClampCameraPosition();
 }
 
 void FObjViewerViewportClient::TickInput(float DeltaTime)
@@ -84,51 +147,25 @@ void FObjViewerViewportClient::TickInput(float DeltaTime)
     const float MoveSensitivity = Settings ? Settings->CameraMoveSensitivity : 1.f;
     const float CameraSpeed = (Settings ? Settings->CameraSpeed : 10.f) * MoveSensitivity;
 
-    FVector Move = FVector(0, 0, 0);
-
-    if (InputSystem::Get().GetKey('W') && !CameraState.bIsOrthogonal)
-        Move.X += CameraSpeed;
-    if (InputSystem::Get().GetKey('A'))
-        Move.Y -= CameraSpeed;
-    if (InputSystem::Get().GetKey('S') && !CameraState.bIsOrthogonal)
-        Move.X -= CameraSpeed;
-    if (InputSystem::Get().GetKey('D'))
-        Move.Y += CameraSpeed;
-    if (InputSystem::Get().GetKey('Q'))
-        Move.Z -= CameraSpeed;
-    if (InputSystem::Get().GetKey('E'))
-        Move.Z += CameraSpeed;
-
-    Move *= DeltaTime;
-    Camera->MoveLocal(Move);
-
     FVector Rotation = FVector(0, 0, 0);
     FVector MouseRotation = FVector(0, 0, 0);
 
     const float RotateSensitivity = Settings ? Settings->CameraRotateSensitivity : 1.f;
-    const float AngleVelocity = (Settings ? Settings->CameraRotationSpeed : 60.f) * RotateSensitivity;
-    if (InputSystem::Get().GetKey(VK_UP))
-        Rotation.Z -= AngleVelocity;
-    if (InputSystem::Get().GetKey(VK_LEFT))
-        Rotation.Y -= AngleVelocity;
-    if (InputSystem::Get().GetKey(VK_DOWN))
-        Rotation.Z += AngleVelocity;
-    if (InputSystem::Get().GetKey(VK_RIGHT))
-        Rotation.Y += AngleVelocity;
 
     // Mouse sensitivity is degrees per pixel (do not multiply by DeltaTime)
-    float MouseRotationSpeed = 0.15f * RotateSensitivity;
-
-    if (InputSystem::Get().GetKey(VK_RBUTTON))
+    float MouseRotationSpeed = 0.5f * RotateSensitivity;
+	
+    if (bIsOrbiting && InputSystem::Get().GetRightDragging())
     {
         float DeltaX = static_cast<float>(InputSystem::Get().MouseDeltaX());
         float DeltaY = static_cast<float>(InputSystem::Get().MouseDeltaY());
 
-        MouseRotation.Y += DeltaX * MouseRotationSpeed; // yaw
-        MouseRotation.Z += DeltaY * MouseRotationSpeed; // pitch
-
-        MouseRotation.Y = Clamp(MouseRotation.Y, -89.0f, 89.0f);
-        MouseRotation.Z = Clamp(MouseRotation.Z, -89.0f, 89.0f);
+        // 카메라를 타겟(회전의 중심점) 위치로 이동시킨 뒤, 마우스 이동량만큼 회전시킵니다.
+        Camera->SetWorldLocation(OrbitPivot);
+        Camera->Rotate(DeltaX * MouseRotationSpeed, DeltaY * MouseRotationSpeed);
+        
+        // 회전된 카메라의 '로컬 X축(앞)'의 반대 방향으로 Distance만큼 이동합니다.
+        Camera->MoveLocal(FVector(-OrbitDistance, 0.0f, 0.0f));
     }
 
     Rotation *= DeltaTime;
@@ -173,6 +210,8 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
 
     POINT MousePoint = InputSystem::Get().GetMousePos();
     MousePoint = Window->ScreenToClientPoint(MousePoint);
+    FRay Ray = Camera->DeprojectScreenToWorld(static_cast<float>(MousePoint.x), static_cast<float>(MousePoint.y),
+                                              WindowWidth, WindowHeight);
 
     //	Cursor
     CursorOverlayState.ScreenX = static_cast<float>(MousePoint.x);
@@ -191,6 +230,8 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
                 ;
             bIsCursorVisible = false;
         }
+
+		HandleDragStart(Ray);
     }
 
     if (InputSystem::Get().GetKeyUp(VK_LBUTTON))
@@ -219,6 +260,17 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
                 ;
             bIsCursorVisible = false;
         }
+
+		POINT MousePoint = InputSystem::Get().GetMousePos();
+		MousePoint = Window->ScreenToClientPoint(MousePoint);
+
+		FVector CameraLocation = Camera->GetWorldLocation();
+		FVector CameraDirection = Camera->GetForwardVector();
+		OrbitDistance = -CameraLocation.Dot(CameraDirection);
+
+		OrbitPivot = CameraLocation + CameraDirection * OrbitDistance;
+
+        bIsOrbiting = true;
     }
 
     if (InputSystem::Get().GetKeyUp(VK_RBUTTON))
@@ -232,10 +284,10 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
                 ;
             bIsCursorVisible = true;
         }
+		
+		bIsOrbiting = false;
     }
 
-    FRay Ray = Camera->DeprojectScreenToWorld(static_cast<float>(MousePoint.x), static_cast<float>(MousePoint.y),
-                                              WindowWidth, WindowHeight);
     FHitResult HitResult;
 
     if (InputSystem::Get().GetKeyDown(VK_LBUTTON))
@@ -244,10 +296,23 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
     }
     else if (InputSystem::Get().GetLeftDragging())
     {
+		// 평행 이동(Pan) 로직을 추가한다.
+        float DeltaX = static_cast<float>(InputSystem::Get().MouseDeltaX());
+        float DeltaY = static_cast<float>(InputSystem::Get().MouseDeltaY());
+
+        const float MoveSensitivity = Settings ? Settings->CameraMoveSensitivity : 1.f;
+        float PanSpeed = MoveSensitivity * 0.01f;
+
+        // MoveLocal은 로컬 좌표계를 사용한다. (X: 전진, Y: 우측, Z: 상단)
+        // 마우스를 우측(+)으로 끌면 화면은 좌측(-)으로, 마우스를 아래(+)로 끌면 화면은 위(+)로 이동합니다.
+        FVector Move(0.0f, -DeltaX * PanSpeed, DeltaY * PanSpeed);
+        Camera->MoveLocal(Move);
     }
     else if (InputSystem::Get().GetLeftDragEnd())
     {
     }
+
+	ClampCameraPosition();
 }
 
 void FObjViewerViewportClient::HandleDragStart(const FRay& Ray)

@@ -27,8 +27,8 @@ public:
 	int32 GridHalfLineCount = 100;
 
 	// Camera Sensitivity
-	float CameraMoveSensitivity = 1.0f;
-	float CameraRotateSensitivity = 1.0f;
+	float CameraMoveSensitivity = 0.5f;
+	float CameraRotateSensitivity = 0.1f;
 
 	// File paths
 	FString DefaultSavePath = FPaths::ToUtf8(FPaths::SceneDir());
