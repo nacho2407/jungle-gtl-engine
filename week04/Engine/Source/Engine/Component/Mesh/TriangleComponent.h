@@ -14,11 +14,11 @@ namespace Engine::Component
         UTriangleComponent() = default;
         virtual ~UTriangleComponent() override = default;
 
-        EBasicMeshType GetBasicMeshType() const override;
+        virtual EBasicMeshType GetBasicMeshType() const override;
 
-        bool GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const override;
+        virtual bool GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const override;
 
       protected:
-        Geometry::FAABB GetLocalAABB() const override;
+        virtual Geometry::FAABB GetLocalAABB() const override;
     };
 } // namespace Engine::Component

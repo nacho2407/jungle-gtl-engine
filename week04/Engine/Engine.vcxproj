@@ -34,6 +34,7 @@
     <ClInclude Include="Source\Asset\AssetManager.h" />
     <ClInclude Include="Source\Asset\FontAsset.h" />
     <ClInclude Include="Source\Asset\FontAtlasLoader.h" />
+    <ClInclude Include="Source\Asset\StaticMesh.h" />
     <ClInclude Include="Source\Asset\SubUVAtlasAsset.h" />
     <ClInclude Include="Source\Asset\SubUVAtlasLoader.h" />
     <ClInclude Include="Source\Asset\Texture2DAsset.h" />
@@ -81,6 +82,7 @@
     <ClInclude Include="Source\Engine\Component\Core\ComponentProperty.h" />
     <ClInclude Include="Source\Engine\Component\Core\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\Component\Core\SceneComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Core\StaticMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\Core\UnknownComponent.h" />
     <ClInclude Include="Source\Engine\Component\Mesh\ConeComponent.h" />
     <ClInclude Include="Source\Engine\Component\Mesh\CubeComponent.h" />
@@ -156,7 +158,6 @@
     <ClInclude Include="Source\ThirdParty\Json\json.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="EngineClassDiagram.cd" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -169,6 +170,7 @@
     <ClCompile Include="Source\Asset\AssetManager.cpp" />
     <ClCompile Include="Source\Asset\FontAsset.cpp" />
     <ClCompile Include="Source\Asset\FontAtlasLoader.cpp" />
+    <ClCompile Include="Source\Asset\StaticMesh.cpp" />
     <ClCompile Include="Source\Asset\SubUVAtlasAsset.cpp" />
     <ClCompile Include="Source\Asset\SubUVAtlasLoader.cpp" />
     <ClCompile Include="Source\Asset\Texture2DAsset.cpp" />
@@ -195,6 +197,7 @@
     <ClCompile Include="Source\CoreUObject\ObjectFactory.cpp" />
     <ClCompile Include="Source\Engine\Component\Core\PrimitiveComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Core\SceneComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Core\StaticMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Core\UnknownComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Mesh\ConeComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Mesh\CubeComponent.cpp" />
@@ -255,13 +258,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v145</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v145</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
