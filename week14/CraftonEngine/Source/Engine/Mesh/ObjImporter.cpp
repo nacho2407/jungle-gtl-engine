@@ -75,23 +75,18 @@ FObjInfo FObjImporter::ParseObj(const std::string& FilePath)
 			for (int i = 0; i < 3; ++i)
 			{
 				LineStream >> FaceVertex;
-				std::string FaceVertex;
-				for (int i = 0; i < 3; ++i)
-				{
-					LineStream >> FaceVertex;
-					uint32 v, vt, vn;
+				uint32 v, vt, vn;
 
-					if (sscanf_s(FaceVertex.c_str(), "%u/%u/%u", &v, &vt, &vn) == 3)
-					{
-						ObjInfo.PosIndices.emplace_back(v - 1);
-						ObjInfo.UVIndices.emplace_back(vt - 1);
-						ObjInfo.NormalIndices.emplace_back(vn - 1);
-					}
-					else
-					{
-						UE_LOG("Failed to parse face vertex: %s", FaceVertex.c_str());
-						return ObjInfo;
-					}
+				if (sscanf_s(FaceVertex.c_str(), "%u/%u/%u", &v, &vt, &vn) == 3)
+				{
+					ObjInfo.PosIndices.emplace_back(v - 1);
+					ObjInfo.UVIndices.emplace_back(vt - 1);
+					ObjInfo.NormalIndices.emplace_back(vn - 1);
+				}
+				else
+				{
+					UE_LOG("Failed to parse face vertex: %s", FaceVertex.c_str());
+					return ObjInfo;
 				}
 			}
 		}
