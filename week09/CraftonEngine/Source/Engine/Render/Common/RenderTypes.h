@@ -31,6 +31,7 @@ enum class EPrimitiveType
 	EPT_Grid,
 	EPT_Text,		// TextRenderComponent — MeshBuffer 없음, FontBatcher가 처리
 	EPT_SubUV,		// SubUVComponent     — MeshBuffer 없음, SubUVBatcher가 처리
+	EPT_StaticMesh,	// StaticMeshComponent
 };
 
 enum class ERenderPass : uint32
