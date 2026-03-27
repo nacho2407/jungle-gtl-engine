@@ -1,13 +1,15 @@
-#pragma once
+﻿#pragma once
 
 #include "Engine/Runtime/Engine.h"
 
-#include "Editor/Viewport/EditorViewportClient.h"
+#include "Editor/Viewport/FLevelViewportLayout.h"
 #include "Editor/UI/EditorMainPanel.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 
 class UGizmoComponent;
+class FLevelEditorViewportClient;
+class FEditorViewportClient;
 
 class UEditorEngine : public UEngine
 {
@@ -25,7 +27,7 @@ public:
 
 	// Editor-specific API
 	UGizmoComponent* GetGizmo() const { return SelectionManager.GetGizmo(); }
-	UCameraComponent* GetCamera() const { return ViewportClient.GetCamera(); }
+	UCameraComponent* GetCamera() const;
 
 	void ClearScene();
 	void ResetViewport();
@@ -37,10 +39,24 @@ public:
 
 	FSelectionManager& GetSelectionManager() { return SelectionManager; }
 
+	// 레이아웃에 위임
+	const TArray<FEditorViewportClient*>& GetAllViewportClients() const { return ViewportLayout.GetAllViewportClients(); }
+	const TArray<FLevelEditorViewportClient*>& GetLevelViewportClients() const { return ViewportLayout.GetLevelViewportClients(); }
+
+	void SetActiveViewport(FLevelEditorViewportClient* InClient) { ViewportLayout.SetActiveViewport(InClient); }
+	FLevelEditorViewportClient* GetActiveViewport() const { return ViewportLayout.GetActiveViewport(); }
+
+	void ToggleViewportSplit() { ViewportLayout.ToggleViewportSplit(); }
+	bool IsSplitViewport() const { return ViewportLayout.IsSplitViewport(); }
+
+	void RenderViewportUI(float DeltaTime) { ViewportLayout.RenderViewportUI(DeltaTime); }
+
+	bool IsMouseOverViewport() const { return ViewportLayout.IsMouseOverViewport(); }
+
 	void RenderUI(float DeltaTime);
 
 private:
 	FSelectionManager SelectionManager;
 	FEditorMainPanel MainPanel;
-	FEditorViewportClient ViewportClient;
+	FLevelViewportLayout ViewportLayout;
 };

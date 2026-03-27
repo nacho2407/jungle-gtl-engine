@@ -20,7 +20,7 @@ UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class) {
 	UObject* Obj = FObjectFactory::Get().Create(Class->name);
 	if (!Obj) return nullptr;
 
-	UActorComponent* Comp = Obj->Cast<UActorComponent>();
+	UActorComponent* Comp = Cast<UActorComponent>();
 	if (!Comp) {
 		UObjectManager::Get().DestroyObject(Obj);
 		return nullptr;

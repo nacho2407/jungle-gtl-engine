@@ -1,13 +1,11 @@
-﻿#include "Editor/EditorEngine.h"
+#include "Editor/EditorEngine.h"
 
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
-#include "Component/GizmoComponent.h"
 #include "Component/CameraComponent.h"
-#include "Component/PrimitiveComponent.h"
 #include "GameFramework/World.h"
 #include "Editor/EditorRenderPipeline.h"
-#include "Core/Stats.h"
+#include "Editor/Viewport/LevelEditorViewportClient.h"
 
 DEFINE_CLASS(UEditorEngine, UEngine)
 REGISTER_FACTORY(UEditorEngine)
@@ -33,18 +31,8 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	// Selection & Gizmo
 	SelectionManager.Init();
 
-	// ViewportClient
-	ViewportClient.SetSettings(&FEditorSettings::Get());
-	ViewportClient.Initialize(Window);
-	ViewportClient.SetViewportSize(Window->GetWidth(), Window->GetHeight());
-	ViewportClient.SetWorld(GetWorld());
-	ViewportClient.SetGizmo(SelectionManager.GetGizmo());
-	ViewportClient.SetSelectionManager(&SelectionManager);
-
-	// Camera
-	ViewportClient.CreateCamera();
-	ViewportClient.ResetCamera();
-	GetWorld()->SetActiveCamera(ViewportClient.GetCamera());
+	// 뷰포트 레이아웃 초기화
+	ViewportLayout.Initialize(this, Window, Renderer, &SelectionManager);
 
 	// Editor render pipeline
 	SetRenderPipeline(std::make_unique<FEditorRenderPipeline>(this, Renderer));
@@ -58,6 +46,9 @@ void UEditorEngine::Shutdown()
 	SelectionManager.Shutdown();
 	MainPanel.Release();
 
+	// 뷰포트 레이아웃 해제
+	ViewportLayout.Release();
+
 	// 엔진 공통 해제 (Renderer, D3D 등)
 	UEngine::Shutdown();
 }
@@ -65,14 +56,27 @@ void UEditorEngine::Shutdown()
 void UEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
 {
 	UEngine::OnWindowResized(Width, Height);
-	ViewportClient.SetViewportSize(Window->GetWidth(), Window->GetHeight());
+	// 윈도우 리사이즈 시에는 ImGui 패널이 실제 크기를 결정하므로
+	// FViewport RT는 SSplitter 레이아웃에서 지연 리사이즈로 처리됨
 }
 
 void UEditorEngine::Tick(float DeltaTime)
 {
-	ViewportClient.Tick(DeltaTime);
+	for (FEditorViewportClient* VC : ViewportLayout.GetAllViewportClients())
+	{
+		VC->Tick(DeltaTime);
+	}
 	MainPanel.Update();
 	UEngine::Tick(DeltaTime);
+}
+
+UCameraComponent* UEditorEngine::GetCamera() const
+{
+	if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
+	{
+		return ActiveVC->GetCamera();
+	}
+	return nullptr;
 }
 
 void UEditorEngine::RenderUI(float DeltaTime)
@@ -80,13 +84,11 @@ void UEditorEngine::RenderUI(float DeltaTime)
 	MainPanel.Render(DeltaTime);
 }
 
+// ─── 기존 메서드 ──────────────────────────────────────────
+
 void UEditorEngine::ResetViewport()
 {
-	ViewportClient.CreateCamera();
-	ViewportClient.SetWorld(GetWorld());
-	ViewportClient.SetViewportSize(Window->GetWidth(), Window->GetHeight());
-	ViewportClient.ResetCamera();
-	GetWorld()->SetActiveCamera(ViewportClient.GetCamera());
+	ViewportLayout.ResetViewport(GetWorld());
 }
 
 void UEditorEngine::CloseScene()
@@ -100,8 +102,7 @@ void UEditorEngine::CloseScene()
 	WorldList.clear();
 	ActiveWorldHandle = FName::None;
 
-	ViewportClient.DestroyCamera();
-	ViewportClient.SetWorld(nullptr);
+	ViewportLayout.DestroyAllCameras();
 }
 
 void UEditorEngine::NewScene()
@@ -126,6 +127,5 @@ void UEditorEngine::ClearScene()
 	WorldList.clear();
 	ActiveWorldHandle = FName::None;
 
-	ViewportClient.DestroyCamera();
-	ViewportClient.SetWorld(nullptr);
+	ViewportLayout.DestroyAllCameras();
 }
