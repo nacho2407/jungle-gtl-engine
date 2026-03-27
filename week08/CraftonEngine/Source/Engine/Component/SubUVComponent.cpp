@@ -1,4 +1,5 @@
 ﻿#include "SubUVComponent.h"
+#include "Object/ObjectFactory.h"
 
 #include <cstring>
 #include "Render/Mesh/MeshManager.h"
@@ -7,8 +8,7 @@
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
 
-DEFINE_CLASS(USubUVComponent, UBillboardComponent)
-REGISTER_FACTORY(USubUVComponent)
+IMPLEMENT_CLASS(USubUVComponent, UBillboardComponent)
 
 USubUVComponent::USubUVComponent()
 {
