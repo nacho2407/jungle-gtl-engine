@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/Object.h"
 
@@ -15,6 +15,7 @@ public:
 		AdvanceToNextValidObject();
 	}
 
+	// 다음 조건에 맞는 객체가 나올 때까지 계속 스킵
 	TObjectIterator& operator++()
 	{
 		++CurrentIndex;
@@ -49,12 +50,12 @@ private:
 	int32 CurrentIndex;
 };
 
-// 모든 UObject 순회 (타입 필터 없음)
+// 타입이 런타임에 결정되는 경우
 class FObjectIterator
 {
 public:
-	FObjectIterator()
-		: CurrentIndex(0)
+	FObjectIterator(const FTypeInfo* InType = nullptr)
+		: CurrentIndex(0), FilterType(InType)
 	{
 		AdvanceToNextValidObject();
 	}
@@ -81,13 +82,18 @@ private:
 	{
 		while (CurrentIndex < static_cast<int32>(GUObjectArray.size()))
 		{
-			if (GUObjectArray[CurrentIndex] != nullptr)
+			UObject* Obj = GUObjectArray[CurrentIndex];
+			if (Obj != nullptr)
 			{
-				return;
+				if (FilterType == nullptr || Obj->GetTypeInfo()->IsA(FilterType))
+				{
+					return;
+				}
 			}
 			++CurrentIndex;
 		}
 	}
 
 	int32 CurrentIndex;
+	const FTypeInfo* FilterType;
 };
