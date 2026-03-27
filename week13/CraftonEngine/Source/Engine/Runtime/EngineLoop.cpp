@@ -13,8 +13,6 @@ void FEngineLoop::CreateEngine()
 
 bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
 {
-	(void)nShowCmd;
-
 	if (!Application.Init(hInstance))
 	{
 		return false;
