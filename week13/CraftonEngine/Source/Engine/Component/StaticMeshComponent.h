@@ -1,9 +1,9 @@
 ﻿#pragma once
 
 #include "Component/MeshComponent.h"
+#include "Mesh/StaticMesh.h"
 
 namespace json { class JSON; }
-class UStaticMesh;
 
 // UStaticMeshComp — 월드 배치 컴포넌트
 class UStaticMeshComp : public UMeshComponent

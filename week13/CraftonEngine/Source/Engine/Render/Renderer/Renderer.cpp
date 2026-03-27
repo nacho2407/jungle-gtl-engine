@@ -31,15 +31,20 @@ void FRenderer::Create(HWND hWindow)
 	Resources.EditorShader.Create(Device.GetDevice(), L"Shaders/Editor.hlsl",
 		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
 
-	// 5. 아웃라인 (Outline.hlsl)
+	// 4. 아웃라인 (Outline.hlsl)
 	Resources.OutlineShader.Create(Device.GetDevice(), L"Shaders/Outline.hlsl",
 		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
+
+	// 5. StaticMeshShader.hlsl
+	Resources.StaticMesh.Create(Device.GetDevice(), L"Shaders/StaticMeshShader.hlsl",
+		"VS", "PS", StaticMeshInputLayout, ARRAYSIZE(StaticMeshInputLayout));
 
 	Resources.PerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FPerObjectConstants));
 	Resources.FrameBuffer.Create(Device.GetDevice(), sizeof(FFrameConstants));
 	Resources.GizmoPerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FGizmoConstants));
 	Resources.EditorConstantBuffer.Create(Device.GetDevice(), sizeof(FEditorConstants));
 	Resources.OutlineConstantBuffer.Create(Device.GetDevice(), sizeof(FOutlineConstants));
+	
 
 	//	MeshManager init
 	FMeshManager::Initialize();
