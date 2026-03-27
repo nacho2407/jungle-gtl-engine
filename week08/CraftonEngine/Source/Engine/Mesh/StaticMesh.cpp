@@ -1,12 +1,12 @@
-#include "Mesh/StaticMesh.h"
+﻿#include "Mesh/StaticMesh.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Object/ObjectFactory.h"
 
 IMPLEMENT_CLASS(UStaticMesh, UObject)
 
-static const std::string EmptyPath;
+static const FString EmptyPath;
 
-const std::string& UStaticMesh::GetAssetPathFileName() const
+const FString& UStaticMesh::GetAssetPathFileName() const
 {
 	if (StaticMeshAsset)
 	{
