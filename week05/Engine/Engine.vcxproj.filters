@@ -132,13 +132,13 @@
     <ClCompile Include="Source\Core\ConsoleVariableManager.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\EngineRuntime.cpp">
+    <ClCompile Include="Source\Core\Engine.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\FEngine.cpp">
+    <ClCompile Include="Source\Core\GameEngine.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\FTimer.cpp">
+    <ClCompile Include="Source\Core\Timer.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Paths.cpp">
@@ -285,8 +285,8 @@
     <ClCompile Include="Source\Scene\Scene.cpp">
       <Filter>Source\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Scene\SceneManager.cpp">
-      <Filter>Source\Scene</Filter>
+    <ClCompile Include="Source\World\WorldManager.cpp">
+      <Filter>Source\World</Filter>
     </ClCompile>
     <ClCompile Include="Source\Serializer\Archive.cpp">
       <Filter>Source\Serializer</Filter>
@@ -386,13 +386,13 @@
     <ClInclude Include="Source\Core\ConsoleVariableManager.h">
       <Filter>Source\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\EngineRuntime.h">
+    <ClInclude Include="Source\Core\Engine.h">
+        <Filter>Source\Core</Filter>
+      </ClInclude>
+    <ClInclude Include="Source\Core\GameEngine.h">
       <Filter>Source\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\FEngine.h">
-      <Filter>Source\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\FTimer.h">
+    <ClInclude Include="Source\Core\Timer.h">
       <Filter>Source\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Paths.h">
@@ -575,8 +575,8 @@
     <ClInclude Include="Source\Scene\SceneContext.h">
       <Filter>Source\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Scene\SceneManager.h">
-      <Filter>Source\Scene</Filter>
+    <ClInclude Include="Source\World\WorldManager.h">
+        <Filter>Source\World</Filter>
     </ClInclude>
     <ClInclude Include="Source\Scene\SceneTypes.h">
       <Filter>Source\Scene</Filter>

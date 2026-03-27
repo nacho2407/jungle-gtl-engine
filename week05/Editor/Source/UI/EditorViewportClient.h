@@ -22,10 +22,10 @@ class CEditorViewportClient : public IViewportClient
 public:
 	CEditorViewportClient(CEditorUI& InEditorUI, FWindowsWindow* InMainWindow);
 
-	void Attach(FEngineRuntime* Runtime, CRenderer* Renderer) override;
-	void Detach(FEngineRuntime* Runtime, CRenderer* Renderer) override;
-	void Tick(FEngineRuntime* Runtime, float DeltaTime) override;
-	void HandleMessage(FEngineRuntime* Runtime, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam) override;
+	void Attach(FEngine* Engine, CRenderer* Renderer) override;
+	void Detach(FEngine* Engine, CRenderer* Renderer) override;
+	void Tick(FEngine* Engine, float DeltaTime) override;
+	void HandleMessage(FEngine* Engine, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam) override;
 	EGizmoMode GetGizmoMode() const { return Gizmo.GetMode(); }
 	void SetGizmoMode(EGizmoMode InMode) { Gizmo.SetMode(InMode); }
 	ERenderMode GetRenderMode() { return RenderMode; }
@@ -33,7 +33,7 @@ public:
 
 	void HandleFileDoubleClick(const FString& FilePath) override;
 	void HandleFileDropOnViewport(const FString& FilePath) override;
-	void BuildRenderCommands(FEngineRuntime* Runtime, UScene* Scene,
+	void BuildRenderCommands(FEngine* Engine, UScene* Scene,
 		const FFrustum& Frustum, FRenderCommandQueue& OutQueue) override;
 	float GetGridSize() const { return GridSize; }
 	void SetGridSize(float InSize);

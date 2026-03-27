@@ -1,14 +1,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Core/FEngine.h"
+#include "Core/Engine.h"
 #include "Platform/Windows/WindowsEngineLaunch.h"
 #include <memory>
 
 class FWindowsApplication;
 class FWindowsWindow;
 
-// Launch가 만든 프로세스 위에서 앱/엔진 초기화와 프레임 반복을 관리한다.
+// FEngineLoop는 앱 시작, 엔진 초기화, 프레임 반복, 종료 순서를 관리한다.
 class ENGINE_API FEngineLoop
 {
 public:
@@ -30,12 +30,13 @@ public:
 private:
 	bool InitializeApplication(HINSTANCE hInstance);
 	bool CreateEngineInstance();
-	bool InitializeEngine();
+	bool InitializeEngine() const;
 
 private:
 	FEngineLaunchConfig Config;
 	bool bExitRequested = false;
 
+	// 현재는 Windows 전용 앱과 윈도우를 직접 사용한다.
 	FWindowsApplication* App = nullptr;
 	FWindowsWindow* MainWindow = nullptr;
 	std::unique_ptr<FEngine> Engine;

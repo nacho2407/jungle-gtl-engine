@@ -1,6 +1,5 @@
 #include "ViewportClient.h"
 #include "World/World.h"
-#include "Core/EngineRuntime.h"
 #include "Input/InputManager.h"
 #include "Camera/Camera.h"
 #include "Renderer/Renderer.h"
@@ -10,19 +9,19 @@
 #include "Debug/EngineLog.h"
 #include "Component/UUIDBillboardComponent.h"
 #include "Component/SubUVComponent.h"
-#include "Core/FEngine.h"
+#include "Core/Engine.h"
 #include "Component/TextComponent.h"
 
 
-void IViewportClient::Attach(FEngineRuntime* Runtime, CRenderer* Renderer)
+void IViewportClient::Attach(FEngine* Engine, CRenderer* Renderer)
 {
 }
 
-void IViewportClient::Detach(FEngineRuntime* Runtime, CRenderer* Renderer)
+void IViewportClient::Detach(FEngine* Engine, CRenderer* Renderer)
 {
 }
 
-void IViewportClient::Tick(FEngineRuntime* Runtime, float DeltaTime)
+void IViewportClient::Tick(FEngine* Engine, float DeltaTime)
 {
 	// instead Enhance input system controller
 	//if (!Core)
@@ -58,23 +57,23 @@ void IViewportClient::Tick(FEngineRuntime* Runtime, float DeltaTime)
 	//}
 }
 
-void IViewportClient::HandleMessage(FEngineRuntime* Runtime, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
+void IViewportClient::HandleMessage(FEngine* Engine, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
 {
 }
 
-UScene* IViewportClient::ResolveScene(FEngineRuntime* Runtime) const
+UScene* IViewportClient::ResolveScene(FEngine* Engine) const
 {
-	return Runtime ? Runtime->GetActiveScene() : nullptr;
+	return Engine ? Engine->GetActiveScene() : nullptr;
 }
 
-UWorld* IViewportClient::ResolveWorld(FEngineRuntime* Runtime) const
+UWorld* IViewportClient::ResolveWorld(FEngine* Engine) const
 {
-	return Runtime ? Runtime->GetActiveWorld() : nullptr;
+	return Engine ? Engine->GetActiveWorld() : nullptr;
 }
 
-void IViewportClient::BuildRenderCommands(FEngineRuntime* Runtime, UScene* Scene, const FFrustum& Frustum, FRenderCommandQueue& OutQueue)
+void IViewportClient::BuildRenderCommands(FEngine* Engine, UScene* Scene, const FFrustum& Frustum, FRenderCommandQueue& OutQueue)
 {
-	UWorld* World = ResolveWorld(Runtime);
+	UWorld* World = ResolveWorld(Engine);
 	if (!World) return;
 
 	// Persistent + Streaming 전체 액터를 렌더
@@ -92,7 +91,7 @@ void IViewportClient::HandleFileDropOnViewport(const FString& FilePath)
 
 }
 
-void CGameViewportClient::Attach(FEngineRuntime* Runtime, CRenderer* Renderer)
+void CGameViewportClient::Attach(FEngine* Engine, CRenderer* Renderer)
 {
 	if (Renderer)
 	{
@@ -100,7 +99,7 @@ void CGameViewportClient::Attach(FEngineRuntime* Runtime, CRenderer* Renderer)
 	}
 }
 
-void CGameViewportClient::Detach(FEngineRuntime* Runtime, CRenderer* Renderer)
+void CGameViewportClient::Detach(FEngine* Engine, CRenderer* Renderer)
 {
 	if (Renderer)
 	{

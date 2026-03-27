@@ -1,7 +1,7 @@
 #include "ControlPanelWindow.h"
 #include "World/WorldContext.h"
 #include "imgui.h"
-#include "Core/EngineRuntime.h"
+#include "Core/Engine.h"
 #include "Renderer/Renderer.h"
 #include "Scene/Scene.h"
 #include "Actor/Actor.h"
@@ -46,7 +46,7 @@ namespace
 	}
 }
 
-void CControlPanelWindow::Render(FEngineRuntime* Core)
+void CControlPanelWindow::Render(FEngine* Engine)
 {
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
 	const bool bOpen = ImGui::Begin("Control Panel");
@@ -58,11 +58,11 @@ void CControlPanelWindow::Render(FEngineRuntime* Core)
 		return;
 	}
 
-	if (Core && Core->GetScene())
+	if (Engine && Engine->GetScene())
 	{
 	
-		const FWorldContext* ActiveSceneContext = Core->GetActiveWorldContext();
-		const TArray<std::unique_ptr<FEditorWorldContext>>& PreviewSceneContexts = Core->GetSceneManager()->GetPreviewWorldContexts();
+		const FWorldContext* ActiveSceneContext = Engine->GetActiveWorldContext();
+		const TArray<std::unique_ptr<FEditorWorldContext>>& PreviewSceneContexts = Engine->GetPreviewWorldContexts();
 		const bool bPreviewActive = ActiveSceneContext && ActiveSceneContext->WorldType == ESceneType::Preview;
 
 		/*
@@ -130,7 +130,7 @@ void CControlPanelWindow::Render(FEngineRuntime* Core)
 		}
 		*/
 		
-		if (CCamera* Camera = Core->GetScene()->GetCamera())
+		if (CCamera* Camera = Engine->GetScene()->GetCamera())
 		{
 		
 			float Sensitivity = Camera->GetMouseSensitivity();
@@ -206,7 +206,7 @@ void CControlPanelWindow::Render(FEngineRuntime* Core)
 
 		if (ImGui::Button("Spawn"))
 		{
-			UScene* Scene = Core->GetScene();
+			UScene* Scene = Engine->GetScene();
 			static int32 SpawnCount = 0;
 			const FString Name = FString(SpawnTypes[SpawnTypeIndex]) + "_Spawned_" + std::to_string(SpawnCount++);
 
@@ -258,13 +258,13 @@ void CControlPanelWindow::Render(FEngineRuntime* Core)
 
 			if (NewActor && !NewActor->IsA<ASkySphereActor>())
 			{
-				Core->SetSelectedActor(NewActor);
+				Engine->SetSelectedActor(NewActor);
 			}
 			UE_LOG("Spawned %s: %s", SpawnTypes[SpawnTypeIndex], Name.c_str());
 		}
 
 		ImGui::SameLine();
-		AActor* SelectedActor = Core->GetSelectedActor();
+		AActor* SelectedActor = Engine->GetSelectedActor();
 		if (!SelectedActor)
 		{
 			ImGui::BeginDisabled();
@@ -273,8 +273,8 @@ void CControlPanelWindow::Render(FEngineRuntime* Core)
 		if (ImGui::Button("Delete"))
 		{
 			const FString Name = SelectedActor->GetName();
-			Core->GetScene()->DestroyActor(SelectedActor);
-			Core->SetSelectedActor(nullptr);
+			Engine->GetScene()->DestroyActor(SelectedActor);
+			Engine->SetSelectedActor(nullptr);
 			UE_LOG("Deleted actor: %s", Name.c_str());
 		}
 

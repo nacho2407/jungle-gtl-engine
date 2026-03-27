@@ -1,4 +1,5 @@
-#include "SceneManager.h"
+#include "WorldManager.h"
+
 #include "Scene/Scene.h"
 #include "World/World.h"
 #include "Object/ObjectFactory.h"
@@ -6,12 +7,12 @@
 #include "Component/CameraComponent.h"
 #include "Camera/Camera.h"
 
-FSceneManager::~FSceneManager()
+FWorldManager::~FWorldManager()
 {
 	Release();
 }
 
-bool FSceneManager::Initialize(float AspectRatio, ESceneType StartupSceneType, CRenderer* InRenderer)
+bool FWorldManager::Initialize(float AspectRatio, ESceneType StartupSceneType, CRenderer* InRenderer)
 {
 	Renderer = InRenderer;
 
@@ -33,7 +34,7 @@ bool FSceneManager::Initialize(float AspectRatio, ESceneType StartupSceneType, C
 	return true;
 }
 
-void FSceneManager::Release()
+void FWorldManager::Release()
 {
 	ActiveWorldContext = nullptr;
 
@@ -51,9 +52,7 @@ void FSceneManager::Release()
 	Renderer = nullptr;
 }
 
-// ===== World Context 생성/파괴 =====
-
-bool FSceneManager::CreateWorldContext(FWorldContext& OutContext, const FString& ContextName,
+bool FWorldManager::CreateWorldContext(FWorldContext& OutContext, const FString& ContextName,
 	ESceneType WorldType, float AspectRatio, bool bDefaultScene)
 {
 	OutContext.ContextName = ContextName;
@@ -79,7 +78,7 @@ bool FSceneManager::CreateWorldContext(FWorldContext& OutContext, const FString&
 	return true;
 }
 
-void FSceneManager::DestroyWorldContext(FWorldContext& Context)
+void FWorldManager::DestroyWorldContext(FWorldContext& Context)
 {
 	if (Context.World)
 	{
@@ -89,7 +88,7 @@ void FSceneManager::DestroyWorldContext(FWorldContext& Context)
 	Context.Reset();
 }
 
-void FSceneManager::DestroyWorldContext(FEditorWorldContext& Context)
+void FWorldManager::DestroyWorldContext(FEditorWorldContext& Context)
 {
 	if (Context.World)
 	{
@@ -99,25 +98,23 @@ void FSceneManager::DestroyWorldContext(FEditorWorldContext& Context)
 	Context.Reset();
 }
 
-// ===== 하위 호환 Scene 접근자 =====
-
-UScene* FSceneManager::GetActiveScene() const
+UScene* FWorldManager::GetActiveScene() const
 {
 	UWorld* World = GetActiveWorld();
 	return World ? World->GetScene() : nullptr;
 }
 
-UScene* FSceneManager::GetEditorScene() const
+UScene* FWorldManager::GetEditorScene() const
 {
 	return EditorWorldContext.World ? EditorWorldContext.World->GetScene() : nullptr;
 }
 
-UScene* FSceneManager::GetGameScene() const
+UScene* FWorldManager::GetGameScene() const
 {
 	return GameWorldContext.World ? GameWorldContext.World->GetScene() : nullptr;
 }
 
-UScene* FSceneManager::GetPreviewScene(const FString& ContextName) const
+UScene* FWorldManager::GetPreviewScene(const FString& ContextName) const
 {
 	const FEditorWorldContext* Context = FindPreviewWorld(ContextName);
 	if (Context && Context->World)
@@ -127,9 +124,7 @@ UScene* FSceneManager::GetPreviewScene(const FString& ContextName) const
 	return nullptr;
 }
 
-// ===== Activate =====
-
-bool FSceneManager::ActivatePreviewScene(const FString& ContextName)
+bool FWorldManager::ActivatePreviewScene(const FString& ContextName)
 {
 	FEditorWorldContext* PreviewContext = FindPreviewWorld(ContextName);
 	if (PreviewContext == nullptr)
@@ -141,70 +136,7 @@ bool FSceneManager::ActivatePreviewScene(const FString& ContextName)
 	return true;
 }
 
-// ===== Selected Actor =====
-
-FEditorWorldContext* FSceneManager::GetActiveEditorContext()
-{
-	if (ActiveWorldContext == &EditorWorldContext)
-	{
-		return &EditorWorldContext;
-	}
-
-	for (const std::unique_ptr<FEditorWorldContext>& Context : PreviewWorldContexts)
-	{
-		if (Context && Context.get() == ActiveWorldContext)
-		{
-			return Context.get();
-		}
-	}
-
-	return nullptr;
-}
-
-const FEditorWorldContext* FSceneManager::GetActiveEditorContext() const
-{
-	if (ActiveWorldContext == &EditorWorldContext)
-	{
-		return &EditorWorldContext;
-	}
-
-	for (const std::unique_ptr<FEditorWorldContext>& Context : PreviewWorldContexts)
-	{
-		if (Context && Context.get() == ActiveWorldContext)
-		{
-			return Context.get();
-		}
-	}
-
-	return nullptr;
-}
-
-void FSceneManager::SetSelectedActor(AActor* InActor)
-{
-	FEditorWorldContext* ActiveEditorContext = GetActiveEditorContext();
-	if (ActiveEditorContext)
-	{
-		ActiveEditorContext->SelectedActor = InActor;
-		return;
-	}
-
-	EditorWorldContext.SelectedActor = InActor;
-}
-
-AActor* FSceneManager::GetSelectedActor() const
-{
-	const FEditorWorldContext* ActiveEditorContext = GetActiveEditorContext();
-	if (ActiveEditorContext)
-	{
-		return ActiveEditorContext->SelectedActor;
-	}
-
-	return EditorWorldContext.SelectedActor;
-}
-
-// ===== Preview =====
-
-FEditorWorldContext* FSceneManager::FindPreviewWorld(const FString& ContextName)
+FEditorWorldContext* FWorldManager::FindPreviewWorld(const FString& ContextName)
 {
 	for (const std::unique_ptr<FEditorWorldContext>& Context : PreviewWorldContexts)
 	{
@@ -216,7 +148,7 @@ FEditorWorldContext* FSceneManager::FindPreviewWorld(const FString& ContextName)
 	return nullptr;
 }
 
-const FEditorWorldContext* FSceneManager::FindPreviewWorld(const FString& ContextName) const
+const FEditorWorldContext* FWorldManager::FindPreviewWorld(const FString& ContextName) const
 {
 	for (const std::unique_ptr<FEditorWorldContext>& Context : PreviewWorldContexts)
 	{
@@ -228,7 +160,7 @@ const FEditorWorldContext* FSceneManager::FindPreviewWorld(const FString& Contex
 	return nullptr;
 }
 
-FEditorWorldContext* FSceneManager::CreatePreviewWorldContext(const FString& ContextName, int32 WindowWidth, int32 WindowHeight)
+FEditorWorldContext* FWorldManager::CreatePreviewWorldContext(const FString& ContextName, int32 WindowWidth, int32 WindowHeight)
 {
 	if (ContextName.empty())
 	{
@@ -255,7 +187,7 @@ FEditorWorldContext* FSceneManager::CreatePreviewWorldContext(const FString& Con
 	return CreatedContext;
 }
 
-bool FSceneManager::DestroyPreviewWorld(const FString& ContextName)
+bool FWorldManager::DestroyPreviewWorld(const FString& ContextName)
 {
 	for (auto It = PreviewWorldContexts.begin(); It != PreviewWorldContexts.end(); ++It)
 	{
@@ -279,9 +211,7 @@ bool FSceneManager::DestroyPreviewWorld(const FString& ContextName)
 	return false;
 }
 
-// ===== Resize =====
-
-void FSceneManager::OnResize(int32 Width, int32 Height)
+void FWorldManager::OnResize(int32 Width, int32 Height)
 {
 	if (Width == 0 || Height == 0)
 	{

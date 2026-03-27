@@ -1,10 +1,9 @@
 #include "PreviewViewportClient.h"
 
 #include "EditorUI.h"
-#include "Core/EngineRuntime.h"
+#include "Core/Engine.h"
 #include "Platform/Windows/WindowsWindow.h"
 #include "Renderer/Renderer.h"
-
 #include "imgui.h"
 
 CPreviewViewportClient::CPreviewViewportClient(CEditorUI& InEditorUI, FWindowsWindow* InMainWindow, FString InPreviewContextName)
@@ -14,26 +13,26 @@ CPreviewViewportClient::CPreviewViewportClient(CEditorUI& InEditorUI, FWindowsWi
 {
 }
 
-void CPreviewViewportClient::Attach(FEngineRuntime* Core, CRenderer* Renderer)
+void CPreviewViewportClient::Attach(FEngine* Engine, CRenderer* Renderer)
 {
-	if (!Core || !Renderer || !MainWindow)
+	if (!Engine || !Renderer || !MainWindow)
 	{
 		return;
 	}
 
-	EditorUI.Initialize(Core);
+	EditorUI.Initialize(Engine);
 	EditorUI.SetupWindow(MainWindow);
 	EditorUI.AttachToRenderer(Renderer);
 }
 
-void CPreviewViewportClient::Detach(FEngineRuntime* Core, CRenderer* Renderer)
+void CPreviewViewportClient::Detach(FEngine* Engine, CRenderer* Renderer)
 {
 	EditorUI.DetachFromRenderer(Renderer);
 }
 
-void CPreviewViewportClient::Tick(FEngineRuntime* Core, float DeltaTime)
+void CPreviewViewportClient::Tick(FEngine* Engine, float DeltaTime)
 {
-	if (!Core)
+	if (!Engine)
 	{
 		return;
 	}
@@ -52,20 +51,20 @@ void CPreviewViewportClient::Tick(FEngineRuntime* Core, float DeltaTime)
 		return;
 	}
 
-	IViewportClient::Tick(Core, DeltaTime);
+	IViewportClient::Tick(Engine, DeltaTime);
 }
 
-UScene* CPreviewViewportClient::ResolveScene(FEngineRuntime* Core) const
+UScene* CPreviewViewportClient::ResolveScene(FEngine* Engine) const
 {
-	if (!Core)
+	if (!Engine)
 	{
 		return nullptr;
 	}
 
-	if (UScene* PreviewScene = Core->GetSceneManager()->GetPreviewScene(PreviewContextName))
+	if (UScene* PreviewScene = Engine->GetPreviewScene(PreviewContextName))
 	{
 		return PreviewScene;
 	}
 
-	return Core->GetActiveScene();
+	return Engine->GetActiveScene();
 }

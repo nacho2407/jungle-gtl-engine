@@ -30,7 +30,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source\FEditorEngine.cpp">
+    <ClCompile Include="Source\EditorEngine.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="Source\main.cpp">
@@ -105,7 +105,7 @@
     <ClCompile Include="EditorGlobals.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\FEditorEngine.h">
+    <ClInclude Include="Source\EditorEngine.h">
       <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="Source\Axis\AxisRenderer.h">

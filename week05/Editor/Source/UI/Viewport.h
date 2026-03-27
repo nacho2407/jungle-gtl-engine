@@ -2,7 +2,7 @@
 #include <d3d11.h>
 #include <CoreMinimal.h>
 
-class FEngineRuntime;
+class FEngine;
 class CRenderer;
 
 class CViewport
@@ -10,7 +10,7 @@ class CViewport
 public:
 	~CViewport();
 
-	void Render(FEngineRuntime* Runtime, CRenderer* Renderer, HWND Hwnd);
+	void Render(FEngine* Engine, CRenderer* Renderer, HWND Hwnd);
 	void ReleaseSceneView();
 	bool GetMousePositionInViewport(int32 WindowMouseX, int32 WindowMouseY, int32& OutViewportX, int32& OutViewportY, int32& OutWidth, int32& OutHeight) const;
 	bool IsHovered() const { return bHovered; }

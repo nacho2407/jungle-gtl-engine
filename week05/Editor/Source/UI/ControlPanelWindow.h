@@ -1,12 +1,12 @@
 #pragma once
 #include "CoreMinimal.h"
 
-class FEngineRuntime;
+class FEngine;
 
 class CControlPanelWindow
 {
 public:
-	void Render(FEngineRuntime* Runtime);
+	void Render(FEngine* Engine);
 
 private:
 	TArray<FString> SceneFiles;

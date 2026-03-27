@@ -2,64 +2,60 @@
 
 #include "EditorUI.h"
 #include "Actor/Actor.h"
-#include "Core/EngineRuntime.h"
-#include "Input/InputManager.h"
+#include "Actor/ObjActor.h"
+#include "Actor/SkySphereActor.h"
+#include "Component/PrimitiveComponent.h"
+#include "Core/Engine.h"
+#include "Core/Paths.h"
 #include "Debug/EngineLog.h"
+#include "Input/InputManager.h"
 #include "Platform/Windows/WindowsWindow.h"
+#include "Renderer/Material.h"
+#include "Renderer/MaterialManager.h"
 #include "Renderer/RenderCommand.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderStateManager.h"
-#include "Renderer/Materialmanager.h"
-#include "Renderer/Material.h"
 #include "Renderer/ShaderMap.h"
 #include "Scene/Scene.h"
 #include "Serializer/SceneSerializer.h"
-#include "Component/PrimitiveComponent.h"
-#include "Core/Paths.h"
 #include "imgui.h"
-#include "Actor/ObjActor.h"
-#include "Actor/SkySphereActor.h"
+
 CEditorViewportClient::CEditorViewportClient(CEditorUI& InEditorUI, FWindowsWindow* InMainWindow)
 	: EditorUI(InEditorUI)
 	, MainWindow(InMainWindow)
 {
 }
 
-void CEditorViewportClient::Attach(FEngineRuntime* Core, CRenderer* Renderer)
+void CEditorViewportClient::Attach(FEngine* Engine, CRenderer* Renderer)
 {
-	if (!Core || !Renderer || !MainWindow)
+	if (!Engine || !Renderer || !MainWindow)
 	{
 		return;
 	}
 
-	EditorUI.Initialize(Core);
+	EditorUI.Initialize(Engine);
 	EditorUI.SetupWindow(MainWindow);
 	EditorUI.AttachToRenderer(Renderer);
 
-	// Wireframe 모드를 위한 머티리얼 가져와서 보관
 	WireFrameMaterial = FMaterialManager::Get().FindByName(WireframeMaterialName);
-
 	CreateGridResource(Renderer);
 }
 
 void CEditorViewportClient::CreateGridResource(CRenderer* Renderer)
 {
-	// 그리드 리소스 초기화
 	ID3D11Device* Device = Renderer->GetDevice();
 	if (Device)
 	{
-		// 그리드 메시 생성 (18개의 정점, SV_VertexID 호환용)
 		GridMesh = std::make_unique<FMeshData>();
 		GridMesh->Topology = EMeshTopology::EMT_TriangleList;
 		for (int i = 0; i < 18; ++i)
 		{
-			FPrimitiveVertex v;
-			GridMesh->Vertices.push_back(v);
+			FPrimitiveVertex Vertex;
+			GridMesh->Vertices.push_back(Vertex);
 			GridMesh->Indices.push_back(i);
 		}
 		GridMesh->CreateVertexAndIndexBuffer(Device);
 
-		// 그리드 머티리얼 생성
 		std::wstring ShaderDirW = FPaths::ShaderDir();
 		std::wstring VSPath = ShaderDirW + L"AxisVertexShader.hlsl";
 		std::wstring PSPath = ShaderDirW + L"AxisPixelShader.hlsl";
@@ -71,35 +67,33 @@ void CEditorViewportClient::CreateGridResource(CRenderer* Renderer)
 		GridMaterial->SetVertexShader(VS);
 		GridMaterial->SetPixelShader(PS);
 
-		FRasterizerStateOption rasterizerOption;
-		rasterizerOption.FillMode = D3D11_FILL_SOLID;
-		rasterizerOption.CullMode = D3D11_CULL_NONE;
-		auto RS = Renderer->GetRenderStateManager()->GetOrCreateRasterizerState(rasterizerOption);
-		GridMaterial->SetRasterizerOption(rasterizerOption);
+		FRasterizerStateOption RasterizerOption;
+		RasterizerOption.FillMode = D3D11_FILL_SOLID;
+		RasterizerOption.CullMode = D3D11_CULL_NONE;
+		auto RS = Renderer->GetRenderStateManager()->GetOrCreateRasterizerState(RasterizerOption);
+		GridMaterial->SetRasterizerOption(RasterizerOption);
 		GridMaterial->SetRasterizerState(RS);
 
-		FDepthStencilStateOption depthStencilOption;
-		depthStencilOption.DepthEnable = true;
-		depthStencilOption.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-		auto DSS = Renderer->GetRenderStateManager()->GetOrCreateDepthStencilState(depthStencilOption);
-		GridMaterial->SetDepthStencilOption(depthStencilOption);
+		FDepthStencilStateOption DepthStencilOption;
+		DepthStencilOption.DepthEnable = true;
+		DepthStencilOption.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+		auto DSS = Renderer->GetRenderStateManager()->GetOrCreateDepthStencilState(DepthStencilOption);
+		GridMaterial->SetDepthStencilOption(DepthStencilOption);
 		GridMaterial->SetDepthStencilState(DSS);
 
-		// b2: Per-Material Constant Buffer (32 bytes)
 		int32 SlotIndex = GridMaterial->CreateConstantBuffer(Device, 32);
 		if (SlotIndex >= 0)
 		{
 			GridMaterial->RegisterParameter("GridSize", SlotIndex, 12, 4);
 			GridMaterial->RegisterParameter("LineThickness", SlotIndex, 16, 4);
 
-	
 			GridMaterial->SetParameterData("GridSize", &GridSize, 4);
 			GridMaterial->SetParameterData("LineThickness", &LineThickness, 4);
 		}
 	}
 }
 
-void CEditorViewportClient::Detach(FEngineRuntime* Core, CRenderer* Renderer)
+void CEditorViewportClient::Detach(FEngine* Engine, CRenderer* Renderer)
 {
 	Gizmo.EndDrag();
 	EditorUI.DetachFromRenderer(Renderer);
@@ -108,9 +102,9 @@ void CEditorViewportClient::Detach(FEngineRuntime* Core, CRenderer* Renderer)
 	GridMaterial.reset();
 }
 
-void CEditorViewportClient::Tick(FEngineRuntime* Core, float DeltaTime)
+void CEditorViewportClient::Tick(FEngine* Engine, float DeltaTime)
 {
-	if (!Core)
+	if (!Engine)
 	{
 		return;
 	}
@@ -129,12 +123,12 @@ void CEditorViewportClient::Tick(FEngineRuntime* Core, float DeltaTime)
 		return;
 	}
 
-	IViewportClient::Tick(Core, DeltaTime);
+	IViewportClient::Tick(Engine, DeltaTime);
 }
 
-void CEditorViewportClient::HandleMessage(FEngineRuntime* Core, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
+void CEditorViewportClient::HandleMessage(FEngine* Engine, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
 {
-	if (!Core || !EditorUI.IsViewportInteractive())
+	if (!Engine || !EditorUI.IsViewportInteractive())
 	{
 		return;
 	}
@@ -144,8 +138,8 @@ void CEditorViewportClient::HandleMessage(FEngineRuntime* Core, HWND Hwnd, UINT 
 		return;
 	}
 
-	UScene* Scene = ResolveScene(Core);
-	AActor* SelectedActor = Core->GetSelectedActor();
+	UScene* Scene = ResolveScene(Engine);
+	AActor* SelectedActor = Engine->GetSelectedActor();
 	if (!Scene)
 	{
 		return;
@@ -159,8 +153,8 @@ void CEditorViewportClient::HandleMessage(FEngineRuntime* Core, HWND Hwnd, UINT 
 		ScreenWidth,
 		ScreenHeight);
 
-	const bool bRightMouseDown = Core->GetInputManager() &&
-		Core->GetInputManager()->IsMouseButtonDown(CInputManager::MOUSE_RIGHT);
+	const bool bRightMouseDown = Engine->GetInputManager() &&
+		Engine->GetInputManager()->IsMouseButtonDown(CInputManager::MOUSE_RIGHT);
 
 	switch (Msg)
 	{
@@ -206,7 +200,7 @@ void CEditorViewportClient::HandleMessage(FEngineRuntime* Core, HWND Hwnd, UINT 
 
 		{
 			AActor* PickedActor = Picker.PickActor(Scene, ScreenMouseX, ScreenMouseY, ScreenWidth, ScreenHeight);
-			Core->SetSelectedActor(PickedActor);
+			Engine->SetSelectedActor(PickedActor);
 			EditorUI.SyncSelectedActorProperty();
 		}
 		return;
@@ -253,85 +247,76 @@ void CEditorViewportClient::HandleMessage(FEngineRuntime* Core, HWND Hwnd, UINT 
 
 void CEditorViewportClient::HandleFileDoubleClick(const FString& FilePath)
 {
-	FEngineRuntime* Core = EditorUI.GetRuntime();
+	FEngine* Engine = EditorUI.GetEngine();
 
-	if (Core)
+	if (Engine && FilePath.ends_with(".json"))
 	{
-		if (FilePath.ends_with(".json"))
-		{
-			Core->SetSelectedActor(nullptr);
-			Core->GetScene()->ClearActors();
-			bool bLoaded = FSceneSerializer::Load(Core->GetScene(), FilePath, Core->GetRenderer()->GetDevice());
+		Engine->SetSelectedActor(nullptr);
+		Engine->GetScene()->ClearActors();
+		bool bLoaded = FSceneSerializer::Load(Engine->GetScene(), FilePath, Engine->GetRenderer()->GetDevice());
 
-			if (bLoaded)
-			{
-				UE_LOG("Scene loaded: %s", FilePath.c_str());
-			}			
-			else
-			{
-				MessageBoxW(
-					nullptr,
-					L"Scene 정보가 잘못되었습니다.",
-					L"Error",
-					MB_OK | MB_ICONWARNING
-				);
-			}
+		if (bLoaded)
+		{
+			UE_LOG("Scene loaded: %s", FilePath.c_str());
+		}
+		else
+		{
+			MessageBoxW(
+				nullptr,
+				L"Scene 정보가 잘못되었습니다.",
+				L"Error",
+				MB_OK | MB_ICONWARNING
+			);
 		}
 	}
 }
 
 void CEditorViewportClient::HandleFileDropOnViewport(const FString& FilePath)
 {
-	FEngineRuntime* Core = EditorUI.GetRuntime();
+	FEngine* Engine = EditorUI.GetEngine();
 
-	if (Core && Core->GetRenderer())
+	if (Engine && Engine->GetRenderer() && FilePath.ends_with(".obj"))
 	{
-		if (FilePath.ends_with(".obj"))
-		{
-			const FRay Ray = Picker.ScreenToRay(Core->GetScene()->GetCamera(), ScreenMouseX, ScreenMouseY, ScreenWidth, ScreenHeight);
+		const FRay Ray = Picker.ScreenToRay(Engine->GetScene()->GetCamera(), ScreenMouseX, ScreenMouseY, ScreenWidth, ScreenHeight);
 
-			AObjActor* NewActor = Core->GetScene()->SpawnActor<AObjActor>("ObjActor");
-			
-			NewActor->LoadObj(Core->GetRenderer()->GetDevice(), FPaths::ToRelativePath(FilePath));
-			FVector V = Ray.Origin + Ray.Direction * 5;
-			NewActor->SetActorLocation(V);
-		}
+		AObjActor* NewActor = Engine->GetScene()->SpawnActor<AObjActor>("ObjActor");
+		NewActor->LoadObj(Engine->GetRenderer()->GetDevice(), FPaths::ToRelativePath(FilePath));
+		FVector SpawnLocation = Ray.Origin + Ray.Direction * 5;
+		NewActor->SetActorLocation(SpawnLocation);
 	}
 }
 
-void CEditorViewportClient::BuildRenderCommands(FEngineRuntime* Core, UScene* Scene,
-	const FFrustum& Frustum, FRenderCommandQueue& OutQueue)
+void CEditorViewportClient::BuildRenderCommands(FEngine* Engine, UScene* Scene, const FFrustum& Frustum, FRenderCommandQueue& OutQueue)
 {
-	IViewportClient::BuildRenderCommands(Core, Scene, Frustum, OutQueue);  // non-const 부모 호출
+	IViewportClient::BuildRenderCommands(Engine, Scene, Frustum, OutQueue);
 
-	// RenderMode 처리
 	if (RenderMode == ERenderMode::Wireframe)
 	{
-		for (auto it = OutQueue.Commands.begin(); it != OutQueue.Commands.end(); it++)
+		for (auto It = OutQueue.Commands.begin(); It != OutQueue.Commands.end(); ++It)
 		{
-			// TODO: 아래의 if문 삭제하고 UUID 렌더러를 컴포넌트가 아닌 EditorViewportClient의 기능으로 재구현
-			if(it->RenderLayer != ERenderLayer::Overlay)
-				it->Material = WireFrameMaterial.get();
+			if (It->RenderLayer != ERenderLayer::Overlay)
+			{
+				It->Material = WireFrameMaterial.get();
+			}
 		}
 	}
 
-	if (!Core || !Scene || !Scene->GetCamera())
+	if (!Engine || !Scene || !Scene->GetCamera())
 	{
 		return;
 	}
 
-	// 그리드(Axis) 명령 삽입
-	if (GridMesh && GridMaterial&&bShowGrid)
+	if (GridMesh && GridMaterial && bShowGrid)
 	{
-		FRenderCommand GridCmd;
-		GridCmd.MeshData = GridMesh.get();
-		GridCmd.Material = GridMaterial.get();
-		GridCmd.WorldMatrix = FMatrix::Identity;
-		GridCmd.RenderLayer = ERenderLayer::Default;
-		OutQueue.AddCommand(GridCmd);
+		FRenderCommand GridCommand;
+		GridCommand.MeshData = GridMesh.get();
+		GridCommand.Material = GridMaterial.get();
+		GridCommand.WorldMatrix = FMatrix::Identity;
+		GridCommand.RenderLayer = ERenderLayer::Default;
+		OutQueue.AddCommand(GridCommand);
 	}
 
-	AActor* GizmoTarget = Core->GetSelectedActor();
+	AActor* GizmoTarget = Engine->GetSelectedActor();
 	if (GizmoTarget && !GizmoTarget->IsA<ASkySphereActor>())
 	{
 		Gizmo.BuildRenderCommands(GizmoTarget, Scene->GetCamera(), OutQueue);
@@ -343,7 +328,7 @@ void CEditorViewportClient::SetGridSize(float InSize)
 	GridSize = InSize;
 	if (GridMaterial)
 	{
-		GridMaterial->SetParameterData("GridSize",&GridSize, 4);
+		GridMaterial->SetParameterData("GridSize", &GridSize, 4);
 	}
 }
 

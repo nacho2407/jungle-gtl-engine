@@ -1,7 +1,7 @@
 #include "Viewport.h"
 
 #include "EditorViewportClient.h"
-#include "Core/EngineRuntime.h"
+#include "Core/Engine.h"
 #include "Renderer/Renderer.h"
 #include "Scene/Scene.h"
 #include "Camera/Camera.h"
@@ -52,7 +52,7 @@ CViewport::~CViewport()
 	ReleaseSceneView();
 }
 
-void CViewport::Render(FEngineRuntime* Core, CRenderer* Renderer, HWND Hwnd)
+void CViewport::Render(FEngine* Engine, CRenderer* Renderer, HWND Hwnd)
 {
 	//ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 	const bool bOpen = ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_MenuBar);
@@ -73,7 +73,7 @@ void CViewport::Render(FEngineRuntime* Core, CRenderer* Renderer, HWND Hwnd)
 
 	if (ImGui::BeginMenuBar())
 	{
-		CEditorViewportClient* EditorViewportClient = Core ? dynamic_cast<CEditorViewportClient*>(Core->GetViewportClient()) : nullptr;
+		CEditorViewportClient* EditorViewportClient = Engine ? dynamic_cast<CEditorViewportClient*>(Engine->GetViewportClient()) : nullptr;
 		if (EditorViewportClient)
 		{
 			// 도구 선택 버튼
@@ -167,9 +167,9 @@ void CViewport::Render(FEngineRuntime* Core, CRenderer* Renderer, HWND Hwnd)
 		}
 	}
 
-	if (Core && Core->GetScene() && Core->GetScene()->GetCamera())
+	if (Engine && Engine->GetScene() && Engine->GetScene()->GetCamera())
 	{
-		Core->GetScene()->GetCamera()->SetAspectRatio(static_cast<float>(NewWidth) / static_cast<float>(NewHeight));
+		Engine->GetScene()->GetCamera()->SetAspectRatio(static_cast<float>(NewWidth) / static_cast<float>(NewHeight));
 	}
 
 	if (ShaderResourceView)

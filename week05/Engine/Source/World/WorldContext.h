@@ -22,11 +22,8 @@ struct ENGINE_API FWorldContext
 
 struct ENGINE_API FEditorWorldContext : public FWorldContext
 {
-	TObjectPtr<AActor> SelectedActor;
-
 	void Reset()
 	{
 		FWorldContext::Reset();
-		SelectedActor = nullptr;
 	}
 };

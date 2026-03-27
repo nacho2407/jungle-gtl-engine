@@ -1,6 +1,6 @@
 #include "EditorUI.h"
 
-#include "Core/EngineRuntime.h"
+#include "Core/Engine.h"
 #include "Object/Object.h"
 #include "Scene/Scene.h"
 #include "Actor/Actor.h"
@@ -69,18 +69,18 @@ std::string GetFilePathUsingDialog(EFileDialogType Type)
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
 
-void CEditorUI::Initialize(FEngineRuntime* InCore)
+void CEditorUI::Initialize(FEngine* InEngine)
 {
-	Runtime = InCore;
+	Engine = InEngine;
 
 	Property.OnChanged = [this](const FVector& Loc, const FVector& Rot, const FVector& Scl)
 		{
-			if (!Runtime)
+			if (!Engine)
 			{
 				return;
 			}
 
-			AActor* Selected = Runtime->GetSelectedActor();
+			AActor* Selected = Engine->GetSelectedActor();
 			if (!Selected)
 			{
 				return;
@@ -98,10 +98,9 @@ void CEditorUI::Initialize(FEngineRuntime* InCore)
 
 	ContentBrowser.OnFileDoubleClickCallback = [this](const FString& FilePath)
 		{
-			if (Runtime)
+			if (Engine)
 			{
-
-				Runtime->GetViewportClient()->HandleFileDoubleClick(FilePath);
+				Engine->GetViewportClient()->HandleFileDoubleClick(FilePath);
 			}
 		};
 
@@ -156,9 +155,9 @@ void CEditorUI::Initialize(FEngineRuntime* InCore)
 			else if (Viewport.IsHovered())
 			{
 				UE_LOG("Drop On Viewport");			
-				if (Runtime)
+				if (Engine)
 				{
-					Runtime->GetViewportClient()->HandleFileDropOnViewport(DraggingFilePath);
+					Engine->GetViewportClient()->HandleFileDropOnViewport(DraggingFilePath);
 				}
 			}
 		};
@@ -166,7 +165,7 @@ void CEditorUI::Initialize(FEngineRuntime* InCore)
 
 void CEditorUI::AttachToRenderer(CRenderer* InRenderer)
 {
-	if (!Runtime || !InRenderer)
+	if (!Engine || !InRenderer)
 	{
 		return;
 	}
@@ -279,15 +278,15 @@ void CEditorUI::AttachToRenderer(CRenderer* InRenderer)
 
 	InRenderer->SetPostRenderCallback([this](CRenderer* Renderer)
 		{
-			if (!Runtime)
+			if (!Engine)
 			{
 				return;
 			}
 	
-			AActor* Selected = Runtime->GetSelectedActor();
+			AActor* Selected = Engine->GetSelectedActor();
 			if (Selected && !Selected->IsPendingDestroy() && Selected->IsVisible()
 				&& !Selected->IsA<ASkySphereActor>()
-				&& Runtime->GetViewportClient()->GetShowFlags().HasFlag(EEngineShowFlags::SF_Primitives))
+				&& Engine->GetViewportClient()->GetShowFlags().HasFlag(EEngineShowFlags::SF_Primitives))
 			{
 				for (UActorComponent* Component : Selected->GetComponents())
 				{
@@ -429,9 +428,9 @@ void CEditorUI::LoadEditorSettings()
 	GetPrivateProfileStringW(L"Grid", L"ShowGrid", L"1", Buf, 64, Path.c_str());
 	bool bShowGrid = (_wtoi(Buf) != 0);
 
-	if (Runtime && Runtime->GetViewportClient())
+	if (Engine && Engine->GetViewportClient())
 	{
-		auto* VPC = static_cast<CEditorViewportClient*>(Runtime->GetViewportClient());
+		auto* VPC = static_cast<CEditorViewportClient*>(Engine->GetViewportClient());
 		VPC->SetGridSize(GridSize);
 		VPC->SetLineThickness(Thickness);
 		VPC->SetGridVisible(bShowGrid);
@@ -459,8 +458,8 @@ void CEditorUI::LoadEditorSettings()
 void CEditorUI::SaveEditorSettings()
 {
 	std::wstring Path = GetEditorIniPathW();
-	if (!Runtime || !Runtime->GetViewportClient()) return;
-	auto* VPC = static_cast<CEditorViewportClient*>(Runtime->GetViewportClient());
+	if (!Engine || !Engine->GetViewportClient()) return;
+	auto* VPC = static_cast<CEditorViewportClient*>(Engine->GetViewportClient());
 
 	wchar_t Buf[64];
 	swprintf(Buf, 64, L"%.2f", VPC->GetGridSize());
@@ -531,17 +530,17 @@ void CEditorUI::Render()
 	ImGui::PopStyleVar();
 	ImGui::End();
 
-	Viewport.Render(Runtime, CurrentRenderer, MainWindow ? MainWindow->GetHwnd() : nullptr);
+	Viewport.Render(Engine, CurrentRenderer, MainWindow ? MainWindow->GetHwnd() : nullptr);
 
-	if (Runtime)
+	if (Engine)
 	{
-		AActor* Selected = Runtime->GetSelectedActor();
+		AActor* Selected = Engine->GetSelectedActor();
 		if (Selected != CachedSelectedActor)
 		{
 			SyncSelectedActorProperty();
 		}
 
-		const FTimer& Timer = Runtime->GetTimer();
+		const FTimer& Timer = Engine->GetTimer();
 		Stat.SetFPS(Timer.GetDisplayFPS());
 		Stat.SetFrameTimeMs(Timer.GetFrameTimeMs());
 	}
@@ -555,32 +554,32 @@ void CEditorUI::Render()
 		{
 			if (ImGui::MenuItem("New Scene"))
 			{
-				if (Runtime)
+				if (Engine)
 				{
-					Runtime->SetSelectedActor(nullptr);
+					Engine->SetSelectedActor(nullptr);
 
-					if (UCameraComponent* Cam = Runtime->GetActiveWorld()->GetActiveCameraComponent())
+					if (UCameraComponent* Cam = Engine->GetActiveWorld()->GetActiveCameraComponent())
 					{
 						Cam->GetCamera()->SetPosition({ -5.0f, 0.0f, 2.0f });
 						Cam->GetCamera()->SetRotation(0.f, 0.f);
 					}
-					Runtime->GetScene()->ClearActors();
+					Engine->GetScene()->ClearActors();
 					UE_LOG("New scene created");
 				}
 			}
 
 			if (ImGui::MenuItem("Open Scene"))
 			{
-				if (Runtime && Runtime->GetActiveScene())
+				if (Engine && Engine->GetActiveScene())
 				{
 					FString Path = GetFilePathUsingDialog(EFileDialogType::Open);
 
 					if (!Path.empty())
 					{
-						Runtime->SetSelectedActor(nullptr);
-						Runtime->GetScene()->ClearActors();
+						Engine->SetSelectedActor(nullptr);
+						Engine->GetScene()->ClearActors();
 
-						bool bLoaded = FSceneSerializer::Load(Runtime->GetScene(), Path, Runtime->GetRenderer()->GetDevice());
+						bool bLoaded = FSceneSerializer::Load(Engine->GetScene(), Path, Engine->GetRenderer()->GetDevice());
 						if (bLoaded)
 						{
 							UE_LOG("Scene loaded: %s", Path.c_str());
@@ -600,13 +599,13 @@ void CEditorUI::Render()
 
 			if (ImGui::MenuItem("Save Scene As..."))
 			{
-				if (Runtime && Runtime->GetActiveScene())
+				if (Engine && Engine->GetActiveScene())
 				{
 					FString Path = GetFilePathUsingDialog(EFileDialogType::Save);
 
 					if (!Path.empty())
 					{
-						FSceneSerializer::Save(Runtime->GetScene(),Path);
+						FSceneSerializer::Save(Engine->GetScene(),Path);
 					}
 				}
 			}
@@ -615,12 +614,12 @@ void CEditorUI::Render()
 		}
 		if (ImGui::BeginMenu("View"))
 		{
-			if (Runtime && Runtime->GetViewportClient())
+			if (Engine && Engine->GetViewportClient())
 			{
-				auto* VPC = static_cast<CEditorViewportClient*>(Runtime->GetViewportClient());
+				auto* VPC = static_cast<CEditorViewportClient*>(Engine->GetViewportClient());
 			
 
-				IViewportClient* ViewportCli = Runtime->GetViewportClient();
+				IViewportClient* ViewportCli = Engine->GetViewportClient();
 				if (!ViewportCli) { ImGui::End(); return; }
 
 				FShowFlags& ShowFlags = ViewportCli->GetShowFlags();
@@ -753,11 +752,11 @@ void CEditorUI::Render()
 		ImGui::EndPopup();
 	}
 
-	ControlPanel.Render(Runtime);
-	Property.Render(Runtime);
+	ControlPanel.Render(Engine);
+	Property.Render(Engine);
 	Console.Render();
 	Stat.Render();
-	Outliner.Render(Runtime);
+	Outliner.Render(Engine);
 	ContentBrowser.Render();
 }
 
@@ -768,12 +767,12 @@ bool CEditorUI::GetViewportMousePosition(int32 WindowMouseX, int32 WindowMouseY,
 
 void CEditorUI::SyncSelectedActorProperty()
 {
-	if (!Runtime)
+	if (!Engine)
 	{
 		return;
 	}
 
-	AActor* Selected = Runtime->GetSelectedActor();
+	AActor* Selected = Engine->GetSelectedActor();
 	if (Selected)
 	{
 		if (USceneComponent* Root = Selected->GetRootComponent())

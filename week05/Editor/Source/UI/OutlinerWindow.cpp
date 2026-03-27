@@ -1,7 +1,7 @@
 #include "OutlinerWindow.h"
 
 #include "imgui.h"
-#include "Core/EngineRuntime.h"
+#include "Core/Engine.h"
 #include "Core/ShowFlags.h"
 #include "Core/ViewportClient.h"
 #include "Scene/Scene.h"
@@ -10,7 +10,7 @@
 #include "Component/TextComponent.h"
 #include "Component/UUIDBillboardComponent.h"
 
-void COutlinerWindow::Render(FEngineRuntime* Core)
+void COutlinerWindow::Render(FEngine* Engine)
 {
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
 	const bool bOpen = ImGui::Begin("Outliner");
@@ -20,18 +20,18 @@ void COutlinerWindow::Render(FEngineRuntime* Core)
 		ImGui::End();
 		return;
 	}
-	if (!Core || !Core->GetScene())
+	if (!Engine || !Engine->GetScene())
 	{
 		ImGui::End();
 		return;
 	}
 
 
-	AActor* SelectedActor = Core->GetSelectedActor();
+	AActor* SelectedActor = Engine->GetSelectedActor();
 
 	ImGui::SeparatorText("Actors");
 
-	UScene* Scene = Core->GetScene();
+	UScene* Scene = Engine->GetScene();
 	const TArray<AActor*>& Actors = Scene->GetActors();
 	
 
@@ -54,7 +54,7 @@ void COutlinerWindow::Render(FEngineRuntime* Core)
 
 		if (ImGui::Selectable(Actor->GetName().c_str(), bSelected))
 		{
-			Core->SetSelectedActor(Actor);
+			Engine->SetSelectedActor(Actor);
 		}
 		ImGui::PopID();
 	}
