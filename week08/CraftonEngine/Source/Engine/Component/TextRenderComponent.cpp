@@ -6,8 +6,7 @@
 #include "Object/ObjectFactory.h"
 #include "Render/Mesh/MeshManager.h"
 
-DEFINE_CLASS(UTextRenderComponent, UBillboardComponent)
-REGISTER_FACTORY(UTextRenderComponent)
+IMPLEMENT_CLASS(UTextRenderComponent, UBillboardComponent)
 
 void UTextRenderComponent::SetFont(const FName& InFontName)
 {

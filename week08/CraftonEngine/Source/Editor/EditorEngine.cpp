@@ -6,9 +6,9 @@
 #include "GameFramework/World.h"
 #include "Editor/EditorRenderPipeline.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
+#include "Object/ObjectFactory.h"
 
-DEFINE_CLASS(UEditorEngine, UEngine)
-REGISTER_FACTORY(UEditorEngine)
+IMPLEMENT_CLASS(UEditorEngine, UEngine)
 
 void UEditorEngine::Init(FWindowsWindow* InWindow)
 {
