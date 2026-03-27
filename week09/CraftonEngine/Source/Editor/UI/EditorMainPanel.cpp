@@ -32,6 +32,12 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	SceneWidget.Initialize(InEditorEngine);
 	ViewportOverlayWidget.Initialize(InEditorEngine);
 	StatWidget.Initialize(InEditorEngine);
+
+	for (int32 i = 0; i < MaxViewports; ++i)
+	{
+		ViewportWidgets[i].Initialize(InEditorEngine);
+		ViewportWidgets[i].SetIndex(i);
+	}
 }
 
 void FEditorMainPanel::Release()
@@ -47,8 +53,12 @@ void FEditorMainPanel::Render(float DeltaTime)
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 
-	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
 
+	for (int32 i = 0; i < ActiveViewportCount; ++i)
+	{
+		ViewportWidgets[i].Render(DeltaTime);
+	}
 	ConsoleWidget.Render(DeltaTime);
 	ControlWidget.Render(DeltaTime);
 	PropertyWidget.Render(DeltaTime);
