@@ -27,6 +27,15 @@ struct FTextureVertex
 	FVector2 TexCoord;
 };
 
+// Position + Normal + Color + UV (StaticMesh GPU용 정점 형식)
+struct FVertexPNCT
+{
+	FVector Position;
+	FVector Normal;
+	FVector4 Color;
+	FVector2 UV;
+};
+
 struct FMeshData
 {
 	TArray<FVertex> Vertices;
