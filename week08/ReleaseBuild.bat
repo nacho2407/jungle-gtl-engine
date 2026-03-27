@@ -2,7 +2,7 @@
 setlocal
 
 set SOLUTION_DIR=%~dp0
-set PROJECT_DIR=%SOLUTION_DIR%W3_Jungle_Team6
+set PROJECT_DIR=%SOLUTION_DIR%CraftonEngine
 set BUILD_OUTPUT=%PROJECT_DIR%\Bin\Release
 set RELEASE_DIR=%SOLUTION_DIR%ReleaseBuild
 
@@ -23,7 +23,7 @@ echo ============================================
 :: 1. MSBuild로 Release x64 빌드
 echo.
 echo [1/3] Building Release x64...
-msbuild "%SOLUTION_DIR%W3_Jungle_Team6.sln" /p:Configuration=Release /p:Platform=x64 /m /v:minimal
+msbuild "%SOLUTION_DIR%CraftonEngine.sln" /p:Configuration=Release /p:Platform=x64 /m /v:minimal
 if %ERRORLEVEL% neq 0 (
     echo BUILD FAILED
     pause
@@ -41,7 +41,7 @@ echo.
 echo [3/3] Copying files...
 
 :: 실행 파일 (루트에)
-copy "%BUILD_OUTPUT%\W3_Jungle_Team6.exe" "%RELEASE_DIR%\" >nul
+copy "%BUILD_OUTPUT%\CraftonEngine.exe" "%RELEASE_DIR%\" >nul
 
 :: ImGui 레이아웃 (도킹 설정 포함)
 if exist "%PROJECT_DIR%\imgui.ini" copy "%PROJECT_DIR%\imgui.ini" "%RELEASE_DIR%\" >nul
@@ -66,7 +66,7 @@ echo  Build complete: %RELEASE_DIR%
 echo ============================================
 echo.
 echo  ReleaseBuild/
-echo    W3_Jungle_Team6.exe
+echo    CraftonEngine.exe
 echo    imgui.ini
 echo    Shaders/
 echo    Asset/Scene/

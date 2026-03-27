@@ -35,7 +35,7 @@ Actor/Component 아키텍처 위에 WYSIWYG 씬 편집, 레이캐스팅 오브�
 
 ```bash
 # MSBuild (x64 Debug)
-msbuild W3_Jungle_Team6.sln /p:Configuration=Debug /p:Platform=x64
+msbuild CraftonEngine.sln /p:Configuration=Debug /p:Platform=x64
 
 # 또는 Visual Studio에서 솔루션 열어 빌드
 ```
@@ -46,7 +46,7 @@ msbuild W3_Jungle_Team6.sln /p:Configuration=Debug /p:Platform=x64
 | Release | x64 | C++20 | Windows |
 | Debug | Win32 | C++17 | Console |
 
-출력 경로: `W3_Jungle_Team6/Bin/<Configuration>/W3_Jungle_Team6.exe`
+출력 경로: `CraftonEngine/Bin/<Configuration>/CraftonEngine.exe`
 
 ### 릴리스 패키징
 
@@ -57,7 +57,7 @@ msbuild W3_Jungle_Team6.sln /p:Configuration=Debug /p:Platform=x64
 ## 프로젝트 구조
 
 ```
-W3_Jungle_Team6/
+CraftonEngine/
 ├── Source/
 │   ├── Engine/                     # 엔진 코어
 │   │   ├── Object/                 # UObject, RTTI, FName, ObjectFactory
