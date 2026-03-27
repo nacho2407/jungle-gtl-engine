@@ -22,11 +22,11 @@ struct FMaterial
     float Opacity    = 1.0f; 
     int   IllumModel = 2;    
 
-	// 경로는 상대 경로로 저장
+	// 경로는 파싱 시점에 절대 경로로 정규화됨
     FString DiffuseTexPath;   // map_Kd
     FString AmbientTexPath;   // map_Ka
     FString SpecularTexPath;  // map_Ks
-    FString BumpTexPath;      // map_bump 
+    FString BumpTexPath;      // map_bump
 };
 
 /**
