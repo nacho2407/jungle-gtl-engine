@@ -10,6 +10,7 @@ void FMeshBufferManager::Create(ID3D11Device* InDevice)
 	MeshBufferMap[EPrimitiveType::EPT_ScaleGizmo].Create(InDevice, FMeshManager::GetScaleGizmo());
 	MeshBufferMap[EPrimitiveType::EPT_SubUV].Create(InDevice, FMeshManager::GetQuad());
 	MeshBufferMap[EPrimitiveType::EPT_Text].Create(InDevice, FMeshManager::GetQuad());
+	//MeshBufferMap[EPrimitiveType::EPT_StaticMesh].Create(InDevice, FMeshManager::GetStaticMesh());
 }
 
 //	TODO : 내일 하기
