@@ -5,6 +5,7 @@
 #include "Render/Resource/Buffer.h"
 #include "Serialization/Archive.h"
 #include "Engine/Object/FName.h"
+#include <memory>
 
 // Cooked Data 내부용 정점
 struct FNormalVertex
@@ -17,8 +18,7 @@ struct FNormalVertex
 
 struct FStaticMeshSection;
 struct FStaticMaterial;
-// TODO: not yet implemented
-struct UMaterialInterface;
+struct FMaterial;
 
 // Cooked Data — GPU용 정점/인덱스
 // FStaticMeshLODResources in UE5
@@ -51,11 +51,11 @@ struct FStaticMesh
 struct FStaticMeshSection
 {
 	// Index into UStaticMesh's FStaticMaterial array.
-	int32 MaterialIndex; // 0, 1, 2
+	//int32 MaterialIndex;
 
 	// from .obj's usemtl statement
 	// TODO: 실제로 UE에서는 MaterialIndex만 사용함
-	FName MaterialSlotName;
+	FString MaterialSlotName;
 
 	uint32 FirstIndex;
 	uint32 NumTriangles;
@@ -63,11 +63,18 @@ struct FStaticMeshSection
 
 struct FStaticMaterial
 {
-	UMaterialInterface* MaterialInterface = nullptr;
+	std::shared_ptr<FMaterial> MaterialInterface;
 
 	// (Imported)MaterialSlotName이 "NAME_None"이면 MaterialInterface의 이름을 사용하도록 설정
-	FName MaterialSlotName = FName::None;
+	FString MaterialSlotName = "None";
 
-	// TODO: EditorOnly
-	//FName ImportedMaterialSlotName = FName::None;
+	// TODO:
+	// mtl 파일의 순서는 상관없이, .obj에서 사용된 순서대로 슬롯이 배치
+	// NAME_None인 슬롯은 무조건 제일 마지막 슬롯으로 배치
+};
+
+struct FMaterial
+{
+	FString DiffuseTextureFilePath;
+	FVector4 DiffuseColor;
 };

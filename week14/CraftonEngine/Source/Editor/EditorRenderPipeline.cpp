@@ -97,7 +97,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 		ShowFlags, ViewMode, Bus);
 
 	const TArray<FString> OverlayLines = Editor->GetOverlayStatSystem().BuildLines(*Editor);
-	if (!OverlayLines.empty() && VP)
+	if (!OverlayLines.empty() && VP && VC == Editor->GetActiveViewport())
 	{
 		const float StartX = 16.0f;
 		const float StartY = 16.0f;
