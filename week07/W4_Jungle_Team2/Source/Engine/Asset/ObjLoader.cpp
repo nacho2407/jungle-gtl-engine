@@ -2,9 +2,9 @@
 
 #include "FileUtils.h"
 #include "StaticMesh.h"
-#include <Math/Utils.h>
-#include <UI/EditorConsoleWidget.h>
-#include <PlatformTime.h>
+#include "Math/Utils.h"
+#include "UI/EditorConsoleWidget.h"
+#include "Core/PlatformTime.h"
 
 //	v, vt, vn, mtllib, usemtl, f
 UStaticMesh* FObjLoader::Load(const FString& Path, const FStaticMeshLoadOptions& LoadOptions)
