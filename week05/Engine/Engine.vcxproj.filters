@@ -305,6 +305,10 @@
       <Filter>Source\Actor</Filter>
     </ClCompile>
     <ClCompile Include="Source\Actor\SkySphereActor.cpp" />
+    <ClCompile Include="Source\Component\UPrimitiveComponent.cpp" />
+    <ClCompile Include="Source\Component\UMeshComponent.cpp" />
+    <ClCompile Include="Source\Component\UStaticMeshComponent.cpp" />
+    <ClCompile Include="Source\Renderer\RenderMesh.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\CoreMinimal.h">
@@ -632,6 +636,11 @@
     <ClInclude Include="Source\Actor\TextActor.h">
       <Filter>Source\Actor</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Component\UPrimitiveComponent.h" />
+    <ClInclude Include="Source\Component\UMeshComponent.h" />
+    <ClInclude Include="Source\Component\UStaticMeshComponent.h" />
+    <ClInclude Include="Source\Renderer\RenderMesh.h" />
+    <ClInclude Include="Source\Renderer\Vertex.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

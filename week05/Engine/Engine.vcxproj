@@ -22,6 +22,9 @@
     <ClInclude Include="PrimitiveLineBatch.h" />
     <ClInclude Include="Source\Actor\TextActor.h" />
     <ClInclude Include="Source\Component\TextComponent.h" />
+    <ClInclude Include="Source\Component\UMeshComponent.h" />
+    <ClInclude Include="Source\Component\UPrimitiveComponent.h" />
+    <ClInclude Include="Source\Component\UStaticMeshComponent.h" />
     <ClInclude Include="Source\CoreMinimal.h" />
     <ClInclude Include="Source\EngineAPI.h" />
     <ClInclude Include="Source\Actor\Actor.h" />
@@ -95,6 +98,7 @@
     <ClInclude Include="Source\Renderer\MaterialManager.h" />
     <ClInclude Include="Source\Renderer\PrimitiveVertex.h" />
     <ClInclude Include="Source\Renderer\RenderCommand.h" />
+    <ClInclude Include="Source\Renderer\RenderMesh.h" />
     <ClInclude Include="Source\Renderer\RenderState.h" />
     <ClInclude Include="Source\Renderer\RenderStateManager.h" />
     <ClInclude Include="Source\Renderer\Renderer.h" />
@@ -106,6 +110,7 @@
     <ClInclude Include="Source\Renderer\SubUVRenderer.h" />
     <ClInclude Include="Source\Renderer\TextMeshBuilder.h" />
     <ClInclude Include="Source\Renderer\TextureVertex.h" />
+    <ClInclude Include="Source\Renderer\Vertex.h" />
     <ClInclude Include="Source\Scene\RenderCollector.h" />
     <ClInclude Include="Source\Scene\Scene.h" />
     <ClInclude Include="Source\Scene\SceneContext.h" />
@@ -154,6 +159,9 @@
     <ClCompile Include="Source\Component\SphereComponent.cpp" />
     <ClCompile Include="Source\Component\SubUVComponent.cpp" />
     <ClCompile Include="Source\Component\TextComponent.cpp" />
+    <ClCompile Include="Source\Component\UMeshComponent.cpp" />
+    <ClCompile Include="Source\Component\UPrimitiveComponent.cpp" />
+    <ClCompile Include="Source\Component\UStaticMeshComponent.cpp" />
     <ClCompile Include="Source\Component\UUIDBillboardComponent.cpp" />
     <ClCompile Include="Source\Core\ConsoleVariableManager.cpp" />
     <ClCompile Include="Source\Core\Core.cpp" />
@@ -195,6 +203,7 @@
     <ClCompile Include="Source\Renderer\Material.cpp" />
     <ClCompile Include="Source\Renderer\MaterialManager.cpp" />
     <ClCompile Include="Source\Renderer\RenderCommand.cpp" />
+    <ClCompile Include="Source\Renderer\RenderMesh.cpp" />
     <ClCompile Include="Source\Renderer\RenderState.cpp" />
     <ClCompile Include="Source\Renderer\RenderStateManager.cpp" />
     <ClCompile Include="Source\Renderer\Renderer.cpp" />
