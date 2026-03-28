@@ -8,6 +8,7 @@
 #include "Editor/UI/EditorMainPanel.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
+#include "Viewport/ViewportCamera.h"
 
 class UGizmoComponent;
 
@@ -29,7 +30,9 @@ public:
 	UGizmoComponent* GetGizmo() const { return SelectionManager.GetGizmo(); }
 
 	// 퍼스펙티브 카메라(인덱스 0)를 반환합니다.
-	UCameraComponent* GetCamera() const { return AllViewportClients[0].GetCamera(); }
+	FViewportCamera* GetCamera() { return AllViewportClients[0].GetCamera(); }
+	const FViewportCamera* GetCamera() const { return AllViewportClients[0].GetCamera(); }
+
 	
 
 	void ClearScene();
