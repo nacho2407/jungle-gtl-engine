@@ -44,8 +44,12 @@ FStaticMesh* FObjManager::LoadObjStaticMeshAsset(const std::string& PathFileName
 	else
 	{
 		// 바이너리 파일이 없음 -> OBJ 파싱 및 굽기 (최초 1회)
-		FObjInfo ParsedObjInfo = FObjImporter::ParseObj(PathFileName);
-		FStaticMesh ConvertedMesh = FObjImporter::Convert(ParsedObjInfo);
+		FStaticMesh ConvertedMesh;
+		TArray<FStaticMaterial> ImportedMaterials;
+		if (!FObjImporter::Import(PathFileName, ConvertedMesh, ImportedMaterials))
+		{
+			return nullptr;
+		}
 
 		// 바이너리로 저장 (Bake/Cooking)
 		FWindowsBinWriter Writer(BinPath);
