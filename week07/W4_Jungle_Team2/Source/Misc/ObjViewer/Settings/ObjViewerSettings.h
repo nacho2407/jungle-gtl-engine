@@ -6,6 +6,12 @@
 #include "Math/Vector.h"
 #include "Render/Common/ViewTypes.h"
 
+enum class EModelUpAxis
+{
+	Z_up = 0, // Blender, Unreal
+	Y_up = 1  // Maya, Unity
+};
+
 class FObjViewerSettings : public TSingleton<FObjViewerSettings>
 {
 	friend class TSingleton<FObjViewerSettings>;
@@ -24,7 +30,7 @@ public:
 	float CameraSpeed = 10.f;
 	float CameraRotationSpeed = 60.f;
 	float CameraForwardSpeed = 500.f;
-	FVector InitViewPos = FVector(10, 0, 5);
+	FVector InitViewPos = FVector(0, 0, 0);
 	FVector InitLookAt = FVector(0, 0, 0);
 
 	// View
@@ -38,9 +44,10 @@ public:
 	// Camera Sensitivity
 	float CameraMoveSensitivity = 0.5f;
 	float CameraRotateSensitivity = 0.1f;
-
+	
 	// File paths
 	FString DefaultSavePath = FPaths::ToUtf8(FPaths::SceneDir());
+	EModelUpAxis ModelUpAxis = EModelUpAxis::Z_up;
 
 	void SaveToFile(const FString& Path) const;
 	void LoadFromFile(const FString& Path);
