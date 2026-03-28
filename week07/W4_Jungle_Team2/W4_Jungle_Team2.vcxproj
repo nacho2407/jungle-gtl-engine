@@ -328,7 +328,6 @@
     <ClInclude Include="Source\Engine\Render\Resource\VertexTypes.h" />
     <ClInclude Include="Source\Engine\Render\Scene\RenderBus.h" />
     <ClInclude Include="Source\Engine\Render\Scene\RenderCollector.h" />
-    <ClInclude Include="Source\Engine\Render\Scene\RenderCollectorContext.h" />
     <ClInclude Include="Source\Engine\Render\Scene\RenderCommand.h" />
     <ClInclude Include="Source\Engine\Runtime\Engine.h" />
     <ClInclude Include="Source\Engine\Runtime\EngineLoop.h" />
