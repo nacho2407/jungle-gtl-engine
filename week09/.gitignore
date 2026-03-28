@@ -1,5 +1,6 @@
 # Claude Code
 CLAUDE.md
+DEVLOG.md
 .claude/
 
 ## Ignore Visual Studio temporary files, build results, and
@@ -105,6 +106,7 @@ StyleCopReport.xml
 *.ilk
 *.meta
 *.obj
+!**/Data/*.obj
 *.idb
 *.iobj
 *.pch

@@ -4,8 +4,10 @@
 #include "Render/Common/RenderTypes.h"
 
 #include "Render/Resource/Buffer.h"
-
+#include <map>
 #include "Render/Mesh/MeshManager.h"
+
+class UStaticMesh;
 
 /*
 	Mesh Manager에서 넘겨 받은 MeshData를 바탕으로 MeshBuffer를 생성하고 소유합니다.

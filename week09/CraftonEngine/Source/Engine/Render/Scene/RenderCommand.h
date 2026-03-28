@@ -26,6 +26,7 @@ enum class ERenderCommandType
 	Grid,		// Grid 패스 — LineBatcher 경유
 	Font,		// TextRenderComponent — FontBatcher 경유
 	SubUV,		// SubUVComponent     — SubUVBatcher 경유
+	StaticMesh,	// StaticMeshComponent — StaticMeshShader 사용
 };
 
 //PerObject

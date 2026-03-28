@@ -1,4 +1,4 @@
-#include "Editor/EditorEngine.h"
+﻿#include "Editor/EditorEngine.h"
 
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
@@ -31,8 +31,9 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	// Selection & Gizmo
 	SelectionManager.Init();
 
-	// 뷰포트 레이아웃 초기화
+	// 뷰포트 레이아웃 초기화 + 저장된 설정 복원
 	ViewportLayout.Initialize(this, Window, Renderer, &SelectionManager);
+	ViewportLayout.LoadFromSettings();
 
 	// Editor render pipeline
 	SetRenderPipeline(std::make_unique<FEditorRenderPipeline>(this, Renderer));
@@ -41,6 +42,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 void UEditorEngine::Shutdown()
 {
 	// 에디터 해제 (엔진보다 먼저)
+	ViewportLayout.SaveToSettings();
 	FEditorSettings::Get().SaveToFile(FEditorSettings::GetDefaultSettingsPath());
 	CloseScene();
 	SelectionManager.Shutdown();
