@@ -7,7 +7,7 @@
 #include "Component/PrimitiveComponent.h"
 #include "GameFramework/World.h"
 #include "Editor/EditorRenderPipeline.h"
-#include "Core/Stats.h"
+#include "Core/Logging/Stats.h"
 
 DEFINE_CLASS(UEditorEngine, UEngine)
 REGISTER_FACTORY(UEditorEngine)

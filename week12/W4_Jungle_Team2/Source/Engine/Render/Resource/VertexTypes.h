@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Math/Vector.h"
+#include "Core/CoreMinimal.h"
 
 /*
 	Vertex 구조체들을 정의하는 Header입니다.
@@ -10,14 +10,14 @@
 struct FVertex
 { 
 	FVector Position;
-	FVector4 Color;
+	FColor Color;
 	int SubID;
 };
 
 struct FNormalVertex
 {
 	FVector Position;
-	FVector4 Color;
+	FColor Color;
 	FVector Normal;
 	FVector2 UVs;	//	TexCoord
 };

@@ -1,7 +1,6 @@
 ﻿#pragma once
 
-#include "Core/CoreTypes.h"
-#include "Math/Vector.h"
+#include "Core/CoreMinimal.h"
 
 /**
  * @brief MTL 파일의 머테리얼 데이터를 표현하는 구조체.

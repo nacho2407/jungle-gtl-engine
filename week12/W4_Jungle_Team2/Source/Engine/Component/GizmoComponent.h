@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "PrimitiveComponent.h"
-#include "Core/CoreTypes.h"
+#include "Core/CoreMinimal.h"
 
 class AActor;
 struct FMeshData;

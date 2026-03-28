@@ -1,10 +1,7 @@
 ﻿#pragma once
 
-#include "Core/CoreTypes.h"
-#include "Core/EngineTypes.h"
+#include "Core/CoreMinimal.h"
 #include "Core/ResourceTypes.h"
-#include "Math/Vector.h"
-#include "Math/Matrix.h"
 #include "Render/Common/RenderTypes.h"
 #include "Render/Resource/Shader.h"
 #include "Render/Resource/VertexTypes.h"

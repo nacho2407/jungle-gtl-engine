@@ -2,7 +2,7 @@
 
 #include <string>
 #include <filesystem>
-#include "Core/CoreTypes.h"
+#include "Core/CoreMinimal.h"
 #include "Core/Paths.h"
 #include "GameFramework/WorldContext.h"
 
