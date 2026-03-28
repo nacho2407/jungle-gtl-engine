@@ -4,7 +4,6 @@
 #include "GameFramework/AActor.h"
 #include "Core/ResourceManager.h"
 #include "Object/ObjectFactory.h"
-#include "Render/Mesh/MeshManager.h"
 
 DEFINE_CLASS(UTextRenderComponent, UBillboardComponent)
 REGISTER_FACTORY(UTextRenderComponent)
@@ -17,6 +16,8 @@ void UTextRenderComponent::SetFont(const FName& InFontName)
 
 void UTextRenderComponent::UpdateWorldAABB() const
 {
+	WorldAABB.Reset();
+
 	float TotalWidth = GetUTF8Length(Text) * 0.5f;
 	float TotalHeight = 0.5f;
 
@@ -35,8 +36,8 @@ void UTextRenderComponent::UpdateWorldAABB() const
 	FVector WorldCenter = GetWorldLocation();
 	WorldCenter -= WorldRight * (ScaledWidth * 0.5f); 
 
-	WorldAABBMinLocation = WorldCenter - Extent;
-	WorldAABBMaxLocation = WorldCenter + Extent;
+	WorldAABB.Expand(WorldCenter - Extent);
+	WorldAABB.Expand(WorldCenter + Extent);
 }
 
 bool UTextRenderComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
@@ -60,8 +61,13 @@ bool UTextRenderComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult
 	if (LocalHitPos.Y >= -0.5f && LocalHitPos.Y <= 0.5f &&
 		LocalHitPos.Z >= -0.5f && LocalHitPos.Z <= 0.5f)
 	{
-		FVector WorldHitPos = OutlineWorldMatrix.TransformVector(LocalHitPos);
+		FVector WorldHitPos = OutlineWorldMatrix.TransformPositionWithW(LocalHitPos);
+		OutHitResult.bHit = true;
+		OutHitResult.HitComponent = this;
 		OutHitResult.Distance = (WorldHitPos - Ray.Origin).Length();
+		OutHitResult.Location = WorldHitPos;
+		OutHitResult.Normal = GetForwardVector();
+		OutHitResult.FaceIndex = 0;
 		return true;
 	}
 
@@ -96,7 +102,6 @@ FString UTextRenderComponent::GetOwnerNameToString() const
 
 UTextRenderComponent::UTextRenderComponent()
 {
-	MeshData = &FMeshManager::GetQuad();
 }
 
 void UTextRenderComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)

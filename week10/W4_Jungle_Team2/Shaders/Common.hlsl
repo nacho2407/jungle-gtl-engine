@@ -52,7 +52,6 @@ cbuffer OutlineConstants : register(b5)
     float3 Padding4;
 };
 
-
 float4 ApplyMVP(float3 pos)
 {
     float4 world = mul(float4(pos, 1.0f), Model);
