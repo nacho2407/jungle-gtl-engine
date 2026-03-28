@@ -264,7 +264,7 @@ void CControlPanelWindow::Render(CCore* Core)
 				AStaticMeshActor* MyCube = Scene->SpawnActor<AStaticMeshActor>(Name);
 				if (MyCube && MyCube->GetStaticMeshComponent())
 				{
-					UStaticMesh* CubeData = FObjManager::GetPrimitiveCube();
+					UStaticMesh* CubeData = FObjManager::GetPrimitivePlane();
 					MyCube->GetStaticMeshComponent()->SetStaticMesh(CubeData);
 
 					// 위치도 적당히 옮겨봅니다.

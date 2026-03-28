@@ -1,13 +1,15 @@
 #pragma once
 
-#include "PrimitiveComponent.h"
+#include "NewPrimitiveComponent.h"
 #include "Math/Vector.h"
 #include "Math/Vector4.h"
 #include "PrimitiveLineBatch.h"
 
-class ULineBatchComponent : public UPrimitiveComponent
+struct FDynamicMesh;
+
+class ULineBatchComponent : public UNewPrimitiveComponent
 {
-	DECLARE_RTTI(ULineBatchComponent, UPrimitiveComponent)
+	DECLARE_RTTI(ULineBatchComponent, UNewPrimitiveComponent)
 
 public:
 	void Initialize();
@@ -15,4 +17,7 @@ public:
 	void DrawWireCube(FVector InCenter, FQuat InRotation, FVector InScale, FVector4 InColor);
 	void DrawWireSphere(FVector InCenter, float InRadius, FVector4 InColor);
 	void Clear();
+
+private:
+	FDynamicMesh* LineMesh = nullptr;
 };

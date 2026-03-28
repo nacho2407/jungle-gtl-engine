@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cmath>
 
+struct FRenderMesh;
 class FArchive;
 class FMaterial;
 class Archive;
@@ -17,7 +18,8 @@ class ENGINE_API UNewPrimitiveComponent : public USceneComponent
 public:
 	DECLARE_RTTI(UNewPrimitiveComponent, USceneComponent)
 
-	virtual FBoxSphereBounds GetWorldBounds() const { return Bounds; };
+	// virtual FBoxSphereBounds GetWorldBounds() const { return Bounds; };
+	virtual FBoxSphereBounds GetWorldBounds() const { return CalcBounds(GetWorldTransform()); }
 	virtual void UpdateBounds();
 	virtual FBoxSphereBounds GetLocalBounds() const;
 	virtual FBoxSphereBounds CalcBounds(const FMatrix& LocalToWorld) const;

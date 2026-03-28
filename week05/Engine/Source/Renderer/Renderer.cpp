@@ -6,6 +6,7 @@
 #include "MaterialManager.h"
 #include "Core/Paths.h"
 #include "Primitive/PrimitiveBase.h"
+#include "RenderMesh.h"
 #include <cassert>
 #include <algorithm>
 
@@ -328,6 +329,7 @@ void CRenderer::SubmitCommands(const FRenderCommandQueue& Queue)
 
 	for (const auto& Cmd : Queue.Commands)
 	{
+		if (Cmd.RenderMesh) Cmd.RenderMesh->UpdateVertexAndIndexBuffer(Device, DeviceContext);
 		if (Cmd.MeshData) Cmd.MeshData->UpdateVertexAndIndexBuffer(Device);
 		AddCommand(Cmd);
 	}
@@ -362,7 +364,7 @@ void CRenderer::ExecuteCommands()
 void CRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 {
 	FMaterial* CurrentMaterial = nullptr;
-	FMeshData* CurrentMesh = nullptr;
+	void* CurrentMeshPtr = nullptr;
 	D3D11_PRIMITIVE_TOPOLOGY CurrentMeshTopology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
 
 	ID3D11ShaderResourceView* FontSRV = TextRenderer.GetAtlasSRV();
@@ -380,7 +382,8 @@ void CRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 	{
 		auto Cmd = *it;
 		if (Cmd.RenderLayer != InRenderLayer) return;
-		if (!Cmd.MeshData || (Cmd.MeshData->Vertices.empty() && Cmd.MeshData->Indices.empty())) continue;
+		if (!Cmd.MeshData && !Cmd.RenderMesh) continue;
+		// if (!Cmd.MeshData || (Cmd.MeshData->Vertices.empty() && Cmd.MeshData->Indices.empty())) continue;
 
 		if (Cmd.Material != CurrentMaterial)
 		{
@@ -411,13 +414,64 @@ void CRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 			}
 		}
 
-		if (Cmd.MeshData != CurrentMesh)
+		if (Cmd.MeshData != CurrentMeshPtr)
 		{
 			Cmd.MeshData->Bind(DeviceContext);
-			CurrentMesh = Cmd.MeshData;
+			CurrentMeshPtr = Cmd.MeshData;
+		}
+		if (Cmd.RenderMesh)
+		{
+			if (Cmd.RenderMesh->Vertices.empty() && Cmd.RenderMesh->Indices.empty()) continue;
+
+			if (Cmd.RenderMesh != CurrentMeshPtr)
+			{
+				Cmd.RenderMesh->Bind(DeviceContext);
+				CurrentMeshPtr = Cmd.RenderMesh;
+			}
+
+			D3D11_PRIMITIVE_TOPOLOGY DesiredTopology = (D3D11_PRIMITIVE_TOPOLOGY)Cmd.RenderMesh->Topology;
+			if (DesiredTopology != CurrentMeshTopology)
+			{
+				DeviceContext->IASetPrimitiveTopology(DesiredTopology);
+				CurrentMeshTopology = DesiredTopology;
+			}
+
+			UpdateObjectConstantBuffer(Cmd.WorldMatrix);
+
+			if (!Cmd.RenderMesh->Indices.empty())
+				DeviceContext->DrawIndexed(static_cast<UINT>(Cmd.RenderMesh->Indices.size()), 0, 0);
+			else
+				DeviceContext->Draw(static_cast<UINT>(Cmd.RenderMesh->Vertices.size()), 0);
+		}
+		// =========================================================
+		// 💀 [구형 아키텍처 그리기] (기존 로직)
+		// =========================================================
+		else if (Cmd.MeshData)
+		{
+			if (Cmd.MeshData->Vertices.empty() && Cmd.MeshData->Indices.empty()) continue;
+
+			if (Cmd.MeshData != CurrentMeshPtr)
+			{
+				Cmd.MeshData->Bind(DeviceContext);
+				CurrentMeshPtr = Cmd.MeshData;
+			}
+
+			D3D11_PRIMITIVE_TOPOLOGY DesiredTopology = (D3D11_PRIMITIVE_TOPOLOGY)Cmd.MeshData->Topology;
+			if (DesiredTopology != CurrentMeshTopology)
+			{
+				DeviceContext->IASetPrimitiveTopology(DesiredTopology);
+				CurrentMeshTopology = DesiredTopology;
+			}
+
+			UpdateObjectConstantBuffer(Cmd.WorldMatrix);
+
+			if (!Cmd.MeshData->Indices.empty())
+				DeviceContext->DrawIndexed(static_cast<UINT>(Cmd.MeshData->Indices.size()), 0, 0);
+			else
+				DeviceContext->Draw(static_cast<UINT>(Cmd.MeshData->Vertices.size()), 0);
 		}
 
-		D3D11_PRIMITIVE_TOPOLOGY DesiredTopology = (D3D11_PRIMITIVE_TOPOLOGY)CurrentMesh->Topology;
+		/*D3D11_PRIMITIVE_TOPOLOGY DesiredTopology = (D3D11_PRIMITIVE_TOPOLOGY)CurrentMeshPtr->Topology;
 		if (DesiredTopology != CurrentMeshTopology)
 		{
 			DeviceContext->IASetPrimitiveTopology(DesiredTopology);
@@ -429,7 +483,7 @@ void CRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 		if (!Cmd.MeshData->Indices.empty())
 			DeviceContext->DrawIndexed(static_cast<UINT>(Cmd.MeshData->Indices.size()), 0, 0);
 		else if (!Cmd.MeshData->Vertices.empty())
-			DeviceContext->Draw(static_cast<UINT>(Cmd.MeshData->Vertices.size()), 0);
+			DeviceContext->Draw(static_cast<UINT>(Cmd.MeshData->Vertices.size()), 0);*/
 	}
 }
 

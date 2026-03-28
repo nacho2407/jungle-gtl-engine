@@ -10,6 +10,8 @@
 #include "Component/TextComponent.h"
 #include "Component/UUIDBillboardComponent.h"
 #include "Actor/SkySphereActor.h" 
+#include "Component/StaticMeshComponent.h"
+#include "Renderer/MeshData.h"
 #include <limits>
 
 FRay CPicker::ScreenToRay(const CCamera* Camera, int32 ScreenX, int32 ScreenY, int32 ScreenWidth, int32 ScreenHeight) const
@@ -127,86 +129,121 @@ AActor* CPicker::PickActor(UScene* Scene, int32 ScreenX, int32 ScreenY,
 		
 		for (UActorComponent* Component : Actor->GetComponents())
 		{
-			if (!Component->IsA(UPrimitiveComponent::StaticClass()))
-			{
-				continue;
-			}
-			if (Component->IsA(UUUIDBillboardComponent::StaticClass()))
-			{
-				continue;
-			}
-			UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
-			if (!PrimitiveComponent)
-			{
-				continue;
-			}
+			if (Component->IsA(UUUIDBillboardComponent::StaticClass())) continue;
 
-			const bool bIsSubUV = PrimitiveComponent->IsA(USubUVComponent::StaticClass());
-			const bool bIsText = PrimitiveComponent->IsA(UTextComponent::StaticClass());
-			if (bIsSubUV || bIsText)
-			{
-				const FBoxSphereBounds Bounds = PrimitiveComponent->GetWorldBounds();
+			const bool bIsOldPrim = Component->IsA(UPrimitiveComponent::StaticClass());
+			const bool bIsStaticMesh = Component->IsA(UStaticMeshComponent::StaticClass());
 
-				FVector ToCenter = Bounds.Center - Ray.Origin;
-				float T = FVector::DotProduct(ToCenter, Ray.Direction);
-				if (T < 0.0f)
+			// 둘 다 아니면 피킹 대상이 아님
+			if (!bIsOldPrim && !bIsStaticMesh) continue;
+
+			// ========================================================
+			// 💀 [구형] 기존 프리미티브 로직 (Text, SubUV, 옛날 Mesh)
+			// ========================================================
+			if (bIsOldPrim)
+			{
+				UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
+
+				const bool bIsSubUV = PrimitiveComponent->IsA(USubUVComponent::StaticClass());
+				const bool bIsText = PrimitiveComponent->IsA(UTextComponent::StaticClass());
+				if (bIsSubUV || bIsText)
 				{
+					// 구형(Sphere) 피킹 로직
+					const FBoxSphereBounds Bounds = PrimitiveComponent->GetWorldBounds();
+					FVector ToCenter = Bounds.Center - Ray.Origin;
+					float T = FVector::DotProduct(ToCenter, Ray.Direction);
+					if (T < 0.0f) continue;
+
+					const FVector ClosestPoint = Ray.Origin + Ray.Direction * T;
+					const float DistSq = (ClosestPoint - Bounds.Center).SizeSquared();
+					const float RadiusSq = Bounds.Radius * Bounds.Radius;
+
+					if (DistSq <= RadiusSq && T < ClosestDistance)
+					{
+						ClosestDistance = T;
+						ClosestActor = Actor;
+					}
 					continue;
 				}
 
-				const FVector ClosestPoint = Ray.Origin + Ray.Direction * T;
-				const float DistSq = (ClosestPoint - Bounds.Center).SizeSquared();
-				const float RadiusSq = Bounds.Radius * Bounds.Radius;
+				// 구형 일반 메시 피킹 로직
+				if (!PrimitiveComponent->GetPrimitive()) continue;
+				FMeshData* Mesh = PrimitiveComponent->GetPrimitive()->GetMeshData();
+				if (!Mesh) continue;
 
-				if (DistSq <= RadiusSq && T < ClosestDistance)
+				const FMatrix World = PrimitiveComponent->GetWorldTransform();
+				for (uint32 Index = 0; Index + 2 < Mesh->Indices.size(); Index += 3)
 				{
-					ClosestDistance = T;
-					ClosestActor = Actor;
+					const FVector& P0 = Mesh->Vertices[Mesh->Indices[Index]].Position;
+					const FVector& P1 = Mesh->Vertices[Mesh->Indices[Index + 1]].Position;
+					const FVector& P2 = Mesh->Vertices[Mesh->Indices[Index + 2]].Position;
+
+					const FVector W0 = {
+						P0.X * World.M[0][0] + P0.Y * World.M[1][0] + P0.Z * World.M[2][0] + World.M[3][0],
+						P0.X * World.M[0][1] + P0.Y * World.M[1][1] + P0.Z * World.M[2][1] + World.M[3][1],
+						P0.X * World.M[0][2] + P0.Y * World.M[1][2] + P0.Z * World.M[2][2] + World.M[3][2]
+					};
+					const FVector W1 = {
+						P1.X * World.M[0][0] + P1.Y * World.M[1][0] + P1.Z * World.M[2][0] + World.M[3][0],
+						P1.X * World.M[0][1] + P1.Y * World.M[1][1] + P1.Z * World.M[2][1] + World.M[3][1],
+						P1.X * World.M[0][2] + P1.Y * World.M[1][2] + P1.Z * World.M[2][2] + World.M[3][2]
+					};
+					const FVector W2 = {
+						P2.X * World.M[0][0] + P2.Y * World.M[1][0] + P2.Z * World.M[2][0] + World.M[3][0],
+						P2.X * World.M[0][1] + P2.Y * World.M[1][1] + P2.Z * World.M[2][1] + World.M[3][1],
+						P2.X * World.M[0][2] + P2.Y * World.M[1][2] + P2.Z * World.M[2][2] + World.M[3][2]
+					};
+
+					float Distance = 0.0f;
+					if (RayTriangleIntersect(Ray, W0, W1, W2, Distance) && Distance < ClosestDistance)
+					{
+						ClosestDistance = Distance;
+						ClosestActor = Actor;
+					}
 				}
-
-				continue;
 			}
-
-			if (!PrimitiveComponent->GetPrimitive())
+			// ========================================================
+			// ⭐ [신형] 스태틱 메시 피킹 로직
+			// ========================================================
+			else if (bIsStaticMesh)
 			{
-				continue;
-			}
+				UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(Component);
+				if (!SMC->GetStaticMesh() || !SMC->GetStaticMesh()->GetRenderData()) continue;
 
-			FMeshData* Mesh = PrimitiveComponent->GetPrimitive()->GetMeshData();
-			if (!Mesh)
-			{
-				continue;
-			}
+				FRenderMesh* Mesh = SMC->GetStaticMesh()->GetRenderData();
+				if (Mesh->Vertices.empty() || Mesh->Indices.empty()) continue;
 
-			const FMatrix World = PrimitiveComponent->GetWorldTransform();
+				const FMatrix World = SMC->GetWorldTransform();
 
-			for (uint32 Index = 0; Index + 2 < Mesh->Indices.size(); Index += 3)
-			{
-				const FVector& P0 = Mesh->Vertices[Mesh->Indices[Index]].Position;
-				const FVector& P1 = Mesh->Vertices[Mesh->Indices[Index + 1]].Position;
-				const FVector& P2 = Mesh->Vertices[Mesh->Indices[Index + 2]].Position;
-
-				const FVector W0 = {
-					P0.X * World.M[0][0] + P0.Y * World.M[1][0] + P0.Z * World.M[2][0] + World.M[3][0],
-					P0.X * World.M[0][1] + P0.Y * World.M[1][1] + P0.Z * World.M[2][1] + World.M[3][1],
-					P0.X * World.M[0][2] + P0.Y * World.M[1][2] + P0.Z * World.M[2][2] + World.M[3][2]
-				};
-				const FVector W1 = {
-					P1.X * World.M[0][0] + P1.Y * World.M[1][0] + P1.Z * World.M[2][0] + World.M[3][0],
-					P1.X * World.M[0][1] + P1.Y * World.M[1][1] + P1.Z * World.M[2][1] + World.M[3][1],
-					P1.X * World.M[0][2] + P1.Y * World.M[1][2] + P1.Z * World.M[2][2] + World.M[3][2]
-				};
-				const FVector W2 = {
-					P2.X * World.M[0][0] + P2.Y * World.M[1][0] + P2.Z * World.M[2][0] + World.M[3][0],
-					P2.X * World.M[0][1] + P2.Y * World.M[1][1] + P2.Z * World.M[2][1] + World.M[3][1],
-					P2.X * World.M[0][2] + P2.Y * World.M[1][2] + P2.Z * World.M[2][2] + World.M[3][2]
-				};
-
-				float Distance = 0.0f;
-				if (RayTriangleIntersect(Ray, W0, W1, W2, Distance) && Distance < ClosestDistance)
+				for (uint32 Index = 0; Index + 2 < Mesh->Indices.size(); Index += 3)
 				{
-					ClosestDistance = Distance;
-					ClosestActor = Actor;
+					// ⭐ 여기서는 FVertex 구조체를 사용하므로 그대로 Position을 빼오면 됩니다.
+					const FVector& P0 = Mesh->Vertices[Mesh->Indices[Index]].Position;
+					const FVector& P1 = Mesh->Vertices[Mesh->Indices[Index + 1]].Position;
+					const FVector& P2 = Mesh->Vertices[Mesh->Indices[Index + 2]].Position;
+
+					const FVector W0 = {
+						P0.X * World.M[0][0] + P0.Y * World.M[1][0] + P0.Z * World.M[2][0] + World.M[3][0],
+						P0.X * World.M[0][1] + P0.Y * World.M[1][1] + P0.Z * World.M[2][1] + World.M[3][1],
+						P0.X * World.M[0][2] + P0.Y * World.M[1][2] + P0.Z * World.M[2][2] + World.M[3][2]
+					};
+					const FVector W1 = {
+						P1.X * World.M[0][0] + P1.Y * World.M[1][0] + P1.Z * World.M[2][0] + World.M[3][0],
+						P1.X * World.M[0][1] + P1.Y * World.M[1][1] + P1.Z * World.M[2][1] + World.M[3][1],
+						P1.X * World.M[0][2] + P1.Y * World.M[1][2] + P1.Z * World.M[2][2] + World.M[3][2]
+					};
+					const FVector W2 = {
+						P2.X * World.M[0][0] + P2.Y * World.M[1][0] + P2.Z * World.M[2][0] + World.M[3][0],
+						P2.X * World.M[0][1] + P2.Y * World.M[1][1] + P2.Z * World.M[2][1] + World.M[3][1],
+						P2.X * World.M[0][2] + P2.Y * World.M[1][2] + P2.Z * World.M[2][2] + World.M[3][2]
+					};
+
+					float Distance = 0.0f;
+					if (RayTriangleIntersect(Ray, W0, W1, W2, Distance) && Distance < ClosestDistance)
+					{
+						ClosestDistance = Distance;
+						ClosestActor = Actor;
+					}
 				}
 			}
 		}

@@ -3,7 +3,7 @@
 #include "Math/MathUtility.h"
 #include "Object/Class.h"
 
-IMPLEMENT_RTTI(ULineBatchComponent, UPrimitiveComponent)
+IMPLEMENT_RTTI(ULineBatchComponent, UNewPrimitiveComponent)
 
 void ULineBatchComponent::Initialize()
 {
