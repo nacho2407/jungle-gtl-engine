@@ -38,6 +38,18 @@ TArray<FString> FOverlayStatSystem::BuildLines(const UEditorEngine& Editor) cons
 			snprintf(Buffer, sizeof(Buffer), "Times Allocated : %u", EngineStatics::GetTotalAllocationCount());
 			Lines.push_back(FString(Buffer));
 		}
+
+		{
+			char Buffer[128] = {};
+			snprintf(Buffer, sizeof(Buffer), "PixelShader Memory : %u", EngineStatics::GetPixelShaderMemory());
+			Lines.push_back(FString(Buffer));
+		}
+
+		{
+			char Buffer[128] = {};
+			snprintf(Buffer, sizeof(Buffer), "VertexShader Memory : %u", EngineStatics::GetVertexShaderMemory());
+			Lines.push_back(FString(Buffer));
+		}
 	}
 
 	return Lines;
