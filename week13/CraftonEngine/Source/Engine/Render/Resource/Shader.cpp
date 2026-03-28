@@ -1,4 +1,5 @@
-#include "Shader.h"
+﻿#include "Shader.h"
+#include "Object/EngineStatics.h"
 
 #include <iostream>
 
@@ -71,6 +72,9 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 		return;
 	}
 
+	CachedVertexShaderSize = vertexShaderCSO->GetBufferSize();
+	EngineStatics::AddVertexShaderMemory(CachedVertexShaderSize);
+
 	// Pixel Shader 생성
 	hr = InDevice->CreatePixelShader(pixelShaderCSO->GetBufferPointer(), pixelShaderCSO->GetBufferSize(), nullptr, &PixelShader);
 	if (FAILED(hr))
@@ -81,6 +85,9 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 		pixelShaderCSO->Release();
 		return;
 	}
+
+	CachedPixelShaderSize = pixelShaderCSO->GetBufferSize();
+	EngineStatics::AddPixelShaderMemory(CachedPixelShaderSize);
 
 	// Input Layout 생성
 	hr = InDevice->CreateInputLayout(InInputElements, InInputElementCount, vertexShaderCSO->GetBufferPointer(), vertexShaderCSO->GetBufferSize(), &InputLayout);
@@ -106,11 +113,17 @@ void FShader::Release()
 	}
 	if (PixelShader)
 	{
+		EngineStatics::SubPixelShaderMemory(CachedPixelShaderSize);
+		CachedPixelShaderSize = 0;
+
 		PixelShader->Release();
 		PixelShader = nullptr;
 	}
 	if (VertexShader)
 	{
+		EngineStatics::SubVertexShaderMemory(CachedVertexShaderSize);
+		CachedVertexShaderSize = 0;
+
 		VertexShader->Release();
 		VertexShader = nullptr;
 	}

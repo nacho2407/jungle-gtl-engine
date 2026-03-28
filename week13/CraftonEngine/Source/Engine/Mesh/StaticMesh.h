@@ -17,7 +17,9 @@ public:
 	const FString& GetAssetPathFileName() const;
 	void SetStaticMeshAsset(std::unique_ptr<FStaticMesh> InMesh);
 	FStaticMesh* GetStaticMeshAsset() const;
+	const TArray<FStaticMaterial>& GetStaticMaterials() const;
 
 private:
 	std::unique_ptr<FStaticMesh> StaticMeshAsset;
+	TArray<FStaticMaterial> StaticMaterials; // 슬롯 이름과 머티리얼 인터페이스를 묶어서 저장하는 배열
 };
