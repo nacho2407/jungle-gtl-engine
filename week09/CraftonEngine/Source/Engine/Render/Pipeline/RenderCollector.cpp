@@ -138,6 +138,15 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 
 		if (!primitiveComponent->SupportsOutline()) continue;
 
+		EPrimitiveType PrimType = primitiveComponent->GetPrimitiveType();
+
+		// StaticMesh는 FVertexPNCT 버퍼라 FVertexInputLayout 셰이더와 불일치
+		// TODO: PNCT 호환 Outline 셰이더 추가 후 제거
+		if (PrimType == EPrimitiveType::EPT_StaticMesh)
+		{
+			CollectAABBCommand(primitiveComponent, ShowFlags, RenderBus);
+			continue;
+		}
 
 		// StencilBuffer Mask
 		FRenderCommand MaskCmd = BaseCmd;
@@ -161,7 +170,6 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 			OutlineCmd.PerObjectConstants.Color = FColor(255, 153, 0, 255).ToVector4();
 		}
 		CollectAABBCommand(primitiveComponent, ShowFlags, RenderBus);
-		EPrimitiveType PrimType = primitiveComponent->GetPrimitiveType();
 		OutlineCmd.Params.Outline.PrimitiveType = (PrimType == EPrimitiveType::EPT_Plane ||
 			PrimType == EPrimitiveType::EPT_SubUV ||
 			PrimType == EPrimitiveType::EPT_Text) ? 0u : 1u;
