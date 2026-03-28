@@ -5,7 +5,7 @@ struct VS_INPUT
     float3 p : POSITION;
     float3 n : NORMAL;
     float4 c : COLOR;
-    float2 t : TEXTURE;
+    float2 t : TEXTCOORD;
 };
 
 struct PS_INPUT
@@ -33,7 +33,11 @@ float4 PS(PS_INPUT input) : SV_TARGET
 {
     // 1. 텍스처에서 현재 UV의 픽셀 색상을 가져옵니다.
     float4 texColor = g_txColor.Sample(g_Sample, input.t);
-    
+
+    // Unbound SRV는 (0,0,0,0)을 반환 — 텍스처 미바인딩 시 white로 대체
+    if (texColor.a < 0.001f)
+        texColor = float4(1.0f, 1.0f, 1.0f, 1.0f);
+
     // 2. 방향성 조명 (Directional Light) 연산
     // 빛의 방향 (임의로 우측 상단에서 쏘는 빛)
     float3 lightDir = normalize(float3(1.0f, -1.0f, 1.0f));
