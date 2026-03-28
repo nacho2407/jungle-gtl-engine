@@ -1,6 +1,7 @@
 ﻿#include "FontBatcher.h"
 
 #include "Core/CoreTypes.h"
+#include "Core/ResourceManager.h"
 
 void FFontBatcher::Create(ID3D11Device* InDevice)
 {
@@ -30,6 +31,14 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 
 	OverlayFontShader.Create(Device, L"Shaders/ShaderOverlayFont.hlsl",
 		"VS", "PS", layout, ARRAYSIZE(layout));
+
+	if (const FFontResource* DefaultFont = FResourceManager::Get().FindFont(FName("Default")))
+	{
+		if (DefaultFont->Columns > 0 && DefaultFont->Rows > 0)
+		{
+			BuildCharInfoMap(DefaultFont->Columns, DefaultFont->Rows);
+		}
+	}
 }
 
 void FFontBatcher::CreateBuffers()
@@ -168,10 +177,85 @@ void FFontBatcher::AddScreenText(const FString& Text,
 	float ViewportWidth, float ViewportHeight,
 	float Scale)
 {
-	if (Text.empty()) return;
-	if (ViewportHeight <= 0 || ViewportWidth <= 0) return;
+	if (Text.empty())
+	{
+		return;
+	}
 
-	// ...
+	if (ViewportWidth <= 0.0f || ViewportHeight <= 0.0f)
+	{
+		return;
+	}
+
+	const float CharW = 20.0f * Scale;
+	const float CharH = 20.0f * Scale;
+	const float LetterSpacing = - 0.3f * CharW;
+
+	const uint32 Base = static_cast<uint32>(Vertices.size());
+	const uint32 IdxBase = static_cast<uint32>(Indices.size());
+	const size_t CharCount = Text.size();
+
+	Vertices.resize(Base + CharCount * 4);
+	Indices.resize(IdxBase + CharCount * 6);
+
+	FTextureVertex* pV = Vertices.data() + Base;
+	uint32* pI = Indices.data() + IdxBase;
+
+	const uint8* Ptr = reinterpret_cast<const uint8*>(Text.c_str());
+	const uint8* const End = Ptr + Text.size();
+
+	uint32 CharIdx = 0;
+	float CursorX = ScreenX;
+
+	auto PixelToClipX = [ViewportWidth](float X) -> float
+		{
+			return (X / ViewportWidth) * 2.0f - 1.0f;
+		};
+
+	auto PixelToClipY = [ViewportHeight](float Y) -> float
+		{
+			return 1.0f - (Y / ViewportHeight) * 2.0f;
+		};
+
+	for (size_t i = 0; i < CharCount && Ptr < End; ++i)
+	{
+		uint32 CP = 0;
+		if (Ptr[0] < 0x80) { CP = Ptr[0];                                                                       Ptr += 1; }
+		else if ((Ptr[0] & 0xE0) == 0xC0 && Ptr + 1 < End) { CP = ((Ptr[0] & 0x1F) << 6) | (Ptr[1] & 0x3F);                                   Ptr += 2; }
+		else if ((Ptr[0] & 0xF0) == 0xE0 && Ptr + 2 < End) { CP = ((Ptr[0] & 0x0F) << 12) | ((Ptr[1] & 0x3F) << 6) | (Ptr[2] & 0x3F);         Ptr += 3; }
+		else if ((Ptr[0] & 0xF8) == 0xF0 && Ptr + 3 < End) { CP = ((Ptr[0] & 0x07) << 18) | ((Ptr[1] & 0x3F) << 12) | ((Ptr[2] & 0x3F) << 6) | (Ptr[3] & 0x3F); Ptr += 4; }
+		else { ++Ptr; continue; }
+
+		FVector2 UVMin, UVMax;
+		GetCharUV(CP, UVMin, UVMax);
+
+		const float Left = PixelToClipX(CursorX);
+		const float Right = PixelToClipX(CursorX + CharW);
+		const float Top = PixelToClipY(ScreenY);
+		const float Bottom = PixelToClipY(ScreenY + CharH);
+
+		pV[0] = { FVector(Left,  Top,    0.0f), FVector2(UVMin.X, UVMin.Y) };
+		pV[1] = { FVector(Right, Top,    0.0f), FVector2(UVMax.X, UVMin.Y) };
+		pV[2] = { FVector(Left,  Bottom, 0.0f), FVector2(UVMin.X, UVMax.Y) };
+		pV[3] = { FVector(Right, Bottom, 0.0f), FVector2(UVMax.X, UVMax.Y) };
+
+		const uint32 Vi = Base + CharIdx * 4;
+		pI[0] = Vi;
+		pI[1] = Vi + 1;
+		pI[2] = Vi + 2;
+		pI[3] = Vi + 1;
+		pI[4] = Vi + 3;
+		pI[5] = Vi + 2;
+
+		pV += 4;
+		pI += 6;
+		++CharIdx;
+
+		CursorX += CharW + LetterSpacing;
+	}
+
+	Vertices.resize(Base + CharIdx * 4);
+	Indices.resize(IdxBase + CharIdx * 6);
 }
 
 void FFontBatcher::Clear()
