@@ -31,8 +31,7 @@ void FObjViewerRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		const FShowFlags& ShowFlags = Settings.ShowFlags;
 		EViewMode ViewMode = Settings.ViewMode;
 
-		Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix(),
-			Camera->GetRightVector(), Camera->GetUpVector());
+		Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix());
 		Bus.SetRenderSettings(ViewMode, ShowFlags);
 
 		Collector.CollectWorld(World, ShowFlags, ViewMode, Bus);

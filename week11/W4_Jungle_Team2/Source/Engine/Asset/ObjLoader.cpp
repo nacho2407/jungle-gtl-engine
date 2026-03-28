@@ -505,7 +505,7 @@ void FObjLoader::NormalizeRawPositionsToUnitCube()
 	const FVector Size = Max - Min;
 	const float MaxDim = std::max(Size.X, std::max(Size.Y, Size.Z));
 
-	if (MaxDim <= EPSILON)
+	if (MaxDim <= Epsilon)
 	{
 		return;
 	}

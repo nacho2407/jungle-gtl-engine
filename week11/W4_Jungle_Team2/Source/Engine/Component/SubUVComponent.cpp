@@ -73,7 +73,7 @@ bool USubUVComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 	LocalRay.Direction = InvWorld.TransformVector(Ray.Direction);
 	LocalRay.Direction.NormalizeSafe();
 
-	if (std::abs(LocalRay.Direction.X) < EPSILON)
+	if (std::abs(LocalRay.Direction.X) < Epsilon)
 	{
 		return false;
 	}

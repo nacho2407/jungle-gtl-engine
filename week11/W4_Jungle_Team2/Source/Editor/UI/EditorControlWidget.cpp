@@ -106,10 +106,10 @@ void FEditorControlWidget::Render(float DeltaTime)
 		Camera->SetOrthographic(bIsOrtho);
 	}
 
-	float CameraFOV_Deg = Camera->GetFOV() * RAD_TO_DEG;
+	float CameraFOV_Deg = DegreesToRadians(Camera->GetFOV());
 	if (ImGui::DragFloat("Camera FOV", &CameraFOV_Deg, 0.5f, 1.0f, 90.0f))
 	{
-		Camera->SetFOV(CameraFOV_Deg * DEG_TO_RAD);
+		Camera->SetFOV(DegreesToRadians(CameraFOV_Deg));
 	}
 
 	float OrthoWidth = Camera->GetOrthoWidth();
