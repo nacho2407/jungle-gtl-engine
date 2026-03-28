@@ -1,17 +1,37 @@
 ﻿#pragma once
 #include "MeshComponent.h"
-#include "Engine/Render/Mesh/StaticMesh.h"
+#include "Asset/StaticMesh.h"
 
 class UStaticMeshComponent : public UMeshComponent
 {
-private:
-	UStaticMesh* StaticMesh = nullptr;
-
 public:
 	DECLARE_CLASS(UStaticMeshComponent, UMeshComponent)
+	UStaticMeshComponent();
 
-	void         SetStaticMesh(UStaticMesh* InMesh) { StaticMesh = InMesh; }
-	UStaticMesh* GetStaticMesh() const              { return StaticMesh; }
+	void SetStaticMesh(UStaticMesh* InStaticMesh);
+	UStaticMesh* GetStaticMesh() const;
+	bool HasValidMesh() const;
 
+	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	void PostEditProperty(const char * PropertyName) override;
+
+	void UpdateWorldAABB() const override;
+	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
 	EPrimitiveType GetPrimitiveType() const override { return EPrimitiveType::EPT_StaticMesh; }
+
+	const FAABB& GetWorldAABB() const override;
+
+	bool ConsumeRenderStateDirty();
+
+private:
+	void MarkBoundsDirty();
+	void MarkRenderStateDirty();
+	void EnsureBoundsUpdated() const;
+
+private:
+	UStaticMesh* StaticMeshAsset = nullptr;
+	FString StaticMeshAssetPath;
+
+	mutable bool bBoundsDirty = true;
+	bool bRenderStateDirty = true;
 };
