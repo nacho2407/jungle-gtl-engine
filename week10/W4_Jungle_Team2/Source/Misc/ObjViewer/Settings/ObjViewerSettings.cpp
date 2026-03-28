@@ -1,4 +1,4 @@
-﻿#include "Editor/Settings/ObjViewerSettings.h"
+﻿#include "Misc/ObjViewer/Settings/ObjViewerSettings.h"
 #include "SimpleJSON/json.hpp"
 
 #include <fstream>
@@ -24,6 +24,7 @@ namespace ObjViewerKey
 	constexpr const char* ViewMode = "ViewMode";
 	constexpr const char* bPrimitives = "bPrimitives";
 	constexpr const char* bGrid = "bGrid";
+	constexpr const char* bAxis = "bAxis";
 
 	// Grid
 	constexpr const char* Grid = "Grid";
@@ -61,6 +62,7 @@ void FObjViewerSettings::SaveToFile(const FString& Path) const
 	ViewObj[ObjViewerKey::ViewMode] = static_cast<int32>(ViewMode);
 	ViewObj[ObjViewerKey::bPrimitives] = ShowFlags.bPrimitives;
 	ViewObj[ObjViewerKey::bGrid] = ShowFlags.bGrid;
+	ViewObj[ObjViewerKey::bAxis] = ShowFlags.bAxis;
 	Root[ObjViewerKey::View] = ViewObj;
 
 	// Grid
@@ -153,6 +155,8 @@ void FObjViewerSettings::LoadFromFile(const FString& Path)
 			ShowFlags.bPrimitives = ViewObj[ObjViewerKey::bPrimitives].ToBool();
 		if (ViewObj.hasKey(ObjViewerKey::bGrid))
 			ShowFlags.bGrid = ViewObj[ObjViewerKey::bGrid].ToBool();
+		if (ViewObj.hasKey(ObjViewerKey::bAxis))
+			ShowFlags.bAxis = ViewObj[ObjViewerKey::bAxis].ToBool();
 	}
 
 	// Grid
