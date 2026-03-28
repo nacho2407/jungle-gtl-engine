@@ -5,12 +5,42 @@
 #include "Engine/Core/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
 
-#include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "GameFramework/World.h"
 #include "Object/Object.h"
+
+#include "Viewport/ViewportCamera.h"
+
+namespace
+{
+	void MoveCameraLocal(FViewportCamera& Camera, const FVector& LocalDelta)
+	{
+		const FVector WorldDelta =
+			Camera.GetForwardVector() * LocalDelta.X +
+			Camera.GetRightVector() * LocalDelta.Y +
+			Camera.GetUpVector() * LocalDelta.Z;
+		Camera.SetLocation(Camera.GetLocation() + WorldDelta);
+	}
+
+	void LookAt(FViewportCamera& Camera, const FVector& Target)
+	{
+		const FVector ToTarget = (Target - Camera.GetLocation()).GetSafeNormal();
+		if (ToTarget.IsNearlyZero())
+		{
+			return;
+		}
+
+		const float YawDegrees = MathUtil::RadiansToDegrees(std::atan2(ToTarget.Y, ToTarget.X));
+		const float FlatLen = std::sqrt(ToTarget.X * ToTarget.X + ToTarget.Y * ToTarget.Y);
+		const float PitchDegrees = MathUtil::RadiansToDegrees(std::atan2(ToTarget.Z, FlatLen));
+
+		FRotator Rotation(PitchDegrees, YawDegrees, 0.0f);
+		Rotation.Normalize();
+		Camera.SetRotation(Rotation);
+	}
+}
 
 void FObjViewerViewportClient::Initialize(FWindowsWindow* InWindow)
 {
@@ -21,14 +51,14 @@ void FObjViewerViewportClient::Initialize(FWindowsWindow* InWindow)
 void FObjViewerViewportClient::CreateCamera()
 {
 	DestroyCamera();
-	Camera = UObjectManager::Get().CreateObject<UCameraComponent>();
+	Camera = new FViewportCamera();
 }
 
 void FObjViewerViewportClient::DestroyCamera()
 {
 	if (Camera)
 	{
-		UObjectManager::Get().DestroyObject(Camera);
+		delete Camera;
 		Camera = nullptr;
 	}
 }
@@ -47,8 +77,8 @@ void FObjViewerViewportClient::ResetCamera()
 	float DistanceMultiplier = 6.0f;
     FVector CameraPos = Center + (Offset * DistanceMultiplier);
 
-    Camera->SetWorldLocation(CameraPos);
-    Camera->LookAt(Center);
+    Camera->SetLocation(CameraPos);
+	LookAt(*Camera, Center);
 }
 
 // 모델의 크기와 비례하게 카메라의 이동 범위를 제한한다.
@@ -63,7 +93,7 @@ void FObjViewerViewportClient::ClampCameraPosition()
     float MaxAllowedDistance = ModelRadius * 6.0f;
 
     // 카메라 위치를 확인하고 이동 범위 제한(Clamp)을 적용
-    FVector CamPos = Camera->GetWorldLocation();
+    FVector CamPos = Camera->GetLocation();
     float CurrentDistance = (CamPos - ModelCenter).Size();
     if (CurrentDistance > MaxAllowedDistance)
     {
@@ -71,7 +101,7 @@ void FObjViewerViewportClient::ClampCameraPosition()
         Direction.Normalize();
 
         FVector ClampedPosition = ModelCenter + Direction * MaxAllowedDistance;
-        Camera->SetWorldLocation(ClampedPosition);
+        Camera->SetLocation(ClampedPosition);
     }
 }
 
@@ -89,7 +119,7 @@ void FObjViewerViewportClient::SetViewportSize(float InWidth, float InHeight)
 
 	if (Camera)
 	{
-		Camera->OnResize(static_cast<int32>(WindowWidth), static_cast<int32>(WindowHeight));
+		Camera->OnResize(static_cast<uint32>(WindowWidth), static_cast<uint32>(WindowHeight));
 	}
 }
 
@@ -112,14 +142,6 @@ void FObjViewerViewportClient::TickInput(float DeltaTime)
 		return;
 	}
 
-	const FCameraState& CameraState = Camera->GetCameraState();
-
-	const float MoveSensitivity = Settings ? Settings->CameraMoveSensitivity : 1.f;
-	const float CameraSpeed = (Settings ? Settings->CameraSpeed : 10.f) * MoveSensitivity;
-
-	FVector Rotation = FVector(0, 0, 0);
-	FVector MouseRotation = FVector(0, 0, 0);
-
 	const float RotateSensitivity = Settings ? Settings->CameraRotateSensitivity : 1.f;
 
 	// Mouse sensitivity is degrees per pixel (do not multiply by DeltaTime)
@@ -128,25 +150,31 @@ void FObjViewerViewportClient::TickInput(float DeltaTime)
 	{
 		float DeltaX = static_cast<float>(InputSystem::Get().MouseDeltaX());
 		float DeltaY = static_cast<float>(InputSystem::Get().MouseDeltaY());
-		const float CurrentPitch = Camera->GetRelativeRotation().Y;
+
+		FRotator CurrentRotation = Camera->GetRotation().Rotator();
+		CurrentRotation.Normalize();
+		const float CurrentPitch = CurrentRotation.Pitch;
 		const float RawPitchDelta = -DeltaY * MouseRotationSpeed;
 		const float TargetPitch = MathUtil::Clamp(CurrentPitch + RawPitchDelta, -89.0f, 89.0f);
 		const float ClampedPitchDelta = TargetPitch - CurrentPitch;
 
-		// 카메라를 타겟(회전의 중심점) 위치로 이동시킨 뒤, 마우스 이동량만큼 회전
-		Camera->SetWorldLocation(OrbitPivot);
-		Camera->Rotate(DeltaX * MouseRotationSpeed, ClampedPitchDelta);
+		CurrentRotation.Yaw = FRotator::NormalizeAxis(CurrentRotation.Yaw + DeltaX * MouseRotationSpeed);
+		CurrentRotation.Pitch = TargetPitch;
+		CurrentRotation.Roll = 0.0f;
+		CurrentRotation.Normalize();
 
-		// 회전된 카메라의 '로컬 X축(앞)'의 반대 방향으로 Distance만큼 이동
-		Camera->MoveLocal(FVector(-OrbitDistance, 0.0f, 0.0f));
+		Camera->SetLocation(OrbitPivot);
+		Camera->SetRotation(CurrentRotation);
+		Camera->SetLocation(OrbitPivot - Camera->GetForwardVector().GetSafeNormal() * OrbitDistance);
 	}
-
-	Rotation *= DeltaTime;
-	Camera->Rotate(Rotation.Y + MouseRotation.Y, Rotation.Z + MouseRotation.Z);
 
 	if (InputSystem::Get().GetKeyDown('O'))
 	{
-		Camera->SetOrthographic(!CameraState.bIsOrthogonal);
+		const EViewportProjectionType Current = Camera->GetProjectionType();
+		const EViewportProjectionType Next = (Current == EViewportProjectionType::Perspective)
+			? EViewportProjectionType::Orthographic
+			: EViewportProjectionType::Perspective;
+		Camera->SetProjectionType(Next);
 	}
 }
 
@@ -173,15 +201,15 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
 		float ModelRadius = ModelInfo.ModelRadius;
 		float DynamicForwardSpeed = ForwardSpeed * ModelRadius;
 
-		if (Camera->IsOrthogonal())
+		if (Camera->GetProjectionType() == EViewportProjectionType::Orthographic)
 		{
-			float NewWidth = Camera->GetOrthoWidth() - ScrollNotches * DynamicForwardSpeed * DeltaTime;
-			Camera->SetOrthoWidth(MathUtil::Clamp(NewWidth, 0.1f, 1000.0f));
+			float NewHeight = Camera->GetOrthoHeight() - ScrollNotches * DynamicForwardSpeed * DeltaTime;
+			Camera->SetOrthoHeight(MathUtil::Clamp(NewHeight, 0.1f, 1000.0f));
 		}
 		else
 		{
 			float MoveAmount = ScrollNotches * DynamicForwardSpeed * DeltaTime;
-			Camera->MoveLocal(FVector(MoveAmount, 0.0f, 0.0f));
+			MoveCameraLocal(*Camera, FVector(MoveAmount, 0.0f, 0.0f));
 		}
 	}
 
@@ -241,11 +269,15 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
 		POINT MousePoint = InputSystem::Get().GetMousePos();
 		MousePoint = Window->ScreenToClientPoint(MousePoint);
 
-		FVector CameraLocation = Camera->GetWorldLocation();
+		ObjViewerModelInfo ModelInfo = GetModelInfo();
+		FVector CameraLocation = Camera->GetLocation();
 		FVector CameraDirection = Camera->GetForwardVector();
-		OrbitDistance = FVector::DotProduct(CameraLocation, CameraDirection);
-
-		OrbitPivot = CameraLocation + CameraDirection * OrbitDistance;
+		OrbitPivot = ModelInfo.ModelCenter;
+		OrbitDistance = (CameraLocation - OrbitPivot).Size();
+		if (OrbitDistance <= MathUtil::Epsilon)
+		{
+			OrbitDistance = std::max(10.0f, ModelInfo.ModelRadius * 2.0f);
+		}
 
 		bIsOrbiting = true;
 	}
@@ -280,16 +312,16 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
 		float PanSpeed = MoveSensitivity * 0.01f;
 
 		FVector Center = FVector(0.0f, 0.0f, 0.0f);
-		FVector OldPos = Camera->GetWorldLocation();
+		FVector OldPos = Camera->GetLocation();
 		float OldDist = (OldPos - Center).Size();
 
 		// MoveLocal은 로컬 좌표계를 사용한다. (X: 전진, Y: 우측, Z: 상단)
 		// 마우스를 우측(+)으로 끌면 화면은 좌측(-)으로, 마우스를 아래(+)로 끌면 화면은 위(+)로 이동합니다.
 		FVector Move(0.0f, -DeltaX * PanSpeed, DeltaY * PanSpeed);
-		Camera->MoveLocal(Move);
+		MoveCameraLocal(*Camera, Move);
 
 		// 파고들기 방지: 이동 후 거리가 줄어들었다면 원래 거리로 밀어냄
-		FVector NewPos = Camera->GetWorldLocation();
+		FVector NewPos = Camera->GetLocation();
 		float NewDist = (NewPos - Center).Size();
 
 		if (NewDist < OldDist)
@@ -298,7 +330,7 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
 			Dir.Normalize();
 
 			// 거리를 OldDist로 강제 복구
-			Camera->SetWorldLocation(Center + Dir * OldDist);
+			Camera->SetLocation(Center + Dir * OldDist);
 		}
 	}
 	else if (InputSystem::Get().GetLeftDragEnd())
@@ -316,12 +348,12 @@ void FObjViewerViewportClient::ClampCameraPanToObject()
 	if (!Camera || !World) return;
 
 	 // 최신 카메라 행렬 확보
-    Camera->UpdateWorldMatrix();
+    // Camera->UpdateWorldMatrix();
 	ObjViewerModelInfo ModelInfo = GetModelInfo();
 
 	float ModelRadius = ModelInfo.ModelRadius;
     FVector ModelCenter = ModelInfo.ModelCenter;
-    FVector CamPos = Camera->GetWorldLocation();
+    FVector CamPos = Camera->GetLocation();
     FVector CamFwd = Camera->GetForwardVector();
     FVector CamRight = Camera->GetRightVector();
     FVector CamUp = Camera->GetUpVector();
@@ -336,9 +368,9 @@ void FObjViewerViewportClient::ClampCameraPanToObject()
 
 	// 직교 투영, 원근 투영에 따라 화면을 벗어나지 않도록 허용할 최대 이탈 거리 계산
 	float MaxAllowedPan = 0.0f;
-	if (Camera->IsOrthogonal())
+	if (Camera->GetProjectionType() == EViewportProjectionType::Orthographic)
 	{
-		MaxAllowedPan = Camera->GetOrthoWidth() * 0.5f * 0.8f;
+		MaxAllowedPan = Camera->GetOrthoHeight() * 0.5f * 0.8f;
 	}
 	else
 	{
@@ -350,7 +382,7 @@ void FObjViewerViewportClient::ClampCameraPanToObject()
 	{
 		float CorrectionScale = 1.0f - (MaxAllowedPan / CurrentPanDist);
 		FVector Correction = CamRight * (DistX * CorrectionScale) + CamUp * (DistY * CorrectionScale);
-		Camera->SetWorldLocation(CamPos + Correction);
+		Camera->SetLocation(CamPos + Correction);
 	}
 }
 
@@ -392,9 +424,16 @@ ObjViewerModelInfo FObjViewerViewportClient::GetModelInfo()
 	ModelInfo.ModelRadius = 100.0f;
     if (bHasValidMesh)
     {
-        ModelInfo.ModelRadius = (MaxAABB - MinAABB).Length() * 0.5f; 
+        ModelInfo.ModelRadius = (MaxAABB - MinAABB).Size() * 0.5f; 
     }
-	ModelInfo.ModelCenter = (MaxAABB + MinAABB) / 2.0f;
+	if (bHasValidMesh)
+	{
+		ModelInfo.ModelCenter = (MaxAABB + MinAABB) / 2.0f;
+	}
+	else
+	{
+		ModelInfo.ModelCenter = FVector::ZeroVector;
+	}
 
 	return ModelInfo;
 }
@@ -410,7 +449,7 @@ void FObjViewerViewportClient::SetViewportRect(float InX, float InY, float InWid
 
     if (Camera)
     {
-        Camera->OnResize(static_cast<int32>(WindowWidth), static_cast<int32>(WindowHeight));
+        Camera->OnResize(static_cast<uint32>(WindowWidth), static_cast<uint32>(WindowHeight));
     }
 }
 
