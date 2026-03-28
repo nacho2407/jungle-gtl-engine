@@ -1,60 +1,69 @@
 #include "SSplitter.h"
 #include "Core/Math/MathUtility.h"
 
-void SSplitter::OnResize(float Width, float Height) 
-{
-    // Assume that resizing splitters have already been done by WindowOverlayManager
-    WindowWidth = Width;
-    WindowHeight = Height;
+#include <cmath>
 
-    ResetPanelDimension();
+// Deprecated: resizing is handled by WindowOverlayManager::ResetViewportDimension.
+void SSplitter::OnResize(float Width, float Height)
+{
 }
 
 void SSplitterV::OnDrag(float Delta, float MinBound, float MaxBound)
-{ 
-	if (Delta < FMath::KindaSmallNumber)
+{
+    if (std::abs(Delta) < FMath::KindaSmallNumber)
     {
-		return;
+        return;
     }
 
-    Origin.X += Delta;
-    FMath::Clamp(Origin.X, MinBound, MaxBound);
-
+    Origin.X = FMath::Clamp(Origin.X + Delta, MinBound, MaxBound);
     ResetPanelDimension();
 }
 
 void SSplitterH::OnDrag(float Delta, float MinBound, float MaxBound)
 {
-    if (Delta < FMath::KindaSmallNumber)
+    if (std::abs(Delta) < FMath::KindaSmallNumber)
     {
         return;
     }
 
-    Origin.Y += Delta;
-    FMath::Clamp(Origin.Y, MinBound, MaxBound);
-
+    Origin.Y = FMath::Clamp(Origin.Y + Delta, MinBound, MaxBound);
     ResetPanelDimension();
 }
 
 void SSplitterV::ResetPanelDimension()
 {
+    const float SplitX = Origin.X;
 
     for (FEditorViewportPanel* Panel : LeftPanels)
     {
+        if (!Panel) continue;
+        Panel->PosX  = 0.f;
+        Panel->Width = SplitX;
     }
 
     for (FEditorViewportPanel* Panel : RightPanels)
     {
+        if (!Panel) continue;
+        Panel->PosX  = SplitX;
+        Panel->Width = WindowWidth - SplitX;
     }
 }
 
-void SSplitterH::ResetPanelDimension() 
+void SSplitterH::ResetPanelDimension()
 {
+    const float SplitY = Origin.Y;
+
     for (FEditorViewportPanel* Panel : UpPanels)
     {
+        if (!Panel) continue;
+        Panel->PosY   = 0.f;
+        Panel->Height = SplitY;
     }
 
     for (FEditorViewportPanel* Panel : BottomPanels)
     {
+        if (!Panel) continue;
+        Panel->PosY   = SplitY;
+        Panel->Height = WindowHeight - SplitY;
     }
 }
