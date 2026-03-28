@@ -4,53 +4,62 @@
 #include "Engine/Core/Timer.h"
 #include "Engine/Object/EngineStatics.h"
 
-TArray<FString> FOverlayStatSystem::BuildLines(const UEditorEngine& Editor) const
+TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& Editor) const
 {
-	TArray<FString> Lines;
+	TArray<FOverlayStatGroup> Groups;
 
 	if (bShowFPS)
 	{
+		FOverlayStatGroup Group;
+		Group.StartY = FPSStartY;
+
 		const FTimer* Timer = Editor.GetTimer();
 		const float FPS = Timer ? Timer->GetDisplayFPS() : 0.0f;
 		const float MS = FPS > 0.0f ? 1000.0f / FPS : 0.0f;
 		{
 			char Buffer[128] = {};
 			snprintf(Buffer, sizeof(Buffer), "FPS : %.1f", FPS);
-			Lines.push_back(FString(Buffer));
+			Group.Lines.push_back(FString(Buffer));
 		}
 		{
 			char Buffer[128] = {};
 			snprintf(Buffer, sizeof(Buffer), "Frame Time : %.2f ms", MS);
-			Lines.push_back(FString(Buffer));
+			Group.Lines.push_back(FString(Buffer));
 		}
+
+		Groups.push_back(std::move(Group));
 	}
 
 	if (bShowMemory)
 	{
+		FOverlayStatGroup Group;
+		Group.StartY = MemoryStartY;
 		{
 			char Buffer[128] = {};
 			snprintf(Buffer, sizeof(Buffer), "Memory Allocated : %u", EngineStatics::GetTotalAllocationBytes());
-			Lines.push_back(FString(Buffer));
+			Group.Lines.push_back(FString(Buffer));
 		}
 
 		{
 			char Buffer[128] = {};
 			snprintf(Buffer, sizeof(Buffer), "Times Allocated : %u", EngineStatics::GetTotalAllocationCount());
-			Lines.push_back(FString(Buffer));
+			Group.Lines.push_back(FString(Buffer));
 		}
 
 		{
 			char Buffer[128] = {};
 			snprintf(Buffer, sizeof(Buffer), "PixelShader Memory : %u", EngineStatics::GetPixelShaderMemory());
-			Lines.push_back(FString(Buffer));
+			Group.Lines.push_back(FString(Buffer));
 		}
 
 		{
 			char Buffer[128] = {};
 			snprintf(Buffer, sizeof(Buffer), "VertexShader Memory : %u", EngineStatics::GetVertexShaderMemory());
-			Lines.push_back(FString(Buffer));
+			Group.Lines.push_back(FString(Buffer));
 		}
+
+		Groups.push_back(std::move(Group));
 	}
 
-	return Lines;
+	return Groups;
 }
