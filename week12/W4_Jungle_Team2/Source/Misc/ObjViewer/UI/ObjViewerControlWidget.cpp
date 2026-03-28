@@ -2,18 +2,15 @@
 #include "Misc/ObjViewer/ObjViewerEngine.h"
 #include "Misc/ObjViewer/Viewport/ObjViewerViewportClient.h"
 #include "Misc/ObjViewer/Settings/ObjViewerSettings.h"
-#include "Component/CameraComponent.h"
+#include "Viewport/ViewportCamera.h"
 #include "ImGui/imgui.h"
 
 void FObjViewerControlWidget::Render(float DeltaTime)
 {
 	if (!Engine) return;
 
-	UCameraComponent* Camera = Engine->GetCamera();
+	FViewportCamera* Camera = Engine->GetCamera();
 	FObjViewerSettings& Settings = FObjViewerSettings::Get();
-	FVector InitViewPos = FVector(10, 0, 5);
-	FVector InitLookAt = FVector(0, 0, 0);
-
 	if (!Camera) return;
 
 	// 우측 상단 배치 및 기본 크기 설정
@@ -26,7 +23,7 @@ void FObjViewerControlWidget::Render(float DeltaTime)
 	{
 		if (ImGui::CollapsingHeader("Camera Settings", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			FVector CamPos = Camera->GetWorldLocation();
+			FVector CamPos = Camera->GetLocation();
 			ImGui::Text("[Position] X: %.2f, Y: %.2f, Z: %.2f", CamPos.X, CamPos.Y, CamPos.Z);
 			
 			ImGui::DragFloat("Panning Speed", &Settings.CameraMoveSensitivity, 0.1f, 0.1f, 10.0f, "%.2f");
@@ -34,8 +31,7 @@ void FObjViewerControlWidget::Render(float DeltaTime)
 
 			if (ImGui::Button("Reset Camera Position", ImVec2(-FLT_MIN, 0)))
 			{
-				Camera->SetWorldLocation(FVector(10, 0, 5));
-				Camera->LookAt(FVector(0, 0, 0));
+				Engine->GetViewportClient().ResetCamera();
 			}
 		}
 

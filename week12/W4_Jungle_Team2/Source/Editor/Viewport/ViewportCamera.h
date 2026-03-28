@@ -36,6 +36,7 @@ public:
 
 	void SetProjectionType(EViewportProjectionType InType);
 	EViewportProjectionType GetProjectionType() const { return ProjectionType; }
+	bool IsOrthographic() const { return ProjectionType == EViewportProjectionType::Orthographic; }
 
 	void SetFOV(float InFOV);
 	void SetNearPlane(float InNear);
