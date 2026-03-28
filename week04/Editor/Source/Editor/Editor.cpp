@@ -319,7 +319,7 @@ void FEditor::Create()
     EditorPanel->ViewportClient = &ViewportClient;
     EditorPanel->Scene = CurScene;
     WindowOverlayManager->GetViewportPanels().push_back(EditorPanel);
-    WindowOverlayManager->SetViewportLayout(EViewportLayout::FourWay);
+    WindowOverlayManager->SetViewportLayout(EViewportLayout::ColumnTwoRow);
     LoadEditorSettings();
 }
 

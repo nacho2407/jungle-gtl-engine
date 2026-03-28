@@ -112,50 +112,50 @@ void FWindowOverlayManager::ResetSplitters()
     {
     case EViewportLayout::TwoColumn:
         SplitterV = new SSplitterV();
-        SplitterV->Init(FVector2(SplitX, 0.f), SplitterHalfThick * 2.f, FW, FH);
+        SplitterV->Init(SplitX, 0.f, SplitterHalfThick * 2.f, FH, FW, FH);
         SplitterV->SetLeftPanels ({ViewportPanels[0]});
         SplitterV->SetRightPanels({ViewportPanels[1]});
         break;
 
     case EViewportLayout::TwoRow:
         SplitterH = new SSplitterH();
-        SplitterH->Init(FVector2(0.f, SplitY), SplitterHalfThick * 2.f, FW, FH);
+        SplitterH->Init(0.f, SplitY, FW, SplitterHalfThick * 2.f, FW, FH);
         SplitterH->SetUpPanels    ({ViewportPanels[0]});
         SplitterH->SetBottomPanels({ViewportPanels[1]});
         break;
 
     case EViewportLayout::ColumnTwoRow:
         SplitterV = new SSplitterV();
-        SplitterV->Init(FVector2(SplitX, 0.f), SplitterHalfThick * 2.f, FW, FH);
+        SplitterV->Init(SplitX, 0.f, SplitterHalfThick * 2.f, FH, FW, FH);
         SplitterV->SetLeftPanels ({ViewportPanels[0]});
         SplitterV->SetRightPanels({ViewportPanels[1], ViewportPanels[2]});
 
         SplitterH = new SSplitterH();
-        SplitterH->Init(FVector2(0.f, SplitY), SplitterHalfThick * 2.f, FW, FH);
+        SplitterH->Init(0.f, SplitY, FW, SplitterHalfThick * 2.f, FW, FH);
         SplitterH->SetUpPanels    ({ViewportPanels[1]});
         SplitterH->SetBottomPanels({ViewportPanels[2]});
         break;
 
     case EViewportLayout::TwoRowColumn:
         SplitterV = new SSplitterV();
-        SplitterV->Init(FVector2(SplitX, 0.f), SplitterHalfThick * 2.f, FW, FH);
+        SplitterV->Init(SplitX, 0.f, SplitterHalfThick * 2.f, FH, FW, FH);
         SplitterV->SetLeftPanels ({ViewportPanels[0], ViewportPanels[1]});
         SplitterV->SetRightPanels({ViewportPanels[2]});
 
         SplitterH = new SSplitterH();
-        SplitterH->Init(FVector2(0.f, SplitY), SplitterHalfThick * 2.f, FW, FH);
+        SplitterH->Init(0.f, SplitY, FW, SplitterHalfThick * 2.f, FW, FH);
         SplitterH->SetUpPanels    ({ViewportPanels[0]});
         SplitterH->SetBottomPanels({ViewportPanels[1]});
         break;
 
     case EViewportLayout::FourWay:
         SplitterV = new SSplitterV();
-        SplitterV->Init(FVector2(SplitX, 0.f), SplitterHalfThick * 2.f, FW, FH);
+        SplitterV->Init(SplitX, 0.f, SplitterHalfThick * 2.f, FH, FW, FH);
         SplitterV->SetLeftPanels ({ViewportPanels[0], ViewportPanels[1]});
         SplitterV->SetRightPanels({ViewportPanels[2], ViewportPanels[3]});
 
         SplitterH = new SSplitterH();
-        SplitterH->Init(FVector2(0.f, SplitY), SplitterHalfThick * 2.f, FW, FH);
+        SplitterH->Init(0.f, SplitY, FW, SplitterHalfThick * 2.f, FW, FH);
         SplitterH->SetUpPanels    ({ViewportPanels[0], ViewportPanels[2]});
         SplitterH->SetBottomPanels({ViewportPanels[1], ViewportPanels[3]});
         break;
@@ -175,18 +175,6 @@ void FWindowOverlayManager::ReleaseSplitters()
 // Splitter drag interaction
 // ---------------------------------------------------------------------------
 
-bool FWindowOverlayManager::HitTestSplitterV(int32 X) const
-{
-    if (!SplitterV) return false;
-    return std::abs(static_cast<float>(X) - SplitterV->GetOrigin().X) <= SplitterHalfThick;
-}
-
-bool FWindowOverlayManager::HitTestSplitterH(int32 Y) const
-{
-    if (!SplitterH) return false;
-    return std::abs(static_cast<float>(Y) - SplitterH->GetOrigin().Y) <= SplitterHalfThick;
-}
-
 void FWindowOverlayManager::BeginSplitterDrag(bool bVertical, bool bHorizontal)
 {
     bDraggingV = bVertical   && SplitterV != nullptr;
@@ -201,14 +189,14 @@ void FWindowOverlayManager::UpdateSplitterDrag(float DeltaX, float DeltaY)
     if (bDraggingV && SplitterV)
     {
         SplitterV->OnDrag(DeltaX, FW * 0.1f, FW * 0.9f);
-        VSplitRatio = SplitterV->GetOrigin().X / FW;
+        VSplitRatio = SplitterV->PosX / FW;
         SyncPanelClients();
     }
 
     if (bDraggingH && SplitterH)
     {
         SplitterH->OnDrag(DeltaY, FH * 0.1f, FH * 0.9f);
-        HSplitRatio = SplitterH->GetOrigin().Y / FH;
+        HSplitRatio = SplitterH->PosY / FH;
         SyncPanelClients();
     }
 }

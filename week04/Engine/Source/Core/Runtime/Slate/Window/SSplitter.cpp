@@ -13,7 +13,7 @@ void SSplitterV::OnDrag(float Delta, float MinBound, float MaxBound)
         return;
     }
 
-    Origin.X = FMath::Clamp(Origin.X + Delta, MinBound, MaxBound);
+    PosX = FMath::Clamp(PosX + Delta, MinBound, MaxBound);
     ResetPanelDimension();
 }
 
@@ -24,13 +24,13 @@ void SSplitterH::OnDrag(float Delta, float MinBound, float MaxBound)
         return;
     }
 
-    Origin.Y = FMath::Clamp(Origin.Y + Delta, MinBound, MaxBound);
+    PosY = FMath::Clamp(PosY + Delta, MinBound, MaxBound);
     ResetPanelDimension();
 }
 
 void SSplitterV::ResetPanelDimension()
 {
-    const float SplitX = Origin.X;
+    const float SplitX = PosX;
 
     for (SWindow* Panel : LeftPanels)
     {
@@ -51,7 +51,7 @@ void SSplitterV::ResetPanelDimension()
 
 void SSplitterH::ResetPanelDimension()
 {
-    const float SplitY = Origin.Y;
+    const float SplitY = PosY;
 
     for (SWindow* Panel : UpPanels)
     {
