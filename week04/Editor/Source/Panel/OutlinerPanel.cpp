@@ -19,7 +19,7 @@
 #include "Engine/Game/TextActor.h"
 #include "Engine/Game/AtlasSpriteActor.h"
 #include "Engine/Game/FlipbookActor.h"
-
+#include "Engine/Game/StaticMeshActor.h"
 
 namespace
 {
@@ -71,15 +71,17 @@ namespace
             return "AtlasSpriteActor";
         case FOutlinerPanel::ESpawnActorType::Flipbook:
             return "FlipbookActor";
+        case FOutlinerPanel::ESpawnActorType::StaticMesh:
+            return "StaticMeshActor";
         default:
             return "Unknown";
         }
     }
 
-    const char* const SpawnActorTypeLabels[] = {
-        "CubeActor",     "SphereActor", "ConeActor",   "CylinderActor", "RingActor",
-        "TriangleActor", "SpriteActor", "EffectActor", "TextActor",     "AtlasSpriteActor", "FlipbookActor"
-    };
+    const char* const SpawnActorTypeLabels[] = {"CubeActor",        "SphereActor",  "ConeActor",
+                                                "CylinderActor",    "RingActor",    "TriangleActor",
+                                                "SpriteActor",      "EffectActor",  "TextActor",
+                                                "AtlasSpriteActor", "FlipbookActor", "StaticMeshActor"};
 
     AActor* CreateActorByType(FOutlinerPanel::ESpawnActorType InType)
     {
@@ -105,8 +107,10 @@ namespace
             return new ATextActor();
         case FOutlinerPanel::ESpawnActorType::AtlasSprite:
             return new AAtlasSpriteActor();
-            case FOutlinerPanel::ESpawnActorType::Flipbook:
+        case FOutlinerPanel::ESpawnActorType::Flipbook:
             return new AFlipbookActor();
+        case FOutlinerPanel::ESpawnActorType::StaticMesh:
+            return new AStaticMeshActor();
         default:
             return nullptr;
         }

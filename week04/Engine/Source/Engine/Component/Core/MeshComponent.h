@@ -26,6 +26,8 @@ namespace Engine::Component
         virtual Asset::UMaterial* GetMaterial(uint32 Index) const;
         virtual uint32            GetNumMaterials() const;
 
+        virtual void DescribeProperties(FComponentPropertyBuilder& Builder) override;
+
         virtual void Serialize(bool bIsLoading, void* JsonHandle);
 
       protected:

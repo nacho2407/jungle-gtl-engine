@@ -2,6 +2,7 @@
 #include "Engine/EngineStatics.h"
 #include "Object.h"
 
+// 엔진 내부에서만 사용하는 전역 배열
 TArray<UObject*> GUObjectArray;
 
 namespace
@@ -39,6 +40,11 @@ namespace
         return Object->Name.ToFString();
     }
 } // namespace
+
+TArray<UObject*>& UObject::GetGlobalUObjectArray()
+{
+    return GUObjectArray;
+}
 
 UObject::UObject()
 {

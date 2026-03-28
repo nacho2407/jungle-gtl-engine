@@ -1,5 +1,5 @@
 #include "Core/CoreMinimal.h"
-#include "StaticMeshComponent.h"
+#include "Engine/Component/Mesh/StaticMeshComponent.h"
 #include "Asset/StaticMesh.h"
 #include "Engine/Component/Core/ComponentProperty.h"
 
@@ -9,7 +9,10 @@ namespace Engine::Component
 
     UStaticMeshComponent::~UStaticMeshComponent() {}
 
-    EBasicMeshType UStaticMeshComponent::GetBasicMeshType() const { return EBasicMeshType::None; }
+    EBasicMeshType UStaticMeshComponent::GetBasicMeshType() const
+    {
+        return EBasicMeshType::None;
+    }
 
     void UStaticMeshComponent::DescribeProperties(FComponentPropertyBuilder& Builder)
     {
@@ -19,8 +22,10 @@ namespace Engine::Component
         Options.ExpectedAssetPathKind = EComponentAssetPathKind::StaticMeshFile;
 
         Builder.AddAssetPath(
-            "ObjStaticMeshAsset", L"Static Mesh", [this]() { return GetMeshPath(); },
-            [this](const FString& InPath) { SetMeshPath(InPath); }, Options);
+            "ObjStaticMeshAsset", L"Static Mesh", 
+            [this]() { return GetMeshPath(); },
+            [this](const FString& InPath) { SetMeshPath(InPath); }, 
+            Options);
     }
 
     void UStaticMeshComponent::Serialize(bool bIsLoading, void* JsonHandle)
@@ -33,7 +38,7 @@ namespace Engine::Component
         StaticMesh = InStaticMesh;
         if (StaticMesh)
         {
-            // 에셋이 변경되면 머티리얼 슬롯 수를 동기화합니다.
+            // Initialize material slots here later
         }
     }
 
@@ -44,7 +49,8 @@ namespace Engine::Component
 
     void UStaticMeshComponent::SetMeshPath(const FString& InPath)
     {
-        // FObjManager 연동 예정
+        if (InPath.empty()) return;
+        // FObjManager linkage needed
     }
 
     bool UStaticMeshComponent::GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const

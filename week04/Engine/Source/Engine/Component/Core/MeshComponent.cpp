@@ -1,9 +1,9 @@
 #include "Core/CoreMinimal.h"
 #include "Engine/Component/Core/MeshComponent.h"
-/*
- * #include "Asset/Material.h"
- * 추가 예정 클래스
- */
+#include "Engine/Component/Core/ComponentProperty.h"
+#include "Asset/Asset.h"
+
+#include <string>
 
 namespace Engine::Component
 {
@@ -11,14 +11,53 @@ namespace Engine::Component
 
     UMeshComponent::~UMeshComponent() {}
 
-    void UMeshComponent::Serialize(bool bIsLoading, void* JsonHandle)
+    void UMeshComponent::Serialize(bool bIsLoading, void* JsonHandle) {}
+
+    void UMeshComponent::DescribeProperties(FComponentPropertyBuilder& Builder)
     {
-        // 공통 메시 직렬화 로직
+        UPrimitiveComponent::DescribeProperties(Builder);
+
+        // Automate Material Slot exposure using standard string conversion
+        for (uint32 i = 0; i < GetNumMaterials(); ++i)
+        {
+            std::string IndexStr = std::to_string(i);
+            FString     Key = "MaterialSlot_" + IndexStr;
+
+            std::wstring WIndexStr = std::to_wstring(i);
+            FWString     Label = L"Material Slot " + WIndexStr;
+
+            FComponentPropertyOptions Options;
+            Options.ExpectedAssetPathKind = EComponentAssetPathKind::TextureImage;
+
+            Builder.AddAssetPath(
+                Key, Label,
+                [this, i]() -> FString
+                {
+                    // Safely access UAsset functionality even if UMaterial header is missing
+                    UObject* MatObj = (UObject*)GetMaterial(i);
+                    if (MatObj)
+                    {
+                        if (UAsset* Asset = Cast<UAsset>(MatObj))
+                        {
+                            return Asset->GetAssetName();
+                        }
+                    }
+                    return "";
+                },
+                [this, i](const FString& NewPath)
+                { 
+                    // To be implemented with Material Loader
+                },
+                Options);
+        }
     }
 
     void UMeshComponent::InitializeMaterialSlots(uint32 NumSections)
     {
-        OverrideMaterials.resize(NumSections, nullptr);
+        if (NumSections != OverrideMaterials.size())
+        {
+            OverrideMaterials.resize(NumSections, nullptr);
+        }
     }
 
     void UMeshComponent::SetMaterial(uint32 Index, Asset::UMaterial* InMaterial)

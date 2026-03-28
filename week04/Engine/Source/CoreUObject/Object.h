@@ -68,6 +68,9 @@ class ENGINE_API UObject
     static void* AllocateObject(size_t Size, const char* InTypeName);
     static void FreeObject(void* Pointer, size_t Size);
 
+    /** 엔진의 모든 객체 배열에 안전하게 접근하기 위한 정적 함수 */
+    static TArray<UObject*>& GetGlobalUObjectArray();
+
   public:
     uint32 UUID;
     Engine::Core::Misc::FName  Name;

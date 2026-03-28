@@ -7,6 +7,7 @@
 #include "Engine/Component/Mesh/RingComponent.h"
 #include "Engine/Component/Mesh/SphereComponent.h"
 #include "Engine/Component/Mesh/TriangleComponent.h"
+#include "Engine/Component/Mesh/StaticMeshComponent.h"
 #include "Engine/Component/Sprite/AtlasComponent.h"
 #include "Engine/Component/Sprite/SpriteComponent.h"
 #include "Engine/Component/Sprite/SubUVComponent.h"
@@ -26,6 +27,7 @@
 #include "Engine/Game/TriangleActor.h"
 #include "Engine/Game/AtlasSpriteActor.h"
 #include "Engine/Game/FlipbookActor.h"
+#include "Engine/Game/StaticMeshActor.h"
 #include "Engine/Game/UnknownActor.h"
 
 #include <typeindex>
@@ -96,6 +98,7 @@ namespace
         RegisterActorType<ATriangleActor>("ATriangleActor");
         RegisterActorType<AFlipbookActor>("AFlipbookActor");
         RegisterActorType<AAtlasSpriteActor>("AAtlasSpriteActor");
+        RegisterActorType<AStaticMeshActor>("AStaticMeshActor");
         RegisterActorType<AUnknownActor>("AUnknownActor");
 
         RegisterComponentType<Engine::Component::UConeComponent>("UConeComponent");
@@ -111,6 +114,7 @@ namespace
         RegisterComponentType<Engine::Component::USubUVComponent>("USubUVAnimatedComponent");
         RegisterComponentType<Engine::Component::UAtlasTextComponent>("UTextComponent");
         RegisterComponentType<Engine::Component::UAtlasTextComponent>("UAtlasTextComponent");
+        RegisterComponentType<Engine::Component::UStaticMeshComponent>("UStaticMeshComponent");
         RegisterComponentType<Engine::Component::UUnknownComponent>("UUnknownComponent");
     }
 } // namespace

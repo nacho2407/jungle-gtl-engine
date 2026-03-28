@@ -11,19 +11,24 @@
 #include "Engine/Game/Actor.h"
 #include "Engine/Game/UnknownActor.h"
 #include "SceneIO/SceneAssetPath.h"
+#include "Asset/StaticMesh.h"
 #include "imgui.h"
 
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <cctype>
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+
+extern ENGINE_API TArray<UObject*> GUObjectArray;
 
 namespace
 {
     constexpr ImVec4 UnknownItemColor = ImVec4(0.95f, 0.35f, 0.35f, 1.0f);
 
+    /** 💡 김기훈 님의 요청: 이름이 "None"이면 클래스 이름을 반환하도록 보정 */
     FString GetBaseObjectDisplayName(const UObject* Object)
     {
         if (Object == nullptr)
@@ -31,12 +36,20 @@ namespace
             return {};
         }
 
-        if (Object->Name.IsValid())
+        FString NameStr = Object->Name.IsValid() ? Object->Name.ToFString() : "";
+
+        // 이름이 없거나 기본값 "None"인 경우 클래스 이름 사용
+        if (NameStr.empty() || NameStr == "None")
         {
-            return Object->Name.ToFString();
+            const char* RawTypeName = Object->GetTypeName();
+            if ((RawTypeName[0] == 'U' || RawTypeName[0] == 'A') && isupper(RawTypeName[1]))
+            {
+                return FString(RawTypeName + 1);
+            }
+            return FString(RawTypeName);
         }
 
-        return "Unnamed";
+        return NameStr;
     }
 
     bool IsUnknownObject(const UObject* Object)
@@ -47,7 +60,7 @@ namespace
         }
 
         return Object->IsA(AUnknownActor::GetClass()) ||
-            Object->IsA(Engine::Component::UUnknownComponent::GetClass());
+               Object->IsA(Engine::Component::UUnknownComponent::GetClass());
     }
 
     const char* GetUnknownSuffix(const UObject* Object)
@@ -82,17 +95,16 @@ namespace
         return DisplayName;
     }
 
-    bool IsComponentOwnedByActor(const AActor* Actor,
+    bool IsComponentOwnedByActor(const AActor*                             Actor,
                                  const Engine::Component::USceneComponent* Component)
     {
         return Actor != nullptr && Component != nullptr && Component->GetOwnerActor() == Actor;
     }
 
-    bool ShouldShowComponentInDetailsTree(const AActor* Actor,
+    bool ShouldShowComponentInDetailsTree(const AActor*                             Actor,
                                           const Engine::Component::USceneComponent* Component)
     {
-        return IsComponentOwnedByActor(Actor, Component) &&
-               Component != nullptr &&
+        return IsComponentOwnedByActor(Actor, Component) && Component != nullptr &&
                Component->ShouldShowInDetailsTree();
     }
 
@@ -133,8 +145,6 @@ namespace
         ImGui::SetNextItemWidth(-1.0f);
         if (ImGui::DragFloat3("##Value", EulerDegrees.XYZ, Speed))
         {
-            // UI는 LH Z-Up 기준 축 회전(X,Y,Z)을 보여 주고,
-            // 엔진 내부 Rotator(Pitch,Yaw,Roll) 순서로 다시 변환해 저장합니다.
             Value = EulerDegrees;
         }
         ImGui::PopID();
@@ -171,9 +181,8 @@ namespace
         return Descriptor.Key;
     }
 
-    bool IsCompatibleAssetKind(
-        Engine::Component::EComponentAssetPathKind ExpectedKind,
-        Engine::Component::EComponentAssetPathKind IncomingKind)
+    bool IsCompatibleAssetKind(Engine::Component::EComponentAssetPathKind ExpectedKind,
+                               Engine::Component::EComponentAssetPathKind IncomingKind)
     {
         if (ExpectedKind == Engine::Component::EComponentAssetPathKind::Any)
         {
@@ -183,16 +192,15 @@ namespace
         return ExpectedKind == IncomingKind;
     }
 
-    bool TryAcceptAssetPathDrop(
-        const Engine::Component::FComponentPropertyDescriptor& Descriptor,
-        TMap<FString, FString>* AssetPathEditBuffers)
+    bool TryAcceptAssetPathDrop(const Engine::Component::FComponentPropertyDescriptor& Descriptor,
+                                TMap<FString, FString>* AssetPathEditBuffers)
     {
         if (AssetPathEditBuffers == nullptr || !ImGui::BeginDragDropTarget())
         {
             return false;
         }
 
-        bool bApplied = false;
+        bool                bApplied = false;
         const ImGuiPayload* ActivePayload = ImGui::GetDragDropPayload();
         if (ActivePayload != nullptr &&
             ActivePayload->IsDataType(Editor::Content::ContentBrowserAssetPayloadType))
@@ -203,9 +211,9 @@ namespace
             if (DragPayload != nullptr &&
                 IsCompatibleAssetKind(Descriptor.ExpectedAssetPathKind, DragPayload->AssetKind))
             {
-                const ImGuiPayload* AcceptedPayload = ImGui::AcceptDragDropPayload(
-                    Editor::Content::ContentBrowserAssetPayloadType,
-                    ImGuiDragDropFlags_AcceptBeforeDelivery);
+                const ImGuiPayload* AcceptedPayload =
+                    ImGui::AcceptDragDropPayload(Editor::Content::ContentBrowserAssetPayloadType,
+                                                 ImGuiDragDropFlags_AcceptBeforeDelivery);
                 if (AcceptedPayload != nullptr && AcceptedPayload->IsDelivery())
                 {
                     const FString DroppedVirtualPath = DragPayload->VirtualPath;
@@ -222,6 +230,58 @@ namespace
 
         ImGui::EndDragDropTarget();
         return bApplied;
+    }
+
+    /** Helper to draw a combo box for Static Mesh assets */
+    bool DrawStaticMeshAssetCombo(const Engine::Component::FComponentPropertyDescriptor& Descriptor,
+                                  const FString& CurrentPath, const FString& RawValue,
+                                  TMap<FString, FString>* AssetPathEditBuffers)
+    {
+        bool    bChanged = false;
+        FString ComboLabel = CurrentPath.empty() ? "None" : CurrentPath;
+
+        if (ImGui::BeginCombo("##Value", ComboLabel.c_str()))
+        {
+            for (UObject* Obj : UObject::GetGlobalUObjectArray())
+            {
+                if (Obj == nullptr)
+                {
+                    continue;
+                }
+
+                if (UStaticMesh* MeshAsset = Cast<UStaticMesh>(Obj))
+                {
+                    const FString AssetPath = MeshAsset->GetAssetPathFileName();
+                    FString       DisplayLabel = MeshAsset->GetAssetName();
+
+                    if (MeshAsset->bIsBaked)
+                    {
+                        DisplayLabel += " [Baked]";
+                    }
+
+                    const bool bIsSelected = (RawValue == AssetPath);
+                    if (ImGui::Selectable(DisplayLabel.c_str(), bIsSelected))
+                    {
+                        if (Descriptor.StringSetter)
+                        {
+                            Descriptor.StringSetter(AssetPath);
+                        }
+                        if (AssetPathEditBuffers != nullptr)
+                        {
+                            (*AssetPathEditBuffers)[Descriptor.Key] = AssetPath;
+                        }
+                        bChanged = true;
+                    }
+
+                    if (bIsSelected)
+                    {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+            }
+            ImGui::EndCombo();
+        }
+        return bChanged;
     }
 
     bool DrawBoolPropertyRow(const char* LabelId, const char* DisplayLabel,
@@ -301,47 +361,60 @@ namespace
             InputValue = CachedInput;
         }
 
-        std::array<char, 1024> Buffer{};
-        const size_t CopyLength = std::min(Buffer.size() - 1, InputValue.size());
-        if (CopyLength > 0)
-        {
-            memcpy(Buffer.data(), InputValue.data(), CopyLength);
-        }
-        Buffer[CopyLength] = '\0';
-
         ImGui::PushID(LabelId);
         ImGui::TextUnformatted(DisplayLabel);
         ImGui::SameLine(140.0f);
         ImGui::SetNextItemWidth(-1.0f);
-        const ImGuiInputTextFlags InputFlags =
-            bIsAssetPath ? ImGuiInputTextFlags_EnterReturnsTrue : ImGuiInputTextFlags_None;
-        const bool bChanged = ImGui::InputText("##Value", Buffer.data(), Buffer.size(), InputFlags);
+
+        bool bChanged = false;
         bool bDroppedAssetPath = false;
-        if (bIsAssetPath)
+
+        // Static Mesh Dropdown UI
+        if (bIsAssetPath && Descriptor.ExpectedAssetPathKind ==
+                                Engine::Component::EComponentAssetPathKind::StaticMeshFile)
         {
+            bChanged =
+                DrawStaticMeshAssetCombo(Descriptor, InputValue, Value, AssetPathEditBuffers);
             bDroppedAssetPath = TryAcceptAssetPathDrop(Descriptor, AssetPathEditBuffers);
         }
+        else
+        {
+            std::array<char, 1024> Buffer{};
+            const size_t           CopyLength = std::min(Buffer.size() - 1, InputValue.size());
+            if (CopyLength > 0)
+            {
+                memcpy(Buffer.data(), InputValue.data(), CopyLength);
+            }
+            Buffer[CopyLength] = '\0';
+
+            const ImGuiInputTextFlags InputFlags =
+                bIsAssetPath ? ImGuiInputTextFlags_EnterReturnsTrue : ImGuiInputTextFlags_None;
+
+            if (ImGui::InputText("##Value", Buffer.data(), Buffer.size(), InputFlags))
+            {
+                if (Descriptor.StringSetter)
+                {
+                    Descriptor.StringSetter(Buffer.data());
+                }
+                if (bIsAssetPath && AssetPathEditBuffers != nullptr)
+                {
+                    (*AssetPathEditBuffers)[Descriptor.Key] = Buffer.data();
+                }
+                bChanged = true;
+            }
+
+            if (bIsAssetPath)
+            {
+                bDroppedAssetPath = TryAcceptAssetPathDrop(Descriptor, AssetPathEditBuffers);
+            }
+        }
+
         const bool bHovered = bIsAssetPath && ImGui::IsItemHovered();
         ImGui::PopID();
 
         if (bDroppedAssetPath)
         {
             return true;
-        }
-
-        if (bIsAssetPath && AssetPathEditBuffers != nullptr)
-        {
-            (*AssetPathEditBuffers)[Descriptor.Key] = Buffer.data();
-        }
-
-        if (bChanged && Descriptor.StringSetter)
-        {
-            Descriptor.StringSetter(Buffer.data());
-
-            if (bIsAssetPath && AssetPathEditBuffers != nullptr)
-            {
-                (*AssetPathEditBuffers)[Descriptor.Key] = Buffer.data();
-            }
         }
 
         if (bHovered)
@@ -354,8 +427,8 @@ namespace
             if (!ResolvedPath.empty())
             {
                 const std::u8string Utf8Path = ResolvedPath.u8string();
-                const FString TooltipText(reinterpret_cast<const char*>(Utf8Path.data()),
-                                          Utf8Path.size());
+                const FString       TooltipText(reinterpret_cast<const char*>(Utf8Path.data()),
+                                                Utf8Path.size());
                 ImGui::SetTooltip("%s", TooltipText.c_str());
             }
         }
@@ -387,7 +460,7 @@ namespace
                               const Engine::Component::FComponentPropertyDescriptor& Descriptor)
     {
         FColor Value = Descriptor.ColorGetter ? Descriptor.ColorGetter() : FColor::White();
-        float ColorValue[4] = {Value.r, Value.g, Value.b, Value.a};
+        float  ColorValue[4] = {Value.r, Value.g, Value.b, Value.a};
 
         ImGui::PushID(LabelId);
         ImGui::TextUnformatted(DisplayLabel);
@@ -398,20 +471,19 @@ namespace
 
         if (bChanged && Descriptor.ColorSetter)
         {
-            Descriptor.ColorSetter(FColor(ColorValue[0], ColorValue[1], ColorValue[2],
-                                          ColorValue[3]));
+            Descriptor.ColorSetter(
+                FColor(ColorValue[0], ColorValue[1], ColorValue[2], ColorValue[3]));
         }
 
         return bChanged;
     }
 
-    bool DrawComponentPropertyRow(
-        const Engine::Component::FComponentPropertyDescriptor& Descriptor,
-        TMap<FString, FString>* AssetPathEditBuffers)
+    bool DrawComponentPropertyRow(const Engine::Component::FComponentPropertyDescriptor& Descriptor,
+                                  TMap<FString, FString>* AssetPathEditBuffers)
     {
         const FString LabelText = BuildPropertyLabel(Descriptor);
-        const char* LabelId = Descriptor.Key.c_str();
-        const char* DisplayLabel = LabelText.c_str();
+        const char*   LabelId = Descriptor.Key.c_str();
+        const char*   DisplayLabel = LabelText.c_str();
 
         using namespace Engine::Component;
 
@@ -439,15 +511,9 @@ namespace
     }
 } // namespace
 
-const wchar_t* FPropertiesPanel::GetPanelID() const
-{
-    return L"PropertiesPanel";
-}
+const wchar_t* FPropertiesPanel::GetPanelID() const { return L"PropertiesPanel"; }
 
-const wchar_t* FPropertiesPanel::GetDisplayName() const
-{
-    return L"Details";
-}
+const wchar_t* FPropertiesPanel::GetDisplayName() const { return L"Details"; }
 
 void FPropertiesPanel::Draw()
 {
@@ -475,7 +541,7 @@ void FPropertiesPanel::Draw()
         return;
     }
 
-    AActor* SelectedActor = nullptr;
+    AActor*                             SelectedActor = nullptr;
     Engine::Component::USceneComponent* TargetComponent = ResolveTargetComponent(SelectedActor);
     if (TargetComponent == nullptr)
     {
@@ -498,7 +564,8 @@ void FPropertiesPanel::Draw()
     ImGui::End();
 }
 
-void FPropertiesPanel::SetTarget(const FVector& Location, const FVector& Rotation, const FVector& Scale)
+void FPropertiesPanel::SetTarget(const FVector& Location, const FVector& Rotation,
+                                 const FVector& Scale)
 {
     EditLocation = Location;
     EditRotation = Rotation;
@@ -537,7 +604,7 @@ void FPropertiesPanel::SyncEditTransformFromTarget(
     }
 
     const FVector CurrentLocation = TargetComponent->GetRelativeLocation();
-    const FQuat CurrentRotation = TargetComponent->GetRelativeQuaternion();
+    const FQuat   CurrentRotation = TargetComponent->GetRelativeQuaternion();
     const FVector CurrentScale = TargetComponent->GetRelativeScale3D();
 
     const bool bTargetChanged = (CachedTargetComponent != TargetComponent);
@@ -546,11 +613,8 @@ void FPropertiesPanel::SyncEditTransformFromTarget(
     const bool bRotationChangedExternally =
         !CurrentRotation.Equals(FRotator::MakeFromEuler(EditRotation).Quaternion());
 
-    // 회전 편집 중에는 패널이 표시 중인 Euler 값을 유지해야 합니다.
-    // 매 프레임 quat -> euler 로 다시 변환하면 Pitch(Y축)가 +/-90 부근에서
-    // 등가 회전의 다른 표현으로 튀어 특이점처럼 보이는 현상이 발생합니다.
-    if (bTargetChanged || bLocationChangedExternally || bScaleChangedExternally
-        || bRotationChangedExternally)
+    if (bTargetChanged || bLocationChangedExternally || bScaleChangedExternally ||
+        bRotationChangedExternally)
     {
         if (bTargetChanged)
         {
@@ -562,8 +626,8 @@ void FPropertiesPanel::SyncEditTransformFromTarget(
     }
 }
 
-Engine::Component::USceneComponent* FPropertiesPanel::ResolveTargetComponent(
-    AActor*& OutSelectedActor) const
+Engine::Component::USceneComponent*
+FPropertiesPanel::ResolveTargetComponent(AActor*& OutSelectedActor) const
 {
     OutSelectedActor = ResolveSelectedActor();
     if (GetContext() == nullptr || GetContext()->SelectedObject == nullptr)
@@ -594,13 +658,11 @@ void FPropertiesPanel::DrawNoSelectionState() const
 
 void FPropertiesPanel::DrawMultipleSelectionState() const
 {
-    const size_t SelectedCount =
-        GetContext() != nullptr ? GetContext()->SelectedActors.size() : 0;
+    const size_t SelectedCount = GetContext() != nullptr ? GetContext()->SelectedActors.size() : 0;
 
     ImGui::Text("%zu actors selected.", SelectedCount);
     ImGui::Spacing();
-    ImGui::TextWrapped(
-        "Details currently supports a single selected actor or component.");
+    ImGui::TextWrapped("Details currently supports a single selected actor or component.");
 }
 
 void FPropertiesPanel::DrawUnsupportedSelectionState() const
@@ -649,33 +711,15 @@ void FPropertiesPanel::DrawComponentHierarchy(
     }
 
     Engine::Component::USceneComponent* RootComponent = SelectedActor->GetRootComponent();
-    if (ShouldShowComponentInDetailsTree(SelectedActor, RootComponent))
-    {
-        DrawComponentNode(SelectedActor, RootComponent, TargetComponent);
-    }
-
-    for (Engine::Component::USceneComponent* Component : OwnedComponents)
-    {
-        if (Component == nullptr || Component == RootComponent)
-        {
-            continue;
-        }
-
-        if (!ShouldShowComponentInDetailsTree(SelectedActor, Component) ||
-            Component->GetAttachParent() != nullptr)
-        {
-            continue;
-        }
-
-        DrawComponentNode(SelectedActor, Component, TargetComponent);
-    }
+    DrawComponentNode(SelectedActor, RootComponent, TargetComponent);
 }
 
-void FPropertiesPanel::DrawComponentNode(
-    AActor* OwnerActor, Engine::Component::USceneComponent* Component,
-    Engine::Component::USceneComponent* TargetComponent) const
+void FPropertiesPanel::DrawComponentNode(AActor*                             OwnerActor,
+                                         Engine::Component::USceneComponent* Component,
+                                         Engine::Component::USceneComponent* TargetComponent) const
 {
-    if (!ShouldShowComponentInDetailsTree(OwnerActor, Component))
+    if (!IsComponentOwnedByActor(OwnerActor, Component) || Component == nullptr ||
+        !Component->ShouldShowInDetailsTree())
     {
         return;
     }
@@ -683,17 +727,16 @@ void FPropertiesPanel::DrawComponentNode(
     bool bHasVisibleChildren = false;
     for (Engine::Component::USceneComponent* ChildComponent : Component->GetAttachChildren())
     {
-        if (ShouldShowComponentInDetailsTree(OwnerActor, ChildComponent))
+        if (ChildComponent != nullptr && ChildComponent->ShouldShowInDetailsTree())
         {
             bHasVisibleChildren = true;
             break;
         }
     }
 
-    ImGuiTreeNodeFlags TreeFlags = ImGuiTreeNodeFlags_OpenOnArrow |
-                                   ImGuiTreeNodeFlags_OpenOnDoubleClick |
-                                   ImGuiTreeNodeFlags_SpanAvailWidth |
-                                   ImGuiTreeNodeFlags_DefaultOpen;
+    ImGuiTreeNodeFlags TreeFlags =
+        ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick |
+        ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
     if (TargetComponent == Component)
     {
         TreeFlags |= ImGuiTreeNodeFlags_Selected;
@@ -704,18 +747,41 @@ void FPropertiesPanel::DrawComponentNode(
         TreeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
     }
 
-    const char* DisplayName = Component->GetTypeName();
+    // 💡 김기훈 님의 요청: 이름 수명 확보 및 "None" 기본값 처리 로직 통합
+    FString     DisplayLabelStr = GetBaseObjectDisplayName(Component);
+    const char* DisplayLabel = DisplayLabelStr.c_str();
 
     ImGui::PushID(Component);
     if (IsUnknownObject(Component))
     {
         ImGui::PushStyleColor(ImGuiCol_Text, UnknownItemColor);
     }
-    const bool bNodeOpen = ImGui::TreeNodeEx("##ComponentNode", TreeFlags, "%s", DisplayName);
+    const bool bNodeOpen = ImGui::TreeNodeEx("##ComponentNode", TreeFlags, "%s", DisplayLabel);
     if (IsUnknownObject(Component))
     {
         ImGui::PopStyleColor();
     }
+
+    // 💡 Context menu for deletion
+    if (ImGui::BeginPopupContextItem("ComponentContextMenu"))
+    {
+        bool bIsRoot = (Component == OwnerActor->GetRootComponent());
+        if (ImGui::MenuItem("Remove Component", nullptr, false, !bIsRoot))
+        {
+            if (OwnerActor != nullptr)
+            {
+                OwnerActor->RemoveOwnedComponent(Component);
+
+                if (GetContext() != nullptr && GetContext()->Editor != nullptr)
+                {
+                    GetContext()->Editor->SetSelectedObject(OwnerActor);
+                    GetContext()->Editor->MarkSceneDirty();
+                }
+            }
+        }
+        ImGui::EndPopup();
+    }
+
     const bool bNodeClicked = ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen();
 
     if (bNodeClicked && GetContext() != nullptr && GetContext()->Editor != nullptr)
@@ -727,10 +793,7 @@ void FPropertiesPanel::DrawComponentNode(
     {
         for (Engine::Component::USceneComponent* ChildComponent : Component->GetAttachChildren())
         {
-            if (ShouldShowComponentInDetailsTree(OwnerActor, ChildComponent))
-            {
-                DrawComponentNode(OwnerActor, ChildComponent, TargetComponent);
-            }
+            DrawComponentNode(OwnerActor, ChildComponent, TargetComponent);
         }
 
         ImGui::TreePop();
@@ -738,8 +801,7 @@ void FPropertiesPanel::DrawComponentNode(
     ImGui::PopID();
 }
 
-void FPropertiesPanel::DrawTransformEditor(
-    Engine::Component::USceneComponent* TargetComponent)
+void FPropertiesPanel::DrawTransformEditor(Engine::Component::USceneComponent* TargetComponent)
 {
     ImGui::TextUnformatted("Transform");
     DrawVectorRow("Location", EditLocation, 0.1f);
@@ -827,7 +889,4 @@ void FPropertiesPanel::DrawComponentPropertyEditor(
     }
 }
 
-void FPropertiesPanel::ResetAssetPathEditState()
-{
-    AssetPathEditBuffers.clear();
-}
+void FPropertiesPanel::ResetAssetPathEditState() { AssetPathEditBuffers.clear(); }

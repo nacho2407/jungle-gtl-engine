@@ -132,6 +132,15 @@
     <ClCompile Include="Source\Asset\FontAtlasLoader.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Asset\Material.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\MaterialInstance.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\MaterialInterface.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Asset\StaticMesh.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
@@ -210,9 +219,6 @@
     <ClCompile Include="Source\Engine\Component\Core\SceneComponent.cpp">
       <Filter>Source\Engine\Component\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\Core\StaticMeshComponent.cpp">
-      <Filter>Source\Engine\Component\Core</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Component\Core\UnknownComponent.cpp">
       <Filter>Source\Engine\Component\Core</Filter>
     </ClCompile>
@@ -232,6 +238,9 @@
       <Filter>Source\Engine\Component\Mesh</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Mesh\SphereComponent.cpp">
+      <Filter>Source\Engine\Component\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Mesh\StaticMeshComponent.cpp">
       <Filter>Source\Engine\Component\Mesh</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Mesh\TriangleComponent.cpp">
@@ -286,6 +295,9 @@
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Game\SpriteActor.cpp">
+      <Filter>Source\Engine\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Game\StaticMeshActor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Game\TextActor.cpp">
@@ -426,6 +438,15 @@
       <Filter>Source\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\FontAtlasLoader.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\Material.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\MaterialInstance.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\MaterialInterface.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\StaticMesh.h">
@@ -578,9 +599,6 @@
     <ClInclude Include="Source\Engine\Component\Core\SceneComponent.h">
       <Filter>Source\Engine\Component\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\Core\StaticMeshComponent.h">
-      <Filter>Source\Engine\Component\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Component\Core\UnknownComponent.h">
       <Filter>Source\Engine\Component\Core</Filter>
     </ClInclude>
@@ -600,6 +618,9 @@
       <Filter>Source\Engine\Component\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Mesh\SphereComponent.h">
+      <Filter>Source\Engine\Component\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Mesh\StaticMeshComponent.h">
       <Filter>Source\Engine\Component\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Mesh\TriangleComponent.h">
@@ -654,6 +675,9 @@
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Game\SpriteActor.h">
+      <Filter>Source\Engine\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Game\StaticMeshActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Game\TextActor.h">

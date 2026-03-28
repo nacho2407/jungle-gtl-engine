@@ -12,6 +12,9 @@ class ENGINE_API UStaticMesh : public UStreamableRenderAsset
   public:
     DECLARE_RTTI(UStaticMesh, UStreamableRenderAsset)
 
+    /** 이 에셋이 Bake된 .mesh 파일에서 로드되었는지 여부 */
+    bool bIsBaked = false;
+
     UStaticMesh();
     virtual ~UStaticMesh() override;
 
