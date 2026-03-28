@@ -16,6 +16,8 @@ public:
 	void Shutdown();
 
 private:
+	// TODO-VIEWER: Slate 구조 개편 후 엔진 포인터 삭제하기
+	UObjViewerEngine* Engine = nullptr;
 	FWindowsWindow* Window = nullptr;
 
 	// 하위 위젯 인스턴스
