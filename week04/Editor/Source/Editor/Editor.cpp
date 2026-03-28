@@ -172,9 +172,9 @@ namespace
             return {};
         }
 
-        const int RequiredSize = WideCharToMultiByte(CP_UTF8, 0, InText.c_str(),
-                                                     static_cast<int>(InText.size()), nullptr, 0,
-                                                     nullptr, nullptr);
+        const int RequiredSize =
+            WideCharToMultiByte(CP_UTF8, 0, InText.c_str(), static_cast<int>(InText.size()),
+                                nullptr, 0, nullptr, nullptr);
         if (RequiredSize <= 0)
         {
             return {};
@@ -704,25 +704,13 @@ void FEditor::CreateNewScene()
     PerformNewScene();
 }
 
-bool FEditor::SaveCurrentSceneToDisk()
-{
-    return SaveScene();
-}
+bool FEditor::SaveCurrentSceneToDisk() { return SaveScene(); }
 
-void FEditor::RequestSaveSceneAs()
-{
-    SaveSceneAs();
-}
+void FEditor::RequestSaveSceneAs() { SaveSceneAs(); }
 
-void FEditor::RequestOpenSceneDialog()
-{
-    RequestOpenScene();
-}
+void FEditor::RequestOpenSceneDialog() { RequestOpenScene(); }
 
-void FEditor::RequestAboutPopUp()
-{
-    RequestAboutPopup();
-}
+void FEditor::RequestAboutPopUp() { RequestAboutPopup(); }
 
 bool FEditor::SaveSceneAsPath(const std::filesystem::path& FilePath)
 {
@@ -739,20 +727,11 @@ bool FEditor::CanDeleteSelectedActors() const
     return GlobalInputController.CanDeleteSelectedActors();
 }
 
-bool FEditor::DeleteSelectedActors()
-{
-    return GlobalInputController.DeleteSelectedActors();
-}
+bool FEditor::DeleteSelectedActors() { return GlobalInputController.DeleteSelectedActors(); }
 
-void FEditor::RefreshContentIndex()
-{
-    ContentIndex.Refresh();
-}
+void FEditor::RefreshContentIndex() { ContentIndex.Refresh(); }
 
-std::filesystem::path FEditor::GetDefaultSceneDirectory() const
-{
-    return GetSceneDirectory();
-}
+std::filesystem::path FEditor::GetDefaultSceneDirectory() const { return GetSceneDirectory(); }
 
 void FEditor::ClearScene()
 {
@@ -817,7 +796,8 @@ void FEditor::MarkSceneDirty() { SceneDocument.bDirty = true; }
 
 void FEditor::EnsureAboutImageLoaded()
 {
-    if (AboutImageResource != nullptr || bAttemptedAboutImageLoad || EditorContext.AssetManager == nullptr)
+    if (AboutImageResource != nullptr || bAttemptedAboutImageLoad ||
+        EditorContext.AssetManager == nullptr)
     {
         return;
     }
@@ -832,8 +812,8 @@ void FEditor::EnsureAboutImageLoaded()
 
     UAsset* LoadedAsset = EditorContext.AssetManager->Load(ImagePath.wstring(), LoadParams);
     UTexture2DAsset* TextureAsset = Cast<UTexture2DAsset>(LoadedAsset);
-    if (TextureAsset == nullptr || TextureAsset->GetResource() == nullptr
-        || TextureAsset->GetSRV() == nullptr)
+    if (TextureAsset == nullptr || TextureAsset->GetResource() == nullptr ||
+        TextureAsset->GetSRV() == nullptr)
     {
         UE_LOG(FEditor, ELogVerbosity::Warning, "Failed to load About image: %s",
                PathToUtf8String(ImagePath).c_str());
@@ -989,20 +969,41 @@ void FEditor::RegisterDefaultCommands()
                                                           .ShortcutLabel = "Ctrl+Y",
                                                           .CanExecute = []() { return false; }});
 
-    MenuRegistry.RegisterCommand(
-        FEditorCommandDefinition{.CommandId = "edit.delete_selection",
-                                 .Label = L"Delete Selection",
-                                 .ShortcutLabel = "Delete",
-                                 .Execute =
-                                     [this]()
-                                 {
-                                     GlobalInputController.DeleteSelectedActors();
-                                 },
-                                 .CanExecute =
-                                     [this]()
-                                 {
-                                     return GlobalInputController.CanDeleteSelectedActors();
-                                 }});
+    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
+        .CommandId = "edit.delete_selection",
+        .Label = L"Delete Selection",
+        .ShortcutLabel = "Delete",
+        .Execute =
+            [this]()
+        {
+            // 1. 선택된 객체가 컴포넌트인지 확인합니다.
+            if (auto* SelectedComp =
+                    Cast<Engine::Component::USceneComponent>(EditorContext.SelectedObject))
+            {
+                AActor* Owner = SelectedComp->GetOwnerActor();
+                // RootComponent가 아닌 일반 컴포넌트일 경우 컴포넌트만 삭제합니다.
+                if (Owner != nullptr && SelectedComp != Owner->GetRootComponent())
+                {
+                    Owner->RemoveOwnedComponent(SelectedComp);
+
+                    // 삭제 후 부모 액터를 선택 상태로 만듭니다.
+                    SetSelectedObject(Owner);
+                    MarkSceneDirty();
+                    return;
+                }
+            }
+
+            // 2. 컴포넌트가 아니거나 Root일 경우 기존 액터 삭제 로직을 수행합니다.
+            GlobalInputController.DeleteSelectedActors();
+        },
+        .CanExecute =
+            [this]()
+        {
+            // 컴포넌트가 선택되었거나, 삭제 가능한 액터가 있을 때 실행 가능합니다.
+            if (Cast<Engine::Component::USceneComponent>(EditorContext.SelectedObject))
+                return true;
+            return GlobalInputController.CanDeleteSelectedActors();
+        }});
 
     MenuRegistry.RegisterCommand(FEditorCommandDefinition{.CommandId = "edit.preferences",
                                                           .Label = L"Preferences (Not Ready)",
@@ -1030,23 +1031,23 @@ void FEditor::RegisterDefaultCommands()
                                                           .Label = L"Build (Not Ready)",
                                                           .CanExecute = []() { return false; }});
 
-    MenuRegistry.RegisterCommand(FEditorCommandDefinition{
-        .CommandId = "help.shortcuts",
-        .Label = L"Shortcuts",
-        .Execute =
-            [this]()
-        {
-            if (PanelManager == nullptr)
-            {
-                return;
-            }
+    MenuRegistry.RegisterCommand(
+        FEditorCommandDefinition{.CommandId = "help.shortcuts",
+                                 .Label = L"Shortcuts",
+                                 .Execute =
+                                     [this]()
+                                 {
+                                     if (PanelManager == nullptr)
+                                     {
+                                         return;
+                                     }
 
-            FPanelOpenRequest Request;
-            Request.PanelType = std::type_index(typeid(FShortcutsPanel));
-            Request.OpenPolicy = EPanelOpenPolicy::FocusIfOpenElseCreate;
-            PanelManager->OpenPanel(Request);
-        },
-        .CanExecute = [this]() { return PanelManager != nullptr; }});
+                                     FPanelOpenRequest Request;
+                                     Request.PanelType = std::type_index(typeid(FShortcutsPanel));
+                                     Request.OpenPolicy = EPanelOpenPolicy::FocusIfOpenElseCreate;
+                                     PanelManager->OpenPanel(Request);
+                                 },
+                                 .CanExecute = [this]() { return PanelManager != nullptr; }});
 
     MenuRegistry.RegisterCommand(
         FEditorCommandDefinition{.CommandId = "help.about",
@@ -1222,8 +1223,8 @@ void FEditor::DrawAboutPopup()
 
         ImGui::Spacing();
 
-        if (AboutImageResource != nullptr && AboutImageResource->GetSRV() != nullptr
-            && AboutImageResource->Width > 0 && AboutImageResource->Height > 0)
+        if (AboutImageResource != nullptr && AboutImageResource->GetSRV() != nullptr &&
+            AboutImageResource->Width > 0 && AboutImageResource->Height > 0)
         {
             ImGui::Spacing();
             ImGui::Separator();
@@ -1231,18 +1232,17 @@ void FEditor::DrawAboutPopup()
 
             const float AvailableWidth = ImGui::GetContentRegionAvail().x;
             const float TargetWidth = std::min(AvailableWidth, 460.0f);
-            const float AspectRatio =
-                static_cast<float>(AboutImageResource->Height)
-                / static_cast<float>(AboutImageResource->Width);
+            const float AspectRatio = static_cast<float>(AboutImageResource->Height) /
+                                      static_cast<float>(AboutImageResource->Width);
             const ImVec2 ImageSize(TargetWidth, TargetWidth * AspectRatio);
             if (AvailableWidth > ImageSize.x)
             {
-                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (AvailableWidth - ImageSize.x) * 0.5f);
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() +
+                                     (AvailableWidth - ImageSize.x) * 0.5f);
             }
 
-            ImGui::Image(ImTextureRef(
-                             static_cast<ImTextureID>(reinterpret_cast<uintptr_t>(
-                                 AboutImageResource->GetSRV()))),
+            ImGui::Image(ImTextureRef(static_cast<ImTextureID>(
+                             reinterpret_cast<uintptr_t>(AboutImageResource->GetSRV()))),
                          ImageSize);
         }
 
@@ -1358,7 +1358,7 @@ void FEditor::DrawPanel()
         PanelManager->DrawPanels();
     }
 
-     ViewportClient.DrawViewportOverlay();
+    ViewportClient.DrawViewportOverlay();
 
     EditorChrome.Draw(ChromeMenus);
     DrawAboutPopup();
@@ -1380,8 +1380,7 @@ void FEditor::BuildRenderData()
 
     const EEditorShowFlags EditorShowFlags =
         ViewportClient.GetRenderSetting().BuildEditorShowFlags(true);
-    const ESceneShowFlags SceneShowFlags =
-        ViewportClient.GetRenderSetting().BuildSceneShowFlags();
+    const ESceneShowFlags SceneShowFlags = ViewportClient.GetRenderSetting().BuildSceneShowFlags();
 
     ViewportClient.BuildRenderData(EditorRenderData, EditorShowFlags);
 

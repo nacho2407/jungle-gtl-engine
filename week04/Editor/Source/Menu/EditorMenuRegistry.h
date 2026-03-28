@@ -155,22 +155,22 @@ class FEditorMenuRegistry
     struct FRegisteredMenuEntry
     {
         FEditorMenuEntryDefinition Definition;
-        size_t Serial = 0;
+        size_t                     Serial = 0;
     };
 
     // submenu를 포함한 트리 형태의 중간 빌드 구조입니다.
     struct FBuildMenuItem
     {
         EEditorChromeMenuItemType Type = EEditorChromeMenuItemType::Action;
-        FWString Label;
-        FString ShortcutLabel;
-        bool bEnabled = true;
-        bool bCheckable = false;
-        bool bChecked = false;
-        std::function<void()> OnTriggered;
-        TArray<FBuildMenuItem> Children;
-        int32 Order = 0;
-        size_t Serial = 0;
+        FWString                  Label;
+        FString                   ShortcutLabel;
+        bool                      bEnabled = true;
+        bool                      bCheckable = false;
+        bool                      bChecked = false;
+        std::function<void()>     OnTriggered;
+        TArray<FBuildMenuItem>    Children;
+        int32                     Order = 0;
+        size_t                    Serial = 0;
     };
 
     // 같은 위치에 같은 항목이 다시 등록되면 순서만 갱신하고 중복 추가는 막습니다.
@@ -178,11 +178,10 @@ class FEditorMenuRegistry
     {
         for (FRegisteredMenuEntry& Entry : MenuEntries)
         {
-            const bool bSameKey =
-                Entry.Definition.MainMenu == Definition.MainMenu &&
-                Entry.Definition.SubmenuPath == Definition.SubmenuPath &&
-                Entry.Definition.CommandId == Definition.CommandId &&
-                Entry.Definition.bSeparator == Definition.bSeparator;
+            const bool bSameKey = Entry.Definition.MainMenu == Definition.MainMenu &&
+                                  Entry.Definition.SubmenuPath == Definition.SubmenuPath &&
+                                  Entry.Definition.CommandId == Definition.CommandId &&
+                                  Entry.Definition.bSeparator == Definition.bSeparator;
 
             if (!bSameKey)
             {
@@ -236,9 +235,9 @@ class FEditorMenuRegistry
         while (Start < SubmenuPath.size())
         {
             const size_t SlashIndex = SubmenuPath.find('/', Start);
-            const size_t SegmentLength =
-                (SlashIndex == FWString::npos) ? (SubmenuPath.size() - Start)
-                                               : (SlashIndex - Start);
+            const size_t SegmentLength = (SlashIndex == FWString::npos)
+                                             ? (SubmenuPath.size() - Start)
+                                             : (SlashIndex - Start);
 
             if (SegmentLength > 0)
             {
@@ -272,25 +271,26 @@ class FEditorMenuRegistry
             return Item;
         }
 
-        Items.push_back(FBuildMenuItem{});
-        FBuildMenuItem& Item = Items.back();
-        Item.Type = EEditorChromeMenuItemType::SubMenu;
-        Item.Label = Label;
-        Item.Order = Order;
-        Item.Serial = Serial;
-        return Item;
+        FBuildMenuItem NewSubmenu;
+        NewSubmenu.Type = EEditorChromeMenuItemType::SubMenu;
+        NewSubmenu.Label = Label;
+        NewSubmenu.Order = Order;
+        NewSubmenu.Serial = Serial;
+
+        Items.push_back(std::move(NewSubmenu));
+        return Items.back();
     }
 
     // submenu path를 따라가며 중간 노드를 만들고 마지막 단계에 실제 항목을 넣습니다.
     static void InsertMenuEntry(TArray<FBuildMenuItem>& Items,
                                 const TArray<FWString>& SubmenuSegments, size_t SegmentIndex,
-                                const FRegisteredMenuEntry& Entry,
+                                const FRegisteredMenuEntry&     Entry,
                                 const FEditorCommandDefinition* Command)
     {
         if (SegmentIndex < SubmenuSegments.size())
         {
-            FBuildMenuItem& Submenu = FindOrAddSubmenu(
-                Items, SubmenuSegments[SegmentIndex], Entry.Definition.Order, Entry.Serial);
+            FBuildMenuItem& Submenu = FindOrAddSubmenu(Items, SubmenuSegments[SegmentIndex],
+                                                       Entry.Definition.Order, Entry.Serial);
             InsertMenuEntry(Submenu.Children, SubmenuSegments, SegmentIndex + 1, Entry, Command);
             return;
         }
@@ -370,5 +370,5 @@ class FEditorMenuRegistry
     TMap<FString, FEditorCommandDefinition> Commands;
     // 메뉴 배치 정의를 등록 순서와 함께 보관합니다.
     TArray<FRegisteredMenuEntry> MenuEntries;
-    size_t NextEntrySerial = 0;
+    size_t                       NextEntrySerial = 0;
 };

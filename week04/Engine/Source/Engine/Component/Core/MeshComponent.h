@@ -4,7 +4,7 @@
 
 namespace Engine::Asset
 {
-    class UMaterial;
+    class UMaterialInterface; // Use Interface for maximum flexibility
 }
 
 namespace Engine::Component
@@ -21,14 +21,16 @@ namespace Engine::Component
         virtual ~UMeshComponent() override;
 
         /** 머티리얼 슬롯 관리 */
-        virtual void              InitializeMaterialSlots(uint32 NumSections);
-        virtual void              SetMaterial(uint32 Index, Asset::UMaterial* InMaterial);
-        virtual Asset::UMaterial* GetMaterial(uint32 Index) const;
-        virtual uint32            GetNumMaterials() const;
+        virtual void InitializeMaterialSlots(uint32 NumSections);
+        virtual void SetMaterial(uint32 Index, Asset::UMaterialInterface* InMaterial);
+        virtual Asset::UMaterialInterface* GetMaterial(uint32 Index) const;
+        virtual uint32                     GetNumMaterials() const;
+
+        virtual void DescribeProperties(FComponentPropertyBuilder& Builder) override;
 
         virtual void Serialize(bool bIsLoading, void* JsonHandle);
 
       protected:
-        TArray<Asset::UMaterial*> OverrideMaterials;
+        TArray<Asset::UMaterialInterface*> OverrideMaterials;
     };
 } // namespace Engine::Component

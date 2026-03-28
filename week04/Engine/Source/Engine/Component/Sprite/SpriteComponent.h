@@ -1,13 +1,17 @@
 #pragma once
 
-#include "Engine/Component/Mesh/QuadComponent.h"
+#include "Engine/Component/Core/PrimitiveComponent.h"
 #include "Renderer/RenderAsset/TextureResource.h"
+#include "Renderer/Types/BasicMeshType.h" // EBasicMeshType 정의 포함
 
 namespace Engine::Component
 {
-    class ENGINE_API USpriteComponent : public UQuadComponent
+    /**
+     * @brief 2D 스프라이트를 렌더링하는 컴포넌트입니다.
+     */
+    class ENGINE_API USpriteComponent : public UPrimitiveComponent
     {
-        DECLARE_RTTI(USpriteComponent, UQuadComponent)
+        DECLARE_RTTI(USpriteComponent, UPrimitiveComponent)
       public:
         USpriteComponent() = default;
         ~USpriteComponent() override = default;
@@ -16,8 +20,8 @@ namespace Engine::Component
         FTextureResource*       GetTextureResource() { return TextureResource; }
         void                    SetTextureResource(FTextureResource* InTextureResource);
 
-        FString GetTexturePath() const { return TexturePath; }
-        void SetTexturePath(const FString& InPath);
+        const FString& GetTexturePath() const { return TexturePath; }
+        void           SetTexturePath(const FString& InPath);
 
         bool GetBillboard() const { return bBillboard; }
         void SetBillboard(bool bInBillboard);
@@ -25,13 +29,21 @@ namespace Engine::Component
         const FVector& GetBillboardOffset() const { return BillboardOffset; }
         void           SetBillboardOffset(const FVector& InBillboardOffset);
 
-        void DescribeProperties(FComponentPropertyBuilder& Builder) override;
-        void ResolveAssetReferences(UAssetManager* InAssetManager) override;
+        // UPrimitiveComponent/USceneComponent 인터페이스 구현
+        bool GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const override;
+        void DescribeProperties(class FComponentPropertyBuilder& Builder) override;
+        void ResolveAssetReferences(class UAssetManager* InAssetManager) override;
+
+        /** 스프라이트 계열은 기본적으로 Quad 타입을 반환하도록 설정 */
+        EBasicMeshType GetBasicMeshType() const override { return EBasicMeshType::Quad; }
+
+      protected:
+        Geometry::FAABB GetLocalAABB() const override;
 
       protected:
         FTextureResource* TextureResource = nullptr;
-        FString TexturePath = {};
-        bool    bBillboard = false;
-        FVector BillboardOffset = FVector(0.0f, 0.0f, 0.0f);
+        FString           TexturePath = "";
+        bool              bBillboard = true;
+        FVector           BillboardOffset = FVector::ZeroVector;
     };
 } // namespace Engine::Component

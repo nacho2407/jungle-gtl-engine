@@ -1,6 +1,6 @@
 #include "Core/CoreMinimal.h"
 #include "MaterialLoader.h"
-#include "MaterialAsset.h" // UMaterialAsset 클래스 헤더
+#include "Asset/MaterialInterface.h" // 우리의 클래스 헤더
 #include "Texture2DAsset.h"
 
 #include <filesystem>
@@ -51,15 +51,15 @@ UAsset* FMaterialLoader::LoadAsset(const FSourceRecord& Source, const FAssetLoad
     if (!ParseMtlText(Source, *MatResource))
     {
         UE_LOG(Asset, ELogVerbosity::Warning,
-               "[MaterialLoader] Failed to parse .mtl file. Path = % s ",
+               "[MaterialLoader] Failed to parse .mtl file. Path = %s",
                WidePathToUtf8(Source.NormalizedPath).c_str());
                             
         return nullptr;
     }
 
-    // 3. 에셋 래퍼 생성 및 반환
-    UMaterialAsset* NewMatAsset = new UMaterialAsset();
-    NewMatAsset->Initialize(Source, MatResource);
+    // 3. 우리의 UMaterialInterface 에셋 생성 및 초기화
+    Engine::Asset::UMaterialInterface* NewMatAsset = new Engine::Asset::UMaterialInterface();
+    NewMatAsset->Initialize(MatResource);
 
     if (AssetManager) // 포인터가 유효한지 확인
     {
@@ -91,14 +91,10 @@ UAsset* FMaterialLoader::LoadAsset(const FSourceRecord& Source, const FAssetLoad
                 if (LoadedTex)
                 {
                     UTexture2DAsset* TexAsset = static_cast<UTexture2DAsset*>(LoadedTex);
-
-                    // UMaterialAsset이 텍스처 에셋의 생명주기를 참조하도록 의존성 추가
-                    // NewMatAsset->AddTextureDependency(TexAsset);
-
                     return TexAsset->GetResource();
                 }
 
-                // 로드 실패 시 에러 로그 출력 (LogName을 활용해 어떤 맵이 실패했는지 명시)
+                // 로드 실패 시 에러 로그 출력
                 UE_LOG(Asset, ELogVerbosity::Warning,
                        "[MaterialLoader] Failed to load %s texture. Path=%s", LogName,
                        WidePathToUtf8(WideTexPath).c_str());
@@ -146,14 +142,13 @@ bool FMaterialLoader::ParseMtlText(const FSourceRecord& Source,
 
         if (Header == "newmtl")
         {
-            // 이전 재질이 있었다면 맵에 저장
             if (bHasMaterial && !CurrentMaterialName.empty())
             {
                 OutResource.Materials[CurrentMaterialName] = CurrentData;
             }
 
             LineStream >> CurrentMaterialName;
-            CurrentData = FMaterialData(); // 새 재질 초기화
+            CurrentData = FMaterialData();
             bHasMaterial = true;
         }
         else if (Header == "Ka")
@@ -193,7 +188,7 @@ bool FMaterialLoader::ParseMtlText(const FSourceRecord& Source,
         {
             LineStream >> CurrentData.Opacity;
         }
-        else if (Header == "Tr") // .mtl 파일에 따라 d 대신 Tr(Transparency)를 쓰는 경우 대응
+        else if (Header == "Tr")
         {
             float Transparency;
             LineStream >> Transparency;
@@ -215,8 +210,6 @@ bool FMaterialLoader::ParseMtlText(const FSourceRecord& Source,
         {
             FString TextureFilename;
             LineStream >> TextureFilename;
-
-            // FontAtlasLoader에서 사용했던 방식처럼 Sibling Path로 절대 경로화
             FWString AbsoluteTexturePath =
                 ResolveSiblingPath(Source.NormalizedPath, TextureFilename);
             CurrentData.DiffuseMapPath = WidePathToUtf8(AbsoluteTexturePath);
@@ -225,7 +218,6 @@ bool FMaterialLoader::ParseMtlText(const FSourceRecord& Source,
         {
             FString TextureFilename;
             LineStream >> TextureFilename;
-
             FWString AbsoluteTexturePath =
                 ResolveSiblingPath(Source.NormalizedPath, TextureFilename);
             CurrentData.SpecularHighlightMapPath = WidePathToUtf8(AbsoluteTexturePath);
@@ -240,22 +232,10 @@ bool FMaterialLoader::ParseMtlText(const FSourceRecord& Source,
         }
     }
 
-    // 루프가 끝난 후 마지막 재질 저장
     if (bHasMaterial && !CurrentMaterialName.empty())
     {
         OutResource.Materials[CurrentMaterialName] = CurrentData;
     }
-
-    // for (const auto& Pair : OutResource.Materials)
-    //{
-    //     const FMaterialData& Data = Pair.second;
-    //     if (Data.DiffuseMapPath.empty())
-    //     {
-    //         // 텍스처 경로가 없으면 에디터 콘솔에 노란색 경고 띄우기
-    //         UE_LOG(Asset, ELogVerbosity::Warning,
-    //                "[MaterialLoader] Material '%s' has no diffuse map.", Pair.first.c_str());
-    //     }
-    // }
 
     return !OutResource.Materials.empty();
 }

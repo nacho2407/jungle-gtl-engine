@@ -25,9 +25,31 @@ namespace Engine::Component
         BillboardOffset = InBillboardOffset;
     }
 
+    bool USpriteComponent::GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const
+    {
+        // 쿼드(사각형)를 구성하는 두 개의 삼각형 생성 (-1~1 범위)
+        Geometry::FTriangle T1, T2;
+        T1.V0 = {-1.0f, 0.0f, -1.0f};
+        T1.V1 = { 1.0f, 0.0f, -1.0f};
+        T1.V2 = { 1.0f, 0.0f,  1.0f};
+
+        T2.V0 = {-1.0f, 0.0f, -1.0f};
+        T2.V1 = { 1.0f, 0.0f,  1.0f};
+        T2.V2 = {-1.0f, 0.0f,  1.0f};
+
+        OutTriangles.push_back(T1);
+        OutTriangles.push_back(T2);
+        return true;
+    }
+
+    Geometry::FAABB USpriteComponent::GetLocalAABB() const
+    {
+        return Geometry::FAABB({-1.0f, -0.1f, -1.0f}, {1.0f, 0.1f, 1.0f});
+    }
+
     void USpriteComponent::DescribeProperties(FComponentPropertyBuilder& Builder)
     {
-        UQuadComponent::DescribeProperties(Builder);
+        // UPrimitiveComponent::DescribeProperties(Builder); // 부모 호출
 
         FComponentPropertyOptions TexturePathOptions;
         TexturePathOptions.ExpectedAssetPathKind = EComponentAssetPathKind::TextureImage;
@@ -39,6 +61,10 @@ namespace Engine::Component
         Builder.AddBool(
             "billboard", L"Billboard", [this]() { return GetBillboard(); },
             [this](bool bInValue) { SetBillboard(bInValue); });
+            
+        Builder.AddVector3(
+            "billboard_offset", L"Billboard Offset", [this]() { return GetBillboardOffset(); },
+            [this](const FVector& InValue) { SetBillboardOffset(InValue); });
     }
 
     void USpriteComponent::ResolveAssetReferences(UAssetManager* InAssetManager)
@@ -54,8 +80,6 @@ namespace Engine::Component
             Engine::SceneIO::ResolveSceneAssetPathToAbsolute(TexturePath);
         if (AbsolutePath.empty())
         {
-            UE_LOG(Asset, ELogVerbosity::Warning,
-                   "Failed to resolve texture path for SpriteComponent: %s", TexturePath.c_str());
             return;
         }
 
@@ -64,14 +88,10 @@ namespace Engine::Component
 
         UAsset*          LoadedAsset = InAssetManager->Load(AbsolutePath.native(), LoadParams);
         UTexture2DAsset* TextureAsset = Cast<UTexture2DAsset>(LoadedAsset);
-        if (TextureAsset == nullptr)
+        if (TextureAsset != nullptr)
         {
-            UE_LOG(Asset, ELogVerbosity::Warning,
-                   "Failed to load texture asset for SpriteComponent: %s", TexturePath.c_str());
-            return;
+            SetTextureResource(TextureAsset->GetResource());
         }
-
-        SetTextureResource(TextureAsset->GetResource());
     }
 
     REGISTER_CLASS(Engine::Component, USpriteComponent)
