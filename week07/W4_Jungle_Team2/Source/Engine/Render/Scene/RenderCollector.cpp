@@ -6,6 +6,8 @@
 #include "Component/GizmoComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/SubUVComponent.h"
+#include "Component/StaticMeshComponent.h"
+#include "Core/ResourceManager.h"
 
 void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
 {
@@ -199,7 +201,38 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);
 		break;
 	}
+	case EPrimitiveType::EPT_StaticMesh :
+	{
+		UStaticMeshComponent* StaticMeshComp = static_cast<UStaticMeshComponent*>(Primitive);
+		const UStaticMesh* Mesh = StaticMeshComp->GetStaticMesh();
 
+		for (const auto& Section :  Mesh->GetSections())
+		{
+			FRenderCommand Cmd = {};
+			Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
+			Cmd.Type = ERenderCommandType::StaticMesh;
+
+			Cmd.SectionIndexStart = Section.StartIndex;
+			Cmd.SectionIndexCount = Section.IndexCount;
+			const FStaticMeshMaterialSlot& MtlSlot = Mesh->GetMaterialSlots()[Section.MaterialSlotIndex];
+			FMaterial MtlData = MtlSlot.MaterialData;
+
+			// 빛 방향은 일정하다고 가정합니다
+			Cmd.Constants.StaticMesh.CameraWorldPos = RenderBus.GetCameraPosition();
+
+			Cmd.Constants.StaticMesh.AmbientColor  = MtlData.AmbientColor;
+			Cmd.Constants.StaticMesh.DiffuseColor  = MtlData.DiffuseColor;
+			Cmd.Constants.StaticMesh.SpecularColor = MtlData.SpecularColor;
+			Cmd.Constants.StaticMesh.Shininess	   = MtlData.Shininess;
+
+			// Bump맵은 웬만하면 없어서 굳이 사용하지 않겠습니다
+			// TODO : 텍스쳐가 올바르게 가정되어 있다고 사용하고 있어서 수정해야함
+			//Cmd.DiffuseTexPath  = FResourceManager::Get().GetOrLoadTexture(MtlData.DiffuseTexPath, nullptr)->Path;
+			//Cmd.AmbientTexPath  = FResourceManager::Get().GetOrLoadTexture(MtlData.AmbientTexPath, nullptr)->Path;
+			//Cmd.SpecularTexPath = FResourceManager::Get().GetOrLoadTexture(MtlData.SpecularTexPath, nullptr)->Path;
+			RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
+		}
+	}
 	default:
 		return;
 	}
