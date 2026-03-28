@@ -6,7 +6,7 @@
 
 IMPLEMENT_RTTI(URandomColorComponent, UActorComponent)
 
-void URandomColorComponent::Initialize()
+void URandomColorComponent::PostConstruct()
 {
 	bCanEverTick = true;
 }

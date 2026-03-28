@@ -6,7 +6,7 @@ class ENGINE_API UTextComponent : public UPrimitiveComponent
 public:
 	DECLARE_RTTI(UTextComponent, UPrimitiveComponent)
 
-	virtual void Initialize();
+	void PostConstruct() override;
 
 	virtual FBoxSphereBounds GetWorldBounds() const override;
 

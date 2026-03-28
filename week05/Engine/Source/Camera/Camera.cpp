@@ -3,18 +3,18 @@
 #include <cmath>
 #include "Math/MathUtility.h"
 
-void CCamera::SetPosition(const FVector& InPosition)
+void FCamera::SetPosition(const FVector& InPosition)
 {
 	Position = InPosition;
 }
 
-void CCamera::SetRotation(float InYaw, float InPitch)
+void FCamera::SetRotation(float InYaw, float InPitch)
 {
 	Yaw = InYaw;
 	Pitch = InPitch;
 }
 
-FVector CCamera::GetForward() const
+FVector FCamera::GetForward() const
 {
 	float RadYaw = FMath::DegreesToRadians(Yaw);
 	float RadPitch = FMath::DegreesToRadians(Pitch);
@@ -27,29 +27,29 @@ FVector CCamera::GetForward() const
 	return Forward.GetSafeNormal();
 }
 
-FVector CCamera::GetRight() const
+FVector FCamera::GetRight() const
 {
 	return FVector::CrossProduct(Up, GetForward()).GetSafeNormal();
 }
 
-void CCamera::MoveForward(float Delta)
+void FCamera::MoveForward(float Delta)
 {
 	FVector Forward = GetForward();
 	Position = Position + Forward * (Delta * Speed);
 }
 
-void CCamera::MoveRight(float Delta)
+void FCamera::MoveRight(float Delta)
 {
 	FVector Right = GetRight();
 	Position = Position + Right * (Delta * Speed);
 }
 
-void CCamera::MoveUp(float Delta)
+void FCamera::MoveUp(float Delta)
 {
 	Position = Position + Up * (Delta * Speed);
 }
 
-void CCamera::Rotate(float DeltaYaw, float DeltaPitch)
+void FCamera::Rotate(float DeltaYaw, float DeltaPitch)
 {
 	Yaw += DeltaYaw;
 	Pitch += DeltaPitch;
@@ -59,13 +59,13 @@ void CCamera::Rotate(float DeltaYaw, float DeltaPitch)
 	if (Pitch < -89.0f) Pitch = -89.0f;
 }
 
-FMatrix CCamera::GetViewMatrix() const
+FMatrix FCamera::GetViewMatrix() const
 {
 	FVector Target = Position + GetForward();
 	return FMatrix::MakeViewLookAtLH(Position, Target, Up);
 }
 
-FMatrix CCamera::GetProjectionMatrix() const
+FMatrix FCamera::GetProjectionMatrix() const
 {
 	if (ProjectionMode == ECameraProjectionMode::Orthographic)
 	{
@@ -77,62 +77,62 @@ FMatrix CCamera::GetProjectionMatrix() const
 	return FMatrix::MakePerspectiveFovLH(FMath::DegreesToRadians(FOV), AspectRatio, NearPlane, FarPlane);
 }
 
-void CCamera::SetAspectRatio(float InAspectRatio)
+void FCamera::SetAspectRatio(float InAspectRatio)
 {
 	AspectRatio = (std::max)(InAspectRatio, 0.01f);
 }
 
-FVector CCamera::GetPosition() const
+FVector FCamera::GetPosition() const
 {
 	return Position;
 }
 
-float CCamera::GetYaw() const
+float FCamera::GetYaw() const
 {
 	return Yaw;
 }
 
-float CCamera::GetPitch() const
+float FCamera::GetPitch() const
 {
 	return Pitch;
 }
 
-float CCamera::GetFOV() const
+float FCamera::GetFOV() const
 {
 	return FOV;
 }
 
-void CCamera::SetFOV(float InFOV)
+void FCamera::SetFOV(float InFOV)
 {
 	FOV = std::clamp(InFOV, 1.0f, 179.0f);
 }
 
-ECameraProjectionMode CCamera::GetProjectionMode() const
+ECameraProjectionMode FCamera::GetProjectionMode() const
 {
 	return ProjectionMode;
 }
 
-bool CCamera::IsOrthographic() const
+bool FCamera::IsOrthographic() const
 {
 	return ProjectionMode == ECameraProjectionMode::Orthographic;
 }
 
-void CCamera::SetProjectionMode(ECameraProjectionMode InProjectionMode)
+void FCamera::SetProjectionMode(ECameraProjectionMode InProjectionMode)
 {
 	ProjectionMode = InProjectionMode;
 }
 
-float CCamera::GetOrthoWidth() const
+float FCamera::GetOrthoWidth() const
 {
 	return OrthoWidth;
 }
 
-float CCamera::GetOrthoHeight() const
+float FCamera::GetOrthoHeight() const
 {
 	return OrthoWidth / (std::max)(AspectRatio, 0.01f);
 }
 
-void CCamera::SetOrthoWidth(float InOrthoWidth)
+void FCamera::SetOrthoWidth(float InOrthoWidth)
 {
 	OrthoWidth = (std::max)(InOrthoWidth, 0.01f);
 }

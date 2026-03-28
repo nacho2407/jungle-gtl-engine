@@ -5,5 +5,5 @@ class ENGINE_API UCubeComponent : public UPrimitiveComponent
 {
 public:
 	DECLARE_RTTI(UCubeComponent, UPrimitiveComponent)
-	void Initialize();
+	void PostConstruct() override;
 };

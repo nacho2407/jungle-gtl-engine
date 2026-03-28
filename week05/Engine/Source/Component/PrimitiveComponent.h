@@ -20,7 +20,7 @@ class ENGINE_API UPrimitiveComponent : public USceneComponent
 public:
 	DECLARE_RTTI(UPrimitiveComponent, USceneComponent)
 
-	CPrimitiveBase* GetPrimitive() const { return Primitive.get(); }
+	FPrimitiveBase* GetPrimitive() const { return Primitive.get(); }
 
 	void SetMaterial(FMaterial* InMaterial) { Material = InMaterial; }
 	FMaterial* GetMaterial() const { return Material; }
@@ -36,7 +36,7 @@ public:
 	}
 
 protected:
-	std::shared_ptr<CPrimitiveBase> Primitive;
+	std::shared_ptr<FPrimitiveBase> Primitive;
 	FMaterial* Material = nullptr;
 	bool bDrawDebugBounds = true;
 public:

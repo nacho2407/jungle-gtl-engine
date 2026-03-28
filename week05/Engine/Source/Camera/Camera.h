@@ -8,10 +8,10 @@ enum class ECameraProjectionMode : uint8_t
 	Orthographic
 };
 
-class ENGINE_API CCamera
+class ENGINE_API FCamera
 {
 public:
-	CCamera() = default;
+	FCamera() = default;
 
 	void SetPosition(const FVector& InPosition);
 	void SetRotation(float InYaw, float InPitch);

@@ -1,7 +1,7 @@
 #include "ControlPanelWindow.h"
 #include "World/WorldContext.h"
 #include "imgui.h"
-#include "Core/Core.h"
+#include "EditorEngine.h"
 #include "Renderer/Renderer.h"
 #include "Scene/Scene.h"
 #include "Actor/Actor.h"
@@ -26,19 +26,19 @@
 
 namespace
 {
-	const char* GetSceneTypeLabel(ESceneType SceneType)
+	const char* GetWorldTypeLabel(EWorldType WorldType)
 	{
-		switch (SceneType)
+		switch (WorldType)
 		{
-		case ESceneType::Game:
+		case EWorldType::Game:
 			return "Game";
-		case ESceneType::Editor:
+		case EWorldType::Editor:
 			return "Editor";
-		case ESceneType::PIE:
+		case EWorldType::PIE:
 			return "PIE";
-		case ESceneType::Preview:
+		case EWorldType::Preview:
 			return "Preview";
-		case ESceneType::Inactive:
+		case EWorldType::Inactive:
 			return "Inactive";
 		default:
 			return "Unknown";
@@ -46,7 +46,7 @@ namespace
 	}
 }
 
-void CControlPanelWindow::Render(CCore* Core)
+void FControlPanelWindow::Render(FEditorEngine* Engine)
 {
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
 	const bool bOpen = ImGui::Begin("Control Panel");
@@ -58,12 +58,12 @@ void CControlPanelWindow::Render(CCore* Core)
 		return;
 	}
 
-	if (Core && Core->GetScene())
+	if (Engine && Engine->GetScene())
 	{
 	
-		const FWorldContext* ActiveSceneContext = Core->GetActiveWorldContext();
-		const TArray<std::unique_ptr<FEditorWorldContext>>& PreviewSceneContexts = Core->GetSceneManager()->GetPreviewWorldContexts();
-		const bool bPreviewActive = ActiveSceneContext && ActiveSceneContext->WorldType == ESceneType::Preview;
+		const FWorldContext* ActiveSceneContext = Engine->GetActiveWorldContext();
+		const TArray<FWorldContext*>& PreviewSceneContexts = Engine->GetPreviewWorldContexts();
+		const bool bPreviewActive = ActiveSceneContext && ActiveSceneContext->WorldType == EWorldType::Preview;
 
 		/*
 			PreviewScene 등 아마 확장의 여지를 둔 것으로 보이나 아무 기능도 없어 주석 처리함		
@@ -74,7 +74,7 @@ void CControlPanelWindow::Render(CCore* Core)
 		if (ActiveSceneContext)
 		{
 			ImGui::Text("Active: %s", ActiveSceneContext->ContextName.c_str());
-			ImGui::Text("Type: %s", GetSceneTypeLabel(ActiveSceneContext->WorldType));
+			ImGui::Text("Type: %s", GetWorldTypeLabel(ActiveSceneContext->WorldType));
 		}
 		*/
 
@@ -130,7 +130,7 @@ void CControlPanelWindow::Render(CCore* Core)
 		}
 		*/
 		
-		if (CCamera* Camera = Core->GetScene()->GetCamera())
+		if (FCamera* Camera = Engine->GetScene()->GetCamera())
 		{
 		
 			float Sensitivity = Camera->GetMouseSensitivity();
@@ -206,7 +206,7 @@ void CControlPanelWindow::Render(CCore* Core)
 
 		if (ImGui::Button("Spawn"))
 		{
-			UScene* Scene = Core->GetScene();
+			UScene* Scene = Engine->GetScene();
 			static int32 SpawnCount = 0;
 			const FString Name = FString(SpawnTypes[SpawnTypeIndex]) + "_Spawned_" + std::to_string(SpawnCount++);
 
@@ -258,13 +258,13 @@ void CControlPanelWindow::Render(CCore* Core)
 
 			if (NewActor && !NewActor->IsA<ASkySphereActor>())
 			{
-				Core->SetSelectedActor(NewActor);
+				Engine->SetSelectedActor(NewActor);
 			}
 			UE_LOG("Spawned %s: %s", SpawnTypes[SpawnTypeIndex], Name.c_str());
 		}
 
 		ImGui::SameLine();
-		AActor* SelectedActor = Core->GetSelectedActor();
+		AActor* SelectedActor = Engine->GetSelectedActor();
 		if (!SelectedActor)
 		{
 			ImGui::BeginDisabled();
@@ -273,8 +273,8 @@ void CControlPanelWindow::Render(CCore* Core)
 		if (ImGui::Button("Delete"))
 		{
 			const FString Name = SelectedActor->GetName();
-			Core->GetScene()->DestroyActor(SelectedActor);
-			Core->SetSelectedActor(nullptr);
+			Engine->GetScene()->DestroyActor(SelectedActor);
+			Engine->SetSelectedActor(nullptr);
 			UE_LOG("Deleted actor: %s", Name.c_str());
 		}
 

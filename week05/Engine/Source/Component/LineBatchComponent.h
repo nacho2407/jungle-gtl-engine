@@ -10,7 +10,7 @@ class ULineBatchComponent : public UPrimitiveComponent
 	DECLARE_RTTI(ULineBatchComponent, UPrimitiveComponent)
 
 public:
-	void Initialize();
+	void PostConstruct() override;
 	void DrawLine(FVector InStart, FVector InEnd, FVector4 color);
 	void DrawWireCube(FVector InCenter, FQuat InRotation, FVector InScale, FVector4 InColor);
 	void DrawWireSphere(FVector InCenter, float InRadius, FVector4 InColor);

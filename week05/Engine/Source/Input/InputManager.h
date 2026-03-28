@@ -17,16 +17,16 @@ struct FInputEvent
 	int32 KeyOrButton;
 };
 
-class ENGINE_API CInputManager
+class ENGINE_API FInputManager
 {
 public:
-	CInputManager() = default;
-	~CInputManager() = default;
+	FInputManager() = default;
+	~FInputManager() = default;
 
-	CInputManager(const CInputManager&) = delete;
-	CInputManager(CInputManager&&) = delete;
-	CInputManager& operator=(const CInputManager&) = delete;
-	CInputManager& operator=(CInputManager&&) = delete;
+	FInputManager(const FInputManager&) = delete;
+	FInputManager(FInputManager&&) = delete;
+	FInputManager& operator=(const FInputManager&) = delete;
+	FInputManager& operator=(FInputManager&&) = delete;
 
 	void ProcessMessage(HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam);
 	void Tick();

@@ -1,7 +1,7 @@
 #pragma once
 #include "SceneComponent.h"
 
-class CCamera;
+class FCamera;
 
 class ENGINE_API UCameraComponent : public USceneComponent
 {
@@ -9,7 +9,7 @@ public:
 	DECLARE_RTTI(UCameraComponent, USceneComponent)
 	virtual ~UCameraComponent();
 
-	void Initialize();
+	void PostConstruct() override;
 	virtual void Tick(float DeltaTime) override;
 	//Movement method
 	void MoveForward(float Value);
@@ -18,7 +18,7 @@ public:
 	void Rotate(float DeltaYaw, float DeltaPitch);
 
 	//Camera property getter
-	CCamera* GetCamera() const;
+	FCamera* GetCamera() const;
 	FMatrix GetViewMatrix() const;
 	FMatrix GetProjectionMatrix() const;
 
@@ -27,5 +27,5 @@ public:
 	void SetSpeed(float Inspeed);
 	void SetSensitivity(float InSetSensitivity);
 private:
-	CCamera* Camera = nullptr;
+	FCamera* Camera = nullptr;
 };

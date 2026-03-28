@@ -17,18 +17,18 @@ class FMaterial;
 class UScene;
 
 using FGUICallback = std::function<void()>;
-class CRenderer;
-using FPostRenderCallback = std::function<void(CRenderer*)>;
+class FRenderer;
+using FPostRenderCallback = std::function<void(FRenderer*)>;
 
 /**
  * 엔진의 핵심 렌더링 시스템
  * 렌더링 정책에 따라 제출된 명령들을 GPU에서 실행함
  */
-class ENGINE_API CRenderer
+class ENGINE_API FRenderer
 {
 public:
-	CRenderer(HWND InHwnd, int32 InWidth, int32 InHeight);
-	~CRenderer();
+	FRenderer(HWND InHwnd, int32 InWidth, int32 InHeight);
+	~FRenderer();
 
 	/** 시스템 초기화 및 D3D11 장치 생성 */
 	bool Initialize(HWND InHwnd, int32 InWidth, int32 InHeight);
@@ -86,15 +86,15 @@ public:
 	// ─── 접근자 ───
 	FMaterial* GetDefaultMaterial() const { return DefaultMaterial.get(); }
 	size_t GetPrevCommandCount() const { return PrevCommandCount; }
-	std::unique_ptr<CRenderStateManager>& GetRenderStateManager() { return RenderStateManager; }
+	std::unique_ptr<FRenderStateManager>& GetRenderStateManager() { return RenderStateManager; }
 	ID3D11Device* GetDevice() const { return Device; }
 	ID3D11DeviceContext* GetDeviceContext() const { return DeviceContext; }
 	ID3D11RenderTargetView* GetRenderTargetView() const { return RenderTargetView; }
 	IDXGISwapChain* GetSwapChain() const { return SwapChain; };
 	HWND GetHwnd() const { return Hwnd; }
 
-	CTextMeshBuilder& GetTextRenderer() { return TextRenderer; }
-	CSubUVRenderer& GetSubUVRenderer() { return SubUVRenderer; }
+	FTextMeshBuilder& GetTextRenderer() { return TextRenderer; }
+	FSubUVRenderer& GetSubUVRenderer() { return SubUVRenderer; }
 	FVector GetCameraPosition() const;
 
 	ID3D11ShaderResourceView* GetFolderIconSRV() const { return FolderIconSRV; }
@@ -114,7 +114,7 @@ private:
 	bool CreateTextureFromSTB(ID3D11Device* Device, const char* FilePath, ID3D11ShaderResourceView** OutSRV);
 
 private:
-	std::unique_ptr<CRenderStateManager> RenderStateManager = nullptr;
+	std::unique_ptr<FRenderStateManager> RenderStateManager = nullptr;
 
 	HWND Hwnd = nullptr;
 	ID3D11Device* Device = nullptr;
@@ -162,8 +162,8 @@ private:
 	std::shared_ptr<FMaterial> DefaultMaterial;
 	std::shared_ptr<FMaterial> DefaultTextureMaterial;
 
-	CTextMeshBuilder TextRenderer;
-	CSubUVRenderer SubUVRenderer;
+	FTextMeshBuilder TextRenderer;
+	FSubUVRenderer SubUVRenderer;
 
 	ID3D11ShaderResourceView* FolderIconSRV = nullptr;
 	ID3D11ShaderResourceView* FileIconSRV = nullptr;
@@ -172,5 +172,5 @@ private:
 	ID3D11SamplerState* NormalSampler = nullptr;
 
 public:
-	CShaderManager ShaderManager;
+	FShaderManager ShaderManager;
 };

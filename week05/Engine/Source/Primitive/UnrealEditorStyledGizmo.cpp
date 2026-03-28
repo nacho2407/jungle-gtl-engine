@@ -32,7 +32,7 @@ constexpr float kLargeOuterAlpha = 127.0f / 255.0f;
 constexpr float kSmallOuterAlpha = 15.0f / 255.0f;
 constexpr float kArcballAlpha = 6.0f / 255.0f;
 
-struct Basis3
+struct FGizmoBasis3
 {
     FVector x;
     FVector y;
@@ -55,26 +55,26 @@ float DegreesToRadians(float degrees)
     return degrees * (kPi / 180.0f);
 }
 
-Color MakeColor(float r, float g, float b, float a = 1.0f)
+FGizmoColor MakeColor(float r, float g, float b, float a = 1.0f)
 {
-    return Color{r, g, b, a};
+    return FGizmoColor{r, g, b, a};
 }
 
-Color ApplyAlpha(const Color& color, float alpha)
+FGizmoColor ApplyAlpha(const FGizmoColor& color, float alpha)
 {
     return MakeColor(color.r, color.g, color.b, alpha);
 }
 
-Basis3 MakeBasisFromX(const FVector& axis)
+FGizmoBasis3 MakeBasisFromX(const FVector& axis)
 {
     const FVector x = NormalizeSafe(axis, FVector(1.0f, 0.0f, 0.0f));
     const FVector up = (std::fabs(x.X) < 0.95f) ? FVector(1.0f, 0.0f, 0.0f) : FVector(0.0f, 1.0f, 0.0f);
     const FVector z = NormalizeSafe(FVector::CrossProduct(x, up), FVector(0.0f, 0.0f, 1.0f));
     const FVector y = NormalizeSafe(FVector::CrossProduct(z, x), FVector(0.0f, 1.0f, 0.0f));
-    return Basis3{x, y, z};
+    return FGizmoBasis3{x, y, z};
 }
 
-Basis3 MakeBasisFromXAndNormal(const FVector& axis, const FVector& preferredNormal)
+FGizmoBasis3 MakeBasisFromXAndNormal(const FVector& axis, const FVector& preferredNormal)
 {
     const FVector x = NormalizeSafe(axis, FVector(1.0f, 0.0f, 0.0f));
     FVector z = NormalizeSafe(preferredNormal, FVector(0.0f, 0.0f, 1.0f));
@@ -85,20 +85,20 @@ Basis3 MakeBasisFromXAndNormal(const FVector& axis, const FVector& preferredNorm
 
     const FVector y = NormalizeSafe(FVector::CrossProduct(z, x), FVector(0.0f, 1.0f, 0.0f));
     z = NormalizeSafe(FVector::CrossProduct(x, y), z);
-    return Basis3{x, y, z};
+    return FGizmoBasis3{x, y, z};
 }
 
-FVector TransformVector(const Basis3& basis, const FVector& local)
+FVector TransformVector(const FGizmoBasis3& basis, const FVector& local)
 {
     return basis.x * local.X + basis.y * local.Y + basis.z * local.Z;
 }
 
-FVector TransformPoint(const Basis3& basis, const FVector& origin, const FVector& local)
+FVector TransformPoint(const FGizmoBasis3& basis, const FVector& origin, const FVector& local)
 {
     return origin + TransformVector(basis, local);
 }
 
-FVector TransformNormal(const Basis3& basis, const FVector& localNormal)
+FVector TransformNormal(const FGizmoBasis3& basis, const FVector& localNormal)
 {
     return NormalizeSafe(TransformVector(basis, localNormal), FVector(0.0f, 0.0f, 1.0f));
 }
@@ -117,40 +117,40 @@ std::uint32_t ComputeCircleSides(int transformGizmoSize)
     return static_cast<std::uint32_t>(kAxisCircleSides);
 }
 
-bool IsAxisActive(AxisId activeAxis, AxisId axis)
+bool IsAxisActive(EGizmoAxisId activeAxis, EGizmoAxisId axis)
 {
     return activeAxis == axis;
 }
 
-void AppendTriangle(Mesh& mesh, std::uint32_t a, std::uint32_t b, std::uint32_t c)
+void AppendTriangle(FGizmoMesh& mesh, std::uint32_t a, std::uint32_t b, std::uint32_t c)
 {
     mesh.indices.push_back(a);
     mesh.indices.push_back(b);
     mesh.indices.push_back(c);
 }
 
-void AppendVertex(Mesh& mesh, const FVector& position, const FVector& normal, const Vec2& uv, const Color& color)
+void AppendVertex(FGizmoMesh& mesh, const FVector& position, const FVector& normal, const FGizmoVec2& uv, const FGizmoColor& color)
 {
-    mesh.vertices.push_back(Vertex{position, normal, uv, color});
+    mesh.vertices.push_back(FGizmoVertex{position, normal, uv, color});
 }
 
-void AppendLocalVertex(Mesh& mesh, const Basis3& basis, const FVector& origin, const FVector& localPosition, const FVector& localNormal, const Vec2& uv, const Color& color)
+void AppendLocalVertex(FGizmoMesh& mesh, const FGizmoBasis3& basis, const FVector& origin, const FVector& localPosition, const FVector& localNormal, const FGizmoVec2& uv, const FGizmoColor& color)
 {
     AppendVertex(mesh, TransformPoint(basis, origin, localPosition), TransformNormal(basis, localNormal), uv, color);
 }
 
-void AppendQuad(Mesh& mesh, const FVector& v0, const FVector& v1, const FVector& v2, const FVector& v3, const FVector& normal, const Color& color)
+void AppendQuad(FGizmoMesh& mesh, const FVector& v0, const FVector& v1, const FVector& v2, const FVector& v3, const FVector& normal, const FGizmoColor& color)
 {
     const std::uint32_t base = static_cast<std::uint32_t>(mesh.vertices.size());
-    AppendVertex(mesh, v0, normal, Vec2{0.0f, 0.0f}, color);
-    AppendVertex(mesh, v1, normal, Vec2{1.0f, 0.0f}, color);
-    AppendVertex(mesh, v2, normal, Vec2{1.0f, 1.0f}, color);
-    AppendVertex(mesh, v3, normal, Vec2{0.0f, 1.0f}, color);
+    AppendVertex(mesh, v0, normal, FGizmoVec2{0.0f, 0.0f}, color);
+    AppendVertex(mesh, v1, normal, FGizmoVec2{1.0f, 0.0f}, color);
+    AppendVertex(mesh, v2, normal, FGizmoVec2{1.0f, 1.0f}, color);
+    AppendVertex(mesh, v3, normal, FGizmoVec2{0.0f, 1.0f}, color);
     AppendTriangle(mesh, base + 0, base + 1, base + 2);
     AppendTriangle(mesh, base + 0, base + 2, base + 3);
 }
 
-void AppendLocalQuad(Mesh& mesh, const Basis3& basis, const FVector& origin, const FVector& v0, const FVector& v1, const FVector& v2, const FVector& v3, const FVector& localNormal, const Color& color)
+void AppendLocalQuad(FGizmoMesh& mesh, const FGizmoBasis3& basis, const FVector& origin, const FVector& v0, const FVector& v1, const FVector& v2, const FVector& v3, const FVector& localNormal, const FGizmoColor& color)
 {
     const FVector normal = TransformNormal(basis, localNormal);
     AppendQuad(
@@ -163,7 +163,7 @@ void AppendLocalQuad(Mesh& mesh, const Basis3& basis, const FVector& origin, con
         color);
 }
 
-void AppendOrientedBox(Mesh& mesh, const FVector& center, const Basis3& basis, const FVector& halfExtents, const Color& color)
+void AppendOrientedBox(FGizmoMesh& mesh, const FVector& center, const FGizmoBasis3& basis, const FVector& halfExtents, const FGizmoColor& color)
 {
     const FVector px = basis.x * halfExtents.X;
     const FVector py = basis.y * halfExtents.Y;
@@ -187,19 +187,19 @@ void AppendOrientedBox(Mesh& mesh, const FVector& center, const Basis3& basis, c
     AppendQuad(mesh, c[0], c[3], c[2], c[1], basis.z * -1.0f, color);
 }
 
-void AppendCylinder(Mesh& mesh, const FVector& start, const FVector& end, float radius, std::uint32_t sides, const Color& color)
+void AppendCylinder(FGizmoMesh& mesh, const FVector& start, const FVector& end, float radius, std::uint32_t sides, const FGizmoColor& color)
 {
     sides = std::max<std::uint32_t>(sides, 3);
     const FVector axis = NormalizeSafe(end - start, FVector(1.0f, 0.0f, 0.0f));
-    const Basis3 basis = MakeBasisFromX(axis);
+    const FGizmoBasis3 basis = MakeBasisFromX(axis);
 
     const std::uint32_t base = static_cast<std::uint32_t>(mesh.vertices.size());
     for (std::uint32_t i = 0; i < sides; ++i)
     {
         const float angle = kTwoPi * static_cast<float>(i) / static_cast<float>(sides);
         const FVector radial = basis.y * std::cos(angle) + basis.z * std::sin(angle);
-        AppendVertex(mesh, start + radial * radius, radial, Vec2{0.0f, 0.0f}, color);
-        AppendVertex(mesh, end + radial * radius, radial, Vec2{1.0f, 0.0f}, color);
+        AppendVertex(mesh, start + radial * radius, radial, FGizmoVec2{0.0f, 0.0f}, color);
+        AppendVertex(mesh, end + radial * radius, radial, FGizmoVec2{1.0f, 0.0f}, color);
     }
 
     for (std::uint32_t i = 0; i < sides; ++i)
@@ -233,9 +233,9 @@ FVector CalcConeVert(float angle1, float angle2, float azimuthAngle)
     return FVector(1.0f - 2.0f * rSq, 2.0f * sqr * alpha, 2.0f * sqr * beta);
 }
 
-void AppendUnrealCone(Mesh& mesh, const FVector& tipPosition, const FVector& axisDirection, float scale, float angle, std::uint32_t sides, const Color& color)
+void AppendUnrealCone(FGizmoMesh& mesh, const FVector& tipPosition, const FVector& axisDirection, float scale, float angle, std::uint32_t sides, const FGizmoColor& color)
 {
-    const Basis3 basis = MakeBasisFromX(axisDirection);
+    const FGizmoBasis3 basis = MakeBasisFromX(axisDirection);
     for (std::uint32_t i = 0; i < sides; ++i)
     {
         const std::uint32_t next = (i + 1) % sides;
@@ -246,14 +246,14 @@ void AppendUnrealCone(Mesh& mesh, const FVector& tipPosition, const FVector& axi
         const FVector p1 = tipPosition + TransformVector(basis, CalcConeVert(angle, angle, a1) * scale);
         const FVector n = NormalizeSafe(FVector::CrossProduct(p0 - tip, p1 - tip), axisDirection);
         const std::uint32_t base = static_cast<std::uint32_t>(mesh.vertices.size());
-        AppendVertex(mesh, tip, n, Vec2{0.0f, 0.5f}, color);
-        AppendVertex(mesh, p0, n, Vec2{1.0f, 0.0f}, color);
-        AppendVertex(mesh, p1, n, Vec2{1.0f, 1.0f}, color);
+        AppendVertex(mesh, tip, n, FGizmoVec2{0.0f, 0.5f}, color);
+        AppendVertex(mesh, p0, n, FGizmoVec2{1.0f, 0.0f}, color);
+        AppendVertex(mesh, p1, n, FGizmoVec2{1.0f, 1.0f}, color);
         AppendTriangle(mesh, base + 0, base + 1, base + 2);
     }
 }
 
-void AppendSphere(Mesh& mesh, const FVector& center, float radius, std::uint32_t slices, std::uint32_t stacks, const Color& color)
+void AppendSphere(FGizmoMesh& mesh, const FVector& center, float radius, std::uint32_t slices, std::uint32_t stacks, const FGizmoColor& color)
 {
     slices = std::max<std::uint32_t>(slices, 3);
     stacks = std::max<std::uint32_t>(stacks, 2);
@@ -271,7 +271,7 @@ void AppendSphere(Mesh& mesh, const FVector& center, float radius, std::uint32_t
             const float u = static_cast<float>(slice) / static_cast<float>(slices);
             const float theta = u * kTwoPi;
             const FVector n(sinPhi * std::cos(theta), sinPhi * std::sin(theta), cosPhi);
-            AppendVertex(mesh, center + n * radius, n, Vec2{u, v}, color);
+            AppendVertex(mesh, center + n * radius, n, FGizmoVec2{u, v}, color);
         }
     }
 
@@ -290,7 +290,7 @@ void AppendSphere(Mesh& mesh, const FVector& center, float radius, std::uint32_t
     }
 }
 
-void AppendArcBand(Mesh& mesh, const FVector& axis0, const FVector& axis1, float innerRadius, float outerRadius, float startAngle, float endAngle, const Color& color, std::uint32_t circleSides)
+void AppendArcBand(FGizmoMesh& mesh, const FVector& axis0, const FVector& axis1, float innerRadius, float outerRadius, float startAngle, float endAngle, const FGizmoColor& color, std::uint32_t circleSides)
 {
     const float range = endAngle - startAngle;
     const std::uint32_t quarterSides = std::max<std::uint32_t>(circleSides, 4);
@@ -303,7 +303,7 @@ void AppendArcBand(Mesh& mesh, const FVector& axis0, const FVector& axis1, float
         const float t = static_cast<float>(i) / static_cast<float>(points);
         const float angle = startAngle + range * t;
         const FVector dir = NormalizeSafe(axis0 * std::cos(angle) + axis1 * std::sin(angle), axis0);
-        AppendVertex(mesh, dir * outerRadius, normal, Vec2{t, 0.0f}, color);
+        AppendVertex(mesh, dir * outerRadius, normal, FGizmoVec2{t, 0.0f}, color);
     }
 
     const std::uint32_t innerBase = static_cast<std::uint32_t>(mesh.vertices.size());
@@ -312,7 +312,7 @@ void AppendArcBand(Mesh& mesh, const FVector& axis0, const FVector& axis1, float
         const float t = static_cast<float>(i) / static_cast<float>(points);
         const float angle = startAngle + range * t;
         const FVector dir = NormalizeSafe(axis0 * std::cos(angle) + axis1 * std::sin(angle), axis0);
-        AppendVertex(mesh, dir * innerRadius, normal, Vec2{t, 1.0f}, color);
+        AppendVertex(mesh, dir * innerRadius, normal, FGizmoVec2{t, 1.0f}, color);
     }
 
     for (std::uint32_t i = 0; i < points; ++i)
@@ -322,7 +322,7 @@ void AppendArcBand(Mesh& mesh, const FVector& axis0, const FVector& axis1, float
     }
 }
 
-void AppendCornerHelperStrip(Mesh& mesh, const Basis3& basis, const FVector& origin, const FVector& length, float thickness, const Color& color, bool swapXZ)
+void AppendCornerHelperStrip(FGizmoMesh& mesh, const FGizmoBasis3& basis, const FVector& origin, const FVector& length, float thickness, const FGizmoColor& color, bool swapXZ)
 {
     const float tx = length.X * 0.5f;
     const float ty = length.Y * 0.5f;
@@ -334,7 +334,7 @@ void AppendCornerHelperStrip(Mesh& mesh, const Basis3& basis, const FVector& ori
         return swapXZ ? SwapXZ(v) : v;
     };
 
-    const auto addLocalVertex = [&](const FVector& localPosition, const FVector& localNormal, const Vec2& uv)
+    const auto addLocalVertex = [&](const FVector& localPosition, const FVector& localNormal, const FGizmoVec2& uv)
     {
         AppendLocalVertex(mesh, basis, origin, mapLocal(localPosition), mapLocal(localNormal), uv, color);
     };
@@ -364,11 +364,11 @@ void AppendCornerHelperStrip(Mesh& mesh, const Basis3& basis, const FVector& ori
     {
         const std::uint32_t base = static_cast<std::uint32_t>(mesh.vertices.size());
         const FVector localNormal = mapLocal(FVector(0.0f, 1.0f, 0.0f));
-        addLocalVertex(FVector(-tx, +ty, tz - th), localNormal, Vec2{0.0f, 0.0f});
-        addLocalVertex(FVector(-tx, +ty, +tz), localNormal, Vec2{0.0f, 1.0f});
-        addLocalVertex(FVector(+tx - th, +ty, +tz), localNormal, Vec2{1.0f, 1.0f});
-        addLocalVertex(FVector(+tx, +ty, +tz), localNormal, Vec2{1.0f, 1.0f});
-        addLocalVertex(FVector(+tx - th, +ty, tz - th), localNormal, Vec2{1.0f, 0.0f});
+        addLocalVertex(FVector(-tx, +ty, tz - th), localNormal, FGizmoVec2{0.0f, 0.0f});
+        addLocalVertex(FVector(-tx, +ty, +tz), localNormal, FGizmoVec2{0.0f, 1.0f});
+        addLocalVertex(FVector(+tx - th, +ty, +tz), localNormal, FGizmoVec2{1.0f, 1.0f});
+        addLocalVertex(FVector(+tx, +ty, +tz), localNormal, FGizmoVec2{1.0f, 1.0f});
+        addLocalVertex(FVector(+tx - th, +ty, tz - th), localNormal, FGizmoVec2{1.0f, 0.0f});
         AppendTriangle(mesh, base + 0, base + 1, base + 2);
         AppendTriangle(mesh, base + 0, base + 2, base + 4);
         AppendTriangle(mesh, base + 4, base + 2, base + 3);
@@ -377,11 +377,11 @@ void AppendCornerHelperStrip(Mesh& mesh, const Basis3& basis, const FVector& ori
     {
         const std::uint32_t base = static_cast<std::uint32_t>(mesh.vertices.size());
         const FVector localNormal = mapLocal(FVector(0.0f, -1.0f, 0.0f));
-        addLocalVertex(FVector(-tx, -ty, tz - th), localNormal, Vec2{0.0f, 0.0f});
-        addLocalVertex(FVector(-tx, -ty, +tz), localNormal, Vec2{0.0f, 1.0f});
-        addLocalVertex(FVector(+tx - th, -ty, +tz), localNormal, Vec2{1.0f, 1.0f});
-        addLocalVertex(FVector(+tx, -ty, +tz), localNormal, Vec2{1.0f, 1.0f});
-        addLocalVertex(FVector(+tx - th, -ty, tz - th), localNormal, Vec2{1.0f, 0.0f});
+        addLocalVertex(FVector(-tx, -ty, tz - th), localNormal, FGizmoVec2{0.0f, 0.0f});
+        addLocalVertex(FVector(-tx, -ty, +tz), localNormal, FGizmoVec2{0.0f, 1.0f});
+        addLocalVertex(FVector(+tx - th, -ty, +tz), localNormal, FGizmoVec2{1.0f, 1.0f});
+        addLocalVertex(FVector(+tx, -ty, +tz), localNormal, FGizmoVec2{1.0f, 1.0f});
+        addLocalVertex(FVector(+tx - th, -ty, tz - th), localNormal, FGizmoVec2{1.0f, 0.0f});
         AppendTriangle(mesh, base + 0, base + 2, base + 1);
         AppendTriangle(mesh, base + 0, base + 4, base + 2);
         AppendTriangle(mesh, base + 4, base + 3, base + 2);
@@ -399,9 +399,9 @@ void AppendCornerHelperStrip(Mesh& mesh, const Basis3& basis, const FVector& ori
         color);
 }
 
-void AppendTranslatePlane(Mesh& mesh, const FVector& axis0, const FVector& axis1, const FVector& normal, const Color& axis0Color, const Color& axis1Color, float s)
+void AppendTranslatePlane(FGizmoMesh& mesh, const FVector& axis0, const FVector& axis1, const FVector& normal, const FGizmoColor& axis0Color, const FGizmoColor& axis1Color, float s)
 {
-    const Basis3 localToWorld{
+    const FGizmoBasis3 localToWorld{
         NormalizeSafe(axis0, FVector(1.0f, 0.0f, 0.0f)),
         NormalizeSafe(normal, FVector(0.0f, 0.0f, 1.0f)),
         NormalizeSafe(axis1, FVector(0.0f, 1.0f, 0.0f))};
@@ -413,7 +413,7 @@ void AppendTranslatePlane(Mesh& mesh, const FVector& axis0, const FVector& axis1
     AppendCornerHelperStrip(mesh, localToWorld, origin, length, thickness, axis0Color, true);
 }
 
-void AppendSegmentBox(Mesh& mesh, const FVector& start, const FVector& end, float halfThickness, const FVector& planeNormal, const Color& color)
+void AppendSegmentBox(FGizmoMesh& mesh, const FVector& start, const FVector& end, float halfThickness, const FVector& planeNormal, const FGizmoColor& color)
 {
     const FVector segment = end - start;
     const float len = segment.Size();
@@ -422,12 +422,12 @@ void AppendSegmentBox(Mesh& mesh, const FVector& start, const FVector& end, floa
         return;
     }
 
-    const Basis3 basis = MakeBasisFromXAndNormal(segment, planeNormal);
+    const FGizmoBasis3 basis = MakeBasisFromXAndNormal(segment, planeNormal);
     const FVector center = (start + end) * 0.5f;
     AppendOrientedBox(mesh, center, basis, FVector(len * 0.5f, halfThickness, halfThickness), color);
 }
 
-void AppendScalePlane(Mesh& mesh, const FVector& axis0, const FVector& axis1, const FVector& normal, const Color& axis0Color, const Color& axis1Color, float s)
+void AppendScalePlane(FGizmoMesh& mesh, const FVector& axis0, const FVector& axis1, const FVector& normal, const FGizmoColor& axis0Color, const FGizmoColor& axis1Color, float s)
 {
     const FVector p0 = axis0 * (24.0f * s);
     const FVector p1 = axis0 * (12.0f * s) + axis1 * (12.0f * s);
@@ -438,53 +438,53 @@ void AppendScalePlane(Mesh& mesh, const FVector& axis0, const FVector& axis1, co
 
 } // namespace
 
-void Mesh::Clear()
+void FGizmoMesh::Clear()
 {
     vertices.clear();
     indices.clear();
 }
 
-bool Mesh::Empty() const
+bool FGizmoMesh::Empty() const
 {
     return vertices.empty() || indices.empty();
 }
 
-Color AxisColorX()
+FGizmoColor AxisColorX()
 {
     return MakeColor(0.594f, 0.0197f, 0.0f, 1.0f);
 }
 
-Color AxisColorY()
+FGizmoColor AxisColorY()
 {
     return MakeColor(0.1349f, 0.3959f, 0.0f, 1.0f);
 }
 
-Color AxisColorZ()
+FGizmoColor AxisColorZ()
 {
     return MakeColor(0.0251f, 0.207f, 0.85f, 1.0f);
 }
 
-Color ScreenAxisColor()
+FGizmoColor ScreenAxisColor()
 {
     return MakeColor(0.76f, 0.72f, 0.14f, 1.0f);
 }
 
-Color ScreenSpaceColor()
+FGizmoColor ScreenSpaceColor()
 {
     return MakeColor(196.0f / 255.0f, 196.0f / 255.0f, 196.0f / 255.0f, 1.0f);
 }
 
-Color ArcballColor()
+FGizmoColor ArcballColor()
 {
     return MakeColor(128.0f / 255.0f, 128.0f / 255.0f, 128.0f / 255.0f, kArcballAlpha);
 }
 
-Color HighlightColor()
+FGizmoColor HighlightColor()
 {
     return MakeColor(1.0f, 1.0f, 0.0f, 1.0f);
 }
 
-void AppendMesh(Mesh& destination, const Mesh& source)
+void AppendMesh(FGizmoMesh& destination, const FGizmoMesh& source)
 {
     if (source.vertices.empty())
     {
@@ -499,10 +499,10 @@ void AppendMesh(Mesh& destination, const Mesh& source)
     }
 }
 
-Mesh MergeMeshes(std::initializer_list<const Mesh*> meshes)
+FGizmoMesh MergeMeshes(std::initializer_list<const FGizmoMesh*> meshes)
 {
-    Mesh merged;
-    for (const Mesh* mesh : meshes)
+    FGizmoMesh merged;
+    for (const FGizmoMesh* mesh : meshes)
     {
         if (mesh != nullptr)
         {
@@ -512,9 +512,9 @@ Mesh MergeMeshes(std::initializer_list<const Mesh*> meshes)
     return merged;
 }
 
-TranslationGizmo GenerateTranslationGizmo(const TranslationDesc& desc)
+FTranslationGizmo GenerateTranslationGizmo(const FTranslationGizmoDesc& desc)
 {
-    TranslationGizmo gizmo;
+    FTranslationGizmo gizmo;
     const float s = desc.uniformScale;
     const float gizmoSize = static_cast<float>(desc.transformGizmoSize);
     const float axisLength = std::max(1.0f, kAxisLength + gizmoSize);
@@ -544,9 +544,9 @@ TranslationGizmo GenerateTranslationGizmo(const TranslationDesc& desc)
     return gizmo;
 }
 
-RotationGizmo GenerateRotationGizmo(const RotationDesc& desc)
+FRotationGizmo GenerateRotationGizmo(const FRotationGizmoDesc& desc)
 {
-    RotationGizmo gizmo;
+    FRotationGizmo gizmo;
     const float s = desc.uniformScale;
     const float gizmoSize = static_cast<float>(desc.transformGizmoSize);
     const float innerRadius = (kInnerAxisCircleRadius * s) + gizmoSize;
@@ -554,7 +554,7 @@ RotationGizmo GenerateRotationGizmo(const RotationDesc& desc)
     const std::uint32_t circleSides = ComputeCircleSides(desc.transformGizmoSize);
     const FVector dir = NormalizeSafe(desc.cameraDirection, FVector(-1.0f, -1.0f, -1.0f));
 
-    auto appendAxisArc = [&](Mesh& mesh, AxisId axisId, const FVector& axis0, const FVector& axis1, const Color& baseColor)
+    auto appendAxisArc = [&](FGizmoMesh& mesh, EGizmoAxisId axisId, const FVector& axis0, const FVector& axis1, const FGizmoColor& baseColor)
     {
         if (desc.dragging)
         {
@@ -605,11 +605,11 @@ RotationGizmo GenerateRotationGizmo(const RotationDesc& desc)
         }
     };
 
-    appendAxisArc(gizmo.ringX, AxisId::X, FVector(0.0f, 0.0f, 1.0f), FVector(0.0f, 1.0f, 0.0f), AxisColorX());
-    appendAxisArc(gizmo.ringY, AxisId::Y, FVector(1.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 1.0f), AxisColorY());
-    appendAxisArc(gizmo.ringZ, AxisId::Z, FVector(1.0f, 0.0f, 0.0f), FVector(0.0f, 1.0f, 0.0f), AxisColorZ());
+    appendAxisArc(gizmo.ringX, EGizmoAxisId::X, FVector(0.0f, 0.0f, 1.0f), FVector(0.0f, 1.0f, 0.0f), AxisColorX());
+    appendAxisArc(gizmo.ringY, EGizmoAxisId::Y, FVector(1.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 1.0f), AxisColorY());
+    appendAxisArc(gizmo.ringZ, EGizmoAxisId::Z, FVector(1.0f, 0.0f, 0.0f), FVector(0.0f, 1.0f, 0.0f), AxisColorZ());
 
-    if (desc.includeScreenRing && (!desc.dragging || desc.activeAxis == AxisId::Screen))
+    if (desc.includeScreenRing && (!desc.dragging || desc.activeAxis == EGizmoAxisId::Screen))
     {
         const float screenOuter = (kOuterAxisCircleRadius * 1.25f * s) + gizmoSize;
         const float screenInner = ((kOuterAxisCircleRadius - 1.0f) * 1.25f * s) + gizmoSize;
@@ -625,7 +625,7 @@ RotationGizmo GenerateRotationGizmo(const RotationDesc& desc)
             circleSides);
     }
 
-    if (desc.includeArcball && (!desc.dragging || desc.activeAxis == AxisId::XYZ))
+    if (desc.includeArcball && (!desc.dragging || desc.activeAxis == EGizmoAxisId::XYZ))
     {
         AppendSphere(gizmo.arcball, FVector(0.0f, 0.0f, 0.0f), innerRadius, 32, 24, ArcballColor());
     }
@@ -633,9 +633,9 @@ RotationGizmo GenerateRotationGizmo(const RotationDesc& desc)
     return gizmo;
 }
 
-ScaleGizmo GenerateScaleGizmo(const ScaleDesc& desc)
+FScaleGizmo GenerateScaleGizmo(const FScaleGizmoDesc& desc)
 {
-    ScaleGizmo gizmo;
+    FScaleGizmo gizmo;
     const float s = desc.uniformScale;
     const float gizmoSize = static_cast<float>(desc.transformGizmoSize);
     const float axisLength = std::max(1.0f, kAxisLength + gizmoSize - (kAxisLengthScaleOffset * 2.0f));
@@ -648,9 +648,9 @@ ScaleGizmo GenerateScaleGizmo(const ScaleDesc& desc)
     AppendCylinder(gizmo.axisY, FVector(0.0f, 0.0f, 0.0f), yDir * (axisLength * s), kCylinderRadius * s, 16, AxisColorY());
     AppendCylinder(gizmo.axisZ, FVector(0.0f, 0.0f, 0.0f), zDir * (axisLength * s), kCylinderRadius * s, 16, AxisColorZ());
 
-    AppendOrientedBox(gizmo.axisX, xDir * (cubeCenter * s), Basis3{xDir, yDir, zDir}, FVector(kScaleCenterCubeHalf * s, kScaleCenterCubeHalf * s, kScaleCenterCubeHalf * s), AxisColorX());
-    AppendOrientedBox(gizmo.axisY, yDir * (cubeCenter * s), Basis3{yDir, xDir * -1.0f, zDir}, FVector(kScaleCenterCubeHalf * s, kScaleCenterCubeHalf * s, kScaleCenterCubeHalf * s), AxisColorY());
-    AppendOrientedBox(gizmo.axisZ, zDir * (cubeCenter * s), Basis3{zDir, xDir, yDir}, FVector(kScaleCenterCubeHalf * s, kScaleCenterCubeHalf * s, kScaleCenterCubeHalf * s), AxisColorZ());
+    AppendOrientedBox(gizmo.axisX, xDir * (cubeCenter * s), FGizmoBasis3{xDir, yDir, zDir}, FVector(kScaleCenterCubeHalf * s, kScaleCenterCubeHalf * s, kScaleCenterCubeHalf * s), AxisColorX());
+    AppendOrientedBox(gizmo.axisY, yDir * (cubeCenter * s), FGizmoBasis3{yDir, xDir * -1.0f, zDir}, FVector(kScaleCenterCubeHalf * s, kScaleCenterCubeHalf * s, kScaleCenterCubeHalf * s), AxisColorY());
+    AppendOrientedBox(gizmo.axisZ, zDir * (cubeCenter * s), FGizmoBasis3{zDir, xDir, yDir}, FVector(kScaleCenterCubeHalf * s, kScaleCenterCubeHalf * s, kScaleCenterCubeHalf * s), AxisColorZ());
 
     AppendScalePlane(gizmo.planeXY, xDir, yDir, zDir, AxisColorX(), AxisColorY(), s);
     AppendScalePlane(gizmo.planeXZ, xDir, zDir, yDir * -1.0f, AxisColorX(), AxisColorZ(), s);
@@ -658,23 +658,23 @@ ScaleGizmo GenerateScaleGizmo(const ScaleDesc& desc)
 
     if (desc.includeCenterCube)
     {
-        AppendOrientedBox(gizmo.centerCube, FVector(0.0f, 0.0f, 0.0f), Basis3{xDir, yDir, zDir}, FVector(kScaleCenterCubeHalf * s, kScaleCenterCubeHalf * s, kScaleCenterCubeHalf * s), ScreenSpaceColor());
+        AppendOrientedBox(gizmo.centerCube, FVector(0.0f, 0.0f, 0.0f), FGizmoBasis3{xDir, yDir, zDir}, FVector(kScaleCenterCubeHalf * s, kScaleCenterCubeHalf * s, kScaleCenterCubeHalf * s), ScreenSpaceColor());
     }
 
     return gizmo;
 }
 
-Mesh Combine(const TranslationGizmo& gizmo)
+FGizmoMesh Combine(const FTranslationGizmo& gizmo)
 {
     return MergeMeshes({&gizmo.axisX, &gizmo.axisY, &gizmo.axisZ, &gizmo.planeXY, &gizmo.planeXZ, &gizmo.planeYZ, &gizmo.screenSphere});
 }
 
-Mesh Combine(const RotationGizmo& gizmo)
+FGizmoMesh Combine(const FRotationGizmo& gizmo)
 {
     return MergeMeshes({&gizmo.ringX, &gizmo.ringY, &gizmo.ringZ, &gizmo.screenRing, &gizmo.arcball});
 }
 
-Mesh Combine(const ScaleGizmo& gizmo)
+FGizmoMesh Combine(const FScaleGizmo& gizmo)
 {
     return MergeMeshes({&gizmo.axisX, &gizmo.axisY, &gizmo.axisZ, &gizmo.planeXY, &gizmo.planeXZ, &gizmo.planeYZ, &gizmo.centerCube});
 }

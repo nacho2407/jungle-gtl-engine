@@ -148,13 +148,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="EditorGlobals.cpp" />
-    <ClCompile Include="Source\FEditorEngine.cpp" />
+    <ClCompile Include="Source\EditorEngine.cpp" />
     <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\Axis\AxisRenderer.cpp" />
     <ClCompile Include="Source\Controller\EditorViewportController.cpp" />
     <ClCompile Include="Source\Gizmo\Gizmo.cpp" />
     <ClCompile Include="Source\Pawn\EditorCameraPawn.cpp" />
     <ClCompile Include="Source\Picking\Picker.cpp" />
+    <ClCompile Include="Source\Subsystem\EditorCameraSubsystem.cpp" />
+    <ClCompile Include="Source\Subsystem\EditorSelectionSubsystem.cpp" />
     <ClCompile Include="Source\UI\ConsoleWindow.cpp" />
     <ClCompile Include="Source\UI\ContentBrowserWindow.cpp" />
     <ClCompile Include="Source\UI\ControlPanelWindow.cpp" />
@@ -175,12 +177,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="EditorGlobals.h" />
-    <ClInclude Include="Source\FEditorEngine.h" />
+    <ClInclude Include="Source\EditorEngine.h" />
     <ClInclude Include="Source\Axis\AxisRenderer.h" />
     <ClInclude Include="Source\Controller\EditorViewportController.h" />
     <ClInclude Include="Source\Gizmo\Gizmo.h" />
     <ClInclude Include="Source\Pawn\EditorCameraPawn.h" />
     <ClInclude Include="Source\Picking\Picker.h" />
+    <ClInclude Include="Source\Subsystem\EditorCameraSubsystem.h" />
+    <ClInclude Include="Source\Subsystem\EditorSelectionSubsystem.h" />
     <ClInclude Include="Source\UI\ConsoleWindow.h" />
     <ClInclude Include="Source\UI\ContentBrowserWindow.h" />
     <ClInclude Include="Source\UI\ControlPanelWindow.h" />
