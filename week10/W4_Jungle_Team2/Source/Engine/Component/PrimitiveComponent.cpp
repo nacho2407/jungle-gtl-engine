@@ -43,7 +43,7 @@ bool UPrimitiveComponent::IntersectTriangle(const FVector& RayOrigin, const FVec
 	const FVector PVec = FVector::CrossProduct(RayDir, Edge2);
 	const float Det = FVector::DotProduct(Edge1, PVec);
 	
-	if (std::fabs(Det) < EPSILON)
+	if (std::fabs(Det) < Epsilon)
 	{
 		return false;
 	}

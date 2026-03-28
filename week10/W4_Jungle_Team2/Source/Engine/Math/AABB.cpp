@@ -77,7 +77,7 @@ bool FAABB::IntersectRay(const FRay& Ray, float& OutT) const
 		const float BoxMin = (&Min.X)[Axis];
 		const float BoxMax = (&Max.X)[Axis];
 		
-		if (std::fabs(Direction) < EPSILON)
+		if (std::fabs(Direction) < Epsilon)
 		{
 			if (Origin < BoxMin || Origin > BoxMax)
 			{

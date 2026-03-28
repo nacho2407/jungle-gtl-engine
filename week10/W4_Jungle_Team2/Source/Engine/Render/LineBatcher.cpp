@@ -63,7 +63,7 @@ namespace
 
 	FVector ComputeGridFocusPoint(const FVector& CameraPosition, const FVector& CameraForward)
 	{
-		if (std::fabs(CameraForward.Z) > EPSILON) // if Z가 거의 EPSILON -> 평면과 평행 -> 교차 계산 X
+		if (std::fabs(CameraForward.Z) > Epsilon) // if Z가 거의 EPSILON -> 평면과 평행 -> 교차 계산 X
 		{
 			const float T = (GridPlaneZ - CameraPosition.Z) / CameraForward.Z;
 			if (T > 0.0f) // 카메라 앞쪽 방향만 사용
@@ -73,7 +73,7 @@ namespace
 		}
 
 		FVector PlanarForward(CameraForward.X, CameraForward.Y, 0.0f); // 평행한 경우 -> Z 성분 제거 -> XY 평면 방향만 사용
-		if (PlanarForward.Length() > EPSILON)
+		if (PlanarForward.Length() > Epsilon)
 		{
 			PlanarForward.Normalize();
 			// 카메라 아래 지점 + 앞으로 조금 이동

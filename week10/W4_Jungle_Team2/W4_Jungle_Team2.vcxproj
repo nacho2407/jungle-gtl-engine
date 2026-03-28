@@ -221,7 +221,6 @@
     <ClCompile Include="Source\Engine\Math\AABB.cpp" />
     <ClCompile Include="Source\Engine\Math\Matrix.cpp" />
     <ClCompile Include="Source\Engine\Math\Transform.cpp" />
-    <ClCompile Include="Source\Engine\Math\Utils.cpp" />
     <ClCompile Include="Source\Engine\Math\Vector.cpp" />
     <ClCompile Include="Source\Engine\Object\EngineStatics.cpp" />
     <ClCompile Include="Source\Engine\Object\FName.cpp" />
