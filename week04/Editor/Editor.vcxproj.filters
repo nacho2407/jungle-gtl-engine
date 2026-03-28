@@ -180,7 +180,6 @@
     <ClCompile Include="Source\Viewport\Selection\ViewportSelectionController.cpp">
       <Filter>Source\Viewport\Selection</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Viewport\Window\SWindow.cpp" />
     <ClCompile Include="Source\Viewport\Window\SSplitter.cpp" />
     <ClCompile Include="Source\Viewport\Window\SSplitterH.cpp" />
     <ClCompile Include="Source\Viewport\Window\SSplitterV.cpp" />
@@ -322,7 +321,6 @@
     <ClInclude Include="Source\Viewport\Selection\ViewportSelectionController.h">
       <Filter>Source\Viewport\Selection</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Viewport\Window\SWindow.h" />
     <ClInclude Include="Source\Viewport\Window\SSplitter.h" />
     <ClInclude Include="Source\Viewport\Window\SSplitterH.h" />
     <ClInclude Include="Source\Viewport\Window\SSplitterV.h" />

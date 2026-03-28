@@ -1,7 +1,6 @@
 #pragma once
-#include "SWindow.h"
 
-class SSplitter : public SWindow
+class SSplitter
 {
 private:
   //SWindow* TopLeftWindow;    // Persistent

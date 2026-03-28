@@ -137,7 +137,6 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClCompile Include="Source\Viewport\Window\SSplitter.cpp" />
     <ClCompile Include="Source\Viewport\Window\SSplitterH.cpp" />
     <ClCompile Include="Source\Viewport\Window\SSplitterV.cpp" />
-    <ClCompile Include="Source\Viewport\Window\SWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Camera\ViewportCamera.h" />
@@ -188,7 +187,6 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClInclude Include="Source\Viewport\Window\SSplitter.h" />
     <ClInclude Include="Source\Viewport\Window\SSplitterH.h" />
     <ClInclude Include="Source\Viewport\Window\SSplitterV.h" />
-    <ClInclude Include="Source\Viewport\Window\SWindow.h" />
     <ClInclude Include="Source\Viewport\Window\WindowOverlayManager.h" />
   </ItemGroup>
   <ItemGroup>
