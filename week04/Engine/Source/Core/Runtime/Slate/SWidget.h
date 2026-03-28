@@ -11,4 +11,7 @@ class ENGINE_API SWidget
     virtual void OnMouseMove(float DeltaX, float DeltaY) {}
 
     virtual ~SWidget() = default;
+
+  protected:
+    bool bIsClicked = false;
 };

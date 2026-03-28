@@ -13,6 +13,7 @@
 #include "ApplicationCore/Input/InputSystem.h"
 #include "Viewport/Global/EditorGlobalController.h"
 #include "Input/EditorGlobalContext.h"
+#include "Input/ViewportOverlayInputContext.h"
 
 #include "Engine/Scene.h"
 #include "Logging/EditorLogBuffer.h"
@@ -136,10 +137,10 @@ class FEditor
   private:
     FEditorViewportClient ViewportClient;
     FWindowOverlayManager* WindowOverlayManager = nullptr;
-    FEditorViewportPanel*  InputCapturePanel    = nullptr;
     Engine::ApplicationCore::FInputRouter GlobalInputRouter;
     FEditorGlobalController GlobalInputController;
-    FEditorGlobalContext GlobalInputContext{&GlobalInputController};
+    FEditorGlobalContext            GlobalInputContext{&GlobalInputController};
+    FViewportOverlayInputContext*   OverlayInputContext = nullptr;
 
     FEditorContext        EditorContext;
     FEditorSettings       PersistentSettings;

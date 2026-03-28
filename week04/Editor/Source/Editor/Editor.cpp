@@ -320,6 +320,10 @@ void FEditor::Create()
     EditorPanel->Scene = CurScene;
     WindowOverlayManager->GetViewportPanels().push_back(EditorPanel);
     WindowOverlayManager->SetViewportLayout(EViewportLayout::ColumnTwoRow);
+
+    OverlayInputContext = new FViewportOverlayInputContext(WindowOverlayManager);
+    GlobalInputRouter.AddContext(OverlayInputContext);
+
     LoadEditorSettings();
 }
 
@@ -354,6 +358,9 @@ void FEditor::Release()
     {
         GLog = nullptr;
     }
+
+    delete OverlayInputContext;
+    OverlayInputContext = nullptr;
 
     if (WindowOverlayManager)
     {
@@ -643,47 +650,7 @@ void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* Input
 
     while (InputSystem->PollEvent(Event))
     {
-        if (GlobalInputRouter.RouteEvent(Event, InputState))
-        {
-            continue;
-        }
-
-        // Mouse events carry position; keyboard events fall back to current cursor.
-        const bool bIsMouseEvent = (Event.Type == EInputEventType::MouseButtonDown ||
-                                    Event.Type == EInputEventType::MouseButtonUp   ||
-                                    Event.Type == EInputEventType::MouseMove       ||
-                                    Event.Type == EInputEventType::MouseWheel);
-
-        FEditorViewportPanel* TargetPanel = InputCapturePanel;
-        if (TargetPanel == nullptr && WindowOverlayManager)
-        {
-            const int32 LookupX = bIsMouseEvent ? Event.MouseX : InputState.MouseX;
-            const int32 LookupY = bIsMouseEvent ? Event.MouseY : InputState.MouseY;
-            TargetPanel = WindowOverlayManager->FindPanelAtPoint(LookupX, LookupY);
-        }
-
-        // Lock routing to this panel while any mouse button remains held.
-        if (Event.Type == EInputEventType::MouseButtonDown && InputCapturePanel == nullptr)
-        {
-            InputCapturePanel = TargetPanel;
-        }
-
-        if (TargetPanel && TargetPanel->ViewportClient)
-        {
-            TargetPanel->ViewportClient->HandleInputEvent(Event, InputState);
-        }
-
-        // Release capture once all mouse buttons are up.
-        if (Event.Type == EInputEventType::MouseButtonUp)
-        {
-            const bool bAnyButtonHeld = InputState.IsKeyDown(EKey::MouseLeft)  ||
-                                        InputState.IsKeyDown(EKey::MouseRight) ||
-                                        InputState.IsKeyDown(EKey::MouseMiddle);
-            if (!bAnyButtonHeld)
-            {
-                InputCapturePanel = nullptr;
-            }
-        }
+        GlobalInputRouter.RouteEvent(Event, InputState);
     }
 
     // Tick every panel's viewport client uniformly.

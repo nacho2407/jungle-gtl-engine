@@ -175,6 +175,18 @@ void FWindowOverlayManager::ReleaseSplitters()
 // Splitter drag interaction
 // ---------------------------------------------------------------------------
 
+bool FWindowOverlayManager::HitTestSplitterV(int32 X) const
+{
+    if (!SplitterV) return false;
+    return std::abs(static_cast<float>(X) - SplitterV->PosX) <= SplitterHalfThick;
+}
+
+bool FWindowOverlayManager::HitTestSplitterH(int32 Y) const
+{
+    if (!SplitterH) return false;
+    return std::abs(static_cast<float>(Y) - SplitterH->PosY) <= SplitterHalfThick;
+}
+
 void FWindowOverlayManager::BeginSplitterDrag(bool bVertical, bool bHorizontal)
 {
     bDraggingV = bVertical   && SplitterV != nullptr;
@@ -188,14 +200,14 @@ void FWindowOverlayManager::UpdateSplitterDrag(float DeltaX, float DeltaY)
 
     if (bDraggingV && SplitterV)
     {
-        SplitterV->OnDrag(DeltaX, FW * 0.1f, FW * 0.9f);
+        SplitterV->OnDrag(DeltaX);
         VSplitRatio = SplitterV->PosX / FW;
         SyncPanelClients();
     }
 
     if (bDraggingH && SplitterH)
     {
-        SplitterH->OnDrag(DeltaY, FH * 0.1f, FH * 0.9f);
+        SplitterH->OnDrag(DeltaY);
         HSplitRatio = SplitterH->PosY / FH;
         SyncPanelClients();
     }

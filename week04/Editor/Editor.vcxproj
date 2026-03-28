@@ -105,6 +105,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClCompile Include="Source\Input\GizmoInputContext.cpp" />
     <ClCompile Include="Source\Input\NavigationInputContext.cpp" />
     <ClCompile Include="Source\Input\SelectionInputContext.cpp" />
+    <ClCompile Include="Source\Input\ViewportOverlayInputContext.cpp" />
     <ClCompile Include="Source\Launch\EditorEngineLoop.cpp" />
     <ClCompile Include="Source\Launch\Launch.cpp" />
     <ClCompile Include="Source\main.cpp" />
@@ -152,6 +153,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClInclude Include="Source\Input\GizmoInputContext.h" />
     <ClInclude Include="Source\Input\NavigationInputContext.h" />
     <ClInclude Include="Source\Input\SelectionInputContext.h" />
+    <ClInclude Include="Source\Input\ViewportOverlayInputContext.h" />
     <ClInclude Include="Source\Launch\EditorEngineLoop.h" />
     <ClInclude Include="Source\Launch\Launch.h" />
     <ClInclude Include="Source\Menu\EditorMenuRegistry.h" />

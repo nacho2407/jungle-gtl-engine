@@ -6,25 +6,47 @@
 // Deprecated: resizing is handled by WindowOverlayManager::ResetViewportDimension.
 void SSplitter::OnResize(float Width, float Height) {}
 
-void SSplitterV::OnDrag(float Delta, float MinBound, float MaxBound)
+void SSplitter::OnMouseButtonDown(int32 MouseX, int32 MouseY) 
+{
+    if (HitTest(FVector2(MouseX, MouseY)))
+    {
+        bIsClicked = true;
+    }
+}
+
+void SSplitter::OnMouseButtonUp(int32 MouseX, int32 MouseY) 
+{
+    bIsClicked = false;
+}
+
+void SSplitter::OnMouseMove(float DeltaX, float DeltaY) 
+{
+    // Find mouse delta and call OnDrag if bIsClicked
+}
+
+void SSplitterV::OnDrag(float Delta)
 {
     if (std::abs(Delta) < FMath::KindaSmallNumber)
     {
         return;
     }
 
-    PosX = FMath::Clamp(PosX + Delta, MinBound, MaxBound);
+    const float Lo = (MinBound > 0.f) ? MinBound : WindowWidth * 0.1f;
+    const float Hi = (MaxBound > 0.f) ? MaxBound : WindowWidth * 0.9f;
+    PosX = FMath::Clamp(PosX + Delta, Lo, Hi);
     ResetPanelDimension();
 }
 
-void SSplitterH::OnDrag(float Delta, float MinBound, float MaxBound)
+void SSplitterH::OnDrag(float Delta)
 {
     if (std::abs(Delta) < FMath::KindaSmallNumber)
     {
         return;
     }
 
-    PosY = FMath::Clamp(PosY + Delta, MinBound, MaxBound);
+    const float Lo = (MinBound > 0.f) ? MinBound : WindowHeight * 0.1f;
+    const float Hi = (MaxBound > 0.f) ? MaxBound : WindowHeight * 0.9f;
+    PosY = FMath::Clamp(PosY + Delta, Lo, Hi);
     ResetPanelDimension();
 }
 

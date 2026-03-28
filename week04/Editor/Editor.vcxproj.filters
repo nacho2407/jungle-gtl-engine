@@ -99,6 +99,9 @@
     <ClCompile Include="Source\Input\SelectionInputContext.cpp">
       <Filter>Source\Input</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Input\ViewportOverlayInputContext.cpp">
+      <Filter>Source\Input</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Launch\EditorEngineLoop.cpp">
       <Filter>Source\Launch</Filter>
     </ClCompile>
@@ -234,6 +237,9 @@
       <Filter>Source\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Input\SelectionInputContext.h">
+      <Filter>Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Input\ViewportOverlayInputContext.h">
       <Filter>Source\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Launch\EditorEngineLoop.h">
