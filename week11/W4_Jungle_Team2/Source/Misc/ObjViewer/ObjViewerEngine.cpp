@@ -12,6 +12,7 @@
 #include "Engine/Serialization/SceneSaveManager.h"
 #include "GameFramework/World.h"
 #include "ImGui/imgui.h"
+#include "Viewport/ViewportCamera.h"
 
 DEFINE_CLASS(UObjViewerEngine, UEngine)
 REGISTER_FACTORY(UObjViewerEngine)
@@ -72,7 +73,7 @@ void UObjViewerEngine::BeginPlay()
     PreviewActor->SetRootComponent(MeshComp);
 
     // 카메라 세팅은 ViewportClient에게 온전히 위임
-    if (UCameraComponent* MainCamera = ViewportClient.GetCamera())
+    if (FViewportCamera* MainCamera = ViewportClient.GetCamera())
     {
         World->SetActiveCamera(MainCamera);
     }
