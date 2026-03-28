@@ -12,7 +12,7 @@
 #include "Engine/Component/Core/UnknownComponent.h"
 
 #include "Content/ContentBrowserDragDrop.h"
-#include "CoreUObject/UObjectIterator.h"
+#include "CoreUObject/UObjectIterator.h" // 민준 님의 이터레이터 헤더
 #include "Editor/Editor.h"
 #include "Editor/EditorContext.h"
 #include "CoreUObject/Object.h"
@@ -37,14 +37,23 @@ namespace
 {
     constexpr ImVec4 UnknownItemColor = ImVec4(0.95f, 0.35f, 0.35f, 1.0f);
 
+    /** 
+     * 객체의 이름을 안전하게 가져옵니다. 
+     * 댕글링 포인터 방지를 위해 IsValidLowLevel()을 철저히 확인합니다.
+     */
     FString GetBaseObjectDisplayName(const UObject* Object)
     {
-        if (Object == nullptr)
-            return {};
+        // 1. nullptr 및 메모리 유효성 검사 (민준 님의 IsValidLowLevel 활용)
+        if (Object == nullptr || !Object->IsValidLowLevel())
+            return "Invalid Object";
+
+        // 2. 이름 유효성 검사
         FString NameStr = Object->Name.IsValid() ? Object->Name.ToFString() : "";
         if (NameStr.empty() || NameStr == "None")
         {
             const char* RawTypeName = Object->GetTypeName();
+            if (RawTypeName == nullptr) return "Unknown Type";
+            
             if ((RawTypeName[0] == 'U' || RawTypeName[0] == 'A') && isupper(RawTypeName[1]))
                 return FString(RawTypeName + 1);
             return FString(RawTypeName);
@@ -54,7 +63,7 @@ namespace
 
     bool IsUnknownObject(const UObject* Object)
     {
-        if (Object == nullptr)
+        if (Object == nullptr || !Object->IsValidLowLevel())
             return false;
         return Object->IsA(AUnknownActor::GetClass()) ||
                Object->IsA(Engine::Component::UUnknownComponent::GetClass());
@@ -62,7 +71,7 @@ namespace
 
     const char* GetUnknownSuffix(const UObject* Object)
     {
-        if (Object == nullptr)
+        if (Object == nullptr || !Object->IsValidLowLevel())
             return nullptr;
         if (Object->IsA(AUnknownActor::GetClass()))
             return "(UnknownActor)";
@@ -74,27 +83,22 @@ namespace
     bool IsComponentOwnedByActor(const AActor*                             Actor,
                                  const Engine::Component::USceneComponent* Component)
     {
-        return Actor != nullptr && Component != nullptr && Component->GetOwnerActor() == Actor;
+        // 배우와 컴포넌트 모두 유효한 상태인지 확인
+        if (Actor == nullptr || !Actor->IsValidLowLevel() || Component == nullptr || !Component->IsValidLowLevel())
+            return false;
+        return Component->GetOwnerActor() == Actor;
     }
 
     bool ShouldShowComponentInDetailsTree(const AActor*                             Actor,
                                           const Engine::Component::USceneComponent* Component)
     {
-        return IsComponentOwnedByActor(Actor, Component) && Component != nullptr &&
-               Component->ShouldShowInDetailsTree();
+        return IsComponentOwnedByActor(Actor, Component) && Component->ShouldShowInDetailsTree();
     }
 
-    /**
-     * 액터 내에서 중복되지 않는 고유한 컴포넌트 이름을 생성합니다.
-     * 기본적으로 "BaseName 1", "BaseName 2"와 같은 형식으로 숫자를 증가시키며 확인합니다.
-     * 
-     * @param Actor 컴포넌트를 소유한 액터입니다.
-     * @param BaseName 기본이 되는 이름 문자열입니다.
-     * @return 중복되지 않는 새로운 고유 이름입니다.
-     */
+    /** 액터 내에서 중복되지 않는 고유한 컴포넌트 이름을 생성합니다. (예: StaticMeshComponent 1) */
     FString GenerateUniqueComponentName(AActor* Actor, const FString& BaseName)
     {
-        if (Actor == nullptr)
+        if (Actor == nullptr || !Actor->IsValidLowLevel())
             return BaseName;
 
         const auto& Components = Actor->GetOwnedComponents();
@@ -107,7 +111,7 @@ namespace
             bUnique = true;
             for (auto* Comp : Components)
             {
-                if (Comp && Comp->Name.ToFString() == FinalName)
+                if (Comp && Comp->IsValidLowLevel() && Comp->Name.ToFString() == FinalName)
                 {
                     Suffix++;
                     FinalName = BaseName + " " + std::to_string(Suffix);
@@ -121,7 +125,7 @@ namespace
 
     void DrawObjectSummaryLine(const char* Prefix, const UObject* Object)
     {
-        if (Object == nullptr)
+        if (Object == nullptr || !Object->IsValidLowLevel())
             return;
         ImGui::Text("%s: %s", Prefix, GetBaseObjectDisplayName(Object).c_str());
         if (!IsUnknownObject(Object))
@@ -202,9 +206,6 @@ namespace
         return bApplied;
     }
 
-    /** 
-     * 고정 메시 에셋 선택 콤보박스
-     */
     bool DrawStaticMeshAssetCombo(const Engine::Component::FComponentPropertyDescriptor& Descriptor,
                                   const FString& CurrentPath, const FString& RawValue,
                                   TMap<FString, FString>* AssetPathEditBuffers)
@@ -223,7 +224,6 @@ namespace
                 FString       Label = MeshAsset->GetAssetName();
                 if (MeshAsset->bIsBaked)
                     Label += " [Baked]";
-                
                 bool bSelected = (RawValue == Path);
                 if (ImGui::Selectable(Label.c_str(), bSelected))
                 {
@@ -241,16 +241,13 @@ namespace
         return bChanged;
     }
 
-    /** 
-     * 머티리얼 선택 콤보박스
-     */
     bool DrawMaterialAssetCombo(Engine::Component::UMeshComponent* MeshComp, uint32 SlotIndex)
     {
-        if (MeshComp == nullptr)
+        if (MeshComp == nullptr || !MeshComp->IsValidLowLevel())
             return false;
 
         Engine::Asset::UMaterialInterface* CurrentMat = MeshComp->GetMaterial(SlotIndex);
-        FString     CurrentPath = CurrentMat ? CurrentMat->GetAssetName() : "None";
+        FString     CurrentPath = (CurrentMat && CurrentMat->IsValidLowLevel()) ? CurrentMat->GetAssetName() : "None";
         std::string LabelId = "Material Slot " + std::to_string(SlotIndex + 1);
 
         bool bChanged = false;
@@ -444,32 +441,42 @@ void FPropertiesPanel::Draw()
         ImGui::End();
         return;
     }
-    if (GetContext() == nullptr || GetContext()->SelectedObject == nullptr)
+
+    // 전역 선택 객체 유효성 검사 강화
+    if (GetContext() == nullptr || GetContext()->SelectedObject == nullptr || !GetContext()->SelectedObject->IsValidLowLevel())
     {
         CachedTargetComponent = nullptr;
+        RenamingComponent = nullptr; // 이름 변경 중인 객체도 초기화
         ResetAssetPathEditState();
         DrawNoSelectionState();
         ImGui::End();
         return;
     }
+
     if (GetContext()->SelectedActors.size() > 1)
     {
         CachedTargetComponent = nullptr;
+        RenamingComponent = nullptr;
         ResetAssetPathEditState();
         DrawMultipleSelectionState();
         ImGui::End();
         return;
     }
+
     AActor*                             SelActor = nullptr;
     Engine::Component::USceneComponent* TargetComp = ResolveTargetComponent(SelActor);
-    if (TargetComp == nullptr)
+    
+    // 타겟 컴포넌트 유효성 검사 강화
+    if (TargetComp == nullptr || !TargetComp->IsValidLowLevel())
     {
         CachedTargetComponent = nullptr;
+        RenamingComponent = nullptr;
         ResetAssetPathEditState();
         DrawUnsupportedSelectionState();
         ImGui::End();
         return;
     }
+
     SyncEditTransformFromTarget(TargetComp);
     DrawComponentHierarchy(SelActor, TargetComp);
     ImGui::Separator();
@@ -490,7 +497,7 @@ void FPropertiesPanel::SetTarget(const FVector& Loc, const FVector& Rot, const F
 
 AActor* FPropertiesPanel::ResolveSelectedActor() const
 {
-    if (GetContext() == nullptr || GetContext()->SelectedObject == nullptr)
+    if (GetContext() == nullptr || GetContext()->SelectedObject == nullptr || !GetContext()->SelectedObject->IsValidLowLevel())
         return nullptr;
     if (AActor* Actor = Cast<AActor>(GetContext()->SelectedObject))
         return Actor;
@@ -501,7 +508,7 @@ AActor* FPropertiesPanel::ResolveSelectedActor() const
 
 void FPropertiesPanel::SyncEditTransformFromTarget(Engine::Component::USceneComponent* TargetComp)
 {
-    if (TargetComp == nullptr)
+    if (TargetComp == nullptr || !TargetComp->IsValidLowLevel())
     {
         CachedTargetComponent = nullptr;
         ResetAssetPathEditState();
@@ -524,11 +531,11 @@ Engine::Component::USceneComponent*
 FPropertiesPanel::ResolveTargetComponent(AActor*& OutActor) const
 {
     OutActor = ResolveSelectedActor();
-    if (GetContext() == nullptr || GetContext()->SelectedObject == nullptr)
+    if (GetContext() == nullptr || GetContext()->SelectedObject == nullptr || !GetContext()->SelectedObject->IsValidLowLevel())
         return nullptr;
     if (auto* Comp = Cast<Engine::Component::USceneComponent>(GetContext()->SelectedObject))
         return Comp;
-    if (OutActor != nullptr)
+    if (OutActor != nullptr && OutActor->IsValidLowLevel())
         return OutActor->GetRootComponent();
     return nullptr;
 }
@@ -550,9 +557,9 @@ void FPropertiesPanel::DrawSelectionSummary(AActor*                             
                                             Engine::Component::USceneComponent* Comp) const
 {
     DrawObjectSummaryLine("Selected", GetContext()->SelectedObject);
-    if (Actor)
+    if (Actor && Actor->IsValidLowLevel())
         DrawObjectSummaryLine("Actor", Actor);
-    if (Comp)
+    if (Comp && Comp->IsValidLowLevel())
         DrawObjectSummaryLine("Component", Comp);
 }
 
@@ -560,7 +567,7 @@ void FPropertiesPanel::ResetAssetPathEditState() { AssetPathEditBuffers.clear();
 
 void FPropertiesPanel::StartRenaming(Engine::Component::USceneComponent* InComponent) const
 {
-    if (InComponent == nullptr)
+    if (InComponent == nullptr || !InComponent->IsValidLowLevel())
         return;
     RenamingComponent = InComponent;
     FString CurrentName = InComponent->Name.ToFString();
@@ -588,41 +595,31 @@ void FPropertiesPanel::DrawComponentHierarchy(AActor*                           
 
     if (ImGui::BeginPopup("AddComponentPopup"))
     {
-        // Static Mesh Component 추가 (발제 핵심 기능)
         if (ImGui::MenuItem("Static Mesh Component"))
         {
-            if (Actor != nullptr)
+            if (Actor != nullptr && Actor->IsValidLowLevel())
             {
                 ::Engine::Component::UStaticMeshComponent* NewComp =
                     new ::Engine::Component::UStaticMeshComponent();
                 if (NewComp != nullptr)
                 {
-                    // 고유 이름 생성 (예: StaticMeshComponent 1)
                     FString UniqueName = GenerateUniqueComponentName(Actor, "StaticMeshComponent");
                     NewComp->Name = UniqueName;
-
-                    // AActor::AddOwnedComponent 내부에서 자동으로 Root에 부착 처리됨
                     Actor->AddOwnedComponent(NewComp);
 
-                    // 생성 후 즉시 선택 및 씬 변경 표시
                     if (GetContext() && GetContext()->Editor)
                     {
                         GetContext()->Editor->SetSelectedObject(NewComp);
                         GetContext()->Editor->MarkSceneDirty();
                     }
-
-                    // 생성 즉시 이름 변경 모드 진입
                     StartRenaming(NewComp);
                 }
             }
         }
-
-        // 추후 다른 기능성 컴포넌트(Light, Camera 등) 추가 지점
-
         ImGui::EndPopup();
     }
 
-    if (Actor == nullptr)
+    if (Actor == nullptr || !Actor->IsValidLowLevel())
         return;
     const TArray<Engine::Component::USceneComponent*>& Owned = Actor->GetOwnedComponents();
     if (Owned.empty())
@@ -633,13 +630,12 @@ void FPropertiesPanel::DrawComponentHierarchy(AActor*                           
 void FPropertiesPanel::DrawComponentNode(AActor* Actor, Engine::Component::USceneComponent* Comp,
                                          Engine::Component::USceneComponent* TargetComp) const
 {
-    if (!IsComponentOwnedByActor(Actor, Comp) || Comp == nullptr ||
+    if (Comp == nullptr || !Comp->IsValidLowLevel() || !IsComponentOwnedByActor(Actor, Comp) ||
         !Comp->ShouldShowInDetailsTree())
         return;
 
     ImGui::PushID(Comp);
 
-    // 이름 변경 트리거 감지 (선택된 상태에서 F2 또는 이미 선택된 항목 다시 클릭)
     if (TargetComp == Comp)
     {
         if (ImGui::IsKeyPressed(ImGuiKey_F2))
@@ -652,7 +648,7 @@ void FPropertiesPanel::DrawComponentNode(AActor* Actor, Engine::Component::UScen
     bool bHasChildren = false;
     for (auto* Child : Comp->GetAttachChildren())
     {
-        if (Child && Child->ShouldShowInDetailsTree())
+        if (Child && Child->IsValidLowLevel() && Child->ShouldShowInDetailsTree())
         {
             bHasChildren = true;
             break;
@@ -662,6 +658,9 @@ void FPropertiesPanel::DrawComponentNode(AActor* Actor, Engine::Component::UScen
     // 이름 변경 모드 렌더링
     if (RenamingComponent == Comp)
     {
+        // 렌더링 전 유효성 재확인
+        if (!Comp->IsValidLowLevel()) { RenamingComponent = nullptr; ImGui::PopID(); return; }
+
         ImGui::AlignTextToFramePadding();
         if (bHasChildren)
         {
@@ -693,8 +692,7 @@ void FPropertiesPanel::DrawComponentNode(AActor* Actor, Engine::Component::UScen
                 GetContext()->Editor->MarkSceneDirty();
         }
 
-        if (ImGui::IsItemDeactivated() &&
-            !ImGui::IsItemDeactivatedAfterEdit()) // 포커스 잃었을 때 (수정 없이)
+        if (ImGui::IsItemDeactivated() && !ImGui::IsItemDeactivatedAfterEdit())
         {
             RenamingComponent = nullptr;
         }
@@ -727,6 +725,10 @@ void FPropertiesPanel::DrawComponentNode(AActor* Actor, Engine::Component::UScen
             }
             if (ImGui::MenuItem("Remove", "Delete", false, Comp != Actor->GetRootComponent()))
             {
+                // 삭제 전 모든 캐시 초기화 (댕글링 포인터 방지 핵심 코드)
+                if (RenamingComponent == Comp) RenamingComponent = nullptr;
+                if (CachedTargetComponent == Comp) CachedTargetComponent = nullptr;
+                
                 Actor->RemoveOwnedComponent(Comp);
                 if (GetContext() && GetContext()->Editor)
                 {
@@ -737,12 +739,10 @@ void FPropertiesPanel::DrawComponentNode(AActor* Actor, Engine::Component::UScen
             ImGui::EndPopup();
         }
 
-        // 클릭 이벤트 처리 (선택 및 느린 클릭 이름 변경)
         if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
         {
-            if (TargetComp == Comp) // 이미 선택된 항목을 클릭했을 때 (느린 클릭)
+            if (TargetComp == Comp)
             {
-                // 더블 클릭이 아닐 때만 이름 변경 시도 (더블 클릭은 트리 노드 열기/닫기용)
                 if (!ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
                 {
                     StartRenaming(Comp);
@@ -767,6 +767,8 @@ void FPropertiesPanel::DrawComponentNode(AActor* Actor, Engine::Component::UScen
 
 void FPropertiesPanel::DrawTransformEditor(Engine::Component::USceneComponent* Comp)
 {
+    if (Comp == nullptr || !Comp->IsValidLowLevel()) return;
+
     ImGui::TextUnformatted("Transform");
     DrawVectorRow("Location", EditLocation);
     DrawRotatorRow("Rotation", EditRotation);
@@ -799,12 +801,11 @@ void FPropertiesPanel::DrawTransformEditor(Engine::Component::USceneComponent* C
 
 void FPropertiesPanel::DrawComponentPropertyEditor(Engine::Component::USceneComponent* TargetComp)
 {
-    if (TargetComp == nullptr)
+    if (TargetComp == nullptr || !TargetComp->IsValidLowLevel())
         return;
 
     bool bMod = false;
 
-    // 렌더링 가능한 메시 컴포넌트인지 확인하고, 슬롯이 존재할 때만 Materials 섹션 표시
     if (TargetComp->IsA(Engine::Component::UMeshComponent::GetClass()))
     {
         Engine::Component::UMeshComponent* MeshComp =
@@ -823,7 +824,6 @@ void FPropertiesPanel::DrawComponentPropertyEditor(Engine::Component::USceneComp
         }
     }
 
-    // 일반 속성 편집기
     Engine::Component::FComponentPropertyBuilder Builder;
     TargetComp->DescribeProperties(Builder);
     ImGui::TextUnformatted("Properties");
