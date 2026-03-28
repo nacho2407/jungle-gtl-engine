@@ -14,6 +14,7 @@ enum class EPropertyType : uint8_t
 	Vec4,
 	String,
 	Name,		// FName — 문자열 풀 기반 이름 (리소스 키 등)
+	StaticMeshRef,	// UStaticMesh* 에셋 레퍼런스 (드롭다운 선택)
 	// 필요 시 Enum, Color 등 추가
 };
 
