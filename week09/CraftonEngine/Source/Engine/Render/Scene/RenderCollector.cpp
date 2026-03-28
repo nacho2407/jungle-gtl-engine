@@ -6,6 +6,8 @@
 #include "Component/GizmoComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/SubUVComponent.h"
+#include "Component/StaticMeshComponent.h"
+#include "Mesh/StaticMeshAsset.h"
 
 void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
 {
@@ -170,13 +172,30 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 	case EPrimitiveType::EPT_Cube:
 	case EPrimitiveType::EPT_Sphere:
 	case EPrimitiveType::EPT_Plane:
-	case EPrimitiveType::EPT_StaticMesh:
 	{
 		if (!ShowFlags.bPrimitives) return;
 		FRenderCommand Cmd = {};
 		Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
 		Cmd.Type = ERenderCommandType::Primitive;
 		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(PrimType);
+		Cmd.DepthStencilState = EDepthStencilState::Default;
+		RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
+		break;
+	}
+
+	case EPrimitiveType::EPT_StaticMesh:
+	{
+		if (!ShowFlags.bPrimitives) return;
+		UStaticMeshComp* SMC = static_cast<UStaticMeshComp*>(Primitive);
+		UStaticMesh* SM = SMC->GetStaticMesh();
+		if (!SM) return;
+		FStaticMesh* Asset = SM->GetStaticMeshAsset();
+		if (!Asset || !Asset->RenderBuffer || !Asset->RenderBuffer->IsValid()) return;
+
+		FRenderCommand Cmd = {};
+		Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
+		Cmd.Type = ERenderCommandType::StaticMesh;
+		Cmd.MeshBuffer = Asset->RenderBuffer;
 		Cmd.DepthStencilState = EDepthStencilState::Default;
 		RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
 		break;

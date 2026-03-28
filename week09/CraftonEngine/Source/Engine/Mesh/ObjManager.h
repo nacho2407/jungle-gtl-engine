@@ -2,6 +2,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Object/ObjectIterator.h"
+#include "Render/Common/RenderTypes.h"
 #include <map>
 #include <string>
 
@@ -12,8 +13,10 @@ class UStaticMesh;
 class FObjManager
 {
 	static std::map<std::string, FStaticMesh> ObjStaticMeshMap;
+	static ID3D11Device* GDevice;
 
 public:
+	static void SetDevice(ID3D11Device* InDevice) { GDevice = InDevice; }
 	static FStaticMesh* LoadObjStaticMeshAsset(const std::string& PathFileName);
 	static UStaticMesh* LoadObjStaticMesh(const std::string& PathFileName);
 };
