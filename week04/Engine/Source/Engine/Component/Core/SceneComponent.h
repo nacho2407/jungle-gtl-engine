@@ -59,10 +59,8 @@ namespace Engine::Component
             // Do nothing
         };
 
-    protected:
-        virtual void OnTransformChanged()
-        {
-        }
+      protected:
+        virtual void OnTransformChanged() {}
 
       protected:
         bool bIsSelected = false;

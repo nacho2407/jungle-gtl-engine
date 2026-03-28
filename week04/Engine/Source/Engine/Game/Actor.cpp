@@ -24,10 +24,10 @@ void AActor::Tick(float DeltaTime)
 {
     for (auto& Component : OwnedComponents)
     {
-	    if (Component)
-	    {
+        if (Component)
+        {
             Component->Update(DeltaTime);
-	    }
+        }
     }
 }
 
@@ -75,28 +75,16 @@ void AActor::AddOwnedComponent(Engine::Component::USceneComponent* InComponent,
         return;
     }
 
-    for (Engine::Component::USceneComponent* ExistingComponent : OwnedComponents)
+    const auto ExistingComponentIterator =
+        std::find(OwnedComponents.begin(), OwnedComponents.end(), InComponent);
+
+    if (ExistingComponentIterator == OwnedComponents.end())
     {
-        if (ExistingComponent == InComponent)
-        {
-            InComponent->SetOwnerActor(this);
-
-            if (bMakeRootComponent)
-            {
-                SetRootComponent(InComponent);
-            }
-            else if (RootComponent != nullptr && InComponent != RootComponent &&
-                     InComponent->GetAttachParent() == nullptr)
-            {
-                InComponent->AttachToComponent(RootComponent);
-            }
-
-            return;
-        }
+        OwnedComponents.push_back(InComponent);
     }
 
-    OwnedComponents.push_back(InComponent);
     InComponent->SetOwnerActor(this);
+
     if (bMakeRootComponent || RootComponent == nullptr)
     {
         SetRootComponent(InComponent);
@@ -104,6 +92,26 @@ void AActor::AddOwnedComponent(Engine::Component::USceneComponent* InComponent,
     else if (InComponent != RootComponent && InComponent->GetAttachParent() == nullptr)
     {
         InComponent->AttachToComponent(RootComponent);
+    }
+}
+
+void AActor::RemoveOwnedComponent(Engine::Component::USceneComponent* InComponent)
+{
+    if (InComponent == nullptr || InComponent == RootComponent)
+    {
+        return;
+    }
+
+    auto It = std::find(OwnedComponents.begin(), OwnedComponents.end(), InComponent);
+    if (It != OwnedComponents.end())
+    {
+        OwnedComponents.erase(It);
+
+        // Ensure proper detachment from hierarchy
+        InComponent->DetachFromParent();
+
+        // Prevent memory leak by manually deleting the object
+        delete InComponent;
     }
 }
 
@@ -146,7 +154,12 @@ FMatrix AActor::GetWorldMatrix() const
     return FMatrix::Identity;
 }
 
-EBasicMeshType AActor::GetMeshType() const
+EBasicMeshType AActor::GetMeshType() const { return EBasicMeshType::Cube; }
+
+AActor* AActor::Clone() const
 {
-    return EBasicMeshType::Cube;
+    // TODO: Implement deep copy of actor and its components
+    return nullptr;
 }
+
+REGISTER_CLASS(, AActor)

@@ -30,13 +30,6 @@ namespace Engine::Component
 
     void UAtlasTextComponent::SetLineSpacing(float InLineSpacing) { LineSpacing = InLineSpacing; }
 
-    void UAtlasTextComponent::SetBillboard(bool bInBillboard) { bBillboard = bInBillboard; }
-
-    void UAtlasTextComponent::SetBillboardOffset(const FVector& InBillboardOffset)
-    {
-        BillboardOffset = InBillboardOffset;
-    }
-
     void UAtlasTextComponent::DescribeProperties(FComponentPropertyBuilder& Builder)
     {
         UAtlasComponent::DescribeProperties(Builder);
@@ -86,14 +79,10 @@ namespace Engine::Component
 
         UAsset*     LoadedAsset = InAssetManager->Load(AbsolutePath.native(), LoadParams);
         UFontAsset* FontAsset = Cast<UFontAsset>(LoadedAsset);
-        if (FontAsset == nullptr)
+        if (FontAsset != nullptr)
         {
-            UE_LOG(Asset, ELogVerbosity::Warning,
-                   "Failed to load font asset for AtlasTextComponent: %s", FontPath.c_str());
-            return;
+            SetFontResource(&FontAsset->GetResource());
         }
-
-        SetFontResource(&FontAsset->GetResource());
     }
 
     FMatrix UAtlasTextComponent::GetRenderPlacementWorld(const AActor& InOwnerActor) const

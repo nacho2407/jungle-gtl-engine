@@ -7,17 +7,13 @@ class AActor;
 class FOutlinerPanel : public IPanel
 {
   public:
+    /** 스폰 가능한 액터 타입 (언리얼의 Place Actor 메뉴와 유사) */
     enum class ESpawnActorType : uint32
     {
-        Cube,
-        Sphere,
-        Cone,
-        Cylinder,
-        Ring,
-        Triangle,
-        Sprite,
-        Effect,
-        Text,
+        StaticMesh,   // 정적 메시 액터 (기본)
+        Sprite,       // 스프라이트 액터
+        Effect,       // 이펙트 액터
+        Text,         // 텍스트 액터
         AtlasSprite,
         Flipbook
     };
@@ -37,6 +33,6 @@ class FOutlinerPanel : public IPanel
     void SpawnActors() const;
 
   private:
-    ESpawnActorType SpawnActorType = ESpawnActorType::Cube;
+    ESpawnActorType SpawnActorType = ESpawnActorType::StaticMesh;
     int32           SpawnCount = 1;
 };

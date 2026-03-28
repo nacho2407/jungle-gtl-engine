@@ -1,17 +1,16 @@
 #include "AtlasComponent.h"
-
 #include "Engine/Component/Core/ComponentProperty.h"
 
 namespace Engine::Component
 {
     void UAtlasComponent::SetAtlasRows(int32 InAtlasRows)
     {
-        AtlasRows = (InAtlasRows > 0) ? InAtlasRows : 1;
+        AtlasRows = std::max(1, InAtlasRows);
     }
 
     void UAtlasComponent::SetAtlasColumns(int32 InAtlasColumns)
     {
-        AtlasColumns = (InAtlasColumns > 0) ? InAtlasColumns : 1;
+        AtlasColumns = std::max(1, InAtlasColumns);
     }
 
     void UAtlasComponent::SetAtlasGrid(int32 InAtlasRows, int32 InAtlasColumns)
@@ -22,20 +21,15 @@ namespace Engine::Component
 
     void UAtlasComponent::DescribeProperties(FComponentPropertyBuilder& Builder)
     {
-        UQuadComponent::DescribeProperties(Builder);
+        USpriteComponent::DescribeProperties(Builder); // 부모 호출 변경
 
-        FComponentPropertyOptions IntOptions;
-        IntOptions.DragSpeed = 1.0f;
-
-        Builder.AddBool(
-            "billboard", L"Billboard", [this]() { return GetBillboard(); },
-            [this](bool bInValue) { SetBillboard(bInValue); });
         Builder.AddInt(
             "atlas_rows", L"Atlas Rows", [this]() { return GetAtlasRows(); },
-            [this](int32 InValue) { SetAtlasRows(InValue); }, IntOptions);
+            [this](int32 InValue) { SetAtlasRows(InValue); });
+
         Builder.AddInt(
             "atlas_columns", L"Atlas Columns", [this]() { return GetAtlasColumns(); },
-            [this](int32 InValue) { SetAtlasColumns(InValue); }, IntOptions);
+            [this](int32 InValue) { SetAtlasColumns(InValue); });
     }
 
     REGISTER_CLASS(Engine::Component, UAtlasComponent)

@@ -4,22 +4,17 @@
 #include "Editor/EditorContext.h"
 #include "Core/Misc/Name.h"
 #include "Engine/Game/Actor.h"
-#include "Engine/Game/CubeActor.h"
-#include "Engine/Game/SphereActor.h"
 #include "Engine/Game/UnknownActor.h"
 #include "Engine/Scene.h"
 #include "Input/ContextModeTypes.h"
 #include "imgui.h"
-#include "Engine/Game/ConeActor.h"
-#include "Engine/Game/CylinderActor.h"
-#include "Engine/Game/RingActor.h"
-#include "Engine/Game/TriangleActor.h"
 #include "Engine/Game/SpriteActor.h"
 #include "Engine/Game/EffectActor.h"
 #include "Engine/Game/TextActor.h"
 #include "Engine/Game/AtlasSpriteActor.h"
 #include "Engine/Game/FlipbookActor.h"
-
+#include "Engine/Game/StaticMeshActor.h"
+#include "Engine/Component/Mesh/StaticMeshComponent.h"
 
 namespace
 {
@@ -49,18 +44,8 @@ namespace
     {
         switch (InType)
         {
-        case FOutlinerPanel::ESpawnActorType::Cube:
-            return "CubeActor";
-        case FOutlinerPanel::ESpawnActorType::Sphere:
-            return "SphereActor";
-        case FOutlinerPanel::ESpawnActorType::Cone:
-            return "ConeActor";
-        case FOutlinerPanel::ESpawnActorType::Cylinder:
-            return "CylinderActor";
-        case FOutlinerPanel::ESpawnActorType::Ring:
-            return "RingActor";
-        case FOutlinerPanel::ESpawnActorType::Triangle:
-            return "TriangleActor";
+        case FOutlinerPanel::ESpawnActorType::StaticMesh:
+            return "StaticMeshActor";
         case FOutlinerPanel::ESpawnActorType::Sprite:
             return "SpriteActor";
         case FOutlinerPanel::ESpawnActorType::Effect:
@@ -76,27 +61,15 @@ namespace
         }
     }
 
-    const char* const SpawnActorTypeLabels[] = {
-        "CubeActor",     "SphereActor", "ConeActor",   "CylinderActor", "RingActor",
-        "TriangleActor", "SpriteActor", "EffectActor", "TextActor",     "AtlasSpriteActor", "FlipbookActor"
-    };
+    const char* const SpawnActorTypeLabels[] = {"StaticMeshActor", "SpriteActor",      "EffectActor",
+                                                "TextActor",       "AtlasSpriteActor", "FlipbookActor"};
 
     AActor* CreateActorByType(FOutlinerPanel::ESpawnActorType InType)
     {
         switch (InType)
         {
-        case FOutlinerPanel::ESpawnActorType::Cube:
-            return new ACubeActor();
-        case FOutlinerPanel::ESpawnActorType::Sphere:
-            return new ASphereActor();
-        case FOutlinerPanel::ESpawnActorType::Cone:
-            return new AConeActor();
-        case FOutlinerPanel::ESpawnActorType::Cylinder:
-            return new ACylinderActor();
-        case FOutlinerPanel::ESpawnActorType::Ring:
-            return new ARingActor();
-        case FOutlinerPanel::ESpawnActorType::Triangle:
-            return new ATriangleActor();
+        case FOutlinerPanel::ESpawnActorType::StaticMesh:
+            return new AStaticMeshActor();
         case FOutlinerPanel::ESpawnActorType::Sprite:
             return new ASpriteActor();
         case FOutlinerPanel::ESpawnActorType::Effect:
@@ -105,7 +78,7 @@ namespace
             return new ATextActor();
         case FOutlinerPanel::ESpawnActorType::AtlasSprite:
             return new AAtlasSpriteActor();
-            case FOutlinerPanel::ESpawnActorType::Flipbook:
+        case FOutlinerPanel::ESpawnActorType::Flipbook:
             return new AFlipbookActor();
         default:
             return nullptr;
@@ -257,6 +230,19 @@ void FOutlinerPanel::SpawnActors() const
         if (NewActor == nullptr)
         {
             continue;
+        }
+
+        // Static Mesh Actor인 경우 기본 메시(Cube)를 할당해 줍니다.
+        if (SpawnActorType == ESpawnActorType::StaticMesh)
+        {
+            if (auto* SMActor = Cast<AStaticMeshActor>(NewActor))
+            {
+                if (auto* SMComp = SMActor->GetStaticMeshComponent())
+                {
+                    // 기본 에셋 경로 설정
+                    SMComp->SetMeshPath("Data/Cube.obj");
+                }
+            }
         }
 
         const size_t ActorIndex = ExistingActorCount + static_cast<size_t>(SpawnIndex) + 1;

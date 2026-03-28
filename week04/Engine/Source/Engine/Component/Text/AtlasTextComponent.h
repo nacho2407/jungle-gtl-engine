@@ -33,11 +33,6 @@ namespace Engine::Component
         float GetLineSpacing() const { return LineSpacing; }
         void  SetLineSpacing(float InLineSpacing);
 
-        bool GetBillboard() const { return bBillboard; }
-        void SetBillboard(bool bInBillboard);
-
-        const FVector& GetBillboardOffset() const { return BillboardOffset; }
-        void           SetBillboardOffset(const FVector& InBillboardOffset);
         void           DescribeProperties(FComponentPropertyBuilder& Builder) override;
         void           ResolveAssetReferences(UAssetManager* InAssetManager) override;
         virtual FMatrix GetRenderPlacementWorld(const AActor& InOwnerActor) const;
