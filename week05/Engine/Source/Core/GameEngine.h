@@ -9,6 +9,7 @@ public:
 	~FGameEngine() override = default;
 
 protected:
-	ESceneType GetStartupSceneType() const override { return ESceneType::Game; }
+	bool InitializeWorlds(int32 Width, int32 Height) override;
 	std::unique_ptr<IViewportClient> CreateViewportClient() override;
+	void TickWorlds(float DeltaTime) override;
 };

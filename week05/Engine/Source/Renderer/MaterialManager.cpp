@@ -53,7 +53,7 @@ FMaterialManager& FMaterialManager::Get()
 	return Instance;
 }
 
-void FMaterialManager::LoadAllMaterials(ID3D11Device* InDevice, CRenderStateManager* InStateManager)
+void FMaterialManager::LoadAllMaterials(ID3D11Device* InDevice, FRenderStateManager* InStateManager)
 {
 	// 경로 내의 모든 머티리얼 JSON 파일 가져오기
 	namespace fs = std::filesystem;
@@ -79,8 +79,8 @@ void FMaterialManager::LoadAllMaterials(ID3D11Device* InDevice, CRenderStateMana
 }
 
 std::shared_ptr<FMaterial> FMaterialManager::LoadFromFile(
-	ID3D11Device* InDevice, 
-	CRenderStateManager* InStateManager, 
+	ID3D11Device* InDevice,
+	FRenderStateManager* InStateManager,
 	const FString& InFilePath
 )
 {

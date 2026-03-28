@@ -4,7 +4,7 @@
 #include "Debug/EngineLog.h"
 #include "Core/Paths.h"
 
-CContentBrowserWindow::CContentBrowserWindow():
+FContentBrowserWindow::FContentBrowserWindow():
 	RootPath(std::filesystem::current_path()),
 	CurrentPath(std::filesystem::current_path())
 {
@@ -17,7 +17,7 @@ CContentBrowserWindow::CContentBrowserWindow():
 	CurrentPath = RootPath;
 }
 
-void CContentBrowserWindow::Render()
+void FContentBrowserWindow::Render()
 {
 	if (!ImGui::Begin("Content Browser"))
 	{
@@ -87,17 +87,17 @@ void CContentBrowserWindow::Render()
 	}
 }
 
-void CContentBrowserWindow::SetFolderIcon(ID3D11ShaderResourceView* FolderSRV)
+void FContentBrowserWindow::SetFolderIcon(ID3D11ShaderResourceView* FolderSRV)
 {
 	FolderIcon = (ImTextureID)(FolderSRV);
 }
 
-void CContentBrowserWindow::SetFileIcon(ID3D11ShaderResourceView* FileSRV)
+void FContentBrowserWindow::SetFileIcon(ID3D11ShaderResourceView* FileSRV)
 {
 	FileIcon = (ImTextureID)(FileSRV);
 }
 
-void CContentBrowserWindow::DrawFolderTree(const std::filesystem::path& Path)
+void FContentBrowserWindow::DrawFolderTree(const std::filesystem::path& Path)
 {
 	for (auto& Entry : std::filesystem::directory_iterator(Path))
 	{
@@ -143,7 +143,7 @@ void CContentBrowserWindow::DrawFolderTree(const std::filesystem::path& Path)
 	}
 }
 
-void CContentBrowserWindow::DrawFileGrid()
+void FContentBrowserWindow::DrawFileGrid()
 {
 	const float CellSize = 80.0f;
 	const float IconSize = 48.0f;

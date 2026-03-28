@@ -13,11 +13,11 @@
 #include "Component/TextComponent.h"
 
 
-void IViewportClient::Attach(FEngine* Engine, CRenderer* Renderer)
+void IViewportClient::Attach(FEngine* Engine, FRenderer* Renderer)
 {
 }
 
-void IViewportClient::Detach(FEngine* Engine, CRenderer* Renderer)
+void IViewportClient::Detach(FEngine* Engine, FRenderer* Renderer)
 {
 }
 
@@ -29,14 +29,14 @@ void IViewportClient::Tick(FEngine* Engine, float DeltaTime)
 	//	return;
 	//}
 
-	//CInputManager* InputManager = Core->GetInputManager();
+	//FInputManager* InputManager = Core->GetInputManager();
 	//UScene* Scene = ResolveScene(Core);
 	//if (!InputManager || !Scene)
 	//{
 	//	return;
 	//}
 
-	//CCamera* Camera = Scene->GetCamera();
+	//FCamera* Camera = Scene->GetCamera();
 	//if (!Camera)
 	//{
 	//	return;
@@ -49,7 +49,7 @@ void IViewportClient::Tick(FEngine* Engine, float DeltaTime)
 	//if (InputManager->IsKeyDown('E')) Camera->MoveUp(DeltaTime);
 	//if (InputManager->IsKeyDown('Q')) Camera->MoveUp(-DeltaTime);
 
-	//if (InputManager->IsMouseButtonDown(CInputManager::MOUSE_RIGHT))
+	//if (InputManager->IsMouseButtonDown(FInputManager::MOUSE_RIGHT))
 	//{
 	//	const float DeltaX = InputManager->GetMouseDeltaX();
 	//	const float DeltaY = InputManager->GetMouseDeltaY();
@@ -91,7 +91,7 @@ void IViewportClient::HandleFileDropOnViewport(const FString& FilePath)
 
 }
 
-void CGameViewportClient::Attach(FEngine* Engine, CRenderer* Renderer)
+void FGameViewportClient::Attach(FEngine* Engine, FRenderer* Renderer)
 {
 	if (Renderer)
 	{
@@ -99,7 +99,7 @@ void CGameViewportClient::Attach(FEngine* Engine, CRenderer* Renderer)
 	}
 }
 
-void CGameViewportClient::Detach(FEngine* Engine, CRenderer* Renderer)
+void FGameViewportClient::Detach(FEngine* Engine, FRenderer* Renderer)
 {
 	if (Renderer)
 	{

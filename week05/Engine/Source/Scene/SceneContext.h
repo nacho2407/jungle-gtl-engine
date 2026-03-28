@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Scene/SceneTypes.h"
+#include "Scene/WorldTypes.h"
 
 class AActor;
 class UScene;
@@ -9,14 +9,14 @@ class UScene;
 struct ENGINE_API FSceneContext
 {
 	FString ContextName;
-	ESceneType SceneType = ESceneType::Game;
+	EWorldType WorldType = EWorldType::Game;
 	UScene* Scene = nullptr;
 
 	bool IsValid() const { return Scene != nullptr; }
 	void Reset()
 	{
 		ContextName.clear();
-		SceneType = ESceneType::Game;
+		WorldType = EWorldType::Game;
 		Scene = nullptr;
 	}
 };

@@ -13,12 +13,12 @@
 #include <cstring>
 #include <algorithm>
 
-CSubUVRenderer::~CSubUVRenderer()
+FSubUVRenderer::~FSubUVRenderer()
 {
 	Release();
 }
 
-bool CSubUVRenderer::Initialize(CRenderer* InRenderer, const std::wstring& TexturePath)
+bool FSubUVRenderer::Initialize(FRenderer* InRenderer, const std::wstring& TexturePath)
 {
 	Release();
 
@@ -103,7 +103,7 @@ bool CSubUVRenderer::Initialize(CRenderer* InRenderer, const std::wstring& Textu
 	return true;
 }
 
-void CSubUVRenderer::Release()
+void FSubUVRenderer::Release()
 {
 	if (TextureSRV) { TextureSRV->Release(); TextureSRV = nullptr; }
 	if (SamplerState) { SamplerState->Release(); SamplerState = nullptr; }
@@ -112,7 +112,7 @@ void CSubUVRenderer::Release()
 	DeviceContext = nullptr;
 }
 
-bool CSubUVRenderer::BuildSubUVMesh(const FVector2& Size, FMeshData& OutMesh) const
+bool FSubUVRenderer::BuildSubUVMesh(const FVector2& Size, FMeshData& OutMesh) const
 {
 	OutMesh.Vertices.clear();
 	OutMesh.Indices.clear();
@@ -140,7 +140,7 @@ bool CSubUVRenderer::BuildSubUVMesh(const FVector2& Size, FMeshData& OutMesh) co
 	return true;
 }
 
-void CSubUVRenderer::UpdateAnimationParams(
+void FSubUVRenderer::UpdateAnimationParams(
 	int32 Columns, int32 Rows, int32 TotalFrames,
 	int32 FirstFrame, int32 LastFrame,
 	float FPS, float ElapsedTime, bool bLoop)

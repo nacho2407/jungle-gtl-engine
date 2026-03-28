@@ -1,36 +1,34 @@
 #include "PreviewViewportClient.h"
 
+#include "EditorEngine.h"
 #include "EditorUI.h"
-#include "Core/Engine.h"
-#include "Platform/Windows/WindowsWindow.h"
 #include "Renderer/Renderer.h"
 #include "imgui.h"
 
-CPreviewViewportClient::CPreviewViewportClient(CEditorUI& InEditorUI, FWindowsWindow* InMainWindow, FString InPreviewContextName)
+FPreviewViewportClient::FPreviewViewportClient(FEditorUI& InEditorUI, FString InPreviewContextName)
 	: EditorUI(InEditorUI)
-	, MainWindow(InMainWindow)
 	, PreviewContextName(std::move(InPreviewContextName))
 {
 }
 
-void CPreviewViewportClient::Attach(FEngine* Engine, CRenderer* Renderer)
+void FPreviewViewportClient::Attach(FEngine* Engine, FRenderer* Renderer)
 {
-	if (!Engine || !Renderer || !MainWindow)
+	FEditorEngine* EditorEngine = static_cast<FEditorEngine*>(Engine);
+	if (!EditorEngine || !Renderer)
 	{
 		return;
 	}
 
-	EditorUI.Initialize(Engine);
-	EditorUI.SetupWindow(MainWindow);
+	EditorUI.Initialize(EditorEngine);
 	EditorUI.AttachToRenderer(Renderer);
 }
 
-void CPreviewViewportClient::Detach(FEngine* Engine, CRenderer* Renderer)
+void FPreviewViewportClient::Detach(FEngine* Engine, FRenderer* Renderer)
 {
 	EditorUI.DetachFromRenderer(Renderer);
 }
 
-void CPreviewViewportClient::Tick(FEngine* Engine, float DeltaTime)
+void FPreviewViewportClient::Tick(FEngine* Engine, float DeltaTime)
 {
 	if (!Engine)
 	{
@@ -54,17 +52,18 @@ void CPreviewViewportClient::Tick(FEngine* Engine, float DeltaTime)
 	IViewportClient::Tick(Engine, DeltaTime);
 }
 
-UScene* CPreviewViewportClient::ResolveScene(FEngine* Engine) const
+UScene* FPreviewViewportClient::ResolveScene(FEngine* Engine) const
 {
-	if (!Engine)
+	FEditorEngine* EditorEngine = static_cast<FEditorEngine*>(Engine);
+	if (!EditorEngine)
 	{
 		return nullptr;
 	}
 
-	if (UScene* PreviewScene = Engine->GetPreviewScene(PreviewContextName))
+	if (UScene* PreviewScene = EditorEngine->GetPreviewScene(PreviewContextName))
 	{
 		return PreviewScene;
 	}
 
-	return Engine->GetActiveScene();
+	return EditorEngine->GetActiveScene();
 }

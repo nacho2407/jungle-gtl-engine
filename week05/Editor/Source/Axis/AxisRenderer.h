@@ -3,7 +3,7 @@
 #include "Math/Vector.h"
 #include "Math/Matrix.h"
 
-class CAxisRenderer
+class FAxisRenderer
 {
 public:
     // World 좌표계 축 (항상 표시)

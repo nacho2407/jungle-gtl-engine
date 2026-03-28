@@ -1,12 +1,12 @@
 #include "PrimitiveLineBatch.h"
 
-CPrimitiveLineBatch::CPrimitiveLineBatch()
+FPrimitiveLineBatch::FPrimitiveLineBatch()
 {
 	MeshData = std::make_shared<FMeshData>();
 	MeshData->Topology = EMeshTopology::EMT_LineList;
 }
 
-uint32 CPrimitiveLineBatch::AddLine(FVector InStart, FVector InEnd, FVector4 InColor, uint32 InBatchID)
+uint32 FPrimitiveLineBatch::AddLine(FVector InStart, FVector InEnd, FVector4 InColor, uint32 InBatchID)
 {
 	uint32 meshDataSize = MeshData->Vertices.size();
 	const FVector normal = FVector::ZeroVector;
@@ -22,7 +22,7 @@ uint32 CPrimitiveLineBatch::AddLine(FVector InStart, FVector InEnd, FVector4 InC
 	return InBatchID;
 }
 
-void CPrimitiveLineBatch::ClearVertices()
+void FPrimitiveLineBatch::ClearVertices()
 {
 	MeshData->Vertices.clear();
 	MeshData->Indices.clear();

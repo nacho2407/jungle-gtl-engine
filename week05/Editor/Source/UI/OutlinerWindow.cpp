@@ -1,7 +1,7 @@
 #include "OutlinerWindow.h"
 
 #include "imgui.h"
-#include "Core/Engine.h"
+#include "EditorEngine.h"
 #include "Core/ShowFlags.h"
 #include "Core/ViewportClient.h"
 #include "Scene/Scene.h"
@@ -10,7 +10,7 @@
 #include "Component/TextComponent.h"
 #include "Component/UUIDBillboardComponent.h"
 
-void COutlinerWindow::Render(FEngine* Engine)
+void FOutlinerWindow::Render(FEditorEngine* Engine)
 {
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
 	const bool bOpen = ImGui::Begin("Outliner");

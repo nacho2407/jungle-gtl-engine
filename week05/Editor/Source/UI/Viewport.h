@@ -3,14 +3,14 @@
 #include <CoreMinimal.h>
 
 class FEngine;
-class CRenderer;
+class FRenderer;
 
-class CViewport
+class FViewport
 {
 public:
-	~CViewport();
+	~FViewport();
 
-	void Render(FEngine* Engine, CRenderer* Renderer, HWND Hwnd);
+	void Render(FEngine* Engine, FRenderer* Renderer, HWND Hwnd);
 	void ReleaseSceneView();
 	bool GetMousePositionInViewport(int32 WindowMouseX, int32 WindowMouseY, int32& OutViewportX, int32& OutViewportY, int32& OutWidth, int32& OutHeight) const;
 	bool IsHovered() const { return bHovered; }

@@ -8,46 +8,48 @@
 #include "Types/ObjectPtr.h"
 #include "ContentBrowserWindow.h"
 
-class FEngine;
+class FEditorEngine;
 class FWindowsWindow;
-class CRenderer;
+class FRenderer;
 class AActor;
-class CEditorViewportClient;
-class CEditorUI
+class FEditorViewportClient;
+class FEditorUI
 {
 public:
-	void Initialize(FEngine* InEngine);
+	void Initialize(FEditorEngine* InEngine);
 	void SetupWindow(FWindowsWindow* InWindow);
-	void AttachToRenderer(CRenderer* InRenderer);
-	void DetachFromRenderer(CRenderer* InRenderer);
+	void AttachToRenderer(FRenderer* InRenderer);
+	void DetachFromRenderer(FRenderer* InRenderer);
 	void Render();
 	void SyncSelectedActorProperty();
 	bool GetViewportMousePosition(int32 WindowMouseX, int32 WindowMouseY, int32& OutViewportX, int32& OutViewportY, int32& OutWidth, int32& OutHeight) const;
 	bool IsViewportInteractive() const;
+	bool HasHostWindow() const { return MainWindow != nullptr; }
+	FWindowsWindow* GetHostWindow() const { return MainWindow; }
 
-	CConsoleWindow& GetConsole() { return Console; }
-	FEngine* GetEngine() { return Engine; }
+	FConsoleWindow& GetConsole() { return Console; }
+	FEditorEngine* GetEngine() { return Engine; }
 
 private:
 	void BuildDefaultLayout(uint32 DockID);
 	void LoadEditorSettings();
 	void SaveEditorSettings();
 	std::wstring GetEditorIniPathW() const;
-	FEngine* Engine = nullptr;
+	FEditorEngine* Engine = nullptr;
 	TObjectPtr<AActor> CachedSelectedActor;
 
 	FWindowsWindow* MainWindow = nullptr;
 
-	CControlPanelWindow ControlPanel;
-	CPropertyWindow Property;
-	CConsoleWindow Console;
-	CStatWindow Stat;
-	CViewport Viewport;
-	COutlinerWindow Outliner;
-	CContentBrowserWindow ContentBrowser;
+	FControlPanelWindow ControlPanel;
+	FPropertyWindow Property;
+	FConsoleWindow Console;
+	FStatWindow Stat;
+	FViewport Viewport;
+	FOutlinerWindow Outliner;
+	FContentBrowserWindow ContentBrowser;
 
 	bool bWindowSetup = false;
 	bool bViewportClientActive = false;
 	bool bLayoutInitialized = false;
-	CRenderer* CurrentRenderer = nullptr;
+	FRenderer* CurrentRenderer = nullptr;
 };

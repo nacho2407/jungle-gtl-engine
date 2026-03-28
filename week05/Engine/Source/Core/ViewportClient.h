@@ -8,7 +8,7 @@
 #include "Scene/RenderCollector.h"
 
 class FEngine;
-class CRenderer;
+class FRenderer;
 class UScene;
 class FFrustum;
 class UPrimitiveComponent;
@@ -19,8 +19,8 @@ class ENGINE_API IViewportClient
 public:
 	virtual ~IViewportClient() = default;
 
-	virtual void Attach(FEngine* Engine, CRenderer* Renderer);
-	virtual void Detach(FEngine* Engine, CRenderer* Renderer);
+	virtual void Attach(FEngine* Engine, FRenderer* Renderer);
+	virtual void Detach(FEngine* Engine, FRenderer* Renderer);
 	virtual void Tick(FEngine* Engine, float DeltaTime);
 	virtual void HandleMessage(FEngine* Engine, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam);
 	virtual UScene* ResolveScene(FEngine* Engine) const;
@@ -37,9 +37,9 @@ protected:
 	FSceneRenderCollector RenderCollector;
 };
 
-class ENGINE_API CGameViewportClient : public IViewportClient
+class ENGINE_API FGameViewportClient : public IViewportClient
 {
 public:
-	void Attach(FEngine* Engine, CRenderer* Renderer) override;
-	void Detach(FEngine* Engine, CRenderer* Renderer) override;
+	void Attach(FEngine* Engine, FRenderer* Renderer) override;
+	void Detach(FEngine* Engine, FRenderer* Renderer) override;
 };

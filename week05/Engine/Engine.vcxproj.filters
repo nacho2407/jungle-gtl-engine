@@ -285,9 +285,6 @@
     <ClCompile Include="Source\Scene\Scene.cpp">
       <Filter>Source\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\World\WorldManager.cpp">
-      <Filter>Source\World</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Serializer\Archive.cpp">
       <Filter>Source\Serializer</Filter>
     </ClCompile>
@@ -387,8 +384,8 @@
       <Filter>Source\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Engine.h">
-        <Filter>Source\Core</Filter>
-      </ClInclude>
+      <Filter>Source\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Core\GameEngine.h">
       <Filter>Source\Core</Filter>
     </ClInclude>
@@ -575,10 +572,7 @@
     <ClInclude Include="Source\Scene\SceneContext.h">
       <Filter>Source\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\World\WorldManager.h">
-        <Filter>Source\World</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Scene\SceneTypes.h">
+    <ClInclude Include="Source\Scene\WorldTypes.h">
       <Filter>Source\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Serializer\Archive.h">

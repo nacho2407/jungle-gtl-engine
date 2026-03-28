@@ -47,12 +47,16 @@ void FEngineLoop::Tick()
 	}
 
 	// 호스트 메시지 처리가 끝난 뒤 엔진 프레임을 한 번 실행한다.
-	Engine->TickFrame();
+	Engine->Tick();
 }
 
 void FEngineLoop::Exit()
 {
-	Engine.reset();
+	if (Engine)
+	{
+		Engine->Shutdown();
+		Engine.reset();
+	}
 
 	if (App)
 	{

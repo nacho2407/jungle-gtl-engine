@@ -1,8 +1,8 @@
 #include "Engine.h"
 
 #include "Platform/Windows/WindowsWindow.h"
-#include "Actor/Actor.h"
 #include "Actor/SkySphereActor.h"
+#include "Camera/Camera.h"
 #include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Core/ConsoleVariableManager.h"
@@ -10,8 +10,6 @@
 #include "Input/EnhancedInputManager.h"
 #include "Input/InputManager.h"
 #include "Math/Frustum.h"
-#include "Object/ObjectFactory.h"
-#include "Object/ObjectGlobals.h"
 #include "Object/ObjectManager.h"
 #include "Physics/PhysicsManager.h"
 #include "Primitive/PrimitiveBase.h"
@@ -21,18 +19,12 @@
 #include "Scene/Scene.h"
 #include "ViewportClient.h"
 #include "World/World.h"
-#include "World/WorldManager.h"
+#include "Object/ObjectFactory.h"
 
 FEngine* GEngine = nullptr;
 
 namespace
 {
-	const TArray<std::unique_ptr<FEditorWorldContext>>& GetEmptyPreviewWorldContexts()
-	{
-		static TArray<std::unique_ptr<FEditorWorldContext>> EmptyPreviewWorldContexts;
-		return EmptyPreviewWorldContexts;
-	}
-
 	const FTimer& GetEmptyTimer()
 	{
 		static FTimer EmptyTimer;
@@ -40,10 +32,8 @@ namespace
 	}
 }
 
-FEngine::~FEngine()
-{
-	Shutdown();
-}
+FEngine::~FEngine() = default;
+FEngine::FEngine() = default;
 
 bool FEngine::Initialize(const FEngineInitArgs& Args)
 {
@@ -52,25 +42,50 @@ bool FEngine::Initialize(const FEngineInitArgs& Args)
 		return false;
 	}
 
+	auto FailInitialize = [this]() -> bool
+	{
+		Shutdown();
+		return false;
+	};
+
 	GEngine = this;
 
+	// 1. 파생형이 내부 상태를 먼저 준비한다.
 	PreInitialize();
-	OnHostWindowReady(Args.MainWindow);
+	// 2. 엔진이 사용할 호스트 창 참조를 바인딩한다.
+	BindHost(Args.MainWindow);
 
-	if (!InitializeRuntime(Args.Hwnd, Args.Width, Args.Height, GetStartupSceneType()))
+	// 3. 월드와 무관한 런타임 시스템을 먼저 초기화한다.
+	if (!InitializeRuntimeSystems(Args.Hwnd, Args.Width, Args.Height))
 	{
-		return false;
+		return FailInitialize();
 	}
 
-	ViewportClient = CreateViewportClient();
-	SetViewportClient(ViewportClient.get());
+	// 4. 시작 모드에 맞는 월드 컨텍스트와 월드를 생성한다.
+	if (!InitializeWorlds(Args.Width, Args.Height))
+	{
+		return FailInitialize();
+	}
 
-	PostInitialize();
+	// 5. 메인 뷰포트 클라이언트를 만들어 기본 렌더링 경로를 준비한다.
+	if (!InitializePrimaryViewport())
+	{
+		return FailInitialize();
+	}
+
+	// 6. 게임/에디터 전용 초기화는 파생형이 담당한다.
+	if (!InitializeMode())
+	{
+		return FailInitialize();
+	}
+
+	// 7. 마지막 초기 검증이나 동기화를 수행한다.
+	FinalizeInitialize();
 
 	return true;
 }
 
-void FEngine::TickFrame()
+void FEngine::Tick()
 {
 	if (!Renderer)
 	{
@@ -84,12 +99,12 @@ void FEngine::TickFrame()
 	Tick(DeltaTime);
 	TickInput(DeltaTime);
 	TickPhysics(DeltaTime);
-	TickWorld(DeltaTime);
+	TickWorlds(DeltaTime);
 	RenderFrame();
 	RunLateUpdate(DeltaTime);
 }
 
-CRenderer* FEngine::GetRenderer() const
+FRenderer* FEngine::GetRenderer() const
 {
 	return Renderer.get();
 }
@@ -119,14 +134,14 @@ void FEngine::SetViewportClient(IViewportClient* InViewportClient)
 	}
 }
 
-CInputManager* FEngine::GetInputManager() const
+FInputManager* FEngine::GetInputManager() const
 {
-	return InputManager;
+	return InputManager.get();
 }
 
-CEnhancedInputManager* FEngine::GetEnhancedInputManager() const
+FEnhancedInputManager* FEngine::GetEnhancedInputManager() const
 {
-	return EnhancedInput;
+	return EnhancedInput.get();
 }
 
 const FTimer& FEngine::GetTimer() const
@@ -139,95 +154,43 @@ float FEngine::GetDeltaTime() const
 	return Renderer ? Timer.GetDeltaTime() : 0.0f;
 }
 
-FWorldManager* FEngine::GetWorldManager() const
-{
-	return WorldManager.get();
-}
-
 UScene* FEngine::GetScene() const
 {
-	return WorldManager ? WorldManager->GetActiveScene() : nullptr;
+	return GetActiveScene();
 }
 
 UScene* FEngine::GetActiveScene() const
 {
-	return WorldManager ? WorldManager->GetActiveScene() : nullptr;
-}
-
-UScene* FEngine::GetEditorScene() const
-{
-	return WorldManager ? WorldManager->GetEditorScene() : nullptr;
+	const FWorldContext* Context = FindWorldContext(EWorldType::Game);
+	return (Context && Context->World) ? Context->World->GetScene() : nullptr;
 }
 
 UScene* FEngine::GetGameScene() const
 {
-	return WorldManager ? WorldManager->GetGameScene() : nullptr;
-}
-
-UScene* FEngine::GetPreviewScene(const FString& ContextName) const
-{
-	return WorldManager ? WorldManager->GetPreviewScene(ContextName) : nullptr;
-}
-
-void FEngine::SetSelectedActor(AActor* InActor)
-{
-	(void)InActor;
-}
-
-AActor* FEngine::GetSelectedActor() const
-{
-	return nullptr;
-}
-
-void FEngine::ActivateEditorScene() const
-{
-	if (WorldManager)
-	{
-		WorldManager->ActivateEditorScene();
-	}
+	const FWorldContext* Context = FindWorldContext(EWorldType::Game);
+	return (Context && Context->World) ? Context->World->GetScene() : nullptr;
 }
 
 void FEngine::ActivateGameScene() const
 {
-	if (WorldManager)
-	{
-		WorldManager->ActivateGameScene();
-	}
-}
-
-bool FEngine::ActivatePreviewScene(const FString& ContextName) const
-{
-	return WorldManager ? WorldManager->ActivatePreviewScene(ContextName) : false;
 }
 
 UWorld* FEngine::GetActiveWorld() const
 {
-	return WorldManager ? WorldManager->GetActiveWorld() : nullptr;
-}
-
-UWorld* FEngine::GetEditorWorld() const
-{
-	return WorldManager ? WorldManager->GetEditorWorld() : nullptr;
+	const FWorldContext* Context = FindWorldContext(EWorldType::Game);
+	return Context ? Context->World : nullptr;
 }
 
 UWorld* FEngine::GetGameWorld() const
 {
-	return WorldManager ? WorldManager->GetGameWorld() : nullptr;
+	const FWorldContext* Context = FindWorldContext(EWorldType::Game);
+	return Context ? Context->World : nullptr;
 }
 
 const FWorldContext* FEngine::GetActiveWorldContext() const
 {
-	return WorldManager ? WorldManager->GetActiveWorldContext() : nullptr;
-}
-
-const TArray<std::unique_ptr<FEditorWorldContext>>& FEngine::GetPreviewWorldContexts() const
-{
-	return WorldManager ? WorldManager->GetPreviewWorldContexts() : GetEmptyPreviewWorldContexts();
-}
-
-FEditorWorldContext* FEngine::CreatePreviewWorldContext(const FString& ContextName, int32 Width, int32 Height)
-{
-	return WorldManager ? WorldManager->CreatePreviewWorldContext(ContextName, Width, Height) : nullptr;
+	const FWorldContext* Context = FindWorldContext(EWorldType::Game);
+	return (Context && Context->IsValid()) ? Context : nullptr;
 }
 
 bool FEngine::HandleMessage(HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
@@ -260,9 +223,10 @@ void FEngine::HandleResize(int32 Width, int32 Height)
 		Renderer->OnResize(Width, Height);
 	}
 
-	if (WorldManager)
+	const float AspectRatio = static_cast<float>(Width) / static_cast<float>(Height);
+	for (const std::unique_ptr<FWorldContext>& Context : WorldContexts)
 	{
-		WorldManager->OnResize(Width, Height);
+		UpdateWorldAspectRatio(Context ? Context->World : nullptr, AspectRatio);
 	}
 }
 
@@ -278,68 +242,163 @@ void FEngine::Shutdown()
 	ViewportClient.reset();
 }
 
-bool FEngine::InitializeRuntime(HWND Hwnd, int32 Width, int32 Height, ESceneType StartupSceneType)
+bool FEngine::InitializeRuntimeSystems(HWND Hwnd, int32 Width, int32 Height)
 {
 	FPaths::Initialize();
 
 	WindowWidth = Width;
 	WindowHeight = Height;
 
-	Renderer = std::make_unique<CRenderer>(Hwnd, Width, Height);
+	Renderer = std::make_unique<FRenderer>(Hwnd, Width, Height);
 	if (!Renderer)
 	{
 		return false;
 	}
 
-	ObjManager = new ObjectManager();
+	// 런타임 시스템은 월드 생성 전에 모두 준비해 둔다.
+	ObjManager = std::make_unique<FObjectManager>();
 
 	FMaterialManager::Get().LoadAllMaterials(Renderer->GetDevice(), Renderer->GetRenderStateManager().get());
 
-	InputManager = new CInputManager();
-	EnhancedInput = new CEnhancedInputManager();
-	PhysicsManager = std::make_unique<CPhysicsManager>();
+	InputManager = std::make_unique<FInputManager>();
+	EnhancedInput = std::make_unique<FEnhancedInputManager>();
+	PhysicsManager = std::make_unique<FPhysicsManager>();
 
 	Timer.Initialize();
 	RegisterConsoleVariables();
 
-	WorldManager = std::make_unique<FWorldManager>();
-	const float AspectRatio = static_cast<float>(Width) / static_cast<float>(Height);
-	if (!WorldManager->Initialize(AspectRatio, StartupSceneType, Renderer.get()))
+	return true;
+}
+
+bool FEngine::InitializeWorlds(int32 Width, int32 Height)
+{
+	// 월드는 런타임 시스템이 준비된 뒤에만 만든다.
+	(void)Width;
+	(void)Height;
+
+	return true;
+}
+
+bool FEngine::InitializePrimaryViewport()
+{
+	// 기본 뷰포트는 월드 생성 이후에 만들어야 활성 씬과 바로 연결할 수 있다.
+	ViewportClient = CreateViewportClient();
+	if (!ViewportClient)
 	{
-		ReleaseRuntime();
 		return false;
 	}
 
+	SetViewportClient(ViewportClient.get());
 	return true;
 }
 
 void FEngine::ReleaseRuntime()
 {
-	if (WorldManager)
+	while (!WorldContexts.empty())
 	{
-		WorldManager->Release();
-		WorldManager.reset();
+		DestroyWorldContext(WorldContexts.back().get());
 	}
 
 	if (ObjManager)
 	{
 		ObjManager->FlushKilledObjects();
-		delete ObjManager;
-		ObjManager = nullptr;
 	}
+	ObjManager.reset();
 
-	delete EnhancedInput;
-	EnhancedInput = nullptr;
-
-	delete InputManager;
-	InputManager = nullptr;
+	EnhancedInput.reset();
+	InputManager.reset();
 
 	PhysicsManager.reset();
-	CPrimitiveBase::ClearCache();
+	FPrimitiveBase::ClearCache();
 	Renderer.reset();
 
 	CommandQueue.Clear();
 	LastGCTime = 0.0;
+}
+
+FWorldContext* FEngine::FindWorldContext(EWorldType WorldType)
+{
+	for (const std::unique_ptr<FWorldContext>& Context : WorldContexts)
+	{
+		if (Context && Context->WorldType == WorldType)
+		{
+			return Context.get();
+		}
+	}
+
+	return nullptr;
+}
+
+const FWorldContext* FEngine::FindWorldContext(EWorldType WorldType) const
+{
+	for (const std::unique_ptr<FWorldContext>& Context : WorldContexts)
+	{
+		if (Context && Context->WorldType == WorldType)
+		{
+			return Context.get();
+		}
+	}
+
+	return nullptr;
+}
+
+FWorldContext* FEngine::CreateWorldContext(const FString& ContextName, EWorldType WorldType, float AspectRatio, bool bDefaultScene)
+{
+	std::unique_ptr<FWorldContext> NewContext = std::make_unique<FWorldContext>();
+	NewContext->ContextName = ContextName;
+	NewContext->WorldType = WorldType;
+	NewContext->World = FObjectFactory::ConstructObject<UWorld>(nullptr, ContextName);
+	if (!NewContext->World)
+	{
+		return nullptr;
+	}
+
+	NewContext->World->SetWorldType(WorldType);
+	if (bDefaultScene)
+	{
+		NewContext->World->InitializeWorld(AspectRatio, Renderer ? Renderer->GetDevice() : nullptr);
+	}
+	else
+	{
+		NewContext->World->InitializeWorld(AspectRatio);
+	}
+
+	FWorldContext* CreatedContext = NewContext.get();
+	WorldContexts.push_back(std::move(NewContext));
+	return CreatedContext;
+}
+
+void FEngine::DestroyWorldContext(FWorldContext* Context)
+{
+	if (!Context)
+	{
+		return;
+	}
+
+	if (Context->World)
+	{
+		Context->World->CleanupWorld();
+		delete Context->World;
+	}
+
+	Context->Reset();
+
+	for (auto It = WorldContexts.begin(); It != WorldContexts.end(); ++It)
+	{
+		if (It->get() == Context)
+		{
+			WorldContexts.erase(It);
+			break;
+		}
+	}
+}
+
+void FEngine::UpdateWorldAspectRatio(UWorld* World, float AspectRatio) const
+{
+	if (World && World->GetCamera())
+	{
+		World->GetCamera()->SetAspectRatio(AspectRatio);
+	}
 }
 
 void FEngine::BeginFrame()
@@ -356,7 +415,7 @@ void FEngine::TickInput(float DeltaTime)
 
 	if (EnhancedInput && InputManager)
 	{
-		EnhancedInput->ProcessInput(InputManager, DeltaTime);
+		EnhancedInput->ProcessInput(InputManager.get(), DeltaTime);
 	}
 
 	if (ActiveViewportClient)
@@ -367,56 +426,55 @@ void FEngine::TickInput(float DeltaTime)
 
 void FEngine::TickPhysics(float DeltaTime)
 {
-	if (!PhysicsManager)
-	{
-		return;
-	}
+	(void)DeltaTime;
 
-	UScene* Scene = ActiveViewportClient ? ActiveViewportClient->ResolveScene(this) : GetActiveScene();
-	if (!Scene)
-	{
-		return;
-	}
+	//if (!PhysicsManager)
+	//{
+	//	return;
+	//}
 
-	FVector LineStart(2, 2, 0);
-	FVector LineEnd(5, 5, 0);
-	FHitResult HitResult;
+	//if (!WantsPhysicsDebugVisualization())
+	//{
+	//	return;
+	//}
 
-	const bool bHit = PhysicsManager->Linetrace(Scene, LineStart, LineEnd, HitResult);
-	if (bHit && !HitResult.HitActor->IsA(ASkySphereActor::StaticClass()))
-	{
-		for (UActorComponent* ActorComp : HitResult.HitActor->GetComponents())
-		{
-			if (!ActorComp->IsA(UPrimitiveComponent::StaticClass()))
-			{
-				continue;
-			}
+	//UScene* Scene = ActiveViewportClient ? ActiveViewportClient->ResolveScene(this) : GetActiveScene();
+	//if (!Scene)
+	//{
+	//	return;
+	//}
 
-			UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(ActorComp);
-			if (!PrimitiveComponent->ShouldDrawDebugBounds())
-			{
-				continue;
-			}
+	//const FVector LineStart(2, 2, 0);
+	//const FVector LineEnd(5, 5, 0);
+	//FHitResult HitResult;
 
-			FBoxSphereBounds Bounds = PrimitiveComponent->GetWorldBounds();
-			DebugDrawManager.DrawCube(Bounds.Center, Bounds.BoxExtent, FVector4(1, 0, 0, 1));
-		}
+	//const bool bHit = PhysicsManager->Linetrace(Scene, LineStart, LineEnd, HitResult);
+	//if (bHit && !HitResult.HitActor->IsA(ASkySphereActor::StaticClass()))
+	//{
+	//	for (UActorComponent* ActorComp : HitResult.HitActor->GetComponents())
+	//	{
+	//		if (!ActorComp->IsA(UPrimitiveComponent::StaticClass()))
+	//		{
+	//			continue;
+	//		}
 
-		DebugDrawManager.DrawCube(HitResult.HitLocation, FVector(0.1f, 0.1f, 0.1f), FVector4(0, 1, 0, 1));
-	}
+	//		UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(ActorComp);
+	//		if (!PrimitiveComponent->ShouldDrawDebugBounds())
+	//		{
+	//			continue;
+	//		}
 
-	if (Renderer)
-	{
-		DebugDrawManager.DrawLine(LineStart, LineEnd, FVector4(0, 1, 1, 1));
-	}
-}
+	//		const FBoxSphereBounds Bounds = PrimitiveComponent->GetWorldBounds();
+	//		DebugDrawManager.DrawCube(Bounds.Center, Bounds.BoxExtent, FVector4(1, 0, 0, 1));
+	//	}
 
-void FEngine::TickWorld(float DeltaTime)
-{
-	if (UWorld* World = GetActiveWorld())
-	{
-		World->Tick(DeltaTime);
-	}
+	//	DebugDrawManager.DrawCube(HitResult.HitLocation, FVector(0.1f, 0.1f, 0.1f), FVector4(0, 1, 0, 1));
+	//}
+
+	//if (Renderer)
+	//{
+	//	DebugDrawManager.DrawLine(LineStart, LineEnd, FVector4(0, 1, 1, 1));
+	//}
 }
 
 void FEngine::RenderFrame()
@@ -533,7 +591,7 @@ void FEngine::RegisterConsoleVariables()
 		}
 		else
 		{
-			OutResult = "ForceGC: ObjectManager is not available.";
+			OutResult = "ForceGC: FObjectManager is not available.";
 		}
 	}, "Force immediate garbage collection");
 }

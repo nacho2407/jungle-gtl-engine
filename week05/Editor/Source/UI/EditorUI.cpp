@@ -1,6 +1,6 @@
 #include "EditorUI.h"
 
-#include "Core/Engine.h"
+#include "EditorEngine.h"
 #include "Object/Object.h"
 #include "Scene/Scene.h"
 #include "Actor/Actor.h"
@@ -69,7 +69,7 @@ std::string GetFilePathUsingDialog(EFileDialogType Type)
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
 
-void CEditorUI::Initialize(FEngine* InEngine)
+void FEditorUI::Initialize(FEditorEngine* InEngine)
 {
 	Engine = InEngine;
 
@@ -163,7 +163,7 @@ void CEditorUI::Initialize(FEngine* InEngine)
 		};
 }
 
-void CEditorUI::AttachToRenderer(CRenderer* InRenderer)
+void FEditorUI::AttachToRenderer(FRenderer* InRenderer)
 {
 	if (!Engine || !InRenderer)
 	{
@@ -276,7 +276,7 @@ void CEditorUI::AttachToRenderer(CRenderer* InRenderer)
 
 	InRenderer->SetGUIUpdateCallback([this]() { Render(); });
 
-	InRenderer->SetPostRenderCallback([this](CRenderer* Renderer)
+	InRenderer->SetPostRenderCallback([this](FRenderer* Renderer)
 		{
 			if (!Engine)
 			{
@@ -312,7 +312,7 @@ void CEditorUI::AttachToRenderer(CRenderer* InRenderer)
 	LoadEditorSettings();
 }
 
-void CEditorUI::DetachFromRenderer(CRenderer* InRenderer)
+void FEditorUI::DetachFromRenderer(FRenderer* InRenderer)
 {
 	bViewportClientActive = false;
 	CurrentRenderer = nullptr;
@@ -325,7 +325,7 @@ void CEditorUI::DetachFromRenderer(CRenderer* InRenderer)
 	}
 }
 
-void CEditorUI::SetupWindow(FWindowsWindow* InWindow)
+void FEditorUI::SetupWindow(FWindowsWindow* InWindow)
 {
 	MainWindow = InWindow;
 	if (bWindowSetup || MainWindow == nullptr)
@@ -382,7 +382,7 @@ void CEditorUI::SetupWindow(FWindowsWindow* InWindow)
 		});
 }
 
-void CEditorUI::BuildDefaultLayout(uint32 DockID)
+void FEditorUI::BuildDefaultLayout(uint32 DockID)
 {
 	ImGui::DockBuilderRemoveNode(DockID);
 	ImGui::DockBuilderAddNode(DockID, ImGuiDockNodeFlags_DockSpace);
@@ -414,7 +414,7 @@ void CEditorUI::BuildDefaultLayout(uint32 DockID)
 	ImGui::DockBuilderFinish(DockID);
 }
 
-void CEditorUI::LoadEditorSettings()
+void FEditorUI::LoadEditorSettings()
 {
 	std::wstring Path = GetEditorIniPathW();
 	wchar_t Buf[64];
@@ -430,7 +430,7 @@ void CEditorUI::LoadEditorSettings()
 
 	if (Engine && Engine->GetViewportClient())
 	{
-		auto* VPC = static_cast<CEditorViewportClient*>(Engine->GetViewportClient());
+		auto* VPC = static_cast<FEditorViewportClient*>(Engine->GetViewportClient());
 		VPC->SetGridSize(GridSize);
 		VPC->SetLineThickness(Thickness);
 		VPC->SetGridVisible(bShowGrid);
@@ -455,11 +455,11 @@ void CEditorUI::LoadEditorSettings()
 
 }
 
-void CEditorUI::SaveEditorSettings()
+void FEditorUI::SaveEditorSettings()
 {
 	std::wstring Path = GetEditorIniPathW();
 	if (!Engine || !Engine->GetViewportClient()) return;
-	auto* VPC = static_cast<CEditorViewportClient*>(Engine->GetViewportClient());
+	auto* VPC = static_cast<FEditorViewportClient*>(Engine->GetViewportClient());
 
 	wchar_t Buf[64];
 	swprintf(Buf, 64, L"%.2f", VPC->GetGridSize());
@@ -478,13 +478,13 @@ void CEditorUI::SaveEditorSettings()
 
 }
 
-std::wstring CEditorUI::GetEditorIniPathW() const
+std::wstring FEditorUI::GetEditorIniPathW() const
 {
 	return (FPaths::ProjectRoot() / "editor.ini").wstring();
 }
 
 
-void CEditorUI::Render()
+void FEditorUI::Render()
 {
 	static bool bOpenAboutPopup = false;
 
@@ -616,7 +616,7 @@ void CEditorUI::Render()
 		{
 			if (Engine && Engine->GetViewportClient())
 			{
-				auto* VPC = static_cast<CEditorViewportClient*>(Engine->GetViewportClient());
+				auto* VPC = static_cast<FEditorViewportClient*>(Engine->GetViewportClient());
 			
 
 				IViewportClient* ViewportCli = Engine->GetViewportClient();
@@ -760,12 +760,12 @@ void CEditorUI::Render()
 	ContentBrowser.Render();
 }
 
-bool CEditorUI::GetViewportMousePosition(int32 WindowMouseX, int32 WindowMouseY, int32& OutViewportX, int32& OutViewportY, int32& OutWidth, int32& OutHeight) const
+bool FEditorUI::GetViewportMousePosition(int32 WindowMouseX, int32 WindowMouseY, int32& OutViewportX, int32& OutViewportY, int32& OutWidth, int32& OutHeight) const
 {
 	return Viewport.GetMousePositionInViewport(WindowMouseX, WindowMouseY, OutViewportX, OutViewportY, OutWidth, OutHeight);
 }
 
-void CEditorUI::SyncSelectedActorProperty()
+void FEditorUI::SyncSelectedActorProperty()
 {
 	if (!Engine)
 	{
@@ -794,7 +794,7 @@ void CEditorUI::SyncSelectedActorProperty()
 	CachedSelectedActor = Selected;
 }
 
-bool CEditorUI::IsViewportInteractive() const
+bool FEditorUI::IsViewportInteractive() const
 {
 	return Viewport.IsVisible() && (Viewport.IsHovered() || Viewport.IsFocused());
 }

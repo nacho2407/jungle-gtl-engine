@@ -4,7 +4,7 @@
 #include "Math/Vector.h"
 #include "../Math/Vector.h"
 
-class CRenderer;
+class FRenderer;
 class FShowFlags;
 class UWorld;
 struct FDebugLine
@@ -28,11 +28,11 @@ public:
 	void DrawCube(const FVector& Center, const FVector& Extent, const FVector4& Color);
 	void DrawWorldAxis(float Length = 1000.f);
 
-	void Flush(CRenderer* Renderer, const FShowFlags& ShowFlags, UWorld* World);
+	void Flush(FRenderer* Renderer, const FShowFlags& ShowFlags, UWorld* World);
 	void Clear();
 private:
 	TArray<FDebugLine> Lines;
 	TArray<FDebugCube> Cubes;
 	bool bDrawWorldAxis = false;
-	void DrawAllCollisionBounds(CRenderer* Renderer, UWorld* World);
+	void DrawAllCollisionBounds(FRenderer* Renderer, UWorld* World);
 };

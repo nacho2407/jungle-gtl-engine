@@ -3,11 +3,11 @@
 #include "Math/MathUtility.h"
 #include <cmath>
 
-const FString CPrimitiveSphere::Key = "Sphere";
+const FString FPrimitiveSphere::Key = "Sphere";
 
-// FString CPrimitiveSphere::GetFilePath() { return FPaths::MeshDir() + "Sphere.mesh"; }
+// FString FPrimitiveSphere::GetFilePath() { return FPaths::MeshDir() + "Sphere.mesh"; }
 
-CPrimitiveSphere::CPrimitiveSphere(int32 Segments, int32 Rings)
+FPrimitiveSphere::FPrimitiveSphere(int32 Segments, int32 Rings)
 {
 	auto Cached = GetCached(Key);
 	if (Cached)
@@ -20,7 +20,7 @@ CPrimitiveSphere::CPrimitiveSphere(int32 Segments, int32 Rings)
 	}
 }
 
-void CPrimitiveSphere::Generate(int32 Segments, int32 Rings)
+void FPrimitiveSphere::Generate(int32 Segments, int32 Rings)
 {
 	auto Data = std::make_shared<FMeshData>();
 

@@ -10,19 +10,19 @@ class FVertexShader;
 class FPixelShader;
 class FMaterial;
 struct FMeshData;
-class CRenderer;
-class CRenderStateManager;
+class FRenderer;
+class FRenderStateManager;
 /**
  * 문자열을 렌더링 가능한 메시 데이터로 변환하고 폰트 머티리얼을 관리함
  * 렌더러가 직접 문자열을 그리는 대신 메시와 머티리얼을 생성하여 통합 패스에서 처리함
  */
-class ENGINE_API CTextMeshBuilder
+class ENGINE_API FTextMeshBuilder
 {
 public:
-	CTextMeshBuilder() = default;
-	~CTextMeshBuilder();
+	FTextMeshBuilder() = default;
+	~FTextMeshBuilder();
 
-	bool Initialize(CRenderer* InRenderer);
+	bool Initialize(FRenderer* InRenderer);
 	void Release();
 
 	/** 폰트 셰이더와 아틀라스가 설정된 공유 머티리얼 반환 */
@@ -48,7 +48,7 @@ private:
 private:
 	ID3D11Device* Device = nullptr;
 	ID3D11DeviceContext* DeviceContext = nullptr;
-	CRenderStateManager* RenderStateManager = nullptr;
+	FRenderStateManager* RenderStateManager = nullptr;
 	FFontAtlas Atlas;
 	std::shared_ptr<FMaterial> FontMaterial;
 };

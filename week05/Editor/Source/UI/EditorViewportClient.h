@@ -5,8 +5,7 @@
 #include "Picking/Picker.h"
 #include "Types/CoreTypes.h"
 
-class CEditorUI;
-class FWindowsWindow;
+class FEditorUI;
 class FFrustum;
 struct FRenderCommandQueue;
 
@@ -17,18 +16,18 @@ enum class ERenderMode
 	Wireframe,
 };
 
-class CEditorViewportClient : public IViewportClient
+class FEditorViewportClient : public IViewportClient
 {
 public:
-	CEditorViewportClient(CEditorUI& InEditorUI, FWindowsWindow* InMainWindow);
+	explicit FEditorViewportClient(FEditorUI& InEditorUI);
 
-	void Attach(FEngine* Engine, CRenderer* Renderer) override;
-	void Detach(FEngine* Engine, CRenderer* Renderer) override;
+	void Attach(FEngine* Engine, FRenderer* Renderer) override;
+	void Detach(FEngine* Engine, FRenderer* Renderer) override;
 	void Tick(FEngine* Engine, float DeltaTime) override;
 	void HandleMessage(FEngine* Engine, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam) override;
 	EGizmoMode GetGizmoMode() const { return Gizmo.GetMode(); }
-	void SetGizmoMode(EGizmoMode InMode) { Gizmo.SetMode(InMode); }
-	ERenderMode GetRenderMode() { return RenderMode; }
+	void SetGizmoMode(EGizmoMode InMode) const { Gizmo.SetMode(InMode); }
+	ERenderMode GetRenderMode() const { return RenderMode; }
 	void SetRenderMode(ERenderMode InRenderMode) { RenderMode = InRenderMode; }
 
 	void HandleFileDoubleClick(const FString& FilePath) override;
@@ -42,10 +41,9 @@ public:
 	bool IsGridVisible() const { return bShowGrid; }
 	void SetGridVisible(bool bVisible) { bShowGrid = bVisible; }
 private:
-	CEditorUI& EditorUI;
-	FWindowsWindow* MainWindow = nullptr;
-	CPicker Picker;
-	mutable CGizmo Gizmo;
+	FEditorUI& EditorUI;
+	FPicker Picker;
+	mutable FGizmo Gizmo;
 
 	ERenderMode RenderMode = ERenderMode::Lighting;
 	const FString WireframeMaterialName = "M_Wireframe";
@@ -59,7 +57,7 @@ private:
 	// 그리드 렌더링용
 	std::unique_ptr<FMeshData> GridMesh;
 	std::shared_ptr<FMaterial> GridMaterial;
-	void CreateGridResource(CRenderer* Renderer);
+	void CreateGridResource(FRenderer* Renderer);
 	float GridSize = 10.0f;
 	float LineThickness = 1.0f;
 	bool bShowGrid = true;

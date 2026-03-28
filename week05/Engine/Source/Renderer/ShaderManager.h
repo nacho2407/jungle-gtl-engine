@@ -7,11 +7,11 @@
 class FVertexShader;
 class FPixelShader;
 
-class ENGINE_API CShaderManager
+class ENGINE_API FShaderManager
 {
 public:
-    CShaderManager() = default;
-    ~CShaderManager();
+    FShaderManager() = default;
+    ~FShaderManager();
 
     bool LoadVertexShader(ID3D11Device* Device, const wchar_t* FilePath);
     bool LoadPixelShader(ID3D11Device* Device, const wchar_t* FilePath);

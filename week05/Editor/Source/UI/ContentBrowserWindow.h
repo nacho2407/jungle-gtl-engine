@@ -6,10 +6,10 @@
 
 struct ID3D11ShaderResourceView;
 
-class CContentBrowserWindow
+class FContentBrowserWindow
 {
 public:
-	CContentBrowserWindow();
+	FContentBrowserWindow();
 
 	void Render();
 

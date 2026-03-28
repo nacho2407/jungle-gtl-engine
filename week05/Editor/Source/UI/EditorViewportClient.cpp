@@ -1,5 +1,6 @@
 #include "EditorViewportClient.h"
 
+#include "EditorEngine.h"
 #include "EditorUI.h"
 #include "Actor/Actor.h"
 #include "Actor/ObjActor.h"
@@ -9,7 +10,6 @@
 #include "Core/Paths.h"
 #include "Debug/EngineLog.h"
 #include "Input/InputManager.h"
-#include "Platform/Windows/WindowsWindow.h"
 #include "Renderer/Material.h"
 #include "Renderer/MaterialManager.h"
 #include "Renderer/RenderCommand.h"
@@ -20,28 +20,27 @@
 #include "Serializer/SceneSerializer.h"
 #include "imgui.h"
 
-CEditorViewportClient::CEditorViewportClient(CEditorUI& InEditorUI, FWindowsWindow* InMainWindow)
+FEditorViewportClient::FEditorViewportClient(FEditorUI& InEditorUI)
 	: EditorUI(InEditorUI)
-	, MainWindow(InMainWindow)
 {
 }
 
-void CEditorViewportClient::Attach(FEngine* Engine, CRenderer* Renderer)
+void FEditorViewportClient::Attach(FEngine* Engine, FRenderer* Renderer)
 {
-	if (!Engine || !Renderer || !MainWindow)
+	FEditorEngine* EditorEngine = static_cast<FEditorEngine*>(Engine);
+	if (!EditorEngine || !Renderer)
 	{
 		return;
 	}
 
-	EditorUI.Initialize(Engine);
-	EditorUI.SetupWindow(MainWindow);
+	EditorUI.Initialize(EditorEngine);
 	EditorUI.AttachToRenderer(Renderer);
 
 	WireFrameMaterial = FMaterialManager::Get().FindByName(WireframeMaterialName);
 	CreateGridResource(Renderer);
 }
 
-void CEditorViewportClient::CreateGridResource(CRenderer* Renderer)
+void FEditorViewportClient::CreateGridResource(FRenderer* Renderer)
 {
 	ID3D11Device* Device = Renderer->GetDevice();
 	if (Device)
@@ -93,7 +92,7 @@ void CEditorViewportClient::CreateGridResource(CRenderer* Renderer)
 	}
 }
 
-void CEditorViewportClient::Detach(FEngine* Engine, CRenderer* Renderer)
+void FEditorViewportClient::Detach(FEngine* Engine, FRenderer* Renderer)
 {
 	Gizmo.EndDrag();
 	EditorUI.DetachFromRenderer(Renderer);
@@ -102,7 +101,7 @@ void CEditorViewportClient::Detach(FEngine* Engine, CRenderer* Renderer)
 	GridMaterial.reset();
 }
 
-void CEditorViewportClient::Tick(FEngine* Engine, float DeltaTime)
+void FEditorViewportClient::Tick(FEngine* Engine, float DeltaTime)
 {
 	if (!Engine)
 	{
@@ -126,9 +125,15 @@ void CEditorViewportClient::Tick(FEngine* Engine, float DeltaTime)
 	IViewportClient::Tick(Engine, DeltaTime);
 }
 
-void CEditorViewportClient::HandleMessage(FEngine* Engine, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
+void FEditorViewportClient::HandleMessage(FEngine* Engine, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
 {
 	if (!Engine || !EditorUI.IsViewportInteractive())
+	{
+		return;
+	}
+
+	FEditorEngine* EditorEngine = static_cast<FEditorEngine*>(Engine);
+	if (!EditorEngine)
 	{
 		return;
 	}
@@ -139,7 +144,7 @@ void CEditorViewportClient::HandleMessage(FEngine* Engine, HWND Hwnd, UINT Msg, 
 	}
 
 	UScene* Scene = ResolveScene(Engine);
-	AActor* SelectedActor = Engine->GetSelectedActor();
+	AActor* SelectedActor = EditorEngine->GetSelectedActor();
 	if (!Scene)
 	{
 		return;
@@ -154,7 +159,7 @@ void CEditorViewportClient::HandleMessage(FEngine* Engine, HWND Hwnd, UINT Msg, 
 		ScreenHeight);
 
 	const bool bRightMouseDown = Engine->GetInputManager() &&
-		Engine->GetInputManager()->IsMouseButtonDown(CInputManager::MOUSE_RIGHT);
+		Engine->GetInputManager()->IsMouseButtonDown(FInputManager::MOUSE_RIGHT);
 
 	switch (Msg)
 	{
@@ -200,7 +205,7 @@ void CEditorViewportClient::HandleMessage(FEngine* Engine, HWND Hwnd, UINT Msg, 
 
 		{
 			AActor* PickedActor = Picker.PickActor(Scene, ScreenMouseX, ScreenMouseY, ScreenWidth, ScreenHeight);
-			Engine->SetSelectedActor(PickedActor);
+			EditorEngine->SetSelectedActor(PickedActor);
 			EditorUI.SyncSelectedActorProperty();
 		}
 		return;
@@ -245,9 +250,9 @@ void CEditorViewportClient::HandleMessage(FEngine* Engine, HWND Hwnd, UINT Msg, 
 	}
 }
 
-void CEditorViewportClient::HandleFileDoubleClick(const FString& FilePath)
+void FEditorViewportClient::HandleFileDoubleClick(const FString& FilePath)
 {
-	FEngine* Engine = EditorUI.GetEngine();
+	FEditorEngine* Engine = EditorUI.GetEngine();
 
 	if (Engine && FilePath.ends_with(".json"))
 	{
@@ -271,9 +276,9 @@ void CEditorViewportClient::HandleFileDoubleClick(const FString& FilePath)
 	}
 }
 
-void CEditorViewportClient::HandleFileDropOnViewport(const FString& FilePath)
+void FEditorViewportClient::HandleFileDropOnViewport(const FString& FilePath)
 {
-	FEngine* Engine = EditorUI.GetEngine();
+	FEditorEngine* Engine = EditorUI.GetEngine();
 
 	if (Engine && Engine->GetRenderer() && FilePath.ends_with(".obj"))
 	{
@@ -286,7 +291,7 @@ void CEditorViewportClient::HandleFileDropOnViewport(const FString& FilePath)
 	}
 }
 
-void CEditorViewportClient::BuildRenderCommands(FEngine* Engine, UScene* Scene, const FFrustum& Frustum, FRenderCommandQueue& OutQueue)
+void FEditorViewportClient::BuildRenderCommands(FEngine* Engine, UScene* Scene, const FFrustum& Frustum, FRenderCommandQueue& OutQueue)
 {
 	IViewportClient::BuildRenderCommands(Engine, Scene, Frustum, OutQueue);
 
@@ -316,14 +321,15 @@ void CEditorViewportClient::BuildRenderCommands(FEngine* Engine, UScene* Scene, 
 		OutQueue.AddCommand(GridCommand);
 	}
 
-	AActor* GizmoTarget = Engine->GetSelectedActor();
+	FEditorEngine* EditorEngine = static_cast<FEditorEngine*>(Engine);
+	AActor* GizmoTarget = EditorEngine ? EditorEngine->GetSelectedActor() : nullptr;
 	if (GizmoTarget && !GizmoTarget->IsA<ASkySphereActor>())
 	{
 		Gizmo.BuildRenderCommands(GizmoTarget, Scene->GetCamera(), OutQueue);
 	}
 }
 
-void CEditorViewportClient::SetGridSize(float InSize)
+void FEditorViewportClient::SetGridSize(float InSize)
 {
 	GridSize = InSize;
 	if (GridMaterial)
@@ -332,7 +338,7 @@ void CEditorViewportClient::SetGridSize(float InSize)
 	}
 }
 
-void CEditorViewportClient::SetLineThickness(float InThickness)
+void FEditorViewportClient::SetLineThickness(float InThickness)
 {
 	LineThickness = InThickness;
 	if (GridMaterial)
