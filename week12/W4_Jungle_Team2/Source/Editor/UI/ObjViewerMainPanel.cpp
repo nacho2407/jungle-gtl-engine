@@ -9,46 +9,46 @@
 
 void FObjViewerMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UObjViewerEngine* InEngine)
 {
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
 
-    ImGuiIO& IO = ImGui::GetIO();
-    IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	ImGuiIO& IO = ImGui::GetIO();
+	IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-    Window = InWindow;
+	Window = InWindow;
 
-    // 한글 지원 폰트 로드
-    IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 16.0f, nullptr, IO.Fonts->GetGlyphRangesKorean());
+	// 한글 지원 폰트 로드
+	IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 16.0f, nullptr, IO.Fonts->GetGlyphRangesKorean());
 
-    ImGui_ImplWin32_Init((void*)InWindow->GetHWND());
-    ImGui_ImplDX11_Init(InRenderer.GetFD3DDevice().GetDevice(), InRenderer.GetFD3DDevice().GetDeviceContext());
+	ImGui_ImplWin32_Init((void*)InWindow->GetHWND());
+	ImGui_ImplDX11_Init(InRenderer.GetFD3DDevice().GetDevice(), InRenderer.GetFD3DDevice().GetDeviceContext());
 
-    // 모든 하위 위젯 초기화
-    MenuBarWidget.Initialize(InEngine);
-    ControlWidget.Initialize(InEngine);
-    StatWidget.Initialize(InEngine);
+	// 모든 하위 위젯 초기화
+	MenuBarWidget.Initialize(InEngine);
+	ControlWidget.Initialize(InEngine);
+	StatWidget.Initialize(InEngine);
 }
 
 void FObjViewerMainPanel::Shutdown()
 {
-    ImGui_ImplDX11_Shutdown();
-    ImGui_ImplWin32_Shutdown();
-    ImGui::DestroyContext();
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
 }
 
 void FObjViewerMainPanel::Render(float DeltaTime)
 {
-    ImGui_ImplDX11_NewFrame();
-    ImGui_ImplWin32_NewFrame();
-    ImGui::NewFrame();
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
 
-    ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
-    // 하위 위젯들 렌더링
-    MenuBarWidget.Render(DeltaTime);
-    ControlWidget.Render(DeltaTime);
-    StatWidget.Render(DeltaTime);
+	// 하위 위젯들 렌더링
+	MenuBarWidget.Render(DeltaTime);
+	ControlWidget.Render(DeltaTime);
+	StatWidget.Render(DeltaTime);
 
-    ImGui::Render();
-    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+	ImGui::Render();
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }

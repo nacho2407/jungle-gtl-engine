@@ -11,15 +11,15 @@ class FRenderer;
 class FObjViewerMainPanel
 {
 public:
-    void Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UObjViewerEngine* InEngine);
-    void Render(float DeltaTime);
-    void Shutdown();
+	void Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UObjViewerEngine* InEngine);
+	void Render(float DeltaTime);
+	void Shutdown();
 
 private:
-    FWindowsWindow* Window = nullptr;
+	FWindowsWindow* Window = nullptr;
 
-    // 하위 위젯 인스턴스
-    FObjViewerMenuBarWidget MenuBarWidget;
-    FObjViewerControlWidget ControlWidget;
-    FObjViewerStatWidget    StatWidget;
+	// 하위 위젯 인스턴스
+	FObjViewerMenuBarWidget MenuBarWidget;
+	FObjViewerControlWidget ControlWidget;
+	FObjViewerStatWidget    StatWidget;
 };
