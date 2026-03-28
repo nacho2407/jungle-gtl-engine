@@ -11,7 +11,7 @@ public:
 	void SetStaticMesh(UStaticMesh* InStaticMesh);
 	UStaticMesh* GetStaticMesh() const;
 	bool HasValidMesh() const;
-	
+
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char * PropertyName) override;
 
