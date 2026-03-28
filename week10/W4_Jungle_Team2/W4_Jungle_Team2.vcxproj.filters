@@ -319,6 +319,8 @@
     <ClCompile Include="Source\Editor\Viewport\ObjViewerViewportClient.cpp">
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Slate\SWindow.cpp" />
+    <ClCompile Include="Source\Engine\Slate\SSplitter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -601,5 +603,7 @@
     <ClInclude Include="Source\Editor\Viewport\ObjViewerViewportClient.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Slate\SWindow.h" />
+    <ClInclude Include="Source\Engine\Slate\SSplitter.h" />
   </ItemGroup>
 </Project>
