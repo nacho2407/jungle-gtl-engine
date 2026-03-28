@@ -9,15 +9,15 @@ class SViewport : public SWindow
 {
 
 public:
-	bool OnMouseMove(int X, int Y) override;
-	bool OnMouseButtonDown(int Button, int X, int Y) override;
-	bool OnMouseButtonUp(int Button, int X, int Y) override;
-	bool OnMouseWheel(int Delta, int X, int Y) override;
+	bool OnMouseMove(int32 X, int32 Y) override;
+	bool OnMouseButtonDown(int32 Button, int32 X, int32 Y) override;
+	bool OnMouseButtonUp(int32 Button, int32 X, int32 Y) override;
+	bool OnMouseWheel(int32 Delta, int32 X, int32 Y) override;
 	bool OnKeyDown(uint32 Key) override;
 	bool OnKeyUp(uint32 Key) override;
 
 private:
-	FViewportMouseEvent MakeMouseEvent(int X, int Y) const;
+	FViewportMouseEvent MakeMouseEvent(int32 X, int32 Y) const;
 
 private:
 	ISlateViewport* ViewportInterface = nullptr;

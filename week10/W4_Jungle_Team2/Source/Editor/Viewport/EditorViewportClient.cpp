@@ -11,6 +11,7 @@
 #include "Component/PrimitiveComponent.h"
 #include "Object/Object.h"
 #include "Editor/Selection/SelectionManager.h"
+#include "EditorUtils.h"
 
 void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
 {
@@ -61,6 +62,7 @@ void FEditorViewportClient::SetViewportSize(float InWidth, float InHeight)
 
 void FEditorViewportClient::Tick(float DeltaTime)
 {
+	if (!State->bFocused) return;
 	TickInput(DeltaTime);
 	TickInteraction(DeltaTime);
 }

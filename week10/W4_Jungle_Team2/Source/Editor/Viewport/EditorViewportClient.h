@@ -7,6 +7,25 @@
 #include "Core/CollisionTypes.h"
 #include "Runtime/ViewportClient.h"
 
+enum EEditorViewportType
+{
+	EVT_Perspective = 0,		// Perspective
+	EVT_OrthoXY = 1,			// Top
+	EVT_OrthoXZ = 2,			// Right
+	EVT_OrthoYZ = 3,			// Back
+	EVT_OrthoNegativeXY = 4,	// Bottom
+	EVT_OrthoNegativeXZ = 5,	// Left
+	EVT_OrthoNegativeYZ = 6,	// Front
+
+	EVT_OrthoTop = EVT_OrthoXY,				// TOP
+	EVT_OrthoLeft = EVT_OrthoXZ,			// Left
+	EVT_OrthoFront = EVT_OrthoNegativeYZ,	// Front
+	EVT_OrthoBack = EVT_OrthoYZ,			// Back
+	EVT_OrthoBottom = EVT_OrthoNegativeXY,	// Bottom
+	EVT_OrthoRight = EVT_OrthoNegativeXZ,	// Right
+	LVT_MAX = 7,
+};
+
 
 class UWorld;
 class UCameraComponent;
@@ -52,7 +71,7 @@ private:
 	void HandleDragStart(const FRay& Ray);
 
 private:
-	// Viewport와 ViewportClient는 상호참조(상위 객체 소유권)
+	// Viewport <-> ViewportClient는 상호참조(상위 객체 소유권)
 	FWindowsWindow* Window = nullptr;
 
 	FSceneViewport* Viewport = nullptr;

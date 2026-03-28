@@ -14,8 +14,8 @@ public:
 	virtual const FViewportRect& GetRect() const = 0;
 
 	// 좌표 보조
-	virtual bool ContainsPoint(int X, int Y) const = 0;
-	virtual void WindowToLocal(int X, int Y, int& OutX, int& OutY) const = 0;
+	virtual bool ContainsPoint(int32 X, int32 Y) const = 0;
+	virtual void WindowToLocal(int32 X, int32 Y, int32& OutX, int32& OutY) const = 0;
 
 	// 마우스 입력
 	virtual bool OnMouseMove(const FViewportMouseEvent& Ev) = 0;

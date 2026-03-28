@@ -22,7 +22,7 @@ public:
 	const SWidget* GetChild() const { return Child; }
 
 	// Widget Hit Test
-	SWidget* HitTest(int X, int Y) override;
+	SWidget* HitTest(int32 X, int32 Y) override;
 
 private:
 	// SWindow 크기

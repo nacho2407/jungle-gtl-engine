@@ -17,7 +17,7 @@ public:
 	}
 
 protected:
-	FSceneViewport* SceneViewport;
-	SViewport* ViewportWidget;
-	FEditorViewportClient* Client;
+	FSceneViewport* SceneViewport = nullptr;
+	SViewport* ViewportWidget = nullptr;
+	FEditorViewportClient* Client = nullptr;
 };

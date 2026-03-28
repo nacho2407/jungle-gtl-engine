@@ -13,8 +13,8 @@ public:
 	virtual void SetRect(const FViewportRect& InRect) { Rect = InRect; }
 	const FViewportRect& GetRect() const { return Rect; }
 
-	bool ContainsPoint(int X, int Y) const { return Rect.Contains(X, Y); }
-	void WindowToLocal(int X, int Y, int& OutX, int& OutY) const 
+	bool ContainsPoint(int32 X, int32 Y) const { return Rect.Contains(X, Y); }
+	void WindowToLocal(int32 X, int32 Y, int32& OutX, int32& OutY) const
 	{ 
 		return Rect.WindowToLocal(X, Y, OutX, OutY); 
 	}
