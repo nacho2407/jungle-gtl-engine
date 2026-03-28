@@ -132,7 +132,19 @@
     <ClCompile Include="Source\Asset\FontAtlasLoader.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Asset\MaterialAsset.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\MaterialLoader.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Asset\StaticMesh.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\StaticMeshAsset.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\StaticMeshLoader.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Asset\StreamableRenderAsset.cpp">
@@ -199,6 +211,12 @@
       <Filter>Source\CoreUObject</Filter>
     </ClCompile>
     <ClCompile Include="Source\CoreUObject\ObjectFactory.cpp">
+      <Filter>Source\CoreUObject</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\CoreUObject\UObjectArray.cpp">
+      <Filter>Source\CoreUObject</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\CoreUObject\UObjectIterator.cpp">
       <Filter>Source\CoreUObject</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Core\MeshComponent.cpp">
@@ -357,10 +375,6 @@
     <ClCompile Include="Source\SceneIO\SceneTypeRegistry.cpp">
       <Filter>Source\SceneIO</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Asset\StaticMeshAsset.cpp" />
-    <ClCompile Include="Source\Asset\StaticMeshLoader.cpp" />
-    <ClCompile Include="Source\Asset\MaterialAsset.cpp" />
-    <ClCompile Include="Source\Asset\MaterialLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Mesh\Cone.h">
@@ -432,7 +446,19 @@
     <ClInclude Include="Source\Asset\FontAtlasLoader.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Asset\MaterialAsset.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\MaterialLoader.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Asset\StaticMesh.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\StaticMeshAsset.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\StaticMeshLoader.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\StreamableRenderAsset.h">
@@ -568,6 +594,12 @@
       <Filter>Source\CoreUObject</Filter>
     </ClInclude>
     <ClInclude Include="Source\CoreUObject\ObjectFactory.h">
+      <Filter>Source\CoreUObject</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CoreUObject\UObjectArray.h">
+      <Filter>Source\CoreUObject</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CoreUObject\UObjectIterator.h">
       <Filter>Source\CoreUObject</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Core\ComponentProperty.h">
@@ -714,6 +746,12 @@
     <ClInclude Include="Source\Renderer\RenderAsset\FontResource.h">
       <Filter>Source\Renderer\RenderAsset</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Renderer\RenderAsset\MaterialResource.h">
+      <Filter>Source\Renderer\RenderAsset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\RenderAsset\StaticMeshResource.h">
+      <Filter>Source\Renderer\RenderAsset</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Renderer\RenderAsset\SubUVAtlasResource.h">
       <Filter>Source\Renderer\RenderAsset</Filter>
     </ClInclude>
@@ -804,12 +842,6 @@
     <ClInclude Include="Source\ThirdParty\Json\json.hpp">
       <Filter>Source\ThirdParty\Json</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Asset\StaticMeshAsset.h" />
-    <ClInclude Include="Source\Asset\StaticMeshLoader.h" />
-    <ClInclude Include="Source\Renderer\RenderAsset\StaticMeshResource.h" />
-    <ClInclude Include="Source\Asset\MaterialAsset.h" />
-    <ClInclude Include="Source\Asset\MaterialLoader.h" />
-    <ClInclude Include="Source\Renderer\RenderAsset\MaterialResource.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
