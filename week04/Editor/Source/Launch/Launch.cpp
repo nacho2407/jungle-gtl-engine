@@ -102,18 +102,18 @@ namespace
 
 int Launch(HINSTANCE HInstance, int NCmdShow)
 {
-   int ExitCode = -1;
-   
-   __try
-   {
-       ExitCode = GuardedMain(HInstance, NCmdShow);
-   }
-   __except (ReportCrash(GetExceptionInformation()))
-   {
-       MessageBoxW(NULL, L"엔진에 치명적인 오류가 발생하여 종료됩니다. 크래시 로그를 확인하세요.",
-                   L"Engine Crash", MB_ICONERROR | MB_OK);
-   
-       ExitCode = -1;
-   }
-   return ExitCode;
+    int ExitCode = -1;
+
+    __try
+    {
+        ExitCode = GuardedMain(HInstance, NCmdShow);
+    }
+    __except (ReportCrash(GetExceptionInformation()))
+    {
+        MessageBoxW(NULL, L"엔진에 치명적인 오류가 발생하여 종료됩니다. 크래시 로그를 확인하세요.",
+                    L"Engine Crash", MB_ICONERROR | MB_OK);
+
+        ExitCode = -1;
+    }
+    return ExitCode;
 }

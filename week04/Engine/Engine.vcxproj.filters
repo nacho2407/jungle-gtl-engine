@@ -132,19 +132,16 @@
     <ClCompile Include="Source\Asset\FontAtlasLoader.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Asset\Material.cpp">
-      <Filter>Source\Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Asset\MaterialInstance.cpp">
-      <Filter>Source\Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Asset\MaterialInterface.cpp">
+    <ClCompile Include="Source\Asset\MaterialAsset.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Asset\MaterialLoader.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Asset\StaticMesh.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\StaticMeshAsset.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Asset\StaticMeshLoader.cpp">
@@ -231,10 +228,31 @@
     <ClCompile Include="Source\Engine\Component\Core\SceneComponent.cpp">
       <Filter>Source\Engine\Component\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Core\StaticMeshComponent.cpp">
+      <Filter>Source\Engine\Component\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\Core\UnknownComponent.cpp">
       <Filter>Source\Engine\Component\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\Mesh\StaticMeshComponent.cpp">
+    <ClCompile Include="Source\Engine\Component\Mesh\ConeComponent.cpp">
+      <Filter>Source\Engine\Component\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Mesh\CubeComponent.cpp">
+      <Filter>Source\Engine\Component\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Mesh\CylinderComponent.cpp">
+      <Filter>Source\Engine\Component\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Mesh\QuadComponent.cpp">
+      <Filter>Source\Engine\Component\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Mesh\RingComponent.cpp">
+      <Filter>Source\Engine\Component\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Mesh\SphereComponent.cpp">
+      <Filter>Source\Engine\Component\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Mesh\TriangleComponent.cpp">
       <Filter>Source\Engine\Component\Mesh</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Sprite\AtlasComponent.cpp">
@@ -264,19 +282,34 @@
     <ClCompile Include="Source\Engine\Game\AtlasSpriteActor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Game\ConeActor.cpp">
+      <Filter>Source\Engine\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Game\CubeActor.cpp">
+      <Filter>Source\Engine\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Game\CylinderActor.cpp">
+      <Filter>Source\Engine\Game</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Game\EffectActor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Game\FlipbookActor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Game\RingActor.cpp">
+      <Filter>Source\Engine\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Game\SphereActor.cpp">
+      <Filter>Source\Engine\Game</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Game\SpriteActor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Game\StaticMeshActor.cpp">
+    <ClCompile Include="Source\Engine\Game\TextActor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Game\TextActor.cpp">
+    <ClCompile Include="Source\Engine\Game\TriangleActor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Game\UnknownActor.cpp">
@@ -413,19 +446,16 @@
     <ClInclude Include="Source\Asset\FontAtlasLoader.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Asset\Material.h">
-      <Filter>Source\Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Asset\MaterialInstance.h">
-      <Filter>Source\Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Asset\MaterialInterface.h">
+    <ClInclude Include="Source\Asset\MaterialAsset.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\MaterialLoader.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\StaticMesh.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\StaticMeshAsset.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\StaticMeshLoader.h">
@@ -584,10 +614,31 @@
     <ClInclude Include="Source\Engine\Component\Core\SceneComponent.h">
       <Filter>Source\Engine\Component\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Core\StaticMeshComponent.h">
+      <Filter>Source\Engine\Component\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\Core\UnknownComponent.h">
       <Filter>Source\Engine\Component\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\Mesh\StaticMeshComponent.h">
+    <ClInclude Include="Source\Engine\Component\Mesh\ConeComponent.h">
+      <Filter>Source\Engine\Component\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Mesh\CubeComponent.h">
+      <Filter>Source\Engine\Component\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Mesh\CylinderComponent.h">
+      <Filter>Source\Engine\Component\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Mesh\QuadComponent.h">
+      <Filter>Source\Engine\Component\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Mesh\RingComponent.h">
+      <Filter>Source\Engine\Component\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Mesh\SphereComponent.h">
+      <Filter>Source\Engine\Component\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Mesh\TriangleComponent.h">
       <Filter>Source\Engine\Component\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Sprite\AtlasComponent.h">
@@ -617,19 +668,34 @@
     <ClInclude Include="Source\Engine\Game\AtlasSpriteActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Game\ConeActor.h">
+      <Filter>Source\Engine\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Game\CubeActor.h">
+      <Filter>Source\Engine\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Game\CylinderActor.h">
+      <Filter>Source\Engine\Game</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Game\EffectActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Game\FlipbookActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Game\RingActor.h">
+      <Filter>Source\Engine\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Game\SphereActor.h">
+      <Filter>Source\Engine\Game</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Game\SpriteActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Game\StaticMeshActor.h">
+    <ClInclude Include="Source\Engine\Game\TextActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Game\TextActor.h">
+    <ClInclude Include="Source\Engine\Game\TriangleActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Game\UnknownActor.h">
