@@ -276,34 +276,37 @@ void FLineBatcher::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacin
 		}
 	}
 
-	if (bShowXAxis)
+	if (ShowFlags.bAxis)
 	{
-		const float Alpha = std::max(AxisMinVisibleAlpha, ComputeLineFade(-FocusPoint.Y, AxisFadeStartY, GridExtentY));
-		AddLine(
-			FVector(MinX, 0.0f, AxisHeightBias),
-			FVector(MaxX, 0.0f, AxisHeightBias),
-			WithAlpha(FColor::Red().ToVector4(), Alpha)
-		);
-	}
+		if (bShowXAxis)
+		{
+			const float Alpha = std::max(AxisMinVisibleAlpha, ComputeLineFade(-FocusPoint.Y, AxisFadeStartY, GridExtentY));
+			AddLine(
+				FVector(MinX, 0.0f, AxisHeightBias),
+				FVector(MaxX, 0.0f, AxisHeightBias),
+				WithAlpha(FColor::Red().ToVector4(), Alpha)
+			);
+		}
 
-	if (bShowYAxis)
-	{
-		const float Alpha = std::max(AxisMinVisibleAlpha, ComputeLineFade(-FocusPoint.X, AxisFadeStartX, GridExtentX));
-		AddLine(
-			FVector(0.0f, MinY, AxisHeightBias),
-			FVector(0.0f, MaxY, AxisHeightBias),
-			WithAlpha(FColor::Green().ToVector4(), Alpha)
-		);
-	}
+		if (bShowYAxis)
+		{
+			const float Alpha = std::max(AxisMinVisibleAlpha, ComputeLineFade(-FocusPoint.X, AxisFadeStartX, GridExtentX));
+			AddLine(
+				FVector(0.0f, MinY, AxisHeightBias),
+				FVector(0.0f, MaxY, AxisHeightBias),
+				WithAlpha(FColor::Green().ToVector4(), Alpha)
+			);
+		}
 
-	if (bShowXAxis && bShowYAxis)
-	{
-		const float AxisHeight = std::max(Spacing * static_cast<float>(BaseHalfCount), Spacing * 10.0f);
-		AddLine(
-			FVector(0.0f, 0.0f, -AxisHeight),
-			FVector(0.0f, 0.0f, AxisHeight),
-			FColor::Blue().ToVector4()
-		);
+		if (bShowXAxis && bShowYAxis)
+		{
+			const float AxisHeight = std::max(Spacing * static_cast<float>(BaseHalfCount), Spacing * 10.0f);
+			AddLine(
+				FVector(0.0f, 0.0f, -AxisHeight),
+				FVector(0.0f, 0.0f, AxisHeight),
+				FColor::Blue().ToVector4()
+			);
+		}
 	}
 }
 
