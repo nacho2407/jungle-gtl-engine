@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Core/CoreTypes.h"
 #include <cstdarg>
 #include <functional>
@@ -14,7 +14,7 @@ class FEditorConsoleWidget : public FEditorWidget
 {
 public:
 	static void AddLog(const char* fmt, ...);
-
+	virtual void Initialize(UEditorEngine* InEditorEngine) override;
 	virtual void Render(float DeltaTime) override;
 
 	void Clear()
