@@ -1,6 +1,4 @@
 ﻿#pragma once
-#pragma once
-
 #include "Render/Common/RenderTypes.h"
 
 #include "Viewport/CursorOverlayState.h"
@@ -8,8 +6,9 @@
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
 
+
+class FViewportCamera;
 class UWorld;
-class UCameraComponent;
 class FObjViewerSettings;
 class FWindowsWindow;
 class FSelectionManager;
@@ -25,7 +24,7 @@ class FObjViewerViewportClient
 public:
 	void Initialize(FWindowsWindow* InWindow);
 	void SetWorld(UWorld* InWorld) { World = InWorld; }
-	void SetSettings(FObjViewerSettings* InSettings) { Settings = InSettings; }
+	void SetSettings(const FObjViewerSettings* InSettings) { Settings = InSettings; }
 	void SetSelectionManager(FSelectionManager* InSelectionManager) { SelectionManager = InSelectionManager; }
 	void SetViewportSize(float InWidth, float InHeight);
 
@@ -38,7 +37,7 @@ public:
 	void ClampCameraPosition();
 	void ClampCameraPanToObject();
 	ObjViewerModelInfo GetModelInfo();
-	UCameraComponent* GetCamera() const { return Camera; }
+	FViewportCamera* GetCamera() const { return Camera; }
 
 	// SetViewportSize를 대체
     void SetViewportRect(float InX, float InY, float InWidth, float InHeight);
@@ -61,7 +60,7 @@ private:
 private:
 	FWindowsWindow* Window = nullptr;
 	UWorld* World = nullptr;
-	UCameraComponent* Camera = nullptr;
+	FViewportCamera* Camera = nullptr;
 	const FObjViewerSettings* Settings = nullptr;
 	FSelectionManager* SelectionManager = nullptr;
 

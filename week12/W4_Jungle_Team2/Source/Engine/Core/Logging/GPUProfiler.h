@@ -1,8 +1,10 @@
+﻿#pragma once
 #pragma once
 
+#include "Core/CoreMinimal.h"
 #include "Core/CoreTypes.h"
 #include "Core/Singleton.h"
-#include "Core/Stats.h"
+#include "Core/Logging/Stats.h"
 
 #include <d3d11.h>
 
