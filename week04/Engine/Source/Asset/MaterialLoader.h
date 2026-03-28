@@ -7,7 +7,7 @@
 class ENGINE_API FMaterialLoader : public IAssetLoader
 {
   public:
-    FMaterialLoader() = default;
+    FMaterialLoader(UAssetManager* InAssetManager) { AssetManager = InAssetManager; }
     ~FMaterialLoader() override = default;
 
     bool       CanLoad(const FWString& Path, const FAssetLoadParams& Params) const override;
@@ -21,4 +21,6 @@ class ENGINE_API FMaterialLoader : public IAssetLoader
     // map_Kd 경로를 .mtl 파일 위치 기준으로 절대 경로화 해주는 유틸리티
     FWString ResolveSiblingPath(const FWString& BaseFilePath, const FString& RelativePath) const;
     FString  WidePathToUtf8(const FWString& Path) const;
+
+    UAssetManager* AssetManager = nullptr;
 };

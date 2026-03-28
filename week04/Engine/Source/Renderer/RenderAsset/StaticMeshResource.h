@@ -21,6 +21,7 @@ struct FStaticMeshResource
     uint32 VertexStride = 0;
 
     TArray<FSubMesh> SubMeshes;
+    TArray<FString> MaterialLibraryPaths;
 
     // --- CPU 충돌/Picking용 데이터 (RAM) ---
     TArray<FVector> CPU_Positions;

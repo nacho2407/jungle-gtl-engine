@@ -19,7 +19,10 @@ struct FVertex
     FVector  Normal;
 };
 
-FStaticMeshLoader::FStaticMeshLoader(FD3D11RHI* InRHI) : RHI(InRHI) {}
+FStaticMeshLoader::FStaticMeshLoader(FD3D11RHI* InRHI, UAssetManager* InAssetManager)
+    : RHI(InRHI), AssetManager(InAssetManager)
+{
+}
 
 bool FStaticMeshLoader::CanLoad(const FWString& Path, const FAssetLoadParams& Params) const
 {
@@ -81,6 +84,28 @@ UAsset* FStaticMeshLoader::LoadAsset(const FSourceRecord& Source, const FAssetLo
     UStaticMeshAsset* NewMeshAsset = new UStaticMeshAsset();
     NewMeshAsset->Initialize(Source, MeshResource);
 
+    // .obj 파일을 읽으면서 기록해두었던 .mtl 파일들을 load 하도록 AssetManager의 Load 함수 호출
+    if (AssetManager) // 포인터가 유효한지 확인
+    {
+        const fs::path ObjFilePath(Source.NormalizedPath);
+        const fs::path ObjDir = ObjFilePath.parent_path();
+
+        for (const FString& MtlFileName : MeshResource->MaterialLibraryPaths)
+        {
+            const fs::path MtlRelativePath(MtlFileName.c_str());
+
+            // 디렉토리 경로와 파일 이름을 결합 (예: "Data/Models" / "InteriorTest1.mtl")
+            const fs::path FullMtlPath = ObjDir / MtlRelativePath;
+
+            // fs::path의 내장 함수를 사용하여 최종 경로를 FWString(std::wstring)으로 변환
+            FWString WideMtlPath = FullMtlPath.wstring();
+
+            FAssetLoadParams MatParams;
+            MatParams.ExplicitType = EAssetType::Material;
+
+            AssetManager->Load(WideMtlPath, MatParams); // 전역 Get() 대신 주입받은 포인터 사용
+        }
+    }
     return NewMeshAsset;
 }
 
@@ -114,7 +139,17 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMeshRes
         FString            Header;
         LineStream >> Header;
 
-        if (Header == "v")
+        if (Header == "mtllib")
+        {
+            FString MtlFileName;
+            // 한 줄에 여러 개의 .mtl 파일이 선언될 수 있으므로 루프를 돌며 읽습니다.
+            while (LineStream >> MtlFileName)
+            {
+                // 필요하다면 여기서 절대 경로/상대 경로 변환을 수행할 수 있습니다.
+                OutMesh.MaterialLibraryPaths.push_back(MtlFileName);
+            }
+        }
+        else if (Header == "v")
         {
             FVector Pos;
             LineStream >> Pos.X >> Pos.Y >> Pos.Z;
@@ -148,7 +183,10 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMeshRes
                 // 이전 SubMesh 구역 닫기
                 CurrentSubMesh.IndexCount = static_cast<uint32>(OutMesh.CPU_Indices.size()) -
                                             CurrentSubMesh.StartIndexLocation;
-                OutMesh.SubMeshes.push_back(CurrentSubMesh);
+                if (CurrentSubMesh.IndexCount > 0)
+                {
+                    OutMesh.SubMeshes.push_back(CurrentSubMesh);
+                }
             }
 
             LineStream >> CurrentSubMesh.DefaultMaterialName;
@@ -250,7 +288,10 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMeshRes
     {
         CurrentSubMesh.IndexCount =
             static_cast<uint32>(OutMesh.CPU_Indices.size()) - CurrentSubMesh.StartIndexLocation;
-        OutMesh.SubMeshes.push_back(CurrentSubMesh);
+        if (CurrentSubMesh.IndexCount > 0)
+        {
+            OutMesh.SubMeshes.push_back(CurrentSubMesh);
+        }
     }
     // 머티리얼 정보가 전혀 없는 obj 파일에 대한 예외 처리
     else if (!OutMesh.CPU_Indices.empty())

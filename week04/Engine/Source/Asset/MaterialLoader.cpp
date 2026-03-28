@@ -1,6 +1,7 @@
 #include "Core/CoreMinimal.h"
 #include "MaterialLoader.h"
 #include "MaterialAsset.h" // UMaterialAsset 클래스 헤더
+#include "Texture2DAsset.h"
 
 #include <filesystem>
 #include <sstream>
@@ -49,8 +50,10 @@ UAsset* FMaterialLoader::LoadAsset(const FSourceRecord& Source, const FAssetLoad
     // 2. 파싱
     if (!ParseMtlText(Source, *MatResource))
     {
-        UE_LOG(Asset, ELogVerbosity::Warning, "[MaterialLoader] Failed to parse .mtl file. Path=%s",
+        UE_LOG(Asset, ELogVerbosity::Warning,
+               "[MaterialLoader] Failed to parse .mtl file. Path = % s ",
                WidePathToUtf8(Source.NormalizedPath).c_str());
+                            
         return nullptr;
     }
 
@@ -58,6 +61,62 @@ UAsset* FMaterialLoader::LoadAsset(const FSourceRecord& Source, const FAssetLoad
     UMaterialAsset* NewMatAsset = new UMaterialAsset();
     NewMatAsset->Initialize(Source, MatResource);
 
+    if (AssetManager) // 포인터가 유효한지 확인
+    {
+        // MTL 파일의 디렉토리 경로 추출 (텍스처 상대 경로 조합용)
+        const fs::path MtlFilePath(Source.NormalizedPath);
+        const fs::path MtlDir = MtlFilePath.parent_path();
+
+        for (auto& Pair : MatResource->Materials)
+        {
+            auto LoadTextureForMaterial = [&](const FString& InMapPath, bool bSRGB,
+                                              bool        bIsNormalMap,
+                                              const char* LogName) -> FTextureResource*
+            {
+                if (InMapPath.empty())
+                {
+                    return nullptr;
+                }
+
+                const fs::path TexRelativePath(InMapPath.c_str());
+                const fs::path FullTexPath = MtlDir / TexRelativePath;
+                FWString       WideTexPath = FullTexPath.wstring();
+
+                FAssetLoadParams TexParams;
+                TexParams.ExplicitType = EAssetType::Texture;
+                TexParams.TextureSettings.bSRGB = bSRGB;
+                TexParams.TextureSettings.bIsNormalMap = bIsNormalMap;
+
+                UAsset* LoadedTex = AssetManager->Load(WideTexPath, TexParams);
+                if (LoadedTex)
+                {
+                    UTexture2DAsset* TexAsset = static_cast<UTexture2DAsset*>(LoadedTex);
+
+                    // UMaterialAsset이 텍스처 에셋의 생명주기를 참조하도록 의존성 추가
+                    // NewMatAsset->AddTextureDependency(TexAsset);
+
+                    return TexAsset->GetResource();
+                }
+
+                // 로드 실패 시 에러 로그 출력 (LogName을 활용해 어떤 맵이 실패했는지 명시)
+                UE_LOG(Asset, ELogVerbosity::Warning,
+                       "[MaterialLoader] Failed to load %s texture. Path=%s", LogName,
+                       WidePathToUtf8(WideTexPath).c_str());
+
+                return nullptr;
+            };
+            FMaterialData& CurrentMaterial = Pair.second;
+
+            CurrentMaterial.DiffuseTexture =
+                LoadTextureForMaterial(CurrentMaterial.DiffuseMapPath, true, false, "Diffuse");
+            CurrentMaterial.AmbientTexture =
+                LoadTextureForMaterial(CurrentMaterial.AmbientMapPath, false, false, "Ambient");
+            CurrentMaterial.SpecularTexture = LoadTextureForMaterial(
+                CurrentMaterial.SpecularHighlightMapPath, false, false, "Specular");
+            CurrentMaterial.NormalTexture =
+                LoadTextureForMaterial(CurrentMaterial.NormalMapPath, false, true, "Normal");
+        }
+    }
     return NewMatAsset;
 }
 
@@ -226,6 +285,6 @@ FWString FMaterialLoader::ResolveSiblingPath(const FWString& BaseFilePath,
 FString FMaterialLoader::WidePathToUtf8(const FWString& Path) const
 {
     const fs::path      FilePath(Path);
-    const std::u8string         Utf8Path = FilePath.u8string();
+    const std::u8string Utf8Path = FilePath.u8string();
     return FString(reinterpret_cast<const char*>(Utf8Path.data()), Utf8Path.size());
 }
