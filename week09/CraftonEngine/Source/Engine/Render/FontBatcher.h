@@ -54,7 +54,8 @@ public:
 	);
 
 	// 이번 프레임 누적 텍스트 초기화
-	void Clear();
+	void Clear();        // 빌보드 텍스트 (Vertices/Indices)
+	void ClearScreen();  // 오버레이 텍스트 (ScreenVertices/ScreenIndices)
 
 	// Dynamic VB 업로드 + 드로우콜 1회
 	// Resource — FontBatcher가 사용할 FontAtlas 리소스 (ResourceManager 소유)
@@ -67,6 +68,9 @@ private:
 	// CPU 누적 배열
 	TArray<FTextureVertex> Vertices;
 	TArray<uint32>         Indices;
+
+	TArray<FTextureVertex> ScreenVertices;
+	TArray<uint32>         ScreenIndices;
 
 	// GPU 버퍼 (Dynamic)
 	ID3D11Buffer* VertexBuffer = nullptr;

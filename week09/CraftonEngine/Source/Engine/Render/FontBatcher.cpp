@@ -187,19 +187,19 @@ void FFontBatcher::AddScreenText(const FString& Text,
 		return;
 	}
 
-	const float CharW = 20.0f * Scale;
-	const float CharH = 20.0f * Scale;
-	const float LetterSpacing = - 0.3f * CharW;
+	const float CharW = 25.0f * Scale;
+	const float CharH = 25.0f * Scale;
+	const float LetterSpacing = - 0.5f * CharW;
 
-	const uint32 Base = static_cast<uint32>(Vertices.size());
-	const uint32 IdxBase = static_cast<uint32>(Indices.size());
+	const uint32 Base = static_cast<uint32>(ScreenVertices.size());
+	const uint32 IdxBase = static_cast<uint32>(ScreenIndices.size());
 	const size_t CharCount = Text.size();
 
-	Vertices.resize(Base + CharCount * 4);
-	Indices.resize(IdxBase + CharCount * 6);
+	ScreenVertices.resize(Base + CharCount * 4);
+	ScreenIndices.resize(IdxBase + CharCount * 6);
 
-	FTextureVertex* pV = Vertices.data() + Base;
-	uint32* pI = Indices.data() + IdxBase;
+	FTextureVertex* pV = ScreenVertices.data() + Base;
+	uint32* pI = ScreenIndices.data() + IdxBase;
 
 	const uint8* Ptr = reinterpret_cast<const uint8*>(Text.c_str());
 	const uint8* const End = Ptr + Text.size();
@@ -254,14 +254,20 @@ void FFontBatcher::AddScreenText(const FString& Text,
 		CursorX += CharW + LetterSpacing;
 	}
 
-	Vertices.resize(Base + CharIdx * 4);
-	Indices.resize(IdxBase + CharIdx * 6);
+	ScreenVertices.resize(Base + CharIdx * 4);
+	ScreenIndices.resize(IdxBase + CharIdx * 6);
 }
 
 void FFontBatcher::Clear()
 {
 	Vertices.clear();
 	Indices.clear();
+}
+
+void FFontBatcher::ClearScreen()
+{
+	ScreenVertices.clear();
+	ScreenIndices.clear();
 }
 
 void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FFontResource* Resource)
@@ -314,27 +320,27 @@ void FFontBatcher::FlushScreen(ID3D11DeviceContext* Context, const FFontResource
 {
 	// 오버레이 텍스트는 별도 셰이더 사용
 	if (!Resource || !Resource->IsLoaded()) return;
-	if (Vertices.empty() || !VertexBuffer || !IndexBuffer) return;
+	if (ScreenVertices.empty() || !VertexBuffer || !IndexBuffer) return;
 	// Atlas 그리드가 바뀌었으면 CharInfoMap 재빌드
 	if (CachedColumns != Resource->Columns || CachedRows != Resource->Rows)
 	{
 		BuildCharInfoMap(Resource->Columns, Resource->Rows);
 	}
 	// 버퍼 크기 초과 시 재할당
-	if (Vertices.size() > MaxVertexCount || Indices.size() > MaxIndexCount)
+	if (ScreenVertices.size() > MaxVertexCount || ScreenIndices.size() > MaxIndexCount)
 	{
-		MaxVertexCount = static_cast<uint32>(Vertices.size()) * 2;
-		MaxIndexCount = static_cast<uint32>(Indices.size()) * 2;
+		MaxVertexCount = static_cast<uint32>(ScreenVertices.size()) * 2;
+		MaxIndexCount = static_cast<uint32>(ScreenIndices.size()) * 2;
 		CreateBuffers();
 	}
 	// VB 업로드
 	D3D11_MAPPED_SUBRESOURCE mapped = {};
 	if (FAILED(Context->Map(VertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return;
-	memcpy(mapped.pData, Vertices.data(), sizeof(FTextureVertex) * Vertices.size());
+	memcpy(mapped.pData, ScreenVertices.data(), sizeof(FTextureVertex) * ScreenVertices.size());
 	Context->Unmap(VertexBuffer, 0);
 	// IB 업로드
 	if (FAILED(Context->Map(IndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return;
-	memcpy(mapped.pData, Indices.data(), sizeof(uint32) * Indices.size());
+	memcpy(mapped.pData, ScreenIndices.data(), sizeof(uint32) * ScreenIndices.size());
 	Context->Unmap(IndexBuffer, 0);
 	// 셰이더 바인딩
 	OverlayFontShader.Bind(Context);
@@ -346,7 +352,7 @@ void FFontBatcher::FlushScreen(ID3D11DeviceContext* Context, const FFontResource
 	ID3D11ShaderResourceView* SRV = Resource->SRV;
 	Context->PSSetShaderResources(0, 1, &SRV);
 	Context->PSSetSamplers(0, 1, &SamplerState);
-	Context->DrawIndexed(static_cast<uint32>(Indices.size()), 0, 0);
+	Context->DrawIndexed(static_cast<uint32>(ScreenIndices.size()), 0, 0);
 }
 
 void FFontBatcher::GetCharUV(uint32 Codepoint, FVector2& OutUVMin, FVector2& OutUVMax) const
