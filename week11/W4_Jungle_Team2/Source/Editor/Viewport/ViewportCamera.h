@@ -70,7 +70,7 @@ private:
 	// 기본값은 기존 CameraComponent와 비슷하게 60도
 	float FOV = 3.14159265358979f / 3.0f;
 	float NearPlane = 0.1f;
-	float FarPlane = 1000.0f;
+	float FarPlane = 2000.0f;
 
 	// OrthoWidth 대신 높이를 기준으로 관리
 	float OrthoHeight = 10.0f;
