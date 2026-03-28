@@ -167,7 +167,7 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		}
 		else {
 			float NewFOV = Camera->GetFOV() - ScrollNotches * ZoomSpeed * DeltaTime;
-			Camera->SetFOV(Clamp(NewFOV, 1.f * DEG_TO_RAD, 90.0f * DEG_TO_RAD));
+			Camera->SetFOV(Clamp<float>(NewFOV, DegreesToRadians(1.f), DegreesToRadians(90.0f)));
 		}
 	}
 

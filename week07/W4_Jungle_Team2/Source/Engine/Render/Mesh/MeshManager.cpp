@@ -59,13 +59,13 @@ void FEditorMeshLibrary::CreateRotationGizmo()
 
 		for (int i = 0; i <= Segments; ++i)
 		{
-			float longitude = (float)i / Segments * 2.0f * M_PI;
+			float longitude = (float)i / Segments * 2.0f * PI;
 			float sinLong = sin(longitude);
 			float cosLong = cos(longitude);
 
 			for (int j = 0; j < TubeSegments; ++j)
 			{
-				float latitude = (float)j / TubeSegments * 2.0f * M_PI;
+				float latitude = (float)j / TubeSegments * 2.0f * PI;
 				float sinLat = sin(latitude);
 				float cosLat = cos(latitude);
 
@@ -192,7 +192,7 @@ void FEditorMeshLibrary::CreateTranslationGizmo()
 		// 링 버텍스 생성
 		for (int32 i = 0; i <= segments; ++i)
 		{
-			float angle = (2.0f * M_PI * i) / segments;
+			float angle = (2.0f * PI * i) / segments;
 			float c = cos(angle);
 			float s = sin(angle);
 
