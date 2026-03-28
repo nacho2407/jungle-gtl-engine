@@ -46,7 +46,7 @@ bool UTextRenderComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult
 	FMatrix InvWorldMatrix = OutlineWorldMatrix.GetInverse();
 
 	FRay LocalRay;
-	LocalRay.Origin = InvWorldMatrix.TransformPositionWithW(Ray.Origin);
+	LocalRay.Origin = InvWorldMatrix.TransformPosition(Ray.Origin);
 	LocalRay.Direction = InvWorldMatrix.TransformVector(Ray.Direction).Normalized();
 
 
@@ -61,10 +61,10 @@ bool UTextRenderComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult
 	if (LocalHitPos.Y >= -0.5f && LocalHitPos.Y <= 0.5f &&
 		LocalHitPos.Z >= -0.5f && LocalHitPos.Z <= 0.5f)
 	{
-		FVector WorldHitPos = OutlineWorldMatrix.TransformPositionWithW(LocalHitPos);
+		FVector WorldHitPos = OutlineWorldMatrix.TransformPosition(LocalHitPos);
 		OutHitResult.bHit = true;
 		OutHitResult.HitComponent = this;
-		OutHitResult.Distance = (WorldHitPos - Ray.Origin).Length();
+		OutHitResult.Distance = (WorldHitPos - Ray.Origin).Size();
 		OutHitResult.Location = WorldHitPos;
 		OutHitResult.Normal = GetForwardVector();
 		OutHitResult.FaceIndex = 0;

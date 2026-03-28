@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Engine/Runtime/Engine.h"
 
@@ -25,7 +25,8 @@ public:
 
 	// Editor-specific API
 	UGizmoComponent* GetGizmo() const { return SelectionManager.GetGizmo(); }
-	UCameraComponent* GetCamera() const { return ViewportClient.GetCamera(); }
+	FViewportCamera* GetCamera() { return ViewportClient.GetCamera(); }
+	const FViewportCamera* GetCamera() const { return ViewportClient.GetCamera(); }
 
 	void ClearScene();
 	void ResetViewport();
