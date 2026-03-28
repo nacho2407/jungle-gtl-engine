@@ -4,7 +4,6 @@
 #include "Editor/UI/EditorControlWidget.h"
 #include "Editor/UI/EditorPropertyWidget.h"
 #include "Editor/UI/EditorSceneWidget.h"
-#include "Editor/UI/EditorViewportOverlayWidget.h"
 #include "Editor/UI/EditorStatWidget.h"
 
 class FRenderer;
@@ -26,6 +25,5 @@ private:
 	FEditorControlWidget ControlWidget;
 	FEditorPropertyWidget PropertyWidget;
 	FEditorSceneWidget SceneWidget;
-	FEditorViewportOverlayWidget ViewportOverlayWidget;
 	FEditorStatWidget StatWidget;
 };

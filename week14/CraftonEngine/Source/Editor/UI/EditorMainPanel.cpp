@@ -31,7 +31,6 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	ControlWidget.Initialize(InEditorEngine);
 	PropertyWidget.Initialize(InEditorEngine);
 	SceneWidget.Initialize(InEditorEngine);
-	ViewportOverlayWidget.Initialize(InEditorEngine);
 	StatWidget.Initialize(InEditorEngine);
 }
 
@@ -55,13 +54,13 @@ void FEditorMainPanel::Render(float DeltaTime)
 	{
 		EditorEngine->RenderViewportUI(DeltaTime);
 	}
-
 	ConsoleWidget.Render(DeltaTime);
 	ControlWidget.Render(DeltaTime);
-	PropertyWidget.Render(DeltaTime);
 	SceneWidget.Render(DeltaTime);
-	ViewportOverlayWidget.Render(DeltaTime);
+	PropertyWidget.Render(DeltaTime);
 	StatWidget.Render(DeltaTime);
+	// 뷰포트 렌더링은 EditorEngine이 담당 (SSplitter 레이아웃 + ImGui::Image)
+
 
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
