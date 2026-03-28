@@ -20,7 +20,6 @@ struct FObjInfo
 
 	FString ObjectName; // object name (optional)
 
-	// .mtl File Path
 	FString MaterialLibraryFilePath;
 	TArray<FStaticMeshSection> Sections;
 };
@@ -42,7 +41,6 @@ struct FObjMaterialInfo
 // OBJ/MTL 파싱 + Raw→Cooked 변환
 struct FObjImporter
 {
-	// Assume that only one object is defined in the .obj file
 	static bool Import(const FString& ObjFilePath, FStaticMesh& OutMesh, TArray<FStaticMaterial>& OutMaterials);
 private:
 	static bool ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo);
