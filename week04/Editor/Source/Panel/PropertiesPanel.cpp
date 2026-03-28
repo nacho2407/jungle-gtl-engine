@@ -83,6 +83,41 @@ namespace
                Component->ShouldShowInDetailsTree();
     }
 
+    /**
+     * 액터 내에서 중복되지 않는 고유한 컴포넌트 이름을 생성합니다.
+     * 기본적으로 "BaseName 1", "BaseName 2"와 같은 형식으로 숫자를 증가시키며 확인합니다.
+     * 
+     * @param Actor 컴포넌트를 소유한 액터입니다.
+     * @param BaseName 기본이 되는 이름 문자열입니다.
+     * @return 중복되지 않는 새로운 고유 이름입니다.
+     */
+    FString GenerateUniqueComponentName(AActor* Actor, const FString& BaseName)
+    {
+        if (Actor == nullptr)
+            return BaseName;
+
+        const auto& Components = Actor->GetOwnedComponents();
+        int32       Suffix = 1;
+        FString     FinalName = BaseName + " " + std::to_string(Suffix);
+
+        bool bUnique = false;
+        while (!bUnique)
+        {
+            bUnique = true;
+            for (auto* Comp : Components)
+            {
+                if (Comp && Comp->Name.ToFString() == FinalName)
+                {
+                    Suffix++;
+                    FinalName = BaseName + " " + std::to_string(Suffix);
+                    bUnique = false;
+                    break;
+                }
+            }
+        }
+        return FinalName;
+    }
+
     void DrawObjectSummaryLine(const char* Prefix, const UObject* Object)
     {
         if (Object == nullptr)
@@ -516,6 +551,20 @@ void FPropertiesPanel::DrawSelectionSummary(AActor*                             
         DrawObjectSummaryLine("Component", Comp);
 }
 
+void FPropertiesPanel::ResetAssetPathEditState() { AssetPathEditBuffers.clear(); }
+
+void FPropertiesPanel::StartRenaming(Engine::Component::USceneComponent* InComponent) const
+{
+    if (InComponent == nullptr)
+        return;
+    RenamingComponent = InComponent;
+    FString CurrentName = InComponent->Name.ToFString();
+    memset(RenameBuffer, 0, sizeof(RenameBuffer));
+    memcpy(RenameBuffer, CurrentName.c_str(),
+           std::min(sizeof(RenameBuffer) - 1, CurrentName.size()));
+    bFocusRenameInput = true;
+}
+
 void FPropertiesPanel::DrawComponentHierarchy(AActor*                             Actor,
                                               Engine::Component::USceneComponent* TargetComp) const
 {
@@ -543,7 +592,9 @@ void FPropertiesPanel::DrawComponentHierarchy(AActor*                           
                     new ::Engine::Component::UStaticMeshComponent();
                 if (NewComp != nullptr)
                 {
-                    NewComp->Name = "StaticMeshComponent";
+                    // 고유 이름 생성 (예: StaticMeshComponent 1)
+                    FString UniqueName = GenerateUniqueComponentName(Actor, "StaticMeshComponent");
+                    NewComp->Name = UniqueName;
 
                     // AActor::AddOwnedComponent 내부에서 자동으로 Root에 부착 처리됨
                     Actor->AddOwnedComponent(NewComp);
@@ -554,6 +605,9 @@ void FPropertiesPanel::DrawComponentHierarchy(AActor*                           
                         GetContext()->Editor->SetSelectedObject(NewComp);
                         GetContext()->Editor->MarkSceneDirty();
                     }
+
+                    // 생성 즉시 이름 변경 모드 진입
+                    StartRenaming(NewComp);
                 }
             }
         }
@@ -577,6 +631,19 @@ void FPropertiesPanel::DrawComponentNode(AActor* Actor, Engine::Component::UScen
     if (!IsComponentOwnedByActor(Actor, Comp) || Comp == nullptr ||
         !Comp->ShouldShowInDetailsTree())
         return;
+
+    ImGui::PushID(Comp);
+
+    // 이름 변경 트리거 감지 (선택된 상태에서 F2 또는 이미 선택된 항목 다시 클릭)
+    if (TargetComp == Comp)
+    {
+        if (ImGui::IsKeyPressed(ImGuiKey_F2))
+        {
+            StartRenaming(Comp);
+        }
+    }
+
+    bool bOpen = false;
     bool bHasChildren = false;
     for (auto* Child : Comp->GetAttachChildren())
     {
@@ -586,42 +653,110 @@ void FPropertiesPanel::DrawComponentNode(AActor* Actor, Engine::Component::UScen
             break;
         }
     }
-    ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_OpenOnArrow |
-                               ImGuiTreeNodeFlags_OpenOnDoubleClick |
-                               ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
-    if (TargetComp == Comp)
-        Flags |= ImGuiTreeNodeFlags_Selected;
-    if (!bHasChildren)
-        Flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-    FString LabelStr = GetBaseObjectDisplayName(Comp);
-    ImGui::PushID(Comp);
-    if (IsUnknownObject(Comp))
-        ImGui::PushStyleColor(ImGuiCol_Text, UnknownItemColor);
-    bool bOpen = ImGui::TreeNodeEx("##Node", Flags, "%s", LabelStr.c_str());
-    if (IsUnknownObject(Comp))
-        ImGui::PopStyleColor();
-    if (ImGui::BeginPopupContextItem("CompCtx"))
+
+    // 이름 변경 모드 렌더링
+    if (RenamingComponent == Comp)
     {
-        if (ImGui::MenuItem("Remove", nullptr, false, Comp != Actor->GetRootComponent()))
+        ImGui::AlignTextToFramePadding();
+        if (bHasChildren)
         {
-            Actor->RemoveOwnedComponent(Comp);
+            ImGui::TreeNodeEx("##Dummy",
+                              ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
+                                  ImGuiTreeNodeFlags_SpanAvailWidth,
+                              "");
+            ImGui::SameLine();
+        }
+        else
+        {
+            ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
+        }
+
+        if (bFocusRenameInput)
+        {
+            ImGui::SetKeyboardFocusHere();
+            bFocusRenameInput = false;
+        }
+
+        ImGui::SetNextItemWidth(-1.0f);
+        if (ImGui::InputText("##RenameInput", RenameBuffer, sizeof(RenameBuffer),
+                             ImGuiInputTextFlags_EnterReturnsTrue |
+                                 ImGuiInputTextFlags_AutoSelectAll))
+        {
+            Comp->Name = RenameBuffer;
+            RenamingComponent = nullptr;
             if (GetContext() && GetContext()->Editor)
-            {
-                GetContext()->Editor->SetSelectedObject(Actor);
                 GetContext()->Editor->MarkSceneDirty();
+        }
+
+        if (ImGui::IsItemDeactivated() &&
+            !ImGui::IsItemDeactivatedAfterEdit()) // 포커스 잃었을 때 (수정 없이)
+        {
+            RenamingComponent = nullptr;
+        }
+    }
+    else
+    {
+        ImGuiTreeNodeFlags Flags =
+            ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick |
+            ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
+        if (TargetComp == Comp)
+            Flags |= ImGuiTreeNodeFlags_Selected;
+        if (!bHasChildren)
+            Flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+        FString LabelStr = GetBaseObjectDisplayName(Comp);
+        if (IsUnknownObject(Comp))
+            ImGui::PushStyleColor(ImGuiCol_Text, UnknownItemColor);
+
+        bOpen = ImGui::TreeNodeEx("##Node", Flags, "%s", LabelStr.c_str());
+
+        if (IsUnknownObject(Comp))
+            ImGui::PopStyleColor();
+
+        // 우클릭 컨텍스트 메뉴
+        if (ImGui::BeginPopupContextItem("CompCtx"))
+        {
+            if (ImGui::MenuItem("Rename", "F2"))
+            {
+                StartRenaming(Comp);
+            }
+            if (ImGui::MenuItem("Remove", "Delete", false, Comp != Actor->GetRootComponent()))
+            {
+                Actor->RemoveOwnedComponent(Comp);
+                if (GetContext() && GetContext()->Editor)
+                {
+                    GetContext()->Editor->SetSelectedObject(Actor);
+                    GetContext()->Editor->MarkSceneDirty();
+                }
+            }
+            ImGui::EndPopup();
+        }
+
+        // 클릭 이벤트 처리 (선택 및 느린 클릭 이름 변경)
+        if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+        {
+            if (TargetComp == Comp) // 이미 선택된 항목을 클릭했을 때 (느린 클릭)
+            {
+                // 더블 클릭이 아닐 때만 이름 변경 시도 (더블 클릭은 트리 노드 열기/닫기용)
+                if (!ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+                {
+                    StartRenaming(Comp);
+                }
+            }
+            else if (GetContext() && GetContext()->Editor)
+            {
+                GetContext()->Editor->SetSelectedObject(Comp);
             }
         }
-        ImGui::EndPopup();
     }
-    if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen() && GetContext() &&
-        GetContext()->Editor)
-        GetContext()->Editor->SetSelectedObject(Comp);
+
     if (bHasChildren && bOpen)
     {
         for (auto* Child : Comp->GetAttachChildren())
             DrawComponentNode(Actor, Child, TargetComp);
         ImGui::TreePop();
     }
+
     ImGui::PopID();
 }
 
@@ -702,5 +837,3 @@ void FPropertiesPanel::DrawComponentPropertyEditor(Engine::Component::USceneComp
     if (bMod && GetContext() && GetContext()->Editor)
         GetContext()->Editor->MarkSceneDirty();
 }
-
-void FPropertiesPanel::ResetAssetPathEditState() { AssetPathEditBuffers.clear(); }
