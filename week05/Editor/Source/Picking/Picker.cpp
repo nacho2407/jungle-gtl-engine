@@ -208,9 +208,9 @@ AActor* CPicker::PickActor(UScene* Scene, int32 ScreenX, int32 ScreenY,
 			else if (bIsStaticMesh)
 			{
 				UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(Component);
-				if (!SMC->GetStaticMesh() || !SMC->GetStaticMesh()->GetRenderData()) continue;
+				if (!SMC->GetRenderMesh()) continue;
 
-				FRenderMesh* Mesh = SMC->GetStaticMesh()->GetRenderData();
+				FRenderMesh* Mesh = SMC->GetRenderMesh();
 				if (Mesh->Vertices.empty() || Mesh->Indices.empty()) continue;
 
 				const FMatrix World = SMC->GetWorldTransform();

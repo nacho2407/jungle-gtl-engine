@@ -21,6 +21,11 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 	}
 }
 
+FRenderMesh* UStaticMeshComponent::GetRenderMesh() const
+{
+	 return StaticMesh ? StaticMesh->GetRenderData() : nullptr;
+}
+
 FBoxSphereBounds UStaticMeshComponent::GetLocalBounds() const
 {
 	if (StaticMesh)

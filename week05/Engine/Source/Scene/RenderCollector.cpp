@@ -32,10 +32,10 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 		{
 			UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(Comp);
 
-			if (SMC->GetStaticMesh() && SMC->GetStaticMesh()->GetRenderData())
+			if (SMC->GetRenderMesh())
 			{
 				FRenderCommand Command;
-				Command.RenderMesh = SMC->GetStaticMesh()->GetRenderData();
+				Command.RenderMesh = SMC->GetRenderMesh();
 				Command.WorldMatrix = SMC->GetWorldTransform();
 				Command.Material = SMC->GetMaterial(0);
 
@@ -169,7 +169,7 @@ void FSceneRenderCollector::FrustrumCull(const TArray<AActor*>& Actors, const FF
 			{
 				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives)) continue;
 				UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(Comp);
-				if (!SMC->GetStaticMesh() || !SMC->GetStaticMesh()->GetRenderData()) continue;
+				if (!SMC->GetRenderMesh()) continue;
 
 				Bounds = SMC->GetWorldBounds(); // UMeshComponent나 UNewPrimitiveComponent에 있는 함수 호출
 			}

@@ -29,6 +29,8 @@ public:
 	bool ShouldDrawDebugBounds() const { return bDrawDebugBounds; }
 	void SetDrawDebugBounds(bool bEnable) { bDrawDebugBounds = bEnable; }
 
+	virtual FRenderMesh* GetRenderMesh() const { return nullptr; }
+
 protected:
 	FBoxSphereBounds Bounds;
 	bool bDrawDebugBounds = true;

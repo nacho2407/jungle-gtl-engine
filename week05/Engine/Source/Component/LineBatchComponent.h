@@ -4,8 +4,7 @@
 #include "Math/Vector.h"
 #include "Math/Vector4.h"
 #include "PrimitiveLineBatch.h"
-
-struct FDynamicMesh;
+#include "Renderer/MeshData.h"
 
 class ULineBatchComponent : public UNewPrimitiveComponent
 {
@@ -18,6 +17,9 @@ public:
 	void DrawWireSphere(FVector InCenter, float InRadius, FVector4 InColor);
 	void Clear();
 
+	virtual FRenderMesh* GetRenderMesh() const override { return LineMesh.get(); }
+	virtual FBoxSphereBounds GetLocalBounds() const override;
+
 private:
-	FDynamicMesh* LineMesh = nullptr;
+	std::shared_ptr<FDynamicMesh> LineMesh;
 };
