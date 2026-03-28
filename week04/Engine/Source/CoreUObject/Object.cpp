@@ -3,6 +3,7 @@
 #include "Object.h"
 
 TArray<UObject*> GUObjectArray;
+TArray<uint32>   GFreeIndices;
 
 namespace
 {
@@ -43,8 +44,18 @@ namespace
 UObject::UObject()
 {
 	UUID = UEngineStatics::GenUUID();
-	InternalIndex = static_cast<uint32>(GUObjectArray.size());
-	GUObjectArray.push_back(this);
+
+    if (!GFreeIndices.empty())
+    {
+        InternalIndex = GFreeIndices.back();
+        GFreeIndices.pop_back();
+        GUObjectArray[InternalIndex] = this;
+    }
+    else
+    {
+        InternalIndex = static_cast<uint32>(GUObjectArray.size());
+        GUObjectArray.push_back(this);
+    }
 
     const FString ObjectName = ResolveObjectName(this);
     UE_LOG(UObject, ELogVerbosity::Log, "Created %s (UUID=%u, Name=%s, Address=%p)",
@@ -60,6 +71,7 @@ UObject::~UObject()
 	if (InternalIndex < GUObjectArray.size() && GUObjectArray[InternalIndex] == this)
 	{
 		GUObjectArray[InternalIndex] = nullptr;
+        GFreeIndices.push_back(InternalIndex);
 	}
 
     GetAllocatedObjectTypeNames().erase(this);
