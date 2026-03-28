@@ -7,29 +7,28 @@
 #include "Types/CoreTypes.h"
 #include "BlitRenderer.h"
 
-class CEditorUI;
-class CWindow;
+class FEditorUI;
 class FFrustum;
 struct FRenderCommandQueue;
 class FEditorEngine;
 
-class CEditorViewportClient : public IViewportClient
+class FEditorViewportClient : public IViewportClient
 {
 public:
-	CEditorViewportClient(FEditorEngine& InEditorEngine, CEditorUI& InEditorUI, CWindow* InMainWindow);
+	FEditorViewportClient(FEditorEngine& InEditorEngine, CEditorUI& InEditorUI, CWindow* InMainWindow);
 
-	void Attach(CCore* Core, CRenderer* Renderer) override;
-	void Detach(CCore* Core, CRenderer* Renderer) override;
-	void Tick(CCore* Core, float DeltaTime) override;
-	void HandleMessage(CCore* Core, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam) override;
+	void Attach(FEngine* Engine, FRenderer* Renderer) override;
+	void Detach(FEngine* Engine, FRenderer* Renderer) override;
+	void Tick(FEngine* Engine, float DeltaTime) override;
+	void HandleMessage(FEngine* Engine, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam) override;
 	EGizmoMode GetGizmoMode() const { return Gizmo.GetMode(); }
-	void SetGizmoMode(EGizmoMode InMode) { Gizmo.SetMode(InMode); }
-	ERenderMode GetRenderMode() { return RenderMode; }
+	void SetGizmoMode(EGizmoMode InMode) const { Gizmo.SetMode(InMode); }
+	ERenderMode GetRenderMode() const { return RenderMode; }
 	void SetRenderMode(ERenderMode InRenderMode) { RenderMode = InRenderMode; }
 
 	void HandleFileDoubleClick(const FString& FilePath) override;
 	void HandleFileDropOnViewport(const FString& FilePath) override;
-	void BuildRenderCommands(CCore* Core, UScene* Scene,
+	void BuildRenderCommands(FEngine* Engine, UScene* Scene,
 		const FFrustum& Frustum, FRenderCommandQueue& OutQueue) override;
 	float GetGridSize() const { return GridSize; }
 	void SetGridSize(float InSize);
@@ -42,12 +41,13 @@ public:
 	void Render(CCore* Core, CRenderer* Renderer);
 
 private:
+	FEditorUI& EditorUI;
+	FPicker Picker;
+	mutable FGizmo Gizmo;
 	void InitializeEntries();
 
-	CEditorUI& EditorUI;
 	CWindow* MainWindow = nullptr;
 	CPicker Picker;
-	mutable CGizmo Gizmo;
 	TArray<FViewportEntry> Entries;
 	FEditorEngine& EditorEngine;
 
@@ -65,7 +65,7 @@ private:
 	// 그리드 렌더링용
 	std::unique_ptr<FMeshData> GridMesh;
 	std::shared_ptr<FMaterial> GridMaterial;
-	void CreateGridResource(CRenderer* Renderer);
+	void CreateGridResource(FRenderer* Renderer);
 	float GridSize = 10.0f;
 	float LineThickness = 1.0f;
 	bool bShowGrid = true;

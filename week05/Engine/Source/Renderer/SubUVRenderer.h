@@ -9,19 +9,19 @@ class FVertexShader;
 class FPixelShader;
 class FMaterial;
 struct FMeshData;
-class CRenderer;
+class FRenderer;
 
 /**
  * 스프라이트 시트 애니메이션(SubUV)을 위한 메시 생성 및 머티리얼을 관리함
  * 렌더러가 직접 그리는 대신 메시와 머티리얼 데이터를 생성하여 통합 패스에서 처리함
  */
-class ENGINE_API CSubUVRenderer
+class ENGINE_API FSubUVRenderer
 {
 public:
-	CSubUVRenderer() = default;
-	~CSubUVRenderer();
+	FSubUVRenderer() = default;
+	~FSubUVRenderer();
 
-	bool Initialize(CRenderer* InRenderer, const std::wstring& TexturePath);
+	bool Initialize(FRenderer* InRenderer, const std::wstring& TexturePath);
 	void Release();
 
 	/** SubUV 전용 머티리얼 반환 */

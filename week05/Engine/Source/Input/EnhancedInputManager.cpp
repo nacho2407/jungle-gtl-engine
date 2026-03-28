@@ -6,7 +6,7 @@
 
 #include <algorithm>
 
-void CEnhancedInputManager::AddMappingContext(FInputMappingContext* Context, int32 Priority)
+void FEnhancedInputManager::AddMappingContext(FInputMappingContext* Context, int32 Priority)
 {
 	MappingContexts.push_back({ Context, Priority });
 	std::sort(MappingContexts.begin(), MappingContexts.end(),
@@ -16,7 +16,7 @@ void CEnhancedInputManager::AddMappingContext(FInputMappingContext* Context, int
 	});
 }
 
-void CEnhancedInputManager::RemoveMappingContext(FInputMappingContext* Context)
+void FEnhancedInputManager::RemoveMappingContext(FInputMappingContext* Context)
 {
 	MappingContexts.erase(
 		std::remove_if(MappingContexts.begin(), MappingContexts.end(),
@@ -24,23 +24,23 @@ void CEnhancedInputManager::RemoveMappingContext(FInputMappingContext* Context)
 		MappingContexts.end());
 }
 
-void CEnhancedInputManager::ClearAllMappingContexts()
+void FEnhancedInputManager::ClearAllMappingContexts()
 {
 	MappingContexts.clear();
 }
 
-void CEnhancedInputManager::BindAction(FInputAction* Action, ETriggerEvent TriggerEvent, FInputActionCallback Callback)
+void FEnhancedInputManager::BindAction(FInputAction* Action, ETriggerEvent TriggerEvent, FInputActionCallback Callback)
 {
 	Bindings.push_back({ Action, TriggerEvent, std::move(Callback) });
 }
 
-void CEnhancedInputManager::ClearBindings()
+void FEnhancedInputManager::ClearBindings()
 {
 	Bindings.clear();
 }
 
 
-FInputActionValue CEnhancedInputManager::GetRawActionValue(CInputManager* Input, int32 Key)
+FInputActionValue FEnhancedInputManager::GetRawActionValue(FInputManager* Input, int32 Key)
 {
 	if (Key == static_cast<int32>(EInputKey::MouseX))
 		return FInputActionValue(Input->GetMouseDeltaX());
@@ -49,7 +49,7 @@ FInputActionValue CEnhancedInputManager::GetRawActionValue(CInputManager* Input,
 	return FInputActionValue(Input->IsKeyDown(Key) ? 1.0f : 0.0f);
 }
 
-void CEnhancedInputManager::ProcessInput(CInputManager* RawInput, float DeltaTime)
+void FEnhancedInputManager::ProcessInput(FInputManager* RawInput, float DeltaTime)
 {
 	TMap<FInputAction*, FInputActionValue> ActionValues;
 	TMap<FInputAction*, ETriggerState> NewTriggerStates;

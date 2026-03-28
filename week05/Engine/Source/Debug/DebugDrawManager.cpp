@@ -23,7 +23,7 @@ void FDebugDrawManager::DrawWorldAxis(float Length)
 	bDrawWorldAxis = true;
 }
 
-void FDebugDrawManager::Flush(CRenderer* Renderer, const FShowFlags& ShowFlags, UWorld* World)
+void FDebugDrawManager::Flush(FRenderer* Renderer, const FShowFlags& ShowFlags, UWorld* World)
 {
 
 	if (!Renderer) return;
@@ -70,7 +70,7 @@ void FDebugDrawManager::Clear()
 	bDrawWorldAxis = false;
 }
 
-void FDebugDrawManager::DrawAllCollisionBounds(CRenderer* Renderer, UWorld* World)
+void FDebugDrawManager::DrawAllCollisionBounds(FRenderer* Renderer, UWorld* World)
 {
 	TArray<AActor*> AllActors = World->GetAllActors();
 	for (AActor* Actor : AllActors)

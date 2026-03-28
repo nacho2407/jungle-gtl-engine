@@ -4,7 +4,7 @@
 
 class AActor;
 class UScene;
-class CCamera;
+class FCamera;
 class UWorld;
 
 struct FRay
@@ -13,11 +13,11 @@ struct FRay
     FVector Direction;
 };
 
-class CPicker
+class FPicker
 {
 public:
     // 스크린 좌표 → 월드 레이 변환 (Deprojection)
-    FRay ScreenToRay(const CCamera* Camera, int32 ScreenX, int32 ScreenY, int32 ScreenWidth, int32 ScreenHeight) const;
+    FRay ScreenToRay(const FCamera* Camera, int32 ScreenX, int32 ScreenY, int32 ScreenWidth, int32 ScreenHeight) const;
 
 	FRay ScreenToRay(const FViewportEntry& Entry, int32 ScreenX, int32 ScreenY) const;
 

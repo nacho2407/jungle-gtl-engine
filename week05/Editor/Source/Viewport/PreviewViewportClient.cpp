@@ -1,8 +1,7 @@
 #include "PreviewViewportClient.h"
 
 #include "UI/EditorUI.h"
-#include "Core/Core.h"
-#include "Platform/Windows/Window.h"
+#include "EditorEngine.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderCommand.h"
 #include "Component/CameraComponent.h"
@@ -10,33 +9,32 @@
 #include "World/World.h"
 #include "imgui.h"
 
-CPreviewViewportClient::CPreviewViewportClient(CEditorUI& InEditorUI, CWindow* InMainWindow, FString InPreviewContextName)
+FPreviewViewportClient::FPreviewViewportClient(FEditorUI& InEditorUI, FString InPreviewContextName)
 	: EditorUI(InEditorUI)
-	, MainWindow(InMainWindow)
 	, PreviewContextName(std::move(InPreviewContextName))
 {
 }
 
-void CPreviewViewportClient::Attach(CCore* Core, CRenderer* Renderer)
+void FPreviewViewportClient::Attach(FEngine* Engine, FRenderer* Renderer)
 {
-	if (!Core || !Renderer || !MainWindow)
+	FEditorEngine* EditorEngine = static_cast<FEditorEngine*>(Engine);
+	if (!EditorEngine || !Renderer)
 	{
 		return;
 	}
 
-	EditorUI.Initialize(Core);
-	EditorUI.SetupWindow(MainWindow);
+	EditorUI.Initialize(EditorEngine);
 	EditorUI.AttachToRenderer(Renderer);
 }
 
-void CPreviewViewportClient::Detach(CCore* Core, CRenderer* Renderer)
+void FPreviewViewportClient::Detach(FEngine* Engine, FRenderer* Renderer)
 {
 	EditorUI.DetachFromRenderer(Renderer);
 }
 
-void CPreviewViewportClient::Tick(CCore* Core, float DeltaTime)
+void FPreviewViewportClient::Tick(FEngine* Engine, float DeltaTime)
 {
-	if (!Core)
+	if (!Engine)
 	{
 		return;
 	}
@@ -55,10 +53,10 @@ void CPreviewViewportClient::Tick(CCore* Core, float DeltaTime)
 		return;
 	}
 
-	IViewportClient::Tick(Core, DeltaTime);
+	IViewportClient::Tick(Engine, DeltaTime);
 }
 
-void CPreviewViewportClient::Render(CCore* Core, CRenderer* Renderer)
+void FPreviewViewportClient::Render(CCore* Core, CRenderer* Renderer)
 {
 	if (!Core || !Renderer)
 	{
@@ -90,18 +88,19 @@ void CPreviewViewportClient::Render(CCore* Core, CRenderer* Renderer)
 	EditorUI.Render();
 }
 
-UScene* CPreviewViewportClient::ResolveScene(CCore* Core) const
+UScene* FPreviewViewportClient::ResolveScene(FEngine* Engine) const
 {
-	if (!Core)
+	FEditorEngine* EditorEngine = static_cast<FEditorEngine*>(Engine);
+	if (!EditorEngine)
 	{
 		return nullptr;
 	}
 
-	if (UScene* PreviewScene = Core->GetSceneManager()->GetPreviewScene(PreviewContextName))
+	if (UScene* PreviewScene = EditorEngine->GetPreviewScene(PreviewContextName))
 	{
 		return PreviewScene;
 	}
 
-	return Core->GetActiveScene();
+	return EditorEngine->GetActiveScene();
 }
 

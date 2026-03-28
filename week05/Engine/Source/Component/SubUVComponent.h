@@ -6,7 +6,7 @@ class ENGINE_API USubUVComponent : public UPrimitiveComponent
 public:
 	DECLARE_RTTI(USubUVComponent, UPrimitiveComponent)
 
-	void Initialize();
+	void PostConstruct() override;
 
 	virtual FBoxSphereBounds GetWorldBounds() const override;
 

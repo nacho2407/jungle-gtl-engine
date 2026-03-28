@@ -6,12 +6,12 @@
 #include "Input/InputModifier.h"
 #include "Input/InputMappingContext.h"
 #include "Camera/Camera.h"
-CEditorViewportController::~CEditorViewportController()
+FEditorViewportController::~FEditorViewportController()
 {
 	Cleanup();
 }
 
-void CEditorViewportController::Cleanup()
+void FEditorViewportController::Cleanup()
 {
 	if (EnhancedInput && CameraContext)
 		EnhancedInput->RemoveMappingContext(CameraContext);
@@ -20,7 +20,7 @@ void CEditorViewportController::Cleanup()
 	EnhancedInput = nullptr;
 }
 
-void CEditorViewportController::Initialize(UCameraComponent* InCameraComp, CInputManager* InInput, CEnhancedInputManager* InEnhancedInput)
+void FEditorViewportController::Initialize(UCameraComponent* InCameraComp, FInputManager* InInput, FEnhancedInputManager* InEnhancedInput)
 {
 	CameraComponent = InCameraComp;
 	InputManager = InInput;
@@ -28,13 +28,13 @@ void CEditorViewportController::Initialize(UCameraComponent* InCameraComp, CInpu
 	SetupInputBindings();
 }
 
-void CEditorViewportController::Tick(float DeltaTime)
+void FEditorViewportController::Tick(float DeltaTime)
 {
 	CurrentDeltaTime = DeltaTime;
 }
 
 
-void CEditorViewportController::SetupInputBindings()
+void FEditorViewportController::SetupInputBindings()
 {
 	CameraContext = new FInputMappingContext();
 
@@ -69,31 +69,31 @@ void CEditorViewportController::SetupInputBindings()
 
 	EnhancedInput->BindAction(&MoveForwardAction, ETriggerEvent::Triggered,
 		[this](const FInputActionValue& Value) {
-		if (InputManager && InputManager->IsMouseButtonDown(CInputManager::MOUSE_RIGHT))
+		if (InputManager && InputManager->IsMouseButtonDown(FInputManager::MOUSE_RIGHT))
 			CameraComponent->MoveForward(Value.Get() * CurrentDeltaTime);
 	});
 
 	EnhancedInput->BindAction(&MoveRightAction, ETriggerEvent::Triggered,
 		[this](const FInputActionValue& Value) {
-		if (InputManager && InputManager->IsMouseButtonDown(CInputManager::MOUSE_RIGHT))
+		if (InputManager && InputManager->IsMouseButtonDown(FInputManager::MOUSE_RIGHT))
 			CameraComponent->MoveRight(Value.Get() * CurrentDeltaTime);
 	});
 
 	EnhancedInput->BindAction(&MoveUpAction, ETriggerEvent::Triggered,
 		[this](const FInputActionValue& Value) {
-		if (InputManager && InputManager->IsMouseButtonDown(CInputManager::MOUSE_RIGHT))
+		if (InputManager && InputManager->IsMouseButtonDown(FInputManager::MOUSE_RIGHT))
 			CameraComponent->MoveUp(Value.Get() * CurrentDeltaTime);
 	});
 
 	EnhancedInput->BindAction(&LookXAction, ETriggerEvent::Triggered,
 		[this](const FInputActionValue& Value) {
-		if (InputManager && InputManager->IsMouseButtonDown(CInputManager::MOUSE_RIGHT))
+		if (InputManager && InputManager->IsMouseButtonDown(FInputManager::MOUSE_RIGHT))
 			CameraComponent->Rotate(Value.Get() * CameraComponent->GetCamera()->GetMouseSensitivity(), 0.0f);
 	});
 
 	EnhancedInput->BindAction(&LookYAction, ETriggerEvent::Triggered,
 		[this](const FInputActionValue& Value) {
-		if (InputManager && InputManager->IsMouseButtonDown(CInputManager::MOUSE_RIGHT))
+		if (InputManager && InputManager->IsMouseButtonDown(FInputManager::MOUSE_RIGHT))
 			CameraComponent->Rotate(0.0f, -Value.Get() * CameraComponent->GetCamera()->GetMouseSensitivity());
 	});
 

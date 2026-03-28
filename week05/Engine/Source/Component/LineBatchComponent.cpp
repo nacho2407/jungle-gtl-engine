@@ -5,20 +5,20 @@
 
 IMPLEMENT_RTTI(ULineBatchComponent, UPrimitiveComponent)
 
-void ULineBatchComponent::Initialize()
+void ULineBatchComponent::PostConstruct()
 {
-	Primitive = std::make_shared<CPrimitiveLineBatch>();
+	Primitive = std::make_shared<FPrimitiveLineBatch>();
 }
 
 void ULineBatchComponent::DrawLine(FVector InStart, FVector InEnd, FVector4 InColor)
 {
-	auto primitive = static_pointer_cast<CPrimitiveLineBatch>(Primitive);
+	auto primitive = static_pointer_cast<FPrimitiveLineBatch>(Primitive);
 	primitive->AddLine(InStart, InEnd, InColor);
 }
 
 void ULineBatchComponent::DrawWireCube(FVector InCenter, FQuat InRotation, FVector InScale, FVector4 InColor)
 {
-	auto LineBatch = static_pointer_cast<CPrimitiveLineBatch>(Primitive);
+	auto LineBatch = static_pointer_cast<FPrimitiveLineBatch>(Primitive);
 	const FVector BaseCube[12][2] = {
 		{{-0.5f, -0.5f, 0.5f}, {0.5f, -0.5f, 0.5f}},  // 왼쪽 위
 		{{-0.5f, -0.5f, -0.5f}, {0.5f, -0.5f, -0.5f}},  // 왼쪽 아래
@@ -43,7 +43,7 @@ void ULineBatchComponent::DrawWireCube(FVector InCenter, FQuat InRotation, FVect
 
 void ULineBatchComponent::DrawWireSphere(FVector InCenter, float InRadius, FVector4 InColor)
 {
-	auto LineBatch = static_pointer_cast<CPrimitiveLineBatch>(Primitive);
+	auto LineBatch = static_pointer_cast<FPrimitiveLineBatch>(Primitive);
 	if (!LineBatch) return;
 
 	const int32 Segments = 16; // 선의 개수 (정밀도)
@@ -84,6 +84,6 @@ void ULineBatchComponent::DrawWireSphere(FVector InCenter, float InRadius, FVect
 
 void ULineBatchComponent::Clear()
 {
-	auto primitive = static_pointer_cast<CPrimitiveLineBatch>(Primitive);
+	auto primitive = static_pointer_cast<FPrimitiveLineBatch>(Primitive);
 	primitive->ClearVertices();
 }

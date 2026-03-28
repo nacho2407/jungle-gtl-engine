@@ -4,10 +4,10 @@
 
 IMPLEMENT_RTTI(USkyComponent, UPrimitiveComponent)
 
-void USkyComponent::Initialize()
+void USkyComponent::PostConstruct()
 {
 	bDrawDebugBounds = false;
-	Primitive = std::make_unique<CPrimitiveSky>();
+	Primitive = std::make_unique<FPrimitiveSky>();
 }
 
 FBoxSphereBounds USkyComponent::GetWorldBounds() const
