@@ -18,18 +18,6 @@ public:
 	FVector InitViewPos = FVector(10, 0, 5);
 	FVector InitLookAt = FVector(0, 0, 0);
 
-	// View
-	EViewMode ViewMode = EViewMode::Lit;
-	FShowFlags ShowFlags;
-
-	// Grid
-	float GridSpacing = 1.0f;
-	int32 GridHalfLineCount = 100;
-
-	// Camera Sensitivity
-	float CameraMoveSensitivity = 1.0f;
-	float CameraRotateSensitivity = 1.0f;
-
 	// Viewport Layout
 	int32 LayoutType = 0; // EViewportLayout
 	FViewportRenderOptions SlotOptions[4];

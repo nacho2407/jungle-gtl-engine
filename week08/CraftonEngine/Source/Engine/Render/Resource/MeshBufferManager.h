@@ -7,7 +7,6 @@
 #include <map>
 #include "Render/Mesh/MeshManager.h"
 
-class FStaticMesh;
 class UStaticMesh;
 
 /*
