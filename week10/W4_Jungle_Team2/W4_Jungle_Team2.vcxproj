@@ -309,6 +309,8 @@
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp" />
     <ClCompile Include="Source\Engine\Slate\SSplitter.cpp" />
     <ClCompile Include="Source\Engine\Slate\SWindow.cpp" />
+    <ClCompile Include="Source\Engine\Slate\SSplitterH.cpp" />
+    <ClCompile Include="Source\Engine\Slate\SSplitterV.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_demo.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_draw.cpp" />
@@ -410,6 +412,8 @@
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />
     <ClInclude Include="Source\Engine\Slate\SSplitter.h" />
     <ClInclude Include="Source\Engine\Slate\SWindow.h" />
+    <ClInclude Include="Source\Engine\Slate\SSplitterH.h" />
+    <ClInclude Include="Source\Engine\Slate\SSplitterV.h" />
     <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui_impl_dx11.h" />

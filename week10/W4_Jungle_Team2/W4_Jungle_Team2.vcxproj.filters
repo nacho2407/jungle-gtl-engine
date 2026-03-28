@@ -321,6 +321,8 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Slate\SWindow.cpp" />
     <ClCompile Include="Source\Engine\Slate\SSplitter.cpp" />
+    <ClCompile Include="Source\Engine\Slate\SSplitterH.cpp" />
+    <ClCompile Include="Source\Engine\Slate\SSplitterV.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -605,5 +607,7 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Slate\SWindow.h" />
     <ClInclude Include="Source\Engine\Slate\SSplitter.h" />
+    <ClInclude Include="Source\Engine\Slate\SSplitterH.h" />
+    <ClInclude Include="Source\Engine\Slate\SSplitterV.h" />
   </ItemGroup>
 </Project>
