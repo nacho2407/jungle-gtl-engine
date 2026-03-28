@@ -1,9 +1,9 @@
 ﻿#pragma once
 #include "Engine/Runtime/Engine.h"
 
-#include "Editor/Viewport/ObjViewerViewportClient.h"
-#include "Editor/UI/ObjViewerMainPanel.h"
-#include "Editor/Settings/ObjViewerSettings.h"
+#include "Misc/ObjViewer/Viewport/ObjViewerViewportClient.h"
+#include "Misc/ObjViewer/UI/ObjViewerMainPanel.h"
+#include "Misc/ObjViewer/Settings/ObjViewerSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 
 class UObjViewerEngine : public UEngine
@@ -17,6 +17,7 @@ public:
 	void Tick(float DeltaTime) override;
 	
 	UCameraComponent* GetCamera() const { return ViewportClient.GetCamera(); }
+	FObjViewerViewportClient& GetViewportClient() { return ViewportClient; }
 
 	void RenderUI(float DeltaTime);
 	void OnWindowResized(uint32 Width, uint32 Height) override;
