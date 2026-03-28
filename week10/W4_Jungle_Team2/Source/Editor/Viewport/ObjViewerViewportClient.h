@@ -28,8 +28,11 @@ public:
 	void DestroyCamera();
 	void ResetCamera();
 
+	// 카메라 조작감 개선
 	void ClampCameraPosition();
-	void ClampCameraPanToObject(); // 화면 이탈 방지 함수 추가
+	void ClampCameraPanToObject();
+	float GetModelRadius();
+
 	UCameraComponent* GetCamera() const { return Camera; }
 
 	void Tick(float DeltaTime);
