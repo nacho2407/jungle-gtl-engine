@@ -65,6 +65,18 @@ public:
 	// Renderer 에서 사용하는 Proj 정보가 담긴 SceneView를 생성하는 함수
 	void BuildSceneView(FSceneView& OutView) const override;
 
+	// Key 입력 대응 함수
+	bool OnMouseMove(const FViewportMouseEvent& Ev) override;
+	bool OnMouseButtonDown(const FViewportMouseEvent& Ev) override;
+	bool OnMouseButtonUp(const FViewportMouseEvent& Ev) override;
+	bool OnMouseWheel(float Delta) override;
+	bool OnKeyDown(uint32 Key) override;
+	bool OnKeyUp(uint32 Key) override;
+
+	// Get Set
+	EEditorViewportType GetViewportType() const { return ViewportType; }
+	void SetViewportType(EEditorViewportType InType) { ViewportType = InType; }
+
 private:
 	void TickInput(float DeltaTime);
 	void TickInteraction(float DeltaTime);
@@ -75,6 +87,8 @@ private:
 	FWindowsWindow* Window = nullptr;
 
 	FSceneViewport* Viewport = nullptr;
+
+	EEditorViewportType  ViewportType = EVT_Perspective;  // 값 멤버로 직접 보유
 	FEditorViewportState* State = nullptr;
 
 	UWorld* World = nullptr;

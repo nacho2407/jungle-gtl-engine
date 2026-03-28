@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "Math/Matrix.h"
-#include "Slate/SlateUtils.h"
 #include "Render/Common/ViewTypes.h"
+#include "ViewportRect.h"
 
 struct FSceneView
 {

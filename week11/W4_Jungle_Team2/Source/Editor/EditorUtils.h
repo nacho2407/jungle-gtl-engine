@@ -3,12 +3,6 @@
 /*
 * Editor 모듈에서 필요한 Utility + Enum 정의
 */
-enum class EEditorViewMode
-{
-	Lit = 0,
-	UnLit,
-	Wireframe
-};
 
 enum class EEditorCameraMode
 {
@@ -24,9 +18,7 @@ enum class EEditorCameraMode
 struct FEditorViewportState
 {
 	FViewportRect Rect;
-
-	EEditorCameraMode CameraMode = EEditorCameraMode::Perspective;
-	EEditorViewMode ViewMode = EEditorViewMode::Lit;
+	EViewMode ViewMode = EViewMode::Lit;
 
 	bool bFocused = false;
 	bool bHovered = false;

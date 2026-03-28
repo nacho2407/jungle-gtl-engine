@@ -11,6 +11,7 @@
 #include "Component/PrimitiveComponent.h"
 #include "Object/Object.h"
 #include "Editor/Selection/SelectionManager.h"
+#include "Runtime/SceneView.h"
 #include "EditorUtils.h"
 
 void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
@@ -62,7 +63,8 @@ void FEditorViewportClient::SetViewportSize(float InWidth, float InHeight)
 
 void FEditorViewportClient::Tick(float DeltaTime)
 {
-	if (!State->bFocused) return;
+	// TODO: 나중에 기능 완성되면 주석해제
+	// if (!State->bFocused) return;
 	TickInput(DeltaTime);
 	TickInteraction(DeltaTime);
 }
@@ -70,6 +72,36 @@ void FEditorViewportClient::Tick(float DeltaTime)
 void FEditorViewportClient::BuildSceneView(FSceneView& OutView) const
 {
 	
+}
+
+bool FEditorViewportClient::OnMouseMove(const FViewportMouseEvent& Ev)
+{
+	return false;
+}
+
+bool FEditorViewportClient::OnMouseButtonDown(const FViewportMouseEvent& Ev)
+{
+	return false;
+}
+
+bool FEditorViewportClient::OnMouseButtonUp(const FViewportMouseEvent& Ev)
+{
+	return false;
+}
+
+bool FEditorViewportClient::OnMouseWheel(float Delta)
+{
+	return false;
+}
+
+bool FEditorViewportClient::OnKeyDown(uint32 Key)
+{
+	return false;
+}
+
+bool FEditorViewportClient::OnKeyUp(uint32 Key)
+{
+	return false;
 }
 
 void FEditorViewportClient::TickInput(float DeltaTime)
