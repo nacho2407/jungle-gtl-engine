@@ -10,12 +10,12 @@ const FViewportRect& FSceneViewport::GetRect() const
 	return FViewport::GetRect();
 }
 
-bool FSceneViewport::ContainsPoint(int X, int Y) const
+bool FSceneViewport::ContainsPoint(int32 X, int32 Y) const
 {
 	return false;
 }
 
-void FSceneViewport::WindowToLocal(int X, int Y, int& OutX, int& OutY) const
+void FSceneViewport::WindowToLocal(int32 X, int32 Y, int32& OutX, int32& OutY) const
 {
 }
 
