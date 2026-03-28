@@ -220,7 +220,7 @@ void FRenderer::InitializePassBatchers()
 	PassBatchers[(uint32)ERenderPass::Font] = {
 		/*.Clear   =*/ [this]() { FontBatcher.Clear(); },
 		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus& Bus) {
-			if (Cmd.Type == ERenderCommandType::Font && Cmd.Constants.Font.Text && !Cmd.Constants.Font.Text->empty())
+			if (Cmd.Type == ERenderCommandType::Font && Cmd.Constants.Font.Text && !Cmd.Constants.Font.Text->empty() && !Cmd.Constants.Font.bScreenSpace)
 			{
 				FontBatcher.AddText(
 					*Cmd.Constants.Font.Text,
@@ -240,7 +240,7 @@ void FRenderer::InitializePassBatchers()
 
 	// --- OverlayFont 패스: 스크린 텍스트 → FontBatcher ---
 	PassBatchers[(uint32)ERenderPass::OverlayFont] = {
-		/*.Clear   =*/ [this]() { FontBatcher.Clear(); },
+		/*.Clear   =*/ [this]() {FontBatcher.ClearScreen(); }, // Font 시작 시에 클리어
 		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus& Bus) {
 			if (Cmd.Type == ERenderCommandType::Font && Cmd.Constants.Font.Text && !Cmd.Constants.Font.Text->empty() && Cmd.Constants.Font.bScreenSpace)
 			{
