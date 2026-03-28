@@ -1,9 +1,8 @@
 ﻿#pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/CoreMinimal.h"
 #include "Core/Singleton.h"
 
-#define NOMINMAX
 #include <Windows.h>
 #include <cfloat>
 
