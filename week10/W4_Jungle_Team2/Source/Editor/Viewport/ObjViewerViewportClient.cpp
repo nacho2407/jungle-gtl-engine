@@ -16,7 +16,7 @@ void FObjViewerViewportClient::Initialize(FWindowsWindow* InWindow)
 {
     Window = InWindow;
 
-    UE_LOG("Hello ZZup Engine! %d", 2026);
+    // UE_LOG("Hello ZZup Engine! %d", 2026);
 }
 
 void FObjViewerViewportClient::CreateCamera()
