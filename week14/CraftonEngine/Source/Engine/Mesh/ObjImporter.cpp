@@ -396,10 +396,12 @@ bool FObjImporter::Import(const FString& ObjFilePath, FStaticMesh& OutMesh, TArr
 	}
 
 	TArray<FObjMaterialInfo> ParsedMtlInfos;
-	if (!FObjImporter::ParseMtl(ObjInfo.MaterialLibraryFilePath, ParsedMtlInfos))
-	{
-		UE_LOG("ParseMtl failed for: %s", ObjInfo.MaterialLibraryFilePath.c_str());
-		return false;
+	if (!ObjInfo.MaterialLibraryFilePath.empty()) {
+		if (!FObjImporter::ParseMtl(ObjInfo.MaterialLibraryFilePath, ParsedMtlInfos))
+		{
+			UE_LOG("ParseMtl failed for: %s", ObjInfo.MaterialLibraryFilePath.c_str());
+			return false;
+		}
 	}
 
 	if (!FObjImporter::Convert(ObjInfo, ParsedMtlInfos, OutMesh, OutMaterials)){
