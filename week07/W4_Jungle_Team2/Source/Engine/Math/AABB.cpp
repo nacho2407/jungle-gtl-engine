@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cfloat>
 
+#include "Core/RayTypes.h"
 #include "Utils.h"
 
 FAABB::FAABB()
@@ -77,7 +78,7 @@ bool FAABB::IntersectRay(const FRay& Ray, float& OutT) const
 		const float BoxMin = (&Min.X)[Axis];
 		const float BoxMax = (&Max.X)[Axis];
 		
-		if (std::fabs(Direction) < EPSILON)
+		if (std::fabs(Direction) < MathUtil::Epsilon)
 		{
 			if (Origin < BoxMin || Origin > BoxMax)
 			{

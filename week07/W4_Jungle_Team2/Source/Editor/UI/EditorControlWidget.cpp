@@ -1,10 +1,10 @@
 ﻿#include "Editor/UI/EditorControlWidget.h"
 
 #include "Editor/EditorEngine.h"
-#include "Engine/Core/Timer.h"
+#include "Editor/Viewport/ViewportCamera.h"
+#include "Core/Logging/Timer.h"
 
 #include "ImGui/imgui.h"
-#include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextRenderComponent.h"
@@ -99,37 +99,46 @@ void FEditorControlWidget::Render(float DeltaTime)
 	SEPARATOR();
 
 	// Camera
-	UCameraComponent* Camera = EditorEngine->GetCamera();
-	bool bIsOrtho = Camera->IsOrthogonal();
+	FViewportCamera* Camera = EditorEngine->GetCamera();
+	if (Camera == nullptr)
+	{
+		ImGui::End();
+		return;
+	}
+
+	bool bIsOrtho = (Camera->GetProjectionType() == EViewportProjectionType::Orthographic);
 	if (ImGui::Checkbox("Orthographic", &bIsOrtho))
 	{
-		Camera->SetOrthographic(bIsOrtho);
+		Camera->SetProjectionType(bIsOrtho ? EViewportProjectionType::Orthographic : EViewportProjectionType::Perspective);
 	}
 
-	float CameraFOV_Deg = Camera->GetFOV() * RAD_TO_DEG;
+	float CameraFOV_Deg = MathUtil::RadiansToDegrees(Camera->GetFOV());
 	if (ImGui::DragFloat("Camera FOV", &CameraFOV_Deg, 0.5f, 1.0f, 90.0f))
 	{
-		Camera->SetFOV(CameraFOV_Deg * DEG_TO_RAD);
+		Camera->SetFOV(MathUtil::DegreesToRadians(CameraFOV_Deg));
 	}
 
-	float OrthoWidth = Camera->GetOrthoWidth();
-	if (ImGui::DragFloat("Ortho Width", &OrthoWidth, 0.1f, 0.1f, 1000.0f))
+	float OrthoHeight = Camera->GetOrthoHeight();
+	if (ImGui::DragFloat("Ortho Height", &OrthoHeight, 0.1f, 0.1f, 1000.0f))
 	{
-		Camera->SetOrthoWidth(Clamp(OrthoWidth, 0.1f, 1000.0f));
+		Camera->SetOrthoHeight(MathUtil::Clamp(OrthoHeight, 0.1f, 1000.0f));
 	}
 
-	FVector CamPos = Camera->GetWorldLocation();
+	FVector CamPos = Camera->GetLocation();
 	float CameraLocation[3] = { CamPos.X, CamPos.Y, CamPos.Z };
 	if (ImGui::DragFloat3("Camera Location", CameraLocation, 0.1f))
 	{
-		Camera->SetWorldLocation(FVector(CameraLocation[0], CameraLocation[1], CameraLocation[2]));
+		Camera->SetLocation(FVector(CameraLocation[0], CameraLocation[1], CameraLocation[2]));
 	}
 
-	FVector CamRot = Camera->GetRelativeRotation();
+	FVector CamRot = Camera->GetRotation().Rotator().Euler();
 	float CameraRotation[3] = { CamRot.X, CamRot.Y, CamRot.Z };
 	if (ImGui::DragFloat3("Camera Rotation", CameraRotation, 0.1f))
 	{
-		Camera->SetRelativeRotation(FVector(Clamp(CameraRotation[0], CamRot.X, CamRot.X), CameraRotation[1], CameraRotation[2]));
+		FRotator NewRotation = FRotator::MakeFromEuler(FVector(CameraRotation[0], CameraRotation[1], CameraRotation[2]));
+		NewRotation.Roll = 0.0f;
+		NewRotation.Normalize();
+		Camera->SetRotation(NewRotation);
 	}
 
 	SEPARATOR();
