@@ -23,12 +23,14 @@ const TArray<FRenderCommand>& FRenderBus::GetCommands(ERenderPass Pass) const
 	return PassQueues[(uint32)Pass];
 }
 
-void FRenderBus::SetViewProjection(const FMatrix& InView, const FMatrix& InProj, const FVector& CameraRightVector, const FVector& CameraUpVector)
+void FRenderBus::SetViewProjection(const FMatrix& InView, const FMatrix& InProj)
 {
 	View = InView;
 	Proj = InProj;
-	CameraRight = CameraRightVector;
-	CameraUp = CameraUpVector;
+
+	CameraRight    = FVector(InView.M[0][0], InView.M[1][0], InView.M[2][0]);
+	CameraUp       = FVector(InView.M[0][1], InView.M[1][1], InView.M[2][1]);
+	CameraPosition = InView.GetInverseFast().GetLocation();
 }
 
 void FRenderBus::SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags)
