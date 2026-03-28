@@ -10,11 +10,20 @@ class FObjViewerSettings : public TSingleton<FObjViewerSettings>
 {
 	friend class TSingleton<FObjViewerSettings>;
 
+protected:
+	// FObjViewer만의 기본값 세팅
+	FObjViewerSettings()
+	{
+		ViewMode = EViewMode::Lit;
+		ShowFlags.bAxis = false;
+		ShowFlags.bBillboardText = false;
+	}
+
 public:
 	// Viewport
 	float CameraSpeed = 10.f;
 	float CameraRotationSpeed = 60.f;
-	float CameraZoomSpeed = 500.f;
+	float CameraForwardSpeed = 500.f;
 	FVector InitViewPos = FVector(10, 0, 5);
 	FVector InitLookAt = FVector(0, 0, 0);
 
