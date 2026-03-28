@@ -240,9 +240,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Editor\UI\ObjViewerControlWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\ObjViewerMainPanel.cpp" />
     <ClCompile Include="Source\Editor\ObjViewerEngine.cpp" />
     <ClCompile Include="Source\Editor\ObjViewerRenderPipeline.cpp" />
     <ClCompile Include="Source\Editor\Settings\ObjViewerSettings.cpp" />
+    <ClCompile Include="Source\Editor\UI\ObjViewerMenuBarWIdget.cpp" />
+    <ClCompile Include="Source\Editor\UI\ObjViewerStatWidget.cpp" />
     <ClCompile Include="Source\Editor\Viewport\ObjViewerViewportClient.cpp" />
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Material.cpp" />
@@ -317,6 +321,11 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Editor\UI\ObjViewerControlWidget.h" />
+    <ClInclude Include="Source\Editor\UI\ObjViewerMainPanel.h" />
+    <ClInclude Include="Source\Editor\UI\ObjViewerMenuBarWIdget.h" />
+    <ClInclude Include="Source\Editor\UI\ObjViewerStatWidget.h" />
+    <ClInclude Include="Source\Editor\UI\ObjViewerWidget.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Material.h" />
     <ClInclude Include="Source\Engine\Component\StaticMeshComponent.h" />

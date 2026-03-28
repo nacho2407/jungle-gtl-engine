@@ -151,22 +151,22 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
         return;
     }
 
-	// Viewer에서는 실제로 Zoom이 일어나는 대신 카메라를 전후로 이동한다.
-    const float ZoomSpeed = Settings ? Settings->CameraZoomSpeed : 500.f;
+	// Viewer에서는 Zoom이 일어나는 대신 카메라를 전후로 이동한다.
+    const float ForwardSpeed = Settings ? Settings->CameraForwardSpeed : 500.f;
     float ScrollNotches = InputSystem::Get().GetScrollNotches();
     if (ScrollNotches != 0.0f)
     {
 		float ModelRadius = GetModelRadius();
-		float DynamicZoomSpeed = ZoomSpeed * ModelRadius;
+		float DynamicForwardSpeed = ForwardSpeed * ModelRadius;
 
         if (Camera->IsOrthogonal())
         {
-            float NewWidth = Camera->GetOrthoWidth() - ScrollNotches * DynamicZoomSpeed * DeltaTime;
+            float NewWidth = Camera->GetOrthoWidth() - ScrollNotches * DynamicForwardSpeed * DeltaTime;
             Camera->SetOrthoWidth(Clamp(NewWidth, 0.1f, 1000.0f));
         }
         else
         {
-            float MoveAmount = ScrollNotches * DynamicZoomSpeed * DeltaTime;
+            float MoveAmount = ScrollNotches * DynamicForwardSpeed * DeltaTime;
             Camera->MoveLocal(FVector(MoveAmount, 0.0f, 0.0f));
         }
     }
@@ -413,25 +413,6 @@ void FObjViewerViewportClient::HandleDragStart(const FRay& Ray)
     }
 
     bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);
-
-    if (BestActor == nullptr)
-    {
-        if (!bCtrlHeld)
-        {
-            SelectionManager->ClearSelection();
-        }
-    }
-    else
-    {
-        if (bCtrlHeld)
-        {
-            SelectionManager->ToggleSelect(BestActor);
-        }
-        else
-        {
-            SelectionManager->Select(BestActor);
-        }
-    }
 }
 
 void FObjViewerViewportClient::TickCursorOverlay(float DeltaTime)
