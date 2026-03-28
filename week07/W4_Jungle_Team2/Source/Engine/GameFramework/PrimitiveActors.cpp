@@ -22,7 +22,7 @@ REGISTER_FACTORY(ASphereActor)
 DEFINE_CLASS(APlaneActor, AActor)
 REGISTER_FACTORY(APlaneActor)
 
-DEFINE_CLASS(AAttachTestActor, AActor)
+DEFINE_CLASS(AAttachTestActor, AActor) 
 REGISTER_FACTORY(AAttachTestActor)
 
 void ACubeActor::InitDefaultComponents()
