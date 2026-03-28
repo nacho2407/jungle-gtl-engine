@@ -54,6 +54,7 @@ void FObjViewerControlWidget::Render(float DeltaTime)
 		if (ImGui::CollapsingHeader("View Mode", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			ImGui::Checkbox("Show Grid", &Settings.ShowFlags.bGrid);
+			ImGui::Checkbox("Show Axis", &Settings.ShowFlags.bAxis);
 
 			bool bWireframe = (Settings.ViewMode == EViewMode::Wireframe);
 			if (ImGui::Checkbox("Wireframe Mode", &bWireframe))

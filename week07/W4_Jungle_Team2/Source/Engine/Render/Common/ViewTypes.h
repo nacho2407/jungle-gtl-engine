@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 
@@ -14,6 +14,7 @@ struct FShowFlags
 {
 	bool bPrimitives = true;
 	bool bGrid = true;
+	bool bAxis = true;
 	bool bGizmo = true;
 	bool bBillboardText = true;
 	bool bBoundingVolume = false;
