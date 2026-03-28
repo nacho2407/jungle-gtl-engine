@@ -256,7 +256,7 @@ void FRenderer::InitializePassBatchers()
 		},
 		/*.Flush   =*/ [this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
 			const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
-			FontBatcher.Flush(Ctx, FontRes);
+			FontBatcher.FlushScreen(Ctx, FontRes);
 		}
 	};
 
