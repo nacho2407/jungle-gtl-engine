@@ -94,30 +94,32 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 		Editor->GetSelectionManager().GetSelectedActors(),
 		ShowFlags, ViewMode, Bus);
 
-	const TArray<FString> OverlayLines = Editor->GetOverlayStatSystem().BuildLines(*Editor);
-	if (!OverlayLines.empty() && VP && VC == Editor->GetActiveViewport())
+	const TArray<FOverlayStatGroup> OverlayGroups = Editor->GetOverlayStatSystem().BuildGroups(*Editor);
+	if (!OverlayGroups.empty() && VP && VC == Editor->GetActiveViewport())
 	{
 		const float StartX = 16.0f;
-		const float StartY = 25.0f;
 		const float LineHeight = 20.0f;
 
-		for (size_t i = 0; i < OverlayLines.size(); ++i)
+		for (const FOverlayStatGroup& Group : OverlayGroups)
 		{
-			FRenderCommand Cmd = {};
-			Cmd.Type = ERenderCommandType::Font;
-			Cmd.BlendState = EBlendState::AlphaBlend;
-			Cmd.DepthStencilState = EDepthStencilState::NoDepth;
+			for (size_t i = 0; i < Group.Lines.size(); ++i)
+			{
+				FRenderCommand Cmd = {};
+				Cmd.Type = ERenderCommandType::Font;
+				Cmd.BlendState = EBlendState::AlphaBlend;
+				Cmd.DepthStencilState = EDepthStencilState::NoDepth;
 
-			Cmd.Params.Font.Text = &OverlayLines[i];
-			Cmd.Params.Font.Font = nullptr;
-			Cmd.Params.Font.Scale = 1.0f;
-			Cmd.Params.Font.bScreenSpace = 1;
-			Cmd.Params.Font.ScreenPosition = FVector2(
-				StartX,
-				StartY + static_cast<float>(i) * LineHeight
-			);
+				Cmd.Params.Font.Text = &Group.Lines[i];
+				Cmd.Params.Font.Font = nullptr;
+				Cmd.Params.Font.Scale = 1.0f;
+				Cmd.Params.Font.bScreenSpace = 1;
+				Cmd.Params.Font.ScreenPosition = FVector2(
+					StartX,
+					Group.StartY + static_cast<float>(i) * LineHeight
+				);
 
-			Bus.AddCommand(ERenderPass::OverlayFont, std::move(Cmd));
+				Bus.AddCommand(ERenderPass::OverlayFont, std::move(Cmd));
+			}
 		}
 	}
 
