@@ -4,7 +4,7 @@
 
 IMPLEMENT_RTTI(USphereComponent, UPrimitiveComponent)
 
-void USphereComponent::Initialize()
+void USphereComponent::PostConstruct()
 {
-	Primitive = std::make_unique<CPrimitiveSphere>();
+	Primitive = std::make_unique<FPrimitiveSphere>();
 }

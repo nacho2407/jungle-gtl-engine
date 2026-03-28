@@ -3,13 +3,13 @@
 #include "InputTrigger.h"
 #include <functional>
 
-class CInputManager;
+class FInputManager;
 
 struct FInputMappingContext;
 struct FInputAction;
 
 using FInputActionCallback = std::function<void(const FInputActionValue&)>;
-class ENGINE_API  CEnhancedInputManager
+class ENGINE_API  FEnhancedInputManager
 {
 public:
 
@@ -20,9 +20,9 @@ public:
 	void BindAction(FInputAction* Action, ETriggerEvent TriggerEvent, FInputActionCallback Callback);
 	void ClearBindings();
 
-	void ProcessInput(CInputManager* RawInput, float DeltaTime);
+	void ProcessInput(FInputManager* RawInput, float DeltaTime);
 private:
-	FInputActionValue GetRawActionValue(CInputManager* Input, int32 Key);
+	FInputActionValue GetRawActionValue(FInputManager* Input, int32 Key);
 	struct FMappingContextEntry
 	{
 		FInputMappingContext* Context;

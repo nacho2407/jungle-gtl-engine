@@ -1,12 +1,12 @@
-#include "Window.h"
-#include "WindowApplication.h"
+#include "WindowsWindow.h"
+#include "WindowsApplication.h"
 
-CWindow::~CWindow()
+FWindowsWindow::~FWindowsWindow()
 {
 	Destroy();
 }
 
-bool CWindow::Create(HINSTANCE Instance, const WCHAR* ClassName,
+bool FWindowsWindow::Create(HINSTANCE Instance, const WCHAR* ClassName,
 	const WCHAR* Title, int InWidth, int InHeight, int InX, int InY)
 {
 	Width = InWidth;
@@ -32,21 +32,21 @@ bool CWindow::Create(HINSTANCE Instance, const WCHAR* ClassName,
 		return false;
 	}
 
-	CWindowApplication::Get().RegisterWindow(Hwnd, this);
+	FWindowsApplication::Get().RegisterWindow(Hwnd, this);
 	return true;
 }
 
-void CWindow::Destroy()
+void FWindowsWindow::Destroy()
 {
 	if (Hwnd)
 	{
-		CWindowApplication::Get().UnregisterWindow(Hwnd);
+		FWindowsApplication::Get().UnregisterWindow(Hwnd);
 		::DestroyWindow(Hwnd);
 		Hwnd = nullptr;
 	}
 }
 
-void CWindow::Show()
+void FWindowsWindow::Show()
 {
 	if (Hwnd)
 	{
@@ -55,7 +55,7 @@ void CWindow::Show()
 	}
 }
 
-void CWindow::Hide()
+void FWindowsWindow::Hide()
 {
 	if (Hwnd)
 	{
@@ -63,17 +63,17 @@ void CWindow::Hide()
 	}
 }
 
-void CWindow::AddMessageFilter(FWndProcFilter Filter)
+void FWindowsWindow::AddMessageFilter(FWndProcFilter Filter)
 {
 	MessageFilters.push_back(Filter);
 }
 
-void CWindow::SetOnResizeCallback(FOnResizeCallback Callback)
+void FWindowsWindow::SetOnResizeCallback(FOnResizeCallback Callback)
 {
 	OnResizeCallback = Callback;
 }
 
-LRESULT CWindow::HandleMessage(UINT Msg, WPARAM wParam, LPARAM lParam)
+LRESULT FWindowsWindow::HandleMessage(UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	// Run message filters (ImGui, picking, input, etc.)
 	for (auto& Filter : MessageFilters)

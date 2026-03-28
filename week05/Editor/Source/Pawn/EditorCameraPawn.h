@@ -8,7 +8,7 @@ class AEditorCameraPawn : public AActor
 {
 public:
 	DECLARE_RTTI(AEditorCameraPawn, AActor)
-	void Initialize();
+	void PostConstruct() override;
 
 	UCameraComponent* GetCameraComponent() const { return CameraCompenent; }
 

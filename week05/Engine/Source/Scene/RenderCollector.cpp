@@ -4,7 +4,7 @@
 #include "Actor/Actor.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SubUVComponent.h"
-#include "Core/FEngine.h"
+#include "Core/Engine.h"
 #include "Component/TextComponent.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/TextMeshBuilder.h"
@@ -236,11 +236,11 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 	TArray<UPrimitiveComponent*> VisiblePrimitives;
 	FrustrumCull(Actors, Frustum, ShowFlags, VisiblePrimitives);
 
-	CRenderer* Renderer = GEngine->GetCore()->GetRenderer();
+	FRenderer* Renderer = GEngine ? GEngine->GetRenderer() : nullptr;
 	if (!Renderer) return;
 
-	CTextMeshBuilder& TextRenderer = Renderer->GetTextRenderer();
-	CSubUVRenderer& SubUVRenderer = Renderer->GetSubUVRenderer();
+	FTextMeshBuilder& TextRenderer = Renderer->GetTextRenderer();
+	FSubUVRenderer& SubUVRenderer = Renderer->GetSubUVRenderer();
 
 	for (UPrimitiveComponent* PrimitiveComponent : VisiblePrimitives)
 	{
@@ -304,7 +304,7 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 			FMeshData* SubUVMesh = SubUVComponent->GetSubUVMesh();
 			if (SubUVMesh && SubUVRenderer.BuildSubUVMesh(SubUVComponent->GetSize(), *SubUVMesh))
 			{
-				float TotalTime = static_cast<float>(GEngine->GetCore()->GetTimer().GetTotalTime());
+				float TotalTime = GEngine ? static_cast<float>(GEngine->GetTimer().GetTotalTime()) : 0.0f;
 				SubUVRenderer.UpdateAnimationParams(
 					SubUVComponent->GetColumns(), SubUVComponent->GetRows(), SubUVComponent->GetTotalFrames(),
 					SubUVComponent->GetFirstFrame(), SubUVComponent->GetLastFrame(),

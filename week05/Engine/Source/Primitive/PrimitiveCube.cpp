@@ -1,11 +1,11 @@
 #include "PrimitiveCube.h"
 #include "Core/Paths.h"
 
-const FString CPrimitiveCube::Key = "Cube";
+const FString FPrimitiveCube::Key = "Cube";
 
-// FString CPrimitiveCube::GetFilePath() { return FPaths::MeshDir() + "Cube.mesh"; }
+// FString FPrimitiveCube::GetFilePath() { return FPaths::MeshDir() + "Cube.mesh"; }
 
-CPrimitiveCube::CPrimitiveCube()
+FPrimitiveCube::FPrimitiveCube()
 {
 	auto Cached = GetCached(Key);
 	if (Cached)
@@ -18,7 +18,7 @@ CPrimitiveCube::CPrimitiveCube()
 	}
 }
 
-void CPrimitiveCube::Generate()
+void FPrimitiveCube::Generate()
 {
 	auto Data = std::make_shared<FMeshData>();
 

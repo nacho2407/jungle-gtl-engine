@@ -7,8 +7,8 @@
 #include "Renderer/RenderCommand.h"
 #include "Scene/RenderCollector.h"
 
-class CCore;
-class CRenderer;
+class FEngine;
+class FRenderer;
 class UScene;
 class FFrustum;
 class UPrimitiveComponent;
@@ -19,15 +19,15 @@ class ENGINE_API IViewportClient
 public:
 	virtual ~IViewportClient() = default;
 
-	virtual void Attach(CCore* Core, CRenderer* Renderer);
-	virtual void Detach(CCore* Core, CRenderer* Renderer);
-	virtual void Tick(CCore* Core, float DeltaTime);
-	virtual void HandleMessage(CCore* Core, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam);
-	virtual UScene* ResolveScene(CCore* Core) const;
-	virtual UWorld* ResolveWorld(CCore* Core) const;
+	virtual void Attach(FEngine* Engine, FRenderer* Renderer);
+	virtual void Detach(FEngine* Engine, FRenderer* Renderer);
+	virtual void Tick(FEngine* Engine, float DeltaTime);
+	virtual void HandleMessage(FEngine* Engine, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam);
+	virtual UScene* ResolveScene(FEngine* Engine) const;
+	virtual UWorld* ResolveWorld(FEngine* Engine) const;
 	FShowFlags& GetShowFlags() { return ShowFlags; }
 	const FShowFlags& GetShowFlags() const { return ShowFlags; }
-	virtual void BuildRenderCommands(CCore* Core, UScene* Scene,
+	virtual void BuildRenderCommands(FEngine* Engine, UScene* Scene,
 		const FFrustum& Frustum, FRenderCommandQueue& OutQueue);
 	/** 입력 처리는 원래 Viewport 에서 처리하는게 맞는데 구조상 여기다 넣음 */
 	virtual void HandleFileDoubleClick(const FString& FilePath);
@@ -37,9 +37,9 @@ protected:
 	FSceneRenderCollector RenderCollector;
 };
 
-class ENGINE_API CGameViewportClient : public IViewportClient
+class ENGINE_API FGameViewportClient : public IViewportClient
 {
 public:
-	void Attach(CCore* Core, CRenderer* Renderer) override;
-	void Detach(CCore* Core, CRenderer* Renderer) override;
+	void Attach(FEngine* Engine, FRenderer* Renderer) override;
+	void Detach(FEngine* Engine, FRenderer* Renderer) override;
 };

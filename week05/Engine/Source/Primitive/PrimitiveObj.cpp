@@ -3,18 +3,18 @@
 #include <fstream>
 #include <sstream>
 
-CPrimitiveObj::CPrimitiveObj()
+FPrimitiveObj::FPrimitiveObj()
 {
 	MeshData = std::make_shared<FMeshData>();
 }
 
-CPrimitiveObj::CPrimitiveObj(const FString& FilePath)
+FPrimitiveObj::FPrimitiveObj(const FString& FilePath)
 {
 	MeshData = std::make_shared<FMeshData>();
 	LoadObj(FilePath);
 }
 
-void CPrimitiveObj::LoadObj(const FString& FilePath)
+void FPrimitiveObj::LoadObj(const FString& FilePath)
 {
 	SetPrimitiveFileName(FilePath);
 

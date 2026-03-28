@@ -19,6 +19,9 @@
     <Filter Include="Source\Picking">
       <UniqueIdentifier>{f6faa914-edd8-6594-d865-4579e893d626}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Subsystem">
+      <UniqueIdentifier>{8f5e31ae-50f2-4da7-bd3b-7ad0f4ba83bf}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\UI">
       <UniqueIdentifier>{937fbf30-493d-dd10-0906-014ab75451c6}</UniqueIdentifier>
     </Filter>
@@ -30,7 +33,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source\FEditorEngine.cpp">
+    <ClCompile Include="Source\EditorEngine.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="Source\main.cpp">
@@ -50,6 +53,12 @@
     </ClCompile>
     <ClCompile Include="Source\Picking\Picker.cpp">
       <Filter>Source\Picking</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Subsystem\EditorCameraSubsystem.cpp">
+      <Filter>Source\Subsystem</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Subsystem\EditorSelectionSubsystem.cpp">
+      <Filter>Source\Subsystem</Filter>
     </ClCompile>
     <ClCompile Include="Source\UI\ConsoleWindow.cpp">
       <Filter>Source\UI</Filter>
@@ -105,7 +114,7 @@
     <ClCompile Include="EditorGlobals.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\FEditorEngine.h">
+    <ClInclude Include="Source\EditorEngine.h">
       <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="Source\Axis\AxisRenderer.h">
@@ -122,6 +131,12 @@
     </ClInclude>
     <ClInclude Include="Source\Picking\Picker.h">
       <Filter>Source\Picking</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Subsystem\EditorCameraSubsystem.h">
+      <Filter>Source\Subsystem</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Subsystem\EditorSelectionSubsystem.h">
+      <Filter>Source\Subsystem</Filter>
     </ClInclude>
     <ClInclude Include="Source\UI\ConsoleWindow.h">
       <Filter>Source\UI</Filter>

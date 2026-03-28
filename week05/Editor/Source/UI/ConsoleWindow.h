@@ -5,11 +5,11 @@
 
 using FCommandHandler = std::function<void(const char*)>;
 
-class CConsoleWindow
+class FConsoleWindow
 {
 public:
-	CConsoleWindow();
-	~CConsoleWindow();
+	FConsoleWindow();
+	~FConsoleWindow();
 
 	void Render();
 	void AddLog(const char* Fmt, ...) IM_FMTARGS(2);
