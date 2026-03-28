@@ -1,6 +1,6 @@
 #pragma once
 #include "Viewport/Window/EditorViewportPanel.h"
-#include "Core/Runtime/Slate/Panel/SSplitter.h"
+#include "Core/Runtime/Slate/Window/SSplitter.h"
 
 struct FEditorContext;
 class  FScene;

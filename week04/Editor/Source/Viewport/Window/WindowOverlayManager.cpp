@@ -230,7 +230,7 @@ FEditorViewportPanel* FWindowOverlayManager::FindPanelAtPoint(int32 X, int32 Y) 
     for (FEditorViewportPanel* Panel : ViewportPanels)
     {
         if (!Panel) continue;
-        if (Panel->IsHover(FVector2(static_cast<float>(X), static_cast<float>(Y))))
+        if (Panel->HitTest(FVector2(static_cast<float>(X), static_cast<float>(Y))))
             return Panel;
     }
     return nullptr;

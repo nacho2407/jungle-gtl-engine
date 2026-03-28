@@ -1,4 +1,4 @@
-#include "Core/Runtime/Slate/Panel/SSplitter.h"
+#include "Core/Runtime/Slate/Window/SSplitter.h"
 #include "Core/Math/MathUtility.h"
 
 #include <cmath>
