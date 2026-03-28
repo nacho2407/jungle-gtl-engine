@@ -14,7 +14,7 @@ public:
 	// Viewport
 	float CameraSpeed = 10.f;
 	float CameraRotationSpeed = 60.f;
-	float CameraZoomSpeed = 300.f;
+	float CameraZoomSpeed = 500.f;
 	FVector InitViewPos = FVector(10, 0, 5);
 	FVector InitLookAt = FVector(0, 0, 0);
 

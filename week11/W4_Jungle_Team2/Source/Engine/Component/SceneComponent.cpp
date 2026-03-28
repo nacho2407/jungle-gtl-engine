@@ -18,6 +18,12 @@ void USceneComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 	OutProps.push_back({ "Scale", EPropertyType::Vec3, &RelativeScale3D, 0.0f, 0.0f, 0.1f });
 }
 
+void USceneComponent::PostEditProperty(const char* PropertyName)
+{
+	UActorComponent::PostEditProperty(PropertyName);
+	MarkTransformDirty();
+}
+
 USceneComponent::USceneComponent()
 {
 	CachedWorldMatrix = FMatrix::Identity;
