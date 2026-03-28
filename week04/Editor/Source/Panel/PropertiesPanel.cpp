@@ -12,6 +12,7 @@
 #include "Engine/Component/Core/UnknownComponent.h"
 
 #include "Content/ContentBrowserDragDrop.h"
+#include "CoreUObject/UObjectIterator.h"
 #include "Editor/Editor.h"
 #include "Editor/EditorContext.h"
 #include "CoreUObject/Object.h"
@@ -30,7 +31,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-extern ENGINE_API TArray<UObject*> GUObjectArray;
+extern ENGINE_API FUObjectArray GUObjectArray;
 
 namespace
 {
@@ -201,6 +202,9 @@ namespace
         return bApplied;
     }
 
+    /** 
+     * 고정 메시 에셋 선택 콤보박스
+     */
     bool DrawStaticMeshAssetCombo(const Engine::Component::FComponentPropertyDescriptor& Descriptor,
                                   const FString& CurrentPath, const FString& RawValue,
                                   TMap<FString, FString>* AssetPathEditBuffers)
@@ -209,43 +213,46 @@ namespace
         FString ComboLabel = CurrentPath.empty() ? "None" : CurrentPath;
         if (ImGui::BeginCombo("##Value", ComboLabel.c_str()))
         {
-            for (UObject* Obj : UObject::GetGlobalUObjectArray())
+            for (TUObjectIterator<UStaticMesh> It; It; ++It)
             {
-                if (Obj == nullptr)
+                UStaticMesh* MeshAsset = *It;
+                if (MeshAsset == nullptr || !MeshAsset->IsValidLowLevel())
                     continue;
-                if (UStaticMesh* MeshAsset = Cast<UStaticMesh>(Obj))
+
+                const FString Path = MeshAsset->GetAssetPathFileName();
+                FString       Label = MeshAsset->GetAssetName();
+                if (MeshAsset->bIsBaked)
+                    Label += " [Baked]";
+                
+                bool bSelected = (RawValue == Path);
+                if (ImGui::Selectable(Label.c_str(), bSelected))
                 {
-                    const FString Path = MeshAsset->GetAssetPathFileName();
-                    FString       Label = MeshAsset->GetAssetName();
-                    if (MeshAsset->bIsBaked)
-                        Label += " [Baked]";
-                    bool bSelected = (RawValue == Path);
-                    if (ImGui::Selectable(Label.c_str(), bSelected))
-                    {
-                        if (Descriptor.StringSetter)
-                            Descriptor.StringSetter(Path);
-                        if (AssetPathEditBuffers != nullptr)
-                            (*AssetPathEditBuffers)[Descriptor.Key] = Path;
-                        bChanged = true;
-                    }
-                    if (bSelected)
-                        ImGui::SetItemDefaultFocus();
+                    if (Descriptor.StringSetter)
+                        Descriptor.StringSetter(Path);
+                    if (AssetPathEditBuffers != nullptr)
+                        (*AssetPathEditBuffers)[Descriptor.Key] = Path;
+                    bChanged = true;
                 }
+                if (bSelected)
+                    ImGui::SetItemDefaultFocus();
             }
             ImGui::EndCombo();
         }
         return bChanged;
     }
 
-    /** 머티리얼 선택 드롭다운 UI (인식 오류 방지를 위해 명시적 타입 사용) */
+    /** 
+     * 머티리얼 선택 콤보박스
+     */
     bool DrawMaterialAssetCombo(Engine::Component::UMeshComponent* MeshComp, uint32 SlotIndex)
     {
-        if (MeshComp == nullptr) return false;
+        if (MeshComp == nullptr)
+            return false;
 
         Engine::Asset::UMaterialInterface* CurrentMat = MeshComp->GetMaterial(SlotIndex);
-        FString CurrentPath = CurrentMat ? CurrentMat->GetAssetName() : "None";
+        FString     CurrentPath = CurrentMat ? CurrentMat->GetAssetName() : "None";
         std::string LabelId = "Material Slot " + std::to_string(SlotIndex + 1);
-        
+
         bool bChanged = false;
         ImGui::TextUnformatted(LabelId.c_str());
         ImGui::SameLine(140.0f);
@@ -257,7 +264,8 @@ namespace
             for (TUObjectIterator<Engine::Asset::UMaterialInterface> It; It; ++It)
             {
                 Engine::Asset::UMaterialInterface* MatAsset = *It;
-                if (MatAsset == nullptr) continue;
+                if (MatAsset == nullptr || !MatAsset->IsValidLowLevel())
+                    continue;
 
                 bool bSelected = (CurrentMat == MatAsset);
                 if (ImGui::Selectable(MatAsset->GetAssetName().c_str(), bSelected))

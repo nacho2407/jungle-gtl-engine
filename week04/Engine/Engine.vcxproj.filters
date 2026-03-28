@@ -210,6 +210,12 @@
     <ClCompile Include="Source\CoreUObject\ObjectFactory.cpp">
       <Filter>Source\CoreUObject</Filter>
     </ClCompile>
+    <ClCompile Include="Source\CoreUObject\UObjectArray.cpp">
+      <Filter>Source\CoreUObject</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\CoreUObject\UObjectIterator.cpp">
+      <Filter>Source\CoreUObject</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\Core\MeshComponent.cpp">
       <Filter>Source\Engine\Component\Core</Filter>
     </ClCompile>
@@ -369,7 +375,6 @@
     <ClCompile Include="Source\SceneIO\SceneTypeRegistry.cpp">
       <Filter>Source\SceneIO</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CoreUObject\ObjectArray.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Mesh\Cone.h">
@@ -586,6 +591,12 @@
       <Filter>Source\CoreUObject</Filter>
     </ClInclude>
     <ClInclude Include="Source\CoreUObject\ObjectFactory.h">
+      <Filter>Source\CoreUObject</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CoreUObject\UObjectArray.h">
+      <Filter>Source\CoreUObject</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CoreUObject\UObjectIterator.h">
       <Filter>Source\CoreUObject</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Core\ComponentProperty.h">
@@ -825,8 +836,6 @@
     <ClInclude Include="Source\ThirdParty\Json\json.hpp">
       <Filter>Source\ThirdParty\Json</Filter>
     </ClInclude>
-    <ClInclude Include="Source\CoreUObject\ObjectItem.h" />
-    <ClInclude Include="Source\CoreUObject\ObjectArray.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
