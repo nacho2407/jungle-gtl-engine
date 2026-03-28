@@ -28,74 +28,96 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 	{
 		if (!Comp) continue;
 
-		if (Comp->IsA(UStaticMeshComponent::StaticClass()))
+		if (Comp->IsA(UNewPrimitiveComponent::StaticClass()))
 		{
-			UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(Comp);
+			UNewPrimitiveComponent* NewPrimitiveComponent = static_cast<UNewPrimitiveComponent*>(Comp);
 
-			if (SMC->GetRenderMesh())
+			if (NewPrimitiveComponent->IsA(UTextComponent::StaticClass()))
 			{
-				FRenderCommand Command;
-				Command.RenderMesh = SMC->GetRenderMesh();
-				Command.WorldMatrix = SMC->GetWorldTransform();
-				Command.Material = SMC->GetMaterial(0);
+				UTextComponent* TextComp = static_cast<UTextComponent*>(NewPrimitiveComponent);
+				FRenderMesh* TextMesh = TextComp->GetRenderMesh();
 
-				OutQueue.AddCommand(Command);
+				if (TextMesh)
+				{
+					// 더티인 경우에만 실제 메시를 재생성(빌드)
+					bool bBuilt = false;
+					if (TextComp->IsTextMeshDirty())
+					{
+						// BuildTextMesh는 OutMesh를 갱신하고 성공시 true 반환
+						bBuilt = TextRenderer.BuildTextMesh(TextComp->GetDisplayText(), *TextMesh);
+						if (bBuilt)
+						{
+							// 메시 CPU 데이터 변경이므로 GPU 업로드가 필요함을 표시
+							TextMesh->bIsDirty = true;
+							TextComp->ClearTextMeshDirty();
+						}
+					}
+
+					// 이미 빌드되어 있거나 방금 빌드에 성공했다면 렌더 커맨드 추가
+					if (!TextMesh->Vertices.empty())
+					{
+						FMaterial* FontMat = TextRenderer.GetFontMaterial();
+						if (FontMat)
+						{
+							FVector4 Color = TextComp->GetTextColor();
+							FontMat->SetParameterData("TextColor", &Color, 16);
+
+							FRenderCommand Command;
+							Command.RenderMesh = TextMesh;
+							Command.Material = FontMat;
+							// TODO: UUID 렌더링 기능 재구현되면 아래 1줄 삭제
+							if (!Comp->IsA(UUUIDBillboardComponent::StaticClass()))
+							{
+								Command.RenderLayer = ERenderLayer::Default;  // ← Overlay → Default
+							}
+							else
+							{
+								Command.RenderLayer = ERenderLayer::Overlay;
+							}
+
+							const FVector WorldPos = TextComp->GetRenderWorldPosition();
+							const FVector Scale = TextComp->GetRenderWorldScale();
+
+							if (TextComp->IsBillboard())
+							{
+								const FVector CameraPos = Renderer->GetCameraPosition();
+								Command.WorldMatrix = FMatrix::MakeScale(Scale) * FMatrix::MakeBillboard(WorldPos, CameraPos);
+							}
+							else
+							{
+								const float TextScale = TextComp->GetTextScale();
+								Command.WorldMatrix =
+									FMatrix::MakeScale(FVector(TextScale, TextScale, TextScale)) *
+									TextComp->GetWorldTransform();
+							}
+
+							OutQueue.AddCommand(Command);
+						}
+					}
+				}
+				continue;
 			}
-			continue;
+			if (Comp->IsA(UStaticMeshComponent::StaticClass()))
+			{
+				UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(Comp);
+
+				if (SMC->GetRenderMesh())
+				{
+					FRenderCommand Command;
+					Command.RenderMesh = SMC->GetRenderMesh();
+					Command.WorldMatrix = SMC->GetWorldTransform();
+					Command.Material = SMC->GetMaterial(0);
+
+					OutQueue.AddCommand(Command);
+				}
+				continue;
+			}
 		}
 
 		// ─── 텍스트 컴포넌트 ───
 		if (Comp->IsA(UPrimitiveComponent::StaticClass()))
 		{
 			UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Comp);
-			if (PrimitiveComponent->IsA(UTextComponent::StaticClass()))
-			{
-				UTextComponent* TextComp = static_cast<UTextComponent*>(PrimitiveComponent);
-				FMeshData* TextMesh = TextComp->GetTextMesh();
-
-				if (TextMesh && TextRenderer.BuildTextMesh(TextComp->GetDisplayText(), *TextMesh))
-				{
-					FMaterial* FontMat = TextRenderer.GetFontMaterial();
-					if (FontMat)
-					{
-						FVector4 Color = TextComp->GetTextColor();
-						FontMat->SetParameterData("TextColor", &Color, 16);
-
-						FRenderCommand Command;
-						Command.MeshData = TextMesh;
-						Command.Material = FontMat;
-						// TODO: UUID 렌더링 기능 재구현되면 아래 1줄 삭제
-						if (!Comp->IsA(UUUIDBillboardComponent::StaticClass()))
-						{
-							Command.RenderLayer = ERenderLayer::Default;  // ← Overlay → Default
-						}
-						else
-						{
-							Command.RenderLayer = ERenderLayer::Overlay;
-						}
-
-
-						const FVector WorldPos = TextComp->GetRenderWorldPosition();
-						const FVector Scale = TextComp->GetRenderWorldScale();
-
-						if (TextComp->IsBillboard())
-						{
-							const FVector CameraPos = Renderer->GetCameraPosition();
-							Command.WorldMatrix = FMatrix::MakeScale(Scale) * FMatrix::MakeBillboard(WorldPos, CameraPos);
-						}
-						else
-						{
-							const float TextScale = TextComp->GetTextScale();
-							Command.WorldMatrix =
-								FMatrix::MakeScale(FVector(TextScale, TextScale, TextScale)) *
-								TextComp->GetWorldTransform();
-						}
-
-						OutQueue.AddCommand(Command);
-					}
-				}
-				continue;
-			}
 
 			// ─── SubUV 스프라이트 통합 ───
 			// TODO: 일반적인 프리미티브와 RenderCommand build 경로 통합
@@ -158,33 +180,36 @@ void FSceneRenderCollector::FrustrumCull(const TArray<AActor*>& Actors, const FF
 
 		for (UActorComponent* Comp : Actor->GetComponents())
 		{
-			const bool bIsStaticMesh = Comp->IsA(UStaticMeshComponent::StaticClass());
+			const bool bIsNewPrimitive = Comp->IsA(UNewPrimitiveComponent::StaticClass());
 			const bool bIsOldPrimitive = Comp->IsA(UPrimitiveComponent::StaticClass());
 
-			if (!bIsStaticMesh && !bIsOldPrimitive) continue;
+			if (!bIsNewPrimitive && !bIsOldPrimitive) continue;
 
 			FBoxSphereBounds Bounds;
 
-			if (bIsStaticMesh)
+			if (bIsNewPrimitive)
 			{
+				UNewPrimitiveComponent* NewPrimitiveComponent = static_cast<UNewPrimitiveComponent*>(Comp);
 				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives)) continue;
-				UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(Comp);
-				if (!SMC->GetRenderMesh()) continue;
+				if (NewPrimitiveComponent->IsA(UStaticMeshComponent::StaticClass()))
+				{
+					if (!NewPrimitiveComponent->GetRenderMesh()) continue;
+				}
+				else if (NewPrimitiveComponent->IsA(UUUIDBillboardComponent::StaticClass())) {
+					if (!ShowFlags.HasFlag(EEngineShowFlags::SF_UUID)) continue;
+				}
+				else if (NewPrimitiveComponent->IsA(UTextComponent::StaticClass())) {
+					if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Text)) continue;
+				}
 
-				Bounds = SMC->GetWorldBounds(); // UMeshComponent나 UNewPrimitiveComponent에 있는 함수 호출
+				Bounds = NewPrimitiveComponent->GetWorldBounds(); // UMeshComponent나 UNewPrimitiveComponent에 있는 함수 호출
 			}
 			else if (bIsOldPrimitive)
 			{
 				UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Comp);
 
-				if (PrimitiveComponent->IsA(UUUIDBillboardComponent::StaticClass())) {
-					if (!ShowFlags.HasFlag(EEngineShowFlags::SF_UUID)) continue;
-				}
-				else if (PrimitiveComponent->IsA(USubUVComponent::StaticClass())) {
+				if (PrimitiveComponent->IsA(USubUVComponent::StaticClass())) {
 					if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Billboard)) continue;
-				}
-				else if (PrimitiveComponent->IsA(UTextComponent::StaticClass())) {
-					if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Text)) continue;
 				}
 				else {
 					if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives)) continue;

@@ -1,10 +1,12 @@
 #pragma once
-#include "PrimitiveComponent.h"
+#include "NewPrimitiveComponent.h"
 
-class ENGINE_API UTextComponent : public UPrimitiveComponent
+#include "Renderer/MeshData.h"
+
+class ENGINE_API UTextComponent : public UNewPrimitiveComponent
 {
 public:
-	DECLARE_RTTI(UTextComponent, UPrimitiveComponent)
+	DECLARE_RTTI(UTextComponent, UNewPrimitiveComponent)
 
 	virtual void Initialize();
 
@@ -33,7 +35,12 @@ public:
 	virtual FVector GetRenderWorldScale() const { return GetWorldTransform().GetScaleVector() * TextScale; }
 
 	/** 폰트 렌더링용 메시 데이터 반환 */
-	struct FMeshData* GetTextMesh() const { return TextMesh.get(); }
+	virtual FRenderMesh* GetRenderMesh() const override;
+	FDynamicMesh* GetTextMesh() const { return TextMesh.get(); }
+
+	bool IsTextMeshDirty() const { return bTextMeshDirty; }
+	void MarkTextMeshDirty() { bTextMeshDirty = true; if (TextMesh) TextMesh->bIsDirty = true; }
+	void ClearTextMeshDirty() { bTextMeshDirty = false; }
 
 protected:
 	FString Text = "Text";
@@ -42,5 +49,7 @@ protected:
 	bool bBillboard = false;
 
 	/** 텍스트 렌더링을 위해 생성된 동적 메시 데이터 */
-	std::shared_ptr<struct FMeshData> TextMesh;
+	std::shared_ptr<struct FDynamicMesh> TextMesh;
+
+	bool bTextMeshDirty = true;
 };

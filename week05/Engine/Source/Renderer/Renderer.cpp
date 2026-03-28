@@ -414,7 +414,7 @@ void CRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 			}
 		}
 
-		if (Cmd.MeshData != CurrentMeshPtr)
+		if (Cmd.MeshData && Cmd.MeshData != CurrentMeshPtr)
 		{
 			Cmd.MeshData->Bind(DeviceContext);
 			CurrentMeshPtr = Cmd.MeshData;

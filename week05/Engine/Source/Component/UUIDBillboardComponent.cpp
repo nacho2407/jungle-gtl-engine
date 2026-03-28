@@ -28,16 +28,10 @@ FString UUUIDBillboardComponent::GetDisplayText() const
 FVector UUUIDBillboardComponent::GetRenderWorldPosition() const
 {
 	AActor* OwnerActor = GetOwner();
-	if (!OwnerActor)
-	{
-		return WorldOffset;
-	}
+	if (!OwnerActor) return WorldOffset;
 
 	USceneComponent* Root = OwnerActor->GetRootComponent();
-	if (!Root)
-	{
-		return WorldOffset;
-	}
+	if (!Root) return WorldOffset;
 
 	const FVector RootLocation = Root->GetWorldLocation();
 
@@ -46,19 +40,26 @@ FVector UUUIDBillboardComponent::GetRenderWorldPosition() const
 
 	for (UActorComponent* Component : OwnerActor->GetComponents())
 	{
-		if (!Component || !Component->IsA(UPrimitiveComponent::StaticClass()))
+		if (!Component) continue;
+		if (Component == this) continue;
+
+		const bool bIsNewPrim = Component->IsA(UNewPrimitiveComponent::StaticClass());
+		const bool bIsOldPrim = Component->IsA(UPrimitiveComponent::StaticClass());
+
+		if (!bIsNewPrim && !bIsOldPrim) continue;
+		if (Component == this) continue;
+
+		FBoxSphereBounds Bounds;
+
+		if (bIsNewPrim)
 		{
-			continue;
+			Bounds = static_cast<UNewPrimitiveComponent*>(Component)->GetWorldBounds();
+		}
+		else if (bIsOldPrim)
+		{
+			Bounds = static_cast<UPrimitiveComponent*>(Component)->GetWorldBounds();
 		}
 
-		UPrimitiveComponent* PrimitiveComp = static_cast<UPrimitiveComponent*>(Component);
-
-		if (PrimitiveComp == this)
-		{
-			continue;
-		}
-
-		const FBoxSphereBounds Bounds = PrimitiveComp->GetWorldBounds();
 		const float TopZ = Bounds.Center.Z + Bounds.BoxExtent.Z;
 
 		if (!bFoundPrimitiveBounds || TopZ > MaxTopZ)
@@ -79,7 +80,6 @@ FVector UUUIDBillboardComponent::GetRenderWorldPosition() const
 
 	return RootLocation + WorldOffset;
 }
-
 FVector UUUIDBillboardComponent::GetRenderWorldScale() const
 {
 	// 빌보드는 트랜스포메이션의 스케일과 상관없이 TextScale 만을 절대적으로 사용하는 것이 일반적임
