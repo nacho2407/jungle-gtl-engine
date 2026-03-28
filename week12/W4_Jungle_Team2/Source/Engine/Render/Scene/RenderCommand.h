@@ -26,6 +26,7 @@ enum class ERenderCommandType
 	Grid,		// Grid 패스 — LineBatcher 경유
 	Font,		// TextRenderComponent — FontBatcher 경유
 	SubUV,		// SubUVComponent     — SubUVBatcher 경유
+	StaticMesh,	// UStaticMeshComponent — OBJ 메시 퐁셰이딩
 };
 
 //PerObject
@@ -100,10 +101,32 @@ struct FSubUVConstants
 	float Height = 1.0f;
 };
 
+// StaticMeshBuffer (b6) — ShaderStaticMesh.hlsl 대응
+struct FStaticMeshConstants
+{
+	// Phong Material
+	FVector AmbientColor   = { 0.2f, 0.2f, 0.2f };
+	float   Padding0       = 0.0f;
+	FVector DiffuseColor   = { 0.8f, 0.8f, 0.8f };
+	float   Padding1       = 0.0f;
+	FVector SpecularColor  = { 0.5f, 0.5f, 0.5f };
+	float   Shininess      = 32.0f;
+
+	// Camera
+	FVector CameraWorldPos = { 0.0f, 0.0f, 0.0f };
+	float   Padding2       = 0.0f;
+
+	// Texture
+
+};
+
 struct FRenderCommand
 {
 	//	VB, IB 모두 담고 있는 MB
 	FMeshBuffer* MeshBuffer = nullptr;
+	uint32		 SectionIndexStart = {};
+	uint32		 SectionIndexCount = {};
+
 	FPerObjectConstants PerObjectConstants = {};
 
 	union
@@ -115,6 +138,7 @@ struct FRenderCommand
 		FGridConstants Grid;
 		FFontConstants Font;
 		FSubUVConstants SubUV;
+		FStaticMeshConstants StaticMesh;
 	} Constants;
 
 	EDepthStencilState DepthStencilState = static_cast<EDepthStencilState>(-1);
