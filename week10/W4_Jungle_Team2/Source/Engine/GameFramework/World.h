@@ -3,6 +3,7 @@
 #include "GameFramework/AActor.h"
 
 class UCameraComponent;
+class FViewportCamera;
 
 class UWorld : public UObject {
 public:
@@ -47,11 +48,11 @@ public:
     bool HasBegunPlay() const { return bHasBegunPlay; }
 
     // Active Camera — EditorViewportClient 또는 PlayerController가 세팅
-    void SetActiveCamera(UCameraComponent* InCamera) { ActiveCamera = InCamera; }
-    UCameraComponent* GetActiveCamera() const { return ActiveCamera; }
+    void SetActiveCamera(FViewportCamera* InCamera) { ActiveCamera = InCamera; }
+	FViewportCamera* GetActiveCamera() const { return ActiveCamera; }
 
 private:
     TArray<AActor*> Actors;
-    UCameraComponent* ActiveCamera = nullptr;
+	FViewportCamera* ActiveCamera = nullptr;
     bool bHasBegunPlay = false;
 };

@@ -233,7 +233,7 @@ bool UGizmoComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 	}
 
 	const FMatrix InvWorld = GetWorldMatrix().GetInverse();
-	FVector LocalOrigin = InvWorld.TransformPositionWithW(Ray.Origin);
+	FVector LocalOrigin = InvWorld.TransformPosition(Ray.Origin);
 	FVector LocalDirection = InvWorld.TransformVector(Ray.Direction);
 	LocalDirection.NormalizeSafe();
 
@@ -263,7 +263,7 @@ bool UGizmoComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 	}
 
 	const FVector LocalHitPoint = LocalOrigin + (LocalDirection * ClosestT);
-	const FVector WorldHitPoint = GetWorldMatrix().TransformPositionWithW(LocalHitPoint);
+	const FVector WorldHitPoint = GetWorldMatrix().TransformPosition(LocalHitPoint);
 	OutHitResult.Distance = FVector::Distance(Ray.Origin, WorldHitPoint);
 	OutHitResult.Location = WorldHitPoint;
 	OutHitResult.HitComponent = this;
@@ -353,7 +353,7 @@ void UGizmoComponent::UpdateAngularDrag(const FRay& Ray)
 	FVector CenterToLast = (LastIntersectionLocation - GetWorldLocation()).Normalized();
 	FVector CenterToCurrent = (CurrentIntersectionLocation - GetWorldLocation()).Normalized();
 
-	float DotProduct = Clamp(CenterToLast.DotProduct(CenterToCurrent), -1.0f, 1.0f);
+	float DotProduct = MathUtil::Clamp(CenterToLast.DotProduct(CenterToCurrent), -1.0f, 1.0f);
 	float AngleRadians = std::acos(DotProduct);
 
 	FVector CrossProduct = CenterToLast.CrossProduct(CenterToCurrent);

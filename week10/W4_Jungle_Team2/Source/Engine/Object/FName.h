@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/CoreMinimal.h"
 #include "Core/Singleton.h"
 
 // ============================================================
@@ -63,3 +63,4 @@ private:
 	TArray<FString> Entries;
 	TMap<FString, uint32> LookupMap;
 };
+
