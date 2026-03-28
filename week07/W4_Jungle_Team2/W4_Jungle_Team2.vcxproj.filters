@@ -701,5 +701,8 @@
     <ClInclude Include="Source\Misc\ObjViewer\Viewport\ObjViewerViewportClient.h">
       <Filter>Source\Misc\ObjViewer\Viewport</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Object\ObjectIterator.h">
+      <Filter>Source\Engine\Object</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
