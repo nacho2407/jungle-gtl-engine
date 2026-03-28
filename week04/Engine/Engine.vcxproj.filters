@@ -132,6 +132,9 @@
     <ClCompile Include="Source\Asset\FontAtlasLoader.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Asset\Material.cpp">
+      <Filter>Source\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Asset\MaterialAsset.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
@@ -446,7 +449,13 @@
     <ClInclude Include="Source\Asset\FontAtlasLoader.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Asset\Material.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Asset\MaterialAsset.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\MaterialInterface.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\MaterialLoader.h">

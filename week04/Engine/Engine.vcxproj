@@ -34,7 +34,9 @@
     <ClInclude Include="Source\Asset\AssetManager.h" />
     <ClInclude Include="Source\Asset\FontAsset.h" />
     <ClInclude Include="Source\Asset\FontAtlasLoader.h" />
+    <ClInclude Include="Source\Asset\Material.h" />
     <ClInclude Include="Source\Asset\MaterialAsset.h" />
+    <ClInclude Include="Source\Asset\MaterialInterface.h" />
     <ClInclude Include="Source\Asset\MaterialLoader.h" />
     <ClInclude Include="Source\Asset\StaticMesh.h" />
     <ClInclude Include="Source\Asset\StaticMeshAsset.h" />
@@ -180,6 +182,7 @@
     <ClCompile Include="Source\Asset\AssetManager.cpp" />
     <ClCompile Include="Source\Asset\FontAsset.cpp" />
     <ClCompile Include="Source\Asset\FontAtlasLoader.cpp" />
+    <ClCompile Include="Source\Asset\Material.cpp" />
     <ClCompile Include="Source\Asset\MaterialAsset.cpp" />
     <ClCompile Include="Source\Asset\MaterialLoader.cpp" />
     <ClCompile Include="Source\Asset\StaticMesh.cpp" />

@@ -1,9 +1,14 @@
 #include "Core/CoreMinimal.h"
 #include "Asset/StaticMesh.h"
 
-UStaticMesh::UStaticMesh() : StaticMeshAsset(nullptr) {}
+UStaticMesh::UStaticMesh() : RenderResource(nullptr) {}
 
 UStaticMesh::~UStaticMesh() {}
+
+void UStaticMesh::Initialize(std::shared_ptr<FStaticMeshResource> InResource)
+{
+    RenderResource = InResource;
+}
 
 void UStaticMesh::Serialize(class FArchive& Ar)
 {

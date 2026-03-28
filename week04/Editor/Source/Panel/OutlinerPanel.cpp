@@ -19,7 +19,8 @@
 #include "Engine/Game/TextActor.h"
 #include "Engine/Game/AtlasSpriteActor.h"
 #include "Engine/Game/FlipbookActor.h"
-
+#include "Engine/Game/StaticMeshActor.h"
+#include "Engine/Component/Mesh/StaticMeshComponent.h"
 
 namespace
 {
@@ -49,6 +50,8 @@ namespace
     {
         switch (InType)
         {
+        case FOutlinerPanel::ESpawnActorType::StaticMesh:
+            return "StaticMeshActor";
         case FOutlinerPanel::ESpawnActorType::Cube:
             return "CubeActor";
         case FOutlinerPanel::ESpawnActorType::Sphere:
@@ -77,7 +80,7 @@ namespace
     }
 
     const char* const SpawnActorTypeLabels[] = {
-        "CubeActor",     "SphereActor", "ConeActor",   "CylinderActor", "RingActor",
+        "StaticMeshActor", "CubeActor",     "SphereActor", "ConeActor",   "CylinderActor", "RingActor",
         "TriangleActor", "SpriteActor", "EffectActor", "TextActor",     "AtlasSpriteActor", "FlipbookActor"
     };
 
@@ -85,6 +88,8 @@ namespace
     {
         switch (InType)
         {
+        case FOutlinerPanel::ESpawnActorType::StaticMesh:
+            return new AStaticMeshActor();
         case FOutlinerPanel::ESpawnActorType::Cube:
             return new ACubeActor();
         case FOutlinerPanel::ESpawnActorType::Sphere:
@@ -257,6 +262,19 @@ void FOutlinerPanel::SpawnActors() const
         if (NewActor == nullptr)
         {
             continue;
+        }
+
+        // Static Mesh Actor인 경우 기본 메시(Cube)를 할당해 줍니다.
+        if (SpawnActorType == ESpawnActorType::StaticMesh)
+        {
+            if (auto* SMActor = Cast<AStaticMeshActor>(NewActor))
+            {
+                if (auto* SMComp = SMActor->GetStaticMeshComponent())
+                {
+                    // 기본 에셋 경로 설정
+                    SMComp->SetMeshPath("Data/Cube.obj");
+                }
+            }
         }
 
         const size_t ActorIndex = ExistingActorCount + static_cast<size_t>(SpawnIndex) + 1;
