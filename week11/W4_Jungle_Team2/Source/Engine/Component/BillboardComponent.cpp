@@ -14,13 +14,13 @@ void UBillboardComponent::TickComponent(float DeltaTime)
 	FVector Forward = CameraForward * -1;
 	FVector WorldUp = FVector(0.0f, 0.0f, 1.0f);
 
-	if (std::abs(Forward.Dot(WorldUp)) > 0.99f)
+	if (std::abs(Forward.DotProduct(WorldUp)) > 0.99f)
 	{
 		WorldUp = FVector(0.0f, 1.0f, 0.0f); // 임시 Up축 변경
 	}
 
-	FVector Right = WorldUp.Cross(Forward).Normalized();
-	FVector Up = Forward.Cross(Right).Normalized();
+	FVector Right = WorldUp.CrossProduct(Forward).Normalized();
+	FVector Up = Forward.CrossProduct(Right).Normalized();
 
 	FMatrix RotMatrix;
 	RotMatrix.SetAxes(Forward, Right, Up);
