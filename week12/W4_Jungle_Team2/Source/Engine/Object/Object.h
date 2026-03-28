@@ -92,6 +92,17 @@ public:
 	template<typename T>
 	const T* Cast() const { return IsA<T>() ? static_cast<const T*>(this) : nullptr; }
 
+	bool IsValidLowLevel() const { return this != nullptr; }
+
+	struct FObjectNameProxy : public FString
+	{
+		using FString::FString;
+		FObjectNameProxy(const FString& InStr) : FString(InStr) {}
+		const char* operator*() const { return c_str(); }
+	};
+
+	FObjectNameProxy GetName() const { return FObjectNameProxy(ObjectName.ToString()); }
+
 	static const FTypeInfo s_TypeInfo;
 
 protected:
@@ -103,6 +114,58 @@ private:
 };
 
 extern TArray<UObject*> GUObjectArray;
+
+template<typename T>
+class TObjectIterator
+{
+public:
+	TObjectIterator() : CurrentIndex(0)
+	{
+		Advance();
+	}
+
+	TObjectIterator& operator++()
+	{
+		CurrentIndex++;
+		Advance();
+		return *this;
+	}
+
+	T* operator*() const
+	{
+		if (CurrentIndex < GUObjectArray.size())
+		{
+			return static_cast<T*>(GUObjectArray[CurrentIndex]);
+		}
+		return nullptr;
+	}
+
+	T* operator->() const
+	{
+		return operator*();
+	}
+
+	explicit operator bool() const
+	{
+		return CurrentIndex < GUObjectArray.size();
+	}
+
+private:
+	void Advance()
+	{
+		while (CurrentIndex < GUObjectArray.size())
+		{
+			UObject* Obj = GUObjectArray[CurrentIndex];
+			if (Obj && Obj->IsA<T>())
+			{
+				break;
+			}
+			CurrentIndex++;
+		}
+	}
+
+	size_t CurrentIndex;
+};
 
 class UObjectManager : public TSingleton<UObjectManager>
 {
