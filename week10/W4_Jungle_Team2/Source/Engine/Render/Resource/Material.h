@@ -8,8 +8,9 @@
  * Obj .mtl 포맷 기준으로 정의했습니다.
  */
 
-struct FMaterial
+class FMaterial
 {
+public:
     FString Name;
 
     FVector AmbientColor   = { 0.2f, 0.2f, 0.2f }; // Ka
