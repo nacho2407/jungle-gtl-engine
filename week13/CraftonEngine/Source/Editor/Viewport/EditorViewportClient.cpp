@@ -120,7 +120,6 @@ void FEditorViewportClient::Tick(float DeltaTime)
 
 	TickInput(DeltaTime);
 	TickInteraction(DeltaTime);
-	TickCursorOverlay(DeltaTime);
 }
 
 void FEditorViewportClient::TickInput(float DeltaTime)
@@ -253,30 +252,17 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	float LocalMouseX = static_cast<float>(MousePoint.x) - ViewportScreenRect.X;
 	float LocalMouseY = static_cast<float>(MousePoint.y) - ViewportScreenRect.Y;
 
-	//	Cursor (윈도우 클라이언트 좌표 유지)
-	CursorOverlayState.ScreenX = static_cast<float>(MousePoint.x);
-	CursorOverlayState.ScreenY = static_cast<float>(MousePoint.y);
-
 	if (InputSystem::Get().GetKeyDown(VK_LBUTTON))
 	{
-		CursorOverlayState.bPressed = true;
-		CursorOverlayState.bVisible = true;
-		CursorOverlayState.TargetRadius = CursorOverlayState.MaxRadius;
-		CursorOverlayState.Color = FVector4(1.0f, 1.0f, 0.0f, 1.0f);  // Yellow for left-click
-
 		if (bIsCursorVisible)
 		{
 			while (ShowCursor(FALSE) >= 0);
 			bIsCursorVisible = false;
 		}
-
 	}
 
 	if (InputSystem::Get().GetKeyUp(VK_LBUTTON))
 	{
-		CursorOverlayState.bPressed = false;
-		CursorOverlayState.TargetRadius = 0.0f;
-
 		if (!bIsCursorVisible)
 		{
 			while (ShowCursor(TRUE) < 0);
@@ -286,11 +272,6 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 
 	if (InputSystem::Get().GetKeyDown(VK_RBUTTON))
 	{
-		CursorOverlayState.bPressed = true;
-		CursorOverlayState.bVisible = true;
-		CursorOverlayState.TargetRadius = CursorOverlayState.MaxRadius;
-		CursorOverlayState.Color = FVector4(0.0f, 0.0f, 1.0f, 1.0f);  // Blue for right-click
-
 		if (bIsCursorVisible)
 		{
 			while (ShowCursor(FALSE) >= 0);
@@ -300,9 +281,6 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 
 	if (InputSystem::Get().GetKeyUp(VK_RBUTTON))
 	{
-		CursorOverlayState.bPressed = false;
-		CursorOverlayState.TargetRadius = 0.0f;
-
 		if (!bIsCursorVisible)
 		{
 			while (ShowCursor(TRUE) < 0);
@@ -400,18 +378,6 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 				SelectionManager->Select(BestActor);
 			}
 		}
-	}
-}
-
-void FEditorViewportClient::TickCursorOverlay(float DeltaTime)
-{
-	const float Alpha = std::min(1.0f, DeltaTime * CursorOverlayState.LerpSpeed);
-	CursorOverlayState.CurrentRadius += (CursorOverlayState.TargetRadius - CursorOverlayState.CurrentRadius) * Alpha;
-
-	if (!CursorOverlayState.bPressed && CursorOverlayState.CurrentRadius < 0.01f)
-	{
-		CursorOverlayState.CurrentRadius = 0.0f;
-		CursorOverlayState.bVisible = false;
 	}
 }
 
