@@ -2,6 +2,8 @@
 
 #include "Core/CoreTypes.h"
 #include <sstream>
+#include <filesystem>
+#include <fstream>
 
 #include "Core/StringUtils.h"
 

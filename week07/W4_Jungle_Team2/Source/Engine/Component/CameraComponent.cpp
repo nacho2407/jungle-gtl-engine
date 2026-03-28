@@ -16,7 +16,7 @@ FMatrix UCameraComponent::GetViewMatrix() const {
 		R.X, U.X, F.X, 0,
 		R.Y, U.Y, F.Y, 0,
 		R.Z, U.Z, F.Z, 0,
-		-E.Dot(R), -E.Dot(U), -E.Dot(F), 1
+		-E.DotProduct(R), -E.DotProduct(U), -E.DotProduct(F), 1
 	);
 }
 
