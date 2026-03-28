@@ -17,12 +17,16 @@
 #include "Core/Paths.h"
 #include "Debug/EngineLog.h"
 #include "Component/CameraComponent.h"
+#include "Component/StaticMeshComponent.h"
 #include "Actor/SkySphereActor.h"
 #include "Controller/EditorViewportController.h"
 #include "Serializer/SceneSerializer.h"
 #include <filesystem>
 #include <random>
 #include <chrono>
+
+#include "Actor/StaticMeshActor.h"
+#include "Obj/ObjManager.h"
 
 namespace
 {
@@ -192,7 +196,7 @@ void CControlPanelWindow::Render(CCore* Core)
 		ImGui::SeparatorText("Spawn");
 
 		static int32 SpawnTypeIndex = 0;
-		const char* SpawnTypes[] = { "Cube", "Sphere", "Plane", "AttachTest", "SubUV", "Text", "SkySphere" };
+		const char* SpawnTypes[] = { "Cube", "Sphere", "Plane", "AttachTest", "SubUV", "Text", "SkySphere", "Staticmesh" };
 
 		ImGui::Combo("Type", &SpawnTypeIndex, SpawnTypes, IM_ARRAYSIZE(SpawnTypes));
 
@@ -254,6 +258,18 @@ void CControlPanelWindow::Render(CCore* Core)
 			else if (SpawnTypeIndex == 6)
 			{
 				NewActor = Scene->SpawnActor<ASkySphereActor>(Name);
+			}
+			else if (SpawnTypeIndex == 7)
+			{
+				AStaticMeshActor* MyCube = Scene->SpawnActor<AStaticMeshActor>(Name);
+				if (MyCube && MyCube->GetStaticMeshComponent())
+				{
+					UStaticMesh* CubeData = FObjManager::GetPrimitiveCube();
+					MyCube->GetStaticMeshComponent()->SetStaticMesh(CubeData);
+
+					// 위치도 적당히 옮겨봅니다.
+					MyCube->SetActorLocation(FVector(0.0f, 0.0f, 5.0f));
+				}
 			}
 
 			if (NewActor && !NewActor->IsA<ASkySphereActor>())
