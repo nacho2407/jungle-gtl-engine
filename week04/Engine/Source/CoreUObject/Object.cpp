@@ -1,9 +1,11 @@
 #include "Core/CoreMinimal.h"
-#include "Engine/EngineStatics.h"
+
 #include "Object.h"
 
-TArray<UObject*> GUObjectArray;
-TArray<uint32>   GFreeIndices;
+#include "CoreUObject/ObjectArray.h"
+#include "Engine/EngineStatics.h"
+
+FUObjectArray GUObjectArray;
 
 namespace
 {
@@ -45,17 +47,7 @@ UObject::UObject()
 {
 	UUID = UEngineStatics::GenUUID();
 
-    if (!GFreeIndices.empty())
-    {
-        InternalIndex = GFreeIndices.back();
-        GFreeIndices.pop_back();
-        GUObjectArray[InternalIndex] = this;
-    }
-    else
-    {
-        InternalIndex = static_cast<uint32>(GUObjectArray.size());
-        GUObjectArray.push_back(this);
-    }
+    GUObjectArray.AllocateObjectIndex(this);
 
     const FString ObjectName = ResolveObjectName(this);
     UE_LOG(UObject, ELogVerbosity::Log, "Created %s (UUID=%u, Name=%s, Address=%p)",
@@ -68,11 +60,7 @@ UObject::~UObject()
     UE_LOG(UObject, ELogVerbosity::Log, "Destroyed %s (UUID=%u, Name=%s, Address=%p)",
            ResolveAllocatedObjectTypeName(this), UUID, ObjectName.c_str(), this);
 
-	if (InternalIndex < GUObjectArray.size() && GUObjectArray[InternalIndex] == this)
-	{
-		GUObjectArray[InternalIndex] = nullptr;
-        GFreeIndices.push_back(InternalIndex);
-	}
+	GUObjectArray.FreeObjectIndex(InternalIndex, this);
 
     GetAllocatedObjectTypeNames().erase(this);
 }
