@@ -16,6 +16,6 @@ struct FShowFlags
 	bool bGrid = true;
 	bool bAxis = true;
 	bool bGizmo = true;
-	bool bBillboardText = true;
+	bool bBillboardText = false;
 	bool bBoundingVolume = false;
 };

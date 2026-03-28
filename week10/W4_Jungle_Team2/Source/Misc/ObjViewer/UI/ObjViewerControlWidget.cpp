@@ -1,7 +1,7 @@
 ﻿#include "ObjViewerControlWidget.h"
-#include "Editor/ObjViewerEngine.h"
-#include "Editor/Viewport/ObjViewerViewportClient.h"
-#include "Editor/Settings/ObjViewerSettings.h"
+#include "Misc/ObjViewer/ObjViewerEngine.h"
+#include "Misc/ObjViewer/Viewport/ObjViewerViewportClient.h"
+#include "Misc/ObjViewer/Settings/ObjViewerSettings.h"
 #include "Component/CameraComponent.h"
 #include "ImGui/imgui.h"
 

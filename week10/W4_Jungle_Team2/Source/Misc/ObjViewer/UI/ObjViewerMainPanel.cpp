@@ -1,9 +1,10 @@
 ﻿#include "ObjViewerMainPanel.h"
-#include "Editor/ObjViewerEngine.h"
+#include "Misc/ObjViewer/ObjViewerEngine.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Render/Renderer/Renderer.h"
 
 #include "ImGui/imgui.h"
+#include "ImGui/imgui_internal.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
 
@@ -15,6 +16,8 @@ void FObjViewerMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer
 	ImGuiIO& IO = ImGui::GetIO();
 	IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
+	// TODO-VIEWER: Slate 구조 개편 후 엔진 포인터 삭제하기
+	Engine = InEngine;
 	Window = InWindow;
 
 	// 한글 지원 폰트 로드
@@ -41,6 +44,20 @@ void FObjViewerMainPanel::Render(float DeltaTime)
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
+
+	ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+
+	// TODO-VIEWER: Slate 구조 개편 후 뷰포트 값 세팅하기
+    if (Engine)
+    {
+        ImGuiDockNode* CentralNode = ImGui::DockBuilderGetCentralNode(dockspace_id);
+        if (CentralNode)
+        {
+            Engine->GetViewportClient().SetViewportRect(
+                CentralNode->Pos.x, CentralNode->Pos.y, 
+                CentralNode->Size.x, CentralNode->Size.y);
+        }
+    }
 
 	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
