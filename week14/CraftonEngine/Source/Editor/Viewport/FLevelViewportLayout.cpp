@@ -12,6 +12,7 @@
 #include "Core/Paths.h"
 #include "ImGui/imgui.h"
 #include "WICTextureLoader.h"
+#include "Component/CameraComponent.h"
 
 // ─── 레이아웃별 슬롯 수 ─────────────────────────────────────
 
@@ -803,4 +804,115 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 		ImGui::PopID();
 	}
 	ImGui::End();
+}
+
+// ─── FEditorSettings ↔ 뷰포트 상태 동기화 ──────────────────
+
+void FLevelViewportLayout::SaveToSettings()
+{
+	FEditorSettings& S = FEditorSettings::Get();
+
+	S.LayoutType = static_cast<int32>(CurrentLayout);
+
+	// 뷰포트별 렌더 옵션 저장
+	for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+	{
+		S.SlotOptions[i] = LevelViewportClients[i]->GetRenderOptions();
+	}
+
+	// Splitter 비율 저장
+	if (RootSplitter)
+	{
+		TArray<SSplitter*> AllSplitters;
+		SSplitter::CollectSplitters(RootSplitter, AllSplitters);
+		S.SplitterCount = static_cast<int32>(AllSplitters.size());
+		if (S.SplitterCount > 3) S.SplitterCount = 3;
+		for (int32 i = 0; i < S.SplitterCount; ++i)
+		{
+			S.SplitterRatios[i] = AllSplitters[i]->GetRatio();
+		}
+	}
+	else
+	{
+		S.SplitterCount = 0;
+	}
+
+	// Perspective 카메라 (slot 0) 저장
+	if (!LevelViewportClients.empty())
+	{
+		UCameraComponent* Cam = LevelViewportClients[0]->GetCamera();
+		if (Cam)
+		{
+			S.PerspCamLocation = Cam->GetWorldLocation();
+			S.PerspCamRotation = Cam->GetRelativeRotation();
+			const FCameraState& CS = Cam->GetCameraState();
+			S.PerspCamFOV = CS.FOV * (180.0f / 3.14159265358979f); // rad → deg
+			S.PerspCamNearClip = CS.NearZ;
+			S.PerspCamFarClip = CS.FarZ;
+		}
+	}
+}
+
+void FLevelViewportLayout::LoadFromSettings()
+{
+	const FEditorSettings& S = FEditorSettings::Get();
+
+	// 레이아웃 전환 (슬롯 생성 + 트리 빌드)
+	EViewportLayout NewLayout = static_cast<EViewportLayout>(S.LayoutType);
+	if (NewLayout >= EViewportLayout::MAX)
+		NewLayout = EViewportLayout::OnePane;
+
+	// OnePane이 아니면 레이아웃 적용 (Initialize에서 이미 OnePane으로 생성됨)
+	if (NewLayout != EViewportLayout::OnePane)
+	{
+		// SetLayout 내부 bWasOnePane 분기를 피하기 위해 직접 전환
+		SSplitter::DestroyTree(RootSplitter);
+		RootSplitter = nullptr;
+		DraggingSplitter = nullptr;
+
+		int32 RequiredSlots = GetSlotCount(NewLayout);
+		EnsureViewportSlots(RequiredSlots);
+
+		RootSplitter = BuildSplitterTree(NewLayout);
+		ActiveSlotCount = RequiredSlots;
+		CurrentLayout = NewLayout;
+	}
+
+	// 뷰포트별 렌더 옵션 적용
+	for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+	{
+		FLevelEditorViewportClient* VC = LevelViewportClients[i];
+		VC->GetRenderOptions() = S.SlotOptions[i];
+
+		// ViewportType에 따라 카메라 ortho/방향 설정
+		VC->SetViewportType(S.SlotOptions[i].ViewportType);
+	}
+
+	// Splitter 비율 복원
+	if (RootSplitter)
+	{
+		TArray<SSplitter*> AllSplitters;
+		SSplitter::CollectSplitters(RootSplitter, AllSplitters);
+		for (int32 i = 0; i < S.SplitterCount && i < static_cast<int32>(AllSplitters.size()); ++i)
+		{
+			AllSplitters[i]->SetRatio(S.SplitterRatios[i]);
+		}
+	}
+
+	// Perspective 카메라 (slot 0) 복원
+	if (!LevelViewportClients.empty())
+	{
+		UCameraComponent* Cam = LevelViewportClients[0]->GetCamera();
+		if (Cam)
+		{
+			Cam->SetRelativeLocation(S.PerspCamLocation);
+			Cam->SetRelativeRotation(S.PerspCamRotation);
+
+			FCameraState CS = Cam->GetCameraState();
+			CS.FOV = S.PerspCamFOV * (3.14159265358979f / 180.0f); // deg → rad
+			CS.NearZ = S.PerspCamNearClip;
+			CS.FarZ = S.PerspCamFarClip;
+			Cam->SetCameraState(CS);
+		}
+	}
 }

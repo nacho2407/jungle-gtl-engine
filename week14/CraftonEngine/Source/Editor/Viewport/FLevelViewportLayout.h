@@ -47,6 +47,10 @@ public:
 		FSelectionManager* InSelectionManager);
 	void Release();
 
+	// FEditorSettings ↔ 뷰포트 상태 동기화
+	void SaveToSettings();
+	void LoadFromSettings();
+
 	// 레이아웃 전환
 	void SetLayout(EViewportLayout NewLayout);
 	EViewportLayout GetLayout() const { return CurrentLayout; }
