@@ -67,6 +67,11 @@ class FWindowOverlayManager
     // Re-create splitters for the current layout and window size
     void ResetSplitters();
 
+    // Returns a human readable string for each layout enum feed
+    FString GetViewportLayoutString(EViewportLayout Layout) const;
+
+    EViewportLayout GetViewportLayout() const { return ViewportLayout; }
+
     // ── Splitter drag interaction ────────────────────────────────────────────
     // Returns true if the pixel X is within the grab zone of the vertical splitter
     bool HitTestSplitterV(int32 X) const;

@@ -6,6 +6,7 @@
 #include "Editor/EditorContext.h"
 #include "Engine/EngineStatics.h"
 #include "Viewport/EditorViewportClient.h"
+#include "Viewport/Window/WindowOverlayManager.h"
 #include "imgui.h"
 
 namespace
@@ -77,6 +78,8 @@ void FControlPanel::Draw()
     DrawNavigationSection();
     ImGui::Separator();
     DrawWorldSection();
+    ImGui::Separator();
+    DrawViewportOverlaySection();
 
     ImGui::End();
 }
@@ -276,4 +279,34 @@ void FControlPanel::DrawWorldSection() const
     {
         UEngineStatics::GridSpacing = FMath::Clamp(GridSpacing, 1.0f, 1000.0f);
     }
+}
+
+void FControlPanel::DrawViewportOverlaySection() const
+{
+    ImGui::TextUnformatted("Viewport Overlay");
+    if (GetContext() == nullptr || GetContext()->Editor == nullptr)
+    {
+        return;
+    }
+    auto* OverlayManager = GetContext()->Editor->GetWindowOverlayManager();
+    EViewportLayout CurrentLayout = OverlayManager->GetViewportLayout();
+    if (ImGui::BeginCombo("Layout", OverlayManager->GetViewportLayoutString(CurrentLayout).c_str()))
+    {
+        for (int i = 0; i < static_cast<int>(EViewportLayout::Count); ++i)
+        {
+            EViewportLayout Layout = static_cast<EViewportLayout>(i);
+            if (ImGui::Selectable(OverlayManager->GetViewportLayoutString(Layout).c_str(),
+                                  Layout == CurrentLayout))
+            {
+                OverlayManager->SetViewportLayout(Layout);
+            }
+        }
+        ImGui::EndCombo();
+    }
+
+    //bool                   bShowViewportBorders = OverlayManager.IsViewportBorderVisible();
+    //if (ImGui::Checkbox("Viewport Borders", &bShowViewportBorders))
+    //{
+    //    OverlayManager.SetViewportBorderVisible(bShowViewportBorders);
+    //}
 }

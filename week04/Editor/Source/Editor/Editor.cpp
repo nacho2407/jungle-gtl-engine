@@ -321,6 +321,7 @@ void FEditor::Create()
     WindowOverlayManager->GetViewportPanels().push_back(EditorPanel);
     WindowOverlayManager->SetViewportLayout(EViewportLayout::ColumnTwoRow);
 
+    // SubViewports and Splitter controls
     OverlayInputContext = new FViewportOverlayInputContext(WindowOverlayManager);
     GlobalInputRouter.AddContext(OverlayInputContext);
 

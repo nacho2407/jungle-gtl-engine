@@ -28,6 +28,27 @@ static int32 RequiredPanelCount(EViewportLayout Layout)
     }
 }
 
+FString FWindowOverlayManager::GetViewportLayoutString(EViewportLayout Layout) const 
+{
+    switch (Layout)
+    {
+    case EViewportLayout::Single:
+        return "Single";
+    case EViewportLayout::TwoColumn:
+        return "TwoColumn";
+    case EViewportLayout::TwoRow:
+        return "TwoRow";
+    case EViewportLayout::ColumnTwoRow:
+        return "ColumnTwoRow";
+    case EViewportLayout::TwoRowColumn:
+        return "TwoRowColumn";
+    case EViewportLayout::FourWay:
+        return "FourWay";
+    default:
+        return "Unknown";
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Panel dimension management
 // ---------------------------------------------------------------------------

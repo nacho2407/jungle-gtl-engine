@@ -8,7 +8,8 @@ enum class EViewportLayout
     TwoRow,
     ColumnTwoRow,
     TwoRowColumn,
-    FourWay
+    FourWay,
+    Count = 6,
 };
 
 

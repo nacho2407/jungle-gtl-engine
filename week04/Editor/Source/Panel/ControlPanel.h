@@ -23,4 +23,5 @@ private:
     void DrawShowFlagsSection() const;
     void DrawNavigationSection() const;
     void DrawWorldSection() const;
+    void DrawViewportOverlaySection() const;
 };
