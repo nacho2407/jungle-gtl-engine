@@ -135,6 +135,7 @@
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -159,6 +160,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Editor\Viewport\FSceneViewport.cpp" />
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp" />
     <ClCompile Include="Source\Editor\ObjViewerEngine.cpp" />
@@ -228,13 +230,17 @@
     <ClCompile Include="Source\Engine\Runtime\Engine.cpp" />
     <ClCompile Include="Source\Engine\Runtime\EngineLoop.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Launch.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Viewport.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsApplication.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp" />
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp" />
+    <ClCompile Include="Source\Engine\Slate\SlateApplication.cpp" />
     <ClCompile Include="Source\Engine\Slate\SSplitter.cpp" />
+    <ClCompile Include="Source\Engine\Slate\SViewport.cpp" />
     <ClCompile Include="Source\Engine\Slate\SWindow.cpp" />
     <ClCompile Include="Source\Engine\Slate\SSplitterH.cpp" />
     <ClCompile Include="Source\Engine\Slate\SSplitterV.cpp" />
+    <ClCompile Include="Source\Engine\Slate\SWidget.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_demo.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_draw.cpp" />
@@ -245,8 +251,10 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Editor\Viewport\FSceneViewport.h" />
     <ClInclude Include="Source\Editor\EditorEngine.h" />
     <ClInclude Include="Source\Editor\EditorRenderPipeline.h" />
+    <ClInclude Include="Source\Editor\EditorUtils.h" />
     <ClInclude Include="Source\Editor\ObjViewerEngine.h" />
     <ClInclude Include="Source\Editor\ObjViewerRenderPipeline.h" />
     <ClInclude Include="Source\Editor\Selection\SelectionManager.h" />
@@ -336,13 +344,21 @@
     <ClInclude Include="Source\Engine\Runtime\Engine.h" />
     <ClInclude Include="Source\Engine\Runtime\EngineLoop.h" />
     <ClInclude Include="Source\Engine\Runtime\Launch.h" />
+    <ClInclude Include="Source\Engine\Runtime\Viewport.h" />
+    <ClInclude Include="Source\Engine\Runtime\ViewportClient.h" />
+    <ClInclude Include="Source\Engine\Runtime\WindowMessageHandler.h" />
     <ClInclude Include="Source\Engine\Runtime\WindowsApplication.h" />
     <ClInclude Include="Source\Engine\Runtime\WindowsWindow.h" />
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />
+    <ClInclude Include="Source\Engine\Slate\ISlateViewport.h" />
+    <ClInclude Include="Source\Engine\Slate\SlateApplication.h" />
+    <ClInclude Include="Source\Engine\Slate\SlateUtils.h" />
     <ClInclude Include="Source\Engine\Slate\SSplitter.h" />
+    <ClInclude Include="Source\Engine\Slate\SViewport.h" />
     <ClInclude Include="Source\Engine\Slate\SWindow.h" />
     <ClInclude Include="Source\Engine\Slate\SSplitterH.h" />
     <ClInclude Include="Source\Engine\Slate\SSplitterV.h" />
+    <ClInclude Include="Source\Engine\Slate\SWidget.h" />
     <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui_impl_dx11.h" />
