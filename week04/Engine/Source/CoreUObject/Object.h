@@ -48,6 +48,10 @@
         static Cls##Register Global_##Cls##Register;\
     }
 
+class FUObjectArray;
+
+extern FUObjectArray GUObjectArray;
+
 class ENGINE_API UObject
 {
   public:
@@ -67,6 +71,11 @@ class ENGINE_API UObject
     void  operator delete(void* Pointer, size_t Size);
     static void* AllocateObject(size_t Size, const char* InTypeName);
     static void FreeObject(void* Pointer, size_t Size);
+
+    /**
+     * @brief 본 객체가 현재 object array 상에서 유효한지 검사합니다.
+     */
+    bool IsValidLowLevel() const;
 
   public:
     uint32 UUID;

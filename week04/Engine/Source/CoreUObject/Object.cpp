@@ -2,7 +2,7 @@
 
 #include "Object.h"
 
-#include "CoreUObject/ObjectArray.h"
+#include "CoreUObject/UObjectArray.h"
 #include "Engine/EngineStatics.h"
 
 FUObjectArray GUObjectArray;
@@ -96,6 +96,23 @@ void UObject::FreeObject(void* Pointer, size_t Size)
 	UEngineStatics::TotalAllocationCount--;
 
 	::operator delete(Pointer, Size);
+}
+
+bool UObject::IsValidLowLevel() const
+{
+    if (InternalIndex >= GUObjectArray.Num())
+    {
+        return false;
+    }
+
+    const FUObjectItem* TempItem = GUObjectArray.GetObjectItem(InternalIndex);
+
+    if (TempItem == nullptr || TempItem->Object == nullptr || TempItem->Object != this)
+    {
+        return false;
+    }
+
+    return true;
 }
 
 REGISTER_CLASS(, UObject)

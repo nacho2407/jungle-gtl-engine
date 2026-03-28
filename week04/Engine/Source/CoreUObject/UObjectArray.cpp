@@ -1,4 +1,4 @@
-#include "CoreUObject/ObjectArray.h"
+#include "CoreUObject/UObjectArray.h"
 
 #include <utility>
 
@@ -11,7 +11,7 @@ void FUObjectArray::AllocateObjectIndex(UObject* Object)
         return;
     }
 
-	FObjectItem ObjectItem{ Object };
+	FUObjectItem ObjectItem{ Object };
     uint32      Index = Objects.size();
 
     if (!FreeIndices.empty())
@@ -40,7 +40,7 @@ void FUObjectArray::FreeObjectIndex(uint32 Index, UObject* Object)
     FreeIndices.push_back(Index);
 }
 
-const FObjectItem* FUObjectArray::GetObjectItem(uint32 Index) const
+const FUObjectItem* FUObjectArray::GetObjectItem(uint32 Index) const
 {
     if (Index >= Objects.size())
     {
