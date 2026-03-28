@@ -10,7 +10,6 @@
 #include "Core/Logging/Stats.h"
 #include "Core/Logging/GPUProfiler.h"
 
-
 void FRenderer::Create(HWND hWindow)
 {
 	Device.Create(hWindow);
