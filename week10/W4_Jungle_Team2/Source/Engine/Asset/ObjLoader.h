@@ -23,6 +23,7 @@ private:
 	bool ParseObj(const FString& Path);
 	//	Raw Data -> Cooked Data
 	bool BuildStaticMesh();
+	bool BindMaterials();
 
 	//	CookedData -> UStaticMesh
 	UStaticMesh* CreateAsset();

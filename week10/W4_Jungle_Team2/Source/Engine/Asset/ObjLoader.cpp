@@ -1,5 +1,4 @@
 ﻿#include "ObjLoader.h"
-
 #include "FileUtils.h"
 #include "StaticMesh.h"
 #include "Math/Utils.h"
@@ -207,6 +206,27 @@ bool FObjLoader::BuildStaticMesh()
 	return !StaticMeshAsset.Vertices.empty() && !StaticMeshAsset.Indices.empty();
 }
 
+bool FObjLoader::BindMaterials()
+{
+	if (RawData.ReferencedMtlPath.empty())
+		return true;
+
+	std::filesystem::path MtlPath =
+		std::filesystem::path(SourcePath).parent_path() / RawData.ReferencedMtlPath;
+
+	TMap<FString, FMaterial> Materials;
+	if (!FObjMtlLoader::Load(MtlPath.string(), Materials))
+		return true;
+
+	for (FStaticMeshMaterialSlot& Slot : StaticMeshAsset.MaterialSlots)
+	{
+		auto Iter = Materials.find(Slot.SlotName);
+		if (Iter != Materials.end())
+			Slot.MaterialData = Iter->second;
+	}
+
+	return true;
+}
 
 UStaticMesh* FObjLoader::CreateAsset()
 {
@@ -314,6 +334,7 @@ bool FObjLoader::ParseFaceLine(const FString& Line, const FString& CurrentMateri
 
 	//	surface 정보는 최소한 4개를 보장 (face는 3개가 아닐 수도 있음)
 	//	이후에 triangulation 진행해야 함
+
 	if (Tokens.size() < 4)
 	{
 		return false;
@@ -399,7 +420,6 @@ int32 FObjLoader::GetOrAddMaterialSlot(const FString& MaterialName)
 
 	FStaticMeshMaterialSlot NewSlot = {};
 	NewSlot.SlotName = SlotName;
-	NewSlot.DefaultMaterial = nullptr;
 
 	StaticMeshAsset.MaterialSlots.push_back(NewSlot);
 	return static_cast<int32>(StaticMeshAsset.MaterialSlots.size() - 1);

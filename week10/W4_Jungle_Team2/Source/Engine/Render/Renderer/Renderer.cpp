@@ -35,11 +35,16 @@ void FRenderer::Create(HWND hWindow)
 	Resources.OutlineShader.Create(Device.GetDevice(), L"Shaders/Outline.hlsl",
 		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
 
+	// 6. 스태틱 메시 (ShaderStaticMesh.hlsl)
+	Resources.StaticMeshShader.Create(Device.GetDevice(), L"Shaders/ShaderStaticMesh.hlsl",
+		"mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
+
 	Resources.PerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FPerObjectConstants));
 	Resources.FrameBuffer.Create(Device.GetDevice(), sizeof(FFrameConstants));
 	Resources.GizmoPerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FGizmoConstants));
 	Resources.EditorConstantBuffer.Create(Device.GetDevice(), sizeof(FEditorConstants));
 	Resources.OutlineConstantBuffer.Create(Device.GetDevice(), sizeof(FOutlineConstants));
+	Resources.StaticMeshConstantBuffer.Create(Device.GetDevice(), sizeof(FStaticMeshConstants));
 
 	//	MeshManager init
 	FMeshManager::Initialize();
@@ -64,12 +69,14 @@ void FRenderer::Release()
 	Resources.GizmoShader.Release();
 	Resources.EditorShader.Release();
 	Resources.OutlineShader.Release();
+	Resources.StaticMeshShader.Release();
 
 	Resources.PerObjectConstantBuffer.Release();
 	Resources.FrameBuffer.Release();
 	Resources.GizmoPerObjectConstantBuffer.Release();
 	Resources.EditorConstantBuffer.Release();
 	Resources.OutlineConstantBuffer.Release();
+	Resources.StaticMeshConstantBuffer.Release();
 
 	FGPUProfiler::Get().Shutdown();
 
@@ -378,6 +385,19 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 			Context->PSSetConstantBuffers(5, 1, &cb);
 			cb = Resources.PerObjectConstantBuffer.GetBuffer();
 			Context->VSSetConstantBuffers(1, 1, &cb);
+		}
+		break;
+
+	case ERenderCommandType::StaticMesh:
+		Resources.StaticMeshShader.Bind(Context);
+		Resources.StaticMeshConstantBuffer.Update(Context, &InCmd.Constants.StaticMesh, sizeof(FStaticMeshConstants));
+		{
+			ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
+			Context->VSSetConstantBuffers(1, 1, &cb);
+			Context->PSSetConstantBuffers(1, 1, &cb);
+			cb = Resources.StaticMeshConstantBuffer.GetBuffer();
+			Context->VSSetConstantBuffers(6, 1, &cb);
+			Context->PSSetConstantBuffers(6, 1, &cb);
 		}
 		break;
 	}
