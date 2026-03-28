@@ -5,11 +5,39 @@
 DEFINE_CLASS(UGizmoComponent, UPrimitiveComponent)
 REGISTER_FACTORY(UGizmoComponent)
 
+#include <cfloat>
 #include <cmath>
 UGizmoComponent::UGizmoComponent()
 {
-	MeshData = &FMeshManager::GetTranslationGizmo();
-	LocalExtents = FVector(1.5f, 1.5f, 1.5f);
+	GizmoMeshData = &FMeshManager::GetTranslationGizmo();
+}
+
+const FMeshData* UGizmoComponent::GetActiveMeshData() const
+{
+	return GizmoMeshData;
+}
+
+void UGizmoComponent::UpdateWorldAABB() const
+{
+	WorldAABB.Reset();
+
+	const FMatrix& WorldMatrix = GetWorldMatrix();
+
+	const float NewEx = std::abs(WorldMatrix.M[0][0]) * LocalExtents.X +
+		std::abs(WorldMatrix.M[1][0]) * LocalExtents.Y +
+		std::abs(WorldMatrix.M[2][0]) * LocalExtents.Z;
+
+	const float NewEy = std::abs(WorldMatrix.M[0][1]) * LocalExtents.X +
+		std::abs(WorldMatrix.M[1][1]) * LocalExtents.Y +
+		std::abs(WorldMatrix.M[2][1]) * LocalExtents.Z;
+
+	const float NewEz = std::abs(WorldMatrix.M[0][2]) * LocalExtents.X +
+		std::abs(WorldMatrix.M[1][2]) * LocalExtents.Y +
+		std::abs(WorldMatrix.M[2][2]) * LocalExtents.Z;
+
+	const FVector WorldCenter = GetWorldLocation();
+	WorldAABB.Expand(WorldCenter - FVector(NewEx, NewEy, NewEz));
+	WorldAABB.Expand(WorldCenter + FVector(NewEx, NewEy, NewEz));
 }
 
 bool UGizmoComponent::IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float& OutRayT)
@@ -198,7 +226,47 @@ void UGizmoComponent::SetTargetScale(FVector NewScale)
 
 bool UGizmoComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 {
-	UPrimitiveComponent::RaycastMesh(Ray, OutHitResult);
+	const FMeshData* MeshData = GetActiveMeshData();
+	if (!MeshData || MeshData->Indices.empty())
+	{
+		return false;
+	}
+
+	const FMatrix InvWorld = GetWorldMatrix().GetInverse();
+	FVector LocalOrigin = InvWorld.TransformPositionWithW(Ray.Origin);
+	FVector LocalDirection = InvWorld.TransformVector(Ray.Direction);
+	LocalDirection.NormalizeSafe();
+
+	bool bHit = false;
+	float ClosestT = FLT_MAX;
+
+	for (size_t i = 0; i + 2 < MeshData->Indices.size(); i += 3)
+	{
+		const FVector& V0 = MeshData->Vertices[MeshData->Indices[i]].Position;
+		const FVector& V1 = MeshData->Vertices[MeshData->Indices[i + 1]].Position;
+		const FVector& V2 = MeshData->Vertices[MeshData->Indices[i + 2]].Position;
+
+		float HitT = 0.0f;
+		if (IntersectTriangle(LocalOrigin, LocalDirection, V0, V1, V2, HitT) && HitT < ClosestT)
+		{
+			ClosestT = HitT;
+			bHit = true;
+			OutHitResult.FaceIndex = static_cast<int32>(i);
+		}
+	}
+
+	OutHitResult.bHit = bHit;
+	if (!bHit)
+	{
+		UpdateHoveredAxis(-1);
+		return false;
+	}
+
+	const FVector LocalHitPoint = LocalOrigin + (LocalDirection * ClosestT);
+	const FVector WorldHitPoint = GetWorldMatrix().TransformPositionWithW(LocalHitPoint);
+	OutHitResult.Distance = FVector::Distance(Ray.Origin, WorldHitPoint);
+	OutHitResult.Location = WorldHitPoint;
+	OutHitResult.HitComponent = this;
 
 	UpdateHoveredAxis(OutHitResult.FaceIndex);
 
@@ -239,13 +307,13 @@ void UGizmoComponent::UpdateLinearDrag(const FRay& Ray)
 {
 	FVector AxisVector = GetVectorForAxis(SelectedAxis);
 
-	FVector PlaneNormal = AxisVector.Cross(Ray.Direction);
-	FVector ProjectDir = PlaneNormal.Cross(AxisVector);
+	FVector PlaneNormal = AxisVector.CrossProduct(Ray.Direction);
+	FVector ProjectDir = PlaneNormal.CrossProduct(AxisVector);
 
-	float Denom = Ray.Direction.Dot(ProjectDir);
+	float Denom = Ray.Direction.DotProduct(ProjectDir);
 	if (std::abs(Denom) < 1e-6f) return;
 
-	float DistanceToPlane = (GetWorldLocation() - Ray.Origin).Dot(ProjectDir) / Denom;
+	float DistanceToPlane = (GetWorldLocation() - Ray.Origin).DotProduct(ProjectDir) / Denom;
 	FVector CurrentIntersectionLocation = Ray.Origin + (Ray.Direction * DistanceToPlane);
 
 	if (bIsFirstFrameOfDrag)
@@ -257,7 +325,7 @@ void UGizmoComponent::UpdateLinearDrag(const FRay& Ray)
 
 	FVector FullDelta = CurrentIntersectionLocation - LastIntersectionLocation;
 
-	float DragAmount = FullDelta.Dot(AxisVector);
+	float DragAmount = FullDelta.DotProduct(AxisVector);
 
 	HandleDrag(DragAmount);
 
@@ -269,10 +337,10 @@ void UGizmoComponent::UpdateAngularDrag(const FRay& Ray)
 	FVector AxisVector = GetVectorForAxis(SelectedAxis);
 	FVector PlaneNormal = AxisVector;
 
-	float Denom = Ray.Direction.Dot(PlaneNormal);
+	float Denom = Ray.Direction.DotProduct(PlaneNormal);
 	if (std::abs(Denom) < 1e-6f) return;
 
-	float DistanceToPlane = (GetWorldLocation() - Ray.Origin).Dot(PlaneNormal) / Denom;
+	float DistanceToPlane = (GetWorldLocation() - Ray.Origin).DotProduct(PlaneNormal) / Denom;
 	FVector CurrentIntersectionLocation = Ray.Origin + (Ray.Direction * DistanceToPlane);
 
 	if (bIsFirstFrameOfDrag)
@@ -285,11 +353,11 @@ void UGizmoComponent::UpdateAngularDrag(const FRay& Ray)
 	FVector CenterToLast = (LastIntersectionLocation - GetWorldLocation()).Normalized();
 	FVector CenterToCurrent = (CurrentIntersectionLocation - GetWorldLocation()).Normalized();
 
-	float DotProduct = Clamp(CenterToLast.Dot(CenterToCurrent), -1.0f, 1.0f);
+	float DotProduct = Clamp(CenterToLast.DotProduct(CenterToCurrent), -1.0f, 1.0f);
 	float AngleRadians = std::acos(DotProduct);
 
-	FVector CrossProduct = CenterToLast.Cross(CenterToCurrent);
-	float Sign = (CrossProduct.Dot(AxisVector) >= 0.0f) ? 1.0f : -1.0f;
+	FVector CrossProduct = CenterToLast.CrossProduct(CenterToCurrent);
+	float Sign = (CrossProduct.DotProduct(AxisVector) >= 0.0f) ? 1.0f : -1.0f;
 
 	float DeltaAngle = Sign * AngleRadians;
 
@@ -308,6 +376,13 @@ void UGizmoComponent::UpdateHoveredAxis(int Index)
 	{
 		if (IsHolding() == false)
 		{
+			const FMeshData* MeshData = GetActiveMeshData();
+			if (!MeshData)
+			{
+				SelectedAxis = -1;
+				return;
+			}
+
 			uint32 VertexIndex = MeshData->Indices[Index];
 			SelectedAxis = MeshData->Vertices[VertexIndex].SubID;
 
@@ -369,17 +444,17 @@ void UGizmoComponent::UpdateGizmoTransform()
 	{
 	case EGizmoMode::Scale:
 		SetRelativeRotation(ActorRot);
-		MeshData = &FMeshManager::Get().GetScaleGizmo();
+		GizmoMeshData = &FMeshManager::Get().GetScaleGizmo();
 		break;
 
 	case EGizmoMode::Rotate:
 		SetRelativeRotation(bIsWorldSpace ? FVector() : ActorRot);
-		MeshData = &FMeshManager::Get().GetRotationGizmo();
+		GizmoMeshData = &FMeshManager::Get().GetRotationGizmo();
 		break;
 
 	case EGizmoMode::Translate:
 		SetRelativeRotation(bIsWorldSpace ? FVector() : ActorRot);
-		MeshData = &FMeshManager::Get().GetTranslationGizmo();
+		GizmoMeshData = &FMeshManager::Get().GetTranslationGizmo();
 		break;
 	}
 }

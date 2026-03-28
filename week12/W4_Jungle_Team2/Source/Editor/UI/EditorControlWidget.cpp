@@ -7,7 +7,9 @@
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Component/SubUVComponent.h"
-#include "GameFramework/PrimitiveActors.h"
+#include "Component/TextRenderComponent.h"
+#include "Component/StaticMeshComponent.h"
+#include "Core/ResourceManager.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -43,32 +45,41 @@ void FEditorControlWidget::Render(float DeltaTime)
 	if (ImGui::Button("Spawn"))
 	{
 		UWorld* World = EditorEngine->GetWorld();
+		if (!World)
+		{
+			ImGui::End();
+			return;
+		}
+
+		auto SpawnStaticMeshActor = [&]()
+		{
+			AActor* Actor = World->SpawnActor<AActor>();
+			Actor->SetActorLocation(CurSpawnPoint);
+
+			UStaticMeshComponent* StaticMeshComp = Actor->AddComponent<UStaticMeshComponent>();
+			Actor->SetRootComponent(StaticMeshComp);
+		};
+
 		for (int32 i = 0; i < NumberOfSpawnedActors; i++)
 		{
 			switch (SelectedPrimitiveType)
 			{
-			case 0: // Cube
+			case 0: // StaticMesh
 			{
-				ACubeActor* Actor = World->SpawnActor<ACubeActor>();
-				Actor->SetActorLocation(CurSpawnPoint);
-				Actor->InitDefaultComponents();
+				SpawnStaticMeshActor();
 				break;
 			}
-			case 1: // Sphere
+			case 1: // TextRender
 			{
-				ASphereActor* Actor = World->SpawnActor<ASphereActor>();
+				AActor* Actor = World->SpawnActor<AActor>();
 				Actor->SetActorLocation(CurSpawnPoint);
-				Actor->InitDefaultComponents();
+				UTextRenderComponent* Text = Actor->AddComponent<UTextRenderComponent>();
+				Actor->SetRootComponent(Text);
+				Text->SetFont(FName("Default"));
+				Text->SetText("TextRender");
 				break;
 			}
-			case 2: // Plane
-			{
-				APlaneActor* Actor = World->SpawnActor<APlaneActor>();
-				Actor->SetActorLocation(CurSpawnPoint);
-				Actor->InitDefaultComponents();
-				break;
-			}
-			case 3: // Explosion
+			case 2: // SubUV
 			{
 				AActor* Actor = World->SpawnActor<AActor>();
 				Actor->SetActorLocation(CurSpawnPoint);

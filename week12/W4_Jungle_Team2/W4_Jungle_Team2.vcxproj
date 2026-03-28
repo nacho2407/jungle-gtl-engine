@@ -160,6 +160,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="PlatformTime.cpp" />
+    <ClCompile Include="Source\Engine\Asset\FontAtlasLoader.cpp" />
+    <ClCompile Include="Source\Engine\Asset\ParticleAtlasLoader.cpp" />
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Math\AABB.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Material.cpp" />
@@ -235,6 +238,9 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="PlatformTime.h" />
+    <ClInclude Include="Source\Engine\Asset\FontAtlasLoader.h" />
+    <ClInclude Include="Source\Engine\Asset\ParticleAtlasLoader.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
     <ClInclude Include="Source\Engine\Math\AABB.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Material.h" />

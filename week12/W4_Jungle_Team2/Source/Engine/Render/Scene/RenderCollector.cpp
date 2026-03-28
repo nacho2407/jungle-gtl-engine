@@ -3,6 +3,7 @@
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/StaticMeshComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/SubUVComponent.h"
@@ -95,8 +96,25 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 	{
 
 		if (!primitiveComponent->IsVisible()) continue;
+
+		FMeshBuffer* MeshBuffer = nullptr;
+		if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_StaticMesh)
+		{
+			auto* StaticMeshComp = static_cast<UStaticMeshComponent*>(primitiveComponent);
+			MeshBuffer = MeshBufferManager.GetStaticMeshBuffer(StaticMeshComp->GetStaticMesh());
+		}
+		else
+		{
+			MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
+		}
+
+		if (!MeshBuffer)
+		{
+			continue;
+		}
+
 		FRenderCommand BaseCmd{};
-		BaseCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
+		BaseCmd.MeshBuffer = MeshBuffer;
 		BaseCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
 		FVector WorldScale = primitiveComponent->GetWorldScale();
 
@@ -152,7 +170,7 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		}
 		CollectAABBCommand(primitiveComponent, ShowFlags, RenderBus);
 		EPrimitiveType PrimType = primitiveComponent->GetPrimitiveType();
-		OutlineCmd.Constants.Outline.PrimitiveType = (PrimType == EPrimitiveType::EPT_Plane ||
+		OutlineCmd.Constants.Outline.PrimitiveType = (PrimType == EPrimitiveType::EPT_Billboard ||
 			PrimType == EPrimitiveType::EPT_SubUV ||
 			PrimType == EPrimitiveType::EPT_Text) ? 0u : 1u;
 		RenderBus.AddCommand(ERenderPass::Outline, OutlineCmd);
@@ -167,15 +185,18 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 
 	switch (PrimType)
 	{
-	case EPrimitiveType::EPT_Cube:
-	case EPrimitiveType::EPT_Sphere:
-	case EPrimitiveType::EPT_Plane:
+	case EPrimitiveType::EPT_StaticMesh:
 	{
 		if (!ShowFlags.bPrimitives) return;
+
+		auto* StaticMeshComp = static_cast<UStaticMeshComponent*>(Primitive);
+		FMeshBuffer* MeshBuffer = MeshBufferManager.GetStaticMeshBuffer(StaticMeshComp->GetStaticMesh());
+		if (!MeshBuffer) return;
+
 		FRenderCommand Cmd = {};
 		Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
 		Cmd.Type = ERenderCommandType::Primitive;
-		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(PrimType);
+		Cmd.MeshBuffer = MeshBuffer;
 		Cmd.DepthStencilState = EDepthStencilState::Default;
 		RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
 		break;
@@ -201,6 +222,10 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 	}
 
 	default:
+		if (PrimType == EPrimitiveType::EPT_TransGizmo || PrimType == EPrimitiveType::EPT_RotGizmo || PrimType == EPrimitiveType::EPT_ScaleGizmo)
+		{
+			return;
+		}
 		return;
 	}
 }
@@ -212,7 +237,7 @@ void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponen
 	FRenderCommand AABBCmd = {};
 	AABBCmd.Type = ERenderCommandType::DebugBox;
 
-	FBoundingBox Box = PrimitiveComponent->GetWorldBoundingBox();
+	const FAABB& Box = PrimitiveComponent->GetWorldAABB();
 
 	// 이전에 정의한 union 구조체의 AABB 영역에 데이터를 채웁니다.
 	AABBCmd.Constants.AABB.Min = Box.Min;
