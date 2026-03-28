@@ -14,6 +14,7 @@ namespace ResourceKey
 {
 	constexpr const char* Font = "Font";
 	constexpr const char* Particle = "Particle";
+	constexpr const char* Material = "Material";
 	constexpr const char* StaticMesh = "StaticMesh";
 	constexpr const char* Path = "Path";
 	constexpr const char* Columns = "Columns";
@@ -86,6 +87,26 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
 		}
 	}
 
+	// Material — { "Name": { "Path": "Asset/Material/xxx.mtl" } }
+	if (Root.hasKey(ResourceKey::Material))
+	{
+		JSON MaterialSection = Root[ResourceKey::Material];
+		for (auto& Pair : MaterialSection.ObjectRange())
+		{
+			JSON Entry = Pair.second;
+			if (!Entry.hasKey(ResourceKey::Path))
+			{
+				continue;
+			}
+
+			FString MtlPath = Entry[ResourceKey::Path].ToString();
+			if (!LoadMaterial(MtlPath))
+			{
+				UE_LOG("Failed to load material from Resource.ini: %s", MtlPath.c_str());
+			}
+		}
+	}
+
 	// Particle — { "Name": { "Path": "...", "Columns": 6, "Rows": 6 } }
 	if (Root.hasKey(ResourceKey::Particle))
 	{
@@ -102,6 +123,7 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
 			ParticleResources[Pair.first] = Resource;
 		}
 	}
+
 
 	if (LoadGPUResources(InDevice))
 	{
@@ -148,6 +170,14 @@ bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 		}
 	}
 
+	for (auto& [Name, Mat] : MaterialRegistry)
+	{
+		if (Mat.bHasDiffuseTexture  && !Mat.DiffuseTexPath.empty())  LoadTexture(Mat.DiffuseTexPath,  Device);
+		if (Mat.bHasAmbientTexture  && !Mat.AmbientTexPath.empty())  LoadTexture(Mat.AmbientTexPath,  Device);
+		if (Mat.bHasSpecularTexture && !Mat.SpecularTexPath.empty()) LoadTexture(Mat.SpecularTexPath, Device);
+		if (Mat.bHasBumpTexture     && !Mat.BumpTexPath.empty())     LoadTexture(Mat.BumpTexPath,     Device);
+	}
+
 	return true;
 }
 
@@ -191,21 +221,77 @@ void FResourceManager::ReleaseGPUResources()
 	StaticMeshRegistry.clear();
 }
 
-FMaterialResource* FResourceManager::GetOrLoadTexture(const FString& Path, ID3D11Device* Device)
+bool FResourceManager::LoadMaterial(const FString& MtlFilePath)
 {
-	auto Iter = MaterialTextureResources.find(Path);
-	if (Iter != MaterialTextureResources.end())
+	if (MtlFilePath.empty())
 	{
-		return &Iter->second;
+		return false;
 	}
+
+	TMap<FString, FMaterial> Parsed;
+	if (!FObjMtlLoader::Load(MtlFilePath, Parsed))
+	{
+		UE_LOG("Failed to load MTL: %s", MtlFilePath.c_str());
+		return false;
+	}
+
+	for (auto& [Name, Mat] : Parsed)
+	{
+		MaterialRegistry[Name] = Mat;
+	}
+
+	UE_LOG("Loaded MTL: %s", MtlFilePath.c_str());
+	return true;
+}
+
+FMaterial* FResourceManager::FindMaterial(const FString& MaterialName)
+{
+	auto It = MaterialRegistry.find(MaterialName);
+	return (It != MaterialRegistry.end()) ? &It->second : nullptr;
+}
+
+const FMaterial* FResourceManager::FindMaterial(const FString& MaterialName) const
+{
+	auto It = MaterialRegistry.find(MaterialName);
+	return (It != MaterialRegistry.end()) ? &It->second : nullptr;
+}
+
+
+TArray<FString> FResourceManager::GetMaterialNames() const
+{
+	TArray<FString> Names;
+	Names.reserve(MaterialRegistry.size());
+	for (const auto& [Name, None] : MaterialRegistry)
+	{
+		Names.push_back(Name);
+	}
+	return Names;
+}
+
+FMaterialResource* FResourceManager::FindTexture(const FString& Path) const
+{
+	auto It = MaterialTextureResources.find(Path);
+	return (It != MaterialTextureResources.end()) ? const_cast<FMaterialResource*>(&It->second) : nullptr;
+}
+
+FMaterialResource* FResourceManager::LoadTexture(const FString& Path, ID3D11Device* Device)
+{
+	if (FMaterialResource* Cached = FindTexture(Path))
+	{
+		return Cached;
+	}
+
+	if (!Device)
+	{
+		return nullptr;
+	}
+
+	std::wstring FullPath = FPaths::Combine(FPaths::RootDir(), FPaths::ToWide(Path));
 
 	FMaterialResource Resource;
 	Resource.Path = Path;
 
-	std::wstring FullPath = FPaths::Combine(FPaths::RootDir(), FPaths::ToWide(Path));
-
 	HRESULT hr;
-
 	if (FullPath.size() >= 4 && FullPath.substr(FullPath.size() - 4) == L".dds")
 	{
 		hr = DirectX::CreateDDSTextureFromFile(Device, FullPath.c_str(), nullptr, &Resource.SRV);
