@@ -3,6 +3,7 @@
 #include "Engine/Runtime/Engine.h"
 
 #include "Editor/Viewport/FLevelViewportLayout.h"
+#include "Editor/Viewport/OverlayStatSystem.h"
 #include "Editor/UI/EditorMainPanel.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
@@ -10,6 +11,7 @@
 class UGizmoComponent;
 class FLevelEditorViewportClient;
 class FEditorViewportClient;
+class FOverlayStatSystem;
 
 class UEditorEngine : public UEngine
 {
@@ -55,8 +57,12 @@ public:
 
 	void RenderUI(float DeltaTime);
 
+	FOverlayStatSystem& GetOverlayStatSystem() { return OverlayStatSystem; }
+	const FOverlayStatSystem& GetOverlayStatSystem() const { return OverlayStatSystem; }
+
 private:
 	FSelectionManager SelectionManager;
 	FEditorMainPanel MainPanel;
 	FLevelViewportLayout ViewportLayout;
+	FOverlayStatSystem OverlayStatSystem;
 };
