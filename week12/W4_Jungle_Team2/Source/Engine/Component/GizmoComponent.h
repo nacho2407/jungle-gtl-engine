@@ -4,6 +4,7 @@
 #include "Core/CoreTypes.h"
 
 class AActor;
+struct FMeshData;
 
 class UGizmoComponent : public UPrimitiveComponent
 {
@@ -31,6 +32,7 @@ private:
 	bool bPressedOnHandle = false;
 
 	bool IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float& OutRayT);
+	const FMeshData* GetActiveMeshData() const;
 
 	//Control Target Method
 	void HandleDrag(float DragAmount);
@@ -45,6 +47,7 @@ public:
 	DECLARE_CLASS(UGizmoComponent, UPrimitiveComponent)
 	UGizmoComponent();
 
+	void UpdateWorldAABB() const override;
 	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
 
 	FVector GetVectorForAxis(int32 Axis);
@@ -84,4 +87,8 @@ public:
 	void Deactivate() override;
 
 	EPrimitiveType GetPrimitiveType() const override;
+
+private:
+	const FMeshData* GizmoMeshData = nullptr;
+	FVector LocalExtents = FVector(1.5f, 1.5f, 1.5f);
 };
