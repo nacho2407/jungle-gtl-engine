@@ -220,12 +220,6 @@ void FEditorEngine::InitializeViewportStorage()
 	Viewports[1].SetRect({ HalfW, 0, Width - HalfW, HalfH });
 	Viewports[2].SetRect({ 0, HalfH, HalfW, Height - HalfH });
 	Viewports[3].SetRect({ HalfW, HalfH, Width - HalfW, Height - HalfH });
-
-	ID3D11Device* Device = Core->GetRenderer()->GetDevice();
-	for (uint32 i = 0; i < 4; ++i)
-	{
-		Viewports[i].EnsureResources(Device);
-	}
 }
 
 FViewport* FEditorEngine::FindViewport(FViewportId Id)

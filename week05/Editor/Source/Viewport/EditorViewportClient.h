@@ -5,6 +5,7 @@
 #include "Gizmo/Gizmo.h"
 #include "Picking/Picker.h"
 #include "Types/CoreTypes.h"
+#include "BlitRenderer.h"
 
 class CEditorUI;
 class CWindow;
@@ -50,6 +51,8 @@ private:
 	TArray<FViewportEntry> Entries;
 	FEditorEngine& EditorEngine;
 
+	FBlitRenderer BlitRenderer;
+
 	ERenderMode RenderMode = ERenderMode::Lighting;
 	const FString WireframeMaterialName = "M_Wireframe";
 	std::shared_ptr<FMaterial> WireFrameMaterial = nullptr;
@@ -66,4 +69,5 @@ private:
 	float GridSize = 10.0f;
 	float LineThickness = 1.0f;
 	bool bShowGrid = true;
+	void SyncViewportRectsFromDock();
 };

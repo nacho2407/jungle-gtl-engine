@@ -47,6 +47,26 @@ void CRenderer::ClearSceneRenderTarget()
 	bUseSceneRenderTargetOverride = false;
 }
 
+void CRenderer::BeginScenePass(ID3D11RenderTargetView* InRTV, ID3D11DepthStencilView* InDSV, const D3D11_VIEWPORT& InVP)
+{
+	DeviceContext->OMSetRenderTargets(1, &InRTV, InDSV);
+	DeviceContext->RSSetViewports(1, &InVP);
+	ClearCommandList();
+}
+
+void CRenderer::EndScenePass()
+{
+}
+
+void CRenderer::BindSwapChainRTV()
+{
+	if (RenderTargetView)
+	{
+		DeviceContext->OMSetRenderTargets(1, &RenderTargetView, DepthStencilView);
+		DeviceContext->RSSetViewports(1, &Viewport);
+	}
+}
+
 void CRenderer::SetGUICallbacks(
 	FGUICallback InInit,
 	FGUICallback InShutdown,
@@ -272,7 +292,6 @@ void CRenderer::SetConstantBuffers()
 void CRenderer::BeginFrame()
 {
 	if (GUINewFrame) GUINewFrame();
-	if (GUIUpdate) GUIUpdate();
 
 	constexpr float ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
 	if (RenderTargetView) DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
@@ -357,6 +376,8 @@ void CRenderer::ExecuteCommands()
 	ExecuteRenderPass(ERenderLayer::Overlay);
 	
 	if (PostRenderCallback) PostRenderCallback(this);
+
+	ClearCommandList();
 }
 
 void CRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)

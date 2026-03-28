@@ -77,8 +77,8 @@ FRay CPicker::ScreenToRay(const FViewportEntry& Entry, int32 ScreenX, int32 Scre
 	const FMatrix ProjMatrix = Entry.LocalState.BuildProjMatrix(AspectRatio);
 	const FMatrix ViewInverse = ViewMatrix.GetInverse();
 	//Ndc convert missing center pixel lerp (0.5) Half-pixel offset added
-	const float NdcX = (2.0f * (ScreenX + 0.5f) / ScreenX) - 1.0f;
-	const float NdcY = 1.0f - (2.0f * (ScreenY + 0.5f) / ScreenY);
+	const float NdcX = (2.0f * (ScreenX + 0.5f) / Rect.Width) - 1.0f;
+	const float NdcY = 1.0f - (2.0f * (ScreenY + 0.5f) / Rect.Height);
 
 	if (Entry.LocalState.ProjectionType != EViewportType::Perspective)
 	{

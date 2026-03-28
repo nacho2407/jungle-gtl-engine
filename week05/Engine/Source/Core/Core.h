@@ -34,6 +34,7 @@ public:
 
 	void Tick();
 	void Tick(float DeltaTime);
+	void Render();
 
 	void ProcessInput(HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam);
 	CRenderer* GetRenderer() const { return Renderer.get(); }
@@ -72,7 +73,6 @@ private:
 	void Input(float DeltaTime);
 	void Physics(float DeltaTime);
 	void GameLogic(float DeltaTime);
-	void Render();
 	void LateUpdate(float DeltaTime);
 	void RegisterConsoleVariables();
 	FDebugDrawManager& GetDebugDrawManager() { return DebugDrawManager; }
@@ -94,6 +94,4 @@ private:
 	double GCInterval = 30.0;
 	int32 WindowWidth = 0;
 	int32 WindowHeight = 0;
-
-	FRenderCommandQueue CommandQueue;
 };

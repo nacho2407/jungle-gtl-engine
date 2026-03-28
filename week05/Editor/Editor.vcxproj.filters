@@ -102,6 +102,7 @@
     <ClCompile Include="EditorGlobals.cpp" />
     <ClCompile Include="Source\Viewport\Viewport.cpp" />
     <ClCompile Include="Source\Viewport\ViewportTypes.cpp" />
+    <ClCompile Include="Source\Viewport\BlitRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\FEditorEngine.h">
@@ -176,6 +177,7 @@
     <ClInclude Include="EditorGlobals.h" />
     <ClInclude Include="Source\Viewport\Viewport.h" />
     <ClInclude Include="Source\Viewport\ViewportTypes.h" />
+    <ClInclude Include="Source\Viewport\BlitRenderer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\imgui\imgui.natstepfilter">

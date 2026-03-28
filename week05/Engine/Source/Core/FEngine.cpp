@@ -58,8 +58,9 @@ void FEngine::Run()
 	{
 		if (Core)
 		{
-			Tick(Core->GetTimer().GetDeltaTime());
 			Core->Tick();
+			Tick(Core->GetDeltaTime());
+			Core->Render();
 		}
 	}
 }

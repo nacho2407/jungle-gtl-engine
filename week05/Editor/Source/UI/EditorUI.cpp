@@ -266,8 +266,6 @@ void CEditorUI::AttachToRenderer(CRenderer* InRenderer)
 		}
 	);
 
-	InRenderer->SetGUIUpdateCallback([this]() { Render(); });
-
 	InRenderer->SetPostRenderCallback([this](CRenderer* Renderer)
 		{
 			if (!Core)

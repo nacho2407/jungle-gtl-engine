@@ -12,6 +12,8 @@
 #include "Component/SubUVComponent.h"
 #include "Core/FEngine.h"
 #include "Component/TextComponent.h"
+#include "Component/CameraComponent.h"
+#include "Math/Frustum.h"
 
 
 void IViewportClient::Attach(CCore* Core, CRenderer* Renderer)
@@ -92,6 +94,11 @@ void IViewportClient::HandleFileDropOnViewport(const FString& FilePath)
 
 }
 
+void IViewportClient::Render(CCore* Core, CRenderer* Renderer)
+{
+}
+
+
 void CGameViewportClient::Attach(CCore* Core, CRenderer* Renderer)
 {
 	if (Renderer)
@@ -106,4 +113,42 @@ void CGameViewportClient::Detach(CCore* Core, CRenderer* Renderer)
 	{
 		Renderer->ClearViewportCallbacks();
 	}
+}
+
+void CGameViewportClient::Render(CCore* Core, CRenderer* Renderer)
+{
+	if (!Core || !Renderer)
+	{
+		return;
+	}
+
+	UScene* Scene = ResolveScene(Core);
+	if (!Scene)
+	{
+		return;
+	}
+
+	UWorld* ActiveWorld = ResolveWorld(Core);
+	if (!ActiveWorld)
+	{
+		return;
+	}
+
+	UCameraComponent* ActiveCamera = ActiveWorld->GetActiveCameraComponent();
+	if (!ActiveCamera)
+	{
+		return;
+	}
+
+	FRenderCommandQueue Queue;
+	Queue.Reserve(Renderer->GetPrevCommandCount());
+	Queue.ViewMatrix = ActiveCamera->GetViewMatrix();
+	Queue.ProjectionMatrix = ActiveCamera->GetProjectionMatrix();
+
+	FFrustum Frustum;
+	Frustum.ExtractFromVP(Queue.ViewMatrix * Queue.ProjectionMatrix);
+
+	BuildRenderCommands(Core, Scene, Frustum, Queue);
+	Renderer->SubmitCommands(Queue);
+	Renderer->ExecuteCommands();
 }

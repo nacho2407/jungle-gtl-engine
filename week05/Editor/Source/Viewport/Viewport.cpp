@@ -96,6 +96,9 @@ void FViewport::EnsureResources(ID3D11Device* Device)
 		Release();
 		return;
 	}
+
+	ResourceWidth = Rect.Width;
+	ResourceHeight = Rect.Height;
 }
 
 void FViewport::Release()
@@ -119,4 +122,7 @@ void FViewport::Release()
 	Resource = reinterpret_cast<IUnknown*>(RenderTargetTexture);
 	ReleaseIfValid(Resource);
 	RenderTargetTexture = nullptr;
+
+	ResourceWidth = 0;
+	ResourceHeight = 0;
 }

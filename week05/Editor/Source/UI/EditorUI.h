@@ -6,6 +6,7 @@
 #include "StatWindow.h"
 #include "Types/ObjectPtr.h"
 #include "ContentBrowserWindow.h"
+#include "Viewport/ViewportTypes.h"
 
 class CCore;
 class CWindow;
@@ -26,6 +27,9 @@ public:
 
 	CConsoleWindow& GetConsole() { return Console; }
 	CCore* GetCore() { return Core; }
+
+	bool GetCentralDockRect(FRect& OutRect) const;
+	bool HasCentralDockRect() const { return bHasCentralDockRect; }
 
 private:
 	void BuildDefaultLayout(uint32 DockID);
@@ -48,4 +52,6 @@ private:
 	bool bViewportClientActive = false;
 	bool bLayoutInitialized = false;
 	CRenderer* CurrentRenderer = nullptr;
+	FRect CentralDockRect;
+	bool bHasCentralDockRect = false;
 };

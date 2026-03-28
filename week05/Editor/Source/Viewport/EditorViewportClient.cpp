@@ -40,6 +40,8 @@ void CEditorViewportClient::Attach(CCore* Core, CRenderer* Renderer)
 	EditorUI.SetupWindow(MainWindow);
 	EditorUI.AttachToRenderer(Renderer);
 
+	BlitRenderer.Initialize(Renderer->GetDevice());
+
 	// Wireframe 모드를 위한 머티리얼 가져와서 보관
 	WireFrameMaterial = FMaterialManager::Get().FindByName(WireframeMaterialName);
 
@@ -107,6 +109,8 @@ void CEditorViewportClient::Detach(CCore* Core, CRenderer* Renderer)
 {
 	Gizmo.EndDrag();
 	EditorUI.DetachFromRenderer(Renderer);
+
+	BlitRenderer.Release();
 
 	GridMesh.reset();
 	GridMaterial.reset();
@@ -374,13 +378,14 @@ void CEditorViewportClient::Render(CCore* Core, CRenderer* Renderer)
 		return;
 	}
 
-	const float Colors[4][4] =
+	UScene* Scene = ResolveScene(Core);
+
+	if (!Scene)
 	{
-		{ 0.25f, 0.10f, 0.10f, 1.0f },
-		{ 0.10f, 0.25f, 0.10f, 1.0f },
-		{ 0.10f, 0.10f, 0.25f, 1.0f },
-		{ 0.25f, 0.25f, 0.10f, 1.0f },
-	};
+		return;
+	}
+
+	constexpr float ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
 
 	for (int32 i = 0; i < static_cast<int32>(Entries.size()); ++i)
 	{
@@ -399,8 +404,6 @@ void CEditorViewportClient::Render(CCore* Core, CRenderer* Renderer)
 			continue;
 		}
 
-		Context->OMSetRenderTargets(1, &RTV, DSV);
-
 		const auto& Rect = Entry.Viewport->GetRect();
 		D3D11_VIEWPORT VP = {};
 		VP.TopLeftX = 0.0f;
@@ -409,11 +412,31 @@ void CEditorViewportClient::Render(CCore* Core, CRenderer* Renderer)
 		VP.Height = static_cast<float>(Rect.Height);
 		VP.MinDepth = 0.0f;
 		VP.MaxDepth = 1.0f;
-
-		Context->RSSetViewports(1, &VP);
-		Context->ClearRenderTargetView(RTV, Colors[i % 4]);
+		
+		Context->ClearRenderTargetView(RTV, ClearColor);
 		Context->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+		Renderer->BeginScenePass(RTV, DSV, VP);
+
+		const float AspectRatio = static_cast<float>(Rect.Width) / static_cast<float>(Rect.Height);
+		FRenderCommandQueue Queue;
+		Queue.Reserve(Renderer->GetPrevCommandCount());
+		Queue.ProjectionMatrix = Entry.LocalState.BuildProjMatrix(AspectRatio);
+		Queue.ViewMatrix = Entry.LocalState.BuildViewMatrix();
+
+		FFrustum ffrustum;
+		ffrustum.ExtractFromVP(Queue.ViewMatrix * Queue.ProjectionMatrix);
+		BuildRenderCommands(Core, Scene, ffrustum, Queue);
+		Renderer->SubmitCommands(Queue);
+		Renderer->ExecuteCommands();
+		Renderer->EndScenePass();
 	}
+
+	Renderer->BindSwapChainRTV();
+
+	BlitRenderer.BlitAll(Context, Entries);
+
+	EditorUI.Render();
 }
 
 void CEditorViewportClient::InitializeEntries()
@@ -433,7 +456,7 @@ void CEditorViewportClient::InitializeEntries()
 		};
 
 	AddEntry(0, EViewportType::Perspective, 0);
-	AddEntry(1, EViewportType::OrthoTop, 1);
-	AddEntry(2, EViewportType::OrthoFront, 2);
-	AddEntry(3, EViewportType::OrthoRight, 3);
+	AddEntry(1, EViewportType::Perspective, 1);
+	AddEntry(2, EViewportType::Perspective, 2);
+	AddEntry(3, EViewportType::Perspective, 3);
 }

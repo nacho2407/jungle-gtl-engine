@@ -5,15 +5,12 @@
 #include "Scene/Scene.h"
 #include "Actor/Actor.h"
 #include "Input/EnhancedInputManager.h"
-#include "Component/CameraComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Object/ObjectManager.h"
 #include "Component/PrimitiveComponent.h"
 #include "Primitive/PrimitiveBase.h"
 #include "Renderer/Renderer.h"
-#include "Renderer/RenderCommand.h"
 #include "Renderer/MaterialManager.h"
-#include "Math/Frustum.h"
 #include "Input/InputManager.h"
 #include "ViewportClient.h"
 #include "Object/ObjectGlobals.h"
@@ -141,7 +138,6 @@ void CCore::Tick(const float DeltaTime)
 	Input(DeltaTime);
 	Physics(DeltaTime);
 	GameLogic(DeltaTime);
-	Render();
 	LateUpdate(DeltaTime);
 }
 
@@ -236,49 +232,25 @@ void CCore::LateUpdate(float DeltaTime)
 
 void CCore::Render()
 {
-	UScene* Scene = ViewportClient ? ViewportClient->ResolveScene(this) : GetActiveScene();
-	if (!Renderer || !Scene || Renderer->IsOccluded())
+	if (!Renderer || Renderer->IsOccluded())
 	{
 		return;
 	}
 
 	Renderer->BeginFrame();
 
-	UWorld* ActiveWorld = GetActiveWorld();
-	if (!ActiveWorld)
-	{
-		Renderer->EndFrame();
-		return;
-	}
-	UCameraComponent* ActiveCamera = ActiveWorld->GetActiveCameraComponent();
-	if (!ActiveCamera)
-	{
-		Renderer->EndFrame();
-		return;
-	}
-
-	CommandQueue.Clear();
-	CommandQueue.Reserve(Renderer->GetPrevCommandCount());
-	CommandQueue.ViewMatrix = ActiveCamera->GetViewMatrix();
-	CommandQueue.ProjectionMatrix = ActiveCamera->GetProjectionMatrix();
-
-	FFrustum Frustum;
-	const FMatrix ViewProjection = CommandQueue.ViewMatrix * CommandQueue.ProjectionMatrix;
-	Frustum.ExtractFromVP(ViewProjection);
-
 	if (ViewportClient)
 	{
-		ViewportClient->BuildRenderCommands(this, Scene, Frustum, CommandQueue);
-	}
-	else
-	{
-		// Scene->CollectRenderCommands(Frustum, CommandQueue);
+		ViewportClient->Render(this, Renderer.get());
 	}
 
-	Renderer->SubmitCommands(CommandQueue);
-	Renderer->ExecuteCommands();
 	const FShowFlags& ShowFlags = ViewportClient ? ViewportClient->GetShowFlags() : FShowFlags();
-	DebugDrawManager.Flush(Renderer.get(), ShowFlags, ActiveWorld);
+	UWorld* ActiveWorld = GetActiveWorld();
+	if (ActiveWorld)
+	{
+		DebugDrawManager.Flush(Renderer.get(), ShowFlags, ActiveWorld);
+	}
+
 	Renderer->EndFrame();
 }
 

@@ -48,7 +48,7 @@ FMatrix FViewportLocalState::BuildViewMatrix() const
 	{
 		const FVector Eye = Position;
 		const FVector Forward = Rotation.Vector().GetSafeNormal();
-		const FVector Up = Rotation.RotateVector(FVector::UpVector).GetSafeNormal();
+		const FVector Up = FVector::UpVector;
 
 		return FMatrix::MakeViewLookAtLH(Eye, Eye + Forward, Up);
 	}
@@ -57,7 +57,7 @@ FMatrix FViewportLocalState::BuildViewMatrix() const
 	{
 		const FVector Eye = OrthoTarget + FVector::UpVector * OrthoZoom;
 		const FVector Forward = FVector::DownVector;
-		const FVector Up = FVector::ForwardVector;
+		const FVector Up = FVector::UpVector;
 		return FMatrix::MakeViewLookAtLH(Eye, Eye + Forward, Up);
 	}
 
@@ -78,7 +78,13 @@ FMatrix FViewportLocalState::BuildViewMatrix() const
 	}
 
 	default:
-		return FMatrix::Identity;
+	{
+		const FVector Eye = Position;
+		const FVector Forward = Rotation.Vector().GetSafeNormal();
+		const FVector Up = FVector::UpVector;
+
+		return FMatrix::MakeViewLookAtLH(Eye, Eye + Forward, Up);
+	}
 	}
 }
 
