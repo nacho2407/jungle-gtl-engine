@@ -16,7 +16,7 @@ class FSelectionManager;
 struct ObjViewerModelInfo
 {
 	FVector ModelCenter = FVector(0.0f, 0.0f, 0.0f);
-	float ModelRadius = 50.0f;
+	float ModelRadius = 2.0f;
 };
 
 class FObjViewerViewportClient
@@ -74,7 +74,7 @@ private:
 	// Viewer 전용 중심점 기준 회전 조작에 사용
 	bool bIsOrbiting = false;
 	FVector OrbitPivot = FVector(0.0f, 0.0f, 0.0f);
-	float OrbitDistance = 50.0f;
+	float OrbitDistance = 10.0f;
 
 	FCursorOverlayState CursorOverlayState;
 };
