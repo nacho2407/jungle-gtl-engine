@@ -6,6 +6,7 @@
 #include "UI/EditorUI.h"
 #include "Viewport/Viewport.h"
 #include "Viewport/PreviewViewportClient.h"
+#include "Slate/SlateApplication.h"
 
 class AActor;
 
@@ -33,6 +34,7 @@ public:
 
 	const TArray<FViewport>& GetViewports() const { return Viewports; }
 	TArray<FViewport>& GetViewports() { return Viewports; }
+	FSlateApplication* GetSlateApplication() const { return SlateApplication.get(); }
 
 protected:
 	void PreInitialize() override;
@@ -78,4 +80,6 @@ private:
 	FWindowsWindow* MainWindow = nullptr;
 	TArray<FViewport> Viewports;
 	FEditorViewportClient* EditorViewportClientRaw = nullptr;
+
+	std::unique_ptr<FSlateApplication> SlateApplication = nullptr;
 };

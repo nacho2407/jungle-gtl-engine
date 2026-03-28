@@ -23,7 +23,6 @@ public:
 	void Render();
 	void SyncSelectedActorProperty();
 	bool GetViewportMousePosition(int32 WindowMouseX, int32 WindowMouseY, int32& OutViewportX, int32& OutViewportY, int32& OutWidth, int32& OutHeight) const;
-	bool IsViewportInteractive() const;
 	bool HasHostWindow() const { return MainWindow != nullptr; }
 	FWindowsWindow* GetHostWindow() const { return MainWindow; }
 
@@ -31,11 +30,11 @@ public:
 	FEditorEngine* GetEngine() { return Engine; }
 
 	bool GetCentralDockRect(FRect& OutRect) const;
+	void SaveEditorSettings();
 
 private:
 	void BuildDefaultLayout(uint32 DockID);
 	void LoadEditorSettings();
-	void SaveEditorSettings();
 	std::wstring GetEditorIniPathW() const;
 	FEditorEngine* Engine = nullptr;
 	TObjectPtr<AActor> CachedSelectedActor;

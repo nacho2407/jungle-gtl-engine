@@ -71,4 +71,6 @@ private:
 	float LineThickness = 1.0f;
 	bool bShowGrid = true;
 	void SyncViewportRectsFromDock();
+	// Entries 기준으로 Id에 해당하는 FViewport* 반환 (없으면 nullptr)
+	FViewport* GetViewportById(FViewportId Id) const;
 };

@@ -39,18 +39,19 @@ void FPreviewViewportClient::Tick(FEngine* Engine, float DeltaTime)
 		return;
 	}
 
+	FSlateApplication* Slate = EditorUI.GetEngine()->GetSlateApplication();
+	if (!Slate || Slate->GetFocusedViewportId() == INVALID_VIEWPORT_ID)
+	{
+		return;
+	}
+
 	if (ImGui::GetCurrentContext())
 	{
 		const ImGuiIO& IO = ImGui::GetIO();
-		if ((IO.WantCaptureKeyboard || IO.WantCaptureMouse) && !EditorUI.IsViewportInteractive())
+		if (IO.WantCaptureKeyboard || IO.WantCaptureMouse)
 		{
 			return;
 		}
-	}
-
-	if (!EditorUI.IsViewportInteractive())
-	{
-		return;
 	}
 
 	IViewportClient::Tick(Engine, DeltaTime);

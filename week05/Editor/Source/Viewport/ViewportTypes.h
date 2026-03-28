@@ -7,12 +7,27 @@ using FViewportId = uint32;
 constexpr FViewportId INVALID_VIEWPORT_ID = UINT32_MAX;
 constexpr int32 MAX_VIEWPORTS = 4;
 
+struct FPoint
+{
+	int32 X = 0;
+	int32 Y = 0;
+
+	FPoint(int32 InX = 0, int32 InY = 0) : X(InX), Y(InY)
+	{
+	}
+};
+
 struct FRect
 {
 	int32 X = 0;
 	int32 Y = 0;
 	int32 Width = 0;
 	int32 Height = 0;
+
+	FRect(int32 InX = 0, int32 InY = 0, int32 InWidth = 0, int32 InHeight = 0) :
+		X(InX), Y(InY), Width(InWidth), Height(InHeight)
+	{
+	}
 
 	bool IsValid() const { return Width > 0 && Height > 0; }
 };

@@ -120,18 +120,19 @@ void FEditorViewportClient::Tick(FEngine* Engine, float DeltaTime)
 		return;
 	}
 
+	FSlateApplication* Slate = EditorUI.GetEngine()->GetSlateApplication();
+	if (!Slate || Slate->GetFocusedViewportId() == INVALID_VIEWPORT_ID)
+	{
+		return;
+	}
+
 	if (ImGui::GetCurrentContext())
 	{
 		const ImGuiIO& IO = ImGui::GetIO();
-		if ((IO.WantCaptureKeyboard || IO.WantCaptureMouse) && !EditorUI.IsViewportInteractive())
+		if (IO.WantCaptureKeyboard || IO.WantCaptureMouse)
 		{
 			return;
 		}
-	}
-
-	if (!EditorUI.IsViewportInteractive())
-	{
-		return;
 	}
 
 	IViewportClient::Tick(Engine, DeltaTime);
@@ -139,36 +140,38 @@ void FEditorViewportClient::Tick(FEngine* Engine, float DeltaTime)
 
 void FEditorViewportClient::HandleMessage(FEngine* Engine, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
 {
-	if (!Engine || !EditorUI.IsViewportInteractive())
-	{
-		return;
-	}
-
 	FEditorEngine* EditorEngine = static_cast<FEditorEngine*>(Engine);
-	if (!EditorEngine)
-	{
+	if (!Engine || !EditorEngine)
 		return;
+
+	FSlateApplication* Slate = EditorEngine->GetSlateApplication();
+	if (!Slate)
+		return;
+
+	const int32 MouseX = static_cast<int32>(static_cast<short>(LOWORD(LParam)));
+	const int32 MouseY = static_cast<int32>(static_cast<short>(HIWORD(LParam)));
+
+	// 1. Slate 마우스 이벤트 전달: FocusedViewportId 갱신 + SSplitter 드래그 처리
+	switch (Msg)
+	{
+	case WM_LBUTTONDOWN: Slate->ProcessMouseDown(MouseX, MouseY); break;
+	case WM_MOUSEMOVE:   Slate->ProcessMouseMove(MouseX, MouseY); break;
+	case WM_LBUTTONUP:   Slate->ProcessMouseUp(MouseX, MouseY);   break;
+	default: break;
 	}
 
-	if (ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureMouse && !EditorUI.IsViewportInteractive())
-	{
+	// 2. SSplitter 드래그 중 → 뷰포트 로직 전부 차단
+	if (Slate->IsDraggingSplitter())
 		return;
-	}
+
+	// 3. ImGui 마우스 캡처 → 차단
+	if (ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureMouse)
+		return;
 
 	UScene* Scene = ResolveScene(Engine);
 	AActor* SelectedActor = EditorEngine->GetSelectedActor();
 	if (!Scene)
-	{
 		return;
-	}
-
-	const bool bHasViewportMouse = EditorUI.GetViewportMousePosition(
-		static_cast<int32>(static_cast<short>(LOWORD(LParam))),
-		static_cast<int32>(static_cast<short>(HIWORD(LParam))),
-		ScreenMouseX,
-		ScreenMouseY,
-		ScreenWidth,
-		ScreenHeight);
 
 	const bool bRightMouseDown = Engine->GetInputManager() &&
 		Engine->GetInputManager()->IsMouseButtonDown(FInputManager::MOUSE_RIGHT);
@@ -176,90 +179,102 @@ void FEditorViewportClient::HandleMessage(FEngine* Engine, HWND Hwnd, UINT Msg, 
 	switch (Msg)
 	{
 	case WM_KEYDOWN:
-		if (bRightMouseDown)
-		{
+	{
+		if (Slate->GetFocusedViewportId() == INVALID_VIEWPORT_ID || bRightMouseDown)
 			return;
-		}
-
 		switch (WParam)
 		{
-		case 'W':
-			Gizmo.SetMode(EGizmoMode::Location);
-			return;
-
-		case 'E':
-			Gizmo.SetMode(EGizmoMode::Rotation);
-			return;
-
-		case 'R':
-			Gizmo.SetMode(EGizmoMode::Scale);
-			return;
-
+		case 'W': Gizmo.SetMode(EGizmoMode::Location);   return;
+		case 'E': Gizmo.SetMode(EGizmoMode::Rotation);   return;
+		case 'R': Gizmo.SetMode(EGizmoMode::Scale);      return;
 		case 'L':
 			Gizmo.ToggleCoordinateSpace();
 			UE_LOG("Gizmo Space: %s", Gizmo.GetCoordinateSpace() == EGizmoCoordinateSpace::Local ? "Local" : "World");
 			return;
-
-		default:
-			return;
+		default: return;
 		}
+	}
 
 	case WM_LBUTTONDOWN:
-		if (!bHasViewportMouse)
-		{
-			return;
-		}
+	{
+		// ProcessMouseDown에서 FocusedViewportId가 방금 갱신됨
+		FViewport* VP = GetViewportById(Slate->GetFocusedViewportId());
+		if (!VP) return;
+		const FRect& R = VP->GetRect();
+		ScreenMouseX = MouseX - R.X;
+		ScreenMouseY = MouseY - R.Y;
+		ScreenWidth  = R.Width;
+		ScreenHeight = R.Height;
 
 		if (SelectedActor && Gizmo.BeginDrag(SelectedActor, Scene, Picker, ScreenMouseX, ScreenMouseY, ScreenWidth, ScreenHeight))
-		{
 			return;
-		}
 
-		{
-			AActor* PickedActor = Picker.PickActor(Scene, ScreenMouseX, ScreenMouseY, ScreenWidth, ScreenHeight);
-			EditorEngine->SetSelectedActor(PickedActor);
-			EditorUI.SyncSelectedActorProperty();
-		}
+		AActor* PickedActor = Picker.PickActor(Scene, ScreenMouseX, ScreenMouseY, ScreenWidth, ScreenHeight);
+		EditorEngine->SetSelectedActor(PickedActor);
+		EditorUI.SyncSelectedActorProperty();
 		return;
+	}
 
 	case WM_MOUSEMOVE:
-		if (!bHasViewportMouse)
+	{
+		FViewport* VP = GetViewportById(Slate->GetHoveredViewportId());
+		if (!VP)
 		{
 			Gizmo.ClearHover();
 			return;
 		}
+		const FRect& R = VP->GetRect();
+		ScreenMouseX = MouseX - R.X;
+		ScreenMouseY = MouseY - R.Y;
+		ScreenWidth  = R.Width;
+		ScreenHeight = R.Height;
 
 		if (!Gizmo.IsDragging())
 		{
 			Gizmo.UpdateHover(SelectedActor, Scene, Picker, ScreenMouseX, ScreenMouseY, ScreenWidth, ScreenHeight);
 			return;
 		}
-
 		if (Gizmo.UpdateDrag(SelectedActor, Scene, Picker, ScreenMouseX, ScreenMouseY, ScreenWidth, ScreenHeight))
-		{
 			EditorUI.SyncSelectedActorProperty();
-		}
 		return;
+	}
 
 	case WM_LBUTTONUP:
-		if (Gizmo.IsDragging())
+	{
+		if (!Gizmo.IsDragging()) return;
+		Gizmo.EndDrag();
+		FViewport* VP = GetViewportById(Slate->GetHoveredViewportId());
+		if (VP)
 		{
-			Gizmo.EndDrag();
-			if (bHasViewportMouse)
-			{
-				Gizmo.UpdateHover(SelectedActor, Scene, Picker, ScreenMouseX, ScreenMouseY, ScreenWidth, ScreenHeight);
-			}
-			else
-			{
-				Gizmo.ClearHover();
-			}
-			EditorUI.SyncSelectedActorProperty();
+			const FRect& R = VP->GetRect();
+			ScreenMouseX = MouseX - R.X;
+			ScreenMouseY = MouseY - R.Y;
+			ScreenWidth  = R.Width;
+			ScreenHeight = R.Height;
+			Gizmo.UpdateHover(SelectedActor, Scene, Picker, ScreenMouseX, ScreenMouseY, ScreenWidth, ScreenHeight);
 		}
+		else
+		{
+			Gizmo.ClearHover();
+		}
+		EditorUI.SyncSelectedActorProperty();
 		return;
+	}
 
 	default:
 		return;
 	}
+}
+
+FViewport* FEditorViewportClient::GetViewportById(FViewportId Id) const
+{
+	if (Id == INVALID_VIEWPORT_ID) return nullptr;
+	for (const FViewportEntry& Entry : Entries)
+	{
+		if (Entry.Id == Id && Entry.bActive && Entry.Viewport)
+			return Entry.Viewport;
+	}
+	return nullptr;
 }
 
 void FEditorViewportClient::HandleFileDoubleClick(const FString& FilePath)
@@ -458,49 +473,10 @@ void FEditorViewportClient::SyncViewportRectsFromDock()
 		Central.Height = static_cast<int32>(VP->WorkSize.y);
 	}
 
-	if (Entries.empty())
+	FSlateApplication* Slate = EditorEngine.GetSlateApplication();
+	if (Slate)
 	{
-		return;
-	}
-
-	// 활성 뷰포트 수에 따라 분할
-	int32 ActiveCount = 0;
-	for (const FViewportEntry& Entry : Entries)
-	{
-		if (Entry.bActive) ++ActiveCount;
-	}
-
-	// 분할 rect 계산: 1개면 전체, 2개면 좌/우, 4개면 2x2
-	const int32 HalfW = Central.Width  / 2;
-	const int32 HalfH = Central.Height / 2;
-
-	FRect SubRects[4];
-	if (ActiveCount <= 1)
-	{
-		SubRects[0] = Central;
-	}
-	else if (ActiveCount == 2)
-	{
-		SubRects[0] = { Central.X,          Central.Y, HalfW, Central.Height };
-		SubRects[1] = { Central.X + HalfW,  Central.Y, HalfW, Central.Height };
-	}
-	else // 3 or 4
-	{
-		SubRects[0] = { Central.X,         Central.Y,          HalfW, HalfH };
-		SubRects[1] = { Central.X + HalfW, Central.Y,          HalfW, HalfH };
-		SubRects[2] = { Central.X,         Central.Y + HalfH,  HalfW, HalfH };
-		SubRects[3] = { Central.X + HalfW, Central.Y + HalfH,  HalfW, HalfH };
-	}
-
-	int32 Idx = 0;
-	for (FViewportEntry& Entry : Entries)
-	{
-		if (!Entry.bActive || !Entry.Viewport)
-		{
-			continue;
-		}
-		Entry.Viewport->SetRect(SubRects[Idx]);
-		++Idx;
+		Slate->SetViewportAreaRect(Central);
 	}
 }
 

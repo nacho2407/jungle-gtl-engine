@@ -231,6 +231,15 @@ void FEditorEngine::FinalizeInitialize()
 {
 	// 모드 전용 초기화가 모두 끝난 뒤 마지막 상태를 기록한다.
 	UE_LOG("EditorEngine initialized");
+	const int32 W = MainWindow ? MainWindow->GetWidth() : 800;
+	const int32 H = MainWindow ? MainWindow->GetHeight() : 600;
+
+	SlateApplication = std::make_unique<FSlateApplication>();
+	SlateApplication->Initialize(
+		FRect(0, 0, W, H),
+		&Viewports[0], &Viewports[1], &Viewports[2], &Viewports[3],
+		0.5f, 0.5f, 0.5f
+	);
 }
 
 void FEditorEngine::Tick(float DeltaTime)

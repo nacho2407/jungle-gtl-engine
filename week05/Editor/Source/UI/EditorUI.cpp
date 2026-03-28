@@ -369,7 +369,8 @@ void FEditorUI::SetupWindow(FWindowsWindow* InWindow)
 
 			const bool bHandledByImGui = ImGui_ImplWin32_WndProcHandler(Hwnd, Msg, WParam, LParam) != 0;
 
-			if (IsViewportInteractive())
+			FSlateApplication* Slate = Engine->GetSlateApplication();
+			if (Slate && Slate->GetMouseCapturedViewportId() != INVALID_VIEWPORT_ID)
 			{
 				return false;
 			}
@@ -804,12 +805,6 @@ void FEditorUI::SyncSelectedActorProperty()
 	}
 
 	CachedSelectedActor = Selected;
-}
-
-bool FEditorUI::IsViewportInteractive() const
-{
-	return false;
-	//return Viewport.IsVisible() && (Viewport.IsHovered() || Viewport.IsFocused());
 }
 
 bool FEditorUI::GetCentralDockRect(FRect& OutRect) const
