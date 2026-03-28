@@ -5,11 +5,6 @@ void FSceneViewport::Draw()
 {
 }
 
-const FViewportRect& FSceneViewport::GetRect() const
-{
-	return FViewport::GetRect();
-}
-
 bool FSceneViewport::ContainsPoint(int32 X, int32 Y) const
 {
 	return false;

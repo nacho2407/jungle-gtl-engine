@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "Runtime/Viewport.h"
-#include <Slate/ISlateViewport.h>
+#include "Slate/ISlateViewport.h"
 
 class FViewportClient;
 struct FViewportMouseEvent;
@@ -17,9 +17,10 @@ public:
 	void SetClient(FViewportClient* InClient) { Client = InClient; }
 	FViewportClient* GetClient() const { return Client; }
 
-	// ISlateViewport Interface
+	/*
+	* ISlateViewport Interface
+	*/
 	void Draw() override;
-	const FViewportRect& GetRect() const override;
 
 	bool ContainsPoint(int32 X, int32 Y) const override;
 	void WindowToLocal(int32 X, int32 Y, int32& OutX, int32& OutY) const override;
