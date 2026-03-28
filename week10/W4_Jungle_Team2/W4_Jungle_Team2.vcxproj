@@ -342,6 +342,7 @@
     <ClInclude Include="Source\Editor\ObjViewerEngine.h" />
     <ClInclude Include="Source\Editor\ObjViewerRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h" />
+    <ClInclude Include="Source\Engine\Runtime\ViewportRect.h" />
     <ClInclude Include="Source\Misc\ObjViewer\ObjViewerEngine.h" />
     <ClInclude Include="Source\Misc\ObjViewer\ObjViewerRenderPipeline.h" />
     <ClInclude Include="Source\Editor\Selection\SelectionManager.h" />

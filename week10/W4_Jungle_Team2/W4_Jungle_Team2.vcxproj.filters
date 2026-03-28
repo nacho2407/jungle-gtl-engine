@@ -352,12 +352,6 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Source\Engine\Asset\ObjLoader.cpp" />
-    <ClCompile Include="Source\Editor\ObjViewerEngine.cpp">
-      <Filter>Source\Editor</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\ObjViewerRenderPipeline.cpp">
-      <Filter>Source\Editor</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Misc\ObjViewer\UI\ObjViewerControlWidget.cpp">
       <Filter>Source\Misc\ObjViewer\UI</Filter>
     </ClCompile>
@@ -389,6 +383,12 @@
     <ClCompile Include="Source\Engine\Slate\SSplitter.cpp" />
     <ClCompile Include="Source\Engine\Slate\SSplitterH.cpp" />
     <ClCompile Include="Source\Engine\Slate\SSplitterV.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\FSceneViewport.cpp" />
+    <ClCompile Include="Source\Misc\ObjViewer\ObjViewerEngine.cpp" />
+    <ClCompile Include="Source\Misc\ObjViewer\ObjViewerRenderPipeline.cpp" />
+    <ClCompile Include="Source\Engine\Slate\SlateApplication.cpp" />
+    <ClCompile Include="Source\Engine\Slate\SViewport.cpp" />
+    <ClCompile Include="Source\Engine\Slate\SWidget.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -735,5 +735,20 @@
     <ClInclude Include="Source\Engine\Slate\SSplitter.h" />
     <ClInclude Include="Source\Engine\Slate\SSplitterH.h" />
     <ClInclude Include="Source\Engine\Slate\SSplitterV.h" />
+    <ClInclude Include="Source\Engine\Runtime\SceneView.h" />
+    <ClInclude Include="Source\Editor\Viewport\FSceneViewport.h" />
+    <ClInclude Include="Source\Editor\EditorUtils.h" />
+    <ClInclude Include="Source\Editor\ObjViewerEngine.h" />
+    <ClInclude Include="Source\Editor\ObjViewerRenderPipeline.h" />
+    <ClInclude Include="Source\Engine\Runtime\Viewport.h" />
+    <ClInclude Include="Source\Engine\Runtime\ViewportClient.h" />
+    <ClInclude Include="Source\Engine\Runtime\WindowMessageHandler.h" />
+    <ClInclude Include="Source\Engine\Slate\ISlateViewport.h" />
+    <ClInclude Include="Source\Editor\Viewport\SEditorViewport.h" />
+    <ClInclude Include="Source\Engine\Slate\SlateApplication.h" />
+    <ClInclude Include="Source\Engine\Slate\SlateUtils.h" />
+    <ClInclude Include="Source\Engine\Slate\SViewport.h" />
+    <ClInclude Include="Source\Engine\Slate\SWidget.h" />
+    <ClInclude Include="Source\Engine\Runtime\ViewportRect.h" />
   </ItemGroup>
 </Project>

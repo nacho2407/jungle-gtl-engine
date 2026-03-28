@@ -2,7 +2,6 @@
 #include "SWindow.h"
 
 struct FViewportMouseEvent;
-class FSceneViewport;
 class ISlateViewport;
 
 class SViewport : public SWindow

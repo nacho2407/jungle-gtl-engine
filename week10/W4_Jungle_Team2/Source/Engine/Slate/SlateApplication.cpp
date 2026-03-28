@@ -11,16 +11,6 @@ void FSlateApplication::Shutdown()
 
 }
 
-void FSlateApplication::SetRootWindow(class SWindow* InRootWindow)
-{
-
-}
-
-SWindow* FSlateApplication::GetRootWindow() const
-{
-	return RootWindow;
-}
-
 void FSlateApplication::Tick(float DeltaTime)
 {
 

@@ -39,8 +39,8 @@ public:
 	float GetSplitRatio() const { return SplitRatio; }
 
 private:
-	SWindow* SideLT; // Left or Top
-	SWindow* SideRB; // Right or Bottom
+	SWindow* SideLT = nullptr; // Left or Top
+	SWindow* SideRB = nullptr; // Right or Bottom
 
 	float SplitRatio = 0.5f; // SideLT와 SideRB 분할 비율
 	float BarThickness = 4.0f; // Splitter 바 두께

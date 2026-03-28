@@ -8,13 +8,17 @@ class FSceneViewport;
 class SEditorViewport : public SWindow
 {
 public:
-	void SetViewportWidget(SViewport* InViewportWidget) { ViewportWidget = InViewportWidget;}
-	SViewport* GetViewportWidget() const { return ViewportWidget; }
 
-	FEditorViewportClient* GetViewportClient() const
-	{
-		return Client;
-	}
+	// Get Set
+	FSceneViewport* GetSceneViewport() const { return SceneViewport; }
+	void SetSceneViewport(FSceneViewport* InViewport) { SceneViewport = InViewport; }
+
+	SViewport* GetViewport() const { return ViewportWidget; }
+	void SetViewport(SViewport* InWidget) { ViewportWidget = InWidget; }
+
+	FEditorViewportClient* GetEditorViewportClient() const { return Client; }
+	void SetEditorViewportClient(FEditorViewportClient* InClient) { Client = InClient; }
+
 
 protected:
 	FSceneViewport* SceneViewport = nullptr;
