@@ -28,6 +28,7 @@ class FWindowOverlayManager
     void                           ResetViewportDimension();
     TArray<FEditorViewportPanel*>& GetViewportPanels();
     void                           AddNewViewportPanel();
+    FEditorViewportPanel*          FindPanelAtPoint(int32 X, int32 Y) const;
 
     void Release();
 

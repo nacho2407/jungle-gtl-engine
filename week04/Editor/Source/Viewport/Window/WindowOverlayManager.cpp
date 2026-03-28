@@ -100,6 +100,22 @@ void FWindowOverlayManager::ResetViewportDimension()
 
 TArray<FEditorViewportPanel*>& FWindowOverlayManager::GetViewportPanels() { return ViewportPanels; }
 
+FEditorViewportPanel* FWindowOverlayManager::FindPanelAtPoint(int32 X, int32 Y) const
+{
+    for (FEditorViewportPanel* Panel : ViewportPanels)
+    {
+        if (!Panel) continue;
+        if (X >= static_cast<int32>(Panel->PosX) &&
+            X <  static_cast<int32>(Panel->PosX + Panel->Width) &&
+            Y >= static_cast<int32>(Panel->PosY) &&
+            Y <  static_cast<int32>(Panel->PosY + Panel->Height))
+        {
+            return Panel;
+        }
+    }
+    return nullptr;
+}
+
 void FWindowOverlayManager::AddNewViewportPanel() {
     FEditorViewportPanel*  Panel = new FEditorViewportPanel();
     FEditorViewportClient* ViewportClient = new FEditorViewportClient();

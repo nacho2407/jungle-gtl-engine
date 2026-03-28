@@ -24,6 +24,4 @@ struct FEditorViewportPanel
 
     // 이 패널이 화면 어디에 그려지고 있는지 UI 좌표
     float PosX = 0.f, PosY = 0.f, Width = 0.f, Height = 0.f;
-
-    bool bIsActive = false;
 };

@@ -321,7 +321,7 @@ void FEditor::Create()
     EditorPanel->ViewportClient = &ViewportClient;
     EditorPanel->Scene = CurScene;
     WindowOverlayManager->GetViewportPanels().push_back(EditorPanel);
-    WindowOverlayManager->SetViewportLayout(EViewportLayout::TwoRowColumn);
+    WindowOverlayManager->SetViewportLayout(EViewportLayout::FourWay);
 }
 
 void FEditor::Release()
@@ -630,9 +630,11 @@ void FEditor::ResolveSceneAssetReferences(FScene* Scene)
 
 void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* InputSystem)
 {
+    using namespace Engine::ApplicationCore;
+
     EditorContext.DeltaTime = DeltaTime;
-    Engine::ApplicationCore::FInputEvent        Event;
-    const Engine::ApplicationCore::FInputState& InputState = InputSystem->GetInputState();
+    FInputEvent        Event;
+    const FInputState& InputState = InputSystem->GetInputState();
 
     while (InputSystem->PollEvent(Event))
     {
@@ -641,19 +643,52 @@ void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* Input
             continue;
         }
 
-        ViewportClient.HandleInputEvent(Event, InputState);
+        // Mouse events carry position; keyboard events fall back to current cursor.
+        const bool bIsMouseEvent = (Event.Type == EInputEventType::MouseButtonDown ||
+                                    Event.Type == EInputEventType::MouseButtonUp   ||
+                                    Event.Type == EInputEventType::MouseMove       ||
+                                    Event.Type == EInputEventType::MouseWheel);
+
+        FEditorViewportPanel* TargetPanel = InputCapturePanel;
+        if (TargetPanel == nullptr && WindowOverlayManager)
+        {
+            const int32 LookupX = bIsMouseEvent ? Event.MouseX : InputState.MouseX;
+            const int32 LookupY = bIsMouseEvent ? Event.MouseY : InputState.MouseY;
+            TargetPanel = WindowOverlayManager->FindPanelAtPoint(LookupX, LookupY);
+        }
+
+        // Lock routing to this panel while any mouse button remains held.
+        if (Event.Type == EInputEventType::MouseButtonDown && InputCapturePanel == nullptr)
+        {
+            InputCapturePanel = TargetPanel;
+        }
+
+        if (TargetPanel && TargetPanel->ViewportClient)
+        {
+            TargetPanel->ViewportClient->HandleInputEvent(Event, InputState);
+        }
+
+        // Release capture once all mouse buttons are up.
+        if (Event.Type == EInputEventType::MouseButtonUp)
+        {
+            const bool bAnyButtonHeld = InputState.IsKeyDown(EKey::MouseLeft)  ||
+                                        InputState.IsKeyDown(EKey::MouseRight) ||
+                                        InputState.IsKeyDown(EKey::MouseMiddle);
+            if (!bAnyButtonHeld)
+            {
+                InputCapturePanel = nullptr;
+            }
+        }
     }
 
-    ViewportClient.Tick(DeltaTime, InputState);
-
+    // Tick every panel's viewport client uniformly.
     if (WindowOverlayManager)
     {
-        TArray<FEditorViewportPanel*>& Panels = WindowOverlayManager->GetViewportPanels();
-        for (uint32 i = 1; i < Panels.size(); i++)
+        for (FEditorViewportPanel* Panel : WindowOverlayManager->GetViewportPanels())
         {
-            if (Panels[i] && Panels[i]->ViewportClient)
+            if (Panel && Panel->ViewportClient)
             {
-                Panels[i]->ViewportClient->Tick(DeltaTime, InputState);
+                Panel->ViewportClient->Tick(DeltaTime, InputState);
             }
         }
     }

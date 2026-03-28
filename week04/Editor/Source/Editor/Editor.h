@@ -136,6 +136,7 @@ class FEditor
   private:
     FEditorViewportClient ViewportClient;
     FWindowOverlayManager* WindowOverlayManager = nullptr;
+    FEditorViewportPanel*  InputCapturePanel    = nullptr;
     Engine::ApplicationCore::FInputRouter GlobalInputRouter;
     FEditorGlobalController GlobalInputController;
     FEditorGlobalContext GlobalInputContext{&GlobalInputController};
