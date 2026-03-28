@@ -28,7 +28,6 @@ struct FStaticMesh
 	TArray<FNormalVertex> Vertices;
 	TArray<uint32> Indices;
 
-	// https://github.com/EpicGames/UnrealEngine/blob/260bb2e1c5610b31c63a36206eedd289409c5f11/Engine/Source/Runtime/Engine/Public/StaticMeshResources.h#L403-L431
 	TArray<FStaticMeshSection> Sections;
 
 	FMeshBuffer* RenderBuffer = nullptr;
@@ -50,13 +49,8 @@ struct FStaticMesh
 
 struct FStaticMeshSection
 {
-	// Index into UStaticMesh's FStaticMaterial array.
-	//int32 MaterialIndex;
-
-	// from .obj's usemtl statement
-	// TODO: 실제로 UE에서는 MaterialIndex만 사용함
+	//int32 MaterialIndex; // Index into UStaticMesh's FStaticMaterial array.
 	FString MaterialSlotName;
-
 	uint32 FirstIndex;
 	uint32 NumTriangles;
 };
@@ -64,13 +58,7 @@ struct FStaticMeshSection
 struct FStaticMaterial
 {
 	std::shared_ptr<FMaterial> MaterialInterface;
-
-	// (Imported)MaterialSlotName이 "NAME_None"이면 MaterialInterface의 이름을 사용하도록 설정
-	FString MaterialSlotName = "None";
-
-	// TODO:
-	// mtl 파일의 순서는 상관없이, .obj에서 사용된 순서대로 슬롯이 배치
-	// NAME_None인 슬롯은 무조건 제일 마지막 슬롯으로 배치
+	FString MaterialSlotName = "None"; // "None"은 특별한 슬롯 이름으로, OBJ 파일에서 머티리얼이 지정되지 않은 섹션에 할당됩니다.
 };
 
 struct FMaterial
