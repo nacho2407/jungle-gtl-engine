@@ -202,6 +202,29 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		break;
 	}
 
+	case EPrimitiveType::EPT_Text:
+	{
+		if (!ShowFlags.bBillboardText) return;
+
+		UTextRenderComponent* TextComp = static_cast<UTextRenderComponent*>(Primitive);
+		const FFontResource* Font = TextComp->GetFont();
+		if (!Font || !Font->IsLoaded()) return;
+
+		const FString& Text = TextComp->GetText();
+		if (Text.empty()) return;
+
+		FRenderCommand Cmd = {};
+		Cmd.Type = ERenderCommandType::Font;
+		Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), TextComp->GetColor() };
+		Cmd.Constants.Font.Text = &Text;
+		Cmd.Constants.Font.Font = Font;
+		Cmd.Constants.Font.Scale = TextComp->GetFontSize();
+		Cmd.BlendState = EBlendState::AlphaBlend;
+		Cmd.DepthStencilState = EDepthStencilState::Default;
+		RenderBus.AddCommand(ERenderPass::Font, Cmd);
+		break;
+	}
+
 	case EPrimitiveType::EPT_SubUV:
 	{
 		USubUVComponent* SubUVComp = static_cast<USubUVComponent*>(Primitive);

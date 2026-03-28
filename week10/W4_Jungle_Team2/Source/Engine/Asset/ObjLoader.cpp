@@ -52,7 +52,7 @@ UStaticMesh* FObjLoader::Load(const FString& Path, const FStaticMeshLoadOptions&
 		StaticMeshAsset.MaterialSlots.size());
 
 	const double EndTime = FPlatformTime::Seconds();
-	UE_LOG("ObjLoader: Loaded %s in %.3f sec", Path.c_str(), EndTime - StartTime);
+	UE_LOG("[ObjLoader] Loaded %s in %.3f sec", Path.c_str(), EndTime - StartTime);
 
 	/* Build Asset from Cooked Data */
 	return CreateAsset();

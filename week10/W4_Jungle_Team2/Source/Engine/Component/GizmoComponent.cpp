@@ -9,7 +9,7 @@ REGISTER_FACTORY(UGizmoComponent)
 #include <cmath>
 UGizmoComponent::UGizmoComponent()
 {
-	GizmoMeshData = &FMeshManager::GetTranslationGizmo();
+	GizmoMeshData = &FEditorMeshLibrary::GetTranslationGizmo();
 }
 
 const FMeshData* UGizmoComponent::GetActiveMeshData() const
@@ -444,17 +444,17 @@ void UGizmoComponent::UpdateGizmoTransform()
 	{
 	case EGizmoMode::Scale:
 		SetRelativeRotation(ActorRot);
-		GizmoMeshData = &FMeshManager::Get().GetScaleGizmo();
+		GizmoMeshData = &FEditorMeshLibrary::Get().GetScaleGizmo();
 		break;
 
 	case EGizmoMode::Rotate:
 		SetRelativeRotation(bIsWorldSpace ? FVector() : ActorRot);
-		GizmoMeshData = &FMeshManager::Get().GetRotationGizmo();
+		GizmoMeshData = &FEditorMeshLibrary::Get().GetRotationGizmo();
 		break;
 
 	case EGizmoMode::Translate:
 		SetRelativeRotation(bIsWorldSpace ? FVector() : ActorRot);
-		GizmoMeshData = &FMeshManager::Get().GetTranslationGizmo();
+		GizmoMeshData = &FEditorMeshLibrary::Get().GetTranslationGizmo();
 		break;
 	}
 }

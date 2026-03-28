@@ -4,6 +4,20 @@
 
 namespace
 {
+	FMeshData CreateBillboardQuadMeshData()
+	{
+		FMeshData QuadMeshData;
+		FVector4 DefaultColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+		QuadMeshData.Vertices.push_back({ FVector(0.0f, -0.5f,  0.5f), DefaultColor, 0 });
+		QuadMeshData.Vertices.push_back({ FVector(0.0f,  0.5f,  0.5f), DefaultColor, 0 });
+		QuadMeshData.Vertices.push_back({ FVector(0.0f,  0.5f, -0.5f), DefaultColor, 0 });
+		QuadMeshData.Vertices.push_back({ FVector(0.0f, -0.5f, -0.5f), DefaultColor, 0 });
+
+		QuadMeshData.Indices = { 0, 1, 2, 0, 2, 3 };
+		return QuadMeshData;
+	}
+
 	FMeshData ToMeshData(const UStaticMesh* StaticMeshAsset)
 	{
 		FMeshData Result;
@@ -32,13 +46,14 @@ namespace
 void FMeshBufferManager::Create(ID3D11Device* InDevice)
 {
 	Device = InDevice;
+	const FMeshData QuadMeshData = CreateBillboardQuadMeshData();
 
-	MeshBufferMap[EPrimitiveType::EPT_TransGizmo].Create(InDevice, FMeshManager::GetTranslationGizmo());
-	MeshBufferMap[EPrimitiveType::EPT_RotGizmo].Create(InDevice, FMeshManager::GetRotationGizmo()); 
-	MeshBufferMap[EPrimitiveType::EPT_ScaleGizmo].Create(InDevice, FMeshManager::GetScaleGizmo());
-	MeshBufferMap[EPrimitiveType::EPT_Billboard].Create(InDevice, FMeshManager::GetQuad());
-	MeshBufferMap[EPrimitiveType::EPT_SubUV].Create(InDevice, FMeshManager::GetQuad());
-	MeshBufferMap[EPrimitiveType::EPT_Text].Create(InDevice, FMeshManager::GetQuad());
+	MeshBufferMap[EPrimitiveType::EPT_TransGizmo].Create(InDevice, FEditorMeshLibrary::GetTranslationGizmo());
+	MeshBufferMap[EPrimitiveType::EPT_RotGizmo].Create(InDevice, FEditorMeshLibrary::GetRotationGizmo()); 
+	MeshBufferMap[EPrimitiveType::EPT_ScaleGizmo].Create(InDevice, FEditorMeshLibrary::GetScaleGizmo());
+	MeshBufferMap[EPrimitiveType::EPT_Billboard].Create(InDevice, QuadMeshData);
+	MeshBufferMap[EPrimitiveType::EPT_SubUV].Create(InDevice, QuadMeshData);
+	MeshBufferMap[EPrimitiveType::EPT_Text].Create(InDevice, QuadMeshData);
 }
 
 //	TODO : 내일 하기
