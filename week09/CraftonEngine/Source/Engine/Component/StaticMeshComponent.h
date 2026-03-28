@@ -22,6 +22,13 @@ public:
 
 	void Serialize(bool bIsLoading, json::JSON& Handle);
 
+	// Property Editor 지원
+	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	void PostEditProperty(const char* PropertyName) override;
+
+	const FString& GetStaticMeshPath() const { return StaticMeshPath; }
+
 private:
 	UStaticMesh* StaticMesh = nullptr;
+	FString StaticMeshPath = "None";
 };
