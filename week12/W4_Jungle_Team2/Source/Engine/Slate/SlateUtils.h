@@ -15,6 +15,11 @@ struct FRect
 	FRect(float InX, float InY, float InWidthHeight)
 		: FRect(InX, InY, InWidthHeight, InWidthHeight) {
 	}
+
+	bool Contains(float Px, float Py) const
+	{
+		return (Px >= X && Px <= X + Width && Py >= Y && Py <= Y + Height);
+	}
 };
 
 struct FPoint
@@ -28,17 +33,25 @@ struct FPoint
 
 struct FViewportRect
 {
-	int X = 0;
-	int Y = 0;
-	int Width = 0;
-	int Height = 0;
+	int32 X = 0;
+	int32 Y = 0;
+	int32 Width = 0;
+	int32 Height = 0;
 
-	bool Contains(int Px, int Py) const
-	{
-		return (Px >= X && Px <= X + Width && Py >= Y && Py <= Y + Py);
+	FViewportRect() = default;
+	FViewportRect(int32 InX, int32 InY, int32 InWidth, int32 InHeight)
+		:X(InX), Y(InY), Width(InWidth), Height(InHeight) {
+	}
+	FViewportRect(int32 InX, int32 InY, int32 InWidthHeight)
+		: FViewportRect(InX, InY, InWidthHeight, InWidthHeight) {
 	}
 
-	void WindowToLocal(int Px, int Py, int& OutX, int& OutY) const
+	bool Contains(int32 Px, int32 Py) const
+	{
+		return (Px >= X && Px <= X + Width && Py >= Y && Py <= Y + Height);
+	}
+
+	void WindowToLocal(int32 Px, int32 Py, int32& OutX, int32& OutY) const
 	{
 		if (Contains(Px, Py))
 		{
@@ -47,9 +60,9 @@ struct FViewportRect
 		}
 	}
 
-	void WindowToNormalized(int Px, int Py, float& OutU, float& OutV) const
+	void WindowToNormalized(int32 Px, int32 Py, float& OutU, float& OutV) const
 	{
-		int U = 0, V = 0;
+		int32 U = 0, V = 0;
 		WindowToLocal(Px, Py, U, V);
 		OutU = static_cast<float>(U) / static_cast<float>(Width);
 		OutV = static_cast<float>(V) / static_cast<float>(Height);
@@ -58,14 +71,14 @@ struct FViewportRect
 
 struct FViewportMouseEvent
 {
-	int WindowX = 0;
-	int WindowY = 0;
+	int32 WindowX = 0;
+	int32 WindowY = 0;
 
-	int LocalX = 0;
-	int LocalY = 0;
+	int32 LocalX = 0;
+	int32 LocalY = 0;
 
-	int DeltaX = 0;
-	int DeltaY = 0;
+	int32 DeltaX = 0;
+	int32 DeltaY = 0;
 
 	bool bLeftDown = false;
 	bool bRightDown = false;

@@ -1,21 +1,21 @@
 ﻿#include "SViewport.h"
 
-bool SViewport::OnMouseMove(int X, int Y)
+bool SViewport::OnMouseMove(int32 X, int32 Y)
 {
 	return false;
 }
 
-bool SViewport::OnMouseButtonDown(int Button, int X, int Y)
+bool SViewport::OnMouseButtonDown(int32 Button, int32 X, int32 Y)
 {
 	return false;
 }
 
-bool SViewport::OnMouseButtonUp(int Button, int X, int Y)
+bool SViewport::OnMouseButtonUp(int32 Button, int32 X, int32 Y)
 {
 	return false;
 }
 
-bool SViewport::OnMouseWheel(int Delta, int X, int Y)
+bool SViewport::OnMouseWheel(int32 Delta, int32 X, int32 Y)
 {
 	return false;
 }
@@ -30,7 +30,7 @@ bool SViewport::OnKeyUp(uint32 Key)
 	return false;
 }
 
-FViewportMouseEvent SViewport::MakeMouseEvent(int X, int Y) const
+FViewportMouseEvent SViewport::MakeMouseEvent(int32 X, int32 Y) const
 {
 	return FViewportMouseEvent();
 }
