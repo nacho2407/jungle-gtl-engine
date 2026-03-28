@@ -58,12 +58,12 @@ bool FDynamicMesh::CreateVertexAndIndexBuffer(ID3D11Device* Device)
 	if (Vertices.empty() || Indices.empty()) return false;
 
 	// 잦은 버퍼 재생성을 막기 위해 실제 필요한 크기보다 1.5배 크게(여유 공간) 할당
-	MaxVertexCapacity = static_cast<uint32>(Vertices.size() * 1.5f);
-	MaxIndexCapacity = static_cast<uint32>(Indices.size() * 1.5f);
+	MaxVertexCapacity = static_cast<uint32>(Vertices.size());
+	MaxIndexCapacity = static_cast<uint32>(Indices.size());
 
 	// 최소 용량 방어 로직 (선택 사항: 원치 않으시면 지우셔도 됩니다)
-	if (MaxVertexCapacity < 64) MaxVertexCapacity = 64;
-	if (MaxIndexCapacity < 64) MaxIndexCapacity = 64;
+	/*if (MaxVertexCapacity < 64) MaxVertexCapacity = 64;
+	if (MaxIndexCapacity < 64) MaxIndexCapacity = 64;*/
 
 	// 1. Vertex Buffer (DYNAMIC + CPU_ACCESS_WRITE)
 	D3D11_BUFFER_DESC VBDesc = {};
