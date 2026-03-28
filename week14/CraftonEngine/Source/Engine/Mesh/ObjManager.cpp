@@ -54,8 +54,13 @@ std::unique_ptr<FStaticMesh> FObjManager::LoadStaticMeshAsset(const std::string&
 	}
 	else
 	{
-		FObjInfo ParsedObjInfo = FObjImporter::ParseObj(PathFileName);
-		FStaticMesh ConvertedMesh = FObjImporter::Convert(ParsedObjInfo);
+		// 바이너리 파일이 없음 -> OBJ 파싱 및 굽기 (최초 1회)
+		FStaticMesh ConvertedMesh;
+		TArray<FStaticMaterial> ImportedMaterials;
+		if (!FObjImporter::Import(PathFileName, ConvertedMesh, ImportedMaterials))
+		{
+			return nullptr;
+		}
 
 		FWindowsBinWriter Writer(BinPath);
 		if (Writer.IsValid())

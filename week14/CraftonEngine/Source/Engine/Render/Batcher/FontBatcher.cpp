@@ -1,6 +1,7 @@
 ﻿#include "FontBatcher.h"
 
 #include "Core/CoreTypes.h"
+#include "Core/ResourceManager.h"
 
 void FFontBatcher::Create(ID3D11Device* InDevice)
 {
@@ -27,6 +28,17 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 	};
 	FontShader.Create(Device, L"Shaders/ShaderFont.hlsl",
 		"VS", "PS", layout, ARRAYSIZE(layout));
+
+	OverlayFontShader.Create(Device, L"Shaders/ShaderOverlayFont.hlsl",
+		"VS", "PS", layout, ARRAYSIZE(layout));
+
+	if (const FFontResource* DefaultFont = FResourceManager::Get().FindFont(FName("Default")))
+	{
+		if (DefaultFont->Columns > 0 && DefaultFont->Rows > 0)
+		{
+			BuildCharInfoMap(DefaultFont->Columns, DefaultFont->Rows);
+		}
+	}
 }
 
 void FFontBatcher::CreateBuffers()
@@ -86,6 +98,7 @@ void FFontBatcher::Release()
 	if (SamplerState) { SamplerState->Release(); SamplerState = nullptr; }
 
 	FontShader.Release();
+	OverlayFontShader.Release();
 }
 
 void FFontBatcher::AddText(const FString& Text,
@@ -157,10 +170,104 @@ void FFontBatcher::AddText(const FString& Text,
 	Indices.resize(IdxBase + CharIdx * 6);
 }
 
+
+// 오버레이 텍스트
+void FFontBatcher::AddScreenText(const FString& Text,
+	float ScreenX, float ScreenY,
+	float ViewportWidth, float ViewportHeight,
+	float Scale)
+{
+	if (Text.empty())
+	{
+		return;
+	}
+
+	if (ViewportWidth <= 0.0f || ViewportHeight <= 0.0f)
+	{
+		return;
+	}
+
+	const float CharW = 25.0f * Scale;
+	const float CharH = 25.0f * Scale;
+	const float LetterSpacing = - 0.5f * CharW;
+
+	const uint32 Base = static_cast<uint32>(ScreenVertices.size());
+	const uint32 IdxBase = static_cast<uint32>(ScreenIndices.size());
+	const size_t CharCount = Text.size();
+
+	ScreenVertices.resize(Base + CharCount * 4);
+	ScreenIndices.resize(IdxBase + CharCount * 6);
+
+	FTextureVertex* pV = ScreenVertices.data() + Base;
+	uint32* pI = ScreenIndices.data() + IdxBase;
+
+	const uint8* Ptr = reinterpret_cast<const uint8*>(Text.c_str());
+	const uint8* const End = Ptr + Text.size();
+
+	uint32 CharIdx = 0;
+	float CursorX = ScreenX;
+
+	auto PixelToClipX = [ViewportWidth](float X) -> float
+		{
+			return (X / ViewportWidth) * 2.0f - 1.0f;
+		};
+
+	auto PixelToClipY = [ViewportHeight](float Y) -> float
+		{
+			return 1.0f - (Y / ViewportHeight) * 2.0f;
+		};
+
+	for (size_t i = 0; i < CharCount && Ptr < End; ++i)
+	{
+		uint32 CP = 0;
+		if (Ptr[0] < 0x80) { CP = Ptr[0];                                                                       Ptr += 1; }
+		else if ((Ptr[0] & 0xE0) == 0xC0 && Ptr + 1 < End) { CP = ((Ptr[0] & 0x1F) << 6) | (Ptr[1] & 0x3F);                                   Ptr += 2; }
+		else if ((Ptr[0] & 0xF0) == 0xE0 && Ptr + 2 < End) { CP = ((Ptr[0] & 0x0F) << 12) | ((Ptr[1] & 0x3F) << 6) | (Ptr[2] & 0x3F);         Ptr += 3; }
+		else if ((Ptr[0] & 0xF8) == 0xF0 && Ptr + 3 < End) { CP = ((Ptr[0] & 0x07) << 18) | ((Ptr[1] & 0x3F) << 12) | ((Ptr[2] & 0x3F) << 6) | (Ptr[3] & 0x3F); Ptr += 4; }
+		else { ++Ptr; continue; }
+
+		FVector2 UVMin, UVMax;
+		GetCharUV(CP, UVMin, UVMax);
+
+		const float Left = PixelToClipX(CursorX);
+		const float Right = PixelToClipX(CursorX + CharW);
+		const float Top = PixelToClipY(ScreenY);
+		const float Bottom = PixelToClipY(ScreenY + CharH);
+
+		pV[0] = { FVector(Left,  Top,    0.0f), FVector2(UVMin.X, UVMin.Y) };
+		pV[1] = { FVector(Right, Top,    0.0f), FVector2(UVMax.X, UVMin.Y) };
+		pV[2] = { FVector(Left,  Bottom, 0.0f), FVector2(UVMin.X, UVMax.Y) };
+		pV[3] = { FVector(Right, Bottom, 0.0f), FVector2(UVMax.X, UVMax.Y) };
+
+		const uint32 Vi = Base + CharIdx * 4;
+		pI[0] = Vi;
+		pI[1] = Vi + 1;
+		pI[2] = Vi + 2;
+		pI[3] = Vi + 1;
+		pI[4] = Vi + 3;
+		pI[5] = Vi + 2;
+
+		pV += 4;
+		pI += 6;
+		++CharIdx;
+
+		CursorX += CharW + LetterSpacing;
+	}
+
+	ScreenVertices.resize(Base + CharIdx * 4);
+	ScreenIndices.resize(IdxBase + CharIdx * 6);
+}
+
 void FFontBatcher::Clear()
 {
 	Vertices.clear();
 	Indices.clear();
+}
+
+void FFontBatcher::ClearScreen()
+{
+	ScreenVertices.clear();
+	ScreenIndices.clear();
 }
 
 void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FFontResource* Resource)
@@ -207,6 +314,45 @@ void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FFontResource* Reso
 	Context->PSSetSamplers(0, 1, &SamplerState);
 
 	Context->DrawIndexed(static_cast<uint32>(Indices.size()), 0, 0);
+}
+
+void FFontBatcher::FlushScreen(ID3D11DeviceContext* Context, const FFontResource* Resource)
+{
+	// 오버레이 텍스트는 별도 셰이더 사용
+	if (!Resource || !Resource->IsLoaded()) return;
+	if (ScreenVertices.empty() || !VertexBuffer || !IndexBuffer) return;
+	// Atlas 그리드가 바뀌었으면 CharInfoMap 재빌드
+	if (CachedColumns != Resource->Columns || CachedRows != Resource->Rows)
+	{
+		BuildCharInfoMap(Resource->Columns, Resource->Rows);
+	}
+	// 버퍼 크기 초과 시 재할당
+	if (ScreenVertices.size() > MaxVertexCount || ScreenIndices.size() > MaxIndexCount)
+	{
+		MaxVertexCount = static_cast<uint32>(ScreenVertices.size()) * 2;
+		MaxIndexCount = static_cast<uint32>(ScreenIndices.size()) * 2;
+		CreateBuffers();
+	}
+	// VB 업로드
+	D3D11_MAPPED_SUBRESOURCE mapped = {};
+	if (FAILED(Context->Map(VertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return;
+	memcpy(mapped.pData, ScreenVertices.data(), sizeof(FTextureVertex) * ScreenVertices.size());
+	Context->Unmap(VertexBuffer, 0);
+	// IB 업로드
+	if (FAILED(Context->Map(IndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return;
+	memcpy(mapped.pData, ScreenIndices.data(), sizeof(uint32) * ScreenIndices.size());
+	Context->Unmap(IndexBuffer, 0);
+	// 셰이더 바인딩
+	OverlayFontShader.Bind(Context);
+	uint32 stride = sizeof(FTextureVertex), offset = 0;
+	Context->IASetVertexBuffers(0, 1, &VertexBuffer, &stride, &offset);
+	Context->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	// ResourceManager 소유 SRV 바인딩
+	ID3D11ShaderResourceView* SRV = Resource->SRV;
+	Context->PSSetShaderResources(0, 1, &SRV);
+	Context->PSSetSamplers(0, 1, &SamplerState);
+	Context->DrawIndexed(static_cast<uint32>(ScreenIndices.size()), 0, 0);
 }
 
 void FFontBatcher::GetCharUV(uint32 Codepoint, FVector2& OutUVMin, FVector2& OutUVMax) const
