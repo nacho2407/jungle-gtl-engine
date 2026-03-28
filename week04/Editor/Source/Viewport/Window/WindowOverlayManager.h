@@ -1,6 +1,5 @@
 #pragma once
-#include "Core/CoreMinimal.h"
-#include "EditorViewportPanel.h"
+#include "SSplitter.h"
 
 struct FEditorContext;
 class  FScene;
@@ -44,6 +43,8 @@ class FWindowOverlayManager
 
     FEditorViewportClient::FPickCallback PickCallback;
 
+    TArray<SSplitter*> VecSplitter;
+
   public:
     void                           ResetViewportDimension();
     TArray<FEditorViewportPanel*>& GetViewportPanels();
@@ -52,6 +53,9 @@ class FWindowOverlayManager
 
     // Deletes and nullifies the heap memory occupied by dynamically allocated panels
     void Release();
+
+    // Deletes and nullifies the heap memory occupied by dynamically allocated splitters
+    void ReleaseSplitters();
 
     // Toggled when the entire window size is changed
     void SetWindowDimension(uint32 Width, uint32 Height);
@@ -70,4 +74,7 @@ class FWindowOverlayManager
 
     // Resets camera movement settings to their default value
     void SetNavigationValues(float MoveSpeed, float RotationSpeed);
+
+    // Reset splitters accordingly to the viewport layout
+    void ResetSplitters(EViewportLayout ViewportLayout);
 };

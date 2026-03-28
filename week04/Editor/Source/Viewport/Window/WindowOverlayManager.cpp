@@ -160,6 +160,7 @@ void FWindowOverlayManager::SetPickCallback(FEditorViewportClient::FPickCallback
 
 void FWindowOverlayManager::Release()
 {
+    ReleaseSplitters();
     for (uint32 i = 0; i < ViewportPanels.size(); i++)
     {
         FEditorViewportPanel* Panel = ViewportPanels[i]; 
@@ -183,6 +184,19 @@ void FWindowOverlayManager::Release()
             delete Panel;
         }
     }
+}
+
+void FWindowOverlayManager::ReleaseSplitters() 
+{ 
+    for (uint32 i = 0; i < VecSplitter.size(); i++) 
+    {
+        if (VecSplitter[i])
+        {
+            delete VecSplitter[i];
+            VecSplitter[i] = nullptr;
+        }
+    }
+    VecSplitter.clear();
 }
 
 void FWindowOverlayManager::SetWindowDimension(uint32 Width, uint32 Height)
@@ -213,5 +227,40 @@ void FWindowOverlayManager::SetNavigationValues(float MoveSpeed, float RotationS
             Panel->ViewportClient->GetNavigationController().SetMoveSpeed(MoveSpeed);
             Panel->ViewportClient->GetNavigationController().SetRotationSpeed(RotationSpeed);
         }
+    }
+}
+
+void FWindowOverlayManager::ResetSplitters(EViewportLayout ViewportLayout) 
+{ 
+    ReleaseSplitters();
+
+    switch (ViewportLayout)
+    {
+    case (EViewportLayout::Single):
+    {
+        // Nothing to do here
+        break;
+    }
+    case (EViewportLayout::TwoRow):
+    {
+        SSplitterH();
+        break;
+    }
+    case (EViewportLayout::TwoColumn):
+    {
+        break;
+    }
+    case (EViewportLayout::TwoRowColumn):
+    {
+        break;
+    }
+    case (EViewportLayout::ColumnTwoRow):
+    {
+        break;
+    }
+    case (EViewportLayout::FourWay):
+    {
+        break;
+    }
     }
 }
