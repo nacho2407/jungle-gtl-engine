@@ -4,7 +4,6 @@
 #include "Render/Common/RenderTypes.h"
 #include "Render/Common/ViewTypes.h"
 
-#include "Viewport/CursorOverlayState.h"
 #include "UI/SWindow.h"
 #include <string>
 #include "Core/RayTypes.h"
@@ -47,8 +46,6 @@ public:
 	void SetActive(bool bInActive) { bIsActive = bInActive; }
 	bool IsActive() const { return bIsActive; }
 
-	const FCursorOverlayState& GetCursorOverlayState() const { return CursorOverlayState; }
-
 	// FViewport 소유
 	void SetViewport(FViewport* InViewport) { Viewport = InViewport; }
 	FViewport* GetViewport() const { return Viewport; }
@@ -66,8 +63,6 @@ public:
 private:
 	void TickInput(float DeltaTime);
 	void TickInteraction(float DeltaTime);
-	void TickCursorOverlay(float DeltaTime);
-
 	void HandleDragStart(const FRay& Ray);
 
 private:
@@ -90,5 +85,4 @@ private:
 	// 뷰포트 슬롯의 스크린 좌표 (ImGui screen space = 윈도우 클라이언트 좌표)
 	FRect ViewportScreenRect;
 
-	FCursorOverlayState CursorOverlayState;
 };

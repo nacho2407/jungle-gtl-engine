@@ -170,6 +170,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 	case EPrimitiveType::EPT_Cube:
 	case EPrimitiveType::EPT_Sphere:
 	case EPrimitiveType::EPT_Plane:
+	case EPrimitiveType::EPT_StaticMesh:
 	{
 		if (!ShowFlags.bPrimitives) return;
 		FRenderCommand Cmd = {};
