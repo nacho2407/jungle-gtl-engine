@@ -5,8 +5,8 @@
 #include "Render/Renderer/Renderer.h"
 #include "Component/GizmoComponent.h"
 #include "GameFramework/World.h"
-#include "Core/Stats.h"
-#include "Core/GPUProfiler.h"
+#include "Core/Logging/Stats.h"
+#include "Core/Logging/GPUProfiler.h"
 #include "Runtime/SceneView.h"
 
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer)
@@ -49,7 +49,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
 {
 	FEditorViewportClient& VC = Editor->GetViewportClient(ViewportIndex);
 
-	UCameraComponent* Camera = VC.GetCamera();
+	FViewportCamera* Camera = VC.GetCamera();
 	if (!Camera) return;
 
 	// 1. 이 뷰포트의 SceneView 빌드
