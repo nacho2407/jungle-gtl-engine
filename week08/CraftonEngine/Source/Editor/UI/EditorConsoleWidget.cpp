@@ -1,4 +1,6 @@
-#include "Editor/UI/EditorConsoleWidget.h"
+﻿#include "Editor/UI/EditorConsoleWidget.h"
+#include "Editor/EditorEngine.h"
+#include "Editor/Viewport/OverlayStatSystem.h"
 
 void FEditorConsoleWidget::AddLog(const char* fmt, ...) {
 	char buf[1024];
@@ -8,6 +10,56 @@ void FEditorConsoleWidget::AddLog(const char* fmt, ...) {
 	va_end(args);
 	Messages.push_back(_strdup(buf));
 	if (AutoScroll) ScrollToBottom = true;
+}
+
+void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
+{
+	FEditorWidget::Initialize(InEditorEngine);
+
+	RegisterCommand("clear", [this](const TArray<FString>& Args)
+		{
+			(void)Args;
+			Clear();
+		});
+
+	RegisterCommand("stat", [this](const TArray<FString>& Args)
+		{
+			if (EditorEngine == nullptr)
+			{
+				AddLog("[ERROR] EditorEngine is null.\n");
+				return;
+			}
+
+			if (Args.size() < 2)
+			{
+				AddLog("Usage: stat fps | stat memory | stat none\n");
+				return;
+			}
+
+			FOverlayStatSystem& StatSystem = EditorEngine->GetOverlayStatSystem();
+			const FString& SubCommand = Args[1];
+
+			if (SubCommand == "fps")
+			{
+				StatSystem.ShowFPS(true);
+				AddLog("Overlay stat enabled: fps\n");
+			}
+			else if (SubCommand == "memory")
+			{
+				StatSystem.ShowMemory(true);
+				AddLog("Overlay stat enabled: memory\n");
+			}
+			else if (SubCommand == "none")
+			{
+				StatSystem.HideAll();
+				AddLog("Overlay stat disabled: all\n");
+			}
+			else
+			{
+				AddLog("[ERROR] Unknown stat command: '%s'\n", SubCommand.c_str());
+				AddLog("Usage: stat fps | stat memory | stat none\n");
+			}
+		});
 }
 
 void FEditorConsoleWidget::Render(float DeltaTime)

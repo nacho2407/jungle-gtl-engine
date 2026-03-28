@@ -14,6 +14,7 @@ enum class EDepthStencilState
 	StencilWrite,
 	StencilOutline,
 	StencilWriteOnlyEqual,
+	NoDepth,
 
 	// --- 기즈모 전용 ---
 	GizmoInside,         
@@ -58,6 +59,7 @@ private:
 	ID3D11DepthStencilState* DepthStencilStateStencilWrite = nullptr;
 	ID3D11DepthStencilState* DepthStencilStateStencilOutline = nullptr;
 	ID3D11DepthStencilState* DepthStencilStateStencilMaskEqual = nullptr;
+	ID3D11DepthStencilState* DepthStencilStateNoDepth = nullptr;
 
 	ID3D11DepthStencilState* DepthStencilStateGizmoInside = nullptr;  
 	ID3D11DepthStencilState* DepthStencilStateGizmoOutside = nullptr; 
