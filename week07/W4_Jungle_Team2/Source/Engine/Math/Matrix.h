@@ -93,6 +93,10 @@ struct FMatrix {
 	FVector GetLocation() const;
 	FVector GetScale() const;
 	void SetAxes(const FVector& Right, const FVector& Up, const FVector& Forward);
+	
+	FVector TransformPosition(const FVector& Vector) const;
+	FVector InverseTransformPosition(const FVector& Vector) const;
+	FVector InverseTransformVector(const FVector& Vector) const;
 };
 
 FVector operator* (const FVector& vector, const FMatrix& matrix);
