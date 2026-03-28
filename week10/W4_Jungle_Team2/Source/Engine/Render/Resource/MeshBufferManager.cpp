@@ -99,13 +99,14 @@ FMeshBuffer* FMeshBufferManager::GetStaticMeshBuffer(const UStaticMesh* StaticMe
 		return &It->second;
 	}
 
-	FMeshData PrimitiveMeshData = ToMeshData(StaticMeshAsset);
-	if (PrimitiveMeshData.Vertices.empty() || PrimitiveMeshData.Indices.empty())
+	const TArray<FNormalVertex>& Vertices = StaticMeshAsset->GetVertices();
+	const TArray<uint32>&        Indices  = StaticMeshAsset->GetIndices();
+	if (Vertices.empty() || Indices.empty())
 	{
 		return nullptr;
 	}
 
 	FMeshBuffer& NewBuffer = StaticMeshBufferMap[StaticMeshAsset];
-	NewBuffer.Create(Device, PrimitiveMeshData);
+	NewBuffer.CreateForStaticMesh(Device, Vertices, Indices);
 	return &NewBuffer;
 }
