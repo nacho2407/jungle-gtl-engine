@@ -61,6 +61,9 @@
     <Filter Include="Source\Viewport\Selection">
       <UniqueIdentifier>{c02bdf14-d23c-3f72-e5f4-7a918dc1b5dc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Viewport\Window">
+      <UniqueIdentifier>{d3f2a1b0-8c7e-4f5d-9e6a-1b2c3d4e5f60}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Camera\ViewportCamera.cpp">
@@ -160,7 +163,7 @@
       <Filter>Source\Viewport</Filter>
     </ClCompile>
     <ClCompile Include="Source\Viewport\Window\EditorViewportPanel.cpp">
-      <Filter>Source\Viewport</Filter>
+      <Filter>Source\Viewport\Window</Filter>
     </ClCompile>
     <ClCompile Include="Source\Viewport\Gizmo\ViewportGizmoController.cpp">
       <Filter>Source\Viewport\Gizmo</Filter>
@@ -180,8 +183,9 @@
     <ClCompile Include="Source\Viewport\Selection\ViewportSelectionController.cpp">
       <Filter>Source\Viewport\Selection</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Viewport\Window\SSplitter.cpp" />
-    <ClCompile Include="Source\Viewport\Window\WindowOverlayManager.cpp" />
+    <ClCompile Include="Source\Viewport\Window\WindowOverlayManager.cpp">
+      <Filter>Source\Viewport\Window</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Camera\ViewportCamera.h">
@@ -299,7 +303,7 @@
       <Filter>Source\Viewport</Filter>
     </ClInclude>
     <ClInclude Include="Source\Viewport\Window\EditorViewportPanel.h">
-      <Filter>Source\Viewport</Filter>
+      <Filter>Source\Viewport\Window</Filter>
     </ClInclude>
     <ClInclude Include="Source\Viewport\Gizmo\ViewportGizmoController.h">
       <Filter>Source\Viewport\Gizmo</Filter>
@@ -319,8 +323,9 @@
     <ClInclude Include="Source\Viewport\Selection\ViewportSelectionController.h">
       <Filter>Source\Viewport\Selection</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Viewport\Window\SSplitter.h" />
-    <ClInclude Include="Source\Viewport\Window\WindowOverlayManager.h" />
+    <ClInclude Include="Source\Viewport\Window\WindowOverlayManager.h">
+      <Filter>Source\Viewport\Window</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Source\ThirdParty\ImGui\imgui.natstepfilter">

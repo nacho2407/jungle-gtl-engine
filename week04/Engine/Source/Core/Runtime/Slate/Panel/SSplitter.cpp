@@ -1,12 +1,10 @@
-#include "SSplitter.h"
+#include "Core/Runtime/Slate/Panel/SSplitter.h"
 #include "Core/Math/MathUtility.h"
 
 #include <cmath>
 
 // Deprecated: resizing is handled by WindowOverlayManager::ResetViewportDimension.
-void SSplitter::OnResize(float Width, float Height)
-{
-}
+void SSplitter::OnResize(float Width, float Height) {}
 
 void SSplitterV::OnDrag(float Delta, float MinBound, float MaxBound)
 {
@@ -34,14 +32,14 @@ void SSplitterV::ResetPanelDimension()
 {
     const float SplitX = Origin.X;
 
-    for (FEditorViewportPanel* Panel : LeftPanels)
+    for (SWindow* Panel : LeftPanels)
     {
         if (!Panel) continue;
         Panel->PosX  = 0.f;
         Panel->Width = SplitX;
     }
 
-    for (FEditorViewportPanel* Panel : RightPanels)
+    for (SWindow* Panel : RightPanels)
     {
         if (!Panel) continue;
         Panel->PosX  = SplitX;
@@ -53,14 +51,14 @@ void SSplitterH::ResetPanelDimension()
 {
     const float SplitY = Origin.Y;
 
-    for (FEditorViewportPanel* Panel : UpPanels)
+    for (SWindow* Panel : UpPanels)
     {
         if (!Panel) continue;
         Panel->PosY   = 0.f;
         Panel->Height = SplitY;
     }
 
-    for (FEditorViewportPanel* Panel : BottomPanels)
+    for (SWindow* Panel : BottomPanels)
     {
         if (!Panel) continue;
         Panel->PosY   = SplitY;

@@ -627,7 +627,8 @@ bool FEditorEngineLoop::RunFrameOnceWithoutResize()
         for (FEditorViewportPanel* Panel : WindowOverlayManager->GetViewportPanels())
         {
             if (!Panel || !Panel->ViewportClient) continue;
-            if (Panel->Width <= 0.f || Panel->Height <= 0.f) continue;
+            if (Panel->Width <= 0.f || Panel->Height <= 0.f)
+                continue;
 
             Panel->PrepareRender();
             Panel->BuildRenderData();

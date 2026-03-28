@@ -103,6 +103,18 @@
     <Filter Include="Source\Engine\Component\Text">
       <UniqueIdentifier>{9ecbb042-c8bc-15cb-9b15-f4ac96e2e30e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Core\Runtime">
+      <UniqueIdentifier>{7e427720-4616-4ed2-9532-d057556bb2ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Runtime\Slate">
+      <UniqueIdentifier>{6d92c048-7a25-4afb-a9ae-dc99ac67cd3d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Runtime\Slate\Panel">
+      <UniqueIdentifier>{e7a4019d-7425-47ed-81ae-329237c8ff1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Runtime\Slate\Window">
+      <UniqueIdentifier>{81965b95-2a63-40c7-a555-92c1ad60a0c1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\ApplicationCore\Input\InputRouter.cpp">
@@ -344,6 +356,9 @@
     </ClCompile>
     <ClCompile Include="Source\SceneIO\SceneTypeRegistry.cpp">
       <Filter>Source\SceneIO</Filter>
+    </ClCompile>
+    <ClCompile Include="SSplitter.cpp">
+      <Filter>Source\Core\Runtime\Slate\Panel</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -775,6 +790,18 @@
     </ClInclude>
     <ClInclude Include="Source\ThirdParty\Json\json.hpp">
       <Filter>Source\ThirdParty\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Runtime\Slate\SWidget.h">
+      <Filter>Source\Core\Runtime\Slate</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Runtime\Slate\Window\SWindow.h">
+      <Filter>Source\Core\Runtime\Slate\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Runtime\Slate\Panel\SPanel.h">
+      <Filter>Source\Core\Runtime\Slate\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Runtime\Slate\Panel\SSplitter.h">
+      <Filter>Source\Core\Runtime\Slate\Panel</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

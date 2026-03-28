@@ -11,6 +11,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Core\Runtime\Slate\SWidget.h" />
+    <ClInclude Include="Source\Core\Runtime\Slate\Window\SWindow.h" />
+    <ClInclude Include="Source\Core\Runtime\Slate\Panel\SPanel.h" />
+    <ClInclude Include="Source\Core\Runtime\Slate\Panel\SSplitter.h" />
     <ClInclude Include="Resources\Mesh\Cone.h" />
     <ClInclude Include="Resources\Mesh\Cube.h" />
     <ClInclude Include="Resources\Mesh\Cylinder.h" />
@@ -243,6 +247,7 @@
     <ClCompile Include="Source\SceneIO\SceneJson.cpp" />
     <ClCompile Include="Source\SceneIO\SceneSerializer.cpp" />
     <ClCompile Include="Source\SceneIO\SceneTypeRegistry.cpp" />
+    <ClCompile Include="SSplitter.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
