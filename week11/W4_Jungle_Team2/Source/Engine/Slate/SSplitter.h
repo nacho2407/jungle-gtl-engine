@@ -13,10 +13,13 @@ class SSplitter : public SWindow
 {
 public:
 
-	// Mouse Callbac
+	// Mouse Callback
 	bool OnMouseMove(int32 X, int32 Y) override;
 	bool OnMouseButtonDown(int32 Button, int32 X, int32 Y) override;
 	bool OnMouseButtonUp(int32 Button, int32 X, int32 Y) override;
+
+	// SideLT / SideRB 를 먼저 검사하고, 그 사이 바 영역이면 this 반환
+	SWidget* HitTest(int32 X, int32 Y) override;
 
 	virtual void UpdateCildRect() { }
 
