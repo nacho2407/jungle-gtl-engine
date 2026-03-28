@@ -6,6 +6,7 @@
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
 #include "Runtime/ViewportClient.h"
+#include "Viewport/ViewportNavigationController.h"
 
 enum EEditorViewportType
 {
@@ -33,6 +34,7 @@ class FEditorSettings;
 class FWindowsWindow;
 class FSelectionManager;
 class FSceneViewport;
+class FViewportNavigationController;
 struct FEditorViewportState;
 
 /*
@@ -121,6 +123,4 @@ private:
 	bool bFirstMouseMoveAfterRotateStart = false;
 	bool bFirstMouseMoveAfterPanStart = false;
 	bool bFirstMouseMoveAfterOrbitStart = false;
-
-	FCursorOverlayState CursorOverlayState;
 };
