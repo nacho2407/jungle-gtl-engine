@@ -275,6 +275,10 @@ namespace
             return "Texture";
         case EContentBrowserItemType::Font:
             return "Font";
+        case EContentBrowserItemType::StaticMesh:
+            return "StaticMesh";
+        case EContentBrowserItemType::Material:
+            return "Material";
         case EContentBrowserItemType::UnknownFile:
         default:
             return "Unknown";
