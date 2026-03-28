@@ -1,7 +1,12 @@
 ﻿#include "ObjViewerMenuBarWidget.h"
+
 #include "Misc/ObjViewer/ObjViewerEngine.h"
+#include "Misc/ObjViewer/Settings/ObjViewerSettings.h"
 #include "Engine/Core/Paths.h"
 #include "Engine/Runtime/WindowsWindow.h"
+#include "Core/ResourceManager.h"
+#include "Component/StaticMeshComponent.h"
+#include "Math/Rotator.h"
 #include "ImGui/imgui.h"
 
 #include <windows.h>
@@ -18,7 +23,25 @@ void FObjViewerMenuBarWidget::Render(float DeltaTime)
 				FString FilePath = OpenFileDialog();
 				if (!FilePath.empty())
 				{
-					// TODO: 모델 로드 로직
+					UStaticMesh* LoadedMesh = FResourceManager::Get().LoadStaticMesh(FilePath);
+					if (LoadedMesh)
+					{
+						if (UStaticMeshComponent* TargetComponent = Engine->GetPreviewMeshComponent()) 
+						{
+							TargetComponent->SetStaticMesh(LoadedMesh);
+
+							if (FObjViewerSettings::Get().ModelUpAxis == EModelUpAxis::Y_up)
+							{
+								TargetComponent->GetOwner()->SetActorRotation(FVector(90.0f, 0.0f, 0.0f));
+							}
+							else
+							{
+								TargetComponent->GetOwner()->SetActorRotation(FVector(0.0f, 0.0f, 0.0f));
+							}
+							
+							Engine->GetViewportClient().ResetCamera();
+						}
+					}
 				}
 			}
 			if (ImGui::MenuItem("Save"))
