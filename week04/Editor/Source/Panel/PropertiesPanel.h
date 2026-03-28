@@ -50,7 +50,7 @@ class FPropertiesPanel : public IPanel
     FVector                             EditLocation = {0.f, 0.f, 0.f};
     FVector                             EditRotation = {0.f, 0.f, 0.f};
     FVector                             EditScale = {1.f, 1.f, 1.f};
-    Engine::Component::USceneComponent* CachedTargetComponent = nullptr;
+    mutable Engine::Component::USceneComponent* CachedTargetComponent = nullptr;
     TMap<FString, FString>              AssetPathEditBuffers;
 
     // 이름 변경 관련 상태 (Mutable은 Draw 내부 수정을 위함)
