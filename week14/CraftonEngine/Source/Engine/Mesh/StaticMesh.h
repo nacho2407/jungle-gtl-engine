@@ -3,6 +3,7 @@
 #include "Object/Object.h"
 
 struct FStaticMesh;
+struct FStaticMaterial;
 
 // UStaticMesh — FStaticMesh를 참조하는 UObject 래퍼
 class UStaticMesh : public UObject
@@ -19,4 +20,5 @@ public:
 
 private:
 	FStaticMesh* StaticMeshAsset = nullptr;
+	TArray<FStaticMaterial> StaticMaterials;
 };
