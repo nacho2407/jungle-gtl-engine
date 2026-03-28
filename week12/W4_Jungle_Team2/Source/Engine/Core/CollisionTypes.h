@@ -5,10 +5,28 @@ struct FHitResult
 {
     class UPrimitiveComponent* HitComponent = nullptr;
 
-    float Distance = 3.402823466e+38F; // FLT_MAX
-    FVector WorldHitLocation = { 0, 0, 0 };
-    FVector WorldNormal = { 0, 0, 0 };
+    float Distance = FLT_MAX;
+	
+	//	World 기준
+    FVector Location = { 0, 0, 0 };
+    FVector Normal = { 0, 0, 0 };
+	
     int FaceIndex = -1; 
 
     bool bHit = false;
+	
+	void Reset()
+	{
+		HitComponent = nullptr;
+		Distance = FLT_MAX;
+		Location = { 0, 0, 0 };
+		Normal = { 0, 0, 0 };
+		FaceIndex = -1;
+		bHit = false;
+	}
+	
+	bool IsValid() const
+	{
+		return bHit && (HitComponent != nullptr);
+	}
 };

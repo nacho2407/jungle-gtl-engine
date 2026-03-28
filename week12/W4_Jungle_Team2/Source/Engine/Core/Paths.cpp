@@ -15,31 +15,31 @@ std::wstring FPaths::RootDir()
 		if (std::filesystem::exists(ExeDir / L"Shaders"))
 		{
 			// 배포: exe와 리소스가 같은 디렉터리
-			Cached = ExeDir.wstring() + L"\\";
+			Cached = ExeDir.generic_wstring() + L"/";
 		}
 		else
 		{
 			// 개발: CWD(= $(ProjectDir))에 리소스가 있음
-			Cached = std::filesystem::current_path().wstring() + L"\\";
+			Cached = std::filesystem::current_path().generic_wstring() + L"/";
 		}
 	}
 	return Cached;
 }
 
-std::wstring FPaths::ShaderDir() { return RootDir() + L"Shaders\\"; }
-std::wstring FPaths::SceneDir() { return RootDir() + L"Asset\\Scene\\"; }
-std::wstring FPaths::DumpDir() { return RootDir() + L"Saves\\Dump\\"; }
-std::wstring FPaths::SettingsDir() { return RootDir() + L"Settings\\"; }
-std::wstring FPaths::ShaderFilePath() { return RootDir() + L"Shaders\\ShaderW0.hlsl"; }
-std::wstring FPaths::SettingsFilePath() { return RootDir() + L"Settings\\Editor.ini"; }
-std::wstring FPaths::ViewerSettingsFilePath() { return RootDir() + L"Settings\\ObjViewer.ini"; }
-std::wstring FPaths::ResourceFilePath() { return RootDir() + L"Settings\\Resource.ini"; }
+std::wstring FPaths::ShaderDir() { return RootDir() + L"Shaders/"; }
+std::wstring FPaths::SceneDir() { return RootDir() + L"Asset/Scene/"; }
+std::wstring FPaths::DumpDir() { return RootDir() + L"Saves/Dump/"; }
+std::wstring FPaths::SettingsDir() { return RootDir() + L"Settings/"; }
+std::wstring FPaths::ShaderFilePath() { return RootDir() + L"Shaders/ShaderW0.hlsl"; }
+std::wstring FPaths::SettingsFilePath() { return RootDir() + L"Settings/Editor.ini"; }
+std::wstring FPaths::ViewerSettingsFilePath() { return RootDir() + L"Settings/ObjViewer.ini"; }
+std::wstring FPaths::ResourceFilePath() { return RootDir() + L"Settings/Resource.ini"; }
 
 std::wstring FPaths::Combine(const std::wstring& Base, const std::wstring& Child)
 {
 	std::filesystem::path Result(Base);
 	Result /= Child;
-	return Result.wstring();
+	return Result.generic_wstring(); // backslash를 slash로 변환해서 반환한다.
 }
 
 void FPaths::CreateDir(const std::wstring& Path)
