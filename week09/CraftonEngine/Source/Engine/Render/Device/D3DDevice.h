@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/RenderStateTypes.h"
 #include "Core/CoreTypes.h"

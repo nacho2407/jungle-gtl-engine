@@ -18,8 +18,7 @@ struct FNormalVertex
 
 struct FStaticMeshSection;
 struct FStaticMaterial;
-// TODO: not yet implemented
-struct UMaterialInterface;
+struct FMaterial;
 
 // Cooked Data — GPU용 정점/인덱스
 // FStaticMeshLODResources in UE5
@@ -29,7 +28,6 @@ struct FStaticMesh
 	TArray<FNormalVertex> Vertices;
 	TArray<uint32> Indices;
 
-	// https://github.com/EpicGames/UnrealEngine/blob/260bb2e1c5610b31c63a36206eedd289409c5f11/Engine/Source/Runtime/Engine/Public/StaticMeshResources.h#L403-L431
 	TArray<FStaticMeshSection> Sections;
 
 	std::unique_ptr<FMeshBuffer> RenderBuffer;
@@ -51,24 +49,20 @@ struct FStaticMesh
 
 struct FStaticMeshSection
 {
-	// Index into UStaticMesh's FStaticMaterial array.
-	int32 MaterialIndex; // 0, 1, 2
-
-	// from .obj's usemtl statement
-	// TODO: 실제로 UE에서는 MaterialIndex만 사용함
-	FName MaterialSlotName;
-
+	//int32 MaterialIndex; // Index into UStaticMesh's FStaticMaterial array.
+	FString MaterialSlotName;
 	uint32 FirstIndex;
 	uint32 NumTriangles;
 };
 
 struct FStaticMaterial
 {
-	UMaterialInterface* MaterialInterface = nullptr;
+	std::shared_ptr<FMaterial> MaterialInterface;
+	FString MaterialSlotName = "None"; // "None"은 특별한 슬롯 이름으로, OBJ 파일에서 머티리얼이 지정되지 않은 섹션에 할당됩니다.
+};
 
-	// (Imported)MaterialSlotName이 "NAME_None"이면 MaterialInterface의 이름을 사용하도록 설정
-	FName MaterialSlotName = FName::None;
-
-	// TODO: EditorOnly
-	//FName ImportedMaterialSlotName = FName::None;
+struct FMaterial
+{
+	FString DiffuseTextureFilePath;
+	FVector4 DiffuseColor;
 };
