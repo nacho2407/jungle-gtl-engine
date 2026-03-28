@@ -206,6 +206,27 @@ bool FObjLoader::BuildStaticMesh()
 	return !StaticMeshAsset.Vertices.empty() && !StaticMeshAsset.Indices.empty();
 }
 
+bool FObjLoader::BindMaterials()
+{
+	if (RawData.ReferencedMtlPath.empty())
+		return true;
+
+	std::filesystem::path MtlPath =
+		std::filesystem::path(SourcePath).parent_path() / RawData.ReferencedMtlPath;
+
+	TMap<FString, FMaterial> Materials;
+	if (!FObjMtlLoader::Load(MtlPath.string(), Materials))
+		return true;
+
+	for (FStaticMeshMaterialSlot& Slot : StaticMeshAsset.MaterialSlots)
+	{
+		auto Iter = Materials.find(Slot.SlotName);
+		if (Iter != Materials.end())
+			Slot.MaterialData = Iter->second;
+	}
+
+	return true;
+}
 
 UStaticMesh* FObjLoader::CreateAsset()
 {
