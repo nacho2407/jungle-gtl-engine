@@ -5,8 +5,9 @@
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 #include "GameFramework/World.h"
-#include "Core/Stats.h"
-#include "Core/GPUProfiler.h"
+#include "Core/Logging/Stats.h"
+#include "Core/Logging/GPUProfiler.h"
+#include "Viewport/ViewportCamera.h"
 
 FObjViewerRenderPipeline::FObjViewerRenderPipeline(UObjViewerEngine* InEngine, FRenderer& InRenderer)
 	: Engine(InEngine)
@@ -24,7 +25,7 @@ void FObjViewerRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	Bus.Clear();
 
 	UWorld* World = Engine->GetWorld();
-	UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
+	FViewportCamera* Camera = Engine->GetCamera();
 	if (Camera)
 	{
 		const auto& Settings = Engine->GetSettings();

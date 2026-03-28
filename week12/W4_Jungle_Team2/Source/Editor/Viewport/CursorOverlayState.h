@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Math/Vector.h"
+#include "Math/Vector4.h"
 
 struct FCursorOverlayState
 {

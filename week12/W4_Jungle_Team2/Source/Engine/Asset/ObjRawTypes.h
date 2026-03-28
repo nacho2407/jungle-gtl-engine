@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/CoreMinimal.h"
 #include "Math/Vector.h"
 
 #include <functional>

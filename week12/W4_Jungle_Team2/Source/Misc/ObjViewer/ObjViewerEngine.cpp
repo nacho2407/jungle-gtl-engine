@@ -4,7 +4,7 @@
 #include "Component/CameraComponent.h"
 #include "Engine/Component/StaticMeshComponent.h"
 #include "Component/PrimitiveComponent.h"
-#include "Core/Stats.h"
+#include "Core/Logging/Stats.h"
 #include "Core/ResourceManager.h"
 #include "Engine/GameFramework/PrimitiveActors.h"
 #include "Engine/GameFramework/World.h"
@@ -12,6 +12,7 @@
 #include "Engine/Serialization/SceneSaveManager.h"
 #include "GameFramework/World.h"
 #include "ImGui/imgui.h"
+#include "Viewport/ViewportCamera.h"
 
 DEFINE_CLASS(UObjViewerEngine, UEngine)
 REGISTER_FACTORY(UObjViewerEngine)
@@ -43,7 +44,6 @@ void UObjViewerEngine::Init(FWindowsWindow* InWindow)
 	// 엔진 시스템에 활성 카메라 등록
 	ViewportClient.CreateCamera();
 	ViewportClient.ResetCamera();
-	GetWorld()->SetActiveCamera(ViewportClient.GetCamera());
 
 	// Obj Viewer Render Pipeline 세팅
 	SetRenderPipeline(std::make_unique<FObjViewerRenderPipeline>(this, Renderer));
@@ -73,7 +73,7 @@ void UObjViewerEngine::BeginPlay()
     PreviewActor->SetRootComponent(MeshComp);
 
     // 카메라 세팅은 ViewportClient에게 온전히 위임
-    if (UCameraComponent* MainCamera = ViewportClient.GetCamera())
+    if (FViewportCamera* MainCamera = ViewportClient.GetCamera())
     {
         World->SetActiveCamera(MainCamera);
     }
