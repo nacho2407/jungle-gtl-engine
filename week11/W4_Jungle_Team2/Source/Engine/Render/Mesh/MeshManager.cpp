@@ -1,37 +1,19 @@
 ﻿#include "MeshManager.h"
+
 #include "Math/Utils.h"
 
 #include <fstream>
 #include <iostream>
 #include <sstream>
 
-FMeshData FMeshManager::CubeMeshData;
-FMeshData FMeshManager::PlaneMeshData;
-FMeshData FMeshManager::SphereMeshData;
-FMeshData FMeshManager::TranslationGizmoMeshData;
-FMeshData FMeshManager::RotationGizmoMeshData;
-FMeshData FMeshManager::ScaleGizmoMeshData;
-FMeshData FMeshManager::QuadMeshData;
-bool FMeshManager::bIsInitialized = false;
+FMeshData FEditorMeshLibrary::TranslationGizmoMeshData;
+FMeshData FEditorMeshLibrary::RotationGizmoMeshData;
+FMeshData FEditorMeshLibrary::ScaleGizmoMeshData;
+bool FEditorMeshLibrary::bIsInitialized = false;
 
-void FMeshManager::Initialize()
+void FEditorMeshLibrary::Initialize()
 {
 	if (bIsInitialized) return;
-
-	if (CubeMeshData.Vertices.empty())
-	{
-		CreateCube();
-	}
-
-	if (PlaneMeshData.Vertices.empty())
-	{
-		CreatePlane();
-	}
-
-	if (SphereMeshData.Vertices.empty())
-	{
-		CreateSphere();
-	}
 
 	if (TranslationGizmoMeshData.Vertices.empty())
 	{
@@ -48,149 +30,10 @@ void FMeshManager::Initialize()
 		CreateRotationGizmo();
 	}
 
-	if (QuadMeshData.Vertices.empty())
-	{
-		CreateQuad();
-	}
-
     bIsInitialized = true;
 }
 
-void FMeshManager::CreateCube()
-{
-	TArray<FVertex>& vertices = CubeMeshData.Vertices;
-	TArray<uint32>& indices = CubeMeshData.Indices;
-
-	vertices.clear();
-	indices.clear();
-
-	auto MakeColor = [](float x, float y, float z) -> FVector4
-		{
-			// -0.5 ~ 0.5 → 0 ~ 1
-			float r = (x + 0.5f);
-			float g = (y + 0.5f);
-			float b = (z + 0.5f);
-
-			// 살짝 대비 주기 (optional)
-			r = powf(r, 0.8f);
-			g = powf(g, 0.8f);
-			b = powf(b, 0.8f);
-
-			return FVector4(r, g, b, 1.0f);
-		};
-
-	auto V = [&](float x, float y, float z)
-		{
-			return FVertex{ FVector(x, y, z), MakeColor(x, y, z) };
-		};
-
-	vertices = {
-
-		// FRONT
-		V(0.5f,-0.5f,-0.5f),
-		V(0.5f,-0.5f, 0.5f),
-		V(0.5f, 0.5f, 0.5f),
-		V(0.5f, 0.5f,-0.5f),
-
-		// BACK
-		V(-0.5f,-0.5f,-0.5f),
-		V(-0.5f, 0.5f,-0.5f),
-		V(-0.5f, 0.5f, 0.5f),
-		V(-0.5f,-0.5f, 0.5f),
-
-		// LEFT
-		V(-0.5f,-0.5f,-0.5f),
-		V(-0.5f,-0.5f, 0.5f),
-		V(0.5f,-0.5f, 0.5f),
-		V(0.5f,-0.5f,-0.5f),
-
-		// RIGHT
-		V(-0.5f, 0.5f,-0.5f),
-		V(0.5f, 0.5f,-0.5f),
-		V(0.5f, 0.5f, 0.5f),
-		V(-0.5f, 0.5f, 0.5f),
-
-		// TOP
-		V(-0.5f,-0.5f, 0.5f),
-		V(-0.5f, 0.5f, 0.5f),
-		V(0.5f, 0.5f, 0.5f),
-		V(0.5f,-0.5f, 0.5f),
-
-		// BOTTOM
-		V(-0.5f,-0.5f,-0.5f),
-		V(0.5f,-0.5f,-0.5f),
-		V(0.5f, 0.5f,-0.5f),
-		V(-0.5f, 0.5f,-0.5f),
-	};
-
-	indices = {
-		0,2,1, 0,3,2,
-		4,6,5, 4,7,6,
-		8,10,9, 8,11,10,
-		12,14,13, 12,15,14,
-		16,18,17, 16,19,18,
-		20,22,21, 20,23,22
-	};
-}
-
-void FMeshManager::CreateSphere(int slices, int stacks)
-{
-	TArray<FVertex>& vertices = SphereMeshData.Vertices;
-	TArray<uint32>& indices = SphereMeshData.Indices;
-
-	vertices.clear();
-	indices.clear();
-
-	const float Radius = 0.5f;
-	//FVector4 color(1.0f, 1.0f, 1.0f, 1.0f);
-
-	//Create Vertex
-	for (int i = 0; i <= stacks; ++i) {
-		float pi = 3.141592f * (float)i / stacks;
-		for (int j = 0; j <= slices; ++j) {
-			float theta = 2.0f * 3.141592f * (float)j / slices;
-
-			float x = Radius * sin(pi) * cos(theta);
-			float y = Radius * sin(pi) * sin(theta);
-			float z = Radius * cos(pi);
-
-#if TEST
-
-			FVector4 color(1.0f, 1.0f, 1.0f, 1.0f);
-
-#else
-
-			FVector4 color(
-				x * 0.5f + 0.5f,
-				y * 0.5f + 0.5f,
-				z * 0.5f + 0.5f,
-				1.0f
-			);
-#endif
-
-			vertices.push_back({ {x, y, z}, color });
-		}
-	}
-
-	//Create Index
-	for (int i = 0; i < stacks; ++i) {
-		for (int j = 0; j < slices; ++j) {
-			uint32 first = i * (slices + 1) + j;
-			uint32 second = first + slices + 1;
-
-			// 구 표면의 외곽이 front face가 되도록 winding을 맞춘다.
-			indices.push_back(first);
-			indices.push_back(second);
-			indices.push_back(first + 1);
-
-			indices.push_back(second);
-			indices.push_back(second + 1);
-			indices.push_back(first + 1);
-		}
-	}
-}
-
-void FMeshManager::CreateRotationGizmo()
+void FEditorMeshLibrary::CreateRotationGizmo()
 {
 	TArray<FVertex>& vertices = RotationGizmoMeshData.Vertices;
 	TArray<uint32>& indices = RotationGizmoMeshData.Indices;
@@ -261,7 +104,7 @@ void FMeshManager::CreateRotationGizmo()
 	}
 }
 
-void FMeshManager::CreateScaleGizmo()
+void FEditorMeshLibrary::CreateScaleGizmo()
 {
 	TArray<FVertex>& vertices = ScaleGizmoMeshData.Vertices;
 	TArray<uint32>& indices = ScaleGizmoMeshData.Indices;
@@ -315,29 +158,7 @@ void FMeshManager::CreateScaleGizmo()
 	}
 }
 
-void FMeshManager::CreateQuad()
-{
-	TArray<FVertex>& vertices = QuadMeshData.Vertices;
-	TArray<uint32>& indices = QuadMeshData.Indices;
-
-	vertices.clear();
-	indices.clear();
-
-	FVector4 DefaultColor(1.0f, 1.0f, 1.0f, 1.0f);
-
-	// 좌상단 (X: -0.5, Z: 0.5)
-	vertices.push_back({ FVector(0.0f, -0.5f,  0.5f), DefaultColor, 0 });
-	// 우상단 (X: 0.5, Z: 0.5)
-	vertices.push_back({ FVector(0.0f, 0.5f,  0.5f), DefaultColor, 0 });
-	// 우하단 (X: 0.5, Z: -0.5)
-	vertices.push_back({ FVector(0.0f, 0.5f, -0.5f), DefaultColor, 0 });
-	// 좌하단 (X: -0.5, Z: -0.5)
-	vertices.push_back({ FVector(0.0f, -0.5f, -0.5f), DefaultColor, 0 });
-
-	indices.assign({ 0, 1, 2, 0, 2, 3 });
-}
-
-void FMeshManager::CreateTranslationGizmo()
+void FEditorMeshLibrary::CreateTranslationGizmo()
 {
 	TArray<FVertex>& vertices = TranslationGizmoMeshData.Vertices;
 	TArray<uint32>& indices = TranslationGizmoMeshData.Indices;
@@ -432,38 +253,4 @@ void FMeshManager::CreateTranslationGizmo()
 	}
 }
 
-void FMeshManager::CreatePlane()
-{
-	TArray<FVertex>& vertices = PlaneMeshData.Vertices;
-	TArray<uint32>& indices = PlaneMeshData.Indices;
-
-	vertices.clear();
-	indices.clear();
-
-	FVector4 color(1.0f, 1.0f, 1.0f, 1.0f);
-
-	// Front face (Z = 0.01f)
-	vertices = {
-		{ {-0.5f, -0.5f, 0.01f}, color }, // 0
-		{ {-0.5f,  0.5f, 0.01f}, color }, // 1
-		{ { 0.5f,  0.5f, 0.01f}, color }, // 2
-		{ { 0.5f, -0.5f, 0.01f}, color }, // 3
-
-		// Back face (Z = -0.01f) - reversed winding for opposite normal
-		{ {-0.5f, -0.5f, -0.01f}, color }, // 4
-		{ { 0.5f,  0.5f, -0.01f}, color }, // 5
-		{ {-0.5f,  0.5f, -0.01f}, color }, // 6
-		{ { 0.5f, -0.5f, -0.01f}, color }  // 7
-	};
-
-	// Front face triangles
-	indices = {
-		0, 2, 1,  // Front tri 1
-		0, 3, 2,  // Front tri 2
-
-		// Back face triangles (reversed winding for correct normal)
-		4, 6, 5,  // Back tri 1
-		4, 5, 7   // Back tri 2
-	};
-}
 

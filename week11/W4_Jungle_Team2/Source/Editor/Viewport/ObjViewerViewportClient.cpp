@@ -16,7 +16,7 @@ void FObjViewerViewportClient::Initialize(FWindowsWindow* InWindow)
 {
     Window = InWindow;
 
-    UE_LOG("Hello ZZup Engine! %d", 2026);
+    // UE_LOG("Hello ZZup Engine! %d", 2026);
 }
 
 void FObjViewerViewportClient::CreateCamera()
@@ -229,7 +229,7 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
 
 		FVector CameraLocation = Camera->GetWorldLocation();
 		FVector CameraDirection = Camera->GetForwardVector();
-		OrbitDistance = -CameraLocation.Dot(CameraDirection);
+		OrbitDistance = -CameraLocation.DotProduct(CameraDirection);
 
 		OrbitPivot = CameraLocation + CameraDirection * OrbitDistance;
 
@@ -311,9 +311,9 @@ void FObjViewerViewportClient::ClampCameraPanToObject()
     FVector CamUp = Camera->GetUpVector();
 
     FVector ToObject = SceneCenter - CamPos;
-    float DistZ = ToObject.Dot(CamFwd);
-    float DistX = ToObject.Dot(CamRight);
-    float DistY = ToObject.Dot(CamUp);
+    float DistZ = ToObject.DotProduct(CamFwd);
+    float DistX = ToObject.DotProduct(CamRight);
+    float DistY = ToObject.DotProduct(CamUp);
 
     // 피타고라스의 정리를 이용해 '화면 중앙에서의 2D 직선 거리' 계산
     float CurrentPanDist = std::sqrt(DistX * DistX + DistY * DistY);
@@ -356,7 +356,7 @@ float FObjViewerViewportClient::GetModelRadius()
             if (!PrimComp || !PrimComp->IsVisible()) continue;
 
             PrimComp->UpdateWorldAABB();
-            FBoundingBox Box = PrimComp->GetWorldBoundingBox();
+            FBoundingBox Box = PrimComp->GetWorldAABB();
 
             MinAABB.X = std::min(MinAABB.X, Box.Min.X);
             MinAABB.Y = std::min(MinAABB.Y, Box.Min.Y);
