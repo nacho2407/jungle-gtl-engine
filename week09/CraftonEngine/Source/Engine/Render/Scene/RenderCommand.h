@@ -91,6 +91,9 @@ struct FFontConstants
 	const FString* Text = nullptr;			// 컴포넌트 소유 문자열 참조 (프레임 내 유효)
 	const FFontResource* Font = nullptr;
 	float Scale = 1.0f;
+
+	uint32 bScreenSpace = 0;	// true면 스크린 공간에서 렌더링, false면 월드 공간
+	FVector2 ScreenPosition = FVector2(0.0f, 0.0f);		// 스크린 공간에서의 위치 (bScreenSpace가 true일 때 사용)
 };
 
 struct FSubUVConstants
