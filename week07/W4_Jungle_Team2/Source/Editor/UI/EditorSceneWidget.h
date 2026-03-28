@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Editor/UI/EditorWidget.h"
-#include "Core/CoreTypes.h"
+#include "Core/CoreMinimal.h"
 
 class FEditorSceneWidget : public FEditorWidget
 {

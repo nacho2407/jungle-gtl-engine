@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/CoreTypes.h"
+#include "Core/CoreMinimal.h"
 #include <cstdarg>
 #include <functional>
 #include <sstream>

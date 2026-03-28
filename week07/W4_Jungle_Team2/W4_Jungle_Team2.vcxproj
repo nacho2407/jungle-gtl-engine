@@ -130,11 +130,12 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;WITH_EDITOR=1;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -159,20 +160,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Editor\UI\ObjViewerControlWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\ObjViewerMainPanel.cpp" />
-    <ClCompile Include="Source\Editor\ObjViewerEngine.cpp" />
-    <ClCompile Include="Source\Editor\ObjViewerRenderPipeline.cpp" />
-    <ClCompile Include="Source\Editor\Settings\ObjViewerSettings.cpp" />
-    <ClCompile Include="Source\Editor\UI\ObjViewerMenuBarWIdget.cpp" />
-    <ClCompile Include="Source\Editor\UI\ObjViewerStatWidget.cpp" />
-    <ClCompile Include="Source\Editor\Viewport\ObjViewerViewportClient.cpp" />
-    <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resource\Material.cpp" />
-    <ClCompile Include="Source\Engine\Component\StaticMeshComponent.cpp" />
-    <ClCompile Include="Source\Engine\Asset\AssetBinder.cpp" />
-    <ClCompile Include="Source\Engine\Asset\FileUtils.cpp" />
-    <ClCompile Include="Source\Engine\Asset\ObjLoader.cpp" />
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp" />
     <ClCompile Include="Source\Editor\ObjViewerEngine.cpp" />
@@ -188,6 +175,10 @@
     <ClCompile Include="Source\Editor\UI\EditorStatWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorViewportOverlayWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\ObjViewerControlWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\ObjViewerMainPanel.cpp" />
+    <ClCompile Include="Source\Editor\UI\ObjViewerMenuBarWIdget.cpp" />
+    <ClCompile Include="Source\Editor\UI\ObjViewerStatWidget.cpp" />
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\ObjViewerViewportClient.cpp" />
     <ClCompile Include="Source\Engine\Asset\AssetBinder.cpp" />
@@ -208,20 +199,25 @@
     <ClCompile Include="Source\Engine\Component\TextRenderComponent.cpp" />
     <ClCompile Include="Source\Engine\Core\CrashDump.cpp" />
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
-    <ClCompile Include="Source\Engine\Core\GPUProfiler.cpp" />
     <ClCompile Include="Source\Engine\Core\InputSystem.cpp" />
     <ClCompile Include="Source\Engine\Core\Paths.cpp" />
     <ClCompile Include="Source\Engine\Core\PlatformTime.cpp" />
     <ClCompile Include="Source\Engine\Core\ResourceManager.cpp" />
-    <ClCompile Include="Source\Engine\Core\Stats.cpp" />
-    <ClCompile Include="Source\Engine\Core\Timer.cpp" />
+    <ClCompile Include="Source\Engine\Core\Logging\GPUProfiler.cpp" />
+    <ClCompile Include="Source\Engine\Core\Logging\Stats.cpp" />
+    <ClCompile Include="Source\Engine\Core\Logging\Timer.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\PrimitiveActors.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\World.cpp" />
     <ClCompile Include="Source\Engine\Math\AABB.cpp" />
+    <ClCompile Include="Source\Engine\Math\Color.cpp" />
     <ClCompile Include="Source\Engine\Math\Matrix.cpp" />
+    <ClCompile Include="Source\Engine\Math\Quat.cpp" />
+    <ClCompile Include="Source\Engine\Math\Rotator.cpp" />
     <ClCompile Include="Source\Engine\Math\Transform.cpp" />
     <ClCompile Include="Source\Engine\Math\Vector.cpp" />
+    <ClCompile Include="Source\Engine\Math\Vector2.cpp" />
+    <ClCompile Include="Source\Engine\Math\Vector4.cpp" />
     <ClCompile Include="Source\Engine\Object\EngineStatics.cpp" />
     <ClCompile Include="Source\Engine\Object\FName.cpp" />
     <ClCompile Include="Source\Engine\Object\Object.cpp" />
@@ -252,23 +248,10 @@
     <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\ViewportCamera.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\ViewportNavigationController.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Editor\UI\ObjViewerControlWidget.h" />
-    <ClInclude Include="Source\Editor\UI\ObjViewerMainPanel.h" />
-    <ClInclude Include="Source\Editor\UI\ObjViewerMenuBarWIdget.h" />
-    <ClInclude Include="Source\Editor\UI\ObjViewerStatWidget.h" />
-    <ClInclude Include="Source\Editor\UI\ObjViewerWidget.h" />
-    <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\Material.h" />
-    <ClInclude Include="Source\Engine\Component\StaticMeshComponent.h" />
-    <ClInclude Include="Source\Engine\Asset\AssetBinder.h" />
-    <ClInclude Include="Source\Engine\Asset\FileUtils.h" />
-    <ClInclude Include="Source\Editor\ObjViewerEngine.h" />
-    <ClInclude Include="Source\Editor\ObjViewerRenderPipeline.h" />
-    <ClInclude Include="Source\Editor\Settings\ObjViewerSettings.h" />
-    <ClInclude Include="Source\Editor\Viewport\ObjViewerViewportClient.h" />
-    <ClInclude Include="Source\Engine\Asset\ObjLoader.h" />
     <ClInclude Include="Source\Editor\EditorEngine.h" />
     <ClInclude Include="Source\Editor\EditorRenderPipeline.h" />
     <ClInclude Include="Source\Editor\ObjViewerEngine.h" />
@@ -284,6 +267,11 @@
     <ClInclude Include="Source\Editor\UI\EditorStatWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorViewportOverlayWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\ObjViewerControlWidget.h" />
+    <ClInclude Include="Source\Editor\UI\ObjViewerMainPanel.h" />
+    <ClInclude Include="Source\Editor\UI\ObjViewerMenuBarWIdget.h" />
+    <ClInclude Include="Source\Editor\UI\ObjViewerStatWidget.h" />
+    <ClInclude Include="Source\Editor\UI\ObjViewerWidget.h" />
     <ClInclude Include="Source\Editor\Viewport\CursorOverlayState.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\ObjViewerViewportClient.h" />
@@ -309,11 +297,11 @@
     <ClInclude Include="Source\Engine\Core\CollisionTypes.h" />
     <ClInclude Include="Source\Engine\Core\Common.h" />
     <ClInclude Include="Source\Engine\Core\ConsoleHelper.h" />
+    <ClInclude Include="Source\Engine\Core\CoreMinimal.h" />
     <ClInclude Include="Source\Engine\Core\CoreTypes.h" />
     <ClInclude Include="Source\Engine\Core\CrashDump.h" />
     <ClInclude Include="Source\Engine\Core\Debug.h" />
     <ClInclude Include="Source\Engine\Core\EngineTypes.h" />
-    <ClInclude Include="Source\Engine\Core\GPUProfiler.h" />
     <ClInclude Include="Source\Engine\Core\InputSystem.h" />
     <ClInclude Include="Source\Engine\Core\Paths.h" />
     <ClInclude Include="Source\Engine\Core\PlatformTime.h" />
@@ -322,18 +310,32 @@
     <ClInclude Include="Source\Engine\Core\ResourceManager.h" />
     <ClInclude Include="Source\Engine\Core\ResourceTypes.h" />
     <ClInclude Include="Source\Engine\Core\Singleton.h" />
-    <ClInclude Include="Source\Engine\Core\Stats.h" />
     <ClInclude Include="Source\Engine\Core\StringUtils.h" />
-    <ClInclude Include="Source\Engine\Core\Timer.h" />
+    <ClInclude Include="Source\Engine\Core\Containers\Array.h" />
+    <ClInclude Include="Source\Engine\Core\Containers\LinkedList.h" />
+    <ClInclude Include="Source\Engine\Core\Containers\Map.h" />
+    <ClInclude Include="Source\Engine\Core\Containers\Pair.h" />
+    <ClInclude Include="Source\Engine\Core\Containers\Queue.h" />
+    <ClInclude Include="Source\Engine\Core\Containers\Set.h" />
+    <ClInclude Include="Source\Engine\Core\Containers\StaticArray.h" />
+    <ClInclude Include="Source\Engine\Core\Containers\String.h" />
+    <ClInclude Include="Source\Engine\Core\Logging\GPUProfiler.h" />
+    <ClInclude Include="Source\Engine\Core\Logging\Stats.h" />
+    <ClInclude Include="Source\Engine\Core\Logging\Timer.h" />
     <ClInclude Include="Source\Engine\GameFramework\AActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\PrimitiveActors.h" />
     <ClInclude Include="Source\Engine\GameFramework\World.h" />
     <ClInclude Include="Source\Engine\GameFramework\WorldContext.h" />
     <ClInclude Include="Source\Engine\Math\AABB.h" />
+    <ClInclude Include="Source\Engine\Math\Color.h" />
     <ClInclude Include="Source\Engine\Math\Matrix.h" />
+    <ClInclude Include="Source\Engine\Math\Quat.h" />
+    <ClInclude Include="Source\Engine\Math\Rotator.h" />
     <ClInclude Include="Source\Engine\Math\Transform.h" />
     <ClInclude Include="Source\Engine\Math\Utils.h" />
     <ClInclude Include="Source\Engine\Math\Vector.h" />
+    <ClInclude Include="Source\Engine\Math\Vector2.h" />
+    <ClInclude Include="Source\Engine\Math\Vector4.h" />
     <ClInclude Include="Source\Engine\Object\EngineStatics.h" />
     <ClInclude Include="Source\Engine\Object\FName.h" />
     <ClInclude Include="Source\Engine\Object\Object.h" />
@@ -372,6 +374,8 @@
     <ClInclude Include="ThirdParty\ImGui\imstb_textedit.h" />
     <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h" />
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp" />
+    <ClInclude Include="Source\Editor\Viewport\ViewportCamera.h" />
+    <ClInclude Include="Source\Editor\Viewport\ViewportNavigationController.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Common.hlsl">
@@ -399,6 +403,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\ShaderLine.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\ShaderStaticMesh.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
