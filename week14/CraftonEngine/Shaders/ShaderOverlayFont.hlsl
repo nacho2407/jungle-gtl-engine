@@ -30,5 +30,5 @@ float4 PS(PSInput input) : SV_TARGET
         discard;
     }
 
-    return float4(1.0f, 1.0f, 1.0f, col.r);
+    return float4(0.6f, 0.85f, 0.75f, col.r);
 }
