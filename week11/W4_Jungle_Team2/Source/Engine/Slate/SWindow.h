@@ -1,38 +1,33 @@
 ﻿#pragma once
-struct FRect
-{
-	float X = 0;
-	float Y = 0;
-	float Width = 0;
-	float Height = 0;
 
-	FRect() = default;
-	FRect(float InX, float InY, float InWidth, float InHeight)
-		:X(InX), Y(InY), Width(InWidth), Height(InHeight) { }
-	FRect(float InX, float InY, float InWidthHeight)
-		: FRect(InX, InY, InWidthHeight, InWidthHeight) { }
-};
+#include "SlateUtils.h"
+#include "SWidget.h"
 
-struct FPoint
-{
-	float X = 0; 
-	float Y = 0;
-
-	FPoint() = default;
-	FPoint(float InX, float InY) : X(InX), Y(InY) { }
-};
-
-class SWindow
+/**
+ * Root UI 영역
+ * 자기 자식 하나 또는 여러 개를 통해 UI tree 의 루트 역할
+ * Hover 검사
+ */
+class SWindow : public SWidget
 {
 public:
-	bool IsHovered(FPoint Coord) const;
+	bool IsHover(FPoint Coord) const;
 
-	FRect GetRect() { return Rect; }
-	const FRect& GetRect() const { return Rect; }
-
+	// Rect Get Set
+	FRect GetRect() const { return Rect; }
 	void SetRect(FRect InRect) { Rect = InRect; }
 
+	// Child Get Set
+	void SetChild(SWidget* InChild) { Child = InChild; }
+	const SWidget* GetChild() const { return Child; }
+
+	// Widget Hit Test
+	SWidget* HitTest(int X, int Y) override;
+
 private:
+	// SWindow 크기
 	FRect Rect;
+	// SWindow 자식
+	SWidget* Child = nullptr;
 };
 
