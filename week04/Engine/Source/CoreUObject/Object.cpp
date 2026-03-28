@@ -5,7 +5,7 @@
 #include "CoreUObject/UObjectArray.h"
 #include "Engine/EngineStatics.h"
 
-FUObjectArray GUObjectArray;
+ENGINE_API FUObjectArray GUObjectArray;
 
 namespace
 {

@@ -8,7 +8,7 @@
 /**
  * @brief Traversal + type filtering까지 담당(UE 스타일)
  */
-class FUObjectIteratorBase
+class ENGINE_API FUObjectIteratorBase
 {
   public:
     FUObjectIteratorBase(const void* InClass);
@@ -40,7 +40,7 @@ template <typename T>
 class TUObjectIterator: public FUObjectIteratorBase
 {
   public:
-    TUObjectIterator() : FUObjectIteratorBase(T::GetClass()) {}
+    TUObjectIterator(): FUObjectIteratorBase(T::GetClass()) {}
     ~TUObjectIterator() = default;
 
     TUObjectIterator<T>& operator ++()
@@ -66,10 +66,10 @@ class TUObjectIterator: public FUObjectIteratorBase
  * @brief 별도의 타입 검사가 필요 없는 UObject는 특수화
  */
 template<>
-class TUObjectIterator<UObject>: public FUObjectIteratorBase
+class ENGINE_API TUObjectIterator<UObject>: public FUObjectIteratorBase
 {
   public:
-    TUObjectIterator() : FUObjectIteratorBase(UObject::GetClass()) {}
+    TUObjectIterator(): FUObjectIteratorBase(UObject::GetClass()) {}
     ~TUObjectIterator() = default;
 
     TUObjectIterator<UObject>& operator++()

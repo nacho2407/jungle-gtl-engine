@@ -50,7 +50,7 @@
 
 class FUObjectArray;
 
-extern FUObjectArray GUObjectArray;
+extern ENGINE_API FUObjectArray GUObjectArray;
 
 class ENGINE_API UObject
 {
