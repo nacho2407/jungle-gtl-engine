@@ -24,3 +24,8 @@ FStaticMesh* UStaticMesh::GetStaticMeshAsset() const
 {
 	return StaticMeshAsset;
 }
+
+const TArray<FStaticMaterial>& UStaticMesh::GetStaticMaterials() const
+{
+	return StaticMaterials;
+}
