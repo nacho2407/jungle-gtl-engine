@@ -1,12 +1,6 @@
 ﻿#pragma once
 #include <cmath>
 
-//	Virtual Table 용량을 줄이기 위해 Vector 인터페이스를 제거하고 FVector와 FVector4가 직접 구현하도록 변경
-//struct Vector {
-//	virtual float Length() const = 0;
-//	virtual void Normalize() = 0;
-//};
-
 struct FVector {
 	union
 	{
@@ -19,10 +13,8 @@ struct FVector {
 			float R, G, B;
 		};
 
-		//	Iteration 가능 + Cache 친화
 		float Data[3];
 	};
-
 
 	FVector() {
 		X = 0.0f;
@@ -37,14 +29,33 @@ struct FVector {
 	}
 	
 	float Length() const;
-	void  Normalize();
+	float LengthSquared() const;
+	void Normalize();
+	void NormalizeSafe(float Epsilon = 1e-6f);
 	FVector Normalized() const;
+	FVector GetSafeNormal(float Epsilon = 1e-6f) const;
 
-	float   Dot(const FVector& Other) const;
-	FVector Cross(const FVector& Other) const;
-	static FVector Cross(const FVector& v1, const FVector& v2) { return v1.Cross(v2); }
+	bool IsNearlyZero(float Epsilon = 1e-6f) const;
+	bool Equals(const FVector& Other, float Epsilon = 1e-6f) const;
+	void Set(float InX, float InY, float InZ);
+
+	float DotProduct(const FVector& Other) const;
+	FVector CrossProduct(const FVector& Other) const;
+	float MaxComponent() const;
+	float MinComponent() const;
+
+	static FVector CrossProduct(const FVector& v1, const FVector& v2) { return v1.CrossProduct(v2); }
+	static float DotProduct(const FVector& v1, const FVector& v2) { return v1.DotProduct(v2); }
 	static float Distance(const FVector& V1, const FVector& V2);
 	static float DistSquared(const FVector& V1, const FVector& V2);
+	static FVector Lerp(const FVector& A, const FVector& B, float Alpha);
+	static FVector Reflect(const FVector& Direction, const FVector& Normal);
+	static FVector Project(const FVector& Vector, const FVector& OnNormal);
+	static FVector ZeroVector();
+	static FVector OneVector();
+	static FVector UpVector();
+	static FVector RightVector();
+	static FVector ForwardVector();
 
 	FVector operator+(const FVector& Other) const;
 	FVector operator-(const FVector& Other) const;
@@ -62,7 +73,6 @@ struct FVector {
 };
 
 struct FVector4 {
-	
 	union
 	{
 		struct
@@ -74,7 +84,6 @@ struct FVector4 {
 			float R, G, B, A;
 		};
 
-		//	Iteration 가능 + Cache 친화
 		float Data[4];
 	};
 
@@ -99,7 +108,6 @@ struct FVector4 {
 		W = InW;
 	}
 
-	// Implicitly sets w = 1.0f
 	FVector4(const FVector& Other) {
 		X = Other.X;
 		Y = Other.Y;
@@ -108,14 +116,20 @@ struct FVector4 {
 	}
 
 	float Length() const;
+	float LengthSquared() const;
 	void Normalize();
+	void NormalizeSafe(float Epsilon = 1e-6f);
 	FVector4 Normalized() const;
+	FVector4 GetSafeNormal(float Epsilon = 1e-6f) const;
+
+	bool IsNearlyZero(float Epsilon = 1e-6f) const;
+	bool Equals(const FVector4& Other, float Epsilon = 1e-6f) const;
+	void Set(float InX, float InY, float InZ, float InW);
 
 	float Dot(const FVector4& Other) const;
-
-	// NOT a true cross vector (Drops w)
 	FVector4 Cross(const FVector4& Other) const;
 	static FVector4 Cross(const FVector4& v1, const FVector4& v2) { return v1.Cross(v2); }
+	static FVector4 Lerp(const FVector4& A, const FVector4& B, float Alpha);
 
 	FVector4 operator+(const FVector4& Other) const;
 	FVector4 operator-(const FVector4& other) const;
@@ -178,18 +192,36 @@ struct FVector2
 		};
 		float Data[2];
 	};
+
 	FVector2() {
 		X = 0.0f;
 		Y = 0.0f;
 	}
+
 	FVector2(float InX, float InY) {
 		X = InX;
 		Y = InY;
 	}
+
 	float Length() const;
+	float LengthSquared() const;
 	void Normalize();
+	void NormalizeSafe(float Epsilon = 1e-6f);
 	FVector2 Normalized() const;
-	float Dot(const FVector2& Other) const;
+	FVector2 GetSafeNormal(float Epsilon = 1e-6f) const;
+
+	bool IsNearlyZero(float Epsilon = 1e-6f) const;
+	bool Equals(const FVector2& Other, float Epsilon = 1e-6f) const;
+	void Set(float InX, float InY);
+
+	float DotProduct(const FVector2& Other) const;
+
+	static float Distance(const FVector2& V1, const FVector2& V2);
+	static float DistSquared(const FVector2& V1, const FVector2& V2);
+	static FVector2 Lerp(const FVector2& A, const FVector2& B, float Alpha);
+	static FVector2 ZeroVector();
+	static FVector2 OneVector();
+
 	FVector2 operator+(const FVector2& Other) const;
 	FVector2 operator-(const FVector2& Other) const;
 	FVector2 operator+(float Scalar) const;

@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
+#include "Math/AABB.h"
 #include "Render/Resource/VertexTypes.h"
 #include "Render/Resource/Material.h"
 
@@ -32,4 +33,6 @@ struct FStaticMesh
 	TArray<uint32> Indices;
 	TArray<FStaticMeshSection> Sections;
 	TArray<FStaticMeshMaterialSlot> MaterialSlots;
+	
+	FAABB LocalBounds;
 };
