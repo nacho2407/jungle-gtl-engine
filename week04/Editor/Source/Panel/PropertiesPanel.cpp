@@ -240,13 +240,12 @@ namespace
     /** 머티리얼 선택 드롭다운 UI (인식 오류 방지를 위해 명시적 타입 사용) */
     bool DrawMaterialAssetCombo(Engine::Component::UMeshComponent* MeshComp, uint32 SlotIndex)
     {
-        if (MeshComp == nullptr)
-            return false;
+        if (MeshComp == nullptr) return false;
 
         Engine::Asset::UMaterialInterface* CurrentMat = MeshComp->GetMaterial(SlotIndex);
-        FString     CurrentPath = CurrentMat ? CurrentMat->GetAssetName() : "None";
+        FString CurrentPath = CurrentMat ? CurrentMat->GetAssetName() : "None";
         std::string LabelId = "Material Slot " + std::to_string(SlotIndex + 1);
-
+        
         bool bChanged = false;
         ImGui::TextUnformatted(LabelId.c_str());
         ImGui::SameLine(140.0f);
@@ -255,18 +254,16 @@ namespace
         FString PopupId = FString("##MatCombo_") + std::to_string(SlotIndex);
         if (ImGui::BeginCombo(PopupId.c_str(), CurrentPath.c_str()))
         {
-            for (UObject* Obj : UObject::GetGlobalUObjectArray())
+            for (TUObjectIterator<Engine::Asset::UMaterialInterface> It; It; ++It)
             {
-                if (Obj != nullptr && Obj->IsA(Engine::Asset::UMaterialInterface::GetClass()))
+                Engine::Asset::UMaterialInterface* MatAsset = *It;
+                if (MatAsset == nullptr) continue;
+
+                bool bSelected = (CurrentMat == MatAsset);
+                if (ImGui::Selectable(MatAsset->GetAssetName().c_str(), bSelected))
                 {
-                    Engine::Asset::UMaterialInterface* MatAsset =
-                        (Engine::Asset::UMaterialInterface*)Obj;
-                    bool bSelected = (CurrentMat == MatAsset);
-                    if (ImGui::Selectable(MatAsset->GetAssetName().c_str(), bSelected))
-                    {
-                        MeshComp->SetMaterial(SlotIndex, MatAsset);
-                        bChanged = true;
-                    }
+                    MeshComp->SetMaterial(SlotIndex, MatAsset);
+                    bChanged = true;
                 }
             }
             ImGui::EndCombo();
