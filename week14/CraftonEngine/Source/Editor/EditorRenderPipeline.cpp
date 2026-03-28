@@ -1,4 +1,4 @@
-#include "EditorRenderPipeline.h"
+﻿#include "EditorRenderPipeline.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
@@ -84,13 +84,43 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix(),
 		Camera->GetRightVector(), Camera->GetUpVector());
 	Bus.SetRenderSettings(ViewMode, ShowFlags);
-
+	if (VP)
+	{
+		Bus.SetViewportSize(static_cast<float>(VP->GetWidth()), static_cast<float>(VP->GetHeight()));
+	}
 	Collector.CollectWorld(World, ShowFlags, ViewMode, Bus);
 	Collector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Bus);
 	Collector.CollectGizmo(Editor->GetGizmo(), ShowFlags, Bus);
 	Collector.CollectSelection(
 		Editor->GetSelectionManager().GetSelectedActors(),
 		ShowFlags, ViewMode, Bus);
+
+	const TArray<FString> OverlayLines = Editor->GetOverlayStatSystem().BuildLines(*Editor);
+	if (!OverlayLines.empty() && VP && VC == Editor->GetActiveViewport())
+	{
+		const float StartX = 16.0f;
+		const float StartY = 16.0f;
+		const float LineHeight = 20.0f;
+
+		for (size_t i = 0; i < OverlayLines.size(); ++i)
+		{
+			FRenderCommand Cmd = {};
+			Cmd.Type = ERenderCommandType::Font;
+			Cmd.BlendState = EBlendState::AlphaBlend;
+			Cmd.DepthStencilState = EDepthStencilState::NoDepth;
+
+			Cmd.Constants.Font.Text = &OverlayLines[i];
+			Cmd.Constants.Font.Font = nullptr;
+			Cmd.Constants.Font.Scale = 1.0f;
+			Cmd.Constants.Font.bScreenSpace = 1;
+			Cmd.Constants.Font.ScreenPosition = FVector2(
+				StartX,
+				StartY + static_cast<float>(i) * LineHeight
+			);
+
+			Bus.AddCommand(ERenderPass::OverlayFont, std::move(Cmd));
+		}
+	}
 
 	// GPU 렌더
 	Renderer.PrepareBatchers(Bus);
