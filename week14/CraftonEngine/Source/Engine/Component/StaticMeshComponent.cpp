@@ -1,6 +1,8 @@
 ﻿#include "Component/StaticMeshComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Core/PropertyTypes.h"
+#include "Mesh/StaticMeshAsset.h"
+#include "Engine/Runtime/Engine.h"
 
 IMPLEMENT_CLASS(UStaticMeshComp, UMeshComponent)
 
@@ -17,6 +19,14 @@ void UStaticMeshComp::SetStaticMesh(UStaticMesh* InMesh)
 UStaticMesh* UStaticMeshComp::GetStaticMesh() const
 {
 	return StaticMesh;
+}
+
+FMeshBuffer* UStaticMeshComp::GetMeshBuffer() const
+{
+	if (!StaticMesh) return nullptr;
+	FStaticMesh* Asset = StaticMesh->GetStaticMeshAsset();
+	if (!Asset || !Asset->RenderBuffer) return nullptr;
+	return Asset->RenderBuffer.get();
 }
 
 void UStaticMeshComp::Serialize(bool bIsLoading, json::JSON& Handle)
@@ -39,7 +49,8 @@ void UStaticMeshComp::PostEditProperty(const char* PropertyName)
 		}
 		else
 		{
-			UStaticMesh* Loaded = FObjManager::LoadObjStaticMesh(StaticMeshPath);
+			ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+			UStaticMesh* Loaded = FObjManager::LoadObjStaticMesh(StaticMeshPath, Device);
 			StaticMesh = Loaded;
 		}
 	}

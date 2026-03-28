@@ -4,7 +4,7 @@
 #include "GameFramework/AActor.h"
 #include "Core/ResourceManager.h"
 #include "Object/ObjectFactory.h"
-#include "Render/Mesh/MeshManager.h"
+#include "Render/Resource/MeshBufferManager.h"
 
 IMPLEMENT_CLASS(UTextRenderComponent, UBillboardComponent)
 
@@ -95,7 +95,7 @@ FString UTextRenderComponent::GetOwnerNameToString() const
 
 UTextRenderComponent::UTextRenderComponent()
 {
-	MeshData = &FMeshManager::GetQuad();
+	MeshData = &FMeshBufferManager::Get().GetMeshData(EPrimitiveType::EPT_Quad);
 }
 
 void UTextRenderComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)

@@ -5,7 +5,9 @@
 #include "Engine/Core/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Core/ResourceManager.h"
-#include "Render/Renderer/DefaultRenderPipeline.h"
+#include "Render/Pipeline/DefaultRenderPipeline.h"
+#include "Render/Resource/MeshBufferManager.h"
+#include "Mesh/ObjManager.h"
 #include "GameFramework/World.h"
 
 DEFINE_CLASS(UEngine, UObject)
@@ -22,8 +24,10 @@ void UEngine::Init(FWindowsWindow* InWindow)
 
 	InputSystem::Get().SetOwnerWindow(Window->GetHWND());
 	Renderer.Create(Window->GetHWND());
-	FResourceManager::Get().LoadFromFile(
-		FPaths::ToUtf8(FPaths::ResourceFilePath()), Renderer.GetFD3DDevice().GetDevice());
+
+	ID3D11Device* Device = Renderer.GetFD3DDevice().GetDevice();
+	FMeshBufferManager::Get().Initialize(Device);
+	FResourceManager::Get().LoadFromFile(FPaths::ToUtf8(FPaths::ResourceFilePath()), Device);
 
 	SetRenderPipeline(std::make_unique<FDefaultRenderPipeline>(this, Renderer));
 }
@@ -32,6 +36,7 @@ void UEngine::Shutdown()
 {
 	RenderPipeline.reset();
 	FResourceManager::Get().ReleaseGPUResources();
+	FMeshBufferManager::Get().Release();
 	Renderer.Release();
 }
 

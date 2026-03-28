@@ -1,11 +1,11 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/Object.h"
+#include "Mesh/StaticMeshAsset.h"
 
-struct FStaticMesh;
-struct FStaticMaterial;
+#include <memory>
 
-// UStaticMesh — FStaticMesh를 참조하는 UObject 래퍼
+// UStaticMesh — FStaticMesh를 소유하는 UObject 에셋
 class UStaticMesh : public UObject
 {
 public:
@@ -15,10 +15,9 @@ public:
 	~UStaticMesh() override = default;
 
 	const FString& GetAssetPathFileName() const;
-	void SetStaticMeshAsset(FStaticMesh* InMesh);
+	void SetStaticMeshAsset(std::unique_ptr<FStaticMesh> InMesh);
 	FStaticMesh* GetStaticMeshAsset() const;
 
 private:
-	FStaticMesh* StaticMeshAsset = nullptr;
-	TArray<FStaticMaterial> StaticMaterials;
+	std::unique_ptr<FStaticMesh> StaticMeshAsset;
 };

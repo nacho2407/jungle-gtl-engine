@@ -8,9 +8,9 @@
 
 //	TODO : CoreType.h 경로 변경 요구
 #include "Core/CoreTypes.h"
-#include "Render/Scene/RenderCommand.h"
+#include "Render/Pipeline/RenderCommand.h"
 
-#include "Render/Common/ViewTypes.h"
+#include "Render/Types/ViewTypes.h"
 
 
 class FRenderBus

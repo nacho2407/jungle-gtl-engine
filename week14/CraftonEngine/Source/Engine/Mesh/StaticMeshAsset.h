@@ -5,6 +5,7 @@
 #include "Render/Resource/Buffer.h"
 #include "Serialization/Archive.h"
 #include "Engine/Object/FName.h"
+#include <memory>
 
 // Cooked Data 내부용 정점
 struct FNormalVertex
@@ -31,7 +32,7 @@ struct FStaticMesh
 	// https://github.com/EpicGames/UnrealEngine/blob/260bb2e1c5610b31c63a36206eedd289409c5f11/Engine/Source/Runtime/Engine/Public/StaticMeshResources.h#L403-L431
 	TArray<FStaticMeshSection> Sections;
 
-	FMeshBuffer* RenderBuffer = nullptr;
+	std::unique_ptr<FMeshBuffer> RenderBuffer;
 
 	void Serialize(FArchive& Ar)
 	{
