@@ -5,29 +5,41 @@
 #include "Renderer/RenderAsset/TextureResource.h"
 #include <memory>
 
+struct FMaterialData
+{
+    FVector AmbientColor = {0.2f, 0.2f, 0.2f};  // Ka
+    FVector DiffuseColor = {0.8f, 0.8f, 0.8f};  // Kd
+    FVector SpecularColor = {0.0f, 0.0f, 0.0f}; // Ks
+    FVector EmissiveColor = {0.0f, 0.0f, 0.0f}; // Ke
+    FVector TransmissionFilter = {1.0f, 1.0f, 1.0f}; //Tf
+
+    float   SpecularHighlight = 10.0f; // Ns
+    float OpticalDensity = 1.0f; // Ni
+    float Opacity = 1.0f;        // d (or 1.0 - Tr)
+    int32 IlluminationModel = 2; // illum
+
+    // --- 텍스처 경로 ---
+    FString AmbientMapPath = "";           // map_Ka
+    FString DiffuseMapPath = "";           // map_Kd
+    FString SpecularHighlightMapPath = ""; // map_Ns
+    FString NormalMapPath = "";            // map_bump 또는 bump
+
+    // --- 런타임 텍스처 리소스 포인터 (Component에서 로드 시 채워짐) ---
+    FTextureResource* AmbientTexture = nullptr;
+    FTextureResource* DiffuseTexture = nullptr;
+    FTextureResource* SpecularTexture = nullptr;
+    FTextureResource* NormalTexture = nullptr;
+};
+
 struct FMaterialResource
 {
-    // 표면 속성 (Ka, Kd, Ks 등)
-    FVector AmbientColor = {0.2f, 0.2f, 0.2f};
-    FVector DiffuseColor = {0.8f, 0.8f, 0.8f};
-    FVector SpecularColor = {0.0f, 0.0f, 0.0f};
-    float   SpecularHighlight = 10.0f; // Ns
+    TMap<FString, FMaterialData> Materials;
 
-    // 텍스처 리소스 참조 (map_Kd)
-    // TextureLoader가 생성한 리소스의 참조 카운트를 공유하여 메모리 중복 방지
-    std::shared_ptr<FTextureResource> DiffuseTexture;
-
-    ID3D11ShaderResourceView* GetDiffuseSRV() const
+    const FMaterialData* GetMaterial(const FString& Name) const
     {
-        return DiffuseTexture ? DiffuseTexture->GetSRV() : nullptr;
+        auto It = Materials.find(Name);
+        return It != Materials.end() ? &It->second : nullptr;
     }
 
-    void Reset()
-    {
-        AmbientColor = {0.2f, 0.2f, 0.2f};
-        DiffuseColor = {0.8f, 0.8f, 0.8f};
-        SpecularColor = {0.0f, 0.0f, 0.0f};
-        SpecularHighlight = 10.0f;
-        DiffuseTexture.reset();
-    }
+    void Reset() { Materials.clear(); }
 };

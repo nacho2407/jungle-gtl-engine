@@ -9,6 +9,8 @@
 #include <cwctype>
 #include <algorithm>
 
+namespace fs = std::filesystem;
+
 // 임시 정점 구조체 (엔진의 실제 FVertex 구조체에 맞게 수정 필요)
 struct FVertex
 {
@@ -29,8 +31,8 @@ bool FStaticMeshLoader::CanLoad(const FWString& Path, const FAssetLoadParams& Pa
         return false;
     }
 
-    const std::filesystem::path FilePath(Path);
-    FWString                    Extension = FilePath.extension().native();
+    const fs::path FilePath(Path);
+    FWString       Extension = FilePath.extension().native();
     std::transform(Extension.begin(), Extension.end(), Extension.begin(),
                    [](wchar_t Ch) { return static_cast<wchar_t>(std::towlower(Ch)); });
 
@@ -88,17 +90,17 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMeshRes
     if (!Source.bFileBytesLoaded || Source.FileBytes.empty())
         return false;
 
-    std::string        FileString(reinterpret_cast<const char*>(Source.FileBytes.data()),
+    FString            FileString(reinterpret_cast<const char*>(Source.FileBytes.data()),
                                   Source.FileBytes.size());
     std::istringstream Stream(FileString);
-    std::string        Line;
+    FString            Line;
 
     std::vector<FVector>  TempPositions;
     std::vector<FVector2> TempUVs;
     std::vector<FVector>  TempNormals;
 
     // 중복 정점 방지를 위한 해시 맵 ("v/vt/vn" 문자열 -> 인덱스)
-    std::unordered_map<std::string, uint32> VertexCache;
+    TMap<FString, uint32> VertexCache;
 
     FSubMesh CurrentSubMesh;
     bool     bSubMeshActive = false;
@@ -109,7 +111,7 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMeshRes
             continue;
 
         std::istringstream LineStream(Line);
-        std::string        Header;
+        FString            Header;
         LineStream >> Header;
 
         if (Header == "v")
@@ -156,25 +158,64 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMeshRes
         }
         else if (Header == "f")
         {
-            std::string VertexToken;
+            // FString VertexToken;
+            // while (LineStream >> VertexToken)
+            //{
+            //     auto It = VertexCache.find(VertexToken);
+            //     if (It != VertexCache.end())
+            //     {
+            //         OutMesh.CPU_Indices.push_back(It->second);
+            //     }
+            //     else
+            //     {
+            //         std::istringstream TokenStream(VertexToken);
+            //         FString            V_Str, VT_Str, VN_Str;
+
+            //        std::getline(TokenStream, V_Str, '/');
+            //        std::getline(TokenStream, VT_Str, '/');
+            //        std::getline(TokenStream, VN_Str, '/');
+
+            //        FVertex NewVertex = {};
+            //        // OBJ 인덱스는 1부터 시작하므로 1을 빼줍니다.
+            //        if (!V_Str.empty())
+            //            NewVertex.Position = TempPositions[std::stoi(V_Str) - 1];
+            //        if (!VT_Str.empty())
+            //            NewVertex.UV = TempUVs[std::stoi(VT_Str) - 1];
+            //        if (!VN_Str.empty())
+            //            NewVertex.Normal = TempNormals[std::stoi(VN_Str) - 1];
+
+            //        uint32 NewIndex = static_cast<uint32>(OutVertices.size());
+            //        OutVertices.push_back(NewVertex);
+            //        OutMesh.CPU_Indices.push_back(NewIndex);
+
+            //        // CPU 충돌/Picking용 위치 데이터 복사본 유지
+            //        OutMesh.CPU_Positions.push_back(NewVertex.Position);
+
+            //        VertexCache[VertexToken] = NewIndex;
+            //    }
+            //}
+
+            FString VertexToken;
+            std::vector<uint32>
+                FaceIndices; // 현재 다각형(Face)을 구성하는 정점 인덱스들을 임시 저장
+
             while (LineStream >> VertexToken)
             {
                 auto It = VertexCache.find(VertexToken);
                 if (It != VertexCache.end())
                 {
-                    OutMesh.CPU_Indices.push_back(It->second);
+                    FaceIndices.push_back(It->second);
                 }
                 else
                 {
                     std::istringstream TokenStream(VertexToken);
-                    std::string        V_Str, VT_Str, VN_Str;
+                    FString            V_Str, VT_Str, VN_Str;
 
                     std::getline(TokenStream, V_Str, '/');
                     std::getline(TokenStream, VT_Str, '/');
                     std::getline(TokenStream, VN_Str, '/');
 
                     FVertex NewVertex = {};
-                    // OBJ 인덱스는 1부터 시작하므로 1을 빼줍니다.
                     if (!V_Str.empty())
                         NewVertex.Position = TempPositions[std::stoi(V_Str) - 1];
                     if (!VT_Str.empty())
@@ -184,13 +225,22 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMeshRes
 
                     uint32 NewIndex = static_cast<uint32>(OutVertices.size());
                     OutVertices.push_back(NewVertex);
-                    OutMesh.CPU_Indices.push_back(NewIndex);
 
-                    // CPU 충돌/Picking용 위치 데이터 복사본 유지
+                    // CPU 충돌용 위치 데이터
                     OutMesh.CPU_Positions.push_back(NewVertex.Position);
 
                     VertexCache[VertexToken] = NewIndex;
+                    FaceIndices.push_back(NewIndex);
                 }
+            }
+
+            // --- Triangulation (다각형을 삼각형으로 분할) ---
+            // 점이 3개면 1바퀴, 4개면 2바퀴 돌면서 삼각형 생성
+            for (size_t i = 1; i + 1 < FaceIndices.size(); ++i)
+            {
+                OutMesh.CPU_Indices.push_back(FaceIndices[0]);     // 기준점 (v0)
+                OutMesh.CPU_Indices.push_back(FaceIndices[i]);     // v1, v2 ...
+                OutMesh.CPU_Indices.push_back(FaceIndices[i + 1]); // v2, v3 ...
             }
         }
     }
@@ -255,7 +305,7 @@ bool FStaticMeshLoader::CreateBuffers(const TArray<FVertex>& InVertices,
 
 FString FStaticMeshLoader::WidePathToUtf8(const FWString& Path) const
 {
-    const std::filesystem::path FilePath(Path);
-    const std::u8string         Utf8Path = FilePath.u8string();
+    const fs::path      FilePath(Path);
+    const std::u8string Utf8Path = FilePath.u8string();
     return FString(reinterpret_cast<const char*>(Utf8Path.data()), Utf8Path.size());
 }
