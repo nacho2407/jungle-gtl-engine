@@ -9,6 +9,13 @@ struct FMeshVertex
     FVector Position;
 };
 
+struct FMeshVertexNormal
+{
+    FVector  Position;
+    FVector2 UV;
+    FVector  Normal;
+};
+
 struct FLineVertex
 {
     FVector Position;

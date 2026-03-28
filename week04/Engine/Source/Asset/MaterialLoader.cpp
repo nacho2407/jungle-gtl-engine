@@ -53,7 +53,7 @@ UAsset* FMaterialLoader::LoadAsset(const FSourceRecord& Source, const FAssetLoad
         UE_LOG(Asset, ELogVerbosity::Warning,
                "[MaterialLoader] Failed to parse .mtl file. Path = % s ",
                WidePathToUtf8(Source.NormalizedPath).c_str());
-                            
+
         return nullptr;
     }
 
@@ -91,18 +91,14 @@ UAsset* FMaterialLoader::LoadAsset(const FSourceRecord& Source, const FAssetLoad
                 if (LoadedTex)
                 {
                     UTexture2DAsset* TexAsset = static_cast<UTexture2DAsset*>(LoadedTex);
-
-                    // UMaterialAsset이 텍스처 에셋의 생명주기를 참조하도록 의존성 추가
-                    // NewMatAsset->AddTextureDependency(TexAsset);
+                    NewMatAsset->AddTextureDependency(TexAsset);
 
                     return TexAsset->GetResource();
                 }
-
                 // 로드 실패 시 에러 로그 출력 (LogName을 활용해 어떤 맵이 실패했는지 명시)
                 UE_LOG(Asset, ELogVerbosity::Warning,
                        "[MaterialLoader] Failed to load %s texture. Path=%s", LogName,
                        WidePathToUtf8(WideTexPath).c_str());
-
                 return nullptr;
             };
             FMaterialData& CurrentMaterial = Pair.second;
@@ -126,117 +122,161 @@ bool FMaterialLoader::ParseMtlText(const FSourceRecord& Source,
     if (!Source.bFileBytesLoaded || Source.FileBytes.empty())
         return false;
 
-    FString            FileString(reinterpret_cast<const char*>(Source.FileBytes.data()),
-                                  Source.FileBytes.size());
-    std::istringstream Stream(FileString);
-    FString            Line;
+    // 1. 파일 전체를 감싸는 View 생성 (메모리 복사 없음)
+    std::string_view FileView(reinterpret_cast<const char*>(Source.FileBytes.data()),
+                              Source.FileBytes.size());
 
     FString       CurrentMaterialName = "";
     FMaterialData CurrentData;
     bool          bHasMaterial = false;
 
-    while (std::getline(Stream, Line))
+    // --- 파싱 헬퍼 함수들 ---
+    auto GetNextToken = [](std::string_view& View) -> std::string_view
     {
-        if (Line.empty() || Line[0] == '#')
-            continue;
+        size_t First = View.find_first_not_of(" \t\r");
+        if (First == std::string_view::npos)
+            return {};
+        View.remove_prefix(First);
 
-        std::istringstream LineStream(Line);
-        FString            Header;
-        LineStream >> Header;
+        size_t           Last = View.find_first_of(" \t\r\n");
+        std::string_view Token = View.substr(0, Last);
+        if (Last != std::string_view::npos)
+            View.remove_prefix(Last);
+        else
+            View = {};
+        return Token;
+    };
+
+    auto ParseFloat = [](std::string_view Token, float& OutVal)
+    {
+        if (!Token.empty())
+            std::from_chars(Token.data(), Token.data() + Token.size(), OutVal);
+    };
+
+    auto ParseInt = [](std::string_view Token, int32& OutVal)
+    {
+        if (!Token.empty())
+            std::from_chars(Token.data(), Token.data() + Token.size(), OutVal);
+    };
+
+    // --- 메인 파싱 루프 ---
+    size_t LineStart = 0;
+    while (LineStart < FileView.length())
+    {
+        size_t LineEnd = FileView.find('\n', LineStart);
+        if (LineEnd == std::string_view::npos)
+            LineEnd = FileView.length();
+
+        std::string_view LineView = FileView.substr(LineStart, LineEnd - LineStart);
+        LineStart = LineEnd + 1;
+
+        std::string_view Header = GetNextToken(LineView);
+        if (Header.empty() || Header[0] == '#')
+            continue;
 
         if (Header == "newmtl")
         {
-            // 이전 재질이 있었다면 맵에 저장
             if (bHasMaterial && !CurrentMaterialName.empty())
             {
                 OutResource.Materials[CurrentMaterialName] = CurrentData;
             }
 
-            LineStream >> CurrentMaterialName;
-            CurrentData = FMaterialData(); // 새 재질 초기화
+            std::string_view MatName = GetNextToken(LineView);
+            CurrentMaterialName = FString(MatName);
+            CurrentData = FMaterialData();
             bHasMaterial = true;
         }
         else if (Header == "Ka")
         {
-            LineStream >> CurrentData.AmbientColor.X >> CurrentData.AmbientColor.Y >>
-                CurrentData.AmbientColor.Z;
+            ParseFloat(GetNextToken(LineView), CurrentData.AmbientColor.X);
+            ParseFloat(GetNextToken(LineView), CurrentData.AmbientColor.Y);
+            ParseFloat(GetNextToken(LineView), CurrentData.AmbientColor.Z);
         }
         else if (Header == "Kd")
         {
-            LineStream >> CurrentData.DiffuseColor.X >> CurrentData.DiffuseColor.Y >>
-                CurrentData.DiffuseColor.Z;
+            ParseFloat(GetNextToken(LineView), CurrentData.DiffuseColor.X);
+            ParseFloat(GetNextToken(LineView), CurrentData.DiffuseColor.Y);
+            ParseFloat(GetNextToken(LineView), CurrentData.DiffuseColor.Z);
         }
         else if (Header == "Ks")
         {
-            LineStream >> CurrentData.SpecularColor.X >> CurrentData.SpecularColor.Y >>
-                CurrentData.SpecularColor.Z;
-        }
-        else if (Header == "Ns")
-        {
-            LineStream >> CurrentData.SpecularHighlight;
+            ParseFloat(GetNextToken(LineView), CurrentData.SpecularColor.X);
+            ParseFloat(GetNextToken(LineView), CurrentData.SpecularColor.Y);
+            ParseFloat(GetNextToken(LineView), CurrentData.SpecularColor.Z);
         }
         else if (Header == "Ke")
         {
-            LineStream >> CurrentData.EmissiveColor.X >> CurrentData.EmissiveColor.Y >>
-                CurrentData.EmissiveColor.Z;
+            ParseFloat(GetNextToken(LineView), CurrentData.EmissiveColor.X);
+            ParseFloat(GetNextToken(LineView), CurrentData.EmissiveColor.Y);
+            ParseFloat(GetNextToken(LineView), CurrentData.EmissiveColor.Z);
         }
         else if (Header == "Tf")
         {
-            LineStream >> CurrentData.TransmissionFilter.X >> CurrentData.TransmissionFilter.Y >>
-                CurrentData.TransmissionFilter.Z;
+            ParseFloat(GetNextToken(LineView), CurrentData.TransmissionFilter.X);
+            ParseFloat(GetNextToken(LineView), CurrentData.TransmissionFilter.Y);
+            ParseFloat(GetNextToken(LineView), CurrentData.TransmissionFilter.Z);
+        }
+        else if (Header == "Ns")
+        {
+            ParseFloat(GetNextToken(LineView), CurrentData.SpecularHighlight);
         }
         else if (Header == "Ni")
         {
-            LineStream >> CurrentData.OpticalDensity;
+            ParseFloat(GetNextToken(LineView), CurrentData.OpticalDensity);
         }
         else if (Header == "d")
         {
-            LineStream >> CurrentData.Opacity;
+            ParseFloat(GetNextToken(LineView), CurrentData.Opacity);
         }
-        else if (Header == "Tr") // .mtl 파일에 따라 d 대신 Tr(Transparency)를 쓰는 경우 대응
+        else if (Header == "Tr")
         {
-            float Transparency;
-            LineStream >> Transparency;
+            float Transparency = 0.0f;
+            ParseFloat(GetNextToken(LineView), Transparency);
             CurrentData.Opacity = 1.0f - Transparency;
         }
         else if (Header == "illum")
         {
-            LineStream >> CurrentData.IlluminationModel;
+            ParseInt(GetNextToken(LineView), CurrentData.IlluminationModel);
         }
         else if (Header == "map_Ka")
         {
-            std::string TextureFilename;
-            LineStream >> TextureFilename;
-            FWString AbsoluteTexturePath =
-                ResolveSiblingPath(Source.NormalizedPath, TextureFilename);
-            CurrentData.AmbientMapPath = WidePathToUtf8(AbsoluteTexturePath);
+            std::string_view TexName = GetNextToken(LineView);
+            if (!TexName.empty())
+            {
+                FWString AbsoluteTexturePath =
+                    ResolveSiblingPath(Source.NormalizedPath, FString(TexName));
+                CurrentData.AmbientMapPath = WidePathToUtf8(AbsoluteTexturePath);
+            }
         }
         else if (Header == "map_Kd")
         {
-            FString TextureFilename;
-            LineStream >> TextureFilename;
-
-            // FontAtlasLoader에서 사용했던 방식처럼 Sibling Path로 절대 경로화
-            FWString AbsoluteTexturePath =
-                ResolveSiblingPath(Source.NormalizedPath, TextureFilename);
-            CurrentData.DiffuseMapPath = WidePathToUtf8(AbsoluteTexturePath);
+            std::string_view TexName = GetNextToken(LineView);
+            if (!TexName.empty())
+            {
+                FWString AbsoluteTexturePath =
+                    ResolveSiblingPath(Source.NormalizedPath, FString(TexName));
+                CurrentData.DiffuseMapPath = WidePathToUtf8(AbsoluteTexturePath);
+            }
         }
         else if (Header == "map_Ns")
         {
-            FString TextureFilename;
-            LineStream >> TextureFilename;
-
-            FWString AbsoluteTexturePath =
-                ResolveSiblingPath(Source.NormalizedPath, TextureFilename);
-            CurrentData.SpecularHighlightMapPath = WidePathToUtf8(AbsoluteTexturePath);
+            std::string_view TexName = GetNextToken(LineView);
+            if (!TexName.empty())
+            {
+                FWString AbsoluteTexturePath =
+                    ResolveSiblingPath(Source.NormalizedPath, FString(TexName));
+                CurrentData.SpecularHighlightMapPath = WidePathToUtf8(AbsoluteTexturePath);
+            }
         }
         else if (Header == "map_bump" || Header == "bump")
         {
-            std::string TextureFilename;
-            LineStream >> TextureFilename;
-            FWString AbsoluteTexturePath =
-                ResolveSiblingPath(Source.NormalizedPath, TextureFilename);
-            CurrentData.NormalMapPath = WidePathToUtf8(AbsoluteTexturePath);
+            std::string_view TexName = GetNextToken(LineView);
+            if (!TexName.empty())
+            {
+                FWString AbsoluteTexturePath =
+                    ResolveSiblingPath(Source.NormalizedPath, FString(TexName));
+                CurrentData.NormalMapPath = WidePathToUtf8(AbsoluteTexturePath);
+            }
         }
     }
 
@@ -246,18 +286,146 @@ bool FMaterialLoader::ParseMtlText(const FSourceRecord& Source,
         OutResource.Materials[CurrentMaterialName] = CurrentData;
     }
 
+    // 주석 처리된 로그 부분 유지
     // for (const auto& Pair : OutResource.Materials)
-    //{
-    //     const FMaterialData& Data = Pair.second;
-    //     if (Data.DiffuseMapPath.empty())
-    //     {
-    //         // 텍스처 경로가 없으면 에디터 콘솔에 노란색 경고 띄우기
-    //         UE_LOG(Asset, ELogVerbosity::Warning,
-    //                "[MaterialLoader] Material '%s' has no diffuse map.", Pair.first.c_str());
-    //     }
-    // }
+    // { ... }
 
     return !OutResource.Materials.empty();
+    //if (!Source.bFileBytesLoaded || Source.FileBytes.empty())
+    //    return false;
+
+    //FString            FileString(reinterpret_cast<const char*>(Source.FileBytes.data()),
+    //                              Source.FileBytes.size());
+    //std::istringstream Stream(FileString);
+    //FString            Line;
+
+    //FString       CurrentMaterialName = "";
+    //FMaterialData CurrentData;
+    //bool          bHasMaterial = false;
+
+    //while (std::getline(Stream, Line))
+    //{
+    //    if (Line.empty() || Line[0] == '#')
+    //        continue;
+
+    //    std::istringstream LineStream(Line);
+    //    FString            Header;
+    //    LineStream >> Header;
+
+    //    if (Header == "newmtl")
+    //    {
+    //        // 이전 재질이 있었다면 맵에 저장
+    //        if (bHasMaterial && !CurrentMaterialName.empty())
+    //        {
+    //            OutResource.Materials[CurrentMaterialName] = CurrentData;
+    //        }
+
+    //        LineStream >> CurrentMaterialName;
+    //        CurrentData = FMaterialData(); // 새 재질 초기화
+    //        bHasMaterial = true;
+    //    }
+    //    else if (Header == "Ka")
+    //    {
+    //        LineStream >> CurrentData.AmbientColor.X >> CurrentData.AmbientColor.Y >>
+    //            CurrentData.AmbientColor.Z;
+    //    }
+    //    else if (Header == "Kd")
+    //    {
+    //        LineStream >> CurrentData.DiffuseColor.X >> CurrentData.DiffuseColor.Y >>
+    //            CurrentData.DiffuseColor.Z;
+    //    }
+    //    else if (Header == "Ks")
+    //    {
+    //        LineStream >> CurrentData.SpecularColor.X >> CurrentData.SpecularColor.Y >>
+    //            CurrentData.SpecularColor.Z;
+    //    }
+    //    else if (Header == "Ns")
+    //    {
+    //        LineStream >> CurrentData.SpecularHighlight;
+    //    }
+    //    else if (Header == "Ke")
+    //    {
+    //        LineStream >> CurrentData.EmissiveColor.X >> CurrentData.EmissiveColor.Y >>
+    //            CurrentData.EmissiveColor.Z;
+    //    }
+    //    else if (Header == "Tf")
+    //    {
+    //        LineStream >> CurrentData.TransmissionFilter.X >> CurrentData.TransmissionFilter.Y >>
+    //            CurrentData.TransmissionFilter.Z;
+    //    }
+    //    else if (Header == "Ni")
+    //    {
+    //        LineStream >> CurrentData.OpticalDensity;
+    //    }
+    //    else if (Header == "d")
+    //    {
+    //        LineStream >> CurrentData.Opacity;
+    //    }
+    //    else if (Header == "Tr") // .mtl 파일에 따라 d 대신 Tr(Transparency)를 쓰는 경우 대응
+    //    {
+    //        float Transparency;
+    //        LineStream >> Transparency;
+    //        CurrentData.Opacity = 1.0f - Transparency;
+    //    }
+    //    else if (Header == "illum")
+    //    {
+    //        LineStream >> CurrentData.IlluminationModel;
+    //    }
+    //    else if (Header == "map_Ka")
+    //    {
+    //        std::string TextureFilename;
+    //        LineStream >> TextureFilename;
+    //        FWString AbsoluteTexturePath =
+    //            ResolveSiblingPath(Source.NormalizedPath, TextureFilename);
+    //        CurrentData.AmbientMapPath = WidePathToUtf8(AbsoluteTexturePath);
+    //    }
+    //    else if (Header == "map_Kd")
+    //    {
+    //        FString TextureFilename;
+    //        LineStream >> TextureFilename;
+
+    //        // FontAtlasLoader에서 사용했던 방식처럼 Sibling Path로 절대 경로화
+    //        FWString AbsoluteTexturePath =
+    //            ResolveSiblingPath(Source.NormalizedPath, TextureFilename);
+    //        CurrentData.DiffuseMapPath = WidePathToUtf8(AbsoluteTexturePath);
+    //    }
+    //    else if (Header == "map_Ns")
+    //    {
+    //        FString TextureFilename;
+    //        LineStream >> TextureFilename;
+
+    //        FWString AbsoluteTexturePath =
+    //            ResolveSiblingPath(Source.NormalizedPath, TextureFilename);
+    //        CurrentData.SpecularHighlightMapPath = WidePathToUtf8(AbsoluteTexturePath);
+    //    }
+    //    else if (Header == "map_bump" || Header == "bump")
+    //    {
+    //        std::string TextureFilename;
+    //        LineStream >> TextureFilename;
+    //        FWString AbsoluteTexturePath =
+    //            ResolveSiblingPath(Source.NormalizedPath, TextureFilename);
+    //        CurrentData.NormalMapPath = WidePathToUtf8(AbsoluteTexturePath);
+    //    }
+    //}
+
+    //// 루프가 끝난 후 마지막 재질 저장
+    //if (bHasMaterial && !CurrentMaterialName.empty())
+    //{
+    //    OutResource.Materials[CurrentMaterialName] = CurrentData;
+    //}
+
+    //// for (const auto& Pair : OutResource.Materials)
+    ////{
+    ////     const FMaterialData& Data = Pair.second;
+    ////     if (Data.DiffuseMapPath.empty())
+    ////     {
+    ////         // 텍스처 경로가 없으면 에디터 콘솔에 노란색 경고 띄우기
+    ////         UE_LOG(Asset, ELogVerbosity::Warning,
+    ////                "[MaterialLoader] Material '%s' has no diffuse map.", Pair.first.c_str());
+    ////     }
+    //// }
+
+    //return !OutResource.Materials.empty();
 }
 
 FWString FMaterialLoader::ResolveSiblingPath(const FWString& BaseFilePath,

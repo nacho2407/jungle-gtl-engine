@@ -4,9 +4,8 @@
 #include "AssetManager.h"
 #include "Renderer/RenderAsset/StaticMeshResource.h"
 
-
 class FD3D11RHI;
-struct FVertex; // 엔진에 정의된 버텍스 구조체 (Position, UV, Normal 등 포함)
+struct FMeshVertexNormal;
 
 class ENGINE_API FStaticMeshLoader : public IAssetLoader
 {
@@ -20,8 +19,9 @@ class ENGINE_API FStaticMeshLoader : public IAssetLoader
 
   private:
     bool ParseObjText(const FSourceRecord& Source, FStaticMeshResource& OutMesh,
-                      TArray<FVertex>& OutVertices) const;
-    bool CreateBuffers(const TArray<FVertex>& InVertices, FStaticMeshResource& OutMesh) const;
+                      TArray<FMeshVertexNormal>& OutVertices) const;
+    bool CreateBuffers(const TArray<FMeshVertexNormal>& InVertices,
+                       FStaticMeshResource&             OutMesh) const;
 
     // 문자열 유틸리티
     FString WidePathToUtf8(const FWString& Path) const;
@@ -37,9 +37,9 @@ class ENGINE_API FStaticMeshLoader : public IAssetLoader
     //    // 메모리에 통째로 읽어 들인 후 Asset 생성
     //}
 
-    void SaveToBinary(const std::string& BinPath, FStaticMeshResource* CookedData)
-    {
-        // CookedData의 Vertices 배열과 Indices 배열의 크기 및 메모리 블록을
-        // .bin 파일에 바이너리 쓰기(fwrite 또는 std::ofstream::write)로 저장
-    }
+    //void SaveToBinary(const std::string& BinPath, FStaticMeshResource* CookedData)
+    //{
+    //    // CookedData의 Vertices 배열과 Indices 배열의 크기 및 메모리 블록을
+    //    // .bin 파일에 바이너리 쓰기(fwrite 또는 std::ofstream::write)로 저장
+    //}
 };

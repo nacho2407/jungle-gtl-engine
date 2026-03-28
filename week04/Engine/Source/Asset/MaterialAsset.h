@@ -15,18 +15,14 @@ class ENGINE_API UMaterialAsset : public UAsset
     ~UMaterialAsset() = default;
 
     void Initialize(const FSourceRecord& InSource, std::shared_ptr<FMaterialResource> InResource);
-
     FMaterialResource* GetResource() const { return Resource.get(); }
 
-    // void SetDiffuseTexture(UTexture2DAsset* NewTexture);
-
-    // 직렬화(저장)할 때 참조 중인 텍스처 목록을 뽑아볼 수 있도록 제공
-    TArray<UTexture2DAsset*> GetReferencedTextures() const;
+    TArray<UTexture2DAsset*>&       GetReferencedTextures() { return ReferencedTextures; }
+    const TArray<UTexture2DAsset*>& GetReferencedTextures() const { return ReferencedTextures; }
+    void                            AddTextureDependency(UTexture2DAsset* InTexture);
+    bool                            HasTextureDependency(const UTexture2DAsset* InTexture) const;
 
   private:
     std::shared_ptr<FMaterialResource> Resource;
-    UTexture2DAsset*                   DiffuseTextureAsset = nullptr;
-    UTexture2DAsset*                   AmbientTextureAsset = nullptr;
-    UTexture2DAsset*                   SpecularTextureAsset = nullptr;
-    UTexture2DAsset*                   NormalTextureAsset = nullptr;
+    TArray<UTexture2DAsset*>           ReferencedTextures;
 };
