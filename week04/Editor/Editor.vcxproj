@@ -184,7 +184,6 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClInclude Include="Source\Viewport\Selection\ViewportSelectionController.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="EditorClassDiagram.cd" />
     <None Include="Source\ThirdParty\ImGui\imgui.natstepfilter" />
   </ItemGroup>
   <ItemGroup>

@@ -7,6 +7,6 @@ REGISTER_CLASS(, UAsset)
 
 void UAsset::InitializeAssetMetadata(const FSourceRecord& Source)
 {
-	SourcePath = Source.NormalizedPath;
-	ImportedHash = Source.SourceHash;
+    SourcePath = Source.NormalizedPath;
+    ImportedHash = Source.SourceHash;
 }
