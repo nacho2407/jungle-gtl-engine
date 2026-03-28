@@ -1,4 +1,4 @@
-#include "AABB.h"
+﻿#include "AABB.h"
 
 #include <algorithm>
 #include <cfloat>
@@ -68,7 +68,7 @@ bool FAABB::IntersectRay(const FRay& Ray, float& OutT) const
 	}
 	
 	float TMin = 0.0f;
-	float TMax = 0.0f;
+	float TMax = FLT_MAX;
 	
 	for (int Axis = 0; Axis < 3; Axis++)
 	{
