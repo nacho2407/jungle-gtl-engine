@@ -34,6 +34,10 @@ public:
 	const FVector& GetWireframeColor() const { return WireframeColor; }
 	void SetWireframeColor(const FVector& InColor) { WireframeColor = InColor; }
 
+	void SetViewportSize(float InWidth, float InHeight);
+	const float GetViewportWidth() const { return viewportWidth; }
+	const float GetViewportHeight() const { return viewprotHeight; }
+
 private:
 	TArray<FRenderCommand> PassQueues[(uint32)ERenderPass::MAX];
 
@@ -41,6 +45,9 @@ private:
 	FMatrix Proj;
 	FVector CameraRight;
 	FVector CameraUp;
+
+	float viewportWidth = 0.0f;
+	float viewprotHeight = 0.0f;
 
 	//Editor Settings
 	EViewMode ViewMode;
