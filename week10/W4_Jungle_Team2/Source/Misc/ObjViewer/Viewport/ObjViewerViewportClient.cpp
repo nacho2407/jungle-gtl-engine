@@ -74,7 +74,7 @@ void FObjViewerViewportClient::ResetCamera()
 	FVector Center = ModelInfo.ModelCenter;
 	FVector Offset(ModelRadius, ModelRadius, ModelRadius);
 
-	float DistanceMultiplier = 6.0f;
+	float DistanceMultiplier = 4.0f;
     FVector CameraPos = Center + (Offset * DistanceMultiplier);
 
     Camera->SetLocation(CameraPos);
@@ -90,7 +90,7 @@ void FObjViewerViewportClient::ClampCameraPosition()
 	ObjViewerModelInfo ModelInfo = GetModelInfo();
 	float ModelRadius = ModelInfo.ModelRadius;
 	FVector ModelCenter = ModelInfo.ModelCenter;
-    float MaxAllowedDistance = ModelRadius * 6.0f;
+    float MaxAllowedDistance = ModelRadius * 4.0f;
 
     // 카메라 위치를 확인하고 이동 범위 제한(Clamp)을 적용
     FVector CamPos = Camera->GetLocation();
@@ -442,7 +442,7 @@ ObjViewerModelInfo FObjViewerViewportClient::GetModelInfo()
 	}
 
 	// 씬 중심점과 모델의 최대 크기(반지름)를 계산
-	ModelInfo.ModelRadius = 100.0f;
+	ModelInfo.ModelRadius = 2.0f;
     if (bHasValidMesh)
     {
         ModelInfo.ModelRadius = (MaxAABB - MinAABB).Size() * 0.5f; 

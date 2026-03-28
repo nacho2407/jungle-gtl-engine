@@ -3,6 +3,7 @@
 #include "Misc/ObjViewer/Viewport/ObjViewerViewportClient.h"
 #include "Misc/ObjViewer/Settings/ObjViewerSettings.h"
 #include "Viewport/ViewportCamera.h"
+#include "Math/Transform.h"
 #include "ImGui/imgui.h"
 
 void FObjViewerControlWidget::Render(float DeltaTime)
@@ -58,6 +59,36 @@ void FObjViewerControlWidget::Render(float DeltaTime)
 				Settings.ViewMode = bWireframe ? EViewMode::Wireframe : EViewMode::Lit;
 			}
 		}
+		
+		if (ImGui::CollapsingHeader("Model Transformation", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            // 현재 세팅값을 int로 캐스팅하여 라디오 버튼에 연결
+            int CurrentAxis = static_cast<int>(Settings.ModelUpAxis);
+            bool bChanged = false;
+
+            ImGui::Text("Up Axis:");
+            if (ImGui::RadioButton("Z-Up (Blender, Unreal)", &CurrentAxis, 0)) bChanged = true;
+            if (ImGui::RadioButton("Y-Up (Maya, Unity)", &CurrentAxis, 1)) bChanged = true;
+
+            // 만약 유저가 버튼을 눌러 상태가 변했다면 물체에 회전을 적용한다.
+            if (bChanged)
+            {
+                Settings.ModelUpAxis = static_cast<EModelUpAxis>(CurrentAxis);
+                
+                if (UStaticMeshComponent* MeshComp = Engine->GetPreviewMeshComponent())
+                {
+                    AActor* ModelActor = MeshComp->GetOwner();
+                    if (CurrentAxis == 0) // Z-Up
+                    {
+                        ModelActor->SetActorRotation(FVector(0.0f, 0.0f, 0.0f));
+                    }
+                    else if (CurrentAxis == 1) // Y-Up (Maya 등)
+                    {
+                        ModelActor->SetActorRotation(FVector(90.0f, 0.0f, 0.0f)); 
+                    }
+                }
+            }
+        }
 	}
 	ImGui::End();
 }
