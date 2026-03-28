@@ -5,7 +5,7 @@
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Engine/Runtime/WindowsWindow.h"
-#include "Render/Renderer/Renderer.h"
+#include "Render/Pipeline/Renderer.h"
 #include "Viewport/Viewport.h"
 #include "UI/SSplitter.h"
 #include "Math/Utils.h"

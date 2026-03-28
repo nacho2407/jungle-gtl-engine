@@ -4,9 +4,9 @@
 #include "Core/EngineTypes.h"
 #include "Math/Vector.h"
 #include "Math/Matrix.h"
-#include "Render/Common/RenderTypes.h"
+#include "Render/Types/RenderTypes.h"
 
-#include "Render/Common/ViewTypes.h"
+#include "Render/Types/ViewTypes.h"
 
 // ============================================================
 // FLineVertex — 라인 렌더링용 버텍스 (Position + Color)

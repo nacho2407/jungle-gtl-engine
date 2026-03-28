@@ -1,7 +1,7 @@
 ﻿#include "PrimitiveComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Core/RayTypes.h"
-#include "Render/Mesh/MeshManager.h"
+#include "Render/Resource/MeshBufferManager.h"
 #include "Core/CollisionTypes.h"
 
 DEFINE_CLASS(UPrimitiveComponent, USceneComponent)
@@ -155,12 +155,12 @@ void UPrimitiveComponent::AddWorldOffset(const FVector& WorldDelta)
 
 UCubeComponent::UCubeComponent()
 {
-	MeshData = &FMeshManager::GetCube();
+	MeshData = &FMeshBufferManager::Get().GetMeshData(EPrimitiveType::EPT_Cube);
 }
 
 USphereComponent::USphereComponent()
 {
-	MeshData = &FMeshManager::GetSphere();
+	MeshData = &FMeshBufferManager::Get().GetMeshData(EPrimitiveType::EPT_Sphere);
 }
 
 void USphereComponent::UpdateWorldAABB() const
@@ -185,7 +185,7 @@ void USphereComponent::UpdateWorldAABB() const
 
 UPlaneComponent::UPlaneComponent()
 {
-	MeshData = &FMeshManager::GetPlane();
+	MeshData = &FMeshBufferManager::Get().GetMeshData(EPrimitiveType::EPT_Plane);
 }
 
 void UPlaneComponent::UpdateWorldAABB() const

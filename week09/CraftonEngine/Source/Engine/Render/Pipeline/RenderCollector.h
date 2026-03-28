@@ -1,6 +1,7 @@
 #pragma once
 #include "RenderBus.h"
 #include "Render/Resource/MeshBufferManager.h"
+#include "Render/Resource/ShaderManager.h"
 
 class UWorld;
 class AActor;
@@ -8,12 +9,7 @@ class UPrimitiveComponent;
 class UGizmoComponent;
 
 class FRenderCollector {
-private:
-	FMeshBufferManager MeshBufferManager;
 public:
-	void Initialize(ID3D11Device* InDevice) { MeshBufferManager.Create(InDevice); }
-	void Release() { MeshBufferManager.Release(); }
-
 	void CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus);
 	void CollectSelection(const TArray<AActor*>& SelectedActors, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus);
 	void CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& ShowFlags, FRenderBus& RenderBus);

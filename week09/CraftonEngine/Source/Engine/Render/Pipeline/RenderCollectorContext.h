@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Render/Common/ViewTypes.h"
+#include "Render/Types/ViewTypes.h"
 
 class UCameraComponent;
 

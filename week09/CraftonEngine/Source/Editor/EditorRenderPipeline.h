@@ -1,7 +1,7 @@
 #pragma once
-#include "Render/Renderer/IRenderPipeline.h"
-#include "Render/Scene/RenderCollector.h"
-#include "Render/Scene/RenderBus.h"
+#include "Render/Pipeline/IRenderPipeline.h"
+#include "Render/Pipeline/RenderCollector.h"
+#include "Render/Pipeline/RenderBus.h"
 
 class UEditorEngine;
 class FViewport;

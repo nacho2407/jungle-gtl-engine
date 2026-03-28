@@ -1,83 +1,33 @@
 ﻿#pragma once
-
-/*
-	Direct3D Device, Context, Swapchain을 관리하는 Class 입니다.
-*/
-
-#include "Render/Common/RenderTypes.h"
+#include "Render/Types/RenderTypes.h"
+#include "Render/Types/RenderStateTypes.h"
 #include "Core/CoreTypes.h"
 
-enum class EDepthStencilState
-{
-	Default,
-	DepthReadOnly,
-	StencilWrite,
-	StencilOutline,
-	StencilWriteOnlyEqual,
-
-	// --- 기즈모 전용 ---
-	GizmoInside,         
-	GizmoOutside         
-};
-
-enum class EBlendState
-{
-	Opaque,
-	AlphaBlend,
-	NoColor
-};
-
-enum class ERasterizerState
-{
-	SolidBackCull,
-	SolidFrontCull,
-	SolidNoCull,
-	WireFrame,
-};
+#include "RasterizerStateManager.h"
+#include "DepthStencilStateManager.h"
+#include "BlendStateManager.h"
 
 class FD3DDevice
 {
-private:
-	ID3D11Device* Device = nullptr;
-	ID3D11DeviceContext* DeviceContext = nullptr;
-	IDXGISwapChain* SwapChain = nullptr;
-
-	ID3D11Texture2D* FrameBuffer = nullptr;
-	ID3D11RenderTargetView* FrameBufferRTV = nullptr;
-
-	ID3D11RasterizerState* RasterizerStateBackCull = nullptr;
-	ID3D11RasterizerState* RasterizerStateFrontCull = nullptr;
-	ID3D11RasterizerState* RasterizerStateNoCull = nullptr;
-	ID3D11RasterizerState* RasterizerStateWireFrame = nullptr;
-
-	ID3D11Texture2D* DepthStencilBuffer = nullptr;
-	ID3D11DepthStencilView* DepthStencilView = nullptr;
-
-	ID3D11DepthStencilState* DepthStencilStateDefault = nullptr;
-	ID3D11DepthStencilState* DepthStencilStateDepthReadOnly = nullptr;
-	ID3D11DepthStencilState* DepthStencilStateStencilWrite = nullptr;
-	ID3D11DepthStencilState* DepthStencilStateStencilOutline = nullptr;
-	ID3D11DepthStencilState* DepthStencilStateStencilMaskEqual = nullptr;
-
-	ID3D11DepthStencilState* DepthStencilStateGizmoInside = nullptr;  
-	ID3D11DepthStencilState* DepthStencilStateGizmoOutside = nullptr; 
-
-	ID3D11BlendState* BlendStateAlpha = nullptr;
-	ID3D11BlendState* BlendStateNoColorWrite = nullptr;
-
-	D3D11_VIEWPORT ViewportInfo = {};
-
-	const float ClearColor[4] = { 0.25f, 0.25f, 0.25f, 1.0f };
-
-	ERasterizerState CurrentRasterizerState = ERasterizerState::SolidBackCull;
-	EDepthStencilState CurrentDepthStencilState = EDepthStencilState::Default;
-	EBlendState CurrentBlendState = EBlendState::Opaque;
-
-	BOOL bTearingSupported = FALSE;
-	UINT SwapChainFlags = 0;
-
 public:
+	FD3DDevice() = default;
 
+	void Create(HWND InHWindow);
+	void Release();
+
+	void Present();
+	void OnResizeViewport(int width, int height);
+
+	ID3D11Device* GetDevice() const;
+	ID3D11DeviceContext* GetDeviceContext() const;
+	ID3D11RenderTargetView* GetFrameBufferRTV() const { return FrameBufferRTV; }
+	ID3D11DepthStencilView* GetDepthStencilView() const { return DepthStencilView; }
+	const D3D11_VIEWPORT& GetViewport() const { return ViewportInfo; }
+	const float* GetClearColor() const { return ClearColor; }
+
+	void SetDepthStencilState(EDepthStencilState InState);
+	void SetBlendState(EBlendState InState);
+	void SetRasterizerState(ERasterizerState InState);
 
 private:
 	void CreateDeviceAndSwapChain(HWND InHWindow);
@@ -86,31 +36,28 @@ private:
 	void CreateFrameBuffer();
 	void ReleaseFrameBuffer();
 
-	void CreateRasterizerState();
-	void ReleaseRasterizerState();
-
 	void CreateDepthStencilBuffer();
 	void ReleaseDepthStencilBuffer();
 
-	void CreateBlendState();
-	void ReleaseBlendState();
+private:
+	ID3D11Device* Device = nullptr;
+	ID3D11DeviceContext* DeviceContext = nullptr;
+	IDXGISwapChain* SwapChain = nullptr;
 
-public:
-	FD3DDevice() = default;
+	ID3D11Texture2D* FrameBuffer = nullptr;
+	ID3D11RenderTargetView* FrameBufferRTV = nullptr;
 
-	void Create(HWND InHWindow);
-	void Release();
+	ID3D11Texture2D* DepthStencilBuffer = nullptr;
+	ID3D11DepthStencilView* DepthStencilView = nullptr;
 
-	void BeginFrame();
-	void EndFrame();
+	FRasterizerStateManager RasterizerStateManager;
+	FDepthStencilStateManager DepthStencilStateManager;
+	FBlendStateManager BlendStateManager;
 
-	void OnResizeViewport(int width, int height);
+	D3D11_VIEWPORT ViewportInfo = {};
 
-	ID3D11Device* GetDevice() const;
-	ID3D11DeviceContext* GetDeviceContext() const;
+	const float ClearColor[4] = { 0.25f, 0.25f, 0.25f, 1.0f };
 
-	void SetDepthStencilState(EDepthStencilState InState);
-	void SetBlendState(EBlendState InState);
-	void SetRasterizerState(ERasterizerState InState);
+	BOOL bTearingSupported = FALSE;
+	UINT SwapChainFlags = 0;
 };
-

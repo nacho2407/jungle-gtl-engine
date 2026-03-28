@@ -1,14 +1,14 @@
 ﻿#include "GizmoComponent.h"
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
-#include "Render/Mesh/MeshManager.h"
+#include "Render/Resource/MeshBufferManager.h"
 
 IMPLEMENT_CLASS(UGizmoComponent, UPrimitiveComponent)
 
 #include <cmath>
 UGizmoComponent::UGizmoComponent()
 {
-	MeshData = &FMeshManager::GetTranslationGizmo();
+	MeshData = &FMeshBufferManager::Get().GetMeshData(EPrimitiveType::EPT_TransGizmo);
 	LocalExtents = FVector(1.5f, 1.5f, 1.5f);
 }
 
@@ -369,17 +369,17 @@ void UGizmoComponent::UpdateGizmoTransform()
 	{
 	case EGizmoMode::Scale:
 		SetRelativeRotation(ActorRot);
-		MeshData = &FMeshManager::Get().GetScaleGizmo();
+		MeshData = &FMeshBufferManager::Get().GetMeshData(EPrimitiveType::EPT_ScaleGizmo);
 		break;
 
 	case EGizmoMode::Rotate:
 		SetRelativeRotation(bIsWorldSpace ? FVector() : ActorRot);
-		MeshData = &FMeshManager::Get().GetRotationGizmo();
+		MeshData = &FMeshBufferManager::Get().GetMeshData(EPrimitiveType::EPT_RotGizmo);
 		break;
 
 	case EGizmoMode::Translate:
 		SetRelativeRotation(bIsWorldSpace ? FVector() : ActorRot);
-		MeshData = &FMeshManager::Get().GetTranslationGizmo();
+		MeshData = &FMeshBufferManager::Get().GetMeshData(EPrimitiveType::EPT_TransGizmo);
 		break;
 	}
 }

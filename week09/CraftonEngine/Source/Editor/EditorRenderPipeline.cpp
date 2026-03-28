@@ -2,7 +2,7 @@
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
-#include "Render/Renderer/Renderer.h"
+#include "Render/Pipeline/Renderer.h"
 #include "Viewport/Viewport.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
@@ -13,12 +13,10 @@
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer)
 	: Editor(InEditor)
 {
-	Collector.Initialize(InRenderer.GetFD3DDevice().GetDevice());
 }
 
 FEditorRenderPipeline::~FEditorRenderPipeline()
 {
-	Collector.Release();
 }
 
 void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)

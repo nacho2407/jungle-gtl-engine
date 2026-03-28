@@ -1,10 +1,37 @@
-﻿#include "Shader.h"
+#include "Shader.h"
 
 #include <iostream>
 
-void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const char * InVSEntryPoint, const char * InPSEntryPoint,
-		const D3D11_INPUT_ELEMENT_DESC * InInputElements, UINT InInputElementCount)
+FShader::FShader(FShader&& Other) noexcept
+	: VertexShader(Other.VertexShader)
+	, PixelShader(Other.PixelShader)
+	, InputLayout(Other.InputLayout)
 {
+	Other.VertexShader = nullptr;
+	Other.PixelShader = nullptr;
+	Other.InputLayout = nullptr;
+}
+
+FShader& FShader::operator=(FShader&& Other) noexcept
+{
+	if (this != &Other)
+	{
+		Release();
+		VertexShader = Other.VertexShader;
+		PixelShader = Other.PixelShader;
+		InputLayout = Other.InputLayout;
+		Other.VertexShader = nullptr;
+		Other.PixelShader = nullptr;
+		Other.InputLayout = nullptr;
+	}
+	return *this;
+}
+
+void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const char* InVSEntryPoint, const char* InPSEntryPoint,
+	const D3D11_INPUT_ELEMENT_DESC* InInputElements, UINT InInputElementCount)
+{
+	Release();
+
 	ID3DBlob* vertexShaderCSO = nullptr;
 	ID3DBlob* pixelShaderCSO = nullptr;
 	ID3DBlob* errorBlob = nullptr;
@@ -49,13 +76,22 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 	if (FAILED(hr))
 	{
 		std::cerr << "Failed to create Pixel Shader (HRESULT: " << hr << ")" << std::endl;
+		Release();
 		vertexShaderCSO->Release();
 		pixelShaderCSO->Release();
 		return;
 	}
 
 	// Input Layout 생성
-	InDevice->CreateInputLayout(InInputElements, InInputElementCount, vertexShaderCSO->GetBufferPointer(), vertexShaderCSO->GetBufferSize(), &InputLayout);
+	hr = InDevice->CreateInputLayout(InInputElements, InInputElementCount, vertexShaderCSO->GetBufferPointer(), vertexShaderCSO->GetBufferSize(), &InputLayout);
+	if (FAILED(hr))
+	{
+		std::cerr << "Failed to create Input Layout (HRESULT: " << hr << ")" << std::endl;
+		Release();
+		vertexShaderCSO->Release();
+		pixelShaderCSO->Release();
+		return;
+	}
 
 	vertexShaderCSO->Release();
 	pixelShaderCSO->Release();

@@ -1,5 +1,4 @@
-﻿#include "Mesh/StaticMesh.h"
-#include "Mesh/StaticMeshAsset.h"
+#include "Mesh/StaticMesh.h"
 #include "Object/ObjectFactory.h"
 
 IMPLEMENT_CLASS(UStaticMesh, UObject)
@@ -15,12 +14,12 @@ const FString& UStaticMesh::GetAssetPathFileName() const
 	return EmptyPath;
 }
 
-void UStaticMesh::SetStaticMeshAsset(FStaticMesh* InMesh)
+void UStaticMesh::SetStaticMeshAsset(std::unique_ptr<FStaticMesh> InMesh)
 {
-	StaticMeshAsset = InMesh;
+	StaticMeshAsset = std::move(InMesh);
 }
 
 FStaticMesh* UStaticMesh::GetStaticMeshAsset() const
 {
-	return StaticMeshAsset;
+	return StaticMeshAsset.get();
 }
