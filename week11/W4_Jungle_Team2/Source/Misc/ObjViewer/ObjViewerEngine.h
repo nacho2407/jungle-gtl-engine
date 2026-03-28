@@ -16,7 +16,7 @@ public:
 	void Shutdown() override;
 	void Tick(float DeltaTime) override;
 	
-	UCameraComponent* GetCamera() const { return ViewportClient.GetCamera(); }
+	FViewportCamera* GetCamera() const { return ViewportClient.GetCamera(); }
 	FObjViewerViewportClient& GetViewportClient() { return ViewportClient; }
 
 	void RenderUI(float DeltaTime);

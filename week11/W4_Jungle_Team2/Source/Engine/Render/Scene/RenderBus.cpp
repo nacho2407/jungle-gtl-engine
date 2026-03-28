@@ -30,7 +30,7 @@ void FRenderBus::SetViewProjection(const FMatrix& InView, const FMatrix& InProj)
 
 	CameraRight    = FVector(InView.M[0][0], InView.M[1][0], InView.M[2][0]);
 	CameraUp       = FVector(InView.M[0][1], InView.M[1][1], InView.M[2][1]);
-	CameraPosition = InView.GetInverseFast().GetLocation();
+	CameraPosition = InView.GetInverse().GetOrigin();
 }
 
 void FRenderBus::SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags)
