@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/Misc/BitMaskEnum.h"
 #include "Navigation/ViewportNavigationController.h"
 #include "Selection/ViewportSelectionController.h"
 #include "Gizmo/ViewportGizmoController.h"
@@ -13,6 +14,18 @@
 #include "Renderer/Types/EditorShowFlags.h"
 
 struct FEditorContext;
+
+enum class EViewportStatFlags : uint8
+{
+    None = 0,
+    FPS = 1 << 0,
+    Memory = 1 << 1
+};
+
+template <> struct TEnableBitMaskOperators<EViewportStatFlags>
+{
+    static constexpr bool bEnabled = true;
+};
 
 class FEditorViewportClient : public Engine::Viewport::IViewportClient
 {
@@ -63,10 +76,20 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
         }
         return FPickResult{};
     }
+
+    bool IsStatEnabled(EViewportStatFlags InFlags) const { return IsFlagSet(StatFlags, InFlags); }
+
+    void SetStatEnabled(EViewportStatFlags InFlag, bool bEnabled)
+    {
+        SetFlag(StatFlags, InFlag, bEnabled);
+    }
+
+    void ClearAllStats() { StatFlags = EViewportStatFlags::None; }
+
+    EViewportStatFlags GetStatFlags() const { return StatFlags; }
     
 private:
     void DrawOutline();
-
 
   private:
     FScene* CurScene = nullptr;
@@ -82,4 +105,6 @@ private:
     FNavigationInputContext ViewportInputContext{&NavigationController};
     FSelectionInputContext SelectionInputContext{&SelectionController};
     FGizmoInputContext      GizmoInputContext{&GizmoController};
+
+    EViewportStatFlags StatFlags = EViewportStatFlags::None;
 };
