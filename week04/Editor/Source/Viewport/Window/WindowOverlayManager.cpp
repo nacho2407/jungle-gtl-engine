@@ -125,6 +125,8 @@ void FWindowOverlayManager::AddNewViewportPanel() {
     ViewportClient->Create();
     ViewportClient->SetEditorContext(EditorContext);
     ViewportClient->SetScene(Scene);
+    ViewportClient->GetNavigationController().SetMoveSpeed(DefaultMoveSpeed);
+    ViewportClient->GetNavigationController().SetRotationSpeed(DefaultRotationSpeed);
 
     Panel->Scene = Scene;
     Panel->ViewportClient = ViewportClient;
@@ -190,8 +192,26 @@ void FWindowOverlayManager::SetWindowDimension(uint32 Width, uint32 Height)
     ResetViewportDimension();
 }
 
-void FWindowOverlayManager::SetViewportLayout(EViewportLayout Layout) 
+void FWindowOverlayManager::SetViewportLayout(EViewportLayout Layout)
 {
     ViewportLayout = Layout;
     ResetViewportDimension();
+}
+
+void FWindowOverlayManager::SetNavigationValues(float MoveSpeed, float RotationSpeed)
+{
+    DefaultMoveSpeed     = MoveSpeed;
+    DefaultRotationSpeed = RotationSpeed;
+
+    // Apply retroactively to all managed panels (index > 0 is owned by this manager;
+    // index 0 is FEditor::ViewportClient which controls its own settings).
+    for (uint32 i = 1; i < ViewportPanels.size(); ++i)
+    {
+        FEditorViewportPanel* Panel = ViewportPanels[i];
+        if (Panel && Panel->ViewportClient)
+        {
+            Panel->ViewportClient->GetNavigationController().SetMoveSpeed(MoveSpeed);
+            Panel->ViewportClient->GetNavigationController().SetRotationSpeed(RotationSpeed);
+        }
+    }
 }

@@ -282,8 +282,6 @@ void FEditor::Create()
     GlobalInputController.SetSelectionController(&ViewportClient.GetSelectionController());
     GlobalInputRouter.AddContext(&GlobalInputContext);
 
-    LoadEditorSettings();
-
     // 메뉴 시스템은 command 등록과 배치 등록을 분리해서 초기화합니다.
     MenuRegistry.Clear();
     RegisterDefaultCommands();
@@ -311,7 +309,7 @@ void FEditor::Create()
     ViewportClient.SetScene(CurScene);
     GlobalInputController.SetScene(CurScene);
 
-    UE_LOG(FEditor, ELogVerbosity::Log, "Hello Editor");
+    UE_LOG(FEditor, ELogVerbosity::Log, "Hello Probopass!");
     EditorContext.Scene = CurScene;
 
     WindowOverlayManager = new FWindowOverlayManager();
@@ -322,6 +320,7 @@ void FEditor::Create()
     EditorPanel->Scene = CurScene;
     WindowOverlayManager->GetViewportPanels().push_back(EditorPanel);
     WindowOverlayManager->SetViewportLayout(EViewportLayout::FourWay);
+    LoadEditorSettings();
 }
 
 void FEditor::Release()
@@ -427,6 +426,12 @@ void FEditor::LoadEditorSettings()
     ViewportClient.GetNavigationController().SetRotationSpeed(SettingsData.CameraRotationSpeed);
     EditorContext.ContentBrowserLeftPaneWidth =
         std::max(SettingsData.ContentBrowserLeftPaneWidth, 120.0f);
+
+    if (WindowOverlayManager != nullptr)
+    {
+        WindowOverlayManager->SetNavigationValues(SettingsData.CameraMoveSpeed,
+                                                  SettingsData.CameraRotationSpeed);
+    }
 }
 
 void FEditor::SaveEditorSettings() const
