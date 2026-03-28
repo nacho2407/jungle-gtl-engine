@@ -1,4 +1,5 @@
 ﻿#include "Editor/Settings/EditorSettings.h"
+#include "Editor/Viewport/FLevelViewportLayout.h"
 #include "SimpleJSON/json.hpp"
 
 #include <fstream>
@@ -14,27 +15,38 @@ namespace Key
 	constexpr const char* CameraSpeed = "CameraSpeed";
 	constexpr const char* CameraRotationSpeed = "CameraRotationSpeed";
 	constexpr const char* CameraZoomSpeed = "CameraZoomSpeed";
-	constexpr const char* CameraMoveSensitivity = "CameraMoveSensitivity";
-	constexpr const char* CameraRotateSensitivity = "CameraRotateSensitivity";
 	constexpr const char* InitViewPos = "InitViewPos";
 	constexpr const char* InitLookAt = "InitLookAt";
 
-	// View
-	constexpr const char* View = "View";
+	// Slot Render Options
 	constexpr const char* ViewMode = "ViewMode";
 	constexpr const char* bPrimitives = "bPrimitives";
 	constexpr const char* bGrid = "bGrid";
 	constexpr const char* bGizmo = "bGizmo";
 	constexpr const char* bBillboardText = "bBillboardText";
 	constexpr const char* bBoundingVolume = "bBoundingVolume";
-
-	// Grid
-	constexpr const char* Grid = "Grid";
 	constexpr const char* GridSpacing = "GridSpacing";
 	constexpr const char* GridHalfLineCount = "GridHalfLineCount";
+	constexpr const char* CameraMoveSensitivity = "CameraMoveSensitivity";
+	constexpr const char* CameraRotateSensitivity = "CameraRotateSensitivity";
 
 	// Paths
 	constexpr const char* DefaultSavePath = "DefaultSavePath";
+
+	// Layout
+	constexpr const char* Layout = "Layout";
+	constexpr const char* LayoutType = "LayoutType";
+	constexpr const char* Slots = "Slots";
+	constexpr const char* ViewportType = "ViewportType";
+	constexpr const char* SplitterRatios = "SplitterRatios";
+
+	// Perspective Camera
+	constexpr const char* PerspectiveCamera = "PerspectiveCamera";
+	constexpr const char* Location = "Location";
+	constexpr const char* Rotation = "Rotation";
+	constexpr const char* FOV = "FOV";
+	constexpr const char* NearClip = "NearClip";
+	constexpr const char* FarClip = "FarClip";
 }
 
 void FEditorSettings::SaveToFile(const FString& Path) const
@@ -48,8 +60,6 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	Viewport[Key::CameraSpeed] = CameraSpeed;
 	Viewport[Key::CameraRotationSpeed] = CameraRotationSpeed;
 	Viewport[Key::CameraZoomSpeed] = CameraZoomSpeed;
-	Viewport[Key::CameraMoveSensitivity] = CameraMoveSensitivity;
-	Viewport[Key::CameraRotateSensitivity] = CameraRotateSensitivity;
 
 	JSON InitPos = Array(InitViewPos.X, InitViewPos.Y, InitViewPos.Z);
 	Viewport[Key::InitViewPos] = InitPos;
@@ -59,26 +69,52 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 
 	Root[Key::Viewport] = Viewport;
 
-	// View
-	JSON ViewObj = Object();
-	ViewObj[Key::ViewMode] = static_cast<int32>(ViewMode);
-	ViewObj[Key::bPrimitives] = ShowFlags.bPrimitives;
-	ViewObj[Key::bGrid] = ShowFlags.bGrid;
-	ViewObj[Key::bGizmo] = ShowFlags.bGizmo;
-	ViewObj[Key::bBillboardText] = ShowFlags.bBillboardText;
-	ViewObj[Key::bBoundingVolume] = ShowFlags.bBoundingVolume;
-	Root[Key::View] = ViewObj;
-
-	// Grid
-	JSON GridObj = Object();
-	GridObj[Key::GridSpacing] = GridSpacing;
-	GridObj[Key::GridHalfLineCount] = GridHalfLineCount;
-	Root[Key::Grid] = GridObj;
-
 	// Paths
 	JSON PathsObj = Object();
 	PathsObj[Key::DefaultSavePath] = DefaultSavePath;
 	Root[Key::Paths] = PathsObj;
+
+	// Layout
+	JSON LayoutObj = Object();
+	LayoutObj[Key::LayoutType] = LayoutType;
+
+	JSON SlotsArr = Array();
+	int32 SlotCount = FLevelViewportLayout::GetSlotCount(static_cast<EViewportLayout>(LayoutType));
+	for (int32 i = 0; i < SlotCount; ++i)
+	{
+		JSON SlotObj = Object();
+		const FViewportRenderOptions& Opts = SlotOptions[i];
+		SlotObj[Key::ViewMode] = static_cast<int32>(Opts.ViewMode);
+		SlotObj[Key::ViewportType] = static_cast<int32>(Opts.ViewportType);
+		SlotObj[Key::bPrimitives] = Opts.ShowFlags.bPrimitives;
+		SlotObj[Key::bGrid] = Opts.ShowFlags.bGrid;
+		SlotObj[Key::bGizmo] = Opts.ShowFlags.bGizmo;
+		SlotObj[Key::bBillboardText] = Opts.ShowFlags.bBillboardText;
+		SlotObj[Key::bBoundingVolume] = Opts.ShowFlags.bBoundingVolume;
+		SlotObj[Key::GridSpacing] = Opts.GridSpacing;
+		SlotObj[Key::GridHalfLineCount] = Opts.GridHalfLineCount;
+		SlotObj[Key::CameraMoveSensitivity] = Opts.CameraMoveSensitivity;
+		SlotObj[Key::CameraRotateSensitivity] = Opts.CameraRotateSensitivity;
+		SlotsArr.append(SlotObj);
+	}
+	LayoutObj[Key::Slots] = SlotsArr;
+
+	JSON RatiosArr = Array();
+	for (int32 i = 0; i < SplitterCount; ++i)
+	{
+		RatiosArr.append(SplitterRatios[i]);
+	}
+	LayoutObj[Key::SplitterRatios] = RatiosArr;
+	Root[Key::Layout] = LayoutObj;
+
+	// Perspective Camera
+	JSON CamObj = Object();
+	CamObj[Key::Location] = Array(PerspCamLocation.X, PerspCamLocation.Y, PerspCamLocation.Z);
+	CamObj[Key::Rotation] = Array(PerspCamRotation.X, PerspCamRotation.Y, PerspCamRotation.Z);
+	CamObj[Key::FOV] = PerspCamFOV;
+	CamObj[Key::NearClip] = PerspCamNearClip;
+	CamObj[Key::FarClip] = PerspCamFarClip;
+	Root[Key::PerspectiveCamera] = CamObj;
 
 	// Ensure directory exists
 	std::filesystem::path FilePath(FPaths::ToWide(Path));
@@ -120,10 +156,6 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 			CameraRotationSpeed = static_cast<float>(Viewport[Key::CameraRotationSpeed].ToFloat());
 		if (Viewport.hasKey(Key::CameraZoomSpeed))
 			CameraZoomSpeed = static_cast<float>(Viewport[Key::CameraZoomSpeed].ToFloat());
-		if (Viewport.hasKey(Key::CameraMoveSensitivity))
-			CameraMoveSensitivity = static_cast<float>(Viewport[Key::CameraMoveSensitivity].ToFloat());
-		if (Viewport.hasKey(Key::CameraRotateSensitivity))
-			CameraRotateSensitivity = static_cast<float>(Viewport[Key::CameraRotateSensitivity].ToFloat());
 
 		if (Viewport.hasKey(Key::InitViewPos))
 		{
@@ -144,40 +176,6 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		}
 	}
 
-	// View
-	if (Root.hasKey(Key::View))
-	{
-		JSON ViewObj = Root[Key::View];
-
-		if (ViewObj.hasKey(Key::ViewMode))
-		{
-			int32 Mode = ViewObj[Key::ViewMode].ToInt();
-			if (Mode >= 0 && Mode < static_cast<int32>(EViewMode::Count))
-				ViewMode = static_cast<EViewMode>(Mode);
-		}
-		if (ViewObj.hasKey(Key::bPrimitives))
-			ShowFlags.bPrimitives = ViewObj[Key::bPrimitives].ToBool();
-		if (ViewObj.hasKey(Key::bGrid))
-			ShowFlags.bGrid = ViewObj[Key::bGrid].ToBool();
-		if (ViewObj.hasKey(Key::bGizmo))
-			ShowFlags.bGizmo = ViewObj[Key::bGizmo].ToBool();
-		if (ViewObj.hasKey(Key::bBillboardText))
-			ShowFlags.bBillboardText = ViewObj[Key::bBillboardText].ToBool();
-		if (ViewObj.hasKey(Key::bBoundingVolume))
-			ShowFlags.bBoundingVolume = ViewObj[Key::bBoundingVolume].ToBool();
-	}
-
-	// Grid
-	if (Root.hasKey(Key::Grid))
-	{
-		JSON GridObj = Root[Key::Grid];
-
-		if (GridObj.hasKey(Key::GridSpacing))
-			GridSpacing = static_cast<float>(GridObj[Key::GridSpacing].ToFloat());
-		if (GridObj.hasKey(Key::GridHalfLineCount))
-			GridHalfLineCount = GridObj[Key::GridHalfLineCount].ToInt();
-	}
-
 	// Paths
 	if (Root.hasKey(Key::Paths))
 	{
@@ -185,5 +183,85 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 
 		if (PathsObj.hasKey(Key::DefaultSavePath))
 			DefaultSavePath = PathsObj[Key::DefaultSavePath].ToString();
+	}
+
+	// Layout
+	if (Root.hasKey(Key::Layout))
+	{
+		JSON LayoutObj = Root[Key::Layout];
+
+		if (LayoutObj.hasKey(Key::LayoutType))
+			LayoutType = LayoutObj[Key::LayoutType].ToInt();
+
+		if (LayoutObj.hasKey(Key::Slots))
+		{
+			JSON SlotsArr = LayoutObj[Key::Slots];
+			for (int32 i = 0; i < static_cast<int32>(SlotsArr.length()) && i < 4; ++i)
+			{
+				JSON S = SlotsArr[i];
+				FViewportRenderOptions& Opts = SlotOptions[i];
+				if (S.hasKey(Key::ViewMode))
+					Opts.ViewMode = static_cast<EViewMode>(S[Key::ViewMode].ToInt());
+				if (S.hasKey(Key::ViewportType))
+					Opts.ViewportType = static_cast<ELevelViewportType>(S[Key::ViewportType].ToInt());
+				if (S.hasKey(Key::bPrimitives))
+					Opts.ShowFlags.bPrimitives = S[Key::bPrimitives].ToBool();
+				if (S.hasKey(Key::bGrid))
+					Opts.ShowFlags.bGrid = S[Key::bGrid].ToBool();
+				if (S.hasKey(Key::bGizmo))
+					Opts.ShowFlags.bGizmo = S[Key::bGizmo].ToBool();
+				if (S.hasKey(Key::bBillboardText))
+					Opts.ShowFlags.bBillboardText = S[Key::bBillboardText].ToBool();
+				if (S.hasKey(Key::bBoundingVolume))
+					Opts.ShowFlags.bBoundingVolume = S[Key::bBoundingVolume].ToBool();
+				if (S.hasKey(Key::GridSpacing))
+					Opts.GridSpacing = static_cast<float>(S[Key::GridSpacing].ToFloat());
+				if (S.hasKey(Key::GridHalfLineCount))
+					Opts.GridHalfLineCount = S[Key::GridHalfLineCount].ToInt();
+				if (S.hasKey(Key::CameraMoveSensitivity))
+					Opts.CameraMoveSensitivity = static_cast<float>(S[Key::CameraMoveSensitivity].ToFloat());
+				if (S.hasKey(Key::CameraRotateSensitivity))
+					Opts.CameraRotateSensitivity = static_cast<float>(S[Key::CameraRotateSensitivity].ToFloat());
+			}
+		}
+
+		if (LayoutObj.hasKey(Key::SplitterRatios))
+		{
+			JSON RatiosArr = LayoutObj[Key::SplitterRatios];
+			SplitterCount = static_cast<int32>(RatiosArr.length());
+			if (SplitterCount > 3) SplitterCount = 3;
+			for (int32 i = 0; i < SplitterCount; ++i)
+			{
+				SplitterRatios[i] = static_cast<float>(RatiosArr[i].ToFloat());
+			}
+		}
+	}
+
+	// Perspective Camera
+	if (Root.hasKey(Key::PerspectiveCamera))
+	{
+		JSON CamObj = Root[Key::PerspectiveCamera];
+		if (CamObj.hasKey(Key::Location))
+		{
+			JSON L = CamObj[Key::Location];
+			PerspCamLocation = FVector(
+				static_cast<float>(L[0].ToFloat()),
+				static_cast<float>(L[1].ToFloat()),
+				static_cast<float>(L[2].ToFloat()));
+		}
+		if (CamObj.hasKey(Key::Rotation))
+		{
+			JSON R = CamObj[Key::Rotation];
+			PerspCamRotation = FVector(
+				static_cast<float>(R[0].ToFloat()),
+				static_cast<float>(R[1].ToFloat()),
+				static_cast<float>(R[2].ToFloat()));
+		}
+		if (CamObj.hasKey(Key::FOV))
+			PerspCamFOV = static_cast<float>(CamObj[Key::FOV].ToFloat());
+		if (CamObj.hasKey(Key::NearClip))
+			PerspCamNearClip = static_cast<float>(CamObj[Key::NearClip].ToFloat());
+		if (CamObj.hasKey(Key::FarClip))
+			PerspCamFarClip = static_cast<float>(CamObj[Key::FarClip].ToFloat());
 	}
 }
