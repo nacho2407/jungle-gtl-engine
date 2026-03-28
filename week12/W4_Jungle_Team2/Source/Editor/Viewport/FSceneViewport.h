@@ -34,6 +34,16 @@ public:
 	bool OnKeyUp(uint32 Key) override;
 	bool OnChar(uint32 Codepoint) override;
 
+
+	void SetRect(const FViewportRect& InRect) override
+	{
+		Rect = InRect;
+	}
+	const FViewportRect& GetRect() const override
+	{
+		return Rect;
+	}
+
 private:
 	class FViewportClient* Client = nullptr;
 };

@@ -71,7 +71,86 @@ void FEditorViewportClient::Tick(float DeltaTime)
 
 void FEditorViewportClient::BuildSceneView(FSceneView& OutView) const
 {
-	
+	if (!Camera) return;
+	// Renderer 에서 사용할 SceneView 설정 
+	OutView.ViewMatrix           = Camera->GetViewMatrix();
+	OutView.ProjectionMatrix     = Camera->GetProjectionMatrix();
+	OutView.ViewProjectionMatrix = OutView.ViewMatrix * OutView.ProjectionMatrix;
+
+	OutView.CameraPosition = Camera->GetWorldLocation();
+	OutView.CameraForward  = Camera->GetForwardVector();
+	OutView.CameraRight    = Camera->GetRightVector();
+	OutView.CameraUp       = Camera->GetUpVector();
+
+	OutView.bOrthographic = Camera->IsOrthogonal();
+
+	if (State)
+	{
+		OutView.ViewRect = State->Rect;
+		OutView.ViewMode = State->ViewMode;
+	}
+}
+
+void FEditorViewportClient::ApplyCameraMode()
+{
+	if (!Camera) return;
+
+	// 직교 뷰는 기존 회전값이 LookAt에 간섭하지 않도록 초기화
+	Camera->SetRelativeRotation(FVector(0.f, 0.f, 0.f));
+
+	switch (ViewportType)
+	{
+	case EVT_Perspective:
+		Camera->SetOrthographic(false);
+		// Perspective 카메라 위치/방향은 Settings->InitViewPos 기준 유지
+		if (Settings)
+		{
+			Camera->SetWorldLocation(Settings->InitViewPos);
+			Camera->LookAt(Settings->InitLookAt);
+		}
+		break;
+
+	// --- 직교 뷰 (X=Forward, Y=Right, Z=Up) ---
+
+	case EVT_OrthoTop:			// 위에서 아래 (-Z 방향)
+		Camera->SetOrthographic(true);
+		Camera->SetWorldLocation(FVector(0.f, 0.f, 1000.f));
+		Camera->LookAt(FVector(0.f, 0.f, 0.f));
+		break;
+
+	case EVT_OrthoBottom:		// 아래에서 위 (+Z 방향)
+		Camera->SetOrthographic(true);
+		Camera->SetWorldLocation(FVector(0.f, 0.f, -1000.f));
+		Camera->LookAt(FVector(0.f, 0.f, 0.f));
+		break;
+
+	case EVT_OrthoFront:		// 앞(-X)에서 뒤 (+X 방향)
+		Camera->SetOrthographic(true);
+		Camera->SetWorldLocation(FVector(-1000.f, 0.f, 0.f));
+		Camera->LookAt(FVector(0.f, 0.f, 0.f));
+		break;
+
+	case EVT_OrthoBack:			// 뒤(+X)에서 앞 (-X 방향)
+		Camera->SetOrthographic(true);
+		Camera->SetWorldLocation(FVector(1000.f, 0.f, 0.f));
+		Camera->LookAt(FVector(0.f, 0.f, 0.f));
+		break;
+
+	case EVT_OrthoLeft:			// 왼쪽(-Y)에서 오른쪽 (+Y 방향)
+		Camera->SetOrthographic(true);
+		Camera->SetWorldLocation(FVector(0.f, -1000.f, 0.f));
+		Camera->LookAt(FVector(0.f, 0.f, 0.f));
+		break;
+
+	case EVT_OrthoRight:		// 오른쪽(+Y)에서 왼쪽 (-Y 방향)
+		Camera->SetOrthographic(true);
+		Camera->SetWorldLocation(FVector(0.f, 1000.f, 0.f));
+		Camera->LookAt(FVector(0.f, 0.f, 0.f));
+		break;
+
+	default:
+		break;
+	}
 }
 
 bool FEditorViewportClient::OnMouseMove(const FViewportMouseEvent& Ev)
