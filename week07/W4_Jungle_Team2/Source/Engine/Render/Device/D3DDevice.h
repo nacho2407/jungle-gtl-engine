@@ -106,6 +106,13 @@ public:
 
 	void OnResizeViewport(int width, int height);
 
+	/*
+	 * 렌더링 대상 : 지정한 서브 영역으로 제한
+	 * 다중 뷰포트 렌더링 시 각 뷰포트마다 호출.
+	 * BeginFrame 이후, 각 뷰포트 렌더 직전에 호출해야 합니다.
+	 */
+	void SetSubViewport(int32 X, int32 Y, int32 Width, int32 Height);
+
 	ID3D11Device* GetDevice() const;
 	ID3D11DeviceContext* GetDeviceContext() const;
 
