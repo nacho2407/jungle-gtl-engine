@@ -1,8 +1,10 @@
-#pragma once
+﻿#pragma once
 
 #include "Engine/Runtime/Engine.h"
 
 #include "Editor/Viewport/EditorViewportClient.h"
+#include "Editor/Viewport/FSceneViewport.h"
+#include "Editor/EditorUtils.h"
 #include "Editor/UI/EditorMainPanel.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
@@ -25,7 +27,10 @@ public:
 
 	// Editor-specific API
 	UGizmoComponent* GetGizmo() const { return SelectionManager.GetGizmo(); }
-	UCameraComponent* GetCamera() const { return ViewportClient.GetCamera(); }
+
+	// 퍼스펙티브 카메라(인덱스 0)를 반환합니다.
+	UCameraComponent* GetCamera() const { return AllViewportClients[0].GetCamera(); }
+	
 
 	void ClearScene();
 	void ResetViewport();
@@ -39,8 +44,26 @@ public:
 
 	void RenderUI(float DeltaTime);
 
+	// Viewport Get Set
+	static constexpr int32 MaxViewports = 4;
+
+	FEditorViewportClient& GetViewportClient(int32 Index) { return AllViewportClients[Index]; }
+	const FEditorViewportClient& GetViewportClient(int32 Index) const { return AllViewportClients[Index]; }
+
+	FSceneViewport& GetSceneViewport(int32 Index) { return SceneViewports[Index]; }
+	const FSceneViewport& GetSceneViewport(int32 Index) const { return SceneViewports[Index]; }
+
+	FEditorViewportState& GetViewportState(int32 Index) { return ViewportStates[Index]; }
+	const FEditorViewportState& GetViewportState(int32 Index) const { return ViewportStates[Index]; }
+
 private:
+	// Window 크기 기준으로 4개 뷰포트 영역을 계산
+	void UpdateViewportRects(uint32 Width, uint32 Height);
+
 	FSelectionManager SelectionManager;
 	FEditorMainPanel MainPanel;
-	FEditorViewportClient ViewportClient;
+
+	TStaticArray<FEditorViewportClient, MaxViewports> AllViewportClients;
+	TStaticArray<FSceneViewport, MaxViewports>        SceneViewports;
+	TStaticArray<FEditorViewportState, MaxViewports>  ViewportStates;
 };
