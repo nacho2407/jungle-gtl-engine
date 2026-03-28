@@ -1,15 +1,17 @@
-﻿#include "Editor/ObjViewerEngine.h"
+﻿#include "Misc/ObjViewer/ObjViewerEngine.h"
+#include "Misc/ObjViewer/ObjViewerRenderPipeline.h"
 
 #include "Component/CameraComponent.h"
-#include "Component/GizmoComponent.h"
+#include "Engine/Component/StaticMeshComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Core/Logging/Stats.h"
-#include "Editor/ObjViewerRenderPipeline.h"
+#include "Core/ResourceManager.h"
 #include "Engine/GameFramework/PrimitiveActors.h"
 #include "Engine/GameFramework/World.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
 #include "GameFramework/World.h"
+#include "ImGui/imgui.h"
 
 DEFINE_CLASS(UObjViewerEngine, UEngine)
 REGISTER_FACTORY(UObjViewerEngine)
@@ -35,7 +37,7 @@ void UObjViewerEngine::Init(FWindowsWindow* InWindow)
 	// 뷰포트 및 카메라 설정
 	ViewportClient.SetSettings(&FObjViewerSettings::Get());
 	ViewportClient.Initialize(InWindow);
-	ViewportClient.SetViewportSize(InWindow->GetWidth(), InWindow->GetHeight());
+	ViewportClient.SetViewportRect(0, 0, InWindow->GetWidth(), InWindow->GetHeight());
 	ViewportClient.SetWorld(GetWorld());
 
 	// 엔진 시스템에 활성 카메라 등록
@@ -61,18 +63,21 @@ void UObjViewerEngine::BeginPlay()
 	if (!World)
 		return;
 
-	// 테스트용 ACubeActor 생성
-	ACubeActor* PreviewCube = World->SpawnActor<ACubeActor>();
-	PreviewCube->SetActorLocation(FVector(0, 0, 0));
-	PreviewCube->InitDefaultComponents();
+	// 모델 스폰 및 메쉬 세팅
+    AActor* PreviewActor = World->SpawnActor<AActor>();
+    PreviewActor->SetActorLocation(FVector(0, 0, 0));
 
-	// ViewportClient의 카메라 가져오기
-	UCameraComponent* MainCamera = ViewportClient.GetCamera();
-	if (MainCamera)
-	{
-		MainCamera->SetWorldLocation(FVector(2.0f, 3.0f, 3.0f));
-		MainCamera->LookAt(FVector(0.0f, 0.0f, 0.0f));
-	}
+    auto* MeshComp = PreviewActor->AddComponent<UStaticMeshComponent>();
+    // MeshComp->SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Buddah.obj")); 
+    PreviewActor->SetRootComponent(MeshComp);
+
+    // 카메라 세팅은 ViewportClient에게 온전히 위임
+    if (UCameraComponent* MainCamera = ViewportClient.GetCamera())
+    {
+        World->SetActiveCamera(MainCamera);
+    }
+
+	ViewportClient.ResetCamera();
 
 	// 기본 조명 스폰
 	// AStaticLightActor* Light = World->SpawnActor<AStaticLightActor>();
@@ -96,6 +101,7 @@ void UObjViewerEngine::RenderUI(float DeltaTime)
 // 창 크기가 바뀔 때마다 카메라의 비율(Aspect Ratio) 다시 계산
 void UObjViewerEngine::OnWindowResized(uint32 Width, uint32 Height)
 {
+	// TODO-VIEWER: Slate 구조 개편 후 다시 작성하기
 	UEngine::OnWindowResized(Width, Height);
-	ViewportClient.SetViewportSize(Window->GetWidth(), Window->GetHeight());
+    ViewportClient.SetViewportRect(0, 0, Window->GetWidth(), Window->GetHeight());
 }
