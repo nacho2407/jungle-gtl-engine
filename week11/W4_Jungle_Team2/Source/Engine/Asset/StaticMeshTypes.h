@@ -1,12 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Render/Resource/VertexTypes.h"
 #include "Render/Resource/Material.h"
 
 //	Raw Data -> Cooked Static Mesh
-
-class UMaterial;
+struct ID3D11ShaderResourceView;
 
 struct FStaticMeshSection
 {
@@ -19,7 +18,10 @@ struct FStaticMeshMaterialSlot
 {
 	FString SlotName;
 	FMaterial MaterialData;
-	UMaterial* DefaultMaterial = nullptr;
+
+	ID3D11ShaderResourceView* DiffuseSRV = nullptr;
+	ID3D11ShaderResourceView* AmbientSRV = nullptr;
+	ID3D11ShaderResourceView* SpecularSRV = nullptr;
 };
 
 //	CookedData

@@ -180,7 +180,8 @@ bool FObjLoader::BuildStaticMesh()
 
 bool FObjLoader::BindMaterials()
 {
-	// MTL 경로가 없으면 머테리얼 없이 성공으로 처리
+	// MTL 경로가 없거나 로드에 실패하면 머테리얼 없이 성공으로 처리합니다
+
 	if (RawData.ReferencedMtlPath.empty())
 	{
 		return true;
@@ -193,7 +194,6 @@ bool FObjLoader::BindMaterials()
 	TMap<FString, FMaterial> Materials;
 	if (!FObjMtlLoader::Load(MtlPath.string(), Materials))
 	{
-		// MTL 로드 실패해도 메시는 사용 가능하므로 성공 처리
 		return true;
 	}
 
@@ -316,6 +316,7 @@ bool FObjLoader::ParseFaceLine(const FString& Line, const FString& CurrentMateri
 
 	//	surface 정보는 최소한 4개를 보장 (face는 3개가 아닐 수도 있음)
 	//	이후에 triangulation 진행해야 함
+
 	if (Tokens.size() < 4)
 	{
 		return false;
@@ -380,7 +381,6 @@ int32 FObjLoader::GetOrAddMaterialSlot(const FString& MaterialName)
 
 	FStaticMeshMaterialSlot NewSlot = {};
 	NewSlot.SlotName = SlotName;
-	NewSlot.DefaultMaterial = nullptr;
 
 	StaticMeshAsset.MaterialSlots.push_back(NewSlot);
 	return static_cast<int32>(StaticMeshAsset.MaterialSlots.size() - 1);
