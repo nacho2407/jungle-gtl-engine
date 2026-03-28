@@ -9,12 +9,12 @@ public:
 	virtual void Tick(float DeltaTime) {}
 	virtual void Paint() {}
 
-	virtual SWidget* HitTest(int X, int Y) = 0;
+	virtual SWidget* HitTest(int32 X, int32 Y) = 0;
 
-	virtual bool OnMouseMove(int X, int Y) { return false; }
-	virtual bool OnMouseButtonDown(int Button, int X, int Y) { return false; }
-	virtual bool OnMouseButtonUp(int Button, int X, int Y) { return false; }
-	virtual bool OnMouseWheel(int Delta, int X, int Y) { return false; }
+	virtual bool OnMouseMove(int32 X, int32 Y) { return false; }
+	virtual bool OnMouseButtonDown(int32 Button, int32 X, int32 Y) { return false; }
+	virtual bool OnMouseButtonUp(int32 Button, int32 X, int32 Y) { return false; }
+	virtual bool OnMouseWheel(int32 Delta, int32 X, int32 Y) { return false; }
 
 	virtual bool OnKeyDown(uint32 Key) { return false; }
 	virtual bool OnKeyUp(uint32 Key) { return false; }

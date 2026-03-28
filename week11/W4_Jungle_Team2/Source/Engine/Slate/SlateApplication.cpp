@@ -31,22 +31,22 @@ void FSlateApplication::Paint()
 
 }
 
-bool FSlateApplication::OnMouseMove(void* hwnd, int X, int Y)
+bool FSlateApplication::OnMouseMove(void* hwnd, int32 X, int32 Y)
 {
 	return false;
 }
 
-bool FSlateApplication::OnMouseButtonDown(void* hwnd, int Button, int X, int Y)
+bool FSlateApplication::OnMouseButtonDown(void* hwnd, int32 Button, int32 X, int32 Y)
 {
 	return false;
 }
 
-bool FSlateApplication::OnMouseButtonUp(void* hwnd, int Button, int X, int Y)
+bool FSlateApplication::OnMouseButtonUp(void* hwnd, int32 Button, int32 X, int32 Y)
 {
 	return false;
 }
 
-bool FSlateApplication::OnMouseWheel(void* hwnd, int Delta, int X, int Y)
+bool FSlateApplication::OnMouseWheel(void* hwnd, int32 Delta, int32 X, int32 Y)
 {
 	return false;
 }
@@ -66,7 +66,7 @@ bool FSlateApplication::OnChar(void* hwnd, uint32 Codepoint)
 	return false;
 }
 
-bool FSlateApplication::OnResize(void* hwnd, int Width, int Height)
+bool FSlateApplication::OnResize(void* hwnd, int32 Width, int32 Height)
 {
 	return false;
 }
@@ -81,7 +81,7 @@ bool FSlateApplication::OnKillFocus(void* hwnd)
 	return false;
 }
 
-SWidget* FSlateApplication::HitTest(int X, int Y)
+SWidget* FSlateApplication::HitTest(int32 X, int32 Y)
 {
 	return nullptr;
 }

@@ -14,9 +14,9 @@ class SSplitter : public SWindow
 public:
 
 	// Mouse Callbac
-	bool OnMouseMove(int X, int Y) override;
-	bool OnMouseButtonDown(int Button, int X, int Y) override;
-	bool OnMouseButtonUp(int Button, int X, int Y) override;
+	bool OnMouseMove(int32 X, int32 Y) override;
+	bool OnMouseButtonDown(int32 Button, int32 X, int32 Y) override;
+	bool OnMouseButtonUp(int32 Button, int32 X, int32 Y) override;
 
 	virtual void UpdateCildRect() { }
 
@@ -35,7 +35,7 @@ public:
 	void SetSideRB(SWindow* InSideRB) { SideRB = InSideRB; }
 	
 	// SplitRatio
-	void SetSplitRatio(float InRatio) { }
+	void SetSplitRatio(float InRatio) { SplitRatio = InRatio; }
 	float GetSplitRatio() const { return SplitRatio; }
 
 private:
