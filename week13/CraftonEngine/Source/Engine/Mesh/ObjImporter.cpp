@@ -3,29 +3,36 @@
 #include "Editor/UI/EditorConsoleWidget.h"
 #include <fstream>
 #include <sstream>
-#include <charconv>
 #include <map>
+#include <filesystem>
 
-struct FVertexKey
-{
-	uint32 p, t, n;
-	bool operator<(const FVertexKey& Other) const
-	{
-		if (p != Other.p) return p < Other.p;
-		if (t != Other.t) return t < Other.t;
-		return n < Other.n;
-	}
+struct FVertexKey {
+    uint32 p, t, n;
+    bool operator==(const FVertexKey& Other) const {
+        return p == Other.p && t == Other.t && n == Other.n;
+    }
 };
 
-FObjInfo FObjImporter::ParseObj(const std::string& FilePath)
+namespace std {
+template<>
+struct hash<FVertexKey>
+{
+    size_t operator()(const FVertexKey& Key) const noexcept
+    {
+        return ((size_t)Key.p) ^ (((size_t)Key.t) << 8) ^ (((size_t)Key.n) << 16);
+    }
+};
+}
+
+FObjInfo FObjImporter::ParseObj(const FString& ObjFilePath)
 {
 	FObjInfo ObjInfo;
 	// TODO: 파일을 미리 탐색해서 reserve로 용량을 할당하고 파싱 시작하기
-	std::ifstream File(FilePath);
+	std::ifstream File(ObjFilePath);
 
 	if (!File.is_open())
 	{
-		UE_LOG("Failed to open OBJ file: %s", FilePath.c_str());
+		UE_LOG("Failed to open OBJ file: %s", ObjFilePath.c_str());
 		return ObjInfo;
 	}
 
@@ -61,16 +68,15 @@ FObjInfo FObjImporter::ParseObj(const std::string& FilePath)
 		else if (Prefix == "f")
 		{
 			// default material section 추가 (usemtl이 없는 경우)
-			if (ObjInfo.MaterialSections.empty())
+			if (ObjInfo.Sections.empty())
 			{
-				FObjInfo::FObjMaterialSection DefaultSection;
-				DefaultSection.MaterialName = "Default";
-				DefaultSection.StartIndex = 0;
-				DefaultSection.IndexCount = 0;
-				ObjInfo.MaterialSections.emplace_back(DefaultSection);
+				FStaticMeshSection DefaultSection;
+				DefaultSection.MaterialSlotName = FName::None;
+				DefaultSection.FirstIndex = 0;
+				DefaultSection.NumTriangles = 0;
+				ObjInfo.Sections.emplace_back(DefaultSection);
 			}
 
-			// TODO: (v, vt, vn) 모두 존재하고 Face가 삼각형이며 양수 인덱스라고 가정
 			std::string FaceVertex;
 			for (int i = 0; i < 3; ++i)
 			{
@@ -92,18 +98,25 @@ FObjInfo FObjImporter::ParseObj(const std::string& FilePath)
 		}
 		else if (Prefix == "mtllib")
 		{
-			LineStream >> ObjInfo.MaterialLibrary;
+			std::string MtlFileName;
+			LineStream >> MtlFileName;
+
+			std::filesystem::path ObjPath(ObjFilePath);
+			ObjInfo.MaterialLibraryFilePath = (ObjPath.parent_path() / MtlFileName).string();
 		}
 		else if (Prefix == "usemtl")
 		{
-			if (!ObjInfo.MaterialSections.empty())
+			if (!ObjInfo.Sections.empty())
 			{
-				ObjInfo.MaterialSections.back().IndexCount = static_cast<uint32>(ObjInfo.PosIndices.size()) - ObjInfo.MaterialSections.back().StartIndex;
+				ObjInfo.Sections.back().NumTriangles = (static_cast<uint32>(ObjInfo.PosIndices.size()) - ObjInfo.Sections.back().FirstIndex) / 3;
 			}
-			FObjInfo::FObjMaterialSection Section;
-			LineStream >> Section.MaterialName;
-			Section.StartIndex = static_cast<uint32>(ObjInfo.PosIndices.size());
-			ObjInfo.MaterialSections.emplace_back(Section);
+			FStaticMeshSection Section;
+			FString MaterialSlotName;
+			LineStream >> MaterialSlotName;
+			// TODO: UTF8 지원하는지 확인 필요
+			Section.MaterialSlotName = MaterialSlotName;
+			Section.FirstIndex = static_cast<uint32>(ObjInfo.PosIndices.size());
+			ObjInfo.Sections.emplace_back(Section);
 		}
 		else if (Prefix == "o")
 		{
@@ -111,21 +124,21 @@ FObjInfo FObjImporter::ParseObj(const std::string& FilePath)
 		}
 	}
 
-	if (!ObjInfo.MaterialSections.empty())
+	if (!ObjInfo.Sections.empty())
 	{
-		ObjInfo.MaterialSections.back().IndexCount = static_cast<uint32>(ObjInfo.PosIndices.size()) - ObjInfo.MaterialSections.back().StartIndex;
+		ObjInfo.Sections.back().NumTriangles = (static_cast<uint32>(ObjInfo.PosIndices.size()) - ObjInfo.Sections.back().FirstIndex) / 3;
 	}
 	return ObjInfo;
 }
 
-TArray<FObjMaterialInfo> FObjImporter::ParseMtl(const std::string& MtlPath)
+TArray<FObjMaterialInfo> FObjImporter::ParseMtl(const FString& MtlFilePath)
 {
 	TArray<FObjMaterialInfo> MaterialInfos;
-	std::ifstream File(MtlPath);
+	std::ifstream File(MtlFilePath);
 
 	if (!File.is_open())
 	{
-		UE_LOG("Failed to open MTL file: %s", MtlPath.c_str());
+		UE_LOG("Failed to open MTL file: %s", MtlFilePath.c_str());
 		return MaterialInfos;
 	}
 
@@ -143,7 +156,10 @@ TArray<FObjMaterialInfo> FObjImporter::ParseMtl(const std::string& MtlPath)
 		else if (Prefix == "newmtl")
 		{
 			FObjMaterialInfo MaterialInfo;
-			LineStream >> MaterialInfo.Name;
+			FString MaterialSlotName;
+			LineStream >> MaterialSlotName;
+			
+			MaterialInfo.MaterialSlotName = MaterialSlotName;
 			MaterialInfos.emplace_back(MaterialInfo);
 		}
 		else if (Prefix == "Kd")
@@ -162,9 +178,9 @@ TArray<FObjMaterialInfo> FObjImporter::ParseMtl(const std::string& MtlPath)
 			{
 				continue;
 			}
-			std::string TexturePath;
-			LineStream >> TexturePath;
-			MaterialInfos.back().DiffuseTexture = TexturePath;
+			std::string TextureFilePath;
+			LineStream >> TextureFilePath;
+			MaterialInfos.back().DiffuseTexture = TextureFilePath;
 		}
 	}
 
@@ -179,7 +195,7 @@ FStaticMesh FObjImporter::Convert(const FObjInfo& ObjInfo)
 	FStaticMesh OutMesh = FStaticMesh();
 
 	// TODO: unordered_map은 FVertexKey의 해시 함수를 정의해야 해서 map으로 대체
-	std::map<FVertexKey, uint32> VertexMap;
+	TMap<FVertexKey, uint32> VertexMap;
 
 	// for each Triangle (3 indices)
 	const size_t IndexCount = ObjInfo.PosIndices.size();
