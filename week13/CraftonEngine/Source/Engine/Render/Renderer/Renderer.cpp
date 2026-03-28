@@ -175,6 +175,7 @@ void FRenderer::InitializePassRenderStates()
 	S[(uint32)E::Grid] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     &Resources.EditorShader,    false };
 	S[(uint32)E::DepthLess] = { EDepthStencilState::DepthReadOnly,EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.GizmoShader,     false };
 	S[(uint32)E::Font] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, nullptr,                    true };
+	S[(uint32)E::OverlayFont] = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, nullptr,                    true };
 	S[(uint32)E::SubUV] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, nullptr,                    true };
 }
 
@@ -223,7 +224,7 @@ void FRenderer::InitializePassBatchers()
 	PassBatchers[(uint32)ERenderPass::Font] = {
 		/*.Clear   =*/ [this]() { FontBatcher.Clear(); },
 		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus& Bus) {
-			if (Cmd.Type == ERenderCommandType::Font && Cmd.Constants.Font.Text && !Cmd.Constants.Font.Text->empty())
+			if (Cmd.Type == ERenderCommandType::Font && Cmd.Constants.Font.Text && !Cmd.Constants.Font.Text->empty() && !Cmd.Constants.Font.bScreenSpace)
 			{
 				FontBatcher.AddText(
 					*Cmd.Constants.Font.Text,
@@ -238,6 +239,28 @@ void FRenderer::InitializePassBatchers()
 		/*.Flush   =*/ [this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
 			const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
 			FontBatcher.Flush(Ctx, FontRes);
+		}
+	};
+
+	// --- OverlayFont 패스: 스크린 텍스트 → FontBatcher ---
+	PassBatchers[(uint32)ERenderPass::OverlayFont] = {
+		/*.Clear   =*/ [this]() {FontBatcher.ClearScreen(); }, // Font 시작 시에 클리어
+		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus& Bus) {
+			if (Cmd.Type == ERenderCommandType::Font && Cmd.Constants.Font.Text && !Cmd.Constants.Font.Text->empty() && Cmd.Constants.Font.bScreenSpace)
+			{
+				FontBatcher.AddScreenText(
+					*Cmd.Constants.Font.Text,
+					Cmd.Constants.Font.ScreenPosition.X,
+					Cmd.Constants.Font.ScreenPosition.Y,
+					Bus.GetViewportWidth(),
+					Bus.GetViewportHeight(),
+					Cmd.Constants.Font.Scale
+				);
+			}
+		},
+		/*.Flush   =*/ [this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
+			const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
+			FontBatcher.FlushScreen(Ctx, FontRes);
 		}
 	};
 
