@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -40,6 +40,8 @@
     <ClInclude Include="Source\Asset\SubUVAtlasLoader.h" />
     <ClInclude Include="Source\Asset\Texture2DAsset.h" />
     <ClInclude Include="Source\Asset\TextureLoader.h" />
+    <ClInclude Include="Source\CoreUObject\UObjectArray.h" />
+    <ClInclude Include="Source\CoreUObject\UObjectIterator.h" />
     <ClInclude Include="Source\Core\Containers\Array.h" />
     <ClInclude Include="Source\Core\Containers\LinkedList.h" />
     <ClInclude Include="Source\Core\Containers\Map.h" />
@@ -178,6 +180,8 @@
     <ClCompile Include="Source\Asset\SubUVAtlasLoader.cpp" />
     <ClCompile Include="Source\Asset\Texture2DAsset.cpp" />
     <ClCompile Include="Source\Asset\TextureLoader.cpp" />
+    <ClCompile Include="Source\CoreUObject\UObjectIterator.cpp" />
+    <ClCompile Include="Source\CoreUObject\UObjectArray.cpp" />
     <ClCompile Include="Source\Core\CoreGlobals.cpp" />
     <ClCompile Include="Source\Core\CoreMinimal.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -262,13 +266,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>

@@ -357,6 +357,7 @@
     <ClCompile Include="Source\SceneIO\SceneTypeRegistry.cpp">
       <Filter>Source\SceneIO</Filter>
     </ClCompile>
+    <ClCompile Include="Source\CoreUObject\ObjectArray.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Mesh\Cone.h">
@@ -800,6 +801,8 @@
     <ClInclude Include="Source\ThirdParty\Json\json.hpp">
       <Filter>Source\ThirdParty\Json</Filter>
     </ClInclude>
+    <ClInclude Include="Source\CoreUObject\ObjectItem.h" />
+    <ClInclude Include="Source\CoreUObject\ObjectArray.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

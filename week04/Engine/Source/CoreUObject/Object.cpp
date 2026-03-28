@@ -1,8 +1,11 @@
 #include "Core/CoreMinimal.h"
-#include "Engine/EngineStatics.h"
+
 #include "Object.h"
 
-TArray<UObject*> GUObjectArray;
+#include "CoreUObject/UObjectArray.h"
+#include "Engine/EngineStatics.h"
+
+ENGINE_API FUObjectArray GUObjectArray;
 
 namespace
 {
@@ -43,8 +46,8 @@ namespace
 UObject::UObject()
 {
 	UUID = UEngineStatics::GenUUID();
-	InternalIndex = static_cast<uint32>(GUObjectArray.size());
-	GUObjectArray.push_back(this);
+
+    GUObjectArray.AllocateObjectIndex(this);
 
     const FString ObjectName = ResolveObjectName(this);
     UE_LOG(UObject, ELogVerbosity::Log, "Created %s (UUID=%u, Name=%s, Address=%p)",
@@ -57,10 +60,7 @@ UObject::~UObject()
     UE_LOG(UObject, ELogVerbosity::Log, "Destroyed %s (UUID=%u, Name=%s, Address=%p)",
            ResolveAllocatedObjectTypeName(this), UUID, ObjectName.c_str(), this);
 
-	if (InternalIndex < GUObjectArray.size() && GUObjectArray[InternalIndex] == this)
-	{
-		GUObjectArray[InternalIndex] = nullptr;
-	}
+	GUObjectArray.FreeObjectIndex(InternalIndex, this);
 
     GetAllocatedObjectTypeNames().erase(this);
 }
@@ -96,6 +96,23 @@ void UObject::FreeObject(void* Pointer, size_t Size)
 	UEngineStatics::TotalAllocationCount--;
 
 	::operator delete(Pointer, Size);
+}
+
+bool UObject::IsValidLowLevel() const
+{
+    if (InternalIndex >= GUObjectArray.Num())
+    {
+        return false;
+    }
+
+    const FUObjectItem* TempItem = GUObjectArray.GetObjectItem(InternalIndex);
+
+    if (TempItem == nullptr || TempItem->Object == nullptr || TempItem->Object != this)
+    {
+        return false;
+    }
+
+    return true;
 }
 
 REGISTER_CLASS(, UObject)

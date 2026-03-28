@@ -61,6 +61,9 @@
     <Filter Include="Source\Viewport\Selection">
       <UniqueIdentifier>{c02bdf14-d23c-3f72-e5f4-7a918dc1b5dc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Tests">
+      <UniqueIdentifier>{f4c8c8ce-a8ec-4db5-9b81-5708ef9c0f13}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Camera\ViewportCamera.cpp">
@@ -131,6 +134,9 @@
     </ClCompile>
     <ClCompile Include="Source\Panel\StatePanel.cpp">
       <Filter>Source\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Tests\ObjectIteratorSmokeTest.cpp">
+      <Filter>Source\Tests</Filter>
     </ClCompile>
     <ClCompile Include="Source\ThirdParty\ImGui\imgui.cpp">
       <Filter>Source\ThirdParty\ImGui</Filter>
@@ -265,6 +271,9 @@
     </ClInclude>
     <ClInclude Include="Source\Panel\StatePanel.h">
       <Filter>Source\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Tests\ObjectIteratorSmokeTest.h">
+      <Filter>Source\Tests</Filter>
     </ClInclude>
     <ClInclude Include="Source\ThirdParty\ImGui\imconfig.h">
       <Filter>Source\ThirdParty\ImGui</Filter>
