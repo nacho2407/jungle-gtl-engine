@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source">
@@ -132,13 +132,13 @@
     <ClCompile Include="Source\Core\ConsoleVariableManager.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Core.cpp">
+    <ClCompile Include="Source\Core\Engine.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\FEngine.cpp">
+    <ClCompile Include="Source\Core\GameEngine.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\FTimer.cpp">
+    <ClCompile Include="Source\Core\Timer.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Paths.cpp">
@@ -207,10 +207,13 @@
     <ClCompile Include="Source\Platform\Windows\PlatformGlobals.cpp">
       <Filter>Source\Platform\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Platform\Windows\Window.cpp">
+    <ClCompile Include="Source\Platform\Windows\WindowsEngineLaunch.cpp">
       <Filter>Source\Platform\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Platform\Windows\WindowApplication.cpp">
+    <ClCompile Include="Source\Platform\Windows\WindowsWindow.cpp">
+      <Filter>Source\Platform\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Platform\Windows\WindowsApplication.cpp">
       <Filter>Source\Platform\Windows</Filter>
     </ClCompile>
     <ClCompile Include="Source\Primitive\PrimitiveBase.cpp">
@@ -282,9 +285,6 @@
     <ClCompile Include="Source\Scene\Scene.cpp">
       <Filter>Source\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Scene\SceneManager.cpp">
-      <Filter>Source\Scene</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Serializer\Archive.cpp">
       <Filter>Source\Serializer</Filter>
     </ClCompile>
@@ -312,6 +312,7 @@
     <ClCompile Include="Source\Renderer\MeshData.cpp" />
     <ClCompile Include="Source\Obj\ObjManager.cpp" />
     <ClCompile Include="Source\Actor\StaticMeshActor.cpp" />
+    <ClCompile Include="Source\Core\EngineLoop.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\CoreMinimal.h">
@@ -389,13 +390,13 @@
     <ClInclude Include="Source\Core\ConsoleVariableManager.h">
       <Filter>Source\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Core.h">
+    <ClInclude Include="Source\Core\Engine.h">
       <Filter>Source\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\FEngine.h">
+    <ClInclude Include="Source\Core\GameEngine.h">
       <Filter>Source\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\FTimer.h">
+    <ClInclude Include="Source\Core\Timer.h">
       <Filter>Source\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Paths.h">
@@ -485,10 +486,13 @@
     <ClInclude Include="Source\Platform\Windows\PlatformGlobals.h">
       <Filter>Source\Platform\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Platform\Windows\Window.h">
+    <ClInclude Include="Source\Platform\Windows\WindowsEngineLaunch.h">
       <Filter>Source\Platform\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Platform\Windows\WindowApplication.h">
+    <ClInclude Include="Source\Platform\Windows\WindowsWindow.h">
+      <Filter>Source\Platform\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Platform\Windows\WindowsApplication.h">
       <Filter>Source\Platform\Windows</Filter>
     </ClInclude>
     <ClInclude Include="Source\Platform\Windows\WindowTypes.h">
@@ -575,10 +579,7 @@
     <ClInclude Include="Source\Scene\SceneContext.h">
       <Filter>Source\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Scene\SceneManager.h">
-      <Filter>Source\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Scene\SceneTypes.h">
+    <ClInclude Include="Source\Scene\WorldTypes.h">
       <Filter>Source\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Serializer\Archive.h">
@@ -647,6 +648,7 @@
     <ClInclude Include="Source\Renderer\MeshData.h" />
     <ClInclude Include="Source\Obj\ObjManager.h" />
     <ClInclude Include="Source\Actor\StaticMeshActor.h" />
+    <ClInclude Include="Source\Core\EngineLoop.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -5,5 +5,5 @@ class ENGINE_API USphereComponent : public UPrimitiveComponent
 {
 	DECLARE_RTTI(USphereComponent, UPrimitiveComponent)
 
-	void Initialize();
+	void PostConstruct() override;
 };

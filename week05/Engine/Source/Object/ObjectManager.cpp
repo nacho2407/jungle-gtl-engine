@@ -7,12 +7,12 @@
 
 constexpr int32 GUObjectArrayReserveSize = 32768;
 
-ObjectManager::ObjectManager()
+FObjectManager::FObjectManager()
 {
 	GUObjectArray.reserve(GUObjectArrayReserveSize);
 }
 
-ObjectManager::~ObjectManager()
+FObjectManager::~FObjectManager()
 {
 	// GUObjectArray에 남은 오브젝트 전부 해제
 	for (UObject* Obj : GUObjectArray)
@@ -25,7 +25,7 @@ ObjectManager::~ObjectManager()
 	GUObjectArray.clear();
 }
 
-UObject* ObjectManager::SpawnObject(
+UObject* FObjectManager::SpawnObject(
 	UClass* InClass,
 	UObject* InOuter,
 	const FString& InName)
@@ -33,7 +33,7 @@ UObject* ObjectManager::SpawnObject(
 	return FObjectFactory::ConstructObject(InClass, InOuter, InName);
 }
 
-void ObjectManager::ReleaseObject(UObject* obj)
+void FObjectManager::ReleaseObject(UObject* obj)
 {
 	if (!obj) return;
 
@@ -43,7 +43,7 @@ void ObjectManager::ReleaseObject(UObject* obj)
 	delete obj;
 }
 
-void ObjectManager::FlushKilledObjects()
+void FObjectManager::FlushKilledObjects()
 {
 	int32 PrevCount = static_cast<int32>(GUObjectArray.size());
 	int32 KilledCount = 0;

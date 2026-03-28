@@ -1,7 +1,7 @@
 #include "RenderStateManager.h"
 #include "RenderState.h"
 
-void CRenderStateManager::PrepareCommonStates()
+void FRenderStateManager::PrepareCommonStates()
 {
 	// 예: Solid/Wireframe x Cull None/Back/Front
 	D3D11_FILL_MODE fills[] = { D3D11_FILL_SOLID, D3D11_FILL_WIREFRAME };
@@ -31,7 +31,7 @@ void CRenderStateManager::PrepareCommonStates()
 	GetOrCreateBlendState(blendOpt);
 }
 
-std::shared_ptr<FRasterizerState> CRenderStateManager::GetOrCreateRasterizerState(const FRasterizerStateOption& opt)
+std::shared_ptr<FRasterizerState> FRenderStateManager::GetOrCreateRasterizerState(const FRasterizerStateOption& opt)
 {
 	uint32 key = opt.ToKey();
 	auto it = RasterizerStateMap.find(key);
@@ -43,7 +43,7 @@ std::shared_ptr<FRasterizerState> CRenderStateManager::GetOrCreateRasterizerStat
 	return state;
 }
 
-std::shared_ptr<FDepthStencilState> CRenderStateManager::GetOrCreateDepthStencilState(const FDepthStencilStateOption& opt)
+std::shared_ptr<FDepthStencilState> FRenderStateManager::GetOrCreateDepthStencilState(const FDepthStencilStateOption& opt)
 {
 	uint32 key = opt.ToKey();
 	auto it = DepthStencilStateMap.find(key);
@@ -55,7 +55,7 @@ std::shared_ptr<FDepthStencilState> CRenderStateManager::GetOrCreateDepthStencil
 	return state;
 }
 
-std::shared_ptr<FBlendState> CRenderStateManager::GetOrCreateBlendState(const FBlendStateOption& opt)
+std::shared_ptr<FBlendState> FRenderStateManager::GetOrCreateBlendState(const FBlendStateOption& opt)
 {
 	uint32 key = opt.ToKey();
 	auto it = BlendStateMap.find(key);
@@ -67,7 +67,7 @@ std::shared_ptr<FBlendState> CRenderStateManager::GetOrCreateBlendState(const FB
 	return state;
 }
 
-void CRenderStateManager::BindState(std::shared_ptr<FRasterizerState> InRS)
+void FRenderStateManager::BindState(std::shared_ptr<FRasterizerState> InRS)
 {
 	if (InRS != nullptr && CurrentRasterizerState != InRS)
 	{
@@ -76,7 +76,7 @@ void CRenderStateManager::BindState(std::shared_ptr<FRasterizerState> InRS)
 	}
 }
 
-void CRenderStateManager::BindState(std::shared_ptr<FDepthStencilState> InDSS)
+void FRenderStateManager::BindState(std::shared_ptr<FDepthStencilState> InDSS)
 {
 	if (InDSS != nullptr && CurrentDepthStencilState != InDSS)
 	{
@@ -85,7 +85,7 @@ void CRenderStateManager::BindState(std::shared_ptr<FDepthStencilState> InDSS)
 	}
 }
 
-void CRenderStateManager::BindState(std::shared_ptr<FBlendState> InBS)
+void FRenderStateManager::BindState(std::shared_ptr<FBlendState> InBS)
 {
 	if (InBS != nullptr && CurrentBlendState != InBS)
 	{
@@ -94,7 +94,7 @@ void CRenderStateManager::BindState(std::shared_ptr<FBlendState> InBS)
 	}
 }
 
-void CRenderStateManager::RebindState()
+void FRenderStateManager::RebindState()
 {
 	if (CurrentRasterizerState) CurrentRasterizerState->Bind(DeviceContext);
 	if (CurrentDepthStencilState) CurrentDepthStencilState->Bind(DeviceContext);

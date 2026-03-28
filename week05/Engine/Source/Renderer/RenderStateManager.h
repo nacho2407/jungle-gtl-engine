@@ -10,7 +10,7 @@ using Microsoft::WRL::ComPtr;
 
 /// RasterizerState, BlendState, DepthStencilState 등의 Renderer state 담당
 /// 현재 RasterizerState만 적용된 상태
-class ENGINE_API CRenderStateManager
+class ENGINE_API FRenderStateManager
 {
 private:
 	ID3D11Device* Device;
@@ -24,7 +24,7 @@ private:
 	std::shared_ptr<FBlendState> CurrentBlendState = nullptr;
 
 public:
-	CRenderStateManager(ID3D11Device* InDevice, ID3D11DeviceContext* InDeviceContext) 
+	FRenderStateManager(ID3D11Device* InDevice, ID3D11DeviceContext* InDeviceContext)
 		: Device(InDevice)
 		, DeviceContext(InDeviceContext)
 	{}

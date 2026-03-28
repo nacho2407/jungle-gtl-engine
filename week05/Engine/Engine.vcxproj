@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Core\EngineLoop.h" />
+    <ClInclude Include="Source\Core\GameEngine.h" />
     <ClInclude Include="PrimitiveLineBatch.h" />
     <ClInclude Include="Source\Actor\StaticMeshActor.h" />
     <ClInclude Include="Source\Actor\TextActor.h" />
@@ -51,9 +53,8 @@
     <ClInclude Include="Source\Component\SubUVComponent.h" />
     <ClInclude Include="Source\Component\UUIDBillboardComponent.h" />
     <ClInclude Include="Source\Core\ConsoleVariableManager.h" />
-    <ClInclude Include="Source\Core\Core.h" />
-    <ClInclude Include="Source\Core\FEngine.h" />
-    <ClInclude Include="Source\Core\FTimer.h" />
+    <ClInclude Include="Source\Core\Engine.h" />
+    <ClInclude Include="Source\Core\Timer.h" />
     <ClInclude Include="Source\Core\Paths.h" />
     <ClInclude Include="Source\Core\ShowFlags.h" />
     <ClInclude Include="Source\Core\ViewportClient.h" />
@@ -84,8 +85,9 @@
     <ClInclude Include="Source\Obj\ObjManager.h" />
     <ClInclude Include="Source\Physics\PhysicsManager.h" />
     <ClInclude Include="Source\Platform\Windows\PlatformGlobals.h" />
-    <ClInclude Include="Source\Platform\Windows\Window.h" />
-    <ClInclude Include="Source\Platform\Windows\WindowApplication.h" />
+    <ClInclude Include="Source\Platform\Windows\WindowsEngineLaunch.h" />
+    <ClInclude Include="Source\Platform\Windows\WindowsWindow.h" />
+    <ClInclude Include="Source\Platform\Windows\WindowsApplication.h" />
     <ClInclude Include="Source\Platform\Windows\WindowTypes.h" />
     <ClInclude Include="Source\Primitive\PrimitiveBase.h" />
     <ClInclude Include="Source\Primitive\PrimitiveCube.h" />
@@ -117,8 +119,7 @@
     <ClInclude Include="Source\Scene\RenderCollector.h" />
     <ClInclude Include="Source\Scene\Scene.h" />
     <ClInclude Include="Source\Scene\SceneContext.h" />
-    <ClInclude Include="Source\Scene\SceneManager.h" />
-    <ClInclude Include="Source\Scene\SceneTypes.h" />
+    <ClInclude Include="Source\Scene\WorldTypes.h" />
     <ClInclude Include="Source\Serializer\Archive.h" />
     <ClInclude Include="Source\Serializer\SceneSerializer.h" />
     <ClInclude Include="Source\Types\Array.h" />
@@ -138,6 +139,8 @@
     <ClInclude Include="ThirdParty\nlohmann\json.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Core\EngineLoop.cpp" />
+    <ClCompile Include="Source\Core\GameEngine.cpp" />
     <ClCompile Include="PrimitiveLineBatch.cpp" />
     <ClCompile Include="Source\Actor\Actor.cpp" />
     <ClCompile Include="Source\Actor\StaticMeshActor.cpp" />
@@ -168,9 +171,8 @@
     <ClCompile Include="Source\Component\StaticMeshComponent.cpp" />
     <ClCompile Include="Source\Component\UUIDBillboardComponent.cpp" />
     <ClCompile Include="Source\Core\ConsoleVariableManager.cpp" />
-    <ClCompile Include="Source\Core\Core.cpp" />
-    <ClCompile Include="Source\Core\FEngine.cpp" />
-    <ClCompile Include="Source\Core\FTimer.cpp" />
+    <ClCompile Include="Source\Core\Engine.cpp" />
+    <ClCompile Include="Source\Core\Timer.cpp" />
     <ClCompile Include="Source\Core\Paths.cpp" />
     <ClCompile Include="Source\Core\ShowFlags.cpp" />
     <ClCompile Include="Source\Core\ViewportClient.cpp" />
@@ -194,8 +196,9 @@
     <ClCompile Include="Source\Obj\ObjManager.cpp" />
     <ClCompile Include="Source\Physics\PhysicsManager.cpp" />
     <ClCompile Include="Source\Platform\Windows\PlatformGlobals.cpp" />
-    <ClCompile Include="Source\Platform\Windows\Window.cpp" />
-    <ClCompile Include="Source\Platform\Windows\WindowApplication.cpp" />
+    <ClCompile Include="Source\Platform\Windows\WindowsEngineLaunch.cpp" />
+    <ClCompile Include="Source\Platform\Windows\WindowsWindow.cpp" />
+    <ClCompile Include="Source\Platform\Windows\WindowsApplication.cpp" />
     <ClCompile Include="Source\Primitive\PrimitiveBase.cpp" />
     <ClCompile Include="Source\Primitive\PrimitiveCube.cpp" />
     <ClCompile Include="Source\Primitive\PrimitiveGizmo.cpp" />
@@ -221,7 +224,6 @@
     <ClCompile Include="Source\Renderer\TextMeshBuilder.cpp" />
     <ClCompile Include="Source\Scene\RenderCollector.cpp" />
     <ClCompile Include="Source\Scene\Scene.cpp" />
-    <ClCompile Include="Source\Scene\SceneManager.cpp" />
     <ClCompile Include="Source\Serializer\Archive.cpp" />
     <ClCompile Include="Source\Serializer\SceneSerializer.cpp" />
     <ClCompile Include="Source\Types\Name.cpp" />

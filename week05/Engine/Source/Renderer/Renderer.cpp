@@ -22,17 +22,17 @@ static FVector GetCameraWorldPositionFromViewMatrix(const FMatrix& ViewMatrix)
 	return FVector(InvView.M[3][0], InvView.M[3][1], InvView.M[3][2]);
 }
 
-CRenderer::CRenderer(HWND InHwnd, int32 InWidth, int32 InHeight)
+FRenderer::FRenderer(HWND InHwnd, int32 InWidth, int32 InHeight)
 {
 	Initialize(InHwnd, InWidth, InHeight);
 }
 
-CRenderer::~CRenderer()
+FRenderer::~FRenderer()
 {
 	Release();
 }
 
-void CRenderer::SetSceneRenderTarget(ID3D11RenderTargetView* InRenderTargetView, ID3D11DepthStencilView* InDepthStencilView, const D3D11_VIEWPORT& InViewport)
+void FRenderer::SetSceneRenderTarget(ID3D11RenderTargetView* InRenderTargetView, ID3D11DepthStencilView* InDepthStencilView, const D3D11_VIEWPORT& InViewport)
 {
 	SceneRenderTargetView = InRenderTargetView;
 	SceneDepthStencilView = InDepthStencilView;
@@ -40,7 +40,7 @@ void CRenderer::SetSceneRenderTarget(ID3D11RenderTargetView* InRenderTargetView,
 	bUseSceneRenderTargetOverride = (SceneRenderTargetView != nullptr && SceneDepthStencilView != nullptr);
 }
 
-void CRenderer::ClearSceneRenderTarget()
+void FRenderer::ClearSceneRenderTarget()
 {
 	SceneRenderTargetView = nullptr;
 	SceneDepthStencilView = nullptr;
@@ -48,7 +48,7 @@ void CRenderer::ClearSceneRenderTarget()
 	bUseSceneRenderTargetOverride = false;
 }
 
-void CRenderer::SetGUICallbacks(
+void FRenderer::SetGUICallbacks(
 	FGUICallback InInit,
 	FGUICallback InShutdown,
 	FGUICallback InNewFrame,
@@ -67,12 +67,12 @@ void CRenderer::SetGUICallbacks(
 	}
 }
 
-void CRenderer::SetGUIUpdateCallback(FGUICallback InUpdate)
+void FRenderer::SetGUIUpdateCallback(FGUICallback InUpdate)
 {
 	GUIUpdate = std::move(InUpdate);
 }
 
-void CRenderer::ClearViewportCallbacks()
+void FRenderer::ClearViewportCallbacks()
 {
 	if (GUIShutdown)
 	{
@@ -88,7 +88,7 @@ void CRenderer::ClearViewportCallbacks()
 	PostRenderCallback = nullptr;
 }
 
-bool CRenderer::CreateDeviceAndSwapChain(HWND InHwnd, int32 Width, int32 Height)
+bool FRenderer::CreateDeviceAndSwapChain(HWND InHwnd, int32 Width, int32 Height)
 {
 	DXGI_SWAP_CHAIN_DESC SwapChainDesc = {};
 	SwapChainDesc.BufferDesc.Width = Width;
@@ -123,7 +123,7 @@ bool CRenderer::CreateDeviceAndSwapChain(HWND InHwnd, int32 Width, int32 Height)
 	return true;
 }
 
-bool CRenderer::CreateRenderTargetAndDepthStencil(int32 Width, int32 Height)
+bool FRenderer::CreateRenderTargetAndDepthStencil(int32 Width, int32 Height)
 {
 	ID3D11Texture2D* BackBuffer = nullptr;
 	HRESULT Hr = SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&BackBuffer);
@@ -153,7 +153,7 @@ bool CRenderer::CreateRenderTargetAndDepthStencil(int32 Width, int32 Height)
 	return SUCCEEDED(Hr);
 }
 
-bool CRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
+bool FRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 {
 	Hwnd = InHwnd;
 
@@ -167,7 +167,7 @@ bool CRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 	Viewport.MinDepth = 0.f;
 	Viewport.MaxDepth = 1.f;
 
-	RenderStateManager = std::make_unique<CRenderStateManager>(Device, DeviceContext);
+	RenderStateManager = std::make_unique<FRenderStateManager>(Device, DeviceContext);
 	RenderStateManager->PrepareCommonStates();
 
 	if (!CreateConstantBuffers()) return false;
@@ -264,13 +264,13 @@ bool CRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 	return true;
 }
 
-void CRenderer::SetConstantBuffers()
+void FRenderer::SetConstantBuffers()
 {
 	ID3D11Buffer* CBs[2] = { FrameConstantBuffer, ObjectConstantBuffer };
 	DeviceContext->VSSetConstantBuffers(0, 2, CBs);
 }
 
-void CRenderer::BeginFrame()
+void FRenderer::BeginFrame()
 {
 	if (GUINewFrame) GUINewFrame();
 	if (GUIUpdate) GUIUpdate();
@@ -298,14 +298,14 @@ void CRenderer::BeginFrame()
 	ClearCommandList();
 }
 
-void CRenderer::ClearCommandList()
+void FRenderer::ClearCommandList()
 {
 	PrevCommandCount = CommandList.size();
 	CommandList.clear();
 	CommandList.reserve(PrevCommandCount);	
 }
 
-void CRenderer::EndFrame()
+void FRenderer::EndFrame()
 {
 	if (RenderTargetView)
 	{
@@ -322,7 +322,7 @@ void CRenderer::EndFrame()
 	if (GUIPostPresent) GUIPostPresent();
 }
 
-void CRenderer::SubmitCommands(const FRenderCommandQueue& Queue)
+void FRenderer::SubmitCommands(const FRenderCommandQueue& Queue)
 {
 	ViewMatrix = Queue.ViewMatrix;
 	ProjectionMatrix = Queue.ProjectionMatrix;
@@ -335,7 +335,7 @@ void CRenderer::SubmitCommands(const FRenderCommandQueue& Queue)
 	}
 }
 
-void CRenderer::AddCommand(const FRenderCommand& Command)
+void FRenderer::AddCommand(const FRenderCommand& Command)
 {
 	CommandList.push_back(Command);
 	FRenderCommand& Added = CommandList.back();
@@ -343,7 +343,7 @@ void CRenderer::AddCommand(const FRenderCommand& Command)
 	Added.SortKey = FRenderCommand::MakeSortKey(Added.Material, Added.MeshData);
 }
 
-void CRenderer::ExecuteCommands()
+void FRenderer::ExecuteCommands()
 {
 	std::sort(CommandList.begin(), CommandList.end(),
 		[](const FRenderCommand& A, const FRenderCommand& B) {
@@ -361,7 +361,7 @@ void CRenderer::ExecuteCommands()
 	if (PostRenderCallback) PostRenderCallback(this);
 }
 
-void CRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
+void FRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 {
 	FMaterial* CurrentMaterial = nullptr;
 	void* CurrentMeshPtr = nullptr;
@@ -487,17 +487,17 @@ void CRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 	}
 }
 
-void CRenderer::ClearDepthBuffer()
+void FRenderer::ClearDepthBuffer()
 {
 	if (SceneDepthStencilView) DeviceContext->ClearDepthStencilView(SceneDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 }
 
-FVector CRenderer::GetCameraPosition() const
+FVector FRenderer::GetCameraPosition() const
 {
 	return GetCameraWorldPositionFromViewMatrix(ViewMatrix);
 }
 
-bool CRenderer::CreateConstantBuffers()
+bool FRenderer::CreateConstantBuffers()
 {
 	D3D11_BUFFER_DESC Desc = {};
 	Desc.Usage = D3D11_USAGE_DYNAMIC;
@@ -511,7 +511,7 @@ bool CRenderer::CreateConstantBuffers()
 	return SUCCEEDED(Device->CreateBuffer(&Desc, nullptr, &ObjectConstantBuffer));
 }
 
-void CRenderer::UpdateFrameConstantBuffer()
+void FRenderer::UpdateFrameConstantBuffer()
 {
 	FFrameConstantBuffer CBData;
 	CBData.View = ViewMatrix.GetTransposed();
@@ -524,7 +524,7 @@ void CRenderer::UpdateFrameConstantBuffer()
 	}
 }
 
-void CRenderer::UpdateObjectConstantBuffer(const FMatrix& WorldMatrix)
+void FRenderer::UpdateObjectConstantBuffer(const FMatrix& WorldMatrix)
 {
 	FObjectConstantBuffer CBData;
 	CBData.World = WorldMatrix.GetTransposed();
@@ -536,7 +536,7 @@ void CRenderer::UpdateObjectConstantBuffer(const FMatrix& WorldMatrix)
 	}
 }
 
-bool CRenderer::CreateTextureFromSTB(ID3D11Device* Device, const char* FilePath, ID3D11ShaderResourceView** OutSRV)
+bool FRenderer::CreateTextureFromSTB(ID3D11Device* Device, const char* FilePath, ID3D11ShaderResourceView** OutSRV)
 {
 	int W, H, C;
 	unsigned char* Data = stbi_load(FilePath, &W, &H, &C, 4);
@@ -558,7 +558,7 @@ bool CRenderer::CreateTextureFromSTB(ID3D11Device* Device, const char* FilePath,
 	return SUCCEEDED(hr);
 }
 
-bool CRenderer::InitOutlineResources()
+bool FRenderer::InitOutlineResources()
 {
 	if (StencilWriteState && StencilTestState && OutlinePS) return true;
 
@@ -582,7 +582,7 @@ bool CRenderer::InitOutlineResources()
 	return OutlinePS != nullptr;
 }
 
-void CRenderer::RenderOutline(FMeshData* Mesh, const FMatrix& WorldMatrix, float OutlineScale)
+void FRenderer::RenderOutline(FMeshData* Mesh, const FMatrix& WorldMatrix, float OutlineScale)
 {
 	if (!Mesh || !InitOutlineResources()) return;
 	Mesh->UpdateVertexAndIndexBuffer(Device);
@@ -606,13 +606,13 @@ void CRenderer::RenderOutline(FMeshData* Mesh, const FMatrix& WorldMatrix, float
 	DeviceContext->OMSetDepthStencilState(nullptr, 0);
 }
 
-void CRenderer::DrawLine(const FVector& Start, const FVector& End, const FVector4& Color)
+void FRenderer::DrawLine(const FVector& Start, const FVector& End, const FVector4& Color)
 {
 	LineVertices.push_back({ Start, Color, FVector::ZeroVector });
 	LineVertices.push_back({ End, Color, FVector::ZeroVector });
 }
 
-void CRenderer::DrawCube(const FVector& Center, const FVector& BoxExtent, const FVector4& Color)
+void FRenderer::DrawCube(const FVector& Center, const FVector& BoxExtent, const FVector4& Color)
 {
 	FVector v[8] = {
 		Center + FVector(-BoxExtent.X, -BoxExtent.Y, -BoxExtent.Z), Center + FVector(-BoxExtent.X, -BoxExtent.Y, BoxExtent.Z),
@@ -625,7 +625,7 @@ void CRenderer::DrawCube(const FVector& Center, const FVector& BoxExtent, const 
 	DrawLine(v[0], v[1], Color); DrawLine(v[4], v[5], Color); DrawLine(v[6], v[7], Color); DrawLine(v[2], v[3], Color);
 }
 
-void CRenderer::ExecuteLineCommands()
+void FRenderer::ExecuteLineCommands()
 {
 	if (LineVertices.empty()) return;
 	ShaderManager.Bind(DeviceContext);
@@ -653,7 +653,7 @@ void CRenderer::ExecuteLineCommands()
 	LineVertices.clear();
 }
 
-void CRenderer::Release()
+void FRenderer::Release()
 {
 	ClearViewportCallbacks(); ClearSceneRenderTarget();
 	TextRenderer.Release(); SubUVRenderer.Release();
@@ -674,13 +674,13 @@ void CRenderer::Release()
 	if (Device) Device->Release();
 }
 
-bool CRenderer::IsOccluded()
+bool FRenderer::IsOccluded()
 {
 	if (bSwapChainOccluded && SwapChain->Present(0, DXGI_PRESENT_TEST) == DXGI_STATUS_OCCLUDED) return true;
 	bSwapChainOccluded = false; return false;
 }
 
-void CRenderer::OnResize(int32 W, int32 H)
+void FRenderer::OnResize(int32 W, int32 H)
 {
 	if (W == 0 || H == 0) return;
 	ClearSceneRenderTarget();

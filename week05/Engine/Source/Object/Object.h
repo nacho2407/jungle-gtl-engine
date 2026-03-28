@@ -2,18 +2,6 @@
 #include "CoreMinimal.h"
 #include "ObjectTypes.h"
 
-template <typename T>
-concept HasInitialize = requires(T t) {
-	{ t.Initialize() } -> std::same_as<void>;
-};
-
-template <typename T>
-inline void InitializeIfAble(T* obj) {
-	if constexpr (HasInitialize<T>) {
-		obj->Initialize();
-	}
-}
-
 #define DECLARE_RTTI(ClassName, ParentClassName) \
     public: \
         static UClass* StaticClass(); \
@@ -22,14 +10,9 @@ inline void InitializeIfAble(T* obj) {
         { \
             return ClassName::StaticClass(); \
         } \
-		ClassName() : ParentClassName("") { \
-			InitializeIfAble(this); \
-		} \
+		ClassName() : ParentClassName("") {} \
 		ClassName(const FString& InName, UObject* InOuter = nullptr) \
-			: ParentClassName(InName, InOuter) \
-		{ \
-			InitializeIfAble(this); \
-		}
+			: ParentClassName(InName, InOuter) {}
 
 #define IMPLEMENT_RTTI(ClassName, ParentClassName) \
     namespace { \
@@ -54,8 +37,7 @@ class UObject;
 // 조건 1: 엔진에서 생성되는 모든 UObject를 관리하는 전역 배열
 // InternalIndex가 이 배열의 인덱스와 대응됨
 
-extern ENGINE_API 	TArray<UObject*> GUObjectArray;
-
+extern ENGINE_API TArray<UObject*> GUObjectArray;
 
 class ENGINE_API UObject
 {
@@ -82,6 +64,7 @@ public:
 	virtual UClass* GetClass() const;
 	const FString& GetName() const;
 	UObject* GetOuter() const;
+	virtual void PostConstruct();
 
 	bool IsA(const UClass* InClass) const;
 
@@ -124,9 +107,9 @@ public:
 	bool IsPendingKill() const;
 
 private:
-	FString      Name;
-	UObject* Outer = nullptr;
-	EObjectFlags Flags = EObjectFlags::None;
+	FString			Name;
+	UObject*		Outer = nullptr;
+	EObjectFlags	Flags = EObjectFlags::None;
 };
 
 #include "Types/ObjectPtr.h"

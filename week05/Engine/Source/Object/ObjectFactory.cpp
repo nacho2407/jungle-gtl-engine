@@ -1,28 +1,19 @@
 #include "ObjectFactory.h"
-#include "Object/Object.h"
-#include "Object/Class.h"
 
-// UUID -> UObject* 역방향 조회 맵 정의
+#include "Object/Class.h"
+#include "Object/Object.h"
+
 TMap<uint32, UObject*> GUUIDToObjectMap;
 uint32 FObjectFactory::LastUUID = 0;
-// 조건 3: ConstructObject 구현
-// 처리 순서:
-//   1. UClass::CreateInstance  → 파생 클래스 new 호출 (operator new에서 메모리 통계 갱신)
-//   2. UUID 부여
-//   3. InternalIndex = GUObjectArray 현재 크기
-//   4. GUObjectArray에 push
-//   5. UUID 맵에 등록
-UObject* FObjectFactory::ConstructObject(
-	UClass* InClass,
-	UObject* InOuter,
-	const FString& InName)
+
+UObject* FObjectFactory::ConstructObject(const FObjectCreateParams& Params)
 {
-	if (!InClass)
+	if (!Params.Class)
 	{
 		return nullptr;
 	}
 
-	UObject* NewObj = InClass->CreateInstance(InOuter, InName);
+	UObject* NewObj = Params.Class->CreateInstance(Params.Outer, Params.Name);
 	if (!NewObj)
 	{
 		return nullptr;
@@ -33,10 +24,28 @@ UObject* FObjectFactory::ConstructObject(
 	GUObjectArray.push_back(NewObj);
 	GUUIDToObjectMap[NewObj->UUID] = NewObj;
 
+	if (Params.Flags != EObjectFlags::None)
+	{
+		NewObj->AddFlags(Params.Flags);
+	}
+
+	NewObj->PostConstruct();
 	return NewObj;
 }
 
-
+UObject* FObjectFactory::ConstructObject(
+	UClass* InClass,
+	UObject* InOuter,
+	const FString& InName,
+	EObjectFlags InFlags)
+{
+	FObjectCreateParams Params;
+	Params.Class = InClass;
+	Params.Outer = InOuter;
+	Params.Name = InName;
+	Params.Flags = InFlags;
+	return ConstructObject(Params);
+}
 
 uint32 FObjectFactory::GetLastUUID()
 {

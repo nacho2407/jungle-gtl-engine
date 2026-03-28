@@ -6,9 +6,9 @@
 
 IMPLEMENT_RTTI(UUUIDBillboardComponent, UTextComponent)
 
-void UUUIDBillboardComponent::Initialize()
+void UUUIDBillboardComponent::PostConstruct()
 {
-	UTextComponent::Initialize();
+	UTextComponent::PostConstruct();
 	SetBillboard(true);
 	bDrawDebugBounds = false;
 	SetTextScale(0.3f); // UUID 빌보드의 기본 스케일 설정
