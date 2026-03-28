@@ -2,18 +2,29 @@
 
 #include "Render/Common/RenderTypes.h"
 
-#include "Viewport/CursorOverlayState.h"
 #include <string>
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
+#include "Runtime/ViewportClient.h"
+
+
 class UWorld;
 class UCameraComponent;
 class UGizmoComponent;
 class FEditorSettings;
 class FWindowsWindow;
 class FSelectionManager;
+class FSceneViewport;
+struct FEditorViewportState;
 
-class FEditorViewportClient
+/*
+* 뷰포트별 카메라 / 뷰모드 / 입력 / 피킹 / 기즈모
+* BuildSceneView
+* orthographic / perspective 분기
+* Gizmo axis visibility 분기
+*/
+
+class FEditorViewportClient : public FViewportClient
 {
 public:
 	void Initialize(FWindowsWindow* InWindow);
@@ -32,17 +43,21 @@ public:
 
 	void Tick(float DeltaTime);
 
-	const FCursorOverlayState& GetCursorOverlayState() const { return CursorOverlayState; }
+	// Renderer 에서 사용하는 Proj 정보가 담긴 SceneView를 생성하는 함수
+	void BuildSceneView(FSceneView& OutView) const override;
 
 private:
 	void TickInput(float DeltaTime);
 	void TickInteraction(float DeltaTime);
-	void TickCursorOverlay(float DeltaTime);
-
 	void HandleDragStart(const FRay& Ray);
 
 private:
+	// Viewport와 ViewportClient는 상호참조(상위 객체 소유권)
 	FWindowsWindow* Window = nullptr;
+
+	FSceneViewport* Viewport = nullptr;
+	FEditorViewportState* State = nullptr;
+
 	UWorld* World = nullptr;
 	UCameraComponent* Camera = nullptr;
 	UGizmoComponent* Gizmo = nullptr;
@@ -53,6 +68,4 @@ private:
 	float WindowHeight = 1080.f;
 
 	bool bIsCursorVisible = true;
-
-	FCursorOverlayState CursorOverlayState;
 };
