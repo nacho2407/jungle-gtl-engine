@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/CoreTypes.h"
+#include "Math/AABB.h"
 #include "Render/Resource/VertexTypes.h"
 
 //	Raw Data -> Cooked Static Mesh 
@@ -28,4 +29,6 @@ struct FStaticMesh
 	TArray<uint32> Indices;
 	TArray<FStaticMeshSection> Sections;
 	TArray<FStaticMeshMaterialSlot> MaterialSlots;
+	
+	FAABB LocalBounds;
 };

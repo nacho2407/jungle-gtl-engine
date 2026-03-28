@@ -24,6 +24,7 @@ public:
 	const TArray<USceneComponent*>& GetChildren() const { return ChildComponents; }
 
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	void PostEditProperty(const char * PropertyName) override;
 
 	virtual void UpdateWorldMatrix() const;
 	virtual void AddWorldOffset(const FVector& WorldDelta);
