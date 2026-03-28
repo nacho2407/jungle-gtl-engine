@@ -192,13 +192,28 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
                             static_cast<float>(CachedWindowHeight));
 
     InitializeForTime();
-    Editor->GetViewportClient().OnPickRequested = [this](int32 X, int32 Y) -> FPickResult
+    if (FWindowOverlayManager* WOM = Editor->GetWindowOverlayManager())
     {
-        FPickResult Result;
-        // EngineLoop는 Renderer와 Editor 모두에 접근 가능하므로 픽킹을 직접 수행해서 반환
-        Renderer->Pick(Editor->GetEditorRenderData(), X, Y, Result);
-        return Result;
-    };
+        // Each panel owns its EditorRenderData. At pick time, find which panel
+        // the cursor is in and use that panel's cached render data.
+        WOM->SetPickCallback([this, WOM](int32 X, int32 Y) -> FPickResult
+        {
+            for (FEditorViewportPanel* Panel : WOM->GetViewportPanels())
+            {
+                if (!Panel) continue;
+                if (X >= static_cast<int32>(Panel->PosX) &&
+                    X <  static_cast<int32>(Panel->PosX + Panel->Width) &&
+                    Y >= static_cast<int32>(Panel->PosY) &&
+                    Y <  static_cast<int32>(Panel->PosY + Panel->Height))
+                {
+                    FPickResult Result;
+                    Renderer->Pick(Panel->EditorRenderData, X, Y, Result);
+                    return Result;
+                }
+            }
+            return FPickResult{};
+        });
+    }
     return true;
 }
 
@@ -614,39 +629,9 @@ bool FEditorEngineLoop::RunFrameOnceWithoutResize()
             if (!Panel || !Panel->ViewportClient) continue;
             if (Panel->Width <= 0.f || Panel->Height <= 0.f) continue;
 
-            FViewportCamera& Cam = Panel->ViewportClient->GetCamera();
-
-            Panel->SceneView.SetViewMatrix(Cam.GetViewMatrix());
-            Panel->SceneView.SetProjectionMatrix(Cam.GetProjectionMatrix());
-            Panel->SceneView.SetViewLocation(Cam.GetLocation());
-            Panel->SceneView.SetClipPlanes(Cam.GetNearPlane(), Cam.GetFarPlane());
-
-            FViewportRect VR;
-            VR.X      = static_cast<int32>(Panel->PosX);
-            VR.Y      = static_cast<int32>(Panel->PosY);
-            VR.Width  = static_cast<int32>(Panel->Width);
-            VR.Height = static_cast<int32>(Panel->Height);
-            Panel->SceneView.SetViewRect(VR);
-
-            FEditorRenderData EditorData;
-            FSceneRenderData  SceneData;
-            EditorData.SceneView = &Panel->SceneView;
-            SceneData.SceneView  = &Panel->SceneView;
-            SceneData.ViewMode   = Panel->ViewportClient->GetRenderSetting().GetViewMode();
-
-            const EEditorShowFlags EditorShowFlags =
-                Panel->ViewportClient->GetRenderSetting().BuildEditorShowFlags(true);
-            const ESceneShowFlags SceneShowFlags =
-                Panel->ViewportClient->GetRenderSetting().BuildSceneShowFlags();
-
-            Panel->ViewportClient->BuildRenderData(EditorData, EditorShowFlags);
-
-            if (FScene* Scene = Editor->GetScene())
-            {
-                Scene->BuildRenderData(SceneData, SceneShowFlags);
-            }
-
-            Renderer->Render(EditorData, SceneData);
+            Panel->PrepareRender();
+            Panel->BuildRenderData();
+            Renderer->Render(Panel->EditorRenderData, Panel->SceneRenderData);
         }
     }
     Editor->DrawPanel();

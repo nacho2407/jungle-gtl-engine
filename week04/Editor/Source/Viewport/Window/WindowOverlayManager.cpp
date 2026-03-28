@@ -1,5 +1,4 @@
 #include "WindowOverlayManager.h"
-#include "Engine/Scene.h"
 #include "Editor/EditorContext.h"
 
 static int32 RequiredPanelCount(EViewportLayout Layout)
@@ -30,32 +29,32 @@ void FWindowOverlayManager::ResetViewportDimension()
     }
     else if (ViewportLayout == EViewportLayout::TwoColumn)
     {
-        ViewportDim[0] = FRect(0, 0, W / 2, H);
-        ViewportDim[1] = FRect(W / 2, 0, W / 2, H);
+        ViewportDim[0] = FRect(0,        0, W / 2, H);
+        ViewportDim[1] = FRect(W / 2,    0, W / 2, H);
     }
     else if (ViewportLayout == EViewportLayout::TwoRow)
     {
-        ViewportDim[0] = FRect(0, 0, W, H / 2);
-        ViewportDim[1] = FRect(0, H / 2, W, H / 2);
+        ViewportDim[0] = FRect(0, 0,         W, H / 2);
+        ViewportDim[1] = FRect(0, H / 2,     W, H / 2);
     }
     else if (ViewportLayout == EViewportLayout::ColumnTwoRow)
     {
-        ViewportDim[0] = FRect(0, 0, W / 2, H);
-        ViewportDim[1] = FRect(W / 2, 0, W / 2, H / 2);
-        ViewportDim[2] = FRect(W / 2, H / 2, W / 2, H / 2);
+        ViewportDim[0] = FRect(0,      0,         W / 2, H);
+        ViewportDim[1] = FRect(W / 2,  0,         W / 2, H / 2);
+        ViewportDim[2] = FRect(W / 2,  H / 2,     W / 2, H / 2);
     }
     else if (ViewportLayout == EViewportLayout::TwoRowColumn)
     {
-        ViewportDim[0] = FRect(0, 0, W / 2, H / 2);
-        ViewportDim[1] = FRect(0, H / 2, W / 2, H / 2);
-        ViewportDim[2] = FRect(W / 2, 0, W / 2, H);
+        ViewportDim[0] = FRect(0,      0,         W / 2, H / 2);
+        ViewportDim[1] = FRect(0,      H / 2,     W / 2, H / 2);
+        ViewportDim[2] = FRect(W / 2,  0,         W / 2, H);
     }
     else if (ViewportLayout == EViewportLayout::FourWay)
     {
-        ViewportDim[0] = FRect(0, 0, W / 2, H / 2);
-        ViewportDim[1] = FRect(0, H / 2, W / 2, H / 2);
-        ViewportDim[2] = FRect(W / 2, 0, W / 2, H / 2);
-        ViewportDim[3] = FRect(W / 2, H / 2, W / 2, H / 2);
+        ViewportDim[0] = FRect(0,      0,         W / 2, H / 2);
+        ViewportDim[1] = FRect(0,      H / 2,     W / 2, H / 2);
+        ViewportDim[2] = FRect(W / 2,  0,         W / 2, H / 2);
+        ViewportDim[3] = FRect(W / 2,  H / 2,     W / 2, H / 2);
     }
 
     // 2. Adjust panel count to match the layout (panel[0] is always preserved)
@@ -91,6 +90,10 @@ void FWindowOverlayManager::ResetViewportDimension()
             ViewportPanels[i]->PosY   = static_cast<float>(ViewportDim[i].Y);
             ViewportPanels[i]->Width  = static_cast<float>(ViewportDim[i].W);
             ViewportPanels[i]->Height = static_cast<float>(ViewportDim[i].H);
+
+            ViewportPanels[i]->ViewportClient->OnResize(
+                static_cast<uint32>(ViewportDim[i].W),
+                static_cast<uint32>(ViewportDim[i].H));
         }
     }
 }
@@ -104,8 +107,34 @@ void FWindowOverlayManager::AddNewViewportPanel() {
     ViewportClient->SetEditorContext(EditorContext);
     ViewportClient->SetScene(Scene);
 
+    Panel->Scene = Scene;
     Panel->ViewportClient = ViewportClient;
+    ViewportClient->OnPickRequested = PickCallback;
     ViewportPanels.push_back(Panel);
+}
+
+void FWindowOverlayManager::SetScene(FScene* InScene)
+{
+    Scene = InScene;
+    for (FEditorViewportPanel* Panel : ViewportPanels)
+    {
+        if (Panel)
+            Panel->Scene = InScene;
+    }
+}
+
+void FWindowOverlayManager::SetPickCallback(FEditorViewportClient::FPickCallback Callback)
+{
+    PickCallback = std::move(Callback);
+    // Apply retroactively to panel[0], whose client is owned externally by FEditor.
+    // Panels[1..n] are created by this manager and always get it on construction.
+    for (FEditorViewportPanel* Panel : ViewportPanels)
+    {
+        if (Panel && Panel->ViewportClient)
+        {
+            Panel->ViewportClient->OnPickRequested = PickCallback;
+        }
+    }
 }
 
 void FWindowOverlayManager::Release()

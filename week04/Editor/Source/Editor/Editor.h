@@ -98,8 +98,6 @@ class FEditor
     std::filesystem::path GetCurrentScenePath() const { return SceneDocument.CurrentScenePath; }
     std::filesystem::path GetDefaultSceneDirectory() const;
 
-    const FEditorRenderData&     GetEditorRenderData() const { return EditorRenderData; }
-    const FSceneRenderData&      GetSceneRenderData() const { return SceneRenderData; }
     FScene*                      GetScene() const { return CurScene; }
     FEditorViewportClient&       GetViewportClient() { return ViewportClient; }
     const FEditorViewportClient& GetViewportClient() const { return ViewportClient; }

@@ -1,5 +1,6 @@
 #pragma once
 #include "SWindow.h"
+#include "Viewport/EditorViewportClient.h"
 
 struct FEditorContext;
 class  FScene;
@@ -20,6 +21,9 @@ class FWindowOverlayManager
 
     uint32 W = 0;
     uint32 H = 0;
+
+    FEditorViewportClient::FPickCallback PickCallback;
+
   public:
     void                           ResetViewportDimension();
     TArray<FEditorViewportPanel*>& GetViewportPanels();
@@ -28,7 +32,8 @@ class FWindowOverlayManager
     void Release();
 
     void SetWindowDimension(uint32 Width, uint32 Height);
+    void SetPickCallback(FEditorViewportClient::FPickCallback Callback);
     void SetEditorContext(FEditorContext* InEditorContext) { EditorContext = InEditorContext; }
-    void SetScene(FScene* InScene) { Scene = InScene; }
+    void SetScene(FScene* InScene);
     void SetViewportLayout(EViewportLayout ViewportLayout);
 };

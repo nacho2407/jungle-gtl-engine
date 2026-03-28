@@ -319,8 +319,9 @@ void FEditor::Create()
     WindowOverlayManager->SetScene(CurScene);
     FEditorViewportPanel* EditorPanel = new FEditorViewportPanel();
     EditorPanel->ViewportClient = &ViewportClient;
+    EditorPanel->Scene = CurScene;
     WindowOverlayManager->GetViewportPanels().push_back(EditorPanel);
-    WindowOverlayManager->SetViewportLayout(EViewportLayout::TwoColumn);
+    WindowOverlayManager->SetViewportLayout(EViewportLayout::TwoRowColumn);
 }
 
 void FEditor::Release()
@@ -645,6 +646,18 @@ void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* Input
 
     ViewportClient.Tick(DeltaTime, InputState);
 
+    if (WindowOverlayManager)
+    {
+        TArray<FEditorViewportPanel*>& Panels = WindowOverlayManager->GetViewportPanels();
+        for (uint32 i = 1; i < Panels.size(); i++)
+        {
+            if (Panels[i] && Panels[i]->ViewportClient)
+            {
+                Panels[i]->ViewportClient->Tick(DeltaTime, InputState);
+            }
+        }
+    }
+
     if (PanelManager != nullptr)
     {
         PanelManager->Tick(DeltaTime);
@@ -669,7 +682,6 @@ void FEditor::OnWindowResized(float Width, float Height)
     WindowWidth = Width;
     EditorContext.WindowWidth = Width;
     EditorContext.WindowHeight = Height;
-    ViewportClient.OnResize(static_cast<uint32>(Width), static_cast<uint32>(Height));
 
     if (WindowOverlayManager != nullptr)
     {
