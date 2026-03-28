@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Render/Types/RenderTypes.h"
 #include "Core/CoreTypes.h"
 
@@ -23,4 +23,7 @@ private:
 	ID3D11VertexShader* VertexShader = nullptr;
 	ID3D11PixelShader* PixelShader = nullptr;
 	ID3D11InputLayout* InputLayout = nullptr;
+
+	size_t CachedVertexShaderSize = 0;
+	size_t CachedPixelShaderSize = 0;
 };
