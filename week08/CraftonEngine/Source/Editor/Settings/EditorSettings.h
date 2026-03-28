@@ -18,17 +18,18 @@ public:
 	FVector InitViewPos = FVector(10, 0, 5);
 	FVector InitLookAt = FVector(0, 0, 0);
 
-	// View
-	EViewMode ViewMode = EViewMode::Lit;
-	FShowFlags ShowFlags;
+	// Viewport Layout
+	int32 LayoutType = 0; // EViewportLayout
+	FViewportRenderOptions SlotOptions[4];
+	float SplitterRatios[3] = { 0.5f, 0.5f, 0.5f };
+	int32 SplitterCount = 0;
 
-	// Grid
-	float GridSpacing = 1.0f;
-	int32 GridHalfLineCount = 100;
-
-	// Camera Sensitivity
-	float CameraMoveSensitivity = 1.0f;
-	float CameraRotateSensitivity = 1.0f;
+	// Perspective Camera (slot 0) 복원용
+	FVector PerspCamLocation = FVector(10, 0, 5);
+	FVector PerspCamRotation = FVector(0, 0, 0);
+	float PerspCamFOV = 60.0f;
+	float PerspCamNearClip = 0.1f;
+	float PerspCamFarClip = 1000.0f;
 
 	// File paths
 	FString DefaultSavePath = FPaths::ToUtf8(FPaths::SceneDir());

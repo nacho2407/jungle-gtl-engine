@@ -2,8 +2,8 @@
 
 #include "Viewport/ViewportClient.h"
 #include "Render/Common/RenderTypes.h"
+#include "Render/Common/ViewTypes.h"
 
-#include "Viewport/CursorOverlayState.h"
 #include "UI/SWindow.h"
 #include <string>
 #include "Core/RayTypes.h"
@@ -25,6 +25,13 @@ public:
 	void SetSettings(const FEditorSettings* InSettings) { Settings = InSettings; }
 	void SetSelectionManager(FSelectionManager* InSelectionManager) { SelectionManager = InSelectionManager; }
 	UGizmoComponent* GetGizmo() { return Gizmo; }
+
+	// 뷰포트별 렌더 옵션
+	FViewportRenderOptions& GetRenderOptions() { return RenderOptions; }
+	const FViewportRenderOptions& GetRenderOptions() const { return RenderOptions; }
+
+	// 뷰포트 타입 전환 (Perspective / Ortho 방향)
+	void SetViewportType(ELevelViewportType NewType);
 	void SetViewportSize(float InWidth, float InHeight);
 
 	// Camera lifecycle
@@ -38,8 +45,6 @@ public:
 	// 활성 상태 — 활성 뷰포트만 입력 처리
 	void SetActive(bool bInActive) { bIsActive = bInActive; }
 	bool IsActive() const { return bIsActive; }
-
-	const FCursorOverlayState& GetCursorOverlayState() const { return CursorOverlayState; }
 
 	// FViewport 소유
 	void SetViewport(FViewport* InViewport) { Viewport = InViewport; }
@@ -58,8 +63,6 @@ public:
 private:
 	void TickInput(float DeltaTime);
 	void TickInteraction(float DeltaTime);
-	void TickCursorOverlay(float DeltaTime);
-
 	void HandleDragStart(const FRay& Ray);
 
 private:
@@ -71,6 +74,7 @@ private:
 	UGizmoComponent* Gizmo = nullptr;
 	const FEditorSettings* Settings = nullptr;
 	FSelectionManager* SelectionManager = nullptr;
+	FViewportRenderOptions RenderOptions;
 
 	float WindowWidth = 1920.f;
 	float WindowHeight = 1080.f;
@@ -81,5 +85,4 @@ private:
 	// 뷰포트 슬롯의 스크린 좌표 (ImGui screen space = 윈도우 클라이언트 좌표)
 	FRect ViewportScreenRect;
 
-	FCursorOverlayState CursorOverlayState;
 };
