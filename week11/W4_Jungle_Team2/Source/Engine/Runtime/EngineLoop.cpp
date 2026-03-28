@@ -1,10 +1,13 @@
 ﻿#include "Engine/Runtime/EngineLoop.h"
 
 #include "Editor/EditorEngine.h"
+#include "Editor/ObjViewerEngine.h"
 
 void FEngineLoop::CreateEngine()
 {
-#if WITH_EDITOR
+#if IS_OBJ_VIEWER
+	GEngine = UObjectManager::Get().CreateObject<UObjViewerEngine>();
+#elif WITH_EDITOR
 	GEngine = UObjectManager::Get().CreateObject<UEditorEngine>();
 #else
 	GEngine = UObjectManager::Get().CreateObject<UEngine>();
