@@ -1,6 +1,6 @@
-﻿#include "Editor/Viewport/ObjViewerViewportClient.h"
+﻿#include "Misc/ObjViewer/Viewport/ObjViewerViewportClient.h"
 
-#include "Editor/Settings/ObjViewerSettings.h"
+#include "Misc/ObjViewer/Settings/ObjViewerSettings.h"
 #include "Editor/UI/EditorConsoleWidget.h"
 #include "Engine/Core/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
@@ -15,7 +15,6 @@
 void FObjViewerViewportClient::Initialize(FWindowsWindow* InWindow)
 {
     Window = InWindow;
-
     // UE_LOG("Hello ZZup Engine! %d", 2026);
 }
 
@@ -39,8 +38,17 @@ void FObjViewerViewportClient::ResetCamera()
 {
     if (!Camera || !Settings)
         return;
-    Camera->SetWorldLocation(Settings->InitViewPos);
-    Camera->LookAt(Settings->InitLookAt);
+
+	ObjViewerModelInfo ModelInfo = GetModelInfo();
+	float ModelRadius = ModelInfo.ModelRadius;
+	FVector Center = ModelInfo.ModelCenter;
+	FVector Offset(ModelRadius, ModelRadius, ModelRadius);
+
+	float DistanceMultiplier = 6.0f;
+    FVector CameraPos = Center + (Offset * DistanceMultiplier);
+
+    Camera->SetWorldLocation(CameraPos);
+    Camera->LookAt(Center);
 }
 
 // 모델의 크기와 비례하게 카메라의 이동 범위를 제한한다.
@@ -49,19 +57,20 @@ void FObjViewerViewportClient::ClampCameraPosition()
 	if (!Camera || !World) return;
 
     // 허용되는 최대 거리를 설정
-	FVector SceneCenter = FVector(0, 0, 0) ;
-	float ModelRadius = GetModelRadius();
-    float MaxAllowedDistance = ModelRadius * 3.0f;
+	ObjViewerModelInfo ModelInfo = GetModelInfo();
+	float ModelRadius = ModelInfo.ModelRadius;
+	FVector ModelCenter = ModelInfo.ModelCenter;
+    float MaxAllowedDistance = ModelRadius * 6.0f;
 
     // 카메라 위치를 확인하고 이동 범위 제한(Clamp)을 적용
     FVector CamPos = Camera->GetWorldLocation();
-    float CurrentDistance = (CamPos - SceneCenter).Length();
+    float CurrentDistance = (CamPos - ModelCenter).Length();
     if (CurrentDistance > MaxAllowedDistance)
     {
-        FVector Direction = CamPos - SceneCenter;
+        FVector Direction = CamPos - ModelCenter;
         Direction.Normalize();
 
-        FVector ClampedPosition = SceneCenter + Direction * MaxAllowedDistance;
+        FVector ClampedPosition = ModelCenter + Direction * MaxAllowedDistance;
         Camera->SetWorldLocation(ClampedPosition);
     }
 }
@@ -156,7 +165,8 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
     float ScrollNotches = InputSystem::Get().GetScrollNotches();
     if (ScrollNotches != 0.0f)
     {
-		float ModelRadius = GetModelRadius();
+		ObjViewerModelInfo ModelInfo = GetModelInfo();
+		float ModelRadius = ModelInfo.ModelRadius;
 		float DynamicForwardSpeed = ForwardSpeed * ModelRadius;
 
         if (Camera->IsOrthogonal())
@@ -173,12 +183,15 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
 
     POINT MousePoint = InputSystem::Get().GetMousePos();
     MousePoint = Window->ScreenToClientPoint(MousePoint);
-    FRay Ray = Camera->DeprojectScreenToWorld(static_cast<float>(MousePoint.x), static_cast<float>(MousePoint.y),
-                                              WindowWidth, WindowHeight);
 
-    //	Cursor
-    CursorOverlayState.ScreenX = static_cast<float>(MousePoint.x);
-    CursorOverlayState.ScreenY = static_cast<float>(MousePoint.y);
+    // 위젯이 없는 뷰포트 영역(Central Node)을 기준으로 마우스 좌표 보정
+    float LocalMouseX = static_cast<float>(MousePoint.x) - ViewportX;
+    float LocalMouseY = static_cast<float>(MousePoint.y) - ViewportY;
+
+    // 보정된 마우스 좌표로 Raycast 수행
+    FRay Ray = Camera->DeprojectScreenToWorld(LocalMouseX, LocalMouseY, WindowWidth, WindowHeight);
+    CursorOverlayState.ScreenX = LocalMouseX;
+    CursorOverlayState.ScreenY = LocalMouseY;
 
     if (InputSystem::Get().GetKeyDown(VK_LBUTTON))
     {
@@ -304,13 +317,16 @@ void FObjViewerViewportClient::ClampCameraPanToObject()
 
 	 // 최신 카메라 행렬 확보
     Camera->UpdateWorldMatrix();
-    FVector SceneCenter = FVector(0, 0, 0);
+	ObjViewerModelInfo ModelInfo = GetModelInfo();
+
+	float ModelRadius = ModelInfo.ModelRadius;
+    FVector ModelCenter = ModelInfo.ModelCenter;
     FVector CamPos = Camera->GetWorldLocation();
     FVector CamFwd = Camera->GetForwardVector();
     FVector CamRight = Camera->GetRightVector();
     FVector CamUp = Camera->GetUpVector();
 
-    FVector ToObject = SceneCenter - CamPos;
+    FVector ToObject = ModelCenter - CamPos;
     float DistZ = ToObject.DotProduct(CamFwd);
     float DistX = ToObject.DotProduct(CamRight);
     float DistY = ToObject.DotProduct(CamUp);
@@ -339,11 +355,13 @@ void FObjViewerViewportClient::ClampCameraPanToObject()
 }
 
 // 모델의 크기에 따라 카메라 조작 속도를 변경하도록 ModelRadius를 계산한다.
-float FObjViewerViewportClient::GetModelRadius()
+ObjViewerModelInfo FObjViewerViewportClient::GetModelInfo()
 {
     FVector MinAABB(FLT_MAX, FLT_MAX, FLT_MAX);
     FVector MaxAABB(-FLT_MAX, -FLT_MAX, -FLT_MAX);
     bool bHasValidMesh = false;
+
+	ObjViewerModelInfo ModelInfo;
 
     // 스폰된 액터를 순회하며 AABB 박스를 계산한다. (Viewer에서는 보통 하나)
     for (AActor* Actor : World->GetActors())
@@ -371,13 +389,29 @@ float FObjViewerViewportClient::GetModelRadius()
 	}
 	
 	// 씬 중심점과 모델의 최대 크기(반지름)를 계산
-    float ModelRadius = 1000.0f;
+	ModelInfo.ModelRadius = 100.0f;
     if (bHasValidMesh)
     {
-        ModelRadius = (MaxAABB - MinAABB).Length() * 0.5f; 
+        ModelInfo.ModelRadius = (MaxAABB - MinAABB).Length() * 0.5f; 
     }
+	ModelInfo.ModelCenter = (MaxAABB + MinAABB) / 2.0f;
 
-	return ModelRadius;
+	return ModelInfo;
+}
+
+void FObjViewerViewportClient::SetViewportRect(float InX, float InY, float InWidth, float InHeight)
+{
+    ViewportX = InX;
+    ViewportY = InY;
+    
+    // 최소 1 픽셀 크기를 보장하여 0으로 나누기(Divide by Zero) 에러 방지
+    WindowWidth = InWidth > 0.0f ? InWidth : 1.0f;
+    WindowHeight = InHeight > 0.0f ? InHeight : 1.0f;
+
+    if (Camera)
+    {
+        Camera->OnResize(static_cast<int32>(WindowWidth), static_cast<int32>(WindowHeight));
+    }
 }
 
 void FObjViewerViewportClient::HandleDragStart(const FRay& Ray)

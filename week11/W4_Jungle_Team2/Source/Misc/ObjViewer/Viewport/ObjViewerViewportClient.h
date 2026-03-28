@@ -14,12 +14,18 @@ class FObjViewerSettings;
 class FWindowsWindow;
 class FSelectionManager;
 
+struct ObjViewerModelInfo
+{
+	FVector ModelCenter = FVector(0.0f, 0.0f, 0.0f);
+	float ModelRadius = 50.0f;
+};
+
 class FObjViewerViewportClient
 {
 public:
 	void Initialize(FWindowsWindow* InWindow);
 	void SetWorld(UWorld* InWorld) { World = InWorld; }
-	void SetSettings(const FObjViewerSettings* InSettings) { Settings = InSettings; }
+	void SetSettings(FObjViewerSettings* InSettings) { Settings = InSettings; }
 	void SetSelectionManager(FSelectionManager* InSelectionManager) { SelectionManager = InSelectionManager; }
 	void SetViewportSize(float InWidth, float InHeight);
 
@@ -31,9 +37,15 @@ public:
 	// 카메라 조작감 개선
 	void ClampCameraPosition();
 	void ClampCameraPanToObject();
-	float GetModelRadius();
-
+	ObjViewerModelInfo GetModelInfo();
 	UCameraComponent* GetCamera() const { return Camera; }
+
+	// SetViewportSize를 대체
+    void SetViewportRect(float InX, float InY, float InWidth, float InHeight);
+    float GetViewportX() const { return ViewportX; }
+    float GetViewportY() const { return ViewportY; }
+    float GetViewportWidth() const { return WindowWidth; }
+    float GetViewportHeight() const { return WindowHeight; }
 
 	void Tick(float DeltaTime);
 
@@ -53,6 +65,8 @@ private:
 	const FObjViewerSettings* Settings = nullptr;
 	FSelectionManager* SelectionManager = nullptr;
 
+	float ViewportX = 0.0f;
+    float ViewportY = 0.0f;
 	float WindowWidth = 1920.f;
 	float WindowHeight = 1080.f;
 	
