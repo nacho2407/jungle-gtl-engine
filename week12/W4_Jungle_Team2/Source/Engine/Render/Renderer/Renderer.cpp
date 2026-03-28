@@ -46,6 +46,15 @@ void FRenderer::Create(HWND hWindow)
 	Resources.OutlineConstantBuffer.Create(Device.GetDevice(), sizeof(FOutlineConstants));
 	Resources.StaticMeshConstantBuffer.Create(Device.GetDevice(), sizeof(FStaticMeshConstants));
 
+	// TODO : SamplerState 관리
+	D3D11_SAMPLER_DESC SampDesc = {};
+	SampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	SampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	SampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	SampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	Device.GetDevice()->CreateSamplerState(&SampDesc, &Resources.MeshSamplerState);
+
+
 	//	MeshManager init
 	FMeshManager::Initialize();
 
@@ -77,6 +86,7 @@ void FRenderer::Release()
 	Resources.EditorConstantBuffer.Release();
 	Resources.OutlineConstantBuffer.Release();
 	Resources.StaticMeshConstantBuffer.Release();
+	Resources.MeshSamplerState->Release();
 
 	FGPUProfiler::Get().Shutdown();
 
@@ -395,9 +405,20 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 			ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
 			Context->VSSetConstantBuffers(1, 1, &cb);
 			Context->PSSetConstantBuffers(1, 1, &cb);
+
 			cb = Resources.StaticMeshConstantBuffer.GetBuffer();
 			Context->VSSetConstantBuffers(6, 1, &cb);
 			Context->PSSetConstantBuffers(6, 1, &cb);
+
+			ID3D11ShaderResourceView* SRVs[4] = {
+				InCmd.Constants.StaticMesh.DiffuseSRV,
+				InCmd.Constants.StaticMesh.AmbientSRV,
+				InCmd.Constants.StaticMesh.SpecularSRV,
+				InCmd.Constants.StaticMesh.BumpSRV
+			};
+			Context->PSSetShaderResources(0, 4, SRVs);
+			Context->PSSetSamplers(0, 1, &Resources.MeshSamplerState);
+
 		}
 		break;
 	}

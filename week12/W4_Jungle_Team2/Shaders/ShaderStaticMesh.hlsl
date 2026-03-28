@@ -2,11 +2,6 @@
 
 cbuffer StaticMeshBuffer : register(b6)
 {
-    float3 LightDir;    
-    float  LightIntensity;
-    float3 LightColor;
-    float  Padding6_0;
-    
     float3 AmbientColor;    // Ka
     float  Padding6_1;
     float3 DiffuseColor;    // Kd
@@ -22,6 +17,7 @@ cbuffer StaticMeshBuffer : register(b6)
 Texture2D DiffuseMap  : register(t0);
 Texture2D AmbientMap  : register(t1);
 Texture2D SpecularMap : register(t2);
+Texture2D BumpMap     : register(t3);
 
 SamplerState SampleState : register(s0);
 
@@ -45,15 +41,18 @@ struct PSInput
 PSInput mainVS(VSInput input)
 {
     PSInput output;
-    output.ClipPos = float4(0, 0, 0, 1);
-    output.WorldPos = float3(0, 0, 0);
-    output.WorldNormal = float3(0, 0, 0);
-    output.UV = float2(0, 0);
+    
+    output.WorldPos = mul(float4(input.Position, 1.0f), Model);
+    output.WorldNormal = input.Normal;
+    output.UV = input.UV;
+    output.ClipPos = ApplyMVP(input.Position);
     return output;
 }
 
 
 float4 mainPS(PSInput input) : SV_TARGET
 {
-    return float4(0.f, 0.f ,0.f, 1.f);
+    float4 Diffuse = DiffuseMap.Sample(SampleState, input.UV);
+    
+    return Diffuse;
 }

@@ -2,7 +2,7 @@
 
 DEFINE_CLASS(UMeshComponent, UPrimitiveComponent)
 
-void UMeshComponent::SetMaterial(int32 SlotIndex, UMaterial* InMaterial)
+void UMeshComponent::SetMaterial(int32 SlotIndex, FMaterial* InMaterial)
 {
 	if (SlotIndex < 0)
 	{
@@ -17,7 +17,7 @@ void UMeshComponent::SetMaterial(int32 SlotIndex, UMaterial* InMaterial)
 	OverrideMaterial[SlotIndex] = InMaterial;
 }
 
-UMaterial* UMeshComponent::GetMaterial(int32 SlotIndex) const
+FMaterial* UMeshComponent::GetMaterial(int32 SlotIndex) const
 {
 	if (SlotIndex < 0 || SlotIndex >= static_cast<int32>(OverrideMaterial.size()))
 	{
@@ -38,6 +38,7 @@ void UMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps
 	
 	//	지금은 Override Material 자체를 에디터에 노출하지 않음
 	//	TODO : Material Asset System 정리되면 슬롯별로 노출
+
 }
 
 void UMeshComponent::PostEditProperty(const char* PropertyName)
