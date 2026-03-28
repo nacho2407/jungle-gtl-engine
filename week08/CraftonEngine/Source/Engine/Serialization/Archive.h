@@ -1,0 +1,61 @@
+﻿#pragma once
+
+#pragma once
+#include "Core/CoreTypes.h" // TArray가 정의된 곳
+#include <type_traits>
+#include <string>
+
+// 언리얼 엔진의 핵심 직렬화 베이스 클래스
+class FArchive
+{
+protected:
+	bool bIsLoading = false;
+	bool bIsSaving = false;
+
+public:
+	virtual ~FArchive() = default;
+
+	inline bool IsLoading() const { return bIsLoading; }
+	inline bool IsSaving() const { return bIsSaving; }
+
+	// 핵심 순수 가상 함수: 파생 클래스(Writer/Reader)가 구현해야 할 실제 입출력 로직
+	// Data 포인터부터 Num 바이트만큼을 읽거나 씁니다.
+	virtual void Serialize(void* Data, size_t Num) = 0;
+
+	// ----------------------------------------------------
+	// 마법의 연산자 오버로딩 (기본 자료형: int, float, 구조체 등)
+	// ----------------------------------------------------
+	template<typename T>
+	FArchive& operator<<(T& Value)
+	{
+		// 포인터가 아닌 기본 데이터 타입이나 메모리 복사가 가능한 구조체만 허용
+		static_assert(std::is_standard_layout<T>::value, "T must be standard layout");
+		this->Serialize(&Value, sizeof(T));
+		return *this;
+	}
+};
+
+// ----------------------------------------------------
+// 🪄 마법의 연산자 특수화 (TArray 지원)
+// ----------------------------------------------------
+template<typename T>
+FArchive& operator<<(FArchive& Ar, TArray<T>& Array)
+{
+	// 1. 배열의 총 개수(Length)를 먼저 직렬화합니다.
+	uint32 ArrayNum = static_cast<uint32>(Array.size());
+	Ar << ArrayNum;
+
+	// 2. 만약 읽는 중(Load)이라면, 방금 알아낸 개수만큼 메모리를 미리 할당합니다.
+	if (Ar.IsLoading())
+	{
+		Array.resize(ArrayNum);
+	}
+
+	// 3. 개수가 있다면, 배열 데이터를 통째로(sizeof(T) * Num) 복사합니다.
+	if (ArrayNum > 0)
+	{
+		Ar.Serialize(Array.data(), ArrayNum * sizeof(T));
+	}
+
+	return Ar;
+}
