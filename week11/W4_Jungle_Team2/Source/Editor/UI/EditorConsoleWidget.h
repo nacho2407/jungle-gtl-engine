@@ -13,6 +13,8 @@
 class FEditorConsoleWidget : public FEditorWidget
 {
 public:
+	FEditorConsoleWidget();
+
 	static void AddLog(const char* fmt, ...);
 
 	virtual void Render(float DeltaTime) override;
@@ -44,6 +46,9 @@ private:
 	void RegisterCommand(const FString& Name, CommandFn Fn);
 	void ExecCommand(const char* CommandLine);
 	static int32 TextEditCallback(ImGuiInputTextCallbackData* Data);
+
+private:
+	void CmdStat(const TArray<FString>& Args);
 };
 
 #define UE_LOG(Format, ...) \
