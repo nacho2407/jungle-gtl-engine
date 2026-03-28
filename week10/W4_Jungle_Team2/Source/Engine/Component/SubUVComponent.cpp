@@ -5,6 +5,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
+#include "Math/Utils.h"
 
 DEFINE_CLASS(USubUVComponent, UBillboardComponent)
 REGISTER_FACTORY(USubUVComponent)
@@ -69,11 +70,11 @@ bool USubUVComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 	const FMatrix InvWorld = GetWorldMatrix().GetInverse();
 
 	FRay LocalRay;
-	LocalRay.Origin = InvWorld.TransformPositionWithW(Ray.Origin);
+	LocalRay.Origin = InvWorld.TransformPosition(Ray.Origin);
 	LocalRay.Direction = InvWorld.TransformVector(Ray.Direction);
 	LocalRay.Direction.NormalizeSafe();
 
-	if (std::abs(LocalRay.Direction.X) < Epsilon)
+	if (std::abs(LocalRay.Direction.X) < MathUtil::Epsilon)
 	{
 		return false;
 	}
@@ -93,7 +94,7 @@ bool USubUVComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 		return false;
 	}
 
-	const FVector HitWorld = GetWorldMatrix().TransformPositionWithW(HitLocal);
+	const FVector HitWorld = GetWorldMatrix().TransformPosition(HitLocal);
 
 	OutHitResult.bHit = true;
 	OutHitResult.HitComponent = this;

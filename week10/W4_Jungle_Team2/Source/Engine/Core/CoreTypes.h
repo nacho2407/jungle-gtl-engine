@@ -1,15 +1,8 @@
 ﻿#pragma once
-#include <stdint.h>
-#include <vector>
-#include <list>
-#include <unordered_set>
-#include <unordered_map>
-#include <queue>
-#include <array>
-#include <string>
-#include <utility>
 
-#include "Core/Debug.h"
+#include <DirectXMath.h>
+#include <cstddef>
+#include <cstdint>
 
 using int8 = __int8;
 using int16 = __int16;
@@ -21,30 +14,24 @@ using uint16 = unsigned __int16;
 using uint32 = unsigned __int32;
 using uint64 = unsigned __int64;
 
-using FString = std::string;
+using Float2 = DirectX::XMFLOAT2;
+using Float3 = DirectX::XMFLOAT3;
+using Float4 = DirectX::XMFLOAT4;
 
-template <typename T>
-using TArray = std::vector<T>;
+using XMVector = DirectX::XMVECTOR;
+using FXMVector = DirectX::FXMVECTOR;
+using GXMVector = DirectX::GXMVECTOR;
+using HXMVector = DirectX::HXMVECTOR;
+using CXMVector = DirectX::CXMVECTOR;
 
-template <typename T>
-using TDoubleLinkedList = std::list<T>;
+using Float4X4 = DirectX::XMFLOAT4X4;
 
-template <typename T>
-using TLinkedList = std::list<T>;
+using XMMatrix = DirectX::XMMATRIX;
+using FXMMatrix = DirectX::FXMMATRIX;
+using CXMMatrix = DirectX::CXMMATRIX;
 
-template <typename T, size_t N>
-using TStaticArray = std::array<T, N>;
+using SIZE_T = std::size_t;
 
-
-template <typename T>
-using TSet = std::unordered_set<T>;
-
-template <typename KeyType, typename ValueType>
-using TMap = std::unordered_map<KeyType, ValueType>;
-
-template <typename T1, typename T2>
-using TPair = std::pair<T1, T2>;
-
-
-template <typename T>
-using TQueue = std::queue<T>;
+using ANSICHAR = char;
+using WIDECHAR = wchar_t;
+using TCHAR = WIDECHAR;
