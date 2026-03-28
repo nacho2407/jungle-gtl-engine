@@ -334,6 +334,8 @@ void FWindowOverlayManager::SetWindowDimension(uint32 Width, uint32 Height)
 void FWindowOverlayManager::SetViewportLayout(EViewportLayout Layout)
 {
     ViewportLayout = Layout;
+    VSplitRatio    = 0.5f;
+    HSplitRatio    = 0.5f;
     ResetViewportDimension();
 }
 
