@@ -1,5 +1,4 @@
 ﻿#include "Editor/Viewport/ViewportNavigationController.h"
-#include "Editor/Viewport/ViewportNavigationController.h"
 
 #include <cmath>
 #include <algorithm>
