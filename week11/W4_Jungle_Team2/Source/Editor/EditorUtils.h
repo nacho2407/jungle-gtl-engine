@@ -1,19 +1,9 @@
 ﻿#pragma once
-#include "Slate/SlateUtils.h"
+#include "Runtime/ViewportRect.h"
+#include "Render/Common/ViewTypes.h"
 /*
 * Editor 모듈에서 필요한 Utility + Enum 정의
 */
-
-enum class EEditorCameraMode
-{
-	Perspective = 0,
-	Top,
-	Bottom,
-	Left,
-	Right,
-	Front,
-	Back
-};
 
 struct FEditorViewportState
 {
