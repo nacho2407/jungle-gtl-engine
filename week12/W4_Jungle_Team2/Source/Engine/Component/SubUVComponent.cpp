@@ -11,7 +11,7 @@ REGISTER_FACTORY(USubUVComponent)
 
 USubUVComponent::USubUVComponent()
 {
-	SetVisibility(false);
+	SetVisibility(true);
 }
 
 void USubUVComponent::SetParticle(const FName& InParticleName)
