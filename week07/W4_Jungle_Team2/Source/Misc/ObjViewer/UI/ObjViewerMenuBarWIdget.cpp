@@ -1,5 +1,5 @@
 ﻿#include "ObjViewerMenuBarWidget.h"
-#include "Editor/ObjViewerEngine.h"
+#include "Misc/ObjViewer/ObjViewerEngine.h"
 #include "Engine/Core/Paths.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "ImGui/imgui.h"
