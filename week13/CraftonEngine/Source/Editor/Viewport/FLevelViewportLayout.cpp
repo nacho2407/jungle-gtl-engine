@@ -12,6 +12,7 @@
 #include "Core/Paths.h"
 #include "ImGui/imgui.h"
 #include "WICTextureLoader.h"
+#include "Component/CameraComponent.h"
 
 // ─── 레이아웃별 슬롯 수 ─────────────────────────────────────
 
@@ -418,6 +419,8 @@ void FLevelViewportLayout::SetLayout(EViewportLayout NewLayout)
 {
 	if (NewLayout == CurrentLayout) return;
 
+	bool bWasOnePane = (CurrentLayout == EViewportLayout::OnePane);
+
 	// 기존 트리 해제
 	SSplitter::DestroyTree(RootSplitter);
 	RootSplitter = nullptr;
@@ -430,6 +433,20 @@ void FLevelViewportLayout::SetLayout(EViewportLayout NewLayout)
 		EnsureViewportSlots(RequiredSlots);
 	else if (RequiredSlots < static_cast<int32>(LevelViewportClients.size()))
 		ShrinkViewportSlots(RequiredSlots);
+
+	// OnePane → 분할 전환 시 1번부터 Top, Front, Right 순으로 기본 설정
+	if (bWasOnePane && NewLayout != EViewportLayout::OnePane)
+	{
+		constexpr ELevelViewportType DefaultTypes[] = {
+			ELevelViewportType::Top,
+			ELevelViewportType::Front,
+			ELevelViewportType::Right
+		};
+		for (int32 i = 1; i < RequiredSlots && (i - 1) < 3; ++i)
+		{
+			LevelViewportClients[i]->SetViewportType(DefaultTypes[i - 1]);
+		}
+	}
 
 	// 새 트리 빌드
 	RootSplitter = BuildSplitterTree(NewLayout);
@@ -453,86 +470,7 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 	bMouseOverViewport = false;
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-	ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_MenuBar);
-
-	// ── 메뉴 바: 토글 버튼 + 레이아웃 선택 팝업 ──
-	if (ImGui::BeginMenuBar())
-	{
-		// OnePane이면 FourPanes2x2 아이콘, 그 외면 OnePane 아이콘 (클릭 시 토글)
-		constexpr float ToggleIconSize = 16.0f;
-		int32 ToggleIdx = (CurrentLayout == EViewportLayout::OnePane)
-			? static_cast<int32>(EViewportLayout::FourPanes2x2)
-			: static_cast<int32>(EViewportLayout::OnePane);
-
-		float MenuBarRight = ImGui::GetWindowContentRegionMax().x;
-		float ToggleBtnW = ToggleIconSize + ImGui::GetStyle().FramePadding.x * 2.0f;
-		float LayoutBtnW = ImGui::CalcTextSize("Layout").x + ImGui::GetStyle().FramePadding.x * 2.0f;
-		ImGui::SetCursorPosX(MenuBarRight - ToggleBtnW - LayoutBtnW - ImGui::GetStyle().ItemSpacing.x);
-
-		if (ImGui::BeginMenu("Layout"))
-		{
-			constexpr int32 LayoutCount = static_cast<int32>(EViewportLayout::MAX);
-			constexpr int32 Columns = 4;
-			constexpr float IconSize = 32.0f;
-
-			for (int32 i = 0; i < LayoutCount; ++i)
-			{
-				ImGui::PushID(i);
-
-				bool bSelected = (static_cast<EViewportLayout>(i) == CurrentLayout);
-				if (bSelected)
-				{
-					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
-				}
-
-				bool bClicked = false;
-				if (LayoutIcons[i])
-				{
-					bClicked = ImGui::ImageButton("##icon", (ImTextureID)LayoutIcons[i], ImVec2(IconSize, IconSize));
-				}
-				else
-				{
-					char Label[4];
-					snprintf(Label, sizeof(Label), "%d", i);
-					bClicked = ImGui::Button(Label, ImVec2(IconSize + 8, IconSize + 8));
-				}
-
-				if (bSelected)
-				{
-					ImGui::PopStyleColor();
-				}
-
-				if (bClicked)
-				{
-					SetLayout(static_cast<EViewportLayout>(i));
-				}
-
-				if ((i + 1) % Columns != 0 && i + 1 < LayoutCount)
-					ImGui::SameLine();
-
-				ImGui::PopID();
-			}
-			ImGui::EndMenu();
-		}
-
-		// 토글 버튼
-		if (LayoutIcons[ToggleIdx])
-		{
-			if (ImGui::ImageButton("##toggle", (ImTextureID)LayoutIcons[ToggleIdx], ImVec2(ToggleIconSize, ToggleIconSize)))
-			{
-				ToggleViewportSplit();
-			}
-		}
-		else
-		{
-			const char* ToggleLabel = (CurrentLayout == EViewportLayout::OnePane) ? "Split" : "Merge";
-			if (ImGui::Button(ToggleLabel))
-			{
-				ToggleViewportSplit();
-			}
-		}
-		ImGui::EndMenuBar();
-	}
+	ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_None);
 
 	ImVec2 ContentPos = ImGui::GetCursorScreenPos();
 	ImVec2 ContentSize = ImGui::GetContentRegionAvail();
@@ -560,6 +498,12 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 				VC->UpdateLayoutRect();
 				VC->RenderViewportImage(VC == ActiveViewportClient);
 			}
+		}
+
+		// 각 뷰포트 패인 상단에 툴바 오버레이 렌더
+		for (int32 i = 0; i < ActiveSlotCount; ++i)
+		{
+			RenderPaneToolbar(i);
 		}
 
 		// 분할 바 렌더 (재귀 수집)
@@ -659,4 +603,316 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 
 	ImGui::End();
 	ImGui::PopStyleVar();
+}
+
+// ─── 각 뷰포트 패인 툴바 오버레이 ──────────────────────────
+
+void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
+{
+	if (SlotIndex >= MaxViewportSlots || !ViewportWindows[SlotIndex]) return;
+
+	const FRect& PaneRect = ViewportWindows[SlotIndex]->GetRect();
+	if (PaneRect.Width <= 0 || PaneRect.Height <= 0) return;
+
+	// 패인 상단에 오버레이 윈도우
+	char OverlayID[64];
+	snprintf(OverlayID, sizeof(OverlayID), "##PaneToolbar_%d", SlotIndex);
+
+	ImGui::SetNextWindowPos(ImVec2(PaneRect.X, PaneRect.Y));
+	ImGui::SetNextWindowBgAlpha(0.4f);
+	ImGui::SetNextWindowSize(ImVec2(0, 0)); // auto-size
+
+	ImGuiWindowFlags OverlayFlags =
+		ImGuiWindowFlags_NoDecoration |
+		ImGuiWindowFlags_AlwaysAutoResize |
+		ImGuiWindowFlags_NoSavedSettings |
+		ImGuiWindowFlags_NoFocusOnAppearing |
+		ImGuiWindowFlags_NoNav |
+		ImGuiWindowFlags_NoMove;
+
+	ImGui::Begin(OverlayID, nullptr, OverlayFlags);
+	{
+		ImGui::PushID(SlotIndex);
+
+		// Layout 드롭다운
+		char PopupID[64];
+		snprintf(PopupID, sizeof(PopupID), "LayoutPopup_%d", SlotIndex);
+
+		if (ImGui::Button("Layout"))
+		{
+			ImGui::OpenPopup(PopupID);
+		}
+
+		if (ImGui::BeginPopup(PopupID))
+		{
+			constexpr int32 LayoutCount = static_cast<int32>(EViewportLayout::MAX);
+			constexpr int32 Columns = 4;
+			constexpr float IconSize = 32.0f;
+
+			for (int32 i = 0; i < LayoutCount; ++i)
+			{
+				ImGui::PushID(i);
+
+				bool bSelected = (static_cast<EViewportLayout>(i) == CurrentLayout);
+				if (bSelected)
+				{
+					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+				}
+
+				bool bClicked = false;
+				if (LayoutIcons[i])
+				{
+					bClicked = ImGui::ImageButton("##icon", (ImTextureID)LayoutIcons[i], ImVec2(IconSize, IconSize));
+				}
+				else
+				{
+					char Label[4];
+					snprintf(Label, sizeof(Label), "%d", i);
+					bClicked = ImGui::Button(Label, ImVec2(IconSize + 8, IconSize + 8));
+				}
+
+				if (bSelected)
+				{
+					ImGui::PopStyleColor();
+				}
+
+				if (bClicked)
+				{
+					SetLayout(static_cast<EViewportLayout>(i));
+					ImGui::CloseCurrentPopup();
+				}
+
+				if ((i + 1) % Columns != 0 && i + 1 < LayoutCount)
+					ImGui::SameLine();
+
+				ImGui::PopID();
+			}
+			ImGui::EndPopup();
+		}
+
+		// 토글 버튼 (같은 행)
+		ImGui::SameLine();
+
+		constexpr float ToggleIconSize = 16.0f;
+		int32 ToggleIdx = (CurrentLayout == EViewportLayout::OnePane)
+			? static_cast<int32>(EViewportLayout::FourPanes2x2)
+			: static_cast<int32>(EViewportLayout::OnePane);
+
+		if (LayoutIcons[ToggleIdx])
+		{
+			if (ImGui::ImageButton("##toggle", (ImTextureID)LayoutIcons[ToggleIdx], ImVec2(ToggleIconSize, ToggleIconSize)))
+			{
+				ToggleViewportSplit();
+			}
+		}
+		else
+		{
+			const char* ToggleLabel = (CurrentLayout == EViewportLayout::OnePane) ? "Split" : "Merge";
+			if (ImGui::Button(ToggleLabel))
+			{
+				ToggleViewportSplit();
+			}
+		}
+
+		// ViewportType + Settings 팝업
+		if (SlotIndex < static_cast<int32>(LevelViewportClients.size()))
+		{
+		FLevelEditorViewportClient* VC = LevelViewportClients[SlotIndex];
+		FViewportRenderOptions& Opts = VC->GetRenderOptions();
+
+		// ── Viewport Type 드롭다운 (Perspective / Ortho 방향) ──
+		ImGui::SameLine();
+
+		static const char* ViewportTypeNames[] = {
+			"Perspective", "Top", "Bottom", "Left", "Right", "Front", "Back"
+		};
+		int32 CurrentTypeIdx = static_cast<int32>(Opts.ViewportType);
+		const char* CurrentTypeName = ViewportTypeNames[CurrentTypeIdx];
+
+		char VTPopupID[64];
+		snprintf(VTPopupID, sizeof(VTPopupID), "ViewportTypePopup_%d", SlotIndex);
+
+		if (ImGui::Button(CurrentTypeName))
+		{
+			ImGui::OpenPopup(VTPopupID);
+		}
+
+		if (ImGui::BeginPopup(VTPopupID))
+		{
+			for (int32 t = 0; t < 7; ++t)
+			{
+				bool bSelected = (t == CurrentTypeIdx);
+				if (ImGui::Selectable(ViewportTypeNames[t], bSelected))
+				{
+					VC->SetViewportType(static_cast<ELevelViewportType>(t));
+				}
+			}
+			ImGui::EndPopup();
+		}
+
+		// ── Settings 팝업 ──
+		ImGui::SameLine();
+
+		char SettingsPopupID[64];
+		snprintf(SettingsPopupID, sizeof(SettingsPopupID), "SettingsPopup_%d", SlotIndex);
+
+		if (ImGui::Button("Settings"))
+		{
+			ImGui::OpenPopup(SettingsPopupID);
+		}
+
+		if (ImGui::BeginPopup(SettingsPopupID))
+		{
+			// View Mode
+			ImGui::Text("View Mode");
+			int32 CurrentMode = static_cast<int32>(Opts.ViewMode);
+			ImGui::RadioButton("Lit", &CurrentMode, static_cast<int32>(EViewMode::Lit));
+			ImGui::SameLine();
+			ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
+			ImGui::SameLine();
+			ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
+			Opts.ViewMode = static_cast<EViewMode>(CurrentMode);
+
+			ImGui::Separator();
+
+			// Show Flags
+			ImGui::Text("Show");
+			ImGui::Checkbox("Primitives", &Opts.ShowFlags.bPrimitives);
+			ImGui::Checkbox("BillboardText", &Opts.ShowFlags.bBillboardText);
+			ImGui::Checkbox("Grid", &Opts.ShowFlags.bGrid);
+			ImGui::Checkbox("Gizmo", &Opts.ShowFlags.bGizmo);
+			ImGui::Checkbox("Bounding Volume", &Opts.ShowFlags.bBoundingVolume);
+
+			ImGui::Separator();
+
+			// Grid Settings
+			ImGui::Text("Grid");
+			ImGui::SliderFloat("Spacing", &Opts.GridSpacing, 0.1f, 10.0f, "%.1f");
+			ImGui::SliderInt("Half Line Count", &Opts.GridHalfLineCount, 10, 500);
+
+			ImGui::Separator();
+
+			// Camera Sensitivity
+			ImGui::Text("Camera");
+			ImGui::SliderFloat("Move Sensitivity", &Opts.CameraMoveSensitivity, 0.1f, 5.0f, "%.1f");
+			ImGui::SliderFloat("Rotate Sensitivity", &Opts.CameraRotateSensitivity, 0.1f, 5.0f, "%.1f");
+
+			ImGui::EndPopup();
+		}
+		} // SlotIndex guard
+
+		ImGui::PopID();
+	}
+	ImGui::End();
+}
+
+// ─── FEditorSettings ↔ 뷰포트 상태 동기화 ──────────────────
+
+void FLevelViewportLayout::SaveToSettings()
+{
+	FEditorSettings& S = FEditorSettings::Get();
+
+	S.LayoutType = static_cast<int32>(CurrentLayout);
+
+	// 뷰포트별 렌더 옵션 저장
+	for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+	{
+		S.SlotOptions[i] = LevelViewportClients[i]->GetRenderOptions();
+	}
+
+	// Splitter 비율 저장
+	if (RootSplitter)
+	{
+		TArray<SSplitter*> AllSplitters;
+		SSplitter::CollectSplitters(RootSplitter, AllSplitters);
+		S.SplitterCount = static_cast<int32>(AllSplitters.size());
+		if (S.SplitterCount > 3) S.SplitterCount = 3;
+		for (int32 i = 0; i < S.SplitterCount; ++i)
+		{
+			S.SplitterRatios[i] = AllSplitters[i]->GetRatio();
+		}
+	}
+	else
+	{
+		S.SplitterCount = 0;
+	}
+
+	// Perspective 카메라 (slot 0) 저장
+	if (!LevelViewportClients.empty())
+	{
+		UCameraComponent* Cam = LevelViewportClients[0]->GetCamera();
+		if (Cam)
+		{
+			S.PerspCamLocation = Cam->GetWorldLocation();
+			S.PerspCamRotation = Cam->GetRelativeRotation();
+			const FCameraState& CS = Cam->GetCameraState();
+			S.PerspCamFOV = CS.FOV * (180.0f / 3.14159265358979f); // rad → deg
+			S.PerspCamNearClip = CS.NearZ;
+			S.PerspCamFarClip = CS.FarZ;
+		}
+	}
+}
+
+void FLevelViewportLayout::LoadFromSettings()
+{
+	const FEditorSettings& S = FEditorSettings::Get();
+
+	// 레이아웃 전환 (슬롯 생성 + 트리 빌드)
+	EViewportLayout NewLayout = static_cast<EViewportLayout>(S.LayoutType);
+	if (NewLayout >= EViewportLayout::MAX)
+		NewLayout = EViewportLayout::OnePane;
+
+	// OnePane이 아니면 레이아웃 적용 (Initialize에서 이미 OnePane으로 생성됨)
+	if (NewLayout != EViewportLayout::OnePane)
+	{
+		// SetLayout 내부 bWasOnePane 분기를 피하기 위해 직접 전환
+		SSplitter::DestroyTree(RootSplitter);
+		RootSplitter = nullptr;
+		DraggingSplitter = nullptr;
+
+		int32 RequiredSlots = GetSlotCount(NewLayout);
+		EnsureViewportSlots(RequiredSlots);
+
+		RootSplitter = BuildSplitterTree(NewLayout);
+		ActiveSlotCount = RequiredSlots;
+		CurrentLayout = NewLayout;
+	}
+
+	// 뷰포트별 렌더 옵션 적용
+	for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+	{
+		FLevelEditorViewportClient* VC = LevelViewportClients[i];
+		VC->GetRenderOptions() = S.SlotOptions[i];
+
+		// ViewportType에 따라 카메라 ortho/방향 설정
+		VC->SetViewportType(S.SlotOptions[i].ViewportType);
+	}
+
+	// Splitter 비율 복원
+	if (RootSplitter)
+	{
+		TArray<SSplitter*> AllSplitters;
+		SSplitter::CollectSplitters(RootSplitter, AllSplitters);
+		for (int32 i = 0; i < S.SplitterCount && i < static_cast<int32>(AllSplitters.size()); ++i)
+		{
+			AllSplitters[i]->SetRatio(S.SplitterRatios[i]);
+		}
+	}
+
+	// Perspective 카메라 (slot 0) 복원
+	if (!LevelViewportClients.empty())
+	{
+		UCameraComponent* Cam = LevelViewportClients[0]->GetCamera();
+		if (Cam)
+		{
+			Cam->SetRelativeLocation(S.PerspCamLocation);
+			Cam->SetRelativeRotation(S.PerspCamRotation);
+
+			FCameraState CS = Cam->GetCameraState();
+			CS.FOV = S.PerspCamFOV * (3.14159265358979f / 180.0f); // deg → rad
+			CS.NearZ = S.PerspCamNearClip;
+			CS.FarZ = S.PerspCamFarClip;
+			Cam->SetCameraState(CS);
+		}
+	}
 }
