@@ -77,6 +77,12 @@ public:
 	EEditorViewportType GetViewportType() const { return ViewportType; }
 	void SetViewportType(EEditorViewportType InType) { ViewportType = InType; }
 
+	void SetViewport(FSceneViewport* InViewport) { Viewport = InViewport; }
+	void SetState(FEditorViewportState* InState) { State = InState; }
+
+	// ViewportType에 맞게 카메라 초기화.
+	void ApplyCameraMode();
+
 private:
 	void TickInput(float DeltaTime);
 	void TickInteraction(float DeltaTime);
