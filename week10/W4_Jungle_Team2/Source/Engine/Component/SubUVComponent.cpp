@@ -1,7 +1,6 @@
 ﻿#include "SubUVComponent.h"
 
 #include <cstring>
-#include "Render/Mesh/MeshManager.h"
 #include "Core/ResourceManager.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -12,7 +11,6 @@ REGISTER_FACTORY(USubUVComponent)
 
 USubUVComponent::USubUVComponent()
 {
-	MeshData = &FMeshManager::Get().GetQuad();
 	SetVisibility(false);
 }
 
@@ -42,7 +40,9 @@ void USubUVComponent::PostEditProperty(const char* PropertyName)
 
 void USubUVComponent::UpdateWorldAABB() const
 {
-	FVector LExt = { 0.01f, 0.5f, 0.5f };
+	WorldAABB.Reset();
+
+	FVector LExt = { 0.01f, Width * 0.5f, Height * 0.5f };
 
 	float NewEx = std::abs(CachedWorldMatrix.M[0][0]) * LExt.X +
 		std::abs(CachedWorldMatrix.M[1][0]) * LExt.Y +
@@ -57,9 +57,51 @@ void USubUVComponent::UpdateWorldAABB() const
 		std::abs(CachedWorldMatrix.M[2][2]) * LExt.Z;
 
 	FVector WorldCenter = GetWorldLocation();
+	const FVector Min = WorldCenter - FVector(NewEx, NewEy, NewEz);
+	const FVector Max = WorldCenter + FVector(NewEx, NewEy, NewEz);
 
-	WorldAABBMinLocation = WorldCenter - FVector(NewEx, NewEy, NewEz);
-	WorldAABBMaxLocation = WorldCenter + FVector(NewEx, NewEy, NewEz);
+	WorldAABB.Expand(Min);
+	WorldAABB.Expand(Max);
+}
+
+bool USubUVComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
+{
+	const FMatrix InvWorld = GetWorldMatrix().GetInverse();
+
+	FRay LocalRay;
+	LocalRay.Origin = InvWorld.TransformPositionWithW(Ray.Origin);
+	LocalRay.Direction = InvWorld.TransformVector(Ray.Direction);
+	LocalRay.Direction.NormalizeSafe();
+
+	if (std::abs(LocalRay.Direction.X) < EPSILON)
+	{
+		return false;
+	}
+
+	const float T = -LocalRay.Origin.X / LocalRay.Direction.X;
+	if (T < 0.0f)
+	{
+		return false;
+	}
+
+	const FVector HitLocal = LocalRay.Origin + LocalRay.Direction * T;
+	const float HalfW = Width * 0.5f;
+	const float HalfH = Height * 0.5f;
+
+	if (HitLocal.Y < -HalfW || HitLocal.Y > HalfW || HitLocal.Z < -HalfH || HitLocal.Z > HalfH)
+	{
+		return false;
+	}
+
+	const FVector HitWorld = GetWorldMatrix().TransformPositionWithW(HitLocal);
+
+	OutHitResult.bHit = true;
+	OutHitResult.HitComponent = this;
+	OutHitResult.Distance = FVector::Distance(Ray.Origin, HitWorld);
+	OutHitResult.Location = HitWorld;
+	OutHitResult.Normal = GetForwardVector();
+	OutHitResult.FaceIndex = 0;
+	return true;
 }
 
 void USubUVComponent::TickComponent(float DeltaTime)

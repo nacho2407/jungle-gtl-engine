@@ -1,9 +1,17 @@
 ﻿#include "GameFramework/PrimitiveActors.h"
 
-#include "Component/PrimitiveComponent.h"
+#include "Component/StaticMeshComponent.h"
 #include "Component/TextRenderComponent.h"
+#include "Core/ResourceManager.h"
 #include <format>
 #include <Component/SubUVComponent.h>
+
+namespace
+{
+	constexpr const char* CubeMeshPath = "Asset/Mesh/Cube.obj";
+	constexpr const char* SphereMeshPath = "Asset/Mesh/Sphere.obj";
+	constexpr const char* PlaneMeshPath = "Asset/Mesh/Plane.obj";
+}
 
 DEFINE_CLASS(ACubeActor, AActor)
 REGISTER_FACTORY(ACubeActor)
@@ -19,7 +27,8 @@ REGISTER_FACTORY(AAttachTestActor)
 
 void ACubeActor::InitDefaultComponents()
 {
-	auto* Cube = AddComponent<UCubeComponent>();
+	auto* Cube = AddComponent<UStaticMeshComponent>();
+	Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
 	SetRootComponent(Cube);
 
 	// Text
@@ -40,7 +49,8 @@ void ACubeActor::InitDefaultComponents()
 
 void ASphereActor::InitDefaultComponents()
 {
-	auto* Sphere = AddComponent<USphereComponent>();
+	auto* Sphere = AddComponent<UStaticMeshComponent>();
+	Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(SphereMeshPath));
 	SetRootComponent(Sphere);
 
 	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
@@ -60,7 +70,8 @@ void ASphereActor::InitDefaultComponents()
 
 void APlaneActor::InitDefaultComponents()
 {
-	auto* Plane = AddComponent<UPlaneComponent>();
+	auto* Plane = AddComponent<UStaticMeshComponent>();
+	Plane->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(PlaneMeshPath));
 	SetRootComponent(Plane);
 
 	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
@@ -81,7 +92,8 @@ void APlaneActor::InitDefaultComponents()
 void AAttachTestActor::InitDefaultComponents()
 {
 	// Root: Cube
-	auto* Cube = AddComponent<UCubeComponent>();
+	auto* Cube = AddComponent<UStaticMeshComponent>();
+	Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
 	SetRootComponent(Cube);
 
 	// Grouping node for spheres
@@ -98,7 +110,8 @@ void AAttachTestActor::InitDefaultComponents()
 	};
 	for (int i = 0; i < 4; ++i)
 	{
-		auto* Sphere = AddComponent<USphereComponent>();
+		auto* Sphere = AddComponent<UStaticMeshComponent>();
+		Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(SphereMeshPath));
 		Sphere->AttachToComponent(Primitives);
 		Sphere->SetRelativeLocation(Positions[i]);
 	}

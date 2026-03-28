@@ -2,35 +2,36 @@
 #include "MeshComponent.h"
 #include "Asset/StaticMesh.h"
 
-class FStaticMesh;
-
 class UStaticMeshComponent : public UMeshComponent
 {
 public:
 	DECLARE_CLASS(UStaticMeshComponent, UMeshComponent)
-	
+	UStaticMeshComponent();
+
 	void SetStaticMesh(UStaticMesh* InStaticMesh);
-	UStaticMesh* GetStaticMesh();
+	UStaticMesh* GetStaticMesh() const;
 	bool HasValidMesh() const;
 	
+	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	void PostEditProperty(const char * PropertyName) override;
+
 	void UpdateWorldAABB() const override;
-	bool RaycastMesh(const FRay & Ray, FHitResult & OutHitResult) override;
-	
-	const FAABB & GetWorldAABB() const override;
-	
-	void OnTransformChanged() override;
-	
-	bool ConsumRenderStateDirty();
-	
+	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
+	EPrimitiveType GetPrimitiveType() const override { return EPrimitiveType::EPT_StaticMesh; }
+
+	const FAABB& GetWorldAABB() const override;
+
+	bool ConsumeRenderStateDirty();
+
 private:
 	void MarkBoundsDirty();
 	void MarkRenderStateDirty();
 	void EnsureBoundsUpdated() const;
-	
+
 private:
-	UStaticMesh * StaticMeshAsset = nullptr;
-	
-	mutable FAABB WorldAABB;
+	UStaticMesh* StaticMeshAsset = nullptr;
+	FString StaticMeshAssetPath;
+
 	mutable bool bBoundsDirty = true;
 	bool bRenderStateDirty = true;
 };

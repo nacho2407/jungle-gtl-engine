@@ -1,5 +1,9 @@
 ﻿#pragma once
+#pragma once
 
+#include "Asset/FontAtlasLoader.h"
+#include "Asset/ObjLoader.h"
+#include "Asset/ParticleAtlasLoader.h"
 #include "Asset/StaticMesh.h"
 #include "Core/CoreTypes.h"
 #include "Core/Singleton.h"
@@ -45,14 +49,24 @@ public:
 
 	// --- Particle names ---
 	TArray<FString> GetParticleNames() const;
+	
+	/* For StaticMeshes */
+	UStaticMesh* LoadStaticMesh(const FString& Path);
+	UStaticMesh* FindStaticMesh(const FString& Path) const;
+	TArray<FString> GetStaticMeshPaths() const;
 
 private:
 	FResourceManager() = default;
 	~FResourceManager() { ReleaseGPUResources(); }
+	
+	FObjLoader ObjLoader;
+	FFontAtlasLoader FontLoader;
+	FParticleAtlasLoader ParticleLoader;
 
 	TMap<FString, FFontResource>     FontResources;
 	TMap<FString, FParticleResource> ParticleResources;
 	TMap<FString, FMaterialResource> MaterialTextureResources;
 	
-	TMap<FString, UStaticMesh*> StaticMeshes;
+	TMap<FString, FStaticMeshResource> StaticMeshRegistry; // Resource.ini에 등록된 StaticMesh Path 목록
+	TMap<FString, UStaticMesh*> StaticMeshMap;
 };

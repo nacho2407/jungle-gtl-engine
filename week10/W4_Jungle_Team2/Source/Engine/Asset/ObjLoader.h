@@ -3,6 +3,7 @@
 #include "Asset/ObjRawTypes.h"
 #include "Asset/StaticMeshTypes.h"
 #include "Asset/IAssetLoader.h"
+#include <Core/ResourceTypes.h>
 
 class UStaticMesh;
 
@@ -12,7 +13,7 @@ public:
 	FObjLoader() = default;
 	~FObjLoader() override = default;
 
-	UStaticMesh* Load(const FString& Path);
+	UStaticMesh* Load(const FString& Path, const FStaticMeshLoadOptions& LoadOptions);
 
 	bool SupportsExtension(const FString& Extension) const override;
 	FString GetLoaderName() const override;
@@ -40,6 +41,7 @@ private:
 	FNormalVertex MakeVertex(const FObjRawIndex & RawIndex) const;
 	uint32 GetOrCreateVertexIndex(const FObjRawIndex & RawIndex, TMap<FObjVertexKey, uint32> & VertexMap);
 	
+	void NormalizeRawPositionsToUnitCube();
 private:
 	FString SourcePath;
 	FObjRawData RawData;

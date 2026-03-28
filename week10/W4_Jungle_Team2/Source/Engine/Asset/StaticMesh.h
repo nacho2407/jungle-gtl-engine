@@ -1,4 +1,6 @@
 ﻿#pragma once
+#pragma once
+
 #include "StaticMeshTypes.h"
 #include "Object/Object.h"
 
@@ -30,5 +32,5 @@ public:
 	bool HasValidMeshData() const;
 
 private:
-	FStaticMesh * MeshData;
+	FStaticMesh* MeshData = nullptr;
 };

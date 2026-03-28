@@ -1,6 +1,17 @@
 ﻿#include "StaticMeshComponent.h"
 
+#include <cfloat>
+#include <cstring>
+
+#include "Core/ResourceManager.h"
+
 DEFINE_CLASS(UStaticMeshComponent, UMeshComponent)
+
+UStaticMeshComponent::UStaticMeshComponent()
+{
+	//	기본 도형은 Cube로 설정
+	SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/cube.obj"));
+}
 
 void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 {
@@ -10,12 +21,21 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 	}
 
 	StaticMeshAsset = InStaticMesh;
+	
+	if (StaticMeshAsset != nullptr)
+	{
+		StaticMeshAssetPath = StaticMeshAsset->GetAssetPathFileName();
+	}
+	else
+	{
+		StaticMeshAssetPath.clear();
+	}
 
 	MarkBoundsDirty();
 	MarkRenderStateDirty();
 }
 
-UStaticMesh* UStaticMeshComponent::GetStaticMesh()
+UStaticMesh* UStaticMeshComponent::GetStaticMesh() const
 {
 	return StaticMeshAsset;
 }
@@ -23,6 +43,33 @@ UStaticMesh* UStaticMeshComponent::GetStaticMesh()
 bool UStaticMeshComponent::HasValidMesh() const
 {
 	return StaticMeshAsset != nullptr && StaticMeshAsset->HasValidMeshData();
+}
+
+void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+	UMeshComponent::GetEditableProperties(OutProps);
+	OutProps.push_back({"StaticMesh", EPropertyType::String, &StaticMeshAssetPath});
+}
+
+void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
+{
+	UMeshComponent::PostEditProperty(PropertyName);
+	
+	//	추후에 FNAme으로 바꿔도 될 듯 싶긴한데 보류
+	if (std::strcmp(PropertyName, "StaticMesh") != 0)
+	{
+		return;
+	}
+	
+	if (StaticMeshAssetPath.empty())
+	{
+		SetStaticMesh(nullptr);
+		return;
+	}
+	
+	UStaticMesh * Mesh = FResourceManager::Get().LoadStaticMesh(StaticMeshAssetPath);
+	
+	SetStaticMesh(Mesh);
 }
 
 void UStaticMeshComponent::UpdateWorldAABB() const
@@ -44,27 +91,29 @@ void UStaticMeshComponent::UpdateWorldAABB() const
 
 	const FVector LocalCorners[8] =
 	{
-		FVector{LocalBounds.Min.X, LocalBounds.Min.Y, LocalBounds.Min.Z},
-		FVector{LocalBounds.Max.X, LocalBounds.Min.Y, LocalBounds.Min.Z},
-		FVector{LocalBounds.Min.X, LocalBounds.Max.Y, LocalBounds.Min.Z},
-		FVector{LocalBounds.Min.X, LocalBounds.Min.Y, LocalBounds.Max.Z},
-		FVector{LocalBounds.Min.X, LocalBounds.Max.Y, LocalBounds.Max.Z},
-		FVector{LocalBounds.Max.X, LocalBounds.Min.Y, LocalBounds.Max.Z},
-		FVector{LocalBounds.Max.X, LocalBounds.Max.Y, LocalBounds.Min.Z},
-		FVector{LocalBounds.Max.X, LocalBounds.Max.Y, LocalBounds.Max.Z}
+		FVector(LocalBounds.Min.X, LocalBounds.Min.Y, LocalBounds.Min.Z),
+		FVector(LocalBounds.Max.X, LocalBounds.Min.Y, LocalBounds.Min.Z),
+		FVector(LocalBounds.Min.X, LocalBounds.Max.Y, LocalBounds.Min.Z),
+		FVector(LocalBounds.Max.X, LocalBounds.Max.Y, LocalBounds.Min.Z),
+		FVector(LocalBounds.Min.X, LocalBounds.Min.Y, LocalBounds.Max.Z),
+		FVector(LocalBounds.Max.X, LocalBounds.Min.Y, LocalBounds.Max.Z),
+		FVector(LocalBounds.Min.X, LocalBounds.Max.Y, LocalBounds.Max.Z),
+		FVector(LocalBounds.Max.X, LocalBounds.Max.Y, LocalBounds.Max.Z)
 	};
-	
-	const FMatrix WorldMatrix = GetComponentTransform().ToMatrix();
-	
+
+	const FMatrix& WorldMatrix = GetWorldMatrix();
+
 	for (const FVector& Corner : LocalCorners)
 	{
-		const FVector WorldPos = WorldMatrix.TransformPositionWithW(Corner);
+		const FVector WorldPos = WorldMatrix.TransformPosition(Corner);
 		WorldAABB.Expand(WorldPos);
 	}
-	
+
 	bBoundsDirty = false;
 }
 
+//	Ray를 Local로 바꿔서 확인 
+//	모든 Mesh를 World로 바꾸는 것보다 훨씬 빠름
 bool UStaticMeshComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 {
 	if (!HasValidMesh())
@@ -83,51 +132,72 @@ bool UStaticMeshComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult
 	const TArray<FNormalVertex>& Vertices = StaticMeshAsset->GetVertices();
 	const TArray<uint32>& Indices = StaticMeshAsset->GetIndices();
 
-	if (Vertices.empty() || Indices.size() < 3)
+	if (Vertices.empty() || Indices.empty())
 	{
 		return false;
 	}
 
-	const FMatrix WorldMatrix = GetComponentTransform().ToMatrix();
+	const FMatrix InvWorld = GetWorldMatrix().GetInverse();
+
+	FRay LocalRay = Ray;
+	LocalRay.Origin = InvWorld.TransformPosition(LocalRay.Origin);
+	LocalRay.Direction = InvWorld.TransformVector(LocalRay.Direction);
+	LocalRay.Direction.NormalizeSafe();
 
 	bool bHit = false;
-	float ClosestDistance = FLT_MAX;
-	FHitResult BestHit;
+	float ClosestT = FLT_MAX;
+	int32 BestFaceIndex = -1;
+	FVector BestLocalNormal = FVector::ZeroVector();
 
-	for (size_t i = 0; i + 2 < Indices.size(); i += 3)
+	for (uint32 i = 0; i + 2 < static_cast<uint32>(Indices.size()); i += 3)
 	{
 		const uint32 I0 = Indices[i];
 		const uint32 I1 = Indices[i + 1];
 		const uint32 I2 = Indices[i + 2];
-
+		
 		if (I0 >= Vertices.size() || I1 >= Vertices.size() || I2 >= Vertices.size())
 		{
 			continue;
 		}
-
-		const FVector V0 = WorldMatrix.TransformPosition(Vertices[I0].Position);
-		const FVector V1 = WorldMatrix.TransformPosition(Vertices[I1].Position);
-		const FVector V2 = WorldMatrix.TransformPosition(Vertices[I2].Position);
-
-		FHitResult Hit;
-		if (IntersectTriangle(Ray, V0, V1, V2, Hit))
+		
+		const FVector & V0 = Vertices[I0].Position;
+		const FVector & V1 = Vertices[I1].Position;
+		const FVector & V2 = Vertices[I2].Position;
+		
+		float HitT = 0.0f;
+		if (IntersectTriangle(LocalRay.Origin, LocalRay.Direction, V0, V1, V2, HitT))
 		{
-			if (Hit.Distance < ClosestDistance)
+			if (HitT < ClosestT)
 			{
-				ClosestDistance = Hit.Distance;
-				BestHit = Hit;
+				ClosestT = HitT;
 				bHit = true;
+				BestFaceIndex = static_cast<int32>(i / 3);
+				
+				const FVector Edge1 = V1 - V0;
+				const FVector Edge2 = V2 - V0;
+				BestLocalNormal = FVector::CrossProduct(Edge1, Edge2).GetSafeNormal();
 			}
 		}
 	}
-
-	if (bHit)
+	
+	if (!bHit)
 	{
-		BestHit.HitComponent = this;
-		OutHitResult = BestHit;
+		return false;
 	}
-
-	return bHit;
+	
+	const FVector LocalHitLocation = LocalRay.Origin + LocalRay.Direction * ClosestT;
+	const FVector WorldHitLocation = GetWorldMatrix().TransformPosition(LocalHitLocation);
+	FVector WorldNormal = GetWorldMatrix().TransformVector(BestLocalNormal);
+	WorldNormal.NormalizeSafe();
+	
+	OutHitResult.bHit = true;
+	OutHitResult.HitComponent = this;
+	OutHitResult.Distance = (WorldHitLocation - Ray.Origin).Length();
+	OutHitResult.Location = WorldHitLocation;
+	OutHitResult.Normal = WorldNormal;
+	OutHitResult.FaceIndex = BestFaceIndex;
+	
+	return true;
 }
 
 const FAABB& UStaticMeshComponent::GetWorldAABB() const
@@ -136,15 +206,7 @@ const FAABB& UStaticMeshComponent::GetWorldAABB() const
 	return WorldAABB;
 }
 
-void UStaticMeshComponent::OnTransformChanged()
-{
-	UMeshComponent::OnTransformChanged();
-
-	MarkBoundsDirty();
-	MarkRenderStateDirty();
-}
-
-bool UStaticMeshComponent::ConsumRenderStateDirty()
+bool UStaticMeshComponent::ConsumeRenderStateDirty()
 {
 	const bool bWasDirty = bRenderStateDirty;
 	bRenderStateDirty = false;
@@ -163,8 +225,14 @@ void UStaticMeshComponent::MarkRenderStateDirty()
 
 void UStaticMeshComponent::EnsureBoundsUpdated() const
 {
-	if (!bBoundsDirty)
+	if (!bBoundsDirty && !bTransformDirty)
 	{
+		return;
+	}
+
+	if (bTransformDirty)
+	{
+		(void)GetWorldMatrix();
 		return;
 	}
 

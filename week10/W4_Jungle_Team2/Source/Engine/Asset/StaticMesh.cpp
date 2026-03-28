@@ -39,38 +39,32 @@ const FString& UStaticMesh::GetAssetPathFileName() const
 
 const TArray<FNormalVertex>& UStaticMesh::GetVertices() const
 {
-	//	UE_LOG로 남길까 했지만 의미가 없음
-	static_assert(MeshData != nullptr, "MeshData is nullptr");
-
-	return MeshData->Vertices;
+	static const TArray<FNormalVertex> Empty = {};
+	return MeshData ? MeshData->Vertices : Empty;
 }
 
 const TArray<uint32>& UStaticMesh::GetIndices() const
 {
-	static_assert(MeshData != nullptr, "MeshData is nullptr");
-
-	return MeshData->Indices;
+	static const TArray<uint32> Empty = {};
+	return MeshData ? MeshData->Indices : Empty;
 }
 
 const TArray<FStaticMeshSection>& UStaticMesh::GetSections() const
 {
-	static_assert(MeshData != nullptr, "MeshData is nullptr");
-
-	return MeshData->Sections;
+	static const TArray<FStaticMeshSection> Empty = {};
+	return MeshData ? MeshData->Sections : Empty;
 }
 
 const TArray<FStaticMeshMaterialSlot>& UStaticMesh::GetMaterialSlots() const
 {
-	static_assert(MeshData != nullptr, "MeshData is nullptr");
-
-	return MeshData->MaterialSlots;
+	static const TArray<FStaticMeshMaterialSlot> Empty = {};
+	return MeshData ? MeshData->MaterialSlots : Empty;
 }
 
 const FAABB& UStaticMesh::GetLocalBounds() const
 {
-	static_assert(MeshData != nullptr, "MeshData is nullptr");
-
-	return MeshData->LocalBounds;
+	static const FAABB Empty = {};
+	return MeshData ? MeshData->LocalBounds : Empty;
 }
 
 bool UStaticMesh::HasValidMeshData() const

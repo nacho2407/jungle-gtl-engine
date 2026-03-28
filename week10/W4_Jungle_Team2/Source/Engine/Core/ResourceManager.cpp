@@ -1,7 +1,9 @@
 ﻿#include "Core/ResourceManager.h"
+
 #include "Core/Paths.h"
 #include "SimpleJSON/json.hpp"
 
+#include <algorithm>
 #include <fstream>
 #include <filesystem>
 #include "DDSTextureLoader.h"
@@ -10,11 +12,14 @@
 
 namespace ResourceKey
 {
-	constexpr const char* Font     = "Font";
+	constexpr const char* Font = "Font";
 	constexpr const char* Particle = "Particle";
-	constexpr const char* Path     = "Path";
-	constexpr const char* Columns  = "Columns";
-	constexpr const char* Rows     = "Rows";
+	constexpr const char* StaticMesh = "StaticMesh";
+	constexpr const char* Path = "Path";
+	constexpr const char* Columns = "Columns";
+	constexpr const char* Rows = "Rows";
+	constexpr const char* Preload = "Preload";
+	constexpr const char* NormalizeToUnitCube = "NormalizeToUnitCube";
 }
 
 void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
@@ -28,7 +33,7 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
 	}
 
 	FString Content((std::istreambuf_iterator<char>(File)),
-		std::istreambuf_iterator<char>());
+	                std::istreambuf_iterator<char>());
 
 	JSON Root = JSON::Load(Content);
 
@@ -40,12 +45,44 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
 		{
 			JSON Entry = Pair.second;
 			FFontResource Resource;
-			Resource.Name    = FName(Pair.first.c_str());
-			Resource.Path    = Entry[ResourceKey::Path].ToString();
+			Resource.Name = FName(Pair.first.c_str());
+			Resource.Path = Entry[ResourceKey::Path].ToString();
 			Resource.Columns = static_cast<uint32>(Entry[ResourceKey::Columns].ToInt());
-			Resource.Rows    = static_cast<uint32>(Entry[ResourceKey::Rows].ToInt());
-			Resource.SRV     = nullptr;
+			Resource.Rows = static_cast<uint32>(Entry[ResourceKey::Rows].ToInt());
+			Resource.SRV = nullptr;
 			FontResources[Pair.first] = Resource;
+		}
+	}
+
+	// StaticMesh — { "Name": { "Path": "Asset/Mesh/xxx.obj" } }
+	// StaticMesh — { "Name": { "Path": "...", "Preload": true, "NormalizeToUnitCube": true } }
+	if (Root.hasKey(ResourceKey::StaticMesh))
+	{
+		JSON StaticMeshSection = Root[ResourceKey::StaticMesh];
+		for (auto& Pair : StaticMeshSection.ObjectRange())
+		{
+			JSON Entry = Pair.second;
+			if (!Entry.hasKey(ResourceKey::Path))
+			{
+				continue;
+			}
+
+			FStaticMeshResource Resource;
+			Resource.Name = Pair.first;
+			Resource.Path = Entry[ResourceKey::Path].ToString();
+			Resource.bPreload = Entry.hasKey(ResourceKey::Preload)
+				? Entry[ResourceKey::Preload].ToBool()
+				: false;
+			Resource.bNormalizeToUnitCube = Entry.hasKey(ResourceKey::NormalizeToUnitCube)
+				? Entry[ResourceKey::NormalizeToUnitCube].ToBool()
+				: false;
+
+			StaticMeshRegistry[Pair.first] = Resource;
+
+			if (Resource.bPreload && LoadStaticMesh(Resource.Path) == nullptr)
+			{
+				UE_LOG("Failed to load static mesh from Resource.ini: %s", Resource.Path.c_str());
+			}
 		}
 	}
 
@@ -57,11 +94,11 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
 		{
 			JSON Entry = Pair.second;
 			FParticleResource Resource;
-			Resource.Name    = FName(Pair.first.c_str());
-			Resource.Path    = Entry[ResourceKey::Path].ToString();
+			Resource.Name = FName(Pair.first.c_str());
+			Resource.Path = Entry[ResourceKey::Path].ToString();
 			Resource.Columns = static_cast<uint32>(Entry[ResourceKey::Columns].ToInt());
-			Resource.Rows    = static_cast<uint32>(Entry[ResourceKey::Rows].ToInt());
-			Resource.SRV     = nullptr;
+			Resource.Rows = static_cast<uint32>(Entry[ResourceKey::Rows].ToInt());
+			Resource.SRV = nullptr;
 			ParticleResources[Pair.first] = Resource;
 		}
 	}
@@ -83,31 +120,32 @@ bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 		return false;
 	}
 
-	auto LoadSRV = [&](FTextureAtlasResource& Resource) -> bool
-	{
-		std::wstring FullPath = FPaths::Combine(FPaths::RootDir(), FPaths::ToWide(Resource.Path));
-		HRESULT hr = DirectX::CreateDDSTextureFromFileEx(
-			Device,
-			FullPath.c_str(),
-			0,
-			D3D11_USAGE_IMMUTABLE,
-			D3D11_BIND_SHADER_RESOURCE,
-			0, 0,
-			DirectX::DDS_LOADER_DEFAULT,
-			nullptr,
-			&Resource.SRV
-		);
-		return SUCCEEDED(hr);
-	};
-
 	for (auto& [Key, Resource] : FontResources)
 	{
-		if (!LoadSRV(Resource)) return false;
+		if (Resource.SRV != nullptr)
+		{
+			continue;
+		}
+
+		if (!FontLoader.Load(Resource.Name, Resource.Path, Resource.Columns, Resource.Rows, Device, Resource))
+		{
+			UE_LOG("Failed to load Font atlas: %s", Resource.Path.c_str());
+			return false;
+		}
 	}
 
 	for (auto& [Key, Resource] : ParticleResources)
 	{
-		if (!LoadSRV(Resource)) return false;
+		if (Resource.SRV != nullptr)
+		{
+			continue;
+		}
+
+		if (!ParticleLoader.Load(Resource.Name, Resource.Path, Resource.Columns, Resource.Rows, Device, Resource))
+		{
+			UE_LOG("Failed to load Particle atlas: %s", Resource.Path.c_str());
+			return false;
+		}
 	}
 
 	return true;
@@ -117,21 +155,40 @@ void FResourceManager::ReleaseGPUResources()
 {
 	for (auto& [Key, Resource] : FontResources)
 	{
-		if (Resource.SRV) { Resource.SRV->Release(); Resource.SRV = nullptr; }
+		if (Resource.SRV)
+		{
+			Resource.SRV->Release();
+			Resource.SRV = nullptr;
+		}
 	}
 	FontResources.clear();
 
 	for (auto& [Key, Resource] : ParticleResources)
 	{
-		if (Resource.SRV) { Resource.SRV->Release(); Resource.SRV = nullptr; }
+		if (Resource.SRV)
+		{
+			Resource.SRV->Release();
+			Resource.SRV = nullptr;
+		}
 	}
 	ParticleResources.clear();
-	
+
 	for (auto& [Key, Resource] : MaterialTextureResources)
 	{
-		if (Resource.SRV) { Resource.SRV->Release(); Resource.SRV = nullptr; }
+		if (Resource.SRV)
+		{
+			Resource.SRV->Release();
+			Resource.SRV = nullptr;
+		}
 	}
 	MaterialTextureResources.clear();
+
+	for (auto& [Path, StaticMeshAsset] : StaticMeshMap)
+	{
+		delete StaticMeshAsset;
+	}
+	StaticMeshMap.clear();
+	StaticMeshRegistry.clear();
 }
 
 FMaterialResource* FResourceManager::GetOrLoadTexture(const FString& Path, ID3D11Device* Device)
@@ -184,11 +241,11 @@ const FFontResource* FResourceManager::FindFont(const FName& FontName) const
 void FResourceManager::RegisterFont(const FName& FontName, const FString& InPath, uint32 Columns, uint32 Rows)
 {
 	FFontResource Resource;
-	Resource.Name    = FontName;
-	Resource.Path    = InPath;
+	Resource.Name = FontName;
+	Resource.Path = InPath;
 	Resource.Columns = Columns;
-	Resource.Rows    = Rows;
-	Resource.SRV     = nullptr;
+	Resource.Rows = Rows;
+	Resource.SRV = nullptr;
 	FontResources[FontName.ToString()] = Resource;
 }
 
@@ -208,11 +265,11 @@ const FParticleResource* FResourceManager::FindParticle(const FName& ParticleNam
 void FResourceManager::RegisterParticle(const FName& ParticleName, const FString& InPath, uint32 Columns, uint32 Rows)
 {
 	FParticleResource Resource;
-	Resource.Name    = ParticleName;
-	Resource.Path    = InPath;
+	Resource.Name = ParticleName;
+	Resource.Path = InPath;
 	Resource.Columns = Columns;
-	Resource.Rows    = Rows;
-	Resource.SRV     = nullptr;
+	Resource.Rows = Rows;
+	Resource.SRV = nullptr;
 	ParticleResources[ParticleName.ToString()] = Resource;
 }
 
@@ -236,4 +293,69 @@ TArray<FString> FResourceManager::GetParticleNames() const
 		Names.push_back(Key);
 	}
 	return Names;
+}
+
+UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
+{
+	if (Path.empty())
+	{
+		return nullptr;
+	}
+
+	if (UStaticMesh* FoundMesh = FindStaticMesh(Path))
+	{
+		return FoundMesh;
+	}
+
+	FStaticMeshLoadOptions LoadOptions = {};
+
+	for (const auto& [Key, Resource] : StaticMeshRegistry)
+	{
+		if (Resource.Path == Path)
+		{
+			LoadOptions.bNormalizeToUnitCube = Resource.bNormalizeToUnitCube;
+			break;
+		}
+	}
+
+	UStaticMesh* LoadedMesh = ObjLoader.Load(Path, LoadOptions);
+	if (LoadedMesh == nullptr)
+	{
+		return nullptr;
+	}
+
+	StaticMeshMap.insert({ Path, LoadedMesh });
+	return LoadedMesh;
+}
+
+UStaticMesh* FResourceManager::FindStaticMesh(const FString& Path) const
+{
+	auto It = StaticMeshMap.find(Path);
+	if (It == StaticMeshMap.end())
+	{
+		return nullptr;
+	}
+
+	return It->second;
+}
+
+TArray<FString> FResourceManager::GetStaticMeshPaths() const
+{
+	TArray<FString> Paths;
+	Paths.reserve(StaticMeshRegistry.size() + StaticMeshMap.size());
+
+	for (const auto& Pair : StaticMeshRegistry)
+	{
+		Paths.push_back(Pair.second.Path);
+	}
+
+	for (const auto& Pair : StaticMeshMap)
+	{
+		if (std::find(Paths.begin(), Paths.end(), Pair.first) == Paths.end())
+		{
+			Paths.push_back(Pair.first);
+		}
+	}
+
+	return Paths;
 }
