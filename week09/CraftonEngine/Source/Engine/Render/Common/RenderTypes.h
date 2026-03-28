@@ -38,7 +38,6 @@ enum class ERenderPass : uint32
 {
 	Opaque,
 	Font,			// TextRenderComponent → FontBatcher 경유
-	OverlayFont,
 	SubUV,			// SubUVComponent     → SubUVBatcher 경유
 	Translucent,
 	StencilMask,
@@ -46,5 +45,6 @@ enum class ERenderPass : uint32
 	Editor,
 	Grid,
 	DepthLess,
+	OverlayFont,
 	MAX
 };
