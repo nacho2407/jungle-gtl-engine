@@ -1,7 +1,9 @@
 ﻿#include "Engine/Runtime/Engine.h"
+#include "Engine/Runtime/Engine.h"
 
 #include "Core/Paths.h"
-#include "Core/Stats.h"
+#include "Core/Logging/Stats.h"
+#include "Core/Logging/GPUProfiler.h"
 #include "Engine/Core/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Core/ResourceManager.h"

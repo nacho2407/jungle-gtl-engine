@@ -1,4 +1,5 @@
 ﻿#include "Renderer.h"
+#include "Renderer.h"
 
 #include <iostream>
 #include <algorithm>
@@ -6,8 +7,8 @@
 #include "Core/ResourceManager.h"
 #include "Render/Common/RenderTypes.h"
 #include "Render/Mesh/MeshManager.h"
-#include "Core/Stats.h"
-#include "Core/GPUProfiler.h"
+#include "Core/Logging/Stats.h"
+#include "Core/Logging/GPUProfiler.h"
 
 
 void FRenderer::Create(HWND hWindow)
@@ -201,7 +202,7 @@ void FRenderer::InitializePassBatchers()
 		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus& Bus) {
 			if (Cmd.Type == ERenderCommandType::Grid)
 			{
-				const FVector CameraPos = Bus.GetView().GetInverseFast().GetLocation();
+				const FVector CameraPos = Bus.GetView().GetInverse().GetOrigin();
 				FVector CameraFwd = Bus.GetCameraRight().CrossProduct(Bus.GetCameraUp());
 				CameraFwd.Normalize();
 
@@ -225,10 +226,10 @@ void FRenderer::InitializePassBatchers()
 			{
 				FontBatcher.AddText(
 					*Cmd.Constants.Font.Text,
-					Cmd.PerObjectConstants.Model.GetLocation(),
+					Cmd.PerObjectConstants.Model.GetOrigin(),
 					Bus.GetCameraRight(),
 					Bus.GetCameraUp(),
-					Cmd.PerObjectConstants.Model.GetScale(),
+					Cmd.PerObjectConstants.Model.GetScaleVector(),
 					Cmd.Constants.Font.Scale
 				);
 			}
@@ -257,10 +258,10 @@ void FRenderer::InitializePassBatchers()
 
 				SubUVBatcher.AddSprite(
 					SubUV.Particle->SRV,
-					Cmd.PerObjectConstants.Model.GetLocation(),
+					Cmd.PerObjectConstants.Model.GetOrigin(),
 					Bus.GetCameraRight(),
 					Bus.GetCameraUp(),
-					Cmd.PerObjectConstants.Model.GetScale(),
+					Cmd.PerObjectConstants.Model.GetScaleVector(),
 					SubUV.FrameIndex,
 					SubUV.Particle->Columns,
 					SubUV.Particle->Rows,
@@ -282,7 +283,7 @@ void FRenderer::FlushLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const 
 {
 	if (Batcher.GetLineCount() == 0) return;
 
-	const FVector CameraPosition = Bus.GetView().GetInverseFast().GetLocation();
+	const FVector CameraPosition = Bus.GetView().GetInverse().GetOrigin();
 	FEditorConstants EditorConstants = {};
 	EditorConstants.CameraPosition = CameraPosition;
 	Resources.EditorConstantBuffer.Update(Context, &EditorConstants, sizeof(FEditorConstants));

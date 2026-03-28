@@ -3,7 +3,7 @@
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
-#include "Core/Stats.h"
+#include "Core/Logging/Stats.h"
 #include "Editor/ObjViewerRenderPipeline.h"
 #include "Engine/GameFramework/PrimitiveActors.h"
 #include "Engine/GameFramework/World.h"
@@ -41,7 +41,6 @@ void UObjViewerEngine::Init(FWindowsWindow* InWindow)
 	// 엔진 시스템에 활성 카메라 등록
 	ViewportClient.CreateCamera();
 	ViewportClient.ResetCamera();
-	GetWorld()->SetActiveCamera(ViewportClient.GetCamera());
 
 	// Obj Viewer Render Pipeline 세팅
 	SetRenderPipeline(std::make_unique<FObjViewerRenderPipeline>(this, Renderer));
@@ -73,7 +72,6 @@ void UObjViewerEngine::BeginPlay()
 	{
 		MainCamera->SetWorldLocation(FVector(2.0f, 3.0f, 3.0f));
 		MainCamera->LookAt(FVector(0.0f, 0.0f, 0.0f));
-		World->SetActiveCamera(MainCamera);
 	}
 
 	// 기본 조명 스폰

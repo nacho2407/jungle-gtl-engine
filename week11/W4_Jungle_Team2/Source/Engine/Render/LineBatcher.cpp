@@ -36,7 +36,7 @@ namespace
 		}
 
 		const float Normalized = (std::fabs(OffsetFromFocus) - FadeStart) / (FadeEnd - FadeStart);
-		const float LinearFade = Clamp(1.0f - Normalized, 0.0f, 1.0f);
+		const float LinearFade = MathUtil::Clamp(1.0f - Normalized, 0.0f, 1.0f);
 		// 멀리서 여러 저알파 line이 한 픽셀에 누적되는 현상을 줄이기 위해
 		// grid fade를 선형보다 조금 더 빠르게 감쇠시킨다.
 		return LinearFade * LinearFade;
@@ -44,7 +44,7 @@ namespace
 
 	FVector4 WithAlpha(const FVector4& Color, float Alpha)
 	{
-		return FVector4(Color.X, Color.Y, Color.Z, Color.W * Clamp(Alpha, 0.0f, 1.0f));
+		return FVector4(Color.X, Color.Y, Color.Z, Color.W * MathUtil::Clamp(Alpha, 0.0f, 1.0f));
 	}
 
 	bool IsAxisLine(float Coordinate, float Spacing)
@@ -63,7 +63,7 @@ namespace
 
 	FVector ComputeGridFocusPoint(const FVector& CameraPosition, const FVector& CameraForward)
 	{
-		if (std::fabs(CameraForward.Z) > Epsilon) // if Z가 거의 EPSILON -> 평면과 평행 -> 교차 계산 X
+		if (std::fabs(CameraForward.Z) > MathUtil::Epsilon) // if Z가 거의 EPSILON -> 평면과 평행 -> 교차 계산 X
 		{
 			const float T = (GridPlaneZ - CameraPosition.Z) / CameraForward.Z;
 			if (T > 0.0f) // 카메라 앞쪽 방향만 사용
@@ -73,7 +73,7 @@ namespace
 		}
 
 		FVector PlanarForward(CameraForward.X, CameraForward.Y, 0.0f); // 평행한 경우 -> Z 성분 제거 -> XY 평면 방향만 사용
-		if (PlanarForward.Length() > Epsilon)
+		if (PlanarForward.Size() > MathUtil::Epsilon)
 		{
 			PlanarForward.Normalize();
 			// 카메라 아래 지점 + 앞으로 조금 이동

@@ -2,7 +2,7 @@
 
 #include "Renderer.h"
 #include "Engine/Runtime/Engine.h"
-#include "Component/CameraComponent.h"
+#include "Editor/Viewport/ViewportCamera.h"
 #include "GameFramework/World.h"
 
 FDefaultRenderPipeline::FDefaultRenderPipeline(UEngine* InEngine, FRenderer& InRenderer)
@@ -21,7 +21,7 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	Bus.Clear();
 
 	UWorld* World = Engine->GetWorld();
-	UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
+	FViewportCamera* Camera = World ? World->GetActiveCamera() : nullptr;
 	if (Camera)
 	{
 		FMatrix ViewMat = Camera->GetViewMatrix();

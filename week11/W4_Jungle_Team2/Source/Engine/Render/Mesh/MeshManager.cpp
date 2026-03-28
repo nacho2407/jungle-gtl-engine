@@ -46,10 +46,10 @@ void FEditorMeshLibrary::CreateRotationGizmo()
 	const int Segments = 64;
 	const int TubeSegments = 8;
 
-	FVector4 Colors[3] = {
-		FVector4(1.0f, 0.0f, 0.0f, 1.0f), // X-Axis (Red)
-		FVector4(0.0f, 1.0f, 0.0f, 1.0f), // Y-Axis (Green)
-		FVector4(0.0f, 0.0f, 1.0f, 1.0f)  // Z-Axis (Blue)
+	FColor Colors[3] = {
+		FColor(1.0f, 0.0f, 0.0f, 1.0f), // X-Axis (Red)
+		FColor(0.0f, 1.0f, 0.0f, 1.0f), // Y-Axis (Green)
+		FColor(0.0f, 0.0f, 1.0f, 1.0f)  // Z-Axis (Blue)
 	};
 
 	// 각 축(X, Y, Z)에 대해 고리 생성
@@ -59,13 +59,13 @@ void FEditorMeshLibrary::CreateRotationGizmo()
 
 		for (int i = 0; i <= Segments; ++i)
 		{
-			float longitude = (float)i / Segments * 2.0f * PI;
+			float longitude = (float)i / Segments * 2.0f * MathUtil::PI;
 			float sinLong = sin(longitude);
 			float cosLong = cos(longitude);
 
 			for (int j = 0; j < TubeSegments; ++j)
 			{
-				float latitude = (float)j / TubeSegments * 2.0f * PI;
+				float latitude = (float)j / TubeSegments * 2.0f * MathUtil::PI;
 				float sinLat = sin(latitude);
 				float cosLat = cos(latitude);
 
@@ -116,15 +116,15 @@ void FEditorMeshLibrary::CreateScaleGizmo()
 	const float BoxSize = 0.05f;
 	const float StemThickness = 0.03f;
 
-	FVector4 colors[3] = {
-		FVector4(1.0f, 0.0f, 0.0f, 1.0f), // X
-		FVector4(0.0f, 1.0f, 0.0f, 1.0f), // Y
-		FVector4(0.0f, 0.0f, 1.0f, 1.0f)  // Z
+	FColor colors[3] = {
+		FColor(1.0f, 0.0f, 0.0f, 1.0f), // X
+		FColor(0.0f, 1.0f, 0.0f, 1.0f), // Y
+		FColor(0.0f, 0.0f, 1.0f, 1.0f)  // Z
 	};
 
 	FVector dirs[3] = { FVector(1,0,0), FVector(0,1,0), FVector(0,0,1) };
 
-	auto AddBox = [&](const FVector& Center, const FVector& Extent, const FVector4& Color, int SubID) {
+	auto AddBox = [&](const FVector& Center, const FVector& Extent, const FColor& Color, int SubID) {
 		uint32 StartIdx = (uint32)vertices.size();
 		FVector p[8] = {
 			Center + FVector(-Extent.X, -Extent.Y, -Extent.Z), Center + FVector(Extent.X, -Extent.Y, -Extent.Z),
@@ -172,10 +172,10 @@ void FEditorMeshLibrary::CreateTranslationGizmo()
 	const float stemLength = 0.8f;
 	const float totalLength = 1.0f;
 
-	FVector4 colors[3] = {
-		FVector4(1.0f, 0.0f, 0.0f, 1.0f), // X
-		FVector4(0.0f, 1.0f, 0.0f, 1.0f), // Y
-		FVector4(0.0f, 0.0f, 1.0f, 1.0f)  // Z
+	FColor colors[3] = {
+		FColor(1.0f, 0.0f, 0.0f, 1.0f), // X
+		FColor(0.0f, 1.0f, 0.0f, 1.0f), // Y
+		FColor(0.0f, 0.0f, 1.0f, 1.0f)  // Z
 	};
 
 	for (int32 axis = 0; axis < 3; ++axis)
@@ -192,7 +192,7 @@ void FEditorMeshLibrary::CreateTranslationGizmo()
 		// 링 버텍스 생성
 		for (int32 i = 0; i <= segments; ++i)
 		{
-			float angle = (2.0f * PI * i) / segments;
+			float angle = (2.0f * MathUtil::PI * i) / segments;
 			float c = cos(angle);
 			float s = sin(angle);
 

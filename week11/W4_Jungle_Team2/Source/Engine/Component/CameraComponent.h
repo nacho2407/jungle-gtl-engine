@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Engine/Core/RayTypes.h"
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
@@ -45,6 +45,25 @@ public:
 	bool IsOrthogonal() const { return CameraState.bIsOrthogonal; }
 
 	FRay DeprojectScreenToWorld(float MouseX, float MouseY, float ScreenWidth, float ScreenHeight);
+
+public:
+	//	Unreal-style editor camera helpers
+	void AddYawInput(float DeltaYawDegrees);
+	void AddPitchInput(float DeltaPitchDegrees);
+
+	void MoveForward(float Distance);
+	void MoveRight(float Distance);
+	void MoveUp(float Distance);
+
+	float GetPitchDegrees() const;
+	float GetYawDegrees() const;
+
+	FVector GetForwardVector() const;
+	FVector GetRightVector() const;
+	FVector GetUpVector() const;
+
+private:
+	void SetViewRotationDegrees(float PitchDegrees, float YawDegrees);
 
 private:
 	FCameraState CameraState;
