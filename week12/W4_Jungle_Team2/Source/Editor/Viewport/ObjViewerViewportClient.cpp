@@ -34,6 +34,7 @@ void FObjViewerViewportClient::DestroyCamera()
     }
 }
 
+// 카메라를 초기 위치로 이동시킨다.
 void FObjViewerViewportClient::ResetCamera()
 {
     if (!Camera || !Settings)
@@ -47,47 +48,10 @@ void FObjViewerViewportClient::ClampCameraPosition()
 {
 	if (!Camera || !World) return;
 
-    FVector MinAABB(FLT_MAX, FLT_MAX, FLT_MAX);
-    FVector MaxAABB(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-    bool bHasValidMesh = false;
-
-    // 스폰된 액터를 순회하며 AABB 박스를 계산한다. (Viewer에서는 보통 하나)
-    for (AActor* Actor : World->GetActors())
-    {
-        if (!Actor || !Actor->GetRootComponent()) continue;
-
-        for (auto* primitive : Actor->GetPrimitiveComponents())
-        {
-            UPrimitiveComponent* PrimComp = static_cast<UPrimitiveComponent*>(primitive);
-            if (!PrimComp || !PrimComp->IsVisible()) continue;
-
-            PrimComp->UpdateWorldAABB();
-            FBoundingBox Box = PrimComp->GetWorldBoundingBox();
-
-            MinAABB.X = std::min(MinAABB.X, Box.Min.X);
-            MinAABB.Y = std::min(MinAABB.Y, Box.Min.Y);
-            MinAABB.Z = std::min(MinAABB.Z, Box.Min.Z);
-
-            MaxAABB.X = std::max(MaxAABB.X, Box.Max.X);
-            MaxAABB.Y = std::max(MaxAABB.Y, Box.Max.Y);
-            MaxAABB.Z = std::max(MaxAABB.Z, Box.Max.Z);
-
-            bHasValidMesh = true;
-        }
-	}
-	
-	// 씬 중심점과 모델의 최대 크기(반지름)를 계산
-    FVector SceneCenter(0.0f, 0.0f, 0.0f);
-    float ModelRadius = 1000.0f;
-
-    if (bHasValidMesh)
-    {
-        SceneCenter = (MinAABB + MaxAABB) * 0.5f;
-        ModelRadius = (MaxAABB - MinAABB).Length() * 0.5f; 
-    }
-
     // 허용되는 최대 거리를 설정
-    float MaxAllowedDistance = ModelRadius * 2.0f; 
+	FVector SceneCenter = FVector(0, 0, 0) ;
+	float ModelRadius = GetModelRadius();
+    float MaxAllowedDistance = ModelRadius * 3.0f;
 
     // 카메라 위치를 확인하고 이동 범위 제한(Clamp)을 적용
     FVector CamPos = Camera->GetWorldLocation();
@@ -125,10 +89,6 @@ void FObjViewerViewportClient::Tick(float DeltaTime)
     TickInput(DeltaTime);
     TickInteraction(DeltaTime);
     TickCursorOverlay(DeltaTime);
-
-	// Camera Position 및 Lookat 좌표를 제한
-	ClampCameraPanToObject(); // 화면 이탈 방지 함수 추가
-	ClampCameraPosition();
 }
 
 void FObjViewerViewportClient::TickInput(float DeltaTime)
@@ -191,20 +151,23 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
         return;
     }
 
-    const float ZoomSpeed = Settings ? Settings->CameraZoomSpeed : 300.f;
-
+	// Viewer에서는 실제로 Zoom이 일어나는 대신 카메라를 전후로 이동한다.
+    const float ZoomSpeed = Settings ? Settings->CameraZoomSpeed : 500.f;
     float ScrollNotches = InputSystem::Get().GetScrollNotches();
     if (ScrollNotches != 0.0f)
     {
+		float ModelRadius = GetModelRadius();
+		float DynamicZoomSpeed = ZoomSpeed * ModelRadius;
+
         if (Camera->IsOrthogonal())
         {
-            float NewWidth = Camera->GetOrthoWidth() - ScrollNotches * ZoomSpeed * DeltaTime;
+            float NewWidth = Camera->GetOrthoWidth() - ScrollNotches * DynamicZoomSpeed * DeltaTime;
             Camera->SetOrthoWidth(Clamp(NewWidth, 0.1f, 1000.0f));
         }
         else
         {
-            float NewFOV = Camera->GetFOV() - ScrollNotches * ZoomSpeed * DeltaTime;
-            Camera->SetFOV(Clamp(NewFOV, 1.f * DEG_TO_RAD, 90.0f * DEG_TO_RAD));
+            float MoveAmount = ScrollNotches * DynamicZoomSpeed * DeltaTime;
+            Camera->MoveLocal(FVector(MoveAmount, 0.0f, 0.0f));
         }
     }
 
@@ -329,16 +292,19 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
     {
     }
 
+	// Camera Position 및 Lookat 좌표를 제한한다.
+	ClampCameraPanToObject(); 
 	ClampCameraPosition();
 }
 
+// 물체를 카메라가 보고 있는 화면 중심에서 너무 멀리 이동시킬 수 없도록 한다.
 void FObjViewerViewportClient::ClampCameraPanToObject()
 {
     if (!Camera || !World) return;
 
 	 // 최신 카메라 행렬 확보
     Camera->UpdateWorldMatrix();
-    FVector SceneCenter = FVector(0.0f, 0.0f, 0.0f);
+    FVector SceneCenter = FVector(0, 0, 0);
     FVector CamPos = Camera->GetWorldLocation();
     FVector CamFwd = Camera->GetForwardVector();
     FVector CamRight = Camera->GetRightVector();
@@ -370,6 +336,48 @@ void FObjViewerViewportClient::ClampCameraPanToObject()
         FVector Correction = CamRight * (DistX * CorrectionScale) + CamUp * (DistY * CorrectionScale);
         Camera->SetWorldLocation(CamPos + Correction);
     }
+}
+
+// 모델의 크기에 따라 카메라 조작 속도를 변경하도록 ModelRadius를 계산한다.
+float FObjViewerViewportClient::GetModelRadius()
+{
+    FVector MinAABB(FLT_MAX, FLT_MAX, FLT_MAX);
+    FVector MaxAABB(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+    bool bHasValidMesh = false;
+
+    // 스폰된 액터를 순회하며 AABB 박스를 계산한다. (Viewer에서는 보통 하나)
+    for (AActor* Actor : World->GetActors())
+    {
+        if (!Actor || !Actor->GetRootComponent()) continue;
+
+        for (auto* primitive : Actor->GetPrimitiveComponents())
+        {
+            UPrimitiveComponent* PrimComp = static_cast<UPrimitiveComponent*>(primitive);
+            if (!PrimComp || !PrimComp->IsVisible()) continue;
+
+            PrimComp->UpdateWorldAABB();
+            FBoundingBox Box = PrimComp->GetWorldBoundingBox();
+
+            MinAABB.X = std::min(MinAABB.X, Box.Min.X);
+            MinAABB.Y = std::min(MinAABB.Y, Box.Min.Y);
+            MinAABB.Z = std::min(MinAABB.Z, Box.Min.Z);
+
+            MaxAABB.X = std::max(MaxAABB.X, Box.Max.X);
+            MaxAABB.Y = std::max(MaxAABB.Y, Box.Max.Y);
+            MaxAABB.Z = std::max(MaxAABB.Z, Box.Max.Z);
+
+            bHasValidMesh = true;
+        }
+	}
+	
+	// 씬 중심점과 모델의 최대 크기(반지름)를 계산
+    float ModelRadius = 1000.0f;
+    if (bHasValidMesh)
+    {
+        ModelRadius = (MaxAABB - MinAABB).Length() * 0.5f; 
+    }
+
+	return ModelRadius;
 }
 
 void FObjViewerViewportClient::HandleDragStart(const FRay& Ray)
