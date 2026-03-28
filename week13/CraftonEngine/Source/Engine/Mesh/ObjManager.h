@@ -16,6 +16,7 @@ class FObjManager
 	static ID3D11Device* GDevice;
 
 public:
+	static std::string GetBinaryFilePath(const std::string& OriginalPath);
 	static void SetDevice(ID3D11Device* InDevice) { GDevice = InDevice; }
 	static FStaticMesh* LoadObjStaticMeshAsset(const std::string& PathFileName);
 	static UStaticMesh* LoadObjStaticMesh(const std::string& PathFileName);
