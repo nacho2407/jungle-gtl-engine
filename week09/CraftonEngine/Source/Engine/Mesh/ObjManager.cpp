@@ -58,23 +58,15 @@ FStaticMesh* FObjManager::LoadObjStaticMeshAsset(const std::string& PathFileName
 		ObjStaticMeshMap[PathFileName] = std::move(ConvertedMesh);
 	}
 
-	//// 1. 파싱
-	//FObjInfo ParsedObjInfo = FObjImporter::ParseObj(PathFileName);
-
-	//// 2. 변환된 임시 객체를 Map 안에 통째로 집어넣음 (이동)
-	//ObjStaticMeshMap[PathFileName] = FObjImporter::Convert(ParsedObjInfo);
-
-
-
 	// 3. Map 안에 안전하게 정착한 진짜 객체의 참조를 가져옴
-	FStaticMesh& ConvertedMesh = ObjStaticMeshMap[PathFileName];
+	FStaticMesh& TargetMesh = ObjStaticMeshMap[PathFileName];
 	// 4. 경로 이름 세팅
-	ConvertedMesh.PathFileName = PathFileName;
+	TargetMesh.PathFileName = PathFileName;
 
 	TArray<FVertexPNCT> RenderVertices;
-	RenderVertices.reserve(ConvertedMesh.Vertices.size());
+	RenderVertices.reserve(TargetMesh.Vertices.size());
 
-	for (const FNormalVertex& RawVert : ConvertedMesh.Vertices)
+	for (const FNormalVertex& RawVert : TargetMesh.Vertices)
 	{
 		FVertexPNCT RenderVert;
 		RenderVert.Position = RawVert.pos;
@@ -85,26 +77,26 @@ FStaticMesh* FObjManager::LoadObjStaticMeshAsset(const std::string& PathFileName
 	}
 
 	// 2. MeshBuffer 객체 생성 및 GPU에 버퍼 굽기
-	ConvertedMesh.RenderBuffer = new FMeshBuffer();
+	TargetMesh.RenderBuffer = new FMeshBuffer();
 
 	if (GDevice)
 	{
 		uint32 VCount = static_cast<uint32>(RenderVertices.size());
 		uint32 VByteWidth = VCount * sizeof(FVertexPNCT);
-		ConvertedMesh.RenderBuffer->GetVertexBuffer().Create(
+		TargetMesh.RenderBuffer->GetVertexBuffer().Create(
 			GDevice, RenderVertices.data(), VCount, VByteWidth, sizeof(FVertexPNCT));
 
-		if (!ConvertedMesh.Indices.empty())
+		if (!TargetMesh.Indices.empty())
 		{
-			uint32 ICount = static_cast<uint32>(ConvertedMesh.Indices.size());
+			uint32 ICount = static_cast<uint32>(TargetMesh.Indices.size());
 			uint32 IByteWidth = ICount * sizeof(uint32);
-			ConvertedMesh.RenderBuffer->GetIndexBuffer().Create(
-				GDevice, ConvertedMesh.Indices.data(), ICount, IByteWidth);
+			TargetMesh.RenderBuffer->GetIndexBuffer().Create(
+				GDevice, TargetMesh.Indices.data(), ICount, IByteWidth);
 		}
 	}
 
 	// 5. 안전한 메모리 주소 반환
-	return &ConvertedMesh;
+	return &TargetMesh;
 }
 
 UStaticMesh* FObjManager::LoadObjStaticMesh(const std::string& PathFileName)
