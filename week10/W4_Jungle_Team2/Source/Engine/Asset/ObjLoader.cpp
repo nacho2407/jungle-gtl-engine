@@ -1,35 +1,63 @@
 ﻿#include "ObjLoader.h"
 #include "FileUtils.h"
-#include "Render/Resource/Material.h"
-#include "Render/Mesh/StaticMesh.h"
-
+#include "StaticMesh.h"
+#include "Math/Utils.h"
+#include "UI/EditorConsoleWidget.h"
+#include "Core/PlatformTime.h"
 
 //	v, vt, vn, mtllib, usemtl, f
-UStaticMesh* FObjLoader::Load(const FString& Path)
+UStaticMesh* FObjLoader::Load(const FString& Path, const FStaticMeshLoadOptions& LoadOptions)
 {
 	Reset();
-	
+
 	SourcePath = Path;
 
+	const double StartTime = FPlatformTime::Seconds();
+	UE_LOG("[ObjLoader] Start loading OBJ: %s", Path.c_str());
+
+	/* Obj Parse - Build Raw Data */
 	if (!ParseObj(Path))
 	{
+		UE_LOG("[ObjLoader] Failed to parse OBJ: %s", Path.c_str());
 		return nullptr;
 	}
 
+	/* 단위 큐브의 크기로 변경 */
+	if (LoadOptions.bNormalizeToUnitCube)
+	{
+		UE_LOG("[ObjLoader] NormalizeToUnitCube enabled: %s", Path.c_str());
+		NormalizeRawPositionsToUnitCube();
+	}
+
+	/* Build Cooked Data from Raw Data */
 	if (!BuildStaticMesh())
 	{
+		UE_LOG("[ObjLoader] Failed to build static mesh: %s", Path.c_str());
 		return nullptr;
 	}
 
-	if (!BindMaterials())
+	/* Local Bounds(AABB) */
+	StaticMeshAsset.LocalBounds.Reset();
+	for (const FNormalVertex& Vertex : StaticMeshAsset.Vertices)
 	{
-		return nullptr;
+		StaticMeshAsset.LocalBounds.Expand(Vertex.Position);
 	}
 
+	UE_LOG("[ObjLoader] OBJ Loaded: %s (Vertices: %zu, Indices: %zu, Sections: %zu, MaterialSlots: %zu)",
+		SourcePath.c_str(),
+		StaticMeshAsset.Vertices.size(),
+		StaticMeshAsset.Indices.size(),
+		StaticMeshAsset.Sections.size(),
+		StaticMeshAsset.MaterialSlots.size());
+
+	const double EndTime = FPlatformTime::Seconds();
+	UE_LOG("[ObjLoader] Loaded %s in %.3f sec", Path.c_str(), EndTime - StartTime);
+
+	/* Build Asset from Cooked Data */
 	return CreateAsset();
 }
 
-//	TODO : 대소문자 정규화 해야하나
+//	TODO : 나중에 다시 확인해보기
 bool FObjLoader::SupportsExtension(const FString& Extension) const
 {
 	return Extension == FString("obj") || Extension == FString(".obj") || Extension == FString("OBJ") || Extension == FString(".OBJ");
@@ -124,97 +152,66 @@ bool FObjLoader::BuildStaticMesh()
 	//	IndexBuffer를 위한 Map
 	TMap<FObjVertexKey, uint32> VertexMap;
 
-	//	Slot 별로 Section 생성 (Section per Material Slot)
-	for (int32 SlotIdx = 0; SlotIdx < static_cast<int32>(StaticMeshAsset.MaterialSlots.size()); SlotIdx++)
+	TArray<TArray<uint32>> SlotIndices;
+	SlotIndices.resize(StaticMeshAsset.MaterialSlots.size());
+
+	for (const FObjRawFace& Face : RawData.Faces)
 	{
-		const FString& SlotName = StaticMeshAsset.MaterialSlots[SlotIdx].SlotName;
+		if (Face.Vertices.size() < 3)
+		{
+			continue;
+		}
+
+		const FString MaterialName = Face.MaterialName.empty() ? FString("Default") : Face.MaterialName;
+		const int32 SlotIdx = GetOrAddMaterialSlot(MaterialName);
+		if (SlotIdx < 0 || SlotIdx >= static_cast<int32>(SlotIndices.size()))
+		{
+			continue;
+		}
+
+		TArray<uint32>& IndicesPerSlot = SlotIndices[SlotIdx];
+		for (uint32 i = 0; i < Face.Vertices.size() - 2; i++)
+		{
+			const uint32 I0 = GetOrCreateVertexIndex(Face.Vertices[0], VertexMap);
+			const uint32 I1 = GetOrCreateVertexIndex(Face.Vertices[i + 1], VertexMap);
+			const uint32 I2 = GetOrCreateVertexIndex(Face.Vertices[i + 2], VertexMap);
+
+			IndicesPerSlot.push_back(I0);
+			IndicesPerSlot.push_back(I1);
+			IndicesPerSlot.push_back(I2);
+		}
+	}
+
+	for (int32 SlotIdx = 0; SlotIdx < static_cast<int32>(SlotIndices.size()); SlotIdx++)
+	{
+		TArray<uint32>& IndicesPerSlot = SlotIndices[SlotIdx];
+		if (IndicesPerSlot.empty())
+		{
+			continue;
+		}
 
 		FStaticMeshSection NewSection;
 		NewSection.StartIndex = static_cast<int32>(StaticMeshAsset.Indices.size());
 		NewSection.MaterialSlotIndex = SlotIdx;
 
-		for (const FObjRawFace& Face : RawData.Faces)
-		{
-			FString FaceMaterialName = Face.MaterialName;
+		StaticMeshAsset.Indices.insert(
+			StaticMeshAsset.Indices.end(),
+			IndicesPerSlot.begin(),
+			IndicesPerSlot.end());
 
-			if (FaceMaterialName.empty())
-			{
-				FaceMaterialName = "Default";
-			}
-
-			//	현재 slot에만 해당하는 face만 처리
-			if (FaceMaterialName != SlotName)
-			{
-				continue;
-			}
-			
-			//	물론 일어나지 않을 일이긴 함
-			if (Face.Vertices.size() < 3)
-			{
-				continue;
-			}
-			
-			for (uint32 i = 0; i < Face.Vertices.size() - 2; i++)
-			{
-				uint32 I0 = GetOrCreateVertexIndex(Face.Vertices[0], VertexMap);
-				uint32 I1 = GetOrCreateVertexIndex(Face.Vertices[i + 1], VertexMap);
-				uint32 I2 = GetOrCreateVertexIndex(Face.Vertices[i + 2], VertexMap);
-
-				StaticMeshAsset.Indices.push_back(I0);
-				StaticMeshAsset.Indices.push_back(I1);
-				StaticMeshAsset.Indices.push_back(I2);
-			}
-		}
-
-		//	Slot이 차지하는 index 범위를 section으로 기록
-		NewSection.IndexCount = static_cast<uint32>(StaticMeshAsset.Indices.size()- NewSection.StartIndex);
-
-		if (NewSection.IndexCount > 0)
-		{
-			StaticMeshAsset.Sections.push_back(NewSection);
-		}
+		NewSection.IndexCount = static_cast<uint32>(IndicesPerSlot.size());
+		StaticMeshAsset.Sections.push_back(NewSection);
 	}
 
 	return !StaticMeshAsset.Vertices.empty() && !StaticMeshAsset.Indices.empty();
 }
 
-bool FObjLoader::BindMaterials()
-{
-	// MTL 경로가 없거나 로드에 실패하면 머테리얼 없이 성공으로 처리합니다
-
-	if (RawData.ReferencedMtlPath.empty())
-	{
-		return true;
-	}
-
-	// OBJ 파일 경로 기준으로 MTL 상대 경로 해석
-	std::filesystem::path ObjPath(SourcePath);
-	std::filesystem::path MtlPath = ObjPath.parent_path() / RawData.ReferencedMtlPath;
-
-	TMap<FString, FMaterial> Materials;
-	if (!FObjMtlLoader::Load(MtlPath.string(), Materials))
-	{
-		return true;
-	}
-
-	// 각 MaterialSlot에 파싱된 FMaterial 바인딩
-	for (FStaticMeshMaterialSlot& Slot : StaticMeshAsset.MaterialSlots)
-	{
-		auto Iter = Materials.find(Slot.SlotName);
-		if (Iter != Materials.end())
-		{
-			Slot.MaterialData = Iter->second;
-		}
-	}
-
-	return true;
-}
 
 UStaticMesh* FObjLoader::CreateAsset()
 {
-	UStaticMesh* Asset = new UStaticMesh();
-	Asset->MeshData = std::move(StaticMeshAsset);
-	return Asset;
+	UStaticMesh * NewStaticMeshAsset = new UStaticMesh();
+	NewStaticMeshAsset->SetMeshData(new FStaticMesh(StaticMeshAsset));
+	return NewStaticMeshAsset;
 }
 
 void FObjLoader::Reset()
@@ -344,7 +341,28 @@ bool FObjLoader::ParseFaceLine(const FString& Line, const FString& CurrentMateri
 //	NOTE : Obj는 종종 negative index를 사용할 때도 있음 (그러나 지원하지 않는게 편할 듯) - 필요하면 추가할 것
 bool FObjLoader::ParseFaceVertexToken(const FString& Token, FObjRawIndex& OutIndex)
 {
-	TArray<FString> Parts = StringUtils::Split(Token);
+	TArray<FString> Parts;
+	Parts.reserve(3);
+
+	size_t Start = 0;
+	while (true)
+	{
+		size_t SlashPos = Token.find('/', Start);
+		if (SlashPos == FString::npos)
+		{
+			Parts.push_back(Token.substr(Start));
+			break;
+		}
+
+		Parts.push_back(Token.substr(Start, SlashPos - Start));
+		Start = SlashPos + 1;
+
+		if (Start > Token.size())
+		{
+			Parts.emplace_back();
+			break;
+		}
+	}
 
 	if (Parts.size() >= 1 && !Parts[0].empty())
 	{
@@ -439,6 +457,44 @@ uint32 FObjLoader::GetOrCreateVertexIndex(const FObjRawIndex& RawIndex, TMap<FOb
 	VertexMap.emplace(Key, NewIndex);
 
 	return NewIndex;
+}
+
+void FObjLoader::NormalizeRawPositionsToUnitCube()
+{
+	if (RawData.Positions.empty())
+	{
+		return;
+	}
+
+	FVector Min(FLT_MAX, FLT_MAX, FLT_MAX);
+	FVector Max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+	for (const FVector& Position : RawData.Positions)
+	{
+		Min.X = std::min(Min.X, Position.X);
+		Min.Y = std::min(Min.Y, Position.Y);
+		Min.Z = std::min(Min.Z, Position.Z);
+
+		Max.X = std::max(Max.X, Position.X);
+		Max.Y = std::max(Max.Y, Position.Y);
+		Max.Z = std::max(Max.Z, Position.Z);
+	}
+
+	const FVector Center = (Min + Max) * 0.5f;
+	const FVector Size = Max - Min;
+	const float MaxDim = std::max(Size.X, std::max(Size.Y, Size.Z));
+
+	if (MaxDim <= EPSILON)
+	{
+		return;
+	}
+
+	const float Scale = 1.0f / MaxDim;
+
+	for (FVector& Position : RawData.Positions)
+	{
+		Position = (Position - Center) * Scale;
+	}
 }
 
 #pragma endregion

@@ -143,7 +143,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 		ERenderPass CurPass = static_cast<ERenderPass>(i);
 		const auto& Commands = InRenderBus.GetCommands(CurPass);
 		if (Commands.empty()) continue;
-
+	
 		if (PassBatchers[i])
 		{
 			ApplyPassRenderState(CurPass, Context, InRenderBus.GetViewMode());
@@ -202,7 +202,7 @@ void FRenderer::InitializePassBatchers()
 			if (Cmd.Type == ERenderCommandType::Grid)
 			{
 				const FVector CameraPos = Bus.GetView().GetInverseFast().GetLocation();
-				FVector CameraFwd = Bus.GetCameraRight().Cross(Bus.GetCameraUp());
+				FVector CameraFwd = Bus.GetCameraRight().CrossProduct(Bus.GetCameraUp());
 				CameraFwd.Normalize();
 
 				GridLineBatcher.AddWorldHelpers(

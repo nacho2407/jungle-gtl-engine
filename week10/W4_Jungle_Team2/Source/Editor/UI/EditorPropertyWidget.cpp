@@ -6,6 +6,7 @@
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/SceneComponent.h"
+#include "Component/StaticMeshComponent.h"
 #include "Core/PropertyTypes.h"
 #include "Core/ResourceManager.h"
 #include "Object/FName.h"
@@ -37,7 +38,17 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	{
 		SelectedComponent = nullptr;
 		LastSelectedActor = PrimaryActor;
-		bActorSelected = true;
+
+		USceneComponent* RootComp = PrimaryActor->GetRootComponent();
+		if (RootComp && RootComp->IsA<UStaticMeshComponent>())
+		{
+			SelectedComponent = RootComp;
+			bActorSelected = false;
+		}
+		else
+		{
+			bActorSelected = true;
+		}
 	}
 
 	const TArray<AActor*>& SelectedActors = Selection.GetSelectedActors();
@@ -367,12 +378,41 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 	case EPropertyType::String:
 	{
 		FString* Val = static_cast<FString*>(Prop.ValuePtr);
-		char Buf[256];
-		strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
-		if (ImGui::InputText(Prop.Name, Buf, sizeof(Buf)))
+
+		if (strcmp(Prop.Name, "StaticMesh") == 0)
 		{
-			*Val = Buf;
-			bChanged = true;
+			TArray<FString> MeshPaths = FResourceManager::Get().GetStaticMeshPaths();
+			if (!MeshPaths.empty())
+			{
+				const FString Current = *Val;
+				if (ImGui::BeginCombo(Prop.Name, Current.empty() ? "<None>" : Current.c_str()))
+				{
+					for (const FString& Path : MeshPaths)
+					{
+						const bool bSelected = (Current == Path);
+						if (ImGui::Selectable(Path.c_str(), bSelected))
+						{
+							*Val = Path;
+							bChanged = true;
+						}
+						if (bSelected)
+						{
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+			}
+		}
+		else
+		{
+			char Buf[256];
+			strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
+			if (ImGui::InputText(Prop.Name, Buf, sizeof(Buf)))
+			{
+				*Val = Buf;
+				bChanged = true;
+			}
 		}
 		break;
 	}
