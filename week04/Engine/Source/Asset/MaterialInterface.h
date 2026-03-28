@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Asset/Asset.h"
+#include "Renderer/RenderAsset/MaterialResource.h"
+#include <memory>
 
 namespace Engine::Asset
 {
@@ -15,7 +17,15 @@ namespace Engine::Asset
         UMaterialInterface();
         virtual ~UMaterialInterface() override;
 
-        /** UAsset에 Serialize가 없으므로 여기서 새롭게 가상 함수로 정의합니다. */
+        /** 에셋 로더로부터 전체 머티리얼 리소스를 주입받습니다. */
+        virtual void Initialize(std::shared_ptr<FMaterialResource> InResource) { SharedResource = InResource; }
+
+        /** 공통 리소스 접근 */
+        const FMaterialResource* GetSharedResource() const { return SharedResource.get(); }
+
         virtual void Serialize(class FArchive& Ar);
+
+      protected:
+        std::shared_ptr<FMaterialResource> SharedResource;
     };
 } // namespace Engine::Asset

@@ -8,8 +8,8 @@
 #include "Engine/Component/Core/SceneComponent.h"
 #include "Engine/EngineStatics.h"
 #include "Engine/Game/Actor.h"
-#include "Engine/Game/CubeActor.h"
-#include "Engine/Game/SphereActor.h"
+#include "Engine/Game/UnknownActor.h"
+#include "Engine/Game/StaticMeshActor.h" // 통합된 액터 사용
 #include "Engine/Scene.h"
 #include "Content/EditorContentIndex.h"
 #include "Renderer/Types/ViewMode.h"
@@ -533,7 +533,7 @@ void FConsolePanel::ExecuteCommand(const FString& CommandLine)
         UE_LOG(Console, ELogVerbosity::Log,
                "  scene.new, scene.open <path>, scene.save, scene.saveas <path>, scene.clear, scene.list, scene.summary");
         UE_LOG(Console, ELogVerbosity::Log,
-               "  actor.spawn <cube|sphere> [count], actor.delete_selected, actor.list_selected, actor.inspect <name|uuid>");
+               "  actor.spawn <mesh> [count], actor.delete_selected, actor.list_selected, actor.inspect <name|uuid>");
         UE_LOG(Console, ELogVerbosity::Log,
                "  component.inspect <name|uuid>, select.clear, select.focus, selection.dump");
         UE_LOG(Console, ELogVerbosity::Log,
@@ -732,7 +732,7 @@ void FConsolePanel::ExecuteCommand(const FString& CommandLine)
             if (Tokens.size() < 2)
             {
                 UE_LOG(Console, ELogVerbosity::Warning,
-                       "Usage: actor.spawn <cube|sphere> [count]");
+                       "Usage: actor.spawn <mesh> [count]");
             }
             else
             {
@@ -744,34 +744,19 @@ void FConsolePanel::ExecuteCommand(const FString& CommandLine)
                 else
                 {
                     SpawnCount = FMath::Clamp(SpawnCount, 1, 256);
-                    const FString ActorType = ToLowerAsciiCopy(Tokens[1]);
                     int32 CreatedCount = 0;
                     for (int32 Index = 0; Index < SpawnCount; ++Index)
                     {
-                        AActor* NewActor = nullptr;
-                        if (ActorType == "cube")
-                        {
-                            NewActor = new ACubeActor();
-                        }
-                        else if (ActorType == "sphere")
-                        {
-                            NewActor = new ASphereActor();
-                        }
-                        else
-                        {
-                            UE_LOG(Console, ELogVerbosity::Warning,
-                                   "Unsupported actor type. Use cube or sphere.");
-                            break;
-                        }
-
+                        // 모든 도형 스폰은 이제 StaticMeshActor 하나로 통합됩니다.
+                        AActor* NewActor = new AStaticMeshActor();
                         Editor->AddActorToScene(NewActor, Index == SpawnCount - 1);
                         ++CreatedCount;
                     }
 
                     if (CreatedCount > 0)
                     {
-                        UE_LOG(Console, ELogVerbosity::Log, "Spawned %d %s actor(s).",
-                               CreatedCount, ActorType.c_str());
+                        UE_LOG(Console, ELogVerbosity::Log, "Spawned %d static mesh actor(s).",
+                               CreatedCount);
                     }
                 }
             }

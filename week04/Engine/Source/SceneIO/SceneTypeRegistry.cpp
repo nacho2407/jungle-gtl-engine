@@ -1,12 +1,5 @@
 #include "SceneTypeRegistry.h"
 
-#include "Engine/Component/Mesh/ConeComponent.h"
-#include "Engine/Component/Mesh/CubeComponent.h"
-#include "Engine/Component/Mesh/CylinderComponent.h"
-#include "Engine/Component/Mesh/QuadComponent.h"
-#include "Engine/Component/Mesh/RingComponent.h"
-#include "Engine/Component/Mesh/SphereComponent.h"
-#include "Engine/Component/Mesh/TriangleComponent.h"
 #include "Engine/Component/Mesh/StaticMeshComponent.h"
 #include "Engine/Component/Sprite/AtlasComponent.h"
 #include "Engine/Component/Sprite/SpriteComponent.h"
@@ -16,15 +9,9 @@
 #include "Engine/Component/Core/UnknownComponent.h"
 #include "Engine/Component/Text/AtlasTextComponent.h"
 #include "Engine/Game/Actor.h"
-#include "Engine/Game/ConeActor.h"
-#include "Engine/Game/CubeActor.h"
-#include "Engine/Game/CylinderActor.h"
 #include "Engine/Game/EffectActor.h"
-#include "Engine/Game/RingActor.h"
-#include "Engine/Game/SphereActor.h"
 #include "Engine/Game/SpriteActor.h"
 #include "Engine/Game/TextActor.h"
-#include "Engine/Game/TriangleActor.h"
 #include "Engine/Game/AtlasSpriteActor.h"
 #include "Engine/Game/FlipbookActor.h"
 #include "Engine/Game/StaticMeshActor.h"
@@ -87,27 +74,16 @@ namespace
 
         bRegistered = true;
 
-        RegisterActorType<AConeActor>("AConeActor");
-        RegisterActorType<ACubeActor>("ACubeActor");
-        RegisterActorType<ACylinderActor>("ACylinderActor");
+        // --- 통합된 액터 시스템 등록 ---
         RegisterActorType<AEffectActor>("AEffectActor");
-        RegisterActorType<ARingActor>("ARingActor");
-        RegisterActorType<ASphereActor>("ASphereActor");
         RegisterActorType<ASpriteActor>("ASpriteActor");
         RegisterActorType<ATextActor>("ATextActor");
-        RegisterActorType<ATriangleActor>("ATriangleActor");
         RegisterActorType<AFlipbookActor>("AFlipbookActor");
         RegisterActorType<AAtlasSpriteActor>("AAtlasSpriteActor");
         RegisterActorType<AStaticMeshActor>("AStaticMeshActor");
         RegisterActorType<AUnknownActor>("AUnknownActor");
 
-        RegisterComponentType<Engine::Component::UConeComponent>("UConeComponent");
-        RegisterComponentType<Engine::Component::UCubeComponent>("UCubeComponent");
-        RegisterComponentType<Engine::Component::UCylinderComponent>("UCylinderComponent");
-        RegisterComponentType<Engine::Component::UQuadComponent>("UQuadComponent");
-        RegisterComponentType<Engine::Component::URingComponent>("URingComponent");
-        RegisterComponentType<Engine::Component::USphereComponent>("USphereComponent");
-        RegisterComponentType<Engine::Component::UTriangleComponent>("UTriangleComponent");
+        // --- 통합된 컴포넌트 시스템 등록 ---
         RegisterComponentType<Engine::Component::USpriteComponent>("USpriteComponent");
         RegisterComponentType<Engine::Component::UAtlasComponent>("UAtlasComponent");
         RegisterComponentType<Engine::Component::USubUVComponent>("USubUVComponent");

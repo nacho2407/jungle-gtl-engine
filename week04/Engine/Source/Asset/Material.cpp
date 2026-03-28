@@ -3,11 +3,23 @@
 
 namespace Engine::Asset
 {
-    UMaterial::UMaterial() {}
+    UMaterial::UMaterial() = default;
+    UMaterial::~UMaterial() = default;
 
-    UMaterial::~UMaterial() {}
+    const FMaterialData* UMaterial::GetMaterialData() const
+    {
+        if (SharedResource == nullptr || MaterialName.empty())
+        {
+            return nullptr;
+        }
+        return SharedResource->GetMaterial(MaterialName);
+    }
 
-    void UMaterial::Serialize(class FArchive& Ar) { UMaterialInterface::Serialize(Ar); }
+    void UMaterial::Serialize(class FArchive& Ar)
+    {
+        UMaterialInterface::Serialize(Ar);
+        // 추가 속성 직렬화 (나중에 구현)
+    }
 
     REGISTER_CLASS(Engine::Asset, UMaterial)
 } // namespace Engine::Asset
