@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "SlateUtils.h"
+#include "Runtime/ViewportRect.h"
 
 class ISlateViewport
 {
