@@ -2,6 +2,7 @@
 #include "Engine/Runtime/Engine.h"
 
 #include "Editor/Viewport/ObjViewerViewportClient.h"
+#include "Editor/UI/ObjViewerMainPanel.h"
 #include "Editor/Settings/ObjViewerSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 
@@ -14,12 +15,16 @@ public:
 	void BeginPlay() override;
 	void Shutdown() override;
 	void Tick(float DeltaTime) override;
+	
+	UCameraComponent* GetCamera() const { return ViewportClient.GetCamera(); }
+
+	void RenderUI(float DeltaTime);
 	void OnWindowResized(uint32 Width, uint32 Height) override;
 
 	FObjViewerSettings& GetSettings() { return FObjViewerSettings::Get(); }
 	const FObjViewerSettings& GetSettings() const { return FObjViewerSettings::Get(); }
 
 private:
-	FSelectionManager SelectionManager;
+	FObjViewerMainPanel MainPanel;
 	FObjViewerViewportClient ViewportClient;
 };
