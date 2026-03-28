@@ -8,6 +8,7 @@
 #include "Render/Mesh/MeshManager.h"
 #include "Core/Stats.h"
 #include "Core/GPUProfiler.h"
+#include "Mesh/ObjManager.h"
 
 
 void FRenderer::Create(HWND hWindow)
@@ -55,6 +56,9 @@ void FRenderer::Create(HWND hWindow)
 	// 텍스처는 ResourceManager가 소유 — Batcher는 셰이더/버퍼만 초기화
 	FontBatcher.Create(Device.GetDevice());
 	SubUVBatcher.Create(Device.GetDevice());
+
+	// FObjManager에 디바이스 전달 (StaticMesh GPU 버퍼 생성용)
+	FObjManager::SetDevice(Device.GetDevice());
 
 	InitializePassRenderStates();
 	InitializePassBatchers();
@@ -351,6 +355,10 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 
 	switch (InCmd.Type)
 	{
+	case ERenderCommandType::StaticMesh:
+		Resources.StaticMesh.Bind(Context);
+		break;
+
 	case ERenderCommandType::Gizmo:
 		Resources.GizmoShader.Bind(Context);
 		Resources.GizmoPerObjectConstantBuffer.Update(Context, &InCmd.Constants.Gizmo, sizeof(FGizmoConstants));

@@ -47,6 +47,10 @@ public:
 		FSelectionManager* InSelectionManager);
 	void Release();
 
+	// FEditorSettings ↔ 뷰포트 상태 동기화
+	void SaveToSettings();
+	void LoadFromSettings();
+
 	// 레이아웃 전환
 	void SetLayout(EViewportLayout NewLayout);
 	EViewportLayout GetLayout() const { return CurrentLayout; }
@@ -76,6 +80,7 @@ private:
 	SSplitter* BuildSplitterTree(EViewportLayout Layout);
 	void EnsureViewportSlots(int32 RequiredCount);
 	void ShrinkViewportSlots(int32 RequiredCount);
+	void RenderPaneToolbar(int32 SlotIndex);
 
 	// 아이콘 텍스처
 	void LoadLayoutIcons(ID3D11Device* Device);

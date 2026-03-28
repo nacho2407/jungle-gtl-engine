@@ -6,6 +6,7 @@
 class UEditorEngine;
 class FViewport;
 class UCameraComponent;
+class FLevelEditorViewportClient;
 
 class FEditorRenderPipeline : public IRenderPipeline
 {
@@ -16,8 +17,8 @@ public:
 	void Execute(float DeltaTime, FRenderer& Renderer) override;
 
 private:
-	// 단일 뷰포트 렌더 단위 — FViewport + Camera만으로 독립 실행 가능
-	void RenderViewport(FViewport* VP, UCameraComponent* Camera, FRenderer& Renderer);
+	// 단일 뷰포트 렌더 단위 — ViewportClient의 렌더 옵션을 사용
+	void RenderViewport(FLevelEditorViewportClient* VC, FRenderer& Renderer);
 
 private:
 	UEditorEngine* Editor = nullptr;

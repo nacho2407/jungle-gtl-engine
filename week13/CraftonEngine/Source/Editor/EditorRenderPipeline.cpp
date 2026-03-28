@@ -1,4 +1,4 @@
-﻿#include "EditorRenderPipeline.h"
+#include "EditorRenderPipeline.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
@@ -31,7 +31,7 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	// 뷰포트별 오프스크린 렌더 (각 VP의 RT에 3D 씬 렌더)
 	for (FLevelEditorViewportClient* VC : Editor->GetLevelViewportClients())
 	{
-		RenderViewport(VC->GetViewport(), VC->GetCamera(), Renderer);
+		RenderViewport(VC, Renderer);
 	}
 
 	// 스왑체인 백버퍼 복귀 → ImGui 합성 (Image(SRV)로 뷰포트 표시) → Present
@@ -40,10 +40,12 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	Renderer.EndFrame();
 }
 
-void FEditorRenderPipeline::RenderViewport(FViewport* VP, UCameraComponent* Camera, FRenderer& Renderer)
+void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRenderer& Renderer)
 {
+	UCameraComponent* Camera = VC->GetCamera();
 	if (!Camera) return;
 
+	FViewport* VP = VC->GetViewport();
 	ID3D11DeviceContext* Ctx = Renderer.GetFD3DDevice().GetDeviceContext();
 
 	// 지연 리사이즈 적용 (ImGui에서 요청된 크기 변경을 렌더 직전에 반영)
@@ -69,20 +71,22 @@ void FEditorRenderPipeline::RenderViewport(FViewport* VP, UCameraComponent* Came
 		Ctx->RSSetViewports(1, &VPRect);
 	}
 
+	// 뷰포트별 렌더 옵션 사용
+	const FViewportRenderOptions& Opts = VC->GetRenderOptions();
+	const FShowFlags& ShowFlags = Opts.ShowFlags;
+	EViewMode ViewMode = Opts.ViewMode;
+
 	// Bus 수집
 	Bus.Clear();
 
 	UWorld* World = Editor->GetWorld();
-	const auto& Settings = Editor->GetSettings();
-	const FShowFlags& ShowFlags = Settings.ShowFlags;
-	EViewMode ViewMode = Settings.ViewMode;
 
 	Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix(),
 		Camera->GetRightVector(), Camera->GetUpVector());
 	Bus.SetRenderSettings(ViewMode, ShowFlags);
 
 	Collector.CollectWorld(World, ShowFlags, ViewMode, Bus);
-	Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus);
+	Collector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Bus);
 	Collector.CollectGizmo(Editor->GetGizmo(), ShowFlags, Bus);
 	Collector.CollectSelection(
 		Editor->GetSelectionManager().GetSelectedActors(),
