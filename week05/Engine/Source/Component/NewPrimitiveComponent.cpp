@@ -1,22 +1,22 @@
-#include "UPrimitiveComponent.h"
+#include "NewPrimitiveComponent.h"
 #include "Object/Class.h"
 #include "Serializer/Archive.h"
 #include "Debug/EngineLog.h"
 
 #include "PrimitiveComponent.h"
-IMPLEMENT_RTTI(UUPrimitiveComponent, USceneComponent)
+IMPLEMENT_RTTI(UNewPrimitiveComponent, USceneComponent)
 
-FBoxSphereBounds UUPrimitiveComponent::GetLocalBounds() const
+FBoxSphereBounds UNewPrimitiveComponent::GetLocalBounds() const
 {
 	return { FVector(0, 0, 0), 0.f, FVector(0, 0, 0) };
 }
 
-void UUPrimitiveComponent::UpdateBounds()
+void UNewPrimitiveComponent::UpdateBounds()
 {
 	Bounds = CalcBounds(GetWorldTransform());
 }
 
-FBoxSphereBounds UUPrimitiveComponent::CalcBounds(const FMatrix& LocalToWorld) const
+FBoxSphereBounds UNewPrimitiveComponent::CalcBounds(const FMatrix& LocalToWorld) const
 {
 	FBoxSphereBounds LocalBound = GetLocalBounds();
 
@@ -46,8 +46,10 @@ FBoxSphereBounds UUPrimitiveComponent::CalcBounds(const FMatrix& LocalToWorld) c
 	return { Center, WorldBoxExtent.Size(), WorldBoxExtent };
 }
 
+/*
 void UPrimitiveComponent::Serialize(FArchive& Ar)
 {
 	USceneComponent::Serialize(Ar);
 	Ar.Serialize("bDrawDebugBounds", bDrawDebugBounds);
 }
+*/

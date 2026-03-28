@@ -1,4 +1,5 @@
 #include "RenderMesh.h"
+#include "Vertex.h"
 
 void FRenderMesh::Bind(ID3D11DeviceContext* Context)
 {

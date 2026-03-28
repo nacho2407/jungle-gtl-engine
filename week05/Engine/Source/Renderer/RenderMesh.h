@@ -1,11 +1,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "StaticVertex.h"
 #include "Component/PrimitiveComponent.h"
 #include "Renderer/TextMeshBuilder.h"
-#include "Math/BoxSphereBounds.h"
-#include "MeshTopology.h"
+#include "Vertex.h"
 
 struct ENGINE_API FRenderMesh
 {

@@ -1,7 +1,9 @@
-#include "UStaticMeshComponent.h"
-
+#include "StaticMeshComponent.h"
+#include "Object/Class.h"
 #include "PrimitiveComponent.h"
+#include "MeshComponent.h"
 #include "Obj/ObjManager.h"
+IMPLEMENT_RTTI(UStaticMeshComponent, UMeshComponent)
 
 void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 {
@@ -25,17 +27,17 @@ FBoxSphereBounds UStaticMeshComponent::GetLocalBounds() const
 	{
 		return StaticMesh->LocalBounds;
 	}
-	return UPrimitiveComponent::GetLocalBounds();
+	return UNewPrimitiveComponent::GetLocalBounds();
 }
 
 FBoxSphereBounds UStaticMeshComponent::CalcBounds(const FMatrix& LocalToWorld) const
 {
-	return UPrimitiveComponent::CalcBounds(LocalToWorld);
+	return UNewPrimitiveComponent::CalcBounds(LocalToWorld);
 }
 
 void UStaticMeshComponent::Serialize(FArchive& Ar)
 {
-	UMeshComponent::Serialize(Ar);
+	// UMeshComponent::Serialize(Ar);
 	FString AssetName;
 	if (Ar.IsSaving())
 	{

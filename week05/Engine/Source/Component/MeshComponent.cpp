@@ -1,6 +1,9 @@
-#include "UMeshComponent.h"
+#include "Object/Class.h"
 #include "Serializer/Archive.h"
 #include "Renderer/Material.h"
+#include "MeshComponent.h"
+
+IMPLEMENT_RTTI(UMeshComponent, UNewPrimitiveComponent)
 
 void UMeshComponent::SetMaterial(int32 Index, FMaterial* InMaterial)
 {
@@ -16,6 +19,7 @@ FMaterial* UMeshComponent::GetMaterial(int32 Index) const
 	return nullptr;
 }
 
+/*
 void UMeshComponent::Serialize(FArchive& Ar)
 {
 	UUPrimitiveComponent::Serialize(Ar);
@@ -42,3 +46,4 @@ void UMeshComponent::Serialize(FArchive& Ar)
 		}
 	}
 }
+*/
