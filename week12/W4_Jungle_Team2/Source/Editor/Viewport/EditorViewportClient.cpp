@@ -419,7 +419,12 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		return;
 	}
 
-	Gizmo->ApplyScreenSpaceScaling(Camera.GetLocation());
+	// 직교 뷰포트(Top/Front/Right)는 카메라가 씬에서 1000유닛 이상 떨어져 있어
+	// 스케일이 ~100 으로 폭발합니다. 퍼스펙티브 뷰포트에서만 스케일을 결정합니다.
+	if (!Camera.IsOrthographic())
+	{
+		Gizmo->ApplyScreenSpaceScaling(Camera.GetLocation());
+	}
 
 	if (InputSystem::Get().GetGuiInputState().bUsingMouse)
 	{
