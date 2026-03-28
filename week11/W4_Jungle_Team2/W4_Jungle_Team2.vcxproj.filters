@@ -105,6 +105,9 @@
     <FxCompile Include="Shaders\ShaderSubUV.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\ShaderStaticMesh.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
@@ -342,6 +345,7 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Engine\Core\PlatformTime.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -602,9 +606,6 @@
     <ClInclude Include="Source\Engine\Render\Scene\RenderCollector.h">
       <Filter>Source\Engine\Render\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Scene\RenderCollectorContext.h">
-      <Filter>Source\Engine\Render\Scene</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Scene\RenderCommand.h">
       <Filter>Source\Engine\Render\Scene</Filter>
     </ClInclude>
@@ -653,5 +654,6 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\PlatformTime.h" />
   </ItemGroup>
 </Project>

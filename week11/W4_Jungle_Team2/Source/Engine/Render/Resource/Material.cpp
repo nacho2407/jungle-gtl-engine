@@ -1,18 +1,20 @@
 ﻿#include "Material.h"
 #include "Asset/FileUtils.h"
+#include "Core/Paths.h"
 
 #include <filesystem>
 
 bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, FMaterial>& OutMaterials)
 {
-    std::ifstream File(FilePath);
+    std::ifstream File(std::filesystem::path(FPaths::ToWide(FilePath)));
 	if (!File.is_open())
 	{
 		return false;
 	}
 
 
-	std::filesystem::path MtlDir = std::filesystem::path(FilePath).parent_path();
+	// 한글 경로 안전을 위해 wide string 기반으로 filesystem 연산 수행
+	std::filesystem::path MtlDir = std::filesystem::path(FPaths::ToWide(FilePath)).parent_path();
 	auto ResolveTexPath = [&](std::istringstream& InISS) -> FString
 		{
 			FString RelPath;
@@ -21,8 +23,9 @@ bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, FMaterial>& OutM
 			{
 				return {};
 			}
-			// 중복된 경로 해결
-			return (MtlDir / RelPath).lexically_normal().string();
+			std::filesystem::path FileName = std::filesystem::path(FPaths::ToWide(RelPath)).filename();
+			std::filesystem::path TexPath = (MtlDir / FileName).lexically_normal();
+			return FPaths::ToUtf8(TexPath.generic_wstring());
 		};
 
     FMaterial* Current = nullptr;
@@ -104,19 +107,23 @@ bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, FMaterial>& OutM
 		else if (Token == "map_Kd")
 		{
 			Current->DiffuseTexPath = ResolveTexPath(ISS);
+			Current->bHasDiffuseTexture = true;
 		}
         else if (Token == "map_Ka")
         {
 			Current->AmbientTexPath = ResolveTexPath(ISS);
+			Current->bHasAmbientTexture = true;
         }
         else if (Token == "map_Ks")
         {
 			Current->SpecularTexPath = ResolveTexPath(ISS);
+			Current->bHasSpecularTexture = true;
         }
 		// 범프 맵은 그레이스케일로 높이값이 저장되어 있고 추후 노말로 변환한다고 한다.
         else if (Token == "map_bump" || Token == "bump")
         {
 			Current->BumpTexPath = ResolveTexPath(ISS);
+			Current->bHasBumpTexture = true;
         }
     }
 

@@ -23,4 +23,6 @@ struct FRenderResources
     FShader EditorShader;
 	FShader OutlineShader;
     FShader StaticMeshShader;
+
+	ID3D11SamplerState* MeshSamplerState;
 };

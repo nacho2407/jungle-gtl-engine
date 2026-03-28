@@ -10,7 +10,7 @@ DEFINE_CLASS(UStaticMeshComponent, UMeshComponent)
 UStaticMeshComponent::UStaticMeshComponent()
 {
 	//	기본 도형은 Cube로 설정
-	SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/cube.obj"));
+	SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Dice.obj"));
 }
 
 void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
@@ -25,6 +25,12 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 	if (StaticMeshAsset != nullptr)
 	{
 		StaticMeshAssetPath = StaticMeshAsset->GetAssetPathFileName();
+		const auto& Slots = StaticMeshAsset->GetMaterialSlots();
+		OverrideMaterial.resize(Slots.size());
+		for (int32 i = 0; i < static_cast<int32>(Slots.size()); ++i)
+		{
+			OverrideMaterial[i] = Slots[i].MaterialData;
+		}
 	}
 	else
 	{
@@ -44,6 +50,8 @@ bool UStaticMeshComponent::HasValidMesh() const
 {
 	return StaticMeshAsset != nullptr && StaticMeshAsset->HasValidMeshData();
 }
+
+
 
 void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {

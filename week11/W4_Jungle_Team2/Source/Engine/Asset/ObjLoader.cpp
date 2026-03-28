@@ -4,6 +4,7 @@
 #include "Math/Utils.h"
 #include "UI/EditorConsoleWidget.h"
 #include "Core/PlatformTime.h"
+#include "Core/ResourceManager.h"
 
 //	v, vt, vn, mtllib, usemtl, f
 UStaticMesh* FObjLoader::Load(const FString& Path, const FStaticMeshLoadOptions& LoadOptions)
@@ -35,6 +36,9 @@ UStaticMesh* FObjLoader::Load(const FString& Path, const FStaticMeshLoadOptions&
 		UE_LOG("[ObjLoader] Failed to build static mesh: %s", Path.c_str());
 		return nullptr;
 	}
+	
+	/* Bind Matrail 실패하지 않습니다! 여러분들 처럼요*/
+	BindMaterials();
 
 	/* Local Bounds(AABB) */
 	StaticMeshAsset.LocalBounds.Reset();
@@ -213,16 +217,14 @@ bool FObjLoader::BindMaterials()
 
 	std::filesystem::path MtlPath =
 		std::filesystem::path(SourcePath).parent_path() / RawData.ReferencedMtlPath;
+	MtlPath = MtlPath.generic_wstring();
 
-	TMap<FString, FMaterial> Materials;
-	if (!FObjMtlLoader::Load(MtlPath.string(), Materials))
+	if (!FResourceManager::Get().LoadMaterial(MtlPath.string()))
 		return true;
 
 	for (FStaticMeshMaterialSlot& Slot : StaticMeshAsset.MaterialSlots)
 	{
-		auto Iter = Materials.find(Slot.SlotName);
-		if (Iter != Materials.end())
-			Slot.MaterialData = Iter->second;
+		Slot.MaterialData = FResourceManager::Get().FindMaterial(Slot.SlotName);
 	}
 
 	return true;
@@ -278,7 +280,7 @@ bool FObjLoader::ParseTexCoordLine(const FString& Line)
 
 	FVector2 TexCoord;
 	TexCoord.X = std::stof(Tokens[1]);
-	TexCoord.Y = std::stof(Tokens[2]);
+	TexCoord.Y = 1.0f - std::stof(Tokens[2]); // OBJ(V=하단) → DirectX(V=상단) 변환
 
 	RawData.UVs.push_back(TexCoord);
 	return true;
