@@ -114,7 +114,7 @@
     <FxCompile Include="Shaders\StaticMeshShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="ShaderOverlayFont.hlsl">
+    <FxCompile Include="Shaders\ShaderOverlayFont.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
@@ -348,6 +348,9 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\OverlayStatSystem.cpp">
+      <Filter>Source\Editor\Viewport</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -652,6 +655,9 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Viewport\OverlayStatSystem.h">
+      <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
