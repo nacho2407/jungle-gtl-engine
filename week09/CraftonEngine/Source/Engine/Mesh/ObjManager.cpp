@@ -2,8 +2,19 @@
 #include "Mesh/StaticMeshAsset.h"
 #include "Mesh/StaticMesh.h"
 #include "ObjImporter.h"
+#include "Serialization/WindowsArchive.h"
 
 std::map<std::string, FStaticMesh> FObjManager::ObjStaticMeshMap;
+
+std::string FObjManager::GetBinaryFilePath(const std::string& OriginalPath)
+{
+	size_t DotPos = OriginalPath.find_last_of('.');
+	if (DotPos != std::string::npos)
+	{
+		return OriginalPath.substr(0, DotPos) + ".bin";
+	}
+	return OriginalPath + ".bin";
+}
 
 FStaticMesh* FObjManager::LoadObjStaticMeshAsset(const std::string& PathFileName)
 {
@@ -17,15 +28,44 @@ FStaticMesh* FObjManager::LoadObjStaticMeshAsset(const std::string& PathFileName
 		return &It->second;
 	}
 
-	// 1. 파싱
-	FObjInfo ParsedObjInfo = FObjImporter::ParseObj(PathFileName);
+	std::string BinPath = GetBinaryFilePath(PathFileName);
+	FWindowsBinReader Reader(BinPath);
+	if (Reader.IsValid())
+	{
+		// 구워진 바이너리 파일이 존재함 (초고속 로딩)
+		FStaticMesh CachedMesh;
+		CachedMesh.Serialize(Reader); // 디스크에서 RAM으로 1초 만에 복사 완료!
 
-	// 2. 변환된 임시 객체를 Map 안에 통째로 집어넣음 (이동)
-	ObjStaticMeshMap[PathFileName] = FObjImporter::Convert(ParsedObjInfo);
+		// Map에 이동(Move) 삽입
+		ObjStaticMeshMap[PathFileName] = std::move(CachedMesh);
+	}
+	else
+	{
+		// 바이너리 파일이 없음 -> OBJ 파싱 및 굽기 (최초 1회)
+		FObjInfo ParsedObjInfo = FObjImporter::ParseObj(PathFileName);
+		FStaticMesh ConvertedMesh = FObjImporter::Convert(ParsedObjInfo);
+
+		// 바이너리로 저장 (Bake/Cooking)
+		FWindowsBinWriter Writer(BinPath);
+		if (Writer.IsValid())
+		{
+			ConvertedMesh.Serialize(Writer); // RAM에 있는 데이터를 디스크에 .bin으로 굽기!
+		}
+
+		// Map에 이동(Move) 삽입
+		ObjStaticMeshMap[PathFileName] = std::move(ConvertedMesh);
+	}
+
+	//// 1. 파싱
+	//FObjInfo ParsedObjInfo = FObjImporter::ParseObj(PathFileName);
+
+	//// 2. 변환된 임시 객체를 Map 안에 통째로 집어넣음 (이동)
+	//ObjStaticMeshMap[PathFileName] = FObjImporter::Convert(ParsedObjInfo);
+
+
 
 	// 3. Map 안에 안전하게 정착한 진짜 객체의 참조를 가져옴
 	FStaticMesh& ConvertedMesh = ObjStaticMeshMap[PathFileName];
-
 	// 4. 경로 이름 세팅
 	ConvertedMesh.PathFileName = PathFileName;
 
