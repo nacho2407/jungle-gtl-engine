@@ -43,9 +43,12 @@ class FViewportCamera
     float GetOrthoHeight() const { return OrthoHeight; }
 
     void OnResize(uint32 InWidth, uint32 InHeight);
+    void SetOrigin(uint32 InOriginX, uint32 InOriginY) { OriginX = InOriginX; OriginY = InOriginY; }
 
     uint32 GetWidth() const { return Width; }
     uint32 GetHeight() const { return Height; }
+    uint32 GetOriginX() const { return OriginX; }
+    uint32 GetOriginY() const { return OriginY; }
     float  GetAspectRatio() const { return AspectRatio; }
 
   private:
@@ -61,6 +64,8 @@ class FViewportCamera
 
     uint32 Width = 1920;
     uint32 Height = 1080;
+    uint32 OriginX = 0;
+    uint32 OriginY = 0;
     float  AspectRatio = 16.0f / 9.0f;
 
     float FOV = 3.141592f;

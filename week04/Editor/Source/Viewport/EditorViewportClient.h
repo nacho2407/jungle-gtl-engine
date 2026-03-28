@@ -34,6 +34,7 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     void BuildRenderData(FEditorRenderData& OutRenderData, EEditorShowFlags InShowFlags);
 
     void OnResize(uint32 InWidth, uint32 InHeight);
+    void SetViewportOrigin(uint32 InOriginX, uint32 InOriginY);
     void SetEditorContext(FEditorContext* InContext);
     void SetScene(FScene* InScene);
     void SyncSelectionFromContext();

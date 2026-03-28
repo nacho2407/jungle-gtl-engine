@@ -94,6 +94,9 @@ void FWindowOverlayManager::ResetViewportDimension()
             ViewportPanels[i]->ViewportClient->OnResize(
                 static_cast<uint32>(ViewportDim[i].W),
                 static_cast<uint32>(ViewportDim[i].H));
+            ViewportPanels[i]->ViewportClient->SetViewportOrigin(
+                static_cast<uint32>(ViewportDim[i].X),
+                static_cast<uint32>(ViewportDim[i].Y));
         }
     }
 }

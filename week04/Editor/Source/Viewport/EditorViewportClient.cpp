@@ -125,6 +125,11 @@ void FEditorViewportClient::OnResize(uint32 Width, uint32 Height)
     SelectionController.SetViewportSize(Width, Height);
 }
 
+void FEditorViewportClient::SetViewportOrigin(uint32 InOriginX, uint32 InOriginY)
+{
+    ViewportCamera.SetOrigin(InOriginX, InOriginY);
+}
+
 void FEditorViewportClient::SetEditorContext(FEditorContext* InContext)
 {
     SelectionController.SetEditorContext(InContext);
