@@ -1,13 +1,13 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Object/Object.h"
-#include "Scene/WorldTypes.h"
+#include "Scene/SceneTypes.h"
 
 // Forward declarations — include 최소화
 class UScene;
 class AActor;
 class UCameraComponent;
-class FCamera;
+class CCamera;
 class FFrustum;
 struct FRenderCommandQueue;
 struct ID3D11Device;
@@ -16,7 +16,7 @@ class ENGINE_API UWorld : public UObject
 {
 public:
 	DECLARE_RTTI(UWorld, UObject)
-	~UWorld() override;
+	~UWorld();
 
 	template <typename T>
 	T* SpawnActor(const FString& InName);
@@ -38,16 +38,19 @@ public:
 	// 카메라
 	void SetActiveCameraComponent(UCameraComponent* InCamera);
 	UCameraComponent* GetActiveCameraComponent() const;
-	FCamera* GetCamera() const;
+	CCamera* GetCamera() const;
+
 
 	// 라이프사이클
 	void InitializeWorld(float AspectRatio, ID3D11Device* Device = nullptr);
 	void BeginPlay();
 	void Tick(float InDeltaTime);
 	void CleanupWorld();
+	
 
-	EWorldType GetWorldType() const { return WorldType; }
-	void SetWorldType(EWorldType InType) { WorldType = InType; }
+
+	ESceneType GetWorldType() const { return WorldType; }
+	void SetWorldType(ESceneType InType) { WorldType = InType; }
 	float GetWorldTime() const { return WorldTime; }
 	float GetDeltaTime() const { return DeltaSeconds; }
 
@@ -58,11 +61,10 @@ private:
 	bool bBegunPlay = false;
 	float WorldTime = 0.f;
 	float DeltaSeconds = 0.f;
-	EWorldType WorldType = EWorldType::Game;
+	ESceneType WorldType = ESceneType::Game;
 	UCameraComponent* SceneCameraComponent = nullptr;    
 	TObjectPtr<UCameraComponent> ActiveCameraComponent;
 };
-
 #include "Scene/Scene.h"
 
 template <typename T>

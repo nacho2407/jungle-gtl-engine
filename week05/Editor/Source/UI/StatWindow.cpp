@@ -4,7 +4,7 @@
 #include "Object/ObjectGlobals.h"
 #include "Memory/MemoryBase.h"
 
-void FStatWindow::RefreshObjectList()
+void CStatWindow::RefreshObjectList()
 {
 	ObjectEntries.clear();
 
@@ -25,7 +25,7 @@ void FStatWindow::RefreshObjectList()
 	bShowObjectList = true;
 }
 
-void FStatWindow::Render()
+void CStatWindow::Render()
 {
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
 	bool bOpen = ImGui::Begin("Stats");

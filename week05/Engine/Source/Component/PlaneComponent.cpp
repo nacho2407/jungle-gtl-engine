@@ -4,7 +4,7 @@
 
 IMPLEMENT_RTTI(UPlaneComponent, UPrimitiveComponent)
 
-void UPlaneComponent::PostConstruct()
+void UPlaneComponent::Initialize()
 {
-	Primitive = std::make_unique<FPrimitivePlane>();
+	Primitive = std::make_unique<CPrimitivePlane>();
 }

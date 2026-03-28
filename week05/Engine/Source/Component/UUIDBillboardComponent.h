@@ -8,7 +8,7 @@ class ENGINE_API UUUIDBillboardComponent : public UTextComponent
 public:
 	DECLARE_RTTI(UUUIDBillboardComponent, UTextComponent)
 
-	void PostConstruct() override;
+	virtual void Initialize() override;
 
 	virtual FString GetDisplayText() const override;
 	// SetWorldOffset 반영해서 오브젝트 머리 위에 뜨도록 함

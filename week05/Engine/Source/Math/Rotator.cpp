@@ -112,7 +112,7 @@ FRotator& FRotator::operator/=(float Scale) noexcept
 
 FVector FRotator::Euler() const noexcept
 {
-	return { Roll, Pitch, Yaw };
+	return FVector(Roll, Pitch, Yaw);
 }
 
 FVector FRotator::Vector() const noexcept

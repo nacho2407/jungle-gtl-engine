@@ -3,11 +3,11 @@
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 #include <d3d11.h>
-#include "WorldTypes.h"
+#include "SceneTypes.h"
 #include "Core/ShowFlags.h"
 #include "RenderCollector.h"
 class AActor;
-class FCamera;
+class CCamera;
 class FFrustum;
 class UCameraComponent;
 class UPrimitiveComponent;
@@ -40,12 +40,13 @@ public:
 	void CleanupDestroyedActors();
 
 	const TArray<AActor*>& GetActors() const { return Actors; }
-	EWorldType GetWorldType() const;
-	bool IsEditorScene() const;
-	bool IsGameScene() const;
+	void SetSceneType(ESceneType InSceneType) { SceneType = InSceneType; }
+	ESceneType GetSceneType() const { return SceneType; }
+	bool IsEditorScene() const { return SceneType == ESceneType::Editor; }
+	bool IsGameScene() const { return SceneType == ESceneType::Game || SceneType == ESceneType::PIE; }
 
   
-	FCamera* GetCamera() const;
+	CCamera* GetCamera() const;
 
 
 	void ClearActors();
@@ -58,4 +59,7 @@ public:
 private:
 	TArray<AActor*> Actors;
 	bool bBegunPlay = false;
+	ESceneType SceneType = ESceneType::Game;
+
+
 };

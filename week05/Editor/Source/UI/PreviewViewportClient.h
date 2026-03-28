@@ -3,19 +3,21 @@
 #include "CoreMinimal.h"
 #include "Core/ViewportClient.h"
 
-class FEditorUI;
+class CEditorUI;
+class CWindow;
 
-class FPreviewViewportClient : public IViewportClient
+class CPreviewViewportClient : public IViewportClient
 {
 public:
-	FPreviewViewportClient(FEditorUI& InEditorUI, FString InPreviewContextName);
+	CPreviewViewportClient(CEditorUI& InEditorUI, CWindow* InMainWindow, FString InPreviewContextName);
 
-	void Attach(FEngine* Engine, FRenderer* Renderer) override;
-	void Detach(FEngine* Engine, FRenderer* Renderer) override;
-	void Tick(FEngine* Engine, float DeltaTime) override;
-	UScene* ResolveScene(FEngine* Engine) const override;
+	void Attach(CCore* Core, CRenderer* Renderer) override;
+	void Detach(CCore* Core, CRenderer* Renderer) override;
+	void Tick(CCore* Core, float DeltaTime) override;
+	UScene* ResolveScene(CCore* Core) const override;
 
 private:
-	FEditorUI& EditorUI;
+	CEditorUI& EditorUI;
+	CWindow* MainWindow = nullptr;
 	FString PreviewContextName;
 };

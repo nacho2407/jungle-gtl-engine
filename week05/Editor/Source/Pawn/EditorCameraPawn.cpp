@@ -5,7 +5,7 @@
 
 IMPLEMENT_RTTI(AEditorCameraPawn, AActor)
 
-void AEditorCameraPawn::PostConstruct()
+void AEditorCameraPawn::Initialize()
 {
 	CameraCompenent = FObjectFactory::ConstructObject<UCameraComponent>(this);
 	AddOwnedComponent(CameraCompenent);

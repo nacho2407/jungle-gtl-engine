@@ -4,25 +4,25 @@
 #include <cctype>
 
 // --- Helpers ---
-int32 FConsoleWindow::Stricmp(const char* S1, const char* S2)
+int32 CConsoleWindow::Stricmp(const char* S1, const char* S2)
 {
 	int32 d;
 	while ((d = toupper(*S2) - toupper(*S1)) == 0 && *S1) { S1++; S2++; }
 	return d;
 }
-int32 FConsoleWindow::Strnicmp(const char* S1, const char* S2, int32 N)
+int32 CConsoleWindow::Strnicmp(const char* S1, const char* S2, int32 N)
 {
 	int32 d = 0;
 	while (N > 0 && (d = toupper(*S2) - toupper(*S1)) == 0 && *S1) { S1++; S2++; N--; }
 	return d;
 }
-char* FConsoleWindow::Strdup(const char* S)
+char* CConsoleWindow::Strdup(const char* S)
 {
 	size_t Len = strlen(S) + 1;
 	void* Buf = ImGui::MemAlloc(Len);
 	return (char*)memcpy(Buf, S, Len);
 }
-void FConsoleWindow::Strtrim(char* S)
+void CConsoleWindow::Strtrim(char* S)
 {
 	char* End = S + strlen(S);
 	while (End > S && End[-1] == ' ') End--;
@@ -30,7 +30,7 @@ void FConsoleWindow::Strtrim(char* S)
 }
 
 // --- Constructor / Destructor ---
-FConsoleWindow::FConsoleWindow()
+CConsoleWindow::CConsoleWindow()
 {
 	ClearLog();
 	memset(InputBuf, 0, sizeof(InputBuf));
@@ -43,21 +43,21 @@ FConsoleWindow::FConsoleWindow()
 	AddLog("Welcome to Console.");
 }
 
-FConsoleWindow::~FConsoleWindow()
+CConsoleWindow::~CConsoleWindow()
 {
 	ClearLog();
 	for (int32 i = 0; i < History.Size; i++)
 		ImGui::MemFree(History[i]);
 }
 
-void FConsoleWindow::ClearLog()
+void CConsoleWindow::ClearLog()
 {
 	for (int32 i = 0; i < Items.Size; i++)
 		ImGui::MemFree(Items[i]);
 	Items.clear();
 }
 
-void FConsoleWindow::AddLog(const char* Fmt, ...)
+void CConsoleWindow::AddLog(const char* Fmt, ...)
 {
 	char Buf[1024];
 	va_list Args;
@@ -68,13 +68,13 @@ void FConsoleWindow::AddLog(const char* Fmt, ...)
 	Items.push_back(Strdup(Buf));
 }
 
-void FConsoleWindow::RegisterCommand(const char* Command)
+void CConsoleWindow::RegisterCommand(const char* Command)
 {
 	Commands.push_back(Command);
 }
 
 // --- Render ---
-void FConsoleWindow::Render()
+void CConsoleWindow::Render()
 {
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
 	bool bOpen = ImGui::Begin("Console");
@@ -180,7 +180,7 @@ void FConsoleWindow::Render()
 }
 
 // --- Command execution ---
-void FConsoleWindow::ExecCommand(const char* CommandLine)
+void CConsoleWindow::ExecCommand(const char* CommandLine)
 {
 	AddLog("# %s\n", CommandLine);
 
@@ -223,12 +223,12 @@ void FConsoleWindow::ExecCommand(const char* CommandLine)
 }
 
 // --- Text callback ---
-int32 FConsoleWindow::TextEditCallbackStub(ImGuiInputTextCallbackData* Data)
+int32 CConsoleWindow::TextEditCallbackStub(ImGuiInputTextCallbackData* Data)
 {
-	return ((FConsoleWindow*)Data->UserData)->TextEditCallback(Data);
+	return ((CConsoleWindow*)Data->UserData)->TextEditCallback(Data);
 }
 
-int32 FConsoleWindow::TextEditCallback(ImGuiInputTextCallbackData* Data)
+int32 CConsoleWindow::TextEditCallback(ImGuiInputTextCallbackData* Data)
 {
 	switch (Data->EventFlag)
 	{

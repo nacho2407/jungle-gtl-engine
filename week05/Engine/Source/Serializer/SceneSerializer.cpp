@@ -21,7 +21,7 @@
 void FSceneSerializer::Save(UScene* Scene, const FString& FilePath)
 {
 	nlohmann::json Json;
-	FCamera* Camera = Scene->GetCamera();
+	CCamera* Camera = Scene->GetCamera();
 	if (Camera)
 	{
 		const FVector Position = Camera->GetPosition();
@@ -92,7 +92,7 @@ bool FSceneSerializer::Load(UScene* Scene, const FString& FilePath, ID3D11Device
 	if (!Json.contains("Primitives"))
 		return false;
 
-	FCamera* Camera = Scene->GetCamera();
+	CCamera* Camera = Scene->GetCamera();
 	if (Camera && Json.contains("Camera"))
 	{
 		auto& Cam = Json["Camera"];

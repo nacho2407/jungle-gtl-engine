@@ -22,6 +22,8 @@ void UWorld::InitializeWorld(float AspectRatio, ID3D11Device* Device)
 		return;
 	}
 
+	PersistentLevel->SetSceneType(WorldType);
+
 	if (!SceneCameraComponent)
 	{
 		SceneCameraComponent = FObjectFactory::ConstructObject<UCameraComponent>(this, "SceneCamera");
@@ -131,6 +133,7 @@ UScene* UWorld::LoadStreamingLevel(const FString& LevelName, ID3D11Device* Devic
 	}
 	UScene* NewLevel = FObjectFactory::ConstructObject<UScene>(this, LevelName);
 	if (!NewLevel) return nullptr;
+	NewLevel->SetSceneType(WorldType);
 
 	if (Device)
 	{
@@ -209,8 +212,9 @@ UCameraComponent* UWorld::GetActiveCameraComponent() const
 	return ActiveCameraComponent ? ActiveCameraComponent.Get() : SceneCameraComponent;
 }
 
-FCamera* UWorld::GetCamera() const
+CCamera* UWorld::GetCamera() const
 {
 	UCameraComponent* Cam = GetActiveCameraComponent();
 	return Cam ? Cam->GetCamera() : nullptr;
 }
+

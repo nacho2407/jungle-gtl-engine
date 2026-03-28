@@ -1,7 +1,7 @@
 #include "InputManager.h"
 #include <cstring>
 
-void FInputManager::ProcessMessage(HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
+void CInputManager::ProcessMessage(HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
 {
 	switch (Msg)
 	{
@@ -48,7 +48,7 @@ void FInputManager::ProcessMessage(HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LP
 	}
 }
 
-void FInputManager::Tick()
+void CInputManager::Tick()
 {
 	// Save previous frame state
 	std::memcpy(PrevKeyState, KeyState, sizeof(KeyState));
@@ -91,37 +91,37 @@ void FInputManager::Tick()
 	}
 }
 
-bool FInputManager::IsKeyDown(int32 Key) const
+bool CInputManager::IsKeyDown(int32 Key) const
 {
 	if (Key < 0 || Key >= MAX_KEYS) return false;
 	return KeyState[Key];
 }
 
-bool FInputManager::IsKeyPressed(int32 Key) const
+bool CInputManager::IsKeyPressed(int32 Key) const
 {
 	if (Key < 0 || Key >= MAX_KEYS) return false;
 	return KeyState[Key] && !PrevKeyState[Key];
 }
 
-bool FInputManager::IsKeyReleased(int32 Key) const
+bool CInputManager::IsKeyReleased(int32 Key) const
 {
 	if (Key < 0 || Key >= MAX_KEYS) return false;
 	return !KeyState[Key] && PrevKeyState[Key];
 }
 
-bool FInputManager::IsMouseButtonDown(int32 Button) const
+bool CInputManager::IsMouseButtonDown(int32 Button) const
 {
 	if (Button < 0 || Button >= MAX_MOUSE_BUTTONS) return false;
 	return MouseButtonState[Button];
 }
 
-bool FInputManager::IsMouseButtonPressed(int32 Button) const
+bool CInputManager::IsMouseButtonPressed(int32 Button) const
 {
 	if (Button < 0 || Button >= MAX_MOUSE_BUTTONS) return false;
 	return MouseButtonState[Button] && !PrevMouseButtonState[Button];
 }
 
-bool FInputManager::IsMouseButtonReleased(int32 Button) const
+bool CInputManager::IsMouseButtonReleased(int32 Button) const
 {
 	if (Button < 0 || Button >= MAX_MOUSE_BUTTONS) return false;
 	return !MouseButtonState[Button] && PrevMouseButtonState[Button];

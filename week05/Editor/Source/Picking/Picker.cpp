@@ -14,7 +14,7 @@
 #include "Renderer/MeshData.h"
 #include <limits>
 
-FRay FPicker::ScreenToRay(const FCamera* Camera, int32 ScreenX, int32 ScreenY, int32 ScreenWidth, int32 ScreenHeight) const
+FRay CPicker::ScreenToRay(const CCamera* Camera, int32 ScreenX, int32 ScreenY, int32 ScreenWidth, int32 ScreenHeight) const
 {
 	if (!Camera || ScreenWidth <= 0 || ScreenHeight <= 0)
 	{
@@ -59,7 +59,7 @@ FRay FPicker::ScreenToRay(const FCamera* Camera, int32 ScreenX, int32 ScreenY, i
 	return { RayOrigin, RayDirectionWorld };
 }
 
-bool FPicker::RayTriangleIntersect(const FRay& Ray,
+bool CPicker::RayTriangleIntersect(const FRay& Ray,
 								   const FVector& V0, const FVector& V1, const FVector& V2,
 								   float& OutDistance) const
 {
@@ -102,7 +102,7 @@ bool FPicker::RayTriangleIntersect(const FRay& Ray,
 	return false;
 }
 
-AActor* FPicker::PickActor(UScene* Scene, int32 ScreenX, int32 ScreenY,
+AActor* CPicker::PickActor(UScene* Scene, int32 ScreenX, int32 ScreenY,
 						   int32 ScreenWidth, int32 ScreenHeight) const
 {
 	if (!Scene || !Scene->GetCamera())
@@ -110,7 +110,7 @@ AActor* FPicker::PickActor(UScene* Scene, int32 ScreenX, int32 ScreenY,
 		return nullptr;
 	}
 
-	FCamera* Camera = Scene->GetCamera();
+	CCamera* Camera = Scene->GetCamera();
 	const FRay Ray = ScreenToRay(Camera, ScreenX, ScreenY, ScreenWidth, ScreenHeight);
 
 	AActor* ClosestActor = nullptr;

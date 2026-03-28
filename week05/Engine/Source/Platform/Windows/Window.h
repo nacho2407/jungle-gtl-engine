@@ -4,11 +4,11 @@
 #include <functional>
 #include "WindowTypes.h"
 
-class ENGINE_API FWindowsWindow
+class ENGINE_API CWindow
 {
 public:
-	FWindowsWindow() = default;
-	~FWindowsWindow();
+	CWindow() = default;
+	~CWindow();
 
 	bool Create(HINSTANCE Instance, const WCHAR* ClassName,
 		const WCHAR* Title, int InWidth, int InHeight, int InX, int InY);

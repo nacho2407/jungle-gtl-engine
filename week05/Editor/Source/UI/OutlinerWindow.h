@@ -1,10 +1,10 @@
 #pragma once
 #include "CoreMinimal.h"
 
-class FEditorEngine;
+class CCore;
 
-class FOutlinerWindow
+class COutlinerWindow
 {
 public:
-	void Render(FEditorEngine* Engine);
+	void Render(CCore* Core);
 };

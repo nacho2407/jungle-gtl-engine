@@ -1,5 +1,6 @@
 #include "ViewportClient.h"
 #include "World/World.h"
+#include "Core/Core.h"
 #include "Input/InputManager.h"
 #include "Camera/Camera.h"
 #include "Renderer/Renderer.h"
@@ -9,19 +10,19 @@
 #include "Debug/EngineLog.h"
 #include "Component/UUIDBillboardComponent.h"
 #include "Component/SubUVComponent.h"
-#include "Core/Engine.h"
+#include "Core/FEngine.h"
 #include "Component/TextComponent.h"
 
 
-void IViewportClient::Attach(FEngine* Engine, FRenderer* Renderer)
+void IViewportClient::Attach(CCore* Core, CRenderer* Renderer)
 {
 }
 
-void IViewportClient::Detach(FEngine* Engine, FRenderer* Renderer)
+void IViewportClient::Detach(CCore* Core, CRenderer* Renderer)
 {
 }
 
-void IViewportClient::Tick(FEngine* Engine, float DeltaTime)
+void IViewportClient::Tick(CCore* Core, float DeltaTime)
 {
 	// instead Enhance input system controller
 	//if (!Core)
@@ -29,14 +30,14 @@ void IViewportClient::Tick(FEngine* Engine, float DeltaTime)
 	//	return;
 	//}
 
-	//FInputManager* InputManager = Core->GetInputManager();
+	//CInputManager* InputManager = Core->GetInputManager();
 	//UScene* Scene = ResolveScene(Core);
 	//if (!InputManager || !Scene)
 	//{
 	//	return;
 	//}
 
-	//FCamera* Camera = Scene->GetCamera();
+	//CCamera* Camera = Scene->GetCamera();
 	//if (!Camera)
 	//{
 	//	return;
@@ -49,7 +50,7 @@ void IViewportClient::Tick(FEngine* Engine, float DeltaTime)
 	//if (InputManager->IsKeyDown('E')) Camera->MoveUp(DeltaTime);
 	//if (InputManager->IsKeyDown('Q')) Camera->MoveUp(-DeltaTime);
 
-	//if (InputManager->IsMouseButtonDown(FInputManager::MOUSE_RIGHT))
+	//if (InputManager->IsMouseButtonDown(CInputManager::MOUSE_RIGHT))
 	//{
 	//	const float DeltaX = InputManager->GetMouseDeltaX();
 	//	const float DeltaY = InputManager->GetMouseDeltaY();
@@ -57,23 +58,23 @@ void IViewportClient::Tick(FEngine* Engine, float DeltaTime)
 	//}
 }
 
-void IViewportClient::HandleMessage(FEngine* Engine, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
+void IViewportClient::HandleMessage(CCore* Core, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam)
 {
 }
 
-UScene* IViewportClient::ResolveScene(FEngine* Engine) const
+UScene* IViewportClient::ResolveScene(CCore* Core) const
 {
-	return Engine ? Engine->GetActiveScene() : nullptr;
+	return Core ? Core->GetActiveScene() : nullptr;
 }
 
-UWorld* IViewportClient::ResolveWorld(FEngine* Engine) const
+UWorld* IViewportClient::ResolveWorld(CCore* Core) const
 {
-	return Engine ? Engine->GetActiveWorld() : nullptr;
+	return Core ? Core->GetActiveWorld() : nullptr;
 }
 
-void IViewportClient::BuildRenderCommands(FEngine* Engine, UScene* Scene, const FFrustum& Frustum, FRenderCommandQueue& OutQueue)
+void IViewportClient::BuildRenderCommands(CCore* Core, UScene* Scene, const FFrustum& Frustum, FRenderCommandQueue& OutQueue)
 {
-	UWorld* World = ResolveWorld(Engine);
+	UWorld* World = ResolveWorld(Core);
 	if (!World) return;
 
 	// Persistent + Streaming 전체 액터를 렌더
@@ -91,7 +92,7 @@ void IViewportClient::HandleFileDropOnViewport(const FString& FilePath)
 
 }
 
-void FGameViewportClient::Attach(FEngine* Engine, FRenderer* Renderer)
+void CGameViewportClient::Attach(CCore* Core, CRenderer* Renderer)
 {
 	if (Renderer)
 	{
@@ -99,7 +100,7 @@ void FGameViewportClient::Attach(FEngine* Engine, FRenderer* Renderer)
 	}
 }
 
-void FGameViewportClient::Detach(FEngine* Engine, FRenderer* Renderer)
+void CGameViewportClient::Detach(CCore* Core, CRenderer* Renderer)
 {
 	if (Renderer)
 	{

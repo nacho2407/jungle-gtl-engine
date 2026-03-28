@@ -1,7 +1,7 @@
 #include "Viewport.h"
 
 #include "EditorViewportClient.h"
-#include "Core/Engine.h"
+#include "Core/Core.h"
 #include "Renderer/Renderer.h"
 #include "Scene/Scene.h"
 #include "Camera/Camera.h"
@@ -19,7 +19,7 @@ namespace
 		}
 	}
 
-	bool RenderGizmoModeButton(const char* Label, EGizmoMode Mode, FEditorViewportClient* ViewportClient)
+	bool RenderGizmoModeButton(const char* Label, EGizmoMode Mode, CEditorViewportClient* ViewportClient)
 	{
 		if (ViewportClient == nullptr)
 		{
@@ -47,12 +47,12 @@ namespace
 	}
 }
 
-FViewport::~FViewport()
+CViewport::~CViewport()
 {
 	ReleaseSceneView();
 }
 
-void FViewport::Render(FEngine* Engine, FRenderer* Renderer, HWND Hwnd)
+void CViewport::Render(CCore* Core, CRenderer* Renderer, HWND Hwnd)
 {
 	//ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 	const bool bOpen = ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_MenuBar);
@@ -73,7 +73,7 @@ void FViewport::Render(FEngine* Engine, FRenderer* Renderer, HWND Hwnd)
 
 	if (ImGui::BeginMenuBar())
 	{
-		FEditorViewportClient* EditorViewportClient = Engine ? dynamic_cast<FEditorViewportClient*>(Engine->GetViewportClient()) : nullptr;
+		CEditorViewportClient* EditorViewportClient = Core ? dynamic_cast<CEditorViewportClient*>(Core->GetViewportClient()) : nullptr;
 		if (EditorViewportClient)
 		{
 			// 도구 선택 버튼
@@ -167,9 +167,9 @@ void FViewport::Render(FEngine* Engine, FRenderer* Renderer, HWND Hwnd)
 		}
 	}
 
-	if (Engine && Engine->GetScene() && Engine->GetScene()->GetCamera())
+	if (Core && Core->GetScene() && Core->GetScene()->GetCamera())
 	{
-		Engine->GetScene()->GetCamera()->SetAspectRatio(static_cast<float>(NewWidth) / static_cast<float>(NewHeight));
+		Core->GetScene()->GetCamera()->SetAspectRatio(static_cast<float>(NewWidth) / static_cast<float>(NewHeight));
 	}
 
 	if (ShaderResourceView)
@@ -180,7 +180,7 @@ void FViewport::Render(FEngine* Engine, FRenderer* Renderer, HWND Hwnd)
 	ImGui::End();
 }
 
-void FViewport::ReleaseSceneView()
+void CViewport::ReleaseSceneView()
 {
 	IUnknown* Resource = reinterpret_cast<IUnknown*>(DepthStencilView);
 	ReleaseIfValid(Resource);
@@ -206,7 +206,7 @@ void FViewport::ReleaseSceneView()
 	OffscreenHeight = 0;
 }
 
-bool FViewport::GetMousePositionInViewport(int32 WindowMouseX, int32 WindowMouseY, int32& OutViewportX, int32& OutViewportY, int32& OutWidth, int32& OutHeight) const
+bool CViewport::GetMousePositionInViewport(int32 WindowMouseX, int32 WindowMouseY, int32& OutViewportX, int32& OutViewportY, int32& OutWidth, int32& OutHeight) const
 {
 	if (!bVisible || OffscreenWidth == 0 || OffscreenHeight == 0)
 	{
@@ -232,7 +232,7 @@ bool FViewport::GetMousePositionInViewport(int32 WindowMouseX, int32 WindowMouse
 	return true;
 }
 
-void FViewport::ReadySceneView(ID3D11Device* Device, uint32 Width, uint32 Height)
+void CViewport::ReadySceneView(ID3D11Device* Device, uint32 Width, uint32 Height)
 {
 	if (Device == nullptr)
 	{

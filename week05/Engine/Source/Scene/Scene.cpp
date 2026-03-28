@@ -13,7 +13,6 @@
 #include "Object/Class.h"
 
 #include "Serializer/SceneSerializer.h"
-#include "World/World.h"
 #include <algorithm>
 
 
@@ -37,27 +36,10 @@ UScene::~UScene()
 }
 
 
-FCamera* UScene::GetCamera() const
+CCamera* UScene::GetCamera() const
 {
 	UWorld* World = GetTypedOuter<UWorld>();
 	return World ? World->GetCamera() : nullptr;
-}
-
-EWorldType UScene::GetWorldType() const
-{
-	UWorld* World = GetTypedOuter<UWorld>();
-	return World ? World->GetWorldType() : EWorldType::Game;
-}
-
-bool UScene::IsEditorScene() const
-{
-	return GetWorldType() == EWorldType::Editor;
-}
-
-bool UScene::IsGameScene() const
-{
-	const EWorldType WorldType = GetWorldType();
-	return WorldType == EWorldType::Game || WorldType == EWorldType::PIE;
 }
 
 

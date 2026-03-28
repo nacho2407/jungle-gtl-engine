@@ -2,13 +2,13 @@
 
 #include "Primitive/PrimitiveBase.h"
 
-class ENGINE_API FPrimitiveSphere : public FPrimitiveBase
+class ENGINE_API CPrimitiveSphere : public CPrimitiveBase
 {
 public:
 	static const FString Key;
 	// static FString GetFilePath();
 
-	FPrimitiveSphere(int32 Segments = 16, int32 Rings = 16);
+	CPrimitiveSphere(int32 Segments = 16, int32 Rings = 16);
 
 	void Generate(int32 Segments, int32 Rings);
 };

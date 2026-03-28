@@ -9,7 +9,7 @@ struct FObjectEntry
 	uint32 Size = 0;
 };
 
-class FStatWindow
+class CStatWindow
 {
 public:
 	void Render();

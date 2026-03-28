@@ -6,13 +6,13 @@
 #include "Math/Vector.h"
 
 
-struct FGizmoVec2
+struct Vec2
 {
     float x = 0.0f;
     float y = 0.0f;
 };
 
-struct FGizmoColor
+struct Color
 {
     float r = 1.0f;
     float g = 1.0f;
@@ -20,24 +20,24 @@ struct FGizmoColor
     float a = 1.0f;
 };
 
-struct FGizmoVertex
+struct Vertex
 {
     FVector position;
     FVector normal;
-    FGizmoVec2 uv;
-    FGizmoColor color;
+    Vec2 uv;
+    Color color;
 };
 
-struct FGizmoMesh
+struct Mesh
 {
-    std::vector<FGizmoVertex> vertices;
+    std::vector<Vertex> vertices;
     std::vector<std::uint32_t> indices;
 
     void Clear();
     bool Empty() const;
 };
 
-enum class EGizmoAxisId : std::uint32_t
+enum class AxisId : std::uint32_t
 {
     None = 0,
     X,
@@ -47,7 +47,7 @@ enum class EGizmoAxisId : std::uint32_t
     Screen,
 };
 
-struct FTranslationGizmoDesc
+struct TranslationDesc
 {
     float uniformScale = 1.0f;
     int transformGizmoSize = 0;
@@ -55,7 +55,7 @@ struct FTranslationGizmoDesc
     bool leftUpForward = false;
 };
 
-struct FRotationGizmoDesc
+struct RotationDesc
 {
     float uniformScale = 1.0f;
     int transformGizmoSize = 0;
@@ -68,11 +68,11 @@ struct FRotationGizmoDesc
     bool includeScreenRing = true;
     bool includeArcball = true;
     bool dragging = false;
-    EGizmoAxisId activeAxis = EGizmoAxisId::None;
+    AxisId activeAxis = AxisId::None;
     float deltaRotationDegrees = 0.0f;
 };
 
-struct FScaleGizmoDesc
+struct ScaleDesc
 {
     float uniformScale = 1.0f;
     int transformGizmoSize = 0;
@@ -80,52 +80,52 @@ struct FScaleGizmoDesc
     bool leftUpForward = false;
 };
 
-struct FTranslationGizmo
+struct TranslationGizmo
 {
-    FGizmoMesh axisX;
-    FGizmoMesh axisY;
-    FGizmoMesh axisZ;
-    FGizmoMesh planeXY;
-    FGizmoMesh planeXZ;
-    FGizmoMesh planeYZ;
-    FGizmoMesh screenSphere;
+    Mesh axisX;
+    Mesh axisY;
+    Mesh axisZ;
+    Mesh planeXY;
+    Mesh planeXZ;
+    Mesh planeYZ;
+    Mesh screenSphere;
 };
 
-struct FRotationGizmo
+struct RotationGizmo
 {
-    FGizmoMesh ringX;
-    FGizmoMesh ringY;
-    FGizmoMesh ringZ;
-    FGizmoMesh screenRing;
-    FGizmoMesh arcball;
+    Mesh ringX;
+    Mesh ringY;
+    Mesh ringZ;
+    Mesh screenRing;
+    Mesh arcball;
 };
 
-struct FScaleGizmo
+struct ScaleGizmo
 {
-    FGizmoMesh axisX;
-    FGizmoMesh axisY;
-    FGizmoMesh axisZ;
-    FGizmoMesh planeXY;
-    FGizmoMesh planeXZ;
-    FGizmoMesh planeYZ;
-    FGizmoMesh centerCube;
+    Mesh axisX;
+    Mesh axisY;
+    Mesh axisZ;
+    Mesh planeXY;
+    Mesh planeXZ;
+    Mesh planeYZ;
+    Mesh centerCube;
 };
 
-FTranslationGizmo GenerateTranslationGizmo(const FTranslationGizmoDesc& desc = {});
-FRotationGizmo GenerateRotationGizmo(const FRotationGizmoDesc& desc = {});
-FScaleGizmo GenerateScaleGizmo(const FScaleGizmoDesc& desc = {});
+TranslationGizmo GenerateTranslationGizmo(const TranslationDesc& desc = {});
+RotationGizmo GenerateRotationGizmo(const RotationDesc& desc = {});
+ScaleGizmo GenerateScaleGizmo(const ScaleDesc& desc = {});
 
-void AppendMesh(FGizmoMesh& destination, const FGizmoMesh& source);
-FGizmoMesh MergeMeshes(std::initializer_list<const FGizmoMesh*> meshes);
+void AppendMesh(Mesh& destination, const Mesh& source);
+Mesh MergeMeshes(std::initializer_list<const Mesh*> meshes);
 
-FGizmoMesh Combine(const FTranslationGizmo& gizmo);
-FGizmoMesh Combine(const FRotationGizmo& gizmo);
-FGizmoMesh Combine(const FScaleGizmo& gizmo);
+Mesh Combine(const TranslationGizmo& gizmo);
+Mesh Combine(const RotationGizmo& gizmo);
+Mesh Combine(const ScaleGizmo& gizmo);
 
-FGizmoColor AxisColorX();
-FGizmoColor AxisColorY();
-FGizmoColor AxisColorZ();
-FGizmoColor ScreenAxisColor();
-FGizmoColor ScreenSpaceColor();
-FGizmoColor ArcballColor();
-FGizmoColor HighlightColor();
+Color AxisColorX();
+Color AxisColorY();
+Color AxisColorZ();
+Color ScreenAxisColor();
+Color ScreenSpaceColor();
+Color ArcballColor();
+Color HighlightColor();

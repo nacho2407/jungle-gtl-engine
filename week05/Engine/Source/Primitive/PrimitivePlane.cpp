@@ -1,11 +1,11 @@
 #include "PrimitivePlane.h"
 #include "Core/Paths.h"
 
-const FString FPrimitivePlane::Key = "Plane";
+const FString CPrimitivePlane::Key = "Plane";
 
-// FString FPrimitivePlane::GetFilePath() { return FPaths::MeshDir() + "Plane.mesh"; }
+// FString CPrimitivePlane::GetFilePath() { return FPaths::MeshDir() + "Plane.mesh"; }
 
-FPrimitivePlane::FPrimitivePlane()
+CPrimitivePlane::CPrimitivePlane()
 {
 	auto Cached = GetCached(Key);
 	if (Cached)
@@ -18,7 +18,7 @@ FPrimitivePlane::FPrimitivePlane()
 	}
 }
 
-void FPrimitivePlane::Generate()
+void CPrimitivePlane::Generate()
 {
 	auto Data = std::make_shared<FMeshData>();
 

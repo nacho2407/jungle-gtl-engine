@@ -2,11 +2,11 @@
 #include "Core/Paths.h"
 #include "Math/MathUtility.h"
 #include <cmath>
-const FString FPrimitiveSky::Key = "SkySphere";
+const FString CPrimitiveSky::Key = "SkySphere";
 
 
 
-FPrimitiveSky::FPrimitiveSky(int32 Segments, int32 Rings)
+CPrimitiveSky::CPrimitiveSky(int32 Segments, int32 Rings)
 {
 	auto Cached = GetCached(Key);
 	if (Cached)
@@ -17,7 +17,7 @@ FPrimitiveSky::FPrimitiveSky(int32 Segments, int32 Rings)
 		Generate(Segments, Rings);
 }
 
-void FPrimitiveSky::Generate(int32 Segments, int32 Rings)
+void CPrimitiveSky::Generate(int32 Segments, int32 Rings)
 {
 	auto Data = std::make_shared<FMeshData>();
 

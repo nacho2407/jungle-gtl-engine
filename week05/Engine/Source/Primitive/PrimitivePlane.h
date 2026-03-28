@@ -2,13 +2,13 @@
 
 #include "Primitive/PrimitiveBase.h"
 
-class ENGINE_API FPrimitivePlane : public FPrimitiveBase
+class ENGINE_API CPrimitivePlane : public CPrimitiveBase
 {
 public:
 	static const FString Key;
 	// static FString GetFilePath();
 
-	FPrimitivePlane();
+	CPrimitivePlane();
 
 	void Generate();
 };

@@ -2,11 +2,11 @@
 
 #include "PrimitiveBase.h"
 
-class FPrimitiveObj : public FPrimitiveBase
+class CPrimitiveObj : public CPrimitiveBase
 {
 public:
-	FPrimitiveObj();
-	FPrimitiveObj(const FString& FilePath);
+	CPrimitiveObj();
+	CPrimitiveObj(const FString& FilePath);
 
 private:
 	void LoadObj(const FString& FilePath);

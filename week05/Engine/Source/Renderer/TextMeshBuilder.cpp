@@ -12,12 +12,12 @@
 #include "Core/Paths.h"
 #include <cstring>
 
-FTextMeshBuilder::~FTextMeshBuilder()
+CTextMeshBuilder::~CTextMeshBuilder()
 {
 	Release();
 }
 
-bool FTextMeshBuilder::Initialize(FRenderer* InRenderer)
+bool CTextMeshBuilder::Initialize(CRenderer* InRenderer)
 {
 	Release();
 
@@ -96,7 +96,7 @@ bool FTextMeshBuilder::Initialize(FRenderer* InRenderer)
 	return true;
 }
 
-void FTextMeshBuilder::Release()
+void CTextMeshBuilder::Release()
 {
 	Atlas.Release();
 	FontMaterial.reset();
@@ -105,7 +105,7 @@ void FTextMeshBuilder::Release()
 	RenderStateManager = nullptr;
 }
 
-bool FTextMeshBuilder::BuildTextMesh(const FString& Text, FRenderMesh& OutMesh) const
+bool CTextMeshBuilder::BuildTextMesh(const FString& Text, FRenderMesh& OutMesh) const
 {
 	if (Text.empty())
 	{
@@ -172,7 +172,7 @@ bool FTextMeshBuilder::BuildTextMesh(const FString& Text, FRenderMesh& OutMesh) 
 	return !OutMesh.Vertices.empty();
 }
 
-void FTextMeshBuilder::SetFillMode(D3D11_FILL_MODE InFillMode)
+void CTextMeshBuilder::SetFillMode(D3D11_FILL_MODE InFillMode)
 {
 	if (!FontMaterial) return;
 	FRasterizerStateOption Option = FontMaterial->GetRasterizerOption();
@@ -183,7 +183,7 @@ void FTextMeshBuilder::SetFillMode(D3D11_FILL_MODE InFillMode)
 	FontMaterial->SetRasterizerState(RS);
 }
 
-TArray<uint32> FTextMeshBuilder::DecodeToCodepoints(const FString& Text) const
+TArray<uint32> CTextMeshBuilder::DecodeToCodepoints(const FString& Text) const
 {
 	TArray<uint32> Result;
 

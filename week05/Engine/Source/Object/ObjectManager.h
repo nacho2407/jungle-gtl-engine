@@ -6,11 +6,11 @@
 class UObject;
 class UClass;
 
-class ENGINE_API FObjectManager
+class ENGINE_API ObjectManager
 {
 public:
-	FObjectManager();
-	~FObjectManager();
+	ObjectManager();
+	~ObjectManager();
 
 	// UClass*를 직접 넘기는 버전
 	UObject* SpawnObject(

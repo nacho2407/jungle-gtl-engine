@@ -4,10 +4,10 @@
 
 IMPLEMENT_RTTI(UCameraComponent, USceneComponent)
 
-void UCameraComponent::PostConstruct()
+void UCameraComponent::Initialize()
 {
 	bCanEverTick = true;
-	Camera = new FCamera();
+	Camera = new CCamera();
 }
 
 UCameraComponent::~UCameraComponent()
@@ -45,7 +45,7 @@ void UCameraComponent::Rotate(float DeltaYaw, float DeltaPitch)
 	Camera->Rotate(DeltaYaw, DeltaPitch);
 }
 
-FCamera* UCameraComponent::GetCamera() const
+CCamera* UCameraComponent::GetCamera() const
 {
 	return Camera;
 }

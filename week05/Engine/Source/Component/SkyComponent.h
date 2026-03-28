@@ -6,6 +6,6 @@ class ENGINE_API USkyComponent : public UPrimitiveComponent
 public:
 	DECLARE_RTTI(USkyComponent, UPrimitiveComponent)
 
-	void PostConstruct() override;
+	void Initialize();
 	FBoxSphereBounds GetWorldBounds() const override;
 };

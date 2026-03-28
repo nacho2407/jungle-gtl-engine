@@ -10,7 +10,7 @@ struct FHitResult
 	FVector HitLocation;
 };
 
-class FPhysicsManager
+class CPhysicsManager
 {
 public:
 	/**

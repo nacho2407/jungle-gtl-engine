@@ -1,9 +1,9 @@
 #pragma once
 #include "PrimitiveBase.h"
 
-struct FRotationGizmoDesc;
+struct RotationDesc;
 
-class ENGINE_API FPrimitiveGizmo : public FPrimitiveBase
+class ENGINE_API CPrimitiveGizmo : public CPrimitiveBase
 {
 public:
 	enum class EGizmoType : std::uint8_t
@@ -30,7 +30,7 @@ public:
 	static const FString Key;
 	static const FString FilePath;
 
-	explicit FPrimitiveGizmo(EGizmoType Type = EGizmoType::Scale);
+	explicit CPrimitiveGizmo(EGizmoType Type = EGizmoType::Scale);
 
 	void Generate(EGizmoType Type);
 	static std::shared_ptr<FMeshData> CreateTranslationAxisMesh(EAxis Axis);
@@ -41,10 +41,10 @@ public:
 	static std::shared_ptr<FMeshData> CreateTranslationScreenMesh(const FVector4& OverrideColor);
 	static std::shared_ptr<FMeshData> CreateRotationAxisMesh(EAxis Axis);
 	static std::shared_ptr<FMeshData> CreateRotationAxisMesh(EAxis Axis, const FVector4& OverrideColor);
-	static std::shared_ptr<FMeshData> CreateRotationAxisMesh(EAxis Axis, const FRotationGizmoDesc& Desc);
-	static std::shared_ptr<FMeshData> CreateRotationAxisMesh(EAxis Axis, const FRotationGizmoDesc& Desc, const FVector4& OverrideColor);
-	static std::shared_ptr<FMeshData> CreateRotationScreenMesh(const FRotationGizmoDesc& Desc);
-	static std::shared_ptr<FMeshData> CreateRotationScreenMesh(const FRotationGizmoDesc& Desc, const FVector4& OverrideColor);
+	static std::shared_ptr<FMeshData> CreateRotationAxisMesh(EAxis Axis, const RotationDesc& Desc);
+	static std::shared_ptr<FMeshData> CreateRotationAxisMesh(EAxis Axis, const RotationDesc& Desc, const FVector4& OverrideColor);
+	static std::shared_ptr<FMeshData> CreateRotationScreenMesh(const RotationDesc& Desc);
+	static std::shared_ptr<FMeshData> CreateRotationScreenMesh(const RotationDesc& Desc, const FVector4& OverrideColor);
 	static std::shared_ptr<FMeshData> CreateScaleAxisMesh(EAxis Axis);
 	static std::shared_ptr<FMeshData> CreateScaleAxisMesh(EAxis Axis, const FVector4& OverrideColor);
 	static std::shared_ptr<FMeshData> CreateScalePlaneMesh(EScalePlane Plane);

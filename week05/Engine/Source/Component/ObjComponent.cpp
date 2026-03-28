@@ -11,9 +11,13 @@
 
 IMPLEMENT_RTTI(UObjComponent, UPrimitiveComponent)
 
+void UObjComponent::Initialize()
+{ 
+}
+
 void UObjComponent::LoadPrimitive(const FString& FilePath)
 {
-	Primitive = std::make_unique<FPrimitiveObj>(FilePath);
+	Primitive = std::make_unique<CPrimitiveObj>(FilePath);	
 }
 
 void UObjComponent::LoadTexture(ID3D11Device* Device, const FString& FilePath)

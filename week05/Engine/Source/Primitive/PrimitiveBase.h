@@ -57,11 +57,11 @@ private:
 	float LocalBoundRadius = 0.f;
 };
 
-class ENGINE_API FPrimitiveBase
+class ENGINE_API CPrimitiveBase
 {
 public:
-	FPrimitiveBase() = default;
-	virtual ~FPrimitiveBase() = default;
+	CPrimitiveBase() = default;
+	virtual ~CPrimitiveBase() = default;
 
 	FMeshData* GetMeshData() const 
 	{ 

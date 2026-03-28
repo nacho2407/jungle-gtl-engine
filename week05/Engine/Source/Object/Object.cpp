@@ -2,7 +2,7 @@
 #include "Object/Class.h"
 
 // 조건 1: 전역 오브젝트 배열 정의
-static TArray<UObject*> GUObjectArray;
+TArray<UObject*> GUObjectArray;
 
 // TObjectPtr에서 사용: void*를 통해 forward-declared T의 UUID를 안전하게 추출
 uint32_t ExtractUObjectUUID(const void* Ptr)
@@ -100,10 +100,6 @@ const FString& UObject::GetName() const
 UObject* UObject::GetOuter() const
 {
 	return Outer;
-}
-
-void UObject::PostConstruct()
-{
 }
 
 FString UObject::GetPathName() const

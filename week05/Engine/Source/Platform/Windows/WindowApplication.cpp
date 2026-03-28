@@ -1,17 +1,17 @@
-#include "WindowsApplication.h"
+#include "WindowApplication.h"
 #include "PlatformGlobals.h"
-#include "WindowsWindow.h"
+#include "Window.h"
 
 
-TMap<HWND, FWindowsWindow*> FWindowsApplication::WindowMap;
+TMap<HWND, CWindow*> CWindowApplication::WindowMap;
 
-FWindowsApplication& FWindowsApplication::Get()
+CWindowApplication& CWindowApplication::Get()
 {
-	static FWindowsApplication Instance;
+	static CWindowApplication Instance;
 	return Instance;
 }
 
-bool FWindowsApplication::Create(HINSTANCE InInstance, const WCHAR* ClassName)
+bool CWindowApplication::Create(HINSTANCE InInstance, const WCHAR* ClassName)
 {
 	Instance = InInstance;
 	GhInstance = InInstance;
@@ -33,7 +33,7 @@ bool FWindowsApplication::Create(HINSTANCE InInstance, const WCHAR* ClassName)
 	return true;
 }
 
-void FWindowsApplication::Destroy()
+void CWindowApplication::Destroy()
 {
 	if (MainWindow)
 	{
@@ -48,9 +48,9 @@ void FWindowsApplication::Destroy()
 	}
 }
 
-FWindowsWindow* FWindowsApplication::MakeWindow(const WCHAR* Title, int Width, int Height, int X, int Y)
+CWindow* CWindowApplication::MakeWindow(const WCHAR* Title, int Width, int Height, int X, int Y)
 {
-	FWindowsWindow* Window = new FWindowsWindow();
+	CWindow* Window = new CWindow();
 	if (!Window->Create(Instance, WindowClassName, Title, Width, Height, X, Y))
 	{
 		delete Window;
@@ -59,13 +59,13 @@ FWindowsWindow* FWindowsApplication::MakeWindow(const WCHAR* Title, int Width, i
 	return Window;
 }
 
-bool FWindowsApplication::CreateMainWindow(const WCHAR* Title, int Width, int Height, int X, int Y)
+bool CWindowApplication::CreateMainWindow(const WCHAR* Title, int Width, int Height, int X, int Y)
 {
 	MainWindow = MakeWindow(Title, Width, Height, X, Y);
 	return MainWindow != nullptr;
 }
 
-bool FWindowsApplication::PumpMessages()
+bool CWindowApplication::PumpMessages()
 {
 	MSG Msg = {};
 	while (PeekMessage(&Msg, nullptr, 0, 0, PM_REMOVE))
@@ -80,7 +80,7 @@ bool FWindowsApplication::PumpMessages()
 	return true;
 }
 
-LRESULT CALLBACK FWindowsApplication::StaticWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK CWindowApplication::StaticWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	auto It = WindowMap.find(hWnd);
 	if (It != WindowMap.end())
@@ -90,32 +90,32 @@ LRESULT CALLBACK FWindowsApplication::StaticWndProc(HWND hWnd, UINT Msg, WPARAM 
 	return DefWindowProc(hWnd, Msg, wParam, lParam);
 }
 
-void FWindowsApplication::RegisterWindow(HWND Hwnd, FWindowsWindow* Window)
+void CWindowApplication::RegisterWindow(HWND Hwnd, CWindow* Window)
 {
 	WindowMap[Hwnd] = Window;
 }
 
-void FWindowsApplication::UnregisterWindow(HWND Hwnd)
+void CWindowApplication::UnregisterWindow(HWND Hwnd)
 {
 	WindowMap.erase(Hwnd);
 }
 
-HWND FWindowsApplication::GetHwnd() const
+HWND CWindowApplication::GetHwnd() const
 {
 	return MainWindow ? MainWindow->GetHwnd() : nullptr;
 }
 
-int32 FWindowsApplication::GetWindowWidth() const
+int32 CWindowApplication::GetWindowWidth() const
 {
 	return MainWindow ? MainWindow->GetWidth() : 0;
 }
 
-int32 FWindowsApplication::GetWindowHeight() const
+int32 CWindowApplication::GetWindowHeight() const
 {
 	return MainWindow ? MainWindow->GetHeight() : 0;
 }
 
-void FWindowsApplication::AddMessageFilter(FWndProcFilter Filter)
+void CWindowApplication::AddMessageFilter(FWndProcFilter Filter)
 {
 	if (MainWindow)
 	{
@@ -123,7 +123,7 @@ void FWindowsApplication::AddMessageFilter(FWndProcFilter Filter)
 	}
 }
 
-void FWindowsApplication::SetOnResizeCallback(FOnResizeCallback Callback)
+void CWindowApplication::SetOnResizeCallback(FOnResizeCallback Callback)
 {
 	if (MainWindow)
 	{
@@ -131,7 +131,7 @@ void FWindowsApplication::SetOnResizeCallback(FOnResizeCallback Callback)
 	}
 }
 
-void FWindowsApplication::ShowWindow()
+void CWindowApplication::ShowWindow()
 {
 	if (MainWindow)
 	{

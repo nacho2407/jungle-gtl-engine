@@ -3,18 +3,18 @@
 #include "Input/InputAction.h"
 
 class UCameraComponent;
-class FInputManager;
-class FEnhancedInputManager;
+class CInputManager;
+class CEnhancedInputManager;
 struct FInputMappingContext;
 
 
-class FEditorViewportController
+class CEditorViewportController
 {
 public:
-	~FEditorViewportController();
+	~CEditorViewportController();
 
 	// ← EnhancedInput 포인터 추가
-	void Initialize(UCameraComponent* InCameraComp, FInputManager* InInput, FEnhancedInputManager* InEnhancedInput);
+	void Initialize(UCameraComponent* InCameraComp, CInputManager* InInput, CEnhancedInputManager* InEnhancedInput);
 	void Cleanup();
 
 	void Tick(float DeltaTime);
@@ -25,8 +25,8 @@ private:
 	void SetupInputBindings(); // 기존 ProcessCameraInput 대체
 
 	UCameraComponent* CameraComponent = nullptr;
-	FInputManager* InputManager = nullptr;
-	FEnhancedInputManager* EnhancedInput = nullptr;
+	CInputManager* InputManager = nullptr;
+	CEnhancedInputManager* EnhancedInput = nullptr;
 
 	FInputMappingContext* CameraContext = nullptr; // 소멸자에서 정리
 

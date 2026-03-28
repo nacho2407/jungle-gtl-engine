@@ -1,10 +1,10 @@
 #include "PropertyWindow.h"
-#include "EditorEngine.h"
+#include "Core/Core.h"
 #include "Actor/Actor.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextComponent.h"
 #include "Component/UUIDBillboardComponent.h"
-void FPropertyWindow::SetTarget(const FVector& Location, const FVector& Rotation,
+void CPropertyWindow::SetTarget(const FVector& Location, const FVector& Rotation,
 	const FVector& Scale, const char* ActorName)
 {
 	EditLocation = Location;
@@ -18,7 +18,7 @@ void FPropertyWindow::SetTarget(const FVector& Location, const FVector& Rotation
 		snprintf(ActorNameBuf, sizeof(ActorNameBuf), "None");
 }
 
-void FPropertyWindow::DrawTransformSection()
+void CPropertyWindow::DrawTransformSection()
 {
 	float Loc[3] = { EditLocation.X, EditLocation.Y, EditLocation.Z };
 	float Rot[3] = { EditRotation.X, EditRotation.Y, EditRotation.Z };
@@ -98,7 +98,7 @@ void FPropertyWindow::DrawTransformSection()
 		OnChanged(EditLocation, EditRotation, EditScale);
 }
 
-void FPropertyWindow::Render(FEditorEngine* Engine)
+void CPropertyWindow::Render(CCore* Core)
 {
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
 	bool bOpen = ImGui::Begin("Properties");
@@ -124,9 +124,9 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 		DrawTransformSection();
 		ImGui::Unindent(8.0f);
 	}
-	if (Engine)
+	if (Core)
 	{
-		AActor* SelectedActor = Engine->GetSelectedActor();
+		AActor* SelectedActor = Core->GetSelectedActor();
 		if (SelectedActor)
 		{
 			if (ImGui::CollapsingHeader("Billboard", ImGuiTreeNodeFlags_DefaultOpen))

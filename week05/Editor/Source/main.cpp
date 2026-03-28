@@ -1,19 +1,25 @@
-﻿#include "EditorEngine.h"
-#include "Platform/Windows/WindowsEngineLaunch.h"
+#include "FEditorEngine.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int)
 {
-	// Windows 런처에 넘길 에디터 실행 설정을 구성한다.
-	FEngineLaunchConfig Config;
-	Config.Title = L"Jungle Editor";
-	Config.Width = 1280;
-	Config.Height = 720;
-	Config.CreateEngine = []()
+	HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+	if (FAILED(hr) && hr != RPC_E_CHANGED_MODE)
 	{
-		return std::make_unique<FEditorEngine>();
-	};
+		MessageBox(nullptr, L"CoInitializeEx failed", L"COM Error", MB_OK);
+		return -1;
+	}
 
-	// OS 진입점 이후의 제어를 Windows 전용 Launch 계층으로 넘긴다.
-	FWindowsEngineLaunch Launch;
-	return Launch.Run(hInstance, Config);
+	FEditorEngine Engine;
+	if (!Engine.Initialize(hInstance))
+		return -1;
+
+	Engine.Run();
+	Engine.Shutdown(); // ~FEingine() called shutdown
+
+	if (SUCCEEDED(hr) || hr == S_FALSE)
+	{
+		CoUninitialize();
+	}
+
+	return 0;
 }

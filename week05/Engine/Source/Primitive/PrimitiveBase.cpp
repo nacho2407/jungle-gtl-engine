@@ -114,11 +114,11 @@ void FMeshData::UpdateLocalBound()
 	}
 }
 
-// ─── FPrimitiveBase ───
+// ─── CPrimitiveBase ───
 
-std::unordered_map<FString, std::shared_ptr<FMeshData>> FPrimitiveBase::MeshCache;
+std::unordered_map<FString, std::shared_ptr<FMeshData>> CPrimitiveBase::MeshCache;
 
-std::shared_ptr<FMeshData> FPrimitiveBase::LoadFromFile(const FString& Key, const FString& FilePath)
+std::shared_ptr<FMeshData> CPrimitiveBase::LoadFromFile(const FString& Key, const FString& FilePath)
 {
 	auto It = MeshCache.find(Key);
 	if (It != MeshCache.end())
@@ -135,7 +135,7 @@ std::shared_ptr<FMeshData> FPrimitiveBase::LoadFromFile(const FString& Key, cons
 	return Data;
 }
 
-std::shared_ptr<FMeshData> FPrimitiveBase::GetCached(const FString& Key)
+std::shared_ptr<FMeshData> CPrimitiveBase::GetCached(const FString& Key)
 {
 	auto It = MeshCache.find(Key);
 	if (It != MeshCache.end())
@@ -145,13 +145,13 @@ std::shared_ptr<FMeshData> FPrimitiveBase::GetCached(const FString& Key)
 	return nullptr;
 }
 
-void FPrimitiveBase::RegisterMeshData(const FString& Key, std::shared_ptr<FMeshData> Data)
+void CPrimitiveBase::RegisterMeshData(const FString& Key, std::shared_ptr<FMeshData> Data)
 {
 	Data->UpdateLocalBound();
 	MeshCache[Key] = Data;
 }
 
-void FPrimitiveBase::ClearCache()
+void CPrimitiveBase::ClearCache()
 {
 	MeshCache.clear();
 }
@@ -161,7 +161,7 @@ void FPrimitiveBase::ClearCache()
 // [FPrimitiveVertex * VertexCount] Vertices
 // [uint32] IndexCount
 // [uint32 * IndexCount] Indices
-std::shared_ptr<FMeshData> FPrimitiveBase::LoadFromFile(const FString& FilePath)
+std::shared_ptr<FMeshData> CPrimitiveBase::LoadFromFile(const FString& FilePath)
 {
 	std::ifstream File(FilePath, std::ios::binary);
 	if (!File.is_open())
