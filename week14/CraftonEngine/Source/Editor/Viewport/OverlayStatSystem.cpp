@@ -10,24 +10,32 @@ TArray<FString> FOverlayStatSystem::BuildLines(const UEditorEngine& Editor) cons
 
 	if (bShowFPS)
 	{
-		char Buffer[128] = {};
 		const FTimer* Timer = Editor.GetTimer();
 		const float FPS = Timer ? Timer->GetDisplayFPS() : 0.0f;
-		snprintf(Buffer, sizeof(Buffer), "FPS : %.1f", FPS);
-		Lines.push_back(FString(Buffer));
+		const float MS = FPS > 0.0f ? 1000.0f / FPS : 0.0f;
+		{
+			char Buffer[128] = {};
+			snprintf(Buffer, sizeof(Buffer), "FPS : %.1f", FPS);
+			Lines.push_back(FString(Buffer));
+		}
+		{
+			char Buffer[128] = {};
+			snprintf(Buffer, sizeof(Buffer), "Frame Time : %.2f ms", MS);
+			Lines.push_back(FString(Buffer));
+		}
 	}
 
 	if (bShowMemory)
 	{
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "Memory Allocated : %d", EngineStatics::GetTotalAllocationBytes());
+			snprintf(Buffer, sizeof(Buffer), "Memory Allocated : %u", EngineStatics::GetTotalAllocationBytes());
 			Lines.push_back(FString(Buffer));
 		}
 
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "Times Allocated : %d", EngineStatics::GetTotalAllocationCount());
+			snprintf(Buffer, sizeof(Buffer), "Times Allocated : %u", EngineStatics::GetTotalAllocationCount());
 			Lines.push_back(FString(Buffer));
 		}
 	}
