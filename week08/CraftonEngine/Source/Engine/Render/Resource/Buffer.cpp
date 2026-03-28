@@ -1,45 +1,42 @@
 ﻿#include "Buffer.h"
 
-#pragma region __FMESHBUFFER__
-
-void FMeshBuffer::Create(ID3D11Device* InDevice, const FMeshData& InMeshData)
-{
-	if (InMeshData.Vertices.empty())
-	{
-		VertexBuffer.Release();
-		IndexBuffer.Release();
-		return;
-	}
-
-	uint32 VertexCount = static_cast<uint32>(InMeshData.Vertices.size());
-	uint32 VertexByteWidth = VertexCount * sizeof(FVertex);
-
-	VertexBuffer.Create(InDevice, InMeshData.Vertices.data(), VertexCount, VertexByteWidth, sizeof(FVertex));
-	
-	if (!InMeshData.Indices.empty())
-	{
-		uint32 IndexCount = static_cast<uint32>(InMeshData.Indices.size());
-		uint32 IndexByteWidth = IndexCount * sizeof(uint32);
-
-		IndexBuffer.Create(InDevice, InMeshData.Indices.data(), IndexCount, IndexByteWidth);
-	}
-}
-
 void FMeshBuffer::Release()
 {
 	VertexBuffer.Release();
 	IndexBuffer.Release();
 }
 
-#pragma endregion
+FVertexBuffer::FVertexBuffer(FVertexBuffer&& Other) noexcept
+	: Buffer(Other.Buffer)
+	, VertexCount(Other.VertexCount)
+	, Stride(Other.Stride)
+{
+	Other.Buffer = nullptr;
+	Other.VertexCount = 0;
+	Other.Stride = 0;
+}
 
-#pragma region __FVERTEXBUFFER__
+FVertexBuffer& FVertexBuffer::operator=(FVertexBuffer&& Other) noexcept
+{
+	if (this != &Other)
+	{
+		Release();
+		Buffer = Other.Buffer;
+		VertexCount = Other.VertexCount;
+		Stride = Other.Stride;
+		Other.Buffer = nullptr;
+		Other.VertexCount = 0;
+		Other.Stride = 0;
+	}
+	return *this;
+}
 
 void FVertexBuffer::Create(ID3D11Device* InDevice, const void* InData, uint32 InVertexCount, uint32 InByteWidth, uint32 InStride)
 {
+	Release();
+
 	if (!InData || InByteWidth == 0)
 	{
-		Release();
 		VertexCount = 0;
 		Stride = InStride;
 		return;
@@ -55,7 +52,6 @@ void FVertexBuffer::Create(ID3D11Device* InDevice, const void* InData, uint32 In
 	HRESULT hr = InDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferSRD, &Buffer);
 	if (FAILED(hr))
 	{
-		Release();
 		VertexCount = 0;
 		Stride = InStride;
 		return;
@@ -72,12 +68,7 @@ void FVertexBuffer::Release()
 		Buffer->Release();
 		Buffer = nullptr;
 	}
-}
-
-//	 Vertex buffer는 Immutable로 생성했으므로 업데이트가 불가. 업데이트가 필요하다면 Dynamic으로 생성
-void FVertexBuffer::Update(ID3D11DeviceContext* InDeviceContext, const TArray<uint32>& InData, uint32 InByteWidth)
-{
-	//	 Do nothing
+	VertexCount = 0;
 }
 
 ID3D11Buffer* FVertexBuffer::GetBuffer() const
@@ -85,13 +76,27 @@ ID3D11Buffer* FVertexBuffer::GetBuffer() const
 	return Buffer;
 }
 
-#pragma endregion
+FConstantBuffer::FConstantBuffer(FConstantBuffer&& Other) noexcept
+	: Buffer(Other.Buffer)
+{
+	Other.Buffer = nullptr;
+}
 
-#pragma region __FCONSTANTBUFFER__
+FConstantBuffer& FConstantBuffer::operator=(FConstantBuffer&& Other) noexcept
+{
+	if (this != &Other)
+	{
+		Release();
+		Buffer = Other.Buffer;
+		Other.Buffer = nullptr;
+	}
+	return *this;
+}
 
-//	 Constant buffer는 Dynamic으로 생성하여 업데이트가 가능하도록 구현
 void FConstantBuffer::Create(ID3D11Device* InDevice, uint32 InByteWidth)
 {
+	Release();
+
 	D3D11_BUFFER_DESC constantBufferDesc = {};
 
 	constantBufferDesc.ByteWidth = (InByteWidth + 0xf) & 0xfffffff0;
@@ -111,15 +116,16 @@ void FConstantBuffer::Release()
 	}
 }
 
-//	Constant buffer는 Dynamic으로 생성했으므로 업데이트가 가능. 업데이트가 필요하다면 Map/Unmap을 이용하여 업데이트
-//	InData는 Constant buffer에 업데이트할 데이터의 포인터입니다. InByteWidth는 업데이트할 데이터의 총 byte 크기입니다.
-//	즉, InData는 FPerObjectConstants 구조체의 포인터입니다.
 void FConstantBuffer::Update(ID3D11DeviceContext* InDeviceContext, const void* InData, uint32 InByteWidth)
 {
 	if (Buffer)
 	{
 		D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
-		InDeviceContext->Map(Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
+		HRESULT hr = InDeviceContext->Map(Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
+		if (FAILED(hr))
+		{
+			return;
+		}
 
 		std::memcpy(constantbufferMSR.pData, InData, InByteWidth);
 
@@ -132,15 +138,34 @@ ID3D11Buffer* FConstantBuffer::GetBuffer()
 	return Buffer;
 }
 
-#pragma endregion
 
-#pragma region __FINDEXBUFFER__
+FIndexBuffer::FIndexBuffer(FIndexBuffer&& Other) noexcept
+	: Buffer(Other.Buffer)
+	, IndexCount(Other.IndexCount)
+{
+	Other.Buffer = nullptr;
+	Other.IndexCount = 0;
+}
+
+FIndexBuffer& FIndexBuffer::operator=(FIndexBuffer&& Other) noexcept
+{
+	if (this != &Other)
+	{
+		Release();
+		Buffer = Other.Buffer;
+		IndexCount = Other.IndexCount;
+		Other.Buffer = nullptr;
+		Other.IndexCount = 0;
+	}
+	return *this;
+}
 
 void FIndexBuffer::Create(ID3D11Device* InDevice, const void* InData, uint32 InIndexCount, uint32 InByteWidth)
 {
+	Release();
+
 	if (!InData || InByteWidth == 0 || InIndexCount == 0)
 	{
-		Release();
 		IndexCount = 0;
 		return;
 	}
@@ -156,7 +181,6 @@ void FIndexBuffer::Create(ID3D11Device* InDevice, const void* InData, uint32 InI
 	HRESULT hr = InDevice->CreateBuffer(&indexBufferDesc, &indexBufferSRD, &Buffer);
 	if (FAILED(hr))
 	{
-		Release();
 		IndexCount = 0;
 		return;
 	}
@@ -171,16 +195,10 @@ void FIndexBuffer::Release()
 		Buffer->Release();
 		Buffer = nullptr;
 	}
-}
-
-void FIndexBuffer::Update(ID3D11DeviceContext* InDeviceContext, const TArray<uint32>& InData, uint32 InByteWidth)
-{
-	//	 Do nothing
+	IndexCount = 0;
 }
 
 ID3D11Buffer* FIndexBuffer::GetBuffer() const
 {
 	return Buffer;
 }
-
-#pragma endregion

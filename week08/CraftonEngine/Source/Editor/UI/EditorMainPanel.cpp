@@ -7,7 +7,7 @@
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
 
-#include "Render/Renderer/Renderer.h"
+#include "Render/Pipeline/Renderer.h"
 #include "Engine/Core/InputSystem.h"
 
 void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine)

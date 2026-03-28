@@ -3,8 +3,8 @@
 #include "Object/Object.h"
 #include "GameFramework/World.h"
 #include "GameFramework/WorldContext.h"
-#include "Render/Renderer/Renderer.h"
-#include "Render/Renderer/IRenderPipeline.h"
+#include "Render/Pipeline/Renderer.h"
+#include "Render/Pipeline/IRenderPipeline.h"
 
 #include <memory>
 

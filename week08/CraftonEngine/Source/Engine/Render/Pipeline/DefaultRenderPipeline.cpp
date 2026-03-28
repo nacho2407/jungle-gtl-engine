@@ -8,12 +8,10 @@
 FDefaultRenderPipeline::FDefaultRenderPipeline(UEngine* InEngine, FRenderer& InRenderer)
 	: Engine(InEngine)
 {
-	Collector.Initialize(InRenderer.GetFD3DDevice().GetDevice());
 }
 
 FDefaultRenderPipeline::~FDefaultRenderPipeline()
 {
-	Collector.Release();
 }
 
 void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)

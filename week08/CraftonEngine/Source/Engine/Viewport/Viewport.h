@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Render/Common/RenderTypes.h"
+#include "Render/Types/RenderTypes.h"
 
 class FViewportClient;
 

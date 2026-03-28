@@ -1,24 +1,18 @@
 ﻿#pragma once
+#include "Render/Resource/Buffer.h"
+#include "Render/Pipeline/RenderCommand.h"
 
 /*
-	Shader, Constant Buffer 등 렌더링에 필요한 리소스들을 관리하는 Class 입니다.
-	Renderer에서 필요한 리소스들을 FRenderResources에 추가하여 관리할 수 있습니다.
+	공용 Constant Buffer를 관리하는 구조체입니다.
+	모든 커맨드가 공통으로 사용하는 Frame/PerObject CB만 소유합니다.
+	타입별 CB(Gizmo, Editor, Outline 등)는 FConstantBufferPool에서 관리됩니다.
 */
-
-#include "Render/Resource/Shader.h"
-#include "Render/Resource/Buffer.h"
 
 struct FRenderResources
 {
-	FConstantBuffer FrameBuffer;					// b0
-    FConstantBuffer PerObjectConstantBuffer;        // b1
-    FConstantBuffer GizmoPerObjectConstantBuffer;   // b2
-    FConstantBuffer EditorConstantBuffer;           // b4
-	FConstantBuffer OutlineConstantBuffer;          // b5
+	FConstantBuffer FrameBuffer;				// b0 — ECBSlot::Frame
+	FConstantBuffer PerObjectConstantBuffer;	// b1 — ECBSlot::PerObject
 
-    FShader PrimitiveShader;
-    FShader GizmoShader;
-    FShader EditorShader;
-	FShader OutlineShader;
-	FShader StaticMesh;
+	void Create(ID3D11Device* InDevice);
+	void Release();
 };

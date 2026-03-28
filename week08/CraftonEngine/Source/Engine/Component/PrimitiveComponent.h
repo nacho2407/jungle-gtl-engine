@@ -2,30 +2,23 @@
 
 #include "Object/ObjectFactory.h"
 #include "SceneComponent.h"
-#include "Render/Scene/RenderBus.h"
-#include "Render/Common/RenderTypes.h"
+#include "Render/Pipeline/RenderBus.h"
+#include "Render/Types/RenderTypes.h"
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
 #include "Core/EngineTypes.h"
-
-struct FMeshData;
+#include "Render/Types/VertexTypes.h"
 
 
 class UPrimitiveComponent : public USceneComponent
 {
-protected:
-	const FMeshData* MeshData = nullptr;
-	FVector LocalExtents = { 0.5f, 0.5f, 0.5f };
-	mutable FVector WorldAABBMinLocation;
-	mutable FVector WorldAABBMaxLocation;
-	bool bIsVisible = true;
-
 public:
 	DECLARE_CLASS(UPrimitiveComponent, USceneComponent)
 
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 	inline const FMeshData* GetMeshData() const { return MeshData; };
+	virtual FMeshBuffer* GetMeshBuffer() const { return nullptr; }
 
 	inline void SetVisibility(bool bVisible) { bIsVisible = bVisible; }
 
@@ -50,12 +43,17 @@ public:
 	// MeshBuffer 기반 아웃라인 렌더링을 지원하는지 여부.
 	// Batcher 처리 타입(SubUV, Text)은 false를 반환합니다.
 	virtual bool SupportsOutline() const { return true; }
+
+protected:
+	const FMeshData* MeshData = nullptr;
+	FVector LocalExtents = { 0.5f, 0.5f, 0.5f };
+	mutable FVector WorldAABBMinLocation;
+	mutable FVector WorldAABBMaxLocation;
+	bool bIsVisible = true;
 };
 
 class UCubeComponent : public UPrimitiveComponent
 {
-private:
-
 public:
 	DECLARE_CLASS(UCubeComponent, UPrimitiveComponent)
 	UCubeComponent();
@@ -66,8 +64,6 @@ public:
 
 class USphereComponent : public UPrimitiveComponent
 {
-private:
-
 public:
 	DECLARE_CLASS(USphereComponent, UPrimitiveComponent)
 	USphereComponent();
@@ -79,8 +75,6 @@ public:
 
 class UPlaneComponent : public UPrimitiveComponent
 {
-private:
-
 public:
 	DECLARE_CLASS(UPlaneComponent, UPrimitiveComponent)
 	UPlaneComponent();

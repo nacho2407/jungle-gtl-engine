@@ -2,7 +2,7 @@
 #include "Object/ObjectFactory.h"
 
 #include <cstring>
-#include "Render/Mesh/MeshManager.h"
+#include "Render/Resource/MeshBufferManager.h"
 #include "Core/ResourceManager.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -12,7 +12,7 @@ IMPLEMENT_CLASS(USubUVComponent, UBillboardComponent)
 
 USubUVComponent::USubUVComponent()
 {
-	MeshData = &FMeshManager::Get().GetQuad();
+	MeshData = &FMeshBufferManager::Get().GetMeshData(EPrimitiveType::EPT_Quad);
 	SetVisibility(false);
 }
 

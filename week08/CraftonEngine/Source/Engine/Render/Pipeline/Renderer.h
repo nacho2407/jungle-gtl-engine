@@ -1,17 +1,18 @@
-﻿#pragma once
+#pragma once
 
 /*
 	실제 렌더링을 담당하는 Class 입니다. (Rendering 최상위 클래스)
 */
 
-#include "Render/Common/RenderTypes.h"
+#include "Render/Types/RenderTypes.h"
 
-#include "Render/Scene/RenderBus.h"
+#include "Render/Pipeline/RenderBus.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/RenderResources.h"
-#include "Render/LineBatcher.h"
-#include "Render/FontBatcher.h"
-#include "Render/SubUVBatcher.h"
+#include "Render/Resource/ShaderManager.h"
+#include "Render/Batcher/LineBatcher.h"
+#include "Render/Batcher/FontBatcher.h"
+#include "Render/Batcher/SubUVBatcher.h"
 
 #include <cstddef>
 #include <functional>
@@ -33,7 +34,6 @@ struct FPassRenderState
 	EBlendState              Blend          = EBlendState::Opaque;
 	ERasterizerState         Rasterizer     = ERasterizerState::SolidBackCull;
 	D3D11_PRIMITIVE_TOPOLOGY Topology       = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	FShader*                 Shader         = nullptr; // nullptr → batcher가 자체 셰이더 사용
 	bool                     bWireframeAware = false;  // Wireframe 모드 시 래스터라이저 전환
 };
 
@@ -56,12 +56,12 @@ private:
 	void InitializePassBatchers();
 
 	void ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Context, EViewMode ViewMode);
-	void BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContext* Context);
+	void BindCommand(const FRenderCommand& InCmd, ID3D11DeviceContext* Context);
 
 	void DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderCommand& InCommand);
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus);
 
-	// 기본 패스 실행기 — SetupRenderState + DrawCommand 루프
+	// 기본 패스 실행기 — SetupRenderState + BindCommand + DrawCommand 루프
 	void ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand>& Commands, const FRenderBus& Bus, ID3D11DeviceContext* Context);
 
 	// LineBatcher Flush 공통 — EditorConstants 업데이트 + EditorShader 바인딩
@@ -81,22 +81,4 @@ private:
 
 	FPassRenderState    PassRenderStates[(uint32)ERenderPass::MAX];
 	FPassBatcherBinding PassBatchers[(uint32)ERenderPass::MAX];
-	ID3D11ShaderResourceView* SubUVCachedSRV = nullptr;
-
-	//	Primitive and Gizmo Input Layout
-	D3D11_INPUT_ELEMENT_DESC PrimitiveInputLayout[2] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0,  static_cast<uint32>(offsetof(FVertex, Position)), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FVertex, Color)), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	};
-
-	D3D11_INPUT_ELEMENT_DESC StaticMeshInputLayout[4] =
-	{
-		// SemanticName, SemanticIndex, Format, InputSlot, AlignedByteOffset, InputSlotClass, InstanceDataStepRate
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 0,                            D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXTCOORD",  0, DXGI_FORMAT_R32G32_FLOAT,       0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-	};
 };
-

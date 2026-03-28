@@ -5,9 +5,9 @@
 #include "Core/ResourceTypes.h"
 #include "Math/Vector.h"
 #include "Math/Matrix.h"
-#include "Render/Common/RenderTypes.h"
+#include "Render/Types/RenderTypes.h"
 #include "Render/Resource/Shader.h"
-#include "Render/Resource/VertexTypes.h"
+#include "Render/Types/VertexTypes.h"
 
 // Texture Atlas UV 정보
 struct FCharacterInfo

@@ -1,4 +1,5 @@
-﻿#include "RenderCollector.h"
+#include "RenderCollector.h"
+#include "Render/Resource/ConstantBufferPool.h"
 
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
@@ -6,8 +7,6 @@
 #include "Component/GizmoComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/SubUVComponent.h"
-#include "Component/StaticMeshComponent.h"
-#include "Mesh/StaticMeshAsset.h"
 
 void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
 {
@@ -32,8 +31,8 @@ void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, F
 {
 	FRenderCommand Cmd = {};
 	Cmd.Type = ERenderCommandType::Grid;
-	Cmd.Constants.Grid.GridSpacing = GridSpacing;
-	Cmd.Constants.Grid.GridHalfLineCount = GridHalfLineCount;
+	Cmd.Params.Grid.GridSpacing = GridSpacing;
+	Cmd.Params.Grid.GridHalfLineCount = GridHalfLineCount;
 	RenderBus.AddCommand(ERenderPass::Grid, Cmd);
 }
 
@@ -42,7 +41,7 @@ void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& Sh
 	if (ShowFlags.bGizmo == false) return;
 	if (!Gizmo || !Gizmo->IsVisible()) return;
 
-	FMeshBuffer* GizmoMesh = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
+	FMeshBuffer* GizmoMesh = &FMeshBufferManager::Get().GetMeshBuffer(Gizmo->GetPrimitiveType());
 	FMatrix WorldMatrix = Gizmo->GetWorldMatrix();
 	bool bHolding = Gizmo->IsHolding();
 	int32 SelectedAxis = Gizmo->GetSelectedAxis();
@@ -50,6 +49,7 @@ void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& Sh
 	auto CreateGizmoCmd = [&](bool bInner) {
 		FRenderCommand Cmd = {};
 		Cmd.Type = ERenderCommandType::Gizmo;
+		Cmd.Shader = FShaderManager::Get().GetShader(EShaderType::Gizmo);
 		Cmd.MeshBuffer = GizmoMesh;
 		Cmd.PerObjectConstants = FPerObjectConstants{ WorldMatrix };
 
@@ -63,11 +63,15 @@ void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& Sh
 			Cmd.DepthStencilState = EDepthStencilState::GizmoOutside;
 			Cmd.BlendState = EBlendState::Opaque;
 		}
-		Cmd.Constants.Gizmo.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-		Cmd.Constants.Gizmo.bIsInnerGizmo = bInner ? 1 : 0;
-		Cmd.Constants.Gizmo.bClicking = bHolding ? 1 : 0;
-		Cmd.Constants.Gizmo.SelectedAxis = SelectedAxis >= 0 ? (uint32)SelectedAxis : 0xffffffffu;
-		Cmd.Constants.Gizmo.HoveredAxisOpacity = 0.3f;
+		Cmd.Params.Gizmo.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+		Cmd.Params.Gizmo.bIsInnerGizmo = bInner ? 1 : 0;
+		Cmd.Params.Gizmo.bClicking = bHolding ? 1 : 0;
+		Cmd.Params.Gizmo.SelectedAxis = SelectedAxis >= 0 ? (uint32)SelectedAxis : 0xffffffffu;
+		Cmd.Params.Gizmo.HoveredAxisOpacity = 0.3f;
+
+		// Gizmo CB
+		Cmd.ExtraCB = { FConstantBufferPool::Get().GetBuffer(ECBSlot::Gizmo, sizeof(FGizmoConstants)), sizeof(FGizmoConstants), ECBSlot::Gizmo };
+
 		return Cmd;
 		};
 
@@ -98,7 +102,9 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 
 		if (!primitiveComponent->IsVisible()) continue;
 		FRenderCommand BaseCmd{};
-		BaseCmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
+		FMeshBuffer* Buffer = primitiveComponent->GetMeshBuffer();
+		if (!Buffer) Buffer = &FMeshBufferManager::Get().GetMeshBuffer(primitiveComponent->GetPrimitiveType());
+		BaseCmd.MeshBuffer = Buffer;
 		BaseCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
 		FVector WorldScale = primitiveComponent->GetWorldScale();
 
@@ -121,9 +127,9 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 				TextCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
 				TextCmd.Type = ERenderCommandType::Font;
 				TextCmd.PerObjectConstants.Color = TextComp->GetColor();
-				TextCmd.Constants.Font.Text = &Text;
-				TextCmd.Constants.Font.Font = Font;
-				TextCmd.Constants.Font.Scale = TextComp->GetFontSize();
+				TextCmd.Params.Font.Text = &Text;
+				TextCmd.Params.Font.Font = Font;
+				TextCmd.Params.Font.Scale = TextComp->GetFontSize();
 				TextCmd.BlendState = EBlendState::AlphaBlend;
 				TextCmd.DepthStencilState = EDepthStencilState::Default;
 				RenderBus.AddCommand(ERenderPass::Font, TextCmd);
@@ -136,6 +142,7 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		// StencilBuffer Mask
 		FRenderCommand MaskCmd = BaseCmd;
 		MaskCmd.Type = ERenderCommandType::SelectionOutline;
+		MaskCmd.Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
 		MaskCmd.DepthStencilState = EDepthStencilState::StencilWrite; //스텐실 버퍼만 작성하는 타입
 		MaskCmd.BlendState = EBlendState::NoColor;
 		RenderBus.AddCommand(ERenderPass::StencilMask, MaskCmd);
@@ -143,20 +150,25 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		// Outline
 		FRenderCommand OutlineCmd = BaseCmd;
 		OutlineCmd.Type = ERenderCommandType::SelectionOutline;
+		OutlineCmd.Shader = FShaderManager::Get().GetShader(EShaderType::Outline);
 		OutlineCmd.DepthStencilState = EDepthStencilState::StencilOutline;
-		OutlineCmd.Constants.Outline.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
-		OutlineCmd.Constants.Outline.OutlineInvScale = FVector(1.0f / WorldScale.X,
+		OutlineCmd.Params.Outline.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
+		OutlineCmd.Params.Outline.OutlineInvScale = FVector(1.0f / WorldScale.X,
 			1.0f / WorldScale.Y, 1.0f / WorldScale.Z);
-		OutlineCmd.Constants.Outline.OutlineOffset = 0.03f;
+		OutlineCmd.Params.Outline.OutlineOffset = 0.03f;
 		if (ViewMode == EViewMode::Wireframe)
 		{
 			OutlineCmd.PerObjectConstants.Color = FColor(255, 153, 0, 255).ToVector4();
 		}
 		CollectAABBCommand(primitiveComponent, ShowFlags, RenderBus);
 		EPrimitiveType PrimType = primitiveComponent->GetPrimitiveType();
-		OutlineCmd.Constants.Outline.PrimitiveType = (PrimType == EPrimitiveType::EPT_Plane ||
+		OutlineCmd.Params.Outline.PrimitiveType = (PrimType == EPrimitiveType::EPT_Plane ||
 			PrimType == EPrimitiveType::EPT_SubUV ||
 			PrimType == EPrimitiveType::EPT_Text) ? 0u : 1u;
+
+		// Outline CB
+		OutlineCmd.ExtraCB = { FConstantBufferPool::Get().GetBuffer(ECBSlot::Outline, sizeof(FOutlineConstants)), sizeof(FOutlineConstants), ECBSlot::Outline };
+
 		RenderBus.AddCommand(ERenderPass::Outline, OutlineCmd);
 	}
 }
@@ -172,30 +184,28 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 	case EPrimitiveType::EPT_Cube:
 	case EPrimitiveType::EPT_Sphere:
 	case EPrimitiveType::EPT_Plane:
-	{
-		if (!ShowFlags.bPrimitives) return;
-		FRenderCommand Cmd = {};
-		Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
-		Cmd.Type = ERenderCommandType::Primitive;
-		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(PrimType);
-		Cmd.DepthStencilState = EDepthStencilState::Default;
-		RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
-		break;
-	}
-
 	case EPrimitiveType::EPT_StaticMesh:
 	{
 		if (!ShowFlags.bPrimitives) return;
-		UStaticMeshComp* SMC = static_cast<UStaticMeshComp*>(Primitive);
-		UStaticMesh* SM = SMC->GetStaticMesh();
-		if (!SM) return;
-		FStaticMesh* Asset = SM->GetStaticMeshAsset();
-		if (!Asset || !Asset->RenderBuffer || !Asset->RenderBuffer->IsValid()) return;
+
+		// 컴포넌트가 자체 버퍼를 가지면 사용, 아니면 MeshBufferManager에서 조회
+		FMeshBuffer* Buffer = Primitive->GetMeshBuffer();
+		if (!Buffer) Buffer = &FMeshBufferManager::Get().GetMeshBuffer(PrimType);
+		if (!Buffer || !Buffer->IsValid()) return;
 
 		FRenderCommand Cmd = {};
 		Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
-		Cmd.Type = ERenderCommandType::StaticMesh;
-		Cmd.MeshBuffer = Asset->RenderBuffer;
+		if (PrimType == EPrimitiveType::EPT_StaticMesh)
+		{
+			Cmd.Type = ERenderCommandType::StaticMesh;
+			Cmd.Shader = FShaderManager::Get().GetShader(EShaderType::StaticMesh);
+		}
+		else
+		{
+			Cmd.Type = ERenderCommandType::Primitive;
+			Cmd.Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
+		}
+		Cmd.MeshBuffer = Buffer;
 		Cmd.DepthStencilState = EDepthStencilState::Default;
 		RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
 		break;
@@ -210,10 +220,10 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		FRenderCommand Cmd = {};
 		Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
 		Cmd.Type = ERenderCommandType::SubUV;
-		Cmd.Constants.SubUV.Particle = Particle;
-		Cmd.Constants.SubUV.FrameIndex = SubUVComp->GetFrameIndex();
-		Cmd.Constants.SubUV.Width = SubUVComp->GetWidth();
-		Cmd.Constants.SubUV.Height = SubUVComp->GetHeight();
+		Cmd.Params.SubUV.Particle = Particle;
+		Cmd.Params.SubUV.FrameIndex = SubUVComp->GetFrameIndex();
+		Cmd.Params.SubUV.Width = SubUVComp->GetWidth();
+		Cmd.Params.SubUV.Height = SubUVComp->GetHeight();
 		Cmd.BlendState = EBlendState::AlphaBlend;
 		Cmd.DepthStencilState = EDepthStencilState::Default;
 		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);
@@ -234,11 +244,9 @@ void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponen
 
 	FBoundingBox Box = PrimitiveComponent->GetWorldBoundingBox();
 
-	// 이전에 정의한 union 구조체의 AABB 영역에 데이터를 채웁니다.
-	AABBCmd.Constants.AABB.Min = Box.Min;
-	AABBCmd.Constants.AABB.Max = Box.Max;
-	AABBCmd.Constants.AABB.Color = FColor::White();
+	AABBCmd.Params.AABB.Min = Box.Min;
+	AABBCmd.Params.AABB.Max = Box.Max;
+	AABBCmd.Params.AABB.Color = FColor::White();
 
-	// 렌더러가 마지막에 몰아서 그릴 수 있게 특정 패스(예: Editor/Overlay)에 푸시합니다.
 	RenderBus.AddCommand(ERenderPass::Editor, AABBCmd);
 }

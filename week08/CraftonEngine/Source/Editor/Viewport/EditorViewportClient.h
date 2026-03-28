@@ -1,8 +1,8 @@
 ﻿#pragma once
 
 #include "Viewport/ViewportClient.h"
-#include "Render/Common/RenderTypes.h"
-#include "Render/Common/ViewTypes.h"
+#include "Render/Types/RenderTypes.h"
+#include "Render/Types/ViewTypes.h"
 
 #include "UI/SWindow.h"
 #include <string>
@@ -84,5 +84,4 @@ private:
 
 	// 뷰포트 슬롯의 스크린 좌표 (ImGui screen space = 윈도우 클라이언트 좌표)
 	FRect ViewportScreenRect;
-
 };
