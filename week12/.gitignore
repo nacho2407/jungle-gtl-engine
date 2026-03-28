@@ -448,3 +448,6 @@ FodyWeavers.xsd
 
 #Rider CMake Project for Showing Dependency diagram
 CMakeLists.txt
+
+# Asset 파일 살리기 - obj 등
+!W4_Jungle_Team2/W4_Jungle_Team2/Asset/**

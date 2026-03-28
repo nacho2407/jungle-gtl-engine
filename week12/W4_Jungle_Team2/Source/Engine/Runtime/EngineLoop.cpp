@@ -17,6 +17,8 @@ void FEngineLoop::CreateEngine()
 bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
 {
 	(void)nShowCmd;
+	
+	UE_LOG("Hello, ZZup Engine!");
 
 	if (!Application.Init(hInstance))
 	{
