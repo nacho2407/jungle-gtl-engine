@@ -1,14 +1,13 @@
 #include "Core/CoreMinimal.h"
 #include "Asset/Material.h"
 
-UMaterial::UMaterial() {}
-
-UMaterial::~UMaterial() {}
-
-void UMaterial::Serialize(class FArchive& Ar)
+namespace Engine::Asset
 {
-    UMaterialInterface::Serialize(Ar);
-    // Serialize PBR properties here
-}
+    UMaterial::UMaterial() {}
 
-REGISTER_CLASS(, UMaterial)
+    UMaterial::~UMaterial() {}
+
+    void UMaterial::Serialize(class FArchive& Ar) { UMaterialInterface::Serialize(Ar); }
+
+    REGISTER_CLASS(Engine::Asset, UMaterial)
+} // namespace Engine::Asset

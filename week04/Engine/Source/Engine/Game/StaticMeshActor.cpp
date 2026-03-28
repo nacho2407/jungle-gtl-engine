@@ -12,6 +12,9 @@ AStaticMeshActor::AStaticMeshActor()
     // 2. Create the StaticMeshComponent as a child, allowing it to be removed by the user
     StaticMeshComponent = new Engine::Component::UStaticMeshComponent();
     StaticMeshComponent->Name = "StaticMeshComponent";
+
+    // Logic: No slots initially. They appear only when a Static Mesh is assigned.
+
     AddOwnedComponent(StaticMeshComponent, false); // Not a root, so it's removable
 
     // Establishes parent-child relationship in the scene hierarchy

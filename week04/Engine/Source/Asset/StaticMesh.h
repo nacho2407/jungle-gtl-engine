@@ -25,9 +25,14 @@ class ENGINE_API UStaticMesh : public UStreamableRenderAsset
     /** 에셋 파일 경로 반환 */
     const FString& GetAssetPathFileName() const { return GetAssetName(); }
 
+    /** 이 메시가 가진 섹션(재질 구역)의 개수를 관리합니다. */
+    uint32 GetNumSections() const { return NumSections; }
+    void   SetNumSections(uint32 InNum) { NumSections = InNum; }
+
     /** 이진 데이터 직렬화 (Bake 연동) */
     virtual void Serialize(class FArchive& Ar) override;
 
   private:
     FStaticMesh* StaticMeshAsset = nullptr;
+    uint32       NumSections = 1; // 기본값은 1개 섹션
 };

@@ -1,12 +1,15 @@
 #include "Core/CoreMinimal.h"
 #include "Asset/MaterialInstance.h"
 
-UMaterialInstance::UMaterialInstance()
-    : Parent(nullptr), bOverrideBaseColor(false), bOverrideMetallic(false),
-      bOverrideRoughness(false)
+namespace Engine::Asset
 {
-}
+    UMaterialInstance::UMaterialInstance()
+        : Parent(nullptr), bOverrideBaseColor(false), bOverrideMetallic(false),
+          bOverrideRoughness(false)
+    {
+    }
 
-UMaterialInstance::~UMaterialInstance() {}
+    UMaterialInstance::~UMaterialInstance() {}
 
-REGISTER_CLASS(, UMaterialInstance)
+    REGISTER_CLASS(Engine::Asset, UMaterialInstance)
+} // namespace Engine::Asset

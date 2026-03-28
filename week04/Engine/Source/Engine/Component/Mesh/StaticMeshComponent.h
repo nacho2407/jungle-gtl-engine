@@ -9,7 +9,7 @@ namespace Engine::Component
 {
     class ENGINE_API UStaticMeshComponent : public UMeshComponent
     {
-    public:
+      public:
         DECLARE_RTTI(UStaticMeshComponent, UMeshComponent)
 
         UStaticMeshComponent();
@@ -24,15 +24,15 @@ namespace Engine::Component
 
         virtual bool ShouldShowInDetailsTree() const override { return true; }
 
-    protected:
-        virtual bool            GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const override;
+      protected:
+        virtual bool GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const override;
         virtual Geometry::FAABB GetLocalAABB() const override;
 
-    private:
+      private:
         FString GetMeshPath() const;
         void    SetMeshPath(const FString& InPath);
 
-    private:
+      private:
         UStaticMesh* StaticMesh = nullptr;
     };
 } // namespace Engine::Component

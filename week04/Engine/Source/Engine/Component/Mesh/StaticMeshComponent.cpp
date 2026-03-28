@@ -38,7 +38,13 @@ namespace Engine::Component
         StaticMesh = InStaticMesh;
         if (StaticMesh)
         {
-            // Initialize material slots here later
+            // 메시의 섹션 개수에 맞춰 머티리얼 슬롯 자동 조절!
+            InitializeMaterialSlots(StaticMesh->GetNumSections());
+        }
+        else
+        {
+            // 메시가 없으면 머티리얼 슬롯도 존재할 수 없습니다.
+            InitializeMaterialSlots(0);
         }
     }
 
