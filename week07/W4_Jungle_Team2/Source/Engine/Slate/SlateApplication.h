@@ -4,8 +4,11 @@
 
 class SWidget;
 class SWindow;
+
 /*
-* Slate 총괄 및 입력 처리를 담당하는 짬통
+* Slate 총괄 및 입력 처리를 담당하는 싱글턴.
+* 위젯 트리의 루트 윈도우만 알고 있으며,
+* 트리 내부 구조(Splitter, Viewport 등)는 소유하지 않습니다.
 */
 class FSlateApplication : public TSingleton<FSlateApplication>, public IWindowMessageHandler
 {
@@ -30,7 +33,6 @@ public:
 
 	// Get Set
 	SWindow* GetRootWindow() const { return RootWindow; }
-	void SetRootWindow(SWindow* InWindow) { RootWindow = InWindow; }
 
 	SWidget* GetFocusedWidget() const { return FocusedWidget; }
 	void SetFocusedWidget(SWidget* InWidget) { FocusedWidget = InWidget; }
@@ -51,4 +53,3 @@ private:
 	SWidget* HoveredWidget = nullptr;
 	SWidget* CapturedWidget = nullptr;
 };
-
