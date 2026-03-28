@@ -1,4 +1,4 @@
-#include "EditorRenderPipeline.h"
+﻿#include "EditorRenderPipeline.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
@@ -31,6 +31,7 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	// 뷰포트별 오프스크린 렌더 (각 VP의 RT에 3D 씬 렌더)
 	for (FLevelEditorViewportClient* VC : Editor->GetLevelViewportClients())
 	{
+		SCOPE_STAT("RenderViewport");
 		RenderViewport(VC, Renderer);
 	}
 
