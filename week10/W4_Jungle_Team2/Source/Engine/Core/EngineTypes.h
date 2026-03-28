@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
+#include "Math/AABB.h"
 #include "Math/Vector.h"
 
 // ============================================================
@@ -33,33 +34,36 @@ struct FColor
 // ============================================================
 // FBoundingBox — AABB (Axis-Aligned Bounding Box)
 // ============================================================
-struct FBoundingBox
-{
-	FVector Min;
-	FVector Max;
+// struct FBoundingBox
+// {
+// 	FVector Min;
+// 	FVector Max;
+//
+// 	FBoundingBox()
+// 		: Min(FVector(FLT_MAX, FLT_MAX, FLT_MAX))
+// 		, Max(FVector(-FLT_MAX, -FLT_MAX, -FLT_MAX))
+// 	{
+// 	}
+//
+// 	FBoundingBox(const FVector& InMin, const FVector& InMax)
+// 		: Min(InMin), Max(InMax) {
+// 	}
+//
+// 	// 점을 포함하도록 확장
+// 	void Expand(const FVector& Point);
+//
+// 	// 중심점 반환
+// 	FVector GetCenter() const;
+//
+// 	// 크기(Extent) 반환
+// 	FVector GetExtent() const;
+//
+// 	// 유효 여부 (Min < Max)
+// 	bool IsValid() const;
+// };
 
-	FBoundingBox()
-		: Min(FVector(FLT_MAX, FLT_MAX, FLT_MAX))
-		, Max(FVector(-FLT_MAX, -FLT_MAX, -FLT_MAX))
-	{
-	}
-
-	FBoundingBox(const FVector& InMin, const FVector& InMax)
-		: Min(InMin), Max(InMax) {
-	}
-
-	// 점을 포함하도록 확장
-	void Expand(const FVector& Point);
-
-	// 중심점 반환
-	FVector GetCenter() const;
-
-	// 크기(Extent) 반환
-	FVector GetExtent() const;
-
-	// 유효 여부 (Min < Max)
-	bool IsValid() const;
-};
+//	TODO : 나중에 지우기
+using FBoundingBox = FAABB;
 
 // ============================================================
 // EViewModeIndex — 렌더링 뷰 모드
