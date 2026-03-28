@@ -1,8 +1,10 @@
 #include "FEditorEngine.h"
 
 #include "imgui_impl_dx11.h"
-#include "UI/EditorViewportClient.h"
-#include "UI/PreviewViewportClient.h"
+#include "Viewport/EditorViewportClient.h"
+#include "Viewport/PreviewViewportClient.h"
+#include "Viewport/Viewport.h"
+#include "Platform/Windows/Window.h"
 #include "Core/Core.h"
 #include "Core/ConsoleVariableManager.h"
 #include "Scene/Scene.h"
@@ -163,7 +165,12 @@ void FEditorEngine::Tick(float DeltaTime)
 
 std::unique_ptr<IViewportClient> FEditorEngine::CreateViewportClient()
 {
-	return std::make_unique<CEditorViewportClient>(EditorUI, MainWindow);
+	InitializeViewportStorage();
+
+	auto Client = std::make_unique<CEditorViewportClient>(*this, EditorUI, MainWindow);
+	EditorViewportClientRaw = Client.get();
+
+	return Client;
 }
 
 CEditorViewportController* FEditorEngine::GetViewportController()
@@ -189,4 +196,52 @@ void FEditorEngine::SyncViewportClient()
 	{
 		Core->SetViewportClient(TargetViewportClient);
 	}
+}
+
+void FEditorEngine::InitializeViewportStorage()
+{
+	if (!Core || !Core->GetRenderer() || !MainWindow)
+	{
+		return;
+	}
+
+	const int32 Width = MainWindow->GetWidth();
+	const int32 Height = MainWindow->GetHeight();
+
+	const int32 HalfW = Width / 2;
+	const int32 HalfH = Height / 2;
+
+	if (Viewports.size() != MAX_VIEWPORTS)
+	{
+		Viewports.resize(MAX_VIEWPORTS);
+	}
+
+	Viewports[0].SetRect({ 0, 0, HalfW, HalfH });
+	Viewports[1].SetRect({ HalfW, 0, Width - HalfW, HalfH });
+	Viewports[2].SetRect({ 0, HalfH, HalfW, Height - HalfH });
+	Viewports[3].SetRect({ HalfW, HalfH, Width - HalfW, Height - HalfH });
+
+	ID3D11Device* Device = Core->GetRenderer()->GetDevice();
+	for (uint32 i = 0; i < 4; ++i)
+	{
+		Viewports[i].EnsureResources(Device);
+	}
+}
+
+FViewport* FEditorEngine::FindViewport(FViewportId Id)
+{
+	if (!EditorViewportClientRaw)
+	{
+		return nullptr;
+	}
+
+	for (FViewportEntry& Entry : EditorViewportClientRaw->GetEntries())
+	{
+		if (Entry.Id == Id && Entry.bActive)
+		{
+			return Entry.Viewport;
+		}
+	}
+
+	return nullptr;
 }

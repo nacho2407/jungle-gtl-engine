@@ -1,6 +1,6 @@
 #include "PreviewViewportClient.h"
 
-#include "EditorUI.h"
+#include "UI/EditorUI.h"
 #include "Core/Core.h"
 #include "Platform/Windows/Window.h"
 #include "Renderer/Renderer.h"

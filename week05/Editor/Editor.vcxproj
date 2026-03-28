@@ -113,6 +113,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(ProjectDir)Source\;$(ProjectDir)..\Engine\Source\;$(ProjectDir)ThirdParty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -135,6 +136,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(ProjectDir)Source\;$(ProjectDir)..\Engine\Source\;$(ProjectDir)ThirdParty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -159,12 +161,13 @@
     <ClCompile Include="Source\UI\ContentBrowserWindow.cpp" />
     <ClCompile Include="Source\UI\ControlPanelWindow.cpp" />
     <ClCompile Include="Source\UI\EditorUI.cpp" />
-    <ClCompile Include="Source\UI\EditorViewportClient.cpp" />
+    <ClCompile Include="Source\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\UI\OutlinerWindow.cpp" />
-    <ClCompile Include="Source\UI\PreviewViewportClient.cpp" />
+    <ClCompile Include="Source\Viewport\PreviewViewportClient.cpp" />
     <ClCompile Include="Source\UI\PropertyWindow.cpp" />
     <ClCompile Include="Source\UI\StatWindow.cpp" />
-    <ClCompile Include="Source\UI\Viewport.cpp" />
+    <ClCompile Include="Source\Viewport\Viewport.cpp" />
+    <ClCompile Include="Source\Viewport\ViewportTypes.cpp" />
     <ClCompile Include="ThirdParty\imgui\imgui.cpp" />
     <ClCompile Include="ThirdParty\imgui\imgui_demo.cpp" />
     <ClCompile Include="ThirdParty\imgui\imgui_draw.cpp" />
@@ -185,12 +188,13 @@
     <ClInclude Include="Source\UI\ContentBrowserWindow.h" />
     <ClInclude Include="Source\UI\ControlPanelWindow.h" />
     <ClInclude Include="Source\UI\EditorUI.h" />
-    <ClInclude Include="Source\UI\EditorViewportClient.h" />
+    <ClInclude Include="Source\Viewport\EditorViewportClient.h" />
     <ClInclude Include="Source\UI\OutlinerWindow.h" />
-    <ClInclude Include="Source\UI\PreviewViewportClient.h" />
+    <ClInclude Include="Source\Viewport\PreviewViewportClient.h" />
     <ClInclude Include="Source\UI\PropertyWindow.h" />
     <ClInclude Include="Source\UI\StatWindow.h" />
-    <ClInclude Include="Source\UI\Viewport.h" />
+    <ClInclude Include="Source\Viewport\Viewport.h" />
+    <ClInclude Include="Source\Viewport\ViewportTypes.h" />
     <ClInclude Include="ThirdParty\imgui\imconfig.h" />
     <ClInclude Include="ThirdParty\imgui\imgui.h" />
     <ClInclude Include="ThirdParty\imgui\imgui_impl_dx11.h" />

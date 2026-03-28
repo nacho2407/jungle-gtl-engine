@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ViewportTypes.h"
 #include "Core/ViewportClient.h"
 #include "Gizmo/Gizmo.h"
 #include "Picking/Picker.h"
@@ -9,18 +10,12 @@ class CEditorUI;
 class CWindow;
 class FFrustum;
 struct FRenderCommandQueue;
-
-enum class ERenderMode
-{
-	Lighting,
-	NoLighting,
-	Wireframe,
-};
+class FEditorEngine;
 
 class CEditorViewportClient : public IViewportClient
 {
 public:
-	CEditorViewportClient(CEditorUI& InEditorUI, CWindow* InMainWindow);
+	CEditorViewportClient(FEditorEngine& InEditorEngine, CEditorUI& InEditorUI, CWindow* InMainWindow);
 
 	void Attach(CCore* Core, CRenderer* Renderer) override;
 	void Detach(CCore* Core, CRenderer* Renderer) override;
@@ -41,11 +36,19 @@ public:
 	void SetLineThickness(float InThickness);
 	bool IsGridVisible() const { return bShowGrid; }
 	void SetGridVisible(bool bVisible) { bShowGrid = bVisible; }
+	TArray<FViewportEntry>& GetEntries() { return Entries; }
+	const TArray<FViewportEntry>& GetEntries() const { return Entries; }
+	void Render(CCore* Core, CRenderer* Renderer);
+
 private:
+	void InitializeEntries();
+
 	CEditorUI& EditorUI;
 	CWindow* MainWindow = nullptr;
 	CPicker Picker;
 	mutable CGizmo Gizmo;
+	TArray<FViewportEntry> Entries;
+	FEditorEngine& EditorEngine;
 
 	ERenderMode RenderMode = ERenderMode::Lighting;
 	const FString WireframeMaterialName = "M_Wireframe";

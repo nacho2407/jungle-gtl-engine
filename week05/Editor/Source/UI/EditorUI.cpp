@@ -20,7 +20,7 @@
 #include <windows.h>
 #include <commdlg.h>
 
-#include "UI/EditorViewportClient.h"
+#include "Viewport/EditorViewportClient.h"
 #include "Debug/EngineLog.h"
 #include "Component/CameraComponent.h"
 #include "Camera/Camera.h"
@@ -28,7 +28,6 @@
 #include "Actor/SkySphereActor.h" 
 #include "Actor/ObjActor.h"
 #include "Core/ShowFlags.h"
-#include "EditorViewportClient.h"
 
 enum class EFileDialogType
 {
@@ -151,14 +150,6 @@ void CEditorUI::Initialize(CCore* InCore)
 					{
 						UE_LOG("Moved: %s -> %s", Src.string().c_str(), Dst.string().c_str());
 					}
-				}
-			}
-			else if (Viewport.IsHovered())
-			{
-				UE_LOG("Drop On Viewport");			
-				if (Core)
-				{
-					Core->GetViewportClient()->HandleFileDropOnViewport(DraggingFilePath);
 				}
 			}
 		};
@@ -317,7 +308,6 @@ void CEditorUI::DetachFromRenderer(CRenderer* InRenderer)
 {
 	bViewportClientActive = false;
 	CurrentRenderer = nullptr;
-	Viewport.ReleaseSceneView();
 
 	if (InRenderer)
 	{
@@ -530,8 +520,6 @@ void CEditorUI::Render()
 	ImGui::DockSpace(DockID, ImVec2(0, 0), ImGuiDockNodeFlags_PassthruCentralNode);
 	ImGui::PopStyleVar();
 	ImGui::End();
-
-	Viewport.Render(Core, CurrentRenderer, MainWindow ? MainWindow->GetHwnd() : nullptr);
 
 	if (Core)
 	{
@@ -763,7 +751,8 @@ void CEditorUI::Render()
 
 bool CEditorUI::GetViewportMousePosition(int32 WindowMouseX, int32 WindowMouseY, int32& OutViewportX, int32& OutViewportY, int32& OutWidth, int32& OutHeight) const
 {
-	return Viewport.GetMousePositionInViewport(WindowMouseX, WindowMouseY, OutViewportX, OutViewportY, OutWidth, OutHeight);
+	return false;
+	// return Viewport.GetMousePositionInViewport(WindowMouseX, WindowMouseY, OutViewportX, OutViewportY, OutWidth, OutHeight);
 }
 
 void CEditorUI::SyncSelectedActorProperty()
@@ -797,5 +786,6 @@ void CEditorUI::SyncSelectedActorProperty()
 
 bool CEditorUI::IsViewportInteractive() const
 {
-	return Viewport.IsVisible() && (Viewport.IsHovered() || Viewport.IsFocused());
+	return false;
+	//return Viewport.IsVisible() && (Viewport.IsHovered() || Viewport.IsFocused());
 }

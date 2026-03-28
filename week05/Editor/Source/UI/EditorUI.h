@@ -4,7 +4,6 @@
 #include "PropertyWindow.h"
 #include "ConsoleWindow.h"
 #include "StatWindow.h"
-#include "Viewport.h"
 #include "Types/ObjectPtr.h"
 #include "ContentBrowserWindow.h"
 
@@ -42,7 +41,6 @@ private:
 	CPropertyWindow Property;
 	CConsoleWindow Console;
 	CStatWindow Stat;
-	CViewport Viewport;
 	COutlinerWindow Outliner;
 	CContentBrowserWindow ContentBrowser;
 

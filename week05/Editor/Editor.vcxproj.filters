@@ -63,22 +63,19 @@
     <ClCompile Include="Source\UI\EditorUI.cpp">
       <Filter>Source\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\UI\EditorViewportClient.cpp">
+    <ClCompile Include="Source\Viewport\EditorViewportClient.cpp">
       <Filter>Source\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\UI\OutlinerWindow.cpp">
       <Filter>Source\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\UI\PreviewViewportClient.cpp">
+    <ClCompile Include="Source\Viewport\PreviewViewportClient.cpp">
       <Filter>Source\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\UI\PropertyWindow.cpp">
       <Filter>Source\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\UI\StatWindow.cpp">
-      <Filter>Source\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\UI\Viewport.cpp">
       <Filter>Source\UI</Filter>
     </ClCompile>
     <ClCompile Include="ThirdParty\imgui\imgui.cpp">
@@ -103,6 +100,8 @@
       <Filter>ThirdParty\imgui</Filter>
     </ClCompile>
     <ClCompile Include="EditorGlobals.cpp" />
+    <ClCompile Include="Source\Viewport\Viewport.cpp" />
+    <ClCompile Include="Source\Viewport\ViewportTypes.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\FEditorEngine.h">
@@ -135,22 +134,19 @@
     <ClInclude Include="Source\UI\EditorUI.h">
       <Filter>Source\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\UI\EditorViewportClient.h">
+    <ClInclude Include="Source\Viewport\EditorViewportClient.h">
       <Filter>Source\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\UI\OutlinerWindow.h">
       <Filter>Source\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\UI\PreviewViewportClient.h">
+    <ClInclude Include="Source\Viewport\PreviewViewportClient.h">
       <Filter>Source\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\UI\PropertyWindow.h">
       <Filter>Source\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\UI\StatWindow.h">
-      <Filter>Source\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\UI\Viewport.h">
       <Filter>Source\UI</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\imgui\imconfig.h">
@@ -178,6 +174,8 @@
       <Filter>ThirdParty\imgui</Filter>
     </ClInclude>
     <ClInclude Include="EditorGlobals.h" />
+    <ClInclude Include="Source\Viewport\Viewport.h" />
+    <ClInclude Include="Source\Viewport\ViewportTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\imgui\imgui.natstepfilter">

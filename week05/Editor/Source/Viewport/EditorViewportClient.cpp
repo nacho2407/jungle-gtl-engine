@@ -1,6 +1,6 @@
 #include "EditorViewportClient.h"
 
-#include "EditorUI.h"
+#include "UI/EditorUI.h"
 #include "Actor/Actor.h"
 #include "Core/Core.h"
 #include "Input/InputManager.h"
@@ -19,10 +19,14 @@
 #include "imgui.h"
 #include "Actor/ObjActor.h"
 #include "Actor/SkySphereActor.h"
-CEditorViewportClient::CEditorViewportClient(CEditorUI& InEditorUI, CWindow* InMainWindow)
-	: EditorUI(InEditorUI)
+#include <FEditorEngine.h>
+
+CEditorViewportClient::CEditorViewportClient(FEditorEngine& InEditorEngine, CEditorUI& InEditorUI, CWindow* InMainWindow)
+	: EditorEngine(InEditorEngine)
+	, EditorUI(InEditorUI)
 	, MainWindow(InMainWindow)
 {
+	InitializeEntries();
 }
 
 void CEditorViewportClient::Attach(CCore* Core, CRenderer* Renderer)
@@ -354,4 +358,82 @@ void CEditorViewportClient::SetLineThickness(float InThickness)
 	{
 		GridMaterial->SetParameterData("LineThickness", &LineThickness, 4);
 	}
+}
+
+void CEditorViewportClient::Render(CCore* Core, CRenderer* Renderer)
+{
+	if (!Renderer)
+	{
+		return;
+	}
+
+	ID3D11Device* Device = Renderer->GetDevice();
+	ID3D11DeviceContext* Context = Renderer->GetDeviceContext();
+	if (!Device || !Context)
+	{
+		return;
+	}
+
+	const float Colors[4][4] =
+	{
+		{ 0.25f, 0.10f, 0.10f, 1.0f },
+		{ 0.10f, 0.25f, 0.10f, 1.0f },
+		{ 0.10f, 0.10f, 0.25f, 1.0f },
+		{ 0.25f, 0.25f, 0.10f, 1.0f },
+	};
+
+	for (int32 i = 0; i < static_cast<int32>(Entries.size()); ++i)
+	{
+		FViewportEntry& Entry = Entries[i];
+		if (!Entry.bActive || !Entry.Viewport)
+		{
+			continue;
+		}
+
+		Entry.Viewport->EnsureResources(Device);
+
+		ID3D11RenderTargetView* RTV = Entry.Viewport->GetRTV();
+		ID3D11DepthStencilView* DSV = Entry.Viewport->GetDSV();
+		if (!RTV || !DSV)
+		{
+			continue;
+		}
+
+		Context->OMSetRenderTargets(1, &RTV, DSV);
+
+		const auto& Rect = Entry.Viewport->GetRect();
+		D3D11_VIEWPORT VP = {};
+		VP.TopLeftX = 0.0f;
+		VP.TopLeftY = 0.0f;
+		VP.Width = static_cast<float>(Rect.Width);
+		VP.Height = static_cast<float>(Rect.Height);
+		VP.MinDepth = 0.0f;
+		VP.MaxDepth = 1.0f;
+
+		Context->RSSetViewports(1, &VP);
+		Context->ClearRenderTargetView(RTV, Colors[i % 4]);
+		Context->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	}
+}
+
+void CEditorViewportClient::InitializeEntries()
+{
+	Entries.clear();
+	Entries.reserve(4);
+
+	auto AddEntry = [this](FViewportId Id, EViewportType Type, int32 SlotIndex)
+		{
+			FViewportEntry Entry;
+			Entry.Id = Id;
+			Entry.Type = Type;
+			Entry.Viewport = &EditorEngine.GetViewports()[SlotIndex];
+			Entry.bActive = true;
+			Entry.LocalState = FViewportLocalState::CreateDefault(Type);
+			Entries.push_back(Entry);
+		};
+
+	AddEntry(0, EViewportType::Perspective, 0);
+	AddEntry(1, EViewportType::OrthoTop, 1);
+	AddEntry(2, EViewportType::OrthoFront, 2);
+	AddEntry(3, EViewportType::OrthoRight, 3);
 }
