@@ -14,6 +14,7 @@ class FObjManager
 	static std::map<std::string, FStaticMesh> ObjStaticMeshMap;
 
 public:
+	static std::string GetBinaryFilePath(const std::string& OriginalPath);
 	static FStaticMesh* LoadObjStaticMeshAsset(const std::string& PathFileName);
 	static UStaticMesh* LoadObjStaticMesh(const std::string& PathFileName);
 };
