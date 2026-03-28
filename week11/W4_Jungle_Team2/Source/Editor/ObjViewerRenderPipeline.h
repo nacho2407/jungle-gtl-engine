@@ -15,7 +15,7 @@ public:
 	void Execute(float DeltaTime, FRenderer& Renderer) override;
 
 private:
-	UEngine* Engine = nullptr;
+	UObjViewerEngine* Engine = nullptr;
 	FRenderCollector Collector;
 	FRenderBus Bus;
 };
