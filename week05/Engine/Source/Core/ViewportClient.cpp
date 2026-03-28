@@ -93,12 +93,12 @@ void IViewportClient::HandleFileDropOnViewport(const FString& FilePath)
 
 }
 
-void IViewportClient::Render(CCore* Core, CRenderer* Renderer)
+void IViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 {
 }
 
 
-void FGameViewportClient::Attach(CCore* Core, CRenderer* Renderer)
+void FGameViewportClient::Attach(FEngine* Engine, FRenderer* Renderer)
 {
 	if (Renderer)
 	{
@@ -114,20 +114,20 @@ void FGameViewportClient::Detach(FEngine* Engine, FRenderer* Renderer)
 	}
 }
 
-void CGameViewportClient::Render(CCore* Core, CRenderer* Renderer)
+void FGameViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 {
-	if (!Core || !Renderer)
+	if (!Engine || !Renderer)
 	{
 		return;
 	}
 
-	UScene* Scene = ResolveScene(Core);
+	UScene* Scene = ResolveScene(Engine);
 	if (!Scene)
 	{
 		return;
 	}
 
-	UWorld* ActiveWorld = ResolveWorld(Core);
+	UWorld* ActiveWorld = ResolveWorld(Engine);
 	if (!ActiveWorld)
 	{
 		return;
@@ -147,7 +147,7 @@ void CGameViewportClient::Render(CCore* Core, CRenderer* Renderer)
 	FFrustum Frustum;
 	Frustum.ExtractFromVP(Queue.ViewMatrix * Queue.ProjectionMatrix);
 
-	BuildRenderCommands(Core, Scene, Frustum, Queue);
+	BuildRenderCommands(Engine, Scene, Frustum, Queue);
 	Renderer->SubmitCommands(Queue);
 	Renderer->ExecuteCommands();
 }

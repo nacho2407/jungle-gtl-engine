@@ -1,7 +1,7 @@
 #include "Viewport.h"
 
 #include "EditorViewportClient.h"
-#include "Core/Core.h"
+#include "Core/Engine.h"
 #include "Scene/Scene.h"
 
 namespace

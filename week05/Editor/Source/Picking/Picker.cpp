@@ -134,7 +134,7 @@ FRay FPicker::ScreenToRay(const FViewportEntry& Entry, int32 ScreenX, int32 Scre
 	return { RayOrigin, RayDirectionWorld };
 }
 
-bool CPicker::RayTriangleIntersect(const FRay& Ray,
+bool FPicker::RayTriangleIntersect(const FRay& Ray,
 								   const FVector& V0, const FVector& V1, const FVector& V2,
 								   float& OutDistance) const
 {
@@ -292,7 +292,7 @@ AActor* FPicker::PickActor(UScene* Scene, int32 ScreenX, int32 ScreenY,
 	return ClosestActor;
 }
 
-AActor* CPicker::PickActor(UWorld* World, const FViewportEntry& Entry, int32 ScreenX, int32 ScreenY) const
+AActor* FPicker::PickActor(UWorld* World, const FViewportEntry& Entry, int32 ScreenX, int32 ScreenY) const
 {
 	if (!World || !Entry.Viewport || !Entry.bActive)
 	{

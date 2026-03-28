@@ -6,6 +6,7 @@
 #include "Picking/Picker.h"
 #include "Types/CoreTypes.h"
 #include "BlitRenderer.h"
+#include "Platform/Windows/WindowsWindow.h"
 
 class FEditorUI;
 class FFrustum;
@@ -15,7 +16,7 @@ class FEditorEngine;
 class FEditorViewportClient : public IViewportClient
 {
 public:
-	FEditorViewportClient(FEditorEngine& InEditorEngine, CEditorUI& InEditorUI, CWindow* InMainWindow);
+	FEditorViewportClient(FEditorEngine& InEditorEngine, FEditorUI& InEditorUI, FWindowsWindow* InMainWindow);
 
 	void Attach(FEngine* Engine, FRenderer* Renderer) override;
 	void Detach(FEngine* Engine, FRenderer* Renderer) override;
@@ -38,16 +39,16 @@ public:
 	void SetGridVisible(bool bVisible) { bShowGrid = bVisible; }
 	TArray<FViewportEntry>& GetEntries() { return Entries; }
 	const TArray<FViewportEntry>& GetEntries() const { return Entries; }
-	void Render(CCore* Core, CRenderer* Renderer);
+	void Render(FEngine* Engine, FRenderer* Renderer);
 
 private:
 	FEditorUI& EditorUI;
-	FPicker Picker;
 	mutable FGizmo Gizmo;
 	void InitializeEntries();
 
-	CWindow* MainWindow = nullptr;
-	CPicker Picker;
+	FWindowsWindow* MainWindow = nullptr;
+
+	FPicker Picker;
 	TArray<FViewportEntry> Entries;
 	FEditorEngine& EditorEngine;
 

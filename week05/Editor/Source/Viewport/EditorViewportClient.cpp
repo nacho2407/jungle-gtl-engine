@@ -21,9 +21,10 @@
 #include "imgui.h"
 #include "Actor/ObjActor.h"
 #include "Actor/SkySphereActor.h"
-#include <FEditorEngine.h>
+#include <EditorEngine.h>
+#include "Viewport.h"
 
-FEditorViewportClient::FEditorViewportClient(FEditorEngine& InEditorEngine, CEditorUI& InEditorUI, CWindow* InMainWindow)
+FEditorViewportClient::FEditorViewportClient(FEditorEngine& InEditorEngine, FEditorUI& InEditorUI, FWindowsWindow* InMainWindow)
 	: EditorEngine(InEditorEngine)
 	, EditorUI(InEditorUI)
 	, MainWindow(InMainWindow)
@@ -358,12 +359,14 @@ void FEditorViewportClient::SetLineThickness(float InThickness)
 	}
 }
 
-void CEditorViewportClient::Render(CCore* Core, CRenderer* Renderer)
+void FEditorViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 {
 	if (!Renderer)
 	{
 		return;
 	}
+
+	SyncViewportRectsFromDock();
 
 	ID3D11Device* Device = Renderer->GetDevice();
 	ID3D11DeviceContext* Context = Renderer->GetDeviceContext();
@@ -372,7 +375,7 @@ void CEditorViewportClient::Render(CCore* Core, CRenderer* Renderer)
 		return;
 	}
 
-	UScene* Scene = ResolveScene(Core);
+	UScene* Scene = ResolveScene(Engine);
 
 	if (!Scene)
 	{
@@ -420,7 +423,7 @@ void CEditorViewportClient::Render(CCore* Core, CRenderer* Renderer)
 
 		FFrustum ffrustum;
 		ffrustum.ExtractFromVP(Queue.ViewMatrix * Queue.ProjectionMatrix);
-		BuildRenderCommands(Core, Scene, ffrustum, Queue);
+		BuildRenderCommands(Engine, Scene, ffrustum, Queue);
 		Renderer->SubmitCommands(Queue);
 		Renderer->ExecuteCommands();
 		Renderer->EndScenePass();
@@ -433,7 +436,75 @@ void CEditorViewportClient::Render(CCore* Core, CRenderer* Renderer)
 	EditorUI.Render();
 }
 
-void CEditorViewportClient::InitializeEntries()
+void FEditorViewportClient::SyncViewportRectsFromDock()
+{
+	FRect Central;
+	if (!EditorUI.GetCentralDockRect(Central) || !Central.IsValid())
+	{
+		// 첫 프레임 fallback
+		if (!ImGui::GetCurrentContext())
+		{
+			return;
+		}
+		ImGuiViewport* VP = ImGui::GetMainViewport();
+		if (!VP || VP->WorkSize.x <= 0 || VP->WorkSize.y <= 0)
+		{
+			return;
+		}
+		// WorkPos도 절대 좌표이므로 창 위치(Pos)를 빼서 클라이언트 좌표로
+		Central.X      = static_cast<int32>(VP->WorkPos.x - VP->Pos.x);
+		Central.Y      = static_cast<int32>(VP->WorkPos.y - VP->Pos.y);
+		Central.Width  = static_cast<int32>(VP->WorkSize.x);
+		Central.Height = static_cast<int32>(VP->WorkSize.y);
+	}
+
+	if (Entries.empty())
+	{
+		return;
+	}
+
+	// 활성 뷰포트 수에 따라 분할
+	int32 ActiveCount = 0;
+	for (const FViewportEntry& Entry : Entries)
+	{
+		if (Entry.bActive) ++ActiveCount;
+	}
+
+	// 분할 rect 계산: 1개면 전체, 2개면 좌/우, 4개면 2x2
+	const int32 HalfW = Central.Width  / 2;
+	const int32 HalfH = Central.Height / 2;
+
+	FRect SubRects[4];
+	if (ActiveCount <= 1)
+	{
+		SubRects[0] = Central;
+	}
+	else if (ActiveCount == 2)
+	{
+		SubRects[0] = { Central.X,          Central.Y, HalfW, Central.Height };
+		SubRects[1] = { Central.X + HalfW,  Central.Y, HalfW, Central.Height };
+	}
+	else // 3 or 4
+	{
+		SubRects[0] = { Central.X,         Central.Y,          HalfW, HalfH };
+		SubRects[1] = { Central.X + HalfW, Central.Y,          HalfW, HalfH };
+		SubRects[2] = { Central.X,         Central.Y + HalfH,  HalfW, HalfH };
+		SubRects[3] = { Central.X + HalfW, Central.Y + HalfH,  HalfW, HalfH };
+	}
+
+	int32 Idx = 0;
+	for (FViewportEntry& Entry : Entries)
+	{
+		if (!Entry.bActive || !Entry.Viewport)
+		{
+			continue;
+		}
+		Entry.Viewport->SetRect(SubRects[Idx]);
+		++Idx;
+	}
+}
+
+void FEditorViewportClient::InitializeEntries()
 {
 	Entries.clear();
 	Entries.reserve(4);

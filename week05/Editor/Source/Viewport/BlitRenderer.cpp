@@ -16,8 +16,6 @@ void FBlitRenderer::Initialize(ID3D11Device* Device)
 		return;
 	}
 
-	// 셰이더 — FVertexShader::Create는 POSITION/COLOR/NORMAL/TEXCOORD layout을 강제 생성하므로
-	// SV_VertexID 전용 Blit VS는 FShaderResource로 블롭만 받아 raw API로 직접 생성
 	std::wstring ShaderDir = FPaths::ShaderDir().wstring();
 
 	auto VSResource = FShaderResource::GetOrCompile((ShaderDir + L"BlitVertexShader.hlsl").c_str(), "main", "vs_5_0");

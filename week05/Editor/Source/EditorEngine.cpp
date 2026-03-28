@@ -12,8 +12,9 @@
 #include "Object/ObjectFactory.h"
 #include "Platform/Windows/WindowsWindow.h"
 #include "Scene/Scene.h"
-#include "UI/EditorViewportClient.h"
-#include "UI/PreviewViewportClient.h"
+#include "Viewport/Viewport.h"
+#include "Viewport/EditorViewportClient.h"
+#include "Viewport/PreviewViewportClient.h"
 #include "World/World.h"
 
 namespace
@@ -197,7 +198,9 @@ void FEditorEngine::PreInitialize()
 void FEditorEngine::BindHost(FWindowsWindow* InMainWindow)
 {
 	// 실제 UI/뷰포트 생성은 뒤 단계에서 하고, 여기서는 창 참조만 저장한다.
+	MainWindow = InMainWindow;
 	EditorUI.SetupWindow(InMainWindow);
+	Viewports.resize(4);
 }
 
 bool FEditorEngine::InitializeWorlds(int32 Width, int32 Height)
@@ -246,7 +249,27 @@ void FEditorEngine::TickWorlds(float DeltaTime)
 
 std::unique_ptr<IViewportClient> FEditorEngine::CreateViewportClient()
 {
-	return std::make_unique<FEditorViewportClient>(EditorUI);
+	auto Client = std::make_unique<FEditorViewportClient>(*this, EditorUI, MainWindow);
+	EditorViewportClientRaw = Client.get();
+	return Client;
+}
+
+void FEditorEngine::RenderFrame()
+{
+	FRenderer* Renderer = GetRenderer();
+	if (!Renderer || Renderer->IsOccluded())
+	{
+		return;
+	}
+
+	Renderer->BeginFrame();
+
+	if (EditorViewportClientRaw)
+	{
+		EditorViewportClientRaw->Render(this, Renderer);
+	}
+
+	Renderer->EndFrame();
 }
 
 FEditorViewportController* FEditorEngine::GetViewportController()
@@ -382,4 +405,22 @@ void FEditorEngine::SyncViewportClient()
 	{
 		SetViewportClient(TargetViewportClient);
 	}
+}
+
+FViewport* FEditorEngine::FindViewport(FViewportId Id)
+{
+	if (!EditorViewportClientRaw)
+	{
+		return nullptr;
+	}
+
+	for (FViewportEntry& Entry : EditorViewportClientRaw->GetEntries())
+	{
+		if (Entry.Id == Id && Entry.bActive)
+		{
+			return Entry.Viewport;
+		}
+	}
+
+	return nullptr;
 }

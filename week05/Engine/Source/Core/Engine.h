@@ -74,6 +74,7 @@ protected:
 	virtual void TickWorlds(float DeltaTime) = 0;
 	virtual bool WantsPhysicsDebugVisualization() const { return false; }
 	virtual std::unique_ptr<IViewportClient> CreateViewportClient() = 0;
+	virtual void RenderFrame();
 	FWorldContext* FindWorldContext(EWorldType WorldType);
 	const FWorldContext* FindWorldContext(EWorldType WorldType) const;
 	FWorldContext* CreateWorldContext(const FString& ContextName, EWorldType WorldType, float AspectRatio, bool bDefaultScene);
@@ -91,7 +92,6 @@ private:
 	void BeginFrame();
 	void TickInput(float DeltaTime);
 	void TickPhysics(float DeltaTime);
-	void RenderFrame();
 	void RunLateUpdate(float DeltaTime);
 	void RegisterConsoleVariables();
 

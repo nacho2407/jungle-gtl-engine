@@ -31,7 +31,6 @@ public:
 	FEditorEngine* GetEngine() { return Engine; }
 
 	bool GetCentralDockRect(FRect& OutRect) const;
-	bool HasCentralDockRect() const { return bHasCentralDockRect; }
 
 private:
 	void BuildDefaultLayout(uint32 DockID);

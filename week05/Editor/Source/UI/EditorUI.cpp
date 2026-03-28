@@ -523,10 +523,25 @@ void FEditorUI::Render()
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 	ImGui::DockSpace(DockID, ImVec2(0, 0), ImGuiDockNodeFlags_PassthruCentralNode);
+
+	ImGuiDockNode* CentralNode = ImGui::DockBuilderGetCentralNode(DockID);
+	if (CentralNode && CentralNode->Size.x > 0 && CentralNode->Size.y > 0)
+	{
+		// CentralNode->Pos는 모니터 절대 좌표 (ViewportsEnable 시)
+		// DX11 swap chain은 클라이언트 기준(0,0)이므로 창 위치를 빼야 함
+		ImGuiViewport* MainVP = ImGui::GetMainViewport();
+		const float WinX = MainVP ? MainVP->Pos.x : 0.0f;
+		const float WinY = MainVP ? MainVP->Pos.y : 0.0f;
+
+		CentralDockRect.X      = static_cast<int32>(CentralNode->Pos.x - WinX);
+		CentralDockRect.Y      = static_cast<int32>(CentralNode->Pos.y - WinY);
+		CentralDockRect.Width  = static_cast<int32>(CentralNode->Size.x);
+		CentralDockRect.Height = static_cast<int32>(CentralNode->Size.y);
+		bHasCentralDockRect = true;
+	}
+
 	ImGui::PopStyleVar();
 	ImGui::End();
-
-	Viewport.Render(Engine, CurrentRenderer, MainWindow ? MainWindow->GetHwnd() : nullptr);
 
 	if (Engine)
 	{
@@ -795,4 +810,14 @@ bool FEditorUI::IsViewportInteractive() const
 {
 	return false;
 	//return Viewport.IsVisible() && (Viewport.IsHovered() || Viewport.IsFocused());
+}
+
+bool FEditorUI::GetCentralDockRect(FRect& OutRect) const
+{
+	if (!bHasCentralDockRect)
+	{
+		return false;
+	}
+	OutRect = CentralDockRect;
+	return true;
 }

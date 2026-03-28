@@ -4,7 +4,8 @@
 #include "Subsystem/EditorCameraSubsystem.h"
 #include "Subsystem/EditorSelectionSubsystem.h"
 #include "UI/EditorUI.h"
-#include "UI/PreviewViewportClient.h"
+#include "Viewport/Viewport.h"
+#include "Viewport/PreviewViewportClient.h"
 
 class AActor;
 
@@ -30,6 +31,9 @@ public:
 	const FWorldContext* GetActiveWorldContext() const override;
 	void HandleResize(int32 Width, int32 Height) override;
 
+	const TArray<FViewport>& GetViewports() const { return Viewports; }
+	TArray<FViewport>& GetViewports() { return Viewports; }
+
 protected:
 	void PreInitialize() override;
 	// 에디터 UI가 나중에 사용할 메인 창 참조만 저장한다.
@@ -42,8 +46,10 @@ protected:
 	void TickWorlds(float DeltaTime) override;
 	bool WantsPhysicsDebugVisualization() const override { return true; }
 	std::unique_ptr<IViewportClient> CreateViewportClient() override;
+	void RenderFrame() override;
 
 	FEditorViewportController* GetViewportController();
+	FViewport* FindViewport(FViewportId Id);
 
 private:
 	// 프리뷰 씬/프리뷰 뷰포트 준비
@@ -68,4 +74,8 @@ private:
 	FWorldContext* EditorWorldContext = nullptr;
 	TArray<FWorldContext*> PreviewWorldContexts;
 	FWorldContext* ActiveEditorWorldContext = nullptr;
+
+	FWindowsWindow* MainWindow = nullptr;
+	TArray<FViewport> Viewports;
+	FEditorViewportClient* EditorViewportClientRaw = nullptr;
 };

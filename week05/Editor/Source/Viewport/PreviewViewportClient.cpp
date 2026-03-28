@@ -56,15 +56,15 @@ void FPreviewViewportClient::Tick(FEngine* Engine, float DeltaTime)
 	IViewportClient::Tick(Engine, DeltaTime);
 }
 
-void FPreviewViewportClient::Render(CCore* Core, CRenderer* Renderer)
+void FPreviewViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 {
-	if (!Core || !Renderer)
+	if (!Engine || !Renderer)
 	{
 		return;
 	}
 
-	UScene* Scene = ResolveScene(Core);
-	UWorld* ActiveWorld = ResolveWorld(Core);
+	UScene* Scene = ResolveScene(Engine);
+	UWorld* ActiveWorld = ResolveWorld(Engine);
 
 	if (Scene && ActiveWorld)
 	{
@@ -79,7 +79,7 @@ void FPreviewViewportClient::Render(CCore* Core, CRenderer* Renderer)
 			FFrustum Frustum;
 			Frustum.ExtractFromVP(Queue.ViewMatrix * Queue.ProjectionMatrix);
 
-			BuildRenderCommands(Core, Scene, Frustum, Queue);
+			BuildRenderCommands(Engine, Scene, Frustum, Queue);
 			Renderer->SubmitCommands(Queue);
 			Renderer->ExecuteCommands();
 		}
