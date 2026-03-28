@@ -53,6 +53,7 @@ public:
 	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_SubUV;
 
 	void UpdateWorldAABB() const override;
+	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
 protected:
 	void TickComponent(float DeltaTime) override;
 
