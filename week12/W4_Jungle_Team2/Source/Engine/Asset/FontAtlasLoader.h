@@ -3,7 +3,7 @@
 #include "Asset/IAssetLoader.h"
 #include "Core/ResourceTypes.h"
 
-class ID3D11Device;
+struct ID3D11Device;
 
 class FFontAtlasLoader : public IAssetLoader
 {
