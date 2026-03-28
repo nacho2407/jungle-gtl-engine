@@ -1,4 +1,4 @@
-#include "Engine/Core/InputSystem.h"
+﻿#include "Engine/Core/InputSystem.h"
 #include <cmath>
 
 void InputSystem::Tick()
@@ -26,11 +26,17 @@ void InputSystem::Tick()
         PrevMousePos = MousePos;
         return;
     }
-
-    for (int i = 0; i < 256; ++i)
+	
+    // 단 한 번의 API 호출로 모든 키 상태 갱신 (CPU 10% 병목)
+	BYTE keyState[256];
+    if (GetKeyboardState(keyState))
     {
-        PrevStates[i] = CurrentStates[i];
-        CurrentStates[i] = (GetAsyncKeyState(i) & 0x8000) != 0;
+        for (int i = 0; i < 256; ++i)
+        {
+            PrevStates[i] = CurrentStates[i];
+            // GetKeyboardState는 최상위 비트(0x80)가 눌림 상태를 나타냄
+            CurrentStates[i] = (keyState[i] & 0x80) != 0; 
+        }
     }
 
     bLeftDragJustStarted = false;

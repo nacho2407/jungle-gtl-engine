@@ -115,58 +115,6 @@ private:
 
 extern TArray<UObject*> GUObjectArray;
 
-template<typename T>
-class TObjectIterator
-{
-public:
-	TObjectIterator() : CurrentIndex(0)
-	{
-		Advance();
-	}
-
-	TObjectIterator& operator++()
-	{
-		CurrentIndex++;
-		Advance();
-		return *this;
-	}
-
-	T* operator*() const
-	{
-		if (CurrentIndex < GUObjectArray.size())
-		{
-			return static_cast<T*>(GUObjectArray[CurrentIndex]);
-		}
-		return nullptr;
-	}
-
-	T* operator->() const
-	{
-		return operator*();
-	}
-
-	explicit operator bool() const
-	{
-		return CurrentIndex < GUObjectArray.size();
-	}
-
-private:
-	void Advance()
-	{
-		while (CurrentIndex < GUObjectArray.size())
-		{
-			UObject* Obj = GUObjectArray[CurrentIndex];
-			if (Obj && Obj->IsA<T>())
-			{
-				break;
-			}
-			CurrentIndex++;
-		}
-	}
-
-	size_t CurrentIndex;
-};
-
 class UObjectManager : public TSingleton<UObjectManager>
 {
 	friend class TSingleton<UObjectManager>;

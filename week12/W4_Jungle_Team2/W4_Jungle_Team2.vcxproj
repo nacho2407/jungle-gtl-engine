@@ -328,6 +328,7 @@
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h" />
     <ClInclude Include="Source\Editor\EditorRenderPipeline.h" />
+    <ClInclude Include="Source\Engine\Object\ObjectIterator.h" />
     <ClInclude Include="Source\Misc\ObjViewer\ObjViewerEngine.h" />
     <ClInclude Include="Source\Misc\ObjViewer\ObjViewerRenderPipeline.h" />
     <ClInclude Include="Source\Editor\Selection\SelectionManager.h" />
