@@ -88,6 +88,7 @@ void AStaticMeshActor::InitDefaultComponents()
 	// 컴포넌트에 에셋 할당 (Assign)
 	SM->SetStaticMesh(CubeAsset);
 
+
 	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
 	Text->SetFont(FName("Default"));
 	Text->AttachToComponent(SM);

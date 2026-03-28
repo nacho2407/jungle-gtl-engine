@@ -1,10 +1,12 @@
 ﻿#include "Mesh/ObjManager.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Mesh/StaticMesh.h"
+#include "Render/Resource/VertexTypes.h"
 #include "ObjImporter.h"
 #include "Serialization/WindowsArchive.h"
 
 std::map<std::string, FStaticMesh> FObjManager::ObjStaticMeshMap;
+ID3D11Device* FObjManager::GDevice = nullptr;
 
 std::string FObjManager::GetBinaryFilePath(const std::string& OriginalPath)
 {
@@ -85,7 +87,21 @@ FStaticMesh* FObjManager::LoadObjStaticMeshAsset(const std::string& PathFileName
 	// 2. MeshBuffer 객체 생성 및 GPU에 버퍼 굽기
 	ConvertedMesh.RenderBuffer = new FMeshBuffer();
 
-	//ConvertedMesh.RenderBuffer->Create(RenderVertices);
+	if (GDevice)
+	{
+		uint32 VCount = static_cast<uint32>(RenderVertices.size());
+		uint32 VByteWidth = VCount * sizeof(FVertexPNCT);
+		ConvertedMesh.RenderBuffer->GetVertexBuffer().Create(
+			GDevice, RenderVertices.data(), VCount, VByteWidth, sizeof(FVertexPNCT));
+
+		if (!ConvertedMesh.Indices.empty())
+		{
+			uint32 ICount = static_cast<uint32>(ConvertedMesh.Indices.size());
+			uint32 IByteWidth = ICount * sizeof(uint32);
+			ConvertedMesh.RenderBuffer->GetIndexBuffer().Create(
+				GDevice, ConvertedMesh.Indices.data(), ICount, IByteWidth);
+		}
+	}
 
 	// 5. 안전한 메모리 주소 반환
 	return &ConvertedMesh;
