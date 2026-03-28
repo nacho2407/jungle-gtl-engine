@@ -16,6 +16,7 @@ public:
 	~UStaticMeshComp() override = default;
 
 	EPrimitiveType GetPrimitiveType() const override { return EPrimitiveType::EPT_StaticMesh; }
+	FMeshBuffer* GetMeshBuffer() const override;
 
 	void SetStaticMesh(UStaticMesh* InMesh);
 	UStaticMesh* GetStaticMesh() const;

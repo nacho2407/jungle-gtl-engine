@@ -6,7 +6,7 @@
 	RenderCommand는 Renderer에서 Draw Call을 1회 수행하기 위해 필요한 정보를 담고 있습니다.
 */
 
-#include "Render/Common/RenderTypes.h"
+#include "Render/Types/RenderTypes.h"
 #include "Render/Resource/Buffer.h"
 #include "Render/Device/D3DDevice.h"
 #include "Core/EngineTypes.h"
@@ -14,6 +14,18 @@
 
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
+
+class FShader;
+
+// HLSL Common.hlsl과 1:1 대응하는 CB 슬롯 정의
+namespace ECBSlot
+{
+	constexpr uint32 Frame     = 0;  // b0: View/Projection/Wireframe
+	constexpr uint32 PerObject = 1;  // b1: Model/Color
+	constexpr uint32 Gizmo     = 2;  // b2: Gizmo state
+	constexpr uint32 Editor    = 4;  // b4: Camera position
+	constexpr uint32 Outline   = 5;  // b5: Outline params
+}
 
 enum class ERenderCommandType
 {
@@ -27,6 +39,7 @@ enum class ERenderCommandType
 	Font,		// TextRenderComponent — FontBatcher 경유
 	SubUV,		// SubUVComponent     — SubUVBatcher 경유
 	StaticMesh,	// StaticMeshComponent — StaticMeshShader 사용
+	MAX,
 };
 
 //PerObject
@@ -101,22 +114,33 @@ struct FSubUVConstants
 	float Height = 1.0f;
 };
 
+// 타입별 CB 바인딩 디스크립터 — Params 데이터를 GPU CB에 업로드
+struct FConstantBufferBinding
+{
+	FConstantBuffer* Buffer = nullptr;	// 업데이트할 CB (nullptr이면 미사용)
+	uint32 Size = 0;					// 업로드할 바이트 수
+	uint32 Slot = 0;					// VS/PS CB 슬롯
+};
+
 struct FRenderCommand
 {
-	//	VB, IB 모두 담고 있는 MB
 	FMeshBuffer* MeshBuffer = nullptr;
-	FPerObjectConstants PerObjectConstants = {};
+	FShader* Shader = nullptr;
+	FPerObjectConstants PerObjectConstants = {};	// b1 (공통)
 
+	// 타입별 파라미터 (GPU CB 데이터 또는 CPU 배처 파라미터)
 	union
 	{
 		FGizmoConstants Gizmo;
-		FEditorConstants Editor;
 		FOutlineConstants Outline;
 		FAABBConstants AABB;
 		FGridConstants Grid;
 		FFontConstants Font;
 		FSubUVConstants SubUV;
-	} Constants;
+	} Params;
+
+	// 타입별 Extra CB 바인딩 — Params 데이터를 지정 슬롯의 CB에 업로드
+	FConstantBufferBinding ExtraCB;
 
 	EDepthStencilState DepthStencilState = static_cast<EDepthStencilState>(-1);
 	EBlendState BlendState = static_cast<EBlendState>(-1);
