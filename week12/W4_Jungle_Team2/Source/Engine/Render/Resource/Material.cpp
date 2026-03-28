@@ -1,7 +1,6 @@
 ﻿#include "Material.h"
+#include "Asset/FileUtils.h"
 
-#include <fstream>
-#include <sstream>
 #include <filesystem>
 
 bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, FMaterial>& OutMaterials)
@@ -11,14 +10,24 @@ bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, FMaterial>& OutM
 	{
 		return false;
 	}
-	std::filesystem::path CurrentFilePath   = FilePath;
-	std::filesystem::path CurrentDirectory  = CurrentFilePath.parent_path();
 
-	std::filesystem::path TextureFileName = {};
-	FString				  TextureFileFullPath = {};
+
+	std::filesystem::path MtlDir = std::filesystem::path(FilePath).parent_path();
+	auto ResolveTexPath = [&](std::istringstream& InISS) -> FString
+		{
+			FString RelPath;
+			InISS >> RelPath;
+			if (RelPath.empty())
+			{
+				return {};
+			}
+			// 중복된 경로 해결
+			return (MtlDir / RelPath).lexically_normal().string();
+		};
 
     FMaterial* Current = nullptr;
     FString    Line;
+
 	auto ParseFVector = [](std::istringstream& InISS) -> FVector
 		{
 			FVector Vector;
@@ -26,23 +35,9 @@ bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, FMaterial>& OutM
 			return Vector;
 		};
 
-	auto TrimLine = [](const FString& inLine) -> FString
-		{
-			FString OutString = "";
-
-			uint64 Start = inLine.find_first_not_of(" \n\t\r");
-			if (Start == FString::npos)
-			{
-				return OutString;
-			}
-			uint64 End = inLine.find_last_not_of(" \n\t\r");
-			OutString = inLine.substr(Start, End - Start + 1);
-			return OutString;
-		};
-
     while (std::getline(File, Line))
     {
-        Line = TrimLine(Line);
+        Line = StringUtils::Trim(Line);
         if (Line.empty() || Line.front() == '#')
             continue;
 
@@ -80,12 +75,12 @@ bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, FMaterial>& OutM
 		{
 			Current->EmissiveColor = ParseFVector(ISS);
 		}
-		// 광택 집중도?
+		// 광택 집중도
 		else if (Token == "Ns")
 		{
 			ISS >> Current->Shininess;
 		}
-		// 보통 d 아니면 Tr로 투명도 처리 tr = 1 - d
+		// 보통 d 아니면 Tr로 투명도 처리 (Tr = 1 - d)
 		else if (Token == "d")
 		{
 			ISS >> Current->Opacity;
@@ -97,33 +92,31 @@ bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, FMaterial>& OutM
 			Current->Opacity = 1.0f - Tr;
 		}
 		/**
-		 * 0 -> 조명 계산 없음 
-		 * 1 -> Ka + Kd 
-		 * 2 -> Ka + Kd + Ks (퐁 셰이더) 
+		 * 0 -> 조명 계산 없음
+		 * 1 -> Ka + Kd
+		 * 2 -> Ka + Kd + Ks (퐁 셰이더)
 		 */
 		else if (Token == "illum")
 		{
 			ISS >> Current->IllumModel;
 		}
-		// TextureMap
+		// TextureMap - 파싱 시점에 절대 경로로 정규화
 		else if (Token == "map_Kd")
 		{
-			ISS >> TextureFileName;
-			TextureFileName.filename();
-			//Current->DiffuseTexPath = ;
+			Current->DiffuseTexPath = ResolveTexPath(ISS);
 		}
         else if (Token == "map_Ka")
         {
-			ISS >> Current->AmbientTexPath;
+			Current->AmbientTexPath = ResolveTexPath(ISS);
         }
         else if (Token == "map_Ks")
         {
-			ISS >> Current->SpecularTexPath;
+			Current->SpecularTexPath = ResolveTexPath(ISS);
         }
 		// 범프 맵은 그레이스케일로 높이값이 저장되어 있고 추후 노말로 변환한다고 한다.
         else if (Token == "map_bump" || Token == "bump")
         {
-			ISS >> Current->BumpTexPath;
+			Current->BumpTexPath = ResolveTexPath(ISS);
         }
     }
 

@@ -16,8 +16,11 @@ struct FRenderResources
     FConstantBuffer EditorConstantBuffer;           // b4
 	FConstantBuffer OutlineConstantBuffer;          // b5
 
+    FConstantBuffer StaticMeshConstantBuffer;       // b6
+
     FShader PrimitiveShader;
     FShader GizmoShader;
     FShader EditorShader;
 	FShader OutlineShader;
+    FShader StaticMeshShader;
 };
