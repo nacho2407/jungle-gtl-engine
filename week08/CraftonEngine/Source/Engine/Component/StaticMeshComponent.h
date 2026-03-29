@@ -19,6 +19,8 @@ public:
 
 	EPrimitiveType GetPrimitiveType() const override { return EPrimitiveType::EPT_StaticMesh; }
 	FMeshBuffer* GetMeshBuffer() const override;
+	bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
+	void UpdateWorldAABB() const override;
 
 	void SetStaticMesh(UStaticMesh* InMesh);
 	UStaticMesh* GetStaticMesh() const;
@@ -36,9 +38,14 @@ public:
 	const FString& GetStaticMeshPath() const { return StaticMeshPath; }
 
 private:
+	void CacheLocalBounds();
+
 	UStaticMesh* StaticMesh = nullptr;
 	FString StaticMeshPath = "None";
 
 	TArray<std::shared_ptr<UMaterial>> OverrideMaterials;
 	TArray<FString> OverrideMaterialPaths;
+	FVector CachedLocalCenter = { 0, 0, 0 };
+	FVector CachedLocalExtent = { 0.5f, 0.5f, 0.5f };
+	bool bHasValidBounds = false;
 };

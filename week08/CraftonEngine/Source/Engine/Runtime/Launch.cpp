@@ -1,7 +1,7 @@
 ﻿#include "Engine/Runtime/Launch.h"
 
 #include "Engine/Runtime/EngineLoop.h"
-#include "Engine/Core/CrashDump.h"
+#include "Engine/Platform/CrashDump.h"
 
 namespace
 {

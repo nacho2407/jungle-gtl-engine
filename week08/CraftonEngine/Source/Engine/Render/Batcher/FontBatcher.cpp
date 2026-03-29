@@ -1,7 +1,7 @@
 ﻿#include "FontBatcher.h"
 
 #include "Core/CoreTypes.h"
-#include "Core/ResourceManager.h"
+#include "Resource/ResourceManager.h"
 
 void FFontBatcher::Create(ID3D11Device* InDevice)
 {

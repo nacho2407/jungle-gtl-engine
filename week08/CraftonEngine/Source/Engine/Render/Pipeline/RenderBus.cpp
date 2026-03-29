@@ -23,10 +23,11 @@ const TArray<FRenderCommand>& FRenderBus::GetCommands(ERenderPass Pass) const
 	return PassQueues[(uint32)Pass];
 }
 
-void FRenderBus::SetViewProjection(const FMatrix& InView, const FMatrix& InProj, const FVector& CameraRightVector, const FVector& CameraUpVector)
+void FRenderBus::SetViewProjection(const FMatrix& InView, const FMatrix& InProj, const FVector& CameraForwardVector, const FVector& CameraRightVector, const FVector& CameraUpVector)
 {
 	View = InView;
 	Proj = InProj;
+	CameraForward = CameraForwardVector;
 	CameraRight = CameraRightVector;
 	CameraUp = CameraUpVector;
 }

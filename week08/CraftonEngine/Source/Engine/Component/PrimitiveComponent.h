@@ -17,7 +17,6 @@ public:
 
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
-	inline const FMeshData* GetMeshData() const { return MeshData; };
 	virtual FMeshBuffer* GetMeshBuffer() const { return nullptr; }
 
 	inline void SetVisibility(bool bVisible) { bIsVisible = bVisible; }
@@ -30,10 +29,7 @@ public:
 
 	//Collision
 	virtual void UpdateWorldAABB() const;
-	bool CheckAABB(const FRay& Ray);
-	bool Raycast(const FRay& Ray, FHitResult& OutHitResult);
-	bool IntersectTriangle(const FVector& RayOrigin, const FVector& RayDir, const FVector& V0, const FVector& V1, const FVector& V2, float& OutT);
-	virtual bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult);
+	virtual bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult);
 	inline bool IsVisible() const { return bIsVisible; }
 
 	void UpdateWorldMatrix() const override;
@@ -45,7 +41,6 @@ public:
 	virtual bool SupportsOutline() const { return true; }
 
 protected:
-	const FMeshData* MeshData = nullptr;
 	FVector LocalExtents = { 0.5f, 0.5f, 0.5f };
 	mutable FVector WorldAABBMinLocation;
 	mutable FVector WorldAABBMaxLocation;
