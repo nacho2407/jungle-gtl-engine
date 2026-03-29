@@ -227,6 +227,7 @@
     <ClCompile Include="Source\Engine\Core\GPUProfiler.cpp" />
     <ClCompile Include="Source\Engine\Core\InputSystem.cpp" />
     <ClCompile Include="Source\Engine\Core\Paths.cpp" />
+    <ClCompile Include="Source\Engine\Core\RayUtils.cpp" />
     <ClCompile Include="Source\Engine\Core\ResourceManager.cpp" />
     <ClCompile Include="Source\Engine\Core\Stats.cpp" />
     <ClCompile Include="Source\Engine\Core\Timer.cpp" />
@@ -319,6 +320,7 @@
     <ClInclude Include="Source\Engine\Core\Paths.h" />
     <ClInclude Include="Source\Engine\Core\PropertyTypes.h" />
     <ClInclude Include="Source\Engine\Core\RayTypes.h" />
+    <ClInclude Include="Source\Engine\Core\RayUtils.h" />
     <ClInclude Include="Source\Engine\Core\ResourceManager.h" />
     <ClInclude Include="Source\Engine\Core\ResourceTypes.h" />
     <ClInclude Include="Source\Engine\Core\Singleton.h" />
