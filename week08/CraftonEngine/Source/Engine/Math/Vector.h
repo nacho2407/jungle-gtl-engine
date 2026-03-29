@@ -23,13 +23,11 @@ struct FVector {
 		float Data[3];
 	};
 
-
 	FVector() {
 		X = 0.0f;
 		Y = 0.0f;
 		Z = 0.0f;
 	}
-	
 	FVector(float InX, float InY, float InZ) {
 		X = InX;
 		Y = InY;
