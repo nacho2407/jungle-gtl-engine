@@ -11,7 +11,6 @@ TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& E
 	if (bShowFPS)
 	{
 		FOverlayStatGroup Group;
-		Group.StartY = FPSStartY;
 
 		const FTimer* Timer = Editor.GetTimer();
 		const float FPS = Timer ? Timer->GetDisplayFPS() : 0.0f;
@@ -33,7 +32,7 @@ TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& E
 	if (bShowMemory)
 	{
 		FOverlayStatGroup Group;
-		Group.StartY = MemoryStartY;
+
 		{
 			char Buffer[128] = {};
 			snprintf(Buffer, sizeof(Buffer), "Memory Allocated : %u", EngineStatics::GetTotalAllocationBytes());
@@ -62,4 +61,35 @@ TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& E
 	}
 
 	return Groups;
+}
+
+TArray<FOverlayStatLine> FOverlayStatSystem::BuildLines(const UEditorEngine& Editor) const
+{
+	TArray<FOverlayStatLine> Result;
+	const TArray<FOverlayStatGroup> Groups = BuildGroups(Editor);
+
+	float CurrentY = Layout.StartY;
+
+	for (const FOverlayStatGroup& Group : Groups)
+	{
+		for (size_t i = 0; i < Group.Lines.size(); ++i)
+		{
+			FOverlayStatLine Line;
+			Line.Text = Group.Lines[i];
+			Line.ScreenPosition = FVector2(
+				Layout.StartX,
+				CurrentY + static_cast<float>(i) * Layout.LineHeight
+			);
+
+			Result.push_back(std::move(Line));
+		}
+
+		if (!Group.Lines.empty())
+		{
+			CurrentY += static_cast<float>(Group.Lines.size()) * Layout.LineHeight;
+			CurrentY += Layout.GroupSpacing;
+		}
+	}
+
+	return Result;
 }
