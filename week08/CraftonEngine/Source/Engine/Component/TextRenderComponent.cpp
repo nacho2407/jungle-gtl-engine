@@ -2,7 +2,7 @@
 
 #include <cstring>
 #include "GameFramework/AActor.h"
-#include "Core/ResourceManager.h"
+#include "Resource/ResourceManager.h"
 #include "Object/ObjectFactory.h"
 #include "Render/Resource/MeshBufferManager.h"
 

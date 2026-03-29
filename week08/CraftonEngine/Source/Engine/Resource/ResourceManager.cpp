@@ -1,5 +1,5 @@
-﻿#include "Core/ResourceManager.h"
-#include "Core/Paths.h"
+﻿#include "Resource/ResourceManager.h"
+#include "Platform/Paths.h"
 #include "SimpleJSON/json.hpp"
 
 #include <fstream>

@@ -2,7 +2,7 @@
 
 #include "Editor/UI/EditorConsoleWidget.h"
 #include "Editor/Settings/EditorSettings.h"
-#include "Engine/Core/InputSystem.h"
+#include "Engine/Input/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
 
 #include "Component/CameraComponent.h"
@@ -10,7 +10,7 @@
 #include "GameFramework/World.h"
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
-#include "Core/RayUtils.h"
+#include "Collision/RayUtils.h"
 #include "Object/Object.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "ImGui/imgui.h"
@@ -18,8 +18,6 @@
 void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
 {
 	Window = InWindow;
-
-	UE_LOG("Hello ZZup Engine! %d", 2026);
 }
 
 void FEditorViewportClient::CreateCamera()
@@ -258,7 +256,7 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	// active 전환 시 GetKeyUp이 처리되지 않아 커서가 영구 숨김될 수 있음
 
 	// FViewport 크기 기준으로 디프로젝션 (슬롯 크기와 동기화됨)
-	float VPWidth  = Viewport ? static_cast<float>(Viewport->GetWidth())  : WindowWidth;
+	float VPWidth = Viewport ? static_cast<float>(Viewport->GetWidth()) : WindowWidth;
 	float VPHeight = Viewport ? static_cast<float>(Viewport->GetHeight()) : WindowHeight;
 	FRay Ray = Camera->DeprojectScreenToWorld(LocalMouseX, LocalMouseY, VPWidth, VPHeight);
 	FHitResult HitResult;
@@ -324,7 +322,7 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 					}
 				}
 			}
-			
+
 		}
 
 		bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);

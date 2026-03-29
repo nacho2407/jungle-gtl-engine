@@ -8,7 +8,7 @@
 #include "Component/StaticMeshComponent.h"
 #include "Component/SceneComponent.h"
 #include "Core/PropertyTypes.h"
-#include "Core/ResourceManager.h"
+#include "Resource/ResourceManager.h"
 #include "Object/FName.h"
 #include "Object/ObjectIterator.h"
 

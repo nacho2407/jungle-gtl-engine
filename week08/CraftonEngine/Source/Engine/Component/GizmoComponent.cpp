@@ -2,7 +2,7 @@
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
 #include "Render/Resource/MeshBufferManager.h"
-#include "Core/RayUtils.h"
+#include "Collision/RayUtils.h"
 
 IMPLEMENT_CLASS(UGizmoComponent, UPrimitiveComponent)
 
