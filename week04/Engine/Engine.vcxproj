@@ -125,6 +125,7 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11RHI.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11TextBatchRenderer.h" />
+    <ClInclude Include="Source\Renderer\D3D11\D3D11WidgetRenderer.h" />
     <ClInclude Include="Source\Renderer\EditorRenderData.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\FontResource.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\SubUVAtlasResource.h" />
@@ -235,6 +236,7 @@
     <ClCompile Include="Source\Renderer\D3D11\D3D11RHI.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11TextBatchRenderer.cpp" />
+    <ClCompile Include="Source\Renderer\D3D11\D3D11WidgetRenderer.cpp" />
     <ClCompile Include="Source\Renderer\RendererModule.cpp" />
     <ClCompile Include="Source\Renderer\Submitter\AABBSubmitter.cpp" />
     <ClCompile Include="Source\Renderer\Submitter\OverlayMeshSubmitter.cpp" />

@@ -1,0 +1,99 @@
+#include "D3D11WidgetRenderer.h"
+#include "Renderer/D3D11/D3D11RHI.h"
+
+void FD3D11WidgetRenderer::Initialize(FD3D11RHI* InRHI) 
+{ 
+	RHI = InRHI;
+    const wchar_t* ShaderPath = L"Content\\Shader\\ShaderMesh.hlsl";	// Add a new shader if necessary
+
+	// Shader
+	D3D11_INPUT_ELEMENT_DESC LayoutDesc[] = { 
+		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
+		 D3D11_INPUT_PER_VERTEX_DATA, 0}
+	};
+
+	RHI->CreateVertexShaderAndInputLayout(ShaderPath, "VSMain", LayoutDesc, 1,
+                                              VertexShader.GetAddressOf(),
+                                              InputLayout.GetAddressOf());
+	RHI->CreatePixelShader(ShaderPath, "PSMain", PixelShader.GetAddressOf());
+
+	FVector QuadVert[4] = {
+		{0.f, 0.f, 0.f},
+		{1.f, 0.f, 0.f},
+		{1.f, 1.f, 0.f}, 
+		{0.f, 1.f, 0.f},
+	};
+    uint16 Indices[6] = {0, 1, 3, 1, 2, 3};
+	
+	RHI->CreateVertexBuffer(QuadVert, sizeof(QuadVert) * 4, sizeof(QuadVert), false, VertexBuffer.GetAddressOf());
+    RHI->CreateIndexBuffer(Indices, sizeof(Indices), false, IndexBuffer.GetAddressOf());
+    RHI->CreateConstantBuffer(sizeof(FMeshUnlitConstants), ConstantBuffer.GetAddressOf());
+
+	// Render states
+    D3D11_DEPTH_STENCIL_DESC DS_DESC = {};
+    DS_DESC.DepthEnable    = FALSE;
+    DS_DESC.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    DS_DESC.DepthFunc      = D3D11_COMPARISON_ALWAYS;
+    RHI->CreateDepthStencilState(DS_DESC, DepthStencilState.GetAddressOf());
+
+	// Alpha blend
+    D3D11_BLEND_DESC BlendDesc = {};
+    BlendDesc.RenderTarget[0].BlendEnable           = TRUE;
+    BlendDesc.RenderTarget[0].SrcBlend              = D3D11_BLEND_SRC_ALPHA;
+    BlendDesc.RenderTarget[0].DestBlend             = D3D11_BLEND_INV_SRC_ALPHA;
+    BlendDesc.RenderTarget[0].BlendOp               = D3D11_BLEND_OP_ADD;
+    BlendDesc.RenderTarget[0].SrcBlendAlpha         = D3D11_BLEND_ONE;
+    BlendDesc.RenderTarget[0].DestBlendAlpha        = D3D11_BLEND_ZERO;
+    BlendDesc.RenderTarget[0].BlendOpAlpha          = D3D11_BLEND_OP_ADD;
+    BlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+    RHI->CreateBlendState(BlendDesc, BlendState.GetAddressOf());
+
+	// Rasterizer state
+    D3D11_RASTERIZER_DESC RasterizerDesc = {};
+    RasterizerDesc.CullMode = D3D11_CULL_BACK;
+    RasterizerDesc.FillMode = D3D11_FILL_SOLID;
+    RasterizerDesc.DepthClipEnable = TRUE;
+    RHI->CreateRasterizerState(RasterizerDesc, RasterizerState.GetAddressOf());
+}
+
+void FD3D11WidgetRenderer::BeginFrame(uint32 ScreenWidth, uint32 ScreenHeight)
+{
+    const float W = static_cast<float>(ScreenWidth);
+    const float H = static_cast<float>(ScreenHeight);
+    OrthographicMatrix = FMatrix(
+        2.f/W, 0.f,   0.f,  0.f,
+        0.f,  -2.f/H, 0.f,  0.f,
+        0.f,   0.f,   1.f,  0.f,
+        -1.f,  1.f,   0.f,  1.f);
+}
+
+void FD3D11WidgetRenderer::DrawWidget(ID3D11DeviceContext* Context, float X, float Y, float W,
+                                      float H, FColor Color)
+{
+    FMatrix Model(
+        W, 0.f, 0.f, 0.f,
+        0.f, H, 0.f, 0.f,
+        0.f, 0.f, 1.f, 0.f,
+        X,   Y, 0.f, 1.f);
+
+    FMeshUnlitConstants CB;
+    CB.MVP       = Model* OrthographicMatrix;
+    CB.BaseColor = Color;
+    RHI->UpdateConstantBuffer(ConstantBuffer.Get(), &CB, sizeof(CB));
+
+    Context->VSSetShader(VertexShader.Get(), nullptr, 0);
+    Context->PSSetShader(PixelShader.Get(), nullptr, 0);
+    Context->IASetInputLayout(InputLayout.Get());
+    Context->VSSetConstantBuffers(0, 1, ConstantBuffer.GetAddressOf());
+    Context->PSSetConstantBuffers(0, 1, ConstantBuffer.GetAddressOf());
+    Context->OMSetDepthStencilState(DepthStencilState.Get(), 0);
+    Context->OMSetBlendState(BlendState.Get(), nullptr, 0xffffffff);
+    Context->RSSetState(RasterizerState.Get());
+
+    constexpr UINT Stride = sizeof(FVector);
+    constexpr UINT Offset = 0;
+    Context->IASetVertexBuffers(0, 1, VertexBuffer.GetAddressOf(), &Stride, &Offset);
+    Context->IASetIndexBuffer(IndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    Context->DrawIndexed(6, 0, 0);
+}

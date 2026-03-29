@@ -13,5 +13,6 @@ class ENGINE_API SWidget
     virtual ~SWidget() = default;
 
   protected:
+    SWidget() = default;
     bool bIsClicked = false;
 };

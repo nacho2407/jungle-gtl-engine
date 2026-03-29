@@ -357,6 +357,7 @@
     <ClCompile Include="Source\Core\Runtime\Slate\Window\SSplitter.cpp">
       <Filter>Source\Core\Runtime\Slate\Window</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Renderer\D3D11\D3D11WidgetRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Mesh\Cone.h">
@@ -797,6 +798,7 @@
     <ClInclude Include="Source\Core\Runtime\Slate\Window\SSplitter.h">
       <Filter>Source\Core\Runtime\Slate\Window</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Renderer\D3D11\D3D11WidgetRenderer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
