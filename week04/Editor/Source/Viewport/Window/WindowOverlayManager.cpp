@@ -168,7 +168,6 @@ void FWindowOverlayManager::ResetSplitters()
         SplitterV->SetRightPanels({ViewportPanels[1], ViewportPanels[2]});
 
         SplitterH = new SSplitterH();
-        // H bar starts at V's current split and spans only the right column
         SplitterH->Init(SplitX, SplitY, FW - SplitX, SplitterHalfThick * 2.f, FW, FH);
         SplitterH->SetUpPanels    ({ViewportPanels[1]});
         SplitterH->SetBottomPanels({ViewportPanels[2]});
@@ -181,7 +180,6 @@ void FWindowOverlayManager::ResetSplitters()
         SplitterV->SetRightPanels({ViewportPanels[2]});
 
         SplitterH = new SSplitterH();
-        // H bar spans only the left column
         SplitterH->Init(0.f, SplitY, SplitX, SplitterHalfThick * 2.f, FW, FH);
         SplitterH->SetUpPanels    ({ViewportPanels[0]});
         SplitterH->SetBottomPanels({ViewportPanels[1]});
@@ -242,19 +240,15 @@ void FWindowOverlayManager::UpdateSplitterDrag(float DeltaX, float DeltaY)
         SplitterV->OnDrag(DeltaX);
         VSplitRatio = SplitterV->PosX / FW;
 
-        // In ColumnTwoRow / TwoRowColumn the H bar is anchored to the V divider.
-        // Keep its visual position and width in sync so it doesn't bleed across.
         if (SplitterH)
         {
             switch (ViewportLayout)
             {
             case EViewportLayout::ColumnTwoRow:
-                // H bar spans only the right column
                 SplitterH->PosX  = SplitterV->PosX;
                 SplitterH->Width = FW - SplitterV->PosX;
                 break;
             case EViewportLayout::TwoRowColumn:
-                // H bar spans only the left column
                 SplitterH->Width = SplitterV->PosX;
                 break;
             default:
