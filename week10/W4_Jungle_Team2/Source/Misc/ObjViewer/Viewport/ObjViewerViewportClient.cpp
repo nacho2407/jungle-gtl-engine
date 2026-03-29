@@ -256,8 +256,20 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
 		return;
 	}
 
+	// 수정된 부분: UI(ImGui)가 마우스를 차지했을 때의 예외 처리
 	if (InputSystem::Get().GetGuiInputState().bUsingMouse)
 	{
+		// 뷰포트 조작 중 마우스가 UI로 넘어갔는데 커서가 꺼져있다면 강제로 복구합니다.
+		if (!bIsCursorVisible)
+		{
+			while (ShowCursor(TRUE) < 0);
+			bIsCursorVisible = true;
+			
+			// 눌려있던 상태 변수들도 강제로 초기화
+			CursorOverlayState.bPressed = false;
+			CursorOverlayState.TargetRadius = 0.0f;
+			bIsOrbiting = false;
+		}
 		return;
 	}
 
