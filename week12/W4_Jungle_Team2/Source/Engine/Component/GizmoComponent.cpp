@@ -368,29 +368,27 @@ void UGizmoComponent::UpdateAngularDrag(const FRay& Ray)
 
 void UGizmoComponent::UpdateHoveredAxis(int Index)
 {
+	if (IsHolding() || IsPressedOnHandle())
+	{
+		return;
+	}
+
+	// 조작 중이 아닐 때만 마우스 Raycast 결과에 따라 축을 갱신합니다.
 	if (Index < 0)
 	{
-		// 클릭을 누른 상태라면 마우스가 IsHolding()에서 잠시 빗나가도 축 선택을 초기화하지 않는다.
-		if (IsHolding() == false && IsPressedOnHandle() == false) 
-		{
-			SelectedAxis = -1;
-		}
+		SelectedAxis = -1;
 	}
 	else
 	{
-		if (IsHolding() == false)
+		const FMeshData* MeshData = GetActiveMeshData();
+		if (!MeshData)
 		{
-			const FMeshData* MeshData = GetActiveMeshData();
-			if (!MeshData)
-			{
-				SelectedAxis = -1;
-				return;
-			}
-
-			uint32 VertexIndex = MeshData->Indices[Index];
-			SelectedAxis = MeshData->Vertices[VertexIndex].SubID;
-
+			SelectedAxis = -1;
+			return;
 		}
+
+		uint32 VertexIndex = MeshData->Indices[Index];
+		SelectedAxis = MeshData->Vertices[VertexIndex].SubID;
 	}
 }
 
@@ -414,7 +412,6 @@ void UGizmoComponent::UpdateDrag(const FRay& Ray)
 	else
 	{
 		UpdateLinearDrag(Ray);
-
 	}
 }
 
@@ -422,6 +419,8 @@ void UGizmoComponent::DragEnd()
 {
 	bIsFirstFrameOfDrag = true;
 	SetHolding(false);
+	SetPressedOnHandle(false);
+	SelectedAxis = -1;
 }
 
 void UGizmoComponent::SetNextMode()
