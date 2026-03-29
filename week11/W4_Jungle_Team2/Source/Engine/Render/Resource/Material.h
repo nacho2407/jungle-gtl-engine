@@ -25,7 +25,7 @@ public:
 
 	// Texture 정보
 	// 경로는 파싱 시점에 절대 경로로 정규화됨
-    FString DiffuseTexPath;   // map_Kd
+    FString DiffuseTexPath = { "Asset/Mesh/Default.png" };   // map_Kd
 	bool	bHasDiffuseTexture = { false };
 
     FString AmbientTexPath;   // map_Ka

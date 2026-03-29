@@ -17,30 +17,6 @@ namespace
 		QuadMeshData.Indices = { 0, 1, 2, 0, 2, 3 };
 		return QuadMeshData;
 	}
-
-	FMeshData ToMeshData(const UStaticMesh* StaticMeshAsset)
-	{
-		FMeshData Result;
-		if (!StaticMeshAsset || !StaticMeshAsset->HasValidMeshData())
-		{
-			return Result;
-		}
-
-		const TArray<FNormalVertex>& SourceVertices = StaticMeshAsset->GetVertices();
-		Result.Vertices.reserve(SourceVertices.size());
-
-		for (const FNormalVertex& Vertex : SourceVertices)
-		{
-			FVertex PrimitiveVertex = {};
-			PrimitiveVertex.Position = Vertex.Position;
-			PrimitiveVertex.Color = Vertex.Color;
-			PrimitiveVertex.SubID = 0;
-			Result.Vertices.push_back(PrimitiveVertex);
-		}
-
-		Result.Indices = StaticMeshAsset->GetIndices();
-		return Result;
-	}
 }
 
 void FMeshBufferManager::Create(ID3D11Device* InDevice)
@@ -56,7 +32,7 @@ void FMeshBufferManager::Create(ID3D11Device* InDevice)
 	MeshBufferMap[EPrimitiveType::EPT_Text].Create(InDevice, QuadMeshData);
 }
 
-//	TODO : 내일 하기
+
 void FMeshBufferManager::Release()
 {
 	for (auto& pair : MeshBufferMap)

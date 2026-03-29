@@ -22,7 +22,8 @@ public:
 	static std::wstring SettingsFilePath();  // Settings/Editor.ini
 	static std::wstring ViewerSettingsFilePath(); // Settings/ObjViewer.ini
 	static std::wstring ResourceFilePath();  // Settings/Resource.ini
-	static std::wstring MaterialTextureDir(); //Model/Texture/
+	static std::wstring ResourceDefaultMaterialTexture(); // Asset/Mesh/Default.png
+
 
 	// 경로 결합: FPaths::Combine(L"Asset/Scene", L"Default.Scene")
 	static std::wstring Combine(const std::wstring& Base, const std::wstring& Child);
