@@ -1,7 +1,7 @@
 ﻿#include "PrimitiveComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Core/RayTypes.h"
-#include "Core/RayUtils.h"
+#include "Collision/RayUtils.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Core/CollisionTypes.h"
 
