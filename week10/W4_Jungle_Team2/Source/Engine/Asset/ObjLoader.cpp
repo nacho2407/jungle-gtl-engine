@@ -1,4 +1,6 @@
 ﻿#include "ObjLoader.h"
+#include "ObjLoader.h"
+
 #include "FileUtils.h"
 #include "StaticMesh.h"
 #include "Math/Utils.h"
@@ -6,8 +8,12 @@
 #include "Core/PlatformTime.h"
 #include "Core/ResourceManager.h"
 
+#include <algorithm>
+#include <cfloat>
+#include <filesystem>
+
 //	v, vt, vn, mtllib, usemtl, f
-UStaticMesh* FObjLoader::Load(const FString& Path, const FStaticMeshLoadOptions& LoadOptions)
+UStaticMesh * FObjLoader::Load(const FString & Path, const FStaticMeshLoadOptions & LoadOptions)
 {
 	Reset();
 
@@ -69,7 +75,7 @@ bool FObjLoader::SupportsExtension(const FString& Extension) const
 
 FString FObjLoader::GetLoaderName() const
 {
-	return FString{"FObjLoader"};
+	return FString{ "FObjLoader" };
 }
 
 bool FObjLoader::ParseObj(const FString& Path)
@@ -232,7 +238,7 @@ bool FObjLoader::BindMaterials()
 
 UStaticMesh* FObjLoader::CreateAsset()
 {
-	UStaticMesh * NewStaticMeshAsset = new UStaticMesh();
+	UStaticMesh* NewStaticMeshAsset = new UStaticMesh();
 	NewStaticMeshAsset->SetMeshData(new FStaticMesh(StaticMeshAsset));
 	return NewStaticMeshAsset;
 }
@@ -446,7 +452,7 @@ FNormalVertex FObjLoader::MakeVertex(const FObjRawIndex& RawIndex) const
 	}
 
 	//	White로 초기화
-	Vertex.Color = FVector4{1.f, 1.f, 1.f, 1.f};
+	Vertex.Color = FColor{ 1.f, 1.f, 1.f, 1.f };
 
 	if (RawIndex.UVIndex >= 0 && RawIndex.UVIndex < static_cast<int32>(RawData.UVs.size()))
 	{
@@ -454,7 +460,7 @@ FNormalVertex FObjLoader::MakeVertex(const FObjRawIndex& RawIndex) const
 	}
 	else
 	{
-		Vertex.UVs = FVector2{0.0f, 0.0f};
+		Vertex.UVs = FVector2{ 0.0f, 0.0f };
 	}
 
 	return Vertex;
@@ -475,7 +481,7 @@ uint32 FObjLoader::GetOrCreateVertexIndex(const FObjRawIndex& RawIndex, TMap<FOb
 
 	FNormalVertex NewVertex = MakeVertex(RawIndex);
 	uint32 NewIndex = static_cast<uint32>(StaticMeshAsset.Vertices.size());
-	
+
 	StaticMeshAsset.Vertices.push_back(NewVertex);
 	VertexMap.emplace(Key, NewIndex);
 
@@ -507,7 +513,7 @@ void FObjLoader::NormalizeRawPositionsToUnitCube()
 	const FVector Size = Max - Min;
 	const float MaxDim = std::max(Size.X, std::max(Size.Y, Size.Z));
 
-	if (MaxDim <= EPSILON)
+	if (MaxDim <= MathUtil::Epsilon)
 	{
 		return;
 	}

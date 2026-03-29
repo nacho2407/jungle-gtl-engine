@@ -155,7 +155,7 @@ bool UStaticMeshComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult
 	bool bHit = false;
 	float ClosestT = FLT_MAX;
 	int32 BestFaceIndex = -1;
-	FVector BestLocalNormal = FVector::ZeroVector();
+	FVector BestLocalNormal = FVector::ZeroVector;
 
 	for (uint32 i = 0; i + 2 < static_cast<uint32>(Indices.size()); i += 3)
 	{
@@ -200,7 +200,7 @@ bool UStaticMeshComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult
 	
 	OutHitResult.bHit = true;
 	OutHitResult.HitComponent = this;
-	OutHitResult.Distance = (WorldHitLocation - Ray.Origin).Length();
+	OutHitResult.Distance = (WorldHitLocation - Ray.Origin).Size();
 	OutHitResult.Location = WorldHitLocation;
 	OutHitResult.Normal = WorldNormal;
 	OutHitResult.FaceIndex = BestFaceIndex;

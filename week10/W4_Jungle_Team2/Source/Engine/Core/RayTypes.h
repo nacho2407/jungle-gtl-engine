@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "Math/Vector.h"
+#include "Core/CoreMinimal.h"
 
 struct FRay
 {

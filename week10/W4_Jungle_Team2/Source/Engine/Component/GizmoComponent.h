@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "PrimitiveComponent.h"
-#include "Core/CoreTypes.h"
+#include "Core/CoreMinimal.h"
 
 class AActor;
 struct FMeshData;
@@ -71,7 +71,6 @@ public:
 	void SetTargetLocation(FVector NewLocation);
 	void SetTargetRotation(FVector NewRotation);
 	void SetTargetScale(FVector NewScale);
-
 
 	void SetNextMode();
 	void UpdateGizmoMode(EGizmoMode NewMode);

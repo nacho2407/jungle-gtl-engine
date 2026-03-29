@@ -1,6 +1,9 @@
+﻿#pragma once
 #pragma once
+
 #include "Vector.h"
-#include "Core/RayTypes.h"
+
+struct FRay;
 
 struct FAABB
 {

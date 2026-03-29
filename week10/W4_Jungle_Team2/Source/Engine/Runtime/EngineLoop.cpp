@@ -1,7 +1,7 @@
 ﻿#include "Engine/Runtime/EngineLoop.h"
 
 #include "Editor/EditorEngine.h"
-#include "Editor/ObjViewerEngine.h"
+#include "Misc/ObjViewer/ObjViewerEngine.h"
 
 void FEngineLoop::CreateEngine()
 {

@@ -1,12 +1,12 @@
 ﻿#include "EditorRenderPipeline.h"
 
 #include "Editor/EditorEngine.h"
+#include "Editor/Viewport/ViewportCamera.h"
 #include "Render/Renderer/Renderer.h"
-#include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 #include "GameFramework/World.h"
-#include "Core/Stats.h"
-#include "Core/GPUProfiler.h"
+#include "Core/Logging/Stats.h"
+#include "Core/Logging/GPUProfiler.h"
 
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer)
 	: Editor(InEditor)
@@ -29,7 +29,7 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	Bus.Clear();
 
 	UWorld* World = Editor->GetWorld();
-	UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
+	const FViewportCamera* Camera = Editor->GetCamera();
 	if (Camera)
 	{
 		const auto& Settings = Editor->GetSettings();

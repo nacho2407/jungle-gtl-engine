@@ -9,7 +9,7 @@
 #include "Render/Common/RenderTypes.h"
 #include "Render/Resource/Buffer.h"
 #include "Render/Device/D3DDevice.h"
-#include "Core/EngineTypes.h"
+#include "Core/CoreMinimal.h"
 #include "Core/ResourceTypes.h"
 
 #include "Math/Matrix.h"
