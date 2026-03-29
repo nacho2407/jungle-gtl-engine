@@ -5,6 +5,7 @@
 #include "GameFramework/AActor.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"
+#include "Texture/Texture2D.h"
 #include "Component/GizmoComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/SubUVComponent.h"
@@ -228,7 +229,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 					{
 						if (Mat.MaterialSlotName == Section.MaterialSlotName && Mat.MaterialInterface)
 						{
-							Draw.DiffuseSRV = Mat.MaterialInterface->DiffuseSRV;
+							if (Mat.MaterialInterface->DiffuseTexture)
+								Draw.DiffuseSRV = Mat.MaterialInterface->DiffuseTexture->GetSRV();
 							Draw.DiffuseColor = Mat.MaterialInterface->DiffuseColor;
 							break;
 						}

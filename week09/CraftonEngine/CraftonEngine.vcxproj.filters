@@ -67,6 +67,9 @@
     <Filter Include="Source\Engine\Serialization">
       <UniqueIdentifier>{ed75d9ef-2b75-72a2-4c98-1326dfc67dce}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Texture">
+      <UniqueIdentifier>{47537f5f-2462-5e60-cdb7-3549aca81c3f}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\UI">
       <UniqueIdentifier>{978b827b-4b84-fdec-420b-c2481e6f0df1}</UniqueIdentifier>
     </Filter>
@@ -322,6 +325,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp">
       <Filter>Source\Engine\Serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Texture\Texture2D.cpp">
+      <Filter>Source\Engine\Texture</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\SSplitter.cpp">
       <Filter>Source\Engine\UI</Filter>
@@ -634,6 +640,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\WindowsArchive.h">
       <Filter>Source\Engine\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Texture\Texture2D.h">
+      <Filter>Source\Engine\Texture</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\UI\SSplitter.h">
       <Filter>Source\Engine\UI</Filter>
