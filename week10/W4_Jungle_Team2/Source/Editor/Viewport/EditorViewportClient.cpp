@@ -84,8 +84,17 @@ void FEditorViewportClient::SetViewportSize(float InWidth, float InHeight)
 
 void FEditorViewportClient::Tick(float DeltaTime)
 {
-	// TODO: 나중에 기능 완성되면 주석해제
-	// if (!State->bFocused) return;
+	// 우클릭 회전 / 중클릭 팬 / Alt+좌클릭 오빗이 진행 중이면
+	// 마우스가 다른 뷰포트로 나가더라도 이 뷰포트가 계속 입력을 독점합니다.
+	const bool bActiveOperation = bRightMouseRotating
+	                            || bRightMousePanning
+	                            || bMiddleMousePanning
+	                            || bAltLeftMouseOrbiting;
+
+	if (State && !State->bHovered && !bActiveOperation)
+	{
+		return;
+	}
 	TickInput(DeltaTime);
 	NavigationController.Tick(DeltaTime);
 	TickInteraction(DeltaTime);
@@ -115,8 +124,6 @@ void FEditorViewportClient::BuildSceneView(FSceneView& OutView) const
 
 void FEditorViewportClient::ApplyCameraMode()
 {
-	// if (!Camera) return;
-
 	// 직교 뷰는 기존 회전값이 LookAt에 간섭하지 않도록 초기화
 	Camera.SetRotation(FRotator(0.f, 0.f, 0.f));
 
@@ -124,50 +131,49 @@ void FEditorViewportClient::ApplyCameraMode()
 	{
 	case EVT_Perspective:
 		Camera.SetProjectionType(EViewportProjectionType::Perspective);
-		// Perspective 카메라 위치/방향은 Settings->InitViewPos 기준 유지
+		Camera.ClearCustomLookDir();
 		if (Settings)
 		{
 			Camera.SetLocation(Settings->InitViewPos);
-			// Camera.LookAt(Settings->InitLookAt);
 		}
 		break;
 
 	// --- 직교 뷰 (X=Forward, Y=Right, Z=Up) ---
 
-	case EVT_OrthoTop:			// 위에서 아래 (-Z 방향)
+	case EVT_OrthoTop:			// 위에서 아래 (-Z 방향), 스크린 위 = +X
 		Camera.SetProjectionType(EViewportProjectionType::Orthographic);
 		Camera.SetLocation(FVector(0.f, 0.f, 1000.f));
-		// Camera->LookAt(FVector(0.f, 0.f, 0.f));
+		Camera.SetCustomLookDir(FVector(0.f, 0.f, -1.f), FVector(1.f, 0.f, 0.f));
 		break;
 
-	case EVT_OrthoBottom:		// 아래에서 위 (+Z 방향)
+	case EVT_OrthoBottom:		// 아래에서 위 (+Z 방향), 스크린 위 = +X
 		Camera.SetProjectionType(EViewportProjectionType::Orthographic);
 		Camera.SetLocation(FVector(0.f, 0.f, -1000.f));
-		// Camera->LookAt(FVector(0.f, 0.f, 0.f));
+		Camera.SetCustomLookDir(FVector(0.f, 0.f, 1.f), FVector(1.f, 0.f, 0.f));
 		break;
 
-	case EVT_OrthoFront:		// 앞(-X)에서 뒤 (+X 방향)
+	case EVT_OrthoFront:		// 앞(-X)에서 뒤 (+X 방향), 스크린 위 = +Z
 		Camera.SetProjectionType(EViewportProjectionType::Orthographic);
 		Camera.SetLocation(FVector(-1000.f, 0.f, 0.f));
-		// Camera->LookAt(FVector(0.f, 0.f, 0.f));
+		Camera.SetCustomLookDir(FVector(1.f, 0.f, 0.f), FVector(0.f, 0.f, 1.f));
 		break;
 
-	case EVT_OrthoBack:			// 뒤(+X)에서 앞 (-X 방향)
+	case EVT_OrthoBack:			// 뒤(+X)에서 앞 (-X 방향), 스크린 위 = +Z
 		Camera.SetProjectionType(EViewportProjectionType::Orthographic);
 		Camera.SetLocation(FVector(1000.f, 0.f, 0.f));
-		// Camera->LookAt(FVector(0.f, 0.f, 0.f));
+		Camera.SetCustomLookDir(FVector(-1.f, 0.f, 0.f), FVector(0.f, 0.f, 1.f));
 		break;
 
-	case EVT_OrthoLeft:			// 왼쪽(-Y)에서 오른쪽 (+Y 방향)
+	case EVT_OrthoLeft:			// 왼쪽(-Y)에서 오른쪽 (+Y 방향), 스크린 위 = +Z
 		Camera.SetProjectionType(EViewportProjectionType::Orthographic);
 		Camera.SetLocation(FVector(0.f, -1000.f, 0.f));
-		// Camera->LookAt(FVector(0.f, 0.f, 0.f));
+		Camera.SetCustomLookDir(FVector(0.f, 1.f, 0.f), FVector(0.f, 0.f, 1.f));
 		break;
 
-	case EVT_OrthoRight:		// 오른쪽(+Y)에서 왼쪽 (-Y 방향)
+	case EVT_OrthoRight:		// 오른쪽(+Y)에서 왼쪽 (-Y 방향), 스크린 위 = +Z
 		Camera.SetProjectionType(EViewportProjectionType::Orthographic);
 		Camera.SetLocation(FVector(0.f, 1000.f, 0.f));
-		// Camera->LookAt(FVector(0.f, 0.f, 0.f));
+		Camera.SetCustomLookDir(FVector(0.f, -1.f, 0.f), FVector(0.f, 0.f, 1.f));
 		break;
 
 	default:
@@ -226,9 +232,20 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	// ----------------------------
 	if (InputSystem::Get().GetKeyDown(VK_RBUTTON) && !bCtrlDown && !bAltDown && !bShiftDown)
 	{
-		bRightMouseRotating = true;
-		bFirstMouseMoveAfterRotateStart = true;
-		NavigationController.SetRotating(true);
+		if (Camera.IsOrthographic())
+		{
+			// 직교 뷰: 우클릭 드래그 = 팬
+			bRightMousePanning = true;
+			bFirstMouseMoveAfterRightPanStart = true;
+			NavigationController.BeginPanning();
+		}
+		else
+		{
+			// 원근 뷰: 우클릭 드래그 = 회전
+			bRightMouseRotating = true;
+			bFirstMouseMoveAfterRotateStart = true;
+			NavigationController.SetRotating(true);
+		}
 
 		if (bIsCursorVisible)
 		{
@@ -237,10 +254,18 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		}
 	}
 
-	if (InputSystem::Get().GetKeyUp(VK_RBUTTON) && bRightMouseRotating)
+	if (InputSystem::Get().GetKeyUp(VK_RBUTTON))
 	{
-		bRightMouseRotating = false;
-		NavigationController.SetRotating(false);
+		if (bRightMouseRotating)
+		{
+			bRightMouseRotating = false;
+			NavigationController.SetRotating(false);
+		}
+		if (bRightMousePanning)
+		{
+			bRightMousePanning = false;
+			NavigationController.EndPanning();
+		}
 
 		if (!bIsCursorVisible)
 		{
@@ -299,10 +324,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		}
 	}
 
-	// ----------------------------
 	// Keyboard movement while rotating
-	// (이전 엔진 감각 유지)
-	// ----------------------------
 	if (bRightMouseRotating)
 	{
 		float ForwardValue = 0.f;
@@ -330,9 +352,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		NavigationController.MoveUp(NormalizedInput.Z, DeltaTime);
 	}
 
-	// ----------------------------
-	// Mouse rotate / pan / orbit
-	// ----------------------------
+	// Mouse rotate / pan / orbit	
 	const float MouseDeltaX = static_cast<float>(InputSystem::Get().MouseDeltaX());
 	const float MouseDeltaY = static_cast<float>(InputSystem::Get().MouseDeltaY());
 
@@ -361,6 +381,18 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		}
 	}
 
+	if (bRightMousePanning)
+	{
+		if (bFirstMouseMoveAfterRightPanStart)
+		{
+			bFirstMouseMoveAfterRightPanStart = false;
+		}
+		else
+		{
+			NavigationController.AddPanInput(MouseDeltaX, -MouseDeltaY);
+		}
+	}
+
 	if (bAltLeftMouseOrbiting)
 	{
 		if (bFirstMouseMoveAfterOrbitStart)
@@ -374,9 +406,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		}
 	}
 
-	// ----------------------------
 	// Zoom / speed
-	// ----------------------------
 	const float ScrollNotches = InputSystem::Get().GetScrollNotches();
 	if (!MathUtil::IsNearlyZero(ScrollNotches))
 	{
@@ -419,8 +449,8 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		return;
 	}
 
-	// 직교 뷰포트(Top/Front/Right)는 카메라가 씬에서 1000유닛 이상 떨어져 있어
-	// 스케일이 ~100 으로 폭발합니다. 퍼스펙티브 뷰포트에서만 스케일을 결정합니다.
+	// 직교 뷰포트(Top/Front/Right)는 카메라가 씬에서 1000유닛 이상 떨어져 있어 스케일이 ~100 으로 폭발합니다.
+	// 퍼스펙티브 뷰포트에서만 스케일을 결정합니다.
 	if (!Camera.IsOrthographic())
 	{
 		Gizmo->ApplyScreenSpaceScaling(Camera.GetLocation());
@@ -434,7 +464,13 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	POINT MousePoint = InputSystem::Get().GetMousePos();
 	MousePoint = Window->ScreenToClientPoint(MousePoint);
 
-	FRay Ray = Camera.DeprojectScreenToWorld(static_cast<float>(MousePoint.x), static_cast<float>(MousePoint.y), WindowWidth, WindowHeight);
+	// 윈도우 기준 좌표 → 뷰포트 로컬 좌표로 변환
+	const float ViewportOffsetX = State ? static_cast<float>(State->Rect.X) : 0.f;
+	const float ViewportOffsetY = State ? static_cast<float>(State->Rect.Y) : 0.f;
+	const float LocalX = static_cast<float>(MousePoint.x) - ViewportOffsetX;
+	const float LocalY = static_cast<float>(MousePoint.y) - ViewportOffsetY;
+
+	FRay Ray = Camera.DeprojectScreenToWorld(LocalX, LocalY, WindowWidth, WindowHeight);
 	
 	FHitResult HitResult;
 	Gizmo->Raycast(Ray, HitResult);
@@ -528,6 +564,6 @@ FVector FEditorViewportClient::ResolveOrbitPivot() const
 	}
 
 	// 현재 SelectionManager API를 모르므로 임시 기본값.
-	// 나중에 primary selection center를 반환하도록 연결 권장.
+	// 나중에 primary selection Center 를 반환하도록 연결 권장.
 	return Camera.GetLocation() + Camera.GetForwardVector() * 300.0f;
 }

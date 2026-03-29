@@ -117,10 +117,12 @@ private:
 
 	// Input state bridge for current singleton InputSystem
 	bool bRightMouseRotating = false;
+	bool bRightMousePanning  = false;   // 직교 뷰: 우클릭 드래그 = 팬
 	bool bMiddleMousePanning = false;
 	bool bAltLeftMouseOrbiting = false;
 
-	bool bFirstMouseMoveAfterRotateStart = false;
-	bool bFirstMouseMoveAfterPanStart = false;
-	bool bFirstMouseMoveAfterOrbitStart = false;
+	bool bFirstMouseMoveAfterRotateStart   = false;
+	bool bFirstMouseMoveAfterRightPanStart = false;
+	bool bFirstMouseMoveAfterPanStart      = false;
+	bool bFirstMouseMoveAfterOrbitStart    = false;
 };
