@@ -10,7 +10,7 @@ DEFINE_CLASS(UStaticMeshComponent, UMeshComponent)
 UStaticMeshComponent::UStaticMeshComponent()
 {
 	//	기본 도형은 Cube로 설정
-	SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Dice.obj"));
+	SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Dice/Dice.obj"));
 }
 
 void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)

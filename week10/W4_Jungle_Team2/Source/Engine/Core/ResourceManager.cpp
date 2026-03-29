@@ -36,6 +36,8 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
 	FString Content((std::istreambuf_iterator<char>(File)),
 	                std::istreambuf_iterator<char>());
 
+	InitializeDefaultResources(InDevice);
+
 	JSON Root = JSON::Load(Content);
 
 	// Font — { "Name": { "Path": "...", "Columns": 16, "Rows": 16 } }
@@ -181,6 +183,27 @@ bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 	return true;
 }
 
+void FResourceManager::InitializeDefaultResources(ID3D11Device* Device)
+{
+	if (!Device || DefaultWhiteSRV) return;
+
+	D3D11_TEXTURE2D_DESC Desc = {};
+	Desc.Width            = 1;
+	Desc.Height           = 1;
+	Desc.MipLevels        = 1;
+	Desc.ArraySize        = 1;
+	Desc.Format           = DXGI_FORMAT_R8G8B8A8_UNORM;
+	Desc.SampleDesc.Count = 1;
+	Desc.Usage            = D3D11_USAGE_IMMUTABLE;
+	Desc.BindFlags        = D3D11_BIND_SHADER_RESOURCE;
+
+	constexpr uint32_t WhitePixel = 0xFFFFFFFF;
+	D3D11_SUBRESOURCE_DATA InitData = { &WhitePixel, 4, 0 };
+
+	Device->CreateTexture2D(&Desc, &InitData, &DefaultWhiteTexture);
+	Device->CreateShaderResourceView(DefaultWhiteTexture, nullptr, &DefaultWhiteSRV);
+}
+
 void FResourceManager::ReleaseGPUResources()
 {
 	for (auto& [Key, Resource] : FontResources)
@@ -219,6 +242,9 @@ void FResourceManager::ReleaseGPUResources()
 	}
 	StaticMeshMap.clear();
 	StaticMeshRegistry.clear();
+
+	if (DefaultWhiteSRV)     { DefaultWhiteSRV->Release();     DefaultWhiteSRV     = nullptr; }
+	if (DefaultWhiteTexture) { DefaultWhiteTexture->Release();  DefaultWhiteTexture = nullptr; }
 }
 
 bool FResourceManager::LoadMaterial(const FString& MtlFilePath)

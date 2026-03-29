@@ -37,7 +37,7 @@ UStaticMesh* FObjLoader::Load(const FString& Path, const FStaticMeshLoadOptions&
 		return nullptr;
 	}
 	
-	/* Bind Matrail 실패하지 않습니다! 여러분들 처럼요*/
+	/* Bind Material 실패하지 않습니다! 여러분들 처럼요*/
 	BindMaterials();
 
 	/* Local Bounds(AABB) */
@@ -135,7 +135,7 @@ bool FObjLoader::ParseObj(const FString& Path)
 
 bool FObjLoader::BuildStaticMesh()
 {
-	//	Mesh를 생성할 Raw Data 존재 확인
+	// Mesh를 생성할 Raw Data 존재 확인
 	if (RawData.Positions.empty() || RawData.Faces.empty())
 	{
 		return false;
@@ -147,13 +147,13 @@ bool FObjLoader::BuildStaticMesh()
 	StaticMeshAsset.Sections.clear();
 	StaticMeshAsset.MaterialSlots.clear();
 
-	//	usemtl 이름 기준으로 slot 목록 생성 (slot per usemtl)
+	// usemtl 이름 기준으로 slot 목록 생성 
 	for (const FObjRawFace& Face : RawData.Faces)
 	{
 		GetOrAddMaterialSlot(Face.MaterialName);
 	}
 
-	//	IndexBuffer를 위한 Map
+	// IndexBuffer를 위한 Map
 	TMap<FObjVertexKey, uint32> VertexMap;
 
 	TArray<TArray<uint32>> SlotIndices;
@@ -280,7 +280,7 @@ bool FObjLoader::ParseTexCoordLine(const FString& Line)
 
 	FVector2 TexCoord;
 	TexCoord.X = std::stof(Tokens[1]);
-	TexCoord.Y = 1.0f - std::stof(Tokens[2]); // OBJ(V=하단) → DirectX(V=상단) 변환
+	TexCoord.Y = 1.0f - std::stof(Tokens[2]); 
 
 	RawData.UVs.push_back(TexCoord);
 	return true;
