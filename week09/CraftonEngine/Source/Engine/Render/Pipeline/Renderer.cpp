@@ -163,10 +163,7 @@ void FRenderer::InitializePassBatchers()
 	PassBatchers[(uint32)ERenderPass::Editor] = {
 		/*.Clear   =*/ [this]() { EditorLineBatcher.Clear(); },
 		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus&) {
-			if (Cmd.Type == ERenderCommandType::DebugBox)
-			{
-				EditorLineBatcher.AddAABB(FBoundingBox{ Cmd.Params.AABB.Min, Cmd.Params.AABB.Max }, Cmd.Params.AABB.Color);
-			}
+			EditorLineBatcher.AddAABB(FBoundingBox{ Cmd.Params.AABB.Min, Cmd.Params.AABB.Max }, Cmd.Params.AABB.Color);
 		},
 		/*.Flush   =*/ [this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
 			FlushLineBatcher(EditorLineBatcher, Pass, Bus, Ctx);
@@ -177,18 +174,15 @@ void FRenderer::InitializePassBatchers()
 	PassBatchers[(uint32)ERenderPass::Grid] = {
 		/*.Clear   =*/ [this]() { GridLineBatcher.Clear(); },
 		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus& Bus) {
-			if (Cmd.Type == ERenderCommandType::Grid)
-			{
-				const FVector CameraPos = Bus.GetView().GetInverseFast().GetLocation();
-				FVector CameraFwd = Bus.GetCameraRight().Cross(Bus.GetCameraUp());
-				CameraFwd.Normalize();
+			const FVector CameraPos = Bus.GetView().GetInverseFast().GetLocation();
+			FVector CameraFwd = Bus.GetCameraRight().Cross(Bus.GetCameraUp());
+			CameraFwd.Normalize();
 
-				GridLineBatcher.AddWorldHelpers(
-					Bus.GetShowFlags(),
-					Cmd.Params.Grid.GridSpacing,
-					Cmd.Params.Grid.GridHalfLineCount,
-					CameraPos, CameraFwd);
-			}
+			GridLineBatcher.AddWorldHelpers(
+				Bus.GetShowFlags(),
+				Cmd.Params.Grid.GridSpacing,
+				Cmd.Params.Grid.GridHalfLineCount,
+				CameraPos, CameraFwd);
 		},
 		/*.Flush   =*/ [this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
 			FlushLineBatcher(GridLineBatcher, Pass, Bus, Ctx);
@@ -199,7 +193,7 @@ void FRenderer::InitializePassBatchers()
 	PassBatchers[(uint32)ERenderPass::Font] = {
 		/*.Clear   =*/ [this]() { FontBatcher.Clear(); },
 		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus& Bus) {
-			if (Cmd.Type == ERenderCommandType::Font && Cmd.Params.Font.Text && !Cmd.Params.Font.Text->empty() && !Cmd.Params.Font.bScreenSpace)
+			if (Cmd.Params.Font.Text && !Cmd.Params.Font.Text->empty() && !Cmd.Params.Font.bScreenSpace)
 			{
 				FontBatcher.AddText(
 					*Cmd.Params.Font.Text,
@@ -221,7 +215,7 @@ void FRenderer::InitializePassBatchers()
 	PassBatchers[(uint32)ERenderPass::OverlayFont] = {
 		/*.Clear   =*/ [this]() {FontBatcher.ClearScreen(); }, // Font 시작 시에 클리어
 		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus& Bus) {
-			if (Cmd.Type == ERenderCommandType::Font && Cmd.Params.Font.Text && !Cmd.Params.Font.Text->empty() && Cmd.Params.Font.bScreenSpace)
+			if (Cmd.Params.Font.Text && !Cmd.Params.Font.Text->empty() && Cmd.Params.Font.bScreenSpace)
 			{
 				FontBatcher.AddScreenText(
 					*Cmd.Params.Font.Text,
@@ -245,7 +239,7 @@ void FRenderer::InitializePassBatchers()
 			SubUVBatcher.Clear();
 		},
 		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus& Bus) {
-			if (Cmd.Type == ERenderCommandType::SubUV && Cmd.Params.SubUV.Particle)
+			if (Cmd.Params.SubUV.Particle)
 			{
 				const auto& SubUV = Cmd.Params.SubUV;
 				SubUVBatcher.AddSprite(
@@ -306,7 +300,7 @@ void FRenderer::ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand
 		BindCommand(Cmd, Context);
 
 		// StaticMesh: 섹션별 SRV 바인딩 + 분할 드로우
-		if (Cmd.Type == ERenderCommandType::StaticMesh && !Cmd.SectionDraws.empty())
+		if (!Cmd.SectionDraws.empty())
 		{
 			DrawStaticMeshSections(Context, Cmd);
 		}
