@@ -1,4 +1,4 @@
-#include "RenderCollector.h"
+﻿#include "RenderCollector.h"
 #include "Render/Resource/ConstantBufferPool.h"
 
 #include "GameFramework/World.h"
@@ -102,7 +102,6 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 
 	for (UPrimitiveComponent* primitiveComponent : Actor->GetPrimitiveComponents())
 	{
-
 		if (!primitiveComponent->IsVisible()) continue;
 		FRenderCommand BaseCmd{};
 		FMeshBuffer* Buffer = primitiveComponent->GetMeshBuffer();
@@ -176,7 +175,7 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		{
 			OutlineCmd.PerObjectConstants.Color = FColor(255, 153, 0, 255).ToVector4();
 		}
-		CollectAABBCommand(primitiveComponent, ShowFlags, RenderBus);
+
 		OutlineCmd.Params.Outline.PrimitiveType = (PrimType == EPrimitiveType::EPT_Plane ||
 			PrimType == EPrimitiveType::EPT_SubUV ||
 			PrimType == EPrimitiveType::EPT_Text) ? 0u : 1u;
@@ -185,6 +184,14 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		OutlineCmd.ExtraCB = { FConstantBufferPool::Get().GetBuffer(ECBSlot::Outline, sizeof(FOutlineConstants)), sizeof(FOutlineConstants), ECBSlot::Outline };
 
 		RenderBus.AddCommand(ERenderPass::Outline, OutlineCmd);
+
+		// 보조 컴포넌트(텍스트/빌보드/SubUV)는 AABB 제외 — 메인 메시만 표시
+		if (PrimType != EPrimitiveType::EPT_Text &&
+			PrimType != EPrimitiveType::EPT_SubUV &&
+			!primitiveComponent->IsA<UBillboardComponent>())
+		{
+			CollectAABBCommand(primitiveComponent, ShowFlags, RenderBus);
+		}
 	}
 }
 
