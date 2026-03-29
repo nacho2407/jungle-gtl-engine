@@ -11,7 +11,7 @@ class FMaterial;
 struct FBoxSphereBounds
 {
 	FVector Center;
-	float Radius;
+	float Radius = 0.f;
 	FVector BoxExtent;
 };
 

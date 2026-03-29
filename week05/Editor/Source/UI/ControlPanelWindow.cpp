@@ -264,11 +264,8 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 				AStaticMeshActor* MyCube = Scene->SpawnActor<AStaticMeshActor>(Name);
 				if (MyCube && MyCube->GetStaticMeshComponent())
 				{
-					UStaticMesh* CubeData = FObjManager::GetPrimitivePlane();
+					UStaticMesh* CubeData = FObjManager::GetPrimitiveSphere();
 					MyCube->GetStaticMeshComponent()->SetStaticMesh(CubeData);
-
-					// 위치도 적당히 옮겨봅니다.
-					MyCube->SetActorLocation(FVector(0.0f, 0.0f, 5.0f));
 				}
 			}
 

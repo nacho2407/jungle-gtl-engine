@@ -106,7 +106,10 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 					FRenderCommand Command;
 					Command.RenderMesh = SMC->GetRenderMesh();
 					Command.WorldMatrix = SMC->GetWorldTransform();
-					Command.Material = SMC->GetMaterial(0);
+					std::shared_ptr<FMaterial> MatPtr = SMC->GetMaterial(0);
+					FMaterial* Mat = MatPtr.get();
+
+					Command.Material = Mat ? Mat : Renderer->GetDefaultMaterial();
 
 					OutQueue.AddCommand(Command);
 				}

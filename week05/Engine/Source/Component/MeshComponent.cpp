@@ -5,7 +5,7 @@
 
 IMPLEMENT_RTTI(UMeshComponent, UNewPrimitiveComponent)
 
-void UMeshComponent::SetMaterial(int32 Index, FMaterial* InMaterial)
+void UMeshComponent::SetMaterial(int32 Index, const std::shared_ptr<FMaterial>& InMaterial)
 {
 	if (Index >= 0 && Index < Materials.size())
 	{
@@ -13,7 +13,7 @@ void UMeshComponent::SetMaterial(int32 Index, FMaterial* InMaterial)
 	}
 }
 
-FMaterial* UMeshComponent::GetMaterial(int32 Index) const
+std::shared_ptr<FMaterial> UMeshComponent::GetMaterial(int32 Index) const
 {
 	if (Index >= 0 && Index < Materials.size()) return Materials[Index];
 	return nullptr;

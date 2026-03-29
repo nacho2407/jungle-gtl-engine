@@ -41,7 +41,7 @@ public:
 
 private:
 	/** 폰트 렌더링용 전용 머티리얼 생성 및 설정 */
-	bool CreateFontMaterial();
+	// bool CreateFontMaterial();
 
 	/** UTF-8 문자열을 코드포인트 배열로 변환 */
 	TArray<uint32> DecodeToCodepoints(const FString& Text) const;

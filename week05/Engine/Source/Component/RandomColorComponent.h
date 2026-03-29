@@ -5,7 +5,7 @@
 #include <memory>
 
 class FDynamicMaterial;
-class UPrimitiveComponent;
+class UMeshComponent;
 
 class ENGINE_API URandomColorComponent : public UActorComponent
 {
@@ -21,8 +21,8 @@ public:
 	void Tick(float DeltaTime) override;
 
 private:
-	TObjectPtr<UPrimitiveComponent> CachedPrimitive;
-	std::unique_ptr<FDynamicMaterial> DynamicMaterial;
+	TObjectPtr<UMeshComponent> CachedMesh;
+	std::shared_ptr<FDynamicMaterial> DynamicMaterial;
 	float UpdateInterval = 1.0f;
 	float ElapsedTime = 0.0f;
 
