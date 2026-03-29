@@ -370,7 +370,11 @@ void UGizmoComponent::UpdateHoveredAxis(int Index)
 {
 	if (Index < 0)
 	{
-		if (IsHolding() == false) SelectedAxis = -1;
+		// 클릭을 누른 상태라면 마우스가 IsHolding()에서 잠시 빗나가도 축 선택을 초기화하지 않는다.
+		if (IsHolding() == false && IsPressedOnHandle() == false) 
+		{
+			SelectedAxis = -1;
+		}
 	}
 	else
 	{
