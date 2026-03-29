@@ -35,7 +35,7 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	Renderer.BeginFrame();
 
 	// 4개 뷰포트를 순서대로 렌더링
-	for (int32 i = 0; i < UEditorEngine::MaxViewports; ++i)
+	for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
 	{
 		RenderViewport(Renderer, i);
 	}
@@ -47,7 +47,7 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 
 void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIndex)
 {
-	FEditorViewportClient& VC = Editor->GetViewportClient(ViewportIndex);
+	FEditorViewportClient& VC = Editor->GetViewportLayout().GetViewportClient(ViewportIndex);
 
 	FViewportCamera* Camera = VC.GetCamera();
 	if (!Camera) return;
