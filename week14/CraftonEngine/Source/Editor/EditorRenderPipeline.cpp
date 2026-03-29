@@ -105,8 +105,6 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 		{
 			FRenderCommand Cmd = {};
 			Cmd.Type = ERenderCommandType::Font;
-			Cmd.BlendState = EBlendState::AlphaBlend;
-			Cmd.DepthStencilState = EDepthStencilState::NoDepth;
 
 			Cmd.Params.Font.Text = &Line.Text;
 			Cmd.Params.Font.Font = nullptr;
