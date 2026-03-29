@@ -77,7 +77,7 @@ struct FOutlineConstants
 	FVector4 OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
 	FVector OutlineInvScale;
 	float OutlineOffset = 0.05f;
-	uint32 PrimitiveType; // EPrimitiveType enum value
+	uint32 bIs3D; // 0: 2D (Plane 등), 1: 3D (Cube 등)
 	float Padding0[3];
 };
 
@@ -157,7 +157,5 @@ struct FRenderCommand
 	// 타입별 Extra CB 바인딩 — Params 데이터를 지정 슬롯의 CB에 업로드
 	FConstantBufferBinding ExtraCB;
 
-	EDepthStencilState DepthStencilState = static_cast<EDepthStencilState>(-1);
-	EBlendState BlendState = static_cast<EBlendState>(-1);
 	ERenderCommandType Type = ERenderCommandType::Primitive;
 };
