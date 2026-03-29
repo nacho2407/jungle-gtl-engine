@@ -16,6 +16,9 @@ class FSelectionManager;
 
 /*
 * Viewport Layout 을 관리하는 최상위 객체
+* 스플리터 위젯 트리를 생성하고 FSlateApplication::RootWindow 에 연결합니다.
+* SSplitterV → 2×SSplitterH → 4×SViewport
+* SceneViewports[i] 를 각 SViewport 의 ISlateViewport 로 연결합니다.
 */
 
 class FViewportLayout
@@ -55,12 +58,7 @@ public:
 	// Window 크기 기준으로 4개 뷰포트 영역을 계산합니다.
 	void UpdateViewportRects(uint32 Width, uint32 Height);
 
-	/*
-	 * 스플리터 위젯 트리를 생성하고 FSlateApplication::RootWindow 에 연결합니다.
-	 *   SSplitterV → 2×SSplitterH → 4×SViewport
-	 * SceneViewports[i] 를 각 SViewport 의 ISlateViewport 로 연결합니다.
-	 */
-
+	// Splitter Widget Tree 생성
 	void BuildViewportLayout(int32 Width, int32 Height);
 
 	// SViewport(FRect) → ISlateViewport(FViewportRect) 동기화
@@ -70,6 +68,7 @@ public:
 	// 스플리터 위젯 소유권 (new → BuildViewportLayout, delete → DestroyViewportLayout)
 	void DestroyViewportLayout();
 private:
+	// TODO: 1개 <-> 4개 왔다갔다 할 수 있게
 	TStaticArray<FEditorViewportClient, MaxViewports> ViewportClients;
 	TStaticArray<FSceneViewport, MaxViewports>        SceneViewports;
 	TStaticArray<FEditorViewportState, MaxViewports>  ViewportStates;
@@ -79,5 +78,8 @@ private:
 	SSplitterH* TopSplitterH = nullptr;
 	SSplitterH* BotSplitterH = nullptr;
 	SViewport* ViewportWidgets[MaxViewports] = {};
+
+	// 캐싱 목적 Window 소유(소유권은 WindowsApplication)
+	FWindowsWindow* Window = nullptr;
 };
 
