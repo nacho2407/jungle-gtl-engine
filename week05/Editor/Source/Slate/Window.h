@@ -5,6 +5,7 @@
 class SWindow
 {
 public:
+	virtual ~SWindow() {}
 	FRect Rect;
 	bool IsHover(FPoint coord) const;
 };

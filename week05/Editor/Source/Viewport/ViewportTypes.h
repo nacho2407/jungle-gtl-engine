@@ -1,5 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
+#include "Core/ShowFlags.h"
 
 class FViewport;
 
@@ -47,6 +48,13 @@ enum class EViewportType : uint8
 	OrthoRight,
 };
 
+enum class EViewportLayout : uint8 {
+	Single,
+	SplitH, SplitV,
+	ThreeLeft, ThreeRight, ThreeTop, ThreeBottom,
+	FourGrid,
+};
+
 struct FViewportLocalState
 {
 	EViewportType ProjectionType = EViewportType::Perspective;
@@ -61,19 +69,20 @@ struct FViewportLocalState
 	float OrthoZoom = 1000.f;
 
 	ERenderMode ViewMode = ERenderMode::Lighting;
+
 	bool bShowGrid = true;
-	float GridSize = 100.f;
+	float GridSize = 10.0f;
+	float LineThickness = 1.0f;
+	FShowFlags ShowFlags;
 
 	static FViewportLocalState CreateDefault(EViewportType Type);
 	FMatrix BuildViewMatrix() const;
 	FMatrix BuildProjMatrix(float AspectRatio) const;
-	bool GetViewportRectInClient(int32& OutX, int32& OutY, int32& OutWidth, int32& OutHeight) const;
 };
 
 struct FViewportEntry
 {
 	FViewportId Id = INVALID_VIEWPORT_ID;
-	EViewportType Type = EViewportType::Perspective;
 	FViewport* Viewport;
 	bool bActive = false;
 	FViewportLocalState LocalState;

@@ -7,6 +7,7 @@
 #include "Types/CoreTypes.h"
 #include "BlitRenderer.h"
 #include "Platform/Windows/WindowsWindow.h"
+#include "Core/ShowFlags.h"
 
 class FEditorUI;
 class FFrustum;
@@ -30,21 +31,21 @@ public:
 	void HandleFileDoubleClick(const FString& FilePath) override;
 	void HandleFileDropOnViewport(const FString& FilePath) override;
 	void BuildRenderCommands(FEngine* Engine, UScene* Scene,
-		const FFrustum& Frustum, FRenderCommandQueue& OutQueue) override;
-	float GetGridSize() const { return GridSize; }
-	void SetGridSize(float InSize);
-	float GetLineThickness() const { return LineThickness; }
-	void SetLineThickness(float InThickness);
-	bool IsGridVisible() const { return bShowGrid; }
-	void SetGridVisible(bool bVisible) { bShowGrid = bVisible; }
+		const FFrustum& Frustum, const FShowFlags& Flags, FRenderCommandQueue& OutQueue) override;
 	TArray<FViewportEntry>& GetEntries() { return Entries; }
 	const TArray<FViewportEntry>& GetEntries() const { return Entries; }
 	void Render(FEngine* Engine, FRenderer* Renderer);
+	FViewportEntry* FindEntryByType(EViewportType Type);
+	const FViewportEntry* FindEntryByType(EViewportType Type) const;
+	FViewport* GetViewportById(FViewportId Id) const;
+	const FViewportEntry* FindEntryByViewportID(FViewportId ViewportId) const;
+	FViewportEntry* FindEntryByViewportID(FViewportId ViewportId);
 
 private:
 	FEditorUI& EditorUI;
 	mutable FGizmo Gizmo;
 	void InitializeEntries();
+	void SyncViewportRectsFromDock();
 
 	FWindowsWindow* MainWindow = nullptr;
 
@@ -67,10 +68,4 @@ private:
 	std::unique_ptr<FMeshData> GridMesh;
 	std::shared_ptr<FMaterial> GridMaterial;
 	void CreateGridResource(FRenderer* Renderer);
-	float GridSize = 10.0f;
-	float LineThickness = 1.0f;
-	bool bShowGrid = true;
-	void SyncViewportRectsFromDock();
-	// Entries 기준으로 Id에 해당하는 FViewport* 반환 (없으면 nullptr)
-	FViewport* GetViewportById(FViewportId Id) const;
 };

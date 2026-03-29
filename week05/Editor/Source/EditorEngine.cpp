@@ -234,16 +234,26 @@ void FEditorEngine::FinalizeInitialize()
 	const int32 W = MainWindow ? MainWindow->GetWidth() : 800;
 	const int32 H = MainWindow ? MainWindow->GetHeight() : 600;
 
+	FViewport* VPs[MAX_VIEWPORTS] = {
+		&Viewports[0], &Viewports[1], &Viewports[2], &Viewports[3]
+	};
 	SlateApplication = std::make_unique<FSlateApplication>();
-	SlateApplication->Initialize(
-		FRect(0, 0, W, H),
-		&Viewports[0], &Viewports[1], &Viewports[2], &Viewports[3],
-		0.5f, 0.5f, 0.5f
-	);
+	SlateApplication->Initialize(FRect(0, 0, W, H), VPs, MAX_VIEWPORTS);
 }
 
 void FEditorEngine::Tick(float DeltaTime)
 {
+	// 포커스된 뷰포트가 Perspective일 때만 키보드 입력 연결
+	if (EditorViewportClientRaw && SlateApplication)
+	{
+		FViewportId FocusedId = SlateApplication->GetFocusedViewportId();
+		FViewportEntry* FocusedEntry = EditorViewportClientRaw->FindEntryByViewportID(FocusedId);
+		FViewportLocalState* LocalState = nullptr;
+		if (FocusedEntry && FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
+			LocalState = &FocusedEntry->LocalState;
+		CameraSubsystem.GetViewportController()->SetActiveLocalState(LocalState);
+	}
+
 	CameraSubsystem.Tick(GetActiveWorld(), GetScene(), DeltaTime);
 	SyncViewportClient();
 }
@@ -328,6 +338,16 @@ void FEditorEngine::InitEditorViewportRouting()
 {
 	// 초기 활성 월드가 Editor/Preview 중 무엇인지에 따라 적절한 뷰포트를 고른다.
 	SyncViewportClient();
+
+	// Perspective Entry의 LocalState를 입력 컨트롤러에 연결
+	if (EditorViewportClientRaw)
+	{
+		FViewportEntry* PerspEntry = EditorViewportClientRaw->FindEntryByType(EViewportType::Perspective);
+		if (PerspEntry)
+		{
+			CameraSubsystem.GetViewportController()->SetActiveLocalState(&PerspEntry->LocalState);
+		}
+	}
 }
 
 bool FEditorEngine::InitEditorWorlds(int32 Width, int32 Height)

@@ -8,36 +8,49 @@
 
 class FSlateApplication
 {
-	FViewportId HoveredViewportId       = INVALID_VIEWPORT_ID;
-	FViewportId FocusedViewportId       = INVALID_VIEWPORT_ID;
+	FViewportId HoveredViewportId = INVALID_VIEWPORT_ID;
+	FViewportId FocusedViewportId = INVALID_VIEWPORT_ID;
 	FViewportId MouseCapturedViewportId = INVALID_VIEWPORT_ID;
-	SSplitter*  DraggingSplitter        = nullptr;
+	SSplitter*  DraggingSplitter = nullptr;
 
-	std::unique_ptr<SSplitterH> SplitterH;
-	std::unique_ptr<SSplitterV> SplitterVL;
-	std::unique_ptr<SSplitterV> SplitterVR;
-	std::unique_ptr<SViewport>  Viewports[4];
+	FRect AreaRect;
+	EViewportLayout CurrentLayout = EViewportLayout::Single;
+
+	std::unique_ptr<SViewport> Viewports[MAX_VIEWPORTS];
+	int32 ActiveViewportCount  = 0;
+
+	std::unique_ptr<SSplitterH> SplitterPool_H[2];
+	std::unique_ptr<SSplitterV> SplitterPool_V[2];
+
+	SSplitter* ActiveSplitters[3]  = {};
+	int32 ActiveSplitterCount = 0;
+
+	SWindow* Root = nullptr;
+
+	void BuildTree_Single();
+	void BuildTree_SplitH();
+	void BuildTree_SplitV();
+	void BuildTree_ThreeLeft();
+	void BuildTree_ThreeRight();
+	void BuildTree_ThreeTop();
+	void BuildTree_ThreeBottom();
+	void BuildTree_FourGrid();
+	void ResetPools();
+	void SyncViewportRects();
 
 public:
-	void Initialize(const FRect& Area,
-	                FViewport* VP0, FViewport* VP1,
-	                FViewport* VP2, FViewport* VP3,
-	                float RatioH, float RatioVL, float RatioVR);
-	
+	void Initialize(const FRect& Area, FViewport* VPs[], int32 Count);
+	void SetLayout(EViewportLayout Layout);
 	void SetViewportAreaRect(const FRect& Area);
-
 	void PerformLayout();
 
-	FViewportId GetHoveredViewportId()       const { return HoveredViewportId; }
-	FViewportId GetFocusedViewportId()       const { return FocusedViewportId; }
+	FViewportId GetHoveredViewportId() const { return HoveredViewportId; }
+	FViewportId GetFocusedViewportId() const { return FocusedViewportId; }
 	FViewportId GetMouseCapturedViewportId() const { return MouseCapturedViewportId; }
-	bool IsPointerOverViewport(FViewportId Id) const;
-	bool IsDraggingSplitter()                const { return DraggingSplitter != nullptr; }
-
-	SSplitterH* GetSplitterH()               const { return SplitterH.get(); }
-	SSplitterV* GetSplitterVL()              const { return SplitterVL.get(); }
-	SSplitterV* GetSplitterVR()              const { return SplitterVR.get(); }
-	SViewport*  GetViewportWidget(int32 Idx) const;
+	EViewportLayout GetCurrentLayout() const { return CurrentLayout; }
+	int32 GetActiveViewportCount() const { return ActiveViewportCount; }
+	bool IsDraggingSplitter() const { return DraggingSplitter != nullptr; }
+	bool IsPointerOverViewport(FViewportId Id) const { return HoveredViewportId == Id; }
 
 	void ProcessMouseDown(int32 X, int32 Y);
 	void ProcessMouseMove(int32 X, int32 Y);

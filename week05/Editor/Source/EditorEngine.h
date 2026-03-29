@@ -35,6 +35,7 @@ public:
 	const TArray<FViewport>& GetViewports() const { return Viewports; }
 	TArray<FViewport>& GetViewports() { return Viewports; }
 	FSlateApplication* GetSlateApplication() const { return SlateApplication.get(); }
+	FEditorViewportClient* GetEditorViewportClient() const { return EditorViewportClientRaw; }
 
 protected:
 	void PreInitialize() override;

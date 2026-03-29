@@ -1,4 +1,5 @@
 #include "PreviewViewportClient.h"
+#include "Core/ShowFlags.h"
 
 #include "UI/EditorUI.h"
 #include "EditorEngine.h"
@@ -80,7 +81,7 @@ void FPreviewViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 			FFrustum Frustum;
 			Frustum.ExtractFromVP(Queue.ViewMatrix * Queue.ProjectionMatrix);
 
-			BuildRenderCommands(Engine, Scene, Frustum, Queue);
+			BuildRenderCommands(Engine, Scene, Frustum, FShowFlags{}, Queue);
 			Renderer->SubmitCommands(Queue);
 			Renderer->ExecuteCommands();
 		}

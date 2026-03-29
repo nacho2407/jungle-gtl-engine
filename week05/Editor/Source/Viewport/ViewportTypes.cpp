@@ -12,17 +12,15 @@ FViewportLocalState FViewportLocalState::CreateDefault(EViewportType Type)
 	State.FarPlane = 10000.0f;
 	State.FovY = 60.0f;
 
-	State.OrthoTarget = FVector::ZeroVector;
-	State.OrthoZoom = 1000.0f;
-
+	State.OrthoTarget = FVector::ZeroVector + FVector(0.0f, 0.0f, 1.0f);
+	State.OrthoZoom = 100.0f;
 	State.bShowGrid = true;
-	State.GridSize = 100.0f;
 	State.ViewMode = ERenderMode::Lighting;
 
 	switch (Type)
 	{
 	case EViewportType::Perspective:
-		State.Position = FVector(0.0f, 0.0f, -5.0f);
+		State.Position = FVector(-10.0f, 0.0f, 10.0f);
 		State.Rotation = FRotator::ZeroRotator;
 		break;
 
@@ -57,7 +55,7 @@ FMatrix FViewportLocalState::BuildViewMatrix() const
 	{
 		const FVector Eye = OrthoTarget + FVector::UpVector * OrthoZoom;
 		const FVector Forward = FVector::DownVector;
-		const FVector Up = FVector::UpVector;
+		const FVector Up = FVector::ForwardVector;
 		return FMatrix::MakeViewLookAtLH(Eye, Eye + Forward, Up);
 	}
 

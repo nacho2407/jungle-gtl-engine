@@ -512,14 +512,13 @@ void FEngine::RenderFrame()
 
 	if (ActiveViewportClient)
 	{
-		ActiveViewportClient->BuildRenderCommands(this, Scene, Frustum, CommandQueue);
+		ActiveViewportClient->BuildRenderCommands(this, Scene, Frustum, FShowFlags{}, CommandQueue);
 	}
 
 	Renderer->SubmitCommands(CommandQueue);
 	Renderer->ExecuteCommands();
 
-	const FShowFlags& ShowFlags = ActiveViewportClient ? ActiveViewportClient->GetShowFlags() : FShowFlags();
-	DebugDrawManager.Flush(Renderer.get(), ShowFlags, ActiveWorld);
+	DebugDrawManager.Flush(Renderer.get(), FShowFlags{}, ActiveWorld);
 	Renderer->EndFrame();
 }
 

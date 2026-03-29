@@ -25,16 +25,13 @@ public:
 	virtual void HandleMessage(FEngine* Engine, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam);
 	virtual UScene* ResolveScene(FEngine* Engine) const;
 	virtual UWorld* ResolveWorld(FEngine* Engine) const;
-	FShowFlags& GetShowFlags() { return ShowFlags; }
-	const FShowFlags& GetShowFlags() const { return ShowFlags; }
 	virtual void BuildRenderCommands(FEngine* Engine, UScene* Scene,
-		const FFrustum& Frustum, FRenderCommandQueue& OutQueue);
+		const FFrustum& Frustum, const FShowFlags& Flags, FRenderCommandQueue& OutQueue);
 	/** 입력 처리는 원래 Viewport 에서 처리하는게 맞는데 구조상 여기다 넣음 */
 	virtual void HandleFileDoubleClick(const FString& FilePath);
 	virtual void HandleFileDropOnViewport(const FString& FilePath);
 	virtual void Render(FEngine* Engine, FRenderer* Renderer);
 protected:
-	FShowFlags ShowFlags;
 	FSceneRenderCollector RenderCollector;
 };
 
