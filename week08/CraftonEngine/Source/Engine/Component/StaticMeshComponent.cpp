@@ -9,7 +9,6 @@
 
 IMPLEMENT_CLASS(UStaticMeshComp, UMeshComponent)
 
-
 void UStaticMeshComp::SetStaticMesh(UStaticMesh* InMesh)
 {
 	StaticMesh = InMesh;
@@ -173,7 +172,7 @@ void UStaticMeshComp::PostEditProperty(const char* PropertyName)
 		{
 			ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
 			UStaticMesh* Loaded = FObjManager::LoadObjStaticMesh(StaticMeshPath, Device);
-			StaticMesh = Loaded;
+			SetStaticMesh(Loaded);
 		}
 		CacheLocalBounds();
 	}

@@ -87,7 +87,7 @@ void AStaticMeshActor::InitDefaultComponents()
 	ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
 	UStaticMesh* CubeAsset = FObjManager::LoadObjStaticMesh("Data/cube-tex.obj", Device);
 	//UStaticMesh* CubeAsset = FObjManager::LoadObjStaticMesh("Data/Wolf/Wolf_One_obj.obj", Device);
-	//CubeAsset = FObjManager::LoadObjStaticMesh("Data/TwoSectionPlane.obj", Device);
+	CubeAsset = FObjManager::LoadObjStaticMesh("Data/TwoSectionPlane.obj", Device);
 
 	// 컴포넌트에 에셋 할당 (Assign)
 	SM->SetStaticMesh(CubeAsset);
