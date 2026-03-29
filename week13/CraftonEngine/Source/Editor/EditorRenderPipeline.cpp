@@ -82,7 +82,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	UWorld* World = Editor->GetWorld();
 
 	Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix(),
-		Camera->GetRightVector(), Camera->GetUpVector());
+		Camera->GetForwardVector(), Camera->GetRightVector(), Camera->GetUpVector());
 	Bus.SetRenderSettings(ViewMode, ShowFlags);
 	if (VP)
 	{

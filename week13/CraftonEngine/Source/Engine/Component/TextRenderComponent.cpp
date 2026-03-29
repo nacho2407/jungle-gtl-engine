@@ -16,31 +16,25 @@ void UTextRenderComponent::SetFont(const FName& InFontName)
 
 void UTextRenderComponent::UpdateWorldAABB() const
 {
-	float TotalWidth = GetUTF8Length(Text) * 0.5f;
-	float TotalHeight = 0.5f;
+	// 빌보드는 어느 방향에서든 보이므로 view-independent 구형 바운드 사용
+	float TotalWidth = GetUTF8Length(Text) * CharWidth;
+	float MaxExtent = std::max(TotalWidth, CharHeight);
 
 	FVector WorldScale = GetWorldScale();
-	float ScaledWidth = TotalWidth * WorldScale.Y;
-	float ScaledHeight = TotalHeight * WorldScale.Z;
-
-	FVector WorldRight = FVector(CachedWorldMatrix.M[1][0], CachedWorldMatrix.M[1][1], CachedWorldMatrix.M[1][2]).Normalized();
-	FVector WorldUp = FVector(CachedWorldMatrix.M[2][0], CachedWorldMatrix.M[2][1], CachedWorldMatrix.M[2][2]).Normalized();
-
-	float Ex = std::abs(WorldRight.X) * (ScaledWidth * 0.5f) + std::abs(WorldUp.X) * (ScaledHeight * 0.5f);
-	float Ey = std::abs(WorldRight.Y) * (ScaledWidth * 0.5f) + std::abs(WorldUp.Y) * (ScaledHeight * 0.5f);
-	float Ez = std::abs(WorldRight.Z) * (ScaledWidth * 0.5f) + std::abs(WorldUp.Z) * (ScaledHeight * 0.5f);
-	FVector Extent(Ex, Ey, Ez);
+	float ScaledMax = MaxExtent * std::max({ WorldScale.X, WorldScale.Y, WorldScale.Z });
 
 	FVector WorldCenter = GetWorldLocation();
-	WorldCenter -= WorldRight * (ScaledWidth * 0.5f); 
+	FVector Extent(ScaledMax, ScaledMax, ScaledMax);
 
 	WorldAABBMinLocation = WorldCenter - Extent;
 	WorldAABBMaxLocation = WorldCenter + Extent;
 }
 
-bool UTextRenderComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
+bool UTextRenderComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
-	FMatrix OutlineWorldMatrix = CalculateOutlineMatrix();
+	// Ray 방향으로 빌보드 행렬을 계산 (CachedWorldMatrix는 active 카메라 기준이라 다른 뷰포트에서 틀림)
+	FMatrix PerRayBillboard = ComputeBillboardMatrix(Ray.Direction);
+	FMatrix OutlineWorldMatrix = CalculateOutlineMatrix(PerRayBillboard);
 	FMatrix InvWorldMatrix = OutlineWorldMatrix.GetInverse();
 
 	FRay LocalRay;
@@ -95,7 +89,6 @@ FString UTextRenderComponent::GetOwnerNameToString() const
 
 UTextRenderComponent::UTextRenderComponent()
 {
-	MeshData = &FMeshBufferManager::Get().GetMeshData(EPrimitiveType::EPT_Quad);
 }
 
 void UTextRenderComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
@@ -132,6 +125,23 @@ FMatrix UTextRenderComponent::CalculateOutlineMatrix() const
 	FMatrix TransMatrix = FMatrix::MakeTranslationMatrix(FVector(0.0f, CenterY, CenterZ));
 
 	return (ScaleMatrix * TransMatrix) * CachedWorldMatrix;
+}
+
+FMatrix UTextRenderComponent::CalculateOutlineMatrix(const FMatrix& BillboardWorldMatrix) const
+{
+	int32 Len = GetUTF8Length(Text);
+
+	if (Len <= 0) return FMatrix::Identity;
+
+	float TotalLocalWidth = (Len * CharWidth);
+
+	float CenterY = TotalLocalWidth * -0.5f;
+	float CenterZ = 0.0f;
+
+	FMatrix ScaleMatrix = FMatrix::MakeScaleMatrix(FVector(1.0f, TotalLocalWidth, CharHeight));
+	FMatrix TransMatrix = FMatrix::MakeTranslationMatrix(FVector(0.0f, CenterY, CenterZ));
+
+	return (ScaleMatrix * TransMatrix) * BillboardWorldMatrix;
 }
 
 int32 UTextRenderComponent::GetUTF8Length(const FString& str) const{
