@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "EngineStatics.h"
+#include "Profiling/MemoryStats.h"
 #include "Object/FName.h"
 #include "Core/Singleton.h"
 
@@ -58,7 +58,7 @@ public:
 		void* Ptr = std::malloc(Size);
 		if (Ptr)
 		{
-			EngineStatics::OnAllocated(static_cast<uint32>(Size));
+			MemoryStats::OnAllocated(static_cast<uint32>(Size));
 		}
 		return Ptr;
 	}
@@ -67,7 +67,7 @@ public:
 	{
 		if (Ptr)
 		{
-			EngineStatics::OnDeallocated(static_cast<uint32>(Size));
+			MemoryStats::OnDeallocated(static_cast<uint32>(Size));
 			std::free(Ptr);
 			;
 		}
