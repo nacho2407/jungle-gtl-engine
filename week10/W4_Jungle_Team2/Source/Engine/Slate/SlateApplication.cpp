@@ -1,4 +1,4 @@
-#include "SlateApplication.h"
+﻿#include "SlateApplication.h"
 #include "SWindow.h"
 #include "imgui.h"
 
@@ -9,6 +9,9 @@ void FSlateApplication::Initialize()
 
 void FSlateApplication::Shutdown()
 {
+	// 위젯 참조를 먼저 비웁니다 (W-8: dangling pointer 방지)
+	ClearWidgetRefs();
+
 	// RootWindow 만 소유 — 위젯 트리 내부는 호출자(에디터)가 해제합니다.
 	delete RootWindow;
 	RootWindow = nullptr;
@@ -129,6 +132,13 @@ bool FSlateApplication::OnSetFocus(void* hwnd)
 bool FSlateApplication::OnKillFocus(void* hwnd)
 {
 	return false;
+}
+
+void FSlateApplication::ClearWidgetRefs()
+{
+	FocusedWidget = nullptr;
+	HoveredWidget = nullptr;
+	CapturedWidget = nullptr;
 }
 
 SWidget* FSlateApplication::HitTest(int32 X, int32 Y)
