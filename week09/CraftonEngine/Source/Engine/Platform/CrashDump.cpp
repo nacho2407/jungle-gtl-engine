@@ -1,5 +1,5 @@
-#include "Engine/Core/CrashDump.h"
-#include "Engine/Core/Paths.h"
+#include "Engine/Platform/CrashDump.h"
+#include "Engine/Platform/Paths.h"
 
 #include <DbgHelp.h>
 #include <ctime>
