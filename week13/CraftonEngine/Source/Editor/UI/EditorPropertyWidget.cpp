@@ -8,9 +8,10 @@
 #include "Component/StaticMeshComponent.h"
 #include "Component/SceneComponent.h"
 #include "Core/PropertyTypes.h"
-#include "Core/ResourceManager.h"
+#include "Resource/ResourceManager.h"
 #include "Object/FName.h"
 #include "Object/ObjectIterator.h"
+#include "Materials/Material.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -298,10 +299,10 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	}
 
 	// Transform 프로퍼티 이름 목록
-	auto IsTransformProp = [](const char* Name) {
-		return strcmp(Name, "Location") == 0
-			|| strcmp(Name, "Rotation") == 0
-			|| strcmp(Name, "Scale") == 0;
+	auto IsTransformProp = [](const FString& Name) {
+		return Name == "Location"
+			|| Name == "Rotation"
+			|| Name == "Scale";
 		};
 
 	// Pass 1: Transform 프로퍼티 먼저 (Root가 아닐 때만)
@@ -339,34 +340,34 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 	case EPropertyType::Bool:
 	{
 		bool* Val = static_cast<bool*>(Prop.ValuePtr);
-		bChanged = ImGui::Checkbox(Prop.Name, Val);
+		bChanged = ImGui::Checkbox(Prop.Name.c_str(), Val);
 		break;
 	}
 	case EPropertyType::Int:
 	{
 		int32* Val = static_cast<int32*>(Prop.ValuePtr);
-		bChanged = ImGui::DragInt(Prop.Name, Val);
+		bChanged = ImGui::DragInt(Prop.Name.c_str(), Val);
 		break;
 	}
 	case EPropertyType::Float:
 	{
 		float* Val = static_cast<float*>(Prop.ValuePtr);
 		if (Prop.Min != 0.0f || Prop.Max != 0.0f)
-			bChanged = ImGui::DragFloat(Prop.Name, Val, Prop.Speed, Prop.Min, Prop.Max);
+			bChanged = ImGui::DragFloat(Prop.Name.c_str(), Val, Prop.Speed, Prop.Min, Prop.Max);
 		else
-			bChanged = ImGui::DragFloat(Prop.Name, Val, Prop.Speed);
+			bChanged = ImGui::DragFloat(Prop.Name.c_str(), Val, Prop.Speed);
 		break;
 	}
 	case EPropertyType::Vec3:
 	{
 		float* Val = static_cast<float*>(Prop.ValuePtr);
-		bChanged = ImGui::DragFloat3(Prop.Name, Val, Prop.Speed);
+		bChanged = ImGui::DragFloat3(Prop.Name.c_str(), Val, Prop.Speed);
 		break;
 	}
 	case EPropertyType::Vec4:
 	{
 		float* Val = static_cast<float*>(Prop.ValuePtr);
-		bChanged = ImGui::ColorEdit4(Prop.Name, Val);
+		bChanged = ImGui::ColorEdit4(Prop.Name.c_str(), Val);
 		break;
 	}
 	case EPropertyType::String:
@@ -374,7 +375,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 		FString* Val = static_cast<FString*>(Prop.ValuePtr);
 		char Buf[256];
 		strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
-		if (ImGui::InputText(Prop.Name, Buf, sizeof(Buf)))
+		if (ImGui::InputText(Prop.Name.c_str(), Buf, sizeof(Buf)))
 		{
 			*Val = Buf;
 			bChanged = true;
@@ -384,13 +385,38 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 	case EPropertyType::StaticMeshRef:
 	{
 		FString* Val = static_cast<FString*>(Prop.ValuePtr);
-		if (ImGui::BeginCombo(Prop.Name, Val->c_str()))
+		if (ImGui::BeginCombo(Prop.Name.c_str(), Val->c_str()))
 		{
 			for (TObjectIterator<UStaticMesh> It; It; ++It)
 			{
 				UStaticMesh* MeshAsset = *It;
 				if (!MeshAsset) continue;
 				const FString& AssetPath = MeshAsset->GetAssetPathFileName();
+				if (AssetPath.empty()) continue;
+				bool bSelected = (*Val == AssetPath);
+				if (ImGui::Selectable(AssetPath.c_str(), bSelected))
+				{
+					*Val = AssetPath;
+					bChanged = true;
+				}
+				if (bSelected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+		break;
+	}
+	case EPropertyType::Material:
+	{
+		FString* Val = static_cast<FString*>(Prop.ValuePtr);
+		if (ImGui::BeginCombo(Prop.Name.c_str(), Val->c_str()))
+		{
+			for (TObjectIterator<UMaterial> It; It; ++It)
+			{
+				UMaterial* MaterialAsset = *It;
+				if (!MaterialAsset) continue;
+				const FString& AssetPath = MaterialAsset->GetAssetPathFileName();
+				if (AssetPath.empty()) continue;
 				bool bSelected = (*Val == AssetPath);
 				if (ImGui::Selectable(AssetPath.c_str(), bSelected))
 				{
@@ -411,14 +437,14 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 
 		// 리소스 키와 매칭되는 프로퍼티면 콤보 박스로 렌더링
 		TArray<FString> Names;
-		if (strcmp(Prop.Name, "Font") == 0)
+		if (strcmp(Prop.Name.c_str(), "Font") == 0)
 			Names = FResourceManager::Get().GetFontNames();
-		else if (strcmp(Prop.Name, "Particle") == 0)
+		else if (strcmp(Prop.Name.c_str(), "Particle") == 0)
 			Names = FResourceManager::Get().GetParticleNames();
 
 		if (!Names.empty())
 		{
-			if (ImGui::BeginCombo(Prop.Name, Current.c_str()))
+			if (ImGui::BeginCombo(Prop.Name.c_str(), Current.c_str()))
 			{
 				for (const auto& Name : Names)
 				{
@@ -438,7 +464,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 		{
 			char Buf[256];
 			strncpy_s(Buf, sizeof(Buf), Current.c_str(), _TRUNCATE);
-			if (ImGui::InputText(Prop.Name, Buf, sizeof(Buf)))
+			if (ImGui::InputText(Prop.Name.c_str(), Buf, sizeof(Buf)))
 			{
 				*Val = FName(Buf);
 				bChanged = true;
@@ -450,6 +476,6 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 
 	if (bChanged && SelectedComponent)
 	{
-		SelectedComponent->PostEditProperty(Prop.Name);
+		SelectedComponent->PostEditProperty(Prop.Name.c_str());
 	}
 }

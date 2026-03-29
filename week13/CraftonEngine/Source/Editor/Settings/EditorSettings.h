@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
-#include "Core/Paths.h"
+#include "Platform/Paths.h"
 #include "Core/Singleton.h"
 #include "Math/Vector.h"
 #include "Render/Types/ViewTypes.h"

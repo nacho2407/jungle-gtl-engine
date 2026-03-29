@@ -2,6 +2,7 @@
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
 #include "Render/Resource/MeshBufferManager.h"
+#include "Collision/RayUtils.h"
 
 IMPLEMENT_CLASS(UGizmoComponent, UPrimitiveComponent)
 
@@ -196,9 +197,21 @@ void UGizmoComponent::SetTargetScale(FVector NewScale)
 	TargetActor->SetActorScale(SafeScale);
 }
 
-bool UGizmoComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
+bool UGizmoComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
-	UPrimitiveComponent::RaycastMesh(Ray, OutHitResult);
+	if (!MeshData || MeshData->Indices.empty()) return false;
+
+	bool bHit = FRayUtils::RaycastTriangles(
+		Ray, CachedWorldMatrix,
+		&MeshData->Vertices[0].Position,
+		sizeof(FVertex),
+		MeshData->Indices,
+		OutHitResult);
+
+	if (bHit)
+	{
+		OutHitResult.HitComponent = this;
+	}
 
 	UpdateHoveredAxis(OutHitResult.FaceIndex);
 
@@ -343,6 +356,7 @@ void UGizmoComponent::DragEnd()
 {
 	bIsFirstFrameOfDrag = true;
 	SetHolding(false);
+	SetPressedOnHandle(false);
 }
 
 void UGizmoComponent::SetNextMode()
@@ -384,11 +398,19 @@ void UGizmoComponent::UpdateGizmoTransform()
 	}
 }
 
-void UGizmoComponent::ApplyScreenSpaceScaling(const FVector& CameraLocation)
+void UGizmoComponent::ApplyScreenSpaceScaling(const FVector& CameraLocation, bool bIsOrtho, float OrthoWidth)
 {
-	float Distance = FVector::Distance(CameraLocation, GetWorldLocation());
-
-	float NewScale = Distance * 0.1f;
+	float NewScale;
+	if (bIsOrtho)
+	{
+		// Ortho에서는 카메라 거리가 시각적 크기와 무관 — OrthoWidth(줌 레벨)로 결정
+		NewScale = OrthoWidth * 0.1f;
+	}
+	else
+	{
+		float Distance = FVector::Distance(CameraLocation, GetWorldLocation());
+		NewScale = Distance * 0.1f;
+	}
 
 	if (NewScale < 0.01f) NewScale = 0.01f;
 

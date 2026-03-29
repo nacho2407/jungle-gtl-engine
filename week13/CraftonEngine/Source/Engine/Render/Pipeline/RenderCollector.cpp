@@ -1,4 +1,4 @@
-#include "RenderCollector.h"
+﻿#include "RenderCollector.h"
 #include "Render/Resource/ConstantBufferPool.h"
 
 #include "GameFramework/World.h"
@@ -9,6 +9,7 @@
 #include "Component/GizmoComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/SubUVComponent.h"
+#include "Component/BillboardComponent.h"
 
 void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
 {
@@ -101,7 +102,6 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 
 	for (UPrimitiveComponent* primitiveComponent : Actor->GetPrimitiveComponents())
 	{
-
 		if (!primitiveComponent->IsVisible()) continue;
 		FRenderCommand BaseCmd{};
 		FMeshBuffer* Buffer = primitiveComponent->GetMeshBuffer();
@@ -118,7 +118,14 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 			const FString& Text = TextComp->GetText();
 			if (Text.empty()) continue;
 
-			FMatrix outlineMatrix = TextComp->CalculateOutlineMatrix();
+			// 카메라 축을 직접 사용하여 빌보드 행렬 구성 (FontBatcher와 동일한 축 보장)
+			// Right를 반전: CalculateOutlineMatrix의 CenterY(-0.5)와 결합해 올바른 방향이 됨
+			FVector BillboardForward = (RenderBus.GetCameraForward() * -1.0f);
+			FMatrix RotMatrix;
+			RotMatrix.SetAxes(BillboardForward, RenderBus.GetCameraRight() * -1.0f, RenderBus.GetCameraUp());
+			FMatrix PerViewBillboard = FMatrix::MakeScaleMatrix(TextComp->GetWorldScale())
+				* RotMatrix * FMatrix::MakeTranslationMatrix(TextComp->GetWorldLocation());
+			FMatrix outlineMatrix = TextComp->CalculateOutlineMatrix(PerViewBillboard);
 			WorldScale = outlineMatrix.GetScale();
 
 			FRenderCommand TextCmd = BaseCmd;
@@ -126,7 +133,7 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 
 			if (ShowFlags.bBillboardText)
 			{
-				TextCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
+				TextCmd.PerObjectConstants = FPerObjectConstants{ PerViewBillboard };
 				TextCmd.Type = ERenderCommandType::Font;
 				TextCmd.PerObjectConstants.Color = TextComp->GetColor();
 				TextCmd.Params.Font.Text = &Text;
@@ -141,19 +148,14 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		if (!primitiveComponent->SupportsOutline()) continue;
 
 		EPrimitiveType PrimType = primitiveComponent->GetPrimitiveType();
-
-		// StaticMesh는 FVertexPNCT 버퍼라 FVertexInputLayout 셰이더와 불일치
-		// TODO: PNCT 호환 Outline 셰이더 추가 후 제거
-		if (PrimType == EPrimitiveType::EPT_StaticMesh)
-		{
-			CollectAABBCommand(primitiveComponent, ShowFlags, RenderBus);
-			continue;
-		}
+		bool bIsPNCT = (PrimType == EPrimitiveType::EPT_StaticMesh);
 
 		// StencilBuffer Mask
 		FRenderCommand MaskCmd = BaseCmd;
 		MaskCmd.Type = ERenderCommandType::SelectionOutline;
-		MaskCmd.Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
+		MaskCmd.Shader = bIsPNCT
+			? FShaderManager::Get().GetShader(EShaderType::StaticMesh)
+			: FShaderManager::Get().GetShader(EShaderType::Primitive);
 		MaskCmd.DepthStencilState = EDepthStencilState::StencilWrite; //스텐실 버퍼만 작성하는 타입
 		MaskCmd.BlendState = EBlendState::NoColor;
 		RenderBus.AddCommand(ERenderPass::StencilMask, MaskCmd);
@@ -161,9 +163,11 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		// Outline
 		FRenderCommand OutlineCmd = BaseCmd;
 		OutlineCmd.Type = ERenderCommandType::SelectionOutline;
-		OutlineCmd.Shader = FShaderManager::Get().GetShader(EShaderType::Outline);
+		OutlineCmd.Shader = bIsPNCT
+			? FShaderManager::Get().GetShader(EShaderType::OutlinePNCT)
+			: FShaderManager::Get().GetShader(EShaderType::Outline);
 		OutlineCmd.DepthStencilState = EDepthStencilState::StencilOutline;
-		OutlineCmd.Params.Outline.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
+		OutlineCmd.Params.Outline.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 0.7f); // RGBA (반투명)
 		OutlineCmd.Params.Outline.OutlineInvScale = FVector(1.0f / WorldScale.X,
 			1.0f / WorldScale.Y, 1.0f / WorldScale.Z);
 		OutlineCmd.Params.Outline.OutlineOffset = 0.03f;
@@ -171,7 +175,7 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		{
 			OutlineCmd.PerObjectConstants.Color = FColor(255, 153, 0, 255).ToVector4();
 		}
-		CollectAABBCommand(primitiveComponent, ShowFlags, RenderBus);
+
 		OutlineCmd.Params.Outline.PrimitiveType = (PrimType == EPrimitiveType::EPT_Plane ||
 			PrimType == EPrimitiveType::EPT_SubUV ||
 			PrimType == EPrimitiveType::EPT_Text) ? 0u : 1u;
@@ -180,6 +184,14 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		OutlineCmd.ExtraCB = { FConstantBufferPool::Get().GetBuffer(ECBSlot::Outline, sizeof(FOutlineConstants)), sizeof(FOutlineConstants), ECBSlot::Outline };
 
 		RenderBus.AddCommand(ERenderPass::Outline, OutlineCmd);
+
+		// 보조 컴포넌트(텍스트/빌보드/SubUV)는 AABB 제외 — 메인 메시만 표시
+		if (PrimType != EPrimitiveType::EPT_Text &&
+			PrimType != EPrimitiveType::EPT_SubUV &&
+			!primitiveComponent->IsA<UBillboardComponent>())
+		{
+			CollectAABBCommand(primitiveComponent, ShowFlags, RenderBus);
+		}
 	}
 }
 
@@ -216,7 +228,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 			if (SM && SM->GetStaticMeshAsset())
 			{
 				const auto& Sections = SM->GetStaticMeshAsset()->Sections;
-				const auto& Materials = SM->GetStaticMaterials();
+				const auto& Slots = SM->GetStaticMaterials(); // 기본 슬롯 정보
+				const auto& Overrides = SMComp->GetOverrideMaterials(); // 인스턴스별 오버라이드 정보
 
 				for (const FStaticMeshSection& Section : Sections)
 				{
@@ -225,13 +238,18 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 					Draw.IndexCount = Section.NumTriangles * 3;
 
 					// 머티리얼 슬롯 이름으로 매칭
-					for (const FStaticMaterial& Mat : Materials)
+					for (int32 i = 0; i < Slots.size(); ++i)
 					{
-						if (Mat.MaterialSlotName == Section.MaterialSlotName && Mat.MaterialInterface)
+						if (Slots[i].MaterialSlotName == Section.MaterialSlotName)
 						{
-							if (Mat.MaterialInterface->DiffuseTexture)
-								Draw.DiffuseSRV = Mat.MaterialInterface->DiffuseTexture->GetSRV();
-							Draw.DiffuseColor = Mat.MaterialInterface->DiffuseColor;
+							// 2. 찾은 인덱스(i)를 사용하여 컴포넌트의 OverrideMaterials에서 머티리얼을 가져옵니다.
+							if (i < Overrides.size() && Overrides[i])
+							{
+								auto& Mat = Overrides[i];
+								if (Mat->DiffuseTexture)
+									Draw.DiffuseSRV = Mat->DiffuseTexture->GetSRV();
+								Draw.DiffuseColor = Mat->DiffuseColor;
+							}
 							break;
 						}
 					}

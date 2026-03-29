@@ -2,11 +2,11 @@
 
 #include <iostream>
 #include <algorithm>
-#include "Core/ResourceManager.h"
+#include "Resource/ResourceManager.h"
 #include "Render/Types/RenderTypes.h"
 #include "Render/Resource/ConstantBufferPool.h"
-#include "Core/Stats.h"
-#include "Core/GPUProfiler.h"
+#include "Profiling/Stats.h"
+#include "Profiling/GPUProfiler.h"
 
 
 void FRenderer::Create(HWND hWindow)
@@ -144,7 +144,7 @@ void FRenderer::InitializePassRenderStates()
 	S[(uint32)E::Opaque]      = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true  };
 	S[(uint32)E::Translucent] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::StencilMask] = { EDepthStencilState::StencilWrite,  EBlendState::Opaque,     ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::Outline]     = { EDepthStencilState::StencilOutline,EBlendState::Opaque,     ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::Outline]     = { EDepthStencilState::StencilOutline,EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::Editor]      = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     true  };
 	S[(uint32)E::Grid]        = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     false };
 	S[(uint32)E::DepthLess]   = { EDepthStencilState::DepthReadOnly,EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
@@ -422,6 +422,9 @@ void FRenderer::DrawStaticMeshSections(ID3D11DeviceContext* Context, const FRend
 	ID3D11Buffer* indexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
 	if (!indexBuffer) return;
 	Context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	// StaticMeshShader가 s0에 SamplerState를 요구
+	Context->PSSetSamplers(0, 1, &Resources.DefaultSampler);
 
 	for (const FMeshSectionDraw& Section : Cmd.SectionDraws)
 	{
