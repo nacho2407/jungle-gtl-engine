@@ -3,7 +3,7 @@
 #include <cmath>
 #include "Object/ObjectFactory.h"
 #include "Core/PropertyTypes.h"
-#include "Core/RayUtils.h"
+#include "Collision/RayUtils.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Engine/Runtime/Engine.h"
 

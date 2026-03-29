@@ -1,7 +1,7 @@
-﻿#include "Editor/Viewport/OverlayStatSystem.h"
+﻿#include "Editor/Subsystem/OverlayStatSystem.h"
 
 #include "Editor/EditorEngine.h"
-#include "Engine/Core/Timer.h"
+#include "Engine/Profiling/Timer.h"
 #include "Engine/Object/EngineStatics.h"
 
 TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& Editor) const

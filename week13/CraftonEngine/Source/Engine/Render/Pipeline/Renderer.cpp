@@ -2,11 +2,11 @@
 
 #include <iostream>
 #include <algorithm>
-#include "Core/ResourceManager.h"
+#include "Resource/ResourceManager.h"
 #include "Render/Types/RenderTypes.h"
 #include "Render/Resource/ConstantBufferPool.h"
-#include "Core/Stats.h"
-#include "Core/GPUProfiler.h"
+#include "Profiling/Stats.h"
+#include "Profiling/GPUProfiler.h"
 
 
 void FRenderer::Create(HWND hWindow)

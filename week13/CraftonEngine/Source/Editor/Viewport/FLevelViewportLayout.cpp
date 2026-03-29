@@ -9,7 +9,7 @@
 #include "Viewport/Viewport.h"
 #include "UI/SSplitter.h"
 #include "Math/Utils.h"
-#include "Core/Paths.h"
+#include "Platform/Paths.h"
 #include "ImGui/imgui.h"
 #include "WICTextureLoader.h"
 #include "Component/CameraComponent.h"
