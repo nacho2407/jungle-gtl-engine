@@ -12,7 +12,6 @@ IMPLEMENT_CLASS(USubUVComponent, UBillboardComponent)
 
 USubUVComponent::USubUVComponent()
 {
-	MeshData = &FMeshBufferManager::Get().GetMeshData(EPrimitiveType::EPT_Quad);
 	SetVisibility(false);
 }
 
