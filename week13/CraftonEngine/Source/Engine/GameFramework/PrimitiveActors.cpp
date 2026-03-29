@@ -85,9 +85,9 @@ void AStaticMeshActor::InitDefaultComponents()
 
 	// 큐브 에셋을 매니저에게 요청 (없으면 파싱해서 만들고, 있으면 캐시된 걸 줌)
 	ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-	//UStaticMesh* CubeAsset = FObjManager::LoadObjStaticMesh("Data/cube-tex.obj", Device);
-	UStaticMesh* CubeAsset = FObjManager::LoadObjStaticMesh("Data/Wolf/Wolf_One_obj.obj", Device);
-	CubeAsset = FObjManager::LoadObjStaticMesh("Data/IronMan/IronMan.obj", Device);
+	UStaticMesh* CubeAsset = FObjManager::LoadObjStaticMesh("Data/cube-tex.obj", Device);
+	//UStaticMesh* CubeAsset = FObjManager::LoadObjStaticMesh("Data/Wolf/Wolf_One_obj.obj", Device);
+	//CubeAsset = FObjManager::LoadObjStaticMesh("Data/TwoSectionPlane.obj", Device);
 
 	// 컴포넌트에 에셋 할당 (Assign)
 	SM->SetStaticMesh(CubeAsset);
