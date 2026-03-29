@@ -296,8 +296,11 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
     {
         FStaticMaterial StaticMaterial;
         StaticMaterial.MaterialSlotName = SlotName;
-        // TODO: UObject 팩토리 사용하도록 수정
-        StaticMaterial.MaterialInterface = std::make_shared<UMaterial>();
+
+		UMaterial* NewMaterial = UObjectManager::Get().CreateObject<UMaterial>();
+		StaticMaterial.MaterialInterface = std::shared_ptr<UMaterial>(NewMaterial);
+
+		NewMaterial->PathFileName = SlotName;
 
         auto It = MatelialInfoMap.find(SlotName);
         if (It != MatelialInfoMap.end() && It->second)

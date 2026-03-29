@@ -22,7 +22,7 @@ enum class EPropertyType : uint8_t
 // 컴포넌트가 노출하는 편집 가능한 프로퍼티 디스크립터
 struct FPropertyDescriptor
 {
-	const char* Name;
+	FString Name;
 	EPropertyType Type;
 	void* ValuePtr;
 
