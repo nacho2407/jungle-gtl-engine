@@ -36,10 +36,6 @@ public:
 		bShowMemory = false;
 	}
 
-	bool IsFPSVisible() const { return bShowFPS; }
-	bool IsMemoryVisible() const { return bShowMemory; }
-	bool HasAnyVisible() const { return bShowFPS || bShowMemory; }
-
 	const FOverlayStatLayout& GetLayout() const { return Layout; }
 	FOverlayStatLayout& GetLayout() { return Layout; }
 
