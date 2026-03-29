@@ -6,6 +6,7 @@
 #include "Render/Resource/Buffer.h"
 #include "Serialization/Archive.h"
 #include "Engine/Object/FName.h"
+#include "Materials/Material.h"
 #include <memory>
 
 // Cooked Data 내부용 정점
@@ -61,19 +62,4 @@ struct FStaticMaterial
 	// std::shared_ptr<class UMaterialInterface> MaterialInterface;
 	std::shared_ptr<class UMaterial> MaterialInterface;
 	FString MaterialSlotName = "None"; // "None"은 특별한 슬롯 이름으로, OBJ 파일에서 머티리얼이 지정되지 않은 섹션에 할당됩니다.
-};
-
-class UTexture2D;
-
-// class UMaterialInterface
-// {
-// };
-
-// TODO: 다른 파일에 분리하기
-class UMaterial : public UObject // : public UMaterialInterface
-{
-public:
-	FString DiffuseTextureFilePath;
-	FVector4 DiffuseColor;
-	UTexture2D* DiffuseTexture = nullptr;	// UObjectManager 소유, 여기선 참조만
 };
