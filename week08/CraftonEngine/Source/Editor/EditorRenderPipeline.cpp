@@ -104,7 +104,6 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 		for (const FOverlayStatLine& Line : OverlayLines)
 		{
 			FRenderCommand Cmd = {};
-			Cmd.Type = ERenderCommandType::Font;
 
 			Cmd.Params.Font.Text = &Line.Text;
 			Cmd.Params.Font.Font = nullptr;

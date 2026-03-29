@@ -27,21 +27,6 @@ namespace ECBSlot
 	constexpr uint32 Outline   = 5;  // b5: Outline params
 }
 
-enum class ERenderCommandType
-{
-	Primitive,
-	Gizmo,
-	StencilMask,
-	SelectionOutline,
-	Billboard,
-	DebugBox,
-	Grid,		// Grid 패스 — LineBatcher 경유
-	Font,		// TextRenderComponent — FontBatcher 경유
-	SubUV,		// SubUVComponent     — SubUVBatcher 경유
-	StaticMesh,	// StaticMeshComponent — StaticMeshShader 사용
-	MAX,
-};
-
 //PerObject
 struct FPerObjectConstants
 {
@@ -156,6 +141,4 @@ struct FRenderCommand
 
 	// 타입별 Extra CB 바인딩 — Params 데이터를 지정 슬롯의 CB에 업로드
 	FConstantBufferBinding ExtraCB;
-
-	ERenderCommandType Type = ERenderCommandType::Primitive;
 };
