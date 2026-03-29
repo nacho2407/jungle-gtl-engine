@@ -1,10 +1,12 @@
 ﻿#include "ViewportLayout.h"
 #include "Runtime/WindowsWindow.h"
-#include "EditorEngine.h"
+#include "Selection/SelectionManager.h"
+#include "Editor/Settings/EditorSettings.h"
 #include "Slate/SViewport.h"
 #include "Slate/SSplitterH.h"
 #include "Slate/SSplitterV.h"
 #include "Slate/SlateApplication.h"
+#include "Core/InputSystem.h"
 
 //  뷰포트 타입 테이블  [인덱스 → EEditorViewportType]
 static constexpr EEditorViewportType kViewportTypes[FViewportLayout::MaxViewports] =
@@ -17,15 +19,16 @@ static constexpr EEditorViewportType kViewportTypes[FViewportLayout::MaxViewport
 
 void FViewportLayout::Init(FWindowsWindow* InWindow, UWorld* World, FSelectionManager* SelectionManager)
 {
+	Window = InWindow;
 	// 초기 뷰포트 영역 설정
-	UpdateViewportRects(static_cast<uint32>(InWindow->GetWidth()), 
-		static_cast<uint32>(InWindow->GetHeight()));
+	UpdateViewportRects(static_cast<uint32>(Window->GetWidth()),
+		static_cast<uint32>(Window->GetHeight()));
 
 	// 4개 뷰포트 클라이언트 초기화
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
 		ViewportClients[i].SetSettings(&FEditorSettings::Get());
-		ViewportClients[i].Initialize(InWindow);
+		ViewportClients[i].Initialize(Window);
 		ViewportClients[i].SetWorld(World);
 		ViewportClients[i].SetGizmo(SelectionManager->GetGizmo());
 		ViewportClients[i].SetSelectionManager(SelectionManager);
@@ -49,11 +52,64 @@ void FViewportLayout::Shutdown()
 
 void FViewportLayout::Tick(float DeltaTime)
 {
-	// 1. PumpMessages 에서 처리된 WM_MOUSEMOVE 드래그 결과를 즉시 뷰포트 Rect 에 반영합니다.
+	// 1. PumpMessages 에서 처리된 WM_MOUSEMOVE 드래그 결과를 즉시 뷰포트 Rect 에 반영
 	//    이렇게 해야 아래 bHovered 계산이 현재 프레임 Rect 를 사용할 수 있습니다.
 	if (GetRootSplitterV())
 	{
 		SyncViewportRects();
+	}
+
+	// 2. 어느 뷰포트에 마우스가 있는지 판단합니다.
+	//    경계 픽셀 충돌을 피하기 위해 첫 번째로 일치하는 뷰포트만 true 로 설정합니다.
+	if (Window)
+	{
+		POINT MousePt = InputSystem::Get().GetMousePos();
+		MousePt = Window->ScreenToClientPoint(MousePt);
+		const int32 MouseX = static_cast<int32>(MousePt.x);
+		const int32 MouseY = static_cast<int32>(MousePt.y);
+
+		// 독점 조작 중(회전·팬·궤도)인 뷰포트가 있으면 해당 뷰포트만 hovered 유지합니다.
+		// 조작 중 마우스가 다른 뷰포트로 이동해도 입력이 누수되지 않도록 막습니다.
+		int32 ActiveOpViewport = -1;
+		for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+		{
+			if (GetViewportClient(i).IsActiveOperation())
+			{
+				ActiveOpViewport = i;
+				break;
+			}
+		}
+
+		// 독점 조작하는 뷰포트가 있다면 상태값 유지
+		if (ActiveOpViewport >= 0)
+		{
+			for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+				GetViewportState(i).bHovered = (i == ActiveOpViewport);
+		}
+		else
+		{
+			// Hover된 뷰포트 찾아서 상태값 변경하기
+			bool bFoundHover = false;
+			for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+			{
+				FEditorViewportState& ViewportState = GetViewportState(i);
+				if (!bFoundHover && ViewportState.Rect.Contains(MouseX, MouseY))
+				{
+					ViewportState.bHovered = true;
+					bFoundHover = true;
+				}
+				else
+				{
+					ViewportState.bHovered = false;
+				}
+			}
+		}
+	}
+
+	// 3. bHovered 가 설정된 뷰포트만 입력을 처리합니다.
+	for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+	{
+		GetViewportClient(i).Tick(DeltaTime);
 	}
 }
 
@@ -167,8 +223,19 @@ void FViewportLayout::SyncViewportRects()
 
 void FViewportLayout::DestroyViewportLayout()
 {
-	// LinkedSplitter 양방향 참조를 먼저 해제합니다.
-	// delete 순서와 무관하게 댕글링 포인터가 생기지 않도록 합니다.
+	// SlateApplication 이 보유한 Widget 먼저 해제
+	FSlateApplication::Get().ClearWidgetRefs();
+
+	// SlateApplication RootWindow 의 자식 참조 해제
+	if (SWindow* RootWindow = FSlateApplication::Get().GetRootWindow())
+		RootWindow->SetChild(nullptr);
+
+	// 뷰포트 위젯 삭제 전에 SideLT/SideRB 참조 끊기
+	if (TopSplitterH) { TopSplitterH->SetSideLT(nullptr); TopSplitterH->SetSideRB(nullptr); }
+	if (BotSplitterH) { BotSplitterH->SetSideLT(nullptr); BotSplitterH->SetSideRB(nullptr); }
+	if (RootSplitterV) { RootSplitterV->SetSideLT(nullptr); RootSplitterV->SetSideRB(nullptr); }
+
+	// LinkedSplitter 양방향 참조 해제 (delete 순서와 무관하게 dangling 방지)
 	if (TopSplitterH) TopSplitterH->SetLinkedSplitter(nullptr);
 	if (BotSplitterH) BotSplitterH->SetLinkedSplitter(nullptr);
 
