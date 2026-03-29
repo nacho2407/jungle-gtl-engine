@@ -24,183 +24,6 @@ struct hash<FVertexKey>
 };
 }
 
-namespace
-{
-	// 헬퍼 1: usemtl 등장 순서를 기반으로 FStaticMaterial 배열 및 인덱스 맵 생성
-	void BuildMaterialArray(
-		const FObjInfo& ObjInfo,
-		const TArray<FObjMaterialInfo>& MtlInfos,
-		TArray<FStaticMaterial>& OutMaterials,
-		std::map<FString, int32>& OutMatNameToIndex)
-	{
-		OutMaterials.clear();
-		OutMatNameToIndex.clear();
-
-		// MtlInfo를 빠르게 이름으로 찾기 위한 맵
-		std::map<FString, const FObjMaterialInfo*> MtlInfoMap;
-		for (const auto& Mtl : MtlInfos)
-		{
-			MtlInfoMap[Mtl.MaterialSlotName] = &Mtl;
-		}
-
-		TArray<FString> OrderedSlotNames;
-		bool bHasNone = false;
-
-		// 1. OBJ의 usemtl(Sections) 등장 순서대로 고유한 슬롯 이름 수집
-		for (const FStaticMeshSection& Section : ObjInfo.Sections)
-		{
-			const FString& SlotName = Section.MaterialSlotName;
-
-			// None은 나중에 맨 뒤에 붙이기 위해 따로 마킹
-			if (SlotName == "None")
-			{
-				bHasNone = true;
-				continue;
-			}
-
-			// 아직 등록되지 않은 이름이라면 순서대로 추가
-			if (std::find(OrderedSlotNames.begin(), OrderedSlotNames.end(), SlotName) == OrderedSlotNames.end())
-			{
-				OrderedSlotNames.push_back(SlotName);
-			}
-		}
-
-		// 2. 수집된 순서대로 FStaticMaterial 생성
-		for (const FString& SlotName : OrderedSlotNames)
-		{
-			FStaticMaterial StaticMat;
-			StaticMat.MaterialSlotName = SlotName;
-			StaticMat.MaterialInterface = std::make_shared<FMaterial>();
-
-			auto It = MtlInfoMap.find(SlotName);
-			if (It != MtlInfoMap.end() && It->second)
-			{
-				const FObjMaterialInfo* Info = It->second;
-				if (!Info->map_Kd.empty())
-				{
-					StaticMat.MaterialInterface->DiffuseTextureFilePath = Info->map_Kd;
-					StaticMat.MaterialInterface->DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-				}
-				else
-				{
-					StaticMat.MaterialInterface->DiffuseColor = { Info->Kd.X, Info->Kd.Y, Info->Kd.Z, 1.0f };
-				}
-			}
-			else
-			{
-				// MTL에 정의되지 않은 이름인 경우 기본 백색 처리
-				StaticMat.MaterialInterface->DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-			}
-
-			OutMatNameToIndex[SlotName] = static_cast<int32>(OutMaterials.size());
-			OutMaterials.push_back(StaticMat);
-		}
-
-		// 3. "None" 슬롯이 존재했다면 무조건 배열의 맨 마지막에 배치
-		if (bHasNone)
-		{
-			FStaticMaterial DefaultMat;
-			DefaultMat.MaterialSlotName = "None";
-			DefaultMat.MaterialInterface = std::make_shared<FMaterial>();
-			DefaultMat.MaterialInterface->DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-
-			OutMatNameToIndex["None"] = static_cast<int32>(OutMaterials.size());
-			OutMaterials.push_back(DefaultMat);
-		}
-	}
-
-	// 헬퍼 2: 파편화된 섹션들의 면(Face)을 머티리얼 인덱스 기준으로 재그룹화
-	void GroupFacesByMaterial(
-		const FObjInfo& ObjInfo,
-		const std::map<FString, int32>& MatNameToIndex,
-		size_t NumMaterials,
-		TArray<TArray<uint32>>& OutFacesPerMaterial)
-	{
-		OutFacesPerMaterial.resize(NumMaterials);
-
-		for (const FStaticMeshSection& RawSection : ObjInfo.Sections)
-		{
-			int32 MatIndex = MatNameToIndex.at(RawSection.MaterialSlotName);
-			for (uint32 i = 0; i < RawSection.NumTriangles; ++i)
-			{
-				uint32 FaceStartIndex = RawSection.FirstIndex + (i * 3);
-				OutFacesPerMaterial[MatIndex].push_back(FaceStartIndex);
-			}
-		}
-	}
-
-	// 헬퍼 3: 버텍스 중복 제거, 좌표계 변환 및 최종 인덱스 버퍼 구성
-	void ProcessVerticesAndSections(
-		const FObjInfo& ObjInfo,
-		const TArray<FStaticMaterial>& Materials,
-		const TArray<TArray<uint32>>& FacesPerMaterial,
-		FStaticMesh& OutMesh)
-	{
-		std::unordered_map<FVertexKey, uint32> VertexMap;
-
-		for (size_t MatIndex = 0; MatIndex < Materials.size(); ++MatIndex)
-		{
-			const TArray<uint32>& FaceStarts = FacesPerMaterial[MatIndex];
-			if (FaceStarts.empty()) continue;
-
-			FStaticMeshSection NewSection;
-			NewSection.MaterialSlotName = Materials[MatIndex].MaterialSlotName;
-			NewSection.FirstIndex = static_cast<uint32>(OutMesh.Indices.size());
-			NewSection.NumTriangles = static_cast<uint32>(FaceStarts.size());
-
-			for (uint32 FaceStartIndex : FaceStarts)
-			{
-				uint32 TriangleIndices[3];
-
-				for (int j = 0; j < 3; ++j)
-				{
-					size_t CurrentIndex = FaceStartIndex + j;
-					FVertexKey Key = {
-						ObjInfo.PosIndices[CurrentIndex],
-						ObjInfo.UVIndices[CurrentIndex],
-						ObjInfo.NormalIndices[CurrentIndex]
-					};
-
-					auto It = VertexMap.find(Key);
-					if (It != VertexMap.end())
-					{
-						TriangleIndices[j] = It->second;
-					}
-					else
-					{
-						FNormalVertex NewVertex;
-						NewVertex.pos = ObjInfo.Positions[Key.p];
-						NewVertex.normal = ObjInfo.Normals[Key.n];
-
-						// RHS -> LHS
-						NewVertex.pos.Z = -NewVertex.pos.Z;
-						NewVertex.normal.Z = -NewVertex.normal.Z;
-
-						// UV left-bottom -> left-top
-						NewVertex.tex = ObjInfo.UVs[Key.t];
-						NewVertex.tex.V = 1.0f - NewVertex.tex.V;
-
-						NewVertex.color = { 1.0f, 1.0f, 1.0f, 1.0f };
-
-						uint32 NewIndex = static_cast<uint32>(OutMesh.Vertices.size());
-						OutMesh.Vertices.push_back(NewVertex);
-
-						VertexMap[Key] = NewIndex;
-						TriangleIndices[j] = NewIndex;
-					}
-				}
-
-				// CCW -> CW
-				OutMesh.Indices.push_back(TriangleIndices[0]);
-				OutMesh.Indices.push_back(TriangleIndices[2]);
-				OutMesh.Indices.push_back(TriangleIndices[1]);
-			}
-
-			OutMesh.Sections.push_back(NewSection);
-		}
-	}
-}
-
 bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
 {
 	OutObjInfo = FObjInfo();
@@ -436,25 +259,166 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 // and, size of PosIndices, UVIndices, NormalIndices are all the same.
 bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInfo>& MtlInfos, FStaticMesh& OutMesh, TArray<FStaticMaterial>& OutMaterials)
 {
-	OutMesh = FStaticMesh();
-	OutMaterials.clear();
+    OutMesh = FStaticMesh();
+    OutMaterials.clear();
 
-	std::map<FString, int32> MatNameToIndex;
-	TArray<TArray<uint32>> FacesPerMaterial;
+    // Phase 1: usemtl 등장 순서를 기반으로 FStaticMaterial 배열 및 인덱스 맵 생성
+    std::map<FString, int32> MaterialSlotNameToIndex;
+    std::map<FString, const FObjMaterialInfo*> MatelialInfoMap;
 
-	// 1. usemtl 순서대로 재질 배열 구성 (None은 맨 뒤로)
-	BuildMaterialArray(ObjInfo, MtlInfos, OutMaterials, MatNameToIndex);
+    // MtlInfo를 빠르게 찾기 위한 맵 구성
+    for (const auto& Mtl : MtlInfos)
+    {
+        MatelialInfoMap[Mtl.MaterialSlotName] = &Mtl;
+    }
 
-	// 2. 머티리얼별로 면(Triangles) 재그룹화
-	GroupFacesByMaterial(ObjInfo, MatNameToIndex, OutMaterials.size(), FacesPerMaterial);
+    TArray<FString> OrderedSlotNames;
+    bool bHasNone = false;
 
-	// 3. 버텍스 생성 및 인덱스 버퍼 구성
-	ProcessVerticesAndSections(ObjInfo, OutMaterials, FacesPerMaterial, OutMesh);
+    // OBJ의 Sections(usemtl) 등장 순서대로 머티리얼 슬롯 이름 수집
+    for (const FStaticMeshSection& Section : ObjInfo.Sections)
+    {
+        if (Section.MaterialSlotName == "None")
+        {
+            bHasNone = true;
+            continue;
+        }
 
-	OutMesh.PathFileName = ObjInfo.ObjectName;
-	return true;
+        if (std::find(OrderedSlotNames.begin(), OrderedSlotNames.end(), Section.MaterialSlotName) == OrderedSlotNames.end())
+        {
+            OrderedSlotNames.push_back(Section.MaterialSlotName);
+        }
+    }
+
+    // 수집된 순서대로 머티리얼 초기화
+    for (const FString& SlotName : OrderedSlotNames)
+    {
+        FStaticMaterial StaticMaterial;
+        StaticMaterial.MaterialSlotName = SlotName;
+        // TODO: UObject 팩토리 사용하도록 수정
+        StaticMaterial.MaterialInterface = std::make_shared<UMaterial>();
+
+        auto It = MatelialInfoMap.find(SlotName);
+        if (It != MatelialInfoMap.end() && It->second)
+        {
+            const FObjMaterialInfo* Info = It->second;
+            if (!Info->map_Kd.empty())
+            {
+                StaticMaterial.MaterialInterface->DiffuseTextureFilePath = Info->map_Kd;
+                StaticMaterial.MaterialInterface->DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+            }
+            else
+            {
+                StaticMaterial.MaterialInterface->DiffuseColor = { Info->Kd.X, Info->Kd.Y, Info->Kd.Z, 1.0f };
+            }
+        }
+        else
+        {
+            StaticMaterial.MaterialInterface->DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f }; // MTL 누락 시 기본 백색
+        }
+
+        MaterialSlotNameToIndex[SlotName] = static_cast<int32>(OutMaterials.size());
+        OutMaterials.push_back(StaticMaterial);
+    }
+
+    // "None" 슬롯이 존재했다면 맨 마지막에 배치
+    if (bHasNone)
+    {
+        FStaticMaterial DefaultMat;
+        DefaultMat.MaterialSlotName = "None";
+        // TODO: UObject 팩토리 사용하도록 수정
+        DefaultMat.MaterialInterface = std::make_shared<UMaterial>();
+        DefaultMat.MaterialInterface->DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+        MaterialSlotNameToIndex["None"] = static_cast<int32>(OutMaterials.size());
+        OutMaterials.push_back(DefaultMat);
+    }
+
+    // =========================================================================
+    // Phase 2: 파편화된 섹션들의 면(Face)을 머티리얼 인덱스 기준으로 재그룹화
+    // =========================================================================
+    TArray<TArray<uint32>> FacesPerMaterial;
+    FacesPerMaterial.resize(OutMaterials.size());
+
+    for (const FStaticMeshSection& RawSection : ObjInfo.Sections)
+    {
+        int32 MatIndex = MaterialSlotNameToIndex.at(RawSection.MaterialSlotName);
+        for (uint32 i = 0; i < RawSection.NumTriangles; ++i)
+        {
+            uint32 FaceStartIndex = RawSection.FirstIndex + (i * 3);
+            FacesPerMaterial[MatIndex].push_back(FaceStartIndex);
+        }
+    }
+
+    // =========================================================================
+    // Phase 3: 버텍스 중복 제거, 좌표계 변환 및 최종 인덱스 버퍼 구성
+    // =========================================================================
+    std::unordered_map<FVertexKey, uint32> VertexMap;
+
+    for (size_t MatIndex = 0; MatIndex < OutMaterials.size(); ++MatIndex)
+    {
+        const TArray<uint32>& FaceStarts = FacesPerMaterial[MatIndex];
+        if (FaceStarts.empty()) continue;
+
+        FStaticMeshSection NewSection;
+        NewSection.MaterialSlotName = OutMaterials[MatIndex].MaterialSlotName;
+        NewSection.FirstIndex = static_cast<uint32>(OutMesh.Indices.size());
+        NewSection.NumTriangles = static_cast<uint32>(FaceStarts.size());
+
+        for (uint32 FaceStartIndex : FaceStarts)
+        {
+            uint32 TriangleIndices[3];
+
+            for (int j = 0; j < 3; ++j)
+            {
+                size_t CurrentIndex = FaceStartIndex + j;
+                FVertexKey Key = {
+                    ObjInfo.PosIndices[CurrentIndex],
+                    ObjInfo.UVIndices[CurrentIndex],
+                    ObjInfo.NormalIndices[CurrentIndex]
+                };
+
+                auto It = VertexMap.find(Key);
+                if (It != VertexMap.end())
+                {
+                    TriangleIndices[j] = It->second;
+                }
+                else
+                {
+                    FNormalVertex NewVertex;
+                    NewVertex.pos = ObjInfo.Positions[Key.p];
+                    NewVertex.normal = ObjInfo.Normals[Key.n];
+
+                    // RHS -> LHS 변환
+                    NewVertex.pos.Z = -NewVertex.pos.Z;
+                    NewVertex.normal.Z = -NewVertex.normal.Z;
+
+                    // UV 변환 (left-bottom -> left-top)
+                    NewVertex.tex = ObjInfo.UVs[Key.t];
+                    NewVertex.tex.V = 1.0f - NewVertex.tex.V;
+
+                    NewVertex.color = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+                    uint32 NewIndex = static_cast<uint32>(OutMesh.Vertices.size());
+                    OutMesh.Vertices.push_back(NewVertex);
+
+                    VertexMap[Key] = NewIndex;
+                    TriangleIndices[j] = NewIndex;
+                }
+            }
+
+            // CCW -> CW (인덱스 순서 변경)
+            OutMesh.Indices.push_back(TriangleIndices[0]);
+            OutMesh.Indices.push_back(TriangleIndices[2]);
+            OutMesh.Indices.push_back(TriangleIndices[1]);
+        }
+
+        OutMesh.Sections.push_back(NewSection);
+    }
+
+    OutMesh.PathFileName = ObjInfo.ObjectName;
+    return true;
 }
-
 bool FObjImporter::Import(const FString& ObjFilePath, FStaticMesh& OutMesh, TArray<FStaticMaterial>& OutMaterials)
 {
 	OutMaterials.clear();
