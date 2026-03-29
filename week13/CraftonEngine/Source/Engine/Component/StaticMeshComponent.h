@@ -42,9 +42,9 @@ private:
 
 	UStaticMesh* StaticMesh = nullptr;
 	FString StaticMeshPath = "None";
-
 	TArray<std::shared_ptr<UMaterial>> OverrideMaterials;
 	TArray<FString> OverrideMaterialPaths;
+
 	FVector CachedLocalCenter = { 0, 0, 0 };
 	FVector CachedLocalExtent = { 0.5f, 0.5f, 0.5f };
 	bool bHasValidBounds = false;

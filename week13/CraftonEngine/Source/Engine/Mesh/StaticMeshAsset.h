@@ -63,6 +63,3 @@ struct FStaticMaterial
 	std::shared_ptr<class UMaterial> MaterialInterface;
 	FString MaterialSlotName = "None"; // "None"은 특별한 슬롯 이름으로, OBJ 파일에서 머티리얼이 지정되지 않은 섹션에 할당됩니다.
 };
-
-
-
