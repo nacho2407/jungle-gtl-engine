@@ -39,7 +39,7 @@ private:
 	~FGPUProfiler() = default;
 
 	static const uint32 MAX_TIMESTAMPS = 64;
-	static const uint32 FRAME_COUNT = 2;
+	static const uint32 FRAME_COUNT = 3;
 
 	struct FTimestampPair
 	{
@@ -53,6 +53,7 @@ private:
 		ID3D11Query* DisjointQuery = nullptr;
 		FTimestampPair Timestamps[MAX_TIMESTAMPS];
 		uint32 UsedCount = 0;
+		bool bActive = false;	// Begin()~GetData() 사이이면 true
 	};
 
 	FFrameData Frames[FRAME_COUNT];
@@ -61,6 +62,7 @@ private:
 	ID3D11Device* Device = nullptr;
 	ID3D11DeviceContext* Context = nullptr;
 	bool bInitialized = false;
+	bool bFrameActive = false;	// 현재 프레임에서 Begin()이 호출됐는지
 
 	void CollectPreviousFrame();
 

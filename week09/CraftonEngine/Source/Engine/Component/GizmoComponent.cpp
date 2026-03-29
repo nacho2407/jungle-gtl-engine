@@ -356,6 +356,7 @@ void UGizmoComponent::DragEnd()
 {
 	bIsFirstFrameOfDrag = true;
 	SetHolding(false);
+	SetPressedOnHandle(false);
 }
 
 void UGizmoComponent::SetNextMode()
