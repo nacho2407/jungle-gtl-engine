@@ -1,4 +1,4 @@
-#include "Core/GPUProfiler.h"
+#include "Profiling/GPUProfiler.h"
 
 #include <algorithm>
 #include <cfloat>
@@ -18,6 +18,7 @@ void FGPUProfiler::Initialize(ID3D11Device* InDevice, ID3D11DeviceContext* InCon
 	{
 		Device->CreateQuery(&disjointDesc, &Frames[f].DisjointQuery);
 		Frames[f].UsedCount = 0;
+		Frames[f].bActive = false;
 
 		for (uint32 i = 0; i < MAX_TIMESTAMPS; ++i)
 		{
@@ -59,23 +60,39 @@ void FGPUProfiler::BeginFrame()
 
 	// 현재 프레임 시작
 	FFrameData& Write = Frames[WriteIndex];
+
+	// 이 슬롯의 이전 결과가 아직 소비되지 않았다면 직접 소비 시도
+	if (Write.bActive)
+	{
+		D3D11_QUERY_DATA_TIMESTAMP_DISJOINT Dummy;
+		if (Context->GetData(Write.DisjointQuery, &Dummy, sizeof(Dummy), 0) != S_OK)
+		{
+			// GPU가 아직 완료하지 않음 — 이 프레임은 프로파일링 건너뜀
+			bFrameActive = false;
+			return;
+		}
+		Write.bActive = false;
+	}
+
+	bFrameActive = true;
 	Write.UsedCount = 0;
+	Write.bActive = true;
 	Context->Begin(Write.DisjointQuery);
 }
 
 void FGPUProfiler::EndFrame()
 {
-	if (!bInitialized) return;
+	if (!bInitialized || !bFrameActive) return;
 
 	Context->End(Frames[WriteIndex].DisjointQuery);
 
 	// 프레임 스왑
-	WriteIndex = 1 - WriteIndex;
+	WriteIndex = (WriteIndex + 1) % FRAME_COUNT;
 }
 
 uint32 FGPUProfiler::BeginTimestamp(const char* Name)
 {
-	if (!bInitialized) return UINT32_MAX;
+	if (!bInitialized || !bFrameActive) return UINT32_MAX;
 
 	FFrameData& Write = Frames[WriteIndex];
 	if (Write.UsedCount >= MAX_TIMESTAMPS) return UINT32_MAX;
@@ -88,7 +105,7 @@ uint32 FGPUProfiler::BeginTimestamp(const char* Name)
 
 void FGPUProfiler::EndTimestamp(uint32 Index)
 {
-	if (!bInitialized || Index == UINT32_MAX) return;
+	if (!bInitialized || !bFrameActive || Index == UINT32_MAX) return;
 
 	FFrameData& Write = Frames[WriteIndex];
 	if (Index >= Write.UsedCount) return;
@@ -98,13 +115,18 @@ void FGPUProfiler::EndTimestamp(uint32 Index)
 
 void FGPUProfiler::CollectPreviousFrame()
 {
-	uint32 ReadIndex = 1 - WriteIndex;
+	uint32 ReadIndex = (WriteIndex + 1) % FRAME_COUNT;
 	FFrameData& Read = Frames[ReadIndex];
 
-	// Disjoint 결과 확인 (UsedCount와 무관하게 항상 읽어서 Query 상태를 소비)
+	if (!Read.bActive) return;  // 수집할 데이터 없음
+
 	D3D11_QUERY_DATA_TIMESTAMP_DISJOINT disjointData;
 	HRESULT hr = Context->GetData(Read.DisjointQuery, &disjointData, sizeof(disjointData), 0);
-	if (hr != S_OK || disjointData.Disjoint || Read.UsedCount == 0)
+	if (hr != S_OK) return;  // 아직 준비 안 됨 — 다음 프레임에 재시도
+
+	Read.bActive = false;  // 결과 소비 완료
+
+	if (disjointData.Disjoint || Read.UsedCount == 0)
 	{
 		return;
 	}
