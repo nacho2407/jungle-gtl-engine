@@ -21,7 +21,7 @@ void FViewportLayout::Init(FWindowsWindow* InWindow, UWorld* World, FSelectionMa
 {
 	Window = InWindow;
 	// 초기 뷰포트 영역 설정
-	UpdateViewportRects(static_cast<uint32>(Window->GetWidth()),
+	InitViewportRect(static_cast<uint32>(Window->GetWidth()),
 		static_cast<uint32>(Window->GetHeight()));
 
 	// 4개 뷰포트 클라이언트 초기화
@@ -125,7 +125,7 @@ void FViewportLayout::OnWindowResized(uint32 Width, uint32 Height)
 }
 
 // 영역 계산 헬퍼
-void FViewportLayout::UpdateViewportRects(uint32 Width, uint32 Height)
+void FViewportLayout::InitViewportRect(uint32 Width, uint32 Height)
 {
 	const int32 W = static_cast<int32>(Width);
 	const int32 H = static_cast<int32>(Height);
