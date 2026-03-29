@@ -45,11 +45,11 @@ void FEditorViewportClient::CreateGridResource(FRenderer* Renderer)
 	ID3D11Device* Device = Renderer->GetDevice();
 	if (Device)
 	{
-		GridMesh = std::make_unique<FMeshData>();
+		GridMesh = std::make_unique<FDynamicMesh>();
 		GridMesh->Topology = EMeshTopology::EMT_TriangleList;
 		for (int i = 0; i < 18; ++i)
 		{
-			FPrimitiveVertex Vertex;
+			FVertex Vertex;
 			GridMesh->Vertices.push_back(Vertex);
 			GridMesh->Indices.push_back(i);
 		}
@@ -314,7 +314,7 @@ void FEditorViewportClient::BuildRenderCommands(FEngine* Engine, UScene* Scene, 
 	if (GridMesh && GridMaterial && bShowGrid)
 	{
 		FRenderCommand GridCommand;
-		GridCommand.MeshData = GridMesh.get();
+		GridCommand.RenderMesh = GridMesh.get();
 		GridCommand.Material = GridMaterial.get();
 		GridCommand.WorldMatrix = FMatrix::Identity;
 		GridCommand.RenderLayer = ERenderLayer::Default;

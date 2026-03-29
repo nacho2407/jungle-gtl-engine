@@ -55,7 +55,7 @@ private:
 	int32 ScreenMouseY = 0;
 
 	// 그리드 렌더링용
-	std::unique_ptr<FMeshData> GridMesh;
+	std::unique_ptr<FDynamicMesh> GridMesh;
 	std::shared_ptr<FMaterial> GridMaterial;
 	void CreateGridResource(FRenderer* Renderer);
 	float GridSize = 10.0f;
