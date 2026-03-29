@@ -87,9 +87,10 @@ public:
 
 	//Collision
 	void UpdateWorldAABB() const override;
-	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult);
+	bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
 
 	FMatrix CalculateOutlineMatrix() const;
+	FMatrix CalculateOutlineMatrix(const FMatrix& BillboardWorldMatrix) const;
 	int32 GetUTF8Length(const FString& str) const;
 
 private:
