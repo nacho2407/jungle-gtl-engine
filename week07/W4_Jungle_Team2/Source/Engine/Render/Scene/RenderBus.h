@@ -7,7 +7,7 @@
 */
 
 //	TODO : CoreType.h 경로 변경 요구
-#include "Core/CoreTypes.h"
+#include "Core/CoreMinimal.h"
 #include "Render/Scene/RenderCommand.h"
 
 #include "Render/Common/ViewTypes.h"

@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "CoreTypes.h"
+#include "CoreMinimal.h"
 
 namespace common {
 	namespace constants {

@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Core/CoreTypes.h"
+#include "Core/CoreMinimal.h"
 #include "Core/Paths.h"
 #include "Core/Singleton.h"
 #include "Math/Vector.h"
@@ -29,6 +29,10 @@ public:
 	// Camera Sensitivity
 	float CameraMoveSensitivity = 1.0f;
 	float CameraRotateSensitivity = 1.0f;
+
+	// Debug Stats
+	bool bShowStatFPS = false;
+	bool bShowStatMemory = false;
 
 	// File paths
 	FString DefaultSavePath = FPaths::ToUtf8(FPaths::SceneDir());

@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 //	Windows API Include
-#define NOMINMAX
 #include <Windows.h>
 #include <windowsx.h>
 

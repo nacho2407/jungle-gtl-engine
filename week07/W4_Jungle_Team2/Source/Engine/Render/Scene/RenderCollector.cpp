@@ -137,7 +137,7 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 			if (Text.empty()) continue;
 
 			FMatrix outlineMatrix = TextComp->CalculateOutlineMatrix();
-			WorldScale = outlineMatrix.GetScale();
+			WorldScale = outlineMatrix.GetScaleVector();
 
 			FRenderCommand TextCmd = BaseCmd;
 			BaseCmd.PerObjectConstants.Model = outlineMatrix;
@@ -178,7 +178,7 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		OutlineCmd.Constants.Outline.OutlineOffset = 0.03f;
 		if (ViewMode == EViewMode::Wireframe)
 		{
-			OutlineCmd.PerObjectConstants.Color = FColor(255, 153, 0, 255).ToVector4();
+			OutlineCmd.PerObjectConstants.Color = FColor(1.0f, 0.6f, 0.0f, 1.0f).ToVector4();
 		}
 		CollectAABBCommand(primitiveComponent, ShowFlags, RenderBus);
 		EPrimitiveType PrimType = primitiveComponent->GetPrimitiveType();
