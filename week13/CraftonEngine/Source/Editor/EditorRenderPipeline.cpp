@@ -9,6 +9,7 @@
 #include "GameFramework/World.h"
 #include "Core/Stats.h"
 #include "Core/GPUProfiler.h"
+#include "Editor/Viewport/OverlayStatSystem.h"
 
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer)
 	: Editor(InEditor)
@@ -94,32 +95,25 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 		Editor->GetSelectionManager().GetSelectedActors(),
 		ShowFlags, ViewMode, Bus);
 
-	const TArray<FOverlayStatGroup> OverlayGroups = Editor->GetOverlayStatSystem().BuildGroups(*Editor);
-	if (!OverlayGroups.empty() && VP && VC == Editor->GetActiveViewport())
+	const TArray<FOverlayStatLine> OverlayLines = Editor->GetOverlayStatSystem().BuildLines(*Editor);
+	if (!OverlayLines.empty() && VP && VC == Editor->GetActiveViewport())
 	{
-		const float StartX = 16.0f;
-		const float LineHeight = 20.0f;
+		const float TextScale = Editor->GetOverlayStatSystem().GetLayout().TextScale;
 
-		for (const FOverlayStatGroup& Group : OverlayGroups)
+		for (const FOverlayStatLine& Line : OverlayLines)
 		{
-			for (size_t i = 0; i < Group.Lines.size(); ++i)
-			{
-				FRenderCommand Cmd = {};
-				Cmd.Type = ERenderCommandType::Font;
-				Cmd.BlendState = EBlendState::AlphaBlend;
-				Cmd.DepthStencilState = EDepthStencilState::NoDepth;
+			FRenderCommand Cmd = {};
+			Cmd.Type = ERenderCommandType::Font;
+			Cmd.BlendState = EBlendState::AlphaBlend;
+			Cmd.DepthStencilState = EDepthStencilState::NoDepth;
 
-				Cmd.Params.Font.Text = &Group.Lines[i];
-				Cmd.Params.Font.Font = nullptr;
-				Cmd.Params.Font.Scale = 1.0f;
-				Cmd.Params.Font.bScreenSpace = 1;
-				Cmd.Params.Font.ScreenPosition = FVector2(
-					StartX,
-					Group.StartY + static_cast<float>(i) * LineHeight
-				);
+			Cmd.Params.Font.Text = &Line.Text;
+			Cmd.Params.Font.Font = nullptr;
+			Cmd.Params.Font.Scale = TextScale;
+			Cmd.Params.Font.bScreenSpace = 1;
+			Cmd.Params.Font.ScreenPosition = Line.ScreenPosition;
 
-				Bus.AddCommand(ERenderPass::OverlayFont, std::move(Cmd));
-			}
+			Bus.AddCommand(ERenderPass::OverlayFont, std::move(Cmd));
 		}
 	}
 

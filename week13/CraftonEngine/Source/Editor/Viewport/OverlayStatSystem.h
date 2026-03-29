@@ -1,13 +1,28 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
+#include "Math/Vector.h"
 
 class UEditorEngine;
 
 struct FOverlayStatGroup
 {
-	float StartY;
 	TArray<FString> Lines;
+};
+
+struct FOverlayStatLine
+{
+	FString Text;
+	FVector2 ScreenPosition = FVector2(0.0f, 0.0f);
+};
+
+struct FOverlayStatLayout
+{
+	float StartX = 16.0f;
+	float StartY = 25.0f;
+	float LineHeight = 20.0f;
+	float GroupSpacing = 12.0f;
+	float TextScale = 1.0f;
 };
 
 class FOverlayStatSystem
@@ -25,12 +40,15 @@ public:
 	bool IsMemoryVisible() const { return bShowMemory; }
 	bool HasAnyVisible() const { return bShowFPS || bShowMemory; }
 
+	const FOverlayStatLayout& GetLayout() const { return Layout; }
+	FOverlayStatLayout& GetLayout() { return Layout; }
+
 	TArray<FOverlayStatGroup> BuildGroups(const UEditorEngine& Editor) const;
+	TArray<FOverlayStatLine> BuildLines(const UEditorEngine& Editor) const;
 
 private:
 	bool bShowFPS = false;
 	bool bShowMemory = false;
 
-	static constexpr float FPSStartY = 25.0f;
-	static constexpr float MemoryStartY = 25.0f + 16.0f * 4; // FPS 아래에 위치하도록 간격 조정
+	FOverlayStatLayout Layout;
 };
