@@ -68,8 +68,18 @@ void FDepthStencilStateManager::Create(ID3D11Device* InDevice)
 	Desc.BackFace = Desc.FrontFace;
 	InDevice->CreateDepthStencilState(&Desc, &StencilMaskEqual);
 
-	// Stencil Outline (Not Equal, read-only)
+	// Stencil Outline (Not Equal, depth write enabled)
+	Desc = {};
+	Desc.DepthEnable = TRUE;
+	Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	Desc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+	Desc.StencilEnable = TRUE;
+	Desc.StencilReadMask = 0xFF;
+	Desc.StencilWriteMask = 0x00;
 	Desc.FrontFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;
+	Desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	Desc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	Desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
 	Desc.BackFace = Desc.FrontFace;
 	InDevice->CreateDepthStencilState(&Desc, &StencilOutline);
 }

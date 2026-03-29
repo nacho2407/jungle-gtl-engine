@@ -1,7 +1,7 @@
 #include "Editor/UI/EditorStatWidget.h"
 
-#include "Core/Stats.h"
-#include "Core/GPUProfiler.h"
+#include "Profiling/Stats.h"
+#include "Profiling/GPUProfiler.h"
 #include "ImGui/imgui.h"
 
 #include <algorithm>

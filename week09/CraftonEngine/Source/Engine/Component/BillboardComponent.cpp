@@ -29,3 +29,23 @@ void UBillboardComponent::TickComponent(float DeltaTime)
 
 	UpdateWorldAABB();
 }
+
+FMatrix UBillboardComponent::ComputeBillboardMatrix(const FVector& CameraForward) const
+{
+	// TickComponent와 동일한 로직
+	FVector Forward = (CameraForward * -1.0f).Normalized();
+	FVector WorldUp = FVector(0.0f, 0.0f, 1.0f);
+
+	if (std::abs(Forward.Dot(WorldUp)) > 0.99f)
+	{
+		WorldUp = FVector(0.0f, 1.0f, 0.0f);
+	}
+
+	FVector Right = WorldUp.Cross(Forward).Normalized();
+	FVector Up = Forward.Cross(Right).Normalized();
+
+	FMatrix RotMatrix;
+	RotMatrix.SetAxes(Forward, Right, Up);
+
+	return FMatrix::MakeScaleMatrix(GetWorldScale()) * RotMatrix * FMatrix::MakeTranslationMatrix(GetWorldLocation());
+}

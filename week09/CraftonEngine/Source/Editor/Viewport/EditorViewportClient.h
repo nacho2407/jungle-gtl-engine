@@ -80,8 +80,6 @@ private:
 	float WindowHeight = 1080.f;
 
 	bool bIsActive = false;
-	bool bIsCursorVisible = true;
-
 	// 뷰포트 슬롯의 스크린 좌표 (ImGui screen space = 윈도우 클라이언트 좌표)
 	FRect ViewportScreenRect;
 };
