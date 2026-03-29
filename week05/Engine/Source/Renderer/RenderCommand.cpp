@@ -1,8 +1,8 @@
 #include "RenderCommand.h"
 #include "Material.h"
-#include "Primitive/PrimitiveBase.h"
+#include "MeshData.h"
 
-uint64 FRenderCommand::MakeSortKey(const FMaterial* InMaterial, const FMeshData* InMeshData)
+uint64 FRenderCommand::MakeSortKey(const FMaterial* InMaterial, const FRenderMesh* InMeshData)
 {
 	uint32 MatId = InMaterial ? InMaterial->GetSortId() : 0;
 	uint32 MeshId = InMeshData ? InMeshData->GetSortId() : 0;

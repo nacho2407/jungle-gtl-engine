@@ -8,7 +8,6 @@
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderMesh.h"
 #include "Renderer/RenderStateManager.h"
-#include "Primitive/PrimitiveBase.h"
 #include "Core/Paths.h"
 #include <cstring>
 

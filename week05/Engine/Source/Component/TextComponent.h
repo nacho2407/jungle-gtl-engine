@@ -1,12 +1,12 @@
 #pragma once
-#include "NewPrimitiveComponent.h"
+#include "PrimitiveComponent.h"
 
 #include "Renderer/MeshData.h"
 
-class ENGINE_API UTextComponent : public UNewPrimitiveComponent
+class ENGINE_API UTextComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_RTTI(UTextComponent, UNewPrimitiveComponent)
+	DECLARE_RTTI(UTextComponent, UPrimitiveComponent)
 
 	void PostConstruct() override;
 

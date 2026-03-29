@@ -35,7 +35,7 @@ bool FPhysicsManager::Linetrace(const UScene* Scene, const FVector& Start, const
 
 				UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
 				if (!PrimitiveComponent->ShouldDrawDebugBounds()) continue;
-				if (!PrimitiveComponent->GetPrimitive() || !PrimitiveComponent->GetPrimitive()->GetMeshData())
+				if (!PrimitiveComponent->GetRenderMesh())
 				{
 					continue;
 				}

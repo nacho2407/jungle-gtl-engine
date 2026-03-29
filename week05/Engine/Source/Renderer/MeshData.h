@@ -3,8 +3,6 @@
 
 #include "Renderer/RenderMesh.h"
 #include "CoreMinimal.h"
-#include "Primitive/PrimitiveBase.h"
-
 
 
 struct ENGINE_API FStaticMesh : public FRenderMesh

@@ -1,7 +1,5 @@
 #include "Shader.h"
 #include "ShaderResource.h"
-#include "PrimitiveVertex.h"
-
 // ─── FVertexShader ───
 
 FVertexShader::~FVertexShader()

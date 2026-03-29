@@ -1,5 +1,4 @@
 #pragma once
-#include "PrimitiveBase.h"
 #include "Renderer/MeshData.h"
 
 struct FDynamicMesh;

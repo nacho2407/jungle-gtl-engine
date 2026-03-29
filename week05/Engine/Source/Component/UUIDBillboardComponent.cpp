@@ -1,7 +1,6 @@
 #include "UUIDBillboardComponent.h"
 #include "Actor/Actor.h"
 #include "Object/Class.h"
-#include "Primitive/PrimitiveBase.h"
 #include <limits>
 
 IMPLEMENT_RTTI(UUUIDBillboardComponent, UTextComponent)
@@ -40,25 +39,14 @@ FVector UUUIDBillboardComponent::GetRenderWorldPosition() const
 
 	for (UActorComponent* Component : OwnerActor->GetComponents())
 	{
-		if (!Component) continue;
-		if (Component == this) continue;
+		// 자기 자신(UUID 컴포넌트)이거나 nullptr이면 패스
+		if (!Component || Component == this) continue;
 
-		const bool bIsNewPrim = Component->IsA(UNewPrimitiveComponent::StaticClass());
-		const bool bIsOldPrim = Component->IsA(UPrimitiveComponent::StaticClass());
+		// ⭐ 구형/신형 구분할 필요 없이 UPrimitiveComponent 하나로 통일!
+		if (!Component->IsA(UPrimitiveComponent::StaticClass())) continue;
 
-		if (!bIsNewPrim && !bIsOldPrim) continue;
-		if (Component == this) continue;
-
-		FBoxSphereBounds Bounds;
-
-		if (bIsNewPrim)
-		{
-			Bounds = static_cast<UNewPrimitiveComponent*>(Component)->GetWorldBounds();
-		}
-		else if (bIsOldPrim)
-		{
-			Bounds = static_cast<UPrimitiveComponent*>(Component)->GetWorldBounds();
-		}
+		UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
+		FBoxSphereBounds Bounds = PrimitiveComponent->GetWorldBounds();
 
 		const float TopZ = Bounds.Center.Z + Bounds.BoxExtent.Z;
 
@@ -80,6 +68,7 @@ FVector UUUIDBillboardComponent::GetRenderWorldPosition() const
 
 	return RootLocation + WorldOffset;
 }
+
 FVector UUUIDBillboardComponent::GetRenderWorldScale() const
 {
 	// 빌보드는 트랜스포메이션의 스케일과 상관없이 TextScale 만을 절대적으로 사용하는 것이 일반적임

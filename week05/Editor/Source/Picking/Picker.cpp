@@ -4,15 +4,14 @@
 #include "Actor/Actor.h"
 #include "Camera/Camera.h"
 #include "Component/PrimitiveComponent.h"
-#include "Primitive/PrimitiveBase.h"
-#include "Renderer/PrimitiveVertex.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextComponent.h"
 #include "Component/UUIDBillboardComponent.h"
-#include "Actor/SkySphereActor.h" 
 #include "Component/StaticMeshComponent.h"
 #include "Renderer/MeshData.h"
 #include <limits>
+
+#include "Component/SkyComponent.h"
 
 FRay FPicker::ScreenToRay(const FCamera* Camera, int32 ScreenX, int32 ScreenY, int32 ScreenWidth, int32 ScreenHeight) const
 {
@@ -103,7 +102,7 @@ bool FPicker::RayTriangleIntersect(const FRay& Ray,
 }
 
 AActor* FPicker::PickActor(UScene* Scene, int32 ScreenX, int32 ScreenY,
-						   int32 ScreenWidth, int32 ScreenHeight) const
+	int32 ScreenWidth, int32 ScreenHeight) const
 {
 	if (!Scene || !Scene->GetCamera())
 	{
@@ -118,108 +117,57 @@ AActor* FPicker::PickActor(UScene* Scene, int32 ScreenX, int32 ScreenY,
 
 	for (AActor* Actor : Scene->GetActors())
 	{
-		if (!Actor || Actor->IsPendingDestroy())
+		// 액터가 파괴 대기 중이거나 보이지 않으면 패스
+		if (!Actor || Actor->IsPendingDestroy() || !Actor->IsVisible())
 		{
 			continue;
 		}
-		if (!Actor->IsVisible() )
-			continue;
-		if (Actor->IsA<ASkySphereActor>())
-			continue;
-		
+
+
 		for (UActorComponent* Component : Actor->GetComponents())
 		{
+			if (!Component || !Component->IsA(UPrimitiveComponent::StaticClass())) continue;
+
+			// ─── 1. 피킹 제외 대상 (UUID 이름표, 하늘) ───
 			if (Component->IsA(UUUIDBillboardComponent::StaticClass())) continue;
+			if (Component->IsA(USkyComponent::StaticClass())) continue;
 
-			const bool bIsOldPrim = Component->IsA(UPrimitiveComponent::StaticClass());
-			const bool bIsStaticMesh = Component->IsA(UNewPrimitiveComponent::StaticClass());
+			UPrimitiveComponent* PrimComp = static_cast<UPrimitiveComponent*>(Component);
 
-			// 둘 다 아니면 피킹 대상이 아님
-			if (!bIsOldPrim && !bIsStaticMesh) continue;
-
-			// ========================================================
-			// 💀 [구형] 기존 프리미티브 로직 (Text, SubUV, 옛날 Mesh)
-			// ========================================================
-			if (bIsOldPrim)
+			// ─── 2. 바운딩 스피어(구형) 기반 피킹 (Text, SubUV) ───
+			if (PrimComp->IsA(USubUVComponent::StaticClass()) || PrimComp->IsA(UTextComponent::StaticClass()))
 			{
-				UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
+				const FBoxSphereBounds Bounds = PrimComp->GetWorldBounds();
+				FVector ToCenter = Bounds.Center - Ray.Origin;
+				float T = FVector::DotProduct(ToCenter, Ray.Direction);
+				if (T < 0.0f) continue;
 
-				// 구형 일반 메시 피킹 로직
-				if (!PrimitiveComponent->GetPrimitive()) continue;
-				FMeshData* Mesh = PrimitiveComponent->GetPrimitive()->GetMeshData();
-				if (!Mesh) continue;
+				const FVector ClosestPoint = Ray.Origin + Ray.Direction * T;
+				const float DistSq = (ClosestPoint - Bounds.Center).SizeSquared();
+				const float RadiusSq = Bounds.Radius * Bounds.Radius;
 
-				const FMatrix World = PrimitiveComponent->GetWorldTransform();
-				for (uint32 Index = 0; Index + 2 < Mesh->Indices.size(); Index += 3)
+				if (DistSq <= RadiusSq && T < ClosestDistance)
 				{
-					const FVector& P0 = Mesh->Vertices[Mesh->Indices[Index]].Position;
-					const FVector& P1 = Mesh->Vertices[Mesh->Indices[Index + 1]].Position;
-					const FVector& P2 = Mesh->Vertices[Mesh->Indices[Index + 2]].Position;
-
-					const FVector W0 = {
-						P0.X * World.M[0][0] + P0.Y * World.M[1][0] + P0.Z * World.M[2][0] + World.M[3][0],
-						P0.X * World.M[0][1] + P0.Y * World.M[1][1] + P0.Z * World.M[2][1] + World.M[3][1],
-						P0.X * World.M[0][2] + P0.Y * World.M[1][2] + P0.Z * World.M[2][2] + World.M[3][2]
-					};
-					const FVector W1 = {
-						P1.X * World.M[0][0] + P1.Y * World.M[1][0] + P1.Z * World.M[2][0] + World.M[3][0],
-						P1.X * World.M[0][1] + P1.Y * World.M[1][1] + P1.Z * World.M[2][1] + World.M[3][1],
-						P1.X * World.M[0][2] + P1.Y * World.M[1][2] + P1.Z * World.M[2][2] + World.M[3][2]
-					};
-					const FVector W2 = {
-						P2.X * World.M[0][0] + P2.Y * World.M[1][0] + P2.Z * World.M[2][0] + World.M[3][0],
-						P2.X * World.M[0][1] + P2.Y * World.M[1][1] + P2.Z * World.M[2][1] + World.M[3][1],
-						P2.X * World.M[0][2] + P2.Y * World.M[1][2] + P2.Z * World.M[2][2] + World.M[3][2]
-					};
-
-					float Distance = 0.0f;
-					if (RayTriangleIntersect(Ray, W0, W1, W2, Distance) && Distance < ClosestDistance)
-					{
-						ClosestDistance = Distance;
-						ClosestActor = Actor;
-					}
+					ClosestDistance = T;
+					ClosestActor = Actor;
 				}
+				continue;
 			}
-			// ========================================================
-			// ⭐ [신형] 스태틱 메시 피킹 로직
-			// ========================================================
-			else if (bIsStaticMesh)
+
+			// ─── 3. 정점 기반(폴리곤 단위) 정밀 피킹 (StaticMesh 등 일반 도형) ───
+			if (PrimComp->IsA(UStaticMeshComponent::StaticClass()))
 			{
-				UNewPrimitiveComponent* NewPrimitiveComponent = static_cast<UNewPrimitiveComponent*>(Component);
-
-				const bool bIsSubUV = NewPrimitiveComponent->IsA(USubUVComponent::StaticClass());
-				const bool bIsText = NewPrimitiveComponent->IsA(UTextComponent::StaticClass());
-				if (bIsSubUV || bIsText)
-				{
-					// 구형(Sphere) 피킹 로직
-					const FBoxSphereBounds Bounds = NewPrimitiveComponent->GetWorldBounds();
-					FVector ToCenter = Bounds.Center - Ray.Origin;
-					float T = FVector::DotProduct(ToCenter, Ray.Direction);
-					if (T < 0.0f) continue;
-
-					const FVector ClosestPoint = Ray.Origin + Ray.Direction * T;
-					const float DistSq = (ClosestPoint - Bounds.Center).SizeSquared();
-					const float RadiusSq = Bounds.Radius * Bounds.Radius;
-
-					if (DistSq <= RadiusSq && T < ClosestDistance)
-					{
-						ClosestDistance = T;
-						ClosestActor = Actor;
-					}
-					continue;
-				}
-
-				UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(Component);
-				if (!SMC->GetRenderMesh()) continue;
-
+				UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(PrimComp);
 				FRenderMesh* Mesh = SMC->GetRenderMesh();
-				if (Mesh->Vertices.empty() || Mesh->Indices.empty()) continue;
+
+				// 메쉬가 없거나 정점이 비어있으면 패스
+				if (!Mesh || Mesh->Vertices.empty() || Mesh->Indices.empty()) continue;
 
 				const FMatrix World = SMC->GetWorldTransform();
 
 				for (uint32 Index = 0; Index + 2 < Mesh->Indices.size(); Index += 3)
 				{
-					// ⭐ 여기서는 FVertex 구조체를 사용하므로 그대로 Position을 빼오면 됩니다.
+					// ⭐ 이제 무조건 신형 FVertex 구조체를 쓰므로 코드가 하나로 통합됩니다.
 					const FVector& P0 = Mesh->Vertices[Mesh->Indices[Index]].Position;
 					const FVector& P1 = Mesh->Vertices[Mesh->Indices[Index + 1]].Position;
 					const FVector& P2 = Mesh->Vertices[Mesh->Indices[Index + 2]].Position;

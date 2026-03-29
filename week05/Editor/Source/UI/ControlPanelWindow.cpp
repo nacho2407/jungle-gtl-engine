@@ -5,12 +5,6 @@
 #include "Renderer/Renderer.h"
 #include "Scene/Scene.h"
 #include "Actor/Actor.h"
-#include "Actor/AttachTestActor.h"
-#include "Actor/CubeActor.h"
-#include "Actor/SphereActor.h"
-#include "Actor/PlaneActor.h"
-#include "Actor/SubUVActor.h"
-#include "Actor/TextActor.h"
 #include "Component/TextComponent.h"
 #include "Component/SkyComponent.h"
 #include "Object/ObjectFactory.h"
@@ -19,7 +13,6 @@
 #include "Debug/EngineLog.h"
 #include "Component/CameraComponent.h"
 #include "Component/StaticMeshComponent.h"
-#include "Actor/SkySphereActor.h"
 #include "Component/SubUVComponent.h"
 #include "Controller/EditorViewportController.h"
 #include "Serializer/SceneSerializer.h"
@@ -222,7 +215,7 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 			// ─── 1. 특수 액터 (미리 조립된 테스트용 액터) ───
 			if (SpawnTypeIndex == 3)
 			{
-				NewActor = Scene->SpawnActor<AAttachTestActor>(Name);
+				// NewActor = Scene->SpawnActor<AAttachTestActor>(Name);
 			}
 			// ─── 2. 순수 컴포넌트 조립 방식 (대통합!) ───
 			else

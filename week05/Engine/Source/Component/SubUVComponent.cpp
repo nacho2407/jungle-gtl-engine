@@ -1,9 +1,8 @@
 #include "SubUVComponent.h"
 #include "Object/Class.h"
 #include "Renderer/MeshData.h"
-#include "Primitive/PrimitiveBase.h"
 
-IMPLEMENT_RTTI(USubUVComponent, UNewPrimitiveComponent)
+IMPLEMENT_RTTI(USubUVComponent, UPrimitiveComponent)
 
 void USubUVComponent::PostConstruct()
 {

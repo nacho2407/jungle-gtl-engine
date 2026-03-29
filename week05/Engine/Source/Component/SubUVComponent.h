@@ -1,12 +1,12 @@
 #pragma once
-#include "NewPrimitiveComponent.h"
+#include "PrimitiveComponent.h"
 
 struct FDynamicMesh;
 
-class ENGINE_API USubUVComponent : public UNewPrimitiveComponent
+class ENGINE_API USubUVComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_RTTI(USubUVComponent, UNewPrimitiveComponent)
+	DECLARE_RTTI(USubUVComponent, UPrimitiveComponent)
 
 	void PostConstruct() override;
 

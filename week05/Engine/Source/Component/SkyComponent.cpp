@@ -2,7 +2,6 @@
 
 #include "Actor/Actor.h"
 #include "Obj/ObjManager.h"
-#include "Primitive/PrimitiveSky.h"
 #include "Object/Class.h"
 #include "Renderer/MaterialManager.h"
 #include "CameraComponent.h"

@@ -1,9 +1,8 @@
 #include "LineBatchComponent.h"
-#include "PrimitiveLineBatch.h"
 #include "Math/MathUtility.h"
 #include "Object/Class.h"
 
-IMPLEMENT_RTTI(ULineBatchComponent, UNewPrimitiveComponent)
+IMPLEMENT_RTTI(ULineBatchComponent, UPrimitiveComponent)
 
 void ULineBatchComponent::PostConstruct()
 {
@@ -20,7 +19,7 @@ void ULineBatchComponent::DrawLine(FVector InStart, FVector InEnd, FVector4 InCo
 	FVertex V1, V2;
 	V1.Position = InStart;
 	V1.Color = InColor;
-	V1.Normal = FVector::ZeroVector; // ³ë¸Ö ÃÊ±âÈ­
+	V1.Normal = FVector::ZeroVector; // ë…¸ë©€ ì´ˆê¸°í™”
 
 	V2.Position = InEnd;
 	V2.Color = InColor;
@@ -29,11 +28,11 @@ void ULineBatchComponent::DrawLine(FVector InStart, FVector InEnd, FVector4 InCo
 	LineMesh->Vertices.push_back(V1);
 	LineMesh->Vertices.push_back(V2);
 
-	// ÀÎµ¦½º ¹öÆÛ ¾÷µ¥ÀÌÆ®
+	// ì¸ë±ìŠ¤ ë²„í¼ ì—…ë°ì´íŠ¸
 	LineMesh->Indices.push_back(CurrentSize);
 	LineMesh->Indices.push_back(CurrentSize + 1);
 
-	// »óÅÂ °»½Å
+	// ìƒíƒœ ê°±ì‹ 
 	LineMesh->bIsDirty = true;
 	LineMesh->UpdateLocalBound();
 }
@@ -42,18 +41,18 @@ void ULineBatchComponent::DrawWireCube(FVector InCenter, FQuat InRotation, FVect
 {
 	if (!LineMesh) return;
 	const FVector BaseCube[12][2] = {
-		{{-0.5f, -0.5f, 0.5f}, {0.5f, -0.5f, 0.5f}},  // ¿ÞÂÊ À§
-		{{-0.5f, -0.5f, -0.5f}, {0.5f, -0.5f, -0.5f}},  // ¿ÞÂÊ ¾Æ·¡
-		{{-0.5f, 0.5f, 0.5f}, {0.5f, 0.5f, 0.5f}},  // ¿À¸¥ÂÊ À§
-		{{-0.5f, 0.5f, -0.5f}, {0.5f, 0.5f, -0.5f}},  // ¿À¸¥ÂÊ ¾Æ·¡
-		{{0.5f, -0.5f, 0.5f}, {0.5f, 0.5f, 0.5f}},  // ¾ÕÂÊ À§
-		{{0.5f, -0.5f, -0.5f}, {0.5f, 0.5f, -0.5f}},  // ¾ÕÂÊ ¾Æ·¡
-		{{-0.5f, -0.5f, 0.5f}, {-0.5f, 0.5f, 0.5f}},  // µÞÂÊ À§
-		{{-0.5f, -0.5f, -0.5f}, {-0.5f, 0.5f, -0.5f}},  // µÞÂÊ ¾Æ·¡
-		{{0.5f, -0.5f, -0.5f}, {0.5f, -0.5f, 0.5f}},  // ¾ÕÂÊ ¿Þ
-		{{0.5f, 0.5f, -0.5f}, {0.5f, 0.5f, 0.5f}},  // ¾ÕÂÊ ¿À¸¥
-		{{-0.5f, -0.5f, -0.5f}, {-0.5f, -0.5f, 0.5f}},  // µÞÂÊ ¿Þ
-		{{-0.5f, 0.5f, -0.5f}, {-0.5f, 0.5f, 0.5f}}  // µÞÂÊ ¿À¸¥
+		{{-0.5f, -0.5f, 0.5f}, {0.5f, -0.5f, 0.5f}},  // ì™¼ìª½ ìœ„
+		{{-0.5f, -0.5f, -0.5f}, {0.5f, -0.5f, -0.5f}},  // ì™¼ìª½ ì•„ëž˜
+		{{-0.5f, 0.5f, 0.5f}, {0.5f, 0.5f, 0.5f}},  // ì˜¤ë¥¸ìª½ ìœ„
+		{{-0.5f, 0.5f, -0.5f}, {0.5f, 0.5f, -0.5f}},  // ì˜¤ë¥¸ìª½ ì•„ëž˜
+		{{0.5f, -0.5f, 0.5f}, {0.5f, 0.5f, 0.5f}},  // ì•žìª½ ìœ„
+		{{0.5f, -0.5f, -0.5f}, {0.5f, 0.5f, -0.5f}},  // ì•žìª½ ì•„ëž˜
+		{{-0.5f, -0.5f, 0.5f}, {-0.5f, 0.5f, 0.5f}},  // ë’·ìª½ ìœ„
+		{{-0.5f, -0.5f, -0.5f}, {-0.5f, 0.5f, -0.5f}},  // ë’·ìª½ ì•„ëž˜
+		{{0.5f, -0.5f, -0.5f}, {0.5f, -0.5f, 0.5f}},  // ì•žìª½ ì™¼
+		{{0.5f, 0.5f, -0.5f}, {0.5f, 0.5f, 0.5f}},  // ì•žìª½ ì˜¤ë¥¸
+		{{-0.5f, -0.5f, -0.5f}, {-0.5f, -0.5f, 0.5f}},  // ë’·ìª½ ì™¼
+		{{-0.5f, 0.5f, -0.5f}, {-0.5f, 0.5f, 0.5f}}  // ë’·ìª½ ì˜¤ë¥¸
 	};
 	for (int i = 0; i < 12; i++)
 	{
@@ -67,7 +66,7 @@ void ULineBatchComponent::DrawWireSphere(FVector InCenter, float InRadius, FVect
 {
 	if (!LineMesh) return;
 
-	const int32 Segments = 16; // ¼±ÀÇ °³¼ö (Á¤¹Ðµµ)
+	const int32 Segments = 16; // ì„ ì˜ ê°œìˆ˜ (ì •ë°€ë„)
 	const float AngleStep = 2.0f * FMath::PI / Segments;
 
 	for (int32 i = 0; i < Segments; i++)
@@ -80,21 +79,21 @@ void ULineBatchComponent::DrawWireSphere(FVector InCenter, float InRadius, FVect
 		float S2 = sinf(A2) * InRadius;
 		float C2 = cosf(A2) * InRadius;
 
-		// XY Æò¸é ¿ø (°¡·Î)
+		// XY í‰ë©´ ì› (ê°€ë¡œ)
 		DrawLine(
 			InCenter + FVector(C1, S1, 0.0f),
 			InCenter + FVector(C2, S2, 0.0f),
 			InColor
 		);
 
-		// YZ Æò¸é ¿ø (¼¼·Î 1)
+		// YZ í‰ë©´ ì› (ì„¸ë¡œ 1)
 		DrawLine(
 			InCenter + FVector(0.0f, C1, S1),
 			InCenter + FVector(0.0f, C2, S2),
 			InColor
 		);
 
-		// ZX Æò¸é ¿ø (¼¼·Î 2)
+		// ZX í‰ë©´ ì› (ì„¸ë¡œ 2)
 		DrawLine(
 			InCenter + FVector(S1, 0.0f, C1),
 			InCenter + FVector(S2, 0.0f, C2),

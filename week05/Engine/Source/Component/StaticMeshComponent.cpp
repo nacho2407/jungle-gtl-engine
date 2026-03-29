@@ -32,12 +32,12 @@ FBoxSphereBounds UStaticMeshComponent::GetLocalBounds() const
 	{
 		return StaticMesh->LocalBounds;
 	}
-	return UNewPrimitiveComponent::GetLocalBounds();
+	return UPrimitiveComponent::GetLocalBounds();
 }
 
 FBoxSphereBounds UStaticMeshComponent::CalcBounds(const FMatrix& LocalToWorld) const
 {
-	return UNewPrimitiveComponent::CalcBounds(LocalToWorld);
+	return UPrimitiveComponent::CalcBounds(LocalToWorld);
 }
 
 void UStaticMeshComponent::Serialize(FArchive& Ar)

@@ -5,6 +5,16 @@
 #include "Renderer/TextMeshBuilder.h"
 #include "Vertex.h"
 
+enum class EMeshTopology
+{
+	EMT_Undefined = 0, // = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED
+	EMT_Point = 1,	// =  D3D11_PRIMITIVE_TOPOLOGY_POINTLIST
+	EMT_LineList = 2, // = D3D11_PRIMITIVE_TOPOLOGY_LINELIST
+	EMT_LineStrip = 3,	// = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP
+	EMT_TriangleList = 4, // = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
+	EMT_TriangleStrip = 5, // = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP
+};
+
 struct ENGINE_API FRenderMesh
 {
 	FRenderMesh() : SortId(NextSortId++) {}

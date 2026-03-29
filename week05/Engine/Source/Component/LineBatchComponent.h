@@ -1,14 +1,13 @@
 #pragma once
 
-#include "NewPrimitiveComponent.h"
+#include "PrimitiveComponent.h"
 #include "Math/Vector.h"
 #include "Math/Vector4.h"
-#include "PrimitiveLineBatch.h"
 #include "Renderer/MeshData.h"
 
-class ULineBatchComponent : public UNewPrimitiveComponent
+class ULineBatchComponent : public UPrimitiveComponent
 {
-	DECLARE_RTTI(ULineBatchComponent, UNewPrimitiveComponent)
+	DECLARE_RTTI(ULineBatchComponent, UPrimitiveComponent)
 
 public:
 	void PostConstruct() override;

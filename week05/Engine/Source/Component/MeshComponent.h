@@ -1,12 +1,12 @@
 #pragma once
-#include "Component/NewPrimitiveComponent.h"
+#include "Component/PrimitiveComponent.h"
 
 class FMaterial;
 
-class ENGINE_API UMeshComponent : public UNewPrimitiveComponent
+class ENGINE_API UMeshComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_RTTI(UMeshComponent, UNewPrimitiveComponent)
+	DECLARE_RTTI(UMeshComponent, UPrimitiveComponent)
 
 	void SetMaterial(int32 Index, const std::shared_ptr<FMaterial>& InMaterial);
 	std::shared_ptr<FMaterial> GetMaterial(int32 Index) const;

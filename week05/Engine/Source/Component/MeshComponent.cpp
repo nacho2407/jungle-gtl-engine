@@ -3,7 +3,7 @@
 #include "Renderer/Material.h"
 #include "MeshComponent.h"
 
-IMPLEMENT_RTTI(UMeshComponent, UNewPrimitiveComponent)
+IMPLEMENT_RTTI(UMeshComponent, UPrimitiveComponent)
 
 void UMeshComponent::SetMaterial(int32 Index, const std::shared_ptr<FMaterial>& InMaterial)
 {

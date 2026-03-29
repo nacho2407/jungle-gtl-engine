@@ -1,10 +1,9 @@
 #include "TextComponent.h"
 #include "Object/Class.h"
-#include "Primitive/PrimitiveBase.h"
 #include <algorithm>
 
 
-IMPLEMENT_RTTI(UTextComponent, UNewPrimitiveComponent)
+IMPLEMENT_RTTI(UTextComponent, UPrimitiveComponent)
 
 void UTextComponent::PostConstruct()
 {
