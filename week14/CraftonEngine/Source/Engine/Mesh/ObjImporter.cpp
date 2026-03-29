@@ -412,6 +412,7 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 				{
 					// '-'로 시작하지 않는 첫 번째 토큰을 만났다면, 이것이 파일명의 시작입니다!
 					// 파일명 내부에 띄어쓰기가 있을 수 있으므로 토큰을 뽑기 전의 전체 라인을 가져옵니다.
+					FStringParser::TrimLeft(LineBeforeToken);
 					TextureFileName = std::string(LineBeforeToken);
 					break;
 				}
@@ -438,29 +439,29 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 
 bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInfo>& MtlInfos, FStaticMesh& OutMesh, TArray<FStaticMaterial>& OutMaterials)
 {
-    OutMesh = FStaticMesh();
-    OutMaterials.clear();
+	OutMesh = FStaticMesh();
+	OutMaterials.clear();
 
-    // Phase 1: usemtl 등장 순서를 기반으로 FStaticMaterial 배열 및 인덱스 맵 생성
-    TArray<FString> OrderedMaterialSlots;
-    bool bHasNoneSlot = false;
+	// Phase 1: usemtl 등장 순서를 기반으로 FStaticMaterial 배열 및 인덱스 맵 생성
+	TArray<FString> OrderedMaterialSlots;
+	bool bHasNoneSlot = false;
 
-    // OBJ의 Sections(usemtl) 등장 순서대로 고유 슬롯 수집
+	// OBJ의 Sections(usemtl) 등장 순서대로 고유 슬롯 수집
 	for (const FStaticMeshSection& Section : ObjInfo.Sections)
-    {
-        const FString& CurrentSlotName = Section.MaterialSlotName;
+	{
+		const FString& CurrentSlotName = Section.MaterialSlotName;
 
-        if (CurrentSlotName == "None")
-        {
-            bHasNoneSlot = true;
-            continue;
-        }
+		if (CurrentSlotName == "None")
+		{
+			bHasNoneSlot = true;
+			continue;
+		}
 
-        if (std::find(OrderedMaterialSlots.begin(), OrderedMaterialSlots.end(), CurrentSlotName) == OrderedMaterialSlots.end())
-        {
-            OrderedMaterialSlots.push_back(CurrentSlotName);
-        }
-    }
+		if (std::find(OrderedMaterialSlots.begin(), OrderedMaterialSlots.end(), CurrentSlotName) == OrderedMaterialSlots.end())
+		{
+			OrderedMaterialSlots.push_back(CurrentSlotName);
+		}
+	}
 
 	// 수집된 순서대로 머티리얼 생성 및 인덱스 매핑
 	for (const FString& TargetSlotName : OrderedMaterialSlots)
@@ -470,61 +471,64 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 		auto It = std::find_if(MtlInfos.begin(), MtlInfos.end(),
 			[&TargetSlotName](const FObjMaterialInfo& Mat) {
 				return Mat.MaterialSlotName == TargetSlotName;
-		});
+			});
 
 		if (It != MtlInfos.end())
 		{
 			MatchedMaterial = &(*It);
 		}
 
-		// 매칭된 머티리얼 정보로 FStaticMaterial 생성
-		FStaticMaterial NewStaticMaterial;
-		NewStaticMaterial.MaterialSlotName = TargetSlotName;
-		NewStaticMaterial.MaterialInterface = std::shared_ptr<UMaterial>(UObjectManager::Get().CreateObject<UMaterial>());
-		NewStaticMaterial.MaterialSlotName = TargetSlotName;
+		UMaterial* MaterialObject = UObjectManager::Get().CreateObject<UMaterial>();
+		MaterialObject->PathFileName = TargetSlotName;
 
 		if (MatchedMaterial)
 		{
 			if (!MatchedMaterial->map_Kd.empty())
 			{
-				NewStaticMaterial.MaterialInterface->DiffuseTextureFilePath = MatchedMaterial->map_Kd;
-				NewStaticMaterial.MaterialInterface->DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+				MaterialObject->DiffuseTextureFilePath = MatchedMaterial->map_Kd;
+				MaterialObject->DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 			}
 			else
 			{
-				NewStaticMaterial.MaterialInterface->DiffuseColor = { MatchedMaterial->Kd.X, MatchedMaterial->Kd.Y, MatchedMaterial->Kd.Z, 1.0f };
+				MaterialObject->DiffuseColor = { MatchedMaterial->Kd.X, MatchedMaterial->Kd.Y, MatchedMaterial->Kd.Z, 1.0f };
 			}
 		}
 		else
 		{
-			NewStaticMaterial.MaterialInterface->DiffuseColor = FallbackColor4;
+			MaterialObject->DiffuseColor = FallbackColor4;
 		}
 
+		FStaticMaterial NewStaticMaterial;
+		NewStaticMaterial.MaterialInterface = std::shared_ptr<UMaterial>(MaterialObject);
+		NewStaticMaterial.MaterialSlotName = TargetSlotName;
 		OutMaterials.push_back(NewStaticMaterial);
 	}
 
-    // "None" 슬롯이 존재했다면 맨 마지막에 배치
+	// "None" 슬롯이 존재했다면 맨 마지막에 배치
 	if (bHasNoneSlot)
-    {
-        FStaticMaterial NewDefaultStaticMaterial;
-        NewDefaultStaticMaterial.MaterialSlotName = "None";
-        NewDefaultStaticMaterial.MaterialInterface = std::shared_ptr<UMaterial>(UObjectManager::Get().CreateObject<UMaterial>());
-		NewDefaultStaticMaterial.MaterialInterface->DiffuseColor = FallbackColor4;
+	{
+		UMaterial* DefaultMaterialObject = UObjectManager::Get().CreateObject<UMaterial>();
+		DefaultMaterialObject->PathFileName = "None"; // 임시로 슬롯 이름을 경로로 사용
+		DefaultMaterialObject->DiffuseColor = FallbackColor4;
 
-        OutMaterials.push_back(NewDefaultStaticMaterial);
-    }
+		FStaticMaterial NewDefaultStaticMaterial;
+		NewDefaultStaticMaterial.MaterialInterface = std::shared_ptr<UMaterial>(DefaultMaterialObject);
+		NewDefaultStaticMaterial.MaterialSlotName = "None";
+
+		OutMaterials.push_back(NewDefaultStaticMaterial);
+	}
 
     // Phase 2: 파편화된 섹션들의 면(Face)을 머티리얼 인덱스 기준으로 재그룹화
 	TArray<TArray<uint32>> FacesPerMaterial;
-    FacesPerMaterial.resize(OutMaterials.size());
+	FacesPerMaterial.resize(OutMaterials.size());
 
-    for (const FStaticMeshSection& RawSection : ObjInfo.Sections)
-    {
+	for (const FStaticMeshSection& RawSection : ObjInfo.Sections)
+	{
 		// 섹션의 머티리얼 슬롯 이름과 일치하는 OutMaterials 배열의 인덱스 찾기
 		auto It = std::find_if(OutMaterials.begin(), OutMaterials.end(),
 			[&RawSection](const FStaticMaterial& Mat) {
 				return Mat.MaterialSlotName == RawSection.MaterialSlotName;
-        });
+			});
 
 		size_t MaterialIndex = 0;
 		if (It != OutMaterials.end())
@@ -538,29 +542,29 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 			UE_LOG("Warning: Material slot '%s' not found. Assigning to Default slot.", RawSection.MaterialSlotName.c_str());
 		}
 
-        for (uint32 i = 0; i < RawSection.NumTriangles; ++i)
-        {
-            uint32 FaceStartIndex = RawSection.FirstIndex + (i * 3);
-            FacesPerMaterial[MaterialIndex].push_back(FaceStartIndex);
-        }
-    }
+		for (uint32 i = 0; i < RawSection.NumTriangles; ++i)
+		{
+			uint32 FaceStartIndex = RawSection.FirstIndex + (i * 3);
+			FacesPerMaterial[MaterialIndex].push_back(FaceStartIndex);
+		}
+	}
 
     // Phase 3: 재그룹화된 면 데이터를 기반으로 최종 정점/인덱스 버퍼 구축
-    TMap<FVertexKey, uint32> VertexMap;
+	TMap<FVertexKey, uint32> VertexMap;
 
-    for (size_t MaterialIndex = 0; MaterialIndex < OutMaterials.size(); ++MaterialIndex)
-    {
-        const TArray<uint32>& FaceStarts = FacesPerMaterial[MaterialIndex];
-        if (FaceStarts.empty()) continue;
+	for (size_t MaterialIndex = 0; MaterialIndex < OutMaterials.size(); ++MaterialIndex)
+	{
+		const TArray<uint32>& FaceStarts = FacesPerMaterial[MaterialIndex];
+		if (FaceStarts.empty()) continue;
 
-        FStaticMeshSection NewSection;
-        NewSection.MaterialSlotName = OutMaterials[MaterialIndex].MaterialSlotName;
-        NewSection.FirstIndex = static_cast<uint32>(OutMesh.Indices.size());
-        NewSection.NumTriangles = static_cast<uint32>(FaceStarts.size());
+		FStaticMeshSection NewSection;
+		NewSection.MaterialSlotName = OutMaterials[MaterialIndex].MaterialSlotName;
+		NewSection.FirstIndex = static_cast<uint32>(OutMesh.Indices.size());
+		NewSection.NumTriangles = static_cast<uint32>(FaceStarts.size());
 
-        for (uint32 FaceStartIndex : FaceStarts)
-        {
-            uint32 TriangleIndices[3];
+		for (uint32 FaceStartIndex : FaceStarts)
+		{
+			uint32 TriangleIndices[3];
 
 			// (P1 - P0) X (P2 - P0) 후 정규화
 			FVector P0 = ObjInfo.Positions[ObjInfo.PosIndices[FaceStartIndex]];
@@ -571,25 +575,25 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 			FVector Edge2 = P2 - P0;
 			FVector FaceNormal = Edge1.Cross(Edge2).Normalized();
 
-            for (int j = 0; j < 3; ++j)
-            {
-                size_t CurrentIndex = FaceStartIndex + j;
-                FVertexKey Key = {
-                    ObjInfo.PosIndices[CurrentIndex],
-                    ObjInfo.UVIndices[CurrentIndex],
-                    ObjInfo.NormalIndices[CurrentIndex]
-                };
+			for (int j = 0; j < 3; ++j)
+			{
+				size_t CurrentIndex = FaceStartIndex + j;
+				FVertexKey Key = {
+					ObjInfo.PosIndices[CurrentIndex],
+					ObjInfo.UVIndices[CurrentIndex],
+					ObjInfo.NormalIndices[CurrentIndex]
+				};
 
-                if (auto It = VertexMap.find(Key); It != VertexMap.end())
-                {
+				if (auto It = VertexMap.find(Key); It != VertexMap.end())
+				{
 					// 이미 생성된 정점이 있다면 인덱스 재사용
-                    TriangleIndices[j] = It->second;
-                }
-                else
-                {
+					TriangleIndices[j] = It->second;
+				}
+				else
+				{
 					// 새로운 정점 생성
-                    FNormalVertex NewVertex;
-                    NewVertex.pos = ObjInfo.Positions[Key.p];
+					FNormalVertex NewVertex;
+					NewVertex.pos = ObjInfo.Positions[Key.p];
 
 					// Normal 예외 처리
 					if (Key.n == -1)
@@ -601,9 +605,9 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 						NewVertex.normal = ObjInfo.Normals[Key.n];
 					}
 
-                    // RHS -> LHS 변환
-                    NewVertex.pos.Z = -NewVertex.pos.Z;
-                    NewVertex.normal.Z = -NewVertex.normal.Z;
+					// RHS -> LHS 변환
+					NewVertex.pos.Z = -NewVertex.pos.Z;
+					NewVertex.normal.Z = -NewVertex.normal.Z;
 
 
 					// UV 예외 처리
@@ -618,24 +622,24 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 						NewVertex.tex.V = 1.0f - NewVertex.tex.V;
 					}
 
-                    NewVertex.color = { 1.0f, 1.0f, 1.0f, 1.0f };
+					NewVertex.color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-                    uint32 NewIndex = static_cast<uint32>(OutMesh.Vertices.size());
-                    OutMesh.Vertices.push_back(NewVertex);
+					uint32 NewIndex = static_cast<uint32>(OutMesh.Vertices.size());
+					OutMesh.Vertices.push_back(NewVertex);
 
-                    VertexMap[Key] = NewIndex;
-                    TriangleIndices[j] = NewIndex;
-                }
-            }
+					VertexMap[Key] = NewIndex;
+					TriangleIndices[j] = NewIndex;
+				}
+			}
 
-            // CCW -> CW (인덱스 순서 변경)
-            OutMesh.Indices.push_back(TriangleIndices[0]);
-            OutMesh.Indices.push_back(TriangleIndices[2]);
-            OutMesh.Indices.push_back(TriangleIndices[1]);
-        }
+			// CCW -> CW (인덱스 순서 변경)
+			OutMesh.Indices.push_back(TriangleIndices[0]);
+			OutMesh.Indices.push_back(TriangleIndices[2]);
+			OutMesh.Indices.push_back(TriangleIndices[1]);
+		}
 
-        OutMesh.Sections.push_back(NewSection);
-    }
+		OutMesh.Sections.push_back(NewSection);
+	}
 
     return true;
 }
