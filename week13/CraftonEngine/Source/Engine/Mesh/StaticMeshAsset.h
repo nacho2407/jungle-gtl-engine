@@ -65,4 +65,5 @@ struct FMaterial
 {
 	FString DiffuseTextureFilePath;
 	FVector4 DiffuseColor;
+	ID3D11ShaderResourceView* DiffuseSRV = nullptr;
 };
