@@ -17,6 +17,9 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	Shaders[(uint32)EShaderType::Outline].Create(InDevice, L"Shaders/Outline.hlsl",
 		"VS", "PS", FVertexInputLayout, ARRAYSIZE(FVertexInputLayout));
 
+	Shaders[(uint32)EShaderType::OutlinePNCT].Create(InDevice, L"Shaders/OutlinePNCT.hlsl",
+		"VS", "PS", FVertexPNCTInputLayout, ARRAYSIZE(FVertexPNCTInputLayout));
+
 	Shaders[(uint32)EShaderType::StaticMesh].Create(InDevice, L"Shaders/StaticMeshShader.hlsl",
 		"VS", "PS", FVertexPNCTInputLayout, ARRAYSIZE(FVertexPNCTInputLayout));
 
