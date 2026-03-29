@@ -61,9 +61,11 @@ struct FStaticMaterial
 	FString MaterialSlotName = "None"; // "None"은 특별한 슬롯 이름으로, OBJ 파일에서 머티리얼이 지정되지 않은 섹션에 할당됩니다.
 };
 
+class UTexture2D;
+
 struct FMaterial
 {
 	FString DiffuseTextureFilePath;
 	FVector4 DiffuseColor;
-	ID3D11ShaderResourceView* DiffuseSRV = nullptr;
+	UTexture2D* DiffuseTexture = nullptr;	// UObjectManager 소유, 여기선 참조만
 };
