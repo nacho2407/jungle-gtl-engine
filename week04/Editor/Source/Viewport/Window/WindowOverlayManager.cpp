@@ -217,14 +217,12 @@ void FWindowOverlayManager::ReleaseSplitters()
 bool FWindowOverlayManager::HitTestSplitterV(int32 X, int32 Y) const
 {
     if (!SplitterV) return false;
-    //return std::abs(static_cast<float>(X) - SplitterV->PosX) <= SplitterHalfThick;
     return SplitterV->HitTest(FVector2(static_cast<float>(X), static_cast<float>(Y)));
 }
 
 bool FWindowOverlayManager::HitTestSplitterH(int32 X, int32 Y) const
 {
     if (!SplitterH) return false;
-    //return std::abs(static_cast<float>(Y) - SplitterH->PosY) <= SplitterHalfThick;
     return SplitterH->HitTest(FVector2(static_cast<float>(X), static_cast<float>(Y)));
 }
 
