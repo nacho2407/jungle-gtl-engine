@@ -48,7 +48,7 @@ cbuffer OutlineConstants : register(b5)
     float4 OutlineColor;
     float3 OutlineInvScale;
     float OutlineOffset;
-    uint PrimitiveType; //  0 : 2D, 1 : 3D
+    uint bIs3D; //  0 : 2D (Plane), 1 : 3D (Cube)
     float3 Padding4;
 };
 
