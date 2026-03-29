@@ -115,8 +115,6 @@ void FViewportLayout::Tick(float DeltaTime)
 
 void FViewportLayout::OnWindowResized(uint32 Width, uint32 Height)
 {
-	UpdateViewportRects(Width, Height);
-
 	// 스플리터 트리 재배치 + SViewport → ISlateViewport 동기화
 	if (GetRootSplitterV())
 	{
