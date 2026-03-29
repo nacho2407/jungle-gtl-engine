@@ -8,7 +8,6 @@ class UMeshComponent : public UPrimitiveComponent
 public:
 	DECLARE_CLASS(UMeshComponent, UPrimitiveComponent)
 	
-	
 	void SetMaterial(int32 SlotIndex, UMaterial * InMaterial);
 	UMaterial * GetMaterial(int32 SlotIndex) const;
 	int32 GetMaterialCount() const;
