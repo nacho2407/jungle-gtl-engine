@@ -3,9 +3,7 @@
 #include "Render/Types/VertexTypes.h"
 #include "ObjImporter.h"
 #include "Serialization/WindowsArchive.h"
-#include "WICTextureLoader.h"
-#include "UI/EditorConsoleWidget.h"
-#include <filesystem>
+#include "Texture/Texture2D.h"
 
 std::map<std::string, UStaticMesh*> FObjManager::StaticMeshCache;
 
@@ -100,7 +98,7 @@ bool FObjManager::LoadStaticMeshAsset(const std::string& PathFileName, ID3D11Dev
 		Result->RenderBuffer->Create(InDevice, RenderMeshData);
 	}
 
-	// 머티리얼 텍스처 프리로드
+	// 머티리얼 텍스처 프리로드 (UTexture2D 캐시 경유)
 	if (InDevice)
 	{
 		for (auto& Mat : OutMaterials)
@@ -110,17 +108,8 @@ bool FObjManager::LoadStaticMeshAsset(const std::string& PathFileName, ID3D11Dev
 				continue;
 			}
 
-			std::filesystem::path TexPath(Mat.MaterialInterface->DiffuseTextureFilePath);
-			std::wstring WideTexPath = TexPath.wstring();
-
-			HRESULT hr = DirectX::CreateWICTextureFromFile(
-				InDevice, WideTexPath.c_str(),
-				nullptr, &Mat.MaterialInterface->DiffuseSRV);
-
-			if (FAILED(hr))
-			{
-				UE_LOG("Failed to load texture: %s", Mat.MaterialInterface->DiffuseTextureFilePath.c_str());
-			}
+			Mat.MaterialInterface->DiffuseTexture = UTexture2D::LoadFromFile(
+				Mat.MaterialInterface->DiffuseTextureFilePath, InDevice);
 		}
 	}
 
