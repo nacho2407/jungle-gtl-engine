@@ -56,7 +56,8 @@ void UObjViewerEngine::Init(FWindowsWindow* InWindow)
 
 void UObjViewerEngine::Shutdown()
 {
-	FObjViewerSettings::Get().SaveToFile(FObjViewerSettings::GetDefaultSettingsPath());
+	FString SavePath = FPaths::ToRelativeString(FPaths::ToWide(FObjViewerSettings::GetDefaultSettingsPath()));
+	FObjViewerSettings::Get().SaveToFile(SavePath);
 
 	// 엔진 공통 해제 (Renderer, D3D 등)
 	UEngine::Shutdown();
