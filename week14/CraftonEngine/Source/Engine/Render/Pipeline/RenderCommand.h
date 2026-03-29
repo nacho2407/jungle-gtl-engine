@@ -125,11 +125,23 @@ struct FConstantBufferBinding
 	uint32 Slot = 0;					// VS/PS CB 슬롯
 };
 
+// 섹션별 드로우 정보 — 머티리얼(텍스처)이 다른 구간을 분리 드로우
+struct FMeshSectionDraw
+{
+	ID3D11ShaderResourceView* DiffuseSRV = nullptr;
+	FVector4 DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+	uint32 FirstIndex = 0;
+	uint32 IndexCount = 0;
+};
+
 struct FRenderCommand
 {
 	FMeshBuffer* MeshBuffer = nullptr;
 	FShader* Shader = nullptr;
 	FPerObjectConstants PerObjectConstants = {};	// b1 (공통)
+
+	// StaticMesh 섹션별 드로우 정보
+	TArray<FMeshSectionDraw> SectionDraws;
 
 	// 타입별 파라미터 (GPU CB 데이터 또는 CPU 배처 파라미터)
 	union

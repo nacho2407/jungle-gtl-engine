@@ -254,22 +254,45 @@ bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
 				OutObjInfo.Sections.emplace_back(DefaultSection);
 			}
 
-			std::string FaceVertex;
-			for (int i = 0; i < 3; ++i)
-			{
-				LineStream >> FaceVertex;
-				uint32 v, vt, vn;
+			// face의 모든 정점을 먼저 수집
+			struct FFaceVert { uint32 p, t, n; };
+			TArray<FFaceVert> FaceVerts;
 
+			std::string FaceVertex;
+			while (LineStream >> FaceVertex)
+			{
+				uint32 v, vt, vn;
 				if (sscanf_s(FaceVertex.c_str(), "%u/%u/%u", &v, &vt, &vn) == 3)
 				{
-					OutObjInfo.PosIndices.emplace_back(v - 1);
-					OutObjInfo.UVIndices.emplace_back(vt - 1);
-					OutObjInfo.NormalIndices.emplace_back(vn - 1);
+					FaceVerts.push_back({ v - 1, vt - 1, vn - 1 });
+				}
+				else if (sscanf_s(FaceVertex.c_str(), "%u//%u", &v, &vn) == 2)
+				{
+					FaceVerts.push_back({ v - 1, 0, vn - 1 });
 				}
 				else
 				{
 					UE_LOG("Failed to parse face vertex: %s", FaceVertex.c_str());
 					return false;
+				}
+			}
+
+			if (FaceVerts.size() < 3)
+			{
+				UE_LOG("Face with less than 3 vertices");
+				return false;
+			}
+
+			// Fan triangulation: N각형 → (N-2)개 삼각형
+			for (size_t i = 1; i + 1 < FaceVerts.size(); ++i)
+			{
+				// 삼각형: [0, i, i+1]
+				const FFaceVert* Tri[3] = { &FaceVerts[0], &FaceVerts[i], &FaceVerts[i + 1] };
+				for (int j = 0; j < 3; ++j)
+				{
+					OutObjInfo.PosIndices.emplace_back(Tri[j]->p);
+					OutObjInfo.UVIndices.emplace_back(Tri[j]->t);
+					OutObjInfo.NormalIndices.emplace_back(Tri[j]->n);
 				}
 			}
 		}
@@ -304,6 +327,12 @@ bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
 	if (!OutObjInfo.Sections.empty())
 	{
 		OutObjInfo.Sections.back().NumTriangles = (static_cast<uint32>(OutObjInfo.PosIndices.size()) - OutObjInfo.Sections.back().FirstIndex) / 3;
+	}
+
+	// UV가 하나도 없는 OBJ 파일 대비: 더미 UV 삽입
+	if (OutObjInfo.UVs.empty())
+	{
+		OutObjInfo.UVs.emplace_back(FVector2{ 0.0f, 0.0f });
 	}
 
 	return true;
@@ -352,10 +381,52 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 			{
 				continue;
 			}
+			// 옵션(-s, -o, -bm 등)을 스킵하고 마지막 파일 경로만 추출
 			std::string TextureFileName;
-			std::getline(LineStream >> std::ws, TextureFileName);
-			std::filesystem::path FilePath(MtlFilePath);
-			OutMtlInfos.back().map_Kd = (FilePath.parent_path() / TextureFileName).string();
+			std::string Token;
+			while (LineStream >> Token)
+			{
+				if (Token[0] == '-')
+				{
+					// 옵션 플래그 뒤의 인자값들 스킵 (-s x y z, -o x y z, -bm val 등)
+					std::string Arg;
+					while (LineStream.peek() != EOF && LineStream.peek() != '-')
+					{
+						size_t Pos = LineStream.tellg();
+						LineStream >> Arg;
+						// 숫자가 아니면 파일명 시작 → 되돌리고 break
+						bool bIsNumber = !Arg.empty() && (isdigit(Arg[0]) || Arg[0] == '.' || (Arg[0] == '-' && Arg.size() > 1));
+						if (!bIsNumber)
+						{
+							TextureFileName = Arg;
+							// 파일명에 공백이 있을 수 있으므로 나머지도 붙임
+							std::string Rest;
+							if (std::getline(LineStream >> std::ws, Rest) && !Rest.empty())
+							{
+								TextureFileName += " " + Rest;
+							}
+							goto done;
+						}
+					}
+				}
+				else
+				{
+					// 옵션이 아닌 토큰 → 파일명 시작
+					TextureFileName = Token;
+					std::string Rest;
+					if (std::getline(LineStream >> std::ws, Rest) && !Rest.empty())
+					{
+						TextureFileName += " " + Rest;
+					}
+					goto done;
+				}
+			}
+			done:
+			if (!TextureFileName.empty())
+			{
+				std::filesystem::path FilePath(MtlFilePath);
+				OutMtlInfos.back().map_Kd = (FilePath.parent_path() / TextureFileName).string();
+			}
 		}
 	}
 	return true;

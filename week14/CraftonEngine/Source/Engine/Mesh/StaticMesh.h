@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/Object.h"
 #include "Mesh/StaticMeshAsset.h"
@@ -17,6 +17,7 @@ public:
 	const FString& GetAssetPathFileName() const;
 	void SetStaticMeshAsset(std::unique_ptr<FStaticMesh> InMesh);
 	FStaticMesh* GetStaticMeshAsset() const;
+	void SetStaticMaterials(TArray<FStaticMaterial>&& InMaterials);
 	const TArray<FStaticMaterial>& GetStaticMaterials() const;
 
 private:

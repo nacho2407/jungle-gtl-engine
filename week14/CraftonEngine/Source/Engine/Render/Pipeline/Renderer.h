@@ -59,6 +59,7 @@ private:
 	void BindCommand(const FRenderCommand& InCmd, ID3D11DeviceContext* Context);
 
 	void DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderCommand& InCommand);
+	void DrawStaticMeshSections(ID3D11DeviceContext* Context, const FRenderCommand& Cmd);
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus);
 
 	// 기본 패스 실행기 — SetupRenderState + BindCommand + DrawCommand 루프

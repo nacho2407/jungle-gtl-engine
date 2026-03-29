@@ -12,7 +12,7 @@ cbuffer FrameBuffer : register(b0)
 cbuffer PerObjectBuffer : register(b1)
 {
     row_major float4x4 Model;
-    float4 PrimitiveColor; 
+    float4 PrimitiveColor;
 };
 
 cbuffer GizmoBuffer : register(b2)
@@ -51,7 +51,6 @@ cbuffer OutlineConstants : register(b5)
     uint PrimitiveType; //  0 : 2D, 1 : 3D
     float3 Padding4;
 };
-
 
 float4 ApplyMVP(float3 pos)
 {
