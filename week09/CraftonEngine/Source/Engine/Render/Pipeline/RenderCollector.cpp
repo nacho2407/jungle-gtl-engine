@@ -1,4 +1,4 @@
-#include "RenderCollector.h"
+﻿#include "RenderCollector.h"
 #include "Render/Resource/ConstantBufferPool.h"
 
 #include "GameFramework/World.h"
@@ -221,7 +221,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 			if (SM && SM->GetStaticMeshAsset())
 			{
 				const auto& Sections = SM->GetStaticMeshAsset()->Sections;
-				const auto& Materials = SM->GetStaticMaterials();
+				const auto& Slots = SM->GetStaticMaterials(); // 기본 슬롯 정보
+				const auto& Overrides = SMComp->GetOverrideMaterials(); // 인스턴스별 오버라이드 정보
 
 				for (const FStaticMeshSection& Section : Sections)
 				{
@@ -230,13 +231,18 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 					Draw.IndexCount = Section.NumTriangles * 3;
 
 					// 머티리얼 슬롯 이름으로 매칭
-					for (const FStaticMaterial& Mat : Materials)
+					for (int32 i = 0; i < Slots.size(); ++i)
 					{
-						if (Mat.MaterialSlotName == Section.MaterialSlotName && Mat.MaterialInterface)
+						if (Slots[i].MaterialSlotName == Section.MaterialSlotName)
 						{
-							if (Mat.MaterialInterface->DiffuseTexture)
-								Draw.DiffuseSRV = Mat.MaterialInterface->DiffuseTexture->GetSRV();
-							Draw.DiffuseColor = Mat.MaterialInterface->DiffuseColor;
+							// 2. 찾은 인덱스(i)를 사용하여 컴포넌트의 OverrideMaterials에서 머티리얼을 가져옵니다.
+							if (i < Overrides.size() && Overrides[i])
+							{
+								auto& Mat = Overrides[i];
+								if (Mat->DiffuseTexture)
+									Draw.DiffuseSRV = Mat->DiffuseTexture->GetSRV();
+								Draw.DiffuseColor = Mat->DiffuseColor;
+							}
 							break;
 						}
 					}
