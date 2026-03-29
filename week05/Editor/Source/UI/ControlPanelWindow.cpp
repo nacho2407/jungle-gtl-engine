@@ -23,7 +23,6 @@
 #include <filesystem>
 #include <random>
 #include <chrono>
-#include "Viewport/EditorViewportClient.h"
 
 namespace
 {
@@ -131,12 +130,12 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 		}
 		*/
 
-		FEditorViewportClient* EVC = Engine->GetEditorViewportClient();
 		FSlateApplication* Slate = Engine->GetSlateApplication();
 		FViewportId FocusedId = Slate ? Slate->GetFocusedViewportId() : INVALID_VIEWPORT_ID;
-		FViewportEntry* Entry = EVC ? EVC->FindEntryByViewportID(FocusedId) : nullptr;
-		if (!Entry && EVC && !EVC->GetEntries().empty())
-			Entry = &EVC->GetEntries().front();
+		FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
+		FViewportEntry* Entry = ViewportRegistry.FindEntryByViewportID(FocusedId);
+		if (!Entry && !ViewportRegistry.GetEntries().empty())
+			Entry = &ViewportRegistry.GetEntries().front();
 
 		// Speed/Sensitivity는 FCamera에서 읽기 (렌더 무관 설정값)
 		if (FCamera* Camera = Engine->GetScene()->GetCamera())

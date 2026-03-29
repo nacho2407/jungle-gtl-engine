@@ -73,14 +73,14 @@ UWorld* IViewportClient::ResolveWorld(FEngine* Engine) const
 	return Engine ? Engine->GetActiveWorld() : nullptr;
 }
 
-void IViewportClient::BuildRenderCommands(FEngine* Engine, UScene* Scene, const FFrustum& Frustum, const FShowFlags& Flags, FRenderCommandQueue& OutQueue)
+void IViewportClient::BuildRenderCommands(FEngine* Engine, UScene* Scene, const FFrustum& Frustum, const FShowFlags& Flags, const FVector& CameraPosition, FRenderCommandQueue& OutQueue)
 {
 	UWorld* World = ResolveWorld(Engine);
 	if (!World) return;
 
 	// Persistent + Streaming 전체 액터를 렌더
 	TArray<AActor*> AllActors = World->GetAllActors();
-	RenderCollector.CollectRenderCommands(AllActors, Frustum, Flags, OutQueue);
+	RenderCollector.CollectRenderCommands(AllActors, Frustum, Flags, CameraPosition, OutQueue);
 }
 
 void IViewportClient::HandleFileDoubleClick(const FString& FilePath)
@@ -147,7 +147,8 @@ void FGameViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 	FFrustum Frustum;
 	Frustum.ExtractFromVP(Queue.ViewMatrix * Queue.ProjectionMatrix);
 
-	BuildRenderCommands(Engine, Scene, Frustum, FShowFlags{}, Queue);
+	const FVector CameraPosition = Queue.ViewMatrix.GetInverse().GetTranslation();
+	BuildRenderCommands(Engine, Scene, Frustum, FShowFlags{}, CameraPosition, Queue);
 	Renderer->SubmitCommands(Queue);
 	Renderer->ExecuteCommands();
 }

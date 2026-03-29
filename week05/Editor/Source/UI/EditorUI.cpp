@@ -20,7 +20,6 @@
 #include <windows.h>
 #include <commdlg.h>
 
-#include "Viewport/EditorViewportClient.h"
 #include "Debug/EngineLog.h"
 #include "Component/CameraComponent.h"
 #include "Camera/Camera.h"
@@ -151,14 +150,17 @@ void FEditorUI::Initialize(FEditorEngine* InEngine)
 					}
 				}
 			}
-			//else if (Viewport.IsHovered())
-			//{
-			//	UE_LOG("Drop On Viewport");			
-			//	if (Engine)
-			//	{
-			//		Engine->GetViewportClient()->HandleFileDropOnViewport(DraggingFilePath);
-			//	}
-			//}
+			else if (
+				Engine &&
+				Engine->GetSlateApplication() &&
+				Engine->GetSlateApplication()->GetHoveredViewportId() != INVALID_VIEWPORT_ID)
+			{
+				UE_LOG("Drop On Viewport");			
+				if (Engine)
+				{
+					Engine->GetViewportClient()->HandleFileDropOnViewport(DraggingFilePath);
+				}
+			}
 		};
 }
 
@@ -284,12 +286,12 @@ void FEditorUI::AttachToRenderer(FRenderer* InRenderer)
 			if (Selected && !Selected->IsPendingDestroy() && Selected->IsVisible()
 				&& !Selected->IsA<ASkySphereActor>()
 				&& [&]() -> bool {
-				FEditorViewportClient* EVC = Engine->GetEditorViewportClient();
-				if (!EVC || EVC->GetEntries().empty()) return true;
+				const FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
+				if (ViewportRegistry.GetEntries().empty()) return true;
 				FSlateApplication* Slate = Engine->GetSlateApplication();
 				FViewportId VId = Slate ? Slate->GetFocusedViewportId() : INVALID_VIEWPORT_ID;
 				const FViewportEntry* E = (VId != INVALID_VIEWPORT_ID)
-					? EVC->FindEntryByViewportID(VId) : &EVC->GetEntries().front();
+					? ViewportRegistry.FindEntryByViewportID(VId) : &ViewportRegistry.GetEntries().front();
 				return E && E->LocalState.ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives);
 			}())
 			{
@@ -422,13 +424,13 @@ void FEditorUI::BuildDefaultLayout(uint32 DockID)
 void FEditorUI::LoadEditorSettings()
 {
 	std::wstring Path = GetEditorIniPathW();
-	FEditorViewportClient* EVC = Engine ? Engine->GetEditorViewportClient() : nullptr;
-	if (!EVC) return;
+	if (!Engine) return;
+	FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
 
 	wchar_t Sec[32];
 	wchar_t Buf[64];
 
-	for (FViewportEntry& Entry : EVC->GetEntries())
+	for (FViewportEntry& Entry : ViewportRegistry.GetEntries())
 	{
 		swprintf(Sec, 32, L"Viewport.%u", Entry.Id);
 		FViewportLocalState& S = Entry.LocalState;
@@ -465,13 +467,13 @@ void FEditorUI::LoadEditorSettings()
 void FEditorUI::SaveEditorSettings()
 {
 	std::wstring Path = GetEditorIniPathW();
-	FEditorViewportClient* EVC = Engine ? Engine->GetEditorViewportClient() : nullptr;
-	if (!EVC) return;
+	if (!Engine) return;
+	const FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
 
 	wchar_t Sec[32];
 	wchar_t Buf[64];
 
-	for (const FViewportEntry& Entry : EVC->GetEntries())
+	for (const FViewportEntry& Entry : ViewportRegistry.GetEntries())
 	{
 		swprintf(Sec, 32, L"Viewport.%u", Entry.Id);
 		const FViewportLocalState& S = Entry.LocalState;
@@ -623,18 +625,15 @@ void FEditorUI::Render()
 						{
 							if (CameraData.bValid)
 							{
-								FEditorViewportClient* EVC = Engine->GetEditorViewportClient();
-								if (EVC)
+								FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
+								FViewportEntry* PerspEntry = ViewportRegistry.FindEntryByType(EViewportType::Perspective);
+								if (PerspEntry)
 								{
-									FViewportEntry* PerspEntry = EVC->FindEntryByType(EViewportType::Perspective);
-									if (PerspEntry)
-									{
-										PerspEntry->LocalState.Position  = CameraData.Location;
-										PerspEntry->LocalState.Rotation  = CameraData.Rotation;
-										PerspEntry->LocalState.FovY      = CameraData.FOV;
-										PerspEntry->LocalState.NearPlane = CameraData.NearClip;
-										PerspEntry->LocalState.FarPlane  = CameraData.FarClip;
-									}
+									PerspEntry->LocalState.Position  = CameraData.Location;
+									PerspEntry->LocalState.Rotation  = CameraData.Rotation;
+									PerspEntry->LocalState.FovY      = CameraData.FOV;
+									PerspEntry->LocalState.NearPlane = CameraData.NearClip;
+									PerspEntry->LocalState.FarPlane  = CameraData.FarClip;
 								}
 							}
 							UE_LOG("Scene loaded: %s", Path.c_str());
@@ -661,19 +660,16 @@ void FEditorUI::Render()
 					if (!Path.empty())
 					{
 						FCameraSerializeData CameraData;
-						FEditorViewportClient* EVC = Engine->GetEditorViewportClient();
-						if (EVC)
+						const FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
+						const FViewportEntry* PerspEntry = ViewportRegistry.FindEntryByType(EViewportType::Perspective);
+						if (PerspEntry)
 						{
-							const FViewportEntry* PerspEntry = EVC->FindEntryByType(EViewportType::Perspective);
-							if (PerspEntry)
-							{
-								CameraData.Location  = PerspEntry->LocalState.Position;
-								CameraData.Rotation  = PerspEntry->LocalState.Rotation;
-								CameraData.FOV       = PerspEntry->LocalState.FovY;
-								CameraData.NearClip  = PerspEntry->LocalState.NearPlane;
-								CameraData.FarClip   = PerspEntry->LocalState.FarPlane;
-								CameraData.bValid    = true;
-							}
+							CameraData.Location  = PerspEntry->LocalState.Position;
+							CameraData.Rotation  = PerspEntry->LocalState.Rotation;
+							CameraData.FOV       = PerspEntry->LocalState.FovY;
+							CameraData.NearClip  = PerspEntry->LocalState.NearPlane;
+							CameraData.FarClip   = PerspEntry->LocalState.FarPlane;
+							CameraData.bValid    = true;
 						}
 						FSceneSerializer::Save(Engine->GetScene(), Path, CameraData);
 					}
@@ -684,20 +680,22 @@ void FEditorUI::Render()
 		}
 		if (ImGui::BeginMenu("View"))
 		{
-			FEditorViewportClient* VPC = Engine ? Engine->GetEditorViewportClient() : nullptr;
-			if (VPC && !VPC->GetEntries().empty())
+			if (Engine)
 			{
-				FViewportEntry* TargetEntry = nullptr;
-				FSlateApplication* Slate = Engine->GetSlateApplication();
-				FViewportId ViewportID = Slate ? Slate->GetFocusedViewportId() : INVALID_VIEWPORT_ID;
+				FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
+				if (!ViewportRegistry.GetEntries().empty())
+				{
+					FViewportEntry* TargetEntry = nullptr;
+					FSlateApplication* Slate = Engine->GetSlateApplication();
+					FViewportId ViewportID = Slate ? Slate->GetFocusedViewportId() : INVALID_VIEWPORT_ID;
 
-				if (ViewportID == INVALID_VIEWPORT_ID)
-					TargetEntry = &VPC->GetEntries().front();
-				else
-					TargetEntry = VPC->FindEntryByViewportID(ViewportID);
+					if (ViewportID == INVALID_VIEWPORT_ID)
+						TargetEntry = &ViewportRegistry.GetEntries().front();
+					else
+						TargetEntry = ViewportRegistry.FindEntryByViewportID(ViewportID);
 
-				if (!TargetEntry)
-					TargetEntry = &VPC->GetEntries().front();
+					if (!TargetEntry)
+						TargetEntry = &ViewportRegistry.GetEntries().front();
 
 				FShowFlags& ShowFlags = TargetEntry->LocalState.ShowFlags;
 				// ===== Show Flags 섹션 =====
@@ -735,6 +733,7 @@ void FEditorUI::Render()
 				if (ImGui::SliderFloat("Line Thickness", &TargetEntry->LocalState.LineThickness, 0.1f, 5.0f, "%.2f"))
 				{
 					SaveEditorSettings();
+				}
 				}
 			}
 			ImGui::EndMenu();
@@ -835,8 +834,41 @@ void FEditorUI::Render()
 
 bool FEditorUI::GetViewportMousePosition(int32 WindowMouseX, int32 WindowMouseY, int32& OutViewportX, int32& OutViewportY, int32& OutWidth, int32& OutHeight) const
 {
-	return false;
-	// return Viewport.GetMousePositionInViewport(WindowMouseX, WindowMouseY, OutViewportX, OutViewportY, OutWidth, OutHeight);
+	if (!Engine)
+	{
+		return false;
+	}
+
+	FSlateApplication* Slate = Engine->GetSlateApplication();
+	if (!Slate)
+	{
+		return false;
+	}
+
+	const FViewportId HoveredViewportId = Slate->GetHoveredViewportId();
+	if (HoveredViewportId == INVALID_VIEWPORT_ID)
+	{
+		return false;
+	}
+
+	const FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
+	const FViewportEntry* Entry = ViewportRegistry.FindEntryByViewportID(HoveredViewportId);
+	if (!Entry || !Entry->bActive || !Entry->Viewport)
+	{
+		return false;
+	}
+
+	const FRect& Rect = Entry->Viewport->GetRect();
+	if (!Rect.IsValid())
+	{
+		return false;
+	}
+
+	OutViewportX = WindowMouseX - Rect.X;
+	OutViewportY = WindowMouseY - Rect.Y;
+	OutWidth = Rect.Width;
+	OutHeight = Rect.Height;
+	return true;
 }
 
 void FEditorUI::SyncSelectedActorProperty()

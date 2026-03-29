@@ -170,7 +170,11 @@
     <ClCompile Include="Source\UI\ControlPanelWindow.cpp" />
     <ClCompile Include="Source\UI\EditorUI.cpp" />
     <ClCompile Include="Source\Viewport\BlitRenderer.cpp" />
+    <ClCompile Include="Source\Viewport\Services\EditorViewportAssetInteractionService.cpp" />
+    <ClCompile Include="Source\Viewport\Services\EditorViewportInputService.cpp" />
+    <ClCompile Include="Source\Viewport\Services\EditorViewportRenderService.cpp" />
     <ClCompile Include="Source\Viewport\EditorViewportClient.cpp" />
+    <ClCompile Include="Source\Viewport\EditorViewportRegistry.cpp" />
     <ClCompile Include="Source\UI\OutlinerWindow.cpp" />
     <ClCompile Include="Source\Viewport\PreviewViewportClient.cpp" />
     <ClCompile Include="Source\UI\PropertyWindow.cpp" />
@@ -206,7 +210,11 @@
     <ClInclude Include="Source\UI\ControlPanelWindow.h" />
     <ClInclude Include="Source\UI\EditorUI.h" />
     <ClInclude Include="Source\Viewport\BlitRenderer.h" />
+    <ClInclude Include="Source\Viewport\Services\EditorViewportAssetInteractionService.h" />
+    <ClInclude Include="Source\Viewport\Services\EditorViewportInputService.h" />
+    <ClInclude Include="Source\Viewport\Services\EditorViewportRenderService.h" />
     <ClInclude Include="Source\Viewport\EditorViewportClient.h" />
+    <ClInclude Include="Source\Viewport\EditorViewportRegistry.h" />
     <ClInclude Include="Source\UI\OutlinerWindow.h" />
     <ClInclude Include="Source\Viewport\PreviewViewportClient.h" />
     <ClInclude Include="Source\UI\PropertyWindow.h" />

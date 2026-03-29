@@ -6,6 +6,9 @@
 #include "Picking/Picker.h"
 #include "Types/CoreTypes.h"
 #include "BlitRenderer.h"
+#include "Services/EditorViewportInputService.h"
+#include "Services/EditorViewportAssetInteractionService.h"
+#include "Services/EditorViewportRenderService.h"
 #include "Platform/Windows/WindowsWindow.h"
 #include "Core/ShowFlags.h"
 
@@ -13,11 +16,16 @@ class FEditorUI;
 class FFrustum;
 struct FRenderCommandQueue;
 class FEditorEngine;
+class FEditorViewportRegistry;
 
 class FEditorViewportClient : public IViewportClient
 {
 public:
-	FEditorViewportClient(FEditorEngine& InEditorEngine, FEditorUI& InEditorUI, FWindowsWindow* InMainWindow);
+	FEditorViewportClient(
+		FEditorEngine& InEditorEngine,
+		FEditorUI& InEditorUI,
+		FEditorViewportRegistry& InViewportRegistry,
+		FWindowsWindow* InMainWindow);
 
 	void Attach(FEngine* Engine, FRenderer* Renderer) override;
 	void Detach(FEngine* Engine, FRenderer* Renderer) override;
@@ -31,27 +39,22 @@ public:
 	void HandleFileDoubleClick(const FString& FilePath) override;
 	void HandleFileDropOnViewport(const FString& FilePath) override;
 	void BuildRenderCommands(FEngine* Engine, UScene* Scene,
-		const FFrustum& Frustum, const FShowFlags& Flags, FRenderCommandQueue& OutQueue) override;
-	TArray<FViewportEntry>& GetEntries() { return Entries; }
-	const TArray<FViewportEntry>& GetEntries() const { return Entries; }
+	const FFrustum& Frustum, const FShowFlags& Flags, const FVector& CameraPosition, FRenderCommandQueue& OutQueue) override;
 	void Render(FEngine* Engine, FRenderer* Renderer);
-	FViewportEntry* FindEntryByType(EViewportType Type);
-	const FViewportEntry* FindEntryByType(EViewportType Type) const;
-	FViewport* GetViewportById(FViewportId Id) const;
-	const FViewportEntry* FindEntryByViewportID(FViewportId ViewportId) const;
-	FViewportEntry* FindEntryByViewportID(FViewportId ViewportId);
 
 private:
 	FEditorUI& EditorUI;
 	mutable FGizmo Gizmo;
-	void InitializeEntries();
 	void SyncViewportRectsFromDock();
 
 	FWindowsWindow* MainWindow = nullptr;
 
 	FPicker Picker;
-	TArray<FViewportEntry> Entries;
 	FEditorEngine& EditorEngine;
+	FEditorViewportRegistry& ViewportRegistry;
+	FEditorViewportInputService InputService;
+	FEditorViewportAssetInteractionService AssetInteractionService;
+	FEditorViewportRenderService RenderService;
 
 	FBlitRenderer BlitRenderer;
 
@@ -59,10 +62,6 @@ private:
 	const FString WireframeMaterialName = "M_Wireframe";
 	std::shared_ptr<FMaterial> WireFrameMaterial = nullptr;
 
-	int32 ScreenWidth = 0;
-	int32 ScreenHeight = 0;
-	int32 ScreenMouseX = 0;
-	int32 ScreenMouseY = 0;
 
 	// 그리드 렌더링용
 	std::unique_ptr<FMeshData> GridMesh;

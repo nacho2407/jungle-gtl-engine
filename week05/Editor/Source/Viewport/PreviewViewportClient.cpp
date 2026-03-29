@@ -81,7 +81,8 @@ void FPreviewViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 			FFrustum Frustum;
 			Frustum.ExtractFromVP(Queue.ViewMatrix * Queue.ProjectionMatrix);
 
-			BuildRenderCommands(Engine, Scene, Frustum, FShowFlags{}, Queue);
+			const FVector CameraPosition = Queue.ViewMatrix.GetInverse().GetTranslation();
+			BuildRenderCommands(Engine, Scene, Frustum, FShowFlags{}, CameraPosition, Queue);
 			Renderer->SubmitCommands(Queue);
 			Renderer->ExecuteCommands();
 		}

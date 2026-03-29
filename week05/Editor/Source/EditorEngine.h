@@ -4,11 +4,13 @@
 #include "Subsystem/EditorCameraSubsystem.h"
 #include "Subsystem/EditorSelectionSubsystem.h"
 #include "UI/EditorUI.h"
-#include "Viewport/Viewport.h"
+#include "Viewport/EditorViewportRegistry.h"
 #include "Viewport/PreviewViewportClient.h"
 #include "Slate/SlateApplication.h"
 
 class AActor;
+class FEditorViewportClient;
+class FShowFlags;
 
 class FEditorEngine : public FEngine
 {
@@ -32,10 +34,13 @@ public:
 	const FWorldContext* GetActiveWorldContext() const override;
 	void HandleResize(int32 Width, int32 Height) override;
 
-	const TArray<FViewport>& GetViewports() const { return Viewports; }
-	TArray<FViewport>& GetViewports() { return Viewports; }
+	const TArray<FViewport>& GetViewports() const { return ViewportRegistry.GetViewports(); }
+	TArray<FViewport>& GetViewports() { return ViewportRegistry.GetViewports(); }
+	const FEditorViewportRegistry& GetViewportRegistry() const { return ViewportRegistry; }
+	FEditorViewportRegistry& GetViewportRegistry() { return ViewportRegistry; }
 	FSlateApplication* GetSlateApplication() const { return SlateApplication.get(); }
-	FEditorViewportClient* GetEditorViewportClient() const { return EditorViewportClientRaw; }
+	void FlushDebugDrawForViewport(FRenderer* Renderer, const FShowFlags& ShowFlags, bool bClearAfterFlush);
+	void ClearDebugDrawForFrame();
 
 protected:
 	void PreInitialize() override;
@@ -79,7 +84,7 @@ private:
 	FWorldContext* ActiveEditorWorldContext = nullptr;
 
 	FWindowsWindow* MainWindow = nullptr;
-	TArray<FViewport> Viewports;
+	FEditorViewportRegistry ViewportRegistry;
 	FEditorViewportClient* EditorViewportClientRaw = nullptr;
 
 	std::unique_ptr<FSlateApplication> SlateApplication = nullptr;

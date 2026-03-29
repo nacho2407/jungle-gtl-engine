@@ -12,7 +12,6 @@ class FEditorEngine;
 class FWindowsWindow;
 class FRenderer;
 class AActor;
-class FEditorViewportClient;
 class FEditorUI
 {
 public:

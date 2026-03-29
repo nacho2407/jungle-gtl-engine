@@ -28,7 +28,7 @@ public:
 	void DrawCube(const FVector& Center, const FVector& Extent, const FVector4& Color);
 	void DrawWorldAxis(float Length = 1000.f);
 
-	void Flush(FRenderer* Renderer, const FShowFlags& ShowFlags, UWorld* World);
+	void Flush(FRenderer* Renderer, const FShowFlags& ShowFlags, UWorld* World, bool bClearAfterFlush = true);
 	void Clear();
 private:
 	TArray<FDebugLine> Lines;

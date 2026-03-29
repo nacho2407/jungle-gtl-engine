@@ -11,7 +11,7 @@
 #include "Renderer/Material.h"
 
 void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors, const FFrustum& Frustum,
-	const FShowFlags& ShowFlags, FRenderCommandQueue& OutQueue)
+	const FShowFlags& ShowFlags, const FVector& CameraPosition, FRenderCommandQueue& OutQueue)
 {
 	TArray<UPrimitiveComponent*> VisiblePrimitives;
 	FrustrumCull(Actors, Frustum, ShowFlags, VisiblePrimitives);
@@ -59,8 +59,7 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 
 					if (TextComp->IsBillboard())
 					{
-						const FVector CameraPos = Renderer->GetCameraPosition();
-						Command.WorldMatrix = FMatrix::MakeScale(Scale) * FMatrix::MakeBillboard(WorldPos, CameraPos);
+						Command.WorldMatrix = FMatrix::MakeScale(Scale) * FMatrix::MakeBillboard(WorldPos, CameraPosition);
 					}
 					else
 					{
@@ -101,10 +100,9 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 
 					if (SubUVComponent->IsBillboard())
 					{
-						const FVector CameraPos = Renderer->GetCameraPosition();
 						const FVector WorldPos = Command.WorldMatrix.GetTranslation();
 						const FVector Scale = Command.WorldMatrix.GetScaleVector();
-						Command.WorldMatrix = FMatrix::MakeScale(Scale) * FMatrix::MakeBillboard(WorldPos, CameraPos);
+						Command.WorldMatrix = FMatrix::MakeScale(Scale) * FMatrix::MakeBillboard(WorldPos, CameraPosition);
 					}
 
 					OutQueue.AddCommand(Command);

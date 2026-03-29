@@ -200,7 +200,6 @@ void FEditorEngine::BindHost(FWindowsWindow* InMainWindow)
 	// 실제 UI/뷰포트 생성은 뒤 단계에서 하고, 여기서는 창 참조만 저장한다.
 	MainWindow = InMainWindow;
 	EditorUI.SetupWindow(InMainWindow);
-	Viewports.resize(4);
 }
 
 bool FEditorEngine::InitializeWorlds(int32 Width, int32 Height)
@@ -234,6 +233,7 @@ void FEditorEngine::FinalizeInitialize()
 	const int32 W = MainWindow ? MainWindow->GetWidth() : 800;
 	const int32 H = MainWindow ? MainWindow->GetHeight() : 600;
 
+	TArray<FViewport>& Viewports = ViewportRegistry.GetViewports();
 	FViewport* VPs[MAX_VIEWPORTS] = {
 		&Viewports[0], &Viewports[1], &Viewports[2], &Viewports[3]
 	};
@@ -247,7 +247,7 @@ void FEditorEngine::Tick(float DeltaTime)
 	if (EditorViewportClientRaw && SlateApplication)
 	{
 		FViewportId FocusedId = SlateApplication->GetFocusedViewportId();
-		FViewportEntry* FocusedEntry = EditorViewportClientRaw->FindEntryByViewportID(FocusedId);
+		FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(FocusedId);
 		FViewportLocalState* LocalState = nullptr;
 		if (FocusedEntry && FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
 			LocalState = &FocusedEntry->LocalState;
@@ -268,7 +268,7 @@ void FEditorEngine::TickWorlds(float DeltaTime)
 
 std::unique_ptr<IViewportClient> FEditorEngine::CreateViewportClient()
 {
-	auto Client = std::make_unique<FEditorViewportClient>(*this, EditorUI, MainWindow);
+	auto Client = std::make_unique<FEditorViewportClient>(*this, EditorUI, ViewportRegistry, MainWindow);
 	EditorViewportClientRaw = Client.get();
 	return Client;
 }
@@ -294,6 +294,28 @@ void FEditorEngine::RenderFrame()
 FEditorViewportController* FEditorEngine::GetViewportController()
 {
 	return CameraSubsystem.GetViewportController();
+}
+
+void FEditorEngine::FlushDebugDrawForViewport(FRenderer* Renderer, const FShowFlags& ShowFlags, bool bClearAfterFlush)
+{
+	if (!Renderer)
+	{
+		return;
+	}
+
+	if (UWorld* ActiveWorld = GetActiveWorld())
+	{
+		GetDebugDrawManager().Flush(Renderer, ShowFlags, ActiveWorld, bClearAfterFlush);
+	}
+	else if (bClearAfterFlush)
+	{
+		GetDebugDrawManager().Clear();
+	}
+}
+
+void FEditorEngine::ClearDebugDrawForFrame()
+{
+	GetDebugDrawManager().Clear();
 }
 
 bool FEditorEngine::InitEditorPreview()
@@ -340,13 +362,10 @@ void FEditorEngine::InitEditorViewportRouting()
 	SyncViewportClient();
 
 	// Perspective Entry의 LocalState를 입력 컨트롤러에 연결
-	if (EditorViewportClientRaw)
+	FViewportEntry* PerspEntry = ViewportRegistry.FindEntryByType(EViewportType::Perspective);
+	if (PerspEntry)
 	{
-		FViewportEntry* PerspEntry = EditorViewportClientRaw->FindEntryByType(EViewportType::Perspective);
-		if (PerspEntry)
-		{
-			CameraSubsystem.GetViewportController()->SetActiveLocalState(&PerspEntry->LocalState);
-		}
+		CameraSubsystem.GetViewportController()->SetActiveLocalState(&PerspEntry->LocalState);
 	}
 }
 
@@ -438,12 +457,7 @@ void FEditorEngine::SyncViewportClient()
 
 FViewport* FEditorEngine::FindViewport(FViewportId Id)
 {
-	if (!EditorViewportClientRaw)
-	{
-		return nullptr;
-	}
-
-	for (FViewportEntry& Entry : EditorViewportClientRaw->GetEntries())
+	for (FViewportEntry& Entry : ViewportRegistry.GetEntries())
 	{
 		if (Entry.Id == Id && Entry.bActive)
 		{
