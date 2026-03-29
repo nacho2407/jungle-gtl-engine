@@ -40,8 +40,9 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		RenderViewport(Renderer, i);
 	}
 
-	// ImGui UI 오버레이 + SwapChain Present
+	// ImGui UI 오버레이
 	Editor->RenderUI(DeltaTime);
+
 	Renderer.EndFrame();
 }
 
@@ -77,7 +78,19 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
 
 	Collector.CollectWorld(World, ShowFlags, ViewMode, Bus);
 	Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus);
-	Collector.CollectGizmo(Editor->GetGizmo(), ShowFlags, Bus);
+
+	// 뷰포트별 카메라 기준으로 기즈모 스케일 결정
+	// TickInteraction 에서 한 번만 처리하면 마지막 뷰포트가 다른 뷰포트의 스케일을 덮어쓰므로
+	// CollectGizmo 직전에 각 뷰포트 카메라로 적용합니다.
+	if (UGizmoComponent* Gizmo = Editor->GetGizmo())
+	{
+		if (Camera->IsOrthographic())
+			Gizmo->ApplyScreenSpaceScalingOrtho(Camera->GetOrthoHeight());
+		else
+			Gizmo->ApplyScreenSpaceScaling(SceneView.CameraPosition);
+	}
+
+	Collector.CollectGizmo(Editor->GetGizmo(), ShowFlags, Bus, VC.GetViewportState()->bHovered);
 	Collector.CollectSelection(
 		Editor->GetSelectionManager().GetSelectedActors(),
 		ShowFlags, ViewMode, Bus);
