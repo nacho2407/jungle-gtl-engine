@@ -47,11 +47,6 @@ public:
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 
-	// --- PrimitiveComponent 인터페이스 ---
-	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
-	bool SupportsOutline() const override { return true; }
-	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_SubUV;
-
 	void UpdateWorldAABB() const override;
 protected:
 	void TickComponent(float DeltaTime) override;
