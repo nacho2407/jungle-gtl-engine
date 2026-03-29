@@ -1,5 +1,6 @@
 ﻿#include "Mesh/ObjManager.h"
 #include "Mesh/StaticMesh.h"
+#include "Materials/Material.h"
 #include "Render/Types/VertexTypes.h"
 #include "ObjImporter.h"
 #include "Serialization/WindowsArchive.h"
