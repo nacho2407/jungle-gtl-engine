@@ -2,6 +2,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Math/Vector.h"
+#include "Engine/Object/Object.h"
 #include "Render/Resource/Buffer.h"
 #include "Serialization/Archive.h"
 #include "Engine/Object/FName.h"
@@ -18,7 +19,7 @@ struct FNormalVertex
 
 struct FStaticMeshSection;
 struct FStaticMaterial;
-struct FMaterial;
+struct FMaterialInterface;
 
 // Cooked Data — GPU용 정점/인덱스
 // FStaticMeshLODResources in UE5
@@ -57,14 +58,21 @@ struct FStaticMeshSection
 
 struct FStaticMaterial
 {
-	std::shared_ptr<FMaterial> MaterialInterface;
+	// std::shared_ptr<class UMaterialInterface> MaterialInterface;
+	std::shared_ptr<class UMaterial> MaterialInterface;
 	FString MaterialSlotName = "None"; // "None"은 특별한 슬롯 이름으로, OBJ 파일에서 머티리얼이 지정되지 않은 섹션에 할당됩니다.
 };
 
 class UTexture2D;
 
-struct FMaterial
+// class UMaterialInterface
+// {
+// };
+
+// TODO: 다른 파일에 분리하기
+class UMaterial : public UObject // : public UMaterialInterface
 {
+public:
 	FString DiffuseTextureFilePath;
 	FVector4 DiffuseColor;
 	UTexture2D* DiffuseTexture = nullptr;	// UObjectManager 소유, 여기선 참조만
