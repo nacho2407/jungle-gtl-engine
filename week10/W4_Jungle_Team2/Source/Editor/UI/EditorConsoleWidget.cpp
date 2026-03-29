@@ -1,5 +1,6 @@
 ﻿#include "Editor/UI/EditorConsoleWidget.h"
 #include "Editor/Settings/EditorSettings.h"
+#include <algorithm>
 
 // 콘솔 초기화 시점에 입력될 명령어를 등록한다.
 FEditorConsoleWidget::FEditorConsoleWidget() 
