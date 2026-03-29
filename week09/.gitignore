@@ -106,7 +106,7 @@ StyleCopReport.xml
 *.ilk
 *.meta
 *.obj
-!**/Data/*.obj
+!**/Data/**/*.obj
 *.idb
 *.iobj
 *.pch
