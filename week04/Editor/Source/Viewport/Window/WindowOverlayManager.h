@@ -1,6 +1,7 @@
 #pragma once
 #include "Viewport/Window/EditorViewportPanel.h"
 #include "Core/Runtime/Slate/Window/SSplitter.h"
+#include "Renderer/WidgetRenderData.h"
 
 struct FEditorContext;
 class  FScene;
@@ -10,6 +11,7 @@ class FWindowOverlayManager
   private:
     EViewportLayout               ViewportLayout = EViewportLayout::Single;
     TArray<FEditorViewportPanel*> ViewportPanels;
+    FEditorViewportPanel*         LastFocusedPanel = nullptr;
     FEditorContext*               EditorContext  = nullptr;
     FScene*                       Scene          = nullptr;
 
@@ -38,7 +40,9 @@ class FWindowOverlayManager
     void                           ResetViewportDimension();
     TArray<FEditorViewportPanel*>& GetViewportPanels();
     void                           AddNewViewportPanel();
-    FEditorViewportPanel*          FindPanelAtPoint(int32 X, int32 Y) const;
+    FEditorViewportPanel*          FindPanelAtPoint(int32 X, int32 Y);
+    FEditorViewportPanel*          FindPanelAtPointClicked(int32 X, int32 Y);
+
 
     // Deletes and nullifies the heap memory occupied by dynamically allocated panels
     void Release();
@@ -67,6 +71,10 @@ class FWindowOverlayManager
     // Re-create splitters for the current layout and window size
     void ResetSplitters();
 
+    // Pushes each panel's viewport client data into the provided WidgetData for rendering; called
+    // by the main loop
+    void BuildViewportWIdgetData(FWidgetRenderData& WidgetData);
+
     // Returns a human readable string for each layout enum feed
     FString GetViewportLayoutString(EViewportLayout Layout) const;
 
@@ -89,6 +97,7 @@ class FWindowOverlayManager
 
     float GetVSplitRatio() const { return VSplitRatio; }
     float GetHSplitRatio() const { return HSplitRatio; }
+    FEditorViewportPanel* GetLastFocusedPanel() const { return LastFocusedPanel; }
 
   private:
     // Push current panel PosX/Y/Width/Height to each ViewportClient

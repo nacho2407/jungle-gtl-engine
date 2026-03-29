@@ -491,7 +491,6 @@ void FViewportNavigationController::TranslateWithGizmoDelta(const FVector& Delta
     }
 }
 
-
 void FViewportNavigationController::FocusActors()
 {
     if (ViewportCamera == nullptr)

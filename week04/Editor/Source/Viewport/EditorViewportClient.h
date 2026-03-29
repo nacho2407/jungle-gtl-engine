@@ -14,6 +14,17 @@
 
 struct FEditorContext;
 
+enum EViewportViewOrientation
+{
+    Free,
+    Top,
+    Bottom,
+    Left,
+    Right,
+    Front,
+    Back,
+};
+
 class FEditorViewportClient : public Engine::Viewport::IViewportClient
 {
   public:
@@ -38,6 +49,9 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     void SetEditorContext(FEditorContext* InContext);
     void SetScene(FScene* InScene);
     void SyncSelectionFromContext();
+
+    void                     SetViewOrientation(EViewportViewOrientation InOrientation);
+    EViewportViewOrientation GetViewOrientation() const { return ViewOrientation; }
 
     FViewportNavigationController& GetNavigationController() { return NavigationController; }
     const FViewportNavigationController& GetNavigationController() const
@@ -69,7 +83,9 @@ private:
     void DrawOutline();
 
 
-  private:
+private:
+    EViewportViewOrientation ViewOrientation = EViewportViewOrientation::Free;
+
     FScene* CurScene = nullptr;
 
     FViewportCamera ViewportCamera;

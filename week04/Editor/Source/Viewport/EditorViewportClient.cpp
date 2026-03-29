@@ -125,6 +125,61 @@ void FEditorViewportClient::OnResize(uint32 Width, uint32 Height)
     SelectionController.SetViewportSize(Width, Height);
 }
 
+void FEditorViewportClient::SetViewOrientation(EViewportViewOrientation InOrientation) 
+{
+    using enum EViewportViewOrientation;
+    ViewOrientation = InOrientation;
+    if (ViewOrientation == Free)
+    {
+        ViewportCamera.SetProjectionType(EViewportProjectionType::Perspective);
+        return;
+    }
+    ViewportCamera.SetProjectionType(EViewportProjectionType::Orthographic);
+
+    switch (ViewOrientation)
+    {
+    case Top:
+    {
+        ViewportCamera.SetRotation(FRotator(90.0f, 0.0f, 0.0f));
+        ViewportCamera.SetLocation(FVector(0.0f, 0.0f, 100.0f));
+        break;
+    }
+    case Bottom:
+    {
+        ViewportCamera.SetRotation(FRotator(-90.0f, 0.0f, 0.0f));
+        ViewportCamera.SetLocation(FVector(0.0f, 0.0f, -100.0f));
+        break;
+    }
+    case Left:
+    {
+        ViewportCamera.SetRotation(FRotator(0.0f, 90.0f, 0.0f));
+        ViewportCamera.SetLocation(FVector(0.0f, 100.0f, 0.0f));
+        break;
+    }
+    case Right:
+    {
+        ViewportCamera.SetRotation(FRotator(0.0f, -90.0f, 0.0f));
+        ViewportCamera.SetLocation(FVector(0.0f, -100.0f, 0.0f));
+        break;
+    }
+    case Front:
+    {
+        ViewportCamera.SetRotation(FRotator(0.0f, 0.0f, 0.0f));
+        ViewportCamera.SetLocation(FVector(-100.0f, 0.0f, 0.0f));
+        break;
+    }
+    case Back:
+    {
+        ViewportCamera.SetRotation(FRotator(0.0f, 0.0f, 180.0f));
+        ViewportCamera.SetLocation(FVector(100.0f, 0.0f, 0.0f));
+        break;
+    }
+    }
+
+    NavigationController.SetRotationLocked(true);
+    NavigationController.SetTranslationLocked(true);
+}
+
 void FEditorViewportClient::SetViewportOrigin(uint32 InOriginX, uint32 InOriginY)
 {
     ViewportCamera.SetOrigin(InOriginX, InOriginY);

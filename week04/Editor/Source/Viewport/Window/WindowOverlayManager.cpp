@@ -77,6 +77,8 @@ void FWindowOverlayManager::ResetViewportDimension()
     while (static_cast<int32>(ViewportPanels.size()) > Required)
     {
         FEditorViewportPanel* Panel = ViewportPanels.back();
+        if (Panel == LastFocusedPanel)
+            LastFocusedPanel = nullptr;
         if (Panel->Viewport)
         {
             delete Panel->Viewport;
@@ -279,15 +281,24 @@ void FWindowOverlayManager::EndSplitterDrag()
 
 TArray<FEditorViewportPanel*>& FWindowOverlayManager::GetViewportPanels() { return ViewportPanels; }
 
-FEditorViewportPanel* FWindowOverlayManager::FindPanelAtPoint(int32 X, int32 Y) const
+FEditorViewportPanel* FWindowOverlayManager::FindPanelAtPoint(int32 X, int32 Y)
 {
     for (FEditorViewportPanel* Panel : ViewportPanels)
     {
         if (!Panel) continue;
         if (Panel->HitTest(FVector2(static_cast<float>(X), static_cast<float>(Y))))
+        {
             return Panel;
+        }
     }
     return nullptr;
+}
+
+FEditorViewportPanel* FWindowOverlayManager::FindPanelAtPointClicked(int32 X, int32 Y)
+{
+    auto* Panel = FindPanelAtPoint(X, Y);
+    LastFocusedPanel = Panel;
+    return Panel;
 }
 
 void FWindowOverlayManager::AddNewViewportPanel()
@@ -332,6 +343,7 @@ void FWindowOverlayManager::SetPickCallback(FEditorViewportClient::FPickCallback
 
 void FWindowOverlayManager::Release()
 {
+    LastFocusedPanel = nullptr;
     ReleaseSplitters();
     for (uint32 i = 0; i < ViewportPanels.size(); ++i)
     {
@@ -387,4 +399,18 @@ void FWindowOverlayManager::SetNavigationValues(float MoveSpeed, float RotationS
             Panel->ViewportClient->GetNavigationController().SetRotationSpeed(RotationSpeed);
         }
     }
+}
+
+void FWindowOverlayManager::BuildViewportWIdgetData(FWidgetRenderData& WidgetData)
+{
+    if (SplitterV)
+    {
+        WidgetData.Widgets.push_back(SplitterV);
+    }
+    if (SplitterH)
+    {
+        WidgetData.Widgets.push_back(SplitterH);
+    }
+    WidgetData.ScreenWidth = W;
+    WidgetData.ScreenHeight = H;
 }

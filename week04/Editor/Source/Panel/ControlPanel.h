@@ -2,6 +2,7 @@
 
 #include "Panel.h"
 
+class FEditorViewportClient;
 class FViewportCamera;
 
 class FControlPanel : public IPanel
@@ -15,6 +16,7 @@ public:
     void Draw() override;
 
 private:
+    FEditorViewportClient* ResolveViewportClient() const;
     FViewportCamera* ResolveViewportCamera() const;
     void DrawUnavailableState() const;
     void DrawTransformSection(FViewportCamera& Camera) const;

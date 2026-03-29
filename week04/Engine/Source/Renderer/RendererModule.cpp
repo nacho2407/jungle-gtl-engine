@@ -309,6 +309,8 @@ void FRendererModule::RenderViewportOverlayPass(const FWidgetRenderData& InWidge
         if (!Widget)
             continue;
 
+        // Only render SWindow widgets for now, as they are the only ones used in viewport overlays.
+        // Implement a separate submitter if more variety is need in the future
         SWindow* Window = dynamic_cast<SWindow*>(Widget);
         if (!Window)
             continue;

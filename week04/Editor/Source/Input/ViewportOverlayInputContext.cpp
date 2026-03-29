@@ -42,7 +42,7 @@ bool FViewportOverlayInputContext::HandleEvent(const FInputEvent& Event, const F
         // No splitter hit — lock input to the panel under the cursor.
         if (CapturePanel == nullptr)
         {
-            CapturePanel = OverlayManager->FindPanelAtPoint(Event.MouseX, Event.MouseY);
+            CapturePanel = OverlayManager->FindPanelAtPointClicked(Event.MouseX, Event.MouseY);
         }
         if (CapturePanel && CapturePanel->ViewportClient)
         {

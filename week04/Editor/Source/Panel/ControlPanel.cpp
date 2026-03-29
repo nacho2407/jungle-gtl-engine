@@ -6,6 +6,7 @@
 #include "Editor/EditorContext.h"
 #include "Engine/EngineStatics.h"
 #include "Viewport/EditorViewportClient.h"
+#include "Viewport/Window/EditorViewportPanel.h"
 #include "Viewport/Window/WindowOverlayManager.h"
 #include "imgui.h"
 
@@ -84,14 +85,27 @@ void FControlPanel::Draw()
     ImGui::End();
 }
 
-FViewportCamera* FControlPanel::ResolveViewportCamera() const
+FEditorViewportClient* FControlPanel::ResolveViewportClient() const
 {
     if (GetContext() == nullptr || GetContext()->Editor == nullptr)
-    {
         return nullptr;
-    }
 
-    return &GetContext()->Editor->GetViewportClient().GetCamera();
+    auto* OverlayManager = GetContext()->Editor->GetWindowOverlayManager();
+    if (OverlayManager)
+    {
+        FEditorViewportPanel* Panel = OverlayManager->GetLastFocusedPanel();
+        if (Panel && Panel->ViewportClient)
+            return Panel->ViewportClient;
+    }
+    return &GetContext()->Editor->GetViewportClient();
+}
+
+FViewportCamera* FControlPanel::ResolveViewportCamera() const
+{
+    FEditorViewportClient* Client = ResolveViewportClient();
+    if (!Client)
+        return nullptr;
+    return &Client->GetCamera();
 }
 
 void FControlPanel::DrawUnavailableState() const
@@ -157,13 +171,11 @@ void FControlPanel::DrawProjectionSection(FViewportCamera& Camera) const
 
 void FControlPanel::DrawViewModeSection() const
 {
-    if (GetContext() == nullptr || GetContext()->Editor == nullptr)
-    {
+    FEditorViewportClient* Client = ResolveViewportClient();
+    if (!Client)
         return;
-    }
 
-    FViewportRenderSetting& RenderSetting =
-        GetContext()->Editor->GetViewportClient().GetRenderSetting();
+    FViewportRenderSetting& RenderSetting = Client->GetRenderSetting();
 
     ImGui::TextUnformatted("View Mode");
 
@@ -176,13 +188,11 @@ void FControlPanel::DrawViewModeSection() const
 
 void FControlPanel::DrawShowFlagsSection() const
 {
-    if (GetContext() == nullptr || GetContext()->Editor == nullptr)
-    {
+    FEditorViewportClient* Client = ResolveViewportClient();
+    if (!Client)
         return;
-    }
 
-    FViewportRenderSetting& RenderSetting =
-        GetContext()->Editor->GetViewportClient().GetRenderSetting();
+    FViewportRenderSetting& RenderSetting = Client->GetRenderSetting();
 
     ImGui::TextUnformatted("Show Flags");
 
@@ -247,13 +257,11 @@ void FControlPanel::DrawShowFlagsSection() const
 
 void FControlPanel::DrawNavigationSection() const
 {
-    if (GetContext() == nullptr || GetContext()->Editor == nullptr)
-    {
+    FEditorViewportClient* Client = ResolveViewportClient();
+    if (!Client)
         return;
-    }
 
-    FViewportNavigationController& NavigationController =
-        GetContext()->Editor->GetViewportClient().GetNavigationController();
+    FViewportNavigationController& NavigationController = Client->GetNavigationController();
 
     ImGui::TextUnformatted("Navigation");
 
