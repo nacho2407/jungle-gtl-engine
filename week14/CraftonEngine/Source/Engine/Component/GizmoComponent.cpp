@@ -9,7 +9,7 @@ IMPLEMENT_CLASS(UGizmoComponent, UPrimitiveComponent)
 #include <cmath>
 UGizmoComponent::UGizmoComponent()
 {
-	MeshData = &FMeshBufferManager::Get().GetMeshData(EPrimitiveType::EPT_TransGizmo);
+	MeshData = &FMeshBufferManager::Get().GetMeshData(EMeshShape::TransGizmo);
 	LocalExtents = FVector(1.5f, 1.5f, 1.5f);
 }
 
@@ -383,17 +383,17 @@ void UGizmoComponent::UpdateGizmoTransform()
 	{
 	case EGizmoMode::Scale:
 		SetRelativeRotation(ActorRot);
-		MeshData = &FMeshBufferManager::Get().GetMeshData(EPrimitiveType::EPT_ScaleGizmo);
+		MeshData = &FMeshBufferManager::Get().GetMeshData(EMeshShape::ScaleGizmo);
 		break;
 
 	case EGizmoMode::Rotate:
 		SetRelativeRotation(bIsWorldSpace ? FVector() : ActorRot);
-		MeshData = &FMeshBufferManager::Get().GetMeshData(EPrimitiveType::EPT_RotGizmo);
+		MeshData = &FMeshBufferManager::Get().GetMeshData(EMeshShape::RotGizmo);
 		break;
 
 	case EGizmoMode::Translate:
 		SetRelativeRotation(bIsWorldSpace ? FVector() : ActorRot);
-		MeshData = &FMeshBufferManager::Get().GetMeshData(EPrimitiveType::EPT_TransGizmo);
+		MeshData = &FMeshBufferManager::Get().GetMeshData(EMeshShape::TransGizmo);
 		break;
 	}
 }
@@ -432,19 +432,19 @@ void UGizmoComponent::Deactivate()
 	SelectedAxis = -1;
 }
 
-EPrimitiveType UGizmoComponent::GetPrimitiveType() const
+FMeshBuffer* UGizmoComponent::GetMeshBuffer() const
 {
-	EPrimitiveType CurPrimitiveType = EPrimitiveType::EPT_TransGizmo;
+	EMeshShape Shape = EMeshShape::TransGizmo;
 	switch (CurMode)
 	{
 	case EGizmoMode::Translate:
 		break;
 	case EGizmoMode::Rotate:
-		CurPrimitiveType = EPrimitiveType::EPT_RotGizmo;
+		Shape = EMeshShape::RotGizmo;
 		break;
 	case EGizmoMode::Scale:
-		CurPrimitiveType = EPrimitiveType::EPT_ScaleGizmo;
+		Shape = EMeshShape::ScaleGizmo;
 		break;
 	}
-	return CurPrimitiveType;
+	return &FMeshBufferManager::Get().GetMeshBuffer(Shape);
 }

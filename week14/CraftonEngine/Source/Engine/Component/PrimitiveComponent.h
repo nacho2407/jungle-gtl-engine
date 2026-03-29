@@ -18,6 +18,7 @@ public:
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 	virtual FMeshBuffer* GetMeshBuffer() const { return nullptr; }
+	virtual const FMeshData* GetMeshData() const { return nullptr; }
 
 	inline void SetVisibility(bool bVisible) { bIsVisible = bVisible; }
 
@@ -34,10 +35,11 @@ public:
 
 	void UpdateWorldMatrix() const override;
 	void AddWorldOffset(const FVector& WorldDelta) override;
-	virtual EPrimitiveType GetPrimitiveType() const = 0;
+
+	// Outline 셰이더에서 2D/3D 확장 방식 결정 (Plane, Billboard 등 flat 컴포넌트는 true)
+	virtual bool IsFlat() const { return false; }
 
 	// MeshBuffer 기반 아웃라인 렌더링을 지원하는지 여부.
-	// Batcher 처리 타입(SubUV, Text)은 false를 반환합니다.
 	virtual bool SupportsOutline() const { return true; }
 
 protected:
@@ -52,9 +54,9 @@ class UCubeComponent : public UPrimitiveComponent
 public:
 	DECLARE_CLASS(UCubeComponent, UPrimitiveComponent)
 	UCubeComponent();
-	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_Cube;
 
-	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
+	FMeshBuffer* GetMeshBuffer() const override;
+	const FMeshData* GetMeshData() const override;
 };
 
 class USphereComponent : public UPrimitiveComponent
@@ -63,9 +65,9 @@ public:
 	DECLARE_CLASS(USphereComponent, UPrimitiveComponent)
 	USphereComponent();
 	void UpdateWorldAABB() const override;
-	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_Sphere;
 
-	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
+	FMeshBuffer* GetMeshBuffer() const override;
+	const FMeshData* GetMeshData() const override;
 };
 
 class UPlaneComponent : public UPrimitiveComponent
@@ -75,7 +77,8 @@ public:
 	UPlaneComponent();
 	void UpdateWorldAABB() const override;
 	void SetRelativeScale(const FVector& NewScale);
-	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_Plane;
 
-	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
+	FMeshBuffer* GetMeshBuffer() const override;
+	const FMeshData* GetMeshData() const override;
+	bool IsFlat() const override { return true; }
 };

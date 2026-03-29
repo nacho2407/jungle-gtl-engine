@@ -17,7 +17,6 @@ public:
 	UStaticMeshComp() = default;
 	~UStaticMeshComp() override = default;
 
-	EPrimitiveType GetPrimitiveType() const override { return EPrimitiveType::EPT_StaticMesh; }
 	FMeshBuffer* GetMeshBuffer() const override;
 	bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
 	void UpdateWorldAABB() const override;
