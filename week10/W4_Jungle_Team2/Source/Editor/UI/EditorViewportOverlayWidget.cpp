@@ -77,8 +77,44 @@ void FEditorViewportOverlayWidget::RenderViewportToolbars()
 
 		ImGui::Begin(WinName, nullptr, kFlags);
 
-		// ── [Perspective] 버튼 (현재는 레이블 역할, 추후 뷰타입 변경 메뉴로 확장 가능)
-		ImGui::Button(GetViewportTypeName(VType));
+		// ── [Perspective] 버튼 → 클릭 시 뷰포트 타입 변경 팝업
+		{
+			char TypeBtnName[48];
+			snprintf(TypeBtnName, sizeof(TypeBtnName), "%s##vtype_%d", GetViewportTypeName(VType), i);
+			if (ImGui::Button(TypeBtnName))
+			{
+				char TypePopupId[32];
+				snprintf(TypePopupId, sizeof(TypePopupId), "##VTPopup_%d", i);
+				ImGui::OpenPopup(TypePopupId);
+			}
+
+			char TypePopupId[32];
+			snprintf(TypePopupId, sizeof(TypePopupId), "##VTPopup_%d", i);
+			if (ImGui::BeginPopup(TypePopupId))
+			{
+				ImGui::TextDisabled("Viewport Type");
+				ImGui::Separator();
+
+				static constexpr EEditorViewportType kTypes[] = {
+					EVT_Perspective,
+					EVT_OrthoTop,   EVT_OrthoBottom,
+					EVT_OrthoFront, EVT_OrthoBack,
+					EVT_OrthoLeft,  EVT_OrthoRight
+				};
+				for (EEditorViewportType T : kTypes)
+				{
+					const bool bSel = (VType == T);
+					if (ImGui::Selectable(GetViewportTypeName(T), bSel))
+					{
+						FEditorViewportClient& VC = EditorEngine->GetViewportLayout().GetViewportClient(i);
+						VC.SetViewportType(T);
+						VC.ApplyCameraMode(); // 카메라 위치·방향·투영 재설정 + lerp 타겟 초기화
+					}
+					if (bSel) ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndPopup();
+			}
+		}
 
 		ImGui::SameLine(0.f, 2.f);
 
