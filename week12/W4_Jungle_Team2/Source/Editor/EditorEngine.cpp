@@ -75,38 +75,6 @@ void UEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
 void UEditorEngine::Tick(float DeltaTime)
 {
 	ViewportLayout.Tick(DeltaTime);
-
-	// 2. 어느 뷰포트에 마우스가 있는지 판단합니다.
-	//    경계 픽셀 충돌을 피하기 위해 첫 번째로 일치하는 뷰포트만 true 로 설정합니다.
-	if (Window)
-	{
-		POINT MousePt = InputSystem::Get().GetMousePos();
-		MousePt = Window->ScreenToClientPoint(MousePt);
-		const int32 MouseX = static_cast<int32>(MousePt.x);
-		const int32 MouseY = static_cast<int32>(MousePt.y);
-
-		bool bFoundHover = false;
-		for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
-		{
-			FEditorViewportState& ViewportState = ViewportLayout.GetViewportState(i);
-			if (!bFoundHover && ViewportState.Rect.Contains(MouseX, MouseY))
-			{
-				ViewportState.bHovered = true;
-				bFoundHover = true;
-			}
-			else
-			{
-				ViewportState.bHovered = false;
-			}
-		}
-	}
-
-	// 3. bHovered 가 설정된 뷰포트만 입력을 처리합니다.
-	for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
-	{
-		ViewportLayout.GetViewportClient(i).Tick(DeltaTime);
-	}
-
 	MainPanel.Update();
 	UEngine::Tick(DeltaTime);
 }
