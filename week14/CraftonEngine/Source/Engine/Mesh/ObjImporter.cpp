@@ -1,10 +1,12 @@
-﻿#include "Mesh/ObjImporter.h"
+﻿#include "Core/Paths.h"
+#include "Mesh/ObjImporter.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Editor/UI/EditorConsoleWidget.h"
 #include <algorithm>
-#include <filesystem>
 #include <fstream>
-#include <sstream>
+#include <filesystem>
+#include <charconv>
+#include <chrono>
 
 struct FVertexKey {
     uint32 p, t, n;
@@ -24,50 +26,181 @@ struct hash<FVertexKey>
 };
 }
 
+struct FStringParser
+{
+	// Delimiter로 구분된 다음 토큰을 추출하고, InOutView에서 해당 토큰과 구분자 제거
+	static std::string_view GetNextToken(std::string_view& InOutView, char Delimiter = ' ')
+	{
+		size_t DelimiterPosition = InOutView.find(Delimiter);
+		std::string_view Token = InOutView.substr(0, DelimiterPosition); // [0, DelimiterPosition) 범위의 토큰 추출
+		if (DelimiterPosition != std::string_view::npos)
+		{
+			InOutView.remove_prefix(DelimiterPosition + 1); // 토큰과 구분자 제거
+		}
+		else
+		{
+			InOutView = std::string_view();
+		}
+		return Token;
+	}
+
+	// 다수의 공백을 구분자로 사용하여 다음 토큰을 추출하고, InOutView에서 해당 토큰과 앞의 공백 제거
+	static std::string_view GetNextWhitespaceToken(std::string_view& InOutView)
+	{
+		size_t Start = InOutView.find_first_not_of(" \t");
+		if (Start == std::string_view::npos)
+		{
+			InOutView = std::string_view();
+			return std::string_view();
+		}
+		InOutView.remove_prefix(Start); // 유효한 문자 앞의 공백 제거
+
+		size_t End = InOutView.find_first_of(" \t");
+		std::string_view Token = InOutView.substr(0, End); // 공백 이전까지의 토큰 추출
+
+		if (End != std::string_view::npos)
+		{
+			InOutView.remove_prefix(End);
+		}
+		else
+		{
+			InOutView = std::string_view();
+		}
+		return Token;
+	}
+
+	// InOutView의 왼쪽 끝에 있는 공백 제거
+	static void TrimLeft(std::string_view& InOutView)
+	{
+		size_t Start = InOutView.find_first_not_of(" \t");
+		if (Start != std::string_view::npos)
+		{
+			InOutView.remove_prefix(Start);  // 유효한 문자 앞의 공백 제거
+		}
+		else
+		{
+			InOutView = std::string_view();
+		}
+	}
+
+	static bool ParseInt(std::string_view Str, int& OutValue)
+	{
+		if (Str.empty()) return false;
+		std::from_chars_result result = std::from_chars(Str.data(), Str.data() + Str.size(), OutValue);
+		return result.ec == std::errc();
+	}
+
+	static bool ParseFloat(std::string_view Str, float& OutValue)
+	{
+		if (Str.empty()) return false;
+		std::from_chars_result result = std::from_chars(Str.data(), Str.data() + Str.size(), OutValue);
+		return result.ec == std::errc();
+	}
+};
+
+struct FRawFaceVertex
+{
+    int32 PosIndex = -1;
+    int32 UVIndex = -1;
+    int32 NormalIndex = -1;
+};
+
+FRawFaceVertex ParseSingleFaceVertex(std::string_view FaceToken)
+{
+    FRawFaceVertex Result;
+
+    // 첫 번째 토큰: Position
+    std::string_view PosStr = FStringParser::GetNextToken(FaceToken, '/');
+    FStringParser::ParseInt(PosStr, Result.PosIndex);
+
+    // 두 번째 토큰: UV (있을 수도, 비어있을 수도 있음)
+    if (!FaceToken.empty())
+    {
+        std::string_view UVStr = FStringParser::GetNextToken(FaceToken, '/');
+        if (!UVStr.empty())
+        {
+            FStringParser::ParseInt(UVStr, Result.UVIndex);
+        }
+    }
+
+    // 세 번째 토큰: Normal
+    if (!FaceToken.empty())
+    {
+        std::string_view NormalStr = FStringParser::GetNextToken(FaceToken, '/');
+        FStringParser::ParseInt(NormalStr, Result.NormalIndex);
+    }
+
+    return Result;
+}
+
 bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
 {
 	OutObjInfo = FObjInfo();
-	// TODO: 파일을 미리 탐색해서 reserve로 용량을 할당하고 파싱 시작하기
-	std::ifstream File(ObjFilePath);
 
+	std::ifstream File(ObjFilePath, std::ios::binary | std::ios::ate);
 	if (!File.is_open())
 	{
 		UE_LOG("Failed to open OBJ file: %s", ObjFilePath.c_str());
 		return false;
 	}
 
-	std::string Line;
-	while (std::getline(File, Line))
+	size_t FileSize = static_cast<size_t>(File.tellg());
+	File.seekg(0, std::ios::beg);
+	TArray<char> Buffer(FileSize);
+	if (!File.read(Buffer.data(), FileSize))
 	{
-		std::stringstream LineStream(Line);
-		std::string Prefix;
-		LineStream >> Prefix;
+		UE_LOG("Failed to read OBJ file: %s", ObjFilePath.c_str());
+		return false;
+	}
 
-		if (Prefix.empty() || Prefix[0] == '#')
+	std::string_view FileView(Buffer.data(), Buffer.size());
+
+	TArray<FRawFaceVertex> FaceVertices;
+	FaceVertices.reserve(6); // Heuristic
+
+	while (!FileView.empty())
+	{
+		std::string_view Line = FStringParser::GetNextToken(FileView, '\n');
+
+		// CRLF 제거
+		if (!Line.empty() && Line.back() == '\r')
+		{
+			Line.remove_suffix(1);
+		}
+
+		if (Line.empty() || Line[0] == '#')
 		{
 			continue;
 		}
-		else if (Prefix == "v")
+
+		std::string_view Prefix = FStringParser::GetNextToken(Line);
+
+		if (Prefix == "v")
 		{
 			FVector Position;
-			LineStream >> Position.X >> Position.Y >> Position.Z;
+			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), Position.X);
+			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), Position.Y);
+			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), Position.Z);
 			OutObjInfo.Positions.emplace_back(Position);
 		}
 		else if (Prefix == "vt")
 		{
 			FVector2 UV;
-			LineStream >> UV.U >> UV.V;
+			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), UV.U);
+			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), UV.V);
 			OutObjInfo.UVs.emplace_back(UV);
 		}
 		else if (Prefix == "vn")
 		{
 			FVector Normal;
-			LineStream >> Normal.X >> Normal.Y >> Normal.Z;
+			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), Normal.X);
+			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), Normal.Y);
+			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), Normal.Z);
 			OutObjInfo.Normals.emplace_back(Normal);
 		}
 		else if (Prefix == "f")
 		{
-			// default material section 추가 (usemtl이 없는 경우)
+			// default material section 추가 (usemtl이 없이 f가 먼저 나오는 경우)
 			if (OutObjInfo.Sections.empty())
 			{
 				FStaticMeshSection DefaultSection;
@@ -77,73 +210,80 @@ bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
 				OutObjInfo.Sections.emplace_back(DefaultSection);
 			}
 
-			// face의 모든 정점을 먼저 수집
-			struct FFaceVert { uint32 p, t, n; };
-			TArray<FFaceVert> FaceVerts;
-
-			std::string FaceVertex;
-			while (LineStream >> FaceVertex)
+			while (!Line.empty())
 			{
-				uint32 v, vt, vn;
-				if (sscanf_s(FaceVertex.c_str(), "%u/%u/%u", &v, &vt, &vn) == 3)
+				std::string_view FaceToken = FStringParser::GetNextToken(Line, ' ');
+				if (!FaceToken.empty())
 				{
-					FaceVerts.push_back({ v - 1, vt - 1, vn - 1 });
-				}
-				else if (sscanf_s(FaceVertex.c_str(), "%u//%u", &v, &vn) == 2)
-				{
-					FaceVerts.push_back({ v - 1, 0, vn - 1 });
-				}
-				else
-				{
-					UE_LOG("Failed to parse face vertex: %s", FaceVertex.c_str());
-					return false;
+					FaceVertices.push_back(ParseSingleFaceVertex(FaceToken));
 				}
 			}
 
-			if (FaceVerts.size() < 3)
+			if (FaceVertices.size() < 3)
 			{
 				UE_LOG("Face with less than 3 vertices");
-				return false;
+				continue;
 			}
 
-			// Fan triangulation: N각형 → (N-2)개 삼각형
-			for (size_t i = 1; i + 1 < FaceVerts.size(); ++i)
+			// Fan triangulation
+			for (size_t i = 1; i + 1 < FaceVertices.size(); ++i)
 			{
-				// 삼각형: [0, i, i+1]
-				const FFaceVert* Tri[3] = { &FaceVerts[0], &FaceVerts[i], &FaceVerts[i + 1] };
+				const std::array<FRawFaceVertex, 3> TriangleVerts = { FaceVertices[0], FaceVertices[i], FaceVertices[i + 1] };
 				for (int j = 0; j < 3; ++j)
 				{
-					OutObjInfo.PosIndices.emplace_back(Tri[j]->p);
-					OutObjInfo.UVIndices.emplace_back(Tri[j]->t);
-					OutObjInfo.NormalIndices.emplace_back(Tri[j]->n);
+					constexpr int32 InvalidIndex = -1;
+					OutObjInfo.PosIndices.emplace_back(TriangleVerts[j].PosIndex - 1);
+#ifdef _DEBUG
+					if (TriangleVerts[j].PosIndex < 1) {
+						UE_LOG("Warning: Invalid position index %d in face. OBJ indices are 1-based, so this vertex will be ignored.", TriangleVerts[j].PosIndex);
+					}
+#endif
+					OutObjInfo.UVIndices.emplace_back(TriangleVerts[j].UVIndex > 0 ? TriangleVerts[j].UVIndex - 1 : InvalidIndex);
+					OutObjInfo.NormalIndices.emplace_back(TriangleVerts[j].NormalIndex > 0 ? TriangleVerts[j].NormalIndex - 1 : InvalidIndex);
 				}
 			}
+			FaceVertices.clear();
 		}
-		else if (Prefix == "mtllib")
+		else
 		{
-			std::string MtlFileName;
-			std::getline(LineStream >> std::ws, MtlFileName);
-			std::filesystem::path FilePath(ObjFilePath);
-			OutObjInfo.MaterialLibraryFilePath = (FilePath.parent_path() / MtlFileName).string();
-		}
-		else if (Prefix == "usemtl")
-		{
-			if (!OutObjInfo.Sections.empty())
+			if (Prefix == "mtllib")
 			{
-				OutObjInfo.Sections.back().NumTriangles = (static_cast<uint32>(OutObjInfo.PosIndices.size()) - OutObjInfo.Sections.back().FirstIndex) / 3;
+				size_t CommentPos = Line.find('#');
+				if (CommentPos != std::string_view::npos) { Line = Line.substr(0, CommentPos); }
+				FStringParser::TrimLeft(Line);
+
+				std::filesystem::path FilePath(ObjFilePath);
+
+				OutObjInfo.MaterialLibraryFilePath = (FilePath.parent_path() / std::string(Line)).generic_string();
+				UE_LOG("Found material library: %s", OutObjInfo.MaterialLibraryFilePath.c_str());
 			}
-			FStaticMeshSection Section;
-			LineStream >> Section.MaterialSlotName;
-			if (Section.MaterialSlotName.empty())
+			else if (Prefix == "usemtl")
 			{
-				Section.MaterialSlotName = "None";
+				size_t CommentPos = Line.find('#');
+				if (CommentPos != std::string_view::npos) { Line = Line.substr(0, CommentPos); }
+				FStringParser::TrimLeft(Line);
+
+				if (!OutObjInfo.Sections.empty())
+				{
+					OutObjInfo.Sections.back().NumTriangles = (static_cast<uint32>(OutObjInfo.PosIndices.size()) - OutObjInfo.Sections.back().FirstIndex) / 3;
+				}
+				FStaticMeshSection Section;
+				Section.MaterialSlotName = std::string(Line);
+				if (Section.MaterialSlotName.empty())
+				{
+					Section.MaterialSlotName = "None";
+				}
+				Section.FirstIndex = static_cast<uint32>(OutObjInfo.PosIndices.size());
+				OutObjInfo.Sections.emplace_back(Section);
 			}
-			Section.FirstIndex = static_cast<uint32>(OutObjInfo.PosIndices.size());
-			OutObjInfo.Sections.emplace_back(Section);
-		}
-		else if (Prefix == "o")
-		{
-			LineStream >> OutObjInfo.ObjectName;
+			else if (Prefix == "o")
+			{
+				size_t CommentPos = Line.find('#');
+				if (CommentPos != std::string_view::npos) { Line = Line.substr(0, CommentPos); }
+				FStringParser::TrimLeft(Line);
+
+				OutObjInfo.ObjectName = std::string(Line);
+			}
 		}
 	}
 
@@ -152,7 +292,6 @@ bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
 		OutObjInfo.Sections.back().NumTriangles = (static_cast<uint32>(OutObjInfo.PosIndices.size()) - OutObjInfo.Sections.back().FirstIndex) / 3;
 	}
 
-	// UV가 하나도 없는 OBJ 파일 대비: 더미 UV 삽입
 	if (OutObjInfo.UVs.empty())
 	{
 		OutObjInfo.UVs.emplace_back(FVector2{ 0.0f, 0.0f });
@@ -164,7 +303,7 @@ bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
 bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>& OutMtlInfos)
 {
 	OutMtlInfos.clear();
-	std::ifstream File(MtlFilePath);
+	std::ifstream File(MtlFilePath, std::ios::binary | std::ios::ate);
 
 	if (!File.is_open())
 	{
@@ -172,22 +311,40 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 		return false;
 	}
 
-	std::string Line;
-	while (std::getline(File, Line))
+	size_t FileSize = static_cast<size_t>(File.tellg());
+	File.seekg(0, std::ios::beg);
+	TArray<char> Buffer(FileSize);
+	if (!File.read(Buffer.data(), FileSize))
 	{
-		std::stringstream LineStream(Line);
-		std::string Prefix;
-		LineStream >> Prefix;
+		UE_LOG("Failed to read MTL file: %s", MtlFilePath.c_str());
+		return false;
+	}
 
-		if (Prefix.empty() || Prefix[0] == '#')
+	std::string_view FileView(Buffer.data(), Buffer.size());
+
+	while (!FileView.empty())
+	{
+		std::string_view Line = FStringParser::GetNextToken(FileView, '\n');
+
+		// CRLF 제거
+		if (!Line.empty() && Line.back() == '\r')
+		{
+			Line.remove_suffix(1);
+		}
+
+		if (Line.empty() || Line[0] == '#')
 		{
 			continue;
 		}
-		else if (Prefix == "newmtl")
+
+		std::string_view Prefix = FStringParser::GetNextWhitespaceToken(Line);
+
+		if (Prefix == "newmtl")
 		{
 			FObjMaterialInfo MaterialInfo;
-			LineStream >> MaterialInfo.MaterialSlotName;
-			MaterialInfo.Kd = { 1.0f, 1.0f, 1.0f }; // default diffuse color
+			FStringParser::TrimLeft(Line);
+			MaterialInfo.MaterialSlotName = std::string(Line);
+			MaterialInfo.Kd = { 1.0f, 0.0f, 1.0f }; // default magenta color for debugging
 			OutMtlInfos.emplace_back(MaterialInfo);
 		}
 		else if (Prefix == "Kd")
@@ -196,7 +353,10 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 			{
 				continue;
 			}
-			LineStream >> OutMtlInfos.back().Kd.X >> OutMtlInfos.back().Kd.Y >> OutMtlInfos.back().Kd.Z;
+			FObjMaterialInfo& CurrentMaterial = OutMtlInfos.back();
+			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), CurrentMaterial.Kd.X);
+			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), CurrentMaterial.Kd.Y);
+			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), CurrentMaterial.Kd.Z);
 		}
 		else if (Prefix == "map_Kd")
 		{
@@ -204,59 +364,75 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 			{
 				continue;
 			}
-			// 옵션(-s, -o, -bm 등)을 스킵하고 마지막 파일 경로만 추출
+
 			std::string TextureFileName;
-			std::string Token;
-			while (LineStream >> Token)
+
+			// 토큰 단위로 옵션들을 건너뜁니다.
+			while (!Line.empty())
 			{
+				// 파일명에 공백이 포함될 수 있으므로, 현재 Line의 상태를 백업해둡니다.
+				std::string_view LineBeforeToken = Line;
+				std::string_view Token = FStringParser::GetNextWhitespaceToken(Line);
+
+				if (Token.empty()) break;
+
+				// 토큰이 '-'로 시작하면 옵션 플래그인지 확인합니다.
 				if (Token[0] == '-')
 				{
-					// 옵션 플래그 뒤의 인자값들 스킵 (-s x y z, -o x y z, -bm val 등)
-					std::string Arg;
-					while (LineStream.peek() != EOF && LineStream.peek() != '-')
+					int32 ArgsToSkip = 0;
+
+					// 1. 3개의 인자를 받는 옵션 (Vector)
+					if (Token == "-s" || Token == "-o" || Token == "-t")
 					{
-						size_t Pos = LineStream.tellg();
-						LineStream >> Arg;
-						// 숫자가 아니면 파일명 시작 → 되돌리고 break
-						bool bIsNumber = !Arg.empty() && (isdigit(Arg[0]) || Arg[0] == '.' || (Arg[0] == '-' && Arg.size() > 1));
-						if (!bIsNumber)
-						{
-							TextureFileName = Arg;
-							// 파일명에 공백이 있을 수 있으므로 나머지도 붙임
-							std::string Rest;
-							if (std::getline(LineStream >> std::ws, Rest) && !Rest.empty())
-							{
-								TextureFileName += " " + Rest;
-							}
-							goto done;
-						}
+						ArgsToSkip = 3;
+					}
+					// 2. 2개의 인자를 받는 옵션
+					else if (Token == "-mm")
+					{
+						ArgsToSkip = 2;
+					}
+					// 3. 1개의 인자를 받는 옵션 (Float, String, Bool)
+					else if (Token == "-bm" || Token == "-boost" || Token == "-texres" ||
+							 Token == "-blendu" || Token == "-blendv" || Token == "-clamp" ||
+							 Token == "-cc" || Token == "-imfchan")
+					{
+						ArgsToSkip = 1;
+					}
+
+					// 파악된 옵션의 인자 개수만큼 다음 토큰들을 무시합니다.
+					for (int32 i = 0; i < ArgsToSkip; ++i)
+					{
+						FStringParser::GetNextWhitespaceToken(Line);
 					}
 				}
 				else
 				{
-					// 옵션이 아닌 토큰 → 파일명 시작
-					TextureFileName = Token;
-					std::string Rest;
-					if (std::getline(LineStream >> std::ws, Rest) && !Rest.empty())
-					{
-						TextureFileName += " " + Rest;
-					}
-					goto done;
+					// '-'로 시작하지 않는 첫 번째 토큰을 만났다면, 이것이 파일명의 시작입니다!
+					// 파일명 내부에 띄어쓰기가 있을 수 있으므로 토큰을 뽑기 전의 전체 라인을 가져옵니다.
+					TextureFileName = std::string(LineBeforeToken);
+					break;
 				}
 			}
-			done:
+
+			// 문자열 끝에 남아있을지 모르는 쓸데없는 공백이나 탭을 정리합니다. (RTrim)
+			size_t LastNonSpace = TextureFileName.find_last_not_of(" \t");
+			if (LastNonSpace != std::string::npos)
+			{
+				TextureFileName.erase(LastNonSpace + 1);
+			}
+
+			// 최종적으로 추출된 파일명 할당
 			if (!TextureFileName.empty())
 			{
 				std::filesystem::path FilePath(MtlFilePath);
-				OutMtlInfos.back().map_Kd = (FilePath.parent_path() / TextureFileName).string();
+				OutMtlInfos.back().map_Kd = (FilePath.parent_path() / TextureFileName).lexically_normal().generic_string();
 			}
 		}
 	}
+
 	return true;
 }
 
-// assume that all faces are triangles and that (v, vt, vn) are all present.
-// and, size of PosIndices, UVIndices, NormalIndices are all the same.
 bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInfo>& MtlInfos, FStaticMesh& OutMesh, TArray<FStaticMaterial>& OutMaterials)
 {
     OutMesh = FStaticMesh();
@@ -329,7 +505,7 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
     {
         FStaticMaterial DefaultMaterial;
         DefaultMaterial.MaterialSlotName = "None";
-        // TODO: UObject 팩토리 사용하도록 수정
+        // TODO: UObject 팩토리 사용하도록 수정. 혹은 엔진 초기화 시점에 기본 머티리얼 하나 만들어서 참조하도록 수정
         DefaultMaterial.MaterialInterface = std::make_shared<UMaterial>();
         DefaultMaterial.MaterialInterface->DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 
@@ -384,6 +560,15 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
         {
             uint32 TriangleIndices[3];
 
+			// (P1 - P0) X (P2 - P0) 후 정규화
+			FVector P0 = ObjInfo.Positions[ObjInfo.PosIndices[FaceStartIndex]];
+			FVector P1 = ObjInfo.Positions[ObjInfo.PosIndices[FaceStartIndex + 1]];
+			FVector P2 = ObjInfo.Positions[ObjInfo.PosIndices[FaceStartIndex + 2]];
+
+			FVector Edge1 = P1 - P0;
+			FVector Edge2 = P2 - P0;
+			FVector FaceNormal = Edge1.Cross(Edge2).Normalized();
+
             for (int j = 0; j < 3; ++j)
             {
                 size_t CurrentIndex = FaceStartIndex + j;
@@ -403,15 +588,33 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 					// 새로운 정점 생성
                     FNormalVertex NewVertex;
                     NewVertex.pos = ObjInfo.Positions[Key.p];
-                    NewVertex.normal = ObjInfo.Normals[Key.n];
+
+					// Normal 예외 처리
+					if (Key.n == -1)
+					{
+						NewVertex.normal = FaceNormal;
+					}
+					else
+					{
+						NewVertex.normal = ObjInfo.Normals[Key.n];
+					}
 
                     // RHS -> LHS 변환
                     NewVertex.pos.Z = -NewVertex.pos.Z;
                     NewVertex.normal.Z = -NewVertex.normal.Z;
 
-                    // UV 변환 (left-bottom -> left-top)
-                    NewVertex.tex = ObjInfo.UVs[Key.t];
-                    NewVertex.tex.V = 1.0f - NewVertex.tex.V;
+
+					// UV 예외 처리
+					if (Key.t == -1)
+					{
+						NewVertex.tex = { 0.0f, 0.0f };
+					}
+					else
+					{
+						NewVertex.tex = ObjInfo.UVs[Key.t];
+						// UV 변환 (left-bottom -> left-top)
+						NewVertex.tex.V = 1.0f - NewVertex.tex.V;
+					}
 
                     NewVertex.color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
@@ -437,6 +640,8 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 
 bool FObjImporter::Import(const FString& ObjFilePath, FStaticMesh& OutMesh, TArray<FStaticMaterial>& OutMaterials)
 {
+	auto StartTime = std::chrono::high_resolution_clock::now();
+
 	OutMaterials.clear();
 
 	FObjInfo ObjInfo;
@@ -459,7 +664,11 @@ bool FObjImporter::Import(const FString& ObjFilePath, FStaticMesh& OutMesh, TArr
 		UE_LOG("Convert failed for: %s", ObjFilePath.c_str());
 		return false;
 	}
-
 	OutMesh.PathFileName = ObjFilePath;
+
+	auto EndTime = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> Duration = EndTime - StartTime;
+	UE_LOG("OBJ Imported successfully. File: %s. Time taken: %.4f seconds", ObjFilePath.c_str(), Duration.count());
+
 	return true;
 }
