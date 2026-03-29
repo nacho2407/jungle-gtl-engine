@@ -16,12 +16,18 @@ class ENGINE_API AStaticMeshActor : public AActor
     DECLARE_RTTI(AStaticMeshActor, AActor)
 
     AStaticMeshActor();
-    virtual ~AStaticMeshActor() override;
+    virtual ~AStaticMeshActor() =default ;
 
     Engine::Component::UStaticMeshComponent* GetStaticMeshComponent() const
     {
         return StaticMeshComponent;
     }
+
+    bool           IsRenderable() const override;
+    bool           IsSelected() const override;
+    // FColor         GetColor() const override;
+    // EBasicMeshType GetMeshType() const override;
+    uint32         GetObjectId() const override;
 
   private:
     Engine::Component::UStaticMeshComponent* StaticMeshComponent = nullptr;

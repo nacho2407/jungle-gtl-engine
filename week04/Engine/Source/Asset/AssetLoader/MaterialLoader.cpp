@@ -58,7 +58,7 @@ UAsset* FMaterialLoader::LoadAsset(const FSourceRecord& Source, const FAssetLoad
     }
 
     // 3. 에셋 래퍼 생성 및 반환
-    UMaterialAsset* NewMatAsset = new UMaterialAsset();
+    Engine::Asset::UMaterialAsset* NewMatAsset = new Engine::Asset::UMaterialAsset();
     NewMatAsset->Initialize(Source, MatResource);
 
     if (AssetManager) // 포인터가 유효한지 확인

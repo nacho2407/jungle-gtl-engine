@@ -23,6 +23,19 @@ AStaticMeshActor::AStaticMeshActor()
     Name = "StaticMeshActor";
 }
 
-AStaticMeshActor::~AStaticMeshActor() {}
+
+bool AStaticMeshActor::IsRenderable() const { return GetStaticMeshComponent() != nullptr; }
+
+bool AStaticMeshActor::IsSelected() const
+{
+    if (RootComponent == nullptr)
+    {
+        return false;
+    }
+
+    return RootComponent->IsSelected();
+}
+
+uint32 AStaticMeshActor::GetObjectId() const { return UUID; }
 
 REGISTER_CLASS(, AStaticMeshActor)

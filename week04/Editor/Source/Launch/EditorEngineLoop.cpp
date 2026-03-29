@@ -12,11 +12,11 @@
 
 #include "Core/Misc/NameSubsystem.h"
 #include "Asset/AssetManager.h"
-#include "Asset/FontAtlasLoader.h"
-#include "Asset/SubUVAtlasLoader.h"
-#include "Asset/TextureLoader.h"
-#include "Asset/StaticMeshLoader.h"
-#include "Asset/MaterialLoader.h" 
+#include "Asset/AssetLoader/FontAtlasLoader.h"
+#include "Asset/AssetLoader/SubUVAtlasLoader.h"
+#include "Asset/AssetLoader/TextureLoader.h"
+#include "Asset/AssetLoader/StaticMeshLoader.h"
+#include "Asset/AssetLoader/MaterialLoader.h" 
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND HWnd, UINT Message,
                                                              WPARAM WParam, LPARAM LParam);

@@ -8,6 +8,8 @@
 #include "Engine/Component/Sprite/SpriteComponent.h"
 #include "Engine/Component/Sprite/SubUVComponent.h"
 #include "Engine/Component/Text/AtlasTextComponent.h"
+#include "Engine/Component/Mesh/StaticMeshComponent.h"
+#include "Asset/StaticMesh.h"
 #include "Engine/Game/Actor.h"
 #include "Renderer/RenderAsset/SubUVAtlasResource.h"
 #include "Renderer/Types/RenderItem.h"
@@ -23,8 +25,8 @@ namespace
 
         /*const auto* SubUVComponent =
             Cast<Engine::Component::USubUVComponent>(SpriteComponent.GetClass());*/
-         const auto* SubUVComponent =
-             dynamic_cast<const Engine::Component::USubUVComponent*>(&SpriteComponent);
+        const auto* SubUVComponent =
+            dynamic_cast<const Engine::Component::USubUVComponent*>(&SpriteComponent);
         if (SubUVComponent == nullptr)
         {
             return;
@@ -112,6 +114,7 @@ void FScene::Tick(float DeltaTime)
 
 void FScene::BuildRenderData(FSceneRenderData& OutRenderData, ESceneShowFlags InShowFlags) const
 {
+    OutRenderData.StaticMeshes.clear();
     OutRenderData.Primitives.clear();
     OutRenderData.Sprites.clear();
     OutRenderData.Texts.clear();
@@ -180,6 +183,51 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData, ESceneShowFlags In
                 TextItem.State.SetHovered(Actor->IsHovered());
 
                 OutRenderData.Texts.push_back(TextItem);
+            }
+#pragma endregion
+
+#pragma region __STATIC_MESH__
+            else if (auto* StaticMeshComp =
+                         Cast<Engine::Component::UStaticMeshComponent>(Component))
+            {
+                // (선택 사항) ShowFlags에 SF_StaticMeshes 같은 플래그가 있다면 여기서 체크
+                // if (!IsFlagSet(InShowFlags, ESceneShowFlags::SF_StaticMeshes)) continue;
+
+                Engine::Asset::UStaticMesh* StaticMeshAsset = StaticMeshComp->GetStaticMesh();
+                if (StaticMeshAsset == nullptr || StaticMeshAsset->GetRenderResource() == nullptr)
+                {
+                    continue;
+                }
+
+                FStaticMeshRenderItem MeshItem = {};
+
+                // 1. 트랜스폼 데이터 세팅
+                MeshItem.World = Actor->GetWorldMatrix(); // (또는 컴포넌트의 월드 매트릭스)
+
+                // 2. VBO/IBO가 들어있는 렌더 리소스 포인터 전달
+                MeshItem.RenderResource = StaticMeshAsset->GetRenderResource();
+
+                // 3. 서브 메시 개수만큼 매핑된 머티리얼 포인터 수집
+                uint32 NumSubMeshes =
+                    static_cast<uint32>(MeshItem.RenderResource->SubMeshes.size());
+                for (uint32 i = 0; i < NumSubMeshes; ++i)
+                {
+                    // 컴포넌트의 GetMaterial을 호출하면 Fallback 로직에 의해
+                    // 오버라이드된 재질이거나 원본 기본 재질이 알맞게 튀어나옵니다.
+                    MeshItem.Materials.push_back(StaticMeshComp->GetMaterial(i));
+                }
+
+                // 4. 상태 및 피킹 데이터
+                MeshItem.WorldAABB = StaticMeshComp->GetWorldAABB();
+                MeshItem.State.ObjectId = ObjectId;
+                MeshItem.State.bShowBounds = Actor->IsShowBounds();
+                MeshItem.State.SetVisible(Actor->IsVisible());
+                MeshItem.State.SetPickable(Actor->IsPickable());
+                MeshItem.State.SetSelected(Actor->IsSelected());
+                MeshItem.State.SetHovered(Actor->IsHovered());
+
+                // 5. 렌더 데이터 큐에 삽입
+                OutRenderData.StaticMeshes.push_back(MeshItem);
             }
 #pragma endregion
 

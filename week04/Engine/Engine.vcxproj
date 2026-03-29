@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Renderer\D3D11\D3D11StaticMeshRenderer.h" />
     <ClInclude Include="Source\Asset\MaterialInstance.h" />
     <ClInclude Include="Resources\Mesh\Cone.h" />
     <ClInclude Include="Resources\Mesh\Cube.h" />
@@ -168,11 +169,13 @@
     <ClInclude Include="Source\SceneIO\SceneSerializer.h" />
     <ClInclude Include="Source\SceneIO\SceneTypeRegistry.h" />
     <ClInclude Include="Source\ThirdParty\Json\json.hpp" />
+    <ClInclude Include="Source\Renderer\Submitter\StaticMeshSubmitter.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Renderer\D3D11\D3D11StaticMeshRenderer.cpp" />
     <ClCompile Include="Source\Asset\MaterialInstance.cpp" />
     <ClCompile Include="Source\ApplicationCore\Input\InputRouter.cpp" />
     <ClCompile Include="Source\ApplicationCore\Input\InputSystem.cpp" />
@@ -267,6 +270,7 @@
     <ClCompile Include="Source\SceneIO\SceneJson.cpp" />
     <ClCompile Include="Source\SceneIO\SceneSerializer.cpp" />
     <ClCompile Include="Source\SceneIO\SceneTypeRegistry.cpp" />
+    <ClCompile Include="Source\Renderer\Submitter\StaticMeshSubmitter.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

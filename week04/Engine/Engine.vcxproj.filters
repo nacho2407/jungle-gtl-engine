@@ -376,6 +376,8 @@
       <Filter>Source\SceneIO</Filter>
     </ClCompile>
     <ClCompile Include="Source\Asset\MaterialInstance.cpp" />
+    <ClCompile Include="Source\Renderer\Submitter\StaticMeshSubmitter.cpp" />
+    <ClCompile Include="Source\Renderer\D3D11\D3D11StaticMeshRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Mesh\Cone.h">
@@ -847,6 +849,8 @@
       <Filter>Source\ThirdParty\Json</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\MaterialInstance.h" />
+    <ClInclude Include="Source\Renderer\Submitter\StaticMeshSubmitter.h" />
+    <ClInclude Include="Source\Renderer\D3D11\D3D11StaticMeshRenderer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

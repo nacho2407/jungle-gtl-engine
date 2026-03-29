@@ -30,6 +30,8 @@ namespace Engine::Component
 
         virtual void Serialize(bool bIsLoading, void* JsonHandle) {}
 
+         static FString WidePathToUtf8(const FWString& Path);
+
       protected:
         TArray<Asset::UMaterialInterface*> OverrideMaterials;
     };

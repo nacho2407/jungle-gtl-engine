@@ -10,7 +10,30 @@ namespace Engine::Asset
         RenderResource = std::move(InResource);
     }
 
-    void UStaticMesh::AddMaterialDependency(UMaterialAsset* InMaterial)
+    void UStaticMesh::InitializeMaterialSlots(uint32 NumSlots)
+    {
+        Materials.resize(NumSlots, nullptr);
+    }
+
+    UMaterialInterface* UStaticMesh::GetMaterial(uint32 Index) const
+    {
+        // 배열 범위를 벗어나지 않도록 안전 검사
+        if (Index < Materials.size())
+        {
+            return Materials[Index];
+        }
+        return nullptr;
+    }
+
+    void UStaticMesh::SetMaterial(uint32 Index, UMaterialInterface* InMaterial)
+    {
+        if (Index < Materials.size())
+        {
+            Materials[Index] = InMaterial;
+        }
+    }
+
+    /*void UStaticMesh::AddMaterialDependency(UMaterialAsset* InMaterial)
     {
         if (InMaterial && !HasMaterialDependency(InMaterial))
         {
@@ -22,7 +45,7 @@ namespace Engine::Asset
     {
         auto It = std::find(ReferencedMaterials.begin(), ReferencedMaterials.end(), InMaterial);
         return It != ReferencedMaterials.end();
-    }
+    }*/
 
     REGISTER_CLASS(Engine::Asset, UStaticMesh)
 } // namespace Engine::Asset

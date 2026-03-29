@@ -5,6 +5,7 @@
 #include "Asset/Asset.h"
 
 #include <string>
+#include <filesystem>
 
 namespace Engine::Component
 {
@@ -56,5 +57,12 @@ namespace Engine::Component
     uint32 UMeshComponent::GetNumMaterials() const
     {
         return static_cast<uint32>(OverrideMaterials.size());
+    }
+
+    FString UMeshComponent::WidePathToUtf8(const FWString& Path)
+    {
+        const std::filesystem::path      FilePath(Path);
+        const std::u8string Utf8Path = FilePath.u8string();
+        return FString(reinterpret_cast<const char*>(Utf8Path.data()), Utf8Path.size());
     }
 } // namespace Engine::Component

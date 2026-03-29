@@ -50,8 +50,6 @@ namespace
     {
         switch (InType)
         {
-        case FOutlinerPanel::ESpawnActorType::StaticMesh:
-            return "StaticMeshActor";
         case FOutlinerPanel::ESpawnActorType::Cube:
             return "CubeActor";
         case FOutlinerPanel::ESpawnActorType::Sphere:
@@ -74,22 +72,23 @@ namespace
             return "AtlasSpriteActor";
         case FOutlinerPanel::ESpawnActorType::Flipbook:
             return "FlipbookActor";
+        case FOutlinerPanel::ESpawnActorType::StaticMesh:
+            return "StaticMeshActor";
         default:
             return "Unknown";
         }
     }
 
     const char* const SpawnActorTypeLabels[] = {
-        "StaticMeshActor", "CubeActor",     "SphereActor", "ConeActor",   "CylinderActor", "RingActor",
-        "TriangleActor", "SpriteActor", "EffectActor", "TextActor",     "AtlasSpriteActor", "FlipbookActor"
+        "CubeActor", "SphereActor",      "ConeActor",     "CylinderActor",
+        "RingActor", "TriangleActor",    "SpriteActor",   "EffectActor",
+        "TextActor", "AtlasSpriteActor", "FlipbookActor", "StaticMeshActor",
     };
 
     AActor* CreateActorByType(FOutlinerPanel::ESpawnActorType InType)
     {
         switch (InType)
         {
-        case FOutlinerPanel::ESpawnActorType::StaticMesh:
-            return new AStaticMeshActor();
         case FOutlinerPanel::ESpawnActorType::Cube:
             return new ACubeActor();
         case FOutlinerPanel::ESpawnActorType::Sphere:
@@ -110,8 +109,10 @@ namespace
             return new ATextActor();
         case FOutlinerPanel::ESpawnActorType::AtlasSprite:
             return new AAtlasSpriteActor();
-            case FOutlinerPanel::ESpawnActorType::Flipbook:
+        case FOutlinerPanel::ESpawnActorType::Flipbook:
             return new AFlipbookActor();
+        case FOutlinerPanel::ESpawnActorType::StaticMesh:
+            return new AStaticMeshActor();
         default:
             return nullptr;
         }
@@ -264,18 +265,18 @@ void FOutlinerPanel::SpawnActors() const
             continue;
         }
 
-        // Static Mesh Actor인 경우 기본 메시(Cube)를 할당해 줍니다.
-        if (SpawnActorType == ESpawnActorType::StaticMesh)
-        {
-            if (auto* SMActor = Cast<AStaticMeshActor>(NewActor))
-            {
-                if (auto* SMComp = SMActor->GetStaticMeshComponent())
-                {
-                    // 기본 에셋 경로 설정
-                    SMComp->SetMeshPath("Data/Cube.obj");
-                }
-            }
-        }
+        //// Static Mesh Actor인 경우 기본 메시(Cube)를 할당해 줍니다.
+        // if (SpawnActorType == ESpawnActorType::StaticMesh)
+        //{
+        //     if (auto* SMActor = Cast<AStaticMeshActor>(NewActor))
+        //     {
+        //         if (auto* SMComp = SMActor->GetStaticMeshComponent())
+        //         {
+        //             // 기본 에셋 경로 설정
+        //             SMComp->SetMeshPath("Data/Cube.obj");
+        //         }
+        //     }
+        // }
 
         const size_t ActorIndex = ExistingActorCount + static_cast<size_t>(SpawnIndex) + 1;
         NewActor->Name =

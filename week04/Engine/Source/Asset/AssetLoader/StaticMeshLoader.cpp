@@ -12,7 +12,6 @@
 
 namespace fs = std::filesystem;
 
-
 FStaticMeshLoader::FStaticMeshLoader(FD3D11RHI* InRHI, UAssetManager* InAssetManager)
     : RHI(InRHI), AssetManager(InAssetManager)
 {
@@ -74,48 +73,68 @@ UAsset* FStaticMeshLoader::LoadAsset(const FSourceRecord& Source, const FAssetLo
         return nullptr;
     }
 
-    // 3. 에셋 생성 및 리소스 복사 (FontAsset 방식과 동일)
-    UStaticMesh* NewMeshAsset = new UStaticMesh();
+    // 3. 에셋 생성 및 리소스 복사
+    Engine::Asset::UStaticMesh* NewMeshAsset = new Engine::Asset::UStaticMesh();
     NewMeshAsset->Initialize(Source, MeshResource);
 
-    // .obj 파일을 읽으면서 기록해두었던 .mtl 파일들을 load 하도록 AssetManager의 Load 함수 호출
-    if (AssetManager) // 포인터가 유효한지 확인
+    // --- 추가: 서브 메시 개수에 맞춰 머티리얼 슬롯 미리 확보 ---
+    const uint32 NumSubMeshes = static_cast<uint32>(MeshResource->SubMeshes.size());
+    NewMeshAsset->InitializeMaterialSlots(NumSubMeshes);
+
+    // .mtl 파일 로드 및 매핑
+    if (AssetManager)
     {
         const fs::path ObjFilePath(Source.NormalizedPath);
         const fs::path ObjDir = ObjFilePath.parent_path();
 
+        // 성공적으로 로드된 머티리얼 에셋들을 임시 보관할 배열
+        TArray<Engine::Asset::UMaterialAsset*> LoadedMtls;
+
+        // 4. 연관된 모든 .mtl 파일 로드
         for (const FString& MtlFileName : MeshResource->MaterialLibraryPaths)
         {
             const fs::path MtlRelativePath(MtlFileName.c_str());
-
-            // 디렉토리 경로와 파일 이름을 결합 (예: "Data/Models" / "InteriorTest1.mtl")
             const fs::path FullMtlPath = ObjDir / MtlRelativePath;
-
-            // fs::path의 내장 함수를 사용하여 최종 경로를 FWString(std::wstring)으로 변환
-            FWString WideMtlPath = FullMtlPath.wstring();
+            FWString       WideMtlPath = FullMtlPath.wstring();
 
             FAssetLoadParams MatParams;
             MatParams.ExplicitType = EAssetType::Material;
 
-
             UAsset* LoadedAsset = AssetManager->Load(WideMtlPath, MatParams);
             if (LoadedAsset)
             {
-                UMaterialAsset* MatAsset = static_cast<UMaterialAsset*>(LoadedAsset);
+                Engine::Asset::UMaterialAsset* MatAsset =
+                    static_cast<Engine::Asset::UMaterialAsset*>(LoadedAsset);
 
-                // 앞서 StaticMesh.h에 추가했던 종속성 배열에 넣어 생명주기를 묶어줍니다.
-                // (NewMeshAsset은 현재 Initialize 중인 UStaticMesh 포인터라고 가정합니다)
-                NewMeshAsset->AddMaterialDependency(MatAsset);
+                LoadedMtls.push_back(MatAsset); // 매핑을 위해 보관
             }
             else
             {
-                // 3. 실패 시 에디터 콘솔이나 로그 창에 명확한 경고를 남깁니다.
                 UE_LOG(Asset, ELogVerbosity::Warning,
                        "[StaticMeshLoader] Failed to load .mtl file. Path=%s",
                        WidePathToUtf8(WideMtlPath).c_str());
             }
         }
+        // --- 추가: 5. 서브 메시의 'usemtl' 이름으로 실제 머티리얼 매핑 ---
+        for (uint32 i = 0; i < NumSubMeshes; ++i)
+        {
+            const FString& TargetMatName = MeshResource->SubMeshes[i].DefaultMaterialName;
+            Engine::Asset::UMaterialAsset* MatchedMat = nullptr;
+
+            // 로드된 MTL 에셋들 중에서 해당 이름을 가진 재질 데이터가 있는지 검색
+            for (Engine::Asset::UMaterialAsset* Mtl : LoadedMtls)
+            {
+                if (Mtl->GetMaterialData(TargetMatName) != nullptr)
+                {
+                    MatchedMat = Mtl;
+                    break;
+                }
+            }
+            // 찾은 머티리얼 에셋을 UStaticMesh의 해당 서브 메시 인덱스(슬롯)에 세팅
+            NewMeshAsset->SetMaterial(i, MatchedMat);
+        }
     }
+
     return NewMeshAsset;
 }
 
@@ -332,27 +351,26 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMeshRes
     OutMesh.VertexStride = sizeof(FMeshVertexNormal);
 
     return OutMesh.VertexCount > 0 && OutMesh.IndexCount > 0;
-    //if (!Source.bFileBytesLoaded || Source.FileBytes.empty())
-    //    return false;
+    // if (!Source.bFileBytesLoaded || Source.FileBytes.empty())
+    //     return false;
 
-    //FString            FileString(reinterpret_cast<const char*>(Source.FileBytes.data()), Source.FileBytes.size());
-    //std::istringstream Stream(FileString);
-    //FString            Line;
+    // FString            FileString(reinterpret_cast<const char*>(Source.FileBytes.data()),
+    // Source.FileBytes.size()); std::istringstream Stream(FileString); FString            Line;
 
-    //std::vector<FVector>  TempPositions;
-    //std::vector<FVector2> TempUVs;
-    //std::vector<FVector>  TempNormals;
+    // std::vector<FVector>  TempPositions;
+    // std::vector<FVector2> TempUVs;
+    // std::vector<FVector>  TempNormals;
 
     //// 중복 정점 방지를 위한 해시 맵 ("v/vt/vn" 문자열 -> 인덱스)
-    //TMap<FString, uint32> VertexCache;
+    // TMap<FString, uint32> VertexCache;
 
-    //FSubMesh CurrentSubMesh;
-    //bool     bSubMeshActive = false;
+    // FSubMesh CurrentSubMesh;
+    // bool     bSubMeshActive = false;
 
-    //while (std::getline(Stream, Line))
+    // while (std::getline(Stream, Line))
     //{
-    //    if (Line.empty() || Line[0] == '#')
-    //        continue;
+    //     if (Line.empty() || Line[0] == '#')
+    //         continue;
 
     //    std::istringstream LineStream(Line);
     //    FString            Header;
@@ -503,63 +521,100 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMeshRes
     //}
 
     //// 파일 끝에 도달했을 때 마지막 SubMesh 닫기
-    //if (bSubMeshActive)
+    // if (bSubMeshActive)
     //{
-    //    CurrentSubMesh.IndexCount =
-    //        static_cast<uint32>(OutMesh.CPU_Indices.size()) - CurrentSubMesh.StartIndexLocation;
-    //    if (CurrentSubMesh.IndexCount > 0)
-    //    {
-    //        OutMesh.SubMeshes.push_back(CurrentSubMesh);
-    //    }
-    //}
+    //     CurrentSubMesh.IndexCount =
+    //         static_cast<uint32>(OutMesh.CPU_Indices.size()) - CurrentSubMesh.StartIndexLocation;
+    //     if (CurrentSubMesh.IndexCount > 0)
+    //     {
+    //         OutMesh.SubMeshes.push_back(CurrentSubMesh);
+    //     }
+    // }
     //// 머티리얼 정보가 전혀 없는 obj 파일에 대한 예외 처리
-    //else if (!OutMesh.CPU_Indices.empty())
+    // else if (!OutMesh.CPU_Indices.empty())
     //{
-    //    CurrentSubMesh.DefaultMaterialName = "DefaultMaterial";
-    //    CurrentSubMesh.StartIndexLocation = 0;
-    //    CurrentSubMesh.IndexCount = static_cast<uint32>(OutMesh.CPU_Indices.size());
-    //    OutMesh.SubMeshes.push_back(CurrentSubMesh);
-    //}
+    //     CurrentSubMesh.DefaultMaterialName = "DefaultMaterial";
+    //     CurrentSubMesh.StartIndexLocation = 0;
+    //     CurrentSubMesh.IndexCount = static_cast<uint32>(OutMesh.CPU_Indices.size());
+    //     OutMesh.SubMeshes.push_back(CurrentSubMesh);
+    // }
 
-    //OutMesh.VertexCount = static_cast<uint32>(OutVertices.size());
-    //OutMesh.IndexCount = static_cast<uint32>(OutMesh.CPU_Indices.size());
-    //OutMesh.VertexStride = sizeof(FMeshVertexNormal);
+    // OutMesh.VertexCount = static_cast<uint32>(OutVertices.size());
+    // OutMesh.IndexCount = static_cast<uint32>(OutMesh.CPU_Indices.size());
+    // OutMesh.VertexStride = sizeof(FMeshVertexNormal);
 
-    //return OutMesh.VertexCount > 0 && OutMesh.IndexCount > 0;
+    // return OutMesh.VertexCount > 0 && OutMesh.IndexCount > 0;
 }
 
 bool FStaticMeshLoader::CreateBuffers(const TArray<FMeshVertexNormal>& InVertices,
                                       FStaticMeshResource&             OutMesh) const
 {
+    // RHI (Render Hardware Interface) 유효성 검사
     if (!RHI || !RHI->GetDevice())
+    {
+        UE_LOG(Asset, ELogVerbosity::Warning, "[StaticMeshLoader] D3D Device is invalid.");
         return false;
+    }
 
-    // 1. 버텍스 버퍼 생성
-    D3D11_BUFFER_DESC VbDesc = {};
-    VbDesc.ByteWidth = sizeof(FMeshVertexNormal) * OutMesh.VertexCount;
-    VbDesc.Usage = D3D11_USAGE_IMMUTABLE;
-    VbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    ID3D11Device* Device = RHI->GetDevice();
+    HRESULT       Hr = S_OK;
 
-    D3D11_SUBRESOURCE_DATA VbData = {};
-    VbData.pSysMem = InVertices.data();
+    // ------------------------------------------------------------------
+    // 1. Vertex Buffer (VBO) 생성 및 메타데이터 세팅
+    // ------------------------------------------------------------------
+    if (!InVertices.empty())
+    {
+        // 렌더링 시 필요한 필수 정보 저장
+        OutMesh.VertexCount = static_cast<uint32>(InVertices.size());
+        OutMesh.VertexStride = sizeof(FMeshVertexNormal);
 
-    HRESULT Hr = RHI->GetDevice()->CreateBuffer(&VbDesc, &VbData, &OutMesh.VertexBuffer);
-    if (FAILED(Hr))
-        return false;
+        D3D11_BUFFER_DESC VbDesc = {};
+        VbDesc.Usage = D3D11_USAGE_IMMUTABLE; // 데이터가 변하지 않으므로 최적화
+        VbDesc.ByteWidth = static_cast<UINT>(OutMesh.VertexStride * OutMesh.VertexCount);
+        VbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+        VbDesc.CPUAccessFlags = 0;
+        VbDesc.MiscFlags = 0;
 
-    // 2. 인덱스 버퍼 생성
-    D3D11_BUFFER_DESC IbDesc = {};
-    IbDesc.ByteWidth = sizeof(uint32) * OutMesh.IndexCount;
-    IbDesc.Usage = D3D11_USAGE_IMMUTABLE;
-    IbDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+        D3D11_SUBRESOURCE_DATA VbData = {};
+        VbData.pSysMem = InVertices.data();
 
-    D3D11_SUBRESOURCE_DATA IbData = {};
-    IbData.pSysMem = OutMesh.CPU_Indices.data();
+        Hr = Device->CreateBuffer(&VbDesc, &VbData, &OutMesh.VertexBuffer);
+        if (FAILED(Hr))
+        {
+            UE_LOG(Asset, ELogVerbosity::Warning,
+                   "[StaticMeshLoader] Failed to create Vertex Buffer. HRESULT=0x%08x",
+                   static_cast<uint32>(Hr));
+            return false;
+        }
+    }
 
-    Hr = RHI->GetDevice()->CreateBuffer(&IbDesc, &IbData, &OutMesh.IndexBuffer);
-    if (FAILED(Hr))
-        return false;
+    // ------------------------------------------------------------------
+    // 2. Index Buffer (IBO) 생성 및 메타데이터 세팅
+    // ------------------------------------------------------------------
+    if (!OutMesh.CPU_Indices.empty()) // 변경됨: Indices -> CPU_Indices
+    {
+        // 렌더링 시 필요한 인덱스 개수 저장
+        OutMesh.IndexCount = static_cast<uint32>(OutMesh.CPU_Indices.size());
 
+        D3D11_BUFFER_DESC IbDesc = {};
+        IbDesc.Usage = D3D11_USAGE_IMMUTABLE;
+        IbDesc.ByteWidth = static_cast<UINT>(sizeof(uint32) * OutMesh.IndexCount);
+        IbDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+        IbDesc.CPUAccessFlags = 0;
+        IbDesc.MiscFlags = 0;
+
+        D3D11_SUBRESOURCE_DATA IbData = {};
+        IbData.pSysMem = OutMesh.CPU_Indices.data();
+
+        Hr = Device->CreateBuffer(&IbDesc, &IbData, &OutMesh.IndexBuffer);
+        if (FAILED(Hr))
+        {
+            UE_LOG(Asset, ELogVerbosity::Warning,
+                   "[StaticMeshLoader] Failed to create Index Buffer. HRESULT=0x%08x",
+                   static_cast<uint32>(Hr));
+            return false;
+        }
+    }
     return true;
 }
 

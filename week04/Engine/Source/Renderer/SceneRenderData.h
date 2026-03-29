@@ -12,6 +12,7 @@ struct FSceneRenderData
     EViewModeIndex    ViewMode = EViewModeIndex::VMI_Lit;
     bool              bUseInstancing = true;
 
+    TArray<FStaticMeshRenderItem> StaticMeshes;
     TArray<FPrimitiveRenderItem> Primitives;
     TArray<FSpriteRenderItem>    Sprites;
     TArray<FTextRenderItem>      Texts;
