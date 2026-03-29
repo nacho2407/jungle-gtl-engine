@@ -80,6 +80,18 @@ void FDebugDrawManager::DrawAllCollisionBounds(FRenderer* Renderer, UWorld* Worl
 
 		for (UActorComponent* Comp : Actor->GetComponents())
 		{
+			if (Comp->IsA(UNewPrimitiveComponent::StaticClass()))
+			{
+				UNewPrimitiveComponent* NewPrimiComp = static_cast<UNewPrimitiveComponent*>(Comp);
+				if (NewPrimiComp->ShouldDrawDebugBounds())
+				{
+					if (NewPrimiComp->GetRenderMesh())
+					{
+						FBoxSphereBounds Bound = NewPrimiComp->GetWorldBounds();
+						Renderer->DrawCube(Bound.Center, Bound.BoxExtent, FVector4(1, 0, 0, 1));  // 빨강색
+					}
+				}
+			}
 			if (!Comp->IsA(UPrimitiveComponent::StaticClass()))
 				continue;
 

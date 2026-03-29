@@ -19,6 +19,7 @@
 #include "Component/CameraComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Actor/SkySphereActor.h"
+#include "Component/SubUVComponent.h"
 #include "Controller/EditorViewportController.h"
 #include "Serializer/SceneSerializer.h"
 #include <filesystem>
@@ -214,61 +215,68 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 			static int32 SpawnCount = 0;
 			const FString Name = FString(SpawnTypes[SpawnTypeIndex]) + "_Spawned_" + std::to_string(SpawnCount++);
 
+			// ⭐ 단 하나의 포인터로 통합 관리 (유령 액터 생성 방지)
 			AActor* NewActor = nullptr;
-			if (SpawnTypeIndex == 0)
+
+			// ─── 1. 순수 컴포넌트 조립 방식 (Cube, Sphere, Plane, StaticMesh) ───
+			if (SpawnTypeIndex == 0 || SpawnTypeIndex == 1 || SpawnTypeIndex == 2 || SpawnTypeIndex == 7)
 			{
-				NewActor = Scene->SpawnActor<ACubeActor>(Name);
+				AActor* EmptyActor = Scene->SpawnActor<AActor>(Name);
+				if (EmptyActor)
+				{
+					// 빈 액터에 StaticMeshComponent 생성 및 부착
+					UStaticMeshComponent* MeshComp = FObjectFactory::ConstructObject<UStaticMeshComponent>(EmptyActor);
+					EmptyActor->AddOwnedComponent(MeshComp);
+					EmptyActor->SetRootComponent(MeshComp);
+
+					// 각 타입에 맞는 Mesh Data 장착
+					UStaticMesh* MeshData = nullptr;
+					if (SpawnTypeIndex == 0)      MeshData = FObjManager::GetPrimitiveCube();
+					else if (SpawnTypeIndex == 1) MeshData = FObjManager::GetPrimitiveSphere();
+					else if (SpawnTypeIndex == 2) MeshData = FObjManager::GetPrimitivePlane();
+					else if (SpawnTypeIndex == 7) MeshData = FObjManager::GetPrimitivePlane(); // (현재 7번도 Plane을 쓰도록 되어있음)
+
+					MeshComp->SetStaticMesh(MeshData);
+					NewActor = EmptyActor;
+				}
 			}
-			else if (SpawnTypeIndex == 1)
-			{
-				NewActor = Scene->SpawnActor<ASphereActor>(Name);
-			}
-			else if (SpawnTypeIndex == 2)
-			{
-				NewActor = Scene->SpawnActor<APlaneActor>(Name);
-			}
+			// ─── 2. 특수 액터 (AttachTest) ───
 			else if (SpawnTypeIndex == 3)
 			{
 				NewActor = Scene->SpawnActor<AAttachTestActor>(Name);
 			}
+			// ─── 3. 순수 컴포넌트 조립 방식 (SubUV) ───
 			else if (SpawnTypeIndex == 4)
 			{
-				NewActor = Scene->SpawnActor<ASubUVActor>(Name);
-			}
-			else if (SpawnTypeIndex == 5)
-			{
-				NewActor = Scene->SpawnActor<ATextActor>(Name);
-
-				if (NewActor)
+				AActor* EmptyActor = Scene->SpawnActor<AActor>(Name);
+				if (EmptyActor)
 				{
-					ATextActor* TextActor = static_cast<ATextActor*>(NewActor);
-					if (UTextComponent* TextComponent = TextActor->GetTextComponent())
-					{
-						if (SpawnTextBuffer[0] != '\0')
-						{
-							TextComponent->SetText(SpawnTextBuffer);
-						}
-						else
-						{
-							TextComponent->SetText("Text");
-						}
-					}
+					USubUVComponent* SubUVComp = FObjectFactory::ConstructObject<USubUVComponent>(EmptyActor);
+					EmptyActor->AddOwnedComponent(SubUVComp);
+					EmptyActor->SetRootComponent(SubUVComp);
+					NewActor = EmptyActor;
 				}
 			}
+			// ─── 4. 기존 프리셋 액터 (Text) ───
+			else if (SpawnTypeIndex == 5)
+			{
+				ATextActor* TextActor = Scene->SpawnActor<ATextActor>(Name);
+				if (TextActor)
+				{
+					if (UTextComponent* TextComponent = TextActor->GetTextComponent())
+					{
+						TextComponent->SetText(SpawnTextBuffer[0] != '\0' ? SpawnTextBuffer : "Text");
+					}
+					NewActor = TextActor;
+				}
+			}
+			// ─── 5. 특수 액터 (SkySphere) ───
 			else if (SpawnTypeIndex == 6)
 			{
 				NewActor = Scene->SpawnActor<ASkySphereActor>(Name);
 			}
-			else if (SpawnTypeIndex == 7)
-			{
-				AStaticMeshActor* MyCube = Scene->SpawnActor<AStaticMeshActor>(Name);
-				if (MyCube && MyCube->GetStaticMeshComponent())
-				{
-					UStaticMesh* CubeData = FObjManager::GetPrimitiveSphere();
-					MyCube->GetStaticMeshComponent()->SetStaticMesh(CubeData);
-				}
-			}
 
+			// ─── 마무리: 에디터 선택 및 로그 출력 ───
 			if (NewActor && !NewActor->IsA<ASkySphereActor>())
 			{
 				Engine->SetSelectedActor(NewActor);

@@ -132,7 +132,7 @@ AActor* FPicker::PickActor(UScene* Scene, int32 ScreenX, int32 ScreenY,
 			if (Component->IsA(UUUIDBillboardComponent::StaticClass())) continue;
 
 			const bool bIsOldPrim = Component->IsA(UPrimitiveComponent::StaticClass());
-			const bool bIsStaticMesh = Component->IsA(UStaticMeshComponent::StaticClass());
+			const bool bIsStaticMesh = Component->IsA(UNewPrimitiveComponent::StaticClass());
 
 			// 둘 다 아니면 피킹 대상이 아님
 			if (!bIsOldPrim && !bIsStaticMesh) continue;
@@ -143,28 +143,6 @@ AActor* FPicker::PickActor(UScene* Scene, int32 ScreenX, int32 ScreenY,
 			if (bIsOldPrim)
 			{
 				UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
-
-				const bool bIsSubUV = PrimitiveComponent->IsA(USubUVComponent::StaticClass());
-				const bool bIsText = PrimitiveComponent->IsA(UTextComponent::StaticClass());
-				if (bIsSubUV || bIsText)
-				{
-					// 구형(Sphere) 피킹 로직
-					const FBoxSphereBounds Bounds = PrimitiveComponent->GetWorldBounds();
-					FVector ToCenter = Bounds.Center - Ray.Origin;
-					float T = FVector::DotProduct(ToCenter, Ray.Direction);
-					if (T < 0.0f) continue;
-
-					const FVector ClosestPoint = Ray.Origin + Ray.Direction * T;
-					const float DistSq = (ClosestPoint - Bounds.Center).SizeSquared();
-					const float RadiusSq = Bounds.Radius * Bounds.Radius;
-
-					if (DistSq <= RadiusSq && T < ClosestDistance)
-					{
-						ClosestDistance = T;
-						ClosestActor = Actor;
-					}
-					continue;
-				}
 
 				// 구형 일반 메시 피킹 로직
 				if (!PrimitiveComponent->GetPrimitive()) continue;
@@ -207,6 +185,30 @@ AActor* FPicker::PickActor(UScene* Scene, int32 ScreenX, int32 ScreenY,
 			// ========================================================
 			else if (bIsStaticMesh)
 			{
+				UNewPrimitiveComponent* NewPrimitiveComponent = static_cast<UNewPrimitiveComponent*>(Component);
+
+				const bool bIsSubUV = NewPrimitiveComponent->IsA(USubUVComponent::StaticClass());
+				const bool bIsText = NewPrimitiveComponent->IsA(UTextComponent::StaticClass());
+				if (bIsSubUV || bIsText)
+				{
+					// 구형(Sphere) 피킹 로직
+					const FBoxSphereBounds Bounds = NewPrimitiveComponent->GetWorldBounds();
+					FVector ToCenter = Bounds.Center - Ray.Origin;
+					float T = FVector::DotProduct(ToCenter, Ray.Direction);
+					if (T < 0.0f) continue;
+
+					const FVector ClosestPoint = Ray.Origin + Ray.Direction * T;
+					const float DistSq = (ClosestPoint - Bounds.Center).SizeSquared();
+					const float RadiusSq = Bounds.Radius * Bounds.Radius;
+
+					if (DistSq <= RadiusSq && T < ClosestDistance)
+					{
+						ClosestDistance = T;
+						ClosestActor = Actor;
+					}
+					continue;
+				}
+
 				UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(Component);
 				if (!SMC->GetRenderMesh()) continue;
 

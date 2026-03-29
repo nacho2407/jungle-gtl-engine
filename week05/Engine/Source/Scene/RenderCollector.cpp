@@ -97,6 +97,41 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 				}
 				continue;
 			}
+			if (NewPrimitiveComponent->IsA(USubUVComponent::StaticClass()))
+			{
+				USubUVComponent* SubUVComponent = static_cast<USubUVComponent*>(NewPrimitiveComponent);
+				FRenderMesh* SubUVMesh = SubUVComponent->GetSubUVMesh();
+				if (SubUVMesh && SubUVRenderer.BuildSubUVMesh(SubUVComponent->GetSize(), *SubUVMesh))
+				{
+					SubUVMesh->bIsDirty = true;
+					float TotalTime = GEngine ? static_cast<float>(GEngine->GetTimer().GetTotalTime()) : 0.0f;
+					SubUVRenderer.UpdateAnimationParams(
+						SubUVComponent->GetColumns(), SubUVComponent->GetRows(), SubUVComponent->GetTotalFrames(),
+						SubUVComponent->GetFirstFrame(), SubUVComponent->GetLastFrame(),
+						SubUVComponent->GetFPS(), TotalTime, SubUVComponent->IsLoop()
+					);
+
+					FMaterial* SubUVMat = SubUVRenderer.GetSubUVMaterial();
+					if (SubUVMat)
+					{
+						FRenderCommand Command;
+						Command.RenderMesh = SubUVMesh;
+						Command.Material = SubUVMat;
+						Command.WorldMatrix = SubUVComponent->GetWorldTransform();
+
+						if (SubUVComponent->IsBillboard())
+						{
+							const FVector CameraPos = Renderer->GetCameraPosition();
+							const FVector WorldPos = Command.WorldMatrix.GetTranslation();
+							const FVector Scale = Command.WorldMatrix.GetScaleVector();
+							Command.WorldMatrix = FMatrix::MakeScale(Scale) * FMatrix::MakeBillboard(WorldPos, CameraPos);
+						}
+
+						OutQueue.AddCommand(Command);
+					}
+				}
+				continue;
+			}
 			if (Comp->IsA(UStaticMeshComponent::StaticClass()))
 			{
 				UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(Comp);
@@ -124,40 +159,6 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 
 			// ─── SubUV 스프라이트 통합 ───
 			// TODO: 일반적인 프리미티브와 RenderCommand build 경로 통합
-			if (PrimitiveComponent->IsA(USubUVComponent::StaticClass()))
-			{
-				USubUVComponent* SubUVComponent = static_cast<USubUVComponent*>(PrimitiveComponent);
-				FMeshData* SubUVMesh = SubUVComponent->GetSubUVMesh();
-				if (SubUVMesh && SubUVRenderer.BuildSubUVMesh(SubUVComponent->GetSize(), *SubUVMesh))
-				{
-					float TotalTime = GEngine ? static_cast<float>(GEngine->GetTimer().GetTotalTime()) : 0.0f;
-					SubUVRenderer.UpdateAnimationParams(
-						SubUVComponent->GetColumns(), SubUVComponent->GetRows(), SubUVComponent->GetTotalFrames(),
-						SubUVComponent->GetFirstFrame(), SubUVComponent->GetLastFrame(),
-						SubUVComponent->GetFPS(), TotalTime, SubUVComponent->IsLoop()
-					);
-
-					FMaterial* SubUVMat = SubUVRenderer.GetSubUVMaterial();
-					if (SubUVMat)
-					{
-						FRenderCommand Command;
-						Command.MeshData = SubUVMesh;
-						Command.Material = SubUVMat;
-						Command.WorldMatrix = SubUVComponent->GetWorldTransform();
-
-						if (SubUVComponent->IsBillboard())
-						{
-							const FVector CameraPos = Renderer->GetCameraPosition();
-							const FVector WorldPos = Command.WorldMatrix.GetTranslation();
-							const FVector Scale = Command.WorldMatrix.GetScaleVector();
-							Command.WorldMatrix = FMatrix::MakeScale(Scale) * FMatrix::MakeBillboard(WorldPos, CameraPos);
-						}
-
-						OutQueue.AddCommand(Command);
-					}
-				}
-				continue;
-			}
 
 			// ─── 일반 프리미티브 ───
 			if (!PrimitiveComponent->GetPrimitive() || !PrimitiveComponent->GetPrimitive()->GetMeshData())
@@ -204,6 +205,9 @@ void FSceneRenderCollector::FrustrumCull(const TArray<AActor*>& Actors, const FF
 				else if (NewPrimitiveComponent->IsA(UTextComponent::StaticClass())) {
 					if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Text)) continue;
 				}
+				else if (NewPrimitiveComponent->IsA(USubUVComponent::StaticClass())) {
+					if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Billboard)) continue;
+				}
 
 				Bounds = NewPrimitiveComponent->GetWorldBounds(); // UMeshComponent나 UNewPrimitiveComponent에 있는 함수 호출
 			}
@@ -211,13 +215,9 @@ void FSceneRenderCollector::FrustrumCull(const TArray<AActor*>& Actors, const FF
 			{
 				UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Comp);
 
-				if (PrimitiveComponent->IsA(USubUVComponent::StaticClass())) {
-					if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Billboard)) continue;
-				}
-				else {
-					if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives)) continue;
-					if (!PrimitiveComponent->GetPrimitive() || !PrimitiveComponent->GetPrimitive()->GetMeshData()) continue;
-				}
+
+				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives)) continue;
+				if (!PrimitiveComponent->GetPrimitive() || !PrimitiveComponent->GetPrimitive()->GetMeshData()) continue;
 
 				Bounds = PrimitiveComponent->GetWorldBounds();
 			}

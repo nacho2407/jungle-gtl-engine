@@ -9,7 +9,7 @@ IMPLEMENT_RTTI(UTextComponent, UNewPrimitiveComponent)
 void UTextComponent::PostConstruct()
 {
 	// 폰트 렌더링용 메시 데이터 객체 생성
-	bDrawDebugBounds = true;
+	bDrawDebugBounds = false;
 	TextMesh = std::make_shared<FDynamicMesh>();
 	TextMesh->Topology = EMeshTopology::EMT_TriangleList;
 
