@@ -42,7 +42,9 @@ public:
 
 	SWidget* GetCapturedWidget() const { return CapturedWidget; }
 	void SetCapturedWidget(SWidget* InWidget) { CapturedWidget = InWidget; }
-	
+
+	// 위젯 트리가 파괴되기 전에 모든 위젯 참조를 일괄 해제
+	void ClearWidgetRefs();
 
 private:
 	SWidget* HitTest(int32 X, int32 Y);
