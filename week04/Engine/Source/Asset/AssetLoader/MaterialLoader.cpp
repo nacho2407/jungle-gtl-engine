@@ -1,7 +1,7 @@
 #include "Core/CoreMinimal.h"
 #include "MaterialLoader.h"
-#include "MaterialAsset.h" // UMaterialAsset 클래스 헤더
-#include "Texture2DAsset.h"
+#include "Asset/MaterialAsset.h" // UMaterialAsset 클래스 헤더
+#include "Asset/Texture2DAsset.h"
 
 #include <filesystem>
 #include <sstream>

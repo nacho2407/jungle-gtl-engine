@@ -19,7 +19,8 @@ class FOutlinerPanel : public IPanel
         Effect,
         Text,
         AtlasSprite,
-        Flipbook
+        Flipbook,
+        StaticMesh
     };
 
   public:

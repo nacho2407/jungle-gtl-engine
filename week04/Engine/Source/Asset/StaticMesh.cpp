@@ -1,19 +1,28 @@
 #include "Core/CoreMinimal.h"
-#include "Asset/StaticMesh.h"
+#include "StaticMesh.h"
 
-UStaticMesh::UStaticMesh() : RenderResource(nullptr) {}
-
-UStaticMesh::~UStaticMesh() {}
-
-void UStaticMesh::Initialize(std::shared_ptr<FStaticMeshResource> InResource)
+namespace Engine::Asset
 {
-    RenderResource = InResource;
-}
+    void UStaticMesh::Initialize(const FSourceRecord&                 InSource,
+                                 std::shared_ptr<FStaticMeshResource> InResource)
+    {
+        InitializeAssetMetadata(InSource);
+        RenderResource = std::move(InResource);
+    }
 
-void UStaticMesh::Serialize(class FArchive& Ar)
-{
-    UStreamableRenderAsset::Serialize(Ar);
-    // StaticMesh 고유 데이터 직렬화 (나중에 구현)
-}
+    void UStaticMesh::AddMaterialDependency(UMaterialAsset* InMaterial)
+    {
+        if (InMaterial && !HasMaterialDependency(InMaterial))
+        {
+            ReferencedMaterials.push_back(InMaterial);
+        }
+    }
 
-REGISTER_CLASS(, UStaticMesh)
+    bool UStaticMesh::HasMaterialDependency(const UMaterialAsset* InMaterial) const
+    {
+        auto It = std::find(ReferencedMaterials.begin(), ReferencedMaterials.end(), InMaterial);
+        return It != ReferencedMaterials.end();
+    }
+
+    REGISTER_CLASS(Engine::Asset, UStaticMesh)
+} // namespace Engine::Asset

@@ -162,12 +162,12 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
     TextureAssetLoader = new FTextureLoader(&Renderer->GetRHI());
     FontAssetLoader = new FFontAtlasLoader(&Renderer->GetRHI());
     SubUVAtlasAssetLoader = new FSubUVAtlasLoader(&Renderer->GetRHI());
-    StaticMeshAssetLoader = new FStaticMeshLoader(&Renderer->GetRHI(), AssetManager);
+    StaticMeshLoader = new FStaticMeshLoader(&Renderer->GetRHI(), AssetManager);
     MaterialAssetLoader = new FMaterialLoader(AssetManager);
     AssetManager->RegisterLoader(TextureAssetLoader);
     AssetManager->RegisterLoader(FontAssetLoader);
     AssetManager->RegisterLoader(SubUVAtlasAssetLoader);
-    AssetManager->RegisterLoader(StaticMeshAssetLoader);
+    AssetManager->RegisterLoader(StaticMeshLoader);
     AssetManager->RegisterLoader(MaterialAssetLoader);
     Editor->SetRuntimeServices(&Renderer->GetRHI(), AssetManager);
 
@@ -239,8 +239,8 @@ void FEditorEngineLoop::ShutDown()
         Editor->SetRuntimeServices(nullptr, nullptr);
     }
 
-     delete StaticMeshAssetLoader;
-    StaticMeshAssetLoader = nullptr;
+     delete StaticMeshLoader;
+    StaticMeshLoader = nullptr;
 
      delete MaterialAssetLoader;
     MaterialAssetLoader = nullptr;

@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Asset\MaterialInstance.h" />
     <ClInclude Include="Resources\Mesh\Cone.h" />
     <ClInclude Include="Resources\Mesh\Cube.h" />
     <ClInclude Include="Resources\Mesh\Cylinder.h" />
@@ -30,22 +31,20 @@
     <ClInclude Include="Source\ApplicationCore\Windows\WindowsApplication.h" />
     <ClInclude Include="Source\ApplicationCore\Windows\WindowsWindow.h" />
     <ClInclude Include="Source\Asset\Asset.h" />
-    <ClInclude Include="Source\Asset\AssetLoader.h" />
+    <ClInclude Include="Source\Asset\AssetLoader\AssetLoader.h" />
     <ClInclude Include="Source\Asset\AssetManager.h" />
     <ClInclude Include="Source\Asset\FontAsset.h" />
-    <ClInclude Include="Source\Asset\FontAtlasLoader.h" />
-    <ClInclude Include="Source\Asset\Material.h" />
+    <ClInclude Include="Source\Asset\AssetLoader\FontAtlasLoader.h" />
     <ClInclude Include="Source\Asset\MaterialAsset.h" />
     <ClInclude Include="Source\Asset\MaterialInterface.h" />
-    <ClInclude Include="Source\Asset\MaterialLoader.h" />
+    <ClInclude Include="Source\Asset\AssetLoader\MaterialLoader.h" />
     <ClInclude Include="Source\Asset\StaticMesh.h" />
-    <ClInclude Include="Source\Asset\StaticMeshAsset.h" />
-    <ClInclude Include="Source\Asset\StaticMeshLoader.h" />
+    <ClInclude Include="Source\Asset\AssetLoader\StaticMeshLoader.h" />
     <ClInclude Include="Source\Asset\StreamableRenderAsset.h" />
     <ClInclude Include="Source\Asset\SubUVAtlasAsset.h" />
-    <ClInclude Include="Source\Asset\SubUVAtlasLoader.h" />
+    <ClInclude Include="Source\Asset\AssetLoader\SubUVAtlasLoader.h" />
     <ClInclude Include="Source\Asset\Texture2DAsset.h" />
-    <ClInclude Include="Source\Asset\TextureLoader.h" />
+    <ClInclude Include="Source\Asset\AssetLoader\TextureLoader.h" />
     <ClInclude Include="Source\Core\Containers\Array.h" />
     <ClInclude Include="Source\Core\Containers\LinkedList.h" />
     <ClInclude Include="Source\Core\Containers\Map.h" />
@@ -92,7 +91,6 @@
     <ClInclude Include="Source\Engine\Component\Core\MeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\Core\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\Component\Core\SceneComponent.h" />
-    <ClInclude Include="Source\Engine\Component\Core\StaticMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\Core\UnknownComponent.h" />
     <ClInclude Include="Source\Engine\Component\Mesh\ConeComponent.h" />
     <ClInclude Include="Source\Engine\Component\Mesh\CubeComponent.h" />
@@ -100,6 +98,7 @@
     <ClInclude Include="Source\Engine\Component\Mesh\QuadComponent.h" />
     <ClInclude Include="Source\Engine\Component\Mesh\RingComponent.h" />
     <ClInclude Include="Source\Engine\Component\Mesh\SphereComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Mesh\StaticMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\Mesh\TriangleComponent.h" />
     <ClInclude Include="Source\Engine\Component\Sprite\AtlasComponent.h" />
     <ClInclude Include="Source\Engine\Component\Sprite\SpriteComponent.h" />
@@ -118,6 +117,7 @@
     <ClInclude Include="Source\Engine\Game\RingActor.h" />
     <ClInclude Include="Source\Engine\Game\SphereActor.h" />
     <ClInclude Include="Source\Engine\Game\SpriteActor.h" />
+    <ClInclude Include="Source\Engine\Game\StaticMeshActor.h" />
     <ClInclude Include="Source\Engine\Game\TextActor.h" />
     <ClInclude Include="Source\Engine\Game\TriangleActor.h" />
     <ClInclude Include="Source\Engine\Game\UnknownActor.h" />
@@ -173,26 +173,25 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Asset\MaterialInstance.cpp" />
     <ClCompile Include="Source\ApplicationCore\Input\InputRouter.cpp" />
     <ClCompile Include="Source\ApplicationCore\Input\InputSystem.cpp" />
     <ClCompile Include="Source\ApplicationCore\Windows\WindowsApplication.cpp" />
     <ClCompile Include="Source\ApplicationCore\Windows\WindowsWindow.cpp" />
     <ClCompile Include="Source\Asset\Asset.cpp" />
-    <ClCompile Include="Source\Asset\AssetLoader.cpp" />
+    <ClCompile Include="Source\Asset\AssetLoader\AssetLoader.cpp" />
     <ClCompile Include="Source\Asset\AssetManager.cpp" />
     <ClCompile Include="Source\Asset\FontAsset.cpp" />
-    <ClCompile Include="Source\Asset\FontAtlasLoader.cpp" />
-    <ClCompile Include="Source\Asset\Material.cpp" />
+    <ClCompile Include="Source\Asset\AssetLoader\FontAtlasLoader.cpp" />
     <ClCompile Include="Source\Asset\MaterialAsset.cpp" />
-    <ClCompile Include="Source\Asset\MaterialLoader.cpp" />
+    <ClCompile Include="Source\Asset\AssetLoader\MaterialLoader.cpp" />
     <ClCompile Include="Source\Asset\StaticMesh.cpp" />
-    <ClCompile Include="Source\Asset\StaticMeshAsset.cpp" />
-    <ClCompile Include="Source\Asset\StaticMeshLoader.cpp" />
+    <ClCompile Include="Source\Asset\AssetLoader\StaticMeshLoader.cpp" />
     <ClCompile Include="Source\Asset\StreamableRenderAsset.cpp" />
     <ClCompile Include="Source\Asset\SubUVAtlasAsset.cpp" />
-    <ClCompile Include="Source\Asset\SubUVAtlasLoader.cpp" />
+    <ClCompile Include="Source\Asset\AssetLoader\SubUVAtlasLoader.cpp" />
     <ClCompile Include="Source\Asset\Texture2DAsset.cpp" />
-    <ClCompile Include="Source\Asset\TextureLoader.cpp" />
+    <ClCompile Include="Source\Asset\AssetLoader\TextureLoader.cpp" />
     <ClCompile Include="Source\Core\CoreGlobals.cpp" />
     <ClCompile Include="Source\Core\CoreMinimal.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -218,7 +217,6 @@
     <ClCompile Include="Source\Engine\Component\Core\MeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Core\PrimitiveComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Core\SceneComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\Core\StaticMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Core\UnknownComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Mesh\ConeComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Mesh\CubeComponent.cpp" />
@@ -226,6 +224,7 @@
     <ClCompile Include="Source\Engine\Component\Mesh\QuadComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Mesh\RingComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Mesh\SphereComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Mesh\StaticMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Mesh\TriangleComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Sprite\AtlasComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Sprite\SpriteComponent.cpp" />
@@ -244,6 +243,7 @@
     <ClCompile Include="Source\Engine\Game\RingActor.cpp" />
     <ClCompile Include="Source\Engine\Game\SphereActor.cpp" />
     <ClCompile Include="Source\Engine\Game\SpriteActor.cpp" />
+    <ClCompile Include="Source\Engine\Game\StaticMeshActor.cpp" />
     <ClCompile Include="Source\Engine\Game\TextActor.cpp" />
     <ClCompile Include="Source\Engine\Game\TriangleActor.cpp" />
     <ClCompile Include="Source\Engine\Game\UnknownActor.cpp" />

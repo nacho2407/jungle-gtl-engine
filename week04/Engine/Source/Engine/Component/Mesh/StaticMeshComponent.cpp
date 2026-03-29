@@ -1,5 +1,5 @@
 #include "Core/CoreMinimal.h"
-#include "StaticMeshComponent.h"
+#include "Engine/Component/Mesh/StaticMeshComponent.h"
 #include "Asset/StaticMesh.h"
 #include "Asset/AssetManager.h"
 #include "Engine/Component/Core/ComponentProperty.h"
@@ -11,7 +11,10 @@ namespace Engine::Component
 
     UStaticMeshComponent::~UStaticMeshComponent() {}
 
-    EBasicMeshType UStaticMeshComponent::GetBasicMeshType() const { return EBasicMeshType::None; }
+    EBasicMeshType UStaticMeshComponent::GetBasicMeshType() const
+    {
+        return EBasicMeshType::None;
+    }
 
     void UStaticMeshComponent::DescribeProperties(FComponentPropertyBuilder& Builder)
     {
@@ -21,8 +24,10 @@ namespace Engine::Component
         Options.ExpectedAssetPathKind = EComponentAssetPathKind::StaticMeshFile;
 
         Builder.AddAssetPath(
-            "ObjStaticMeshAsset", L"Static Mesh", [this]() { return GetMeshPath(); },
-            [this](const FString& InPath) { SetMeshPath(InPath); }, Options);
+            "ObjStaticMesh", L"Static Mesh", 
+            [this]() { return GetMeshPath(); },
+            [this](const FString& InPath) { SetMeshPath(InPath); }, 
+            Options);
     }
 
     void UStaticMeshComponent::Serialize(bool bIsLoading, void* JsonHandle)
@@ -58,7 +63,7 @@ namespace Engine::Component
         StaticMesh = InStaticMesh;
         if (StaticMesh)
         {
-            InitializeMaterialSlots(StaticMesh->GetNumSections());
+            // InitializeMaterialSlots(StaticMesh->GetNumSections());
         }
         else
         {

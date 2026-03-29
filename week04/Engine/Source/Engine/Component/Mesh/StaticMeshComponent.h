@@ -7,9 +7,6 @@ class UStaticMesh;
 
 namespace Engine::Component
 {
-    /**
-     * @brief 정적 메시를 월드에 렌더링하기 위한 컴포넌트입니다.
-     */
     class ENGINE_API UStaticMeshComponent : public UMeshComponent
     {
       public:
@@ -25,7 +22,6 @@ namespace Engine::Component
         /** 에셋 참조 해결 (언리얼의 PostLoad와 유사한 역할) */
         virtual void           ResolveAssetReferences(class UAssetManager* InAssetManager) override;
 
-        /** 에셋 할당 */
         void         SetStaticMesh(UStaticMesh* InStaticMesh);
         UStaticMesh* GetStaticMesh() const { return StaticMesh; }
 
@@ -33,11 +29,7 @@ namespace Engine::Component
         FString GetMeshPath() const;
         void    SetMeshPath(const FString& InPath);
 
-        // 에디터 및 외부 시스템에서 접근할 수 있도록 public으로 공개합니다.
-        FString GetMeshPath() const;
-        void    SetMeshPath(const FString& InPath);
-
-         virtual bool ShouldShowInDetailsTree() const override { return true; }
+        virtual bool ShouldShowInDetailsTree() const override { return true; }
 
       protected:
         virtual bool GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const override;

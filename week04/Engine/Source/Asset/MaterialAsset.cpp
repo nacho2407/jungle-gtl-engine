@@ -1,25 +1,44 @@
 #include "Core/CoreMinimal.h"
 #include "MaterialAsset.h"
+#include "Renderer/RenderAsset/MaterialResource.h"
 
-void UMaterialAsset::Initialize(const FSourceRecord&               InSource,
-                                std::shared_ptr<FMaterialResource> InResource)
+namespace Engine::Asset
 {
-    InitializeAssetMetadata(InSource);
-    Resource = std::move(InResource);
-}
-
-void UMaterialAsset::AddTextureDependency(UTexture2DAsset* InTexture)
-{
-    if (InTexture && !HasTextureDependency(InTexture))
+    void UMaterialAsset::Initialize(const FSourceRecord&               InSource,
+                                    std::shared_ptr<FMaterialResource> InResource)
     {
-        ReferencedTextures.push_back(InTexture);
+        InitializeAssetMetadata(InSource);
+        Resource = std::move(InResource);
     }
+
+    const FMaterialData*
+    UMaterialAsset::GetMaterialData(const FString& SubMaterialName) const
+    {
+        if (Resource)
+        {
+            auto It = Resource->Materials.find(SubMaterialName);
+            if (It != Resource->Materials.end())
+            {
+                return &It->second;
+            }
+        }
+        return nullptr;
+    }
+
+    void UMaterialAsset::AddTextureDependency(UTexture2DAsset* InTexture)
+    {
+        if (InTexture && !HasTextureDependency(InTexture))
+        {
+            ReferencedTextures.push_back(InTexture);
+        }
+    }
+
+    bool UMaterialAsset::HasTextureDependency(const UTexture2DAsset* InTexture) const
+    {
+        auto It = std::find(ReferencedTextures.begin(), ReferencedTextures.end(), InTexture);
+        return It != ReferencedTextures.end();
+    }
+
+    REGISTER_CLASS(Engine::Asset, UMaterialAsset)
 }
 
-bool UMaterialAsset::HasTextureDependency(const UTexture2DAsset* InTexture) const
-{
-    auto It = std::find(ReferencedTextures.begin(), ReferencedTextures.end(), InTexture);
-    return It != ReferencedTextures.end();
-}
-
-REGISTER_CLASS(, UMaterialAsset)

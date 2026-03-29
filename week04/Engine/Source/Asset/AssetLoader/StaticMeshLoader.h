@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/CoreMinimal.h"
 #include "AssetLoader.h"
-#include "AssetManager.h"
+#include "Asset/AssetManager.h"
 #include "Renderer/RenderAsset/StaticMeshResource.h"
 
 class FD3D11RHI;

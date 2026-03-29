@@ -58,7 +58,7 @@ class FEditorEngineLoop : public IEngineLoop, public IEditorChromeHost
     IAssetLoader* TextureAssetLoader = nullptr;
     IAssetLoader* FontAssetLoader = nullptr;
     IAssetLoader* SubUVAtlasAssetLoader = nullptr;
-    IAssetLoader*    StaticMeshAssetLoader = nullptr;
+    IAssetLoader*    StaticMeshLoader = nullptr;
     IAssetLoader*    MaterialAssetLoader = nullptr;
 
     float DeltaTime = 0.0f;

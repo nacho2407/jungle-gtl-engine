@@ -1,6 +1,6 @@
 #include "Core/CoreMinimal.h"
 #include "StaticMeshLoader.h"
-#include "StaticMeshAsset.h"
+#include "Asset/StaticMesh.h"
 #include "Renderer/D3D11/D3D11RHI.h"
 #include "Renderer/Types/VertexTypes.h"
 
@@ -75,7 +75,7 @@ UAsset* FStaticMeshLoader::LoadAsset(const FSourceRecord& Source, const FAssetLo
     }
 
     // 3. 에셋 생성 및 리소스 복사 (FontAsset 방식과 동일)
-    UStaticMeshAsset* NewMeshAsset = new UStaticMeshAsset();
+    UStaticMesh* NewMeshAsset = new UStaticMesh();
     NewMeshAsset->Initialize(Source, MeshResource);
 
     // .obj 파일을 읽으면서 기록해두었던 .mtl 파일들을 load 하도록 AssetManager의 Load 함수 호출
@@ -103,8 +103,8 @@ UAsset* FStaticMeshLoader::LoadAsset(const FSourceRecord& Source, const FAssetLo
             {
                 UMaterialAsset* MatAsset = static_cast<UMaterialAsset*>(LoadedAsset);
 
-                // 앞서 StaticMeshAsset.h에 추가했던 종속성 배열에 넣어 생명주기를 묶어줍니다.
-                // (NewMeshAsset은 현재 Initialize 중인 UStaticMeshAsset 포인터라고 가정합니다)
+                // 앞서 StaticMesh.h에 추가했던 종속성 배열에 넣어 생명주기를 묶어줍니다.
+                // (NewMeshAsset은 현재 Initialize 중인 UStaticMesh 포인터라고 가정합니다)
                 NewMeshAsset->AddMaterialDependency(MatAsset);
             }
             else

@@ -1,15 +1,16 @@
 #include "Core/CoreMinimal.h"
-#include "SubUVAtlasLoader.h"
+#include "FontAtlasLoader.h"
 
 #include <algorithm>
 #include <cwctype>
 #include <filesystem>
+#include <fstream>
 #include <limits>
 #include <objbase.h>
 #include <wincodec.h>
 
+#include "Asset/FontAsset.h"
 #include "Renderer/D3D11/D3D11RHI.h"
-#include "SubUVAtlasAsset.h"
 
 #pragma comment(lib, "ole32.lib")
 #pragma comment(lib, "windowscodecs.lib")
@@ -149,12 +150,6 @@ namespace
         return true;
     }
 
-    FString GetStemName(const FString& FileName)
-    {
-        namespace fs = std::filesystem;
-        return fs::path(FileName).stem().string();
-    }
-
     FString WidePathToUtf8(const FWString& Path)
     {
         const std::filesystem::path FilePath(Path);
@@ -163,17 +158,16 @@ namespace
     }
 } // namespace
 
-FSubUVAtlasLoader::FSubUVAtlasLoader(FD3D11RHI* InRHI) : RHI(InRHI) {}
+FFontAtlasLoader::FFontAtlasLoader(FD3D11RHI* InRHI) : RHI(InRHI) {}
 
-bool FSubUVAtlasLoader::CanLoad(const FWString& Path, const FAssetLoadParams& Params) const
+bool FFontAtlasLoader::CanLoad(const FWString& Path, const FAssetLoadParams& Params) const
 {
     if (Path.empty())
     {
         return false;
     }
 
-    if (Params.ExplicitType != EAssetType::Unknown &&
-        Params.ExplicitType != EAssetType::SpriteAtlas)
+    if (Params.ExplicitType != EAssetType::Unknown && Params.ExplicitType != EAssetType::Font)
     {
         return false;
     }
@@ -183,12 +177,12 @@ bool FSubUVAtlasLoader::CanLoad(const FWString& Path, const FAssetLoadParams& Pa
     std::transform(Extension.begin(), Extension.end(), Extension.begin(),
                    [](wchar_t Ch) { return static_cast<wchar_t>(std::towlower(Ch)); });
 
-    return Extension == L".json";
+    return Extension == L".font" || Extension == L".json";
 }
 
-EAssetType FSubUVAtlasLoader::GetAssetType() const { return EAssetType::SpriteAtlas; }
+EAssetType FFontAtlasLoader::GetAssetType() const { return EAssetType::Font; }
 
-uint64 FSubUVAtlasLoader::MakeBuildSignature(const FAssetLoadParams& Params) const
+uint64 FFontAtlasLoader::MakeBuildSignature(const FAssetLoadParams& Params) const
 {
     (void)Params;
 
@@ -198,33 +192,32 @@ uint64 FSubUVAtlasLoader::MakeBuildSignature(const FAssetLoadParams& Params) con
     return Hash;
 }
 
-UAsset* FSubUVAtlasLoader::LoadAsset(const FSourceRecord& Source, const FAssetLoadParams& Params)
+UAsset* FFontAtlasLoader::LoadAsset(const FSourceRecord& Source, const FAssetLoadParams& Params)
 {
     (void)Params;
 
-    FSubUVAtlasResource AtlasResource;
-    if (!ParseSubUVJson(Source, AtlasResource))
+    FFontResource FontResource;
+    if (!ParseFontAtlasJson(Source, FontResource))
     {
         UE_LOG(Asset, ELogVerbosity::Warning,
-               "[SubUVAtlasLoader] Failed at sprite atlas parse. Path=%s",
+               "[FontAtlasLoader] Failed at font atlas parse. Path=%s",
                WidePathToUtf8(Source.NormalizedPath).c_str());
         return nullptr;
     }
 
-    USubUVAtlasAsset* NewAsset = new USubUVAtlasAsset();
-    NewAsset->Initialize(Source, AtlasResource);
-    return NewAsset;
+    UFontAsset* NewFontAsset = new UFontAsset();
+    NewFontAsset->Initialize(Source, FontResource);
+    return NewFontAsset;
 }
 
-bool FSubUVAtlasLoader::ParseSubUVJson(const FSourceRecord& Source,
-                                       FSubUVAtlasResource& OutAtlas) const
+bool FFontAtlasLoader::ParseFontAtlasJson(const FSourceRecord& Source, FFontResource& OutFont) const
 {
-    OutAtlas.Reset();
+    OutFont.Reset();
 
     if (!Source.bFileBytesLoaded || Source.FileBytes.empty())
     {
         UE_LOG(Asset, ELogVerbosity::Warning,
-               "[SubUVAtlasLoader] ParseSubUVJson failed at source bytes validation. Path=%s",
+               "[FontAtlasLoader] ParseFontAtlasJson failed at source bytes validation. Path=%s",
                WidePathToUtf8(Source.NormalizedPath).c_str());
         return false;
     }
@@ -234,206 +227,173 @@ bool FSubUVAtlasLoader::ParseSubUVJson(const FSourceRecord& Source,
     if (Root.is_discarded())
     {
         UE_LOG(Asset, ELogVerbosity::Warning,
-               "[SubUVAtlasLoader] ParseSubUVJson failed at JSON parse. Path=%s",
+               "[FontAtlasLoader] ParseFontAtlasJson failed at JSON parse. Path=%s",
                WidePathToUtf8(Source.NormalizedPath).c_str());
         return false;
     }
 
-    if (!ParseMeta(Root, OutAtlas))
+    if (!ParseInfo(Root, OutFont.Info) || !ParseCommon(Root, OutFont.Common) ||
+        !ParsePages(Root, OutFont.PageFiles) || !ParseChars(Root, OutFont.Glyphs))
     {
         UE_LOG(Asset, ELogVerbosity::Warning,
-               "[SubUVAtlasLoader] ParseSubUVJson failed at meta parse. Path=%s",
+               "[FontAtlasLoader] ParseFontAtlasJson failed at JSON section parse. Path=%s",
                WidePathToUtf8(Source.NormalizedPath).c_str());
         return false;
     }
 
-    if (!ParseFrames(Root, OutAtlas.Frames))
+    if (OutFont.PageFiles.empty())
     {
         UE_LOG(Asset, ELogVerbosity::Warning,
-               "[SubUVAtlasLoader] ParseSubUVJson failed at frame parse. Path=%s",
+               "[FontAtlasLoader] ParseFontAtlasJson failed at atlas page discovery. Path=%s",
                WidePathToUtf8(Source.NormalizedPath).c_str());
-        OutAtlas.Reset();
         return false;
     }
 
-    if (!ParseSequences(OutAtlas.Frames, OutAtlas.Sequences))
+    if (!LoadAtlasTexture(Source, OutFont.PageFiles[0], OutFont.Atlas))
     {
         UE_LOG(Asset, ELogVerbosity::Warning,
-               "[SubUVAtlasLoader] ParseSubUVJson failed at sequence parse. Path=%s",
-               WidePathToUtf8(Source.NormalizedPath).c_str());
-        OutAtlas.Reset();
+               "[FontAtlasLoader] ParseFontAtlasJson failed at atlas texture load. Path=%s "
+               "AtlasPage=%s",
+               WidePathToUtf8(Source.NormalizedPath).c_str(), OutFont.PageFiles[0].c_str());
+        OutFont.Reset();
         return false;
     }
 
-    if (OutAtlas.PageFiles.empty())
+    if (OutFont.Common.ScaleW == 0)
     {
-        UE_LOG(Asset, ELogVerbosity::Warning,
-               "[SubUVAtlasLoader] ParseSubUVJson failed at atlas page discovery. Path=%s",
-               WidePathToUtf8(Source.NormalizedPath).c_str());
-        return false;
+        OutFont.Common.ScaleW = OutFont.Atlas.Width;
     }
 
-    if (!LoadAtlasTexture(Source, OutAtlas.PageFiles[0], OutAtlas.Atlas))
+    if (OutFont.Common.ScaleH == 0)
     {
-        UE_LOG(
-            Asset, ELogVerbosity::Warning,
-            "[SubUVAtlasLoader] ParseSubUVJson failed at atlas texture load. Path=%s AtlasPage=%s",
-            WidePathToUtf8(Source.NormalizedPath).c_str(), OutAtlas.PageFiles[0].c_str());
-        OutAtlas.Reset();
-        return false;
+        OutFont.Common.ScaleH = OutFont.Atlas.Height;
     }
 
-    if (OutAtlas.Common.ScaleW == 0)
+    if (OutFont.Common.Pages == 0)
     {
-        OutAtlas.Common.ScaleW = OutAtlas.Atlas.Width;
-    }
-
-    if (OutAtlas.Common.ScaleH == 0)
-    {
-        OutAtlas.Common.ScaleH = OutAtlas.Atlas.Height;
-    }
-
-    if (OutAtlas.Common.Pages == 0)
-    {
-        OutAtlas.Common.Pages = static_cast<uint32>(OutAtlas.PageFiles.size());
-    }
-
-    if (OutAtlas.Info.FrameCount == 0)
-    {
-        OutAtlas.Info.FrameCount = static_cast<uint32>(OutAtlas.Frames.size());
-    }
-
-    if (OutAtlas.Info.Columns == 0)
-    {
-        OutAtlas.Info.Columns = static_cast<uint32>(OutAtlas.Frames.size());
-    }
-
-    if (OutAtlas.Info.Rows == 0)
-    {
-        OutAtlas.Info.Rows = 1;
-    }
-
-    if (OutAtlas.Info.Name.empty())
-    {
-        OutAtlas.Info.Name = "Default";
+        OutFont.Common.Pages = static_cast<uint32>(OutFont.PageFiles.size());
     }
 
     return true;
 }
 
-bool FSubUVAtlasLoader::ParseMeta(const nlohmann::json& Root, FSubUVAtlasResource& OutAtlas) const
+bool FFontAtlasLoader::ParseInfo(const nlohmann::json& Root, FFontInfo& OutInfo) const
 {
-    if (!Root.contains("meta") || !Root["meta"].is_object())
+    if (!Root.contains("info") || !Root["info"].is_object())
     {
         return false;
     }
 
-    const auto& Meta = Root["meta"];
+    const auto& Info = Root["info"];
 
-    const FString ImageFile = Meta.value("image", "");
-    if (ImageFile.empty())
+    OutInfo.Face = Info.value("face", "");
+    OutInfo.Size = Info.value("size", 0);
+    OutInfo.bBold = Info.value("bold", 0) != 0;
+    OutInfo.bItalic = Info.value("italic", 0) != 0;
+    OutInfo.bUnicode = Info.value("unicode", 0) != 0;
+
+    OutInfo.StretchH = Info.value("stretchH", 100);
+    OutInfo.bSmooth = Info.value("smooth", 1) != 0;
+    OutInfo.AA = Info.value("aa", 1);
+    OutInfo.Outline = Info.value("outline", 0);
+
+    if (Info.contains("padding") && Info["padding"].is_array() && Info["padding"].size() == 4)
     {
-        return false;
+        OutInfo.PaddingLeft = Info["padding"][0].get<int32>();
+        OutInfo.PaddingTop = Info["padding"][1].get<int32>();
+        OutInfo.PaddingRight = Info["padding"][2].get<int32>();
+        OutInfo.PaddingBottom = Info["padding"][3].get<int32>();
     }
 
-    OutAtlas.PageFiles.clear();
-    OutAtlas.PageFiles.push_back(ImageFile);
-
-    OutAtlas.Info.Name = GetStemName(ImageFile);
-    OutAtlas.Info.Texture = ImageFile;
-    OutAtlas.Info.FPS = 0.0f;
-    OutAtlas.Info.bLoop = true;
-
-    OutAtlas.Common.Pages = 1;
-    OutAtlas.Common.bPacked = true;
-
-    if (Meta.contains("size") && Meta["size"].is_object())
+    if (Info.contains("spacing") && Info["spacing"].is_array() && Info["spacing"].size() == 2)
     {
-        const auto& Size = Meta["size"];
-        OutAtlas.Common.ScaleW = Size.value("w", 0u);
-        OutAtlas.Common.ScaleH = Size.value("h", 0u);
+        OutInfo.SpacingX = Info["spacing"][0].get<int32>();
+        OutInfo.SpacingY = Info["spacing"][1].get<int32>();
     }
 
     return true;
 }
 
-bool FSubUVAtlasLoader::ParseFrames(const nlohmann::json& Root,
-                                    TArray<FSubUVFrame>&  OutFrames) const
+bool FFontAtlasLoader::ParseCommon(const nlohmann::json& Root, FFontCommon& OutCommon) const
 {
-    if (!Root.contains("frames") || !Root["frames"].is_object())
+    if (!Root.contains("common") || !Root["common"].is_object())
     {
         return false;
     }
 
-    OutFrames.clear();
+    const auto& Common = Root["common"];
 
-    uint32 FrameId = 0;
+    OutCommon.LineHeight = Common.value("lineHeight", 0u);
+    OutCommon.Base = Common.value("base", 0u);
+    OutCommon.ScaleW = Common.value("scaleW", 0u);
+    OutCommon.ScaleH = Common.value("scaleH", 0u);
+    OutCommon.Pages = Common.value("pages", 0u);
+    OutCommon.bPacked = Common.value("packed", 0) != 0;
 
-    for (auto It = Root["frames"].begin(); It != Root["frames"].end(); ++It)
+    OutCommon.AlphaChannel = Common.value("alphaChnl", 0u);
+    OutCommon.RedChannel = Common.value("redChnl", 0u);
+    OutCommon.GreenChannel = Common.value("greenChnl", 0u);
+    OutCommon.BlueChannel = Common.value("blueChnl", 0u);
+
+    return true;
+}
+
+bool FFontAtlasLoader::ParsePages(const nlohmann::json& Root, TArray<FString>& OutPages) const
+{
+    if (!Root.contains("pages") || !Root["pages"].is_array())
     {
-        const FString         FrameName = It.key();
-        const nlohmann::json& Entry = It.value();
+        return false;
+    }
 
-        if (!Entry.is_object())
+    OutPages.clear();
+    for (const auto& Page : Root["pages"])
+    {
+        if (Page.is_string())
         {
+            OutPages.push_back(Page.get<FString>());
             continue;
         }
 
-        if (!Entry.contains("frame") || !Entry["frame"].is_object())
+        if (Page.is_object() && Page.contains("file") && Page["file"].is_string())
         {
-            continue;
+            OutPages.push_back(Page["file"].get<FString>());
         }
-
-        const auto& FrameRect = Entry["frame"];
-
-        FSubUVFrame Frame;
-        Frame.Id = FrameId++;
-        Frame.X = FrameRect.value("x", 0u);
-        Frame.Y = FrameRect.value("y", 0u);
-        Frame.Width = FrameRect.value("w", 0u);
-        Frame.Height = FrameRect.value("h", 0u);
-        Frame.Duration = 0.0f;
-
-        if (Entry.contains("pivot") && Entry["pivot"].is_object())
-        {
-            const auto& Pivot = Entry["pivot"];
-            Frame.PivotX = Pivot.value("x", 0.5f);
-            Frame.PivotY = Pivot.value("y", 0.5f);
-        }
-        else
-        {
-            Frame.PivotX = 0.5f;
-            Frame.PivotY = 0.5f;
-        }
-
-        OutFrames.push_back(Frame);
     }
 
-    return !OutFrames.empty();
+    return !OutPages.empty();
 }
 
-bool FSubUVAtlasLoader::ParseSequences(const TArray<FSubUVFrame>&     Frames,
-                                       TMap<FString, FSubUVSequence>& OutSequences) const
+bool FFontAtlasLoader::ParseChars(const nlohmann::json&     Root,
+                                  TMap<uint32, FFontGlyph>& OutGlyphs) const
 {
-    OutSequences.clear();
-
-    if (Frames.empty())
+    if (!Root.contains("chars") || !Root["chars"].is_array())
     {
         return false;
     }
 
-    FSubUVSequence DefaultSequence;
-    DefaultSequence.Name = "Default";
-    DefaultSequence.StartFrame = 0;
-    DefaultSequence.EndFrame = static_cast<uint32>(Frames.size() - 1);
-    DefaultSequence.bLoop = true;
+    OutGlyphs.clear();
+    for (const auto& Ch : Root["chars"])
+    {
+        FFontGlyph Glyph;
+        Glyph.Id = Ch.value("id", 0u);
+        Glyph.X = Ch.value("x", 0u);
+        Glyph.Y = Ch.value("y", 0u);
+        Glyph.Width = Ch.value("width", 0u);
+        Glyph.Height = Ch.value("height", 0u);
+        Glyph.XOffset = Ch.value("xoffset", 0);
+        Glyph.YOffset = Ch.value("yoffset", 0);
+        Glyph.XAdvance = Ch.value("xadvance", 0);
+        Glyph.Page = Ch.value("page", 0u);
+        Glyph.Channel = Ch.value("chnl", 0u);
 
-    OutSequences.insert_or_assign(DefaultSequence.Name, DefaultSequence);
-    return true;
+        OutGlyphs.insert_or_assign(Glyph.Id, Glyph);
+    }
+
+    return !OutGlyphs.empty();
 }
 
-bool FSubUVAtlasLoader::LoadAtlasTexture(const FSourceRecord& JsonSource, const FString& PageFile,
-                                         FTextureResource& OutAtlas) const
+bool FFontAtlasLoader::LoadAtlasTexture(const FSourceRecord& JsonSource, const FString& PageFile,
+                                        FTextureResource& OutAtlas) const
 {
     const FWString AtlasPath = ResolveSiblingPath(JsonSource.NormalizedPath, PageFile);
     if (AtlasPath.empty())
@@ -464,8 +424,8 @@ bool FSubUVAtlasLoader::LoadAtlasTexture(const FSourceRecord& JsonSource, const 
     return true;
 }
 
-std::shared_ptr<FSubUVAtlasLoader::FDecodedAtlasImage>
-FSubUVAtlasLoader::GetOrDecodeAtlas(const FWString& AtlasPath) const
+std::shared_ptr<FFontAtlasLoader::FDecodedAtlasImage>
+FFontAtlasLoader::GetOrDecodeAtlas(const FWString& AtlasPath) const
 {
     const FSourceRecord* AtlasSource = AtlasSourceCache.GetOrLoad(AtlasPath);
     if (!AtlasSource || AtlasSource->SourceHash.empty())
@@ -491,8 +451,8 @@ FSubUVAtlasLoader::GetOrDecodeAtlas(const FWString& AtlasPath) const
 }
 
 std::shared_ptr<FTextureResource>
-FSubUVAtlasLoader::GetOrCreateAtlasResource(const FSourceRecord&      AtlasSource,
-                                            const FDecodedAtlasImage& DecodedImage) const
+FFontAtlasLoader::GetOrCreateAtlasResource(const FSourceRecord&      AtlasSource,
+                                           const FDecodedAtlasImage& DecodedImage) const
 {
     if (AtlasSource.SourceHash.empty())
     {
@@ -516,8 +476,8 @@ FSubUVAtlasLoader::GetOrCreateAtlasResource(const FSourceRecord&      AtlasSourc
     return InsertedIt->second;
 }
 
-bool FSubUVAtlasLoader::DecodeWithWIC(const FSourceRecord& AtlasSource,
-                                      FDecodedAtlasImage&  OutImage) const
+bool FFontAtlasLoader::DecodeWithWIC(const FSourceRecord& AtlasSource,
+                                     FDecodedAtlasImage&  OutImage) const
 {
     if (!AtlasSource.bFileBytesLoaded)
     {
@@ -529,20 +489,20 @@ bool FSubUVAtlasLoader::DecodeWithWIC(const FSourceRecord& AtlasSource,
                               OutImage.Pixels);
 }
 
-bool FSubUVAtlasLoader::CreateTextureResource(const FDecodedAtlasImage& DecodedImage,
-                                              FTextureResource&         OutAtlas) const
+bool FFontAtlasLoader::CreateTextureResource(const FDecodedAtlasImage& DecodedImage,
+                                             FTextureResource&         OutAtlas) const
 {
     if (!RHI || !RHI->GetDevice())
     {
         UE_LOG(Asset, ELogVerbosity::Warning,
-               "[SubUVAtlasLoader] CreateTextureResource failed at D3D device validation.");
+               "[FontAtlasLoader] CreateTextureResource failed at D3D device validation.");
         return false;
     }
 
     if (DecodedImage.Width == 0 || DecodedImage.Height == 0 || DecodedImage.Pixels.empty())
     {
         UE_LOG(Asset, ELogVerbosity::Warning,
-               "[SubUVAtlasLoader] CreateTextureResource failed at decoded atlas validation.");
+               "[FontAtlasLoader] CreateTextureResource failed at decoded atlas validation.");
         return false;
     }
 
@@ -572,7 +532,7 @@ bool FSubUVAtlasLoader::CreateTextureResource(const FDecodedAtlasImage& DecodedI
     if (FAILED(Hr))
     {
         UE_LOG(Asset, ELogVerbosity::Warning,
-               "[SubUVAtlasLoader] CreateTextureResource failed at CreateTexture2D. HRESULT=0x%08x",
+               "[FontAtlasLoader] CreateTextureResource failed at CreateTexture2D. HRESULT=0x%08x",
                static_cast<uint32>(Hr));
         return false;
     }
@@ -588,7 +548,7 @@ bool FSubUVAtlasLoader::CreateTextureResource(const FDecodedAtlasImage& DecodedI
     if (FAILED(Hr))
     {
         UE_LOG(Asset, ELogVerbosity::Warning,
-               "[SubUVAtlasLoader] CreateTextureResource failed at CreateShaderResourceView. "
+               "[FontAtlasLoader] CreateTextureResource failed at CreateShaderResourceView. "
                "HRESULT=0x%08x",
                static_cast<uint32>(Hr));
         return false;
@@ -603,8 +563,8 @@ bool FSubUVAtlasLoader::CreateTextureResource(const FDecodedAtlasImage& DecodedI
     return true;
 }
 
-FWString FSubUVAtlasLoader::ResolveSiblingPath(const FWString& BaseFilePath,
-                                               const FString&  RelativePath) const
+FWString FFontAtlasLoader::ResolveSiblingPath(const FWString& BaseFilePath,
+                                              const FString&  RelativePath) const
 {
     if (BaseFilePath.empty() || RelativePath.empty())
     {

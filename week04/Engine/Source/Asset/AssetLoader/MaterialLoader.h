@@ -1,7 +1,7 @@
 #pragma once
 
 #include "AssetLoader.h"
-#include "AssetManager.h"
+#include "Asset/AssetManager.h"
 #include "Renderer/RenderAsset/MaterialResource.h"
 
 class ENGINE_API FMaterialLoader : public IAssetLoader

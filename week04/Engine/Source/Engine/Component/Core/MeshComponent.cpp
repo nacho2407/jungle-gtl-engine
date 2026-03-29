@@ -1,27 +1,42 @@
 #include "Core/CoreMinimal.h"
 #include "Engine/Component/Core/MeshComponent.h"
-/*
- * #include "Asset/Material.h"
- * 추가 예정 클래스
- */
+#include "Engine/Component/Core/ComponentProperty.h"
+#include "Asset/MaterialInterface.h"
+#include "Asset/Asset.h"
+
+#include <string>
 
 namespace Engine::Component
 {
-    UMeshComponent::UMeshComponent() {}
-
-    UMeshComponent::~UMeshComponent() {}
-
-    void UMeshComponent::Serialize(bool bIsLoading, void* JsonHandle)
+    UMeshComponent::UMeshComponent()
     {
-        // 공통 메시 직렬화 로직
+    }
+
+    UMeshComponent::~UMeshComponent()
+    {
+    }
+
+    //void UMeshComponent::Serialize(bool bIsLoading, void* JsonHandle)
+    //{
+    //}
+
+    void UMeshComponent::DescribeProperties(FComponentPropertyBuilder& Builder)
+    {
+        UPrimitiveComponent::DescribeProperties(Builder);
+
+        // Redundant manual registration removed. 
+        // Material slots are now handled via a dedicated UI section in PropertiesPanel.cpp.
     }
 
     void UMeshComponent::InitializeMaterialSlots(uint32 NumSections)
     {
-        OverrideMaterials.resize(NumSections, nullptr);
+        if (NumSections != OverrideMaterials.size())
+        {
+            OverrideMaterials.resize(NumSections, nullptr);
+        }
     }
 
-    void UMeshComponent::SetMaterial(uint32 Index, Asset::UMaterial* InMaterial)
+    void UMeshComponent::SetMaterial(uint32 Index, Asset::UMaterialInterface* InMaterial)
     {
         if (Index < OverrideMaterials.size())
         {
@@ -29,7 +44,7 @@ namespace Engine::Component
         }
     }
 
-    Asset::UMaterial* UMeshComponent::GetMaterial(uint32 Index) const
+    Asset::UMaterialInterface* UMeshComponent::GetMaterial(uint32 Index) const
     {
         if (Index < OverrideMaterials.size())
         {

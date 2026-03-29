@@ -1,38 +1,36 @@
 #pragma once
-
-#include "Asset/StreamableRenderAsset.h"
+#include "StreamableRenderAsset.h"
+#include "Asset/MaterialAsset.h"
 #include "Renderer/RenderAsset/StaticMeshResource.h"
 #include <memory>
 
-/**
- * @brief 정적 메시(Static Mesh) 리소스를 관리하는 에셋 클래스입니다.
- * 언리얼 엔진의 UStaticMesh 구조를 모방하며, 실제 데이터는 FStaticMeshResource가 소유합니다.
- */
-class ENGINE_API UStaticMesh : public UStreamableRenderAsset
+
+namespace Engine::Asset
 {
-  public:
-    DECLARE_RTTI(UStaticMesh, UStreamableRenderAsset)
+    class UMaterialAsset;
 
-    UStaticMesh();
-    virtual ~UStaticMesh() override;
+    class ENGINE_API UStaticMesh : public UStreamableRenderAsset
+    {
+        DECLARE_RTTI(UStaticMesh, UStreamableRenderAsset)
+      public:
+        UStaticMesh() = default;
+        ~UStaticMesh() = default;
 
-    /** 
-     * 에셋 로더로부터 리소스를 주입받아 초기화합니다.
-     */
-    void Initialize(std::shared_ptr<FStaticMeshResource> InResource);
+        void Initialize(const FSourceRecord&                 InSource,
+                        std::shared_ptr<FStaticMeshResource> InResource);
 
-    /** 렌더링 리소스 접근 */
-    const FStaticMeshResource* GetRenderResource() const { return RenderResource.get(); }
-    FStaticMeshResource*       GetRenderResource() { return RenderResource.get(); }
+        const FStaticMeshResource* GetResource() const { return RenderResource.get(); }
+        FStaticMeshResource*       GetResource() { return RenderResource.get(); }
 
-    /** 에셋 파일 경로 반환 */
-    const FString& GetAssetPathFileName() const { return GetAssetName(); }
+        const TArray<UMaterialAsset*>& GetReferencedMaterials() const
+        {
+            return ReferencedMaterials;
+        }
+        void AddMaterialDependency(UMaterialAsset* InMaterial);
+        bool HasMaterialDependency(const UMaterialAsset* InMaterial) const;
 
-    /** 이진 데이터 직렬화 (Bake 연동) */
-    virtual void Serialize(class FArchive& Ar);
-
-  private:
-    std::shared_ptr<FStaticMeshResource> RenderResource;
-    uint32                               NumSections = 1; // 기본값은 1개 섹션
-};
-   
+      private:
+        std::shared_ptr<FStaticMeshResource> RenderResource;
+        TArray<UMaterialAsset*>              ReferencedMaterials;
+    };
+}
