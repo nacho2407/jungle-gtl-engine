@@ -33,7 +33,6 @@ void FRenderCollector::CollectSelection(const TArray<AActor*>& SelectedActors, c
 void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus)
 {
 	FRenderCommand Cmd = {};
-	Cmd.Type = ERenderCommandType::Grid;
 	Cmd.Params.Grid.GridSpacing = GridSpacing;
 	Cmd.Params.Grid.GridHalfLineCount = GridHalfLineCount;
 	RenderBus.AddCommand(ERenderPass::Grid, Cmd);
@@ -51,7 +50,6 @@ void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& Sh
 
 	auto CreateGizmoCmd = [&](bool bInner) {
 		FRenderCommand Cmd = {};
-		Cmd.Type = ERenderCommandType::Gizmo;
 		Cmd.Shader = FShaderManager::Get().GetShader(EShaderType::Gizmo);
 		Cmd.MeshBuffer = GizmoMesh;
 		Cmd.PerObjectConstants = FPerObjectConstants{ WorldMatrix };
@@ -118,7 +116,6 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 			if (ShowFlags.bBillboardText)
 			{
 				TextCmd.PerObjectConstants = FPerObjectConstants{ PerViewBillboard };
-				TextCmd.Type = ERenderCommandType::Font;
 				TextCmd.PerObjectConstants.Color = TextComp->GetColor();
 				TextCmd.Params.Font.Text = &Text;
 				TextCmd.Params.Font.Font = Font;
@@ -133,7 +130,6 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 
 		// StencilBuffer Mask
 		FRenderCommand MaskCmd = BaseCmd;
-		MaskCmd.Type = ERenderCommandType::SelectionOutline;
 		MaskCmd.Shader = bIsPNCT
 			? FShaderManager::Get().GetShader(EShaderType::StaticMesh)
 			: FShaderManager::Get().GetShader(EShaderType::Primitive);
@@ -141,7 +137,6 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 
 		// Outline
 		FRenderCommand OutlineCmd = BaseCmd;
-		OutlineCmd.Type = ERenderCommandType::SelectionOutline;
 		OutlineCmd.Shader = bIsPNCT
 			? FShaderManager::Get().GetShader(EShaderType::OutlinePNCT)
 			: FShaderManager::Get().GetShader(EShaderType::Outline);
@@ -181,7 +176,6 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 
 		FRenderCommand Cmd = {};
 		Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
-		Cmd.Type = ERenderCommandType::SubUV;
 		Cmd.Params.SubUV.Particle = Particle;
 		Cmd.Params.SubUV.FrameIndex = SubUVComp->GetFrameIndex();
 		Cmd.Params.SubUV.Width = SubUVComp->GetWidth();
@@ -201,7 +195,6 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 
 	if (UStaticMeshComp* SMComp = Cast<UStaticMeshComp>(Primitive))
 	{
-		Cmd.Type = ERenderCommandType::StaticMesh;
 		Cmd.Shader = FShaderManager::Get().GetShader(EShaderType::StaticMesh);
 
 		// 섹션별 드로우 정보 수집
@@ -235,7 +228,6 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 	}
 	else
 	{
-		Cmd.Type = ERenderCommandType::Primitive;
 		Cmd.Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
 	}
 
@@ -248,7 +240,6 @@ void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponen
 	if (!ShowFlags.bBoundingVolume) return;
 
 	FRenderCommand AABBCmd = {};
-	AABBCmd.Type = ERenderCommandType::DebugBox;
 
 	FBoundingBox Box = PrimitiveComponent->GetWorldBoundingBox();
 
