@@ -153,7 +153,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 		ERenderPass CurPass = static_cast<ERenderPass>(i);
 		const auto& Commands = InRenderBus.GetCommands(CurPass);
 		if (Commands.empty()) continue;
-	
+
 		if (PassBatchers[i])
 		{
 			ApplyPassRenderState(CurPass, Context, InRenderBus.GetViewMode());
@@ -450,9 +450,10 @@ void FRenderer::DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderC
 	ID3D11Buffer* indexBuffer = InCommand.MeshBuffer->GetIndexBuffer().GetBuffer();
 	if (indexBuffer != nullptr)
 	{
-		uint32 indexCount = InCommand.MeshBuffer->GetIndexBuffer().GetIndexCount();
+		uint32 indexStart = InCommand.SectionIndexStart;
+		uint32 indexCount = InCommand.SectionIndexCount;
 		InDeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-		InDeviceContext->DrawIndexed(indexCount, 0, 0);
+		InDeviceContext->DrawIndexed(indexCount, indexStart, 0);
 	}
 	else
 	{

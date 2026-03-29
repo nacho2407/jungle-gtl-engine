@@ -12,6 +12,7 @@ cbuffer StaticMeshBuffer : register(b6)
     // Camera
     float3 CameraWorldPos;
     float  Padding6_3;
+    
 };
 
 Texture2D DiffuseMap  : register(t0);

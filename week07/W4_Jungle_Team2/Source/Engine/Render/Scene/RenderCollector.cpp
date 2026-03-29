@@ -53,6 +53,10 @@ void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& Sh
 		FRenderCommand Cmd = {};
 		Cmd.Type = ERenderCommandType::Gizmo;
 		Cmd.MeshBuffer = GizmoMesh;
+
+		Cmd.SectionIndexStart = 0;
+		Cmd.SectionIndexCount = GizmoMesh->GetIndexBuffer().GetIndexCount();
+
 		Cmd.PerObjectConstants = FPerObjectConstants{ WorldMatrix };
 
 		if (bInner)
@@ -119,6 +123,9 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		FRenderCommand BaseCmd{};
 		BaseCmd.MeshBuffer = MeshBuffer;
 		BaseCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
+		BaseCmd.SectionIndexStart = 0;
+		BaseCmd.SectionIndexCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
+
 		FVector WorldScale = primitiveComponent->GetWorldScale();
 
 		if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Text)
@@ -151,6 +158,8 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 
 		if (!primitiveComponent->SupportsOutline()) continue;
 
+		// 일단 불편해서 스태틱메시의 아웃라인은 끔
+		//if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_StaticMesh) continue;
 
 		// StencilBuffer Mask
 		FRenderCommand MaskCmd = BaseCmd;
@@ -205,59 +214,38 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 			Cmd.Type = ERenderCommandType::StaticMesh;
 			Cmd.MeshBuffer = MeshBuffer;
 			Cmd.DepthStencilState = EDepthStencilState::Default;
+			Cmd.BlendState = EBlendState::Opaque;
 
 			Cmd.SectionIndexStart = Section.StartIndex;
 			Cmd.SectionIndexCount = Section.IndexCount;
 
 			Cmd.Constants.StaticMesh.CameraWorldPos = RenderBus.GetCameraPosition();
 
+			// 메테리얼 정보가 없을 시 디폴트 메테리얼을 사용합니다.
 			static const FMaterial DefaultMaterial{};
 
 			const FMaterial* MtlData = StaticMeshComp->GetMaterial(Section.MaterialSlotIndex);
+			// 메테리얼 정보가 없을 경우
 			if (!MtlData) MtlData = &DefaultMaterial;
+	
+			Cmd.Constants.StaticMesh.AmbientColor = MtlData->AmbientColor;
+			Cmd.Constants.StaticMesh.DiffuseColor = MtlData->DiffuseColor;
+			Cmd.Constants.StaticMesh.SpecularColor = MtlData->SpecularColor;
+			Cmd.Constants.StaticMesh.Shininess = MtlData->Shininess;
 
-			// 빛 방향은 일정하다고 가정합니다
-			if (MtlData)
+			ID3D11ShaderResourceView* DefaultSRV = FResourceManager::Get().GetDefaultWhiteSRV();
+
+			auto ResolveSRV = [&](const FString& Path) -> ID3D11ShaderResourceView*
 			{
-				Cmd.Constants.StaticMesh.AmbientColor = MtlData->AmbientColor;
-				Cmd.Constants.StaticMesh.DiffuseColor = MtlData->DiffuseColor;
-				Cmd.Constants.StaticMesh.SpecularColor = MtlData->SpecularColor;
-				Cmd.Constants.StaticMesh.Shininess = MtlData->Shininess;
+				FMaterialResource* Res = FResourceManager::Get().FindTexture(Path);
+				return (Res && Res->SRV) ? Res->SRV : DefaultSRV;
+			};
 
-				FMaterialResource* DiffuseTexture = FResourceManager::Get().FindTexture(MtlData->DiffuseTexPath);
-				Cmd.Constants.StaticMesh.bHasDiffuseMap = bool(DiffuseTexture);
-				if (DiffuseTexture)
-				{
-					Cmd.Constants.StaticMesh.DiffuseSRV = DiffuseTexture->SRV;
-				}
+			Cmd.Constants.StaticMesh.DiffuseSRV  = MtlData->bHasDiffuseTexture  ? ResolveSRV(MtlData->DiffuseTexPath)  : DefaultSRV;
+			Cmd.Constants.StaticMesh.AmbientSRV  = MtlData->bHasAmbientTexture  ? ResolveSRV(MtlData->AmbientTexPath)  : DefaultSRV;
+			Cmd.Constants.StaticMesh.SpecularSRV = MtlData->bHasSpecularTexture ? ResolveSRV(MtlData->SpecularTexPath) : DefaultSRV;
+			Cmd.Constants.StaticMesh.BumpSRV     = MtlData->bHasBumpTexture     ? ResolveSRV(MtlData->BumpTexPath)     : DefaultSRV;
 
-				FMaterialResource* AmbientTexture = FResourceManager::Get().FindTexture(MtlData->AmbientTexPath);
-				Cmd.Constants.StaticMesh.bHasAmbientMap = bool(AmbientTexture);
-				if (AmbientTexture)
-				{
-					Cmd.Constants.StaticMesh.AmbientSRV = AmbientTexture->SRV;
-				}
-
-				FMaterialResource* SpecularTexture = FResourceManager::Get().FindTexture(MtlData->SpecularTexPath);
-				Cmd.Constants.StaticMesh.bHasSpecularMap = bool(SpecularTexture);
-				if (SpecularTexture)
-				{
-					Cmd.Constants.StaticMesh.SpecularSRV = SpecularTexture->SRV;
-				}
-
-				FMaterialResource* BumpTexture = FResourceManager::Get().FindTexture(MtlData->BumpTexPath);
-				Cmd.Constants.StaticMesh.bHasBumpMap = bool(BumpTexture);
-				if (BumpTexture)
-				{
-					Cmd.Constants.StaticMesh.BumpSRV = BumpTexture->SRV;
-				}
-
-			}
-			// 미리 준비한 디폴트 텍스쳐 붙이기
-			else
-			{
-
-			}
 			RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
 		}
 
@@ -283,6 +271,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		Cmd.Constants.Font.Scale = TextComp->GetFontSize();
 		Cmd.BlendState = EBlendState::AlphaBlend;
 		Cmd.DepthStencilState = EDepthStencilState::Default;
+		
 		RenderBus.AddCommand(ERenderPass::Font, Cmd);
 		break;
 	}
@@ -302,6 +291,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		Cmd.Constants.SubUV.Height = SubUVComp->GetHeight();
 		Cmd.BlendState = EBlendState::AlphaBlend;
 		Cmd.DepthStencilState = EDepthStencilState::Default;
+
 
 		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);
 		break;

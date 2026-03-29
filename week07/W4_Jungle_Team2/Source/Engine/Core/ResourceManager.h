@@ -15,6 +15,8 @@
 // 컴포넌트는 소유하지 않고 포인터로 공유 데이터를 참조합니다.
 
 struct ID3D11Device;
+struct ID3D11Texture2D;
+struct ID3D11ShaderResourceView;
 
 class FResourceManager : public TSingleton<FResourceManager>
 {
@@ -26,6 +28,10 @@ public:
 
 	// GPU 리소스 로드 (Device 필요)
 	bool LoadGPUResources(ID3D11Device* Device);
+
+	// --- Default Resources ---
+	void InitializeDefaultResources(ID3D11Device* Device);
+	ID3D11ShaderResourceView* GetDefaultWhiteSRV() const { return DefaultWhiteSRV; }
 
 	// --- Material Texture (SRV) ---
 	FMaterialResource* FindTexture(const FString& Path) const;
@@ -71,4 +77,7 @@ private:
 
 	TMap<FString, FStaticMeshResource> StaticMeshRegistry;
 	TMap<FString, UStaticMesh*>        StaticMeshMap;
+
+	ID3D11Texture2D*          DefaultWhiteTexture = nullptr;
+	ID3D11ShaderResourceView* DefaultWhiteSRV     = nullptr;
 };
