@@ -8,7 +8,7 @@
 
 #include "Render/Common/RenderTypes.h"
 
-#include "Core/CoreTypes.h"
+#include "Core/CoreMinimal.h"
 #include "Render/Resource/VertexTypes.h"
 
 

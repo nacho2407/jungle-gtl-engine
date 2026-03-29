@@ -16,6 +16,7 @@ public:
 	static std::wstring SceneDir();       // Asset/Scene/
 	static std::wstring DumpDir();        // Saves/Dump/
 	static std::wstring SettingsDir();    // Settings/
+	static std::wstring MaterialTextureDir(); //Model/Texture/
 
 	// 주요 파일 경로
 	static std::wstring ShaderFilePath(); // Shaders/ShaderW0.hlsl
@@ -23,7 +24,10 @@ public:
 	static std::wstring ViewerSettingsFilePath(); // Settings/ObjViewer.ini
 	static std::wstring ResourceFilePath();  // Settings/Resource.ini
 	static std::wstring ResourceDefaultMaterialTexture(); // Asset/Mesh/Default.png
-
+	static std::wstring ToRelative(const std::wstring& AbsolutePath);
+	static std::wstring ToAbsolute(const std::wstring& RelativePath);
+	static std::string ToRelativeString(const std::wstring& AbsolutePath);
+	static std::string ToAbsoluteString(const std::wstring& RelativePath);
 
 	// 경로 결합: FPaths::Combine(L"Asset/Scene", L"Default.Scene")
 	static std::wstring Combine(const std::wstring& Base, const std::wstring& Child);

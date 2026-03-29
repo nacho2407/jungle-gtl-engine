@@ -1,4 +1,12 @@
-#include "Editor/UI/EditorConsoleWidget.h"
+﻿#include "Editor/UI/EditorConsoleWidget.h"
+#include "Editor/Settings/EditorSettings.h"
+
+// 콘솔 초기화 시점에 입력될 명령어를 등록한다.
+FEditorConsoleWidget::FEditorConsoleWidget() 
+{
+	// 임의의 명령어 문자열이 들어왔을 때 뒤의 함수를 실행하도록 분기한다.
+	RegisterCommand("stat", [this](const TArray<FString>& Args) { CmdStat(Args); });
+}
 
 void FEditorConsoleWidget::AddLog(const char* fmt, ...) {
 	char buf[1024];
@@ -173,6 +181,36 @@ int32 FEditorConsoleWidget::TextEditCallback(ImGuiInputTextCallbackData* Data) {
 	}
 
 	return 0;
+}
+
+void FEditorConsoleWidget::CmdStat(const TArray<FString>& Args)
+{
+	if (Args.size() < 2)
+	{
+		AddLog("[WARN] Usage: stat <fps|memory|none>\n");
+		return;
+	}
+
+	FString Target = Args[1];
+	std::transform(Target.begin(), Target.end(), Target.begin(), ::tolower);
+	FEditorSettings& Settings = FEditorSettings::Get();
+
+	if (Target == "fps")
+	{
+		Settings.bShowStatFPS = !Settings.bShowStatFPS;
+		AddLog("Stat FPS %s\n", Settings.bShowStatFPS ? "Enabled" : "Disabled");
+	}
+	else if (Target == "memory")
+	{
+		Settings.bShowStatMemory = !Settings.bShowStatMemory;
+		AddLog("Stat Memory %s\n", Settings.bShowStatMemory ? "Enabled" : "Disabled");
+	}
+	else if (Target == "none")
+	{
+		Settings.bShowStatFPS = false;
+		Settings.bShowStatMemory = false;
+		AddLog("All Stats Disabled\n");
+	}
 }
 
 ImVector<char*> FEditorConsoleWidget::Messages;

@@ -7,7 +7,7 @@ namespace
 	FMeshData CreateBillboardQuadMeshData()
 	{
 		FMeshData QuadMeshData;
-		FVector4 DefaultColor(1.0f, 1.0f, 1.0f, 1.0f);
+		FColor DefaultColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 		QuadMeshData.Vertices.push_back({ FVector(0.0f, -0.5f,  0.5f), DefaultColor, 0 });
 		QuadMeshData.Vertices.push_back({ FVector(0.0f,  0.5f,  0.5f), DefaultColor, 0 });

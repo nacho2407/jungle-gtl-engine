@@ -92,6 +92,17 @@ public:
 	template<typename T>
 	const T* Cast() const { return IsA<T>() ? static_cast<const T*>(this) : nullptr; }
 
+	bool IsValidLowLevel() const { return this != nullptr; }
+
+	struct FObjectNameProxy : public FString
+	{
+		using FString::FString;
+		FObjectNameProxy(const FString& InStr) : FString(InStr) {}
+		const char* operator*() const { return c_str(); }
+	};
+
+	FObjectNameProxy GetName() const { return FObjectNameProxy(ObjectName.ToString()); }
+
 	static const FTypeInfo s_TypeInfo;
 
 protected:
