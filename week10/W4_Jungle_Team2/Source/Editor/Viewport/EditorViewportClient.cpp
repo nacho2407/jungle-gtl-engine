@@ -4,6 +4,7 @@
 #include "Editor/Settings/EditorSettings.h"
 #include "Engine/Core/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
+#include "Engine/Slate/SlateApplication.h"
 
 #include "GameFramework/World.h"
 #include "Component/GizmoComponent.h"
@@ -31,11 +32,15 @@ void FEditorViewportClient::CreateCamera()
 	Camera = FViewportCamera();
 	Camera.OnResize(static_cast<uint32>(WindowWidth), static_cast<uint32>(WindowHeight));
 	NavigationController.SetCamera(&Camera);
+
+	// 이전 lerp 타겟이 남아 있으면 리셋 후 카메라가 이동 처리 목적
+	NavigationController.ResetTargetLocation();
 }
 
 void FEditorViewportClient::DestroyCamera()
 {
 	bHasCamera = false;
+	NavigationController.SetCamera(nullptr); 
 }
 
 void FEditorViewportClient::ResetCamera()
@@ -100,10 +105,11 @@ void FEditorViewportClient::Tick(float DeltaTime)
 	TickInteraction(DeltaTime);
 }
 
+// Renderer 에서 사용할 SceneView 설정
 void FEditorViewportClient::BuildSceneView(FSceneView& OutView) const
 {
-	// if (Camera) return;
-	// Renderer 에서 사용할 SceneView 설정 
+	if (!bHasCamera) return;
+
 	OutView.ViewMatrix           = Camera.GetViewMatrix();
 	OutView.ProjectionMatrix     = Camera.GetProjectionMatrix();
 	OutView.ViewProjectionMatrix = OutView.ViewMatrix * OutView.ProjectionMatrix;
@@ -138,7 +144,7 @@ void FEditorViewportClient::ApplyCameraMode()
 		}
 		break;
 
-	// --- 직교 뷰 (X=Forward, Y=Right, Z=Up) ---
+	// 직교 뷰 (X=Forward, Y=Right, Z=Up)
 
 	case EVT_OrthoTop:			// 위에서 아래 (-Z 방향), 스크린 위 = +X
 		Camera.SetProjectionType(EViewportProjectionType::Orthographic);
@@ -179,6 +185,10 @@ void FEditorViewportClient::ApplyCameraMode()
 	default:
 		break;
 	}
+
+	// 카메라 위치가 바뀐 직후 lerp 타겟을 초기화합니다
+	// 미리 쌓인 TargetLocation 이 있으면 다음 Tick 에서 카메라가 이동하는 현상이 생깁니다
+	NavigationController.ResetTargetLocation();
 }
 
 bool FEditorViewportClient::OnMouseMove(const FViewportMouseEvent& Ev)
@@ -227,9 +237,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	const bool bCtrlDown = InputSystem::Get().GetKey(VK_CONTROL);
 	const bool bShiftDown = InputSystem::Get().GetKey(VK_SHIFT);
 
-	// ----------------------------
 	// Mouse button begin/end state bridge
-	// ----------------------------
 	if (InputSystem::Get().GetKeyDown(VK_RBUTTON) && !bCtrlDown && !bAltDown && !bShiftDown)
 	{
 		if (Camera.IsOrthographic())
@@ -248,8 +256,9 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		}
 
 		if (bIsCursorVisible)
-		{
-			while (ShowCursor(FALSE) >= 0) {}
+		{	
+			// 무한루프 방지용
+			for (int32 Cnt = 0; ShowCursor(FALSE) >= 0 && Cnt < 10; ++Cnt) {}
 			bIsCursorVisible = false;
 		}
 	}
@@ -269,7 +278,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 
 		if (!bIsCursorVisible)
 		{
-			while (ShowCursor(TRUE) < 0) {}
+			for (int32 Cnt = 0; ShowCursor(TRUE) < 0 && Cnt < 10; ++Cnt) {}
 			bIsCursorVisible = true;
 		}
 	}
@@ -282,7 +291,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 
 		if (bIsCursorVisible)
 		{
-			while (ShowCursor(FALSE) >= 0) {}
+			for (int32 Cnt = 0; ShowCursor(FALSE) >= 0 && Cnt < 10; ++Cnt) {}
 			bIsCursorVisible = false;
 		}
 	}
@@ -294,7 +303,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 
 		if (!bIsCursorVisible)
 		{
-			while (ShowCursor(TRUE) < 0) {}
+			for (int32 Cnt = 0; ShowCursor(TRUE) < 0 && Cnt < 10; ++Cnt) {}
 			bIsCursorVisible = true;
 		}
 	}
@@ -307,7 +316,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 
 		if (bIsCursorVisible)
 		{
-			while (ShowCursor(FALSE) >= 0) {}
+			for (int32 Cnt = 0; ShowCursor(FALSE) >= 0 && Cnt < 10; ++Cnt) {}
 			bIsCursorVisible = false;
 		}
 	}
@@ -319,7 +328,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 
 		if (!bIsCursorVisible)
 		{
-			while (ShowCursor(TRUE) < 0) {}
+			for (int32 Cnt = 0; ShowCursor(TRUE) < 0 && Cnt < 10; ++Cnt) {}
 			bIsCursorVisible = true;
 		}
 	}
@@ -449,11 +458,21 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		return;
 	}
 
-	// 직교 뷰포트(Top/Front/Right)는 카메라가 씬에서 1000유닛 이상 떨어져 있어 스케일이 ~100 으로 폭발합니다.
-	// 퍼스펙티브 뷰포트에서만 스케일을 결정합니다.
-	if (!Camera.IsOrthographic())
+	// 기즈모 드래그 중이면 마우스가 뷰포트 밖으로 나가도 계속 처리
+	const bool bGizmoHolding = Gizmo->IsHolding();
+
+	// Slate 가 입력을 소유 중(스플리터 드래그 등)이면 선택/기즈모 처리를 건너뜁니다.
+	// 이 검사가 없으면 스플리터 클릭 시 HandleDragStart → selection clear → 기즈모 소멸이 발생합니다.
+	if (FSlateApplication::Get().GetCapturedWidget() != nullptr && !bGizmoHolding)
 	{
-		Gizmo->ApplyScreenSpaceScaling(Camera.GetLocation());
+		return;
+	}
+
+	// 마우스가 이 뷰포트 안에 없을 때는 선택/클릭 처리를 하지 않습니다.
+	// 기즈모 드래그 중에는 마우스가 뷰포트 밖으로 나가도 계속 업데이트합니다
+	if (State && !State->bHovered && !bGizmoHolding)
+	{
+		return;
 	}
 
 	if (InputSystem::Get().GetGuiInputState().bUsingMouse)
@@ -472,6 +491,12 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 
 	FRay Ray = Camera.DeprojectScreenToWorld(LocalX, LocalY, WindowWidth, WindowHeight);
 	
+	// 카메라 위치에 따른 기즈모 스케일 처리
+	if (Camera.IsOrthographic())
+		Gizmo->ApplyScreenSpaceScalingOrtho(Camera.GetOrthoHeight());
+	else
+		Gizmo->ApplyScreenSpaceScaling(Camera.GetLocation());
+
 	FHitResult HitResult;
 	Gizmo->Raycast(Ray, HitResult);
 
@@ -499,6 +524,8 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 
 void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 {
+	if (!World || !Gizmo) return;
+
 	FHitResult HitResult{};
 	if (Gizmo->Raycast(Ray, HitResult))
 	{
