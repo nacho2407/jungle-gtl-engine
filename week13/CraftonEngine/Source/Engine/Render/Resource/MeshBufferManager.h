@@ -14,8 +14,8 @@ public:
 	void Initialize(ID3D11Device* InDevice);
 	void Release();
 
-	FMeshBuffer& GetMeshBuffer(EPrimitiveType InPrimitiveType);
-	const FMeshData& GetMeshData(EPrimitiveType InPrimitiveType) const;
+	FMeshBuffer& GetMeshBuffer(EMeshShape InShape);
+	const FMeshData& GetMeshData(EMeshShape InShape) const;
 
 private:
 	FMeshBufferManager() = default;
@@ -31,10 +31,10 @@ private:
 	void CreateQuad();
 
 	// CPU 메시 데이터
-	TMap<EPrimitiveType, FMeshData> MeshDataMap;
+	TMap<EMeshShape, FMeshData> MeshDataMap;
 
 	// GPU 버퍼
-	TMap<EPrimitiveType, FMeshBuffer> MeshBufferMap;
+	TMap<EMeshShape, FMeshBuffer> MeshBufferMap;
 
 	bool bIsInitialized = false;
 };
