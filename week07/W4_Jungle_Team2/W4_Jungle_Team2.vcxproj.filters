@@ -76,6 +76,21 @@
     <Filter Include="Source\Engine\Serialization">
       <UniqueIdentifier>{6a768296-435c-d7db-15e7-f1c6dbf87cc5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Misc">
+      <UniqueIdentifier>{ccf9aa9a-cf34-ca37-c88d-434c210d8c06}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Misc\ObjViewer">
+      <UniqueIdentifier>{861b2bc2-5528-644f-fdd7-5d85ae500847}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Misc\ObjViewer\Settings">
+      <UniqueIdentifier>{ef8ffe39-86c8-3671-f81c-97b6e5335c0c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Misc\ObjViewer\UI">
+      <UniqueIdentifier>{82703837-1a41-4bd3-d8cd-e64337aa2b0f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Misc\ObjViewer\Viewport">
+      <UniqueIdentifier>{b7912cdc-b727-fa50-3c72-28e3eceec661}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ThirdParty">
       <UniqueIdentifier>{99c11070-80cd-d889-3cb9-7873e2e2c31f}</UniqueIdentifier>
     </Filter>
@@ -84,21 +99,6 @@
     </Filter>
     <Filter Include="ThirdParty\SimpleJSON">
       <UniqueIdentifier>{473ce82c-d353-3555-1765-3303ff0d609c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Misc">
-      <UniqueIdentifier>{d804c3f6-9a90-466e-865d-590c3390b38b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Misc\ObjViewer">
-      <UniqueIdentifier>{26349645-4fca-44ef-9adf-fa68b114ba17}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Misc\ObjViewer\UI">
-      <UniqueIdentifier>{36894a67-679b-4929-93b4-6cfcef4e55e6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Misc\ObjViewer\Viewport">
-      <UniqueIdentifier>{27812c71-4304-4f25-b8ad-cc5038dd2693}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Misc\ObjViewer\Settings">
-      <UniqueIdentifier>{ee98bcac-7f51-418e-8445-c67c843108f1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -126,13 +126,7 @@
     <FxCompile Include="Shaders\ShaderStaticMesh.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\ShaderStaticMesh.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="Shaders\ShaderSubUV.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\ShaderStaticMesh.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
@@ -174,6 +168,12 @@
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp">
+      <Filter>Source\Editor\Viewport</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Viewport\ViewportCamera.cpp">
+      <Filter>Source\Editor\Viewport</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Viewport\ViewportNavigationController.cpp">
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Asset\AssetBinder.cpp">
@@ -234,9 +234,6 @@
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\Paths.cpp">
-      <Filter>Source\Engine\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Core\PlatformTime.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\PlatformTime.cpp">
@@ -356,6 +353,30 @@
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp">
       <Filter>Source\Engine\Serialization</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Misc\ObjViewer\ObjViewerEngine.cpp">
+      <Filter>Source\Misc\ObjViewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Misc\ObjViewer\ObjViewerRenderPipeline.cpp">
+      <Filter>Source\Misc\ObjViewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Misc\ObjViewer\Settings\ObjViewerSettings.cpp">
+      <Filter>Source\Misc\ObjViewer\Settings</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Misc\ObjViewer\UI\ObjViewerControlWidget.cpp">
+      <Filter>Source\Misc\ObjViewer\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Misc\ObjViewer\UI\ObjViewerMainPanel.cpp">
+      <Filter>Source\Misc\ObjViewer\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Misc\ObjViewer\UI\ObjViewerMenuBarWIdget.cpp">
+      <Filter>Source\Misc\ObjViewer\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Misc\ObjViewer\UI\ObjViewerStatWidget.cpp">
+      <Filter>Source\Misc\ObjViewer\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Misc\ObjViewer\Viewport\ObjViewerViewportClient.cpp">
+      <Filter>Source\Misc\ObjViewer\Viewport</Filter>
+    </ClCompile>
     <ClCompile Include="ThirdParty\ImGui\imgui.cpp">
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
@@ -378,33 +399,6 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source\Engine\Core\PlatformTime.cpp" />
-    <ClCompile Include="Source\Misc\ObjViewer\ObjViewerEngine.cpp">
-      <Filter>Source\Misc\ObjViewer</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Misc\ObjViewer\ObjViewerRenderPipeline.cpp">
-      <Filter>Source\Misc\ObjViewer</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Misc\ObjViewer\UI\ObjViewerControlWidget.cpp">
-      <Filter>Source\Misc\ObjViewer\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Misc\ObjViewer\UI\ObjViewerMainPanel.cpp">
-      <Filter>Source\Misc\ObjViewer\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Misc\ObjViewer\UI\ObjViewerMenuBarWIdget.cpp">
-      <Filter>Source\Misc\ObjViewer\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Misc\ObjViewer\UI\ObjViewerStatWidget.cpp">
-      <Filter>Source\Misc\ObjViewer\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Misc\ObjViewer\Settings\ObjViewerSettings.cpp">
-      <Filter>Source\Misc\ObjViewer\Settings</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Misc\ObjViewer\Viewport\ObjViewerViewportClient.cpp">
-      <Filter>Source\Misc\ObjViewer\Viewport</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Viewport\ViewportCamera.cpp" />
-    <ClCompile Include="Source\Editor\Viewport\ViewportNavigationController.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -447,6 +441,12 @@
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h">
+      <Filter>Source\Editor\Viewport</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Viewport\ViewportCamera.h">
+      <Filter>Source\Editor\Viewport</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Viewport\ViewportNavigationController.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\AssetBinder.h">
@@ -534,9 +534,6 @@
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Paths.h">
-      <Filter>Source\Engine\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Core\PlatformTime.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\PlatformTime.h">
@@ -647,6 +644,9 @@
     <ClInclude Include="Source\Engine\Object\ObjectFactory.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Object\ObjectIterator.h">
+      <Filter>Source\Engine\Object</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\FontBatcher.h">
       <Filter>Source\Engine\Render</Filter>
     </ClInclude>
@@ -722,6 +722,33 @@
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h">
       <Filter>Source\Engine\Serialization</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Misc\ObjViewer\ObjViewerEngine.h">
+      <Filter>Source\Misc\ObjViewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Misc\ObjViewer\ObjViewerRenderPipeline.h">
+      <Filter>Source\Misc\ObjViewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Misc\ObjViewer\Settings\ObjViewerSettings.h">
+      <Filter>Source\Misc\ObjViewer\Settings</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Misc\ObjViewer\UI\ObjViewerControlWidget.h">
+      <Filter>Source\Misc\ObjViewer\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Misc\ObjViewer\UI\ObjViewerMainPanel.h">
+      <Filter>Source\Misc\ObjViewer\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Misc\ObjViewer\UI\ObjViewerMenuBarWIdget.h">
+      <Filter>Source\Misc\ObjViewer\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Misc\ObjViewer\UI\ObjViewerStatWidget.h">
+      <Filter>Source\Misc\ObjViewer\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Misc\ObjViewer\UI\ObjViewerWidget.h">
+      <Filter>Source\Misc\ObjViewer\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Misc\ObjViewer\Viewport\ObjViewerViewportClient.h">
+      <Filter>Source\Misc\ObjViewer\Viewport</Filter>
+    </ClInclude>
     <ClInclude Include="ThirdParty\ImGui\imconfig.h">
       <Filter>ThirdParty\ImGui</Filter>
     </ClInclude>
@@ -749,38 +776,5 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Core\PlatformTime.h" />
-    <ClInclude Include="Source\Misc\ObjViewer\ObjViewerRenderPipeline.h">
-      <Filter>Source\Misc\ObjViewer</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Misc\ObjViewer\ObjViewerEngine.h">
-      <Filter>Source\Misc\ObjViewer</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Misc\ObjViewer\UI\ObjViewerControlWidget.h">
-      <Filter>Source\Misc\ObjViewer\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Misc\ObjViewer\UI\ObjViewerMainPanel.h">
-      <Filter>Source\Misc\ObjViewer\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Misc\ObjViewer\UI\ObjViewerMenuBarWIdget.h">
-      <Filter>Source\Misc\ObjViewer\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Misc\ObjViewer\UI\ObjViewerStatWidget.h">
-      <Filter>Source\Misc\ObjViewer\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Misc\ObjViewer\UI\ObjViewerWidget.h">
-      <Filter>Source\Misc\ObjViewer\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Misc\ObjViewer\Settings\ObjViewerSettings.h">
-      <Filter>Source\Misc\ObjViewer\Settings</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Misc\ObjViewer\Viewport\ObjViewerViewportClient.h">
-      <Filter>Source\Misc\ObjViewer\Viewport</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Object\ObjectIterator.h">
-      <Filter>Source\Engine\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\Viewport\ViewportCamera.h" />
-    <ClInclude Include="Source\Editor\Viewport\ViewportNavigationController.h" />
   </ItemGroup>
 </Project>
