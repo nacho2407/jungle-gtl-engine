@@ -1,4 +1,4 @@
-#include "RenderResources.h"
+﻿#include "RenderResources.h"
 
 void FRenderResources::Create(ID3D11Device* InDevice)
 {

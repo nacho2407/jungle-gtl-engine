@@ -1,6 +1,6 @@
 #pragma once
 #include <windows.h>
-#include "Singleton.h"
+#include "Core/Singleton.h"
 
 struct FGuiInputState
 {

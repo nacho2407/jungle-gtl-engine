@@ -2,7 +2,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Core/Singleton.h"
-#include "Core/Stats.h"
+#include "Profiling/Stats.h"
 
 #include <d3d11.h>
 
