@@ -44,18 +44,6 @@ void FObjViewerMenuBarWidget::Render(float DeltaTime)
 					}
 				}
 			}
-			if (ImGui::MenuItem("Save"))
-			{
-				// TODO: 덮어쓰기 로직
-			}
-			if (ImGui::MenuItem("Save As..."))
-			{
-				FString FilePath = SaveFileDialog();
-				if (!FilePath.empty())
-				{
-					// TODO: 다른 이름으로 저장 로직
-				}
-			}
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();
@@ -75,6 +63,8 @@ FString FObjViewerMenuBarWidget::OpenFileDialog()
 	ofn.lpstrFilter = L"OBJ Files (*.obj)\0*.obj\0All Files\0*.*\0";
 	ofn.nFilterIndex = 1;
 	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+
+	ShowCursor(TRUE);  // 엔진 내부의 커서 숨김 초기화
 
 	if (GetOpenFileNameW(&ofn) == TRUE)
 	{
