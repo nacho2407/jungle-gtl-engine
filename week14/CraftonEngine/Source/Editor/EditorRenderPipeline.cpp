@@ -7,9 +7,9 @@
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 #include "GameFramework/World.h"
-#include "Core/Stats.h"
-#include "Core/GPUProfiler.h"
-#include "Editor/Viewport/OverlayStatSystem.h"
+#include "Profiling/Stats.h"
+#include "Profiling/GPUProfiler.h"
+#include "Editor/Subsystem/OverlayStatSystem.h"
 
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer)
 	: Editor(InEditor)
@@ -30,7 +30,6 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	// 뷰포트별 오프스크린 렌더 (각 VP의 RT에 3D 씬 렌더)
 	for (FLevelEditorViewportClient* VC : Editor->GetLevelViewportClients())
 	{
-		SCOPE_STAT("RenderViewport");
 		RenderViewport(VC, Renderer);
 	}
 
@@ -82,7 +81,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	UWorld* World = Editor->GetWorld();
 
 	Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix(),
-		Camera->GetRightVector(), Camera->GetUpVector());
+		Camera->GetForwardVector(), Camera->GetRightVector(), Camera->GetUpVector());
 	Bus.SetRenderSettings(ViewMode, ShowFlags);
 	if (VP)
 	{

@@ -29,6 +29,7 @@ private:
 	bool bIsHolding = false;
 	bool bIsWorldSpace = true;
 	bool bPressedOnHandle = false;
+	const FMeshData* MeshData = nullptr;
 
 	bool IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float& OutRayT);
 
@@ -45,7 +46,7 @@ public:
 	DECLARE_CLASS(UGizmoComponent, UPrimitiveComponent)
 	UGizmoComponent();
 
-	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
+	bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
 
 	FVector GetVectorForAxis(int32 Axis);
 	void RenderGizmo() {}
@@ -76,7 +77,7 @@ public:
 	inline void SetRotateMode() { UpdateGizmoMode(EGizmoMode::Rotate); }
 	inline void SetScaleMode() { UpdateGizmoMode(EGizmoMode::Scale); }
 	void UpdateGizmoTransform();
-	void ApplyScreenSpaceScaling(const FVector& CameraLocation);
+	void ApplyScreenSpaceScaling(const FVector& CameraLocation, bool bIsOrtho = false, float OrthoWidth = 10.0f);
 	void SetWorldSpace(bool bWorldSpace);
 
 

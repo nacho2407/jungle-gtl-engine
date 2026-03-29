@@ -1,6 +1,6 @@
 ﻿#include "Editor/UI/EditorConsoleWidget.h"
 #include "Editor/EditorEngine.h"
-#include "Editor/Viewport/OverlayStatSystem.h"
+#include "Editor/Subsystem/OverlayStatSystem.h"
 
 void FEditorConsoleWidget::AddLog(const char* fmt, ...) {
 	char buf[1024];
