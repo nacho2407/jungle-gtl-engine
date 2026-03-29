@@ -285,6 +285,11 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	{
 		Gizmo->DragEnd();
 	}
+	else if (InputSystem::Get().GetKeyUp(VK_LBUTTON))
+	{
+		// 드래그 threshold 미달로 DragEnd가 호출되지 않는 경우 처리
+		Gizmo->SetPressedOnHandle(false);
+	}
 }
 
 void FEditorViewportClient::HandleDragStart(const FRay& Ray)

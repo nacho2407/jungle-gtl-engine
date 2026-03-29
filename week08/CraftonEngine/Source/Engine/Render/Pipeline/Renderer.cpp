@@ -423,6 +423,9 @@ void FRenderer::DrawStaticMeshSections(ID3D11DeviceContext* Context, const FRend
 	if (!indexBuffer) return;
 	Context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
+	// StaticMeshShader가 s0에 SamplerState를 요구
+	Context->PSSetSamplers(0, 1, &Resources.DefaultSampler);
+
 	for (const FMeshSectionDraw& Section : Cmd.SectionDraws)
 	{
 		if (Section.IndexCount == 0) continue;
