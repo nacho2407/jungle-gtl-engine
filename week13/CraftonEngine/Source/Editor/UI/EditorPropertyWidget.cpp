@@ -404,6 +404,29 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 		}
 		break;
 	}
+	case EPropertyType::Material:
+	{
+		FString* Val = static_cast<FString*>(Prop.ValuePtr);
+		if (ImGui::BeginCombo(Prop.Name, Val->c_str()))
+		{
+			for (TObjectIterator<UStaticMesh> It; It; ++It)
+			{
+				UStaticMesh* MeshAsset = *It;
+				if (!MeshAsset) continue;
+				const FString& AssetPath = MeshAsset->GetAssetPathFileName();
+				bool bSelected = (*Val == AssetPath);
+				if (ImGui::Selectable(AssetPath.c_str(), bSelected))
+				{
+					*Val = AssetPath;
+					bChanged = true;
+				}
+				if (bSelected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+		break;
+	}
 	case EPropertyType::Name:
 	{
 		FName* Val = static_cast<FName*>(Prop.ValuePtr);
