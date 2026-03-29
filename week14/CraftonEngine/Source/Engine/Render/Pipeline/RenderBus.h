@@ -22,11 +22,12 @@ public:
 	const TArray<FRenderCommand>& GetCommands(ERenderPass Pass) const;
 
 	// Getter,Setter
-	void SetViewProjection(const FMatrix& InView, const FMatrix& InProj, const FVector& CameraRightVector, const FVector& CameraUpVector);
+	void SetViewProjection(const FMatrix& InView, const FMatrix& InProj, const FVector& CameraForwardVector, const FVector& CameraRightVector, const FVector& CameraUpVector);
 	void SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags);
 
 	const FMatrix& GetView() const { return View; }
 	const FMatrix& GetProj() const { return Proj; }
+	const FVector& GetCameraForward() const { return CameraForward; }
 	const FVector& GetCameraUp() const { return CameraUp; }
 	const FVector& GetCameraRight() const { return CameraRight; }
 	EViewMode GetViewMode() const { return ViewMode; }
@@ -43,6 +44,7 @@ private:
 
 	FMatrix View;
 	FMatrix Proj;
+	FVector CameraForward;
 	FVector CameraRight;
 	FVector CameraUp;
 

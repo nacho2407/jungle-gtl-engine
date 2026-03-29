@@ -10,6 +10,7 @@
 #include "GameFramework/World.h"
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
+#include "Core/RayUtils.h"
 #include "Object/Object.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "ImGui/imgui.h"
@@ -66,11 +67,11 @@ void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
 	{
 	case ELevelViewportType::Top:
 		Position = FVector(0, 0, OrthoDistance);
-		Rotation = FVector(0, -89.9f, 0);	// Pitch down
+		Rotation = FVector(0, 89.9f, 0);	// Pitch down (positive pitch = look -Z)
 		break;
 	case ELevelViewportType::Bottom:
 		Position = FVector(0, 0, -OrthoDistance);
-		Rotation = FVector(0, 89.9f, 0);	// Pitch up
+		Rotation = FVector(0, -89.9f, 0);	// Pitch up (negative pitch = look +Z)
 		break;
 	case ELevelViewportType::Front:
 		Position = FVector(OrthoDistance, 0, 0);
@@ -223,7 +224,8 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		return;
 	}
 
-	Gizmo->ApplyScreenSpaceScaling(Camera->GetWorldLocation());
+	Gizmo->ApplyScreenSpaceScaling(Camera->GetWorldLocation(),
+		Camera->IsOrthogonal(), Camera->GetOrthoWidth());
 
 	if (InputSystem::Get().GetGuiInputState().bUsingMouse)
 	{
@@ -252,41 +254,8 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	float LocalMouseX = static_cast<float>(MousePoint.x) - ViewportScreenRect.X;
 	float LocalMouseY = static_cast<float>(MousePoint.y) - ViewportScreenRect.Y;
 
-	if (InputSystem::Get().GetKeyDown(VK_LBUTTON))
-	{
-		if (bIsCursorVisible)
-		{
-			while (ShowCursor(FALSE) >= 0);
-			bIsCursorVisible = false;
-		}
-	}
-
-	if (InputSystem::Get().GetKeyUp(VK_LBUTTON))
-	{
-		if (!bIsCursorVisible)
-		{
-			while (ShowCursor(TRUE) < 0);
-			bIsCursorVisible = true;
-		}
-	}
-
-	if (InputSystem::Get().GetKeyDown(VK_RBUTTON))
-	{
-		if (bIsCursorVisible)
-		{
-			while (ShowCursor(FALSE) >= 0);
-			bIsCursorVisible = false;
-		}
-	}
-
-	if (InputSystem::Get().GetKeyUp(VK_RBUTTON))
-	{
-		if (!bIsCursorVisible)
-		{
-			while (ShowCursor(TRUE) < 0);
-			bIsCursorVisible = true;
-		}
-	}
+	// 커서 숨김 제거: ShowCursor는 전역 레퍼런스 카운터라 멀티 뷰포트에서
+	// active 전환 시 GetKeyUp이 처리되지 않아 커서가 영구 숨김될 수 있음
 
 	// FViewport 크기 기준으로 디프로젝션 (슬롯 크기와 동기화됨)
 	float VPWidth  = Viewport ? static_cast<float>(Viewport->GetWidth())  : WindowWidth;
@@ -295,7 +264,7 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	FHitResult HitResult;
 
 	//Gizmo Hover
-	Gizmo->Raycast(Ray, HitResult);
+	FRayUtils::RaycastComponent(Gizmo, Ray, HitResult);
 
 	if (InputSystem::Get().GetKeyDown(VK_LBUTTON))
 	{
@@ -323,7 +292,7 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 {
 	FHitResult HitResult{};
-	if (Gizmo->Raycast(Ray, HitResult))
+	if (FRayUtils::RaycastComponent(Gizmo, Ray, HitResult))
 	{
 		Gizmo->SetPressedOnHandle(true);
 		UE_LOG("Gizmo is Holding");
@@ -346,7 +315,7 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 				UPrimitiveComponent* PrimitiveComp = static_cast<UPrimitiveComponent*>(primitive);
 
 				HitResult = {};
-				if (PrimitiveComp->Raycast(Ray, HitResult))
+				if (FRayUtils::RaycastComponent(PrimitiveComp, Ray, HitResult))
 				{
 					if (HitResult.Distance < ClosestDistance)
 					{
