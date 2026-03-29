@@ -154,9 +154,7 @@ void UStaticMeshComp::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 
 	for (int32 i = 0; i < OverrideMaterialPaths.size(); ++i)
 	{
-		char Buffer[32];
-		snprintf(Buffer, sizeof(Buffer), "Element %d", i);
-		OutProps.push_back({ Buffer, EPropertyType::Material, &OverrideMaterialPaths[i] });
+		OutProps.push_back({ "Element " + std::to_string(i), EPropertyType::Material, &OverrideMaterialPaths[i] });
 	}
 }
 
@@ -177,25 +175,44 @@ void UStaticMeshComp::PostEditProperty(const char* PropertyName)
 		CacheLocalBounds();
 	}
 
-	//if (strncmp(PropertyName, "Element", 8) == 0)
-	//{
-	//	// "Material X" 에서 인덱스 번호 추출
-	//	int32 Index = atoi(&PropertyName[9]);
+	if (strncmp(PropertyName, "Element ", 8) == 0)
+	{
+		// "Element 0"에서 8번째 인덱스부터 시작하는 숫자를 정수로 변환
+		int32 Index = atoi(&PropertyName[8]);
 
-	//	if (Index >= 0 && Index < OverrideMaterialPaths.size())
-	//	{
-	//		FString NewMatPath = OverrideMaterialPaths[Index];
-	//		if (NewMatPath != "None" && !NewMatPath.empty())
-	//		{
-	//			ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-	//			// ObjManager나 Factory를 통해 새 머티리얼 로드
-	//			std::shared_ptr<UMaterial> LoadedMat = FObjManager::LoadObjMaterial(NewMatPath, Device);
-	//			OverrideMaterials[Index] = LoadedMat; // 실제 스마트 포인터 교체
-	//		}
-	//		else
-	//		{
-	//			OverrideMaterials[Index] = nullptr;
-	//		}
-	//	}
-	//}
+		// 인덱스 범위 유효성 검사
+		if (Index >= 0 && Index < OverrideMaterialPaths.size())
+		{
+			FString NewMatPath = OverrideMaterialPaths[Index];
+
+			if (NewMatPath == "None" || NewMatPath.empty())
+			{
+				SetMaterial(Index, nullptr);
+			}
+			else
+			{
+				// UI 콤보박스는 이미 로드된 머티리얼 목록을 보여주므로, 
+				// TObjectIterator를 통해 메모리에 있는 해당 경로의 머티리얼을 찾습니다.
+				UMaterial* FoundMat = nullptr;
+				for (TObjectIterator<UMaterial> It; It; ++It)
+				{
+					if ((*It)->GetAssetPathFileName() == NewMatPath)
+					{
+						FoundMat = *It;
+						break;
+					}
+				}
+
+				if (FoundMat)
+				{
+					// 찾은 머티리얼을 해당 슬롯에 적용합니다. 
+					// shared_ptr 관리 방식에 따라 아래와 같이 캐스팅하여 넣습니다.
+					SetMaterial(Index, std::shared_ptr<UMaterial>(FoundMat, [](UMaterial*) {
+						// UObjectManager가 수명을 관리하므로 shared_ptr이 해제될 때 
+						// 실제 객체를 delete하지 않도록 빈 삭제자(No-op deleter)를 사용합니다.
+						}));
+				}
+			}
+		}
+	}
 }
