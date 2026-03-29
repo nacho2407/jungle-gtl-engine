@@ -3,7 +3,7 @@
 #include <string>
 #include <filesystem>
 #include "Core/CoreTypes.h"
-#include "Core/Paths.h"
+#include "Platform/Paths.h"
 #include "GameFramework/WorldContext.h"
 
 // Forward declarations

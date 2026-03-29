@@ -1,4 +1,4 @@
-#include "Engine/Core/InputSystem.h"
+#include "Engine/Input/InputSystem.h"
 #include <cmath>
 
 void InputSystem::Tick()
