@@ -8,6 +8,7 @@
 #include <memory>
 
 struct FStaticMesh;
+struct FStaticMaterial;
 class UStaticMesh;
 
 // 에셋 로드/캐싱 관리자
@@ -21,5 +22,6 @@ public:
 	static UStaticMesh* LoadObjStaticMesh(const std::string& PathFileName, ID3D11Device* InDevice);
 
 private:
-	static std::unique_ptr<FStaticMesh> LoadStaticMeshAsset(const std::string& PathFileName, ID3D11Device* InDevice);
+	static bool LoadStaticMeshAsset(const std::string& PathFileName, ID3D11Device* InDevice,
+		std::unique_ptr<FStaticMesh>& OutMesh, TArray<FStaticMaterial>& OutMaterials);
 };

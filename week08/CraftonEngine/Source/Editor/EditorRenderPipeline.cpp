@@ -88,6 +88,8 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	{
 		Bus.SetViewportSize(static_cast<float>(VP->GetWidth()), static_cast<float>(VP->GetHeight()));
 	}
+
+	// RenderCommand를 ERenderPass별로 수집. Collect 단계에서 CPU에서 처리할 작업(예: AABB → 선분 변환)도 수행.
 	Collector.CollectWorld(World, ShowFlags, ViewMode, Bus);
 	Collector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Bus);
 	Collector.CollectGizmo(Editor->GetGizmo(), ShowFlags, Bus);
@@ -116,6 +118,8 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 			Bus.AddCommand(ERenderPass::OverlayFont, std::move(Cmd));
 		}
 	}
+
+	//============
 
 	// GPU 렌더
 	Renderer.PrepareBatchers(Bus);

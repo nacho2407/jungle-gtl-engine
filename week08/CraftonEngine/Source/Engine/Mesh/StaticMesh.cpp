@@ -24,6 +24,11 @@ FStaticMesh* UStaticMesh::GetStaticMeshAsset() const
 	return StaticMeshAsset.get();
 }
 
+void UStaticMesh::SetStaticMaterials(TArray<FStaticMaterial>&& InMaterials)
+{
+	StaticMaterials = std::move(InMaterials);
+}
+
 const TArray<FStaticMaterial>& UStaticMesh::GetStaticMaterials() const
 {
 	return StaticMaterials;
