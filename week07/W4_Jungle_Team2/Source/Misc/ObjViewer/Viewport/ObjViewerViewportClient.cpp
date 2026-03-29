@@ -24,21 +24,27 @@ namespace
 		Camera.SetLocation(Camera.GetLocation() + WorldDelta);
 	}
 
+	// 짐벌 락 해결을 위해 쿼터니언 방식으로 교체
 	void LookAt(FViewportCamera& Camera, const FVector& Target)
 	{
-		const FVector ToTarget = (Target - Camera.GetLocation()).GetSafeNormal();
-		if (ToTarget.IsNearlyZero())
+		FVector Forward = (Target - Camera.GetLocation()).GetSafeNormal();
+		if (Forward.IsNearlyZero()) return;
+
+		FVector UpRef = FVector::UpVector;	
+		if (std::abs(Forward.DotProduct(UpRef)) > 0.99f)
 		{
-			return;
+			UpRef = FVector(1.0f, 0.0f, 0.0f);
 		}
 
-		const float YawDegrees = MathUtil::RadiansToDegrees(std::atan2(ToTarget.Y, ToTarget.X));
-		const float FlatLen = std::sqrt(ToTarget.X * ToTarget.X + ToTarget.Y * ToTarget.Y);
-		const float PitchDegrees = MathUtil::RadiansToDegrees(std::atan2(ToTarget.Z, FlatLen));
+		FVector Right = FVector::CrossProduct(UpRef, Forward).GetSafeNormal();
+		FVector Up = FVector::CrossProduct(Forward, Right).GetSafeNormal();
 
-		FRotator Rotation(PitchDegrees, YawDegrees, 0.0f);
-		Rotation.Normalize();
-		Camera.SetRotation(Rotation);
+		FMatrix RotMat = FMatrix::Identity;
+		RotMat.SetAxes(Forward, Right, Up);
+
+		FQuat QuatRot(RotMat);
+		QuatRot.Normalize();
+		Camera.SetRotation(QuatRot);
 	}
 }
 
@@ -77,8 +83,50 @@ void FObjViewerViewportClient::ResetCamera()
 	float DistanceMultiplier = 4.0f;
     FVector CameraPos = Center + (Offset * DistanceMultiplier);
 
-    Camera->SetLocation(CameraPos);
+	Camera->SetLocation(CameraPos);
 	LookAt(*Camera, Center);
+}
+
+// 카메라를 초기 위치로 애니메이션과 함께 부드럽게 이동시킨다.
+void FObjViewerViewportClient::ResetCameraSmoothly()
+{
+    if (!Camera || !Settings)
+        return;
+
+	ObjViewerModelInfo ModelInfo = GetModelInfo();
+	float ModelRadius = ModelInfo.ModelRadius;
+	FVector Center = ModelInfo.ModelCenter;
+	FVector Offset(ModelRadius, ModelRadius, ModelRadius);
+
+	float DistanceMultiplier = 3.0f;
+	FVector TargetPos = Center + (Offset * DistanceMultiplier);
+
+    // 1. 목표 회전값(Target Rotation)을 쿼터니언으로 미리 계산
+    FVector Forward = (Center - TargetPos).GetSafeNormal();
+    FVector UpRef = FVector::UpVector;
+    if (std::abs(Forward.DotProduct(UpRef)) > 0.99f) UpRef = FVector(1.0f, 0.0f, 0.0f);
+    
+    FVector Right = FVector::CrossProduct(UpRef, Forward).GetSafeNormal();
+    FVector Up = FVector::CrossProduct(Forward, Right).GetSafeNormal();
+    
+    FMatrix RotMat = FMatrix::Identity;
+    RotMat.SetAxes(Forward, Right, Up);
+    FQuat TargetRot(RotMat);
+    TargetRot.Normalize();
+
+    // 2. 현재 상태를 '시작점'으로, 계산된 값을 '목표점'으로 저장
+    CameraGUIParams.ResetStartLocation = Camera->GetLocation();
+    CameraGUIParams.ResetStartRotation = Camera->GetRotation();
+    CameraGUIParams.ResetStartOrbitPivot = OrbitPivot;
+    CameraGUIParams.ResetStartOrbitDistance = OrbitDistance;
+    CameraGUIParams.ResetTargetLocation = TargetPos;
+    CameraGUIParams.ResetTargetRotation = TargetRot;
+    CameraGUIParams.ResetTargetOrbitPivot = Center;
+    CameraGUIParams.ResetTargetOrbitDistance = (TargetPos - Center).Size();
+
+    // 3. 애니메이션 시작 트리거 ON
+    CameraGUIParams.bIsResettingCamera = true;
+    CameraGUIParams.ResetCameraProgress = 0.0f;
 }
 
 // 모델의 크기와 비례하게 카메라의 이동 범위를 제한한다.
@@ -90,7 +138,7 @@ void FObjViewerViewportClient::ClampCameraPosition()
 	ObjViewerModelInfo ModelInfo = GetModelInfo();
 	float ModelRadius = ModelInfo.ModelRadius;
 	FVector ModelCenter = ModelInfo.ModelCenter;
-    float MaxAllowedDistance = ModelRadius * 4.0f;
+    float MaxAllowedDistance = ModelRadius * 6.0f;
 
     // 카메라 위치를 확인하고 이동 범위 제한(Clamp)을 적용
     FVector CamPos = Camera->GetLocation();
@@ -125,6 +173,7 @@ void FObjViewerViewportClient::SetViewportSize(float InWidth, float InHeight)
 
 void FObjViewerViewportClient::Tick(float DeltaTime)
 {
+	TickCameraReset(DeltaTime);
 	TickInput(DeltaTime);
 	TickInteraction(DeltaTime);
 	TickCursorOverlay(DeltaTime);
@@ -211,6 +260,12 @@ void FObjViewerViewportClient::TickInteraction(float DeltaTime)
 	{
 		return;
 	}
+
+	// 뷰포트를 더블 클릭하면 카메라가 모델을 향해 부드럽게 리셋된다.
+	if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+    {
+        ResetCameraSmoothly();
+    }
 
 	// Viewer에서는 Zoom이 일어나는 대신 카메라를 전후로 이동한다.
     const float ForwardSpeed = Settings ? Settings->CameraForwardSpeed : 500.f;
@@ -369,7 +424,6 @@ void FObjViewerViewportClient::ClampCameraPanToObject()
 	if (!Camera || !World) return;
 
 	 // 최신 카메라 행렬 확보
-    // Camera->UpdateWorldMatrix();
 	ObjViewerModelInfo ModelInfo = GetModelInfo();
 
 	float ModelRadius = ModelInfo.ModelRadius;
@@ -519,4 +573,35 @@ void FObjViewerViewportClient::TickCursorOverlay(float DeltaTime)
 		CursorOverlayState.CurrentRadius = 0.0f;
 		CursorOverlayState.bVisible = false;
 	}
+}
+
+void FObjViewerViewportClient::TickCameraReset(float DeltaTime)
+{
+	FCameraGUIParameters& params = CameraGUIParams;
+
+    if (!params.bIsResettingCamera || !Camera) return;
+	
+    // 진행도 업데이트 (0.0 ~ 1.0 Clamp)
+    params.ResetCameraProgress += DeltaTime * params.ResetCameraSpeed;
+    if (params.ResetCameraProgress >= 1.0f)
+    {
+        params.ResetCameraProgress = 1.0f;
+        params.bIsResettingCamera = false; // 애니메이션 종료
+    }
+
+    // 부드러운 가감속을 위한 Smoothstep 공식 적용
+    float t = params.ResetCameraProgress;
+    float Alpha = t * t * (3.0f - 2.0f * t);
+
+    // 위치 보간 (Lerp)
+    FVector CurrentLocation = params.ResetStartLocation + (params.ResetTargetLocation - params.ResetStartLocation) * Alpha;
+    Camera->SetLocation(CurrentLocation);
+
+    // 회전 보간 (Slerp - 구면 선형 보간)
+    FQuat CurrentRotation = FQuat::Slerp(params.ResetStartRotation, params.ResetTargetRotation, Alpha);
+    Camera->SetRotation(CurrentRotation);
+
+    // 회전 중심축(Pivot) 보간
+    OrbitPivot = params.ResetStartOrbitPivot + (params.ResetTargetOrbitPivot - params.ResetStartOrbitPivot) * Alpha;
+    OrbitDistance = params.ResetStartOrbitDistance + (params.ResetTargetOrbitDistance - params.ResetStartOrbitDistance) * Alpha;
 }
