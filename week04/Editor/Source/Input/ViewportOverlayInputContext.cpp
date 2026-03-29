@@ -28,8 +28,8 @@ bool FViewportOverlayInputContext::HandleEvent(const FInputEvent& Event, const F
         // Only left-click can start a splitter drag.
         if (Event.Key == EKey::MouseLeft)
         {
-            const bool bHitV = OverlayManager->HitTestSplitterV(Event.MouseX);
-            const bool bHitH = OverlayManager->HitTestSplitterH(Event.MouseY);
+            const bool bHitV = OverlayManager->HitTestSplitterV(Event.MouseX, Event.MouseY);
+            const bool bHitH = OverlayManager->HitTestSplitterH(Event.MouseX, Event.MouseY);
             if (bHitV || bHitH)
             {
                 OverlayManager->BeginSplitterDrag(bHitV, bHitH);

@@ -76,9 +76,9 @@ class FWindowOverlayManager
 
     // ── Splitter drag interaction ────────────────────────────────────────────
     // Returns true if the pixel X is within the grab zone of the vertical splitter
-    bool HitTestSplitterV(int32 X) const;
+    bool HitTestSplitterV(int32 X, int32 Y) const;
     // Returns true if the pixel Y is within the grab zone of the horizontal splitter
-    bool HitTestSplitterH(int32 Y) const;
+    bool HitTestSplitterH(int32 X, int32 Y) const;
     // Start dragging; pass which axes are active
     void BeginSplitterDrag(bool bVertical, bool bHorizontal);
     // Feed per-frame mouse delta while dragging

@@ -33,7 +33,7 @@ class ENGINE_API SSplitter : public SWindow
     virtual void OnDrag(float Delta) = 0;
     virtual void ResetPanelDimension() = 0;
 
-    bool HitTest(FVector2 P) const override { return false; }
+    //bool HitTest(FVector2 P) const override { return false; }
 
     float GetMinBound()    const { return MinBound; }
     float GetMaxBound()    const { return MaxBound; }

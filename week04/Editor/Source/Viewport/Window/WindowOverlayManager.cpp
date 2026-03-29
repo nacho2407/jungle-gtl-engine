@@ -168,7 +168,8 @@ void FWindowOverlayManager::ResetSplitters()
         SplitterV->SetRightPanels({ViewportPanels[1], ViewportPanels[2]});
 
         SplitterH = new SSplitterH();
-        SplitterH->Init(0.f, SplitY, FW, SplitterHalfThick * 2.f, FW, FH);
+        // H bar starts at V's current split and spans only the right column
+        SplitterH->Init(SplitX, SplitY, FW - SplitX, SplitterHalfThick * 2.f, FW, FH);
         SplitterH->SetUpPanels    ({ViewportPanels[1]});
         SplitterH->SetBottomPanels({ViewportPanels[2]});
         break;
@@ -180,7 +181,8 @@ void FWindowOverlayManager::ResetSplitters()
         SplitterV->SetRightPanels({ViewportPanels[2]});
 
         SplitterH = new SSplitterH();
-        SplitterH->Init(0.f, SplitY, FW, SplitterHalfThick * 2.f, FW, FH);
+        // H bar spans only the left column
+        SplitterH->Init(0.f, SplitY, SplitX, SplitterHalfThick * 2.f, FW, FH);
         SplitterH->SetUpPanels    ({ViewportPanels[0]});
         SplitterH->SetBottomPanels({ViewportPanels[1]});
         break;
@@ -212,16 +214,18 @@ void FWindowOverlayManager::ReleaseSplitters()
 // Splitter drag interaction
 // ---------------------------------------------------------------------------
 
-bool FWindowOverlayManager::HitTestSplitterV(int32 X) const
+bool FWindowOverlayManager::HitTestSplitterV(int32 X, int32 Y) const
 {
     if (!SplitterV) return false;
-    return std::abs(static_cast<float>(X) - SplitterV->PosX) <= SplitterHalfThick;
+    //return std::abs(static_cast<float>(X) - SplitterV->PosX) <= SplitterHalfThick;
+    return SplitterV->HitTest(FVector2(static_cast<float>(X), static_cast<float>(Y)));
 }
 
-bool FWindowOverlayManager::HitTestSplitterH(int32 Y) const
+bool FWindowOverlayManager::HitTestSplitterH(int32 X, int32 Y) const
 {
     if (!SplitterH) return false;
-    return std::abs(static_cast<float>(Y) - SplitterH->PosY) <= SplitterHalfThick;
+    //return std::abs(static_cast<float>(Y) - SplitterH->PosY) <= SplitterHalfThick;
+    return SplitterH->HitTest(FVector2(static_cast<float>(X), static_cast<float>(Y)));
 }
 
 void FWindowOverlayManager::BeginSplitterDrag(bool bVertical, bool bHorizontal)
@@ -239,6 +243,27 @@ void FWindowOverlayManager::UpdateSplitterDrag(float DeltaX, float DeltaY)
     {
         SplitterV->OnDrag(DeltaX);
         VSplitRatio = SplitterV->PosX / FW;
+
+        // In ColumnTwoRow / TwoRowColumn the H bar is anchored to the V divider.
+        // Keep its visual position and width in sync so it doesn't bleed across.
+        if (SplitterH)
+        {
+            switch (ViewportLayout)
+            {
+            case EViewportLayout::ColumnTwoRow:
+                // H bar spans only the right column
+                SplitterH->PosX  = SplitterV->PosX;
+                SplitterH->Width = FW - SplitterV->PosX;
+                break;
+            case EViewportLayout::TwoRowColumn:
+                // H bar spans only the left column
+                SplitterH->Width = SplitterV->PosX;
+                break;
+            default:
+                break;
+            }
+        }
+
         SyncPanelClients();
     }
 

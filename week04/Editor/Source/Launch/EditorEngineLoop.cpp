@@ -624,6 +624,7 @@ bool FEditorEngineLoop::RunFrameOnceWithoutResize()
 
     Renderer->BeginFrame();
     auto* WindowOverlayManager = Editor->GetWindowOverlayManager();
+    FWidgetRenderData WidgetRenderData = {};
     if (WindowOverlayManager)
     {
         for (FEditorViewportPanel* Panel : WindowOverlayManager->GetViewportPanels())
@@ -636,13 +637,12 @@ bool FEditorEngineLoop::RunFrameOnceWithoutResize()
             Panel->BuildRenderData();
             Renderer->Render(Panel->EditorRenderData, Panel->SceneRenderData);
         }
+        if (WindowOverlayManager->GetSplitterV()) { WidgetRenderData.Widgets.push_back(WindowOverlayManager->GetSplitterV()); }
+        if (WindowOverlayManager->GetSplitterH()) { WidgetRenderData.Widgets.push_back(WindowOverlayManager->GetSplitterH()); }
+        WidgetRenderData.ScreenWidth = CachedWindowWidth;
+        WidgetRenderData.ScreenHeight = CachedWindowHeight;
+        Renderer->RenderViewportOverlayPass(WidgetRenderData);
     }
-    FWidgetRenderData WidgetRenderData = {};
-    if (WindowOverlayManager->GetSplitterV()) { WidgetRenderData.Widgets.push_back(WindowOverlayManager->GetSplitterV()); }
-    if (WindowOverlayManager->GetSplitterH()) { WidgetRenderData.Widgets.push_back(WindowOverlayManager->GetSplitterH()); }
-    WidgetRenderData.ScreenWidth = CachedWindowWidth;
-    WidgetRenderData.ScreenHeight = CachedWindowHeight;
-    Renderer->RenderViewportOverlayPass(WidgetRenderData);
     Editor->DrawPanel();
     Renderer->EndFrame();
 
