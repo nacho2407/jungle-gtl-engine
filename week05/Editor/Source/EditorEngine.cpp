@@ -66,6 +66,7 @@ FEditorEngine::~FEditorEngine() = default;
 void FEditorEngine::Shutdown()
 {
 	FEngineLog::Get().SetCallback({});
+	EditorUI.SaveEditorSettings();
 
 	if (GetViewportClient() == PreviewViewportClient.get())
 	{
@@ -239,6 +240,8 @@ void FEditorEngine::FinalizeInitialize()
 	};
 	SlateApplication = std::make_unique<FSlateApplication>();
 	SlateApplication->Initialize(FRect(0, 0, W, H), VPs, MAX_VIEWPORTS);
+	EditorUI.OnSlateReady();
+
 }
 
 void FEditorEngine::Tick(float DeltaTime)

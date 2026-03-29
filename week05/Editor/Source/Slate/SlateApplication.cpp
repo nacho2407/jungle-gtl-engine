@@ -14,7 +14,7 @@ void FSlateApplication::Initialize(const FRect& Area, FViewport* VPs[], int32 Co
 	}
 
 	AreaRect = Area;
-	SetLayout(EViewportLayout::ThreeLeft);
+	SetLayout(EViewportLayout::FourGrid);
 }
 
 void FSlateApplication::ResetPools()
@@ -206,6 +206,23 @@ void FSlateApplication::PerformLayout()
 	SyncViewportRects();
 }
 
+float FSlateApplication::GetSplitterRatio(int32 Index) const
+{
+	if (Index < ActiveSplitterCount && ActiveSplitters[Index])
+	{
+		return ActiveSplitters[Index]->Ratio;
+	}
+	return 0.5f;
+}
+
+void FSlateApplication::SetSplitterRatio(int32 Index, float Ratio)
+{
+	if (Index < ActiveSplitterCount)
+	{
+		ActiveSplitters[Index]->Ratio = Ratio;
+	}
+}
+
 // ────────────────────────────────────────────────────────────
 // Mouse input
 // ────────────────────────────────────────────────────────────
@@ -263,5 +280,6 @@ void FSlateApplication::ProcessMouseUp(int32 X, int32 Y)
 	{
 		DraggingSplitter->OnMouseUp();
 		DraggingSplitter = nullptr;
+		if (OnSplitterDragEnd) OnSplitterDragEnd();
 	}
 }

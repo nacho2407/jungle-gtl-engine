@@ -20,6 +20,7 @@ public:
 	void AttachToRenderer(FRenderer* InRenderer);
 	void DetachFromRenderer(FRenderer* InRenderer);
 	void Render();
+	void OnSlateReady();
 	void SyncSelectedActorProperty();
 	bool GetViewportMousePosition(int32 WindowMouseX, int32 WindowMouseY, int32& OutViewportX, int32& OutViewportY, int32& OutWidth, int32& OutHeight) const;
 	bool HasHostWindow() const { return MainWindow != nullptr; }

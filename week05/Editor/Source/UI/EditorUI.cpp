@@ -150,12 +150,9 @@ void FEditorUI::Initialize(FEditorEngine* InEngine)
 					}
 				}
 			}
-			else if (
-				Engine &&
-				Engine->GetSlateApplication() &&
-				Engine->GetSlateApplication()->GetHoveredViewportId() != INVALID_VIEWPORT_ID)
+			else if (Engine && Engine->GetSlateApplication() && Engine->GetSlateApplication()->GetHoveredViewportId() != INVALID_VIEWPORT_ID)
 			{
-				UE_LOG("Drop On Viewport");			
+				UE_LOG("Drop On Viewport");
 				if (Engine)
 				{
 					Engine->GetViewportClient()->HandleFileDropOnViewport(DraggingFilePath);
@@ -316,6 +313,22 @@ void FEditorUI::AttachToRenderer(FRenderer* InRenderer)
 			const float AxisLength = 10000.0f;
 			const FVector Origin = { 0.0f, 0.0f, 0.0f };
 		});
+}
+
+void FEditorUI::OnSlateReady()
+{
+	if (!Engine)
+	{
+		return;
+	}
+
+	FSlateApplication* Slate = Engine->GetSlateApplication();
+	if (!Slate)
+	{
+		return;
+	}
+
+	Slate->OnSplitterDragEnd = [this]() { SaveEditorSettings(); };
 	LoadEditorSettings();
 }
 
@@ -380,7 +393,7 @@ void FEditorUI::SetupWindow(FWindowsWindow* InWindow)
 			const bool bHandledByImGui = ImGui_ImplWin32_WndProcHandler(Hwnd, Msg, WParam, LParam) != 0;
 
 			FSlateApplication* Slate = Engine->GetSlateApplication();
-			if (Slate && Slate->GetMouseCapturedViewportId() != INVALID_VIEWPORT_ID)
+			if (Slate && (Slate->GetMouseCapturedViewportId() != INVALID_VIEWPORT_ID || Slate->IsDraggingSplitter()))
 			{
 				return false;
 			}
@@ -462,6 +475,52 @@ void FEditorUI::LoadEditorSettings()
 		GetPrivateProfileStringW(Sec, L"SF.Collision", L"0", Buf, 64, Path.c_str());
 		S.ShowFlags.SetFlag(EEngineShowFlags::SF_Collision, _wtoi(Buf) != 0);
 	}
+
+	bool bAnyDebugDrawEnabled = false;
+	bool bAnyCollisionEnabled = false;
+	for (const FViewportEntry& Entry : ViewportRegistry.GetEntries())
+	{
+		bAnyDebugDrawEnabled = bAnyDebugDrawEnabled || Entry.LocalState.ShowFlags.HasFlag(EEngineShowFlags::SF_DebugDraw);
+		bAnyCollisionEnabled = bAnyCollisionEnabled || Entry.LocalState.ShowFlags.HasFlag(EEngineShowFlags::SF_Collision);
+	}
+
+	for (FViewportEntry& Entry : ViewportRegistry.GetEntries())
+	{
+		Entry.LocalState.ShowFlags.SetFlag(EEngineShowFlags::SF_DebugDraw, bAnyDebugDrawEnabled);
+		Entry.LocalState.ShowFlags.SetFlag(EEngineShowFlags::SF_Collision, bAnyCollisionEnabled);
+	}
+
+	FSlateApplication* Slate = Engine->GetSlateApplication();
+	if (Slate)
+	{
+		GetPrivateProfileStringW(L"Splitter", L"Layout", L"0", Buf, 64, Path.c_str());
+		int32 LayoutValue = _wtoi(Buf);
+		if (LayoutValue < static_cast<int32>(EViewportLayout::Single) ||
+			LayoutValue > static_cast<int32>(EViewportLayout::FourGrid))
+		{
+			LayoutValue = static_cast<int32>(EViewportLayout::Single);
+		}
+
+		Slate->SetLayout(static_cast<EViewportLayout>(LayoutValue));
+		for (int i = 0; i < 3; ++i)
+		{
+			swprintf(Sec, 32, L"Splitter%d", i);
+			GetPrivateProfileStringW(Sec, L"Ratio", L"0.5", Buf, 64, Path.c_str());
+
+			float Ratio = static_cast<float>(_wtof(Buf));
+			if (Ratio < 0.05f)
+			{
+				Ratio = 0.05f;
+			}
+			else if (Ratio > 0.95f)
+			{
+				Ratio = 0.95f;
+			}
+			Slate->SetSplitterRatio(i, Ratio);
+		}
+
+		Slate->PerformLayout();
+	}
 }
 
 void FEditorUI::SaveEditorSettings()
@@ -499,6 +558,20 @@ void FEditorUI::SaveEditorSettings()
 			S.ShowFlags.HasFlag(EEngineShowFlags::SF_WorldAxis) ? L"1" : L"0", Path.c_str());
 		WritePrivateProfileStringW(Sec, L"SF.Collision",
 			S.ShowFlags.HasFlag(EEngineShowFlags::SF_Collision) ? L"1" : L"0", Path.c_str());
+	}
+
+	FSlateApplication* Slate = Engine->GetSlateApplication();
+
+	if (Slate)
+	{
+		WritePrivateProfileStringW(L"Splitter", L"Layout",
+			std::to_wstring(static_cast<int>(Slate->GetCurrentLayout())).c_str(), Path.c_str());
+		for (int i = 0; i < 3; i++)
+		{
+			swprintf(Sec, 32, L"Splitter%d", i);
+			swprintf(Buf, 64, L"%.4f", Slate->GetSplitterRatio(i));
+			WritePrivateProfileStringW(Sec, L"Ratio", Buf, Path.c_str());
+		}
 	}
 }
 
@@ -706,7 +779,17 @@ void FEditorUI::Render()
 					bool bValue = ShowFlags.HasFlag(Flag);
 					if (ImGui::Checkbox(Label, &bValue))
 					{
-						ShowFlags.SetFlag(Flag, bValue);
+						if (Flag == EEngineShowFlags::SF_DebugDraw || Flag == EEngineShowFlags::SF_Collision)
+						{
+							for (FViewportEntry& Entry : ViewportRegistry.GetEntries())
+							{
+								Entry.LocalState.ShowFlags.SetFlag(Flag, bValue);
+							}
+						}
+						else
+						{
+							ShowFlags.SetFlag(Flag, bValue);
+						}
 						SaveEditorSettings();
 					}
 				};

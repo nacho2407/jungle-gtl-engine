@@ -5,6 +5,7 @@
 #include "SplitterH.h"
 #include "SplitterV.h"
 #include <memory>
+#include <functional>
 
 class FSlateApplication
 {
@@ -51,8 +52,12 @@ public:
 	int32 GetActiveViewportCount() const { return ActiveViewportCount; }
 	bool IsDraggingSplitter() const { return DraggingSplitter != nullptr; }
 	bool IsPointerOverViewport(FViewportId Id) const { return HoveredViewportId == Id; }
+	float GetSplitterRatio(int32 Index) const;
+	void SetSplitterRatio(int32 Index, float Ratio);
 
 	void ProcessMouseDown(int32 X, int32 Y);
 	void ProcessMouseMove(int32 X, int32 Y);
 	void ProcessMouseUp(int32 X, int32 Y);
+
+	std::function<void()> OnSplitterDragEnd;
 };
