@@ -35,6 +35,25 @@ FVector FViewportCamera::GetUpVector() const
 	return Rotation.GetUpVector();
 }
 
+FVector FViewportCamera::GetEffectiveRight() const
+{
+	if (bHasCustomLookDir)
+	{
+		// ViewMatrix 와 동일한 기준: Right = Cross(ViewUp, Forward)
+		return FVector::CrossProduct(ViewUp, CustomLookDir).GetSafeNormal();
+	}
+	return GetRightVector();
+}
+
+FVector FViewportCamera::GetEffectiveUp() const
+{
+	if (bHasCustomLookDir)
+	{
+		return ViewUp;
+	}
+	return GetUpVector();
+}
+
 FMatrix FViewportCamera::GetViewMatrix() const
 {
 	if (bIsViewDirty)
