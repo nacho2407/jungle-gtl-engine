@@ -14,8 +14,8 @@ class UMaterial : public UObject // : public UMaterialInterface
 {
 public:
 	DECLARE_CLASS(UMaterial, UObject)
-	FString PathFileName;
 
+	FString PathFileName;
 	FString DiffuseTextureFilePath;
 	FVector4 DiffuseColor;
 	UTexture2D* DiffuseTexture = nullptr;	// UObjectManager 소유, 여기선 참조만
