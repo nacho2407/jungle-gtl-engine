@@ -1,11 +1,11 @@
 ﻿#include "Object.h"
-#include "EngineStatics.h"
+#include "UUIDGenerator.h"
 
 TArray<UObject*> GUObjectArray;
 
 UObject::UObject()
 {
-	UUID = EngineStatics::GenUUID();
+	UUID = UUIDGenerator::GenUUID();
 	InternalIndex = static_cast<uint32>(GUObjectArray.size());
 	GUObjectArray.push_back(this);
 }
