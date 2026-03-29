@@ -502,6 +502,14 @@ void FEditorUI::LoadEditorSettings()
 		}
 
 		Slate->SetLayout(static_cast<EViewportLayout>(LayoutValue));
+		const int32 ActiveViewportCount = Slate->GetActiveViewportCount();
+		int32 EntryIndex = 0;
+		for (FViewportEntry& Entry : ViewportRegistry.GetEntries())
+		{
+			Entry.bActive = (EntryIndex < ActiveViewportCount);
+			++EntryIndex;
+		}
+
 		for (int i = 0; i < 3; ++i)
 		{
 			swprintf(Sec, 32, L"Splitter%d", i);
