@@ -315,7 +315,16 @@ void FRenderer::ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand
 		Device.SetBlendState(TargetBlend);
 
 		BindCommand(Cmd, Context);
-		DrawCommand(Context, Cmd);
+
+		// StaticMesh: 섹션별 SRV 바인딩 + 분할 드로우
+		if (Cmd.Type == ERenderCommandType::StaticMesh && !Cmd.SectionDraws.empty())
+		{
+			DrawStaticMeshSections(Context, Cmd);
+		}
+		else
+		{
+			DrawCommand(Context, Cmd);
+		}
 	}
 }
 
@@ -397,6 +406,42 @@ void FRenderer::DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderC
 	{
 		InDeviceContext->Draw(vertexCount, 0);
 	}
+}
+
+void FRenderer::DrawStaticMeshSections(ID3D11DeviceContext* Context, const FRenderCommand& Cmd)
+{
+	if (!Cmd.MeshBuffer || !Cmd.MeshBuffer->IsValid()) return;
+
+	// 버텍스 버퍼 바인딩 (한 번만)
+	uint32 offset = 0;
+	ID3D11Buffer* vertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
+	if (!vertexBuffer) return;
+	uint32 stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
+	Context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+
+	ID3D11Buffer* indexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
+	if (!indexBuffer) return;
+	Context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	for (const FMeshSectionDraw& Section : Cmd.SectionDraws)
+	{
+		if (Section.IndexCount == 0) continue;
+
+		// 섹션별 SRV 바인딩 (t0)
+		ID3D11ShaderResourceView* srv = Section.DiffuseSRV;
+		Context->PSSetShaderResources(0, 1, &srv);
+
+		// 섹션별 DiffuseColor를 PrimitiveColor(b1)에 반영
+		FPerObjectConstants SectionConstants = Cmd.PerObjectConstants;
+		SectionConstants.Color = Section.DiffuseColor;
+		Resources.PerObjectConstantBuffer.Update(Context, &SectionConstants, sizeof(FPerObjectConstants));
+
+		Context->DrawIndexed(Section.IndexCount, Section.FirstIndex, 0);
+	}
+
+	// SRV 언바인딩 (다음 드로우에 영향 방지)
+	ID3D11ShaderResourceView* nullSRV = nullptr;
+	Context->PSSetShaderResources(0, 1, &nullSRV);
 }
 
 //	Present the rendered frame to the screen. 반드시 Render 이후에 호출되어야 함.

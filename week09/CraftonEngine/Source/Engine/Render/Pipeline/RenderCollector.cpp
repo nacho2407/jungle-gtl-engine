@@ -4,6 +4,7 @@
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/StaticMeshComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/SubUVComponent.h"
@@ -207,6 +208,35 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		{
 			Cmd.Type = ERenderCommandType::StaticMesh;
 			Cmd.Shader = FShaderManager::Get().GetShader(EShaderType::StaticMesh);
+
+			// 섹션별 드로우 정보 수집
+			UStaticMeshComp* SMComp = static_cast<UStaticMeshComp*>(Primitive);
+			UStaticMesh* SM = SMComp->GetStaticMesh();
+			if (SM && SM->GetStaticMeshAsset())
+			{
+				const auto& Sections = SM->GetStaticMeshAsset()->Sections;
+				const auto& Materials = SM->GetStaticMaterials();
+
+				for (const FStaticMeshSection& Section : Sections)
+				{
+					FMeshSectionDraw Draw;
+					Draw.FirstIndex = Section.FirstIndex;
+					Draw.IndexCount = Section.NumTriangles * 3;
+
+					// 머티리얼 슬롯 이름으로 매칭
+					for (const FStaticMaterial& Mat : Materials)
+					{
+						if (Mat.MaterialSlotName == Section.MaterialSlotName && Mat.MaterialInterface)
+						{
+							Draw.DiffuseSRV = Mat.MaterialInterface->DiffuseSRV;
+							Draw.DiffuseColor = Mat.MaterialInterface->DiffuseColor;
+							break;
+						}
+					}
+
+					Cmd.SectionDraws.push_back(Draw);
+				}
+			}
 		}
 		else
 		{

@@ -1,8 +1,11 @@
-#include "Mesh/ObjManager.h"
+﻿#include "Mesh/ObjManager.h"
 #include "Mesh/StaticMesh.h"
 #include "Render/Types/VertexTypes.h"
 #include "ObjImporter.h"
 #include "Serialization/WindowsArchive.h"
+#include "WICTextureLoader.h"
+#include "UI/EditorConsoleWidget.h"
+#include <filesystem>
 
 std::map<std::string, UStaticMesh*> FObjManager::StaticMeshCache;
 
@@ -26,15 +29,17 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const std::string& PathFileName, ID3
 	}
 
 	// 파싱 + GPU 버퍼 생성
-	std::unique_ptr<FStaticMesh> Asset = LoadStaticMeshAsset(PathFileName, InDevice);
-	if (!Asset)
+	std::unique_ptr<FStaticMesh> Asset;
+	TArray<FStaticMaterial> Materials;
+	if (!LoadStaticMeshAsset(PathFileName, InDevice, Asset, Materials))
 	{
 		return nullptr;
 	}
 
-	// UStaticMesh 생성 + FStaticMesh 소유권 이전
+	// UStaticMesh 생성 + FStaticMesh 소유권 이전 + 머티리얼 설정
 	UStaticMesh* StaticMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
 	StaticMesh->SetStaticMeshAsset(std::move(Asset));
+	StaticMesh->SetStaticMaterials(std::move(Materials));
 
 	// 캐시 등록
 	StaticMeshCache[PathFileName] = StaticMesh;
@@ -42,34 +47,35 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const std::string& PathFileName, ID3
 	return StaticMesh;
 }
 
-std::unique_ptr<FStaticMesh> FObjManager::LoadStaticMeshAsset(const std::string& PathFileName, ID3D11Device* InDevice)
+bool FObjManager::LoadStaticMeshAsset(const std::string& PathFileName, ID3D11Device* InDevice,
+	std::unique_ptr<FStaticMesh>& OutMesh, TArray<FStaticMaterial>& OutMaterials)
 {
 	auto Result = std::make_unique<FStaticMesh>();
+	OutMaterials.clear();
 
-	std::string BinPath = GetBinaryFilePath(PathFileName);
-	FWindowsBinReader Reader(BinPath);
-	if (Reader.IsValid())
-	{
-		Result->Serialize(Reader);
-	}
-	else
-	{
+	//std::string BinPath = GetBinaryFilePath(PathFileName);
+	//FWindowsBinReader Reader(BinPath);
+	//if (Reader.IsValid())
+	//{
+	//	Result->Serialize(Reader);
+	//}
+	//else
+	//{
 		// 바이너리 파일이 없음 -> OBJ 파싱 및 굽기 (최초 1회)
-		FStaticMesh ConvertedMesh;
-		TArray<FStaticMaterial> ImportedMaterials;
-		if (!FObjImporter::Import(PathFileName, ConvertedMesh, ImportedMaterials))
-		{
-			return nullptr;
-		}
-
-		FWindowsBinWriter Writer(BinPath);
-		if (Writer.IsValid())
-		{
-			ConvertedMesh.Serialize(Writer);
-		}
-
-		*Result = std::move(ConvertedMesh);
+	FStaticMesh ConvertedMesh;
+	if (!FObjImporter::Import(PathFileName, ConvertedMesh, OutMaterials))
+	{
+		return false;
 	}
+
+	//FWindowsBinWriter Writer(BinPath);
+	//if (Writer.IsValid())
+	//{
+	//	ConvertedMesh.Serialize(Writer);
+	//}
+
+	*Result = std::move(ConvertedMesh);
+	//}
 
 	Result->PathFileName = PathFileName;
 
@@ -94,5 +100,30 @@ std::unique_ptr<FStaticMesh> FObjManager::LoadStaticMeshAsset(const std::string&
 		Result->RenderBuffer->Create(InDevice, RenderMeshData);
 	}
 
-	return Result;
+	// 머티리얼 텍스처 프리로드
+	if (InDevice)
+	{
+		for (auto& Mat : OutMaterials)
+		{
+			if (!Mat.MaterialInterface || Mat.MaterialInterface->DiffuseTextureFilePath.empty())
+			{
+				continue;
+			}
+
+			std::filesystem::path TexPath(Mat.MaterialInterface->DiffuseTextureFilePath);
+			std::wstring WideTexPath = TexPath.wstring();
+
+			HRESULT hr = DirectX::CreateWICTextureFromFile(
+				InDevice, WideTexPath.c_str(),
+				nullptr, &Mat.MaterialInterface->DiffuseSRV);
+
+			if (FAILED(hr))
+			{
+				UE_LOG("Failed to load texture: %s", Mat.MaterialInterface->DiffuseTextureFilePath.c_str());
+			}
+		}
+	}
+
+	OutMesh = std::move(Result);
+	return true;
 }
