@@ -70,6 +70,8 @@ class FWindowOverlayManager
     // Returns a human readable string for each layout enum feed
     FString GetViewportLayoutString(EViewportLayout Layout) const;
 
+    SSplitter*      GetSplitterV() const;
+    SSplitter*      GetSplitterH() const;
     EViewportLayout GetViewportLayout() const { return ViewportLayout; }
 
     // ── Splitter drag interaction ────────────────────────────────────────────

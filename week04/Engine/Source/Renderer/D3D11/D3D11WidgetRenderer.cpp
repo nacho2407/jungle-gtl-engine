@@ -1,8 +1,13 @@
 #include "D3D11WidgetRenderer.h"
 #include "Renderer/D3D11/D3D11RHI.h"
 
-void FD3D11WidgetRenderer::Initialize(FD3D11RHI* InRHI) 
+bool FD3D11WidgetRenderer::Initialize(FD3D11RHI* InRHI) 
 { 
+    if (!InRHI)
+    {
+        return false;
+    }
+
 	RHI = InRHI;
     const wchar_t* ShaderPath = L"Content\\Shader\\ShaderMesh.hlsl";	// Add a new shader if necessary
 
@@ -54,12 +59,19 @@ void FD3D11WidgetRenderer::Initialize(FD3D11RHI* InRHI)
     RasterizerDesc.FillMode = D3D11_FILL_SOLID;
     RasterizerDesc.DepthClipEnable = TRUE;
     RHI->CreateRasterizerState(RasterizerDesc, RasterizerState.GetAddressOf());
+
+    return true;
 }
 
 void FD3D11WidgetRenderer::BeginFrame(uint32 ScreenWidth, uint32 ScreenHeight)
 {
     const float W = static_cast<float>(ScreenWidth);
     const float H = static_cast<float>(ScreenHeight);
+
+    // Reset the D3D11 viewport to the full window — panel rendering leaves it
+    // set to the last panel's sub-region, which would misplace widget draws.
+    RHI->SetViewport(static_cast<int32>(ScreenWidth), static_cast<int32>(ScreenHeight));
+
     OrthographicMatrix = FMatrix(
         2.f/W, 0.f,   0.f,  0.f,
         0.f,  -2.f/H, 0.f,  0.f,
@@ -96,4 +108,18 @@ void FD3D11WidgetRenderer::DrawWidget(ID3D11DeviceContext* Context, float X, flo
     Context->IASetIndexBuffer(IndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
     Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     Context->DrawIndexed(6, 0, 0);
+}
+
+void FD3D11WidgetRenderer::Shutdown()
+{
+    RasterizerState.Reset();
+    BlendState.Reset();
+    DepthStencilState.Reset();
+    IndexBuffer.Reset();
+    VertexBuffer.Reset();
+    ConstantBuffer.Reset();
+    InputLayout.Reset();
+    PixelShader.Reset();
+    VertexShader.Reset();
+    RHI = nullptr;
 }

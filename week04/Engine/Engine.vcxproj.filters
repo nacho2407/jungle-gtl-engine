@@ -799,6 +799,7 @@
       <Filter>Source\Core\Runtime\Slate\Window</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\D3D11\D3D11WidgetRenderer.h" />
+    <ClInclude Include="Source\Renderer\WidgetRenderData.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

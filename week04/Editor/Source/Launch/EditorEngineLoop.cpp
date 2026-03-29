@@ -16,6 +16,8 @@
 #include "Asset/SubUVAtlasLoader.h"
 #include "Asset/TextureLoader.h"
 
+#include "Renderer/WidgetRenderData.h"
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND HWnd, UINT Message,
                                                              WPARAM WParam, LPARAM LParam);
 
@@ -635,6 +637,12 @@ bool FEditorEngineLoop::RunFrameOnceWithoutResize()
             Renderer->Render(Panel->EditorRenderData, Panel->SceneRenderData);
         }
     }
+    FWidgetRenderData WidgetRenderData = {};
+    if (WindowOverlayManager->GetSplitterV()) { WidgetRenderData.Widgets.push_back(WindowOverlayManager->GetSplitterV()); }
+    if (WindowOverlayManager->GetSplitterH()) { WidgetRenderData.Widgets.push_back(WindowOverlayManager->GetSplitterH()); }
+    WidgetRenderData.ScreenWidth = CachedWindowWidth;
+    WidgetRenderData.ScreenHeight = CachedWindowHeight;
+    Renderer->RenderViewportOverlayPass(WidgetRenderData);
     Editor->DrawPanel();
     Renderer->EndFrame();
 

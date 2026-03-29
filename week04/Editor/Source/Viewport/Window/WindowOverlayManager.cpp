@@ -49,6 +49,22 @@ FString FWindowOverlayManager::GetViewportLayoutString(EViewportLayout Layout) c
     }
 }
 
+SSplitter* FWindowOverlayManager::GetSplitterV() const
+{
+    if (SplitterV)
+        return SplitterV;
+    else
+        return nullptr;
+}
+
+SSplitter* FWindowOverlayManager::GetSplitterH() const
+{
+    if (SplitterH)
+        return SplitterH;
+    else
+        return nullptr;
+}
+
 // ---------------------------------------------------------------------------
 // Panel dimension management
 // ---------------------------------------------------------------------------

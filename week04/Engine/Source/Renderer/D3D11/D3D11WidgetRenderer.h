@@ -9,7 +9,7 @@ class FD3D11RHI;
 class FD3D11WidgetRenderer
 {
 public:
-  void Initialize(FD3D11RHI* InRHI);
+  bool Initialize(FD3D11RHI* InRHI);
   void Shutdown();
 
   void BeginFrame(uint32 ScreenWidth, uint32 ScreenHeight);

@@ -10,8 +10,10 @@
 #include "Renderer/D3D11/D3D11RHI.h"
 #include "Renderer/D3D11/D3D11SpriteBatchRenderer.h"
 #include "Renderer/D3D11/D3D11TextBatchRenderer.h"
+#include "Renderer/D3D11/D3D11WidgetRenderer.h"
 #include "Renderer/EditorRenderData.h"
 #include "Renderer/SceneRenderData.h"
+#include "Renderer/WidgetRenderData.h"
 #include "Renderer/Submitter/AABBSubmitter.h"
 #include "Renderer/Submitter/OverlayMeshSubmitter.h"
 #include "Renderer/Submitter/SceneMeshSubmitter.h"
@@ -43,6 +45,8 @@ class ENGINE_API FRendererModule
     void SetVSyncEnabled(bool bEnabled);
     bool IsVSyncEnabled() const;
 
+    void RenderViewportOverlayPass(const FWidgetRenderData& InWidgetRenderData);
+
   private:
     FD3D11RHI RHI;
 
@@ -52,6 +56,7 @@ class ENGINE_API FRendererModule
     FD3D11TextBatchRenderer  TextRenderer;
     FD3D11SpriteBatchRenderer SpriteRenderer;
     FD3D11ObjectIdRenderer   ObjectIdRenderer;
+    FD3D11WidgetRenderer      WidgetRenderer;
 
     FSceneMeshSubmitter  SceneMeshSubmitter;
     FOverlayMeshSubmitter OverlayMeshSubmitter;

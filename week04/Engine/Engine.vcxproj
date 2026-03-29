@@ -153,6 +153,7 @@
     <ClInclude Include="Source\Renderer\Types\ShaderConstants.h" />
     <ClInclude Include="Source\Renderer\Types\VertexTypes.h" />
     <ClInclude Include="Source\Renderer\Types\ViewMode.h" />
+    <ClInclude Include="Source\Renderer\WidgetRenderData.h" />
     <ClInclude Include="Source\SceneIO\SceneAssetPath.h" />
     <ClInclude Include="Source\SceneIO\SceneJson.h" />
     <ClInclude Include="Source\SceneIO\SceneSerializer.h" />

@@ -3,6 +3,7 @@
 #include "Renderer/Types/PickId.h"
 #include "Renderer/Types/PickResult.h"
 #include "SceneView.h"
+#include "Core/Runtime/Slate/Window/SWindow.h"
 
 namespace
 {
@@ -95,6 +96,11 @@ bool FRendererModule::StartupModule(HWND hWnd)
 
     if (!ObjectIdRenderer.Initialize(&RHI))
     {
+        ShutdownModule();
+        return false;
+    }
+
+    if (!WidgetRenderer.Initialize(&RHI)) {
         ShutdownModule();
         return false;
     }
@@ -286,6 +292,29 @@ void FRendererModule::RenderOverlayPass(const FEditorRenderData& InEditorRenderD
         MeshBatchRenderer.BeginFrame(GizmoCenterPassParams);
         OverlayMeshSubmitter.SubmitCenterHandle(MeshBatchRenderer, InEditorRenderData);
         MeshBatchRenderer.EndFrame();
+    }
+}
+
+void FRendererModule::RenderViewportOverlayPass(const FWidgetRenderData& InWidgetRenderData) 
+{
+    if (InWidgetRenderData.Widgets.empty())
+        return;
+
+    WidgetRenderer.BeginFrame(InWidgetRenderData.ScreenWidth, InWidgetRenderData.ScreenHeight);
+
+    ID3D11DeviceContext* Context = RHI.GetDeviceContext();
+
+    for (SWidget* Widget : InWidgetRenderData.Widgets)
+    {
+        if (!Widget)
+            continue;
+
+        SWindow* Window = dynamic_cast<SWindow*>(Widget);
+        if (!Window)
+            continue;
+
+        WidgetRenderer.DrawWidget(Context, Window->PosX, Window->PosY, Window->Width,
+                                  Window->Height, FColor(0.25f, 0.25f, 0.25f, 1.f));
     }
 }
 
