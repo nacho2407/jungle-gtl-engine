@@ -1,12 +1,15 @@
-﻿#include "Core/Paths.h"
-#include "Mesh/ObjImporter.h"
+﻿#include "Mesh/ObjImporter.h"
 #include "Mesh/StaticMeshAsset.h"
+#include "Materials/Material.h"
 #include "Editor/UI/EditorConsoleWidget.h"
 #include <algorithm>
 #include <fstream>
 #include <filesystem>
 #include <charconv>
 #include <chrono>
+
+const FVector FallbackColor3 = FVector(1.0f, 0.0f, 1.0f);
+const FVector4 FallbackColor4 = FVector4(1.0f, 0.0f, 1.0f, 1.0f);
 
 struct FVertexKey {
     uint32 p, t, n;
@@ -344,7 +347,7 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 			FObjMaterialInfo MaterialInfo;
 			FStringParser::TrimLeft(Line);
 			MaterialInfo.MaterialSlotName = std::string(Line);
-			MaterialInfo.Kd = { 1.0f, 0.0f, 1.0f }; // default magenta color for debugging
+			MaterialInfo.Kd = FallbackColor3;
 			OutMtlInfos.emplace_back(MaterialInfo);
 		}
 		else if (Prefix == "Kd")
@@ -459,11 +462,11 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
         }
     }
 
-    // 수집된 순서대로 머티리얼 생성 및 인덱스 매핑
+	// 수집된 순서대로 머티리얼 생성 및 인덱스 매핑
 	for (const FString& TargetSlotName : OrderedMaterialSlots)
-    {
-        // 슬롯 이름과 일치하는 파싱된 머티리얼 데이터 선형 탐색
-        const FObjMaterialInfo* MatchedMaterial = nullptr;
+	{
+		// 슬롯 이름과 일치하는 파싱된 머티리얼 데이터 선형 탐색
+		const FObjMaterialInfo* MatchedMaterial = nullptr;
 		auto It = std::find_if(MtlInfos.begin(), MtlInfos.end(),
 			[&TargetSlotName](const FObjMaterialInfo& Mat) {
 				return Mat.MaterialSlotName == TargetSlotName;
@@ -475,41 +478,40 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 		}
 
 		// 매칭된 머티리얼 정보로 FStaticMaterial 생성
-		FStaticMaterial NewMaterial;
-        NewMaterial.MaterialSlotName = TargetSlotName;
-        // TODO: UObject 팩토리 사용하도록 수정
-        NewMaterial.MaterialInterface = std::make_shared<UMaterial>();
-        if (MatchedMaterial)
-        {
-            if (!MatchedMaterial->map_Kd.empty())
-            {
-                NewMaterial.MaterialInterface->DiffuseTextureFilePath = MatchedMaterial->map_Kd;
-                NewMaterial.MaterialInterface->DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-            }
-            else
-            {
-                NewMaterial.MaterialInterface->DiffuseColor = { MatchedMaterial->Kd.X, MatchedMaterial->Kd.Y, MatchedMaterial->Kd.Z, 1.0f };
-            }
-        }
-        else
-        {
-			// 매칭 실패 시 Magenta 색상
-            NewMaterial.MaterialInterface->DiffuseColor = { 1.0f, 0.0f, 1.0f, 1.0f };
-        }
+		FStaticMaterial NewStaticMaterial;
+		NewStaticMaterial.MaterialSlotName = TargetSlotName;
+		NewStaticMaterial.MaterialInterface = std::shared_ptr<UMaterial>(UObjectManager::Get().CreateObject<UMaterial>());
+		NewStaticMaterial.MaterialSlotName = TargetSlotName;
 
-        OutMaterials.push_back(NewMaterial);
-    }
+		if (MatchedMaterial)
+		{
+			if (!MatchedMaterial->map_Kd.empty())
+			{
+				NewStaticMaterial.MaterialInterface->DiffuseTextureFilePath = MatchedMaterial->map_Kd;
+				NewStaticMaterial.MaterialInterface->DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+			}
+			else
+			{
+				NewStaticMaterial.MaterialInterface->DiffuseColor = { MatchedMaterial->Kd.X, MatchedMaterial->Kd.Y, MatchedMaterial->Kd.Z, 1.0f };
+			}
+		}
+		else
+		{
+			NewStaticMaterial.MaterialInterface->DiffuseColor = FallbackColor4;
+		}
+
+		OutMaterials.push_back(NewStaticMaterial);
+	}
 
     // "None" 슬롯이 존재했다면 맨 마지막에 배치
 	if (bHasNoneSlot)
     {
-        FStaticMaterial DefaultMaterial;
-        DefaultMaterial.MaterialSlotName = "None";
-        // TODO: UObject 팩토리 사용하도록 수정. 혹은 엔진 초기화 시점에 기본 머티리얼 하나 만들어서 참조하도록 수정
-        DefaultMaterial.MaterialInterface = std::make_shared<UMaterial>();
-        DefaultMaterial.MaterialInterface->DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+        FStaticMaterial NewDefaultStaticMaterial;
+        NewDefaultStaticMaterial.MaterialSlotName = "None";
+        NewDefaultStaticMaterial.MaterialInterface = std::shared_ptr<UMaterial>(UObjectManager::Get().CreateObject<UMaterial>());
+		NewDefaultStaticMaterial.MaterialInterface->DiffuseColor = FallbackColor4;
 
-        OutMaterials.push_back(DefaultMaterial);
+        OutMaterials.push_back(NewDefaultStaticMaterial);
     }
 
     // Phase 2: 파편화된 섹션들의 면(Face)을 머티리얼 인덱스 기준으로 재그룹화

@@ -1,8 +1,8 @@
-﻿#include "Editor/Viewport/OverlayStatSystem.h"
+﻿#include "Editor/Subsystem/OverlayStatSystem.h"
 
 #include "Editor/EditorEngine.h"
-#include "Engine/Core/Timer.h"
-#include "Engine/Object/EngineStatics.h"
+#include "Engine/Profiling/Timer.h"
+#include "Engine/Profiling/MemoryStats.h"
 
 TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& Editor) const
 {
@@ -35,25 +35,25 @@ TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& E
 
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "Memory Allocated : %u", EngineStatics::GetTotalAllocationBytes());
+			snprintf(Buffer, sizeof(Buffer), "Memory Allocated : %u", MemoryStats::GetTotalAllocationBytes());
 			Group.Lines.push_back(FString(Buffer));
 		}
 
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "Times Allocated : %u", EngineStatics::GetTotalAllocationCount());
+			snprintf(Buffer, sizeof(Buffer), "Times Allocated : %u", MemoryStats::GetTotalAllocationCount());
 			Group.Lines.push_back(FString(Buffer));
 		}
 
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "PixelShader Memory : %u", EngineStatics::GetPixelShaderMemory());
+			snprintf(Buffer, sizeof(Buffer), "PixelShader Memory : %u", MemoryStats::GetPixelShaderMemory());
 			Group.Lines.push_back(FString(Buffer));
 		}
 
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "VertexShader Memory : %u", EngineStatics::GetVertexShaderMemory());
+			snprintf(Buffer, sizeof(Buffer), "VertexShader Memory : %u", MemoryStats::GetVertexShaderMemory());
 			Group.Lines.push_back(FString(Buffer));
 		}
 
