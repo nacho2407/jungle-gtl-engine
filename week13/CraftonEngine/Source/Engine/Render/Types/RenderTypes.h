@@ -17,21 +17,16 @@
 #pragma comment(lib, "dxgi")
 #include "Core/CoreTypes.h"
 
-//	Primtive Type Enum
-enum class EPrimitiveType
+//	Mesh Shape Enum — MeshBufferManager 조회용 (순수 기하 형상)
+enum class EMeshShape
 {
-	EPT_Cube,
-	EPT_Sphere,
-	EPT_Plane,
-	EPT_Quad,
-	EPT_TransGizmo,
-	EPT_RotGizmo,
-	EPT_ScaleGizmo,
-	EPT_Axis,
-	EPT_Grid,
-	EPT_Text,		// TextRenderComponent — MeshBuffer 없음, FontBatcher가 처리
-	EPT_SubUV,		// SubUVComponent     — MeshBuffer 없음, SubUVBatcher가 처리
-	EPT_StaticMesh,	// StaticMeshComponent
+	Cube,
+	Sphere,
+	Plane,
+	Quad,
+	TransGizmo,
+	RotGizmo,
+	ScaleGizmo,
 };
 
 enum class ERenderPass : uint32
@@ -44,7 +39,8 @@ enum class ERenderPass : uint32
 	Outline,
 	Editor,
 	Grid,
-	DepthLess,
+	GizmoOuter,
+	GizmoInner,
 	OverlayFont,
 	MAX
 };
