@@ -1,8 +1,6 @@
 ﻿#pragma once
 
 #include "Render/Common/RenderTypes.h"
-
-#include <string>
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
 #include "Runtime/ViewportClient.h"
@@ -79,12 +77,23 @@ public:
 	EEditorViewportType GetViewportType() const { return ViewportType; }
 	void SetViewportType(EEditorViewportType InType) { ViewportType = InType; }
 
+	FSceneViewport* GetViewport() { return Viewport; }
+	const FSceneViewport* GetViewport() const { return Viewport; }
 	void SetViewport(FSceneViewport* InViewport) { Viewport = InViewport; }
+
+	FEditorViewportState* GetViewportState() { return State; }
+	const FEditorViewportState* GetViewportState() const { return State; }
 	void SetState(FEditorViewportState* InState) { State = InState; }
 
 	// ViewportType에 맞게 카메라 초기화.
 	void ApplyCameraMode();
-
+	
+	// 현재 EditorViewportClient가 참조하는 Viewport 에서 독점 조작이 진행 중인지 반환합니다.
+	bool IsActiveOperation() const
+	{
+		return bRightMouseRotating || bRightMousePanning
+			|| bMiddleMousePanning || bAltLeftMouseOrbiting;
+	}
 private:
 	void TickInput(float DeltaTime);
 	void TickInteraction(float DeltaTime);
