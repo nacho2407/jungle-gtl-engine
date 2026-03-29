@@ -7,6 +7,7 @@ REGISTER_FACTORY(UGizmoComponent)
 
 #include <cfloat>
 #include <cmath>
+
 UGizmoComponent::UGizmoComponent()
 {
 	GizmoMeshData = &FEditorMeshLibrary::GetTranslationGizmo();
@@ -141,14 +142,14 @@ void UGizmoComponent::RotateTarget(float DragAmount)
 	if (!TargetActor || !TargetActor->GetRootComponent()) return;
 
 	FVector RotationAxis = GetVectorForAxis(SelectedAxis);
-	FMatrix DeltaMatrix = FMatrix::MakeRotationAxis(RotationAxis, DragAmount);
+	FQuat DeltaQuat(RotationAxis, DragAmount);
 
 	auto ApplyRotation = [&](AActor* Actor)
 		{
 			if (!Actor || !Actor->GetRootComponent()) return;
-			FMatrix CurMatrix = FMatrix::MakeRotationEuler(Actor->GetActorRotation());
-			FMatrix NewMatrix = CurMatrix * DeltaMatrix;
-			Actor->SetActorRotation(NewMatrix.GetEuler());
+			FQuat CurQuat = FQuat::MakeFromEuler(Actor->GetActorRotation());
+			FQuat NewQuat = CurQuat * DeltaQuat;
+			Actor->SetActorRotation(NewQuat.Euler());
 		};
 
 	if (AllSelectedActors)
@@ -233,7 +234,7 @@ bool UGizmoComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 	}
 
 	const FMatrix InvWorld = GetWorldMatrix().GetInverse();
-	FVector LocalOrigin = InvWorld.TransformPositionWithW(Ray.Origin);
+	FVector LocalOrigin = InvWorld.TransformPosition(Ray.Origin);
 	FVector LocalDirection = InvWorld.TransformVector(Ray.Direction);
 	LocalDirection.NormalizeSafe();
 
@@ -263,7 +264,7 @@ bool UGizmoComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 	}
 
 	const FVector LocalHitPoint = LocalOrigin + (LocalDirection * ClosestT);
-	const FVector WorldHitPoint = GetWorldMatrix().TransformPositionWithW(LocalHitPoint);
+	const FVector WorldHitPoint = GetWorldMatrix().TransformPosition(LocalHitPoint);
 	OutHitResult.Distance = FVector::Distance(Ray.Origin, WorldHitPoint);
 	OutHitResult.Location = WorldHitPoint;
 	OutHitResult.HitComponent = this;
@@ -307,7 +308,19 @@ void UGizmoComponent::UpdateLinearDrag(const FRay& Ray)
 {
 	FVector AxisVector = GetVectorForAxis(SelectedAxis);
 
-	FVector PlaneNormal = AxisVector.CrossProduct(Ray.Direction);
+	FVector ViewDir = (GetWorldLocation() - Ray.Origin);
+	ViewDir.NormalizeSafe();
+
+	// 고정된 뷰 벡터와 축을 외적하여 마우스를 아무리 움직여도 뒤집히지 않는 고정 평면을 만든다.
+	FVector PlaneNormal = AxisVector.CrossProduct(ViewDir);
+
+	// 시선과 기즈모 축이 완벽하게 일직선이 되어 외적 결과가 영벡터가 되는 특수 경우 예외 처리
+	if (PlaneNormal.SizeSquared() < 1e-6f)
+	{
+		PlaneNormal = AxisVector.CrossProduct(FVector::UpVector);
+	}
+	PlaneNormal.NormalizeSafe();
+
 	FVector ProjectDir = PlaneNormal.CrossProduct(AxisVector);
 
 	float Denom = Ray.Direction.DotProduct(ProjectDir);
@@ -353,7 +366,7 @@ void UGizmoComponent::UpdateAngularDrag(const FRay& Ray)
 	FVector CenterToLast = (LastIntersectionLocation - GetWorldLocation()).Normalized();
 	FVector CenterToCurrent = (CurrentIntersectionLocation - GetWorldLocation()).Normalized();
 
-	float DotProduct = Clamp(CenterToLast.DotProduct(CenterToCurrent), -1.0f, 1.0f);
+	float DotProduct = MathUtil::Clamp(CenterToLast.DotProduct(CenterToCurrent), -1.0f, 1.0f);
 	float AngleRadians = std::acos(DotProduct);
 
 	FVector CrossProduct = CenterToLast.CrossProduct(CenterToCurrent);
@@ -368,25 +381,27 @@ void UGizmoComponent::UpdateAngularDrag(const FRay& Ray)
 
 void UGizmoComponent::UpdateHoveredAxis(int Index)
 {
+	if (IsHolding() || IsPressedOnHandle())
+	{
+		return;
+	}
+
+	// 조작 중이 아닐 때만 마우스 Raycast 결과에 따라 축을 갱신합니다.
 	if (Index < 0)
 	{
-		if (IsHolding() == false) SelectedAxis = -1;
+		SelectedAxis = -1;
 	}
 	else
 	{
-		if (IsHolding() == false)
+		const FMeshData* MeshData = GetActiveMeshData();
+		if (!MeshData)
 		{
-			const FMeshData* MeshData = GetActiveMeshData();
-			if (!MeshData)
-			{
-				SelectedAxis = -1;
-				return;
-			}
-
-			uint32 VertexIndex = MeshData->Indices[Index];
-			SelectedAxis = MeshData->Vertices[VertexIndex].SubID;
-
+			SelectedAxis = -1;
+			return;
 		}
+
+		uint32 VertexIndex = MeshData->Indices[Index];
+		SelectedAxis = MeshData->Vertices[VertexIndex].SubID;
 	}
 }
 
@@ -410,7 +425,6 @@ void UGizmoComponent::UpdateDrag(const FRay& Ray)
 	else
 	{
 		UpdateLinearDrag(Ray);
-
 	}
 }
 
@@ -418,6 +432,8 @@ void UGizmoComponent::DragEnd()
 {
 	bIsFirstFrameOfDrag = true;
 	SetHolding(false);
+	SetPressedOnHandle(false);
+	SelectedAxis = -1;
 }
 
 void UGizmoComponent::SetNextMode()
