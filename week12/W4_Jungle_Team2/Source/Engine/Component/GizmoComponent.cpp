@@ -7,6 +7,7 @@ REGISTER_FACTORY(UGizmoComponent)
 
 #include <cfloat>
 #include <cmath>
+
 UGizmoComponent::UGizmoComponent()
 {
 	GizmoMeshData = &FEditorMeshLibrary::GetTranslationGizmo();
@@ -307,7 +308,19 @@ void UGizmoComponent::UpdateLinearDrag(const FRay& Ray)
 {
 	FVector AxisVector = GetVectorForAxis(SelectedAxis);
 
-	FVector PlaneNormal = AxisVector.CrossProduct(Ray.Direction);
+	FVector ViewDir = (GetWorldLocation() - Ray.Origin);
+	ViewDir.NormalizeSafe();
+
+	// 고정된 뷰 벡터와 축을 외적하여 마우스를 아무리 움직여도 뒤집히지 않는 고정 평면을 만든다.
+	FVector PlaneNormal = AxisVector.CrossProduct(ViewDir);
+
+	// 시선과 기즈모 축이 완벽하게 일직선이 되어 외적 결과가 영벡터가 되는 특수 경우 예외 처리
+	if (PlaneNormal.SizeSquared() < 1e-6f)
+	{
+		PlaneNormal = AxisVector.CrossProduct(FVector::UpVector);
+	}
+	PlaneNormal.NormalizeSafe();
+
 	FVector ProjectDir = PlaneNormal.CrossProduct(AxisVector);
 
 	float Denom = Ray.Direction.DotProduct(ProjectDir);
