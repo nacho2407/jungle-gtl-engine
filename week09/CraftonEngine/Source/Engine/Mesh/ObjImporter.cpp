@@ -1,5 +1,6 @@
 ﻿#include "Mesh/ObjImporter.h"
 #include "Mesh/StaticMeshAsset.h"
+#include "Materials/Material.h"
 #include "Editor/UI/EditorConsoleWidget.h"
 #include <fstream>
 #include <sstream>
