@@ -3,6 +3,7 @@
 #include "Editor/EditorEngine.h"
 #include "Engine/Profiling/Timer.h"
 
+#include "Engine/Profiling/MemoryStats.h"
 #include "ImGui/imgui.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
@@ -34,8 +35,8 @@ void FEditorControlWidget::Render(float DeltaTime)
 
 	// Stats
 	ImGui::Text("FPS : %.1f", EditorEngine->GetTimer()->GetDisplayFPS());
-	ImGui::Text("Memory Allocated : %d", EngineStatics::GetTotalAllocationBytes());
-	ImGui::Text("Times Allocated : %d", EngineStatics::GetTotalAllocationCount());
+	ImGui::Text("Memory Allocated : %d", MemoryStats::GetTotalAllocationBytes());
+	ImGui::Text("Times Allocated : %d", MemoryStats::GetTotalAllocationCount());
 
 	SEPARATOR();
 
