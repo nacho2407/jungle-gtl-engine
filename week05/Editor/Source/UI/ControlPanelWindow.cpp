@@ -12,6 +12,7 @@
 #include "Actor/SubUVActor.h"
 #include "Actor/TextActor.h"
 #include "Component/TextComponent.h"
+#include "Component/SkyComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Camera/Camera.h"
 #include "Core/Paths.h"
@@ -27,6 +28,7 @@
 #include <chrono>
 
 #include "Actor/StaticMeshActor.h"
+#include "Math/MathUtility.h"
 #include "Obj/ObjManager.h"
 
 namespace
@@ -215,69 +217,70 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 			static int32 SpawnCount = 0;
 			const FString Name = FString(SpawnTypes[SpawnTypeIndex]) + "_Spawned_" + std::to_string(SpawnCount++);
 
-			// ⭐ 단 하나의 포인터로 통합 관리 (유령 액터 생성 방지)
 			AActor* NewActor = nullptr;
 
-			// ─── 1. 순수 컴포넌트 조립 방식 (Cube, Sphere, Plane, StaticMesh) ───
-			if (SpawnTypeIndex == 0 || SpawnTypeIndex == 1 || SpawnTypeIndex == 2 || SpawnTypeIndex == 7)
-			{
-				AActor* EmptyActor = Scene->SpawnActor<AActor>(Name);
-				if (EmptyActor)
-				{
-					// 빈 액터에 StaticMeshComponent 생성 및 부착
-					UStaticMeshComponent* MeshComp = FObjectFactory::ConstructObject<UStaticMeshComponent>(EmptyActor);
-					EmptyActor->AddOwnedComponent(MeshComp);
-					EmptyActor->SetRootComponent(MeshComp);
-
-					// 각 타입에 맞는 Mesh Data 장착
-					UStaticMesh* MeshData = nullptr;
-					if (SpawnTypeIndex == 0)      MeshData = FObjManager::GetPrimitiveCube();
-					else if (SpawnTypeIndex == 1) MeshData = FObjManager::GetPrimitiveSphere();
-					else if (SpawnTypeIndex == 2) MeshData = FObjManager::GetPrimitivePlane();
-					else if (SpawnTypeIndex == 7) MeshData = FObjManager::GetPrimitivePlane(); // (현재 7번도 Plane을 쓰도록 되어있음)
-
-					MeshComp->SetStaticMesh(MeshData);
-					NewActor = EmptyActor;
-				}
-			}
-			// ─── 2. 특수 액터 (AttachTest) ───
-			else if (SpawnTypeIndex == 3)
+			// ─── 1. 특수 액터 (미리 조립된 테스트용 액터) ───
+			if (SpawnTypeIndex == 3)
 			{
 				NewActor = Scene->SpawnActor<AAttachTestActor>(Name);
 			}
-			// ─── 3. 순수 컴포넌트 조립 방식 (SubUV) ───
-			else if (SpawnTypeIndex == 4)
+			// ─── 2. 순수 컴포넌트 조립 방식 (대통합!) ───
+			else
 			{
+				// 도화지가 될 텅 빈 액터 스폰
 				AActor* EmptyActor = Scene->SpawnActor<AActor>(Name);
+
 				if (EmptyActor)
 				{
-					USubUVComponent* SubUVComp = FObjectFactory::ConstructObject<USubUVComponent>(EmptyActor);
-					EmptyActor->AddOwnedComponent(SubUVComp);
-					EmptyActor->SetRootComponent(SubUVComp);
+					// [0, 1, 2, 7번] 스태틱 메시 계열 (Cube, Sphere, Plane)
+					if (SpawnTypeIndex == 0 || SpawnTypeIndex == 1 || SpawnTypeIndex == 2 || SpawnTypeIndex == 7)
+					{
+						UStaticMeshComponent* MeshComp = FObjectFactory::ConstructObject<UStaticMeshComponent>(EmptyActor);
+						EmptyActor->AddOwnedComponent(MeshComp);
+						EmptyActor->SetRootComponent(MeshComp);
+
+						UStaticMesh* MeshData = nullptr;
+						if (SpawnTypeIndex == 0)      MeshData = FObjManager::GetPrimitiveCube();
+						else if (SpawnTypeIndex == 1) MeshData = FObjManager::GetPrimitiveSphere();
+						else if (SpawnTypeIndex == 2) MeshData = FObjManager::GetPrimitivePlane();
+						else if (SpawnTypeIndex == 7) MeshData = FObjManager::GetPrimitivePlane();
+
+						MeshComp->SetStaticMesh(MeshData);
+					}
+					// [4번] SubUV 스프라이트
+					else if (SpawnTypeIndex == 4)
+					{
+						USubUVComponent* SubUVComp = FObjectFactory::ConstructObject<USubUVComponent>(EmptyActor);
+						EmptyActor->AddOwnedComponent(SubUVComp);
+						EmptyActor->SetRootComponent(SubUVComp);
+					}
+					// [5번] 텍스트 (Text)
+					else if (SpawnTypeIndex == 5)
+					{
+						UTextComponent* TextComp = FObjectFactory::ConstructObject<UTextComponent>(EmptyActor);
+						EmptyActor->AddOwnedComponent(TextComp);
+						EmptyActor->SetRootComponent(TextComp);
+
+						TextComp->SetText(SpawnTextBuffer[0] != '\0' ? SpawnTextBuffer : "Text");
+					}
+					// [6번] 하늘 (SkySphere)
+					else if (SpawnTypeIndex == 6)
+					{
+						USkyComponent* SkyComp = FObjectFactory::ConstructObject<USkyComponent>(EmptyActor);
+						EmptyActor->AddOwnedComponent(SkyComp);
+						EmptyActor->SetRootComponent(SkyComp);
+
+						// USkyComponent는 스스로 Initialize()에서 FObjManager::GetPrimitiveSky()를 세팅하므로 
+						// 여기서 따로 메쉬를 넣어줄 필요가 없습니다!
+					}
+
 					NewActor = EmptyActor;
 				}
 			}
-			// ─── 4. 기존 프리셋 액터 (Text) ───
-			else if (SpawnTypeIndex == 5)
-			{
-				ATextActor* TextActor = Scene->SpawnActor<ATextActor>(Name);
-				if (TextActor)
-				{
-					if (UTextComponent* TextComponent = TextActor->GetTextComponent())
-					{
-						TextComponent->SetText(SpawnTextBuffer[0] != '\0' ? SpawnTextBuffer : "Text");
-					}
-					NewActor = TextActor;
-				}
-			}
-			// ─── 5. 특수 액터 (SkySphere) ───
-			else if (SpawnTypeIndex == 6)
-			{
-				NewActor = Scene->SpawnActor<ASkySphereActor>(Name);
-			}
 
 			// ─── 마무리: 에디터 선택 및 로그 출력 ───
-			if (NewActor && !NewActor->IsA<ASkySphereActor>())
+			// 하늘(6번)은 배경이므로 에디터에서 자동 선택되지 않게 막아둠
+			if (NewActor && SpawnTypeIndex != 6)
 			{
 				Engine->SetSelectedActor(NewActor);
 			}

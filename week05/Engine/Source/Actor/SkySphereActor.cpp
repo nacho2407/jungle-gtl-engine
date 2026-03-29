@@ -17,7 +17,7 @@ void ASkySphereActor::PostSpawnInitialize()
 	std::shared_ptr<FMaterial> SkyMat = FMaterialManager::Get().FindByName("M_Sky");
 	if (SkyMat)
 	{
-		SkyComponent->SetMaterial(SkyMat.get());
+		// SkyComponent->SetMaterial(SkyMat.get());
 	}
 	// SceneComponent need SetRelativeScale3D,  SetWorldLocation
 	if (USceneComponent* Root = GetRootComponent())

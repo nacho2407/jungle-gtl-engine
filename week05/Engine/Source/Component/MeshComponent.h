@@ -10,7 +10,7 @@ public:
 
 	void SetMaterial(int32 Index, const std::shared_ptr<FMaterial>& InMaterial);
 	std::shared_ptr<FMaterial> GetMaterial(int32 Index) const;
-	int32 GetNumMaterials() const { return Materials.size(); }
+	int32 GetNumMaterials() const { return static_cast<int32>(Materials.size()); }
 
 	// virtual void Serialize(FArchive& Ar) override;
 
