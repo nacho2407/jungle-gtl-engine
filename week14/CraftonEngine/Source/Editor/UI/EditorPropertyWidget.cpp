@@ -11,6 +11,7 @@
 #include "Resource/ResourceManager.h"
 #include "Object/FName.h"
 #include "Object/ObjectIterator.h"
+#include "Materials/Material.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -399,6 +400,29 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 				}
 				if (bSelected)
 					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+		break;
+	}
+	case EPropertyType::Material:
+	{
+		FString* Val = static_cast<FString*>(Prop.ValuePtr);
+		if (ImGui::BeginCombo(Prop.Name, Val->c_str()))
+		{
+			for (TObjectIterator<UMaterial> It; It; ++It)
+			{
+				//UMaterial* MaterialAsset = *It;
+				//if (!MaterialAsset) continue;
+				//const FString& AssetPath = MaterialAsset->GetAssetPathFileName();
+				//bool bSelected = (*Val == AssetPath);
+				//if (ImGui::Selectable(AssetPath.c_str(), bSelected))
+				//{
+				//	*Val = AssetPath;
+				//	bChanged = true;
+				//}
+				//if (bSelected)
+				//	ImGui::SetItemDefaultFocus();
 			}
 			ImGui::EndCombo();
 		}
