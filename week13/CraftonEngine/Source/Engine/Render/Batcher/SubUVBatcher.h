@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "BatcherBase.h"
 #include "Core/CoreTypes.h"
 #include "Core/EngineTypes.h"
 #include "Core/ResourceTypes.h"
@@ -12,10 +13,10 @@
 // SubUV 아틀라스 내 한 프레임의 UV 정보
 struct FSubUVFrameInfo
 {
-    float U;      // 좌상단 U (0~1)
-    float V;      // 좌상단 V (0~1)
-    float Width;  // 프레임 UV 너비
-    float Height; // 프레임 UV 높이
+	float U;      // 좌상단 U (0~1)
+	float V;      // 좌상단 V (0~1)
+	float Width;  // 프레임 UV 너비
+	float Height; // 프레임 UV 높이
 };
 
 struct FSRVBatch
@@ -26,63 +27,47 @@ struct FSRVBatch
 	int32  BaseVertex;   // DrawIndexed의 BaseVertexLocation
 };
 
-// FSubUVBatcher — SubUV 스프라이트를 배치로 모아 1회 드로우콜로 처리
+// FSubUVBatcher — SubUV 스프라이트를 배치로 모아 드로우콜로 처리
 //
 // 사용 흐름:
-//   1) Create()      — 장치 초기화 (셰이더, 샘플러, Dynamic VB/IB). 텍스처는 로드하지 않습니다.
+//   1) Create()      — 장치 초기화 (셰이더, 샘플러, Dynamic VB/IB)
 //   2) Clear()       — 매 프레임 시작 시 이전 스프라이트 제거
 //   3) AddSprite()   — 프레임 인덱스 기반 스프라이트 쿼드 누적
-//   4) Flush()       — Dynamic VB/IB 업로드 + DrawIndexed 1회 호출
-//                      SRV는 ResourceManager가 소유하는 FParticleResource에서 전달받습니다.
+//   4) DrawBatch()   — Dynamic VB/IB 업로드 + SRV별 DrawIndexed 호출
 //   5) Release()     — DX 리소스 해제
-class FSubUVBatcher
+class FSubUVBatcher : public FBatcherBase
 {
 public:
-    FSubUVBatcher()  = default;
-    ~FSubUVBatcher() = default;
+	void Create(ID3D11Device* InDevice);
+	void Release();
 
-    // 공유 리소스 초기화 (셰이더, 샘플러, Dynamic VB/IB).
-    // 텍스처는 로드하지 않으며 ResourceManager가 소유합니다.
-    void Create(ID3D11Device* InDevice);
-    void Release();
+	// 월드 좌표 위에 빌보드 스프라이트 쿼드 추가 (배치에 누적)
+	void AddSprite(ID3D11ShaderResourceView* SRV,
+		const FVector& WorldPos,
+		const FVector& CamRight,
+		const FVector& CamUp,
+		const FVector& WorldScale,
+		uint32 FrameIndex,
+		uint32 Columns,
+		uint32 Rows,
+		float Width  = 1.0f,
+		float Height = 1.0f);
 
-    // 월드 좌표 위에 빌보드 스프라이트 쿼드 추가 (배치에 누적).
-    // Columns / Rows — 호출 시 FParticleResource에서 전달받은 아틀라스 그리드 크기
-    void AddSprite(ID3D11ShaderResourceView* SRV, 
-		           const FVector& WorldPos,
-                   const FVector& CamRight,
-                   const FVector& CamUp,
-				   const FVector& WorldScale,
-                   uint32 FrameIndex,
-                   uint32 Columns,
-                   uint32 Rows,
-                   float Width  = 1.0f,
-                   float Height = 1.0f);
+	void Clear();
 
-    // 이번 프레임에 누적된 스프라이트 전체 제거
-    void Clear();
+	// Dynamic VB/IB 업로드 + SRV별 DrawIndexed
+	void DrawBatch(ID3D11DeviceContext* Context);
 
-    // Dynamic VB/IB 업로드 + DrawIndexed 1회 호출
-    // SRV — ResourceManager 소유 FParticleResource의 SRV를 전달
-    void Flush(ID3D11DeviceContext* Context);
-
-    uint32 GetSpriteCount() const { return static_cast<uint32>(Vertices.size() / 4); }
+	uint32 GetSpriteCount() const { return static_cast<uint32>(Vertices.size() / 4); }
 
 private:
-    TArray<FTextureVertex> Vertices;
-    TArray<uint32>         Indices;
+	TArray<FTextureVertex> Vertices;
+	TArray<uint32>         Indices;
 	TArray<FSRVBatch>      Batches;
 
-    ID3D11Buffer* VertexBuffer = nullptr;
-    ID3D11Buffer* IndexBuffer  = nullptr;
+	// 고유 리소스
+	ID3D11SamplerState* SamplerState = nullptr;
+	FShader             SubUVShader;
 
-    uint32 MaxVertexCount = 0;
-    uint32 MaxIndexCount  = 0;
-
-    ID3D11Device*       Device       = nullptr; // 소유권 없음
-    ID3D11SamplerState* SamplerState = nullptr;
-    FShader             SubUVShader;
-
-    void CreateBuffers();
-    FSubUVFrameInfo GetFrameUV(uint32 FrameIndex, uint32 Columns, uint32 Rows) const;
+	FSubUVFrameInfo GetFrameUV(uint32 FrameIndex, uint32 Columns, uint32 Rows) const;
 };
