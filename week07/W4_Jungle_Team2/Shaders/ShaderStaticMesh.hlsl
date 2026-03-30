@@ -3,16 +3,14 @@
 cbuffer StaticMeshBuffer : register(b6)
 {
     float3 AmbientColor;    // Ka
-    float  Padding6_1;
     float3 DiffuseColor;    // Kd
-    float  Padding6_2;
     float3 SpecularColor;   // Ks
     float  Shininess;       // Ns
-
     // Camera
     float3 CameraWorldPos;
-    float  Padding6_3;
-    
+    // ScrollUV
+    float2 ScrollUV;
+    float Padding6_1;
 };
 
 Texture2D DiffuseMap  : register(t0);
@@ -45,7 +43,7 @@ PSInput mainVS(VSInput input)
     
     output.WorldPos = mul(float4(input.Position, 1.0f), Model);
     output.WorldNormal = input.Normal;
-    output.UV = input.UV;
+    output.UV = input.UV + ScrollUV;
     output.ClipPos = ApplyMVP(input.Position);
     return output;
 }
