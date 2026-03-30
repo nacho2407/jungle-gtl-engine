@@ -240,7 +240,7 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 						else if (SpawnTypeIndex == 2)  MeshData = FObjManager::LoadObjStaticMeshAsset((FPaths::MeshDir() / "PrimitivePlane.obj").string().c_str());
 						else if (SpawnTypeIndex == 7) 
 						{
-							std::filesystem::path ModelPath = FPaths::MeshDir() / "TestBox.obj";
+							std::filesystem::path ModelPath = FPaths::MeshDir() / "Godzilla.obj";
 							FString FullPath = ModelPath.string().c_str(); // FString으로 변환
 
 							MeshData = FObjManager::LoadObjStaticMeshAsset(FullPath);

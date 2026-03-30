@@ -414,6 +414,9 @@ void FRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 		{
 			if (Cmd.RenderMesh->Vertices.empty() && Cmd.RenderMesh->Indices.empty()) continue;
 
+			FString MatName = Cmd.Material ? Cmd.Material->GetOriginName() : "Unknown";
+			UE_LOG("[렌더러 확인] 현재 그리는 메쉬 섹션의 머티리얼 이름: %s", MatName.c_str());
+
 			if (Cmd.RenderMesh != CurrentMeshPtr)
 			{
 				Cmd.RenderMesh->Bind(DeviceContext);

@@ -140,6 +140,7 @@ inline UStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileN
 
 	for (const FString& MatName : FoundMaterials)
 	{
+		UE_LOG("%s", MatName.c_str());
 		auto Material = FMaterialManager::Get().FindByName(MatName);
 
 		if (!Material)
@@ -165,13 +166,11 @@ inline bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutM
 	std::string FilePathStr(FilePath.c_str());
 	std::ifstream File(FilePathStr); // 텍스트 모드로 열기
 
-	UE_LOG("여기는 옴?1");
 	if (!File.is_open())
 	{
 		UE_LOG("[FObjManager] Failed to open OBJ file: %s\n", FilePathStr.c_str());
 		return false;
 	}
-	UE_LOG("여기는 옴?2");
 
 	FObjParserContext Context{ OutMesh, OutMaterialNames };
 	FString Line;
