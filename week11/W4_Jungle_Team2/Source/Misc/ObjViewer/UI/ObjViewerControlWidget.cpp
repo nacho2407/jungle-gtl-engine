@@ -27,9 +27,9 @@ void FObjViewerControlWidget::Render(float DeltaTime)
 			FVector CamPos = Camera->GetLocation();
 			ImGui::Text("[Position] X: %.2f, Y: %.2f, Z: %.2f", CamPos.X, CamPos.Y, CamPos.Z);
 			
-			ImGui::DragFloat("Panning Speed", &Settings.CameraMoveSensitivity, 0.01f, 0.1f, 1.0f, "%.3f");
-            ImGui::DragFloat("Rotation Speed", &Settings.CameraRotateSensitivity, 0.01f, 0.01f, 0.5f, "%.3f");
-			ImGui::DragFloat("Dolly Speed", &Settings.CameraForwardSpeed, 10.0f, 500.0f, 2000.0f, "%.0f");
+			ImGui::DragFloat("Panning Speed", &Settings.CameraMoveSensitivity, 0.01f, 0.01f, 0.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
+            ImGui::DragFloat("Rotation Speed", &Settings.CameraRotateSensitivity, 0.01f, 0.01f, 0.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
+			ImGui::DragFloat("Dolly Speed", &Settings.CameraForwardSpeed, 5.0f, 100.0f, 2000.0f, "%.0f", ImGuiSliderFlags_Logarithmic);
 
 			if (ImGui::Button("Save Camera Position", ImVec2(-FLT_MIN, 0)))
 			{

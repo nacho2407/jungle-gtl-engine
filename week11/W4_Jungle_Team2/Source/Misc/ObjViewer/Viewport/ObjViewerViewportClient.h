@@ -30,11 +30,6 @@ struct FCameraGUIParameters
     FVector ResetTargetLocation;
     FQuat ResetStartRotation;
     FQuat ResetTargetRotation;
-
-    FVector ResetStartOrbitPivot;
-    FVector ResetTargetOrbitPivot;
-    float ResetStartOrbitDistance = 0.0f;
-    float ResetTargetOrbitDistance = 0.0f;
 };
 
 class FObjViewerViewportClient
