@@ -460,3 +460,8 @@ CMakeLists.txt
 
 # Gemini TODO
 GEMINI_TODO.md
+
+# Sample obj 폴더 안의 .obj 파일은 추적 허용
+!Editor/Content/
+!Editor/Content/Sample obj/
+!Editor/Content/Sample obj/**/*.obj
