@@ -85,4 +85,6 @@ public:
 	void Deactivate() override;
 
 	FMeshBuffer* GetMeshBuffer() const override;
+	void CollectRender(FRenderBus& Bus) const override;
+	void CollectSelection(FRenderBus& Bus) const override {}  // Gizmo는 선택 이펙트 없음
 };
