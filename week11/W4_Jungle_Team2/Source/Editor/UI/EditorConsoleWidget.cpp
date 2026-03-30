@@ -1,4 +1,7 @@
 ﻿#include "Editor/UI/EditorConsoleWidget.h"
+
+#include <algorithm>
+
 #include "Editor/Settings/EditorSettings.h"
 #include <algorithm>
 
