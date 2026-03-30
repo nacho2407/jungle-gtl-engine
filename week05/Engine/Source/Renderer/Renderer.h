@@ -87,8 +87,12 @@ public:
 	bool InitOutlineResources();
 	void RenderOutline(FRenderMesh* Mesh, const FMatrix& WorldMatrix, float OutlineScale = 1.05f);
 
+	// Texture 생성을 위해 따로 뺏음. - 추후 TextureManager 리펙토링이 완성되면 필요 없어질것.
+	bool CreateTextureFromSTB(ID3D11Device* Device, const char* FilePath, ID3D11ShaderResourceView** OutSRV);
+
 	// ─── 접근자 ───
 	FMaterial* GetDefaultMaterial() const { return DefaultMaterial.get(); }
+	FMaterial* GetDefaultTextureMaterial() const { return DefaultTextureMaterial.get(); }
 	size_t GetPrevCommandCount() const { return PrevCommandCount; }
 	std::unique_ptr<FRenderStateManager>& GetRenderStateManager() { return RenderStateManager; }
 	ID3D11Device* GetDevice() const { return Device; }
@@ -114,8 +118,6 @@ private:
 	void UpdateFrameConstantBuffer();
 	void UpdateObjectConstantBuffer(const FMatrix& WorldMatrix);
 	void ClearDepthBuffer();
-
-	bool CreateTextureFromSTB(ID3D11Device* Device, const char* FilePath, ID3D11ShaderResourceView** OutSRV);
 
 private:
 	std::unique_ptr<FRenderStateManager> RenderStateManager = nullptr;

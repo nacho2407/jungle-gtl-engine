@@ -203,7 +203,7 @@ bool FObjViewerEngine::LoadModelFromFile(const FString& FilePath, const FObjImpo
 		return false;
 	}
 
-	UStaticMeshComponent* MeshComponent = DisplayActor->GetStaticMeshComponent();
+	UStaticMeshComponent* MeshComponent = DisplayActor->GetComponentByClass<UStaticMeshComponent>();
 	if (!MeshComponent)
 	{
 		UE_LOG("[ObjViewer] Failed to get mesh component for OBJ: %s", FilePath.c_str());

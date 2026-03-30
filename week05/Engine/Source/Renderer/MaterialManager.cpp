@@ -364,6 +364,16 @@ TArray<FString> FMaterialManager::GetLoadedPaths() const
 	return Result;
 }
 
+TArray<FString> FMaterialManager::GetAllMaterialNames() const
+{
+	TArray<FString> Names;
+	for (const auto& Pair: NameCache)
+	{
+		Names.push_back(Pair.first);
+	} 
+	return Names;
+}
+
 void FMaterialManager::Clear()
 {
 	PathCache.clear();

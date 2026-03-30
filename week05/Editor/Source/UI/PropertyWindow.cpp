@@ -1,11 +1,17 @@
 #include "PropertyWindow.h"
 #include "EditorEngine.h"
 #include "Actor/Actor.h"
+#include "Component/StaticMeshComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextComponent.h"
 #include "Component/UUIDBillboardComponent.h"
+#include "Renderer/MeshData.h"
+#include "Renderer/RenderMesh.h"
+#include "Renderer/Material.h"
+#include "Renderer/MaterialManager.h"
+
 void FPropertyWindow::SetTarget(const FVector& Location, const FVector& Rotation,
-	const FVector& Scale, const char* ActorName)
+                                const FVector& Scale, const char* ActorName)
 {
 	EditLocation = Location;
 	EditRotation = Rotation;
@@ -152,6 +158,66 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 					}
 				}
 				ImGui::Unindent(8.0f);
+			}
+			if (UStaticMeshComponent* MeshComp = SelectedActor->GetComponentByClass<UStaticMeshComponent>())
+			{
+				if (ImGui::CollapsingHeader("Materials", ImGuiTreeNodeFlags_DefaultOpen))
+				{
+					ImGui::Indent(8.0f);
+
+					if (UStaticMesh* MeshData = MeshComp->GetStaticMesh())
+					{
+						// 현재 어떤 모델(Mesh)이 장착되어 있는지 보여줌
+						ImGui::TextDisabled("Mesh:");
+						ImGui::SameLine();
+						ImGui::Text("%s", MeshData->GetAssetPathFileName().c_str());
+						ImGui::Spacing();
+
+						// 매니저에서 모든 머티리얼 리스트 가져오기
+						TArray<FString> MatNames = FMaterialManager::Get().GetAllMaterialNames();
+						uint32 NumSections = MeshData->GetNumSections();
+
+						// 섹션 개수만큼 머티리얼 슬롯(콤보박스) 생성
+						for (uint32 i = 0; i < NumSections; ++i)
+						{
+							std::shared_ptr<FMaterial> CurrentMat = MeshComp->GetMaterial(i);
+							std::string CurrentMatName = CurrentMat ? CurrentMat->GetOriginName() : "None";
+
+							ImGui::PushID(i); // ID 충돌 방지
+							std::string Label = "Section " + std::to_string(i);
+
+							ImGui::PushItemWidth(180.f); // 콤보박스 너비 조절
+							if (ImGui::BeginCombo(Label.c_str(), CurrentMatName.c_str()))
+							{
+								for (const FString& MatName : MatNames)
+								{
+									bool bSelected = (CurrentMatName == MatName);
+									if (ImGui::Selectable(MatName.c_str(), bSelected))
+									{
+										// 선택 시 머티리얼 즉시 교체!
+										auto SelectedMaterial = FMaterialManager::Get().FindByName(MatName);
+										if (SelectedMaterial)
+										{
+											MeshComp->SetMaterial(i, SelectedMaterial);
+										}
+									}
+									if (bSelected)
+									{
+										ImGui::SetItemDefaultFocus();
+									}
+								}
+								ImGui::EndCombo();
+							}
+							ImGui::PopItemWidth();
+							ImGui::PopID();
+						}
+					}
+					else
+					{
+						ImGui::TextDisabled("No Static Mesh Assigned");
+					}
+					ImGui::Unindent(8.0f);
+				}
 			}
 		}
 	}

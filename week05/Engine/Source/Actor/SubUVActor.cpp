@@ -1,0 +1,16 @@
+#include "SubUVActor.h"
+#include "Asset/ObjManager.h"
+#include "Core/Paths.h"
+#include "Object/ObjectFactory.h"
+#include "Object/Class.h"
+#include "Component/SubUVComponent.h"
+
+IMPLEMENT_RTTI(ASubUVActor, AActor)
+
+void ASubUVActor::PostSpawnInitialize()
+{
+	SubUVComponent = FObjectFactory::ConstructObject<USubUVComponent>(this);
+	AddOwnedComponent(SubUVComponent);
+
+	AActor::PostSpawnInitialize();
+}

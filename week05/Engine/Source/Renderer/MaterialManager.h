@@ -29,6 +29,8 @@ public:
 	// 로드된 Material 파일 경로 목록 반환
 	TArray<FString> GetLoadedPaths() const;
 
+	TArray<FString> GetAllMaterialNames() const;
+
 	void Clear();
 
 private:

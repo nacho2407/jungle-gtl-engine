@@ -10,6 +10,7 @@
 #include <algorithm>
 
 #define STB_IMAGE_IMPLEMENTATION
+#include "Debug/EngineLog.h"
 #include "ThirdParty/stb_image.h"
 
 #pragma comment(lib, "d3d11.lib")
@@ -435,6 +436,8 @@ void FRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 		{
 			if (Cmd.RenderMesh->Vertices.empty() && Cmd.RenderMesh->Indices.empty()) continue;
 
+			FString MatName = Cmd.Material ? Cmd.Material->GetOriginName() : "Unknown";
+
 			if (Cmd.RenderMesh != CurrentMeshPtr)
 			{
 				Cmd.RenderMesh->Bind(DeviceContext);
@@ -451,9 +454,18 @@ void FRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 			UpdateObjectConstantBuffer(Cmd.WorldMatrix);
 
 			if (!Cmd.RenderMesh->Indices.empty())
-				DeviceContext->DrawIndexed(static_cast<UINT>(Cmd.RenderMesh->Indices.size()), 0, 0);
+			{
+				UINT DrawCount = (Cmd.IndexCount > 0) ? Cmd.IndexCount : static_cast<UINT>(Cmd.RenderMesh->Indices.size());
+				UINT StartLocation = Cmd.IndexStart;
+
+				FString MatName = Cmd.Material ? Cmd.Material->GetOriginName() : "Unknown";
+
+				DeviceContext->DrawIndexed(DrawCount, StartLocation, 0);
+			}
 			else
+			{
 				DeviceContext->Draw(static_cast<UINT>(Cmd.RenderMesh->Vertices.size()), 0);
+			}
 		}
 	}
 }

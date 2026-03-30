@@ -12,8 +12,6 @@ public:
 
 	virtual void PostSpawnInitialize() override;
 
-	UStaticMeshComponent* GetStaticMeshComponent() const { return StaticMeshComp; }
-
 private:
 	UStaticMeshComponent* StaticMeshComp = nullptr;
 };

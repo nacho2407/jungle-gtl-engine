@@ -199,6 +199,11 @@ std::filesystem::path FPaths::MeshDir()
 	return Root / "Assets/Meshes/";
 }
 
+std::filesystem::path FPaths::TextureDir()
+{
+	return Root / "Assets/Textures/";
+}
+
 std::filesystem::path FPaths::ContentDir()
 {
 	return Root / "Content/";
@@ -208,6 +213,7 @@ std::filesystem::path FPaths::ShaderCacheDir()
 {
 	return Root / "Content/Shaders/";
 }
+
 
 /*
 FString FPaths::Combine(const FString& Base, const FString& Relative)

@@ -45,7 +45,7 @@ namespace
 		UWorld* PreviewWorld = PreviewContext->World;
 		if (PreviewWorld->GetActors().empty())
 		{
-			AActor* PreviewActor = PreviewWorld->SpawnActor<AActor>("PreviewCube");
+			/*AActor* PreviewActor = PreviewWorld->SpawnActor<AActor>("PreviewCube");
 			if (PreviewActor)
 			{
 				UStaticMeshComponent* PreviewComponent = FObjectFactory::ConstructObject<UStaticMeshComponent>(PreviewActor);
@@ -54,7 +54,7 @@ namespace
 
 				PreviewComponent->SetStaticMesh(FObjManager::GetPrimitiveCube());
 				PreviewActor->SetActorLocation({ 0.0f, 0.0f, 0.0f });
-			}
+			}*/
 		}
 
 		if (UCameraComponent* PreviewCamera = PreviewWorld->GetActiveCameraComponent())
