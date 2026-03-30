@@ -20,7 +20,13 @@ static constexpr EEditorViewportType kViewportTypes[FViewportLayout::MaxViewport
 void FViewportLayout::Init(FWindowsWindow* InWindow, UWorld* World, FSelectionManager* SelectionManager)
 {
 	Window = InWindow;
-	// 초기 뷰포트 영역 설정
+
+	// Settings 에서 레이아웃 상태 복원
+	const FEditorSettings& S = FEditorSettings::Get();
+	bSingleViewport    = (S.ActiveViewportCount == 1);
+	SingleViewportIndex = S.SingleViewportIndex;
+
+	// 초기 뷰포트 영역 설정 (SyncViewportRects 에서 최종 덮어씌워짐)
 	InitViewportRect(static_cast<uint32>(Window->GetWidth()),
 		static_cast<uint32>(Window->GetHeight()));
 
@@ -130,7 +136,7 @@ void FViewportLayout::InitViewportRect(uint32 Width, uint32 Height)
 	const int32 W = static_cast<int32>(Width);
 	const int32 H = static_cast<int32>(Height);
 
-	// 처음엔 50:50 고정 분할
+	// 50:50 초기 분할 (이후 BuildViewportLayout → SyncViewportRects 에서 최종 반영)
 	const int32 HalfW = W / 2;
 	const int32 HalfH = H / 2;
 
@@ -209,6 +215,11 @@ void FViewportLayout::SetSingleViewportMode(bool bSingle, int32 Index)
 {
 	bSingleViewport     = bSingle;
 	SingleViewportIndex = (Index < 0) ? 0 : (Index >= MaxViewports ? MaxViewports - 1 : Index);
+
+	// Settings 즉시 반영 (Shutdown 의 SaveToFile 에서 파일에 기록됨)
+	FEditorSettings::Get().ActiveViewportCount = bSingleViewport ? 1 : MaxViewports;
+	FEditorSettings::Get().SingleViewportIndex = SingleViewportIndex;
+
 	SyncViewportRects();
 }
 
