@@ -90,6 +90,7 @@ void AStaticMeshActor::InitDefaultComponents()
 	CubeAsset = FObjManager::LoadObjStaticMesh("Data/TwoSectionPlane.obj", Device);
 	// CubeAsset = FObjManager::LoadObjStaticMesh("Data/Wolf/Wolf_One_obj.obj", Device);
 	CubeAsset = FObjManager::LoadObjStaticMesh("Data/Lumine/LumineModel.obj", Device);
+	// CubeAsset = FObjManager::LoadObjStaticMesh("Data/Lumia/Lumia.obj", Device);
 
 	// 컴포넌트에 에셋 할당 (Assign)
 	SM->SetStaticMesh(CubeAsset);
