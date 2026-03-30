@@ -54,14 +54,21 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 		return;
 	}
 
-	// Input Layout 생성
-	hr = InDevice->CreateInputLayout(InInputElements, InInputElementCount, vertexShaderCSO->GetBufferPointer(), vertexShaderCSO->GetBufferSize(), &InputLayout);
-	if (FAILED(hr))
+	// Input Layout 생성 (fullscreen triangle 등 입력 레이아웃이 없는 VS 지원)
+	if (InInputElements != nullptr && InInputElementCount > 0)
 	{
-		std::cerr << "Failed to create Input Layout (HRESULT: " << hr << ")" << std::endl;
-		vertexShaderCSO->Release();
-		pixelShaderCSO->Release();
-		return;
+		hr = InDevice->CreateInputLayout(InInputElements, InInputElementCount, vertexShaderCSO->GetBufferPointer(), vertexShaderCSO->GetBufferSize(), &InputLayout);
+		if (FAILED(hr))
+		{
+			std::cerr << "Failed to create Input Layout (HRESULT: " << hr << ")" << std::endl;
+			vertexShaderCSO->Release();
+			pixelShaderCSO->Release();
+			return;
+		}
+	}
+	else
+	{
+		InputLayout = nullptr;
 	}
 
 	vertexShaderCSO->Release();
