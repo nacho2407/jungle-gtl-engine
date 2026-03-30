@@ -97,7 +97,7 @@ void FEditorViewportOverlayWidget::RenderViewportToolbars()
 
 			char TypePopupId[32];
 			snprintf(TypePopupId, sizeof(TypePopupId), "##VTPopup_%d", i);
-			if (ImGui::BeginPopup(TypePopupId))
+			if (ImGui::BeginPopup(TypePopupId, ImGuiWindowFlags_NoMove))
 			{
 				ImGui::TextDisabled("Viewport Type");
 				ImGui::Separator();
@@ -161,7 +161,7 @@ void FEditorViewportOverlayWidget::RenderViewportToolbars()
 		char PopupId[32];
 		snprintf(PopupId, sizeof(PopupId), "##VMPopup_%d", i);
 
-		if (ImGui::BeginPopup(PopupId))
+		if (ImGui::BeginPopup(PopupId, ImGuiWindowFlags_NoMove))
 		{
 			ImGui::TextDisabled("View Mode");
 			ImGui::Separator();
