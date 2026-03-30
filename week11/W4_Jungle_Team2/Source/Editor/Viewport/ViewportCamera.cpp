@@ -35,16 +35,52 @@ FVector FViewportCamera::GetUpVector() const
 	return Rotation.GetUpVector();
 }
 
+FVector FViewportCamera::GetEffectiveRight() const
+{
+	if (bHasCustomLookDir)
+	{
+		// ViewMatrix 와 동일한 기준: Right = Cross(ViewUp, Forward)
+		return FVector::CrossProduct(ViewUp, CustomLookDir).GetSafeNormal();
+	}
+	return GetRightVector();
+}
+
+FVector FViewportCamera::GetEffectiveUp() const
+{
+	if (bHasCustomLookDir)
+	{
+		return ViewUp;
+	}
+	return GetUpVector();
+}
+
 FMatrix FViewportCamera::GetViewMatrix() const
 {
 	if (bIsViewDirty)
 	{
-		const FVector Forward = GetForwardVector().GetSafeNormal();
-		CachedViewMatrix = FMatrix::MakeViewLookAtLH(Location, Location + Forward);
+		const FVector Forward = bHasCustomLookDir
+			? CustomLookDir
+			: GetForwardVector().GetSafeNormal();
+		CachedViewMatrix = FMatrix::MakeViewLookAtLH(Location, Location + Forward, ViewUp);
 		bIsViewDirty = false;
 	}
 
 	return CachedViewMatrix;
+}
+
+void FViewportCamera::SetCustomLookDir(const FVector& InLookDir, const FVector& InViewUp)
+{
+	CustomLookDir = InLookDir.GetSafeNormal();
+	ViewUp = InViewUp.GetSafeNormal();
+	bHasCustomLookDir = true;
+	MarkViewDirty();
+}
+
+void FViewportCamera::ClearCustomLookDir()
+{
+	bHasCustomLookDir = false;
+	ViewUp = FVector(0.f, 0.f, 1.f);
+	MarkViewDirty();
 }
 
 FMatrix FViewportCamera::GetProjectionMatrix() const
