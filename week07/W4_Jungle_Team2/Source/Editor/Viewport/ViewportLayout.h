@@ -29,6 +29,7 @@ public:
 	// Lifecycle
 	void Init(FWindowsWindow* InWindow, UWorld* World, FSelectionManager* SelectionManager);
 	void Shutdown();
+	void UpdateHoverStates();
 	void Tick(float DeltaTime);
 	void OnWindowResized(uint32 Width, uint32 Height);
 

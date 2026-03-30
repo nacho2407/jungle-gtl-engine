@@ -31,6 +31,7 @@ public:
 
 	// 직교 뷰의 Custom LookDir 를 반영한 실제 화면 오른쪽/위 벡터
 	// Pan / 기타 입력에서 올바른 세계 축을 구하기 위해 사용합니다.
+	FVector GetEffectiveForward() const;
 	FVector GetEffectiveRight() const;
 	FVector GetEffectiveUp() const;
 
