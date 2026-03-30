@@ -43,6 +43,13 @@ public:
 		const FVector& WorldScale,
 		float Scale = 1.0f);
 
+	// 스크린 좌표 위에 빌보드 텍스트 추가	 (배치에 누적)
+	void AddText2D(const FString& Text, 
+		const FVector2& ScreenPos, 
+		float ViewportWidth, 
+		float ViewportHeight, 
+		float Scale = 1.0f);
+
 	// 이번 프레임 누적 텍스트 초기화
 	void Clear();
 
