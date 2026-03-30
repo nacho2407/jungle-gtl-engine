@@ -12,8 +12,20 @@
 #include "Object/FName.h"
 #include "Object/ObjectIterator.h"
 #include "Materials/Material.h"
+#include "Mesh/ObjManager.h"
+#include "Mesh/StaticMesh.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
+
+static FString RemoveExtension(const FString& Path)
+{
+	size_t DotPos = Path.find_last_of('.');
+	if (DotPos == FString::npos)
+	{
+		return Path;
+	}
+	return Path.substr(0, DotPos);
+}
 
 void FEditorPropertyWidget::Render(float DeltaTime)
 {
@@ -387,18 +399,31 @@ bool FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 	case EPropertyType::StaticMeshRef:
 	{
 		FString* Val = static_cast<FString*>(Prop.ValuePtr);
-		if (ImGui::BeginCombo(Prop.Name.c_str(), Val->c_str()))
+
+		FString Preview = *Val;
+		if (Preview.empty()) Preview = "None";
+
+		if (ImGui::BeginCombo(Prop.Name.c_str(), Preview.c_str()))
 		{
-			for (TObjectIterator<UStaticMesh> It; It; ++It)
+			bool bSelectedNone = (*Val == "None");
+			if (ImGui::Selectable("None", bSelectedNone))
 			{
-				UStaticMesh* MeshAsset = *It;
-				if (!MeshAsset) continue;
-				const FString& AssetPath = MeshAsset->GetAssetPathFileName();
-				if (AssetPath.empty()) continue;
-				bool bSelected = (*Val == AssetPath);
-				if (ImGui::Selectable(AssetPath.c_str(), bSelected))
+				*Val = "None";
+				bChanged = true;
+			}
+			if (bSelectedNone)
+				ImGui::SetItemDefaultFocus();
+
+			const TArray<FMeshAssetListItem>& MeshFiles = FObjManager::GetAvailableMeshFiles();
+			for (const FMeshAssetListItem& Item : MeshFiles)
+			{
+				bool bSelected = (*Val == Item.FullPath);
+
+				FString Label = Item.DisplayName;
+
+				if (ImGui::Selectable(Label.c_str(), bSelected))
 				{
-					*Val = AssetPath;
+					*Val = Item.FullPath;
 					bChanged = true;
 				}
 				if (bSelected)

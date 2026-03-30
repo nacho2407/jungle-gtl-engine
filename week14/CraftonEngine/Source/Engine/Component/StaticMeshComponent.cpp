@@ -169,7 +169,14 @@ void UStaticMeshComp::PostEditProperty(const char* PropertyName)
 		else
 		{
 			ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-			UStaticMesh* Loaded = FObjManager::LoadObjStaticMesh(StaticMeshPath, Device);
+			UStaticMesh* Loaded = nullptr;
+
+			size_t DotPos = StaticMeshPath.find_last_of('.');
+			FString Ext = (DotPos != FString::npos) ? StaticMeshPath.substr(DotPos) : "";
+
+			if (Ext == ".bin") Loaded = FObjManager::LoadBinStaticMesh(StaticMeshPath, Device);
+			else if (Ext == ".obj") Loaded = FObjManager::LoadObjStaticMesh(StaticMeshPath, Device);
+			
 			SetStaticMesh(Loaded);
 		}
 		CacheLocalBounds();

@@ -1,17 +1,79 @@
 ﻿#include "Mesh/ObjManager.h"
 #include "Mesh/StaticMesh.h"
+#include "Engine/Platform/Paths.h"
+#include <filesystem>
 
 std::map<FString, UStaticMesh*> FObjManager::StaticMeshCache;
+TArray<FMeshAssetListItem> FObjManager::AvailableMeshFiles;
 
 FString FObjManager::GetBinaryFilePath(const FString& OriginalPath)
 {
-	size_t DotPos = OriginalPath.find_last_of('.');
-	if (DotPos != FString::npos)
+	std::filesystem::path SrcPath(OriginalPath);
+	std::wstring Ext = SrcPath.extension().wstring();
+
+	// 이미 bin 경로가 들어온 경우에는 그대로 사용
+	if (Ext == L".bin")
 	{
-		return OriginalPath.substr(0, DotPos) + ".bin";
+		return OriginalPath;
 	}
-	return OriginalPath + ".bin";
+
+	// obj 등 원본 메시 경로가 들어온 경우에는 MeshCache 아래에 bin 생성
+	std::wstring CacheDir = FPaths::RootDir() + L"Asset\\MeshCache\\";
+	FPaths::CreateDir(CacheDir);
+
+	std::filesystem::path BinPath = std::filesystem::path(CacheDir) / SrcPath.stem();
+	BinPath += L".bin";
+
+	return FPaths::ToUtf8(BinPath.wstring());
 }
+
+void FObjManager::ScanMeshAssets()
+{
+	AvailableMeshFiles.clear();
+
+	auto AddFilesFromRoot = [](const std::filesystem::path& RootPath, const wchar_t* TargetExt, TArray<FMeshAssetListItem>& OutFiles)
+		{
+			if (!std::filesystem::exists(RootPath))
+			{
+				return;
+			}
+
+			for (const auto& Entry : std::filesystem::recursive_directory_iterator(RootPath))
+			{
+				if (!Entry.is_regular_file())
+				{
+					continue;
+				}
+
+				const std::filesystem::path& Path = Entry.path();
+				if (Path.extension() != TargetExt)
+				{
+					continue;
+				}
+
+				std::filesystem::path RelativePath = std::filesystem::relative(Path, RootPath);
+
+				FMeshAssetListItem Item;
+				Item.DisplayName = FPaths::ToUtf8(RelativePath.wstring());
+				Item.FullPath = FPaths::ToUtf8(Path.wstring());
+
+				OutFiles.push_back(Item);
+			}
+		};
+
+	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Data\\";
+	const std::filesystem::path MeshCacheRoot = FPaths::RootDir() + L"Asset\\MeshCache\\";
+
+	AddFilesFromRoot(DataRoot, L".obj", AvailableMeshFiles);
+	AddFilesFromRoot(MeshCacheRoot, L".bin", AvailableMeshFiles);
+
+}
+
+const TArray<FMeshAssetListItem>& FObjManager::GetAvailableMeshFiles()
+{
+	return AvailableMeshFiles;
+}
+
 
 UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11Device* InDevice)
 {
@@ -30,5 +92,20 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 	// 캐시 등록
 	StaticMeshCache[PathFileName] = StaticMesh;
 
+	return StaticMesh;
+}
+
+UStaticMesh* FObjManager::LoadBinStaticMesh(const FString& BinPath, ID3D11Device* InDevice)
+{
+	auto It = StaticMeshCache.find(BinPath);
+	if (It != StaticMeshCache.end())
+	{
+		return It->second;
+	}
+
+	UStaticMesh* StaticMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
+	StaticMesh->Build(BinPath, InDevice);
+
+	StaticMeshCache[BinPath] = StaticMesh;
 	return StaticMesh;
 }
