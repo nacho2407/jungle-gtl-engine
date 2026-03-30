@@ -333,7 +333,7 @@ void FRenderer::ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand
 		Device.SetDepthStencilState(TargetDepth);
 		Device.SetBlendState(TargetBlend);
 
-		BindShaderByType(Cmd, Context);
+		BindShaderByType(Cmd, Context, LastCommandType);
 		if (Cmd.Type == ERenderCommandType::PostProcessOutline)
 		{
 			DrawPostProcessOutline(Context);
@@ -371,7 +371,6 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
 	}
 }
 
-// 헤더 파일의 선언도 수정 필요: void BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContext* Context, ERenderCommandType& LastCommandType);
 void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContext* Context, ERenderCommandType& LastCommandType)
 {
     bool bTypeChanged = (LastCommandType != InCmd.Type);
@@ -411,14 +410,6 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 		Context->PSSetConstantBuffers(5, 1, &cb);
 		break;
 	}
-
-	case ERenderCommandType::StaticMesh:
-		Resources.StaticMeshShader.Bind(Context);
-		Resources.StaticMeshConstantBuffer.Update(Context, &InCmd.Constants.StaticMesh, sizeof(FStaticMeshConstants));
-		{
-			ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
-			Context->VSSetConstantBuffers(1, 1, &cb);
-			Context->PSSetConstantBuffers(1, 1, &cb);
 
     case ERenderCommandType::StaticMesh:
         Resources.StaticMeshConstantBuffer.Update(Context, &InCmd.Constants.StaticMesh, sizeof(FStaticMeshConstants));
