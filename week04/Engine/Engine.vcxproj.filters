@@ -355,6 +355,7 @@
       <Filter>Source\Core\Runtime\Slate\Window</Filter>
     </ClCompile>
     <ClCompile Include="Source\Renderer\D3D11\D3D11WidgetRenderer.cpp" />
+    <ClCompile Include="Source\Renderer\Text\TextLayout.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Mesh\Cone.h">
@@ -797,6 +798,9 @@
     </ClInclude>
     <ClInclude Include="Source\Renderer\D3D11\D3D11WidgetRenderer.h" />
     <ClInclude Include="Source\Renderer\WidgetRenderData.h" />
+    <ClInclude Include="Source\Renderer\SceneFrameRenderData.h" />
+    <ClInclude Include="Source\Renderer\SceneRenderData.h" />
+    <ClInclude Include="Source\Renderer\Text\TextLayout.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

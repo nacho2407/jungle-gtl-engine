@@ -142,6 +142,7 @@
     <ClInclude Include="Source\Renderer\Submitter\TextSubmitter.h" />
     <ClInclude Include="Source\Renderer\Submitter\WorldAxesSubmitter.h" />
     <ClInclude Include="Source\Renderer\Submitter\WorldGridSubmitter.h" />
+    <ClInclude Include="Source\Renderer\Text\TextLayout.h" />
     <ClInclude Include="Source\Renderer\Types\AxisColors.h" />
     <ClInclude Include="Source\Renderer\Types\BasicMeshType.h" />
     <ClInclude Include="Source\Renderer\Types\EditorShowFlags.h" />
@@ -246,6 +247,7 @@
     <ClCompile Include="Source\Renderer\Submitter\TextSubmitter.cpp" />
     <ClCompile Include="Source\Renderer\Submitter\WorldAxesSubmitter.cpp" />
     <ClCompile Include="Source\Renderer\Submitter\WorldGridSubmitter.cpp" />
+    <ClCompile Include="Source\Renderer\Text\TextLayout.cpp" />
     <ClCompile Include="Source\SceneIO\SceneJson.cpp" />
     <ClCompile Include="Source\SceneIO\SceneSerializer.cpp" />
     <ClCompile Include="Source\SceneIO\SceneTypeRegistry.cpp" />

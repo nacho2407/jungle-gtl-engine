@@ -103,7 +103,11 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     {
         return NavigationController;
     }
-    FViewportSelectionController& GetSelectionController() { return SelectionController; }
+    FViewportSelectionController& GetSelectionController() { return *ActiveController; }
+
+    // Makes this client share an external selection controller instead of its own.
+    // Call after Create(). The camera is stamped onto the shared controller on each input event.
+    void UseSharedSelectionController(FViewportSelectionController* Shared);
     FViewportGizmoController& GetGizmoController() { return GizmoController; }
     FViewportInteractionState& GetInteractionState() { return InteractionState; }
     FViewportRenderSetting& GetRenderSetting() { return RenderSetting; }
@@ -130,6 +134,8 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     void DrawStatOverlay(void);
 
     /**
+     * @deprecated ImGui 대신 자체 렌더링 패스를 타기 위해 삭제될 예정인 함수입니다.
+     * 
      * @brief stat fps에 대응하는 FPS 정보 오버레이를 그립니다.
      * 
      * @param InData stat fps 명령이 활성화된 경우, viewport에 그려질 FPS 정보 오버레이에 필요한
@@ -138,6 +144,8 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     void DrawFPSStatOverlay(const FFPSStatData& InData);
 
     /**
+     * @deprecated ImGui 대신 자체 렌더링 패스를 타기 위해 삭제될 예정인 함수입니다.
+     * 
      * @brief stat memory에 대응하는 메모리 정보 오버레이를 그립니다.
      * 
      * @param InData stat memory 명령이 활성화된 경우, viewport에 그려질 메모리 정보 오버레이에
@@ -160,6 +168,10 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     uint32 GetViewportOriginX() const { return ViewportCamera.GetOriginX(); }
     uint32 GetViewportOriginY() const { return ViewportCamera.GetOriginY(); }
 
+    /**
+     * @brief 현재 viewport에서 그려지는 오버레이에 필요한 데이터를 수집하여 OutData에 채웁니다.
+     * 프로그램 전역적으로 그려지는 오버레이인 위젯과는 달리 각 뷰포트 패널에서 그려지는 오버레이를 구현하기 위해 추가된 함수입니다.
+     */
     void BuildViewportOverlayRenderData(FWidgetRenderData& OutData) const;
     
   private:
@@ -171,7 +183,7 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     FMemoryStatData CollectMemoryStatData() const;
 
     void BuildFPSStatOverlayRenderData(FWidgetRenderData& OutData) const;
-    void BuildMemoryStatOverlayRenderData(FWidgetRenderData& OutData) const;
+    void BuildMemoryStatOverlayRenderData(FWidgetRenderData&  OutData) const;
 
 private:
     EViewportViewOrientation ViewOrientation = EViewportViewOrientation::Free;
@@ -185,13 +197,14 @@ private:
     FViewportCamera ViewportCamera;
 
     FViewportNavigationController NavigationController;
-    FViewportSelectionController SelectionController;
+    FViewportSelectionController  OwnedSelectionController;
+    FViewportSelectionController* ActiveController = nullptr; // points to OwnedSelectionController or a shared one
     FViewportGizmoController GizmoController;
     FViewportInteractionState InteractionState;
     FViewportRenderSetting RenderSetting;
 
     FNavigationInputContext ViewportInputContext{&NavigationController};
-    FSelectionInputContext SelectionInputContext{&SelectionController};
+    FSelectionInputContext  SelectionInputContext{nullptr}; // wired to ActiveController in Create()
     FGizmoInputContext      GizmoInputContext{&GizmoController};
 
     FEditorContext* EditorContext = nullptr;

@@ -11,16 +11,19 @@
 
 void FEditorViewportClient::Create()
 {
+    ActiveController = &OwnedSelectionController;
+
     InputRouter = new Engine::ApplicationCore::FInputRouter();
     InputRouter->AddContext(&ViewportInputContext);
     InputRouter->AddContext(&SelectionInputContext);
     InputRouter->AddContext(&GizmoInputContext);
     GizmoController.SetViewportClient(this);
-    GizmoController.SetViewportSelectionController(&SelectionController);
+    GizmoController.SetViewportSelectionController(ActiveController);
 
     NavigationController.SetCamera(&ViewportCamera);
-    NavigationController.SetSelectionController(&SelectionController);
-    SelectionController.SetCamera(&ViewportCamera);
+    NavigationController.SetSelectionController(ActiveController);
+    ActiveController->SetCamera(&ViewportCamera);
+    SelectionInputContext.SetSelectionController(ActiveController);
     GizmoController.SetCamera(&ViewportCamera);
     GizmoInputContext.SetNavigationController(&NavigationController);
 
@@ -47,9 +50,9 @@ void FEditorViewportClient::Initialize(FScene* Scene, uint32 ViewportWidth, uint
 
     ViewportCamera.OnResize(ViewportWidth, ViewportHeight);
 
-    SelectionController.SetActors(Scene->GetActors());
-    SelectionController.SetCamera(&ViewportCamera);
-    SelectionController.SetViewportSize(ViewportWidth, ViewportHeight);
+    ActiveController->SetActors(Scene->GetActors());
+    ActiveController->SetCamera(&ViewportCamera);
+    ActiveController->SetViewportSize(ViewportWidth, ViewportHeight);
 }
 
 void FEditorViewportClient::Tick(float DeltaTime, const Engine::ApplicationCore::FInputState& State)
@@ -61,7 +64,7 @@ void FEditorViewportClient::Tick(float DeltaTime, const Engine::ApplicationCore:
         InputRouter->Tick(State);
     }
 
-    SelectionController.SyncSelectionFromContext();
+    ActiveController->SyncSelectionFromContext();
     NavigationController.Tick(DeltaTime);
 }
 
@@ -70,6 +73,14 @@ void FEditorViewportClient::Draw() {}
 void FEditorViewportClient::HandleInputEvent(const Engine::ApplicationCore::FInputEvent& Event,
                                              const Engine::ApplicationCore::FInputState& State)
 {
+    // Stamp this panel's camera onto the (possibly shared) selection controller so that
+    // ray-picking and screen-space rect selection use the correct frustum.
+    if (ActiveController != nullptr)
+    {
+        ActiveController->SetCamera(&ViewportCamera);
+        ActiveController->SetViewportSize(ViewportCamera.GetWidth(), ViewportCamera.GetHeight());
+    }
+
     if (InputRouter)
     {
         InputRouter->RouteEvent(Event, State);
@@ -84,11 +95,11 @@ void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData, EE
         IsFlagSet(InShowFlags, EEditorShowFlags::SF_SelectionOutline);
 
 
-    if (!SelectionController.GetSelectedActors().empty())
+    if (!ActiveController->GetSelectedActors().empty())
     {
         OutRenderData.Gizmo.GizmoType = GizmoController.GetGizmoType();
         OutRenderData.Gizmo.Highlight = GizmoController.GetGizmoHighlight();
-        GizmoController.SetSelectedActor(SelectionController.GetSelectedActors().back());
+        GizmoController.SetSelectedActor(ActiveController->GetSelectedActors().back());
         if (GizmoController.bIsWorldMode && GizmoController.GetGizmoType() != EGizmoType::Scaling)
         {
             FVector RelativeLocation{
@@ -131,7 +142,7 @@ void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData, EE
 void FEditorViewportClient::OnResize(uint32 Width, uint32 Height)
 {
     ViewportCamera.OnResize(Width, Height);
-    SelectionController.SetViewportSize(Width, Height);
+    ActiveController->SetViewportSize(Width, Height);
 }
 
 FString FEditorViewportClient::GetViewOrientationString(EViewportViewOrientation InOrientation) const 
@@ -153,6 +164,8 @@ FString FEditorViewportClient::GetViewOrientationString(EViewportViewOrientation
         return "Front";
     case Back:
         return "Back";
+    default:
+        return "Unknown";
     }
 }
 
@@ -238,29 +251,37 @@ void FEditorViewportClient::SetViewportOrigin(uint32 InOriginX, uint32 InOriginY
     ViewportCamera.SetOrigin(InOriginX, InOriginY);
 }
 
+void FEditorViewportClient::UseSharedSelectionController(FViewportSelectionController* Shared)
+{
+    ActiveController = Shared;
+    SelectionInputContext.SetSelectionController(Shared);
+    GizmoController.SetViewportSelectionController(Shared);
+    NavigationController.SetSelectionController(Shared);
+}
+
 void FEditorViewportClient::SetEditorContext(FEditorContext* InContext)
 {
     EditorContext = InContext;
-    SelectionController.SetEditorContext(InContext);
+    ActiveController->SetEditorContext(InContext);
 }
 
 void FEditorViewportClient::SetScene(FScene* InScene)
 {
     CurScene = InScene;
-    SelectionController.SetActors(InScene != nullptr ? InScene->GetActors() : nullptr);
+    ActiveController->SetActors(InScene != nullptr ? InScene->GetActors() : nullptr);
 }
 
 void FEditorViewportClient::SyncSelectionFromContext()
 {
-    SelectionController.SyncSelectionFromContext();
+    ActiveController->SyncSelectionFromContext();
 }
 
 void FEditorViewportClient::DrawViewportOverlay()
 {
-    if (SelectionController.IsDraggingSelection())
+    if (ActiveController->IsDraggingSelection())
     {
         int32 StartX, StartY, EndX, EndY;
-        SelectionController.GetSelectionRect(StartX, StartY, EndX, EndY);
+        ActiveController->GetSelectionRect(StartX, StartY, EndX, EndY);
 
         const float MinX = (float)std::min(StartX, EndX);
         const float MinY = (float)std::min(StartY, EndY);
@@ -351,7 +372,20 @@ void FEditorViewportClient::DrawMemoryStatOverlay(const FMemoryStatData& InData)
 
 void FEditorViewportClient::BuildViewportOverlayRenderData(FWidgetRenderData& OutData) const
 {
+    if (StatFlags == EViewportStatFlags::None)
+    {
+        return;
+    }
 
+    if (IsStatEnabled(EViewportStatFlags::FPS))
+    {
+        BuildFPSStatOverlayRenderData(OutData);
+    }
+
+    if (IsStatEnabled(EViewportStatFlags::Memory))
+    {
+        BuildMemoryStatOverlayRenderData(OutData);
+    }
 }
 
 void FEditorViewportClient::DrawOutline() {}
@@ -375,12 +409,36 @@ FMemoryStatData FEditorViewportClient::CollectMemoryStatData() const
     return Data;
 }
 
-void FEditorViewportClient::BuildFPSStatOverlayRenderData(FWidgetRenderData& OutData) const
+void FEditorViewportClient::BuildFPSStatOverlayRenderData(FWidgetRenderData&  OutData) const
 {
-
+//    const FFPSStatData FPSData = CollectFPSStatData();
+//
+//    const float ViewLeft = static_cast<float>(ViewportCamera.GetOriginX());
+//    const float ViewTop = static_cast<float>(ViewportCamera.GetOriginY());
+//    const float ViewWidth = static_cast<float>(ViewportCamera.GetWidth());
+//    const float ViewHeight = static_cast<float>(ViewportCamera.GetHeight());
+//
+//    char FPSLine[64];
+//    char FrameTimeLine[64];
+//
+//    snprintf(FPSLine, sizeof(FPSLine), "%.2f FPS", FPSData.FPS);
+//    snprintf(FrameTimeLine, sizeof(FrameTimeLine), "%.2f ms", FPSData.FrameTimeMS);
+//
+//    const float LineSpacing = 4.0f;
+//    const float TotalHeight = FPSTextSize.y + LineSpacing + FrameTextSize.y; // tlqkf!!!!!
+//
+//    const float RightPadding = 100.0f * ViewWidth / 1920.0f;
+//    const float AnchorX = ViewLeft + ViewWidth - RightPadding;
+//    const float AnchorY = ViewTop + ViewHeight * 0.25f;
+//
+//    const float FPSPosX = AnchorX - FPSTextSize.x;
+//    const float FPSPosY = AnchorY - TotalHeight * 0.5f;
+//
+//    const float FramePosX = AnchorX - FrameTextSize.x;
+//    const float FramePosY = FPSPosY + FPSTextSize.y + LineSpacing;
 }
 
-void FEditorViewportClient::BuildMemoryStatOverlayRenderData(FWidgetRenderData& OutData) const
+void FEditorViewportClient::BuildMemoryStatOverlayRenderData(FWidgetRenderData&  OutData) const
 {
-
+    // 추가 예정
 }
