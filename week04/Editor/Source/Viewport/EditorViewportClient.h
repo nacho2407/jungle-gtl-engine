@@ -12,9 +12,10 @@
 #include "Input/GizmoInputContext.h"
 #include "Renderer/EditorRenderData.h"
 #include "Renderer/Types/EditorShowFlags.h"
-#include "Renderer/WidgetRenderData.h"
 
 struct FEditorContext;
+struct ImDrawList;
+struct ImVec2;
 
 enum class EViewportStatFlags : uint8
 {
@@ -113,7 +114,7 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     FViewportRenderSetting& GetRenderSetting() { return RenderSetting; }
     const FViewportRenderSetting& GetRenderSetting() const { return RenderSetting; }
 
-    void DrawViewportOverlay();
+    void DrawViewportOverlay(const ImVec2& ViewPos, const ImVec2& ViewSize);
 
     FViewportCamera& GetCamera() { return ViewportCamera; }
     using FPickCallback = std::function<FPickResult(int32, int32)>;
@@ -131,27 +132,25 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     /**
      * @brief 현재 viewport에서 그려지는 각 stat 명령 관련 텍스트 오버레이를 그리는 오케스트레이션 함수
      */
-    void DrawStatOverlay(void);
+    void DrawStatOverlay(ImDrawList* DrawList, const ImVec2& ViewPos, const ImVec2& ViewSize);
 
     /**
-     * @deprecated ImGui 대신 자체 렌더링 패스를 타기 위해 삭제될 예정인 함수입니다.
-     * 
      * @brief stat fps에 대응하는 FPS 정보 오버레이를 그립니다.
      * 
      * @param InData stat fps 명령이 활성화된 경우, viewport에 그려질 FPS 정보 오버레이에 필요한
      * 데이터를 담는 스냅샷 구조체
      */
-    void DrawFPSStatOverlay(const FFPSStatData& InData);
+    void DrawFPSStatOverlay(const FFPSStatData& InData, ImDrawList* DrawList,
+                            const ImVec2& ViewPos, const ImVec2& ViewSize);
 
     /**
-     * @deprecated ImGui 대신 자체 렌더링 패스를 타기 위해 삭제될 예정인 함수입니다.
-     * 
      * @brief stat memory에 대응하는 메모리 정보 오버레이를 그립니다.
      * 
      * @param InData stat memory 명령이 활성화된 경우, viewport에 그려질 메모리 정보 오버레이에
      * 필요한 각 행의 데이터를 담는 구조체들의 배열을 포함하는 스냅샷 구조체
      */
-    void DrawMemoryStatOverlay(const FMemoryStatData& InData);
+    void DrawMemoryStatOverlay(const FMemoryStatData& InData, ImDrawList* DrawList,
+                               const ImVec2& ViewPos, const ImVec2& ViewSize);
 
     void EnableStat(EViewportStatFlags InFlag) { SetStatEnabled(InFlag, true); }
 
@@ -167,12 +166,6 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
 
     uint32 GetViewportOriginX() const { return ViewportCamera.GetOriginX(); }
     uint32 GetViewportOriginY() const { return ViewportCamera.GetOriginY(); }
-
-    /**
-     * @brief 현재 viewport에서 그려지는 오버레이에 필요한 데이터를 수집하여 OutData에 채웁니다.
-     * 프로그램 전역적으로 그려지는 오버레이인 위젯과는 달리 각 뷰포트 패널에서 그려지는 오버레이를 구현하기 위해 추가된 함수입니다.
-     */
-    void BuildViewportOverlayRenderData(FWidgetRenderData& OutData) const;
     
   private:
     void DrawOutline();
@@ -181,9 +174,6 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
 
     FFPSStatData    CollectFPSStatData() const;
     FMemoryStatData CollectMemoryStatData() const;
-
-    void BuildFPSStatOverlayRenderData(FWidgetRenderData& OutData) const;
-    void BuildMemoryStatOverlayRenderData(FWidgetRenderData&  OutData) const;
 
 private:
     EViewportViewOrientation ViewOrientation = EViewportViewOrientation::Free;

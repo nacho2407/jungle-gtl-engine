@@ -1498,13 +1498,19 @@ void FEditor::DrawPanel()
         {
             if (Panel != nullptr && Panel->ViewportClient != nullptr)
             {
-                Panel->ViewportClient->DrawViewportOverlay();
+                Panel->ViewportClient->DrawViewportOverlay(
+                    ImVec2(Panel->PosX, Panel->PosY),
+                    ImVec2(Panel->Width, Panel->Height));
             }
         }
     }
     else
     {
-        ViewportClient.DrawViewportOverlay();
+        ViewportClient.DrawViewportOverlay(
+            ImVec2(static_cast<float>(ViewportClient.GetViewportOriginX()),
+                   static_cast<float>(ViewportClient.GetViewportOriginY())),
+            ImVec2(static_cast<float>(ViewportClient.GetCamera().GetWidth()),
+                   static_cast<float>(ViewportClient.GetCamera().GetHeight())));
     }
 
     EditorChrome.Draw(ChromeMenus);

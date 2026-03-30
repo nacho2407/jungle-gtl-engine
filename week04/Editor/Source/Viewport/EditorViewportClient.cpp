@@ -276,7 +276,7 @@ void FEditorViewportClient::SyncSelectionFromContext()
     ActiveController->SyncSelectionFromContext();
 }
 
-void FEditorViewportClient::DrawViewportOverlay()
+void FEditorViewportClient::DrawViewportOverlay(const ImVec2& ViewPos, const ImVec2& ViewSize)
 {
     if (ActiveController->IsDraggingSelection())
     {
@@ -294,12 +294,27 @@ void FEditorViewportClient::DrawViewportOverlay()
                           0, 1.5f);
     }
 
-    DrawStatOverlay();
+    ImGuiViewport* MainViewport = ImGui::GetMainViewport();
+    if (MainViewport == nullptr)
+    {
+        return;
+    }
+
+    ImDrawList* DrawList = ImGui::GetBackgroundDrawList(MainViewport);
+    if (DrawList == nullptr)
+    {
+        return;
+    }
+
+    DrawList->PushClipRect(ViewPos, ImVec2(ViewPos.x + ViewSize.x, ViewPos.y + ViewSize.y), true);
+    DrawStatOverlay(DrawList, ViewPos, ViewSize);
+    DrawList->PopClipRect();
 }
 
-void FEditorViewportClient::DrawStatOverlay(void)
+void FEditorViewportClient::DrawStatOverlay(ImDrawList* DrawList, const ImVec2& ViewPos,
+                                            const ImVec2& ViewSize)
 {
-    if (StatFlags == EViewportStatFlags::None)
+    if (DrawList == nullptr || StatFlags == EViewportStatFlags::None)
     {
         return;
     }
@@ -307,30 +322,28 @@ void FEditorViewportClient::DrawStatOverlay(void)
     if (IsStatEnabled(EViewportStatFlags::FPS))
     {
         const FFPSStatData FPSData = CollectFPSStatData();
-        DrawFPSStatOverlay(FPSData);
+        DrawFPSStatOverlay(FPSData, DrawList, ViewPos, ViewSize);
     }
 
     if (IsStatEnabled(EViewportStatFlags::Memory))
     {
         const FMemoryStatData MemoryData = CollectMemoryStatData();
-        DrawMemoryStatOverlay(MemoryData);
+        DrawMemoryStatOverlay(MemoryData, DrawList, ViewPos, ViewSize);
     }
 }
 
-void FEditorViewportClient::DrawFPSStatOverlay(const FFPSStatData& InData)
+void FEditorViewportClient::DrawFPSStatOverlay(const FFPSStatData& InData, ImDrawList* DrawList,
+                                               const ImVec2& ViewPos, const ImVec2& ViewSize)
 {
-    // 다중 뷰포트 브랜치 머지 후 수정 예정
-    ImDrawList* DrawList = ImGui::GetForegroundDrawList();
     if (DrawList == nullptr)
     {
         return;
     }
 
-    // 다중 뷰포트 브랜치 머지 후 뷰포트 크기 계산 수정 예정
-    const float ViewLeft = static_cast<float>(ViewportCamera.GetOriginX());
-    const float ViewTop = static_cast<float>(ViewportCamera.GetOriginY());
-    const float ViewWidth = static_cast<float>(ViewportCamera.GetWidth());
-    const float ViewHeight = static_cast<float>(ViewportCamera.GetHeight());
+    const float ViewLeft = ViewPos.x;
+    const float ViewTop = ViewPos.y;
+    const float ViewWidth = ViewSize.x;
+    const float ViewHeight = ViewSize.y;
 
     char FPSLine[64];
     char FrameTimeLine[64];
@@ -344,7 +357,7 @@ void FEditorViewportClient::DrawFPSStatOverlay(const FFPSStatData& InData)
     const float LineSpacing = 4.0f;
     const float TotalHeight = FPSTextSize.y + LineSpacing + FrameTextSize.y;
 
-    const float RightPadding = 100.0f * ViewWidth / 1920.0f;
+    const float RightPadding = 50.0f;
     const float AnchorX = ViewLeft + ViewWidth - RightPadding;
     const float AnchorY = ViewTop + ViewHeight * 0.25f;
 
@@ -363,29 +376,15 @@ void FEditorViewportClient::DrawFPSStatOverlay(const FFPSStatData& InData)
     DrawList->AddText(Font, FontSize, ImVec2(FramePosX, FramePosY), FPSTextColor, FrameTimeLine);
 }
 
-void FEditorViewportClient::DrawMemoryStatOverlay(const FMemoryStatData& InData)
+void FEditorViewportClient::DrawMemoryStatOverlay(const FMemoryStatData& InData, ImDrawList* DrawList,
+                                                  const ImVec2& ViewPos, const ImVec2& ViewSize)
 {
     (void)InData;
+    (void)DrawList;
+    (void)ViewPos;
+    (void)ViewSize;
 
     // 추가 예정
-}
-
-void FEditorViewportClient::BuildViewportOverlayRenderData(FWidgetRenderData& OutData) const
-{
-    if (StatFlags == EViewportStatFlags::None)
-    {
-        return;
-    }
-
-    if (IsStatEnabled(EViewportStatFlags::FPS))
-    {
-        BuildFPSStatOverlayRenderData(OutData);
-    }
-
-    if (IsStatEnabled(EViewportStatFlags::Memory))
-    {
-        BuildMemoryStatOverlayRenderData(OutData);
-    }
 }
 
 void FEditorViewportClient::DrawOutline() {}
@@ -407,38 +406,4 @@ FMemoryStatData FEditorViewportClient::CollectMemoryStatData() const
 {
     FMemoryStatData Data;
     return Data;
-}
-
-void FEditorViewportClient::BuildFPSStatOverlayRenderData(FWidgetRenderData&  OutData) const
-{
-//    const FFPSStatData FPSData = CollectFPSStatData();
-//
-//    const float ViewLeft = static_cast<float>(ViewportCamera.GetOriginX());
-//    const float ViewTop = static_cast<float>(ViewportCamera.GetOriginY());
-//    const float ViewWidth = static_cast<float>(ViewportCamera.GetWidth());
-//    const float ViewHeight = static_cast<float>(ViewportCamera.GetHeight());
-//
-//    char FPSLine[64];
-//    char FrameTimeLine[64];
-//
-//    snprintf(FPSLine, sizeof(FPSLine), "%.2f FPS", FPSData.FPS);
-//    snprintf(FrameTimeLine, sizeof(FrameTimeLine), "%.2f ms", FPSData.FrameTimeMS);
-//
-//    const float LineSpacing = 4.0f;
-//    const float TotalHeight = FPSTextSize.y + LineSpacing + FrameTextSize.y; // tlqkf!!!!!
-//
-//    const float RightPadding = 100.0f * ViewWidth / 1920.0f;
-//    const float AnchorX = ViewLeft + ViewWidth - RightPadding;
-//    const float AnchorY = ViewTop + ViewHeight * 0.25f;
-//
-//    const float FPSPosX = AnchorX - FPSTextSize.x;
-//    const float FPSPosY = AnchorY - TotalHeight * 0.5f;
-//
-//    const float FramePosX = AnchorX - FrameTextSize.x;
-//    const float FramePosY = FPSPosY + FPSTextSize.y + LineSpacing;
-}
-
-void FEditorViewportClient::BuildMemoryStatOverlayRenderData(FWidgetRenderData&  OutData) const
-{
-    // 추가 예정
 }
