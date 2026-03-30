@@ -1,4 +1,4 @@
-#include "SceneSaveManager.h"
+﻿#include "SceneSaveManager.h"
 
 #include <iostream>
 #include <fstream>
@@ -13,21 +13,30 @@
 #include "Object/ObjectFactory.h"
 #include "Core/PropertyTypes.h"
 #include "Object/FName.h"
+#include "Math/Matrix.h"
 
 namespace SceneKeys
 {
-	static constexpr const char* Version           = "Version";
-	static constexpr const char* Name              = "Name";
+	static constexpr const char* Version            = "Version";
+	static constexpr const char* Name               = "Name";
 	static constexpr const char* ClassName          = "ClassName";
-	static constexpr const char* WorldType         = "WorldType";
-	static constexpr const char* ContextName       = "ContextName";
-	static constexpr const char* ContextHandle     = "ContextHandle";
-	static constexpr const char* Actors            = "Actors";
-	static constexpr const char* Visible           = "bVisible";
-	static constexpr const char* RootComponent     = "RootComponent";
+	static constexpr const char* WorldType          = "WorldType";
+	static constexpr const char* ContextName        = "ContextName";
+	static constexpr const char* ContextHandle      = "ContextHandle";
+	static constexpr const char* Actors             = "Actors";
+	static constexpr const char* Visible            = "bVisible";
+	static constexpr const char* RootComponent      = "RootComponent";
 	static constexpr const char* NonSceneComponents = "NonSceneComponents";
-	static constexpr const char* Properties        = "Properties";
-	static constexpr const char* Children          = "Children";
+	static constexpr const char* Properties         = "Properties";
+	static constexpr const char* Children           = "Children";
+
+	// PerspectiveCamera 섹션
+	static constexpr const char* PerspectiveCamera  = "PerspectiveCamera";
+	static constexpr const char* Location           = "Location";
+	static constexpr const char* Rotation           = "Rotation";
+	static constexpr const char* FOV                = "FOV";
+	static constexpr const char* NearClip           = "NearClip";
+	static constexpr const char* FarClip            = "FarClip";
 }
 
 static const char* WorldTypeToString(EWorldType Type)
@@ -50,7 +59,8 @@ static EWorldType StringToWorldType(const string& Str)
 // Save
 // ============================================================
 
-void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, FWorldContext& WorldContext)
+void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, FWorldContext& WorldContext,
+                                        const FEditorCameraState* CameraState)
 {
 	using namespace json;
 
@@ -67,6 +77,8 @@ void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, FWorldContext
 	JSON Root = SerializeWorld(WorldContext.World, WorldContext);
 	Root[SceneKeys::Version] = 2;
 	Root[SceneKeys::Name] = FinalName;
+
+	Root[SceneKeys::PerspectiveCamera] = SerializeCameraState(CameraState);
 
 	std::ofstream File(FileDestination);
 	if (File.is_open()) {
@@ -195,11 +207,36 @@ json::JSON FSceneSaveManager::SerializePropertyValue(const FPropertyDescriptor& 
 	}
 }
 
+json::JSON FSceneSaveManager::SerializeCameraState(const FEditorCameraState* CameraState /*= nullptr*/)
+{
+	using namespace json;
+
+	// Perspective 카메라 상태 저장
+	if (CameraState && CameraState->bValid)
+	{
+		JSON Cam = Object();
+		Cam[SceneKeys::Location] = Array(
+			static_cast<double>(CameraState->Location.X),
+			static_cast<double>(CameraState->Location.Y),
+			static_cast<double>(CameraState->Location.Z));
+		Cam[SceneKeys::Rotation] = Array(
+			static_cast<double>(CameraState->Rotation.Pitch),
+			static_cast<double>(CameraState->Rotation.Yaw),
+			static_cast<double>(CameraState->Rotation.Roll));
+		Cam[SceneKeys::FOV] = static_cast<double>(CameraState->FOV);
+		Cam[SceneKeys::NearClip] = static_cast<double>(CameraState->NearClip);
+		Cam[SceneKeys::FarClip] = static_cast<double>(CameraState->FarClip);
+		return Cam;
+	}
+	return nullptr;
+}
+
 // ============================================================
 // Load
 // ============================================================
 
-void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext& OutWorldContext)
+void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext& OutWorldContext,
+                                          FEditorCameraState* OutCameraState)
 {
 	using json::JSON;
 	std::ifstream File(std::filesystem::path(FPaths::ToWide(filepath)));
@@ -269,6 +306,8 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 			}
 		}
 	}
+
+	DeserializeCameraState(root, OutCameraState);
 
 	OutWorldContext.WorldType = WorldType;
 	OutWorldContext.World = World;
@@ -361,6 +400,41 @@ void FSceneSaveManager::DeserializePropertyValue(FPropertyDescriptor& Prop, json
 
 	default:
 		break;
+	}
+}
+
+void FSceneSaveManager::DeserializeCameraState(json::JSON& root, FEditorCameraState* OutCameraState /*= nullptr*/)
+{
+	using namespace json;
+	// Perspective 카메라 상태 복원
+	if (OutCameraState && root.hasKey(SceneKeys::PerspectiveCamera))
+	{
+		JSON Cam = root[SceneKeys::PerspectiveCamera];
+
+		if (Cam.hasKey(SceneKeys::Location))
+		{
+			JSON Loc = Cam[SceneKeys::Location];
+			OutCameraState->Location = FVector(
+				static_cast<float>(Loc[0].ToFloat()),
+				static_cast<float>(Loc[1].ToFloat()),
+				static_cast<float>(Loc[2].ToFloat()));
+		}
+		if (Cam.hasKey(SceneKeys::Rotation))
+		{
+			JSON Rot = Cam[SceneKeys::Rotation];
+			OutCameraState->Rotation = FRotator(
+				static_cast<float>(Rot[0].ToFloat()),  // Pitch
+				static_cast<float>(Rot[1].ToFloat()),  // Yaw
+				static_cast<float>(Rot[2].ToFloat())); // Roll
+		}
+		if (Cam.hasKey(SceneKeys::FOV))
+			OutCameraState->FOV = static_cast<float>(Cam[SceneKeys::FOV].ToFloat());
+		if (Cam.hasKey(SceneKeys::NearClip))
+			OutCameraState->NearClip = static_cast<float>(Cam[SceneKeys::NearClip].ToFloat());
+		if (Cam.hasKey(SceneKeys::FarClip))
+			OutCameraState->FarClip = static_cast<float>(Cam[SceneKeys::FarClip].ToFloat());
+
+		OutCameraState->bValid = true;
 	}
 }
 
