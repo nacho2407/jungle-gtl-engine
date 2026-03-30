@@ -31,6 +31,11 @@ void FObjViewerControlWidget::Render(float DeltaTime)
             ImGui::DragFloat("Rotation Speed", &Settings.CameraRotateSensitivity, 0.01f, 0.01f, 0.5f, "%.3f");
 			ImGui::DragFloat("Dolly Speed", &Settings.CameraForwardSpeed, 10.0f, 500.0f, 2000.0f, "%.0f");
 
+			if (ImGui::Button("Save Camera Position", ImVec2(-FLT_MIN, 0)))
+			{
+				Engine->GetViewportClient().SaveCameraPosition();
+			}
+
 			if (ImGui::Button("Reset Camera Position", ImVec2(-FLT_MIN, 0)))
 			{
 				Engine->GetViewportClient().ResetCameraSmoothly();
