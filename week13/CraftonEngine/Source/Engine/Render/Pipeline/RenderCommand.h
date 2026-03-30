@@ -19,11 +19,10 @@ class FShader;
 // HLSL Common.hlsl과 1:1 대응하는 CB 슬롯 정의
 namespace ECBSlot
 {
-	constexpr uint32 Frame = 0;  // b0: View/Projection/Wireframe
-	constexpr uint32 PerObject = 1;  // b1: Model/Color
-	constexpr uint32 Gizmo = 2;  // b2: Gizmo state
-	constexpr uint32 Editor = 4;  // b4: Camera position
-	constexpr uint32 Outline = 5;  // b5: Outline params
+	constexpr uint32 Frame = 0;     // b0: View/Projection/Wireframe
+	constexpr uint32 PerObject = 1; // b1: Model/Color
+	constexpr uint32 Gizmo = 2;     // b2: Gizmo state
+	constexpr uint32 Outline = 3;   // b3: Outline params
 }
 
 //PerObject
@@ -54,12 +53,6 @@ struct FGizmoConstants
 	uint32 bClicking;
 	uint32 SelectedAxis;
 	float HoveredAxisOpacity;
-};
-
-struct FEditorConstants
-{
-	FVector CameraPosition; // xyz 사용, w padding
-	uint32 Flag;
 };
 
 struct FOutlineConstants
