@@ -43,9 +43,9 @@ bool UTextRenderComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult
 		BillboardWorldMatrix = MakeBillboardWorldMatrix(
 			GetWorldLocation(),
 			GetWorldScale(),
-			ActiveCamera->GetForwardVector(),
-			ActiveCamera->GetRightVector(),
-			ActiveCamera->GetUpVector());
+			ActiveCamera->GetEffectiveForward(),
+			ActiveCamera->GetEffectiveRight(),
+			ActiveCamera->GetEffectiveUp());
 	}
 
 	FMatrix OutlineWorldMatrix = CalculateOutlineMatrix(BillboardWorldMatrix);
