@@ -27,6 +27,13 @@ static FString RemoveExtension(const FString& Path)
 	return Path.substr(0, DotPos);
 }
 
+static FString GetStemFromPath(const FString& Path)
+{
+	size_t SlashPos = Path.find_last_of("/\\");
+	FString FileName = (SlashPos == FString::npos) ? Path : Path.substr(SlashPos + 1);
+	return RemoveExtension(FileName);
+}
+
 void FEditorPropertyWidget::Render(float DeltaTime)
 {
 	(void)DeltaTime;
@@ -400,8 +407,8 @@ bool FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 	{
 		FString* Val = static_cast<FString*>(Prop.ValuePtr);
 
-		FString Preview = *Val;
-		if (Preview.empty()) Preview = "None";
+		FString Preview = Val->empty() ? "None" : GetStemFromPath(*Val);
+		if (*Val == "None") Preview = "None";
 
 		if (ImGui::BeginCombo(Prop.Name.c_str(), Preview.c_str()))
 		{
