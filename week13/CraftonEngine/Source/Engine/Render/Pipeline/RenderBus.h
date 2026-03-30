@@ -1,15 +1,6 @@
 ﻿#pragma once
-
-/*
-
-	는 Renderer에게 Draw Call 요청을 vector의 형태로 전달하는 역할을 합니다.
-	Renderer가 RenderBus에 담긴 Draw Call 요청들을 처리할 수 있게 합니다.
-*/
-
-//	TODO : CoreType.h 경로 변경 요구
 #include "Core/CoreTypes.h"
 #include "Render/Pipeline/RenderCommand.h"
-
 #include "Render/Types/ViewTypes.h"
 
 
@@ -17,9 +8,24 @@ class FRenderBus
 {
 public:
 	void Clear();
+
+	// Mesh 패스용 (Opaque, StencilMask, Outline, Gizmo, Translucent)
 	void AddCommand(ERenderPass Pass, const FRenderCommand& InCommand);
 	void AddCommand(ERenderPass Pass, FRenderCommand&& InCommand);
 	const TArray<FRenderCommand>& GetCommands(ERenderPass Pass) const;
+
+	// Batcher 패스용 — 타입 안전한 전용 큐
+	void AddFontEntry(FFontEntry&& Entry);
+	void AddOverlayFontEntry(FFontEntry&& Entry);
+	void AddSubUVEntry(FSubUVEntry&& Entry);
+	void AddAABBEntry(FAABBEntry&& Entry);
+	void AddGridEntry(FGridEntry&& Entry);
+
+	const TArray<FFontEntry>& GetFontEntries() const { return FontEntries; }
+	const TArray<FFontEntry>& GetOverlayFontEntries() const { return OverlayFontEntries; }
+	const TArray<FSubUVEntry>& GetSubUVEntries() const { return SubUVEntries; }
+	const TArray<FAABBEntry>& GetAABBEntries() const { return AABBEntries; }
+	const TArray<FGridEntry>& GetGridEntries() const { return GridEntries; }
 
 	// Getter,Setter
 	void SetViewProjection(const FMatrix& InView, const FMatrix& InProj, const FVector& CameraForwardVector, const FVector& CameraRightVector, const FVector& CameraUpVector);
@@ -31,7 +37,7 @@ public:
 	const FVector& GetCameraUp() const { return CameraUp; }
 	const FVector& GetCameraRight() const { return CameraRight; }
 	EViewMode GetViewMode() const { return ViewMode; }
-	FShowFlags GetShowFlags() const { return ShowFlags; }
+	const FShowFlags& GetShowFlags() const { return ShowFlags; }
 	const FVector& GetWireframeColor() const { return WireframeColor; }
 	void SetWireframeColor(const FVector& InColor) { WireframeColor = InColor; }
 
@@ -40,7 +46,15 @@ public:
 	const float GetViewportHeight() const { return viewprotHeight; }
 
 private:
+	// Mesh 패스 큐
 	TArray<FRenderCommand> PassQueues[(uint32)ERenderPass::MAX];
+
+	// Batcher 패스 큐
+	TArray<FFontEntry>  FontEntries;
+	TArray<FFontEntry>  OverlayFontEntries;
+	TArray<FSubUVEntry> SubUVEntries;
+	TArray<FAABBEntry>  AABBEntries;
+	TArray<FGridEntry>  GridEntries;
 
 	FMatrix View;
 	FMatrix Proj;
@@ -56,4 +70,3 @@ private:
 	FShowFlags ShowFlags;
 	FVector WireframeColor = FVector(0.0f, 0.0f, 0.7f);
 };
-
