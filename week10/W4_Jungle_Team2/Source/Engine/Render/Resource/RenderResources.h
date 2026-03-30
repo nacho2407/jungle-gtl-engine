@@ -21,6 +21,7 @@ struct FRenderResources
     FShader PrimitiveShader;
     FShader GizmoShader;
     FShader EditorShader;
+	FShader SelectionMaskShader;
 	FShader OutlineShader;
     FShader StaticMeshShader;
 

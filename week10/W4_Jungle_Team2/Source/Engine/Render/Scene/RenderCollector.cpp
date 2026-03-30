@@ -24,13 +24,13 @@ void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, 
 
 void FRenderCollector::CollectSelection(const TArray<AActor*>& SelectedActors, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
 {
-	bool bHasStencilMask = false;
+	bool bHasSelectionMask = false;
 	for (AActor* Actor : SelectedActors)
 	{
-		bHasStencilMask |= CollectFromSelectedActor(Actor, ShowFlags, ViewMode, RenderBus);
+		bHasSelectionMask |= CollectFromSelectedActor(Actor, ShowFlags, ViewMode, RenderBus);
 	}
 
-	if (bHasStencilMask)
+	if (bHasSelectionMask)
 	{
 		FRenderCommand PostProcessCmd = {};
 		PostProcessCmd.Type = ERenderCommandType::PostProcessOutline;
@@ -110,7 +110,7 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 	(void)ViewMode;
 	if (!Actor->IsVisible()) return false;
 
-	bool bHasStencilMask = false;
+	bool bHasSelectionMask = false;
 
 	for (UPrimitiveComponent* primitiveComponent : Actor->GetPrimitiveComponents())
 	{
@@ -174,17 +174,15 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		// 일단 불편해서 스태틱메시의 아웃라인은 끔
 		//if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_StaticMesh) continue;
 
-		// StencilBuffer Mask
+		// Selection Mask
 		FRenderCommand MaskCmd = BaseCmd;
-		MaskCmd.Type = ERenderCommandType::StencilMask;
-		MaskCmd.DepthStencilState = EDepthStencilState::StencilWrite; //스텐실 버퍼만 작성하는 타입
-		MaskCmd.BlendState = EBlendState::NoColor;
-		RenderBus.AddCommand(ERenderPass::StencilMask, MaskCmd);
-		bHasStencilMask = true;
+		MaskCmd.Type = ERenderCommandType::SelectionMask;
+		RenderBus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
+		bHasSelectionMask = true;
 		CollectAABBCommand(primitiveComponent, ShowFlags, RenderBus);
 	}
 
-	return bHasStencilMask;
+	return bHasSelectionMask;
 }
 
 void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)

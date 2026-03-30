@@ -29,6 +29,8 @@ void FD3DDevice::Release()
 void FD3DDevice::BeginFrame()
 {
 	DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
+	const float ClearMask[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	DeviceContext->ClearRenderTargetView(SelectionMaskRTV, ClearMask);
 	DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -231,10 +233,36 @@ void FD3DDevice::CreateFrameBuffer()
 	frameBufferRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 
 	Device->CreateRenderTargetView(FrameBuffer, &frameBufferRTVDesc, &FrameBufferRTV);
+
+	D3D11_TEXTURE2D_DESC selectionMaskDesc = {};
+	selectionMaskDesc.Width = static_cast<uint32>(ViewportInfo.Width);
+	selectionMaskDesc.Height = static_cast<uint32>(ViewportInfo.Height);
+	selectionMaskDesc.MipLevels = 1;
+	selectionMaskDesc.ArraySize = 1;
+	selectionMaskDesc.Format = DXGI_FORMAT_R8_UNORM;
+	selectionMaskDesc.SampleDesc.Count = 1;
+	selectionMaskDesc.Usage = D3D11_USAGE_DEFAULT;
+	selectionMaskDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	Device->CreateTexture2D(&selectionMaskDesc, nullptr, &SelectionMaskBuffer);
+
+	D3D11_RENDER_TARGET_VIEW_DESC selectionMaskRTVDesc = {};
+	selectionMaskRTVDesc.Format = DXGI_FORMAT_R8_UNORM;
+	selectionMaskRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	Device->CreateRenderTargetView(SelectionMaskBuffer, &selectionMaskRTVDesc, &SelectionMaskRTV);
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC selectionMaskSRVDesc = {};
+	selectionMaskSRVDesc.Format = DXGI_FORMAT_R8_UNORM;
+	selectionMaskSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	selectionMaskSRVDesc.Texture2D.MostDetailedMip = 0;
+	selectionMaskSRVDesc.Texture2D.MipLevels = 1;
+	Device->CreateShaderResourceView(SelectionMaskBuffer, &selectionMaskSRVDesc, &SelectionMaskSRV);
 }
 
 void FD3DDevice::ReleaseFrameBuffer()
 {
+	SAFE_RELEASE(SelectionMaskSRV);
+	SAFE_RELEASE(SelectionMaskRTV);
+	SAFE_RELEASE(SelectionMaskBuffer);
 	SAFE_RELEASE(FrameBufferRTV);
 	SAFE_RELEASE(FrameBuffer);
 }
@@ -283,25 +311,13 @@ void FD3DDevice::CreateDepthStencilBuffer()
 	depthStencilDesc.Height = static_cast<uint32>(ViewportInfo.Height);
 	depthStencilDesc.MipLevels = 1;
 	depthStencilDesc.ArraySize = 1;
-	depthStencilDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;	//	Depth 24bit + Stencil 8bit (SRV 호환)
+	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	depthStencilDesc.SampleDesc.Count = 1;
 	depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
-	depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
 	Device->CreateTexture2D(&depthStencilDesc, nullptr, &DepthStencilBuffer);
-
-	D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-	dsvDesc.Texture2D.MipSlice = 0;
-	Device->CreateDepthStencilView(DepthStencilBuffer, &dsvDesc, &DepthStencilView);
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Format = DXGI_FORMAT_X24_TYPELESS_G8_UINT;
-	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MostDetailedMip = 0;
-	srvDesc.Texture2D.MipLevels = 1;
-	Device->CreateShaderResourceView(DepthStencilBuffer, &srvDesc, &DepthStencilSRV);
+	Device->CreateDepthStencilView(DepthStencilBuffer, nullptr, &DepthStencilView);
 
 	//	Default
 	D3D11_DEPTH_STENCIL_DESC depthStencilStateDefaultDesc = {};
@@ -340,7 +356,7 @@ void FD3DDevice::CreateDepthStencilBuffer()
 
 	Device->CreateDepthStencilState(&depthStencilStateStencilWriteDesc, &DepthStencilStateStencilWrite);
 
-	{//Gizmo DepthStencil State
+	{// Gizmo split by selected-object stencil mask (ref=1)
 		D3D11_DEPTH_STENCIL_DESC gizmoInsideDesc = {};
 		gizmoInsideDesc.DepthEnable = TRUE;
 		gizmoInsideDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
@@ -440,7 +456,6 @@ void FD3DDevice::ReleaseDepthStencilBuffer()
 	SAFE_RELEASE(DepthStencilStateStencilMaskEqual);
 	SAFE_RELEASE(DepthStencilStateGizmoInside);
 	SAFE_RELEASE(DepthStencilStateGizmoOutside);
-	SAFE_RELEASE(DepthStencilSRV);
 	SAFE_RELEASE(DepthStencilView);
 	SAFE_RELEASE(DepthStencilBuffer);
 }
