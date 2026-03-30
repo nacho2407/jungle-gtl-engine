@@ -58,14 +58,12 @@ FArchive& operator<<(FArchive& Ar, TArray<T>& Array)
 	if (Ar.IsLoading()) Array.resize(ArrayNum);
 	if (ArrayNum > 0)
 	{
-		// 2. 만약 읽는 중(Load)이라면, 방금 알아낸 개수만큼 메모리를 미리 할당합니다.
-		if (Ar.IsLoading())
+		// T가 객체(struct/class)일 경우 내부 멤버의 Serialize를 순회 호출
+		if constexpr (!std::is_standard_layout<T>::value)
 		{
-			Array.resize(ArrayNum);
+			for (auto& Item : Array) { Ar << Item; }
 		}
-
-		// 3. 개수가 있다면, 배열 데이터를 통째로(sizeof(T) * Num) 복사합니다.
-		if (ArrayNum > 0)
+		else // 기본 자료형(정점 등)은 통째로 메모리 복사 (엄청난 속도 향상)
 		{
 			Ar.Serialize(Array.data(), ArrayNum * sizeof(T));
 		}
