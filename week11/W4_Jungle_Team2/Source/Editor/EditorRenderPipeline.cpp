@@ -19,61 +19,15 @@ FEditorRenderPipeline::~FEditorRenderPipeline()
 	Collector.Release();
 }
 
-//	void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
-//	{
-//	#if STATS
-//		FStatManager::Get().TakeSnapshot();
-//		FGPUProfiler::Get().TakeSnapshot();
-//	#endif
-//	
-//		Bus.Clear();
-//	
-//		UWorld* World = Editor->GetWorld();
-//		const FViewportCamera* Camera = Editor->GetCamera();
-//		if (Camera)
-//		{
-//			const auto& Settings = Editor->GetSettings();
-//			const FShowFlags& ShowFlags = Settings.ShowFlags;
-//			EViewMode ViewMode = Settings.ViewMode;
-//	
-//			Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix());
-//			Bus.SetRenderSettings(ViewMode, ShowFlags);
-//	
-//			Collector.CollectWorld(World, ShowFlags, ViewMode, Bus);
-//			Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus);
-//			Collector.CollectGizmo(Editor->GetGizmo(), ShowFlags, Bus);
-//			Collector.CollectSelection(
-//				Editor->GetSelectionManager().GetSelectedActors(),
-//				ShowFlags, ViewMode, Bus);
-//		}
-//	
-//		Renderer.PrepareBatchers(Bus);
-//		Renderer.BeginFrame();
-//		Renderer.Render(Bus);
-//		Editor->RenderUI(DeltaTime);
-//		Renderer.EndFrame();
-//	}
-
-void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer &Renderer) 
+void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 {
 #if STATS
 	FStatManager::Get().TakeSnapshot();
 	FGPUProfiler::Get().TakeSnapshot();
 #endif
-
-	Renderer.BeginFrame();
-
-    Render3DWorld(Renderer);
-    Render2DOverlay(DeltaTime, Renderer);
-    Editor->RenderUI(DeltaTime);
-
-    Renderer.EndFrame();
-}
-
-void FEditorRenderPipeline::Render3DWorld(FRenderer& Renderer)
-{
+	
 	Bus.Clear();
-
+	
 	UWorld* World = Editor->GetWorld();
 	const FViewportCamera* Camera = Editor->GetCamera();
 	if (Camera)
@@ -81,10 +35,10 @@ void FEditorRenderPipeline::Render3DWorld(FRenderer& Renderer)
 		const auto& Settings = Editor->GetSettings();
 		const FShowFlags& ShowFlags = Settings.ShowFlags;
 		EViewMode ViewMode = Settings.ViewMode;
-
+	
 		Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix());
 		Bus.SetRenderSettings(ViewMode, ShowFlags);
-
+	
 		Collector.CollectWorld(World, ShowFlags, ViewMode, Bus);
 		Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus);
 		Collector.CollectGizmo(Editor->GetGizmo(), ShowFlags, Bus);
@@ -92,15 +46,10 @@ void FEditorRenderPipeline::Render3DWorld(FRenderer& Renderer)
 			Editor->GetSelectionManager().GetSelectedActors(),
 			ShowFlags, ViewMode, Bus);
 	}
-
+	
 	Renderer.PrepareBatchers(Bus);
-    Renderer.Render(Bus);
-}
-
-void FEditorRenderPipeline::Render2DOverlay(float DeltaTime, FRenderer& Renderer)
-{
-    //if (Camera && Camera->GetViewportClient()) 
-    //{
-    //    Camera->GetViewportClient()->DrawOverlay(Renderer, DeltaTime);
-    //}
+	Renderer.BeginFrame();
+	Renderer.Render(Bus);
+	Editor->RenderUI(DeltaTime);
+	Renderer.EndFrame();
 }

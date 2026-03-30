@@ -471,3 +471,23 @@ TArray<FString> FResourceManager::GetStaticMeshPaths() const
 
 	return Paths;
 }
+
+size_t FResourceManager::GetMaterialMemorySize() const
+{
+	size_t TotalSize = 0;
+	// 1. FMaterial 구조체 기본 크기
+	TotalSize += MaterialRegistry.size() * sizeof(FMaterial);
+
+	// 2. 내부 FString들이 힙(Heap)에 동적 할당한 문자열 길이까지 정밀하게 합산
+	for (const auto& Pair : MaterialRegistry)
+	{
+		const FMaterial& Mat = Pair.second;
+		TotalSize += Mat.Name.capacity();
+		TotalSize += Mat.DiffuseTexPath.capacity();
+		TotalSize += Mat.AmbientTexPath.capacity();
+		TotalSize += Mat.SpecularTexPath.capacity();
+		TotalSize += Mat.BumpTexPath.capacity();
+	}
+
+	return TotalSize;
+}
