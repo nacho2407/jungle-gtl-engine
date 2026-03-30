@@ -1,6 +1,7 @@
 #pragma once
 #include "Viewport/Window/EditorViewportPanel.h"
 #include "Core/Runtime/Slate/Window/SSplitter.h"
+#include "Renderer/SceneFrameRenderData.h"
 #include "Renderer/WidgetRenderData.h"
 
 struct FEditorContext;
@@ -61,6 +62,11 @@ class FWindowOverlayManager
 
     // Sets the scene to render for ALL viewports
     void SetScene(FScene* InScene);
+
+    // Traverses the scene once per frame and returns view-independent render items.
+    // Call this before the per-panel render loop, then pass the result to
+    // FRendererModule::SetSceneFrameData.
+    FSceneFrameRenderData BuildSceneFrameData() const;
 
     // Modifies how cameras are laid out onto the viewport
     void SetViewportLayout(EViewportLayout Layout);

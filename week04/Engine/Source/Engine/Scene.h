@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/Containers/Array.h"
-#include "Renderer/SceneRenderData.h"
+#include "Renderer/SceneFrameRenderData.h"
 #include "Renderer/Types/SceneShowFlags.h"
 
 class AActor;
@@ -17,7 +17,7 @@ class ENGINE_API FScene
 
     void Tick(float DeltaTime);
 
-    void BuildRenderData(FSceneRenderData& OutRenderData, ESceneShowFlags InShowFlags) const;
+    void BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFlags InShowFlags) const;
     void Clear();
 
     TArray<AActor*>* GetActors() { return &Actors; }

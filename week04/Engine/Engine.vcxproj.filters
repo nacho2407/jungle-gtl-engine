@@ -708,9 +708,6 @@
     <ClInclude Include="Source\Renderer\RendererModule.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\SceneRenderData.h">
-      <Filter>Source\Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Renderer\SceneView.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>

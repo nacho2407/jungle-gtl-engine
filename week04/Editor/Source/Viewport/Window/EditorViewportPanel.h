@@ -4,7 +4,6 @@
 #include "Viewport/EditorViewportClient.h"
 #include "Core/Runtime/Slate/Window/SWindow.h"
 #include "Renderer/SceneView.h"
-#include "Renderer/SceneRenderData.h"
 
 class FEditorViewportPanel : public SWindow
 {
@@ -12,9 +11,7 @@ class FEditorViewportPanel : public SWindow
     FEditorViewportPanel() = default;
     FEditorViewport*       Viewport       = nullptr; // 렌더 타겟 텍스처 관리 (출력)
     FEditorViewportClient* ViewportClient = nullptr; // 카메라 및 입력 로직 관리 (입력/제어)
-    FScene*                Scene          = nullptr;
 
-    FSceneRenderData  SceneRenderData;
     FEditorRenderData EditorRenderData;
 
     void PrepareRender();

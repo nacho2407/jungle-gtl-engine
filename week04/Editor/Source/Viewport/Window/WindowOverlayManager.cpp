@@ -1,5 +1,6 @@
 #include "WindowOverlayManager.h"
 #include "Editor/EditorContext.h"
+#include "Engine/Scene.h"
 
 #include <cmath>
 
@@ -314,7 +315,6 @@ void FWindowOverlayManager::AddNewViewportPanel()
     ViewportClient->GetNavigationController().SetMoveSpeed(DefaultMoveSpeed);
     ViewportClient->GetNavigationController().SetRotationSpeed(DefaultRotationSpeed);
 
-    Panel->Scene          = Scene;
     Panel->ViewportClient = ViewportClient;
     ViewportClient->OnPickRequested = PickCallback;
     ViewportPanels.push_back(Panel);
@@ -437,9 +437,28 @@ void FWindowOverlayManager::SetScene(FScene* InScene)
     Scene = InScene;
     for (FEditorViewportPanel* Panel : ViewportPanels)
     {
-        if (Panel)
-            Panel->Scene = InScene;
+        if (Panel && Panel->ViewportClient)
+            Panel->ViewportClient->SetScene(InScene);
     }
+}
+
+FSceneFrameRenderData FWindowOverlayManager::BuildSceneFrameData() const
+{
+    FSceneFrameRenderData FrameData;
+    if (Scene == nullptr)
+    {
+        return FrameData;
+    }
+
+    ESceneShowFlags UnionFlags = ESceneShowFlags::None;
+    for (FEditorViewportPanel* Panel : ViewportPanels)
+    {
+        if (Panel && Panel->ViewportClient)
+            UnionFlags |= Panel->ViewportClient->GetRenderSetting().BuildSceneShowFlags();
+    }
+
+    Scene->BuildRenderData(FrameData, UnionFlags);
+    return FrameData;
 }
 
 void FWindowOverlayManager::SetPickCallback(FEditorViewportClient::FPickCallback Callback)

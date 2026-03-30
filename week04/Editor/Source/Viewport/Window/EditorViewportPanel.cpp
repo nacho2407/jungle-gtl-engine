@@ -1,5 +1,4 @@
 #include "EditorViewportPanel.h"
-#include "Engine/Scene.h"
 
 void FEditorViewportPanel::PrepareRender() {
     FViewportCamera& Cam = ViewportClient->GetCamera();
@@ -17,23 +16,13 @@ void FEditorViewportPanel::PrepareRender() {
     SceneView.SetViewRect(VR);
 }
 
-void FEditorViewportPanel::BuildRenderData() 
+void FEditorViewportPanel::BuildRenderData()
 {
-	SceneRenderData = {};
     EditorRenderData = {};
     EditorRenderData.SceneView = &SceneView;
-    SceneRenderData.SceneView = &SceneView;
-    SceneRenderData.ViewMode = ViewportClient->GetRenderSetting().GetViewMode();
 
     const EEditorShowFlags EditorShowFlags =
         ViewportClient->GetRenderSetting().BuildEditorShowFlags(true);
-    const ESceneShowFlags SceneShowFlags =
-        ViewportClient->GetRenderSetting().BuildSceneShowFlags();
 
     ViewportClient->BuildRenderData(EditorRenderData, EditorShowFlags);
-
-    if (Scene)
-    {
-        Scene->BuildRenderData(SceneRenderData, SceneShowFlags);
-    }
 }

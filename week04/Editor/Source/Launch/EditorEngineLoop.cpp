@@ -627,6 +627,8 @@ bool FEditorEngineLoop::RunFrameOnceWithoutResize()
     FWidgetRenderData WidgetRenderData = {};
     if (WindowOverlayManager)
     {
+        Renderer->SetSceneFrameData(WindowOverlayManager->BuildSceneFrameData());
+
         for (FEditorViewportPanel* Panel : WindowOverlayManager->GetViewportPanels())
         {
             if (!Panel || !Panel->ViewportClient) continue;
@@ -635,7 +637,8 @@ bool FEditorEngineLoop::RunFrameOnceWithoutResize()
 
             Panel->PrepareRender();
             Panel->BuildRenderData();
-            Renderer->Render(Panel->EditorRenderData, Panel->SceneRenderData);
+            Renderer->Render(Panel->EditorRenderData,
+                             Panel->ViewportClient->GetRenderSetting().GetViewMode());
         }
         WindowOverlayManager->BuildViewportWIdgetData(WidgetRenderData);
         Renderer->RenderViewportOverlayPass(WidgetRenderData);
