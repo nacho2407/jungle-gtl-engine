@@ -158,6 +158,7 @@
     <ClCompile Include="Source\Pawn\EditorCameraPawn.cpp" />
     <ClCompile Include="Source\Picking\Picker.cpp" />
     <ClCompile Include="Source\Slate\HorizontalBox.cpp" />
+    <ClCompile Include="Source\Slate\Overlay.cpp" />
     <ClCompile Include="Source\Slate\Painter.cpp" />
     <ClCompile Include="Source\Slate\SlateApplication.cpp" />
     <ClCompile Include="Source\Slate\TextBlock.cpp" />
@@ -202,6 +203,7 @@
     <ClInclude Include="Source\Picking\Picker.h" />
     <ClInclude Include="Source\Slate\HorizontalBox.h" />
     <ClInclude Include="Source\Slate\Image.h" />
+    <ClInclude Include="Source\Slate\Overlay.h" />
     <ClInclude Include="Source\Slate\Painter.h" />
     <ClInclude Include="Source\Slate\Panel.h" />
     <ClInclude Include="Source\Slate\SlateApplication.h" />

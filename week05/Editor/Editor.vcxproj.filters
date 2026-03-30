@@ -125,6 +125,7 @@
     <ClCompile Include="Source\Slate\VerticalBox.cpp" />
     <ClCompile Include="Source\Slate\HorizontalBox.cpp" />
     <ClCompile Include="Source\Slate\TextBlock.cpp" />
+    <ClCompile Include="Source\Slate\Overlay.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\EditorEngine.h">
@@ -224,6 +225,7 @@
     <ClInclude Include="Source\Slate\VerticalBox.h" />
     <ClInclude Include="Source\Slate\Panel.h" />
     <ClInclude Include="Source\Slate\HorizontalBox.h" />
+    <ClInclude Include="Source\Slate\Overlay.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\imgui\imgui.natstepfilter">
