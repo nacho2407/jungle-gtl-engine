@@ -20,6 +20,10 @@ public:
 	virtual FMeshBuffer* GetMeshBuffer() const { return nullptr; }
 	virtual const FMeshData* GetMeshData() const { return nullptr; }
 
+	// 렌더 데이터 수집 — 각 컴포넌트가 자신의 렌더 엔트리를 RenderBus에 직접 추가
+	virtual void CollectRender(FRenderBus& Bus) const;
+	virtual void CollectSelection(FRenderBus& Bus) const;
+
 	inline void SetVisibility(bool bVisible) { bIsVisible = bVisible; }
 
 	// 월드 공간 AABB를 FBoundingBox로 반환 (파트 B LineBatcher와의 인터페이스)
@@ -43,6 +47,11 @@ public:
 	virtual bool SupportsOutline() const { return true; }
 
 protected:
+	// Stencil+Outline 공통 패턴 — 셰이더와 행렬만 지정하면 나머지 자동
+	void BuildOutlineCommands(FRenderBus& Bus, FMeshBuffer* Buffer,
+		const FMatrix& WorldMatrix, const FVector& WorldScale,
+		FShader* StencilShader, FShader* OutlineShader) const;
+
 	FVector LocalExtents = { 0.5f, 0.5f, 0.5f };
 	mutable FVector WorldAABBMinLocation;
 	mutable FVector WorldAABBMaxLocation;
