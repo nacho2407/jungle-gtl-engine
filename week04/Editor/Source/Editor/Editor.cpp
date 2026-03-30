@@ -603,6 +603,10 @@ void FEditor::ReplaceCurrentScene(std::unique_ptr<FScene> NewScene)
     EditorContext.Scene = CurScene;
     EditorContext.SelectedObject = nullptr;
     EditorContext.SelectedActors.clear();
+    if (WindowOverlayManager)
+    {
+        WindowOverlayManager->SetScene(CurScene);
+    }
     ResolveSceneAssetReferences(CurScene);
 }
 
