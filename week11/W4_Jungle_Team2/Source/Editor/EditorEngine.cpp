@@ -81,6 +81,16 @@ void UEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
 void UEditorEngine::Tick(float DeltaTime)
 {
 	ViewportLayout.Tick(DeltaTime);
+
+	// 마지막 포커스 뷰포트 카메라를 ActiveCamera 로 갱신
+	// → BillboardComponent::TickComponent 가 올바른 카메라를 참조하도록
+	if (UWorld* World = GetWorld())
+	{
+		const int32 FocusedIdx = ViewportLayout.GetLastFocusedViewportIndex();
+		if (FViewportCamera* FocusedCam = ViewportLayout.GetIndexedViewportClientCamera(FocusedIdx))
+			World->SetActiveCamera(FocusedCam);
+	}
+
 	MainPanel.Update();
 	UEngine::Tick(DeltaTime);
 }
