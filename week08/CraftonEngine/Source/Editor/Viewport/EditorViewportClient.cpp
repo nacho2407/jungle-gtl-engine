@@ -298,7 +298,6 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 	if (FRayUtils::RaycastComponent(Gizmo, Ray, HitResult))
 	{
 		Gizmo->SetPressedOnHandle(true);
-		UE_LOG("Gizmo is Holding");
 	}
 	else
 	{
@@ -327,7 +326,6 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 					}
 				}
 			}
-
 		}
 
 		bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);

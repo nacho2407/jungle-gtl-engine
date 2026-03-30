@@ -89,33 +89,21 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	}
 
 	// RenderCommand를 ERenderPass별로 수집. Collect 단계에서 CPU에서 처리할 작업(예: AABB → 선분 변환)도 수행.
-	Collector.CollectWorld(World, ShowFlags, ViewMode, Bus);
+	Collector.CollectWorld(World, Editor->GetSelectionManager().GetSelectedActors(), Bus);
 	Collector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Bus);
-	Collector.CollectGizmo(Editor->GetGizmo(), ShowFlags, Bus);
-	Collector.CollectSelection(
-		Editor->GetSelectionManager().GetSelectedActors(),
-		ShowFlags, ViewMode, Bus);
+	Collector.CollectGizmo(Editor->GetGizmo(), Bus);
 
 	const TArray<FOverlayStatLine> OverlayLines = Editor->GetOverlayStatSystem().BuildLines(*Editor);
 	if (!OverlayLines.empty() && VP && VC == Editor->GetActiveViewport())
 	{
-		const float TextScale = Editor->GetOverlayStatSystem().GetLayout().TextScale;
-
+		TArray<FScreenTextItem> TextItems;
+		TextItems.reserve(OverlayLines.size());
 		for (const FOverlayStatLine& Line : OverlayLines)
 		{
-			FRenderCommand Cmd = {};
-			Cmd.Type = ERenderCommandType::Font;
-			Cmd.BlendState = EBlendState::AlphaBlend;
-			Cmd.DepthStencilState = EDepthStencilState::NoDepth;
-
-			Cmd.Params.Font.Text = &Line.Text;
-			Cmd.Params.Font.Font = nullptr;
-			Cmd.Params.Font.Scale = TextScale;
-			Cmd.Params.Font.bScreenSpace = 1;
-			Cmd.Params.Font.ScreenPosition = Line.ScreenPosition;
-
-			Bus.AddCommand(ERenderPass::OverlayFont, std::move(Cmd));
+			TextItems.push_back({ &Line.Text, Line.ScreenPosition });
 		}
+
+		Collector.CollectOverlayText(TextItems, Editor->GetOverlayStatSystem().GetLayout().TextScale, Bus);
 	}
 
 	//============
