@@ -35,6 +35,15 @@ FVector FViewportCamera::GetUpVector() const
 	return Rotation.GetUpVector();
 }
 
+FVector FViewportCamera::GetEffectiveForward() const
+{
+	if (bHasCustomLookDir)
+	{
+		return CustomLookDir;
+	}
+	return GetForwardVector();
+}
+
 FVector FViewportCamera::GetEffectiveRight() const
 {
 	if (bHasCustomLookDir)

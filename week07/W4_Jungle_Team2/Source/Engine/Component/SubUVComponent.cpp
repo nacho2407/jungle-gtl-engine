@@ -45,7 +45,6 @@ void USubUVComponent::UpdateWorldAABB() const
 {
 	WorldAABB.Reset();
 
-
 	/*FVector LExt = { 0.01f, Width * 0.5f, Height * 0.5f };
 
 	float NewEx = std::abs(CachedWorldMatrix.M[0][0]) * LExt.X +
@@ -85,9 +84,9 @@ bool USubUVComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 		BillboardWorldMatrix = MakeBillboardWorldMatrix(
 			GetWorldLocation(),
 			GetWorldScale(),
-			ActiveCamera->GetForwardVector(),
-			ActiveCamera->GetRightVector(),
-			ActiveCamera->GetUpVector());
+			ActiveCamera->GetEffectiveForward(),
+			ActiveCamera->GetEffectiveRight(),
+			ActiveCamera->GetEffectiveUp());
 	}
 
 	const FMatrix InvWorld = BillboardWorldMatrix.GetInverse();
