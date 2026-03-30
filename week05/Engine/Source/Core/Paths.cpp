@@ -4,6 +4,82 @@
 
 namespace fs = std::filesystem;
 
+namespace
+{
+	std::wstring Utf8ToWide(const FString& Utf8String)
+	{
+		if (Utf8String.empty())
+		{
+			return L"";
+		}
+
+		const int32 RequiredChars = ::MultiByteToWideChar(
+			CP_UTF8,
+			0,
+			Utf8String.c_str(),
+			-1,
+			nullptr,
+			0);
+		if (RequiredChars <= 1)
+		{
+			return L"";
+		}
+
+		std::wstring WideString;
+		WideString.resize(static_cast<size_t>(RequiredChars));
+		::MultiByteToWideChar(
+			CP_UTF8,
+			0,
+			Utf8String.c_str(),
+			-1,
+			WideString.data(),
+			RequiredChars);
+		WideString.pop_back();
+		return WideString;
+	}
+
+	std::string WideToUtf8(const std::wstring& WideString)
+	{
+		if (WideString.empty())
+		{
+			return "";
+		}
+
+		const int32 RequiredBytes = ::WideCharToMultiByte(
+			CP_UTF8,
+			0,
+			WideString.c_str(),
+			-1,
+			nullptr,
+			0,
+			nullptr,
+			nullptr);
+		if (RequiredBytes <= 1)
+		{
+			return "";
+		}
+
+		std::string Utf8String;
+		Utf8String.resize(static_cast<size_t>(RequiredBytes));
+		::WideCharToMultiByte(
+			CP_UTF8,
+			0,
+			WideString.c_str(),
+			-1,
+			Utf8String.data(),
+			RequiredBytes,
+			nullptr,
+			nullptr);
+		Utf8String.pop_back();
+		return Utf8String;
+	}
+
+	std::string PathToUtf8(const fs::path& Path)
+	{
+		return WideToUtf8(Path.wstring());
+	}
+}
+
 // FString FPaths::Root;
 std::filesystem::path FPaths::Root;
 bool FPaths::bInitialized = false;
@@ -50,37 +126,36 @@ void FPaths::Initialize()
 
 std::wstring FPaths::ToWide(const FString& Path)
 {
-	return std::wstring(Path.begin(), Path.end());
+	return Utf8ToWide(Path);
 }
 
 std::string FPaths::ToRelativePath(const FString& Path)
 {
-	FString Root = ProjectRoot().string();
-	FString RelativePath = Path;
-
-	if (RelativePath.starts_with(Root))
+	const fs::path InputPath = fs::path(ToWide(Path)).lexically_normal();
+	if (!InputPath.is_absolute())
 	{
-		RelativePath = RelativePath.substr(Root.length(), RelativePath.length() - Root.length());
+		return PathToUtf8(InputPath);
 	}
-	else
-		return Path;
 
-	return RelativePath;
+	const fs::path RootPath = ProjectRoot().lexically_normal();
+	const fs::path RelativePath = InputPath.lexically_relative(RootPath);
+	if (RelativePath.empty())
+	{
+		return PathToUtf8(InputPath);
+	}
+
+	return PathToUtf8(RelativePath);
 }
 
 std::string FPaths::ToAbsolutePath(const FString& Path)
 {
-	FString Root = ProjectRoot().string();
-	FString AbsolutePath = Path;
-
-	if (AbsolutePath.starts_with(Root))
+	const fs::path InputPath = fs::path(ToWide(Path)).lexically_normal();
+	if (InputPath.is_absolute())
 	{
-		return Path;
+		return PathToUtf8(InputPath);
 	}
-	else
-		AbsolutePath = Root + Path;
 
-	return AbsolutePath;
+	return PathToUtf8((ProjectRoot() / InputPath).lexically_normal());
 }
 
 void FPaths::SetRoot(const std::filesystem::path& InPath)

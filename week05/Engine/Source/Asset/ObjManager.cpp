@@ -1,5 +1,6 @@
 #include "ObjManager.h"
 #include "Core/Paths.h"
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 
@@ -92,13 +93,16 @@ inline bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutM
 	return true;*/
 
 	// 1. 파일 열기 (엔진의 FString이나 FPaths에 맞춰서 수정하세요)
-	std::string FilePathStr(FilePath.c_str());
+	const FString AbsolutePath = FPaths::ToAbsolutePath(FilePath);
+	const std::filesystem::path ObjPath(FPaths::ToWide(AbsolutePath));
+	const std::filesystem::path FilePathStr = ObjPath;
+	const std::string FilePathDisplay = AbsolutePath;
 	// std::string FilePathStr(FPaths::ToAbsolutePath(FilePath).c_str()); 
 
 	std::ifstream File(FilePathStr); // 텍스트 모드로 열기
 	if (!File.is_open())
 	{
-		printf("[FObjManager] Failed to open OBJ file: %s\n", FilePathStr.c_str());
+		printf("[FObjManager] Failed to open OBJ file: %s\n", FilePathDisplay.c_str());
 		return false;
 	}
 
@@ -226,7 +230,7 @@ inline bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutM
 	OutMesh->Topology = EMeshTopology::EMT_TriangleList;
 
 	printf("[FObjManager] Parsed Temporary OBJ: %s (Verts: %zu, Inds: %zu)\n",
-		FilePathStr.c_str(), OutMesh->Vertices.size(), OutMesh->Indices.size());
+		FilePathDisplay.c_str(), OutMesh->Vertices.size(), OutMesh->Indices.size());
 
 	return true;
 }
