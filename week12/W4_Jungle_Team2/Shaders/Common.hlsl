@@ -46,10 +46,11 @@ cbuffer EditorBuffer : register(b4)
 cbuffer OutlineConstants : register(b5)
 {
     float4 OutlineColor;
-    float3 OutlineInvScale;
-    float OutlineOffset;
-    uint PrimitiveType; //  0 : 2D, 1 : 3D
-    float3 Padding4;
+    float OutlineFactor;
+    float3 padding4;
+    // float OutlineOffset;
+    // uint PrimitiveType; //  0 : 2D, 1 : 3D
+    // float3 Padding4;
 };
 
 float4 ApplyMVP(float3 pos)

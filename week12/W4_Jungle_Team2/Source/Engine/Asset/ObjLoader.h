@@ -43,6 +43,7 @@ private:
 	uint32 GetOrCreateVertexIndex(const FObjRawIndex & RawIndex, TMap<FObjVertexKey, uint32> & VertexMap);
 	
 	void NormalizeRawPositionsToUnitCube();
+	void NormalizeRawSizeToUnitCube();
 private:
 	FString SourcePath;
 	FObjRawData RawData;
