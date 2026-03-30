@@ -7,6 +7,7 @@
 #include "Slate/SSplitterV.h"
 #include "Slate/SlateApplication.h"
 #include "Core/InputSystem.h"
+#include <imgui.h>
 
 //  뷰포트 타입 테이블  [인덱스 → EEditorViewportType]
 static constexpr EEditorViewportType kViewportTypes[FViewportLayout::MaxViewports] =
@@ -108,7 +109,13 @@ void FViewportLayout::UpdateHoverStates()
 
 					// 좌클릭 시 해당 뷰포트를 마지막 포커스로 등록
 					if (InputSystem::Get().GetKeyDown(VK_LBUTTON))
+					{
+						if (ImGui::GetIO().WantCaptureMouse)
+						{
+							return;
+						}
 						LastFocusedViewportIndex = i;
+					}
 				}
 				else
 				{
