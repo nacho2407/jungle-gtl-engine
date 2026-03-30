@@ -23,7 +23,7 @@ public:
 	static std::wstring SettingsFilePath();  // Settings/Editor.ini
 	static std::wstring ViewerSettingsFilePath(); // Settings/ObjViewer.ini
 	static std::wstring ResourceFilePath();  // Settings/Resource.ini
-
+	static std::wstring ResourceDefaultMaterialTexture(); // Asset/Mesh/Default.png
 	static std::wstring ToRelative(const std::wstring& AbsolutePath);
 	static std::wstring ToAbsolute(const std::wstring& RelativePath);
 	static std::string ToRelativeString(const std::wstring& AbsolutePath);

@@ -11,8 +11,9 @@ std::wstring FPaths::RootDir()
 		WCHAR Buffer[MAX_PATH];
 		GetModuleFileNameW(nullptr, Buffer, MAX_PATH);
 		std::filesystem::path ExeDir = std::filesystem::path(Buffer).parent_path();
+		ExeDir /= "Test";
 
-		if (std::filesystem::exists(ExeDir / L"Shaders"))
+ 		if (std::filesystem::exists(ExeDir / L"Shaders"))
 		{
 			// 배포: exe와 리소스가 같은 디렉터리
 			Cached = ExeDir.generic_wstring() + L"/";
@@ -34,6 +35,8 @@ std::wstring FPaths::ShaderFilePath() { return RootDir() + L"Shaders/ShaderW0.hl
 std::wstring FPaths::SettingsFilePath() { return RootDir() + L"Settings/Editor.ini"; }
 std::wstring FPaths::ViewerSettingsFilePath() { return RootDir() + L"Settings/ObjViewer.ini"; }
 std::wstring FPaths::ResourceFilePath() { return RootDir() + L"Settings/Resource.ini"; }
+std::wstring FPaths::ResourceDefaultMaterialTexture() { return RootDir() + L"Asset/Mesh/Default.png"; }
+
 
 std::wstring FPaths::Combine(const std::wstring& Base, const std::wstring& Child)
 {
