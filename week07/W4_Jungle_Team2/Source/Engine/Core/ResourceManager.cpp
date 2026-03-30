@@ -6,9 +6,89 @@
 #include <algorithm>
 #include <fstream>
 #include <filesystem>
+#include <chrono>
+
 #include "DDSTextureLoader.h"
 #include "WICTextureLoader.h"
 #include "UI/EditorConsoleWidget.h"
+#include "Asset/BinarySerializer.h"
+#include "Asset/StaticMeshTypes.h"
+
+#pragma region __BINARY__
+
+uint64 FResourceManager::GetFileWriteTimeTicks(const FString& Path) const
+{
+	namespace fs = std::filesystem;
+
+	fs::path FilePath(FPaths::ToAbsolute(FPaths::ToWide(Path)));
+	if (!fs::exists(FilePath))
+	{
+		return 0;
+	}
+
+	auto WriteTime = fs::last_write_time(FilePath);
+	auto Duration = WriteTime.time_since_epoch();
+
+	return static_cast<uint64>(
+		std::chrono::duration_cast<std::chrono::seconds>(Duration).count());
+}
+
+FString FResourceManager::MakeStaticMeshBinaryPath(const FString& SourcePath) const
+{
+	namespace fs = std::filesystem;
+
+	fs::path SourceFsPath(FPaths::ToWide(SourcePath));
+
+	//	Root/Asset/Mesh/Bin
+	fs::path BinDir = fs::path(FPaths::RootDir()) / "Asset" / "Mesh" / "Bin";
+
+	if (!fs::exists(BinDir))
+	{
+		fs::create_directories(BinDir);
+	}
+
+	//	파일명만 따와서 .bin 으로 저장
+	fs::path BinaryFileName = SourceFsPath.stem();
+	BinaryFileName += ".bin";
+
+	fs::path BinaryPath = BinDir / BinaryFileName;
+	return FPaths::ToString(BinaryPath.wstring());
+}
+
+bool FResourceManager::IsStaticMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const
+{
+	FStaticMeshBinaryHeader Header;
+	if (!BinarySerializer.ReadStaticMeshHeader(BinaryPath, Header))
+	{
+		return false;
+	}
+
+	const uint64 SourceWriteTime = GetFileWriteTimeTicks(SourcePath);
+	if (SourceWriteTime == 0)
+	{
+		return false;
+	}
+
+	return Header.SourceFileWriteTime == SourceWriteTime;
+}
+
+void FResourceManager::PreloadStaticMeshes()
+{
+	for (const auto& [Key, Resource] : StaticMeshRegistry)
+	{
+		if (!Resource.bPreload)
+		{
+			continue;
+		}
+
+		if (LoadStaticMesh(Resource.Path) == nullptr)
+		{
+			UE_LOG("Failed to load static mesh from Resource.ini: %s", Resource.Path.c_str());
+		}
+	}
+}
+
+#pragma endregion
 
 namespace ResourceKey
 {
@@ -81,11 +161,6 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
 				: false;
 
 			StaticMeshRegistry[Pair.first] = Resource;
-
-			if (Resource.bPreload && LoadStaticMesh(Resource.Path) == nullptr)
-			{
-				UE_LOG("Failed to load static mesh from Resource.ini: %s", Resource.Path.c_str());
-			}
 		}
 	}
 
@@ -125,6 +200,9 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
 			ParticleResources[Pair.first] = Resource;
 		}
 	}
+
+	// Material 로딩 이후 StaticMesh Preload를 수행해야 SlotName->Material resolve가 가능합니다.
+	PreloadStaticMeshes();
 
 
 	if (LoadGPUResources(InDevice))
@@ -434,12 +512,72 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 		}
 	}
 
-	//	3. OBJ Load
-	UStaticMesh* LoadedMesh = ObjLoader.Load(Path, LoadOptions);
-	if (LoadedMesh == nullptr)
+	const FString BinaryPath = MakeStaticMeshBinaryPath(Path);
+
+	FStaticMesh* LoadedMeshData = nullptr;
+	double BinaryLoadSec = 0.0;
+	double ObjLoadSec = 0.0;
+
+	//	2. Binary Load 시도
+	if (IsStaticMeshBinaryValid(Path, BinaryPath))
 	{
-		return nullptr;
+		const auto BinaryStart = std::chrono::steady_clock::now();
+
+		LoadedMeshData = new FStaticMesh();
+		if (!BinarySerializer.LoadStaticMesh(BinaryPath, *LoadedMeshData))
+		{
+			delete LoadedMeshData;
+			LoadedMeshData = nullptr;
+		}
+
+		const auto BinaryEnd = std::chrono::steady_clock::now();
+		BinaryLoadSec = std::chrono::duration<double>(BinaryEnd - BinaryStart).count();
 	}
+
+	//	3. Binary 실패 시 OBJ Load
+	if (LoadedMeshData == nullptr)
+	{
+		const auto ObjStart = std::chrono::steady_clock::now();
+		LoadedMeshData = ObjLoader.Load(Path, LoadOptions);
+		const auto ObjEnd = std::chrono::steady_clock::now();
+		ObjLoadSec = std::chrono::duration<double>(ObjEnd - ObjStart).count();
+
+		if (LoadedMeshData == nullptr)
+		{
+			UE_LOG("[StaticMeshLoad] Failed | Path=%s | BinarySec=%.6f | ObjSec=%.6f", Path.c_str(), BinaryLoadSec, ObjLoadSec);
+			return nullptr;
+		}
+
+		//	4. OBJ 로드 성공 시 Binary 저장
+		const bool bSaveBinaryOk = BinarySerializer.SaveStaticMesh(BinaryPath, Path, *LoadedMeshData);
+		UE_LOG(
+			"[StaticMeshLoad] Source=OBJ | Path=%s | ObjSec=%.6f | BinarySave=%s | BinaryPath=%s",
+			Path.c_str(),
+			ObjLoadSec,
+			bSaveBinaryOk ? "OK" : "FAIL",
+			BinaryPath.c_str());
+	}
+	else
+	{
+		UE_LOG(
+			"[StaticMeshLoad] Source=Binary | Path=%s | BinarySec=%.6f | BinaryPath=%s",
+			Path.c_str(),
+			BinaryLoadSec,
+			BinaryPath.c_str());
+	}
+
+	TArray<FStaticMeshMaterialSlot> MaterialSlots;
+	MaterialSlots.reserve(LoadedMeshData->SlotNames.size());
+	for (const FString& SlotName : LoadedMeshData->SlotNames)
+	{
+		FStaticMeshMaterialSlot Slot = {};
+		Slot.SlotName = SlotName;
+		Slot.MaterialData = FindMaterial(SlotName);
+		MaterialSlots.push_back(Slot);
+	}
+
+	UStaticMesh* LoadedMesh = new UStaticMesh();
+	LoadedMesh->SetMeshData(LoadedMeshData, MaterialSlots);
 
 	StaticMeshMap.insert({ Path, LoadedMesh });
 	return LoadedMesh;
