@@ -115,34 +115,31 @@ struct FObjParserContext
 inline UStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileName)
 {
 	// 추후에 obj파싱이 끝나면 없앨 코드
-	if (PathFileName == "Primitive_Sphere") return GetPrimitiveSphere();
 
 	// ---------------------------------------------
 	auto It = ObjStaticMeshMap.find(PathFileName);
 	if (It != ObjStaticMeshMap.end()) return It->second;
 
-	FStaticMesh* RawData = new FStaticMesh();
+	auto RawData = std::make_unique<FStaticMesh>();
 	RawData->PathFileName = PathFileName;
 
 	TArray<FString> FoundMaterials;
-	if (!ParseObjFile(PathFileName, RawData, FoundMaterials))
+	if (!ParseObjFile(PathFileName, RawData.get(), FoundMaterials))
 	{
-		delete RawData;
 		return nullptr;
 	}
 
 	RawData->UpdateLocalBound();
 
 	UStaticMesh* NewAsset = new UStaticMesh();
-	NewAsset->SetStaticMeshAsset(RawData);
+	NewAsset->SetStaticMeshAsset(RawData.release());
 	
-	NewAsset->LocalBounds.Radius = RawData->GetLocalBoundRadius();
-	NewAsset->LocalBounds.Center = RawData->GetCenterCoord();
-	NewAsset->LocalBounds.BoxExtent = (RawData->GetMaxCoord() - RawData->GetMinCoord()) * 0.5f;
+	NewAsset->LocalBounds.Radius = NewAsset->GetRenderData()->GetLocalBoundRadius();
+	NewAsset->LocalBounds.Center = NewAsset->GetRenderData()->GetCenterCoord();
+	NewAsset->LocalBounds.BoxExtent = (NewAsset->GetRenderData()->GetMaxCoord() - NewAsset->GetRenderData()->GetMinCoord()) * 0.5f;
 
 	for (const FString& MatName : FoundMaterials)
 	{
-		UE_LOG("%s", MatName.c_str());
 		auto Material = FMaterialManager::Get().FindByName(MatName);
 
 		if (!Material)
@@ -189,7 +186,7 @@ bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
 			CurrentMaterial->SetOriginName(MaterialName.c_str());
 
 			std::wstring VSPath = FPaths::ShaderDir() / L"VertexShader.hlsl";
-			std::wstring PSPath = FPaths::ShaderDir() / L"TexturePixelShader.hlsl";
+			std::wstring PSPath = FPaths::ShaderDir() / L"ColorPixelShader.hlsl";
 			CurrentMaterial->SetVertexShader(FShaderMap::Get().GetOrCreateVertexShader(GEngine->GetRenderer()->GetDevice(), VSPath.c_str()));
 			CurrentMaterial->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(GEngine->GetRenderer()->GetDevice(), PSPath.c_str()));
 
@@ -209,6 +206,19 @@ bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
 
 			FMaterialManager::Get().Register(MaterialName.c_str(), CurrentMaterial);
 		}
+		else if (Type == "Kd" && CurrentMaterial)
+		{
+			float R, G, B;
+			SS >> R >> G >> B;
+
+			float DiffuseColor[4] = {R, G, B, 1.0f};
+
+			auto CB = CurrentMaterial->GetConstantBuffer(0);
+			if (CB)
+			{
+				CB->SetData(DiffuseColor, sizeof(DiffuseColor));
+			}
+		}
 		else if (Type == "map_Kd" && CurrentMaterial)
 		{
 			std::string TextureFileName;
@@ -221,9 +231,12 @@ bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
 			{
 				auto MaterialTexture = std::make_shared<FMaterialTexture>();
 				MaterialTexture->TextureSRV = NewSRV;
-
 				CurrentMaterial->SetMaterialTexture(MaterialTexture);
-				UE_LOG("[MTL 파서] %s 텍스처 자동 로드 및 장착 완료!", TextureFileName.c_str());
+
+				std::wstring TexPSPath = FPaths::ShaderDir() / L"TexturePixelShader.hlsl";
+				CurrentMaterial->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(GEngine->GetRenderer()->GetDevice(), TexPSPath.c_str()));
+
+				UE_LOG("[MTL 파서] %s 텍스처 자동 로드 및 장착 완료!", TexPSPath.c_str());
 			}
 		}
 	}
@@ -311,186 +324,4 @@ inline void FObjManager::ClearCache()
 		}
 	}
 	ObjStaticMeshMap.clear();
-}
-
-UStaticMesh* FObjManager::GetPrimitiveSphere()
-{
-	FString SphereKey = "Primitive_Sphere";
-
-	auto It = ObjStaticMeshMap.find(SphereKey);
-	if (It != ObjStaticMeshMap.end())
-	{
-		return It->second;
-	}
-
-	FStaticMesh* RawData = new FStaticMesh();
-	RawData->PathFileName = SphereKey;
-
-	const int32 Latitudes = 16;  // 위도 분할 (정밀도)
-	const int32 Longitudes = 16; // 경도 분할 (정밀도)
-	const float Radius = 0.5f;   // 반지름 0.5 (지름 1.0)
-
-	// 1. 정점 생성 (위도/경도 기반)
-	for (int32 i = 0; i <= Latitudes; ++i)
-	{
-		float V = static_cast<float>(i) / static_cast<float>(Latitudes);
-		float Phi = V * FMath::PI; // 0 ~ PI
-
-		for (int32 j = 0; j <= Longitudes; ++j)
-		{
-			float U = static_cast<float>(j) / static_cast<float>(Longitudes);
-			float Theta = U * FMath::PI * 2.0f; // 0 ~ 2PI
-
-			float X = Radius * sinf(Phi) * cosf(Theta);
-			float Z = Radius * cosf(Phi);
-			float Y = Radius * sinf(Phi) * sinf(Theta);
-
-			FVector Pos(X, Y, Z);
-			FVector Normal = Pos;
-			Normal.Normalize(); // 중심에서 뻗어나가는 방향이 노멀
-
-			// ⭐ 예전 코드에서 가져온 "Normal 기반 색상 매핑" (RGB로 매핑)
-			float R = Normal.X * 0.5f + 0.5f;
-			float G = Normal.Y * 0.5f + 0.5f;
-			float B = Normal.Z * 0.5f + 0.5f;
-
-			FVertex Vert;
-			Vert.Position = Pos;
-			Vert.Normal = Normal;
-			Vert.Color = FVector4(R, G, B, 1.0f); // ⭐ 하얀색 대신 무지개색 적용!
-			Vert.UV = FVector2(U, V);
-
-			RawData->Vertices.push_back(Vert);
-		}
-	}
-
-	// 2. 인덱스 생성 (면 만들기)
-	for (int32 i = 0; i < Latitudes; ++i)
-	{
-		for (int32 j = 0; j < Longitudes; ++j)
-		{
-			uint32 First = (i * (Longitudes + 1)) + j;
-			uint32 Second = First + Longitudes + 1;
-
-			// 첫 번째 삼각형
-			RawData->Indices.push_back(First);
-			RawData->Indices.push_back(Second);
-			RawData->Indices.push_back(First + 1);
-
-			// 두 번째 삼각형
-			RawData->Indices.push_back(Second);
-			RawData->Indices.push_back(Second + 1);
-			RawData->Indices.push_back(First + 1);
-		}
-	}
-
-	RawData->Topology = EMeshTopology::EMT_TriangleList;
-
-	FMeshSection DefaultSection;
-	DefaultSection.MaterialIndex = 0;
-	DefaultSection.StartIndex = 0;
-	DefaultSection.IndexCount = static_cast<uint32>(RawData->Indices.size());
-	RawData->Sections.push_back(DefaultSection);
-
-	RawData->UpdateLocalBound();
-
-	UStaticMesh* SphereAsset = new UStaticMesh();
-	SphereAsset->SetStaticMeshAsset(RawData);
-
-	SphereAsset->LocalBounds.Radius = RawData->GetLocalBoundRadius();
-	SphereAsset->LocalBounds.Center = RawData->GetCenterCoord();
-	SphereAsset->LocalBounds.BoxExtent = (RawData->GetMaxCoord() - RawData->GetMinCoord()) * 0.5f;
-
-	ObjStaticMeshMap[SphereKey] = SphereAsset;
-
-	return SphereAsset;
-}
-
-UStaticMesh* FObjManager::GetPrimitiveSky()
-{
-	FString SkyKey = "Primitive_Sky";
-
-	auto It = ObjStaticMeshMap.find(SkyKey);
-	if (It != ObjStaticMeshMap.end())
-	{
-		return It->second;
-	}
-
-	FStaticMesh* RawData = new FStaticMesh();
-	RawData->PathFileName = SkyKey;
-
-	const int32 Segments = 32;
-	const int32 Rings = 32;
-	const float Radius = 0.5f;
-
-	// 1. 정점 생성 (안쪽을 바라보는 노멀)
-	for (int32 Ring = 0; Ring <= Rings; ++Ring)
-	{
-		float Phi = FMath::PI * static_cast<float>(Ring) / static_cast<float>(Rings);
-		float Z = cosf(Phi);
-		float SinPhi = sinf(Phi);
-
-		for (int32 Seg = 0; Seg <= Segments; ++Seg)
-		{
-			float Theta = FMath::TwoPi * static_cast<float>(Seg) / static_cast<float>(Segments);
-			float X = SinPhi * cosf(Theta);
-			float Y = SinPhi * sinf(Theta);
-
-			FVector Pos(X * Radius, Y * Radius, Z * Radius);
-
-			// ⭐ 핵심: 하늘은 안에서 밖을 보므로 노멀을 뒤집어 줍니다!
-			FVector Normal(-X, -Y, -Z);
-			Normal.Normalize();
-
-			FVertex Vert;
-			Vert.Position = Pos;
-			Vert.Normal = Normal;
-			Vert.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f); // 일단 하얀색
-
-			// UV 좌표도 꼼꼼히 챙겨줍니다 (나중에 구름 텍스처 발라야 하니까요!)
-			Vert.UV = FVector2(static_cast<float>(Seg) / Segments, static_cast<float>(Ring) / Rings);
-
-			RawData->Vertices.push_back(Vert);
-		}
-	}
-
-	// 2. 인덱스 생성 (면 그리는 순서 뒤집기)
-	for (int32 Ring = 0; Ring < Rings; ++Ring)
-	{
-		for (int32 Seg = 0; Seg < Segments; ++Seg)
-		{
-			uint32 Current = Ring * (Segments + 1) + Seg;
-			uint32 Next = Current + Segments + 1;
-
-			// ⭐ 핵심: 컬링되지 않도록 삼각형 그리는 순서를 바꿨습니다 (올려주신 기존 로직 유지)
-			RawData->Indices.push_back(Current);
-			RawData->Indices.push_back(Current + 1);
-			RawData->Indices.push_back(Next);
-
-			RawData->Indices.push_back(Current + 1);
-			RawData->Indices.push_back(Next + 1);
-			RawData->Indices.push_back(Next);
-		}
-	}
-
-	RawData->Topology = EMeshTopology::EMT_TriangleList;
-
-	FMeshSection DefaultSection;
-	DefaultSection.MaterialIndex = 0;
-	DefaultSection.StartIndex = 0;
-	DefaultSection.IndexCount = static_cast<uint32>(RawData->Indices.size());
-	RawData->Sections.push_back(DefaultSection);
-
-	RawData->UpdateLocalBound();
-
-	UStaticMesh* SkyAsset = new UStaticMesh();
-	SkyAsset->SetStaticMeshAsset(RawData);
-
-	SkyAsset->LocalBounds.Radius = RawData->GetLocalBoundRadius();
-	SkyAsset->LocalBounds.Center = RawData->GetCenterCoord();
-	SkyAsset->LocalBounds.BoxExtent = (RawData->GetMaxCoord() - RawData->GetMinCoord()) * 0.5f;
-
-	ObjStaticMeshMap[SkyKey] = SkyAsset;
-
-	return SkyAsset;
 }

@@ -15,7 +15,6 @@ public:
 	static void ClearCache();
 
 	// 임시용. 추후 .obj파일 파싱으로 변경될 예정.
-	static UStaticMesh* GetPrimitiveSphere();
 	static UStaticMesh* GetPrimitiveSky();
 
 private:

@@ -263,7 +263,7 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 				{
 					UStaticMeshComponent* MeshComp = FObjectFactory::ConstructObject<UStaticMeshComponent>();
 
-					std::filesystem::path ModelPath = FPaths::MeshDir() / "PrimitiveSphere.obj";
+					std::filesystem::path ModelPath = FPaths::MeshDir() / "bugatti.obj";
 					FString FullPath = ModelPath.string().c_str();
 
 					UStaticMesh* MeshData = FObjManager::LoadObjStaticMeshAsset(FullPath);
