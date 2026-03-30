@@ -317,6 +317,12 @@ void FWindowOverlayManager::AddNewViewportPanel()
 
     Panel->ViewportClient = ViewportClient;
     ViewportClient->OnPickRequested = PickCallback;
+
+    if (SharedSelectionController != nullptr)
+    {
+        ViewportClient->UseSharedSelectionController(SharedSelectionController);
+    }
+
     ViewportPanels.push_back(Panel);
 }
 

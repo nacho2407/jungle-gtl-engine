@@ -318,6 +318,11 @@ void FEditor::Create()
     FEditorViewportPanel* EditorPanel = new FEditorViewportPanel();
     EditorPanel->ViewportClient = &ViewportClient;
     WindowOverlayManager->GetViewportPanels().push_back(EditorPanel);
+
+    // Share the primary ViewportClient's selection controller with all sub-panels
+    // so there is only one SelectedActors array — eliminates stale-pointer crashes on actor delete.
+    WindowOverlayManager->SetSharedSelectionController(&ViewportClient.GetSelectionController());
+
     WindowOverlayManager->SetViewportLayout(EViewportLayout::ColumnTwoRow);
 
     // SubViewports and Splitter controls

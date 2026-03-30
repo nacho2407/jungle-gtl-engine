@@ -60,7 +60,11 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     {
         return NavigationController;
     }
-    FViewportSelectionController& GetSelectionController() { return SelectionController; }
+    FViewportSelectionController& GetSelectionController() { return *ActiveController; }
+
+    // Makes this client share an external selection controller instead of its own.
+    // Call after Create(). The camera is stamped onto the shared controller on each input event.
+    void UseSharedSelectionController(FViewportSelectionController* Shared);
     FViewportGizmoController& GetGizmoController() { return GizmoController; }
     FViewportInteractionState& GetInteractionState() { return InteractionState; }
     FViewportRenderSetting& GetRenderSetting() { return RenderSetting; }
@@ -97,12 +101,13 @@ private:
     FViewportCamera ViewportCamera;
 
     FViewportNavigationController NavigationController;
-    FViewportSelectionController SelectionController;
+    FViewportSelectionController  OwnedSelectionController;
+    FViewportSelectionController* ActiveController = nullptr; // points to OwnedSelectionController or a shared one
     FViewportGizmoController GizmoController;
     FViewportInteractionState InteractionState;
     FViewportRenderSetting RenderSetting;
 
     FNavigationInputContext ViewportInputContext{&NavigationController};
-    FSelectionInputContext SelectionInputContext{&SelectionController};
+    FSelectionInputContext  SelectionInputContext{nullptr}; // wired to ActiveController in Create()
     FGizmoInputContext      GizmoInputContext{&GizmoController};
 };

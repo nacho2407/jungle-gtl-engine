@@ -18,10 +18,12 @@ public:
                      const Engine::ApplicationCore::FInputState& State) override;
     void Tick(const Engine::ApplicationCore::FInputState& State) override;
 
+    void SetSelectionController(FViewportSelectionController* SC) { SelectionController = SC; }
+
 private:
     ESelectionMode ResolveSelectionMode(const Engine::ApplicationCore::FInputState& State) const;
     bool           IsRectSelectionModifier(const Engine::ApplicationCore::FInputState& State) const;
-    
+
 private:
     FViewportSelectionController* SelectionController = nullptr;
     

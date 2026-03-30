@@ -1,5 +1,6 @@
 #pragma once
 #include "Viewport/Window/EditorViewportPanel.h"
+#include "Viewport/Selection/ViewportSelectionController.h"
 #include "Core/Runtime/Slate/Window/SSplitter.h"
 #include "Renderer/SceneFrameRenderData.h"
 #include "Renderer/WidgetRenderData.h"
@@ -37,6 +38,10 @@ class FWindowOverlayManager
 
     FEditorViewportClient::FPickCallback PickCallback;
 
+    // A single shared selection controller distributed to all dynamically created sub-panels.
+    // Points to the primary ViewportClient's owned controller (set via SetSharedSelectionController).
+    FViewportSelectionController* SharedSelectionController = nullptr;
+
   public:
     void                           ResetViewportDimension();
     TArray<FEditorViewportPanel*>& GetViewportPanels();
@@ -59,6 +64,10 @@ class FWindowOverlayManager
 
     // Sets an editor context for each viewport panel to use
     void SetEditorContext(FEditorContext* InEditorContext) { EditorContext = InEditorContext; }
+
+    // Designates a single selection controller to be shared by all dynamically created sub-panels.
+    // Call this once after the primary ViewportClient is initialized.
+    void SetSharedSelectionController(FViewportSelectionController* SC) { SharedSelectionController = SC; }
 
     // Sets the scene to render for ALL viewports
     void SetScene(FScene* InScene);
