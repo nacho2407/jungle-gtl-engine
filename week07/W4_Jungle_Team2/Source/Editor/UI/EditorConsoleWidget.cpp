@@ -2,8 +2,8 @@
 
 #include <algorithm>
 
-#include "Editor/Settings/EditorSettings.h"
-#include <algorithm>
+#include "Editor/EditorEngine.h"
+#include "Editor/Viewport/ViewportLayout.h"
 
 // 콘솔 초기화 시점에 입력될 명령어를 등록한다.
 FEditorConsoleWidget::FEditorConsoleWidget() 
@@ -25,6 +25,14 @@ void FEditorConsoleWidget::AddLog(const char* fmt, ...) {
 void FEditorConsoleWidget::Render(float DeltaTime)
 {
 	(void)DeltaTime;
+
+	// 백틱(`) 키 → 콘솔 입력창 포커스
+	// Begin() 전에 호출해야 SetNextWindowFocus 가 올바르게 동작합니다.
+	if (ImGui::IsKeyPressed(ImGuiKey_GraveAccent, false))
+	{
+		bRequestFocusInput = true;
+		ImGui::SetNextWindowFocus();
+	}
 
 	ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
 	if (!ImGui::Begin("Console"))
@@ -90,21 +98,26 @@ void FEditorConsoleWidget::Render(float DeltaTime)
 	ImGui::Separator();
 
 	// Input line
-	bool bReclaimFocus = false;
 	ImGuiInputTextFlags Flags = ImGuiInputTextFlags_EnterReturnsTrue
 		| ImGuiInputTextFlags_EscapeClearsAll
 		| ImGuiInputTextFlags_CallbackHistory
-		| ImGuiInputTextFlags_CallbackCompletion;
+		| ImGuiInputTextFlags_CallbackCompletion
+		| ImGuiInputTextFlags_CallbackCharFilter; // 백틱 문자 필터링용
+
+	// 백틱 포커스 요청 → InputText에 커서 이동
+	if (bRequestFocusInput)
+	{
+		ImGui::SetKeyboardFocusHere(0);
+		bRequestFocusInput = false;
+	}
+
 	if (ImGui::InputText("Input", InputBuf, sizeof(InputBuf), Flags, &TextEditCallback, this)) {
 		ExecCommand(InputBuf);
 		strcpy_s(InputBuf, "");
-		bReclaimFocus = true;
+		// 명령 실행 후 포커스를 반환하지 않음 — EnterReturnsTrue 가 자동으로 포커스 해제
 	}
 
 	ImGui::SetItemDefaultFocus();
-	if (bReclaimFocus) {
-		ImGui::SetKeyboardFocusHere(-1);
-	}
 
 	ImGui::End();
 }
@@ -136,6 +149,14 @@ void FEditorConsoleWidget::ExecCommand(const char* CommandLine) {
 // History & Tab-Completion Callback____________________________________________________________
 int32 FEditorConsoleWidget::TextEditCallback(ImGuiInputTextCallbackData* Data) {
 	FEditorConsoleWidget* Console = (FEditorConsoleWidget*)Data->UserData;
+
+	// 백틱(`) 문자는 콘솔 토글 키이므로 입력창에 삽입하지 않음
+	if (Data->EventFlag == ImGuiInputTextFlags_CallbackCharFilter)
+	{
+		if (Data->EventChar == L'`')
+			return 1; // 문자 버림
+		return 0;
+	}
 
 	if (Data->EventFlag == ImGuiInputTextFlags_CallbackHistory) {
 		const int32 PrevPos = Console->HistoryPos;
@@ -195,24 +216,33 @@ void FEditorConsoleWidget::CmdStat(const TArray<FString>& Args)
 		return;
 	}
 
+	if (!EditorEngine) return;
+
 	FString Target = Args[1];
 	std::transform(Target.begin(), Target.end(), Target.begin(), ::tolower);
-	FEditorSettings& Settings = FEditorSettings::Get();
+
+	FViewportLayout& Layout = EditorEngine->GetViewportLayout();
+	const int32 FocusedIdx  = Layout.GetLastFocusedViewportIndex();
 
 	if (Target == "fps")
 	{
-		Settings.bShowStatFPS = !Settings.bShowStatFPS;
-		AddLog("Stat FPS %s\n", Settings.bShowStatFPS ? "Enabled" : "Disabled");
+		bool& bFlag = Layout.GetViewportState(FocusedIdx).bShowStatFPS;
+		bFlag = !bFlag;
+		AddLog("Stat FPS %s (viewport %d)\n", bFlag ? "Enabled" : "Disabled", FocusedIdx);
 	}
 	else if (Target == "memory")
 	{
-		Settings.bShowStatMemory = !Settings.bShowStatMemory;
-		AddLog("Stat Memory %s\n", Settings.bShowStatMemory ? "Enabled" : "Disabled");
+		bool& bFlag = Layout.GetViewportState(FocusedIdx).bShowStatMemory;
+		bFlag = !bFlag;
+		AddLog("Stat Memory %s (viewport %d)\n", bFlag ? "Enabled" : "Disabled", FocusedIdx);
 	}
 	else if (Target == "none")
 	{
-		Settings.bShowStatFPS = false;
-		Settings.bShowStatMemory = false;
+		for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+		{
+			Layout.GetViewportState(i).bShowStatFPS    = false;
+			Layout.GetViewportState(i).bShowStatMemory = false;
+		}
 		AddLog("All Stats Disabled\n");
 	}
 }
