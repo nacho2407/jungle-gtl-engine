@@ -19,6 +19,7 @@ void UStaticMesh::SetMeshData(FStaticMesh* InMeshData, const TArray<FStaticMeshM
 
 	delete MeshData;
 	MeshData = InMeshData;
+	MaterialSlots = MaterialSlot;
 	RebuildLocalBoundsFromMeshData();
 }
 
