@@ -61,6 +61,18 @@ struct FSceneDocumentState
     FDeferredSceneAction DeferredAction;
 };
 
+/**
+ * @brief 에디터 중앙의 실제 게임 월드가 그려지는 뷰포트 패널의 위치와 크기를 나타내는 구조체입니다.
+ */
+struct FViewportAvailableArea
+{
+    float X = 0.0f;
+    float Y = 0.0f;
+    float Width = 0.0f;
+    float Height = 0.0f;
+    bool  bValid = false;
+};
+
 class FEditor
 {
   public:
@@ -107,6 +119,8 @@ class FEditor
 
     void ToggleActiveViewportStat(EViewportStatFlags StatFlag);
     void ClearActiveViewportStats();
+
+    const FViewportAvailableArea& GetViewportAvailableArea() const { return ViewportAvailableArea; }
     
   private:
     void BuildRenderData();
@@ -169,4 +183,10 @@ class FEditor
     bool  bAboutPopupOpen = false;
     bool  bAttemptedAboutImageLoad = false;
     FTextureResource* AboutImageResource = nullptr;
+
+    /**
+     * @brief 현재 ImGui 도킹된 패널들을 제외한 중앙의 게임 월드가 그려지는 뷰포트 패널의 위치와
+     * 크기를 나타내는 구조체입니다.
+     */
+    FViewportAvailableArea ViewportAvailableArea;
 };

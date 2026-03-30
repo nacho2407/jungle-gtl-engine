@@ -19,9 +19,10 @@
 #include "Panel/ShortcutsPanel.h"
 #include "Panel/StatePanel.h"
 
-#include "imgui.h"
+#include <imgui.h>
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_win32.h>
+#include <imgui_internal.h>
 
 #include <algorithm>
 #include <array>
@@ -312,6 +313,50 @@ namespace
         }
 
         return &Editor->GetViewportClient();
+    }
+
+    /**
+     * @brief 주어진 도킹 노드 트리에서 중앙 도킹 노드(게임 월드가 그려지는 중앙 패널)를 재귀적으로 탐색하여 반환합니다.
+     * 중앙 노드가 항상 트리의 루트에 위치한다는 보장이 없기 때문에 탐색할 필요가 있습니다.
+     * ChildNodes[0], ChildNodes[1] 접근은 internal 구조라 imgui_internal.h가 필요합니다.
+     */
+    ImGuiDockNode* FindCentralDockNode(ImGuiDockNode* Node)
+    {
+        if (Node == nullptr)
+        {
+            return nullptr;
+        }
+
+        if (Node->IsCentralNode())
+        {
+            return Node;
+        }
+
+        if (ImGuiDockNode* Found = FindCentralDockNode(Node->ChildNodes[0]))
+        {
+            return Found;
+        }
+
+        if (ImGuiDockNode* Found = FindCentralDockNode(Node->ChildNodes[1]))
+        {
+            return Found;
+        }
+
+        return nullptr;
+    }
+
+    /**
+     * @brief 주어진 위치와 크기를 기반으로 FViewportAvailableArea 구조체를 생성하는 헬퍼
+     */
+    FViewportAvailableArea MakeViewportAreaFromRect(const ImVec2& Pos, const ImVec2& Size, bool bValid = true)
+    {
+        FViewportAvailableArea Area;
+        Area.X = Pos.x;
+        Area.Y = Pos.y;
+        Area.Width = Size.x;
+        Area.Height = Size.y;
+        Area.bValid = bValid;
+        return Area;
     }
 } // namespace
 
@@ -1347,12 +1392,14 @@ void FEditor::DrawRootDockSpace()
 #ifdef IMGUI_HAS_DOCK
     if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DockingEnable) == 0)
     {
+        ViewportAvailableArea = {};
         return;
     }
 
     ImGuiViewport* Viewport = ImGui::GetMainViewport();
     if (Viewport == nullptr)
     {
+        ViewportAvailableArea = {};
         return;
     }
 
@@ -1369,11 +1416,17 @@ void FEditor::DrawRootDockSpace()
 
     if (DockSpaceWidth <= 0.0f || DockSpaceHeight <= 0.0f)
     {
+        ViewportAvailableArea = {};
         return;
     }
 
-    ImGui::SetNextWindowPos(ImVec2(Viewport->Pos.x + GutterMetrics.Left,
-                                   Viewport->Pos.y + FEditorChrome::TitleBarHeight));
+    const float DockSpaceX = Viewport->Pos.x + GutterMetrics.Left;
+    const float DockSpaceY = Viewport->Pos.y + FEditorChrome::TitleBarHeight;
+
+    FViewportAvailableArea ComputedArea;
+    ComputedArea = MakeViewportAreaFromRect(ImVec2(DockSpaceX, DockSpaceY), ImVec2(DockSpaceWidth, DockSpaceHeight));
+
+    ImGui::SetNextWindowPos(ImVec2(DockSpaceX, DockSpaceY));
     ImGui::SetNextWindowSize(ImVec2(DockSpaceWidth, DockSpaceHeight));
     ImGui::SetNextWindowViewport(Viewport->ID);
 
@@ -1394,11 +1447,22 @@ void FEditor::DrawRootDockSpace()
 
     if (ImGui::Begin("##EditorRootDockSpace", nullptr, WindowFlags))
     {
-        ImGui::DockSpace(ImGui::GetID("EditorRootDockSpace"), ImVec2(0.0f, 0.0f),
-                         RootDockSpaceFlags);
+        const ImGuiID DockSpaceId = ImGui::GetID("EditorRootDockSpace");
+        ImGui::DockSpace(DockSpaceId, ImVec2(0.0f, 0.0f), RootDockSpaceFlags);
+
+        ImGuiDockNode* RootNode = ImGui::DockBuilderGetNode(DockSpaceId);
+        ImGuiDockNode* CentralNode = FindCentralDockNode(RootNode);
+
+        if (CentralNode != nullptr)
+        {
+            ComputedArea = MakeViewportAreaFromRect(CentralNode->Pos, CentralNode->Size);
+        }
     }
 
     ImGui::End();
+
+    ViewportAvailableArea = ComputedArea;
+
     ImGui::PopStyleVar(3);
 #endif
 }
