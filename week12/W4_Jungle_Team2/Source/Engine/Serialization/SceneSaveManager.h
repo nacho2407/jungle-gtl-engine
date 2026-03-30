@@ -48,6 +48,9 @@ public:
 
 private:
 	// ---- Serialization ----
+	
+	static json::JSON SerializeWorldToPrimitives(UWorld* World, const FWorldContext& Ctx);
+	static json::JSON SerializeComponentToPrimitive(USceneComponent* SceneComp);
 	static json::JSON SerializeWorld(UWorld* World, const FWorldContext& Ctx);
 	static json::JSON SerializeActor(AActor* Actor);
 	static json::JSON SerializeSceneComponentTree(USceneComponent* Comp);
@@ -56,6 +59,7 @@ private:
 	static json::JSON SerializeCameraState(const FEditorCameraState* CameraState = nullptr);
 
 	// ---- Deserialization ----
+	static void DeserializePrimitivesToWorld(json::JSON& PrimitivesNode, UWorld* World);
 	static USceneComponent* DeserializeSceneComponentTree(json::JSON& Node, AActor* Owner);
 	static void DeserializeProperties(UActorComponent* Comp, json::JSON& PropsJSON);
 	static void DeserializePropertyValue(FPropertyDescriptor& Prop, json::JSON& Value);

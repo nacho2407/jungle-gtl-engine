@@ -1,54 +1,23 @@
 {
-  "Actors" : [{
-      "ClassName" : "AActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [],
-        "ClassName" : "UStaticMeshComponent",
-        "Properties" : {
-          "Location" : [0.000000, 1.906805, 0.000000],
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "StaticMesh" : "Asset/Mesh/buddha.obj",
-          "Visible" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "AActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [],
-        "ClassName" : "UStaticMeshComponent",
-        "Properties" : {
-          "Location" : [0.000000, 0.000000, 0.000000],
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "StaticMesh" : "Asset/Mesh/cube.obj",
-          "Visible" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "AActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [],
-        "ClassName" : "UStaticMeshComponent",
-        "Properties" : {
-          "Location" : [0.000000, 0.000000, 0.000000],
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "StaticMesh" : "Asset/Mesh/cube.obj",
-          "Visible" : true
-        }
-      },
-      "bVisible" : true
-    }],
   "ClassName" : "UWorld",
-  "ContextHandle" : "Default",
-  "ContextName" : "Default",
   "Name" : "Default",
-  "Version" : 2,
+  "PerspectiveCamera" : {
+    "FOV" : 60.000000,
+    "FarClip" : 2000.000000,
+    "Location" : [17.170649, -2.797964, 7.825249],
+    "NearClip" : 0.100000,
+    "Rotation" : [-22.719635, 147.510666, -13.817627]
+  },
+  "Primitives" : {
+    "0" : {
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Asset/Mesh/Lumine/LumineModel.obj",
+      "Rotation" : [0.000000, 0.000000, 0.000000],
+      "Scale" : [4.137448, 3.710561, 6.315658],
+      "Type" : "StaticMeshComp",
+      "Visible" : true
+    }
+  },
+  "Version" : 3,
   "WorldType" : "Editor"
 }
