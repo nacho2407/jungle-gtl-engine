@@ -224,7 +224,7 @@ bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
 			std::string TextureFileName;
 			SS >> TextureFileName;
 
-			std::filesystem::path TexturePath = FPaths::MeshDir() / TextureFileName;
+			std::filesystem::path TexturePath = FPaths::TextureDir() / TextureFileName;
 
 			ID3D11ShaderResourceView* NewSRV = nullptr;
 			if (GEngine->GetRenderer()->CreateTextureFromSTB(GEngine->GetRenderer()->GetDevice(), TexturePath.string().c_str(), &NewSRV))
@@ -272,7 +272,7 @@ inline bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutM
 			std::string MtlFIleName;
 			SS >> MtlFIleName;
 
-			FString FullMtlPath = (FPaths::MeshDir() / MtlFIleName).string().c_str();
+			FString FullMtlPath = (FPaths::MaterialDir() / MtlFIleName).string().c_str();
 			ParseMtlFile(FullMtlPath);
 		}
 		else if (Type == "usemtl") Context.ParseUseMtl(SS);

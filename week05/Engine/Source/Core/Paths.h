@@ -20,6 +20,7 @@ public:
 	static std::filesystem::path SceneDir();
 	static std::filesystem::path MaterialDir();
 	static std::filesystem::path MeshDir();
+	static std::filesystem::path TextureDir();
 	static std::filesystem::path ContentDir();
 	static std::filesystem::path ShaderCacheDir();
 
