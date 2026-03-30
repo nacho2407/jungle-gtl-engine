@@ -51,11 +51,12 @@ protected:
 	// 에디터 전용 초기화는 이 단계 하나로 모은 뒤 내부 단계로 다시 나눈다.
 	bool InitializeMode() override;
 	void FinalizeInitialize() override;
-	void Tick(float DeltaTime) override;
+	void PrepareFrame(float DeltaTime) override;
 	void TickWorlds(float DeltaTime) override;
 	bool WantsPhysicsDebugVisualization() const override { return true; }
 	std::unique_ptr<IViewportClient> CreateViewportClient() override;
 	void RenderFrame() override;
+	void SyncPlatformState() override;
 
 	FEditorViewportController* GetViewportController();
 	FViewport* FindViewport(FViewportId Id);
@@ -74,6 +75,8 @@ private:
 	FWorldContext* FindPreviewWorld(const FString& ContextName);
 	const FWorldContext* FindPreviewWorld(const FString& ContextName) const;
 	void UpdateEditorWorldAspectRatio(float AspectRatio);
+	void SyncFocusedViewportLocalState();
+	void SyncPlatformCursor();
 	void SyncViewportClient();
 
 	FEditorUI EditorUI;

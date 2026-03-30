@@ -95,12 +95,18 @@ void FEngine::Tick()
 
 	const float DeltaTime = GetDeltaTime();
 
-	Tick(DeltaTime);
-	TickInput(DeltaTime);
+	PrepareFrame(DeltaTime);
+	ProcessInput(DeltaTime);
 	TickPhysics(DeltaTime);
 	TickWorlds(DeltaTime);
 	RenderFrame();
-	RunLateUpdate(DeltaTime);
+	SyncPlatformState();
+	FinalizeFrame(DeltaTime);
+}
+
+void FEngine::PrepareFrame(float DeltaTime)
+{
+	(void)DeltaTime;
 }
 
 FRenderer* FEngine::GetRenderer() const
@@ -405,7 +411,7 @@ void FEngine::BeginFrame()
 	Timer.Tick();
 }
 
-void FEngine::TickInput(float DeltaTime)
+void FEngine::ProcessInput(float DeltaTime)
 {
 	if (InputManager)
 	{
@@ -522,7 +528,11 @@ void FEngine::RenderFrame()
 	Renderer->EndFrame();
 }
 
-void FEngine::RunLateUpdate(float DeltaTime)
+void FEngine::SyncPlatformState()
+{
+}
+
+void FEngine::FinalizeFrame(float DeltaTime)
 {
 	if (GCInterval <= 0.0 || !ObjManager)
 	{
