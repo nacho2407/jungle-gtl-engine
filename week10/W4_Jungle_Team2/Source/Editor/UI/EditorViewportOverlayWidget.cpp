@@ -211,17 +211,18 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
 		return;
 	}
 
-	// View Mode
-	ImGui::Text("View Mode");
-	int32 CurrentMode = static_cast<int32>(Settings.ViewMode);
-	ImGui::RadioButton("Lit", &CurrentMode, static_cast<int32>(EViewMode::Lit));
-	ImGui::SameLine();
-	ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
-	ImGui::SameLine();
-	ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
-	Settings.ViewMode = static_cast<EViewMode>(CurrentMode);
+	// TODO : 나중에 뭔가 전체 모드 변경 같은거 들어갈 것 같아서 미리 남겨둠
+	//// View Mode
+	//ImGui::Text("View Mode");
+	//int32 CurrentMode = static_cast<int32>(Settings.ViewMode);
+	//ImGui::RadioButton("Lit", &CurrentMode, static_cast<int32>(EViewMode::Lit));
+	//ImGui::SameLine();
+	//ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
+	//ImGui::SameLine();
+	//ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
+	//Settings.ViewMode = static_cast<EViewMode>(CurrentMode);
 
-	ImGui::Separator();
+	//ImGui::Separator();
 
 	// Show Flags
 	ImGui::Text("Show");
@@ -261,7 +262,6 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 
 	ImGuiViewport* Viewport = ImGui::GetMainViewport();
 	ImVec2 WindowPos(Viewport->WorkPos.x + (Viewport->WorkSize.x * 0.5f), Viewport->WorkPos.y + 10.0f);
-
 	ImGui::SetNextWindowPos(WindowPos, ImGuiCond_Always, ImVec2(0.5f, 0.0f));
 	ImGui::SetNextWindowBgAlpha(0.3f); // 30% 반투명한 검은색 배경
 
