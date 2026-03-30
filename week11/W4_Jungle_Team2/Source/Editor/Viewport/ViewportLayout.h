@@ -50,8 +50,9 @@ public:
 	// bSingle=false : 4분할 레이아웃 복원
 	void SetSingleViewportMode(bool bSingle, int32 Index = 0);
 
-	bool IsSingleViewportMode()   const { return bSingleViewport; }
-	int32 GetSingleViewportIndex() const { return SingleViewportIndex; }
+	bool  IsSingleViewportMode()        const { return bSingleViewport; }
+	int32 GetSingleViewportIndex()      const { return SingleViewportIndex; }
+	int32 GetLastFocusedViewportIndex() const { return LastFocusedViewportIndex; }
 
 	// Viewport Get Set
 	FEditorViewportClient& GetViewportClient(int32 Index) { return ViewportClients[Index]; }
@@ -77,8 +78,12 @@ public:
 	void DestroyViewportLayout();
 private:
 	// 1개 ↔ 4개 전환 상태
-	bool  bSingleViewport      = false;
-	int32 SingleViewportIndex  = 0;
+	bool  bSingleViewport          = false;
+	int32 SingleViewportIndex      = 0;
+
+	// 마지막으로 카메라 조작(포커스)이 발생한 뷰포트 인덱스
+	// stat 콘솔 명령의 적용 대상으로 사용됩니다.
+	int32 LastFocusedViewportIndex = 0;
 
 	TStaticArray<FEditorViewportClient, MaxViewports> ViewportClients;
 	TStaticArray<FSceneViewport, MaxViewports>        SceneViewports;
