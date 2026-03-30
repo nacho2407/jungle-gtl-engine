@@ -1,5 +1,6 @@
 #include "ObjManager.h"
 #include "Core/Paths.h"
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 
@@ -14,111 +15,121 @@
 
 TMap<FString, UStaticMesh*> FObjManager::ObjStaticMeshMap;
 
-// Obj 파싱 전용 컨텍스트 - 이 cpp 파일 안에서만 사용됨
-// 임시 데이터와 파싱 상태를 한 곳에서 관리.
-struct FObjParserContext
+namespace
 {
-	FStaticMesh* OutMesh;
-	TArray<FString>& OutMaterialNames;
-
-	TArray<FVector> TempPositions;
-	TArray<FVector2> TempUVs;
-	TArray<FVector> TempNormals;
-
-	std::string Line;
-	uint32 CurrentSectionStartIndex = 0;
-	int32 CurrentMaterialIndex = -1;
-
-	void CloseCurrentSection()
+	struct FObjParserContext
 	{
-		if (OutMesh->Indices.size() > CurrentSectionStartIndex)
+		FStaticMesh* OutMesh;
+		TArray<FString>& OutMaterialNames;
+
+		TArray<FVector> TempPositions;
+		TArray<FVector2> TempUVs;
+		TArray<FVector> TempNormals;
+
+		uint32 CurrentSectionStartIndex = 0;
+		int32 CurrentMaterialIndex = -1;
+
+		void CloseCurrentSection()
 		{
-			FMeshSection Section;
-			Section.MaterialIndex = CurrentMaterialIndex;
-			Section.StartIndex = CurrentSectionStartIndex;
-			Section.IndexCount = static_cast<uint32>(OutMesh->Indices.size()) - CurrentSectionStartIndex;
-			OutMesh->Sections.push_back(Section);
+			if (OutMesh->Indices.size() > CurrentSectionStartIndex)
+			{
+				FMeshSection Section;
+				Section.MaterialIndex = CurrentMaterialIndex;
+				Section.StartIndex = CurrentSectionStartIndex;
+				Section.IndexCount = static_cast<uint32>(OutMesh->Indices.size()) - CurrentSectionStartIndex;
+				OutMesh->Sections.push_back(Section);
 
-			CurrentSectionStartIndex = static_cast<uint32>(OutMesh->Indices.size());
-		}
-	}
-
-	void ParseUseMtl(std::stringstream& SS)
-	{
-		std::string MaterialName;
-		SS >> MaterialName;
-
-		CloseCurrentSection();
-
-		FString NewMaterialName(MaterialName.c_str());
-		CurrentMaterialIndex = OutMaterialNames.size();
-		OutMaterialNames.push_back(NewMaterialName);
-	}
-
-	void ParseFace(std::stringstream& SS)
-	{
-		if (CurrentMaterialIndex == -1)
-		{
-			CurrentMaterialIndex = 0;
-			OutMaterialNames.push_back("M_Default");
+				CurrentSectionStartIndex = static_cast<uint32>(OutMesh->Indices.size());
+			}
 		}
 
-		std::string VStr;
-		struct FIndex { uint32 PositionIndex; uint32 UVIndex; uint32 NormalIndex; };
-		TArray<FIndex> Face;
-
-		while (SS >> VStr)
+		void ParseUseMtl(std::stringstream& SS)
 		{
-			std::stringstream VSS(VStr);
-			std::string PositionString, UVString, NormalString;
+			std::string MaterialName;
+			SS >> MaterialName;
 
-			std::getline(VSS, PositionString, '/');
-			std::getline(VSS, UVString, '/');
-			std::getline(VSS, NormalString, '/');
+			CloseCurrentSection();
 
-			FIndex Idx{};
-			Idx.PositionIndex = std::stoi(PositionString) - 1;
-			Idx.UVIndex = UVString.empty() ? 0 : std::stoi(UVString) - 1;
-			Idx.NormalIndex = NormalString.empty() ? 0 : std::stoi(NormalString) - 1;
-
-			Face.push_back(Idx);
+			FString NewMaterialName(MaterialName.c_str());
+			CurrentMaterialIndex = static_cast<int32>(OutMaterialNames.size());
+			OutMaterialNames.push_back(NewMaterialName);
 		}
 
-		// 다각형을 삼각형으로 쪼개기
-		for (size_t i = 1; i + 1 < Face.size(); ++i)
+		void ParseFace(std::stringstream& SS)
 		{
-			uint32 BaseIndex = static_cast<uint32>(OutMesh->Vertices.size());
+			if (CurrentMaterialIndex == -1)
+			{
+				CurrentMaterialIndex = 0;
+				OutMaterialNames.push_back("M_Default");
+			}
 
-			auto AddVertex = [&](const FIndex& Idx)
-				{
-					FVertex V{};
-					V.Position = TempPositions[Idx.PositionIndex];
-					V.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+			std::string VStr;
+			struct FIndex
+			{
+				uint32 PositionIndex;
+				uint32 UVIndex;
+				uint32 NormalIndex;
+			};
+			TArray<FIndex> Face;
 
-					if (!TempUVs.empty() && Idx.UVIndex < TempUVs.size()) V.UV = TempUVs[Idx.UVIndex];
-					if (!TempNormals.empty() && Idx.NormalIndex < TempNormals.size()) V.Normal = TempNormals[Idx.NormalIndex];
+			while (SS >> VStr)
+			{
+				std::stringstream VSS(VStr);
+				std::string PositionString, UVString, NormalString;
 
-					OutMesh->Vertices.push_back(V);
-				};
+				std::getline(VSS, PositionString, '/');
+				std::getline(VSS, UVString, '/');
+				std::getline(VSS, NormalString, '/');
 
-			AddVertex(Face[0]);
-			AddVertex(Face[i]);
-			AddVertex(Face[i + 1]);
+				FIndex Idx{};
+				Idx.PositionIndex = std::stoi(PositionString) - 1;
+				Idx.UVIndex = UVString.empty() ? 0 : std::stoi(UVString) - 1;
+				Idx.NormalIndex = NormalString.empty() ? 0 : std::stoi(NormalString) - 1;
 
-			OutMesh->Indices.push_back(BaseIndex + 0);
-			OutMesh->Indices.push_back(BaseIndex + 1);
-			OutMesh->Indices.push_back(BaseIndex + 2);
+				Face.push_back(Idx);
+			}
+
+			for (size_t i = 1; i + 1 < Face.size(); ++i)
+			{
+				uint32 BaseIndex = static_cast<uint32>(OutMesh->Vertices.size());
+
+				auto AddVertex = [&](const FIndex& Idx)
+					{
+						FVertex V{};
+						V.Position = TempPositions[Idx.PositionIndex];
+						V.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+
+						if (!TempUVs.empty() && Idx.UVIndex < TempUVs.size())
+						{
+							V.UV = TempUVs[Idx.UVIndex];
+						}
+						if (!TempNormals.empty() && Idx.NormalIndex < TempNormals.size())
+						{
+							V.Normal = TempNormals[Idx.NormalIndex];
+						}
+
+						OutMesh->Vertices.push_back(V);
+					};
+
+				AddVertex(Face[0]);
+				AddVertex(Face[i]);
+				AddVertex(Face[i + 1]);
+
+				OutMesh->Indices.push_back(BaseIndex + 0);
+				OutMesh->Indices.push_back(BaseIndex + 1);
+				OutMesh->Indices.push_back(BaseIndex + 2);
+			}
 		}
-	}
-};
+	};
+}
 
 inline UStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileName)
 {
-	// 추후에 obj파싱이 끝나면 없앨 코드
-
-	// ---------------------------------------------
 	auto It = ObjStaticMeshMap.find(PathFileName);
-	if (It != ObjStaticMeshMap.end()) return It->second;
+	if (It != ObjStaticMeshMap.end())
+	{
+		return It->second;
+	}
 
 	auto RawData = std::make_unique<FStaticMesh>();
 	RawData->PathFileName = PathFileName;
@@ -133,7 +144,7 @@ inline UStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileN
 
 	UStaticMesh* NewAsset = new UStaticMesh();
 	NewAsset->SetStaticMeshAsset(RawData.release());
-	
+
 	NewAsset->LocalBounds.Radius = NewAsset->GetRenderData()->GetLocalBoundRadius();
 	NewAsset->LocalBounds.Center = NewAsset->GetRenderData()->GetCenterCoord();
 	NewAsset->LocalBounds.BoxExtent = (NewAsset->GetRenderData()->GetMaxCoord() - NewAsset->GetRenderData()->GetMinCoord()) * 0.5f;
@@ -155,23 +166,31 @@ inline UStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileN
 	{
 		NewAsset->AddDefaultMaterial(FMaterialManager::Get().FindByName("M_Default"));
 	}
-	ObjStaticMeshMap[PathFileName] = NewAsset;
 
+	ObjStaticMeshMap[PathFileName] = NewAsset;
 	return NewAsset;
 }
 
-//TODO: Texture Manager 리펙토링 이후 이 함수는 삭제될 것.
 bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
 {
-	std::ifstream File(MtlFIlePath.c_str());
-	if (!File.is_open()) return false;
+	const FString AbsolutePath = FPaths::ToAbsolutePath(MtlFIlePath);
+	const std::filesystem::path FilePath = std::filesystem::path(FPaths::ToWide(AbsolutePath)).lexically_normal();
+
+	std::ifstream File(FilePath);
+	if (!File.is_open())
+	{
+		return false;
+	}
 
 	std::string Line;
 	std::shared_ptr<FMaterial> CurrentMaterial = nullptr;
 
 	while (std::getline(File, Line))
 	{
-		if (Line.empty() || Line[0] == '#') continue;
+		if (Line.empty() || Line[0] == '#')
+		{
+			continue;
+		}
 
 		std::stringstream SS(Line);
 		std::string Type;
@@ -211,7 +230,7 @@ bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
 			float R, G, B;
 			SS >> R >> G >> B;
 
-			float DiffuseColor[4] = {R, G, B, 1.0f};
+			float DiffuseColor[4] = { R, G, B, 1.0f };
 
 			auto CB = CurrentMaterial->GetConstantBuffer(0);
 			if (CB)
@@ -240,43 +259,58 @@ bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
 			}
 		}
 	}
+
 	return true;
 }
 
 inline bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutMesh, TArray<FString>& OutMaterialNames)
 {
-	std::string FilePathStr(FilePath.c_str());
-	std::ifstream File(FilePathStr); // 텍스트 모드로 열기
+	const FString AbsolutePath = FPaths::ToAbsolutePath(FilePath);
+	const std::filesystem::path ObjPath = std::filesystem::path(FPaths::ToWide(AbsolutePath)).lexically_normal();
+	const std::string FilePathDisplay = AbsolutePath;
 
+	std::ifstream File(ObjPath);
 	if (!File.is_open())
 	{
-		UE_LOG("[FObjManager] Failed to open OBJ file: %s\n", FilePathStr.c_str());
+		UE_LOG("[FObjManager] Failed to open OBJ file: %s\n", FilePathDisplay.c_str());
 		return false;
 	}
 
 	FObjParserContext Context{ OutMesh, OutMaterialNames };
-	FString Line;
+	std::string Line;
 
-	// 한 줄씩 읽으면서 파싱
 	while (std::getline(File, Line))
 	{
-		if (Line.empty() || Line[0] == '#') continue;
+		if (Line.empty() || Line[0] == '#')
+		{
+			continue;
+		}
 
 		std::stringstream SS(Line);
 		std::string Type;
 		SS >> Type;
 
-		// Material
 		if (Type == "mtllib")
 		{
 			std::string MtlFIleName;
 			SS >> MtlFIleName;
 
-			FString FullMtlPath = (FPaths::MaterialDir() / MtlFIleName).string().c_str();
-			ParseMtlFile(FullMtlPath);
+			std::filesystem::path ResolvedMtlPath = ObjPath.parent_path() / MtlFIleName;
+			if (!std::filesystem::exists(ResolvedMtlPath))
+			{
+				ResolvedMtlPath = FPaths::MaterialDir() / MtlFIleName;
+			}
+
+			ParseMtlFile(ResolvedMtlPath.string().c_str());
 		}
-		else if (Type == "usemtl") Context.ParseUseMtl(SS);
-		else if (Type == "f") Context.ParseFace(SS);
+		else if (Type == "usemtl")
+		{
+			Context.ParseUseMtl(SS);
+		}
+		else if (Type == "f")
+		{
+			Context.ParseFace(SS);
+		}
 		else if (Type == "v")
 		{
 			FVector Position;
@@ -287,7 +321,7 @@ inline bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutM
 		{
 			FVector2 UV;
 			SS >> UV.X >> UV.Y;
-			UV.Y = 1.0f - UV.Y;	// 뒤집기 보정 -> 추후 선택하여 변경하도록 해야할듯.
+			UV.Y = 1.0f - UV.Y;
 			Context.TempUVs.push_back(UV);
 		}
 		else if (Type == "vn")
@@ -298,16 +332,14 @@ inline bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutM
 		}
 	}
 
-	// Section과 Topology 세팅
 	Context.CloseCurrentSection();
 	OutMesh->Topology = EMeshTopology::EMT_TriangleList;
 
 	UE_LOG("[FObjManager] Parsed Temporary OBJ: %s (Verts: %zu, Inds: %zu)\n",
-		FilePathStr.c_str(), OutMesh->Vertices.size(), OutMesh->Indices.size());
+		FilePathDisplay.c_str(), OutMesh->Vertices.size(), OutMesh->Indices.size());
 
 	return true;
 }
-
 
 inline void FObjManager::ClearCache()
 {
@@ -323,5 +355,6 @@ inline void FObjManager::ClearCache()
 			Asset = nullptr;
 		}
 	}
+
 	ObjStaticMeshMap.clear();
 }

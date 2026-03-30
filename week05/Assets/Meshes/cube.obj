@@ -2,7 +2,7 @@
 # Import into Blender with Y-forward, Z-up
 #
 # Vertices:                        Faces:
-#      f-------g                          +-------+ 
+#      f-------g                          +-------+
 #     /.      /|                         /.  5   /|  3 back
 #    / .     / |                        / .     / |
 #   e-------h  |                   2   +-------+ 1|

@@ -37,6 +37,6 @@ public:
 	void AddDefaultMaterial(const std::shared_ptr<FMaterial>& InMaterial) { DefaultMaterials.push_back(InMaterial); }
 
 private:
-	FStaticMesh* StaticMeshAsset = nullptr; 
+	FStaticMesh* StaticMeshAsset = nullptr;
 	TArray<std::shared_ptr<FMaterial>> DefaultMaterials;
 };

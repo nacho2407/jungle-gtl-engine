@@ -108,7 +108,7 @@
     <ClCompile Include="ThirdParty\imgui\imgui_widgets.cpp">
       <Filter>ThirdParty\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="EditorGlobals.cpp" />
+    <ClCompile Include="Source\EditorGlobals.cpp" />
     <ClCompile Include="Source\Viewport\Viewport.cpp" />
     <ClCompile Include="Source\Viewport\ViewportTypes.cpp" />
     <ClCompile Include="Source\Viewport\BlitRenderer.cpp" />
@@ -203,7 +203,7 @@
     <ClInclude Include="ThirdParty\imgui\imstb_truetype.h">
       <Filter>ThirdParty\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="EditorGlobals.h" />
+    <ClInclude Include="Source\EditorGlobals.h" />
     <ClInclude Include="Source\Viewport\Viewport.h" />
     <ClInclude Include="Source\Viewport\ViewportTypes.h" />
     <ClInclude Include="Source\Viewport\BlitRenderer.h" />
