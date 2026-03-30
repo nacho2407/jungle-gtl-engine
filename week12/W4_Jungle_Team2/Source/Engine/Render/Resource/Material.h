@@ -23,7 +23,7 @@ public:
 
 	// Texture 정보
 	// 경로는 파싱 시점에 절대 경로로 정규화됨
-    FString DiffuseTexPath = { "Asset/Mesh/Default.png" };   // map_Kd
+    FString DiffuseTexPath;   // map_Kd
 	bool	bHasDiffuseTexture = { false };
 
     FString AmbientTexPath;   // map_Ka
@@ -38,7 +38,6 @@ public:
 
 /**
  * @brief Obj전용 .mtl 파일 파서
- * ResourceManager에서 TMap<FString, FMaterial>을 참조로 받아와 채워 놓을 예정
  */
 class FObjMtlLoader
 {
