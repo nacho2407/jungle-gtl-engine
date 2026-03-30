@@ -24,9 +24,19 @@ void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, 
 
 void FRenderCollector::CollectSelection(const TArray<AActor*>& SelectedActors, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
 {
+	bool bHasStencilMask = false;
 	for (AActor* Actor : SelectedActors)
 	{
-		CollectFromSelectedActor(Actor, ShowFlags, ViewMode, RenderBus);
+		bHasStencilMask |= CollectFromSelectedActor(Actor, ShowFlags, ViewMode, RenderBus);
+	}
+
+	if (bHasStencilMask)
+	{
+		FRenderCommand PostProcessCmd = {};
+		PostProcessCmd.Type = ERenderCommandType::PostProcessOutline;
+		PostProcessCmd.Constants.Outline.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f);
+		PostProcessCmd.Constants.Outline.OutlineThicknessPixels = 5.0f;
+		RenderBus.AddCommand(ERenderPass::PostProcessOutline, PostProcessCmd);
 	}
 }
 
@@ -95,9 +105,12 @@ void FRenderCollector::CollectFromActor(AActor* Actor, const FShowFlags& ShowFla
 	}
 }
 
-void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
+bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
 {
-	if (!Actor->IsVisible()) return;
+	(void)ViewMode;
+	if (!Actor->IsVisible()) return false;
+
+	bool bHasStencilMask = false;
 
 	for (UPrimitiveComponent* primitiveComponent : Actor->GetPrimitiveComponents())
 	{
@@ -163,29 +176,15 @@ void FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 
 		// StencilBuffer Mask
 		FRenderCommand MaskCmd = BaseCmd;
-		MaskCmd.Type = ERenderCommandType::SelectionOutline;
+		MaskCmd.Type = ERenderCommandType::StencilMask;
 		MaskCmd.DepthStencilState = EDepthStencilState::StencilWrite; //스텐실 버퍼만 작성하는 타입
 		MaskCmd.BlendState = EBlendState::NoColor;
 		RenderBus.AddCommand(ERenderPass::StencilMask, MaskCmd);
-
-		// Outline
-		FRenderCommand OutlineCmd = BaseCmd;
-		OutlineCmd.Type = ERenderCommandType::SelectionOutline;
-		OutlineCmd.DepthStencilState = EDepthStencilState::StencilOutline;
-		OutlineCmd.Constants.Outline.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
-		OutlineCmd.Constants.Outline.OutlineFactor = 0.1f;
-		// OutlineCmd.Constants.Outline.OutlineOffset = 0.03f;
-		if (ViewMode == EViewMode::Wireframe)
-		{
-			OutlineCmd.PerObjectConstants.Color = FColor(1.0f, 0.6f, 0.0f, 1.0f).ToVector4();
-		}
+		bHasStencilMask = true;
 		CollectAABBCommand(primitiveComponent, ShowFlags, RenderBus);
-		// EPrimitiveType PrimType = primitiveComponent->GetPrimitiveType();
-		// OutlineCmd.Constants.Outline.PrimitiveType = (PrimType == EPrimitiveType::EPT_Billboard ||
-		// 	PrimType == EPrimitiveType::EPT_SubUV ||
-		// 	PrimType == EPrimitiveType::EPT_Text) ? 0u : 1u;
-		RenderBus.AddCommand(ERenderPass::Outline, OutlineCmd);
 	}
+
+	return bHasStencilMask;
 }
 
 void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)

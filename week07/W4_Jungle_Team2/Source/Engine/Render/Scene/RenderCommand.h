@@ -23,7 +23,7 @@ enum class ERenderCommandType
 	Primitive,
 	Gizmo,
 	StencilMask,
-	SelectionOutline,
+	PostProcessOutline,
 	Billboard,
 	DebugBox,
 	Grid,		// Grid 패스 — LineBatcher 경유
@@ -65,9 +65,9 @@ struct FEditorConstants
 struct FOutlineConstants
 {
 	FVector4 OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
-	float OutlineFactor;
-
-	float Padding0[3];
+	float OutlineThicknessPixels = 2.0f;
+	FVector2 ViewportSize = FVector2(1.0f, 1.0f);
+	float Padding0 = 0.0f;
 };
 
 struct FAABBConstants
