@@ -80,7 +80,7 @@ void FObjViewerViewportClient::ResetCamera()
 	FVector Center = ModelInfo.ModelCenter;
 	FVector Offset(ModelRadius, ModelRadius, ModelRadius);
 
-	float DistanceMultiplier = 4.0f;
+	float DistanceMultiplier = 2.0f;
     FVector CameraPos = Center + (Offset * DistanceMultiplier);
 
 	Camera->SetLocation(CameraPos);
