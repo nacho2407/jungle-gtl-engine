@@ -47,6 +47,7 @@ public:
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 
+	void CollectRender(FRenderBus& Bus) const override;
 	void UpdateWorldAABB() const override;
 protected:
 	void TickComponent(float DeltaTime) override;
