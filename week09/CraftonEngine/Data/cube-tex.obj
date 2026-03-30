@@ -14,7 +14,7 @@
 #                                        bottom
 
 # Material defined in separate file.
-mtllib cube.mtl
+mtllib cube-tex.mtl
 
 g cube
 

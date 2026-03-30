@@ -1,8 +1,21 @@
 ﻿#include "BillboardComponent.h"
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
+#include "Render/Resource/ShaderManager.h"
 
 DEFINE_CLASS(UBillboardComponent, UPrimitiveComponent)
+
+void UBillboardComponent::CollectSelection(FRenderBus& Bus) const
+{
+	FMeshBuffer* Buffer = GetMeshBuffer();
+	if (!Buffer || !Buffer->IsValid()) return;
+	if (!SupportsOutline()) return;
+
+	FShaderManager& SM = FShaderManager::Get();
+	BuildOutlineCommands(Bus, Buffer, GetWorldMatrix(), GetWorldScale(),
+		SM.GetShader(EShaderType::Primitive), SM.GetShader(EShaderType::Outline));
+	// Billboard 계열은 AABB 제외
+}
 
 void UBillboardComponent::TickComponent(float DeltaTime)
 {
