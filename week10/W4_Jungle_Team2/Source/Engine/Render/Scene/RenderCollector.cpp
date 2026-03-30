@@ -49,7 +49,7 @@ void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, F
 	RenderBus.AddCommand(ERenderPass::Grid, Cmd);
 }
 
-void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
+void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& ShowFlags, FRenderBus& RenderBus, bool bIsActiveOperation)
 {
 	if (ShowFlags.bGizmo == false) return;
 	if (!Gizmo || !Gizmo->IsVisible()) return;
@@ -82,7 +82,7 @@ void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& Sh
 		Cmd.Constants.Gizmo.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 		Cmd.Constants.Gizmo.bIsInnerGizmo = bInner ? 1 : 0;
 		Cmd.Constants.Gizmo.bClicking = bHolding ? 1 : 0;
-		Cmd.Constants.Gizmo.SelectedAxis = SelectedAxis >= 0 ? (uint32)SelectedAxis : 0xffffffffu;
+		Cmd.Constants.Gizmo.SelectedAxis = (SelectedAxis >= 0 && bIsActiveOperation) ? (uint32)SelectedAxis : 0xffffffffu;
 		Cmd.Constants.Gizmo.HoveredAxisOpacity = 0.3f;
 		return Cmd;
 		};
