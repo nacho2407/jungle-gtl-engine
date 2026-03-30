@@ -77,16 +77,23 @@ void FEditorViewportOverlayWidget::RenderViewportToolbars()
 
 		ImGui::Begin(WinName, nullptr, kFlags);
 
-		// ── [Perspective] 버튼 → 클릭 시 뷰포트 타입 변경 팝업
+		// ── [Perspective / OrthoXXX] 버튼 → 뷰포트 타입 변경 팝업
+		// 0번: Perspective 고정 — 버튼 비활성화
+		// 1~3번: Orthographic 타입만 선택 가능
 		{
+			const bool bPerspLocked = (i == 0);
+
 			char TypeBtnName[48];
 			snprintf(TypeBtnName, sizeof(TypeBtnName), "%s##vtype_%d", GetViewportTypeName(VType), i);
+
+			if (bPerspLocked) ImGui::BeginDisabled();
 			if (ImGui::Button(TypeBtnName))
 			{
 				char TypePopupId[32];
 				snprintf(TypePopupId, sizeof(TypePopupId), "##VTPopup_%d", i);
 				ImGui::OpenPopup(TypePopupId);
 			}
+			if (bPerspLocked) ImGui::EndDisabled();
 
 			char TypePopupId[32];
 			snprintf(TypePopupId, sizeof(TypePopupId), "##VTPopup_%d", i);
@@ -95,13 +102,13 @@ void FEditorViewportOverlayWidget::RenderViewportToolbars()
 				ImGui::TextDisabled("Viewport Type");
 				ImGui::Separator();
 
-				static constexpr EEditorViewportType kTypes[] = {
-					EVT_Perspective,
+				// 1~3번 뷰포트: Orthographic 타입만 허용
+				static constexpr EEditorViewportType kOrthoTypes[] = {
 					EVT_OrthoTop,   EVT_OrthoBottom,
 					EVT_OrthoFront, EVT_OrthoBack,
 					EVT_OrthoLeft,  EVT_OrthoRight
 				};
-				for (EEditorViewportType T : kTypes)
+				for (EEditorViewportType T : kOrthoTypes)
 				{
 					const bool bSel = (VType == T);
 					if (ImGui::Selectable(GetViewportTypeName(T), bSel))
