@@ -100,9 +100,11 @@ void FEditorViewportInputService::TickCameraNavigation(
 	}
 
 	const FVector ViewRight = FVector::CrossProduct(ViewUp, ViewFwd).GetSafeNormal();
-	const float PanSpeed = FocusedEntry->LocalState.OrthoZoom * 0.002f;
-	FocusedEntry->LocalState.OrthoTarget -= ViewRight * DeltaX * PanSpeed;
-	FocusedEntry->LocalState.OrthoTarget += ViewUp * DeltaY * PanSpeed;
+	const int32 H = FocusedEntry->Viewport->GetRect().Height;
+	if (H <= 0) return;
+	float WorldPerPixel = (2.0f * FocusedEntry->LocalState.OrthoZoom) / static_cast<float>(H);
+	FocusedEntry->LocalState.OrthoTarget -= ViewRight * DeltaX * WorldPerPixel;
+	FocusedEntry->LocalState.OrthoTarget += ViewUp * DeltaY * WorldPerPixel;
 }
 
 void FEditorViewportInputService::HandleMessage(

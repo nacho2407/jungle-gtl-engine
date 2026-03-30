@@ -28,8 +28,8 @@ void SSplitterV::ArrangeChildren()
 	if (SideLT == nullptr && SideRB == nullptr)
 		return;
 
-	SideLT->Rect = FRect(Rect.X, Rect.Y, Rect.Width, Rect.Height * Ratio);
-	SideRB->Rect = FRect(Rect.X, Rect.Y + Rect.Height * Ratio, Rect.Width, Rect.Height * (1.0f - Ratio));
+	SideLT->Rect = FRect(Rect.X, Rect.Y, Rect.Width, Rect.Height * Ratio - BARWIDTH / 2);
+	SideRB->Rect = FRect(Rect.X, Rect.Y + Rect.Height * Ratio + BARWIDTH / 2, Rect.Width, Rect.Height * (1.0f - Ratio));
 
 	if (SSplitter* S = dynamic_cast<SSplitter*>(SideLT)) S->ArrangeChildren();
 	if (SSplitter* S = dynamic_cast<SSplitter*>(SideRB)) S->ArrangeChildren();
