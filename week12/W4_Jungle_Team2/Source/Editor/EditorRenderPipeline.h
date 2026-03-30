@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Render/Renderer/IRenderPipeline.h"
 #include "Render/Scene/RenderCollector.h"
 #include "Render/Scene/RenderBus.h"
@@ -11,7 +11,9 @@ public:
 	FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer);
 	~FEditorRenderPipeline() override;
 
-	void Execute(float DeltaTime, FRenderer& Renderer) override;
+	void Execute(float DeltaTime, FRenderer& Renderer) override;	
+	void Render3DWorld(FRenderer& Renderer);
+	void Render2DOverlay(float DeltaTime, FRenderer& Renderer);
 
 private:
 	UEditorEngine* Editor = nullptr;
