@@ -14,14 +14,11 @@
 #include "Render/Batcher/FontBatcher.h"
 #include "Render/Batcher/SubUVBatcher.h"
 
-#include <cstddef>
 #include <functional>
 
-// 패스별 Batcher 바인딩 — Clear → Collect → Flush 패턴
+// 패스별 Batcher Flush 바인딩
 struct FPassBatcherBinding
 {
-	std::function<void()> Clear;
-	std::function<void(const FRenderCommand&, const FRenderBus&)> Collect;
 	std::function<void(ERenderPass, const FRenderBus&, ID3D11DeviceContext*)> Flush;
 
 	explicit operator bool() const { return Flush != nullptr; }
@@ -76,9 +73,8 @@ private:
 	FFontBatcher   FontBatcher;
 	FSubUVBatcher  SubUVBatcher;
 
-	// 패스별 커맨드 정렬이 필요한 경우 정렬된 복사본 반환, 아니면 원본 참조
-	const TArray<FRenderCommand>& GetAlignedCommands(ERenderPass Pass, const TArray<FRenderCommand>& Commands);
-	TArray<FRenderCommand> SortedCommandBuffer;  // 재할당 방지용 멤버 버퍼
+	// SubUV 정렬용 멤버 버퍼 (재할당 방지)
+	TArray<FSubUVEntry> SortedSubUVBuffer;
 
 	FPassRenderState    PassRenderStates[(uint32)ERenderPass::MAX];
 	FPassBatcherBinding PassBatchers[(uint32)ERenderPass::MAX];
