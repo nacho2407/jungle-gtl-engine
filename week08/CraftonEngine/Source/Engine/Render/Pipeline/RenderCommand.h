@@ -1,11 +1,4 @@
-#pragma once
-
-/*
-	Constants Buffer에 사용될 구조체와
-	에 담길 RenderCommand 구조체를 정의하고 있습니다.
-	RenderCommand는 Renderer에서 Draw Call을 1회 수행하기 위해 필요한 정보를 담고 있습니다.
-*/
-
+﻿#pragma once
 #include "Render/Types/RenderTypes.h"
 #include "Render/Resource/Buffer.h"
 #include "Render/Device/D3DDevice.h"
@@ -17,14 +10,20 @@
 
 class FShader;
 
+/*
+	Constants Buffer에 사용될 구조체와
+	에 담길 RenderCommand 구조체를 정의하고 있습니다.
+	RenderCommand는 Renderer에서 Draw Call을 1회 수행하기 위해 필요한 정보를 담고 있습니다.
+*/
+
 // HLSL Common.hlsl과 1:1 대응하는 CB 슬롯 정의
 namespace ECBSlot
 {
-	constexpr uint32 Frame     = 0;  // b0: View/Projection/Wireframe
+	constexpr uint32 Frame = 0;  // b0: View/Projection/Wireframe
 	constexpr uint32 PerObject = 1;  // b1: Model/Color
-	constexpr uint32 Gizmo     = 2;  // b2: Gizmo state
-	constexpr uint32 Editor    = 4;  // b4: Camera position
-	constexpr uint32 Outline   = 5;  // b5: Outline params
+	constexpr uint32 Gizmo = 2;  // b2: Gizmo state
+	constexpr uint32 Editor = 4;  // b4: Camera position
+	constexpr uint32 Outline = 5;  // b5: Outline params
 }
 
 //PerObject
@@ -104,7 +103,7 @@ struct FSubUVConstants
 {
 	const FParticleResource* Particle = nullptr;
 	uint32 FrameIndex = 0;
-	float Width  = 1.0f;
+	float Width = 1.0f;
 	float Height = 1.0f;
 };
 
