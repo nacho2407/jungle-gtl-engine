@@ -30,11 +30,6 @@ struct FCameraGUIParameters
     FVector ResetTargetLocation;
     FQuat ResetStartRotation;
     FQuat ResetTargetRotation;
-
-    FVector ResetStartOrbitPivot;
-    FVector ResetTargetOrbitPivot;
-    float ResetStartOrbitDistance = 0.0f;
-    float ResetTargetOrbitDistance = 0.0f;
 };
 
 class FObjViewerViewportClient
@@ -51,6 +46,7 @@ public:
 	void DestroyCamera();
 	void ResetCamera();
 	void ResetCameraSmoothly();
+	void SaveCameraPosition();
 
 	// 카메라 조작감 개선
 	void ClampCameraPosition();
@@ -90,6 +86,11 @@ private:
 	float WindowHeight = 1080.f;
 	
 	bool bIsCursorVisible = true;
+	bool bSavedCameraPosition = false;
+	FVector SavedCameraLocation;
+	FQuat SavedCameraRotation;
+	FVector SavedOrbitPivot;
+	float SavedOrbitDistance = 10.0f;
 	
 	FCameraGUIParameters CameraGUIParams;
 	

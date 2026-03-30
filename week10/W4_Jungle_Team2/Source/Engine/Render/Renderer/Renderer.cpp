@@ -370,7 +370,6 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
 	}
 }
 
-// 헤더 파일의 선언도 수정 필요: void BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContext* Context, ERenderCommandType& LastCommandType);
 void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContext* Context, ERenderCommandType& LastCommandType)
 {
     bool bTypeChanged = (LastCommandType != InCmd.Type);
@@ -410,6 +409,7 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 		Context->PSSetConstantBuffers(5, 1, &cb);
 		break;
 	}
+
     case ERenderCommandType::StaticMesh:
         Resources.StaticMeshConstantBuffer.Update(Context, &InCmd.Constants.StaticMesh, sizeof(FStaticMeshConstants));
         
