@@ -27,10 +27,11 @@ FMaterial* UMeshComponent::GetMaterial(int32 SlotIndex) const
 	return OverrideMaterial[SlotIndex];
 }
 
-int32 UMeshComponent::GetMaterialCount() const
+const TArray<FMaterial*>& UMeshComponent::GetOverrideMaterial() const
 {
-	return static_cast<int32>(OverrideMaterial.size());
+	return OverrideMaterial;
 }
+
 
 void UMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {

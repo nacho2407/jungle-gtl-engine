@@ -22,15 +22,19 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 	}
 
 	StaticMeshAsset = InStaticMesh;
-	
+	OverrideMaterial.clear();
+
 	if (StaticMeshAsset != nullptr)
 	{
 		StaticMeshAssetPath = StaticMeshAsset->GetAssetPathFileName();
-		const auto& Slots = StaticMeshAsset->GetMaterialSlots();
-		OverrideMaterial.resize(Slots.size());
-		for (int32 i = 0; i < static_cast<int32>(Slots.size()); ++i)
+
+		const auto& Slots    = StaticMeshAsset->GetMaterialSlots();
+		const auto& Sections = StaticMeshAsset->GetSections();
+		OverrideMaterial.reserve(Sections.size());
+
+		for (int32 i = 0; i < static_cast<int32>(Sections.size()); ++i)
 		{
-			OverrideMaterial[i] = Slots[i].MaterialData;
+			OverrideMaterial.push_back(Slots[Sections[i].MaterialSlotIndex].MaterialData);
 		}
 	}
 	else
