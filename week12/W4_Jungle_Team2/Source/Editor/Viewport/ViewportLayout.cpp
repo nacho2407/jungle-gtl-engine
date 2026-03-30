@@ -205,8 +205,43 @@ void FViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
 	SyncViewportRects();
 }
 
+void FViewportLayout::SetSingleViewportMode(bool bSingle, int32 Index)
+{
+	bSingleViewport     = bSingle;
+	SingleViewportIndex = (Index < 0) ? 0 : (Index >= MaxViewports ? MaxViewports - 1 : Index);
+	SyncViewportRects();
+}
+
 void FViewportLayout::SyncViewportRects()
 {
+	// 1개 모드: SingleViewportIndex 뷰포트에 전체 영역 할당, 나머지는 크기 0
+	if (bSingleViewport && RootSplitterV)
+	{
+		const FRect& Full = RootSplitterV->GetRect();
+		for (int32 i = 0; i < MaxViewports; ++i)
+		{
+			if (i == SingleViewportIndex)
+			{
+				const FViewportRect VR(
+					static_cast<int32>(Full.X),
+					static_cast<int32>(Full.Y),
+					static_cast<int32>(Full.Width),
+					static_cast<int32>(Full.Height));
+				ViewportStates[i].Rect = VR;
+				SceneViewports[i].SetRect(VR);
+				ViewportClients[i].SetViewportSize(Full.Width, Full.Height);
+			}
+			else
+			{
+				const FViewportRect ZeroVR(0, 0, 0, 0);
+				ViewportStates[i].Rect = ZeroVR;
+				SceneViewports[i].SetRect(ZeroVR);
+			}
+		}
+		return;
+	}
+
+	// 4분할 모드: 스플리터 트리에서 각 SViewport 의 FRect 를 읽어 반영
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
 		if (!ViewportWidgets[i]) continue;

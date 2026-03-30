@@ -125,6 +125,27 @@ void FEditorViewportOverlayWidget::RenderViewportToolbars()
 
 		ImGui::SameLine(0.f, 2.f);
 
+		// 뷰포트 1개 <-> 4개 스위칭 버튼
+		// 1개는 전체 화면 크기를 차지 + Splitter바를 그리지 않습니다.
+		{
+			FViewportLayout& VL = EditorEngine->GetViewportLayout();
+			const bool bIsMaximized = VL.IsSingleViewportMode();
+
+			char MaxBtnName[32];
+			snprintf(MaxBtnName, sizeof(MaxBtnName), "%s##max_%d",
+				bIsMaximized ? "[4]" : "[1]", i);
+
+			if (ImGui::Button(MaxBtnName))
+			{
+				if (bIsMaximized)
+					VL.SetSingleViewportMode(false);
+				else
+					VL.SetSingleViewportMode(true, i);
+			}
+		}
+
+		ImGui::SameLine(0.f, 2.f);
+
 		// ── [Lit ▾] 버튼 → 클릭 시 View Mode 팝업
 		char BtnName[32];
 		snprintf(BtnName, sizeof(BtnName), "%s##vm_%d", GetViewModeName(VS.ViewMode), i);
@@ -173,33 +194,38 @@ void FEditorViewportOverlayWidget::Render(float DeltaTime)
 	// 1. 스플리터 바 시각화
 	if (EditorEngine)
 	{
-		ImDrawList* DrawList = ImGui::GetBackgroundDrawList();
-		constexpr ImU32 BarColor   = IM_COL32(80,  80,  80,  220);
-		constexpr ImU32 HoverColor = IM_COL32(140, 180, 255, 255);
-
-		const SWidget* Hovered  = FSlateApplication::Get().GetHoveredWidget();
-		const SWidget* Captured = FSlateApplication::Get().GetCapturedWidget();
 		FViewportLayout& ViewportLayout = EditorEngine->GetViewportLayout();
 
-		SSplitter* Splitters[] = {
-			ViewportLayout.GetRootSplitterV(),
-			ViewportLayout.GetTopSplitterH(),
-			ViewportLayout.GetBotSplitterH()
-		};
-
-		for (SSplitter* S : Splitters)
+		// 1개 모드일 때는 바를 그리지 않음
+		if (!ViewportLayout.IsSingleViewportMode())
 		{
-			if (!S) continue;
-			const FRect Bar = S->GetBarRect();
+			ImDrawList* DrawList = ImGui::GetBackgroundDrawList();
+			constexpr ImU32 BarColor   = IM_COL32(80,  80,  80,  220);
+			constexpr ImU32 HoverColor = IM_COL32(140, 180, 255, 255);
 
-			const SSplitter* Linked = S->GetLinkedSplitter();
-			const bool bHighlight = (S == Hovered || S == Captured)
-				|| (Linked && (Linked == Hovered || Linked == Captured));
+			const SWidget* Hovered  = FSlateApplication::Get().GetHoveredWidget();
+			const SWidget* Captured = FSlateApplication::Get().GetCapturedWidget();
 
-			DrawList->AddRectFilled(
-				ImVec2(Bar.X, Bar.Y),
-				ImVec2(Bar.X + Bar.Width, Bar.Y + Bar.Height),
-				bHighlight ? HoverColor : BarColor);
+			SSplitter* Splitters[] = {
+				ViewportLayout.GetRootSplitterV(),
+				ViewportLayout.GetTopSplitterH(),
+				ViewportLayout.GetBotSplitterH()
+			};
+
+			for (SSplitter* S : Splitters)
+			{
+				if (!S) continue;
+				const FRect Bar = S->GetBarRect();
+
+				const SSplitter* Linked = S->GetLinkedSplitter();
+				const bool bHighlight = (S == Hovered || S == Captured)
+					|| (Linked && (Linked == Hovered || Linked == Captured));
+
+				DrawList->AddRectFilled(
+					ImVec2(Bar.X, Bar.Y),
+					ImVec2(Bar.X + Bar.Width, Bar.Y + Bar.Height),
+					bHighlight ? HoverColor : BarColor);
+			}
 		}
 	}
 
