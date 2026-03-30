@@ -3,12 +3,18 @@
 #include "Renderer/Material.h"
 #include "MeshComponent.h"
 
+#include "Debug/EngineLog.h"
+
 IMPLEMENT_RTTI(UMeshComponent, UPrimitiveComponent)
 
 void UMeshComponent::SetMaterial(int32 Index, const std::shared_ptr<FMaterial>& InMaterial)
 {
-	if (Index >= 0 && Index < Materials.size())
+	if (Index >= 0)
 	{
+		if (Index >= Materials.size())
+		{
+			Materials.resize(Index + 1, nullptr);
+		}
 		Materials[Index] = InMaterial;
 	}
 }

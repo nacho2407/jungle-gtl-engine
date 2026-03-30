@@ -247,6 +247,12 @@
     <ClCompile Include="Source\Platform\Windows\WindowsEngineLaunch.cpp" />
     <ClCompile Include="Source\Platform\Windows\WindowsWindow.cpp" />
     <ClCompile Include="Source\Platform\Windows\WindowsApplication.cpp" />
+    <ClCompile Include="Source\Actor\CubeActor.cpp" />
+    <ClCompile Include="Source\Actor\SphereActor.cpp" />
+    <ClCompile Include="Source\Actor\PlaneActor.cpp" />
+    <ClCompile Include="Source\Actor\SubUVActor.cpp" />
+    <ClCompile Include="Source\Actor\TextActor.cpp" />
+    <ClCompile Include="Source\Actor\SkySphereActor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\CoreMinimal.h">
@@ -510,6 +516,12 @@
     <ClInclude Include="Source\Platform\Windows\WindowsWindow.h" />
     <ClInclude Include="Source\Platform\Windows\WindowsApplication.h" />
     <ClInclude Include="Source\Scene\WorldTypes.h" />
+    <ClInclude Include="Source\Actor\CubeActor.h" />
+    <ClInclude Include="Source\Actor\SphereActor.h" />
+    <ClInclude Include="Source\Actor\PlaneActor.h" />
+    <ClInclude Include="Source\Actor\SubUVActor.h" />
+    <ClInclude Include="Source\Actor\TextActor.h" />
+    <ClInclude Include="Source\Actor\SkySphereActor.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

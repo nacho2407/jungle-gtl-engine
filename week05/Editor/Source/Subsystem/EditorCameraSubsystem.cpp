@@ -47,10 +47,10 @@ void FEditorCameraSubsystem::Shutdown()
 	ViewportController.Cleanup();
 }
 
-void FEditorCameraSubsystem::Tick(UWorld* ActiveWorld, UScene* ActiveScene, float DeltaTime)
+void FEditorCameraSubsystem::PrepareFrame(UWorld* ActiveWorld, UScene* ActiveScene, float DeltaTime)
 {
 	SyncActiveCamera(ActiveWorld, ActiveScene);
-	ViewportController.Tick(DeltaTime);
+	ViewportController.SetFrameDeltaTime(DeltaTime);
 }
 
 FEditorViewportController* FEditorCameraSubsystem::GetViewportController()

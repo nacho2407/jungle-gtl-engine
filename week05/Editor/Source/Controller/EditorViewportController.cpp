@@ -29,7 +29,7 @@ void FEditorViewportController::Initialize(UCameraComponent* InCameraComp, FInpu
 	SetupInputBindings();
 }
 
-void FEditorViewportController::Tick(float DeltaTime)
+void FEditorViewportController::SetFrameDeltaTime(float DeltaTime)
 {
 	CurrentDeltaTime = DeltaTime;
 }

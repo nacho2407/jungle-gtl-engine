@@ -17,10 +17,10 @@ FEditorViewportClient::FEditorViewportClient(
 	FEditorUI& InEditorUI,
 	FEditorViewportRegistry& InViewportRegistry,
 	FWindowsWindow* InMainWindow)
-	: EditorEngine(InEditorEngine)
-	, EditorUI(InEditorUI)
-	, ViewportRegistry(InViewportRegistry)
+	: EditorUI(InEditorUI)
 	, MainWindow(InMainWindow)
+	, EditorEngine(InEditorEngine)
+	, ViewportRegistry(InViewportRegistry)
 {
 }
 

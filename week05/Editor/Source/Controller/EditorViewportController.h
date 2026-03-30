@@ -16,7 +16,7 @@ public:
 
 	void Initialize(UCameraComponent* InCameraComp, FInputManager* InInput, FEnhancedInputManager* InEnhancedInput);
 	void Cleanup();
-	void Tick(float DeltaTime);
+	void SetFrameDeltaTime(float DeltaTime);
 	void SetActiveLocalState(FViewportLocalState* InLocalState);
 
 private:

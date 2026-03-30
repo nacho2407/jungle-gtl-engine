@@ -45,7 +45,7 @@ namespace
 		UWorld* PreviewWorld = PreviewContext->World;
 		if (PreviewWorld->GetActors().empty())
 		{
-			AActor* PreviewActor = PreviewWorld->SpawnActor<AActor>("PreviewCube");
+			/*AActor* PreviewActor = PreviewWorld->SpawnActor<AActor>("PreviewCube");
 			if (PreviewActor)
 			{
 				UStaticMeshComponent* PreviewComponent = FObjectFactory::ConstructObject<UStaticMeshComponent>(PreviewActor);
@@ -54,7 +54,7 @@ namespace
 
 				PreviewComponent->SetStaticMesh(FObjManager::GetPrimitiveCube());
 				PreviewActor->SetActorLocation({ 0.0f, 0.0f, 0.0f });
-			}
+			}*/
 		}
 
 		if (UCameraComponent* PreviewCamera = PreviewWorld->GetActiveCameraComponent())
@@ -249,36 +249,11 @@ void FEditorEngine::FinalizeInitialize()
 	CreateInitUI();
 }
 
-void FEditorEngine::Tick(float DeltaTime)
+void FEditorEngine::PrepareFrame(float DeltaTime)
 {
-	// 포커스된 뷰포트가 Perspective일 때만 키보드 입력 연결
-	if (EditorViewportClientRaw && SlateApplication)
-	{
-		FViewportId FocusedId = SlateApplication->GetFocusedViewportId();
-		FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(FocusedId);
-		FViewportLocalState* LocalState = nullptr;
-		if (FocusedEntry && FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
-			LocalState = &FocusedEntry->LocalState;
-		CameraSubsystem.GetViewportController()->SetActiveLocalState(LocalState);
-	}
-
-	CameraSubsystem.Tick(GetActiveWorld(), GetScene(), DeltaTime);
 	SyncViewportClient();
-	EMouseCursor SlateCursor = SlateApplication->GetCurrentCursor();
-	
-	LPCWSTR WinCursorName = IDC_ARROW; // 기본값
-	switch (SlateCursor)
-	{
-	case EMouseCursor::Default:         WinCursorName = IDC_ARROW;  break;
-	case EMouseCursor::ResizeLeftRight: WinCursorName = IDC_SIZEWE; break;
-	case EMouseCursor::ResizeUpDown:    WinCursorName = IDC_SIZENS; break;
-	case EMouseCursor::Hand:            WinCursorName = IDC_HAND;   break;
-	case EMouseCursor::None:            WinCursorName = nullptr;    break;
-	}
-	if (WinCursorName)
-	{
-		::SetCursor(::LoadCursor(NULL, WinCursorName));
-	}
+	SyncFocusedViewportLocalState();
+	CameraSubsystem.PrepareFrame(GetActiveWorld(), GetScene(), DeltaTime);
 }
 
 void FEditorEngine::TickWorlds(float DeltaTime)
@@ -312,6 +287,11 @@ void FEditorEngine::RenderFrame()
 	}
 
 	Renderer->EndFrame();
+}
+
+void FEditorEngine::SyncPlatformState()
+{
+	SyncPlatformCursor();
 }
 
 FEditorViewportController* FEditorEngine::GetViewportController()
@@ -465,6 +445,48 @@ void FEditorEngine::UpdateEditorWorldAspectRatio(float AspectRatio)
 	for (FWorldContext* PreviewContext : PreviewWorldContexts)
 	{
 		UpdateWorldAspectRatio(PreviewContext ? PreviewContext->World : nullptr, AspectRatio);
+	}
+}
+
+void FEditorEngine::SyncFocusedViewportLocalState()
+{
+	if (!EditorViewportClientRaw || !SlateApplication)
+	{
+		return;
+	}
+
+	FViewportId FocusedId = SlateApplication->GetFocusedViewportId();
+	FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(FocusedId);
+	FViewportLocalState* LocalState = nullptr;
+	if (FocusedEntry && FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
+	{
+		LocalState = &FocusedEntry->LocalState;
+	}
+
+	CameraSubsystem.GetViewportController()->SetActiveLocalState(LocalState);
+}
+
+void FEditorEngine::SyncPlatformCursor()
+{
+	if (!SlateApplication)
+	{
+		return;
+	}
+
+	const EMouseCursor SlateCursor = SlateApplication->GetCurrentCursor();
+	LPCWSTR WinCursorName = IDC_ARROW;
+	switch (SlateCursor)
+	{
+	case EMouseCursor::Default:         WinCursorName = IDC_ARROW;  break;
+	case EMouseCursor::ResizeLeftRight: WinCursorName = IDC_SIZEWE; break;
+	case EMouseCursor::ResizeUpDown:    WinCursorName = IDC_SIZENS; break;
+	case EMouseCursor::Hand:            WinCursorName = IDC_HAND;   break;
+	case EMouseCursor::None:            WinCursorName = nullptr;    break;
+	}
+
+	if (WinCursorName)
+	{
+		::SetCursor(::LoadCursor(NULL, WinCursorName));
 	}
 }
 
