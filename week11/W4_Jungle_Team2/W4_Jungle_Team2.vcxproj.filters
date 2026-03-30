@@ -114,9 +114,6 @@
     <FxCompile Include="Shaders\Gizmo.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Outline.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="Shaders\Primitive.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -429,6 +426,9 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Shaders\OutlinePostProcess.hlsl" />
+    <ClCompile Include="Source\Engine\Asset\BinarySerializer.cpp" />
+    <ClCompile Include="Shaders\SelectionMask.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -860,5 +860,7 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\BinarySerializer.h" />
+    <ClInclude Include="Source\Engine\Object\ObjectIterator.h" />
   </ItemGroup>
 </Project>
