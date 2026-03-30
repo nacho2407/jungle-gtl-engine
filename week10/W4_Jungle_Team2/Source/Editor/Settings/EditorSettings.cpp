@@ -10,9 +10,11 @@ namespace EditorKey
 	constexpr const char* Viewport = "Viewport";
 	constexpr const char* Paths = "Paths";
 
-	// Splitter
-	constexpr const char* SplitterVRatio = "SplitterVRatio";
-	constexpr const char* SplitterHRatio = "SplitterHRatio";
+	// Splitter / Layout
+	constexpr const char* SplitterVRatio      = "SplitterVRatio";
+	constexpr const char* SplitterHRatio      = "SplitterHRatio";
+	constexpr const char* ActiveViewportCount = "ActiveViewportCount";
+	constexpr const char* SingleViewportIndex = "SingleViewportIndex";
 
 	// Viewport
 	constexpr const char* CameraSpeed = "CameraSpeed";
@@ -61,8 +63,10 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	JSON LookAt = Array(InitLookAt.X, InitLookAt.Y, InitLookAt.Z);
 	Viewport[EditorKey::InitLookAt] = LookAt;
 
-	Viewport[EditorKey::SplitterVRatio] = SplitterVRatio;
-	Viewport[EditorKey::SplitterHRatio] = SplitterHRatio;
+	Viewport[EditorKey::SplitterVRatio]      = SplitterVRatio;
+	Viewport[EditorKey::SplitterHRatio]      = SplitterHRatio;
+	Viewport[EditorKey::ActiveViewportCount] = ActiveViewportCount;
+	Viewport[EditorKey::SingleViewportIndex] = SingleViewportIndex;
 
 	Root[EditorKey::Viewport] = Viewport;
 
@@ -154,6 +158,17 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 			SplitterVRatio = static_cast<float>(Viewport[EditorKey::SplitterVRatio].ToFloat());
 		if (Viewport.hasKey(EditorKey::SplitterHRatio))
 			SplitterHRatio = static_cast<float>(Viewport[EditorKey::SplitterHRatio].ToFloat());
+
+		if (Viewport.hasKey(EditorKey::ActiveViewportCount))
+		{
+			const int32 Count = Viewport[EditorKey::ActiveViewportCount].ToInt();
+			ActiveViewportCount = (Count == 1) ? 1 : 4;  // 1 또는 4만 유효
+		}
+		if (Viewport.hasKey(EditorKey::SingleViewportIndex))
+		{
+			const int32 Idx = Viewport[EditorKey::SingleViewportIndex].ToInt();
+			SingleViewportIndex = (Idx >= 0 && Idx < 4) ? Idx : 0;
+		}
 	}
 
 	// View
