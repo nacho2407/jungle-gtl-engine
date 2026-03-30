@@ -160,14 +160,14 @@ void FEditorViewportClient::ApplyCameraMode()
 
 	case EVT_OrthoFront:		// 앞(-X)에서 뒤 (+X 방향), 스크린 위 = +Z
 		Camera.SetProjectionType(EViewportProjectionType::Orthographic);
-		Camera.SetLocation(FVector(-1000.f, 0.f, 0.f));
-		Camera.SetCustomLookDir(FVector(1.f, 0.f, 0.f), FVector(0.f, 0.f, 1.f));
+		Camera.SetLocation(FVector(1000.f, 0.f, 0.f));
+		Camera.SetCustomLookDir(FVector(-1.f, 0.f, 0.f), FVector(0.f, 0.f, 1.f));
 		break;
 
 	case EVT_OrthoBack:			// 뒤(+X)에서 앞 (-X 방향), 스크린 위 = +Z
 		Camera.SetProjectionType(EViewportProjectionType::Orthographic);
-		Camera.SetLocation(FVector(1000.f, 0.f, 0.f));
-		Camera.SetCustomLookDir(FVector(-1.f, 0.f, 0.f), FVector(0.f, 0.f, 1.f));
+		Camera.SetLocation(FVector(-1000.f, 0.f, 0.f));
+		Camera.SetCustomLookDir(FVector(1.f, 0.f, 0.f), FVector(0.f, 0.f, 1.f));
 		break;
 
 	case EVT_OrthoLeft:			// 왼쪽(-Y)에서 오른쪽 (+Y 방향), 스크린 위 = +Z
