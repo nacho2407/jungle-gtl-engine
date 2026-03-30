@@ -22,7 +22,7 @@ enum class ERenderCommandType
 {
 	Primitive,
 	Gizmo,
-	StencilMask,
+	SelectionMask,
 	PostProcessOutline,
 	Billboard,
 	DebugBox,
