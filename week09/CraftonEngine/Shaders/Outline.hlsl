@@ -16,7 +16,7 @@ PSInput VS(VSInput input)
     PSInput output;
     float3 scaledPos;
 
-    if ((bool) PrimitiveType)
+    if ((bool) bIs3D)
     { // 3D (Cube 등)
         float3 signDir = sign(input.position);
         float3 offset = signDir * (OutlineOffset * OutlineInvScale);

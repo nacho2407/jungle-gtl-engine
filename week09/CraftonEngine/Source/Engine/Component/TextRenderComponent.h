@@ -80,11 +80,6 @@ public:
 	void SetVerticalAlignment(ETextVAlign InAlign) { VAlign = InAlign; }
 	ETextVAlign GetVerticalAlignment() const { return VAlign; }
 
-	// --- PrimitiveComponent 인터페이스 ---
-	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
-	bool SupportsOutline() const override { return true; }
-	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_Text;
-
 	//Collision
 	void UpdateWorldAABB() const override;
 	bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;

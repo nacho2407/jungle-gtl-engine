@@ -33,14 +33,14 @@ void UPrimitiveComponent::UpdateWorldAABB() const
 
 bool UPrimitiveComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
-	const FMeshData& Data = FMeshBufferManager::Get().GetMeshData(GetPrimitiveType());
-	if (Data.Indices.empty()) return false;
+	const FMeshData* Data = GetMeshData();
+	if (!Data || Data->Indices.empty()) return false;
 
 	bool bHit = FRayUtils::RaycastTriangles(
 		Ray, CachedWorldMatrix,
-		&Data.Vertices[0].Position,
+		&Data->Vertices[0].Position,
 		sizeof(FVertex),
-		Data.Indices,
+		Data->Indices,
 		OutHitResult);
 
 	if (bHit)
@@ -65,10 +65,14 @@ void UPrimitiveComponent::AddWorldOffset(const FVector& WorldDelta)
 UCubeComponent::UCubeComponent()
 {
 }
+FMeshBuffer* UCubeComponent::GetMeshBuffer() const { return &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::Cube); }
+const FMeshData* UCubeComponent::GetMeshData() const { return &FMeshBufferManager::Get().GetMeshData(EMeshShape::Cube); }
 
 USphereComponent::USphereComponent()
 {
 }
+FMeshBuffer* USphereComponent::GetMeshBuffer() const { return &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::Sphere); }
+const FMeshData* USphereComponent::GetMeshData() const { return &FMeshBufferManager::Get().GetMeshData(EMeshShape::Sphere); }
 
 void USphereComponent::UpdateWorldAABB() const
 {
@@ -93,6 +97,8 @@ void USphereComponent::UpdateWorldAABB() const
 UPlaneComponent::UPlaneComponent()
 {
 }
+FMeshBuffer* UPlaneComponent::GetMeshBuffer() const { return &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::Plane); }
+const FMeshData* UPlaneComponent::GetMeshData() const { return &FMeshBufferManager::Get().GetMeshData(EMeshShape::Plane); }
 
 void UPlaneComponent::UpdateWorldAABB() const
 {
