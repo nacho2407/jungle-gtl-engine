@@ -3,7 +3,6 @@
 #include "CoreMinimal.h"
 
 struct FRenderMesh;
-struct FMeshData;
 class FMaterial;
 
 enum class ERenderLayer {
@@ -14,12 +13,14 @@ enum class ERenderLayer {
 
 struct ENGINE_API FRenderCommand
 {
-	FMeshData* MeshData = nullptr;
 	FRenderMesh* RenderMesh = nullptr;
 
 	FMatrix WorldMatrix;
 	FMaterial* Material = nullptr;
 	uint64 SortKey = 0;
+
+	uint32 IndexStart = 0;
+	uint32 IndexCount = 0;
 
 	ERenderLayer RenderLayer = ERenderLayer::Default;
 	bool bDisableDepthTest = false;

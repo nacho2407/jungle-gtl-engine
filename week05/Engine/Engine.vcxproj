@@ -19,6 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Actor\CubeActor.h" />
+    <ClInclude Include="Source\Actor\PlaneActor.h" />
+    <ClInclude Include="Source\Actor\SkySphereActor.h" />
+    <ClInclude Include="Source\Actor\SphereActor.h" />
+    <ClInclude Include="Source\Actor\SubUVActor.h" />
+    <ClInclude Include="Source\Actor\TextActor.h" />
     <ClInclude Include="Source\Core\EngineLoop.h" />
     <ClInclude Include="Source\Core\GameEngine.h" />
     <ClInclude Include="Source\Actor\StaticMeshActor.h" />
@@ -118,6 +124,12 @@
     <ClInclude Include="ThirdParty\nlohmann\json.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Actor\CubeActor.cpp" />
+    <ClCompile Include="Source\Actor\PlaneActor.cpp" />
+    <ClCompile Include="Source\Actor\SkySphereActor.cpp" />
+    <ClCompile Include="Source\Actor\SphereActor.cpp" />
+    <ClCompile Include="Source\Actor\SubUVActor.cpp" />
+    <ClCompile Include="Source\Actor\TextActor.cpp" />
     <ClCompile Include="Source\Core\EngineLoop.cpp" />
     <ClCompile Include="Source\Core\GameEngine.cpp" />
     <ClCompile Include="Source\Actor\Actor.cpp" />

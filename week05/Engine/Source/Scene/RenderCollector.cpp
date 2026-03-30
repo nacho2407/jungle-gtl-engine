@@ -6,6 +6,7 @@
 #include "Component/SubUVComponent.h"
 #include "Core/Engine.h"
 #include "Component/TextComponent.h"
+#include "Debug/EngineLog.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/TextMeshBuilder.h"
 #include "Renderer/SubUVRenderer.h"
@@ -133,18 +134,40 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 		if (Comp->IsA(UStaticMeshComponent::StaticClass()))
 		{
 			UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(Comp);
+			FRenderMesh* TargetMesh = SMC->GetRenderMesh();
 
-			if (SMC->GetRenderMesh())
+			if (TargetMesh)
 			{
-				FRenderCommand Command;
-				Command.RenderMesh = SMC->GetRenderMesh();
-				Command.WorldMatrix = SMC->GetWorldTransform();
-				std::shared_ptr<FMaterial> MatPtr = SMC->GetMaterial(0);
-				FMaterial* Mat = MatPtr.get();
+				int32 NumSections = TargetMesh->GetNumSection();
+				if (NumSections <= 0)
+				{
+					FRenderCommand Command;
+					Command.RenderMesh = TargetMesh;
+					Command.WorldMatrix = SMC->GetWorldTransform();
+					std::shared_ptr<FMaterial> MatPtr = SMC->GetMaterial(0);
+					Command.Material = MatPtr ? MatPtr.get() : Renderer->GetDefaultMaterial();
 
-				Command.Material = Mat ? Mat : Renderer->GetDefaultMaterial();
+					OutQueue.AddCommand(Command);
+				}
+				else
+				{
+					for (int32 i = 0; i < NumSections; ++i)
+					{
+						const FMeshSection& Section = TargetMesh->Sections[i];
 
-				OutQueue.AddCommand(Command);
+						FRenderCommand Command;
+						Command.RenderMesh = TargetMesh;
+						Command.WorldMatrix = SMC->GetWorldTransform();
+
+						Command.IndexStart = Section.StartIndex;
+						Command.IndexCount = Section.IndexCount;
+
+						// 2. 인덱스(i)에 맞는 머티리얼을 꺼내서 주문서에 붙이기
+						std::shared_ptr<FMaterial> MatPtr = SMC->GetMaterial(i);
+						Command.Material = MatPtr ? MatPtr.get() : Renderer->GetDefaultMaterial();
+						OutQueue.AddCommand(Command);
+					}
+				}
 			}
 			continue;
 		}
@@ -200,171 +223,3 @@ void FSceneRenderCollector::FrustrumCull(const TArray<AActor*>& Actors, const FF
 		}
 	}
 }
-
-
-/*
-void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors, const FFrustum& Frustum,
-	const FShowFlags& ShowFlags, FRenderCommandQueue& OutQueue)
-{
-	TArray<UPrimitiveComponent*> VisiblePrimitives;
-	FrustrumCull(Actors, Frustum, ShowFlags, VisiblePrimitives);
-
-	FRenderer* Renderer = GEngine ? GEngine->GetRenderer() : nullptr;
-	if (!Renderer) return;
-
-	FTextMeshBuilder& TextRenderer = Renderer->GetTextRenderer();
-	FSubUVRenderer& SubUVRenderer = Renderer->GetSubUVRenderer();
-
-	for (UPrimitiveComponent* PrimitiveComponent : VisiblePrimitives)
-	{
-		if (!PrimitiveComponent) continue;
-
-		// ─── 텍스트 컴포넌트 ───
-		if (PrimitiveComponent->IsA(UTextComponent::StaticClass()))
-		{
-			UTextComponent* TextComp = static_cast<UTextComponent*>(PrimitiveComponent);
-			FMeshData* TextMesh = TextComp->GetTextMesh();
-			
-			if (TextMesh && TextRenderer.BuildTextMesh(TextComp->GetDisplayText(), *TextMesh))
-			{
-				FMaterial* FontMat = TextRenderer.GetFontMaterial();
-				if (FontMat)
-				{
-					FVector4 Color = TextComp->GetTextColor();
-					FontMat->SetParameterData("TextColor", &Color, 16);
-
-					FRenderCommand Command;
-					Command.MeshData = TextMesh;
-					Command.Material = FontMat;
-					// TODO: UUID 렌더링 기능 재구현되면 아래 1줄 삭제
-					if (!PrimitiveComponent->IsA(UUUIDBillboardComponent::StaticClass()))
-					{
-						Command.RenderLayer = ERenderLayer::Default;  // ← Overlay → Default
-					}
-					else
-					{
-						Command.RenderLayer = ERenderLayer::Overlay;
-					}
-				
-					
-					const FVector WorldPos = TextComp->GetRenderWorldPosition();
-					const FVector Scale = TextComp->GetRenderWorldScale();
-
-					if (TextComp->IsBillboard())
-					{
-						Command.WorldMatrix = FMatrix::MakeScale(Scale) * FMatrix::MakeBillboard(WorldPos, CameraPosition);
-					}
-					else
-					{
-						const float TextScale = TextComp->GetTextScale();
-						Command.WorldMatrix =
-							FMatrix::MakeScale(FVector(TextScale, TextScale, TextScale)) *
-							TextComp->GetWorldTransform();
-					}
-
-					OutQueue.AddCommand(Command);
-				}
-			}
-			continue;
-		}
-
-		// ─── SubUV 스프라이트 통합 ───
-		// TODO: 일반적인 프리미티브와 RenderCommand build 경로 통합
-		if (PrimitiveComponent->IsA(USubUVComponent::StaticClass()))
-		{
-			USubUVComponent* SubUVComponent = static_cast<USubUVComponent*>(PrimitiveComponent);
-			FMeshData* SubUVMesh = SubUVComponent->GetSubUVMesh();
-			if (SubUVMesh && SubUVRenderer.BuildSubUVMesh(SubUVComponent->GetSize(), *SubUVMesh))
-			{
-				float TotalTime = GEngine ? static_cast<float>(GEngine->GetTimer().GetTotalTime()) : 0.0f;
-				SubUVRenderer.UpdateAnimationParams(
-					SubUVComponent->GetColumns(), SubUVComponent->GetRows(), SubUVComponent->GetTotalFrames(),
-					SubUVComponent->GetFirstFrame(), SubUVComponent->GetLastFrame(),
-					SubUVComponent->GetFPS(), TotalTime, SubUVComponent->IsLoop()
-				);
-
-				FMaterial* SubUVMat = SubUVRenderer.GetSubUVMaterial();
-				if (SubUVMat)
-				{
-					FRenderCommand Command;
-					Command.MeshData = SubUVMesh;
-					Command.Material = SubUVMat;
-					Command.WorldMatrix = SubUVComponent->GetWorldTransform();
-
-					if (SubUVComponent->IsBillboard())
-					{
-						const FVector WorldPos = Command.WorldMatrix.GetTranslation();
-						const FVector Scale = Command.WorldMatrix.GetScaleVector();
-						Command.WorldMatrix = FMatrix::MakeScale(Scale) * FMatrix::MakeBillboard(WorldPos, CameraPosition);
-					}
-
-					OutQueue.AddCommand(Command);
-				}
-			}
-			continue;
-		}
-
-		// ─── 일반 프리미티브 ───
-		if (!PrimitiveComponent->GetPrimitive() || !PrimitiveComponent->GetPrimitive()->GetMeshData())
-		{
-			continue;
-		}
-
-		FRenderCommand Command;
-		Command.MeshData = PrimitiveComponent->GetPrimitive()->GetMeshData();
-		Command.WorldMatrix = PrimitiveComponent->GetWorldTransform();
-		Command.Material = PrimitiveComponent->GetMaterial();
-		OutQueue.AddCommand(Command);
-	}
-}
-
-void FSceneRenderCollector::FrustrumCull(const TArray<AActor*>& Actors, const FFrustum& Frustum,
-	const FShowFlags& ShowFlags, TArray<UPrimitiveComponent*>& OutVisible)
-{
-	for (AActor* Actor : Actors)
-	{
-		if (!Actor || Actor->IsPendingDestroy()) continue;
-		if (!Actor->IsVisible()) continue;
-
-		for (UActorComponent* Component : Actor->GetComponents())
-		{
-			if (!Component->IsA(UPrimitiveComponent::StaticClass())) continue;
-
-			UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
-
-			const bool bIsUUID = PrimitiveComponent->IsA(UUUIDBillboardComponent::StaticClass());
-			const bool bIsSubUV = PrimitiveComponent->IsA(USubUVComponent::StaticClass());
-			const bool bIsText = PrimitiveComponent->IsA(UTextComponent::StaticClass());
-
-			if (bIsUUID)
-			{
-				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_UUID)) continue;
-			}
-			else if (bIsSubUV)
-			{
-				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Billboard))
-				{
-					continue;
-				}
-			}
-			else if (bIsText)
-			{
-				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Text))
-				{
-					continue;
-				}
-			}
-			else
-			{
-				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives)) continue;
-				if (!PrimitiveComponent->GetPrimitive() || !PrimitiveComponent->GetPrimitive()->GetMeshData()) continue;
-			}
-
-			if (Frustum.IsVisible(PrimitiveComponent->GetWorldBounds()))
-			{
-				OutVisible.push_back(PrimitiveComponent);
-			}
-		}
-	}
-}
-*/
