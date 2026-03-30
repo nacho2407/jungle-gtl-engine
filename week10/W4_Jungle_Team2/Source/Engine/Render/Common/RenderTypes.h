@@ -39,7 +39,7 @@ enum class ERenderPass : uint32
 	StencilMask,
 	Grid, 
 	Editor,
-	Outline,
 	DepthLess,
+	PostProcessOutline,
 	MAX
 };
