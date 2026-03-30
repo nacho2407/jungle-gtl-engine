@@ -39,6 +39,9 @@ private:
 	static bool AutoScroll;
 	static bool ScrollToBottom;
 
+	// 백틱(`) 키로 포커스 요청 시 true — 다음 InputText 렌더링 직전에 SetKeyboardFocusHere 호출
+	bool bRequestFocusInput = false;
+
 	//Command Dispatch System
 	using CommandFn = std::function<void(const TArray<FString>& args)>;
 	TMap<FString, CommandFn> Commands;

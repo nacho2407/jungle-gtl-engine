@@ -13,6 +13,7 @@
 #include "Slate/SSplitterV.h"
 #include "Slate/SSplitterH.h"
 #include "Viewport/ViewportLayout.h"
+#include "Core/InputSystem.h"
 
 // 뷰포트 타입 → 표시 이름
 static const char* GetViewportTypeName(EEditorViewportType Type)
@@ -47,7 +48,6 @@ void FEditorViewportOverlayWidget::Render(float DeltaTime)
 	RenderDebugStats(DeltaTime);
 	RenderSplitterBar();
 	RenderViewportToolbars();
-	RenderSettingOverlay();
 }
 
 // ── 뷰포트별 UE 스타일 View Mode 툴바 ─────────────────────────────
@@ -211,18 +211,6 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
 		return;
 	}
 
-	// View Mode
-	ImGui::Text("View Mode");
-	int32 CurrentMode = static_cast<int32>(Settings.ViewMode);
-	ImGui::RadioButton("Lit", &CurrentMode, static_cast<int32>(EViewMode::Lit));
-	ImGui::SameLine();
-	ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
-	ImGui::SameLine();
-	ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
-	Settings.ViewMode = static_cast<EViewMode>(CurrentMode);
-
-	ImGui::Separator();
-
 	// Show Flags
 	ImGui::Text("Show");
 	ImGui::Checkbox("Primitives", &Settings.ShowFlags.bPrimitives);
@@ -251,83 +239,79 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
 
 void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 {
-	FEditorSettings& Settings = FEditorSettings::Get();
+	if (!EditorEngine) return;
 
-	// 둘 다 꺼져있으면 렌더링하지 않음
-	if (!Settings.bShowStatFPS && !Settings.bShowStatMemory)
+	constexpr ImGuiWindowFlags kFlags =
+		ImGuiWindowFlags_NoDecoration      |
+		ImGuiWindowFlags_AlwaysAutoResize  |
+		ImGuiWindowFlags_NoSavedSettings   |
+		ImGuiWindowFlags_NoFocusOnAppearing|
+		ImGuiWindowFlags_NoNav             |
+		ImGuiWindowFlags_NoMove            |
+		ImGuiWindowFlags_NoInputs;
+
+	FViewportLayout& Layout = EditorEngine->GetViewportLayout();
+
+	for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
 	{
-		return;
-	}
+		const FEditorViewportState& VS = Layout.GetViewportState(i);
 
-	ImGuiViewport* Viewport = ImGui::GetMainViewport();
-	ImVec2 WindowPos(Viewport->WorkPos.x + (Viewport->WorkSize.x * 0.5f), Viewport->WorkPos.y + 10.0f);
+		if (!VS.bShowStatFPS && !VS.bShowStatMemory) continue;
+		if (VS.Rect.Width <= 0 || VS.Rect.Height <= 0) continue; // 비활성 뷰포트 스킵
 
-	ImGui::SetNextWindowPos(WindowPos, ImGuiCond_Always, ImVec2(0.5f, 0.0f));
-	ImGui::SetNextWindowBgAlpha(0.3f); // 30% 반투명한 검은색 배경
+		// 툴바 바로 아래 좌측에 고정
+		ImGui::SetNextWindowPos(
+			ImVec2(static_cast<float>(VS.Rect.X) + 8.f,
+			       static_cast<float>(VS.Rect.Y) + 32.f),
+			ImGuiCond_Always);
+		ImGui::SetNextWindowBgAlpha(0.3f);
 
-	// 오버레이 창을 위한 플래그: 테두리/타이틀바 없음, 자동 크기, 이동 불가, 클릭 무시(NoInputs)
-	ImGuiWindowFlags Flags =
-		ImGuiWindowFlags_NoDecoration |
-		ImGuiWindowFlags_AlwaysAutoResize |
-		ImGuiWindowFlags_NoSavedSettings |
-		ImGuiWindowFlags_NoFocusOnAppearing |
-		ImGuiWindowFlags_NoNav |
-		ImGuiWindowFlags_NoMove |
-		ImGuiWindowFlags_NoInputs; // 마우스 클릭이 뷰포트를 통과하도록 설정
+		char WinId[32];
+		snprintf(WinId, sizeof(WinId), "##StatOverlay_%d", i);
 
-	if (ImGui::Begin("##StatOverlay", nullptr, Flags))
-	{
-		// FPS 출력 (초록색 텍스트)
-		if (Settings.bShowStatFPS)
+		if (ImGui::Begin(WinId, nullptr, kFlags))
 		{
-			float FPS = (DeltaTime > 0.0f) ? (1.0f / DeltaTime) : 0.0f;
-			float MS = DeltaTime * 1000.0f;
-			ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "FPS: %.1f (%.2f ms)", FPS, MS);
-		}
-
-		// Memory 출력 (노란색 텍스트)
-		if (Settings.bShowStatMemory)
-		{
-			size_t MeshMemoryBytes = 0;
-
-			// 이전에 작성했던 UStaticMesh 순회 로직 활용
-			for (TObjectIterator<UStaticMesh> It; It; ++It)
+			// FPS 출력 (초록색 텍스트)
+			if (VS.bShowStatFPS)
 			{
-				UStaticMesh* Mesh = *It;
-				if (Mesh && Mesh->HasValidMeshData())
-				{
-					size_t VerticesMem = Mesh->GetVertices().size() * sizeof(FNormalVertex);
-					size_t IndicesMem = Mesh->GetIndices().size() * sizeof(uint32);
-					size_t SectionsMem = Mesh->GetSections().size() * sizeof(FStaticMeshSection);
-
-					MeshMemoryBytes += sizeof(UStaticMesh) + VerticesMem + IndicesMem + SectionsMem;
-				}
+				const float FPS = (DeltaTime > 0.f) ? (1.f / DeltaTime) : 0.f;
+				ImGui::TextColored(ImVec4(0.f, 1.f, 0.f, 1.f), "FPS: %.1f (%.2f ms)", FPS, DeltaTime * 1000.f);
 			}
 
-			size_t MaterialMemoryBytes = FResourceManager::Get().GetMaterialMemorySize();
-			size_t TotalMemoryBytes = MeshMemoryBytes + MaterialMemoryBytes;
-			// size_t TotalMemoryBytes = MeshMemoryBytes + MaterialMemoryBytes + TextureMemoryBytes;
+			// Memory 출력 (노란색 텍스트)
+			if (VS.bShowStatMemory)
+			{
+				size_t MeshMemoryBytes = 0;
+				for (TObjectIterator<UStaticMesh> It; It; ++It)
+				{
+					UStaticMesh* Mesh = *It;
+					if (Mesh && Mesh->HasValidMeshData())
+					{
+						MeshMemoryBytes += sizeof(UStaticMesh)
+							+ Mesh->GetVertices().size()  * sizeof(FNormalVertex)
+							+ Mesh->GetIndices().size()   * sizeof(uint32)
+							+ Mesh->GetSections().size()  * sizeof(FStaticMeshSection);
+					}
+				}
 
-			// 단위 변환 (MB 단위가 더 보기 좋다면 1024.0f * 1024.0f 로 변경)
-			float MeshKB = MeshMemoryBytes / 1024.0f;
-			float MatKB = MaterialMemoryBytes / 1024.0f;
-			// float TexKB = TextureMemoryBytes / 1024.0f;
-			float TotalKB = TotalMemoryBytes / 1024.0f;
+				const size_t MatMemoryBytes   = FResourceManager::Get().GetMaterialMemorySize();
+				const size_t TotalMemoryBytes = MeshMemoryBytes + MatMemoryBytes;
 
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Memory Stat");
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "- Mesh: %.2f KB", MeshKB);
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "- Material: %.2f KB", MatKB);
-			// ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "- Texture (VRAM): %.2f KB", TexKB);
-			ImGui::Separator();
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Total: %.2f KB", TotalKB);
+				ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "Memory Stat");
+				ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Mesh: %.2f KB",     MeshMemoryBytes / 1024.f);
+				ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Material: %.2f KB", MatMemoryBytes  / 1024.f);
+				ImGui::Separator();
+				ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "Total: %.2f KB",      TotalMemoryBytes / 1024.f);
+			}
 		}
+		ImGui::End();
 	}
-
-	ImGui::End();
 }
 
 void FEditorViewportOverlayWidget::RenderSplitterBar()
 {
+	// if (FSlateApplication::Get().GetCapturedWidget()) return;
+
 	// 스플리터 바 시각화
 	if (EditorEngine)
 	{
@@ -340,8 +324,12 @@ void FEditorViewportOverlayWidget::RenderSplitterBar()
 			constexpr ImU32 BarColor = IM_COL32(80, 80, 80, 220);
 			constexpr ImU32 HoverColor = IM_COL32(140, 180, 255, 255);
 
-			const SWidget* Hovered = FSlateApplication::Get().GetHoveredWidget();
+			const SWidget* Hovered  = FSlateApplication::Get().GetHoveredWidget();
 			const SWidget* Captured = FSlateApplication::Get().GetCapturedWidget();
+
+			// 드래그 중(LButton + 이동)에는 하이라이트를 표시하지 않음
+			// InputSystem::Get().GetLeftDragging() || 
+			const bool bIsDragging = InputSystem::Get().GetRightDragging();
 
 			SSplitter* Splitters[] = {
 				ViewportLayout.GetRootSplitterV(),
@@ -355,8 +343,9 @@ void FEditorViewportOverlayWidget::RenderSplitterBar()
 				const FRect Bar = S->GetBarRect();
 
 				const SSplitter* Linked = S->GetLinkedSplitter();
-				const bool bHighlight = (S == Hovered || S == Captured)
-					|| (Linked && (Linked == Hovered || Linked == Captured));
+				const bool bHighlight = !bIsDragging
+					&& ((S == Hovered || S == Captured)
+						|| (Linked && (Linked == Hovered || Linked == Captured)));
 
 				DrawList->AddRectFilled(
 					ImVec2(Bar.X, Bar.Y),
@@ -365,65 +354,4 @@ void FEditorViewportOverlayWidget::RenderSplitterBar()
 			}
 		}
 	}
-}
-
-void FEditorViewportOverlayWidget::RenderSettingOverlay()
-{
-
-	// 3. Settings 오버레이 패널
-	FEditorSettings& Settings = FEditorSettings::Get();
-
-	ImGuiViewport* Viewport = ImGui::GetMainViewport();
-	const float Padding = 10.0f;
-	ImVec2 WindowPos(Viewport->WorkPos.x + Viewport->WorkSize.x - Padding,
-		Viewport->WorkPos.y + Padding);
-
-	ImGui::SetNextWindowPos(WindowPos, ImGuiCond_Always, ImVec2(1.0f, 0.0f));
-	ImGui::SetNextWindowBgAlpha(0.6f);
-
-	constexpr ImGuiWindowFlags kOverlayFlags =
-		ImGuiWindowFlags_NoDecoration |
-		ImGuiWindowFlags_AlwaysAutoResize |
-		ImGuiWindowFlags_NoSavedSettings |
-		ImGuiWindowFlags_NoFocusOnAppearing |
-		ImGuiWindowFlags_NoNav |
-		ImGuiWindowFlags_NoMove;
-
-	if (!ImGui::Begin("##ViewportOverlay", nullptr, kOverlayFlags))
-	{
-		ImGui::End();
-		return;
-	}
-
-	if (ImGui::Button(bExpanded ? "Settings <<" : "Settings >>"))
-		bExpanded = !bExpanded;
-
-	if (bExpanded)
-	{
-		ImGui::Separator();
-
-		// Show Flags
-		ImGui::Text("Show");
-		ImGui::Checkbox("Primitives", &Settings.ShowFlags.bPrimitives);
-		ImGui::Checkbox("BillboardText", &Settings.ShowFlags.bBillboardText);
-		ImGui::Checkbox("Grid", &Settings.ShowFlags.bGrid);
-		ImGui::Checkbox("Gizmo", &Settings.ShowFlags.bGizmo);
-		ImGui::Checkbox("Bounding Volume", &Settings.ShowFlags.bBoundingVolume);
-
-		ImGui::Separator();
-
-		// Grid Settings
-		ImGui::Text("Grid");
-		ImGui::SliderFloat("Spacing", &Settings.GridSpacing, 0.1f, 10.0f, "%.1f");
-		ImGui::SliderInt("Half Line Count", &Settings.GridHalfLineCount, 10, 500);
-
-		ImGui::Separator();
-
-		// Camera Sensitivity
-		ImGui::Text("Camera");
-		ImGui::SliderFloat("Move Sensitivity", &Settings.CameraMoveSensitivity, 0.1f, 5.0f, "%.1f");
-		ImGui::SliderFloat("Rotate Sensitivity", &Settings.CameraRotateSensitivity, 0.1f, 5.0f, "%.1f");
-	}
-
-	ImGui::End();
 }
