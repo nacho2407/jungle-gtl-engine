@@ -1,5 +1,7 @@
 #include "Renderer/RendererModule.h"
 
+#include <utility>
+
 #include "Renderer/Types/PickId.h"
 #include "Renderer/Types/PickResult.h"
 #include "SceneView.h"
@@ -161,14 +163,24 @@ void FRendererModule::OnWindowResized(int32 InWidth, int32 InHeight)
     ObjectIdRenderer.Resize(InWidth, InHeight);
 }
 
+void FRendererModule::SetSceneFrameData(FSceneFrameRenderData&& InFrameData)
+{
+    CachedSceneData.Primitives     = std::move(InFrameData.Primitives);
+    CachedSceneData.Sprites        = std::move(InFrameData.Sprites);
+    CachedSceneData.Texts          = std::move(InFrameData.Texts);
+    CachedSceneData.bUseInstancing = InFrameData.bUseInstancing;
+    CachedSceneData.SceneView      = nullptr; // stamped per-panel in Render()
+}
+
 /**
  * @brief Render Order: World Pass -> Overlay Pass
  */
-void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
-                             const FSceneRenderData&  InSceneRenderData)
+void FRendererModule::Render(const FEditorRenderData& InEditorRenderData, EViewModeIndex ViewMode)
 {
-    RenderWorldPass(InEditorRenderData, InSceneRenderData);
-    RenderOverlayPass(InEditorRenderData, InSceneRenderData);
+    CachedSceneData.SceneView = InEditorRenderData.SceneView;
+    CachedSceneData.ViewMode  = ViewMode;
+    RenderWorldPass(InEditorRenderData, CachedSceneData);
+    RenderOverlayPass(InEditorRenderData, CachedSceneData);
 }
 
 /**

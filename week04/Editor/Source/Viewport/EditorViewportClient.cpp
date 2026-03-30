@@ -158,6 +158,11 @@ FString FEditorViewportClient::GetViewOrientationString(EViewportViewOrientation
 
 void FEditorViewportClient::SetViewOrientation(EViewportViewOrientation InOrientation) 
 {
+    if (InOrientation == ViewOrientation)
+    {
+        return;
+    }
+
     using enum EViewportViewOrientation;
     const bool bWasFree = (ViewOrientation == Free);
     ViewOrientation = InOrientation;
@@ -344,6 +349,11 @@ void FEditorViewportClient::DrawMemoryStatOverlay(const FMemoryStatData& InData)
     // 추가 예정
 }
 
+void FEditorViewportClient::BuildViewportOverlayRenderData(FWidgetRenderData& OutData) const
+{
+
+}
+
 void FEditorViewportClient::DrawOutline() {}
 
 FFPSStatData FEditorViewportClient::CollectFPSStatData() const
@@ -363,4 +373,14 @@ FMemoryStatData FEditorViewportClient::CollectMemoryStatData() const
 {
     FMemoryStatData Data;
     return Data;
+}
+
+void FEditorViewportClient::BuildFPSStatOverlayRenderData(FWidgetRenderData& OutData) const
+{
+
+}
+
+void FEditorViewportClient::BuildMemoryStatOverlayRenderData(FWidgetRenderData& OutData) const
+{
+
 }

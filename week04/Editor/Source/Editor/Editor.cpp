@@ -413,7 +413,6 @@ void FEditor::Create()
     WindowOverlayManager->SetScene(CurScene);
     FEditorViewportPanel* EditorPanel = new FEditorViewportPanel();
     EditorPanel->ViewportClient = &ViewportClient;
-    EditorPanel->Scene = CurScene;
     WindowOverlayManager->GetViewportPanels().push_back(EditorPanel);
     WindowOverlayManager->SetViewportLayout(EViewportLayout::ColumnTwoRow);
 
@@ -776,7 +775,7 @@ void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* Input
         CurScene->Tick(DeltaTime);
     }
 
-    BuildRenderData();
+    //BuildRenderData();
 }
 
 void FEditor::OnWindowResized(float Width, float Height)
@@ -1484,6 +1483,12 @@ void FEditor::DrawPanel()
 
     if (WindowOverlayManager != nullptr)
     {
+        const FViewportAvailableArea& Area = GetViewportAvailableArea();
+        if (Area.bValid)
+        {
+            WindowOverlayManager->SetViewportAvailableArea(Area.X, Area.Y, Area.Width, Area.Height);
+        }
+
         for (FEditorViewportPanel* Panel : WindowOverlayManager->GetViewportPanels())
         {
             if (Panel != nullptr && Panel->ViewportClient != nullptr)
@@ -1506,25 +1511,26 @@ void FEditor::DrawPanel()
 
 void FEditor::BuildRenderData()
 {
-    EditorRenderData = FEditorRenderData{};
-    SceneRenderData = FSceneRenderData{};
+    //EditorRenderData = FEditorRenderData{};
+    //SceneRenderData = FSceneRenderData{};
 
-    BuildSceneView();
+    //BuildSceneView();
 
-    EditorRenderData.SceneView = &SceneView;
-    SceneRenderData.SceneView = &SceneView;
-    SceneRenderData.ViewMode = ViewportClient.GetRenderSetting().GetViewMode();
+    //EditorRenderData.SceneView = &SceneView;
+    //SceneRenderData.SceneView = &SceneView;
+    //SceneRenderData.ViewMode = ViewportClient.GetRenderSetting().GetViewMode();
 
-    const EEditorShowFlags EditorShowFlags =
-        ViewportClient.GetRenderSetting().BuildEditorShowFlags(true);
-    const ESceneShowFlags SceneShowFlags = ViewportClient.GetRenderSetting().BuildSceneShowFlags();
+    //const EEditorShowFlags EditorShowFlags =
+    //    ViewportClient.GetRenderSetting().BuildEditorShowFlags(true);
+    //const ESceneShowFlags SceneShowFlags =
+    //    ViewportClient.GetRenderSetting().BuildSceneShowFlags();
 
-    ViewportClient.BuildRenderData(EditorRenderData, EditorShowFlags);
+    //ViewportClient.BuildRenderData(EditorRenderData, EditorShowFlags);
 
-    if (CurScene != nullptr)
-    {
-        CurScene->BuildRenderData(SceneRenderData, SceneShowFlags);
-    }
+    //if (CurScene != nullptr)
+    //{
+    //    CurScene->BuildRenderData(SceneRenderData, SceneShowFlags);
+    //}
 }
 
 // 다중 뷰포트 머지 후에 active viewport를 토글하는 방식으로 변경 예정

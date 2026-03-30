@@ -12,6 +12,7 @@
 #include "Input/GizmoInputContext.h"
 #include "Renderer/EditorRenderData.h"
 #include "Renderer/Types/EditorShowFlags.h"
+#include "Renderer/WidgetRenderData.h"
 
 struct FEditorContext;
 
@@ -158,6 +159,8 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
 
     uint32 GetViewportOriginX() const { return ViewportCamera.GetOriginX(); }
     uint32 GetViewportOriginY() const { return ViewportCamera.GetOriginY(); }
+
+    void BuildViewportOverlayRenderData(FWidgetRenderData& OutData) const;
     
   private:
     void DrawOutline();
@@ -166,6 +169,9 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
 
     FFPSStatData    CollectFPSStatData() const;
     FMemoryStatData CollectMemoryStatData() const;
+
+    void BuildFPSStatOverlayRenderData(FWidgetRenderData& OutData) const;
+    void BuildMemoryStatOverlayRenderData(FWidgetRenderData& OutData) const;
 
 private:
     EViewportViewOrientation ViewOrientation = EViewportViewOrientation::Free;

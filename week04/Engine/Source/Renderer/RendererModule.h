@@ -12,6 +12,7 @@
 #include "Renderer/D3D11/D3D11TextBatchRenderer.h"
 #include "Renderer/D3D11/D3D11WidgetRenderer.h"
 #include "Renderer/EditorRenderData.h"
+#include "Renderer/SceneFrameRenderData.h"
 #include "Renderer/SceneRenderData.h"
 #include "Renderer/WidgetRenderData.h"
 #include "Renderer/Submitter/AABBSubmitter.h"
@@ -34,8 +35,11 @@ class ENGINE_API FRendererModule
 
     void OnWindowResized(int32 InWidth, int32 InHeight);
 
-    void Render(const FEditorRenderData& InEditorRenderData,
-                const FSceneRenderData&  InSceneRenderData);
+    // Call once per frame before the per-panel loop to cache view-independent scene items.
+    void SetSceneFrameData(FSceneFrameRenderData&& InFrameData);
+
+    // Call per panel — uses the cached scene items; SceneView is taken from InEditorRenderData.
+    void Render(const FEditorRenderData& InEditorRenderData, EViewModeIndex ViewMode);
 
     bool Pick(const FEditorRenderData& InEditorRenderData, int32 MouseX, int32 MouseY,
               FPickResult& OutResult);
@@ -67,6 +71,9 @@ class ENGINE_API FRendererModule
     FWorldAxesSubmitter  WorldAxesSubmitter;
 
     TComPtr<ID3D11Debug> DebugDevice;
+
+    // Cached per-frame scene items (view-independent). SceneView is stamped per-panel in Render().
+    FSceneRenderData CachedSceneData;
 
     void RenderWorldPass(const FEditorRenderData& InEditorRenderData,
                          const FSceneRenderData&  InSceneRenderData);

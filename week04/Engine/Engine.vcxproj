@@ -132,6 +132,7 @@
     <ClInclude Include="Source\Renderer\RenderAsset\SubUVAtlasResource.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\TextureResource.h" />
     <ClInclude Include="Source\Renderer\RendererModule.h" />
+    <ClInclude Include="Source\Renderer\SceneFrameRenderData.h" />
     <ClInclude Include="Source\Renderer\SceneRenderData.h" />
     <ClInclude Include="Source\Renderer\SceneView.h" />
     <ClInclude Include="Source\Renderer\Submitter\AABBSubmitter.h" />

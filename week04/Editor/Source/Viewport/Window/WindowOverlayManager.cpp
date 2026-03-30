@@ -1,5 +1,6 @@
 #include "WindowOverlayManager.h"
 #include "Editor/EditorContext.h"
+#include "Engine/Scene.h"
 
 #include <cmath>
 
@@ -104,10 +105,16 @@ void FWindowOverlayManager::ResetViewportDimension()
     for (FEditorViewportPanel* Panel : ViewportPanels)
     {
         if (!Panel) continue;
-        Panel->PosX   = 0.f;
-        Panel->PosY   = 0.f;
-        Panel->Width  = static_cast<float>(W);
-        Panel->Height = static_cast<float>(H);
+        //Panel->PosX   = 0.f;
+        //Panel->PosY   = 0.f;
+        //Panel->Width  = static_cast<float>(W);
+        //Panel->Height = static_cast<float>(H);
+
+        // 실제 화면에 그려지는 뷰포트 영역의 위치와 크기를 사용하는 구조로 변경합니다!
+        Panel->PosX = ViewportAreaX;
+        Panel->PosY = ViewportAreaY;
+        Panel->Width = ViewportAreaWidth;
+        Panel->Height = ViewportAreaHeight;
     }
 
     // 4. Each splitter narrows its own axis independently
@@ -116,9 +123,6 @@ void FWindowOverlayManager::ResetViewportDimension()
 
     // 5. Push final positions to every ViewportClient
     SyncPanelClients();
-
-    // 6. Set default oreintation values for each panel
-    ResetViewOrientation();
 }
 
 void FWindowOverlayManager::SyncPanelClients()
@@ -145,59 +149,73 @@ void FWindowOverlayManager::ResetSplitters()
 
     if (ViewportLayout == EViewportLayout::Single) return;
 
-    const float FW    = static_cast<float>(W);
-    const float FH    = static_cast<float>(H);
-    const float SplitX = FW * VSplitRatio;
-    const float SplitY = FH * HSplitRatio;
+    const float AreaX = ViewportAreaX;
+    const float AreaY = ViewportAreaY;
+    const float AreaW = ViewportAreaWidth;
+    const float AreaH = ViewportAreaHeight;
+
+    const float AreaRight = AreaX + AreaW;
+    const float AreaBottom = AreaY + AreaH;
+
+    const float SplitX = AreaX + AreaW * VSplitRatio;
+    const float SplitY = AreaY + AreaH * HSplitRatio;
 
     switch (ViewportLayout)
     {
     case EViewportLayout::TwoColumn:
         SplitterV = new SSplitterV();
-        SplitterV->Init(SplitX, 0.f, SplitterHalfThick * 2.f, FH, FW, FH);
+        SplitterV->Init(SplitX, AreaY, SplitterHalfThick * 2.f, AreaH, AreaW, AreaH);
+        SplitterV->SetPanelAreaBounds(AreaX, AreaRight, AreaY, AreaBottom);
         SplitterV->SetLeftPanels ({ViewportPanels[0]});
         SplitterV->SetRightPanels({ViewportPanels[1]});
         break;
 
     case EViewportLayout::TwoRow:
         SplitterH = new SSplitterH();
-        SplitterH->Init(0.f, SplitY, FW, SplitterHalfThick * 2.f, FW, FH);
+        SplitterH->Init(AreaX, SplitY, AreaW, SplitterHalfThick * 2.f, AreaW, AreaH);
+        SplitterH->SetPanelAreaBounds(AreaX, AreaRight, AreaY, AreaBottom);
         SplitterH->SetUpPanels    ({ViewportPanels[0]});
         SplitterH->SetBottomPanels({ViewportPanels[1]});
         break;
 
     case EViewportLayout::ColumnTwoRow:
         SplitterV = new SSplitterV();
-        SplitterV->Init(SplitX, 0.f, SplitterHalfThick * 2.f, FH, FW, FH);
+        SplitterV->Init(SplitX, AreaY, SplitterHalfThick * 2.f, AreaH, AreaW, AreaH);
+        SplitterV->SetPanelAreaBounds(AreaX, AreaRight, AreaY, AreaBottom);
         SplitterV->SetLeftPanels ({ViewportPanels[0]});
         SplitterV->SetRightPanels({ViewportPanels[1], ViewportPanels[2]});
 
         SplitterH = new SSplitterH();
-        SplitterH->Init(SplitX, SplitY, FW - SplitX, SplitterHalfThick * 2.f, FW, FH);
+        SplitterH->Init(SplitX, SplitY, AreaRight - SplitX, SplitterHalfThick * 2.f, AreaW, AreaH);
+        SplitterH->SetPanelAreaBounds(SplitX, AreaRight, AreaY, AreaBottom);
         SplitterH->SetUpPanels    ({ViewportPanels[1]});
         SplitterH->SetBottomPanels({ViewportPanels[2]});
         break;
 
     case EViewportLayout::TwoRowColumn:
         SplitterV = new SSplitterV();
-        SplitterV->Init(SplitX, 0.f, SplitterHalfThick * 2.f, FH, FW, FH);
+        SplitterV->Init(SplitX, AreaY, SplitterHalfThick * 2.f, AreaH, AreaW, AreaH);
+        SplitterV->SetPanelAreaBounds(AreaX, AreaRight, AreaY, AreaBottom);
         SplitterV->SetLeftPanels ({ViewportPanels[0], ViewportPanels[1]});
         SplitterV->SetRightPanels({ViewportPanels[2]});
 
         SplitterH = new SSplitterH();
-        SplitterH->Init(0.f, SplitY, SplitX, SplitterHalfThick * 2.f, FW, FH);
+        SplitterH->Init(AreaX, SplitY, SplitX - AreaX, SplitterHalfThick * 2.f, AreaW, AreaH);
+        SplitterH->SetPanelAreaBounds(AreaX, SplitX, AreaY, AreaBottom);
         SplitterH->SetUpPanels    ({ViewportPanels[0]});
         SplitterH->SetBottomPanels({ViewportPanels[1]});
         break;
 
     case EViewportLayout::FourWay:
         SplitterV = new SSplitterV();
-        SplitterV->Init(SplitX, 0.f, SplitterHalfThick * 2.f, FH, FW, FH);
+        SplitterV->Init(SplitX, AreaY, SplitterHalfThick * 2.f, AreaH, AreaW, AreaH);
+        SplitterV->SetPanelAreaBounds(AreaX, AreaRight, AreaY, AreaBottom);
         SplitterV->SetLeftPanels ({ViewportPanels[0], ViewportPanels[1]});
         SplitterV->SetRightPanels({ViewportPanels[2], ViewportPanels[3]});
 
         SplitterH = new SSplitterH();
-        SplitterH->Init(0.f, SplitY, FW, SplitterHalfThick * 2.f, FW, FH);
+        SplitterH->Init(AreaX, SplitY, AreaW, SplitterHalfThick * 2.f, AreaW, AreaH);
+        SplitterH->SetPanelAreaBounds(AreaX, AreaRight, AreaY, AreaBottom);
         SplitterH->SetUpPanels    ({ViewportPanels[0], ViewportPanels[2]});
         SplitterH->SetBottomPanels({ViewportPanels[1], ViewportPanels[3]});
         break;
@@ -237,13 +255,13 @@ void FWindowOverlayManager::BeginSplitterDrag(bool bVertical, bool bHorizontal)
 
 void FWindowOverlayManager::UpdateSplitterDrag(float DeltaX, float DeltaY)
 {
-    const float FW = static_cast<float>(W);
-    const float FH = static_cast<float>(H);
-
     if (bDraggingV && SplitterV)
     {
         SplitterV->OnDrag(DeltaX);
-        VSplitRatio = SplitterV->PosX / FW;
+        if (ViewportAreaWidth > 0.0f)
+        {
+            VSplitRatio = FMath::Clamp((SplitterV->PosX - ViewportAreaX) / ViewportAreaWidth, 0.0f, 1.0f);
+        }
 
         if (SplitterH)
         {
@@ -251,10 +269,11 @@ void FWindowOverlayManager::UpdateSplitterDrag(float DeltaX, float DeltaY)
             {
             case EViewportLayout::ColumnTwoRow:
                 SplitterH->PosX  = SplitterV->PosX;
-                SplitterH->Width = FW - SplitterV->PosX;
+                SplitterH->Width = (ViewportAreaX + ViewportAreaWidth) - SplitterV->PosX;
                 break;
             case EViewportLayout::TwoRowColumn:
-                SplitterH->Width = SplitterV->PosX;
+                SplitterH->PosX = ViewportAreaX;
+                SplitterH->Width = SplitterV->PosX - ViewportAreaX;
                 break;
             default:
                 break;
@@ -267,7 +286,12 @@ void FWindowOverlayManager::UpdateSplitterDrag(float DeltaX, float DeltaY)
     if (bDraggingH && SplitterH)
     {
         SplitterH->OnDrag(DeltaY);
-        HSplitRatio = SplitterH->PosY / FH;
+
+        if (ViewportAreaHeight > 0.0f)
+        {
+            HSplitRatio = FMath::Clamp((SplitterH->PosY - ViewportAreaY) / ViewportAreaHeight, 0.0f, 1.0f);
+        }
+
         SyncPanelClients();
     }
 }
@@ -276,6 +300,27 @@ void FWindowOverlayManager::EndSplitterDrag()
 {
     bDraggingV = false;
     bDraggingH = false;
+}
+
+void FWindowOverlayManager::SetViewportAvailableArea(float InX, float InY, float InWidth, float InHeight)
+{
+    // 뷰포트가 변경되었을 때만 reset을 트리거
+    const bool bChanged = !FMath::IsNearlyEqual(ViewportAreaX, InX) ||
+                          !FMath::IsNearlyEqual(ViewportAreaY, InY) ||
+                          !FMath::IsNearlyEqual(ViewportAreaWidth, InWidth) ||
+                          !FMath::IsNearlyEqual(ViewportAreaHeight, InHeight);
+
+    if (!bChanged)
+    {
+        return;
+    }
+
+    ViewportAreaX = InX;
+    ViewportAreaY = InY;
+    ViewportAreaWidth = InWidth;
+    ViewportAreaHeight = InHeight;
+
+    ResetViewportDimension();
 }
 
 // ---------------------------------------------------------------------------
@@ -314,7 +359,6 @@ void FWindowOverlayManager::AddNewViewportPanel()
     ViewportClient->GetNavigationController().SetMoveSpeed(DefaultMoveSpeed);
     ViewportClient->GetNavigationController().SetRotationSpeed(DefaultRotationSpeed);
 
-    Panel->Scene          = Scene;
     Panel->ViewportClient = ViewportClient;
     ViewportClient->OnPickRequested = PickCallback;
     ViewportPanels.push_back(Panel);
@@ -437,9 +481,28 @@ void FWindowOverlayManager::SetScene(FScene* InScene)
     Scene = InScene;
     for (FEditorViewportPanel* Panel : ViewportPanels)
     {
-        if (Panel)
-            Panel->Scene = InScene;
+        if (Panel && Panel->ViewportClient)
+            Panel->ViewportClient->SetScene(InScene);
     }
+}
+
+FSceneFrameRenderData FWindowOverlayManager::BuildSceneFrameData() const
+{
+    FSceneFrameRenderData FrameData;
+    if (Scene == nullptr)
+    {
+        return FrameData;
+    }
+
+    ESceneShowFlags UnionFlags = ESceneShowFlags::None;
+    for (FEditorViewportPanel* Panel : ViewportPanels)
+    {
+        if (Panel && Panel->ViewportClient)
+            UnionFlags |= Panel->ViewportClient->GetRenderSetting().BuildSceneShowFlags();
+    }
+
+    Scene->BuildRenderData(FrameData, UnionFlags);
+    return FrameData;
 }
 
 void FWindowOverlayManager::SetPickCallback(FEditorViewportClient::FPickCallback Callback)
@@ -493,6 +556,7 @@ void FWindowOverlayManager::SetViewportLayout(EViewportLayout Layout)
     VSplitRatio    = 0.5f;
     HSplitRatio    = 0.5f;
     ResetViewportDimension();
+    ResetViewOrientation();
 }
 
 void FWindowOverlayManager::SetNavigationValues(float MoveSpeed, float RotationSpeed)

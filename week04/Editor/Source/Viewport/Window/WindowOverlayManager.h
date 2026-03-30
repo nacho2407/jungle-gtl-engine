@@ -1,6 +1,7 @@
 #pragma once
 #include "Viewport/Window/EditorViewportPanel.h"
 #include "Core/Runtime/Slate/Window/SSplitter.h"
+#include "Renderer/SceneFrameRenderData.h"
 #include "Renderer/WidgetRenderData.h"
 
 struct FEditorContext;
@@ -36,6 +37,12 @@ class FWindowOverlayManager
 
     FEditorViewportClient::FPickCallback PickCallback;
 
+    // 실제 화면에 그려지는 뷰포트 영역의 위치와 크기
+    float ViewportAreaX = 0.0f;
+    float ViewportAreaY = 0.0f;
+    float ViewportAreaWidth = 0.0f;
+    float ViewportAreaHeight = 0.0f;
+
   public:
     void                           ResetViewportDimension();
     TArray<FEditorViewportPanel*>& GetViewportPanels();
@@ -61,6 +68,11 @@ class FWindowOverlayManager
 
     // Sets the scene to render for ALL viewports
     void SetScene(FScene* InScene);
+
+    // Traverses the scene once per frame and returns view-independent render items.
+    // Call this before the per-panel render loop, then pass the result to
+    // FRendererModule::SetSceneFrameData.
+    FSceneFrameRenderData BuildSceneFrameData() const;
 
     // Modifies how cameras are laid out onto the viewport
     void SetViewportLayout(EViewportLayout Layout);
@@ -101,6 +113,9 @@ class FWindowOverlayManager
     float GetVSplitRatio() const { return VSplitRatio; }
     float GetHSplitRatio() const { return HSplitRatio; }
     FEditorViewportPanel* GetLastFocusedPanel() const { return LastFocusedPanel; }
+
+    // 실제 화면에 그려지는 게임 월드 뷰포트 영역의 위치와 크기를 설정
+    void SetViewportAvailableArea(float X, float Y, float Width, float Height);
 
   private:
     // Push current panel PosX/Y/Width/Height to each ViewportClient
