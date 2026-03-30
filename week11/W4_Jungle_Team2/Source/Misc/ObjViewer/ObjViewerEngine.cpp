@@ -18,6 +18,12 @@ REGISTER_FACTORY(UObjViewerEngine)
 
 void UObjViewerEngine::Init(FWindowsWindow* InWindow)
 {
+	WCHAR ModulePath[MAX_PATH];
+	GetModuleFileNameW(nullptr, ModulePath, MAX_PATH);
+	std::filesystem::path ExeDir = std::filesystem::path(ModulePath).parent_path();
+	
+	std::filesystem::current_path(ExeDir);
+
 	// 엔진 공통 초기화 (Renderer, D3D, 싱글턴 등)
 	UEngine::Init(InWindow);
 	
@@ -39,6 +45,31 @@ void UObjViewerEngine::Init(FWindowsWindow* InWindow)
 	auto* MeshComp = PreviewActor->AddComponent<UStaticMeshComponent>();
 	PreviewMeshComponent = MeshComp;
 	PreviewActor->SetRootComponent(MeshComp);
+
+	// 파일 경로를 받아 .obj 파일이 맞는지 간단히 검사한 후, 로드하여 프리뷰 컴포넌트에 세팅합니다.
+	int Argc = 0;
+	LPWSTR* Argv = CommandLineToArgvW(GetCommandLineW(), &Argc);
+	if (Argv && Argc > 1)
+	{
+		std::wstring WideFilePath = Argv[1];
+		FString FilePath = FPaths::ToUtf8(WideFilePath);
+
+		// 경로에 .obj가 포함되어 있는지 간단히 검사
+		if (FilePath.find(".obj") != FString::npos || FilePath.find(".OBJ") != FString::npos)
+		{
+			// 메뉴 바에서 로드할 때와 동일하게 메쉬를 로드하고 컴포넌트에 세팅합니다.
+			if (UStaticMesh* LoadedMesh = FResourceManager::Get().LoadStaticMesh(FilePath))
+			{
+				PreviewMeshComponent->SetStaticMesh(LoadedMesh);
+			}
+		}
+	}
+	
+	// 할당된 메모리 해제
+	if (Argv)
+	{
+		LocalFree(Argv);
+	}
 
 	// 뷰포트 및 카메라 설정
 	ViewportClient.SetSettings(&FObjViewerSettings::Get());

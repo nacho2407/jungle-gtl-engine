@@ -2,6 +2,7 @@
 
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
+#include "Component/BillboardComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/GizmoComponent.h"
@@ -10,6 +11,34 @@
 #include "Component/StaticMeshComponent.h"
 #include "Core/ResourceManager.h"
 #include "Render/Resource/Material.h"
+
+namespace
+{
+	FMatrix MakeViewBillboardMatrix(const UPrimitiveComponent* Primitive, const FRenderBus& RenderBus)
+	{
+		const FMatrix WorldMatrix = Primitive->GetWorldMatrix();
+		return UBillboardComponent::MakeBillboardWorldMatrix(
+			WorldMatrix.GetOrigin(),
+			WorldMatrix.GetScaleVector(),
+			RenderBus.GetCameraForward(),
+			RenderBus.GetCameraRight(),
+			RenderBus.GetCameraUp());
+	}
+
+	FMatrix MakeViewSubUVSelectionMatrix(const USubUVComponent* SubUVComp, const FRenderBus& RenderBus)
+	{
+		const FVector WorldScale = SubUVComp->GetWorldScale();
+		return UBillboardComponent::MakeBillboardWorldMatrix(
+			SubUVComp->GetWorldLocation(),
+			FVector(
+				WorldScale.X > 0.01f ? WorldScale.X : 0.01f,
+				SubUVComp->GetWidth() * WorldScale.Y,
+				SubUVComp->GetHeight() * WorldScale.Z),
+			RenderBus.GetCameraForward(),
+			RenderBus.GetCameraRight(),
+			RenderBus.GetCameraUp());
+	}
+}
 
 void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
 {
@@ -139,8 +168,6 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		BaseCmd.SectionIndexStart = 0;
 		BaseCmd.SectionIndexCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
 
-		FVector WorldScale = primitiveComponent->GetWorldScale();
-
 		if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Text)
 		{
 			UTextRenderComponent* TextComp = static_cast<UTextRenderComponent*>(primitiveComponent);
@@ -149,15 +176,15 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 			const FString& Text = TextComp->GetText();
 			if (Text.empty()) continue;
 
-			FMatrix outlineMatrix = TextComp->CalculateOutlineMatrix();
-			WorldScale = outlineMatrix.GetScaleVector();
+			const FMatrix BillboardMatrix = MakeViewBillboardMatrix(primitiveComponent, RenderBus);
+			FMatrix outlineMatrix = TextComp->CalculateOutlineMatrix(BillboardMatrix);
 
 			FRenderCommand TextCmd = BaseCmd;
 			BaseCmd.PerObjectConstants.Model = outlineMatrix;
 
 			if (ShowFlags.bBillboardText)
 			{
-				TextCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
+				TextCmd.PerObjectConstants = FPerObjectConstants{ BillboardMatrix };
 				TextCmd.Type = ERenderCommandType::Font;
 				TextCmd.PerObjectConstants.Color = TextComp->GetColor();
 				TextCmd.Constants.Font.Text = &Text;
@@ -167,6 +194,12 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 				TextCmd.DepthStencilState = EDepthStencilState::Default;
 				RenderBus.AddCommand(ERenderPass::Font, TextCmd);
 			}
+		}
+		else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_SubUV)
+		{
+			BaseCmd.PerObjectConstants.Model = MakeViewSubUVSelectionMatrix(
+				static_cast<USubUVComponent*>(primitiveComponent),
+				RenderBus);
 		}
 
 		if (!primitiveComponent->SupportsOutline()) continue;
@@ -267,7 +300,9 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 
 		FRenderCommand Cmd = {};
 		Cmd.Type = ERenderCommandType::Font;
-		Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), TextComp->GetColor() };
+		Cmd.PerObjectConstants = FPerObjectConstants{
+			MakeViewBillboardMatrix(Primitive, RenderBus),
+			TextComp->GetColor() };
 		Cmd.Constants.Font.Text = &Text;
 		Cmd.Constants.Font.Font = Font;
 		Cmd.Constants.Font.Scale = TextComp->GetFontSize();
@@ -285,7 +320,9 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		if (!Particle || !Particle->IsLoaded()) return;
 
 		FRenderCommand Cmd = {};
-		Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
+		Cmd.PerObjectConstants = FPerObjectConstants{
+			MakeViewBillboardMatrix(Primitive, RenderBus),
+			FColor::White().ToVector4() };
 		Cmd.Type = ERenderCommandType::SubUV;
 		Cmd.Constants.SubUV.Particle = Particle;
 		Cmd.Constants.SubUV.FrameIndex = SubUVComp->GetFrameIndex();
