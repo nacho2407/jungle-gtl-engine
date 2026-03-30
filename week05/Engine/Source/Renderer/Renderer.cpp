@@ -432,6 +432,40 @@ void FRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 			}
 		}
 
+		if (Cmd.Material)
+		{
+			if (Cmd.bDisableCulling)
+			{
+				FRasterizerStateOption RasterOpt = Cmd.Material->GetRasterizerOption();
+				RasterOpt.CullMode = D3D11_CULL_NONE;
+				auto OverrideRS = RenderStateManager->GetOrCreateRasterizerState(RasterOpt);
+				RenderStateManager->BindState(OverrideRS);
+			}
+			else
+			{
+				RenderStateManager->BindState(Cmd.Material->GetRasterizerState());
+			}
+
+			if (Cmd.bDisableDepthTest || Cmd.bDisableDepthWrite)
+			{
+				FDepthStencilStateOption DepthOpt = Cmd.Material->GetDepthStencilOption();
+				if (Cmd.bDisableDepthTest)
+				{
+					DepthOpt.DepthEnable = false;
+				}
+				if (Cmd.bDisableDepthWrite)
+				{
+					DepthOpt.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+				}
+				auto OverrideDSS = RenderStateManager->GetOrCreateDepthStencilState(DepthOpt);
+				RenderStateManager->BindState(OverrideDSS);
+			}
+			else
+			{
+				RenderStateManager->BindState(Cmd.Material->GetDepthStencilState());
+			}
+		}
+
 		if (Cmd.RenderMesh)
 		{
 			if (Cmd.RenderMesh->Vertices.empty() && Cmd.RenderMesh->Indices.empty()) continue;
@@ -472,7 +506,23 @@ void FRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 
 void FRenderer::ClearDepthBuffer()
 {
-	if (SceneDepthStencilView) DeviceContext->ClearDepthStencilView(SceneDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	ID3D11RenderTargetView* BoundRTV = nullptr;
+	ID3D11DepthStencilView* BoundDSV = nullptr;
+	DeviceContext->OMGetRenderTargets(1, &BoundRTV, &BoundDSV);
+
+	if (BoundDSV)
+	{
+		DeviceContext->ClearDepthStencilView(BoundDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	}
+
+	if (BoundRTV)
+	{
+		BoundRTV->Release();
+	}
+	if (BoundDSV)
+	{
+		BoundDSV->Release();
+	}
 }
 
 FVector FRenderer::GetCameraPosition() const
@@ -571,10 +621,17 @@ void FRenderer::RenderOutline(FRenderMesh* Mesh, const FMatrix& WorldMatrix, flo
 	Mesh->UpdateVertexAndIndexBuffer(Device, DeviceContext);
 	Mesh->Bind(DeviceContext);
 
-	ID3D11RenderTargetView* ActiveRTV = bUseSceneRenderTargetOverride ? SceneRenderTargetView : RenderTargetView;
-	ID3D11DepthStencilView* ActiveDSV = bUseSceneRenderTargetOverride ? SceneDepthStencilView : DepthStencilView;
+	ID3D11RenderTargetView* BoundRTV = nullptr;
+	ID3D11DepthStencilView* BoundDSV = nullptr;
+	DeviceContext->OMGetRenderTargets(1, &BoundRTV, &BoundDSV);
+	if (!BoundRTV || !BoundDSV)
+	{
+		if (BoundRTV) BoundRTV->Release();
+		if (BoundDSV) BoundDSV->Release();
+		return;
+	}
 
-	DeviceContext->OMSetRenderTargets(0, nullptr, ActiveDSV);
+	DeviceContext->OMSetRenderTargets(0, nullptr, BoundDSV);
 	DeviceContext->OMSetDepthStencilState(StencilWriteState, 1);
 	UpdateObjectConstantBuffer(WorldMatrix);
 	// DeviceContext->DrawIndexed(static_cast<UINT>(Mesh->Indices.size()), 0, 0);
@@ -589,14 +646,24 @@ void FRenderer::RenderOutline(FRenderMesh* Mesh, const FMatrix& WorldMatrix, flo
 		DeviceContext->Draw(static_cast<UINT>(Mesh->Vertices.size()), 0);
 	}
 
-	DeviceContext->OMSetRenderTargets(1, &ActiveRTV, ActiveDSV);
+	DeviceContext->OMSetRenderTargets(1, &BoundRTV, BoundDSV);
 	DeviceContext->OMSetDepthStencilState(StencilTestState, 1);
 	UpdateObjectConstantBuffer(FMatrix::MakeScale(OutlineScale) * WorldMatrix);
 	OutlinePS->Bind(DeviceContext);
-	DeviceContext->DrawIndexed(static_cast<UINT>(Mesh->Indices.size()), 0, 0);
+	if (!Mesh->Indices.empty())
+	{
+		DeviceContext->DrawIndexed(static_cast<UINT>(Mesh->Indices.size()), 0, 0);
+	}
+	else
+	{
+		DeviceContext->Draw(static_cast<UINT>(Mesh->Vertices.size()), 0);
+	}
 
 	ShaderManager.Bind(DeviceContext);
 	DeviceContext->OMSetDepthStencilState(nullptr, 0);
+
+	BoundRTV->Release();
+	BoundDSV->Release();
 }
 
 void FRenderer::DrawLine(const FVector& Start, const FVector& End, const FVector4& Color)
