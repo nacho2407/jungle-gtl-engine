@@ -209,24 +209,25 @@ namespace
         return bApplied;
     }
 
-    void CollectAssetsByType(const FContentBrowserFolderNode& Folder,
-                             EContentBrowserItemType TargetType, TArray<FString>& OutPaths)
+    void CollectAssetItemsByType(const FContentBrowserFolderNode&    Folder,
+                                 EContentBrowserItemType             TargetType,
+                                 TArray<const FContentBrowserItem*>& OutItems)
     {
         for (const auto& File : Folder.Files)
         {
             if (File.ItemType == TargetType)
-                OutPaths.push_back(File.VirtualPath);
+                OutItems.push_back(&File);
         }
         for (const auto& SubFolder : Folder.ChildFolders)
         {
-            CollectAssetsByType(SubFolder, TargetType, OutPaths);
+            CollectAssetItemsByType(SubFolder, TargetType, OutItems);
         }
     }
 
     bool DrawStaticMeshAssetCombo(const Engine::Component::FComponentPropertyDescriptor& Descriptor,
                                   const FString& CurrentPath, const FString& RawValue,
                                   TMap<FString, FString>* AssetPathEditBuffers,
-                                  FEditorContext* Context)
+                                  FEditorContext*         Context)
     {
         bool    bChanged = false;
         FString ComboLabel = CurrentPath.empty() ? "None" : CurrentPath;
@@ -245,18 +246,19 @@ namespace
 
             if (Context && Context->ContentIndex)
             {
-                TArray<FString> MeshPaths;
-                CollectAssetsByType(Context->ContentIndex->GetSnapshot().RootFolder, EContentBrowserItemType::StaticMesh, MeshPaths);
+                TArray<const FContentBrowserItem*> MeshItems;
+                CollectAssetItemsByType(Context->ContentIndex->GetSnapshot().RootFolder,
+                                        EContentBrowserItemType::StaticMesh, MeshItems);
 
-                for (const FString& Path : MeshPaths)
+                for (const auto* Item : MeshItems)
                 {
-                    bool bSelected = (RawValue == Path);
-                    if (ImGui::Selectable(Path.c_str(), bSelected))
+                    bool bSelected = (RawValue == Item->VirtualPath);
+                    if (ImGui::Selectable(Item->VirtualPath.c_str(), bSelected))
                     {
                         if (Descriptor.StringSetter)
-                            Descriptor.StringSetter(Path);
+                            Descriptor.StringSetter(Item->VirtualPath);
                         if (AssetPathEditBuffers != nullptr)
-                            (*AssetPathEditBuffers)[Descriptor.Key] = Path;
+                            (*AssetPathEditBuffers)[Descriptor.Key] = Item->VirtualPath;
                         bChanged = true;
                     }
                     if (bSelected)
@@ -268,14 +270,16 @@ namespace
         return bChanged;
     }
 
-    bool DrawMaterialAssetCombo(Engine::Component::UMeshComponent* MeshComp, uint32 SlotIndex, 
+    bool DrawMaterialAssetCombo(Engine::Component::UMeshComponent* MeshComp, uint32 SlotIndex,
                                 FEditorContext* Context)
     {
         if (MeshComp == nullptr || !MeshComp->IsValidLowLevel() || Context == nullptr)
             return false;
 
         Engine::Asset::UMaterialInterface* CurrentMat = MeshComp->GetMaterial(SlotIndex);
-        FString     CurrentPath = (CurrentMat && CurrentMat->IsValidLowLevel()) ? CurrentMat->GetAssetName() : "None";
+        // 현재 적용된 머티리얼이 있다면 그 이름을, 없으면 None 표시
+        FString CurrentDisplayName =
+            (CurrentMat && CurrentMat->IsValidLowLevel()) ? CurrentMat->GetAssetName() : "None";
         std::string LabelId = "Material Slot " + std::to_string(SlotIndex + 1);
 
         bool bChanged = false;
@@ -284,7 +288,7 @@ namespace
         ImGui::SetNextItemWidth(-1.0f);
 
         FString PopupId = FString("##MatCombo_") + std::to_string(SlotIndex);
-        if (ImGui::BeginCombo(PopupId.c_str(), CurrentPath.c_str()))
+        if (ImGui::BeginCombo(PopupId.c_str(), CurrentDisplayName.c_str()))
         {
             // None 옵션 추가
             bool bNoneSelected = (CurrentMat == nullptr);
@@ -296,19 +300,34 @@ namespace
 
             if (Context->ContentIndex)
             {
-                TArray<FString> MaterialPaths;
-                CollectAssetsByType(Context->ContentIndex->GetSnapshot().RootFolder, EContentBrowserItemType::Material, MaterialPaths);
+                TArray<const FContentBrowserItem*> MaterialItems;
+                CollectAssetItemsByType(Context->ContentIndex->GetSnapshot().RootFolder,
+                                        EContentBrowserItemType::Material, MaterialItems);
 
-                for (const FString& Path : MaterialPaths)
+                for (const auto* Item : MaterialItems)
                 {
-                    bool bSelected = (CurrentPath == Path);
-                    if (ImGui::Selectable(Path.c_str(), bSelected))
+                    // 로드된 에셋의 이름(절대경로)과 인덱스의 절대경로를 비교하여 선택 상태 표시
+                    // 1. std::wstring을 FString(UTF-8)으로 안전하게 변환
+                    FString ItemAbsPath = Engine::Component::UMeshComponent::WidePathToUtf8(
+                        Item->AbsolutePath.wstring());
+
+                    // 2. 비교 연산 (타입이 FString 또는 std::wstring으로 통일되어야 함)
+                    // 만약 CurrentMat->GetPath() 가 std::wstring을 반환한다면:
+                    bool bSelected =
+                        (CurrentMat && CurrentMat->GetPath() == Item->AbsolutePath.wstring());
+
+                    // 만약 CurrentMat->GetPath() 가 FString을 반환한다면:
+                    // bool bSelected = (CurrentMat && CurrentMat->GetPath() == ItemAbsPath);
+
+                    if (ImGui::Selectable(Item->VirtualPath.c_str(), bSelected))
                     {
                         if (Context->AssetManager)
                         {
                             ::FAssetLoadParams Params;
                             Params.ExplicitType = ::EAssetType::Material;
-                            UAsset* Loaded = Context->AssetManager->Load(Engine::SceneIO::ResolveSceneAssetPathToAbsolute(Path).wstring(), Params);
+                            // 인덱스가 가진 검증된 절대 경로를 직접 사용하여 로드
+                            UAsset* Loaded =
+                                Context->AssetManager->Load(Item->AbsolutePath.wstring(), Params);
                             if (auto* NewMat = Cast<Engine::Asset::UMaterialInterface>(Loaded))
                             {
                                 MeshComp->SetMaterial(SlotIndex, NewMat);
