@@ -12,11 +12,16 @@ public:
 	FMaterial* GetMaterial(int32 SlotIndex) const;
 
 	const TArray<FMaterial*>& GetOverrideMaterial() const;
+	const std::pair<float, float> GetScroll() const { return ScrollUV; };
 
+	int32 GetMaterialCount() const;
+	
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char * PropertyName) override;
 	
+	virtual void TickComponent(float DeltaTime) override;
+
 protected:
-	// 각 섹션이 지니고 있는 메테리얼 정보를 오버라이드합니다.
 	TArray<FMaterial*> OverrideMaterial;
+	std::pair<float, float> ScrollUV = { };
 };
