@@ -598,10 +598,15 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 						NewVertex.normal = ObjInfo.Normals[Key.n];
 					}
 
-					// RHS -> LHS 변환
-					NewVertex.pos.Z = -NewVertex.pos.Z;
-					NewVertex.normal.Z = -NewVertex.normal.Z;
+					// OBJ는 Y-up, Z-Forward (RHS)
+					// UE는 Z-Up, X-Forward (LHS)
 
+					float RawY = ObjInfo.Positions[Key.p].Y;
+					float RawZ = ObjInfo.Positions[Key.p].Z;
+
+					NewVertex.pos.X = ObjInfo.Positions[Key.p].X;
+					NewVertex.pos.Y = RawZ;
+					NewVertex.pos.Z = RawY;
 
 					// UV 예외 처리
 					if (Key.t == -1)
