@@ -435,6 +435,9 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorMaterialWidget.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -868,6 +871,9 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorMaterialWidget.h">
+      <Filter>Source\Editor\UI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
