@@ -229,7 +229,20 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMeshRes
         }
         else if (Header == "mtllib")
         {
-            std::string_view MtlFile = GetNextToken(LineView);
+            auto TrimView = [](std::string_view View) -> std::string_view
+            {
+                const size_t First = View.find_first_not_of(" \t\r");
+                if (First == std::string_view::npos)
+                {
+                    return {};
+                }
+
+                const size_t Last = View.find_last_not_of(" \t\r");
+                return View.substr(First, Last - First + 1);
+            };
+
+            std::string_view MtlFile = TrimView(LineView);
+
             if (MtlFile.empty())
             {
                 UE_LOG(Asset, ELogVerbosity::Warning,
@@ -237,6 +250,7 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMeshRes
                        WidePathToUtf8(Source.NormalizedPath).c_str());
                 return false;
             }
+
             if (!OutMesh.MaterialLibraryPath.empty())
             {
                 UE_LOG(Asset, ELogVerbosity::Warning,
@@ -246,16 +260,6 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMeshRes
             }
 
             OutMesh.MaterialLibraryPath = FString(MtlFile);
-
-            // 같은 줄에 두 번째 파일명이 더 있으면 실패
-            if (!GetNextToken(LineView).empty())
-            {
-                UE_LOG(Asset, ELogVerbosity::Warning,
-                       "[StaticMeshLoader] Multiple mtllib entries in one declaration are not "
-                       "supported. Path=%s",
-                       WidePathToUtf8(Source.NormalizedPath).c_str());
-                return false;
-            }
         }
         else if (Header == "usemtl")
         {
