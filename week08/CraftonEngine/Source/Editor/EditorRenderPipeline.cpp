@@ -89,12 +89,9 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	}
 
 	// RenderCommand를 ERenderPass별로 수집. Collect 단계에서 CPU에서 처리할 작업(예: AABB → 선분 변환)도 수행.
-	Collector.CollectWorld(World, ShowFlags, ViewMode, Bus);
+	Collector.CollectWorld(World, Editor->GetSelectionManager().GetSelectedActors(), Bus);
 	Collector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Bus);
-	Collector.CollectGizmo(Editor->GetGizmo(), ShowFlags, Bus);
-	Collector.CollectSelection(
-		Editor->GetSelectionManager().GetSelectedActors(),
-		ShowFlags, ViewMode, Bus);
+	Collector.CollectGizmo(Editor->GetGizmo(), Bus);
 
 	const TArray<FOverlayStatLine> OverlayLines = Editor->GetOverlayStatSystem().BuildLines(*Editor);
 	if (!OverlayLines.empty() && VP && VC == Editor->GetActiveViewport())
@@ -103,15 +100,14 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 
 		for (const FOverlayStatLine& Line : OverlayLines)
 		{
-			FRenderCommand Cmd = {};
+			FFontEntry Entry = {};
+			Entry.Font.Text = &Line.Text;
+			Entry.Font.Font = nullptr;
+			Entry.Font.Scale = TextScale;
+			Entry.Font.bScreenSpace = 1;
+			Entry.Font.ScreenPosition = Line.ScreenPosition;
 
-			Cmd.Params.Font.Text = &Line.Text;
-			Cmd.Params.Font.Font = nullptr;
-			Cmd.Params.Font.Scale = TextScale;
-			Cmd.Params.Font.bScreenSpace = 1;
-			Cmd.Params.Font.ScreenPosition = Line.ScreenPosition;
-
-			Bus.AddCommand(ERenderPass::OverlayFont, std::move(Cmd));
+			Bus.AddOverlayFontEntry(std::move(Entry));
 		}
 	}
 
