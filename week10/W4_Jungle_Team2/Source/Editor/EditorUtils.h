@@ -13,4 +13,8 @@ struct FEditorViewportState
 	bool bFocused = false;
 	bool bHovered = false;
 	bool bVisible = true;
+
+	// Stat Overlay (뷰포트별 독립 제어)
+	bool bShowStatFPS    = false;
+	bool bShowStatMemory = false;
 };
