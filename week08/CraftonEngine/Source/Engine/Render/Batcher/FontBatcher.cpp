@@ -5,12 +5,8 @@
 
 void FFontBatcher::Create(ID3D11Device* InDevice)
 {
-	Device = InDevice;
-
-	// Dynamic VB/IB 초기 할당 (텍스처는 ResourceManager가 소유 — 여기서 로드하지 않음)
-	MaxVertexCount = 1024;
-	MaxIndexCount = 1536;
-	CreateBuffers();
+	CreateBuffers(InDevice, 1024, sizeof(FTextureVertex), 1536);
+	if (!Device) return;
 
 	// Sampler — Point 필터 (폰트는 선명하게)
 	D3D11_SAMPLER_DESC sampDesc = {};
@@ -39,26 +35,6 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 			BuildCharInfoMap(DefaultFont->Columns, DefaultFont->Rows);
 		}
 	}
-}
-
-void FFontBatcher::CreateBuffers()
-{
-	if (VertexBuffer) { VertexBuffer->Release(); VertexBuffer = nullptr; }
-	if (IndexBuffer) { IndexBuffer->Release();  IndexBuffer = nullptr; }
-
-	D3D11_BUFFER_DESC vbDesc = {};
-	vbDesc.Usage = D3D11_USAGE_DYNAMIC;
-	vbDesc.ByteWidth = sizeof(FTextureVertex) * MaxVertexCount;
-	vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	Device->CreateBuffer(&vbDesc, nullptr, &VertexBuffer);
-
-	D3D11_BUFFER_DESC ibDesc = {};
-	ibDesc.Usage = D3D11_USAGE_DYNAMIC;
-	ibDesc.ByteWidth = sizeof(uint32) * MaxIndexCount;
-	ibDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	ibDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	Device->CreateBuffer(&ibDesc, nullptr, &IndexBuffer);
 }
 
 void FFontBatcher::BuildCharInfoMap(uint32 Columns, uint32 Rows)
@@ -92,13 +68,13 @@ void FFontBatcher::Release()
 {
 	CharInfoMap.clear();
 	Clear();
+	ClearScreen();
 
-	if (VertexBuffer) { VertexBuffer->Release(); VertexBuffer = nullptr; }
-	if (IndexBuffer) { IndexBuffer->Release();  IndexBuffer = nullptr; }
 	if (SamplerState) { SamplerState->Release(); SamplerState = nullptr; }
-
 	FontShader.Release();
 	OverlayFontShader.Release();
+
+	ReleaseBuffers();
 }
 
 void FFontBatcher::AddText(const FString& Text,
@@ -270,89 +246,62 @@ void FFontBatcher::ClearScreen()
 	ScreenIndices.clear();
 }
 
-void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FFontResource* Resource)
+void FFontBatcher::DrawBatch(ID3D11DeviceContext* Context, const FFontResource* Resource)
 {
 	if (!Resource || !Resource->IsLoaded()) return;
-	if (Vertices.empty() || !VertexBuffer || !IndexBuffer) return;
+	if (Vertices.empty()) return;
 
-	// Atlas 그리드가 바뀌었으면 CharInfoMap 재빌드
 	if (CachedColumns != Resource->Columns || CachedRows != Resource->Rows)
 	{
 		BuildCharInfoMap(Resource->Columns, Resource->Rows);
 	}
 
-	// 버퍼 크기 초과 시 재할당
-	if (Vertices.size() > MaxVertexCount || Indices.size() > MaxIndexCount)
-	{
-		MaxVertexCount = static_cast<uint32>(Vertices.size()) * 2;
-		MaxIndexCount = static_cast<uint32>(Indices.size()) * 2;
-		CreateBuffers();
-	}
+	const uint32 VertexCount = static_cast<uint32>(Vertices.size());
+	const uint32 IndexCount = static_cast<uint32>(Indices.size());
 
-	// VB 업로드
-	D3D11_MAPPED_SUBRESOURCE mapped = {};
-	if (FAILED(Context->Map(VertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return;
-	memcpy(mapped.pData, Vertices.data(), sizeof(FTextureVertex) * Vertices.size());
-	Context->Unmap(VertexBuffer, 0);
+	VB.EnsureCapacity(Device, VertexCount);
+	IB.EnsureCapacity(Device, IndexCount);
+	if (!VB.Update(Context, Vertices.data(), VertexCount)) return;
+	if (!IB.Update(Context, Indices.data(), IndexCount)) return;
 
-	// IB 업로드
-	if (FAILED(Context->Map(IndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return;
-	memcpy(mapped.pData, Indices.data(), sizeof(uint32) * Indices.size());
-	Context->Unmap(IndexBuffer, 0);
-
-	// 셰이더 바인딩
 	FontShader.Bind(Context);
+	VB.Bind(Context);
+	IB.Bind(Context);
 
-	uint32 stride = sizeof(FTextureVertex), offset = 0;
-	Context->IASetVertexBuffers(0, 1, &VertexBuffer, &stride, &offset);
-	Context->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	// ResourceManager 소유 SRV 바인딩
 	ID3D11ShaderResourceView* SRV = Resource->SRV;
 	Context->PSSetShaderResources(0, 1, &SRV);
 	Context->PSSetSamplers(0, 1, &SamplerState);
 
-	Context->DrawIndexed(static_cast<uint32>(Indices.size()), 0, 0);
+	Context->DrawIndexed(IndexCount, 0, 0);
 }
 
-void FFontBatcher::FlushScreen(ID3D11DeviceContext* Context, const FFontResource* Resource)
+void FFontBatcher::DrawScreenBatch(ID3D11DeviceContext* Context, const FFontResource* Resource)
 {
-	// 오버레이 텍스트는 별도 셰이더 사용
 	if (!Resource || !Resource->IsLoaded()) return;
-	if (ScreenVertices.empty() || !VertexBuffer || !IndexBuffer) return;
-	// Atlas 그리드가 바뀌었으면 CharInfoMap 재빌드
+	if (ScreenVertices.empty()) return;
+
 	if (CachedColumns != Resource->Columns || CachedRows != Resource->Rows)
 	{
 		BuildCharInfoMap(Resource->Columns, Resource->Rows);
 	}
-	// 버퍼 크기 초과 시 재할당
-	if (ScreenVertices.size() > MaxVertexCount || ScreenIndices.size() > MaxIndexCount)
-	{
-		MaxVertexCount = static_cast<uint32>(ScreenVertices.size()) * 2;
-		MaxIndexCount = static_cast<uint32>(ScreenIndices.size()) * 2;
-		CreateBuffers();
-	}
-	// VB 업로드
-	D3D11_MAPPED_SUBRESOURCE mapped = {};
-	if (FAILED(Context->Map(VertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return;
-	memcpy(mapped.pData, ScreenVertices.data(), sizeof(FTextureVertex) * ScreenVertices.size());
-	Context->Unmap(VertexBuffer, 0);
-	// IB 업로드
-	if (FAILED(Context->Map(IndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return;
-	memcpy(mapped.pData, ScreenIndices.data(), sizeof(uint32) * ScreenIndices.size());
-	Context->Unmap(IndexBuffer, 0);
-	// 셰이더 바인딩
+
+	const uint32 VertexCount = static_cast<uint32>(ScreenVertices.size());
+	const uint32 IndexCount = static_cast<uint32>(ScreenIndices.size());
+
+	VB.EnsureCapacity(Device, VertexCount);
+	IB.EnsureCapacity(Device, IndexCount);
+	if (!VB.Update(Context, ScreenVertices.data(), VertexCount)) return;
+	if (!IB.Update(Context, ScreenIndices.data(), IndexCount)) return;
+
 	OverlayFontShader.Bind(Context);
-	uint32 stride = sizeof(FTextureVertex), offset = 0;
-	Context->IASetVertexBuffers(0, 1, &VertexBuffer, &stride, &offset);
-	Context->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	// ResourceManager 소유 SRV 바인딩
+	VB.Bind(Context);
+	IB.Bind(Context);
+
 	ID3D11ShaderResourceView* SRV = Resource->SRV;
 	Context->PSSetShaderResources(0, 1, &SRV);
 	Context->PSSetSamplers(0, 1, &SamplerState);
-	Context->DrawIndexed(static_cast<uint32>(ScreenIndices.size()), 0, 0);
+
+	Context->DrawIndexed(IndexCount, 0, 0);
 }
 
 void FFontBatcher::GetCharUV(uint32 Codepoint, FVector2& OutUVMin, FVector2& OutUVMax) const
