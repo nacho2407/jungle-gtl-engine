@@ -98,6 +98,12 @@ bool FRendererModule::StartupModule(HWND hWnd)
         return false;
     }
 
+    if (!StaticMeshRenderer.Initialize(&RHI))
+    {
+        ShutdownModule();
+        return false;
+    }
+
 #if defined(_DEBUG)
     if (RHI.GetDevice() != nullptr)
     {
@@ -119,6 +125,7 @@ void FRendererModule::ShutdownModule()
     LineRenderer.Shutdown();
     OutlineRenderer.Shutdown();
     MeshBatchRenderer.Shutdown();
+    StaticMeshRenderer.Shutdown();
 
 #if defined(_DEBUG)
     if (DebugDevice != nullptr)
@@ -172,7 +179,7 @@ void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderDat
 {
     if (HasScenePrimitives(InSceneRenderData))
     {
-        FMeshBatchPassParams ScenePassParams = {};
+        FMeshPassParams ScenePassParams = {};
         ScenePassParams.SceneView = InSceneRenderData.SceneView;
         ScenePassParams.ViewMode = InSceneRenderData.ViewMode;
         ScenePassParams.bUseInstancing = InSceneRenderData.bUseInstancing;
@@ -193,6 +200,27 @@ void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderDat
 
         MeshBatchRenderer.EndFrame();
     }
+
+    // -------------------------------------------------------------------------
+    // [추가됨] 2. Static Mesh 렌더링
+    // -------------------------------------------------------------------------
+    if (InSceneRenderData.SceneView != nullptr && !InSceneRenderData.StaticMeshes.empty())
+    {
+        FMeshPassParams StaticMeshPassParams = {};
+        StaticMeshPassParams.SceneView = InSceneRenderData.SceneView;
+        StaticMeshPassParams.ViewMode = InSceneRenderData.ViewMode;
+        // 스태틱 메시는 현재 단일 드로우 콜 구조이므로 인스턴싱 플래그는 false 또는 무시됩니다.
+        StaticMeshPassParams.bUseInstancing = false;
+        StaticMeshPassParams.bDisableDepth = false;
+
+        StaticMeshRenderer.BeginFrame(StaticMeshPassParams);
+
+        // Submitter를 통해 RenderData의 StaticMeshes를 Renderer로 전달
+        StaticMeshSubmitter.Submit(StaticMeshRenderer, InSceneRenderData);
+
+        StaticMeshRenderer.EndFrame();
+    }
+    // -------------------------------------------------------------------------
 
     if (InEditorRenderData.SceneView != nullptr)
     {
@@ -258,7 +286,7 @@ void FRendererModule::RenderOverlayPass(const FEditorRenderData& InEditorRenderD
         RHI.ClearDepthStencil(RHI.GetDepthStencilView(), 1.0f, 0);
 
         // ================= Gizmo =================
-        FMeshBatchPassParams GizmoPassParams = {};
+        FMeshPassParams GizmoPassParams = {};
         GizmoPassParams.SceneView = InEditorRenderData.SceneView;
         GizmoPassParams.ViewMode = EViewModeIndex::VMI_Unlit;
         GizmoPassParams.bUseInstancing = true;
@@ -269,7 +297,7 @@ void FRendererModule::RenderOverlayPass(const FEditorRenderData& InEditorRenderD
         MeshBatchRenderer.EndFrame();
 
         // ================= Gizmo Center =================
-        FMeshBatchPassParams GizmoCenterPassParams = GizmoPassParams;
+        FMeshPassParams GizmoCenterPassParams = GizmoPassParams;
         GizmoCenterPassParams.bDisableDepth = true;
 
         MeshBatchRenderer.BeginFrame(GizmoCenterPassParams);

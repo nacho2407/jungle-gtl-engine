@@ -194,6 +194,16 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="Content\Shader\StaticMeshShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <FileType>Document</FileType>
+    </Text>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

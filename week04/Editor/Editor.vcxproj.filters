@@ -328,4 +328,7 @@
       <Filter>Source\ThirdParty\ImGui</Filter>
     </Natvis>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="Content\Shader\StaticMeshShader.hlsl" />
+  </ItemGroup>
 </Project>

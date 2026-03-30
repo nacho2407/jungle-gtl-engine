@@ -53,7 +53,7 @@ UAsset* FStaticMeshLoader::LoadAsset(const FSourceRecord& Source, const FAssetLo
     std::shared_ptr<FStaticMeshResource> MeshResource = std::make_shared<FStaticMeshResource>();
     MeshResource->Reset();
 
-    TArray<FMeshVertexNormal> ParsedVertices;
+    TArray<FMeshVertexPNCT> ParsedVertices;
 
     // 1. OBJ 텍스트 파싱 및 CPU 데이터 구성
     if (!ParseObjText(Source, *MeshResource, ParsedVertices))
@@ -139,7 +139,7 @@ UAsset* FStaticMeshLoader::LoadAsset(const FSourceRecord& Source, const FAssetLo
 }
 
 bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMeshResource& OutMesh,
-                                     TArray<FMeshVertexNormal>& OutVertices) const
+                                     TArray<FMeshVertexPNCT>& OutVertices) const
 {
     if (!Source.bFileBytesLoaded || Source.FileBytes.empty())
         return false;
@@ -302,7 +302,7 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMeshRes
                     ParseFaceIndex(VT);
                     ParseFaceIndex(VN);
 
-                    FMeshVertexNormal NewVertex = {};
+                    FMeshVertexPNCT NewVertex = {};
                     if (V > 0)
                         NewVertex.Position = TempPositions[V - 1];
                     if (VT > 0)
@@ -348,7 +348,7 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMeshRes
 
     OutMesh.VertexCount = static_cast<uint32>(OutVertices.size());
     OutMesh.IndexCount = static_cast<uint32>(OutMesh.CPU_Indices.size());
-    OutMesh.VertexStride = sizeof(FMeshVertexNormal);
+    OutMesh.VertexStride = sizeof(FMeshVertexPNCT);
 
     return OutMesh.VertexCount > 0 && OutMesh.IndexCount > 0;
     // if (!Source.bFileBytesLoaded || Source.FileBytes.empty())
@@ -450,7 +450,7 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMeshRes
     //        //        std::getline(TokenStream, VT_Str, '/');
     //        //        std::getline(TokenStream, VN_Str, '/');
 
-    //        //        FMeshVertexNormal NewVertex = {};
+    //        //        FMeshVertexPNCT NewVertex = {};
     //        //        // OBJ 인덱스는 1부터 시작하므로 1을 빼줍니다.
     //        //        if (!V_Str.empty())
     //        //            NewVertex.Position = TempPositions[std::stoi(V_Str) - 1];
@@ -490,7 +490,7 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMeshRes
     //                std::getline(TokenStream, VT_Str, '/');
     //                std::getline(TokenStream, VN_Str, '/');
 
-    //                FMeshVertexNormal NewVertex = {};
+    //                FMeshVertexPNCT NewVertex = {};
     //                if (!V_Str.empty())
     //                    NewVertex.Position = TempPositions[std::stoi(V_Str) - 1];
     //                if (!VT_Str.empty())
@@ -541,12 +541,12 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMeshRes
 
     // OutMesh.VertexCount = static_cast<uint32>(OutVertices.size());
     // OutMesh.IndexCount = static_cast<uint32>(OutMesh.CPU_Indices.size());
-    // OutMesh.VertexStride = sizeof(FMeshVertexNormal);
+    // OutMesh.VertexStride = sizeof(FMeshVertexPNCT);
 
     // return OutMesh.VertexCount > 0 && OutMesh.IndexCount > 0;
 }
 
-bool FStaticMeshLoader::CreateBuffers(const TArray<FMeshVertexNormal>& InVertices,
+bool FStaticMeshLoader::CreateBuffers(const TArray<FMeshVertexPNCT>& InVertices,
                                       FStaticMeshResource&             OutMesh) const
 {
     // RHI (Render Hardware Interface) 유효성 검사
@@ -566,7 +566,7 @@ bool FStaticMeshLoader::CreateBuffers(const TArray<FMeshVertexNormal>& InVertice
     {
         // 렌더링 시 필요한 필수 정보 저장
         OutMesh.VertexCount = static_cast<uint32>(InVertices.size());
-        OutMesh.VertexStride = sizeof(FMeshVertexNormal);
+        OutMesh.VertexStride = sizeof(FMeshVertexPNCT);
 
         D3D11_BUFFER_DESC VbDesc = {};
         VbDesc.Usage = D3D11_USAGE_IMMUTABLE; // 데이터가 변하지 않으므로 최적화

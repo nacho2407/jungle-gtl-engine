@@ -851,6 +851,7 @@
     <ClInclude Include="Source\Asset\MaterialInstance.h" />
     <ClInclude Include="Source\Renderer\Submitter\StaticMeshSubmitter.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11StaticMeshRenderer.h" />
+    <ClInclude Include="Source\Renderer\Types\MeshPassParams.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

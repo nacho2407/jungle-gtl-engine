@@ -5,7 +5,7 @@
 #include "Renderer/RenderAsset/StaticMeshResource.h"
 
 class FD3D11RHI;
-struct FMeshVertexNormal;
+struct FMeshVertexPNCT;
 
 class ENGINE_API FStaticMeshLoader : public IAssetLoader
 {
@@ -19,8 +19,8 @@ class ENGINE_API FStaticMeshLoader : public IAssetLoader
 
   private:
     bool ParseObjText(const FSourceRecord& Source, FStaticMeshResource& OutMesh,
-                      TArray<FMeshVertexNormal>& OutVertices) const;
-    bool CreateBuffers(const TArray<FMeshVertexNormal>& InVertices,
+                      TArray<FMeshVertexPNCT>& OutVertices) const;
+    bool CreateBuffers(const TArray<FMeshVertexPNCT>& InVertices,
                        FStaticMeshResource&             OutMesh) const;
 
     // 문자열 유틸리티

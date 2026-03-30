@@ -155,6 +155,7 @@
     <ClInclude Include="Source\Renderer\Types\BasicMeshType.h" />
     <ClInclude Include="Source\Renderer\Types\EditorShowFlags.h" />
     <ClInclude Include="Source\Renderer\Types\MeshInstanceData.h" />
+    <ClInclude Include="Source\Renderer\Types\MeshPassParams.h" />
     <ClInclude Include="Source\Renderer\Types\ObjectIdRenderItem.h" />
     <ClInclude Include="Source\Renderer\Types\PickId.h" />
     <ClInclude Include="Source\Renderer\Types\PickResult.h" />
