@@ -26,7 +26,7 @@ void FObjViewerMenuBarWidget::Render(float DeltaTime)
 
 				if (!FilePath.empty())
 				{
-					UStaticMesh* LoadedMesh = FResourceManager::Get().LoadStaticMesh(FilePath);
+					UStaticMesh* LoadedMesh = FResourceManager::Get().LoadStaticMesh(FilePath);	
 					if (LoadedMesh)
 					{
 						if (UStaticMeshComponent* TargetComponent = Engine->GetPreviewMeshComponent()) 
