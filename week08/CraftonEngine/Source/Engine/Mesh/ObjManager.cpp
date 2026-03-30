@@ -1,9 +1,13 @@
 ﻿#include "Mesh/ObjManager.h"
 #include "Mesh/StaticMesh.h"
+#include "Mesh/ObjImporter.h"
+#include "Materials/Material.h"
+#include "Serialization/WindowsArchive.h"
 #include "Engine/Platform/Paths.h"
 #include <filesystem>
 
 std::map<FString, UStaticMesh*> FObjManager::StaticMeshCache;
+TMap<FString, UMaterial*> FObjManager::MaterialCache;
 TArray<FMeshAssetListItem> FObjManager::AvailableMeshFiles;
 
 FString FObjManager::GetBinaryFilePath(const FString& OriginalPath)
@@ -93,4 +97,31 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 	StaticMeshCache[PathFileName] = StaticMesh;
 
 	return StaticMesh;
+}
+
+UMaterial* FObjManager::GetOrLoadMaterial(const FString& MaterialName)
+{
+	// 1. 캐시(RAM)에 이미 있는지 검사
+	if (MaterialCache.contains(MaterialName))
+	{
+		return MaterialCache[MaterialName];
+	}
+
+	// 2. 캐시에 없다면 빈 객체 생성
+	UMaterial* NewMaterial = UObjectManager::Get().CreateObject<UMaterial>();
+	FString MatPath = MaterialName;
+
+	// 3. 하드디스크(.bin)에 있다면 로드
+	if (std::filesystem::exists(MatPath))
+	{
+		FWindowsBinReader Reader(MatPath);
+		if (Reader.IsValid())
+		{
+			NewMaterial->Serialize(Reader);
+		}
+	}
+
+	// 4. 캐시에 등록 후 반환
+	MaterialCache[MaterialName] = NewMaterial;
+	return NewMaterial;
 }
