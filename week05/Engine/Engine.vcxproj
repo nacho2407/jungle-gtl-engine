@@ -68,7 +68,7 @@
     <ClInclude Include="Source\Object\ObjectGlobals.h" />
     <ClInclude Include="Source\Object\ObjectManager.h" />
     <ClInclude Include="Source\Object\ObjectTypes.h" />
-    <ClInclude Include="Source\Obj\ObjManager.h" />
+    <ClInclude Include="Source\Asset\ObjManager.h" />
     <ClInclude Include="Source\Physics\PhysicsManager.h" />
     <ClInclude Include="Source\Platform\Windows\PlatformGlobals.h" />
     <ClInclude Include="Source\Platform\Windows\WindowsEngineLaunch.h" />
@@ -158,7 +158,7 @@
     <ClCompile Include="Source\Object\ObjectFactory.cpp" />
     <ClCompile Include="Source\Object\ObjectGlobals.cpp" />
     <ClCompile Include="Source\Object\ObjectManager.cpp" />
-    <ClCompile Include="Source\Obj\ObjManager.cpp" />
+    <ClCompile Include="Source\Asset\ObjManager.cpp" />
     <ClCompile Include="Source\Physics\PhysicsManager.cpp" />
     <ClCompile Include="Source\Platform\Windows\PlatformGlobals.cpp" />
     <ClCompile Include="Source\Platform\Windows\WindowsEngineLaunch.cpp" />

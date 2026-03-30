@@ -22,7 +22,9 @@
 
 #include "Actor/StaticMeshActor.h"
 #include "Math/MathUtility.h"
-#include "Obj/ObjManager.h"
+#include "Asset/ObjManager.h"
+#include "Renderer/Material.h"
+#include "Renderer/MaterialManager.h"
 
 namespace
 {

@@ -2,7 +2,7 @@
 #include "Object/Class.h"
 #include "PrimitiveComponent.h"
 #include "MeshComponent.h"
-#include "Obj/ObjManager.h"
+#include "Asset/ObjManager.h"
 IMPLEMENT_RTTI(UStaticMeshComponent, UMeshComponent)
 
 void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)

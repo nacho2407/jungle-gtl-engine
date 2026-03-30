@@ -1,7 +1,7 @@
 #include "SkyComponent.h"
 
 #include "Actor/Actor.h"
-#include "Obj/ObjManager.h"
+#include "Asset/ObjManager.h"
 #include "Object/Class.h"
 #include "Renderer/MaterialManager.h"
 #include "CameraComponent.h"

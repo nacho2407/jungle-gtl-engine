@@ -19,7 +19,7 @@
 #include "imgui.h"
 #include "Component/SkyComponent.h"
 #include "Component/StaticMeshComponent.h"
-#include "Obj/ObjManager.h"
+#include "Asset/ObjManager.h"
 
 FEditorViewportClient::FEditorViewportClient(FEditorUI& InEditorUI)
 	: EditorUI(InEditorUI)

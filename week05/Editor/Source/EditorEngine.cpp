@@ -9,7 +9,7 @@
 #include "Core/ConsoleVariableManager.h"
 #include "Core/Engine.h"
 #include "Debug/EngineLog.h"
-#include "Obj/ObjManager.h"
+#include "Asset/ObjManager.h"
 #include "Object/ObjectFactory.h"
 #include "Platform/Windows/WindowsWindow.h"
 #include "Scene/Scene.h"

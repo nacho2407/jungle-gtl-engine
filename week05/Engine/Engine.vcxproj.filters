@@ -238,7 +238,7 @@
     <ClCompile Include="Source\Component\StaticMeshComponent.cpp" />
     <ClCompile Include="Source\Renderer\RenderMesh.cpp" />
     <ClCompile Include="Source\Renderer\MeshData.cpp" />
-    <ClCompile Include="Source\Obj\ObjManager.cpp" />
+    <ClCompile Include="Source\Asset\ObjManager.cpp" />
     <ClCompile Include="Source\Actor\StaticMeshActor.cpp" />
     <ClCompile Include="Source\Core\EngineLoop.cpp" />
     <ClCompile Include="Source\Core\GameEngine.cpp" />
@@ -500,7 +500,7 @@
     <ClInclude Include="Source\Renderer\RenderMesh.h" />
     <ClInclude Include="Source\Renderer\Vertex.h" />
     <ClInclude Include="Source\Renderer\MeshData.h" />
-    <ClInclude Include="Source\Obj\ObjManager.h" />
+    <ClInclude Include="Source\Asset\ObjManager.h" />
     <ClInclude Include="Source\Actor\StaticMeshActor.h" />
     <ClInclude Include="Source\Core\EngineLoop.h" />
     <ClInclude Include="Source\Core\GameEngine.h" />
