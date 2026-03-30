@@ -75,8 +75,8 @@ void FSlateApplication::BuildTree_SplitH()
 	// [VP0 | VP1]
 	ActiveViewportCount = 2;
 	SplitterPool_H[0]->Ratio  = 0.5f;
-	SplitterPool_H[0]->SideLT = Viewports[0].get();
-	SplitterPool_H[0]->SideRB = Viewports[1].get();
+	SplitterPool_H[0]->SetSideLT(Viewports[0].get());
+	SplitterPool_H[0]->SetSideRB(Viewports[1].get());
 	ActiveSplitters[ActiveSplitterCount++] = SplitterPool_H[0].get();
 	Root = SplitterPool_H[0].get();
 }
@@ -87,8 +87,8 @@ void FSlateApplication::BuildTree_SplitV()
 	// [VP1]
 	ActiveViewportCount = 2;
 	SplitterPool_V[0]->Ratio  = 0.5f;
-	SplitterPool_V[0]->SideLT = Viewports[0].get();
-	SplitterPool_V[0]->SideRB = Viewports[1].get();
+	SplitterPool_V[0]->SetSideLT(Viewports[0].get());
+	SplitterPool_V[0]->SetSideRB(Viewports[1].get());
 	ActiveSplitters[ActiveSplitterCount++] = SplitterPool_V[0].get();
 	Root = SplitterPool_V[0].get();
 }
@@ -99,12 +99,12 @@ void FSlateApplication::BuildTree_ThreeLeft()
 	//      [ VP2]
 	ActiveViewportCount = 3;
 	SplitterPool_V[0]->Ratio  = 0.5f;
-	SplitterPool_V[0]->SideLT = Viewports[1].get();
-	SplitterPool_V[0]->SideRB = Viewports[2].get();
+	SplitterPool_V[0]->SetSideLT(Viewports[1].get());
+	SplitterPool_V[0]->SetSideRB(Viewports[2].get());
 
 	SplitterPool_H[0]->Ratio  = 0.5f;
-	SplitterPool_H[0]->SideLT = Viewports[0].get();
-	SplitterPool_H[0]->SideRB = SplitterPool_V[0].get();
+	SplitterPool_H[0]->SetSideLT(Viewports[0].get());
+	SplitterPool_H[0]->SetSideRB(SplitterPool_V[0].get());
 
 	ActiveSplitters[ActiveSplitterCount++] = SplitterPool_H[0].get();
 	ActiveSplitters[ActiveSplitterCount++] = SplitterPool_V[0].get();
@@ -117,12 +117,12 @@ void FSlateApplication::BuildTree_ThreeRight()
 	// [VP1     ]
 	ActiveViewportCount = 3;
 	SplitterPool_V[0]->Ratio  = 0.5f;
-	SplitterPool_V[0]->SideLT = Viewports[0].get();
-	SplitterPool_V[0]->SideRB = Viewports[1].get();
+	SplitterPool_V[0]->SetSideLT(Viewports[0].get());
+	SplitterPool_V[0]->SetSideRB(Viewports[1].get());
 
 	SplitterPool_H[0]->Ratio  = 0.5f;
-	SplitterPool_H[0]->SideLT = SplitterPool_V[0].get();
-	SplitterPool_H[0]->SideRB = Viewports[2].get();
+	SplitterPool_H[0]->SetSideLT(SplitterPool_V[0].get());
+	SplitterPool_H[0]->SetSideRB(Viewports[2].get());
 
 	ActiveSplitters[ActiveSplitterCount++] = SplitterPool_H[0].get();
 	ActiveSplitters[ActiveSplitterCount++] = SplitterPool_V[0].get();
@@ -135,12 +135,12 @@ void FSlateApplication::BuildTree_ThreeTop()
 	// [VP1 | VP2]
 	ActiveViewportCount = 3;
 	SplitterPool_H[0]->Ratio  = 0.5f;
-	SplitterPool_H[0]->SideLT = Viewports[1].get();
-	SplitterPool_H[0]->SideRB = Viewports[2].get();
+	SplitterPool_H[0]->SetSideLT(Viewports[1].get());
+	SplitterPool_H[0]->SetSideRB(Viewports[2].get());
 
 	SplitterPool_V[0]->Ratio  = 0.5f;
-	SplitterPool_V[0]->SideLT = Viewports[0].get();
-	SplitterPool_V[0]->SideRB = SplitterPool_H[0].get();
+	SplitterPool_V[0]->SetSideLT(Viewports[0].get());
+	SplitterPool_V[0]->SetSideRB(SplitterPool_H[0].get());
 
 	ActiveSplitters[ActiveSplitterCount++] = SplitterPool_V[0].get();
 	ActiveSplitters[ActiveSplitterCount++] = SplitterPool_H[0].get();
@@ -153,12 +153,12 @@ void FSlateApplication::BuildTree_ThreeBottom()
 	// [   VP2   ]
 	ActiveViewportCount = 3;
 	SplitterPool_H[0]->Ratio  = 0.5f;
-	SplitterPool_H[0]->SideLT = Viewports[0].get();
-	SplitterPool_H[0]->SideRB = Viewports[1].get();
+	SplitterPool_H[0]->SetSideLT(Viewports[0].get());
+	SplitterPool_H[0]->SetSideRB(Viewports[1].get());
 
 	SplitterPool_V[0]->Ratio  = 0.5f;
-	SplitterPool_V[0]->SideLT = SplitterPool_H[0].get();
-	SplitterPool_V[0]->SideRB = Viewports[2].get();
+	SplitterPool_V[0]->SetSideLT(SplitterPool_H[0].get());
+	SplitterPool_V[0]->SetSideRB(Viewports[2].get());
 
 	ActiveSplitters[ActiveSplitterCount++] = SplitterPool_V[0].get();
 	ActiveSplitters[ActiveSplitterCount++] = SplitterPool_H[0].get();
@@ -171,16 +171,16 @@ void FSlateApplication::BuildTree_FourGrid()
 	// [VP2 | VP3]
 	ActiveViewportCount = 4;
 	SplitterPool_V[0]->Ratio  = 0.5f;
-	SplitterPool_V[0]->SideLT = Viewports[0].get();
-	SplitterPool_V[0]->SideRB = Viewports[2].get();
+	SplitterPool_V[0]->SetSideLT(Viewports[0].get());
+	SplitterPool_V[0]->SetSideRB(Viewports[2].get());
 
 	SplitterPool_V[1]->Ratio  = 0.5f;
-	SplitterPool_V[1]->SideLT = Viewports[1].get();
-	SplitterPool_V[1]->SideRB = Viewports[3].get();
+	SplitterPool_V[1]->SetSideLT(Viewports[1].get());
+	SplitterPool_V[1]->SetSideRB(Viewports[3].get());
 
 	SplitterPool_H[0]->Ratio  = 0.5f;
-	SplitterPool_H[0]->SideLT = SplitterPool_V[0].get();
-	SplitterPool_H[0]->SideRB = SplitterPool_V[1].get();
+	SplitterPool_H[0]->SetSideLT(SplitterPool_V[0].get());
+	SplitterPool_H[0]->SetSideRB(SplitterPool_V[1].get());
 
 	ActiveSplitters[ActiveSplitterCount++] = SplitterPool_H[0].get();
 	ActiveSplitters[ActiveSplitterCount++] = SplitterPool_V[0].get();
@@ -201,8 +201,7 @@ void FSlateApplication::PerformLayout()
 {
 	if (!Root) return;
 	Root->Rect = AreaRect;
-	if (SSplitter* S = dynamic_cast<SSplitter*>(Root))
-		S->ArrangeChildren();
+	Root->ArrangeChildren();
 	SyncViewportRects();
 }
 
@@ -221,6 +220,19 @@ void FSlateApplication::SetSplitterRatio(int32 Index, float Ratio)
 	{
 		ActiveSplitters[Index]->Ratio = Ratio;
 	}
+}
+
+SWidget* FSlateApplication::CreateWidget(std::unique_ptr<SWidget> InWidget)
+{
+	SWidget* Raw = InWidget.get();
+	OwnedWidgets.push_back(std::move(InWidget));
+	return Raw;
+}
+
+void FSlateApplication::Paint(SWidget& Painter)
+{
+	if (Root) Root->Paint(Painter);
+	for (auto* W : OverlayWidgets) W->Paint(Painter);
 }
 
 // ────────────────────────────────────────────────────────────
@@ -258,9 +270,24 @@ void FSlateApplication::ProcessMouseMove(int32 X, int32 Y)
 {
 	if (DraggingSplitter)
 	{
+		CurrentCursor = DraggingSplitter->GetCursor();
 		DraggingSplitter->OnMouseMove(X, Y);
 		PerformLayout();
 		return;
+	}
+
+	for (int i = 0; i < ActiveSplitterCount; i++)
+	{
+		SSplitter* S = ActiveSplitters[i];
+		if (!S) continue;
+		FRect Bar = S->GetSplitterBarRect();
+		if (Bar.IsValid() &&
+			Bar.X <= X && X <= Bar.X + Bar.Width &&
+			Bar.Y <= Y && Y <= Bar.Y + Bar.Height)
+		{
+			CurrentCursor = S->GetCursor();
+			return;
+		}
 	}
 
 	HoveredViewportId = INVALID_VIEWPORT_ID;
@@ -268,17 +295,19 @@ void FSlateApplication::ProcessMouseMove(int32 X, int32 Y)
 	{
 		if (Viewports[i] && Viewports[i]->HitTest(X, Y))
 		{
+			CurrentCursor = Viewports[i]->GetCursor();
 			HoveredViewportId = Viewports[i]->Id;
 			return;
 		}
 	}
+
+	CurrentCursor = EMouseCursor::Default;
 }
 
 void FSlateApplication::ProcessMouseUp(int32 X, int32 Y)
 {
 	if (DraggingSplitter)
 	{
-		DraggingSplitter->OnMouseUp();
 		DraggingSplitter = nullptr;
 		if (OnSplitterDragEnd) OnSplitterDragEnd();
 	}

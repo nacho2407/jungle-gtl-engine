@@ -5,4 +5,6 @@
 
 class SWindow : public SWidget
 {
+public:
+	virtual EMouseCursor GetCursor() const override { return EMouseCursor::Default; }
 };

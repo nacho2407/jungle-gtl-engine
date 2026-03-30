@@ -17,6 +17,7 @@
 #include "Viewport/EditorViewportClient.h"
 #include "Viewport/PreviewViewportClient.h"
 #include "World/World.h"
+#include "Slate/TextBlock.h"
 
 namespace
 {
@@ -245,7 +246,7 @@ void FEditorEngine::FinalizeInitialize()
 	SlateApplication = std::make_unique<FSlateApplication>();
 	SlateApplication->Initialize(FRect(0, 0, W, H), VPs, MAX_VIEWPORTS);
 	EditorUI.OnSlateReady();
-
+	CreateInitUI();
 }
 
 void FEditorEngine::Tick(float DeltaTime)
@@ -263,6 +264,21 @@ void FEditorEngine::Tick(float DeltaTime)
 
 	CameraSubsystem.Tick(GetActiveWorld(), GetScene(), DeltaTime);
 	SyncViewportClient();
+	EMouseCursor SlateCursor = SlateApplication->GetCurrentCursor();
+	
+	LPCWSTR WinCursorName = IDC_ARROW; // 기본값
+	switch (SlateCursor)
+	{
+	case EMouseCursor::Default:         WinCursorName = IDC_ARROW;  break;
+	case EMouseCursor::ResizeLeftRight: WinCursorName = IDC_SIZEWE; break;
+	case EMouseCursor::ResizeUpDown:    WinCursorName = IDC_SIZENS; break;
+	case EMouseCursor::Hand:            WinCursorName = IDC_HAND;   break;
+	case EMouseCursor::None:            WinCursorName = nullptr;    break;
+	}
+	if (WinCursorName)
+	{
+		::SetCursor(::LoadCursor(NULL, WinCursorName));
+	}
 }
 
 void FEditorEngine::TickWorlds(float DeltaTime)
@@ -323,6 +339,16 @@ void FEditorEngine::FlushDebugDrawForViewport(FRenderer* Renderer, const FShowFl
 void FEditorEngine::ClearDebugDrawForFrame()
 {
 	GetDebugDrawManager().Clear();
+}
+
+void FEditorEngine::CreateInitUI()
+{
+	std::unique_ptr<STextBlock> Label = std::make_unique<STextBlock>();
+	Label->Text = "한글 테스트";
+	Label->Color = 0xFFFFFFFF;
+	Label->Rect = { 800, 100, 0, 0 };
+	SWidget* Raw = SlateApplication->CreateWidget(std::move(Label));
+	SlateApplication->AddOverlayWidget(Raw);
 }
 
 bool FEditorEngine::InitEditorPreview()

@@ -15,22 +15,26 @@ FRect SSplitterH::GetSplitterBarRect() const
 
 void SSplitterH::ArrangeChildren()
 {
-	if (SideLT == nullptr && SideRB != nullptr)
+	SWidget* LT = GetSideLT();
+	SWidget* RB = GetSideRB();
+
+	if (LT == nullptr && RB != nullptr)
 	{
-		SideRB->Rect = Rect;
+		RB->Rect = Rect;
+		RB->ArrangeChildren();
 		return;
 	}
-	if (SideLT != nullptr && SideRB == nullptr)
+	if (LT != nullptr && RB == nullptr)
 	{
-		SideLT->Rect = Rect;
+		LT->Rect = Rect;
+		LT->ArrangeChildren();
 		return;
 	}
-	if (SideLT == nullptr && SideRB == nullptr)
+	if (LT == nullptr && RB == nullptr)
 		return;
 
-	SideLT->Rect = FRect(Rect.X, Rect.Y, Rect.Width * Ratio - BARWIDTH / 2, Rect.Height);
-	SideRB->Rect = FRect(Rect.X + Rect.Width * Ratio + BARWIDTH / 2, Rect.Y, Rect.Width * (1.0f - Ratio), Rect.Height);
-
-	if (SSplitter* S = dynamic_cast<SSplitter*>(SideLT)) S->ArrangeChildren();
-	if (SSplitter* S = dynamic_cast<SSplitter*>(SideRB)) S->ArrangeChildren();
+	LT->Rect = FRect(Rect.X, Rect.Y, Rect.Width * Ratio - BARWIDTH / 2, Rect.Height);
+	LT->ArrangeChildren();
+	RB->Rect = FRect(Rect.X + Rect.Width * Ratio + BARWIDTH / 2, Rect.Y, Rect.Width * (1.0f - Ratio), Rect.Height);
+	RB->ArrangeChildren();
 }

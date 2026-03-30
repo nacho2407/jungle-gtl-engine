@@ -41,6 +41,7 @@ public:
 	FSlateApplication* GetSlateApplication() const { return SlateApplication.get(); }
 	void FlushDebugDrawForViewport(FRenderer* Renderer, const FShowFlags& ShowFlags, bool bClearAfterFlush);
 	void ClearDebugDrawForFrame();
+	void CreateInitUI();
 
 protected:
 	void PreInitialize() override;

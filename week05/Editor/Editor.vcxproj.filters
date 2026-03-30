@@ -113,7 +113,6 @@
     <ClCompile Include="Source\Viewport\ViewportTypes.cpp" />
     <ClCompile Include="Source\Viewport\BlitRenderer.cpp" />
     <ClCompile Include="Source\Slate\SlateApplication.cpp" />
-    <ClCompile Include="Source\Slate\Splitter.cpp" />
     <ClCompile Include="Source\Slate\SViewport.cpp" />
     <ClCompile Include="Source\Slate\SplitterV.cpp" />
     <ClCompile Include="Source\Slate\SplitterH.cpp" />
@@ -123,6 +122,9 @@
     <ClCompile Include="Source\Viewport\EditorViewportRegistry.cpp" />
     <ClCompile Include="Source\Slate\Widget.cpp" />
     <ClCompile Include="Source\Slate\Painter.cpp" />
+    <ClCompile Include="Source\Slate\VerticalBox.cpp" />
+    <ClCompile Include="Source\Slate\HorizontalBox.cpp" />
+    <ClCompile Include="Source\Slate\TextBlock.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\EditorEngine.h">
@@ -216,6 +218,12 @@
     <ClInclude Include="Source\Viewport\EditorViewportRegistry.h" />
     <ClInclude Include="Source\Slate\Widget.h" />
     <ClInclude Include="Source\Slate\Painter.h" />
+    <ClInclude Include="Source\Slate\TextBlock.h" />
+    <ClInclude Include="Source\Slate\Image.h" />
+    <ClInclude Include="Source\Slate\Slot.h" />
+    <ClInclude Include="Source\Slate\VerticalBox.h" />
+    <ClInclude Include="Source\Slate\Panel.h" />
+    <ClInclude Include="Source\Slate\HorizontalBox.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\imgui\imgui.natstepfilter">

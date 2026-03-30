@@ -15,6 +15,8 @@
 #include "Component/SkyComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Asset/ObjManager.h"
+#include "Slate/Painter.h"
+
 
 void FEditorViewportRenderService::RenderAll(
 	FEngine* Engine,
@@ -124,6 +126,19 @@ void FEditorViewportRenderService::RenderAll(
 
 	Renderer->BindSwapChainRTV();
 	BlitRenderer.BlitAll(Context, Entries);
+
+	Renderer->BindSwapChainRTV();
+	if (FSlateApplication* Slate = EditorEngine->GetSlateApplication())
+	{
+		FPainter Painter(Renderer);
+
+		RECT rc{};
+		::GetClientRect(Renderer->GetHwnd(), &rc);
+		Painter.SetScreenSize(rc.right - rc.left, rc.bottom - rc.top);
+		Slate->Paint(Painter);
+		Painter.Flush();
+	}
+
 	EditorUI.Render();
 }
 

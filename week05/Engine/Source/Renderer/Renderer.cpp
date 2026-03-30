@@ -374,6 +374,7 @@ void FRenderer::ExecuteCommands()
 	ExecuteRenderPass(ERenderLayer::Default);
 	ClearDepthBuffer();
 	ExecuteRenderPass(ERenderLayer::Overlay);
+	ExecuteRenderPass(ERenderLayer::UI);
 	
 	if (PostRenderCallback) PostRenderCallback(this);
 

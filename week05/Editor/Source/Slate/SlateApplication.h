@@ -27,7 +27,11 @@ class FSlateApplication
 	SSplitter* ActiveSplitters[3]  = {};
 	int32 ActiveSplitterCount = 0;
 
-	SWindow* Root = nullptr;
+	SWidget* Root = nullptr;
+	TArray<std::unique_ptr<SWidget>> OwnedWidgets;
+	TArray<SWidget*> OverlayWidgets;
+
+	EMouseCursor CurrentCursor = EMouseCursor::Default;
 
 	void BuildTree_Single();
 	void BuildTree_SplitH();
@@ -55,12 +59,14 @@ public:
 	bool IsPointerOverViewport(FViewportId Id) const { return HoveredViewportId == Id; }
 	float GetSplitterRatio(int32 Index) const;
 	void SetSplitterRatio(int32 Index, float Ratio);
+	SWidget* CreateWidget(std::unique_ptr<SWidget> InWidget);
+	void AddOverlayWidget(SWidget* W) { OverlayWidgets.push_back(W); }
+	void Paint(SWidget& Painter);
 
 	void ProcessMouseDown(int32 X, int32 Y);
 	void ProcessMouseMove(int32 X, int32 Y);
 	void ProcessMouseUp(int32 X, int32 Y);
 
-	void Paint(SWidget& Painter) { if (Root) Root->Paint(Painter); };
-
+	EMouseCursor GetCurrentCursor() const { return CurrentCursor; }
 	std::function<void()> OnSplitterDragEnd;
 };
