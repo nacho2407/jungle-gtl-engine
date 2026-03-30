@@ -9,13 +9,12 @@ class UTexture2D;
 // {
 // };
 
-// TODO: 다른 파일에 분리하기
 class UMaterial : public UObject // : public UMaterialInterface
 {
 public:
 	DECLARE_CLASS(UMaterial, UObject)
 
-	FString PathFileName;
+	FString PathFileName;					// 어떤 Material인지 판별하는 고유 이름
 	FString DiffuseTextureFilePath;
 	FVector4 DiffuseColor;
 	UTexture2D* DiffuseTexture = nullptr;	// UObjectManager 소유, 여기선 참조만

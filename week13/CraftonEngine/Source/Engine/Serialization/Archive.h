@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#pragma once
 #include "Core/CoreTypes.h" // TArray가 정의된 곳
 #include <type_traits>
 #include <string>
@@ -35,6 +34,17 @@ public:
 	}
 };
 
+inline FArchive& operator<<(FArchive& Ar, FString& Str)
+{
+	uint32 Length = static_cast<uint32>(Str.size());
+	Ar << Length;
+
+	if (Ar.IsLoading()) Str.resize(Length);
+	if (Length > 0) Ar.Serialize(Str.data(), Length);
+
+	return Ar;
+}
+
 // ----------------------------------------------------
 // 🪄 마법의 연산자 특수화 (TArray 지원)
 // ----------------------------------------------------
@@ -45,16 +55,20 @@ FArchive& operator<<(FArchive& Ar, TArray<T>& Array)
 	uint32 ArrayNum = static_cast<uint32>(Array.size());
 	Ar << ArrayNum;
 
-	// 2. 만약 읽는 중(Load)이라면, 방금 알아낸 개수만큼 메모리를 미리 할당합니다.
-	if (Ar.IsLoading())
-	{
-		Array.resize(ArrayNum);
-	}
-
-	// 3. 개수가 있다면, 배열 데이터를 통째로(sizeof(T) * Num) 복사합니다.
+	if (Ar.IsLoading()) Array.resize(ArrayNum);
 	if (ArrayNum > 0)
 	{
-		Ar.Serialize(Array.data(), ArrayNum * sizeof(T));
+		// 2. 만약 읽는 중(Load)이라면, 방금 알아낸 개수만큼 메모리를 미리 할당합니다.
+		if (Ar.IsLoading())
+		{
+			Array.resize(ArrayNum);
+		}
+
+		// 3. 개수가 있다면, 배열 데이터를 통째로(sizeof(T) * Num) 복사합니다.
+		if (ArrayNum > 0)
+		{
+			Ar.Serialize(Array.data(), ArrayNum * sizeof(T));
+		}
 	}
 
 	return Ar;
