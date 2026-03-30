@@ -277,6 +277,7 @@ def generate_vcxproj(files: dict[str, list[str]]):
         ET.SubElement(cl, "ConformanceMode").text = "true"
         ET.SubElement(cl, "AdditionalOptions").text = "/utf-8 %(AdditionalOptions)"
         ET.SubElement(cl, "ExceptionHandling").text = "Async"
+        ET.SubElement(cl, "MultiProcessorCompilation").text = "true"
 
         if is_x64:
             ET.SubElement(cl, "LanguageStandard").text = "stdcpp20"
