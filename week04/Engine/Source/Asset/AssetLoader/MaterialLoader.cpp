@@ -26,7 +26,7 @@ namespace Engine::Asset
     {
         (void)Params;
 
-        std::shared_ptr<FMaterialResource> MatResource = std::make_shared<FMaterialResource>();
+        std::shared_ptr<::FMaterialResource> MatResource = std::make_shared<::FMaterialResource>();
         if (!ParseMtlText(Source, *MatResource))
         {
             return nullptr;
@@ -38,7 +38,7 @@ namespace Engine::Asset
         return NewMaterial;
     }
 
-    bool FMaterialLoader::ParseMtlText(const FSourceRecord& Source, FMaterialResource& OutResource)
+    bool FMaterialLoader::ParseMtlText(const FSourceRecord& Source, ::FMaterialResource& OutResource)
     {
         if (!Source.bFileBytesLoaded || Source.FileBytes.empty()) return false;
 

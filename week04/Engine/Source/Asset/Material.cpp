@@ -6,7 +6,7 @@
 
 namespace Engine::Asset
 {
-    void UMaterial::Initialize(const FSourceRecord& InSource, std::shared_ptr<FMaterialResource> InResource)
+    void UMaterial::Initialize(const FSourceRecord& InSource, std::shared_ptr<::FMaterialResource> InResource)
     {
         Resource = InResource;
         SetPath(InSource.NormalizedPath);
