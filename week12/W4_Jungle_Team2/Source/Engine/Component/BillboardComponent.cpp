@@ -1,40 +1,62 @@
 ﻿#include "BillboardComponent.h"
+#include <cmath>
 #include "GameFramework/World.h"
 #include "Editor/Viewport/ViewportCamera.h"
 
 DEFINE_CLASS(UBillboardComponent, UPrimitiveComponent)
 
-void UBillboardComponent::TickComponent(float DeltaTime)
+bool UBillboardComponent::TryGetActiveCamera(const FViewportCamera*& OutCamera) const
 {
-	FVector WorldLocation = GetWorldLocation();
+	OutCamera = nullptr;
 
 	if (GetOwner() == nullptr || GetOwner()->GetWorld() == nullptr)
 	{
-		return;
+		return false;
 	}
 
-	const FViewportCamera* ActiveCamera = GetOwner()->GetWorld()->GetActiveCamera();
-	if (ActiveCamera == nullptr)
+	OutCamera = GetOwner()->GetWorld()->GetActiveCamera();
+	return OutCamera != nullptr;
+}
+// 카메라 Forward, Right, Up Vector 기반으로 billboard 의 world 행렬 생성 
+FMatrix UBillboardComponent::MakeBillboardWorldMatrix(
+	const FVector& WorldLocation,
+	const FVector& WorldScale,
+	const FVector& CameraForward,
+	const FVector& CameraRight,
+	const FVector& CameraUp)
+{
+	FVector Forward = CameraForward.GetSafeNormal();
+	FVector Right = (-CameraRight).GetSafeNormal();
+	FVector Up = CameraUp.GetSafeNormal();
+
+	if (Forward.IsNearlyZero())
 	{
-		return;
+		Forward = FVector(-1.0f, 0.0f, 0.0f);
 	}
 
-	FVector CameraForward = ActiveCamera->GetForwardVector().GetSafeNormal();
-	FVector Forward = CameraForward * -1;
-	FVector WorldUp = FVector(0.0f, 0.0f, 1.0f);
-
-	if (std::abs(FVector::DotProduct(Forward,WorldUp)) > 0.99f)
+	if (Right.IsNearlyZero() || Up.IsNearlyZero())
 	{
-		WorldUp = FVector(0.0f, 1.0f, 0.0f); // 임시 Up축 변경
+		FVector FallbackUp = FVector::UpVector;
+		if (std::abs(FVector::DotProduct(Forward, FallbackUp)) > 0.99f)
+		{
+			FallbackUp = FVector::RightVector;
+		}
+
+		Right = FVector::CrossProduct(FallbackUp, Forward).GetSafeNormal();
+		Up = FVector::CrossProduct(Forward, Right).GetSafeNormal();
 	}
 
-	FVector Right = FVector::CrossProduct(WorldUp,Forward).GetSafeNormal();
-	FVector Up = FVector::CrossProduct(Forward,Right).GetSafeNormal();
+	FMatrix BillboardMatrix = FMatrix::Identity;
+	BillboardMatrix.SetAxes(
+		Forward * WorldScale.X,
+		Right * WorldScale.Y,
+		Up * WorldScale.Z,
+		WorldLocation);
+	return BillboardMatrix;
+}
 
-	FMatrix RotMatrix;
-	RotMatrix.SetAxes(Forward, Right, Up);
-
-	CachedWorldMatrix = FMatrix::MakeScaleMatrix(GetWorldScale()) * RotMatrix * FMatrix::MakeTranslationMatrix(WorldLocation);
-
+void UBillboardComponent::TickComponent(float DeltaTime)
+{
+	(void)DeltaTime;
 	UpdateWorldAABB();
 }
