@@ -50,37 +50,97 @@ void FRenderer::Release()
 }
 
 //	Bus → Batcher 데이터 수집 (CPU). BeginFrame 이전에 호출.
-void FRenderer::PrepareBatchers(const FRenderBus& InRenderBus)
+void FRenderer::PrepareBatchers(const FRenderBus& Bus)
 {
-	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
+	// --- Editor 패스: AABB 디버그 박스 → EditorLineBatcher ---
+	EditorLineBatcher.Clear();
+	for (const auto& Entry : Bus.GetAABBEntries())
 	{
-		if (!PassBatchers[i]) continue;
-
-		const auto& Commands = InRenderBus.GetCommands(static_cast<ERenderPass>(i));
-		const auto& AlignedCommands = GetAlignedCommands(static_cast<ERenderPass>(i), Commands);
-
-		PassBatchers[i].Clear();
-		for (const auto& Cmd : AlignedCommands)
-			PassBatchers[i].Collect(Cmd, InRenderBus);
-	}
-}
-
-const TArray<FRenderCommand>& FRenderer::GetAlignedCommands(ERenderPass Pass, const TArray<FRenderCommand>& Commands)
-{
-	// SubUV 패스: Particle(SRV) 포인터 기준 정렬 → 같은 텍스쳐끼리 연속 배치
-	if (Pass == ERenderPass::SubUV && Commands.size() > 1)
-	{
-		SortedCommandBuffer.assign(Commands.begin(), Commands.end());
-
-		std::sort(SortedCommandBuffer.begin(), SortedCommandBuffer.end(),
-			[](const FRenderCommand& A, const FRenderCommand& B) {
-				return A.Params.SubUV.Particle < B.Params.SubUV.Particle;
-			});
-
-		return SortedCommandBuffer;
+		EditorLineBatcher.AddAABB(FBoundingBox{ Entry.AABB.Min, Entry.AABB.Max }, Entry.AABB.Color);
 	}
 
-	return Commands;
+	// --- Grid 패스: 월드 그리드 + 축 → GridLineBatcher ---
+	GridLineBatcher.Clear();
+	for (const auto& Entry : Bus.GetGridEntries())
+	{
+		const FVector CameraPos = Bus.GetView().GetInverseFast().GetLocation();
+		FVector CameraFwd = Bus.GetCameraRight().Cross(Bus.GetCameraUp());
+		CameraFwd.Normalize();
+
+		GridLineBatcher.AddWorldHelpers(
+			Bus.GetShowFlags(),
+			Entry.Grid.GridSpacing,
+			Entry.Grid.GridHalfLineCount,
+			CameraPos, CameraFwd);
+	}
+
+	// --- Font 패스: 월드 공간 텍스트 → FontBatcher ---
+	FontBatcher.Clear();
+	for (const auto& Entry : Bus.GetFontEntries())
+	{
+		if (Entry.Font.Text && !Entry.Font.Text->empty())
+		{
+			FontBatcher.AddText(
+				*Entry.Font.Text,
+				Entry.PerObject.Model.GetLocation(),
+				Bus.GetCameraRight(),
+				Bus.GetCameraUp(),
+				Entry.PerObject.Model.GetScale(),
+				Entry.Font.Scale
+			);
+		}
+	}
+
+	// --- OverlayFont 패스: 스크린 공간 텍스트 → FontBatcher ---
+	FontBatcher.ClearScreen();
+	for (const auto& Entry : Bus.GetOverlayFontEntries())
+	{
+		if (Entry.Font.Text && !Entry.Font.Text->empty())
+		{
+			FontBatcher.AddScreenText(
+				*Entry.Font.Text,
+				Entry.Font.ScreenPosition.X,
+				Entry.Font.ScreenPosition.Y,
+				Bus.GetViewportWidth(),
+				Bus.GetViewportHeight(),
+				Entry.Font.Scale
+			);
+		}
+	}
+
+	// --- SubUV 패스: 스프라이트 → SubUVBatcher (Particle SRV 기준 정렬) ---
+	SubUVBatcher.Clear();
+	{
+		const auto& Entries = Bus.GetSubUVEntries();
+		SortedSubUVBuffer.assign(Entries.begin(), Entries.end());
+
+		if (SortedSubUVBuffer.size() > 1)
+		{
+			std::sort(SortedSubUVBuffer.begin(), SortedSubUVBuffer.end(),
+				[](const FSubUVEntry& A, const FSubUVEntry& B) {
+					return A.SubUV.Particle < B.SubUV.Particle;
+				});
+		}
+
+		for (const auto& Entry : SortedSubUVBuffer)
+		{
+			if (Entry.SubUV.Particle)
+			{
+				SubUVBatcher.AddSprite(
+					Entry.SubUV.Particle->SRV,
+					Entry.PerObject.Model.GetLocation(),
+					Bus.GetCameraRight(),
+					Bus.GetCameraUp(),
+					Entry.PerObject.Model.GetScale(),
+					Entry.SubUV.FrameIndex,
+					Entry.SubUV.Particle->Columns,
+					Entry.SubUV.Particle->Rows,
+					Entry.SubUV.Width,
+					Entry.SubUV.Height
+				);
+			}
+		}
+	}
 }
 
 //	GPU 프레임 시작. 반드시 Render 이전에 호출되어야 함.
@@ -117,16 +177,18 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
 	{
 		ERenderPass CurPass = static_cast<ERenderPass>(i);
-		const auto& Commands = InRenderBus.GetCommands(CurPass);
-		if (Commands.empty()) continue;
 
 		if (PassBatchers[i])
 		{
+			// Batcher 패스 — Flush 내부에서 빈 데이터 체크
 			ApplyPassRenderState(CurPass, Context, InRenderBus.GetViewMode());
 			PassBatchers[i].Flush(CurPass, InRenderBus, Context);
 		}
 		else
 		{
+			// Mesh 패스
+			const auto& Commands = InRenderBus.GetCommands(CurPass);
+			if (Commands.empty()) continue;
 			ExecuteDefaultPass(CurPass, Commands, InRenderBus, Context);
 		}
 	}
@@ -143,125 +205,50 @@ void FRenderer::InitializePassRenderStates()
 	//                              DepthStencil                    Blend                Rasterizer                   Topology                                WireframeAware
 	S[(uint32)E::Opaque]      = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true  };
 	S[(uint32)E::Translucent] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::StencilMask] = { EDepthStencilState::StencilWrite,  EBlendState::Opaque,     ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::StencilMask] = { EDepthStencilState::StencilWrite,  EBlendState::NoColor,    ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::Outline]     = { EDepthStencilState::StencilOutline,EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::Editor]      = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     true  };
 	S[(uint32)E::Grid]        = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     false };
-	S[(uint32)E::DepthLess]   = { EDepthStencilState::DepthReadOnly,EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::GizmoOuter]  = { EDepthStencilState::GizmoOutside, EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::GizmoInner]  = { EDepthStencilState::GizmoInside,  EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::Font]        = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true  };
 	S[(uint32)E::OverlayFont] = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true  };
 	S[(uint32)E::SubUV]       = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true  };
 }
 
 // ============================================================
-// Pass Batcher 바인딩 초기화
+// Pass Batcher Flush 바인딩 초기화
 // ============================================================
 void FRenderer::InitializePassBatchers()
 {
-	// --- Editor 패스: AABB 디버그 박스 → EditorLineBatcher ---
 	PassBatchers[(uint32)ERenderPass::Editor] = {
-		/*.Clear   =*/ [this]() { EditorLineBatcher.Clear(); },
-		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus&) {
-			if (Cmd.Type == ERenderCommandType::DebugBox)
-			{
-				EditorLineBatcher.AddAABB(FBoundingBox{ Cmd.Params.AABB.Min, Cmd.Params.AABB.Max }, Cmd.Params.AABB.Color);
-			}
-		},
-		/*.Flush   =*/ [this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
+		[this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
 			FlushLineBatcher(EditorLineBatcher, Pass, Bus, Ctx);
 		}
 	};
 
-	// --- Grid 패스: 월드 그리드 + 축 → GridLineBatcher ---
 	PassBatchers[(uint32)ERenderPass::Grid] = {
-		/*.Clear   =*/ [this]() { GridLineBatcher.Clear(); },
-		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus& Bus) {
-			if (Cmd.Type == ERenderCommandType::Grid)
-			{
-				const FVector CameraPos = Bus.GetView().GetInverseFast().GetLocation();
-				FVector CameraFwd = Bus.GetCameraRight().Cross(Bus.GetCameraUp());
-				CameraFwd.Normalize();
-
-				GridLineBatcher.AddWorldHelpers(
-					Bus.GetShowFlags(),
-					Cmd.Params.Grid.GridSpacing,
-					Cmd.Params.Grid.GridHalfLineCount,
-					CameraPos, CameraFwd);
-			}
-		},
-		/*.Flush   =*/ [this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
+		[this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
 			FlushLineBatcher(GridLineBatcher, Pass, Bus, Ctx);
 		}
 	};
 
-	// --- Font 패스: 텍스트 → FontBatcher ---
 	PassBatchers[(uint32)ERenderPass::Font] = {
-		/*.Clear   =*/ [this]() { FontBatcher.Clear(); },
-		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus& Bus) {
-			if (Cmd.Type == ERenderCommandType::Font && Cmd.Params.Font.Text && !Cmd.Params.Font.Text->empty() && !Cmd.Params.Font.bScreenSpace)
-			{
-				FontBatcher.AddText(
-					*Cmd.Params.Font.Text,
-					Cmd.PerObjectConstants.Model.GetLocation(),
-					Bus.GetCameraRight(),
-					Bus.GetCameraUp(),
-					Cmd.PerObjectConstants.Model.GetScale(),
-					Cmd.Params.Font.Scale
-				);
-			}
-		},
-		/*.Flush   =*/ [this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
+		[this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
 			const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
 			FontBatcher.Flush(Ctx, FontRes);
 		}
 	};
 
-	// --- OverlayFont 패스: 스크린 텍스트 → FontBatcher ---
 	PassBatchers[(uint32)ERenderPass::OverlayFont] = {
-		/*.Clear   =*/ [this]() {FontBatcher.ClearScreen(); }, // Font 시작 시에 클리어
-		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus& Bus) {
-			if (Cmd.Type == ERenderCommandType::Font && Cmd.Params.Font.Text && !Cmd.Params.Font.Text->empty() && Cmd.Params.Font.bScreenSpace)
-			{
-				FontBatcher.AddScreenText(
-					*Cmd.Params.Font.Text,
-					Cmd.Params.Font.ScreenPosition.X,
-					Cmd.Params.Font.ScreenPosition.Y,
-					Bus.GetViewportWidth(),
-					Bus.GetViewportHeight(),
-					Cmd.Params.Font.Scale
-				);
-			}
-		},
-		/*.Flush   =*/ [this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
+		[this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
 			const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
 			FontBatcher.FlushScreen(Ctx, FontRes);
 		}
 	};
 
-	// --- SubUV 패스: 스프라이트 → SubUVBatcher ---
 	PassBatchers[(uint32)ERenderPass::SubUV] = {
-		/*.Clear   =*/ [this]() {
-			SubUVBatcher.Clear();
-		},
-		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus& Bus) {
-			if (Cmd.Type == ERenderCommandType::SubUV && Cmd.Params.SubUV.Particle)
-			{
-				const auto& SubUV = Cmd.Params.SubUV;
-				SubUVBatcher.AddSprite(
-					SubUV.Particle->SRV,
-					Cmd.PerObjectConstants.Model.GetLocation(),
-					Bus.GetCameraRight(),
-					Bus.GetCameraUp(),
-					Cmd.PerObjectConstants.Model.GetScale(),
-					SubUV.FrameIndex,
-					SubUV.Particle->Columns,
-					SubUV.Particle->Rows,
-					SubUV.Width,
-					SubUV.Height
-				);
-			}
-		},
-		/*.Flush   =*/ [this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
+		[this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
 			SubUVBatcher.Flush(Ctx);
 		}
 	};
@@ -300,24 +287,12 @@ void FRenderer::ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand
 {
 	ApplyPassRenderState(Pass, Context, Bus.GetViewMode());
 
-	const FPassRenderState& State = PassRenderStates[(uint32)Pass];
 	for (const auto& Cmd : Commands)
 	{
-		EDepthStencilState TargetDepth = (Cmd.DepthStencilState != static_cast<EDepthStencilState>(-1))
-			? Cmd.DepthStencilState
-			: State.DepthStencil;
-
-		EBlendState TargetBlend = (Cmd.BlendState != static_cast<EBlendState>(-1))
-			? Cmd.BlendState
-			: State.Blend;
-
-		Device.SetDepthStencilState(TargetDepth);
-		Device.SetBlendState(TargetBlend);
-
 		BindCommand(Cmd, Context);
 
 		// StaticMesh: 섹션별 SRV 바인딩 + 분할 드로우
-		if (Cmd.Type == ERenderCommandType::StaticMesh && !Cmd.SectionDraws.empty())
+		if (!Cmd.SectionDraws.empty())
 		{
 			DrawStaticMeshSections(Context, Cmd);
 		}
@@ -362,10 +337,10 @@ void FRenderer::BindCommand(const FRenderCommand& InCmd, ID3D11DeviceContext* Co
 		Context->VSSetConstantBuffers(ECBSlot::PerObject, 1, &cb);
 	}
 
-	// Extra CB — Params 데이터를 지정 슬롯에 업로드
+	// Extra CB — ExtraCB.Data를 지정 슬롯에 업로드
 	if (InCmd.ExtraCB.Buffer)
 	{
-		InCmd.ExtraCB.Buffer->Update(Context, &InCmd.Params, InCmd.ExtraCB.Size);
+		InCmd.ExtraCB.Buffer->Update(Context, InCmd.ExtraCB.Data, InCmd.ExtraCB.Size);
 		ID3D11Buffer* cb = InCmd.ExtraCB.Buffer->GetBuffer();
 		Context->VSSetConstantBuffers(InCmd.ExtraCB.Slot, 1, &cb);
 		Context->PSSetConstantBuffers(InCmd.ExtraCB.Slot, 1, &cb);

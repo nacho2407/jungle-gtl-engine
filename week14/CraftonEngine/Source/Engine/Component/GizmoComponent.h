@@ -84,5 +84,5 @@ public:
 	//UActorComponent Override
 	void Deactivate() override;
 
-	EPrimitiveType GetPrimitiveType() const override;
+	FMeshBuffer* GetMeshBuffer() const override;
 };

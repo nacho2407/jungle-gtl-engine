@@ -27,24 +27,24 @@ void FMeshBufferManager::Release()
 	bIsInitialized = false;
 }
 
-FMeshBuffer& FMeshBufferManager::GetMeshBuffer(EPrimitiveType InPrimitiveType)
+FMeshBuffer& FMeshBufferManager::GetMeshBuffer(EMeshShape InShape)
 {
-	auto it = MeshBufferMap.find(InPrimitiveType);
+	auto it = MeshBufferMap.find(InShape);
 	if (it != MeshBufferMap.end())
 	{
 		return it->second;
 	}
-	return MeshBufferMap.at(EPrimitiveType::EPT_Cube);
+	return MeshBufferMap.at(EMeshShape::Cube);
 }
 
-const FMeshData& FMeshBufferManager::GetMeshData(EPrimitiveType InPrimitiveType) const
+const FMeshData& FMeshBufferManager::GetMeshData(EMeshShape InShape) const
 {
-	auto it = MeshDataMap.find(InPrimitiveType);
+	auto it = MeshDataMap.find(InShape);
 	if (it != MeshDataMap.end())
 	{
 		return it->second;
 	}
-	return MeshDataMap.at(EPrimitiveType::EPT_Cube);
+	return MeshDataMap.at(EMeshShape::Cube);
 }
 
 void FMeshBufferManager::CreatePrimitiveMeshData()
@@ -56,15 +56,11 @@ void FMeshBufferManager::CreatePrimitiveMeshData()
 	CreateRotationGizmo();
 	CreateScaleGizmo();
 	CreateQuad();
-
-	// SubUV, Text는 Quad와 동일한 메시 사용
-	MeshDataMap[EPrimitiveType::EPT_SubUV] = MeshDataMap[EPrimitiveType::EPT_Quad];
-	MeshDataMap[EPrimitiveType::EPT_Text] = MeshDataMap[EPrimitiveType::EPT_Quad];
 }
 
 void FMeshBufferManager::CreateCube()
 {
-	FMeshData& Data = MeshDataMap[EPrimitiveType::EPT_Cube];
+	FMeshData& Data = MeshDataMap[EMeshShape::Cube];
 	TArray<FVertex>& vertices = Data.Vertices;
 	TArray<uint32>& indices = Data.Indices;
 
@@ -108,7 +104,7 @@ void FMeshBufferManager::CreateCube()
 
 void FMeshBufferManager::CreateSphere(int Slices, int Stacks)
 {
-	FMeshData& Data = MeshDataMap[EPrimitiveType::EPT_Sphere];
+	FMeshData& Data = MeshDataMap[EMeshShape::Sphere];
 	TArray<FVertex>& vertices = Data.Vertices;
 	TArray<uint32>& indices = Data.Indices;
 
@@ -146,7 +142,7 @@ void FMeshBufferManager::CreateSphere(int Slices, int Stacks)
 
 void FMeshBufferManager::CreateRotationGizmo()
 {
-	FMeshData& Data = MeshDataMap[EPrimitiveType::EPT_RotGizmo];
+	FMeshData& Data = MeshDataMap[EMeshShape::RotGizmo];
 	TArray<FVertex>& vertices = Data.Vertices;
 	TArray<uint32>& indices = Data.Indices;
 
@@ -211,7 +207,7 @@ void FMeshBufferManager::CreateRotationGizmo()
 
 void FMeshBufferManager::CreateScaleGizmo()
 {
-	FMeshData& Data = MeshDataMap[EPrimitiveType::EPT_ScaleGizmo];
+	FMeshData& Data = MeshDataMap[EMeshShape::ScaleGizmo];
 	TArray<FVertex>& vertices = Data.Vertices;
 	TArray<uint32>& indices = Data.Indices;
 
@@ -261,7 +257,7 @@ void FMeshBufferManager::CreateScaleGizmo()
 
 void FMeshBufferManager::CreateQuad()
 {
-	FMeshData& Data = MeshDataMap[EPrimitiveType::EPT_Quad];
+	FMeshData& Data = MeshDataMap[EMeshShape::Quad];
 	TArray<FVertex>& vertices = Data.Vertices;
 	TArray<uint32>& indices = Data.Indices;
 
@@ -277,7 +273,7 @@ void FMeshBufferManager::CreateQuad()
 
 void FMeshBufferManager::CreateTranslationGizmo()
 {
-	FMeshData& Data = MeshDataMap[EPrimitiveType::EPT_TransGizmo];
+	FMeshData& Data = MeshDataMap[EMeshShape::TransGizmo];
 	TArray<FVertex>& vertices = Data.Vertices;
 	TArray<uint32>& indices = Data.Indices;
 
@@ -346,7 +342,7 @@ void FMeshBufferManager::CreateTranslationGizmo()
 
 void FMeshBufferManager::CreatePlane()
 {
-	FMeshData& Data = MeshDataMap[EPrimitiveType::EPT_Plane];
+	FMeshData& Data = MeshDataMap[EMeshShape::Plane];
 	TArray<FVertex>& vertices = Data.Vertices;
 	TArray<uint32>& indices = Data.Indices;
 
