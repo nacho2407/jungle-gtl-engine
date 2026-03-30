@@ -138,6 +138,7 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 
 			if (TargetMesh)
 			{
+				UE_LOG("여기 오긴 함?");
 				int32 NumSections = TargetMesh->GetNumSection();
 				if (NumSections <= 0)
 				{
