@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Asset/BinarySerializer.h"
 #include "Asset/FontAtlasLoader.h"
 #include "Asset/ObjLoader.h"
 #include "Asset/ParticleAtlasLoader.h"
@@ -66,15 +67,23 @@ public:
 	size_t GetMaterialMemorySize() const;
 
 private:
+	uint64 GetFileWriteTimeTicks(const FString& Path) const;
+	FString MakeStaticMeshBinaryPath(const FString& SourcePath) const;
+	bool IsStaticMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const;
+	void PreloadStaticMeshes();
+
 	FResourceManager() = default;
 	~FResourceManager() { ReleaseGPUResources(); }
 
 	FObjLoader ObjLoader;
 	FFontAtlasLoader FontLoader;
 	FParticleAtlasLoader ParticleLoader;
+	
+	FBinarySerializer BinarySerializer;
 
 	TMap<FString, FFontResource>     FontResources;
 	TMap<FString, FParticleResource> ParticleResources;
+	
 	TMap<FString, FMaterialResource> MaterialTextureResources;
 	TMap<FString, FMaterial>         MaterialRegistry;   
 
