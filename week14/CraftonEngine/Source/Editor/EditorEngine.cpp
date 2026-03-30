@@ -7,6 +7,7 @@
 #include "Editor/EditorRenderPipeline.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Object/ObjectFactory.h"
+#include "Mesh/ObjManager.h"
 
 IMPLEMENT_CLASS(UEditorEngine, UEngine)
 
@@ -14,6 +15,8 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 {
 	// 엔진 공통 초기화 (Renderer, D3D, 싱글턴 등)
 	UEngine::Init(InWindow);
+	
+	FObjManager::ScanMeshAssets();
 
 	// 에디터 전용 초기화
 	FEditorSettings::Get().LoadFromFile(FEditorSettings::GetDefaultSettingsPath());
