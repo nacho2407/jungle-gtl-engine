@@ -217,8 +217,7 @@ void FRenderer::InitializePassBatchers()
 			if (Cmd.Type == ERenderCommandType::Grid)
 			{
 				const FVector CameraPos = Bus.GetView().GetInverse().GetOrigin();
-				FVector CameraFwd = Bus.GetCameraRight().CrossProduct(Bus.GetCameraUp());
-				CameraFwd.Normalize();
+				const FVector CameraFwd = Bus.GetCameraForward();
 
 				GridLineBatcher.AddWorldHelpers(
 					Bus.GetShowFlags(),
