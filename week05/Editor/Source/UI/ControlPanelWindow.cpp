@@ -240,7 +240,7 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 						else if (SpawnTypeIndex == 2)  MeshData = FObjManager::LoadObjStaticMeshAsset((FPaths::MeshDir() / "PrimitivePlane.obj").string().c_str());
 						else if (SpawnTypeIndex == 7) 
 						{
-							std::filesystem::path ModelPath = FPaths::MeshDir() / "Godzilla.obj";
+							std::filesystem::path ModelPath = FPaths::MeshDir() / "cube-tex.obj";
 							FString FullPath = ModelPath.string().c_str(); // FString으로 변환
 
 							MeshData = FObjManager::LoadObjStaticMeshAsset(FullPath);
@@ -257,24 +257,6 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 								UE_LOG("[테스트 실패] OBJ 파일을 찾을 수 없거나 파싱에 실패했습니다.");
 							}
 						}
-
-						/*auto Mat0 = FMaterialManager::Get().FindByName("M_Default");
-						auto Mat1 = FMaterialManager::Get().FindByName("M_Default_Texture");
-
-						// 안전빵 로그
-						if (!Mat0 || !Mat1)
-						{
-							UE_LOG("[오류] 머티리얼을 못 찾았습니다!");
-						}
-						else
-						{
-							// 0번 구역은 M_Default, 1번 구역은 M_Default_Texture 로 옷 입히기
-							MeshComp->SetMaterial(0, Mat0);
-							MeshComp->SetMaterial(1, Mat1);
-							UE_LOG("[성공] 다중 머티리얼 큐브 세팅 완료!");
-						}
-
-						MeshComp->SetRelativeLocation(FVector(0, 0, 2.0f));*/
 
 						MeshComp->SetStaticMesh(MeshData);
 					}

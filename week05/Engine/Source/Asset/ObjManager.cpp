@@ -3,10 +3,14 @@
 #include <fstream>
 #include <sstream>
 
+#include "Core/Engine.h"
 #include "Debug/EngineLog.h"
 #include "Renderer/Renderer.h"
 #include "Math/MathUtility.h"
 #include "Renderer/MaterialManager.h"
+#include "Renderer/Shader.h"
+#include "Renderer/Material.h"
+#include "Renderer/ShaderMap.h"
 
 TMap<FString, UStaticMesh*> FObjManager::ObjStaticMeshMap;
 
@@ -111,8 +115,6 @@ struct FObjParserContext
 inline UStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileName)
 {
 	// 추후에 obj파싱이 끝나면 없앨 코드
-	if (PathFileName == "Primitive_Cube")  return GetPrimitiveCube();
-	if (PathFileName == "Primitive_Plane") return GetPrimitivePlane();
 	if (PathFileName == "Primitive_Sphere") return GetPrimitiveSphere();
 
 	// ---------------------------------------------
@@ -161,6 +163,73 @@ inline UStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileN
 	return NewAsset;
 }
 
+//TODO: Texture Manager 리펙토링 이후 이 함수는 삭제될 것.
+bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
+{
+	std::ifstream File(MtlFIlePath.c_str());
+	if (!File.is_open()) return false;
+
+	std::string Line;
+	std::shared_ptr<FMaterial> CurrentMaterial = nullptr;
+
+	while (std::getline(File, Line))
+	{
+		if (Line.empty() || Line[0] == '#') continue;
+
+		std::stringstream SS(Line);
+		std::string Type;
+		SS >> Type;
+
+		if (Type == "newmtl")
+		{
+			std::string MaterialName;
+			SS >> MaterialName;
+
+			CurrentMaterial = std::make_shared<FMaterial>();
+			CurrentMaterial->SetOriginName(MaterialName.c_str());
+
+			std::wstring VSPath = FPaths::ShaderDir() / L"VertexShader.hlsl";
+			std::wstring PSPath = FPaths::ShaderDir() / L"TexturePixelShader.hlsl";
+			CurrentMaterial->SetVertexShader(FShaderMap::Get().GetOrCreateVertexShader(GEngine->GetRenderer()->GetDevice(), VSPath.c_str()));
+			CurrentMaterial->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(GEngine->GetRenderer()->GetDevice(), PSPath.c_str()));
+
+			auto DefaultTexMat = GEngine->GetRenderer()->GetDefaultTextureMaterial();
+			CurrentMaterial->SetRasterizerOption(DefaultTexMat->GetRasterizerOption());
+			CurrentMaterial->SetRasterizerState(DefaultTexMat->GetRasterizerState());
+			CurrentMaterial->SetDepthStencilOption(DefaultTexMat->GetDepthStencilOption());
+			CurrentMaterial->SetDepthStencilState(DefaultTexMat->GetDepthStencilState());
+
+			int32 SlotIndex = CurrentMaterial->CreateConstantBuffer(GEngine->GetRenderer()->GetDevice(), 16);
+			if (SlotIndex >= 0)
+			{
+				CurrentMaterial->RegisterParameter("BaseColor", SlotIndex, 0, 16);
+				float White[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+				CurrentMaterial->GetConstantBuffer(SlotIndex)->SetData(White, sizeof(White));
+			}
+
+			FMaterialManager::Get().Register(MaterialName.c_str(), CurrentMaterial);
+		}
+		else if (Type == "map_Kd" && CurrentMaterial)
+		{
+			std::string TextureFileName;
+			SS >> TextureFileName;
+
+			std::filesystem::path TexturePath = FPaths::MeshDir() / TextureFileName;
+
+			ID3D11ShaderResourceView* NewSRV = nullptr;
+			if (GEngine->GetRenderer()->CreateTextureFromSTB(GEngine->GetRenderer()->GetDevice(), TexturePath.string().c_str(), &NewSRV))
+			{
+				auto MaterialTexture = std::make_shared<FMaterialTexture>();
+				MaterialTexture->TextureSRV = NewSRV;
+
+				CurrentMaterial->SetMaterialTexture(MaterialTexture);
+				UE_LOG("[MTL 파서] %s 텍스처 자동 로드 및 장착 완료!", TextureFileName.c_str());
+			}
+		}
+	}
+	return true;
+}
+
 inline bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutMesh, TArray<FString>& OutMaterialNames)
 {
 	std::string FilePathStr(FilePath.c_str());
@@ -185,7 +254,15 @@ inline bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutM
 		SS >> Type;
 
 		// Material
-		if (Type == "usemtl") Context.ParseUseMtl(SS);
+		if (Type == "mtllib")
+		{
+			std::string MtlFIleName;
+			SS >> MtlFIleName;
+
+			FString FullMtlPath = (FPaths::MeshDir() / MtlFIleName).string().c_str();
+			ParseMtlFile(FullMtlPath);
+		}
+		else if (Type == "usemtl") Context.ParseUseMtl(SS);
 		else if (Type == "f") Context.ParseFace(SS);
 		else if (Type == "v")
 		{
@@ -234,186 +311,6 @@ inline void FObjManager::ClearCache()
 		}
 	}
 	ObjStaticMeshMap.clear();
-}
-
-UStaticMesh* FObjManager::GetPrimitivePlane()
-{
-	FString PlaneKey = "Primitive_Plane";
-
-	auto It = ObjStaticMeshMap.find(PlaneKey);
-	if (It != ObjStaticMeshMap.end())
-	{
-		return It->second;
-	}
-
-	FStaticMesh* RawData = new FStaticMesh();
-	RawData->PathFileName = PlaneKey;
-
-	FVector4 White = { 1.0f, 1.0f, 1.0f, 1.0f };
-	FVector Normal = { 0.0f, 1.0f, 0.0f };
-
-	RawData->Vertices.push_back({ { -5.0f,  5.0f, 0.0f }, White, Normal, {0.0f, 0.0f} });
-	RawData->Vertices.push_back({ {  5.0f,  5.0f, 0.0f }, White, Normal, {1.0f, 0.0f} });
-	RawData->Vertices.push_back({ {  5.0f, -5.0f, 0.0f }, White, Normal, {1.0f, 1.0f} });
-	RawData->Vertices.push_back({ { -5.0f, -5.0f, 0.0f }, White, Normal, {0.0f, 1.0f} });
-
-	RawData->Indices.push_back(0);
-	RawData->Indices.push_back(2);
-	RawData->Indices.push_back(1);
-	RawData->Indices.push_back(0);
-	RawData->Indices.push_back(3);
-	RawData->Indices.push_back(2);
-
-	RawData->Topology = EMeshTopology::EMT_TriangleList;
-
-	FMeshSection DefaultSection;
-	DefaultSection.MaterialIndex = 0;
-	DefaultSection.StartIndex = 0;
-	DefaultSection.IndexCount = static_cast<uint32>(RawData->Indices.size());
-	RawData->Sections.push_back(DefaultSection);
-
-	RawData->UpdateLocalBound();
-
-	UStaticMesh* PlaneAsset = new UStaticMesh();
-	PlaneAsset->SetStaticMeshAsset(RawData);
-
-	PlaneAsset->LocalBounds.Radius = RawData->GetLocalBoundRadius();
-	PlaneAsset->LocalBounds.Center = RawData->GetCenterCoord();
-	PlaneAsset->LocalBounds.BoxExtent = (RawData->GetMaxCoord() - RawData->GetMinCoord()) * 0.5f;
-
-	ObjStaticMeshMap[PlaneKey] = PlaneAsset;
-
-	return PlaneAsset;
-}
-
-UStaticMesh* FObjManager::GetPrimitiveCube()
-{
-	FString CubeKey = "Primitive_Cube";
-
-	auto It = ObjStaticMeshMap.find(CubeKey);
-	if (It != ObjStaticMeshMap.end())
-	{
-		return It->second;
-	}
-
-	FStaticMesh* RawData = new FStaticMesh();
-	RawData->PathFileName = CubeKey;
-
-	FVector4 Red = { 1.0f, 0.3f, 0.3f, 1.0f };
-	FVector4 Green = { 0.3f, 1.0f, 0.3f, 1.0f };
-	FVector4 Blue = { 0.3f, 0.3f, 1.0f, 1.0f };
-	FVector4 Yellow = { 1.0f, 1.0f, 0.3f, 1.0f };
-	FVector4 Cyan = { 0.3f, 1.0f, 1.0f, 1.0f };
-	FVector4 Magenta = { 1.0f, 0.3f, 1.0f, 1.0f };
-
-	RawData->Vertices.push_back({ {  0.5f, -0.5f, -0.5f }, Red, {  1.0f,  0.0f,  0.0f }, {0.0f, 0.0f} });
-	RawData->Vertices.push_back({ {  0.5f,  0.5f, -0.5f }, Red, {  1.0f,  0.0f,  0.0f }, {1.0f, 0.0f} });
-	RawData->Vertices.push_back({ {  0.5f,  0.5f,  0.5f }, Red, {  1.0f,  0.0f,  0.0f }, {1.0f, 1.0f} });
-	RawData->Vertices.push_back({ {  0.5f, -0.5f,  0.5f }, Red, {  1.0f,  0.0f,  0.0f }, {0.0f, 1.0f} });
-
-	// Back face (x = -0.5) — Green
-	RawData->Vertices.push_back({ { -0.5f,  0.5f, -0.5f }, Green, { -1.0f,  0.0f,  0.0f }, {0.0f, 0.0f} });
-	RawData->Vertices.push_back({ { -0.5f, -0.5f, -0.5f }, Green, { -1.0f,  0.0f,  0.0f }, {1.0f, 0.0f} });
-	RawData->Vertices.push_back({ { -0.5f, -0.5f,  0.5f }, Green, { -1.0f,  0.0f,  0.0f }, {1.0f, 1.0f} });
-	RawData->Vertices.push_back({ { -0.5f,  0.5f,  0.5f }, Green, { -1.0f,  0.0f,  0.0f }, {0.0f, 1.0f} });
-
-	// Top face (z = +0.5) — Blue
-	RawData->Vertices.push_back({ { -0.5f, -0.5f,  0.5f }, Blue, {  0.0f,  0.0f,  1.0f }, {0.0f, 0.0f} });
-	RawData->Vertices.push_back({ {  0.5f, -0.5f,  0.5f }, Blue, {  0.0f,  0.0f,  1.0f }, {1.0f, 0.0f} });
-	RawData->Vertices.push_back({ {  0.5f,  0.5f,  0.5f }, Blue, {  0.0f,  0.0f,  1.0f }, {1.0f, 1.0f} });
-	RawData->Vertices.push_back({ { -0.5f,  0.5f,  0.5f }, Blue, {  0.0f,  0.0f,  1.0f }, {0.0f, 1.0f} });
-
-	// Bottom face (z = -0.5) — Yellow
-	RawData->Vertices.push_back({ { -0.5f,  0.5f, -0.5f }, Yellow, {  0.0f,  0.0f, -1.0f }, {0.0f, 0.0f} });
-	RawData->Vertices.push_back({ {  0.5f,  0.5f, -0.5f }, Yellow, {  0.0f,  0.0f, -1.0f }, {1.0f, 0.0f} });
-	RawData->Vertices.push_back({ {  0.5f, -0.5f, -0.5f }, Yellow, {  0.0f,  0.0f, -1.0f }, {1.0f, 1.0f} });
-	RawData->Vertices.push_back({ { -0.5f, -0.5f, -0.5f }, Yellow, {  0.0f,  0.0f, -1.0f }, {0.0f, 1.0f} });
-
-	// Right face (y = +0.5) — Cyan
-	RawData->Vertices.push_back({ {  0.5f,  0.5f, -0.5f }, Cyan, {  0.0f,  1.0f,  0.0f }, {0.0f, 0.0f} });
-	RawData->Vertices.push_back({ { -0.5f,  0.5f, -0.5f }, Cyan, {  0.0f,  1.0f,  0.0f }, {1.0f, 0.0f} });
-	RawData->Vertices.push_back({ { -0.5f,  0.5f,  0.5f }, Cyan, {  0.0f,  1.0f,  0.0f }, {1.0f, 1.0f} });
-	RawData->Vertices.push_back({ {  0.5f,  0.5f,  0.5f }, Cyan, {  0.0f,  1.0f,  0.0f }, {0.0f, 1.0f} });
-
-	// Left face (y = -0.5) — Magenta
-	RawData->Vertices.push_back({ { -0.5f, -0.5f, -0.5f }, Magenta, {  0.0f, -1.0f,  0.0f }, {0.0f, 0.0f} });
-	RawData->Vertices.push_back({ {  0.5f, -0.5f, -0.5f }, Magenta, {  0.0f, -1.0f,  0.0f }, {1.0f, 0.0f} });
-	RawData->Vertices.push_back({ {  0.5f, -0.5f,  0.5f }, Magenta, {  0.0f, -1.0f,  0.0f }, {1.0f, 1.0f} });
-	RawData->Vertices.push_back({ { -0.5f, -0.5f,  0.5f }, Magenta, {  0.0f, -1.0f,  0.0f }, {0.0f, 1.0f} });
-
-	// 36 indices (6 faces * 2 triangles * 3 vertices)
-	for (uint32 i = 0; i < 6; ++i)
-	{
-		uint32 Base = i * 4;
-		RawData->Indices.push_back(Base + 0);
-		RawData->Indices.push_back(Base + 1);
-		RawData->Indices.push_back(Base + 2);
-		RawData->Indices.push_back(Base + 0);
-		RawData->Indices.push_back(Base + 2);
-		RawData->Indices.push_back(Base + 3);
-	}
-
-	RawData->Topology = EMeshTopology::EMT_TriangleList;
-
-	FMeshSection Section0;
-	Section0.MaterialIndex = 0;
-	Section0.StartIndex = 0;
-	Section0.IndexCount = 18;
-	RawData->Sections.push_back(Section0);
-
-	// 1번 섹션: 뒤쪽 18개 인덱스 (면 3개)
-	FMeshSection Section1;
-	Section1.MaterialIndex = 1;
-	Section1.StartIndex = 18;
-	Section1.IndexCount = 18;
-	RawData->Sections.push_back(Section1);
-
-	RawData->UpdateLocalBound();
-
-	UStaticMesh* CubeAsset = new UStaticMesh();
-	CubeAsset->SetStaticMeshAsset(RawData);
-
-	CubeAsset->LocalBounds.Radius = RawData->GetLocalBoundRadius();
-	CubeAsset->LocalBounds.Center = RawData->GetCenterCoord();
-	CubeAsset->LocalBounds.BoxExtent = (RawData->GetMaxCoord() - RawData->GetMinCoord()) * 0.5f;
-
-	// ==========================================================
-	// ⭐ UStaticMesh(원본 에셋)에 2개의 기본 머티리얼을 꽂아줍니다!
-	// ==========================================================
-	// (주의: "M_Default"와 "M_Font"는 엔진에 미리 로드되어 있다고 가정한 이름입니다. 
-	// 실제 로드되어 있는 아무 머티리얼 이름 2개로 바꿔주세요)
-
-	/*auto Mat0 = FMaterialManager::Get().FindByName("M_Default");
-	auto Mat1 = FMaterialManager::Get().FindByName("M_Default"); // 아까 초기화 코드에 있던 다른 머티리얼
-
-	if (!Mat0) UE_LOG("[경고] M_Default 머티리얼을 찾을 수 없습니다! (초기화 순서 의심)");
-	if (!Mat1) UE_LOG("[경고] M_Default_Texture 머티리얼을 찾을 수 없습니다!");
-
-	CubeAsset->AddDefaultMaterial(Mat0);
-	CubeAsset->AddDefaultMaterial(Mat1);*/
-
-	ObjStaticMeshMap[CubeKey] = CubeAsset;
-
-	return CubeAsset;
-
-	/*FMeshSection DefaultSection;
-	DefaultSection.MaterialIndex = 0;
-	DefaultSection.StartIndex = 0;
-	DefaultSection.IndexCount = static_cast<uint32>(RawData->Indices.size());
-	RawData->Sections.push_back(DefaultSection);
-
-	RawData->UpdateLocalBound();
-
-	UStaticMesh* CubeAsset = new UStaticMesh();
-	CubeAsset->SetStaticMeshAsset(RawData);
-
-	CubeAsset->LocalBounds.Radius = RawData->GetLocalBoundRadius();
-	CubeAsset->LocalBounds.Center = RawData->GetCenterCoord();
-	CubeAsset->LocalBounds.BoxExtent = (RawData->GetMaxCoord() - RawData->GetMinCoord()) * 0.5f;
-
-	ObjStaticMeshMap[CubeKey] = CubeAsset;
-
-	return CubeAsset;*/
 }
 
 UStaticMesh* FObjManager::GetPrimitiveSphere()

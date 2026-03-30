@@ -10,11 +10,11 @@ private:
 
 public:
 	static UStaticMesh* LoadObjStaticMeshAsset(const FString& PathFileName);
+	static bool ParseMtlFile(const FString& MtlFIlePath);
+
 	static void ClearCache();
 
 	// 임시용. 추후 .obj파일 파싱으로 변경될 예정.
-	static UStaticMesh* GetPrimitivePlane();
-	static UStaticMesh* GetPrimitiveCube();
 	static UStaticMesh* GetPrimitiveSphere();
 	static UStaticMesh* GetPrimitiveSky();
 
