@@ -40,6 +40,21 @@ void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, F
 	RenderBus.AddGridEntry(std::move(Entry));
 }
 
+void FRenderCollector::CollectOverlayText(const TArray<FScreenTextItem>& Items, float TextScale, FRenderBus& RenderBus)
+{
+	for (const FScreenTextItem& Item : Items)
+	{
+		FFontEntry Entry = {};
+		Entry.Font.Text = Item.Text;
+		Entry.Font.Font = nullptr;
+		Entry.Font.Scale = TextScale;
+		Entry.Font.bScreenSpace = 1;
+		Entry.Font.ScreenPosition = Item.ScreenPosition;
+
+		RenderBus.AddOverlayFontEntry(std::move(Entry));
+	}
+}
+
 void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, FRenderBus& RenderBus)
 {
 	const FShowFlags& ShowFlags = RenderBus.GetShowFlags();

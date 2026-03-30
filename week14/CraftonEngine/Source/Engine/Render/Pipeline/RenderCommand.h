@@ -134,6 +134,13 @@ struct FGridEntry
 	FGridConstants Grid;
 };
 
+// 스크린 공간 텍스트 입력 — Overlay Stats 등에서 사용
+struct FScreenTextItem
+{
+	const FString* Text = nullptr;
+	FVector2 ScreenPosition = FVector2(0.0f, 0.0f);
+};
+
 // ============================================================
 // 타입별 CB 바인딩 디스크립터 — GPU CB에 업로드할 데이터를 인라인 보관
 // ============================================================
