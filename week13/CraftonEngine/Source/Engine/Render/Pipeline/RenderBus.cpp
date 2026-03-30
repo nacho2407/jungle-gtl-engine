@@ -1,4 +1,4 @@
-﻿#include "RenderBus.h"
+#include "RenderBus.h"
 
 void FRenderBus::Clear()
 {
@@ -6,6 +6,12 @@ void FRenderBus::Clear()
 	{
 		PassQueues[i].clear();
 	}
+
+	FontEntries.clear();
+	OverlayFontEntries.clear();
+	SubUVEntries.clear();
+	AABBEntries.clear();
+	GridEntries.clear();
 }
 
 void FRenderBus::AddCommand(ERenderPass Pass, const FRenderCommand& InCommand)
@@ -21,6 +27,31 @@ void FRenderBus::AddCommand(ERenderPass Pass, FRenderCommand&& InCommand)
 const TArray<FRenderCommand>& FRenderBus::GetCommands(ERenderPass Pass) const
 {
 	return PassQueues[(uint32)Pass];
+}
+
+void FRenderBus::AddFontEntry(FFontEntry&& Entry)
+{
+	FontEntries.push_back(std::move(Entry));
+}
+
+void FRenderBus::AddOverlayFontEntry(FFontEntry&& Entry)
+{
+	OverlayFontEntries.push_back(std::move(Entry));
+}
+
+void FRenderBus::AddSubUVEntry(FSubUVEntry&& Entry)
+{
+	SubUVEntries.push_back(std::move(Entry));
+}
+
+void FRenderBus::AddAABBEntry(FAABBEntry&& Entry)
+{
+	AABBEntries.push_back(std::move(Entry));
+}
+
+void FRenderBus::AddGridEntry(FGridEntry&& Entry)
+{
+	GridEntries.push_back(std::move(Entry));
 }
 
 void FRenderBus::SetViewProjection(const FMatrix& InView, const FMatrix& InProj, const FVector& CameraForwardVector, const FVector& CameraRightVector, const FVector& CameraUpVector)
