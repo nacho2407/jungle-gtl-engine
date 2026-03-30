@@ -18,6 +18,35 @@ void FMeshBuffer::Create(ID3D11Device* InDevice, const FMeshData& InMeshData)
 	}
 }
 
+void FMeshBuffer::CreateForStaticMesh(ID3D11Device* InDevice, const TArray<FNormalVertex>& InVertices, const TArray<uint32>& InIndices)
+{
+	if (InVertices.empty() || !InDevice)
+	{
+		return;
+	}
+
+	const uint32 Stride     = sizeof(FNormalVertex);
+	const uint32 ByteWidth  = static_cast<uint32>(Stride * InVertices.size());
+
+	D3D11_BUFFER_DESC Desc  = {};
+	Desc.ByteWidth           = ByteWidth;
+	Desc.Usage               = D3D11_USAGE_IMMUTABLE;
+	Desc.BindFlags           = D3D11_BIND_VERTEX_BUFFER;
+
+	D3D11_SUBRESOURCE_DATA SRD = { InVertices.data() };
+
+	ID3D11Buffer* RawBuffer = nullptr;
+	if (SUCCEEDED(InDevice->CreateBuffer(&Desc, &SRD, &RawBuffer)))
+	{
+		VertexBuffer.SetRaw(RawBuffer, static_cast<uint32>(InVertices.size()), Stride);
+	}
+
+	if (!InIndices.empty())
+	{
+		IndexBuffer.Create(InDevice, InIndices, static_cast<uint32>(sizeof(uint32) * InIndices.size()));
+	}
+}
+
 void FMeshBuffer::Release()
 {
 	VertexBuffer.Release();
@@ -56,6 +85,14 @@ void FVertexBuffer::Create(ID3D11Device* InDevice, const TArray<FVertex> & InDat
 
 	VertexCount = static_cast<uint32>(InData.size());
 	Stride = InStride;
+}
+
+void FVertexBuffer::SetRaw(ID3D11Buffer* InBuffer, uint32 InVertexCount, uint32 InStride)
+{
+	Release();
+	Buffer      = InBuffer;
+	VertexCount = InVertexCount;
+	Stride      = InStride;
 }
 
 void FVertexBuffer::Release()
