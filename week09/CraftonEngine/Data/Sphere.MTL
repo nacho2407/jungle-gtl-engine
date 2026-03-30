@@ -1,0 +1,3 @@
+newmtl BasicShapeMaterial
+Kd 1.0 1.0 1.0
+map_Kd BasicShape.png
