@@ -6,6 +6,7 @@
 #include "Input/InputModifier.h"
 #include "Input/InputMappingContext.h"
 #include "Camera/Camera.h"
+#include "Viewport/ViewportTypes.h"
 FEditorViewportController::~FEditorViewportController()
 {
 	Cleanup();
@@ -28,9 +29,14 @@ void FEditorViewportController::Initialize(UCameraComponent* InCameraComp, FInpu
 	SetupInputBindings();
 }
 
-void FEditorViewportController::Tick(float DeltaTime)
+void FEditorViewportController::SetFrameDeltaTime(float DeltaTime)
 {
 	CurrentDeltaTime = DeltaTime;
+}
+
+void FEditorViewportController::SetActiveLocalState(FViewportLocalState* InLocalState)
+{
+	ActiveLocalState = InLocalState;
 }
 
 
@@ -61,40 +67,41 @@ void FEditorViewportController::SetupInputBindings()
 	Q.Modifiers.push_back(new FModifierNegative());
 
 
-	CameraContext->AddMapping(&LookXAction, static_cast<int32>(EInputKey::MouseX));
-	CameraContext->AddMapping(&LookYAction, static_cast<int32>(EInputKey::MouseY));
-
 	EnhancedInput->AddMappingContext(CameraContext, 0);
 
 
 	EnhancedInput->BindAction(&MoveForwardAction, ETriggerEvent::Triggered,
 		[this](const FInputActionValue& Value) {
+		if (!ActiveLocalState) return;
 		if (InputManager && InputManager->IsMouseButtonDown(FInputManager::MOUSE_RIGHT))
-			CameraComponent->MoveForward(Value.Get() * CurrentDeltaTime);
+		{
+			const float Speed = CameraComponent ? CameraComponent->GetCamera()->GetSpeed() : 5.0f;
+			const FVector Forward = ActiveLocalState->Rotation.Vector().GetSafeNormal();
+			ActiveLocalState->Position += Forward * (Value.Get() * Speed * CurrentDeltaTime);
+		}
 	});
 
 	EnhancedInput->BindAction(&MoveRightAction, ETriggerEvent::Triggered,
 		[this](const FInputActionValue& Value) {
+		if (!ActiveLocalState) return;
 		if (InputManager && InputManager->IsMouseButtonDown(FInputManager::MOUSE_RIGHT))
-			CameraComponent->MoveRight(Value.Get() * CurrentDeltaTime);
+		{
+			const float Speed = CameraComponent ? CameraComponent->GetCamera()->GetSpeed() : 5.0f;
+			const FVector Forward = ActiveLocalState->Rotation.Vector().GetSafeNormal();
+			const FVector Right = FVector::CrossProduct(FVector(0.f, 0.f, 1.f), Forward).GetSafeNormal();
+			ActiveLocalState->Position += Right * (Value.Get() * Speed * CurrentDeltaTime);
+		}
 	});
 
 	EnhancedInput->BindAction(&MoveUpAction, ETriggerEvent::Triggered,
 		[this](const FInputActionValue& Value) {
+		if (!ActiveLocalState) return;
 		if (InputManager && InputManager->IsMouseButtonDown(FInputManager::MOUSE_RIGHT))
-			CameraComponent->MoveUp(Value.Get() * CurrentDeltaTime);
+		{
+			const float Speed = CameraComponent ? CameraComponent->GetCamera()->GetSpeed() : 5.0f;
+			ActiveLocalState->Position += FVector(0.f, 0.f, 1.f) * (Value.Get() * Speed * CurrentDeltaTime);
+		}
 	});
 
-	EnhancedInput->BindAction(&LookXAction, ETriggerEvent::Triggered,
-		[this](const FInputActionValue& Value) {
-		if (InputManager && InputManager->IsMouseButtonDown(FInputManager::MOUSE_RIGHT))
-			CameraComponent->Rotate(Value.Get() * CameraComponent->GetCamera()->GetMouseSensitivity(), 0.0f);
-	});
-
-	EnhancedInput->BindAction(&LookYAction, ETriggerEvent::Triggered,
-		[this](const FInputActionValue& Value) {
-		if (InputManager && InputManager->IsMouseButtonDown(FInputManager::MOUSE_RIGHT))
-			CameraComponent->Rotate(0.0f, -Value.Get() * CameraComponent->GetCamera()->GetMouseSensitivity());
-	});
 
 }

@@ -70,10 +70,12 @@ protected:
 	virtual bool InitializeWorlds(int32 Width, int32 Height);
 	virtual bool InitializeMode() { return true; }
 	virtual void FinalizeInitialize() {}
-	virtual void Tick(float DeltaTime) {}
+	virtual void PrepareFrame(float DeltaTime);
 	virtual void TickWorlds(float DeltaTime) = 0;
 	virtual bool WantsPhysicsDebugVisualization() const { return false; }
 	virtual std::unique_ptr<IViewportClient> CreateViewportClient() = 0;
+	virtual void RenderFrame();
+	virtual void SyncPlatformState();
 	FWorldContext* FindWorldContext(EWorldType WorldType);
 	const FWorldContext* FindWorldContext(EWorldType WorldType) const;
 	FWorldContext* CreateWorldContext(const FString& ContextName, EWorldType WorldType, float AspectRatio, bool bDefaultScene);
@@ -89,10 +91,9 @@ private:
 	bool InitializePrimaryViewport();
 	void ReleaseRuntime();
 	void BeginFrame();
-	void TickInput(float DeltaTime);
+	void ProcessInput(float DeltaTime);
 	void TickPhysics(float DeltaTime);
-	void RenderFrame();
-	void RunLateUpdate(float DeltaTime);
+	void FinalizeFrame(float DeltaTime);
 	void RegisterConsoleVariables();
 
 private:

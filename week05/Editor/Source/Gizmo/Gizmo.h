@@ -6,9 +6,7 @@
 #include <memory>
 
 class AActor;
-class FCamera;
 class FPicker;
-class UScene;
 class USceneComponent;
 struct FRotationGizmoDesc;
 struct FDynamicMesh;
@@ -16,6 +14,7 @@ class FMaterial;
 class FMaterialManager;
 struct FRenderCommandQueue;
 struct FRay;
+struct FViewportEntry;
 
 enum class EGizmoMode : uint8
 {
@@ -54,10 +53,10 @@ public:
 	EGizmoCoordinateSpace GetCoordinateSpace() const { return CoordinateSpace; }
 	void ToggleCoordinateSpace();
 
-	void BuildRenderCommands(AActor* SelectedActor, const FCamera* Camera, FRenderCommandQueue& OutQueue) const;
-	bool BeginDrag(AActor* SelectedActor, UScene* Scene, const FPicker& Picker, int32 ScreenX, int32 ScreenY, int32 ScreenWidth, int32 ScreenHeight);
-	bool UpdateDrag(AActor* SelectedActor, UScene* Scene, const FPicker& Picker, int32 ScreenX, int32 ScreenY, int32 ScreenWidth, int32 ScreenHeight);
-	void UpdateHover(AActor* SelectedActor, UScene* Scene, const FPicker& Picker, int32 ScreenX, int32 ScreenY, int32 ScreenWidth, int32 ScreenHeight);
+	void BuildRenderCommands(AActor* SelectedActor, const FViewportEntry* Entry, FRenderCommandQueue& OutQueue) const;
+	bool BeginDrag(AActor* SelectedActor, const FViewportEntry* Entry, const FPicker& Picker, int32 ScreenX, int32 ScreenY);
+	bool UpdateDrag(AActor* SelectedActor, const FViewportEntry* Entry, const FPicker& Picker, int32 ScreenX, int32 ScreenY);
+	void UpdateHover(AActor* SelectedActor, const FViewportEntry* Entry, const FPicker& Picker, int32 ScreenX, int32 ScreenY);
 	void ClearHover();
 	void EndDrag();
 
@@ -65,15 +64,15 @@ public:
 
 private:
 	bool EnsureTranslationMeshes() const;
-	bool EnsureRotationMeshes(const FCamera* Camera, const FVector& GizmoWorldLocation) const;
+	bool EnsureRotationMeshes(const FViewportEntry* Entry, const FVector& GizmoWorldLocation) const;
 	bool EnsureScaleMeshes() const;
-	EGizmoAxis HitTestAxis(AActor* SelectedActor, UScene* Scene, const FPicker& Picker, int32 ScreenX, int32 ScreenY, int32 ScreenWidth, int32 ScreenHeight) const;
-	bool BeginAxisDrag(EGizmoAxis Axis, AActor* SelectedActor, UScene* Scene, const FPicker& Picker, int32 ScreenX, int32 ScreenY, int32 ScreenWidth, int32 ScreenHeight);
-	bool BeginTranslationDrag(EGizmoAxis Axis, AActor* SelectedActor, UScene* Scene, const FPicker& Picker, int32 ScreenX, int32 ScreenY, int32 ScreenWidth, int32 ScreenHeight);
-	bool BeginRotationDrag(EGizmoAxis Axis, AActor* SelectedActor, UScene* Scene, const FPicker& Picker, int32 ScreenX, int32 ScreenY, int32 ScreenWidth, int32 ScreenHeight);
-	bool BeginScaleDrag(EGizmoAxis Axis, AActor* SelectedActor, UScene* Scene, const FPicker& Picker, int32 ScreenX, int32 ScreenY, int32 ScreenWidth, int32 ScreenHeight);
+	EGizmoAxis HitTestAxis(AActor* SelectedActor, const FViewportEntry* Entry, const FPicker& Picker, int32 ScreenX, int32 ScreenY) const;
+	bool BeginAxisDrag(EGizmoAxis Axis, AActor* SelectedActor, const FViewportEntry* Entry, const FPicker& Picker, int32 ScreenX, int32 ScreenY);
+	bool BeginTranslationDrag(EGizmoAxis Axis, AActor* SelectedActor, const FViewportEntry* Entry, const FPicker& Picker, int32 ScreenX, int32 ScreenY);
+	bool BeginRotationDrag(EGizmoAxis Axis, AActor* SelectedActor, const FViewportEntry* Entry, const FPicker& Picker, int32 ScreenX, int32 ScreenY);
+	bool BeginScaleDrag(EGizmoAxis Axis, AActor* SelectedActor, const FViewportEntry* Entry, const FPicker& Picker, int32 ScreenX, int32 ScreenY);
 	EGizmoAxis GetDisplayAxis() const;
-	FRotationGizmoDesc BuildRotationDesc(const FCamera* Camera, const FVector& GizmoWorldLocation) const;
+	FRotationGizmoDesc BuildRotationDesc(const FViewportEntry* Entry, const FVector& GizmoWorldLocation) const;
 	FQuat GetGizmoRotation(const AActor* Actor) const;
 	FVector GetGizmoAxisVector(EGizmoAxis Axis, const AActor* Actor) const;
 	FVector GetGizmoPlaneNormal(EGizmoAxis Axis, const AActor* Actor) const;
@@ -90,7 +89,7 @@ private:
 	static bool RayTriangleIntersectTwoSided(const FRay& Ray, const FVector& V0, const FVector& V1, const FVector& V2, float& OutDistance);
 	static bool IntersectPlane(const FRay& Ray, const FVector& PlaneOrigin, const FVector& PlaneNormal, FVector& OutIntersection);
 
-	float ComputeGizmoScale(const FVector& WorldPosition, const FCamera* Camera) const;
+	float ComputeGizmoScale(const FVector& WorldPosition, const FViewportEntry* Entry) const;
 	float GetRenderGizmoScale(float BaseGizmoScale) const;
 
 private:

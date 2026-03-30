@@ -9,10 +9,10 @@ class FPreviewViewportClient : public IViewportClient
 {
 public:
 	FPreviewViewportClient(FEditorUI& InEditorUI, FString InPreviewContextName);
-
 	void Attach(FEngine* Engine, FRenderer* Renderer) override;
 	void Detach(FEngine* Engine, FRenderer* Renderer) override;
 	void Tick(FEngine* Engine, float DeltaTime) override;
+	void Render(FEngine* Engine, FRenderer* Renderer) override;
 	UScene* ResolveScene(FEngine* Engine) const override;
 
 private:

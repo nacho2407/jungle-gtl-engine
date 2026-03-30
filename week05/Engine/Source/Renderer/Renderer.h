@@ -51,6 +51,11 @@ public:
 	void SetSceneRenderTarget(ID3D11RenderTargetView* InRenderTargetView, ID3D11DepthStencilView* InDepthStencilView, const D3D11_VIEWPORT& InViewport);
 	void ClearSceneRenderTarget();
 
+	/** 멀티뷰포트 씬 패스 */
+	void BeginScenePass(ID3D11RenderTargetView* InRTV, ID3D11DepthStencilView* InDSV, const D3D11_VIEWPORT& InVP);
+	void EndScenePass();
+	void BindSwapChainRTV();
+
 	void SetVSync(bool bEnable) { bVSyncEnabled = bEnable; }
 	bool IsVSyncEnabled() const { return bVSyncEnabled; }
 

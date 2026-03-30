@@ -1,11 +1,9 @@
 #pragma once
 
-#include "Math/Vector.h"
-#include "Math/Matrix.h"
+#include "Viewport/ViewportTypes.h"
 
 class AActor;
 class UScene;
-class FCamera;
 
 struct FRay
 {
@@ -16,8 +14,7 @@ struct FRay
 class FPicker
 {
 public:
-    // 스크린 좌표 → 월드 레이 변환 (Deprojection)
-    FRay ScreenToRay(const FCamera* Camera, int32 ScreenX, int32 ScreenY, int32 ScreenWidth, int32 ScreenHeight) const;
+	FRay ScreenToRay(const FViewportEntry& Entry, int32 ScreenX, int32 ScreenY) const;
 
     // Möller–Trumbore 알고리즘: 레이-삼각형 교차 검사
     bool RayTriangleIntersect(const FRay& Ray,
@@ -25,6 +22,5 @@ public:
                               float& OutDistance) const;
 
     // 씬의 모든 Actor를 대상으로 피킹 (가장 가까운 Actor 반환)
-    AActor* PickActor(UScene* Scene, int32 ScreenX, int32 ScreenY,
-                      int32 ScreenWidth, int32 ScreenHeight) const;
+    AActor* PickActor(UScene* Scene, const FViewportEntry* Entry, int32 ScreenX, int32 ScreenY) const;
 };

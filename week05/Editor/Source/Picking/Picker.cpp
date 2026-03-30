@@ -10,34 +10,65 @@
 #include "Component/StaticMeshComponent.h"
 #include "Renderer/MeshData.h"
 #include <limits>
-
 #include "Component/SkyComponent.h"
+#include "Viewport/Viewport.h"
 
-FRay FPicker::ScreenToRay(const FCamera* Camera, int32 ScreenX, int32 ScreenY, int32 ScreenWidth, int32 ScreenHeight) const
+FRay FPicker::ScreenToRay(const FViewportEntry& Entry, int32 ScreenX, int32 ScreenY) const
 {
-	if (!Camera || ScreenWidth <= 0 || ScreenHeight <= 0)
+	if (!Entry.Viewport)
 	{
 		return { FVector::ZeroVector, FVector::ForwardVector };
 	}
 
-	const FMatrix ViewMatrix = Camera->GetViewMatrix();
-	const FMatrix ProjMatrix = Camera->GetProjectionMatrix();
+	const auto& Rect = Entry.Viewport->GetRect();
+	if (Rect.Width <= 0 || Rect.Height <= 0)
+	{
+		return { FVector::ZeroVector, FVector::ForwardVector };
+	}
+
+	const float AspectRatio = static_cast<float>(Rect.Width) / static_cast<float>(Rect.Height);
+
+	const FMatrix ViewMatrix = Entry.LocalState.BuildViewMatrix();
+	const FMatrix ProjMatrix = Entry.LocalState.BuildProjMatrix(AspectRatio);
 	const FMatrix ViewInverse = ViewMatrix.GetInverse();
 	//Ndc convert missing center pixel lerp (0.5) Half-pixel offset added
-	const float NdcX = (2.0f * (ScreenX+0.5f) / ScreenWidth) - 1.0f;
-	const float NdcY = 1.0f - (2.0f * (ScreenY+0.5f) / ScreenHeight);
+	const float NdcX = (2.0f * (ScreenX + 0.5f) / Rect.Width) - 1.0f;
+	const float NdcY = 1.0f - (2.0f * (ScreenY + 0.5f) / Rect.Height);
 
-	if (Camera->IsOrthographic())
+	if (Entry.LocalState.ProjectionType != EViewportType::Perspective)
 	{
-		const float ViewRight = NdcX * (Camera->GetOrthoWidth() * 0.5f);
-		const float ViewUp = NdcY * (Camera->GetOrthoHeight() * 0.5f);
+		const float ViewHeight = Entry.LocalState.OrthoZoom * 2.0f;
+		const float ViewWidth = ViewHeight * AspectRatio;
+
+		const float ViewRight = NdcX * (ViewWidth * 0.5f);
+		const float ViewUp = NdcY * (ViewHeight * 0.5f);
 
 		FVector RayOrigin;
 		RayOrigin.X = ViewRight * ViewInverse.M[1][0] + ViewUp * ViewInverse.M[2][0] + ViewInverse.M[3][0];
 		RayOrigin.Y = ViewRight * ViewInverse.M[1][1] + ViewUp * ViewInverse.M[2][1] + ViewInverse.M[3][1];
 		RayOrigin.Z = ViewRight * ViewInverse.M[1][2] + ViewUp * ViewInverse.M[2][2] + ViewInverse.M[3][2];
 
-		return { RayOrigin, Camera->GetForward() };
+		FVector Forward = FVector::ForwardVector;
+
+		switch (Entry.LocalState.ProjectionType)
+		{
+		case EViewportType::OrthoTop:
+			Forward = FVector::DownVector;
+			break;
+
+		case EViewportType::OrthoFront:
+			Forward = FVector::BackwardVector;
+			break;
+
+		case EViewportType::OrthoRight:
+			Forward = FVector::LeftVector;
+			break;
+
+		default:
+			break;
+		}
+
+		return { RayOrigin, Forward };
 	}
 
 	const float ViewForward = 1.0f;
@@ -101,16 +132,14 @@ bool FPicker::RayTriangleIntersect(const FRay& Ray,
 	return false;
 }
 
-AActor* FPicker::PickActor(UScene* Scene, int32 ScreenX, int32 ScreenY,
-	int32 ScreenWidth, int32 ScreenHeight) const
+AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 ScreenX, int32 ScreenY) const
 {
-	if (!Scene || !Scene->GetCamera())
+	if (!Entry)
 	{
 		return nullptr;
 	}
-
-	FCamera* Camera = Scene->GetCamera();
-	const FRay Ray = ScreenToRay(Camera, ScreenX, ScreenY, ScreenWidth, ScreenHeight);
+	
+	const FRay Ray = ScreenToRay(*Entry, ScreenX, ScreenY);
 
 	AActor* ClosestActor = nullptr;
 	float ClosestDistance = (std::numeric_limits<float>::max)();

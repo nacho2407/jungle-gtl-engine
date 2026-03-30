@@ -16,7 +16,7 @@ public:
 
 	bool Initialize(UWorld* ActiveWorld, FInputManager* InInputManager, FEnhancedInputManager* InEnhancedInputManager);
 	void Shutdown();
-	void Tick(UWorld* ActiveWorld, UScene* ActiveScene, float DeltaTime);
+	void PrepareFrame(UWorld* ActiveWorld, UScene* ActiveScene, float DeltaTime);
 
 	FEditorViewportController* GetViewportController();
 

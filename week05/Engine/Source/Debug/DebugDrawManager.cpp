@@ -23,7 +23,7 @@ void FDebugDrawManager::DrawWorldAxis(float Length)
 	bDrawWorldAxis = true;
 }
 
-void FDebugDrawManager::Flush(FRenderer* Renderer, const FShowFlags& ShowFlags, UWorld* World)
+void FDebugDrawManager::Flush(FRenderer* Renderer, const FShowFlags& ShowFlags, UWorld* World, bool bClearAfterFlush)
 {
 
 	if (!Renderer) return;
@@ -31,7 +31,10 @@ void FDebugDrawManager::Flush(FRenderer* Renderer, const FShowFlags& ShowFlags, 
 	// 디버그 드로우 전체 꺼져있으면 스킵
 	if (!ShowFlags.HasFlag(EEngineShowFlags::SF_DebugDraw))
 	{
-		Clear();
+		if (bClearAfterFlush)
+		{
+			Clear();
+		}
 		return;
 	}
 
@@ -60,7 +63,10 @@ void FDebugDrawManager::Flush(FRenderer* Renderer, const FShowFlags& ShowFlags, 
 	}
 
 	Renderer->ExecuteLineCommands();
-	Clear();
+	if (bClearAfterFlush)
+	{
+		Clear();
+	}
 }
 
 void FDebugDrawManager::Clear()

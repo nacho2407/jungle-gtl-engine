@@ -137,63 +137,53 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 			}
 		}
 		*/
-		
+
+		FSlateApplication* Slate = Engine->GetSlateApplication();
+		FViewportId FocusedId = Slate ? Slate->GetFocusedViewportId() : INVALID_VIEWPORT_ID;
+		FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
+		FViewportEntry* Entry = ViewportRegistry.FindEntryByViewportID(FocusedId);
+		if (!Entry && !ViewportRegistry.GetEntries().empty())
+			Entry = &ViewportRegistry.GetEntries().front();
+
+		// Speed/Sensitivity는 FCamera에서 읽기 (렌더 무관 설정값)
 		if (FCamera* Camera = Engine->GetScene()->GetCamera())
 		{
-		
 			float Sensitivity = Camera->GetMouseSensitivity();
 			if (ImGui::SliderFloat("Mouse Sensitivity", &Sensitivity, 0.01f, 1.0f))
-			{
 				Camera->SetMouseSensitivity(Sensitivity);
-			}
 
 			float Speed = Camera->GetSpeed();
 			if (ImGui::SliderFloat("Move Speed", &Speed, 0.1f, 20.0f))
-			{
 				Camera->SetSpeed(Speed);
-			}
-			const FVector CameraPosition = Camera->GetPosition();
-			float Position[3] = { CameraPosition.X, CameraPosition.Y, CameraPosition.Z };
+		}
+		if (Entry)
+		{
+			float Position[3] = { Entry->LocalState.Position.X, Entry->LocalState.Position.Y, Entry->LocalState.Position.Z };
 			if (ImGui::DragFloat3("Position", Position, 0.1f))
-			{
-				Camera->SetPosition({ Position[0], Position[1], Position[2] });
-			}
+				Entry->LocalState.Position = { Position[0], Position[1], Position[2] };
 
-			float CameraYaw = Camera->GetYaw();
-			float CameraPitch = Camera->GetPitch();
-			bool bRotationChanged = false;
-			bRotationChanged |= ImGui::DragFloat("Yaw", &CameraYaw, 0.5f);
-			bRotationChanged |= ImGui::DragFloat("Pitch", &CameraPitch, 0.5f, -89.0f, 89.0f);
-			if (bRotationChanged)
+			if (Entry->LocalState.ProjectionType == EViewportType::Perspective)
 			{
-				Camera->SetRotation(CameraYaw, CameraPitch);
-			}
-
-			int ProjectionModeIndex = (Camera->GetProjectionMode() == ECameraProjectionMode::Orthographic) ? 1 : 0;
-			const char* ProjectionModes[] = { "Perspective", "Orthographic" };
-			if (ImGui::Combo("Projection", &ProjectionModeIndex, ProjectionModes, IM_ARRAYSIZE(ProjectionModes)))
-			{
-				Camera->SetProjectionMode(
-					ProjectionModeIndex == 0
-					? ECameraProjectionMode::Perspective
-					: ECameraProjectionMode::Orthographic);
-			}
-
-			if (Camera->IsOrthographic())
-			{
-				float OrthoWidth = Camera->GetOrthoWidth();
-				if (ImGui::DragFloat("Ortho Width", &OrthoWidth, 0.5f, 1.0f, 1000.0f))
+				float Yaw = Entry->LocalState.Rotation.Yaw;
+				float Pitch = Entry->LocalState.Rotation.Pitch;
+				bool bRotationChanged = false;
+				bRotationChanged |= ImGui::DragFloat("Yaw", &Yaw, 0.5f);
+				bRotationChanged |= ImGui::DragFloat("Pitch", &Pitch, 0.5f, -89.0f, 89.0f);
+				if (bRotationChanged)
 				{
-					Camera->SetOrthoWidth(OrthoWidth);
+					Entry->LocalState.Rotation.Yaw = Yaw;
+					Entry->LocalState.Rotation.Pitch = Pitch;
 				}
+
+				float FovY = Entry->LocalState.FovY;
+				if (ImGui::SliderFloat("FOV", &FovY, 10.0f, 120.0f))
+					Entry->LocalState.FovY = FovY;
 			}
 			else
 			{
-				float CameraFOV = Camera->GetFOV();
-				if (ImGui::SliderFloat("FOV", &CameraFOV, 10.0f, 120.0f))
-				{
-					Camera->SetFOV(CameraFOV);
-				}
+				float OrthoZoom = Entry->LocalState.OrthoZoom;
+				if (ImGui::DragFloat("Ortho Zoom", &OrthoZoom, 1.0f, 1.0f, 10000.0f))
+					Entry->LocalState.OrthoZoom = OrthoZoom;
 			}
 		}
 

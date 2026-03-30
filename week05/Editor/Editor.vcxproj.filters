@@ -72,22 +72,19 @@
     <ClCompile Include="Source\UI\EditorUI.cpp">
       <Filter>Source\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\UI\EditorViewportClient.cpp">
+    <ClCompile Include="Source\Viewport\EditorViewportClient.cpp">
       <Filter>Source\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\UI\OutlinerWindow.cpp">
       <Filter>Source\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\UI\PreviewViewportClient.cpp">
+    <ClCompile Include="Source\Viewport\PreviewViewportClient.cpp">
       <Filter>Source\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\UI\PropertyWindow.cpp">
       <Filter>Source\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\UI\StatWindow.cpp">
-      <Filter>Source\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\UI\Viewport.cpp">
       <Filter>Source\UI</Filter>
     </ClCompile>
     <ClCompile Include="ThirdParty\imgui\imgui.cpp">
@@ -112,6 +109,23 @@
       <Filter>ThirdParty\imgui</Filter>
     </ClCompile>
     <ClCompile Include="EditorGlobals.cpp" />
+    <ClCompile Include="Source\Viewport\Viewport.cpp" />
+    <ClCompile Include="Source\Viewport\ViewportTypes.cpp" />
+    <ClCompile Include="Source\Viewport\BlitRenderer.cpp" />
+    <ClCompile Include="Source\Slate\SlateApplication.cpp" />
+    <ClCompile Include="Source\Slate\SViewport.cpp" />
+    <ClCompile Include="Source\Slate\SplitterV.cpp" />
+    <ClCompile Include="Source\Slate\SplitterH.cpp" />
+    <ClCompile Include="Source\Viewport\Services\EditorViewportAssetInteractionService.cpp" />
+    <ClCompile Include="Source\Viewport\Services\EditorViewportInputService.cpp" />
+    <ClCompile Include="Source\Viewport\Services\EditorViewportRenderService.cpp" />
+    <ClCompile Include="Source\Viewport\EditorViewportRegistry.cpp" />
+    <ClCompile Include="Source\Slate\Widget.cpp" />
+    <ClCompile Include="Source\Slate\Painter.cpp" />
+    <ClCompile Include="Source\Slate\VerticalBox.cpp" />
+    <ClCompile Include="Source\Slate\HorizontalBox.cpp" />
+    <ClCompile Include="Source\Slate\TextBlock.cpp" />
+    <ClCompile Include="Source\Slate\Overlay.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\EditorEngine.h">
@@ -150,22 +164,19 @@
     <ClInclude Include="Source\UI\EditorUI.h">
       <Filter>Source\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\UI\EditorViewportClient.h">
+    <ClInclude Include="Source\Viewport\EditorViewportClient.h">
       <Filter>Source\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\UI\OutlinerWindow.h">
       <Filter>Source\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\UI\PreviewViewportClient.h">
+    <ClInclude Include="Source\Viewport\PreviewViewportClient.h">
       <Filter>Source\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\UI\PropertyWindow.h">
       <Filter>Source\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\UI\StatWindow.h">
-      <Filter>Source\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\UI\Viewport.h">
       <Filter>Source\UI</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\imgui\imconfig.h">
@@ -193,6 +204,28 @@
       <Filter>ThirdParty\imgui</Filter>
     </ClInclude>
     <ClInclude Include="EditorGlobals.h" />
+    <ClInclude Include="Source\Viewport\Viewport.h" />
+    <ClInclude Include="Source\Viewport\ViewportTypes.h" />
+    <ClInclude Include="Source\Viewport\BlitRenderer.h" />
+    <ClInclude Include="Source\Slate\SlateApplication.h" />
+    <ClInclude Include="Source\Slate\Splitter.h" />
+    <ClInclude Include="Source\Slate\SViewport.h" />
+    <ClInclude Include="Source\Slate\Window.h" />
+    <ClInclude Include="Source\Slate\SplitterH.h" />
+    <ClInclude Include="Source\Slate\SplitterV.h" />
+    <ClInclude Include="Source\Viewport\Services\EditorViewportAssetInteractionService.h" />
+    <ClInclude Include="Source\Viewport\Services\EditorViewportInputService.h" />
+    <ClInclude Include="Source\Viewport\Services\EditorViewportRenderService.h" />
+    <ClInclude Include="Source\Viewport\EditorViewportRegistry.h" />
+    <ClInclude Include="Source\Slate\Widget.h" />
+    <ClInclude Include="Source\Slate\Painter.h" />
+    <ClInclude Include="Source\Slate\TextBlock.h" />
+    <ClInclude Include="Source\Slate\Image.h" />
+    <ClInclude Include="Source\Slate\Slot.h" />
+    <ClInclude Include="Source\Slate\VerticalBox.h" />
+    <ClInclude Include="Source\Slate\Panel.h" />
+    <ClInclude Include="Source\Slate\HorizontalBox.h" />
+    <ClInclude Include="Source\Slate\Overlay.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\imgui\imgui.natstepfilter">

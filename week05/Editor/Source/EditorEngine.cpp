@@ -13,9 +13,11 @@
 #include "Object/ObjectFactory.h"
 #include "Platform/Windows/WindowsWindow.h"
 #include "Scene/Scene.h"
-#include "UI/EditorViewportClient.h"
-#include "UI/PreviewViewportClient.h"
+#include "Viewport/Viewport.h"
+#include "Viewport/EditorViewportClient.h"
+#include "Viewport/PreviewViewportClient.h"
 #include "World/World.h"
+#include "Slate/TextBlock.h"
 
 namespace
 {
@@ -69,6 +71,7 @@ FEditorEngine::~FEditorEngine() = default;
 void FEditorEngine::Shutdown()
 {
 	FEngineLog::Get().SetCallback({});
+	EditorUI.SaveEditorSettings();
 
 	if (GetViewportClient() == PreviewViewportClient.get())
 	{
@@ -201,6 +204,7 @@ void FEditorEngine::PreInitialize()
 void FEditorEngine::BindHost(FWindowsWindow* InMainWindow)
 {
 	// 실제 UI/뷰포트 생성은 뒤 단계에서 하고, 여기서는 창 참조만 저장한다.
+	MainWindow = InMainWindow;
 	EditorUI.SetupWindow(InMainWindow);
 }
 
@@ -232,12 +236,24 @@ void FEditorEngine::FinalizeInitialize()
 {
 	// 모드 전용 초기화가 모두 끝난 뒤 마지막 상태를 기록한다.
 	UE_LOG("EditorEngine initialized");
+	const int32 W = MainWindow ? MainWindow->GetWidth() : 800;
+	const int32 H = MainWindow ? MainWindow->GetHeight() : 600;
+
+	TArray<FViewport>& Viewports = ViewportRegistry.GetViewports();
+	FViewport* VPs[MAX_VIEWPORTS] = {
+		&Viewports[0], &Viewports[1], &Viewports[2], &Viewports[3]
+	};
+	SlateApplication = std::make_unique<FSlateApplication>();
+	SlateApplication->Initialize(FRect(0, 0, W, H), VPs, MAX_VIEWPORTS);
+	EditorUI.OnSlateReady();
+	CreateInitUI();
 }
 
-void FEditorEngine::Tick(float DeltaTime)
+void FEditorEngine::PrepareFrame(float DeltaTime)
 {
-	CameraSubsystem.Tick(GetActiveWorld(), GetScene(), DeltaTime);
 	SyncViewportClient();
+	SyncFocusedViewportLocalState();
+	CameraSubsystem.PrepareFrame(GetActiveWorld(), GetScene(), DeltaTime);
 }
 
 void FEditorEngine::TickWorlds(float DeltaTime)
@@ -250,12 +266,69 @@ void FEditorEngine::TickWorlds(float DeltaTime)
 
 std::unique_ptr<IViewportClient> FEditorEngine::CreateViewportClient()
 {
-	return std::make_unique<FEditorViewportClient>(EditorUI);
+	auto Client = std::make_unique<FEditorViewportClient>(*this, EditorUI, ViewportRegistry, MainWindow);
+	EditorViewportClientRaw = Client.get();
+	return Client;
+}
+
+void FEditorEngine::RenderFrame()
+{
+	FRenderer* Renderer = GetRenderer();
+	if (!Renderer || Renderer->IsOccluded())
+	{
+		return;
+	}
+
+	Renderer->BeginFrame();
+
+	if (EditorViewportClientRaw)
+	{
+		EditorViewportClientRaw->Render(this, Renderer);
+	}
+
+	Renderer->EndFrame();
+}
+
+void FEditorEngine::SyncPlatformState()
+{
+	SyncPlatformCursor();
 }
 
 FEditorViewportController* FEditorEngine::GetViewportController()
 {
 	return CameraSubsystem.GetViewportController();
+}
+
+void FEditorEngine::FlushDebugDrawForViewport(FRenderer* Renderer, const FShowFlags& ShowFlags, bool bClearAfterFlush)
+{
+	if (!Renderer)
+	{
+		return;
+	}
+
+	if (UWorld* ActiveWorld = GetActiveWorld())
+	{
+		GetDebugDrawManager().Flush(Renderer, ShowFlags, ActiveWorld, bClearAfterFlush);
+	}
+	else if (bClearAfterFlush)
+	{
+		GetDebugDrawManager().Clear();
+	}
+}
+
+void FEditorEngine::ClearDebugDrawForFrame()
+{
+	GetDebugDrawManager().Clear();
+}
+
+void FEditorEngine::CreateInitUI()
+{
+	std::unique_ptr<STextBlock> Label = std::make_unique<STextBlock>();
+	Label->Text = "한글 테스트";
+	Label->Color = 0xFFFFFFFF;
+	Label->Rect = { 800, 100, 0, 0 };
+	SWidget* Raw = SlateApplication->CreateWidget(std::move(Label));
+	SlateApplication->AddOverlayWidget(Raw);
 }
 
 bool FEditorEngine::InitEditorPreview()
@@ -300,6 +373,13 @@ void FEditorEngine::InitEditorViewportRouting()
 {
 	// 초기 활성 월드가 Editor/Preview 중 무엇인지에 따라 적절한 뷰포트를 고른다.
 	SyncViewportClient();
+
+	// Perspective Entry의 LocalState를 입력 컨트롤러에 연결
+	FViewportEntry* PerspEntry = ViewportRegistry.FindEntryByType(EViewportType::Perspective);
+	if (PerspEntry)
+	{
+		CameraSubsystem.GetViewportController()->SetActiveLocalState(&PerspEntry->LocalState);
+	}
 }
 
 bool FEditorEngine::InitEditorWorlds(int32 Width, int32 Height)
@@ -368,6 +448,48 @@ void FEditorEngine::UpdateEditorWorldAspectRatio(float AspectRatio)
 	}
 }
 
+void FEditorEngine::SyncFocusedViewportLocalState()
+{
+	if (!EditorViewportClientRaw || !SlateApplication)
+	{
+		return;
+	}
+
+	FViewportId FocusedId = SlateApplication->GetFocusedViewportId();
+	FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(FocusedId);
+	FViewportLocalState* LocalState = nullptr;
+	if (FocusedEntry && FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
+	{
+		LocalState = &FocusedEntry->LocalState;
+	}
+
+	CameraSubsystem.GetViewportController()->SetActiveLocalState(LocalState);
+}
+
+void FEditorEngine::SyncPlatformCursor()
+{
+	if (!SlateApplication)
+	{
+		return;
+	}
+
+	const EMouseCursor SlateCursor = SlateApplication->GetCurrentCursor();
+	LPCWSTR WinCursorName = IDC_ARROW;
+	switch (SlateCursor)
+	{
+	case EMouseCursor::Default:         WinCursorName = IDC_ARROW;  break;
+	case EMouseCursor::ResizeLeftRight: WinCursorName = IDC_SIZEWE; break;
+	case EMouseCursor::ResizeUpDown:    WinCursorName = IDC_SIZENS; break;
+	case EMouseCursor::Hand:            WinCursorName = IDC_HAND;   break;
+	case EMouseCursor::None:            WinCursorName = nullptr;    break;
+	}
+
+	if (WinCursorName)
+	{
+		::SetCursor(::LoadCursor(NULL, WinCursorName));
+	}
+}
+
 void FEditorEngine::SyncViewportClient()
 {
 	if (!GetActiveWorldContext())
@@ -386,4 +508,17 @@ void FEditorEngine::SyncViewportClient()
 	{
 		SetViewportClient(TargetViewportClient);
 	}
+}
+
+FViewport* FEditorEngine::FindViewport(FViewportId Id)
+{
+	for (FViewportEntry& Entry : ViewportRegistry.GetEntries())
+	{
+		if (Entry.Id == Id && Entry.bActive)
+		{
+			return Entry.Viewport;
+		}
+	}
+
+	return nullptr;
 }

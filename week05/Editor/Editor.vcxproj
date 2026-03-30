@@ -113,6 +113,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(ProjectDir)Source\;$(ProjectDir)..\Engine\Source\;$(ProjectDir)ThirdParty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -135,6 +136,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(ProjectDir)Source\;$(ProjectDir)..\Engine\Source\;$(ProjectDir)ThirdParty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -155,18 +157,34 @@
     <ClCompile Include="Source\Gizmo\Gizmo.cpp" />
     <ClCompile Include="Source\Pawn\EditorCameraPawn.cpp" />
     <ClCompile Include="Source\Picking\Picker.cpp" />
+    <ClCompile Include="Source\Slate\HorizontalBox.cpp" />
+    <ClCompile Include="Source\Slate\Overlay.cpp" />
+    <ClCompile Include="Source\Slate\Painter.cpp" />
+    <ClCompile Include="Source\Slate\SlateApplication.cpp" />
+    <ClCompile Include="Source\Slate\TextBlock.cpp" />
+    <ClCompile Include="Source\Slate\VerticalBox.cpp" />
+    <ClCompile Include="Source\Slate\Widget.cpp" />
+    <ClCompile Include="Source\Slate\SplitterH.cpp" />
+    <ClCompile Include="Source\Slate\SplitterV.cpp" />
+    <ClCompile Include="Source\Slate\SViewport.cpp" />
     <ClCompile Include="Source\Subsystem\EditorCameraSubsystem.cpp" />
     <ClCompile Include="Source\Subsystem\EditorSelectionSubsystem.cpp" />
     <ClCompile Include="Source\UI\ConsoleWindow.cpp" />
     <ClCompile Include="Source\UI\ContentBrowserWindow.cpp" />
     <ClCompile Include="Source\UI\ControlPanelWindow.cpp" />
     <ClCompile Include="Source\UI\EditorUI.cpp" />
-    <ClCompile Include="Source\UI\EditorViewportClient.cpp" />
+    <ClCompile Include="Source\Viewport\BlitRenderer.cpp" />
+    <ClCompile Include="Source\Viewport\Services\EditorViewportAssetInteractionService.cpp" />
+    <ClCompile Include="Source\Viewport\Services\EditorViewportInputService.cpp" />
+    <ClCompile Include="Source\Viewport\Services\EditorViewportRenderService.cpp" />
+    <ClCompile Include="Source\Viewport\EditorViewportClient.cpp" />
+    <ClCompile Include="Source\Viewport\EditorViewportRegistry.cpp" />
     <ClCompile Include="Source\UI\OutlinerWindow.cpp" />
-    <ClCompile Include="Source\UI\PreviewViewportClient.cpp" />
+    <ClCompile Include="Source\Viewport\PreviewViewportClient.cpp" />
     <ClCompile Include="Source\UI\PropertyWindow.cpp" />
     <ClCompile Include="Source\UI\StatWindow.cpp" />
-    <ClCompile Include="Source\UI\Viewport.cpp" />
+    <ClCompile Include="Source\Viewport\Viewport.cpp" />
+    <ClCompile Include="Source\Viewport\ViewportTypes.cpp" />
     <ClCompile Include="ThirdParty\imgui\imgui.cpp" />
     <ClCompile Include="ThirdParty\imgui\imgui_demo.cpp" />
     <ClCompile Include="ThirdParty\imgui\imgui_draw.cpp" />
@@ -183,18 +201,39 @@
     <ClInclude Include="Source\Gizmo\Gizmo.h" />
     <ClInclude Include="Source\Pawn\EditorCameraPawn.h" />
     <ClInclude Include="Source\Picking\Picker.h" />
+    <ClInclude Include="Source\Slate\HorizontalBox.h" />
+    <ClInclude Include="Source\Slate\Image.h" />
+    <ClInclude Include="Source\Slate\Overlay.h" />
+    <ClInclude Include="Source\Slate\Painter.h" />
+    <ClInclude Include="Source\Slate\Panel.h" />
+    <ClInclude Include="Source\Slate\SlateApplication.h" />
+    <ClInclude Include="Source\Slate\Slot.h" />
+    <ClInclude Include="Source\Slate\Splitter.h" />
+    <ClInclude Include="Source\Slate\SplitterH.h" />
+    <ClInclude Include="Source\Slate\SplitterV.h" />
+    <ClInclude Include="Source\Slate\SViewport.h" />
+    <ClInclude Include="Source\Slate\TextBlock.h" />
+    <ClInclude Include="Source\Slate\VerticalBox.h" />
+    <ClInclude Include="Source\Slate\Widget.h" />
+    <ClInclude Include="Source\Slate\Window.h" />
     <ClInclude Include="Source\Subsystem\EditorCameraSubsystem.h" />
     <ClInclude Include="Source\Subsystem\EditorSelectionSubsystem.h" />
     <ClInclude Include="Source\UI\ConsoleWindow.h" />
     <ClInclude Include="Source\UI\ContentBrowserWindow.h" />
     <ClInclude Include="Source\UI\ControlPanelWindow.h" />
     <ClInclude Include="Source\UI\EditorUI.h" />
-    <ClInclude Include="Source\UI\EditorViewportClient.h" />
+    <ClInclude Include="Source\Viewport\BlitRenderer.h" />
+    <ClInclude Include="Source\Viewport\Services\EditorViewportAssetInteractionService.h" />
+    <ClInclude Include="Source\Viewport\Services\EditorViewportInputService.h" />
+    <ClInclude Include="Source\Viewport\Services\EditorViewportRenderService.h" />
+    <ClInclude Include="Source\Viewport\EditorViewportClient.h" />
+    <ClInclude Include="Source\Viewport\EditorViewportRegistry.h" />
     <ClInclude Include="Source\UI\OutlinerWindow.h" />
-    <ClInclude Include="Source\UI\PreviewViewportClient.h" />
+    <ClInclude Include="Source\Viewport\PreviewViewportClient.h" />
     <ClInclude Include="Source\UI\PropertyWindow.h" />
     <ClInclude Include="Source\UI\StatWindow.h" />
-    <ClInclude Include="Source\UI\Viewport.h" />
+    <ClInclude Include="Source\Viewport\Viewport.h" />
+    <ClInclude Include="Source\Viewport\ViewportTypes.h" />
     <ClInclude Include="ThirdParty\imgui\imconfig.h" />
     <ClInclude Include="ThirdParty\imgui\imgui.h" />
     <ClInclude Include="ThirdParty\imgui\imgui_impl_dx11.h" />

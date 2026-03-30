@@ -95,12 +95,18 @@ void FEngine::Tick()
 
 	const float DeltaTime = GetDeltaTime();
 
-	Tick(DeltaTime);
-	TickInput(DeltaTime);
+	PrepareFrame(DeltaTime);
+	ProcessInput(DeltaTime);
 	TickPhysics(DeltaTime);
 	TickWorlds(DeltaTime);
 	RenderFrame();
-	RunLateUpdate(DeltaTime);
+	SyncPlatformState();
+	FinalizeFrame(DeltaTime);
+}
+
+void FEngine::PrepareFrame(float DeltaTime)
+{
+	(void)DeltaTime;
 }
 
 FRenderer* FEngine::GetRenderer() const
@@ -405,7 +411,7 @@ void FEngine::BeginFrame()
 	Timer.Tick();
 }
 
-void FEngine::TickInput(float DeltaTime)
+void FEngine::ProcessInput(float DeltaTime)
 {
 	if (InputManager)
 	{
@@ -511,18 +517,22 @@ void FEngine::RenderFrame()
 
 	if (ActiveViewportClient)
 	{
-		ActiveViewportClient->BuildRenderCommands(this, Scene, Frustum, CommandQueue);
+		const FVector CameraPosition = CommandQueue.ViewMatrix.GetInverse().GetTranslation();
+		ActiveViewportClient->BuildRenderCommands(this, Scene, Frustum, FShowFlags{}, CameraPosition, CommandQueue);
 	}
 
 	Renderer->SubmitCommands(CommandQueue);
 	Renderer->ExecuteCommands();
 
-	const FShowFlags& ShowFlags = ActiveViewportClient ? ActiveViewportClient->GetShowFlags() : FShowFlags();
-	DebugDrawManager.Flush(Renderer.get(), ShowFlags, ActiveWorld);
+	DebugDrawManager.Flush(Renderer.get(), FShowFlags{}, ActiveWorld);
 	Renderer->EndFrame();
 }
 
-void FEngine::RunLateUpdate(float DeltaTime)
+void FEngine::SyncPlatformState()
+{
+}
+
+void FEngine::FinalizeFrame(float DeltaTime)
 {
 	if (GCInterval <= 0.0 || !ObjManager)
 	{

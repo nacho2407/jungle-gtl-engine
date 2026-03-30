@@ -20,13 +20,12 @@
 #include <windows.h>
 #include <commdlg.h>
 
-#include "UI/EditorViewportClient.h"
 #include "Debug/EngineLog.h"
 #include "Component/CameraComponent.h"
 #include "Camera/Camera.h"
 #include "Serializer/SceneSerializer.h"
 #include "Core/ShowFlags.h"
-#include "EditorViewportClient.h"
+#include "Viewport/EditorViewportClient.h"
 #include "Component/SkyComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/UUIDBillboardComponent.h"
@@ -153,9 +152,9 @@ void FEditorUI::Initialize(FEditorEngine* InEngine)
 					}
 				}
 			}
-			else if (Viewport.IsHovered())
+			else if (Engine && Engine->GetSlateApplication() && Engine->GetSlateApplication()->GetHoveredViewportId() != INVALID_VIEWPORT_ID)
 			{
-				UE_LOG("Drop On Viewport");			
+				UE_LOG("Drop On Viewport");
 				if (Engine)
 				{
 					Engine->GetViewportClient()->HandleFileDropOnViewport(DraggingFilePath);
@@ -275,8 +274,6 @@ void FEditorUI::AttachToRenderer(FRenderer* InRenderer)
 		}
 	);
 
-	InRenderer->SetGUIUpdateCallback([this]() { Render(); });
-
 	InRenderer->SetPostRenderCallback([this](FRenderer* Renderer)
 		{
 			if (!Engine)
@@ -287,7 +284,15 @@ void FEditorUI::AttachToRenderer(FRenderer* InRenderer)
 			AActor* Selected = Engine->GetSelectedActor();
 			if (Selected && !Selected->IsPendingDestroy() && Selected->IsVisible()
 				&& Selected->GetComponentByClass<USkyComponent>() == nullptr
-				&& Engine->GetViewportClient()->GetShowFlags().HasFlag(EEngineShowFlags::SF_Primitives))
+				&& [&]() -> bool {
+				const FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
+				if (ViewportRegistry.GetEntries().empty()) return true;
+				FSlateApplication* Slate = Engine->GetSlateApplication();
+				FViewportId VId = Slate ? Slate->GetFocusedViewportId() : INVALID_VIEWPORT_ID;
+				const FViewportEntry* E = (VId != INVALID_VIEWPORT_ID)
+					? ViewportRegistry.FindEntryByViewportID(VId) : &ViewportRegistry.GetEntries().front();
+				return E && E->LocalState.ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives);
+			}())
 			{
 				for (UActorComponent* Component : Selected->GetComponents())
 				{
@@ -309,6 +314,22 @@ void FEditorUI::AttachToRenderer(FRenderer* InRenderer)
 			const float AxisLength = 10000.0f;
 			const FVector Origin = { 0.0f, 0.0f, 0.0f };
 		});
+}
+
+void FEditorUI::OnSlateReady()
+{
+	if (!Engine)
+	{
+		return;
+	}
+
+	FSlateApplication* Slate = Engine->GetSlateApplication();
+	if (!Slate)
+	{
+		return;
+	}
+
+	Slate->OnSplitterDragEnd = [this]() { SaveEditorSettings(); };
 	LoadEditorSettings();
 }
 
@@ -316,7 +337,6 @@ void FEditorUI::DetachFromRenderer(FRenderer* InRenderer)
 {
 	bViewportClientActive = false;
 	CurrentRenderer = nullptr;
-	Viewport.ReleaseSceneView();
 
 	if (InRenderer)
 	{
@@ -373,7 +393,8 @@ void FEditorUI::SetupWindow(FWindowsWindow* InWindow)
 
 			const bool bHandledByImGui = ImGui_ImplWin32_WndProcHandler(Hwnd, Msg, WParam, LParam) != 0;
 
-			if (IsViewportInteractive())
+			FSlateApplication* Slate = Engine->GetSlateApplication();
+			if (Slate && (Slate->GetMouseCapturedViewportId() != INVALID_VIEWPORT_ID || Slate->IsDraggingSplitter()))
 			{
 				return false;
 			}
@@ -417,65 +438,150 @@ void FEditorUI::BuildDefaultLayout(uint32 DockID)
 void FEditorUI::LoadEditorSettings()
 {
 	std::wstring Path = GetEditorIniPathW();
+	if (!Engine) return;
+	FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
+
+	wchar_t Sec[32];
 	wchar_t Buf[64];
 
-	GetPrivateProfileStringW(L"Grid", L"GridSize", L"10.0", Buf, 64, Path.c_str());
-	float GridSize = static_cast<float>(_wtof(Buf));
-
-	GetPrivateProfileStringW(L"Grid", L"LineThickness", L"1.0", Buf, 64, Path.c_str());
-	float Thickness = static_cast<float>(_wtof(Buf));
-
-	GetPrivateProfileStringW(L"Grid", L"ShowGrid", L"1", Buf, 64, Path.c_str());
-	bool bShowGrid = (_wtoi(Buf) != 0);
-
-	if (Engine && Engine->GetViewportClient())
+	for (FViewportEntry& Entry : ViewportRegistry.GetEntries())
 	{
-		auto* VPC = static_cast<FEditorViewportClient*>(Engine->GetViewportClient());
-		VPC->SetGridSize(GridSize);
-		VPC->SetLineThickness(Thickness);
-		VPC->SetGridVisible(bShowGrid);
-		FShowFlags& ShowFlags = VPC->GetShowFlags();
+		swprintf(Sec, 32, L"Viewport.%u", Entry.Id);
+		FViewportLocalState& S = Entry.LocalState;
 
-		GetPrivateProfileStringW(L"ShowFlags", L"Primitives", L"1", Buf, 64, Path.c_str());
-		ShowFlags.SetFlag(EEngineShowFlags::SF_Primitives, _wtoi(Buf) != 0);
+		GetPrivateProfileStringW(Sec, L"GridSize", L"10.0", Buf, 64, Path.c_str());
+		S.GridSize = static_cast<float>(_wtof(Buf));
 
-		GetPrivateProfileStringW(L"ShowFlags", L"UUID", L"1", Buf, 64, Path.c_str());
-		ShowFlags.SetFlag(EEngineShowFlags::SF_UUID, _wtoi(Buf) != 0);
+		GetPrivateProfileStringW(Sec, L"LineThickness", L"1.0", Buf, 64, Path.c_str());
+		S.LineThickness = static_cast<float>(_wtof(Buf));
 
-		GetPrivateProfileStringW(L"ShowFlags", L"DebugDraw", L"0", Buf, 64, Path.c_str());
-		ShowFlags.SetFlag(EEngineShowFlags::SF_DebugDraw, _wtoi(Buf) != 0);
+		GetPrivateProfileStringW(Sec, L"ShowGrid", L"1", Buf, 64, Path.c_str());
+		S.bShowGrid = (_wtoi(Buf) != 0);
 
-		GetPrivateProfileStringW(L"ShowFlags", L"WorldAxis", L"0", Buf, 64, Path.c_str());
-		ShowFlags.SetFlag(EEngineShowFlags::SF_WorldAxis, _wtoi(Buf) != 0);
+		GetPrivateProfileStringW(Sec, L"ViewMode", L"0", Buf, 64, Path.c_str());
+		S.ViewMode = static_cast<ERenderMode>(_wtoi(Buf));
 
-		GetPrivateProfileStringW(L"ShowFlags", L"Collision", L"0", Buf, 64, Path.c_str());
-		ShowFlags.SetFlag(EEngineShowFlags::SF_Collision, _wtoi(Buf) != 0);
+		GetPrivateProfileStringW(Sec, L"SF.Primitives", L"1", Buf, 64, Path.c_str());
+		S.ShowFlags.SetFlag(EEngineShowFlags::SF_Primitives, _wtoi(Buf) != 0);
 
+		GetPrivateProfileStringW(Sec, L"SF.UUID", L"1", Buf, 64, Path.c_str());
+		S.ShowFlags.SetFlag(EEngineShowFlags::SF_UUID, _wtoi(Buf) != 0);
+
+		GetPrivateProfileStringW(Sec, L"SF.DebugDraw", L"0", Buf, 64, Path.c_str());
+		S.ShowFlags.SetFlag(EEngineShowFlags::SF_DebugDraw, _wtoi(Buf) != 0);
+
+		GetPrivateProfileStringW(Sec, L"SF.WorldAxis", L"0", Buf, 64, Path.c_str());
+		S.ShowFlags.SetFlag(EEngineShowFlags::SF_WorldAxis, _wtoi(Buf) != 0);
+
+		GetPrivateProfileStringW(Sec, L"SF.Collision", L"0", Buf, 64, Path.c_str());
+		S.ShowFlags.SetFlag(EEngineShowFlags::SF_Collision, _wtoi(Buf) != 0);
 	}
 
+	bool bAnyDebugDrawEnabled = false;
+	bool bAnyCollisionEnabled = false;
+	for (const FViewportEntry& Entry : ViewportRegistry.GetEntries())
+	{
+		bAnyDebugDrawEnabled = bAnyDebugDrawEnabled || Entry.LocalState.ShowFlags.HasFlag(EEngineShowFlags::SF_DebugDraw);
+		bAnyCollisionEnabled = bAnyCollisionEnabled || Entry.LocalState.ShowFlags.HasFlag(EEngineShowFlags::SF_Collision);
+	}
+
+	for (FViewportEntry& Entry : ViewportRegistry.GetEntries())
+	{
+		Entry.LocalState.ShowFlags.SetFlag(EEngineShowFlags::SF_DebugDraw, bAnyDebugDrawEnabled);
+		Entry.LocalState.ShowFlags.SetFlag(EEngineShowFlags::SF_Collision, bAnyCollisionEnabled);
+	}
+
+	FSlateApplication* Slate = Engine->GetSlateApplication();
+	if (Slate)
+	{
+		GetPrivateProfileStringW(L"Splitter", L"Layout", L"0", Buf, 64, Path.c_str());
+		int32 LayoutValue = _wtoi(Buf);
+		if (LayoutValue < static_cast<int32>(EViewportLayout::Single) ||
+			LayoutValue > static_cast<int32>(EViewportLayout::FourGrid))
+		{
+			LayoutValue = static_cast<int32>(EViewportLayout::Single);
+		}
+
+		Slate->SetLayout(static_cast<EViewportLayout>(LayoutValue));
+		const int32 ActiveViewportCount = Slate->GetActiveViewportCount();
+		int32 EntryIndex = 0;
+		for (FViewportEntry& Entry : ViewportRegistry.GetEntries())
+		{
+			Entry.bActive = (EntryIndex < ActiveViewportCount);
+			++EntryIndex;
+		}
+
+		for (int i = 0; i < 3; ++i)
+		{
+			swprintf(Sec, 32, L"Splitter%d", i);
+			GetPrivateProfileStringW(Sec, L"Ratio", L"0.5", Buf, 64, Path.c_str());
+
+			float Ratio = static_cast<float>(_wtof(Buf));
+			if (Ratio < 0.05f)
+			{
+				Ratio = 0.05f;
+			}
+			else if (Ratio > 0.95f)
+			{
+				Ratio = 0.95f;
+			}
+			Slate->SetSplitterRatio(i, Ratio);
+		}
+
+		Slate->PerformLayout();
+	}
 }
 
 void FEditorUI::SaveEditorSettings()
 {
 	std::wstring Path = GetEditorIniPathW();
-	if (!Engine || !Engine->GetViewportClient()) return;
-	auto* VPC = static_cast<FEditorViewportClient*>(Engine->GetViewportClient());
+	if (!Engine) return;
+	const FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
 
+	wchar_t Sec[32];
 	wchar_t Buf[64];
-	swprintf(Buf, 64, L"%.2f", VPC->GetGridSize());
-	WritePrivateProfileStringW(L"Grid", L"GridSize", Buf, Path.c_str());
 
-	swprintf(Buf, 64, L"%.2f", VPC->GetLineThickness());
-	WritePrivateProfileStringW(L"Grid", L"LineThickness", Buf, Path.c_str());
+	for (const FViewportEntry& Entry : ViewportRegistry.GetEntries())
+	{
+		swprintf(Sec, 32, L"Viewport.%u", Entry.Id);
+		const FViewportLocalState& S = Entry.LocalState;
 
-	WritePrivateProfileStringW(L"Grid", L"ShowGrid", VPC->IsGridVisible() ? L"1" : L"0", Path.c_str());
-	FShowFlags& ShowFlags = VPC->GetShowFlags();
-	WritePrivateProfileStringW(L"ShowFlags", L"Primitives", ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives) ? L"1" : L"0", Path.c_str());
-	WritePrivateProfileStringW(L"ShowFlags", L"UUID", ShowFlags.HasFlag(EEngineShowFlags::SF_UUID) ? L"1" : L"0", Path.c_str());
-	WritePrivateProfileStringW(L"ShowFlags", L"DebugDraw", ShowFlags.HasFlag(EEngineShowFlags::SF_DebugDraw) ? L"1" : L"0", Path.c_str());
-	WritePrivateProfileStringW(L"ShowFlags", L"WorldAxis", ShowFlags.HasFlag(EEngineShowFlags::SF_WorldAxis) ? L"1" : L"0", Path.c_str());
-	WritePrivateProfileStringW(L"ShowFlags", L"Collision", ShowFlags.HasFlag(EEngineShowFlags::SF_Collision) ? L"1" : L"0", Path.c_str());
+		swprintf(Buf, 64, L"%.2f", S.GridSize);
+		WritePrivateProfileStringW(Sec, L"GridSize", Buf, Path.c_str());
 
+		swprintf(Buf, 64, L"%.2f", S.LineThickness);
+		WritePrivateProfileStringW(Sec, L"LineThickness", Buf, Path.c_str());
+
+		WritePrivateProfileStringW(Sec, L"ShowGrid",
+			S.bShowGrid ? L"1" : L"0", Path.c_str());
+		WritePrivateProfileStringW(Sec, L"ViewMode",
+			std::to_wstring(static_cast<int>(S.ViewMode)).c_str(), Path.c_str());
+
+		WritePrivateProfileStringW(Sec, L"SF.Primitives",
+			S.ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives) ? L"1" : L"0", Path.c_str());
+		WritePrivateProfileStringW(Sec, L"SF.UUID",
+			S.ShowFlags.HasFlag(EEngineShowFlags::SF_UUID) ? L"1" : L"0", Path.c_str());
+		WritePrivateProfileStringW(Sec, L"SF.DebugDraw",
+			S.ShowFlags.HasFlag(EEngineShowFlags::SF_DebugDraw) ? L"1" : L"0", Path.c_str());
+		WritePrivateProfileStringW(Sec, L"SF.WorldAxis",
+			S.ShowFlags.HasFlag(EEngineShowFlags::SF_WorldAxis) ? L"1" : L"0", Path.c_str());
+		WritePrivateProfileStringW(Sec, L"SF.Collision",
+			S.ShowFlags.HasFlag(EEngineShowFlags::SF_Collision) ? L"1" : L"0", Path.c_str());
+	}
+
+	FSlateApplication* Slate = Engine->GetSlateApplication();
+
+	if (Slate)
+	{
+		WritePrivateProfileStringW(L"Splitter", L"Layout",
+			std::to_wstring(static_cast<int>(Slate->GetCurrentLayout())).c_str(), Path.c_str());
+		for (int i = 0; i < 3; i++)
+		{
+			swprintf(Sec, 32, L"Splitter%d", i);
+			swprintf(Buf, 64, L"%.4f", Slate->GetSplitterRatio(i));
+			WritePrivateProfileStringW(Sec, L"Ratio", Buf, Path.c_str());
+		}
+	}
 }
 
 std::wstring FEditorUI::GetEditorIniPathW() const
@@ -527,10 +633,25 @@ void FEditorUI::Render()
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 	ImGui::DockSpace(DockID, ImVec2(0, 0), ImGuiDockNodeFlags_PassthruCentralNode);
+
+	ImGuiDockNode* CentralNode = ImGui::DockBuilderGetCentralNode(DockID);
+	if (CentralNode && CentralNode->Size.x > 0 && CentralNode->Size.y > 0)
+	{
+		// CentralNode->Pos는 모니터 절대 좌표 (ViewportsEnable 시)
+		// DX11 swap chain은 클라이언트 기준(0,0)이므로 창 위치를 빼야 함
+		ImGuiViewport* MainVP = ImGui::GetMainViewport();
+		const float WinX = MainVP ? MainVP->Pos.x : 0.0f;
+		const float WinY = MainVP ? MainVP->Pos.y : 0.0f;
+
+		CentralDockRect.X      = static_cast<int32>(CentralNode->Pos.x - WinX);
+		CentralDockRect.Y      = static_cast<int32>(CentralNode->Pos.y - WinY);
+		CentralDockRect.Width  = static_cast<int32>(CentralNode->Size.x);
+		CentralDockRect.Height = static_cast<int32>(CentralNode->Size.y);
+		bHasCentralDockRect = true;
+	}
+
 	ImGui::PopStyleVar();
 	ImGui::End();
-
-	Viewport.Render(Engine, CurrentRenderer, MainWindow ? MainWindow->GetHwnd() : nullptr);
 
 	if (Engine)
 	{
@@ -579,9 +700,24 @@ void FEditorUI::Render()
 						Engine->SetSelectedActor(nullptr);
 						Engine->GetScene()->ClearActors();
 
-						bool bLoaded = FSceneSerializer::Load(Engine->GetScene(), Path, Engine->GetRenderer()->GetDevice());
+						FCameraSerializeData CameraData;
+						bool bLoaded = FSceneSerializer::Load(Engine->GetScene(), Path,
+						                                      Engine->GetRenderer()->GetDevice(), &CameraData);
 						if (bLoaded)
 						{
+							if (CameraData.bValid)
+							{
+								FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
+								FViewportEntry* PerspEntry = ViewportRegistry.FindEntryByType(EViewportType::Perspective);
+								if (PerspEntry)
+								{
+									PerspEntry->LocalState.Position  = CameraData.Location;
+									PerspEntry->LocalState.Rotation  = CameraData.Rotation;
+									PerspEntry->LocalState.FovY      = CameraData.FOV;
+									PerspEntry->LocalState.NearPlane = CameraData.NearClip;
+									PerspEntry->LocalState.FarPlane  = CameraData.FarClip;
+								}
+							}
 							UE_LOG("Scene loaded: %s", Path.c_str());
 						}
 						else
@@ -605,7 +741,19 @@ void FEditorUI::Render()
 
 					if (!Path.empty())
 					{
-						FSceneSerializer::Save(Engine->GetScene(),Path);
+						FCameraSerializeData CameraData;
+						const FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
+						const FViewportEntry* PerspEntry = ViewportRegistry.FindEntryByType(EViewportType::Perspective);
+						if (PerspEntry)
+						{
+							CameraData.Location  = PerspEntry->LocalState.Position;
+							CameraData.Rotation  = PerspEntry->LocalState.Rotation;
+							CameraData.FOV       = PerspEntry->LocalState.FovY;
+							CameraData.NearClip  = PerspEntry->LocalState.NearPlane;
+							CameraData.FarClip   = PerspEntry->LocalState.FarPlane;
+							CameraData.bValid    = true;
+						}
+						FSceneSerializer::Save(Engine->GetScene(), Path, CameraData);
 					}
 				}
 			}
@@ -614,15 +762,24 @@ void FEditorUI::Render()
 		}
 		if (ImGui::BeginMenu("View"))
 		{
-			if (Engine && Engine->GetViewportClient())
+			if (Engine)
 			{
-				auto* VPC = static_cast<FEditorViewportClient*>(Engine->GetViewportClient());
-			
+				FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
+				if (!ViewportRegistry.GetEntries().empty())
+				{
+					FViewportEntry* TargetEntry = nullptr;
+					FSlateApplication* Slate = Engine->GetSlateApplication();
+					FViewportId ViewportID = Slate ? Slate->GetFocusedViewportId() : INVALID_VIEWPORT_ID;
 
-				IViewportClient* ViewportCli = Engine->GetViewportClient();
-				if (!ViewportCli) { ImGui::End(); return; }
+					if (ViewportID == INVALID_VIEWPORT_ID)
+						TargetEntry = &ViewportRegistry.GetEntries().front();
+					else
+						TargetEntry = ViewportRegistry.FindEntryByViewportID(ViewportID);
 
-				FShowFlags& ShowFlags = ViewportCli->GetShowFlags();
+					if (!TargetEntry)
+						TargetEntry = &ViewportRegistry.GetEntries().front();
+
+				FShowFlags& ShowFlags = TargetEntry->LocalState.ShowFlags;
 				// ===== Show Flags 섹션 =====
 				ImGui::SeparatorText("Show Flags");
 				// 각 플래그마다 Checkbox 하나씩
@@ -631,7 +788,17 @@ void FEditorUI::Render()
 					bool bValue = ShowFlags.HasFlag(Flag);
 					if (ImGui::Checkbox(Label, &bValue))
 					{
-						ShowFlags.SetFlag(Flag, bValue);
+						if (Flag == EEngineShowFlags::SF_DebugDraw || Flag == EEngineShowFlags::SF_Collision)
+						{
+							for (FViewportEntry& Entry : ViewportRegistry.GetEntries())
+							{
+								Entry.LocalState.ShowFlags.SetFlag(Flag, bValue);
+							}
+						}
+						else
+						{
+							ShowFlags.SetFlag(Flag, bValue);
+						}
 						SaveEditorSettings();
 					}
 				};
@@ -644,24 +811,21 @@ void FEditorUI::Render()
 
 				// ─── Grid ───
 				ImGui::SeparatorText("Grid");
-				bool bShowGrid = VPC->IsGridVisible();
+				bool bShowGrid = TargetEntry->LocalState.bShowGrid;
 				if (ImGui::Checkbox("Show Grid", &bShowGrid))
 				{
-					VPC->SetGridVisible(bShowGrid);
+					TargetEntry->LocalState.bShowGrid = bShowGrid;
 					SaveEditorSettings();
 				}
-				float GridSize = VPC->GetGridSize();
-				if (ImGui::SliderFloat("Grid Size", &GridSize, 1.0f, 100.0f, "%.1f"))
+				if (ImGui::SliderFloat("Grid Size", &TargetEntry->LocalState.GridSize, 1.0f, 100.0f, "%.1f"))
 				{
-					VPC->SetGridSize(GridSize);
 					SaveEditorSettings();
 				}
 
-				float Thickness = VPC->GetLineThickness();
-				if (ImGui::SliderFloat("Line Thickness", &Thickness, 0.1f, 5.0f, "%.2f"))
+				if (ImGui::SliderFloat("Line Thickness", &TargetEntry->LocalState.LineThickness, 0.1f, 5.0f, "%.2f"))
 				{
-					VPC->SetLineThickness(Thickness);
 					SaveEditorSettings();
+				}
 				}
 			}
 			ImGui::EndMenu();
@@ -762,7 +926,41 @@ void FEditorUI::Render()
 
 bool FEditorUI::GetViewportMousePosition(int32 WindowMouseX, int32 WindowMouseY, int32& OutViewportX, int32& OutViewportY, int32& OutWidth, int32& OutHeight) const
 {
-	return Viewport.GetMousePositionInViewport(WindowMouseX, WindowMouseY, OutViewportX, OutViewportY, OutWidth, OutHeight);
+	if (!Engine)
+	{
+		return false;
+	}
+
+	FSlateApplication* Slate = Engine->GetSlateApplication();
+	if (!Slate)
+	{
+		return false;
+	}
+
+	const FViewportId HoveredViewportId = Slate->GetHoveredViewportId();
+	if (HoveredViewportId == INVALID_VIEWPORT_ID)
+	{
+		return false;
+	}
+
+	const FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
+	const FViewportEntry* Entry = ViewportRegistry.FindEntryByViewportID(HoveredViewportId);
+	if (!Entry || !Entry->bActive || !Entry->Viewport)
+	{
+		return false;
+	}
+
+	const FRect& Rect = Entry->Viewport->GetRect();
+	if (!Rect.IsValid())
+	{
+		return false;
+	}
+
+	OutViewportX = WindowMouseX - Rect.X;
+	OutViewportY = WindowMouseY - Rect.Y;
+	OutWidth = Rect.Width;
+	OutHeight = Rect.Height;
+	return true;
 }
 
 void FEditorUI::SyncSelectedActorProperty()
@@ -794,7 +992,12 @@ void FEditorUI::SyncSelectedActorProperty()
 	CachedSelectedActor = Selected;
 }
 
-bool FEditorUI::IsViewportInteractive() const
+bool FEditorUI::GetCentralDockRect(FRect& OutRect) const
 {
-	return Viewport.IsVisible() && (Viewport.IsHovered() || Viewport.IsFocused());
+	if (!bHasCentralDockRect)
+	{
+		return false;
+	}
+	OutRect = CentralDockRect;
+	return true;
 }
