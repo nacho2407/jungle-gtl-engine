@@ -3,6 +3,7 @@
 #include "Materials/Material.h"
 #include "Editor/UI/EditorConsoleWidget.h"
 #include "Engine/Platform/Paths.h"
+#include "Mesh/ObjManager.h"
 #include <algorithm>
 #include <fstream>
 #include <filesystem>
@@ -469,17 +470,21 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 		if (It != MtlInfos.end())
 		{
 			MatchedMaterial = &(*It);
-			UMaterial* MaterialObject = UObjectManager::Get().CreateObject<UMaterial>();
-			MaterialObject->PathFileName = TargetSlotName;
+			UMaterial* MaterialObject = FObjManager::GetOrLoadMaterial(TargetSlotName);
 
-			if (!MatchedMaterial->map_Kd.empty())
+			if (MaterialObject->PathFileName.empty())
 			{
-				MaterialObject->DiffuseTextureFilePath = MatchedMaterial->map_Kd;
-				MaterialObject->DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-			}
-			else
-			{
-				MaterialObject->DiffuseColor = { MatchedMaterial->Kd.X, MatchedMaterial->Kd.Y, MatchedMaterial->Kd.Z, 1.0f };
+				MaterialObject->PathFileName = TargetSlotName;
+
+				if (!MatchedMaterial->map_Kd.empty())
+				{
+					MaterialObject->DiffuseTextureFilePath = MatchedMaterial->map_Kd;
+					MaterialObject->DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+				}
+				else
+				{
+					MaterialObject->DiffuseColor = { MatchedMaterial->Kd.X, MatchedMaterial->Kd.Y, MatchedMaterial->Kd.Z, 1.0f };
+				}
 			}
 
 			// FStaticMaterial 생성 및 OutMaterials에 추가
@@ -500,9 +505,13 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 	// "None" 슬롯이 존재했다면 맨 마지막에 배치
 	if (bHasNoneSlot)
 	{
-		UMaterial* DefaultMaterialObject = UObjectManager::Get().CreateObject<UMaterial>();
-		DefaultMaterialObject->PathFileName = "None"; // 임시로 슬롯 이름을 경로로 사용
-		DefaultMaterialObject->DiffuseColor = FallbackColor4;
+		UMaterial* DefaultMaterialObject = FObjManager::GetOrLoadMaterial("None");
+
+		if (DefaultMaterialObject->PathFileName.empty())
+		{
+			DefaultMaterialObject->PathFileName = "None";
+			DefaultMaterialObject->DiffuseColor = FallbackColor4;
+		}
 
 		FStaticMaterial NewDefaultStaticMaterial;
 		NewDefaultStaticMaterial.MaterialInterface = std::shared_ptr<UMaterial>(DefaultMaterialObject);
