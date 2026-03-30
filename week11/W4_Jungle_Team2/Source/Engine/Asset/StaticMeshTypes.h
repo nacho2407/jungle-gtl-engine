@@ -18,14 +18,14 @@ struct FStaticMeshSection
 struct FStaticMeshMaterialSlot
 {
 	FString SlotName;
-	FMaterial MaterialData;
+	FMaterial* MaterialData = nullptr;
 
 	ID3D11ShaderResourceView* DiffuseSRV = nullptr;
 	ID3D11ShaderResourceView* AmbientSRV = nullptr;
 	ID3D11ShaderResourceView* SpecularSRV = nullptr;
 };
 
-//	CookedData
+// Raw Data
 struct FStaticMesh
 {
 	FString PathFileName;

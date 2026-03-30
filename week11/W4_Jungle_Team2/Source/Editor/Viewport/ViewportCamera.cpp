@@ -174,6 +174,27 @@ void FViewportCamera::SetOrthoHeight(float InHeight)
 	MarkProjectionDirty();
 }
 
+void FViewportCamera::SetLookAt(const FVector &Target) {
+	FVector Forward = (Target - Location).GetSafeNormal();
+	if (Forward.IsNearlyZero()) return;
+
+	FVector UpRef = FVector::UpVector;
+	if (std::abs(Forward.DotProduct(UpRef)) > 0.99f) 
+	{
+		UpRef = FVector(1.0f, 0.0f, 0.0f);
+	}
+
+	FVector Right = FVector::CrossProduct(UpRef, Forward).GetSafeNormal();
+	FVector Up = FVector::CrossProduct(Forward, Right).GetSafeNormal();
+
+	FMatrix RotMat = FMatrix::Identity;
+	RotMat.SetAxes(Forward, Right, Up);
+
+	FQuat QuatRot(RotMat);
+	QuatRot.Normalize();
+	SetRotation(QuatRot);
+}
+
 void FViewportCamera::OnResize(uint32 InWidth, uint32 InHeight)
 {
 	Width = InWidth;

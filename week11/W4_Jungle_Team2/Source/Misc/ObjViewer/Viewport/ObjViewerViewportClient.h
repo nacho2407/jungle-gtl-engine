@@ -16,7 +16,25 @@ class FSelectionManager;
 struct ObjViewerModelInfo
 {
 	FVector ModelCenter = FVector(0.0f, 0.0f, 0.0f);
-	float ModelRadius = 50.0f;
+	float ModelRadius = 2.0f;
+};
+
+// 카메라 초기화 애니메이션을 위한 상태 변수
+struct FCameraGUIParameters
+{
+	bool bIsResettingCamera = false;
+    float ResetCameraProgress = 0.0f;
+    float ResetCameraSpeed = 2.5f;
+
+    FVector ResetStartLocation;
+    FVector ResetTargetLocation;
+    FQuat ResetStartRotation;
+    FQuat ResetTargetRotation;
+
+    FVector ResetStartOrbitPivot;
+    FVector ResetTargetOrbitPivot;
+    float ResetStartOrbitDistance = 0.0f;
+    float ResetTargetOrbitDistance = 0.0f;
 };
 
 class FObjViewerViewportClient
@@ -32,6 +50,7 @@ public:
 	void CreateCamera();
 	void DestroyCamera();
 	void ResetCamera();
+	void ResetCameraSmoothly();
 
 	// 카메라 조작감 개선
 	void ClampCameraPosition();
@@ -54,6 +73,7 @@ private:
 	void TickInput(float DeltaTime);
 	void TickInteraction(float DeltaTime);
 	void TickCursorOverlay(float DeltaTime);
+    void TickCameraReset(float DeltaTime);
 
 	void HandleDragStart(const FRay& Ray);
 
@@ -71,10 +91,12 @@ private:
 	
 	bool bIsCursorVisible = true;
 	
+	FCameraGUIParameters CameraGUIParams;
+	
 	// Viewer 전용 중심점 기준 회전 조작에 사용
 	bool bIsOrbiting = false;
 	FVector OrbitPivot = FVector(0.0f, 0.0f, 0.0f);
-	float OrbitDistance = 50.0f;
+	float OrbitDistance = 10.0f;
 
 	FCursorOverlayState CursorOverlayState;
 };
