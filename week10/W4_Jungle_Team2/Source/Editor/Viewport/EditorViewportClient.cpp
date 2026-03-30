@@ -95,7 +95,8 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		return;
 	}
 
-	if (InputSystem::Get().GetGuiInputState().bUsingKeyboard)
+	if (InputSystem::Get().GetGuiInputState().bUsingKeyboard ||
+	    InputSystem::Get().GetGuiInputState().bUsingMouse)
 	{
 		return;
 	}
