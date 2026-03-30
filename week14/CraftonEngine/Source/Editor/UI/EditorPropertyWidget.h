@@ -17,7 +17,7 @@ private:
 	void RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 	void RenderComponentProperties();
 	void RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
-	void RenderPropertyWidget(struct FPropertyDescriptor& Prop);
+	bool RenderPropertyWidget(struct FPropertyDescriptor& Prop);
 
 	UActorComponent* SelectedComponent = nullptr;
 	AActor* LastSelectedActor = nullptr;

@@ -180,9 +180,9 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 
 		if (PassBatchers[i])
 		{
-			// Batcher 패스 — Flush 내부에서 빈 데이터 체크
+			// Batcher 패스 — DrawBatch 내부에서 빈 데이터 체크
 			ApplyPassRenderState(CurPass, Context, InRenderBus.GetViewMode());
-			PassBatchers[i].Flush(CurPass, InRenderBus, Context);
+			PassBatchers[i].DrawBatch(CurPass, InRenderBus, Context);
 		}
 		else
 		{
@@ -217,47 +217,47 @@ void FRenderer::InitializePassRenderStates()
 }
 
 // ============================================================
-// Pass Batcher Flush 바인딩 초기화
+// Pass Batcher DrawBatch 바인딩 초기화
 // ============================================================
 void FRenderer::InitializePassBatchers()
 {
 	PassBatchers[(uint32)ERenderPass::Editor] = {
 		[this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
-			FlushLineBatcher(EditorLineBatcher, Pass, Bus, Ctx);
+			DrawLineBatcher(EditorLineBatcher, Pass, Bus, Ctx);
 		}
 	};
 
 	PassBatchers[(uint32)ERenderPass::Grid] = {
 		[this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
-			FlushLineBatcher(GridLineBatcher, Pass, Bus, Ctx);
+			DrawLineBatcher(GridLineBatcher, Pass, Bus, Ctx);
 		}
 	};
 
 	PassBatchers[(uint32)ERenderPass::Font] = {
 		[this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
 			const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
-			FontBatcher.Flush(Ctx, FontRes);
+			FontBatcher.DrawBatch(Ctx, FontRes);
 		}
 	};
 
 	PassBatchers[(uint32)ERenderPass::OverlayFont] = {
 		[this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
 			const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
-			FontBatcher.FlushScreen(Ctx, FontRes);
+			FontBatcher.DrawScreenBatch(Ctx, FontRes);
 		}
 	};
 
 	PassBatchers[(uint32)ERenderPass::SubUV] = {
 		[this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
-			SubUVBatcher.Flush(Ctx);
+			SubUVBatcher.DrawBatch(Ctx);
 		}
 	};
 }
 
 // ============================================================
-// LineBatcher Flush 공통
+// LineBatcher DrawBatch 공통
 // ============================================================
-void FRenderer::FlushLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Context)
+void FRenderer::DrawLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Context)
 {
 	if (Batcher.GetLineCount() == 0) return;
 
@@ -277,7 +277,7 @@ void FRenderer::FlushLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const 
 	Context->VSSetConstantBuffers(ECBSlot::Editor, 1, &cb);
 	Context->PSSetConstantBuffers(ECBSlot::Editor, 1, &cb);
 
-	Batcher.Flush(Context);
+	Batcher.DrawBatch(Context);
 }
 
 // ============================================================
