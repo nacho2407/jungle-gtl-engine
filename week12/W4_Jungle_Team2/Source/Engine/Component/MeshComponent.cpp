@@ -32,18 +32,28 @@ const TArray<FMaterial*>& UMeshComponent::GetOverrideMaterial() const
 	return OverrideMaterial;
 }
 
+int32 UMeshComponent::GetMaterialCount() const
+{
+	return static_cast<int32>(OverrideMaterial.size());
+}
 
 void UMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UPrimitiveComponent::GetEditableProperties(OutProps);
-	
-	//	지금은 Override Material 자체를 에디터에 노출하지 않음
-	//	TODO : Material Asset System 정리되면 슬롯별로 노출
 
+	OutProps.push_back({ "Scroll U", EPropertyType::Float, &ScrollUV.first,  -1.0f, 1.0f, 0.01f });
+	OutProps.push_back({ "Scroll V", EPropertyType::Float, &ScrollUV.second, -1.0f, 1.0f, 0.01f });
 }
 
 void UMeshComponent::PostEditProperty(const char* PropertyName)
 {
 	UPrimitiveComponent::PostEditProperty(PropertyName);
+}
+
+void UMeshComponent::TickComponent(float DeltaTime)
+{
+	//ScrollUV.second += DeltaTime;
+
+	//if (ScrollUV.first >= 1.f) ScrollUV.first = 0.f;
 }
 

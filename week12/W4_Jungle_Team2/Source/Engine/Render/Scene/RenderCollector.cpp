@@ -232,6 +232,9 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 			Cmd.Constants.StaticMesh.SpecularColor = MtlData->SpecularColor;
 			Cmd.Constants.StaticMesh.Shininess = MtlData->Shininess;
 
+			Cmd.Constants.StaticMesh.ScrollX = StaticMeshComp->GetScroll().first;
+			Cmd.Constants.StaticMesh.ScrollY = StaticMeshComp->GetScroll().second;
+
 			ID3D11ShaderResourceView* DefaultSRV = FResourceManager::Get().GetDefaultWhiteSRV();
 
 			auto ResolveSRV = [&](const FString& Path) -> ID3D11ShaderResourceView*
