@@ -157,6 +157,49 @@ void FFontBatcher::AddText(const FString& Text,
 	Indices.resize(IdxBase + CharIdx * 6);
 }
 
+void FFontBatcher::AddText2D(const FString& Text, const FVector2& ScreenPos, float ViewportWidth, float ViewportHeight, float Scale)
+{
+	if (Text.empty() || ViewportWidth <= 0.0f || ViewportHeight <= 0.0f)
+	{
+		return;
+	}
+
+	float CurrentX = ScreenPos.X;
+	float CurrentY = ScreenPos.Y;
+
+	for (char C : Text)
+	{
+		FVector2 UVMin, UVMax;
+		GetCharUV(C, UVMin, UVMax);
+
+		float CharWidth = 20.0f * Scale;
+        float CharHeight = 20.0f * Scale;
+
+		// Top Left to Bottom Right
+		FVector PosTL(CurrentX, CurrentY, 0.0f);
+		FVector PosTR(CurrentX + CharWidth, CurrentY, 0.0f);
+		FVector PosBL(CurrentX, CurrentY + CharHeight, 0.0f);
+		FVector PosBR(CurrentX + CharWidth, CurrentY + CharHeight, 0.0f);
+
+		uint32 StartIndex = static_cast<uint32>(Vertices.size());
+
+		Vertices.push_back({PosTL, FVector2(UVMin.X, UVMin.Y)});
+		Vertices.push_back({PosTR, FVector2(UVMax.X, UVMin.Y)});
+		Vertices.push_back({PosBL, FVector2(UVMin.X, UVMax.Y)});
+		Vertices.push_back({PosBR, FVector2(UVMax.X, UVMax.Y)});
+
+		Indices.push_back(StartIndex + 0);
+		Indices.push_back(StartIndex + 1);
+		Indices.push_back(StartIndex + 2);
+
+		Indices.push_back(StartIndex + 1);
+		Indices.push_back(StartIndex + 3);
+		Indices.push_back(StartIndex + 2);
+
+		CurrentX += CharWidth;
+	}
+}
+
 void FFontBatcher::Clear()
 {
 	Vertices.clear();
