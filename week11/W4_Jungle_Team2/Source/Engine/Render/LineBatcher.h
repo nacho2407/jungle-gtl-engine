@@ -61,7 +61,7 @@ public:
 	 * 축과 겹치는 grid 선은 생성하지 않아 z-fighting을 줄입니다.
 	 * 생성된 모든 선은 LineBatcher의 버텍스 배열에 누적되므로 draw call 수는 증가하지 않습니다.
 	 */
-	void AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacing, int32 GridHalfLineCount, const FVector& CameraPosition, const FVector& CameraForward);
+	void AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacing, int32 GridHalfLineCount, const FVector& CameraPosition, const FVector& CameraForward, bool bOrthographic = false);
 
 	// 이번 프레임에 축적된 라인 모두 제거
 	void Clear();
