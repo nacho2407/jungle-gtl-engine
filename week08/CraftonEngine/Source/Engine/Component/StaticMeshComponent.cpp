@@ -6,6 +6,9 @@
 #include "Collision/RayUtils.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Engine/Runtime/Engine.h"
+#include "Render/Resource/ShaderManager.h"
+#include "Render/Resource/ConstantBufferPool.h"
+#include "Texture/Texture2D.h"
 
 IMPLEMENT_CLASS(UStaticMeshComp, UMeshComponent)
 
@@ -84,6 +87,68 @@ std::shared_ptr<UMaterial> UStaticMeshComp::GetMaterial(int32 ElementIndex) cons
 		return OverrideMaterials[ElementIndex];
 	}
 	return nullptr;
+}
+
+void UStaticMeshComp::CollectRender(FRenderBus& Bus) const
+{
+	if (!Bus.GetShowFlags().bPrimitives) return;
+	FMeshBuffer* Buffer = GetMeshBuffer();
+	if (!Buffer || !Buffer->IsValid()) return;
+
+	FRenderCommand Cmd = {};
+	Cmd.PerObjectConstants = FPerObjectConstants::FromWorldMatrix(GetWorldMatrix());
+	Cmd.Shader = FShaderManager::Get().GetShader(EShaderType::StaticMesh);
+	Cmd.MeshBuffer = Buffer;
+
+	if (StaticMesh && StaticMesh->GetStaticMeshAsset())
+	{
+		const auto& Sections = StaticMesh->GetStaticMeshAsset()->Sections;
+		const auto& Slots = StaticMesh->GetStaticMaterials();
+
+		for (const FStaticMeshSection& Section : Sections)
+		{
+			FMeshSectionDraw Draw;
+			Draw.FirstIndex = Section.FirstIndex;
+			Draw.IndexCount = Section.NumTriangles * 3;
+
+			for (int32 i = 0; i < Slots.size(); ++i)
+			{
+				if (Slots[i].MaterialSlotName == Section.MaterialSlotName)
+				{
+					if (i < OverrideMaterials.size() && OverrideMaterials[i])
+					{
+						auto& Mat = OverrideMaterials[i];
+						if (Mat->DiffuseTexture)
+							Draw.DiffuseSRV = Mat->DiffuseTexture->GetSRV();
+						Draw.DiffuseColor = Mat->DiffuseColor;
+					}
+					break;
+				}
+			}
+			Cmd.SectionDraws.push_back(Draw);
+		}
+	}
+	Bus.AddCommand(ERenderPass::Opaque, Cmd);
+}
+
+void UStaticMeshComp::CollectSelection(FRenderBus& Bus) const
+{
+	FMeshBuffer* Buffer = GetMeshBuffer();
+	if (!Buffer || !Buffer->IsValid()) return;
+
+	FShaderManager& SM = FShaderManager::Get();
+	BuildOutlineCommands(Bus, Buffer, GetWorldMatrix(), GetWorldScale(),
+		SM.GetShader(EShaderType::StaticMesh), SM.GetShader(EShaderType::OutlinePNCT));
+
+	if (Bus.GetShowFlags().bBoundingVolume)
+	{
+		FAABBEntry Entry = {};
+		FBoundingBox Box = GetWorldBoundingBox();
+		Entry.AABB.Min = Box.Min;
+		Entry.AABB.Max = Box.Max;
+		Entry.AABB.Color = FColor::White();
+		Bus.AddAABBEntry(std::move(Entry));
+	}
 }
 
 FMeshBuffer* UStaticMeshComp::GetMeshBuffer() const

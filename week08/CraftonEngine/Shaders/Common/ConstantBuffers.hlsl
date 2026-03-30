@@ -1,6 +1,7 @@
-/* Constant Buffers */
+#ifndef CONSTANT_BUFFERS_HLSL
+#define CONSTANT_BUFFERS_HLSL
 
-
+// b0: 프레임 공통 — ViewProj, 와이어프레임 설정
 cbuffer FrameBuffer : register(b0)
 {
     row_major float4x4 View;
@@ -9,12 +10,14 @@ cbuffer FrameBuffer : register(b0)
     float3 WireframeRGB;
 }
 
+// b1: 오브젝트별 — 월드 변환, 색상
 cbuffer PerObjectBuffer : register(b1)
 {
     row_major float4x4 Model;
     float4 PrimitiveColor;
 };
 
+// b2: 기즈모 전용
 cbuffer GizmoBuffer : register(b2)
 {
     float4 GizmoColorTint;
@@ -24,26 +27,8 @@ cbuffer GizmoBuffer : register(b2)
     float HoveredAxisOpacity;
 };
 
-
-cbuffer OverlayBuffer : register(b3)
-{
-    float2 OverlayCenterScreen;
-    float2 ViewportSize;
-
-    float OverlayRadius;
-    float3 Padding2;
-
-    float4 OverlayColor;
-};
-
-cbuffer EditorBuffer : register(b4)
-{
-    float4 CameraPosition;
-    uint EditorFlag;
-    float3 Padding3;
-};
-
-cbuffer OutlineConstants : register(b5)
+// b3: 아웃라인 전용
+cbuffer OutlineConstants : register(b3)
 {
     float4 OutlineColor;
     float3 OutlineInvScale;
@@ -52,9 +37,4 @@ cbuffer OutlineConstants : register(b5)
     float3 Padding4;
 };
 
-float4 ApplyMVP(float3 pos)
-{
-    float4 world = mul(float4(pos, 1.0f), Model);
-    float4 view = mul(world, View);
-    return mul(view, Projection);
-}
+#endif // CONSTANT_BUFFERS_HLSL

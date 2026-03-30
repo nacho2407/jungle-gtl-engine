@@ -80,6 +80,9 @@ public:
 	void SetVerticalAlignment(ETextVAlign InAlign) { VAlign = InAlign; }
 	ETextVAlign GetVerticalAlignment() const { return VAlign; }
 
+	void CollectRender(FRenderBus& Bus) const override;
+	void CollectSelection(FRenderBus& Bus) const override;
+
 	//Collision
 	void UpdateWorldAABB() const override;
 	bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
