@@ -230,7 +230,6 @@
     <ClCompile Include="Source\Engine\Component\TextRenderComponent.cpp" />
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\PrimitiveActors.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\World.cpp" />
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp" />
     <ClCompile Include="Source\Engine\Materials\Material.cpp" />
@@ -275,6 +274,7 @@
     <ClCompile Include="Source\Engine\Runtime\WindowsApplication.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp" />
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp" />
+    <ClCompile Include="Source\Engine\StaticMeshActor.cpp" />
     <ClCompile Include="Source\Engine\Texture\Texture2D.cpp" />
     <ClCompile Include="Source\Engine\UI\SSplitter.cpp" />
     <ClCompile Include="Source\Engine\UI\SWindow.cpp" />
@@ -327,7 +327,6 @@
     <ClInclude Include="Source\Engine\Core\ResourceTypes.h" />
     <ClInclude Include="Source\Engine\Core\Singleton.h" />
     <ClInclude Include="Source\Engine\GameFramework\AActor.h" />
-    <ClInclude Include="Source\Engine\GameFramework\PrimitiveActors.h" />
     <ClInclude Include="Source\Engine\GameFramework\World.h" />
     <ClInclude Include="Source\Engine\GameFramework\WorldContext.h" />
     <ClInclude Include="Source\Engine\Input\InputSystem.h" />
@@ -386,6 +385,7 @@
     <ClInclude Include="Source\Engine\Serialization\Archive.h" />
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />
     <ClInclude Include="Source\Engine\Serialization\WindowsArchive.h" />
+    <ClInclude Include="Source\Engine\StaticMeshActor.h" />
     <ClInclude Include="Source\Engine\Texture\Texture2D.h" />
     <ClInclude Include="Source\Engine\UI\SSplitter.h" />
     <ClInclude Include="Source\Engine\UI\SWidget.h" />
