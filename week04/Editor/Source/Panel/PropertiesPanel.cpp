@@ -226,17 +226,27 @@ namespace
     bool DrawStaticMeshAssetCombo(const Engine::Component::FComponentPropertyDescriptor& Descriptor,
                                   const FString& CurrentPath, const FString& RawValue,
                                   TMap<FString, FString>* AssetPathEditBuffers,
-                                  FEditorContext*         Context)
+                                  FEditorContext* Context)
     {
         bool    bChanged = false;
         FString ComboLabel = CurrentPath.empty() ? "None" : CurrentPath;
         if (ImGui::BeginCombo("##Value", ComboLabel.c_str()))
         {
+            // None 옵션 추가
+            bool bNoneSelected = RawValue.empty() || RawValue == "None";
+            if (ImGui::Selectable("None", bNoneSelected))
+            {
+                if (Descriptor.StringSetter)
+                    Descriptor.StringSetter("");
+                if (AssetPathEditBuffers != nullptr)
+                    (*AssetPathEditBuffers)[Descriptor.Key] = "";
+                bChanged = true;
+            }
+
             if (Context && Context->ContentIndex)
             {
                 TArray<FString> MeshPaths;
-                CollectAssetsByType(Context->ContentIndex->GetSnapshot().RootFolder,
-                                    EContentBrowserItemType::StaticMesh, MeshPaths);
+                CollectAssetsByType(Context->ContentIndex->GetSnapshot().RootFolder, EContentBrowserItemType::StaticMesh, MeshPaths);
 
                 for (const FString& Path : MeshPaths)
                 {
@@ -258,15 +268,14 @@ namespace
         return bChanged;
     }
 
-    bool DrawMaterialAssetCombo(Engine::Component::UMeshComponent* MeshComp, uint32 SlotIndex,
+    bool DrawMaterialAssetCombo(Engine::Component::UMeshComponent* MeshComp, uint32 SlotIndex, 
                                 FEditorContext* Context)
     {
         if (MeshComp == nullptr || !MeshComp->IsValidLowLevel() || Context == nullptr)
             return false;
 
         Engine::Asset::UMaterialInterface* CurrentMat = MeshComp->GetMaterial(SlotIndex);
-        FString                            CurrentPath =
-            (CurrentMat && CurrentMat->IsValidLowLevel()) ? CurrentMat->GetAssetName() : "None";
+        FString     CurrentPath = (CurrentMat && CurrentMat->IsValidLowLevel()) ? CurrentMat->GetAssetName() : "None";
         std::string LabelId = "Material Slot " + std::to_string(SlotIndex + 1);
 
         bool bChanged = false;
@@ -277,11 +286,18 @@ namespace
         FString PopupId = FString("##MatCombo_") + std::to_string(SlotIndex);
         if (ImGui::BeginCombo(PopupId.c_str(), CurrentPath.c_str()))
         {
+            // None 옵션 추가
+            bool bNoneSelected = (CurrentMat == nullptr);
+            if (ImGui::Selectable("None", bNoneSelected))
+            {
+                MeshComp->SetMaterial(SlotIndex, nullptr);
+                bChanged = true;
+            }
+
             if (Context->ContentIndex)
             {
                 TArray<FString> MaterialPaths;
-                CollectAssetsByType(Context->ContentIndex->GetSnapshot().RootFolder,
-                                    EContentBrowserItemType::Material, MaterialPaths);
+                CollectAssetsByType(Context->ContentIndex->GetSnapshot().RootFolder, EContentBrowserItemType::Material, MaterialPaths);
 
                 for (const FString& Path : MaterialPaths)
                 {
@@ -292,9 +308,7 @@ namespace
                         {
                             ::FAssetLoadParams Params;
                             Params.ExplicitType = ::EAssetType::Material;
-                            UAsset* Loaded = Context->AssetManager->Load(
-                                Engine::SceneIO::ResolveSceneAssetPathToAbsolute(Path).wstring(),
-                                Params);
+                            UAsset* Loaded = Context->AssetManager->Load(Engine::SceneIO::ResolveSceneAssetPathToAbsolute(Path).wstring(), Params);
                             if (auto* NewMat = Cast<Engine::Asset::UMaterialInterface>(Loaded))
                             {
                                 MeshComp->SetMaterial(SlotIndex, NewMat);
