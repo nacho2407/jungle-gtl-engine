@@ -128,7 +128,7 @@ FRay FViewportCamera::DeprojectScreenToWorld(float ScreenX, float ScreenY, float
 
 	const FVector NdcNear(NdcX, NdcY, 0.0f);
 	const FVector NdcFar(NdcX, NdcY, 1.0f);
-
+	
 	const FMatrix InverseViewProjection = GetViewProjectionMatrix().GetInverse();
 	const FVector WorldNear = InverseViewProjection.TransformPosition(NdcNear);
 	const FVector WorldFar = InverseViewProjection.TransformPosition(NdcFar);

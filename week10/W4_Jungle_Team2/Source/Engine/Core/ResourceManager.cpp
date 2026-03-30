@@ -434,12 +434,25 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 		}
 	}
 
-	//	3. OBJ Load
-	UStaticMesh* LoadedMesh = ObjLoader.Load(Path, LoadOptions);
-	if (LoadedMesh == nullptr)
+	//	3. OBJ Load (geometry only)
+	FStaticMesh* LoadedMeshData = ObjLoader.Load(Path, LoadOptions);
+	if (LoadedMeshData == nullptr)
 	{
 		return nullptr;
 	}
+
+	TArray<FStaticMeshMaterialSlot> MaterialSlots;
+	MaterialSlots.reserve(LoadedMeshData->SlotNames.size());
+	for (const FString& SlotName : LoadedMeshData->SlotNames)
+	{
+		FStaticMeshMaterialSlot Slot = {};
+		Slot.SlotName = SlotName;
+		Slot.MaterialData = FindMaterial(SlotName);
+		MaterialSlots.push_back(Slot);
+	}
+
+	UStaticMesh* LoadedMesh = new UStaticMesh();
+	LoadedMesh->SetMeshData(LoadedMeshData, MaterialSlots);
 
 	StaticMeshMap.insert({ Path, LoadedMesh });
 	return LoadedMesh;
