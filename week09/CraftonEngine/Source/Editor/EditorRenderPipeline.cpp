@@ -88,10 +88,12 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 		Bus.SetViewportSize(static_cast<float>(VP->GetWidth()), static_cast<float>(VP->GetHeight()));
 	}
 
-	// RenderCommand를 ERenderPass별로 수집. Collect 단계에서 CPU에서 처리할 작업(예: AABB → 선분 변환)도 수행.
+	// RenderCommand를 ERenderPass별로 수집. 각 컴포넌트가 자신의 렌더 엔트리를 Bus에 직접 추가.
 	Collector.CollectWorld(World, Editor->GetSelectionManager().GetSelectedActors(), Bus);
 	Collector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Bus);
-	Collector.CollectGizmo(Editor->GetGizmo(), Bus);
+
+	UGizmoComponent* Gizmo = Editor->GetGizmo();
+	if (Gizmo) Gizmo->CollectRender(Bus);
 
 	const TArray<FOverlayStatLine> OverlayLines = Editor->GetOverlayStatSystem().BuildLines(*Editor);
 	if (!OverlayLines.empty() && VP && VC == Editor->GetActiveViewport())

@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
-#include "Engine/Object/FName.h"
 #include "Math/Vector.h"
 
 struct FStaticMesh;

@@ -1,24 +1,10 @@
-/* Constant Buffers */
-#include "Common.hlsl"
+#include "Common/ConstantBuffers.hlsl"
+#include "Common/VertexLayouts.hlsl"
 
-/* Editor */
-struct VSInput
+PS_Input_ColorWorld VS(VS_Input_PC input)
 {
-    float3 position : POSITION;
-    float4 color : COLOR;
-};
+    PS_Input_ColorWorld output;
 
-struct PSInput
-{
-    float4 position : SV_POSITION;
-    float4 color : COLOR;
-    float3 worldPos : TEXCOORD0;
-};
-
-PSInput VS(VSInput input)
-{
-    PSInput output;
-    
     float3 worldPos = input.position.xyz;
     output.worldPos = worldPos;
 
@@ -30,7 +16,7 @@ PSInput VS(VSInput input)
     return output;
 }
 
-float4 PS(PSInput input) : SV_TARGET
+float4 PS(PS_Input_ColorWorld input) : SV_TARGET
 {
     return input.color;
 }
