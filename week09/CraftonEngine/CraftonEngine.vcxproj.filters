@@ -43,6 +43,9 @@
     <Filter Include="Source\Engine\Input">
       <UniqueIdentifier>{d701938a-e3ec-ca95-4504-ac8ba8ff529d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Materials">
+      <UniqueIdentifier>{d973d908-20fe-e413-77de-bd424077513d}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Math">
       <UniqueIdentifier>{0ccfc3cf-546c-43b3-75c2-b795af8de30c}</UniqueIdentifier>
     </Filter>
@@ -233,6 +236,9 @@
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp">
       <Filter>Source\Engine\Input</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Materials\Material.cpp">
+      <Filter>Source\Engine\Materials</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Math\Matrix.cpp">
       <Filter>Source\Engine\Math</Filter>
     </ClCompile>
@@ -280,6 +286,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Profiling\Timer.cpp">
       <Filter>Source\Engine\Profiling</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Batcher\BatcherBase.cpp">
+      <Filter>Source\Engine\Render\Batcher</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Batcher\FontBatcher.cpp">
       <Filter>Source\Engine\Render\Batcher</Filter>
@@ -393,7 +402,6 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source\Engine\Materials\Material.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -516,6 +524,9 @@
     <ClInclude Include="Source\Engine\Input\InputSystem.h">
       <Filter>Source\Engine\Input</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Materials\Material.h">
+      <Filter>Source\Engine\Materials</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Math\Matrix.h">
       <Filter>Source\Engine\Math</Filter>
     </ClInclude>
@@ -575,6 +586,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Profiling\Timer.h">
       <Filter>Source\Engine\Profiling</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Batcher\BatcherBase.h">
+      <Filter>Source\Engine\Render\Batcher</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Batcher\FontBatcher.h">
       <Filter>Source\Engine\Render\Batcher</Filter>
@@ -723,6 +737,5 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Materials\Material.h" />
   </ItemGroup>
 </Project>

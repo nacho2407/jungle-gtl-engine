@@ -202,3 +202,99 @@ ID3D11Buffer* FIndexBuffer::GetBuffer() const
 {
 	return Buffer;
 }
+
+// ============================================================
+// FDynamicVertexBuffer
+// ============================================================
+
+void FDynamicVertexBuffer::Create(ID3D11Device* InDevice, uint32 InMaxCount, uint32 InStride)
+{
+	Release();
+	Stride = InStride;
+	MaxCount = InMaxCount;
+	if (!InDevice || MaxCount == 0 || Stride == 0) return;
+
+	D3D11_BUFFER_DESC Desc = {};
+	Desc.ByteWidth = Stride * MaxCount;
+	Desc.Usage = D3D11_USAGE_DYNAMIC;
+	Desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	InDevice->CreateBuffer(&Desc, nullptr, &Buffer);
+}
+
+void FDynamicVertexBuffer::Release()
+{
+	if (Buffer) { Buffer->Release(); Buffer = nullptr; }
+	MaxCount = 0;
+}
+
+void FDynamicVertexBuffer::EnsureCapacity(ID3D11Device* InDevice, uint32 RequiredCount)
+{
+	if (Buffer && RequiredCount <= MaxCount) return;
+	uint32 NewMax = MaxCount > 0 ? MaxCount : 256;
+	while (NewMax < RequiredCount) NewMax *= 2;
+	Create(InDevice, NewMax, Stride);
+}
+
+bool FDynamicVertexBuffer::Update(ID3D11DeviceContext* Context, const void* Data, uint32 Count)
+{
+	if (!Buffer || !Context || !Data || Count == 0) return false;
+	D3D11_MAPPED_SUBRESOURCE Mapped = {};
+	if (FAILED(Context->Map(Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped))) return false;
+	memcpy(Mapped.pData, Data, static_cast<size_t>(Stride) * Count);
+	Context->Unmap(Buffer, 0);
+	return true;
+}
+
+void FDynamicVertexBuffer::Bind(ID3D11DeviceContext* Context, uint32 Slot)
+{
+	UINT Offset = 0;
+	Context->IASetVertexBuffers(Slot, 1, &Buffer, &Stride, &Offset);
+}
+
+// ============================================================
+// FDynamicIndexBuffer
+// ============================================================
+
+void FDynamicIndexBuffer::Create(ID3D11Device* InDevice, uint32 InMaxCount)
+{
+	Release();
+	MaxCount = InMaxCount;
+	if (!InDevice || MaxCount == 0) return;
+
+	D3D11_BUFFER_DESC Desc = {};
+	Desc.ByteWidth = sizeof(uint32) * MaxCount;
+	Desc.Usage = D3D11_USAGE_DYNAMIC;
+	Desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	InDevice->CreateBuffer(&Desc, nullptr, &Buffer);
+}
+
+void FDynamicIndexBuffer::Release()
+{
+	if (Buffer) { Buffer->Release(); Buffer = nullptr; }
+	MaxCount = 0;
+}
+
+void FDynamicIndexBuffer::EnsureCapacity(ID3D11Device* InDevice, uint32 RequiredCount)
+{
+	if (Buffer && RequiredCount <= MaxCount) return;
+	uint32 NewMax = MaxCount > 0 ? MaxCount : 256;
+	while (NewMax < RequiredCount) NewMax *= 2;
+	Create(InDevice, NewMax);
+}
+
+bool FDynamicIndexBuffer::Update(ID3D11DeviceContext* Context, const void* Data, uint32 Count)
+{
+	if (!Buffer || !Context || !Data || Count == 0) return false;
+	D3D11_MAPPED_SUBRESOURCE Mapped = {};
+	if (FAILED(Context->Map(Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped))) return false;
+	memcpy(Mapped.pData, Data, sizeof(uint32) * Count);
+	Context->Unmap(Buffer, 0);
+	return true;
+}
+
+void FDynamicIndexBuffer::Bind(ID3D11DeviceContext* Context)
+{
+	Context->IASetIndexBuffer(Buffer, DXGI_FORMAT_R32_UINT, 0);
+}

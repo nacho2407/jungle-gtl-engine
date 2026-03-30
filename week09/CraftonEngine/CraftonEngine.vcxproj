@@ -156,7 +156,6 @@
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -228,8 +227,8 @@
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\PrimitiveActors.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\World.cpp" />
-    <ClCompile Include="Source\Engine\Materials\Material.cpp" />
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp" />
+    <ClCompile Include="Source\Engine\Materials\Material.cpp" />
     <ClCompile Include="Source\Engine\Math\Matrix.cpp" />
     <ClCompile Include="Source\Engine\Math\Transform.cpp" />
     <ClCompile Include="Source\Engine\Math\Utils.cpp" />
@@ -246,6 +245,7 @@
     <ClCompile Include="Source\Engine\Profiling\MemoryStats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\Stats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\Timer.cpp" />
+    <ClCompile Include="Source\Engine\Render\Batcher\BatcherBase.cpp" />
     <ClCompile Include="Source\Engine\Render\Batcher\FontBatcher.cpp" />
     <ClCompile Include="Source\Engine\Render\Batcher\LineBatcher.cpp" />
     <ClCompile Include="Source\Engine\Render\Batcher\SubUVBatcher.cpp" />
@@ -325,8 +325,8 @@
     <ClInclude Include="Source\Engine\GameFramework\PrimitiveActors.h" />
     <ClInclude Include="Source\Engine\GameFramework\World.h" />
     <ClInclude Include="Source\Engine\GameFramework\WorldContext.h" />
-    <ClInclude Include="Source\Engine\Materials\Material.h" />
     <ClInclude Include="Source\Engine\Input\InputSystem.h" />
+    <ClInclude Include="Source\Engine\Materials\Material.h" />
     <ClInclude Include="Source\Engine\Math\Matrix.h" />
     <ClInclude Include="Source\Engine\Math\Transform.h" />
     <ClInclude Include="Source\Engine\Math\Utils.h" />
@@ -347,6 +347,7 @@
     <ClInclude Include="Source\Engine\Profiling\MemoryStats.h" />
     <ClInclude Include="Source\Engine\Profiling\Stats.h" />
     <ClInclude Include="Source\Engine\Profiling\Timer.h" />
+    <ClInclude Include="Source\Engine\Render\Batcher\BatcherBase.h" />
     <ClInclude Include="Source\Engine\Render\Batcher\FontBatcher.h" />
     <ClInclude Include="Source\Engine\Render\Batcher\LineBatcher.h" />
     <ClInclude Include="Source\Engine\Render\Batcher\SubUVBatcher.h" />
