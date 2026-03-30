@@ -45,6 +45,14 @@ public:
 	SSplitterH* GetTopSplitterH()  const { return TopSplitterH; }
 	SSplitterH* GetBotSplitterH()  const { return BotSplitterH; }
 
+	// 1개 ↔ 4개 전환
+	// bSingle=true  : Index 번 뷰포트만 전체 화면
+	// bSingle=false : 4분할 레이아웃 복원
+	void SetSingleViewportMode(bool bSingle, int32 Index = 0);
+
+	bool IsSingleViewportMode()   const { return bSingleViewport; }
+	int32 GetSingleViewportIndex() const { return SingleViewportIndex; }
+
 	// Viewport Get Set
 	FEditorViewportClient& GetViewportClient(int32 Index) { return ViewportClients[Index]; }
 	const FEditorViewportClient& GetViewportClient(int32 Index) const { return ViewportClients[Index]; }
@@ -68,7 +76,10 @@ public:
 	// 스플리터 위젯 소유권 (new → BuildViewportLayout, delete → DestroyViewportLayout)
 	void DestroyViewportLayout();
 private:
-	// TODO: 1개 <-> 4개 왔다갔다 할 수 있게
+	// 1개 ↔ 4개 전환 상태
+	bool  bSingleViewport      = false;
+	int32 SingleViewportIndex  = 0;
+
 	TStaticArray<FEditorViewportClient, MaxViewports> ViewportClients;
 	TStaticArray<FSceneViewport, MaxViewports>        SceneViewports;
 	TStaticArray<FEditorViewportState, MaxViewports>  ViewportStates;
