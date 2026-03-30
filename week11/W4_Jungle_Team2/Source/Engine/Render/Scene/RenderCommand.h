@@ -108,17 +108,24 @@ struct FSubUVConstants
 struct FStaticMeshConstants
 {
 	// Phong Material
-	FVector AmbientColor = { 0.2f, 0.2f, 0.2f };
-	float   Padding0 = 0.0f;
-	FVector DiffuseColor = { 0.8f, 0.8f, 0.8f };
-	float   Padding1 = 0.0f;
+	FVector AmbientColor  = { 0.2f, 0.2f, 0.2f };
+	float   _Pad0         = 0.0f;
+
+	FVector DiffuseColor  = { 0.8f, 0.8f, 0.8f };
+	float   _Pad1         = 0.0f;
+
 	FVector SpecularColor = { 0.5f, 0.5f, 0.5f };
-	float   Shininess = 32.0f;
+	float   Shininess     = 32.0f;
 
 	// Camera
 	FVector CameraWorldPos = { 0.0f, 0.0f, 0.0f };
-	float   Padding2 = 0.0f;
+	float   _Pad2          = 0.0f;
 
+	// ScrollUV
+	float ScrollX  = 0.f;
+	float ScrollY  = 0.f;
+	float Padding0 = 0.0f;
+	
 	// Texture
 	ID3D11ShaderResourceView* DiffuseSRV  = { nullptr };
 	bool bHasDiffuseMap = { false };
