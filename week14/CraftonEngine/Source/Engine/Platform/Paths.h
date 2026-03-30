@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include <Windows.h>
@@ -31,4 +31,6 @@ public:
 	// 변환 유틸리티 (한글 경로 지원)
 	static std::wstring ToWide(const std::string& Utf8Str);
 	static std::string ToUtf8(const std::wstring& WideStr);
+
+	static std::string ResolveAssetPath(const std::string& BaseFilePath, const std::string& TargetPath);
 };
