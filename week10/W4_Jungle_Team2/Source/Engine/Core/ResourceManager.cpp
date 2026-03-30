@@ -414,6 +414,7 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 		return nullptr;
 	}
 
+	//	1. 메모리 캐시 확인
 	if (UStaticMesh* FoundMesh = FindStaticMesh(Path))
 	{
 		return FoundMesh;
@@ -430,6 +431,7 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 		}
 	}
 
+	//	3. OBJ Load
 	UStaticMesh* LoadedMesh = ObjLoader.Load(Path, LoadOptions);
 	if (LoadedMesh == nullptr)
 	{
