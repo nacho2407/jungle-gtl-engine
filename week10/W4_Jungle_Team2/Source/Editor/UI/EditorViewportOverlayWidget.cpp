@@ -1,5 +1,6 @@
 ﻿#include "Editor/UI/EditorViewportOverlayWidget.h"
 
+#include "Core/ResourceManager.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "ImGui/imgui.h"
 
@@ -66,13 +67,14 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 {
 	FEditorSettings& Settings = FEditorSettings::Get();
 
-	ImGuiViewport* Viewport = ImGui::GetMainViewport();
-	ImVec2 WindowPos(Viewport->WorkPos.x + (Viewport->WorkSize.x * 0.5f), Viewport->WorkPos.y + 10.0f);
 	// 둘 다 꺼져있으면 렌더링하지 않음
 	if (!Settings.bShowStatFPS && !Settings.bShowStatMemory)
 	{
 		return;
 	}
+
+	ImGuiViewport* Viewport = ImGui::GetMainViewport();
+	ImVec2 WindowPos(Viewport->WorkPos.x + (Viewport->WorkSize.x * 0.5f), Viewport->WorkPos.y + 10.0f);
 
 	ImGui::SetNextWindowPos(WindowPos, ImGuiCond_Always, ImVec2(0.5f, 0.0f));
 	ImGui::SetNextWindowBgAlpha(0.3f); // 30% 반투명한 검은색 배경
@@ -100,7 +102,7 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 		// Memory 출력 (노란색 텍스트)
 		if (Settings.bShowStatMemory)
 		{
-			size_t TotalMemoryBytes = 0;
+			size_t MeshMemoryBytes = 0;
 
 			// 이전에 작성했던 UStaticMesh 순회 로직 활용
 			for (TObjectIterator<UStaticMesh> It; It; ++It)
@@ -112,12 +114,26 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 					size_t IndicesMem = Mesh->GetIndices().size() * sizeof(uint32);
 					size_t SectionsMem = Mesh->GetSections().size() * sizeof(FStaticMeshSection);
 					
-					TotalMemoryBytes += sizeof(UStaticMesh) + VerticesMem + IndicesMem + SectionsMem;
+					MeshMemoryBytes += sizeof(UStaticMesh) + VerticesMem + IndicesMem + SectionsMem;
 				}
 			}
 
-			float MemoryKB = TotalMemoryBytes / (1024.0f);
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Mesh Memory: %.2f KB", MemoryKB);
+			size_t MaterialMemoryBytes = FResourceManager::Get().GetMaterialMemorySize();
+			size_t TotalMemoryBytes = MeshMemoryBytes + MaterialMemoryBytes;
+			// size_t TotalMemoryBytes = MeshMemoryBytes + MaterialMemoryBytes + TextureMemoryBytes;
+
+			// 단위 변환 (MB 단위가 더 보기 좋다면 1024.0f * 1024.0f 로 변경)
+			float MeshKB = MeshMemoryBytes / 1024.0f;
+			float MatKB = MaterialMemoryBytes / 1024.0f;
+			// float TexKB = TextureMemoryBytes / 1024.0f;
+			float TotalKB = TotalMemoryBytes / 1024.0f;
+
+			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Memory Stat");
+			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "- Mesh: %.2f KB", MeshKB);
+			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "- Material: %.2f KB", MatKB);
+			// ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "- Texture (VRAM): %.2f KB", TexKB);
+			ImGui::Separator();
+			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Total: %.2f KB", TotalKB);
 		}
 	}
 
