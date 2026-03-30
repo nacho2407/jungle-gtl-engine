@@ -206,7 +206,7 @@ void FGizmo::BuildRenderCommands(AActor* SelectedActor, const FViewportEntry* En
 		{
 			return;
 		}
-		Command.MeshData = FTranslationGizmo->GetMeshData();
+		Command.RenderMesh = FTranslationGizmo->GetRenderMesh();
 		OutQueue.AddCommand(Command);
 		break;
 
@@ -215,7 +215,7 @@ void FGizmo::BuildRenderCommands(AActor* SelectedActor, const FViewportEntry* En
 		{
 			return;
 		}
-		for (const std::shared_ptr<FMeshData>& AxisMesh : RotationAxisMeshes)
+		for (const std::shared_ptr<FDynamicMesh>& AxisMesh : RotationAxisMeshes)
 		{
 			if (!AxisMesh)
 			{
@@ -223,14 +223,14 @@ void FGizmo::BuildRenderCommands(AActor* SelectedActor, const FViewportEntry* En
 			}
 
 			Command.WorldMatrix = AxisGizmoWorld;
-			Command.MeshData = AxisMesh.get();
+			Command.RenderMesh = AxisMesh.get();
 			OutQueue.AddCommand(Command);
 		}
 
 		if (RotationScreenMesh)
 		{
 			Command.WorldMatrix = ScreenGizmoWorld;
-			Command.MeshData = RotationScreenMesh.get();
+			Command.RenderMesh = RotationScreenMesh.get();
 			OutQueue.AddCommand(Command);
 		}
 		break;
@@ -240,7 +240,7 @@ void FGizmo::BuildRenderCommands(AActor* SelectedActor, const FViewportEntry* En
 		{
 			return;
 		}
-		Command.MeshData = FScaleGizmo->GetMeshData();
+		Command.RenderMesh = FScaleGizmo->GetRenderMesh();
 		OutQueue.AddCommand(Command);
 		break;
 
@@ -251,7 +251,7 @@ void FGizmo::BuildRenderCommands(AActor* SelectedActor, const FViewportEntry* En
 	const EGizmoAxis DisplayAxis = GetDisplayAxis();
 	if (DisplayAxis != EGizmoAxis::None)
 	{
-		auto AddHighlightCommand = [&](std::shared_ptr<FMeshData>& HighlightMeshSlot, const FMatrix& HighlightWorldMatrix, auto&& Factory)
+		auto AddHighlightCommand = [&](std::shared_ptr<FDynamicMesh>& HighlightMeshSlot, const FMatrix& HighlightWorldMatrix, auto&& Factory)
 		{
 			if (!HighlightMeshSlot)
 			{
@@ -262,7 +262,7 @@ void FGizmo::BuildRenderCommands(AActor* SelectedActor, const FViewportEntry* En
 			{
 				FRenderCommand HighlightCommand = Command;
 				HighlightCommand.WorldMatrix = HighlightWorldMatrix;
-				HighlightCommand.MeshData = HighlightMeshSlot.get();
+				HighlightCommand.RenderMesh = HighlightMeshSlot.get();
 				OutQueue.AddCommand(HighlightCommand);
 			}
 		};
@@ -594,7 +594,7 @@ void FGizmo::EndDrag()
 
 bool FGizmo::EnsureTranslationMeshes() const
 {
-	if (!FTranslationGizmo || !FTranslationGizmo->GetMeshData())
+	if (!FTranslationGizmo || !FTranslationGizmo->GetRenderMesh())
 	{
 		FTranslationGizmo = std::make_unique<FPrimitiveGizmo>(FPrimitiveGizmo::EGizmoType::Translation);
 	}
@@ -635,7 +635,7 @@ bool FGizmo::EnsureTranslationMeshes() const
 	}
 
 	return FTranslationGizmo
-		&& FTranslationGizmo->GetMeshData()
+		&& FTranslationGizmo->GetRenderMesh()
 		&& TranslationAxisMeshes[0]
 		&& TranslationAxisMeshes[1]
 		&& TranslationAxisMeshes[2]
@@ -687,7 +687,7 @@ bool FGizmo::EnsureRotationMeshes(const FViewportEntry* Entry, const FVector& Gi
 
 bool FGizmo::EnsureScaleMeshes() const
 {
-	if (!FScaleGizmo || !FScaleGizmo->GetMeshData())
+	if (!FScaleGizmo || !FScaleGizmo->GetRenderMesh())
 	{
 		FScaleGizmo = std::make_unique<FPrimitiveGizmo>(FPrimitiveGizmo::EGizmoType::Scale);
 	}
@@ -728,7 +728,7 @@ bool FGizmo::EnsureScaleMeshes() const
 	}
 
 	return FScaleGizmo
-		&& FScaleGizmo->GetMeshData()
+		&& FScaleGizmo->GetRenderMesh()
 		&& ScaleAxisMeshes[0]
 		&& ScaleAxisMeshes[1]
 		&& ScaleAxisMeshes[2]
@@ -746,7 +746,7 @@ EGizmoAxis FGizmo::HitTestAxis(AActor* SelectedActor, const FViewportEntry* Entr
 	}
 
 	const FVector WorldLocation = GetActorWorldLocation(SelectedActor);
-	const std::shared_ptr<FMeshData>* AxisMeshes = nullptr;
+	const std::shared_ptr<FDynamicMesh>* AxisMeshes = nullptr;
 	if (Mode == EGizmoMode::Location)
 	{
 		if (!EnsureTranslationMeshes())
@@ -786,7 +786,7 @@ EGizmoAxis FGizmo::HitTestAxis(AActor* SelectedActor, const FViewportEntry* Entr
 	EGizmoAxis BestAxis = EGizmoAxis::None;
 	float BestDistance = (std::numeric_limits<float>::max)();
 
-	const auto TestMesh = [&](const std::shared_ptr<FMeshData>& AxisMesh, const FMatrix& MeshWorld, EGizmoAxis Handle)
+	const auto TestMesh = [&](const std::shared_ptr<FDynamicMesh>& AxisMesh, const FMatrix& MeshWorld, EGizmoAxis Handle)
 	{
 		if (!AxisMesh)
 		{

@@ -24,9 +24,11 @@
 #include "Component/CameraComponent.h"
 #include "Camera/Camera.h"
 #include "Serializer/SceneSerializer.h"
-#include "Actor/SkySphereActor.h" 
-#include "Actor/ObjActor.h"
 #include "Core/ShowFlags.h"
+#include "Viewport/EditorViewportClient.h"
+#include "Component/SkyComponent.h"
+#include "Component/SubUVComponent.h"
+#include "Component/UUIDBillboardComponent.h"
 
 enum class EFileDialogType
 {
@@ -281,7 +283,7 @@ void FEditorUI::AttachToRenderer(FRenderer* InRenderer)
 	
 			AActor* Selected = Engine->GetSelectedActor();
 			if (Selected && !Selected->IsPendingDestroy() && Selected->IsVisible()
-				&& !Selected->IsA<ASkySphereActor>()
+				&& Selected->GetComponentByClass<USkyComponent>() == nullptr
 				&& [&]() -> bool {
 				const FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
 				if (ViewportRegistry.GetEntries().empty()) return true;
@@ -294,16 +296,15 @@ void FEditorUI::AttachToRenderer(FRenderer* InRenderer)
 			{
 				for (UActorComponent* Component : Selected->GetComponents())
 				{
-					if (!Component->IsA(UPrimitiveComponent::StaticClass()))
-					{
-						continue;
-					}
+					if (!Component->IsA(UPrimitiveComponent::StaticClass())) continue;
+					if (Component->IsA(UTextComponent::StaticClass())) continue;
+					if (Component->IsA(USubUVComponent::StaticClass())) continue;
 
 					UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
-					if (PrimitiveComponent->GetPrimitive())
+					if (PrimitiveComponent->GetRenderMesh())
 					{
 						Renderer->RenderOutline(
-							PrimitiveComponent->GetPrimitive()->GetMeshData(),
+							PrimitiveComponent->GetRenderMesh(),
 							PrimitiveComponent->GetWorldTransform()
 						);
 					}

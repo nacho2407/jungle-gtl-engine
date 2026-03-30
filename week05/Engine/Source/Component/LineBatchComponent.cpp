@@ -1,5 +1,4 @@
 #include "LineBatchComponent.h"
-#include "PrimitiveLineBatch.h"
 #include "Math/MathUtility.h"
 #include "Object/Class.h"
 
@@ -7,18 +6,40 @@ IMPLEMENT_RTTI(ULineBatchComponent, UPrimitiveComponent)
 
 void ULineBatchComponent::PostConstruct()
 {
-	Primitive = std::make_shared<FPrimitiveLineBatch>();
+	LineMesh = std::make_shared<FDynamicMesh>();
+	LineMesh->Topology = EMeshTopology::EMT_LineList;
 }
 
 void ULineBatchComponent::DrawLine(FVector InStart, FVector InEnd, FVector4 InColor)
 {
-	auto primitive = static_pointer_cast<FPrimitiveLineBatch>(Primitive);
-	primitive->AddLine(InStart, InEnd, InColor);
+	if (!LineMesh) return;
+
+	uint32 CurrentSize = static_cast<uint32>(LineMesh->Vertices.size());
+
+	FVertex V1, V2;
+	V1.Position = InStart;
+	V1.Color = InColor;
+	V1.Normal = FVector::ZeroVector; // 노멀 초기화
+
+	V2.Position = InEnd;
+	V2.Color = InColor;
+	V2.Normal = FVector::ZeroVector;
+
+	LineMesh->Vertices.push_back(V1);
+	LineMesh->Vertices.push_back(V2);
+
+	// 인덱스 버퍼 업데이트
+	LineMesh->Indices.push_back(CurrentSize);
+	LineMesh->Indices.push_back(CurrentSize + 1);
+
+	// 상태 갱신
+	LineMesh->bIsDirty = true;
+	LineMesh->UpdateLocalBound();
 }
 
 void ULineBatchComponent::DrawWireCube(FVector InCenter, FQuat InRotation, FVector InScale, FVector4 InColor)
 {
-	auto LineBatch = static_pointer_cast<FPrimitiveLineBatch>(Primitive);
+	if (!LineMesh) return;
 	const FVector BaseCube[12][2] = {
 		{{-0.5f, -0.5f, 0.5f}, {0.5f, -0.5f, 0.5f}},  // 왼쪽 위
 		{{-0.5f, -0.5f, -0.5f}, {0.5f, -0.5f, -0.5f}},  // 왼쪽 아래
@@ -43,8 +64,7 @@ void ULineBatchComponent::DrawWireCube(FVector InCenter, FQuat InRotation, FVect
 
 void ULineBatchComponent::DrawWireSphere(FVector InCenter, float InRadius, FVector4 InColor)
 {
-	auto LineBatch = static_pointer_cast<FPrimitiveLineBatch>(Primitive);
-	if (!LineBatch) return;
+	if (!LineMesh) return;
 
 	const int32 Segments = 16; // 선의 개수 (정밀도)
 	const float AngleStep = 2.0f * FMath::PI / Segments;
@@ -82,8 +102,23 @@ void ULineBatchComponent::DrawWireSphere(FVector InCenter, float InRadius, FVect
 	}
 }
 
+FBoxSphereBounds ULineBatchComponent::GetLocalBounds() const
+{
+	if (LineMesh)
+	{
+		return { LineMesh->GetCenterCoord(), LineMesh->GetLocalBoundRadius(),
+				 (LineMesh->GetMaxCoord() - LineMesh->GetMinCoord()) * 0.5f };
+	}
+	return { FVector::ZeroVector, 0.f, FVector::ZeroVector };
+}
+
 void ULineBatchComponent::Clear()
 {
-	auto primitive = static_pointer_cast<FPrimitiveLineBatch>(Primitive);
-	primitive->ClearVertices();
+	if (LineMesh)
+	{
+		LineMesh->Vertices.clear();
+		LineMesh->Indices.clear();
+		LineMesh->bIsDirty = true;
+		LineMesh->UpdateLocalBound();
+	}
 }

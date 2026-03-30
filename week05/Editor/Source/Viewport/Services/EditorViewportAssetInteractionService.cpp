@@ -2,7 +2,7 @@
 
 #include "EditorEngine.h"
 #include "Viewport/EditorViewportRegistry.h"
-#include "Actor/ObjActor.h"
+#include "Actor/Actor.h"
 #include "Core/Paths.h"
 #include "Debug/EngineLog.h"
 #include "Picking/Picker.h"
@@ -11,6 +11,8 @@
 #include "Slate/SlateApplication.h"
 #include "UI/EditorUI.h"
 #include <Windows.h>
+#include "Component/StaticMeshComponent.h"
+#include "Asset/ObjManager.h"
 
 void FEditorViewportAssetInteractionService::HandleFileDoubleClick(
 	FEditorUI& EditorUI,
@@ -87,12 +89,28 @@ void FEditorViewportAssetInteractionService::HandleFileDropOnViewport(
 
 	const FRay Ray = Picker.ScreenToRay(*Entry, ScreenMouseX, ScreenMouseY);
 
-	AObjActor* NewActor = Engine->GetScene()->SpawnActor<AObjActor>("ObjActor");
+	AActor* NewActor = Engine->GetScene()->SpawnActor<AActor>("DroppedObjActor");
 	if (!NewActor)
 	{
 		return;
 	}
 
-	NewActor->LoadObj(Engine->GetRenderer()->GetDevice(), FPaths::ToRelativePath(FilePath));
-	NewActor->SetActorLocation(Ray.Origin + Ray.Direction * 5.0f);
+	UStaticMeshComponent* MeshComponent = FObjectFactory::ConstructObject<UStaticMeshComponent>(NewActor);
+	NewActor->AddOwnedComponent(MeshComponent);
+	NewActor->SetRootComponent(MeshComponent);
+
+	UStaticMesh* LoadedMesh = FObjManager::LoadObjStaticMeshAsset(FPaths::ToRelativePath(FilePath));
+	if (LoadedMesh) MeshComponent->SetStaticMesh(LoadedMesh);
+
+	std::filesystem::path PngPath = FilePath;
+	PngPath.replace_extension(".png");
+	if (std::filesystem::exists(FPaths::ToAbsolutePath(PngPath.string())))
+	{
+		// TODO: 머티리얼 매니저를 통해 텍스처를 읽어오고 머티리얼을 생성해서 MeshComp에 입혀주는 로직 추가
+		// 예: MeshComp->SetMaterial(0, 생성한머티리얼);
+	}
+
+	FVector SpawnLocation = Ray.Origin + Ray.Direction * 5;
+	NewActor->SetActorLocation(SpawnLocation);
+	Engine->SetSelectedActor(NewActor);
 }

@@ -1,7 +1,6 @@
 #include "UUIDBillboardComponent.h"
 #include "Actor/Actor.h"
 #include "Object/Class.h"
-#include "Primitive/PrimitiveBase.h"
 #include <limits>
 
 IMPLEMENT_RTTI(UUUIDBillboardComponent, UTextComponent)
@@ -28,16 +27,10 @@ FString UUUIDBillboardComponent::GetDisplayText() const
 FVector UUUIDBillboardComponent::GetRenderWorldPosition() const
 {
 	AActor* OwnerActor = GetOwner();
-	if (!OwnerActor)
-	{
-		return WorldOffset;
-	}
+	if (!OwnerActor) return WorldOffset;
 
 	USceneComponent* Root = OwnerActor->GetRootComponent();
-	if (!Root)
-	{
-		return WorldOffset;
-	}
+	if (!Root) return WorldOffset;
 
 	const FVector RootLocation = Root->GetWorldLocation();
 
@@ -46,19 +39,15 @@ FVector UUUIDBillboardComponent::GetRenderWorldPosition() const
 
 	for (UActorComponent* Component : OwnerActor->GetComponents())
 	{
-		if (!Component || !Component->IsA(UPrimitiveComponent::StaticClass()))
-		{
-			continue;
-		}
+		// 자기 자신(UUID 컴포넌트)이거나 nullptr이면 패스
+		if (!Component || Component == this) continue;
 
-		UPrimitiveComponent* PrimitiveComp = static_cast<UPrimitiveComponent*>(Component);
+		// ⭐ 구형/신형 구분할 필요 없이 UPrimitiveComponent 하나로 통일!
+		if (!Component->IsA(UPrimitiveComponent::StaticClass())) continue;
 
-		if (PrimitiveComp == this)
-		{
-			continue;
-		}
+		UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
+		FBoxSphereBounds Bounds = PrimitiveComponent->GetWorldBounds();
 
-		const FBoxSphereBounds Bounds = PrimitiveComp->GetWorldBounds();
 		const float TopZ = Bounds.Center.Z + Bounds.BoxExtent.Z;
 
 		if (!bFoundPrimitiveBounds || TopZ > MaxTopZ)

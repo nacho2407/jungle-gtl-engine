@@ -16,7 +16,7 @@ class FMaterial;
 class FFrustum;
 class FShowFlags;
 class UScene;
-struct FMeshData;
+struct FRenderMesh;
 
 class FEditorViewportRenderService
 {
@@ -38,7 +38,7 @@ public:
 		FGizmo& Gizmo,
 		FBlitRenderer& BlitRenderer,
 		const std::shared_ptr<FMaterial>& WireFrameMaterial,
-		FMeshData* GridMesh,
+		FRenderMesh* GridMesh,
 		FMaterial* GridMaterial,
 		const FBuildRenderCommands& BuildRenderCommands) const;
 

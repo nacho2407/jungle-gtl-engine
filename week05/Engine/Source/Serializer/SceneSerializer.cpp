@@ -6,10 +6,6 @@
 #include "Camera/Camera.h"
 #include "Core/Paths.h"
 #include "Actor/Actor.h"
-#include "Actor/AttachTestActor.h"
-#include "Actor/CubeActor.h"
-#include "Actor/SphereActor.h"
-#include "Actor/ObjActor.h"
 #include "Component/PrimitiveComponent.h"
 #include "Scene/Scene.h"
 #include "Object/ObjectFactory.h" 
@@ -140,7 +136,7 @@ bool FSceneSerializer::Load(UScene* Scene, const FString& FilePath, ID3D11Device
 		*static_cast<nlohmann::json*>(Ar.GetRawJson()) = Value;
 		Actor->Serialize(Ar);
 
-		if (Value.contains("Material"))
+		/*if (Value.contains("Material"))
 		{
 			const FString MaterialName = Value["Material"].get<FString>();
 			const std::shared_ptr<FMaterial> Material = FMaterialManager::Get().FindByName(MaterialName);
@@ -165,7 +161,7 @@ bool FSceneSerializer::Load(UScene* Scene, const FString& FilePath, ID3D11Device
 						ObjActor->LoadObj(Device, PrimitiveFileName);
 				}
 			}
-		}
+		}*/
 
 		++ActorIndex;
 

@@ -6,12 +6,11 @@
 #include "Renderer/TextMeshBuilder.h"
 #include "Renderer/SubUVRenderer.h"
 #include "ShaderManager.h"
-#include "Primitive/PrimitiveBase.h"
-#include "PrimitiveVertex.h"
 #include <d3d11.h>
 #include <functional>
 #include <memory>
 
+struct FVertex;
 class FPixelShader;
 class FMaterial;
 class UScene;
@@ -86,7 +85,7 @@ public:
 	// ─── 특수 효과 ───
 	/** 선택된 오브젝트 등의 아웃라인 렌더링 */
 	bool InitOutlineResources();
-	void RenderOutline(FMeshData* Mesh, const FMatrix& WorldMatrix, float OutlineScale = 1.05f);
+	void RenderOutline(FRenderMesh* Mesh, const FMatrix& WorldMatrix, float OutlineScale = 1.05f);
 
 	// ─── 접근자 ───
 	FMaterial* GetDefaultMaterial() const { return DefaultMaterial.get(); }
@@ -146,7 +145,7 @@ private:
 	size_t PrevCommandCount = 0;
 
 	/** 라인 렌더링용 임시 리소스 */
-	TArray<FPrimitiveVertex> LineVertices;
+	TArray<FVertex> LineVertices;
 	ID3D11Buffer* LineVertexBuffer = nullptr;
 	UINT LineVertexBufferSize = 0;
 

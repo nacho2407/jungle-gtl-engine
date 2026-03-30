@@ -5,10 +5,11 @@
 #include "Actor/Actor.h"
 #include "Camera/Camera.h"
 #include "Component/CameraComponent.h"
-#include "Component/CubeComponent.h"
+#include "Component/StaticMeshComponent.h"
 #include "Core/ConsoleVariableManager.h"
 #include "Core/Engine.h"
 #include "Debug/EngineLog.h"
+#include "Asset/ObjManager.h"
 #include "Object/ObjectFactory.h"
 #include "Platform/Windows/WindowsWindow.h"
 #include "Scene/Scene.h"
@@ -46,8 +47,11 @@ namespace
 			AActor* PreviewActor = PreviewWorld->SpawnActor<AActor>("PreviewCube");
 			if (PreviewActor)
 			{
-				UCubeComponent* PreviewComponent = FObjectFactory::ConstructObject<UCubeComponent>(PreviewActor);
+				UStaticMeshComponent* PreviewComponent = FObjectFactory::ConstructObject<UStaticMeshComponent>(PreviewActor);
 				PreviewActor->AddOwnedComponent(PreviewComponent);
+				PreviewActor->SetRootComponent(PreviewComponent);
+
+				PreviewComponent->SetStaticMesh(FObjManager::GetPrimitiveCube());
 				PreviewActor->SetActorLocation({ 0.0f, 0.0f, 0.0f });
 			}
 		}

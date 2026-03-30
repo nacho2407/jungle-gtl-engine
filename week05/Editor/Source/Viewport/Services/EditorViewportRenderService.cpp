@@ -3,7 +3,6 @@
 #include "EditorEngine.h"
 #include "Viewport/EditorViewportRegistry.h"
 #include "Actor/Actor.h"
-#include "Actor/SkySphereActor.h"
 #include "Core/Engine.h"
 #include "Gizmo/Gizmo.h"
 #include "Math/Frustum.h"
@@ -13,6 +12,9 @@
 #include "UI/EditorUI.h"
 #include "Viewport/BlitRenderer.h"
 #include "Viewport/Viewport.h"
+#include "Component/SkyComponent.h"
+#include "Component/StaticMeshComponent.h"
+#include "Asset/ObjManager.h"
 
 void FEditorViewportRenderService::RenderAll(
 	FEngine* Engine,
@@ -23,7 +25,7 @@ void FEditorViewportRenderService::RenderAll(
 	FGizmo& Gizmo,
 	FBlitRenderer& BlitRenderer,
 	const std::shared_ptr<FMaterial>& WireFrameMaterial,
-	FMeshData* GridMesh,
+	FRenderMesh* GridMesh,
 	FMaterial* GridMaterial,
 	const FBuildRenderCommands& BuildRenderCommands) const
 {
@@ -90,7 +92,7 @@ void FEditorViewportRenderService::RenderAll(
 		BuildRenderCommands(Engine, Scene, Frustum, Entry.LocalState.ShowFlags, CameraPosition, Queue);
 
 		AActor* GizmoTarget = EditorEngine->GetSelectedActor();
-		if (GizmoTarget && !GizmoTarget->IsA<ASkySphereActor>())
+		if (GizmoTarget && GizmoTarget->GetComponentByClass<USkyComponent>() == nullptr)
 		{
 			Gizmo.BuildRenderCommands(GizmoTarget, &Entry, Queue);
 		}
@@ -106,7 +108,7 @@ void FEditorViewportRenderService::RenderAll(
 			GridMaterial->SetParameterData("LineThickness", &Entry.LocalState.LineThickness, 4);
 
 			FRenderCommand GridCommand;
-			GridCommand.MeshData = GridMesh;
+			GridCommand.RenderMesh = GridMesh;
 			GridCommand.Material = GridMaterial;
 			GridCommand.WorldMatrix = FMatrix::Identity;
 			GridCommand.RenderLayer = ERenderLayer::Default;

@@ -1,15 +1,17 @@
 #include "SubUVComponent.h"
 #include "Object/Class.h"
-#include "Primitive/PrimitiveBase.h"
+#include "Renderer/MeshData.h"
 
 IMPLEMENT_RTTI(USubUVComponent, UPrimitiveComponent)
 
 void USubUVComponent::PostConstruct()
 {
 	// SubUV 렌더링용 메시 객체 생성
-	bDrawDebugBounds = true;
-	SubUVMesh = std::make_shared<FMeshData>();
+	bDrawDebugBounds = false;
+	SubUVMesh = std::make_shared<FDynamicMesh>();
 }
+
+FRenderMesh* USubUVComponent::GetRenderMesh() const { return SubUVMesh.get(); }
 
 FBoxSphereBounds USubUVComponent::GetWorldBounds() const
 {

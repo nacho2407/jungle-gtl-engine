@@ -1,7 +1,6 @@
 #include "Engine.h"
 
 #include "Platform/Windows/WindowsWindow.h"
-#include "Actor/SkySphereActor.h"
 #include "Camera/Camera.h"
 #include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
@@ -12,7 +11,6 @@
 #include "Math/Frustum.h"
 #include "Object/ObjectManager.h"
 #include "Physics/PhysicsManager.h"
-#include "Primitive/PrimitiveBase.h"
 #include "Renderer/MaterialManager.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderCommand.h"
@@ -20,6 +18,7 @@
 #include "ViewportClient.h"
 #include "World/World.h"
 #include "Object/ObjectFactory.h"
+#include "Primitive/PrimitiveGizmo.h"
 
 FEngine* GEngine = nullptr;
 
@@ -309,7 +308,7 @@ void FEngine::ReleaseRuntime()
 	InputManager.reset();
 
 	PhysicsManager.reset();
-	FPrimitiveBase::ClearCache();
+	FPrimitiveGizmo::ClearCache();
 	Renderer.reset();
 
 	CommandQueue.Clear();

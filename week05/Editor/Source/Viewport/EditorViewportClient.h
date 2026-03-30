@@ -64,7 +64,7 @@ private:
 
 
 	// 그리드 렌더링용
-	std::unique_ptr<FMeshData> GridMesh;
+	std::unique_ptr<FDynamicMesh> GridMesh;
 	std::shared_ptr<FMaterial> GridMaterial;
 	void CreateGridResource(FRenderer* Renderer);
 };

@@ -4,6 +4,10 @@
 
 #include <optional>
 
+#include "Renderer/MeshData.h"
+
+static TMap<FString, std::shared_ptr<FDynamicMesh>> GizmoCache;
+
 namespace
 {
 	FRotationGizmoDesc MakeRotationDesc()
@@ -16,19 +20,26 @@ namespace
 		return Desc;
 	}
 
-	std::shared_ptr<FMeshData> CreateMeshDataFromMesh(const FGizmoMesh& GizmoMesh, const std::optional<FVector4>& OverrideColor = std::nullopt)
+	std::shared_ptr<FDynamicMesh> CreateMeshDataFromMesh(const FGizmoMesh& GizmoMesh, const std::optional<FVector4>& OverrideColor = std::nullopt)
 	{
 		if (GizmoMesh.vertices.empty() || GizmoMesh.indices.empty())
 		{
 			return nullptr;
 		}
 
-		auto Data = std::make_shared<FMeshData>();
+		auto Data = std::make_shared<FDynamicMesh>();
 		Data->Vertices.reserve(GizmoMesh.vertices.size());
 		for (const auto& FGizmoVertex : GizmoMesh.vertices)
 		{
 			FVector4 FGizmoColor = OverrideColor.value_or(FVector4(FGizmoVertex.color.r, FGizmoVertex.color.g, FGizmoVertex.color.b, FGizmoVertex.color.a));
-			Data->Vertices.push_back({ FGizmoVertex.position, FGizmoColor, FGizmoVertex.normal });
+
+			FVertex V;
+			V.Position = FGizmoVertex.position;
+			V.Normal = FGizmoVertex.normal;
+			V.Color = FGizmoColor;
+			V.UV = FVector2(0.0f, 0.0f);
+
+			Data->Vertices.push_back(V);
 		}
 
 		Data->Indices.reserve(GizmoMesh.indices.size());
@@ -38,6 +49,7 @@ namespace
 		}
 
 		Data->Topology = EMeshTopology::EMT_TriangleList;
+		Data->bIsDirty;
 
 		return Data;
 	}
@@ -134,15 +146,22 @@ const FString FPrimitiveGizmo::FilePath = "Assets/Meshed/Gizmo.mesh";
 FPrimitiveGizmo::FPrimitiveGizmo(EGizmoType Type)
 	: GizmoType(Type)
 {
-	auto Cached = GetCached(GetKey(GizmoType));
-	if (Cached)
+	FString CacheKey = GetKey(GizmoType);
+
+	auto It = GizmoCache.find(CacheKey);
+	if (It != GizmoCache.end())
 	{
-		MeshData = Cached;
+		RenderMesh = It->second;
 	}
 	else
 	{
 		Generate(GizmoType);
 	}
+}
+
+void FPrimitiveGizmo::ClearCache()
+{
+	GizmoCache.clear();
 }
 
 void FPrimitiveGizmo::Generate(EGizmoType Type)
@@ -179,107 +198,107 @@ FString FPrimitiveGizmo::GetKey(EGizmoType Type)
 	}
 }
 
-std::shared_ptr<FMeshData> FPrimitiveGizmo::CreateTranslationAxisMesh(EAxis Axis)
+std::shared_ptr<FDynamicMesh> FPrimitiveGizmo::CreateTranslationAxisMesh(EAxis Axis)
 {
 	const FTranslationGizmo Gizmo = GenerateTranslationGizmo();
 	return CreateMeshDataFromMesh(SelectTranslationAxisMesh(Gizmo, Axis));
 }
 
-std::shared_ptr<FMeshData> FPrimitiveGizmo::CreateTranslationAxisMesh(EAxis Axis, const FVector4& OverrideColor)
+std::shared_ptr<FDynamicMesh> FPrimitiveGizmo::CreateTranslationAxisMesh(EAxis Axis, const FVector4& OverrideColor)
 {
 	const FTranslationGizmo Gizmo = GenerateTranslationGizmo();
 	return CreateMeshDataFromMesh(SelectTranslationAxisMesh(Gizmo, Axis), OverrideColor);
 }
 
-std::shared_ptr<FMeshData> FPrimitiveGizmo::CreateTranslationPlaneMesh(ETranslationPlane Plane)
+std::shared_ptr<FDynamicMesh> FPrimitiveGizmo::CreateTranslationPlaneMesh(ETranslationPlane Plane)
 {
 	const FTranslationGizmo Gizmo = GenerateTranslationGizmo();
 	return CreateMeshDataFromMesh(SelectTranslationPlaneMesh(Gizmo, Plane));
 }
 
-std::shared_ptr<FMeshData> FPrimitiveGizmo::CreateTranslationPlaneMesh(ETranslationPlane Plane, const FVector4& OverrideColor)
+std::shared_ptr<FDynamicMesh> FPrimitiveGizmo::CreateTranslationPlaneMesh(ETranslationPlane Plane, const FVector4& OverrideColor)
 {
 	const FTranslationGizmo Gizmo = GenerateTranslationGizmo();
 	return CreateMeshDataFromMesh(SelectTranslationPlaneMesh(Gizmo, Plane), OverrideColor);
 }
 
-std::shared_ptr<FMeshData> FPrimitiveGizmo::CreateTranslationScreenMesh()
+std::shared_ptr<FDynamicMesh> FPrimitiveGizmo::CreateTranslationScreenMesh()
 {
 	const FTranslationGizmo Gizmo = GenerateTranslationGizmo();
 	return CreateMeshDataFromMesh(SelectTranslationScreenMesh(Gizmo));
 }
 
-std::shared_ptr<FMeshData> FPrimitiveGizmo::CreateTranslationScreenMesh(const FVector4& OverrideColor)
+std::shared_ptr<FDynamicMesh> FPrimitiveGizmo::CreateTranslationScreenMesh(const FVector4& OverrideColor)
 {
 	const FTranslationGizmo Gizmo = GenerateTranslationGizmo();
 	return CreateMeshDataFromMesh(SelectTranslationScreenMesh(Gizmo), OverrideColor);
 }
 
-std::shared_ptr<FMeshData> FPrimitiveGizmo::CreateRotationAxisMesh(EAxis Axis)
+std::shared_ptr<FDynamicMesh> FPrimitiveGizmo::CreateRotationAxisMesh(EAxis Axis)
 {
 	return CreateRotationAxisMesh(Axis, MakeRotationDesc());
 }
 
-std::shared_ptr<FMeshData> FPrimitiveGizmo::CreateRotationAxisMesh(EAxis Axis, const FVector4& OverrideColor)
+std::shared_ptr<FDynamicMesh> FPrimitiveGizmo::CreateRotationAxisMesh(EAxis Axis, const FVector4& OverrideColor)
 {
 	return CreateRotationAxisMesh(Axis, MakeRotationDesc(), OverrideColor);
 }
 
-std::shared_ptr<FMeshData> FPrimitiveGizmo::CreateRotationAxisMesh(EAxis Axis, const FRotationGizmoDesc& Desc)
+std::shared_ptr<FDynamicMesh> FPrimitiveGizmo::CreateRotationAxisMesh(EAxis Axis, const FRotationGizmoDesc& Desc)
 {
 	const FRotationGizmo Gizmo = GenerateRotationGizmo(Desc);
 	return CreateMeshDataFromMesh(SelectRotationAxisMesh(Gizmo, Axis));
 }
 
-std::shared_ptr<FMeshData> FPrimitiveGizmo::CreateRotationAxisMesh(EAxis Axis, const FRotationGizmoDesc& Desc, const FVector4& OverrideColor)
+std::shared_ptr<FDynamicMesh> FPrimitiveGizmo::CreateRotationAxisMesh(EAxis Axis, const FRotationGizmoDesc& Desc, const FVector4& OverrideColor)
 {
 	const FRotationGizmo Gizmo = GenerateRotationGizmo(Desc);
 	return CreateMeshDataFromMesh(SelectRotationAxisMesh(Gizmo, Axis), OverrideColor);
 }
 
-std::shared_ptr<FMeshData> FPrimitiveGizmo::CreateRotationScreenMesh(const FRotationGizmoDesc& Desc)
+std::shared_ptr<FDynamicMesh> FPrimitiveGizmo::CreateRotationScreenMesh(const FRotationGizmoDesc& Desc)
 {
 	const FRotationGizmo Gizmo = GenerateRotationGizmo(Desc);
 	return CreateMeshDataFromMesh(SelectRotationScreenMesh(Gizmo));
 }
 
-std::shared_ptr<FMeshData> FPrimitiveGizmo::CreateRotationScreenMesh(const FRotationGizmoDesc& Desc, const FVector4& OverrideColor)
+std::shared_ptr<FDynamicMesh> FPrimitiveGizmo::CreateRotationScreenMesh(const FRotationGizmoDesc& Desc, const FVector4& OverrideColor)
 {
 	const FRotationGizmo Gizmo = GenerateRotationGizmo(Desc);
 	return CreateMeshDataFromMesh(SelectRotationScreenMesh(Gizmo), OverrideColor);
 }
 
-std::shared_ptr<FMeshData> FPrimitiveGizmo::CreateScaleAxisMesh(EAxis Axis)
+std::shared_ptr<FDynamicMesh> FPrimitiveGizmo::CreateScaleAxisMesh(EAxis Axis)
 {
 	const FScaleGizmo Gizmo = GenerateScaleGizmo();
 	return CreateMeshDataFromMesh(SelectScaleAxisMesh(Gizmo, Axis));
 }
 
-std::shared_ptr<FMeshData> FPrimitiveGizmo::CreateScaleAxisMesh(EAxis Axis, const FVector4& OverrideColor)
+std::shared_ptr<FDynamicMesh> FPrimitiveGizmo::CreateScaleAxisMesh(EAxis Axis, const FVector4& OverrideColor)
 {
 	const FScaleGizmo Gizmo = GenerateScaleGizmo();
 	return CreateMeshDataFromMesh(SelectScaleAxisMesh(Gizmo, Axis), OverrideColor);
 }
 
-std::shared_ptr<FMeshData> FPrimitiveGizmo::CreateScalePlaneMesh(EScalePlane Plane)
+std::shared_ptr<FDynamicMesh> FPrimitiveGizmo::CreateScalePlaneMesh(EScalePlane Plane)
 {
 	const FScaleGizmo Gizmo = GenerateScaleGizmo();
 	return CreateMeshDataFromMesh(SelectScalePlaneMesh(Gizmo, Plane));
 }
 
-std::shared_ptr<FMeshData> FPrimitiveGizmo::CreateScalePlaneMesh(EScalePlane Plane, const FVector4& OverrideColor)
+std::shared_ptr<FDynamicMesh> FPrimitiveGizmo::CreateScalePlaneMesh(EScalePlane Plane, const FVector4& OverrideColor)
 {
 	const FScaleGizmo Gizmo = GenerateScaleGizmo();
 	return CreateMeshDataFromMesh(SelectScalePlaneMesh(Gizmo, Plane), OverrideColor);
 }
 
-std::shared_ptr<FMeshData> FPrimitiveGizmo::CreateScaleCenterMesh()
+std::shared_ptr<FDynamicMesh> FPrimitiveGizmo::CreateScaleCenterMesh()
 {
 	const FScaleGizmo Gizmo = GenerateScaleGizmo();
 	return CreateMeshDataFromMesh(SelectScaleCenterMesh(Gizmo));
 }
 
-std::shared_ptr<FMeshData> FPrimitiveGizmo::CreateScaleCenterMesh(const FVector4& OverrideColor)
+std::shared_ptr<FDynamicMesh> FPrimitiveGizmo::CreateScaleCenterMesh(const FVector4& OverrideColor)
 {
 	const FScaleGizmo Gizmo = GenerateScaleGizmo();
 	return CreateMeshDataFromMesh(SelectScaleCenterMesh(Gizmo), OverrideColor);
@@ -291,8 +310,9 @@ void FPrimitiveGizmo::GenerateTranslationGizmoMesh()
 	auto FTranslationGizmo = GenerateTranslationGizmo(desc);
 	FGizmoMesh Gizmo = Combine(FTranslationGizmo);
 	auto Data = CreateMeshDataFromMesh(Gizmo);
-	MeshData = Data;
-	RegisterMeshData(GetKey(EGizmoType::Translation), Data);
+
+	RenderMesh = Data;
+	GizmoCache[GetKey(EGizmoType::Translation)] = Data;
 }
 
 void FPrimitiveGizmo::GenerateRotationGizmoMesh()
@@ -301,8 +321,9 @@ void FPrimitiveGizmo::GenerateRotationGizmoMesh()
 	auto FRotationGizmo = GenerateRotationGizmo(desc);
 	FGizmoMesh Gizmo = Combine(FRotationGizmo);
 	auto Data = CreateMeshDataFromMesh(Gizmo);
-	MeshData = Data;
-	RegisterMeshData(GetKey(EGizmoType::Rotation), Data);
+
+	RenderMesh = Data;
+	GizmoCache[GetKey(EGizmoType::Rotation)] = Data;
 }
 
 void FPrimitiveGizmo::GenerateScaleGizmoMesh()
@@ -311,7 +332,8 @@ void FPrimitiveGizmo::GenerateScaleGizmoMesh()
 	auto FScaleGizmo = GenerateScaleGizmo(desc);
 	FGizmoMesh Gizmo = Combine(FScaleGizmo);
 	auto Data = CreateMeshDataFromMesh(Gizmo);
-	MeshData = Data;
-	RegisterMeshData(GetKey(EGizmoType::Scale), Data);
+
+	RenderMesh = Data;
+	GizmoCache[GetKey(EGizmoType::Scale)] = Data;
 }
 

@@ -187,7 +187,7 @@ void AActor::Serialize(FArchive& Ar)
 		}
 		if (UPrimitiveComponent* PrimComp = GetComponentByClass<UPrimitiveComponent>())
 		{
-			if (PrimComp->GetMaterial() && !PrimComp->GetMaterial()->GetOriginName().empty())
+			/*if (PrimComp->GetMaterial() && !PrimComp->GetMaterial()->GetOriginName().empty())
 			{
 				FString MatName = PrimComp->GetMaterial()->GetOriginName();
 				Ar.Serialize("Material", MatName);
@@ -197,7 +197,7 @@ void AActor::Serialize(FArchive& Ar)
 			{
 				FString PrimFileName = PrimComp->GetPrimitiveFileName();
 				Ar.Serialize("PrimitiveFileName", PrimFileName);
-			}
+			}*/
 		}
 		if (UTextComponent* TC = GetComponentByClass<UTextComponent>())
 		{
