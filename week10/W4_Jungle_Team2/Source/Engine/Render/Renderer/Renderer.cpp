@@ -314,6 +314,7 @@ void FRenderer::ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand
 	ApplyPassRenderState(Pass, Context, Bus.GetViewMode());
 
 	const FPassRenderState& State = PassRenderStates[(uint32)Pass];
+	ERenderCommandType LastCommandType = static_cast<ERenderCommandType>(-1);
 	for (const auto& Cmd : Commands)
 	{
 		EDepthStencilState TargetDepth = (Cmd.DepthStencilState != static_cast<EDepthStencilState>(-1))
@@ -327,7 +328,7 @@ void FRenderer::ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand
 		Device.SetDepthStencilState(TargetDepth);
 		Device.SetBlendState(TargetBlend);
 
-		BindShaderByType(Cmd, Context);
+		BindShaderByType(Cmd, Context, LastCommandType);
 		DrawCommand(Context, Cmd);
 	}
 }
@@ -353,75 +354,91 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
 	}
 }
 
-void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContext* Context)
+// 헤더 파일의 선언도 수정 필요: void BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContext* Context, ERenderCommandType& LastCommandType);
+void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContext* Context, ERenderCommandType& LastCommandType)
 {
-	Resources.PerObjectConstantBuffer.Update(Context, &InCmd.PerObjectConstants, sizeof(FPerObjectConstants));
-	{
-		ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
-		Context->VSSetConstantBuffers(1, 1, &cb);
-	}
+    bool bTypeChanged = (LastCommandType != InCmd.Type);
 
-	switch (InCmd.Type)
-	{
-	case ERenderCommandType::Gizmo:
-		Resources.GizmoShader.Bind(Context);
-		Resources.GizmoPerObjectConstantBuffer.Update(Context, &InCmd.Constants.Gizmo, sizeof(FGizmoConstants));
-		{
-			ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
-			Context->VSSetConstantBuffers(1, 1, &cb);
-			cb = Resources.GizmoPerObjectConstantBuffer.GetBuffer();
-			Context->VSSetConstantBuffers(2, 1, &cb);
-			Context->PSSetConstantBuffers(2, 1, &cb);
-		}
-		break;
+    // 객체별 Transform Data는 항상 업데이트해야 한다.
+    Resources.PerObjectConstantBuffer.Update(Context, &InCmd.PerObjectConstants, sizeof(FPerObjectConstants));
 
-	case ERenderCommandType::DebugBox:
-		Resources.EditorConstantBuffer.Update(Context, &InCmd.Constants.Editor, sizeof(FEditorConstants));
-		{
-			ID3D11Buffer* cb = Resources.EditorConstantBuffer.GetBuffer();
-			Context->VSSetConstantBuffers(4, 1, &cb);
-			Context->PSSetConstantBuffers(4, 1, &cb);
-			cb = Resources.PerObjectConstantBuffer.GetBuffer();
-			Context->VSSetConstantBuffers(1, 1, &cb);
-			Context->PSSetConstantBuffers(1, 1, &cb);
-		}
-		break;
+	// 데이터 Update는 항상 수행하지만, 셰이더/상수 버퍼 바인딩은 타입이 변경된 경우에만 수행
+    switch (InCmd.Type)
+    {
+    case ERenderCommandType::Gizmo:
+        Resources.GizmoPerObjectConstantBuffer.Update(Context, &InCmd.Constants.Gizmo, sizeof(FGizmoConstants));
+        
+        if (bTypeChanged)
+        {
+            Resources.GizmoShader.Bind(Context);
+            ID3D11Buffer* cb1 = Resources.PerObjectConstantBuffer.GetBuffer();
+            Context->VSSetConstantBuffers(1, 1, &cb1);
+            ID3D11Buffer* cb2 = Resources.GizmoPerObjectConstantBuffer.GetBuffer();
+            Context->VSSetConstantBuffers(2, 1, &cb2);
+            Context->PSSetConstantBuffers(2, 1, &cb2);
+        }
+        break;
 
-	case ERenderCommandType::SelectionOutline:
-		Resources.OutlineConstantBuffer.Update(Context, &InCmd.Constants.Outline, sizeof(FOutlineConstants));
-		{
-			ID3D11Buffer* cb = Resources.OutlineConstantBuffer.GetBuffer();
-			Context->VSSetConstantBuffers(5, 1, &cb);
-			Context->PSSetConstantBuffers(5, 1, &cb);
-			cb = Resources.PerObjectConstantBuffer.GetBuffer();
-			Context->VSSetConstantBuffers(1, 1, &cb);
-		}
-		break;
+    case ERenderCommandType::DebugBox:
+        Resources.EditorConstantBuffer.Update(Context, &InCmd.Constants.Editor, sizeof(FEditorConstants));
+        
+        if (bTypeChanged)
+        {
+            ID3D11Buffer* cb4 = Resources.EditorConstantBuffer.GetBuffer();
+            Context->VSSetConstantBuffers(4, 1, &cb4);
+            Context->PSSetConstantBuffers(4, 1, &cb4);
+            ID3D11Buffer* cb1 = Resources.PerObjectConstantBuffer.GetBuffer();
+            Context->VSSetConstantBuffers(1, 1, &cb1);
+            Context->PSSetConstantBuffers(1, 1, &cb1);
+        }
+        break;
 
-	case ERenderCommandType::StaticMesh:
-		Resources.StaticMeshShader.Bind(Context);
-		Resources.StaticMeshConstantBuffer.Update(Context, &InCmd.Constants.StaticMesh, sizeof(FStaticMeshConstants));
-		{
-			ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
-			Context->VSSetConstantBuffers(1, 1, &cb);
-			Context->PSSetConstantBuffers(1, 1, &cb);
+    case ERenderCommandType::SelectionOutline:
+        Resources.OutlineConstantBuffer.Update(Context, &InCmd.Constants.Outline, sizeof(FOutlineConstants));
+        
+        if (bTypeChanged)
+        {
+            ID3D11Buffer* cb5 = Resources.OutlineConstantBuffer.GetBuffer();
+            Context->VSSetConstantBuffers(5, 1, &cb5);
+            Context->PSSetConstantBuffers(5, 1, &cb5);
+            ID3D11Buffer* cb1 = Resources.PerObjectConstantBuffer.GetBuffer();
+            Context->VSSetConstantBuffers(1, 1, &cb1);
+        }
+        break;
 
-			cb = Resources.StaticMeshConstantBuffer.GetBuffer();
-			Context->VSSetConstantBuffers(6, 1, &cb);
-			Context->PSSetConstantBuffers(6, 1, &cb);
+    case ERenderCommandType::StaticMesh:
+        Resources.StaticMeshConstantBuffer.Update(Context, &InCmd.Constants.StaticMesh, sizeof(FStaticMeshConstants));
+        
+        if (bTypeChanged)
+        {
+            Resources.StaticMeshShader.Bind(Context);
+            
+            ID3D11Buffer* cb1 = Resources.PerObjectConstantBuffer.GetBuffer();
+            Context->VSSetConstantBuffers(1, 1, &cb1);
+            Context->PSSetConstantBuffers(1, 1, &cb1);
 
-			ID3D11ShaderResourceView* SRVs[4] = {
-				InCmd.Constants.StaticMesh.DiffuseSRV,
-				InCmd.Constants.StaticMesh.AmbientSRV,
-				InCmd.Constants.StaticMesh.SpecularSRV,
-				InCmd.Constants.StaticMesh.BumpSRV
-			};
-			Context->PSSetShaderResources(0, 4, SRVs);
-			Context->PSSetSamplers(0, 1, &Resources.MeshSamplerState);
+            ID3D11Buffer* cb6 = Resources.StaticMeshConstantBuffer.GetBuffer();
+            Context->VSSetConstantBuffers(6, 1, &cb6);
+            Context->PSSetConstantBuffers(6, 1, &cb6);
 
-		}
-		break;
-	}
+            // 샘플러 상태도 주로 렌더 타입에 종속적이므로 스킵 가능
+            Context->PSSetSamplers(0, 1, &Resources.MeshSamplerState);
+        }
+
+        // [주의] 텍스처(SRV)는 타입이 같아도 메시의 머티리얼마다 변경될 수 있으므로 분기문 밖에서 매번 바인딩합니다.
+        {
+            ID3D11ShaderResourceView* SRVs[4] = {
+                InCmd.Constants.StaticMesh.DiffuseSRV,
+                InCmd.Constants.StaticMesh.AmbientSRV,
+                InCmd.Constants.StaticMesh.SpecularSRV,
+                InCmd.Constants.StaticMesh.BumpSRV
+            };
+            Context->PSSetShaderResources(0, 4, SRVs);
+        }
+        break;
+    }
+
+    LastCommandType = InCmd.Type;
 }
 
 void FRenderer::DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderCommand& InCommand)
