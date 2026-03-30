@@ -4,6 +4,7 @@
 #include "SViewport.h"
 #include "SplitterH.h"
 #include "SplitterV.h"
+#include "Widget.h"
 #include <memory>
 #include <functional>
 
@@ -58,6 +59,8 @@ public:
 	void ProcessMouseDown(int32 X, int32 Y);
 	void ProcessMouseMove(int32 X, int32 Y);
 	void ProcessMouseUp(int32 X, int32 Y);
+
+	void Paint(SWidget& Painter) { if (Root) Root->Paint(Painter); };
 
 	std::function<void()> OnSplitterDragEnd;
 };

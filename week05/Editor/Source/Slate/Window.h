@@ -1,11 +1,8 @@
 #pragma once
 
 #include "Viewport/ViewportTypes.h"
+#include "Widget.h"
 
-class SWindow
+class SWindow : public SWidget
 {
-public:
-	virtual ~SWindow() {}
-	FRect Rect;
-	bool IsHover(FPoint coord) const;
 };
