@@ -18,15 +18,45 @@ struct FNormalVertex
 	FVector2 tex;
 };
 
-struct FStaticMeshSection;
-struct FStaticMaterial;
-struct FMaterialInterface;
+
+struct FStaticMeshSection
+{
+	//int32 MaterialIndex; // Index into UStaticMesh's FStaticMaterial array.
+	FString MaterialSlotName;
+	uint32 FirstIndex;
+	uint32 NumTriangles;
+
+	friend FArchive& operator<<(FArchive& Ar, FStaticMeshSection& Section)
+	{
+		Ar << Section.MaterialSlotName << Section.FirstIndex << Section.NumTriangles;
+		return Ar;
+	}
+};
+
+struct FStaticMaterial
+{
+	// std::shared_ptr<class UMaterialInterface> MaterialInterface;
+	std::shared_ptr<class UMaterial> MaterialInterface;
+	FString MaterialSlotName = "None"; // "None"은 특별한 슬롯 이름으로, OBJ 파일에서 머티리얼이 지정되지 않은 섹션에 할당됩니다.
+
+	friend FArchive& operator<<(FArchive& Ar, FStaticMaterial& Mat)
+	{
+		Ar << Mat.MaterialSlotName;
+
+		if (Ar.IsLoading()) Mat.MaterialInterface = std::make_shared<UMaterial>();
+
+		Ar << Mat.MaterialInterface->PathFileName;
+		Ar << Mat.MaterialInterface->DiffuseTextureFilePath;
+		Ar << Mat.MaterialInterface->DiffuseColor;
+		return Ar;
+	}
+};
 
 // Cooked Data — GPU용 정점/인덱스
 // FStaticMeshLODResources in UE5
 struct FStaticMesh
 {
-	std::string PathFileName;
+	FString PathFileName;
 	TArray<FNormalVertex> Vertices;
 	TArray<uint32> Indices;
 
@@ -36,30 +66,9 @@ struct FStaticMesh
 
 	void Serialize(FArchive& Ar)
 	{
-		// 1. std::string 직렬화 (문자열 길이 -> 문자열 내용)
-		uint32 StringLen = static_cast<uint32>(PathFileName.size());
-		Ar << StringLen;
-
-		if (Ar.IsLoading()) PathFileName.resize(StringLen);
-		if (StringLen > 0) Ar.Serialize(PathFileName.data(), StringLen);
-
-		// 2. TArray 직렬화 (Archive.h에 만들어둔 오버로딩 덕분에 단 한 줄로 끝납니다!)
+		Ar << PathFileName;
 		Ar << Vertices;
 		Ar << Indices;
+		Ar << Sections;
 	}
-};
-
-struct FStaticMeshSection
-{
-	//int32 MaterialIndex; // Index into UStaticMesh's FStaticMaterial array.
-	FString MaterialSlotName;
-	uint32 FirstIndex;
-	uint32 NumTriangles;
-};
-
-struct FStaticMaterial
-{
-	// std::shared_ptr<class UMaterialInterface> MaterialInterface;
-	std::shared_ptr<class UMaterial> MaterialInterface;
-	FString MaterialSlotName = "None"; // "None"은 특별한 슬롯 이름으로, OBJ 파일에서 머티리얼이 지정되지 않은 섹션에 할당됩니다.
 };
