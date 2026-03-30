@@ -143,45 +143,43 @@ void FEditorViewportClient::SyncSelectionFromContext()
 
 void FEditorViewportClient::DrawViewportOverlay()
 {
-    if (!SelectionController.IsDraggingSelection())
+    if (SelectionController.IsDraggingSelection())
+    {
+        int32 StartX, StartY, EndX, EndY;
+        SelectionController.GetSelectionRect(StartX, StartY, EndX, EndY);
+
+        const float MinX = (float)std::min(StartX, EndX);
+        const float MinY = (float)std::min(StartY, EndY);
+        const float MaxX = (float)std::max(StartX, EndX);
+        const float MaxY = (float)std::max(StartY, EndY);
+
+        ImDrawList* DrawList = ImGui::GetForegroundDrawList();
+        DrawList->AddRectFilled(ImVec2(MinX, MinY), ImVec2(MaxX, MaxY), IM_COL32(80, 140, 255, 40));
+        DrawList->AddRect(ImVec2(MinX, MinY), ImVec2(MaxX, MaxY), IM_COL32(80, 140, 255, 255), 0.0f,
+                          0, 1.5f);
+    }
+
+    DrawStatOverlay();
+}
+
+void FEditorViewportClient::DrawStatOverlay(void)
+{
+    if (StatFlags == EViewportStatFlags::None)
     {
         return;
     }
 
-    int32 StartX, StartY, EndX, EndY;
-    SelectionController.GetSelectionRect(StartX, StartY, EndX, EndY);
-
-    const float MinX = (float)std::min(StartX, EndX);
-    const float MinY = (float)std::min(StartY, EndY);
-    const float MaxX = (float)std::max(StartX, EndX);
-    const float MaxY = (float)std::max(StartY, EndY);
-
-    ImDrawList* DrawList = ImGui::GetForegroundDrawList();
-    DrawList->AddRectFilled(ImVec2(MinX, MinY), ImVec2(MaxX, MaxY), IM_COL32(80, 140, 255, 40));
-    DrawList->AddRect(ImVec2(MinX, MinY), ImVec2(MaxX, MaxY), IM_COL32(80, 140, 255, 255), 0.0f, 0,
-                      1.5f);
+    
 }
 
-// void FEditorViewportClient::DrawViewportOverlay()
-//{
-//     if (!SelectionController.IsDraggingSelection())
-//     {
-//         return;
-//     }
-//
-//     int32 StartX, StartY, EndX, EndY;
-//     SelectionController.GetSelectionRect(StartX, StartY, EndX, EndY);
-//
-//     const float MinX = (float)std::min(StartX, EndX);
-//     const float MinY = (float)std::min(StartY, EndY);
-//     const float MaxX = (float)std::max(StartX, EndX);
-//     const float MaxY = (float)std::max(StartY, EndY);
-//
-//     ImDrawList* DrawList = ImGui::GetForegroundDrawList();
-//     DrawList->AddRectFilled(ImVec2(MinX, MinY), ImVec2(MaxX, MaxY), IM_COL32(80, 140, 255, 40));
-//     DrawList->AddRect(ImVec2(MinX, MinY), ImVec2(MaxX, MaxY), IM_COL32(80, 140, 255, 255), 0.0f,
-//     0,
-//                       1.5f);
-// }
+void FEditorViewportClient::DrawFPSStatOverlay(void)
+{
+
+}
+
+void FEditorViewportClient::DrawMemoryStatOverlay(void)
+{
+
+}
 
 void FEditorViewportClient::DrawOutline() {}

@@ -262,6 +262,36 @@ namespace
         OutSelectedPath = NormalizeSceneFilePath(std::filesystem::path(FileBuffer.data()));
         return true;
     }
+
+    void ShowStatToggleDialog(const FEditorViewportClient& ViewportClient, EViewportStatFlags InStat)
+    {
+        switch (InStat)
+        {
+        case EViewportStatFlags::FPS:
+            if (ViewportClient.IsStatEnabled(EViewportStatFlags::FPS))
+            {
+                UE_LOG(FEditor, ELogVerbosity::Log, "viewport stat enabled: fps");
+            }
+            else
+            {
+                UE_LOG(FEditor, ELogVerbosity::Log, "viewport stat disabled: fps");
+            }
+            break;
+        case EViewportStatFlags::Memory:
+            if (ViewportClient.IsStatEnabled(EViewportStatFlags::Memory))
+            {
+                UE_LOG(FEditor, ELogVerbosity::Log, "viewport stat enabled: memory");
+            }
+            else
+            {
+                UE_LOG(FEditor, ELogVerbosity::Log, "viewport stat disabled: memory");
+            }
+            break;
+        case EViewportStatFlags::None:
+            UE_LOG(FEditor, ELogVerbosity::Log, "all viewport stats disabled");
+            break;
+        }
+    }
 } // namespace
 
 // class FSamplePanel : public IPanel
@@ -1388,4 +1418,17 @@ void FEditor::BuildRenderData()
     {
         CurScene->BuildRenderData(SceneRenderData, SceneShowFlags);
     }
+}
+
+// 다중 뷰포트 머지 후에 active viewport를 토글하는 방식으로 변경 예정
+void FEditor::ToggleActiveViewportStat(EViewportStatFlags StatFlag)
+{
+    ViewportClient.ToggleStat(StatFlag);
+    ShowStatToggleDialog(ViewportClient, StatFlag);
+}
+
+void FEditor::ClearActiveViewportStats()
+{
+    ViewportClient.ClearAllStats();
+    ShowStatToggleDialog(ViewportClient, EViewportStatFlags::None);
 }

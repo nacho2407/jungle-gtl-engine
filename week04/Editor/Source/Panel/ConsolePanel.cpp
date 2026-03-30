@@ -541,7 +541,9 @@ void FConsolePanel::ExecuteCommand(const FString& CommandLine)
         UE_LOG(Console, ELogVerbosity::Log,
                "  show.bounds <on|off>, show.grid <on|off>, show.outline <on|off>");
         UE_LOG(Console, ELogVerbosity::Log,
-               "  stats.fps, stats.memory, stats.gpu, content.refresh, content.find <keyword>");
+               "  content.refresh, content.find <keyword>");
+        UE_LOG(Console, ELogVerbosity::Log,
+               "  stat fps, stat memory, stat none");
         bScrollToBottom = true;
         return;
     }
@@ -1173,39 +1175,6 @@ void FConsolePanel::ExecuteCommand(const FString& CommandLine)
         return;
     }
 
-    if (CommandName == "stats.fps")
-    {
-        if (Context == nullptr)
-        {
-            UE_LOG(Console, ELogVerbosity::Warning, "Editor context is unavailable.");
-        }
-        else
-        {
-            UE_LOG(Console, ELogVerbosity::Log, "FPS = %.1f (%.3f ms)",
-                   Context->CurrentFPS, Context->DeltaTime * 1000.0f);
-        }
-        bScrollToBottom = true;
-        return;
-    }
-
-    if (CommandName == "stats.memory")
-    {
-        UE_LOG(Console, ELogVerbosity::Log, "TotalAllocationCount = %u",
-               UEngineStatics::TotalAllocationCount);
-        UE_LOG(Console, ELogVerbosity::Log, "Heap Usage = %.2f KB",
-               UEngineStatics::TotalAllocatedBytes / 1024.0f);
-        bScrollToBottom = true;
-        return;
-    }
-
-    if (CommandName == "stats.gpu")
-    {
-        UE_LOG(Console, ELogVerbosity::Warning,
-               "GPU memory stats are not available in the current build.");
-        bScrollToBottom = true;
-        return;
-    }
-
     if (CommandName == "content.refresh")
     {
         if (Editor == nullptr || Context == nullptr || Context->ContentIndex == nullptr)
@@ -1263,6 +1232,43 @@ void FConsolePanel::ExecuteCommand(const FString& CommandLine)
                 }
             }
         }
+        bScrollToBottom = true;
+        return;
+    }
+
+    if (CommandName == "stat")
+    {
+        if (RequireEditor())
+        {
+            if (Tokens.size() < 2)
+            {
+                UE_LOG(Console, ELogVerbosity::Warning, "Usage: stat <fps|memory|none>");
+
+                bScrollToBottom = true;
+                return;
+            }
+
+            const FString CommandStat = ToLowerAsciiCopy(Tokens[1]);
+
+            if (CommandStat == "fps")
+            {
+                Editor->ToggleActiveViewportStat(EViewportStatFlags::FPS);
+            }
+            else if (CommandStat == "memory")
+            {
+                Editor->ToggleActiveViewportStat(EViewportStatFlags::Memory);
+            }
+            else if (CommandStat == "none")
+            {
+                Editor->ClearActiveViewportStats();
+            }
+            else
+            {
+                UE_LOG(Console, ELogVerbosity::Warning, "Unknown stat command");
+                UE_LOG(Console, ELogVerbosity::Warning, "Usage: stat <fps|memory|none>");
+            }
+        }
+
         bScrollToBottom = true;
         return;
     }

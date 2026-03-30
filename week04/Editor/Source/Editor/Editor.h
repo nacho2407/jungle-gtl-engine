@@ -105,6 +105,9 @@ class FEditor
 
     void DrawPanel();
 
+    void ToggleActiveViewportStat(EViewportStatFlags StatFlag);
+    void ClearActiveViewportStats();
+    
   private:
     void BuildRenderData();
     void BuildSceneView();
@@ -132,7 +135,6 @@ class FEditor
     std::filesystem::path GetSceneDirectory() const;
     void ResolveActorAssetReferences(AActor* Actor);
     void ResolveSceneAssetReferences(FScene* Scene);
-
 
   private:
     FEditorViewportClient ViewportClient;

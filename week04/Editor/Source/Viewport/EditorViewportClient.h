@@ -77,19 +77,37 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
         return FPickResult{};
     }
 
-    bool IsStatEnabled(EViewportStatFlags InFlags) const { return IsFlagSet(StatFlags, InFlags); }
+    /**
+     * @brief 현재 viewport에서 그려지는 각 stat 명령 관련 텍스트 오버레이를 그리는 오케스트레이션 함수
+     */
+    void DrawStatOverlay(void);
 
-    void SetStatEnabled(EViewportStatFlags InFlag, bool bEnabled)
-    {
-        SetFlag(StatFlags, InFlag, bEnabled);
-    }
+    /**
+     * @brief stat fps에 대응하는 FPS 정보 오버레이를 그립니다.
+     */
+    void DrawFPSStatOverlay(void);
+
+    /**
+     * @brief stat memory에 대응하는 메모리 정보 오버레이를 그립니다.
+     */
+    void DrawMemoryStatOverlay(void);
+
+    void EnableStat(EViewportStatFlags InFlag) { SetStatEnabled(InFlag, true); }
+
+    void DisableStat(EViewportStatFlags InFlag) { SetStatEnabled(InFlag, false); }
+
+    void ToggleStat(EViewportStatFlags InFlag) { SetStatEnabled(InFlag, !IsStatEnabled(InFlag)); }
+
+    bool IsStatEnabled(EViewportStatFlags InFlags) const { return IsFlagSet(StatFlags, InFlags); }
 
     void ClearAllStats() { StatFlags = EViewportStatFlags::None; }
 
     EViewportStatFlags GetStatFlags() const { return StatFlags; }
     
-private:
+  private:
     void DrawOutline();
+
+    void SetStatEnabled(EViewportStatFlags InFlag, bool bEnabled) { SetFlag(StatFlags, InFlag, bEnabled); }
 
   private:
     FScene* CurScene = nullptr;
@@ -106,5 +124,8 @@ private:
     FSelectionInputContext SelectionInputContext{&SelectionController};
     FGizmoInputContext      GizmoInputContext{&GizmoController};
 
+    /**
+     * @brief 현재 viewport에서 활성화된 stat 명령들을 나타내는 플래그 집합
+     */
     EViewportStatFlags StatFlags = EViewportStatFlags::None;
 };
