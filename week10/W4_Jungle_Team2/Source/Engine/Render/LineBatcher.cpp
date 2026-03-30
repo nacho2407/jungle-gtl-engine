@@ -13,6 +13,90 @@ namespace
 	constexpr float GridMinVisibleAlpha = 0.05f;
 	constexpr float AxisMinVisibleAlpha = 0.85f;
 
+	// ortho 뷰 방향에 따라 그리드를 그릴 평면을 결정합니다.
+	// XY : Top/Bottom (default)
+	// XZ : Left/Right (카메라가 Y 축 방향)
+	// YZ : Front/Back (카메라가 X 축 방향)
+	enum class EGridPlane { XY, XZ, YZ };
+
+	struct FGridPlaneDesc
+	{
+		int32    A;       // 수평 축 인덱스 (0=X, 1=Y, 2=Z)
+		int32    B;       // 수직 축 인덱스
+		int32    N;       // 법선 축 인덱스 (그리드 평면이 이 값 = 0 에 위치)
+		FVector4 ColorA;  // 수평 축 색상
+		FVector4 ColorB;  // 수직 축 색상
+	};
+
+	EGridPlane DetermineGridPlane(bool bOrthographic, const FVector& CameraForward)
+	{
+		if (!bOrthographic) return EGridPlane::XY;
+
+		const float AxX = std::fabs(CameraForward.X);
+		const float AxY = std::fabs(CameraForward.Y);
+		const float AxZ = std::fabs(CameraForward.Z);
+
+		if (AxX >= AxY && AxX >= AxZ) return EGridPlane::YZ;
+		if (AxY >= AxX && AxY >= AxZ) return EGridPlane::XZ;
+		return EGridPlane::XY;
+	}
+
+	FGridPlaneDesc GetGridPlaneDesc(EGridPlane Plane)
+	{
+		switch (Plane)
+		{
+		case EGridPlane::XZ: return { 0, 2, 1, FColor::Red().ToVector4(),   FColor::Blue().ToVector4()  };
+		case EGridPlane::YZ: return { 1, 2, 0, FColor::Green().ToVector4(), FColor::Blue().ToVector4()  };
+		default:             return { 0, 1, 2, FColor::Red().ToVector4(),   FColor::Green().ToVector4() };
+		}
+	}
+
+	// 인덱스로 FVector 성분에 접근하는 헬퍼
+	inline float  GetComp(const FVector& V, int32 Idx) { return (&V.X)[Idx]; }
+	inline float& GetComp(FVector& V,       int32 Idx) { return (&V.X)[Idx]; }
+
+	// A, B, N 축 값으로 FVector를 생성합니다.
+	FVector MakeGridPoint(const FGridPlaneDesc& Desc, float vA, float vB, float vN)
+	{
+		FVector P = FVector::ZeroVector;
+		GetComp(P, Desc.A) = vA;
+		GetComp(P, Desc.B) = vB;
+		GetComp(P, Desc.N) = vN;
+		return P;
+	}
+
+	// 카메라 위치와 방향에서 그리드 평면(N=0)과의 교점을 구합니다.
+	FVector ComputeGridFocusPointOnPlane(const FVector& CameraPos, const FVector& CameraFwd,
+	                                     const FGridPlaneDesc& Desc)
+	{
+		const float PosN = GetComp(CameraPos, Desc.N);
+		const float FwdN = GetComp(CameraFwd, Desc.N);
+
+		if (std::fabs(FwdN) > MathUtil::Epsilon)
+		{
+			const float T = -PosN / FwdN;
+			if (T > 0.0f)
+			{
+				return CameraPos + CameraFwd * T;
+			}
+		}
+
+		// 평행하거나 교점이 뒤에 있을 때: 카메라 위치를 평면에 투영
+		FVector Fallback = CameraPos;
+		GetComp(Fallback, Desc.N) = 0.0f;
+		return Fallback;
+	}
+
+	// 카메라가 그리드 평면으로부터 떨어진 거리(N축 성분)로 동적 반복 횟수를 계산합니다.
+	int32 ComputeDynamicHalfCountOnPlane(float Spacing, int32 BaseHalfCount,
+	                                     const FVector& CameraPos, const FGridPlaneDesc& Desc)
+	{
+		const float BaseExtent      = Spacing * static_cast<float>(std::max(BaseHalfCount, 1));
+		const float HeightDriven    = (std::fabs(GetComp(CameraPos, Desc.N)) * 2.0f) + (Spacing * 4.0f);
+		const float RequiredExtent  = std::max(BaseExtent, HeightDriven);
+		return std::max(BaseHalfCount, static_cast<int32>(std::ceil(RequiredExtent / Spacing)));
+	}
+
 	float SnapToGrid(float Value, float Spacing)
 	{
 		return std::round(Value / Spacing) * Spacing;
@@ -50,37 +134,6 @@ namespace
 	bool IsAxisLine(float Coordinate, float Spacing)
 	{
 		return std::fabs(Coordinate) <= (Spacing * 0.25f);
-	}
-
-	int32 ComputeDynamicHalfCount(float Spacing, int32 BaseHalfCount, const FVector& CameraPosition)
-	{
-		const float BaseExtent = Spacing * static_cast<float>(std::max(BaseHalfCount, 1));
-		// 카메라 높이에 따른 필요한 grid 크기
-		const float HeightDrivenExtent = (std::fabs(CameraPosition.Z) * 2.0f) + (Spacing * 4.0f);
-		const float RequiredExtent = std::max(BaseExtent, HeightDrivenExtent);
-		return std::max(BaseHalfCount, static_cast<int32>(std::ceil(RequiredExtent / Spacing)));
-	}
-
-	FVector ComputeGridFocusPoint(const FVector& CameraPosition, const FVector& CameraForward)
-	{
-		if (std::fabs(CameraForward.Z) > MathUtil::Epsilon) // if Z가 거의 EPSILON -> 평면과 평행 -> 교차 계산 X
-		{
-			const float T = (GridPlaneZ - CameraPosition.Z) / CameraForward.Z;
-			if (T > 0.0f) // 카메라 앞쪽 방향만 사용
-			{
-				return CameraPosition + (CameraForward * T);
-			}
-		}
-
-		FVector PlanarForward(CameraForward.X, CameraForward.Y, 0.0f); // 평행한 경우 -> Z 성분 제거 -> XY 평면 방향만 사용
-		if (PlanarForward.Size() > MathUtil::Epsilon)
-		{
-			PlanarForward.Normalize();
-			// 카메라 아래 지점 + 앞으로 조금 이동
-			return FVector(CameraPosition.X, CameraPosition.Y, GridPlaneZ) + (PlanarForward * (std::fabs(CameraPosition.Z) * 0.5f));
-		}
-
-		return FVector(CameraPosition.X, CameraPosition.Y, GridPlaneZ);
 	}
 
 	void ReleaseBuffer(ID3D11Buffer*& Buffer)
@@ -189,123 +242,127 @@ void FLineBatcher::AddAABB(const FBoundingBox& Box, const FColor& InColor)
 	}
 }
 
-void FLineBatcher::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacing, int32 GridHalfLineCount, const FVector& CameraPosition, const FVector& CameraForward)
+void FLineBatcher::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacing, int32 GridHalfLineCount,
+	const FVector& CameraPosition, const FVector& CameraForward, bool bOrthographic)
 {
 	const float Spacing = GridSpacing;
 	const int32 BaseHalfCount = std::max(GridHalfLineCount, 1);
 
-	if (Spacing <= 0.0f)
-	{
-		return;
-	}
+	if (Spacing <= 0.0f) return;
 
-	const FVector FocusPoint = ComputeGridFocusPoint(CameraPosition, CameraForward);
-	const float CenterX = SnapToGrid(FocusPoint.X, Spacing);
-	const float CenterY = SnapToGrid(FocusPoint.Y, Spacing);
-	const int32 DynamicHalfCount = ComputeDynamicHalfCount(Spacing, BaseHalfCount, CameraPosition);
-	const float BaseGridExtent = Spacing * static_cast<float>(DynamicHalfCount);
-	const float FocusMinX = CenterX - BaseGridExtent;
-	const float FocusMaxX = CenterX + BaseGridExtent;
-	const float FocusMinY = CenterY - BaseGridExtent;
-	const float FocusMaxY = CenterY + BaseGridExtent;
+	// 뷰 방향에 맞는 그리드 평면 결정
+	const EGridPlane    Plane = DetermineGridPlane(bOrthographic, CameraForward);
+	const FGridPlaneDesc Desc = GetGridPlaneDesc(Plane);
 
-	// focus point 기반 패치를 유지하되, 카메라가 포함된 셀까지는 항상 grid가 이어지도록 범위를 확장한다.
-	const float CameraMinX = SnapDownToGrid(CameraPosition.X, Spacing);
-	const float CameraMaxX = SnapUpToGrid(CameraPosition.X, Spacing);
-	const float CameraMinY = SnapDownToGrid(CameraPosition.Y, Spacing);
-	const float CameraMaxY = SnapUpToGrid(CameraPosition.Y, Spacing);
+	// 카메라 → 그리드 평면 교점을 포커스 포인트로 사용
+	const FVector FocusPoint   = ComputeGridFocusPointOnPlane(CameraPosition, CameraForward, Desc);
+	const float   CenterA      = SnapToGrid(GetComp(FocusPoint, Desc.A), Spacing);
+	const float   CenterB      = SnapToGrid(GetComp(FocusPoint, Desc.B), Spacing);
+	const int32   DynamicHalf  = ComputeDynamicHalfCountOnPlane(Spacing, BaseHalfCount, CameraPosition, Desc);
+	const float   BaseExtent   = Spacing * static_cast<float>(DynamicHalf);
 
-	const float MinX = std::min(FocusMinX, CameraMinX);
-	const float MaxX = std::max(FocusMaxX, CameraMaxX);
-	const float MinY = std::min(FocusMinY, CameraMinY);
-	const float MaxY = std::max(FocusMaxY, CameraMaxY);
+	// 포커스 기반 범위
+	const float FocusMinA = CenterA - BaseExtent;
+	const float FocusMaxA = CenterA + BaseExtent;
+	const float FocusMinB = CenterB - BaseExtent;
+	const float FocusMaxB = CenterB + BaseExtent;
 
-	const int32 MinXIndex = static_cast<int32>(std::floor((MinX - CenterX) / Spacing));
-	const int32 MaxXIndex = static_cast<int32>(std::ceil((MaxX - CenterX) / Spacing));
-	const int32 MinYIndex = static_cast<int32>(std::floor((MinY - CenterY) / Spacing));
-	const int32 MaxYIndex = static_cast<int32>(std::ceil((MaxY - CenterY) / Spacing));
+	// 카메라가 속한 셀까지 범위를 확장 (카메라 위치 기반)
+	const float CameraA    = GetComp(CameraPosition, Desc.A);
+	const float CameraB    = GetComp(CameraPosition, Desc.B);
+	const float MinA = std::min(FocusMinA, SnapDownToGrid(CameraA, Spacing));
+	const float MaxA = std::max(FocusMaxA, SnapUpToGrid(CameraA, Spacing));
+	const float MinB = std::min(FocusMinB, SnapDownToGrid(CameraB, Spacing));
+	const float MaxB = std::max(FocusMaxB, SnapUpToGrid(CameraB, Spacing));
 
-	const float GridExtentX = std::max(std::fabs(MinX - FocusPoint.X), std::fabs(MaxX - FocusPoint.X));
-	const float GridExtentY = std::max(std::fabs(MinY - FocusPoint.Y), std::fabs(MaxY - FocusPoint.Y));
-	const float GridFadeStartX = GridExtentX * GridFadeStartRatio;
-	const float GridFadeStartY = GridExtentY * GridFadeStartRatio;
-	const float AxisFadeStartX = GridExtentX * AxisFadeStartRatio;
-	const float AxisFadeStartY = GridExtentY * AxisFadeStartRatio;
-	const float AxisHeightBias = std::max(Spacing * 0.001f, 0.001f);
+	const int32 MinAIdx = static_cast<int32>(std::floor((MinA - CenterA) / Spacing));
+	const int32 MaxAIdx = static_cast<int32>(std::ceil( (MaxA - CenterA) / Spacing));
+	const int32 MinBIdx = static_cast<int32>(std::floor((MinB - CenterB) / Spacing));
+	const int32 MaxBIdx = static_cast<int32>(std::ceil( (MaxB - CenterB) / Spacing));
 
-	const bool bShowXAxis = (MinY <= 0.0f) && (MaxY >= 0.0f);
-	const bool bShowYAxis = (MinX <= 0.0f) && (MaxX >= 0.0f);
+	const float ExtentA       = std::max(std::fabs(MinA - GetComp(FocusPoint, Desc.A)),
+	                                     std::fabs(MaxA - GetComp(FocusPoint, Desc.A)));
+	const float ExtentB       = std::max(std::fabs(MinB - GetComp(FocusPoint, Desc.B)),
+	                                     std::fabs(MaxB - GetComp(FocusPoint, Desc.B)));
+	const float FadeStartA    = ExtentA * GridFadeStartRatio;
+	const float FadeStartB    = ExtentB * GridFadeStartRatio;
+	const float AxisFadeStA   = ExtentA * AxisFadeStartRatio;
+	const float AxisFadeStB   = ExtentB * AxisFadeStartRatio;
+	const float AxisBias      = std::max(Spacing * 0.001f, 0.001f);
+
+	// 축선 표시 여부: 해당 축이 그리드 범위 안에 들어오는지 확인
+	const bool bShowAxisA = (MinB <= 0.0f) && (MaxB >= 0.0f); // B=0 라인 (A 축)
+	const bool bShowAxisB = (MinA <= 0.0f) && (MaxA >= 0.0f); // A=0 라인 (B 축)
 
 	if (ShowFlags.bGrid)
 	{
 		const FVector4 GridColor = FColor::Gray().ToVector4();
 
-		for (int32 YIndex = MinYIndex; YIndex <= MaxYIndex; ++YIndex)
+		// B 방향으로 스윕: 상수 B 라인 (A 축 방향으로 뻗음)
+		for (int32 BIdx = MinBIdx; BIdx <= MaxBIdx; ++BIdx)
 		{
-			const float WorldY = CenterY + (static_cast<float>(YIndex) * Spacing);
-			if (!(bShowXAxis && IsAxisLine(WorldY, Spacing)))
-			{
-				const float Alpha = ComputeLineFade(WorldY - FocusPoint.Y, GridFadeStartY, GridExtentY);
-				if (Alpha > GridMinVisibleAlpha)
-				{
-					AddLine(
-						FVector(MinX, WorldY, GridPlaneZ),
-						FVector(MaxX, WorldY, GridPlaneZ),
-						WithAlpha(GridColor, Alpha)
-					);
-				}
-			}
+			const float WorldB = CenterB + static_cast<float>(BIdx) * Spacing;
+			if (bShowAxisA && IsAxisLine(WorldB, Spacing)) continue;
 
+			const float Alpha = ComputeLineFade(WorldB - GetComp(FocusPoint, Desc.B), FadeStartB, ExtentB);
+			if (Alpha > GridMinVisibleAlpha)
+			{
+				AddLine(
+					MakeGridPoint(Desc, MinA, WorldB, GridPlaneZ),
+					MakeGridPoint(Desc, MaxA, WorldB, GridPlaneZ),
+					WithAlpha(GridColor, Alpha));
+			}
 		}
 
-		for (int32 XIndex = MinXIndex; XIndex <= MaxXIndex; ++XIndex)
+		// A 방향으로 스윕: 상수 A 라인 (B 축 방향으로 뻗음)
+		for (int32 AIdx = MinAIdx; AIdx <= MaxAIdx; ++AIdx)
 		{
-			const float WorldX = CenterX + (static_cast<float>(XIndex) * Spacing);
-			if (!(bShowYAxis && IsAxisLine(WorldX, Spacing)))
+			const float WorldA = CenterA + static_cast<float>(AIdx) * Spacing;
+			if (bShowAxisB && IsAxisLine(WorldA, Spacing)) continue;
+
+			const float Alpha = ComputeLineFade(WorldA - GetComp(FocusPoint, Desc.A), FadeStartA, ExtentA);
+			if (Alpha > GridMinVisibleAlpha)
 			{
-				const float Alpha = ComputeLineFade(WorldX - FocusPoint.X, GridFadeStartX, GridExtentX);
-				if (Alpha > GridMinVisibleAlpha)
-				{
-					AddLine(
-						FVector(WorldX, MinY, GridPlaneZ),
-						FVector(WorldX, MaxY, GridPlaneZ),
-						WithAlpha(GridColor, Alpha)
-					);
-				}
+				AddLine(
+					MakeGridPoint(Desc, WorldA, MinB, GridPlaneZ),
+					MakeGridPoint(Desc, WorldA, MaxB, GridPlaneZ),
+					WithAlpha(GridColor, Alpha));
 			}
 		}
 	}
 
 	if (ShowFlags.bAxis)
 	{
-		if (bShowXAxis)
+		// A 축선 (B=0)
+		if (bShowAxisA)
 		{
-			const float Alpha = std::max(AxisMinVisibleAlpha, ComputeLineFade(-FocusPoint.Y, AxisFadeStartY, GridExtentY));
+			const float Alpha = std::max(AxisMinVisibleAlpha,
+				ComputeLineFade(-GetComp(FocusPoint, Desc.B), AxisFadeStB, ExtentB));
 			AddLine(
-				FVector(MinX, 0.0f, AxisHeightBias),
-				FVector(MaxX, 0.0f, AxisHeightBias),
-				WithAlpha(FColor::Red().ToVector4(), Alpha)
-			);
+				MakeGridPoint(Desc, MinA, 0.0f, AxisBias),
+				MakeGridPoint(Desc, MaxA, 0.0f, AxisBias),
+				WithAlpha(Desc.ColorA, Alpha));
 		}
 
-		if (bShowYAxis)
+		// B 축선 (A=0)
+		if (bShowAxisB)
 		{
-			const float Alpha = std::max(AxisMinVisibleAlpha, ComputeLineFade(-FocusPoint.X, AxisFadeStartX, GridExtentX));
+			const float Alpha = std::max(AxisMinVisibleAlpha,
+				ComputeLineFade(-GetComp(FocusPoint, Desc.A), AxisFadeStA, ExtentA));
 			AddLine(
-				FVector(0.0f, MinY, AxisHeightBias),
-				FVector(0.0f, MaxY, AxisHeightBias),
-				WithAlpha(FColor::Green().ToVector4(), Alpha)
-			);
+				MakeGridPoint(Desc, 0.0f, MinB, AxisBias),
+				MakeGridPoint(Desc, 0.0f, MaxB, AxisBias),
+				WithAlpha(Desc.ColorB, Alpha));
 		}
 
-		if (bShowXAxis && bShowYAxis)
+		// XY 평면에서만: 원점을 통과하는 Z(Blue) 수직 축을 추가로 그립니다.
+		if (Plane == EGridPlane::XY && bShowAxisA && bShowAxisB)
 		{
 			const float AxisHeight = std::max(Spacing * static_cast<float>(BaseHalfCount), Spacing * 10.0f);
 			AddLine(
 				FVector(0.0f, 0.0f, -AxisHeight),
-				FVector(0.0f, 0.0f, AxisHeight),
-				FColor::Blue().ToVector4()
-			);
+				FVector(0.0f, 0.0f,  AxisHeight),
+				FColor::Blue().ToVector4());
 		}
 	}
 }
