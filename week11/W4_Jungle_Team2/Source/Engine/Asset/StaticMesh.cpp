@@ -10,7 +10,7 @@ UStaticMesh::~UStaticMesh()
 	MeshData = nullptr;
 }
 
-void UStaticMesh::SetMeshData(FStaticMesh* InMeshData)
+void UStaticMesh::SetMeshData(FStaticMesh* InMeshData, const TArray<FStaticMeshMaterialSlot>& MaterialSlot)
 {
 	if (MeshData == InMeshData)
 	{
@@ -19,6 +19,11 @@ void UStaticMesh::SetMeshData(FStaticMesh* InMeshData)
 
 	delete MeshData;
 	MeshData = InMeshData;
+<<<<<<< Updated upstream
+	MaterialSlots = MaterialSlot;
+=======
+	RebuildLocalBoundsFromMeshData();
+>>>>>>> Stashed changes
 }
 
 FStaticMesh* UStaticMesh::GetMeshData()
@@ -54,11 +59,11 @@ const TArray<FStaticMeshSection>& UStaticMesh::GetSections() const
 	static const TArray<FStaticMeshSection> Empty = {};
 	return MeshData ? MeshData->Sections : Empty;
 }
-
+//	준혁님이 수정 예정
 const TArray<FStaticMeshMaterialSlot>& UStaticMesh::GetMaterialSlots() const
 {
 	static const TArray<FStaticMeshMaterialSlot> Empty = {};
-	return MeshData ? MeshData->MaterialSlots : Empty;
+	return MeshData ? MaterialSlots : Empty;
 }
 
 const FAABB& UStaticMesh::GetLocalBounds() const
@@ -72,4 +77,18 @@ bool UStaticMesh::HasValidMeshData() const
 	return MeshData != nullptr
 		&& !MeshData->Vertices.empty()
 		&& !MeshData->Indices.empty();
+}
+
+void UStaticMesh::RebuildLocalBoundsFromMeshData()
+{
+	if (!MeshData)
+	{
+		return;
+	}
+
+	MeshData->LocalBounds.Reset();
+	for (const FNormalVertex& Vertex : MeshData->Vertices)
+	{
+		MeshData->LocalBounds.Expand(Vertex.Position);
+	}
 }

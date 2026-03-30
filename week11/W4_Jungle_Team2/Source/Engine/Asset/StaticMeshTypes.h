@@ -32,7 +32,6 @@ struct FStaticMesh
 	TArray<FNormalVertex> Vertices;
 	TArray<uint32> Indices;
 	TArray<FStaticMeshSection> Sections;
-	TArray<FStaticMeshMaterialSlot> MaterialSlots;
-	
+	TArray<FString> SlotNames;
 	FAABB LocalBounds;
 };

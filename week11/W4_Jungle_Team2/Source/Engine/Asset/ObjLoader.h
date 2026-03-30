@@ -23,9 +23,10 @@ private:
 	bool ParseObj(const FString& Path);
 	//	Raw Data -> Cooked Data
 	bool BuildStaticMesh();
-	bool BindMaterials();
+	// bool BindMaterials();
 
 	//	CookedData -> UStaticMesh
+	TArray<FStaticMeshMaterialSlot> BuildMaterialSlots() const;
 	UStaticMesh* CreateAsset();
 	void Reset();
 
@@ -37,15 +38,29 @@ private:
 	void ParseUseMtlLine(const FString &Line, FString & CurrentMaterialName);
 	bool ParseFaceLine(const FString& Line, const FString &CurrentMaterialName);
 	bool ParseFaceVertexToken(const FString& Token, FObjRawIndex & OutIndex);
-	
+<<<<<<< Updated upstream
+
 	int32 GetOrAddMaterialSlot(const FString & MaterialName);
+=======
+	
+	// int32 GetOrAddMaterialSlot(const FString & MaterialName);
+>>>>>>> Stashed changes
 	FNormalVertex MakeVertex(const FObjRawIndex & RawIndex) const;
 	uint32 GetOrCreateVertexIndex(const FObjRawIndex & RawIndex, TMap<FObjVertexKey, uint32> & VertexMap);
 	
 	void NormalizeRawPositionsToUnitCube();
 	void NormalizeRawSizeToUnitCube();
+	
+	int32 GetOrAddMaterialSlot(const FString& MaterialName);
+	FAABB BuildLocalBounds() const;
 private:
 	FString SourcePath;
 	FObjRawData RawData;
 	FStaticMesh StaticMeshAsset;
+<<<<<<< Updated upstream
+
+=======
+	
+	TArray<FString> BuiltMaterialSlotName;
+>>>>>>> Stashed changes
 };

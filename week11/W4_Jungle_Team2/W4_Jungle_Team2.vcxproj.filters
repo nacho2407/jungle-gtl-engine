@@ -114,7 +114,13 @@
     <FxCompile Include="Shaders\Gizmo.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\OutlinePostProcess.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Primitive.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\SelectionMask.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\ShaderFont.hlsl">
@@ -183,6 +189,9 @@
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Asset\AssetBinder.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\BinarySerializer.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Asset\FileUtils.cpp">
@@ -426,6 +435,9 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorMaterialWidget.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Shaders\OutlinePostProcess.hlsl" />
     <ClCompile Include="Source\Engine\Asset\BinarySerializer.cpp" />
     <ClCompile Include="Shaders\SelectionMask.hlsl" />
@@ -492,6 +504,9 @@
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\AssetBinder.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\BinarySerializer.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\FileUtils.h">
@@ -859,6 +874,9 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorMaterialWidget.h">
+      <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\BinarySerializer.h" />
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h" />
