@@ -29,13 +29,20 @@ UStaticMesh * FObjLoader::Load(const FString & Path, const FStaticMeshLoadOption
 		return nullptr;
 	}
 
-	/* 단위 큐브의 크기로 변경 */
+	
+	/* 단위 큐브의 크기로 변경 및 AABB 기준 가운데로 고정 */
 	if (LoadOptions.bNormalizeToUnitCube)
 	{
 		UE_LOG("[ObjLoader] NormalizeToUnitCube enabled: %s", Path.c_str());
+		
 		NormalizeRawPositionsToUnitCube();
 	}
-
+	else
+	{
+		/* 중점 좌표를 AABB 기준 가운데로 고정 */
+		NormalizeRawPositionsToUnitCube();
+	}
+	
 	/* Build Cooked Data from Raw Data */
 	if (!BuildStaticMesh())
 	{
@@ -523,6 +530,35 @@ void FObjLoader::NormalizeRawPositionsToUnitCube()
 	for (FVector& Position : RawData.Positions)
 	{
 		Position = (Position - Center) * Scale;
+	}
+}
+
+void FObjLoader::NormalizeRawSizeToUnitCube()
+{
+	if (RawData.Positions.empty())
+	{
+		return;
+	}
+
+	FVector Min(FLT_MAX, FLT_MAX, FLT_MAX);
+	FVector Max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+	for (const FVector& Position : RawData.Positions)
+	{
+		Min.X = std::min(Min.X, Position.X);
+		Min.Y = std::min(Min.Y, Position.Y);
+		Min.Z = std::min(Min.Z, Position.Z);
+
+		Max.X = std::max(Max.X, Position.X);
+		Max.Y = std::max(Max.Y, Position.Y);
+		Max.Z = std::max(Max.Z, Position.Z);
+	}
+
+	const FVector Center = (Min + Max) * 0.5f;
+	
+	for (FVector& Position : RawData.Positions)
+	{
+		Position = (Position - Center);
 	}
 }
 

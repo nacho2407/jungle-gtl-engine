@@ -55,7 +55,14 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 	}
 
 	// Input Layout 생성
-	InDevice->CreateInputLayout(InInputElements, InInputElementCount, vertexShaderCSO->GetBufferPointer(), vertexShaderCSO->GetBufferSize(), &InputLayout);
+	hr = InDevice->CreateInputLayout(InInputElements, InInputElementCount, vertexShaderCSO->GetBufferPointer(), vertexShaderCSO->GetBufferSize(), &InputLayout);
+	if (FAILED(hr))
+	{
+		std::cerr << "Failed to create Input Layout (HRESULT: " << hr << ")" << std::endl;
+		vertexShaderCSO->Release();
+		pixelShaderCSO->Release();
+		return;
+	}
 
 	vertexShaderCSO->Release();
 	pixelShaderCSO->Release();
