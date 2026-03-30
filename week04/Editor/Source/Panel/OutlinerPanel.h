@@ -11,6 +11,7 @@ class FOutlinerPanel : public IPanel
     enum class ESpawnActorType : uint32
     {
         StaticMesh,   // 정적 메시 액터 (기본)
+        Quad,         // 쿼드 액터 (별도 보존)
         Sprite,       // 스프라이트 액터
         Effect,       // 이펙트 액터
         Text,         // 텍스트 액터

@@ -82,6 +82,9 @@ struct FAssetLoadParams
     EAssetType            ExplicitType = EAssetType::Unknown;
     bool                  bForceReload = false;
     FTextureBuildSettings TextureSettings = {};
+
+    // 향후 필요 시 아래와 같은 구조체 추가 고려
+    // FMeshBuildSettings MeshSettings = {};
 };
 
 class FSourceCache

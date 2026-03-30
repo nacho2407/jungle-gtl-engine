@@ -14,6 +14,7 @@
 #include "Engine/Game/AtlasSpriteActor.h"
 #include "Engine/Game/FlipbookActor.h"
 #include "Engine/Game/StaticMeshActor.h"
+#include "Engine/Game/QuadActor.h"
 #include "Engine/Component/Mesh/StaticMeshComponent.h"
 
 namespace
@@ -46,6 +47,8 @@ namespace
         {
         case FOutlinerPanel::ESpawnActorType::StaticMesh:
             return "StaticMeshActor";
+        case FOutlinerPanel::ESpawnActorType::Quad:
+            return "QuadActor";
         case FOutlinerPanel::ESpawnActorType::Sprite:
             return "SpriteActor";
         case FOutlinerPanel::ESpawnActorType::Effect:
@@ -61,8 +64,9 @@ namespace
         }
     }
 
-    const char* const SpawnActorTypeLabels[] = {"StaticMeshActor", "SpriteActor",      "EffectActor",
-                                                "TextActor",       "AtlasSpriteActor", "FlipbookActor"};
+    const char* const SpawnActorTypeLabels[] = {
+        "StaticMesh", "Quad", "Sprite", "Effect", "Text", "AtlasSprite", "Flipbook"
+    };
 
     AActor* CreateActorByType(FOutlinerPanel::ESpawnActorType InType)
     {
@@ -70,6 +74,8 @@ namespace
         {
         case FOutlinerPanel::ESpawnActorType::StaticMesh:
             return new AStaticMeshActor();
+        case FOutlinerPanel::ESpawnActorType::Quad:
+            return new AQuadActor();
         case FOutlinerPanel::ESpawnActorType::Sprite:
             return new ASpriteActor();
         case FOutlinerPanel::ESpawnActorType::Effect:

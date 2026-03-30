@@ -1,3 +1,4 @@
+#include "Engine/Component/Core/SceneComponent.h"
 #include "PrimitiveComponent.h"
 #include "Core/Logging/LogMacros.h"
 
@@ -8,6 +9,11 @@
 
 namespace Engine::Component
 {
+    void UPrimitiveComponent::Serialize(bool bIsLoading, void* JsonHandle)
+    {
+        USceneComponent::Serialize(bIsLoading, JsonHandle);
+    }
+    
     const FColor& UPrimitiveComponent::GetColor() const { return Color; }
 
     void UPrimitiveComponent::SetColor(const FColor& NewColor) { Color = NewColor; }

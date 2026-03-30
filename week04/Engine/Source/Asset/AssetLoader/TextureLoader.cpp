@@ -2,7 +2,7 @@
 #include "TextureLoader.h"
 
 #include "Renderer/RenderAsset/TextureResource.h"
-#include "Texture2DAsset.h"
+#include "Asset/Texture2DAsset.h"
 
 #include <algorithm>
 #include <cwctype>

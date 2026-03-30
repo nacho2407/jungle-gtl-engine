@@ -12,11 +12,11 @@
 
 #include "Core/Misc/NameSubsystem.h"
 #include "Asset/AssetManager.h"
-#include "Asset/FontAtlasLoader.h"
-#include "Asset/SubUVAtlasLoader.h"
-#include "Asset/TextureLoader.h"
-#include "Asset/StaticMeshLoader.h"
-#include "Asset/MaterialLoader.h" 
+#include "Asset/AssetLoader/FontAtlasLoader.h"
+#include "Asset/AssetLoader/SubUVAtlasLoader.h"
+#include "Asset/AssetLoader/TextureLoader.h"
+#include "Asset/AssetLoader/StaticMeshLoader.h"
+#include "Asset/AssetLoader/MaterialLoader.h" 
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND HWnd, UINT Message,
                                                              WPARAM WParam, LPARAM LParam);
@@ -162,13 +162,12 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
     TextureAssetLoader = new FTextureLoader(&Renderer->GetRHI());
     FontAssetLoader = new FFontAtlasLoader(&Renderer->GetRHI());
     SubUVAtlasAssetLoader = new FSubUVAtlasLoader(&Renderer->GetRHI());
-    StaticMeshAssetLoader = new FStaticMeshLoader(&Renderer->GetRHI(), AssetManager);
-    MaterialAssetLoader = new FMaterialLoader(AssetManager);
-    AssetManager->RegisterLoader(TextureAssetLoader);
+    StaticMeshLoader = new FStaticMeshLoader(&Renderer->GetRHI(), AssetManager);
+    MaterialLoader = new Engine::Asset::FMaterialLoader();
+    AssetManager->RegisterLoader(MaterialLoader);
     AssetManager->RegisterLoader(FontAssetLoader);
     AssetManager->RegisterLoader(SubUVAtlasAssetLoader);
-    AssetManager->RegisterLoader(StaticMeshAssetLoader);
-    AssetManager->RegisterLoader(MaterialAssetLoader);
+    AssetManager->RegisterLoader(StaticMeshLoader);
     Editor->SetRuntimeServices(&Renderer->GetRHI(), AssetManager);
 
     ImGui::CreateContext();
@@ -239,11 +238,11 @@ void FEditorEngineLoop::ShutDown()
         Editor->SetRuntimeServices(nullptr, nullptr);
     }
 
-     delete StaticMeshAssetLoader;
-    StaticMeshAssetLoader = nullptr;
+     delete StaticMeshLoader;
+    StaticMeshLoader = nullptr;
 
-     delete MaterialAssetLoader;
-    MaterialAssetLoader = nullptr;
+     delete MaterialLoader;
+    MaterialLoader = nullptr;
 
     delete FontAssetLoader;
     FontAssetLoader = nullptr;

@@ -5,10 +5,10 @@
 #include <cstdint>
 
 static const FVertexSimple quad_vertices[] = {
-    {-1.0f, 0.0f, -1.0f}, // 0
-    {1.0f, 0.0f, -1.0f},  // 1
-    {-1.0f, 0.0f, 1.0f},  // 2
-    {1.0f, 0.0f, 1.0f},   // 3
+    {-1.0f, 0.0f, -1.0f, 0.0f, 1.0f}, // 0 (BL)
+    { 1.0f, 0.0f, -1.0f, 1.0f, 1.0f}, // 1 (BR)
+    {-1.0f, 0.0f,  1.0f, 0.0f, 0.0f}, // 2 (TL)
+    { 1.0f, 0.0f,  1.0f, 1.0f, 0.0f}, // 3 (TR)
 };
 
 static const uint16_t quad_indices[] = {

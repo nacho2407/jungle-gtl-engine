@@ -27,29 +27,17 @@ namespace Engine::Component
 
     bool USpriteComponent::GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const
     {
-        // 쿼드(사각형)를 구성하는 두 개의 삼각형 생성 (-1~1 범위)
-        Geometry::FTriangle T1, T2;
-        T1.V0 = {-1.0f, 0.0f, -1.0f};
-        T1.V1 = { 1.0f, 0.0f, -1.0f};
-        T1.V2 = { 1.0f, 0.0f,  1.0f};
-
-        T2.V0 = {-1.0f, 0.0f, -1.0f};
-        T2.V1 = { 1.0f, 0.0f,  1.0f};
-        T2.V2 = {-1.0f, 0.0f,  1.0f};
-
-        OutTriangles.push_back(T1);
-        OutTriangles.push_back(T2);
-        return true;
+        return UQuadComponent::GetLocalTriangles(OutTriangles);
     }
 
     Geometry::FAABB USpriteComponent::GetLocalAABB() const
     {
-        return Geometry::FAABB({-1.0f, -0.1f, -1.0f}, {1.0f, 0.1f, 1.0f});
+        return UQuadComponent::GetLocalAABB();
     }
 
     void USpriteComponent::DescribeProperties(FComponentPropertyBuilder& Builder)
     {
-        // UPrimitiveComponent::DescribeProperties(Builder); // 부모 호출
+        UPrimitiveComponent::DescribeProperties(Builder); // 부모 호출 복구
 
         FComponentPropertyOptions TexturePathOptions;
         TexturePathOptions.ExpectedAssetPathKind = EComponentAssetPathKind::TextureImage;

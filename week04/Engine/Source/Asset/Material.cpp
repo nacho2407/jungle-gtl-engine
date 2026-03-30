@@ -1,24 +1,45 @@
-#include "Core/CoreMinimal.h"
 #include "Asset/Material.h"
+#include "Asset/Asset.h"
+#include "Asset/AssetManager.h"
+#include "CoreUObject/Object.h"
+#include "Renderer/RenderAsset/MaterialResource.h"
 
 namespace Engine::Asset
 {
-    UMaterial::UMaterial() = default;
-    UMaterial::~UMaterial() = default;
-
-    const FMaterialData* UMaterial::GetMaterialData() const
+    void UMaterial::Initialize(const FSourceRecord& InSource, std::shared_ptr<::FMaterialResource> InResource)
     {
-        if (SharedResource == nullptr || MaterialName.empty())
-        {
-            return nullptr;
-        }
-        return SharedResource->GetMaterial(MaterialName);
+        Resource = InResource;
+        SetPath(InSource.NormalizedPath);
     }
 
-    void UMaterial::Serialize(class FArchive& Ar)
+    const FMaterialData* UMaterial::GetMaterialData(const FString& SubMaterialName) const
     {
-        UMaterialInterface::Serialize(Ar);
-        // 추가 속성 직렬화 (나중에 구현)
+        if (Resource)
+        {
+            auto It = Resource->Materials.find(SubMaterialName);
+            if (It != Resource->Materials.end())
+            {
+                return &It->second;
+            }
+        }
+        return nullptr;
+    }
+
+    void UMaterial::AddTextureDependency(UTexture2DAsset* InTexture)
+    {
+        if (InTexture && !HasTextureDependency(InTexture))
+        {
+            ReferencedTextures.push_back(InTexture);
+        }
+    }
+
+    bool UMaterial::HasTextureDependency(const UTexture2DAsset* InTexture) const
+    {
+        for (const auto* Tex : ReferencedTextures)
+        {
+            if (Tex == InTexture) return true;
+        }
+        return false;
     }
 
     REGISTER_CLASS(Engine::Asset, UMaterial)

@@ -3,6 +3,7 @@
 #include "Asset/StaticMesh.h"
 #include "Asset/AssetManager.h"
 #include "Engine/Component/Core/ComponentProperty.h"
+#include "SceneIO/SceneAssetPath.h"
 #include <filesystem>
 
 namespace Engine::Component
@@ -33,7 +34,6 @@ namespace Engine::Component
     void UStaticMeshComponent::Serialize(bool bIsLoading, void* JsonHandle)
     {
         UMeshComponent::Serialize(bIsLoading, JsonHandle);
-        // JSON 직렬화 로직 추가 지점
     }
 
     void UStaticMeshComponent::ResolveAssetReferences(UAssetManager* InAssetManager)
@@ -43,25 +43,32 @@ namespace Engine::Component
             return;
         }
 
-        // FString(std::string)을 FWString(std::wstring)으로 안전하게 변환
-        std::filesystem::path FilePath(PendingMeshPath.c_str());
-        FWString WidePath = FilePath.wstring();
+        const std::filesystem::path AbsolutePath = Engine::SceneIO::ResolveSceneAssetPathToAbsolute(PendingMeshPath);
+        if (AbsolutePath.empty())
+        {
+            return;
+        }
 
         FAssetLoadParams Params;
-        Params.ExplicitType = EAssetType::Mesh;
+        Params.ExplicitType = EAssetType::StaticMesh;
 
-        UAsset* LoadedAsset = InAssetManager->Load(WidePath, Params);
-        if (UStaticMesh* NewMesh = Cast<UStaticMesh>(LoadedAsset))
+        UAsset* LoadedAsset = InAssetManager->Load(AbsolutePath.wstring(), Params);
+        if (Asset::UStaticMesh* NewMesh = Cast<Asset::UStaticMesh>(LoadedAsset))
         {
             SetStaticMesh(NewMesh);
             PendingMeshPath = ""; // 로드 완료 후 비움
         }
     }
 
-    void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
+    void UStaticMeshComponent::SetStaticMesh(Asset::UStaticMesh* InStaticMesh)
     {
         StaticMesh = InStaticMesh;
-        if (StaticMesh)
+        if (StaticMesh && StaticMesh->GetRenderResource())
+        {
+            uint32 NumSubMeshes = static_cast<uint32>(StaticMesh->GetRenderResource()->SubMeshes.size());
+            InitializeMaterialSlots(NumSubMeshes);
+        }
+        else if (StaticMesh)
         {
             InitializeMaterialSlots(StaticMesh->GetNumSections());
         }
@@ -74,14 +81,13 @@ namespace Engine::Component
     FString UStaticMeshComponent::GetMeshPath() const
     {
         if (!PendingMeshPath.empty()) return PendingMeshPath;
-        return StaticMesh ? StaticMesh->GetAssetPathFileName() : "";
+        return StaticMesh ? WidePathToUtf8(StaticMesh->GetPath()) : "";
     }
 
     void UStaticMeshComponent::SetMeshPath(const FString& InPath)
     {
         PendingMeshPath = InPath;
-        // 엔진 시스템이 ResolveAssetReferences를 호출할 때까지 대기하거나, 
-        // 에디터에서 즉시 갱신이 필요한 경우 직접 호출될 수 있습니다.
+        StaticMesh = nullptr;
     }
 
     bool UStaticMeshComponent::GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const
@@ -97,6 +103,24 @@ namespace Engine::Component
             return StaticMesh->GetRenderResource()->BoundingBox;
         }
         return Geometry::FAABB(FVector::ZeroVector, FVector::ZeroVector);
+    }
+
+    Asset::UMaterialInterface* UStaticMeshComponent::GetMaterial(uint32 Index) const
+    {
+        // 1. 컴포넌트 레벨에서 오버라이드된 재질이 있는지 확인
+        Asset::UMaterialInterface* OverrideMat = UMeshComponent::GetMaterial(Index);
+        if (OverrideMat)
+        {
+            return OverrideMat;
+        }
+
+        // 2. 없으면 에셋 레벨의 재질 반환
+        if (StaticMesh)
+        {
+            return StaticMesh->GetMaterial(Index);
+        }
+
+        return nullptr;
     }
 
     REGISTER_CLASS(Engine::Component, UStaticMeshComponent)

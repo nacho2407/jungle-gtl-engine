@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "AssetLoader.h"
-#include "AssetManager.h"
+#include "Asset/AssetManager.h"
 #include "Renderer/RenderAsset/FontResource.h"
 #include "ThirdParty/Json/json.hpp"
 

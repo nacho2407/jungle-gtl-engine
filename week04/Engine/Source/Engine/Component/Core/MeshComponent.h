@@ -4,7 +4,7 @@
 
 namespace Engine::Asset
 {
-    class UMaterialInterface; // Use Interface for maximum flexibility
+    class UMaterialInterface;
 }
 
 namespace Engine::Component
@@ -20,6 +20,8 @@ namespace Engine::Component
         UMeshComponent();
         virtual ~UMeshComponent() override;
 
+        virtual void Serialize(bool bIsLoading, void* JsonHandle) override;
+
         /** 머티리얼 슬롯 관리 */
         virtual void InitializeMaterialSlots(uint32 NumSections);
         virtual void SetMaterial(uint32 Index, Asset::UMaterialInterface* InMaterial);
@@ -28,7 +30,8 @@ namespace Engine::Component
 
         virtual void DescribeProperties(FComponentPropertyBuilder& Builder) override;
 
-        virtual void Serialize(bool bIsLoading, void* JsonHandle);
+        /** 경로 변환 유틸리티 */
+        static FString WidePathToUtf8(const FWString& Path);
 
       protected:
         TArray<Asset::UMaterialInterface*> OverrideMaterials;

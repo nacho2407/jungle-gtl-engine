@@ -17,6 +17,8 @@ namespace Engine::Component
         UPrimitiveComponent() = default;
         ~UPrimitiveComponent() override = default;
 
+        virtual void Serialize(bool bIsLoading, void* JsonHandle) override;
+
         virtual EBasicMeshType GetBasicMeshType() const = 0;
 
         const FColor& GetColor() const;

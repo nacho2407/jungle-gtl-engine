@@ -12,7 +12,7 @@
 #include "Engine/Component/Core/UnknownComponent.h"
 
 #include "Content/ContentBrowserDragDrop.h"
-#include "CoreUObject/UObjectIterator.h" // 민준 님의 이터레이터 헤더
+#include "CoreUObject/UObjectIterator.h" // 이터레이터 헤더
 #include "Editor/Editor.h"
 #include "Editor/EditorContext.h"
 #include "CoreUObject/Object.h"
@@ -43,7 +43,7 @@ namespace
      */
     FString GetBaseObjectDisplayName(const UObject* Object)
     {
-        // 1. nullptr 및 메모리 유효성 검사 (민준 님의 IsValidLowLevel 활용)
+        // 1. nullptr 및 메모리 유효성 검사 (IsValidLowLevel 활용)
         if (Object == nullptr || !Object->IsValidLowLevel())
             return "Invalid Object";
 
@@ -214,16 +214,15 @@ namespace
         FString ComboLabel = CurrentPath.empty() ? "None" : CurrentPath;
         if (ImGui::BeginCombo("##Value", ComboLabel.c_str()))
         {
-            for (TUObjectIterator<UStaticMesh> It; It; ++It)
+            for (TUObjectIterator<Engine::Asset::UStaticMesh> It; It; ++It)
             {
-                UStaticMesh* MeshAsset = *It;
+                Engine::Asset::UStaticMesh* MeshAsset = *It;
                 if (MeshAsset == nullptr || !MeshAsset->IsValidLowLevel())
                     continue;
 
-                const FString Path = MeshAsset->GetAssetPathFileName();
+                const FString Path = MeshAsset->GetAssetName();
                 FString       Label = MeshAsset->GetAssetName();
-                if (MeshAsset->bIsBaked)
-                    Label += " [Baked]";
+                if (MeshAsset->bIsBaked)                    Label += " [Baked]";
                 bool bSelected = (RawValue == Path);
                 if (ImGui::Selectable(Label.c_str(), bSelected))
                 {

@@ -1,39 +1,23 @@
-#include "Core/CoreMinimal.h"
+#include "Engine/Component/Core/PrimitiveComponent.h"
 #include "Engine/Component/Core/MeshComponent.h"
 #include "Engine/Component/Core/ComponentProperty.h"
-#include "Asset/MaterialInterface.h"
-#include "Asset/Asset.h"
-
-#include <string>
+#include <algorithm>
+#include <filesystem>
 
 namespace Engine::Component
 {
-    UMeshComponent::UMeshComponent()
-    {
-    }
+    UMeshComponent::UMeshComponent() {}
 
-    UMeshComponent::~UMeshComponent()
-    {
-    }
+    UMeshComponent::~UMeshComponent() {}
 
     void UMeshComponent::Serialize(bool bIsLoading, void* JsonHandle)
     {
-    }
-
-    void UMeshComponent::DescribeProperties(FComponentPropertyBuilder& Builder)
-    {
-        UPrimitiveComponent::DescribeProperties(Builder);
-
-        // Redundant manual registration removed. 
-        // Material slots are now handled via a dedicated UI section in PropertiesPanel.cpp.
+        UPrimitiveComponent::Serialize(bIsLoading, JsonHandle);
     }
 
     void UMeshComponent::InitializeMaterialSlots(uint32 NumSections)
     {
-        if (NumSections != OverrideMaterials.size())
-        {
-            OverrideMaterials.resize(NumSections, nullptr);
-        }
+        OverrideMaterials.resize(NumSections, nullptr);
     }
 
     void UMeshComponent::SetMaterial(uint32 Index, Asset::UMaterialInterface* InMaterial)
@@ -46,15 +30,25 @@ namespace Engine::Component
 
     Asset::UMaterialInterface* UMeshComponent::GetMaterial(uint32 Index) const
     {
-        if (Index < OverrideMaterials.size())
-        {
-            return OverrideMaterials[Index];
-        }
-        return nullptr;
+        return (Index < OverrideMaterials.size()) ? OverrideMaterials[Index] : nullptr;
     }
 
     uint32 UMeshComponent::GetNumMaterials() const
     {
         return static_cast<uint32>(OverrideMaterials.size());
     }
+
+    void UMeshComponent::DescribeProperties(FComponentPropertyBuilder& Builder)
+    {
+        UPrimitiveComponent::DescribeProperties(Builder);
+    }
+
+    FString UMeshComponent::WidePathToUtf8(const FWString& Path)
+    {
+        std::filesystem::path FilePath(Path);
+        const std::u8string   Utf8Path = FilePath.u8string();
+        return FString(reinterpret_cast<const char*>(Utf8Path.data()), Utf8Path.size());
+    }
+
+    // REGISTER_CLASS 제거 (추상 클래스이므로 인스턴스화 불가)
 } // namespace Engine::Component

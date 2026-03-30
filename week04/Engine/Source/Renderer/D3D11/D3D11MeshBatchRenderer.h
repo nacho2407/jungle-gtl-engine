@@ -8,6 +8,7 @@
 #include "Renderer/Types/BasicMeshType.h"
 #include "Renderer/Types/ViewMode.h"
 #include "Resources/Mesh/MeshPrimitiveTopology.h"
+#include "Renderer/Types/MeshPassParams.h"
 
 class FD3D11RHI;
 class FSceneView;
@@ -15,13 +16,13 @@ class FSceneView;
 struct FPrimitiveRenderItem;
 struct FVertexSimple;
 
-struct FMeshBatchPassParams
-{
-    const FSceneView* SceneView = nullptr;
-    EViewModeIndex    ViewMode = EViewModeIndex::VMI_Lit;
-    bool              bUseInstancing = true;
-    bool              bDisableDepth = false;
-};
+//struct FMeshPassParams
+//{
+//    const FSceneView* SceneView = nullptr;
+//    EViewModeIndex    ViewMode = EViewModeIndex::VMI_Lit;
+//    bool              bUseInstancing = true;
+//    bool              bDisableDepth = false;
+//};
 
 enum class EMeshDrawPath : uint8
 {
@@ -55,7 +56,7 @@ class FD3D11MeshBatchRenderer
     bool Initialize(FD3D11RHI* InRHI);
     void Shutdown();
 
-    void BeginFrame(const FMeshBatchPassParams& InPassParams);
+    void BeginFrame(const FMeshPassParams& InPassParams);
     void AddPrimitive(const FPrimitiveRenderItem& InItem);
     void AddPrimitives(const TArray<FPrimitiveRenderItem>& InItems);
     void EndFrame();
@@ -100,7 +101,7 @@ class FD3D11MeshBatchRenderer
 
   private:
     FD3D11RHI*         RHI = nullptr;
-    FMeshBatchPassParams CurrentPassParams = {};
+    FMeshPassParams CurrentPassParams = {};
     uint32             MaxInstanceCount = MaxInstanceCapacity;
 
     TComPtr<ID3D11VertexShader> InstancedVertexShader;

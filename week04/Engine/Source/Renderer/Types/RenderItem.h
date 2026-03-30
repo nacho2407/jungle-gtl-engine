@@ -8,8 +8,14 @@
 #include "Renderer/Types/BasicMeshType.h"
 #include "Renderer/RenderAsset/FontResource.h"
 #include "Renderer/RenderAsset/TextureResource.h"
+#include "Renderer/RenderAsset/StaticMeshResource.h"
 #include "Core/HAL/PlatformTypes.h"
 #include "Core/Misc/BitMaskEnum.h"
+
+namespace Engine::Asset
+{
+    class UMaterialInterface;
+}
 
 enum class ERenderItemFlags : uint8
 {
@@ -64,6 +70,21 @@ enum class ETextLayoutMode : uint8
 {
     Natural = 0, // 글자 크기는 TextScale이 결정
     FitToBox = 1 // transform scale을 박스 크기로 해석
+};
+
+
+struct FStaticMeshMaterialBinding
+{
+    Engine::Asset::UMaterialInterface* Material = nullptr;
+    FString                            SubMaterialName;
+};
+struct FStaticMeshRenderItem
+{
+    FMatrix World = FMatrix::Identity;
+    const FStaticMeshResource* RenderResource = nullptr;
+    TArray<FStaticMeshMaterialBinding>         MaterialBindings;
+    Geometry::FAABB                            WorldAABB;
+    FRenderItemState                           State;
 };
 
 struct FPrimitiveRenderItem
