@@ -185,6 +185,8 @@ json::JSON FSceneSaveManager::SerializePropertyValue(const FPropertyDescriptor& 
 		return arr;
 	}
 	case EPropertyType::String:
+	case EPropertyType::StaticMeshRef:
+	case EPropertyType::Material:
 		return JSON(*static_cast<FString*>(Prop.ValuePtr));
 
 	case EPropertyType::Name:
@@ -316,6 +318,19 @@ void FSceneSaveManager::DeserializeProperties(UActorComponent* Comp, json::JSON&
 		DeserializePropertyValue(Prop, Value);
 		Comp->PostEditProperty(Prop.Name.c_str());
 	}
+
+	// 2nd pass: PostEditProperty가 새 프로퍼티를 추가할 수 있음
+	// (예: SetStaticMesh → OverrideMaterialPaths 생성 → "Element N" 디스크립터 추가)
+	TArray<FPropertyDescriptor> Descriptors2;
+	Comp->GetEditableProperties(Descriptors2);
+
+	for (size_t i = Descriptors.size(); i < Descriptors2.size(); ++i) {
+		auto& Prop = Descriptors2[i];
+		if (!PropsJSON.hasKey(Prop.Name.c_str())) continue;
+		auto Value = PropsJSON[Prop.Name.c_str()];
+		DeserializePropertyValue(Prop, Value);
+		Comp->PostEditProperty(Prop.Name.c_str());
+	}
 }
 
 void FSceneSaveManager::DeserializePropertyValue(FPropertyDescriptor& Prop, json::JSON& Value)
@@ -352,6 +367,8 @@ void FSceneSaveManager::DeserializePropertyValue(FPropertyDescriptor& Prop, json
 		break;
 	}
 	case EPropertyType::String:
+	case EPropertyType::StaticMeshRef:
+	case EPropertyType::Material:
 		*static_cast<FString*>(Prop.ValuePtr) = Value.ToString();
 		break;
 

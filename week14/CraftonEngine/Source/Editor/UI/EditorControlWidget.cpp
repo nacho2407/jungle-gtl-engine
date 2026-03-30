@@ -1,8 +1,6 @@
 ﻿#include "Editor/UI/EditorControlWidget.h"
-
 #include "Editor/EditorEngine.h"
 #include "Engine/Profiling/Timer.h"
-
 #include "Engine/Profiling/MemoryStats.h"
 #include "ImGui/imgui.h"
 #include "Component/CameraComponent.h"
@@ -10,7 +8,6 @@
 #include "Component/SubUVComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "GameFramework/PrimitiveActors.h"
-
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -32,13 +29,6 @@ void FEditorControlWidget::Render(float DeltaTime)
 	ImGui::SetNextWindowSize(ImVec2(500.0f, 480.0f), ImGuiCond_Once);
 
 	ImGui::Begin("Jungle Control Panel");
-
-	// Stats
-	ImGui::Text("FPS : %.1f", EditorEngine->GetTimer()->GetDisplayFPS());
-	ImGui::Text("Memory Allocated : %d", MemoryStats::GetTotalAllocationBytes());
-	ImGui::Text("Times Allocated : %d", MemoryStats::GetTotalAllocationCount());
-
-	SEPARATOR();
 
 	// Spawn
 	ImGui::Combo("Primitive", &SelectedPrimitiveType, PrimitiveTypes, IM_ARRAYSIZE(PrimitiveTypes));
