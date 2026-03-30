@@ -83,68 +83,17 @@ namespace
 		return FVector(CameraPosition.X, CameraPosition.Y, GridPlaneZ);
 	}
 
-	void ReleaseBuffer(ID3D11Buffer*& Buffer)
-	{
-		if (Buffer)
-		{
-			Buffer->Release();
-			Buffer = nullptr;
-		}
-	}
-
-	bool CreateDynamicBuffer(ID3D11Device* Device, uint32 ByteWidth, UINT BindFlags, ID3D11Buffer** OutBuffer)
-	{
-		if (!Device || ByteWidth == 0 || !OutBuffer)
-		{
-			return false;
-		}
-
-		D3D11_BUFFER_DESC Desc = {};
-		Desc.ByteWidth = ByteWidth;
-		Desc.Usage = D3D11_USAGE_DYNAMIC;
-		Desc.BindFlags = BindFlags;
-		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-		return SUCCEEDED(Device->CreateBuffer(&Desc, nullptr, OutBuffer));
-	}
 }
 
 void FLineBatcher::Create(ID3D11Device* InDevice)
 {
 	Release();
-
-	Device = InDevice;
-	if (!Device)
-	{
-		return;
-	}
-
-	Device->AddRef();
-
-	MaxIndexedVertexCount = 512;
-	MaxIndexCount = 1536;
-
-	if (!CreateDynamicBuffer(Device, sizeof(FLineVertex) * MaxIndexedVertexCount, D3D11_BIND_VERTEX_BUFFER, &IndexedVertexBuffer) ||
-		!CreateDynamicBuffer(Device, sizeof(uint32) * MaxIndexCount, D3D11_BIND_INDEX_BUFFER, &IndexBuffer))
-	{
-		Release();
-		return;
-	}
+	CreateBuffers(InDevice, 512, sizeof(FLineVertex), 1536);
 }
 
 void FLineBatcher::Release()
 {
-	ReleaseBuffer(IndexedVertexBuffer);
-	ReleaseBuffer(IndexBuffer);
-
-	if (Device)
-	{
-		Device->Release();
-		Device = nullptr;
-	}
-
-	MaxIndexedVertexCount = 0;
-	MaxIndexCount = 0;
+	ReleaseBuffers();
 	IndexedVertices.clear();
 	Indices.clear();
 }
@@ -313,65 +262,23 @@ void FLineBatcher::Clear()
 	Indices.clear();
 }
 
-void FLineBatcher::Flush(ID3D11DeviceContext* Context)
+void FLineBatcher::DrawBatch(ID3D11DeviceContext* Context)
 {
-	if (!Context || !Device)
-	{
-		return;
-	}
+	if (!Context || !Device) return;
 
-	const uint32 RequiredIndexedVertexCount = static_cast<uint32>(IndexedVertices.size());
-	const uint32 RequiredIndexCount = static_cast<uint32>(Indices.size());
-	if (RequiredIndexedVertexCount == 0 || RequiredIndexCount == 0)
-	{
-		return;
-	}
+	const uint32 VertexCount = static_cast<uint32>(IndexedVertices.size());
+	const uint32 IndexCount = static_cast<uint32>(Indices.size());
+	if (VertexCount == 0 || IndexCount == 0) return;
 
-	if (!IndexedVertexBuffer || RequiredIndexedVertexCount > MaxIndexedVertexCount)
-	{
-		ReleaseBuffer(IndexedVertexBuffer);
-		MaxIndexedVertexCount = RequiredIndexedVertexCount * 2;
-		if (!CreateDynamicBuffer(Device, sizeof(FLineVertex) * MaxIndexedVertexCount, D3D11_BIND_VERTEX_BUFFER, &IndexedVertexBuffer))
-		{
-			MaxIndexedVertexCount = 0;
-			return;
-		}
-	}
+	VB.EnsureCapacity(Device, VertexCount);
+	IB.EnsureCapacity(Device, IndexCount);
 
-	if (!IndexBuffer || RequiredIndexCount > MaxIndexCount)
-	{
-		ReleaseBuffer(IndexBuffer);
-		MaxIndexCount = RequiredIndexCount * 2;
-		if (!CreateDynamicBuffer(Device, sizeof(uint32) * MaxIndexCount, D3D11_BIND_INDEX_BUFFER, &IndexBuffer))
-		{
-			MaxIndexCount = 0;
-			return;
-		}
-	}
+	if (!VB.Update(Context, IndexedVertices.data(), VertexCount)) return;
+	if (!IB.Update(Context, Indices.data(), IndexCount)) return;
 
-	D3D11_MAPPED_SUBRESOURCE MappedResource = {};
-	if (FAILED(Context->Map(IndexedVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource)))
-	{
-		return;
-	}
-
-	memcpy(MappedResource.pData, IndexedVertices.data(), sizeof(FLineVertex) * RequiredIndexedVertexCount);
-	Context->Unmap(IndexedVertexBuffer, 0);
-
-	if (FAILED(Context->Map(IndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource)))
-	{
-		return;
-	}
-
-	memcpy(MappedResource.pData, Indices.data(), sizeof(uint32) * RequiredIndexCount);
-	Context->Unmap(IndexBuffer, 0);
-
-	UINT Stride = sizeof(FLineVertex);
-	UINT Offset = 0;
-	Context->IASetVertexBuffers(0, 1, &IndexedVertexBuffer, &Stride, &Offset);
-	Context->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-	Context->DrawIndexed(RequiredIndexCount, 0, 0);
+	VB.Bind(Context);
+	IB.Bind(Context);
+	Context->DrawIndexed(IndexCount, 0, 0);
 }
 
 uint32 FLineBatcher::GetLineCount() const
