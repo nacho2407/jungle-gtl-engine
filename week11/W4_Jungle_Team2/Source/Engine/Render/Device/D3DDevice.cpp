@@ -29,6 +29,8 @@ void FD3DDevice::Release()
 void FD3DDevice::BeginFrame()
 {
 	DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
+	const float ClearMask[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	DeviceContext->ClearRenderTargetView(SelectionMaskRTV, ClearMask);
 	DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -72,6 +74,18 @@ void FD3DDevice::OnResizeViewport(int Width, int Height)
 }
 
 
+void FD3DDevice::SetSubViewport(int32 X, int32 Y, int32 Width, int32 Height)
+{
+	D3D11_VIEWPORT vp = {};
+	vp.TopLeftX = static_cast<float>(X);
+	vp.TopLeftY = static_cast<float>(Y);
+	vp.Width    = static_cast<float>(Width);
+	vp.Height   = static_cast<float>(Height);
+	vp.MinDepth = 0.0f;
+	vp.MaxDepth = 1.0f;
+	DeviceContext->RSSetViewports(1, &vp);
+}
+
 ID3D11Device* FD3DDevice::GetDevice() const
 {
 	return Device;
@@ -96,9 +110,6 @@ void FD3DDevice::SetDepthStencilState(EDepthStencilState InState)
 		break;
 	case EDepthStencilState::StencilWrite:
 		DeviceContext->OMSetDepthStencilState(DepthStencilStateStencilWrite, 1);
-		break;
-	case EDepthStencilState::StencilOutline:
-		DeviceContext->OMSetDepthStencilState(DepthStencilStateStencilOutline, 1);
 		break;
 	case EDepthStencilState::StencilWriteOnlyEqual:
 		DeviceContext->OMSetDepthStencilState(DepthStencilStateStencilMaskEqual, 1);
@@ -234,10 +245,36 @@ void FD3DDevice::CreateFrameBuffer()
 	frameBufferRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 
 	Device->CreateRenderTargetView(FrameBuffer, &frameBufferRTVDesc, &FrameBufferRTV);
+
+	D3D11_TEXTURE2D_DESC selectionMaskDesc = {};
+	selectionMaskDesc.Width = static_cast<uint32>(ViewportInfo.Width);
+	selectionMaskDesc.Height = static_cast<uint32>(ViewportInfo.Height);
+	selectionMaskDesc.MipLevels = 1;
+	selectionMaskDesc.ArraySize = 1;
+	selectionMaskDesc.Format = DXGI_FORMAT_R8_UNORM;
+	selectionMaskDesc.SampleDesc.Count = 1;
+	selectionMaskDesc.Usage = D3D11_USAGE_DEFAULT;
+	selectionMaskDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	Device->CreateTexture2D(&selectionMaskDesc, nullptr, &SelectionMaskBuffer);
+
+	D3D11_RENDER_TARGET_VIEW_DESC selectionMaskRTVDesc = {};
+	selectionMaskRTVDesc.Format = DXGI_FORMAT_R8_UNORM;
+	selectionMaskRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	Device->CreateRenderTargetView(SelectionMaskBuffer, &selectionMaskRTVDesc, &SelectionMaskRTV);
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC selectionMaskSRVDesc = {};
+	selectionMaskSRVDesc.Format = DXGI_FORMAT_R8_UNORM;
+	selectionMaskSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	selectionMaskSRVDesc.Texture2D.MostDetailedMip = 0;
+	selectionMaskSRVDesc.Texture2D.MipLevels = 1;
+	Device->CreateShaderResourceView(SelectionMaskBuffer, &selectionMaskSRVDesc, &SelectionMaskSRV);
 }
 
 void FD3DDevice::ReleaseFrameBuffer()
 {
+	SAFE_RELEASE(SelectionMaskSRV);
+	SAFE_RELEASE(SelectionMaskRTV);
+	SAFE_RELEASE(SelectionMaskBuffer);
 	SAFE_RELEASE(FrameBufferRTV);
 	SAFE_RELEASE(FrameBuffer);
 }
@@ -286,7 +323,7 @@ void FD3DDevice::CreateDepthStencilBuffer()
 	depthStencilDesc.Height = static_cast<uint32>(ViewportInfo.Height);
 	depthStencilDesc.MipLevels = 1;
 	depthStencilDesc.ArraySize = 1;
-	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;	//	Depth 24bit + Stenmcil 8bit
+	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	depthStencilDesc.SampleDesc.Count = 1;
 	depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
 	depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
@@ -331,7 +368,7 @@ void FD3DDevice::CreateDepthStencilBuffer()
 
 	Device->CreateDepthStencilState(&depthStencilStateStencilWriteDesc, &DepthStencilStateStencilWrite);
 
-	{//Gizmo DepthStencil State
+	{// Gizmo split by selected-object stencil mask (ref=1)
 		D3D11_DEPTH_STENCIL_DESC gizmoInsideDesc = {};
 		gizmoInsideDesc.DepthEnable = TRUE;
 		gizmoInsideDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
@@ -391,25 +428,6 @@ void FD3DDevice::CreateDepthStencilBuffer()
 
 	Device->CreateDepthStencilState(&maskDesc, &DepthStencilStateStencilMaskEqual);
 
-	// Stencil Test (Not Equal)
-	D3D11_DEPTH_STENCIL_DESC depthStencilStateStencilOutlineDesc = {};
-	depthStencilStateStencilOutlineDesc.DepthEnable = TRUE;
-	// 또는 TRUE + ZERO로 테스트 가능, 지금은 먼저 단순하게
-	depthStencilStateStencilOutlineDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-	depthStencilStateStencilOutlineDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-
-	depthStencilStateStencilOutlineDesc.StencilEnable = TRUE;
-	depthStencilStateStencilOutlineDesc.StencilReadMask = 0xFF;
-	depthStencilStateStencilOutlineDesc.StencilWriteMask = 0x00;
-
-	depthStencilStateStencilOutlineDesc.FrontFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;
-	depthStencilStateStencilOutlineDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilStateStencilOutlineDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilStateStencilOutlineDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-
-	depthStencilStateStencilOutlineDesc.BackFace = depthStencilStateStencilOutlineDesc.FrontFace;
-
-	Device->CreateDepthStencilState(&depthStencilStateStencilOutlineDesc, &DepthStencilStateStencilOutline);
 }
 
 void FD3DDevice::CreateBlendState()
@@ -447,7 +465,6 @@ void FD3DDevice::ReleaseDepthStencilBuffer()
 	SAFE_RELEASE(DepthStencilStateDefault);
 	SAFE_RELEASE(DepthStencilStateDepthReadOnly);
 	SAFE_RELEASE(DepthStencilStateStencilWrite);
-	SAFE_RELEASE(DepthStencilStateStencilOutline);
 	SAFE_RELEASE(DepthStencilStateStencilMaskEqual);
 	SAFE_RELEASE(DepthStencilStateGizmoInside);
 	SAFE_RELEASE(DepthStencilStateGizmoOutside);
