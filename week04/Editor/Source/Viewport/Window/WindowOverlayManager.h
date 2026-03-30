@@ -68,6 +68,9 @@ class FWindowOverlayManager
     // Resets camera movement settings for all managed panels
     void SetNavigationValues(float MoveSpeed, float RotationSpeed);
 
+    // Sets a new view orientation for last focused panel
+    void SetViewportOrientation(EViewportViewOrientation InViewOrientation);
+
     // Re-create splitters for the current layout and window size
     void ResetSplitters();
 
@@ -102,4 +105,7 @@ class FWindowOverlayManager
   private:
     // Push current panel PosX/Y/Width/Height to each ViewportClient
     void SyncPanelClients();
+
+    // Reset view orientation for all panels based on current layout
+    void ResetViewOrientation();
 };

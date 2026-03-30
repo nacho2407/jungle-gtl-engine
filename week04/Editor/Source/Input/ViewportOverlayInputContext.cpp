@@ -121,9 +121,12 @@ bool FViewportOverlayInputContext::HandleEvent(const FInputEvent& Event, const F
     case EInputEventType::KeyDown:
     case EInputEventType::KeyUp:
     {
-        if (CapturePanel && CapturePanel->ViewportClient)
+        FEditorViewportPanel* Target = CapturePanel
+            ? CapturePanel
+            : OverlayManager->GetLastFocusedPanel();
+        if (Target && Target->ViewportClient)
         {
-            CapturePanel->ViewportClient->HandleInputEvent(Event, State);
+            Target->ViewportClient->HandleInputEvent(Event, State);
         }
         return false;
     }

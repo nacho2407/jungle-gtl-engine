@@ -104,11 +104,22 @@ void FViewportNavigationController::MoveForward(float Value, float DeltaTime)
                "MoveForward called while orbiting. Ignoring input.");
         return;
     }
+    if (bTranslationLocked)
+    {
+        UE_LOG(FViewportNavigationController, ELogVerbosity::Warning,
+               "MoveForward called while translation is locked. Ignoring input.");
+        return;
+    }
 
     EnsureTargetLocationInitialized();
-    TargetLocation += ViewportCamera->GetForwardVector() * (Value * MoveSpeed * DeltaTime);
 
-    // MessageBox(nullptr, L"MoveForward called", L"Debug", MB_OK);
+    // In orthographic mode the forward vector is the depth axis — moving along it produces
+    // no visible change.  Use the camera's up vector instead so W/S pan on-screen.
+    const FVector MoveAxis =
+        (ViewportCamera->GetProjectionType() == EViewportProjectionType::Orthographic)
+            ? ViewportCamera->GetUpVector()
+            : ViewportCamera->GetForwardVector();
+    TargetLocation += MoveAxis * (Value * MoveSpeed * DeltaTime);
 }
 
 void FViewportNavigationController::MoveRight(float Value, float DeltaTime)
@@ -143,6 +154,12 @@ void FViewportNavigationController::AddYawInput(float Value)
     {
         return;
     }
+    if (bRotationLocked)
+    {
+        UE_LOG(FViewportNavigationController, ELogVerbosity::Warning,
+               "AddYawInput called while rotation is locked. Ignoring input.");
+        return;
+    }
 
     Yaw += Value * RotationSpeed;
     Yaw = FRotator::NormalizeAxis(Yaw);
@@ -162,6 +179,12 @@ void FViewportNavigationController::AddPitchInput(float Value)
 {
     if (ViewportCamera == nullptr || FMath::IsNearlyZero(Value))
     {
+        return;
+    }
+    if (bRotationLocked)
+    {
+        UE_LOG(FViewportNavigationController, ELogVerbosity::Warning,
+               "AddYawInput called while rotation is locked. Ignoring input.");
         return;
     }
 
@@ -321,6 +344,12 @@ void FViewportNavigationController::BeginPanning()
     {
         return;
     }
+    if (bTranslationLocked)
+    {
+        UE_LOG(FViewportNavigationController, ELogVerbosity::Warning,
+               "BeginPanning called while translation is locked. Ignoring input.");
+        return;
+    }
 
     EnsureTargetLocationInitialized();
     bPanning = true;
@@ -336,6 +365,12 @@ void FViewportNavigationController::AddPanInput(float DeltaX, float DeltaY)
     }
     if (FMath::IsNearlyZero(DeltaX) && FMath::IsNearlyZero(DeltaY))
     {
+        return;
+    }
+    if (bTranslationLocked)
+    {
+        UE_LOG(FViewportNavigationController, ELogVerbosity::Warning,
+               "BeginPanning called while translation is locked. Ignoring input.");
         return;
     }
 
@@ -365,6 +400,13 @@ void FViewportNavigationController::FocusActors(const TArray<AActor*>& Actors)
 
     if (Actors.empty())
     {
+        return;
+    }
+
+    if (bTranslationLocked || bRotationLocked)
+    {
+        UE_LOG(FViewportNavigationController, ELogVerbosity::Warning,
+               "Focus called while translation or rotation is locked. Ignoring input.");
         return;
     }
 
@@ -475,6 +517,11 @@ void FViewportNavigationController::TranslateWithGizmoDelta(const FVector& Delta
     {
         return;
     }
+
+    if (bTranslationLocked)
+    {
+        return;
+    }
     
     EnsureTargetLocationInitialized();
 
@@ -501,6 +548,13 @@ void FViewportNavigationController::FocusActors()
     const TArray<AActor*> Actors = SelectionController->GetSelectedActors();
     if (Actors.empty())
     {
+        return;
+    }
+
+    if (bTranslationLocked || bRotationLocked)
+    {
+        UE_LOG(FViewportNavigationController, ELogVerbosity::Warning,
+               "Focus called while translation or rotation is locked. Ignoring input.");
         return;
     }
 
@@ -603,6 +657,10 @@ void FViewportNavigationController::FocusActors()
 void FViewportNavigationController::UpdateCameraRotation()
 {
     if (ViewportCamera == nullptr)
+    {
+        return;
+    }
+    if (bRotationLocked)
     {
         return;
     }

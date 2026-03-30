@@ -162,6 +162,7 @@ void FControlPanel::DrawProjectionSection(FViewportCamera& Camera) const
         {
             Camera.SetOrthoHeight(FMath::Clamp(OrthoHeight, 1.0f, 1000.0f));
         }
+
     }
 
     ImGui::Spacing();
@@ -312,9 +313,24 @@ void FControlPanel::DrawViewportOverlaySection() const
         ImGui::EndCombo();
     }
 
-    //bool                   bShowViewportBorders = OverlayManager.IsViewportBorderVisible();
-    //if (ImGui::Checkbox("Viewport Borders", &bShowViewportBorders))
-    //{
-    //    OverlayManager.SetViewportBorderVisible(bShowViewportBorders);
-    //}
+    ImGui::TextUnformatted("Viewport Orientation");
+    auto* Panel = OverlayManager->GetLastFocusedPanel();
+    if (Panel && Panel->ViewportClient)
+    {
+        if (ImGui::BeginCombo("Orientation",
+                Panel->ViewportClient->GetViewOrientationString(Panel->ViewportClient->GetViewOrientation()).c_str()))
+        {
+            for (int i = 0; i < static_cast<int>(EViewportViewOrientation::OrientationCount); ++i)
+            {
+                EViewportViewOrientation Orientation = static_cast<EViewportViewOrientation>(i);
+                if (ImGui::Selectable(
+                        Panel->ViewportClient->GetViewOrientationString(Orientation).c_str(),
+                        Orientation == Panel->ViewportClient->GetViewOrientation()))
+                {
+                    OverlayManager->SetViewportOrientation(Orientation);
+                }
+            }
+            ImGui::EndCombo();
+        }
+    }
 }

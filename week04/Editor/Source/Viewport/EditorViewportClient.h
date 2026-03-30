@@ -14,7 +14,7 @@
 
 struct FEditorContext;
 
-enum EViewportViewOrientation
+enum class EViewportViewOrientation
 {
     Free,
     Top,
@@ -23,6 +23,7 @@ enum EViewportViewOrientation
     Right,
     Front,
     Back,
+    OrientationCount
 };
 
 class FEditorViewportClient : public Engine::Viewport::IViewportClient
@@ -52,6 +53,7 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
 
     void                     SetViewOrientation(EViewportViewOrientation InOrientation);
     EViewportViewOrientation GetViewOrientation() const { return ViewOrientation; }
+    FString                  GetViewOrientationString(EViewportViewOrientation InOrientation) const;
 
     FViewportNavigationController& GetNavigationController() { return NavigationController; }
     const FViewportNavigationController& GetNavigationController() const
@@ -85,6 +87,10 @@ private:
 
 private:
     EViewportViewOrientation ViewOrientation = EViewportViewOrientation::Free;
+
+    // Saved when leaving Free mode; restored on return to Free
+    FVector FreeCameraLocation = FVector(-20.0f, 1.0f, 10.0f);
+    FQuat   FreeCameraRotation = FQuat::Identity;
 
     FScene* CurScene = nullptr;
 

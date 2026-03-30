@@ -116,6 +116,9 @@ void FWindowOverlayManager::ResetViewportDimension()
 
     // 5. Push final positions to every ViewportClient
     SyncPanelClients();
+
+    // 6. Set default oreintation values for each panel
+    ResetViewOrientation();
 }
 
 void FWindowOverlayManager::SyncPanelClients()
@@ -315,6 +318,114 @@ void FWindowOverlayManager::AddNewViewportPanel()
     Panel->ViewportClient = ViewportClient;
     ViewportClient->OnPickRequested = PickCallback;
     ViewportPanels.push_back(Panel);
+}
+
+void FWindowOverlayManager::SetViewportOrientation(EViewportViewOrientation InViewOrientation) 
+{
+    if (LastFocusedPanel && LastFocusedPanel->ViewportClient)
+    {
+        LastFocusedPanel->ViewportClient->SetViewOrientation(InViewOrientation);
+    }
+}
+
+void FWindowOverlayManager::ResetViewOrientation()
+{
+    using enum EViewportLayout;
+    using enum EViewportViewOrientation;
+    if (ViewportPanels.empty()) return;
+
+    switch (ViewportLayout)
+    {
+    case Single:
+    {
+        if (ViewportPanels[0] && ViewportPanels[0]->ViewportClient)
+            ViewportPanels[0]->ViewportClient->SetViewOrientation(Free);
+        break;
+    }
+    case TwoColumn:
+    {
+        for (uint32 i = 0; i < ViewportPanels.size(); i++)
+        {
+            auto* Panel = ViewportPanels[i];
+            if (Panel && Panel->ViewportClient)
+            {
+                if (i == 0)
+                    Panel->ViewportClient->SetViewOrientation(Free);
+                if (i == 1)
+                    Panel->ViewportClient->SetViewOrientation(Top);
+            }
+        }
+        break;
+    }
+    case TwoRow:
+    {
+        for (uint32 i = 0; i < ViewportPanels.size(); i++)
+        {
+            auto* Panel = ViewportPanels[i];
+            if (Panel && Panel->ViewportClient)
+            {
+                if (i == 0)
+                    Panel->ViewportClient->SetViewOrientation(Free);
+                if (i == 1)
+                    Panel->ViewportClient->SetViewOrientation(Front);
+            }
+        }
+        break;
+    }
+    case ColumnTwoRow:
+    {
+        for (uint32 i = 0; i < ViewportPanels.size(); i++)
+        {
+            auto* Panel = ViewportPanels[i];
+            if (Panel && Panel->ViewportClient)
+            {
+                if (i == 0)
+                    Panel->ViewportClient->SetViewOrientation(Free);
+                if (i == 1)
+                    Panel->ViewportClient->SetViewOrientation(Top);
+                if (i == 2)
+                    Panel->ViewportClient->SetViewOrientation(Front);
+            }
+        }
+        break;
+    }
+    case TwoRowColumn:
+    {
+        for (uint32 i = 0; i < ViewportPanels.size(); i++)
+        {
+            auto* Panel = ViewportPanels[i];
+            if (Panel && Panel->ViewportClient)
+            {
+                if (i == 0)
+                    Panel->ViewportClient->SetViewOrientation(Free);
+                if (i == 1)
+                    Panel->ViewportClient->SetViewOrientation(Top);
+                if (i == 2)
+                    Panel->ViewportClient->SetViewOrientation(Front);
+            }
+        }
+        break;
+    }
+    case FourWay:
+    {
+        for (uint32 i = 0; i < ViewportPanels.size(); i++)
+        {
+            auto* Panel = ViewportPanels[i];
+            if (Panel && Panel->ViewportClient)
+            {
+                if (i == 0)
+                    Panel->ViewportClient->SetViewOrientation(Free);
+                if (i == 1)
+                    Panel->ViewportClient->SetViewOrientation(Top);
+                if (i == 2)
+                    Panel->ViewportClient->SetViewOrientation(Front);
+                if (i == 3)
+                    Panel->ViewportClient->SetViewOrientation(Right);
+            }
+        }
+        break;
+    }
+    }
 }
 
 // ---------------------------------------------------------------------------
