@@ -10,6 +10,10 @@ namespace EditorKey
 	constexpr const char* Viewport = "Viewport";
 	constexpr const char* Paths = "Paths";
 
+	// Splitter
+	constexpr const char* SplitterVRatio = "SplitterVRatio";
+	constexpr const char* SplitterHRatio = "SplitterHRatio";
+
 	// Viewport
 	constexpr const char* CameraSpeed = "CameraSpeed";
 	constexpr const char* CameraRotationSpeed = "CameraRotationSpeed";
@@ -56,6 +60,9 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 
 	JSON LookAt = Array(InitLookAt.X, InitLookAt.Y, InitLookAt.Z);
 	Viewport[EditorKey::InitLookAt] = LookAt;
+
+	Viewport[EditorKey::SplitterVRatio] = SplitterVRatio;
+	Viewport[EditorKey::SplitterHRatio] = SplitterHRatio;
 
 	Root[EditorKey::Viewport] = Viewport;
 
@@ -142,6 +149,11 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 				static_cast<float>(Look[1].ToFloat()),
 				static_cast<float>(Look[2].ToFloat()));
 		}
+
+		if (Viewport.hasKey(EditorKey::SplitterVRatio))
+			SplitterVRatio = static_cast<float>(Viewport[EditorKey::SplitterVRatio].ToFloat());
+		if (Viewport.hasKey(EditorKey::SplitterHRatio))
+			SplitterHRatio = static_cast<float>(Viewport[EditorKey::SplitterHRatio].ToFloat());
 	}
 
 	// View
