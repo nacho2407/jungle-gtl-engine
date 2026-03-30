@@ -50,21 +50,15 @@ UStaticMesh * FObjLoader::Load(const FString & Path, const FStaticMeshLoadOption
 		return nullptr;
 	}
 	
-<<<<<<< Updated upstream
-=======
 	/* Bind Material 실패하지 않습니다! 여러분들 처럼요*/
 	// BindMaterials();
-
->>>>>>> Stashed changes
+		
 	/* Local Bounds(AABB) */
-	// StaticMeshAsset.LocalBounds.Reset();
-	// for (const FNormalVertex& Vertex : StaticMeshAsset.Vertices)
-	// {
-	// 	StaticMeshAsset.LocalBounds.Expand(Vertex.Position);
-	// }
-
-	/* MTL 로드 → MaterialRegistry 채움 */
-	BindMaterials();
+	StaticMeshAsset.LocalBounds.Reset();
+	for (const FNormalVertex& Vertex : StaticMeshAsset.Vertices)
+	{
+		StaticMeshAsset.LocalBounds.Expand(Vertex.Position);
+	}
 
 	/* SlotNames → FStaticMeshMaterialSlot 배열 빌드 */
 	TArray<FStaticMeshMaterialSlot> MaterialSlots = BuildMaterialSlots();
@@ -74,12 +68,8 @@ UStaticMesh * FObjLoader::Load(const FString & Path, const FStaticMeshLoadOption
 		StaticMeshAsset.Vertices.size(),
 		StaticMeshAsset.Indices.size(),
 		StaticMeshAsset.Sections.size(),
-<<<<<<< Updated upstream
-		MaterialSlots.size());
-=======
 		BuiltMaterialSlotName.size());
 		// ,StaticMeshAsset.MaterialSlots.size());
->>>>>>> Stashed changes
 
 	const double EndTime = FPlatformTime::Seconds();
 	UE_LOG("[ObjLoader] Loaded %s in %.3f sec", Path.c_str(), EndTime - StartTime);
@@ -174,15 +164,6 @@ bool FObjLoader::BuildStaticMesh()
 	StaticMeshAsset.Indices.clear();
 	StaticMeshAsset.Sections.clear();
 	StaticMeshAsset.SlotNames.clear();
-<<<<<<< Updated upstream
-
-	// usemtl 이름 기준으로 SlotNames 목록 생성
-	for (const FObjRawFace& Face : RawData.Faces)
-	{
-		GetOrAddMaterialSlot(Face.MaterialName);
-	}
-
-=======
 	BuiltMaterialSlotName.clear();
 
 	// usemtl 이름 기준으로 slot 목록 생성 
@@ -191,17 +172,12 @@ bool FObjLoader::BuildStaticMesh()
 	// 	GetOrAddMaterialSlot(Face.MaterialName);
 	// }
 	
->>>>>>> Stashed changes
 	// IndexBuffer를 위한 Map
 	TMap<FObjVertexKey, uint32> VertexMap;
 	TArray<TArray<uint32>> SlotIndices;
-<<<<<<< Updated upstream
-	SlotIndices.resize(StaticMeshAsset.SlotNames.size());
-=======
 
 	//	어차피 Section.size() == 0
 	// SlotIndices.resize(StaticMeshAsset.Sections.size());
->>>>>>> Stashed changes
 
 	for (const FObjRawFace& Face : RawData.Faces)
 	{
@@ -263,37 +239,6 @@ bool FObjLoader::BuildStaticMesh()
 	return !StaticMeshAsset.Vertices.empty() && !StaticMeshAsset.Indices.empty();
 }
 
-<<<<<<< Updated upstream
-bool FObjLoader::BindMaterials()
-{
-	if (RawData.ReferencedMtlPath.empty())
-		return true;
-
-	std::filesystem::path MtlPath =
-		std::filesystem::path(SourcePath).parent_path() / RawData.ReferencedMtlPath;
-	MtlPath = MtlPath.generic_wstring();
-
-	// MTL을 MaterialRegistry에 로드하는 것만 담당
-	FResourceManager::Get().LoadMaterial(MtlPath.string());
-	return true;
-}
-
-TArray<FStaticMeshMaterialSlot> FObjLoader::BuildMaterialSlots() const
-{
-	TArray<FStaticMeshMaterialSlot> Slots;
-	Slots.reserve(StaticMeshAsset.SlotNames.size());
-
-	for (const FString& SlotName : StaticMeshAsset.SlotNames)
-	{
-		FStaticMeshMaterialSlot Slot;
-		Slot.SlotName    = SlotName;
-		Slot.MaterialData = FResourceManager::Get().FindMaterial(SlotName);
-		Slots.push_back(Slot);
-	}
-
-	return Slots;
-}
-=======
 // bool FObjLoader::BindMaterials()
 // {
 // 	if (RawData.ReferencedMtlPath.empty())
@@ -313,7 +258,6 @@ TArray<FStaticMeshMaterialSlot> FObjLoader::BuildMaterialSlots() const
 //
 // 	return true;
 // }
->>>>>>> Stashed changes
 
 UStaticMesh* FObjLoader::CreateAsset()
 {
@@ -520,21 +464,6 @@ bool FObjLoader::ParseFaceVertexToken(const FString& Token, FObjRawIndex& OutInd
 	return OutIndex.PositionIndex >= 0;
 }
 
-<<<<<<< Updated upstream
-int32 FObjLoader::GetOrAddMaterialSlot(const FString& MaterialName)
-{
-	const FString SlotName = MaterialName.empty() ? FString("Default") : MaterialName;
-
-	for (int32 i = 0; i < static_cast<int32>(StaticMeshAsset.SlotNames.size()); i++)
-	{
-		if (StaticMeshAsset.SlotNames[i] == SlotName)
-			return i;
-	}
-
-	StaticMeshAsset.SlotNames.push_back(SlotName);
-	return static_cast<int32>(StaticMeshAsset.SlotNames.size() - 1);
-}
-=======
 // int32 FObjLoader::GetOrAddMaterialSlot(const FString& MaterialName)
 // {
 // 	FString SlotName = MaterialName;
@@ -558,7 +487,6 @@ int32 FObjLoader::GetOrAddMaterialSlot(const FString& MaterialName)
 // 	StaticMeshAsset.MaterialSlots.push_back(NewSlot);
 // 	return static_cast<int32>(StaticMeshAsset.MaterialSlots.size() - 1);
 // }
->>>>>>> Stashed changes
 
 //	Raw Index -> 최종 Vertex 생성
 FNormalVertex FObjLoader::MakeVertex(const FObjRawIndex& RawIndex) const
