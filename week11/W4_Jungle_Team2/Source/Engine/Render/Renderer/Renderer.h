@@ -57,7 +57,7 @@ private:
 	void InitializePassBatchers();
 
 	void ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Context, EViewMode ViewMode);
-	void BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContext* Context);
+	void BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContext* Context, ERenderCommandType& LastCommandType);
 
 	void DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderCommand& InCommand);
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus);
