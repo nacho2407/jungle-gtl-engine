@@ -1,38 +1,22 @@
-#include "Common.hlsl"
-
-struct VS_INPUT
-{
-    float3 p : POSITION;
-    float3 n : NORMAL;
-    float4 c : COLOR;
-    float2 t : TEXTCOORD;
-};
-
-struct PS_INPUT
-{
-    float4 p : SV_POSITION;
-    float3 n : NORMAL;
-    float4 c : COLOR;
-    float2 t : TEXTCOORD;
-};
+#include "Common/Functions.hlsl"
+#include "Common/VertexLayouts.hlsl"
 
 Texture2D    g_txColor : register(t0);
 SamplerState g_Sample  : register(s0);
 
-PS_INPUT VS(VS_INPUT input)
+PS_Input_Full VS(VS_Input_PNCT input)
 {
-    PS_INPUT output;
-    output.p = ApplyMVP(input.p);
-    output.n = normalize(mul(input.n, (float3x3) Model));
-    output.c = input.c * PrimitiveColor;
-    output.t = input.t;
+    PS_Input_Full output;
+    output.position = ApplyMVP(input.position);
+    output.normal = normalize(mul(input.normal, (float3x3) Model));
+    output.color = input.color * PrimitiveColor;
+    output.texcoord = input.texcoord;
     return output;
 }
 
-float4 PS(PS_INPUT input) : SV_TARGET
+float4 PS(PS_Input_Full input) : SV_TARGET
 {
-    // 1. 텍스처에서 현재 UV의 픽셀 색상을 가져옵니다.
-    float4 texColor = g_txColor.Sample(g_Sample, input.t);
+    float4 texColor = g_txColor.Sample(g_Sample, input.texcoord);
 
     // Unbound SRV는 (0,0,0,0)을 반환 — 텍스처 미바인딩 시 white로 대체
     if (texColor.a < 0.001f)

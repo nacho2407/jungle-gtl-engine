@@ -10,6 +10,20 @@
 
 IMPLEMENT_CLASS(USubUVComponent, UBillboardComponent)
 
+void USubUVComponent::CollectRender(FRenderBus& Bus) const
+{
+	const FParticleResource* Particle = GetParticle();
+	if (!Particle || !Particle->IsLoaded()) return;
+
+	FSubUVEntry Entry = {};
+	Entry.PerObject = FPerObjectConstants::FromWorldMatrix(GetWorldMatrix());
+	Entry.SubUV.Particle = Particle;
+	Entry.SubUV.FrameIndex = GetFrameIndex();
+	Entry.SubUV.Width = GetWidth();
+	Entry.SubUV.Height = GetHeight();
+	Bus.AddSubUVEntry(std::move(Entry));
+}
+
 USubUVComponent::USubUVComponent()
 {
 	SetVisibility(false);

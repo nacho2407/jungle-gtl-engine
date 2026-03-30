@@ -261,21 +261,10 @@ void FRenderer::DrawLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const F
 {
 	if (Batcher.GetLineCount() == 0) return;
 
-	const FVector CameraPosition = Bus.GetView().GetInverseFast().GetLocation();
-	FEditorConstants EditorConstants = {};
-	EditorConstants.CameraPosition = CameraPosition;
-
-	FConstantBuffer* EditorCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Editor, sizeof(FEditorConstants));
-	EditorCB->Update(Context, &EditorConstants, sizeof(FEditorConstants));
-
 	ApplyPassRenderState(Pass, Context, Bus.GetViewMode());
 
 	FShader* EditorShader = FShaderManager::Get().GetShader(EShaderType::Editor);
 	if (EditorShader) EditorShader->Bind(Context);
-
-	ID3D11Buffer* cb = EditorCB->GetBuffer();
-	Context->VSSetConstantBuffers(ECBSlot::Editor, 1, &cb);
-	Context->PSSetConstantBuffers(ECBSlot::Editor, 1, &cb);
 
 	Batcher.DrawBatch(Context);
 }

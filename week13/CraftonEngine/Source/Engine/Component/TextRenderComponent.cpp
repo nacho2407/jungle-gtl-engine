@@ -5,8 +5,56 @@
 #include "Resource/ResourceManager.h"
 #include "Object/ObjectFactory.h"
 #include "Render/Resource/MeshBufferManager.h"
+#include "Render/Resource/ShaderManager.h"
 
 IMPLEMENT_CLASS(UTextRenderComponent, UBillboardComponent)
+
+void UTextRenderComponent::CollectRender(FRenderBus& Bus) const
+{
+	if (!Bus.GetShowFlags().bBillboardText) return;
+
+	const FFontResource* Font = GetFont();
+	if (!Font || !Font->IsLoaded()) return;
+	if (Text.empty()) return;
+
+	// 현재 뷰포트 카메라 기준 빌보드 행렬
+	FVector BillboardForward = Bus.GetCameraForward() * -1.0f;
+	FMatrix RotMatrix;
+	RotMatrix.SetAxes(BillboardForward, Bus.GetCameraRight() * -1.0f, Bus.GetCameraUp());
+	FMatrix PerViewBillboard = FMatrix::MakeScaleMatrix(GetWorldScale())
+		* RotMatrix * FMatrix::MakeTranslationMatrix(GetWorldLocation());
+
+	FFontEntry Entry = {};
+	Entry.PerObject = FPerObjectConstants{ PerViewBillboard };
+	Entry.PerObject.Color = GetColor();
+	Entry.Font.Text = &Text;
+	Entry.Font.Font = Font;
+	Entry.Font.Scale = GetFontSize();
+	Bus.AddFontEntry(std::move(Entry));
+}
+
+void UTextRenderComponent::CollectSelection(FRenderBus& Bus) const
+{
+	const FFontResource* Font = GetFont();
+	if (!Font || !Font->IsLoaded()) return;
+	if (Text.empty()) return;
+
+	FMeshBuffer* Buffer = GetMeshBuffer();
+	if (!Buffer || !Buffer->IsValid()) return;
+
+	// 빌보드 아웃라인 행렬
+	FVector BillboardForward = Bus.GetCameraForward() * -1.0f;
+	FMatrix RotMatrix;
+	RotMatrix.SetAxes(BillboardForward, Bus.GetCameraRight() * -1.0f, Bus.GetCameraUp());
+	FMatrix PerViewBillboard = FMatrix::MakeScaleMatrix(GetWorldScale())
+		* RotMatrix * FMatrix::MakeTranslationMatrix(GetWorldLocation());
+	FMatrix OutlineMatrix = CalculateOutlineMatrix(PerViewBillboard);
+
+	FShaderManager& SM = FShaderManager::Get();
+	BuildOutlineCommands(Bus, Buffer, OutlineMatrix, OutlineMatrix.GetScale(),
+		SM.GetShader(EShaderType::Primitive), SM.GetShader(EShaderType::Outline));
+	// Billboard 계열 — AABB 제외
+}
 
 void UTextRenderComponent::SetFont(const FName& InFontName)
 {
