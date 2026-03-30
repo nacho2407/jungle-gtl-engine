@@ -18,6 +18,10 @@ public:
 	FVector InitViewPos = FVector(10, 0, 5);
 	FVector InitLookAt = FVector(0, 0, 0);
 
+	// Splitter layout
+	float SplitterVRatio = 0.5f;  // RootSplitterV (위:아래)
+	float SplitterHRatio = 0.5f;  // SplitterH (좌:우)
+
 	// View
 	EViewMode ViewMode = EViewMode::Lit;
 	FShowFlags ShowFlags;
