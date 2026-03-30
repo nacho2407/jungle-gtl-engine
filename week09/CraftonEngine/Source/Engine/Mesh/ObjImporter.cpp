@@ -413,14 +413,14 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 					// '-'로 시작하지 않는 첫 번째 토큰을 만났다면, 이것이 파일명의 시작입니다!
 					// 파일명 내부에 띄어쓰기가 있을 수 있으므로 토큰을 뽑기 전의 전체 라인을 가져옵니다.
 					FStringParser::TrimLeft(LineBeforeToken);
-					TextureFileName = std::string(LineBeforeToken);
+					TextureFileName = FString(LineBeforeToken);
 					break;
 				}
 			}
 
 			// 문자열 끝에 남아있을지 모르는 쓸데없는 공백이나 탭을 정리합니다. (RTrim)
 			size_t LastNonSpace = TextureFileName.find_last_not_of(" \t");
-			if (LastNonSpace != std::string::npos)
+			if (LastNonSpace != FString::npos)
 			{
 				TextureFileName.erase(LastNonSpace + 1);
 			}
