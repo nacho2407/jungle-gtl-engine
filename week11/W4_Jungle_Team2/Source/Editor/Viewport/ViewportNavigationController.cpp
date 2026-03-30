@@ -305,8 +305,9 @@ void FViewportNavigationController::AddPanInput(float DeltaX, float DeltaY)
 
 	EnsureTargetLocationInitialized();
 
-	const FVector Right = ViewportCamera->GetRightVector().GetSafeNormal();
-	const FVector Up = ViewportCamera->GetUpVector().GetSafeNormal();
+	// 직교 뷰의 Custom LookDir 를 반영한 실제 화면 축 사용
+	const FVector Right = ViewportCamera->GetEffectiveRight();
+	const FVector Up    = ViewportCamera->GetEffectiveUp();
 
 	const FVector PanDelta = (Right * DeltaX + Up * DeltaY) * PanSpeed;
 

@@ -79,6 +79,8 @@ public:
 	inline void SetScaleMode() { UpdateGizmoMode(EGizmoMode::Scale); }
 	void UpdateGizmoTransform();
 	void ApplyScreenSpaceScaling(const FVector& CameraLocation);
+	// 직교 뷰 전용: OrthoHeight 기반으로 기즈모 스케일 설정
+	void ApplyScreenSpaceScalingOrtho(float OrthoHeight);
 	void SetWorldSpace(bool bWorldSpace);
 
 
