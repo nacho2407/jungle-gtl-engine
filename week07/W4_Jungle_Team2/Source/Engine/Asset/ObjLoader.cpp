@@ -1,19 +1,14 @@
 ﻿#include "ObjLoader.h"
-#include "ObjLoader.h"
-
 #include "FileUtils.h"
-#include "StaticMesh.h"
 #include "Math/Utils.h"
 #include "UI/EditorConsoleWidget.h"
 #include "Core/PlatformTime.h"
-#include "Core/ResourceManager.h"
 
 #include <algorithm>
 #include <cfloat>
-#include <filesystem>
 
 //	v, vt, vn, mtllib, usemtl, f
-UStaticMesh * FObjLoader::Load(const FString & Path, const FStaticMeshLoadOptions & LoadOptions)
+FStaticMesh* FObjLoader::Load(const FString& Path, const FStaticMeshLoadOptions& LoadOptions)
 {
 	Reset();
 
@@ -49,20 +44,6 @@ UStaticMesh * FObjLoader::Load(const FString & Path, const FStaticMeshLoadOption
 		UE_LOG("[ObjLoader] Failed to build static mesh: %s", Path.c_str());
 		return nullptr;
 	}
-	
-	/* Bind Material 실패하지 않습니다! 여러분들 처럼요*/
-	// BindMaterials();
-		
-	/* Local Bounds(AABB) */
-	StaticMeshAsset.LocalBounds.Reset();
-	for (const FNormalVertex& Vertex : StaticMeshAsset.Vertices)
-	{
-		StaticMeshAsset.LocalBounds.Expand(Vertex.Position);
-	}
-
-	/* SlotNames → FStaticMeshMaterialSlot 배열 빌드 */
-	TArray<FStaticMeshMaterialSlot> MaterialSlots = BuildMaterialSlots();
-
 	UE_LOG("[ObjLoader] OBJ Loaded: %s (Vertices: %zu, Indices: %zu, Sections: %zu, Slots: %zu)",
 		SourcePath.c_str(),
 		StaticMeshAsset.Vertices.size(),
@@ -74,9 +55,7 @@ UStaticMesh * FObjLoader::Load(const FString & Path, const FStaticMeshLoadOption
 	const double EndTime = FPlatformTime::Seconds();
 	UE_LOG("[ObjLoader] Loaded %s in %.3f sec", Path.c_str(), EndTime - StartTime);
 
-	UStaticMesh* NewStaticMeshAsset = new UStaticMesh();
-	NewStaticMeshAsset->SetMeshData(new FStaticMesh(StaticMeshAsset), std::move(MaterialSlots));
-	return NewStaticMeshAsset;
+	return new FStaticMesh(StaticMeshAsset);
 }
 
 //	TODO : 나중에 다시 확인해보기
@@ -258,13 +237,6 @@ bool FObjLoader::BuildStaticMesh()
 //
 // 	return true;
 // }
-
-UStaticMesh* FObjLoader::CreateAsset()
-{
-	UStaticMesh* NewStaticMeshAsset = new UStaticMesh();
-	NewStaticMeshAsset->SetMeshData(new FStaticMesh(StaticMeshAsset), {});
-	return NewStaticMeshAsset;
-}
 
 void FObjLoader::Reset()
 {
