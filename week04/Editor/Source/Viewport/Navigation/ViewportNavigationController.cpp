@@ -100,14 +100,10 @@ void FViewportNavigationController::MoveForward(float Value, float DeltaTime)
     //  Orbiting 중에는 이동 입력을 무시합니다.
     if (bOrbiting)
     {
-        UE_LOG(FViewportNavigationController, ELogVerbosity::Warning,
-               "MoveForward called while orbiting. Ignoring input.");
         return;
     }
     if (bTranslationLocked)
     {
-        UE_LOG(FViewportNavigationController, ELogVerbosity::Warning,
-               "MoveForward called while translation is locked. Ignoring input.");
         return;
     }
 
@@ -156,8 +152,6 @@ void FViewportNavigationController::AddYawInput(float Value)
     }
     if (bRotationLocked)
     {
-        UE_LOG(FViewportNavigationController, ELogVerbosity::Warning,
-               "AddYawInput called while rotation is locked. Ignoring input.");
         return;
     }
 
@@ -183,8 +177,6 @@ void FViewportNavigationController::AddPitchInput(float Value)
     }
     if (bRotationLocked)
     {
-        UE_LOG(FViewportNavigationController, ELogVerbosity::Warning,
-               "AddYawInput called while rotation is locked. Ignoring input.");
         return;
     }
 

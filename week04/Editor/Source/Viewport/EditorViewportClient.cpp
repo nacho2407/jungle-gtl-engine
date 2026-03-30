@@ -181,6 +181,7 @@ void FEditorViewportClient::SetViewOrientation(EViewportViewOrientation InOrient
     ViewportCamera.SetNearPlane(-ViewportCamera.GetFarPlane());
     ViewportCamera.SetProjectionType(EViewportProjectionType::Orthographic);
     NavigationController.ToggleHasTargetLocation();
+    ViewportCamera.SetOrthoHeight(15.0f);
     switch (ViewOrientation)
     {
     case Top:
