@@ -128,8 +128,8 @@ void FEditorViewportOverlayWidget::RenderViewportToolbars()
 		// 뷰포트 1개 <-> 4개 스위칭 버튼
 		// 1개는 전체 화면 크기를 차지 + Splitter바를 그리지 않습니다.
 		{
-			FViewportLayout& VL = EditorEngine->GetViewportLayout();
-			const bool bIsMaximized = VL.IsSingleViewportMode();
+			FViewportLayout& Layout = EditorEngine->GetViewportLayout();
+			const bool bIsMaximized = Layout.IsSingleViewportMode();
 
 			char MaxBtnName[32];
 			snprintf(MaxBtnName, sizeof(MaxBtnName), "%s##max_%d",
@@ -138,9 +138,9 @@ void FEditorViewportOverlayWidget::RenderViewportToolbars()
 			if (ImGui::Button(MaxBtnName))
 			{
 				if (bIsMaximized)
-					VL.SetSingleViewportMode(false);
+					Layout.SetSingleViewportMode(false);
 				else
-					VL.SetSingleViewportMode(true, i);
+					Layout.SetSingleViewportMode(true, i);
 			}
 		}
 
