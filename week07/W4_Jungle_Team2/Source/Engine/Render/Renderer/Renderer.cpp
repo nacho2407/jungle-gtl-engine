@@ -33,7 +33,7 @@ void FRenderer::Create(HWND hWindow)
 
 	// 5. 아웃라인 (Outline.hlsl)
 	Resources.OutlineShader.Create(Device.GetDevice(), L"Shaders/Outline.hlsl",
-		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
+		"VS", "PS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
 
 	// 6. 스태틱 메시 (ShaderStaticMesh.hlsl)
 	Resources.StaticMeshShader.Create(Device.GetDevice(), L"Shaders/ShaderStaticMesh.hlsl",

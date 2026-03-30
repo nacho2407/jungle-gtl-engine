@@ -65,9 +65,8 @@ struct FEditorConstants
 struct FOutlineConstants
 {
 	FVector4 OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
-	FVector OutlineInvScale;
-	float OutlineOffset = 0.05f;
-	uint32 PrimitiveType; // EPrimitiveType enum value
+	float OutlineFactor;
+
 	float Padding0[3];
 };
 
