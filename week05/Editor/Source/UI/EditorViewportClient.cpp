@@ -3,8 +3,6 @@
 #include "EditorEngine.h"
 #include "EditorUI.h"
 #include "Actor/Actor.h"
-#include "Actor/ObjActor.h"
-#include "Actor/SkySphereActor.h"
 #include "Component/PrimitiveComponent.h"
 #include "Core/Engine.h"
 #include "Core/Paths.h"
@@ -19,6 +17,9 @@
 #include "Scene/Scene.h"
 #include "Serializer/SceneSerializer.h"
 #include "imgui.h"
+#include "Component/SkyComponent.h"
+#include "Component/StaticMeshComponent.h"
+#include "Asset/ObjManager.h"
 
 FEditorViewportClient::FEditorViewportClient(FEditorUI& InEditorUI)
 	: EditorUI(InEditorUI)
@@ -45,11 +46,11 @@ void FEditorViewportClient::CreateGridResource(FRenderer* Renderer)
 	ID3D11Device* Device = Renderer->GetDevice();
 	if (Device)
 	{
-		GridMesh = std::make_unique<FMeshData>();
+		GridMesh = std::make_unique<FDynamicMesh>();
 		GridMesh->Topology = EMeshTopology::EMT_TriangleList;
 		for (int i = 0; i < 18; ++i)
 		{
-			FPrimitiveVertex Vertex;
+			FVertex Vertex;
 			GridMesh->Vertices.push_back(Vertex);
 			GridMesh->Indices.push_back(i);
 		}
@@ -284,10 +285,27 @@ void FEditorViewportClient::HandleFileDropOnViewport(const FString& FilePath)
 	{
 		const FRay Ray = Picker.ScreenToRay(Engine->GetScene()->GetCamera(), ScreenMouseX, ScreenMouseY, ScreenWidth, ScreenHeight);
 
-		AObjActor* NewActor = Engine->GetScene()->SpawnActor<AObjActor>("ObjActor");
-		NewActor->LoadObj(Engine->GetRenderer()->GetDevice(), FPaths::ToRelativePath(FilePath));
+		AActor* NewActor = Engine->GetScene()->SpawnActor<AActor>("DroppedObjActor");
+
+		UStaticMeshComponent* MeshComponent = FObjectFactory::ConstructObject<UStaticMeshComponent>(NewActor);
+		NewActor->AddOwnedComponent(MeshComponent);
+		NewActor->SetRootComponent(MeshComponent);
+
+		UStaticMesh* LoadedMesh = FObjManager::LoadObjStaticMeshAsset(FPaths::ToRelativePath(FilePath));
+		if (LoadedMesh) MeshComponent->SetStaticMesh(LoadedMesh);
+
+		std::filesystem::path PngPath = FilePath;
+		PngPath.replace_extension(".png");
+		if (std::filesystem::exists(FPaths::ToAbsolutePath(PngPath.string())))
+		{
+			// TODO: 머티리얼 매니저를 통해 텍스처를 읽어오고 머티리얼을 생성해서 MeshComp에 입혀주는 로직 추가
+			// 예: MeshComp->SetMaterial(0, 생성한머티리얼);
+		}
+
 		FVector SpawnLocation = Ray.Origin + Ray.Direction * 5;
 		NewActor->SetActorLocation(SpawnLocation);
+
+		Engine->SetSelectedActor(NewActor);
 	}
 }
 
@@ -314,7 +332,7 @@ void FEditorViewportClient::BuildRenderCommands(FEngine* Engine, UScene* Scene, 
 	if (GridMesh && GridMaterial && bShowGrid)
 	{
 		FRenderCommand GridCommand;
-		GridCommand.MeshData = GridMesh.get();
+		GridCommand.RenderMesh = GridMesh.get();
 		GridCommand.Material = GridMaterial.get();
 		GridCommand.WorldMatrix = FMatrix::Identity;
 		GridCommand.RenderLayer = ERenderLayer::Default;
@@ -323,7 +341,7 @@ void FEditorViewportClient::BuildRenderCommands(FEngine* Engine, UScene* Scene, 
 
 	FEditorEngine* EditorEngine = static_cast<FEditorEngine*>(Engine);
 	AActor* GizmoTarget = EditorEngine ? EditorEngine->GetSelectedActor() : nullptr;
-	if (GizmoTarget && !GizmoTarget->IsA<ASkySphereActor>())
+	if (GizmoTarget && GizmoTarget->GetComponentByClass<USkyComponent>() == nullptr)
 	{
 		Gizmo.BuildRenderCommands(GizmoTarget, Scene->GetCamera(), OutQueue);
 	}

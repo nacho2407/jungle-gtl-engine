@@ -6,8 +6,8 @@
 #include "Renderer/MaterialManager.h"
 #include "Renderer/ShaderMap.h"
 #include "Renderer/Renderer.h"
+#include "Renderer/RenderMesh.h"
 #include "Renderer/RenderStateManager.h"
-#include "Primitive/PrimitiveBase.h"
 #include "Core/Paths.h"
 #include <WICTextureLoader.h>
 #include <cstring>
@@ -112,7 +112,7 @@ void FSubUVRenderer::Release()
 	DeviceContext = nullptr;
 }
 
-bool FSubUVRenderer::BuildSubUVMesh(const FVector2& Size, FMeshData& OutMesh) const
+bool FSubUVRenderer::BuildSubUVMesh(const FVector2& Size, FRenderMesh& OutMesh) const
 {
 	OutMesh.Vertices.clear();
 	OutMesh.Indices.clear();
@@ -121,7 +121,7 @@ bool FSubUVRenderer::BuildSubUVMesh(const FVector2& Size, FMeshData& OutMesh) co
 	const float HalfW = Size.X * 0.5f;
 	const float HalfH = Size.Y * 0.5f;
 
-	FPrimitiveVertex V0, V1, V2, V3;
+	FVertex V0, V1, V2, V3;
 	V0.Position = FVector(0.0f, -HalfW, HalfH);  V0.UV = FVector2(0.0f, 0.0f);
 	V1.Position = FVector(0.0f, HalfW, HalfH);   V1.UV = FVector2(1.0f, 0.0f);
 	V2.Position = FVector(0.0f, HalfW, -HalfH);  V2.UV = FVector2(1.0f, 1.0f);

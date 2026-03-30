@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 
+struct FRenderMesh;
 struct FMeshData;
 class FMaterial;
 
@@ -14,6 +15,8 @@ enum class ERenderLayer {
 struct ENGINE_API FRenderCommand
 {
 	FMeshData* MeshData = nullptr;
+	FRenderMesh* RenderMesh = nullptr;
+
 	FMatrix WorldMatrix;
 	FMaterial* Material = nullptr;
 	uint64 SortKey = 0;
@@ -23,7 +26,7 @@ struct ENGINE_API FRenderCommand
 	bool bDisableDepthWrite = false;
 	bool bDisableCulling = false;
 
-	static uint64 MakeSortKey(const FMaterial* InMaterial, const FMeshData* InMeshData);
+	static uint64 MakeSortKey(const FMaterial* InMaterial, const FRenderMesh* InMeshData);
 };
 
 /**

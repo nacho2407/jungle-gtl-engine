@@ -5,10 +5,10 @@
 #include <d3d11.h>
 #include <memory>
 
+struct FRenderMesh;
 class FVertexShader;
 class FPixelShader;
 class FMaterial;
-struct FMeshData;
 class FRenderer;
 
 /**
@@ -28,7 +28,7 @@ public:
 	FMaterial* GetSubUVMaterial() const { return SubUVMaterial.get(); }
 
 	/** SubUV용 사각형 메시 데이터 빌드 */
-	bool BuildSubUVMesh(const FVector2& Size, FMeshData& OutMesh) const;
+	bool BuildSubUVMesh(const FVector2& Size, FRenderMesh& OutMesh) const;
 
 	/** 애니메이션 프레임에 따른 UV 파라미터 업데이트 */
 	void UpdateAnimationParams(

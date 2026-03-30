@@ -1,6 +1,8 @@
 #pragma once
 #include "PrimitiveComponent.h"
 
+#include "Renderer/MeshData.h"
+
 class ENGINE_API UTextComponent : public UPrimitiveComponent
 {
 public:
@@ -10,7 +12,6 @@ public:
 
 	virtual FBoxSphereBounds GetWorldBounds() const override;
 
-	/** 표시할 텍스트 설정 - 메시 데이터가 갱신될 수 있도록 유도함 */
 	void SetText(const FString& InText);
 	const FString& GetText() const { return Text; }
 
@@ -25,15 +26,18 @@ public:
 	void SetTextScale(float InScale) { TextScale = InScale; }
 	float GetTextScale() const { return TextScale; }
 
-	/** 기존 UUIDBillboardComponent와의 호환성 및 편의를 위해 추가 */
 	void SetWorldScale(float InScale) { TextScale = InScale; }
 	float GetWorldScale() const { return TextScale; }
 
 	virtual FVector GetRenderWorldPosition() const { return GetWorldLocation(); }
 	virtual FVector GetRenderWorldScale() const { return GetWorldTransform().GetScaleVector() * TextScale; }
 
-	/** 폰트 렌더링용 메시 데이터 반환 */
-	struct FMeshData* GetTextMesh() const { return TextMesh.get(); }
+	virtual FRenderMesh* GetRenderMesh() const override;
+	FDynamicMesh* GetTextMesh() const { return TextMesh.get(); }
+
+	bool IsTextMeshDirty() const { return bTextMeshDirty; }
+	void MarkTextMeshDirty() { bTextMeshDirty = true; if (TextMesh) TextMesh->bIsDirty = true; }
+	void ClearTextMeshDirty() { bTextMeshDirty = false; }
 
 protected:
 	FString Text = "Text";
@@ -41,6 +45,7 @@ protected:
 	float TextScale = 1.0f;
 	bool bBillboard = false;
 
-	/** 텍스트 렌더링을 위해 생성된 동적 메시 데이터 */
-	std::shared_ptr<struct FMeshData> TextMesh;
+	std::shared_ptr<struct FDynamicMesh> TextMesh;
+
+	bool bTextMeshDirty = true;
 };

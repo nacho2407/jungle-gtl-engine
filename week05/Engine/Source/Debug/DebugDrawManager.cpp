@@ -80,19 +80,21 @@ void FDebugDrawManager::DrawAllCollisionBounds(FRenderer* Renderer, UWorld* Worl
 
 		for (UActorComponent* Comp : Actor->GetComponents())
 		{
-			if (!Comp->IsA(UPrimitiveComponent::StaticClass()))
+			if (!Comp || !Comp->IsA(UPrimitiveComponent::StaticClass()))
 				continue;
 
 			UPrimitiveComponent* PrimComp = static_cast<UPrimitiveComponent*>(Comp);
 
-			// 빌보드, SubUV 제외
-			if (!PrimComp->ShouldDrawDebugBounds()) continue;
-
-			if (!PrimComp->GetPrimitive() || !PrimComp->GetPrimitive()->GetMeshData())
+			if (!PrimComp->ShouldDrawDebugBounds())
 				continue;
 
 			FBoxSphereBounds Bound = PrimComp->GetWorldBounds();
-			Renderer->DrawCube(Bound.Center, Bound.BoxExtent, FVector4(1, 0, 0, 1));  // 초록색
+
+			// 바운드 크기가 유효한 경우에만 박스를 그립니다.
+			if (Bound.BoxExtent.SizeSquared() > 0.0f)
+			{
+				Renderer->DrawCube(Bound.Center, Bound.BoxExtent, FVector4(1.0f, 0.0f, 0.0f, 1.0f)); // 빨간색
+			}
 		}
 	}
 }

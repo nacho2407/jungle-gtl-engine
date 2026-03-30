@@ -6,8 +6,8 @@
 #include "Renderer/MaterialManager.h"
 #include "Renderer/ShaderMap.h"
 #include "Renderer/Renderer.h"
+#include "Renderer/RenderMesh.h"
 #include "Renderer/RenderStateManager.h"
-#include "Primitive/PrimitiveBase.h"
 #include "Core/Paths.h"
 #include <cstring>
 
@@ -104,7 +104,7 @@ void FTextMeshBuilder::Release()
 	RenderStateManager = nullptr;
 }
 
-bool FTextMeshBuilder::BuildTextMesh(const FString& Text, FMeshData& OutMesh) const
+bool FTextMeshBuilder::BuildTextMesh(const FString& Text, FRenderMesh& OutMesh) const
 {
 	if (Text.empty())
 	{
@@ -143,7 +143,7 @@ bool FTextMeshBuilder::BuildTextMesh(const FString& Text, FMeshData& OutMesh) co
 
 			const uint32 BaseIndex = static_cast<uint32>(OutMesh.Vertices.size());
 
-			FPrimitiveVertex V0, V1, V2, V3;
+			FVertex V0, V1, V2, V3;
 			V0.Position = FVector(0.0f, X0, Y1); V0.UV = FVector2(Glyph.U0, Glyph.V0);
 			V1.Position = FVector(0.0f, X1, Y1); V1.UV = FVector2(Glyph.U1, Glyph.V0);
 			V2.Position = FVector(0.0f, X1, Y0); V2.UV = FVector2(Glyph.U1, Glyph.V1);

@@ -5,7 +5,7 @@
 #include "Material.h"
 #include "MaterialManager.h"
 #include "Core/Paths.h"
-#include "Primitive/PrimitiveBase.h"
+#include "RenderMesh.h"
 #include <cassert>
 #include <algorithm>
 
@@ -328,7 +328,7 @@ void FRenderer::SubmitCommands(const FRenderCommandQueue& Queue)
 
 	for (const auto& Cmd : Queue.Commands)
 	{
-		if (Cmd.MeshData) Cmd.MeshData->UpdateVertexAndIndexBuffer(Device);
+		if (Cmd.RenderMesh) Cmd.RenderMesh->UpdateVertexAndIndexBuffer(Device, DeviceContext);
 		AddCommand(Cmd);
 	}
 }
@@ -338,7 +338,7 @@ void FRenderer::AddCommand(const FRenderCommand& Command)
 	CommandList.push_back(Command);
 	FRenderCommand& Added = CommandList.back();
 	if (!Added.Material) Added.Material = DefaultMaterial.get();
-	Added.SortKey = FRenderCommand::MakeSortKey(Added.Material, Added.MeshData);
+	Added.SortKey = FRenderCommand::MakeSortKey(Added.Material, Added.RenderMesh);
 }
 
 void FRenderer::ExecuteCommands()
@@ -362,7 +362,7 @@ void FRenderer::ExecuteCommands()
 void FRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 {
 	FMaterial* CurrentMaterial = nullptr;
-	FMeshData* CurrentMesh = nullptr;
+	FRenderMesh* CurrentMeshPtr = nullptr; // ⭐ void* 에서 FRenderMesh* 로 변경
 	D3D11_PRIMITIVE_TOPOLOGY CurrentMeshTopology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
 
 	ID3D11ShaderResourceView* FontSRV = TextRenderer.GetAtlasSRV();
@@ -380,20 +380,19 @@ void FRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 	{
 		auto Cmd = *it;
 		if (Cmd.RenderLayer != InRenderLayer) return;
-		if (!Cmd.MeshData || (Cmd.MeshData->Vertices.empty() && Cmd.MeshData->Indices.empty())) continue;
+
+		if (!Cmd.RenderMesh) continue;
 
 		if (Cmd.Material != CurrentMaterial)
 		{
 			Cmd.Material->Bind(DeviceContext);
-			
-			// RenderStateManager를 통한 일괄 상태 바인딩 (캐싱 활용)
+
 			RenderStateManager->BindState(Cmd.Material->GetRasterizerState());
 			RenderStateManager->BindState(Cmd.Material->GetDepthStencilState());
 			RenderStateManager->BindState(Cmd.Material->GetBlendState());
 
 			CurrentMaterial = Cmd.Material;
 
-			/** 특수 머티리얼 아틀라스 바인딩 보조 */
 			if (CurrentMaterial->GetOriginName() == "M_Font")
 			{
 				DeviceContext->PSSetShaderResources(0, 1, &FontSRV);
@@ -406,30 +405,34 @@ void FRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 			}
 			else
 			{
-				// SRV 는 일반 Material 안에서 bind
 				DeviceContext->PSSetSamplers(0, 1, &NormalSampler);
 			}
 		}
 
-		if (Cmd.MeshData != CurrentMesh)
+		if (Cmd.RenderMesh)
 		{
-			Cmd.MeshData->Bind(DeviceContext);
-			CurrentMesh = Cmd.MeshData;
-		}
+			if (Cmd.RenderMesh->Vertices.empty() && Cmd.RenderMesh->Indices.empty()) continue;
 
-		D3D11_PRIMITIVE_TOPOLOGY DesiredTopology = (D3D11_PRIMITIVE_TOPOLOGY)CurrentMesh->Topology;
-		if (DesiredTopology != CurrentMeshTopology)
-		{
-			DeviceContext->IASetPrimitiveTopology(DesiredTopology);
-			CurrentMeshTopology = DesiredTopology;
-		}
+			if (Cmd.RenderMesh != CurrentMeshPtr)
+			{
+				Cmd.RenderMesh->Bind(DeviceContext);
+				CurrentMeshPtr = Cmd.RenderMesh;
+			}
 
-		UpdateObjectConstantBuffer(Cmd.WorldMatrix);
-		
-		if (!Cmd.MeshData->Indices.empty())
-			DeviceContext->DrawIndexed(static_cast<UINT>(Cmd.MeshData->Indices.size()), 0, 0);
-		else if (!Cmd.MeshData->Vertices.empty())
-			DeviceContext->Draw(static_cast<UINT>(Cmd.MeshData->Vertices.size()), 0);
+			D3D11_PRIMITIVE_TOPOLOGY DesiredTopology = (D3D11_PRIMITIVE_TOPOLOGY)Cmd.RenderMesh->Topology;
+			if (DesiredTopology != CurrentMeshTopology)
+			{
+				DeviceContext->IASetPrimitiveTopology(DesiredTopology);
+				CurrentMeshTopology = DesiredTopology;
+			}
+
+			UpdateObjectConstantBuffer(Cmd.WorldMatrix);
+
+			if (!Cmd.RenderMesh->Indices.empty())
+				DeviceContext->DrawIndexed(static_cast<UINT>(Cmd.RenderMesh->Indices.size()), 0, 0);
+			else
+				DeviceContext->Draw(static_cast<UINT>(Cmd.RenderMesh->Vertices.size()), 0);
+		}
 	}
 }
 
@@ -528,10 +531,10 @@ bool FRenderer::InitOutlineResources()
 	return OutlinePS != nullptr;
 }
 
-void FRenderer::RenderOutline(FMeshData* Mesh, const FMatrix& WorldMatrix, float OutlineScale)
+void FRenderer::RenderOutline(FRenderMesh* Mesh, const FMatrix& WorldMatrix, float OutlineScale)
 {
 	if (!Mesh || !InitOutlineResources()) return;
-	Mesh->UpdateVertexAndIndexBuffer(Device);
+	Mesh->UpdateVertexAndIndexBuffer(Device, DeviceContext);
 	Mesh->Bind(DeviceContext);
 
 	ID3D11RenderTargetView* ActiveRTV = bUseSceneRenderTargetOverride ? SceneRenderTargetView : RenderTargetView;
@@ -540,7 +543,17 @@ void FRenderer::RenderOutline(FMeshData* Mesh, const FMatrix& WorldMatrix, float
 	DeviceContext->OMSetRenderTargets(0, nullptr, ActiveDSV);
 	DeviceContext->OMSetDepthStencilState(StencilWriteState, 1);
 	UpdateObjectConstantBuffer(WorldMatrix);
-	DeviceContext->DrawIndexed(static_cast<UINT>(Mesh->Indices.size()), 0, 0);
+	// DeviceContext->DrawIndexed(static_cast<UINT>(Mesh->Indices.size()), 0, 0);
+
+	DeviceContext->PSSetShader(nullptr, nullptr, 0);
+	if (!Mesh->Indices.empty())
+	{
+		DeviceContext->DrawIndexed(static_cast<UINT>(Mesh->Indices.size()), 0, 0);
+	}
+	else
+	{
+		DeviceContext->Draw(static_cast<UINT>(Mesh->Vertices.size()), 0);
+	}
 
 	DeviceContext->OMSetRenderTargets(1, &ActiveRTV, ActiveDSV);
 	DeviceContext->OMSetDepthStencilState(StencilTestState, 1);
@@ -576,7 +589,7 @@ void FRenderer::ExecuteLineCommands()
 	if (LineVertices.empty()) return;
 	ShaderManager.Bind(DeviceContext);
 	DefaultMaterial->Bind(DeviceContext);
-	UINT Size = static_cast<UINT>(LineVertices.size() * sizeof(FPrimitiveVertex));
+	UINT Size = static_cast<UINT>(LineVertices.size() * sizeof(FVertex));
 	if (LineVertexBuffer && LineVertexBufferSize < Size) { LineVertexBuffer->Release(); LineVertexBuffer = nullptr; }
 	if (!LineVertexBuffer)
 	{
@@ -590,7 +603,7 @@ void FRenderer::ExecuteLineCommands()
 		memcpy(Mapped.pData, LineVertices.data(), Size);
 		DeviceContext->Unmap(LineVertexBuffer, 0);
 	}
-	UINT Stride = sizeof(FPrimitiveVertex), Offset = 0;
+	UINT Stride = sizeof(FVertex), Offset = 0;
 	DeviceContext->IASetVertexBuffers(0, 1, &LineVertexBuffer, &Stride, &Offset);
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	UpdateObjectConstantBuffer(FMatrix::Identity);

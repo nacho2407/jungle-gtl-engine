@@ -1,11 +1,12 @@
 #pragma once
-#include "PrimitiveComponent.h"
+#include "StaticMeshComponent.h"
 
-class ENGINE_API USkyComponent : public UPrimitiveComponent
+class ENGINE_API USkyComponent : public UStaticMeshComponent
 {
 public:
-	DECLARE_RTTI(USkyComponent, UPrimitiveComponent)
+	DECLARE_RTTI(USkyComponent, UStaticMeshComponent)
 
 	void PostConstruct() override;
+	virtual void Tick(float DeltaTime) override;
 	FBoxSphereBounds GetWorldBounds() const override;
 };

@@ -3,6 +3,7 @@
 #include "EngineAPI.h"
 #include "Core/ShowFlags.h"
 
+class UActorComponent;
 class AActor;
 class FFrustum;
 struct FRenderCommandQueue;

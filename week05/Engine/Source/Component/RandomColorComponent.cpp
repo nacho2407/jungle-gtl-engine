@@ -1,5 +1,5 @@
 #include "RandomColorComponent.h"
-#include "PrimitiveComponent.h"
+#include "MeshComponent.h"
 #include "Actor/Actor.h"
 #include "Object/Class.h"
 #include <random>
@@ -19,16 +19,20 @@ void URandomColorComponent::BeginPlay()
 
 	if (Owner)
 	{
-		CachedPrimitive = Owner->GetComponentByClass<UPrimitiveComponent>();
+		CachedMesh = Owner->GetComponentByClass<UMeshComponent>();
 	}
 
 	// 공유 Material을 복제하여 독립적인 DynamicMaterial 생성
-	if (CachedPrimitive && CachedPrimitive->GetMaterial())
+	if (CachedMesh)
 	{
-		DynamicMaterial = CachedPrimitive->GetMaterial()->CreateDynamicMaterial();
-		if (DynamicMaterial)
+		std::shared_ptr<FMaterial> BaseMat = CachedMesh->GetMaterial(0);
+		if (BaseMat)
 		{
-			CachedPrimitive->SetMaterial(DynamicMaterial.get());
+			DynamicMaterial = std::shared_ptr<FDynamicMaterial>(BaseMat->CreateDynamicMaterial().release());
+			if (DynamicMaterial)
+			{
+				CachedMesh->SetMaterial(0, DynamicMaterial);
+			}
 		}
 	}
 

@@ -1,6 +1,8 @@
 #pragma once
 #include "PrimitiveComponent.h"
 
+struct FDynamicMesh;
+
 class ENGINE_API USubUVComponent : public UPrimitiveComponent
 {
 public:
@@ -38,10 +40,11 @@ public:
 	bool IsBillboard() const { return bBillboard; }
 
 	/** SubUV 렌더링용 메시 데이터 반환 */
-	struct FMeshData* GetSubUVMesh() const { return SubUVMesh.get(); }
+	virtual FRenderMesh* GetRenderMesh() const override;
+	FDynamicMesh* GetSubUVMesh() const { return SubUVMesh.get(); }
 
 private:
-	FVector2 Size = FVector2(0.3f, 0.3f);
+	FVector2 Size = FVector2(1.f, 1.f);
 	FVector4 Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	int32 Columns = 3;
@@ -57,5 +60,5 @@ private:
 	bool bBillboard = false;
 
 	/** SubUV 렌더링을 위해 생성된 동적 메시 데이터 */
-	std::shared_ptr<struct FMeshData> SubUVMesh;
+	std::shared_ptr<struct FDynamicMesh> SubUVMesh;
 };

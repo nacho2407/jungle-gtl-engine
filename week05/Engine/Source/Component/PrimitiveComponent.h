@@ -1,17 +1,21 @@
 #pragma once
 #include "SceneComponent.h"
-#include "Primitive/PrimitiveBase.h"
+#include "PrimitiveComponent.h"
 #include "Math/Frustum.h"
 #include <memory>
 #include <algorithm>
 #include <cmath>
 
+struct FRenderMesh;
+class FArchive;
 class FMaterial;
+class Archive;
+struct FBoxSphereBounds;
 
 struct FBoxSphereBounds
 {
 	FVector Center;
-	float Radius;
+	float Radius = 0.f;
 	FVector BoxExtent;
 };
 
@@ -20,26 +24,20 @@ class ENGINE_API UPrimitiveComponent : public USceneComponent
 public:
 	DECLARE_RTTI(UPrimitiveComponent, USceneComponent)
 
-	FPrimitiveBase* GetPrimitive() const { return Primitive.get(); }
+	// virtual FBoxSphereBounds GetWorldBounds() const { return Bounds; };
+	virtual FBoxSphereBounds GetWorldBounds() const { return CalcBounds(GetWorldTransform()); }
+	virtual void UpdateBounds();
+	virtual FBoxSphereBounds GetLocalBounds() const;
+	virtual FBoxSphereBounds CalcBounds(const FMatrix& LocalToWorld) const;
 
-	void SetMaterial(FMaterial* InMaterial) { Material = InMaterial; }
-	FMaterial* GetMaterial() const { return Material; }
+	// virtual void Serialize(FArchive& Ar) override;
 
-	virtual FBoxSphereBounds GetWorldBounds() const;
-
-	void UpdateLocalBound();
-
-	FString GetPrimitiveFileName() const 
-	{ 
-		if (Primitive) return Primitive->GetPrimitiveFileName();
-		else return ""; 
-	}
-
-protected:
-	std::shared_ptr<FPrimitiveBase> Primitive;
-	FMaterial* Material = nullptr;
-	bool bDrawDebugBounds = true;
-public:
 	bool ShouldDrawDebugBounds() const { return bDrawDebugBounds; }
 	void SetDrawDebugBounds(bool bEnable) { bDrawDebugBounds = bEnable; }
+
+	virtual FRenderMesh* GetRenderMesh() const { return nullptr; }
+
+protected:
+	FBoxSphereBounds Bounds;
+	bool bDrawDebugBounds = true;
 };

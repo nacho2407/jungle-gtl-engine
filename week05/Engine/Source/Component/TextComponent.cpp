@@ -1,15 +1,19 @@
 #include "TextComponent.h"
 #include "Object/Class.h"
-#include "Primitive/PrimitiveBase.h"
 #include <algorithm>
+
 
 IMPLEMENT_RTTI(UTextComponent, UPrimitiveComponent)
 
 void UTextComponent::PostConstruct()
 {
 	// 폰트 렌더링용 메시 데이터 객체 생성
-	bDrawDebugBounds = true;
-	TextMesh = std::make_shared<FMeshData>();
+	bDrawDebugBounds = false;
+	TextMesh = std::make_shared<FDynamicMesh>();
+	TextMesh->Topology = EMeshTopology::EMT_TriangleList;
+
+	bTextMeshDirty = true;
+	if (TextMesh) TextMesh->bIsDirty = true;
 }
 
 void UTextComponent::SetText(const FString& InText)
@@ -18,7 +22,13 @@ void UTextComponent::SetText(const FString& InText)
 	{
 		Text = InText;
 		// NOTE: 실제 정점 데이터 갱신은 RenderCollector에서 TextRenderer를 통해 수행함
+		MarkTextMeshDirty();
 	}
+}
+
+FRenderMesh* UTextComponent::GetRenderMesh() const
+{
+	return TextMesh.get();
 }
 
 FBoxSphereBounds UTextComponent::GetWorldBounds() const
