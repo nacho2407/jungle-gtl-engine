@@ -80,16 +80,18 @@ void UEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
 
 void UEditorEngine::Tick(float DeltaTime)
 {
-	ViewportLayout.Tick(DeltaTime);
+	// hover/focus 상태를 먼저 갱신한 뒤 ActiveCamera 를 업데이트합니다.
+	// 이렇게 해야 같은 프레임의 첫 클릭에서도 올바른 카메라로 피킹할 수 있습니다.
+	ViewportLayout.UpdateHoverStates();
 
-	// 마지막 포커스 뷰포트 카메라를 ActiveCamera 로 갱신
-	// → BillboardComponent::TickComponent 가 올바른 카메라를 참조하도록
 	if (UWorld* World = GetWorld())
 	{
 		const int32 FocusedIdx = ViewportLayout.GetLastFocusedViewportIndex();
 		if (FViewportCamera* FocusedCam = ViewportLayout.GetIndexedViewportClientCamera(FocusedIdx))
 			World->SetActiveCamera(FocusedCam);
 	}
+
+	ViewportLayout.Tick(DeltaTime);
 
 	MainPanel.Update();
 	UEngine::Tick(DeltaTime);
