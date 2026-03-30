@@ -76,6 +76,9 @@
     <Filter Include="Source\Engine\Serialization">
       <UniqueIdentifier>{6a768296-435c-d7db-15e7-f1c6dbf87cc5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Slate">
+      <UniqueIdentifier>{31acd203-a2fa-0945-7deb-8338131d403a}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Misc">
       <UniqueIdentifier>{ccf9aa9a-cf34-ca37-c88d-434c210d8c06}</UniqueIdentifier>
     </Filter>
@@ -170,7 +173,13 @@
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp">
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Viewport\FSceneViewport.cpp">
+      <Filter>Source\Editor\Viewport</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Viewport\ViewportCamera.cpp">
+      <Filter>Source\Editor\Viewport</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Viewport\ViewportLayout.cpp">
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Viewport\ViewportNavigationController.cpp">
@@ -353,6 +362,27 @@
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp">
       <Filter>Source\Engine\Serialization</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Slate\SSplitter.cpp">
+      <Filter>Source\Engine\Slate</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Slate\SSplitterH.cpp">
+      <Filter>Source\Engine\Slate</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Slate\SSplitterV.cpp">
+      <Filter>Source\Engine\Slate</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Slate\SViewport.cpp">
+      <Filter>Source\Engine\Slate</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Slate\SWidget.cpp">
+      <Filter>Source\Engine\Slate</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Slate\SWindow.cpp">
+      <Filter>Source\Engine\Slate</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Slate\SlateApplication.cpp">
+      <Filter>Source\Engine\Slate</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Misc\ObjViewer\ObjViewerEngine.cpp">
       <Filter>Source\Misc\ObjViewer</Filter>
     </ClCompile>
@@ -407,6 +437,9 @@
     <ClInclude Include="Source\Editor\EditorRenderPipeline.h">
       <Filter>Source\Editor</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\EditorUtils.h">
+      <Filter>Source\Editor</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\Selection\SelectionManager.h">
       <Filter>Source\Editor\Selection</Filter>
     </ClInclude>
@@ -443,7 +476,16 @@
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Viewport\FSceneViewport.h">
+      <Filter>Source\Editor\Viewport</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Viewport\SEditorViewport.h">
+      <Filter>Source\Editor\Viewport</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\ViewportCamera.h">
+      <Filter>Source\Editor\Viewport</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Viewport\ViewportLayout.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\ViewportNavigationController.h">
@@ -713,6 +755,21 @@
     <ClInclude Include="Source\Engine\Runtime\Launch.h">
       <Filter>Source\Engine\Runtime</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Runtime\SceneView.h">
+      <Filter>Source\Engine\Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Runtime\Viewport.h">
+      <Filter>Source\Engine\Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Runtime\ViewportClient.h">
+      <Filter>Source\Engine\Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Runtime\ViewportRect.h">
+      <Filter>Source\Engine\Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Runtime\WindowMessageHandler.h">
+      <Filter>Source\Engine\Runtime</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Runtime\WindowsApplication.h">
       <Filter>Source\Engine\Runtime</Filter>
     </ClInclude>
@@ -721,6 +778,33 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h">
       <Filter>Source\Engine\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Slate\ISlateViewport.h">
+      <Filter>Source\Engine\Slate</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Slate\SSplitter.h">
+      <Filter>Source\Engine\Slate</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Slate\SSplitterH.h">
+      <Filter>Source\Engine\Slate</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Slate\SSplitterV.h">
+      <Filter>Source\Engine\Slate</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Slate\SViewport.h">
+      <Filter>Source\Engine\Slate</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Slate\SWidget.h">
+      <Filter>Source\Engine\Slate</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Slate\SWindow.h">
+      <Filter>Source\Engine\Slate</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Slate\SlateApplication.h">
+      <Filter>Source\Engine\Slate</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Slate\SlateUtils.h">
+      <Filter>Source\Engine\Slate</Filter>
     </ClInclude>
     <ClInclude Include="Source\Misc\ObjViewer\ObjViewerEngine.h">
       <Filter>Source\Misc\ObjViewer</Filter>

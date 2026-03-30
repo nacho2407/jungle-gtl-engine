@@ -74,6 +74,18 @@ void FD3DDevice::OnResizeViewport(int Width, int Height)
 }
 
 
+void FD3DDevice::SetSubViewport(int32 X, int32 Y, int32 Width, int32 Height)
+{
+	D3D11_VIEWPORT vp = {};
+	vp.TopLeftX = static_cast<float>(X);
+	vp.TopLeftY = static_cast<float>(Y);
+	vp.Width    = static_cast<float>(Width);
+	vp.Height   = static_cast<float>(Height);
+	vp.MinDepth = 0.0f;
+	vp.MaxDepth = 1.0f;
+	DeviceContext->RSSetViewports(1, &vp);
+}
+
 ID3D11Device* FD3DDevice::GetDevice() const
 {
 	return Device;
