@@ -102,6 +102,63 @@ private:
 	FIndexBuffer IndexBuffer;
 };
 
+// ============================================================
+// Dynamic Buffers — 매 프레임 CPU 데이터를 GPU에 업로드하는 버퍼 (Batcher용)
+// ============================================================
+
+class FDynamicVertexBuffer
+{
+public:
+	FDynamicVertexBuffer() = default;
+	~FDynamicVertexBuffer() { Release(); }
+
+	FDynamicVertexBuffer(const FDynamicVertexBuffer&) = delete;
+	FDynamicVertexBuffer& operator=(const FDynamicVertexBuffer&) = delete;
+
+	void Create(ID3D11Device* InDevice, uint32 InMaxCount, uint32 InStride);
+	void Release();
+
+	// RequiredCount > MaxCount 이면 2배 확장 후 재생성
+	void EnsureCapacity(ID3D11Device* InDevice, uint32 RequiredCount);
+	// Map → memcpy → Unmap (WRITE_DISCARD)
+	bool Update(ID3D11DeviceContext* Context, const void* Data, uint32 Count);
+	// IASetVertexBuffers
+	void Bind(ID3D11DeviceContext* Context, uint32 Slot = 0);
+
+	uint32 GetMaxCount() const { return MaxCount; }
+
+private:
+	ID3D11Buffer* Buffer = nullptr;
+	uint32 MaxCount = 0;
+	uint32 Stride = 0;
+};
+
+class FDynamicIndexBuffer
+{
+public:
+	FDynamicIndexBuffer() = default;
+	~FDynamicIndexBuffer() { Release(); }
+
+	FDynamicIndexBuffer(const FDynamicIndexBuffer&) = delete;
+	FDynamicIndexBuffer& operator=(const FDynamicIndexBuffer&) = delete;
+
+	void Create(ID3D11Device* InDevice, uint32 InMaxCount);
+	void Release();
+
+	void EnsureCapacity(ID3D11Device* InDevice, uint32 RequiredCount);
+	bool Update(ID3D11DeviceContext* Context, const void* Data, uint32 Count);
+	// IASetIndexBuffer (DXGI_FORMAT_R32_UINT)
+	void Bind(ID3D11DeviceContext* Context);
+
+	uint32 GetMaxCount() const { return MaxCount; }
+
+private:
+	ID3D11Buffer* Buffer = nullptr;
+	uint32 MaxCount = 0;
+};
+
+// ============================================================
+
 template<typename VertexType>
 void FMeshBuffer::Create(ID3D11Device* InDevice, const TMeshData<VertexType>& InMeshData)
 {

@@ -16,12 +16,12 @@
 
 #include <functional>
 
-// 패스별 Batcher Flush 바인딩
+// 패스별 Batcher DrawBatch 바인딩
 struct FPassBatcherBinding
 {
-	std::function<void(ERenderPass, const FRenderBus&, ID3D11DeviceContext*)> Flush;
+	std::function<void(ERenderPass, const FRenderBus&, ID3D11DeviceContext*)> DrawBatch;
 
-	explicit operator bool() const { return Flush != nullptr; }
+	explicit operator bool() const { return DrawBatch != nullptr; }
 };
 
 // 패스별 기본 렌더 상태 — Single Source of Truth
@@ -62,8 +62,8 @@ private:
 	// 기본 패스 실행기 — SetupRenderState + BindCommand + DrawCommand 루프
 	void ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand>& Commands, const FRenderBus& Bus, ID3D11DeviceContext* Context);
 
-	// LineBatcher Flush 공통 — EditorConstants 업데이트 + EditorShader 바인딩
-	void FlushLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Context);
+	// LineBatcher DrawBatch 공통 — EditorConstants 업데이트 + EditorShader 바인딩
+	void DrawLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Context);
 
 private:
 	FD3DDevice Device;
