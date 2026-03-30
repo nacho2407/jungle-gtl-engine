@@ -311,7 +311,8 @@ void FEditorPropertyWidget::RenderComponentProperties()
 		for (auto& Prop : Props)
 		{
 			if (IsTransformProp(Prop.Name))
-				RenderPropertyWidget(Prop);
+				if (RenderPropertyWidget(Prop))
+					break;
 		}
 		ImGui::Separator();
 	}
@@ -321,7 +322,8 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	{
 		if (IsTransformProp(Prop.Name))
 			continue;
-		RenderPropertyWidget(Prop);
+		if (RenderPropertyWidget(Prop))
+			break;
 	}
 
 	// 프로퍼티 직접 편집 후 월드 행렬 갱신
@@ -331,7 +333,7 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	}
 }
 
-void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
+bool FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 {
 	bool bChanged = false;
 
@@ -478,4 +480,6 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 	{
 		SelectedComponent->PostEditProperty(Prop.Name.c_str());
 	}
+
+	return bChanged;
 }
