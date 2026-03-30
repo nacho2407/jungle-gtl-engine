@@ -191,6 +191,14 @@ void FViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
 
 	// 초기 크기 → 자식 영역 재귀 계산
 	RootSplitterV->SetRect({ 0.f, 0.f, static_cast<float>(Width), static_cast<float>(Height) });
+
+	// 저장된 스플리터 비율 복원 (UpdateCildRect 전에 설정해야 올바르게 분배됨)
+	const float VRatio = FEditorSettings::Get().SplitterVRatio;
+	const float HRatio = FEditorSettings::Get().SplitterHRatio;
+	RootSplitterV->SetSplitRatio(VRatio);
+	TopSplitterH->SetSplitRatio(HRatio);
+	BotSplitterH->SetSplitRatio(HRatio);
+
 	RootSplitterV->UpdateCildRect();
 
 	// SViewport(FRect) → FSceneViewport::SetRect(FViewportRect) 동기화

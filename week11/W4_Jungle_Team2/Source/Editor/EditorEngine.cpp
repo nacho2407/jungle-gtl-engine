@@ -13,6 +13,7 @@
 #include "Core/Logging/Stats.h"
 #include "Slate/SSplitterV.h"
 #include "Slate/SSplitterH.h"
+#include "Settings/EditorSettings.h"
 
 DEFINE_CLASS(UEditorEngine, UEngine)
 REGISTER_FACTORY(UEditorEngine)
@@ -52,7 +53,12 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
 void UEditorEngine::Shutdown()
 {
-	// 에디터 해제 (엔진보다 먼저)
+	// 스플리터 비율을 Settings 에 기록 후 저장
+	if (SSplitterV* SV = ViewportLayout.GetRootSplitterV())
+		FEditorSettings::Get().SplitterVRatio = SV->GetSplitRatio();
+	if (SSplitterH* SH = ViewportLayout.GetTopSplitterH())
+		FEditorSettings::Get().SplitterHRatio = SH->GetSplitRatio();
+
 	FEditorSettings::Get().SaveToFile(FEditorSettings::GetDefaultSettingsPath());
 
 	ViewportLayout.Shutdown();          // 위젯 트리 해제 (소유권: UEditorEngine)
