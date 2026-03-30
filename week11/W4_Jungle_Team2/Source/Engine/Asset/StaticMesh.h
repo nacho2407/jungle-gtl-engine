@@ -13,7 +13,7 @@ public:
 	UStaticMesh() = default;
 	~UStaticMesh() override;
 
-	void SetMeshData(FStaticMesh* InMeshData);
+	void SetMeshData(FStaticMesh* InMeshData, const TArray<FStaticMeshMaterialSlot>& MaterialSlot);
 
 	/* Getters */
 	FStaticMesh* GetMeshData();
@@ -23,6 +23,7 @@ public:
 
 	const TArray<FNormalVertex>& GetVertices() const;
 	const TArray<uint32>& GetIndices() const;
+
 	const TArray<FStaticMeshSection>& GetSections() const;
 	const TArray<FStaticMeshMaterialSlot>& GetMaterialSlots() const;
 
@@ -33,4 +34,5 @@ public:
 
 private:
 	FStaticMesh* MeshData = nullptr;
+	TArray<FStaticMeshMaterialSlot> MaterialSlots;
 };

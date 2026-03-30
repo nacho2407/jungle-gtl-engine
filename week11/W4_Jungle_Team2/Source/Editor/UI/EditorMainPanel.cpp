@@ -20,20 +20,30 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 
 	Window = InWindow;
 
-	// 한글 지원 폰트 로드 (시스템 맑은 고딕)
-	IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 16.0f, nullptr, IO.Fonts->GetGlyphRangesKorean());
+	// 1차: malgun.ttf — 한글 + 기본 라틴 (주 폰트)
+	ImFontGlyphRangesBuilder KoreanBuilder;
+	KoreanBuilder.AddRanges(IO.Fonts->GetGlyphRangesKorean());
+	KoreanBuilder.AddRanges(IO.Fonts->GetGlyphRangesDefault());
+	KoreanBuilder.BuildRanges(&FontGlyphRanges);
+	IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 16.0f, nullptr, FontGlyphRanges.Data);
+
+	// 2차: msyh.ttc — 한자 전체를 malgun이 없는 글리프에만 병합 (fallback)
+	ImFontConfig MergeConfig;
+	MergeConfig.MergeMode = true;
+	IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\msyh.ttc", 16.0f, &MergeConfig, IO.Fonts->GetGlyphRangesChineseFull());
 
 	ImGui_ImplWin32_Init((void*)InWindow->GetHWND());
 	ImGui_ImplDX11_Init(InRenderer.GetFD3DDevice().GetDevice(), InRenderer.GetFD3DDevice().GetDeviceContext());
 
 	ConsoleWidget.Initialize(InEditorEngine);
 	ControlWidget.Initialize(InEditorEngine);
+	MaterialWidget.Initialize(InEditorEngine);
 	PropertyWidget.Initialize(InEditorEngine);
 	SceneWidget.Initialize(InEditorEngine);
 	ViewportOverlayWidget.Initialize(InEditorEngine);
 	StatWidget.Initialize(InEditorEngine);
 }
-
+ 
 void FEditorMainPanel::Release()
 {
 	ImGui_ImplDX11_Shutdown();
@@ -51,6 +61,7 @@ void FEditorMainPanel::Render(float DeltaTime)
 
 	ConsoleWidget.Render(DeltaTime);
 	ControlWidget.Render(DeltaTime);
+	MaterialWidget.Render(DeltaTime);
 	PropertyWidget.Render(DeltaTime);
 	SceneWidget.Render(DeltaTime);
 	ViewportOverlayWidget.Render(DeltaTime);

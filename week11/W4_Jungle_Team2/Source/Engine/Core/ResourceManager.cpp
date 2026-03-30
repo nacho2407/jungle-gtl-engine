@@ -201,7 +201,10 @@ void FResourceManager::InitializeDefaultResources(ID3D11Device* Device)
 	D3D11_SUBRESOURCE_DATA InitData = { &WhitePixel, 4, 0 };
 
 	Device->CreateTexture2D(&Desc, &InitData, &DefaultWhiteTexture);
-	Device->CreateShaderResourceView(DefaultWhiteTexture, nullptr, &DefaultWhiteSRV);
+	if (DefaultWhiteTexture)
+	{
+		Device->CreateShaderResourceView(DefaultWhiteTexture, nullptr, &DefaultWhiteSRV);
+	}
 }
 
 void FResourceManager::ReleaseGPUResources()
