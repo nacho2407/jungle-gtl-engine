@@ -1,18 +1,5 @@
-/* Constant Buffers */
-
-#include "Common.hlsl"
-
-struct VSInput
-{
-    float3 position : POSITION;
-    float4 color : COLOR;
-};
-
-struct PSInput
-{
-    float4 position : SV_POSITION;
-    float4 color : COLOR;
-};
+#include "Common/Functions.hlsl"
+#include "Common/VertexLayouts.hlsl"
 
 uint GetAxisFromColor(float3 color)
 {
@@ -23,15 +10,15 @@ uint GetAxisFromColor(float3 color)
     return 0;
 }
 
-PSInput VS(VSInput input)
+PS_Input_Color VS(VS_Input_PC input)
 {
-    PSInput output;
+    PS_Input_Color output;
     output.position = ApplyMVP(input.position);
     output.color = input.color * GizmoColorTint;
     return output;
 }
 
-float4 PS(PSInput input) : SV_TARGET
+float4 PS(PS_Input_Color input) : SV_TARGET
 {
     uint axis = GetAxisFromColor(input.color.rgb);
     float4 outColor = input.color;
@@ -41,12 +28,12 @@ float4 PS(PSInput input) : SV_TARGET
         outColor.rgb = float3(1, 1, 0);
         outColor.a = 1.0f;
     }
-    
+
     if ((bool) bIsInnerGizmo)
     {
         outColor.a *= HoveredAxisOpacity;
     }
-    
+
     if (axis != SelectedAxis && bClicking)
     {
         discard;

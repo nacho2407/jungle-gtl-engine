@@ -1,26 +1,15 @@
-#include "Common.hlsl"
+#include "Common/Functions.hlsl"
+#include "Common/VertexLayouts.hlsl"
 
-struct VSInput
+PS_Input_Color VS(VS_Input_PC input)
 {
-    float3 position : POSITION;
-    float4 color : COLOR;
-};
-
-struct PSInput
-{
-    float4 position : SV_POSITION;
-    float4 color : COLOR;
-};
-
-PSInput VS(VSInput input)
-{
-    PSInput output;
+    PS_Input_Color output;
     output.position = ApplyMVP(input.position);
     output.color = input.color;
     return output;
 }
 
-float4 PS(PSInput input) : SV_TARGET
+float4 PS(PS_Input_Color input) : SV_TARGET
 {
-    return lerp(input.color, float4(WireframeRGB, 1.0f), bIsWireframe);
+    return float4(ApplyWireframe(input.color.rgb), input.color.a);
 }
