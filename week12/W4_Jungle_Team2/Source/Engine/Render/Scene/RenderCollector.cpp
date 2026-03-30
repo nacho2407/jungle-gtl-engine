@@ -69,12 +69,13 @@ void FRenderCollector::CollectSelection(const TArray<AActor*>& SelectedActors, c
 	}
 }
 
-void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus)
+void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus, bool bOrthographic)
 {
 	FRenderCommand Cmd = {};
 	Cmd.Type = ERenderCommandType::Grid;
 	Cmd.Constants.Grid.GridSpacing = GridSpacing;
 	Cmd.Constants.Grid.GridHalfLineCount = GridHalfLineCount;
+	Cmd.Constants.Grid.bOrthographic = bOrthographic;
 	RenderBus.AddCommand(ERenderPass::Grid, Cmd);
 }
 
