@@ -100,10 +100,17 @@ void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData, EE
             OutRenderData.Gizmo.Frame =
                 GizmoController.GetSelectedActor()->GetRootComponent()->GetRelativeMatrixNoScale();
         }
-        GizmoController.GizmoScale =
-            (ViewportCamera.GetLocation() -
-             GizmoController.GetSelectedActor()->GetRootComponent()->GetRelativeLocation())
-                .Size() / 10.f;
+        if (ViewportCamera.GetProjectionType() == EViewportProjectionType::Orthographic)
+        {
+            GizmoController.GizmoScale = ViewportCamera.GetOrthoHeight() / 10.f;
+        }
+        else
+        {
+            GizmoController.GizmoScale =
+                (ViewportCamera.GetLocation() -
+                 GizmoController.GetSelectedActor()->GetRootComponent()->GetRelativeLocation())
+                    .Size() / 10.f;
+        }
         //  Size 여기서 조정
         OutRenderData.Gizmo.Scale = GizmoController.GizmoScale;
         OutRenderData.bShowGizmo = IsFlagSet(InShowFlags, EEditorShowFlags::SF_Gizmo);
@@ -125,6 +132,105 @@ void FEditorViewportClient::OnResize(uint32 Width, uint32 Height)
 {
     ViewportCamera.OnResize(Width, Height);
     SelectionController.SetViewportSize(Width, Height);
+}
+
+FString FEditorViewportClient::GetViewOrientationString(EViewportViewOrientation InOrientation) const 
+{ 
+    using enum EViewportViewOrientation;
+    switch (InOrientation)
+    {
+    case Free:
+        return "Free";
+    case Top:
+        return "Top";
+    case Bottom:
+        return "Bottom";
+    case Left:
+        return "Left";
+    case Right:
+        return "Right";
+    case Front:
+        return "Front";
+    case Back:
+        return "Back";
+    }
+}
+
+void FEditorViewportClient::SetViewOrientation(EViewportViewOrientation InOrientation) 
+{
+    using enum EViewportViewOrientation;
+    const bool bWasFree = (ViewOrientation == Free);
+    ViewOrientation = InOrientation;
+
+    if (ViewOrientation == Free)
+    {
+        ViewportCamera.SetNearPlane(0.1f);
+        ViewportCamera.SetProjectionType(EViewportProjectionType::Perspective);
+        ViewportCamera.SetLocation(FreeCameraLocation);
+        ViewportCamera.SetRotation(FreeCameraRotation);
+        NavigationController.SetTranslationLocked(false);
+        NavigationController.SetRotationLocked(false);
+        NavigationController.ToggleHasTargetLocation();
+        return;
+    }
+
+    if (bWasFree)
+    {
+        FreeCameraLocation = ViewportCamera.GetLocation();
+        FreeCameraRotation = ViewportCamera.GetRotation();
+    }
+
+    ViewportCamera.SetNearPlane(-ViewportCamera.GetFarPlane());
+    ViewportCamera.SetProjectionType(EViewportProjectionType::Orthographic);
+    NavigationController.ToggleHasTargetLocation();
+    ViewportCamera.SetOrthoHeight(15.0f);
+    switch (ViewOrientation)
+    {
+    case Top:
+    {
+        ViewportCamera.SetRotation(FRotator(90.0f, 0.0f, 0.0f));
+        ViewportCamera.SetLocation(FVector(0.0f, 0.0f, 100.0f));
+        break;
+    }
+    case Bottom:
+    {
+        ViewportCamera.SetRotation(FRotator(-90.0f, 0.0f, 0.0f));
+        ViewportCamera.SetLocation(FVector(0.0f, 0.0f, -100.0f));
+        break;
+    }
+    case Left:
+    {
+        ViewportCamera.SetRotation(FRotator(0.0f, 90.0f, 0.0f));
+        ViewportCamera.SetLocation(FVector(0.0f, 100.0f, 0.0f));
+        break;
+    }
+    case Right:
+    {
+        ViewportCamera.SetRotation(FRotator(0.0f, -90.0f, 0.0f));
+        ViewportCamera.SetLocation(FVector(0.0f, -100.0f, 0.0f));
+        break;
+    }
+    case Front:
+    {
+        ViewportCamera.SetRotation(FRotator(0.0f, 0.0f, 0.0f));
+        ViewportCamera.SetLocation(FVector(-100.0f, 0.0f, 0.0f));
+        break;
+    }
+    case Back:
+    {
+        ViewportCamera.SetRotation(FRotator(0.0f, 0.0f, 180.0f));
+        ViewportCamera.SetLocation(FVector(100.0f, 0.0f, 0.0f));
+        break;
+    }
+    }
+
+    NavigationController.SetRotationLocked(true);
+    //NavigationController.SetTranslationLocked(true);
+}
+
+void FEditorViewportClient::SetViewportOrigin(uint32 InOriginX, uint32 InOriginY)
+{
+    ViewportCamera.SetOrigin(InOriginX, InOriginY);
 }
 
 void FEditorViewportClient::SetEditorContext(FEditorContext* InContext)
@@ -195,8 +301,8 @@ void FEditorViewportClient::DrawFPSStatOverlay(const FFPSStatData& InData)
     }
 
     // 다중 뷰포트 브랜치 머지 후 뷰포트 크기 계산 수정 예정
-    const float ViewLeft = static_cast<float>(ViewportOriginX);
-    const float ViewTop = static_cast<float>(ViewportOriginY);
+    const float ViewLeft = static_cast<float>(ViewportCamera.GetOriginX());
+    const float ViewTop = static_cast<float>(ViewportCamera.GetOriginY());
     const float ViewWidth = static_cast<float>(ViewportCamera.GetWidth());
     const float ViewHeight = static_cast<float>(ViewportCamera.GetHeight());
 
@@ -233,11 +339,7 @@ void FEditorViewportClient::DrawFPSStatOverlay(const FFPSStatData& InData)
 
 void FEditorViewportClient::DrawMemoryStatOverlay(const FMemoryStatData& InData)
 {
-    // 다중 뷰포트 브랜치 머지 후 뷰포트 크기 계산 수정 예정
-    //const float ViewLeft = static_cast<float>(ViewportOriginX);
-    //const float ViewTop = static_cast<float>(ViewportOriginY);
-    //const float ViewWidth = static_cast<float>(ViewportCamera.GetWidth());
-    //const float ViewHeight = static_cast<float>(ViewportCamera.GetHeight());
+    (void)InData;
 
     // 추가 예정
 }

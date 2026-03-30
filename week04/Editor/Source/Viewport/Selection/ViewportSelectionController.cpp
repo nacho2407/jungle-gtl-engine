@@ -199,8 +199,10 @@ AActor* FViewportSelectionController::PickActor(int32 MouseX, int32 MouseY) cons
         return nullptr;
     }
 
+    const int32 LocalMouseX = MouseX - static_cast<int32>(ViewportCamera->GetOriginX());
+    const int32 LocalMouseY = MouseY - static_cast<int32>(ViewportCamera->GetOriginY());
     const Geometry::FRay PickRay = Geometry::FRay::BuildRay(
-        static_cast<int32>(MouseX), static_cast<int32>(MouseY),
+        LocalMouseX, LocalMouseY,
         ViewportCamera->GetViewProjectionMatrix(), static_cast<float>(ViewportCamera->GetWidth()),
         static_cast<float>(ViewportCamera->GetHeight()));
 

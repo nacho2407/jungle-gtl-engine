@@ -292,43 +292,28 @@ namespace
             break;
         }
     }
-} // namespace
 
-// class FSamplePanel : public IPanel
-//{
-// public:
-//     explicit FSamplePanel(const FEditorLogBuffer* InLogBuffer)
-//         : LogBuffer(InLogBuffer)
-//     {
-//     }
-//
-//     const wchar_t* GetPanelID() const override { return L"SamplePanel"; }
-//     const wchar_t* GetDisplayName() const override { return L"Sample Panel"; }
-//     bool ShouldOpenByDefault() const override { return true; }
-//
-//     void Draw() override
-//     {
-//         if (ImGui::Begin("Sample Panel", nullptr))
-//         {
-//             ImGui::Text("PanelManager registration test panel");
-//             ImGui::Separator();
-//
-//
-//             if (LogBuffer != nullptr)
-//             {
-//                 for (const auto& Log : LogBuffer->GetLogBuffer())
-//                 {
-//                     ImGui::Spacing();
-//                     ImGui::Text("%s", Log.Message.c_str());
-//                 }
-//             }
-//         }
-//         ImGui::End();
-//     }
-//
-// private:
-//     const FEditorLogBuffer* LogBuffer = nullptr;
-// };
+    FEditorViewportClient* GetActiveStatViewportClient(FEditor* Editor)
+    {
+        if (Editor == nullptr)
+        {
+            return nullptr;
+        }
+
+        if (FWindowOverlayManager* OverlayManager = Editor->GetWindowOverlayManager())
+        {
+            if (FEditorViewportPanel* FocusedPanel = OverlayManager->GetLastFocusedPanel())
+            {
+                if (FocusedPanel->ViewportClient != nullptr)
+                {
+                    return FocusedPanel->ViewportClient;
+                }
+            }
+        }
+
+        return &Editor->GetViewportClient();
+    }
+} // namespace
 
 void FEditor::Create()
 {
@@ -347,8 +332,6 @@ void FEditor::Create()
     GlobalInputController.SetEditorContext(&EditorContext);
     GlobalInputController.SetSelectionController(&ViewportClient.GetSelectionController());
     GlobalInputRouter.AddContext(&GlobalInputContext);
-
-    LoadEditorSettings();
 
     // 메뉴 시스템은 command 등록과 배치 등록을 분리해서 초기화합니다.
     MenuRegistry.Clear();
@@ -377,8 +360,23 @@ void FEditor::Create()
     ViewportClient.SetScene(CurScene);
     GlobalInputController.SetScene(CurScene);
 
-    UE_LOG(FEditor, ELogVerbosity::Log, "Hello Editor");
+    UE_LOG(FEditor, ELogVerbosity::Log, "Hello Probopass!");
     EditorContext.Scene = CurScene;
+
+    WindowOverlayManager = new FWindowOverlayManager();
+    WindowOverlayManager->SetEditorContext(&EditorContext);
+    WindowOverlayManager->SetScene(CurScene);
+    FEditorViewportPanel* EditorPanel = new FEditorViewportPanel();
+    EditorPanel->ViewportClient = &ViewportClient;
+    EditorPanel->Scene = CurScene;
+    WindowOverlayManager->GetViewportPanels().push_back(EditorPanel);
+    WindowOverlayManager->SetViewportLayout(EViewportLayout::ColumnTwoRow);
+
+    // SubViewports and Splitter controls
+    OverlayInputContext = new FViewportOverlayInputContext(WindowOverlayManager);
+    GlobalInputRouter.AddContext(OverlayInputContext);
+
+    LoadEditorSettings();
 }
 
 void FEditor::Release()
@@ -411,6 +409,16 @@ void FEditor::Release()
     if (GLog == &LogBuffer)
     {
         GLog = nullptr;
+    }
+
+    delete OverlayInputContext;
+    OverlayInputContext = nullptr;
+
+    if (WindowOverlayManager)
+    {
+        WindowOverlayManager->Release();
+        delete WindowOverlayManager;
+        WindowOverlayManager = nullptr;
     }
 }
 
@@ -477,6 +485,12 @@ void FEditor::LoadEditorSettings()
     ViewportClient.GetNavigationController().SetRotationSpeed(SettingsData.CameraRotationSpeed);
     EditorContext.ContentBrowserLeftPaneWidth =
         std::max(SettingsData.ContentBrowserLeftPaneWidth, 120.0f);
+
+    if (WindowOverlayManager != nullptr)
+    {
+        WindowOverlayManager->SetNavigationValues(SettingsData.CameraMoveSpeed,
+                                                  SettingsData.CameraRotationSpeed);
+    }
 }
 
 void FEditor::SaveEditorSettings() const
@@ -640,6 +654,10 @@ void FEditor::ReplaceCurrentScene(std::unique_ptr<FScene> NewScene)
     EditorContext.Scene = CurScene;
     EditorContext.SelectedObject = nullptr;
     EditorContext.SelectedActors.clear();
+    if (WindowOverlayManager)
+    {
+        WindowOverlayManager->SetScene(CurScene);
+    }
     ResolveSceneAssetReferences(CurScene);
 }
 
@@ -680,21 +698,28 @@ void FEditor::ResolveSceneAssetReferences(FScene* Scene)
 
 void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* InputSystem)
 {
+    using namespace Engine::ApplicationCore;
+
     EditorContext.DeltaTime = DeltaTime;
-    Engine::ApplicationCore::FInputEvent        Event;
-    const Engine::ApplicationCore::FInputState& InputState = InputSystem->GetInputState();
+    FInputEvent        Event;
+    const FInputState& InputState = InputSystem->GetInputState();
 
     while (InputSystem->PollEvent(Event))
     {
-        if (GlobalInputRouter.RouteEvent(Event, InputState))
-        {
-            continue;
-        }
-
-        ViewportClient.HandleInputEvent(Event, InputState);
+        GlobalInputRouter.RouteEvent(Event, InputState);
     }
 
-    ViewportClient.Tick(DeltaTime, InputState);
+    // Tick every panel's viewport client uniformly.
+    if (WindowOverlayManager)
+    {
+        for (FEditorViewportPanel* Panel : WindowOverlayManager->GetViewportPanels())
+        {
+            if (Panel && Panel->ViewportClient)
+            {
+                Panel->ViewportClient->Tick(DeltaTime, InputState);
+            }
+        }
+    }
 
     if (PanelManager != nullptr)
     {
@@ -720,7 +745,12 @@ void FEditor::OnWindowResized(float Width, float Height)
     WindowWidth = Width;
     EditorContext.WindowWidth = Width;
     EditorContext.WindowHeight = Height;
-    ViewportClient.OnResize(static_cast<uint32>(Width), static_cast<uint32>(Height));
+
+    if (WindowOverlayManager != nullptr)
+    {
+        WindowOverlayManager->SetWindowDimension(static_cast<uint32>(Width),
+                                                 static_cast<uint32>(Height));
+    }
 }
 
 void FEditor::CreateNewScene()
@@ -1388,7 +1418,20 @@ void FEditor::DrawPanel()
         PanelManager->DrawPanels();
     }
 
-    ViewportClient.DrawViewportOverlay();
+    if (WindowOverlayManager != nullptr)
+    {
+        for (FEditorViewportPanel* Panel : WindowOverlayManager->GetViewportPanels())
+        {
+            if (Panel != nullptr && Panel->ViewportClient != nullptr)
+            {
+                Panel->ViewportClient->DrawViewportOverlay();
+            }
+        }
+    }
+    else
+    {
+        ViewportClient.DrawViewportOverlay();
+    }
 
     EditorChrome.Draw(ChromeMenus);
     DrawAboutPopup();
@@ -1423,12 +1466,36 @@ void FEditor::BuildRenderData()
 // 다중 뷰포트 머지 후에 active viewport를 토글하는 방식으로 변경 예정
 void FEditor::ToggleActiveViewportStat(EViewportStatFlags StatFlag)
 {
-    ViewportClient.ToggleStat(StatFlag);
-    ShowStatToggleDialog(ViewportClient, StatFlag);
+    if (FEditorViewportClient* ActiveViewportClient = GetActiveStatViewportClient(this))
+    {
+        ActiveViewportClient->ToggleStat(StatFlag);
+        ShowStatToggleDialog(*ActiveViewportClient, StatFlag);
+    }
 }
 
 void FEditor::ClearActiveViewportStats()
 {
-    ViewportClient.ClearAllStats();
-    ShowStatToggleDialog(ViewportClient, EViewportStatFlags::None);
+    bool bClearedAnyViewport = false;
+
+    if (WindowOverlayManager != nullptr)
+    {
+        for (FEditorViewportPanel* Panel : WindowOverlayManager->GetViewportPanels())
+        {
+            if (Panel != nullptr && Panel->ViewportClient != nullptr)
+            {
+                Panel->ViewportClient->ClearAllStats();
+                bClearedAnyViewport = true;
+            }
+        }
+    }
+    else
+    {
+        ViewportClient.ClearAllStats();
+        bClearedAnyViewport = true;
+    }
+
+    if (bClearedAnyViewport)
+    {
+        ShowStatToggleDialog(ViewportClient, EViewportStatFlags::None);
+    }
 }

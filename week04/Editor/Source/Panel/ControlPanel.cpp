@@ -6,6 +6,8 @@
 #include "Editor/EditorContext.h"
 #include "Engine/EngineStatics.h"
 #include "Viewport/EditorViewportClient.h"
+#include "Viewport/Window/EditorViewportPanel.h"
+#include "Viewport/Window/WindowOverlayManager.h"
 #include "imgui.h"
 
 namespace
@@ -77,18 +79,33 @@ void FControlPanel::Draw()
     DrawNavigationSection();
     ImGui::Separator();
     DrawWorldSection();
+    ImGui::Separator();
+    DrawViewportOverlaySection();
 
     ImGui::End();
 }
 
-FViewportCamera* FControlPanel::ResolveViewportCamera() const
+FEditorViewportClient* FControlPanel::ResolveViewportClient() const
 {
     if (GetContext() == nullptr || GetContext()->Editor == nullptr)
-    {
         return nullptr;
-    }
 
-    return &GetContext()->Editor->GetViewportClient().GetCamera();
+    auto* OverlayManager = GetContext()->Editor->GetWindowOverlayManager();
+    if (OverlayManager)
+    {
+        FEditorViewportPanel* Panel = OverlayManager->GetLastFocusedPanel();
+        if (Panel && Panel->ViewportClient)
+            return Panel->ViewportClient;
+    }
+    return &GetContext()->Editor->GetViewportClient();
+}
+
+FViewportCamera* FControlPanel::ResolveViewportCamera() const
+{
+    FEditorViewportClient* Client = ResolveViewportClient();
+    if (!Client)
+        return nullptr;
+    return &Client->GetCamera();
 }
 
 void FControlPanel::DrawUnavailableState() const
@@ -145,6 +162,7 @@ void FControlPanel::DrawProjectionSection(FViewportCamera& Camera) const
         {
             Camera.SetOrthoHeight(FMath::Clamp(OrthoHeight, 1.0f, 1000.0f));
         }
+
     }
 
     ImGui::Spacing();
@@ -154,13 +172,11 @@ void FControlPanel::DrawProjectionSection(FViewportCamera& Camera) const
 
 void FControlPanel::DrawViewModeSection() const
 {
-    if (GetContext() == nullptr || GetContext()->Editor == nullptr)
-    {
+    FEditorViewportClient* Client = ResolveViewportClient();
+    if (!Client)
         return;
-    }
 
-    FViewportRenderSetting& RenderSetting =
-        GetContext()->Editor->GetViewportClient().GetRenderSetting();
+    FViewportRenderSetting& RenderSetting = Client->GetRenderSetting();
 
     ImGui::TextUnformatted("View Mode");
 
@@ -173,13 +189,11 @@ void FControlPanel::DrawViewModeSection() const
 
 void FControlPanel::DrawShowFlagsSection() const
 {
-    if (GetContext() == nullptr || GetContext()->Editor == nullptr)
-    {
+    FEditorViewportClient* Client = ResolveViewportClient();
+    if (!Client)
         return;
-    }
 
-    FViewportRenderSetting& RenderSetting =
-        GetContext()->Editor->GetViewportClient().GetRenderSetting();
+    FViewportRenderSetting& RenderSetting = Client->GetRenderSetting();
 
     ImGui::TextUnformatted("Show Flags");
 
@@ -244,13 +258,11 @@ void FControlPanel::DrawShowFlagsSection() const
 
 void FControlPanel::DrawNavigationSection() const
 {
-    if (GetContext() == nullptr || GetContext()->Editor == nullptr)
-    {
+    FEditorViewportClient* Client = ResolveViewportClient();
+    if (!Client)
         return;
-    }
 
-    FViewportNavigationController& NavigationController =
-        GetContext()->Editor->GetViewportClient().GetNavigationController();
+    FViewportNavigationController& NavigationController = Client->GetNavigationController();
 
     ImGui::TextUnformatted("Navigation");
 
@@ -275,5 +287,50 @@ void FControlPanel::DrawWorldSection() const
     if (ImGui::DragFloat("Grid Spacing", &GridSpacing, 0.1f, 1.0f, 1000.0f, "%.1f"))
     {
         UEngineStatics::GridSpacing = FMath::Clamp(GridSpacing, 1.0f, 1000.0f);
+    }
+}
+
+void FControlPanel::DrawViewportOverlaySection() const
+{
+    ImGui::TextUnformatted("Viewport Overlay");
+    if (GetContext() == nullptr || GetContext()->Editor == nullptr)
+    {
+        return;
+    }
+    auto* OverlayManager = GetContext()->Editor->GetWindowOverlayManager();
+    EViewportLayout CurrentLayout = OverlayManager->GetViewportLayout();
+    if (ImGui::BeginCombo("Layout", OverlayManager->GetViewportLayoutString(CurrentLayout).c_str()))
+    {
+        for (int i = 0; i < static_cast<int>(EViewportLayout::Count); ++i)
+        {
+            EViewportLayout Layout = static_cast<EViewportLayout>(i);
+            if (ImGui::Selectable(OverlayManager->GetViewportLayoutString(Layout).c_str(),
+                                  Layout == CurrentLayout))
+            {
+                OverlayManager->SetViewportLayout(Layout);
+            }
+        }
+        ImGui::EndCombo();
+    }
+
+    ImGui::TextUnformatted("Viewport Orientation");
+    auto* Panel = OverlayManager->GetLastFocusedPanel();
+    if (Panel && Panel->ViewportClient)
+    {
+        if (ImGui::BeginCombo("Orientation",
+                Panel->ViewportClient->GetViewOrientationString(Panel->ViewportClient->GetViewOrientation()).c_str()))
+        {
+            for (int i = 0; i < static_cast<int>(EViewportViewOrientation::OrientationCount); ++i)
+            {
+                EViewportViewOrientation Orientation = static_cast<EViewportViewOrientation>(i);
+                if (ImGui::Selectable(
+                        Panel->ViewportClient->GetViewOrientationString(Orientation).c_str(),
+                        Orientation == Panel->ViewportClient->GetViewOrientation()))
+                {
+                    OverlayManager->SetViewportOrientation(Orientation);
+                }
+            }
+            ImGui::EndCombo();
+        }
     }
 }

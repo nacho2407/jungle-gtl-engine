@@ -56,6 +56,18 @@ struct FMemoryStatData
     TArray<FMemoryStatRow> Rows;
 };
 
+enum class EViewportViewOrientation
+{
+    Free,
+    Top,
+    Bottom,
+    Left,
+    Right,
+    Front,
+    Back,
+    OrientationCount
+};
+
 class FEditorViewportClient : public Engine::Viewport::IViewportClient
 {
   public:
@@ -76,9 +88,14 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     void BuildRenderData(FEditorRenderData& OutRenderData, EEditorShowFlags InShowFlags);
 
     void OnResize(uint32 InWidth, uint32 InHeight);
+    void SetViewportOrigin(uint32 InOriginX, uint32 InOriginY);
     void SetEditorContext(FEditorContext* InContext);
     void SetScene(FScene* InScene);
     void SyncSelectionFromContext();
+
+    void                     SetViewOrientation(EViewportViewOrientation InOrientation);
+    EViewportViewOrientation GetViewOrientation() const { return ViewOrientation; }
+    FString                  GetViewOrientationString(EViewportViewOrientation InOrientation) const;
 
     FViewportNavigationController& GetNavigationController() { return NavigationController; }
     const FViewportNavigationController& GetNavigationController() const
@@ -139,14 +156,8 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
 
     EViewportStatFlags GetStatFlags() const { return StatFlags; }
 
-    void SetViewportOrigin(uint32 InX, uint32 InY)
-    {
-        ViewportOriginX = InX;
-        ViewportOriginY = InY;
-    }
-
-    uint32 GetViewportOriginX() const { return ViewportOriginX; }
-    uint32 GetViewportOriginY() const { return ViewportOriginY; }
+    uint32 GetViewportOriginX() const { return ViewportCamera.GetOriginX(); }
+    uint32 GetViewportOriginY() const { return ViewportCamera.GetOriginY(); }
     
   private:
     void DrawOutline();
@@ -156,7 +167,13 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     FFPSStatData    CollectFPSStatData() const;
     FMemoryStatData CollectMemoryStatData() const;
 
-  private:
+private:
+    EViewportViewOrientation ViewOrientation = EViewportViewOrientation::Free;
+
+    // Saved when leaving Free mode; restored on return to Free
+    FVector FreeCameraLocation = FVector(-20.0f, 1.0f, 10.0f);
+    FQuat   FreeCameraRotation = FQuat::Identity;
+
     FScene* CurScene = nullptr;
 
     FViewportCamera ViewportCamera;
@@ -171,14 +188,9 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     FSelectionInputContext SelectionInputContext{&SelectionController};
     FGizmoInputContext      GizmoInputContext{&GizmoController};
 
+    FEditorContext* EditorContext = nullptr;
     /**
      * @brief 현재 viewport에서 활성화된 stat 명령들을 나타내는 플래그 집합
      */
     EViewportStatFlags StatFlags = EViewportStatFlags::None;
-
-    // 다중 뷰포트 확장 대비
-    uint32 ViewportOriginX = 0;
-    uint32 ViewportOriginY = 0;
-
-    FEditorContext* EditorContext = nullptr;
 };

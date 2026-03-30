@@ -145,8 +145,9 @@ void FD3D11RHI::SetViewport(int32 InWidth, int32 InHeight)
     }
 }
 
-void FD3D11RHI::SetViewport(const D3D11_VIEWPORT& InViewport) const
+void FD3D11RHI::SetViewport(D3D11_VIEWPORT& InViewport)
 {
+    Viewport = InViewport;
     if (DeviceContext)
     {
         DeviceContext->RSSetViewports(1, &InViewport);
@@ -191,6 +192,7 @@ void FD3D11RHI::SetDefaultRenderTargets()
     ID3D11RenderTargetView* RTV = BackBufferRTV.Get();
     SetRenderTargets(1, &RTV, DepthStencilView.Get());
     SetViewport(Viewport);
+    //SetViewport(GetViewportWidth(), GetViewportHeight());
 }
 
 bool FD3D11RHI::CompileShaderFromFile(const wchar_t* InFilePath, const char* InEntryPoint,

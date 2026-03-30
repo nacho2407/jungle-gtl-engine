@@ -1,5 +1,4 @@
 #pragma once
-#pragma once
 
 #include "Core/CoreMinimal.h"
 
@@ -13,10 +12,11 @@
 #include "ApplicationCore/Input/InputSystem.h"
 #include "Viewport/Global/EditorGlobalController.h"
 #include "Input/EditorGlobalContext.h"
+#include "Input/ViewportOverlayInputContext.h"
 
 #include "Engine/Scene.h"
 #include "Logging/EditorLogBuffer.h"
-#include "Viewport/EditorViewportClient.h"
+#include "Viewport/Window/WindowOverlayManager.h"
 #include "Renderer/EditorRenderData.h"
 #include "Renderer/SceneRenderData.h"
 #include "Renderer/SceneView.h"
@@ -98,10 +98,10 @@ class FEditor
     std::filesystem::path GetCurrentScenePath() const { return SceneDocument.CurrentScenePath; }
     std::filesystem::path GetDefaultSceneDirectory() const;
 
-    const FEditorRenderData&     GetEditorRenderData() const { return EditorRenderData; }
-    const FSceneRenderData&      GetSceneRenderData() const { return SceneRenderData; }
+    FScene*                      GetScene() const { return CurScene; }
     FEditorViewportClient&       GetViewportClient() { return ViewportClient; }
     const FEditorViewportClient& GetViewportClient() const { return ViewportClient; }
+    FWindowOverlayManager*       GetWindowOverlayManager() { return WindowOverlayManager; }
 
     void DrawPanel();
 
@@ -138,9 +138,11 @@ class FEditor
 
   private:
     FEditorViewportClient ViewportClient;
+    FWindowOverlayManager* WindowOverlayManager = nullptr;
     Engine::ApplicationCore::FInputRouter GlobalInputRouter;
     FEditorGlobalController GlobalInputController;
-    FEditorGlobalContext GlobalInputContext{&GlobalInputController};
+    FEditorGlobalContext            GlobalInputContext{&GlobalInputController};
+    FViewportOverlayInputContext*   OverlayInputContext = nullptr;
 
     FEditorContext        EditorContext;
     FEditorSettings       PersistentSettings;

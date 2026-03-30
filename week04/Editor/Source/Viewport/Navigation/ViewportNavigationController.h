@@ -38,6 +38,10 @@ class FViewportNavigationController : public Engine::Viewport::IViewportControll
         RotationSpeed = FMath::Clamp(InRotationSpeed, 0.01f, 10.0f);
     }
 
+    void SetRotationLocked(bool bInLocked) { bRotationLocked = bInLocked; }
+    void SetTranslationLocked(bool bInLocked) { bTranslationLocked = bInLocked; }
+    void ToggleHasTargetLocation() { bHasTargetLocation = !bHasTargetLocation; }
+
     /* Orbiting */
     void SetSelectionController(class FViewportSelectionController* InController)
     {
@@ -81,6 +85,10 @@ class FViewportNavigationController : public Engine::Viewport::IViewportControll
   private:
     FViewportCamera*                    ViewportCamera = nullptr;
     class FViewportSelectionController* SelectionController = nullptr;
+
+    /* Rotation / Translation Lock */
+    bool bRotationLocked    = false;
+    bool bTranslationLocked = false;
 
     /* Movement */
     float MoveSpeed = 100.0f;

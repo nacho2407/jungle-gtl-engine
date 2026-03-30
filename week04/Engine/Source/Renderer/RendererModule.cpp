@@ -2,6 +2,8 @@
 
 #include "Renderer/Types/PickId.h"
 #include "Renderer/Types/PickResult.h"
+#include "SceneView.h"
+#include "Core/Runtime/Slate/Window/SWindow.h"
 
 namespace
 {
@@ -98,6 +100,11 @@ bool FRendererModule::StartupModule(HWND hWnd)
         return false;
     }
 
+    if (!WidgetRenderer.Initialize(&RHI)) {
+        ShutdownModule();
+        return false;
+    }
+
 #if defined(_DEBUG)
     if (RHI.GetDevice() != nullptr)
     {
@@ -170,6 +177,16 @@ void FRendererModule::Render(const FEditorRenderData& InEditorRenderData,
 void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderData,
                                       const FSceneRenderData&  InSceneRenderData)
 {
+    const FViewportRect& ViewRect = InSceneRenderData.SceneView->GetViewRect();
+    D3D11_VIEWPORT       VP = {(float)ViewRect.X,
+                               (float)ViewRect.Y,
+                               (float)ViewRect.Width,
+                               (float)ViewRect.Height,
+                               0.f,
+                               1.f
+    };
+    RHI.SetViewport(VP);
+
     if (HasScenePrimitives(InSceneRenderData))
     {
         FMeshBatchPassParams ScenePassParams = {};
@@ -275,6 +292,31 @@ void FRendererModule::RenderOverlayPass(const FEditorRenderData& InEditorRenderD
         MeshBatchRenderer.BeginFrame(GizmoCenterPassParams);
         OverlayMeshSubmitter.SubmitCenterHandle(MeshBatchRenderer, InEditorRenderData);
         MeshBatchRenderer.EndFrame();
+    }
+}
+
+void FRendererModule::RenderViewportOverlayPass(const FWidgetRenderData& InWidgetRenderData) 
+{
+    if (InWidgetRenderData.Widgets.empty())
+        return;
+
+    WidgetRenderer.BeginFrame(InWidgetRenderData.ScreenWidth, InWidgetRenderData.ScreenHeight);
+
+    ID3D11DeviceContext* Context = RHI.GetDeviceContext();
+
+    for (SWidget* Widget : InWidgetRenderData.Widgets)
+    {
+        if (!Widget)
+            continue;
+
+        // Only render SWindow widgets for now, as they are the only ones used in viewport overlays.
+        // Implement a separate submitter if more variety is need in the future
+        SWindow* Window = dynamic_cast<SWindow*>(Widget);
+        if (!Window)
+            continue;
+
+        WidgetRenderer.DrawWidget(Context, Window->PosX, Window->PosY, Window->Width,
+                                  Window->Height, FColor(0.25f, 0.25f, 0.25f, 1.f));
     }
 }
 

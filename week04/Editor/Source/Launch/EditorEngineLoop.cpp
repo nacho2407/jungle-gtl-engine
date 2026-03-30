@@ -18,6 +18,8 @@
 #include "Asset/StaticMeshLoader.h"
 #include "Asset/MaterialLoader.h" 
 
+#include "Renderer/WidgetRenderData.h"
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND HWnd, UINT Message,
                                                              WPARAM WParam, LPARAM LParam);
 
@@ -198,13 +200,28 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
                             static_cast<float>(CachedWindowHeight));
 
     InitializeForTime();
-    Editor->GetViewportClient().OnPickRequested = [this](int32 X, int32 Y) -> FPickResult
+    if (FWindowOverlayManager* WOM = Editor->GetWindowOverlayManager())
     {
-        FPickResult Result;
-        // EngineLoop는 Renderer와 Editor 모두에 접근 가능하므로 픽킹을 직접 수행해서 반환
-        Renderer->Pick(Editor->GetEditorRenderData(), X, Y, Result);
-        return Result;
-    };
+        // Each panel owns its EditorRenderData. At pick time, find which panel
+        // the cursor is in and use that panel's cached render data.
+        WOM->SetPickCallback([this, WOM](int32 X, int32 Y) -> FPickResult
+        {
+            for (FEditorViewportPanel* Panel : WOM->GetViewportPanels())
+            {
+                if (!Panel) continue;
+                if (X >= static_cast<int32>(Panel->PosX) &&
+                    X <  static_cast<int32>(Panel->PosX + Panel->Width) &&
+                    Y >= static_cast<int32>(Panel->PosY) &&
+                    Y <  static_cast<int32>(Panel->PosY + Panel->Height))
+                {
+                    FPickResult Result;
+                    Renderer->Pick(Panel->EditorRenderData, X, Y, Result);
+                    return Result;
+                }
+            }
+            return FPickResult{};
+        });
+    }
     return true;
 }
 
@@ -618,7 +635,23 @@ bool FEditorEngineLoop::RunFrameOnceWithoutResize()
     Editor->Tick(DeltaTime, InputSystem);
 
     Renderer->BeginFrame();
-    Renderer->Render(Editor->GetEditorRenderData(), Editor->GetSceneRenderData());
+    auto* WindowOverlayManager = Editor->GetWindowOverlayManager();
+    FWidgetRenderData WidgetRenderData = {};
+    if (WindowOverlayManager)
+    {
+        for (FEditorViewportPanel* Panel : WindowOverlayManager->GetViewportPanels())
+        {
+            if (!Panel || !Panel->ViewportClient) continue;
+            if (Panel->Width <= 0.f || Panel->Height <= 0.f)
+                continue;
+
+            Panel->PrepareRender();
+            Panel->BuildRenderData();
+            Renderer->Render(Panel->EditorRenderData, Panel->SceneRenderData);
+        }
+        WindowOverlayManager->BuildViewportWIdgetData(WidgetRenderData);
+        Renderer->RenderViewportOverlayPass(WidgetRenderData);
+    }
     Editor->DrawPanel();
     Renderer->EndFrame();
 

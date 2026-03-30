@@ -105,6 +105,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClCompile Include="Source\Input\GizmoInputContext.cpp" />
     <ClCompile Include="Source\Input\NavigationInputContext.cpp" />
     <ClCompile Include="Source\Input\SelectionInputContext.cpp" />
+    <ClCompile Include="Source\Input\ViewportOverlayInputContext.cpp" />
     <ClCompile Include="Source\Launch\EditorEngineLoop.cpp" />
     <ClCompile Include="Source\Launch\Launch.cpp" />
     <ClCompile Include="Source\main.cpp" />
@@ -126,13 +127,14 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClCompile Include="Source\ThirdParty\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="Source\Viewport\EditorViewport.cpp" />
     <ClCompile Include="Source\Viewport\EditorViewportClient.cpp" />
-    <ClCompile Include="Source\Viewport\EditorViewprotPanel.cpp" />
+    <ClCompile Include="Source\Viewport\Window\EditorViewportPanel.cpp" />
     <ClCompile Include="Source\Viewport\Gizmo\ViewportGizmoController.cpp" />
     <ClCompile Include="Source\Viewport\Global\EditorGlobalController.cpp" />
     <ClCompile Include="Source\Viewport\Interaction\ViewportInteractionState.cpp" />
     <ClCompile Include="Source\Viewport\Navigation\ViewportNavigationController.cpp" />
     <ClCompile Include="Source\Viewport\RenderSetting\ViewportRenderSetting.cpp" />
     <ClCompile Include="Source\Viewport\Selection\ViewportSelectionController.cpp" />
+    <ClCompile Include="Source\Viewport\Window\WindowOverlayManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Camera\ViewportCamera.h" />
@@ -151,6 +153,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClInclude Include="Source\Input\GizmoInputContext.h" />
     <ClInclude Include="Source\Input\NavigationInputContext.h" />
     <ClInclude Include="Source\Input\SelectionInputContext.h" />
+    <ClInclude Include="Source\Input\ViewportOverlayInputContext.h" />
     <ClInclude Include="Source\Launch\EditorEngineLoop.h" />
     <ClInclude Include="Source\Launch\Launch.h" />
     <ClInclude Include="Source\Menu\EditorMenuRegistry.h" />
@@ -173,13 +176,14 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClInclude Include="Source\ThirdParty\ImGui\imstb_truetype.h" />
     <ClInclude Include="Source\Viewport\EditorViewport.h" />
     <ClInclude Include="Source\Viewport\EditorViewportClient.h" />
-    <ClInclude Include="Source\Viewport\EditorViewprotPanel.h" />
+    <ClInclude Include="Source\Viewport\Window\EditorViewportPanel.h" />
     <ClInclude Include="Source\Viewport\Gizmo\ViewportGizmoController.h" />
     <ClInclude Include="Source\Viewport\Global\EditorGlobalController.h" />
     <ClInclude Include="Source\Viewport\Interaction\ViewportInteractionState.h" />
     <ClInclude Include="Source\Viewport\Navigation\ViewportNavigationController.h" />
     <ClInclude Include="Source\Viewport\RenderSetting\ViewportRenderSetting.h" />
     <ClInclude Include="Source\Viewport\Selection\ViewportSelectionController.h" />
+    <ClInclude Include="Source\Viewport\Window\WindowOverlayManager.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Source\ThirdParty\ImGui\imgui.natstepfilter" />

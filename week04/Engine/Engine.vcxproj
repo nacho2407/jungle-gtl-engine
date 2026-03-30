@@ -11,6 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Core\Runtime\Slate\SWidget.h" />
+    <ClInclude Include="Source\Core\Runtime\Slate\Window\SWindow.h" />
+    <ClInclude Include="Source\Core\Runtime\Slate\Window\SSplitter.h" />
     <ClInclude Include="Resources\Mesh\Cone.h" />
     <ClInclude Include="Resources\Mesh\Cube.h" />
     <ClInclude Include="Resources\Mesh\Cylinder.h" />
@@ -121,6 +124,7 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11RHI.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11TextBatchRenderer.h" />
+    <ClInclude Include="Source\Renderer\D3D11\D3D11WidgetRenderer.h" />
     <ClInclude Include="Source\Renderer\EditorRenderData.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\FontResource.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\MaterialResource.h" />
@@ -150,6 +154,7 @@
     <ClInclude Include="Source\Renderer\Types\ShaderConstants.h" />
     <ClInclude Include="Source\Renderer\Types\VertexTypes.h" />
     <ClInclude Include="Source\Renderer\Types\ViewMode.h" />
+    <ClInclude Include="Source\Renderer\WidgetRenderData.h" />
     <ClInclude Include="Source\SceneIO\SceneAssetPath.h" />
     <ClInclude Include="Source\SceneIO\SceneJson.h" />
     <ClInclude Include="Source\SceneIO\SceneSerializer.h" />
@@ -231,6 +236,7 @@
     <ClCompile Include="Source\Renderer\D3D11\D3D11RHI.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11TextBatchRenderer.cpp" />
+    <ClCompile Include="Source\Renderer\D3D11\D3D11WidgetRenderer.cpp" />
     <ClCompile Include="Source\Renderer\RendererModule.cpp" />
     <ClCompile Include="Source\Renderer\Submitter\AABBSubmitter.cpp" />
     <ClCompile Include="Source\Renderer\Submitter\OverlayMeshSubmitter.cpp" />
@@ -242,6 +248,7 @@
     <ClCompile Include="Source\SceneIO\SceneJson.cpp" />
     <ClCompile Include="Source\SceneIO\SceneSerializer.cpp" />
     <ClCompile Include="Source\SceneIO\SceneTypeRegistry.cpp" />
+    <ClCompile Include="Source\Core\Runtime\Slate\Window\SSplitter.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

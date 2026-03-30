@@ -24,13 +24,13 @@ class FD3D11RHI
     ID3D11Texture2D*        GetDepthStencilBuffer() const { return DepthStencilBuffer.Get(); }
     ID3D11DepthStencilView* GetDepthStencilView() const { return DepthStencilView.Get(); }
 
-    D3D11_VIEWPORT GetViewport() const { return Viewport; }
+    D3D11_VIEWPORT& GetViewport() { return Viewport; }
 
     int32 GetViewportWidth() const { return ViewportWidth; }
     int32 GetViewportHeight() const { return ViewportHeight; }
 
     void SetViewport(int32 InWidth, int32 InHeight);
-    void SetViewport(const D3D11_VIEWPORT& InViewport) const;
+    void SetViewport(D3D11_VIEWPORT& InViewport);
     void SetRenderTargets(uint32 InNumRTVs, ID3D11RenderTargetView* const* InRTVs,
                           ID3D11DepthStencilView* InDepthStencilView) const;
     void ClearRenderTarget(ID3D11RenderTargetView* InRenderTargetView,

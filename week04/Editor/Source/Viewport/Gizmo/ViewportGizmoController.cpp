@@ -66,8 +66,10 @@ bool FViewportGizmoController::OnMouseButtonDown(int32 MouseX, int32 MouseY)
             CurrentDragAxis);
     }
 
+    const int32 LocalMouseX = MouseX - static_cast<int32>(ViewportCamera->GetOriginX());
+    const int32 LocalMouseY = MouseY - static_cast<int32>(ViewportCamera->GetOriginY());
     const Geometry::FRay PickRay = Geometry::FRay::BuildRay(
-        static_cast<int32>(MouseX), static_cast<int32>(MouseY),
+        LocalMouseX, LocalMouseY,
         ViewportCamera->GetViewProjectionMatrix(), static_cast<float>(ViewportCamera->GetWidth()),
         static_cast<float>(ViewportCamera->GetHeight()));
     FVector PivotOrigin = StartTransform.GetLocation();
@@ -222,8 +224,10 @@ void FViewportGizmoController::UpdateDrag(int32 MouseX, int32 MouseY)
         return;
     }
 
+    const int32 LocalMouseX = MouseX - static_cast<int32>(ViewportCamera->GetOriginX());
+    const int32 LocalMouseY = MouseY - static_cast<int32>(ViewportCamera->GetOriginY());
     const Geometry::FRay PickRay = Geometry::FRay::BuildRay(
-        static_cast<int32>(MouseX), static_cast<int32>(MouseY),
+        LocalMouseX, LocalMouseY,
         ViewportCamera->GetViewProjectionMatrix(), static_cast<float>(ViewportCamera->GetWidth()),
         static_cast<float>(ViewportCamera->GetHeight()));
 
@@ -560,10 +564,12 @@ FVector2 FViewportGizmoController::ProjectWorldToScreen(const FVector& WorldPos)
         ClipSpacePos.Y /= ClipSpacePos.W;
     }
 
-    // 3. NDC -> Screen 픽셀 좌표계로 변환
-    float ScreenX = (ClipSpacePos.X + 1.0f) * 0.5f * ViewportCamera->GetWidth();
+    // 3. NDC -> Screen 픽셀 좌표계로 변환 (window-space, panel origin 포함)
+    float ScreenX = (ClipSpacePos.X + 1.0f) * 0.5f * ViewportCamera->GetWidth()
+                    + static_cast<float>(ViewportCamera->GetOriginX());
     // Y축은 NDC에서 위가 +, 화면 픽셀은 아래가 +이므로 뒤집어줍니다.
-    float ScreenY = (1.0f - ClipSpacePos.Y) * 0.5f * ViewportCamera->GetHeight();
+    float ScreenY = (1.0f - ClipSpacePos.Y) * 0.5f * ViewportCamera->GetHeight()
+                    + static_cast<float>(ViewportCamera->GetOriginY());
 
     return FVector2(ScreenX, ScreenY);
 }
