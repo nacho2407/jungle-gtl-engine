@@ -2,10 +2,9 @@
 #include "Misc/ObjViewer/ObjViewerRenderPipeline.h"
 
 #include "Component/CameraComponent.h"
-#include "Engine/Component/StaticMeshComponent.h"
-#include "Component/PrimitiveComponent.h"
 #include "Core/Logging/Stats.h"
 #include "Core/ResourceManager.h"
+#include "Engine/Component/StaticMeshComponent.h"
 #include "Engine/GameFramework/PrimitiveActors.h"
 #include "Engine/GameFramework/World.h"
 #include "Engine/Runtime/WindowsWindow.h"
@@ -35,6 +34,12 @@ void UObjViewerEngine::Init(FWindowsWindow* InWindow)
 	SetActiveWorld(WorldList[0].ContextHandle);
 	GetWorld()->InitWorld();
 
+	// 프리뷰 액터 및 컴포넌트를 생성해 멤버 변수에 저장한다.
+	AActor* PreviewActor = GetWorld()->SpawnActor<AActor>();
+	auto* MeshComp = PreviewActor->AddComponent<UStaticMeshComponent>();
+	PreviewMeshComponent = MeshComp;
+	PreviewActor->SetRootComponent(MeshComp);
+
 	// 뷰포트 및 카메라 설정
 	ViewportClient.SetSettings(&FObjViewerSettings::Get());
 	ViewportClient.Initialize(InWindow);
@@ -51,7 +56,8 @@ void UObjViewerEngine::Init(FWindowsWindow* InWindow)
 
 void UObjViewerEngine::Shutdown()
 {
-	FObjViewerSettings::Get().SaveToFile(FObjViewerSettings::GetDefaultSettingsPath());
+	FString SavePath = FPaths::ToRelativeString(FPaths::ToWide(FObjViewerSettings::GetDefaultSettingsPath()));
+	FObjViewerSettings::Get().SaveToFile(SavePath);
 
 	// 엔진 공통 해제 (Renderer, D3D 등)
 	UEngine::Shutdown();
@@ -63,14 +69,6 @@ void UObjViewerEngine::BeginPlay()
 	UWorld* World = GetWorld();
 	if (!World)
 		return;
-
-	// 모델 스폰 및 메쉬 세팅
-    AActor* PreviewActor = World->SpawnActor<AActor>();
-    PreviewActor->SetActorLocation(FVector(0, 0, 0));
-
-    auto* MeshComp = PreviewActor->AddComponent<UStaticMeshComponent>();
-    // MeshComp->SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Buddah.obj")); 
-    PreviewActor->SetRootComponent(MeshComp);
 
     // 카메라 세팅은 ViewportClient에게 온전히 위임
     if (FViewportCamera* MainCamera = ViewportClient.GetCamera())

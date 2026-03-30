@@ -47,6 +47,7 @@ public:
 	void SetNearPlane(float InNear);
 	void SetFarPlane(float InFar);
 	void SetOrthoHeight(float InHeight);
+	void SetLookAt(const FVector &Target);
 
 	float GetFOV() const { return FOV; }
 	float GetNearPlane() const { return NearPlane; }

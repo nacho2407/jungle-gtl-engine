@@ -4,7 +4,8 @@
 #include "Misc/ObjViewer/Viewport/ObjViewerViewportClient.h"
 #include "Misc/ObjViewer/UI/ObjViewerMainPanel.h"
 #include "Misc/ObjViewer/Settings/ObjViewerSettings.h"
-#include "Editor/Selection/SelectionManager.h"
+#include "Core/ResourceManager.h"
+#include "Component/StaticMeshComponent.h"
 
 class UObjViewerEngine : public UEngine
 {
@@ -21,6 +22,7 @@ public:
 
 	void RenderUI(float DeltaTime);
 	void OnWindowResized(uint32 Width, uint32 Height) override;
+	UStaticMeshComponent* GetPreviewMeshComponent() const { return PreviewMeshComponent; }
 
 	FObjViewerSettings& GetSettings() { return FObjViewerSettings::Get(); }
 	const FObjViewerSettings& GetSettings() const { return FObjViewerSettings::Get(); }
@@ -28,4 +30,5 @@ public:
 private:
 	FObjViewerMainPanel MainPanel;
 	FObjViewerViewportClient ViewportClient;
+	UStaticMeshComponent* PreviewMeshComponent = nullptr;
 };
