@@ -6,6 +6,7 @@
 #include "Math/Utils.h"
 #include "UI/EditorConsoleWidget.h"
 #include "Core/PlatformTime.h"
+#include "Core/ResourceManager.h"
 
 #include <algorithm>
 #include <cfloat>
@@ -41,6 +42,9 @@ UStaticMesh * FObjLoader::Load(const FString & Path, const FStaticMeshLoadOption
 		UE_LOG("[ObjLoader] Failed to build static mesh: %s", Path.c_str());
 		return nullptr;
 	}
+	
+	/* Bind Material 실패하지 않습니다! 여러분들 처럼요*/
+	BindMaterials();
 
 	/* Local Bounds(AABB) */
 	StaticMeshAsset.LocalBounds.Reset();
@@ -137,7 +141,7 @@ bool FObjLoader::ParseObj(const FString& Path)
 
 bool FObjLoader::BuildStaticMesh()
 {
-	//	Mesh를 생성할 Raw Data 존재 확인
+	// Mesh를 생성할 Raw Data 존재 확인
 	if (RawData.Positions.empty() || RawData.Faces.empty())
 	{
 		return false;
@@ -149,13 +153,13 @@ bool FObjLoader::BuildStaticMesh()
 	StaticMeshAsset.Sections.clear();
 	StaticMeshAsset.MaterialSlots.clear();
 
-	//	usemtl 이름 기준으로 slot 목록 생성 (slot per usemtl)
+	// usemtl 이름 기준으로 slot 목록 생성 
 	for (const FObjRawFace& Face : RawData.Faces)
 	{
 		GetOrAddMaterialSlot(Face.MaterialName);
 	}
 
-	//	IndexBuffer를 위한 Map
+	// IndexBuffer를 위한 Map
 	TMap<FObjVertexKey, uint32> VertexMap;
 
 	TArray<TArray<uint32>> SlotIndices;
@@ -219,16 +223,14 @@ bool FObjLoader::BindMaterials()
 
 	std::filesystem::path MtlPath =
 		std::filesystem::path(SourcePath).parent_path() / RawData.ReferencedMtlPath;
+	MtlPath = MtlPath.generic_wstring();
 
-	TMap<FString, FMaterial> Materials;
-	if (!FObjMtlLoader::Load(MtlPath.string(), Materials))
+	if (!FResourceManager::Get().LoadMaterial(MtlPath.string()))
 		return true;
 
 	for (FStaticMeshMaterialSlot& Slot : StaticMeshAsset.MaterialSlots)
 	{
-		auto Iter = Materials.find(Slot.SlotName);
-		if (Iter != Materials.end())
-			Slot.MaterialData = Iter->second;
+		Slot.MaterialData = FResourceManager::Get().FindMaterial(Slot.SlotName);
 	}
 
 	return true;
@@ -284,7 +286,7 @@ bool FObjLoader::ParseTexCoordLine(const FString& Line)
 
 	FVector2 TexCoord;
 	TexCoord.X = std::stof(Tokens[1]);
-	TexCoord.Y = std::stof(Tokens[2]);
+	TexCoord.Y = 1.0f - std::stof(Tokens[2]); 
 
 	RawData.UVs.push_back(TexCoord);
 	return true;

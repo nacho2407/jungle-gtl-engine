@@ -17,16 +17,23 @@ public:
     FVector SpecularColor  = { 0.0f, 0.0f, 0.0f }; // Ks
     FVector EmissiveColor  = { 0.0f, 0.0f, 0.0f }; // Ke
 
-
     float Shininess  = 0.0f; 
     float Opacity    = 1.0f; 
     int   IllumModel = 2;    
 
+	// Texture 정보
 	// 경로는 파싱 시점에 절대 경로로 정규화됨
-    FString DiffuseTexPath;   // map_Kd
+    FString DiffuseTexPath = { "Asset/Mesh/Default.png" };   // map_Kd
+	bool	bHasDiffuseTexture = { false };
+
     FString AmbientTexPath;   // map_Ka
+	bool	bHasAmbientTexture = { false };
+
     FString SpecularTexPath;  // map_Ks
-    FString BumpTexPath;      // map_bump
+	bool	bHasSpecularTexture = { false };
+
+	FString BumpTexPath;      // map_bump
+	bool	bHasBumpTexture = { false };
 };
 
 /**
