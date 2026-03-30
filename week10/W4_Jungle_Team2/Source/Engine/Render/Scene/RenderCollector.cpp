@@ -203,8 +203,11 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 
 		if (!MeshBuffer) return;
 
-		for (const auto& Section : StaticMesh->GetSections())
+		const TArray<FStaticMeshSection>& Sections = StaticMesh->GetSections();
+		for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
 		{
+			const FStaticMeshSection& Section = Sections[SectionIdx];
+
 			FRenderCommand Cmd = {};
 			Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
 			Cmd.Type = ERenderCommandType::StaticMesh;
@@ -220,7 +223,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 			// 메테리얼 정보가 없을 시 디폴트 메테리얼을 사용합니다.
 			static const FMaterial DefaultMaterial{};
 
-			const FMaterial* MtlData = StaticMeshComp->GetMaterial(Section.MaterialSlotIndex);
+			const FMaterial* MtlData = StaticMeshComp->GetMaterial(SectionIdx);
 			// 메테리얼 정보가 없을 경우
 			if (!MtlData) MtlData = &DefaultMaterial;
 	

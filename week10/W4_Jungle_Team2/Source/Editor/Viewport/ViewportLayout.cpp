@@ -86,11 +86,13 @@ void FViewportLayout::Tick(float DeltaTime)
 			}
 		}
 
-		// 독점 조작하는 뷰포트가 있다면 상태값 유지
+		// 독점 조작하는 뷰포트가 있다면 상태값 유지 + 포커스 인덱스 갱신
 		if (ActiveOpViewport >= 0)
 		{
 			for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
 				GetViewportState(i).bHovered = (i == ActiveOpViewport);
+
+			LastFocusedViewportIndex = ActiveOpViewport;
 		}
 		else
 		{
@@ -103,6 +105,10 @@ void FViewportLayout::Tick(float DeltaTime)
 				{
 					ViewportState.bHovered = true;
 					bFoundHover = true;
+
+					// 좌클릭 시 해당 뷰포트를 마지막 포커스로 등록
+					if (InputSystem::Get().GetKeyDown(VK_LBUTTON))
+						LastFocusedViewportIndex = i;
 				}
 				else
 				{
