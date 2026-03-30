@@ -68,7 +68,12 @@ std::string FPaths::ToUtf8(const std::wstring& WideStr)
 	return Result;
 }
 
-// 절대경로를 입력받아서 RootDir 기준의 상대 경로로 변환한다.
+FString FPaths::ToString(const std::wstring& wstring)
+{
+	return ToUtf8(wstring);
+}
+
+//	절대경로를 입력받아서 RootDir 기준의 상대 경로로 변환한다.
 std::wstring FPaths::ToRelative(const std::wstring& AbsolutePath)
 {
 	if (AbsolutePath.empty()) return L"";
@@ -76,13 +81,13 @@ std::wstring FPaths::ToRelative(const std::wstring& AbsolutePath)
 	std::filesystem::path AbsPath(AbsolutePath);
 	std::filesystem::path Root(RootDir());
 	
-	// RootDir 기준으로 상대 경로를 계산 (예: Asset/Scene/map.json)
+	//	RootDir 기준으로 상대 경로를 계산 (예: Asset/Scene/map.json)
 	std::filesystem::path RelPath = std::filesystem::relative(AbsPath, Root);
 	
 	return RelPath.generic_wstring();
 }
 
-// 상대 경로를 입력받아서 RootDir 기준의 절대 경로로 변환한다.
+//	상대 경로를 입력받아서 RootDir 기준의 절대 경로로 변환한다.
 std::wstring FPaths::ToAbsolute(const std::wstring& RelativePath)
 {
 	if (RelativePath.empty()) return L"";

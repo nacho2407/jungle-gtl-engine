@@ -3,6 +3,8 @@
 #include <string>
 #include <Windows.h>
 
+#include "Containers/String.h"
+
 // 엔진 전역 경로를 관리합니다.
 // 모든 경로는 실행 파일 기준 상대 경로이며, 한글 경로를 위해 wstring 기반입니다.
 class FPaths
@@ -38,4 +40,5 @@ public:
 	// 변환 유틸리티 (한글 경로 지원)
 	static std::wstring ToWide(const std::string& Utf8Str);
 	static std::string ToUtf8(const std::wstring& WideStr);
+	static FString ToString(const std::wstring& wstring);
 };

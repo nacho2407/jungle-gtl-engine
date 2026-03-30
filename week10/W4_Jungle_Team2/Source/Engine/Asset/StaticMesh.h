@@ -31,6 +31,9 @@ public:
 	
 	/* */
 	bool HasValidMeshData() const;
+	
+private:
+	void RebuildLocalBoundsFromMeshData();
 
 private:
 	FStaticMesh* MeshData = nullptr;
