@@ -75,6 +75,7 @@ private:
 
 	TMap<FString, FFontResource>     FontResources;
 	TMap<FString, FParticleResource> ParticleResources;
+	
 	TMap<FString, FMaterialResource> MaterialTextureResources;
 	TMap<FString, FMaterial>         MaterialRegistry;   
 
