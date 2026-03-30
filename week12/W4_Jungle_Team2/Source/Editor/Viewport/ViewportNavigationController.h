@@ -1,5 +1,4 @@
 ﻿#pragma once
-#pragma once
 
 #include "Math/Vector.h"
 #include "Math/Utils.h"
@@ -54,6 +53,9 @@ public:
 	void EndPanning();
 	void AddPanInput(float DeltaX, float DeltaY);
 	bool IsPanning() const { return bPanning; }
+
+	// 카메라 리셋 후 lerp 타겟 강제 초기화
+	void ResetTargetLocation() { bHasTargetLocation = false; }
 
 	float GetPanSpeed() const { return PanSpeed; }
 	void SetPanSpeed(float InPanSpeed) { PanSpeed = MathUtil::Clamp<float>(InPanSpeed, 0.01f, 10.0f); }
