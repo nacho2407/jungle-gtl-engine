@@ -1,6 +1,7 @@
-#include "Texture/Texture2D.h"
+﻿#include "Texture/Texture2D.h"
 #include "Object/ObjectFactory.h"
 #include "UI/EditorConsoleWidget.h"
+#include "Platform/Paths.h"
 #include "WICTextureLoader.h"
 
 #include <d3d11.h>
@@ -51,8 +52,9 @@ UTexture2D* UTexture2D::LoadFromFile(const FString& FilePath, ID3D11Device* Devi
 
 bool UTexture2D::LoadInternal(const FString& FilePath, ID3D11Device* Device)
 {
-	std::filesystem::path TexPath(FilePath);
-	std::wstring WidePath = TexPath.wstring();
+	//std::filesystem::path TexPath(FilePath);
+	//std::wstring WidePath = TexPath.wstring();
+	std::wstring WidePath = FPaths::ToWide(FilePath);
 
 	ID3D11Resource* Resource = nullptr;
 	HRESULT hr = DirectX::CreateWICTextureFromFile(
