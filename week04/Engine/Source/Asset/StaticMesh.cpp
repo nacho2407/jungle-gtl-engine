@@ -10,42 +10,55 @@ namespace Engine::Asset
         RenderResource = std::move(InResource);
     }
 
-    void UStaticMesh::InitializeMaterialSlots(uint32 NumSlots)
-    {
-        Materials.resize(NumSlots, nullptr);
-    }
+    void UStaticMesh::InitializeMaterialSlots(uint32 NumSlots) { MaterialSlots.resize(NumSlots); }
 
-    UMaterialInterface* UStaticMesh::GetMaterial(uint32 Index) const
+    const FMaterialSlot* UStaticMesh::GetMaterialSlot(uint32 Index) const
     {
-        // 배열 범위를 벗어나지 않도록 안전 검사
-        if (Index < Materials.size())
+        if (Index < MaterialSlots.size())
         {
-            return Materials[Index];
+            return &MaterialSlots[Index];
         }
         return nullptr;
     }
 
-    void UStaticMesh::SetMaterial(uint32 Index, UMaterialInterface* InMaterial)
+    FMaterialSlot* UStaticMesh::GetMaterialSlot(uint32 Index)
     {
-        if (Index < Materials.size())
+        if (Index < MaterialSlots.size())
         {
-            Materials[Index] = InMaterial;
+            return &MaterialSlots[Index];
         }
+        return nullptr;
     }
 
-    /*void UStaticMesh::AddMaterialDependency(UMaterialAsset* InMaterial)
+    UMaterialInterface* UStaticMesh::GetMaterial(uint32 Index) const
     {
-        if (InMaterial && !HasMaterialDependency(InMaterial))
+        if (Index < MaterialSlots.size())
         {
-            ReferencedMaterials.push_back(InMaterial);
+            return MaterialSlots[Index].Material;
         }
+        return nullptr;
     }
 
-    bool UStaticMesh::HasMaterialDependency(const UMaterialAsset* InMaterial) const
+    const FString& UStaticMesh::GetSubMaterialName(uint32 Index) const
     {
-        auto It = std::find(ReferencedMaterials.begin(), ReferencedMaterials.end(), InMaterial);
-        return It != ReferencedMaterials.end();
-    }*/
+        static const FString EmptyString = "";
+
+        if (Index < MaterialSlots.size())
+        {
+            return MaterialSlots[Index].SubMaterialName;
+        }
+        return EmptyString;
+    }
+
+    void UStaticMesh::SetMaterialSlot(uint32 Index, UMaterialInterface* InMaterial,
+                                      const FString& InSubMaterialName)
+    {
+        if (Index < MaterialSlots.size())
+        {
+            MaterialSlots[Index].Material = InMaterial;
+            MaterialSlots[Index].SubMaterialName = InSubMaterialName;
+        }
+    }
 
     REGISTER_CLASS(Engine::Asset, UStaticMesh)
 } // namespace Engine::Asset

@@ -20,17 +20,14 @@ namespace Engine::Component
         FComponentPropertyOptions StaticMeshPathOptions;
         StaticMeshPathOptions.ExpectedAssetPathKind = EComponentAssetPathKind::StaticMeshFile;
 
-        Builder.AddAssetPath(
-            "StaticMesh_path", L"Static Mesh", 
-            [this]() { return GetMeshPath(); },
-            [this](const FString& InPath) { SetMeshPath(InPath); }, 
-            StaticMeshPathOptions);
+        Builder.AddAssetPath("StaticMesh_path", L"Static Mesh", [this]() { return GetMeshPath(); },
+                             [this](const FString& InPath) { SetMeshPath(InPath); },
+                             StaticMeshPathOptions);
     }
 
     void UStaticMeshComponent::Serialize(bool bIsLoading, void* JsonHandle)
     {
         UMeshComponent::Serialize(bIsLoading, JsonHandle);
-        // JSON 직렬화 로직 추가 지점
     }
 
     void UStaticMeshComponent::ResolveAssetReferences(UAssetManager* InAssetManager)
@@ -58,7 +55,7 @@ namespace Engine::Component
         if (NewMesh == nullptr)
         {
             UE_LOG(Asset, ELogVerbosity::Warning,
-                   "Failed to load sprite atlas asset for SubUVComponent: %s",
+                   "Failed to load Static Mesh asset for StaticMeshComponent: %s",
                    StaticMeshPath.c_str());
             return;
         }
@@ -93,8 +90,6 @@ namespace Engine::Component
     {
         StaticMeshPath = InPath;
         StaticMesh = nullptr;
-        // 엔진 시스템이 ResolveAssetReferences를 호출할 때까지 대기하거나, 
-        // 에디터에서 즉시 갱신이 필요한 경우 직접 호출될 수 있습니다.
     }
 
     bool UStaticMeshComponent::GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const
@@ -112,24 +107,20 @@ namespace Engine::Component
         return Geometry::FAABB(FVector::ZeroVector, FVector::ZeroVector);
     }
 
-
     Asset::UMaterialInterface* UStaticMeshComponent::GetMaterial(uint32 Index) const
     {
-        // 1. 컴포넌트 수준에서 오버라이드 한 것이 있는지 먼저 확인
         Asset::UMaterialInterface* OverrideMat = UMeshComponent::GetMaterial(Index);
         if (OverrideMat)
         {
             return OverrideMat;
         }
 
-        // 2. 오버라이드 된 게 없으면 원본 스태틱 메시 에셋에서 가져옴
         if (StaticMesh)
         {
-            // (StaticMesh 클래스 내부에 Index를 받아 UMaterialAsset을 반환하는 함수가 있다고 가정)
-            // return StaticMesh->GetDefaultMaterial(Index);
+            return StaticMesh->GetMaterial(Index);
         }
 
-        return nullptr; // 아무것도 없으면 nullptr
+        return nullptr;
     }
 
     REGISTER_CLASS(Engine::Component, UStaticMeshComponent)

@@ -72,11 +72,17 @@ enum class ETextLayoutMode : uint8
     FitToBox = 1 // transform scale을 박스 크기로 해석
 };
 
+
+struct FStaticMeshMaterialBinding
+{
+    Engine::Asset::UMaterialInterface* Material = nullptr;
+    FString                            SubMaterialName;
+};
 struct FStaticMeshRenderItem
 {
     FMatrix World = FMatrix::Identity;
     const FStaticMeshResource* RenderResource = nullptr;
-    TArray<Engine::Asset::UMaterialInterface*> Materials;
+    TArray<FStaticMeshMaterialBinding>         MaterialBindings;
     Geometry::FAABB                            WorldAABB;
     FRenderItemState                           State;
 };

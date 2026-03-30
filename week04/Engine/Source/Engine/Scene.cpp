@@ -212,9 +212,15 @@ void FScene::BuildRenderData(FSceneRenderData& OutRenderData, ESceneShowFlags In
                     static_cast<uint32>(MeshItem.RenderResource->SubMeshes.size());
                 for (uint32 i = 0; i < NumSubMeshes; ++i)
                 {
-                    // 컴포넌트의 GetMaterial을 호출하면 Fallback 로직에 의해
-                    // 오버라이드된 재질이거나 원본 기본 재질이 알맞게 튀어나옵니다.
-                    MeshItem.Materials.push_back(StaticMeshComp->GetMaterial(i));
+                    FStaticMeshMaterialBinding Binding = {};
+                    Binding.Material = StaticMeshComp->GetMaterial(i);
+
+                    const Engine::Asset::FMaterialSlot* Slot = StaticMeshAsset->GetMaterialSlot(i);
+                    if (Slot)
+                    {
+                        Binding.SubMaterialName = Slot->SubMaterialName;
+                    }
+                    MeshItem.MaterialBindings.push_back(Binding);
                 }
 
                 // 4. 상태 및 피킹 데이터

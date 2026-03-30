@@ -4,11 +4,15 @@
 #include "Renderer/RenderAsset/StaticMeshResource.h"
 #include <memory>
 
-
 namespace Engine::Asset
 {
-    //class UMaterialAsset;
     class UMaterialInterface;
+
+    struct FMaterialSlot
+    {
+        UMaterialInterface* Material = nullptr;
+        FString             SubMaterialName;
+    };
 
     class ENGINE_API UStaticMesh : public UStreamableRenderAsset
     {
@@ -24,20 +28,20 @@ namespace Engine::Asset
         FStaticMeshResource*       GetRenderResource() { return RenderResource.get(); }
 
         void InitializeMaterialSlots(uint32 NumSlots);
-        UMaterialInterface* GetMaterial(uint32 Index) const;
-        void                SetMaterial(uint32 Index, UMaterialInterface* InMaterial);
-        const TArray<UMaterialInterface*>& GetMaterials() const { return Materials; }
 
-        /*const TArray<UMaterialAsset*>& GetReferencedMaterials() const
-        {
-            return ReferencedMaterials;
-        }
-        void AddMaterialDependency(UMaterialAsset* InMaterial);
-        bool HasMaterialDependency(const UMaterialAsset* InMaterial) const;*/
+        const FMaterialSlot* GetMaterialSlot(uint32 Index) const;
+        FMaterialSlot*       GetMaterialSlot(uint32 Index);
+
+        UMaterialInterface* GetMaterial(uint32 Index) const;
+        const FString&      GetSubMaterialName(uint32 Index) const;
+
+        void SetMaterialSlot(uint32 Index, UMaterialInterface* InMaterial,
+                             const FString& InSubMaterialName);
+
+        const TArray<FMaterialSlot>& GetMaterialSlots() const { return MaterialSlots; }
 
       private:
         std::shared_ptr<FStaticMeshResource> RenderResource;
-        TArray<UMaterialInterface*>          Materials;
+        TArray<FMaterialSlot>                MaterialSlots;
     };
-}
-
+} // namespace Engine::Asset

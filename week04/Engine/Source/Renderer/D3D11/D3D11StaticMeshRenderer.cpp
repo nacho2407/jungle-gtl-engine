@@ -4,6 +4,7 @@
 #include "Renderer/Types/ShaderConstants.h"
 #include "Renderer/Types/VertexTypes.h" // FMeshVertexPNCT 등
 #include "Asset/MaterialInterface.h"
+#include "Renderer/RenderAsset/MaterialResource.h"
 
 bool FD3D11StaticMeshRenderer::Initialize(FD3D11RHI* InRHI)
 {
@@ -20,6 +21,8 @@ bool FD3D11StaticMeshRenderer::Initialize(FD3D11RHI* InRHI)
     if (!CreateConstantBuffers())
         return false;
     if (!CreateStates())
+        return false;
+    if (!CreateDefaultResources())
         return false;
 
     ResetBatches();
@@ -40,6 +43,10 @@ void FD3D11StaticMeshRenderer::Shutdown()
     InputLayout.Reset();
     VertexShader.Reset();
     PixelShader.Reset();
+
+    LinearSamplerState.Reset();
+    DefaultWhiteSRV.Reset();
+    DefaultWhiteTexture.Reset();
 
     RHI = nullptr;
 }
@@ -111,16 +118,14 @@ void FD3D11StaticMeshRenderer::Flush()
         }
 
         // 1. 상수 버퍼 업데이트 (MVP 행렬)
-        FMeshUnlitConstants Constants = {};
-        Constants.MVP = DrawItem.World * CurrentPassParams.SceneView->GetViewProjectionMatrix();
+        //FMeshUnlitConstants Constants = {};
+        //Constants.MVP = DrawItem.World * CurrentPassParams.SceneView->GetViewProjectionMatrix();
 
-        // BaseColor는 머티리얼 시스템이 확장되면 머티리얼 상수 버퍼로 분리하는 것이 좋습니다.
-        Constants.BaseColor = FColor::White();
 
-        if (!RHI->UpdateConstantBuffer(ConstantBuffer.Get(), &Constants, sizeof(Constants)))
-        {
-            continue;
-        }
+        //if (!RHI->UpdateConstantBuffer(ConstantBuffer.Get(), &Constants, sizeof(Constants)))
+        //{
+        //    continue;
+        //}
 
         // 2. 해당 모델의 VBO / IBO 바인딩
         const UINT    Stride = Resource->VertexStride;
@@ -137,13 +142,46 @@ void FD3D11StaticMeshRenderer::Flush()
         {
             const FSubMesh& Sub = Resource->SubMeshes[i];
 
-            // TODO: 머티리얼 바인딩 로직
-            // if (i < DrawItem.Materials.size() && DrawItem.Materials[i])
-            // {
-            //     DrawItem.Materials[i]->Bind(RHI);
-            // }
+            const FMaterialData* MaterialData = nullptr;
 
+            if (i < DrawItem.MaterialBindings.size())
+            {
+                const FStaticMeshMaterialBinding& Binding = DrawItem.MaterialBindings[i];
+                if (Binding.Material != nullptr)
+                {
+                    MaterialData = Binding.Material->GetMaterialData(Binding.SubMaterialName);
+                }
+            }
+
+            FMeshUnlitConstants Constants = {};
+            Constants.MVP = DrawItem.World * CurrentPassParams.SceneView->GetViewProjectionMatrix();
+
+            if (MaterialData)
+            {
+                Constants.BaseColor =
+                    FColor(MaterialData->DiffuseColor.X, MaterialData->DiffuseColor.Y,
+                           MaterialData->DiffuseColor.Z, MaterialData->Opacity);
+            }
+            else
+            {
+                Constants.BaseColor = FColor::White();
+            }
+
+            if (!RHI->UpdateConstantBuffer(ConstantBuffer.Get(), &Constants, sizeof(Constants)))
+            {
+                continue;
+            }
+            /*if (CurrentPassParams.ViewMode == EViewModeIndex::VMI_Wireframe)
+            {
+                BindDefaultMaterial();
+            }
+            else
+            {
+                BindMaterial(MaterialData);
+            }*/
+            BindMaterial(MaterialData);
             RHI->DrawIndexed(Sub.IndexCount, Sub.StartIndexLocation, 0);
+            BindDefaultMaterial();
         }
     }
 }
@@ -254,4 +292,102 @@ void FD3D11StaticMeshRenderer::BindWireframeRasterizer()
 {
     if (RHI)
         RHI->SetRasterizerState(WireframeRasterizerState.Get());
+}
+
+void FD3D11StaticMeshRenderer::BindMaterial(const FMaterialData* InMaterialData)
+{
+    if (RHI == nullptr)
+    {
+        return;
+    }
+
+    ID3D11ShaderResourceView* DiffuseSRV = DefaultWhiteSRV.Get();
+
+    if (InMaterialData != nullptr && InMaterialData->DiffuseTexture != nullptr)
+    {
+        DiffuseSRV = InMaterialData->DiffuseTexture->GetSRV();
+        if (DiffuseSRV == nullptr)
+        {
+            DiffuseSRV = DefaultWhiteSRV.Get();
+        }
+    }
+
+    RHI->SetPSShaderResource(0, DiffuseSRV);
+
+    ID3D11SamplerState* Sampler = LinearSamplerState.Get();
+    RHI->GetDeviceContext()->PSSetSamplers(0, 1, &Sampler);
+}
+
+void FD3D11StaticMeshRenderer::BindDefaultMaterial()
+{
+    if (RHI == nullptr)
+    {
+        return;
+    }
+
+    ID3D11ShaderResourceView* DiffuseSRV = DefaultWhiteSRV.Get();
+    RHI->SetPSShaderResource(0, DiffuseSRV);
+
+    ID3D11SamplerState* Sampler = LinearSamplerState.Get();
+    RHI->GetDeviceContext()->PSSetSamplers(0, 1, &Sampler);
+}
+
+bool FD3D11StaticMeshRenderer::CreateDefaultResources()
+{
+    if (RHI == nullptr || RHI->GetDevice() == nullptr)
+    {
+        return false;
+    }
+
+    ID3D11Device* Device = RHI->GetDevice();
+
+    // 1x1 RGBA white texture
+    const uint32 WhitePixel = 0xffffffff;
+
+    D3D11_TEXTURE2D_DESC TexDesc = {};
+    TexDesc.Width = 1;
+    TexDesc.Height = 1;
+    TexDesc.MipLevels = 1;
+    TexDesc.ArraySize = 1;
+    TexDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    TexDesc.SampleDesc.Count = 1;
+    TexDesc.Usage = D3D11_USAGE_IMMUTABLE;
+    TexDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+    D3D11_SUBRESOURCE_DATA InitData = {};
+    InitData.pSysMem = &WhitePixel;
+    InitData.SysMemPitch = sizeof(uint32);
+
+    if (FAILED(Device->CreateTexture2D(&TexDesc, &InitData, DefaultWhiteTexture.GetAddressOf())))
+    {
+        return false;
+    }
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
+    SRVDesc.Format = TexDesc.Format;
+    SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    SRVDesc.Texture2D.MipLevels = 1;
+
+    if (FAILED(Device->CreateShaderResourceView(DefaultWhiteTexture.Get(), &SRVDesc,
+                                                DefaultWhiteSRV.GetAddressOf())))
+    {
+        return false;
+    }
+
+    D3D11_SAMPLER_DESC SamplerDesc = {};
+    SamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    SamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    SamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    SamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    SamplerDesc.MinLOD = 0.0f;
+    SamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+    SamplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    SamplerDesc.MaxAnisotropy = 1;
+
+    if (FAILED(Device->CreateSamplerState(&SamplerDesc, LinearSamplerState.GetAddressOf())))
+    {
+        return false;
+    }
+
+    return true;
 }

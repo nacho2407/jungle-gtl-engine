@@ -12,6 +12,7 @@ class FSceneView;
 
 // MeshBatchRenderer와 동일한 패스 파라미터를 사용합니다.
 struct FMeshPassParams;
+struct FMaterialData;
 
 class FD3D11StaticMeshRenderer
 {
@@ -34,11 +35,16 @@ class FD3D11StaticMeshRenderer
     bool CreateConstantBuffers();
     bool CreateStates();
 
+    bool CreateDefaultResources();
+
     void ResetBatches();
 
     void BindPipeline();
     void BindSolidRasterizer();
     void BindWireframeRasterizer();
+
+    void BindMaterial(const FMaterialData* InMaterialData);
+    void BindDefaultMaterial();
 
   private:
     FD3D11RHI*           RHI = nullptr;
@@ -55,4 +61,8 @@ class FD3D11StaticMeshRenderer
     TComPtr<ID3D11RasterizerState>   WireframeRasterizerState;
     TComPtr<ID3D11DepthStencilState> DepthStencilState;
     TComPtr<ID3D11DepthStencilState> DepthDisabledState;
+
+    TComPtr<ID3D11SamplerState>       LinearSamplerState;
+    TComPtr<ID3D11Texture2D>          DefaultWhiteTexture;
+    TComPtr<ID3D11ShaderResourceView> DefaultWhiteSRV;
 };
