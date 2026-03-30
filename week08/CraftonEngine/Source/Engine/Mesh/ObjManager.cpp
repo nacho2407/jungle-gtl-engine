@@ -94,18 +94,3 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 
 	return StaticMesh;
 }
-
-UStaticMesh* FObjManager::LoadBinStaticMesh(const FString& BinPath, ID3D11Device* InDevice)
-{
-	auto It = StaticMeshCache.find(BinPath);
-	if (It != StaticMeshCache.end())
-	{
-		return It->second;
-	}
-
-	UStaticMesh* StaticMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
-	StaticMesh->Build(BinPath, InDevice);
-
-	StaticMeshCache[BinPath] = StaticMesh;
-	return StaticMesh;
-}
