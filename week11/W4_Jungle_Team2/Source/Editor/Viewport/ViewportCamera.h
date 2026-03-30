@@ -29,6 +29,11 @@ public:
 	FVector GetRightVector() const;
 	FVector GetUpVector() const;
 
+	// 직교 뷰의 Custom LookDir 를 반영한 실제 화면 오른쪽/위 벡터
+	// Pan / 기타 입력에서 올바른 세계 축을 구하기 위해 사용합니다.
+	FVector GetEffectiveRight() const;
+	FVector GetEffectiveUp() const;
+
 	FMatrix GetViewMatrix() const;
 	FMatrix GetProjectionMatrix() const;
 	FMatrix GetViewProjectionMatrix() const;
@@ -55,6 +60,17 @@ public:
 	uint32 GetHeight() const { return Height; }
 	float GetAspectRatio() const { return AspectRatio; }
 
+	/*
+	 * 직교 뷰 카메라 방향 직접 지정.
+	 * LookAt 계산 시 FQuat::GetForwardVector() 대신 InLookDir 를 사용하고,
+	 * View Up 벡터도 InViewUp 으로 고정합니다.
+	 * Top 뷰처럼 Forward 와 기본 Up (0,0,1) 이 평행한 경우 필수.
+	 */
+	void SetCustomLookDir(const FVector& InLookDir, const FVector& InViewUp);
+	void ClearCustomLookDir();
+
+	const FVector& GetViewUp() const { return ViewUp; }
+
 private:
 	void MarkViewDirty() { bIsViewDirty = true; }
 	void MarkProjectionDirty() { bIsProjectionDirty = true; }
@@ -62,6 +78,11 @@ private:
 private:
 	FVector Location = FVector::ZeroVector;
 	FQuat Rotation = FQuat::Identity;
+
+	// 직교 뷰 방향 고정용 (SetCustomLookDir 로 설정)
+	FVector ViewUp = FVector(0.f, 0.f, 1.f);
+	bool bHasCustomLookDir = false;
+	FVector CustomLookDir = FVector(1.f, 0.f, 0.f);
 
 	EViewportProjectionType ProjectionType = EViewportProjectionType::Perspective;
 
