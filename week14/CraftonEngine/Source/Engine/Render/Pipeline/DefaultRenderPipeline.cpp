@@ -29,7 +29,7 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 			Camera->GetForwardVector(), Camera->GetRightVector(), Camera->GetUpVector());
 		Bus.SetRenderSettings(ViewMode, ShowFlags);
 
-		Collector.CollectWorld(World, ShowFlags, ViewMode, Bus);
+		Collector.CollectWorld(World, {}, Bus);
 	}
 
 	Renderer.PrepareBatchers(Bus);
