@@ -61,6 +61,9 @@ public:
 	UStaticMesh* LoadStaticMesh(const FString& Path);
 	UStaticMesh* FindStaticMesh(const FString& Path) const;
 	TArray<FString> GetStaticMeshPaths() const;
+	
+	// --- Memory ---
+	size_t GetMaterialMemorySize() const;
 
 private:
 	FResourceManager() = default;
