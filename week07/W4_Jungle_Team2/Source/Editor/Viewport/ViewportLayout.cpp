@@ -7,6 +7,7 @@
 #include "Slate/SSplitterV.h"
 #include "Slate/SlateApplication.h"
 #include "Core/InputSystem.h"
+#include <imgui.h>
 
 //  뷰포트 타입 테이블  [인덱스 → EEditorViewportType]
 static constexpr EEditorViewportType kViewportTypes[FViewportLayout::MaxViewports] =
@@ -56,7 +57,7 @@ void FViewportLayout::Shutdown()
 	DestroyViewportLayout();
 }
 
-void FViewportLayout::Tick(float DeltaTime)
+void FViewportLayout::UpdateHoverStates()
 {
 	// 1. PumpMessages 에서 처리된 WM_MOUSEMOVE 드래그 결과를 즉시 뷰포트 Rect 에 반영
 	//    이렇게 해야 아래 bHovered 계산이 현재 프레임 Rect 를 사용할 수 있습니다.
@@ -108,7 +109,13 @@ void FViewportLayout::Tick(float DeltaTime)
 
 					// 좌클릭 시 해당 뷰포트를 마지막 포커스로 등록
 					if (InputSystem::Get().GetKeyDown(VK_LBUTTON))
+					{
+						if (ImGui::GetIO().WantCaptureMouse)
+						{
+							return;
+						}
 						LastFocusedViewportIndex = i;
+					}
 				}
 				else
 				{
@@ -117,8 +124,11 @@ void FViewportLayout::Tick(float DeltaTime)
 			}
 		}
 	}
+}
 
-	// 3. bHovered 가 설정된 뷰포트만 입력을 처리합니다.
+void FViewportLayout::Tick(float DeltaTime)
+{
+	// bHovered 가 설정된 뷰포트만 입력을 처리합니다.
 	for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
 	{
 		GetViewportClient(i).Tick(DeltaTime);

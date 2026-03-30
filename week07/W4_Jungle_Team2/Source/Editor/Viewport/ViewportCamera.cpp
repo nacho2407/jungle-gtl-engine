@@ -35,6 +35,15 @@ FVector FViewportCamera::GetUpVector() const
 	return Rotation.GetUpVector();
 }
 
+FVector FViewportCamera::GetEffectiveForward() const
+{
+	if (bHasCustomLookDir)
+	{
+		return CustomLookDir;
+	}
+	return GetForwardVector();
+}
+
 FVector FViewportCamera::GetEffectiveRight() const
 {
 	if (bHasCustomLookDir)
@@ -128,7 +137,7 @@ FRay FViewportCamera::DeprojectScreenToWorld(float ScreenX, float ScreenY, float
 
 	const FVector NdcNear(NdcX, NdcY, 0.0f);
 	const FVector NdcFar(NdcX, NdcY, 1.0f);
-
+	
 	const FMatrix InverseViewProjection = GetViewProjectionMatrix().GetInverse();
 	const FVector WorldNear = InverseViewProjection.TransformPosition(NdcNear);
 	const FVector WorldFar = InverseViewProjection.TransformPosition(NdcFar);

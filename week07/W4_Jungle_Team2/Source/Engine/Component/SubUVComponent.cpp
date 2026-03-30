@@ -1,6 +1,8 @@
 ﻿#include "SubUVComponent.h"
 
+#include <cmath>
 #include <cstring>
+#include "Editor/Viewport/ViewportCamera.h"
 #include "Core/ResourceManager.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -43,7 +45,7 @@ void USubUVComponent::UpdateWorldAABB() const
 {
 	WorldAABB.Reset();
 
-	FVector LExt = { 0.01f, Width * 0.5f, Height * 0.5f };
+	/*FVector LExt = { 0.01f, Width * 0.5f, Height * 0.5f };
 
 	float NewEx = std::abs(CachedWorldMatrix.M[0][0]) * LExt.X +
 		std::abs(CachedWorldMatrix.M[1][0]) * LExt.Y +
@@ -55,11 +57,19 @@ void USubUVComponent::UpdateWorldAABB() const
 
 	float NewEz = std::abs(CachedWorldMatrix.M[0][2]) * LExt.X +
 		std::abs(CachedWorldMatrix.M[1][2]) * LExt.Y +
-		std::abs(CachedWorldMatrix.M[2][2]) * LExt.Z;
+		std::abs(CachedWorldMatrix.M[2][2]) * LExt.Z;*/
+
+	const FVector WorldScale = GetWorldScale();
+	const float HalfW = Width * WorldScale.Y * 0.5f;
+	const float HalfH = Height * WorldScale.Z * 0.5f;
+	const float Radius = std::sqrt((HalfW * HalfW) + (HalfH * HalfH));
 
 	FVector WorldCenter = GetWorldLocation();
-	const FVector Min = WorldCenter - FVector(NewEx, NewEy, NewEz);
-	const FVector Max = WorldCenter + FVector(NewEx, NewEy, NewEz);
+	/*const FVector Min = WorldCenter - FVector(NewEx, NewEy, NewEz);
+	const FVector Max = WorldCenter + FVector(NewEx, NewEy, NewEz);*/
+	const FVector Extent(Radius, Radius, Radius);
+	const FVector Min = WorldCenter - Extent;
+	const FVector Max = WorldCenter + Extent;
 
 	WorldAABB.Expand(Min);
 	WorldAABB.Expand(Max);
@@ -67,7 +77,19 @@ void USubUVComponent::UpdateWorldAABB() const
 
 bool USubUVComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 {
-	const FMatrix InvWorld = GetWorldMatrix().GetInverse();
+	FMatrix BillboardWorldMatrix = GetWorldMatrix();
+	const FViewportCamera* ActiveCamera = nullptr;
+	if (TryGetActiveCamera(ActiveCamera))
+	{
+		BillboardWorldMatrix = MakeBillboardWorldMatrix(
+			GetWorldLocation(),
+			GetWorldScale(),
+			ActiveCamera->GetEffectiveForward(),
+			ActiveCamera->GetEffectiveRight(),
+			ActiveCamera->GetEffectiveUp());
+	}
+
+	const FMatrix InvWorld = BillboardWorldMatrix.GetInverse();
 
 	FRay LocalRay;
 	LocalRay.Origin = InvWorld.TransformPosition(Ray.Origin);
@@ -94,13 +116,13 @@ bool USubUVComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 		return false;
 	}
 
-	const FVector HitWorld = GetWorldMatrix().TransformPosition(HitLocal);
+	const FVector HitWorld = BillboardWorldMatrix.TransformPosition(HitLocal);
 
 	OutHitResult.bHit = true;
 	OutHitResult.HitComponent = this;
 	OutHitResult.Distance = FVector::Distance(Ray.Origin, HitWorld);
 	OutHitResult.Location = HitWorld;
-	OutHitResult.Normal = GetForwardVector();
+	OutHitResult.Normal = BillboardWorldMatrix.GetForwardVector();
 	OutHitResult.FaceIndex = 0;
 	return true;
 }

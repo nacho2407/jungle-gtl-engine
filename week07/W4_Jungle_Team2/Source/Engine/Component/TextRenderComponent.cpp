@@ -1,6 +1,8 @@
 ﻿#include "TextRenderComponent.h"
 
+#include <cmath>
 #include <cstring>
+#include "Editor/Viewport/ViewportCamera.h"
 #include "GameFramework/AActor.h"
 #include "Core/ResourceManager.h"
 #include "Object/ObjectFactory.h"
@@ -22,19 +24,11 @@ void UTextRenderComponent::UpdateWorldAABB() const
 	float TotalHeight = 0.5f;
 
 	FVector WorldScale = GetWorldScale();
-	float ScaledWidth = TotalWidth * WorldScale.Y;
-	float ScaledHeight = TotalHeight * WorldScale.Z;
-
-	FVector WorldRight = FVector(CachedWorldMatrix.M[1][0], CachedWorldMatrix.M[1][1], CachedWorldMatrix.M[1][2]).Normalized();
-	FVector WorldUp = FVector(CachedWorldMatrix.M[2][0], CachedWorldMatrix.M[2][1], CachedWorldMatrix.M[2][2]).Normalized();
-
-	float Ex = std::abs(WorldRight.X) * (ScaledWidth * 0.5f) + std::abs(WorldUp.X) * (ScaledHeight * 0.5f);
-	float Ey = std::abs(WorldRight.Y) * (ScaledWidth * 0.5f) + std::abs(WorldUp.Y) * (ScaledHeight * 0.5f);
-	float Ez = std::abs(WorldRight.Z) * (ScaledWidth * 0.5f) + std::abs(WorldUp.Z) * (ScaledHeight * 0.5f);
-	FVector Extent(Ex, Ey, Ez);
-
-	FVector WorldCenter = GetWorldLocation();
-	WorldCenter -= WorldRight * (ScaledWidth * 0.5f); 
+	const float HalfWidth = TotalWidth * WorldScale.Y * 0.5f;
+	const float HalfHeight = TotalHeight * WorldScale.Z * 0.5f;
+	const float Radius = std::sqrt((HalfWidth * HalfWidth) + (HalfHeight * HalfHeight));
+	const FVector Extent(Radius, Radius, Radius);
+	const FVector WorldCenter = GetWorldLocation();
 
 	WorldAABB.Expand(WorldCenter - Extent);
 	WorldAABB.Expand(WorldCenter + Extent);
@@ -42,7 +36,19 @@ void UTextRenderComponent::UpdateWorldAABB() const
 
 bool UTextRenderComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 {
-	FMatrix OutlineWorldMatrix = CalculateOutlineMatrix();
+	FMatrix BillboardWorldMatrix = GetWorldMatrix();
+	const FViewportCamera* ActiveCamera = nullptr;
+	if (TryGetActiveCamera(ActiveCamera))
+	{
+		BillboardWorldMatrix = MakeBillboardWorldMatrix(
+			GetWorldLocation(),
+			GetWorldScale(),
+			ActiveCamera->GetEffectiveForward(),
+			ActiveCamera->GetEffectiveRight(),
+			ActiveCamera->GetEffectiveUp());
+	}
+
+	FMatrix OutlineWorldMatrix = CalculateOutlineMatrix(BillboardWorldMatrix);
 	FMatrix InvWorldMatrix = OutlineWorldMatrix.GetInverse();
 
 	FRay LocalRay;
@@ -66,7 +72,7 @@ bool UTextRenderComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult
 		OutHitResult.HitComponent = this;
 		OutHitResult.Distance = (WorldHitPos - Ray.Origin).Size();
 		OutHitResult.Location = WorldHitPos;
-		OutHitResult.Normal = GetForwardVector();
+		OutHitResult.Normal = OutlineWorldMatrix.GetForwardVector();
 		OutHitResult.FaceIndex = 0;
 		return true;
 	}
@@ -125,6 +131,11 @@ void UTextRenderComponent::PostEditProperty(const char* PropertyName)
 
 FMatrix UTextRenderComponent::CalculateOutlineMatrix() const
 {
+	return CalculateOutlineMatrix(GetWorldMatrix());
+}
+
+FMatrix UTextRenderComponent::CalculateOutlineMatrix(const FMatrix& BillboardWorldMatrix) const
+{
 	int32 Len = GetUTF8Length(Text);
 
 	if (Len <= 0) return FMatrix::Identity;
@@ -137,7 +148,7 @@ FMatrix UTextRenderComponent::CalculateOutlineMatrix() const
 	FMatrix ScaleMatrix = FMatrix::MakeScaleMatrix(FVector(1.0f, TotalLocalWidth, CharHeight));
 	FMatrix TransMatrix = FMatrix::MakeTranslationMatrix(FVector(0.0f, CenterY, CenterZ));
 
-	return (ScaleMatrix * TransMatrix) * CachedWorldMatrix;
+	return (ScaleMatrix * TransMatrix) * BillboardWorldMatrix;
 }
 
 int32 UTextRenderComponent::GetUTF8Length(const FString& str) const{
