@@ -41,6 +41,15 @@ static const char* GetViewModeName(EViewMode Mode)
 	}
 }
 
+void FEditorViewportOverlayWidget::Render(float DeltaTime)
+{
+	RenderViewportSettings(DeltaTime);
+	RenderDebugStats(DeltaTime);
+	RenderSplitterBar();
+	RenderViewportToolbars();
+	RenderSettingOverlay();
+}
+
 // ── 뷰포트별 UE 스타일 View Mode 툴바 ─────────────────────────────
 void FEditorViewportOverlayWidget::RenderViewportToolbars()
 {
@@ -192,110 +201,6 @@ void FEditorViewportOverlayWidget::RenderViewportToolbars()
 	ImGui::PopStyleColor(5);
 }
 
-void FEditorViewportOverlayWidget::Render(float DeltaTime)
-{
-	RenderViewportSettings(DeltaTime);
-	RenderDebugStats(DeltaTime);
-
-	// 1. 스플리터 바 시각화
-	if (EditorEngine)
-	{
-		FViewportLayout& ViewportLayout = EditorEngine->GetViewportLayout();
-
-		// 1개 모드일 때는 바를 그리지 않음
-		if (!ViewportLayout.IsSingleViewportMode())
-		{
-			ImDrawList* DrawList = ImGui::GetBackgroundDrawList();
-			constexpr ImU32 BarColor   = IM_COL32(80,  80,  80,  220);
-			constexpr ImU32 HoverColor = IM_COL32(140, 180, 255, 255);
-
-			const SWidget* Hovered  = FSlateApplication::Get().GetHoveredWidget();
-			const SWidget* Captured = FSlateApplication::Get().GetCapturedWidget();
-
-			SSplitter* Splitters[] = {
-				ViewportLayout.GetRootSplitterV(),
-				ViewportLayout.GetTopSplitterH(),
-				ViewportLayout.GetBotSplitterH()
-			};
-
-			for (SSplitter* S : Splitters)
-			{
-				if (!S) continue;
-				const FRect Bar = S->GetBarRect();
-
-				const SSplitter* Linked = S->GetLinkedSplitter();
-				const bool bHighlight = (S == Hovered || S == Captured)
-					|| (Linked && (Linked == Hovered || Linked == Captured));
-
-				DrawList->AddRectFilled(
-					ImVec2(Bar.X, Bar.Y),
-					ImVec2(Bar.X + Bar.Width, Bar.Y + Bar.Height),
-					bHighlight ? HoverColor : BarColor);
-			}
-		}
-	}
-
-	// 2. 뷰포트별 View Mode 툴바 (UE 스타일)
-	RenderViewportToolbars();
-
-	// 3. Settings 오버레이 패널
-	FEditorSettings& Settings = FEditorSettings::Get();
-
-	ImGuiViewport* Viewport = ImGui::GetMainViewport();
-	const float Padding = 10.0f;
-	ImVec2 WindowPos(Viewport->WorkPos.x + Viewport->WorkSize.x - Padding,
-	                 Viewport->WorkPos.y + Padding);
-
-	ImGui::SetNextWindowPos(WindowPos, ImGuiCond_Always, ImVec2(1.0f, 0.0f));
-	ImGui::SetNextWindowBgAlpha(0.6f);
-
-	constexpr ImGuiWindowFlags kOverlayFlags =
-		ImGuiWindowFlags_NoDecoration    |
-		ImGuiWindowFlags_AlwaysAutoResize|
-		ImGuiWindowFlags_NoSavedSettings |
-		ImGuiWindowFlags_NoFocusOnAppearing |
-		ImGuiWindowFlags_NoNav           |
-		ImGuiWindowFlags_NoMove;
-
-	if (!ImGui::Begin("##ViewportOverlay", nullptr, kOverlayFlags))
-	{
-		ImGui::End();
-		return;
-	}
-
-	if (ImGui::Button(bExpanded ? "Settings <<" : "Settings >>"))
-		bExpanded = !bExpanded;
-
-	if (bExpanded)
-	{
-		ImGui::Separator();
-
-		// Show Flags
-		ImGui::Text("Show");
-		ImGui::Checkbox("Primitives",      &Settings.ShowFlags.bPrimitives);
-		ImGui::Checkbox("BillboardText",   &Settings.ShowFlags.bBillboardText);
-		ImGui::Checkbox("Grid",            &Settings.ShowFlags.bGrid);
-		ImGui::Checkbox("Gizmo",           &Settings.ShowFlags.bGizmo);
-		ImGui::Checkbox("Bounding Volume", &Settings.ShowFlags.bBoundingVolume);
-
-	ImGui::Separator();
-
-		// Grid Settings
-		ImGui::Text("Grid");
-		ImGui::SliderFloat("Spacing",       &Settings.GridSpacing,       0.1f, 10.0f, "%.1f");
-		ImGui::SliderInt("Half Line Count", &Settings.GridHalfLineCount, 10,   500);
-
-	ImGui::Separator();
-
-		// Camera Sensitivity
-		ImGui::Text("Camera");
-		ImGui::SliderFloat("Move Sensitivity",   &Settings.CameraMoveSensitivity,   0.1f, 5.0f, "%.1f");
-		ImGui::SliderFloat("Rotate Sensitivity", &Settings.CameraRotateSensitivity, 0.1f, 5.0f, "%.1f");
-	}
-
-	ImGui::End();
-}
-
 void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
 {
 	FEditorSettings& Settings = FEditorSettings::Get();
@@ -416,6 +321,108 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 			ImGui::Separator();
 			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Total: %.2f KB", TotalKB);
 		}
+	}
+
+	ImGui::End();
+}
+
+void FEditorViewportOverlayWidget::RenderSplitterBar()
+{
+	// 스플리터 바 시각화
+	if (EditorEngine)
+	{
+		FViewportLayout& ViewportLayout = EditorEngine->GetViewportLayout();
+
+		// 1개 모드일 때는 바를 그리지 않음
+		if (!ViewportLayout.IsSingleViewportMode())
+		{
+			ImDrawList* DrawList = ImGui::GetBackgroundDrawList();
+			constexpr ImU32 BarColor = IM_COL32(80, 80, 80, 220);
+			constexpr ImU32 HoverColor = IM_COL32(140, 180, 255, 255);
+
+			const SWidget* Hovered = FSlateApplication::Get().GetHoveredWidget();
+			const SWidget* Captured = FSlateApplication::Get().GetCapturedWidget();
+
+			SSplitter* Splitters[] = {
+				ViewportLayout.GetRootSplitterV(),
+				ViewportLayout.GetTopSplitterH(),
+				ViewportLayout.GetBotSplitterH()
+			};
+
+			for (SSplitter* S : Splitters)
+			{
+				if (!S) continue;
+				const FRect Bar = S->GetBarRect();
+
+				const SSplitter* Linked = S->GetLinkedSplitter();
+				const bool bHighlight = (S == Hovered || S == Captured)
+					|| (Linked && (Linked == Hovered || Linked == Captured));
+
+				DrawList->AddRectFilled(
+					ImVec2(Bar.X, Bar.Y),
+					ImVec2(Bar.X + Bar.Width, Bar.Y + Bar.Height),
+					bHighlight ? HoverColor : BarColor);
+			}
+		}
+	}
+}
+
+void FEditorViewportOverlayWidget::RenderSettingOverlay()
+{
+
+	// 3. Settings 오버레이 패널
+	FEditorSettings& Settings = FEditorSettings::Get();
+
+	ImGuiViewport* Viewport = ImGui::GetMainViewport();
+	const float Padding = 10.0f;
+	ImVec2 WindowPos(Viewport->WorkPos.x + Viewport->WorkSize.x - Padding,
+		Viewport->WorkPos.y + Padding);
+
+	ImGui::SetNextWindowPos(WindowPos, ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+	ImGui::SetNextWindowBgAlpha(0.6f);
+
+	constexpr ImGuiWindowFlags kOverlayFlags =
+		ImGuiWindowFlags_NoDecoration |
+		ImGuiWindowFlags_AlwaysAutoResize |
+		ImGuiWindowFlags_NoSavedSettings |
+		ImGuiWindowFlags_NoFocusOnAppearing |
+		ImGuiWindowFlags_NoNav |
+		ImGuiWindowFlags_NoMove;
+
+	if (!ImGui::Begin("##ViewportOverlay", nullptr, kOverlayFlags))
+	{
+		ImGui::End();
+		return;
+	}
+
+	if (ImGui::Button(bExpanded ? "Settings <<" : "Settings >>"))
+		bExpanded = !bExpanded;
+
+	if (bExpanded)
+	{
+		ImGui::Separator();
+
+		// Show Flags
+		ImGui::Text("Show");
+		ImGui::Checkbox("Primitives", &Settings.ShowFlags.bPrimitives);
+		ImGui::Checkbox("BillboardText", &Settings.ShowFlags.bBillboardText);
+		ImGui::Checkbox("Grid", &Settings.ShowFlags.bGrid);
+		ImGui::Checkbox("Gizmo", &Settings.ShowFlags.bGizmo);
+		ImGui::Checkbox("Bounding Volume", &Settings.ShowFlags.bBoundingVolume);
+
+		ImGui::Separator();
+
+		// Grid Settings
+		ImGui::Text("Grid");
+		ImGui::SliderFloat("Spacing", &Settings.GridSpacing, 0.1f, 10.0f, "%.1f");
+		ImGui::SliderInt("Half Line Count", &Settings.GridHalfLineCount, 10, 500);
+
+		ImGui::Separator();
+
+		// Camera Sensitivity
+		ImGui::Text("Camera");
+		ImGui::SliderFloat("Move Sensitivity", &Settings.CameraMoveSensitivity, 0.1f, 5.0f, "%.1f");
+		ImGui::SliderFloat("Rotate Sensitivity", &Settings.CameraRotateSensitivity, 0.1f, 5.0f, "%.1f");
 	}
 
 	ImGui::End();

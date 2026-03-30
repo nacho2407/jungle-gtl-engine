@@ -98,6 +98,4 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
 	// 4. CPU 배처 데이터 준비 → GPU 드로우 (SetSubViewport 영역에만 출력됨)
 	Renderer.PrepareBatchers(Bus);
 	Renderer.Render(Bus);
-	Editor->RenderUI(DeltaTime);
-	Renderer.EndFrame();
 }
