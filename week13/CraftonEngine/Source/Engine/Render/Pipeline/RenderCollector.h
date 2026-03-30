@@ -13,6 +13,7 @@ public:
 	void CollectWorld(UWorld* World, const TArray<AActor*>& SelectedActors, FRenderBus& RenderBus);
 	void CollectGizmo(UGizmoComponent* Gizmo, FRenderBus& RenderBus);
 	void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus);
+	void CollectOverlayText(const TArray<FScreenTextItem>& Items, float TextScale, FRenderBus& RenderBus);
 
 private:
 	void CollectFromActor(AActor* Actor, bool bSelected, FRenderBus& RenderBus);
