@@ -5,12 +5,8 @@
 
 void FSubUVBatcher::Create(ID3D11Device* InDevice)
 {
-    Device = InDevice;
-
-    // Dynamic VB/IB 초기 할당 (텍스처는 ResourceManager가 소유 — 여기서 로드하지 않음)
-    MaxVertexCount = 256;
-    MaxIndexCount  = 384;
-    CreateBuffers();
+    CreateBuffers(InDevice, 256, sizeof(FTextureVertex), 384);
+    if (!Device) return;
 
     // Sampler — Linear 필터 (스프라이트는 부드럽게)
     D3D11_SAMPLER_DESC sampDesc = {};
@@ -30,35 +26,14 @@ void FSubUVBatcher::Create(ID3D11Device* InDevice)
         "VS", "PS", layout, ARRAYSIZE(layout));
 }
 
-void FSubUVBatcher::CreateBuffers()
-{
-    if (VertexBuffer) { VertexBuffer->Release(); VertexBuffer = nullptr; }
-    if (IndexBuffer)  { IndexBuffer->Release();  IndexBuffer  = nullptr; }
-
-    D3D11_BUFFER_DESC vbDesc = {};
-    vbDesc.Usage          = D3D11_USAGE_DYNAMIC;
-    vbDesc.ByteWidth      = sizeof(FTextureVertex) * MaxVertexCount;
-    vbDesc.BindFlags      = D3D11_BIND_VERTEX_BUFFER;
-    vbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    Device->CreateBuffer(&vbDesc, nullptr, &VertexBuffer);
-
-    D3D11_BUFFER_DESC ibDesc = {};
-    ibDesc.Usage          = D3D11_USAGE_DYNAMIC;
-    ibDesc.ByteWidth      = sizeof(uint32) * MaxIndexCount;
-    ibDesc.BindFlags      = D3D11_BIND_INDEX_BUFFER;
-    ibDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    Device->CreateBuffer(&ibDesc, nullptr, &IndexBuffer);
-}
-
 void FSubUVBatcher::Release()
 {
     Clear();
 
-    if (VertexBuffer) { VertexBuffer->Release(); VertexBuffer = nullptr; }
-    if (IndexBuffer)  { IndexBuffer->Release();  IndexBuffer  = nullptr; }
     if (SamplerState) { SamplerState->Release(); SamplerState = nullptr; }
-
     SubUVShader.Release();
+
+    ReleaseBuffers();
 }
 
 void FSubUVBatcher::AddSprite(ID3D11ShaderResourceView* SRV, 
@@ -117,60 +92,29 @@ void FSubUVBatcher::Clear()
 	Batches.clear();
 }
 
-void FSubUVBatcher::Flush(ID3D11DeviceContext* Context)
+void FSubUVBatcher::DrawBatch(ID3D11DeviceContext* Context)
 {
-    //if (!SRV) return;
-    if (Vertices.empty() || !VertexBuffer || !IndexBuffer) return;
+    if (Vertices.empty()) return;
 
-    // 버퍼 크기 초과 시 재할당
-    if (Vertices.size() > MaxVertexCount || Indices.size() > MaxIndexCount)
-    {
-        MaxVertexCount = static_cast<uint32>(Vertices.size()) * 2;
-        MaxIndexCount  = static_cast<uint32>(Indices.size())  * 2;
-        CreateBuffers();
-    }
+    const uint32 VertexCount = static_cast<uint32>(Vertices.size());
+    const uint32 IndexCount = static_cast<uint32>(Indices.size());
 
-    // VB 업로드
-    D3D11_MAPPED_SUBRESOURCE mapped = {};
-    if (FAILED(Context->Map(VertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return;
-    memcpy(mapped.pData, Vertices.data(), sizeof(FTextureVertex) * Vertices.size());
-    Context->Unmap(VertexBuffer, 0);
+    VB.EnsureCapacity(Device, VertexCount);
+    IB.EnsureCapacity(Device, IndexCount);
+    if (!VB.Update(Context, Vertices.data(), VertexCount)) return;
+    if (!IB.Update(Context, Indices.data(), IndexCount)) return;
 
-    // IB 업로드
-    if (FAILED(Context->Map(IndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return;
-    memcpy(mapped.pData, Indices.data(), sizeof(uint32) * Indices.size());
-    Context->Unmap(IndexBuffer, 0);
-
-    // 셰이더 바인딩
     SubUVShader.Bind(Context);
+    VB.Bind(Context);
+    IB.Bind(Context);
+    Context->PSSetSamplers(0, 1, &SamplerState);
 
-    uint32 stride = sizeof(FTextureVertex), offset = 0;
-    Context->IASetVertexBuffers(0, 1, &VertexBuffer, &stride, &offset);
-    Context->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	Context->PSSetSamplers(0, 1, &SamplerState);
-
-    // ResourceManager 소유 SRV 바인딩
-    // Context->PSSetShaderResources(0, 1, &SRV);
-	for (const FSRVBatch& Batch : Batches)
-	{
-		if (!Batch.SRV || Batch.IndexCount == 0) continue;
-
-		// SRV만 교체 (나머지 상태는 유지)
-		Context->PSSetShaderResources(0, 1, &Batch.SRV);
-
-		// DrawIndexed(IndexCount, StartIndexLocation, BaseVertexLocation)
-		//   - StartIndexLocation: IB 내 이 배치의 index 시작 오프셋
-		//   - BaseVertexLocation: VB 내 이 배치의 vertex 시작 오프셋
-		//     → index 값에 이 값이 더해져서 실제 vertex를 참조
-		Context->DrawIndexed(
-			Batch.IndexCount,      // 이 배치의 인덱스 수
-			Batch.IndexStart,      // IB 내 시작 위치
-			Batch.BaseVertex       // VB 내 시작 위치 (index에 더해짐)
-		);
-	}
-
-    /*Context->DrawIndexed(static_cast<uint32>(Indices.size()), 0, 0);*/
+    for (const FSRVBatch& Batch : Batches)
+    {
+        if (!Batch.SRV || Batch.IndexCount == 0) continue;
+        Context->PSSetShaderResources(0, 1, &Batch.SRV);
+        Context->DrawIndexed(Batch.IndexCount, Batch.IndexStart, Batch.BaseVertex);
+    }
 }
 
 FSubUVFrameInfo FSubUVBatcher::GetFrameUV(uint32 FrameIndex, uint32 Columns, uint32 Rows) const
