@@ -72,7 +72,6 @@ public:
 	void SetTargetRotation(FVector NewRotation);
 	void SetTargetScale(FVector NewScale);
 
-
 	void SetNextMode();
 	void UpdateGizmoMode(EGizmoMode NewMode);
 	inline void SetTranslateMode() { UpdateGizmoMode(EGizmoMode::Translate); }

@@ -1,7 +1,12 @@
 ﻿#include "ObjViewerMenuBarWidget.h"
+
 #include "Misc/ObjViewer/ObjViewerEngine.h"
+#include "Misc/ObjViewer/Settings/ObjViewerSettings.h"
 #include "Engine/Core/Paths.h"
 #include "Engine/Runtime/WindowsWindow.h"
+#include "Core/ResourceManager.h"
+#include "Component/StaticMeshComponent.h"
+#include "Math/Rotator.h"
 #include "ImGui/imgui.h"
 
 #include <windows.h>
@@ -18,19 +23,25 @@ void FObjViewerMenuBarWidget::Render(float DeltaTime)
 				FString FilePath = OpenFileDialog();
 				if (!FilePath.empty())
 				{
-					// TODO: 모델 로드 로직
-				}
-			}
-			if (ImGui::MenuItem("Save"))
-			{
-				// TODO: 덮어쓰기 로직
-			}
-			if (ImGui::MenuItem("Save As..."))
-			{
-				FString FilePath = SaveFileDialog();
-				if (!FilePath.empty())
-				{
-					// TODO: 다른 이름으로 저장 로직
+					UStaticMesh* LoadedMesh = FResourceManager::Get().LoadStaticMesh(FilePath);
+					if (LoadedMesh)
+					{
+						if (UStaticMeshComponent* TargetComponent = Engine->GetPreviewMeshComponent()) 
+						{
+							TargetComponent->SetStaticMesh(LoadedMesh);
+
+							if (FObjViewerSettings::Get().ModelUpAxis == EModelUpAxis::Y_up)
+							{
+								TargetComponent->GetOwner()->SetActorRotation(FVector(90.0f, 0.0f, 0.0f));
+							}
+							else
+							{
+								TargetComponent->GetOwner()->SetActorRotation(FVector(0.0f, 0.0f, 0.0f));
+							}
+							
+							Engine->GetViewportClient().ResetCamera();
+						}
+					}
 				}
 			}
 			ImGui::EndMenu();
@@ -52,6 +63,8 @@ FString FObjViewerMenuBarWidget::OpenFileDialog()
 	ofn.lpstrFilter = L"OBJ Files (*.obj)\0*.obj\0All Files\0*.*\0";
 	ofn.nFilterIndex = 1;
 	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+
+	ShowCursor(TRUE);  // 엔진 내부의 커서 숨김 초기화
 
 	if (GetOpenFileNameW(&ofn) == TRUE)
 	{

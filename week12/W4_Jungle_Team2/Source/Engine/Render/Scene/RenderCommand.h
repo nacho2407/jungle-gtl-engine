@@ -15,6 +15,9 @@
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
 
+
+struct ID3D11ShaderResourceView;
+
 enum class ERenderCommandType
 {
 	Primitive,
@@ -102,22 +105,30 @@ struct FSubUVConstants
 };
 
 // StaticMeshBuffer (b6) — ShaderStaticMesh.hlsl 대응
+// 완전 Obj전용입니다. 추후 Bump를 Normal로 바꾸면 됩니다.
 struct FStaticMeshConstants
 {
 	// Phong Material
-	FVector AmbientColor   = { 0.2f, 0.2f, 0.2f };
-	float   Padding0       = 0.0f;
-	FVector DiffuseColor   = { 0.8f, 0.8f, 0.8f };
-	float   Padding1       = 0.0f;
-	FVector SpecularColor  = { 0.5f, 0.5f, 0.5f };
-	float   Shininess      = 32.0f;
+	FVector AmbientColor = { 0.2f, 0.2f, 0.2f };
+	float   Padding0 = 0.0f;
+	FVector DiffuseColor = { 0.8f, 0.8f, 0.8f };
+	float   Padding1 = 0.0f;
+	FVector SpecularColor = { 0.5f, 0.5f, 0.5f };
+	float   Shininess = 32.0f;
 
 	// Camera
 	FVector CameraWorldPos = { 0.0f, 0.0f, 0.0f };
-	float   Padding2       = 0.0f;
+	float   Padding2 = 0.0f;
 
 	// Texture
-
+	ID3D11ShaderResourceView* DiffuseSRV  = { nullptr };
+	bool bHasDiffuseMap = { false };
+	ID3D11ShaderResourceView* AmbientSRV  = { nullptr };
+	bool bHasAmbientMap = { false };
+	ID3D11ShaderResourceView* SpecularSRV = { nullptr };
+	bool bHasSpecularMap = { false };
+	ID3D11ShaderResourceView* BumpSRV = { nullptr };
+	bool bHasBumpMap = { false };
 };
 
 struct FRenderCommand

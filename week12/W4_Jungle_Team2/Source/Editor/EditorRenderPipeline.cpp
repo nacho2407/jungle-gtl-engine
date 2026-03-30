@@ -67,7 +67,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
 
 	// 3. 이 뷰포트용 렌더 데이터 수집
 	Bus.Clear();
-
+	
 	UWorld* World = Editor->GetWorld();
 	const FEditorSettings& Settings = Editor->GetSettings();
 	const FShowFlags& ShowFlags = Settings.ShowFlags;
@@ -98,4 +98,6 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
 	// 4. CPU 배처 데이터 준비 → GPU 드로우 (SetSubViewport 영역에만 출력됨)
 	Renderer.PrepareBatchers(Bus);
 	Renderer.Render(Bus);
+	Editor->RenderUI(DeltaTime);
+	Renderer.EndFrame();
 }

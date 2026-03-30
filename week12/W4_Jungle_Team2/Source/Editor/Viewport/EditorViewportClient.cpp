@@ -332,6 +332,9 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 			bIsCursorVisible = true;
 		}
 	}
+		
+	const float MoveSensitivity = Settings ? Settings->CameraMoveSensitivity : 1.0f;
+	const float RotateSensitivity = Settings ? Settings->CameraRotateSensitivity : 1.0f;
 
 	// Keyboard movement while rotating
 	if (bRightMouseRotating)
@@ -354,7 +357,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 			UpValue -= 1.f;
 
 		FVector NormalizedInput(ForwardValue, RightValue, UpValue);
-		NormalizedInput = NormalizedInput.GetSafeNormal();
+		NormalizedInput = NormalizedInput.GetSafeNormal() * MoveSensitivity;
 
 		NavigationController.MoveForward(NormalizedInput.X, DeltaTime);
 		NavigationController.MoveRight(NormalizedInput.Y, DeltaTime);
@@ -365,6 +368,11 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	const float MouseDeltaX = static_cast<float>(InputSystem::Get().MouseDeltaX());
 	const float MouseDeltaY = static_cast<float>(InputSystem::Get().MouseDeltaY());
 
+	const float ScaledRotateX = MouseDeltaX * RotateSensitivity;
+	const float ScaledRotateY = MouseDeltaY * RotateSensitivity;
+	const float ScaledPanX = MouseDeltaX * MoveSensitivity;
+	const float ScaledPanY = MouseDeltaY * MoveSensitivity;
+
 	if (bRightMouseRotating)
 	{
 		if (bFirstMouseMoveAfterRotateStart)
@@ -373,8 +381,8 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		}
 		else
 		{
-			NavigationController.AddYawInput(MouseDeltaX);
-			NavigationController.AddPitchInput(-MouseDeltaY);
+			NavigationController.AddYawInput(ScaledRotateX);
+			NavigationController.AddPitchInput(-ScaledRotateY);
 		}
 	}
 
@@ -386,7 +394,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		}
 		else
 		{
-			NavigationController.AddPanInput(MouseDeltaX, -MouseDeltaY);
+			NavigationController.AddPanInput(ScaledPanX, -ScaledPanY);
 		}
 	}
 
@@ -410,8 +418,8 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		}
 		else
 		{
-			NavigationController.AddYawInput(MouseDeltaX);
-			NavigationController.AddPitchInput(-MouseDeltaY);
+			NavigationController.AddYawInput(ScaledRotateX);
+			NavigationController.AddPitchInput(-ScaledRotateY);
 		}
 	}
 
