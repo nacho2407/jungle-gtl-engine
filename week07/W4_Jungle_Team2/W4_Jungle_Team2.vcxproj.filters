@@ -55,6 +55,9 @@
     <Filter Include="Source\Engine\Render\Common">
       <UniqueIdentifier>{7b706d86-bad9-f769-4dc8-c5946a78f59c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Render\Debug">
+      <UniqueIdentifier>{011ae04c-7203-ced3-7b94-c4417b5305c4}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Render\Device">
       <UniqueIdentifier>{d750f722-4212-dffa-47d5-24bb1507d362}</UniqueIdentifier>
     </Filter>
