@@ -486,6 +486,13 @@ void UGizmoComponent::ApplyScreenSpaceScaling(const FVector& CameraLocation)
 	SetRelativeScale(FVector(NewScale, NewScale, NewScale));
 }
 
+void UGizmoComponent::ApplyScreenSpaceScalingOrtho(float OrthoHeight)
+{
+	float NewScale = OrthoHeight * 0.1f;
+	if (NewScale < 0.01f) NewScale = 0.01f;
+	SetRelativeScale(FVector(NewScale, NewScale, NewScale));
+}
+
 void UGizmoComponent::SetWorldSpace(bool bWorldSpace)
 {
 	bIsWorldSpace = bWorldSpace;
