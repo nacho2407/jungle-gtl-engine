@@ -2,6 +2,8 @@
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
 #include "Render/Resource/MeshBufferManager.h"
+#include "Render/Resource/ShaderManager.h"
+#include "Render/Resource/ConstantBufferPool.h"
 #include "Collision/RayUtils.h"
 
 IMPLEMENT_CLASS(UGizmoComponent, UPrimitiveComponent)
@@ -447,4 +449,33 @@ FMeshBuffer* UGizmoComponent::GetMeshBuffer() const
 		break;
 	}
 	return &FMeshBufferManager::Get().GetMeshBuffer(Shape);
+}
+
+void UGizmoComponent::CollectRender(FRenderBus& Bus) const
+{
+	if (!Bus.GetShowFlags().bGizmo) return;
+	if (!IsVisible()) return;
+
+	FMeshBuffer* GizmoMesh = GetMeshBuffer();
+	FMatrix WorldMatrix = GetWorldMatrix();
+
+	auto CreateGizmoCmd = [&](bool bInner) {
+		FRenderCommand Cmd = {};
+		Cmd.Shader = FShaderManager::Get().GetShader(EShaderType::Gizmo);
+		Cmd.MeshBuffer = GizmoMesh;
+		Cmd.PerObjectConstants = FPerObjectConstants{ WorldMatrix };
+
+		auto& G = Cmd.ExtraCB.Bind<FGizmoConstants>(
+			FConstantBufferPool::Get().GetBuffer(ECBSlot::Gizmo, sizeof(FGizmoConstants)), ECBSlot::Gizmo);
+		G.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+		G.bIsInnerGizmo = bInner ? 1 : 0;
+		G.bClicking = bIsHolding ? 1 : 0;
+		G.SelectedAxis = SelectedAxis >= 0 ? (uint32)SelectedAxis : 0xffffffffu;
+		G.HoveredAxisOpacity = 0.3f;
+
+		return Cmd;
+	};
+
+	Bus.AddCommand(ERenderPass::GizmoOuter, CreateGizmoCmd(false));
+	Bus.AddCommand(ERenderPass::GizmoInner, CreateGizmoCmd(true));
 }
