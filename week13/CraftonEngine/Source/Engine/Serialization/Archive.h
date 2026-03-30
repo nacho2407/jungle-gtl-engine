@@ -28,19 +28,19 @@ public:
 	FArchive& operator<<(T& Value)
 	{
 		// 포인터가 아닌 기본 데이터 타입이나 메모리 복사가 가능한 구조체만 허용
-		static_assert(std::is_standard_layout<T>::value, "T must be standard layout");
+		static_assert(std::is_trivially_copyable<T>::value, "Error: T is not trivially copyable! You need a custom operator<< for this type.");
 		this->Serialize(&Value, sizeof(T));
 		return *this;
 	}
 };
 
-inline FArchive& operator<<(FArchive& Ar, FString& Str)
+inline FArchive& operator<<(FArchive& Ar, std::string& Str)
 {
 	uint32 Length = static_cast<uint32>(Str.size());
 	Ar << Length;
 
 	if (Ar.IsLoading()) Str.resize(Length);
-	if (Length > 0) Ar.Serialize(Str.data(), Length);
+	if (Length > 0) Ar.Serialize(Str.data(), Length * sizeof(char));
 
 	return Ar;
 }
@@ -58,14 +58,22 @@ FArchive& operator<<(FArchive& Ar, TArray<T>& Array)
 	if (Ar.IsLoading()) Array.resize(ArrayNum);
 	if (ArrayNum > 0)
 	{
-		// T가 객체(struct/class)일 경우 내부 멤버의 Serialize를 순회 호출
-		if constexpr (!std::is_standard_layout<T>::value)
+		if (ArrayNum > 0)
 		{
-			for (auto& Item : Array) { Ar << Item; }
-		}
-		else // 기본 자료형(정점 등)은 통째로 메모리 복사 (엄청난 속도 향상)
-		{
-			Ar.Serialize(Array.data(), ArrayNum * sizeof(T));
+			// FNormalVertex처럼 완벽한 숫자 덩어리일 때만 O(1) 고속 복사를 수행합니다.
+			if constexpr (std::is_trivially_copyable<T>::value)
+			{
+				Ar.Serialize(Array.data(), ArrayNum * sizeof(T));
+			}
+			else
+			{
+				// FStaticMeshSection처럼 안에 FString이 들어있으면,
+				// 느리더라도 반드시 한 요소씩 돌면서 안전하게(Deep Copy) 직렬화합니다.
+				for (auto& Item : Array)
+				{
+					Ar << Item;
+				}
+			}
 		}
 	}
 
