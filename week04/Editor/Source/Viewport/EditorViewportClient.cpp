@@ -1,5 +1,7 @@
 #include "Viewport/EditorViewportClient.h"
 
+#include <cstdio>
+
 #include "ApplicationCore/Input/InputRouter.h"
 #include "Editor/EditorContext.h"
 #include "Engine/Scene.h"
@@ -127,6 +129,7 @@ void FEditorViewportClient::OnResize(uint32 Width, uint32 Height)
 
 void FEditorViewportClient::SetEditorContext(FEditorContext* InContext)
 {
+    EditorContext = InContext;
     SelectionController.SetEditorContext(InContext);
 }
 
@@ -169,17 +172,93 @@ void FEditorViewportClient::DrawStatOverlay(void)
         return;
     }
 
-    
+    if (IsStatEnabled(EViewportStatFlags::FPS))
+    {
+        const FFPSStatData FPSData = CollectFPSStatData();
+        DrawFPSStatOverlay(FPSData);
+    }
+
+    if (IsStatEnabled(EViewportStatFlags::Memory))
+    {
+        const FMemoryStatData MemoryData = CollectMemoryStatData();
+        DrawMemoryStatOverlay(MemoryData);
+    }
 }
 
-void FEditorViewportClient::DrawFPSStatOverlay(void)
+void FEditorViewportClient::DrawFPSStatOverlay(const FFPSStatData& InData)
 {
+    // 다중 뷰포트 브랜치 머지 후 수정 예정
+    ImDrawList* DrawList = ImGui::GetForegroundDrawList();
+    if (DrawList == nullptr)
+    {
+        return;
+    }
 
+    // 다중 뷰포트 브랜치 머지 후 뷰포트 크기 계산 수정 예정
+    const float ViewLeft = static_cast<float>(ViewportOriginX);
+    const float ViewTop = static_cast<float>(ViewportOriginY);
+    const float ViewWidth = static_cast<float>(ViewportCamera.GetWidth());
+    const float ViewHeight = static_cast<float>(ViewportCamera.GetHeight());
+
+    char FPSLine[64];
+    char FrameTimeLine[64];
+
+    snprintf(FPSLine, sizeof(FPSLine), "%.2f FPS", InData.FPS);
+    snprintf(FrameTimeLine, sizeof(FrameTimeLine), "%.2f ms", InData.FrameTimeMS);
+
+    const ImVec2 FPSTextSize = ImGui::CalcTextSize(FPSLine);
+    const ImVec2 FrameTextSize = ImGui::CalcTextSize(FrameTimeLine);
+
+    const float LineSpacing = 4.0f;
+    const float TotalHeight = FPSTextSize.y + LineSpacing + FrameTextSize.y;
+
+    const float RightPadding = 100.0f * ViewWidth / 1920.0f;
+    const float AnchorX = ViewLeft + ViewWidth - RightPadding;
+    const float AnchorY = ViewTop + ViewHeight * 0.25f;
+
+    const float FPSPosX = AnchorX - FPSTextSize.x;
+    const float FPSPosY = AnchorY - TotalHeight * 0.5f;
+
+    const float FramePosX = AnchorX - FrameTextSize.x;
+    const float FramePosY = FPSPosY + FPSTextSize.y + LineSpacing;
+
+    const ImU32 FPSTextColor = IM_COL32(0, 255, 234, 255);
+
+    ImFont*     Font = ImGui::GetFont();
+    const float FontSize = ImGui::GetFontSize() * 1.25f;
+
+    DrawList->AddText(Font, FontSize, ImVec2(FPSPosX, FPSPosY), FPSTextColor, FPSLine);
+    DrawList->AddText(Font, FontSize, ImVec2(FramePosX, FramePosY), FPSTextColor, FrameTimeLine);
 }
 
-void FEditorViewportClient::DrawMemoryStatOverlay(void)
+void FEditorViewportClient::DrawMemoryStatOverlay(const FMemoryStatData& InData)
 {
+    // 다중 뷰포트 브랜치 머지 후 뷰포트 크기 계산 수정 예정
+    //const float ViewLeft = static_cast<float>(ViewportOriginX);
+    //const float ViewTop = static_cast<float>(ViewportOriginY);
+    //const float ViewWidth = static_cast<float>(ViewportCamera.GetWidth());
+    //const float ViewHeight = static_cast<float>(ViewportCamera.GetHeight());
 
+    // 추가 예정
 }
 
 void FEditorViewportClient::DrawOutline() {}
+
+FFPSStatData FEditorViewportClient::CollectFPSStatData() const
+{
+    FFPSStatData Data;
+
+    if (EditorContext != nullptr)
+    {
+        Data.FPS = EditorContext->CurrentFPS;
+        Data.FrameTimeMS = EditorContext->DeltaTime * 1000.0f;
+    }
+
+    return Data;
+}
+
+FMemoryStatData FEditorViewportClient::CollectMemoryStatData() const
+{
+    FMemoryStatData Data;
+    return Data;
+}

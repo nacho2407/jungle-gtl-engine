@@ -27,6 +27,35 @@ template <> struct TEnableBitMaskOperators<EViewportStatFlags>
     static constexpr bool bEnabled = true;
 };
 
+/**
+ * @brief stat fps 명령이 활성화된 경우, viewport에 그려질 FPS 정보
+ * 오버레이에 필요한 데이터를 담는 스냅샷 구조체
+ */
+struct FFPSStatData
+{
+    float FPS = 0.0f;
+    float FrameTimeMS = 0.0f;
+};
+
+/**
+ * @brief stat memory 명령이 활성화된 경우, viewport에 그려질 메모리
+ * 정보 오버레이에 필요한 각 행의 데이터를 담는 구조체
+ */
+struct FMemoryStatRow
+{
+    FString Label;
+    FString Value;
+};
+
+/**
+ * @brief stat memory 명령이 활성화된 경우, viewport에 그려질 메모리
+ * 정보 오버레이에 필요한 데이터를 담는 스냅샷 구조체
+ */
+struct FMemoryStatData
+{
+    TArray<FMemoryStatRow> Rows;
+};
+
 class FEditorViewportClient : public Engine::Viewport::IViewportClient
 {
   public:
@@ -84,13 +113,19 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
 
     /**
      * @brief stat fps에 대응하는 FPS 정보 오버레이를 그립니다.
+     * 
+     * @param InData stat fps 명령이 활성화된 경우, viewport에 그려질 FPS 정보 오버레이에 필요한
+     * 데이터를 담는 스냅샷 구조체
      */
-    void DrawFPSStatOverlay(void);
+    void DrawFPSStatOverlay(const FFPSStatData& InData);
 
     /**
      * @brief stat memory에 대응하는 메모리 정보 오버레이를 그립니다.
+     * 
+     * @param InData stat memory 명령이 활성화된 경우, viewport에 그려질 메모리 정보 오버레이에
+     * 필요한 각 행의 데이터를 담는 구조체들의 배열을 포함하는 스냅샷 구조체
      */
-    void DrawMemoryStatOverlay(void);
+    void DrawMemoryStatOverlay(const FMemoryStatData& InData);
 
     void EnableStat(EViewportStatFlags InFlag) { SetStatEnabled(InFlag, true); }
 
@@ -103,11 +138,23 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     void ClearAllStats() { StatFlags = EViewportStatFlags::None; }
 
     EViewportStatFlags GetStatFlags() const { return StatFlags; }
+
+    void SetViewportOrigin(uint32 InX, uint32 InY)
+    {
+        ViewportOriginX = InX;
+        ViewportOriginY = InY;
+    }
+
+    uint32 GetViewportOriginX() const { return ViewportOriginX; }
+    uint32 GetViewportOriginY() const { return ViewportOriginY; }
     
   private:
     void DrawOutline();
 
     void SetStatEnabled(EViewportStatFlags InFlag, bool bEnabled) { SetFlag(StatFlags, InFlag, bEnabled); }
+
+    FFPSStatData    CollectFPSStatData() const;
+    FMemoryStatData CollectMemoryStatData() const;
 
   private:
     FScene* CurScene = nullptr;
@@ -128,4 +175,10 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
      * @brief 현재 viewport에서 활성화된 stat 명령들을 나타내는 플래그 집합
      */
     EViewportStatFlags StatFlags = EViewportStatFlags::None;
+
+    // 다중 뷰포트 확장 대비
+    uint32 ViewportOriginX = 0;
+    uint32 ViewportOriginY = 0;
+
+    FEditorContext* EditorContext = nullptr;
 };
