@@ -136,33 +136,47 @@ void FEditorSceneWidget::Render(float DeltaTime)
 		FSelectionManager& Selection = EditorEngine->GetSelectionManager();
 
 		ImGui::BeginChild("ActorList", ImVec2(0, 0), ImGuiChildFlags_Borders);
-		for (AActor* Actor : Actors)
-		{
-			if (!Actor) continue;
 
-			FString ActorName = Actor->GetFName().ToString();
-			if (ActorName.empty())
-			{
-				ActorName = Actor->GetTypeInfo()->name;
-			}
+        // 화면에 보이는 항목(DisplayStart ~ DisplayEnd) 범위만 화면에 출력합니다.
+		ImGuiListClipper Clipper;
+        Clipper.Begin(static_cast<int>(Actors.size()));
 
-			bool bIsSelected = Selection.IsSelected(Actor);
-			if (ImGui::Selectable(ActorName.c_str(), bIsSelected))
-			{
-				if (ImGui::GetIO().KeyShift)
-				{
-					Selection.SelectRange(Actor, Actors);
-				}
-				else if (ImGui::GetIO().KeyCtrl)
-				{
-					Selection.ToggleSelect(Actor);
-				}
-				else
-				{
-					Selection.Select(Actor);
-				}
-			}
-		}
+        while (Clipper.Step())
+        {
+            for (int i = Clipper.DisplayStart; i < Clipper.DisplayEnd; i++)
+            {
+                AActor* Actor = Actors[i];
+                if (!Actor) continue;
+
+                FString ActorName = Actor->GetFName().ToString();
+                if (ActorName.empty())
+                {
+                    ActorName = Actor->GetTypeInfo()->name;
+                }
+
+                ImGui::PushID(i); 
+
+                bool bIsSelected = Selection.IsSelected(Actor);
+                if (ImGui::Selectable(ActorName.c_str(), bIsSelected))
+                {
+                    if (ImGui::GetIO().KeyShift)
+                    {
+                        Selection.SelectRange(Actor, Actors);
+                    }
+                    else if (ImGui::GetIO().KeyCtrl)
+                    {
+                        Selection.ToggleSelect(Actor);
+                    }
+                    else
+                    {
+                        Selection.Select(Actor);
+                    }
+                }
+                
+                ImGui::PopID();
+            }
+        }
+        Clipper.End();
 		ImGui::EndChild();
 	}
 
