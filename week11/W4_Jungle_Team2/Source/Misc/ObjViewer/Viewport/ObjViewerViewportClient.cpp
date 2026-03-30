@@ -93,26 +93,45 @@ void FObjViewerViewportClient::ResetCameraSmoothly()
     if (!Camera || !Settings)
         return;
 
-	ObjViewerModelInfo ModelInfo = GetModelInfo();
-	float ModelRadius = ModelInfo.ModelRadius;
-	FVector Center = ModelInfo.ModelCenter;
-	FVector Offset(ModelRadius, ModelRadius, ModelRadius);
+	FVector TargetPos;
+	FQuat TargetRot;
+	FVector TargetPivot;
+	float TargetDist;
 
-	float DistanceMultiplier = 3.0f;
-	FVector TargetPos = Center + (Offset * DistanceMultiplier);
+	// 저장된 카메라 위치가 있다면 그곳을 타겟으로 설정
+	if (bSavedCameraPosition)
+	{
+		TargetPos = SavedCameraLocation;
+		TargetRot = SavedCameraRotation;
+		TargetPivot = SavedOrbitPivot;
+		TargetDist = SavedOrbitDistance;
+	}
+	else
+	{
+		// 저장된 위치가 없다면 기존처럼 모델을 바라보는 디폴트 위치를 타겟으로 계산
+		ObjViewerModelInfo ModelInfo = GetModelInfo();
+		float ModelRadius = ModelInfo.ModelRadius;
+		FVector Center = ModelInfo.ModelCenter;
+		FVector Offset(ModelRadius, ModelRadius, ModelRadius);
 
-    // 1. 목표 회전값(Target Rotation)을 쿼터니언으로 미리 계산
-    FVector Forward = (Center - TargetPos).GetSafeNormal();
-    FVector UpRef = FVector::UpVector;
-    if (std::abs(Forward.DotProduct(UpRef)) > 0.99f) UpRef = FVector(1.0f, 0.0f, 0.0f);
-    
-    FVector Right = FVector::CrossProduct(UpRef, Forward).GetSafeNormal();
-    FVector Up = FVector::CrossProduct(Forward, Right).GetSafeNormal();
-    
-    FMatrix RotMat = FMatrix::Identity;
-    RotMat.SetAxes(Forward, Right, Up);
-    FQuat TargetRot(RotMat);
-    TargetRot.Normalize();
+		float DistanceMultiplier = 3.0f;
+		TargetPos = Center + (Offset * DistanceMultiplier);
+
+		FVector Forward = (Center - TargetPos).GetSafeNormal();
+		FVector UpRef = FVector::UpVector;
+		if (std::abs(Forward.DotProduct(UpRef)) > 0.99f) UpRef = FVector(1.0f, 0.0f, 0.0f);
+		
+		FVector Right = FVector::CrossProduct(UpRef, Forward).GetSafeNormal();
+		FVector Up = FVector::CrossProduct(Forward, Right).GetSafeNormal();
+		
+		FMatrix RotMat = FMatrix::Identity;
+		RotMat.SetAxes(Forward, Right, Up);
+		TargetRot = FQuat(RotMat);
+		TargetRot.Normalize();
+
+		TargetPivot = Center;
+		TargetDist = (TargetPos - Center).Size();
+	}
 
     // 2. 현재 상태를 '시작점'으로, 계산된 값을 '목표점'으로 저장
     CameraGUIParams.ResetStartLocation = Camera->GetLocation();
@@ -121,12 +140,23 @@ void FObjViewerViewportClient::ResetCameraSmoothly()
     CameraGUIParams.ResetStartOrbitDistance = OrbitDistance;
     CameraGUIParams.ResetTargetLocation = TargetPos;
     CameraGUIParams.ResetTargetRotation = TargetRot;
-    CameraGUIParams.ResetTargetOrbitPivot = Center;
-    CameraGUIParams.ResetTargetOrbitDistance = (TargetPos - Center).Size();
+    CameraGUIParams.ResetTargetOrbitPivot = TargetPivot;
+    CameraGUIParams.ResetTargetOrbitDistance = TargetDist;
 
     // 3. 애니메이션 시작 트리거 ON
     CameraGUIParams.bIsResettingCamera = true;
     CameraGUIParams.ResetCameraProgress = 0.0f;
+}
+
+void FObjViewerViewportClient::SaveCameraPosition()
+{
+	if (!Camera) return;
+
+	bSavedCameraPosition = true;
+	SavedCameraLocation = Camera->GetLocation();
+	SavedCameraRotation = Camera->GetRotation();
+	SavedOrbitPivot = OrbitPivot;
+	SavedOrbitDistance = OrbitDistance;
 }
 
 // 모델의 크기와 비례하게 카메라의 이동 범위를 제한한다.
