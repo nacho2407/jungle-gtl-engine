@@ -19,5 +19,5 @@ public:
 	static UStaticMesh* GetPrimitiveSky();
 
 private:
-	static bool ParseObjFile(const FString& FilePath, FStaticMesh* OutMesh);
+	static bool ParseObjFile(const FString& FilePath, FStaticMesh* OutMesh, TArray<FString>& OutMaterialNames);
 };

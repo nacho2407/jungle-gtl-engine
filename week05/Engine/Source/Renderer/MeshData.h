@@ -33,6 +33,10 @@ public:
 	FStaticMesh* GetRenderData() const { return StaticMeshAsset; }
 	int32 GetNumSections() const { return StaticMeshAsset ? StaticMeshAsset->GetNumSection() : 0; }
 
+	const TArray<std::shared_ptr<FMaterial>>& GetDefaultMaterials() const { return DefaultMaterials; }
+	void AddDefaultMaterial(const std::shared_ptr<FMaterial>& InMaterial) { DefaultMaterials.push_back(InMaterial); }
+
 private:
-	FStaticMesh* StaticMeshAsset = nullptr; // 정적 에셋이므로 FStaticMesh 유지
+	FStaticMesh* StaticMeshAsset = nullptr; 
+	TArray<std::shared_ptr<FMaterial>> DefaultMaterials;
 };

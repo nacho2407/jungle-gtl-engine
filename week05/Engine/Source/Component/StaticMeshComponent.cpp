@@ -13,6 +13,11 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 	{
 		int32 NeededMaterialSlots = StaticMesh->GetNumSections();
 		Materials.resize(NeededMaterialSlots, nullptr);
+		const TArray<std::shared_ptr<FMaterial>>& DefaultMats = StaticMesh->GetDefaultMaterials();
+		for (int32 i = 0; i < NeededMaterialSlots && i < DefaultMats.size(); ++i)
+		{
+			Materials[i] = DefaultMats[i];
+		}
 		UpdateBounds();
 	}
 	else
