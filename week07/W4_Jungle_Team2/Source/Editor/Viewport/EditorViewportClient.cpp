@@ -431,7 +431,8 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	}
 
 	// Toggle projection
-	if (InputSystem::Get().GetKeyDown('O'))
+	// TODO: 현재는 오류 발생해서 제거
+	/*if (InputSystem::Get().GetKeyDown('O'))
 	{
 		if (Camera.GetProjectionType() == EViewportProjectionType::Perspective)
 		{
@@ -441,7 +442,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		{
 			Camera.SetProjectionType(EViewportProjectionType::Perspective);
 		}
-	}
+	}*/
 
 	if (InputSystem::Get().GetKeyUp(VK_SPACE) && Gizmo)
 	{

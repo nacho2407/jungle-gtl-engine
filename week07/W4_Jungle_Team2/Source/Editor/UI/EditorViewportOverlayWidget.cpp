@@ -199,9 +199,7 @@ void FEditorViewportOverlayWidget::Render(float DeltaTime)
 	// 2. 뷰포트별 View Mode 툴바 (UE 스타일)
 	RenderViewportToolbars();
 
-	// -------------------------------------------------------
 	// 3. Settings 오버레이 패널
-	// -------------------------------------------------------
 	FEditorSettings& Settings = FEditorSettings::Get();
 
 	ImGuiViewport* Viewport = ImGui::GetMainViewport();
