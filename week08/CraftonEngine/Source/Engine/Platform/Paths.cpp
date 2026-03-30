@@ -64,3 +64,37 @@ std::string FPaths::ToUtf8(const std::wstring& WideStr)
 	WideCharToMultiByte(CP_UTF8, 0, WideStr.c_str(), -1, &Result[0], Size, nullptr, nullptr);
 	return Result;
 }
+
+std::string FPaths::ResolveAssetPath(const std::string& BaseFilePath, const std::string& TargetPath)
+{
+	// 1. 기준 파일(OBJ 또는 MTL)의 폴더 경로 추출
+	std::filesystem::path FileDir(ToWide(BaseFilePath));
+	FileDir = FileDir.parent_path();
+
+	// 2. 타겟 파일 경로(텍스처나 MTL 이름)
+	std::filesystem::path Target(ToWide(TargetPath));
+
+	// 3. 두 경로 합치기 및 정규화
+	std::filesystem::path FullPath = (FileDir / Target).lexically_normal();
+	std::filesystem::path ProjectRoot(RootDir());
+
+	std::filesystem::path RelativePath;
+
+	// 4. 절대/상대 경로 분기 처리
+	if (FullPath.is_absolute())
+	{
+		RelativePath = FullPath.lexically_relative(ProjectRoot);
+		if (RelativePath.empty())
+		{
+			// 드라이브가 다르거나 계산이 불가능한 경우 최후의 수단으로 파일명만 추출
+			RelativePath = FullPath.filename();
+		}
+	}
+	else
+	{
+		RelativePath = FullPath;
+	}
+
+	// 5. 엔진에서 사용하는 UTF-8 포맷으로 반환 (Windows 백슬래시를 슬래시로 통일)
+	return ToUtf8(RelativePath.generic_wstring());
+}
