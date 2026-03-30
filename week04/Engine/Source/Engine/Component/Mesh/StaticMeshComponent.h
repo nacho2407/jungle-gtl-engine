@@ -39,6 +39,7 @@ namespace Engine::Component
 
         /** 머티리얼 접근 오버라이드 (컴포넌트에 없으면 에셋의 것을 반환) */
         virtual Asset::UMaterialInterface* GetMaterial(uint32 Index) const override;
+        virtual uint32                     GetNumMaterials() const override;
 
       protected:
         virtual bool GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const override;
