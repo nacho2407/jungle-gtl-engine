@@ -3,6 +3,8 @@
 #include "Core/RayTypes.h"
 #include "Collision/RayUtils.h"
 #include "Render/Resource/MeshBufferManager.h"
+#include "Render/Resource/ShaderManager.h"
+#include "Render/Resource/ConstantBufferPool.h"
 #include "Core/CollisionTypes.h"
 
 DEFINE_CLASS(UPrimitiveComponent, USceneComponent)
@@ -14,6 +16,70 @@ void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 {
 	USceneComponent::GetEditableProperties(OutProps);
 	OutProps.push_back({ "Visible", EPropertyType::Bool, &bIsVisible });
+}
+
+void UPrimitiveComponent::CollectRender(FRenderBus& Bus) const
+{
+	if (!Bus.GetShowFlags().bPrimitives) return;
+	FMeshBuffer* Buffer = GetMeshBuffer();
+	if (!Buffer || !Buffer->IsValid()) return;
+
+	FRenderCommand Cmd = {};
+	Cmd.PerObjectConstants = FPerObjectConstants::FromWorldMatrix(GetWorldMatrix());
+	Cmd.Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
+	Cmd.MeshBuffer = Buffer;
+	Bus.AddCommand(ERenderPass::Opaque, Cmd);
+}
+
+void UPrimitiveComponent::CollectSelection(FRenderBus& Bus) const
+{
+	FMeshBuffer* Buffer = GetMeshBuffer();
+	if (!Buffer || !Buffer->IsValid()) return;
+	if (!SupportsOutline()) return;
+
+	FShaderManager& SM = FShaderManager::Get();
+	BuildOutlineCommands(Bus, Buffer, GetWorldMatrix(), GetWorldScale(),
+		SM.GetShader(EShaderType::Primitive), SM.GetShader(EShaderType::Outline));
+
+	if (Bus.GetShowFlags().bBoundingVolume)
+	{
+		FAABBEntry Entry = {};
+		FBoundingBox Box = GetWorldBoundingBox();
+		Entry.AABB.Min = Box.Min;
+		Entry.AABB.Max = Box.Max;
+		Entry.AABB.Color = FColor::White();
+		Bus.AddAABBEntry(std::move(Entry));
+	}
+}
+
+void UPrimitiveComponent::BuildOutlineCommands(FRenderBus& Bus, FMeshBuffer* Buffer,
+	const FMatrix& WorldMatrix, const FVector& WorldScale,
+	FShader* StencilShader, FShader* OutlineShader) const
+{
+	// Stencil Mask
+	FRenderCommand MaskCmd = {};
+	MaskCmd.MeshBuffer = Buffer;
+	MaskCmd.PerObjectConstants = FPerObjectConstants{ WorldMatrix };
+	MaskCmd.Shader = StencilShader;
+	Bus.AddCommand(ERenderPass::StencilMask, MaskCmd);
+
+	// Outline
+	FRenderCommand OutlineCmd = {};
+	OutlineCmd.MeshBuffer = Buffer;
+	OutlineCmd.PerObjectConstants = FPerObjectConstants{ WorldMatrix };
+	OutlineCmd.Shader = OutlineShader;
+
+	auto& Outline = OutlineCmd.ExtraCB.Bind<FOutlineConstants>(
+		FConstantBufferPool::Get().GetBuffer(ECBSlot::Outline, sizeof(FOutlineConstants)), ECBSlot::Outline);
+	Outline.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 0.7f);
+	Outline.OutlineInvScale = FVector(1.0f / WorldScale.X, 1.0f / WorldScale.Y, 1.0f / WorldScale.Z);
+	Outline.OutlineOffset = 0.03f;
+	if (Bus.GetViewMode() == EViewMode::Wireframe)
+	{
+		OutlineCmd.PerObjectConstants.Color = FColor(255, 153, 0, 255).ToVector4();
+	}
+	Outline.bIs3D = IsFlat() ? 0u : 1u;
+	Bus.AddCommand(ERenderPass::Outline, OutlineCmd);
 }
 
 void UPrimitiveComponent::UpdateWorldAABB() const

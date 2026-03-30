@@ -2,6 +2,7 @@
 #include "Mesh/StaticMeshAsset.h"
 #include "Materials/Material.h"
 #include "Editor/UI/EditorConsoleWidget.h"
+#include "Engine/Platform/Paths.h"
 #include <algorithm>
 #include <fstream>
 #include <filesystem>
@@ -236,11 +237,6 @@ bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
 				{
 					constexpr int32 InvalidIndex = -1;
 					OutObjInfo.PosIndices.emplace_back(TriangleVerts[j].PosIndex - 1);
-#ifdef _DEBUG
-					if (TriangleVerts[j].PosIndex < 1) {
-						UE_LOG("Warning: Invalid position index %d in face. OBJ indices are 1-based, so this vertex will be ignored.", TriangleVerts[j].PosIndex);
-					}
-#endif
 					OutObjInfo.UVIndices.emplace_back(TriangleVerts[j].UVIndex > 0 ? TriangleVerts[j].UVIndex - 1 : InvalidIndex);
 					OutObjInfo.NormalIndices.emplace_back(TriangleVerts[j].NormalIndex > 0 ? TriangleVerts[j].NormalIndex - 1 : InvalidIndex);
 				}
@@ -254,10 +250,7 @@ bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
 				size_t CommentPos = Line.find('#');
 				if (CommentPos != std::string_view::npos) { Line = Line.substr(0, CommentPos); }
 				FStringParser::TrimLeft(Line);
-
-				std::filesystem::path FilePath(ObjFilePath);
-
-				OutObjInfo.MaterialLibraryFilePath = (FilePath.parent_path() / std::string(Line)).generic_string();
+				OutObjInfo.MaterialLibraryFilePath = FPaths::ResolveAssetPath(ObjFilePath, std::string(Line));
 				UE_LOG("Found material library: %s", OutObjInfo.MaterialLibraryFilePath.c_str());
 			}
 			else if (Prefix == "usemtl")
@@ -428,8 +421,7 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 			// 최종적으로 추출된 파일명 할당
 			if (!TextureFileName.empty())
 			{
-				std::filesystem::path FilePath(MtlFilePath);
-				OutMtlInfos.back().map_Kd = (FilePath.parent_path() / TextureFileName).lexically_normal().generic_string();
+				OutMtlInfos.back().map_Kd = FPaths::ResolveAssetPath(MtlFilePath, TextureFileName);
 			}
 		}
 	}
@@ -606,10 +598,15 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 						NewVertex.normal = ObjInfo.Normals[Key.n];
 					}
 
-					// RHS -> LHS 변환
-					NewVertex.pos.Z = -NewVertex.pos.Z;
-					NewVertex.normal.Z = -NewVertex.normal.Z;
+					// OBJ는 Y-up, Z-Forward (RHS)
+					// UE는 Z-Up, X-Forward (LHS)
 
+					float RawY = ObjInfo.Positions[Key.p].Y;
+					float RawZ = ObjInfo.Positions[Key.p].Z;
+
+					NewVertex.pos.X = ObjInfo.Positions[Key.p].X;
+					NewVertex.pos.Y = RawZ;
+					NewVertex.pos.Z = RawY;
 
 					// UV 예외 처리
 					if (Key.t == -1)

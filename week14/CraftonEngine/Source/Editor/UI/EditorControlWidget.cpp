@@ -1,16 +1,11 @@
 ﻿#include "Editor/UI/EditorControlWidget.h"
-
 #include "Editor/EditorEngine.h"
 #include "Engine/Profiling/Timer.h"
-
 #include "Engine/Profiling/MemoryStats.h"
 #include "ImGui/imgui.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
-#include "Component/SubUVComponent.h"
-#include "Component/StaticMeshComponent.h"
-#include "GameFramework/PrimitiveActors.h"
-
+#include "Engine/StaticMeshActor.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -33,13 +28,6 @@ void FEditorControlWidget::Render(float DeltaTime)
 
 	ImGui::Begin("Jungle Control Panel");
 
-	// Stats
-	ImGui::Text("FPS : %.1f", EditorEngine->GetTimer()->GetDisplayFPS());
-	ImGui::Text("Memory Allocated : %d", MemoryStats::GetTotalAllocationBytes());
-	ImGui::Text("Times Allocated : %d", MemoryStats::GetTotalAllocationCount());
-
-	SEPARATOR();
-
 	// Spawn
 	ImGui::Combo("Primitive", &SelectedPrimitiveType, PrimitiveTypes, IM_ARRAYSIZE(PrimitiveTypes));
 
@@ -52,41 +40,16 @@ void FEditorControlWidget::Render(float DeltaTime)
 			{
 			case 0: // Cube
 			{
-				ACubeActor* Actor = World->SpawnActor<ACubeActor>();
+				AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
 				Actor->SetActorLocation(CurSpawnPoint);
-				Actor->InitDefaultComponents();
+				Actor->InitDefaultComponents("Data/Cube.OBJ");
 				break;
 			}
 			case 1: // Sphere
 			{
-				ASphereActor* Actor = World->SpawnActor<ASphereActor>();
-				Actor->SetActorLocation(CurSpawnPoint);
-				Actor->InitDefaultComponents();
-				break;
-			}
-			case 2: // Plane
-			{
-				APlaneActor* Actor = World->SpawnActor<APlaneActor>();
-				Actor->SetActorLocation(CurSpawnPoint);
-				Actor->InitDefaultComponents();
-				break;
-			}
-			case 3: // Explosion
-			{
-				AActor* Actor = World->SpawnActor<AActor>();
-				Actor->SetActorLocation(CurSpawnPoint);
-				USubUVComponent* SubUV = Actor->AddComponent<USubUVComponent>();
-				Actor->SetRootComponent(SubUV);
-				SubUV->SetParticle(FName("Explosion"));
-				SubUV->SetSpriteSize(2.0f, 2.0f);
-				SubUV->SetFrameRate(30.f);
-				break;
-			}
-			case 4: // Static Mesh
-			{
 				AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
 				Actor->SetActorLocation(CurSpawnPoint);
-				Actor->InitDefaultComponents();
+				Actor->InitDefaultComponents("Data/Sphere.OBJ");
 				break;
 			}
 			}

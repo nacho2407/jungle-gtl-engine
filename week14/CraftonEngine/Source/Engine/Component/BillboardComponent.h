@@ -15,6 +15,7 @@ public:
 	FMatrix ComputeBillboardMatrix(const FVector& CameraForward) const;
 
 	FMeshBuffer* GetMeshBuffer() const override { return &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::Quad); }
+	void CollectSelection(FRenderBus& Bus) const override;
 	bool IsFlat() const override { return true; }
 
 protected:
