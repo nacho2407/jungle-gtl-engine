@@ -112,7 +112,7 @@ void FScene::Tick(float DeltaTime)
     }
 }
 
-void FScene::BuildRenderData(FSceneRenderData& OutRenderData, ESceneShowFlags InShowFlags) const
+void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFlags InShowFlags) const
 {
     OutRenderData.StaticMeshes.clear();
     OutRenderData.Primitives.clear();

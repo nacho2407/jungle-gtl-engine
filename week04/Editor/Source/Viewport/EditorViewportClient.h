@@ -14,6 +14,18 @@
 
 struct FEditorContext;
 
+enum class EViewportViewOrientation
+{
+    Free,
+    Top,
+    Bottom,
+    Left,
+    Right,
+    Front,
+    Back,
+    OrientationCount
+};
+
 class FEditorViewportClient : public Engine::Viewport::IViewportClient
 {
   public:
@@ -34,16 +46,25 @@ class FEditorViewportClient : public Engine::Viewport::IViewportClient
     void BuildRenderData(FEditorRenderData& OutRenderData, EEditorShowFlags InShowFlags);
 
     void OnResize(uint32 InWidth, uint32 InHeight);
+    void SetViewportOrigin(uint32 InOriginX, uint32 InOriginY);
     void SetEditorContext(FEditorContext* InContext);
     void SetScene(FScene* InScene);
     void SyncSelectionFromContext();
+
+    void                     SetViewOrientation(EViewportViewOrientation InOrientation);
+    EViewportViewOrientation GetViewOrientation() const { return ViewOrientation; }
+    FString                  GetViewOrientationString(EViewportViewOrientation InOrientation) const;
 
     FViewportNavigationController& GetNavigationController() { return NavigationController; }
     const FViewportNavigationController& GetNavigationController() const
     {
         return NavigationController;
     }
-    FViewportSelectionController& GetSelectionController() { return SelectionController; }
+    FViewportSelectionController& GetSelectionController() { return *ActiveController; }
+
+    // Makes this client share an external selection controller instead of its own.
+    // Call after Create(). The camera is stamped onto the shared controller on each input event.
+    void UseSharedSelectionController(FViewportSelectionController* Shared);
     FViewportGizmoController& GetGizmoController() { return GizmoController; }
     FViewportInteractionState& GetInteractionState() { return InteractionState; }
     FViewportRenderSetting& GetRenderSetting() { return RenderSetting; }
@@ -68,18 +89,25 @@ private:
     void DrawOutline();
 
 
-  private:
+private:
+    EViewportViewOrientation ViewOrientation = EViewportViewOrientation::Free;
+
+    // Saved when leaving Free mode; restored on return to Free
+    FVector FreeCameraLocation = FVector(-20.0f, 1.0f, 10.0f);
+    FQuat   FreeCameraRotation = FQuat::Identity;
+
     FScene* CurScene = nullptr;
 
     FViewportCamera ViewportCamera;
 
     FViewportNavigationController NavigationController;
-    FViewportSelectionController SelectionController;
+    FViewportSelectionController  OwnedSelectionController;
+    FViewportSelectionController* ActiveController = nullptr; // points to OwnedSelectionController or a shared one
     FViewportGizmoController GizmoController;
     FViewportInteractionState InteractionState;
     FViewportRenderSetting RenderSetting;
 
     FNavigationInputContext ViewportInputContext{&NavigationController};
-    FSelectionInputContext SelectionInputContext{&SelectionController};
+    FSelectionInputContext  SelectionInputContext{nullptr}; // wired to ActiveController in Create()
     FGizmoInputContext      GizmoInputContext{&GizmoController};
 };

@@ -61,6 +61,9 @@
     <Filter Include="Source\Viewport\Selection">
       <UniqueIdentifier>{c02bdf14-d23c-3f72-e5f4-7a918dc1b5dc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Viewport\Window">
+      <UniqueIdentifier>{d3f2a1b0-8c7e-4f5d-9e6a-1b2c3d4e5f60}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Camera\ViewportCamera.cpp">
@@ -94,6 +97,9 @@
       <Filter>Source\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Input\SelectionInputContext.cpp">
+      <Filter>Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\ViewportOverlayInputContext.cpp">
       <Filter>Source\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Launch\EditorEngineLoop.cpp">
@@ -159,8 +165,8 @@
     <ClCompile Include="Source\Viewport\EditorViewportClient.cpp">
       <Filter>Source\Viewport</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Viewport\EditorViewprotPanel.cpp">
-      <Filter>Source\Viewport</Filter>
+    <ClCompile Include="Source\Viewport\Window\EditorViewportPanel.cpp">
+      <Filter>Source\Viewport\Window</Filter>
     </ClCompile>
     <ClCompile Include="Source\Viewport\Gizmo\ViewportGizmoController.cpp">
       <Filter>Source\Viewport\Gizmo</Filter>
@@ -179,6 +185,9 @@
     </ClCompile>
     <ClCompile Include="Source\Viewport\Selection\ViewportSelectionController.cpp">
       <Filter>Source\Viewport\Selection</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\Window\WindowOverlayManager.cpp">
+      <Filter>Source\Viewport\Window</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -228,6 +237,9 @@
       <Filter>Source\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Input\SelectionInputContext.h">
+      <Filter>Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Input\ViewportOverlayInputContext.h">
       <Filter>Source\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Launch\EditorEngineLoop.h">
@@ -296,8 +308,8 @@
     <ClInclude Include="Source\Viewport\EditorViewportClient.h">
       <Filter>Source\Viewport</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Viewport\EditorViewprotPanel.h">
-      <Filter>Source\Viewport</Filter>
+    <ClInclude Include="Source\Viewport\Window\EditorViewportPanel.h">
+      <Filter>Source\Viewport\Window</Filter>
     </ClInclude>
     <ClInclude Include="Source\Viewport\Gizmo\ViewportGizmoController.h">
       <Filter>Source\Viewport\Gizmo</Filter>
@@ -316,6 +328,9 @@
     </ClInclude>
     <ClInclude Include="Source\Viewport\Selection\ViewportSelectionController.h">
       <Filter>Source\Viewport\Selection</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\Window\WindowOverlayManager.h">
+      <Filter>Source\Viewport\Window</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

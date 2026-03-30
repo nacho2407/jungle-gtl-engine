@@ -264,42 +264,6 @@ namespace
     }
 } // namespace
 
-// class FSamplePanel : public IPanel
-//{
-// public:
-//     explicit FSamplePanel(const FEditorLogBuffer* InLogBuffer)
-//         : LogBuffer(InLogBuffer)
-//     {
-//     }
-//
-//     const wchar_t* GetPanelID() const override { return L"SamplePanel"; }
-//     const wchar_t* GetDisplayName() const override { return L"Sample Panel"; }
-//     bool ShouldOpenByDefault() const override { return true; }
-//
-//     void Draw() override
-//     {
-//         if (ImGui::Begin("Sample Panel", nullptr))
-//         {
-//             ImGui::Text("PanelManager registration test panel");
-//             ImGui::Separator();
-//
-//
-//             if (LogBuffer != nullptr)
-//             {
-//                 for (const auto& Log : LogBuffer->GetLogBuffer())
-//                 {
-//                     ImGui::Spacing();
-//                     ImGui::Text("%s", Log.Message.c_str());
-//                 }
-//             }
-//         }
-//         ImGui::End();
-//     }
-//
-// private:
-//     const FEditorLogBuffer* LogBuffer = nullptr;
-// };
-
 void FEditor::Create()
 {
     //  LOG
@@ -317,8 +281,6 @@ void FEditor::Create()
     GlobalInputController.SetEditorContext(&EditorContext);
     GlobalInputController.SetSelectionController(&ViewportClient.GetSelectionController());
     GlobalInputRouter.AddContext(&GlobalInputContext);
-
-    LoadEditorSettings();
 
     // 메뉴 시스템은 command 등록과 배치 등록을 분리해서 초기화합니다.
     MenuRegistry.Clear();
@@ -347,8 +309,27 @@ void FEditor::Create()
     ViewportClient.SetScene(CurScene);
     GlobalInputController.SetScene(CurScene);
 
-    UE_LOG(FEditor, ELogVerbosity::Log, "Hello Editor");
+    UE_LOG(FEditor, ELogVerbosity::Log, "Hello Probopass!");
     EditorContext.Scene = CurScene;
+
+    WindowOverlayManager = new FWindowOverlayManager();
+    WindowOverlayManager->SetEditorContext(&EditorContext);
+    WindowOverlayManager->SetScene(CurScene);
+    FEditorViewportPanel* EditorPanel = new FEditorViewportPanel();
+    EditorPanel->ViewportClient = &ViewportClient;
+    WindowOverlayManager->GetViewportPanels().push_back(EditorPanel);
+
+    // Share the primary ViewportClient's selection controller with all sub-panels
+    // so there is only one SelectedActors array — eliminates stale-pointer crashes on actor delete.
+    WindowOverlayManager->SetSharedSelectionController(&ViewportClient.GetSelectionController());
+
+    WindowOverlayManager->SetViewportLayout(EViewportLayout::ColumnTwoRow);
+
+    // SubViewports and Splitter controls
+    OverlayInputContext = new FViewportOverlayInputContext(WindowOverlayManager);
+    GlobalInputRouter.AddContext(OverlayInputContext);
+
+    LoadEditorSettings();
 }
 
 void FEditor::Release()
@@ -381,6 +362,16 @@ void FEditor::Release()
     if (GLog == &LogBuffer)
     {
         GLog = nullptr;
+    }
+
+    delete OverlayInputContext;
+    OverlayInputContext = nullptr;
+
+    if (WindowOverlayManager)
+    {
+        WindowOverlayManager->Release();
+        delete WindowOverlayManager;
+        WindowOverlayManager = nullptr;
     }
 }
 
@@ -447,6 +438,12 @@ void FEditor::LoadEditorSettings()
     ViewportClient.GetNavigationController().SetRotationSpeed(SettingsData.CameraRotationSpeed);
     EditorContext.ContentBrowserLeftPaneWidth =
         std::max(SettingsData.ContentBrowserLeftPaneWidth, 120.0f);
+
+    if (WindowOverlayManager != nullptr)
+    {
+        WindowOverlayManager->SetNavigationValues(SettingsData.CameraMoveSpeed,
+                                                  SettingsData.CameraRotationSpeed);
+    }
 }
 
 void FEditor::SaveEditorSettings() const
@@ -610,6 +607,10 @@ void FEditor::ReplaceCurrentScene(std::unique_ptr<FScene> NewScene)
     EditorContext.Scene = CurScene;
     EditorContext.SelectedObject = nullptr;
     EditorContext.SelectedActors.clear();
+    if (WindowOverlayManager)
+    {
+        WindowOverlayManager->SetScene(CurScene);
+    }
     ResolveSceneAssetReferences(CurScene);
 }
 
@@ -650,21 +651,28 @@ void FEditor::ResolveSceneAssetReferences(FScene* Scene)
 
 void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* InputSystem)
 {
+    using namespace Engine::ApplicationCore;
+
     EditorContext.DeltaTime = DeltaTime;
-    Engine::ApplicationCore::FInputEvent        Event;
-    const Engine::ApplicationCore::FInputState& InputState = InputSystem->GetInputState();
+    FInputEvent        Event;
+    const FInputState& InputState = InputSystem->GetInputState();
 
     while (InputSystem->PollEvent(Event))
     {
-        if (GlobalInputRouter.RouteEvent(Event, InputState))
-        {
-            continue;
-        }
-
-        ViewportClient.HandleInputEvent(Event, InputState);
+        GlobalInputRouter.RouteEvent(Event, InputState);
     }
 
-    ViewportClient.Tick(DeltaTime, InputState);
+    // Tick every panel's viewport client uniformly.
+    if (WindowOverlayManager)
+    {
+        for (FEditorViewportPanel* Panel : WindowOverlayManager->GetViewportPanels())
+        {
+            if (Panel && Panel->ViewportClient)
+            {
+                Panel->ViewportClient->Tick(DeltaTime, InputState);
+            }
+        }
+    }
 
     if (PanelManager != nullptr)
     {
@@ -676,7 +684,7 @@ void FEditor::Tick(float DeltaTime, Engine::ApplicationCore::FInputSystem* Input
         CurScene->Tick(DeltaTime);
     }
 
-    BuildRenderData();
+    //BuildRenderData();
 }
 
 void FEditor::OnWindowResized(float Width, float Height)
@@ -690,7 +698,12 @@ void FEditor::OnWindowResized(float Width, float Height)
     WindowWidth = Width;
     EditorContext.WindowWidth = Width;
     EditorContext.WindowHeight = Height;
-    ViewportClient.OnResize(static_cast<uint32>(Width), static_cast<uint32>(Height));
+
+    if (WindowOverlayManager != nullptr)
+    {
+        WindowOverlayManager->SetWindowDimension(static_cast<uint32>(Width),
+                                                 static_cast<uint32>(Height));
+    }
 }
 
 void FEditor::CreateNewScene()
@@ -1369,23 +1382,24 @@ void FEditor::DrawPanel()
 
 void FEditor::BuildRenderData()
 {
-    EditorRenderData = FEditorRenderData{};
-    SceneRenderData = FSceneRenderData{};
+    //EditorRenderData = FEditorRenderData{};
+    //SceneRenderData = FSceneRenderData{};
 
-    BuildSceneView();
+    //BuildSceneView();
 
-    EditorRenderData.SceneView = &SceneView;
-    SceneRenderData.SceneView = &SceneView;
-    SceneRenderData.ViewMode = ViewportClient.GetRenderSetting().GetViewMode();
+    //EditorRenderData.SceneView = &SceneView;
+    //SceneRenderData.SceneView = &SceneView;
+    //SceneRenderData.ViewMode = ViewportClient.GetRenderSetting().GetViewMode();
 
-    const EEditorShowFlags EditorShowFlags =
-        ViewportClient.GetRenderSetting().BuildEditorShowFlags(true);
-    const ESceneShowFlags SceneShowFlags = ViewportClient.GetRenderSetting().BuildSceneShowFlags();
+    //const EEditorShowFlags EditorShowFlags =
+    //    ViewportClient.GetRenderSetting().BuildEditorShowFlags(true);
+    //const ESceneShowFlags SceneShowFlags =
+    //    ViewportClient.GetRenderSetting().BuildSceneShowFlags();
 
-    ViewportClient.BuildRenderData(EditorRenderData, EditorShowFlags);
+    //ViewportClient.BuildRenderData(EditorRenderData, EditorShowFlags);
 
-    if (CurScene != nullptr)
-    {
-        CurScene->BuildRenderData(SceneRenderData, SceneShowFlags);
-    }
+    //if (CurScene != nullptr)
+    //{
+    //    CurScene->BuildRenderData(SceneRenderData, SceneShowFlags);
+    //}
 }

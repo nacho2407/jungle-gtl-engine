@@ -159,7 +159,13 @@ bool FD3D11ObjectIdRenderer::RenderAndReadBack(uint32& OutPickId)
 
     ID3D11RenderTargetView* RTV = PickRTV.Get();
     RHI->SetRenderTargets(1, &RTV, PickDSV.Get());
-    RHI->SetViewport(RHI->GetViewport());
+
+    const FViewportRect& VR = CurrentSceneView->GetViewRect();
+    D3D11_VIEWPORT PickVP = {(float)VR.X, (float)VR.Y,
+                             (float)VR.Width, (float)VR.Height,
+                             0.f, 1.f};
+    RHI->SetViewport(PickVP);
+    //RHI->SetViewport(RHI->GetViewport());
 
     static const float ClearColor[4] = {0, 0, 0, 0};
     RHI->ClearRenderTarget(PickRTV.Get(), ClearColor);
