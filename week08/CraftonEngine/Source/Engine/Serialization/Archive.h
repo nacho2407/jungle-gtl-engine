@@ -46,7 +46,7 @@ inline FArchive& operator<<(FArchive& Ar, std::string& Str)
 }
 
 // ----------------------------------------------------
-// 🪄 마법의 연산자 특수화 (TArray 지원)
+// 마법의 연산자 특수화 (TArray 지원)
 // ----------------------------------------------------
 template<typename T>
 FArchive& operator<<(FArchive& Ar, TArray<T>& Array)
