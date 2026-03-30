@@ -29,7 +29,8 @@ FShader& FShader::operator=(FShader&& Other) noexcept
 }
 
 void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const char* InVSEntryPoint, const char* InPSEntryPoint,
-	const D3D11_INPUT_ELEMENT_DESC* InInputElements, UINT InInputElementCount)
+	const D3D11_INPUT_ELEMENT_DESC* InInputElements, UINT InInputElementCount,
+	const D3D_SHADER_MACRO* InDefines)
 {
 	Release();
 
@@ -38,7 +39,7 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 	ID3DBlob* errorBlob = nullptr;
 
 	// Vertex Shader 컴파일
-	HRESULT hr = D3DCompileFromFile(InFilePath, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, InVSEntryPoint, "vs_5_0", 0, 0, &vertexShaderCSO, &errorBlob);
+	HRESULT hr = D3DCompileFromFile(InFilePath, InDefines, D3D_COMPILE_STANDARD_FILE_INCLUDE, InVSEntryPoint, "vs_5_0", 0, 0, &vertexShaderCSO, &errorBlob);
 	if (FAILED(hr))
 	{
 		if (errorBlob)
@@ -50,7 +51,7 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 	}
 
 	// Pixel Shader 컴파일
-	hr = D3DCompileFromFile(InFilePath, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, InPSEntryPoint, "ps_5_0", 0, 0, &pixelShaderCSO, &errorBlob);
+	hr = D3DCompileFromFile(InFilePath, InDefines, D3D_COMPILE_STANDARD_FILE_INCLUDE, InPSEntryPoint, "ps_5_0", 0, 0, &pixelShaderCSO, &errorBlob);
 	if (FAILED(hr))
 	{
 		if (errorBlob)
