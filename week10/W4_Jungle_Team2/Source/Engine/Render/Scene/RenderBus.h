@@ -28,6 +28,7 @@ public:
 	const FMatrix& GetView() const { return View; }
 	const FMatrix& GetProj() const { return Proj; }
 	const FVector& GetCameraPosition() const { return CameraPosition;  }
+	const FVector& GetCameraForward() const { return CameraForward; }
 	const FVector& GetCameraUp() const { return CameraUp; }
 	const FVector& GetCameraRight() const { return CameraRight; }
 	EViewMode GetViewMode() const { return ViewMode; }
@@ -41,6 +42,7 @@ private:
 	FMatrix View;
 	FMatrix Proj;
 	FVector CameraPosition;
+	FVector CameraForward;
 	FVector CameraRight;
 	FVector CameraUp;
 

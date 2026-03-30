@@ -1,4 +1,5 @@
 ﻿#include "RenderBus.h"
+#include <UI/EditorConsoleWidget.h>
 
 void FRenderBus::Clear()
 {
@@ -28,9 +29,11 @@ void FRenderBus::SetViewProjection(const FMatrix& InView, const FMatrix& InProj)
 	View = InView;
 	Proj = InProj;
 
-	CameraRight    = FVector(InView.M[0][0], InView.M[1][0], InView.M[2][0]);
-	CameraUp       = FVector(InView.M[0][1], InView.M[1][1], InView.M[2][1]);
-	CameraPosition = InView.GetInverse().GetOrigin();
+	const FMatrix CameraWorldMatrix = InView.GetInverse();
+	CameraPosition = CameraWorldMatrix.GetOrigin();
+	CameraForward = CameraWorldMatrix.GetForwardVector().GetSafeNormal();
+	CameraRight = CameraWorldMatrix.GetRightVector().GetSafeNormal();
+	CameraUp = CameraWorldMatrix.GetUpVector().GetSafeNormal();
 }
 
 void FRenderBus::SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags)
