@@ -4,6 +4,7 @@
 #include "Math/Vector.h"
 
 class UTexture2D;
+class FArchive;
 
 // class UMaterialInterface
 // {
@@ -21,4 +22,5 @@ public:
 
 public:
 	const FString& GetAssetPathFileName() const;
+	void Serialize(FArchive& Ar);
 };
