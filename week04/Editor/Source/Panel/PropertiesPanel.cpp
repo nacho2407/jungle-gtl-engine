@@ -12,7 +12,7 @@
 #include "Engine/Component/Core/UnknownComponent.h"
 
 #include "Content/ContentBrowserDragDrop.h"
-#include "CoreUObject/UObjectIterator.h" // 민준 님의 이터레이터 헤더
+#include "CoreUObject/UObjectIterator.h" // 이터레이터 헤더
 #include "Editor/Editor.h"
 #include "Editor/EditorContext.h"
 #include "CoreUObject/Object.h"
@@ -43,7 +43,7 @@ namespace
      */
     FString GetBaseObjectDisplayName(const UObject* Object)
     {
-        // 1. nullptr 및 메모리 유효성 검사 (민준 님의 IsValidLowLevel 활용)
+        // 1. nullptr 및 메모리 유효성 검사 (IsValidLowLevel 활용)
         if (Object == nullptr || !Object->IsValidLowLevel())
             return "Invalid Object";
 
