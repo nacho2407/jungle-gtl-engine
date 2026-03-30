@@ -96,19 +96,14 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	const TArray<FOverlayStatLine> OverlayLines = Editor->GetOverlayStatSystem().BuildLines(*Editor);
 	if (!OverlayLines.empty() && VP && VC == Editor->GetActiveViewport())
 	{
-		const float TextScale = Editor->GetOverlayStatSystem().GetLayout().TextScale;
-
+		TArray<FScreenTextItem> TextItems;
+		TextItems.reserve(OverlayLines.size());
 		for (const FOverlayStatLine& Line : OverlayLines)
 		{
-			FFontEntry Entry = {};
-			Entry.Font.Text = &Line.Text;
-			Entry.Font.Font = nullptr;
-			Entry.Font.Scale = TextScale;
-			Entry.Font.bScreenSpace = 1;
-			Entry.Font.ScreenPosition = Line.ScreenPosition;
-
-			Bus.AddOverlayFontEntry(std::move(Entry));
+			TextItems.push_back({ &Line.Text, Line.ScreenPosition });
 		}
+
+		Collector.CollectOverlayText(TextItems, Editor->GetOverlayStatSystem().GetLayout().TextScale, Bus);
 	}
 
 	//============
