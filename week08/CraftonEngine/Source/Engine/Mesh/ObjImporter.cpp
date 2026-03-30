@@ -457,6 +457,7 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 			continue;
 		}
 
+		// 기존에 수집된 슬롯과 중복되지 않는 경우에만 추가
 		if (std::find(OrderedMaterialSlots.begin(), OrderedMaterialSlots.end(), CurrentSlotName) == OrderedMaterialSlots.end())
 		{
 			OrderedMaterialSlots.push_back(CurrentSlotName);
@@ -476,13 +477,9 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 		if (It != MtlInfos.end())
 		{
 			MatchedMaterial = &(*It);
-		}
+			UMaterial* MaterialObject = UObjectManager::Get().CreateObject<UMaterial>();
+			MaterialObject->PathFileName = TargetSlotName;
 
-		UMaterial* MaterialObject = UObjectManager::Get().CreateObject<UMaterial>();
-		MaterialObject->PathFileName = TargetSlotName;
-
-		if (MatchedMaterial)
-		{
 			if (!MatchedMaterial->map_Kd.empty())
 			{
 				MaterialObject->DiffuseTextureFilePath = MatchedMaterial->map_Kd;
@@ -492,16 +489,20 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 			{
 				MaterialObject->DiffuseColor = { MatchedMaterial->Kd.X, MatchedMaterial->Kd.Y, MatchedMaterial->Kd.Z, 1.0f };
 			}
-		}
-		else
-		{
-			MaterialObject->DiffuseColor = FallbackColor4;
-		}
 
-		FStaticMaterial NewStaticMaterial;
-		NewStaticMaterial.MaterialInterface = std::shared_ptr<UMaterial>(MaterialObject);
-		NewStaticMaterial.MaterialSlotName = TargetSlotName;
-		OutMaterials.push_back(NewStaticMaterial);
+			// FStaticMaterial 생성 및 OutMaterials에 추가
+			FStaticMaterial NewStaticMaterial;
+			NewStaticMaterial.MaterialInterface = std::shared_ptr<UMaterial>(MaterialObject);
+			NewStaticMaterial.MaterialSlotName = TargetSlotName;
+			OutMaterials.push_back(NewStaticMaterial);
+		}
+		else // Material Slot이 MTL 파일에 정의되어 있지 않은 않은 경우
+		{
+			FStaticMaterial NewEmptyStaticMaterial;
+			NewEmptyStaticMaterial.MaterialInterface = nullptr; // TODO: 기본 머티리얼을 할당해야 함!!
+			NewEmptyStaticMaterial.MaterialSlotName = TargetSlotName;
+			OutMaterials.push_back(NewEmptyStaticMaterial);
+		}
 	}
 
 	// "None" 슬롯이 존재했다면 맨 마지막에 배치
