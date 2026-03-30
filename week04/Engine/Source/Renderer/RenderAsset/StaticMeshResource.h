@@ -21,7 +21,7 @@ struct FStaticMeshResource
     uint32 VertexStride = 0;
 
     TArray<FSubMesh> SubMeshes;
-    TArray<FString> MaterialLibraryPaths;
+    FString          MaterialLibraryPath;
 
     // --- CPU 충돌/Picking용 데이터 (RAM) ---
     TArray<FVector> CPU_Positions;
@@ -36,6 +36,7 @@ struct FStaticMeshResource
         IndexCount = 0;
         VertexStride = 0;
         SubMeshes.clear();
+        MaterialLibraryPath.clear();
         CPU_Positions.clear();
         CPU_Indices.clear();
         BoundingBox = Geometry::FAABB();

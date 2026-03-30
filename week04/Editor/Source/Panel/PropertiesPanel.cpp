@@ -214,16 +214,15 @@ namespace
         FString ComboLabel = CurrentPath.empty() ? "None" : CurrentPath;
         if (ImGui::BeginCombo("##Value", ComboLabel.c_str()))
         {
-            for (TUObjectIterator<UStaticMesh> It; It; ++It)
+            for (TUObjectIterator<Engine::Asset::UStaticMesh> It; It; ++It)
             {
-                UStaticMesh* MeshAsset = *It;
+                Engine::Asset::UStaticMesh* MeshAsset = *It;
                 if (MeshAsset == nullptr || !MeshAsset->IsValidLowLevel())
                     continue;
 
-                const FString Path = MeshAsset->GetAssetPathFileName();
+                const FString Path = MeshAsset->GetAssetName();
                 FString       Label = MeshAsset->GetAssetName();
-                if (MeshAsset->bIsBaked)
-                    Label += " [Baked]";
+                if (MeshAsset->bIsBaked)                    Label += " [Baked]";
                 bool bSelected = (RawValue == Path);
                 if (ImGui::Selectable(Label.c_str(), bSelected))
                 {

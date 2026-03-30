@@ -9,6 +9,14 @@ struct FMeshVertex
     FVector Position;
 };
 
+struct FMeshVertexPNCT
+{
+    FVector  Position;
+    FVector  Normal;
+    // FVector4 Color;
+    FVector2 UV;
+};
+
 struct FLineVertex
 {
     FVector Position;

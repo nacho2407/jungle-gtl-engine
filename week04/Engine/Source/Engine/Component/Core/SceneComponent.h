@@ -31,6 +31,8 @@ namespace Engine::Component
         USceneComponent*                GetAttachParent() const { return AttachParent; }
         const TArray<USceneComponent*>& GetAttachChildren() const { return AttachChildren; }
 
+        virtual void Serialize(bool bIsLoading, void* JsonHandle);
+
         virtual void SetRelativeLocation(const FVector& NewLocation);
         virtual void SetRelativeRotation(const FQuat& NewRotation);
         virtual void SetRelativeRotation(const FRotator& NewRotation);

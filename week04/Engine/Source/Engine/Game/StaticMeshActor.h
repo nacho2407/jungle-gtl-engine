@@ -1,5 +1,5 @@
 #pragma once
-
+#include "Core/EngineAPI.h"
 #include "Engine/Game/Actor.h"
 
 namespace Engine::Component
@@ -22,6 +22,10 @@ class ENGINE_API AStaticMeshActor : public AActor
     {
         return StaticMeshComponent;
     }
+
+    bool           IsRenderable() const override;
+    bool           IsSelected() const override;
+    uint32         GetObjectId() const override;
 
   private:
     Engine::Component::UStaticMeshComponent* StaticMeshComponent = nullptr;
