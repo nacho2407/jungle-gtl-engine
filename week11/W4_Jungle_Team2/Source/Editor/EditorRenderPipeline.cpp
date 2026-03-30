@@ -77,7 +77,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
 	Bus.SetRenderSettings(ViewMode, ShowFlags);
 
 	Collector.CollectWorld(World, ShowFlags, ViewMode, Bus);
-	Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus);
+	Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus, Camera->IsOrthographic());
 
 	// 뷰포트별 카메라 기준으로 기즈모 스케일 결정
 	// TickInteraction 에서 한 번만 처리하면 마지막 뷰포트가 다른 뷰포트의 스케일을 덮어쓰므로
