@@ -12,7 +12,6 @@ enum class EDepthStencilState
 	Default,
 	DepthReadOnly,
 	StencilWrite,
-	StencilOutline,
 	StencilWriteOnlyEqual,
 
 	// --- 기즈모 전용 ---
@@ -44,6 +43,9 @@ private:
 
 	ID3D11Texture2D* FrameBuffer = nullptr;
 	ID3D11RenderTargetView* FrameBufferRTV = nullptr;
+	ID3D11Texture2D* SelectionMaskBuffer = nullptr;
+	ID3D11RenderTargetView* SelectionMaskRTV = nullptr;
+	ID3D11ShaderResourceView* SelectionMaskSRV = nullptr;
 
 	ID3D11RasterizerState* RasterizerStateBackCull = nullptr;
 	ID3D11RasterizerState* RasterizerStateFrontCull = nullptr;
@@ -56,7 +58,6 @@ private:
 	ID3D11DepthStencilState* DepthStencilStateDefault = nullptr;
 	ID3D11DepthStencilState* DepthStencilStateDepthReadOnly = nullptr;
 	ID3D11DepthStencilState* DepthStencilStateStencilWrite = nullptr;
-	ID3D11DepthStencilState* DepthStencilStateStencilOutline = nullptr;
 	ID3D11DepthStencilState* DepthStencilStateStencilMaskEqual = nullptr;
 
 	ID3D11DepthStencilState* DepthStencilStateGizmoInside = nullptr;  
@@ -115,6 +116,12 @@ public:
 
 	ID3D11Device* GetDevice() const;
 	ID3D11DeviceContext* GetDeviceContext() const;
+	ID3D11RenderTargetView* GetFrameBufferRTV() const { return FrameBufferRTV; }
+	ID3D11RenderTargetView* GetSelectionMaskRTV() const { return SelectionMaskRTV; }
+	ID3D11ShaderResourceView* GetSelectionMaskSRV() const { return SelectionMaskSRV; }
+	ID3D11DepthStencilView* GetDepthStencilView() const { return DepthStencilView; }
+	float GetViewportWidth() const { return ViewportInfo.Width; }
+	float GetViewportHeight() const { return ViewportInfo.Height; }
 
 	void SetDepthStencilState(EDepthStencilState InState);
 	void SetBlendState(EBlendState InState);
