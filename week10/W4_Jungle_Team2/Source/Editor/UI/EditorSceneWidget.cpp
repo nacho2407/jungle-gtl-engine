@@ -61,7 +61,21 @@ void FEditorSceneWidget::Render(float DeltaTime)
 	if (ImGui::Button("Save Scene"))
 	{
 		FWorldContext* Ctx = EditorEngine->GetWorldContextFromHandle(EditorEngine->GetActiveWorldHandle());
-		if (Ctx) FSceneSaveManager::SaveSceneAsJSON(SceneName, *Ctx);
+		if (Ctx)
+		{
+			// Perspective 카메라(0번) 상태를 씬에 함께 저장
+			FEditorCameraState CamState;
+			if (const FViewportCamera* Cam = EditorEngine->GetCamera())
+			{
+				CamState.Location = Cam->GetLocation();
+				CamState.Rotation = FRotator(Cam->GetRotation());
+				CamState.FOV      = Cam->GetFOV() * (180.f / 3.14159265358979f);
+				CamState.NearClip = Cam->GetNearPlane();
+				CamState.FarClip  = Cam->GetFarPlane();
+				CamState.bValid   = true;
+			}
+			FSceneSaveManager::SaveSceneAsJSON(SceneName, *Ctx, &CamState);
+		}
 		SceneSaveNotificationTimer = NotificationTimer;
 		RefreshSceneFileList();
 	}
@@ -101,13 +115,27 @@ void FEditorSceneWidget::Render(float DeltaTime)
 
 			EditorEngine->ClearScene();
 			FWorldContext LoadCtx;
-			FSceneSaveManager::LoadSceneFromJSON(FilePath, LoadCtx);
+			FEditorCameraState LoadedCam;
+			FSceneSaveManager::LoadSceneFromJSON(FilePath, LoadCtx, &LoadedCam);
 			if (LoadCtx.World)
 			{
 				EditorEngine->GetWorldList().push_back(LoadCtx);
 				EditorEngine->SetActiveWorld(LoadCtx.ContextHandle);
 			}
 			EditorEngine->ResetViewport();
+
+			// ResetViewport 가 카메라를 InitViewPos 로 초기화하므로 그 이후에 덮어씁니다
+			if (LoadedCam.bValid)
+			{
+				if (FViewportCamera* Cam = EditorEngine->GetCamera())
+				{
+					Cam->SetLocation(LoadedCam.Location);
+					Cam->SetRotation(FQuat(LoadedCam.Rotation));
+					Cam->SetFOV(LoadedCam.FOV * (3.14159265358979f / 180.f));
+					Cam->SetNearPlane(LoadedCam.NearClip);
+					Cam->SetFarPlane(LoadedCam.FarClip);
+				}
+			}
 			SceneLoadNotificationTimer = NotificationTimer;
 		}
 		if (SceneLoadNotificationTimer > 0.0f)
@@ -136,33 +164,47 @@ void FEditorSceneWidget::Render(float DeltaTime)
 		FSelectionManager& Selection = EditorEngine->GetSelectionManager();
 
 		ImGui::BeginChild("ActorList", ImVec2(0, 0), ImGuiChildFlags_Borders);
-		for (AActor* Actor : Actors)
-		{
-			if (!Actor) continue;
 
-			FString ActorName = Actor->GetFName().ToString();
-			if (ActorName.empty())
-			{
-				ActorName = Actor->GetTypeInfo()->name;
-			}
+        // 화면에 보이는 항목(DisplayStart ~ DisplayEnd) 범위만 화면에 출력합니다.
+		ImGuiListClipper Clipper;
+        Clipper.Begin(static_cast<int>(Actors.size()));
 
-			bool bIsSelected = Selection.IsSelected(Actor);
-			if (ImGui::Selectable(ActorName.c_str(), bIsSelected))
-			{
-				if (ImGui::GetIO().KeyShift)
-				{
-					Selection.SelectRange(Actor, Actors);
-				}
-				else if (ImGui::GetIO().KeyCtrl)
-				{
-					Selection.ToggleSelect(Actor);
-				}
-				else
-				{
-					Selection.Select(Actor);
-				}
-			}
-		}
+        while (Clipper.Step())
+        {
+            for (int i = Clipper.DisplayStart; i < Clipper.DisplayEnd; i++)
+            {
+                AActor* Actor = Actors[i];
+                if (!Actor) continue;
+
+                FString ActorName = Actor->GetFName().ToString();
+                if (ActorName.empty())
+                {
+                    ActorName = Actor->GetTypeInfo()->name;
+                }
+
+                ImGui::PushID(i); 
+
+                bool bIsSelected = Selection.IsSelected(Actor);
+                if (ImGui::Selectable(ActorName.c_str(), bIsSelected))
+                {
+                    if (ImGui::GetIO().KeyShift)
+                    {
+                        Selection.SelectRange(Actor, Actors);
+                    }
+                    else if (ImGui::GetIO().KeyCtrl)
+                    {
+                        Selection.ToggleSelect(Actor);
+                    }
+                    else
+                    {
+                        Selection.Select(Actor);
+                    }
+                }
+                
+                ImGui::PopID();
+            }
+        }
+        Clipper.End();
 		ImGui::EndChild();
 	}
 

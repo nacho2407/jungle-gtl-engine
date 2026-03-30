@@ -8,9 +8,11 @@
 #include "Component/StaticMeshComponent.h"
 #include "Math/Rotator.h"
 #include "ImGui/imgui.h"
+#include "Engine/Core/Paths.h"
 
 #include <windows.h>
 #include <commdlg.h>
+#include <filesystem>
 
 void FObjViewerMenuBarWidget::Render(float DeltaTime)
 {
@@ -21,6 +23,7 @@ void FObjViewerMenuBarWidget::Render(float DeltaTime)
 			if (ImGui::MenuItem("Load..."))
 			{
 				FString FilePath = OpenFileDialog();
+
 				if (!FilePath.empty())
 				{
 					UStaticMesh* LoadedMesh = FResourceManager::Get().LoadStaticMesh(FilePath);
@@ -50,6 +53,7 @@ void FObjViewerMenuBarWidget::Render(float DeltaTime)
 	}
 }
 
+// 불러올 때는 상대 경로로 불러온다.
 FString FObjViewerMenuBarWidget::OpenFileDialog()
 {
 	OPENFILENAMEW ofn;
@@ -68,11 +72,12 @@ FString FObjViewerMenuBarWidget::OpenFileDialog()
 
 	if (GetOpenFileNameW(&ofn) == TRUE)
 	{
-		return FPaths::ToUtf8(ofn.lpstrFile);
+		return FPaths::ToRelativeString(ofn.lpstrFile);
 	}
 	return FString();
 }
 
+// 저장할 때는 절대경로로 저장한다.
 FString FObjViewerMenuBarWidget::SaveFileDialog()
 {
 	OPENFILENAMEW ofn;
@@ -89,7 +94,7 @@ FString FObjViewerMenuBarWidget::SaveFileDialog()
 
 	if (GetSaveFileNameW(&ofn) == TRUE)
 	{
-		return FPaths::ToUtf8(ofn.lpstrFile);
+		return FPaths::ToAbsoluteString(ofn.lpstrFile);
 	}
 	return FString();
 }

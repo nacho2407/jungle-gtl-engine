@@ -6,6 +6,7 @@
 #include "Core/ResourceManager.h"
 
 DEFINE_CLASS(UStaticMeshComponent, UMeshComponent)
+REGISTER_FACTORY(UStaticMeshComponent)
 
 UStaticMeshComponent::UStaticMeshComponent()
 {
