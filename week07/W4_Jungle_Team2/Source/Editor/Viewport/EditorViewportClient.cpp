@@ -138,10 +138,8 @@ void FEditorViewportClient::ApplyCameraMode()
 	case EVT_Perspective:
 		Camera.SetProjectionType(EViewportProjectionType::Perspective);
 		Camera.ClearCustomLookDir();
-		if (Settings)
-		{
-			Camera.SetLocation(Settings->InitViewPos);
-		}
+        Camera.SetLocation(FVector(5.f, 3.f, 5.f));
+		Camera.SetLookAt(FVector(0.f, 0.f, 0.f));
 		break;
 
 	// 직교 뷰 (X=Forward, Y=Right, Z=Up)
@@ -160,14 +158,14 @@ void FEditorViewportClient::ApplyCameraMode()
 
 	case EVT_OrthoFront:		// 앞(-X)에서 뒤 (+X 방향), 스크린 위 = +Z
 		Camera.SetProjectionType(EViewportProjectionType::Orthographic);
-		Camera.SetLocation(FVector(-1000.f, 0.f, 0.f));
-		Camera.SetCustomLookDir(FVector(1.f, 0.f, 0.f), FVector(0.f, 0.f, 1.f));
+		Camera.SetLocation(FVector(1000.f, 0.f, 0.f));
+		Camera.SetCustomLookDir(FVector(-1.f, 0.f, 0.f), FVector(0.f, 0.f, 1.f));
 		break;
 
 	case EVT_OrthoBack:			// 뒤(+X)에서 앞 (-X 방향), 스크린 위 = +Z
 		Camera.SetProjectionType(EViewportProjectionType::Orthographic);
-		Camera.SetLocation(FVector(1000.f, 0.f, 0.f));
-		Camera.SetCustomLookDir(FVector(-1.f, 0.f, 0.f), FVector(0.f, 0.f, 1.f));
+		Camera.SetLocation(FVector(-1000.f, 0.f, 0.f));
+		Camera.SetCustomLookDir(FVector(1.f, 0.f, 0.f), FVector(0.f, 0.f, 1.f));
 		break;
 
 	case EVT_OrthoLeft:			// 왼쪽(-Y)에서 오른쪽 (+Y 방향), 스크린 위 = +Z
@@ -275,6 +273,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		{
 			bRightMousePanning = false;
 			NavigationController.EndPanning();
+			NavigationController.ResetTargetLocation();
 		}
 
 		if (!bIsCursorVisible)
@@ -301,6 +300,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	{
 		bMiddleMousePanning = false;
 		NavigationController.EndPanning();
+		NavigationController.ResetTargetLocation();
 
 		if (!bIsCursorVisible)
 		{
@@ -326,6 +326,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	{
 		bAltLeftMouseOrbiting = false;
 		NavigationController.EndOrbit();
+		NavigationController.ResetTargetLocation();
 
 		if (!bIsCursorVisible)
 		{
@@ -527,6 +528,11 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		}
 	}
 	else if (InputSystem::Get().GetLeftDragEnd())
+	{
+		Gizmo->DragEnd();
+	}
+
+	if (Gizmo->IsPressedOnHandle() && InputSystem::Get().GetKeyUp(VK_LBUTTON))
 	{
 		Gizmo->DragEnd();
 	}
