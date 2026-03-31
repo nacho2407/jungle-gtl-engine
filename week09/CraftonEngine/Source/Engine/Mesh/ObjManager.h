@@ -36,5 +36,5 @@ public:
 
 private:
 	static bool LoadStaticMeshAsset(const std::string& PathFileName, ID3D11Device* InDevice,
-		std::unique_ptr<FStaticMesh>& OutMesh, TArray<FStaticMaterial>& OutMaterials);
+		FStaticMesh*& OutMesh, TArray<FStaticMaterial>& OutMaterials);
 };
