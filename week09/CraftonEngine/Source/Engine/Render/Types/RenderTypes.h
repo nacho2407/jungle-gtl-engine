@@ -36,9 +36,9 @@ enum class ERenderPass : uint32
 	SubUV,			// SubUVComponent     → SubUVBatcher 경유
 	Translucent,
 	SelectionMask,
-	PostProcess,
 	Editor,
 	Grid,
+	PostProcess,
 	GizmoOuter,
 	GizmoInner,
 	OverlayFont,

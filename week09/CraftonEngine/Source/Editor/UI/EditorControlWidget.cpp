@@ -94,27 +94,5 @@ void FEditorControlWidget::Render(float DeltaTime)
 		Camera->SetRelativeRotation(FVector(Clamp(CameraRotation[0], CamRot.X, CamRot.X), CameraRotation[1], CameraRotation[2]));
 	}
 
-	SEPARATOR();
-
-	// Gizmo Space / Mode
-	static int32 SelectedSpace = 0;
-	if (ImGui::RadioButton("World", &SelectedSpace, 0))
-	{
-		EditorEngine->GetGizmo()->SetWorldSpace(true);
-	}
-	ImGui::SameLine();
-	if (ImGui::RadioButton("Local", &SelectedSpace, 1))
-	{
-		EditorEngine->GetGizmo()->SetWorldSpace(false);
-	}
-
-	SEPARATOR();
-
-	if (ImGui::Button("Translate")) EditorEngine->GetGizmo()->SetTranslateMode();
-	ImGui::SameLine();
-	if (ImGui::Button("Rotate")) EditorEngine->GetGizmo()->SetRotateMode();
-	ImGui::SameLine();
-	if (ImGui::Button("Scale")) EditorEngine->GetGizmo()->SetScaleMode();
-
 	ImGui::End();
 }
