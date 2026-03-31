@@ -15,7 +15,6 @@ public:
 	UStaticMesh() = default;
 	~UStaticMesh() override = default;
 
-	void Build(const FString& SourceFilePath, class ID3D11Device* InDevice);
 	void Serialize(FArchive& Ar);
 
 	const FString& GetAssetPathFileName() const;
@@ -24,8 +23,8 @@ public:
 	void SetStaticMaterials(TArray<FStaticMaterial>&& InMaterials);
 	const TArray<FStaticMaterial>& GetStaticMaterials() const;
 
-private:
 	void InitResources(class ID3D11Device* InDevice);
+	
 private:
 	std::unique_ptr<FStaticMesh> StaticMeshAsset;
 	TArray<FStaticMaterial> StaticMaterials; // 슬롯 이름과 머티리얼 인터페이스를 묶어서 저장하는 배열
