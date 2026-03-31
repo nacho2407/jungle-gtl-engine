@@ -3,6 +3,7 @@
 #include "Asset/AssetManager.h"
 #include "CoreUObject/Object.h"
 #include "Renderer/RenderAsset/MaterialResource.h"
+#include <filesystem>
 
 namespace Engine::Asset
 {
@@ -10,7 +11,14 @@ namespace Engine::Asset
     {
         InitializeAssetMetadata(InSource);
         Resource = InResource;
-        // SetPath(InSource.NormalizedPath);
+
+        // 경로에서 파일 이름 추출 (예: "C:/Data/stone.mtl" -> "stone.mtl")
+        std::filesystem::path FilePath(InSource.NormalizedPath);
+        FString ExtractedName = FilePath.filename().string().c_str();
+
+        // 에셋 이름 및 UObject 이름 설정
+        SetAssetName(ExtractedName);
+        Name = ExtractedName.c_str();
     }
 
     const FMaterialData* UMaterial::GetMaterialData(const FString& SubMaterialName) const
