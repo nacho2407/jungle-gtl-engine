@@ -37,12 +37,37 @@ struct FObjMaterialInfo
 	int32 illum; // illumination model
 };
 
+// 블렌더 스타일 Forward 축 선택
+enum class EForwardAxis : uint8
+{
+	X, NegX,   // +X, -X
+	Y, NegY,   // +Y, -Y
+	Z, NegZ    // +Z, -Z
+};
+
+enum class EWindingOrder : uint8
+{
+	CCW_to_CW,  // OBJ CCW → DX CW (인덱스 [0,2,1]) — 기본값
+	Keep         // 원본 유지 [0,1,2]
+};
+
+struct FImportOptions
+{
+	float Scale = 1.0f;
+	EForwardAxis ForwardAxis = EForwardAxis::NegY;  // 블렌더 기본: -Y Forward
+	EWindingOrder WindingOrder = EWindingOrder::CCW_to_CW;
+	static FImportOptions Default() { return {}; }
+};
+
 // OBJ/MTL 파싱 + Raw→Cooked 변환
 struct FObjImporter
 {
 	static bool Import(const FString& ObjFilePath, FStaticMesh& OutMesh, TArray<FStaticMaterial>& OutMaterials);
+	static bool Import(const FString& ObjFilePath, const FImportOptions& Options, FStaticMesh& OutMesh, TArray<FStaticMaterial>& OutMaterials);
 private:
 	static bool ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo);
 	static bool ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>& OutMaterials);
-	static bool Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInfo>& MtlInfos, FStaticMesh& OutMesh, TArray<FStaticMaterial>& OutMaterials);
+	static bool Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInfo>& MtlInfos, const FImportOptions& Options, FStaticMesh& OutMesh, TArray<FStaticMaterial>& OutMaterials);
+
+	static FVector RemapPosition(const FVector& ObjPos, EForwardAxis Axis);
 };
