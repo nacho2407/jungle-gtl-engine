@@ -7,8 +7,9 @@ namespace Engine::Asset
 {
     void UStaticMesh::Initialize(const FSourceRecord& InSource, std::shared_ptr<FStaticMeshResource> InResource)
     {
+        InitializeAssetMetadata(InSource);
         RenderResource = InResource;
-        SetPath(InSource.NormalizedPath);
+        // SetPath(InSource.NormalizedPath);
     }
 
     void UStaticMesh::InitializeMaterialSlots(uint32 NumSlots)

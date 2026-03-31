@@ -467,3 +467,5 @@ GEMINI_TODO.md
 !Editor/Content/Sample obj/
 !Editor/Content/Sample obj/**/*.obj
 
+# Crash Log
+CrashLog.txt

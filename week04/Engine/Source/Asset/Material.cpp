@@ -8,8 +8,9 @@ namespace Engine::Asset
 {
     void UMaterial::Initialize(const FSourceRecord& InSource, std::shared_ptr<::FMaterialResource> InResource)
     {
+        InitializeAssetMetadata(InSource);
         Resource = InResource;
-        SetPath(InSource.NormalizedPath);
+        // SetPath(InSource.NormalizedPath);
     }
 
     const FMaterialData* UMaterial::GetMaterialData(const FString& SubMaterialName) const
