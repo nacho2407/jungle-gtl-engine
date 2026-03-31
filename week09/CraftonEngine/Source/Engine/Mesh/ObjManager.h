@@ -9,6 +9,7 @@
 
 struct FStaticMesh;
 struct FStaticMaterial;
+struct FImportOptions;
 class UStaticMesh;
 class UMaterial;
 
@@ -25,14 +26,18 @@ class FObjManager
 	static std::map<std::string, UStaticMesh*> StaticMeshCache;
 	static TMap<FString, UMaterial*> MaterialCache;
 	static TArray<FMeshAssetListItem> AvailableMeshFiles;
+	static TArray<FMeshAssetListItem> AvailableObjFiles;
 
 
 public:
 	static std::string GetBinaryFilePath(const std::string& OriginalPath);
 	static UStaticMesh* LoadObjStaticMesh(const std::string& PathFileName, ID3D11Device* InDevice);
+	static UStaticMesh* LoadObjStaticMesh(const FString& PathFileName, const FImportOptions& Options, ID3D11Device* InDevice);
 	static UMaterial* GetOrLoadMaterial(const FString& MaterialName);
 	static void ScanMeshAssets();
 	static const TArray<FMeshAssetListItem>& GetAvailableMeshFiles();
+	static void ScanObjSourceFiles();
+	static const TArray<FMeshAssetListItem>& GetAvailableObjFiles();
 
 private:
 	static bool LoadStaticMeshAsset(const std::string& PathFileName, ID3D11Device* InDevice,
