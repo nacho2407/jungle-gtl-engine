@@ -470,6 +470,7 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 		if (It != MtlInfos.end())
 		{
 			MatchedMaterial = &(*It);
+			// 섹션 머티리얼 슬롯 이름과 일치하는 머티리얼 이름이 MTL 파일에서 발견된 경우, 해당 머티리얼 로드 또는 생성
 			UMaterial* MaterialObject = FObjManager::GetOrLoadMaterial(TargetSlotName);
 
 			if (MaterialObject->PathFileName.empty())
@@ -487,16 +488,25 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 				}
 			}
 
-			// FStaticMaterial 생성 및 OutMaterials에 추가
+			// FStaticMaterial 슬롯 생성 및 OutMaterials에 추가
 			FStaticMaterial NewStaticMaterial;
 			NewStaticMaterial.MaterialInterface = std::shared_ptr<UMaterial>(MaterialObject);
 			NewStaticMaterial.MaterialSlotName = TargetSlotName;
 			OutMaterials.push_back(NewStaticMaterial);
 		}
-		else // Material Slot이 MTL 파일에 정의되어 있지 않은 않은 경우
+		else // Material Slot이 MTL 파일에 정의되어 있지 않은 경우
 		{
+			// Default 머티리얼 로드 또는 생성
+			UMaterial* DefaultMaterialObject = FObjManager::GetOrLoadMaterial("None");
+			if (DefaultMaterialObject->PathFileName.empty())
+			{
+				DefaultMaterialObject->PathFileName = "None";
+				DefaultMaterialObject->DiffuseColor = FallbackColor4;
+			}
+
+			// FStaticMaterial 슬롯 생성 및 OutMaterials에 추가
 			FStaticMaterial NewEmptyStaticMaterial;
-			NewEmptyStaticMaterial.MaterialInterface = nullptr; // TODO: 기본 머티리얼을 할당해야 함!!
+			NewEmptyStaticMaterial.MaterialInterface = std::shared_ptr<UMaterial>(DefaultMaterialObject);
 			NewEmptyStaticMaterial.MaterialSlotName = TargetSlotName;
 			OutMaterials.push_back(NewEmptyStaticMaterial);
 		}
