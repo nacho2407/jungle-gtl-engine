@@ -23,6 +23,7 @@ namespace ECBSlot
 	constexpr uint32 PerObject = 1; // b1: Model/Color
 	constexpr uint32 Gizmo = 2;     // b2: Gizmo state
 	constexpr uint32 PostProcess = 3; // b3: PostProcess Outline params
+	constexpr uint32 Material = 4;    // b4: Material properties (UVScroll 등)
 }
 
 //PerObject
@@ -44,6 +45,14 @@ struct FFrameConstants
 	FMatrix Projection;
 	float bIsWireframe;
 	FVector WireframeColor;
+	float Time;
+	float _pad[3];
+};
+
+struct FMaterialConstants
+{
+	uint32 bIsUVScroll;
+	float _pad[3];
 };
 
 struct FGizmoConstants
@@ -179,6 +188,7 @@ struct FMeshSectionDraw
 	FVector4 DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 	uint32 FirstIndex = 0;
 	uint32 IndexCount = 0;
+	bool bIsUVScroll = false;
 };
 
 struct FRenderCommand

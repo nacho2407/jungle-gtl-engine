@@ -21,10 +21,12 @@ void UStaticMeshComp::SetStaticMesh(UStaticMesh* InMesh)
 
 		OverrideMaterials.resize(DefaultMaterials.size());
 		OverrideMaterialPaths.resize(DefaultMaterials.size()); // 경로 배열도 사이즈 맞춤
+		OverrideUVScrolls.resize(DefaultMaterials.size());
 
 		for (int32 i = 0; i < DefaultMaterials.size(); ++i)
 		{
 			OverrideMaterials[i] = DefaultMaterials[i].MaterialInterface;
+			OverrideUVScrolls[i] = DefaultMaterials[i].bIsUVScroll;
 
 			if (OverrideMaterials[i])
 				OverrideMaterialPaths[i] = OverrideMaterials[i]->GetAssetPathFileName();
@@ -37,6 +39,7 @@ void UStaticMeshComp::SetStaticMesh(UStaticMesh* InMesh)
 		StaticMeshPath = "None";
 		OverrideMaterials.clear();
 		OverrideMaterialPaths.clear();
+		OverrideUVScrolls.clear();
 	}
 	CacheLocalBounds();
 }
@@ -120,6 +123,11 @@ void UStaticMeshComp::CollectRender(FRenderBus& Bus) const
 						if (Mat->DiffuseTexture)
 							Draw.DiffuseSRV = Mat->DiffuseTexture->GetSRV();
 						Draw.DiffuseColor = Mat->DiffuseColor;
+					}
+
+					if (i < OverrideUVScrolls.size())
+					{
+						Draw.bIsUVScroll = OverrideUVScrolls[i];
 					}
 					break;
 				}
@@ -222,6 +230,7 @@ void UStaticMeshComp::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 	for (int32 i = 0; i < OverrideMaterialPaths.size(); ++i)
 	{
 		OutProps.push_back({ "Element " + std::to_string(i), EPropertyType::Material, &OverrideMaterialPaths[i] });
+		OutProps.push_back({ "UVScroll " + std::to_string(i), EPropertyType::ByteBool, &OverrideUVScrolls[i] });
 	}
 }
 
