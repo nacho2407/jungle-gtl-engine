@@ -101,7 +101,7 @@ void FViewportLayout::UpdateHoverStates()
 			for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
 				GetViewportState(i).bHovered = (i == ActiveOpViewport);
 
-			LastFocusedViewportIndex = ActiveOpViewport;
+			SetLastFocusedViewportIndex(ActiveOpViewport);
 		}
 		else
 		{
@@ -122,7 +122,7 @@ void FViewportLayout::UpdateHoverStates()
 						{
 							return;
 						}
-						LastFocusedViewportIndex = i;
+						SetLastFocusedViewportIndex(i);
 					}
 				}
 				else
@@ -245,6 +245,13 @@ void FViewportLayout::SetSingleViewportMode(bool bSingle, int32 Index)
 	FEditorSettings::Get().SingleViewportIndex = SingleViewportIndex;
 
 	SyncViewportRects();
+}
+
+void FViewportLayout::SetLastFocusedViewportIndex(int32 Index)
+{
+	if (Index < 0) Index = 0;
+	if (Index >= MaxViewports) Index = MaxViewports - 1;
+	LastFocusedViewportIndex = Index;
 }
 
 void FViewportLayout::SyncViewportRects()
