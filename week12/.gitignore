@@ -452,5 +452,10 @@ CMakeLists.txt
 # ignore Build Files
 W4_Jungle_Team2/Build/
 
+# ignore .ini Files
+*.ini
+
 # Asset 파일 살리기 - obj 등
 !W4_Jungle_Team2/Asset/Mesh/**
+
+W4_Jungle_Team2/Asset/Mesh/Bin/*
