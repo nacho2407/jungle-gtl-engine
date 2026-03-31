@@ -457,6 +457,13 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 		}
 	}
 
+	UMaterial* DefaultMaterialObject = FObjManager::GetOrLoadMaterial("None");
+	if (DefaultMaterialObject->PathFileName.empty())
+	{
+		DefaultMaterialObject->PathFileName = "None";
+		DefaultMaterialObject->DiffuseColor = FallbackColor4;
+	}
+
 	// 수집된 순서대로 머티리얼 생성 및 인덱스 매핑
 	for (const FString& TargetSlotName : OrderedMaterialSlots)
 	{
@@ -473,6 +480,7 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 			// 섹션 머티리얼 슬롯 이름과 일치하는 머티리얼 이름이 MTL 파일에서 발견된 경우, 해당 머티리얼 로드 또는 생성
 			UMaterial* MaterialObject = FObjManager::GetOrLoadMaterial(TargetSlotName);
 
+			// 머티리얼 객체가 새로 생성된 경우에만 속성 설정 (캐시에서 로드된 경우 이미 설정되어 있다고 가정)
 			if (MaterialObject->PathFileName.empty())
 			{
 				MaterialObject->PathFileName = TargetSlotName;
@@ -490,23 +498,15 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 
 			// FStaticMaterial 슬롯 생성 및 OutMaterials에 추가
 			FStaticMaterial NewStaticMaterial;
-			NewStaticMaterial.MaterialInterface = std::shared_ptr<UMaterial>(MaterialObject);
+			NewStaticMaterial.MaterialInterface = MaterialObject;
 			NewStaticMaterial.MaterialSlotName = TargetSlotName;
 			OutMaterials.push_back(NewStaticMaterial);
 		}
 		else // Material Slot이 MTL 파일에 정의되어 있지 않은 경우
 		{
-			// Default 머티리얼 로드 또는 생성
-			UMaterial* DefaultMaterialObject = FObjManager::GetOrLoadMaterial("None");
-			if (DefaultMaterialObject->PathFileName.empty())
-			{
-				DefaultMaterialObject->PathFileName = "None";
-				DefaultMaterialObject->DiffuseColor = FallbackColor4;
-			}
-
 			// FStaticMaterial 슬롯 생성 및 OutMaterials에 추가
 			FStaticMaterial NewEmptyStaticMaterial;
-			NewEmptyStaticMaterial.MaterialInterface = std::shared_ptr<UMaterial>(DefaultMaterialObject);
+			NewEmptyStaticMaterial.MaterialInterface = DefaultMaterialObject;
 			NewEmptyStaticMaterial.MaterialSlotName = TargetSlotName;
 			OutMaterials.push_back(NewEmptyStaticMaterial);
 		}
@@ -515,16 +515,8 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 	// "None" 슬롯이 존재했다면 맨 마지막에 배치
 	if (bHasNoneSlot)
 	{
-		UMaterial* DefaultMaterialObject = FObjManager::GetOrLoadMaterial("None");
-
-		if (DefaultMaterialObject->PathFileName.empty())
-		{
-			DefaultMaterialObject->PathFileName = "None";
-			DefaultMaterialObject->DiffuseColor = FallbackColor4;
-		}
-
 		FStaticMaterial NewDefaultStaticMaterial;
-		NewDefaultStaticMaterial.MaterialInterface = std::shared_ptr<UMaterial>(DefaultMaterialObject);
+		NewDefaultStaticMaterial.MaterialInterface = DefaultMaterialObject;
 		NewDefaultStaticMaterial.MaterialSlotName = "None";
 
 		OutMaterials.push_back(NewDefaultStaticMaterial);
