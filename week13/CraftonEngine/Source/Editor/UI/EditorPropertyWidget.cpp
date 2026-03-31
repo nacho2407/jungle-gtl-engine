@@ -370,10 +370,36 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	}
 
 	// Pass 2: 나머지 프로퍼티
-	for (auto& Prop : Props)
+	for (int32 i = 0; i < (int32)Props.size(); ++i)
 	{
+		auto& Prop = Props[i];
 		if (IsTransformProp(Prop.Name))
 			continue;
+
+		// Element X + UVScroll X를 한 줄에 표시 (bool 혹은 ByteBool 대응)
+		if (Prop.Type == EPropertyType::Material && i + 1 < (int32)Props.size() && 
+			(Props[i + 1].Type == EPropertyType::Bool || Props[i + 1].Type == EPropertyType::ByteBool))
+		{
+			FString OldNextName = Props[i + 1].Name;
+			Props[i + 1].Name = "Scroll"; // 짧은 이름으로 변경
+
+			ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.6f);
+			bool bChangedMat = RenderPropertyWidget(Prop);
+			ImGui::PopItemWidth();
+
+			ImGui::SameLine();
+
+			bool bChangedScroll = RenderPropertyWidget(Props[i + 1]);
+
+			Props[i + 1].Name = OldNextName; // 이름 복구
+
+			if (bChangedMat || bChangedScroll)
+				break;
+
+			i++; // 다음 프로퍼티 건너뜀
+			continue;
+		}
+
 		if (RenderPropertyWidget(Prop))
 			break;
 	}
@@ -395,6 +421,17 @@ bool FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 	{
 		bool* Val = static_cast<bool*>(Prop.ValuePtr);
 		bChanged = ImGui::Checkbox(Prop.Name.c_str(), Val);
+		break;
+	}
+	case EPropertyType::ByteBool:
+	{
+		uint8* Val = static_cast<uint8*>(Prop.ValuePtr);
+		bool bVal = (*Val != 0);
+		if (ImGui::Checkbox(Prop.Name.c_str(), &bVal))
+		{
+			*Val = bVal ? 1 : 0;
+			bChanged = true;
+		}
 		break;
 	}
 	case EPropertyType::Int:
