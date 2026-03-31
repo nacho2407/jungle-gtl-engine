@@ -1,4 +1,4 @@
-#include "Renderer.h"
+﻿#include "Renderer.h"
 
 #include <iostream>
 #include <algorithm>
@@ -203,17 +203,17 @@ void FRenderer::InitializePassRenderStates()
 	auto& S = PassRenderStates;
 
 	//                              DepthStencil                    Blend                Rasterizer                   Topology                                WireframeAware
-	S[(uint32)E::Opaque]      = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true  };
+	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::Translucent] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::StencilMask] = { EDepthStencilState::StencilWrite,  EBlendState::NoColor,    ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::Outline]     = { EDepthStencilState::StencilOutline,EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::Editor]      = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     true  };
-	S[(uint32)E::Grid]        = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     false };
-	S[(uint32)E::GizmoOuter]  = { EDepthStencilState::GizmoOutside, EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::GizmoInner]  = { EDepthStencilState::GizmoInside,  EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::Font]        = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true  };
-	S[(uint32)E::OverlayFont] = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true  };
-	S[(uint32)E::SubUV]       = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true  };
+	S[(uint32)E::SelectionMask] = { EDepthStencilState::StencilWrite,  EBlendState::NoColor,    ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::PostProcess] = { EDepthStencilState::NoDepth,       EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::Editor] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     true };
+	S[(uint32)E::Grid] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     false };
+	S[(uint32)E::GizmoOuter] = { EDepthStencilState::GizmoOutside, EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::GizmoInner] = { EDepthStencilState::GizmoInside,  EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::Font] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
+	S[(uint32)E::OverlayFont] = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
+	S[(uint32)E::SubUV] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 }
 
 // ============================================================
@@ -250,6 +250,12 @@ void FRenderer::InitializePassBatchers()
 	PassBatchers[(uint32)ERenderPass::SubUV] = {
 		[this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
 			SubUVBatcher.DrawBatch(Ctx);
+		}
+	};
+
+	PassBatchers[(uint32)ERenderPass::PostProcess] = {
+		[this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
+			DrawPostProcessOutline(Bus, Ctx);
 		}
 	};
 }
@@ -409,6 +415,51 @@ void FRenderer::DrawStaticMeshSections(ID3D11DeviceContext* Context, const FRend
 	// SRV 언바인딩 (다음 드로우에 영향 방지)
 	ID3D11ShaderResourceView* nullSRV = nullptr;
 	Context->PSSetShaderResources(0, 1, &nullSRV);
+}
+
+// ============================================================
+// PostProcess Outline — DSV unbind → StencilSRV bind → Fullscreen Draw
+// ============================================================
+void FRenderer::DrawPostProcessOutline(const FRenderBus& Bus, ID3D11DeviceContext* Context)
+{
+	ID3D11ShaderResourceView* StencilSRV = Bus.GetViewportStencilSRV();
+	ID3D11DepthStencilView* DSV = Bus.GetViewportDSV();
+	ID3D11RenderTargetView* RTV = Bus.GetViewportRTV();
+	if (!StencilSRV || !RTV) return;
+
+	// SelectionMask 큐가 비어 있으면 선택된 오브젝트 없음 → 스킵
+	if (Bus.GetCommands(ERenderPass::SelectionMask).empty()) return;
+
+	// 1) DSV 언바인딩 (StencilSRV와 동시 바인딩 불가)
+	Context->OMSetRenderTargets(1, &RTV, nullptr);
+
+	// 2) StencilSRV → PS t0 바인딩
+	Context->PSSetShaderResources(0, 1, &StencilSRV);
+
+	// 3) PostProcess 셰이더 바인딩
+	FShader* PPShader = FShaderManager::Get().GetShader(EShaderType::OutlinePostProcess);
+	if (PPShader) PPShader->Bind(Context);
+
+	// 4) Outline CB (b3) 업데이트
+	FConstantBuffer* OutlineCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::PostProcess, sizeof(FOutlinePostProcessConstants));
+	FOutlinePostProcessConstants PPConstants;
+	PPConstants.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f);
+	PPConstants.OutlineThickness = 3.0f;
+	OutlineCB->Update(Context, &PPConstants, sizeof(PPConstants));
+	ID3D11Buffer* cb = OutlineCB->GetBuffer();
+	Context->PSSetConstantBuffers(ECBSlot::PostProcess, 1, &cb);
+
+	// 5) Fullscreen Triangle 드로우 (vertex buffer 없이 SV_VertexID 사용)
+	Context->IASetInputLayout(nullptr);
+	Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+	Context->Draw(3, 0);
+
+	// 6) StencilSRV 언바인딩
+	ID3D11ShaderResourceView* nullSRV = nullptr;
+	Context->PSSetShaderResources(0, 1, &nullSRV);
+
+	// 7) DSV 재바인딩 (후속 패스에서 뎁스 사용)
+	Context->OMSetRenderTargets(1, &RTV, DSV);
 }
 
 //	Present the rendered frame to the screen. 반드시 Render 이후에 호출되어야 함.

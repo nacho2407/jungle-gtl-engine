@@ -3,6 +3,8 @@
 #include "GameFramework/AActor.h"
 
 class UStaticMeshComp;
+class UTextRenderComponent;
+class USubUVComponent;
 
 class AStaticMeshActor : public AActor
 {
@@ -13,5 +15,7 @@ public:
 	void InitDefaultComponents(const FString& UStaticMeshFileName);
 
 private:
-	UStaticMeshComp* StaticMeshComponent;
+	UStaticMeshComp* StaticMeshComponent = nullptr;
+	UTextRenderComponent* TextRenderComponent = nullptr;
+	USubUVComponent* SubUVComponent = nullptr;
 };

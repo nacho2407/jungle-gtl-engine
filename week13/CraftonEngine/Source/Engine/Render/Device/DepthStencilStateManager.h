@@ -15,7 +15,6 @@ private:
 	ID3D11DepthStencilState* Default = nullptr;
 	ID3D11DepthStencilState* DepthReadOnly = nullptr;
 	ID3D11DepthStencilState* StencilWrite = nullptr;
-	ID3D11DepthStencilState* StencilOutline = nullptr;
 	ID3D11DepthStencilState* StencilMaskEqual = nullptr;
 	ID3D11DepthStencilState* NoDepth = nullptr;
 	ID3D11DepthStencilState* GizmoInside = nullptr;
