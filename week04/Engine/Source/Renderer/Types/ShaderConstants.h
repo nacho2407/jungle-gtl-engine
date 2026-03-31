@@ -8,7 +8,10 @@
 struct alignas(16) FMeshUnlitConstants
 {
     FMatrix MVP;
+    FMatrix World;
     FColor  BaseColor;
+    uint32  bEnableLighting;
+    float   Padding[3]; // 16바이트 정렬 유지
 };
 
 // Instanced unlit mesh

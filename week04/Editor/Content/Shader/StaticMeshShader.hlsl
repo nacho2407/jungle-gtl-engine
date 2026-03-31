@@ -1,7 +1,10 @@
 cbuffer FMeshUnlitConstants : register(b0)
 {
     row_major matrix MVP;
+    row_major matrix World;
     float4 BaseColor;
+    uint bEnableLighting;
+    float3 Padding;
 };
 
 Texture2D DiffuseTexture : register(t0);
@@ -25,7 +28,10 @@ VS_OUTPUT VSMain(VS_INPUT Input)
 {
     VS_OUTPUT Output;
     Output.Position = mul(float4(Input.Position, 1.0f), MVP);
-    Output.Normal = Input.Normal;
+    
+    // 법선을 월드 공간으로 변환 (회전 반영)
+    Output.Normal = normalize(mul(Input.Normal, (float3x3)World));
+    
     Output.UV = Input.UV;
     return Output;
 }
@@ -33,5 +39,24 @@ VS_OUTPUT VSMain(VS_INPUT Input)
 float4 PSMain(VS_OUTPUT Input) : SV_Target
 {
     float4 TexColor = DiffuseTexture.Sample(LinearSampler, Input.UV);
-    return TexColor * BaseColor;
+    float4 FinalColor = TexColor * BaseColor;
+
+    if (bEnableLighting != 0)
+    {
+        float3 N = normalize(Input.Normal);
+        
+        // 고정된 광원 방향 (월드 공간 기준)
+        float3 L = normalize(float3(0.5f, 1.0f, 0.5f));
+        
+        // Lambertian Diffuse
+        float Diffuse = max(dot(N, L), 0.0f);
+        
+        // Ambient
+        float Ambient = 0.2f;
+        
+        float Lighting = Diffuse + Ambient;
+        FinalColor.rgb *= Lighting;
+    }
+    
+    return FinalColor;
 }
