@@ -4,16 +4,18 @@
   "PerspectiveCamera" : {
     "FOV" : 60.000000,
     "FarClip" : 2000.000000,
-    "Location" : [17.170649, -2.797964, 7.825249],
+    "Location" : [16.399937, -7.868169, 3.632399],
     "NearClip" : 0.100000,
-    "Rotation" : [-22.719635, 147.510666, -13.817627]
+    "Rotation" : [-19.543579, 152.009781, -10.081604]
   },
   "Primitives" : {
     "0" : {
       "Location" : [0.000000, 0.000000, 0.000000],
-      "ObjStaticMeshAsset" : "Asset/Mesh/Lumine/LumineModel.obj",
-      "Rotation" : [0.000000, 0.000000, 0.000000],
-      "Scale" : [4.137448, 3.710561, 6.315658],
+      "ObjStaticMeshAsset" : "Asset/Mesh/Dice/Dice.obj",
+      "Rotation" : [-125.882919, -36.567413, 88.149826],
+      "Scale" : [1.000000, 24.484438, 1.000000],
+      "Scroll U" : 0.000000,
+      "Scroll V" : 0.000000,
       "Type" : "StaticMeshComp",
       "Visible" : true
     }
