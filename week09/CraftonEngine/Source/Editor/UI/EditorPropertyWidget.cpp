@@ -360,10 +360,10 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	// Pass 1: Transform 프로퍼티 먼저 (Root가 아닐 때만)
 	if (!bIsRoot)
 	{
-		for (auto& Prop : Props)
+		for (int32 i = 0; i < (int32)Props.size(); ++i)
 		{
-			if (IsTransformProp(Prop.Name))
-				if (RenderPropertyWidget(Prop))
+			if (IsTransformProp(Props[i].Name))
+				if (RenderPropertyWidget(Props, i))
 					break;
 		}
 		ImGui::Separator();
@@ -372,35 +372,10 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	// Pass 2: 나머지 프로퍼티
 	for (int32 i = 0; i < (int32)Props.size(); ++i)
 	{
-		auto& Prop = Props[i];
-		if (IsTransformProp(Prop.Name))
+		if (IsTransformProp(Props[i].Name))
 			continue;
 
-		// Element X + UVScroll X를 한 줄에 표시 (bool 혹은 ByteBool 대응)
-		if (Prop.Type == EPropertyType::Material && i + 1 < (int32)Props.size() && 
-			(Props[i + 1].Type == EPropertyType::Bool || Props[i + 1].Type == EPropertyType::ByteBool))
-		{
-			FString OldNextName = Props[i + 1].Name;
-			Props[i + 1].Name = "Scroll"; // 짧은 이름으로 변경
-
-			ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.6f);
-			bool bChangedMat = RenderPropertyWidget(Prop);
-			ImGui::PopItemWidth();
-
-			ImGui::SameLine();
-
-			bool bChangedScroll = RenderPropertyWidget(Props[i + 1]);
-
-			Props[i + 1].Name = OldNextName; // 이름 복구
-
-			if (bChangedMat || bChangedScroll)
-				break;
-
-			i++; // 다음 프로퍼티 건너뜀
-			continue;
-		}
-
-		if (RenderPropertyWidget(Prop))
+		if (RenderPropertyWidget(Props, i))
 			break;
 	}
 
@@ -411,8 +386,10 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	}
 }
 
-bool FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
+bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Props, int32& Index)
 {
+	ImGui::PushID(Index);
+	FPropertyDescriptor& Prop = Props[Index];
 	bool bChanged = false;
 
 	switch (Prop.Type)
@@ -528,24 +505,67 @@ bool FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 	case EPropertyType::Material:
 	{
 		FString* Val = static_cast<FString*>(Prop.ValuePtr);
-		if (ImGui::BeginCombo(Prop.Name.c_str(), Val->c_str()))
+		int32 ElementIdx = (strncmp(Prop.Name.c_str(), "Element ", 8) == 0) ? atoi(&Prop.Name[8]) : -1;
+
+		if (ElementIdx != -1 && SelectedComponent && SelectedComponent->IsA<UStaticMeshComp>())
 		{
-			for (TObjectIterator<UMaterial> It; It; ++It)
+			UStaticMeshComp* StaticMeshComp = static_cast<UStaticMeshComp*>(SelectedComponent);
+			FString SlotName = "None";
+			if (StaticMeshComp->GetStaticMesh() && ElementIdx < StaticMeshComp->GetStaticMesh()->GetStaticMaterials().size())
+				SlotName = StaticMeshComp->GetStaticMesh()->GetStaticMaterials()[ElementIdx].MaterialSlotName;
+
+			// Left Column: [Element N] / [SlotName]
+			ImGui::BeginGroup();
+			ImGui::Text("Element %d", ElementIdx);
+			
+			// SlotName 표시 (TextDisabled 스타일 적용)
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+			ImGui::TextUnformatted(SlotName.c_str());
+			ImGui::PopStyleColor();
+			if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", SlotName.c_str());
+
+			ImGui::EndGroup();
+
+			ImGui::SameLine(120); // 좌측 섹션 너비 확장
+
+			// Right Column: [Material Combo] / [Scroll Checkbox]
+			ImGui::BeginGroup();
+			
+			ImGui::SetNextItemWidth(-1);
+			if (ImGui::BeginCombo("##Mat", Val->c_str()))
 			{
-				UMaterial* MaterialAsset = *It;
-				if (!MaterialAsset) continue;
-				const FString& AssetPath = MaterialAsset->GetAssetPathFileName();
-				if (AssetPath.empty()) continue;
-				bool bSelected = (*Val == AssetPath);
-				if (ImGui::Selectable(AssetPath.c_str(), bSelected))
+				for (TObjectIterator<UMaterial> It; It; ++It)
 				{
-					*Val = AssetPath;
-					bChanged = true;
+					if (!*It) continue;
+					FString Path = (*It)->GetAssetPathFileName();
+					if (ImGui::Selectable(Path.c_str(), *Val == Path)) { *Val = Path; bChanged = true; }
 				}
-				if (bSelected)
-					ImGui::SetItemDefaultFocus();
+				ImGui::EndCombo();
 			}
-			ImGui::EndCombo();
+
+			bool bHasScroll = (Index + 1 < (int32)Props.size() && Props[Index + 1].Name.find("UVScroll") != std::string::npos);
+			if (bHasScroll)
+			{
+				uint8* ScrollPtr = (uint8*)Props[Index + 1].ValuePtr;
+				bool bScroll = (*ScrollPtr != 0);
+				if (ImGui::Checkbox("Scroll", &bScroll)) { *ScrollPtr = bScroll ? 1 : 0; bChanged = true; }
+				Index++; // Consume UVScroll property
+			}
+
+			ImGui::EndGroup();
+		}
+		else
+		{
+			if (ImGui::BeginCombo(Prop.Name.c_str(), Val->c_str()))
+			{
+				for (TObjectIterator<UMaterial> It; It; ++It)
+				{
+					if (!*It) continue;
+					FString Path = (*It)->GetAssetPathFileName();
+					if (ImGui::Selectable(Path.c_str(), *Val == Path)) { *Val = Path; bChanged = true; }
+				}
+				ImGui::EndCombo();
+			}
 		}
 		break;
 	}
@@ -598,5 +618,6 @@ bool FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 		SelectedComponent->PostEditProperty(Prop.Name.c_str());
 	}
 
+	ImGui::PopID();
 	return bChanged;
 }
