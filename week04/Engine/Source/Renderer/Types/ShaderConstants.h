@@ -8,6 +8,7 @@
 struct alignas(16) FMeshUnlitConstants
 {
     FMatrix MVP;
+    FMatrix World;
     FColor  BaseColor;
 };
 

@@ -1,6 +1,7 @@
 cbuffer FMeshUnlitConstants : register(b0)
 {
     row_major float4x4 MVP;
+    row_major float4x4 World;
     float4 BaseColor;
 };
 

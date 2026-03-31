@@ -155,6 +155,7 @@ void FD3D11StaticMeshRenderer::Flush()
 
             FMeshUnlitConstants Constants = {};
             Constants.MVP = DrawItem.World * CurrentPassParams.SceneView->GetViewProjectionMatrix();
+            Constants.World = DrawItem.World;
 
             if (MaterialData)
             {
