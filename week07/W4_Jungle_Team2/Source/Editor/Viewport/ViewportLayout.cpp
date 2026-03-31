@@ -5,6 +5,7 @@
 #include "Slate/SViewport.h"
 #include "Slate/SSplitterH.h"
 #include "Slate/SSplitterV.h"
+#include "Slate/SSplitterCross.h"
 #include "Slate/SlateApplication.h"
 #include "Core/InputSystem.h"
 #include "Engine/Component/GizmoComponent.h"
@@ -246,6 +247,12 @@ void FViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
 	TopSplitterH->SetLinkedSplitter(BotSplitterH);
 	BotSplitterH->SetLinkedSplitter(TopSplitterH);
 
+	// 교차점 핸들: V 바와 H 바가 겹치는 영역을 드래그하면 4개 뷰포트 동시 조정
+	CrossWidget = new SSplitterCross();
+	CrossWidget->SetSplitterV(RootSplitterV);
+	CrossWidget->SetSplitterH(TopSplitterH);
+	RootSplitterV->SetCrossWidget(CrossWidget);
+
 	// FSlateApplication::RootWindow 에 트리 연결 (소유권은 이쪽)
 	SWindow* RootWindow = FSlateApplication::Get().GetRootWindow();
 	if (RootWindow)
@@ -364,6 +371,10 @@ void FViewportLayout::DestroyViewportLayout()
 	// LinkedSplitter 양방향 참조 해제 (delete 순서와 무관하게 dangling 방지)
 	if (TopSplitterH) TopSplitterH->SetLinkedSplitter(nullptr);
 	if (BotSplitterH) BotSplitterH->SetLinkedSplitter(nullptr);
+
+	// CrossWidget 참조 해제 후 삭제
+	if (RootSplitterV) RootSplitterV->SetCrossWidget(nullptr);
+	delete CrossWidget; CrossWidget = nullptr;
 
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{

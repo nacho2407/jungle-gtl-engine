@@ -318,6 +318,7 @@
     <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp" />
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp" />
     <ClCompile Include="Source\Engine\Slate\SSplitter.cpp" />
+    <ClCompile Include="Source\Engine\Slate\SSplitterCross.cpp" />
     <ClCompile Include="Source\Engine\Slate\SSplitterH.cpp" />
     <ClCompile Include="Source\Engine\Slate\SSplitterV.cpp" />
     <ClCompile Include="Source\Engine\Slate\SViewport.cpp" />
@@ -461,6 +462,7 @@
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />
     <ClInclude Include="Source\Engine\Slate\ISlateViewport.h" />
     <ClInclude Include="Source\Engine\Slate\SSplitter.h" />
+    <ClInclude Include="Source\Engine\Slate\SSplitterCross.h" />
     <ClInclude Include="Source\Engine\Slate\SSplitterH.h" />
     <ClInclude Include="Source\Engine\Slate\SSplitterV.h" />
     <ClInclude Include="Source\Engine\Slate\SViewport.h" />
