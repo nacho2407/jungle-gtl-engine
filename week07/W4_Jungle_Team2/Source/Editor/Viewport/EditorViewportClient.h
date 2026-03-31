@@ -54,6 +54,7 @@ public:
 	void SetViewportSize(float InWidth, float InHeight);
 	float GetMoveSpeed() const { return NavigationController.GetMoveSpeed(); }
 	void SetMoveSpeed(float InSpeed) { NavigationController.SetMoveSpeed(InSpeed); }
+	void FocusSelection() { FocusPrimarySelection(); }
 
 	// Camera lifecycle
 	void CreateCamera();
@@ -94,7 +95,7 @@ public:
 	bool IsActiveOperation() const
 	{
 		return bRightMouseRotating || bRightMousePanning
-			|| bMiddleMousePanning || bAltLeftMouseOrbiting
+			|| bMiddleMousePanning
 			|| bAltRightMouseDollying;
 	}
 	bool IsBoxSelecting() const { return bBoxSelecting; }
@@ -109,9 +110,6 @@ private:
 	void FocusPrimarySelection();
 	void DeleteSelectedActors();
 	void SelectAllActors();
-	void BeginMouseConstrain();
-	void UpdateMouseConstrain();
-	void EndMouseConstrain();
 
 	FVector ResolveOrbitPivot() const;
 
@@ -143,7 +141,6 @@ private:
 	bool bRightMouseRotating = false;
 	bool bRightMousePanning  = false;   // 직교 뷰: 우클릭 드래그 = 팬
 	bool bMiddleMousePanning = false;
-	bool bAltLeftMouseOrbiting = false;
 	bool bAltRightMouseDollying = false;
 
 	bool bBoxSelecting = false;
@@ -153,6 +150,5 @@ private:
 	bool bFirstMouseMoveAfterRotateStart   = false;
 	bool bFirstMouseMoveAfterRightPanStart = false;
 	bool bFirstMouseMoveAfterPanStart      = false;
-	bool bFirstMouseMoveAfterOrbitStart    = false;
 	bool bFirstMouseMoveAfterDollyStart    = false;
 };
