@@ -20,6 +20,7 @@
 #include "Panel/StatePanel.h"
 
 #include "imgui.h"
+#include "imgui_internal.h"
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_win32.h>
 
@@ -1345,8 +1346,38 @@ void FEditor::DrawRootDockSpace()
 
     if (ImGui::Begin("##EditorRootDockSpace", nullptr, WindowFlags))
     {
-        ImGui::DockSpace(ImGui::GetID("EditorRootDockSpace"), ImVec2(0.0f, 0.0f),
-                         RootDockSpaceFlags);
+        ImGuiID DockSpaceID = ImGui::GetID("EditorRootDockSpace");
+        ImGui::DockSpace(DockSpaceID, ImVec2(0.0f, 0.0f), RootDockSpaceFlags);
+
+        // 초기 레이아웃 설정 (첫 실행 시에만 적용)
+        static bool bLayoutInitialized = false;
+        if (!bLayoutInitialized)
+        {
+            bLayoutInitialized = true;
+
+            // 기존 설정이 없을 때만 강제로 잡기 위해 체크 (선택 사항)
+            // 여기서는 명시적으로 Builder API를 사용해 구조를 잡습니다.
+            ImGui::DockBuilderRemoveNode(DockSpaceID);
+            ImGui::DockBuilderAddNode(DockSpaceID, RootDockSpaceFlags | ImGuiDockNodeFlags_DockSpace);
+            ImGui::DockBuilderSetNodeSize(DockSpaceID, ImVec2(SafeDockSpaceWidth, SafeDockSpaceHeight));
+
+            ImGuiID MainNode = DockSpaceID;
+            ImGuiID RightNode;
+            
+            // 1. 오른쪽 25% 영역 생성
+            ImGui::DockBuilderSplitNode(MainNode, ImGuiDir_Right, 0.25f, &RightNode, &MainNode);
+
+            // 2. 오른쪽 영역을 위(40%) / 아래(60%)로 분할
+            ImGuiID RightTopNode, RightBottomNode;
+            ImGui::DockBuilderSplitNode(RightNode, ImGuiDir_Up, 0.4f, &RightTopNode, &RightBottomNode);
+
+            // 3. 패널 배치 (이름은 GetDisplayName() 결과와 일치해야 함)
+            ImGui::DockBuilderDockWindow("Outliner", RightTopNode);
+            ImGui::DockBuilderDockWindow("Details", RightBottomNode);
+            ImGui::DockBuilderDockWindow("Viewport", MainNode);
+
+            ImGui::DockBuilderFinish(DockSpaceID);
+        }
     }
 
     ImGui::End();
