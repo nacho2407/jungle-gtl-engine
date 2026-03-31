@@ -12,9 +12,9 @@ void USceneComponent::AttachToComponent(USceneComponent* InParent)
 void USceneComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UActorComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Location", EPropertyType::Vec3, &RelativeLocation, 0.0f, 0.0f, 0.1f });
-	OutProps.push_back({ "Rotation", EPropertyType::Vec3, &RelativeRotation, 0.0f, 0.0f, 0.1f });
-	OutProps.push_back({ "Scale", EPropertyType::Vec3, &RelativeScale3D, 0.0f, 0.0f, 0.1f });
+	OutProps.push_back({ "Location", EPropertyType::Vec3, &RelativeTransform.Location, 0.0f, 0.0f, 0.1f });
+	OutProps.push_back({ "Rotation", EPropertyType::Rotator, &RelativeTransform.Rotation, 0.0f, 0.0f, 0.1f });
+	OutProps.push_back({ "Scale", EPropertyType::Vec3, &RelativeTransform.Scale, 0.0f, 0.0f, 0.1f });
 }
 
 USceneComponent::USceneComponent()
@@ -149,20 +149,26 @@ void USceneComponent::AddWorldOffset(const FVector& WorldDelta)
 
 void USceneComponent::SetRelativeLocation(const FVector& NewLocation)
 {
-	RelativeLocation = NewLocation;
+	RelativeTransform.Location = NewLocation;
 	MarkTransformDirty();
 }
 
-void USceneComponent::SetRelativeRotation(const FVector& NewRotation)
+void USceneComponent::SetRelativeRotation(const FRotator& NewRotation)
 {
-	RelativeRotation = NewRotation;
+	RelativeTransform.Rotation = NewRotation;
+	MarkTransformDirty();
+}
+
+void USceneComponent::SetRelativeRotation(const FVector& EulerRotation)
+{
+	RelativeTransform.Rotation = FRotator(EulerRotation);
 	MarkTransformDirty();
 }
 
 
 void USceneComponent::SetRelativeScale(const FVector& NewScale)
 {
-	RelativeScale3D = NewScale;
+	RelativeTransform.Scale = NewScale;
 	MarkTransformDirty();
 }
 
@@ -246,7 +252,7 @@ FVector USceneComponent::GetUpVector() const
 
 void USceneComponent::Move(const FVector& Delta)
 {
-	SetRelativeLocation(RelativeLocation + Delta);
+	SetRelativeLocation(RelativeTransform.Location + Delta);
 }
 
 void USceneComponent::MoveLocal(const FVector& Delta)
@@ -255,7 +261,7 @@ void USceneComponent::MoveLocal(const FVector& Delta)
 	FVector Right = GetRightVector();
 	FVector Up = GetUpVector();
 
-	SetRelativeLocation(RelativeLocation
+	SetRelativeLocation(RelativeTransform.Location
 		+ Forward * Delta.X
 		+ Right * Delta.Y
 		+ Up * Delta.Z);
@@ -263,16 +269,16 @@ void USceneComponent::MoveLocal(const FVector& Delta)
 
 void USceneComponent::Rotate(float DeltaYaw, float DeltaPitch)
 {
-	RelativeRotation.Z += DeltaYaw;
-	RelativeRotation.Y += DeltaPitch;
-	RelativeRotation.Y = Clamp(RelativeRotation.Y, -89.9f, 89.9f);
+	RelativeTransform.Rotation.Yaw += DeltaYaw;
+	RelativeTransform.Rotation.Pitch += DeltaPitch;
+	RelativeTransform.Rotation.Pitch = Clamp(RelativeTransform.Rotation.Pitch, -89.9f, 89.9f);
 
-	RelativeRotation.X = 0.0f;
+	RelativeTransform.Rotation.Roll = 0.0f;
 
-	SetRelativeRotation(RelativeRotation);
+	SetRelativeRotation(RelativeTransform.Rotation);
 }
 
 FMatrix USceneComponent::GetRelativeMatrix() const
 {
-	return FTransform(RelativeLocation, RelativeRotation, RelativeScale3D).ToMatrix();
+	return RelativeTransform.ToMatrix();
 }

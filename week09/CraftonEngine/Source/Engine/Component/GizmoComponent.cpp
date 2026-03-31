@@ -1,6 +1,7 @@
 ﻿#include "GizmoComponent.h"
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
+#include "Math/Quat.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Resource/ConstantBufferPool.h"
@@ -121,9 +122,9 @@ void UGizmoComponent::RotateTarget(float DragAmount)
 	auto ApplyRotation = [&](AActor* Actor)
 		{
 			if (!Actor || !Actor->GetRootComponent()) return;
-			FMatrix CurMatrix = FMatrix::MakeRotationEuler(Actor->GetActorRotation());
+			FMatrix CurMatrix = FMatrix::MakeRotationEuler(Actor->GetActorRotation().ToVector());
 			FMatrix NewMatrix = CurMatrix * DeltaMatrix;
-			Actor->SetActorRotation(NewMatrix.GetEuler());
+			Actor->SetActorRotation(FRotator(NewMatrix.GetEuler()));
 		};
 
 	if (AllSelectedActors)
@@ -179,7 +180,7 @@ void UGizmoComponent::SetTargetLocation(FVector NewLocation)
 	UpdateGizmoTransform();
 }
 
-void UGizmoComponent::SetTargetRotation(FVector NewRotation)
+void UGizmoComponent::SetTargetRotation(FRotator NewRotation)
 {
 	if (!TargetActor) return;
 
@@ -379,7 +380,7 @@ void UGizmoComponent::UpdateGizmoTransform()
 
 	SetWorldLocation(TargetActor->GetActorLocation());
 
-	FVector ActorRot = TargetActor->GetActorRotation();
+	FRotator ActorRot = TargetActor->GetActorRotation();
 
 	switch (CurMode)
 	{
@@ -389,12 +390,12 @@ void UGizmoComponent::UpdateGizmoTransform()
 		break;
 
 	case EGizmoMode::Rotate:
-		SetRelativeRotation(bIsWorldSpace ? FVector() : ActorRot);
+		SetRelativeRotation(bIsWorldSpace ? FRotator() : ActorRot);
 		MeshData = &FMeshBufferManager::Get().GetMeshData(EMeshShape::RotGizmo);
 		break;
 
 	case EGizmoMode::Translate:
-		SetRelativeRotation(bIsWorldSpace ? FVector() : ActorRot);
+		SetRelativeRotation(bIsWorldSpace ? FRotator() : ActorRot);
 		MeshData = &FMeshBufferManager::Get().GetMeshData(EMeshShape::TransGizmo);
 		break;
 	}

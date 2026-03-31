@@ -4,6 +4,7 @@
 #include "Platform/Paths.h"
 #include "Core/Singleton.h"
 #include "Math/Vector.h"
+#include "Math/Rotator.h"
 #include "Render/Types/ViewTypes.h"
 
 class FEditorSettings : public TSingleton<FEditorSettings>
@@ -26,7 +27,7 @@ public:
 
 	// Perspective Camera (slot 0) 복원용
 	FVector PerspCamLocation = FVector(10, 0, 5);
-	FVector PerspCamRotation = FVector(0, 0, 0);
+	FRotator PerspCamRotation;
 	float PerspCamFOV = 60.0f;
 	float PerspCamNearClip = 0.1f;
 	float PerspCamFarClip = 1000.0f;
