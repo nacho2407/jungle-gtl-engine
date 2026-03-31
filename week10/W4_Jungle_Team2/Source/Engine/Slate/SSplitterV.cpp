@@ -1,4 +1,5 @@
 #include "SSplitterV.h"
+#include "SSplitterCross.h"
 
 void SSplitterV::UpdateCildRect()
 {
@@ -24,6 +25,21 @@ FRect SSplitterV::GetBarRect() const
 	const float HalfBar = GetBarThickness() * 0.5f;
 	const float SplitY  = R.Y + R.Height * GetSplitRatio();
 	return FRect(R.X, SplitY - HalfBar, R.Width, GetBarThickness());
+}
+
+SWidget* SSplitterV::HitTest(int32 X, int32 Y)
+{
+	if (!GetRect().Contains(static_cast<float>(X), static_cast<float>(Y)))
+		return nullptr;
+
+	// 교차점 핸들을 자식 스플리터보다 먼저 검사합니다.
+	if (CrossWidget)
+	{
+		SWidget* Hit = CrossWidget->HitTest(X, Y);
+		if (Hit) return Hit;
+	}
+
+	return SSplitter::HitTest(X, Y);
 }
 
 float SSplitterV::ComputeNewRatio(int32 X, int32 Y) const

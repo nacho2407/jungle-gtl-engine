@@ -1,6 +1,7 @@
 ﻿#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
+#include "Editor/Viewport/ViewportLayout.h"
 #include "Engine/Runtime/WindowsWindow.h"
 
 #include "ImGui/imgui.h"
@@ -126,7 +127,30 @@ void FEditorMainPanel::Update()
 {
 	ImGuiIO& IO = ImGui::GetIO();
 
-	InputSystem::Get().GetGuiInputState().bUsingMouse = IO.WantCaptureMouse;
+	bool bViewportOperationActive = false;
+	if (EditorEngine)
+	{
+		FViewportLayout& Layout = EditorEngine->GetViewportLayout();
+		for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+		{
+			if (Layout.GetViewportClient(i).IsActiveOperation())
+			{
+				bViewportOperationActive = true;
+				break;
+			}
+		}
+	}
+
+	if (bViewportOperationActive)
+	{
+		IO.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+	}
+	else
+	{
+		IO.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+	}
+
+	InputSystem::Get().GetGuiInputState().bUsingMouse = bViewportOperationActive ? false : IO.WantCaptureMouse;
 	InputSystem::Get().GetGuiInputState().bUsingKeyboard = IO.WantCaptureKeyboard;
 
 	// IME는 ImGui가 텍스트 입력을 원할 때만 활성화.

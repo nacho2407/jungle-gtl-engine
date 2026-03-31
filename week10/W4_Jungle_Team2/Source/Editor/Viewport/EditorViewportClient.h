@@ -52,6 +52,8 @@ public:
 	void SetSelectionManager(FSelectionManager* InSelectionManager);
 	UGizmoComponent* GetGizmo() { return Gizmo; }
 	void SetViewportSize(float InWidth, float InHeight);
+	float GetMoveSpeed() const { return NavigationController.GetMoveSpeed(); }
+	void SetMoveSpeed(float InSpeed) { NavigationController.SetMoveSpeed(InSpeed); }
 
 	// Camera lifecycle
 	void CreateCamera();
@@ -92,12 +94,24 @@ public:
 	bool IsActiveOperation() const
 	{
 		return bRightMouseRotating || bRightMousePanning
-			|| bMiddleMousePanning || bAltLeftMouseOrbiting;
+			|| bMiddleMousePanning || bAltLeftMouseOrbiting
+			|| bAltRightMouseDollying;
 	}
+	bool IsBoxSelecting() const { return bBoxSelecting; }
+	POINT GetBoxSelectStart() const { return BoxSelectStart; }
+	POINT GetBoxSelectEnd() const { return BoxSelectEnd; }
 private:
 	void TickInput(float DeltaTime);
 	void TickInteraction(float DeltaTime);
 	void HandleDragStart(const FRay& Ray);
+	void HandleBoxSelection();
+	bool TryProjectWorldToViewport(const FVector& WorldPos, float& OutViewportX, float& OutViewportY, float& OutDepth) const;
+	void FocusPrimarySelection();
+	void DeleteSelectedActors();
+	void SelectAllActors();
+	void BeginMouseConstrain();
+	void UpdateMouseConstrain();
+	void EndMouseConstrain();
 
 	FVector ResolveOrbitPivot() const;
 
@@ -123,15 +137,22 @@ private:
 	float WindowHeight = 1080.f;
 
 	bool bIsCursorVisible = true;
+	bool bMouseConstrained = false;
 
 	// Input state bridge for current singleton InputSystem
 	bool bRightMouseRotating = false;
 	bool bRightMousePanning  = false;   // 직교 뷰: 우클릭 드래그 = 팬
 	bool bMiddleMousePanning = false;
 	bool bAltLeftMouseOrbiting = false;
+	bool bAltRightMouseDollying = false;
+
+	bool bBoxSelecting = false;
+	POINT BoxSelectStart = { 0, 0 };
+	POINT BoxSelectEnd = { 0, 0 };
 
 	bool bFirstMouseMoveAfterRotateStart   = false;
 	bool bFirstMouseMoveAfterRightPanStart = false;
 	bool bFirstMouseMoveAfterPanStart      = false;
 	bool bFirstMouseMoveAfterOrbitStart    = false;
+	bool bFirstMouseMoveAfterDollyStart    = false;
 };
