@@ -13,7 +13,7 @@ void UMeshComponent::SetMaterial(int32 SlotIndex, FMaterial* InMaterial)
 	{
 		OverrideMaterial.resize(SlotIndex + 1, nullptr);
 	}
-	
+
 	OverrideMaterial[SlotIndex] = InMaterial;
 }
 

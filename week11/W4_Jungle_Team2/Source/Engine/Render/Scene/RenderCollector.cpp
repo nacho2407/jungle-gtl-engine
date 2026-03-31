@@ -254,11 +254,11 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 			Cmd.Constants.StaticMesh.CameraWorldPos = RenderBus.GetCameraPosition();
 
 			// 메테리얼 정보가 없을 시 디폴트 메테리얼을 사용합니다.
-			static const FMaterial DefaultMaterial{};
+			static const FMaterial EngineDefaultMaterial{};
 
 			const FMaterial* MtlData = StaticMeshComp->GetMaterial(SectionIdx);
-			// 메테리얼 정보가 없을 경우
-			if (!MtlData) MtlData = &DefaultMaterial;
+
+			if (!MtlData) MtlData = &EngineDefaultMaterial;
 	
 			Cmd.Constants.StaticMesh.AmbientColor = MtlData->AmbientColor;
 			Cmd.Constants.StaticMesh.DiffuseColor = MtlData->DiffuseColor;
@@ -275,6 +275,9 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 				FMaterialResource* Res = FResourceManager::Get().FindTexture(Path);
 				return (Res && Res->SRV) ? Res->SRV : DefaultSRV;
 			};
+
+			Cmd.Constants.StaticMesh.bHasDiffuseMap  = MtlData->bHasDiffuseTexture  ? 1u : 0u;
+			Cmd.Constants.StaticMesh.bHasSpecularMap = MtlData->bHasSpecularTexture ? 1u : 0u;
 
 			Cmd.Constants.StaticMesh.DiffuseSRV  = MtlData->bHasDiffuseTexture  ? ResolveSRV(MtlData->DiffuseTexPath)  : DefaultSRV;
 			Cmd.Constants.StaticMesh.AmbientSRV  = MtlData->bHasAmbientTexture  ? ResolveSRV(MtlData->AmbientTexPath)  : DefaultSRV;
