@@ -65,6 +65,8 @@ FString FEditorPropertyWidget::OpenObjFileDialog()
 		}
 		return FPaths::ToUtf8(RelPath.generic_wstring());
 	}
+
+	return FString();
 }
 
 void FEditorPropertyWidget::Render(float DeltaTime)
