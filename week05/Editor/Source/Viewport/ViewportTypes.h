@@ -44,8 +44,11 @@ enum class EViewportType : uint8
 {
 	Perspective,
 	OrthoTop,
-	OrthoFront,
+	OrthoBottom,
+	OrthoLeft,
 	OrthoRight,
+	OrthoFront,
+	OrthoBack
 };
 
 enum class EViewportLayout : uint8 {
@@ -62,7 +65,7 @@ struct FViewportLocalState
 	FVector Position = FVector(0, 0, -5);
 	FRotator Rotation = FRotator::ZeroRotator;
 	float FovY = 60.f;
-	float NearPlane = 0.1f;
+	float NearPlane = 0.001f;
 	float FarPlane = 10000.f;
 
 	FVector OrthoTarget = FVector::ZeroVector;

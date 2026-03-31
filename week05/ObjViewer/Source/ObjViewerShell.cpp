@@ -1,5 +1,6 @@
 #include "ObjViewerShell.h"
 
+#include <algorithm>
 #include <commdlg.h>
 #include <cstdio>
 #include <filesystem>
@@ -7,6 +8,7 @@
 #include "ObjViewerEngine.h"
 
 #include "Core/Paths.h"
+#include "Debug/EngineLog.h"
 #include "Platform/Windows/WindowsWindow.h"
 #include "Renderer/Renderer.h"
 #include "imgui.h"
@@ -280,6 +282,66 @@ namespace
 		}
 
 		return WideToUtf8(FileBuffer);
+	}
+
+	FString GetDefaultModelExportPath(const FObjViewerEngine* Engine)
+	{
+		FString BaseName = "ExportedMesh";
+		if (Engine && Engine->HasLoadedModel())
+		{
+			const std::filesystem::path SourcePath(FPaths::ToWide(Engine->GetModelState().SourceFilePath));
+			const FString SourceStem = WideToUtf8(SourcePath.stem().wstring());
+			if (!SourceStem.empty())
+			{
+				BaseName = SourceStem;
+			}
+		}
+
+		std::filesystem::path ExportPath = FPaths::MeshDir() / std::filesystem::path(FPaths::ToWide(BaseName));
+		ExportPath.replace_extension(L".Model");
+		return WideToUtf8(ExportPath.wstring());
+	}
+
+	FString SaveModelFileDialog(HWND OwnerWindow, const FString& DefaultPath)
+	{
+		wchar_t FileBuffer[MAX_PATH] = {};
+		wchar_t InitialDirBuffer[MAX_PATH] = {};
+
+		const std::filesystem::path DefaultPathFs = std::filesystem::path(FPaths::ToWide(DefaultPath)).lexically_normal();
+		const std::wstring DefaultFileName = DefaultPathFs.filename().wstring();
+		const std::wstring InitialDir = DefaultPathFs.has_parent_path()
+			? DefaultPathFs.parent_path().wstring()
+			: std::wstring();
+
+		wcsncpy_s(FileBuffer, DefaultFileName.c_str(), _TRUNCATE);
+		if (!InitialDir.empty())
+		{
+			wcsncpy_s(InitialDirBuffer, InitialDir.c_str(), _TRUNCATE);
+		}
+
+		OPENFILENAMEW Ofn = {};
+		Ofn.lStructSize = sizeof(OPENFILENAMEW);
+		Ofn.hwndOwner = OwnerWindow;
+		Ofn.lpstrFile = FileBuffer;
+		Ofn.nMaxFile = MAX_PATH;
+		Ofn.lpstrFilter = L"Model Files\0*.Model\0All Files\0*.*\0";
+		Ofn.nFilterIndex = 1;
+		Ofn.lpstrDefExt = L"Model";
+		Ofn.lpstrInitialDir = InitialDir.empty() ? nullptr : InitialDirBuffer;
+		Ofn.lpstrTitle = L"Export .Model";
+		Ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
+
+		if (!::GetSaveFileNameW(&Ofn))
+		{
+			const DWORD DialogError = ::CommDlgExtendedError();
+			if (DialogError != 0)
+			{
+				UE_LOG("[ObjViewer] GetSaveFileNameW failed. CommDlgExtendedError=%lu", static_cast<unsigned long>(DialogError));
+			}
+			return "";
+		}
+
+		return WideToUtf8(std::wstring(FileBuffer));
 	}
 }
 
@@ -588,6 +650,15 @@ void FObjViewerShell::DrawMenuBar()
 			Engine->ReloadLoadedModel();
 		}
 
+		if (ImGui::MenuItem("Export .Model...", nullptr, false, Engine && Engine->HasLoadedModel()))
+		{
+			const FString ExportPath = SaveModelFileDialog(MainWindow ? MainWindow->GetHwnd() : nullptr, GetDefaultModelExportPath(Engine));
+			if (!ExportPath.empty())
+			{
+				Engine->ExportLoadedModelAsModel(ExportPath);
+			}
+		}
+
 		ImGui::EndMenu();
 	}
 
@@ -630,6 +701,16 @@ void FObjViewerShell::DrawToolbarWindow()
 	if (ImGui::Button("Reload") && Engine)
 	{
 		Engine->ReloadLoadedModel();
+	}
+
+	ImGui::SameLine();
+	if (ImGui::Button("Export .Model") && Engine && Engine->HasLoadedModel())
+	{
+		const FString ExportPath = SaveModelFileDialog(MainWindow ? MainWindow->GetHwnd() : nullptr, GetDefaultModelExportPath(Engine));
+		if (!ExportPath.empty())
+		{
+			Engine->ExportLoadedModelAsModel(ExportPath);
+		}
 	}
 
 	ImGui::SameLine();

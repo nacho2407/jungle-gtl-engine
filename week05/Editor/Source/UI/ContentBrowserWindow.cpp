@@ -168,7 +168,7 @@ void FContentBrowserWindow::DrawFileGrid()
 
 		if (Entry.is_regular_file())
 		{
-			if (!(Ext == ".json" || Ext == ".obj"))
+			if (!(Ext == ".json" || Ext == ".obj" || Ext == ".model"))
 			{
 				continue;
 			}

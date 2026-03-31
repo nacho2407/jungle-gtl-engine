@@ -21,6 +21,7 @@
 #include "Math/Quat.h"
 #include "Math/Frustum.h"
 #include "Platform/Windows/WindowsWindow.h"
+#include "Renderer/Material.h"
 #include "Renderer/MeshData.h"
 #include "Renderer/Renderer.h"
 #include "Scene/Scene.h"
@@ -117,6 +118,62 @@ namespace
 		const float AbsY = std::fabs(Scale.Y);
 		const float AbsZ = std::fabs(Scale.Z);
 		return (std::max)(AbsX, (std::max)(AbsY, AbsZ));
+	}
+
+	TArray<FString> BuildMaterialSlotNames(const UStaticMesh* Mesh)
+	{
+		TArray<FString> MaterialSlotNames;
+		if (Mesh == nullptr || Mesh->GetRenderData() == nullptr)
+		{
+			return MaterialSlotNames;
+		}
+
+		uint32 SlotCount = static_cast<uint32>(Mesh->GetDefaultMaterials().size());
+		for (const FMeshSection& Section : Mesh->GetRenderData()->Sections)
+		{
+			SlotCount = (std::max)(SlotCount, Section.MaterialIndex + 1);
+		}
+
+		if (SlotCount == 0)
+		{
+			SlotCount = 1;
+		}
+
+		MaterialSlotNames.resize(SlotCount, "M_Default");
+
+		const TArray<std::shared_ptr<FMaterial>>& DefaultMaterials = Mesh->GetDefaultMaterials();
+		for (uint32 SlotIndex = 0; SlotIndex < SlotCount && SlotIndex < DefaultMaterials.size(); ++SlotIndex)
+		{
+			const std::shared_ptr<FMaterial>& Material = DefaultMaterials[SlotIndex];
+			if (Material && !Material->GetOriginName().empty())
+			{
+				MaterialSlotNames[SlotIndex] = Material->GetOriginName();
+			}
+		}
+
+		return MaterialSlotNames;
+	}
+
+	FStaticMesh BuildBakedMeshCopy(const FStaticMesh& SourceMesh, const FQuat& ImportRotation)
+	{
+		FStaticMesh BakedMesh;
+		BakedMesh.Topology = SourceMesh.Topology;
+		BakedMesh.PathFileName = SourceMesh.PathFileName;
+		BakedMesh.Sections = SourceMesh.Sections;
+		BakedMesh.Indices = SourceMesh.Indices;
+		BakedMesh.Vertices = SourceMesh.Vertices;
+
+		for (FVertex& Vertex : BakedMesh.Vertices)
+		{
+			Vertex.Position = ImportRotation.RotateVector(Vertex.Position);
+			if (!Vertex.Normal.IsNearlyZero())
+			{
+				Vertex.Normal = ImportRotation.RotateVector(Vertex.Normal).GetSafeNormal();
+			}
+		}
+
+		BakedMesh.bIsDirty = true;
+		return BakedMesh;
 	}
 
 	FVector GetLoadedModelWorldCenter(const FObjViewerModelState& ModelState)
@@ -249,6 +306,29 @@ bool FObjViewerEngine::LoadModelFromFile(const FString& FilePath, const FObjImpo
 	}
 
 	return true;
+}
+
+bool FObjViewerEngine::ExportLoadedModelAsModel(const FString& FilePath) const
+{
+	if (FilePath.empty() || !HasLoadedModel() || ModelState.Mesh == nullptr || ModelState.Mesh->GetRenderData() == nullptr)
+	{
+		UE_LOG("[ObjViewer] Export skipped because no valid mesh is loaded.");
+		return false;
+	}
+
+	const FQuat ImportRotation = MakeImportRotation(ModelState.LastImportSummary);
+	FStaticMesh BakedMesh = BuildBakedMeshCopy(*ModelState.Mesh->GetRenderData(), ImportRotation);
+	const TArray<FString> MaterialSlotNames = BuildMaterialSlotNames(ModelState.Mesh);
+	TArray<FModelMaterialInfo> MaterialInfos;
+	const bool bBuiltMaterialInfos = FObjManager::BuildModelMaterialInfosFromObj(ModelState.SourceFilePath, FilePath, MaterialSlotNames, MaterialInfos);
+	if (!bBuiltMaterialInfos)
+	{
+		UE_LOG("[ObjViewer] Falling back to default embedded material metadata for export: %s", ModelState.SourceFilePath.c_str());
+	}
+
+	const bool bSaved = FObjManager::SaveModelStaticMeshAsset(FilePath, BakedMesh, MaterialInfos);
+	UE_LOG("[ObjViewer] %s .Model export: %s", bSaved ? "Succeeded" : "Failed", FilePath.c_str());
+	return bSaved;
 }
 
 bool FObjViewerEngine::ReloadLoadedModel()

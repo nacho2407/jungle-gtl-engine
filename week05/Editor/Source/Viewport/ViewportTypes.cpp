@@ -8,25 +8,28 @@ FViewportLocalState FViewportLocalState::CreateDefault(EViewportType Type)
 	FViewportLocalState State;
 	State.ProjectionType = Type;
 
-	State.NearPlane = 0.1f;
+	State.NearPlane = 0.001f;
 	State.FarPlane = 10000.0f;
 	State.FovY = 60.0f;
 
 	State.OrthoTarget = FVector::ZeroVector + FVector(0.0f, 0.0f, 1.0f);
-	State.OrthoZoom = 100.0f;
+	State.OrthoZoom = 10.0f;
 	State.bShowGrid = true;
 	State.ViewMode = ERenderMode::Lighting;
 
 	switch (Type)
 	{
 	case EViewportType::Perspective:
-		State.Position = FVector(-10.0f, 0.0f, 10.0f);
+		State.Position = FVector(-10.0f, 0.0f, 1.0f);
 		State.Rotation = FRotator::ZeroRotator;
 		break;
 
 	case EViewportType::OrthoTop:
-	case EViewportType::OrthoFront:
+	case EViewportType::OrthoBottom:
+	case EViewportType::OrthoLeft:
 	case EViewportType::OrthoRight:
+	case EViewportType::OrthoFront:
+	case EViewportType::OrthoBack:
 		State.Position = FVector::ZeroVector;
 		State.Rotation = FRotator::ZeroRotator;
 		break;
@@ -59,10 +62,18 @@ FMatrix FViewportLocalState::BuildViewMatrix() const
 		return FMatrix::MakeViewLookAtLH(Eye, Eye + Forward, Up);
 	}
 
-	case EViewportType::OrthoFront:
+	case EViewportType::OrthoBottom:
 	{
-		const FVector Eye = OrthoTarget + FVector::ForwardVector * OrthoZoom;
-		const FVector Forward = FVector::BackwardVector;
+		const FVector Eye = OrthoTarget + FVector::DownVector * OrthoZoom;
+		const FVector Forward = FVector::UpVector;
+		const FVector Up = FVector::ForwardVector;
+		return FMatrix::MakeViewLookAtLH(Eye, Eye + Forward, Up);
+	}
+
+	case EViewportType::OrthoLeft:
+	{
+		const FVector Eye = OrthoTarget + FVector::LeftVector * OrthoZoom;
+		const FVector Forward = FVector::RightVector;
 		const FVector Up = FVector::UpVector;
 		return FMatrix::MakeViewLookAtLH(Eye, Eye + Forward, Up);
 	}
@@ -71,6 +82,22 @@ FMatrix FViewportLocalState::BuildViewMatrix() const
 	{
 		const FVector Eye = OrthoTarget + FVector::RightVector * OrthoZoom;
 		const FVector Forward = FVector::LeftVector;
+		const FVector Up = FVector::UpVector;
+		return FMatrix::MakeViewLookAtLH(Eye, Eye + Forward, Up);
+	}
+
+	case EViewportType::OrthoFront:
+	{
+		const FVector Eye = OrthoTarget + FVector::ForwardVector * OrthoZoom;
+		const FVector Forward = FVector::BackwardVector;
+		const FVector Up = FVector::UpVector;
+		return FMatrix::MakeViewLookAtLH(Eye, Eye + Forward, Up);
+	}
+
+	case EViewportType::OrthoBack:
+	{
+		const FVector Eye = OrthoTarget + FVector::BackwardVector * OrthoZoom;
+		const FVector Forward = FVector::ForwardVector;
 		const FVector Up = FVector::UpVector;
 		return FMatrix::MakeViewLookAtLH(Eye, Eye + Forward, Up);
 	}
@@ -102,7 +129,7 @@ FMatrix FViewportLocalState::BuildProjMatrix(float AspectRatio) const
 		);
 	}
 
-	const float SafeZoom = (std::max)(OrthoZoom, 0.01f);
+	const float SafeZoom = (std::max)(OrthoZoom, 0.001f);
 	const float ViewHeight = SafeZoom * 2.0f;
 	const float ViewWidth = ViewHeight * SafeAspect;
 

@@ -708,7 +708,25 @@ void FEditorUI::Render()
 							if (CameraData.bValid)
 							{
 								FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
-								FViewportEntry* PerspEntry = ViewportRegistry.FindEntryByType(EViewportType::Perspective);
+								FViewportEntry* PerspEntry = nullptr;
+								if (FSlateApplication* Slate = Engine->GetSlateApplication())
+								{
+									const FViewportId FocusedId = Slate->GetFocusedViewportId();
+									if (FocusedId != INVALID_VIEWPORT_ID)
+									{
+										FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(FocusedId);
+										if (FocusedEntry &&
+											FocusedEntry->bActive &&
+											FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
+										{
+											PerspEntry = FocusedEntry;
+										}
+									}
+								}
+								if (!PerspEntry)
+								{
+									PerspEntry = ViewportRegistry.FindEntryByType(EViewportType::Perspective);
+								}
 								if (PerspEntry)
 								{
 									PerspEntry->LocalState.Position  = CameraData.Location;
@@ -743,7 +761,25 @@ void FEditorUI::Render()
 					{
 						FCameraSerializeData CameraData;
 						const FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
-						const FViewportEntry* PerspEntry = ViewportRegistry.FindEntryByType(EViewportType::Perspective);
+						const FViewportEntry* PerspEntry = nullptr;
+						if (const FSlateApplication* Slate = Engine->GetSlateApplication())
+						{
+							const FViewportId FocusedId = Slate->GetFocusedViewportId();
+							if (FocusedId != INVALID_VIEWPORT_ID)
+							{
+								const FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(FocusedId);
+								if (FocusedEntry &&
+									FocusedEntry->bActive &&
+									FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
+								{
+									PerspEntry = FocusedEntry;
+								}
+							}
+						}
+						if (!PerspEntry)
+						{
+							PerspEntry = ViewportRegistry.FindEntryByType(EViewportType::Perspective);
+						}
 						if (PerspEntry)
 						{
 							CameraData.Location  = PerspEntry->LocalState.Position;

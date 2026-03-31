@@ -205,11 +205,23 @@ void FEditorViewportClient::SyncViewportRectsFromDock()
 		Central.Width  = static_cast<int32>(VP->WorkSize.x);
 		Central.Height = static_cast<int32>(VP->WorkSize.y);
 	}
-
+	
 	FSlateApplication* Slate = EditorEngine.GetSlateApplication();
 	if (Slate)
 	{
-		Slate->SetViewportAreaRect(Central);
+		constexpr int32 HeaderHeight = 34;
+		FRect ViewportArea = Central;
+		if (ViewportArea.Height > HeaderHeight)
+		{
+			ViewportArea.Y += HeaderHeight;
+			ViewportArea.Height -= HeaderHeight;
+		}
+		Slate->SetViewportAreaRect(ViewportArea);
+
+		for (FViewportEntry& Entry : ViewportRegistry.GetEntries())
+		{
+			Entry.bActive = Slate->IsViewportActive(Entry.Id);
+		}
 	}
 }
 

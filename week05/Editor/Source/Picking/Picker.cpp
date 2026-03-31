@@ -56,12 +56,24 @@ FRay FPicker::ScreenToRay(const FViewportEntry& Entry, int32 ScreenX, int32 Scre
 			Forward = FVector::DownVector;
 			break;
 
-		case EViewportType::OrthoFront:
-			Forward = FVector::BackwardVector;
+		case EViewportType::OrthoBottom:
+			Forward = FVector::UpVector;
+			break;
+
+		case EViewportType::OrthoLeft:
+			Forward = FVector::RightVector;
 			break;
 
 		case EViewportType::OrthoRight:
 			Forward = FVector::LeftVector;
+			break;
+
+		case EViewportType::OrthoFront:
+			Forward = FVector::BackwardVector;
+			break;
+
+		case EViewportType::OrthoBack:
+			Forward = FVector::ForwardVector;
 			break;
 
 		default:

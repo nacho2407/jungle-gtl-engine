@@ -1,4 +1,4 @@
-﻿#include "EditorEngine.h"
+#include "EditorEngine.h"
 #include "Platform/Windows/WindowsEngineLaunch.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int)

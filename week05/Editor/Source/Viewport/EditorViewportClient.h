@@ -33,6 +33,8 @@ public:
 	void HandleMessage(FEngine* Engine, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam) override;
 	EGizmoMode GetGizmoMode() const { return Gizmo.GetMode(); }
 	void SetGizmoMode(EGizmoMode InMode) const { Gizmo.SetMode(InMode); }
+	EGizmoCoordinateSpace GetSpaceMode() const { return Gizmo.GetCoordinateSpace(); }
+	void SetSpaceMode(EGizmoCoordinateSpace InSpace) const { Gizmo.SetCoordinateSpace(InSpace); }
 	ERenderMode GetRenderMode() const { return RenderMode; }
 	void SetRenderMode(ERenderMode InRenderMode) { RenderMode = InRenderMode; }
 

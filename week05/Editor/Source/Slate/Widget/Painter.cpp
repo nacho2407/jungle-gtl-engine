@@ -3,6 +3,7 @@
 #include "Renderer/Renderer.h"
 #include "Component/TextComponent.h"
 #include <limits>
+#include <algorithm>
 
 namespace
 {
@@ -13,6 +14,48 @@ namespace
 		const float G = ((C >> 8) & 0xFF) / 255.0f;
 		const float B = (C & 0xFF) / 255.0f;
 		return { R, G, B, A };
+	}
+
+	static bool EnsureUiTextMesh(FRenderer* Renderer, const char* Text, float LetterSpacing, FDynamicMesh*& InOutMesh)
+	{
+		if (!Renderer || !Text || Text[0] == '\0')
+		{
+			return false;
+		}
+
+		if (!InOutMesh)
+		{
+			InOutMesh = new FDynamicMesh();
+			InOutMesh->Topology = EMeshTopology::EMT_TriangleList;
+			if (!Renderer->GetTextRenderer().BuildTextMesh(Text, *InOutMesh, LetterSpacing))
+			{
+				delete InOutMesh;
+				InOutMesh = nullptr;
+				return false;
+			}
+
+			float MinX = (std::numeric_limits<float>::max)();
+			float MinY = (std::numeric_limits<float>::max)();
+
+			for (FVertex& Vertex : InOutMesh->Vertices)
+			{
+				const float ScreenX = Vertex.Position.Y;
+				const float ScreenY = -Vertex.Position.Z;
+				Vertex.Position = FVector(ScreenX, ScreenY, 0.0f);
+				MinX = (std::min)(MinX, Vertex.Position.X);
+				MinY = (std::min)(MinY, Vertex.Position.Y);
+			}
+
+			for (FVertex& Vertex : InOutMesh->Vertices)
+			{
+				Vertex.Position.X -= MinX;
+				Vertex.Position.Y -= MinY;
+			}
+
+			InOutMesh->bIsDirty = true;
+		}
+
+		return true;
 	}
 }
 
@@ -56,7 +99,7 @@ void FPainter::DrawRect(FRect InRect, uint32 Color)
 	if (!Renderer || !InRect.IsValid()) return;
 
 	auto Mesh = std::make_unique<FDynamicMesh>();
-	Mesh->Topology = EMeshTopology::EMT_TriangleList;
+	Mesh->Topology = EMeshTopology::EMT_LineList;
 
 	const FVector4 C = ToColor(Color);
 	auto V = [&](float X, float Y) {
@@ -74,7 +117,7 @@ void FPainter::DrawRect(FRect InRect, uint32 Color)
 		V((float)(InRect.X + InRect.Width), (float)(InRect.Y + InRect.Height)),
 		V((float)InRect.X, (float)(InRect.Y + InRect.Height))
 	};
-	Mesh->Indices = { 0, 1, 1, 2, 2, 3 };
+	Mesh->Indices = { 0, 1, 1, 2, 2, 3, 3, 0 };
 	Mesh->bIsDirty = true;
 
 	FDynamicMesh* MeshPtr = Mesh.get();
@@ -125,37 +168,9 @@ void FPainter::DrawRectFilled(FRect InRect, uint32 Color)
 	UIQueue.AddCommand(Commend);
 }
 
-void FPainter::DrawText(FPoint Point, const char* Text, uint32 Color, float FontSize, FDynamicMesh*& InOutMesh)
+void FPainter::DrawText(FPoint Point, const char* Text, uint32 Color, float FontSize, float LetterSpacing, FDynamicMesh*& InOutMesh)
 {
-	if (!Renderer || !Text || Text[0] == '\0') return;
-
-	if (!InOutMesh)
-	{
-		InOutMesh = new FDynamicMesh();
-		InOutMesh->Topology = EMeshTopology::EMT_TriangleList;
-		if (!Renderer->GetTextRenderer().BuildTextMesh(Text, *InOutMesh))
-			return;
-
-		float MinX = (std::numeric_limits<float>::max)();
-		float MinY = (std::numeric_limits<float>::max)();
-
-		for (FVertex& Vertex : InOutMesh->Vertices)
-		{
-			const float ScreenX = Vertex.Position.Y;
-			const float ScreenY = -Vertex.Position.Z;
-			Vertex.Position = FVector(ScreenX, ScreenY, 0.0f);
-			MinX = (std::min)(MinX, Vertex.Position.X);
-			MinY = (std::min)(MinY, Vertex.Position.Y);
-		}
-
-		for (FVertex& Vertex : InOutMesh->Vertices)
-		{
-			Vertex.Position.X -= MinX;
-			Vertex.Position.Y -= MinY;
-		}
-
-		InOutMesh->bIsDirty = true;
-	}
+	if (!EnsureUiTextMesh(Renderer, Text, LetterSpacing, InOutMesh)) return;
 
 	FDynamicMaterial* FontMat = nullptr;
 	auto It = FontMaterialByColor.find(Color);
@@ -176,9 +191,28 @@ void FPainter::DrawText(FPoint Point, const char* Text, uint32 Color, float Font
 	FRenderCommand Command;
 	Command.RenderMesh = InOutMesh;
 	Command.Material = FontMat;
-	Command.WorldMatrix = FMatrix::MakeWorld({ (float)Point.X, (float)Point.Y, 0 }, FMatrix::Identity, FVector::One() * FontSize);
+	Command.WorldMatrix = FMatrix::MakeWorld(
+		{ (float)Point.X, (float)Point.Y, 0 },
+		FMatrix::Identity,
+		FVector::One() * FontSize
+	);
 	Command.RenderLayer = ERenderLayer::UI;
 	UIQueue.AddCommand(Command);
+}
+
+FVector2 FPainter::MeasureText(const char* Text, float FontSize, float LetterSpacing, FDynamicMesh*& InOutMesh)
+{
+	if (!EnsureUiTextMesh(Renderer, Text, LetterSpacing, InOutMesh)) return { 0.0f, 0.0f };
+
+	float MaxX = 0.0f;
+	float MaxY = 0.0f;
+	for (const FVertex& V : InOutMesh->Vertices)
+	{
+		MaxX = (std::max)(MaxX, V.Position.X);
+		MaxY = (std::max)(MaxY, V.Position.Y);
+	}
+
+	return { MaxX * FontSize, MaxY * FontSize };
 }
 
 void FPainter::Flush()

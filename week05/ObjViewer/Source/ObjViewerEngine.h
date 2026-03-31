@@ -79,6 +79,7 @@ public:
 
 	bool LoadModelFromFile(const FString& FilePath, const FObjImportSummary& ImportOptions);
 	bool LoadModelFromFile(const FString& FilePath, const FString& ImportSource = "Unknown");
+	bool ExportLoadedModelAsModel(const FString& FilePath) const;
 	bool ReloadLoadedModel();
 	void ClearLoadedModel();
 	void FrameLoadedModel();

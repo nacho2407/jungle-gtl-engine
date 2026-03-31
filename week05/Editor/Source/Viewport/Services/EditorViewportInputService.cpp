@@ -85,13 +85,28 @@ void FEditorViewportInputService::TickCameraNavigation(
 		ViewUp = FVector(1, 0, 0);
 		break;
 
-	case EViewportType::OrthoFront:
-		ViewFwd = FVector(-1, 0, 0);
+	case EViewportType::OrthoBottom:
+		ViewFwd = FVector(0, 0, 1);
+		ViewUp = FVector(1, 0, 0);
+		break;
+
+	case EViewportType::OrthoLeft:
+		ViewFwd = FVector(0, 1, 0);
 		ViewUp = FVector(0, 0, 1);
 		break;
 
 	case EViewportType::OrthoRight:
 		ViewFwd = FVector(0, -1, 0);
+		ViewUp = FVector(0, 0, 1);
+		break;
+
+	case EViewportType::OrthoFront:
+		ViewFwd = FVector(-1, 0, 0);
+		ViewUp = FVector(0, 0, 1);
+		break;
+
+	case EViewportType::OrthoBack:
+		ViewFwd = FVector(1, 0, 0);
 		ViewUp = FVector(0, 0, 1);
 		break;
 
@@ -140,6 +155,9 @@ void FEditorViewportInputService::HandleMessage(
 	case WM_LBUTTONDOWN:
 		Slate->ProcessMouseDown(MouseX, MouseY);
 		break;
+	case WM_LBUTTONDBLCLK:
+		Slate->ProcessMouseDoubleClick(MouseX, MouseY);
+		return;
 	case WM_RBUTTONDOWN:
 		Slate->ProcessMouseDown(MouseX, MouseY);
 		break;
