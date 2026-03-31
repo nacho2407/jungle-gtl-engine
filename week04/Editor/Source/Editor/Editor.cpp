@@ -1320,14 +1320,12 @@ void FEditor::DrawRootDockSpace()
             ? (Viewport->Size.y - FEditorChrome::TitleBarHeight - GutterMetrics.Bottom)
             : 0.0f;
 
-    if (DockSpaceWidth <= 0.0f || DockSpaceHeight <= 0.0f)
-    {
-        return;
-    }
+    const float SafeDockSpaceWidth = (DockSpaceWidth > 0.0f) ? DockSpaceWidth : 1.0f;
+    const float SafeDockSpaceHeight = (DockSpaceHeight > 0.0f) ? DockSpaceHeight : 1.0f;
 
     ImGui::SetNextWindowPos(ImVec2(Viewport->Pos.x + GutterMetrics.Left,
                                    Viewport->Pos.y + FEditorChrome::TitleBarHeight));
-    ImGui::SetNextWindowSize(ImVec2(DockSpaceWidth, DockSpaceHeight));
+    ImGui::SetNextWindowSize(ImVec2(SafeDockSpaceWidth, SafeDockSpaceHeight));
     ImGui::SetNextWindowViewport(Viewport->ID);
 
     ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
