@@ -39,13 +39,13 @@ class FViewportSelectionController : public Engine::Viewport::IViewportControlle
     }
 
     bool IsDraggingSelection() const { return bIsDraggingSelection; }
-  void   GetSelectionRect(int32 & OutStartX, int32& OutStartY, int32& OutEndX, int32& OutEndY) const
-  {
-      OutStartX = SelectionStartX;
-      OutStartY = SelectionStartY;
-      OutEndX = SelectionCurrentX;
-      OutEndY = SelectionCurrentY;
-  }
+    void GetSelectionRect(int32 & OutStartX, int32& OutStartY, int32& OutEndX, int32& OutEndY) const
+    {
+        OutStartX = SelectionStartX + static_cast<int32>(ViewportCamera->GetOriginX());
+        OutStartY = SelectionStartY + static_cast<int32>(ViewportCamera->GetOriginY());
+        OutEndX = SelectionCurrentX + static_cast<int32>(ViewportCamera->GetOriginX());
+        OutEndY = SelectionCurrentY + static_cast<int32>(ViewportCamera->GetOriginY());
+    }
 
 private:
     // Geometry::FRay BuildPickRay(int32 MouseX, int32 MouseY) const;
