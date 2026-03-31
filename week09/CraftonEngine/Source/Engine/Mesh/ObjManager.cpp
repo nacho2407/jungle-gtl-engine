@@ -91,13 +91,61 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 	// UStaticMesh 생성 + FStaticMesh 소유권 이전 + 머티리얼 설정
 	UStaticMesh* StaticMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
 
-	StaticMesh->Build(PathFileName, InDevice);
+	FString BinPath = GetBinaryFilePath(PathFileName);
+	bool bNeedRebuild = true;
+
+	// 3. 타임스탬프 비교 (디스크 캐시 확인)
+	if (std::filesystem::exists(BinPath) && std::filesystem::exists(PathFileName))
+	{
+		if (std::filesystem::last_write_time(BinPath) >= std::filesystem::last_write_time(PathFileName))
+		{
+			bNeedRebuild = false;
+		}
+	}
+
+	if (!bNeedRebuild)
+	{
+		// BIN 파일에서 통째로 로드
+		FWindowsBinReader Reader(BinPath);
+		if (Reader.IsValid())
+		{
+			StaticMesh->Serialize(Reader);
+		}
+		else
+		{
+			bNeedRebuild = true; // 읽기 실패 시 강제 파싱
+		}
+	}
+
+	if (bNeedRebuild)
+	{
+		// 무거운 OBJ 파싱 진행
+		auto NewMeshAsset = std::make_unique<FStaticMesh>();
+		TArray<FStaticMaterial> ParsedMaterials;
+
+		if (FObjImporter::Import(PathFileName, *NewMeshAsset, ParsedMaterials))
+		{
+			NewMeshAsset->PathFileName = PathFileName;
+			StaticMesh->SetStaticMeshAsset(std::move(NewMeshAsset));
+			StaticMesh->SetStaticMaterials(std::move(ParsedMaterials));
+
+			// 파싱 결과를 하드디스크에 굽기 (다음 로딩 속도 최적화)
+			FWindowsBinWriter Writer(BinPath);
+			if (Writer.IsValid())
+			{
+				StaticMesh->Serialize(Writer);
+			}
+		}
+	}
+
+	StaticMesh->InitResources(InDevice);
 
 	// 캐시 등록
 	StaticMeshCache[PathFileName] = StaticMesh;
 
 	return StaticMesh;
 }
+
 
 UMaterial* FObjManager::GetOrLoadMaterial(const FString& MaterialName)
 {

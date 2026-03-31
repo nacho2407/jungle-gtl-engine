@@ -217,6 +217,7 @@
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp" />
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\FLevelViewportLayout.cpp" />
+    <ClCompile Include="Source\Engine\StaticMeshActor.cpp" />
     <ClCompile Include="Source\Engine\Collision\RayUtils.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BillboardComponent.cpp" />
@@ -274,7 +275,6 @@
     <ClCompile Include="Source\Engine\Runtime\WindowsApplication.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp" />
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp" />
-    <ClCompile Include="Source\Engine\StaticMeshActor.cpp" />
     <ClCompile Include="Source\Engine\Texture\Texture2D.cpp" />
     <ClCompile Include="Source\Engine\UI\SSplitter.cpp" />
     <ClCompile Include="Source\Engine\UI\SWindow.cpp" />
@@ -307,6 +307,7 @@
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\FLevelViewportLayout.h" />
     <ClInclude Include="Source\Editor\Viewport\LevelEditorViewportClient.h" />
+    <ClInclude Include="Source\Engine\StaticMeshActor.h" />
     <ClInclude Include="Source\Engine\Collision\RayUtils.h" />
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />
     <ClInclude Include="Source\Engine\Component\BillboardComponent.h" />
@@ -385,7 +386,6 @@
     <ClInclude Include="Source\Engine\Serialization\Archive.h" />
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />
     <ClInclude Include="Source\Engine\Serialization\WindowsArchive.h" />
-    <ClInclude Include="Source\Engine\StaticMeshActor.h" />
     <ClInclude Include="Source\Engine\Texture\Texture2D.h" />
     <ClInclude Include="Source\Engine\UI\SSplitter.h" />
     <ClInclude Include="Source\Engine\UI\SWidget.h" />
