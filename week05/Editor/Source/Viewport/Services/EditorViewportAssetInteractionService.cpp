@@ -47,7 +47,25 @@ void FEditorViewportAssetInteractionService::HandleFileDoubleClick(
 
 	if (CameraData.bValid)
 	{
-		FViewportEntry* PerspectiveEntry = ViewportRegistry.FindEntryByType(EViewportType::Perspective);
+		FViewportEntry* PerspectiveEntry = nullptr;
+		if (FSlateApplication* Slate = Engine->GetSlateApplication())
+		{
+			const FViewportId FocusedId = Slate->GetFocusedViewportId();
+			if (FocusedId != INVALID_VIEWPORT_ID)
+			{
+				FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(FocusedId);
+				if (FocusedEntry &&
+					FocusedEntry->bActive &&
+					FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
+				{
+					PerspectiveEntry = FocusedEntry;
+				}
+			}
+		}
+		if (!PerspectiveEntry)
+		{
+			PerspectiveEntry = ViewportRegistry.FindEntryByType(EViewportType::Perspective);
+		}
 		if (PerspectiveEntry)
 		{
 			PerspectiveEntry->LocalState.Position = CameraData.Location;

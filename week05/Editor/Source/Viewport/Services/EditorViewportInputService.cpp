@@ -140,6 +140,9 @@ void FEditorViewportInputService::HandleMessage(
 	case WM_LBUTTONDOWN:
 		Slate->ProcessMouseDown(MouseX, MouseY);
 		break;
+	case WM_LBUTTONDBLCLK:
+		Slate->ProcessMouseDoubleClick(MouseX, MouseY);
+		return;
 	case WM_RBUTTONDOWN:
 		Slate->ProcessMouseDown(MouseX, MouseY);
 		break;

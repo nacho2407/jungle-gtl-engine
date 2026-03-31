@@ -15,7 +15,7 @@
 #include "Component/SkyComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Asset/ObjManager.h"
-#include "Slate/Painter.h"
+#include "Slate/Widget/Painter.h"
 
 
 void FEditorViewportRenderService::RenderAll(

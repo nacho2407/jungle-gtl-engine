@@ -35,6 +35,6 @@ void SSplitterV::ArrangeChildren()
 
 	LT->Rect = FRect(Rect.X, Rect.Y, Rect.Width, Rect.Height * Ratio - BARWIDTH / 2);
 	LT->ArrangeChildren();
-	RB->Rect = FRect(Rect.X, Rect.Y + Rect.Height * Ratio + BARWIDTH / 2, Rect.Width, Rect.Height * (1.0f - Ratio));
+	RB->Rect = FRect(Rect.X, Rect.Y + Rect.Height * Ratio + BARWIDTH / 2, Rect.Width, Rect.Height * (1.0f - Ratio) - BARWIDTH / 2);
 	RB->ArrangeChildren();
 }

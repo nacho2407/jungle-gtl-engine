@@ -8,19 +8,19 @@ FViewportLocalState FViewportLocalState::CreateDefault(EViewportType Type)
 	FViewportLocalState State;
 	State.ProjectionType = Type;
 
-	State.NearPlane = 0.1f;
+	State.NearPlane = 0.001f;
 	State.FarPlane = 10000.0f;
 	State.FovY = 60.0f;
 
 	State.OrthoTarget = FVector::ZeroVector + FVector(0.0f, 0.0f, 1.0f);
-	State.OrthoZoom = 100.0f;
+	State.OrthoZoom = 10.0f;
 	State.bShowGrid = true;
 	State.ViewMode = ERenderMode::Lighting;
 
 	switch (Type)
 	{
 	case EViewportType::Perspective:
-		State.Position = FVector(-10.0f, 0.0f, 10.0f);
+		State.Position = FVector(-10.0f, 0.0f, 1.0f);
 		State.Rotation = FRotator::ZeroRotator;
 		break;
 

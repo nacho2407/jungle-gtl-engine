@@ -21,6 +21,7 @@ bool FWindowsApplication::Create(HINSTANCE InInstance, const WCHAR* ClassName)
 	WindowClass = {};
 	WindowClass.cbSize = sizeof(WNDCLASSEX);
 	WindowClass.lpfnWndProc = StaticWndProc;
+	WindowClass.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
 	WindowClass.hInstance = Instance;
 	WindowClass.lpszClassName = WindowClassName;
 

@@ -117,11 +117,26 @@ bool FTextMeshBuilder::BuildTextMesh(const FString& Text, FRenderMesh& OutMesh) 
 		return false;
 	}
 
+	auto ResolveAdvance = [](uint32 Codepoint, float BaseAdvance) -> float
+	{
+		// Grid atlas uses fixed cell metrics; tighten latin tracking to avoid
+		// excessive spacing in toolbar/button/dropdown labels.
+		if (Codepoint <= 0x007E)
+		{
+			if (Codepoint == static_cast<uint32>(' '))
+			{
+				return BaseAdvance;
+			}
+			return BaseAdvance * 0.82f;
+		}
+		return BaseAdvance;
+	};
+
 	float TotalWidth = 0.0f;
 	for (uint32 Cp : Codepoints)
 	{
 		const FFontGlyph& Glyph = Atlas.GetGlyph(Cp);
-		TotalWidth += Glyph.Advance;
+		TotalWidth += ResolveAdvance(Cp, Glyph.Advance);
 	}
 
 	float PenX = -TotalWidth * 0.5f;
@@ -165,7 +180,7 @@ bool FTextMeshBuilder::BuildTextMesh(const FString& Text, FRenderMesh& OutMesh) 
 			OutMesh.Indices.push_back(BaseIndex + 3);
 		}
 
-		PenX += Glyph.Advance;
+		PenX += ResolveAdvance(Cp, Glyph.Advance);
 	}
 
 	return !OutMesh.Vertices.empty();

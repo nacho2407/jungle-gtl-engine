@@ -1,5 +1,6 @@
 #include "SlateApplication.h"
 #include "Viewport/Viewport.h"
+#include <utility>
 
 // ────────────────────────────────────────────────────────────
 // Initialize
@@ -40,6 +41,18 @@ void FSlateApplication::SyncViewportRects()
 // ────────────────────────────────────────────────────────────
 void FSlateApplication::SetLayout(EViewportLayout Layout)
 {
+	if (bViewportMaximized && Layout != EViewportLayout::Single)
+	{
+		if (SwappedViewportIndex > 0 && SwappedViewportIndex < MAX_VIEWPORTS)
+		{
+			std::swap(Viewports[0], Viewports[SwappedViewportIndex]);
+		}
+
+		bViewportMaximized = false;
+		MaximizedViewportId = INVALID_VIEWPORT_ID;
+		SwappedViewportIndex = -1;
+	}
+
 	CurrentLayout = Layout;
 	ResetPools();
 
@@ -214,6 +227,24 @@ float FSlateApplication::GetSplitterRatio(int32 Index) const
 	return 0.5f;
 }
 
+bool FSlateApplication::IsViewportActive(FViewportId Id) const
+{
+	if (Id == INVALID_VIEWPORT_ID)
+	{
+		return false;
+	}
+
+	for (int32 i = 0; i < ActiveViewportCount; ++i)
+	{
+		if (Viewports[i] && Viewports[i]->Id == Id)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void FSlateApplication::SetSplitterRatio(int32 Index, float Ratio)
 {
 	if (Index < ActiveSplitterCount)
@@ -232,6 +263,42 @@ SWidget* FSlateApplication::CreateWidget(std::unique_ptr<SWidget> InWidget)
 void FSlateApplication::Paint(SWidget& Painter)
 {
 	if (Root) Root->Paint(Painter);
+
+	if (FocusedViewportId != INVALID_VIEWPORT_ID)
+	{
+		for (int i = 0; i < ActiveViewportCount; i++)
+		{
+			if (!Viewports[i] || Viewports[i]->Id != FocusedViewportId)
+			{
+				continue;
+			}
+
+			const FRect FocusRect = Viewports[i]->Rect;
+			if (!FocusRect.IsValid())
+			{
+				break;
+			}
+
+			const int32 Inset = 0;
+			const FRect Outer = {
+				FocusRect.X + Inset,
+				FocusRect.Y + Inset,
+				FocusRect.Width - Inset * 2,
+				FocusRect.Height - Inset * 2
+			};
+			if (Outer.IsValid())
+			{
+				Painter.DrawRect(Outer, 0xFF00B7FF);
+				const FRect Inner = { Outer.X + 1, Outer.Y + 1, Outer.Width - 2, Outer.Height - 2 };
+				if (Inner.IsValid())
+				{
+					Painter.DrawRect(Inner, 0xFF00B7FF);
+				}
+			}
+			break;
+		}
+	}
+
 	for (auto* W : OverlayWidgets) W->Paint(Painter);
 }
 
@@ -240,6 +307,19 @@ void FSlateApplication::Paint(SWidget& Painter)
 // ────────────────────────────────────────────────────────────
 void FSlateApplication::ProcessMouseDown(int32 X, int32 Y)
 {
+	for (int32 i = static_cast<int32>(OverlayWidgets.size()) - 1; i >= 0; --i)
+	{
+		SWidget* W = OverlayWidgets[i];
+		if (!W || !W->HitTest({ X, Y }))
+		{
+			continue;
+		}
+
+		if (W->OnMouseDown(X, Y))
+		{
+			return;
+		}
+	}
 	// Splitter 바 히트 우선
 	for (int i = 0; i < ActiveSplitterCount; i++)
 	{
@@ -266,10 +346,49 @@ void FSlateApplication::ProcessMouseDown(int32 X, int32 Y)
 	}
 }
 
+void FSlateApplication::ProcessMouseDoubleClick(int32 X, int32 Y)
+{
+	for (int32 i = static_cast<int32>(OverlayWidgets.size()) - 1; i >= 0; --i)
+	{
+		SWidget* W = OverlayWidgets[i];
+		if (W && W->HitTest({ X, Y }))
+		{
+			return;
+		}
+	}
+
+	for (int i = 0; i < ActiveViewportCount; i++)
+	{
+		if (!Viewports[i] || !Viewports[i]->HitTest(X, Y))
+		{
+			continue;
+		}
+
+		FocusedViewportId = Viewports[i]->Id;
+		ToggleViewportMaximize(FocusedViewportId);
+		return;
+	}
+}
+
 void FSlateApplication::ProcessMouseMove(int32 X, int32 Y)
 {
+	IsCursorInArea = false;
+	if (AreaRect.IsValid() && AreaRect.X < X && X < AreaRect.X + AreaRect.Width && AreaRect.Y < Y && Y < AreaRect.Y + AreaRect.Height)
+		IsCursorInArea = true;
+
+
+	for (int i = 0; i < ActiveSplitterCount; i++)
+	{
+		if (ActiveSplitters[i])
+		{
+			ActiveSplitters[i]->Color = 0xFF3C3C3C;
+		}
+	}
+
 	if (DraggingSplitter)
 	{
+		DraggingSplitter->Color = 0xFF5A9CFF;
+		HoveredViewportId = INVALID_VIEWPORT_ID;
 		CurrentCursor = DraggingSplitter->GetCursor();
 		DraggingSplitter->OnMouseMove(X, Y);
 		PerformLayout();
@@ -285,6 +404,8 @@ void FSlateApplication::ProcessMouseMove(int32 X, int32 Y)
 			Bar.X <= X && X <= Bar.X + Bar.Width &&
 			Bar.Y <= Y && Y <= Bar.Y + Bar.Height)
 		{
+			S->Color = 0xFF5A9CFF;
+			HoveredViewportId = INVALID_VIEWPORT_ID;
 			CurrentCursor = S->GetCursor();
 			return;
 		}
@@ -308,7 +429,73 @@ void FSlateApplication::ProcessMouseUp(int32 X, int32 Y)
 {
 	if (DraggingSplitter)
 	{
+		DraggingSplitter->Color = 0xFF3C3C3C;
 		DraggingSplitter = nullptr;
 		if (OnSplitterDragEnd) OnSplitterDragEnd();
 	}
+}
+
+int32 FSlateApplication::FindActiveViewportIndexById(FViewportId ViewportId) const
+{
+	for (int32 i = 0; i < ActiveViewportCount; ++i)
+	{
+		if (Viewports[i] && Viewports[i]->Id == ViewportId)
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+void FSlateApplication::ToggleViewportMaximize(FViewportId ViewportId)
+{
+	if (ViewportId == INVALID_VIEWPORT_ID)
+	{
+		return;
+	}
+
+	if (bViewportMaximized)
+	{
+		const EViewportLayout RestoreLayout = LayoutBeforeMaximize;
+		const bool bRestoreOnly = (ViewportId == MaximizedViewportId);
+
+		if (SwappedViewportIndex > 0 && SwappedViewportIndex < MAX_VIEWPORTS)
+		{
+			std::swap(Viewports[0], Viewports[SwappedViewportIndex]);
+		}
+
+		bViewportMaximized = false;
+		MaximizedViewportId = INVALID_VIEWPORT_ID;
+		SwappedViewportIndex = -1;
+		SetLayout(RestoreLayout);
+
+		if (bRestoreOnly)
+		{
+			return;
+		}
+	}
+
+	const int32 TargetIndex = FindActiveViewportIndexById(ViewportId);
+	if (TargetIndex < 0)
+	{
+		return;
+	}
+
+	LayoutBeforeMaximize = CurrentLayout;
+	MaximizedViewportId = ViewportId;
+	SwappedViewportIndex = TargetIndex;
+
+	if (TargetIndex > 0 && TargetIndex < MAX_VIEWPORTS)
+	{
+		std::swap(Viewports[0], Viewports[TargetIndex]);
+	}
+	else
+	{
+		SwappedViewportIndex = -1;
+	}
+
+	SetLayout(EViewportLayout::Single);
+	FocusedViewportId = ViewportId;
+	bViewportMaximized = true;
 }

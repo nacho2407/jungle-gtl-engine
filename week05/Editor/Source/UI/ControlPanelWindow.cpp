@@ -158,9 +158,11 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 		}
 		if (Entry)
 		{
-			float Position[3] = { Entry->LocalState.Position.X, Entry->LocalState.Position.Y, Entry->LocalState.Position.Z };
+			const bool bIsOrtho = (Entry->LocalState.ProjectionType != EViewportType::Perspective);
+			FVector& PositionRef = bIsOrtho ? Entry->LocalState.OrthoTarget : Entry->LocalState.Position;
+			float Position[3] = { PositionRef.X, PositionRef.Y, PositionRef.Z };
 			if (ImGui::DragFloat3("Position", Position, 0.1f))
-				Entry->LocalState.Position = { Position[0], Position[1], Position[2] };
+				PositionRef = { Position[0], Position[1], Position[2] };
 
 			if (Entry->LocalState.ProjectionType == EViewportType::Perspective)
 			{

@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Viewport/ViewportTypes.h"
-#include "SViewport.h"
-#include "SplitterH.h"
-#include "SplitterV.h"
-#include "Widget.h"
+#include "Widget/SViewport.h"
+#include "Widget/SplitterH.h"
+#include "Widget/SplitterV.h"
+#include "Widget/Widget.h"
 #include <memory>
 #include <functional>
 
@@ -14,6 +14,10 @@ class FSlateApplication
 	FViewportId FocusedViewportId = INVALID_VIEWPORT_ID;
 	FViewportId MouseCapturedViewportId = INVALID_VIEWPORT_ID;
 	SSplitter*  DraggingSplitter = nullptr;
+	bool bViewportMaximized = false;
+	EViewportLayout LayoutBeforeMaximize = EViewportLayout::FourGrid;
+	FViewportId MaximizedViewportId = INVALID_VIEWPORT_ID;
+	int32 SwappedViewportIndex = -1;
 
 	FRect AreaRect;
 	EViewportLayout CurrentLayout = EViewportLayout::Single;
@@ -32,6 +36,7 @@ class FSlateApplication
 	TArray<SWidget*> OverlayWidgets;
 
 	EMouseCursor CurrentCursor = EMouseCursor::Default;
+	bool IsCursorInArea = false;
 
 	void BuildTree_Single();
 	void BuildTree_SplitH();
@@ -43,6 +48,8 @@ class FSlateApplication
 	void BuildTree_FourGrid();
 	void ResetPools();
 	void SyncViewportRects();
+	int32 FindActiveViewportIndexById(FViewportId ViewportId) const;
+	void ToggleViewportMaximize(FViewportId ViewportId);
 
 public:
 	void Initialize(const FRect& Area, FViewport* VPs[], int32 Count);
@@ -55,6 +62,7 @@ public:
 	FViewportId GetMouseCapturedViewportId() const { return MouseCapturedViewportId; }
 	EViewportLayout GetCurrentLayout() const { return CurrentLayout; }
 	int32 GetActiveViewportCount() const { return ActiveViewportCount; }
+	bool IsViewportActive(FViewportId Id) const;
 	bool IsDraggingSplitter() const { return DraggingSplitter != nullptr; }
 	bool IsPointerOverViewport(FViewportId Id) const { return HoveredViewportId == Id; }
 	float GetSplitterRatio(int32 Index) const;
@@ -64,9 +72,11 @@ public:
 	void Paint(SWidget& Painter);
 
 	void ProcessMouseDown(int32 X, int32 Y);
+	void ProcessMouseDoubleClick(int32 X, int32 Y);
 	void ProcessMouseMove(int32 X, int32 Y);
 	void ProcessMouseUp(int32 X, int32 Y);
 
 	EMouseCursor GetCurrentCursor() const { return CurrentCursor; }
+	bool GetIsCoursorInArea() const { return IsCursorInArea; }
 	std::function<void()> OnSplitterDragEnd;
 };

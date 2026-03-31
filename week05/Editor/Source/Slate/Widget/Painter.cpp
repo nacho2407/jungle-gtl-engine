@@ -56,7 +56,7 @@ void FPainter::DrawRect(FRect InRect, uint32 Color)
 	if (!Renderer || !InRect.IsValid()) return;
 
 	auto Mesh = std::make_unique<FDynamicMesh>();
-	Mesh->Topology = EMeshTopology::EMT_TriangleList;
+	Mesh->Topology = EMeshTopology::EMT_LineList;
 
 	const FVector4 C = ToColor(Color);
 	auto V = [&](float X, float Y) {
@@ -74,7 +74,7 @@ void FPainter::DrawRect(FRect InRect, uint32 Color)
 		V((float)(InRect.X + InRect.Width), (float)(InRect.Y + InRect.Height)),
 		V((float)InRect.X, (float)(InRect.Y + InRect.Height))
 	};
-	Mesh->Indices = { 0, 1, 1, 2, 2, 3 };
+	Mesh->Indices = { 0, 1, 1, 2, 2, 3, 3, 0 };
 	Mesh->bIsDirty = true;
 
 	FDynamicMesh* MeshPtr = Mesh.get();
@@ -176,7 +176,11 @@ void FPainter::DrawText(FPoint Point, const char* Text, uint32 Color, float Font
 	FRenderCommand Command;
 	Command.RenderMesh = InOutMesh;
 	Command.Material = FontMat;
-	Command.WorldMatrix = FMatrix::MakeWorld({ (float)Point.X, (float)Point.Y, 0 }, FMatrix::Identity, FVector::One() * FontSize);
+	Command.WorldMatrix = FMatrix::MakeWorld(
+		{ (float)Point.X, (float)Point.Y, 0 },
+		FMatrix::Identity,
+		FVector::One() * FontSize
+	);
 	Command.RenderLayer = ERenderLayer::UI;
 	UIQueue.AddCommand(Command);
 }

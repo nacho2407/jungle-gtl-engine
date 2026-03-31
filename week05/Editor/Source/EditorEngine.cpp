@@ -17,7 +17,7 @@
 #include "Viewport/EditorViewportClient.h"
 #include "Viewport/PreviewViewportClient.h"
 #include "World/World.h"
-#include "Slate/TextBlock.h"
+#include "Slate/ViewportToolbar.h"
 
 namespace
 {
@@ -323,11 +323,8 @@ void FEditorEngine::ClearDebugDrawForFrame()
 
 void FEditorEngine::CreateInitUI()
 {
-	std::unique_ptr<STextBlock> Label = std::make_unique<STextBlock>();
-	Label->Text = "한글 테스트";
-	Label->Color = 0xFFFFFFFF;
-	Label->Rect = { 800, 100, 0, 0 };
-	SWidget* Raw = SlateApplication->CreateWidget(std::move(Label));
+	std::unique_ptr<SViewportToolbarWidget> Toolbar = std::make_unique<SViewportToolbarWidget>(this);
+	SWidget* Raw = SlateApplication->CreateWidget(std::move(Toolbar));
 	SlateApplication->AddOverlayWidget(Raw);
 }
 
@@ -375,7 +372,25 @@ void FEditorEngine::InitEditorViewportRouting()
 	SyncViewportClient();
 
 	// Perspective Entry의 LocalState를 입력 컨트롤러에 연결
-	FViewportEntry* PerspEntry = ViewportRegistry.FindEntryByType(EViewportType::Perspective);
+	FViewportEntry* PerspEntry = nullptr;
+	if (SlateApplication)
+	{
+		const FViewportId FocusedId = SlateApplication->GetFocusedViewportId();
+		if (FocusedId != INVALID_VIEWPORT_ID)
+		{
+			FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(FocusedId);
+			if (FocusedEntry &&
+				FocusedEntry->bActive &&
+				FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
+			{
+				PerspEntry = FocusedEntry;
+			}
+		}
+	}
+	if (!PerspEntry)
+	{
+		PerspEntry = ViewportRegistry.FindEntryByType(EViewportType::Perspective);
+	}
 	if (PerspEntry)
 	{
 		CameraSubsystem.GetViewportController()->SetActiveLocalState(&PerspEntry->LocalState);
@@ -468,7 +483,7 @@ void FEditorEngine::SyncFocusedViewportLocalState()
 
 void FEditorEngine::SyncPlatformCursor()
 {
-	if (!SlateApplication)
+	if (!SlateApplication || !SlateApplication->GetIsCoursorInArea())
 	{
 		return;
 	}
@@ -487,6 +502,10 @@ void FEditorEngine::SyncPlatformCursor()
 	if (WinCursorName)
 	{
 		::SetCursor(::LoadCursor(NULL, WinCursorName));
+	}
+	else
+	{
+		::SetCursor(nullptr);
 	}
 }
 
