@@ -156,6 +156,7 @@ void FD3D11StaticMeshRenderer::Flush()
             FMeshUnlitConstants Constants = {};
             Constants.MVP = DrawItem.World * CurrentPassParams.SceneView->GetViewProjectionMatrix();
             Constants.World = DrawItem.World;
+            Constants.bEnableLighting = (CurrentPassParams.ViewMode == EViewModeIndex::VMI_Lit) ? 1 : 0;
 
             if (MaterialData)
             {

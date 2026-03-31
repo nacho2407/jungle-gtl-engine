@@ -90,7 +90,8 @@ void FD3D11WidgetRenderer::DrawWidget(ID3D11DeviceContext* Context, float X, flo
 
     FMeshUnlitConstants CB = {}; // 전체 초기화
     CB.MVP       = Model * OrthographicMatrix;
-    CB.World     = FMatrix::Identity; // World 행렬 추가 (단위 행렬)
+    CB.World     = FMatrix::Identity;
+    CB.bEnableLighting = 0; // 위젯은 라이팅 비활성화
     CB.BaseColor = Color;
     RHI->UpdateConstantBuffer(ConstantBuffer.Get(), &CB, sizeof(CB));
 
