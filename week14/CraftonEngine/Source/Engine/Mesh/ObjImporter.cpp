@@ -671,7 +671,8 @@ bool FObjImporter::Import(const FString& ObjFilePath, FStaticMesh& OutMesh, TArr
 		if (!FObjImporter::ParseMtl(ObjInfo.MaterialLibraryFilePath, ParsedMtlInfos))
 		{
 			UE_LOG("ParseMtl failed for: %s", ObjInfo.MaterialLibraryFilePath.c_str());
-			return false;
+			ObjInfo.MaterialLibraryFilePath.clear(); // MTL 파일 파싱 실패 시, 머티리얼 라이브러리 경로 초기화
+			ParsedMtlInfos.clear(); // MTL 파일 파싱 실패 시, 머티리얼 정보 초기화
 		}
 	}
 
