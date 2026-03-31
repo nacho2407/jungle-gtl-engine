@@ -225,6 +225,8 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	Gizmo->ApplyScreenSpaceScaling(Camera->GetWorldLocation(),
 		Camera->IsOrthogonal(), Camera->GetOrthoWidth());
 
+	Gizmo->UpdateAxisMask(RenderOptions.ViewportType);
+
 	if (InputSystem::Get().GetGuiInputState().bUsingMouse)
 	{
 		return;

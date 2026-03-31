@@ -95,7 +95,11 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	Collector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Bus);
 
 	UGizmoComponent* Gizmo = Editor->GetGizmo();
-	if (Gizmo) Gizmo->CollectRender(Bus);
+	if (Gizmo)
+	{
+		Gizmo->UpdateAxisMask(VC->GetRenderOptions().ViewportType);
+		Gizmo->CollectRender(Bus);
+	}
 
 	const TArray<FOverlayStatLine> OverlayLines = Editor->GetOverlayStatSystem().BuildLines(*Editor);
 	if (!OverlayLines.empty() && VP && VC == Editor->GetActiveViewport())
