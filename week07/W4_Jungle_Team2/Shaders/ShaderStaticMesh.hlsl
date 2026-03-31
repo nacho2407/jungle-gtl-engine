@@ -89,7 +89,7 @@ float4 mainPS(PSInput input) : SV_TARGET
     // 블린 퐁 셰이딩 -> 반사 벡터 대신에 어정쩡한 벡터를 사용한다.
     float3 HalfVector = normalize(fixedLightDir + ViewDir);
     
-    float3 FinalAmbient = AmbientColor * DiffuseTex * 0.5f;
+    float3 FinalAmbient = AmbientColor * DiffuseTex * 0.2f;
     float3 FinalDiffuse = DiffuseTex * DiffuseColor * max(0, dot(N, fixedLightDir));
     float3 FinalSpecular = SpecularTex * SpecularColor * pow(saturate(dot(HalfVector, ViewDir)), max(Shininess, 32.f));
 
