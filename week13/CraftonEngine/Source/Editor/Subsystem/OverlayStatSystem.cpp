@@ -47,13 +47,37 @@ TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& E
 
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "PixelShader Memory : %u", MemoryStats::GetPixelShaderMemory());
+			snprintf(Buffer, sizeof(Buffer), "PixelShader Memory : %u bytes", MemoryStats::GetPixelShaderMemory());
 			Group.Lines.push_back(FString(Buffer));
 		}
 
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "VertexShader Memory : %u", MemoryStats::GetVertexShaderMemory());
+			snprintf(Buffer, sizeof(Buffer), "VertexShader Memory : %u bytes", MemoryStats::GetVertexShaderMemory());
+			Group.Lines.push_back(FString(Buffer));
+		}
+
+		{
+			char Buffer[128] = {};
+			snprintf(Buffer, sizeof(Buffer), "Texture Memory : %u bytes", MemoryStats::GetTextureMemory());
+			Group.Lines.push_back(FString(Buffer));
+		}
+
+		{
+			char Buffer[128] = {};
+			snprintf(Buffer, sizeof(Buffer), "VertexBuffer Memory : %u bytes", MemoryStats::GetVertexBufferMemory());
+			Group.Lines.push_back(FString(Buffer));
+		}
+
+		{
+			char Buffer[128] = {};
+			snprintf(Buffer, sizeof(Buffer), "IndexBuffer Memory : %u bytes", MemoryStats::GetIndexBufferMemory());
+			Group.Lines.push_back(FString(Buffer));
+		}
+
+		{
+			char Buffer[128] = {};
+			snprintf(Buffer, sizeof(Buffer), "ConstantBuffer Memory : %u bytes", MemoryStats::GetConstantBufferMemory());
 			Group.Lines.push_back(FString(Buffer));
 		}
 
