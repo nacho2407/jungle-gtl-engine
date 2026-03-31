@@ -153,5 +153,14 @@ namespace Engine::Component
         return nullptr;
     }
 
+    uint32 UStaticMeshComponent::GetNumMaterials() const
+    {
+        if (StaticMesh)
+        {
+            return StaticMesh->GetNumSections();
+        }
+        return UMeshComponent::GetNumMaterials();
+    }
+
     REGISTER_CLASS(Engine::Component, UStaticMeshComponent)
 } // namespace Engine::Component
