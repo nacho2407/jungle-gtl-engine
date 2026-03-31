@@ -272,7 +272,7 @@ void FViewportNavigationController::Dolly(float Value)
 	}
 
 	EnsureTargetLocationInitialized();
-	TargetLocation += ViewportCamera->GetForwardVector().GetSafeNormal() * (Value * DollySpeed);
+	TargetLocation -= ViewportCamera->GetForwardVector().GetSafeNormal() * (Value * DollySpeed);
 }
 
 void FViewportNavigationController::BeginPanning()
