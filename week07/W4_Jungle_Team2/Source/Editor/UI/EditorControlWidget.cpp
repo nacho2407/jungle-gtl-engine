@@ -11,6 +11,8 @@
 #include "Component/StaticMeshComponent.h"
 #include "Core/ResourceManager.h"
 
+#include "GameFramework/PrimitiveActors.h"
+
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
 void FEditorControlWidget::Initialize(UEditorEngine* InEditorEngine)
@@ -44,43 +46,31 @@ void FEditorControlWidget::Render(float DeltaTime)
 			return;
 		}
 
-		auto SpawnStaticMeshActor = [&]()
-		{
-			AActor* Actor = World->SpawnActor<AActor>();
-			Actor->SetActorLocation(CurSpawnPoint);
-
-			UStaticMeshComponent* StaticMeshComp = Actor->AddComponent<UStaticMeshComponent>();
-			Actor->SetRootComponent(StaticMeshComp);
-		};
-
 		for (int32 i = 0; i < NumberOfSpawnedActors; i++)
 		{
 			switch (SelectedPrimitiveType)
 			{
 			case 0: // StaticMesh
 			{
-				SpawnStaticMeshActor();
+				AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
+				Actor->InitDefaultComponents();
+				Actor->SetActorLocation(CurSpawnPoint);
+
 				break;
 			}
 			case 1: // TextRender
 			{
-				AActor* Actor = World->SpawnActor<AActor>();
+				
+				ATextRenderActor* Actor = World->SpawnActor<ATextRenderActor>();
+				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
-				UTextRenderComponent* Text = Actor->AddComponent<UTextRenderComponent>();
-				Actor->SetRootComponent(Text);
-				Text->SetFont(FName("Default"));
-				Text->SetText("TextRender");
 				break;
 			}
 			case 2: // SubUV
 			{
-				AActor* Actor = World->SpawnActor<AActor>();
+				ASubUVActor* Actor = World->SpawnActor<ASubUVActor>();
+				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
-				USubUVComponent* SubUV = Actor->AddComponent<USubUVComponent>();
-				Actor->SetRootComponent(SubUV);
-				SubUV->SetParticle(FName("Explosion"));
-				SubUV->SetSpriteSize(2.0f, 2.0f);
-				SubUV->SetFrameRate(30.f);
 				break;
 			}
 			}

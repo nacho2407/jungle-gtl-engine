@@ -226,8 +226,8 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		return;
 	}
 
-	if (InputSystem::Get().GetGuiInputState().bUsingKeyboard ||
-	    InputSystem::Get().GetGuiInputState().bUsingMouse)
+	/*InputSystem::Get().GetGuiInputState().bUsingMouse*/
+	if (InputSystem::Get().GetGuiInputState().bUsingKeyboard)
 	{
 		return;
 	}
@@ -482,11 +482,6 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	// 마우스가 이 뷰포트 안에 없을 때는 선택/클릭 처리를 하지 않습니다.
 	// 기즈모 드래그 중에는 마우스가 뷰포트 밖으로 나가도 계속 업데이트합니다
 	if (State && !State->bHovered && !bGizmoHolding)
-	{
-		return;
-	}
-
-	if (InputSystem::Get().GetGuiInputState().bUsingMouse)
 	{
 		return;
 	}
