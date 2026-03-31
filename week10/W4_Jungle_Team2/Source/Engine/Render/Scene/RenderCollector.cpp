@@ -38,6 +38,49 @@ namespace
 			RenderBus.GetCameraRight(),
 			RenderBus.GetCameraUp());
 	}
+	/*
+	* BillBoardComponent를 상속받은 text, SubUV가 사용하는 AABB 계산함수(의존성 분리)
+	*/
+	FAABB BuildQuadAABB(const FMatrix& WorldMatrix)
+	{
+		static constexpr FVector LocalQuadCorners[4] =
+		{
+			FVector(0.0f, -0.5f,  0.5f),
+			FVector(0.0f,  0.5f,  0.5f),
+			FVector(0.0f,  0.5f, -0.5f),
+			FVector(0.0f, -0.5f, -0.5f)
+		};
+
+		FAABB Box;
+		Box.Reset();
+
+		for (const FVector& Corner : LocalQuadCorners)
+		{
+			Box.Expand(WorldMatrix.TransformPosition(Corner));
+		}
+
+		return Box;
+	}
+
+	FAABB BuildRenderAABB(const UPrimitiveComponent* PrimitiveComponent, const FRenderBus& RenderBus)
+	{
+		switch (PrimitiveComponent->GetPrimitiveType())
+		{
+		case EPrimitiveType::EPT_Text:
+		{
+			const UTextRenderComponent* TextComp = static_cast<const UTextRenderComponent*>(PrimitiveComponent);
+			const FMatrix BillboardMatrix = MakeViewBillboardMatrix(PrimitiveComponent, RenderBus);
+			return BuildQuadAABB(TextComp->CalculateOutlineMatrix(BillboardMatrix));
+		}
+		case EPrimitiveType::EPT_SubUV:
+		{
+			const USubUVComponent* SubUVComp = static_cast<const USubUVComponent*>(PrimitiveComponent);
+			return BuildQuadAABB(MakeViewSubUVSelectionMatrix(SubUVComp, RenderBus));
+		}
+		default:
+			return PrimitiveComponent->GetWorldAABB();
+		}
+	}
 }
 
 void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
@@ -69,12 +112,13 @@ void FRenderCollector::CollectSelection(const TArray<AActor*>& SelectedActors, c
 	}
 }
 
-void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus)
+void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus, bool bOrthographic)
 {
 	FRenderCommand Cmd = {};
 	Cmd.Type = ERenderCommandType::Grid;
 	Cmd.Constants.Grid.GridSpacing = GridSpacing;
 	Cmd.Constants.Grid.GridHalfLineCount = GridHalfLineCount;
+	Cmd.Constants.Grid.bOrthographic = bOrthographic;
 	RenderBus.AddCommand(ERenderPass::Grid, Cmd);
 }
 
@@ -354,7 +398,7 @@ void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponen
 	FRenderCommand AABBCmd = {};
 	AABBCmd.Type = ERenderCommandType::DebugBox;
 
-	const FAABB& Box = PrimitiveComponent->GetWorldAABB();
+	const FAABB Box = BuildRenderAABB(PrimitiveComponent, RenderBus);
 
 	// 이전에 정의한 union 구조체의 AABB 영역에 데이터를 채웁니다.
 	AABBCmd.Constants.AABB.Min = Box.Min;

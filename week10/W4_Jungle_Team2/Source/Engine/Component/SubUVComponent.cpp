@@ -45,7 +45,16 @@ void USubUVComponent::UpdateWorldAABB() const
 {
 	WorldAABB.Reset();
 
-	/*FVector LExt = { 0.01f, Width * 0.5f, Height * 0.5f };
+	const FViewportCamera* Camera = nullptr;
+	TryGetActiveCamera(Camera);
+
+	CachedWorldMatrix = MakeBillboardWorldMatrix(GetWorldLocation(),
+		GetWorldScale(),
+		Camera->GetEffectiveForward(),
+		Camera->GetEffectiveRight(),
+		Camera->GetEffectiveUp());
+
+	FVector LExt = { 0.01f, Width * 0.5f, Height * 0.5f };
 
 	float NewEx = std::abs(CachedWorldMatrix.M[0][0]) * LExt.X +
 		std::abs(CachedWorldMatrix.M[1][0]) * LExt.Y +
@@ -57,19 +66,11 @@ void USubUVComponent::UpdateWorldAABB() const
 
 	float NewEz = std::abs(CachedWorldMatrix.M[0][2]) * LExt.X +
 		std::abs(CachedWorldMatrix.M[1][2]) * LExt.Y +
-		std::abs(CachedWorldMatrix.M[2][2]) * LExt.Z;*/
-
-	const FVector WorldScale = GetWorldScale();
-	const float HalfW = Width * WorldScale.Y * 0.5f;
-	const float HalfH = Height * WorldScale.Z * 0.5f;
-	const float Radius = std::sqrt((HalfW * HalfW) + (HalfH * HalfH));
+		std::abs(CachedWorldMatrix.M[2][2]) * LExt.Z;
 
 	FVector WorldCenter = GetWorldLocation();
-	/*const FVector Min = WorldCenter - FVector(NewEx, NewEy, NewEz);
-	const FVector Max = WorldCenter + FVector(NewEx, NewEy, NewEz);*/
-	const FVector Extent(Radius, Radius, Radius);
-	const FVector Min = WorldCenter - Extent;
-	const FVector Max = WorldCenter + Extent;
+	const FVector Min = WorldCenter - FVector(NewEx, NewEy, NewEz);
+	const FVector Max = WorldCenter + FVector(NewEx, NewEy, NewEz);
 
 	WorldAABB.Expand(Min);
 	WorldAABB.Expand(Max);

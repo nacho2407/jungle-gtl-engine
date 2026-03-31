@@ -85,7 +85,8 @@ struct FGridConstants
 {
 	float GridSpacing;
 	int32 GridHalfLineCount;
-	float Padding0[2];
+	bool  bOrthographic;
+	float Padding0[1];
 };
 
 struct FFontConstants
