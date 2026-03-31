@@ -7,6 +7,8 @@
 #include "Render/Resource/ConstantBufferPool.h"
 #include "Profiling/Stats.h"
 #include "Profiling/GPUProfiler.h"
+#include "Engine/Runtime/Engine.h"
+#include "Profiling/Timer.h"
 
 
 void FRenderer::Create(HWND hWindow)
@@ -409,6 +411,14 @@ void FRenderer::DrawStaticMeshSections(ID3D11DeviceContext* Context, const FRend
 		SectionConstants.Color = Section.DiffuseColor;
 		Resources.PerObjectConstantBuffer.Update(Context, &SectionConstants, sizeof(FPerObjectConstants));
 
+		// UVScroll (b4) 업데이트
+		FConstantBuffer* MaterialCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Material, sizeof(FMaterialConstants));
+		FMaterialConstants MatConstants = {};
+		MatConstants.bIsUVScroll = Section.bIsUVScroll ? 1 : 0;
+		MaterialCB->Update(Context, &MatConstants, sizeof(MatConstants));
+		ID3D11Buffer* b4 = MaterialCB->GetBuffer();
+		Context->VSSetConstantBuffers(ECBSlot::Material, 1, &b4);
+
 		Context->DrawIndexed(Section.IndexCount, Section.FirstIndex, 0);
 	}
 
@@ -473,11 +483,16 @@ void FRenderer::EndFrame()
 
 void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus)
 {
-	FFrameConstants frameConstantData;
+	FFrameConstants frameConstantData = {};
 	frameConstantData.View = InRenderBus.GetView();
 	frameConstantData.Projection = InRenderBus.GetProj();
 	frameConstantData.bIsWireframe = (InRenderBus.GetViewMode() == EViewMode::Wireframe);
 	frameConstantData.WireframeColor = InRenderBus.GetWireframeColor();
+	
+	if (GEngine && GEngine->GetTimer())
+	{
+		frameConstantData.Time = static_cast<float>(GEngine->GetTimer()->GetTotalTime());
+	}
 
 	Resources.FrameBuffer.Update(Context, &frameConstantData, sizeof(FFrameConstants));
 	ID3D11Buffer* b0 = Resources.FrameBuffer.GetBuffer();

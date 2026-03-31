@@ -1,5 +1,4 @@
 ﻿#include "EditorRenderPipeline.h"
-
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Render/Pipeline/Renderer.h"

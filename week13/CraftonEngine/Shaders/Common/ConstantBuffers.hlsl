@@ -8,6 +8,8 @@ cbuffer FrameBuffer : register(b0)
     row_major float4x4 Projection;
     float bIsWireframe;
     float3 WireframeRGB;
+    float Time;
+    float3 _framePad;
 }
 
 // b1: 오브젝트별 — 월드 변환, 색상
