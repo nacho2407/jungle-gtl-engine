@@ -153,7 +153,7 @@ void FD3D11StaticMeshRenderer::Flush()
                 }
             }
 
-            FMeshUnlitConstants Constants = {};
+            FMeshLitConstants Constants = {};
             Constants.MVP = DrawItem.World * CurrentPassParams.SceneView->GetViewProjectionMatrix();
             Constants.World = DrawItem.World;
             Constants.bEnableLighting = (CurrentPassParams.ViewMode == EViewModeIndex::VMI_Lit) ? 1 : 0;
@@ -228,7 +228,7 @@ bool FD3D11StaticMeshRenderer::CreateConstantBuffers()
     if (RHI == nullptr)
         return false;
 
-    return RHI->CreateConstantBuffer(sizeof(FMeshUnlitConstants), ConstantBuffer.GetAddressOf());
+    return RHI->CreateConstantBuffer(sizeof(FMeshLitConstants), ConstantBuffer.GetAddressOf());
 }
 
 bool FD3D11StaticMeshRenderer::CreateStates()

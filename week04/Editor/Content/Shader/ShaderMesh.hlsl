@@ -1,10 +1,12 @@
-cbuffer FMeshUnlitConstants : register(b0)
+cbuffer FMeshLitConstants : register(b0)
 {
     row_major float4x4 MVP;
     row_major float4x4 World;
     float4 BaseColor;
     uint bEnableLighting;
-    float3 Padding;
+    float Time;
+    float ScrollSpeedX;
+    float ScrollSpeedY;
 };
 
 struct VSInput

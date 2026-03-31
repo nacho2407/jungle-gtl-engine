@@ -1,4 +1,4 @@
-cbuffer FMeshUnlitConstants : register(b0)
+cbuffer FMeshLitConstants : register(b0)
 {
     row_major matrix MVP;
     row_major matrix World;
