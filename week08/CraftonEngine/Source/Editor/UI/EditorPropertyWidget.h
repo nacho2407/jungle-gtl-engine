@@ -17,7 +17,7 @@ private:
 	void RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 	void RenderComponentProperties();
 	void RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
-	bool RenderPropertyWidget(struct FPropertyDescriptor& Prop);
+	bool RenderPropertyWidget(TArray<struct FPropertyDescriptor>& Props, int32& Index);
 
 	static FString OpenObjFileDialog();
 
