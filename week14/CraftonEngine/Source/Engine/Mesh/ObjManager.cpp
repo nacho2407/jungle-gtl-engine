@@ -31,6 +31,27 @@ FString FObjManager::GetBinaryFilePath(const FString& OriginalPath)
 	return FPaths::ToUtf8(BinPath.wstring());
 }
 
+FString FObjManager::GetMBinaryFilePath(const FString& OriginalPath)
+{
+	std::filesystem::path SrcPath(OriginalPath);
+	std::wstring Ext = SrcPath.extension().wstring();
+
+	// 이미 bin 경로가 들어온 경우에는 그대로 사용
+	if (Ext == L".mbin")
+	{
+		return OriginalPath;
+	}
+
+	// obj 등 원본 메시 경로가 들어온 경우에는 MeshCache 아래에 bin 생성
+	std::wstring CacheDir = FPaths::RootDir() + L"Asset\\MeshCache\\";
+	FPaths::CreateDir(CacheDir);
+
+	std::filesystem::path BinPath = std::filesystem::path(CacheDir) / SrcPath.stem();
+	BinPath += L".mbin";
+
+	return FPaths::ToUtf8(BinPath.wstring());
+}
+
 void FObjManager::ScanMeshAssets()
 {
 	AvailableMeshFiles.clear();
@@ -109,7 +130,21 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 
 		if (FObjImporter::Import(PathFileName, *NewMeshAsset, ParsedMaterials))
 		{
-			NewMeshAsset->PathFileName = PathFileName;
+			for (auto& Mat : ParsedMaterials)
+			{
+				if (Mat.MaterialInterface)
+				{
+					MaterialCache[Mat.MaterialInterface->PathFileName] = Mat.MaterialInterface;
+					FString MatBinPath = FObjManager::GetMBinaryFilePath(Mat.MaterialInterface->PathFileName);
+
+					FWindowsBinWriter MatWriter(MatBinPath);
+					if (MatWriter.IsValid())
+					{
+						Mat.MaterialInterface->Serialize(MatWriter); // UMaterial 데이터 직렬화
+					}
+				}
+			}
+
 			StaticMesh->SetStaticMeshAsset(NewMeshAsset);
 			StaticMesh->SetStaticMaterials(std::move(ParsedMaterials));
 
