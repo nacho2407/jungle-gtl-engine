@@ -32,30 +32,6 @@ public:
         bShowObjectLabels = bInShowObjectLabels;
     }
 
-    bool IsUUIDVisible() const { return bShowUUIDLabels; }
-    void SetUUIDVisible(bool bInShowUUID)
-    {
-        bShowUUIDLabels = bInShowUUID;
-    }
-
-    bool AreScenePrimitivesVisible() const { return bShowScenePrimitives; }
-    void SetScenePrimitivesVisible(bool bInShowScenePrimitives)
-    {
-        bShowScenePrimitives = bInShowScenePrimitives;
-    }
-
-    bool AreSceneSpritesVisible() const { return bShowSceneSprites; }
-    void SetSceneSpritesVisible(bool bInShowSceneSprites)
-    {
-        bShowSceneSprites = bInShowSceneSprites;
-    }
-
-    bool AreBillboardTextVisible() const { return bShowBillboardText; }
-    void SetBillboardTextVisible(bool bInShowBillboardText)
-    {
-        bShowBillboardText = bInShowBillboardText;
-    }
-
     EEditorShowFlags BuildEditorShowFlags(bool bIncludeGizmo) const
     {
         EEditorShowFlags Flags = EEditorShowFlags::None;
@@ -78,28 +54,6 @@ public:
         if (bIncludeGizmo && bShowGizmo)
         {
             Flags |= EEditorShowFlags::SF_Gizmo;
-        }
-        return Flags;
-    }
-
-    ESceneShowFlags BuildSceneShowFlags() const
-    {
-        ESceneShowFlags Flags = ESceneShowFlags::None;
-        if (bShowScenePrimitives)
-        {
-            Flags |= ESceneShowFlags::SF_Primitives;
-        }
-        if (bShowBillboardText)
-        {
-            Flags |= ESceneShowFlags::SF_BillboardText;
-        }
-        if (bShowSceneSprites)
-        {
-            Flags |= ESceneShowFlags::SF_Sprites;
-        }
-        if (bShowUUIDLabels)
-        {
-            Flags |= ESceneShowFlags::SF_UUIDText;
         }
         return Flags;
     }

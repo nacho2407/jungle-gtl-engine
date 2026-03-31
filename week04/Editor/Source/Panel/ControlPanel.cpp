@@ -193,7 +193,9 @@ void FControlPanel::DrawShowFlagsSection() const
     if (!Client)
         return;
 
-    FViewportRenderSetting& RenderSetting = Client->GetRenderSetting();
+    FViewportRenderSetting& RenderSetting  = Client->GetRenderSetting();
+    auto*                   OverlayManager = GetContext()->Editor->GetWindowOverlayManager();
+    FGlobalRenderSetting&   GRenderSetting = OverlayManager->GetRenderSetting();
 
     ImGui::TextUnformatted("Show Flags");
 
@@ -227,32 +229,35 @@ void FControlPanel::DrawShowFlagsSection() const
         RenderSetting.SetObjectLabelsVisible(bShowObjectLabels);
     }
 
-    bool bShowUUID = RenderSetting.IsUUIDVisible();
-    if (ImGui::Checkbox("Editor UUID Labels", &bShowUUID))
-    {
-        RenderSetting.SetUUIDVisible(bShowUUID);
-    }
-
     ImGui::Spacing();
     ImGui::Separator();
     ImGui::Spacing();
 
-    bool bShowScenePrimitives = RenderSetting.AreScenePrimitivesVisible();
+    // Global viewport settings that affect all panels
+    ImGui::TextUnformatted("Global Show Flags");
+
+    bool bShowScenePrimitives = GRenderSetting.bShowScenePrimitives;
     if (ImGui::Checkbox("Scene Primitives", &bShowScenePrimitives))
     {
-        RenderSetting.SetScenePrimitivesVisible(bShowScenePrimitives);
+        GRenderSetting.bShowScenePrimitives = bShowScenePrimitives;
     }
 
-    bool bShowSceneSprites = RenderSetting.AreSceneSpritesVisible();
+    bool bShowSceneSprites = GRenderSetting.bShowSceneSprites;
     if (ImGui::Checkbox("Scene Sprites", &bShowSceneSprites))
     {
-        RenderSetting.SetSceneSpritesVisible(bShowSceneSprites);
+        GRenderSetting.bShowSceneSprites = bShowSceneSprites;
     }
 
-    bool bShowBillboardText = RenderSetting.AreBillboardTextVisible();
+    bool bShowBillboardText = GRenderSetting.bBillboardText;
     if (ImGui::Checkbox("Scene Billboard Text", &bShowBillboardText))
     {
-        RenderSetting.SetBillboardTextVisible(bShowBillboardText);
+        GRenderSetting.bBillboardText = bShowBillboardText;
+    }
+
+    bool bShowUUID = GRenderSetting.bShowUUIDLabels;
+    if (ImGui::Checkbox("Editor UUID Labels", &bShowUUID))
+    {
+        GRenderSetting.bShowUUIDLabels = bShowUUID;
     }
 }
 
