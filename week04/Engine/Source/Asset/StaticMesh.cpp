@@ -9,8 +9,8 @@ namespace Engine::Asset
 {
     void UStaticMesh::Initialize(const FSourceRecord& InSource, std::shared_ptr<FStaticMeshResource> InResource)
     {
+        InitializeAssetMetadata(InSource);
         RenderResource = InResource;
-        SetPath(InSource.NormalizedPath);
 
         // 경로에서 파일 이름 추출
         std::filesystem::path FilePath(InSource.NormalizedPath);

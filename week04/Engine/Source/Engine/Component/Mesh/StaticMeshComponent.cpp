@@ -56,7 +56,7 @@ namespace Engine::Component
         if (Asset::UStaticMesh* NewMesh = Cast<Asset::UStaticMesh>(LoadedAsset))
         {
             SetStaticMesh(NewMesh);
-            PendingMeshPath = ""; // 로드 완료 후 비움
+            // PendingMeshPath = ""; // 로드 완료 후 비움
         }
     }
 
