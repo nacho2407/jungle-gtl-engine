@@ -531,6 +531,11 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	{
 		Gizmo->DragEnd();
 	}
+
+	if (Gizmo->IsPressedOnHandle() && InputSystem::Get().GetKeyUp(VK_LBUTTON))
+	{
+		Gizmo->DragEnd();
+	}
 }
 
 void FEditorViewportClient::HandleDragStart(const FRay& Ray)
