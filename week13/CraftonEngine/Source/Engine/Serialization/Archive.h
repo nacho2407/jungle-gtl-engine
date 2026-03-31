@@ -58,21 +58,18 @@ FArchive& operator<<(FArchive& Ar, TArray<T>& Array)
 	if (Ar.IsLoading()) Array.resize(ArrayNum);
 	if (ArrayNum > 0)
 	{
-		if (ArrayNum > 0)
+		// FNormalVertex처럼 완벽한 숫자 덩어리일 때만 O(1) 고속 복사를 수행합니다.
+		if constexpr (std::is_trivially_copyable<T>::value)
 		{
-			// FNormalVertex처럼 완벽한 숫자 덩어리일 때만 O(1) 고속 복사를 수행합니다.
-			if constexpr (std::is_trivially_copyable<T>::value)
+			Ar.Serialize(Array.data(), ArrayNum * sizeof(T));
+		}
+		else
+		{
+			// FStaticMeshSection처럼 안에 FString이 들어있으면,
+			// 느리더라도 반드시 한 요소씩 돌면서 안전하게(Deep Copy) 직렬화합니다.
+			for (auto& Item : Array)
 			{
-				Ar.Serialize(Array.data(), ArrayNum * sizeof(T));
-			}
-			else
-			{
-				// FStaticMeshSection처럼 안에 FString이 들어있으면,
-				// 느리더라도 반드시 한 요소씩 돌면서 안전하게(Deep Copy) 직렬화합니다.
-				for (auto& Item : Array)
-				{
-					Ar << Item;
-				}
+				Ar << Item;
 			}
 		}
 	}
