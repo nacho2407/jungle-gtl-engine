@@ -20,15 +20,33 @@ void UTextRenderComponent::UpdateWorldAABB() const
 {
 	WorldAABB.Reset();
 
+	// TODO(하드코딩): 전체 가로 세로 길이 
 	float TotalWidth = GetUTF8Length(Text) * 0.5f;
 	float TotalHeight = 0.5f;
 
 	FVector WorldScale = GetWorldScale();
-	const float HalfWidth = TotalWidth * WorldScale.Y * 0.5f;
-	const float HalfHeight = TotalHeight * WorldScale.Z * 0.5f;
-	const float Radius = std::sqrt((HalfWidth * HalfWidth) + (HalfHeight * HalfHeight));
-	const FVector Extent(Radius, Radius, Radius);
-	const FVector WorldCenter = GetWorldLocation();
+	float ScaledWidth = TotalWidth * WorldScale.Y;
+	float ScaledHeight = TotalHeight * WorldScale.Z;
+
+	const FViewportCamera* Camera = nullptr;
+	TryGetActiveCamera(Camera);
+
+	CachedWorldMatrix = MakeBillboardWorldMatrix(GetWorldLocation(),
+		GetWorldScale(),
+		Camera->GetEffectiveForward(),
+		Camera->GetEffectiveRight(),
+		Camera->GetEffectiveUp());
+
+	FVector WorldRight = FVector(CachedWorldMatrix.M[1][0], CachedWorldMatrix.M[1][1], CachedWorldMatrix.M[1][2]).Normalized();
+	FVector WorldUp = FVector(CachedWorldMatrix.M[2][0], CachedWorldMatrix.M[2][1], CachedWorldMatrix.M[2][2]).Normalized();
+
+	float Ex = std::abs(WorldRight.X) * (ScaledWidth * 0.5f) + std::abs(WorldUp.X) * (ScaledHeight * 0.5f);
+	float Ey = std::abs(WorldRight.Y) * (ScaledWidth * 0.5f) + std::abs(WorldUp.Y) * (ScaledHeight * 0.5f);
+	float Ez = std::abs(WorldRight.Z) * (ScaledWidth * 0.5f) + std::abs(WorldUp.Z) * (ScaledHeight * 0.5f);
+	FVector Extent(Ex, Ey, Ez);
+
+	FVector WorldCenter = GetWorldLocation();
+	WorldCenter -= WorldRight * (ScaledWidth * 0.5f);
 
 	WorldAABB.Expand(WorldCenter - Extent);
 	WorldAABB.Expand(WorldCenter + Extent);
