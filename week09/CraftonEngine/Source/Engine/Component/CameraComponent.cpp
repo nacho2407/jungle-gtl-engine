@@ -4,7 +4,8 @@
 
 IMPLEMENT_CLASS(UCameraComponent, USceneComponent)
 
-FMatrix UCameraComponent::GetViewMatrix() const {
+FMatrix UCameraComponent::GetViewMatrix() const
+{
 	UpdateWorldMatrix();
 
 	auto F = GetForwardVector();
@@ -20,7 +21,8 @@ FMatrix UCameraComponent::GetViewMatrix() const {
 	);
 }
 
-FMatrix UCameraComponent::GetProjectionMatrix() const {
+FMatrix UCameraComponent::GetProjectionMatrix() const
+{
 	float Cot = 1.0f / tanf(CameraState.FOV * 0.5f);
 	float Denom = CameraState.FarZ - CameraState.NearZ;
 
@@ -44,7 +46,8 @@ FMatrix UCameraComponent::GetProjectionMatrix() const {
 	}
 }
 
-void UCameraComponent::LookAt(const FVector& Target) {
+void UCameraComponent::LookAt(const FVector& Target)
+{
 	FVector Position = GetWorldLocation();
 	FVector Diff = (Target - Position).Normalized();
 
@@ -59,7 +62,8 @@ void UCameraComponent::LookAt(const FVector& Target) {
 	SetRelativeRotation(RelativeRotation);
 }
 
-void UCameraComponent::OnResize(int32 Width, int32 Height) {
+void UCameraComponent::OnResize(int32 Width, int32 Height)
+{
 	CameraState.AspectRatio = static_cast<float>(Width) / static_cast<float>(Height);
 }
 
