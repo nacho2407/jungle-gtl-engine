@@ -273,6 +273,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		{
 			bRightMousePanning = false;
 			NavigationController.EndPanning();
+			NavigationController.ResetTargetLocation();
 		}
 
 		if (!bIsCursorVisible)
@@ -299,6 +300,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	{
 		bMiddleMousePanning = false;
 		NavigationController.EndPanning();
+		NavigationController.ResetTargetLocation();
 
 		if (!bIsCursorVisible)
 		{
@@ -324,6 +326,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	{
 		bAltLeftMouseOrbiting = false;
 		NavigationController.EndOrbit();
+		NavigationController.ResetTargetLocation();
 
 		if (!bIsCursorVisible)
 		{
