@@ -27,10 +27,11 @@ FString FObjManager::GetBinaryFilePath(const FString& OriginalPath)
 	std::wstring CacheDir = FPaths::RootDir() + L"Asset\\MeshCache\\";
 	FPaths::CreateDir(CacheDir);
 
-	std::filesystem::path BinPath = std::filesystem::path(CacheDir) / SrcPath.stem();
-	BinPath += L".bin";
+	// 상대 경로로 반환
+	std::filesystem::path RelPath = std::filesystem::path(L"Asset\\MeshCache") / SrcPath.stem();
+	RelPath += L".bin";
 
-	return FPaths::ToUtf8(BinPath.wstring());
+	return FPaths::ToUtf8(RelPath.generic_wstring());
 }
 
 FString FObjManager::GetMBinaryFilePath(const FString& OriginalPath)
@@ -48,10 +49,11 @@ FString FObjManager::GetMBinaryFilePath(const FString& OriginalPath)
 	std::wstring CacheDir = FPaths::RootDir() + L"Asset\\MeshCache\\";
 	FPaths::CreateDir(CacheDir);
 
-	std::filesystem::path BinPath = std::filesystem::path(CacheDir) / SrcPath.stem();
-	BinPath += L".mbin";
+	// 상대 경로로 반환
+	std::filesystem::path RelPath = std::filesystem::path(L"Asset\\MeshCache") / SrcPath.stem();
+	RelPath += L".mbin";
 
-	return FPaths::ToUtf8(BinPath.wstring());
+	return FPaths::ToUtf8(RelPath.generic_wstring());
 }
 
 void FObjManager::ScanMeshAssets()
@@ -66,6 +68,9 @@ void FObjManager::ScanMeshAssets()
 		return;
 	}
 
+	const std::filesystem::path ProjectRoot(FPaths::RootDir());
+
+
 	for (const auto& Entry : std::filesystem::recursive_directory_iterator(MeshCacheRoot))
 	{
 		if (!Entry.is_regular_file()) continue;
@@ -75,7 +80,7 @@ void FObjManager::ScanMeshAssets()
 
 		FMeshAssetListItem Item;
 		Item.DisplayName = FPaths::ToUtf8(Path.stem().wstring());
-		Item.FullPath = FPaths::ToUtf8(Path.wstring());
+		Item.FullPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
 		AvailableMeshFiles.push_back(std::move(Item));
 	}
 }
@@ -97,6 +102,9 @@ void FObjManager::ScanObjSourceFiles()
 		return;
 	}
 
+	const std::filesystem::path ProjectRoot(FPaths::RootDir());
+
+
 	for (const auto& Entry : std::filesystem::recursive_directory_iterator(DataRoot))
 	{
 		if (!Entry.is_regular_file()) continue;
@@ -110,7 +118,7 @@ void FObjManager::ScanObjSourceFiles()
 
 		FMeshAssetListItem Item;
 		Item.DisplayName = FPaths::ToUtf8(Path.filename().wstring());
-		Item.FullPath = FPaths::ToUtf8(Path.wstring());
+		Item.FullPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
 		AvailableObjFiles.push_back(std::move(Item));
 	}
 }
