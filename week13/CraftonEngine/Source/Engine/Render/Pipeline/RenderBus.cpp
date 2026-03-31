@@ -72,5 +72,5 @@ void FRenderBus::SetRenderSettings(const EViewMode NewViewMode, const FShowFlags
 void FRenderBus::SetViewportSize(float InWidth, float InHeight)
 {
 	viewportWidth = InWidth;
-	viewprotHeight = InHeight;
+	viewportHeight = InHeight;
 }

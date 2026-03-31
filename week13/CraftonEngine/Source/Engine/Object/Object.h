@@ -69,7 +69,6 @@ public:
 		{
 			MemoryStats::OnDeallocated(static_cast<uint32>(Size));
 			std::free(Ptr);
-			;
 		}
 	}
 
@@ -83,11 +82,6 @@ public:
 	template<typename T>
 	bool IsA() const { return GetTypeInfo()->IsA(&T::s_TypeInfo); }
 
-	template<typename T>
-	T* Cast() { return IsA<T>() ? static_cast<T*>(this) : nullptr; }
-
-	template<typename T>
-	const T* Cast() const { return IsA<T>() ? static_cast<const T*>(this) : nullptr; }
 
 	static const FTypeInfo s_TypeInfo;
 
@@ -151,5 +145,11 @@ public:
 template<typename T>
 T* Cast(UObject* Obj)
 {
-	return Obj ? Obj->Cast<T>() : nullptr;
+	return (Obj && Obj->IsA<T>()) ? static_cast<T*>(Obj) : nullptr;
+}
+
+template<typename T>
+const T* Cast(const UObject* Obj)
+{
+	return (Obj && Obj->IsA<T>()) ? static_cast<const T*>(Obj) : nullptr;
 }
