@@ -22,7 +22,7 @@ public:
 
 	FViewportEntry* FindEntryByViewportID(FViewportId ViewportId);
 	const FViewportEntry* FindEntryByViewportID(FViewportId ViewportId) const;
-	bool SetViewportType(FViewportId ViewportId, EViewportType NewType);
+	bool SetViewportType(FViewportId ViewportId, EViewportType NewType, const FVector* FocusPointHint = nullptr);
 
 	void ResetToDefault();
 

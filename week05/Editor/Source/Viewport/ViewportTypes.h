@@ -44,8 +44,11 @@ enum class EViewportType : uint8
 {
 	Perspective,
 	OrthoTop,
-	OrthoFront,
+	OrthoBottom,
+	OrthoLeft,
 	OrthoRight,
+	OrthoFront,
+	OrthoBack
 };
 
 enum class EViewportLayout : uint8 {

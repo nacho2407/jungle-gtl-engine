@@ -1,5 +1,6 @@
 #include "ViewportToolbar.h"
 
+#include "Actor/Actor.h"
 #include "EditorEngine.h"
 #include "Viewport/EditorViewportRegistry.h"
 #include "Viewport/Viewport.h"
@@ -30,8 +31,11 @@ namespace
 		static const TArray<FString> Options = {
 			"Perspective",
 			"Top",
+			"Bottom",
+			"Left",
+			"Right",
 			"Front",
-			"Right"
+			"Back"
 		};
 		return Options;
 	}
@@ -389,7 +393,15 @@ void SViewportToolbarWidget::ApplyViewportType(EViewportType NewType)
 		return;
 	}
 
-	Engine->GetViewportRegistry().SetViewportType(FocusedEntry->Id, NewType);
+	const FVector* FocusPointHint = nullptr;
+	FVector FocusPoint = FVector::ZeroVector;
+	if (AActor* SelectedActor = Engine->GetSelectedActor())
+	{
+		FocusPoint = SelectedActor->GetActorLocation();
+		FocusPointHint = &FocusPoint;
+	}
+
+	Engine->GetViewportRegistry().SetViewportType(FocusedEntry->Id, NewType, FocusPointHint);
 }
 
 void SViewportToolbarWidget::ApplyRenderMode(ERenderMode NewMode)

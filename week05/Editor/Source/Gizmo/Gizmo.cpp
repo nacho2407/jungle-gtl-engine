@@ -61,11 +61,20 @@ namespace
 		case EViewportType::OrthoTop:
 			return FVector::DownVector;
 
-		case EViewportType::OrthoFront:
-			return FVector::BackwardVector;
+		case EViewportType::OrthoBottom:
+			return FVector::UpVector;
+
+		case EViewportType::OrthoLeft:
+			return FVector::RightVector;
 
 		case EViewportType::OrthoRight:
 			return FVector::LeftVector;
+
+		case EViewportType::OrthoFront:
+			return FVector::BackwardVector;
+
+		case EViewportType::OrthoBack:
+			return FVector::ForwardVector;
 
 		default:
 			return FVector::ForwardVector;
@@ -80,12 +89,13 @@ namespace
 			return Entry.LocalState.Rotation.RotateVector(FVector::UpVector).GetSafeNormal();
 
 		case EViewportType::OrthoTop:
+		case EViewportType::OrthoBottom:
 			return FVector::ForwardVector;
 
-		case EViewportType::OrthoFront:
-			return FVector::UpVector;
-
+		case EViewportType::OrthoLeft:
 		case EViewportType::OrthoRight:
+		case EViewportType::OrthoFront:
+		case EViewportType::OrthoBack:
 			return FVector::UpVector;
 
 		default:
@@ -111,11 +121,21 @@ namespace
 		case EViewportType::OrthoTop:
 			return Entry.LocalState.OrthoTarget + FVector::UpVector * Entry.LocalState.OrthoZoom;
 
-		case EViewportType::OrthoFront:
-			return Entry.LocalState.OrthoTarget + FVector::ForwardVector * Entry.LocalState.OrthoZoom;
+		case EViewportType::OrthoBottom:
+			return Entry.LocalState.OrthoTarget + FVector::DownVector * Entry.LocalState.OrthoZoom;
+
+		case EViewportType::OrthoLeft:
+			return Entry.LocalState.OrthoTarget + FVector::LeftVector * Entry.LocalState.OrthoZoom;
 
 		case EViewportType::OrthoRight:
 			return Entry.LocalState.OrthoTarget + FVector::RightVector * Entry.LocalState.OrthoZoom;
+
+		case EViewportType::OrthoFront:
+			return Entry.LocalState.OrthoTarget + FVector::ForwardVector * Entry.LocalState.OrthoZoom;
+
+		case EViewportType::OrthoBack:
+			return Entry.LocalState.OrthoTarget + FVector::BackwardVector * Entry.LocalState.OrthoZoom;
+
 
 		default:
 			return Entry.LocalState.Position;

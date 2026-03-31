@@ -1,5 +1,40 @@
 #include "EditorViewportRegistry.h"
 
+#include <cmath>
+#include "Math/MathUtility.h"
+
+namespace
+{
+	bool TryGetOrthoEyeAxis(EViewportType Type, FVector& OutEyeAxis)
+	{
+		switch (Type)
+		{
+		case EViewportType::OrthoTop:
+			OutEyeAxis = FVector::UpVector;
+			return true;
+		case EViewportType::OrthoBottom:
+			OutEyeAxis = FVector::DownVector;
+			return true;
+		case EViewportType::OrthoLeft:
+			OutEyeAxis = FVector::LeftVector;
+			return true;
+		case EViewportType::OrthoRight:
+			OutEyeAxis = FVector::RightVector;
+			return true;
+		case EViewportType::OrthoFront:
+			OutEyeAxis = FVector::ForwardVector;
+			return true;
+		case EViewportType::OrthoBack:
+			OutEyeAxis = FVector::BackwardVector;
+			return true;
+		default:
+			break;
+		}
+
+		return false;
+	}
+}
+
 FEditorViewportRegistry::FEditorViewportRegistry()
 {
 	ResetToDefault();
@@ -122,7 +157,7 @@ const FViewportEntry* FEditorViewportRegistry::FindEntryByViewportID(FViewportId
 	return nullptr;
 }
 
-bool FEditorViewportRegistry::SetViewportType(FViewportId ViewportId, EViewportType NewType)
+bool FEditorViewportRegistry::SetViewportType(FViewportId ViewportId, EViewportType NewType, const FVector* FocusPointHint)
 {
 	FViewportEntry* TargetEntry = FindEntryByViewportID(ViewportId);
 	if (!TargetEntry)
@@ -144,6 +179,8 @@ bool FEditorViewportRegistry::SetViewportType(FViewportId ViewportId, EViewportT
 	ConvertedState.bShowGrid = PreviousState.bShowGrid;
 	ConvertedState.GridSize = PreviousState.GridSize;
 	ConvertedState.LineThickness = PreviousState.LineThickness;
+	ConvertedState.NearPlane = PreviousState.NearPlane;
+	ConvertedState.FarPlane = PreviousState.FarPlane;
 
 	if (NewType == EViewportType::Perspective)
 	{
@@ -189,8 +226,54 @@ bool FEditorViewportRegistry::SetViewportType(FViewportId ViewportId, EViewportT
 		}
 		else
 		{
-			const FVector Forward = PreviousState.Rotation.Vector().GetSafeNormal();
-			ConvertedState.OrthoTarget = PreviousState.Position + Forward * 300.0f;
+			FVector FocusPoint = FVector::ZeroVector;
+			bool bHasFocusPoint = false;
+
+			if (FocusPointHint)
+			{
+				FocusPoint = *FocusPointHint;
+				bHasFocusPoint = true;
+			}
+
+			const FVector Eye = PreviousState.Position;
+			FVector Forward = PreviousState.Rotation.Vector().GetSafeNormal();
+			if (Forward.IsNearlyZero())
+			{
+				Forward = FVector::ForwardVector;
+			}
+
+			if (!bHasFocusPoint)
+			{
+				FVector OrthoEyeAxis = FVector::UpVector;
+				if (TryGetOrthoEyeAxis(NewType, OrthoEyeAxis))
+				{
+					const float Denom = FVector::DotProduct(Forward, OrthoEyeAxis);
+					if (std::abs(Denom) > FMath::KindaSmallNumber)
+					{
+						const float T = -FVector::DotProduct(Eye, OrthoEyeAxis) / Denom;
+						if (T > 0.0f)
+						{
+							FocusPoint = Eye + Forward * T;
+							bHasFocusPoint = true;
+						}
+					}
+				}
+			}
+
+			if (!bHasFocusPoint)
+			{
+				const float FallbackDistance = 100.0f;
+				FocusPoint = Eye + Forward * FallbackDistance;
+				bHasFocusPoint = true;
+			}
+
+			ConvertedState.OrthoTarget = FocusPoint;
+
+			const float FocusDistance = (FocusPoint - Eye).Size();
+			const float SafeDistance = (std::max)(FocusDistance, 1.0f);
+			const float HalfFovRadians = FMath::DegreesToRadians(PreviousState.FovY * 0.5f);
+			const float HalfHeight = SafeDistance * std::tan(HalfFovRadians);
+			ConvertedState.OrthoZoom = FMath::Clamp(HalfHeight, 1.0f, 10000.0f);
 		}
 	}
 
