@@ -42,6 +42,6 @@ struct FMaterialResource
         auto It = Materials.find(Name);
         return It != Materials.end() ? &It->second : nullptr;
     }
-
+      
     void Reset() { Materials.clear(); }
 };
