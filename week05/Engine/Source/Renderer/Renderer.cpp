@@ -10,6 +10,8 @@
 #include <algorithm>
 
 #define STB_IMAGE_IMPLEMENTATION
+#include "Asset/ObjManager.h"
+#include "Core/Engine.h"
 #include "Debug/EngineLog.h"
 #include "ThirdParty/stb_image.h"
 
@@ -190,6 +192,8 @@ bool FRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 	RenderStateManager = std::make_unique<FRenderStateManager>(Device, DeviceContext);
 	RenderStateManager->PrepareCommonStates();
 
+	if (!CreateSamplers()) return false;
+
 	if (!CreateConstantBuffers()) return false;
 	SetConstantBuffers();
 
@@ -258,12 +262,16 @@ bool FRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 		DefaultTextureMaterial->SetDepthStencilOption(depthStencilOption);
 		DefaultTextureMaterial->SetDepthStencilState(DSS);
 
-		int32 SlotIndex = DefaultTextureMaterial->CreateConstantBuffer(Device, 16);
+		int32 SlotIndex = DefaultTextureMaterial->CreateConstantBuffer(Device, 32);
 		if (SlotIndex >= 0)
 		{
 			DefaultTextureMaterial->RegisterParameter("BaseColor", SlotIndex, 0, 16);
 			float White[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 			DefaultTextureMaterial->GetConstantBuffer(SlotIndex)->SetData(White, sizeof(White));
+
+			DefaultTextureMaterial->RegisterParameter("UVScrollSpeed", SlotIndex, 16, 16);
+			float DefaultScroll[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+			DefaultTextureMaterial->GetConstantBuffer(SlotIndex)->SetData(DefaultScroll, sizeof(DefaultScroll), 16);
 		}
 		FMaterialManager::Get().Register("M_Default_Texture", DefaultTextureMaterial);
 	}
@@ -564,6 +572,8 @@ void FRenderer::UpdateFrameConstantBuffer()
 	FFrameConstantBuffer CBData;
 	CBData.View = ViewMatrix.GetTransposed();
 	CBData.Projection = ProjectionMatrix.GetTransposed();
+	CBData.Time = GEngine->GetTimer().GetTotalTime();
+	CBData.DeltaTime = GEngine->GetDeltaTime();
 	D3D11_MAPPED_SUBRESOURCE Mapped;
 	if (SUCCEEDED(DeviceContext->Map(FrameConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
 	{

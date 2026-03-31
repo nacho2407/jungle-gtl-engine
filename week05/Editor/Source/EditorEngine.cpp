@@ -10,6 +10,7 @@
 #include "Core/Engine.h"
 #include "Debug/EngineLog.h"
 #include "Asset/ObjManager.h"
+#include "Core/Paths.h"
 #include "Object/ObjectFactory.h"
 #include "Platform/Windows/WindowsWindow.h"
 #include "Scene/Scene.h"
@@ -248,6 +249,7 @@ void FEditorEngine::FinalizeInitialize()
 	SlateApplication->Initialize(FRect(0, 0, W, H), VPs, MAX_VIEWPORTS);
 	EditorUI.OnSlateReady();
 	CreateInitUI();
+	FObjManager::PreloadAllObjFiles(FPaths::MeshDir().string().c_str());
 }
 
 void FEditorEngine::PrepareFrame(float DeltaTime)

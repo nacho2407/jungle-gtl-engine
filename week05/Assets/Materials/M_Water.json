@@ -1,0 +1,17 @@
+{
+  "Name": "M_Water",
+  "VertexShader": "Engine/Shaders/WaterVertexShader.hlsl",
+  "PixelShader": "Engine/Shaders/TexturePixelShader.hlsl",
+  "Textures": {
+    "Diffuse": "Textures/Water_Diffuse.png"
+  },
+  "ConstantBuffers": [
+    {
+      "Parameters": [
+        { "Name": "BaseColor", "Type": "float4", "Value": [1.0, 1.0, 1.0, 1.0] },
+        { "Name": "UVScrollSpeed", "Type": "float2", "Value": [0.05, 0.05] },
+        { "Name": "WaveData", "Type": "float4", "Value": [0.2, 2.0, 1.5, 0.0] }
+      ]
+    }
+  ]
+}
