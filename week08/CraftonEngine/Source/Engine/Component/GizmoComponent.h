@@ -24,6 +24,7 @@ private:
 	const float AxisLength = 1.0f;
 	float Radius = 0.1f;
 	const float ScaleSensitivity = 1.0f;
+	static constexpr float GizmoScreenScale = 0.15f; // 화면 대비 기즈모 크기 비율
 	int32 SelectedAxis = -1;
 	bool bIsFirstFrameOfDrag = true;
 	bool bIsHolding = false;
@@ -77,6 +78,7 @@ public:
 	inline void SetRotateMode() { UpdateGizmoMode(EGizmoMode::Rotate); }
 	inline void SetScaleMode() { UpdateGizmoMode(EGizmoMode::Scale); }
 	void UpdateGizmoTransform();
+	float ComputeScreenSpaceScale(const FVector& CameraLocation, bool bIsOrtho = false, float OrthoWidth = 10.0f);
 	void ApplyScreenSpaceScaling(const FVector& CameraLocation, bool bIsOrtho = false, float OrthoWidth = 10.0f);
 	void SetWorldSpace(bool bWorldSpace);
 
