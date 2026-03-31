@@ -239,7 +239,8 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 			Camera->SetOrthoWidth(Clamp(NewWidth, 0.1f, 1000.0f));
 		}
 		else {
-			float NewFOV = Camera->GetFOV() - ScrollNotches * ZoomSpeed * DeltaTime;
+			constexpr float FovStep = 2.0f * DEG_TO_RAD; // 노치당 2도
+			float NewFOV = Camera->GetFOV() - ScrollNotches * FovStep;
 			Camera->SetFOV(Clamp(NewFOV, 1.f * DEG_TO_RAD, 90.0f * DEG_TO_RAD));
 		}
 	}
