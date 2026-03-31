@@ -32,6 +32,7 @@ public:
 	void UpdateHoverStates();
 	void Tick(float DeltaTime);
 	void OnWindowResized(uint32 Width, uint32 Height);
+	void SetHostRect(const FViewportRect& InHostRect);
 
 	FViewportCamera* GetIndexedViewportClientCamera(int32 Index) {
 		return GetViewportClient(Index).GetCamera();
@@ -54,6 +55,7 @@ public:
 	bool  IsSingleViewportMode()        const { return bSingleViewport; }
 	int32 GetSingleViewportIndex()      const { return SingleViewportIndex; }
 	int32 GetLastFocusedViewportIndex() const { return LastFocusedViewportIndex; }
+	const FViewportRect& GetHostRect() const { return HostRect; }
 	void SetLastFocusedViewportIndex(int32 Index);
 
 	// Viewport Get Set
@@ -99,5 +101,6 @@ private:
 
 	// 캐싱 목적 Window 소유(소유권은 WindowsApplication)
 	FWindowsWindow* Window = nullptr;
+	FViewportRect HostRect;
 };
 
