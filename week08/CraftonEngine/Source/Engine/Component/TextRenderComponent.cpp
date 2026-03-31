@@ -41,6 +41,7 @@ void UTextRenderComponent::CollectSelection(FRenderBus& Bus) const
 
 	FMeshBuffer* Buffer = GetMeshBuffer();
 	if (!Buffer || !Buffer->IsValid()) return;
+	if (!SupportsOutline()) return;
 
 	// 빌보드 아웃라인 행렬
 	FVector BillboardForward = Bus.GetCameraForward() * -1.0f;
@@ -50,9 +51,12 @@ void UTextRenderComponent::CollectSelection(FRenderBus& Bus) const
 		* RotMatrix * FMatrix::MakeTranslationMatrix(GetWorldLocation());
 	FMatrix OutlineMatrix = CalculateOutlineMatrix(PerViewBillboard);
 
-	FShaderManager& SM = FShaderManager::Get();
-	BuildOutlineCommands(Bus, Buffer, OutlineMatrix, OutlineMatrix.GetScale(),
-		SM.GetShader(EShaderType::Primitive), SM.GetShader(EShaderType::Outline));
+	// SelectionMask: 스텐실에 선택 오브젝트 마킹
+	FRenderCommand MaskCmd = {};
+	MaskCmd.MeshBuffer = Buffer;
+	MaskCmd.PerObjectConstants = FPerObjectConstants{ OutlineMatrix };
+	MaskCmd.Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
+	Bus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
 	// Billboard 계열 — AABB 제외
 }
 
@@ -192,7 +196,7 @@ FMatrix UTextRenderComponent::CalculateOutlineMatrix(const FMatrix& BillboardWor
 	return (ScaleMatrix * TransMatrix) * BillboardWorldMatrix;
 }
 
-int32 UTextRenderComponent::GetUTF8Length(const FString& str) const{
+int32 UTextRenderComponent::GetUTF8Length(const FString& str) const {
 	int32 count = 0;
 	for (size_t i = 0; i < str.length(); ++i) {
 		// UTF-8의 첫 바이트가 10xxxxxx 이 아니면 새로운 글자의 시작임

@@ -471,10 +471,10 @@ void UGizmoComponent::CollectRender(FRenderBus& Bus) const
 		G.bIsInnerGizmo = bInner ? 1 : 0;
 		G.bClicking = bIsHolding ? 1 : 0;
 		G.SelectedAxis = SelectedAxis >= 0 ? (uint32)SelectedAxis : 0xffffffffu;
-		G.HoveredAxisOpacity = 0.3f;
+		G.HoveredAxisOpacity = 0.7f;
 
 		return Cmd;
-	};
+		};
 
 	Bus.AddCommand(ERenderPass::GizmoOuter, CreateGizmoCmd(false));
 	Bus.AddCommand(ERenderPass::GizmoInner, CreateGizmoCmd(true));

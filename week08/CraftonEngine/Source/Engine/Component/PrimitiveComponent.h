@@ -47,11 +47,6 @@ public:
 	virtual bool SupportsOutline() const { return true; }
 
 protected:
-	// Stencil+Outline 공통 패턴 — 셰이더와 행렬만 지정하면 나머지 자동
-	void BuildOutlineCommands(FRenderBus& Bus, FMeshBuffer* Buffer,
-		const FMatrix& WorldMatrix, const FVector& WorldScale,
-		FShader* StencilShader, FShader* OutlineShader) const;
-
 	FVector LocalExtents = { 0.5f, 0.5f, 0.5f };
 	mutable FVector WorldAABBMinLocation;
 	mutable FVector WorldAABBMaxLocation;
