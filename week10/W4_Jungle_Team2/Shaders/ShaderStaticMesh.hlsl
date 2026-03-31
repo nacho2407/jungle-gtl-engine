@@ -62,37 +62,44 @@ float4 mainPS(PSInput input) : SV_TARGET
 {
     float3 DiffuseTex = DiffuseMap.Sample(SampleState, input.UV).xyz;
     
+    float3 FinalColor;
+    
     if (!(bool)bHasDiffuseMap)
     {
         DiffuseTex = float3(1.f, 1.f, 1.f);
+        FinalColor = DiffuseColor;
     }
-    
-    float3 SpecularTex = SpecularMap.Sample(SampleState, input.UV).xyz;
-    
-    if (!(bool)bHasSpecularMap)
+    else
     {
-        SpecularTex = float3(1.f, 1.f, 1.f);
+        FinalColor = DiffuseTex;
     }
-    
-    float3 fixedLightDir = {1.f, -1.f, 1.f}; 
-    fixedLightDir = normalize(fixedLightDir);
-    
-    float3 N = normalize(input.WorldNormal);
-    
+    //
+    //float3 SpecularTex = SpecularMap.Sample(SampleState, input.UV).xyz;
+    //
+    //if (!(bool)bHasSpecularMap)
+    //{
+    //    SpecularTex = float3(1.f, 1.f, 1.f);
+    //}
+    //
+    //float3 fixedLightDir = {1.f, -1.f, 1.f}; 
+    //fixedLightDir = normalize(fixedLightDir);
+    //
+    //float3 N = normalize(input.WorldNormal);
+    //
     // 퐁 셰이딩
     //float3 RelfectLightDir = 2.0f * dot(N, fixedLightDir) * N - fixedLightDir; 
     //RelfectLightDir = normalize(RelfectLightDir);
    
-    float3 ViewDir = CameraWorldPos - input.WorldPos;
-    ViewDir = normalize(ViewDir);
+    //float3 ViewDir = CameraWorldPos - input.WorldPos;
+    //ViewDir = normalize(ViewDir);
     
     // 블린 퐁 셰이딩 -> 반사 벡터 대신에 어정쩡한 벡터를 사용한다.
-    float3 HalfVector = normalize(fixedLightDir + ViewDir);
-    
-    float3 FinalAmbient = AmbientColor * DiffuseTex * 0.5f;
-    float3 FinalDiffuse = DiffuseTex * DiffuseColor * max(0, dot(N, fixedLightDir));
-    float3 FinalSpecular = SpecularTex * SpecularColor * pow(saturate(dot(HalfVector, ViewDir)), max(Shininess, 32.f));
-
-    float3 FinalColor = FinalAmbient + FinalDiffuse + FinalSpecular;
+    //float3 HalfVector = normalize(fixedLightDir + ViewDir);
+    //
+    //float3 FinalAmbient = AmbientColor * DiffuseTex * 0.4f;
+    //float3 FinalDiffuse = DiffuseTex * DiffuseColor * max(0, dot(N, fixedLightDir));
+    //float3 FinalSpecular = SpecularTex * SpecularColor * pow(saturate(dot(HalfVector, ViewDir)), max(Shininess, 32.f));
+    //
+    //float3 FinalColor = FinalAmbient + FinalDiffuse + FinalSpecular;
     return float4(FinalColor, 1.f);
 }
