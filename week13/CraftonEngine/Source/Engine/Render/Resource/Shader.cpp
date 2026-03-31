@@ -74,7 +74,7 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 	}
 
 	CachedVertexShaderSize = vertexShaderCSO->GetBufferSize();
-	MemoryStats::AddVertexShaderMemory(CachedVertexShaderSize);
+	MemoryStats::AddVertexShaderMemory(static_cast<uint32>(CachedVertexShaderSize));
 
 	// Pixel Shader 생성
 	hr = InDevice->CreatePixelShader(pixelShaderCSO->GetBufferPointer(), pixelShaderCSO->GetBufferSize(), nullptr, &PixelShader);
@@ -88,7 +88,7 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 	}
 
 	CachedPixelShaderSize = pixelShaderCSO->GetBufferSize();
-	MemoryStats::AddPixelShaderMemory(CachedPixelShaderSize);
+	MemoryStats::AddPixelShaderMemory(static_cast<uint32>(CachedPixelShaderSize));
 
 	// Input Layout 생성 (fullscreen quad 등 vertex buffer 없는 셰이더는 스킵)
 	if (InInputElements && InInputElementCount > 0)
@@ -117,7 +117,7 @@ void FShader::Release()
 	}
 	if (PixelShader)
 	{
-		MemoryStats::SubPixelShaderMemory(CachedPixelShaderSize);
+		MemoryStats::SubPixelShaderMemory(static_cast<uint32>(CachedPixelShaderSize));
 		CachedPixelShaderSize = 0;
 
 		PixelShader->Release();
@@ -125,7 +125,7 @@ void FShader::Release()
 	}
 	if (VertexShader)
 	{
-		MemoryStats::SubVertexShaderMemory(CachedVertexShaderSize);
+		MemoryStats::SubVertexShaderMemory(static_cast<uint32>(CachedVertexShaderSize));
 		CachedVertexShaderSize = 0;
 
 		VertexShader->Release();
