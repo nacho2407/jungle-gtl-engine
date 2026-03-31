@@ -1,0 +1,35 @@
+{
+  "ClassName" : "UWorld",
+  "Name" : "Defaultdsadas",
+  "PerspectiveCamera" : {
+    "FOV" : 60.000000,
+    "FarClip" : 2000.000000,
+    "Location" : [5.000000, 3.000000, 5.000000],
+    "NearClip" : 0.100000,
+    "Rotation" : [-33.930054, -141.677734, 23.805943]
+  },
+  "Primitives" : {
+    "0" : {
+      "Location" : [5.274436, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Asset/Mesh/Dice/Dice.obj",
+      "Rotation" : [0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Scroll U" : 0.000000,
+      "Scroll V" : 0.000000,
+      "Type" : "StaticMeshComp",
+      "Visible" : true
+    },
+    "1" : {
+      "Font" : "Default",
+      "Font Size" : 1.000000,
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "Rotation" : [0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Text" : "TextRendwq123wqeer",
+      "Type" : "UTextRenderdasComponent",
+      "Visible" : true
+    }
+  },
+  "Version" : 3,
+  "WorldType" : "Editor"
+}
