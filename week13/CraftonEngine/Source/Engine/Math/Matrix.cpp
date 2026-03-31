@@ -1,4 +1,6 @@
 ﻿#include "Matrix.h"
+#include "Quat.h"
+#include "Rotator.h"
 #include "Utils.h"
 #include <iostream>
 
@@ -432,4 +434,14 @@ FMatrix FMatrix::MakeRotationAxis(const FVector& Axis, float Angle)
 	ret.M[2][0] = t * a.X * a.Z + s * a.Y; ret.M[2][1] = t * a.Y * a.Z - s * a.X; ret.M[2][2] = t * a.Z * a.Z + c;
 
 	return ret;
+}
+
+FQuat FMatrix::ToQuat() const
+{
+	return FQuat::FromMatrix(*this);
+}
+
+FRotator FMatrix::ToRotator() const
+{
+	return FRotator(GetEuler());
 }
