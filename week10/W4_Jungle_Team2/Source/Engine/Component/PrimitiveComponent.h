@@ -22,7 +22,11 @@ public:
 	bool IsVisible() const { return bIsVisible; }
 
 	/* Getter */
-	virtual const FAABB& GetWorldAABB() const { return WorldAABB; }
+	virtual const FAABB& GetWorldAABB() const 
+	{ 
+		UpdateWorldAABB();
+		return WorldAABB;
+	}
 
 	/* For Collision(Ray-casting) */
 	virtual void UpdateWorldAABB() const = 0;

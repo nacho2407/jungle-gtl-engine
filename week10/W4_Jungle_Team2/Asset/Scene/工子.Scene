@@ -1,0 +1,45 @@
+{
+  "ClassName" : "UWorld",
+  "Name" : "工子",
+  "PerspectiveCamera" : {
+    "FOV" : 84.000000,
+    "FarClip" : 2000.000000,
+    "Location" : [9.122863, 2.862189, 5.863430],
+    "NearClip" : 0.100000,
+    "Rotation" : [-32.986633, -174.380096, 3.066629]
+  },
+  "Primitives" : {
+    "0" : {
+      "Location" : [5.382951, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Asset/Mesh/Lowpoly_tree_sample/Lowpoly_tree_sample.obj",
+      "Rotation" : [-0.000000, 0.000000, 74.827759],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Scroll U" : 0.000000,
+      "Scroll V" : 0.000000,
+      "Type" : "StaticMeshComp",
+      "Visible" : true
+    },
+    "1" : {
+      "Location" : [0.000000, 12.472298, 0.000000],
+      "ObjStaticMeshAsset" : "Asset/Mesh/Lumine/LumineModel.obj",
+      "Rotation" : [-0.000000, 0.000000, 53.973190],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Scroll U" : 0.000000,
+      "Scroll V" : 0.000000,
+      "Type" : "StaticMeshComp",
+      "Visible" : true
+    },
+    "2" : {
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Asset/Mesh/Lumine/LumineModel.obj",
+      "Rotation" : [-0.000000, 49.948235, -0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Scroll U" : 0.000000,
+      "Scroll V" : 0.000000,
+      "Type" : "StaticMeshComp",
+      "Visible" : true
+    }
+  },
+  "Version" : 3,
+  "WorldType" : "Editor"
+}
