@@ -20,7 +20,7 @@ UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class) {
 	UObject* Obj = FObjectFactory::Get().Create(Class->name);
 	if (!Obj) return nullptr;
 
-	UActorComponent* Comp = Cast<UActorComponent>();
+	UActorComponent* Comp = Cast<UActorComponent>(Obj);
 	if (!Comp) {
 		UObjectManager::Get().DestroyObject(Obj);
 		return nullptr;
@@ -28,6 +28,7 @@ UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class) {
 
 	Comp->SetOwner(this);
 	OwnedComponents.push_back(Comp);
+	bPrimitiveCacheDirty = true;
 	return Comp;
 }
 
