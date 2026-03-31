@@ -311,23 +311,11 @@ void FEditorPropertyWidget::RenderComponentProperties()
 		};
 
 	// Pass 1: Transform 프로퍼티 먼저 (Root가 아닐 때만)
-	if (!bIsRoot)
-	{
-		for (auto& Prop : Props)
-		{
-			if (IsTransformProp(Prop.Name))
-				RenderPropertyWidget(Prop);
-		}
-		ImGui::Separator();
-	}
-
-	// Pass 2: 나머지 프로퍼티
 	for (auto& Prop : Props)
-	{
-		if (IsTransformProp(Prop.Name))
-			continue;
+	{ 
 		RenderPropertyWidget(Prop);
 	}
+	ImGui::Separator();
 
 	// 프로퍼티 직접 편집 후 월드 행렬 갱신
 	if (SelectedComponent->IsA<USceneComponent>())

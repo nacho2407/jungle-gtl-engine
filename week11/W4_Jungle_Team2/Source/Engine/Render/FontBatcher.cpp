@@ -118,6 +118,7 @@ void FFontBatcher::AddText(const FString& Text,
 	const uint8* const End = Ptr + Text.size();
 	uint32 CharIdx = 0;
 
+	CharCursorX = -(CharCount * CharW * 0.5f);
 	for (size_t i = 0; i < CharCount && Ptr < End; ++i)
 	{
 		uint32 CP = 0;
