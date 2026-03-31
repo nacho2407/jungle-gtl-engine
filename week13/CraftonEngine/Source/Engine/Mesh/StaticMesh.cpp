@@ -14,7 +14,7 @@ void UStaticMesh::Serialize(FArchive& Ar)
 	// 에셋이 비어있으면 로드용으로 생성
 	if (Ar.IsLoading() && !StaticMeshAsset)
 	{
-		StaticMeshAsset = new FStaticMesh();
+		StaticMeshAsset = std::make_unique<FStaticMesh>();
 	}
 
 	// 1. 지오메트리 데이터 직렬화
@@ -66,14 +66,14 @@ const FString& UStaticMesh::GetAssetPathFileName() const
 	return EmptyPath;
 }
 
-void UStaticMesh::SetStaticMeshAsset(FStaticMesh* InMesh)
+void UStaticMesh::SetStaticMeshAsset(std::unique_ptr<FStaticMesh> InMesh)
 {
 	StaticMeshAsset = std::move(InMesh);
 }
 
 FStaticMesh* UStaticMesh::GetStaticMeshAsset() const
 {
-	return StaticMeshAsset;
+	return StaticMeshAsset.get();
 }
 
 void UStaticMesh::SetStaticMaterials(TArray<FStaticMaterial>&& InMaterials)
