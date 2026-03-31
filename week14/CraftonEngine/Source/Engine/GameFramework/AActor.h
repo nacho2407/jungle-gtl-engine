@@ -52,13 +52,17 @@ public:
 	}
 
 	// Transform — Rotation
-	FVector GetActorRotation() const
+	FRotator GetActorRotation() const
 	{
-		return RootComponent ? RootComponent->GetRelativeRotation() : FVector(0, 0, 0);
+		return RootComponent ? RootComponent->GetRelativeRotation() : FRotator();
 	}
-	void SetActorRotation(const FVector& NewRotation)
+	void SetActorRotation(const FRotator& NewRotation)
 	{
 		if (RootComponent) RootComponent->SetRelativeRotation(NewRotation);
+	}
+	void SetActorRotation(const FVector& EulerRotation)
+	{
+		if (RootComponent) RootComponent->SetRelativeRotation(EulerRotation);
 	}
 
 	// Transform — Scale
