@@ -21,6 +21,13 @@ PS_Input_Color VS(VS_Input_PC input)
 float4 PS(PS_Input_Color input) : SV_TARGET
 {
     uint axis = GetAxisFromColor(input.color.rgb);
+
+    // AxisMask 기반 축 숨김
+    if (!(AxisMask & (1u << axis)))
+    {
+        discard;
+    }
+
     float4 outColor = input.color;
 
     if (axis == SelectedAxis)

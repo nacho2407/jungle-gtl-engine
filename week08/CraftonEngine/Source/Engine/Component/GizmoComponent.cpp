@@ -324,8 +324,17 @@ void UGizmoComponent::UpdateHoveredAxis(int Index)
 		if (IsHolding() == false)
 		{
 			uint32 VertexIndex = MeshData->Indices[Index];
-			SelectedAxis = MeshData->Vertices[VertexIndex].SubID;
+			uint32 HitAxis = MeshData->Vertices[VertexIndex].SubID;
 
+			// 마스크에 의해 숨겨진 축은 선택 불가
+			if (AxisMask & (1u << HitAxis))
+			{
+				SelectedAxis = HitAxis;
+			}
+			else
+			{
+				SelectedAxis = -1;
+			}
 		}
 	}
 }
@@ -428,6 +437,39 @@ void UGizmoComponent::SetWorldSpace(bool bWorldSpace)
 }
 
 
+void UGizmoComponent::UpdateAxisMask(ELevelViewportType ViewportType)
+{
+	constexpr uint32 AllAxes = 0x7;
+	uint32 ViewAxis = AllAxes;
+
+	switch (ViewportType)
+	{
+	case ELevelViewportType::Top:
+	case ELevelViewportType::Bottom:
+		ViewAxis = 0x4; break; // Z
+	case ELevelViewportType::Front:
+	case ELevelViewportType::Back:
+		ViewAxis = 0x1; break; // X
+	case ELevelViewportType::Left:
+	case ELevelViewportType::Right:
+		ViewAxis = 0x2; break; // Y
+	default: break;
+	}
+
+	if (ViewAxis == AllAxes)
+	{
+		AxisMask = AllAxes;
+	}
+	else if (CurMode == EGizmoMode::Rotate)
+	{
+		AxisMask = ViewAxis;            // Rotate: 시선 축만
+	}
+	else
+	{
+		AxisMask = AllAxes & ~ViewAxis;  // Translate/Scale: 시선 축 제외
+	}
+}
+
 void UGizmoComponent::Deactivate()
 {
 	TargetActor = nullptr;
@@ -483,6 +525,7 @@ void UGizmoComponent::CollectRender(FRenderBus& Bus) const
 		G.bClicking = bIsHolding ? 1 : 0;
 		G.SelectedAxis = SelectedAxis >= 0 ? (uint32)SelectedAxis : 0xffffffffu;
 		G.HoveredAxisOpacity = 0.7f;
+		G.AxisMask = AxisMask;
 
 		return Cmd;
 		};
