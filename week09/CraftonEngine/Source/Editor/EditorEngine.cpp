@@ -98,16 +98,7 @@ void UEditorEngine::ResetViewport()
 
 void UEditorEngine::CloseScene()
 {
-	SelectionManager.ClearSelection();
-
-	for (FWorldContext& Ctx : WorldList) {
-		Ctx.World->EndPlay();
-		UObjectManager::Get().DestroyObject(Ctx.World);
-	}
-	WorldList.clear();
-	ActiveWorldHandle = FName::None;
-
-	ViewportLayout.DestroyAllCameras();
+	ClearScene();
 }
 
 void UEditorEngine::NewScene()

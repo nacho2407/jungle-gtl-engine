@@ -43,7 +43,7 @@ public:
 
 	void SetViewportSize(float InWidth, float InHeight);
 	const float GetViewportWidth() const { return viewportWidth; }
-	const float GetViewportHeight() const { return viewprotHeight; }
+	const float GetViewportHeight() const { return viewportHeight; }
 
 private:
 	// Mesh 패스 큐
@@ -63,7 +63,7 @@ private:
 	FVector CameraUp;
 
 	float viewportWidth = 0.0f;
-	float viewprotHeight = 0.0f;
+	float viewportHeight = 0.0f;
 
 	//Editor Settings
 	EViewMode ViewMode;
