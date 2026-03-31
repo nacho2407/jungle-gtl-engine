@@ -54,7 +54,7 @@ enum class EWindingOrder : uint8
 struct FImportOptions
 {
 	float Scale = 1.0f;
-	EForwardAxis ForwardAxis = EForwardAxis::NegY;  // 블렌더 기본: -Y Forward
+	EForwardAxis ForwardAxis = EForwardAxis::NegZ;  // OBJ 기본: Y-up, -Z Forward
 	EWindingOrder WindingOrder = EWindingOrder::CCW_to_CW;
 	static FImportOptions Default() { return {}; }
 };
