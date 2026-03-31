@@ -22,6 +22,7 @@ private:
 	void SetTranslateMode();
 	void SetRotationMode();
 	void SetScaleMode();
+	void ToggleCoordMode();
 
 	bool HandleButtonMouse(SButton& Button, int32 X, int32 Y);
 	bool ComputeButtonsRect(FRect& OutRect) const;
@@ -43,4 +44,5 @@ private:
 	SButton TranslateModeButton;
 	SButton RotationModeButton;
 	SButton ScaleModeButton;
+	SButton ToggleCoordModeButton;
 };

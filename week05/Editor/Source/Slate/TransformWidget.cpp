@@ -17,14 +17,17 @@ FTransformWidget::FTransformWidget(FEditorEngine* InEngine, FEditorViewportClien
 	TranslateModeButton.Text = "T";
 	RotationModeButton.Text = "R";
 	ScaleModeButton.Text = "S";
+	ToggleCoordModeButton.Text = "L";
 
 	TranslateModeButton.FontSize = 24.0f;
 	RotationModeButton.FontSize = 24.0f;
 	ScaleModeButton.FontSize = 24.0f;
+	ToggleCoordModeButton.FontSize = 24.0f;
 
 	TranslateModeButton.OnClicked = [this]() { SetTranslateMode(); };
 	RotationModeButton.OnClicked = [this]() { SetRotationMode(); };
 	ScaleModeButton.OnClicked = [this]() { SetScaleMode(); };
+	ToggleCoordModeButton.OnClicked = [this]() { ToggleCoordMode(); };
 }
 
 void FTransformWidget::OnPaint(SWidget& Painter)
@@ -40,6 +43,7 @@ void FTransformWidget::OnPaint(SWidget& Painter)
 	TranslateModeButton.Paint(Painter);
 	RotationModeButton.Paint(Painter);
 	ScaleModeButton.Paint(Painter);
+	ToggleCoordModeButton.Paint(Painter);
 }
 
 bool FTransformWidget::OnMouseDown(int32 X, int32 Y)
@@ -53,7 +57,7 @@ bool FTransformWidget::OnMouseDown(int32 X, int32 Y)
 	if (HandleButtonMouse(TranslateModeButton, X, Y)) return true;
 	if (HandleButtonMouse(RotationModeButton, X, Y)) return true;
 	if (HandleButtonMouse(ScaleModeButton, X, Y)) return true;
-
+	if (HandleButtonMouse(ToggleCoordModeButton, X, Y)) return true;
 	return false;
 }
 
@@ -82,6 +86,24 @@ void FTransformWidget::SyncSelectionState()
 	Configure(TranslateModeButton, Mode == EGizmoMode::Location);
 	Configure(RotationModeButton, Mode == EGizmoMode::Rotation);
 	Configure(ScaleModeButton, Mode == EGizmoMode::Scale);
+
+	ToggleCoordModeButton.bEnabled = true;
+	ToggleCoordModeButton.BackgroundColor = 0xFF3B5E84;
+	ToggleCoordModeButton.BorderColor = 0xFF86C8FF;
+	ToggleCoordModeButton.TextColor = 0xFFFFFFFF;
+	EGizmoCoordinateSpace Space = ViewportClient->GetSpaceMode();
+	ViewportClient->SetSpaceMode(Space);
+	switch (Space)
+	{
+	case EGizmoCoordinateSpace::World:
+		ToggleCoordModeButton.Text = "W";
+		break;
+	case EGizmoCoordinateSpace::Local:
+		ToggleCoordModeButton.Text = "L";
+		break;
+	default:
+		break;
+	}
 }
 
 void FTransformWidget::UpdateGeometry()
@@ -93,6 +115,7 @@ void FTransformWidget::UpdateGeometry()
 		TranslateModeButton.Rect = { 0, 0, 0, 0 };
 		RotationModeButton.Rect = { 0, 0, 0, 0 };
 		ScaleModeButton.Rect = { 0, 0, 0, 0 };
+		ToggleCoordModeButton.Rect = { 0, 0, 0, 0 };
 		return;
 	}
 
@@ -108,6 +131,9 @@ void FTransformWidget::UpdateGeometry()
 	CursorX += ButtonSize + Gap;
 
 	ScaleModeButton.Rect = { CursorX, RowY, ButtonSize, ButtonSize };
+	CursorX += ButtonSize + Gap;
+
+	ToggleCoordModeButton.Rect = { CursorX, RowY, ButtonSize, ButtonSize };
 }
 
 void FTransformWidget::SetTranslateMode()
@@ -123,6 +149,23 @@ void FTransformWidget::SetRotationMode()
 void FTransformWidget::SetScaleMode()
 {
 	ViewportClient->SetGizmoMode(EGizmoMode::Scale);
+}
+
+void FTransformWidget::ToggleCoordMode()
+{
+	EGizmoCoordinateSpace Space = static_cast<EGizmoCoordinateSpace>(((int8)ViewportClient->GetSpaceMode() + 1) % 2);
+	ViewportClient->SetSpaceMode(Space);
+	switch (Space)
+	{
+	case EGizmoCoordinateSpace::World:
+		ToggleCoordModeButton.Text = "W";
+		break;
+	case EGizmoCoordinateSpace::Local:
+		ToggleCoordModeButton.Text = "L";
+		break;
+	default:
+		break;
+	}
 }
 
 bool FTransformWidget::HandleButtonMouse(SButton& Button, int32 X, int32 Y)
@@ -165,7 +208,7 @@ bool FTransformWidget::ComputeButtonsRect(FRect& OutRect) const
 		return false;
 	}
 
-	const int32 Width = Padding * 2 + ButtonSize * 3 + Gap * 2;
+	const int32 Width = Padding * 3 + ButtonSize * 4 + Gap * 2;
 	const int32 HeaderY = (std::max)(0, MinY - HeaderHeight);
 	const int32 X = MaxX - Width - Padding;
 	const int32 Y = HeaderY;
@@ -181,6 +224,7 @@ FRect FTransformWidget::GetExpandedInteractiveRect() const
 	Expanded = UnionRects(Expanded, TranslateModeButton.Rect);
 	Expanded = UnionRects(Expanded, RotationModeButton.Rect);
 	Expanded = UnionRects(Expanded, ScaleModeButton.Rect);
+	Expanded = UnionRects(Expanded, ToggleCoordModeButton.Rect);
 
 	return Expanded;
 }
