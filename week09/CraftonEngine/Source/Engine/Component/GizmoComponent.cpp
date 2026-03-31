@@ -117,14 +117,14 @@ void UGizmoComponent::RotateTarget(float DragAmount)
 	if (!TargetActor || !TargetActor->GetRootComponent()) return;
 
 	FVector RotationAxis = GetVectorForAxis(SelectedAxis);
-	FMatrix DeltaMatrix = FMatrix::MakeRotationAxis(RotationAxis, DragAmount);
+	FQuat DeltaQuat = FQuat::FromAxisAngle(RotationAxis, DragAmount);
 
 	auto ApplyRotation = [&](AActor* Actor)
 		{
 			if (!Actor || !Actor->GetRootComponent()) return;
-			FMatrix CurMatrix = FMatrix::MakeRotationEuler(Actor->GetActorRotation().ToVector());
-			FMatrix NewMatrix = CurMatrix * DeltaMatrix;
-			Actor->SetActorRotation(FRotator(NewMatrix.GetEuler()));
+			FQuat CurQuat = Actor->GetActorRotation().ToQuaternion();
+			FQuat NewQuat = DeltaQuat * CurQuat;
+			Actor->SetActorRotation(NewQuat.ToRotator());
 		};
 
 	if (AllSelectedActors)
