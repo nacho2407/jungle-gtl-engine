@@ -53,6 +53,8 @@ struct FGizmoConstants
 	uint32 bClicking;
 	uint32 SelectedAxis;
 	float HoveredAxisOpacity;
+	uint32 AxisMask;       // 비트 0=X, 1=Y, 2=Z — 1이면 표시, 0이면 숨김. 0x7=전부 표시
+	uint32 _pad[3];
 };
 
 // PostProcess Outline CB (b3) — HLSL OutlinePostProcessCB와 1:1 대응
