@@ -1565,26 +1565,6 @@ void FEditor::DrawPanel()
 
 void FEditor::BuildRenderData()
 {
-    //EditorRenderData = FEditorRenderData{};
-    //SceneRenderData = FSceneRenderData{};
-
-    //BuildSceneView();
-
-    //EditorRenderData.SceneView = &SceneView;
-    //SceneRenderData.SceneView = &SceneView;
-    //SceneRenderData.ViewMode = ViewportClient.GetRenderSetting().GetViewMode();
-
-    //const EEditorShowFlags EditorShowFlags =
-    //    ViewportClient.GetRenderSetting().BuildEditorShowFlags(true);
-    //const ESceneShowFlags SceneShowFlags =
-    //    ViewportClient.GetRenderSetting().BuildSceneShowFlags();
-
-    //ViewportClient.BuildRenderData(EditorRenderData, EditorShowFlags);
-
-    //if (CurScene != nullptr)
-    //{
-    //    CurScene->BuildRenderData(SceneRenderData, SceneShowFlags);
-    //}
 }
 
 // 다중 뷰포트 머지 후에 active viewport를 토글하는 방식으로 변경 예정
