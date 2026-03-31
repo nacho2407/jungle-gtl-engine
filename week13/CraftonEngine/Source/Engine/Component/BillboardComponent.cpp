@@ -11,9 +11,19 @@ void UBillboardComponent::CollectSelection(FRenderBus& Bus) const
 	if (!Buffer || !Buffer->IsValid()) return;
 	if (!SupportsOutline()) return;
 
-	FShaderManager& SM = FShaderManager::Get();
-	BuildOutlineCommands(Bus, Buffer, GetWorldMatrix(), GetWorldScale(),
-		SM.GetShader(EShaderType::Primitive), SM.GetShader(EShaderType::Outline));
+	// Bus 카메라 벡터로 per-view 빌보드 행렬 계산 (다중 뷰포트 대응)
+	FVector BillboardForward = Bus.GetCameraForward() * -1.0f;
+	FMatrix RotMatrix;
+	RotMatrix.SetAxes(BillboardForward, Bus.GetCameraRight() * -1.0f, Bus.GetCameraUp());
+	FMatrix PerViewBillboard = FMatrix::MakeScaleMatrix(GetWorldScale())
+		* RotMatrix * FMatrix::MakeTranslationMatrix(GetWorldLocation());
+
+	// SelectionMask: 스텐실에 선택 오브젝트 마킹
+	FRenderCommand MaskCmd = {};
+	MaskCmd.MeshBuffer = Buffer;
+	MaskCmd.PerObjectConstants = FPerObjectConstants{ PerViewBillboard };
+	MaskCmd.Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
+	Bus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
 	// Billboard 계열은 AABB 제외
 }
 

@@ -27,14 +27,4 @@ cbuffer GizmoBuffer : register(b2)
     float HoveredAxisOpacity;
 };
 
-// b3: 아웃라인 전용
-cbuffer OutlineConstants : register(b3)
-{
-    float4 OutlineColor;
-    float3 OutlineInvScale;
-    float OutlineOffset;
-    uint bIs3D; //  0 : 2D (Plane), 1 : 3D (Cube)
-    float3 Padding4;
-};
-
 #endif // CONSTANT_BUFFERS_HLSL

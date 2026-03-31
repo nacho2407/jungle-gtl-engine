@@ -68,20 +68,6 @@ void FDepthStencilStateManager::Create(ID3D11Device* InDevice)
 	Desc.BackFace = Desc.FrontFace;
 	InDevice->CreateDepthStencilState(&Desc, &StencilMaskEqual);
 
-	// Stencil Outline (Not Equal, depth write enabled)
-	Desc = {};
-	Desc.DepthEnable = TRUE;
-	Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	Desc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-	Desc.StencilEnable = TRUE;
-	Desc.StencilReadMask = 0xFF;
-	Desc.StencilWriteMask = 0x00;
-	Desc.FrontFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;
-	Desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	Desc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	Desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-	Desc.BackFace = Desc.FrontFace;
-	InDevice->CreateDepthStencilState(&Desc, &StencilOutline);
 }
 
 void FDepthStencilStateManager::Release()
@@ -89,7 +75,6 @@ void FDepthStencilStateManager::Release()
 	SAFE_RELEASE(Default);
 	SAFE_RELEASE(DepthReadOnly);
 	SAFE_RELEASE(StencilWrite);
-	SAFE_RELEASE(StencilOutline);
 	SAFE_RELEASE(StencilMaskEqual);
 	SAFE_RELEASE(NoDepth);
 	SAFE_RELEASE(GizmoInside);
@@ -105,7 +90,6 @@ void FDepthStencilStateManager::Set(ID3D11DeviceContext* InContext, EDepthStenci
 	case EDepthStencilState::Default:              InContext->OMSetDepthStencilState(Default, 0);          break;
 	case EDepthStencilState::DepthReadOnly:        InContext->OMSetDepthStencilState(DepthReadOnly, 0);    break;
 	case EDepthStencilState::StencilWrite:         InContext->OMSetDepthStencilState(StencilWrite, 1);     break;
-	case EDepthStencilState::StencilOutline:       InContext->OMSetDepthStencilState(StencilOutline, 1);   break;
 	case EDepthStencilState::StencilWriteOnlyEqual:InContext->OMSetDepthStencilState(StencilMaskEqual, 1); break;
 	case EDepthStencilState::NoDepth:              InContext->OMSetDepthStencilState(NoDepth, 0);          break;
 	case EDepthStencilState::GizmoInside:          InContext->OMSetDepthStencilState(GizmoInside, 1);      break;
