@@ -3,7 +3,7 @@
 cbuffer MaterialData : register(b2)
 {
 	float4 BaseColor; 
-	float2 UVScrollSpeed; 
+	float2 UVScrollSpeed;
 	float2 Padding1;
 	float4 WaveData; 
 };

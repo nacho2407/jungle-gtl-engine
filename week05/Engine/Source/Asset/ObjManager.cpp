@@ -603,34 +603,6 @@ UStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileName)
 		return nullptr;
 	}
 
-/*<<<<<<< HEAD
-	RawData->UpdateLocalBound();
-
-	UStaticMesh* NewAsset = new UStaticMesh();
-	NewAsset->SetStaticMeshAsset(RawData.release());
-
-	NewAsset->LocalBounds.Radius = NewAsset->GetRenderData()->GetLocalBoundRadius();
-	NewAsset->LocalBounds.Center = NewAsset->GetRenderData()->GetCenterCoord();
-	NewAsset->LocalBounds.BoxExtent = (NewAsset->GetRenderData()->GetMaxCoord() - NewAsset->GetRenderData()->GetMinCoord()) * 0.5f;
-
-	for (const FString& MatName : FoundMaterials)
-	{
-		auto Material = FMaterialManager::Get().FindByName(MatName);
-
-		if (!Material)
-		{
-			Material = FMaterialManager::Get().FindByName("M_Default");
-		}
-
-		NewAsset->AddDefaultMaterial(Material);
-	}
-
-	if (FoundMaterials.empty())
-	{
-		NewAsset->AddDefaultMaterial(FMaterialManager::Get().FindByName("M_Default"));
-	}
-
-=======*/
 	UStaticMesh* NewAsset = FinalizeStaticMeshAsset(PathFileName, std::move(RawData), FoundMaterials);
 	ObjStaticMeshMap[PathFileName] = NewAsset;
 	return NewAsset;
@@ -1040,34 +1012,6 @@ bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
 			std::string MaterialName;
 			SS >> MaterialName;
 
-/*<<<<<<< HEAD
-			CurrentMaterial = std::make_shared<FMaterial>();
-			CurrentMaterial->SetOriginName(MaterialName.c_str());
-
-			std::wstring VSPath = FPaths::ShaderDir() / L"VertexShader.hlsl";
-			std::wstring PSPath = FPaths::ShaderDir() / L"ColorPixelShader.hlsl";
-			CurrentMaterial->SetVertexShader(FShaderMap::Get().GetOrCreateVertexShader(GEngine->GetRenderer()->GetDevice(), VSPath.c_str()));
-			CurrentMaterial->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(GEngine->GetRenderer()->GetDevice(), PSPath.c_str()));
-
-			auto DefaultTexMat = GEngine->GetRenderer()->GetDefaultTextureMaterial();
-			CurrentMaterial->SetRasterizerOption(DefaultTexMat->GetRasterizerOption());
-			CurrentMaterial->SetRasterizerState(DefaultTexMat->GetRasterizerState());
-			CurrentMaterial->SetDepthStencilOption(DefaultTexMat->GetDepthStencilOption());
-			CurrentMaterial->SetDepthStencilState(DefaultTexMat->GetDepthStencilState());
-
-			int32 SlotIndex = CurrentMaterial->CreateConstantBuffer(GEngine->GetRenderer()->GetDevice(), 32);
-			if (SlotIndex >= 0)
-			{
-				CurrentMaterial->RegisterParameter("BaseColor", SlotIndex, 0, 16);
-				float White[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-				CurrentMaterial->GetConstantBuffer(SlotIndex)->SetData(White, sizeof(White));
-
-				CurrentMaterial->RegisterParameter("UVScrollSpeed", SlotIndex, 16, 16);
-				float DefaultScroll[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-				CurrentMaterial->GetConstantBuffer(SlotIndex)->SetData(DefaultScroll, sizeof(DefaultScroll), 16);
-			}
-
-=======*/
 			CurrentMaterial = CreateImportedMaterialTemplate(MaterialName.c_str());
 			FMaterialManager::Get().Register(MaterialName.c_str(), CurrentMaterial);
 		}
@@ -1089,19 +1033,6 @@ bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
 			const std::filesystem::path TexturePath = ResolveTextureReferencePath(FilePath, TextureReference);
 			if (!TryLoadTextureIntoMaterial(CurrentMaterial, TexturePath, "[MTL Parser] Auto-loaded texture-backed pixel shader:"))
 			{
-/*<<<<<<< HEAD
-				auto MaterialTexture = std::make_shared<FMaterialTexture>();
-				MaterialTexture->TextureSRV = NewSRV;
-				CurrentMaterial->SetMaterialTexture(MaterialTexture);
-
-				std::wstring TexPSPath = FPaths::ShaderDir() / L"TexturePixelShader.hlsl";
-				CurrentMaterial->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(GEngine->GetRenderer()->GetDevice(), TexPSPath.c_str()));
-
-				std::wstring TexVSPath = FPaths::ShaderDir() / L"TextureVertexShader.hlsl";
-				CurrentMaterial->SetVertexShader(FShaderMap::Get().GetOrCreateVertexShader(GEngine->GetRenderer()->GetDevice(), TexVSPath.c_str()));
-
-				UE_LOG("[MTL 파서] %s 텍스처 자동 로드 및 장착 완료!", TexPSPath.c_str());
-=======*/
 				UE_LOG("[MTL Parser] Failed to resolve texture '%s' referenced by '%s'.",
 					TextureReference.c_str(),
 					AbsolutePath.c_str());
