@@ -181,8 +181,8 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 		FVector Pos = PrimaryActor->GetActorLocation();
 		float PosArray[3] = { Pos.X, Pos.Y, Pos.Z };
 
-		FVector Rot = PrimaryActor->GetActorRotation();
-		float RotArray[3] = { Rot.X, Rot.Y, Rot.Z };
+		FRotator Rot = PrimaryActor->GetActorRotation();
+		float RotArray[3] = { Rot.Pitch, Rot.Yaw, Rot.Roll };
 
 		FVector Scale = PrimaryActor->GetActorScale();
 		float ScaleArray[3] = { Scale.X, Scale.Y, Scale.Z };
@@ -198,7 +198,8 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 		}
 		if (ImGui::DragFloat3("Rotation", RotArray, 0.1f))
 		{
-			FVector Delta = FVector(RotArray[0], RotArray[1], RotArray[2]) - Rot;
+			FRotator NewRot(RotArray[0], RotArray[1], RotArray[2]);
+			FRotator Delta = NewRot - Rot;
 			for (AActor* Actor : SelectedActors)
 			{
 				if (Actor) Actor->SetActorRotation(Actor->GetActorRotation() + Delta);
@@ -380,6 +381,12 @@ bool FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 		break;
 	}
 	case EPropertyType::Vec3:
+	{
+		float* Val = static_cast<float*>(Prop.ValuePtr);
+		bChanged = ImGui::DragFloat3(Prop.Name.c_str(), Val, Prop.Speed);
+		break;
+	}
+	case EPropertyType::Rotator:
 	{
 		float* Val = static_cast<float*>(Prop.ValuePtr);
 		bChanged = ImGui::DragFloat3(Prop.Name.c_str(), Val, Prop.Speed);
