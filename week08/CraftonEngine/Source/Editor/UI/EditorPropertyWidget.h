@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Editor/UI/EditorWidget.h"
 #include "Object/Object.h"
@@ -18,6 +18,8 @@ private:
 	void RenderComponentProperties();
 	void RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 	bool RenderPropertyWidget(struct FPropertyDescriptor& Prop);
+
+	static FString OpenObjFileDialog();
 
 	UActorComponent* SelectedComponent = nullptr;
 	AActor* LastSelectedActor = nullptr;
