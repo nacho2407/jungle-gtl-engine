@@ -32,6 +32,7 @@ class FViewportGizmoController : public Engine::Viewport::IViewportController
 
     EGizmoType GetGizmoType() const { return GizmoType; }
     EGizmoHighlight GetGizmoHighlight() const { return GizmoHighlight; }
+    void       SetGizmoType(EGizmoType InType) { GizmoType = InType; }
     void       ChangeGizmoType()
     {
         if (GizmoType == EGizmoType::Translation)
