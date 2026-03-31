@@ -301,7 +301,9 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 				ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Mesh: %.2f KB",     MeshMemoryBytes / 1024.f);
 				ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Material: %.2f KB", MatMemoryBytes  / 1024.f);
 				ImGui::Separator();
-				ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "Total: %.2f KB",      TotalMemoryBytes / 1024.f);
+				
+				ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Total Allocated Counts: %d", EngineStatics::GetTotalAllocationCount());
+				ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Total Allocated Bytes: %.2f KB", EngineStatics::GetTotalAllocationBytes() / 1024.f);
 			}
 		}
 		ImGui::End();
