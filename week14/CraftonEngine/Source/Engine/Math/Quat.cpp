@@ -4,7 +4,7 @@
 
 const FQuat FQuat::Identity = FQuat(0.0f, 0.0f, 0.0f, 1.0f);
 
-// 오일러(도) → 쿼터니언. 엔진 회전 순서: Roll(X) * Pitch(Y) * Yaw(Z)
+// 오일러(도) → 쿼터니언. 엔진 행렬 순서 Rx*Ry*Rz (row-major) 에 대응: Qz*Qy*Qx
 FQuat FQuat::FromRotator(const FRotator& Rot)
 {
 	float RollRad  = Rot.Roll  * DEG_TO_RAD * 0.5f;
@@ -15,12 +15,12 @@ FQuat FQuat::FromRotator(const FRotator& Rot)
 	float SP = sinf(PitchRad), CP = cosf(PitchRad);
 	float SY = sinf(YawRad),   CY = cosf(YawRad);
 
-	// Qx(Roll) * Qy(Pitch) * Qz(Yaw)
+	// Qz(Yaw) * Qy(Pitch) * Qx(Roll)
 	FQuat Q;
-	Q.X =  CR * SP * SY + SR * CP * CY;
-	Q.Y =  CR * SP * CY - SR * CP * SY;
-	Q.Z =  CR * CP * SY + SR * SP * CY;
-	Q.W =  CR * CP * CY - SR * SP * SY;
+	Q.X =  SR * CP * CY - CR * SP * SY;
+	Q.Y =  CR * SP * CY + SR * CP * SY;
+	Q.Z =  CR * CP * SY - SR * SP * CY;
+	Q.W =  CR * CP * CY + SR * SP * SY;
 	return Q;
 }
 

@@ -390,6 +390,10 @@ bool FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 	{
 		float* Val = static_cast<float*>(Prop.ValuePtr);
 		bChanged = ImGui::DragFloat3(Prop.Name.c_str(), Val, Prop.Speed);
+		if (bChanged && SelectedComponent && SelectedComponent->IsA<USceneComponent>())
+		{
+			static_cast<USceneComponent*>(SelectedComponent)->ApplyCachedEditRotator();
+		}
 		break;
 	}
 	case EPropertyType::Vec4:

@@ -12,9 +12,22 @@ void USceneComponent::AttachToComponent(USceneComponent* InParent)
 void USceneComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UActorComponent::GetEditableProperties(OutProps);
+	CachedEditRotator = RelativeTransform.GetRotator();
 	OutProps.push_back({ "Location", EPropertyType::Vec3, &RelativeTransform.Location, 0.0f, 0.0f, 0.1f });
-	OutProps.push_back({ "Rotation", EPropertyType::Rotator, &RelativeTransform.Rotation, 0.0f, 0.0f, 0.1f });
+	OutProps.push_back({ "Rotation", EPropertyType::Rotator, &CachedEditRotator, 0.0f, 0.0f, 0.1f });
 	OutProps.push_back({ "Scale", EPropertyType::Vec3, &RelativeTransform.Scale, 0.0f, 0.0f, 0.1f });
+}
+
+void USceneComponent::PostEditProperty(const char* PropertyName)
+{
+	if (strcmp(PropertyName, "Rotation") == 0)
+	{
+		ApplyCachedEditRotator();
+	}
+	else
+	{
+		MarkTransformDirty();
+	}
 }
 
 USceneComponent::USceneComponent()
@@ -155,13 +168,19 @@ void USceneComponent::SetRelativeLocation(const FVector& NewLocation)
 
 void USceneComponent::SetRelativeRotation(const FRotator& NewRotation)
 {
-	RelativeTransform.Rotation = NewRotation;
+	RelativeTransform.SetRotation(NewRotation);
+	MarkTransformDirty();
+}
+
+void USceneComponent::SetRelativeRotation(const FQuat& NewRotation)
+{
+	RelativeTransform.SetRotation(NewRotation);
 	MarkTransformDirty();
 }
 
 void USceneComponent::SetRelativeRotation(const FVector& EulerRotation)
 {
-	RelativeTransform.Rotation = FRotator(EulerRotation);
+	RelativeTransform.SetRotation(FRotator(EulerRotation));
 	MarkTransformDirty();
 }
 
@@ -180,6 +199,12 @@ void USceneComponent::MarkTransformDirty()
 	{
 		Child->MarkTransformDirty();
 	}
+}
+
+void USceneComponent::ApplyCachedEditRotator()
+{
+	RelativeTransform.SetRotation(CachedEditRotator);
+	MarkTransformDirty();
 }
 
 const FMatrix& USceneComponent::GetWorldMatrix() const
@@ -269,13 +294,13 @@ void USceneComponent::MoveLocal(const FVector& Delta)
 
 void USceneComponent::Rotate(float DeltaYaw, float DeltaPitch)
 {
-	RelativeTransform.Rotation.Yaw += DeltaYaw;
-	RelativeTransform.Rotation.Pitch += DeltaPitch;
-	RelativeTransform.Rotation.Pitch = Clamp(RelativeTransform.Rotation.Pitch, -89.9f, 89.9f);
+	FRotator Rot = GetRelativeRotation();
+	Rot.Yaw += DeltaYaw;
+	Rot.Pitch += DeltaPitch;
+	Rot.Pitch = Clamp(Rot.Pitch, -89.9f, 89.9f);
+	Rot.Roll = 0.0f;
 
-	RelativeTransform.Rotation.Roll = 0.0f;
-
-	SetRelativeRotation(RelativeTransform.Rotation);
+	SetRelativeRotation(Rot);
 }
 
 FMatrix USceneComponent::GetRelativeMatrix() const
