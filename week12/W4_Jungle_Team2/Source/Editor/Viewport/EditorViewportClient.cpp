@@ -138,10 +138,8 @@ void FEditorViewportClient::ApplyCameraMode()
 	case EVT_Perspective:
 		Camera.SetProjectionType(EViewportProjectionType::Perspective);
 		Camera.ClearCustomLookDir();
-		if (Settings)
-		{
-			Camera.SetLocation(Settings->InitViewPos);
-		}
+        Camera.SetLocation(FVector(5.f, 3.f, 5.f));
+		Camera.SetLookAt(FVector(0.f, 0.f, 0.f));
 		break;
 
 	// 직교 뷰 (X=Forward, Y=Right, Z=Up)
