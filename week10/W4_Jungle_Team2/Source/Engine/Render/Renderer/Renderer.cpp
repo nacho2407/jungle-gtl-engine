@@ -65,12 +65,13 @@ void FRenderer::Create(HWND hWindow)
 	EditorLineBatcher.Create(Device.GetDevice());
 	GridLineBatcher.Create(Device.GetDevice());
 
-	// 텍스처는 ResourceManager가 소유 — Batcher는 셰이더/버퍼만 초기화
+	// 텍스처는 ResourceManager가 소유 — Batcher 는 셰이더/버퍼만 초기화
 	FontBatcher.Create(Device.GetDevice());
 	SubUVBatcher.Create(Device.GetDevice());
 
 	InitializePassRenderStates();
 	InitializePassBatchers();
+	UseBackBufferRenderTargets();
 
 	// GPU Profiler 초기화
 	FGPUProfiler::Get().Initialize(Device.GetDevice(), Device.GetDeviceContext());
@@ -141,10 +142,38 @@ const TArray<FRenderCommand>& FRenderer::GetAlignedCommands(ERenderPass Pass, co
 void FRenderer::BeginFrame()
 {
 	Device.BeginFrame();
+	UseBackBufferRenderTargets();
 
 #if STATS
 	FGPUProfiler::Get().BeginFrame();
 #endif
+}
+
+void FRenderer::UseBackBufferRenderTargets()
+{
+	CurrentRenderTargets = Device.GetBackBufferRenderTargets();
+	if (CurrentRenderTargets.IsValid())
+	{
+		ID3D11RenderTargetView* RTV = CurrentRenderTargets.SceneColorRTV;
+		Device.GetDeviceContext()->OMSetRenderTargets(1, &RTV, CurrentRenderTargets.DepthStencilView);
+		Device.SetSubViewport(0, 0,
+			static_cast<int32>(CurrentRenderTargets.Width),
+			static_cast<int32>(CurrentRenderTargets.Height));
+	}
+}
+
+void FRenderer::UseViewportRenderTargets()
+{
+	CurrentRenderTargets = Device.GetViewportRenderTargets();
+	if (!CurrentRenderTargets.IsValid())
+	{
+		UseBackBufferRenderTargets();
+		return;
+	}
+
+	Device.SetSubViewport(0, 0,
+		static_cast<int32>(CurrentRenderTargets.Width),
+		static_cast<int32>(CurrentRenderTargets.Height));
 }
 
 //	RenderBus에 담긴 모든 RenderCommand에 대해서 Draw Call 수행 (GPU)
@@ -347,9 +376,9 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
 {
 	//	Selection Mask에 대한 것인지 확인하여 RTV를 가져옴
 	ID3D11RenderTargetView* RTV = (Pass == ERenderPass::SelectionMask)
-		? Device.GetSelectionMaskRTV()
-		: Device.GetFrameBufferRTV();
-	ID3D11DepthStencilView* DSV = Device.GetDepthStencilView();
+		? CurrentRenderTargets.SelectionMaskRTV
+		: CurrentRenderTargets.SceneColorRTV;
+	ID3D11DepthStencilView* DSV = CurrentRenderTargets.DepthStencilView;
 	Context->OMSetRenderTargets(1, &RTV, DSV);
 
 	const FPassRenderState& State = PassRenderStates[(uint32)Pass];
@@ -401,7 +430,7 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 	case ERenderCommandType::PostProcessOutline:
 	{
 		FOutlineConstants outlineConstants = InCmd.Constants.Outline;
-		outlineConstants.ViewportSize = FVector2(Device.GetViewportWidth(), Device.GetViewportHeight());
+		outlineConstants.ViewportSize = FVector2(CurrentRenderTargets.Width, CurrentRenderTargets.Height);
 
 		Resources.OutlineShader.Bind(Context);
 		Resources.OutlineConstantBuffer.Update(Context, &outlineConstants, sizeof(FOutlineConstants));
@@ -485,11 +514,11 @@ void FRenderer::DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderC
 
 void FRenderer::DrawPostProcessOutline(ID3D11DeviceContext* InDeviceContext)
 {
-	ID3D11RenderTargetView* RTV = Device.GetFrameBufferRTV();
+	ID3D11RenderTargetView* RTV = CurrentRenderTargets.SceneColorRTV;
 	InDeviceContext->OMSetRenderTargets(1, &RTV, nullptr);
 	InDeviceContext->OMSetDepthStencilState(nullptr, 0);
 
-	ID3D11ShaderResourceView* maskSRV = Device.GetSelectionMaskSRV();
+	ID3D11ShaderResourceView* maskSRV = CurrentRenderTargets.SelectionMaskSRV;
 	InDeviceContext->PSSetShaderResources(7, 1, &maskSRV);
 
 	InDeviceContext->Draw(3, 0);
