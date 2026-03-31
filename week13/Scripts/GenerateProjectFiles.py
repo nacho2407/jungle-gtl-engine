@@ -66,6 +66,7 @@ INCLUDE_PATHS = [
     "ThirdParty",
     "ThirdParty\\ImGui",
     "Source\\Editor",
+    "Source\\ObjViewer",
     ".",
 ]
 
