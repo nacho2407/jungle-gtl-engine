@@ -173,12 +173,14 @@ void FOutlinerPanel::DrawEmptyState() const
     ImGui::TextWrapped("Actors added to the current scene will appear here.");
 }
 
-void FOutlinerPanel::DrawActorRow(AActor* Actor) const
+void FOutlinerPanel::DrawActorRow(AActor* Actor)
 {
-    if (Actor == nullptr)
+    if (Actor == nullptr || !Actor->IsValidLowLevel())
     {
         return;
     }
+
+    ImGui::PushID(Actor);
 
     bool bIsSelected = false;
     if (GetContext() != nullptr)
@@ -195,28 +197,104 @@ void FOutlinerPanel::DrawActorRow(AActor* Actor) const
         }
     }
 
-    const FString Label = GetActorDisplayName(Actor);
-
-    if (IsUnknownActor(Actor))
+    // 이름 변경 모드 렌더링
+    if (RenamingActor == Actor)
     {
-        ImGui::PushStyleColor(ImGuiCol_Text, UnknownItemColor);
-    }
-
-    if (ImGui::Selectable(Label.c_str(), bIsSelected))
-    {
-        if (GetContext() != nullptr && GetContext()->Editor != nullptr)
+        if (bFocusRenameInput)
         {
-            const ESelectionMode SelectionMode =
-                ImGui::GetIO().KeyCtrl ? ESelectionMode::Toggle : ESelectionMode::Replace;
-            GetContext()->Editor->GetViewportClient().GetSelectionController().SelectActor(
-                Actor, SelectionMode);
+            ImGui::SetKeyboardFocusHere();
+            bFocusRenameInput = false;
+        }
+
+        ImGui::SetNextItemWidth(-1.0f);
+        if (ImGui::InputText("##RenameInput", RenameBuffer, sizeof(RenameBuffer),
+                             ImGuiInputTextFlags_EnterReturnsTrue |
+                                 ImGuiInputTextFlags_AutoSelectAll))
+        {
+            Actor->Name = RenameBuffer;
+            RenamingActor = nullptr;
+            if (GetContext() && GetContext()->Editor)
+                GetContext()->Editor->MarkSceneDirty();
+        }
+
+        if (ImGui::IsItemDeactivated() && !ImGui::IsItemDeactivatedAfterEdit())
+        {
+            RenamingActor = nullptr;
+        }
+    }
+    else
+    {
+        const FString Label = GetActorDisplayName(Actor);
+
+        if (IsUnknownActor(Actor))
+        {
+            ImGui::PushStyleColor(ImGuiCol_Text, UnknownItemColor);
+        }
+
+        if (ImGui::Selectable(Label.c_str(), bIsSelected))
+        {
+            if (GetContext() != nullptr && GetContext()->Editor != nullptr)
+            {
+                const ESelectionMode SelectionMode =
+                    ImGui::GetIO().KeyCtrl ? ESelectionMode::Toggle : ESelectionMode::Replace;
+                GetContext()->Editor->GetViewportClient().GetSelectionController().SelectActor(
+                    Actor, SelectionMode);
+            }
+        }
+
+        if (IsUnknownActor(Actor))
+        {
+            ImGui::PopStyleColor();
+        }
+
+        // 단축키 처리 (선택된 상태일 때)
+        if (bIsSelected && ImGui::IsWindowFocused())
+        {
+            if (ImGui::IsKeyPressed(ImGuiKey_F2))
+            {
+                StartRenaming(Actor);
+            }
+            if (ImGui::IsKeyPressed(ImGuiKey_Delete))
+            {
+                if (GetContext() && GetContext()->Editor)
+                {
+                    GetContext()->Editor->DeleteSelectedActors();
+                }
+            }
+        }
+
+        // 우클릭 컨텍스트 메뉴
+        if (ImGui::BeginPopupContextItem("ActorCtx"))
+        {
+            if (ImGui::MenuItem("Rename", "F2"))
+            {
+                StartRenaming(Actor);
+            }
+            if (ImGui::MenuItem("Delete", "Delete"))
+            {
+                if (GetContext() && GetContext()->Editor)
+                {
+                    GetContext()->Editor->DeleteSelectedActors();
+                }
+            }
+            ImGui::EndPopup();
         }
     }
 
-    if (IsUnknownActor(Actor))
-    {
-        ImGui::PopStyleColor();
-    }
+    ImGui::PopID();
+}
+
+void FOutlinerPanel::StartRenaming(AActor* InActor)
+{
+    if (InActor == nullptr || !InActor->IsValidLowLevel())
+        return;
+    
+    RenamingActor = InActor;
+    FString CurrentName = InActor->Name.ToFString();
+    memset(RenameBuffer, 0, sizeof(RenameBuffer));
+    memcpy(RenameBuffer, CurrentName.c_str(),
+           std::min(sizeof(RenameBuffer) - 1, CurrentName.size()));
+    bFocusRenameInput = true;
 }
 
 void FOutlinerPanel::SpawnActors() const

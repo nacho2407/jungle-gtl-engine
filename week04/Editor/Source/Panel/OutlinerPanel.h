@@ -30,10 +30,17 @@ class FOutlinerPanel : public IPanel
   private:
     void DrawToolbar();
     void DrawEmptyState() const;
-    void DrawActorRow(AActor* Actor) const;
+    void DrawActorRow(AActor* Actor);
     void SpawnActors() const;
+
+    void StartRenaming(AActor* InActor);
 
   private:
     ESpawnActorType SpawnActorType = ESpawnActorType::StaticMesh;
     int32           SpawnCount = 1;
+
+    // 이름 변경 기능 (PropertiesPanel과 동일한 로직)
+    AActor* RenamingActor = nullptr;
+    char    RenameBuffer[256] = {0};
+    bool    bFocusRenameInput = false;
 };
