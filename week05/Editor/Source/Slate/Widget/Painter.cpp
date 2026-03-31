@@ -3,6 +3,7 @@
 #include "Renderer/Renderer.h"
 #include "Component/TextComponent.h"
 #include <limits>
+#include <algorithm>
 
 namespace
 {
@@ -13,6 +14,48 @@ namespace
 		const float G = ((C >> 8) & 0xFF) / 255.0f;
 		const float B = (C & 0xFF) / 255.0f;
 		return { R, G, B, A };
+	}
+
+	static bool EnsureUiTextMesh(FRenderer* Renderer, const char* Text, float LetterSpacing, FDynamicMesh*& InOutMesh)
+	{
+		if (!Renderer || !Text || Text[0] == '\0')
+		{
+			return false;
+		}
+
+		if (!InOutMesh)
+		{
+			InOutMesh = new FDynamicMesh();
+			InOutMesh->Topology = EMeshTopology::EMT_TriangleList;
+			if (!Renderer->GetTextRenderer().BuildTextMesh(Text, *InOutMesh, LetterSpacing))
+			{
+				delete InOutMesh;
+				InOutMesh = nullptr;
+				return false;
+			}
+
+			float MinX = (std::numeric_limits<float>::max)();
+			float MinY = (std::numeric_limits<float>::max)();
+
+			for (FVertex& Vertex : InOutMesh->Vertices)
+			{
+				const float ScreenX = Vertex.Position.Y;
+				const float ScreenY = -Vertex.Position.Z;
+				Vertex.Position = FVector(ScreenX, ScreenY, 0.0f);
+				MinX = (std::min)(MinX, Vertex.Position.X);
+				MinY = (std::min)(MinY, Vertex.Position.Y);
+			}
+
+			for (FVertex& Vertex : InOutMesh->Vertices)
+			{
+				Vertex.Position.X -= MinX;
+				Vertex.Position.Y -= MinY;
+			}
+
+			InOutMesh->bIsDirty = true;
+		}
+
+		return true;
 	}
 }
 
@@ -125,37 +168,9 @@ void FPainter::DrawRectFilled(FRect InRect, uint32 Color)
 	UIQueue.AddCommand(Commend);
 }
 
-void FPainter::DrawText(FPoint Point, const char* Text, uint32 Color, float FontSize, FDynamicMesh*& InOutMesh)
+void FPainter::DrawText(FPoint Point, const char* Text, uint32 Color, float FontSize, float LetterSpacing, FDynamicMesh*& InOutMesh)
 {
-	if (!Renderer || !Text || Text[0] == '\0') return;
-
-	if (!InOutMesh)
-	{
-		InOutMesh = new FDynamicMesh();
-		InOutMesh->Topology = EMeshTopology::EMT_TriangleList;
-		if (!Renderer->GetTextRenderer().BuildTextMesh(Text, *InOutMesh))
-			return;
-
-		float MinX = (std::numeric_limits<float>::max)();
-		float MinY = (std::numeric_limits<float>::max)();
-
-		for (FVertex& Vertex : InOutMesh->Vertices)
-		{
-			const float ScreenX = Vertex.Position.Y;
-			const float ScreenY = -Vertex.Position.Z;
-			Vertex.Position = FVector(ScreenX, ScreenY, 0.0f);
-			MinX = (std::min)(MinX, Vertex.Position.X);
-			MinY = (std::min)(MinY, Vertex.Position.Y);
-		}
-
-		for (FVertex& Vertex : InOutMesh->Vertices)
-		{
-			Vertex.Position.X -= MinX;
-			Vertex.Position.Y -= MinY;
-		}
-
-		InOutMesh->bIsDirty = true;
-	}
+	if (!EnsureUiTextMesh(Renderer, Text, LetterSpacing, InOutMesh)) return;
 
 	FDynamicMaterial* FontMat = nullptr;
 	auto It = FontMaterialByColor.find(Color);
@@ -183,6 +198,21 @@ void FPainter::DrawText(FPoint Point, const char* Text, uint32 Color, float Font
 	);
 	Command.RenderLayer = ERenderLayer::UI;
 	UIQueue.AddCommand(Command);
+}
+
+FVector2 FPainter::MeasureText(const char* Text, float FontSize, float LetterSpacing, FDynamicMesh*& InOutMesh)
+{
+	if (!EnsureUiTextMesh(Renderer, Text, LetterSpacing, InOutMesh)) return { 0.0f, 0.0f };
+
+	float MaxX = 0.0f;
+	float MaxY = 0.0f;
+	for (const FVertex& V : InOutMesh->Vertices)
+	{
+		MaxX = (std::max)(MaxX, V.Position.X);
+		MaxY = (std::max)(MaxY, V.Position.Y);
+	}
+
+	return { MaxX * FontSize, MaxY * FontSize };
 }
 
 void FPainter::Flush()

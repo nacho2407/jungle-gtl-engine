@@ -53,13 +53,16 @@ SViewportToolbarWidget::SViewportToolbarWidget(FEditorEngine* InEngine)
 	Rect = { 0, 0, 330, HeaderHeight };
 	TitleButton.Text = "Viewport";
 	TitleButton.bEnabled = false;
-	TitleButton.FontSize = 11.0f;
+	TitleButton.FontSize = 20.0f;
+	TitleButton.LetterSpacing = 0.5f;
 	TitleButton.DisabledBackgroundColor = 0xFF1F1F1F;
 	TitleButton.BorderColor = 0xFF4E4E4E;
 	TitleButton.DisabledTextColor = 0xFFBDBDBD;
 
 	LayoutDropdown.Label = "Layout";
 	LayoutDropdown.Placeholder = "Select";
+	LayoutDropdown.FontSize = 20.0f;
+	LayoutDropdown.LetterSpacing = 0.5f;
 	LayoutDropdown.SetOptions(GetLayoutOptions());
 	LayoutDropdown.OnSelectionChanged = [this](int32 SelectedIndex)
 	{
@@ -68,6 +71,8 @@ SViewportToolbarWidget::SViewportToolbarWidget(FEditorEngine* InEngine)
 
 	TypeDropdown.Label = "Type";
 	TypeDropdown.Placeholder = "";
+	TypeDropdown.FontSize = 20.0f;
+	TypeDropdown.LetterSpacing = 0.5f;
 	TypeDropdown.SetOptions(GetViewportTypeOptions());
 	TypeDropdown.OnSelectionChanged = [this](int32 SelectedIndex)
 	{
@@ -76,6 +81,8 @@ SViewportToolbarWidget::SViewportToolbarWidget(FEditorEngine* InEngine)
 
 	ModeDropdown.Label = "Mode";
 	ModeDropdown.Placeholder = "";
+	ModeDropdown.FontSize = 20.0f;
+	ModeDropdown.LetterSpacing = 0.5f;
 	ModeDropdown.SetOptions(GetRenderModeOptions());
 	ModeDropdown.OnSelectionChanged = [this](int32 SelectedIndex)
 	{

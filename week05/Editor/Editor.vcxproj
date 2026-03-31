@@ -157,6 +157,7 @@
     <ClCompile Include="Source\Gizmo\Gizmo.cpp" />
     <ClCompile Include="Source\Pawn\EditorCameraPawn.cpp" />
     <ClCompile Include="Source\Picking\Picker.cpp" />
+    <ClCompile Include="Source\Slate\TransformWidget.cpp" />
     <ClCompile Include="Source\Slate\Widget\HorizontalBox.cpp" />
     <ClCompile Include="Source\Slate\Widget\Button.cpp" />
     <ClCompile Include="Source\Slate\Widget\Dropdown.cpp" />
@@ -204,6 +205,7 @@
     <ClInclude Include="Source\Gizmo\Gizmo.h" />
     <ClInclude Include="Source\Pawn\EditorCameraPawn.h" />
     <ClInclude Include="Source\Picking\Picker.h" />
+    <ClInclude Include="Source\Slate\TransformWidget.h" />
     <ClInclude Include="Source\Slate\Widget\HorizontalBox.h" />
     <ClInclude Include="Source\Slate\Widget\Button.h" />
     <ClInclude Include="Source\Slate\Widget\Dropdown.h" />

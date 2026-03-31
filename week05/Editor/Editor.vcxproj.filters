@@ -129,6 +129,7 @@
     <ClCompile Include="Source\Slate\ViewportToolbar.cpp" />
     <ClCompile Include="Source\Slate\Widget\TextBlock.cpp" />
     <ClCompile Include="Source\Slate\Widget\Overlay.cpp" />
+    <ClCompile Include="Source\Slate\TransformWidget.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\EditorEngine.h">
@@ -232,6 +233,7 @@
     <ClInclude Include="Source\Slate\Widget\Dropdown.h" />
     <ClInclude Include="Source\Slate\ViewportToolbar.h" />
     <ClInclude Include="Source\Slate\Widget\Overlay.h" />
+    <ClInclude Include="Source\Slate\TransformWidget.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\imgui\imgui.natstepfilter">

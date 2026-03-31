@@ -10,6 +10,9 @@ public:
 
 	FString Text;
 	float FontSize = 12.0f;
+	float LetterSpacing = 1.0f;
+	ETextHAlign TextHAlign = ETextHAlign::Center;
+	ETextVAlign TextVAlign = ETextVAlign::Center;
 	bool bEnabled = true;
 
 	uint32 BackgroundColor = 0xFF3A3A3A;
@@ -26,5 +29,5 @@ public:
 private:
 	FDynamicMesh* CachedTextMesh = nullptr;
 	FString CachedText;
+	float CachedLetterSpacing = 1.0f;
 };
-

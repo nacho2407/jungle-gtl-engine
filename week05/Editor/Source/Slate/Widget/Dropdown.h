@@ -11,6 +11,10 @@ public:
 	FString Label = "Dropdown";
 	FString Placeholder = "Select";
 	float FontSize = 12.0f;
+	float LetterSpacing = 1.0f;
+	ETextVAlign HeaderTextVAlign = ETextVAlign::Center;
+	ETextHAlign OptionTextHAlign = ETextHAlign::Left;
+	ETextVAlign OptionTextVAlign = ETextVAlign::Center;
 	bool bEnabled = true;
 
 	uint32 RowBackgroundColor = 0xFF3A3A3A;
@@ -42,12 +46,13 @@ public:
 private:
 	FString GetSelectedText() const;
 	FRect GetOptionRect(int32 Index) const;
-	void DrawTextCached(SWidget& Painter, const FString& Text, FPoint Position, uint32 Color);
+	FVector2 MeasureTextCached(SWidget& Painter, const FString& Text, FDynamicMesh*& OutMesh);
+	void ClearTextMeshes();
 
 private:
 	TArray<FString> Options;
 	int32 SelectedIndex = -1;
 	bool bOpen = false;
+	float CachedLetterSpacing = 1.0f;
 	TMap<FString, FDynamicMesh*> TextMeshes;
 };
-

@@ -10,6 +10,7 @@
 #include "Renderer/RenderStateManager.h"
 #include "Core/Paths.h"
 #include <cstring>
+#include <algorithm>
 
 FTextMeshBuilder::~FTextMeshBuilder()
 {
@@ -104,7 +105,7 @@ void FTextMeshBuilder::Release()
 	RenderStateManager = nullptr;
 }
 
-bool FTextMeshBuilder::BuildTextMesh(const FString& Text, FRenderMesh& OutMesh) const
+bool FTextMeshBuilder::BuildTextMesh(const FString& Text, FRenderMesh& OutMesh, float LetterSpacing) const
 {
 	if (Text.empty())
 	{
@@ -117,7 +118,9 @@ bool FTextMeshBuilder::BuildTextMesh(const FString& Text, FRenderMesh& OutMesh) 
 		return false;
 	}
 
-	auto ResolveAdvance = [](uint32 Codepoint, float BaseAdvance) -> float
+	const float SpacingScale = (std::max)(0.0f, LetterSpacing);
+
+	auto ResolveAdvance = [SpacingScale](uint32 Codepoint, float BaseAdvance) -> float
 	{
 		// Grid atlas uses fixed cell metrics; tighten latin tracking to avoid
 		// excessive spacing in toolbar/button/dropdown labels.
@@ -125,11 +128,11 @@ bool FTextMeshBuilder::BuildTextMesh(const FString& Text, FRenderMesh& OutMesh) 
 		{
 			if (Codepoint == static_cast<uint32>(' '))
 			{
-				return BaseAdvance;
+				return BaseAdvance * SpacingScale;
 			}
-			return BaseAdvance * 0.82f;
+			return BaseAdvance * 0.82f * SpacingScale;
 		}
-		return BaseAdvance;
+		return BaseAdvance * SpacingScale;
 	};
 
 	float TotalWidth = 0.0f;

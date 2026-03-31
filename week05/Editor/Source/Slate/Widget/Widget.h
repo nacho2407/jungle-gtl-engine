@@ -17,6 +17,20 @@ enum class EMouseCursor
 	Hand,
 };
 
+enum class ETextHAlign
+{
+	Left,
+	Center,
+	Right
+};
+
+enum class ETextVAlign
+{
+	Top,
+	Center,
+	Bottom
+};
+
 class SWidget
 {
 public:
@@ -33,8 +47,9 @@ public:
 
 	virtual void DrawRectFilled(FRect Rect, uint32 Color) {}
 	virtual void DrawRect(FRect Rect, uint32 Color) {}
-	virtual void DrawText(FPoint Point, const char* Text, uint32 Color, float FontSize, FDynamicMesh*& InOutMesh) {}
+	virtual void DrawText(FPoint Point, const char* Text, uint32 Color, float FontSize, float LetterSpacing, FDynamicMesh*& InOutMesh) {}
 	virtual bool OnMouseDown(int32 X, int32 Y) { (void)X; (void)Y; return false; }
+	virtual FVector2 MeasureText(const char* Text, float FontSize, float LetterSpacing, FDynamicMesh*& InOutMesh);
 
 	virtual EMouseCursor GetCursor() const { return EMouseCursor::Default; }
 };

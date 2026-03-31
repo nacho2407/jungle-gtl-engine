@@ -16,7 +16,8 @@ public:
 
 	void DrawRectFilled(FRect Rect, uint32 Color) override;
 	void DrawRect(FRect Rect, uint32 Color) override;
-	void DrawText(FPoint Point, const char* Text, uint32 Color, float FontSize, FDynamicMesh*& InOutMesh) override;
+	void DrawText(FPoint Point, const char* Text, uint32 Color, float FontSize, float LetterSpacing, FDynamicMesh*& InOutMesh) override;
+	FVector2 MeasureText(const char* Text, float FontSize, float LetterSpacing, FDynamicMesh*& InOutMesh) override;
 
 	void Flush();
 

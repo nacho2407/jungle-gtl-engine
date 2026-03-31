@@ -33,7 +33,7 @@ public:
 	 * 문자열을 분석하여 메시 데이터(정점/인덱스)를 생성함
 	 * 결과는 텍스트가 바뀔 때만 호출하여 성능을 최적화할 것을 권장함
 	 */
-	bool BuildTextMesh(const FString& Text, FRenderMesh& OutMesh) const;
+	bool BuildTextMesh(const FString& Text, FRenderMesh& OutMesh, float LetterSpacing = 1.0f) const;
 	void SetFillMode(D3D11_FILL_MODE InFillMode);
 	/** 폰트 아틀라스 텍스처 SRV 및 샘플러 반환 */
 	ID3D11ShaderResourceView* GetAtlasSRV() const { return Atlas.GetTextureSRV(); }

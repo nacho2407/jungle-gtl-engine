@@ -18,6 +18,7 @@
 #include "Viewport/PreviewViewportClient.h"
 #include "World/World.h"
 #include "Slate/ViewportToolbar.h"
+#include "Slate/TransformWidget.h"
 
 namespace
 {
@@ -324,8 +325,13 @@ void FEditorEngine::ClearDebugDrawForFrame()
 void FEditorEngine::CreateInitUI()
 {
 	std::unique_ptr<SViewportToolbarWidget> Toolbar = std::make_unique<SViewportToolbarWidget>(this);
-	SWidget* Raw = SlateApplication->CreateWidget(std::move(Toolbar));
-	SlateApplication->AddOverlayWidget(Raw);
+	SWidget* RawToolbar = SlateApplication->CreateWidget(std::move(Toolbar));
+	SlateApplication->AddOverlayWidget(RawToolbar);
+
+	auto* RawEditorVP = static_cast<FEditorViewportClient*>(ViewportClient.get());
+	std::unique_ptr<FTransformWidget> Transform = std::make_unique<FTransformWidget>(this, RawEditorVP);
+	SWidget* RawTransform = SlateApplication->CreateWidget(std::move(Transform));
+	SlateApplication->AddOverlayWidget(RawTransform);
 }
 
 bool FEditorEngine::InitEditorPreview()

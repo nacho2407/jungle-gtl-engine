@@ -1,0 +1,205 @@
+#include "TransformWidget.h"
+
+#include "EditorEngine.h"
+#include "Gizmo/Gizmo.h"
+#include "Slate/SlateApplication.h"
+#include "Viewport/EditorViewportClient.h"
+#include "Viewport/EditorViewportRegistry.h"
+#include "Viewport/Viewport.h"
+
+#include <algorithm>
+
+FTransformWidget::FTransformWidget(FEditorEngine* InEngine, FEditorViewportClient* InViewportClient) :
+	Engine(InEngine), ViewportClient(InViewportClient)
+{
+	Rect = { 0, 0, 0, 0 };
+
+	TranslateModeButton.Text = "T";
+	RotationModeButton.Text = "R";
+	ScaleModeButton.Text = "S";
+
+	TranslateModeButton.FontSize = 24.0f;
+	RotationModeButton.FontSize = 24.0f;
+	ScaleModeButton.FontSize = 24.0f;
+
+	TranslateModeButton.OnClicked = [this]() { SetTranslateMode(); };
+	RotationModeButton.OnClicked = [this]() { SetRotationMode(); };
+	ScaleModeButton.OnClicked = [this]() { SetScaleMode(); };
+}
+
+void FTransformWidget::OnPaint(SWidget& Painter)
+{
+	UpdateGeometry();
+	SyncSelectionState();
+
+	if (!Rect.IsValid()) return;
+
+	Painter.DrawRectFilled(Rect, 0xD01C1E21);
+	Painter.DrawRect(Rect, 0xFF555B63);
+
+	TranslateModeButton.Paint(Painter);
+	RotationModeButton.Paint(Painter);
+	ScaleModeButton.Paint(Painter);
+}
+
+bool FTransformWidget::OnMouseDown(int32 X, int32 Y)
+{
+	UpdateGeometry();
+	SyncSelectionState();
+
+	const FPoint Point({ X, Y });
+	if (!HitTest(Point)) return false;
+
+	if (HandleButtonMouse(TranslateModeButton, X, Y)) return true;
+	if (HandleButtonMouse(RotationModeButton, X, Y)) return true;
+	if (HandleButtonMouse(ScaleModeButton, X, Y)) return true;
+
+	return false;
+}
+
+bool FTransformWidget::HitTest(FPoint Point) const
+{
+	return ContainsPoint(GetExpandedInteractiveRect(), Point);
+}
+
+void FTransformWidget::SyncSelectionState()
+{
+	const bool bEnabled = (ViewportClient != nullptr);
+
+	EGizmoMode Mode = EGizmoMode::Location;
+	if (ViewportClient) Mode = ViewportClient->GetGizmoMode();
+
+	auto Configure = [bEnabled](SButton& Button, bool bActive)
+		{
+			Button.bEnabled = bEnabled;
+			Button.BackgroundColor = bActive ? 0xFF3B5E84 : 0xFF2C2F33;
+			Button.BorderColor = bActive ? 0xFF86C8FF : 0xFF5A6068;
+			Button.TextColor = 0xFFFFFFFF;
+			Button.DisabledBackgroundColor = 0xFF1F2124;
+			Button.DisabledTextColor = 0xFF757575;
+		};
+
+	Configure(TranslateModeButton, Mode == EGizmoMode::Location);
+	Configure(RotationModeButton, Mode == EGizmoMode::Rotation);
+	Configure(ScaleModeButton, Mode == EGizmoMode::Scale);
+}
+
+void FTransformWidget::UpdateGeometry()
+{
+	FRect NewRect;
+	if (!ComputeButtonsRect(NewRect))
+	{
+		Rect = { 0, 0, 0, 0 };
+		TranslateModeButton.Rect = { 0, 0, 0, 0 };
+		RotationModeButton.Rect = { 0, 0, 0, 0 };
+		ScaleModeButton.Rect = { 0, 0, 0, 0 };
+		return;
+	}
+
+	Rect = NewRect;
+
+	const int32 RowY = Rect.Y + (Rect.Height - ButtonSize) / 2;
+	int32 CursorX = Rect.X + Padding;
+
+	TranslateModeButton.Rect = { CursorX, RowY, ButtonSize, ButtonSize };
+	CursorX += ButtonSize + Gap;
+
+	RotationModeButton.Rect = { CursorX, RowY, ButtonSize, ButtonSize };
+	CursorX += ButtonSize + Gap;
+
+	ScaleModeButton.Rect = { CursorX, RowY, ButtonSize, ButtonSize };
+}
+
+void FTransformWidget::SetTranslateMode()
+{
+	ViewportClient->SetGizmoMode(EGizmoMode::Location);
+}
+
+void FTransformWidget::SetRotationMode()
+{
+	ViewportClient->SetGizmoMode(EGizmoMode::Rotation);
+}
+
+void FTransformWidget::SetScaleMode()
+{
+	ViewportClient->SetGizmoMode(EGizmoMode::Scale);
+}
+
+bool FTransformWidget::HandleButtonMouse(SButton& Button, int32 X, int32 Y)
+{
+	return Button.OnMouseDown(X, Y);
+}
+
+bool FTransformWidget::ComputeButtonsRect(FRect& OutRect) const
+{
+	if (!Engine) return false;
+
+	const auto& Entries = Engine->GetViewportRegistry().GetEntries();
+
+	int32 MinX = (std::numeric_limits<int32>::max)();
+	int32 MinY = (std::numeric_limits<int32>::max)();
+	int32 MaxX = (std::numeric_limits<int32>::min)();
+	bool bFound = false;
+
+	for (const FViewportEntry& Entry : Entries)
+	{
+		if (!Entry.bActive || !Entry.Viewport)
+		{
+			continue;
+		}
+
+		const FRect& ViewRect = Entry.Viewport->GetRect();
+		if (!ViewRect.IsValid())
+		{
+			continue;
+		}
+
+		bFound = true;
+		MinX = (std::min)(MinX, ViewRect.X);
+		MinY = (std::min)(MinY, ViewRect.Y);
+		MaxX = (std::max)(MaxX, ViewRect.X + ViewRect.Width);
+	}
+
+	if (!bFound)
+	{
+		return false;
+	}
+
+	const int32 Width = Padding * 2 + ButtonSize * 3 + Gap * 2;
+	const int32 HeaderY = (std::max)(0, MinY - HeaderHeight);
+	const int32 X = MaxX - Width - Padding;
+	const int32 Y = HeaderY;
+
+	OutRect = { X, Y + HeaderHeight, Width, HeaderHeight };
+	return true;
+}
+
+FRect FTransformWidget::GetExpandedInteractiveRect() const
+{
+	FRect Expanded = Rect;
+
+	Expanded = UnionRects(Expanded, TranslateModeButton.Rect);
+	Expanded = UnionRects(Expanded, RotationModeButton.Rect);
+	Expanded = UnionRects(Expanded, ScaleModeButton.Rect);
+
+	return Expanded;
+}
+
+bool FTransformWidget::ContainsPoint(const FRect& InRect, FPoint Point)
+{
+	return InRect.IsValid() && InRect.X < Point.X && Point.X < InRect.X + InRect.Width &&
+		InRect.Y < Point.Y && Point.Y < InRect.Y + InRect.Height;
+}
+
+FRect FTransformWidget::UnionRects(const FRect& A, const FRect& B)
+{
+	if (!A.IsValid()) return B;
+	if (!B.IsValid()) return A;
+
+	const int32 Left = (std::min)(A.X, B.X);
+	const int32 Top = (std::min)(A.Y, B.Y);
+	const int32 Right = (std::max)(A.X + A.Width, B.X + B.Width);
+	const int32 Bottom = (std::max)(A.Y + A.Height, B.Y + B.Height);
+
+	return { Left, Top, Right - Left, Bottom - Top };
+}
