@@ -4,13 +4,27 @@
 Texture2D    g_txColor : register(t0);
 SamplerState g_Sample  : register(s0);
 
+// b4: Material properties
+cbuffer MaterialBuffer : register(b4)
+{
+    uint bIsUVScroll;
+    float3 _matPad;
+}
+
 PS_Input_Full VS(VS_Input_PNCT input)
 {
     PS_Input_Full output;
     output.position = ApplyMVP(input.position);
     output.normal = normalize(mul(input.normal, (float3x3) Model));
     output.color = input.color * PrimitiveColor;
-    output.texcoord = input.texcoord;
+
+    float2 texcoord = input.texcoord;
+    if (bIsUVScroll != 0)
+    {
+        texcoord.x += Time * 0.5f; // 가로 방향으로 스크롤 예시
+    }
+    output.texcoord = texcoord;
+
     return output;
 }
 
