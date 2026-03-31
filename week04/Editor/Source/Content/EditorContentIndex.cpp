@@ -47,21 +47,26 @@ namespace
         {
             return EContentBrowserItemType::Scene;
         }
-
-        if (Extension == L".png" || Extension == L".jpg" || Extension == L".jpeg" ||
+        else if (Extension == L".png" || Extension == L".jpg" || Extension == L".jpeg" ||
             Extension == L".bmp")
         {
             return EContentBrowserItemType::Texture;
         }
-
-        if (Extension == L".font" || Extension == L".Font")
+        else if (Extension == L".font" || Extension == L".Font")
         {
             return EContentBrowserItemType::Font;
         }
-
-        if (Extension == L".json")
+        else if (Extension == L".json")
         {
             return EContentBrowserItemType::SpriteAtlas;
+        }
+        else if (Extension == L".obj")
+        {
+            return EContentBrowserItemType::StaticMesh;
+        }
+        else if (Extension == L".mtl")
+        {
+            return EContentBrowserItemType::Material;
         }
 
         return EContentBrowserItemType::UnknownFile;

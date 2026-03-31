@@ -85,7 +85,7 @@ void FD3D11MeshBatchRenderer::Shutdown()
     RHI = nullptr;
 }
 
-void FD3D11MeshBatchRenderer::BeginFrame(const FMeshBatchPassParams& InPassParams)
+void FD3D11MeshBatchRenderer::BeginFrame(const FMeshPassParams& InPassParams)
 {
     CurrentPassParams = InPassParams;
     ResetBatches();

@@ -13,7 +13,8 @@ namespace Engine::Component
         TextureImage,
         SpriteAtlasFile,
         SceneFile,
-        StaticMeshFile
+        StaticMeshFile,
+        MaterialFile
     };
 
     enum class EComponentPropertyType : uint8

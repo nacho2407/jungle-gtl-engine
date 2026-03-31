@@ -608,6 +608,10 @@ namespace
             FSceneJsonValue::Object PropertiesObject;
             BuildKnownComponentProperties(
                 const_cast<Engine::Component::USceneComponent&>(Component), PropertiesObject);
+            
+            // 가상 함수 Serialize 호출 (저장)
+            const_cast<Engine::Component::USceneComponent&>(Component).Serialize(false, &PropertiesObject);
+            
             ComponentObject.erase("data");
             ComponentObject["properties"] = std::move(PropertiesObject);
         }
@@ -724,6 +728,9 @@ namespace
             if (const auto* PropertiesObject = PropertiesIterator->second.TryGetObject())
             {
                 ApplyKnownComponentProperties(*PropertiesObject, Component);
+
+                // 가상 함수 Serialize 호출 (로드)
+                Component.Serialize(true, const_cast<FSceneJsonValue::Object*>(PropertiesObject));
             }
             else
             {

@@ -1,9 +1,11 @@
 #pragma once
 
-#include "Renderer/D3D11/D3D11Common.h"
-#include "Core/HAL/PlatformTypes.h"
 #include <Windows.h>
 #include <d3dcompiler.h>
+
+#include "Core/HAL/PlatformTypes.h"
+#include "Renderer/D3D11/D3D11Common.h"
+#include "Renderer/TrackedMemoryStats.h"
 
 class FD3D11RHI
 {
@@ -28,6 +30,7 @@ class FD3D11RHI
 
     int32 GetViewportWidth() const { return ViewportWidth; }
     int32 GetViewportHeight() const { return ViewportHeight; }
+    const FTrackedMemoryStats& GetTrackedMemoryStats() const { return TrackedMemoryStats; }
 
     void SetViewport(int32 InWidth, int32 InHeight);
     void SetViewport(D3D11_VIEWPORT& InViewport);
@@ -46,21 +49,21 @@ class FD3D11RHI
 
   public:
     bool CompileShaderFromFile(const wchar_t* InFilePath, const char* InEntryPoint,
-                               const char* InTarget, ID3DBlob** OutShaderBlob) const;
+                               const char* InTarget, ID3DBlob** OutShaderBlob);
 
     bool CreateVertexShaderAndInputLayout(const wchar_t* InFilePath, const char* InEntryPoint,
                                           const D3D11_INPUT_ELEMENT_DESC* InInputElements,
                                           uint32                          InInputElementCount,
                                           ID3D11VertexShader**            OutVertexShader,
-                                          ID3D11InputLayout**             OutInputLayout) const;
+                                          ID3D11InputLayout**             OutInputLayout);
 
     bool CreateVertexBuffer(const void* InData, uint32 InByteWidth, uint32 InStride, bool bDynamic,
-                            ID3D11Buffer** OutVertexBuffer) const;
+                            ID3D11Buffer** OutVertexBuffer);
     bool CreateIndexBuffer(const void* InData, uint32 InByteWidth, bool bDynamic,
-                           ID3D11Buffer** OutIndexBuffer) const;
+                           ID3D11Buffer** OutIndexBuffer);
 
     bool CreatePixelShader(const wchar_t* InFilePath, const char* InEntryPoint,
-                           ID3D11PixelShader** OutPixelShader) const;
+                           ID3D11PixelShader** OutPixelShader);
 
     bool CreateConstantBuffer(uint32 InByteWidth, ID3D11Buffer** OutConstantBuffer) const;
     bool UpdateConstantBuffer(ID3D11Buffer* InConstantBuffer, const void* InData,
@@ -132,4 +135,6 @@ class FD3D11RHI
     TComPtr<ID3D11DepthStencilView> DepthStencilView;
 
     D3D11_VIEWPORT Viewport = {};
+
+    FTrackedMemoryStats TrackedMemoryStats;
 };

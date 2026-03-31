@@ -16,7 +16,7 @@ enum class EViewportLayout
 class ENGINE_API SWindow : public SWidget
 {
 protected:
-    SWindow() = default;
+    SWindow();
 
 public:
     float PosX   = 0.f;
@@ -30,5 +30,5 @@ public:
                 P.Y >= PosY && P.Y < PosY + Height);
     }
 
-    virtual ~SWindow() = default;
+    virtual ~SWindow();
 };

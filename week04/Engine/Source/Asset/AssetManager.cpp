@@ -9,7 +9,7 @@
 #include <algorithm>
 
 #include "Asset.h"
-#include "AssetLoader.h"
+#include "Asset/AssetLoader/AssetLoader.h"
 
 namespace
 {

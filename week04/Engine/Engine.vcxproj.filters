@@ -46,6 +46,9 @@
     <Filter Include="Source\ApplicationCore\Windows">
       <UniqueIdentifier>{2548a85b-9fa1-e3d9-af0b-dee02015da10}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Asset\AssetLoader">
+      <UniqueIdentifier>{4ee525cf-2816-6303-ee58-9dda3acbc0ff}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Core\Containers">
       <UniqueIdentifier>{912017d8-8df8-694a-9f3f-b99826c544c4}</UniqueIdentifier>
     </Filter>
@@ -129,16 +132,28 @@
     <ClCompile Include="Source\Asset\Asset.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Asset\AssetLoader.cpp">
-      <Filter>Source\Asset</Filter>
+    <ClCompile Include="Source\Asset\AssetLoader\AssetLoader.cpp">
+      <Filter>Source\Asset\AssetLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\AssetLoader\FontAtlasLoader.cpp">
+      <Filter>Source\Asset\AssetLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\AssetLoader\MaterialLoader.cpp">
+      <Filter>Source\Asset\AssetLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\AssetLoader\StaticMeshLoader.cpp">
+      <Filter>Source\Asset\AssetLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\AssetLoader\SubUVAtlasLoader.cpp">
+      <Filter>Source\Asset\AssetLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\AssetLoader\TextureLoader.cpp">
+      <Filter>Source\Asset\AssetLoader</Filter>
     </ClCompile>
     <ClCompile Include="Source\Asset\AssetManager.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Asset\FontAsset.cpp">
-      <Filter>Source\Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Asset\FontAtlasLoader.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Asset\Material.cpp">
@@ -150,13 +165,7 @@
     <ClCompile Include="Source\Asset\MaterialInterface.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Asset\MaterialLoader.cpp">
-      <Filter>Source\Asset</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Asset\StaticMesh.cpp">
-      <Filter>Source\Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Asset\StaticMeshLoader.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Asset\StreamableRenderAsset.cpp">
@@ -165,13 +174,7 @@
     <ClCompile Include="Source\Asset\SubUVAtlasAsset.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Asset\SubUVAtlasLoader.cpp">
-      <Filter>Source\Asset</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Asset\Texture2DAsset.cpp">
-      <Filter>Source\Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Asset\TextureLoader.cpp">
       <Filter>Source\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\CoreGlobals.cpp">
@@ -243,6 +246,9 @@
     <ClCompile Include="Source\Engine\Component\Core\UnknownComponent.cpp">
       <Filter>Source\Engine\Component\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Mesh\QuadComponent.cpp">
+      <Filter>Source\Engine\Component\Mesh</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\Mesh\StaticMeshComponent.cpp">
       <Filter>Source\Engine\Component\Mesh</Filter>
     </ClCompile>
@@ -277,6 +283,9 @@
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Game\FlipbookActor.cpp">
+      <Filter>Source\Engine\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Game\QuadActor.cpp">
       <Filter>Source\Engine\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Game\SpriteActor.cpp">
@@ -315,6 +324,9 @@
     <ClCompile Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Renderer\D3D11\D3D11StaticMeshRenderer.cpp">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Renderer\D3D11\D3D11TextBatchRenderer.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
@@ -331,6 +343,9 @@
       <Filter>Source\Renderer\Submitter</Filter>
     </ClCompile>
     <ClCompile Include="Source\Renderer\Submitter\SpriteSubmitter.cpp">
+      <Filter>Source\Renderer\Submitter</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\Submitter\StaticMeshSubmitter.cpp">
       <Filter>Source\Renderer\Submitter</Filter>
     </ClCompile>
     <ClCompile Include="Source\Renderer\Submitter\TextSubmitter.cpp">
@@ -350,6 +365,12 @@
     </ClCompile>
     <ClCompile Include="Source\SceneIO\SceneTypeRegistry.cpp">
       <Filter>Source\SceneIO</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Runtime\Slate\SWidget.cpp">
+      <Filter>Source\Core\Runtime\Slate</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Runtime\Slate\Window\SWindow.cpp">
+      <Filter>Source\Core\Runtime\Slate\Window</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Runtime\Slate\Window\SSplitter.cpp">
       <Filter>Source\Core\Runtime\Slate\Window</Filter>
@@ -415,16 +436,28 @@
     <ClInclude Include="Source\Asset\Asset.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Asset\AssetLoader.h">
-      <Filter>Source\Asset</Filter>
+    <ClInclude Include="Source\Asset\AssetLoader\AssetLoader.h">
+      <Filter>Source\Asset\AssetLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\AssetLoader\FontAtlasLoader.h">
+      <Filter>Source\Asset\AssetLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\AssetLoader\MaterialLoader.h">
+      <Filter>Source\Asset\AssetLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\AssetLoader\StaticMeshLoader.h">
+      <Filter>Source\Asset\AssetLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\AssetLoader\SubUVAtlasLoader.h">
+      <Filter>Source\Asset\AssetLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\AssetLoader\TextureLoader.h">
+      <Filter>Source\Asset\AssetLoader</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\AssetManager.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\FontAsset.h">
-      <Filter>Source\Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Asset\FontAtlasLoader.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\Material.h">
@@ -436,13 +469,7 @@
     <ClInclude Include="Source\Asset\MaterialInterface.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Asset\MaterialLoader.h">
-      <Filter>Source\Asset</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Asset\StaticMesh.h">
-      <Filter>Source\Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Asset\StaticMeshLoader.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\StreamableRenderAsset.h">
@@ -451,13 +478,7 @@
     <ClInclude Include="Source\Asset\SubUVAtlasAsset.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Asset\SubUVAtlasLoader.h">
-      <Filter>Source\Asset</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Asset\Texture2DAsset.h">
-      <Filter>Source\Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Asset\TextureLoader.h">
       <Filter>Source\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Containers\Array.h">
@@ -601,6 +622,9 @@
     <ClInclude Include="Source\Engine\Component\Core\UnknownComponent.h">
       <Filter>Source\Engine\Component\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Mesh\QuadComponent.h">
+      <Filter>Source\Engine\Component\Mesh</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\Mesh\StaticMeshComponent.h">
       <Filter>Source\Engine\Component\Mesh</Filter>
     </ClInclude>
@@ -635,6 +659,9 @@
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Game\FlipbookActor.h">
+      <Filter>Source\Engine\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Game\QuadActor.h">
       <Filter>Source\Engine\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Game\SpriteActor.h">
@@ -685,6 +712,9 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Renderer\D3D11\D3D11StaticMeshRenderer.h">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Renderer\D3D11\D3D11TextBatchRenderer.h">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
@@ -724,6 +754,9 @@
     <ClInclude Include="Source\Renderer\Submitter\SpriteSubmitter.h">
       <Filter>Source\Renderer\Submitter</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Renderer\Submitter\StaticMeshSubmitter.h">
+      <Filter>Source\Renderer\Submitter</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Renderer\Submitter\TextSubmitter.h">
       <Filter>Source\Renderer\Submitter</Filter>
     </ClInclude>
@@ -743,6 +776,9 @@
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\Types\MeshInstanceData.h">
+      <Filter>Source\Renderer\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\Types\MeshPassParams.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\Types\ObjectIdRenderItem.h">
@@ -801,6 +837,7 @@
     <ClInclude Include="Source\Renderer\SceneFrameRenderData.h" />
     <ClInclude Include="Source\Renderer\SceneRenderData.h" />
     <ClInclude Include="Source\Renderer\Text\TextLayout.h" />
+    <ClInclude Include="Source\Renderer\TrackedMemorystats.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

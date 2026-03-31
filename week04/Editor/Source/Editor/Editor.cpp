@@ -1313,7 +1313,7 @@ void FEditor::DrawAboutPopup()
         ImGui::TextWrapped("Includes third-party software such as Dear ImGui and nlohmann/json.");
         ImGui::PopStyleColor();
         ImGui::Spacing();
-        ImGui::SeparatorText("First Contributors");
+        ImGui::SeparatorText("First Contributors");  
         ImGui::Spacing();
 
         for (size_t ContributorIndex = 0; ContributorIndex < ContributorDisplayNames.size();

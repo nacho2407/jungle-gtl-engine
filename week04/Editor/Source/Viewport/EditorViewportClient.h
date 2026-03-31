@@ -198,6 +198,7 @@ private:
     FGizmoInputContext      GizmoInputContext{&GizmoController};
 
     FEditorContext* EditorContext = nullptr;
+
     /**
      * @brief 현재 viewport에서 활성화된 stat 명령들을 나타내는 플래그 집합
      */

@@ -9,6 +9,7 @@ struct FSceneFrameRenderData
 {
     bool bUseInstancing = true;
 
+    TArray<FStaticMeshRenderItem> StaticMeshes;
     TArray<FPrimitiveRenderItem> Primitives;
     TArray<FSpriteRenderItem>    Sprites;
     TArray<FTextRenderItem>      Texts;

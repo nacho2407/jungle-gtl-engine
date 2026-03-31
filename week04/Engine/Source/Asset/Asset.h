@@ -12,6 +12,7 @@ public:
 
 public:
     const FWString& GetPath() const { return SourcePath; }
+    void SetPath(const FWString& InPath) { SourcePath = InPath; }
     const FString& GetHash() const { return ImportedHash; }
     const FString& GetAssetName() const { return AssetName; }
 

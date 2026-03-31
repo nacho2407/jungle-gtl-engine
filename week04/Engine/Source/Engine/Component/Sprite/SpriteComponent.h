@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Engine/Component/Core/PrimitiveComponent.h"
+#include "Engine/Component/Mesh/QuadComponent.h"
 #include "Renderer/RenderAsset/TextureResource.h"
 #include "Renderer/Types/BasicMeshType.h" // EBasicMeshType 정의 포함
 
@@ -9,9 +9,9 @@ namespace Engine::Component
     /**
      * @brief 2D 스프라이트를 렌더링하는 컴포넌트입니다.
      */
-    class ENGINE_API USpriteComponent : public UPrimitiveComponent
+    class ENGINE_API USpriteComponent : public UQuadComponent
     {
-        DECLARE_RTTI(USpriteComponent, UPrimitiveComponent)
+        DECLARE_RTTI(USpriteComponent, UQuadComponent)
       public:
         USpriteComponent() = default;
         ~USpriteComponent() override = default;

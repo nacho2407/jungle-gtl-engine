@@ -17,7 +17,8 @@ namespace
     constexpr float SplitterWidth = 6.0f;
     constexpr float FolderTreeIndentSpacing = 4.0f;
     constexpr const char* TypeFilterLabels[] = {
-        "All", "Scene", "Texture", "Font", "Sprite Atlas", "Unknown"
+        "All", "Scene", "Texture", "Font", "Sprite Atlas", "StaticMesh",
+        "Material", "Unknown"
     };
 
     FString ToLowerAsciiCopy(const FString& Value)
@@ -79,6 +80,10 @@ namespace
             return "Font";
         case EContentBrowserItemType::SpriteAtlas:
             return "Sprite Atlas";
+        case EContentBrowserItemType::StaticMesh:
+            return "Static Mesh";
+        case EContentBrowserItemType::Material:
+            return "Material";
         case EContentBrowserItemType::UnknownFile:
         default:
             return "Unknown";
@@ -99,6 +104,10 @@ namespace
             return ImVec4(1.f, 1.f, 1.f, 1.f);
         case EContentBrowserItemType::SpriteAtlas:
             return ImVec4(0.98f, 0.58f, 0.29f, 1.0f);
+        case EContentBrowserItemType::StaticMesh:
+            return ImVec4(0.40f, 0.85f, 0.90f, 1.0f); // 청록색(Cyan) 계열
+        case EContentBrowserItemType::Material:
+            return ImVec4(1.00f, 0.00f, 0.00f, 1.0f); // 올리브/녹색 계열
         case EContentBrowserItemType::UnknownFile:
         default:
             return ImVec4(0.76f, 0.76f, 0.76f, 1.0f);
@@ -139,6 +148,16 @@ namespace
         if (Item.ItemType == EContentBrowserItemType::Scene)
         {
             return Engine::Component::EComponentAssetPathKind::SceneFile;
+        }
+        if (Item.ItemType == EContentBrowserItemType::StaticMesh)
+        {
+            return Engine::Component::EComponentAssetPathKind::StaticMeshFile; // (열거형에 없다면
+                                                                               // 추가 필요)
+        }
+        if (Item.ItemType == EContentBrowserItemType::Material)
+        {
+            return Engine::Component::EComponentAssetPathKind::MaterialFile; // (열거형에 없다면
+                                                                             // 추가 필요)
         }
 
         return Engine::Component::EComponentAssetPathKind::Any;
@@ -595,6 +614,10 @@ bool FContentBrowserPanel::PassesTypeFilter(EContentBrowserItemType ItemType) co
         return ItemType == EContentBrowserItemType::Font;
     case EItemTypeFilter::SpriteAtlas:
         return ItemType == EContentBrowserItemType::SpriteAtlas;
+    case EItemTypeFilter::StaticMesh: // <-- 추가
+        return ItemType == EContentBrowserItemType::StaticMesh;
+    case EItemTypeFilter::Material: // <-- 추가
+        return ItemType == EContentBrowserItemType::Material;
     case EItemTypeFilter::UnknownFile:
         return ItemType == EContentBrowserItemType::UnknownFile;
     default:

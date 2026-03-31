@@ -33,21 +33,21 @@
     <ClInclude Include="Source\ApplicationCore\Windows\WindowsApplication.h" />
     <ClInclude Include="Source\ApplicationCore\Windows\WindowsWindow.h" />
     <ClInclude Include="Source\Asset\Asset.h" />
-    <ClInclude Include="Source\Asset\AssetLoader.h" />
+    <ClInclude Include="Source\Asset\AssetLoader\AssetLoader.h" />
+    <ClInclude Include="Source\Asset\AssetLoader\FontAtlasLoader.h" />
+    <ClInclude Include="Source\Asset\AssetLoader\MaterialLoader.h" />
+    <ClInclude Include="Source\Asset\AssetLoader\StaticMeshLoader.h" />
+    <ClInclude Include="Source\Asset\AssetLoader\SubUVAtlasLoader.h" />
+    <ClInclude Include="Source\Asset\AssetLoader\TextureLoader.h" />
     <ClInclude Include="Source\Asset\AssetManager.h" />
     <ClInclude Include="Source\Asset\FontAsset.h" />
-    <ClInclude Include="Source\Asset\FontAtlasLoader.h" />
     <ClInclude Include="Source\Asset\Material.h" />
     <ClInclude Include="Source\Asset\MaterialInstance.h" />
     <ClInclude Include="Source\Asset\MaterialInterface.h" />
-    <ClInclude Include="Source\Asset\MaterialLoader.h" />
     <ClInclude Include="Source\Asset\StaticMesh.h" />
-    <ClInclude Include="Source\Asset\StaticMeshLoader.h" />
     <ClInclude Include="Source\Asset\StreamableRenderAsset.h" />
     <ClInclude Include="Source\Asset\SubUVAtlasAsset.h" />
-    <ClInclude Include="Source\Asset\SubUVAtlasLoader.h" />
     <ClInclude Include="Source\Asset\Texture2DAsset.h" />
-    <ClInclude Include="Source\Asset\TextureLoader.h" />
     <ClInclude Include="Source\Core\Containers\Array.h" />
     <ClInclude Include="Source\Core\Containers\LinkedList.h" />
     <ClInclude Include="Source\Core\Containers\Map.h" />
@@ -95,6 +95,7 @@
     <ClInclude Include="Source\Engine\Component\Core\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\Component\Core\SceneComponent.h" />
     <ClInclude Include="Source\Engine\Component\Core\UnknownComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Mesh\QuadComponent.h" />
     <ClInclude Include="Source\Engine\Component\Mesh\StaticMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\Sprite\AtlasComponent.h" />
     <ClInclude Include="Source\Engine\Component\Sprite\SpriteComponent.h" />
@@ -107,6 +108,7 @@
     <ClInclude Include="Source\Engine\Game\AtlasSpriteActor.h" />
     <ClInclude Include="Source\Engine\Game\EffectActor.h" />
     <ClInclude Include="Source\Engine\Game\FlipbookActor.h" />
+    <ClInclude Include="Source\Engine\Game\QuadActor.h" />
     <ClInclude Include="Source\Engine\Game\SpriteActor.h" />
     <ClInclude Include="Source\Engine\Game\StaticMeshActor.h" />
     <ClInclude Include="Source\Engine\Game\TextActor.h" />
@@ -123,6 +125,7 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11OutlineRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11RHI.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h" />
+    <ClInclude Include="Source\Renderer\D3D11\D3D11StaticMeshRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11TextBatchRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11WidgetRenderer.h" />
     <ClInclude Include="Source\Renderer\EditorRenderData.h" />
@@ -139,14 +142,17 @@
     <ClInclude Include="Source\Renderer\Submitter\OverlayMeshSubmitter.h" />
     <ClInclude Include="Source\Renderer\Submitter\SceneMeshSubmitter.h" />
     <ClInclude Include="Source\Renderer\Submitter\SpriteSubmitter.h" />
+    <ClInclude Include="Source\Renderer\Submitter\StaticMeshSubmitter.h" />
     <ClInclude Include="Source\Renderer\Submitter\TextSubmitter.h" />
     <ClInclude Include="Source\Renderer\Submitter\WorldAxesSubmitter.h" />
     <ClInclude Include="Source\Renderer\Submitter\WorldGridSubmitter.h" />
     <ClInclude Include="Source\Renderer\Text\TextLayout.h" />
+    <ClInclude Include="Source\Renderer\TrackedMemorystats.h" />
     <ClInclude Include="Source\Renderer\Types\AxisColors.h" />
     <ClInclude Include="Source\Renderer\Types\BasicMeshType.h" />
     <ClInclude Include="Source\Renderer\Types\EditorShowFlags.h" />
     <ClInclude Include="Source\Renderer\Types\MeshInstanceData.h" />
+    <ClInclude Include="Source\Renderer\Types\MeshPassParams.h" />
     <ClInclude Include="Source\Renderer\Types\ObjectIdRenderItem.h" />
     <ClInclude Include="Source\Renderer\Types\PickId.h" />
     <ClInclude Include="Source\Renderer\Types\PickResult.h" />
@@ -172,21 +178,21 @@
     <ClCompile Include="Source\ApplicationCore\Windows\WindowsApplication.cpp" />
     <ClCompile Include="Source\ApplicationCore\Windows\WindowsWindow.cpp" />
     <ClCompile Include="Source\Asset\Asset.cpp" />
-    <ClCompile Include="Source\Asset\AssetLoader.cpp" />
+    <ClCompile Include="Source\Asset\AssetLoader\AssetLoader.cpp" />
+    <ClCompile Include="Source\Asset\AssetLoader\FontAtlasLoader.cpp" />
+    <ClCompile Include="Source\Asset\AssetLoader\MaterialLoader.cpp" />
+    <ClCompile Include="Source\Asset\AssetLoader\StaticMeshLoader.cpp" />
+    <ClCompile Include="Source\Asset\AssetLoader\SubUVAtlasLoader.cpp" />
+    <ClCompile Include="Source\Asset\AssetLoader\TextureLoader.cpp" />
     <ClCompile Include="Source\Asset\AssetManager.cpp" />
     <ClCompile Include="Source\Asset\FontAsset.cpp" />
-    <ClCompile Include="Source\Asset\FontAtlasLoader.cpp" />
     <ClCompile Include="Source\Asset\Material.cpp" />
     <ClCompile Include="Source\Asset\MaterialInstance.cpp" />
     <ClCompile Include="Source\Asset\MaterialInterface.cpp" />
-    <ClCompile Include="Source\Asset\MaterialLoader.cpp" />
     <ClCompile Include="Source\Asset\StaticMesh.cpp" />
-    <ClCompile Include="Source\Asset\StaticMeshLoader.cpp" />
     <ClCompile Include="Source\Asset\StreamableRenderAsset.cpp" />
     <ClCompile Include="Source\Asset\SubUVAtlasAsset.cpp" />
-    <ClCompile Include="Source\Asset\SubUVAtlasLoader.cpp" />
     <ClCompile Include="Source\Asset\Texture2DAsset.cpp" />
-    <ClCompile Include="Source\Asset\TextureLoader.cpp" />
     <ClCompile Include="Source\Core\CoreGlobals.cpp" />
     <ClCompile Include="Source\Core\CoreMinimal.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -213,6 +219,7 @@
     <ClCompile Include="Source\Engine\Component\Core\PrimitiveComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Core\SceneComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Core\UnknownComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Mesh\QuadComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Mesh\StaticMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Sprite\AtlasComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Sprite\SpriteComponent.cpp" />
@@ -225,6 +232,7 @@
     <ClCompile Include="Source\Engine\Game\AtlasSpriteActor.cpp" />
     <ClCompile Include="Source\Engine\Game\EffectActor.cpp" />
     <ClCompile Include="Source\Engine\Game\FlipbookActor.cpp" />
+    <ClCompile Include="Source\Engine\Game\QuadActor.cpp" />
     <ClCompile Include="Source\Engine\Game\SpriteActor.cpp" />
     <ClCompile Include="Source\Engine\Game\StaticMeshActor.cpp" />
     <ClCompile Include="Source\Engine\Game\TextActor.cpp" />
@@ -237,6 +245,7 @@
     <ClCompile Include="Source\Renderer\D3D11\D3D11OutlineRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11RHI.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.cpp" />
+    <ClCompile Include="Source\Renderer\D3D11\D3D11StaticMeshRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11TextBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11WidgetRenderer.cpp" />
     <ClCompile Include="Source\Renderer\RendererModule.cpp" />
@@ -244,6 +253,7 @@
     <ClCompile Include="Source\Renderer\Submitter\OverlayMeshSubmitter.cpp" />
     <ClCompile Include="Source\Renderer\Submitter\SceneMeshSubmitter.cpp" />
     <ClCompile Include="Source\Renderer\Submitter\SpriteSubmitter.cpp" />
+    <ClCompile Include="Source\Renderer\Submitter\StaticMeshSubmitter.cpp" />
     <ClCompile Include="Source\Renderer\Submitter\TextSubmitter.cpp" />
     <ClCompile Include="Source\Renderer\Submitter\WorldAxesSubmitter.cpp" />
     <ClCompile Include="Source\Renderer\Submitter\WorldGridSubmitter.cpp" />
@@ -251,6 +261,8 @@
     <ClCompile Include="Source\SceneIO\SceneJson.cpp" />
     <ClCompile Include="Source\SceneIO\SceneSerializer.cpp" />
     <ClCompile Include="Source\SceneIO\SceneTypeRegistry.cpp" />
+    <ClCompile Include="Source\Core\Runtime\Slate\SWidget.cpp" />
+    <ClCompile Include="Source\Core\Runtime\Slate\Window\SWindow.cpp" />
     <ClCompile Include="Source\Core\Runtime\Slate\Window\SSplitter.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -307,6 +319,7 @@
       <PrecompiledHeaderFile>Core/CoreMinimal.h</PrecompiledHeaderFile>
       <ForcedIncludeFiles>Core/CoreMinimal.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <PrecompiledHeaderOutputFile>$(IntDir)CoreMinimal.pch</PrecompiledHeaderOutputFile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -329,6 +342,7 @@
       <PrecompiledHeaderFile>Core/CoreMinimal.h</PrecompiledHeaderFile>
       <ForcedIncludeFiles>Core/CoreMinimal.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <PrecompiledHeaderOutputFile>$(IntDir)CoreMinimal.pch</PrecompiledHeaderOutputFile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

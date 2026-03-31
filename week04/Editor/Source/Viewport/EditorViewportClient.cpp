@@ -3,11 +3,75 @@
 #include <cstdio>
 
 #include "ApplicationCore/Input/InputRouter.h"
+#include "Core/HAL/PlatformMemory.h"
 #include "Editor/EditorContext.h"
+#include "Engine/EngineStatics.h"
 #include "Engine/Scene.h"
 #include "Engine/Game/Actor.h"
 
 #include "imgui.h"
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
+namespace
+{
+    FString FormatBytes(uint64 Bytes)
+    {
+        constexpr double KB = 1024.0;
+        constexpr double MB = KB * 1024.0;
+        constexpr double GB = MB * 1024.0;
+        constexpr double TB = GB * 1024.0;
+
+        char Buffer[64] = {};
+
+        if (Bytes >= static_cast<uint64>(TB))
+        {
+            snprintf(Buffer, sizeof(Buffer), "%.2f TB", static_cast<double>(Bytes) / TB);
+        }
+        else if (Bytes >= static_cast<uint64>(GB))
+        {
+            snprintf(Buffer, sizeof(Buffer), "%.2f GB", static_cast<double>(Bytes) / GB);
+        }
+        else if (Bytes >= static_cast<uint64>(MB))
+        {
+            snprintf(Buffer, sizeof(Buffer), "%.2f MB", static_cast<double>(Bytes) / MB);
+        }
+        else if (Bytes >= static_cast<uint64>(KB))
+        {
+            snprintf(Buffer, sizeof(Buffer), "%.2f KB", static_cast<double>(Bytes) / KB);
+        }
+        else
+        {
+            snprintf(Buffer, sizeof(Buffer), "%llu B",
+                     static_cast<unsigned long long>(Bytes));
+        }
+
+        return FString(Buffer);
+    }
+
+    bool QueryPlatformMemoryStats(FPlatformMemoryStats& OutStats)
+    {
+        OutStats = {};
+
+        MEMORYSTATUSEX MemoryStatus = {};
+        MemoryStatus.dwLength = sizeof(MemoryStatus);
+        if (!GlobalMemoryStatusEx(&MemoryStatus))
+        {
+            return false;
+        }
+
+        OutStats.TotalPhysical = static_cast<uint64>(MemoryStatus.ullTotalPhys);
+        OutStats.AvailablePhysical = static_cast<uint64>(MemoryStatus.ullAvailPhys);
+        OutStats.UsedPhysical = OutStats.TotalPhysical - OutStats.AvailablePhysical;
+
+        OutStats.TotalVirtual = static_cast<uint64>(MemoryStatus.ullTotalVirtual);
+        OutStats.AvailableVirtual = static_cast<uint64>(MemoryStatus.ullAvailVirtual);
+        OutStats.UsedVirtual = OutStats.TotalVirtual - OutStats.AvailableVirtual;
+
+        return true;
+    }
+}
 
 void FEditorViewportClient::Create()
 {
@@ -405,5 +469,18 @@ FFPSStatData FEditorViewportClient::CollectFPSStatData() const
 FMemoryStatData FEditorViewportClient::CollectMemoryStatData() const
 {
     FMemoryStatData Data;
+
+    FPlatformMemoryStats Stats;
+    if (QueryPlatformMemoryStats(Stats))
+    {
+        Data.Rows.push_back({"Used Physical", FormatBytes(Stats.UsedPhysical)});
+        Data.Rows.push_back({"Available Physical", FormatBytes(Stats.AvailablePhysical)});
+        Data.Rows.push_back({"Used Virtual", FormatBytes(Stats.UsedVirtual)});
+        Data.Rows.push_back({"Available Virtual", FormatBytes(Stats.AvailableVirtual)});
+    }
+
+    Data.Rows.push_back({"Total Allocated (Engine)", FormatBytes(UEngineStatics::TotalAllocatedBytes)});
+    Data.Rows.push_back({"Total Allocation Counts (Engine)", std::to_string(UEngineStatics::TotalAllocationCount)});
+
     return Data;
 }

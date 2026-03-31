@@ -22,6 +22,14 @@ namespace Engine::Component
         OwnerActor = nullptr;
     }
 
+    void USceneComponent::Serialize(bool bIsLoading, void* JsonHandle)
+    {
+        // 최상위 컴포넌트이므로 부모 호출(UObject::Serialize 등)은 생략하거나
+        // 나중에 필요한 공통 데이터가 생기면 이곳에 추가합니다.
+        (void)bIsLoading;
+        (void)JsonHandle;
+    }
+
     void USceneComponent::SetRelativeLocation(const FVector& NewLocation)
     {
         if (WorldTransform.GetLocation() == NewLocation)

@@ -29,6 +29,8 @@ class FContentBrowserPanel : public IPanel
         Texture,
         Font,
         SpriteAtlas,
+        StaticMesh,
+        Material,
         UnknownFile
     };
 

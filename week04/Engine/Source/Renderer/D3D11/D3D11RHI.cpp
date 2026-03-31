@@ -1,6 +1,70 @@
 #include "Core/HAL/PlatformTypes.h"
 #include "Renderer/D3D11/D3D11RHI.h"
 
+namespace
+{
+    uint64 GetFormatBytesPerPixel(DXGI_FORMAT Format)
+    {
+        switch (Format)
+        {
+        case DXGI_FORMAT_R8G8B8A8_UNORM:
+        case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+        case DXGI_FORMAT_B8G8R8A8_UNORM:
+        case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
+        case DXGI_FORMAT_D24_UNORM_S8_UINT:
+        case DXGI_FORMAT_R24G8_TYPELESS:
+            return 4;
+        case DXGI_FORMAT_R32G32B32A32_FLOAT:
+            return 16;
+        case DXGI_FORMAT_R32G32B32_FLOAT:
+            return 12;
+        case DXGI_FORMAT_R32G32_FLOAT:
+            return 8;
+        case DXGI_FORMAT_R32_FLOAT:
+        case DXGI_FORMAT_R32_UINT:
+        case DXGI_FORMAT_D32_FLOAT:
+            return 4;
+        case DXGI_FORMAT_R16G16B16A16_FLOAT:
+        case DXGI_FORMAT_R16G16B16A16_UNORM:
+            return 8;
+        case DXGI_FORMAT_R16G16_FLOAT:
+        case DXGI_FORMAT_R16G16_UNORM:
+            return 4;
+        case DXGI_FORMAT_R16_FLOAT:
+        case DXGI_FORMAT_R16_UNORM:
+        case DXGI_FORMAT_D16_UNORM:
+            return 2;
+        case DXGI_FORMAT_R8_UNORM:
+            return 1;
+        default:
+            return 4;
+        }
+    }
+
+    uint64 EstimateTexture2DSizeBytes(const D3D11_TEXTURE2D_DESC& Desc)
+    {
+        const uint64 BytesPerPixel = GetFormatBytesPerPixel(Desc.Format);
+        uint64 TotalBytes = 0;
+
+        UINT Width = Desc.Width;
+        UINT Height = Desc.Height;
+        const UINT MipLevels = Desc.MipLevels > 0 ? Desc.MipLevels : 1;
+        const UINT SampleCount = Desc.SampleDesc.Count > 0 ? Desc.SampleDesc.Count : 1;
+
+        for (UINT MipIndex = 0; MipIndex < MipLevels; ++MipIndex)
+        {
+            const uint64 MipWidth = Width > 0 ? Width : 1;
+            const uint64 MipHeight = Height > 0 ? Height : 1;
+            TotalBytes += MipWidth * MipHeight * Desc.ArraySize * SampleCount * BytesPerPixel;
+
+            Width = Width > 1 ? Width / 2 : 1;
+            Height = Height > 1 ? Height / 2 : 1;
+        }
+
+        return TotalBytes;
+    }
+}
+
 bool FD3D11RHI::Initialize(HWND InWindowHandle)
 {
     if (InWindowHandle == nullptr)
@@ -43,6 +107,7 @@ bool FD3D11RHI::Initialize(HWND InWindowHandle)
 
     SetViewport(ViewportWidth, ViewportHeight);
     SetDefaultRenderTargets();
+    TrackedMemoryStats = {};
 
     return true;
 }
@@ -65,6 +130,7 @@ void FD3D11RHI::Shutdown()
     ViewportWidth = 0;
     ViewportHeight = 0;
     Viewport = {};
+    TrackedMemoryStats = {};
 }
 
 void FD3D11RHI::BeginFrame() { SetDefaultRenderTargets(); }
@@ -196,7 +262,7 @@ void FD3D11RHI::SetDefaultRenderTargets()
 }
 
 bool FD3D11RHI::CompileShaderFromFile(const wchar_t* InFilePath, const char* InEntryPoint,
-                                             const char* InTarget, ID3DBlob** OutShaderBlob) const
+                                      const char* InTarget, ID3DBlob** OutShaderBlob)
 {
     if (OutShaderBlob == nullptr)
     {
@@ -233,7 +299,7 @@ bool FD3D11RHI::CompileShaderFromFile(const wchar_t* InFilePath, const char* InE
 bool FD3D11RHI::CreateVertexShaderAndInputLayout(
     const wchar_t* InFilePath, const char* InEntryPoint,
     const D3D11_INPUT_ELEMENT_DESC* InInputElements, uint32 InInputElementCount,
-    ID3D11VertexShader** OutVertexShader, ID3D11InputLayout** OutInputLayout) const
+    ID3D11VertexShader** OutVertexShader, ID3D11InputLayout** OutInputLayout)
 {
     if (OutVertexShader == nullptr || OutInputLayout == nullptr)
     {
@@ -268,11 +334,13 @@ bool FD3D11RHI::CreateVertexShaderAndInputLayout(
         return false;
     }
 
+    TrackedMemoryStats.VertexShaderBlobBytes += static_cast<uint64>(VSBlob->GetBufferSize());
+
     return true;
 }
 
 bool FD3D11RHI::CreateVertexBuffer(const void* InData, uint32 InByteWidth, uint32 InStride,
-                                          bool bDynamic, ID3D11Buffer** OutVertexBuffer) const
+                                   bool bDynamic, ID3D11Buffer** OutVertexBuffer)
 {
     if (Device == nullptr || OutVertexBuffer == nullptr || InByteWidth == 0 || InStride == 0)
     {
@@ -308,11 +376,17 @@ bool FD3D11RHI::CreateVertexBuffer(const void* InData, uint32 InByteWidth, uint3
     }
 
     HRESULT Hr = Device->CreateBuffer(&Desc, InitialDataPtr, OutVertexBuffer);
-    return SUCCEEDED(Hr);
+    if (SUCCEEDED(Hr) && *OutVertexBuffer != nullptr)
+    {
+        TrackedMemoryStats.VertexBufferBytes += static_cast<uint64>(Desc.ByteWidth);
+        return true;
+    }
+
+    return false;
 }
 
 bool FD3D11RHI::CreateIndexBuffer(const void* InData, uint32 InByteWidth, bool bDynamic,
-                                         ID3D11Buffer** OutIndexBuffer) const
+                                  ID3D11Buffer** OutIndexBuffer)
 {
     if (Device == nullptr || OutIndexBuffer == nullptr || InByteWidth == 0)
     {
@@ -348,11 +422,17 @@ bool FD3D11RHI::CreateIndexBuffer(const void* InData, uint32 InByteWidth, bool b
     }
 
     HRESULT Hr = Device->CreateBuffer(&Desc, InitialDataPtr, OutIndexBuffer);
-    return SUCCEEDED(Hr);
+    if (SUCCEEDED(Hr) && *OutIndexBuffer != nullptr)
+    {
+        TrackedMemoryStats.IndexBufferBytes += static_cast<uint64>(Desc.ByteWidth);
+        return true;
+    }
+
+    return false;
 }
 
 bool FD3D11RHI::CreatePixelShader(const wchar_t* InFilePath, const char* InEntryPoint,
-                                         ID3D11PixelShader** OutPixelShader) const
+                                  ID3D11PixelShader** OutPixelShader)
 {
     if (OutPixelShader == nullptr)
     {
@@ -370,7 +450,20 @@ bool FD3D11RHI::CreatePixelShader(const wchar_t* InFilePath, const char* InEntry
     HRESULT Hr = Device->CreatePixelShader(PSBlob->GetBufferPointer(), PSBlob->GetBufferSize(),
                                            nullptr, OutPixelShader);
 
-    return SUCCEEDED(Hr);
+    if (FAILED(Hr))
+    {
+        if (*OutPixelShader)
+        {
+            (*OutPixelShader)->Release();
+            *OutPixelShader = nullptr;
+        }
+
+        return false;
+    }
+
+    TrackedMemoryStats.PixelShaderBlobBytes += static_cast<uint64>(PSBlob->GetBufferSize());
+
+    return true;
 }
 
 bool FD3D11RHI::CreateConstantBuffer(uint32         InByteWidth,
@@ -480,7 +573,16 @@ bool FD3D11RHI::CreateBackBuffer()
     Hr = Device->CreateRenderTargetView(BackBufferTexture.Get(), nullptr,
                                         BackBufferRTV.GetAddressOf());
 
-    return SUCCEEDED(Hr);
+    if (FAILED(Hr))
+    {
+        return false;
+    }
+
+    D3D11_TEXTURE2D_DESC BackBufferDesc = {};
+    BackBufferTexture->GetDesc(&BackBufferDesc);
+    TrackedMemoryStats.RenderTargetBytes += EstimateTexture2DSizeBytes(BackBufferDesc);
+
+    return true;
 }
 
 bool FD3D11RHI::CreateDepthStencilBuffer(int32 InWidth, int32 InHeight)
@@ -513,11 +615,39 @@ bool FD3D11RHI::CreateDepthStencilBuffer(int32 InWidth, int32 InHeight)
     Hr = Device->CreateDepthStencilView(DepthStencilBuffer.Get(), nullptr,
                                         DepthStencilView.GetAddressOf());
 
-    return SUCCEEDED(Hr);
+    if (FAILED(Hr))
+    {
+        return false;
+    }
+
+    TrackedMemoryStats.DepthStencilBytes += EstimateTexture2DSizeBytes(DepthDesc);
+    return true;
 }
 
 void FD3D11RHI::ReleaseBackBufferResources()
 {
+    if (DepthStencilBuffer)
+    {
+        D3D11_TEXTURE2D_DESC DepthDesc = {};
+        DepthStencilBuffer->GetDesc(&DepthDesc);
+        const uint64 DepthBytes = EstimateTexture2DSizeBytes(DepthDesc);
+        TrackedMemoryStats.DepthStencilBytes =
+            (TrackedMemoryStats.DepthStencilBytes >= DepthBytes)
+                ? (TrackedMemoryStats.DepthStencilBytes - DepthBytes)
+                : 0;
+    }
+
+    if (BackBufferTexture)
+    {
+        D3D11_TEXTURE2D_DESC BackBufferDesc = {};
+        BackBufferTexture->GetDesc(&BackBufferDesc);
+        const uint64 RenderTargetBytes = EstimateTexture2DSizeBytes(BackBufferDesc);
+        TrackedMemoryStats.RenderTargetBytes =
+            (TrackedMemoryStats.RenderTargetBytes >= RenderTargetBytes)
+                ? (TrackedMemoryStats.RenderTargetBytes - RenderTargetBytes)
+                : 0;
+    }
+
     DepthStencilView.Reset();
     DepthStencilBuffer.Reset();
 

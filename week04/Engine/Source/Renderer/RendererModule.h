@@ -11,6 +11,8 @@
 #include "Renderer/D3D11/D3D11SpriteBatchRenderer.h"
 #include "Renderer/D3D11/D3D11TextBatchRenderer.h"
 #include "Renderer/D3D11/D3D11WidgetRenderer.h"
+#include "Renderer/D3D11/D3D11StaticMeshRenderer.h"
+
 #include "Renderer/EditorRenderData.h"
 #include "Renderer/SceneFrameRenderData.h"
 #include "Renderer/SceneRenderData.h"
@@ -22,6 +24,7 @@
 #include "Renderer/Submitter/TextSubmitter.h"
 #include "Renderer/Submitter/WorldAxesSubmitter.h"
 #include "Renderer/Submitter/WorldGridSubmitter.h"
+#include "Renderer/Submitter/StaticMeshSubmitter.h"
 #include "Renderer/Types/PickResult.h"
 
 class ENGINE_API FRendererModule
@@ -61,6 +64,7 @@ class ENGINE_API FRendererModule
     FD3D11SpriteBatchRenderer SpriteRenderer;
     FD3D11ObjectIdRenderer   ObjectIdRenderer;
     FD3D11WidgetRenderer      WidgetRenderer;
+    FD3D11StaticMeshRenderer  StaticMeshRenderer;
 
     FSceneMeshSubmitter  SceneMeshSubmitter;
     FOverlayMeshSubmitter OverlayMeshSubmitter;
@@ -69,6 +73,7 @@ class ENGINE_API FRendererModule
     FAABBSubmitter       AABBSubmitter;
     FWorldGridSubmitter  WorldGridSubmitter;
     FWorldAxesSubmitter  WorldAxesSubmitter;
+    FStaticMeshSubmitter  StaticMeshSubmitter;
 
     TComPtr<ID3D11Debug> DebugDevice;
 

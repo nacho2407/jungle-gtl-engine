@@ -1,6 +1,7 @@
 #include "SceneTypeRegistry.h"
 
 #include "Engine/Component/Mesh/StaticMeshComponent.h"
+#include "Engine/Component/Mesh/QuadComponent.h"
 #include "Engine/Component/Sprite/AtlasComponent.h"
 #include "Engine/Component/Sprite/SpriteComponent.h"
 #include "Engine/Component/Sprite/SubUVComponent.h"
@@ -15,6 +16,7 @@
 #include "Engine/Game/AtlasSpriteActor.h"
 #include "Engine/Game/FlipbookActor.h"
 #include "Engine/Game/StaticMeshActor.h"
+#include "Engine/Game/QuadActor.h"
 #include "Engine/Game/UnknownActor.h"
 
 #include <typeindex>
@@ -81,16 +83,18 @@ namespace
         RegisterActorType<AFlipbookActor>("AFlipbookActor");
         RegisterActorType<AAtlasSpriteActor>("AAtlasSpriteActor");
         RegisterActorType<AStaticMeshActor>("AStaticMeshActor");
+        RegisterActorType<AQuadActor>("AQuadActor");
         RegisterActorType<AUnknownActor>("AUnknownActor");
 
         // --- 통합된 컴포넌트 시스템 등록 ---
         RegisterComponentType<Engine::Component::USpriteComponent>("USpriteComponent");
         RegisterComponentType<Engine::Component::UAtlasComponent>("UAtlasComponent");
         RegisterComponentType<Engine::Component::USubUVComponent>("USubUVComponent");
-        RegisterComponentType<Engine::Component::USubUVComponent>("USubUVAnimatedComponent");
+        RegisterComponentType<Engine::Component::USubUVAnimatedComponent>("USubUVAnimatedComponent");
         RegisterComponentType<Engine::Component::UAtlasTextComponent>("UTextComponent");
         RegisterComponentType<Engine::Component::UAtlasTextComponent>("UAtlasTextComponent");
         RegisterComponentType<Engine::Component::UStaticMeshComponent>("UStaticMeshComponent");
+        RegisterComponentType<Engine::Component::UQuadComponent>("UQuadComponent");
         RegisterComponentType<Engine::Component::UUnknownComponent>("UUnknownComponent");
     }
 } // namespace

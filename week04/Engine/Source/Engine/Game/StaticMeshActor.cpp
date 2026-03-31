@@ -13,8 +13,6 @@ AStaticMeshActor::AStaticMeshActor()
     StaticMeshComponent = new Engine::Component::UStaticMeshComponent();
     StaticMeshComponent->Name = "StaticMeshComponent";
 
-    // Logic: No slots initially. They appear only when a Static Mesh is assigned.
-
     AddOwnedComponent(StaticMeshComponent, false); // Not a root, so it's removable
 
     // Establishes parent-child relationship in the scene hierarchy
@@ -24,5 +22,19 @@ AStaticMeshActor::AStaticMeshActor()
 }
 
 AStaticMeshActor::~AStaticMeshActor() {}
+
+bool AStaticMeshActor::IsRenderable() const { return GetStaticMeshComponent() != nullptr; }
+
+bool AStaticMeshActor::IsSelected() const
+{
+    if (RootComponent == nullptr)
+    {
+        return false;
+    }
+
+    return RootComponent->IsSelected();
+}
+
+uint32 AStaticMeshActor::GetObjectId() const { return UUID; }
 
 REGISTER_CLASS(, AStaticMeshActor)
