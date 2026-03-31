@@ -1,12 +1,23 @@
-#pragma once
+﻿#pragma once
 #include <windows.h>
 #include "Singleton.h"
+#include "Runtime/ViewportRect.h"
 
 struct FGuiInputState
 {
     bool bUsingMouse = false;
     bool bUsingKeyboard = false;
+
+	bool bViewportHostVisible = false;
+	FViewportRect ViewportHostRect;
+
+	bool IsInViewportHost(int32 X, int32 Y) const
+	{
+		return bViewportHostVisible && ViewportHostRect.Contains(X, Y);
+	}
 };
+
+
 
 class InputSystem : public TSingleton<InputSystem>
 {
