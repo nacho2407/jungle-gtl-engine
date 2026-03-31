@@ -35,7 +35,9 @@ void FObjManager::ScanMeshAssets()
 {
 	AvailableMeshFiles.clear();
 
-	auto AddFilesFromRoot = [](const std::filesystem::path& RootPath, const wchar_t* TargetExt, TArray<FMeshAssetListItem>& OutFiles)
+	std::map<FString, FMeshAssetListItem> MergedItems;
+
+	auto AddFilesFromRoot = [](const std::filesystem::path& RootPath, const wchar_t* TargetExt, std::map<FString, FMeshAssetListItem>& OutMap)
 		{
 			if (!std::filesystem::exists(RootPath))
 			{
@@ -55,22 +57,28 @@ void FObjManager::ScanMeshAssets()
 					continue;
 				}
 
-				std::filesystem::path RelativePath = std::filesystem::relative(Path, RootPath);
+				FString Key = FPaths::ToUtf8(Path.stem().wstring());
 
 				FMeshAssetListItem Item;
-				Item.DisplayName = FPaths::ToUtf8(RelativePath.wstring());
+				Item.DisplayName = Key;
 				Item.FullPath = FPaths::ToUtf8(Path.wstring());
 
-				OutFiles.push_back(Item);
+				OutMap[Key] = Item;
 			}
 		};
 
 	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Data\\";
 	const std::filesystem::path MeshCacheRoot = FPaths::RootDir() + L"Asset\\MeshCache\\";
 
-	AddFilesFromRoot(DataRoot, L".obj", AvailableMeshFiles);
-	AddFilesFromRoot(MeshCacheRoot, L".bin", AvailableMeshFiles);
+	// bin이 같은 키를 덮어쓰도록 우선적용
+	AddFilesFromRoot(DataRoot, L".obj", MergedItems);
+	AddFilesFromRoot(MeshCacheRoot, L".bin", MergedItems);
 
+	AvailableMeshFiles.reserve(MergedItems.size());
+	for (auto& [Key, Item] : MergedItems)
+	{
+		AvailableMeshFiles.push_back(std::move(Item));
+	}
 }
 
 const TArray<FMeshAssetListItem>& FObjManager::GetAvailableMeshFiles()
