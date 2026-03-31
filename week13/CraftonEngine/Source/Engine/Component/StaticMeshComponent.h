@@ -26,9 +26,9 @@ public:
 	void SetStaticMesh(UStaticMesh* InMesh);
 	UStaticMesh* GetStaticMesh() const;
 
-	void SetMaterial(int32 ElementIndex, UMaterial* InMaterial);
-	UMaterial* GetMaterial(int32 ElementIndex) const;
-	const TArray<UMaterial*>& GetOverrideMaterials() const { return OverrideMaterials; }
+	void SetMaterial(int32 ElementIndex, std::shared_ptr<UMaterial> InMaterial);
+	std::shared_ptr<UMaterial> GetMaterial(int32 ElementIndex) const;
+	const TArray<std::shared_ptr<UMaterial>>& GetOverrideMaterials() const { return OverrideMaterials; }
 
 	void Serialize(bool bIsLoading, json::JSON& Handle);
 
@@ -43,7 +43,7 @@ private:
 
 	UStaticMesh* StaticMesh = nullptr;
 	FString StaticMeshPath = "None";
-	TArray<UMaterial*> OverrideMaterials;
+	TArray<std::shared_ptr<UMaterial>> OverrideMaterials;
 	TArray<FString> OverrideMaterialPaths;
 
 	FVector CachedLocalCenter = { 0, 0, 0 };
