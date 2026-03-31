@@ -6,6 +6,8 @@
 #include "Engine/Game/Actor.h"
 #include "Engine/Scene.h"
 #include "Viewport/Selection/ViewportSelectionController.h"
+#include "Panel/ConsolePanel.h"
+#include "Panel/PanelManager.h"
 
 bool FEditorGlobalController::CanDeleteSelectedActors() const
 {
@@ -150,4 +152,39 @@ void FEditorGlobalController::RequestAboutPopup()
     }
 
     Context->Editor->RequestAboutPopUp();
+}
+
+void FEditorGlobalController::RequestConsoleInputFocus()
+{
+    if (Context == nullptr || Context->Editor == nullptr)
+    {
+        return;
+    }
+
+    FPanelManager* PanelManager = Context->Editor->GetPanelManager();
+    if (PanelManager == nullptr)
+    {
+        return;
+    }
+
+    FPanelOpenRequest Request;
+    Request.PanelType = std::type_index(typeid(FConsolePanel));
+    Request.OpenPolicy = EPanelOpenPolicy::FocusIfOpenElseCreate;
+
+    IPanel* ExistingPanel = PanelManager->FindPanel(Request);
+    FConsolePanel* ConsolePanel = static_cast<FConsolePanel*>(ExistingPanel);
+    if (ConsolePanel != nullptr && ConsolePanel->IsOpen() && ConsolePanel->IsInputFocused())
+    {
+        ConsolePanel->SetOpen(false);
+        return;
+    }
+
+    IPanel* Panel = PanelManager->OpenPanel(Request);
+    ConsolePanel = static_cast<FConsolePanel*>(Panel);
+    if (ConsolePanel == nullptr)
+    {
+        return;
+    }
+
+    ConsolePanel->RequestInputFocus();
 }

@@ -488,6 +488,7 @@ void FConsolePanel::DrawInputRow()
     const bool bSubmitted =
         ImGui::InputText("##ConsoleInput", InputBuffer.data(), InputBuffer.size(),
                          ImGuiInputTextFlags_EnterReturnsTrue);
+    bInputFocused = ImGui::IsItemActive() || ImGui::IsItemFocused();
     ImGui::PopItemWidth();
 
     if (bSubmitted)

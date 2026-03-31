@@ -42,6 +42,8 @@ namespace Engine::ApplicationCore
                 return EKey::N2;
             case '3':
                 return EKey::N3;
+            case VK_OEM_3:
+                return EKey::Tilde;
             default:
                 return EKey::Unknown;
             }

@@ -17,15 +17,6 @@ bool FEditorGlobalContext::HandleEvent(const Engine::ApplicationCore::FInputEven
         return false;
     }
 
-    if (ImGui::GetCurrentContext() != nullptr)
-    {
-        const ImGuiIO& IO = ImGui::GetIO();
-        if (IO.WantCaptureKeyboard || IO.WantTextInput)
-        {
-            return false;
-        }
-    }
-
     if (Controller == nullptr)
     {
         return false;
@@ -34,6 +25,22 @@ bool FEditorGlobalContext::HandleEvent(const Engine::ApplicationCore::FInputEven
     const bool bCtrlDown = State.Modifiers.bCtrlDown;
     const bool bShiftDown = State.Modifiers.bShiftDown;
     const bool bAltDown = State.Modifiers.bAltDown;
+    const bool bIsConsoleToggle = !bCtrlDown && !bShiftDown && !bAltDown && Event.Key == EKey::Tilde;
+
+    if (bIsConsoleToggle)
+    {
+        Controller->RequestConsoleInputFocus();
+        return true;
+    }
+
+    if (ImGui::GetCurrentContext() != nullptr)
+    {
+        const ImGuiIO& IO = ImGui::GetIO();
+        if (IO.WantCaptureKeyboard || IO.WantTextInput)
+        {
+            return false;
+        }
+    }
 
     if (bCtrlDown && !bAltDown)
     {

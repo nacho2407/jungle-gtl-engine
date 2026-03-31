@@ -28,6 +28,7 @@ public:
     void SaveScene();
     void SaveSceneAs();
     void RequestAboutPopup();
+    void RequestConsoleInputFocus();
 
 private:
     FScene* Scene = nullptr;
