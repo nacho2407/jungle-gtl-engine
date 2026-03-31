@@ -17795,6 +17795,7 @@ void ImGui::DockContextClearNodes(ImGuiContext* ctx, ImGuiID root_id, bool clear
 {
     IM_UNUSED(ctx);
     IM_ASSERT(ctx == GImGui);
+    
     DockBuilderRemoveNodeDockedWindows(root_id, clear_settings_refs);
     DockBuilderRemoveNodeChildNodes(root_id);
 }

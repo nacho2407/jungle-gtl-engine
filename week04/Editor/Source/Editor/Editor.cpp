@@ -357,6 +357,44 @@ namespace
         Area.bValid = bValid;
         return Area;
     }
+
+    void ApplyInitialDockLayoutIfNeeded(ImGuiID DockSpaceId, const ImVec2& DockSpaceSize)
+    {
+        ImGuiDockNode* RootNode = ImGui::DockBuilderGetNode(DockSpaceId);
+        if (RootNode == nullptr)
+        {
+            return;
+        }
+
+        const bool bHasExistingSplit =
+            RootNode->ChildNodes[0] != nullptr || RootNode->ChildNodes[1] != nullptr;
+        const bool bHasExistingWindows = RootNode->Windows.Size > 0;
+        if (bHasExistingSplit || bHasExistingWindows)
+        {
+            return;
+        }
+
+        // imgui.ini가 아직 없는 첫 실행에서만 기본 패널 배치를 한 번 만듭니다.
+        ImGui::DockBuilderRemoveNode(DockSpaceId);
+        ImGui::DockBuilderAddNode(DockSpaceId,
+                                  RootDockSpaceFlags | ImGuiDockNodeFlags_DockSpace);
+        ImGui::DockBuilderSetNodeSize(DockSpaceId, DockSpaceSize);
+
+        ImGuiID MainNode = DockSpaceId;
+        ImGuiID RightNode = 0;
+        ImGuiID RightTopNode = 0;
+        ImGuiID RightBottomNode = 0;
+
+        ImGui::DockBuilderSplitNode(MainNode, ImGuiDir_Right, 0.25f, &RightNode, &MainNode);
+        ImGui::DockBuilderSplitNode(RightNode, ImGuiDir_Up, 0.4f, &RightTopNode,
+                                    &RightBottomNode);
+
+        // 중앙은 WindowOverlayManager가 실제 viewport 작업 영역으로 사용하므로 비워 둡니다.
+        // 우측은 Unreal 스타일에 맞게 Outliner를 위, Details를 아래에 둡니다.
+        ImGui::DockBuilderDockWindow("Outliner", RightTopNode);
+        ImGui::DockBuilderDockWindow("Details", RightBottomNode);
+        ImGui::DockBuilderFinish(DockSpaceId);
+    }
 } // namespace
 
 void FEditor::Create()
@@ -1455,6 +1493,9 @@ void FEditor::DrawRootDockSpace()
     {
         const ImGuiID DockSpaceId = ImGui::GetID("EditorRootDockSpace");
         ImGui::DockSpace(DockSpaceId, ImVec2(0.0f, 0.0f), RootDockSpaceFlags);
+
+        ApplyInitialDockLayoutIfNeeded(DockSpaceId,
+                                       ImVec2(SafeDockSpaceWidth, SafeDockSpaceHeight));
 
         ImGuiDockNode* RootNode = ImGui::DockBuilderGetNode(DockSpaceId);
         ImGuiDockNode* CentralNode = FindCentralDockNode(RootNode);

@@ -114,6 +114,7 @@ class FEditor
     FEditorViewportClient&       GetViewportClient() { return ViewportClient; }
     const FEditorViewportClient& GetViewportClient() const { return ViewportClient; }
     FWindowOverlayManager*       GetWindowOverlayManager() { return WindowOverlayManager; }
+    class FPanelManager*         GetPanelManager() const { return PanelManager; }
 
     void DrawPanel();
 
@@ -121,8 +122,6 @@ class FEditor
     void ClearActiveViewportStats();
 
     const FViewportAvailableArea& GetViewportAvailableArea() const { return ViewportAvailableArea; }
-
-    FPanelManager* GetPanelManager() const { return PanelManager; }
     
   private:
     void BuildRenderData();

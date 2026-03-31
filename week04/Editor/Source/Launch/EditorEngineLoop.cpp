@@ -660,6 +660,11 @@ bool FEditorEngineLoop::RunFrameOnceWithoutResize()
     InputSystem->BeginFrame();
     UpdateFrameTiming();
 
+    // 누적 시간 업데이트 및 렌더러에 전달
+    static float TotalTime = 0.0f;
+    TotalTime += DeltaTime;
+    Renderer->SetTime(TotalTime);
+
     Editor->SetMainLoopFPS(MainLoopFPS);
     
     Editor->Tick(DeltaTime, InputSystem);

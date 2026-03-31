@@ -24,6 +24,8 @@ namespace Engine::ApplicationCore
                 return EKey::D;
             case 'E':
                 return EKey::E;
+            case 'R':
+                return EKey::R;
             case 'Q':
                 return EKey::Q;
             case 'N':
@@ -34,6 +36,8 @@ namespace Engine::ApplicationCore
                 return EKey::X;
             case VK_SPACE:
                 return EKey::Space;
+            case VK_F2:
+                return EKey::F2;
             case VK_DELETE:
                 return EKey::Delete;
             case '1':

@@ -21,6 +21,7 @@ class FPropertiesPanel : public IPanel
     void Draw() override;
 
     void SetTarget(const FVector& Location, const FVector& Rotation, const FVector& Scale);
+    void StartRenaming(Engine::Component::USceneComponent* InComponent) const;
 
   private:
     AActor*                             ResolveSelectedActor() const;
@@ -44,7 +45,6 @@ class FPropertiesPanel : public IPanel
      * 
      * @param InComponent 이름을 변경할 대상 컴포넌트입니다.
      */
-    void StartRenaming(Engine::Component::USceneComponent* InComponent) const;
 
   private:
     FVector                             EditLocation = {0.f, 0.f, 0.f};

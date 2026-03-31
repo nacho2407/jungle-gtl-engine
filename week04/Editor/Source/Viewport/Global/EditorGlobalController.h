@@ -15,6 +15,7 @@ public:
 
     void SetScene(FScene* InScene) { Scene = InScene; }
     void SetEditorContext(FEditorContext* InContext) { Context = InContext; }
+    FEditorContext* GetEditorContext() const { return Context; }
     void SetSelectionController(FViewportSelectionController* InSelectionController)
     {
         SelectionController = InSelectionController;

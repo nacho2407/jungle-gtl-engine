@@ -34,6 +34,28 @@ namespace Engine::Asset
         return nullptr;
     }
 
+    FMaterialData* UMaterial::GetMaterialDataMutable(const FString& SubMaterialName)
+    {
+        if (Resource)
+        {
+            auto It = Resource->Materials.find(SubMaterialName);
+            if (It != Resource->Materials.end())
+            {
+                return &It->second;
+            }
+        }
+        return nullptr;
+    }
+
+    void UMaterial::SetUVScrollSpeed(const FString& SubMaterialName, const FVector2& NewSpeed)
+    {
+        FMaterialData* Data = GetMaterialDataMutable(SubMaterialName);
+        if (Data)
+        {
+            Data->UVScrollSpeed = NewSpeed;
+        }
+    }
+
     void UMaterial::AddTextureDependency(UTexture2DAsset* InTexture)
     {
         if (InTexture && !HasTextureDependency(InTexture))

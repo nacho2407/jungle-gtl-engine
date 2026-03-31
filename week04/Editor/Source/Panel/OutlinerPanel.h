@@ -26,14 +26,13 @@ class FOutlinerPanel : public IPanel
     int32          GetWindowMenuOrder() const override { return 0; }
 
     void Draw() override;
+    void StartRenaming(AActor* InActor);
 
   private:
     void DrawToolbar();
     void DrawEmptyState() const;
     void DrawActorRow(AActor* Actor);
     void SpawnActors() const;
-
-    void StartRenaming(AActor* InActor);
 
   private:
     ESpawnActorType SpawnActorType = ESpawnActorType::StaticMesh;

@@ -23,6 +23,10 @@ namespace Engine::Asset
 
         void Initialize(const FSourceRecord& InSource, std::shared_ptr<::FMaterialResource> InResource);
         virtual const FMaterialData* GetMaterialData(const FString& SubMaterialName) const override;
+        
+        // 데이터 수정을 위한 비-const 버전 추가
+        FMaterialData* GetMaterialDataMutable(const FString& SubMaterialName);
+        void SetUVScrollSpeed(const FString& SubMaterialName, const FVector2& NewSpeed);
 
         TArray<UTexture2DAsset*>&       GetReferencedTextures() { return ReferencedTextures; }
         const TArray<UTexture2DAsset*>& GetReferencedTextures() const { return ReferencedTextures; }

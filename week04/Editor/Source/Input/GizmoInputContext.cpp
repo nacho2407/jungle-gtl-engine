@@ -103,32 +103,41 @@ bool FGizmoInputContext::HandleEvent(const Engine::ApplicationCore::FInputEvent&
     case EInputEventType::KeyDown:
     {
         if (Event.Key == EKey::Space)
+        {
             GizmoController->ChangeGizmoType();
+            return true;
+        }
         else if (Event.Key == EKey::X)
+        {
             GizmoController->ChangeWorldMode();
-            else if (Event.Key == EKey::N1)
-            {
-                bool bSnapping;
-                float Dummy;
-                GizmoController->GetTranslateSnapping(bSnapping, Dummy);
-                GizmoController->SetTranslateSnapping(!bSnapping, Dummy);
-            }
-            else if (Event.Key == EKey::N2)
-            {
-                bool bSnapping;
-                float Dummy;
-                GizmoController->GetRotateSnapping(bSnapping, Dummy);
-                GizmoController->SetRotateSnapping(!bSnapping, Dummy);
-            }
-            else if (Event.Key == EKey::N3)
-            {
-                bool bSnapping;
-                float Dummy;
-                GizmoController->GetScaleSnapping(bSnapping, Dummy);
-                GizmoController->SetScaleSnapping(!bSnapping, Dummy);
-            }
-            
-        return true;
+            return true;
+        }
+        else if (Event.Key == EKey::N1)
+        {
+            bool  bSnapping;
+            float Dummy;
+            GizmoController->GetTranslateSnapping(bSnapping, Dummy);
+            GizmoController->SetTranslateSnapping(!bSnapping, Dummy);
+            return true;
+        }
+        else if (Event.Key == EKey::N2)
+        {
+            bool  bSnapping;
+            float Dummy;
+            GizmoController->GetRotateSnapping(bSnapping, Dummy);
+            GizmoController->SetRotateSnapping(!bSnapping, Dummy);
+            return true;
+        }
+        else if (Event.Key == EKey::N3)
+        {
+            bool  bSnapping;
+            float Dummy;
+            GizmoController->GetScaleSnapping(bSnapping, Dummy);
+            GizmoController->SetScaleSnapping(!bSnapping, Dummy);
+            return true;
+        }
+
+        return false; // 처리하지 않은 키는 다른 컨텍스트로 전파
     }
     break;
     }
