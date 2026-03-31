@@ -427,16 +427,13 @@ void FEditorViewportClient::DrawMemoryStatOverlay(const FMemoryStatData& InData,
         return;
     }
 
-    const ImVec2 Padding(10.0f, 8.0f);
-    const ImVec2 PanelOffset(18.0f, 18.0f);
-    const float  RowHeight = 22.0f;
+    const ImVec2 PanelOffset(20.0f, 20.0f);
+    const float  RowHeight = 20.0f;
     const float  LabelValueGap = 24.0f;
     const float  MinPanelWidth = 320.0f;
 
-    const ImU32 PanelBgColor = IM_COL32(8, 12, 10, 190);
-    const ImU32 RowBgEvenColor = IM_COL32(18, 34, 22, 170);
-    const ImU32 RowBgOddColor = IM_COL32(26, 48, 32, 170);
-    const ImU32 BorderColor = IM_COL32(90, 180, 110, 180);
+    const ImU32 RowBgEvenColor = IM_COL32(70, 70, 70, 110);
+    const ImU32 RowBgOddColor = IM_COL32(40, 40, 40, 110);
     const ImU32 LabelColor = IM_COL32(170, 255, 180, 255);
     const ImU32 ValueColor = IM_COL32(120, 255, 140, 255);
 
@@ -451,52 +448,47 @@ void FEditorViewportClient::DrawMemoryStatOverlay(const FMemoryStatData& InData,
         MaxValueWidth = std::max(MaxValueWidth, ImGui::CalcTextSize(Row.Value.c_str()).x);
     }
 
-    const float PanelWidth =
-        std::max(MinPanelWidth, Padding.x * 2.0f + MaxLabelWidth + LabelValueGap + MaxValueWidth);
-    const float PanelHeight = Padding.y * 2.0f + RowHeight * static_cast<float>(InData.Rows.size());
+    const float PanelWidth = std::max(MinPanelWidth, MaxLabelWidth + LabelValueGap + MaxValueWidth);
+    const float PanelHeight = RowHeight * static_cast<float>(InData.Rows.size());
 
     ImVec2 PanelMax(PanelMin.x + PanelWidth, PanelMin.y + PanelHeight);
 
-    // viewport 밖으로 넘치지 않게 살짝 보정
-    if (PanelMax.x > ViewPos.x + ViewSize.x - 8.0f)
+    if (PanelMax.x > ViewPos.x + ViewSize.x)
     {
-        const float ShiftX = PanelMax.x - (ViewPos.x + ViewSize.x - 8.0f);
+        const float ShiftX = PanelMax.x - (ViewPos.x + ViewSize.x);
         PanelMin.x -= ShiftX;
         PanelMax.x -= ShiftX;
     }
 
-    if (PanelMax.y > ViewPos.y + ViewSize.y - 8.0f)
+    if (PanelMax.y > ViewPos.y + ViewSize.y)
     {
-        const float ShiftY = PanelMax.y - (ViewPos.y + ViewSize.y - 8.0f);
+        const float ShiftY = PanelMax.y - (ViewPos.y + ViewSize.y);
         PanelMin.y -= ShiftY;
         PanelMax.y -= ShiftY;
     }
 
-    DrawList->AddRectFilled(PanelMin, PanelMax, PanelBgColor, 6.0f);
-    DrawList->AddRect(PanelMin, PanelMax, BorderColor, 6.0f, 0, 1.0f);
+    const float LabelX = PanelMin.x;
+    const float ValueRightX = PanelMax.x;
 
-    const float LabelX = PanelMin.x + Padding.x;
-    const float ValueX = PanelMax.x - Padding.x;
-
-    for (int32 RowIndex = 0; RowIndex < static_cast<int32>(InData.Rows.size()); ++RowIndex)
+    for (int32 RowIndex = 0; RowIndex < static_cast<int32>(InData.Rows.size()); RowIndex++)
     {
         const FMemoryStatRow& Row = InData.Rows[RowIndex];
 
-        const float RowTop = PanelMin.y + Padding.y + RowHeight * static_cast<float>(RowIndex);
+        const float RowTop = PanelMin.y + RowHeight * static_cast<float>(RowIndex);
         const float RowBottom = RowTop + RowHeight;
         const ImU32 RowColor = (RowIndex % 2 == 0) ? RowBgEvenColor : RowBgOddColor;
 
-        DrawList->AddRectFilled(ImVec2(PanelMin.x + 4.0f, RowTop),
-                                ImVec2(PanelMax.x - 4.0f, RowBottom), RowColor, 3.0f);
+        DrawList->AddRectFilled(ImVec2(PanelMin.x, RowTop), ImVec2(PanelMax.x, RowBottom), RowColor,
+                                0.0f);
 
         const ImVec2 LabelSize = ImGui::CalcTextSize(Row.Label.c_str());
         const ImVec2 ValueSize = ImGui::CalcTextSize(Row.Value.c_str());
 
         const float TextY = RowTop + (RowHeight - LabelSize.y) * 0.5f;
-        const float ValueTextX = ValueX - ValueSize.x;
+        const float ValueX = ValueRightX - ValueSize.x;
 
         DrawList->AddText(ImVec2(LabelX, TextY), LabelColor, Row.Label.c_str());
-        DrawList->AddText(ImVec2(ValueTextX, TextY), ValueColor, Row.Value.c_str());
+        DrawList->AddText(ImVec2(ValueX, TextY), ValueColor, Row.Value.c_str());
     }
 }
 

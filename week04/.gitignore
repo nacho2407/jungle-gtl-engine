@@ -458,7 +458,6 @@ FodyWeavers.xsd
 #Rider CMake Project for Showing Dependency diagram
 CMakeLists.txt
 
-# 잠시 실례하겠습니다...
 AGENTS.md
 codex-ref/
 # Gemini TODO
@@ -470,3 +469,5 @@ GEMINI_TODO.md
 !Editor/Content/Sample obj/
 !Editor/Content/Sample obj/**/*.obj
 
+# Crash Log
+CrashLog.txt
