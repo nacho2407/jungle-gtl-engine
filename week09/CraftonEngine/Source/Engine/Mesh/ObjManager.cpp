@@ -128,14 +128,14 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 	if (bNeedRebuild)
 	{
 		// 무거운 OBJ 파싱 진행
-		auto NewMeshAsset = new FStaticMesh();
-		TArray<FStaticMaterial> NewMaterialSlots;
+		auto NewMeshAsset = std::make_unique<FStaticMesh>();
+		TArray<FStaticMaterial> ParsedMaterials;
 
-		if (FObjImporter::Import(PathFileName, *NewMeshAsset, NewMaterialSlots))
+		if (FObjImporter::Import(PathFileName, *NewMeshAsset, ParsedMaterials))
 		{
 			NewMeshAsset->PathFileName = PathFileName;
 			StaticMesh->SetStaticMeshAsset(std::move(NewMeshAsset));
-			StaticMesh->SetStaticMaterials(std::move(NewMaterialSlots));
+			StaticMesh->SetStaticMaterials(std::move(ParsedMaterials));
 
 			// 파싱 결과를 하드디스크에 굽기 (다음 로딩 속도 최적화)
 			FWindowsBinWriter Writer(BinPath);
