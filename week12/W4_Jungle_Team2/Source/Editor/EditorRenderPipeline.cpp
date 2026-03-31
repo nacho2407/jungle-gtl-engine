@@ -7,6 +7,7 @@
 #include "GameFramework/World.h"
 #include "Core/Logging/Stats.h"
 #include "Core/Logging/GPUProfiler.h"
+#include "Engine/Runtime/WindowsWindow.h"
 #include "Runtime/SceneView.h"
 
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer)
@@ -29,16 +30,33 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 
 	if (!Editor->GetWorld()) return;
 
+	// 화면 Resize 목적으로 render 전에 화면 resizing
+	const FViewportRect& HostRect = Editor->GetViewportLayout().GetHostRect();
+	int32 TargetWidth = HostRect.Width;
+	int32 TargetHeight = HostRect.Height;
+
+	if ((TargetWidth <= 0 || TargetHeight <= 0) && Editor->GetWindow())
+	{
+		TargetWidth = static_cast<int32>(Editor->GetWindow()->GetWidth());
+		TargetHeight = static_cast<int32>(Editor->GetWindow()->GetHeight());
+	}
+
+	if (TargetWidth > 0 && TargetHeight > 0)
+	{
+		Renderer.GetFD3DDevice().EnsureViewportRenderTargets(TargetWidth, TargetHeight);
+	}
+
 	// 1회: 전체 백버퍼 클리어 (색상 + 깊이/스텐실)
-	// BeginFrame 내부에서 RSSetViewports(전체창)도 호출되므로
-	// 각 뷰포트에서 SetSubViewport로 덮어씁니다.
 	Renderer.BeginFrame();
+	Renderer.UseViewportRenderTargets();
 
 	// 4개 뷰포트를 순서대로 렌더링
 	for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
 	{
 		RenderViewport(Renderer, i);
 	}
+
+	Renderer.UseBackBufferRenderTargets();
 
 	// ImGui UI 오버레이
 	Editor->RenderUI(DeltaTime);
@@ -62,8 +80,11 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
 	// 2. 렌더링 대상을 서브 영역으로 제한
 	const FViewportRect& Rect = SceneView.ViewRect;
 	if (Rect.Width <= 0 || Rect.Height <= 0) return;
+	const FViewportRect& HostRect = Editor->GetViewportLayout().GetHostRect();
+	const int32 LocalX = Rect.X - HostRect.X;
+	const int32 LocalY = Rect.Y - HostRect.Y;
 
-	Renderer.GetFD3DDevice().SetSubViewport(Rect.X, Rect.Y, Rect.Width, Rect.Height);
+	Renderer.GetFD3DDevice().SetSubViewport(LocalX, LocalY, Rect.Width, Rect.Height);
 
 	// 3. 이 뷰포트용 렌더 데이터 수집
 	Bus.Clear();

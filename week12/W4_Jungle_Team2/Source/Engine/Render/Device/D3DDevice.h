@@ -34,6 +34,22 @@ enum class ERasterizerState
 	WireFrame,
 };
 
+struct FRenderTargetSet
+{
+	ID3D11RenderTargetView* SceneColorRTV = nullptr;
+	ID3D11ShaderResourceView* SceneColorSRV = nullptr;
+	ID3D11RenderTargetView* SelectionMaskRTV = nullptr;
+	ID3D11ShaderResourceView* SelectionMaskSRV = nullptr;
+	ID3D11DepthStencilView* DepthStencilView = nullptr;
+	float Width = 0.0f;
+	float Height = 0.0f;
+
+	bool IsValid() const
+	{
+		return SceneColorRTV != nullptr && DepthStencilView != nullptr && Width > 0.0f && Height > 0.0f;
+	}
+};
+
 class FD3DDevice
 {
 private:
@@ -46,6 +62,12 @@ private:
 	ID3D11Texture2D* SelectionMaskBuffer = nullptr;
 	ID3D11RenderTargetView* SelectionMaskRTV = nullptr;
 	ID3D11ShaderResourceView* SelectionMaskSRV = nullptr;
+	ID3D11Texture2D* ViewportSceneColorTexture = nullptr;
+	ID3D11RenderTargetView* ViewportSceneColorRTV = nullptr;
+	ID3D11ShaderResourceView* ViewportSceneColorSRV = nullptr;
+	ID3D11Texture2D* ViewportSelectionMaskTexture = nullptr;
+	ID3D11RenderTargetView* ViewportSelectionMaskRTV = nullptr;
+	ID3D11ShaderResourceView* ViewportSelectionMaskSRV = nullptr;
 
 	ID3D11RasterizerState* RasterizerStateBackCull = nullptr;
 	ID3D11RasterizerState* RasterizerStateFrontCull = nullptr;
@@ -54,6 +76,8 @@ private:
 
 	ID3D11Texture2D* DepthStencilBuffer = nullptr;
 	ID3D11DepthStencilView* DepthStencilView = nullptr;
+	ID3D11Texture2D* ViewportDepthStencilTexture = nullptr;
+	ID3D11DepthStencilView* ViewportDepthStencilView = nullptr;
 
 	ID3D11DepthStencilState* DepthStencilStateDefault = nullptr;
 	ID3D11DepthStencilState* DepthStencilStateDepthReadOnly = nullptr;
@@ -76,6 +100,8 @@ private:
 
 	BOOL bTearingSupported = FALSE;
 	UINT SwapChainFlags = 0;
+	uint32 ViewportRenderTargetWidth = 0;
+	uint32 ViewportRenderTargetHeight = 0;
 
 public:
 
@@ -86,6 +112,8 @@ private:
 
 	void CreateFrameBuffer();
 	void ReleaseFrameBuffer();
+	void CreateViewportRenderTargets(uint32 Width, uint32 Height);
+	void ReleaseViewportRenderTargets();
 
 	void CreateRasterizerState();
 	void ReleaseRasterizerState();
@@ -106,6 +134,7 @@ public:
 	void EndFrame();
 
 	void OnResizeViewport(int width, int height);
+	void EnsureViewportRenderTargets(int width, int height);
 
 	/*
 	 * 렌더링 대상 : 지정한 서브 영역으로 제한
@@ -120,8 +149,11 @@ public:
 	ID3D11RenderTargetView* GetSelectionMaskRTV() const { return SelectionMaskRTV; }
 	ID3D11ShaderResourceView* GetSelectionMaskSRV() const { return SelectionMaskSRV; }
 	ID3D11DepthStencilView* GetDepthStencilView() const { return DepthStencilView; }
+	ID3D11ShaderResourceView* GetViewportSceneColorSRV() const { return ViewportSceneColorSRV; }
 	float GetViewportWidth() const { return ViewportInfo.Width; }
 	float GetViewportHeight() const { return ViewportInfo.Height; }
+	FRenderTargetSet GetBackBufferRenderTargets() const;
+	FRenderTargetSet GetViewportRenderTargets() const;
 
 	void SetDepthStencilState(EDepthStencilState InState);
 	void SetBlendState(EBlendState InState);

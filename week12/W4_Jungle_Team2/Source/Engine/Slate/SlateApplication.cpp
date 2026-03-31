@@ -1,6 +1,5 @@
 ﻿#include "SlateApplication.h"
 #include "SWindow.h"
-#include "imgui.h"
 
 void FSlateApplication::Initialize()
 {
@@ -30,12 +29,6 @@ void FSlateApplication::Paint()
 
 bool FSlateApplication::OnMouseMove(void* hwnd, int32 X, int32 Y)
 {
-	// ImGui 입력일 경우 무시합니다.
-	if (ImGui::GetIO().WantCaptureMouse)
-	{
-		return true;
-	}
-
 	// 드래그 중(CapturedWidget 존재): 캡처된 위젯에만 전달합니다.
 	if (CapturedWidget)
 	{
@@ -56,12 +49,6 @@ bool FSlateApplication::OnMouseMove(void* hwnd, int32 X, int32 Y)
 
 bool FSlateApplication::OnMouseButtonDown(void* hwnd, int32 Button, int32 X, int32 Y)
 {
-	// ImGui 입력일 경우 무시합니다.
-	if (ImGui::GetIO().WantCaptureMouse)
-	{
-		return false;
-	}
-
 	SWidget* Hit = HitTest(X, Y);
 	if (!Hit) return false;
 
@@ -72,12 +59,6 @@ bool FSlateApplication::OnMouseButtonDown(void* hwnd, int32 Button, int32 X, int
 
 bool FSlateApplication::OnMouseButtonUp(void* hwnd, int32 Button, int32 X, int32 Y)
 {
-	// ImGui 입력일 경우 무시합니다.
-	if (ImGui::GetIO().WantCaptureMouse)
-	{
-		return false;
-	}
-
 	// 드래그 종료: 캡처된 위젯에 Up 이벤트를 전달하고 해제합니다.
 	if (CapturedWidget)
 	{
