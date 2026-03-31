@@ -11,6 +11,11 @@ class ENGINE_API SSplitter : public SWindow
     float    WindowHeight= 0;
     bool     bIsClicked  = false;
 
+    float AreaMinX = 0.0f;
+    float AreaMaxX = 0.0f;
+    float AreaMinY = 0.0f;
+    float AreaMaxY = 0.0f;
+
   public:
     void Init(float X, float Y, float InWidth, float InHeight, float InWindowWidth, float InWindowHeight)
     {
@@ -39,6 +44,14 @@ class ENGINE_API SSplitter : public SWindow
     float GetWindowHeight()const { return WindowHeight; }
 
     virtual ~SSplitter() = default;
+
+    void SetPanelAreaBounds(float InMinX, float InMaxX, float InMinY, float InMaxY)
+    {
+        AreaMinX = InMinX;
+        AreaMaxX = InMaxX;
+        AreaMinY = InMinY;
+        AreaMaxY = InMaxY;
+    }
 };
 
 class ENGINE_API SSplitterV : public SSplitter

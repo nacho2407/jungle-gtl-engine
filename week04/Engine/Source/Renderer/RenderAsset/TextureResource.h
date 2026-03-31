@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/CoreMinimal.h"
 #include "Renderer/D3D11/D3D11Common.h"
+#include "Renderer/MemoryTracker.h"
 
 #include <dxgiformat.h>
 
@@ -13,6 +14,7 @@ struct FTextureResource
 
 	TComPtr<ID3D11Texture2D> Texture;
 	TComPtr<ID3D11ShaderResourceView> SRV;
+    FTrackedTextureAllocationHandle TextureAllocationHandle;
 
 	ID3D11ShaderResourceView* GetSRV() const { return SRV.Get(); }
 };

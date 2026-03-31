@@ -1,5 +1,6 @@
 #include "Core/HAL/PlatformTypes.h"
 #include "Renderer/D3D11/D3D11RHI.h"
+#include "Renderer/MemoryTracker.h"
 
 bool FD3D11RHI::Initialize(HWND InWindowHandle)
 {
@@ -23,6 +24,8 @@ bool FD3D11RHI::Initialize(HWND InWindowHandle)
     {
         return false;
     }
+
+    GMemoryTracker.ResetTrackedMemoryStats();
 
     if (!CreateDeviceAndSwapChain(WindowHandle))
     {
@@ -196,7 +199,7 @@ void FD3D11RHI::SetDefaultRenderTargets()
 }
 
 bool FD3D11RHI::CompileShaderFromFile(const wchar_t* InFilePath, const char* InEntryPoint,
-                                             const char* InTarget, ID3DBlob** OutShaderBlob) const
+                                      const char* InTarget, ID3DBlob** OutShaderBlob)
 {
     if (OutShaderBlob == nullptr)
     {
@@ -233,7 +236,7 @@ bool FD3D11RHI::CompileShaderFromFile(const wchar_t* InFilePath, const char* InE
 bool FD3D11RHI::CreateVertexShaderAndInputLayout(
     const wchar_t* InFilePath, const char* InEntryPoint,
     const D3D11_INPUT_ELEMENT_DESC* InInputElements, uint32 InInputElementCount,
-    ID3D11VertexShader** OutVertexShader, ID3D11InputLayout** OutInputLayout) const
+    ID3D11VertexShader** OutVertexShader, ID3D11InputLayout** OutInputLayout)
 {
     if (OutVertexShader == nullptr || OutInputLayout == nullptr)
     {
@@ -268,11 +271,13 @@ bool FD3D11RHI::CreateVertexShaderAndInputLayout(
         return false;
     }
 
+    GMemoryTracker.AddVertexShaderBlobBytes(static_cast<uint64>(VSBlob->GetBufferSize()));
+
     return true;
 }
 
 bool FD3D11RHI::CreateVertexBuffer(const void* InData, uint32 InByteWidth, uint32 InStride,
-                                          bool bDynamic, ID3D11Buffer** OutVertexBuffer) const
+                                   bool bDynamic, ID3D11Buffer** OutVertexBuffer)
 {
     if (Device == nullptr || OutVertexBuffer == nullptr || InByteWidth == 0 || InStride == 0)
     {
@@ -308,11 +313,17 @@ bool FD3D11RHI::CreateVertexBuffer(const void* InData, uint32 InByteWidth, uint3
     }
 
     HRESULT Hr = Device->CreateBuffer(&Desc, InitialDataPtr, OutVertexBuffer);
-    return SUCCEEDED(Hr);
+    if (SUCCEEDED(Hr) && *OutVertexBuffer != nullptr)
+    {
+        GMemoryTracker.AddVertexBufferBytes(static_cast<uint64>(Desc.ByteWidth));
+        return true;
+    }
+
+    return false;
 }
 
 bool FD3D11RHI::CreateIndexBuffer(const void* InData, uint32 InByteWidth, bool bDynamic,
-                                         ID3D11Buffer** OutIndexBuffer) const
+                                  ID3D11Buffer** OutIndexBuffer)
 {
     if (Device == nullptr || OutIndexBuffer == nullptr || InByteWidth == 0)
     {
@@ -348,11 +359,17 @@ bool FD3D11RHI::CreateIndexBuffer(const void* InData, uint32 InByteWidth, bool b
     }
 
     HRESULT Hr = Device->CreateBuffer(&Desc, InitialDataPtr, OutIndexBuffer);
-    return SUCCEEDED(Hr);
+    if (SUCCEEDED(Hr) && *OutIndexBuffer != nullptr)
+    {
+        GMemoryTracker.AddIndexBufferBytes(static_cast<uint64>(Desc.ByteWidth));
+        return true;
+    }
+
+    return false;
 }
 
 bool FD3D11RHI::CreatePixelShader(const wchar_t* InFilePath, const char* InEntryPoint,
-                                         ID3D11PixelShader** OutPixelShader) const
+                                  ID3D11PixelShader** OutPixelShader)
 {
     if (OutPixelShader == nullptr)
     {
@@ -370,7 +387,20 @@ bool FD3D11RHI::CreatePixelShader(const wchar_t* InFilePath, const char* InEntry
     HRESULT Hr = Device->CreatePixelShader(PSBlob->GetBufferPointer(), PSBlob->GetBufferSize(),
                                            nullptr, OutPixelShader);
 
-    return SUCCEEDED(Hr);
+    if (FAILED(Hr))
+    {
+        if (*OutPixelShader)
+        {
+            (*OutPixelShader)->Release();
+            *OutPixelShader = nullptr;
+        }
+
+        return false;
+    }
+
+    GMemoryTracker.AddPixelShaderBlobBytes(static_cast<uint64>(PSBlob->GetBufferSize()));
+
+    return true;
 }
 
 bool FD3D11RHI::CreateConstantBuffer(uint32         InByteWidth,
@@ -480,7 +510,16 @@ bool FD3D11RHI::CreateBackBuffer()
     Hr = Device->CreateRenderTargetView(BackBufferTexture.Get(), nullptr,
                                         BackBufferRTV.GetAddressOf());
 
-    return SUCCEEDED(Hr);
+    if (FAILED(Hr))
+    {
+        return false;
+    }
+
+    D3D11_TEXTURE2D_DESC BackBufferDesc = {};
+    BackBufferTexture->GetDesc(&BackBufferDesc);
+    GMemoryTracker.AddRenderTargetBytes(GMemoryTracker.EstimateTexture2DSizeBytes(BackBufferDesc));
+
+    return true;
 }
 
 bool FD3D11RHI::CreateDepthStencilBuffer(int32 InWidth, int32 InHeight)
@@ -513,11 +552,32 @@ bool FD3D11RHI::CreateDepthStencilBuffer(int32 InWidth, int32 InHeight)
     Hr = Device->CreateDepthStencilView(DepthStencilBuffer.Get(), nullptr,
                                         DepthStencilView.GetAddressOf());
 
-    return SUCCEEDED(Hr);
+    if (FAILED(Hr))
+    {
+        return false;
+    }
+
+    GMemoryTracker.AddDepthStencilBytes(GMemoryTracker.EstimateTexture2DSizeBytes(DepthDesc));
+    return true;
 }
 
 void FD3D11RHI::ReleaseBackBufferResources()
 {
+    if (DepthStencilBuffer)
+    {
+        D3D11_TEXTURE2D_DESC DepthDesc = {};
+        DepthStencilBuffer->GetDesc(&DepthDesc);
+        GMemoryTracker.RemoveDepthStencilBytes(GMemoryTracker.EstimateTexture2DSizeBytes(DepthDesc));
+    }
+
+    if (BackBufferTexture)
+    {
+        D3D11_TEXTURE2D_DESC BackBufferDesc = {};
+        BackBufferTexture->GetDesc(&BackBufferDesc);
+        GMemoryTracker.RemoveRenderTargetBytes(
+            GMemoryTracker.EstimateTexture2DSizeBytes(BackBufferDesc));
+    }
+
     DepthStencilView.Reset();
     DepthStencilBuffer.Reset();
 

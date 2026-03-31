@@ -80,7 +80,8 @@ void FShortcutsPanel::Draw()
     static constexpr FShortcutEntry EditorEntries[] = {
         {"1 / 2 / 3", "뷰 모드 전환 (Lit / Unlit / Wireframe)"},
         {"F2", "선택된 대상의 이름 변경"},
-        {"Delete", "선택된 Actor 또는 Component 삭제"}};
+        {"Delete", "선택된 Actor 또는 Component 삭제"},
+        {"`", "콘솔 패널 토글"}};
 
     bool bOpen = IsOpen();
     if (ImGui::Begin("Shortcuts", &bOpen))

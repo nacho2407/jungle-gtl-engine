@@ -33,6 +33,7 @@ namespace Engine::ApplicationCore
         N2,
         N3,
         Count,
+        Tilde
     };
 
     enum class EInputEventType

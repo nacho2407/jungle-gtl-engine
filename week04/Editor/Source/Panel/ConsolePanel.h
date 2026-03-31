@@ -15,10 +15,13 @@ class FConsolePanel : public IPanel
 
     const wchar_t* GetPanelID() const override;
     const wchar_t* GetDisplayName() const override;
-    bool ShouldOpenByDefault() const override { return true; }
+    bool ShouldOpenByDefault() const override { return false; }
     int32 GetWindowMenuOrder() const override { return 30; }
 
     void Draw() override;
+
+    void RequestInputFocus() { bReclaimInputFocus = true; }
+    bool IsInputFocused() const { return bInputFocused; }
 
   private:
     void DrawToolbar();
@@ -34,5 +37,6 @@ class FConsolePanel : public IPanel
     bool bAutoScroll = true;
     bool bScrollToBottom = false;
     bool bReclaimInputFocus = false;
+    bool bInputFocused = false;
 };
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Containers/Array.h"
+#include "Core/HAL/PlatformMemory.h"
 
 class UAssetManager;
 class UObject;
