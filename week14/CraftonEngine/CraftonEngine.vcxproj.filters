@@ -191,6 +191,9 @@
     <ClCompile Include="Source\Editor\Viewport\FLevelViewportLayout.cpp">
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\StaticMeshActor.cpp">
+      <Filter>Source\Engine</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Collision\RayUtils.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
@@ -402,7 +405,6 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source\Engine\StaticMeshActor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -452,6 +454,9 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\LevelEditorViewportClient.h">
       <Filter>Source\Editor\Viewport</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\StaticMeshActor.h">
+      <Filter>Source\Engine</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\RayUtils.h">
       <Filter>Source\Engine\Collision</Filter>
@@ -735,6 +740,5 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\StaticMeshActor.h" />
   </ItemGroup>
 </Project>
