@@ -17,7 +17,6 @@
 #include "Panel/PanelManager.h"
 #include "Panel/PropertiesPanel.h"
 #include "Panel/ShortcutsPanel.h"
-#include "Panel/StatePanel.h"
 
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
@@ -394,7 +393,6 @@ void FEditor::Create()
     PanelManager->RegisterPanelInstance<FOutlinerPanel>();
     PanelManager->RegisterPanelInstance<FPropertiesPanel>();
     PanelManager->RegisterPanelInstance<FShortcutsPanel>();
-    PanelManager->RegisterPanelInstance<FStatePanel>();
 
     // PanelManager->RegisterPanelInstance<FSamplePanel>(&LogBuffer);
 

@@ -270,16 +270,27 @@ namespace
         return bChanged;
     }
 
-    bool DrawMaterialAssetCombo(Engine::Component::UMeshComponent* MeshComp, uint32 SlotIndex,
+    bool DrawMaterialAssetCombo(Engine::Component::UMeshComponent* MeshComp, uint32 SlotIndex, 
                                 FEditorContext* Context)
     {
         if (MeshComp == nullptr || !MeshComp->IsValidLowLevel() || Context == nullptr)
             return false;
 
         Engine::Asset::UMaterialInterface* CurrentMat = MeshComp->GetMaterial(SlotIndex);
-        // 현재 적용된 머티리얼이 있다면 그 이름을, 없으면 None 표시
-        FString CurrentDisplayName =
-            (CurrentMat && CurrentMat->IsValidLowLevel()) ? CurrentMat->GetAssetName() : "None";
+
+        // 이름 결정 로직 강화
+        FString CurrentDisplayName = "None";
+        if (CurrentMat && CurrentMat->IsValidLowLevel())
+        {
+            CurrentDisplayName = CurrentMat->GetAssetName();
+            if (CurrentDisplayName.empty())
+            {
+                // 차선책: 경로에서 파일 이름 추출
+                std::filesystem::path Path(CurrentMat->GetPath());
+                CurrentDisplayName = Path.filename().string().c_str();
+            }
+        }
+
         std::string LabelId = "Material Slot " + std::to_string(SlotIndex + 1);
 
         bool bChanged = false;

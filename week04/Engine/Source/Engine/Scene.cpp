@@ -202,11 +202,6 @@ void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFla
                     continue;
                 }
 
-                UE_LOG(Scene, ELogVerbosity::Log,
-                       "[BuildRenderData][StaticMesh] Actor=%s Component=%s Asset=%p Resource=%p",
-                       Actor->Name.ToFString().c_str(), StaticMeshComp->Name.ToFString().c_str(),
-                       StaticMeshAsset, Resource);
-
                 FStaticMeshRenderItem MeshItem = {};
 
                 // 1. 트랜스폼 데이터 세팅
@@ -218,9 +213,6 @@ void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFla
 
                 // 3. 서브 메시 개수만큼 매핑된 머티리얼 포인터 수집
                 const size_t SubMeshCount = Resource->SubMeshes.size();
-                UE_LOG(Scene, ELogVerbosity::Log,
-                       "[BuildRenderData][StaticMesh] Actor=%s Resource=%p SubMeshCount=%zu",
-                       Actor->Name.ToFString().c_str(), Resource, SubMeshCount);
 
                 uint32 NumSubMeshes = static_cast<uint32>(SubMeshCount);
                 for (uint32 i = 0; i < NumSubMeshes; ++i)

@@ -135,9 +135,6 @@
     <ClCompile Include="Source\Panel\ShortcutsPanel.cpp">
       <Filter>Source\Panel</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Panel\StatePanel.cpp">
-      <Filter>Source\Panel</Filter>
-    </ClCompile>
     <ClCompile Include="Source\ThirdParty\ImGui\imgui.cpp">
       <Filter>Source\ThirdParty\ImGui</Filter>
     </ClCompile>
@@ -273,9 +270,6 @@
       <Filter>Source\Panel</Filter>
     </ClInclude>
     <ClInclude Include="Source\Panel\ShortcutsPanel.h">
-      <Filter>Source\Panel</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Panel\StatePanel.h">
       <Filter>Source\Panel</Filter>
     </ClInclude>
     <ClInclude Include="Source\ThirdParty\ImGui\imconfig.h">
