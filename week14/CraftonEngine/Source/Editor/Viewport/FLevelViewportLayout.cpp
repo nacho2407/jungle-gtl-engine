@@ -13,6 +13,7 @@
 #include "ImGui/imgui.h"
 #include "WICTextureLoader.h"
 #include "Component/CameraComponent.h"
+#include "Component/GizmoComponent.h"
 
 // ─── 레이아웃별 슬롯 수 ─────────────────────────────────────
 
@@ -748,6 +749,36 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 				}
 			}
 			ImGui::EndPopup();
+		}
+
+		// ── Gizmo Mode 팝업 ──
+		UGizmoComponent* Gizmo = Editor->GetGizmo();
+		if (Gizmo)
+		{
+			ImGui::SameLine();
+
+			static const char* GizmoModeNames[] = { "Translate", "Rotate", "Scale" };
+			const char* CurrentModeName = GizmoModeNames[static_cast<int32>(Gizmo->GetMode())];
+
+			char GizmoPopupID[64];
+			snprintf(GizmoPopupID, sizeof(GizmoPopupID), "GizmoModePopup_%d", SlotIndex);
+
+			if (ImGui::Button(CurrentModeName))
+			{
+				ImGui::OpenPopup(GizmoPopupID);
+			}
+
+			if (ImGui::BeginPopup(GizmoPopupID))
+			{
+				int32 CurrentGizmoMode = static_cast<int32>(Gizmo->GetMode());
+				if (ImGui::RadioButton("Translate", &CurrentGizmoMode, static_cast<int32>(UGizmoComponent::Translate)))
+					Gizmo->SetTranslateMode();
+				if (ImGui::RadioButton("Rotate", &CurrentGizmoMode, static_cast<int32>(UGizmoComponent::Rotate)))
+					Gizmo->SetRotateMode();
+				if (ImGui::RadioButton("Scale", &CurrentGizmoMode, static_cast<int32>(UGizmoComponent::Scale)))
+					Gizmo->SetScaleMode();
+				ImGui::EndPopup();
+			}
 		}
 
 		// ── Settings 팝업 ──

@@ -25,6 +25,8 @@ cbuffer GizmoBuffer : register(b2)
     uint bClicking;
     uint SelectedAxis;
     float HoveredAxisOpacity;
+    uint AxisMask;       // 비트 0=X, 1=Y, 2=Z
+    uint3 _gizmoPad;
 };
 
 #endif // CONSTANT_BUFFERS_HLSL
