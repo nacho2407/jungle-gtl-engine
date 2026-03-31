@@ -7,6 +7,7 @@
 #include "Serialization/Archive.h"
 #include "Engine/Object/FName.h"
 #include "Materials/Material.h"
+#include "Mesh/ObjManager.h"
 #include <memory>
 
 // Cooked Data 내부용 정점
@@ -36,14 +37,14 @@ struct FStaticMeshSection
 struct FStaticMaterial
 {
 	// std::shared_ptr<class UMaterialInterface> MaterialInterface;
-	std::shared_ptr<class UMaterial> MaterialInterface;
+	UMaterial* MaterialInterface;
 	FString MaterialSlotName = "None"; // "None"은 특별한 슬롯 이름으로, OBJ 파일에서 머티리얼이 지정되지 않은 섹션에 할당됩니다.
 
 	friend FArchive& operator<<(FArchive& Ar, FStaticMaterial& Mat)
 	{
 		Ar << Mat.MaterialSlotName;
 
-		if (Ar.IsLoading()) Mat.MaterialInterface = std::make_shared<UMaterial>();
+		if (Ar.IsLoading()) Mat.MaterialInterface = FObjManager::GetOrLoadMaterial(Mat.MaterialSlotName);
 
 		Ar << Mat.MaterialInterface->PathFileName;
 		Ar << Mat.MaterialInterface->DiffuseTextureFilePath;
