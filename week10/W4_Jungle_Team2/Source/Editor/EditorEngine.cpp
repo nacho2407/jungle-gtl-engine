@@ -99,6 +99,8 @@ void UEditorEngine::Tick(float DeltaTime)
 
 void UEditorEngine::RenderUI(float DeltaTime)
 {
+	FViewportRect HostRect = GetViewportLayout().GetHostRect();
+	GetRenderer().GetFD3DDevice().EnsureViewportRenderTargets(HostRect.Width, HostRect.Height);
 	MainPanel.Render(DeltaTime);
 }
 

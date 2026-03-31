@@ -46,7 +46,7 @@ void UTextRenderComponent::UpdateWorldAABB() const
 	FVector Extent(Ex, Ey, Ez);
 
 	FVector WorldCenter = GetWorldLocation();
-	WorldCenter -= WorldRight * (ScaledWidth * 0.5f);
+	// WorldCenter -= WorldRight * (ScaledWidth * 0.5f);
 
 	WorldAABB.Expand(WorldCenter - Extent);
 	WorldAABB.Expand(WorldCenter + Extent);
@@ -160,8 +160,10 @@ FMatrix UTextRenderComponent::CalculateOutlineMatrix(const FMatrix& BillboardWor
 
 	float TotalLocalWidth = (Len * CharWidth);
 
-	float CenterY = TotalLocalWidth * -0.5f;
-	float CenterZ = 0.0f; // 상하 정렬이 중앙이라면 0
+	// CenterY는 가로, CenterZ는 세로 정렬을 의미, 실제 CursorX 이동은 FontBatcher의 AddText()를 참조
+	// 중앙 정렬이라면 0, 왼쪽 정렬이라면 TotalLocalWidth * -0.5f, 오른쪽정렬이라면 TotalLocalWidth * 0.5f
+	float CenterY = 0.0f;
+	float CenterZ = 0.0f;
 
 	FMatrix ScaleMatrix = FMatrix::MakeScaleMatrix(FVector(1.0f, TotalLocalWidth, CharHeight));
 	FMatrix TransMatrix = FMatrix::MakeTranslationMatrix(FVector(0.0f, CenterY, CenterZ));
