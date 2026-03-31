@@ -234,7 +234,7 @@ bool FD3D11MeshBatchRenderer::CreateConstantBuffers()
     }
 
     const bool bSingleOk =
-        RHI->CreateConstantBuffer(sizeof(FMeshUnlitConstants), SingleConstantBuffer.GetAddressOf());
+        RHI->CreateConstantBuffer(sizeof(FMeshLitConstants), SingleConstantBuffer.GetAddressOf());
 
     const bool bInstancedOk = RHI->CreateConstantBuffer(sizeof(FMeshUnlitInstancedConstants),
                                                         InstancedConstantBuffer.GetAddressOf());
@@ -584,9 +584,14 @@ void FD3D11MeshBatchRenderer::DrawMeshBatch(EBasicMeshType InType, EMeshDrawPath
 
         for (const FMeshDrawData& Draw : Draws)
         {
-            FMeshUnlitConstants Constants = {};
+            FMeshLitConstants Constants = {};
             Constants.MVP = Draw.World * InSceneView->GetViewProjectionMatrix();
+            Constants.World = Draw.World;
             Constants.BaseColor = Draw.Color;
+            Constants.bEnableLighting = (CurrentPassParams.ViewMode == EViewModeIndex::VMI_Lit) ? 1 : 0;
+            Constants.Time = CurrentPassParams.Time;
+            Constants.ScrollSpeedX = 0.0f;
+            Constants.ScrollSpeedY = 0.0f;
 
             if (!RHI->UpdateConstantBuffer(SingleConstantBuffer.Get(), &Constants,
                                            sizeof(Constants)))

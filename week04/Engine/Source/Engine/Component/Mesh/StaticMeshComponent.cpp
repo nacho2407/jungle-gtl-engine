@@ -162,5 +162,14 @@ namespace Engine::Component
         return UMeshComponent::GetNumMaterials();
     }
 
+    FString UStaticMeshComponent::GetSubMaterialName(uint32 Index) const
+    {
+        if (StaticMesh)
+        {
+            return StaticMesh->GetSubMaterialName(Index);
+        }
+        return UMeshComponent::GetSubMaterialName(Index);
+    }
+
     REGISTER_CLASS(Engine::Component, UStaticMeshComponent)
 } // namespace Engine::Component

@@ -32,7 +32,7 @@ bool FD3D11WidgetRenderer::Initialize(FD3D11RHI* InRHI)
 	
 	RHI->CreateVertexBuffer(QuadVert, sizeof(QuadVert) * 4, sizeof(QuadVert), false, VertexBuffer.GetAddressOf());
     RHI->CreateIndexBuffer(Indices, sizeof(Indices), false, IndexBuffer.GetAddressOf());
-    RHI->CreateConstantBuffer(sizeof(FMeshUnlitConstants), ConstantBuffer.GetAddressOf());
+    RHI->CreateConstantBuffer(sizeof(FMeshLitConstants), ConstantBuffer.GetAddressOf());
 
 	// Render states
     D3D11_DEPTH_STENCIL_DESC DS_DESC = {};
@@ -88,7 +88,7 @@ void FD3D11WidgetRenderer::DrawWidget(ID3D11DeviceContext* Context, float X, flo
         0.f, 0.f, 1.f, 0.f,
         X,   Y, 0.f, 1.f);
 
-    FMeshUnlitConstants CB = {}; // 전체 초기화
+    FMeshLitConstants CB = {}; // FMeshLitConstants로 교체
     CB.MVP       = Model * OrthographicMatrix;
     CB.World     = FMatrix::Identity;
     CB.bEnableLighting = 0; // 위젯은 라이팅 비활성화

@@ -27,6 +27,7 @@ namespace Engine::Component
         virtual void SetMaterial(uint32 Index, Asset::UMaterialInterface* InMaterial);
         virtual Asset::UMaterialInterface* GetMaterial(uint32 Index) const;
         virtual uint32                     GetNumMaterials() const;
+        virtual FString                    GetSubMaterialName(uint32 Index) const;
 
         virtual void DescribeProperties(FComponentPropertyBuilder& Builder) override;
 

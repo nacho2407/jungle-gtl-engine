@@ -6,8 +6,9 @@ class FSceneView;
 
 struct FMeshPassParams
 {
-    const FSceneView* SceneView = nullptr;
-    EViewModeIndex    ViewMode = EViewModeIndex::VMI_Lit;
-    bool              bUseInstancing = true;
-    bool              bDisableDepth = false;
+    const class FSceneView* SceneView = nullptr;
+    EViewModeIndex          ViewMode = EViewModeIndex::VMI_Lit;
+    bool                    bUseInstancing = false;
+    bool                    bDisableDepth = false;
+    float                   Time = 0.0f; // 누적 시간 추가
 };

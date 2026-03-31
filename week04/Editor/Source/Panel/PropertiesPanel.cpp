@@ -2,6 +2,7 @@
 
 // 기초 에셋 헤더를 최상단에 배치하여 불완전 형식 에러 방지
 #include "Asset/MaterialInterface.h"
+#include "Asset/Material.h"
 #include "Asset/StaticMesh.h"
 
 // 컴포넌트 헤더 배치
@@ -349,6 +350,47 @@ namespace
                 }
             }
             ImGui::EndCombo();
+        }
+
+        // --- 머티리얼 세부 속성 조절 UI 추가 ---
+        if (CurrentMat && CurrentMat->IsValidLowLevel())
+        {
+            if (auto* Mat = Cast<Engine::Asset::UMaterial>(CurrentMat))
+            {
+                FString SubMatName = MeshComp->GetSubMaterialName(SlotIndex);
+                if (auto* Data = Mat->GetMaterialDataMutable(SubMatName))
+                {
+                    ImGui::Indent(20.0f);
+                    
+                    ImGui::TextUnformatted("UV Scroll Speed");
+                    ImGui::PushID("UVScrollSpeed");
+                    
+                    float SpeedX = Data->UVScrollSpeed.X;
+                    float SpeedY = Data->UVScrollSpeed.Y;
+
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted("X:"); ImGui::SameLine();
+                    ImGui::SetNextItemWidth(70.0f);
+                    if (ImGui::DragFloat("##X", &SpeedX, 0.001f, -10.0f, 10.0f, "%.3f"))
+                    {
+                        Data->UVScrollSpeed.X = SpeedX;
+                        bChanged = true;
+                    }
+
+                    ImGui::SameLine(150.0f);
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted("Y:"); ImGui::SameLine();
+                    ImGui::SetNextItemWidth(70.0f);
+                    if (ImGui::DragFloat("##Y", &SpeedY, 0.001f, -10.0f, 10.0f, "%.3f"))
+                    {
+                        Data->UVScrollSpeed.Y = SpeedY;
+                        bChanged = true;
+                    }
+
+                    ImGui::PopID();
+                    ImGui::Unindent(20.0f);
+                }
+            }
         }
 
         return bChanged;
@@ -891,46 +933,65 @@ void FPropertiesPanel::DrawTransformEditor(Engine::Component::USceneComponent* C
         GetContext()->Editor->MarkSceneDirty();
 }
 
-void FPropertiesPanel::DrawComponentPropertyEditor(Engine::Component::USceneComponent* TargetComp)
-{
-    if (TargetComp == nullptr || !TargetComp->IsValidLowLevel())
-        return;
-
-    bool bMod = false;
-
-    if (TargetComp->IsA(Engine::Component::UMeshComponent::GetClass()))
+    void FPropertiesPanel::DrawComponentPropertyEditor(Engine::Component::USceneComponent* TargetComp)
     {
-        Engine::Component::UMeshComponent* MeshComp =
-            (Engine::Component::UMeshComponent*)TargetComp;
-        if (MeshComp->GetNumMaterials() > 0)
+        if (TargetComp == nullptr || !TargetComp->IsValidLowLevel())
+            return;
+
+        bool bMod = false;
+
+        // 1. Properties 섹션 (먼저 노출)
+        Engine::Component::FComponentPropertyBuilder Builder;
+        TargetComp->DescribeProperties(Builder);
+
+        // 노출할 속성이 있는지 먼저 확인
+        bool bHasExposedProperties = false;
+        for (const auto& Desc : Builder.GetProperties())
         {
-            ImGui::TextUnformatted("Materials");
-            for (uint32 i = 0; i < MeshComp->GetNumMaterials(); ++i)
+            if (Desc.bExposeInDetails)
             {
-                ImGui::PushID(i);
-                if (DrawMaterialAssetCombo(MeshComp, i, GetContext()))
+                bHasExposedProperties = true;
+                break;
+            }
+        }
+
+        if (bHasExposedProperties)
+        {
+            ImGui::TextUnformatted("Properties");
+            for (const auto& Desc : Builder.GetProperties())
+            {
+                if (!Desc.bExposeInDetails)
+                    continue;
+                if (DrawComponentPropertyRow(Desc, &AssetPathEditBuffers, GetContext()))
+                {
                     bMod = true;
-                ImGui::PopID();
+                    if (Desc.Type == Engine::Component::EComponentPropertyType::AssetPath && GetContext() &&
+                        GetContext()->AssetManager)
+                        TargetComp->ResolveAssetReferences(GetContext()->AssetManager);
+                }
             }
             ImGui::Separator();
         }
-    }
 
-    Engine::Component::FComponentPropertyBuilder Builder;
-    TargetComp->DescribeProperties(Builder);
-    ImGui::TextUnformatted("Properties");
-    for (const auto& Desc : Builder.GetProperties())
-    {
-        if (!Desc.bExposeInDetails)
-            continue;
-        if (DrawComponentPropertyRow(Desc, &AssetPathEditBuffers, GetContext()))
+        // 2. Materials 섹션 (나중에 노출)
+        if (TargetComp->IsA(Engine::Component::UMeshComponent::GetClass()))
         {
-            bMod = true;
-            if (Desc.Type == Engine::Component::EComponentPropertyType::AssetPath && GetContext() &&
-                GetContext()->AssetManager)
-                TargetComp->ResolveAssetReferences(GetContext()->AssetManager);
+            Engine::Component::UMeshComponent* MeshComp =
+                (Engine::Component::UMeshComponent*)TargetComp;
+            if (MeshComp->GetNumMaterials() > 0)
+            {
+                ImGui::TextUnformatted("Materials");
+                for (uint32 i = 0; i < MeshComp->GetNumMaterials(); ++i)
+                {
+                    ImGui::PushID(i);
+                    if (DrawMaterialAssetCombo(MeshComp, i, GetContext()))
+                        bMod = true;
+                    ImGui::PopID();
+                }
+                ImGui::Separator();
+            }
         }
+
+        if (bMod && GetContext() && GetContext()->Editor)
+            GetContext()->Editor->MarkSceneDirty();
     }
-    if (bMod && GetContext() && GetContext()->Editor)
-        GetContext()->Editor->MarkSceneDirty();
-}
