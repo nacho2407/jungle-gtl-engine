@@ -35,6 +35,7 @@ public:
 	FShowFlags GetShowFlags() const { return ShowFlags; }
 	const FVector& GetWireframeColor() const { return WireframeColor; }
 	void SetWireframeColor(const FVector& InColor) { WireframeColor = InColor; }
+	bool IsOrthographic() const { return Proj.M[3][3] == 1.0f; }
 
 private:
 	TArray<FRenderCommand> PassQueues[(uint32)ERenderPass::MAX];

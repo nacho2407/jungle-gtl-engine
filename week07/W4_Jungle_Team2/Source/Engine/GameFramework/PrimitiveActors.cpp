@@ -25,6 +25,15 @@ REGISTER_FACTORY(APlaneActor)
 DEFINE_CLASS(AAttachTestActor, AActor) 
 REGISTER_FACTORY(AAttachTestActor)
 
+DEFINE_CLASS(AStaticMeshActor, AActor) 
+REGISTER_FACTORY(AStaticMeshActor)
+
+DEFINE_CLASS(ASubUVActor, AActor) 
+REGISTER_FACTORY(ASubUVActor)
+
+DEFINE_CLASS(ATextRenderActor, AActor) 
+REGISTER_FACTORY(ATextRenderActor)
+
 void ACubeActor::InitDefaultComponents()
 {
 	auto* Cube = AddComponent<UStaticMeshComponent>();
@@ -35,7 +44,7 @@ void ACubeActor::InitDefaultComponents()
 	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
 	Text->SetFont(FName("Default"));
 	Text->AttachToComponent(Cube);
-	Text->SetText("UUID : " + std::to_string(GetUUID()));
+	Text->SetText("UUID: " + std::to_string(GetUUID()));
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 
 	// SubUV
@@ -56,7 +65,7 @@ void ASphereActor::InitDefaultComponents()
 	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
 	Text->SetFont(FName("Default"));
 	Text->AttachToComponent(Sphere);
-	Text->SetText("UUID : " + std::to_string(GetUUID()));
+	Text->SetText("UUID: " + std::to_string(GetUUID()));
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 
 	// SubUV
@@ -119,6 +128,54 @@ void AAttachTestActor::InitDefaultComponents()
 	// Text attached directly to Root
 	auto* Text = AddComponent<UTextRenderComponent>();
 	Text->AttachToComponent(Cube);
-	Text->SetText("UUID : " + std::to_string(GetUUID()));
+	Text->SetText("UUID: " + std::to_string(GetUUID()));
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.5f));
+}
+
+void AStaticMeshActor::InitDefaultComponents()
+{
+	auto* StaticMesh = AddComponent<UStaticMeshComponent>();;
+	SetRootComponent(StaticMesh);
+
+	// Text attached directly to Root
+	auto* Text = AddComponent<UTextRenderComponent>();
+	Text->AttachToComponent(StaticMesh);
+	Text->SetFont(FName("Default"));
+	Text->SetText("UUID: " + std::to_string(GetUUID()));
+
+	FVector Extent = StaticMesh->GetWorldAABB().GetExtent();
+	Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Z * 2.0f));
+}
+
+void ASubUVActor::InitDefaultComponents()
+{
+    auto* SubUV = AddComponent<USubUVComponent>();
+    SetRootComponent(SubUV);
+	SubUV->SetParticle(FName("Explosion"));
+	SubUV->SetSpriteSize(2.0f, 2.0f);
+	SubUV->SetFrameRate(30.f);
+    
+    auto* Text = AddComponent<UTextRenderComponent>();
+    Text->AttachToComponent(SubUV);
+    Text->SetFont(FName("Default"));
+    Text->SetText("UUID: " + std::to_string(GetUUID()));
+
+    FVector Extent = SubUV->GetWorldAABB().GetExtent();
+    Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Z * 2.0f));
+}
+
+void ATextRenderActor::InitDefaultComponents()
+{
+	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
+	SetRootComponent(Text);
+	Text->SetFont(FName("Default"));
+	Text->SetText("TextRender");
+    
+    auto* TextUUID = AddComponent<UTextRenderComponent>();
+    TextUUID->AttachToComponent(TextUUID);
+    TextUUID->SetFont(FName("Default"));
+    TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
+
+    FVector Extent = TextUUID->GetWorldAABB().GetExtent();
+    Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Z * 2.0f));
 }
