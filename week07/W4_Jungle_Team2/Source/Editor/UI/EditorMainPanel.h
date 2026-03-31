@@ -22,7 +22,13 @@ public:
 	void Update();
 
 private:
+	void RenderViewportHostWindow();
+	void RenderViewportMenuBar();
+	int32 ResolveViewportMenuTarget() const;
+private:
 	FWindowsWindow* Window;
+	UEditorEngine* EditorEngine;
+
 	ImVector<ImWchar> FontGlyphRanges; // 폰트 아틀라스 빌드 전까지 수명 유지 필요
 	FEditorConsoleWidget ConsoleWidget;
 	FEditorControlWidget ControlWidget;
