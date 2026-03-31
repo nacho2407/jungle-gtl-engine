@@ -25,7 +25,7 @@ struct FStaticMeshMaterialSlot
 	ID3D11ShaderResourceView* SpecularSRV = nullptr;
 };
 
-// Raw Data
+// Cooked
 struct FStaticMesh
 {
 	FString PathFileName;
