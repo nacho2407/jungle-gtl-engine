@@ -45,6 +45,7 @@ private:
 	FString StaticMeshPath = "None";
 	TArray<UMaterial*> OverrideMaterials;
 	TArray<FString> OverrideMaterialPaths;
+	TArray<uint8> OverrideUVScrolls;
 
 	FVector CachedLocalCenter = { 0, 0, 0 };
 	FVector CachedLocalExtent = { 0.5f, 0.5f, 0.5f };
