@@ -9,9 +9,8 @@ enum class EShaderType : uint32
 	Primitive,
 	Gizmo,
 	Editor,
-	Outline,
-	OutlinePNCT,
 	StaticMesh,
+	OutlinePostProcess,
 	MAX,
 };
 

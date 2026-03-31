@@ -12,6 +12,10 @@ void FRenderBus::Clear()
 	SubUVEntries.clear();
 	AABBEntries.clear();
 	GridEntries.clear();
+
+	ViewportRTV = nullptr;
+	ViewportDSV = nullptr;
+	ViewportStencilSRV = nullptr;
 }
 
 void FRenderBus::AddCommand(ERenderPass Pass, const FRenderCommand& InCommand)
