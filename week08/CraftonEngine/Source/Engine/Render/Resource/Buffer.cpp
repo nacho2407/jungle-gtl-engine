@@ -1,4 +1,5 @@
 ﻿#include "Buffer.h"
+#include "Engine/Profiling/MemoryStats.h"
 
 void FMeshBuffer::Release()
 {
@@ -59,12 +60,17 @@ void FVertexBuffer::Create(ID3D11Device* InDevice, const void* InData, uint32 In
 
 	VertexCount = InVertexCount;
 	Stride = InStride;
+	MemoryStats::AddVertexBufferMemory(InByteWidth);
 }
 
 void FVertexBuffer::Release()
 {
 	if (Buffer)
 	{
+		D3D11_BUFFER_DESC Desc = {};
+		Buffer->GetDesc(&Desc);
+		MemoryStats::SubVertexBufferMemory(Desc.ByteWidth);
+
 		Buffer->Release();
 		Buffer = nullptr;
 	}
@@ -104,13 +110,23 @@ void FConstantBuffer::Create(ID3D11Device* InDevice, uint32 InByteWidth)
 	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
+	// ByteWidth는 16바이트 정렬 후 실제 할당 크기
+	const uint32 AlignedSize = (InByteWidth + 0xf) & 0xfffffff0;
 	InDevice->CreateBuffer(&constantBufferDesc, nullptr, &Buffer);
+	if (Buffer)	
+	{
+		MemoryStats::AddConstantBufferMemory(AlignedSize);
+	}
 }
 
 void FConstantBuffer::Release()
 {
 	if (Buffer)
 	{
+		D3D11_BUFFER_DESC Desc = {};
+		Buffer->GetDesc(&Desc);
+		MemoryStats::SubConstantBufferMemory(Desc.ByteWidth);
+
 		Buffer->Release();
 		Buffer = nullptr;
 	}
@@ -186,12 +202,17 @@ void FIndexBuffer::Create(ID3D11Device* InDevice, const void* InData, uint32 InI
 	}
 
 	IndexCount = InIndexCount;
+	MemoryStats::AddIndexBufferMemory(InByteWidth);
 }
 
 void FIndexBuffer::Release()
 {
 	if (Buffer)
 	{
+		D3D11_BUFFER_DESC Desc = {};
+		Buffer->GetDesc(&Desc);
+		MemoryStats::SubIndexBufferMemory(Desc.ByteWidth);
+
 		Buffer->Release();
 		Buffer = nullptr;
 	}
