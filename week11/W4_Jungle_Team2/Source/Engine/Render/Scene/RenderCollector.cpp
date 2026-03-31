@@ -320,13 +320,24 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 				return (Res && Res->SRV) ? Res->SRV : DefaultSRV;
 			};
 
-			Cmd.Constants.StaticMesh.bHasDiffuseMap  = MtlData->bHasDiffuseTexture  ? 1u : 0u;
-			Cmd.Constants.StaticMesh.bHasSpecularMap = MtlData->bHasSpecularTexture ? 1u : 0u;
-
-			Cmd.Constants.StaticMesh.DiffuseSRV  = MtlData->bHasDiffuseTexture  ? ResolveSRV(MtlData->DiffuseTexPath)  : DefaultSRV;
-			Cmd.Constants.StaticMesh.AmbientSRV  = MtlData->bHasAmbientTexture  ? ResolveSRV(MtlData->AmbientTexPath)  : DefaultSRV;
-			Cmd.Constants.StaticMesh.SpecularSRV = MtlData->bHasSpecularTexture ? ResolveSRV(MtlData->SpecularTexPath) : DefaultSRV;
-			Cmd.Constants.StaticMesh.BumpSRV     = MtlData->bHasBumpTexture     ? ResolveSRV(MtlData->BumpTexPath)     : DefaultSRV;
+			if (ViewMode == EViewMode::Wireframe)
+			{
+				Cmd.Constants.StaticMesh.bHasDiffuseMap =  1u;
+				Cmd.Constants.StaticMesh.bHasSpecularMap = 1u;
+				Cmd.Constants.StaticMesh.DiffuseSRV = DefaultSRV;
+				Cmd.Constants.StaticMesh.AmbientSRV = DefaultSRV;
+				Cmd.Constants.StaticMesh.SpecularSRV = DefaultSRV;
+				Cmd.Constants.StaticMesh.BumpSRV = DefaultSRV;
+			}
+			else
+			{
+				Cmd.Constants.StaticMesh.bHasDiffuseMap = MtlData->bHasDiffuseTexture ? 1u : 0u;
+				Cmd.Constants.StaticMesh.bHasSpecularMap = MtlData->bHasSpecularTexture ? 1u : 0u;
+				Cmd.Constants.StaticMesh.DiffuseSRV = MtlData->bHasDiffuseTexture ? ResolveSRV(MtlData->DiffuseTexPath) : DefaultSRV;
+				Cmd.Constants.StaticMesh.AmbientSRV = MtlData->bHasAmbientTexture ? ResolveSRV(MtlData->AmbientTexPath) : DefaultSRV;
+				Cmd.Constants.StaticMesh.SpecularSRV = MtlData->bHasSpecularTexture ? ResolveSRV(MtlData->SpecularTexPath) : DefaultSRV;
+				Cmd.Constants.StaticMesh.BumpSRV = MtlData->bHasBumpTexture ? ResolveSRV(MtlData->BumpTexPath) : DefaultSRV;
+			}
 
 			RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
 		}
