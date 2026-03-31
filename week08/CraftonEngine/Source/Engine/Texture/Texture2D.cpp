@@ -80,7 +80,7 @@ bool UTexture2D::LoadInternal(const FString& FilePath, ID3D11Device* Device)
 			Height = Desc.Height;
 			Tex2D->Release();
 
-			MemoryStats::AddTextureMemory(Width * Height * 4); // 로드 시 추적 등록
+			MemoryStats::AddTextureMemory(Width * Height * 4); // 로드 시 추적 등록. RGBA8 = 픽셀당 4 bytes
 		}
 		Resource->Release();
 	}
