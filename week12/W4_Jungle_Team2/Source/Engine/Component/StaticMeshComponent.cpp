@@ -57,7 +57,6 @@ bool UStaticMeshComponent::HasValidMesh() const
 }
 
 
-
 void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UMeshComponent::GetEditableProperties(OutProps);
