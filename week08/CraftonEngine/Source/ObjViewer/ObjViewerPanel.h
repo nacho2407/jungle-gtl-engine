@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
+#include "Mesh/ObjImporter.h"
 
 class FRenderer;
 class FWindowsWindow;
@@ -18,10 +19,14 @@ public:
 private:
 	void RenderMeshList();
 	void RenderPreviewViewport(float DeltaTime);
+	void RenderImportPopup();
 
 private:
 	FWindowsWindow* Window = nullptr;
 	UObjViewerEngine* Engine = nullptr;
 
 	int32 SelectedMeshIndex = -1;
+	int32 SelectedObjIndex = -1;
+	bool bShowImportPopup = false;
+	FImportOptions PendingImportOptions;
 };
