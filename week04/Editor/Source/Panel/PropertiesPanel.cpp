@@ -2,6 +2,7 @@
 
 // 기초 에셋 헤더를 최상단에 배치하여 불완전 형식 에러 방지
 #include "Asset/MaterialInterface.h"
+#include "Asset/Material.h"
 #include "Asset/StaticMesh.h"
 
 // 컴포넌트 헤더 배치
@@ -349,6 +350,29 @@ namespace
                 }
             }
             ImGui::EndCombo();
+        }
+
+        // --- 머티리얼 세부 속성 조절 UI 추가 ---
+        if (CurrentMat && CurrentMat->IsValidLowLevel())
+        {
+            if (auto* Mat = Cast<Engine::Asset::UMaterial>(CurrentMat))
+            {
+                FString SubMatName = MeshComp->GetSubMaterialName(SlotIndex);
+                if (auto* Data = Mat->GetMaterialDataMutable(SubMatName))
+                {
+                    ImGui::Indent(20.0f);
+                    
+                    float Speed[2] = { Data->UVScrollSpeed.X, Data->UVScrollSpeed.Y };
+                    if (ImGui::DragFloat2("UV Scroll Speed", Speed, 0.01f, -10.0f, 10.0f))
+                    {
+                        Data->UVScrollSpeed.X = Speed[0];
+                        Data->UVScrollSpeed.Y = Speed[1];
+                        bChanged = true;
+                    }
+
+                    ImGui::Unindent(20.0f);
+                }
+            }
         }
 
         return bChanged;
