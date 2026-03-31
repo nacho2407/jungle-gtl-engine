@@ -23,8 +23,7 @@ public:
 
 private:
 	void RenderViewportHostWindow();
-	void RenderViewportMenuBar();
-	int32 ResolveViewportMenuTarget() const;
+	void RenderViewportMenuBarForIndex(int32 ViewportIndex);
 private:
 	FWindowsWindow* Window;
 	UEditorEngine* EditorEngine;
