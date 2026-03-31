@@ -21,6 +21,7 @@ void FD3DDevice::Release()
 	ReleaseBlendState();
 	ReleaseDepthStencilBuffer();
 	ReleaseRasterizerState();
+	ReleaseViewportRenderTargets();
 	ReleaseFrameBuffer();
 
 	ReleaseDeviceAndSwapChain();
@@ -32,6 +33,14 @@ void FD3DDevice::BeginFrame()
 	const float ClearMask[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	DeviceContext->ClearRenderTargetView(SelectionMaskRTV, ClearMask);
 	DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+	if (ViewportSceneColorRTV && ViewportSelectionMaskRTV && ViewportDepthStencilView)
+	{
+		DeviceContext->ClearRenderTargetView(ViewportSceneColorRTV, ClearColor);
+		DeviceContext->ClearRenderTargetView(ViewportSelectionMaskRTV, ClearMask);
+		DeviceContext->ClearDepthStencilView(ViewportDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	}
+
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	DeviceContext->RSSetViewports(1, &ViewportInfo);
@@ -73,6 +82,26 @@ void FD3DDevice::OnResizeViewport(int Width, int Height)
 	CurrentBlendState = static_cast<EBlendState>(-1);
 }
 
+void FD3DDevice::EnsureViewportRenderTargets(int Width, int Height)
+{
+	if (Width <= 0 || Height <= 0)
+	{
+		ReleaseViewportRenderTargets();
+		return;
+	}
+
+	const uint32 SafeWidth = static_cast<uint32>(Width);
+	const uint32 SafeHeight = static_cast<uint32>(Height);
+	if (ViewportRenderTargetWidth == SafeWidth && ViewportRenderTargetHeight == SafeHeight &&
+		ViewportSceneColorRTV && ViewportSelectionMaskRTV && ViewportDepthStencilView)
+	{
+		return;
+	}
+
+	ReleaseViewportRenderTargets();
+	CreateViewportRenderTargets(SafeWidth, SafeHeight);
+}
+
 
 void FD3DDevice::SetSubViewport(int32 X, int32 Y, int32 Width, int32 Height)
 {
@@ -94,6 +123,31 @@ ID3D11Device* FD3DDevice::GetDevice() const
 ID3D11DeviceContext* FD3DDevice::GetDeviceContext() const
 {
 	return DeviceContext;
+}
+
+FRenderTargetSet FD3DDevice::GetBackBufferRenderTargets() const
+{
+	FRenderTargetSet Targets;
+	Targets.SceneColorRTV = FrameBufferRTV;
+	Targets.SelectionMaskRTV = SelectionMaskRTV;
+	Targets.SelectionMaskSRV = SelectionMaskSRV;
+	Targets.DepthStencilView = DepthStencilView;
+	Targets.Width = ViewportInfo.Width;
+	Targets.Height = ViewportInfo.Height;
+	return Targets;
+}
+
+FRenderTargetSet FD3DDevice::GetViewportRenderTargets() const
+{
+	FRenderTargetSet Targets;
+	Targets.SceneColorRTV = ViewportSceneColorRTV;
+	Targets.SceneColorSRV = ViewportSceneColorSRV;
+	Targets.SelectionMaskRTV = ViewportSelectionMaskRTV;
+	Targets.SelectionMaskSRV = ViewportSelectionMaskSRV;
+	Targets.DepthStencilView = ViewportDepthStencilView;
+	Targets.Width = static_cast<float>(ViewportRenderTargetWidth);
+	Targets.Height = static_cast<float>(ViewportRenderTargetHeight);
+	return Targets;
 }
 
 void FD3DDevice::SetDepthStencilState(EDepthStencilState InState)
@@ -277,6 +331,84 @@ void FD3DDevice::ReleaseFrameBuffer()
 	SAFE_RELEASE(SelectionMaskBuffer);
 	SAFE_RELEASE(FrameBufferRTV);
 	SAFE_RELEASE(FrameBuffer);
+}
+
+void FD3DDevice::CreateViewportRenderTargets(uint32 Width, uint32 Height)
+{
+	ViewportRenderTargetWidth = Width;
+	ViewportRenderTargetHeight = Height;
+
+	D3D11_TEXTURE2D_DESC sceneColorDesc = {};
+	sceneColorDesc.Width = Width;
+	sceneColorDesc.Height = Height;
+	sceneColorDesc.MipLevels = 1;
+	sceneColorDesc.ArraySize = 1;
+	sceneColorDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	sceneColorDesc.SampleDesc.Count = 1;
+	sceneColorDesc.Usage = D3D11_USAGE_DEFAULT;
+	sceneColorDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	Device->CreateTexture2D(&sceneColorDesc, nullptr, &ViewportSceneColorTexture);
+
+	D3D11_RENDER_TARGET_VIEW_DESC sceneColorRTVDesc = {};
+	sceneColorRTVDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	sceneColorRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	Device->CreateRenderTargetView(ViewportSceneColorTexture, &sceneColorRTVDesc, &ViewportSceneColorRTV);
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC sceneColorSRVDesc = {};
+	sceneColorSRVDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	sceneColorSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	sceneColorSRVDesc.Texture2D.MostDetailedMip = 0;
+	sceneColorSRVDesc.Texture2D.MipLevels = 1;
+	Device->CreateShaderResourceView(ViewportSceneColorTexture, &sceneColorSRVDesc, &ViewportSceneColorSRV);
+
+	D3D11_TEXTURE2D_DESC selectionMaskDesc = {};
+	selectionMaskDesc.Width = Width;
+	selectionMaskDesc.Height = Height;
+	selectionMaskDesc.MipLevels = 1;
+	selectionMaskDesc.ArraySize = 1;
+	selectionMaskDesc.Format = DXGI_FORMAT_R8_UNORM;
+	selectionMaskDesc.SampleDesc.Count = 1;
+	selectionMaskDesc.Usage = D3D11_USAGE_DEFAULT;
+	selectionMaskDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	Device->CreateTexture2D(&selectionMaskDesc, nullptr, &ViewportSelectionMaskTexture);
+
+	D3D11_RENDER_TARGET_VIEW_DESC selectionMaskRTVDesc = {};
+	selectionMaskRTVDesc.Format = DXGI_FORMAT_R8_UNORM;
+	selectionMaskRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	Device->CreateRenderTargetView(ViewportSelectionMaskTexture, &selectionMaskRTVDesc, &ViewportSelectionMaskRTV);
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC selectionMaskSRVDesc = {};
+	selectionMaskSRVDesc.Format = DXGI_FORMAT_R8_UNORM;
+	selectionMaskSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	selectionMaskSRVDesc.Texture2D.MostDetailedMip = 0;
+	selectionMaskSRVDesc.Texture2D.MipLevels = 1;
+	Device->CreateShaderResourceView(ViewportSelectionMaskTexture, &selectionMaskSRVDesc, &ViewportSelectionMaskSRV);
+
+	D3D11_TEXTURE2D_DESC depthStencilDesc = {};
+	depthStencilDesc.Width = Width;
+	depthStencilDesc.Height = Height;
+	depthStencilDesc.MipLevels = 1;
+	depthStencilDesc.ArraySize = 1;
+	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	depthStencilDesc.SampleDesc.Count = 1;
+	depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
+	depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	Device->CreateTexture2D(&depthStencilDesc, nullptr, &ViewportDepthStencilTexture);
+	Device->CreateDepthStencilView(ViewportDepthStencilTexture, nullptr, &ViewportDepthStencilView);
+}
+
+void FD3DDevice::ReleaseViewportRenderTargets()
+{
+	SAFE_RELEASE(ViewportDepthStencilView);
+	SAFE_RELEASE(ViewportDepthStencilTexture);
+	SAFE_RELEASE(ViewportSelectionMaskSRV);
+	SAFE_RELEASE(ViewportSelectionMaskRTV);
+	SAFE_RELEASE(ViewportSelectionMaskTexture);
+	SAFE_RELEASE(ViewportSceneColorSRV);
+	SAFE_RELEASE(ViewportSceneColorRTV);
+	SAFE_RELEASE(ViewportSceneColorTexture);
+	ViewportRenderTargetWidth = 0;
+	ViewportRenderTargetHeight = 0;
 }
 
 void FD3DDevice::CreateRasterizerState()
