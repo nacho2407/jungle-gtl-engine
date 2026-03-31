@@ -6,6 +6,7 @@
 #include "Renderer/Types/PickResult.h"
 #include "SceneView.h"
 #include "Core/Runtime/Slate/Window/SWindow.h"
+#include <d3d11sdklayers.h>
 
 namespace
 {
@@ -113,12 +114,6 @@ bool FRendererModule::StartupModule(HWND hWnd)
         return false;
     }
 
-    if (!StaticMeshRenderer.Initialize(&RHI))
-    {
-        ShutdownModule();
-        return false;
-    }
-
 #if defined(_DEBUG)
     if (RHI.GetDevice() != nullptr)
     {
@@ -132,8 +127,6 @@ bool FRendererModule::StartupModule(HWND hWnd)
 
 void FRendererModule::ShutdownModule()
 {
-    DebugDevice.Reset();
-
     ObjectIdRenderer.Shutdown();
     SpriteRenderer.Shutdown();
     TextRenderer.Shutdown();
@@ -141,7 +134,15 @@ void FRendererModule::ShutdownModule()
     OutlineRenderer.Shutdown();
     MeshBatchRenderer.Shutdown();
     StaticMeshRenderer.Shutdown();
+    WidgetRenderer.Shutdown();
 
+    ReportLiveObjects();
+
+    RHI.Shutdown();
+}
+
+void FRendererModule::ReportLiveObjects()
+{
 #if defined(_DEBUG)
     if (DebugDevice != nullptr)
     {
@@ -149,8 +150,6 @@ void FRendererModule::ShutdownModule()
         DebugDevice.Reset();
     }
 #endif
-
-    RHI.Shutdown();
 }
 
 void FRendererModule::BeginFrame()

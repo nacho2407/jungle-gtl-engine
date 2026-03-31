@@ -39,7 +39,7 @@ class ENGINE_API FUObjectArray
     /**
      * @brief 살아있는 객체 수가 아니라 슬롯 배열 길이를 반환합니다. 배열 내에 비어있는 슬롯이 있을 수 있으니 nullptr 검사를 확실히 해야합니다.
      */
-    uint32 Num() const { return Objects.size(); }
+    uint32 Num() const { return static_cast<uint32>(Objects.size()); }
   private:
     TArray<FUObjectItem> Objects;
     TArray<uint32>      FreeIndices;
