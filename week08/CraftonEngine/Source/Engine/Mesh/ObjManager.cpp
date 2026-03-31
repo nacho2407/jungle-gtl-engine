@@ -5,10 +5,12 @@
 #include "Serialization/WindowsArchive.h"
 #include "Engine/Platform/Paths.h"
 #include <filesystem>
+#include <algorithm>
 
 std::map<FString, UStaticMesh*> FObjManager::StaticMeshCache;
 TMap<FString, UMaterial*> FObjManager::MaterialCache;
 TArray<FMeshAssetListItem> FObjManager::AvailableMeshFiles;
+TArray<FMeshAssetListItem> FObjManager::AvailableObjFiles;
 
 FString FObjManager::GetBinaryFilePath(const FString& OriginalPath)
 {
@@ -27,6 +29,27 @@ FString FObjManager::GetBinaryFilePath(const FString& OriginalPath)
 
 	std::filesystem::path BinPath = std::filesystem::path(CacheDir) / SrcPath.stem();
 	BinPath += L".bin";
+
+	return FPaths::ToUtf8(BinPath.wstring());
+}
+
+FString FObjManager::GetMBinaryFilePath(const FString& OriginalPath)
+{
+	std::filesystem::path SrcPath(OriginalPath);
+	std::wstring Ext = SrcPath.extension().wstring();
+
+	// 이미 bin 경로가 들어온 경우에는 그대로 사용
+	if (Ext == L".mbin")
+	{
+		return OriginalPath;
+	}
+
+	// obj 등 원본 메시 경로가 들어온 경우에는 MeshCache 아래에 bin 생성
+	std::wstring CacheDir = FPaths::RootDir() + L"Asset\\MeshCache\\";
+	FPaths::CreateDir(CacheDir);
+
+	std::filesystem::path BinPath = std::filesystem::path(CacheDir) / SrcPath.stem();
+	BinPath += L".mbin";
 
 	return FPaths::ToUtf8(BinPath.wstring());
 }
@@ -62,6 +85,76 @@ const TArray<FMeshAssetListItem>& FObjManager::GetAvailableMeshFiles()
 	return AvailableMeshFiles;
 }
 
+
+void FObjManager::ScanObjSourceFiles()
+{
+	AvailableObjFiles.clear();
+
+	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Data\\";
+
+	if (!std::filesystem::exists(DataRoot))
+	{
+		return;
+	}
+
+	for (const auto& Entry : std::filesystem::recursive_directory_iterator(DataRoot))
+	{
+		if (!Entry.is_regular_file()) continue;
+
+		const std::filesystem::path& Path = Entry.path();
+		std::wstring Ext = Path.extension().wstring();
+
+		// 대소문자 무시
+		std::transform(Ext.begin(), Ext.end(), Ext.begin(), ::towlower);
+		if (Ext != L".obj") continue;
+
+		FMeshAssetListItem Item;
+		Item.DisplayName = FPaths::ToUtf8(Path.filename().wstring());
+		Item.FullPath = FPaths::ToUtf8(Path.wstring());
+		AvailableObjFiles.push_back(std::move(Item));
+	}
+}
+
+const TArray<FMeshAssetListItem>& FObjManager::GetAvailableObjFiles()
+{
+	return AvailableObjFiles;
+}
+
+UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, const FImportOptions& Options, ID3D11Device* InDevice)
+{
+	// 옵션이 다를 수 있으므로 기존 캐시 무효화
+	StaticMeshCache.erase(PathFileName);
+
+	UStaticMesh* StaticMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
+
+	FString BinPath = GetBinaryFilePath(PathFileName);
+
+	// 항상 리빌드 (옵션이 달라질 수 있음)
+	FStaticMesh* NewMeshAsset = new FStaticMesh();
+	TArray<FStaticMaterial> ParsedMaterials;
+
+	if (FObjImporter::Import(PathFileName, Options, *NewMeshAsset, ParsedMaterials))
+	{
+		NewMeshAsset->PathFileName = PathFileName;
+		StaticMesh->SetStaticMeshAsset(NewMeshAsset);
+		StaticMesh->SetStaticMaterials(std::move(ParsedMaterials));
+
+		// .bin 저장
+		FWindowsBinWriter Writer(BinPath);
+		if (Writer.IsValid())
+		{
+			StaticMesh->Serialize(Writer);
+		}
+	}
+
+	StaticMesh->InitResources(InDevice);
+	StaticMeshCache[PathFileName] = StaticMesh;
+
+	// 리프레시
+	ScanMeshAssets();
+
+	return StaticMesh;
+}
 
 UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11Device* InDevice)
 {
@@ -112,7 +205,21 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 
 		if (FObjImporter::Import(PathFileName, *NewMeshAsset, ParsedMaterials))
 		{
-			NewMeshAsset->PathFileName = PathFileName;
+			for (auto& Mat : ParsedMaterials)
+			{
+				if (Mat.MaterialInterface)
+				{
+					MaterialCache[Mat.MaterialInterface->PathFileName] = Mat.MaterialInterface;
+					FString MatBinPath = FObjManager::GetMBinaryFilePath(Mat.MaterialInterface->PathFileName);
+
+					FWindowsBinWriter MatWriter(MatBinPath);
+					if (MatWriter.IsValid())
+					{
+						Mat.MaterialInterface->Serialize(MatWriter); // UMaterial 데이터 직렬화
+					}
+				}
+			}
+
 			StaticMesh->SetStaticMeshAsset(NewMeshAsset);
 			StaticMesh->SetStaticMaterials(std::move(ParsedMaterials));
 
