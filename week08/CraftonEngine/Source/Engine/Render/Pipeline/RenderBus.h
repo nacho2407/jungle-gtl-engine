@@ -45,6 +45,20 @@ public:
 	const float GetViewportWidth() const { return viewportWidth; }
 	const float GetViewportHeight() const { return viewportHeight; }
 
+	// 카메라 투영 정보 (Gizmo per-viewport 스케일링 등)
+	void SetCameraInfo(bool InIsOrtho, float InOrthoWidth) { bIsOrtho = InIsOrtho; OrthoWidth = InOrthoWidth; }
+	bool  IsOrtho()        const { return bIsOrtho; }
+	float GetOrthoWidth()  const { return OrthoWidth; }
+
+	// PostProcess용 뷰포트 리소스 — DSV unbind → StencilSRV bind 필요
+	void SetViewportResources(ID3D11RenderTargetView* InRTV, ID3D11DepthStencilView* InDSV, ID3D11ShaderResourceView* InStencilSRV)
+	{
+		ViewportRTV = InRTV; ViewportDSV = InDSV; ViewportStencilSRV = InStencilSRV;
+	}
+	ID3D11RenderTargetView*  GetViewportRTV()        const { return ViewportRTV; }
+	ID3D11DepthStencilView*  GetViewportDSV()        const { return ViewportDSV; }
+	ID3D11ShaderResourceView* GetViewportStencilSRV() const { return ViewportStencilSRV; }
+
 private:
 	// Mesh 패스 큐
 	TArray<FRenderCommand> PassQueues[(uint32)ERenderPass::MAX];
@@ -64,6 +78,14 @@ private:
 
 	float viewportWidth = 0.0f;
 	float viewportHeight = 0.0f;
+
+	bool  bIsOrtho = false;
+	float OrthoWidth = 10.0f;
+
+	// PostProcess용 뷰포트 D3D 리소스 (프레임 내 유효)
+	ID3D11RenderTargetView*   ViewportRTV        = nullptr;
+	ID3D11DepthStencilView*   ViewportDSV        = nullptr;
+	ID3D11ShaderResourceView* ViewportStencilSRV = nullptr;
 
 	//Editor Settings
 	EViewMode ViewMode;
