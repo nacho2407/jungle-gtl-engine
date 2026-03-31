@@ -20,7 +20,7 @@ void UTextRenderComponent::UpdateWorldAABB() const
 {
 	WorldAABB.Reset();
 
-	// 전체 가로 세로 길이 (하드코딩)....
+	// TODO(하드코딩): 전체 가로 세로 길이 
 	float TotalWidth = GetUTF8Length(Text) * 0.5f;
 	float TotalHeight = 0.5f;
 
