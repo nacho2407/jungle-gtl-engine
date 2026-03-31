@@ -312,7 +312,8 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 
 void FEditorViewportOverlayWidget::RenderSplitterBar()
 {
-	// if (FSlateApplication::Get().GetCapturedWidget()) return;
+	// Caputre 중인 Widget이 있다면 SplitterBar 하이라이트를 비활성화 합니다.
+	 if (FSlateApplication::Get().GetCapturedWidget()) return;
 
 	// 스플리터 바 시각화
 	if (EditorEngine)

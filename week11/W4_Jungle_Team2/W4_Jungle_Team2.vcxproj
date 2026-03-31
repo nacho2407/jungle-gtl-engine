@@ -258,7 +258,6 @@
     <ClCompile Include="Source\Editor\Viewport\ViewportCamera.cpp" />
     <ClCompile Include="Source\Editor\Viewport\ViewportLayout.cpp" />
     <ClCompile Include="Source\Editor\Viewport\ViewportNavigationController.cpp" />
-    <ClCompile Include="Source\Engine\Asset\AssetBinder.cpp" />
     <ClCompile Include="Source\Engine\Asset\BinarySerializer.cpp" />
     <ClCompile Include="Source\Engine\Asset\FileUtils.cpp" />
     <ClCompile Include="Source\Engine\Asset\FontAtlasLoader.cpp" />
@@ -364,7 +363,6 @@
     <ClInclude Include="Source\Editor\Viewport\ViewportCamera.h" />
     <ClInclude Include="Source\Editor\Viewport\ViewportLayout.h" />
     <ClInclude Include="Source\Editor\Viewport\ViewportNavigationController.h" />
-    <ClInclude Include="Source\Engine\Asset\AssetBinder.h" />
     <ClInclude Include="Source\Engine\Asset\BinarySerializer.h" />
     <ClInclude Include="Source\Engine\Asset\FileUtils.h" />
     <ClInclude Include="Source\Engine\Asset\FontAtlasLoader.h" />
