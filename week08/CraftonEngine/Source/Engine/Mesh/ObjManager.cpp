@@ -135,6 +135,22 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, const F
 
 	if (FObjImporter::Import(PathFileName, Options, *NewMeshAsset, ParsedMaterials))
 	{
+		// 머티리얼 .mbin 저장
+		for (auto& Mat : ParsedMaterials)
+		{
+			if (Mat.MaterialInterface)
+			{
+				MaterialCache[Mat.MaterialInterface->PathFileName] = Mat.MaterialInterface;
+				FString MatBinPath = FObjManager::GetMBinaryFilePath(Mat.MaterialInterface->PathFileName);
+
+				FWindowsBinWriter MatWriter(MatBinPath);
+				if (MatWriter.IsValid())
+				{
+					Mat.MaterialInterface->Serialize(MatWriter);
+				}
+			}
+		}
+
 		NewMeshAsset->PathFileName = PathFileName;
 		StaticMesh->SetStaticMeshAsset(NewMeshAsset);
 		StaticMesh->SetStaticMaterials(std::move(ParsedMaterials));
