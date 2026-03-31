@@ -490,7 +490,7 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 
 			// FStaticMaterial 슬롯 생성 및 OutMaterials에 추가
 			FStaticMaterial NewStaticMaterial;
-			NewStaticMaterial.MaterialInterface = MaterialObject;
+			NewStaticMaterial.MaterialInterface = std::shared_ptr<UMaterial>(MaterialObject);
 			NewStaticMaterial.MaterialSlotName = TargetSlotName;
 			OutMaterials.push_back(NewStaticMaterial);
 		}
@@ -506,7 +506,7 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 
 			// FStaticMaterial 슬롯 생성 및 OutMaterials에 추가
 			FStaticMaterial NewEmptyStaticMaterial;
-			NewEmptyStaticMaterial.MaterialInterface = DefaultMaterialObject;
+			NewEmptyStaticMaterial.MaterialInterface = std::shared_ptr<UMaterial>(DefaultMaterialObject);
 			NewEmptyStaticMaterial.MaterialSlotName = TargetSlotName;
 			OutMaterials.push_back(NewEmptyStaticMaterial);
 		}
@@ -524,7 +524,7 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 		}
 
 		FStaticMaterial NewDefaultStaticMaterial;
-		NewDefaultStaticMaterial.MaterialInterface = DefaultMaterialObject;
+		NewDefaultStaticMaterial.MaterialInterface = std::shared_ptr<UMaterial>(DefaultMaterialObject);
 		NewDefaultStaticMaterial.MaterialSlotName = "None";
 
 		OutMaterials.push_back(NewDefaultStaticMaterial);
@@ -679,11 +679,7 @@ bool FObjImporter::Import(const FString& ObjFilePath, FStaticMesh& OutMesh, TArr
 		if (!FObjImporter::ParseMtl(ObjInfo.MaterialLibraryFilePath, ParsedMtlInfos))
 		{
 			UE_LOG("ParseMtl failed for: %s", ObjInfo.MaterialLibraryFilePath.c_str());
-		}
-		else
-		{
-			ObjInfo.MaterialLibraryFilePath = "";
-			ParsedMtlInfos.clear();
+			return false;
 		}
 	}
 
