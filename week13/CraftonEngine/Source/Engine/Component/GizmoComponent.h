@@ -2,6 +2,7 @@
 
 #include "PrimitiveComponent.h"
 #include "Core/CoreTypes.h"
+#include "Math/Rotator.h"
 
 class AActor;
 
@@ -67,7 +68,7 @@ public:
 	void DragEnd();
 
 	void SetTargetLocation(FVector NewLocation);
-	void SetTargetRotation(FVector NewRotation);
+	void SetTargetRotation(FRotator NewRotation);
 	void SetTargetScale(FVector NewScale);
 
 

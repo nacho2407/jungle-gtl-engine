@@ -110,7 +110,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	// Perspective Camera
 	JSON CamObj = Object();
 	CamObj[Key::Location] = Array(PerspCamLocation.X, PerspCamLocation.Y, PerspCamLocation.Z);
-	CamObj[Key::Rotation] = Array(PerspCamRotation.X, PerspCamRotation.Y, PerspCamRotation.Z);
+	CamObj[Key::Rotation] = Array(PerspCamRotation.Roll, PerspCamRotation.Pitch, PerspCamRotation.Yaw);
 	CamObj[Key::FOV] = PerspCamFOV;
 	CamObj[Key::NearClip] = PerspCamNearClip;
 	CamObj[Key::FarClip] = PerspCamFarClip;
@@ -252,10 +252,11 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		if (CamObj.hasKey(Key::Rotation))
 		{
 			JSON R = CamObj[Key::Rotation];
-			PerspCamRotation = FVector(
-				static_cast<float>(R[0].ToFloat()),
-				static_cast<float>(R[1].ToFloat()),
-				static_cast<float>(R[2].ToFloat()));
+			// JSON 포맷: [Roll, Pitch, Yaw] (FVector X,Y,Z 호환)
+			float Roll  = static_cast<float>(R[0].ToFloat());
+			float Pitch = static_cast<float>(R[1].ToFloat());
+			float Yaw   = static_cast<float>(R[2].ToFloat());
+			PerspCamRotation = FRotator(Pitch, Yaw, Roll);
 		}
 		if (CamObj.hasKey(Key::FOV))
 			PerspCamFOV = static_cast<float>(CamObj[Key::FOV].ToFloat());

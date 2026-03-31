@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Math/Transform.h"
+#include "Math/Rotator.h"
 #include "Component/ActorComponent.h"
 #include "Math/Utils.h"
 
@@ -28,16 +29,18 @@ public:
 	virtual void UpdateWorldMatrix() const;
 	virtual void AddWorldOffset(const FVector& WorldDelta);
 	virtual void SetRelativeLocation(const FVector& NewLocation);
-	virtual void SetRelativeRotation(const FVector& NewRotation);
+	virtual void SetRelativeRotation(const FRotator& NewRotation);
+	void SetRelativeRotation(const FVector& EulerRotation);	// FVector 호환
 	virtual void SetRelativeScale(const FVector& NewScale);
 	void MarkTransformDirty();
 	const FMatrix& GetWorldMatrix() const;
 	void SetWorldLocation(FVector NewWorldLocation);
 	FVector GetWorldLocation() const;
 	FVector GetWorldScale() const;
-	FVector GetRelativeLocation() const { return RelativeLocation; }
-	FVector GetRelativeRotation() const { return RelativeRotation; }
-	FVector GetRelativeScale() const { return RelativeScale3D; }
+	const FTransform& GetRelativeTransform() const { return RelativeTransform; }
+	FVector GetRelativeLocation() const { return RelativeTransform.Location; }
+	FRotator GetRelativeRotation() const { return RelativeTransform.Rotation; }
+	FVector GetRelativeScale() const { return RelativeTransform.Scale; }
 	FVector GetForwardVector() const;
 	FVector GetUpVector() const;
 	FVector GetRightVector() const;
@@ -56,8 +59,6 @@ protected:
 
 	mutable bool bTransformDirty = true;
 
-	FVector RelativeLocation{};
-	FVector RelativeRotation{};
-	FVector RelativeScale3D{ 1.0f, 1.0f ,1.0f };
+	FTransform RelativeTransform;
 };
 
