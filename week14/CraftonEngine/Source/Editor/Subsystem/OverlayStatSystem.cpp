@@ -33,7 +33,7 @@ TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& E
 	{
 		FOverlayStatGroup Group;
 
-		{
+		/*{
 			char Buffer[128] = {};
 			snprintf(Buffer, sizeof(Buffer), "Memory Allocated : %u", MemoryStats::GetTotalAllocationBytes());
 			Group.Lines.push_back(FString(Buffer));
@@ -43,7 +43,7 @@ TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& E
 			char Buffer[128] = {};
 			snprintf(Buffer, sizeof(Buffer), "Times Allocated : %u", MemoryStats::GetTotalAllocationCount());
 			Group.Lines.push_back(FString(Buffer));
-		}
+		}*/
 
 		{
 			char Buffer[128] = {};
@@ -77,7 +77,7 @@ TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& E
 
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "ConstantBuffer Memory : %u bytes", MemoryStats::GetConstantBufferMemory());
+			snprintf(Buffer, sizeof(Buffer), "StaticMesh CPU Memory : %u bytes", MemoryStats::GetStaticMeshCPUMemory());
 			Group.Lines.push_back(FString(Buffer));
 		}
 
