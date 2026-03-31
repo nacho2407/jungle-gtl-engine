@@ -11,12 +11,12 @@ namespace Geometry
     inline bool IntersectRayAABB(const FRay& Ray, const FVector& BoxMin, const FVector& BoxMax,
                                  float&      OutT)
     {
-        constexpr float Epsilon = std::numeric_limits<float>::epsilon();
+        constexpr float Epsilon = 1e-6f;
 
         float TMin = 0.0f;
         float TMax = std::numeric_limits<float>::max();
 
-        if (std::fabs(Ray.Origin.X) < Epsilon)
+        if (std::fabs(Ray.Direction.X) < Epsilon)
         {
             if (Ray.Origin.X < BoxMin.X || Ray.Origin.X > BoxMax.X)
             {
@@ -35,7 +35,7 @@ namespace Geometry
             }
 
             TMin = (T1 > TMin) ? T1 : TMin;
-            TMax = (T1 < TMax) ? T1 : TMax;
+            TMax = (T2 < TMax) ? T2 : TMax;
 
             if (TMax < TMin)
             {

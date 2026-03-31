@@ -81,8 +81,8 @@ UAsset* FStaticMeshLoader::LoadAsset(const FSourceRecord& Source, const FAssetLo
     UE_LOG(Asset, ELogVerbosity::Log,
            "[StaticMeshLoader] AABB: Max(%f, %f, %f) / Min(%f, %f, %f)",
            MeshResource->BoundingBox.Max.X, MeshResource->BoundingBox.Max.Y,
-           MeshResource->BoundingBox.Max.Z, MeshResource->BoundingBox.Max.X,
-           MeshResource->BoundingBox.Max.Y, MeshResource->BoundingBox.Max.Z);
+           MeshResource->BoundingBox.Max.Z, MeshResource->BoundingBox.Min.X,
+           MeshResource->BoundingBox.Min.Y, MeshResource->BoundingBox.Min.Z);
 
     // --- 추가: 서브 메시 개수에 맞춰 머티리얼 슬롯 미리 확보 ---
     const uint32 NumSubMeshes = static_cast<uint32>(MeshResource->SubMeshes.size());
