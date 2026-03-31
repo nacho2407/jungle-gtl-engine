@@ -6,6 +6,8 @@
 
 #include <memory>
 
+struct ID3D11Device;
+
 // UStaticMesh — FStaticMesh를 소유하는 UObject 에셋
 class UStaticMesh : public UObject
 {
@@ -23,7 +25,7 @@ public:
 	void SetStaticMaterials(TArray<FStaticMaterial>&& InMaterials);
 	const TArray<FStaticMaterial>& GetStaticMaterials() const;
 
-	void InitResources(class ID3D11Device* InDevice);
+	void InitResources(ID3D11Device* InDevice);
 	
 private:
 	std::unique_ptr<FStaticMesh> StaticMeshAsset;
