@@ -44,17 +44,19 @@ float4 PSMain(VS_OUTPUT Input) : SV_Target
     if (bEnableLighting != 0)
     {
         float3 N = normalize(Input.Normal);
-        
-        // 고정된 광원 방향 (월드 공간 기준)
         float3 L = normalize(float3(0.5f, 1.0f, 0.5f));
         
-        // Lambertian Diffuse
-        float Diffuse = max(dot(N, L), 0.0f);
+        // 1. Half-Lambert (빛을 부드럽게 감싸 실내 가시성 확보)
+        float Lambert = dot(N, L);
+        float HalfLambert = Lambert * 0.5f + 0.5f;
+        float Diffuse = HalfLambert * HalfLambert; // 제곱을 통해 더 예쁜 대비 생성
         
-        // Ambient
-        float Ambient = 0.2f;
+        // 2. Hemisphere Ambient (하늘/지면 대비를 통한 입체감)
+        // 위를 보는 면은 0.3, 아래를 보는 면은 0.1 정도의 앰비언트
+        float SkyFactor = N.y * 0.5f + 0.5f;
+        float3 Ambient = lerp(float3(0.1f, 0.1f, 0.12f), float3(0.25f, 0.25f, 0.3f), SkyFactor);
         
-        float Lighting = Diffuse + Ambient;
+        float3 Lighting = Diffuse * float3(1.0f, 1.0f, 0.95f) + Ambient;
         FinalColor.rgb *= Lighting;
     }
     
