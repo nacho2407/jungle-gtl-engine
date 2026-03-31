@@ -62,8 +62,16 @@ FRect SDropdown::GetOptionRect(int32 Index) const
 
 FVector2 SDropdown::MeasureTextCached(SWidget& Painter, const FString& Text, FDynamicMesh*& OutMesh)
 {
-	OutMesh = TextMeshes[Text];
-	return Painter.MeasureText(Text.c_str(), FontSize, LetterSpacing, OutMesh);
+	auto It = TextMeshes.find(Text);
+	if (It == TextMeshes.end())
+	{
+		It = TextMeshes.emplace(Text, nullptr).first;
+	}
+
+	FDynamicMesh*& CachedMesh = It->second;
+	const FVector2 Size = Painter.MeasureText(Text.c_str(), FontSize, LetterSpacing, CachedMesh);
+	OutMesh = CachedMesh;
+	return Size;
 }
 
 void SDropdown::OnPaint(SWidget& Painter)
