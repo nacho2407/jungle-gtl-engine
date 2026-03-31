@@ -156,10 +156,37 @@ void FViewportLayout::OnWindowResized(uint32 Width, uint32 Height)
 	// 스플리터 트리 재배치 + SViewport → ISlateViewport 동기화
 	if (GetRootSplitterV())
 	{
-		GetRootSplitterV()->SetRect({ 0.f, 0.f, static_cast<float>(Width), static_cast<float>(Height) });
+		const FViewportRect LayoutRect = (HostRect.Width > 0 && HostRect.Height > 0)
+			? HostRect
+			: FViewportRect(0, 0, static_cast<int32>(Width), static_cast<int32>(Height));
+		GetRootSplitterV()->SetRect({
+			static_cast<float>(LayoutRect.X),
+			static_cast<float>(LayoutRect.Y),
+			static_cast<float>(LayoutRect.Width),
+			static_cast<float>(LayoutRect.Height)
+		});
 		GetRootSplitterV()->UpdateCildRect();
 		SyncViewportRects();
 	}
+}
+
+void FViewportLayout::SetHostRect(const FViewportRect& InHostRect)
+{
+	HostRect = InHostRect;
+
+	if (!RootSplitterV)
+	{
+		return;
+	}
+
+	RootSplitterV->SetRect({
+		static_cast<float>(HostRect.X),
+		static_cast<float>(HostRect.Y),
+		static_cast<float>(HostRect.Width),
+		static_cast<float>(HostRect.Height)
+	});
+	RootSplitterV->UpdateCildRect();
+	SyncViewportRects();
 }
 
 // 영역 계산 헬퍼
@@ -228,7 +255,15 @@ void FViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
 	}
 
 	// 초기 크기 → 자식 영역 재귀 계산
-	RootSplitterV->SetRect({ 0.f, 0.f, static_cast<float>(Width), static_cast<float>(Height) });
+	const FViewportRect LayoutRect = (HostRect.Width > 0 && HostRect.Height > 0)
+		? HostRect
+		: FViewportRect(0, 0, Width, Height);
+	RootSplitterV->SetRect({
+		static_cast<float>(LayoutRect.X),
+		static_cast<float>(LayoutRect.Y),
+		static_cast<float>(LayoutRect.Width),
+		static_cast<float>(LayoutRect.Height)
+	});
 
 	// 저장된 스플리터 비율 복원 (UpdateCildRect 전에 설정해야 올바르게 분배됨)
 	const float VRatio = FEditorSettings::Get().SplitterVRatio;
