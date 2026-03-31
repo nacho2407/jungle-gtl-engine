@@ -7,7 +7,8 @@
 #include "Slate/SSplitterV.h"
 #include "Slate/SlateApplication.h"
 #include "Core/InputSystem.h"
-#include <imgui.h>
+#include "imgui.h"
+#include "Engine/Component/GizmoComponent.h"
 
 //  뷰포트 타입 테이블  [인덱스 → EEditorViewportType]
 static constexpr EEditorViewportType kViewportTypes[FViewportLayout::MaxViewports] =
@@ -66,6 +67,13 @@ void FViewportLayout::UpdateHoverStates()
 		SyncViewportRects();
 	}
 
+	// 1 - 1. 특정 뷰포트에서 기즈모 홀딩중이라면 스킵합니다.
+	for (int i = 0; i < MaxViewports; ++i)
+	{
+		if (ViewportClients[i].GetGizmo()->IsHolding())
+			return;
+	}
+
 	// 2. 어느 뷰포트에 마우스가 있는지 판단합니다.
 	//    경계 픽셀 충돌을 피하기 위해 첫 번째로 일치하는 뷰포트만 true 로 설정합니다.
 	if (Window)
@@ -78,7 +86,7 @@ void FViewportLayout::UpdateHoverStates()
 		// 독점 조작 중(회전·팬·궤도)인 뷰포트가 있으면 해당 뷰포트만 hovered 유지합니다.
 		// 조작 중 마우스가 다른 뷰포트로 이동해도 입력이 누수되지 않도록 막습니다.
 		int32 ActiveOpViewport = -1;
-		for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+		for (int32 i = 0; i < MaxViewports; ++i)
 		{
 			if (GetViewportClient(i).IsActiveOperation())
 			{
