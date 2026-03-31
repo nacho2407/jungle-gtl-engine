@@ -6,9 +6,10 @@
 
 #include "SimpleJSON/json.hpp"
 #include "GameFramework/World.h"
-#include "GameFramework/AActor.h"
+#include "GameFramework/PrimitiveActors.h"
 #include "Component/SceneComponent.h"
 #include "Component/ActorComponent.h"
+#include "Component/TextRenderComponent.h"
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 #include "Core/PropertyTypes.h"
@@ -65,107 +66,85 @@ static EWorldType StringToWorldType(const string& Str)
 void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, FWorldContext& WorldContext,
                                         const FEditorCameraState* CameraState)
 {
-	using namespace json;
+    using namespace json;
+    if (!WorldContext.World) return;
 
-	if (!WorldContext.World) return;
+    string FinalName = InSceneName.empty() ? "Save_" + GetCurrentTimeStamp() : InSceneName;
+    std::wstring SceneDir = GetSceneDirectory();
+    std::filesystem::path FileDestination = std::filesystem::path(SceneDir) / (FPaths::ToWide(FinalName) + SceneExtension);
+    std::filesystem::create_directories(SceneDir);
 
-	string FinalName = InSceneName.empty()
-		? "Save_" + GetCurrentTimeStamp()
-		: InSceneName;
+    JSON Root = json::Object();
+    Root[SceneKeys::Version] = 3; 
+    Root[SceneKeys::Name] = FinalName;
+    Root[SceneKeys::ClassName] = WorldContext.World->GetTypeInfo()->name;
+    Root[SceneKeys::WorldType] = WorldTypeToString(WorldContext.WorldType);
+    Root[SceneKeys::PerspectiveCamera] = SerializeCameraState(CameraState);
 
-	std::wstring SceneDir = GetSceneDirectory();
-	std::filesystem::path FileDestination = std::filesystem::path(SceneDir) / (FPaths::ToWide(FinalName) + SceneExtension);
-	std::filesystem::create_directories(SceneDir);
+    // Primitives 딕셔너리로 저장
+    Root[SceneKeys::Primitives] = SerializeWorldToPrimitives(WorldContext.World, WorldContext);
 
-	// 최상위 JSON 오브젝트 생성
-	JSON Root = json::Object();
-	Root[SceneKeys::Version] = 3; // 버전 업
-	Root[SceneKeys::Name] = FinalName;
-	
-	// 월드 설정 (기존과 동일하게 필요하다면 추가)
-	Root[SceneKeys::ClassName] = WorldContext.World->GetTypeInfo()->name;
-	Root[SceneKeys::WorldType] = WorldTypeToString(WorldContext.WorldType);
-
-	// 카메라 상태 저장
-	Root[SceneKeys::PerspectiveCamera] = SerializeCameraState(CameraState);
-
-	// [수정됨] 모든 액터의 컴포넌트들을 Primitives 로 평탄화하여 저장
-	Root[SceneKeys::Primitives] = SerializeWorldToPrimitives(WorldContext.World, WorldContext);
-
-	std::ofstream File(FileDestination);
-	if (File.is_open()) {
-		File << Root.dump();
-		File.flush();
-		File.close();
-	}
+    std::ofstream File(FileDestination);
+    if (File.is_open()) {
+        File << Root.dump();
+        File.flush();
+        File.close();
+    }
 }
 
 json::JSON FSceneSaveManager::SerializeWorldToPrimitives(UWorld* World, const FWorldContext& Ctx)
 {
-	using namespace json;
-	JSON Primitives = json::Object();
-	int32 PrimitiveID = 0;
+    using namespace json;
+    JSON Primitives = json::Object();
+    int32 PrimitiveID = 0; // "3", "4" 등 인덱스로 사용할 키
 
-	for (AActor* Actor : World->GetActors()) 
-	{
-		if (!Actor) continue;
+    for (AActor* Actor : World->GetActors()) 
+    {
+        if (!Actor) continue;
 
-		// 액터 하위의 모든 컴포넌트를 순회합니다. (또는 RootComponent부터 순회)
-		for (UActorComponent* Comp : Actor->GetComponents()) 
-		{
-			// Transform이 있는 SceneComponent만 추출
-			USceneComponent* SceneComp = dynamic_cast<USceneComponent*>(Comp);
-			if (SceneComp) 
-			{
-				JSON PrimObj = SerializeComponentToPrimitive(SceneComp);
-				// 정수 ID를 문자열 키로 사용하여 딕셔너리에 추가
-				Primitives[std::to_string(PrimitiveID++)] = PrimObj;
-			}
-		}
-	}
-	return Primitives;
+        // 루트 컴포넌트만 추출하여 직렬화
+        if (USceneComponent* RootComp = Actor->GetRootComponent()) 
+        {
+            JSON PrimObj = SerializeComponentToPrimitive(RootComp);
+            Primitives[std::to_string(PrimitiveID++)] = PrimObj;
+        }
+    }
+    return Primitives;
 }
 
 json::JSON FSceneSaveManager::SerializeComponentToPrimitive(USceneComponent* SceneComp)
 {
-	using namespace json;
-	JSON PrimObj = json::Object();
+    using namespace json;
+    JSON PrimObj = json::Object();
 
-	// Type (클래스 이름: ex. UStaticMeshComponent 또는 요청하신 StaticMeshComp 문자열 등으로 매핑 가능)
-	FString ClassName = SceneComp->GetTypeInfo()->name;
-	
-	// 만약 내부 클래스 이름 대신 "StaticMeshComp"처럼 특정 이름을 강제해야 한다면 여기서 치환합니다.
-	if (ClassName == "UStaticMeshComponent") { ClassName = "StaticMeshComp"; }
-	PrimObj[SceneKeys::Type] = ClassName;
+    FString ClassName = SceneComp->GetTypeInfo()->name;
+    if (ClassName == "UStaticMeshComponent") { ClassName = "StaticMeshComp"; }
+    PrimObj[SceneKeys::Type] = ClassName;
 
-	// Transform 저장 (Location, Rotation, Scale)
-	FVector Loc = SceneComp->GetRelativeLocation();
-	FVector Rot = SceneComp->GetRelativeRotation(); // Euler 각도로 추출한다고 가정
-	FVector Scl = SceneComp->GetRelativeScale();
+    FVector Loc = SceneComp->GetRelativeLocation();
+    FVector Rot = SceneComp->GetRelativeRotation();
+    FVector Scl = SceneComp->GetRelativeScale();
 
-	PrimObj[SceneKeys::Location] = Array(static_cast<double>(Loc.X), static_cast<double>(Loc.Y), static_cast<double>(Loc.Z));
-	PrimObj[SceneKeys::Rotation] = Array(static_cast<double>(Rot.X), static_cast<double>(Rot.Y), static_cast<double>(Rot.Z));
-	PrimObj[SceneKeys::Scale]    = Array(static_cast<double>(Scl.X), static_cast<double>(Scl.Y), static_cast<double>(Scl.Z));
+    PrimObj[SceneKeys::Location] = Array(static_cast<double>(Loc.X), static_cast<double>(Loc.Y), static_cast<double>(Loc.Z));
+    PrimObj[SceneKeys::Rotation] = Array(static_cast<double>(Rot.X), static_cast<double>(Rot.Y), static_cast<double>(Rot.Z));
+    PrimObj[SceneKeys::Scale]    = Array(static_cast<double>(Scl.X), static_cast<double>(Scl.Y), static_cast<double>(Scl.Z));
 
-	// 기타 프로퍼티 추가
-	TArray<FPropertyDescriptor> Descriptors;
-	SceneComp->GetEditableProperties(Descriptors);
-	for (const auto& Prop : Descriptors) 
-	{
-		FString OutKey = Prop.Name;
-		
-		// [수정] C++ "StaticMesh" 변수를 JSON "ObjStaticMeshAsset" 이름으로 바꿔서 저장
-		if (strcmp(Prop.Name, "StaticMesh") == 0)
-		{
-			OutKey = "ObjStaticMeshAsset";
-		}
-		
-		PrimObj[OutKey] = SerializePropertyValue(Prop);
-	}
+    // 추가 프로퍼티들을 딕셔너리 최상단에 평탄화하여 추가
+    TArray<FPropertyDescriptor> Descriptors;
+    SceneComp->GetEditableProperties(Descriptors);
+    for (const auto& Prop : Descriptors) 
+    {
+        // 트랜스폼 데이터는 위에서 명시적으로 추가했으므로 중복 생략
+        if (strcmp(Prop.Name, "Location") == 0 || strcmp(Prop.Name, "Rotation") == 0 || strcmp(Prop.Name, "Scale") == 0) continue;
 
-	return PrimObj;
+        FString OutKey = Prop.Name;
+        if (strcmp(Prop.Name, "StaticMesh") == 0) { OutKey = "ObjStaticMeshAsset"; }
+        
+        PrimObj[OutKey] = SerializePropertyValue(Prop);
+    }
+
+    return PrimObj;
 }
-
 
 /* @brief 현재 사용하지 않는 함수, 추후 Actor-Component 단위로 계층화를 시켜야 한다면 이쪽을 사용 */
 json::JSON FSceneSaveManager::SerializeWorld(UWorld* World, const FWorldContext& Ctx)
@@ -186,7 +165,6 @@ json::JSON FSceneSaveManager::SerializeWorld(UWorld* World, const FWorldContext&
 	return w;
 }
 
-/* @brief 현재 사용하지 않는 함수, 추후 Actor-Component 단위로 계층화를 시켜야 한다면 이쪽을 사용 */
 json::JSON FSceneSaveManager::SerializeActor(AActor* Actor)
 {
 	using namespace json;
@@ -194,41 +172,24 @@ json::JSON FSceneSaveManager::SerializeActor(AActor* Actor)
 	a[SceneKeys::ClassName] = Actor->GetTypeInfo()->name;
 	a[SceneKeys::Visible] = Actor->IsVisible();
 
-	// RootComponent 트리 직렬화
+	// 자식 컴포넌트 및 NonScene 컴포넌트는 무시하고 RootComponent만 직렬화
 	if (Actor->GetRootComponent()) {
 		a[SceneKeys::RootComponent] = SerializeSceneComponentTree(Actor->GetRootComponent());
 	}
 
-	// Non-scene components
-	JSON NonScene = json::Array();
-	for (UActorComponent* Comp : Actor->GetComponents()) {
-		if (!Comp) continue;
-		if (Comp->IsA<USceneComponent>()) continue;
-
-		JSON c = json::Object();
-		c[SceneKeys::ClassName] = Comp->GetTypeInfo()->name;
-		c[SceneKeys::Properties] = SerializeProperties(Comp);
-		NonScene.append(c);
-	}
-	a[SceneKeys::NonSceneComponents] = NonScene;
-
 	return a;
 }
 
-/* @brief 현재 사용하지 않는 함수, 추후 Actor-Component 단위로 계층화를 시켜야 한다면 이쪽을 사용 */
 json::JSON FSceneSaveManager::SerializeSceneComponentTree(USceneComponent* Comp)
 {
 	using namespace json;
 	JSON c = json::Object();
-	c[SceneKeys::ClassName] = Comp->GetTypeInfo()->name;
+	
+	FString ClassName = Comp->GetTypeInfo()->name;
+	if (ClassName == "UStaticMeshComponent") { ClassName = "StaticMeshComp"; }
+	c[SceneKeys::Type] = ClassName;
+	
 	c[SceneKeys::Properties] = SerializeProperties(Comp);
-
-	JSON Children = json::Array();
-	for (USceneComponent* Child : Comp->GetChildren()) {
-		if (!Child) continue;
-		Children.append(SerializeSceneComponentTree(Child));
-	}
-	c[SceneKeys::Children] = Children;
 
 	return c;
 }
@@ -317,119 +278,88 @@ json::JSON FSceneSaveManager::SerializeCameraState(const FEditorCameraState* Cam
 // Load
 // ============================================================
 
-void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext& OutWorldContext,
-                                          FEditorCameraState* OutCameraState)
+void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext& OutWorldContext, FEditorCameraState* OutCameraState)
 {
-	using json::JSON;
-	std::ifstream File(std::filesystem::path(FPaths::ToWide(filepath)));
-	if (!File.is_open()) {
-		std::cerr << "Failed to open file at target destination" << std::endl;
-		return;
-	}
+    using json::JSON;
+    std::ifstream File(std::filesystem::path(FPaths::ToWide(filepath)));
+    if (!File.is_open()) return;
 
-	string FileContent((std::istreambuf_iterator<char>(File)), std::istreambuf_iterator<char>());
-	JSON root = JSON::Load(FileContent);
+    string FileContent((std::istreambuf_iterator<char>(File)), std::istreambuf_iterator<char>());
+    JSON root = JSON::Load(FileContent);
 
-	string ClassName = root.hasKey(SceneKeys::ClassName) ? root[SceneKeys::ClassName].ToString() : "UWorld";
-	UObject* WorldObj = FObjectFactory::Get().Create(ClassName);
-	if (!WorldObj || !WorldObj->IsA<UWorld>()) return;
+    string ClassName = root.hasKey(SceneKeys::ClassName) ? root[SceneKeys::ClassName].ToString() : "UWorld";
+    UObject* WorldObj = FObjectFactory::Get().Create(ClassName);
+    if (!WorldObj || !WorldObj->IsA<UWorld>()) return;
 
-	UWorld* World = static_cast<UWorld*>(WorldObj);
+    UWorld* World = static_cast<UWorld*>(WorldObj);
+    EWorldType WorldType = root.hasKey(SceneKeys::WorldType) ? StringToWorldType(root[SceneKeys::WorldType].ToString()) : EWorldType::Editor;
 
-	// ... (기존 ContextName, WorldType 등 파싱 로직 유지) ...
-	EWorldType WorldType = root.hasKey(SceneKeys::WorldType) ? StringToWorldType(root[SceneKeys::WorldType].ToString()) : EWorldType::Editor;
+    DeserializeCameraState(root, OutCameraState);
 
-	// 카메라 복원
-	DeserializeCameraState(root, OutCameraState);
+    // Primitives 파싱
+    if (root.hasKey(SceneKeys::Primitives)) 
+    {
+        DeserializePrimitivesToWorld(root[SceneKeys::Primitives], World);
+    }
 
-	// [수정됨] Primitives 데이터를 읽어서 액터로 변환
-	if (root.hasKey(SceneKeys::Primitives)) 
-	{
-		DeserializePrimitivesToWorld(root[SceneKeys::Primitives], World);
-	}
-
-	OutWorldContext.WorldType = WorldType;
-	OutWorldContext.World = World;
-	// OutWorldContext.ContextName = ContextName; // 기존 설정 반영
+    OutWorldContext.WorldType = WorldType;
+    OutWorldContext.World = World;
 }
+#include <functional>
+#include <unordered_map>
 
 void FSceneSaveManager::DeserializePrimitivesToWorld(json::JSON& PrimitivesNode, UWorld* World)
 {
-	// 딕셔너리의 모든 키("3", "4" 등)를 순회
-	for (auto& Pair : PrimitivesNode.ObjectRange()) 
-	{
-		json::JSON& PrimJSON = Pair.second;
+    static std::unordered_map<string, std::function<AActor*()>> ActorFactoryMap = {
+        {"StaticMeshComp", []() { 
+            auto* A = FObjectFactory::Get().Create("AStaticMeshActor")->Cast<AStaticMeshActor>();
+            if (A) A->InitDefaultComponents(); return A; 
+        }},
+        {"UStaticMeshComponent", []() { 
+            auto* A = FObjectFactory::Get().Create("AStaticMeshActor")->Cast<AStaticMeshActor>();
+            if (A) A->InitDefaultComponents(); return A; 
+        }},
+        {"USubUVComponent", []() { 
+            auto* A = FObjectFactory::Get().Create("ASubUVActor")->Cast<ASubUVActor>();
+            if (A) A->InitDefaultComponents(); return A; 
+        }},
+        {"UTextRenderComponent", []() { 
+            auto* A = FObjectFactory::Get().Create("ATextRenderActor")->Cast<ATextRenderActor>();
+            if (A) A->InitDefaultComponents(); return A; 
+        }}
+    };
 
-		if (!PrimJSON.hasKey(SceneKeys::Type)) continue;
-		
-		string CompType = PrimJSON[SceneKeys::Type].ToString();
-		// 저장할 때 치환했던 이름 복구
-		if (CompType == "StaticMeshComp") { CompType = "UStaticMeshComponent"; }
+    for (auto& Pair : PrimitivesNode.ObjectRange()) 
+    {
+        json::JSON& PrimJSON = Pair.second;
 
-		// 1. 새로운 기본 Actor 생성
-		UObject* ActorObj = FObjectFactory::Get().Create("AActor"); // 기본 액터 클래스명
-		if (!ActorObj || !ActorObj->IsA<AActor>()) continue;
-		
-		AActor* NewActor = static_cast<AActor*>(ActorObj);
-		NewActor->SetWorld(World);
+        if (!PrimJSON.hasKey(SceneKeys::Type)) continue;
+        
+        string CompType = PrimJSON[SceneKeys::Type].ToString();
+        AActor* NewActor = nullptr;
 
-		World->AddActor(NewActor);
+        auto it = ActorFactoryMap.find(CompType);
+        if (it != ActorFactoryMap.end()) 
+        {
+            NewActor = it->second(); 
+        }
+        else 
+        {
+            UObject* Obj = FObjectFactory::Get().Create("AActor");
+            NewActor = Obj ? Obj->Cast<AActor>() : nullptr;
+        }
 
-		// 2. JSON에 명시된 타입으로 컴포넌트 생성
-		UObject* CompObj = FObjectFactory::Get().Create(CompType);
-		if (!CompObj || !CompObj->IsA<USceneComponent>()) continue;
+        if (!NewActor) continue;
 
-		USceneComponent* NewComp = static_cast<USceneComponent*>(CompObj);
-		NewActor->RegisterComponent(NewComp);
-		NewActor->SetRootComponent(NewComp);
+        NewActor->SetWorld(World);
+        World->AddActor(NewActor);
 
-		// 4. Transform 설정
-		if (PrimJSON.hasKey(SceneKeys::Location)) {
-			auto LocArray = PrimJSON[SceneKeys::Location];
-			NewComp->SetRelativeLocation(FVector(
-				static_cast<float>(LocArray[0].ToFloat()),
-				static_cast<float>(LocArray[1].ToFloat()),
-				static_cast<float>(LocArray[2].ToFloat())));
-		}
-		if (PrimJSON.hasKey(SceneKeys::Rotation)) {
-			auto RotArray = PrimJSON[SceneKeys::Rotation];
-			NewComp->SetRelativeRotation(FVector(
-				static_cast<float>(RotArray[0].ToFloat()),
-				static_cast<float>(RotArray[1].ToFloat()),
-				static_cast<float>(RotArray[2].ToFloat())));
-		}
-		if (PrimJSON.hasKey(SceneKeys::Scale)) {
-			auto SclArray = PrimJSON[SceneKeys::Scale];
-			NewComp->SetRelativeScale(FVector(
-				static_cast<float>(SclArray[0].ToFloat()),
-				static_cast<float>(SclArray[1].ToFloat()),
-				static_cast<float>(SclArray[2].ToFloat())));
-		}
-
-		// 5. 기타 속성 (ObjStaticMeshAsset 등) 리플렉션을 통한 복원
-		TArray<FPropertyDescriptor> Descriptors;
-		NewComp->GetEditableProperties(Descriptors);
-		for (auto& Prop : Descriptors) 
-		{
-			// 기본적으로 C++ 프로퍼티 이름을 키로 사용
-			FString SearchKey = Prop.Name;
-			
-			if (strcmp(Prop.Name, "StaticMesh") == 0 && PrimJSON.hasKey("ObjStaticMeshAsset"))
-			{
-				SearchKey = "ObjStaticMeshAsset";
-			}
-
-			if (PrimJSON.hasKey(SearchKey)) {
-				auto ValueJSON = PrimJSON[SearchKey];
-				DeserializePropertyValue(Prop, ValueJSON);
-                
-				// 알림을 보내야 UStaticMeshComponent 내에서 에셋을 로드하고 화면에 그릴 준비를 합니다.
-				NewComp->PostEditProperty(Prop.Name); 
-			}
-		}
-
-		NewComp->MarkTransformDirty();
-	}
+        if (USceneComponent* RootComp = NewActor->GetRootComponent()) 
+        {
+            DeserializeProperties(RootComp, PrimJSON);
+            RootComp->MarkTransformDirty();
+        }
+    }
 }
 
 /* @brief 현재 사용하지 않는 함수, 추후 Actor-Component 단위로 계층화를 시켜야 한다면 이쪽을 사용 */
