@@ -120,7 +120,8 @@ UMaterial* FObjManager::GetOrLoadMaterial(const FString& MaterialName)
 	FString MatPath = MaterialName;
 
 	// 3. 하드디스크(.bin)에 있다면 로드
-	if (std::filesystem::exists(MatPath))
+	
+	if (std::filesystem::exists(FPaths::ToWide(MatPath)))
 	{
 		FWindowsBinReader Reader(MatPath);
 		if (Reader.IsValid())
