@@ -15,6 +15,9 @@
 #include "Mesh/ObjManager.h"
 #include "Mesh/StaticMesh.h"
 
+#include <Windows.h>
+#include <commdlg.h>
+
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
 static FString RemoveExtension(const FString& Path)
@@ -32,6 +35,26 @@ static FString GetStemFromPath(const FString& Path)
 	size_t SlashPos = Path.find_last_of("/\\");
 	FString FileName = (SlashPos == FString::npos) ? Path : Path.substr(SlashPos + 1);
 	return RemoveExtension(FileName);
+}
+
+FString FEditorPropertyWidget::OpenObjFileDialog()
+{
+	char FilePath[MAX_PATH] = {};
+
+	OPENFILENAMEA Ofn = {};
+	Ofn.lStructSize = sizeof(Ofn);
+	Ofn.hwndOwner = nullptr;
+	Ofn.lpstrFilter = "OBJ Files (*.obj)\0*.obj\0All Files (*.*)\0*.*\0";
+	Ofn.lpstrFile = FilePath;
+	Ofn.nMaxFile = MAX_PATH;
+	Ofn.lpstrTitle = "Import OBJ Mesh";
+	Ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
+
+	if (GetOpenFileNameA(&Ofn))
+	{
+		return FString(FilePath);
+	}
+	return {};
 }
 
 void FEditorPropertyWidget::Render(float DeltaTime)
@@ -425,10 +448,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 			for (const FMeshAssetListItem& Item : MeshFiles)
 			{
 				bool bSelected = (*Val == Item.FullPath);
-
-				FString Label = Item.DisplayName;
-
-				if (ImGui::Selectable(Label.c_str(), bSelected))
+				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
 				{
 					*Val = Item.FullPath;
 					bChanged = true;
@@ -437,6 +457,24 @@ bool FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 					ImGui::SetItemDefaultFocus();
 			}
 			ImGui::EndCombo();
+		}
+
+		// .obj 임포트 버튼
+		ImGui::SameLine();
+		if (ImGui::Button("Import OBJ"))
+		{
+			FString ObjPath = OpenObjFileDialog();
+			if (!ObjPath.empty())
+			{
+				ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+				UStaticMesh* Loaded = FObjManager::LoadObjStaticMesh(ObjPath, Device);
+				if (Loaded)
+				{
+					*Val = FObjManager::GetBinaryFilePath(ObjPath);
+					FObjManager::ScanMeshAssets(); // 목록 갱신
+					bChanged = true;
+				}
+			}
 		}
 		break;
 	}
