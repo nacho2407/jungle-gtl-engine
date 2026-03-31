@@ -3,12 +3,20 @@
 #include "Asset/AssetManager.h"
 #include "CoreUObject/Object.h"
 
+#include <filesystem>
+
 namespace Engine::Asset
 {
     void UStaticMesh::Initialize(const FSourceRecord& InSource, std::shared_ptr<FStaticMeshResource> InResource)
     {
         RenderResource = InResource;
         SetPath(InSource.NormalizedPath);
+
+        // 경로에서 파일 이름 추출
+        std::filesystem::path FilePath(InSource.NormalizedPath);
+        FString ExtractedName = FilePath.filename().string().c_str();
+        SetAssetName(ExtractedName);
+        Name = ExtractedName.c_str();
     }
 
     void UStaticMesh::InitializeMaterialSlots(uint32 NumSlots)
