@@ -189,7 +189,7 @@ void FEditorSceneWidget::Render(float DeltaTime)
                 {
                     if (ImGui::GetIO().KeyShift)
                     {
-                        Selection.SelectRange(Actor, Actors);
+                        Selection.AddSelect(Actor);
                     }
                     else if (ImGui::GetIO().KeyCtrl)
                     {
