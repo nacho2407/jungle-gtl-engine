@@ -26,7 +26,7 @@ void UStaticMeshComp::SetStaticMesh(UStaticMesh* InMesh)
 		for (int32 i = 0; i < DefaultMaterials.size(); ++i)
 		{
 			OverrideMaterials[i] = DefaultMaterials[i].MaterialInterface;
-			OverrideUVScrolls[i] = DefaultMaterials[i].bIsUVScroll;
+			OverrideUVScrolls[i] = DefaultMaterials[i].bIsUVScroll ? 1 : 0;
 
 			if (OverrideMaterials[i])
 				OverrideMaterialPaths[i] = OverrideMaterials[i]->GetAssetPathFileName();
