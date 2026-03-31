@@ -191,7 +191,7 @@ void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFla
                          Cast<Engine::Component::UStaticMeshComponent>(Component))
             {
                 // (선택 사항) ShowFlags에 SF_StaticMeshes 같은 플래그가 있다면 여기서 체크
-                // if (!IsFlagSet(InShowFlags, ESceneShowFlags::SF_StaticMeshes)) continue;
+                 if (!IsFlagSet(InShowFlags, ESceneShowFlags::SF_Primitives)) continue;
 
                 Engine::Asset::UStaticMesh* StaticMeshAsset = StaticMeshComp->GetStaticMesh();
                 const FStaticMeshResource*  Resource =

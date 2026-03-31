@@ -8,6 +8,36 @@
 struct FEditorContext;
 class  FScene;
 
+struct FGlobalRenderSetting
+{
+    bool bShowUUIDLabels = true;
+    bool bBillboardText = true;
+    bool bShowScenePrimitives = true;
+    bool bShowSceneSprites = true;
+
+    ESceneShowFlags BuildSceneShowFlags() const
+    {
+        ESceneShowFlags Flags = ESceneShowFlags::None;
+        if (bShowScenePrimitives)
+        {
+            Flags |= ESceneShowFlags::SF_Primitives;
+        }
+        if (bBillboardText)
+        {
+            Flags |= ESceneShowFlags::SF_BillboardText;
+        }
+        if (bShowSceneSprites)
+        {
+            Flags |= ESceneShowFlags::SF_Sprites;
+        }
+        if (bShowUUIDLabels)
+        {
+            Flags |= ESceneShowFlags::SF_UUIDText;
+        }
+        return Flags;
+    }
+};
+
 class FWindowOverlayManager
 {
   private:
@@ -16,6 +46,7 @@ class FWindowOverlayManager
     FEditorViewportPanel*         LastFocusedPanel = nullptr;
     FEditorContext*               EditorContext  = nullptr;
     FScene*                       Scene          = nullptr;
+    FGlobalRenderSetting          RenderSetting;
 
     // Global window dimension
     uint32 W = 0;
@@ -101,6 +132,8 @@ class FWindowOverlayManager
 
     // Returns a human readable string for each layout enum feed
     FString GetViewportLayoutString(EViewportLayout Layout) const;
+
+    FGlobalRenderSetting& GetRenderSetting() { return RenderSetting; }
 
     SSplitter*      GetSplitterV() const;
     SSplitter*      GetSplitterH() const;

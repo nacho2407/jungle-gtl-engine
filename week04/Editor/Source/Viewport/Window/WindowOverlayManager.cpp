@@ -501,11 +501,7 @@ FSceneFrameRenderData FWindowOverlayManager::BuildSceneFrameData() const
     }
 
     ESceneShowFlags UnionFlags = ESceneShowFlags::None;
-    for (FEditorViewportPanel* Panel : ViewportPanels)
-    {
-        if (Panel && Panel->ViewportClient)
-            UnionFlags |= Panel->ViewportClient->GetRenderSetting().BuildSceneShowFlags();
-    }
+    UnionFlags |= RenderSetting.BuildSceneShowFlags();
 
     Scene->BuildRenderData(FrameData, UnionFlags);
     return FrameData;
