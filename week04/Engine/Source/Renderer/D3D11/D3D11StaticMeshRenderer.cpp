@@ -157,16 +157,21 @@ void FD3D11StaticMeshRenderer::Flush()
             Constants.MVP = DrawItem.World * CurrentPassParams.SceneView->GetViewProjectionMatrix();
             Constants.World = DrawItem.World;
             Constants.bEnableLighting = (CurrentPassParams.ViewMode == EViewModeIndex::VMI_Lit) ? 1 : 0;
+            Constants.Time = CurrentPassParams.Time;
 
             if (MaterialData)
             {
                 Constants.BaseColor =
                     FColor(MaterialData->DiffuseColor.X, MaterialData->DiffuseColor.Y,
                            MaterialData->DiffuseColor.Z, MaterialData->Opacity);
+                Constants.ScrollSpeedX = MaterialData->UVScrollSpeed.X;
+                Constants.ScrollSpeedY = MaterialData->UVScrollSpeed.Y;
             }
             else
             {
                 Constants.BaseColor = FColor::White();
+                Constants.ScrollSpeedX = 0.0f;
+                Constants.ScrollSpeedY = 0.0f;
             }
 
             if (!RHI->UpdateConstantBuffer(ConstantBuffer.Get(), &Constants, sizeof(Constants)))

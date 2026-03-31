@@ -11,7 +11,9 @@ struct alignas(16) FMeshUnlitConstants
     FMatrix World;
     FColor  BaseColor;
     uint32  bEnableLighting;
-    float   Padding[3]; // 16바이트 정렬 유지
+    float   Time;           // 누적 시간
+    float   ScrollSpeedX;   // U 방향 스크롤 속도
+    float   ScrollSpeedY;   // V 방향 스크롤 속도
 };
 
 // Instanced unlit mesh

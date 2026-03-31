@@ -52,10 +52,13 @@ class ENGINE_API FRendererModule
     void SetVSyncEnabled(bool bEnabled);
     bool IsVSyncEnabled() const;
 
+    void SetTime(float InTime) { Time = InTime; }
+
     void RenderViewportOverlayPass(const FWidgetRenderData& InWidgetRenderData);
 
   private:
     FD3D11RHI RHI;
+    float     Time = 0.0f; // 누적 시간 추가
 
     FD3D11MeshBatchRenderer  MeshBatchRenderer;
     FD3D11OutlineRenderer    OutlineRenderer;

@@ -248,6 +248,7 @@ void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderDat
         // 스태틱 메시는 현재 단일 드로우 콜 구조이므로 인스턴싱 플래그는 false 또는 무시됩니다.
         StaticMeshPassParams.bUseInstancing = false;
         StaticMeshPassParams.bDisableDepth = false;
+        StaticMeshPassParams.Time = Time; // 시간 전달
 
         StaticMeshRenderer.BeginFrame(StaticMeshPassParams);
 

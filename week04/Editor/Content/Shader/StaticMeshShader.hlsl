@@ -4,7 +4,9 @@ cbuffer FMeshUnlitConstants : register(b0)
     row_major matrix World;
     float4 BaseColor;
     uint bEnableLighting;
-    float3 Padding;
+    float Time;
+    float ScrollSpeedX;
+    float ScrollSpeedY;
 };
 
 Texture2D DiffuseTexture : register(t0);
@@ -32,7 +34,9 @@ VS_OUTPUT VSMain(VS_INPUT Input)
     // 법선을 월드 공간으로 변환 (회전 반영)
     Output.Normal = normalize(mul(Input.Normal, (float3x3)World));
     
-    Output.UV = Input.UV;
+    // UV Scroll 적용
+    Output.UV = Input.UV + float2(ScrollSpeedX, ScrollSpeedY) * Time;
+    
     return Output;
 }
 
