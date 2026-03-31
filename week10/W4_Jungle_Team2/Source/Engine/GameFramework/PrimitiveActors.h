@@ -39,3 +39,30 @@ public:
 
 	void InitDefaultComponents();
 };
+
+class AStaticMeshActor : public AActor
+{
+public:
+	DECLARE_CLASS(AStaticMeshActor, AActor)
+	AStaticMeshActor() = default;
+
+	void InitDefaultComponents();
+};
+
+class ASubUVActor : public AActor
+{
+public:
+    DECLARE_CLASS(ASubUVActor, AActor)
+    ASubUVActor() = default;
+
+    void InitDefaultComponents();
+};
+
+class ATextRenderActor : public AActor
+{
+public:
+    DECLARE_CLASS(ATextRenderActor, AActor)
+    ATextRenderActor() = default;
+
+    void InitDefaultComponents();
+};

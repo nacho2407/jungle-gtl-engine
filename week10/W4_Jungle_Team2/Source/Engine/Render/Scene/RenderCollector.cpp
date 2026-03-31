@@ -375,7 +375,6 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		Cmd.BlendState = EBlendState::AlphaBlend;
 		Cmd.DepthStencilState = EDepthStencilState::Default;
 
-
 		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);
 		break;
 	}
