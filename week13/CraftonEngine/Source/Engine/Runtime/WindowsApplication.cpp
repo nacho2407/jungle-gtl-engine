@@ -1,4 +1,5 @@
 #include "Engine/Runtime/WindowsApplication.h"
+#include "Engine/Runtime/resource.h"
 
 #include <windowsx.h>
 
@@ -78,9 +79,16 @@ bool FWindowsApplication::Init(HINSTANCE InHInstance)
 
 	WCHAR WindowClass[] = L"JungleWindowClass";
 	WCHAR Title[] = L"Game Tech Lab";
-	WNDCLASSW WndClass = { 0, StaticWndProc, 0, 0, 0, 0, 0, 0, 0, WindowClass };
+	WNDCLASSEXW WndClass = {};
+	WndClass.cbSize = sizeof(WNDCLASSEXW);
+	WndClass.lpfnWndProc = StaticWndProc;
+	WndClass.hInstance = HInstance;
+	WndClass.hIcon = LoadIconW(HInstance, MAKEINTRESOURCEW(IDI_APP_ICON));
+	WndClass.hIconSm = LoadIconW(HInstance, MAKEINTRESOURCEW(IDI_APP_ICON));
+	WndClass.hCursor = LoadCursorW(nullptr, IDC_ARROW);
+	WndClass.lpszClassName = WindowClass;
 
-	RegisterClassW(&WndClass);
+	RegisterClassExW(&WndClass);
 
 	HWND HWindow = CreateWindowExW(
 		0,
