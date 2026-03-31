@@ -122,19 +122,19 @@ struct FStaticMeshConstants
 	float   _Pad2          = 0.0f;
 
 	// ScrollUV
-	float ScrollX  = 0.f;
-	float ScrollY  = 0.f;
-	float Padding0 = 0.0f;
-	
-	// Texture
+	float  ScrollX          = 0.f;
+	float  ScrollY          = 0.f;
+	float  Padding0         = 0.0f;
+	uint32 bHasDiffuseMap   = 0;     // cbuffer bytes 76-79  — HLSL uint bHasDiffuseMap 대응
+	uint32 bHasSpecularMap  = 0;     // cbuffer bytes 80-83  — HLSL uint bHasSpecularMap 대응
+	float  Padding1         = 0.f;   // cbuffer bytes 84-87
+	float  Padding2         = 0.f;   // cbuffer bytes 88-91  (16바이트 블록 완성)
+
+	// Texture SRV (CPU-only, cbuffer 범위 밖)
 	ID3D11ShaderResourceView* DiffuseSRV  = { nullptr };
-	bool bHasDiffuseMap = { false };
 	ID3D11ShaderResourceView* AmbientSRV  = { nullptr };
-	bool bHasAmbientMap = { false };
 	ID3D11ShaderResourceView* SpecularSRV = { nullptr };
-	bool bHasSpecularMap = { false };
-	ID3D11ShaderResourceView* BumpSRV = { nullptr };
-	bool bHasBumpMap = { false };
+	ID3D11ShaderResourceView* BumpSRV     = { nullptr };
 };
 
 struct FRenderCommand
