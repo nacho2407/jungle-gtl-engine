@@ -2,13 +2,14 @@
 
 #include "PrimitiveComponent.h"
 #include "Core/CoreTypes.h"
+#include "Render/Types/ViewTypes.h"
 
 class AActor;
 
 class UGizmoComponent : public UPrimitiveComponent
 {
 
-private:
+public:
 	enum EGizmoMode
 	{
 		Translate,
@@ -17,6 +18,7 @@ private:
 		End
 	};
 
+private:
 	AActor* TargetActor = nullptr;
 	const TArray<AActor*>* AllSelectedActors = nullptr;
 	EGizmoMode CurMode = EGizmoMode::Translate;
@@ -31,6 +33,7 @@ private:
 	bool bIsWorldSpace = true;
 	bool bPressedOnHandle = false;
 	const FMeshData* MeshData = nullptr;
+	uint32 AxisMask = 0x7; // 비트 0=X, 1=Y, 2=Z — 기본 전부 표시
 
 	bool IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float& OutRayT);
 
@@ -63,6 +66,10 @@ public:
 	inline void SetPressedOnHandle(bool bPressed) { bPressedOnHandle = bPressed; }
 	inline bool IsPressedOnHandle() const { return bPressedOnHandle; }
 
+	void SetAxisMask(uint32 InMask) { AxisMask = InMask; }
+	uint32 GetAxisMask() const { return AxisMask; }
+	EGizmoMode GetMode() const { return CurMode; }
+	void UpdateAxisMask(ELevelViewportType ViewportType);
 	void UpdateHoveredAxis(int Index);
 	void UpdateDrag(const FRay& Ray);
 	void DragEnd();
