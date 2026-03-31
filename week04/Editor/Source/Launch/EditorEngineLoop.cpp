@@ -165,7 +165,7 @@ bool FEditorEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
     FontAssetLoader = new FFontAtlasLoader(&Renderer->GetRHI());
     SubUVAtlasAssetLoader = new FSubUVAtlasLoader(&Renderer->GetRHI());
     StaticMeshLoader = new FStaticMeshLoader(&Renderer->GetRHI(), AssetManager);
-    MaterialLoader = new Engine::Asset::FMaterialLoader();
+    MaterialLoader = new FMaterialLoader(AssetManager);
     AssetManager->RegisterLoader(TextureAssetLoader);
     AssetManager->RegisterLoader(MaterialLoader);
     AssetManager->RegisterLoader(FontAssetLoader);

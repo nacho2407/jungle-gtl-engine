@@ -96,9 +96,10 @@ UAsset* FStaticMeshLoader::LoadAsset(const FSourceRecord& Source, const FAssetLo
         MatParams.ExplicitType = EAssetType::Material;
 
         UAsset* LoadedAsset = AssetManager->Load(WideMtlPath, MatParams);
-        Engine::Asset::UMaterial* LoadedMtl = static_cast<Engine::Asset::UMaterial*>(LoadedAsset);
+        auto*   LoadedMtl = static_cast<Engine::Asset::UMaterial*>(LoadedAsset);
 
-        if (!LoadedMtl)        {
+        if (!LoadedMtl)
+        {
             UE_LOG(Asset, ELogVerbosity::Warning,
                    "[StaticMeshLoader] Failed to load .mtl file. Path=%s",
                    WidePathToUtf8(WideMtlPath).c_str());
@@ -365,7 +366,7 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMeshRes
 }
 
 bool FStaticMeshLoader::CreateBuffers(const TArray<FMeshVertexPNCT>& InVertices,
-                                      FStaticMeshResource&             OutMesh) const
+                                      FStaticMeshResource&           OutMesh) const
 {
     // RHI (Render Hardware Interface) 유효성 검사
     if (!RHI || !RHI->GetDevice())

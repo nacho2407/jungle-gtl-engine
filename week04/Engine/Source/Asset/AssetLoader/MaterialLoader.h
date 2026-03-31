@@ -1,25 +1,26 @@
 #pragma once
-#include "Source/Renderer/RenderAsset/MaterialResource.h"
+
 #include "AssetLoader.h"
+#include "Asset/AssetManager.h"
+#include "Renderer/RenderAsset/MaterialResource.h"
 
-namespace Engine::Asset
+class ENGINE_API FMaterialLoader : public IAssetLoader
 {
-    /**
-     * @brief .mtl 파일을 읽어 UMaterial 에셋을 생성하는 로더입니다.
-     */
-    class ENGINE_API FMaterialLoader : public IAssetLoader
-    {
-      public:
-        FMaterialLoader() = default;
-        virtual ~FMaterialLoader() override = default;
+  public:
+    FMaterialLoader(UAssetManager* InAssetManager) { AssetManager = InAssetManager; }
+    ~FMaterialLoader() override = default;
 
-        virtual bool       CanLoad(const FWString& Path, const FAssetLoadParams& Params) const override;
-        virtual EAssetType GetAssetType() const override { return EAssetType::Material; }
+    bool       CanLoad(const FWString& Path, const FAssetLoadParams& Params) const override;
+    EAssetType GetAssetType() const override;
+    uint64     MakeBuildSignature(const FAssetLoadParams& Params) const override;
+    UAsset*    LoadAsset(const FSourceRecord& Source, const FAssetLoadParams& Params) override;
 
-        virtual uint64     MakeBuildSignature(const FAssetLoadParams& Params) const override;
-        virtual UAsset*    LoadAsset(const FSourceRecord& Source, const FAssetLoadParams& Params) override;
+  private:
+    bool ParseMtlText(const FSourceRecord& Source, FMaterialResource& OutResource) const;
 
-      private:
-        bool ParseMtlText(const FSourceRecord& Source, struct ::FMaterialResource& OutResource);
-    };
-} // namespace Engine::Asset
+    // map_Kd 경로를 .mtl 파일 위치 기준으로 절대 경로화 해주는 유틸리티
+    FWString ResolveSiblingPath(const FWString& BaseFilePath, const FString& RelativePath) const;
+    FString  WidePathToUtf8(const FWString& Path) const;
+
+    UAssetManager* AssetManager = nullptr;
+};
