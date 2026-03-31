@@ -158,6 +158,8 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, const F
 
 UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11Device* InDevice)
 {
+	FString CacheKey = GetBinaryFilePath(PathFileName);
+
 	// 캐시 확인 (O(1) 룩업)
 	auto It = StaticMeshCache.find(PathFileName);
 	if (It != StaticMeshCache.end())
@@ -168,13 +170,14 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 	// UStaticMesh 생성 + FStaticMesh 소유권 이전 + 머티리얼 설정
 	UStaticMesh* StaticMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
 
-	FString BinPath = GetBinaryFilePath(PathFileName);
+	FString BinPath = CacheKey;
 	bool bNeedRebuild = true;
 
 	// 3. 타임스탬프 비교 (디스크 캐시 확인)
-	if (std::filesystem::exists(BinPath) && std::filesystem::exists(PathFileName))
+	if (std::filesystem::exists(BinPath))
 	{
-		if (std::filesystem::last_write_time(BinPath) >= std::filesystem::last_write_time(PathFileName))
+		if (!std::filesystem::exists(PathFileName) || PathFileName == BinPath ||
+			std::filesystem::last_write_time(BinPath) >= std::filesystem::last_write_time(PathFileName))
 		{
 			bNeedRebuild = false;
 		}
@@ -232,7 +235,7 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 	StaticMesh->InitResources(InDevice);
 
 	// 캐시 등록
-	StaticMeshCache[PathFileName] = StaticMesh;
+	StaticMeshCache[CacheKey] = StaticMesh;
 
 	return StaticMesh;
 }
